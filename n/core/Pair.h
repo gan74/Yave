@@ -19,10 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Array.h"
 
-namespace n
-{
-namespace core
-{
+namespace n {
+namespace core {
 
 template<typename T, typename U = T>
 class Pair

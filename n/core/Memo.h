@@ -19,10 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <map>
 
-namespace n
-{
-namespace core
-{
+namespace n {
+namespace core {
 
 template<typename T>
 class MemFunc
@@ -40,7 +38,7 @@ class MemFunc
 			}
 			return it->second;
 		}
-		
+
 		MemFunc &operator=(const MemFunc &) = delete;
 		MemFunc(const MemFunc &) = delete;
 

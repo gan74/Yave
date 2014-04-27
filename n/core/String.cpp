@@ -4,12 +4,8 @@
 #include <iomanip>
 #include <cstring>
 
-namespace n
-{
-namespace core
-{
-
-char String::nullString = 0;
+namespace n {
+namespace core {
 
 String operator+(const char *cst, String s) {
 	return String(cst) + s;
@@ -133,7 +129,7 @@ bool String::isEmpty() const {
 
 char const *String::toChar() const {
 	if(!data) {
-		return &nullString;
+		return (char *)&null;
 	}
 	return data;
 }

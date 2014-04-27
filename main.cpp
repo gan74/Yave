@@ -4,10 +4,13 @@
 #include <n/core/Lazy.h>
 #include <n/core/Memo.h>
 #include <n/core/Option.h>
-#include <iostream>
 #include <n/io/File.h>
+#include <n/test/TestTemplate.h>
+#include <n/test/Test.h>
+
+#include <iostream>
 
 int main() {
-	std::cout<<"Hello wolrd"<<std::endl;
+	//ArrayTest();
 	return 0;
 }

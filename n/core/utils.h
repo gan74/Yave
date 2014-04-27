@@ -17,33 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_UTILS_H
 #define N_CORE_UTILS_H
 
-#include <iostream>
 #include <n/Types.h>
 
-#define N_PI 3.1415926535897932384626433832795028841971693993751058
+namespace n {
+namespace core {
 
-#define nUnused(var) (void)var
-
-#ifdef N_DEBUG
-#define nError(msg) std::cerr<<((msg))<<" in "<<__FILE__<<" at line : "<<__LINE__<<std::endl; exit(1)
-#else
-#define nError(msg) std::cerr<<((msg))<<std::endl; exit(1)
-#endif
-
-#ifndef __GNUC__
-#define N_NO_FORCE_INLINE
-#endif
-
-#ifdef N_NO_FORCE_INLINE
-#define N_FORCE_INLINE /*nothing*/
-#else
-#define N_FORCE_INLINE __attribute__((always_inline))
-#endif
-
-namespace n
-{
-namespace core
-{
+extern const void *null;
 
 uint random(uint max, uint min = 0);
 float random();

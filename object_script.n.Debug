@@ -1,0 +1,12 @@
+INPUT(
+./debug/main.o
+./debug/String.o
+./debug/utils.o
+./debug/File.o
+./debug/InputStream.o
+./debug/OutputStream.o
+./debug/Test.o
+./debug/TestTemplate.o
+./debug/ArrayTest.o
+./debug/TestTemplate.o
+);

@@ -582,9 +582,9 @@ class Array
 		template<typename U>
 		void filter(const U &f) {
 			Array<T>::iterator it = begin();
-			foreach([&](const T &e) {
-				if(f(e)) {
-					*it = e;
+			foreach([&](T &e) {
+				if(f((const T &)e)) {
+					*it = std::move(e);
 					it++;
 				}
 			});

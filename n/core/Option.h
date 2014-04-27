@@ -17,10 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_OPTION_H
 #define N_CORE_OPTION_H
 
-namespace n
-{
-namespace core
-{
+namespace n {
+namespace core {
 
 template<typename T>
 class Option

@@ -22,10 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define N_STRINGIFY(m) n::core::String(#m)
 
-namespace n
-{
-namespace core
-{
+namespace n {
+namespace core {
 
 class String
 {
@@ -85,7 +83,7 @@ class String
 			}
 			return str;
 		}
-		
+
 		char const *begin() const;
 		char const *end() const;
 		String &operator<<(const String &s);
@@ -138,8 +136,6 @@ class String
 		uint length;
 		uint *count;
 		char *data;
-
-		static char nullString;
 };
 
 String operator+(const char *cst, String s);

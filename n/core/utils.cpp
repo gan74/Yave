@@ -1,9 +1,10 @@
 #include "utils.h"
+#include <n/defines.h>
 
-namespace n
-{
-namespace core
-{
+namespace n {
+namespace core {
+
+const void *null = 0;
 
 uint random(uint max, uint min) {
 	static bool seed = false;
