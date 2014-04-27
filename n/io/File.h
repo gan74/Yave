@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "IODevice.h"
 #include <fstream>
-
 #include <n/core/String.h>
 
 namespace n {
@@ -28,120 +27,29 @@ namespace io {
 class File : public IODevice
 {
 	public:
-		File(const core::String &fileName) : IODevice(), name(fileName), mode(IODevice::None) {
-		}
+		File(const core::String &fileName);
 
 		File(const File &) = delete;
 		File &operator=(const File &) = delete;
 
-		bool open(int m) {
-			if(m == IODevice::None) {
-				close();
-				return false;
-			} else {
-				if(isOpen()) {
-					close();
-				}
-				std::ios_base::openmode om = std::fstream::in;
-				if(m & IODevice::Write) {
-					if(m & IODevice::Read) {
-						om |= std::fstream::out;
-					} else {
-						om = std::fstream::out;
-					}
-				}
-				if(m & IODevice::Binary) {
-					om |= std::fstream::binary;
-				}
-				stream.open(name.toChar(), om);
-				if(!stream.is_open()) {
-					mode = IODevice::None;
-					return false;
-				}
-				stream.seekg(0, std::ios::end);
-				length = stream.tellg();
-				stream.seekg(0, std::ios::beg);
-				mode = m;
-				return true;
-			}
-		}
-
-		void seek(uint pos) {
-			if(isOpen()) {
-				stream.seekg(pos, std::ios::beg);
-				stream.seekp(pos, std::ios::beg);
-			}
-		}
-
-		void close() {
-			stream.close();
-			mode = IODevice::None;
-		}
-
-		bool isOpen() const {
-			return mode != IODevice::None;
-		}
-
-		bool atEnd() const {
-			return stream.tellg() == length;
-		}
-
-		bool canWrite() const {
-			return mode & IODevice::Write;
-		}
-
-		bool canRead() const {
-			return !atEnd() && mode & IODevice::Read;
-		}
-
-		void flush() {
-			if(isOpen()) {
-				stream.flush();
-			}
-		}
-
-		uint size() const {
-			if(!isOpen()) {
-				return 0;
-			}
-			return length;
-		}
-
-		int getOpenMode() const {
-			return mode;
-		}
-
-		uint writeBytes(const char *b, uint len) {
-			if(!canWrite()) {
-				return 0;
-			}
-			if(atEnd()) {
-				length += len;
-			}
-			stream.write(b, len);
-			return len;
-		}
-
-		uint readBytes(char *b, uint len = -1) {
-			if(!canRead()) {
-				return 0;
-			}
-			uint l = std::min(len, length - (uint)stream.tellg());
-			stream.read(b, l);
-			/*int ch = stream.get();
-			while(ch != std::istream::traits_type::eof()) {
-				*(b++) = ch;
-				ch = stream.get();
-			}*/
-			return l;
-		}
-
+		bool open(int m);
+		void seek(uint pos);
+		void close();
+		bool isOpen() const;
+		bool atEnd() const;
+		bool canWrite() const;
+		bool canRead() const;
+		void flush();
+		uint size() const;
+		int getOpenMode() const;
+		uint writeBytes(const char *b, uint len);
+		uint readBytes(char *b, uint len = -1);
 
 
 	private:
 		core::String name;
-		int mode;
 		mutable std::fstream stream;
+		int mode;
 		uint length;
 };
 

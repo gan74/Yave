@@ -8,7 +8,10 @@ win32:DEFINES += WIN32
 INCLUDEPATH += ./
 
 SOURCES += main.cpp \
-		   n/core/*.cpp
+		   n/core/*.cpp \
+    n/io/InputStream.cpp \
+    n/io/OutputStream.cpp \
+    n/io/File.cpp
 
 HEADERS += n/*.h \
 		   n/io/*.h \

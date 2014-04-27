@@ -18,7 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_IO_INPUTSTREAM_H
 
 #include <n/Types.h>
-#include <n/core/String.h>
+
+namespace n {
+namespace core {
+class String;
+}
+}
 
 namespace n {
 namespace io {
@@ -35,16 +40,12 @@ class InputStream
 class DataInputStream
 {
 	public:
-		DataInputStream(nInputStream *s) : stream(s) {
-		}
-
-		bool canRead() const {
-			return stream->canRead();
-		}
-
-		uint readBytes(char *b, uint len = -1) const {
-			return stream->readBytes(b, len);
-		}
+		DataInputStream(InputStream *s);
+		bool canRead() const;
+		uint readBytes(char *b, uint len = -1) const;
+		core::String readLine();
+		int readInt();
+		double readDouble();
 
 		template<typename T>
 		uint read(T *t) {
@@ -57,30 +58,6 @@ class DataInputStream
 			return *this;
 		}
 
-		core::String readLine() {
-			nArray<char> arr(6);
-			char c;
-			while(true) {
-				readBytes(&c, 1);
-				if(c != '\n') {
-					arr.append(c);
-				} else {
-					break;
-				}
-			}
-			arr.append('\0');
-			return core::String(arr.begin(), arr.size());
-		}
-
-		int readInt() {
-			core::String s = readLine();
-			return atoi(s.toChar());
-		}
-
-		double readDouble() {
-			core::String s = readLine();
-			return atof(s.toChar());
-		}
 
 	private:
 		InputStream *stream;

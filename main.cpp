@@ -5,6 +5,7 @@
 #include <n/core/Memo.h>
 #include <n/core/Option.h>
 #include <iostream>
+#include <n/io/File.h>
 
 int main() {
 	std::cout<<"Hello wolrd"<<std::endl;

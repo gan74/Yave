@@ -1,5 +1,5 @@
 /*******************************
-Copyright (C) 2009-2010 grégoire ANGERAND
+Copyright (C) 2013-2014 grégoire ANGERAND
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -14,34 +14,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_IO_IODEVICE_H
-#define N_IO_IODEVICE_H
-
-#include "InputStream.h"
 #include "OutputStream.h"
+
 
 namespace n {
 namespace io {
 
-class IODevice : public InputStream, public OutputStream
-{
-	public:
-		static const int None = 0x00;
-		static const int Read = 0x01;
-		static const int Write = 0x02;
-		static const int Binary = 0x04;
+DataOutputStream::DataOutputStream(OutputStream *s) : stream(s) {
+}
 
+bool DataOutputStream::canWrite() const {
+	return stream->canWrite();
+}
 
-		IODevice() {
-		}
+void DataOutputStream::flush() {
+	stream->flush();
+}
 
-		virtual bool open(int) = 0;
-		virtual void close() = 0;
-		virtual bool isOpen() const = 0;
-		virtual int getOpenMode() const = 0;
-};
+uint DataOutputStream::writeBytes(const char *b, uint len) {
+	return stream->writeBytes(b, len);
+}
 
 } // io
 } // n
-
-#endif // N_IO_IODEVICE_H

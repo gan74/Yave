@@ -33,20 +33,10 @@ class OutputStream
 class DataOutputStream
 {
 	public:
-		DataOutputStream(OutputStream *s) : stream(s) {
-		}
-
-		bool canWrite() const {
-			return stream->canWrite();
-		}
-
-		void flush() {
-			stream->flush();
-		}
-
-		uint writeBytes(const char *b, uint len) {
-			return stream->writeBytes(b, len);
-		}
+		DataOutputStream(OutputStream *s);
+		bool canWrite() const;
+		void flush();
+		uint writeBytes(const char *b, uint len);
 
 		template<typename T>
 		uint write(const T *t, uint len = 1) {
