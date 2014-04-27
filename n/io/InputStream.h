@@ -1,0 +1,93 @@
+/*******************************
+Copyright (C) 2009-2010 grégoire ANGERAND
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+**********************************/
+
+#ifndef N_IO_INPUTSTREAM_H
+#define N_IO_INPUTSTREAM_H
+
+#include <n/Types.h>
+#include <n/core/String.h>
+
+namespace n {
+namespace io {
+
+class InputStream
+{
+	public:
+		virtual bool atEnd() const = 0;
+		virtual bool canRead() const = 0;
+		virtual uint readBytes(char *b, uint l = -1) = 0;
+
+};
+
+class DataInputStream
+{
+	public:
+		DataInputStream(nInputStream *s) : stream(s) {
+		}
+
+		bool canRead() const {
+			return stream->canRead();
+		}
+
+		uint readBytes(char *b, uint len = -1) const {
+			return stream->readBytes(b, len);
+		}
+
+		template<typename T>
+		uint read(T *t) {
+			return stream->readBytes((char *)t, sizeof(T));
+		}
+
+		template<typename T>
+		DataInputStream &operator>>(T *t) {
+			read(t);
+			return *this;
+		}
+
+		core::String readLine() {
+			nArray<char> arr(6);
+			char c;
+			while(true) {
+				readBytes(&c, 1);
+				if(c != '\n') {
+					arr.append(c);
+				} else {
+					break;
+				}
+			}
+			arr.append('\0');
+			return core::String(arr.begin(), arr.size());
+		}
+
+		int readInt() {
+			core::String s = readLine();
+			return atoi(s.toChar());
+		}
+
+		double readDouble() {
+			core::String s = readLine();
+			return atof(s.toChar());
+		}
+
+	private:
+		InputStream *stream;
+};
+
+
+} // io
+} // n
+
+#endif // N_IO_INPUTSTREAM_H

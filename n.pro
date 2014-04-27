@@ -7,6 +7,13 @@ win32:DEFINES += WIN32
 
 INCLUDEPATH += ./
 
+SOURCES += main.cpp \
+		   n/core/*.cpp
+
+HEADERS += n/*.h \
+		   n/io/*.h \
+		   n/core/*.h
+
 CONFIG(debug, debug|release) {
 	OBJECTS_DIR = debug
 	DESTDIR = debug
@@ -14,11 +21,3 @@ CONFIG(debug, debug|release) {
 	OBJECTS_DIR = release
 	DESTDIR = release
 }
-
-SOURCES += main.cpp \
-		   #n/*.cpp \
-		   n/core/*.cpp
-
-HEADERS += n/*.h \
-		   n/core/*.h
-
