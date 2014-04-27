@@ -1,0 +1,7 @@
+*.pro.user
+*.o
+/debug/
+/release/
+/Makefile.Debug
+/Makefile.Release
+/Makefile
