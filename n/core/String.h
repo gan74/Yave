@@ -47,7 +47,10 @@ class String
 		};
 
 		template<typename T>
-		String(const T &s) : String(toCString(s)) {
+		String(const T &s) : String() {
+			std::ostringstream oss;
+			oss<<s;
+			operator=(oss.str().c_str());
 		}
 
 		String();
@@ -141,13 +144,6 @@ class String
 
 
 	private:
-		template<typename T>
-		static const char *toCString(const T &s) {
-			std::ostringstream oss;
-			oss<<s;
-			return oss.str().c_str();
-		}
-
 		char *detach(uint s);
 		uint length;
 		uint *count;

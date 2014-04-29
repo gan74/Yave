@@ -4,6 +4,7 @@
 #include <n/core/Lazy.h>
 #include <n/core/Memo.h>
 #include <n/core/Option.h>
+#include <n/core/String.h>
 #include <n/io/File.h>
 #include <n/test/TestTemplate.h>
 #include <n/test/Test.h>

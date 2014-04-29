@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/defines.h>
 #include <functional>
 #include <cstring>
-#include <iostream>
 
 namespace n {
 namespace test {
