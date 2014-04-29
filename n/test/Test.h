@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/defines.h>
 #include <functional>
 #include <cstring>
+#include <iostream>
 
 namespace n {
 namespace test {
@@ -43,8 +44,8 @@ namespace test {
 	};
 
 
-	template<typename T>
-	bool test(T &&a, const T &b, const char *msg) {
+	template<typename T, typename U>
+	bool test(T &&a, const U &b, const char *msg) {
 		if(a != b) {
 			throw TestFailedException(msg);
 		}

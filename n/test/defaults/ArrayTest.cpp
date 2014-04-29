@@ -14,13 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_TEST_ARRAYTEST_H
-#define N_TEST_ARRAYTEST_H
-
 #include <n/test/TestTemplate.h>
 #include <n/core/Array.h>
 #include <n/test/Test.h>
-#include <iostream>
 
 namespace n {
 namespace test {
@@ -57,27 +53,25 @@ class ArrayTest : public TestTemplate<ArrayTest>
 				a.append(T(((i + 1) * (i - 7)) / 13 + i));
 			}
 			core::Array<T> b = a.filtered([](const T &i) -> bool { return i % 2; });
-			test(b.forall([](const T &i) -> bool { return i % 2; }), true, "filter/forall test failed");
+			test(b.forall([](const T &i) -> bool { return i % 2; }), true, "Filter/forall test failed");
 			a.filter([](const T &i) -> bool { return i % 2; });
 			test(b, a, "filter/== test failed");
 			b.map([](const T &i) -> T { return i * 3 + 2; });
-			test(b, a.mapped([](const T &i) -> T { return i * 3 + 2; }), "map test failed");
+			test(b, a.mapped([](const T &i) -> T { return i * 3 + 2; }), "Map test failed");
 
 			core::Array<T> c(1, 2, 3, 4, 10, 11, 11);
 			core::Array<T> d(5, 6, 7, 8, 9);
 			core::Array<T> e(7, 8, 6, 9);
 			core::Array<T> t(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11);
-			test(c.isSorted() && d.isSorted() && !e.isSorted(), true, "sorted test failed");
+			test(c.isSorted() && d.isSorted() && !e.isSorted(), true, "Sorted test failed");
 			auto it = c.find(10);
-			test(it != c.end() || *it == 10, true, "find test failed");
+			test(it != c.end() || *it == 10, true, "Find test failed");
 			auto w = c.insert(d.begin(), d.end(), it);
-			test(c, t, "insert test failed");
-			test(*w, T(10), "insert test failed");
+			test(c, t, "Insert test failed");
+			test(*w, T(10), "Insert test failed");
 		}
 };
 
 } //test
 } //n
 
-
-#endif // N_TEST_ARRAYTEST_H

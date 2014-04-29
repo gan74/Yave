@@ -7,10 +7,6 @@
 namespace n {
 namespace core {
 
-String operator+(const char *cst, String s) {
-	return String(cst) + s;
-}
-
 String::Concat::Concat(const String &a, const String &b) : tokens(4) {
 	tokens.append(a);
 	tokens.append(b);
@@ -34,6 +30,22 @@ String::Concat &String::Concat::operator+(const Concat &c) {
 		tokens.append(s);
 	}
 	return *this;
+}
+
+bool String::Concat::operator==(const String &str) const {
+	return String(*this) == str;
+}
+
+bool String::Concat::operator==(const char *str) const {
+	return operator==(String(str));
+}
+
+bool String::Concat::operator!=(const String &str) const {
+	return !operator==(str);
+}
+
+bool String::Concat::operator!=(const char *str) const {
+	return !operator==(str);
 }
 
 Array<String> String::Concat::getTokens() const {
@@ -247,19 +259,6 @@ String::Concat String::operator+(const String &s) const {
 	return Concat(*this, s);
 }
 
-String String::operator+(char c) {
-	if(!data) {
-		return String(c);
-	}
-	if(length == 0) {
-		return String(&c, 1);
-	}
-	data[length] = c;
-	String s(data, length + 1);
-	data[length] = '\0';
-	return s;
-}
-
 bool String::operator==(const String &str) const {
 	if(str.length != length) {
 		return false;
@@ -381,6 +380,10 @@ char *String::detach(uint s) {
 		return data = 0;
 	}
 	return data = (char *)realloc(data, (s + 1) * sizeof(char));
+}
+
+bool String::isShared() const {
+	return count && *count > 1;
 }
 
 } //core

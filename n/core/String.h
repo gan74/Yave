@@ -36,11 +36,19 @@ class String
 				uint size() const;
 				Concat &operator+(const String &s);
 				Concat &operator+(const Concat &c);
+				bool operator==(const String &str) const;
+				bool operator==(const char *str) const;
+				bool operator!=(const String &str) const;
+				bool operator!=(const char *str) const;
 				Array<String> getTokens() const;
 
 			private:
 				Array<String> tokens;
 		};
+
+		template<typename T>
+		String(const T &s) : String(toCString(s)) {
+		}
 
 		String();
 		String(const char *cst);
@@ -107,12 +115,19 @@ class String
 		float toFloat() const;
 		double toDouble() const;
 		int toInt() const;
+		bool isShared() const;
+
 		operator std::string() const;
 		std::string toStdString() const;
+
+		template<typename T>
+		Concat operator+(const T &i) const {
+			return operator+(String(i));
+		}
+
 		String &operator+=(const String &s);
 		String &operator+=(String &&s);
 		Concat operator+(const String &s) const;
-		String operator+(char c);
 		bool operator==(const String &str) const;
 		bool operator==(const char *str) const;
 		bool operator!=(const String &str) const;
@@ -123,22 +138,37 @@ class String
 		bool operator<(const String &s) const;
 		operator const char *() const;
 
-		template<typename T>
-		static String fromNumber(T i, uint prec = 6) {
-			std::ostringstream oss;
-			oss.precision(prec);
-			oss<<i;
-			return String(oss.str().c_str());
-		}
+
 
 	private:
+		template<typename T>
+		static const char *toCString(const T &s) {
+			std::ostringstream oss;
+			oss<<s;
+			return oss.str().c_str();
+		}
+
 		char *detach(uint s);
 		uint length;
 		uint *count;
 		char *data;
 };
 
-String operator+(const char *cst, String s);
+template<typename T>
+String::Concat operator+(const char *cst, const T &i) {
+	return String(cst) + String(i);
+}
+
+template<typename T>
+String::Concat operator+(const T &i, const char *cst) {
+	return String(i) + String(cst);
+}
+
+template<typename T>
+String::Concat operator+(const T &i, const String &s) {
+	return String(i) + s;
+}
+
 
 } //core
 } //n
