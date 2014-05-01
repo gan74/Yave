@@ -197,6 +197,43 @@ String String::subString(uint beg) const {
 	return subString(beg, length - beg);
 }
 
+bool String::beginWith(const String &s) {
+	if(length < s.length) {
+		return false;
+	}
+	if(isNull()) {
+		return s.isEmpty();
+	}
+	if(s.isEmpty()) {
+		return true;
+	}
+	for(uint i = 0; i != s.length; i++) {
+		if(data[i] != s.data[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool String::endWith(const String &s) {
+	if(length < s.length) {
+		return false;
+	}
+	if(isNull()) {
+		return s.isEmpty();
+	}
+	if(s.isEmpty()) {
+		return true;
+	}
+	uint offset = length - s.length;
+	for(uint i = s.length - 1; i; i--) {
+		if(data[offset + i] != s.data[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void String::detach() {
 	detach(length);
 }

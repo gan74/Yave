@@ -60,10 +60,16 @@ class StringTest : public TestTemplate<StringTest>
 			test(s, "floup flup flap flip", "Map test");
 			test(s.mapped([](char c) { return c == 'f' ? 'F' : c; }), str, "Mapped test");
 			str.filter([](char c) { return c != ' '; });
+			test(str.endWith("pFlapFlip"), true, "endWith test");
+			test(str.endWith("Flap"), false, "endWith test 2");
+			test(str.beginWith("gné ?"), false, "beginWith test");
+			test(str.beginWith("Floup"), true, "beginWith test 2");
+			test(str.endWith(""), true, "endWith \"\" test");
 			test(str, "FloupFlupFlapFlip", "Filter test");
 			test(s, "floup flup flap flip", "Filter test");
 			test(s.mapped([](char c) { return c == 'f' ? 'F' : c; }).filtered([](char c) { return c != ' '; }), str, "Filtered test");
 			core::String a;
+			test(str.endWith(""), true, "\"\".endWith test");
 			test(a.size(), 0, "Lenght test");
 			core::String b = a;
 			a = a + 'c';

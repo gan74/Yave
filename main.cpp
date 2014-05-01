@@ -15,14 +15,6 @@
 
 
 int main(int, char **) {
-	std::cout<<n::TypeInfo<int>::id<<std::endl;
-	std::cout<<n::TypeInfo<int *>::id<<std::endl;
-	std::cout<<n::TypeInfo<const int *>::id<<std::endl;
-	std::cout<<std::endl;
-	std::cout<<n::TypeInfo<int *>::baseId<<std::endl;
-	std::cout<<n::TypeInfo<const int *>::baseId<<std::endl;
-	std::cout<<n::TypeInfo<const int>::baseId<<std::endl;
-
 	return 0;
 }
 

@@ -113,6 +113,8 @@ class String
 		bool contains(String &str) const;
 		String subString(uint beg, uint len) const;
 		String subString(uint beg) const;
+		bool beginWith(const String &s);
+		bool endWith(const String &s);
 		void detach();
 		void swap(String &str);
 		Array<String> split(const String &str) const;
@@ -146,6 +148,7 @@ class String
 
 	private:
 		char *detach(uint s);
+
 		uint length;
 		uint *count;
 		char *data;
@@ -168,7 +171,6 @@ template<typename T>
 n::core::String::Concat operator+(const T &i, const n::core::String &s) {
 	return n::core::String(i) + s;
 }
-
 
 template<n::uint N>
 std::istream &operator>>(std::istream &s, n::core::String &str) {
