@@ -169,4 +169,13 @@ n::core::String::Concat operator+(const T &i, const n::core::String &s) {
 	return n::core::String(i) + s;
 }
 
+
+template<n::uint N>
+std::istream &operator>>(std::istream &s, n::core::String &str) {
+	std::string &st;
+	s>>st;
+	str = n::core::String(st.c_str());
+	return s;
+}
+
 #endif // N_CORE_STRING_H
