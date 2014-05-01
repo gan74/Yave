@@ -151,23 +151,22 @@ class String
 		char *data;
 };
 
-template<typename T>
-String::Concat operator+(const char *cst, const T &i) {
-	return String(cst) + String(i);
-}
-
-template<typename T>
-String::Concat operator+(const T &i, const char *cst) {
-	return String(i) + String(cst);
-}
-
-template<typename T>
-String::Concat operator+(const T &i, const String &s) {
-	return String(i) + s;
-}
-
-
 } //core
 } //n
+
+template<typename T>
+n::core::String::Concat operator+(const char *cst, const T &i) {
+	return n::core::String(cst) + n::core::String(i);
+}
+
+template<typename T>
+n::core::String::Concat operator+(const T &i, const char *cst) {
+	return n::core::String(i) + n::core::String(cst);
+}
+
+template<typename T>
+n::core::String::Concat operator+(const T &i, const n::core::String &s) {
+	return n::core::String(i) + s;
+}
 
 #endif // N_CORE_STRING_H

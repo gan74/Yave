@@ -9,6 +9,7 @@
 #include <n/test/TestTemplate.h>
 #include <n/Types.h>
 #include <n/test/Test.h>
+#include <n/core/BigUint.h>
 
 #include <iostream>
 
