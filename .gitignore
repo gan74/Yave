@@ -5,3 +5,5 @@
 /Makefile.Debug
 /Makefile.Release
 /Makefile
+/object_script.n.Debug
+/object_script.n.Release

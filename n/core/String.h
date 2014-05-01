@@ -105,6 +105,7 @@ class String
 		void clear();
 		uint size() const;
 		bool isEmpty() const;
+		bool isNull() const;
 		char const *toChar() const;
 		uint find(char c, uint from = 0) const;
 		uint find(const String &str, uint from = 0) const;

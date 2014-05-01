@@ -19,9 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cstdint>
 #include <cstdlib>
+#include <type_traits>
+#include <typeinfo>
 
-namespace n
-{
+namespace n {
 
 typedef uint16_t uint16;
 typedef uint32_t uint32;
@@ -29,75 +30,101 @@ typedef size_t uint;
 typedef uint64_t uint64;
 typedef uint8_t byte;
 
+extern uint typeId;
+
+// be wary of templates therefor be wary of bullshit
+
 template<typename T>
+struct TypeInfo
+{
+	static constexpr bool isPrimitive = std::is_trivial<T>::value;
+	static constexpr bool isPointer = false;
+	static constexpr bool isConst = false;
+	static const uint baseId;
+	static const uint id;
+
+	typedef T nonConst;
+	typedef T nonPtr;
+};
+
+
+
+template<typename T>
+struct TypeInfo<T *>
+{
+	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
+	static constexpr bool isPointer = true;
+	static constexpr bool isConst = TypeInfo<T>::isConst;
+	static const uint baseId;
+	static const uint id;
+
+	typedef typename TypeInfo<T>::nonConst nonConst;
+	typedef T nonPtr;
+};
+
+template<typename T>
+struct TypeInfo<const T>
+{
+	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
+	static constexpr bool isPointer = TypeInfo<T>::isPointer;
+	static constexpr bool isConst = true;
+	static const uint baseId;
+	static const uint id;
+
+	typedef T nonConst;
+	typedef typename TypeInfo<T>::nonPtr nonPtr;
+};
+
+
+template<typename T>
+const uint TypeInfo<T>::baseId = typeId++; // dependent on compilation, but NOT on execution flow
+template<typename T>
+const uint TypeInfo<T>::id = TypeInfo<T>::baseId;
+
+template<typename T>
+const uint TypeInfo<T *>::id = typeId++;
+template<typename T>
+const uint TypeInfo<T *>::baseId = TypeInfo<T>::baseId;
+
+template<typename T>
+const uint TypeInfo<const T>::id = typeId++;
+template<typename T>
+const uint TypeInfo<const T>::baseId = TypeInfo<T>::baseId;
+
+
+
+/*template<typename T>
 class TypeInfo
 {
+	template<typename U>
+	struct ptr
+	{
+		static const bool value = false;
+	};
+
+	template<typename U>
+	struct ptr<U *>
+	{
+		static const bool value = true;
+	};
+
+	template<typename U>
+	struct cst
+	{
+		static const bool value = false;
+	};
+
+	template<typename U>
+	struct cst<const U>
+	{
+		static const bool value = true;
+	};
+
 	public:
-		enum {
-			isPrimitive = false,
-			isPointer = false,
-			isConstant = false
-		};
-};
-
-template<typename T>
-class TypeInfo<T *>
-{
-	public:
-		enum {
-			isPrimitive = true, // a pointer is a primitive
-			isPointer = true,
-			isConstant = false
-		};
-};
-
-template<typename T>
-class TypeInfo<T const *>
-{
-	public:
-		enum {
-			isPrimitive = true, // a pointer is a primitive
-			isPointer = true,
-			isConstant = true
-		};
-};
-
-template<typename T>
-class TypeInfo<const T>
-{
-	public:
-		enum {
-			isPrimitive = false,
-			isPointer = false,
-			isConstant = true
-		};
-};
-
-#define N_PRIM_TYPE(type) \
-template<> \
-class TypeInfo<type> { public: \
-	enum { isPrimitive = true, isPointer = false, isConstant = false }; \
-}; \
-template<> \
-class TypeInfo<const type> { public: \
-	enum { isPrimitive = true, isPointer = false, isConstant = true }; \
-}
-
-
-
-N_PRIM_TYPE(int);
-N_PRIM_TYPE(short int);
-N_PRIM_TYPE(long int);
-N_PRIM_TYPE(bool);
-N_PRIM_TYPE(char);
-N_PRIM_TYPE(float);
-N_PRIM_TYPE(double);
-N_PRIM_TYPE(uint);
-N_PRIM_TYPE(byte);
-N_PRIM_TYPE(unsigned long int);
-N_PRIM_TYPE(unsigned long long int);
-N_PRIM_TYPE(unsigned short int);
-
+		static const bool isPrimitive = std::is_trivial<T>::value;
+		static const bool isPointer = ptr<T>::value;
+		static const bool isConst = cst<T>::value;
+};*/
 
 } //n
 

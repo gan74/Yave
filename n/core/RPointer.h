@@ -98,18 +98,18 @@ class RPointer
 			return !isNull();
 		}
 
-		/*RPointer<typename std::remove_const<T>::type> detach() {
+		/*RPointer<typename TypeInfo<T>::nonConst> detach() {
 			if(*count != 1) {
 				unref();
 				count = new uint(1);
 				data = new T(*data);
 			}
-			return RPointer<typename std::remove_const<T>::type>(const_cast<typename std::remove_const<T>::type *>(data), count);
+			return RPointer<typename TypeInfo<T>::nonConst>(const_cast<typename TypeInfo<T>::nonConst *>(data), count);
 		}*/
 
 	private:
 		friend class RPointer<const T>;
-		friend class RPointer<typename std::remove_const<T>::type>; // what ?
+		friend class RPointer<typename TypeInfo<T>::nonConst>; // what ?
 
 		RPointer(T *p, uint *c) : data(p), count(c) {
 			(*count)++;
@@ -330,7 +330,7 @@ class SRPointer
 			return !isNull();
 		}
 
-		SRPointer<typename std::remove_const<T>::type> detach() {
+		SRPointer<typename TypeInfo<T>::nonConst> detach() {
 			if(*count != 1) {
 				unref();
 				count = new uint(1);
@@ -338,7 +338,7 @@ class SRPointer
 				data = new T(*data);
 				onDel = new Option<std::function<void()>>();
 			}
-			return SRPointer<typename std::remove_const<T>::type>(const_cast<typename std::remove_const<T>::type *>(data), count, weak, onDel);
+			return SRPointer<typename TypeInfo<T>::nonConst>(const_cast<typename TypeInfo<T>::nonConst *>(data), count, weak, onDel);
 		}
 
 		WRPointer<T> getWeakPointer() const {
@@ -351,7 +351,7 @@ class SRPointer
 
 	private:
 		friend class SRPointer<const T>;
-		friend class SRPointer<typename std::remove_const<T>::type>; // what ?
+		friend class SRPointer<typename TypeInfo<T>::nonConst>; // what ?
 
 		SRPointer(T *p, uint *c, uint *w, Option<std::function<void(const T *)>> *d) : data(p), count(c), weak(w), onDel(d) {
 			(*count)++;

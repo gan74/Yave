@@ -10,6 +10,7 @@ QMAKE_CXXFLAGS += -pedantic
 INCLUDEPATH += ./
 
 SOURCES += main.cpp \
+		   n/*.cpp \
 		   n/core/*.cpp \
 		   n/io/*.cpp \
 		   n/test/*.cpp \

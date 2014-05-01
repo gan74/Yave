@@ -139,6 +139,10 @@ bool String::isEmpty() const {
 	return !length;
 }
 
+bool String::isNull() const {
+	return !data;
+}
+
 char const *String::toChar() const {
 	if(!data) {
 		return (char *)&null;

@@ -7,11 +7,23 @@
 #include <n/core/String.h>
 #include <n/io/File.h>
 #include <n/test/TestTemplate.h>
+#include <n/Types.h>
 #include <n/test/Test.h>
 
 #include <iostream>
 
-int main() {
-	//ArrayTest();
+
+int main(int, char **) {
+	std::cout<<n::TypeInfo<int>::id<<std::endl;
+	std::cout<<n::TypeInfo<int *>::id<<std::endl;
+	std::cout<<n::TypeInfo<const int *>::id<<std::endl;
+	std::cout<<std::endl;
+	std::cout<<n::TypeInfo<int *>::baseId<<std::endl;
+	std::cout<<n::TypeInfo<const int *>::baseId<<std::endl;
+	std::cout<<n::TypeInfo<const int>::baseId<<std::endl;
+
 	return 0;
 }
+
+
+
