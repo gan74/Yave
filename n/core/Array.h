@@ -312,6 +312,7 @@ class Array
 			std::sort(data, dataEnd, f);
 		}
 
+
 		template<typename U>
 		iterator find(const U &f, const_iterator from) {
 			for(iterator i = const_cast<iterator>(from); i != end(); i++) {
