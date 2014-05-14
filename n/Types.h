@@ -40,9 +40,11 @@ struct TypeInfo
 	static constexpr bool isPrimitive = std::is_trivial<T>::value;
 	static constexpr bool isPointer = false;
 	static constexpr bool isConst = false;
+	static constexpr bool isRef = false;
 	static const uint baseId;
 	static const uint id;
 
+	typedef T nonRef;
 	typedef T nonConst;
 	typedef T nonPtr;
 };
@@ -55,10 +57,12 @@ struct TypeInfo<T *>
 	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
 	static constexpr bool isPointer = true;
 	static constexpr bool isConst = TypeInfo<T>::isConst;
+	static constexpr bool isRef = TypeInfo<T>::isRef;
 	static const uint baseId;
 	static const uint id;
 
-	typedef typename TypeInfo<T>::nonConst nonConst;
+	typedef typename TypeInfo<T>::nonRef *nonRef;
+	typedef typename TypeInfo<T>::nonConst *nonConst;
 	typedef T nonPtr;
 };
 
@@ -68,11 +72,28 @@ struct TypeInfo<const T>
 	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
 	static constexpr bool isPointer = TypeInfo<T>::isPointer;
 	static constexpr bool isConst = true;
+	static constexpr bool isRef = TypeInfo<T>::isRef;
 	static const uint baseId;
 	static const uint id;
 
+	typedef const typename TypeInfo<T>::nonRef nonRef;
 	typedef T nonConst;
-	typedef typename TypeInfo<T>::nonPtr nonPtr;
+	typedef const typename TypeInfo<T>::nonPtr nonPtr;
+};
+
+template<typename T>
+struct TypeInfo<T &>
+{
+	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
+	static constexpr bool isPointer = TypeInfo<T>::isPointer;
+	static constexpr bool isConst = TypeInfo<T>::isConst;
+	static constexpr bool isRef = true;
+	static const uint baseId;
+	static const uint id;
+
+	typedef T nonRef;
+	typedef typename TypeInfo<T>::nonConst &nonConst;
+	typedef typename TypeInfo<T>::nonPtr &nonPtr;
 };
 
 
@@ -90,6 +111,11 @@ template<typename T>
 const uint TypeInfo<const T>::id = typeId++;
 template<typename T>
 const uint TypeInfo<const T>::baseId = TypeInfo<T>::baseId;
+
+template<typename T>
+const uint TypeInfo<T &>::id = typeId++;
+template<typename T>
+const uint TypeInfo<T &>::baseId = TypeInfo<T>::baseId;
 
 
 

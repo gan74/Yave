@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_UTILS_H
 
 #include <n/Types.h>
+#include <tgmath.h>
 
 namespace n {
 namespace core {
@@ -60,7 +61,7 @@ bool isInRange(const T &v, const T &min, const T &max) {
 	return min <= v  && v < max;
 }
 
-template <typename T>
+template<typename T>
 T sign(T x) {
 	return (T(0) < x) - (x < T(0));
 }

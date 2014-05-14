@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <type_traits>
 #include "Option.h"
+#include <n/Types.h>
 
 namespace n {
 namespace core {
@@ -78,8 +79,8 @@ class LazyVal
 };
 
 template<typename T>
-LazyVal<typename std::remove_reference<T>::type> Lazy(T&& t) {
-	return LazyVal<typename std::remove_reference<T>::type>(std::forward<T>(t));
+LazyVal<typename TypeInfo<T>::nonRef> Lazy(T&& t) {
+	return LazyVal<typename TypeInfo<T>::nonRef>(std::forward<T>(t));
 }
 
 } //core
