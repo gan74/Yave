@@ -601,6 +601,22 @@ class Array
 			return acc;
 		}
 
+		void shuffle() {
+			uint s = size();
+			for(uint i = 0; i != s; i++) {
+				uint a = random(s);
+				if(a != i) {
+					std::swap(data[a], data[i]);
+				}
+			}
+		}
+
+		Array<T> shuffled() const {
+			Array<T> sh(*this);
+			sh.shuffle();
+			return sh;
+		}
+
 
 	private:
 		void clear(T *from, T *to) {
