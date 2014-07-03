@@ -12,7 +12,8 @@ uint random(uint max, uint min) {
 		#ifdef N_DEBUG
 		srand(0);
 		#else
-		srand(time(0));
+		time_t now = time(0);
+		srand(hash(&now, sizeof(now)));
 		#endif
 		seed = true;
 	}
@@ -20,7 +21,7 @@ uint random(uint max, uint min) {
 }
 
 float random() {
-	return (float)random(RAND_MAX) / (float)RAND_MAX;
+	return (float)random(RAND_MAX) * 1.0f / (RAND_MAX + 1.0f);
 }
 
 float toDeg(float a) {

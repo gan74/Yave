@@ -617,6 +617,19 @@ class Array
 			return sh;
 		}
 
+		void reverse() {
+			uint s = size() / 2;
+			for(uint i = 0; i != s; i++) {
+				std::swap(data[i], dataEnd[-(i + 1)]);
+			}
+		}
+
+		Array<T> reversed() const {
+			Array<T> re(*this);
+			re.reverse();
+			return re;
+		}
+
 
 	private:
 		void clear(T *from, T *to) {
