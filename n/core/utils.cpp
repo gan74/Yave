@@ -6,6 +6,15 @@ namespace core {
 
 const void *null = 0;
 
+uint randHelper() {
+	uint bits = log2ui(RAND_MAX);
+	uint num;
+	for(uint i = 0; i < sizeof(uint) * 8; i += bits) {
+		num = (num << bits) | rand();
+	}
+	return num;
+}
+
 uint random(uint max, uint min) {
 	static bool seed = false;
 	if(!seed) {
@@ -17,7 +26,7 @@ uint random(uint max, uint min) {
 		#endif
 		seed = true;
 	}
-	return (uint)rand() % (max - min) + min;
+	return (uint)randHelper() % (max - min) + min;
 }
 
 float random() {
