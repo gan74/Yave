@@ -40,16 +40,13 @@ class MemFunc
 			return it->second;
 		}
 
-		MemFunc &operator=(const MemFunc &) = delete;
-		MemFunc(const MemFunc &) = delete;
-
 	private:
 		T t;
 };
 
 template<typename T>
 MemFunc<typename TypeInfo<T>::nonRef> Memo(T&& t) {
-	return MemFunc<typename  TypeInfo<T>::nonRef>(std::forward<T>(t));
+	return MemFunc<typename TypeInfo<T>::nonRef>(std::forward<T>(t));
 }
 
 } //core
