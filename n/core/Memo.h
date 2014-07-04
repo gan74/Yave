@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_MEMO_H
 
 #include <map>
+#include <n/Types.h>
 
 namespace n {
 namespace core {
@@ -47,8 +48,8 @@ class MemFunc
 };
 
 template<typename T>
-MemFunc<typename std::remove_reference<T>::type> nMemo(T&& t) {
-	return MemFunc<typename std::remove_reference<T>::type>(std::forward<T>(t));
+MemFunc<typename TypeInfo<T>::nonRef> Memo(T&& t) {
+	return MemFunc<typename  TypeInfo<T>::nonRef>(std::forward<T>(t));
 }
 
 } //core

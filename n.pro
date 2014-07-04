@@ -5,7 +5,11 @@ CONFIG -= Qt
 DEFINES += N_DEBUG
 win32:DEFINES += WIN32
 
+LIBS += -lpthread
+
 QMAKE_CXXFLAGS += -pedantic
+QMAKE_CXXFLAGS_DEBUG += -pg
+QMAKE_LFLAGS_DEBUG += -pg
 
 INCLUDEPATH += ./
 
@@ -13,12 +17,14 @@ SOURCES += main.cpp \
 		   n/*.cpp \
 		   n/core/*.cpp \
 		   n/io/*.cpp \
+		   n/concurent/*.cpp \
 		   n/test/*.cpp \
 		   n/test/defaults/*.cpp
 
 HEADERS += n/*.h \
 		   n/core/*.h \
 		   n/io/*.h \
+		   n/concurent/*.h \
 		   n/test/*.h
 
 CONFIG(debug, debug|release) {

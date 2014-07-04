@@ -206,7 +206,8 @@ class Array
 			insert(it, e);
 		}
 
-		iterator insert(iterator beg, iterator en, iterator pos) {
+		template<typename I>
+		iterator insert(I beg, I en, iterator pos) {
 			uint a = en - beg;
 			uint index = pos - data;
 			setMinCapacity(size() + a);
@@ -232,7 +233,7 @@ class Array
 			dataEnd = data;
 		}
 
-		iterator remove(const iterator &it) {
+		iterator remove(const_iterator &it) {
 			if(it == dataEnd - 1) {
 				pop();
 				return dataEnd;
@@ -279,18 +280,20 @@ class Array
 			}
 		}
 
-		void assign(iterator first, iterator last) {
+		template<typename I>
+		void assign(I first, I last) {
 			clear(data, dataEnd);
 			uint si = last - first;
 			allocate(computeSize(si));
 			set(data, first, last);
 		}
 
-		void set(iterator position, iterator first, iterator last) {
-			if(TypeInfo<T>::isPrimitive) {
+		template<typename I>
+		void set(iterator position, I first, I last) {
+			/*if(TypeInfo<T>::isPrimitive) {
 				uint tcpy = last - first;
 				memmove(position, first, tcpy * sizeof(T));
-			} else {
+			} else */ {
 				while(first != last) {
 					position->~T();
 					new(position++) T(*first);
@@ -303,8 +306,10 @@ class Array
 			set(position, arr.data, arr.dataEnd);
 		}
 
+		template<typename U = std::less<T>>
 		void sort() {
-			std::sort(data, dataEnd);
+			U f;
+			sort(f);
 		}
 
 		template<typename U>
@@ -407,20 +412,6 @@ class Array
 
 		T &last() {
 			return *(dataEnd - 1);
-		}
-
-		const T &get(uint index) const {
-			if(index + data >= dataEnd) {
-				throw nIndexOutOfBoundException(index, size());
-			}
-			return operator[](index);
-		}
-
-		T &get(uint index) {
-			if(index + data >= dataEnd) {
-				throw nIndexOutOfBoundException(index, size());
-			}
-			return operator[](index);
 		}
 
 		iterator getIterator(uint index) {
@@ -560,8 +551,8 @@ class Array
 		}
 
 		template<typename V>
-		Array<T> mapped(const V &f) const {
-			Array<T> a(size());
+		Array<typename std::result_of<V(const T &)>::type> mapped(const V &f) const {
+			Array<typename std::result_of<V(const T &)>::type> a(size());
 			foreach([&](const T &e) { a.append(f(e)); });
 			return a;
 		}
@@ -591,6 +582,7 @@ class Array
 					it++;
 				}
 			});
+			dataEnd = it;
 			setCapacity(it - begin());
 		}
 
@@ -629,7 +621,6 @@ class Array
 			re.reverse();
 			return re;
 		}
-
 
 	private:
 		void clear(T *from, T *to) {

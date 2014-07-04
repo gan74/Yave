@@ -415,8 +415,8 @@ class List
 		}
 
 		template<typename V>
-		List<T> mapped(const V &f) const {
-			List<T> a;
+		List<typename std::result_of<V(const T &)>::type> mapped(const V &f) const {
+			List<typename std::result_of<V(const T &)>::type> a;
 			foreach([&](const T &e) { a.append(f(e)); });
 			return a;
 		}
