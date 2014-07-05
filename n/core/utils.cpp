@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <n/defines.h>
+#include <ctime>
 
 namespace n {
 namespace core {
@@ -8,7 +9,7 @@ const void *null = 0;
 
 uint randHelper() {
 	uint bits = log2ui(RAND_MAX);
-	uint num;
+	uint num = 0;
 	for(uint i = 0; i < sizeof(uint) * 8; i += bits) {
 		num = (num << bits) | rand();
 	}
