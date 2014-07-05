@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_TIMER_H
 #define N_CORE_TIMER_H
 
-#include <chrono>
 #ifndef N_USE_STD_TIME
 	#if defined WIN32 || defined _WIN32 || defined __CYGWIN__
 		#define N_USE_WIN_TIME
@@ -72,6 +71,8 @@ class Timer
 };
 
 #else
+
+#include <chrono>
 
 class Timer
 {
