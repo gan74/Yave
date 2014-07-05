@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef NTYPES_H
-#define NTYPES_H
+#ifndef N_TYPES_H
+#define N_TYPES_H
 
 #include <cstdint>
 #include <cstdlib>
