@@ -26,7 +26,10 @@ template<typename T, typename U = T>
 class Pair
 {
 	public:
-		Pair(const T &a, const U&b) : _1(a), _2(b) {
+		Pair(const T &a, const U &b) : _1(a), _2(b) {
+		}
+
+		Pair(const Pair<T, U> &p) : Pair(p._1, p._2) {
 		}
 
 		bool operator<(const Pair<T, U> &p) const {
