@@ -22,11 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace core {
 
-template<typename T, typename Comp = std::less<T>>
-class Set : public RBTree<T, Comp>
-{
-
-};
+template<typename T>
+using Set = RBTree<T, std::less<T>>;
 
 } //core
 } //n

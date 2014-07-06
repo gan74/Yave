@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_RBTREE_H
 
 #include <n/Types.h>
+#include <iostream>
+#include <algorithm>
 
 namespace n {
 namespace core {
@@ -107,10 +109,14 @@ class RBTree
 		RBTree() : guard(new Node()), root(guard), setSize(0) {
 		}
 
-		RBTree(const RBTree<T> &o) : RBTree() {
+		RBTree(const RBTree<T, Comp> &o) : RBTree() {
 			for(const T &e : o) {
-				insert(e);
+				insertAtEnd(e);
 			}
+		}
+
+		RBTree(RBTree<T, Comp> &&o) : RBTree() {
+			swap(std::move(o));
 		}
 
 		~RBTree() {
@@ -143,7 +149,7 @@ class RBTree
 
 		const_iterator insert(const T &e) {
 			if(!root->color) {
-				root = new Node(e, guard, guard, guard);
+				guard->children[0] = guard->children[1] = root = new Node(e, guard, guard, guard);
 				root->color = Node::Black;
 				setSize = 1;
 				return const_iterator(root);
@@ -264,53 +270,70 @@ class RBTree
 			return 0;
 		}*/
 
-		RBTree<T> &operator=(const RBTree<T> &o) {
+		void swap(RBTree<T, Comp> &&o) {
+			Node *r = o.root;
+			Node *g = o.guard;
+			uint s = o.setSize;
+			o.root = root;
+			o.guard = guard;
+			o.setSize = setSize;
+			root = r;
+			guard = g;
+			setSize = s;
+		}
+
+		RBTree<T, Comp> &operator=(const RBTree<T, Comp> &o) {
 			clear();
 			for(const T &e : o) {
-				insert(e);
+				insertAtEnd(e);
 			}
 			return *this;
 		}
 
-		RBTree<T> operator+(const T &e) const {
-			RBTree<T> a(*this);
+		RBTree<T, Comp> &operator=(RBTree<T, Comp> &&o) {
+			swap(std::move(o));
+			return *this;
+		}
+
+		RBTree<T, Comp> operator+(const T &e) const {
+			RBTree<T, Comp> a(*this);
 			a.insert(e);
 			return a;
 		}
 
-		RBTree<T> operator+(const RBTree<T> &e) const {
-			RBTree<T> a(*this);
+		RBTree<T, Comp> operator+(const RBTree<T, Comp> &e) const {
+			RBTree<T, Comp> a(*this);
 			for(const T &i : e) {
 				a.insert(i);
 			}
 			return a;
 		}
 
-		RBTree<T> &operator+=(const T &e) {
+		RBTree<T, Comp> &operator+=(const T &e) {
 			insert(e);
 			return *this;
 		}
 
-		RBTree<T> &operator+=(const RBTree<T> &e) {
+		RBTree<T, Comp> &operator+=(const RBTree<T, Comp> &e) {
 			for(const T &i : e) {
 				insert(i);
 			}
 			return *this;
 		}
 
-		RBTree<T> &operator<<(const T &e) {
+		RBTree<T, Comp> &operator<<(const T &e) {
 			insert(e);
 			return *this;
 		}
 
-		RBTree<T> &operator<<(const RBTree<T> &e) {
+		RBTree<T, Comp> &operator<<(const RBTree<T, Comp> &e) {
 			for(const T &i : e) {
 				insert(i);
 			}
 			return *this;
 		}
 
-		bool operator==(const RBTree<T> &tree) const {
+		bool operator==(const RBTree<T, Comp> &tree) const {
 			if(size() == tree.size()) {
 				const_iterator a = begin();
 				const_iterator b = tree.begin();
@@ -326,11 +349,11 @@ class RBTree
 			return false;
 		}
 
-		bool operator!=(const RBTree<T> &tree) const {
+		bool operator!=(const RBTree<T, Comp> &tree) const {
 			return !operator==(tree);
 		}
 
-		bool operator<(const RBTree<T> &tree) const {
+		bool operator<(const RBTree<T, Comp> &tree) const {
 			const_iterator a = begin();
 				const_iterator b = tree.begin();
 				while(a != end() && b != tree.end()) {
@@ -364,18 +387,18 @@ class RBTree
 		}
 
 		template<typename V>
-		RBTree<typename std::result_of<V(const T &)>::type> mapped(const V &f) const {
-			RBTree<typename std::result_of<V(const T &)>::type> a;
+		RBTree<typename std::result_of<V(const T &)>::type, Comp> mapped(const V &f) const {
+			RBTree<typename std::result_of<V(const T &)>::type, Comp> a;
 			foreach([&](const T &e) { a.insert(f(e)); });
 			return a;
 		}
 
 		template<typename U>
-		RBTree<T> filtered(const U &f) const {
-			RBTree<T> a;
+		RBTree<T, Comp> filtered(const U &f) const {
+			RBTree<T, Comp> a;
 			foreach([&](const T &e) {
 				if(f(e)) {
-					a.insert(e);
+					a.insertAtEnd(e);
 				}
 			});
 			return a;
@@ -500,6 +523,16 @@ class RBTree
 				u->parent->children[1] = v;
 			}
 			v->parent = u->parent;
+		}
+
+		void insertAtEnd(const T &e) {
+			if(!root->color)  {
+				insert(e);
+			} else {
+				Node *x = prev(guard);
+				RBinsert(guard->children[0] = x->children[1] = new Node(e, x, guard, guard));
+				setSize++;
+			}
 		}
 
 		void RBinsert(Node *z) {
