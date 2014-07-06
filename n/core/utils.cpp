@@ -27,11 +27,16 @@ uint random(uint max, uint min) {
 		#endif
 		seed = true;
 	}
-	return (uint)randHelper() % (max - min) + min;
+	if(max < min) {
+		uint t = max;
+		max = min;
+		min = t;
+	}
+	return (randHelper() % (max - min)) + min;
 }
 
 float random() {
-	return (float)random(RAND_MAX) * 1.0f / (RAND_MAX + 1.0f);
+	return (float)(randHelper() & 0x7FFFFF) * 1.0f / (0x7FFFFF + 1.0f);
 }
 
 float toDeg(float a) {
