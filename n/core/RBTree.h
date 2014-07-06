@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace core {
 
-template<typename T, typename Comp = std::less<T>>
+template<typename T, typename Comp = std::less<T>, typename Eq = std::equal_to<T>>
 class RBTree
 {
 	class Node
@@ -60,9 +60,69 @@ class RBTree
 	};
 
 	public:
+		class iterator
+		{
+			public:
+				iterator(const iterator &it) : node(it.node) {
+				}
+
+				iterator &operator++() { // ++prefix
+					node = next(node);
+					return *this;
+				}
+
+				iterator operator++(int) { // postfix++
+					iterator it(*this);
+					operator++();
+					return it;
+				}
+
+				iterator &operator--() { // --prefix
+					node = prev(node);
+					return *this;
+				}
+
+				iterator operator--(int) { // postfix--
+					iterator it(*this);
+					operator--();
+					return it;
+				}
+
+				template<typename I>
+				bool operator==(const I &it) const {
+					return node == it.node;
+				}
+
+				template<typename I>
+				bool operator!=(const I &it) const {
+					return node != it.node;
+				}
+
+				const T &operator*() const {
+					return node->data;
+				}
+
+			private:
+				friend class RBTree;
+				iterator(Node *n) : node(n) {
+				}
+
+				template<typename I>
+				iterator(const I &i) : iterator(i.node) {
+				}
+
+				Node *node;
+		};
+
 		class const_iterator
 		{
 			public:
+				const_iterator(const const_iterator &it) : node(it.node) {
+				}
+
+				const_iterator(const iterator &it) : node(it.node) {
+				}
+
 				const_iterator &operator++() { // ++prefix
 					node = next(node);
 					return *this;
@@ -85,11 +145,13 @@ class RBTree
 					return it;
 				}
 
-				bool operator==(const const_iterator &it) const {
+				template<typename I>
+				bool operator==(const I &it) const {
 					return node == it.node;
 				}
 
-				bool operator!=(const const_iterator &it) const {
+				template<typename I>
+				bool operator!=(const I &it) const {
 					return node != it.node;
 				}
 
@@ -97,14 +159,15 @@ class RBTree
 					return node->data;
 				}
 
-			public:
+			private:
+				friend class RBTree;
 				const_iterator(Node *n) : node(n) {
 				}
 
 				Node *node;
 		};
 
-		typedef const_iterator iterator;
+
 
 		RBTree() : guard(new Node()), root(guard), setSize(0) {
 		}
@@ -132,10 +195,18 @@ class RBTree
 			return guard;
 		}
 
+		const_iterator cbegin() const {
+			return begin();
+		}
+
+		const_iterator cend() const {
+			return end();
+		}
+
 		const_iterator find(const T &e) const {
 			Node *n = root;
 			while(n->color) {
-				if(n->data == e) {
+				if(eq(e, n->data)) {
 					return const_iterator(n);
 				}
 				if(comp(e, n->data)) {
@@ -147,12 +218,14 @@ class RBTree
 			return end();
 		}
 
-		const_iterator insert(const T &e) {
+
+
+		iterator insert(const T &e) {
 			if(!root->color) {
 				guard->children[0] = guard->children[1] = root = new Node(e, guard, guard, guard);
 				root->color = Node::Black;
 				setSize = 1;
-				return const_iterator(root);
+				return iterator(root);
 			}
 			Node *n = root;
 			Node *l = guard;
@@ -161,7 +234,7 @@ class RBTree
 			int d = 0;
 			while(n->color) {
 				l = n;
-				if(n->data == e) {
+				if(eq(e, n->data)) {
 					return end();
 				}
 				d++;
@@ -181,7 +254,7 @@ class RBTree
 				guard->children[0] = n;
 			}
 			setSize++;
-			return const_iterator(n);
+			return iterator(n);
 		}
 
 		void clear() {
@@ -190,7 +263,7 @@ class RBTree
 			setSize = 0;
 		}
 
-		const_iterator remove(const_iterator it) {
+		iterator remove(iterator it) {
 			setSize--;
 			Node *z = it.node;
 			Node *td = z;
@@ -424,6 +497,7 @@ class RBTree
 
 	private:
 		Comp comp;
+		Eq eq;
 		Node *guard;
 		Node *root;
 		uint setSize;

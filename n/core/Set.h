@@ -23,7 +23,7 @@ namespace n {
 namespace core {
 
 template<typename T>
-using Set = RBTree<T, std::less<T>>;
+using Set = RBTree<T, std::less<T>, std::equal_to<T>>;
 
 } //core
 } //n
