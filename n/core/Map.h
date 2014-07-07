@@ -1,0 +1,163 @@
+/*******************************
+Copyright (C) 2013-2014 grégoire ANGERAND
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+**********************************/
+
+#ifndef N_CORE_MAP_H
+#define N_CORE_MAP_H
+
+#include "RBTree.h"
+#include "Pair.h"
+
+namespace n {
+namespace core {
+
+template<typename T, typename U, typename C>
+struct MapOp
+{
+	bool operator()(const Pair<T, U> &a, const Pair<T, U> &b) const {
+		C c;
+		return c(a._1, b._1);
+	}
+};
+
+template<typename T, typename U, typename Comp = std::less<T>, typename Eq = std::equal_to<T>>
+class Map : public RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const T, U, Eq>>
+{
+	using MapType = RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const T, U, Eq>>;
+
+	template<typename C>
+	struct MapFindOp
+	{
+		bool operator()(const T &a, const Pair<const T, U> &b) const {
+			C c;
+			return c(a._1, b._1);
+		}
+	};
+
+	typedef MapFindOp<Eq> MapFindEq;
+	typedef MapFindOp<Comp> MapFindComp;
+
+	public:
+		class iterator : public MapType::iterator
+		{
+			public:
+				iterator(const typename MapType::iterator &it) : MapType::iterator(it) {
+				}
+
+				Pair<const T, U> &operator*() {
+					return const_cast<Pair<const T, U> &>(MapType::iterator::operator*()); // makes sence
+				}
+
+			private:
+				friend class Map;
+				iterator(const typename MapType::const_iterator &it) : MapType::iterator(*((typename MapType::iterator *)&it)) {
+				}
+
+		};
+
+		typedef typename MapType::const_iterator const_iterator;
+		typedef Pair<const T, U> element;
+
+		Map(const MapType &m) : MapType(m) {
+		}
+
+		Map() : MapType() {
+		}
+
+		iterator insert(const T &t, const U &u) {
+			return MapType::insert(element(t, u));
+		}
+
+		iterator find(const T &t) {
+			return MapType::find<this->MapFindComp, this->MapFindEq>(t);
+		}
+
+		const_iterator find(const T &t) const {
+			return MapType::find<this->MapFindComp, this->MapFindEq>(t);
+		}
+
+		iterator begin() {
+			return iterator(MapType::begin());
+		}
+
+		iterator end() {
+			return iterator(MapType::end());
+		}
+
+		const_iterator begin() const {
+			return const_iterator(MapType::begin());
+		}
+
+		const_iterator end() const {
+			return const_iterator(MapType::end());
+		}
+
+		const_iterator cbegin() const {
+			return begin();
+		}
+
+		const_iterator cend() const {
+			return end();
+		}
+
+		Map<T, U, Comp, Eq> &operator=(const MapType &o) {
+			MapType::operator=(o);
+			return this;
+		}
+
+		Map<T, U, Comp, Eq> &operator=(MapType &&o) {
+			swap(std::move(o));
+			return *this;
+		}
+
+		template<typename E>
+		Map<T, U, Comp, Eq> operator+(const E &e) const {
+			return MapType::operator+(e);
+		}
+
+		template<typename E>
+		Map<T, U, Comp, Eq> &operator+=(const E &e) {
+			MapType::operator+=(e);
+			return *this;
+		}
+
+		template<typename E>
+		Map<T, U, Comp, Eq> &operator<<(const E &e) {
+			MapType::operator<<(e);
+			return *this;
+		}
+
+		template<typename V>
+		void map(const V &f) {
+			foreach([&](element &e) { e._2 = f(e); });
+		}
+
+		template<typename V>
+		Map<typename std::result_of<V(const element &)>::type, Comp, Eq> mapped(const V &f) const {
+			Map<typename std::result_of<V(const element &)>::type, Comp, Eq> a;
+			foreach([&](const element &e) { a.insert(f(e)); });
+			return a;
+		}
+
+		template<typename V>
+		Map<T, U, Comp, Eq> filtered(const V &f) const {
+			return MapType::filtered(f);
+		}
+};
+
+} // core
+} // n
+
+#endif // N_CORE_MAP_H
