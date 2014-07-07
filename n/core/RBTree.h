@@ -182,13 +182,16 @@ class RBTree
 			return end();
 		}
 
-		const_iterator find(const T &e) const {
+		template<typename C = Comp, typename E = Eq>
+		iterator find(const T &t) {
+			C c;
+			E e;
 			Node *n = root;
 			while(n->color) {
-				if(eq(e, n->data)) {
-					return const_iterator(n);
+				if(e(t, n->data)) {
+					return iterator(n);
 				}
-				if(comp(e, n->data)) {
+				if(c(t, n->data)) {
 					n = n->children[0];
 				} else {
 					n = n->children[1];
@@ -197,6 +200,23 @@ class RBTree
 			return end();
 		}
 
+		template<typename C = Comp, typename E = Eq>
+		const_iterator find(const T &t) const {
+			C c;
+			E e;
+			Node *n = root;
+			while(n->color) {
+				if(e(t, n->data)) {
+					return const_iterator(n);
+				}
+				if(c(t, n->data)) {
+					n = n->children[0];
+				} else {
+					n = n->children[1];
+				}
+			}
+			return end();
+		}
 
 
 		iterator insert(const T &e) {
@@ -243,13 +263,13 @@ class RBTree
 		}
 
 		iterator remove(iterator it) {
+			if(!z->color) {
+				return end();
+			}
 			setSize--;
 			Node *z = it.node;
 			Node *td = z;
 			it++;
-			if(!z->color) {
-				return end();
-			}
 			for(uint i = 0; i != 2; i++) {
 				if(z == guard->children[i]) {
 					guard->children[i] = z->parent;
