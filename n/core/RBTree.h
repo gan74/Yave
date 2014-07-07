@@ -182,8 +182,8 @@ class RBTree
 			return end();
 		}
 
-		template<typename C = Comp, typename E = Eq>
-		iterator find(const T &t) {
+		template<typename U = T, typename C = Comp, typename E = Eq>
+		iterator find(const U &t) {
 			C c;
 			E e;
 			Node *n = root;
@@ -200,8 +200,8 @@ class RBTree
 			return end();
 		}
 
-		template<typename C = Comp, typename E = Eq>
-		const_iterator find(const T &t) const {
+		template<typename U = T, typename C = Comp, typename E = Eq>
+		const_iterator find(const U &t) const {
 			C c;
 			E e;
 			Node *n = root;
@@ -263,11 +263,11 @@ class RBTree
 		}
 
 		iterator remove(iterator it) {
+			Node *z = it.node;
 			if(!z->color) {
 				return end();
 			}
 			setSize--;
-			Node *z = it.node;
 			Node *td = z;
 			it++;
 			for(uint i = 0; i != 2; i++) {
