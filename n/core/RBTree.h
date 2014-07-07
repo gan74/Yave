@@ -143,13 +143,13 @@ class RBTree
 		RBTree() : guard(new Node()), root(guard), setSize(0) {
 		}
 
-		RBTree(const RBTree<T, Comp> &o) : RBTree() {
+		RBTree(const RBTree<T, Comp, Eq> &o) : RBTree() {
 			for(const T &e : o) {
 				insertAtEnd(e);
 			}
 		}
 
-		RBTree(RBTree<T, Comp> &&o) : RBTree() {
+		RBTree(RBTree<T, Comp, Eq> &&o) : RBTree() {
 			swap(std::move(o));
 		}
 
@@ -182,10 +182,8 @@ class RBTree
 			return end();
 		}
 
-		template<typename C = Comp, typename E = Eq, typename U = T>
-		iterator find(const U &t) {
-			C c;
-			E e;
+		template<typename U = T, typename C = Comp, typename E = Eq>
+		iterator find(const U &t, const C c = C(), const E e = E()) {
 			Node *n = root;
 			while(n->color) {
 				if(e(t, n->data)) {
@@ -200,10 +198,8 @@ class RBTree
 			return end();
 		}
 
-		template<typename C = Comp, typename E = Eq, typename U = T>
-		const_iterator find(const U &t) const {
-			C c;
-			E e;
+		template<typename U = T, typename C = Comp, typename E = Eq>
+		const_iterator find(const U &t, const C c = C(), const E e = E()) const {
 			Node *n = root;
 			while(n->color) {
 				if(e(t, n->data)) {
@@ -342,7 +338,7 @@ class RBTree
 			return 0;
 		}*/
 
-		void swap(RBTree<T, Comp> &&o) {
+		void swap(RBTree<T, Comp, Eq> &&o) {
 			Node *r = o.root;
 			Node *g = o.guard;
 			uint s = o.setSize;
@@ -354,7 +350,7 @@ class RBTree
 			setSize = s;
 		}
 
-		RBTree<T, Comp> &operator=(const RBTree<T, Comp> &o) {
+		RBTree<T, Comp, Eq> &operator=(const RBTree<T, Comp, Eq> &o) {
 			clear();
 			for(const T &e : o) {
 				insertAtEnd(e);
@@ -362,50 +358,50 @@ class RBTree
 			return *this;
 		}
 
-		RBTree<T, Comp> &operator=(RBTree<T, Comp> &&o) {
+		RBTree<T, Comp, Eq> &operator=(RBTree<T, Comp, Eq> &&o) {
 			swap(std::move(o));
 			return *this;
 		}
 
-		RBTree<T, Comp> operator+(const T &e) const {
-			RBTree<T, Comp> a(*this);
+		RBTree<T, Comp, Eq> operator+(const T &e) const {
+			RBTree<T, Comp, Eq> a(*this);
 			a.insert(e);
 			return a;
 		}
 
-		RBTree<T, Comp> operator+(const RBTree<T, Comp> &e) const {
-			RBTree<T, Comp> a(*this);
+		RBTree<T, Comp, Eq> operator+(const RBTree<T, Comp, Eq> &e) const {
+			RBTree<T, Comp, Eq> a(*this);
 			for(const T &i : e) {
 				a.insert(i);
 			}
 			return a;
 		}
 
-		RBTree<T, Comp> &operator+=(const T &e) {
+		RBTree<T, Comp, Eq> &operator+=(const T &e) {
 			insert(e);
 			return *this;
 		}
 
-		RBTree<T, Comp> &operator+=(const RBTree<T, Comp> &e) {
+		RBTree<T, Comp, Eq> &operator+=(const RBTree<T, Comp, Eq> &e) {
 			for(const T &i : e) {
 				insert(i);
 			}
 			return *this;
 		}
 
-		RBTree<T, Comp> &operator<<(const T &e) {
+		RBTree<T, Comp, Eq> &operator<<(const T &e) {
 			insert(e);
 			return *this;
 		}
 
-		RBTree<T, Comp> &operator<<(const RBTree<T, Comp> &e) {
+		RBTree<T, Comp, Eq> &operator<<(const RBTree<T, Comp, Eq> &e) {
 			for(const T &i : e) {
 				insert(i);
 			}
 			return *this;
 		}
 
-		bool operator==(const RBTree<T, Comp> &tree) const {
+		bool operator==(const RBTree<T, Comp, Eq> &tree) const {
 			if(size() == tree.size()) {
 				const_iterator a = begin();
 				const_iterator b = tree.begin();
@@ -421,11 +417,11 @@ class RBTree
 			return false;
 		}
 
-		bool operator!=(const RBTree<T, Comp> &tree) const {
+		bool operator!=(const RBTree<T, Comp, Eq> &tree) const {
 			return !operator==(tree);
 		}
 
-		bool operator<(const RBTree<T, Comp> &tree) const {
+		bool operator<(const RBTree<T, Comp, Eq> &tree) const {
 			const_iterator a = begin();
 				const_iterator b = tree.begin();
 				while(a != end() && b != tree.end()) {
@@ -459,15 +455,15 @@ class RBTree
 		}
 
 		template<typename V>
-		RBTree<typename std::result_of<V(const T &)>::type, Comp> mapped(const V &f) const {
-			RBTree<typename std::result_of<V(const T &)>::type, Comp> a;
+		RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq> mapped(const V &f) const {
+			RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq> a;
 			foreach([&](const T &e) { a.insert(f(e)); });
 			return a;
 		}
 
 		template<typename U>
-		RBTree<T, Comp> filtered(const U &f) const {
-			RBTree<T, Comp> a;
+		RBTree<T, Comp, Eq> filtered(const U &f) const {
+			RBTree<T, Comp, Eq> a;
 			foreach([&](const T &e) {
 				if(f(e)) {
 					a.insertAtEnd(e);

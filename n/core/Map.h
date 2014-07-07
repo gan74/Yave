@@ -42,7 +42,7 @@ class Map : public RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const
 	{
 		bool operator()(const T &a, const Pair<const T, U> &b) const {
 			C c;
-			return c(a._1, b._1);
+			return c(a, b._1);
 		}
 	};
 
@@ -81,11 +81,11 @@ class Map : public RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const
 		}
 
 		iterator find(const T &t) {
-			return MapType::find<this->MapFindComp, this->MapFindEq>(t);
+			return MapType::find(t, MapFindComp(), MapFindEq());
 		}
 
 		const_iterator find(const T &t) const {
-			return MapType::find<this->MapFindComp, this->MapFindEq>(t);
+			return MapType::find(t, MapFindComp(), MapFindEq());
 		}
 
 		iterator begin() {
@@ -122,6 +122,23 @@ class Map : public RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const
 			return *this;
 		}
 
+		const U &get(const T &t, const U &def) const {
+			iterator it = find(t);
+			return it == end() ? def : (*it)._2;
+		}
+
+		const U &get(const T &t) const {
+			return get(t, U());
+		}
+
+		U &operator[](const T &t) {
+			iterator it = find(t);
+			if(it == end()) {
+				it = insert(t, U());
+			}
+			return (*it)._2;
+		}
+
 		template<typename E>
 		Map<T, U, Comp, Eq> operator+(const E &e) const {
 			return MapType::operator+(e);
@@ -153,7 +170,7 @@ class Map : public RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const
 
 		template<typename V>
 		Map<T, U, Comp, Eq> filtered(const V &f) const {
-			return MapType::filtered(f);
+			return Map<T, U, Comp, Eq>(MapType::filtered(f));
 		}
 };
 
