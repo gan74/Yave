@@ -31,7 +31,7 @@ class TestTemplate
 	{
 		public:
 			TestRunner() {
-				T().run();
+				test(T().run(), true, "Auto tests failed");
 			}
 	};
 
