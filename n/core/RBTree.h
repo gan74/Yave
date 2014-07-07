@@ -182,7 +182,7 @@ class RBTree
 			return end();
 		}
 
-		template<typename U = T, typename C = Comp, typename E = Eq>
+		template<typename C = Comp, typename E = Eq, typename U = T>
 		iterator find(const U &t) {
 			C c;
 			E e;
@@ -200,7 +200,7 @@ class RBTree
 			return end();
 		}
 
-		template<typename U = T, typename C = Comp, typename E = Eq>
+		template<typename C = Comp, typename E = Eq, typename U = T>
 		const_iterator find(const U &t) const {
 			C c;
 			E e;
