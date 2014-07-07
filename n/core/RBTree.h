@@ -59,114 +59,85 @@ class RBTree
 			byte color;
 	};
 
+	template<typename I>
+	class IteratorBase
+	{
+		public:
+			IteratorBase(const I &it) : node(it.node) {
+			}
+
+			I &operator++() { // ++prefix
+				node = next(node);
+				return *(I *)this;
+			}
+
+			I operator++(int) { // postfix++
+				I it(*(I *)this);
+				operator++();
+				return it;
+			}
+
+			I &operator--() { // --prefix
+				node = prev(node);
+				return *this;
+			}
+
+			I operator--(int) { // postfix--
+				I it(*this);
+				operator--();
+				return it;
+			}
+
+			template<typename J>
+			bool operator==(const IteratorBase<J> &it) const {
+				return node == it.node;
+			}
+
+			template<typename J>
+			bool operator!=(const IteratorBase<J> &it) const {
+				return node != it.node;
+			}
+
+			const T &operator*() const {
+				return node->data;
+			}
+
+		protected:
+			friend class RBTree;
+			IteratorBase(Node *n) : node(n) {
+			}
+
+
+			Node *node;
+	};
+
 	public:
-		class iterator
+		class iterator : public IteratorBase<iterator>
 		{
 			public:
-				iterator(const iterator &it) : node(it.node) {
-				}
-
-				iterator &operator++() { // ++prefix
-					node = next(node);
-					return *this;
-				}
-
-				iterator operator++(int) { // postfix++
-					iterator it(*this);
-					operator++();
-					return it;
-				}
-
-				iterator &operator--() { // --prefix
-					node = prev(node);
-					return *this;
-				}
-
-				iterator operator--(int) { // postfix--
-					iterator it(*this);
-					operator--();
-					return it;
-				}
-
-				template<typename I>
-				bool operator==(const I &it) const {
-					return node == it.node;
-				}
-
-				template<typename I>
-				bool operator!=(const I &it) const {
-					return node != it.node;
-				}
-
-				const T &operator*() const {
-					return node->data;
+				iterator(const iterator &it) : IteratorBase<iterator>(it) {
 				}
 
 			private:
 				friend class RBTree;
-				iterator(Node *n) : node(n) {
+				iterator(Node *n) : IteratorBase<iterator>(n) {
 				}
-
-				template<typename I>
-				iterator(const I &i) : iterator(i.node) {
-				}
-
-				Node *node;
 		};
 
-		class const_iterator
+		class const_iterator : public IteratorBase<const_iterator>
 		{
 			public:
-				const_iterator(const const_iterator &it) : node(it.node) {
+				const_iterator(const const_iterator &it) : IteratorBase<const_iterator>(it) {
 				}
 
-				const_iterator(const iterator &it) : node(it.node) {
-				}
-
-				const_iterator &operator++() { // ++prefix
-					node = next(node);
-					return *this;
-				}
-
-				const_iterator operator++(int) { // postfix++
-					const_iterator it(*this);
-					operator++();
-					return it;
-				}
-
-				const_iterator &operator--() { // --prefix
-					node = prev(node);
-					return *this;
-				}
-
-				const_iterator operator--(int) { // postfix--
-					const_iterator it(*this);
-					operator--();
-					return it;
-				}
-
-				template<typename I>
-				bool operator==(const I &it) const {
-					return node == it.node;
-				}
-
-				template<typename I>
-				bool operator!=(const I &it) const {
-					return node != it.node;
-				}
-
-				const T &operator*() const {
-					return node->data;
+				const_iterator(const iterator &it) : IteratorBase<const_iterator>(it) {
 				}
 
 			private:
 				friend class RBTree;
-				const_iterator(Node *n) : node(n) {
+				const_iterator(Node *n) : IteratorBase<const_iterator>(n) {
 				}
-
-				Node *node;
 		};
-
 
 
 		RBTree() : guard(new Node()), root(guard), setSize(0) {
@@ -192,6 +163,14 @@ class RBTree
 		}
 
 		const_iterator end() const {
+			return guard;
+		}
+
+		iterator begin() {
+			return guard->children[1];
+		}
+
+		iterator end() {
 			return guard;
 		}
 
@@ -479,7 +458,7 @@ class RBTree
 
 		template<typename U>
 		void filter(const U &f) {
-			for(const_iterator it = begin(); it != end();) {
+			for(iterator it = begin(); it != end();) {
 				if(!f(*it)) {
 					it = remove(it);
 				} else {
