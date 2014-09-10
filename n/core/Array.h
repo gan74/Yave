@@ -109,7 +109,7 @@ class Array : private ResizePolicy
 				}
 				return end();
 			}
-			Array<T> buffer;
+			Array<T, ResizePolicy> buffer;
 			buffer.assign(begin(), position);
 			buffer.insert(b, e, buffer.end());
 			uint pos = buffer.size();
@@ -192,6 +192,36 @@ class Array : private ResizePolicy
 		template<typename C>
 		bool operator!=(const C &c) const {
 			return !(*this == c);
+		}
+
+		template<typename C>
+		Array<T, ResizePolicy> operator+(const C &e) const {
+			Array<T, ResizePolicy> a(*this, e);
+			return a;
+		}
+
+		template<typename C>
+		Array<T, ResizePolicy> &operator+=(const C &e) {
+			append(e);
+			return *this;
+		}
+
+		template<typename C>
+		Array<T, ResizePolicy> &operator<<(const C &e) {
+			append(e);
+			return *this;
+		}
+
+		template<typename C>
+		Array<T, ResizePolicy> &operator=(const C &e) {
+			assign(e);
+			return *this;
+		}
+
+		template<typename P>
+		Array<T, ResizePolicy> &operator=(Array<T, P> &&arr) {
+			swap(arr);
+			return *this;
 		}
 
 		void setCapacity(uint cap) {
