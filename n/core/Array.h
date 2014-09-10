@@ -33,7 +33,7 @@ class DefaultArrayResizePolicy
 		}
 
 		bool shrink() const {
-			return true;
+			return false;
 		}
 };
 
@@ -101,15 +101,29 @@ class Array : private ResizePolicy
 			append(args...);
 		}
 
-		iterator remove(const_iterator it) {
-			if(it == dataEnd - 1) {
-				pop();
+		iterator remove(const_iterator b) {
+			return erase(b);
+		}
+
+		iterator erase(const_iterator b) {
+			return erase(b, b + 1);
+		}
+
+		iterator erase(const_iterator b, const_iterator e) {
+			if(e < b) {
+				std::swap(b, e);
+			}
+			uint diff = e - b;
+			if(e == dataEnd) {
+				clear((T *)b, diff);
+				dataEnd -= diff;
+				shrinkIfNeeded();
 				return dataEnd;
 			}
-			it->~T();
-			moveBack((T *)it, dataEnd - it);
-			dataEnd--;
-			return (T *)it;
+			moveBack((T *)b, dataEnd - b, diff);
+			dataEnd -= diff;
+			shrinkIfNeeded();
+			return (T *)b;
 		}
 
 		template<typename I>
@@ -551,18 +565,20 @@ class Array : private ResizePolicy
 			}
 		}
 
-		void moveBack(T *dst, uint n) {
+		void moveBack(T *dst, uint n, uint interval = 1) {
+			n -= interval;
 			if(TypeInfo<T>::isPrimitive) {
-				memmove(dst, dst + 1, sizeof(T) * n);
+				memmove(dst, dst + interval, sizeof(T) * n);
 			} else {
-				for(; n; n--) {
-					std::swap(*dst, *(dst + 1));
+				for(T *e = dst + n; dst != e; dst++) {
+					std::swap(*dst, *(dst + interval));
+				}
+				for(; interval; interval--) {
+					dst->~T();
 					dst++;
 				}
 			}
 		}
-
-
 
 		void clear(T *src, uint n) {
 			if(!TypeInfo<T>::isPrimitive) {
