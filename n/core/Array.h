@@ -101,6 +101,17 @@ class Array : private ResizePolicy
 			append(args...);
 		}
 
+		iterator remove(const_iterator it) {
+			if(it == dataEnd - 1) {
+				pop();
+				return dataEnd;
+			}
+			it->~T();
+			moveBack((T *)it, dataEnd - it);
+			dataEnd--;
+			return (T *)it;
+		}
+
 		template<typename I>
 		iterator insert(I b, I e, iterator position) {
 			if(position == dataEnd) {
@@ -119,6 +130,17 @@ class Array : private ResizePolicy
 		}
 
 		template<typename C>
+		iterator insert(const C &e, iterator position) {
+			if(getCapacity() - size()) {
+				move(position + 1, position, dataEnd - position);
+				position->~T();
+				new(position) T(e);
+				return position + 1;
+			}
+			return insert(&e, (&e) + 1, position);
+		}
+
+		template<typename C>
 		void assign(const C &c) {
 			makeEmpty();
 			append(c);
@@ -134,6 +156,19 @@ class Array : private ResizePolicy
 
 		template<typename RP>
 		void swap(Array<T, RP> &arr) {
+			T *e = arr.dataEnd;
+			T *a = arr.allocEnd;
+			T *d = arr.data;
+			arr.dataEnd = dataEnd;
+			arr.allocEnd = allocEnd;
+			arr.data = data;
+			dataEnd = e;
+			allocEnd = a;
+			data = d;
+		}
+
+		template<typename RP>
+		void swap(Array<T, RP> &&arr) {
 			T *e = arr.dataEnd;
 			T *a = arr.allocEnd;
 			T *d = arr.data;
@@ -515,6 +550,19 @@ class Array : private ResizePolicy
 				}
 			}
 		}
+
+		void moveBack(T *dst, uint n) {
+			if(TypeInfo<T>::isPrimitive) {
+				memmove(dst, dst + 1, sizeof(T) * n);
+			} else {
+				for(; n; n--) {
+					std::swap(*dst, *(dst + 1));
+					dst++;
+				}
+			}
+		}
+
+
 
 		void clear(T *src, uint n) {
 			if(!TypeInfo<T>::isPrimitive) {
