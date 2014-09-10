@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdlib>
 #include <type_traits>
 #include <typeinfo>
+#include <iostream>
 
 namespace n {
 
@@ -34,6 +35,90 @@ extern uint typeId;
 
 // be wary of templates therefor be wary of bullshit
 
+namespace internal {
+typedef byte Yes[1];
+typedef byte No[2];
+
+template<typename T, bool P>
+struct IsNonConstIterable
+{
+	static constexpr bool value = false;
+};
+
+template<typename T>
+struct IsNonConstIterable<T, false>
+{
+	private:
+		struct Fallback { int iterator; };
+		struct Derived : T, Fallback { };
+
+		template<class U>
+		static No &test(decltype(U::iterator) *);
+
+		template<typename U>
+		static Yes &test(U *);
+
+	public:
+		static constexpr bool value = sizeof(test<Derived>(0)) == sizeof(Yes);
+};
+
+
+
+template<typename T, bool P>
+struct IsConstIterable
+{
+	static constexpr bool value = false;
+};
+
+
+template<typename T>
+struct IsConstIterable<T, false>
+{
+	private:
+		struct Fallback { int const_iterator; };
+		struct Derived : T, Fallback { };
+
+		template<class U>
+		static No &test(decltype(U::const_iterator) *);
+
+		template<typename U>
+		static Yes &test(U *);
+
+	public:
+		static constexpr bool value = sizeof(test<Derived>(0)) == sizeof(Yes);
+};
+
+template<typename T, bool P>
+struct TypeContentInternal {};
+
+template<typename T>
+struct TypeContentInternal<T *, true>
+{
+	typedef T type;
+};
+
+template<typename T>
+struct TypeContentInternal<T, false>
+{
+	typedef decltype(((T *)0)->operator*()) type;
+};
+
+}
+
+template<typename From, typename To> // U from T
+struct TypeConversion
+{
+	private:
+		static internal::Yes &test(To);
+		static internal::No &test(...);
+
+		static From &from();
+
+	public:
+		static constexpr bool exists = sizeof(test(from())) == sizeof(internal::Yes);
+
+};
+
 template<typename T>
 struct TypeInfo
 {
@@ -41,6 +126,10 @@ struct TypeInfo
 	static constexpr bool isPointer = false;
 	static constexpr bool isConst = false;
 	static constexpr bool isRef = false;
+
+	static constexpr bool isNonConstIterable = internal::IsNonConstIterable<T, isPrimitive>::value;
+	static constexpr bool isIterable = internal::IsConstIterable<T, isPrimitive>::value || isNonConstIterable;
+
 	static const uint baseId;
 	static const uint id;
 
@@ -61,6 +150,9 @@ struct TypeInfo<T *>
 	static const uint baseId;
 	static const uint id;
 
+	static constexpr bool isNonConstIterable = false;
+	static constexpr bool isIterable = false;
+
 	typedef typename TypeInfo<T>::nonRef *nonRef;
 	typedef typename TypeInfo<T>::nonConst *nonConst;
 	typedef T nonPtr;
@@ -76,6 +168,9 @@ struct TypeInfo<const T>
 	static const uint baseId;
 	static const uint id;
 
+	static constexpr bool isNonConstIterable = false;
+	static constexpr bool isIterable = internal::IsConstIterable<T, isPrimitive>::value;
+
 	typedef const typename TypeInfo<T>::nonRef nonRef;
 	typedef T nonConst;
 	typedef const typename TypeInfo<T>::nonPtr nonPtr;
@@ -90,6 +185,9 @@ struct TypeInfo<T &>
 	static constexpr bool isRef = true;
 	static const uint baseId;
 	static const uint id;
+
+	static constexpr bool isNonConstIterable = TypeInfo<T>::isNonConstIterable;
+	static constexpr bool isIterable = TypeInfo<T>::isIterable;
 
 	typedef T nonRef;
 	typedef typename TypeInfo<T>::nonConst &nonConst;
@@ -117,6 +215,11 @@ const uint TypeInfo<T &>::id = typeId++;
 template<typename T>
 const uint TypeInfo<T &>::baseId = TypeInfo<T>::baseId;
 
+template<typename T>
+struct TypeContent
+{
+	typedef typename internal::TypeContentInternal<T, TypeInfo<T>::isPrimitive>::type type;
+};
 
 
 /*template<typename T>
