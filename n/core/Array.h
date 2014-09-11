@@ -28,12 +28,35 @@ namespace core {
 class DefaultArrayResizePolicy
 {
 	public:
-		uint grow(uint size) const {
-			return size < 2 ? 4 : 1 << (log2ui(size) + 1);
+		static uint standardSize(uint size) {
+			static const uint offset = 12;
+			uint l = log2ui(size + offset);
+			return size < 2 ? 8 : (1 << (l + 1)) - offset;
+		}
+
+		uint size(uint size) const {
+			return standardSize(size);
 		}
 
 		bool shrink() const {
 			return false;
+		}
+};
+
+class CompactArrayResizePolicy
+{
+	public:
+		uint size(uint size) const {
+			static const uint linearThreshold = 11; // 2048
+			if(size > (1 << linearThreshold)) {
+				uint s = DefaultArrayResizePolicy::standardSize(2048);
+				return s + ((1 << linearThreshold) * (((size - s) >> linearThreshold) + 1));
+			}
+			return DefaultArrayResizePolicy::standardSize(size);
+		}
+
+		bool shrink() const {
+			return true;
 		}
 };
 
@@ -77,7 +100,7 @@ class Array : private ResizePolicy
 		}
 
 		template<typename A, typename B, typename... Args>
-		Array(const A &a, const B &b, const Args&... args) : Array(this->grow(sizeof...(args) + 2)) {
+		Array(const A &a, const B &b, const Args&... args) : Array(ResizePolicy::size(sizeof...(args) + 2)) {
 			append(a);
 			append(b);
 			append(args...);
@@ -282,7 +305,11 @@ class Array : private ResizePolicy
 		}
 
 		void setMinCapacity(uint s) {
-			setCapacity(this->grow(s));
+			setCapacity(ResizePolicy::size(s));
+		}
+
+		void reserve(uint s) {
+			setMinCapacity(s + size());
 		}
 
 		uint getCapacity() const {
@@ -590,7 +617,7 @@ class Array : private ResizePolicy
 
 		void expend() {
 			uint s = size();
-			uint ns = this->grow(s);
+			uint ns = ResizePolicy::size(s);
 			setCapacityUnsafe(s, ns);
 		}
 
@@ -598,7 +625,7 @@ class Array : private ResizePolicy
 			if(this->shrink()) {
 				uint cc = getCapacity();
 				uint s = size();
-				uint tc = this->grow(s);
+				uint tc = ResizePolicy::size(s);
 				if(cc != tc) {
 					setCapacityUnsafe(s, tc);
 				}
