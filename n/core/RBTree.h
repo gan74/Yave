@@ -236,6 +236,18 @@ class RBTree
 			return Adder<TypeConversion<C, T>::exists, C>()(*this, c);
 		}
 
+		template<typename A, typename B, typename... Args>
+		iterator insert(const A &a, const B &b, const Args&... args) {
+			Comp c;
+			iterator it = insert(a);
+			iterator w = insert(b);
+			if(comp(w.node->data, it.node->data)) {
+				it = w;
+			}
+			w = insert(args...);
+			return comp(w.node->data, it.node->data) ? w : it;
+		}
+
 		void clear() {
 			clearOne(root);
 			root = guard->children[0] = guard->children[1] = guard->parent = guard;
@@ -617,12 +629,13 @@ class RBTree
 			guard->color = Node::Guard;
 		}
 
-			template<typename C>
+		template<typename C>
 		iterator insertCollection(const C &c) {
+			Comp comp;
 			iterator m = end();
 			for(const auto &e : c) {
 				iterator it = insert(e);
-				if(m == end() || *m < *it) {
+				if(m == end() || comp(*m, *it)) {
 					m = it;
 				}
 			}

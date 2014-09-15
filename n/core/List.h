@@ -179,9 +179,11 @@ class List
 			Adder<TypeConversion<C, T>::exists, true, C>(*this, c);
 		}
 
-		template<typename C>
-		void insert(const C &c) {
-			append(c);
+		template<typename A, typename B, typename... Args>
+		void append(const A &a, const B &b, const Args&... args) {
+			append(a);
+			append(b);
+			append(args...);
 		}
 
 		template<typename C>
@@ -215,7 +217,6 @@ class List
 
 		template<typename C>
 		iterator insert(const C &e, const const_iterator &t) {
-			#warning need work there
 			if(t == begin()) {
 				prepend(e);
 				return begin();
@@ -229,11 +230,6 @@ class List
 			e->prev = tail;
 			tail = ta;
 			return iterator(e->prev);
-			/*lSize++;
-			ListElem *el = new ListElem(e, t.elem, t.elem->prev);
-			el->next->prev = el;
-			el->prev->next = el;
-			return iterator(el);*/
 		}
 
 		template<typename I>
@@ -613,6 +609,9 @@ class List
 		}
 
 	private:
+		void append() {
+		}
+
 		void appendOne(const T &t) {
 			ListElem *e = new ListElem(t, tail, 0);
 			if(head == tail) {
