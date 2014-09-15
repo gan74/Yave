@@ -112,7 +112,8 @@ class Map : public RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const
 			return end();
 		}
 
-		Map<T, U, Comp, Eq> &operator=(const MapType &o) {
+		template<typename C>
+		Map<T, U, Comp, Eq> &operator=(const C &o) {
 			MapType::operator=(o);
 			return this;
 		}
@@ -161,16 +162,16 @@ class Map : public RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const
 			foreach([&](element &e) { e._2 = f(e); });
 		}
 
-		template<typename V>
-		Map<typename std::result_of<V(const element &)>::type, Comp, Eq> mapped(const V &f) const {
-			Map<typename std::result_of<V(const element &)>::type, Comp, Eq> a;
+		template<typename V, typename C = Map<typename std::result_of<V(const element &)>::type, Comp, Eq>>
+		C mapped(const V &f) const {
+			C a;
 			foreach([&](const element &e) { a.insert(f(e)); });
 			return a;
 		}
 
-		template<typename V>
-		Map<T, U, Comp, Eq> filtered(const V &f) const {
-			return Map<T, U, Comp, Eq>(MapType::filtered(f));
+		template<typename V, typename C = Map<T, U, Comp, Eq>>
+		C filtered(const V &f) const {
+			return	C(MapType::filtered(f));
 		}
 };
 

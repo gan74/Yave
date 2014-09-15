@@ -139,7 +139,24 @@ class RBTree
 				}
 		};
 
+	private:
+		template<bool C, typename U>
+		struct Adder
+		{
+			RBTree<T, Comp, Eq>::iterator operator()(RBTree<T, Comp, Eq> &set, const U &e) {
+				return set.insertOne(e);
+			}
+		};
 
+		template<typename U>
+		struct Adder<false, U>
+		{
+			RBTree<T, Comp, Eq>::iterator operator()(RBTree<T, Comp, Eq> &set, const U &e) {
+				return set.insertCollection(e);
+			}
+		};
+
+	public:
 		RBTree() : guard(new Node()), root(guard), setSize(0) {
 		}
 
@@ -214,42 +231,9 @@ class RBTree
 			return end();
 		}
 
-
-		iterator insert(const T &e) {
-			if(!root->color) {
-				guard->children[0] = guard->children[1] = root = new Node(e, guard, guard, guard);
-				root->color = Node::Black;
-				setSize = 1;
-				return iterator(root);
-			}
-			Node *n = root;
-			Node *l = guard;
-			uint o = 0;
-			int w = 0;
-			int d = 0;
-			while(n->color) {
-				l = n;
-				if(eq(e, n->data)) {
-					return end();
-				}
-				d++;
-				if(comp(e, n->data)) {
-					n = n->children[o = 0];
-					w++;
-				} else {
-					n = n->children[o = 1];
-					w--;
-				}
-			}
-			n = l->children[o] = new Node(e, l, guard, guard);
-			RBinsert(n);
-			if(w == d) {
-				guard->children[1] = n;
-			} else if(w == -d) {
-				guard->children[0] = n;
-			}
-			setSize++;
-			return iterator(n);
+		template<typename C>
+		iterator insert(const C &c) {
+			return Adder<TypeConversion<C, T>::exists, C>()(*this, c);
 		}
 
 		void clear() {
@@ -307,37 +291,6 @@ class RBTree
 			return setSize;
 		}
 
-		/*void print() {
-			printOne(root, 0);
-		}
-
-		void printOne(Node *z, uint t) {
-			if(z->color) {
-				for(uint i = 0; i != t; i++) {
-					std::cout<<" ";
-				}
-				std::cout<<z->data<<"  ";
-				if(z->color == Node::Red) {
-					std::cout<<"(R)";
-				} else {
-					std::cout<<"(b)";
-				}
-				std::cout<<std::endl;
-				printOne(z->children[0], t + 1);
-				printOne(z->children[1], t + 1);
-			}
-		}
-
-		uint computeHeight(Node *x = 0) {
-			if(!x) {
-				x = root;
-			}
-			if(x->color) {
-				return std::max(computeHeight(x->children[0]), computeHeight(x->children[1])) + 1;
-			}
-			return 0;
-		}*/
-
 		void swap(RBTree<T, Comp, Eq> &&o) {
 			Node *r = o.root;
 			Node *g = o.guard;
@@ -350,11 +303,10 @@ class RBTree
 			setSize = s;
 		}
 
-		RBTree<T, Comp, Eq> &operator=(const RBTree<T, Comp, Eq> &o) {
+		template<typename C>
+		RBTree<T, Comp, Eq> &operator=(const C &o) {
 			clear();
-			for(const T &e : o) {
-				insertAtEnd(e);
-			}
+			insert(o);
 			return *this;
 		}
 
@@ -363,13 +315,8 @@ class RBTree
 			return *this;
 		}
 
-		RBTree<T, Comp, Eq> operator+(const T &e) const {
-			RBTree<T, Comp, Eq> a(*this);
-			a.insert(e);
-			return a;
-		}
-
-		RBTree<T, Comp, Eq> operator+(const RBTree<T, Comp, Eq> &e) const {
+		template<typename C>
+		RBTree<T, Comp, Eq> operator+(const C &e) const {
 			RBTree<T, Comp, Eq> a(*this);
 			for(const T &i : e) {
 				a.insert(i);
@@ -377,34 +324,23 @@ class RBTree
 			return a;
 		}
 
-		RBTree<T, Comp, Eq> &operator+=(const T &e) {
+		template<typename C>
+		RBTree<T, Comp, Eq> &operator+=(const C &e) {
 			insert(e);
 			return *this;
 		}
 
-		RBTree<T, Comp, Eq> &operator+=(const RBTree<T, Comp, Eq> &e) {
-			for(const T &i : e) {
-				insert(i);
-			}
-			return *this;
-		}
-
-		RBTree<T, Comp, Eq> &operator<<(const T &e) {
+		template<typename C>
+		RBTree<T, Comp, Eq> &operator<<(const C &e) {
 			insert(e);
 			return *this;
 		}
 
-		RBTree<T, Comp, Eq> &operator<<(const RBTree<T, Comp, Eq> &e) {
-			for(const T &i : e) {
-				insert(i);
-			}
-			return *this;
-		}
-
-		bool operator==(const RBTree<T, Comp, Eq> &tree) const {
-			if(size() == tree.size()) {
+		template<typename C>
+		bool operator==(const C &c) const {
+			if(size() == c.size()) {
 				const_iterator a = begin();
-				const_iterator b = tree.begin();
+				const_iterator b = c.begin();
 				while(a != end()) {
 					if(*a != *b) {
 						return false;
@@ -417,21 +353,23 @@ class RBTree
 			return false;
 		}
 
-		bool operator!=(const RBTree<T, Comp, Eq> &tree) const {
-			return !operator==(tree);
+		template<typename C>
+		bool operator!=(const C &c) const {
+			return !operator==(c);
 		}
 
-		bool operator<(const RBTree<T, Comp, Eq> &tree) const {
+		template<typename C>
+		bool operator<(const C &c) const {
 			const_iterator a = begin();
-				const_iterator b = tree.begin();
-				while(a != end() && b != tree.end()) {
+				const_iterator b = c.begin();
+				while(a != end() && b != c.end()) {
 					if(*a != *b) {
 						return false;
 					}
 					++a;
 					++b;
 				}
-			return size() < tree.size();
+			return size() < c.size();
 		}
 
 		template<typename U>
@@ -454,15 +392,15 @@ class RBTree
 			return true;
 		}
 
-		template<typename V>
-		RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq> mapped(const V &f) const {
+		template<typename V, typename C = RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq>>
+		C mapped(const V &f) const {
 			RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq> a;
 			foreach([&](const T &e) { a.insert(f(e)); });
 			return a;
 		}
 
-		template<typename U>
-		RBTree<T, Comp, Eq> filtered(const U &f) const {
+		template<typename U, typename C = RBTree<T, Comp, Eq>>
+		C filtered(const U &f) const {
 			RBTree<T, Comp, Eq> a;
 			foreach([&](const T &e) {
 				if(f(e)) {
@@ -491,8 +429,6 @@ class RBTree
 		}
 
 	private:
-		Comp comp;
-		Eq eq;
 		Node *guard;
 		Node *root;
 		uint setSize;
@@ -679,6 +615,57 @@ class RBTree
 			x->color = Node::Black;
 			root->color = Node::Black;
 			guard->color = Node::Guard;
+		}
+
+			template<typename C>
+		iterator insertCollection(const C &c) {
+			iterator m = end();
+			for(const auto &e : c) {
+				iterator it = insert(e);
+				if(m == end() || *m < *it) {
+					m = it;
+				}
+			}
+			return m;
+		}
+
+		iterator insertOne(const T &e) {
+			Comp comp;
+			Eq eq;
+			if(!root->color) {
+				guard->children[0] = guard->children[1] = root = new Node(e, guard, guard, guard);
+				root->color = Node::Black;
+				setSize = 1;
+				return iterator(root);
+			}
+			Node *n = root;
+			Node *l = guard;
+			uint o = 0;
+			int w = 0;
+			int d = 0;
+			while(n->color) {
+				l = n;
+				if(eq(e, n->data)) {
+					return end();
+				}
+				d++;
+				if(comp(e, n->data)) {
+					n = n->children[o = 0];
+					w++;
+				} else {
+					n = n->children[o = 1];
+					w--;
+				}
+			}
+			n = l->children[o] = new Node(e, l, guard, guard);
+			RBinsert(n);
+			if(w == d) {
+				guard->children[1] = n;
+			} else if(w == -d) {
+				guard->children[0] = n;
+			}
+			setSize++;
+			return iterator(n);
 		}
 
 };
