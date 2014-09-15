@@ -67,7 +67,7 @@ class Array : private ResizePolicy
 	struct Adder
 	{
 		Adder(Array<T, ResizePolicy> &array, const U &e) {
-			array.appendSimple(e);
+			array.appendOne(e);
 		}
 	};
 
@@ -632,7 +632,7 @@ class Array : private ResizePolicy
 			}
 		}
 
-		void appendSimple(const T &e) {
+		void appendOne(const T &e) {
 			if(dataEnd == allocEnd) {
 				expend();
 			}

@@ -43,15 +43,29 @@ class List
 			ListElem *prev;
 	};
 
-	template<typename... Args>
-	void construct(const T &a, const Args&... args) {
-		append(a);
-		construct(args...);
-	}
+	template<bool C, bool A, typename U>
+	struct Adder
+	{
+		Adder(List<T> &lst, const U &e) {
+			if(A) {
+				lst.appendOne(e);
+			} else {
+				lst.prependOne(e);
+			}
+		}
+	};
 
-	void construct(const T &a) {
-		append(a);
-	}
+	template<bool A, typename U>
+	struct Adder<false, A, U>
+	{
+		Adder(List<T> &lst, const U &e) {
+			if(A) {
+				lst.appendCollection(e);
+			} else {
+				lst.prependCollection(e);
+			}
+		}
+	};
 
 	public:
 		class iterator
@@ -160,33 +174,19 @@ class List
 		List() : lSize(0), tail(new ListElem()), head(tail) {
 		}
 
-		template<typename... Args>
-		List(const T & a, const Args&... args) : List() {
-			construct(a, args...);
+		template<typename C>
+		void append(const C &c) {
+			Adder<TypeConversion<C, T>::exists, true, C>(*this, c);
 		}
 
-		List<T> &append(const T &t) {
-			ListElem *e = new ListElem(t, tail, 0);
-			if(head == tail) {
-				head =  e;
-			} else {
-				tail->prev->next = e;
-				e->prev = tail->prev;
-			}
-			tail->prev = e;
-			lSize++;
-			return *this;
+		template<typename C>
+		void insert(const C &c) {
+			append(c);
 		}
 
-		List<T> &prepend(const T &t) {
-			if(isEmpty()) {
-				append(t);
-			} else {
-				ListElem *e = new ListElem(t, head, 0);
-				head = head->prev = e;
-				lSize++;
-			}
-			return *this;
+		template<typename C>
+		void prepend(const C &c) {
+			Adder<TypeConversion<C, T>::exists, false, C>(*this, c);
 		}
 
 		void popFront() {
@@ -196,7 +196,11 @@ class List
 			lSize--;
 		}
 
-		iterator remove(const iterator &t) {
+		void pop() {
+			remove(--end());
+		}
+
+		iterator remove(iterator t) {
 			if(t == begin()) {
 				popFront();
 				return begin();
@@ -209,20 +213,32 @@ class List
 			return iterator(e);
 		}
 
-		iterator insert(const T &e, const const_iterator &t) {
+		template<typename C>
+		iterator insert(const C &e, const const_iterator &t) {
+			#warning need work there
 			if(t == begin()) {
 				prepend(e);
 				return begin();
 			}
-			lSize++;
+			ListElem *e = t.elem;
+			ListElem *ta = tail;
+			e->prev->next = 0;
+			tail = e->prev;
+			append(c);
+			tail->next = e;
+			e->prev = tail;
+			tail = ta;
+			return iterator(e->prev);
+			/*lSize++;
 			ListElem *el = new ListElem(e, t.elem, t.elem->prev);
 			el->next->prev = el;
 			el->prev->next = el;
-			return iterator(el);
+			return iterator(el);*/
 		}
 
-		iterator insert(const const_iterator &beg, const const_iterator &en, iterator pos) {
-			for(iterator it = beg; it != en; it++) {
+		template<typename I>
+		iterator insert(I beg, I en, iterator pos) {
+			for(I it = beg; it != en; ++it) {
 				insert(*it, pos);
 			}
 			return pos;
@@ -237,20 +253,23 @@ class List
 			}
 		}
 
-		void assign(const List<T> &l) {
+		template<typename C>
+		void assign(const C &l) {
 			if(&l != this) {
 				assign(l.begin(), l.end());
 			}
 		}
 
-		void assign(const const_iterator &b, const const_iterator &e) {
+		template<typename I>
+		void assign(I b, I e) {
 			clear();
-			for(const_iterator i = b; i != e; i++) {
+			for(I i = b; i != e; i++) {
 				append(*i);
 			}
 		}
 
-		List<T> &operator=(const List<T> &l) {
+		template<typename C>
+		List<T> &operator=(const C &l) {
 			assign(l);
 		}
 
@@ -313,35 +332,171 @@ class List
 
 		}
 
+		bool isSorted() const {
+			if(isEmpty()) {
+				return true;
+			}
+			const_iterator l = begin();
+				for(const_iterator it = begin() + 1; it != end(); it++) {
+				if(*it < *l) {
+					return false;
+				}
+				l = it;
+			}
+			return true;
+		}
+
 		template<typename U>
-		uint count(const U &f) const {
+		iterator findOne(const U &f, const_iterator from) {
+			for(iterator i = const_cast<iterator>(from); i != end(); i++) {
+				if(f(*i)) {
+					return i;
+				}
+			}
+			return end();
+		}
+
+		template<typename U>
+		const_iterator findOne(const U &f, const_iterator from) const {
+			for(const_iterator i = from; i != end(); i++) {
+				if(f(*i)) {
+					return i;
+				}
+			}
+			return end();
+		}
+
+		template<typename U>
+		uint countAll(const U &f) const {
 			uint c = 0;
 			for(const_iterator i = begin(); i != end(); i++) {
 				if(f(*i)) {
-					return c++;
+					c++;
 				}
 			}
 			return c;
 		}
 
-		iterator find(const T &e) {
-			return find([&](const T &t) { return t == e; }, begin());
+		template<typename V>
+		bool existsOne(const V &f) const {
+			for(const_iterator i = begin(); i != end(); i++) {
+				if(f(*i)) {
+					return true;
+				}
+			}
+			return false;
 		}
 
-		iterator find(const T &e, const const_iterator &from) {
-			return find([&](const T &t) { return t == e; }, from);
+		template<typename U>
+		iterator find(const U &f, const_iterator from) {
+			return findOne(f, from);
+		}
+
+		template<typename U>
+		const_iterator find(const U &f, const_iterator from) const {
+			return findOne(f, from);
+		}
+
+		template<typename U>
+		uint count(const U &f) const {
+			return countAll(f);
+		}
+
+		template<typename V>
+		bool exists(const V &f) const {
+			return existsOne(f);
+		}
+
+		iterator find(const T &e) {
+			return findOne([&](const T &t) { return t == e; }, begin());
+		}
+
+		iterator find(const T &e, const_iterator from) {
+			return findOne([&](const T &t) { return t == e; }, from);
 		}
 
 		const_iterator find(const T &e) const {
-			return find([&](const T &t) { return t == e; }, begin());
+			return findOne([&](const T &t) { return t == e; }, begin());
 		}
 
-		const_iterator find(const T &e, const const_iterator &from) const {
-			return find([&](const T &t) { return t == e; }, from);
+		const_iterator find(const T &e, const_iterator from) const {
+			return findOne([&](const T &t) { return t == e; }, from);
 		}
 
 		uint count(const T &e) const {
-			return count([&](const T &t) { return t == e; });
+			return countAll([&](const T &t) { return t == e; });
+		}
+
+		bool exists(const T &e) const {
+			return existsOne([&](const T &t) { return t == e; });
+		}
+
+		template<typename U>
+		void foreach(const U &f) {
+			std::for_each(begin(), end(), f);
+		}
+
+		template<typename U>
+		void foreach(const U &f) const {
+			std::for_each(begin(), end(), f);
+		}
+
+		template<typename V, typename C = Array<typename std::result_of<V(const T &)>::type, ResizePolicy>>
+		C mapped(const V &f) const {
+			C a;
+			foreach([&](const T &e) { a.insert(f(e)); });
+			return a;
+		}
+
+		template<typename U, typename C = List<T>>
+		C filtered(const U &f) const {
+			C a;
+			foreach([&](const T &e) {
+				if(f(e)) {
+					a.insert(e);
+				}
+			});
+			return a;
+		}
+
+		template<typename C = List<T>>
+		C reversed() const {
+			C re(*this);
+			re.reverse();
+			return re;
+		}
+
+		template<typename U>
+		bool forall(const U &f) const {
+			for(const T &t : *this) {
+				if(!f(t)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		template<typename V>
+		void map(const V &f) {
+			foreach([&](T &e) { e = f(e); });
+		}
+
+		template<typename U>
+		void filter(const U &f) {
+			for(iterator it = begin(); it != end();) {
+				if(!f(*it)) {
+					it = remove(it);
+				} else {
+					it++;
+				}
+			}
+		}
+
+		template<typename V, typename U>
+		V foldRight(const U &f, V def = V(0)) {
+			V acc(def);
+			foreach([&](const T &t) { acc = f(t, acc); });
+			return acc;
 		}
 
 		const_iterator begin() const {
@@ -368,10 +523,11 @@ class List
 			return iterator(tail);
 		}
 
-		bool operator==(const List<T> &l) const {
+		template<typename C>
+		bool operator==(const C &l) const {
 			if(size() == l.size()) {
 				const_iterator a = begin();
-				const_iterator b = l.begin();
+				auto b = l.begin();
 				while(a != end()) {
 					if(*a++ != *b++) {
 						return false;
@@ -382,9 +538,10 @@ class List
 			return false;
 		}
 
-		bool operator<(const List<T> &l) const {
+		template<typename C>
+		bool operator<(const C &l) const {
 			iterator a = begin();
-			iterator b = l.begin();
+			auto b = l.begin();
 			while(a != end() && b != l.end()) {
 				if(*a++ != *b++) {
 					return false;
@@ -414,9 +571,9 @@ class List
 			return true;
 		}
 
-		template<typename V>
-		List<typename std::result_of<V(const T &)>::type> mapped(const V &f) const {
-			List<typename std::result_of<V(const T &)>::type> a;
+		template<typename V, typename C = List<typename std::result_of<V(const T &)>::type>>
+		C mapped(const V &f) const {
+			C a;
 			foreach([&](const T &e) { a.append(f(e)); });
 			return a;
 		}
@@ -426,9 +583,9 @@ class List
 			foreach([&](T &e) { e = f(e); });
 		}
 
-		template<typename U>
-		List<T> filtered(const U &f) const {
-			List<T> a;
+		template<typename U, typename C = List<T>>
+		C filtered(const U &f) const {
+			C a;
 			foreach([&](const T &e) {
 				if(f(e)) {
 					a.append(e);
@@ -456,6 +613,44 @@ class List
 		}
 
 	private:
+		void appendOne(const T &t) {
+			ListElem *e = new ListElem(t, tail, 0);
+			if(head == tail) {
+				head =  e;
+			} else {
+				tail->prev->next = e;
+				e->prev = tail->prev;
+			}
+			tail->prev = e;
+			lSize++;
+		}
+
+		template<typename C>
+		void appendCollection(const C &c) {
+			for(const auto &e : c) {
+				append(e);
+			}
+		}
+
+		void prependOne(const T &t) {
+			if(isEmpty()) {
+				appendOne(t);
+			} else {
+				ListElem *e = new ListElem(t, head, 0);
+				head = head->prev = e;
+				lSize++;
+			}
+			return *this;
+		}
+
+		template<typename C>
+		void prependCollection(const C &c) {
+			for(const auto &e : c) {
+				append(e);
+			}
+		}
+
+
 		uint lSize;
 		ListElem *tail;
 		ListElem *head;
