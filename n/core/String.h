@@ -46,6 +46,8 @@ class String
 				Array<String> tokens;
 		};
 
+		typedef char const * const_iterator;
+
 		template<typename T>
 		String(const T &s) : String() {
 			std::ostringstream oss;
@@ -95,8 +97,8 @@ class String
 			return str;
 		}
 
-		char const *begin() const;
-		char const *end() const;
+		const_iterator begin() const;
+		const_iterator end() const;
 		String &operator<<(const String &s);
 		uint getHash() const;
 
@@ -110,7 +112,7 @@ class String
 		uint find(char c, uint from = 0) const;
 		uint find(const String &str, uint from = 0) const;
 		bool contains(char c) const;
-		bool contains(String &str) const;
+		bool contains(const String &str) const;
 		String subString(uint beg, uint len) const;
 		String subString(uint beg) const;
 		bool beginWith(const String &s);

@@ -185,7 +185,7 @@ bool String::contains(char c) const {
 	return find(c) < length;
 }
 
-bool String::contains(String &str) const {
+bool String::contains(const String &str) const {
 	return find(str) < length;
 }
 
@@ -377,11 +377,11 @@ String::operator const char *() const {
 	return toChar();
 }
 
-char const *String::begin() const {
+String::const_iterator String::begin() const {
 	return data;
 }
 
-char const *String::end() const {
+String::const_iterator String::end() const {
 	return data + length;
 }
 
