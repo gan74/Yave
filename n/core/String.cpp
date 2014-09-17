@@ -12,6 +12,9 @@ String::Concat::Concat(const String &a, const String &b) : tokens(4) {
 	tokens.append(b);
 }
 
+String::Concat::Concat(const Array<String> &arr) : tokens(arr) {
+}
+
 uint String::Concat::size() const {
 	uint s = 0;
 	for(const String &str : tokens) {
@@ -104,7 +107,7 @@ String::~String() {
 }
 
 
-void String::replace(const String &oldS, const String &newS) {
+/*void String::replace(const String &oldS, const String &newS) {
 	while(true) {
 		uint index = find(oldS);
 		if(index == (uint)-1) {
@@ -124,6 +127,29 @@ String String::replaced(const String &oldS, const String &newS) const {
 		str = str.subString(0, index) + newS + str.subString(index + oldS.size());
 	}
 	return str;
+}*/
+
+void String::replace(const String &oldS, const String &newS) {
+	operator=(replaced(oldS, newS));
+}
+
+String String::replaced(const String &oldS, const String &newS) const {
+	Array<String> concat;
+	uint index = find(oldS);
+	if(index != (uint)-1) {
+		uint from = 0;
+		uint offset = oldS.size();
+		do {
+			concat += subString(from, index - from);
+			concat += newS;
+			from = index + offset;
+			index = find(oldS, from);
+		} while(index != (uint)-1);
+		concat += subString(from);
+	} else {
+		return *this;
+	}
+	return Concat(concat);
 }
 
 void String::clear() {

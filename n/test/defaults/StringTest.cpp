@@ -35,6 +35,8 @@ class StringTest : public TestTemplate<StringTest>
 	private:
 		void basicTests() {
 			core::String str = "floup, flup, flap, flip";
+			test(str.find(",", 6), 11, "Find from test failed");
+			std::cout<<str.replaced(",", "")<<std::endl;
 			test(str.replaced(",", ""), "floup flup flap flip", "Replaced test failed");
 			test(str.replaced("p", "w"), "flouw, fluw, flaw, fliw", "Replaced test 2");
 			test(str.replaced("floup", "flip"), "flip, flup, flap, flip", "Replaced test 3");

@@ -32,6 +32,7 @@ class String
 		{
 			public:
 				Concat(const String &a, const String &b);
+				Concat(const Array<String> &arr);
 
 				uint size() const;
 				Concat &operator+(const String &s);
