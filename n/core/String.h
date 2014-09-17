@@ -100,7 +100,6 @@ class String
 
 		const_iterator begin() const;
 		const_iterator end() const;
-		String &operator<<(const String &s);
 		uint getHash() const;
 
 		void replace(const String &oldS, const String &newS);
@@ -140,6 +139,11 @@ class String
 		}
 
 		template<typename T>
+		String &operator<<(const T &s) {
+			return operator+=(String(s));
+		}
+
+		template<typename T>
 		bool operator==(const T &s) const {
 			return operator==(String(s));
 		}
@@ -171,8 +175,6 @@ class String
 		const String &operator=(const Concat &sc);
 		bool operator<(const String &s) const;
 		operator const char *() const;
-
-
 
 	private:
 		char *detach(uint s);
