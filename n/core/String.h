@@ -134,6 +134,31 @@ class String
 			return operator+(String(i));
 		}
 
+		template<typename T>
+		String &operator+=(const T &s) {
+			return operator+=(String(s));
+		}
+
+		template<typename T>
+		bool operator==(const T &s) const {
+			return operator==(String(s));
+		}
+
+		template<typename T>
+		bool operator!=(const T &s) const {
+			return operator!=(String(s));
+		}
+
+		template<typename T>
+		const String &operator=(const T &s) {
+			return operator=(String(s));
+		}
+
+		template<typename T>
+		bool operator<(const T &s) const {
+			return operator<(String(s));
+		}
+
 		String &operator+=(const String &s);
 		String &operator+=(String &&s);
 		Concat operator+(const String &s) const;
