@@ -38,7 +38,7 @@ class DefaultArrayResizePolicy
 			return standardSize(size);
 		}
 
-		bool shrink() const {
+		bool shrink(uint, uint) const {
 			return false;
 		}
 };
@@ -55,8 +55,8 @@ class CompactArrayResizePolicy
 			return DefaultArrayResizePolicy::standardSize(size);
 		}
 
-		bool shrink() const {
-			return true;
+		bool shrink(uint s, uint cap) const {
+			return s + 2048 < cap;
 		}
 };
 
@@ -622,9 +622,9 @@ class Array : private ResizePolicy
 		}
 
 		void shrinkIfNeeded() {
-			if(this->shrink()) {
-				uint cc = getCapacity();
-				uint s = size();
+			uint cc = getCapacity();
+			uint s = size();
+			if(this->shrink(s, cc)) {
 				uint tc = ResizePolicy::size(s);
 				if(cc != tc) {
 					setCapacityUnsafe(s, tc);
