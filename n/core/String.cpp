@@ -411,10 +411,6 @@ String::const_iterator String::end() const {
 	return data + length;
 }
 
-String &String::operator<<(const String &s) {
-	return this->operator+=(s);
-}
-
 uint String::getHash() const {
 	return length && data ? hash(data, length) : 0;
 }
