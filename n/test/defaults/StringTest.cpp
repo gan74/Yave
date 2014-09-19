@@ -36,7 +36,6 @@ class StringTest : public TestTemplate<StringTest>
 		void basicTests() {
 			core::String str = "floup, flup, flap, flip";
 			test(str.find(",", 6), 11, "Find from test failed");
-			std::cout<<str.replaced(",", "")<<std::endl;
 			test(str.replaced(",", ""), "floup flup flap flip", "Replaced test failed");
 			test(str.replaced("p", "w"), "flouw, fluw, flaw, fliw", "Replaced test 2");
 			test(str.replaced("floup", "flip"), "flip, flup, flap, flip", "Replaced test 3");
@@ -86,7 +85,9 @@ class StringTest : public TestTemplate<StringTest>
 			test(a + 3, "cc3", "Int concat test failed");
 			test(core::String("") + 9.5f, "9.5", "Float contructor test failed");
 			test(core::String("a") + 9.5f, "a9.5", "Float concat test failed");
-			test(9.5f + core::String("f"), "9.5f", "Float concat test 2");
+			test(9.5f + core::String("f"), "9.5f", "Float concat test 2 failed");
+			core::Array<char> arr('4', 'a', '{', 'K');
+			test(core::String(arr), "4a{K", "Array test failed");
 		}
 };
 
