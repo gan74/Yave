@@ -58,7 +58,7 @@ class Pair
 			return std::pair<T, U>(_1, _2);
 		}
 
-		Array<T> toArray() const {
+		operator Array<T>() const {
 			return Array<T>(_1, _2);
 		}
 
