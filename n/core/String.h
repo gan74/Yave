@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Array.h"
 #include <sstream>
+#include "AsCollection.h"
 
 #define N_STRINGIFY(m) n::core::String(#m)
 
@@ -76,7 +77,7 @@ class String
 
 		template<typename T>
 		String(const T &s) : String() {
-			Adder<TypeConversion<typename Collection<T>::ElementType, const char>::exists, T>(*this, s);
+			Adder<TypeConversion<typename AsCollection<T>::ElementType, const char>::exists, T>(*this, s);
 		}
 
 		String();

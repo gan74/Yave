@@ -35,7 +35,10 @@ extern uint typeId;
 
 // be wary of templates therefor be wary of bullshit
 
-struct NullType {};
+struct NullType
+{
+	NullType() = delete;
+};
 
 namespace internal {
 typedef byte Yes[1];
@@ -252,29 +255,6 @@ struct TypeContent
 {
 	typedef typename internal::TypeContentInternal<T, TypeInfo<T>::isPrimitive || !TypeInfo<T>::isDereferencable>::type type;
 };
-
-namespace internal {
-template<typename T, bool P> // P = false
-struct CollectionInternal
-{
-	typedef NullType type;
-};
-
-template<typename T>
-struct CollectionInternal<T, true>
-{
-	using IteratorType = typename T::const_iterator;
-	typedef typename TypeContent<IteratorType>::type type;
-};
-}
-
-template<typename T>
-struct Collection
-{
-	typedef typename internal::CollectionInternal<T, TypeInfo<T>::isIterable>::type ElementType;
-};
-
-
 
 
 } //n
