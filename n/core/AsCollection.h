@@ -75,17 +75,19 @@ class AsCollection
 			using ContainerType = typename std::result_of<decltype(changeContentType<N>(makeOne<U>()))>::type;
 		};
 
+
 	public:
 		typedef typename InternalType::ConstIteratorType ConstIteratorType;
 		typedef typename InternalType::IteratorType IteratorType;
 		typedef typename InternalType::type ElementType;
 
-		AsCollection(T &t) : collection(t) {
-
+		AsCollection(const T &t) : collection(t) {
 		}
 
-		template<typename V>
-		AsCollection(const V &) = delete;
+		AsCollection(T &t) : collection(t) {
+		}
+
+		AsCollection(const AsCollection<T> &) = delete;
 
 	private:
 		T collection;
