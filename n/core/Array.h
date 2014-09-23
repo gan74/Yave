@@ -378,9 +378,6 @@ class Array : private ResizePolicy
 		}
 
 		bool isSorted() const {
-			if(isEmpty()) {
-				return true;
-			}
 			const_iterator l = begin();
 				for(const_iterator it = begin() + 1; it != end(); it++) {
 				if(*it < *l) {
