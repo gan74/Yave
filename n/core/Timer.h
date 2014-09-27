@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	#endif
 #endif
 
+
 #ifdef N_USE_WIN_TIME
 #include <windows.h>
 
@@ -70,9 +71,15 @@ class Timer
 		 LARGE_INTEGER time;
 };
 
+} //core
+} //n
+
 #else
 
 #include <chrono>
+
+namespace n {
+namespace core {
 
 class Timer
 {
@@ -107,8 +114,10 @@ class Timer
 		 std::chrono::time_point<std::chrono::high_resolution_clock> time;
 };
 
-#endif
-
 } //core
 } //n
+
+#endif
+
+
 #endif // N_CORE_TIMER_H

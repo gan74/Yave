@@ -82,7 +82,7 @@ class Option
 			return val;
 		}
 
-		const Option &operator=(const Option &o) {
+		Option &operator=(const Option &o) {
 			if(o) {
 				set(o);
 			}

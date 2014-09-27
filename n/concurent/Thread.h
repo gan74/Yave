@@ -30,6 +30,8 @@ class Thread
 {
 	public:
 		Thread();
+		Thread(const Thread &) = delete;
+
 		virtual ~Thread();
 
 		virtual void run() = 0;

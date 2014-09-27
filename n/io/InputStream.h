@@ -42,7 +42,7 @@ class DataInputStream
 	public:
 		DataInputStream(InputStream *s);
 		bool canRead() const;
-		uint readBytes(char *b, uint len = -1) const;
+		uint readBytes(char *b, uint len = -1);
 		core::String readLine();
 		int readInt();
 		double readDouble();

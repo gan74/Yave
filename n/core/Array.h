@@ -252,7 +252,7 @@ class Array : private ResizePolicy
 				return false;
 			}
 			const T *i = data;
-			for(typename C::const_iterator it = c.begin(), en = c.end(); it != en; it++) {
+			for(typename C::const_iterator it = c.begin(), en = c.end(); it != en; ++it) {
 				if(!(*it == *i)) {
 					return false;
 				}
@@ -536,7 +536,7 @@ class Array : private ResizePolicy
 			foreach([&](T &e) {
 				if(f((const T &)e)) {
 					*it = std::move(e);
-					it++;
+					++it;
 				}
 			});
 			dataEnd = it;
@@ -649,6 +649,7 @@ class Array : private ResizePolicy
 
 		void setCapacityUnsafe(uint s, uint ns) {
 			if(TypeInfo<T>::isPrimitive) {
+				// cppcheck-suppress memleakOnRealloc
 				data = (T *)realloc(data, ns * sizeof(T));
 			} else {
 				T *n = (T *)malloc(ns * sizeof(T));

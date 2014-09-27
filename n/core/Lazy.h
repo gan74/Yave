@@ -40,7 +40,7 @@ class LazyVal
 		}
 
 		LazyVal(const LazyVal &) = delete;
-		const LazyVal &operator=(const LazyVal &) = delete;
+		LazyVal &operator=(const LazyVal &) = delete;
 
 		resultType get() const {
 			if(!value) {

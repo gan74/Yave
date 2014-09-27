@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Timer.h>
 
 #if defined WIN32 || defined _WIN32 || defined __CYGWIN__
-#include <windows.h>
+//#include <windows.h>
 #define tsleep(sec) Sleep((sec) * 1000)
 #endif
 #ifdef Linux

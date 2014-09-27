@@ -163,7 +163,7 @@ class SmartPtr : private LockingPolicy
 			this->lock();
 			ptr = p.ptr;
 			if(count = p.count) {
-				*count++;
+				(*count)++;
 			}
 			this->unlock();
 		}

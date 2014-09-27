@@ -2,12 +2,13 @@ CONFIG += console
 CONFIG += c++11
 CONFIG -= Qt
 
-DEFINES += N_DEBUG
 win32:DEFINES += WIN32
 
 LIBS += -lpthread
 
-QMAKE_CXXFLAGS += -pedantic
+DEFINES += N_DEBUG
+
+QMAKE_CXXFLAGS += -pedantic -Wall -Wextra
 QMAKE_CXXFLAGS_DEBUG += -pg
 QMAKE_LFLAGS_DEBUG += -pg
 
@@ -30,6 +31,7 @@ HEADERS += n/*.h \
 CONFIG(debug, debug|release) {
 	OBJECTS_DIR = debug
 	DESTDIR = debug
+	DEFINES += N_DEBUG
 } else {
 	OBJECTS_DIR = release
 	DESTDIR = release

@@ -139,8 +139,8 @@ class String
 		bool contains(const String &str) const;
 		String subString(uint beg, uint len) const;
 		String subString(uint beg) const;
-		bool beginWith(const String &s);
-		bool endWith(const String &s);
+		bool beginWith(const String &s) const;
+		bool endWith(const String &s) const;
 		void detach();
 		void swap(String &str);
 		Array<String> split(const String &str) const;
@@ -194,9 +194,9 @@ class String
 		bool operator==(const char *str) const;
 		bool operator!=(const String &str) const;
 		bool operator!=(const char *str) const;
-		const String &operator=(const String &s);
-		const String &operator=(String &&s);
-		const String &operator=(const Concat &sc);
+		String &operator=(const String &s);
+		String &operator=(String &&s);
+		String &operator=(const Concat &sc);
 		bool operator<(const String &s) const;
 		operator const char *() const;
 

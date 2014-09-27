@@ -174,6 +174,11 @@ class List
 		List() : lSize(0), tail(new ListElem()), head(tail) {
 		}
 
+		template<typename U>
+		List(const List<U> &l) : List() {
+			append(l);
+		}
+
 		template<typename C>
 		void append(const C &c) {
 			Adder<TypeConversion<C, T>::exists, true, C>(*this, c);
@@ -295,7 +300,7 @@ class List
 
 		template<typename U>
 		iterator find(const U &f, const const_iterator &from) {
-			for(iterator i = from; i != end(); i++) {
+			for(iterator i = from; i != end(); ++i) {
 				if(f(*i)) {
 					return i;
 				}
@@ -305,7 +310,7 @@ class List
 
 		template<typename U>
 		const_iterator find(const U &f, const const_iterator &from) const {
-			for(const_iterator i = from; i != end(); i++) {
+			for(const_iterator i = from; i != end(); ++i) {
 				if(f(*i)) {
 					return i;
 				}
@@ -318,7 +323,7 @@ class List
 				return true;
 			}
 			const_iterator l = begin();
-			for(const_iterator it = ++begin(); it != end(); it++) {
+			for(const_iterator it = ++begin(); it != end(); ++it) {
 				if(*it < *l) {
 					return false;
 				}
@@ -333,7 +338,7 @@ class List
 				return true;
 			}
 			const_iterator l = begin();
-				for(const_iterator it = begin() + 1; it != end(); it++) {
+				for(const_iterator it = begin() + 1; it != end(); ++it) {
 				if(*it < *l) {
 					return false;
 				}
@@ -344,7 +349,7 @@ class List
 
 		template<typename U>
 		iterator findOne(const U &f, const_iterator from) {
-			for(iterator i = const_cast<iterator>(from); i != end(); i++) {
+			for(iterator i = const_cast<iterator>(from); i != end(); ++i) {
 				if(f(*i)) {
 					return i;
 				}
@@ -354,7 +359,7 @@ class List
 
 		template<typename U>
 		const_iterator findOne(const U &f, const_iterator from) const {
-			for(const_iterator i = from; i != end(); i++) {
+			for(const_iterator i = from; i != end(); ++i) {
 				if(f(*i)) {
 					return i;
 				}
@@ -365,7 +370,7 @@ class List
 		template<typename U>
 		uint countAll(const U &f) const {
 			uint c = 0;
-			for(const_iterator i = begin(); i != end(); i++) {
+			for(const_iterator i = begin(); i != end(); ++i) {
 				if(f(*i)) {
 					c++;
 				}
@@ -375,7 +380,7 @@ class List
 
 		template<typename V>
 		bool existsOne(const V &f) const {
-			for(const_iterator i = begin(); i != end(); i++) {
+			for(const_iterator i = begin(); i != end(); ++i) {
 				if(f(*i)) {
 					return true;
 				}
@@ -483,7 +488,7 @@ class List
 				if(!f(*it)) {
 					it = remove(it);
 				} else {
-					it++;
+					++it;
 				}
 			}
 		}
@@ -596,7 +601,7 @@ class List
 				if(!f(*it)) {
 					it = remove(it);
 				} else {
-					it++;
+					++it;
 				}
 			}
 		}

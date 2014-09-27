@@ -143,7 +143,7 @@ class RBTree
 		template<bool C, typename U>
 		struct Adder
 		{
-			RBTree<T, Comp, Eq>::iterator operator()(RBTree<T, Comp, Eq> &set, const U &e) {
+			RBTree<T, Comp, Eq>::iterator operator()(RBTree<T, Comp, Eq> &set, const U &e) const {
 				return set.insertOne(e);
 			}
 		};
@@ -151,7 +151,7 @@ class RBTree
 		template<typename U>
 		struct Adder<false, U>
 		{
-			RBTree<T, Comp, Eq>::iterator operator()(RBTree<T, Comp, Eq> &set, const U &e) {
+			RBTree<T, Comp, Eq>::iterator operator()(RBTree<T, Comp, Eq> &set, const U &e) const {
 				return set.insertCollection(e);
 			}
 		};
@@ -261,7 +261,7 @@ class RBTree
 			}
 			setSize--;
 			Node *td = z;
-			it++;
+			++it;
 			for(uint i = 0; i != 2; i++) {
 				if(z == guard->children[i]) {
 					guard->children[i] = z->parent;
@@ -321,6 +321,7 @@ class RBTree
 			insert(o);
 			return *this;
 		}
+
 
 		RBTree<T, Comp, Eq> &operator=(RBTree<T, Comp, Eq> &&o) {
 			swap(std::move(o));
@@ -428,7 +429,7 @@ class RBTree
 				if(!f(*it)) {
 					it = remove(it);
 				} else {
-					it++;
+					++it;
 				}
 			}
 		}
@@ -452,7 +453,7 @@ class RBTree
 			return n;
 		}
 
-		static Node *getMax(Node *n) {
+		/*static Node *getMax(Node *n) {
 			while(n->children[1]->color) {
 				n = n->children[1];
 			}
@@ -461,7 +462,7 @@ class RBTree
 
 		static Node *sibling(Node *n) {
 			return n->parent->children[n->parent->children[0] == n];
-		}
+		}*/
 
 		static Node *next(Node *x) {
 			if(x->children[1]->color) {

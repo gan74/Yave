@@ -4,13 +4,17 @@
 #include <n/core/Set.h>
 #include <n/core/Timer.h>
 #include <n/test/Test.h>
+#include <n/core/Map.h>
+#include <n/core/Functor.h>
+#include <n/core/SmartPtr.h>
 
 #include <iostream>
 #include <set>
 
+#include <n/mem/Allocator.h>
+
 using namespace n::core;
 using namespace n;
-
 
 struct ComparisonCounter
 {
@@ -32,68 +36,43 @@ struct ComparisonCounter
 	int id;
 };
 
-Array<int> testArray;
-
-template<typename T>
-uint64 testComp(uint max) {
-	T set;
-	uint64 eq = 0;
-	uint64 comp = 0;
-	for(uint i = 0; i != max; i++) {
-		set.insert(ComparisonCounter(&eq, &comp));
+struct IntFunc
+{
+	int operator ()(int i) const {
+		return 3 * i;
 	}
-	return eq + comp;
-}
+};
 
-template<typename T>
-void testSet() {
-	T s;
-	for(int i : testArray) {
-		s.insert(i);
-		if(i % 7 == 0) {
-			s.insert(i);
-		}
-	}
-	return;
-
-
-
-
-
-	int i = 0;
-	for(int e : s) {
-		if(e != i) {
-			nError("!");
-		}
-		i++;
-	}
-	int max = testArray.size();
-	for(int w = 0; w < max; w += w % 3 ? 5 : 13) {
-		auto it = s.find(w);
-		if(it == s.end() || *it != w) {
-			nError("!");
-		}
-	}
-}
-
-void randInit(int max) {
-	testArray.clear();
-	testArray.setCapacity(max);
-	for(int i = 0; i != max; i++) {
-		testArray.append(i);
-	}
-	testArray.shuffle();
-}
 
 int main(int, char **) {
-	uint max = 100000; //3250
-	randInit(max);
-	Timer timer;
-	testSet<Set<int>>();
-	double nset = timer.reset() * 1000;
-	testSet<std::set<int>>();
-	double stdset = timer.reset() * 1000;
-	std::cout<<max<<" insertions :"<<std::endl<<"nset   = "<<nset<<"ms"<<std::endl<<"stdset = "<<stdset<<"ms"<<std::endl;
+	std::cout<<std::boolalpha;
+
+	mem::Allocator<4, 60> alloc;
+	Array<void *> ptrs;
+	uint max = 4096;
+	for(uint i = 0; i != max; i++) {
+
+		void *ptr = 0;
+		ptr = alloc.allocate();
+		ptrs.append(ptr);
+		if(i % 255 == 0 && i) {
+			uint si  = random(ptrs.size() / 2, ptrs.size() / 16);
+			std::cout<<"freeing "<<si<<"/"<<ptrs.size()<<" : "<<std::endl;
+			for(uint w = 0; w != si; w++) {
+				uint in = random(ptrs.size());
+				void *p = ptrs[in];
+				ptrs[in] = ptrs.last();
+				ptrs.pop();
+				alloc.desallocate(p);
+			}
+			std::cout<<"\t"<<ptrs.size()<<" live ptrs : "<<alloc.getChunkCount()<<" chunks ("<<alloc.getChunkCount() * 60<<" blocks)"<<std::endl;
+			std::cout<<"\toptimal = "<<ptrs.size() / 60 + 1<<std::endl<<std::endl;
+		}
+	}
+	std::cout<<"freeing memory...."<<std::endl;
+	for(void *p : ptrs) {
+		alloc.desallocate(p);
+	}
 
 	return 0;
 }

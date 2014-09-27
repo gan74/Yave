@@ -223,7 +223,7 @@ String String::subString(uint beg) const {
 	return subString(beg, length - beg);
 }
 
-bool String::beginWith(const String &s) {
+bool String::beginWith(const String &s) const {
 	if(length < s.length) {
 		return false;
 	}
@@ -241,7 +241,7 @@ bool String::beginWith(const String &s) {
 	return true;
 }
 
-bool String::endWith(const String &s) {
+bool String::endWith(const String &s) const {
 	if(length < s.length) {
 		return false;
 	}
@@ -358,7 +358,7 @@ bool String::operator!=(const char *str) const {
 	return !operator==(str);
 }
 
-const String &String::operator=(const String &s) {
+String &String::operator=(const String &s) {
 	clear();
 	data = s.data;
 	count = s.count;
@@ -370,12 +370,12 @@ const String &String::operator=(const String &s) {
 }
 
 
-const String &String::operator=(String &&s) {
+String &String::operator=(String &&s) {
 	swap(s);
 	return *this;
 }
 
-const String &String::operator=(const Concat &sc) {
+String &String::operator=(const Concat &sc) {
 	char *d = detach(sc.size());
 	length = sc.size();
 	for(const String &str : sc.getTokens()) {
@@ -434,6 +434,7 @@ char *String::detach(uint s) {
 		char *d = (char *)malloc((++s) * sizeof(char));
 		count = new uint(1);
 		memcpy(d, data, std::min(s, length + 1) * sizeof(char));
+		// cppcheck-suppress memleak
 		return data = d;
 	}
 	if(!s) {  // count = 0 at this point
@@ -442,6 +443,7 @@ char *String::detach(uint s) {
 		count = 0;
 		return data = 0;
 	}
+	// cppcheck-suppress memleakOnRealloc
 	return data = (char *)realloc(data, (s + 1) * sizeof(char));
 }
 

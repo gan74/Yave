@@ -28,7 +28,7 @@ bool DataInputStream::canRead() const {
 	return stream->canRead();
 }
 
-uint DataInputStream::readBytes(char *b, uint len) const {
+uint DataInputStream::readBytes(char *b, uint len) {
 	return stream->readBytes(b, len);
 }
 

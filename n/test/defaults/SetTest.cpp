@@ -50,7 +50,7 @@ class SetTest : public TestTemplate<SetTest>
 				test(e, i, "Ordering test failed");
 				i++;
 			}
-			for(T w = 0; w < max; w += w % 3 ? 5 : 13) {
+			for(T w = 0; w < max; w += (w % 3) ? 5 : 13) {
 				auto it = s.find(w);
 				if(test(it == s.end(), false, "Find test failed")) {
 					test(*it, w, "Find result test failed");
