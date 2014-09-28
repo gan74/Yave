@@ -33,7 +33,7 @@ uint DataInputStream::readBytes(char *b, uint len) {
 }
 
 core::String DataInputStream::readLine() {
-	core::Array<char> arr(6);
+	core::Array<char> arr;
 	char c;
 	while(true) {
 		readBytes(&c, 1);
@@ -43,18 +43,21 @@ core::String DataInputStream::readLine() {
 			break;
 		}
 	}
-	arr.append('\0');
-	return core::String(arr.begin(), arr.size());
+	return core::String(arr).replaced("\r", "");
 }
 
-int DataInputStream::readInt() {
-	core::String s = readLine();
-	return atoi(s.toChar());
-}
-
-double DataInputStream::readDouble() {
-	core::String s = readLine();
-	return atof(s.toChar());
+core::String DataInputStream::readBlock() {
+	core::Array<char> arr;
+	char c;
+	while(true) {
+		readBytes(&c, 1);
+		if(!isspace(c)) {
+			arr.append(c);
+		} else {
+			break;
+		}
+	}
+	return core::String(arr);
 }
 
 

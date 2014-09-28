@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_IO_OUTPOUTSTREAM_H
 #define N_IO_OUTPOUTSTREAM_H
 
-#include <n/Types.h>
+#include <n/core/String.h>
 
 namespace n {
 namespace io {
@@ -30,30 +30,23 @@ class OutputStream
 		virtual void flush() = 0;
 };
 
-class DataOutputStream
+class DataOutputStream : public OutputStream
 {
 	public:
 		DataOutputStream(OutputStream *s);
-		bool canWrite() const;
-		void flush();
-		uint writeBytes(const char *b, uint len);
+		bool canWrite() const override;
+		void flush() override;
+		uint writeBytes(const char *b, uint len) override;
 
 		template<typename T>
-		uint write(const T *t, uint len = 1) {
-			return stream->writeBytes((char *)t, len);
+		uint write(const T &t) {
+			core::String s(t);
+			return stream->writeBytes(s.toChar(), s.size());
 		}
 
 		template<typename T>
-		uint writeln(const T *t, uint len = -1) {
-			uint i = stream->writeBytes((char *)t, len == (uint)-1 ? len * sizeof(T) : len);
-			char endl = '\n';
-			i += stream->writeBytes(&endl, 1);
-			return i;
-		}
-
-		template<typename T>
-		DataOutputStream &operator<<(T &t) {
-			write(&t);
+		DataOutputStream &operator<<(const T &t) {
+			write(t);
 			return *this;
 		}
 

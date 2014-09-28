@@ -32,18 +32,18 @@ class File : public IODevice
 		File(const File &) = delete;
 		File &operator=(const File &) = delete;
 
-		bool open(int m);
+		bool open(int m) override;
 		void seek(uint pos);
-		void close();
-		bool isOpen() const;
-		bool atEnd() const;
-		bool canWrite() const;
-		bool canRead() const;
-		void flush();
+		void close() override;
+		bool isOpen() const override;
+		bool atEnd() const override;
+		bool canWrite() const override;
+		bool canRead() const override;
+		void flush() override;
 		uint size() const;
-		int getOpenMode() const;
-		uint writeBytes(const char *b, uint len);
-		uint readBytes(char *b, uint len = -1);
+		int getOpenMode() const override;
+		uint writeBytes(const char *b, uint len) override;
+		uint readBytes(char *b, uint len = -1) override;
 
 
 	private:
