@@ -8,7 +8,7 @@ LIBS += -lpthread
 
 DEFINES += N_DEBUG
 
-QMAKE_CXXFLAGS += -pedantic -Wall -Wextra
+QMAKE_CXXFLAGS += -pedantic
 QMAKE_CXXFLAGS_DEBUG += -pg
 QMAKE_LFLAGS_DEBUG += -pg
 
