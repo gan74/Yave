@@ -38,7 +38,7 @@ bool File::open(int m) {
 				om = std::fstream::out;
 			}
 		}
-		if(m & IODevice::Binary) {
+		/*if(m & IODevice::Binary)*/ {
 			om |= std::fstream::binary;
 		}
 		stream.open(name.toChar(), om);
@@ -71,7 +71,7 @@ bool File::isOpen() const {
 }
 
 bool File::atEnd() const {
-	return stream.tellg() == length;
+	return stream.tellg() >= length;
 }
 
 bool File::canWrite() const {
@@ -103,9 +103,7 @@ uint File::writeBytes(const char *b, uint len) {
 	if(!canWrite()) {
 		return 0;
 	}
-	if(atEnd()) {
-		length += len;
-	}
+	length += std::max((uint)stream.tellg() + len, length);
 	stream.write(b, len);
 	return len;
 }
