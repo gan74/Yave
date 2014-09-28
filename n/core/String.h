@@ -58,6 +58,7 @@ class String
 		{
 			public:
 				Concat(const String &a, const String &b);
+				Concat(const String &a);
 				Concat(const Array<String> &arr);
 
 				uint size() const;
@@ -127,7 +128,7 @@ class String
 		uint getHash() const;
 
 		void replace(const String &oldS, const String &newS);
-		String replaced(const String &oldS, const String &newS) const;
+		Concat replaced(const String &oldS, const String &newS) const;
 		void clear();
 		uint size() const;
 		bool isEmpty() const;
@@ -151,6 +152,8 @@ class String
 
 		operator std::string() const;
 		std::string toStdString() const;
+
+		operator Concat() const;
 
 		template<typename T>
 		Concat operator+(const T &i) const {
@@ -199,6 +202,14 @@ class String
 		String &operator=(const Concat &sc);
 		bool operator<(const String &s) const;
 		operator const char *() const;
+
+		template<typename T>
+		operator T() const {
+			std::istringstream str(toStdString());
+			T t;
+			str>>t;
+			return t;
+		}
 
 	private:
 		char *detach(uint s);

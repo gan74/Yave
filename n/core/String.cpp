@@ -7,9 +7,12 @@
 namespace n {
 namespace core {
 
-String::Concat::Concat(const String &a, const String &b) : tokens(4) {
-	tokens.append(a);
+String::Concat::Concat(const String &a, const String &b) : Concat(a) {
 	tokens.append(b);
+}
+
+String::Concat::Concat(const String &a) : tokens(4) {
+	tokens.append(a);
 }
 
 String::Concat::Concat(const Array<String> &arr) : tokens(arr) {
@@ -106,34 +109,11 @@ String::~String() {
 	}
 }
 
-
-/*void String::replace(const String &oldS, const String &newS) {
-	while(true) {
-		uint index = find(oldS);
-		if(index == (uint)-1) {
-			break;
-		}
-		operator=(subString(0, index) + newS + subString(index + oldS.size()));
-	}
-}
-
-String String::replaced(const String &oldS, const String &newS) const {
-	String str = *this;
-	while(true) {
-		uint index = str.find(oldS);
-		if(index == (uint)-1) {
-			break;
-		}
-		str = str.subString(0, index) + newS + str.subString(index + oldS.size());
-	}
-	return str;
-}*/
-
 void String::replace(const String &oldS, const String &newS) {
 	operator=(replaced(oldS, newS));
 }
 
-String String::replaced(const String &oldS, const String &newS) const {
+String::Concat String::replaced(const String &oldS, const String &newS) const {
 	Array<String> concat;
 	uint index = find(oldS);
 	if(index != (uint)-1) {
@@ -147,7 +127,7 @@ String String::replaced(const String &oldS, const String &newS) const {
 		} while(index != (uint)-1);
 		concat += subString(from);
 	} else {
-		return *this;
+		return Concat(*this);
 	}
 	return Concat(concat);
 }
@@ -306,6 +286,10 @@ String::operator std::string() const {
 
 std::string String::toStdString() const {
 	return std::string(data);
+}
+
+String::operator Concat() const {
+	return Concat(*this);
 }
 
 String &String::operator+=(const String &s) {
