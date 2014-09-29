@@ -40,6 +40,32 @@ struct NullType
 	NullType() = delete;
 };
 
+
+template<bool B>
+struct BoolToType // false
+{
+	static constexpr bool value = B;
+	BoolToType() {}
+	BoolToType(std::false_type) {}
+	operator std::false_type() const {
+		return std::false_type();
+	}
+};
+
+template<>
+struct BoolToType<true>
+{
+	static constexpr bool value = true;
+	BoolToType() {}
+	BoolToType(std::true_type) {}
+	operator std::true_type() const {
+		return std::true_type();
+	}
+};
+
+typedef BoolToType<false> FalseType;
+typedef BoolToType<true> TrueType;
+
 #define N_GEN_TYPE_HAS_MEMBER(className, member) \
 template<typename T> \
 class className { \

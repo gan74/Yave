@@ -63,22 +63,6 @@ class CompactArrayResizePolicy
 template<typename T, typename ResizePolicy = DefaultArrayResizePolicy>
 class Array : private ResizePolicy
 {
-	template<bool C, typename U>
-	struct Adder
-	{
-		Adder(Array<T, ResizePolicy> &array, const U &e) {
-			array.appendOne(e);
-		}
-	};
-
-	template<typename U>
-	struct Adder<false, U>
-	{
-		Adder(Array<T, ResizePolicy> &array, const U &e) {
-			array.appendCollection(e);
-		}
-	};
-
 	public:
 		typedef T * iterator;
 		typedef T const * const_iterator;
@@ -108,7 +92,7 @@ class Array : private ResizePolicy
 
 		template<typename C>
 		void append(const C &c) {
-			Adder<TypeConversion<C, T>::exists, C>(*this, c);
+			appendDispatch(c, BoolToType<TypeConversion<C, T>::exists>());
 		}
 
 		template<typename A, typename B, typename... Args>
@@ -629,7 +613,8 @@ class Array : private ResizePolicy
 			}
 		}
 
-		void appendOne(const T &e) {
+		template<typename C>
+		void appendDispatch(const C &e, TrueType) {
 			if(dataEnd == allocEnd) {
 				expend();
 			}
@@ -637,7 +622,7 @@ class Array : private ResizePolicy
 		}
 
 		template<typename C>
-		void appendCollection(const C &c) {
+		void appendDispatch(const C &c, FalseType) {
 			setMinCapacity(size() + c.size());
 			for(const auto &e : c) {
 				append(e);

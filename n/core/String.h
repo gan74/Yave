@@ -28,31 +28,6 @@ namespace core {
 
 class String
 {
-	template<bool I, typename T>
-	struct Adder
-	{
-		Adder(String &s, const T &t) {
-			std::ostringstream oss;
-			oss<<t;
-			s = oss.str().c_str();
-		}
-	};
-
-	template<typename T>
-	struct Adder<true, T>
-	{
-		Adder(String &s, const T &t) {
-			uint i = t.size();
-			char *str = new char[i];
-			char *cc = str;
-			for(const char c : t) {
-				*cc++ = c;
-			}
-			s = String(str, i);
-			delete[] str;
-		}
-	};
-
 	public:
 		class Concat
 		{
@@ -78,7 +53,7 @@ class String
 
 		template<typename T>
 		String(const T &s) : String() {
-			Adder<TypeConversion<typename AsCollection<T>::ElementType, const char>::exists, T>(*this, s);
+			buildDispatch(s, BoolToType<TypeConversion<typename AsCollection<T>::ElementType, const char>::exists>());
 		}
 
 		String();
@@ -212,6 +187,22 @@ class String
 		}
 
 	private:
+		template<typename T>
+		void buildDispatch(const T &t, FalseType) {
+			std::ostringstream oss;
+			oss<<t;
+			operator=(oss.str().c_str());
+		}
+
+		template<typename T>
+		void buildDispatch(const T &t, TrueType) {
+			detach(length = t.size());
+			char *cc = data;
+			for(const char c : t) {
+				*cc++ = c;
+			}
+		}
+
 		char *detach(uint s);
 
 		uint length;
