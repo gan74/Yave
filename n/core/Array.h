@@ -570,7 +570,7 @@ class Array : private ResizePolicy
 
 	private:
 		void copy(T *dst, const T *src, uint n) {
-			if(TypeInfo<T>::isPrimitive) {
+			if(TypeInfo<T>::isPod) {
 				memcpy(dst, src, sizeof(T) * n);
 			} else {
 				for(; n; n--) {
@@ -580,7 +580,7 @@ class Array : private ResizePolicy
 		}
 
 		void move(T *dst, const T *src, uint n) {
-			if(TypeInfo<T>::isPrimitive) {
+			if(TypeInfo<T>::isPod) {
 				memmove(dst, src, sizeof(T) * n);
 			} else {
 				for(; n; n--) {
@@ -591,7 +591,7 @@ class Array : private ResizePolicy
 
 		void moveBack(T *dst, uint n, uint interval = 1) {
 			n -= interval;
-			if(TypeInfo<T>::isPrimitive) {
+			if(TypeInfo<T>::isPod) {
 				memmove(dst, dst + interval, sizeof(T) * n);
 			} else {
 				for(T *e = dst + n; dst != e; dst++) {
@@ -605,7 +605,7 @@ class Array : private ResizePolicy
 		}
 
 		void clear(T *src, uint n) {
-			if(!TypeInfo<T>::isPrimitive) {
+			if(!TypeInfo<T>::isPod) {
 				for(; n; n--) {
 					(src++)->~T();
 				}
@@ -648,7 +648,7 @@ class Array : private ResizePolicy
 		}
 
 		void setCapacityUnsafe(uint s, uint ns) {
-			if(TypeInfo<T>::isPrimitive) {
+			if(TypeInfo<T>::isPod) {
 				// cppcheck-suppress memleakOnRealloc
 				data = (T *)realloc(data, ns * sizeof(T));
 			} else {

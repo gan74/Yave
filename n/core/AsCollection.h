@@ -57,16 +57,19 @@ class AsCollection
 		template<typename E, typename U>
 		struct TemplateEngineInternal
 		{
+
+			typedef byte Yes[1];
+			typedef byte No[2];
 			template<typename V, template<typename...> class C>
-			static internal::Yes &test(C<V> &);
+			static Yes &test(C<V> &);
 
 			template<typename... A>
-			static internal::No &test(...);
+			static No &test(...);
 
 			template<typename O>
 			static O &makeOne();
 
-			static constexpr bool isTemplate = sizeof(test(makeOne<U>())) == sizeof(internal::Yes);
+			static constexpr bool isTemplate = sizeof(test(makeOne<U>())) == sizeof(Yes);
 
 			template<typename N, typename V, template<typename...> class C>
 			static C<N> changeContentType(C<V> &);

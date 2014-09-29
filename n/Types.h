@@ -40,124 +40,118 @@ struct NullType
 	NullType() = delete;
 };
 
+#define N_GEN_TYPE_HAS_MEMBER(className, member) \
+template<typename T> \
+class className { \
+	typedef byte Yes[1]; \
+	typedef byte No[2]; \
+	template<typename U, bool B> \
+	struct SFINAE { \
+		struct Fallback { int member; }; \
+		struct Derived : T, Fallback { }; \
+		template<class V> \
+		static No &test(decltype(V::member) *); \
+		template<typename V> \
+		static Yes &test(V *); \
+		static constexpr bool value = sizeof(test<Derived>(0)) == sizeof(Yes); \
+	}; \
+	template<typename U> \
+	struct SFINAE<U, true> { \
+		static constexpr bool value = false; \
+	}; \
+	static constexpr bool isPrimitive = !std::is_class<T>::value && !std::is_union<T>::value; \
+	public: \
+		static constexpr bool value = SFINAE<T, isPrimitive>::value; \
+};
+
+#define N_GEN_TYPE_HAS_METHOD(className, method) \
+template<typename T, typename R, typename... Args> \
+class className { \
+	template<typename U, bool B> \
+	struct SFINAE { \
+		template<typename V> \
+		static auto test(V *) -> typename std::is_same<decltype(std::declval<V>().method(std::declval<Args>()... )), R>::type; \
+		template<typename V> \
+		static std::false_type test(...); \
+		typedef decltype(test<U>(0)) type; \
+	}; \
+	template<typename U> \
+	struct SFINAE<U, true> { \
+		typedef std::false_type type; \
+	}; \
+	public: \
+		static constexpr bool value = SFINAE<T, std::is_fundamental<T>::value>::type::value; \
+};
+
 namespace internal {
-typedef byte Yes[1];
-typedef byte No[2];
+	N_GEN_TYPE_HAS_MEMBER(IsConstIterable, const_iterator)
+	N_GEN_TYPE_HAS_MEMBER(IsNonConstIterable, iterator)
 
-template<typename T, bool P>
-struct IsNonConstIterable
-{
-	static constexpr bool value = false;
-};
+	template<typename T, bool P>
+	struct TypeContentInternal // P = false
+	{
+		typedef NullType type;
+	};
 
-template<typename T>
-struct IsNonConstIterable<T, false>
-{
-	private:
-		struct Fallback { int iterator; };
-		struct Derived : T, Fallback { };
+	template<typename T>
+	struct TypeContentInternal<T *, true>
+	{
+		typedef T type;
+	};
 
-		template<class U>
-		static No &test(decltype(U::iterator) *);
+	template<typename T>
+	struct TypeContentInternal<T, false>
+	{
+		typedef decltype(((T *)0)->operator*()) type;
+	};
 
-		template<typename U>
-		static Yes &test(U *);
+	template<typename T, bool P>
+	struct IsDereferencable // P = false
+	{
+		private:
+			typedef byte Yes[1];
+			typedef byte No[2];
+			template<typename U>
+			static Yes &test(decltype(&U::operator*));
+			static No &test(...);
+		public:
+			static constexpr bool value = sizeof(test(0)) == sizeof(Yes);
+	};
 
-	public:
-		static constexpr bool value = sizeof(test<Derived>(0)) == sizeof(Yes);
-};
-
-
-
-template<typename T, bool P>
-struct IsConstIterable
-{
-	static constexpr bool value = false;
-};
-
-
-template<typename T>
-struct IsConstIterable<T, false>
-{
-	private:
-		struct Fallback { int const_iterator; };
-		struct Derived : T, Fallback { };
-
-		template<class U>
-		static No &test(decltype(U::const_iterator) *);
-
-		template<typename U>
-		static Yes &test(U *);
-
-	public:
-		static constexpr bool value = sizeof(test<Derived>(0)) == sizeof(Yes);
-};
-
-template<typename T, bool P>
-struct TypeContentInternal // P = false
-{
-	typedef NullType type;
-};
-
-template<typename T>
-struct TypeContentInternal<T *, true>
-{
-	typedef T type;
-};
-
-template<typename T>
-struct TypeContentInternal<T, false>
-{
-	typedef decltype(((T *)0)->operator*()) type;
-};
-
-template<typename T, bool P>
-struct IsDereferencableInternal // P = false
-{
-	private:
-		template<typename U>
-		static Yes &test(decltype(&U::operator*));
-
-		static No &test(...);
-
-	public:
-		static constexpr bool value = sizeof(test(0)) == sizeof(Yes);
-};
-
-template<typename T>
-struct IsDereferencableInternal<T, true>
-{
-	static constexpr bool value = false;
-};
-
+	template<typename T>
+	struct IsDereferencable<T, true>
+	{
+		static constexpr bool value = false;
+	};
 }
 
 template<typename From, typename To> // U from T
-struct TypeConversion
+class TypeConversion
 {
-	private:
-		static internal::Yes &test(To);
-		static internal::No &test(...);
+	typedef byte Yes[1];
+	typedef byte No[2];
+	static Yes &test(To);
+	static No &test(...);
 
-		static From &from();
-
+	static From &from();
 	public:
-		static constexpr bool exists = sizeof(test(from())) == sizeof(internal::Yes);
+		static constexpr bool exists = sizeof(test(from())) == sizeof(Yes);
 
 };
 
 template<typename T>
 struct TypeInfo
 {
-	static constexpr bool isPrimitive = std::is_trivial<T>::value;
+	static constexpr bool isPrimitive = std::is_fundamental<T>::value;// !std::is_class<T>::value && !std::is_union<T>::value;
+	static constexpr bool isPod = std::is_trivial<T>::value || isPrimitive;
 	static constexpr bool isPointer = false;
 	static constexpr bool isConst = false;
 	static constexpr bool isRef = false;
 
-	static constexpr bool isNonConstIterable = internal::IsNonConstIterable<T, isPrimitive>::value;
-	static constexpr bool isIterable = internal::IsConstIterable<T, isPrimitive>::value || isNonConstIterable;
+	static constexpr bool isNonConstIterable = internal::IsNonConstIterable<T>::value;
+	static constexpr bool isIterable = internal::IsConstIterable<T>::value || isNonConstIterable;
 
-	static constexpr bool isDereferencable = internal::IsDereferencableInternal<T, isPrimitive>::value;
+	static constexpr bool isDereferencable = internal::IsDereferencable<T, isPod>::value;
 
 	static const uint baseId;
 	static const uint id;
@@ -167,12 +161,11 @@ struct TypeInfo
 	typedef T nonPtr;
 };
 
-
-
 template<typename T>
 struct TypeInfo<T *>
 {
-	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
+	static constexpr bool isPod = TypeInfo<T>::isPod;
+	static constexpr bool isPrimitive = true;
 	static constexpr bool isPointer = true;
 	static constexpr bool isConst = TypeInfo<T>::isConst;
 	static constexpr bool isRef = TypeInfo<T>::isRef;
@@ -192,6 +185,7 @@ struct TypeInfo<T *>
 template<typename T>
 struct TypeInfo<const T>
 {
+	static constexpr bool isPod = TypeInfo<T>::isPod;
 	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
 	static constexpr bool isPointer = TypeInfo<T>::isPointer;
 	static constexpr bool isConst = true;
@@ -200,7 +194,7 @@ struct TypeInfo<const T>
 	static const uint id;
 
 	static constexpr bool isNonConstIterable = false;
-	static constexpr bool isIterable = internal::IsConstIterable<T, isPrimitive>::value;
+	static constexpr bool isIterable = internal::IsConstIterable<T>::value;
 
 	static constexpr bool isDereferencable = TypeInfo<T>::isDereferencable;
 
@@ -212,6 +206,7 @@ struct TypeInfo<const T>
 template<typename T>
 struct TypeInfo<T &>
 {
+	static constexpr bool isPod = TypeInfo<T>::isPod;
 	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
 	static constexpr bool isPointer = TypeInfo<T>::isPointer;
 	static constexpr bool isConst = TypeInfo<T>::isConst;
@@ -223,6 +218,48 @@ struct TypeInfo<T &>
 	static constexpr bool isIterable = TypeInfo<T>::isIterable;
 
 	static constexpr bool isDereferencable = TypeInfo<T>::isDereferencable;
+
+	typedef T nonRef;
+	typedef typename TypeInfo<T>::nonConst &nonConst;
+	typedef typename TypeInfo<T>::nonPtr &nonPtr;
+};
+
+template<typename T>
+struct TypeInfo<T[]>
+{
+	static constexpr bool isPod = TypeInfo<T>::isPod;
+	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
+	static constexpr bool isPointer = false;
+	static constexpr bool isConst = TypeInfo<T>::isConst;
+	static constexpr bool isRef = false;
+	static const uint baseId;
+	static const uint id;
+
+	static constexpr bool isNonConstIterable = false;
+	static constexpr bool isIterable = false;
+
+	static constexpr bool isDereferencable = true;
+
+	typedef T nonRef;
+	typedef typename TypeInfo<T>::nonConst &nonConst;
+	typedef typename TypeInfo<T>::nonPtr &nonPtr;
+};
+
+template<typename T, uint N>
+struct TypeInfo<T[N]>
+{
+	static constexpr bool isPod = TypeInfo<T>::isPod;
+	static constexpr bool isPrimitive = TypeInfo<T>::isPrimitive;
+	static constexpr bool isPointer = false;
+	static constexpr bool isConst = TypeInfo<T>::isConst;
+	static constexpr bool isRef = false;
+	static const uint baseId;
+	static const uint id;
+
+	static constexpr bool isNonConstIterable = false;
+	static constexpr bool isIterable = false;
+
+	static constexpr bool isDereferencable = true;
 
 	typedef T nonRef;
 	typedef typename TypeInfo<T>::nonConst &nonConst;
@@ -251,9 +288,14 @@ template<typename T>
 const uint TypeInfo<T &>::baseId = TypeInfo<T>::baseId;
 
 template<typename T>
+const uint TypeInfo<T[]>::id = typeId++;
+template<typename T>
+const uint TypeInfo<T[]>::baseId = TypeInfo<T>::baseId;
+
+template<typename T>
 struct TypeContent
 {
-	typedef typename internal::TypeContentInternal<T, TypeInfo<T>::isPrimitive || !TypeInfo<T>::isDereferencable>::type type;
+	typedef typename internal::TypeContentInternal<T, TypeInfo<T>::isPod || !TypeInfo<T>::isDereferencable>::type type;
 };
 
 
