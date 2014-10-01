@@ -606,13 +606,6 @@ class List
 			}
 		}
 
-		template<typename V, typename U>
-		V foldRight(const U &f, V def = V(0)) {
-			V acc(def);
-			foreach([&](const T &t) { acc = f(t, acc); });
-			return acc;
-		}
-
 	private:
 		void append() {
 		}

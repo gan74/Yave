@@ -527,13 +527,6 @@ class Array : private ResizePolicy
 			setCapacity(it - begin());
 		}
 
-		template<typename V, typename U>
-		V foldRight(const U &f, V def = V(0)) {
-			V acc(def);
-			foreach([&](const T &t) { acc = f(t, acc); });
-			return acc;
-		}
-
 		void shuffle() {
 			uint s = size();
 			for(uint i = 0; i != s; i++) {
