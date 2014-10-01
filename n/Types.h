@@ -67,14 +67,14 @@ typedef BoolToType<false> FalseType;
 typedef BoolToType<true> TrueType;
 
 #define N_GEN_TYPE_HAS_MEMBER(className, member) \
-template<typename T> \
+template<typename HasMemberType> \
 class className { \
 	typedef byte Yes[1]; \
 	typedef byte No[2]; \
 	template<typename U, bool B> \
 	struct SFINAE { \
 		struct Fallback { int member; }; \
-		struct Derived : T, Fallback { }; \
+		struct Derived : HasMemberType, Fallback { }; \
 		template<class V> \
 		static No &test(decltype(V::member) *); \
 		template<typename V> \
@@ -85,18 +85,18 @@ class className { \
 	struct SFINAE<U, true> { \
 		static constexpr bool value = false; \
 	}; \
-	static constexpr bool isPrimitive = !std::is_class<T>::value && !std::is_union<T>::value; \
+	static constexpr bool isPrimitive = !std::is_class<HasMemberType>::value && !std::is_union<HasMemberType>::value; \
 	public: \
-		static constexpr bool value = SFINAE<T, isPrimitive>::value; \
+		static constexpr bool value = SFINAE<HasMemberType, isPrimitive>::value; \
 };
 
 #define N_GEN_TYPE_HAS_METHOD(className, method) \
-template<typename T, typename R, typename... Args> \
+template<typename HasMethodType, typename HasMethodRetType, typename... HasMethodArgsType> \
 class className { \
 	template<typename U, bool B> \
 	struct SFINAE { \
 		template<typename V> \
-		static auto test(V *) -> typename std::is_same<decltype(std::declval<V>().method(std::declval<Args>()... )), R>::type; \
+		static auto test(V *) -> typename std::is_same<decltype(std::declval<V>().method(std::declval<HasMethodArgsType>()...)), HasMethodRetType>::type; \
 		template<typename V> \
 		static std::false_type test(...); \
 		typedef decltype(test<U>(0)) type; \
@@ -106,7 +106,7 @@ class className { \
 		typedef std::false_type type; \
 	}; \
 	public: \
-		static constexpr bool value = SFINAE<T, std::is_fundamental<T>::value>::type::value; \
+		static constexpr bool value = SFINAE<HasMethodType, std::is_fundamental<HasMethodType>::value>::type::value; \
 };
 
 namespace internal {
