@@ -137,6 +137,7 @@ namespace internal {
 		private:
 			typedef byte Yes[1];
 			typedef byte No[2];
+
 			template<typename U>
 			static Yes &test(decltype(&U::operator*));
 			static No &test(...);
@@ -190,7 +191,7 @@ struct TypeInfo
 template<typename T>
 struct TypeInfo<T *>
 {
-	static constexpr bool isPod = TypeInfo<T>::isPod;
+	static constexpr bool isPod = true;
 	static constexpr bool isPrimitive = true;
 	static constexpr bool isPointer = true;
 	static constexpr bool isConst = TypeInfo<T>::isConst;

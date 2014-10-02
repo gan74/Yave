@@ -37,11 +37,6 @@ namespace internal {
 	N_GEN_TYPE_HAS_METHOD(HasForall, forall)
 	N_GEN_TYPE_HAS_METHOD(HasMap, map)
 	N_GEN_TYPE_HAS_METHOD(HasFilter, filter)
-
-	N_GEN_TYPE_HAS_METHOD(HasShuffled, shuffled)
-	N_GEN_TYPE_HAS_METHOD(HasReversed, reversed)
-	N_GEN_TYPE_HAS_METHOD(HasShuffle, shuffle)
-	N_GEN_TYPE_HAS_METHOD(HasReverse, reverse)
 }
 
 template<typename T>
@@ -144,6 +139,9 @@ class AsCollection
 		AsCollection(T &t) : collection(t) {
 		}
 
+		AsCollection() {
+		}
+
 		AsCollection(const AsCollection<T> &) = delete;
 
 		template<typename... Args>
@@ -219,26 +217,6 @@ class AsCollection
 		template<typename... Args, typename C = typename MappedType<Args...>::type>
 		C mapped(Args... f) const {
 			return mappedDispatch<C, Args...>(BoolToType<internal::HasMapped<T, C, Args...>::value>(), f...);
-		}
-
-		template<typename... Args>
-		void shuffle(Args... f) {
-			return shuffleDispatch(BoolToType<internal::HasShuffle<T, void, Args...>::value>(), f...);
-		}
-
-		template<typename... Args>
-		void reverse(Args... f) {
-			return reverseDispatch(BoolToType<internal::HasReverse<T, void, Args...>::value>(), f...);
-		}
-
-		template<typename... Args, typename C = T>
-		C shuffled(Args... f) {
-			return shuffledDispatch<C, Args...>(BoolToType<internal::HasShuffled<T, C, Args...>::value>(), f...);
-		}
-
-		template<typename... Args, typename C = T>
-		C reversed(Args... f) {
-			return reversedDispatch<C, Args...>(BoolToType<internal::HasReversed<T, C, Args...>::value>(), f...);
 		}
 
 	private:
@@ -319,24 +297,146 @@ class AsCollection
 			return collection.template mapped<Args...>(f...);
 		}
 
-		template<typename... Args>
-		void reverseDispatch(TrueType, Args... f) {
-			collection.reverse(f...);
+		//--------------- defaults ---------------
+
+		bool isSortedDispatch(FalseType) const {
+			const_iterator l = collection.begin();
+			for(const_iterator it = ++collection.begin(); it != collection.end(); it++) {
+				if(*it < *l) {
+					return false;
+				}
+				l = it;
+			}
+			return true;
 		}
 
-		template<typename... Args>
-		void shuffleDispatch(TrueType, Args... f) {
-			collection.shuffle(f...);
+		template<typename U>
+		iterator findOneDispatch(FalseType, const U &f, const_iterator from) {
+			for(iterator i = const_cast<iterator>(from); i != collection.end(); i++) {
+				if(f(*i)) {
+					return i;
+				}
+			}
+			return collection.end();
 		}
 
-		template<typename C, typename... Args>
-		C reversedDispatch(TrueType, Args... f) const {
-			return collection.template reversed<Args..., C>(f...);
+		template<typename U>
+		const_iterator findOneDispatch(FalseType, const U &f, const_iterator from) const {
+			for(const_iterator i = from; i != collection.end(); i++) {
+				if(f(*i)) {
+					return i;
+				}
+			}
+			return collection.end();
 		}
 
-		template<typename C, typename... Args>
-		C shuffledDispatch(TrueType, Args... f) const {
-			return collection.template shuffled<Args..., C>(f...);
+		template<typename U>
+		uint countAllDispatch(FalseType, const U &f) const {
+			uint c = 0;
+			for(const_iterator i = collection.begin(); i != collection.end(); i++) {
+				if(f(*i)) {
+					c++;
+				}
+			}
+			return c;
+		}
+
+		template<typename V>
+		bool existsOneDispatch(FalseType, const V &f) const {
+			for(const_iterator i = collection.begin(); i != collection.end(); i++) {
+				if(f(*i)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		template<typename U>
+		iterator findDispatch(FalseType, const U &f, const_iterator from) {
+			return findOne(f, from);
+		}
+
+		template<typename U>
+		const_iterator findDispatch(FalseType, const U &f, const_iterator from) const {
+			return findOne(f, from);
+		}
+
+		template<typename U>
+		uint countDispatch(FalseType, const U &f) const {
+			return countAll(f);
+		}
+
+		template<typename V>
+		bool existsDispatch(FalseType, const V &f) const {
+			return existsOne(f);
+		}
+
+		iterator findDispatch(FalseType, const ElementType &e) {
+			return findOne([&](const ElementType &t) { return t == e; }, collection.begin());
+		}
+
+		iterator findDispatch(FalseType, const ElementType &e, const_iterator from) {
+			return findOne([&](const ElementType &t) { return t == e; }, from);
+		}
+
+		const_iterator findDispatch(FalseType, const ElementType &e) const {
+			return findOne([&](const ElementType &t) { return t == e; }, collection.begin());
+		}
+
+		const_iterator findDispatch(FalseType, const ElementType &e, const_iterator from) const {
+			return findOne([&](const ElementType &t) { return t == e; }, from);
+		}
+
+		uint countDispatch(FalseType, const ElementType &e) const {
+			return countAll([&](const ElementType &t) { return t == e; });
+		}
+
+		bool existsDispatch(FalseType, const ElementType &e) const {
+			return existsOne([&](const ElementType &t) { return t == e; });
+		}
+
+		template<typename C, typename V>
+		C mappedDispatch(FalseType, const V &f) const {
+			C a;
+			foreach([&](const ElementType &e) { a.insert(f(e)); });
+			return a;
+		}
+
+		template<typename C, typename U>
+		C filteredDispatch(FalseType, const U &f) const {
+			C a;
+			foreach([&](const ElementType &e) {
+				if(f(e)) {
+					a.insert(e);
+				}
+			});
+			return a;
+		}
+
+		template<typename U>
+		bool forallDispatch(FalseType, const U &f) const {
+			for(const ElementType &t : *this) {
+				if(!f(t)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		template<typename V>
+		void mapDispatch(FalseType, const V &f) {
+			std::for_each(collection.begin(), collection.end(), [&](T &e) { e = f(e); });
+		}
+
+		template<typename U>
+		void filterDispatch(FalseType, const U &f) {
+			for(iterator it = collection.begin(); it != collection.end();) {
+				if(!f(*it)) {
+					it = collection.remove(it);
+				} else {
+					++it;
+				}
+			}
 		}
 
 

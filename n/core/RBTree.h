@@ -322,7 +322,6 @@ class RBTree
 			return *this;
 		}
 
-
 		RBTree<T, Comp, Eq> &operator=(RBTree<T, Comp, Eq> &&o) {
 			swap(std::move(o));
 			return *this;
