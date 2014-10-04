@@ -71,8 +71,7 @@ class Array : private ResizePolicy
 		}
 
 		template<typename C>
-		Array(const C &o) : Array(o.size()) {
-			append(o);
+		Array(const C &c) : Array((uint)c.size()) {
 		}
 
 		Array(uint s) : Array() {
@@ -359,6 +358,11 @@ class Array : private ResizePolicy
 
 		bool isValid(const_iterator i) const {
 			return i >= data && i < dataEnd;
+		}
+
+		template<typename C = std::less<T>>
+		void sort() {
+			std::sort(begin(), end(), C());
 		}
 
 		bool isSorted() const {
