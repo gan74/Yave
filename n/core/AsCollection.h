@@ -133,6 +133,8 @@ class AsCollection
 		typedef typename InternalType::iterator iterator;
 		typedef typename InternalType::type ElementType;
 
+		static constexpr bool isCollection = std::is_same<ElementType, NullType>::value;
+
 		AsCollection(const T &t) : collection(t) {
 		}
 
@@ -438,8 +440,6 @@ class AsCollection
 				}
 			}
 		}
-
-
 };
 
 }
