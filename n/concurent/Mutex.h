@@ -24,45 +24,51 @@ namespace concurent {
 
 class Thread;
 
-class Signal
+class WaitCondition
 {
 	public:
-		Signal();
+		WaitCondition();
 
-		Signal(const Signal &) = delete;
+		WaitCondition(const WaitCondition &) = delete;
 
 		void notify();
 		void notifyAll();
 
 	private:
 		friend class Mutex;
-		pthread_cond_t signal;
+		pthread_cond_t condition;
 };
 
 class Mutex
 {
 	public:
-		Mutex();
+		enum RecursionMode
+		{
+			Recursive,
+			NonRecursive
+		};
+
+		Mutex(RecursionMode r = NonRecursive);
 
 		void lock();
 		void unlock();
 		bool trylock();
 
-		void wait() { wait(signal); }
-		bool wait(double sec)  { return wait(sec, signal); }
-		void notify() { notify(signal); }
-		void notifyAll() { notifyAll(signal); }
+		void wait() { wait(condition); }
+		bool wait(double sec)  { return wait(sec, condition); }
+		void notify() { notify(condition); }
+		void notifyAll() { notifyAll(condition); }
 
-		void wait(Signal &sig);
-		bool wait(double sec, Signal &sig);
-		void notify(Signal &sig);
-		void notifyAll(Signal &sig);
+		void wait(WaitCondition &cond);
+		bool wait(double sec, WaitCondition &cond);
+		void notify(WaitCondition &cond);
+		void notifyAll(WaitCondition &cond);
 
 	private:
 		void checkLockedByThread() const;
 
 		pthread_mutex_t mutex;
-		Signal signal;
+		WaitCondition condition;
 		Thread *thread;
 };
 

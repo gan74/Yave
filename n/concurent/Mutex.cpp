@@ -23,19 +23,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace concurent {
 
-Signal::Signal() : signal(PTHREAD_COND_INITIALIZER) {
+WaitCondition::WaitCondition() : condition(PTHREAD_COND_INITIALIZER) {
 }
 
-void Signal::notify() {
-	pthread_cond_signal(&signal);
+void WaitCondition::notify() {
+	pthread_cond_signal(&condition);
 }
 
-void Signal::notifyAll() {
-	pthread_cond_broadcast(&signal);
+void WaitCondition::notifyAll() {
+	pthread_cond_broadcast(&condition);
 }
 
 
-Mutex::Mutex() : mutex(PTHREAD_MUTEX_INITIALIZER), thread(0) {
+Mutex::Mutex(RecursionMode r) : mutex(r == NonRecursive ?  PTHREAD_MUTEX_INITIALIZER : PTHREAD_RECURSIVE_MUTEX_INITIALIZER), thread(0) {
 }
 
 void Mutex::lock() {
@@ -56,28 +56,28 @@ void Mutex::unlock() {
 	pthread_mutex_unlock(&mutex);
 }
 
-void Mutex::wait(Signal &sig) {
+void Mutex::wait(WaitCondition &cond) {
 	checkLockedByThread();
-	pthread_cond_wait(&(sig.signal), &mutex);
+	pthread_cond_wait(&(cond.condition), &mutex);
 }
 
-bool Mutex::wait(double sec, Signal &sig) {
+bool Mutex::wait(double sec, WaitCondition &cond) {
 	checkLockedByThread();
 	timespec timer;
 	timer.tv_nsec = time(0) + (long)(sec * 1000000000);
-	int err = pthread_cond_timedwait(&(sig.signal), &mutex, &timer);
+	int err = pthread_cond_timedwait(&(cond.condition), &mutex, &timer);
 	if(err && err == ETIMEDOUT) {
 		return true;
 	}
 	return false;
 }
 
-void Mutex::notify(Signal &sig) {
-	sig.notify();
+void Mutex::notify(WaitCondition &cond) {
+	cond.notify();
 }
 
-void Mutex::notifyAll(Signal &sig) {
-	sig.notifyAll();
+void Mutex::notifyAll(WaitCondition &cond) {
+	cond.notifyAll();
 }
 
 void Mutex::checkLockedByThread() const {
