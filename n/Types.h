@@ -168,7 +168,7 @@ class TypeConversion
 template<typename T>
 struct TypeInfo
 {
-	static constexpr bool isPrimitive = std::is_fundamental<T>::value;// !std::is_class<T>::value && !std::is_union<T>::value;
+	static constexpr bool isPrimitive = !std::is_class<T>::value && !std::is_union<T>::value;
 	static constexpr bool isPod = std::is_trivial<T>::value || isPrimitive;
 	static constexpr bool isPointer = false;
 	static constexpr bool isConst = false;
@@ -317,6 +317,11 @@ template<typename T>
 const uint TypeInfo<T[]>::id = typeId++;
 template<typename T>
 const uint TypeInfo<T[]>::baseId = TypeInfo<T>::baseId;
+
+template<typename T, uint N>
+const uint TypeInfo<T[N]>::id = typeId++;
+template<typename T, uint N>
+const uint TypeInfo<T[N]>::baseId = TypeInfo<T>::baseId;
 
 template<typename T>
 struct TypeContent
