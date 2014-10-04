@@ -26,6 +26,11 @@ namespace concurent {
 class PtrLock
 {
 	public:
+		Mutex *getMutex() {
+			return mutex;
+		}
+
+	protected:
 		PtrLock() : mutex(0) {
 		}
 
