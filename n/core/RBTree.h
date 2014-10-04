@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_RBTREE_H
 
 #include <n/Types.h>
-#include <iostream>
 #include <algorithm>
 
 namespace n {

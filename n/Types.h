@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdlib>
 #include <type_traits>
 #include <typeinfo>
-#include <iostream>
 
 namespace n {
 
