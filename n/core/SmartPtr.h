@@ -40,8 +40,9 @@ class NoProxy
 class NoLock
 {
 	public:
+		void swap(const NoLock &) {}
 		void ref(const NoLock &) {}
-		void unref() {}
+		void unref(bool) {}
 		void lock() {}
 		void unlock() {}
 };
@@ -89,8 +90,9 @@ class SmartPtr : private LockingPolicy
 			ptr = p.ptr;
 			p.ptr = pt;
 			p.count = c;
-			p.unlock();
+			LockingPolicy::swap(p);
 			this->unlock();
+			p.unlock();
 		}
 
 		bool isNull() const {
@@ -169,15 +171,17 @@ class SmartPtr : private LockingPolicy
 		}
 
 		void unref() {
+			bool d = false;
 			this->lock();
 			if(count && !--(*count)) {
 				delete ptr;
 				delete count;
+				d = true;
 			}
 			ptr = 0;
 			count = 0;
 			this->unlock();
-			LockingPolicy::unref();
+			LockingPolicy::unref(d);
 		}
 
 		T *ptr;
