@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace concurent {
 
+template<bool Rec = false>
 class PtrLock
 {
 	public:
@@ -31,7 +32,7 @@ class PtrLock
 		}
 
 	protected:
-		PtrLock() : mutex(0) {
+		PtrLock() : PtrLock(BoolToType<Rec>()) {
 		}
 
 		PtrLock(const PtrLock &p) : mutex(0) {
@@ -68,11 +69,17 @@ class PtrLock
 		}
 
 	private:
+		PtrLock(FalseType) : mutex(new Mutex()) {
+		}
+
+		PtrLock(TrueType) : mutex(new Mutex(Mutex::Recursive)) {
+		}
+
 		Mutex *mutex;
 };
 
 template<typename T, typename Proxy = core::NoProxy<T>>
-using MultiThreadPtr = core::SmartPtr<T, Proxy, PtrLock>;
+using MultiThreadPtr = core::SmartPtr<T, Proxy, PtrLock<false>>;
 
 }
 }

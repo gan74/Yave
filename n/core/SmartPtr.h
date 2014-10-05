@@ -81,6 +81,10 @@ class SmartPtr : private LockingPolicy
 			this->unlock();
 		}
 
+		LockingPolicy &getLockingPolicy() {
+			return *((LockingPolicy *)this);
+		}
+
 		void swap(SmartPtr<T, Proxy, LockingPolicy> &p) {
 			p.lock();
 			this->lock();
@@ -164,7 +168,7 @@ class SmartPtr : private LockingPolicy
 			LockingPolicy::ref(p);
 			this->lock();
 			ptr = p.ptr;
-			if(count = p.count) {
+			if((count = p.count)) {
 				(*count)++;
 			}
 			this->unlock();
