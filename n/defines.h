@@ -17,6 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_DEFINES
 #define N_DEFINES
 
+namespace n {
+void fatal(const char *msg, const char *file = 0, int line = 0);
+}
+
 /* defines stuffs here */
 
 #define N_PI 3.1415926535897932384626433832795028841971693993751058
@@ -24,9 +28,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define nUnused(var) (void)(var)
 
 #ifdef N_DEBUG
-#define nError(msg) std::cerr<<((msg))<<" in "<<__FILE__<<" at line : "<<__LINE__<<std::endl; exit(1)
+#define nError(msg) n::fatal((msg), __FILE__, __LINE__)
 #else
-#define nError(msg) std::cerr<<((msg))<<std::endl; exit(1)
+#define nError(msg) n::fatal((msg))
 #endif
 
 #ifndef __GNUC__

@@ -1,8 +1,22 @@
 #include "utils.h"
 #include <n/defines.h>
 #include <ctime>
+#include <iostream>
 
 namespace n {
+
+void fatal(const char *msg, const char *file, int line) {
+	std::cerr<<msg;
+	if(file) {
+		std::cerr<<" in file "<<file;
+		if(line) {
+			std::cerr<<" at line "<<line;
+		}
+	}
+	std::cerr<<std::endl;
+	exit(1);
+}
+
 namespace core {
 
 const void *null = 0;
