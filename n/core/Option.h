@@ -74,6 +74,10 @@ class Option
 			return val;
 		}
 
+		const T &getValue(const T &def) const {
+			return hasVal ? val : def;
+		}
+
 		operator bool() const {
 			return hasVal;
 		}
