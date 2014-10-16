@@ -44,6 +44,25 @@ void fatal(const char *msg, const char *file = 0, int line = 0);
 #endif
 
 
+/****************** OS DEFINES BELOW ******************/
+
+#ifdef __WIN32
+#define N_OS_WIN
+#endif
+
+#ifdef __WIN32__
+#define N_OS_WIN
+#endif
+
+#ifdef WIN32
+#define N_OS_WIN
+#endif
+
+#ifdef _WINDOWS
+#define N_OS_WIN
+#endif
+
+
 
 /****************** COMPILATION DEFINES BELOW ******************/
 
