@@ -89,10 +89,10 @@ void *Thread::threadCreate(void *arg) {
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
 	self->run();
 	self->running = false;
-	pthread_exit(0);
 	if(self->willBeDeleted()) {
 		delete self;
 	}
+	pthread_exit(0);
 	return 0;
 }
 
