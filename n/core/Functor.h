@@ -99,6 +99,8 @@ class Functor
 	};
 
 	public:
+		typedef R ReturnType;
+
 		template<typename T>
 		Functor(const T &t) : func(new Func<T>(t)) {
 		}
@@ -111,11 +113,11 @@ class Functor
 			return n::internal::TupleProxy<R, sizeof...(Args)>::apply(this, args);
 		}
 
-		Functor<R> curry(Args... args) const {
+		Functor<R> curried(Args... args) const {
 			return Functor<R>(Curry(*this, args...));
 		}
 
-		Functor<R> curry(std::tuple<Args...> args) const {
+		Functor<R> curried(std::tuple<Args...> args) const {
 			return Functor<R>(Curry(*this, args));
 		}
 
