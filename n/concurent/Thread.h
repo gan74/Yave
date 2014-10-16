@@ -31,10 +31,9 @@ class Thread
 	public:
 		Thread();
 		Thread(const Thread &) = delete;
+		Thread& operator=(const Thread &) = delete;
 
 		virtual ~Thread();
-
-		virtual void run() = 0;
 
 		static Thread *getCurrent();
 
@@ -46,6 +45,8 @@ class Thread
 		bool willBeDeleted() const;
 		static void sleep(double sec);
 
+	protected:
+		virtual void run() = 0;
 
 	private:
 		static void *threadCreate(void *arg);

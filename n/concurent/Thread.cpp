@@ -60,9 +60,6 @@ void Thread::kill() {
 }
 
 void Thread::join() const {
-	if(!running) {
-		return;
-	}
 	pthread_join(*(pthread_t *)handle, 0);
 }
 
@@ -85,8 +82,8 @@ void *Thread::threadCreate(void *arg) {
 	} else {
 		self->timer->reset();
 	}
-	self->running = true;
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
+	self->running = true;
 	self->run();
 	self->running = false;
 	if(self->willBeDeleted()) {
