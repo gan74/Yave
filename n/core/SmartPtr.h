@@ -68,17 +68,12 @@ class SmartPtr : private LockingPolicy
 		SmartPtr(T *&&p = 0) : LockingPolicy(), ptr(p), count(ptr ? new uint(1) : 0) {
 		}
 
-		SmartPtr(const SmartPtr<T, Proxy, LockingPolicy> &p) {
+		SmartPtr(const SmartPtr<T, Proxy, LockingPolicy> &p) : LockingPolicy(), ptr(0), count(0) {
 			ref(p);
 		}
 
 		~SmartPtr() {
-			this->lock();
-			if(count && !--(*count)) {
-				delete ptr;
-				delete count;
-			}
-			this->unlock();
+			unref();
 		}
 
 		LockingPolicy &getLockingPolicy() {
