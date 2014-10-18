@@ -59,7 +59,7 @@ class ThreadPool : private ThreadNumberPolicy
 			}
 
 		protected:
-			virtual void run() override {
+			void run() override {
 				while(!canceled) {
 					core::Functor<void> func = queue->dequeue();
 					func();
