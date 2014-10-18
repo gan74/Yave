@@ -35,6 +35,12 @@ class List
 			ListElem(ListElem *n = 0, ListElem *p = 0) : next(n ? n : this), prev(p ? p : this) {
 			}
 
+			~ListElem() {
+				if(next != this) {
+					elem.~T();
+				}
+			}
+
 			union
 			{
 				T elem;
@@ -226,15 +232,17 @@ class List
 				prepend(e);
 				return begin();
 			}
-			ListElem *e = t.elem;
-			ListElem *ta = tail;
-			e->prev->next = 0;
-			tail = e->prev;
-			append(c);
-			tail->next = e;
-			e->prev = tail;
-			tail = ta;
-			return iterator(e->prev);
+			if(t == end()) {
+				append(e);
+				return --end();
+			}
+			ListElem *pr = t.prev;
+			ListElem *ne = t;
+			ListElem *n = new ListElem(e, ne, pr);
+			pr->next = n;
+			ne->prev = n;
+			lSize++;
+			return iterator(n);
 		}
 
 		template<typename I>
@@ -333,20 +341,6 @@ class List
 
 		}
 
-		bool isSorted() const {
-			if(isEmpty()) {
-				return true;
-			}
-			const_iterator l = begin();
-				for(const_iterator it = begin() + 1; it != end(); ++it) {
-				if(*it < *l) {
-					return false;
-				}
-				l = it;
-			}
-			return true;
-		}
-
 		template<typename U>
 		iterator findOne(const U &f, const_iterator from) {
 			for(iterator i = const_cast<iterator>(from); i != end(); ++i) {
@@ -442,7 +436,7 @@ class List
 			std::for_each(begin(), end(), f);
 		}
 
-		template<typename V, typename C = Array<typename std::result_of<V(const T &)>::type, ResizePolicy>>
+		template<typename V, typename C = List<typename std::result_of<V(const T &)>::type>>
 		C mapped(const V &f) const {
 			C a;
 			foreach([&](const T &e) { a.insert(f(e)); });
@@ -491,13 +485,6 @@ class List
 					++it;
 				}
 			}
-		}
-
-		template<typename V, typename U>
-		V foldRight(const U &f, V def = V(0)) {
-			V acc(def);
-			foreach([&](const T &t) { acc = f(t, acc); });
-			return acc;
 		}
 
 		const_iterator begin() const {
@@ -551,61 +538,6 @@ class List
 			return size() < l.size();
 		}
 
-
-		template<typename U>
-		void foreach(const U &f) {
-			std::for_each(begin(), end(), f);
-		}
-
-		template<typename U>
-		void foreach(const U &f) const {
-			std::for_each(begin(), end(), f);
-		}
-
-		template<typename U>
-		bool forall(const U &f) const {
-			for(const T &t : *this) {
-				if(!f(t)) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		template<typename V, typename C = List<typename std::result_of<V(const T &)>::type>>
-		C mapped(const V &f) const {
-			C a;
-			foreach([&](const T &e) { a.append(f(e)); });
-			return a;
-		}
-
-		template<typename U>
-		void map(const U &f) {
-			foreach([&](T &e) { e = f(e); });
-		}
-
-		template<typename U, typename C = List<T>>
-		C filtered(const U &f) const {
-			C a;
-			foreach([&](const T &e) {
-				if(f(e)) {
-					a.append(e);
-				}
-			});
-			return a;
-		}
-
-		template<typename U>
-		void filter(const U &f) {
-			for(iterator it = begin(); it != end();) {
-				if(!f(*it)) {
-					it = remove(it);
-				} else {
-					++it;
-				}
-			}
-		}
-
 	private:
 		void append() {
 		}
@@ -637,7 +569,6 @@ class List
 				head = head->prev = e;
 				lSize++;
 			}
-			return *this;
 		}
 
 		template<typename C>
