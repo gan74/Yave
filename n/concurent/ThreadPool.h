@@ -108,7 +108,6 @@ class ThreadPool : private ThreadNumberPolicy
 				addOne();
 			} else {
 				uint desired = this->desiredThreadCount(threads.size(), queue.size());
-				std::cout<<desired<<"/"<<threads.size()<<std::endl;
 				if(desired != threads.size()) {
 					while(this->shouldAjust(threads.size(), desired)) {
 						if(threads.size() < desired) {
