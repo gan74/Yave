@@ -303,7 +303,7 @@ class AsCollection
 
 		bool isSortedDispatch(FalseType) const {
 			const_iterator l = collection.begin();
-			for(const_iterator it = ++collection.begin(); it != collection.end(); it++) {
+			for(const_iterator it = ++collection.begin(); it != collection.end(); ++it) {
 				if(*it < *l) {
 					return false;
 				}
@@ -314,7 +314,7 @@ class AsCollection
 
 		template<typename U>
 		iterator findOneDispatch(FalseType, const U &f, const_iterator from) {
-			for(iterator i = const_cast<iterator>(from); i != collection.end(); i++) {
+			for(iterator i = const_cast<iterator>(from); i != collection.end(); ++i) {
 				if(f(*i)) {
 					return i;
 				}
@@ -324,7 +324,7 @@ class AsCollection
 
 		template<typename U>
 		const_iterator findOneDispatch(FalseType, const U &f, const_iterator from) const {
-			for(const_iterator i = from; i != collection.end(); i++) {
+			for(const_iterator i = from; i != collection.end(); ++i) {
 				if(f(*i)) {
 					return i;
 				}
@@ -335,7 +335,7 @@ class AsCollection
 		template<typename U>
 		uint countAllDispatch(FalseType, const U &f) const {
 			uint c = 0;
-			for(const_iterator i = collection.begin(); i != collection.end(); i++) {
+			for(const_iterator i = collection.begin(); i != collection.end(); ++i) {
 				if(f(*i)) {
 					c++;
 				}
@@ -345,7 +345,7 @@ class AsCollection
 
 		template<typename V>
 		bool existsOneDispatch(FalseType, const V &f) const {
-			for(const_iterator i = collection.begin(); i != collection.end(); i++) {
+			for(const_iterator i = collection.begin(); i != collection.end(); ++i) {
 				if(f(*i)) {
 					return true;
 				}
