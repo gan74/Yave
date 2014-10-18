@@ -30,7 +30,7 @@ class DefaultThreadNumberPolicy
 {
 	public:
 		uint desiredThreadCount(uint threads, uint pendingTasks) {
-			return ((pendingTasks >> 1) + threads) >> 1;
+			return ((pendingTasks >> 1) + (threads >> 1)) >> 1;
 		}
 
 		bool shouldAjust(uint threads, uint desired) {
@@ -108,6 +108,7 @@ class ThreadPool : private ThreadNumberPolicy
 				addOne();
 			} else {
 				uint desired = this->desiredThreadCount(threads.size(), queue.size());
+				std::cout<<desired<<"/"<<threads.size()<<std::endl;
 				if(desired != threads.size()) {
 					while(this->shouldAjust(threads.size(), desired)) {
 						if(threads.size() < desired) {
