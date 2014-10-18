@@ -39,6 +39,15 @@ struct NullType
 	NullType() = delete;
 };
 
+struct Unit
+{
+	Unit() {}
+	Unit(const Unit&) {}
+
+	template<typename T>
+	Unit(T &&) {}
+};
+
 
 template<bool B>
 struct BoolToType // false
