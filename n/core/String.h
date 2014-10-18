@@ -123,6 +123,8 @@ class String
 		float toFloat() const;
 		double toDouble() const;
 		int toInt() const;
+		String toLower() const;
+		String toUpper() const;
 		bool isShared() const;
 
 		operator std::string() const;
@@ -186,11 +188,28 @@ class String
 			return t;
 		}
 
+		operator bool() const {
+			if(toInt() != 0) {
+				return true;
+			}
+			std::istringstream str(toLower().toStdString());
+			bool t = false;
+			str>>std::boolalpha>>t;
+			return t;
+		}
+
 	private:
 		template<typename T>
 		void buildDispatch(const T &t, FalseType) {
 			std::ostringstream oss;
 			oss<<t;
+			operator=(oss.str().c_str());
+		}
+
+
+		void buildDispatch(const bool &t, FalseType) {
+			std::ostringstream oss;
+			oss<<std::boolalpha<<t;
 			operator=(oss.str().c_str());
 		}
 

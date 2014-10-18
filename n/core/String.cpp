@@ -280,6 +280,14 @@ int String::toInt() const {
 	return atoi(data);
 }
 
+String String::toLower() const {
+	return mapped([](char c) -> char { return tolower(c); });
+}
+
+String String::toUpper() const {
+	return mapped([](char c) -> char { return toupper(c); });
+}
+
 String::operator std::string() const {
 	return std::string(data);
 }
