@@ -37,31 +37,6 @@ class InputStream
 
 };
 
-class DataInputStream : public InputStream
-{
-	public:
-		DataInputStream(InputStream *s);
-		bool canRead() const override;
-		uint readBytes(char *b, uint len = -1) override;
-
-		core::String readLine();
-		core::String readBlock();
-
-		template<typename T>
-		T readOne() {
-			return T(readBlock());
-		}
-
-		template<typename T>
-		DataInputStream &operator>>(T &t) {
-			t = T(readBlock());
-			return *this;
-		}
-
-	private:
-		InputStream *stream;
-};
-
 
 } // io
 } // n

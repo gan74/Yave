@@ -30,30 +30,6 @@ class OutputStream
 		virtual void flush() = 0;
 };
 
-class DataOutputStream : public OutputStream
-{
-	public:
-		DataOutputStream(OutputStream *s);
-		bool canWrite() const override;
-		void flush() override;
-		uint writeBytes(const char *b, uint len) override;
-
-		template<typename T>
-		uint write(const T &t) {
-			core::String s(t);
-			return stream->writeBytes(s.toChar(), s.size());
-		}
-
-		template<typename T>
-		DataOutputStream &operator<<(const T &t) {
-			write(t);
-			return *this;
-		}
-
-	private:
-		OutputStream *stream;
-};
-
 
 } // io
 } // n
