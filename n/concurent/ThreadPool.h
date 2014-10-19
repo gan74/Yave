@@ -70,6 +70,24 @@ class DefaultThreadNumberPolicy
 		uint min;
 };
 
+class FixedThreadNumberPolicy
+{
+	public:
+		FixedThreadNumberPolicy(uint n) : fixed(n) {
+		}
+
+		uint desiredThreadCount(uint, uint) {
+			return fixed;
+		}
+
+		bool shouldAjust(uint, uint) {
+			return true;
+		}
+
+	private:
+		uint fixed;
+};
+
 template<typename ThreadNumberPolicy = DefaultThreadNumberPolicy>
 class ThreadPool : public ThreadNumberPolicy
 {
@@ -99,7 +117,9 @@ class ThreadPool : public ThreadNumberPolicy
 
 
 	public:
-		ThreadPool() : ThreadNumberPolicy() {
+		template<typename... Args>
+		ThreadPool(Args... args) : ThreadNumberPolicy(args...) {
+			updateThreadCount();
 		}
 
 		~ThreadPool() {
@@ -135,7 +155,7 @@ class ThreadPool : public ThreadNumberPolicy
 			} else {
 				uint desired = std::max((uint)1, this->desiredThreadCount(threads.size(), queue.size()));
 				if(desired != threads.size()) {
-					while(this->shouldAjust(threads.size(), desired)) {
+					while(threads.size() != desired && this->shouldAjust(threads.size(), desired)) {
 						if(threads.size() < desired) {
 							addOne();
 						} else {
