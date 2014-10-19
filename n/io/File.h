@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_IO_FILE_H
 
 #include "IODevice.h"
-#include <fstream>
 #include <n/core/String.h>
 
 #define N_IO_USE_C_FILE
