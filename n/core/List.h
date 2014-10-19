@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_LIST_H
 
 #include <n/Types.h>
+#include "AsCollection.h"
 
 namespace n {
 namespace core {
@@ -47,30 +48,6 @@ class List
 			};
 			ListElem *next;
 			ListElem *prev;
-	};
-
-	template<bool C, bool A, typename U>
-	struct Adder
-	{
-		Adder(List<T> &lst, const U &e) {
-			if(A) {
-				lst.appendOne(e);
-			} else {
-				lst.prependOne(e);
-			}
-		}
-	};
-
-	template<bool A, typename U>
-	struct Adder<false, A, U>
-	{
-		Adder(List<T> &lst, const U &e) {
-			if(A) {
-				lst.appendCollection(e);
-			} else {
-				lst.prependCollection(e);
-			}
-		}
 	};
 
 	public:
@@ -174,6 +151,10 @@ class List
 				const_iterator(ListElem *e) : elem(e) {
 				}
 
+				iterator nonConst() const {
+					return iterator(*this);
+				}
+
 				ListElem *elem;
 		};
 
@@ -185,21 +166,38 @@ class List
 			append(l);
 		}
 
+		template<typename A, typename... Args>
+		List(const A &a, Args... args) : List() {
+			append(a);
+			append(args...);
+		}
+
 		template<typename C>
 		void append(const C &c) {
-			Adder<TypeConversion<C, T>::exists, true, C>(*this, c);
+			appendDispatch(c, BoolToType<AsCollection<C>::isCollection>());
 		}
 
 		template<typename A, typename B, typename... Args>
-		void append(const A &a, const B &b, const Args&... args) {
+		void append(const A &a, const B &b, Args... args) {
 			append(a);
 			append(b);
 			append(args...);
 		}
 
+		template<typename A, typename... Args>
+		void append(const A &a, Args... args) {
+			append(a);
+			append(args...);
+		}
+
 		template<typename C>
 		void prepend(const C &c) {
-			Adder<TypeConversion<C, T>::exists, false, C>(*this, c);
+			prependDispatch(c, BoolToType<AsCollection<C>::isCollection>());
+		}
+
+		template<typename C>
+		void insert(const C &c) {
+			append(c);
 		}
 
 		void popFront() {
@@ -236,8 +234,8 @@ class List
 				append(e);
 				return --end();
 			}
-			ListElem *pr = t.prev;
-			ListElem *ne = t;
+			ListElem *pr = t.elem->prev;
+			ListElem *ne = t.elem;
 			ListElem *n = new ListElem(e, ne, pr);
 			pr->next = n;
 			ne->prev = n;
@@ -343,7 +341,7 @@ class List
 
 		template<typename U>
 		iterator findOne(const U &f, const_iterator from) {
-			for(iterator i = const_cast<iterator>(from); i != end(); ++i) {
+			for(iterator i = from.nonConst(); i != end(); ++i) {
 				if(f(*i)) {
 					return i;
 				}
@@ -527,6 +525,11 @@ class List
 		}
 
 		template<typename C>
+		bool operator!=(const C &l) const {
+			return !operator==(l);
+		}
+
+		template<typename C>
 		bool operator<(const C &l) const {
 			iterator a = begin();
 			auto b = l.begin();
@@ -542,7 +545,8 @@ class List
 		void append() {
 		}
 
-		void appendOne(const T &t) {
+		template<typename C>
+		void appendDispatch(const C &t, FalseType) {
 			ListElem *e = new ListElem(t, tail, 0);
 			if(head == tail) {
 				head =  e;
@@ -555,15 +559,16 @@ class List
 		}
 
 		template<typename C>
-		void appendCollection(const C &c) {
+		void appendDispatch(const C &c, TrueType) {
 			for(const auto &e : c) {
 				append(e);
 			}
 		}
 
-		void prependOne(const T &t) {
+		template<typename C>
+		void prependDispatch(const C &t, FalseType) {
 			if(isEmpty()) {
-				appendOne(t);
+				append(t);
 			} else {
 				ListElem *e = new ListElem(t, head, 0);
 				head = head->prev = e;
@@ -572,7 +577,7 @@ class List
 		}
 
 		template<typename C>
-		void prependCollection(const C &c) {
+		void prependDispatch(const C &c, TrueType) {
 			for(const auto &e : c) {
 				append(e);
 			}
