@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <n/core/String.h>
 
+#define N_IO_USE_C_FILE
+
 namespace n {
 namespace io {
 
@@ -34,6 +36,7 @@ class File : public IODevice
 
 		bool open(int m) override;
 		void seek(uint pos);
+		uint getPos() const;
 		void close() override;
 		bool isOpen() const override;
 		bool atEnd() const override;
@@ -47,8 +50,13 @@ class File : public IODevice
 
 
 	private:
-		core::String name;
+		#ifndef N_IO_USE_C_FILE
 		mutable std::fstream stream;
+		#else
+		FILE *file;
+		#endif
+
+		core::String name;
 		int mode;
 		uint length;
 };

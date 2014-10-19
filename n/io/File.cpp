@@ -19,10 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 
-File::File(const core::String &fileName) : IODevice(), name(fileName), mode(IODevice::None) {
+File::File(const core::String &fileName) : IODevice(),
+#ifdef N_IO_USE_C_FILE
+	file(0),
+#endif
+	name(fileName), mode(IODevice::None) {
 }
 
 bool File::open(int m) {
+	#ifndef N_IO_USE_C_FILE
 	if(m == IODevice::None) {
 		close();
 		return false;
@@ -52,18 +57,70 @@ bool File::open(int m) {
 		mode = m;
 		return true;
 	}
+	#else
+	if(m == IODevice::None) {
+		close();
+		return false;
+	}
+	if(isOpen()) {
+		close();
+	}
+	core::String openMode;
+	if(m & IODevice::Read && m & IODevice::Write) {
+		openMode = "r+";
+	} else if(m & IODevice::Write) {
+		openMode = "w";
+	}
+	if(m & IODevice::Binary)	{
+		openMode += "b";
+	}
+	file = fopen(name, openMode);
+	if(!file) {
+		return false;
+	}
+	mode = m;
+	fseek(file, 0, SEEK_END);
+	length = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	return true;
+	#endif
 }
 
 void File::seek(uint pos) {
+	#ifndef N_IO_USE_C_FILE
 	if(isOpen()) {
 		stream.seekg(pos, std::ios::beg);
 		stream.seekp(pos, std::ios::beg);
 	}
+	#else
+	if(isOpen()) {
+		fseek(file, pos, SEEK_SET);
+	}
+	#endif
+}
+
+uint File::getPos() const {
+	if(isOpen()) {
+		#ifndef N_IO_USE_C_FILE
+			return stream.tellg();
+		#else
+			return ftell(file);
+		#endif
+	}
+	return 0;
 }
 
 void File::close() {
+	#ifndef N_IO_USE_C_FILE
 	stream.close();
 	mode = IODevice::None;
+	#else
+	if(file) {
+		fclose(file);
+		file = 0;
+		mode = IODevice::None;
+	}
+	#endif
 }
 
 bool File::isOpen() const {
@@ -71,7 +128,7 @@ bool File::isOpen() const {
 }
 
 bool File::atEnd() const {
-	return stream.tellg() >= length;
+	return !isOpen() || getPos() >= length;
 }
 
 bool File::canWrite() const {
@@ -83,9 +140,15 @@ bool File::canRead() const {
 }
 
 void File::flush() {
+	#ifndef N_IO_USE_C_FILE
 	if(isOpen()) {
 		stream.flush();
 	}
+	#else
+	if(isOpen()) {
+		fflush(file);
+	}
+	#endif
 }
 
 uint File::size() const {
@@ -103,16 +166,21 @@ uint File::writeBytes(const char *b, uint len) {
 	if(!canWrite()) {
 		return 0;
 	}
-	length += std::max((uint)stream.tellg() + len, length);
+	length = std::max(getPos() + len, length);
+	#ifndef N_IO_USE_C_FILE
 	stream.write(b, len);
 	return len;
+	#else
+	return fwrite(b, sizeof(char), len, file);
+	#endif
 }
 
 uint File::readBytes(char *b, uint len) {
 	if(!canRead()) {
 		return 0;
 	}
-	uint l = std::min(len, length - (uint)stream.tellg());
+	uint l = std::min(len, length - getPos());
+	#ifndef N_IO_USE_C_FILE
 	stream.read(b, l);
 	/*int ch = stream.get();
 	while(ch != std::istream::traits_type::eof()) {
@@ -120,6 +188,9 @@ uint File::readBytes(char *b, uint len) {
 		ch = stream.get();
 	}*/
 	return l;
+	#else
+	return fread(b, sizeof(char), l, file);
+	#endif
 }
 
 }// io
