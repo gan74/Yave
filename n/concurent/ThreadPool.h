@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Functor.h>
 #include <n/core/Array.h>
 #include "Future.h"
+#include <n/defines.h>
 
 namespace n {
 namespace concurent {
@@ -29,23 +30,48 @@ namespace concurent {
 class DefaultThreadNumberPolicy
 {
 	public:
+		DefaultThreadNumberPolicy() : max(0), min(1) {
+		}
+
+		void setMaxThreadCount(uint m) {
+			max = m;
+			if(max) {
+				min = std::min(min, max);
+			}
+			updateThreadCount();
+		}
+
+		void setMinThreadCount(uint m) {
+			min = m;
+			if(max) {
+				max = std::max(min, max);
+			}
+			updateThreadCount();
+		}
+
+	protected:
+		virtual void updateThreadCount() = 0;
+
 		uint desiredThreadCount(uint threads, uint pendingTasks) {
-			return ((pendingTasks >> 1) + (threads >> 1)) >> 1;
+			uint d = ((pendingTasks >> 1) + (threads >> 1)) >> 1;
+			return std::max(min, max && max < d ? max : d);
 		}
 
 		bool shouldAjust(uint threads, uint desired) {
 			if(threads < desired) {
-				return threads + (threads >> 1) < desired;
+				return (threads < min) || (threads + (threads >> 2) < desired);
 			} else {
-				return (threads >> 1) > desired;
+				return (max && threads > max) || (threads - (threads >> 2) > desired);
 			}
 		}
 
-
+	private:
+		uint max;
+		uint min;
 };
 
 template<typename ThreadNumberPolicy = DefaultThreadNumberPolicy>
-class ThreadPool : private ThreadNumberPolicy
+class ThreadPool : public ThreadNumberPolicy
 {
 	class WorkerThread : public Thread
 	{
@@ -73,7 +99,7 @@ class ThreadPool : private ThreadNumberPolicy
 
 
 	public:
-		ThreadPool() {
+		ThreadPool() : ThreadNumberPolicy() {
 		}
 
 		~ThreadPool() {
@@ -107,7 +133,7 @@ class ThreadPool : private ThreadNumberPolicy
 			if(!threads.size()) {
 				addOne();
 			} else {
-				uint desired = this->desiredThreadCount(threads.size(), queue.size());
+				uint desired = std::max((uint)1, this->desiredThreadCount(threads.size(), queue.size()));
 				if(desired != threads.size()) {
 					while(this->shouldAjust(threads.size(), desired)) {
 						if(threads.size() < desired) {
@@ -142,6 +168,8 @@ class ThreadPool : private ThreadNumberPolicy
 
 
 };
+
+using DefaultThreadPool = ThreadPool<>;
 
 }
 }
