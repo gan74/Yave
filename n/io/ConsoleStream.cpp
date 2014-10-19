@@ -15,7 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "ConsoleStream.h"
-#include <iostream>
+
 
 namespace n {
 namespace io {
@@ -32,7 +32,7 @@ bool ConsoleInputStream::canRead() const {
 }
 
 uint ConsoleInputStream::readBytes(char *b, uint l) {
-	return std::cin.readsome(b, l);
+	return fread(b, sizeof(char), l, stdin);
 }
 
 ConsoleOutputStream::ConsoleOutputStream(Channel ch) : TextOutputStream(this), channel(ch) {
@@ -43,14 +43,13 @@ bool ConsoleOutputStream::canWrite() const {
 }
 
 uint ConsoleOutputStream::writeBytes(const char *b, uint len) {
-	(channel == ConsoleOutputStream::Out ? std::cout : std::cerr).write(b, len);
+	fwrite(b, sizeof(char), len, channel == ConsoleOutputStream::Out ? stdout : stderr);
 	return len;
 }
 
 void ConsoleOutputStream::flush() {
-	(channel == ConsoleOutputStream::Out ? std::cout : std::cerr).flush();
+	fflush(channel == ConsoleOutputStream::Out ? stdout : stderr);
 }
-
 
 ConsoleInputStream in = ConsoleInputStream();
 ConsoleOutputStream out = ConsoleOutputStream(ConsoleOutputStream::Out);
