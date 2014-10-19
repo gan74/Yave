@@ -34,6 +34,7 @@ class DefaultArrayResizePolicy
 			return size < 2 ? 8 : (1 << (l + 1)) - offset;
 		}
 
+	protected:
 		uint size(uint size) const {
 			return standardSize(size);
 		}
@@ -45,7 +46,7 @@ class DefaultArrayResizePolicy
 
 class CompactArrayResizePolicy
 {
-	public:
+	protected:
 		uint size(uint size) const {
 			static const uint linearThreshold = 11; // 2048
 			if(size > (1 << linearThreshold)) {
@@ -61,13 +62,13 @@ class CompactArrayResizePolicy
 };
 
 template<typename T, typename ResizePolicy = DefaultArrayResizePolicy>
-class Array : private ResizePolicy
+class Array : public ResizePolicy
 {
 	public:
 		typedef T * iterator;
 		typedef T const * const_iterator;
 
-		Array() : data(0), dataEnd(0), allocEnd(0) {
+		Array() : ResizePolicy(), data(0), dataEnd(0), allocEnd(0) {
 		}
 
 		template<typename C>
