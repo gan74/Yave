@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/Types.h>
 #include <tuple>
+
 #include "SmartPtr.h"
 
 namespace n {
@@ -125,6 +126,24 @@ class Functor
 		SmartPtr<FuncBase> func;
 
 };
+
+template<typename R, typename... Args>
+class Function {};
+
+template<typename R, typename... Args>
+class Function<R(Args...)>
+{
+	public:
+		static constexpr uint args = sizeof...(Args);
+
+		template<uint N>
+		using argAt = typename std::tuple_element<N, std::tuple<Args...>>::type;
+
+		using functor = Functor<R, Args...>;
+};
+
+
+
 
 }
 }
