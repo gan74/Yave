@@ -39,7 +39,7 @@ class TestTemplate
 	public:
 		TestTemplate() {
 			#ifdef N_AUTO_TEST
-			nUnused(runner);
+			n::unused(runner);
 			#endif
 		}
 
