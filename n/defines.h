@@ -19,13 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 void fatal(const char *msg, const char *file = 0, int line = 0);
+
+template<typename T>
+void unused(T) {}
+
 }
 
 /* defines stuffs here */
 
 #define N_PI 3.1415926535897932384626433832795028841971693993751058
-
-#define nUnused(var) (void)(var)
 
 #ifdef N_DEBUG
 #define nError(msg) n::fatal((msg), __FILE__, __LINE__)
