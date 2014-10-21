@@ -31,10 +31,15 @@ String::Concat &String::Concat::operator+(const String &s) {
 	return *this;
 }
 
-String::Concat &String::Concat::operator+(const Concat &c) {
+String::Concat &String::Concat::operator+=(const Concat &c) {
 	for(const String &s : c.tokens) {
 		tokens.append(s);
 	}
+	return *this;
+}
+
+String::Concat &String::Concat::operator+=(const String &c) {
+	tokens.append(c);
 	return *this;
 }
 
@@ -445,3 +450,19 @@ bool String::isShared() const {
 
 } //core
 } //n
+
+
+
+std::istream &operator>>(std::istream &s, n::core::String &str) {
+	std::string st;
+	s>>st;
+	str = n::core::String(st.c_str());
+	return s;
+}
+
+std::ostream &operator<<(std::ostream &s, const n::core::String &str) {
+	s<<str.toStdString();
+	return s;
+}
+
+

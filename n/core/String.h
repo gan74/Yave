@@ -32,6 +32,8 @@ class String
 		class Concat
 		{
 			public:
+				typedef const char * const_iterator;
+
 				Concat(const String &a, const String &b);
 				Concat(const String &a);
 				Concat(const Array<String> &arr);
@@ -39,6 +41,8 @@ class String
 				uint size() const;
 				Concat &operator+(const String &s);
 				Concat &operator+(const Concat &c);
+				Concat &operator+=(const Concat &c);
+				Concat &operator+=(const String &c);
 				bool operator==(const String &str) const;
 				bool operator==(const char *str) const;
 				bool operator!=(const String &str) const;
@@ -215,11 +219,11 @@ class String
 
 		template<typename T>
 		void buildDispatch(const T &t, TrueType) {
-			detach(length = t.size());
-			char *cc = data;
-			for(const char c : t) {
-				*cc++ = c;
+			Concat self(String(""));
+			for(auto c : t) {
+				self += String(c);
 			}
+			operator=(self);
 		}
 
 		char *detach(uint s);
@@ -247,12 +251,7 @@ n::core::String::Concat operator+(const T &i, const n::core::String &s) {
 	return n::core::String(i) + s;
 }
 
-template<n::uint N>
-std::istream &operator>>(std::istream &s, n::core::String &str) {
-	std::string &st;
-	s>>st;
-	str = n::core::String(st.c_str());
-	return s;
-}
+std::istream &operator>>(std::istream &s, n::core::String &str);
+std::ostream &operator<<(std::ostream &s, const n::core::String &str);
 
 #endif // N_CORE_STRING_H
