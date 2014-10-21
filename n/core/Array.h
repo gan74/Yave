@@ -22,6 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstring>
 #include <algorithm>
 
+#include <iostream>
+
 namespace n {
 namespace core {
 
@@ -72,7 +74,8 @@ class Array : public ResizePolicy
 		}
 
 		template<typename C>
-		Array(const C &c) : Array((uint)c.size()) {
+		Array(const C &c) : Array() {
+			append(c);
 		}
 
 		Array(uint s) : Array() {
@@ -618,6 +621,7 @@ class Array : public ResizePolicy
 			}
 			new(dataEnd++) T(e);
 		}
+
 
 		template<typename C>
 		void appendDispatch(const C &c, FalseType) {
