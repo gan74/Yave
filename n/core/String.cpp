@@ -465,4 +465,10 @@ std::ostream &operator<<(std::ostream &s, const n::core::String &str) {
 	return s;
 }
 
+std::ostream &operator<<(std::ostream &s, const n::core::String::Concat &str) {
+	s<<n::core::String(str);
+	return s;
+}
+
+
 

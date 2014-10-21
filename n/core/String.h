@@ -32,7 +32,15 @@ class String
 		class Concat
 		{
 			public:
-				typedef const char * const_iterator;
+				typedef Array<String>::const_iterator const_iterator;
+
+				const_iterator begin() const {
+					return tokens.begin();
+				}
+
+				const_iterator end() const {
+					return tokens.end();
+				}
 
 				Concat(const String &a, const String &b);
 				Concat(const String &a);
@@ -57,7 +65,8 @@ class String
 
 		template<typename T>
 		String(const T &s) : String() {
-			buildDispatch(s, BoolToType<TypeConversion<typename AsCollection<T>::ElementType, const char>::exists>());
+			//buildDispatch(s, BoolToType<TypeConversion<typename AsCollection<T>::ElementType, const char>::exists>());
+			buildDispatch(s, BoolToType<AsCollection<T>::isCollection>());
 		}
 
 		String();
@@ -252,6 +261,7 @@ n::core::String::Concat operator+(const T &i, const n::core::String &s) {
 }
 
 std::istream &operator>>(std::istream &s, n::core::String &str);
+std::ostream &operator<<(std::ostream &s, const n::core::String::Concat &str);
 std::ostream &operator<<(std::ostream &s, const n::core::String &str);
 
 #endif // N_CORE_STRING_H
