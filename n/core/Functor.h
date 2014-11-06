@@ -80,6 +80,22 @@ class Functor
 			T f;
 	};
 
+	class FuncPtr : public FuncBase
+	{
+		public:
+			FuncPtr(R (*t)(Args...)) : f(t) {
+			}
+
+			FuncPtr(const FuncPtr &) = delete;
+
+			virtual R apply(Args... args) override {
+				return f(args...);
+			}
+
+		private:
+			R (*f)(Args...);
+	};
+
 	class Curry
 	{
 		public:
@@ -104,6 +120,9 @@ class Functor
 
 		template<typename T>
 		Functor(const T &t) : func(new Func<T>(t)) {
+		}
+
+		Functor(R (*f)(Args...)) : func(new FuncPtr(f)) {
 		}
 
 		R operator()(Args... args) {
