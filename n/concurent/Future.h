@@ -68,6 +68,10 @@ class SharedFuture
 			m->unlock();
 		}
 
+		operator T() {
+			return get();
+		}
+
 	private:
 		friend class Promise<T>;
 
