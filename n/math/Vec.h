@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef VEC_H
-#define VEC_H
+#ifndef N_MATH_VEC_H
+#define N_MATH_VEC_H
 
 #include <n/core/String.h>
 
@@ -410,4 +410,4 @@ typedef Vec<uint, 4> Vec4ui;
 }
 }
 
-#endif // VEC_H
+#endif // N_MATH_VEC_H

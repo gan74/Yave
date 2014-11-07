@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CORE_UTILS_H
-#define N_CORE_UTILS_H
+#ifndef N_UTILS_H
+#define N_UTILS_H
 
 #include <n/Types.h>
 #include <tgmath.h>
@@ -103,4 +103,4 @@ namespace core {
 } //core
 } //n
 
-#endif // N_CORE_UTILS_H
+#endif // N_UTILS_H
