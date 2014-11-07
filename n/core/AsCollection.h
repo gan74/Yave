@@ -37,6 +37,7 @@ namespace internal {
 	N_GEN_TYPE_HAS_METHOD(HasForall, forall)
 	N_GEN_TYPE_HAS_METHOD(HasMap, map)
 	N_GEN_TYPE_HAS_METHOD(HasFilter, filter)
+	N_GEN_TYPE_HAS_METHOD(HasMake, make)
 }
 
 template<typename T>
@@ -146,8 +147,26 @@ class AsCollection
 
 		AsCollection(const AsCollection<T> &) = delete;
 
+		bool isEmpty() const {
+			return !(this->size());
+		}
+
+		uint size() const {
+			return sizeDispatch(BoolToType<internal::HasSize<T, uint>::value>());
+		}
+
+		template<typename U, typename... Args>
+		U make(U u, Args... f) const {
+			return makeDispatch(BoolToType<internal::HasMake<T, U, U, Args...>::value>(), u, f...);
+		}
+
 		template<typename... Args>
 		void foreach(Args... f) const {
+			foreachDispatch(BoolToType<internal::HasForeach<T, void, Args...>::value>(), f...);
+		}
+
+		template<typename... Args>
+		void foreach(Args... f) {
 			foreachDispatch(BoolToType<internal::HasForeach<T, void, Args...>::value>(), f...);
 		}
 
@@ -224,9 +243,23 @@ class AsCollection
 	private:
 		T collection;
 
-		template<typename U>
-		void foreachDispatch(FalseType, const U &f) const {
-			std::for_each(collection.begin(), collection.end(), f);
+		uint sizeDispatch(TrueType) const {
+			return collection.size();
+		}
+
+		template<typename U, typename... Args>
+		U makeDispatch(TrueType, const U &u, Args... f) const {
+			return collection.template make<U, Args...>(u, f...);
+		}
+
+		template<typename... Args>
+		void foreachDispatch(TrueType, Args... f) const {
+			collection.foreach(f...);
+		}
+
+		template<typename... Args>
+		void foreachDispatch(TrueType, Args... f) {
+			collection.foreach(f...);
 		}
 
 		template<typename... Args>
@@ -300,6 +333,23 @@ class AsCollection
 		}
 
 		//--------------- defaults ---------------
+
+
+		uint sizeDispatch(FalseType) const {
+			uint s = 0;
+			foreach([&s](const ElementType &) { s++; });
+			return s;
+		}
+
+		template<typename U>
+		void foreachDispatch(FalseType, const U &f) const {
+			std::for_each(collection.begin(), collection.end(), f);
+		}
+
+		template<typename U>
+		void foreachDispatch(FalseType, const U &f) {
+			std::for_each(collection.begin(), collection.end(), f);
+		}
 
 		bool isSortedDispatch(FalseType) const {
 			const_iterator l = collection.begin();
@@ -439,6 +489,20 @@ class AsCollection
 					++it;
 				}
 			}
+		}
+
+		template<typename U>
+		U makeDispatch(FalseType, const U &f) const {
+			U str;
+			if(this->isEmpty()) {
+				return U();
+			}
+			const_iterator end = collection.end();
+			--end;
+			for(const_iterator it = collection.begin(); it != end; ++it) {
+				str += U(*it) + f;
+			}
+			return str + U(*end);
 		}
 };
 
