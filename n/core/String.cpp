@@ -69,9 +69,6 @@ String::String() : String(0, 0) {
 String::String(const char *cst) : String(cst, cst ? strlen(cst) : 0) {
 }
 
-String::String(const char c) : String(&c, 1) {
-}
-
 String::String(const char *cst, uint l) : length(l), count(l ? new uint(1) : 0), data(0) {
 	if(l) {
 		data = (char *)malloc((length + 1) * sizeof(char));

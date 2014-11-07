@@ -66,12 +66,12 @@ class String
 		template<typename T>
 		explicit String(const T &s) : String() {
 			//buildDispatch(s, BoolToType<TypeConversion<typename AsCollection<T>::ElementType, const char>::exists>());
-			buildDispatch(s, BoolToType<AsCollection<T>::isCollection>());
+			//buildDispatch(s, BoolToType<AsCollection<T>::isCollection>());
+			operator=(s);
 		}
 
 		String();
 		String(const char *cst);
-		String(const char c);
 		String(const char *cst, uint l);
 		String(const Concat &sc);
 		String(const String &str);
@@ -172,7 +172,7 @@ class String
 
 		template<typename T>
 		const String &operator=(const T &s) {
-			return operator=(String(s));
+			return operator=(build(s)); //   <------------------ all the problems come from this line
 		}
 
 		template<typename T>
@@ -213,30 +213,51 @@ class String
 
 	private:
 		template<typename T>
-		void buildDispatch(const T &t, FalseType) {
-			std::ostringstream oss;
-			oss<<t;
-			operator=(oss.str().c_str());
-		}
-
-		void buildDispatch(const String &t, FalseType) {
-			operator=(t);
-		}
-
-		void buildDispatch(const bool &t, FalseType) {
-			std::ostringstream oss;
-			oss<<std::boolalpha<<t;
-			operator=(oss.str().c_str());
+		String build(const T &t) const {
+			//return buildDispatch(t, BoolToType<AsCollection<T>::isCollection>());
+			return convertDispatch(t, BoolToType<TypeConversion<T, String>::exists>());
 		}
 
 		template<typename T>
-		void buildDispatch(const T &t, TrueType) {
+		String convertDispatch(const T &t, FalseType) const {
+			return buildDispatch(t, BoolToType<AsCollection<T>::isCollection>());
+		}
+
+		String convertDispatch(const String &t, TrueType) const {
+			return t;
+		}
+
+		template<typename T>
+		String buildDispatch(const T &t, FalseType) const {
+			std::ostringstream oss;
+			oss<<t;
+			return oss.str().c_str();
+		}
+
+
+		String buildDispatch(const bool &t, FalseType) const {
+			std::ostringstream oss;
+			oss<<std::boolalpha<<t;
+			return oss.str().c_str();
+		}
+
+		template<typename T>
+		String buildDispatch(const T &t, TrueType) const {
 			Concat self(String(""));
 			for(auto c : t) {
 				self += String(c);
 			}
-			operator=(self);
+			return self;
 		}
+
+		String buildDispatch(const String &t, TrueType) const {
+			return t;
+		}
+
+		String buildDispatch(const String &t, FalseType) const {
+			return t;
+		}
+
 
 		char *detach(uint s);
 
@@ -249,13 +270,13 @@ class String
 } //n
 
 template<typename T>
-n::core::String::Concat operator+(const char *cst, const T &i) {
-	return n::core::String(cst) + n::core::String(i);
+n::core::String::Concat operator+(const char *cst, const n::core::String &i) {
+	return n::core::String(cst) + i;
 }
 
 template<typename T>
-n::core::String::Concat operator+(const T &i, const char *cst) {
-	return n::core::String(i) + n::core::String(cst);
+n::core::String::Concat operator+(const n::core::String &i, const char *cst) {
+	return i + n::core::String(cst);
 }
 
 template<typename T>
