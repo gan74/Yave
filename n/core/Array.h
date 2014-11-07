@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_ARRAY_H
 
 #include <n/Types.h>
-#include "utils.h"
+#include <n/utils.h>
 #include <cstring>
 #include <algorithm>
 
@@ -538,7 +538,7 @@ class Array : public ResizePolicy
 		void shuffle() {
 			uint s = size();
 			for(uint i = 0; i != s; i++) {
-				uint a = random(s);
+				uint a = math::random(s);
 				if(a != i) {
 					std::swap(data[a], data[i]);
 				}

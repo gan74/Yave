@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_TEST_TESTTEMPLATE_H
 
 #include <n/defines.h>
-#include <n/core/utils.h>
+#include <n/utils.h>
 #include "Test.h"
 
 namespace n {
