@@ -64,7 +64,7 @@ class String
 		typedef char const * const_iterator;
 
 		template<typename T>
-		String(const T &s) : String() {
+		explicit String(const T &s) : String() {
 			//buildDispatch(s, BoolToType<TypeConversion<typename AsCollection<T>::ElementType, const char>::exists>());
 			buildDispatch(s, BoolToType<AsCollection<T>::isCollection>());
 		}
@@ -219,6 +219,9 @@ class String
 			operator=(oss.str().c_str());
 		}
 
+		void buildDispatch(const String &t, FalseType) {
+			operator=(t);
+		}
 
 		void buildDispatch(const bool &t, FalseType) {
 			std::ostringstream oss;
