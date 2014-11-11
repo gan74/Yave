@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_IO_INPUTSTREAM_H
 #define N_IO_INPUTSTREAM_H
 
-#include <n/Types.h>
+#include <n/types.h>
 
 namespace n {
 namespace core {

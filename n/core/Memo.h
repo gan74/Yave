@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_MEMO_H
 
 #include <map>
-#include <n/Types.h>
+#include <n/types.h>
 
 namespace n {
 namespace core {

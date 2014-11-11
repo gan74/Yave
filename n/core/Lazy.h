@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <type_traits>
 #include "Option.h"
-#include <n/Types.h>
+#include <n/types.h>
 
 namespace n {
 namespace core {

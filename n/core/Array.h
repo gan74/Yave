@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_ARRAY_H
 #define N_CORE_ARRAY_H
 
-#include <n/Types.h>
+#include <n/types.h>
 #include <n/utils.h>
 #include <cstring>
 #include <algorithm>

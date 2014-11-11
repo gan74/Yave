@@ -26,7 +26,9 @@ HEADERS += n/*.h \
 		   n/core/*.h \
 		   n/io/*.h \
 		   n/concurent/*.h \
-		   n/test/*.h
+		   n/test/*.h \
+		   n/math/*.h
+
 
 CONFIG(debug, debug|release) {
 	OBJECTS_DIR = debug

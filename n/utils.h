@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_UTILS_H
 #define N_UTILS_H
 
-#include <n/Types.h>
+#include <n/types.h>
 #include <tgmath.h>
 #include <algorithm>
 
@@ -80,6 +80,13 @@ namespace math {
 } //math
 
 namespace core {
+	class NonCopyable
+	{
+		public:
+			NonCopyable(const NonCopyable &) = delete;
+			NonCopyable &operator=(const NonCopyable &) = delete;
+	};
+
 	uint hash(const void *key, uint len, uint seed = 0x1000193);
 	uint log2ui(uint n);
 

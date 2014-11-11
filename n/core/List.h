@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_LIST_H
 #define N_CORE_LIST_H
 
-#include <n/Types.h>
+#include <n/types.h>
 #include "AsCollection.h"
 
 namespace n {
