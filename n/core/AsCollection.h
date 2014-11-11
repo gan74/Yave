@@ -38,9 +38,10 @@ namespace internal {
 	N_GEN_TYPE_HAS_METHOD(HasMap, map)
 	N_GEN_TYPE_HAS_METHOD(HasFilter, filter)
 	N_GEN_TYPE_HAS_METHOD(HasMake, make)
+}
 
 template<typename T>
-class AsCollection
+class AsCollectionInternal
 {
 	private:
 		template<typename U, bool CI, bool NCI> // false, false
@@ -127,6 +128,19 @@ class AsCollection
 			typedef decltype(((T *)0)->template mapped<Args...>(makeOne<Args...>())) type;
 		};
 
+	private:
+		template<typename U>
+		friend constexpr AsCollectionInternal<U> AsCollection(U &);
+
+		template<typename U>
+		friend constexpr AsCollectionInternal<const U> AsCollection(const U &);
+
+		AsCollectionInternal(T &t) : collection(t) {
+		}
+
+		AsCollectionInternal(const AsCollectionInternal<T> &c) : collection(c.collection){
+
+		}
 
 	public:
 		typedef typename InternalType::const_iterator const_iterator;
@@ -141,12 +155,7 @@ class AsCollection
 		AsCollection() : collection(T()) {
 		}*/
 
-		AsCollection(T &t) : collection(t) {
-		}
-
-		//AsCollection(const AsCollection<T> &) = delete;
-
-		AsCollection() = default;
+		AsCollectionInternal() = default;
 
 		bool isEmpty() const {
 			return !(this->size());
@@ -507,27 +516,25 @@ class AsCollection
 		}
 };
 
-}
-
 template<typename T>
 class Collection
 {
 	public:
-		typedef typename internal::AsCollection<T>::const_iterator const_iterator;
-		typedef typename internal::AsCollection<T>::iterator iterator;
-		typedef typename internal::AsCollection<T>::ElementType ElementType;
+		typedef typename AsCollectionInternal<T>::const_iterator const_iterator;
+		typedef typename AsCollectionInternal<T>::iterator iterator;
+		typedef typename AsCollectionInternal<T>::ElementType ElementType;
 
-		static constexpr bool isCollection = internal::AsCollection<T>::isCollection;
+		static constexpr bool isCollection = AsCollectionInternal<T>::isCollection;
 };
 
 template<typename T>
-constexpr auto AsCollection(T &t) {
-	return internal::AsCollection<T>(t);
+constexpr AsCollectionInternal<T> AsCollection(T &t) {
+	return AsCollectionInternal<T>(t);
 }
 
 template<typename T>
-constexpr auto AsCollection(const T &t) {
-	return internal::AsCollection<const T>(t);
+constexpr AsCollectionInternal<const T> AsCollection(const T &t) {
+	return AsCollectionInternal<const T>(t);
 }
 
 
