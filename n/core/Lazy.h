@@ -25,7 +25,7 @@ namespace n {
 namespace core {
 
 template<typename T>
-class LazyVal
+class LazyVal : public NonCopyable
 {
 	public:
 		typedef typename std::result_of<T()>::type resultType;
@@ -38,9 +38,6 @@ class LazyVal
 
 		LazyVal(LazyVal &&l) : func(l.func), value(l.value) {
 		}
-
-		LazyVal(const LazyVal &) = delete;
-		LazyVal &operator=(const LazyVal &) = delete;
 
 		resultType get() const {
 			if(!value) {

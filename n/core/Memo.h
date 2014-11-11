@@ -19,12 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <map>
 #include <n/types.h>
+#include <n/utils.h>
 
 namespace n {
 namespace core {
 
 template<typename T>
-class MemFunc
+class MemFunc : public NonCopyable
 {
 	public:
 		MemFunc(const T &&w) : t(w) {

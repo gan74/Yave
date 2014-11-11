@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CONCURENT_THREAD_H
 #define N_CONCURENT_THREAD_H
 
+#include <n/utils.h>
+
 namespace n {
 
 namespace core {
@@ -26,12 +28,10 @@ class Timer;
 namespace concurent {
 
 
-class Thread
+class Thread : public core::NonCopyable
 {
 	public:
 		Thread();
-		Thread(const Thread &) = delete;
-		Thread& operator=(const Thread &) = delete;
 
 		virtual ~Thread();
 

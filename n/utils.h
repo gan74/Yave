@@ -27,8 +27,6 @@ namespace n {
 	extern const void *null;
 
 namespace math {
-
-
 	template<typename T = double>
 	static constexpr T pi() {
 		return T(3.1415926535897932384626433832795028841971693993751058);
@@ -83,6 +81,7 @@ namespace core {
 	class NonCopyable
 	{
 		public:
+			NonCopyable() {}
 			NonCopyable(const NonCopyable &) = delete;
 			NonCopyable &operator=(const NonCopyable &) = delete;
 	};

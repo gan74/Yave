@@ -25,13 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 
-class File : public IODevice
+class File : public IODevice, core::NonCopyable
 {
 	public:
 		File(const core::String &fileName);
-
-		File(const File &) = delete;
-		File &operator=(const File &) = delete;
 
 		bool open(int m) override;
 		void seek(uint pos);

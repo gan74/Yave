@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CONCURENT_MUTEX_H
 
 #include <pthread.h>
+#include <n/utils.h>
 
 namespace n {
 namespace concurent {
@@ -39,7 +40,7 @@ class WaitCondition
 		pthread_cond_t condition;
 };
 
-class Mutex
+class Mutex : public core::NonCopyable
 {
 	public:
 		enum RecursionMode
