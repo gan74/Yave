@@ -34,7 +34,7 @@ class Vec
 	template<uint P, uint Q, typename U, typename... Args>
 	void build(const Vec<U, Q> &t, Args... args) {
 		for(uint i = 0; i != Q; i++) {
-			vec[P + i] = t[i];
+			vec[P + i] = T(t[i]);
 		}
 		build<P + Q>(args...);
 	}
