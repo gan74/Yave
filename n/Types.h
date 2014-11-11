@@ -48,6 +48,9 @@ struct Unit
 	Unit(T &&) {}
 };
 
+template<typename O, typename...>
+static O &makeOne();
+
 
 template<bool B>
 struct BoolToType // false

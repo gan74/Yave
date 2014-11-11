@@ -220,7 +220,7 @@ class String
 
 		template<typename T>
 		String convertDispatch(const T &t, FalseType) const {
-			return buildDispatch(t, BoolToType<AsCollection<T>::isCollection>());
+			return buildDispatch(t, BoolToType<Collection<T>::isCollection>());
 		}
 
 		String convertDispatch(const String &t, TrueType) const {

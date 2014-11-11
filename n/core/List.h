@@ -174,7 +174,7 @@ class List
 
 		template<typename C>
 		void append(const C &c) {
-			appendDispatch(c, BoolToType<AsCollection<C>::isCollection>());
+			appendDispatch(c, BoolToType<TypeConversion<C, T>::exists>());
 		}
 
 		template<typename A, typename B, typename... Args>
@@ -192,7 +192,7 @@ class List
 
 		template<typename C>
 		void prepend(const C &c) {
-			prependDispatch(c, BoolToType<AsCollection<C>::isCollection>());
+			prependDispatch(c, BoolToType<TypeConversion<C, T>::exists>());
 		}
 
 		template<typename C>
@@ -546,7 +546,7 @@ class List
 		}
 
 		template<typename C>
-		void appendDispatch(const C &t, FalseType) {
+		void appendDispatch(const C &t, TrueType) {
 			ListElem *e = new ListElem(t, tail, 0);
 			if(head == tail) {
 				head =  e;
@@ -559,14 +559,14 @@ class List
 		}
 
 		template<typename C>
-		void appendDispatch(const C &c, TrueType) {
+		void appendDispatch(const C &c, FalseType) {
 			for(const auto &e : c) {
 				append(e);
 			}
 		}
 
 		template<typename C>
-		void prependDispatch(const C &t, FalseType) {
+		void prependDispatch(const C &t, TrueType) {
 			if(isEmpty()) {
 				append(t);
 			} else {
@@ -577,7 +577,7 @@ class List
 		}
 
 		template<typename C>
-		void prependDispatch(const C &c, TrueType) {
+		void prependDispatch(const C &c, FalseType) {
 			for(const auto &e : c) {
 				append(e);
 			}

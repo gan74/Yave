@@ -38,7 +38,6 @@ namespace internal {
 	N_GEN_TYPE_HAS_METHOD(HasMap, map)
 	N_GEN_TYPE_HAS_METHOD(HasFilter, filter)
 	N_GEN_TYPE_HAS_METHOD(HasMake, make)
-}
 
 template<typename T>
 class AsCollection
@@ -136,16 +135,18 @@ class AsCollection
 
 		static constexpr bool isCollection = !std::is_same<ElementType, NullType>::value;
 
-		AsCollection(const T &t) : collection(t) {
+		/*AsCollection(const T &t) : collection(t) {
 		}
+
+		AsCollection() : collection(T()) {
+		}*/
 
 		AsCollection(T &t) : collection(t) {
 		}
 
-		AsCollection() {
-		}
+		//AsCollection(const AsCollection<T> &) = delete;
 
-		AsCollection(const AsCollection<T> &) = delete;
+		AsCollection() = default;
 
 		bool isEmpty() const {
 			return !(this->size());
@@ -241,7 +242,7 @@ class AsCollection
 		}
 
 	private:
-		T collection;
+		T &collection;
 
 		uint sizeDispatch(TrueType) const {
 			return collection.size();
@@ -505,6 +506,31 @@ class AsCollection
 			return str + U(*end);
 		}
 };
+
+}
+
+template<typename T>
+class Collection
+{
+	public:
+		typedef typename internal::AsCollection<T>::const_iterator const_iterator;
+		typedef typename internal::AsCollection<T>::iterator iterator;
+		typedef typename internal::AsCollection<T>::ElementType ElementType;
+
+		static constexpr bool isCollection = internal::AsCollection<T>::isCollection;
+};
+
+template<typename T>
+constexpr auto AsCollection(T &t) {
+	return internal::AsCollection<T>(t);
+}
+
+template<typename T>
+constexpr auto AsCollection(const T &t) {
+	return internal::AsCollection<const T>(t);
+}
+
+
 
 }
 }
