@@ -27,6 +27,13 @@ namespace n {
 	extern const void *null;
 
 namespace math {
+
+
+	template<typename T = double>
+	static constexpr T pi() {
+		return T(3.1415926535897932384626433832795028841971693993751058);
+	}
+
 	uint random(uint max, uint min = 0);
 	float random();
 

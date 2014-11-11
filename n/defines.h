@@ -27,8 +27,6 @@ void unused(T) {}
 
 /* defines stuffs here */
 
-#define N_PI 3.1415926535897932384626433832795028841971693993751058
-
 #ifdef N_DEBUG
 #define nError(msg) n::fatal((msg), __FILE__, __LINE__)
 #else

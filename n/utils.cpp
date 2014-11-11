@@ -53,11 +53,11 @@ namespace math {
 	}
 
 	float toDeg(float a) {
-		return a * 180 / N_PI;
+		return a * 180 / pi();
 	}
 
 	float toRad(float a) {
-		return a / 180 * N_PI;
+		return a / 180 * pi();
 	}
 } //math
 
