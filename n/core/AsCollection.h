@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/types.h>
 
+
 namespace n {
 namespace core {
 
@@ -38,6 +39,7 @@ namespace internal {
 	N_GEN_TYPE_HAS_METHOD(HasMap, map)
 	N_GEN_TYPE_HAS_METHOD(HasFilter, filter)
 	N_GEN_TYPE_HAS_METHOD(HasMake, make)
+	N_GEN_TYPE_HAS_METHOD(HasSetMinCapacity, setMinCapacity)
 }
 
 template<typename T>
@@ -250,8 +252,23 @@ class AsCollectionInternal
 			return mappedDispatch<C, Args...>(BoolToType<internal::HasMapped<T, C, Args...>::value>(), f...);
 		}
 
+		template<typename... Args>
+		void setMinCapacity(Args... f) {
+			return setMinCapacityDispatch(BoolToType<internal::HasSetMinCapacity<T, void, Args...>::value>(), f...);
+		}
+
 	private:
 		T &collection;
+
+		template<typename... Args>
+		void setMinCapacityDispatch(TrueType, Args... f) {
+			collection.setMinCapacity(f...);
+		}
+
+		template<typename... Args>
+		void setMinCapacityDispatch(FalseType, Args...) {
+		}
+
 
 		uint sizeDispatch(TrueType) const {
 			return collection.size();
@@ -460,6 +477,7 @@ class AsCollectionInternal
 		template<typename C, typename V>
 		C mappedDispatch(FalseType, const V &f) const {
 			C a;
+			AsCollection(a).setMinCapacity(size());
 			foreach([&](const ElementType &e) { a.insert(f(e)); });
 			return a;
 		}
@@ -467,6 +485,7 @@ class AsCollectionInternal
 		template<typename C, typename U>
 		C filteredDispatch(FalseType, const U &f) const {
 			C a;
+			AsCollection(a).setMinCapacity(size());
 			foreach([&](const ElementType &e) {
 				if(f(e)) {
 					a.insert(e);
