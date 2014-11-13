@@ -19,9 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/types.h>
 #include <n/utils.h>
+#include "AsCollection.h"
 #include <cstring>
 #include <algorithm>
-
 #include <iostream>
 
 namespace n {
@@ -478,6 +478,7 @@ class Array : public ResizePolicy
 		template<typename V, typename C = Array<typename std::result_of<V(const T &)>::type, ResizePolicy>>
 		C mapped(const V &f) const {
 			C a;
+			AsCollection(a).setMinCapacity(size());
 			foreach([&](const T &e) { a.insert(f(e)); });
 			return a;
 		}
@@ -485,6 +486,7 @@ class Array : public ResizePolicy
 		template<typename U, typename C = Array<T, ResizePolicy>>
 		C filtered(const U &f) const {
 			C a;
+			AsCollection(a).setMinCapacity(size());
 			foreach([&](const T &e) {
 				if(f(e)) {
 					a.insert(e);
