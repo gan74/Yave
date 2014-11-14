@@ -234,18 +234,18 @@ class Array : public ResizePolicy
 		}
 
 		template<typename C>
-		bool operator==(const C &c) const {
-			if(c.size() != size()) {
-				return false;
-			}
-			const T *i = data;
-			for(typename C::const_iterator it = c.begin(), en = c.end(); it != en; ++it) {
-				if(!(*it == *i)) {
-					return false;
+		bool operator==(const C &l) const {
+			if(size() == l.size()) {
+				const_iterator a = begin();
+				auto b = l.begin();
+				while(a != end()) {
+					if(*a++ != *b++) {
+						return false;
+					}
 				}
-				i++;
+				return true;
 			}
-			return true;
+			return false;
 		}
 
 		template<typename C>
@@ -627,7 +627,7 @@ class Array : public ResizePolicy
 
 		template<typename C>
 		void appendDispatch(const C &c, FalseType) {
-			setMinCapacity(size() + c.size());
+			setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
 			for(const auto &e : c) {
 				append(e);
 			}
