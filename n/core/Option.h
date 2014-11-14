@@ -70,11 +70,11 @@ class Option
 			return hasVal;
 		}
 
-		const T &getValue() const {
+		const T &get() const {
 			return val;
 		}
 
-		const T &getValue(const T &def) const {
+		const T &get(const T &def) const {
 			return hasVal ? val : def;
 		}
 
@@ -99,6 +99,14 @@ class Option
 			T val;
 		};
 		bool hasVal;
+};
+
+struct None
+{
+	template<typename T>
+	operator Option<T>() const {
+		return Option<T>();
+	}
 };
 
 } //core
