@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_COLLECTION_H
 
 #include <n/types.h>
+#include "Option.h"
 
 
 namespace n {
@@ -40,6 +41,8 @@ namespace internal {
 	N_GEN_TYPE_HAS_METHOD(HasFilter, filter)
 	N_GEN_TYPE_HAS_METHOD(HasMake, make)
 	N_GEN_TYPE_HAS_METHOD(HasSetMinCapacity, setMinCapacity)
+
+	N_GEN_TYPE_HAS_METHOD(HasEquals, operator==)
 }
 
 template<typename T>
@@ -52,6 +55,7 @@ class AsCollectionInternal
 			typedef NullType const_iterator;
 			typedef NullType iterator;
 			typedef NullType type;
+			typedef NullType SubCollection;
 		};
 
 		template<typename U>
@@ -60,6 +64,36 @@ class AsCollectionInternal
 			using const_iterator = typename U::const_iterator;
 			using iterator = typename U::iterator;
 			typedef typename TypeContent<iterator>::type type;
+
+			class SubCollection
+			{
+				public:
+					typedef CollectionInternal::iterator iterator;
+					typedef CollectionInternal::const_iterator const_iterator;
+
+					iterator begin() {
+						return beg;
+					}
+
+					iterator end() {
+						return end;
+					}
+
+					const_iterator begin() const {
+						return beg;
+					}
+
+					const_iterator end() const {
+						return en;
+					}
+
+				private:
+					SubCollection(iterator b, iterator e) :	beg(b), en(e) {
+					}
+
+					iterator beg;
+					iterator en;
+			};
 		};
 
 		template<typename U>
@@ -68,6 +102,29 @@ class AsCollectionInternal
 			using const_iterator = typename U::const_iterator;
 			typedef NullType iterator;
 			typedef typename TypeContent<const_iterator>::type type;
+
+			class SubCollection
+			{
+				public:
+					typedef CollectionInternal::const_iterator const_iterator;
+
+					const_iterator begin() const {
+						return beg;
+					}
+
+					const_iterator end() const {
+						return en;
+					}
+
+				private:
+					friend class AsCollectionInternal<T>;
+
+					SubCollection(const_iterator b, const_iterator e) :	beg(b), en(e) {
+					}
+
+					const_iterator beg;
+					const_iterator en;
+			};
 		};
 
 		template<typename A, typename... B>
@@ -148,6 +205,7 @@ class AsCollectionInternal
 		typedef typename InternalType::const_iterator const_iterator;
 		typedef typename InternalType::iterator iterator;
 		typedef typename InternalType::type ElementType;
+		typedef typename InternalType::SubCollection SubCollection;
 
 		static constexpr bool isCollection = !std::is_same<ElementType, NullType>::value;
 
@@ -161,6 +219,13 @@ class AsCollectionInternal
 
 		bool isEmpty() const {
 			return !(this->size());
+		}
+
+		Option<uint> sizeOption() const {
+			if(internal::HasSize<T, uint>::value) {
+				return size();
+			}
+			return None();
 		}
 
 		uint size() const {
@@ -257,8 +322,46 @@ class AsCollectionInternal
 			return setMinCapacityDispatch(BoolToType<internal::HasSetMinCapacity<T, void, Args...>::value>(), f...);
 		}
 
+		AsCollectionInternal<T> sub(iterator be, iterator en) {
+			return AsCollectionInternal<T>(SubCollection(be, en));
+		}
+
+		AsCollectionInternal<const T> sub(const_iterator be, const_iterator en) const {
+			return AsCollectionInternal<const T>(SubCollection(be, en));
+		}
+
+		template<typename... Args>
+		bool operator==(Args... f) const {
+			return equalsDispatch(BoolToType<internal::HasEquals<T, bool, Args...>::value>(), f...);
+		}
+
+		template<typename... Args>
+		bool operator!=(Args... f) const {
+			return !operator==(f...);
+		}
+
 	private:
 		T &collection;
+
+		template<typename... Args>
+		bool equalsDispatch(TrueType, Args... f) const {
+			return collection.operator==(f...);
+		}
+
+		template<typename C>
+		bool equalsDispatch(FalseType, const C &c) const {
+			if(internal::HasSize<C, uint>::value && internal::HasSize<T, uint>::value && AsCollection(c).size() != size()) {
+				return false;
+			}
+			const_iterator i = collection.begin();
+			for(typename C::const_iterator it = c.begin(), en = c.end(); it != en; ++it) {
+				if(!(*it == *i)) {
+					return false;
+				}
+				++i;
+			}
+			return true;
+		}
 
 		template<typename... Args>
 		void setMinCapacityDispatch(TrueType, Args... f) {
@@ -542,6 +645,7 @@ class Collection
 		typedef typename AsCollectionInternal<T>::const_iterator const_iterator;
 		typedef typename AsCollectionInternal<T>::iterator iterator;
 		typedef typename AsCollectionInternal<T>::ElementType ElementType;
+		typedef typename AsCollectionInternal<T>::SubCollection SubCollection;
 
 		static constexpr bool isCollection = AsCollectionInternal<T>::isCollection;
 };
