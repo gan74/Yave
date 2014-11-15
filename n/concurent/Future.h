@@ -42,6 +42,14 @@ class SharedFuture
 			return shared->state == Waiting;
 		}
 
+		bool isFailed() const {
+			return shared->state == Failed;
+		}
+
+		bool isSuccess() const {
+			return shared->state == Succeded;
+		}
+
 		core::Option<T> get() {
 			wait();
 			Internal i = getInternal();
