@@ -50,20 +50,6 @@ class NoLock
 template<typename T, typename Proxy = NoProxy<T>, typename LockingPolicy = NoLock>
 class SmartPtr : private LockingPolicy
 {
-	class BoolConvertion // prevent abusive implicit convertion to bool
-	{
-		public:
-			operator bool() const {
-				return result;
-			}
-
-		private:
-			BoolConvertion(bool r) : result(r) {
-			}
-
-			bool result;
-	};
-
 	public:
 		SmartPtr(T *&&p = 0) : LockingPolicy(), ptr(p), count(ptr ? new uint(1) : 0) {
 		}
@@ -152,11 +138,6 @@ class SmartPtr : private LockingPolicy
 		operator SmartPtr<const T>() const {
 			return *this;
 		}
-
-		operator BoolConvertion() const {
-			return BoolConvertion(ptr);
-		}
-
 
 	private:
 		void ref(const SmartPtr<T, Proxy, LockingPolicy> &p) {
