@@ -127,7 +127,8 @@ class Quaternion
 		}
 
 		Vec<T, 3> toEuler() const {
-			return Vec<T, 3>(atan2(T(2) * (w() * x() + y() * z()), T(1) - T(2) * (x() * x() + y() * y())),										 asin(T(2) * (w() * y() - z() * x())),
+			return Vec<T, 3>(atan2(T(2) * (w() * x() + y() * z()), T(1) - T(2) * (x() * x() + y() * y())),
+							 wasin(T(2) * (w() * y() - z() * x())),
 							 atan2(T(2) * (w() * z() + x() * y()), T(1) - T(2) * (y() * y() + z() * z())));
 		}
 
