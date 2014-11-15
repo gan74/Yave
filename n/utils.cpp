@@ -51,14 +51,6 @@ namespace math {
 	float random() {
 		return (float)(randHelper() & 0x7FFFFF) * 1.0f / (0x7FFFFF + 1.0f);
 	}
-
-	float toDeg(float a) {
-		return a * 180 / pi();
-	}
-
-	float toRad(float a) {
-		return a / 180 * pi();
-	}
 } //math
 
 namespace core {

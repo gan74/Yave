@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_COLLECTION_H
 
 #include <n/types.h>
+#include <algorithm>
 #include "Option.h"
-
 
 namespace n {
 namespace core {

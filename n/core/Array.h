@@ -20,9 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/types.h>
 #include <n/utils.h>
 #include "AsCollection.h"
-#include <cstring>
-#include <algorithm>
-#include <iostream>
 
 namespace n {
 namespace core {

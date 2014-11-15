@@ -18,11 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_UTILS_H
 
 #include <n/types.h>
-#include <tgmath.h>
-#include <algorithm>
-#include <cfloat>
-
 #include <vector>
+#include <cfloat>
 
 namespace n {
 	extern const void *null;
@@ -41,8 +38,15 @@ namespace math {
 	uint random(uint max, uint min = 0);
 	float random();
 
-	float toDeg(float a);
-	float toRad(float a);
+	template<typename T>
+	T toDeg(T a) {
+		return a * T(180) / pi<T>();
+	}
+
+	template<typename T>
+	T toRad(T a) {
+		return a / T(180) * pi<T>();
+	}
 
 	template<typename T>
 	const T &clamp(const T &val, const T &mi, const T &ma) {
@@ -94,6 +98,14 @@ namespace core {
 
 	uint hash(const void *key, uint len, uint seed = 0x1000193);
 	uint log2ui(uint n);
+
+	template<typename I, typename F>
+	void for_each(I first, I last, F fn) {
+		while (first!=last) {
+			fn(*first);
+			++first;
+		}
+	}
 
 	template<typename I>
 	void radixSort(I beg, I end) {
