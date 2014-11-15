@@ -60,6 +60,10 @@ class Transform
 			return rot;
 		}
 
+		Vec<3, T> getPosition() const {
+			return pos;
+		}
+
 		Matrix<3, 3, T> getBasis() const {
 			return Matrix<3, 3, T>(getX(), getY(), getZ()).transposed();
 		}

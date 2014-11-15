@@ -140,6 +140,10 @@ class Quaternion
 			return Vec<4, T>(quat.sub(3) / s, acos(w()) * T(2));
 		}
 
+		Vec<3, T> toPacked() const {
+			return quat.sub(3);
+		}
+
 		static Quaternion<T> fromEuler(T yaw, T pitch, T roll) {
 			T cosYaw = cos(yaw * T(0.5));
 			T sinYaw = sin(yaw * T(0.5));
@@ -164,6 +168,10 @@ class Quaternion
 
 		static Quaternion<T> fromAxisAngle(const Vec<4, T> &v) {
 			return fromAxisAngle(v.sub(3), v.w());
+		}
+
+		static Quaternion<T> fromPacked(const Vec<3, T> &v) {
+			return Quaternion<T>(v, sqrt(1 - v.x() * v.x() - v.y() * v.y()));
 		}
 
 	private:
