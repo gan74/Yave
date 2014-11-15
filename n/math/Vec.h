@@ -284,35 +284,35 @@ class Vec
 		}
 
 		Vec<T, N> operator+(const Vec<T, N> &v) const {
-			T t[N];
+			Vec<T, N> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = vec[i] + v.vec[i];
 			}
-			return Vec<T, N>(t);
+			return t;
 		}
 
 		Vec<T, N> operator-(const Vec<T, N> &v) const {
-			T t[N];
+			Vec<T, N> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = vec[i] - v.vec[i];
 			}
-			return Vec<T, N>(t);
+			return t;
 		}
 
 		Vec<T, N> operator*(const Vec<T, N> &v) const {
-			T t[N];
+			Vec<T, N> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = vec[i] * v.vec[i];
 			}
-			return Vec<T, N>(t);
+			return t;
 		}
 
 		Vec<T, N> operator/(const Vec<T, N> &v) const {
-			T t[N];
+			Vec<T, N> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = vec[i] / v.vec[i];
 			}
-			return Vec<T, N>(t);
+			return t;
 		}
 
 		Vec<T, N> operator-() const {
@@ -321,20 +321,6 @@ class Vec
 				t[i] = -vec[i];
 			}
 			return t;
-		}
-
-		Vec<T, N> &operator+=(const Vec<T, N> &v) {
-			for(uint i = 0; i != N; i++) {
-				vec[i] += v.vec[i];
-			}
-			return *this;
-		}
-
-		Vec<T, N> &operator-=(const Vec<T, N> &v) {
-			for(uint i = 0; i != N; i++) {
-				vec[i] -= v.vec[i];
-			}
-			return *this;
 		}
 
 		Vec<T, N> operator*(const T &t) const {
@@ -353,17 +339,27 @@ class Vec
 			return v;
 		}
 
-		Vec<T, N> &operator*=(const T &t) {
-			for(uint i = 0; i != N; i++) {
-				vec[i] *= t;
-			}
+		template<typename U>
+		Vec<T, N> &operator*=(const U &t) {
+			operator=(*this * t);
 			return *this;
 		}
 
-		Vec<T, N> &operator/=(const T &t) {
-			for(uint i = 0; i != N; i++) {
-				vec[i] /= t;
-			}
+		template<typename U>
+		Vec<T, N> &operator/=(const U &t) {
+			operator=(*this / t);
+			return *this;
+		}
+
+		template<typename U>
+		Vec<T, N> &operator+=(const U &t) {
+			operator=(*this + t);
+			return *this;
+		}
+
+		template<typename U>
+		Vec<T, N> &operator-=(const U &t) {
+			operator=(*this - t);
 			return *this;
 		}
 
