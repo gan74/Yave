@@ -22,22 +22,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace math {
 
-template<typename T, uint N, uint M>
+template<uint N, uint M, typename T>
 class Matrix;
 
 namespace internal {
 	template<typename T, uint N>
-	T determinant(const Matrix<T, N, N> &mat);
+	T determinant(const Matrix<N, N, T> &mat);
 
 	template<typename T>
-	T determinant(const Matrix<T, 2, 2> &mat);
+	T determinant(const Matrix<2, 2, T> &mat);
 
 	template<typename T>
-	T determinant(const Matrix<T, 1, 1> &mat);
+	T determinant(const Matrix<1, 1, T> &mat);
 }
 
 
-template<typename T, uint N, uint M> // N rows & M cols
+template<uint N, uint M, typename T = float> // N rows & M cols
 class Matrix
 {
 	template<uint P, typename... Args>
@@ -47,7 +47,7 @@ class Matrix
 	}
 
 	template<uint P, uint Q, typename U, typename... Args>
-	void build(const Vec<U, Q> &t, Args... args) {
+	void build(const Vec<Q, U> &t, Args... args) {
 		for(uint i = 0; i != Q; i++) {
 			setAt(P + i, T(t[i]));
 		}
@@ -73,17 +73,22 @@ class Matrix
 			build<0>(t, args...);
 		}
 
-		Matrix(const Vec<T, N> r[M]) {
+		template<uint P, typename... Args>
+		Matrix(const Vec<P, T> &t, Args... args) {
+			build<0>(t, args...);
+		}
+
+		Matrix(const Vec<N, T> r[M]) {
 			for(uint i = 0; i != M; i++) {
 				rows[i] = r[i];
 			}
 		}
 
-		Vec<T, M> &operator[](uint i) {
+		Vec<M, T> &operator[](uint i) {
 			return rows[i];
 		}
 
-		const Vec<T, M> &operator[](uint i) const {
+		const Vec<M, T> &operator[](uint i) const {
 			return rows[i];
 		}
 
@@ -91,9 +96,18 @@ class Matrix
 			return N == M;
 		}
 
+		template<typename U>
+		Vec<M, U> operator*(const Vec<M, U> &v) const {
+			Vec<M, U> tr;
+			for(uint i = 0; i != M; i++) {
+				tr += column(i) * v[i];
+			}
+			return tr;
+		}
+
 		template<typename U, uint P>
-		auto operator*(const Matrix<U, M, P> &m) const -> Matrix<decltype(makeOne<T>() * makeOne<U>()), N, P> {
-			Matrix<decltype(makeOne<T>() * makeOne<U>()), N, P> mat;
+		auto operator*(const Matrix<M, P, U> &m) const -> Matrix<N, P, decltype(makeOne<T>() * makeOne<U>())> {
+			Matrix<N, P, decltype(makeOne<T>() * makeOne<U>())> mat;
 			for(uint i = 0; i != N; i++) {
 				for(uint j = 0; j != P; j++) {
 					decltype(makeOne<T>() * makeOne<U>()) tmp(0);
@@ -107,8 +121,8 @@ class Matrix
 		}
 
 		template<typename U>
-		auto operator+(const Matrix<U, N, M> &m) const -> Matrix<decltype(makeOne<T>() + makeOne<U>()), N, M> {
-			Matrix<decltype(makeOne<T>() * makeOne<U>()), N, M> mat;
+		auto operator+(const Matrix<N, M, U> &m) const -> Matrix<N, M, decltype(makeOne<T>() + makeOne<U>())> {
+			Matrix<N, M, decltype(makeOne<T>() * makeOne<U>())> mat;
 			for(uint i = 0; i != N; i++) {
 				for(uint j = 0; j != M; j++) {
 					mat[i][j] = rows[i][j] + m[i][j];
@@ -117,24 +131,25 @@ class Matrix
 			return mat;
 		}
 
-		Vec<T, N> column(uint col) const {
-			Vec<T, N> c;
+		Vec<N, T> column(uint col) const {
+			Vec<N, T> c;
 			for(uint i = 0; i != N; i++) {
 				c[i] = rows[i][col];
 			}
+			return c;
 		}
 
-		Matrix<T, M, N> transposed() const {
-			Matrix<T, M, N> tr;
+		Matrix<M, N, T> transposed() const {
+			Matrix<M, N, T> tr;
 			for(uint i = 0; i != N; i++) {
-				for(uint j = 0; j != M; i++) {
+				for(uint j = 0; j != M; j++) {
 					tr[j][i] = (*this)[i][j];
 				}
 			}
 			return tr;
 		}
 
-		Matrix<T, N, M> &operator=(const Matrix<T, N, M> &m) {
+		Matrix<N, M, T> &operator=(const Matrix<N, M, T> &m) {
 			for(uint i = 0; i != N; i++) {
 				for(uint j = 0; j != M; j++) {
 					(*this)[i][j] = m[i][j];
@@ -143,7 +158,7 @@ class Matrix
 			return *this;
 		}
 
-		bool operator==(const Matrix<T, N, M> &m) const {
+		bool operator==(const Matrix<N, M, T> &m) const {
 			for(uint i = 0; i != N; i++) {
 				for(uint j = 0; j != M; j++) {
 					if((*this)[i][j] != m[i][j]) {
@@ -154,8 +169,8 @@ class Matrix
 			return true;
 		}
 
-		Matrix<T, N - 1, M - 1> sub(uint r, uint c) const {
-			Matrix<T, N - 1, M - 1> mat;
+		Matrix<N - 1, M - 1, T> sub(uint r, uint c) const {
+			Matrix<N - 1, M - 1, T> mat;
 			for(uint i = 0; i != N - 1; i++) {
 				for(uint j = 0; j != M - 1; j++) {
 					uint ir = i < r ? i : i + 1;
@@ -171,11 +186,11 @@ class Matrix
 			return internal::determinant(*this);
 		}
 
-		Matrix<T, N, M> inverse() const {
-			Matrix<T, N, M> inv;
+		Matrix<N, M, T> inverse() const {
+			Matrix<N, M, T> inv;
 			T d = determinant();
 			if(d == 0) {
-				return Matrix<T, N, M>();
+				return Matrix<N, M, T>();
 			}
 			d = 1 / d;
 			for(uint i = 0; i != N; i++) {
@@ -186,9 +201,9 @@ class Matrix
 			return inv;
 		}
 
-		static constexpr Matrix<T, N, M> identity() {
+		static constexpr Matrix<N, M, T> identity() {
 			chksq();
-			Matrix<T, N, M> mat;
+			Matrix<N, M, T> mat;
 			for(uint i = 0; i != N; i++) {
 				mat[i][i] = T(1);
 			}
@@ -200,12 +215,12 @@ class Matrix
 			static_assert(isSquare(), "The matrix must be square");
 		}
 
-		Vec<T, M> rows[N];
+		Vec<M, T> rows[N];
 };
 
 namespace internal {
 	template<typename T, uint N>
-	T determinant(const Matrix<T, N, N> &mat) {
+	T determinant(const Matrix<N, N, T> &mat) {
 		struct {
 			int operator()(int index) const {
 				return 2 * (index % 2) - 1;
@@ -219,13 +234,13 @@ namespace internal {
 	}
 
 	template<typename T>
-	T determinant(const Matrix<T, 2, 2> &mat) {
+	T determinant(const Matrix<2, 2, T> &mat) {
 		return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 	}
 
 
 	template<typename T>
-	T determinant(const Matrix<T, 1, 1> &mat) {
+	T determinant(const Matrix<1, 1, T> &mat) {
 		return mat[0][0];
 	}
 }

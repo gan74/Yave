@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace math {
 
-template<typename T>
+template<typename T = float>
 class Quaternion
 {
 
@@ -33,11 +33,11 @@ class Quaternion
 
 
 		template<typename U>
-		Quaternion(const Vec<U, 4> &q) : quat(q.normalized()) {
+		Quaternion(const Vec<4, U> &q) : quat(q.normalized()) {
 		}
 
 		template<typename... Args>
-		Quaternion(Args... args) : Quaternion(Vec<T, 4>(args...)) {
+		Quaternion(Args... args) : Quaternion(Vec<4, T>(args...)) {
 		}
 
 		Quaternion() : Quaternion(0, 0, 0, 1) {
@@ -47,20 +47,20 @@ class Quaternion
 			return acos(w() * T(2));
 		}
 
-		Vec<T, 3> getAxis() const {
-			return Vec<T, 3>(quat.sub(3) /sqrt(T(1) - w() * w()));
+		Vec<3, T> getAxis() const {
+			return Vec<3, T>(quat.sub(3) /sqrt(T(1) - w() * w()));
 		}
 
 		Quaternion<T> inverse() const {
 			return Quaternion<T>(-quat.sub(3), quat.w());
 		}
 
-		operator Vec<T, 4>() const {
+		operator Vec<4, T>() const {
 			return quat;
 		}
 
-		Vec<T, 3> operator()(const Vec<T, 3> &v) const {
-			Vec<T, 3> u = quat.sub(3);
+		Vec<3, T> operator()(const Vec<3, T> &v) const {
+			Vec<3, T> u = quat.sub(3);
 			return u * T(2) * u.dot(v)
 				  + v * (w() * w() - u.length2())
 				  + u.cross(v) * T(2) * w();
@@ -91,7 +91,7 @@ class Quaternion
 		}
 
 		template<typename U>
-		Quaternion<T> &operator=(const Vec<U, 4> &q) {
+		Quaternion<T> &operator=(const Vec<4, U> &q) {
 			quat = q.normalized();
 			return *this;
 		}
@@ -126,18 +126,18 @@ class Quaternion
 			 return quat.w();
 		}
 
-		Vec<T, 3> toEuler() const {
-			return Vec<T, 3>(atan2(T(2) * (w() * x() + y() * z()), T(1) - T(2) * (x() * x() + y() * y())),
+		Vec<3, T> toEuler() const {
+			return Vec<3, T>(atan2(T(2) * (w() * x() + y() * z()), T(1) - T(2) * (x() * x() + y() * y())),
 							 wasin(T(2) * (w() * y() - z() * x())),
 							 atan2(T(2) * (w() * z() + x() * y()), T(1) - T(2) * (y() * y() + z() * z())));
 		}
 
-		Vec<T, 4> toAxisAngle() const {
+		Vec<4, T> toAxisAngle() const {
 			T s = sqrt(T(w) - w() * w());
 			if(s < epsilon<T>()) {
 				s = T(1);
 			}
-			return Vec<T, 4>(quat.sub(3) / s, acos(w()) * T(2));
+			return Vec<4, T>(quat.sub(3) / s, acos(w()) * T(2));
 		}
 
 		static Quaternion<T> fromEuler(T yaw, T pitch, T roll) {
@@ -153,21 +153,21 @@ class Quaternion
 								 cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw);
 		}
 
-		static Quaternion<T> fromEuler(const Vec<T, 3> &euler) {
+		static Quaternion<T> fromEuler(const Vec<3, T> &euler) {
 			return fromEuler(euler[yawIndex], euler[pitchIndex], euler[rollIndex]);
 		}
 
-		static Quaternion<T> fromAxisAngle(const Vec<T, 3> &axis, T ang) {
+		static Quaternion<T> fromAxisAngle(const Vec<3, T> &axis, T ang) {
 			T s = sin(ang * T(0.5)) / axis.length();
 			return Quaternion<T>(axis.x() * s, axis.y() * s, axis.z() * s, cos(ang * T(0.5)));
 		}
 
-		static Quaternion<T> fromAxisAngle(const Vec<T, 4> &v) {
+		static Quaternion<T> fromAxisAngle(const Vec<4, T> &v) {
 			return fromAxisAngle(v.sub(3), v.w());
 		}
 
 	private:
-		Vec<T, 4> quat;
+		Vec<4, T> quat;
 };
 
 }

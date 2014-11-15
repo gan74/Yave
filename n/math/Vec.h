@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace math {
 
-template<typename T, uint N>
+template<uint N, typename T = float>
 class Vec
 {
 	template<uint P, typename... Args>
@@ -32,7 +32,7 @@ class Vec
 	}
 
 	template<uint P, uint Q, typename U, typename... Args>
-	void build(const Vec<U, Q> &t, Args... args) {
+	void build(const Vec<Q, U> &t, Args... args) {
 		for(uint i = 0; i != Q; i++) {
 			vec[P + i] = T(t[i]);
 		}
@@ -54,6 +54,11 @@ class Vec
 			build<0>(x, args...);
 		}
 
+		template<uint M, typename... Args>
+		Vec(const Vec<M, T> &v, Args... args) {
+			build<0>(v, args...);
+		}
+
 		Vec(T t = T(0)) {
 			for(uint i = 0; i != N; i++) {
 				vec[i] = t;
@@ -61,17 +66,10 @@ class Vec
 		}
 
 		template<typename X>
-		Vec(const Vec<X, N> &v) {
+		Vec(const Vec<N, X> &v) {
 			for(uint i = 0; i != N; i++) {
 				vec[i] = v[i];
 			}
-		}
-
-		Vec(Vec<T, N - 1> v, T t = (T)0) {
-			for(uint i = 0; i != N - 1; i++) {
-				vec[i] = v[i];
-			}
-			vec[N - 1] = t;
 		}
 
 
@@ -87,7 +85,7 @@ class Vec
 			return sqrt(length2());
 		}
 
-		T dot(const Vec<T, N> &o) const {
+		T dot(const Vec<N, T> &o) const {
 			T sum = 0;
 			for(uint i = 0; i != N; i++) {
 				sum += vec[i] * o.vec[i];
@@ -95,8 +93,8 @@ class Vec
 			return sum;
 		}
 
-		Vec<T, N> cross(const Vec<T, N> &o) const {
-			Vec<T, N> v;
+		Vec<N, T> cross(const Vec<N, T> &o) const {
+			Vec<N, T> v;
 			for(uint i = 0; i != N; i++) {
 				v[i] = vec[(i + 1) % N] * o.vec[(i + 2) % N] - vec[(i + 2) % N] * o.vec[(i + 1) % N];
 			}
@@ -113,29 +111,29 @@ class Vec
 			this->operator*=(1.0f / max());
 		}
 
-		Vec<T, N> normalized() const {
+		Vec<N, T> normalized() const {
 			if(isNull()) {
-				return Vec<T, N>();
+				return Vec<N, T>();
 			}
-			Vec<T, N> v(*this);
+			Vec<N, T> v(*this);
 			return v * (1.0f / length());
 		}
 
-		Vec<T, N> saturated() const {
-			Vec<T, N> v(*this);
+		Vec<N, T> saturated() const {
+			Vec<N, T> v(*this);
 			return v * (1.0f / max());
 		}
 
-		Vec<T, N> abs() const {
-			Vec<T, N> v(*this);
+		Vec<N, T> abs() const {
+			Vec<N, T> v(*this);
 			for(uint i = 0; i != N; i++) {
 				v[i] = vec[i] < T(0) ? -vec[i] : vec[i];
 			}
 			return v;
 		}
 
-		Vec<T, N> max(const Vec<T, N> &v) const {
-			Vec<T, N> e;
+		Vec<N, T> max(const Vec<N, T> &v) const {
+			Vec<N, T> e;
 			for(uint i = 0; i != N; i++) {
 				e[i] = std::max(v[i], vec[i]);
 			}
@@ -150,8 +148,8 @@ class Vec
 			return t;
 		}
 
-		Vec<T, N> min(const Vec<T, N> &v) const {
-			Vec<T, N> e;
+		Vec<N, T> min(const Vec<N, T> &v) const {
+			Vec<N, T> e;
 			for(uint i = 0; i != N; i++) {
 				e[i] = std::min(v[i], vec[i]);
 			}
@@ -223,8 +221,8 @@ class Vec
 			return true;
 		}
 
-		Vec<T, N - 1> sub(uint w) const {
-			Vec<T, N - 1> s;
+		Vec<N - 1, T> sub(uint w) const {
+			Vec<N - 1, T> s;
 			uint j = 0;
 			for(uint i = 0; i != N; i++) {
 				if(i != w) {
@@ -250,8 +248,8 @@ class Vec
 			return vec + N;
 		}
 
-		Vec<T, N> flipped() const {
-			Vec<T, N> v;
+		Vec<N, T> flipped() const {
+			Vec<N, T> v;
 			for(uint i = 0; i != N; i++) {
 				v[N - i - 1] = vec[i];
 			}
@@ -270,7 +268,7 @@ class Vec
 			return vec[i];
 		}
 
-		bool operator!=(const Vec<T, N> &o) const {
+		bool operator!=(const Vec<N, T> &o) const {
 			for(uint i = 0; i != N; i++) {
 				if(o.vec[i] != vec[i]) {
 					return true;
@@ -279,60 +277,60 @@ class Vec
 			return false;
 		}
 
-		bool operator==(const Vec<T, N> &o) const {
+		bool operator==(const Vec<N, T> &o) const {
 			return !operator!=(o);
 		}
 
-		Vec<T, N> operator+(const Vec<T, N> &v) const {
-			Vec<T, N> t;
+		Vec<N, T> operator+(const Vec<N, T> &v) const {
+			Vec<N, T> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = vec[i] + v.vec[i];
 			}
 			return t;
 		}
 
-		Vec<T, N> operator-(const Vec<T, N> &v) const {
-			Vec<T, N> t;
+		Vec<N, T> operator-(const Vec<N, T> &v) const {
+			Vec<N, T> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = vec[i] - v.vec[i];
 			}
 			return t;
 		}
 
-		Vec<T, N> operator*(const Vec<T, N> &v) const {
-			Vec<T, N> t;
+		Vec<N, T> operator*(const Vec<N, T> &v) const {
+			Vec<N, T> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = vec[i] * v.vec[i];
 			}
 			return t;
 		}
 
-		Vec<T, N> operator/(const Vec<T, N> &v) const {
-			Vec<T, N> t;
+		Vec<N, T> operator/(const Vec<N, T> &v) const {
+			Vec<N, T> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = vec[i] / v.vec[i];
 			}
 			return t;
 		}
 
-		Vec<T, N> operator-() const {
-			Vec<T, N> t;
+		Vec<N, T> operator-() const {
+			Vec<N, T> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = -vec[i];
 			}
 			return t;
 		}
 
-		Vec<T, N> operator*(const T &t) const {
-			Vec<T, N> v;
+		Vec<N, T> operator*(const T &t) const {
+			Vec<N, T> v;
 			for(uint i = 0; i != N; i++) {
 				v[i] = vec[i] * t;
 			}
 			return v;
 		}
 
-		Vec<T, N> operator/(const T &t) const {
-			Vec<T, N> v;
+		Vec<N, T> operator/(const T &t) const {
+			Vec<N, T> v;
 			for(uint i = 0; i != N; i++) {
 				v[i] = vec[i] / t;
 			}
@@ -340,34 +338,34 @@ class Vec
 		}
 
 		template<typename U>
-		Vec<T, N> &operator*=(const U &t) {
-			operator=(*this * t);
+		Vec<N, T> &operator*=(const U &t) {
+			this->operator=(*this * t);
 			return *this;
 		}
 
 		template<typename U>
-		Vec<T, N> &operator/=(const U &t) {
-			operator=(*this / t);
+		Vec<N, T> &operator/=(const U &t) {
+			this->operator=(*this / t);
 			return *this;
 		}
 
 		template<typename U>
-		Vec<T, N> &operator+=(const U &t) {
-			operator=(*this + t);
+		Vec<N, T> &operator+=(const U &t) {
+			this->operator=(*this + t);
 			return *this;
 		}
 
 		template<typename U>
-		Vec<T, N> &operator-=(const U &t) {
-			operator=(*this - t);
+		Vec<N, T> &operator-=(const U &t) {
+			this->operator=(*this - t);
 			return *this;
 		}
 
-		Vec<T, N> operator^(const Vec<T, N> &o) const {
+		Vec<N, T> operator^(const Vec<N, T> &o) const {
 			return cross(o);
 		}
 
-		bool operator<(const Vec<T, N> &v) const {
+		bool operator<(const Vec<N, T> &v) const {
 			for(uint i = 0; i != N; i++) {
 				if(vec[i] < v[i]) {
 					return true;
@@ -378,7 +376,7 @@ class Vec
 			return false;
 		}
 
-		bool operator>(const Vec<T, N> &v) const {
+		bool operator>(const Vec<N, T> &v) const {
 			for(uint i = 0; i != N; i++) {
 				if(vec[i] > v[i]) {
 					return true;
@@ -390,7 +388,7 @@ class Vec
 		}
 
 		operator core::String() const {
-			return "(" + (core::AsCollection<Vec<T, N>>(*this)).make(core::String(", ")) + ")";
+			return "(" + (core::AsCollection<Vec<N, T>>(*this)).make(core::String(", ")) + ")";
 		}
 
 	private:
@@ -399,21 +397,21 @@ class Vec
 };
 
 
-typedef Vec<float, 2> Vec2;
-typedef Vec<float, 3> Vec3;
-typedef Vec<float, 4> Vec4;
+typedef Vec<2> Vec2;
+typedef Vec<3> Vec3;
+typedef Vec<4> Vec4;
 
-typedef Vec<double, 2> Vec2d;
-typedef Vec<double, 3> Vec3d;
-typedef Vec<double, 4> Vec4d;
+typedef Vec<2, double> Vec2d;
+typedef Vec<3, double> Vec3d;
+typedef Vec<4, double> Vec4d;
 
-typedef Vec<int, 2> Vec2i;
-typedef Vec<int, 3> Vec3i;
-typedef Vec<int, 4> Vec4i;
+typedef Vec<2, int> Vec2i;
+typedef Vec<3, int> Vec3i;
+typedef Vec<4, int> Vec4i;
 
-typedef Vec<uint, 2> Vec2ui;
-typedef	Vec<uint, 3> Vec3ui;
-typedef Vec<uint, 4> Vec4ui;
+typedef Vec<2, uint> Vec2ui;
+typedef	Vec<3, uint> Vec3ui;
+typedef Vec<4, uint> Vec4ui;
 
 }
 }
