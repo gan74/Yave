@@ -25,28 +25,51 @@ namespace n {
 	extern const void *null;
 
 namespace math {
+	namespace internal {
+		template<typename T, bool B>
+		struct ToFloatingPoint
+		{
+			typedef double type;
+		};
+
+		template<typename T>
+		struct ToFloatingPoint<T, true>
+		{
+			typedef T type;
+		};
+	}
+
+
+	template<typename T>
+	struct ToFloatingPoint
+	{
+			typedef typename internal::ToFloatingPoint<T, std::is_floating_point<T>::value>::type type;
+	};
+
 	template<typename T = double>
-	static constexpr T pi() {
-		return T(3.1415926535897932384626433832795028841971693993751058);
+	static constexpr typename ToFloatingPoint<T>::type pi() {
+		return typename ToFloatingPoint<T>::type(3.1415926535897932384626433832795028841971693993751058);
 	}
 
 	template<typename T = double>
-	static constexpr T epsilon() {
-		return T(FLT_EPSILON);
+	static constexpr typename ToFloatingPoint<T>::type epsilon() {
+		return ToFloatingPoint<T>::type(FLT_EPSILON * 2.0);
+	}
+
+	template<typename T>
+	typename ToFloatingPoint<T>::type toDeg(T a) {
+		typedef typename ToFloatingPoint<T>::type type;
+		return a * type(180) / pi<type>();
+	}
+
+	template<typename T>
+	typename ToFloatingPoint<T>::type toRad(T a) {
+		typedef typename ToFloatingPoint<T>::type type;
+		return a / type(180) * pi<type>();
 	}
 
 	uint random(uint max, uint min = 0);
 	float random();
-
-	template<typename T>
-	T toDeg(T a) {
-		return a * T(180) / pi<T>();
-	}
-
-	template<typename T>
-	T toRad(T a) {
-		return a / T(180) * pi<T>();
-	}
 
 	template<typename T>
 	const T &clamp(const T &val, const T &mi, const T &ma) {
@@ -98,14 +121,6 @@ namespace core {
 
 	uint hash(const void *key, uint len, uint seed = 0x1000193);
 	uint log2ui(uint n);
-
-	template<typename I, typename F>
-	void for_each(I first, I last, F fn) {
-		while (first!=last) {
-			fn(*first);
-			++first;
-		}
-	}
 
 	template<typename I>
 	void radixSort(I beg, I end) {
