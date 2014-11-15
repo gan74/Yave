@@ -117,17 +117,17 @@ class Vec
 			if(isNull()) {
 				return Vec<T, N>();
 			}
-			Vec<T, N> v(vec);
+			Vec<T, N> v(*this);
 			return v * (1.0f / length());
 		}
 
 		Vec<T, N> saturated() const {
-			Vec<T, N> v(vec);
+			Vec<T, N> v(*this);
 			return v * (1.0f / max());
 		}
 
 		Vec<T, N> abs() const {
-			Vec<T, N> v(vec);
+			Vec<T, N> v(*this);
 			for(uint i = 0; i != N; i++) {
 				v[i] = vec[i] < T(0) ? -vec[i] : vec[i];
 			}
@@ -250,6 +250,18 @@ class Vec
 			return vec + N;
 		}
 
+		Vec<T, N> flipped() const {
+			Vec<T, N> v;
+			for(uint i = 0; i != N; i++) {
+				v[N - i - 1] = vec[i];
+			}
+			return v;
+		}
+
+		void flip()	{
+			operator=(flipped());
+		}
+
 		T &operator[](uint i) {
 			return vec[i];
 		}
@@ -304,11 +316,11 @@ class Vec
 		}
 
 		Vec<T, N> operator-() const {
-			T t[N];
+			Vec<T, N> t;
 			for(uint i = 0; i != N; i++) {
 				t[i] = -vec[i];
 			}
-			return Vec<T, N>(t);
+			return t;
 		}
 
 		Vec<T, N> &operator+=(const Vec<T, N> &v) {
@@ -326,19 +338,19 @@ class Vec
 		}
 
 		Vec<T, N> operator*(const T &t) const {
-			T v[N];
+			Vec<T, N> v;
 			for(uint i = 0; i != N; i++) {
 				v[i] = vec[i] * t;
 			}
-			return Vec<T, N>(v);
+			return v;
 		}
 
 		Vec<T, N> operator/(const T &t) const {
-			T v[N];
+			Vec<T, N> v;
 			for(uint i = 0; i != N; i++) {
 				v[i] = vec[i] / t;
 			}
-			return Vec<T, N>(v);
+			return v;
 		}
 
 		Vec<T, N> &operator*=(const T &t) {
