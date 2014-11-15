@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/types.h>
 #include <tgmath.h>
 #include <algorithm>
+#include <cfloat>
 
 #include <vector>
 
@@ -30,6 +31,11 @@ namespace math {
 	template<typename T = double>
 	static constexpr T pi() {
 		return T(3.1415926535897932384626433832795028841971693993751058);
+	}
+
+	template<typename T = double>
+	static constexpr T epsilon() {
+		return T(FLT_EPSILON);
 	}
 
 	uint random(uint max, uint min = 0);
