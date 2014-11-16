@@ -205,10 +205,10 @@ class String
 			return t;
 		}
 
-		char *detach(uint s);
+		void detach(uint s);
 
 		uint length;
-		uint *count;
+		mutable uint *count;
 		char *data;
 };
 

@@ -13,7 +13,7 @@ String::String() : length(0), count(0), data(0) {
 String::String(const char *cst) : String(cst, cst ? strlen(cst) : 0) {
 }
 
-String::String(const char *cst, uint l) : length(l), count(l ? new uint(1) : 0), data(0) {
+String::String(const char *cst, uint l) : length(l), count(/*l ? new uint(1) :*/ 0), data(0) {
 	if(l) {
 		data = (char *)malloc((length + 1) * sizeof(char));
 		if(cst) {
@@ -26,6 +26,8 @@ String::String(const char *cst, uint l) : length(l), count(l ? new uint(1) : 0),
 String::String(const String &str) : length(str.length), count(str.count), data(str.data) {
 	if(count) {
 		(*count)++;
+	} else if(data) {
+		count = str.count = new uint(2);
 	}
 }
 
@@ -34,12 +36,25 @@ String::String(String &&str) : String() {
 }
 
 String::~String() {
-	if(count) {
+	/*if(count) {
 		if(*count == 1) {
 			delete count;
 			free(data);
 		} else {
 			(*count)--;
+		}
+	}*/
+	if(data) {
+		if(!count) {
+			delete count;
+			free(data);
+		} else {
+			if(*count == 1) {
+				delete count;
+				free(data);
+			} else {
+				(*count)--;
+			}
 		}
 	}
 }
@@ -68,7 +83,7 @@ String String::replaced(const String &oldS, const String &newS) const {
 }
 
 void String::clear() {
-	detach(length = 0);
+	detach(0);
 }
 
 uint String::size() const {
@@ -231,9 +246,10 @@ std::string String::toStdString() const {
 }
 
 String &String::operator+=(const String &s) {
+	uint l = length;
 	detach(length + s.length);
-	memmove(data + length, s.data, s.length); // just in case of s = s;
-	if(length += s.length) {
+	memmove(data + l, s.data, s.length); // just in case of s = s;
+	if(length) {
 		data[length] = '\0';
 	}
 	return *this;
@@ -256,7 +272,7 @@ bool String::operator==(const String &str) const {
 	if(str.length != length) {
 		return false;
 	}
-	if(str.count == count) {
+	if(count && count == str.count) {
 		return true;
 	}
 	for(uint i = 0; i != length; i++) {
@@ -291,6 +307,8 @@ String &String::operator=(const String &s) {
 	length = s.length;
 	if(count) {
 		(*count)++;
+	} else if(data) {
+		count = s.count = new uint(2);
 	}
 	return *this;
 }
@@ -330,12 +348,48 @@ uint String::getHash() const {
 	return length && data ? hash(data, length) : 0;
 }
 
-char *String::detach(uint s) {
+void String::detach(uint s) {
 	if(s) {
 		if(count) {
 			if(*count == 1) {
 				// cppcheck-suppress memleakOnRealloc
 				data = (char *)realloc(data, (s + 1) * sizeof(char));
+			} else {
+				(*count)--;
+				count = new uint(1);
+				char *d = (char *)malloc((s + 1) * sizeof(char));
+				memcpy(d, data, std::min(length, s) * sizeof(char));
+				data = d;
+			}
+		} else {
+			data = (char *)realloc(data, (s + 1) * sizeof(char));
+		}
+	} else {
+		if(count) {
+			(*count)--;
+			if(!*count) {
+				delete count;
+				free(data);
+			}
+			count = 0;
+			data = 0;
+		} else {
+			if(data) {
+				free(data);
+				data = 0;
+			}
+		}
+	}
+	length = s;
+	if(data) {
+		data[length] = '\0';
+	}
+	/*if(s) {
+		if(count) {
+			if(*count == 1) {
+				// cppcheck-suppress memleakOnRealloc
+				data = (char *)realloc(data, (s + 1) * sizeof(char));
+				data[length] = '\0';
 			} else {
 				(*count)--;
 				count = new uint(1);
@@ -360,11 +414,12 @@ char *String::detach(uint s) {
 			data = 0;
 		}
 	}
-	return data;
+	length = s;
+	return data;*/
 }
 
 bool String::isShared() const {
-	return !count || *count > 1;
+	return !data || (count && *count > 1);
 }
 
 }
