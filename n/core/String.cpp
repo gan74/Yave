@@ -350,76 +350,36 @@ uint String::getHash() const {
 
 void String::detach(uint s) {
 	if(s) {
-		if(count) {
-			if(*count == 1) {
-				// cppcheck-suppress memleakOnRealloc
-				data = (char *)realloc(data, (s + 1) * sizeof(char));
-			} else {
-				(*count)--;
-				count = new uint(1);
-				char *d = (char *)malloc((s + 1) * sizeof(char));
-				memcpy(d, data, std::min(length, s) * sizeof(char));
-				data = d;
-			}
-		} else {
+		if(isUnique()) {
+			// cppcheck-suppress memleakOnRealloc
 			data = (char *)realloc(data, (s + 1) * sizeof(char));
+		} else {
+			(*count)--;
+			count = 0;
+			char *d = (char *)malloc((s + 1) * sizeof(char));
+			memcpy(d, data, std::min(length, s) * sizeof(char));
+			data = d;
 		}
 	} else {
-		if(count) {
-			(*count)--;
-			if(!*count) {
-				delete count;
-				free(data);
-			}
-			count = 0;
-			data = 0;
-		} else {
-			if(data) {
-				free(data);
-				data = 0;
-			}
+		if(isUnique()) {
+			delete count;
+			free(data);
 		}
+		count = 0;
+		data = 0;
 	}
 	length = s;
 	if(data) {
 		data[length] = '\0';
 	}
-	/*if(s) {
-		if(count) {
-			if(*count == 1) {
-				// cppcheck-suppress memleakOnRealloc
-				data = (char *)realloc(data, (s + 1) * sizeof(char));
-				data[length] = '\0';
-			} else {
-				(*count)--;
-				count = new uint(1);
-				char *d = (char *)malloc((s + 1) * sizeof(char));
-				memcpy(d, data, std::min(length, s) * sizeof(char));
-				d[s] = '\0';
-				data = d;
-			}
-		} else {
-			count = new uint(1);
-			data = (char *)malloc((s + 1) * sizeof(char));
-			*data = '\0';
-		}
-	} else {
-		if(count) {
-			(*count)--;
-			if(!*count) {
-				delete count;
-				free(data);
-			}
-			count = 0;
-			data = 0;
-		}
-	}
-	length = s;
-	return data;*/
+}
+
+bool String::isUnique() const {
+	return (!count || *count == 1);
 }
 
 bool String::isShared() const {
-	return !data || (count && *count > 1);
+	return count && *count > 1;
 }
 
 }

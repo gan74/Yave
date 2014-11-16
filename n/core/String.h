@@ -105,6 +105,7 @@ class String
 		String toLower() const;
 		String toUpper() const;
 		bool isShared() const;
+		bool isUnique() const;
 
 		operator std::string() const;
 		std::string toStdString() const;
