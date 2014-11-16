@@ -624,6 +624,7 @@ class Array : public ResizePolicy
 
 		template<typename C>
 		void appendDispatch(const C &c, FalseType) {
+			static_assert(Collection<C>::isCollection, "Can not build n::core::Array<T> from given type. (type is not convertible to T and is not a collection of T)");
 			setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
 			for(const auto &e : c) {
 				append(e);
