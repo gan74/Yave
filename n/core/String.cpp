@@ -7,62 +7,6 @@
 namespace n {
 namespace core {
 
-String::Concat::Concat(const String &a, const String &b) : Concat(a) {
-	tokens.append(b);
-}
-
-String::Concat::Concat(const String &a) : tokens(4) {
-	tokens.append(a);
-}
-
-String::Concat::Concat(const Array<String> &arr) : tokens(arr) {
-}
-
-uint String::Concat::size() const {
-	uint s = 0;
-	for(const String &str : tokens) {
-		s += str.size();
-	}
-	return s;
-}
-
-String::Concat &String::Concat::operator+(const String &s) {
-	tokens.append(s);
-	return *this;
-}
-
-String::Concat &String::Concat::operator+=(const Concat &c) {
-	for(const String &s : c.tokens) {
-		tokens.append(s);
-	}
-	return *this;
-}
-
-String::Concat &String::Concat::operator+=(const String &c) {
-	tokens.append(c);
-	return *this;
-}
-
-bool String::Concat::operator==(const String &str) const {
-	return String(*this) == str;
-}
-
-bool String::Concat::operator==(const char *str) const {
-	return operator==(String(str));
-}
-
-bool String::Concat::operator!=(const String &str) const {
-	return !operator==(str);
-}
-
-bool String::Concat::operator!=(const char *str) const {
-	return !operator==(str);
-}
-
-Array<String> String::Concat::getTokens() const {
-	return tokens;
-}
-
 String::String() : String(0, 0) {
 }
 
@@ -77,15 +21,6 @@ String::String(const char *cst, uint l) : length(l), count(l ? new uint(1) : 0),
 		}
 		data[length] = '\0';
 	}
-}
-
-String::String(const Concat &sc) : length(sc.size()), count(new uint(1)) {
-	char *d = data = (char *)malloc((length + 1) * sizeof(char));
-	for(const String &str : sc.getTokens()) {
-		memcpy(d, str.data, str.size() * sizeof(char));
-		d += str.size();
-	}
-	data[length] = '\0';
 }
 
 String::String(const String &str) : length(str.length), count(str.count), data(str.data) {
@@ -116,7 +51,7 @@ void String::replace(const String &oldS, const String &newS) {
 }
 
 String String::replaced(const String &oldS, const String &newS) const {
-	Array<String> concat;
+	String concat;
 	uint index = find(oldS);
 	if(index != (uint)-1) {
 		uint from = 0;
@@ -129,9 +64,9 @@ String String::replaced(const String &oldS, const String &newS) const {
 		} while(index != (uint)-1);
 		concat += subString(from);
 	} else {
-		return Concat(*this);
+		return *this;
 	}
-	return Concat(concat);
+	return concat;
 }
 
 void String::clear() {
@@ -301,24 +236,31 @@ std::string String::toStdString() const {
 String &String::operator+=(const String &s) {
 	detach(length + s.length);
 	memmove(data + length, s.data, s.length); // just in case of s = s;
-	data[length += s.length] = '\0';
+	if(length += s.length) {
+		data[length] = '\0';
+	}
 	return *this;
 }
 
-String &String::operator+=(String &&s) {
-	detach(length + s.length);
-	memcpy(data + length, s.data, s.length);
-	data[length += s.length] = '\0';
-	return *this;
-}
-
-String::Concat String::operator+(const String &s) const {
-	return Concat(*this, s);
+String String::operator+(const String &s) const {
+	if(isEmpty()) {
+		return s;
+	}
+	if(s.isEmpty()) {
+		return *this;
+	}
+	String str(0, length + s.length);
+	memcpy(str.data, data, length * sizeof(char));
+	memcpy(str.data + length, s.data, s.length * sizeof(char));
+	return str;
 }
 
 bool String::operator==(const String &str) const {
 	if(str.length != length) {
 		return false;
+	}
+	if(str.count == count) {
+		return true;
 	}
 	for(uint i = 0; i != length; i++) {
 		if(data[i] != str.data[i]) {
@@ -362,17 +304,6 @@ String &String::operator=(const String &s) {
 
 String &String::operator=(String &&s) {
 	swap(s);
-	return *this;
-}
-
-String &String::operator=(const Concat &sc) {
-	char *d = detach(sc.size());
-	length = sc.size();
-	for(const String &str : sc.getTokens()) {
-		memcpy(d, str.data, str.size() * sizeof(char));
-		d += str.size();
-	}
-	data[length] = '\0';
 	return *this;
 }
 
@@ -438,7 +369,7 @@ char *String::detach(uint s) {
 }
 
 bool String::isShared() const {
-	return count && *count > 1;
+	return !count || *count > 1;
 }
 
 } //core

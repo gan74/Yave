@@ -28,50 +28,19 @@ namespace core {
 
 class String
 {
-	class Concat
-	{
-		public:
-			typedef Array<String>::const_iterator const_iterator;
-
-			const_iterator begin() const {
-				return tokens.begin();
-			}
-
-			const_iterator end() const {
-				return tokens.end();
-			}
-
-			Concat(const String &a, const String &b);
-			Concat(const String &a);
-			Concat(const Array<String> &arr);
-
-			uint size() const;
-			Concat &operator+(const String &s);
-			Concat &operator+(const Concat &c);
-			Concat &operator+=(const Concat &c);
-			Concat &operator+=(const String &c);
-			bool operator==(const String &str) const;
-			bool operator==(const char *str) const;
-			bool operator!=(const String &str) const;
-			bool operator!=(const char *str) const;
-			Array<String> getTokens() const;
-
-		private:
-			Array<String> tokens;
-	};
-
 	public:
 		typedef char const * const_iterator;
 
-		template<typename T>
-		explicit String(const T &s) : String() {
-			operator=(s);
+
+		explicit String(const char *cst, uint l);
+
+		template<typename T, typename... Args>
+		String(const T &s) : String() {
+			operator=(build(s));
 		}
 
 		String();
 		String(const char *cst);
-		String(const char *cst, uint l);
-		String(const Concat &sc);
 		String(const String &str);
 		String(String &&str);
 		~String();
@@ -141,56 +110,17 @@ class String
 		operator std::string() const;
 		std::string toStdString() const;
 
-		/*operator Concat() const {
-			return Concat(*this);
-		}*/
-
-		template<typename T>
-		String operator+(const T &i) const {
-			return operator+(String(i));
-		}
-
-		template<typename T>
-		String &operator+=(const T &s) {
-			return operator+=(String(s));
-		}
-
-		template<typename T>
-		String &operator<<(const T &s) {
-			return operator+=(String(s));
-		}
-
-		template<typename T>
-		bool operator==(const T &s) const {
-			return operator==(String(s));
-		}
-
-		template<typename T>
-		bool operator!=(const T &s) const {
-			return operator!=(String(s));
-		}
-
-		template<typename T>
-		const String &operator=(const T &s) {
-			return operator=(build(s)); //   <------------------ all the problems come from this line
-		}
-
-		template<typename T>
-		bool operator<(const T &s) const {
-			return operator<(String(s));
-		}
 
 		String &operator+=(const String &s);
-		String &operator+=(String &&s);
-		Concat operator+(const String &s) const;
+		String operator+(const String &s) const;
 		bool operator==(const String &str) const;
 		bool operator==(const char *str) const;
 		bool operator!=(const String &str) const;
 		bool operator!=(const char *str) const;
 		String &operator=(const String &s);
 		String &operator=(String &&s);
-		String &operator=(const Concat &sc);
 		bool operator<(const String &s) const;
+
 		operator const char *() const;
 
 		template<typename T>
@@ -212,9 +142,11 @@ class String
 		}
 
 	private:
+		struct StringConverter;
+
 		template<typename T>
 		String build(const T &t) const {
-			return convertDispatch(t, BoolToType<TypeConversion<T, String>::exists>());
+			return convertDispatch(t, BoolToType<TypeConversion<T, StringConverter>::exists>());
 		}
 
 		template<typename T>
@@ -242,7 +174,7 @@ class String
 
 		template<typename T>
 		String buildDispatch(const T &t, TrueType) const {
-			Concat self(String(""));
+			String self;
 			for(auto c : t) {
 				self += String(c);
 			}
@@ -266,7 +198,15 @@ class String
 };
 
 } //core
-} //n
+} //n$
+
+
+struct n::core::String::StringConverter : public String
+{
+	template<typename T>
+	explicit StringConverter(const T &t) : String(t) {
+	}
+};
 
 template<typename T>
 n::core::String operator+(const char *cst, const n::core::String &i) {
@@ -283,9 +223,12 @@ n::core::String operator+(const T &i, const n::core::String &s) {
 	return n::core::String(i) + s;
 }
 
+template<typename T>
+n::core::String operator+(const n::core::String &s, const T &i) {
+	return s + n::core::String(i);
+}
 
 std::istream &operator>>(std::istream &s, n::core::String &str);
-//std::ostream &operator<<(std::ostream &s, const n::core::String::Concat &str);
 std::ostream &operator<<(std::ostream &s, const n::core::String &str);
 
 #endif // N_CORE_STRING_H

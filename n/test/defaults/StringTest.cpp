@@ -34,6 +34,13 @@ class StringTest : public TestTemplate<StringTest>
 
 	private:
 		void basicTests() {
+			struct Convertible
+			{
+				operator core::String() const {
+					return "this is a convertible";
+				}
+			};
+
 			core::String str = "floup, flup, flap, flip";
 			test(str.find(",", 6), 11, "Find from test failed");
 			test(str.replaced(",", ""), "floup flup flap flip", "Replaced test failed");
@@ -72,23 +79,27 @@ class StringTest : public TestTemplate<StringTest>
 			core::String a;
 			test(str.endWith(""), true, "\"\".endWith test failed");
 			test(a.size(), 0, "Lenght test failed");
+			a += "Share";
 			core::String b = a;
-			a = a + 'c';
-			test(a.isShared(), false, "Shared test failed");
-			test(b.size(), 0, "CoW test failed");
+			test(a.isShared() && b.isShared() && b == "Share", true, "Shared test 1");
+			a = a + 'd';
+			test(a, "Shared", "+ test failed");
+			test(a.isShared() || b.isShared(), false, "Shared test failed");
+			test(b, "Share", "CoW test failed");
 			b = a;
-			test(a.isShared() && b.isShared(), true, "Shared test 2");
+			test(a.isShared() && b.isShared() && b == "Shared", true, "Shared test 2");
 			a += a;
 			test(a.isShared() || b.isShared(), false, "Shared test 3");
-			test(b.size(), 1, "CoW test 2");
-			test(a, "cc", "CoW test 3");
-			test(a + 3, "cc3", "Int concat test failed");
+			test(b, "Shared", "CoW test 2");
+			test(a, "SharedShared", "CoW test 3");
+			test(a + 3, "SharedShared3", "Int concat test failed");
 			test(core::String("") + 9.5f, "9.5", "Float contructor test failed");
 			test(core::String("a") + 9.5f, "a9.5", "Float concat test failed");
 			test(9.5f + core::String("f"), "9.5f", "Float concat test 2 failed");
 			test("9."+ core::String("5") + "f", "9.5f", "char * concat test 2 failed");
 			core::Array<char> arr('4', 'a', '{', 'K');
 			test(core::String(arr), "4a{K", "Array test failed");
+			test(core::String(Convertible()), "this is a convertible", "Conversion test failed");
 		}
 };
 
