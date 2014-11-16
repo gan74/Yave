@@ -63,7 +63,7 @@ class StringTest : public TestTemplate<StringTest>
 			str.filter([](char c) { return c != ' '; });
 			test(str.endWith("pFlapFlip"), true, "endWith test failed");
 			test(str.endWith("Flap"), false, "endWith test 2");
-			test(str.beginWith("gné ?"), false, "beginWith test failed");
+			test(str.beginWith("gna ?"), false, "beginWith test failed");
 			test(str.beginWith("Floup"), true, "beginWith test 2");
 			test(str.endWith(""), true, "endWith \"\" test failed");
 			test(str, "FloupFlupFlapFlip", "Filter test failed");
@@ -86,6 +86,7 @@ class StringTest : public TestTemplate<StringTest>
 			test(core::String("") + 9.5f, "9.5", "Float contructor test failed");
 			test(core::String("a") + 9.5f, "a9.5", "Float concat test failed");
 			test(9.5f + core::String("f"), "9.5f", "Float concat test 2 failed");
+			test("9."+ core::String("5") + "f", "9.5f", "char * concat test 2 failed");
 			core::Array<char> arr('4', 'a', '{', 'K');
 			test(core::String(arr), "4a{K", "Array test failed");
 		}
