@@ -17,9 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_STRING_H
 #define N_CORE_STRING_H
 
-#include "Array.h"
 #include <sstream>
+#include "Array.h"
 #include "AsCollection.h"
+#include <n/defines.h>
 
 #define N_STRINGIFY(m) n::core::String(#m)
 
@@ -31,12 +32,10 @@ class String
 	public:
 		typedef char const * const_iterator;
 
-
 		explicit String(const char *cst, uint l);
 
 		template<typename T, typename... Args>
-		String(const T &s) : String() {
-			operator=(build(s));
+		String(const T &s) : String(build(s)) {
 		}
 
 		String();
@@ -145,35 +144,35 @@ class String
 		struct StringConverter;
 
 		template<typename T>
-		String build(const T &t) const {
+		N_FORCE_INLINE String build(const T &t) const {
 			return convertDispatch(t, BoolToType<TypeConversion<T, StringConverter>::exists>());
 		}
 
 		template<typename T>
-		String convertDispatch(const T &t, FalseType) const {
+		N_FORCE_INLINE String convertDispatch(const T &t, FalseType) const {
 			return buildDispatch(t, BoolToType<Collection<T>::isCollection>(), BoolToType<std::is_same<typename Collection<T>::ElementType, String>::value>());
 		}
 
-		String convertDispatch(const String &t, TrueType) const {
+		N_FORCE_INLINE const String &convertDispatch(const String &t, TrueType) const {
 			return t;
 		}
 
 		template<typename T, typename B>
-		String buildDispatch(const T &t, FalseType, B) const {
+		N_FORCE_INLINE String buildDispatch(const T &t, FalseType, B) const {
 			std::ostringstream oss;
 			oss<<t;
 			return oss.str().c_str();
 		}
 
 		template<typename B>
-		String buildDispatch(const bool &t, FalseType, B) const {
+		N_FORCE_INLINE String buildDispatch(const bool &t, FalseType, B) const {
 			std::ostringstream oss;
 			oss<<std::boolalpha<<t;
 			return oss.str().c_str();
 		}
 
 		template<typename T>
-		String buildDispatch(const T &t, TrueType, FalseType) const {
+		N_FORCE_INLINE String buildDispatch(const T &t, TrueType, FalseType) const {
 			String self;
 			for(auto c : t) {
 				self += String(c);
@@ -182,7 +181,7 @@ class String
 		}
 
 		template<typename T>
-		String buildDispatch(const T &t, TrueType, TrueType) const {
+		N_FORCE_INLINE String buildDispatch(const T &t, TrueType, TrueType) const {
 			uint l = 0;
 			for(const String &c : t) {
 				l += c.size();
@@ -197,15 +196,14 @@ class String
 		}
 
 		template<typename B>
-		String buildDispatch(const String &t, TrueType, B) const {
+		N_FORCE_INLINE const String &buildDispatch(const String &t, TrueType, B) const {
 			return t;
 		}
 
 		template<typename B>
-		String buildDispatch(const String &t, FalseType, B) const {
+		N_FORCE_INLINE const String &buildDispatch(const String &t, FalseType, B) const {
 			return t;
 		}
-
 
 		char *detach(uint s);
 
@@ -214,25 +212,15 @@ class String
 		char *data;
 };
 
-} //core
-} //n$
-
-
-struct n::core::String::StringConverter : public String
+struct String::StringConverter : public String
 {
 	template<typename T>
 	explicit StringConverter(const T &t) : String(t) {
 	}
 };
 
-template<typename T>
-n::core::String operator+(const char *cst, const n::core::String &i) {
-	return n::core::String(cst) + i;
-}
 
-template<typename T>
-n::core::String operator+(const n::core::String &i, const char *cst) {
-	return i + n::core::String(cst);
+}
 }
 
 template<typename T>

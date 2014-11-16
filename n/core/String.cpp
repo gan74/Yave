@@ -7,7 +7,7 @@
 namespace n {
 namespace core {
 
-String::String() : String(0, 0) {
+String::String() : length(0), count(0), data(0) {
 }
 
 String::String(const char *cst) : String(cst, cst ? strlen(cst) : 0) {
@@ -29,20 +29,18 @@ String::String(const String &str) : length(str.length), count(str.count), data(s
 	}
 }
 
-String::String(String &&str) : length(0), count(0), data(0) {
+String::String(String &&str) : String() {
 	swap(str);
 }
 
 String::~String() {
-	if(data) {
+	if(count) {
 		if(*count == 1) {
 			delete count;
 			free(data);
 		} else {
 			(*count)--;
 		}
-	} else {
-		delete count;
 	}
 }
 
@@ -70,8 +68,7 @@ String String::replaced(const String &oldS, const String &newS) const {
 }
 
 void String::clear() {
-	detach(0);
-	length = 0;
+	detach(length = 0);
 }
 
 uint String::size() const {
@@ -271,9 +268,6 @@ bool String::operator==(const String &str) const {
 }
 
 bool String::operator==(const char *str) const {
-	if(length != strlen(str)) {
-		return false;
-	}
 	for(uint i = 0; i != length; i++) {
 		if(data[i] != str[i]) {
 			return false;
@@ -291,7 +285,7 @@ bool String::operator!=(const char *str) const {
 }
 
 String &String::operator=(const String &s) {
-	clear();
+	detach(0);
 	data = s.data;
 	count = s.count;
 	length = s.length;
@@ -337,43 +331,44 @@ uint String::getHash() const {
 }
 
 char *String::detach(uint s) {
-	if(!count) {
-		if(s) {
+	if(s) {
+		if(count) {
+			if(*count == 1) {
+				// cppcheck-suppress memleakOnRealloc
+				data = (char *)realloc(data, (s + 1) * sizeof(char));
+			} else {
+				(*count)--;
+				count = new uint(1);
+				char *d = (char *)malloc((s + 1) * sizeof(char));
+				memcpy(d, data, std::min(length, s) * sizeof(char));
+				d[s] = '\0';
+				data = d;
+			}
+		} else {
 			count = new uint(1);
 			data = (char *)malloc((s + 1) * sizeof(char));
 			*data = '\0';
-			return data;
 		}
-		return data = 0;
-	}
-	if(*count != 1) {
-		(*count)--;
-		if(!s) {
+	} else {
+		if(count) {
+			(*count)--;
+			if(!*count) {
+				delete count;
+				free(data);
+			}
 			count = 0;
-			return data = 0;
+			data = 0;
 		}
-		char *d = (char *)malloc((++s) * sizeof(char));
-		count = new uint(1);
-		memcpy(d, data, std::min(s, length + 1) * sizeof(char));
-		// cppcheck-suppress memleak
-		return data = d;
 	}
-	if(!s) {  // count = 0 at this point
-		free(data);
-		delete count;
-		count = 0;
-		return data = 0;
-	}
-	// cppcheck-suppress memleakOnRealloc
-	return data = (char *)realloc(data, (s + 1) * sizeof(char));
+	return data;
 }
 
 bool String::isShared() const {
 	return !count || *count > 1;
 }
 
-} //core
-} //n
+}
+}
 
 
 
@@ -389,10 +384,6 @@ std::ostream &operator<<(std::ostream &s, const n::core::String &str) {
 	return s;
 }
 
-/*std::ostream &operator<<(std::ostream &s, const n::core::String::Concat &str) {
-	s<<n::core::String(str);
-	return s;
-}*/
 
 
 
