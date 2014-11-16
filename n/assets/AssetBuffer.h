@@ -62,8 +62,9 @@ class AssetBuffer : public core::NonCopyable, protected LoadPolicy
 			return Asset<T>(asset);
 		}
 
-		AssetLoader<T> &getLoader() {
-			return loader;
+		template<typename... Args, typename U>
+		void addLoader(U u) {
+			return loader.addLoader<Args...>(u);
 		}
 
 	private:

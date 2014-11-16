@@ -27,7 +27,8 @@ namespace assets {
 template<typename T>
 class AssetLoader
 {
-	using VariadicType = core::Array<const std::type_info *>;
+
+	using ArgumentTypes = core::Array<Type>;
 
 	template<typename... Ar>
 	class TypeArray
@@ -35,22 +36,22 @@ class AssetLoader
 		template<typename W, typename... A>
 		struct TypeHelper
 		{
-			static VariadicType types() {
-				return VariadicType() + &typeid(W) + TypeHelper<A...>::types();
+			static ArgumentTypes args() {
+				return ArgumentTypes(typeid(W), TypeHelper<A...>::args());
 			}
 		};
 
 		template<typename W, typename Z>
 		struct TypeHelper<W, Z>
 		{
-			static VariadicType types() {
-				return VariadicType() + &typeid(W) + &typeid(Z);
+			static ArgumentTypes args() {
+				return ArgumentTypes(typeid(W), typeid(Z));
 			}
 		};
 
 		public:
-			static VariadicType types() {
-				VariadicType arr = TypeHelper<Ar..., NullType, NullType>::types();
+			static ArgumentTypes args() {
+				ArgumentTypes arr = TypeHelper<Ar..., NullType, NullType>::args();
 				arr.pop();
 				arr.pop();
 				return arr;
@@ -60,7 +61,7 @@ class AssetLoader
 	class LoaderBase
 	{
 		public:
-			virtual VariadicType types() const = 0;
+			virtual ArgumentTypes args() const = 0;
 	};
 
 	template<typename... Args>
@@ -71,8 +72,8 @@ class AssetLoader
 			LoaderFunc(U u) : func(u) {
 			}
 
-			VariadicType types() const override {
-				return TypeArray<Args...>::types();
+			ArgumentTypes args() const override {
+				return TypeArray<Args...>::args();
 			}
 
 			T *operator()(Args... args) {
@@ -89,19 +90,21 @@ class AssetLoader
 
 		template<typename... Args>
 		T *operator()(Args... args) const {
-			VariadicType types = TypeArray<Args...>::types();
+			ArgumentTypes argTypes = TypeArray<Args...>::args();
 			core::Array<LoaderBase *> valid;
 			for(LoaderBase *b : bases) {
-				if(b->types() == types) {
+				if(b->args() == argTypes) {
 					valid += b;
 				}
 			}
 			if(valid.size() > 1) {
-				fatal("Unable to load asset : ambiguous argument sequence");
+				fatal("Unable to load asset : ambiguous argument sequence : " + argsToString(argTypes) + " has " + valid.size() + " possible solutions.");
 			}
 			LoaderFunc<Args...> *ld = dynamic_cast<LoaderFunc<Args...> *>(valid.isEmpty() ? 0 : valid.first());
 			if(!ld) {
-				fatal("Unable to load asset : no compatible loader found");
+				fatal("Unable to load asset : no compatible loader found for " + argsToString(argTypes) + ", candidates are : " + AsCollection(bases.mapped([](const LoaderBase *b) {
+						return "\n  " + argsToString(b->args());
+					})).make(core::String(" or ")));
 			}
 			return (*ld)(args...);
 		}
@@ -122,6 +125,12 @@ class AssetLoader
 		}
 
 	private:
+		static core::String argsToString(const ArgumentTypes &types) {
+			return "{" + AsCollection(types.mapped([](const Type &t) {
+						return t.name();
+					})).make(core::String(", ")) + "}";
+		}
+
 		core::Array<LoaderBase *> bases;
 
 };
