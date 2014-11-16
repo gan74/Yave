@@ -17,13 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_ASSETS_ASSET_H
 #define N_ASSETS_ASSET_H
 
-#include <n/core/SmartPtr.h>
+#include <n/concurent/MultiThreadPtr.h>
+
+
 namespace n {
 namespace assets {
 
 
 template<typename T>
-using AssetPtr = core::SmartPtr<T *>;
+using AssetPtr = concurent::MultiThreadPtr<T *>;
 
 template<typename T>
 class Asset
