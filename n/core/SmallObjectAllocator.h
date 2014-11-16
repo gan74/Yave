@@ -39,16 +39,18 @@ class SmallObjectAllocator
 			buffer[S - 1].ptr = (uint)-1;
 		}
 
-		T *alloc() {
+		template<typename... Args>
+		T *alloc(Args... args) {
 			if(ptr >= S) {
-				return new uint;
+				return new T(args...);
 			}
 			uint prev = ptr;
 			ptr = buffer[ptr].ptr;
-			return &buffer[prev].obj;
+			return new(&buffer[prev].obj) T(args...);
 		}
 
 		void free(T *p) {
+			p->~T();
 			free((InternalType *)p);
 		}
 
