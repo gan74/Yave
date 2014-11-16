@@ -115,7 +115,7 @@ void String::replace(const String &oldS, const String &newS) {
 	operator=(replaced(oldS, newS));
 }
 
-String::Concat String::replaced(const String &oldS, const String &newS) const {
+String String::replaced(const String &oldS, const String &newS) const {
 	Array<String> concat;
 	uint index = find(oldS);
 	if(index != (uint)-1) {
@@ -298,10 +298,6 @@ std::string String::toStdString() const {
 	return std::string(data);
 }
 
-String::operator Concat() const {
-	return Concat(*this);
-}
-
 String &String::operator+=(const String &s) {
 	detach(length + s.length);
 	memmove(data + length, s.data, s.length); // just in case of s = s;
@@ -462,10 +458,10 @@ std::ostream &operator<<(std::ostream &s, const n::core::String &str) {
 	return s;
 }
 
-std::ostream &operator<<(std::ostream &s, const n::core::String::Concat &str) {
+/*std::ostream &operator<<(std::ostream &s, const n::core::String::Concat &str) {
 	s<<n::core::String(str);
 	return s;
-}
+}*/
 
 
 

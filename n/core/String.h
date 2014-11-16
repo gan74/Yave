@@ -28,45 +28,43 @@ namespace core {
 
 class String
 {
+	class Concat
+	{
+		public:
+			typedef Array<String>::const_iterator const_iterator;
+
+			const_iterator begin() const {
+				return tokens.begin();
+			}
+
+			const_iterator end() const {
+				return tokens.end();
+			}
+
+			Concat(const String &a, const String &b);
+			Concat(const String &a);
+			Concat(const Array<String> &arr);
+
+			uint size() const;
+			Concat &operator+(const String &s);
+			Concat &operator+(const Concat &c);
+			Concat &operator+=(const Concat &c);
+			Concat &operator+=(const String &c);
+			bool operator==(const String &str) const;
+			bool operator==(const char *str) const;
+			bool operator!=(const String &str) const;
+			bool operator!=(const char *str) const;
+			Array<String> getTokens() const;
+
+		private:
+			Array<String> tokens;
+	};
+
 	public:
-		class Concat
-		{
-			public:
-				typedef Array<String>::const_iterator const_iterator;
-
-				const_iterator begin() const {
-					return tokens.begin();
-				}
-
-				const_iterator end() const {
-					return tokens.end();
-				}
-
-				Concat(const String &a, const String &b);
-				Concat(const String &a);
-				Concat(const Array<String> &arr);
-
-				uint size() const;
-				Concat &operator+(const String &s);
-				Concat &operator+(const Concat &c);
-				Concat &operator+=(const Concat &c);
-				Concat &operator+=(const String &c);
-				bool operator==(const String &str) const;
-				bool operator==(const char *str) const;
-				bool operator!=(const String &str) const;
-				bool operator!=(const char *str) const;
-				Array<String> getTokens() const;
-
-			private:
-				Array<String> tokens;
-		};
-
 		typedef char const * const_iterator;
 
 		template<typename T>
 		explicit String(const T &s) : String() {
-			//buildDispatch(s, BoolToType<TypeConversion<typename AsCollection<T>::ElementType, const char>::exists>());
-			//buildDispatch(s, BoolToType<AsCollection<T>::isCollection>());
 			operator=(s);
 		}
 
@@ -116,7 +114,7 @@ class String
 		uint getHash() const;
 
 		void replace(const String &oldS, const String &newS);
-		Concat replaced(const String &oldS, const String &newS) const;
+		String replaced(const String &oldS, const String &newS) const;
 		void clear();
 		uint size() const;
 		bool isEmpty() const;
@@ -143,10 +141,12 @@ class String
 		operator std::string() const;
 		std::string toStdString() const;
 
-		operator Concat() const;
+		/*operator Concat() const {
+			return Concat(*this);
+		}*/
 
 		template<typename T>
-		Concat operator+(const T &i) const {
+		String operator+(const T &i) const {
 			return operator+(String(i));
 		}
 
@@ -214,7 +214,6 @@ class String
 	private:
 		template<typename T>
 		String build(const T &t) const {
-			//return buildDispatch(t, BoolToType<AsCollection<T>::isCollection>());
 			return convertDispatch(t, BoolToType<TypeConversion<T, String>::exists>());
 		}
 
@@ -270,22 +269,23 @@ class String
 } //n
 
 template<typename T>
-n::core::String::Concat operator+(const char *cst, const n::core::String &i) {
+n::core::String operator+(const char *cst, const n::core::String &i) {
 	return n::core::String(cst) + i;
 }
 
 template<typename T>
-n::core::String::Concat operator+(const n::core::String &i, const char *cst) {
+n::core::String operator+(const n::core::String &i, const char *cst) {
 	return i + n::core::String(cst);
 }
 
 template<typename T>
-n::core::String::Concat operator+(const T &i, const n::core::String &s) {
+n::core::String operator+(const T &i, const n::core::String &s) {
 	return n::core::String(i) + s;
 }
 
+
 std::istream &operator>>(std::istream &s, n::core::String &str);
-std::ostream &operator<<(std::ostream &s, const n::core::String::Concat &str);
+//std::ostream &operator<<(std::ostream &s, const n::core::String::Concat &str);
 std::ostream &operator<<(std::ostream &s, const n::core::String &str);
 
 #endif // N_CORE_STRING_H
