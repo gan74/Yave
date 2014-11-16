@@ -36,25 +36,12 @@ String::String(String &&str) : String() {
 }
 
 String::~String() {
-	/*if(count) {
-		if(*count == 1) {
+	if(data) {
+		if(isUnique) {
 			delete count;
 			free(data);
 		} else {
 			(*count)--;
-		}
-	}*/
-	if(data) {
-		if(!count) {
-			delete count;
-			free(data);
-		} else {
-			if(*count == 1) {
-				delete count;
-				free(data);
-			} else {
-				(*count)--;
-			}
 		}
 	}
 }
