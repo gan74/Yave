@@ -37,7 +37,7 @@ String::String(String &&str) : String() {
 
 String::~String() {
 	if(data) {
-		if(isUnique) {
+		if(isUnique()) {
 			delete count;
 			free(data);
 		} else {
