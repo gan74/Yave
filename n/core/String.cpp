@@ -51,7 +51,7 @@ void String::replace(const String &oldS, const String &newS) {
 }
 
 String String::replaced(const String &oldS, const String &newS) const {
-	String concat;
+	Array<String> concat;
 	uint index = find(oldS);
 	if(index != (uint)-1) {
 		uint from = 0;
