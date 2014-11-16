@@ -24,33 +24,42 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
+namespace core {
+	class String;
+}
+
+typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
-typedef size_t uint;
 typedef uint64_t uint64;
+
 typedef uint8_t byte;
+typedef size_t uint;
 
 extern uint typeId;
 
 // be wary of templates therefor be wary of bullshit
+
+template<typename O, typename...>
+O &makeOne();
 
 struct NullType
 {
 	NullType() = delete;
 };
 
-struct Unit
+struct Nothing
 {
-	Unit() {}
-	Unit(const Unit&) {}
+	Nothing() {}
 
 	template<typename T>
-	Unit(T &&) {}
+	Nothing(T) {}
+
+	template<typename T>
+	operator T() const {
+		throw 0;
+	}
 };
-
-template<typename O, typename...>
-static O &makeOne();
-
 
 template<bool B>
 struct BoolToType // false
@@ -302,6 +311,30 @@ struct TypeInfo<T[N]>
 	typedef T nonRef;
 	typedef typename TypeInfo<T>::nonConst &nonConst;
 	typedef typename TypeInfo<T>::nonPtr &nonPtr;
+};
+
+class Type
+{
+	public:
+		Type(const std::type_info &i) : info(&i) {
+		}
+
+		bool operator==(const Type &t) const {
+			return *info == *t.info;
+		}
+
+		bool operator!=(const Type &t) const {
+			return !operator ==(t);
+		}
+
+		bool operator<(const Type &t) const {
+			return info->before(*t.info);
+		}
+
+		core::String name() const;
+
+	private:
+		const std::type_info *info;
 };
 
 

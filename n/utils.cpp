@@ -7,7 +7,7 @@ namespace n {
 
 	const void *null = 0;
 
-	void fatal(const char *msg, const char *file, int line) {
+	Nothing fatal(const char *msg, const char *file, int line) {
 		std::cerr<<msg;
 		if(file) {
 			std::cerr<<" in file "<<file;

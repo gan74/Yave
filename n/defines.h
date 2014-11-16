@@ -18,7 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_DEFINES
 
 namespace n {
-void fatal(const char *msg, const char *file = 0, int line = 0);
+
+class Nothing;
+
+Nothing fatal(const char *msg, const char *file = 0, int line = 0);
 
 template<typename T>
 void unused(T) {}
