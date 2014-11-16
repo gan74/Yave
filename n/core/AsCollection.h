@@ -215,7 +215,21 @@ class AsCollectionInternal
 		AsCollection() : collection(T()) {
 		}*/
 
-		AsCollectionInternal() = default;
+		iterator begin() {
+			return collection.begin();
+		}
+
+		iterator end() {
+			return collection.end();
+		}
+
+		const_iterator begin() const {
+			return collection.begin();
+		}
+
+		const_iterator end() const {
+			return collection.end();
+		}
 
 		bool isEmpty() const {
 			return !(this->size());
