@@ -146,6 +146,43 @@ namespace core {
 			}
 		}
 	}
+
+	template<uint S, typename T>
+	class StaticAllocator
+	{
+		static_assert(sizeof(T) >= sizeof(uint), "StaticAllocator can not contain small objects");
+
+		public:
+			StaticAllocator() : ptr(0) {
+				for(uint i = 0; i != S; i++) {
+					*(uint *)(buffer + i) = i + 1;
+				}
+				buffer[S - 1] = (uint)-1;
+			}
+
+			T *alloc() {
+				if(ptr >= S) {
+					return new uint;
+				}
+				uint prev = ptr;
+				ptr = buffer[ptr];
+				return buffer + prev;
+			}
+
+			void free(T *p) {
+				if(p >= buffer && p < buffer + S) {
+					buffer[p - buffer] = ptr;
+					ptr  = p - buffer;
+				} else {
+					delete p;
+				}
+			}
+
+		private:
+			uint buffer[S];
+			uint ptr;
+	};
+
 } //core
 } //n
 
