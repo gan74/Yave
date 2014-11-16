@@ -151,29 +151,29 @@ class String
 
 		template<typename T>
 		String convertDispatch(const T &t, FalseType) const {
-			return buildDispatch(t, BoolToType<Collection<T>::isCollection>());
+			return buildDispatch(t, BoolToType<Collection<T>::isCollection>(), BoolToType<std::is_same<typename Collection<T>::ElementType, String>::value>());
 		}
 
 		String convertDispatch(const String &t, TrueType) const {
 			return t;
 		}
 
-		template<typename T>
-		String buildDispatch(const T &t, FalseType) const {
+		template<typename T, typename B>
+		String buildDispatch(const T &t, FalseType, B) const {
 			std::ostringstream oss;
 			oss<<t;
 			return oss.str().c_str();
 		}
 
-
-		String buildDispatch(const bool &t, FalseType) const {
+		template<typename B>
+		String buildDispatch(const bool &t, FalseType, B) const {
 			std::ostringstream oss;
 			oss<<std::boolalpha<<t;
 			return oss.str().c_str();
 		}
 
 		template<typename T>
-		String buildDispatch(const T &t, TrueType) const {
+		String buildDispatch(const T &t, TrueType, FalseType) const {
 			String self;
 			for(auto c : t) {
 				self += String(c);
@@ -181,11 +181,28 @@ class String
 			return self;
 		}
 
-		String buildDispatch(const String &t, TrueType) const {
+		template<typename T>
+		String buildDispatch(const T &t, TrueType, TrueType) const {
+			uint l = 0;
+			for(const String &c : t) {
+				l += c.size();
+			}
+			String str(0, l);
+			char *ptr = str.data;
+			for(const String &c : t) {
+				memcpy(ptr, c.data, c.length * sizeof(char));
+				ptr += c.length;
+			}
+			return str;
+		}
+
+		template<typename B>
+		String buildDispatch(const String &t, TrueType, B) const {
 			return t;
 		}
 
-		String buildDispatch(const String &t, FalseType) const {
+		template<typename B>
+		String buildDispatch(const String &t, FalseType, B) const {
 			return t;
 		}
 
