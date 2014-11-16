@@ -41,9 +41,9 @@ void unused(T) {}
 #endif
 
 #ifdef N_NO_FORCE_INLINE
-#define N_FORCE_INLINE /*nothing*/
+#define N_FORCE_INLINE inline
 #else
-#define N_FORCE_INLINE __attribute__((always_inline))
+#define N_FORCE_INLINE inline  __attribute__((always_inline))
 #endif
 
 
