@@ -8,7 +8,9 @@ LIBS += -lpthread
 
 DEFINES += N_DEBUG
 
+
 QMAKE_CXXFLAGS += -pedantic
+QMAKE_CXXFLAGS += -Winline
 QMAKE_CXXFLAGS_DEBUG += -pg
 QMAKE_LFLAGS_DEBUG += -pg
 
@@ -37,4 +39,6 @@ CONFIG(debug, debug|release) {
 } else {
 	OBJECTS_DIR = release
 	DESTDIR = release
+	QMAKE_CXXFLAGS += -flto
+	QMAKE_LFLAGS += -flto
 }
