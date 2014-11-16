@@ -26,7 +26,7 @@ n::core::String demangle(const char* name) {
 	int status = 0;
 	n::core::String n(name);
 	const char *d = abi::__cxa_demangle(n, NULL, NULL, &status);
-	return status ? d : name;
+	return !status ? d : name;
 }
 
 #else
