@@ -70,6 +70,6 @@ void unused(T) {}
 /****************** COMPILATION DEFINES BELOW ******************/
 
 
-#define N_AUTO_TEST
+//#define N_AUTO_TEST
 
 #endif //N_DEFINES

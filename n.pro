@@ -36,6 +36,7 @@ CONFIG(debug, debug|release) {
 	OBJECTS_DIR = debug
 	DESTDIR = debug
 	DEFINES += N_DEBUG
+	DEFINES	+= N_AUTO_TEST
 } else {
 	OBJECTS_DIR = release
 	DESTDIR = release
