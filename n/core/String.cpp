@@ -13,11 +13,13 @@ String::String() : length(0), count(0), data(0) {
 String::String(const char *cst) : String(cst, cst ? strlen(cst) : 0) {
 }
 
-String::String(const char *cst, uint l) : length(l), count(/*l ? new uint(1) :*/ 0), data(0) {
+String::String(const char *cst, uint l) : length(l), count(0), data(0) {
 	if(l) {
 		data = (char *)malloc((length + 1) * sizeof(char));
 		if(cst) {
 			memcpy(data, cst, length * sizeof(char));
+		} else {
+			*data = '\0';
 		}
 		data[length] = '\0';
 	}
@@ -233,9 +235,10 @@ std::string String::toStdString() const {
 }
 
 String &String::operator+=(const String &s) {
-	uint l = length;
-	detach(length + s.length);
-	memmove(data + l, s.data, s.length); // just in case of s = s;
+	uint tl = length;
+	uint ol = s.length;
+	detach(tl + ol);
+	memcpy(data + tl, s.data, ol * sizeof(char));
 	if(length) {
 		data[length] = '\0';
 	}
