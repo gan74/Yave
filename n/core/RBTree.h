@@ -232,7 +232,7 @@ class RBTree
 
 		template<typename C>
 		iterator insert(const C &c) {
-			return Adder<TypeConversion<C, T>::exists, C>()(*this, c);
+			return Adder<TypeConversion<C, const T>::exists, C>()(*this, c);
 		}
 
 		template<typename A, typename B, typename... Args>

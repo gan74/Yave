@@ -92,7 +92,7 @@ class Array : public ResizePolicy
 
 		template<typename C>
 		void append(const C &c) {
-			appendDispatch(c, BoolToType<TypeConversion<C, T>::exists>());
+			appendDispatch(c, BoolToType<TypeConversion<C, const T>::exists>());
 		}
 
 		template<typename A, typename B, typename... Args>

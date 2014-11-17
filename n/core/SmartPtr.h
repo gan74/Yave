@@ -135,6 +135,10 @@ class SmartPtr : private LockingPolicy
 			return isNull();
 		}
 
+		explicit operator bool() const {
+			return !isNull();
+		}
+
 		operator SmartPtr<const T>() const {
 			return *this;
 		}

@@ -124,14 +124,14 @@ class String
 		operator const char *() const;
 
 		template<typename T>
-		operator T() const {
+		explicit operator T() const {
 			std::istringstream str(toStdString());
 			T t;
 			str>>t;
 			return t;
 		}
 
-		operator bool() const {
+		explicit operator bool() const {
 			if(toInt() != 0) {
 				return true;
 			}
@@ -140,7 +140,6 @@ class String
 			str>>std::boolalpha>>t;
 			return t;
 		}
-
 	private:
 		struct StringConverter;
 

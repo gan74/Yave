@@ -174,7 +174,7 @@ class List
 
 		template<typename C>
 		void append(const C &c) {
-			appendDispatch(c, BoolToType<TypeConversion<C, T>::exists>());
+			appendDispatch(c, BoolToType<TypeConversion<C, const T>::exists>());
 		}
 
 		template<typename A, typename B, typename... Args>
@@ -192,7 +192,7 @@ class List
 
 		template<typename C>
 		void prepend(const C &c) {
-			prependDispatch(c, BoolToType<TypeConversion<C, T>::exists>());
+			prependDispatch(c, BoolToType<TypeConversion<C, const T>::exists>());
 		}
 
 		template<typename C>
