@@ -45,8 +45,9 @@ namespace internal {
 	N_GEN_TYPE_HAS_METHOD(HasEquals, operator==)
 }
 
+
 template<typename T>
-class AsCollectionInternal
+class Collection
 {
 	private:
 		template<typename U, bool CI, bool NCI> // false, false
@@ -117,7 +118,7 @@ class AsCollectionInternal
 					}
 
 				private:
-					friend class AsCollectionInternal<T>;
+					friend class Collection<T>;
 
 					SubCollection(const_iterator b, const_iterator e) :	beg(b), en(e) {
 					}
@@ -127,59 +128,10 @@ class AsCollectionInternal
 			};
 		};
 
-		template<typename A, typename... B>
-		struct first
-		{
-			typedef A type;
-		};
-
-		template<typename A, typename... B>
-		struct last
-		{
-			typedef typename last<B...>::type type;
-		};
-
-		template<typename A>
-		struct last<A>
-		{
-			typedef A type;
-		};
-
-		template<typename... A>
-		struct VarArgs
-		{
-			typedef typename first<A...>::type first;
-			typedef typename last<A...>::type last;
-		};
-
-
 		typedef CollectionInternal<T, TypeInfo<T>::isIterable, TypeInfo<T>::isNonConstIterable> InternalType;
 
 		template<typename O, typename...>
 		static O &makeOne();
-
-		/*template<typename E, typename U>
-		struct TemplateEngineInternal
-		{
-
-			typedef byte Yes[1];
-			typedef byte No[2];
-			template<typename V, template<typename...> class C>
-			static Yes &test(C<V> &);
-
-			template<typename... A>
-			static No &test(...);
-
-
-
-			static constexpr bool isTemplate = sizeof(test(makeOne<U>())) == sizeof(Yes);
-
-			template<typename N, typename V, template<typename...> class C>
-			static C<N> changeContentType(C<V> &);
-
-			template<typename N>
-			using ContainerType = typename std::result_of<decltype(changeContentType<N>(makeOne<U>()))>::type;
-		};*/
 
 		template<typename... Args>
 		struct MappedType
@@ -189,15 +141,15 @@ class AsCollectionInternal
 
 	private:
 		template<typename U>
-		friend constexpr AsCollectionInternal<U> AsCollection(U &);
+		friend constexpr Collection<U> AsCollection(U &);
 
 		template<typename U>
-		friend constexpr AsCollectionInternal<const U> AsCollection(const U &);
+		friend constexpr Collection<const U> AsCollection(const U &);
 
-		AsCollectionInternal(T &t) : collection(t) {
+		Collection(T &t) : collection(t) {
 		}
 
-		AsCollectionInternal(const AsCollectionInternal<T> &c) : collection(c.collection){
+		Collection(const Collection<T> &c) : collection(c.collection){
 
 		}
 
@@ -208,12 +160,6 @@ class AsCollectionInternal
 		typedef typename InternalType::SubCollection SubCollection;
 
 		static constexpr bool isCollection = !std::is_same<ElementType, NullType>::value;
-
-		/*AsCollection(const T &t) : collection(t) {
-		}
-
-		AsCollection() : collection(T()) {
-		}*/
 
 		iterator begin() {
 			return collection.begin();
@@ -336,12 +282,12 @@ class AsCollectionInternal
 			return setMinCapacityDispatch(BoolToType<internal::HasSetMinCapacity<T, void, Args...>::value>(), f...);
 		}
 
-		AsCollectionInternal<T> sub(iterator be, iterator en) {
-			return AsCollectionInternal<T>(SubCollection(be, en));
+		Collection<T> sub(iterator be, iterator en) {
+			return Collection<T>(SubCollection(be, en));
 		}
 
-		AsCollectionInternal<const T> sub(const_iterator be, const_iterator en) const {
-			return AsCollectionInternal<const T>(SubCollection(be, en));
+		Collection<const T> sub(const_iterator be, const_iterator en) const {
+			return Collection<const T>(SubCollection(be, en));
 		}
 
 		template<typename... Args>
@@ -364,7 +310,7 @@ class AsCollectionInternal
 
 		template<typename C>
 		bool equalsDispatch(FalseType, const C &c) const {
-			if(internal::HasSize<C, uint>::value && internal::HasSize<T, uint>::value && AsCollection(c).size() != size()) {
+			if(internal::HasSize<C, uint>::value && internal::HasSize<T, uint>::value && Collection(c).size() != size()) {
 				return false;
 			}
 			const_iterator i = collection.begin();
@@ -594,7 +540,7 @@ class AsCollectionInternal
 		template<typename C, typename V>
 		C mappedDispatch(FalseType, const V &f) const {
 			C a;
-			AsCollection(a).setMinCapacity(size());
+			Collection(a).setMinCapacity(size());
 			foreach([&](const ElementType &e) { a.insert(f(e)); });
 			return a;
 		}
@@ -602,7 +548,7 @@ class AsCollectionInternal
 		template<typename C, typename U>
 		C filteredDispatch(FalseType, const U &f) const {
 			C a;
-			AsCollection(a).setMinCapacity(size());
+			Collection(a).setMinCapacity(size());
 			foreach([&](const ElementType &e) {
 				if(f(e)) {
 					a.insert(e);
@@ -653,27 +599,14 @@ class AsCollectionInternal
 };
 
 template<typename T>
-class Collection
-{
-	public:
-		typedef typename AsCollectionInternal<T>::const_iterator const_iterator;
-		typedef typename AsCollectionInternal<T>::iterator iterator;
-		typedef typename AsCollectionInternal<T>::ElementType ElementType;
-		typedef typename AsCollectionInternal<T>::SubCollection SubCollection;
-
-		static constexpr bool isCollection = AsCollectionInternal<T>::isCollection;
-};
-
-template<typename T>
-constexpr AsCollectionInternal<T> AsCollection(T &t) {
-	return AsCollectionInternal<T>(t);
+constexpr Collection<T> AsCollection(T &t) {
+	return Collection<T>(t);
 }
 
 template<typename T>
-constexpr AsCollectionInternal<const T> AsCollection(const T &t) {
-	return AsCollectionInternal<const T>(t);
+constexpr Collection<const T> AsCollection(const T &t) {
+	return Collection<const T>(t);
 }
-
 
 
 }

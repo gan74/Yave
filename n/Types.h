@@ -130,8 +130,45 @@ class className { \
 };
 
 namespace internal {
-	N_GEN_TYPE_HAS_MEMBER(IsConstIterable, const_iterator)
-	N_GEN_TYPE_HAS_MEMBER(IsNonConstIterable, iterator)
+	N_GEN_TYPE_HAS_MEMBER(IsConstIterableInternal, const_iterator)
+	N_GEN_TYPE_HAS_MEMBER(IsNonConstIterableInternal, iterator)
+
+	template<typename T, bool B>
+	struct IsNonConstIterableDispatch
+	{
+		static constexpr bool value = !std::is_same<typename T::iterator, NullType>::value;
+	};
+
+	template<typename T>
+	struct IsNonConstIterableDispatch<T, false>
+	{
+		static constexpr bool value = false;
+	};
+
+	template<typename T>
+	struct IsNonConstIterable
+	{
+		static constexpr bool value = IsNonConstIterableDispatch<T, IsNonConstIterableInternal<T>::value>::value;
+	};
+
+	template<typename T, bool B>
+	struct IsConstIterableDispatch
+	{
+		static constexpr bool value = !std::is_same<typename T::const_iterator, NullType>::value;
+	};
+
+	template<typename T>
+	struct IsConstIterableDispatch<T, false>
+	{
+		static constexpr bool value = false;
+	};
+
+	template<typename T>
+	struct IsConstIterable
+	{
+		static constexpr bool value = IsConstIterableDispatch<T, IsConstIterableInternal<T>::value>::value;
+	};
+
 
 	template<typename T, bool P>
 	struct TypeContentInternal // P = false
@@ -171,6 +208,18 @@ namespace internal {
 		static constexpr bool value = false;
 	};
 }
+
+template<bool C, typename Then, typename Else>
+struct IfThenElse
+{
+	typedef Then type;
+};
+
+template<typename Then, typename Else>
+struct IfThenElse<false, Then, Else>
+{
+	typedef Else type;
+};
 
 template<typename From, typename To> // U from T
 class TypeConversion
