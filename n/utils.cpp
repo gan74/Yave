@@ -5,8 +5,6 @@
 
 namespace n {
 
-	const void *null = 0;
-
 	Nothing fatal(const char *msg, const char *file, int line) {
 		std::cerr<<msg;
 		if(file) {
