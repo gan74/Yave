@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_SMALLOBJECTALLOCATOR_H
 
 #include <n/types.h>
+#include <iostream>
 
 namespace n {
 namespace core {
@@ -50,7 +51,6 @@ class SmallObjectAllocator
 		}
 
 		void free(T *p) {
-			p->~T();
 			free((InternalType *)p);
 		}
 
@@ -59,6 +59,7 @@ class SmallObjectAllocator
 			if(!p) {
 				return;
 			}
+			(&p->obj)->~T();
 			if(p >= buffer && p < buffer + S) {
 				buffer[p - buffer].ptr = ptr;
 				ptr	= p - buffer;
