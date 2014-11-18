@@ -7,6 +7,36 @@
 namespace n {
 namespace core {
 
+char *allocStr(uint s) {
+	if(!s) {
+		return 0;
+	}
+	char *c = (char *)malloc((s + 1) * sizeof(char));
+	*c = '\0';
+	//cppcheck-suppress memleak
+	return c + 1;
+}
+
+char *reallocStr(char *p, uint s) {
+	if(!s) {
+		return 0;
+	}
+	if(!p) {
+		return allocStr(s);
+	}
+	while(*p) p--;
+	p = (char *)realloc(p, s + 1);
+	return p + 1;
+}
+
+void freeStr(char *p) {
+	if(!p) {
+		return;
+	}
+	while(*p) p--;
+	free(p);
+}
+
 String::String() : length(0), count(0), data(0) {
 }
 
@@ -15,13 +45,12 @@ String::String(const char *cst) : String(cst, cst ? strlen(cst) : 0) {
 
 String::String(const char *cst, uint l) : length(l), count(0), data(0) {
 	if(l) {
-		data = (char *)malloc((length + 1) * sizeof(char));
+		data = allocStr(length);//(char *)malloc(length * sizeof(char));
 		if(cst) {
 			memcpy(data, cst, length * sizeof(char));
 		} else {
 			*data = '\0';
 		}
-		data[length] = '\0';
 	}
 }
 
@@ -41,7 +70,7 @@ String::~String() {
 	if(data) {
 		if(isUnique()) {
 			delete count;
-			free(data);
+			freeStr(data);//free(data);
 		} else {
 			(*count)--;
 		}
@@ -50,6 +79,10 @@ String::~String() {
 
 void String::replace(const String &oldS, const String &newS) {
 	operator=(replaced(oldS, newS));
+}
+
+void String::replace(uint beg, uint len, const String &newS) {
+	operator=(replaced(beg, len, newS));
 }
 
 String String::replaced(const String &oldS, const String &newS) const {
@@ -69,6 +102,10 @@ String String::replaced(const String &oldS, const String &newS) const {
 		return *this;
 	}
 	return concat;
+}
+
+String String::replaced(uint beg, uint len, const String &newS) const {
+	return subString(0, beg) + newS + subString(beg + len);
 }
 
 void String::clear() {
@@ -91,6 +128,9 @@ char const *String::toChar() const {
 	if(!data) {
 		return (char *)&null;
 	}
+	detach(length + 1);
+	length--;
+	data[length] = '\0';
 	return data;
 }
 
@@ -133,8 +173,16 @@ bool String::contains(const String &str) const {
 	return find(str) < length;
 }
 
+String::String(const String &str, uint beg, uint len) : length(len), count(str.count), data(str.data + beg) {
+	if(count) {
+		(*count)++;
+	} else if(data) {
+		count = str.count = new uint(2);
+	}
+}
+
 String String::subString(uint beg, uint len) const {
-	return String(data + beg, len);
+	return String(*this, beg, len);
 }
 
 String String::subString(uint beg) const {
@@ -226,12 +274,8 @@ String String::toUpper() const {
 	return mapped([](char c) -> char { return toupper(c); });
 }
 
-String::operator std::string() const {
-	return std::string(data);
-}
-
 std::string String::toStdString() const {
-	return std::string(data);
+	return std::string(data, length);
 }
 
 String &String::operator+=(const String &s) {
@@ -239,9 +283,6 @@ String &String::operator+=(const String &s) {
 	uint ol = s.length;
 	detach(tl + ol);
 	memcpy(data + tl, s.data, ol * sizeof(char));
-	if(length) {
-		data[length] = '\0';
-	}
 	return *this;
 }
 
@@ -338,30 +379,26 @@ uint String::getHash() const {
 	return length && data ? hash(data, length) : 0;
 }
 
-void String::detach(uint s) {
+void String::detach(uint s) const {
 	if(s) {
 		if(isUnique()) {
-			// cppcheck-suppress memleakOnRealloc
-			data = (char *)realloc(data, (s + 1) * sizeof(char));
+			data = reallocStr(data, s);//(char *)realloc(data, s * sizeof(char));
 		} else {
 			(*count)--;
 			count = 0;
-			char *d = (char *)malloc((s + 1) * sizeof(char));
+			char *d = allocStr(s);//(char *)malloc(s * sizeof(char));
 			memcpy(d, data, std::min(length, s) * sizeof(char));
 			data = d;
 		}
 	} else {
 		if(isUnique()) {
 			delete count;
-			free(data);
+			freeStr(data);//free(data);
 		}
 		count = 0;
 		data = 0;
 	}
 	length = s;
-	if(data) {
-		data[length] = '\0';
-	}
 }
 
 bool String::isUnique() const {
@@ -374,8 +411,6 @@ bool String::isShared() const {
 
 }
 }
-
-
 
 std::istream &operator>>(std::istream &s, n::core::String &str) {
 	std::string st;

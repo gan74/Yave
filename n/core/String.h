@@ -32,17 +32,81 @@ class String
 	public:
 		typedef char const * const_iterator;
 
-		explicit String(const char *cst, uint l);
-
 		template<typename T, typename... Args>
 		String(const T &s) : String(build(s)) {
 		}
+
+		explicit String(const char *cst, uint l);
 
 		String();
 		String(const char *cst);
 		String(const String &str);
 		String(String &&str);
 		~String();
+
+		const_iterator begin() const;
+		const_iterator end() const;
+		uint getHash() const;
+
+		void replace(uint beg, uint len, const String &newS);
+		void replace(const String &oldS, const String &newS);
+		String replaced(uint beg, uint len, const String &newS) const;
+		String replaced(const String &oldS, const String &newS) const;
+		void clear();
+		uint size() const;
+		bool isEmpty() const;
+		bool isNull() const;
+		uint find(char c, uint from = 0) const;
+		uint find(const String &str, uint from = 0) const;
+		bool contains(char c) const;
+		bool contains(const String &str) const;
+		String subString(uint beg, uint len) const;
+		String subString(uint beg) const;
+		bool beginWith(const String &s) const;
+		bool endWith(const String &s) const;
+		void detach();
+		void swap(String &str);
+		Array<String> split(const String &str) const;
+		float toFloat() const;
+		double toDouble() const;
+		int toInt() const;
+		String toLower() const;
+		String toUpper() const;
+		bool isShared() const;
+		bool isUnique() const;
+
+		String &operator+=(const String &s);
+		String operator+(const String &s) const;
+		bool operator==(const String &str) const;
+		bool operator==(const char *str) const;
+		bool operator!=(const String &str) const;
+		bool operator!=(const char *str) const;
+		String &operator=(const String &s);
+		String &operator=(String &&s);
+		bool operator<(const String &s) const;
+
+		const char *toChar() const;
+		operator const char *() const;
+
+		std::string toStdString() const;
+
+		template<typename T>
+		explicit operator T() const {
+			std::istringstream str(toStdString());
+			T t;
+			str>>t;
+			return t;
+		}
+
+		explicit operator bool() const {
+			if(toInt() != 0) {
+				return true;
+			}
+			std::istringstream str(toLower().toStdString());
+			bool t = false;
+			str>>std::boolalpha>>t;
+			return t;
+		}
 
 		template<typename T>
 		void filter(T f) {
@@ -77,70 +141,9 @@ class String
 			return str;
 		}
 
-		const_iterator begin() const;
-		const_iterator end() const;
-		uint getHash() const;
-
-		void replace(const String &oldS, const String &newS);
-		String replaced(const String &oldS, const String &newS) const;
-		void clear();
-		uint size() const;
-		bool isEmpty() const;
-		bool isNull() const;
-		char const *toChar() const;
-		uint find(char c, uint from = 0) const;
-		uint find(const String &str, uint from = 0) const;
-		bool contains(char c) const;
-		bool contains(const String &str) const;
-		String subString(uint beg, uint len) const;
-		String subString(uint beg) const;
-		bool beginWith(const String &s) const;
-		bool endWith(const String &s) const;
-		void detach();
-		void swap(String &str);
-		Array<String> split(const String &str) const;
-		float toFloat() const;
-		double toDouble() const;
-		int toInt() const;
-		String toLower() const;
-		String toUpper() const;
-		bool isShared() const;
-		bool isUnique() const;
-
-		operator std::string() const;
-		std::string toStdString() const;
-
-
-		String &operator+=(const String &s);
-		String operator+(const String &s) const;
-		bool operator==(const String &str) const;
-		bool operator==(const char *str) const;
-		bool operator!=(const String &str) const;
-		bool operator!=(const char *str) const;
-		String &operator=(const String &s);
-		String &operator=(String &&s);
-		bool operator<(const String &s) const;
-
-		operator const char *() const;
-
-		template<typename T>
-		explicit operator T() const {
-			std::istringstream str(toStdString());
-			T t;
-			str>>t;
-			return t;
-		}
-
-		explicit operator bool() const {
-			if(toInt() != 0) {
-				return true;
-			}
-			std::istringstream str(toLower().toStdString());
-			bool t = false;
-			str>>std::boolalpha>>t;
-			return t;
-		}
 	private:
+		String(const String &str, uint beg, uint len);
+
 		struct StringConverter;
 
 		template<typename T>
@@ -205,11 +208,11 @@ class String
 			return t;
 		}
 
-		void detach(uint s);
+		void detach(uint s) const;
 
-		uint length;
+		mutable uint length;
 		mutable uint *count;
-		char *data;
+		mutable char *data;
 };
 
 struct String::StringConverter : public String
