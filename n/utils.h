@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cfloat>
 
 namespace n {
-	extern const void *null;
+	extern constexpr void *null;
 
 namespace math {
 	namespace internal {

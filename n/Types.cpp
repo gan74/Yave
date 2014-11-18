@@ -24,8 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 n::core::String demangle(const char* name) {
 	int status = 0;
-	n::core::String n(name);
-	const char *d = abi::__cxa_demangle(n, NULL, NULL, &status);
+	const char *d = abi::__cxa_demangle(name, NULL, NULL, &status);
 	return !status ? d : name;
 }
 
