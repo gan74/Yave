@@ -14,43 +14,41 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CORE_SMALLOBJECTALLOCATOR_H
-#define N_CORE_SMALLOBJECTALLOCATOR_H
+#ifndef N_MEM_MEMCHUNK_H
+#define N_MEM_MEMCHUNK_H
 
-#include <n/types.h>
-#include <iostream>
+#include <n/utils.h>
 
 namespace n {
-namespace core {
+namespace mem {
 
-template<typename T, uint S = 1024>
-class SmallObjectAllocator
+template<uint US>
+class MemChunk : public NonCopyable
 {
 	union InternalType
 	{
-		T obj;
+		byte obj[US];
 		uint ptr;
 	};
 
 	public:
-		SmallObjectAllocator() : ptr(0) {
-			for(uint i = 0; i != S; i++) {
+		MemChunk(uint s) : ptr(0), size(s), buffer(new InternalType[size]) {
+			for(uint i = 0; i != size; i++) {
 				buffer[i].ptr = i + 1;
 			}
-			buffer[S - 1].ptr = (uint)-1;
+			buffer[size - 1].ptr = (uint)-1;
 		}
 
-		template<typename... Args>
-		T *alloc(Args... args) {
-			if(ptr >= S) {
-				return new T(args...);
+		void *alloc() {
+			if(ptr >= size) {
+				return 0;
 			}
 			uint prev = ptr;
 			ptr = buffer[ptr].ptr;
-			return new(&buffer[prev].obj) T(args...);
+			return buffer[prev].obj;
 		}
 
-		void free(T *p) {
+		void free(void *p) {
 			free((InternalType *)p);
 		}
 
@@ -59,8 +57,7 @@ class SmallObjectAllocator
 			if(!p) {
 				return;
 			}
-			(&p->obj)->~T();
-			if(p >= buffer && p < buffer + S) {
+			if(p >= buffer && p < buffer + size) {
 				buffer[p - buffer].ptr = ptr;
 				ptr	= p - buffer;
 			} else {
@@ -69,11 +66,12 @@ class SmallObjectAllocator
 		}
 
 		uint ptr;
-		InternalType buffer[S];
+		const uint size;
+		InternalType *buffer;
 };
 
 }
 }
 
 
-#endif // N_CORE_SMALLOBJECTALLOCATOR_H
+#endif // N_MEM_MEMCHUNK_H
