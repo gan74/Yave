@@ -134,9 +134,9 @@ class String
 
 		template<typename T>
 		String mapped(T f) const {
-			String str;
-			for(char *c = data; c != data + length; c++) {
-				str += f(*c);
+			String str(0, size());
+			for(uint i = 0; i != size(); i++) {
+				str.data[i] = f(data[i]);
 			}
 			return str;
 		}

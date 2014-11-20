@@ -4,25 +4,24 @@
 #include <iomanip>
 #include <cstring>
 
-
-#include <iostream>
-
 namespace n {
 namespace core {
 
 N_FORCE_INLINE uint sizeForStrAlloc(uint s) {
 	uint mod = s % sizeof(uint);
-	return 2 * sizeof(uint) + s + (mod ? sizeof(uint) - mod : 0);
+	return s + (mod ? sizeof(uint) - mod : 0);
 }
 
 N_FORCE_INLINE char *allocStr(uint **count, uint s) {
 	if(!s) {
 		return 0;
 	}
-	*count = (uint *)malloc(sizeForStrAlloc(s));
-	**count = 1;
-	*(*count + 1) = s;
-	return (char *)(*count + 2);
+	uint allocSize = sizeForStrAlloc(s);
+	uint *cptr = (uint *)malloc(allocSize + 2 * sizeof(uint));
+	*cptr = 1;
+	cptr[1] = allocSize;
+	*count = cptr;
+	return (char *)(cptr + 2);
 }
 
 N_FORCE_INLINE char *reallocStr(uint **count, uint s) {
@@ -30,22 +29,34 @@ N_FORCE_INLINE char *reallocStr(uint **count, uint s) {
 		*count = 0;
 		return 0;
 	}
-	if(!*count) {
+	uint *cptr = *count;
+	if(!cptr) {
 		return allocStr(count, s);
 	}
-	uint allocLen = *(*count + 1);
+	uint allocated = cptr[1];
+	uint optAllocSize =  sizeForStrAlloc(s);
+	if(s > allocated || allocated + 2 * sizeof(uint) < optAllocSize) {
+		//cppcheck-suppress memleakOnRealloc
+		cptr = (uint *)realloc(cptr, optAllocSize + 2 * sizeof(uint));
+		cptr[1] = optAllocSize;
+	}
+	*count = cptr;
+	return (char *)(cptr + 2);
+	/*uint allocLen = *(cptr + 1);
 	uint size = sizeForStrAlloc(s);
 	if(allocLen < s) {
-		*count = (uint *)realloc(*count, size);
-		*(*count + 1) = size;
+		//cppcheck-suppress memleakOnRealloc
+		cptr = (uint *)realloc(cptr, size);
+		*(cptr + 1) = size;
 	} else {
 		uint nSize = sizeForStrAlloc(s);
 		if(nSize + 2 * sizeof(uint)	< size) {
-			*count = (uint *)realloc(*count, nSize);
-			*(*count + 1) = nSize;
+			cptr = (uint *)realloc(*count, nSize);
+			*(cptr + 1) = nSize;
 		}
 	}
-	return (char *)(*count + 2);
+	*count = cptr;
+	return (char *)(cptr + 2);*/
 }
 
 N_FORCE_INLINE void freeStr(uint **count, char *) {
@@ -356,8 +367,6 @@ String &String::operator=(const String &s) {
 	length = s.length;
 	if(count) {
 		(*count)++;
-	} else if(data) {
-		count = s.count = new uint(2);
 	}
 	return *this;
 }
