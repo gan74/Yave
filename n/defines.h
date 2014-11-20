@@ -40,6 +40,10 @@ void unused(T) {}
 #define N_NO_FORCE_INLINE
 #endif
 
+#ifdef N_DEBUG
+#define N_NO_FORCE_INLINE
+#endif
+
 #ifdef N_NO_FORCE_INLINE
 #define N_FORCE_INLINE inline
 #else
