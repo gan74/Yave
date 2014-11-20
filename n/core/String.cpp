@@ -40,7 +40,7 @@ N_FORCE_INLINE char *reallocStr(uint **count, uint s) {
 		*(*count + 1) = size;
 	} else {
 		uint nSize = sizeForStrAlloc(s);
-		if(nSize + sizeof(uint)	< size) {
+		if(nSize + 2 * sizeof(uint)	< size) {
 			*count = (uint *)realloc(*count, nSize);
 			*(*count + 1) = nSize;
 		}
