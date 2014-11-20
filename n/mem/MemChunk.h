@@ -23,7 +23,7 @@ namespace n {
 namespace mem {
 
 template<uint US>
-class MemChunk : public NonCopyable
+class MemChunk : public core::NonCopyable
 {
 	union InternalType
 	{
@@ -48,21 +48,21 @@ class MemChunk : public NonCopyable
 			return buffer[prev].obj;
 		}
 
-		void free(void *p) {
-			free((InternalType *)p);
+		bool free(void *p) {
+			return free((InternalType *)p);
 		}
 
 	private:
-		void free(InternalType *p) {
+		bool free(InternalType *p) {
 			if(!p) {
-				return;
+				return true;
 			}
 			if(p >= buffer && p < buffer + size) {
 				buffer[p - buffer].ptr = ptr;
 				ptr	= p - buffer;
-			} else {
-				delete p;
+				return true;
 			}
+			return false;
 		}
 
 		uint ptr;
