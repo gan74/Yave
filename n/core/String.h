@@ -67,13 +67,11 @@ class String
 		void detach();
 		void swap(String &str);
 		Array<String> split(const String &str) const;
-		float toFloat() const;
-		double toDouble() const;
-		int toInt() const;
 		String toLower() const;
 		String toUpper() const;
 		bool isShared() const;
 		bool isUnique() const;
+		bool isSharedSubset() const;
 
 		String &operator+=(const String &s);
 		String operator+(const String &s) const;
@@ -92,17 +90,19 @@ class String
 
 		template<typename T>
 		explicit operator T() const {
-			std::istringstream str(toStdString());
+			std::istringstream str;
+			str.rdbuf()->pubsetbuf(data, length);
 			T t;
 			str>>t;
 			return t;
 		}
 
 		explicit operator bool() const {
-			if(toInt() != 0) {
+			if((int)(*this)) {
 				return true;
 			}
-			std::istringstream str(toLower().toStdString());
+			std::istringstream str;
+			str.rdbuf()->pubsetbuf(data, length);
 			bool t = false;
 			str>>std::boolalpha>>t;
 			return t;
@@ -142,6 +142,12 @@ class String
 		}
 
 	private:
+		struct StrData
+		{
+			uint count;
+			char str[sizeof(uint)];
+		};
+
 		String(const String &str, uint beg, uint len);
 
 		struct StringConverter;

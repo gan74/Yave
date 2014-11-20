@@ -4,48 +4,70 @@
 #include <iomanip>
 #include <cstring>
 
+
+#include <iostream>
+
 namespace n {
 namespace core {
 
-char *allocStr(uint s) {
+N_FORCE_INLINE uint sizeForStrAlloc(uint s) {
+	uint mod = s % sizeof(uint);
+	return 2 * sizeof(uint) + s + (mod ? sizeof(uint) - mod : 0);
+}
+
+N_FORCE_INLINE char *allocStr(uint **count, uint s) {
 	if(!s) {
 		return 0;
 	}
-	char *c = (char *)malloc((s + 1) * sizeof(char));
-	*c = '\0';
-	//cppcheck-suppress memleak
-	return c + 1;
+	*count = (uint *)malloc(sizeForStrAlloc(s));
+	**count = 1;
+	*(*count + 1) = s;
+	return (char *)(*count + 2);
 }
 
-char *reallocStr(char *p, uint s) {
+N_FORCE_INLINE char *reallocStr(uint **count, uint s) {
 	if(!s) {
+		*count = 0;
 		return 0;
 	}
-	if(!p) {
-		return allocStr(s);
+	if(!*count) {
+		return allocStr(count, s);
 	}
-	while(*p) p--;
-	p = (char *)realloc(p, s + 1);
-	return p + 1;
+	uint allocLen = *(*count + 1);
+	uint size = sizeForStrAlloc(s);
+	if(allocLen < s) {
+		*count = (uint *)realloc(*count, size);
+		*(*count + 1) = size;
+	} else {
+		uint nSize = sizeForStrAlloc(s);
+		if(nSize + sizeof(uint)	< size) {
+			*count = (uint *)realloc(*count, nSize);
+			*(*count + 1) = nSize;
+		}
+	}
+	return (char *)(*count + 2);
 }
 
-void freeStr(char *p) {
-	if(!p) {
+N_FORCE_INLINE void freeStr(uint **count, char *) {
+	if(!*count) {
 		return;
 	}
-	while(*p) p--;
-	free(p);
+	free(*count);
 }
 
 String::String() : length(0), count(0), data(0) {
 }
 
-String::String(const char *cst) : String(cst, cst ? strlen(cst) : 0) {
+String::String(const char *cst) : String() {
+	if(cst) {
+		data = allocStr(&count, length = strlen(cst));//(char *)malloc(length * sizeof(char));
+		memcpy(data, cst, length * sizeof(char));
+	}
 }
 
 String::String(const char *cst, uint l) : length(l), count(0), data(0) {
 	if(l) {
-		data = allocStr(length);//(char *)malloc(length * sizeof(char));
+		data = allocStr(&count, length);//(char *)malloc(length * sizeof(char));
 		if(cst) {
 			memcpy(data, cst, length * sizeof(char));
 		} else {
@@ -57,8 +79,6 @@ String::String(const char *cst, uint l) : length(l), count(0), data(0) {
 String::String(const String &str) : length(str.length), count(str.count), data(str.data) {
 	if(count) {
 		(*count)++;
-	} else if(data) {
-		count = str.count = new uint(2);
 	}
 }
 
@@ -69,11 +89,16 @@ String::String(String &&str) : String() {
 String::~String() {
 	if(data) {
 		if(isUnique()) {
-			delete count;
-			freeStr(data);//free(data);
+			freeStr(&count, data);
 		} else {
 			(*count)--;
 		}
+	}
+}
+
+String::String(const String &str, uint beg, uint len) : length(len), count(str.count), data(str.data + beg) {
+	if(count) {
+		(*count)++;
 	}
 }
 
@@ -82,7 +107,16 @@ void String::replace(const String &oldS, const String &newS) {
 }
 
 void String::replace(uint beg, uint len, const String &newS) {
-	operator=(replaced(beg, len, newS));
+	uint ol = length;
+	if(newS.size() > len) {
+		detach(ol - len + newS.size());
+		memmove(data + beg + newS.size(), data + beg + len, (ol - beg - len) * sizeof(char));
+		memcpy(data + beg, newS.data, newS.length * sizeof(char));
+	} else {
+		memmove(data + beg + newS.size(), data + beg + len, (ol - beg - len) * sizeof(char));
+		memcpy(data + beg, newS.data, newS.length * sizeof(char));
+		detach(ol - len + newS.size());
+	}
 }
 
 String String::replaced(const String &oldS, const String &newS) const {
@@ -105,7 +139,7 @@ String String::replaced(const String &oldS, const String &newS) const {
 }
 
 String String::replaced(uint beg, uint len, const String &newS) const {
-	return subString(0, beg) + newS + subString(beg + len);
+	return Array<String>(subString(0, beg), newS, subString(beg + len));
 }
 
 void String::clear() {
@@ -171,14 +205,6 @@ bool String::contains(char c) const {
 
 bool String::contains(const String &str) const {
 	return find(str) < length;
-}
-
-String::String(const String &str, uint beg, uint len) : length(len), count(str.count), data(str.data + beg) {
-	if(count) {
-		(*count)++;
-	} else if(data) {
-		count = str.count = new uint(2);
-	}
 }
 
 String String::subString(uint beg, uint len) const {
@@ -254,18 +280,6 @@ Array<String> String::split(const String &str) const {
 	return arr;
 }
 
-float String::toFloat() const {
-	return toDouble();
-}
-
-double String::toDouble() const {
-	return atof(data);
-}
-
-int String::toInt() const {
-	return atoi(data);
-}
-
 String String::toLower() const {
 	return mapped([](char c) -> char { return tolower(c); });
 }
@@ -332,6 +346,10 @@ bool String::operator!=(const char *str) const {
 }
 
 String &String::operator=(const String &s) {
+	if(isUnique() && !s.count) {
+		s.count = count;
+		count = 0;
+	}
 	detach(0);
 	data = s.data;
 	count = s.count;
@@ -376,24 +394,22 @@ String::const_iterator String::end() const {
 }
 
 uint String::getHash() const {
-	return length && data ? hash(data, length) : 0;
+	return data ? hash(data, length) : hash(&null, 1);
 }
 
 void String::detach(uint s) const {
 	if(s) {
 		if(isUnique()) {
-			data = reallocStr(data, s);//(char *)realloc(data, s * sizeof(char));
+			data = reallocStr(&count, s);
 		} else {
 			(*count)--;
-			count = 0;
-			char *d = allocStr(s);//(char *)malloc(s * sizeof(char));
+			char *d = allocStr(&count, s);
 			memcpy(d, data, std::min(length, s) * sizeof(char));
 			data = d;
 		}
 	} else {
 		if(isUnique()) {
-			delete count;
-			freeStr(data);//free(data);
+			freeStr(&count, data);//free(data);
 		}
 		count = 0;
 		data = 0;
@@ -403,6 +419,10 @@ void String::detach(uint s) const {
 
 bool String::isUnique() const {
 	return (!count || *count == 1);
+}
+
+bool String::isSharedSubset() const {
+	return data && data[-1] == '\0';
 }
 
 bool String::isShared() const {
