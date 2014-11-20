@@ -29,7 +29,8 @@ HEADERS += n/*.h \
 		   n/io/*.h \
 		   n/concurent/*.h \
 		   n/test/*.h \
-		   n/math/*.h
+		   n/math/*.h \
+		   n/mem/*.h
 
 
 CONFIG(debug, debug|release) {
