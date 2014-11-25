@@ -1,5 +1,5 @@
-#ifndef N_COCURENT_SPINLOCK_H
-#define N_COCURENT_SPINLOCK_H
+#ifndef N_CONCURENT_SPINLOCK_H
+#define N_CONCURENT_SPINLOCK_H
 
 #include <pthread.h>
 #include <n/utils.h>
@@ -24,4 +24,4 @@ class SpinLock : public core::NonCopyable
 }
 }
 
-#endif // N_COCURENT_SPINLOCK_H
+#endif // N_CONCURENT_SPINLOCK_H
