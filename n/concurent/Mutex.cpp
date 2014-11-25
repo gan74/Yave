@@ -15,10 +15,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Mutex.h"
-#include "Thread.h"
+
 #include <ctime>
 #include <n/defines.h>
-#include <iostream>
 
 namespace n {
 namespace concurent {
@@ -34,25 +33,34 @@ void WaitCondition::notifyAll() {
 	pthread_cond_broadcast(&condition);
 }
 
-
-Mutex::Mutex(RecursionMode r) : mutex(r == NonRecursive ?  PTHREAD_MUTEX_INITIALIZER : PTHREAD_RECURSIVE_MUTEX_INITIALIZER), thread(0) {
+Mutex::Mutex(RecursionMode r) : mutex(r == NonRecursive ?  PTHREAD_MUTEX_INITIALIZER : PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
+#ifdef N_DEBUG
+, thread(0)
+#endif
+{
 }
 
 void Mutex::lock() {
 	pthread_mutex_lock(&mutex);
+	#ifdef N_DEBUG
 	thread = Thread::getCurrent();
+	#endif
 }
 
 bool Mutex::trylock() {
 	if(!pthread_mutex_trylock(&mutex)) {
+		#ifdef N_DEBUG
 		thread = Thread::getCurrent();
+		#endif
 		return true;
 	}
 	return false;
 }
 
 void Mutex::unlock() {
+	#ifdef N_DEBUG
 	thread = 0;
+	#endif
 	pthread_mutex_unlock(&mutex);
 }
 
@@ -81,9 +89,11 @@ void Mutex::notifyAll(WaitCondition &cond) {
 }
 
 void Mutex::checkLockedByThread() const {
+	#ifdef N_DEBUG
 	if(Thread::getCurrent() != thread) {
 		nError("Waiting on an unlocked mutex");
 	}
+	#endif
 }
 
 

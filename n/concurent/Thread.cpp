@@ -15,7 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Thread.h"
-#include <pthread.h>
 #include <n/core/Timer.h>
 
 #if defined WIN32 || defined _WIN32 || defined __CYGWIN__
@@ -32,12 +31,11 @@ namespace concurent {
 
 thread_local Thread *Thread::self = 0;
 
-Thread::Thread() : handle(new pthread_t), running(false), toDelete(false), timer(0) {
+Thread::Thread() : running(false), toDelete(false), timer(0) {
 }
 
 Thread::~Thread() {
 	join();
-	delete (pthread_t *)handle;
 	if(timer) {
 		delete timer;
 	}
@@ -52,15 +50,15 @@ bool Thread::isRunning() const {
 }
 
 bool Thread::start() {
-	return !pthread_create((pthread_t *)handle, 0, Thread::threadCreate, this);
+	return !pthread_create(&handle, 0, Thread::threadCreate, this);
 }
 
 void Thread::kill() {
-	pthread_cancel(*(pthread_t *)handle);
+	pthread_cancel(handle);
 }
 
 void Thread::join() const {
-	pthread_join(*(pthread_t *)handle, 0);
+	pthread_join(handle, 0);
 }
 
 void Thread::deleteLater() {

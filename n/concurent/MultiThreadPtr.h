@@ -72,7 +72,7 @@ class PtrLock
 		PtrLock(FalseType) : mutex(new Mutex()) {
 		}
 
-		PtrLock(TrueType) : mutex(new Mutex(Mutex::Recursive)) {
+		PtrLock(TrueType) : mutex(new Mutex(concurent::Recursive)) {
 		}
 
 		Mutex *mutex;

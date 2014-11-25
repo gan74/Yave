@@ -17,13 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CONCURENT_MUTEX_H
 #define N_CONCURENT_MUTEX_H
 
-#include <pthread.h>
-#include <n/utils.h>
+#include "Thread.h"
 
 namespace n {
 namespace concurent {
-
-class Thread;
 
 class WaitCondition
 {
@@ -43,12 +40,6 @@ class WaitCondition
 class Mutex : public core::NonCopyable
 {
 	public:
-		enum RecursionMode
-		{
-			Recursive,
-			NonRecursive
-		};
-
 		Mutex(RecursionMode r = NonRecursive);
 
 		void lock();
@@ -70,7 +61,10 @@ class Mutex : public core::NonCopyable
 
 		pthread_mutex_t mutex;
 		WaitCondition condition;
+
+		#ifdef N_DEBUG
 		Thread *thread;
+		#endif
 };
 
 }
