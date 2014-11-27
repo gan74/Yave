@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include <n/utils.h>
 
+#include <n/defines.h>
+
 namespace n {
 namespace concurent {
 
