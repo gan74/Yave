@@ -191,15 +191,17 @@ namespace internal {
 	template<typename T, bool P>
 	struct IsDereferencable // P = false
 	{
-		private:
-			typedef byte Yes[1];
-			typedef byte No[2];
+		typedef byte Yes[1];
+		typedef byte No[2];
 
-			template<typename U>
-			static Yes &test(decltype(&U::operator*));
-			static No &test(...);
+		static_assert(sizeof(Yes) != sizeof(No), "SFINAE : sizeof(Yes) == sizeof(No)");
+
+		template<typename U>
+		static Yes &test(decltype(&U::operator*));
+		template<typename U>
+		static No &test(...);
 		public:
-			static constexpr bool value = sizeof(test(0)) == sizeof(Yes);
+			static constexpr bool value = sizeof(test<T>(0)) == sizeof(Yes);
 	};
 
 	template<typename T>
@@ -208,17 +210,21 @@ namespace internal {
 		static constexpr bool value = false;
 	};
 }
+
+
 template<typename From, typename To> // U from T
 class TypeConversion
 {
 	typedef byte Yes[1];
 	typedef byte No[2];
+
+	static_assert(sizeof(Yes) != sizeof(No), "SFINAE : sizeof(Yes) == sizeof(No)");
+
 	static Yes &test(To);
 	static No &test(...);
 
-	static From &from();
 	public:
-		static constexpr bool exists = sizeof(test(from())) == sizeof(Yes);
+		static constexpr bool exists = sizeof(test(makeOne<From>())) == sizeof(Yes);
 
 };
 
