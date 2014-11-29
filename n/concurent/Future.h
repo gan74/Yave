@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CONCURENTFUTURE_H
 
 #include "MultiThreadPtr.h"
+#include "Mutex.h"
 #include <n/core/Option.h>
 
 namespace n {
@@ -132,7 +133,7 @@ class SharedFuture
 		}
 
 		Mutex *getMutex() {
-			return shared.getLockingPolicy().getMutex();
+			return shared.getLockingPolicy().getLock();
 		}
 
 		Internal getInternal() {
@@ -143,7 +144,7 @@ class SharedFuture
 			return i;
 		}
 
-		core::SmartPtr<Internal, typename core::NoProxy<Internal>, PtrLock<true>> shared;
+		core::SmartPtr<Internal, typename core::NoProxy<Internal>, PtrLock<RecursiveMutex>> shared;
 };
 
 }

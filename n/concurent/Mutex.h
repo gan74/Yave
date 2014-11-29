@@ -67,6 +67,14 @@ class Mutex : public core::NonCopyable
 		#endif
 };
 
+
+class RecursiveMutex : public Mutex
+{
+	public:
+		RecursiveMutex() : Mutex(Recursive) {
+		}
+};
+
 }
 }
 

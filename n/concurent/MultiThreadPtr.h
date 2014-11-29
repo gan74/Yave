@@ -17,22 +17,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CONCURENT_MULTITHREADPTR_H
 #define N_CONCURENT_MULTITHREADPTR_H
 
-#include "Mutex.h"
+#include "SpinLock.h"
 #include <n/core/SmartPtr.h>
 
 namespace n {
 namespace concurent {
 
-template<bool Rec = false>
+template<typename Lock = SpinLock>
 class PtrLock
 {
 	public:
-		Mutex *getMutex() {
-			return mutex;
+		Lock *getLock() {
+			return lock;
 		}
 
 	protected:
-		PtrLock() : PtrLock(BoolToType<Rec>()) {
+		PtrLock() : mutex(new Lock()) {
 		}
 
 		PtrLock(const PtrLock &p) : mutex(0) {
@@ -69,17 +69,11 @@ class PtrLock
 		}
 
 	private:
-		PtrLock(FalseType) : mutex(new Mutex()) {
-		}
-
-		PtrLock(TrueType) : mutex(new Mutex(concurent::Recursive)) {
-		}
-
-		Mutex *mutex;
+		Lock *mutex;
 };
 
 template<typename T, typename Proxy = core::NoProxy<T>>
-using MultiThreadPtr = core::SmartPtr<T, Proxy, PtrLock<false>>;
+using MultiThreadPtr = core::SmartPtr<T, Proxy, PtrLock<>>;
 
 }
 }
