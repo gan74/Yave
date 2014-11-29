@@ -42,21 +42,6 @@ N_FORCE_INLINE char *reallocStr(uint **count, uint s) {
 	}
 	*count = cptr;
 	return (char *)(cptr + 2);
-	/*uint allocLen = *(cptr + 1);
-	uint size = sizeForStrAlloc(s);
-	if(allocLen < s) {
-		//cppcheck-suppress memleakOnRealloc
-		cptr = (uint *)realloc(cptr, size);
-		*(cptr + 1) = size;
-	} else {
-		uint nSize = sizeForStrAlloc(s);
-		if(nSize + 2 * sizeof(uint)	< size) {
-			cptr = (uint *)realloc(*count, nSize);
-			*(cptr + 1) = nSize;
-		}
-	}
-	*count = cptr;
-	return (char *)(cptr + 2);*/
 }
 
 N_FORCE_INLINE void freeStr(uint **count, char *) {
