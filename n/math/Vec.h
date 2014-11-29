@@ -59,7 +59,7 @@ class Vec
 			build<0>(v, args...);
 		}
 
-		Vec(T t = T(0)) {
+		explicit Vec(T t = T(0)) {
 			for(uint i = 0; i != N; i++) {
 				vec[i] = t;
 			}
