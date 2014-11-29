@@ -74,7 +74,7 @@ bool File::open(int m) {
 	if(m & IODevice::Binary)	{
 		openMode += "b";
 	}
-	file = fopen(name, openMode);
+	file = fopen(name.toChar(), openMode.toChar());
 	if(!file) {
 		return false;
 	}

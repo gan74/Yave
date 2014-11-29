@@ -83,8 +83,12 @@ class String
 		String &operator=(String &&s);
 		bool operator<(const String &s) const;
 
+		char operator[](uint i) const {
+			return data[i];
+		}
+
 		const char *toChar() const;
-		operator const char *() const;
+		explicit operator const char *() const;
 
 		std::string toStdString() const;
 

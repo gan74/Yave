@@ -24,8 +24,17 @@ N_FORCE_INLINE char *allocStr(uint **count, uint s) {
 	return (char *)(cptr + 2);
 }
 
+
+N_FORCE_INLINE void freeStr(uint **count, char *) {
+	if(!*count) {
+		return;
+	}
+	free(*count);
+}
+
 N_FORCE_INLINE char *reallocStr(uint **count, uint s) {
 	if(!s) {
+		freeStr(count, 0);
 		*count = 0;
 		return 0;
 	}
@@ -42,13 +51,6 @@ N_FORCE_INLINE char *reallocStr(uint **count, uint s) {
 	}
 	*count = cptr;
 	return (char *)(cptr + 2);
-}
-
-N_FORCE_INLINE void freeStr(uint **count, char *) {
-	if(!*count) {
-		return;
-	}
-	free(*count);
 }
 
 String::String() : length(0), count(0), data(0) {
@@ -342,10 +344,6 @@ bool String::operator!=(const char *str) const {
 }
 
 String &String::operator=(const String &s) {
-	if(isUnique() && !s.count) {
-		s.count = count;
-		count = 0;
-	}
 	detach(0);
 	data = s.data;
 	count = s.count;
@@ -393,7 +391,7 @@ uint String::getHash() const {
 
 void String::detach(uint s) const {
 	if(s) {
-		if(isUnique()) {
+		if(isUnique() && !isSharedSubset()) {
 			data = reallocStr(&count, s);
 		} else {
 			(*count)--;
@@ -416,7 +414,7 @@ bool String::isUnique() const {
 }
 
 bool String::isSharedSubset() const {
-	return data && data[-1] == '\0';
+	return count && (char *)(count + 1)	!= data;
 }
 
 bool String::isShared() const {
