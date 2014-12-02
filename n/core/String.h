@@ -92,13 +92,21 @@ class String
 
 		std::string toStdString() const;
 
-		template<typename T>
-		explicit operator T() const {
+		template<typename T, typename F = Nothing>
+		T to(F f = F()) const {
 			std::istringstream str;
 			str.rdbuf()->pubsetbuf(data, length);
 			T t;
 			str>>t;
+			if(str.fail()) {
+				f();
+			}
 			return t;
+		}
+
+		template<typename T>
+		explicit operator T() const {
+			return to<T>();
 		}
 
 		explicit operator bool() const {
