@@ -28,7 +28,7 @@ class PtrLock
 {
 	public:
 		Lock *getLock() {
-			return lock;
+			return mutex;
 		}
 
 	protected:
