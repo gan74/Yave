@@ -59,8 +59,14 @@ struct Nothing
 
 	template<typename T>
 	operator T() const {
-		throw 0;
+		throw Nothing();
 	}
+};
+
+template<int I>
+struct IntToType
+{
+	static constexpr bool value = I;
 };
 
 template<bool B>
