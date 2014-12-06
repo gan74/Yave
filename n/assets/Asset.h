@@ -19,18 +19,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/concurent/MultiThreadPtr.h>
 
-
 namespace n {
 namespace assets {
 
-
 template<typename T>
 using AssetPtr = concurent::MultiThreadPtr<T *>;
+
+template<typename T, typename LoadPolicy>
+class AssetBuffer;
 
 template<typename T>
 class Asset
 {
 	public:
+		Asset() : ptr(0) {
+		}
+
 		T &operator->() {
 			return **ptr;
 		}
@@ -55,7 +59,7 @@ class Asset
 		template<typename U, typename P>
 		friend class AssetBuffer;
 
-		Asset(AssetPtr<T> p = 0) : ptr(p) {
+		Asset(AssetPtr<T> p) : ptr(p) {
 		}
 
 		AssetPtr<T> ptr;

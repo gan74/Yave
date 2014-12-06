@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Array.h>
 #include "AssetLoader.h"
 #include <n/concurent/Async.h>
+#include <n/concurent/Mutex.h>
+
 namespace n {
 namespace assets {
 
@@ -58,16 +60,21 @@ class AssetBuffer : public core::NonCopyable, protected LoadPolicy
 		template<typename... Args>
 		Asset<T> load(Args... args) {
 			AssetPtr<T> asset(LoadPolicy::operator()(loader, args...));
+			mutex.lock();
 			assets.append(asset);
+			mutex.unlock();
 			return Asset<T>(asset);
 		}
 
 		template<typename... Args, typename U>
 		void addLoader(U u) {
-			return loader.addLoader<Args...>(u);
+			mutex.lock();
+			loader.addLoader<Args...>(u);
+			mutex.unlock();
 		}
 
 	private:
+		concurent::Mutex mutex;
 		AssetLoader<T> loader;
 		core::Array<AssetPtr<T>> assets;
 };
