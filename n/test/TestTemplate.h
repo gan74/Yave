@@ -27,12 +27,11 @@ namespace test {
 template<typename T>
 class TestTemplate
 {
-	class TestRunner
+	struct Runner
 	{
-		public:
-			TestRunner() {
-				test(T().run(), true, "Auto tests failed");
-			}
+		Runner() {
+			test(T().run(), true, "Auto tests failed");
+		}
 	};
 
 
@@ -48,13 +47,13 @@ class TestTemplate
 
 	private:
 	#ifdef N_AUTO_TEST
-	static TestRunner runner;
+	static Runner runner;
 	#endif
 };
 
 #ifdef N_AUTO_TEST
 template<typename T>
-typename TestTemplate<T>::TestRunner TestTemplate<T>::runner = TestTemplate<T>::TestRunner();
+typename TestTemplate<T>::Runner TestTemplate<T>::runner = TestTemplate<T>::Runner();
 #endif
 
 } //test
