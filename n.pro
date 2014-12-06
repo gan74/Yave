@@ -22,7 +22,8 @@ SOURCES += main.cpp \
 		   n/io/*.cpp \
 		   n/concurent/*.cpp \
 		   n/test/*.cpp \
-		   n/test/defaults/*.cpp
+		   n/test/defaults/*.cpp \
+		   n/script/*.cpp
 
 HEADERS += n/*.h \
 		   n/core/*.h \
@@ -30,7 +31,9 @@ HEADERS += n/*.h \
 		   n/concurent/*.h \
 		   n/test/*.h \
 		   n/math/*.h \
-		   n/mem/*.h
+		   n/mem/*.h \
+		   n/script/*.h \
+    n/script/PrimitieType.h
 
 
 CONFIG(debug, debug|release) {

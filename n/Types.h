@@ -1,5 +1,5 @@
 /*******************************
-Copyright (C) 2009-2010 gr�goire ANGERAND
+Copyright (C) 2013-2015 gregoire ANGERAND
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -13,12 +13,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-
 #ifndef N_TYPES_H
 #define N_TYPES_H
 
 #include <cstdint>
 #include <cstdlib>
+#include <algorithm>
 #include <type_traits>
 #include <typeinfo>
 
@@ -54,6 +54,8 @@ struct Nothing
 
 	template<typename T>
 	Nothing(T) {}
+
+	void operator()() const {}
 
 	template<typename T>
 	operator T() const {

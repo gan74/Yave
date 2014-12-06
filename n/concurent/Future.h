@@ -1,5 +1,5 @@
 /*******************************
-Copyright (C) 2013-2014 gr�goire ANGERAND
+Copyright (C) 2013-2015 gregoire ANGERAND
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENTFUTURE_H
-#define N_CONCURENTFUTURE_H
+#ifndef N_CONCURENT_FUTURE_H
+#define N_CONCURENT_FUTURE_H
 
 #include "MultiThreadPtr.h"
 #include "Mutex.h"
@@ -150,4 +150,4 @@ class SharedFuture
 }
 }
 
-#endif // FUTURE_H
+#endif // N_CONCURENT_FUTURE_H

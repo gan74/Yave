@@ -1,5 +1,5 @@
 /*******************************
-Copyright (C) 2013-2014 grégoire ANGERAND
+Copyright (C) 2013-2015 gregoire ANGERAND
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

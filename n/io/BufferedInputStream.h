@@ -14,32 +14,36 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_SPINLOCK_H
-#define N_CONCURENT_SPINLOCK_H
+#ifndef N_IO_BUFFEREDINPUTSTREAM_H
+#define N_IO_BUFFEREDINPUTSTREAM_H
 
-#include <pthread.h>
-#include <n/utils.h>
-
-#include <n/defines.h>
+#include "InputStream.h"
 
 namespace n {
-namespace concurent {
+namespace io {
 
-class SpinLock : public core::NonCopyable
+class BufferedInputStream : public InputStream
 {
 	public:
-		SpinLock();
+		BufferedInputStream(InputStream *st);
+		~BufferedInputStream();
 
-		void lock();
-		void unlock();
-		bool trylock();
+		bool atEnd() const override;
+		bool canRead() const override;
+		uint readBytes(char *b, uint l = -1) override;
+
+		uint getBufferUsedSize() const;
 
 	private:
-		pthread_spinlock_t spin;
+		uint fillBuffer();
+
+		InputStream *stream;
+		uint bufferSize;
+		uint bufferUsed;
+		char *buffer;
 };
 
-
 }
 }
 
-#endif // N_CONCURENT_SPINLOCK_H
+#endif // N_IO_BUFFEREDINPUTSTREAM_H

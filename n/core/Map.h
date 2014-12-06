@@ -1,5 +1,5 @@
 /*******************************
-Copyright (C) 2013-2014 grégoire ANGERAND
+Copyright (C) 2013-2015 gregoire ANGERAND
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -13,7 +13,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-
 #ifndef N_CORE_MAP_H
 #define N_CORE_MAP_H
 

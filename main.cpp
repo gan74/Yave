@@ -1,6 +1,7 @@
+#include <iostream>
 
-#include <n/types.h>
-
+#include<n/types.h>
+#include <n/utils.h>
 #include <n/core/Array.h>
 #include <n/core/String.h>
 #include <n/core/Set.h>
@@ -10,6 +11,8 @@
 #include <n/core/Functor.h>
 #include <n/core/SmartPtr.h>
 #include <n/core/Lazy.h>
+
+#include <n/mem/Allocator.h>
 
 #include <n/concurent/Thread.h>
 #include <n/concurent/Mutex.h>
@@ -21,92 +24,193 @@
 
 #include <n/math/Vec.h>
 #include <n/math/Matrix.h>
+#include <n/math/Quaternion.h>
+#include <n/math/Transform.h>
 
-#include <iostream>
-#include <set>
-#include <assert.h>
+#include <n/assets/AssetBuffer.h>
+
+#include <n/script/Lexer.h>
+#include <n/script/Machine.h>
 
 using namespace	n::concurent;
+using namespace n::assets;
 using namespace n::core;
 using namespace n::math;
 using namespace n::io;
 using namespace n;
 
-template<typename A, typename B>
-auto truc(A a, B b) -> decltype(a + b) { return a + b; }
+template<typename... Args>
+String substr(const String &str, Args... args) {
+	return str.subString(args...);
+}
 
-template<typename T>
-bool isProbablePrime(T p) {
-	T a = (p + 1) / 2;
-	return modPow<T>(a, p - 1, p);
+template<typename... Args>
+std::string substr(const std::string &str, Args... args) {
+	return str.substr(args...);
 }
 
 template<typename T>
-bool isPrime(T p) {
-	T s = isqrt(p + 1) + 1;
-	for(T i = 2; i < s; i++) {
-		if(p % i == 0) {
-			return false;
-		}
+T benchReplace(double &time) {
+	Timer timer;
+	T a("strReplaceBench");
+	uint max = 300000;
+	const char *test = "maybe";
+	const char *test2 = "ornpot";
+	for(uint i = 0; i != max; i++) {
+		a.replace(3, 7, T(test));
+		a.replace(7, 4, T(test2));
 	}
-	return true;
+	time += timer.elapsed();
+	return a;
 }
 
 template<typename T>
-uint primes(T max) {
-	Array<T> primes(2);
-	for(uint i = 3; i != max; i += 2) {
-		if(isPrime(i)) {
-			primes.append(i);
-			//std::cout<<i<<std::endl;
-		}
+uint benchCtor(double &time) {
+	Timer timer;
+	uint max = 500000;
+	uint tot = 0;
+	while(tot < max) {
+		T a("maybe");
+		T b("ornpot");
+		tot += a.size() + b.size();
 	}
-	return primes.size();
+	time += timer.elapsed();
+	return tot;
 }
 
 template<typename T>
-uint fastPrimes(T max) {
-	Array<T> primes(2);
-	for(T i = 3; i != max; i += 2) {
-		if(isProbablePrime(i) && isPrime(i)) {
-			primes.append(i);
-			//std::cout<<i<<std::endl;
-		}
+uint benchEq(double &time) {
+	Timer timer;
+	uint max = 40000000;
+	T a("strReplacebench");
+	uint tot = 0;
+	while(tot < max) {
+		T b("maybe");
+		a = b;
+		tot += a.size() + b.size();
 	}
-	return primes.filtered([](T x) { return isPrime(x); }).size();
+	time += timer.elapsed();
+	return tot;
 }
 
 template<typename T>
-Array<int> foo(const T &t) {
-	return AsCollection(t).sub(t.begin(), t.end()).mapped([](typename Collection<T>::ElementType t) -> int { return t - 1; });
-}
-
-class NC : public NonCopyable
-{
-	public:
-		NC() {
-		}
-};
-
-template<typename T, uint N, uint M>
-String m2s(Matrix<T, N, M> m) {
-	String str;
-	for(uint i = 0; i != N; i++) {
-		str += "| ";
-		for(uint j = 0; j != M; j++) {
-			str += m[i][j] + String(" ");
-		}
-		str += " |\n";
+T benchCat(double &time) {
+	Timer timer;
+	T a("strbench");
+	uint max = 30000000;
+	T tmp("Strings !");
+	while(a.size() < max) {
+		a = a + tmp;
+		tmp += a;
 	}
-	return str;
+	while(a.size() > 453) {
+		a =	substr(a, a.size() / 2, a.size() / 2 - 1);
+	}
+	time += timer.elapsed();
+	return a;
 }
+
+template<typename T>
+T benchMulti(double &time) {
+	Timer timer;
+	T a("strbench");
+	uint max = 100000;
+	T tmp("Strings !");
+	for(uint i = 0; i != max; i++) {
+		a = a + tmp;
+		uint mod = 1025 + sin(i / 200.0) * 1000;
+		if(a.size() > mod) {
+			do {
+				a = substr(a, mod / 7, a.size() % mod);
+			} while(a.size() > 3 * mod);
+		} else {
+			a = substr(a, 1);
+		}
+		tmp = a;
+		a = a + "mark";
+	}
+	time += timer.elapsed();
+	return a;
+}
+
+void printScore(double &co, double &st) {
+	std::cout<<"std::string  : "<<round(st * 1000)<<"ms"<<std::endl;
+	std::cout<<"core::String : "<<round(co * 1000)<<"ms"<<std::endl;
+	std::cout<<"Total        : "<<round((st + co) * 1000)<<"ms"<<std::endl;
+	if(co > st) {
+		std::cout<<"/!\\ core::String failed to outperform std::string"<<std::endl;
+	} else {
+		std::cout<<std::endl;
+	}
+	double min = std::min(co, st);
+	std::cout<<"difference  : "<<round((st + co - min - min) / min * 1000) / 10<<"%"<<std::endl;
+	std::cout<<std::endl;
+	std::cout<<std::endl;
+	co = st = 0;
+}
+
+void benchmark(double &stdTime, double &strTime, double time = 5) {
+	stdTime = 0;
+	strTime = 0;
+	do {
+		if(benchReplace<String>(strTime) != benchReplace<std::string>(stdTime)) {
+			fatal("Strings not equal !");
+		}//printScore(strTime, stdTime);
+		if(benchCtor<String>(strTime) != benchCtor<std::string>(stdTime)) {
+			fatal("Strings not equal !");
+		}//printScore(strTime, stdTime);
+		if(benchEq<String>(strTime) != benchEq<std::string>(stdTime)) {
+			fatal("Strings not equal !");
+		}//printScore(strTime, stdTime);
+		if(benchCat<String>(strTime) != benchCat<std::string>(stdTime)) {
+			fatal("Strings not equal !");
+		}//printScore(strTime, stdTime);
+		if(benchMulti<String>(strTime) != benchMulti<std::string>(stdTime)) {
+			fatal("Strings not equal !");
+		}//printScore(strTime, stdTime);
+		if(!stdTime && !strTime) {
+			return;
+		}
+	} while(stdTime + strTime < time);
+}
+
+void benchStrings() {
+	double stdTime = 0;
+	double strTime = 0;
+	benchmark(stdTime, strTime);
+	printScore(strTime, stdTime);
+}
+
+
+
+class BS {};
+
 
 int main(int, char **) {
-	std::cout<<std::boolalpha<<(Array<int>(1, 2, 3, 4, 5, 6, 7, 8, 9) == Array<int>(1, 2, 3, 4, 5, 6, 7, 8, 9))<<std::endl;
-	for(int w : foo(Array<int>(1, 2, 3, 4, 5, 6, 7, 8, 9))) {
-		std::cout<<w<<std::endl;
+	script::DynamicBytecode bc[] = {
+		script::DynamicBytecode(script::DynamicBytecode::Push, 9),
+		script::DynamicBytecode(script::DynamicBytecode::Push, 17),
+		script::DynamicBytecode(script::DynamicBytecode::SlB),
+
+		script::DynamicBytecode(script::DynamicBytecode::Push, 18),
+		script::DynamicBytecode(script::DynamicBytecode::Push, 19),
+		script::DynamicBytecode(script::DynamicBytecode::SlE),
+		script::DynamicBytecode(script::DynamicBytecode::Push, 646),
+		script::DynamicBytecode(script::DynamicBytecode::Add),
+		script::DynamicBytecode(script::DynamicBytecode::Cast, script::DynamicPrimitive(script::PrimitiveType::Array)),
+		script::DynamicBytecode(script::DynamicBytecode::End)};
+
+
+	script::DynamicPrimitive ret = script::Machine::run(bc);
+	if(ret.type() != script::PrimitiveType::Array) {
+		fatal("Expected Array");
 	}
+	Array<script::DynamicPrimitive> arr = ret.data().to<Array<script::DynamicPrimitive>>();
+	std::cout<<"size = "<<arr.size()<<std::endl;
+	for(script::DynamicPrimitive d : arr) {
+		std::cout<<d.data().Int<<std::endl;
+	}
+
+	return 0;
 }
-
-
 
