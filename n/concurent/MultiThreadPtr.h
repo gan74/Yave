@@ -44,7 +44,7 @@ class PtrLock
 		}
 
 		void swap(PtrLock &p) {
-			Mutex *m = mutex;
+			Lock *m = mutex;
 			mutex = p.mutex;
 			p.mutex = m;
 		}
