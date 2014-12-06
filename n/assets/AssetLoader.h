@@ -97,16 +97,23 @@ class AssetLoader
 					valid += b;
 				}
 			}
-			if(valid.size() > 1) {
+			/*if(valid.size() > 1) {
 				fatal(core::String("Unable to load asset : ambiguous argument sequence : " + argsToString(argTypes) + " has " + valid.size() + " possible solutions.").toChar());
-			}
-			LoaderFunc<Args...> *ld = dynamic_cast<LoaderFunc<Args...> *>(valid.isEmpty() ? 0 : valid.first());
-			if(!ld) {
+			}*/
+			if(valid.isEmpty()) {
 				fatal(core::String("Unable to load asset : no compatible loader found for " + argsToString(argTypes) + ", candidates are : " + AsCollection(bases.mapped([](const LoaderBase *b) {
 						return "\n  " + argsToString(b->args());
 					})).make(core::String(" or "))).toChar());
+			} else {
+				for(LoaderBase *b : valid) {
+					LoaderFunc<Args...> *ld = dynamic_cast<LoaderFunc<Args...> *>(b);
+					T *r = (*ld)(args...);
+					if(r) {
+						return r;
+					}
+				}
 			}
-			return (*ld)(args...);
+			return 0;
 		}
 
 		template<typename... Args>
