@@ -32,6 +32,7 @@ namespace n {
 		}
 		std::cerr<<std::endl;
 		exit(1);
+		return Nothing();
 	}
 
 namespace math {
