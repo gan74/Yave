@@ -35,6 +35,19 @@ class Asset
 		Asset() : ptr(0) {
 		}
 
+		Asset(T *&&p) : Asset(AssetPtr<T>(new T*(p))) {
+		}
+
+		~Asset() {
+			if(ptr.getReferenceCount() == 1) {
+				delete *ptr;
+			}
+			if(ptr.getReferenceCount() == 2) {
+				delete *ptr;
+				ptr = 0;
+			}
+		}
+
 		T &operator->() {
 			return **ptr;
 		}

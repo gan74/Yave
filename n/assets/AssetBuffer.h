@@ -73,6 +73,14 @@ class AssetBuffer : public core::NonCopyable, protected LoadPolicy
 			mutex.unlock();
 		}
 
+		void gc() {
+			mutex.lock();
+			assets.filter([](const AssetPtr<T> &ptr) {
+				return ptr.getReferenceCount() > 1 && *ptr;
+			});
+			mutex.unlock();
+		}
+
 	private:
 		concurent::Mutex mutex;
 		AssetLoader<T> loader;
