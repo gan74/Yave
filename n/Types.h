@@ -50,12 +50,11 @@ struct NullType
 
 struct Nothing
 {
-	Nothing() {}
+	template<typename... Args>
+	Nothing(Args...) {}
 
-	template<typename T>
-	Nothing(T) {}
-
-	void operator()() const {}
+	template<typename... Args>
+	void operator()(Args...) const {}
 
 	template<typename T>
 	operator T() const {
