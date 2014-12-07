@@ -37,6 +37,45 @@ namespace math {
 		{
 			typedef T type;
 		};
+
+		template<typename T, typename U, bool A, bool B>
+		struct NormalizedConversion // true true
+		{
+			T operator()(U u) {
+				return u;
+			}
+		};
+
+		template<typename T, typename U>
+		struct NormalizedConversion<T, U, false, false>
+		{
+			T operator()(U u) {
+				if(sizeof(U) > sizeof(T)) {
+					return u >> ((sizeof(U) - sizeof(T)) * 8);
+				}
+				return u << ((sizeof(T) - sizeof(U)) * 8);
+			}
+		};
+
+		template<typename T, typename U>
+		struct NormalizedConversion<T, U, true, false>
+		{
+			T operator()(U u) {
+				return T(u) / T(U(~U(0)));
+			}
+		};
+
+		template<typename T, typename U>
+		struct NormalizedConversion<T, U, false, true>
+		{
+			T operator()(U u) {
+				U max = U(T(~T(0)));
+				long double ldm = max;
+				long double v = u;
+				return T(ldm * v);
+			}
+		};
+
 	}
 
 
@@ -96,6 +135,11 @@ namespace math {
 			num = ((num % mod) * (num % mod)) % mod;
 		}
 		return exp;
+	}
+
+	template<typename T, typename U>
+	T normalizedConversion(U u) {
+		return internal::NormalizedConversion<T, U, std::is_floating_point<T>::value, std::is_floating_point<U>::value>()(u);
 	}
 
 	template<typename T>
