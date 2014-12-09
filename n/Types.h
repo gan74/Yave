@@ -241,6 +241,11 @@ class Type
 		Type(const std::type_info &i) : info(&i) {
 		}
 
+		template<typename T>
+		Type(T) : Type(typeid(T)) {
+		}
+
+
 		bool operator==(const Type &t) const {
 			return *info == *t.info;
 		}
