@@ -43,7 +43,7 @@ class MapTest : public TestTemplate<MapTest>
 			map.insert(8, "Eight");
 			map.insert(9, "Nine");
 			map.insert(1, "Two");
-			test(map.size(), 10, "Map size test failed");
+			test(map.size(), 10u, "Map size test failed");
 			auto it = map.begin();
 			test(TypeInfo<decltype(it)>::id, TypeInfo<core::Map<int, core::String>::iterator>::id, "Iterator type test failed");
 			for(int i = 0; i != 10; i++) {
@@ -67,7 +67,7 @@ class MapTest : public TestTemplate<MapTest>
 			f.insert(5, "Five");
 			f.insert(7, "Seven");
 			f.insert(9, "Nine");
-			test(f.size(), 5, "Clear test failed");
+			test(f.size(), 5u, "Clear test failed");
 			test(map, f, "Filter test failed");
 			test(map.get(7), "Seven", "Get test failed");
 			test(map.get(8), "", "Get default test failed");

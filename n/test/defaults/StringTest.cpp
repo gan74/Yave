@@ -42,7 +42,7 @@ class StringTest : public TestTemplate<StringTest>
 			};
 
 			core::String str = "floup, flup, flap, flip";
-			test(str.find(",", 6), 11, "Find from test failed");
+			test(str.find(",", 6), 11u, "Find from test failed");
 			test(str.replaced(",", ""), "floup flup flap flip", "Replaced test failed");
 			test(str.replaced("p", "w"), "flouw, fluw, flaw, fliw", "Replaced test 2");
 			test(str.replaced("floup", "flip"), "flip, flup, flap, flip", "Replaced test 3");
@@ -61,7 +61,7 @@ class StringTest : public TestTemplate<StringTest>
 			str.detach();
 			//test(str.toChar() != cp, true, "detach test failed");
 			test(str, "floup flup flap flip", "detach test failed");
-			test(str.size(), 20, "detach test failed");
+			test(str.size(), 20u, "detach test failed");
 			test(str.size(), strlen(str.toChar()), "detach test failed");
 			str.map([](char c) { return c == 'f' ? 'F' : c; });
 			test(str, "Floup Flup Flap Flip", "Map test failed");
@@ -78,7 +78,7 @@ class StringTest : public TestTemplate<StringTest>
 			test(s.mapped([](char c) { return c == 'f' ? 'F' : c; }).filtered([](char c) { return c != ' '; }), str, "Filtered test failed");
 			core::String a;
 			test(str.endWith(""), true, "\"\".endWith test failed");
-			test(a.size(), 0, "Lenght test failed");
+			test(a.size(), 0u, "Lenght test failed");
 			a += "Share";
 			core::String b = a;
 			test(a.isShared() && b.isShared() && b == "Share", true, "Shared test 1");
