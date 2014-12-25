@@ -17,13 +17,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_ASSETS_ASSET_H
 #define N_ASSETS_ASSET_H
 
-#include <n/concurent/MultiThreadPtr.h>
+#include <n/concurent/Atomic.h>
+#include <n/core/SmartPtr.h>
 
 namespace n {
 namespace assets {
 
 template<typename T>
-using AssetPtr = concurent::MultiThreadPtr<T *>;
+class AssetPtr : public core::SmartPtr<const T *, concurent::auint>
+{
+	static constexpr T *InvalidPtr = (T *)0x1;
+	public:
+		AssetPtr(const T **a) : core::SmartPtr<const T *, concurent::auint>(std::move(a)) {
+		}
+
+		bool isValid() const {
+			return this->operator*() != InvalidPtr;
+		}
+
+		void invalidate() const {
+			if(this->operator*() && isValid()) {
+				this->operator*();
+			}
+			this->operator*() = InvalidPtr;
+		}
+};
 
 template<typename T, typename LoadPolicy>
 class AssetBuffer;
@@ -35,28 +53,16 @@ class Asset
 		Asset() : ptr(0) {
 		}
 
-		Asset(T *&&p) : Asset(AssetPtr<T>(new T*(p))) {
+		Asset(T *&&p) : ptr(AssetPtr<T>(new const T*(p))) {
 		}
 
 		~Asset() {
-			if(ptr.getReferenceCount() == 1) {
-				delete *ptr;
+			if(ptr.getReferenceCount() < 2) {
+				ptr.invalidate();
 			}
-			if(ptr.getReferenceCount() == 2) {
-				delete *ptr;
-				ptr = 0;
-			}
-		}
-
-		T &operator->() {
-			return **ptr;
 		}
 
 		const T &operator->() const {
-			return **ptr;
-		}
-
-		T &operator*() {
 			return **ptr;
 		}
 
@@ -65,14 +71,18 @@ class Asset
 		}
 
 		bool isValid() const {
-			return *ptr;
+			return ptr.isValid();
+		}
+
+		bool isNull() const {
+			return !*ptr || !isValid();
 		}
 
 	private:
 		template<typename U, typename P>
 		friend class AssetBuffer;
 
-		Asset(AssetPtr<T> p) : ptr(p) {
+		Asset(AssetPtr<T> &p) : ptr(p) {
 		}
 
 		AssetPtr<T> ptr;

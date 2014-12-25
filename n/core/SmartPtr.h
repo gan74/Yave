@@ -47,14 +47,14 @@ class NoLock
 		void unlock() {}
 };
 
-template<typename T, typename Proxy = NoProxy<T>, typename LockingPolicy = NoLock>
+template<typename T, typename C = uint, typename Proxy = NoProxy<T>, typename LockingPolicy = NoLock>
 class SmartPtr : private LockingPolicy
 {
 	public:
-		SmartPtr(T *&&p = 0) : LockingPolicy(), ptr(p), count(ptr ? new uint(1) : 0) {
+		SmartPtr(T *&&p = 0) : LockingPolicy(), ptr(p), count(ptr ? new C(1) : 0) {
 		}
 
-		SmartPtr(const SmartPtr<T, Proxy, LockingPolicy> &p) : LockingPolicy(), ptr(0), count(0) {
+		SmartPtr(const SmartPtr<T, C, Proxy, LockingPolicy> &p) : LockingPolicy(), ptr(0), count(0) {
 			ref(p);
 		}
 
@@ -66,11 +66,11 @@ class SmartPtr : private LockingPolicy
 			return *((LockingPolicy *)this);
 		}
 
-		void swap(SmartPtr<T, Proxy, LockingPolicy> &p) {
+		void swap(SmartPtr<T, C, Proxy, LockingPolicy> &p) {
 			p.lock();
 			this->lock();
 			T *pt = ptr;
-			uint *c = count;
+			C *c = count;
 			count = p.count;
 			ptr = p.ptr;
 			p.ptr = pt;
@@ -96,13 +96,13 @@ class SmartPtr : private LockingPolicy
 			return Proxy(ptr);
 		}
 
-		SmartPtr<T, Proxy, LockingPolicy> &operator=(const SmartPtr<T, Proxy, LockingPolicy> &p) {
+		SmartPtr<T, C, Proxy, LockingPolicy> &operator=(const SmartPtr<T, C, Proxy, LockingPolicy> &p) {
 			unref();
 			ref(p);
 			return *this;
 		}
 
-		SmartPtr<T, Proxy, LockingPolicy> &operator=(SmartPtr<T, Proxy, LockingPolicy> &&p) {
+		SmartPtr<T, C, Proxy, LockingPolicy> &operator=(SmartPtr<T, C, Proxy, LockingPolicy> &&p) {
 			swap(p);
 			return *this;
 		}
@@ -144,7 +144,7 @@ class SmartPtr : private LockingPolicy
 		}
 
 	private:
-		void ref(const SmartPtr<T, Proxy, LockingPolicy> &p) {
+		void ref(const SmartPtr<T, C, Proxy, LockingPolicy> &p) {
 			LockingPolicy::ref(p);
 			this->lock();
 			ptr = p.ptr;
@@ -169,7 +169,7 @@ class SmartPtr : private LockingPolicy
 		}
 
 		T *ptr;
-		uint *count;
+		C *count;
 
 };
 

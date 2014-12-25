@@ -144,7 +144,7 @@ class SharedFuture
 			return i;
 		}
 
-		core::SmartPtr<Internal, typename core::NoProxy<Internal>, PtrLock<RecursiveMutex>> shared;
+		core::SmartPtr<Internal, uint, typename core::NoProxy<Internal>, PtrLock<RecursiveMutex>> shared;
 };
 
 }

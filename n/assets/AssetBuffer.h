@@ -31,7 +31,11 @@ class ImediateLoadingPolicy
 	public:
 		template<typename... Args>
 		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
-			return AssetPtr<T>(new T*(loader(args...)));
+			AssetPtr<T> t = AssetPtr<T>(new T*(loader(args...)));
+			if(t.isNull()) {
+				t.invalidate();
+			}
+			return t;
 		}
 };
 
@@ -41,10 +45,15 @@ class AsyncLoadingPolicy
 	public:
 		template<typename... Args>
 		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
-			AssetPtr<T> ptr(new T*(0));
+			AssetPtr<T> ptr(new const T*(0));
 			concurent::Async([=](Args... args) {
-				*ptr = loader(args...);
-				return 0;
+				T *o = loader(args...);
+				if(o) {
+					*ptr = o;
+				} else {
+					ptr.invalidate();
+				}
+				return Nothing();
 			}, args...);
 			return ptr;
 		}
@@ -76,7 +85,7 @@ class AssetBuffer : public core::NonCopyable, protected LoadPolicy
 		void gc() {
 			mutex.lock();
 			assets.filter([](const AssetPtr<T> &ptr) {
-				return ptr.getReferenceCount() > 1 && *ptr;
+				return ptr.getReferenceCount() > 1;
 			});
 			mutex.unlock();
 		}
