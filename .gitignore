@@ -10,3 +10,5 @@
 /object_script.n.Release
 /cppcheck
 *.out
+*.txt
+*.png

@@ -8,6 +8,8 @@ LIBS += -lpthread
 
 DEFINES += N_DEBUG
 
+DEFINES += N_USE_LODEPNG
+
 
 QMAKE_CXXFLAGS += -pedantic
 QMAKE_CXXFLAGS += -Winline
@@ -23,7 +25,8 @@ SOURCES += main.cpp \
 		   n/concurent/*.cpp \
 		   n/test/*.cpp \
 		   n/test/defaults/*.cpp \
-		   n/script/*.cpp
+		   n/script/*.cpp \
+		   n/graphics/*.cpp
 
 HEADERS += n/*.h \
 		   n/core/*.h \
@@ -32,8 +35,13 @@ HEADERS += n/*.h \
 		   n/test/*.h \
 		   n/math/*.h \
 		   n/mem/*.h \
+		   n/assets/*.h \
 		   n/script/*.h \
-    n/script/PrimitieType.h
+		   n/graphics/*.h
+
+
+SOURCES += dependencies/lodepng/*.cpp
+HEADERS += dependencies/lodepng/*.h
 
 
 CONFIG(debug, debug|release) {
