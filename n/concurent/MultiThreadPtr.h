@@ -73,7 +73,7 @@ class PtrLock
 };
 
 template<typename T, typename Proxy = core::NoProxy<T>>
-using MultiThreadPtr = core::SmartPtr<T, Proxy, PtrLock<>>;
+using MultiThreadPtr = core::SmartPtr<T, uint, Proxy, PtrLock<>>;
 
 }
 }
