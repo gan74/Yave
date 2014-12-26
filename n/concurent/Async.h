@@ -27,7 +27,7 @@ template<typename T>
 class AsyncTask : public Thread
 {
 	public:
-		AsyncTask(const Promise<T> &p, const core::Functor<T> &f) : func(f), promise(p) {
+		AsyncTask(const Promise<T> &p, const core::Functor<T()> &f) : func(f), promise(p) {
 			deleteLater();
 		}
 
@@ -36,20 +36,20 @@ class AsyncTask : public Thread
 		}
 
 	private:
-		core::Functor<T> func;
+		core::Functor<T()> func;
 		Promise<T> promise;
 };
 
 template<typename R>
-static SharedFuture<R> Async(const core::Functor<R> &f) {
+static SharedFuture<R> Async(const core::Functor<R()> &f) {
 	Promise<R> promise;
 	(new AsyncTask<R>(promise, f))->start();
 	return promise.getFuture();
 }
 
-template<typename T, typename... Args>
-static SharedFuture<typename std::result_of<T(Args...)>::type> Async(const T f, Args... args) {
-	return Async<typename std::result_of<T(Args...)>::type>(core::Functor<typename std::result_of<T(Args...)>::type, Args...>(f).curried(args...));
+template<typename T, typename... Args, typename R = typename std::result_of<T(Args...)>::type>
+static SharedFuture<R> Async(const T f, Args... args) {
+	return Async<R>(core::Functor<R(Args...)>(f).curried(args...));
 }
 
 }

@@ -105,7 +105,7 @@ class ThreadPool : public core::NonCopyable, public ThreadNumberPolicy
 		protected:
 			void run() override {
 				while(!canceled) {
-					core::Functor<void> func = queue->dequeue();
+					core::Functor<void()> func = queue->dequeue();
 					func();
 				}
 			}

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/types.h>
 #include <tuple>
+#include <n/utils.h>
 
 #include "SmartPtr.h"
 
@@ -47,7 +48,10 @@ struct TupleProxy<R, 0> {
 namespace core {
 
 template<typename R, typename... Args>
-class Functor
+class Functor {};
+
+template<typename R, typename... Args>
+class Functor<R(Args...)>
 {
 	class FuncBase
 	{
@@ -64,13 +68,11 @@ class Functor
 	};
 
 	template<typename T>
-	class Func : public FuncBase
+	class Func : public FuncBase, private NonCopyable
 	{
 		public:
 			Func(const T &t) : f(t) {
 			}
-
-			Func(const Func<T> &) = delete;
 
 			virtual R apply(Args... args) override {
 				return f(args...);
@@ -99,10 +101,10 @@ class Functor
 	class Curry
 	{
 		public:
-			Curry(const Functor<R, Args...> &f, Args... ar) : func(f), args(ar...) {
+			Curry(const Functor<R(Args...)> &f, Args... ar) : func(f), args(ar...) {
 			}
 
-			Curry(const Functor<R, Args...> &f, std::tuple<Args...> ar) : func(f), args(ar) {
+			Curry(const Functor<R(Args...)> &f, std::tuple<Args...> ar) : func(f), args(ar) {
 			}
 
 			R operator()() {
@@ -110,7 +112,7 @@ class Functor
 			}
 
 		private:
-			Functor<R, Args...> func;
+			Functor<R(Args...)> func;
 			std::tuple<Args...> args;
 
 	};
@@ -133,34 +135,23 @@ class Functor
 			return n::internal::TupleProxy<R, sizeof...(Args)>::apply(this, args);
 		}
 
-		Functor<R> curried(Args... args) const {
-			return Functor<R>(Curry(*this, args...));
+		Functor<R()> curried(Args... args) const {
+			return Functor<R()>(Curry(*this, args...));
 		}
 
-		Functor<R> curried(std::tuple<Args...> args) const {
-			return Functor<R>(Curry(*this, args));
+		Functor<R()> curried(std::tuple<Args...> args) const {
+			return Functor<R()>(Curry(*this, args));
 		}
+
+		static constexpr uint ArgCount = sizeof...(Args);
+
+		template<uint N>
+		using ArgType = typename std::tuple_element<N, std::tuple<Args...>>::type;
 
 	private:
 		SmartPtr<FuncBase> func;
 
 };
-
-template<typename R, typename... Args>
-class Function {};
-
-template<typename R, typename... Args>
-class Function<R(Args...)>
-{
-	public:
-		static constexpr uint args = sizeof...(Args);
-
-		template<uint N>
-		using argAt = typename std::tuple_element<N, std::tuple<Args...>>::type;
-
-		using functor = Functor<R, Args...>;
-};
-
 
 
 

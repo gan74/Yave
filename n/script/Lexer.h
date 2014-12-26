@@ -78,7 +78,7 @@ class Lexer
 				}
 		};
 
-		Lexer(const core::Functor<char> &n) : lineNum(1), colNum(0), nextChar(n) {
+		Lexer(const core::Functor<char()> &n) : lineNum(1), colNum(0), nextChar(n) {
 		}
 
 		const_iterator begin() {
@@ -151,7 +151,7 @@ class Lexer
 		uint lineNum;
 		uint colNum;
 		core::String buffer;
-		core::Functor<char> nextChar;
+		core::Functor<char()> nextChar;
 };
 
 }

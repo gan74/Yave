@@ -81,7 +81,7 @@ class AssetLoader
 			}
 
 		private:
-			core::Functor<T *, Args...> func;
+			core::Functor<T *(Args...)> func;
 	};
 
 	public:
@@ -117,18 +117,18 @@ class AssetLoader
 		}
 
 		template<typename... Args>
-		void addLoader(core::Functor<T *, Args...> f) {
+		void addLoader(core::Functor<T *(Args...)> f) {
 			bases.append(new LoaderFunc<Args...>(f));
 		}
 
 		template<typename... Args>
 		void addLoader(T *(*f)(Args...)) {
-			addLoader(core::Functor<T *, Args...>(f));
+			addLoader(core::Functor<T *(Args...)>(f));
 		}
 
 		template<typename... Args, typename U>
 		void addLoader(U u) {
-			addLoader(core::Functor<T *, Args...>(u));
+			addLoader(core::Functor<T *(Args...)>(u));
 		}
 
 	private:
