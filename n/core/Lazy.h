@@ -25,7 +25,7 @@ namespace n {
 namespace core {
 
 template<typename T>
-class LazyVal : public NonCopyable
+class LazyVal : NonCopyable
 {
 	public:
 		typedef typename std::result_of<T()>::type resultType;

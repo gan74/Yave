@@ -24,9 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace mem {
 
-class Allocator : public core::NonCopyable
+class Allocator : core::NonCopyable
 {
-	class Region : public core::NonCopyable
+	class Region : core::NonCopyable
 	{
 		public:
 			Region(uint blckSize, uint nBlck = 0) : blockSize(blckSize), size(nBlck ? nBlck : std::min(16, 1 << (14 - blckSize))), left(size), mem(malloc(blockSize * size)), ptr(mem) {

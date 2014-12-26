@@ -68,7 +68,7 @@ class Functor<R(Args...)>
 	};
 
 	template<typename T>
-	class Func : public FuncBase, private NonCopyable
+	class Func : public FuncBase, NonCopyable
 	{
 		public:
 			Func(const T &t) : f(t) {

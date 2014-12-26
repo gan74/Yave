@@ -25,7 +25,7 @@ namespace n {
 namespace core {
 
 template<typename T>
-class MemFunc : public NonCopyable
+class MemFunc : NonCopyable
 {
 	public:
 		MemFunc(const T &&w) : t(w) {

@@ -60,7 +60,7 @@ class AsyncLoadingPolicy
 };
 
 template<typename T, typename LoadPolicy>
-class AssetBuffer : public core::NonCopyable, protected LoadPolicy
+class AssetBuffer : protected LoadPolicy, core::NonCopyable
 {
 	public:
 		AssetBuffer() {

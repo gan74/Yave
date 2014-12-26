@@ -35,7 +35,7 @@ enum RecursionMode
 };
 
 
-class Thread : public core::NonCopyable
+class Thread : core::NonCopyable
 {
 	public:
 		Thread();

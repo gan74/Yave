@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-struct ImageInternal : public core::NonCopyable
+struct ImageInternal : core::NonCopyable
 {
 	ImageInternal(const math::Vec2ui &s, void *c, ImageFormat f = ImageFormat::R8G8B8A8) : format(f), size(s), data(new byte[s.mul() * format.bytePerPixel()]) {
 		if(c) {

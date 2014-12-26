@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace concurent {
 
-class SpinLock : public core::NonCopyable
+class SpinLock : core::NonCopyable
 {
 	public:
 		SpinLock();
