@@ -17,63 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CONCURENT_MULTITHREADPTR_H
 #define N_CONCURENT_MULTITHREADPTR_H
 
-#include "SpinLock.h"
+#include "Atomic.h"
 #include <n/core/SmartPtr.h>
 
 namespace n {
 namespace concurent {
 
-template<typename Lock = SpinLock>
-class PtrLock
-{
-	public:
-		Lock *getLock() {
-			return mutex;
-		}
-
-	protected:
-		PtrLock() : mutex(new Lock()) {
-		}
-
-		PtrLock(const PtrLock &p) : mutex(0) {
-			ref(p);
-		}
-
-		void ref(const PtrLock &p) {
-			mutex = p.mutex;
-		}
-
-		void swap(PtrLock &p) {
-			Lock *m = mutex;
-			mutex = p.mutex;
-			p.mutex = m;
-		}
-
-		void unref(bool del) {
-			if(mutex && del) {
-				delete mutex;
-			}
-			mutex = 0;
-		}
-
-		void lock() {
-			if(mutex) {
-				mutex->lock();
-			}
-		}
-
-		void unlock() {
-			if(mutex) {
-				mutex->unlock();
-			}
-		}
-
-	private:
-		Lock *mutex;
-};
-
 template<typename T, typename Proxy = core::NoProxy<T>>
-using MultiThreadPtr = core::SmartPtr<T, uint, Proxy, PtrLock<>>;
+using MultiThreadPtr = core::SmartPtr<T, auint, Proxy>;
 
 }
 }

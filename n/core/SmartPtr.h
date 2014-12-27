@@ -37,24 +37,14 @@ class NoProxy
 		T *obj;
 };
 
-class NoLock
+template<typename T, typename C = uint, typename Proxy = NoProxy<T>>
+class SmartPtr
 {
 	public:
-		void swap(const NoLock &) {}
-		void ref(const NoLock &) {}
-		void unref(bool) {}
-		void lock() {}
-		void unlock() {}
-};
-
-template<typename T, typename C = uint, typename Proxy = NoProxy<T>, typename LockingPolicy = NoLock>
-class SmartPtr : private LockingPolicy
-{
-	public:
-		SmartPtr(T *&&p = 0) : LockingPolicy(), ptr(p), count(ptr ? new C(1) : 0) {
+		SmartPtr(T *&&p = 0) : ptr(p), count(ptr ? new C(1) : 0) {
 		}
 
-		SmartPtr(const SmartPtr<T, C, Proxy, LockingPolicy> &p) : LockingPolicy(), ptr(0), count(0) {
+		SmartPtr(const SmartPtr<T, C, Proxy> &p) : ptr(0), count(0) {
 			ref(p);
 		}
 
@@ -62,22 +52,9 @@ class SmartPtr : private LockingPolicy
 			unref();
 		}
 
-		LockingPolicy &getLockingPolicy() {
-			return *((LockingPolicy *)this);
-		}
-
-		void swap(SmartPtr<T, C, Proxy, LockingPolicy> &p) {
-			p.lock();
-			this->lock();
-			T *pt = ptr;
-			C *c = count;
-			count = p.count;
-			ptr = p.ptr;
-			p.ptr = pt;
-			p.count = c;
-			LockingPolicy::swap(p);
-			this->unlock();
-			p.unlock();
+		void swap(SmartPtr<T, C, Proxy> &p) {
+			std::swap(ptr, p.ptr);
+			std::swap(count, p.count);
 		}
 
 		bool isNull() const {
@@ -88,6 +65,15 @@ class SmartPtr : private LockingPolicy
 			return *count;
 		}
 
+		T *pointer() {
+			return ptr;
+		}
+
+		const T *pointer() const {
+			return ptr;
+		}
+
+
 		T &operator*() const {
 			return *ptr;
 		}
@@ -96,13 +82,13 @@ class SmartPtr : private LockingPolicy
 			return Proxy(ptr);
 		}
 
-		SmartPtr<T, C, Proxy, LockingPolicy> &operator=(const SmartPtr<T, C, Proxy, LockingPolicy> &p) {
+		SmartPtr<T, C, Proxy> &operator=(const SmartPtr<T, C, Proxy> &p) {
 			unref();
 			ref(p);
 			return *this;
 		}
 
-		SmartPtr<T, C, Proxy, LockingPolicy> &operator=(SmartPtr<T, C, Proxy, LockingPolicy> &&p) {
+		SmartPtr<T, C, Proxy> &operator=(SmartPtr<T, C, Proxy> &&p) {
 			swap(p);
 			return *this;
 		}
@@ -144,28 +130,20 @@ class SmartPtr : private LockingPolicy
 		}
 
 	private:
-		void ref(const SmartPtr<T, C, Proxy, LockingPolicy> &p) {
-			LockingPolicy::ref(p);
-			this->lock();
-			ptr = p.ptr;
+		void ref(const SmartPtr<T, C, Proxy> &p) {
 			if((count = p.count)) {
 				(*count)++;
 			}
-			this->unlock();
+			ptr = p.ptr;
 		}
 
 		void unref() {
-			bool d = false;
-			this->lock();
 			if(count && !--(*count)) {
 				delete ptr;
 				delete count;
-				d = true;
 			}
 			ptr = 0;
 			count = 0;
-			this->unlock();
-			LockingPolicy::unref(d);
 		}
 
 		T *ptr;

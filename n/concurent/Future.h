@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MultiThreadPtr.h"
 #include "Mutex.h"
 #include <n/core/Option.h>
+#include "Atomic.h"
 
 namespace n {
 namespace concurent {
@@ -96,6 +97,7 @@ class SharedFuture
 			}
 
 			State state;
+			Mutex mutex;
 			union
 			{
 				T val;
@@ -133,18 +135,14 @@ class SharedFuture
 		}
 
 		Mutex *getMutex() {
-			return shared.getLockingPolicy().getLock();
+			return &shared->mutex;
 		}
 
-		Internal getInternal() {
-			Mutex *m = getMutex();
-			m->lock();
-			Internal i = *shared;
-			m->unlock();
-			return i;
+		Internal *getInternal() {
+			return shared.pointer();
 		}
 
-		core::SmartPtr<Internal, uint, typename core::NoProxy<Internal>, PtrLock<RecursiveMutex>> shared;
+		MultiThreadPtr<Internal> shared;
 };
 
 }
