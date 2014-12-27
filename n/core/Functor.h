@@ -53,13 +53,11 @@ class Functor {};
 template<typename R, typename... Args>
 class Functor<R(Args...)>
 {
-	class FuncBase
+	class FuncBase : NonCopyable
 	{
 		public:
 			FuncBase() {
 			}
-
-			FuncBase(const FuncBase &) = delete;
 
 			virtual ~FuncBase() {
 			}
@@ -68,7 +66,7 @@ class Functor<R(Args...)>
 	};
 
 	template<typename T>
-	class Func : public FuncBase, NonCopyable
+	class Func : public FuncBase
 	{
 		public:
 			Func(const T &t) : f(t) {
@@ -88,8 +86,6 @@ class Functor<R(Args...)>
 			FuncPtr(R (*t)(Args...)) : f(t) {
 			}
 
-			FuncPtr(const FuncPtr &) = delete;
-
 			virtual R apply(Args... args) override {
 				return f(args...);
 			}
@@ -97,6 +93,18 @@ class Functor<R(Args...)>
 		private:
 			R (*f)(Args...);
 	};
+
+	template<typename T>
+	FuncBase *vodify(const T &t, FalseType) {
+		return new Func<T>(t);
+	}
+
+	template<typename T>
+	FuncBase *vodify(const T &t, TrueType) {
+		return vodify([=] (Args... args) -> void {
+			t(args...);
+		}, FalseType());
+	}
 
 	class Curry
 	{
@@ -121,7 +129,7 @@ class Functor<R(Args...)>
 		typedef R ReturnType;
 
 		template<typename T>
-		Functor(const T &t) : func(new Func<T>(t)) {
+		Functor(const T &t) : func(vodify(t, BoolToType<std::is_void<R>::value>())) {
 		}
 
 		Functor(R (*f)(Args...)) : func(new FuncPtr(f)) {
@@ -135,12 +143,24 @@ class Functor<R(Args...)>
 			return n::internal::TupleProxy<R, sizeof...(Args)>::apply(this, args);
 		}
 
+		R operator()(Args... args) const {
+			return func->apply(args...);
+		}
+
+		R operator()(const std::tuple<Args...> &args) const {
+			return n::internal::TupleProxy<R, sizeof...(Args)>::apply(this, args);
+		}
+
 		Functor<R()> curried(Args... args) const {
 			return Functor<R()>(Curry(*this, args...));
 		}
 
 		Functor<R()> curried(std::tuple<Args...> args) const {
 			return Functor<R()>(Curry(*this, args));
+		}
+
+		explicit operator Functor<void(Args...)>() {
+			return *reinterpret_cast<Functor<void(Args...)> *>(this);
 		}
 
 		static constexpr uint ArgCount = sizeof...(Args);
@@ -152,8 +172,6 @@ class Functor<R(Args...)>
 		SmartPtr<FuncBase> func;
 
 };
-
-
 
 }
 }
