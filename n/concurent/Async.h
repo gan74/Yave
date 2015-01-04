@@ -40,6 +40,24 @@ class AsyncTask : public Thread
 		Promise<T> promise;
 };
 
+template<>
+class AsyncTask<void> : public Thread
+{
+	public:
+		AsyncTask(const Promise<void> &p, const core::Functor<void()> &f) : func(f), promise(p) {
+			deleteLater();
+		}
+
+		virtual void run() override {
+			func();
+			promise.success();
+		}
+
+	private:
+		core::Functor<void()> func;
+		Promise<void> promise;
+};
+
 template<typename R>
 static SharedFuture<R> Async(const core::Functor<R()> &f) {
 	Promise<R> promise;

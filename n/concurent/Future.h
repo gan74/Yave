@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MultiThreadPtr.h"
 #include "Mutex.h"
 #include <n/core/Option.h>
+#include <n/types.h>
 #include "Atomic.h"
 
 namespace n {
@@ -28,10 +29,10 @@ namespace concurent {
 template<typename T>
 class Promise;
 
-
 template<typename T>
 class SharedFuture
 {
+	typedef typename VoidToNothing<T>::type TI;
 	public:
 		enum State
 		{
@@ -52,7 +53,7 @@ class SharedFuture
 			return shared->state == Succeded;
 		}
 
-		core::Option<T> get() {
+		core::Option<TI> get() {
 			wait();
 			Internal i = getInternal();
 			if(i.state != Succeded) {
@@ -61,7 +62,7 @@ class SharedFuture
 			return i.val;
 		}
 
-		core::Option<T> tryGet() {
+		core::Option<TI> tryGet() {
 			Internal i = getInternal();
 			if(i.state != Succeded) {
 				return core::Option<T>();
@@ -78,7 +79,7 @@ class SharedFuture
 			m->unlock();
 		}
 
-		operator T() {
+		operator TI() {
 			return get();
 		}
 
@@ -92,7 +93,7 @@ class SharedFuture
 
 			~Internal() {
 				if(state == Succeded) {
-					val.~T();
+					val.~TI();
 				}
 			}
 
@@ -100,14 +101,14 @@ class SharedFuture
 			Mutex mutex;
 			union
 			{
-				T val;
+				TI val;
 			};
 		};
 
 		SharedFuture() : shared(new Internal()){
 		}
 
-		void complete(T e) {
+		void complete(TI e) {
 			Mutex *m = getMutex();
 			m->lock();
 			if(!isWaiting()) {
@@ -116,7 +117,7 @@ class SharedFuture
 				m->notifyAll();
 			}
 			shared->state = Succeded;
-			new(&(shared->val)) T(e);
+			new(&(shared->val)) TI(e);
 			m->unlock();
 			m->notifyAll();
 		}

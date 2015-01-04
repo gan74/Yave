@@ -26,12 +26,18 @@ namespace concurent {
 template<typename T>
 class Promise
 {
+	typedef typename VoidToNothing<T>::type TI;
 	public:
 		Promise() {
 		}
 
-		void success(const T &e) {
+		void success(const TI &e) {
 			future.complete(e);
+		}
+
+		void success() {
+			static_assert(std::is_void<T>::value, "Promise<T>::success() can only be used on Promise<void>");
+			future.complete(Nothing());
 		}
 
 		void fail() {
@@ -42,9 +48,16 @@ class Promise
 			return future;
 		}
 
-		static Promise<T> succeded(const T &e) {
+		static Promise<T> succeded(const TI &e) {
 			Promise<T> p;
 			p.success(e);
+			return p;
+		}
+
+		static Promise<T> succeded() {
+			static_assert(std::is_void<T>::value, "Promise<T>::succeded() can only be used on Promise<void>");
+			Promise<T> p;
+			p.success();
 			return p;
 		}
 
