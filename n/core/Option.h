@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_OPTION_H
 #define N_CORE_OPTION_H
 
+#include <n/types.h>
+
 namespace n {
 namespace core {
 
@@ -27,11 +29,12 @@ class Option
 		Option() : hasVal(false) {
 		}
 
-		Option(const T &t) : Option() {
+		Option(const T &t) : Option<T>() {
 			set(t);
 		}
 
-		Option(const Option &o) : Option() {
+		template<typename U>
+		Option(const Option<U> &o) : Option<T>() {
 			if(o) {
 				set(o);
 			}
@@ -86,7 +89,8 @@ class Option
 			return val;
 		}
 
-		Option &operator=(const Option &o) {
+		template<typename U>
+		Option<T> &operator=(const Option<U> &o) {
 			if(o) {
 				set(o);
 			}
@@ -98,6 +102,53 @@ class Option
 		{
 			T val;
 		};
+		bool hasVal;
+};
+
+template<>
+class Option<void>
+{
+	public:
+		Option(Nothing = Nothing()) : hasVal(false) {
+		}
+
+		template<typename T>
+		Option(const Option<T> &o) : hasVal(o.hasVal) {
+		}
+
+		void set(Nothing = Nothing()) {
+			hasVal = true;
+		}
+
+		void clear() {
+			hasVal = false;
+		}
+
+		bool hasValue() const {
+			return hasVal;
+		}
+
+		void get() const {
+		}
+
+		operator bool() const {
+			return hasVal;
+		}
+
+		operator void() const {
+		}
+
+		operator Nothing() const {
+			return Nothing();
+		}
+
+		template<typename T>
+		Option<void> &operator=(const Option<T> &o) {
+			hasVal = o.hasVal;
+			return *this;
+		}
+
+	private:
 		bool hasVal;
 };
 

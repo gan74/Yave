@@ -53,7 +53,7 @@ class SharedFuture
 			return shared->state == Succeded;
 		}
 
-		core::Option<TI> get() {
+		core::Option<T> get() {
 			wait();
 			Internal i = getInternal();
 			if(i.state != Succeded) {
@@ -62,7 +62,7 @@ class SharedFuture
 			return i.val;
 		}
 
-		core::Option<TI> tryGet() {
+		core::Option<T> tryGet() {
 			Internal i = getInternal();
 			if(i.state != Succeded) {
 				return core::Option<T>();
@@ -79,7 +79,7 @@ class SharedFuture
 			m->unlock();
 		}
 
-		operator TI() {
+		operator T() {
 			return get();
 		}
 
