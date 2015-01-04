@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "Thread.h"
 #include <n/core/Timer.h>
+#include <pthread.h>
 
 #if defined WIN32 || defined _WIN32 || defined __CYGWIN__
 //#include <windows.h>
@@ -30,14 +31,16 @@ namespace concurent {
 
 thread_local Thread *Thread::self = 0;
 
-Thread::Thread() : running(false), toDelete(false), timer(0) {
+struct Thread::Internal
+{
+	pthread_t handle;
+};
+
+Thread::Thread() : internal(new Internal), running(false), toDelete(false) {
 }
 
 Thread::~Thread() {
 	join();
-	if(timer) {
-		delete timer;
-	}
 }
 
 Thread *Thread::getCurrent() {
@@ -49,15 +52,15 @@ bool Thread::isRunning() const {
 }
 
 bool Thread::start() {
-	return !pthread_create(&handle, 0, Thread::threadCreate, this);
+	return !pthread_create(&internal->handle, 0, Thread::threadCreate, this);
 }
 
 void Thread::kill() {
-	pthread_cancel(handle);
+	pthread_cancel(internal->handle);
 }
 
 void Thread::join() const {
-	pthread_join(handle, 0);
+	pthread_join(internal->handle, 0);
 }
 
 void Thread::deleteLater() {
@@ -74,11 +77,6 @@ void Thread::sleep(double sec) {
 
 void *Thread::threadCreate(void *arg) {
 	self = (Thread *)arg;
-	if(!self->timer) {
-		self->timer = new core::Timer();
-	} else {
-		self->timer->reset();
-	}
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
 	self->running = true;
 	self->run();

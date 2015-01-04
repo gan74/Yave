@@ -18,13 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CONCURENT_THREAD_H
 
 #include <n/utils.h>
-#include <pthread.h>
 
 namespace n {
-
-namespace core {
-class Timer;
-}
 
 namespace concurent {
 
@@ -34,9 +29,9 @@ enum RecursionMode
 	NonRecursive
 };
 
-
 class Thread : core::NonCopyable
 {
+	struct Internal;
 	public:
 		Thread();
 
@@ -59,10 +54,10 @@ class Thread : core::NonCopyable
 		static void *threadCreate(void *arg);
 
 		static thread_local Thread *self;
-		pthread_t handle;
+
+		Internal *internal;
 		bool running;
 		bool toDelete;
-		core::Timer *timer;
 };
 
 }

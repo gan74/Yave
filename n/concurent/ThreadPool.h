@@ -31,7 +31,7 @@ namespace concurent {
 class DefaultThreadNumberPolicy
 {
 	public:
-		DefaultThreadNumberPolicy() : max(0), min(0) {
+		DefaultThreadNumberPolicy() : max(1024), min(0) {
 		}
 
 		void setMaxThreadCount(uint m) {
