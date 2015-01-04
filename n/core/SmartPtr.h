@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_SMARTPTR_H
 
 #include <n/types.h>
+#include <n/concurent/Atomic.h>
 
 namespace n {
 namespace core {
@@ -37,7 +38,7 @@ class NoProxy
 		T *obj;
 };
 
-template<typename T, typename C = uint, typename Proxy = NoProxy<T>>
+template<typename T, typename C = concurent::auint, typename Proxy = NoProxy<T>>
 class SmartPtr
 {
 	public:
