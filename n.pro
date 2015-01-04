@@ -37,7 +37,8 @@ HEADERS += n/*.h \
 		   n/mem/*.h \
 		   n/assets/*.h \
 		   n/script/*.h \
-		   n/graphics/*.h
+		   n/graphics/*.h \
+		   n/signals/*.h
 
 
 SOURCES += dependencies/lodepng/*.cpp
