@@ -119,6 +119,10 @@ class Functor<R(Args...)>
 				return func(args);
 			}
 
+			R operator()() const {
+				return func(args);
+			}
+
 		private:
 			Functor<R(Args...)> func;
 			std::tuple<Args...> args;
