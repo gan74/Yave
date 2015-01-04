@@ -94,7 +94,7 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 	class WorkerThread : public Thread
 	{
 		public:
-			WorkerThread(SynchronizedQueue<core::Functor<void>> *q) : canceled(false), queue(q) {
+			WorkerThread(SynchronizedQueue<core::Functor<void()>> *q) : canceled(false), queue(q) {
 				deleteLater();
 			}
 
@@ -112,7 +112,7 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 
 		private:
 			bool canceled;
-			SynchronizedQueue<core::Functor<void>> *queue;
+			SynchronizedQueue<core::Functor<void()>> *queue;
 	};
 
 
@@ -128,14 +128,10 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 			}
 		}
 
-
-		template<typename T>
-		SharedFuture<typename std::result_of<T()>::type> submit(const T &func) {
-			auto promise = new Promise<typename std::result_of<T()>::type>();
-			queue.queue(core::Functor<void>([promise, func]() -> void {
-				promise->success(func());
-				delete promise;
-			}));
+		template<typename T, typename R = typename std::result_of<T()>::type>
+		SharedFuture<R> submit(const T &func) {
+			Promise<R> *promise = new Promise<R>();
+			enqueue(promise, func, BoolToType<std::is_void<R>::value>());
 			updateThreadCount();
 			return promise->getFuture();
 		}
@@ -153,7 +149,7 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 			if(!threads.size()) {
 				addOne();
 			} else {
-				uint desired = std::max((uint)1, this->desiredThreadCount(threads.size(), queue.size()));
+				uint desired = std::max(1u, this->desiredThreadCount(threads.size(), queue.size()));
 				if(desired != threads.size()) {
 					while(threads.size() != desired && this->shouldAjust(threads.size(), desired)) {
 						if(threads.size() < desired) {
@@ -165,6 +161,23 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 				}
 			}
 			threadMutex.unlock();
+		}
+
+		template<typename T, typename R>
+		void enqueue(Promise<R> *promise, const T &func, TrueType) {
+			queue.queue(core::Functor<void()>([=]() -> void {
+				func();
+				promise->success();
+				delete promise;
+			}));
+		}
+
+		template<typename T, typename R>
+		void enqueue(Promise<R> *promise, const T &func, FalseType) {
+			queue.queue(core::Functor<void()>([=]() -> void {
+				promise->success(func());
+				delete promise;
+			}));
 		}
 
 		void removeOne() {
@@ -181,7 +194,7 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 			threads.append(th);
 		}
 
-		SynchronizedQueue<core::Functor<void>> queue;
+		SynchronizedQueue<core::Functor<void()>> queue;
 		Mutex threadMutex;
 		core::Array<WorkerThread *> threads;
 
