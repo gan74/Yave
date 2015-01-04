@@ -37,19 +37,21 @@ class DynamicPrimitive
 		Primitive toType(PrimitiveType t) const;
 
 		PrimitiveType &type() {
-			return *(PrimitiveType *)raw;
+			return *(PrimitiveType *)(void *)raw;
 		}
 
 		Primitive &data() {
-			return *(Primitive *)(raw + 1);
+			void *t = raw + 1;
+			return *(Primitive *)t;
 		}
 
 		const PrimitiveType &type() const {
-			return *(PrimitiveType *)raw;
+			return *(PrimitiveType *)(void *)raw;
 		}
 
 		const Primitive &data() const {
-			return *(Primitive *)(raw + 1);
+			const void *t = raw + 1;
+			return *(const Primitive *)t;
 		}
 
 	private:

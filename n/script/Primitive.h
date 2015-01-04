@@ -25,7 +25,7 @@ union Primitive
 	Primitive() : Primitive(0) {
 	}
 
-	Primitive(int i) : Int(i) {
+	Primitive(int32 i) : Int(i) {
 	}
 
 	Primitive(float f) : Float(f) {
@@ -55,7 +55,7 @@ union Primitive
 		return *(T *)ptr;
 	}
 
-	int Int;
+	int32 Int;
 	float Float;
 	void *ptr;
 };
