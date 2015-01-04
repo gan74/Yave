@@ -29,7 +29,7 @@ class ImmediateCall : core::NonCopyable
 {
 	public:
 		template<typename... Args>
-		void operator()(const core::Array<core::Functor<void(Args...)>> &slots, Args... args) const {
+		void call(const core::Array<core::Functor<void(Args...)>> &slots, Args... args) const {
 			for(auto f : slots) {
 				f(args...);
 			}
@@ -40,7 +40,7 @@ class AsyncCall : core::NonCopyable
 {
 	public:
 		template<typename... Args>
-		void operator()(const core::Array<core::Functor<void(Args...)>> &slots, Args... args) const {
+		void call(const core::Array<core::Functor<void(Args...)>> &slots, Args... args) const {
 			concurent::Async([=]() {
 				for(auto f : slots) {
 					f(args...);
@@ -50,11 +50,12 @@ class AsyncCall : core::NonCopyable
 };
 
 template<typename CallingPolicy, typename... Args>
-class Signal
+class Signal : private CallingPolicy
 {
 	using Lock = concurent::SpinLock;
 	public:
-		Signal() {
+		template<typename... PArgs>
+		Signal(PArgs... args) : CallingPolicy(args...) {
 		}
 
 		template<typename P>
@@ -66,8 +67,7 @@ class Signal
 
 		void operator()(Args... args) const {
 			lock.lock();
-			CallingPolicy caller;
-			caller(connected, args...);
+			this->call(connected, args...);
 			lock.unlock();
 		}
 
