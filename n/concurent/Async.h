@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CONCURENT_ASYNC_H
 
 #include "Promise.h"
+#include "ThreadPool.h"
 #include <n/core/Functor.h>
 
 namespace n {
@@ -59,7 +60,11 @@ class AsyncTask<void> : public Thread
 };
 
 template<typename R>
-static SharedFuture<R> Async(const core::Functor<R()> &f) {
+static SharedFuture<R> Async(const core::Functor<R()> &f, bool pool = true) {
+	if(pool) {
+		static DefaultThreadPool threads;
+		return threads(f);
+	}
 	Promise<R> promise;
 	(new AsyncTask<R>(promise, f))->start();
 	return promise.getFuture();

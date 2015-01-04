@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CONCURENT_THREADPOOL_H
 
 #include "Thread.h"
+#include "SpinLock.h"
 #include "SynchronizedQueue.h"
 #include <n/core/Functor.h>
 #include <n/core/Array.h>
@@ -30,7 +31,7 @@ namespace concurent {
 class DefaultThreadNumberPolicy
 {
 	public:
-		DefaultThreadNumberPolicy() : max(0), min(1) {
+		DefaultThreadNumberPolicy() : max(0), min(0) {
 		}
 
 		void setMaxThreadCount(uint m) {
@@ -94,7 +95,7 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 	class WorkerThread : public Thread
 	{
 		public:
-			WorkerThread(SynchronizedQueue<core::Functor<void()>> *q) : canceled(false), queue(q) {
+			WorkerThread(ThreadPool<ThreadNumberPolicy> *p) : canceled(false), pool(p) {
 				deleteLater();
 			}
 
@@ -105,14 +106,15 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 		protected:
 			void run() override {
 				while(!canceled) {
-					core::Functor<void()> func = queue->dequeue();
+					core::Functor<void()> func = pool->dequeue();
 					func();
+					pool->updateThreadCount();
 				}
 			}
 
 		private:
 			bool canceled;
-			SynchronizedQueue<core::Functor<void()>> *queue;
+			ThreadPool<ThreadNumberPolicy> *pool;
 	};
 
 
@@ -136,11 +138,20 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 			return promise->getFuture();
 		}
 
-		uint getThreadCount() {
+		uint getThreadCount() const {
 			threadMutex.lock();
 			uint s = threads.size();
 			threadMutex.unlock();
 			return s;
+		}
+
+		uint getPendingTaskCount() const {
+			return queue.size();
+		}
+
+		template<typename T, typename R = typename std::result_of<T()>::type>
+		SharedFuture<R> operator()(const T &func) {
+			return submit(func);
 		}
 
 	private:
@@ -180,8 +191,12 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 			}));
 		}
 
+		core::Functor<void()> dequeue() {
+			return queue.dequeue();
+		}
+
 		void removeOne() {
-			if(threads.size() > 1) {
+			if(!threads.isEmpty()) {
 				WorkerThread *t = threads.last();
 				t->cancel();
 				threads.pop();
@@ -189,17 +204,15 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 		}
 
 		void addOne() {
-			WorkerThread *th = new WorkerThread(&queue);
+			WorkerThread *th = new WorkerThread(this);
 			th->start();
 			threads.append(th);
 		}
 
 		SynchronizedQueue<core::Functor<void()>> queue;
-		Mutex threadMutex;
+
+		mutable SpinLock threadMutex;
 		core::Array<WorkerThread *> threads;
-
-
-
 };
 
 using DefaultThreadPool = ThreadPool<>;
