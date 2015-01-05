@@ -20,8 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MultiThreadPtr.h"
 #include "Mutex.h"
 #include <n/core/Option.h>
-#include <n/types.h>
-#include "Atomic.h"
 
 namespace n {
 namespace concurent {

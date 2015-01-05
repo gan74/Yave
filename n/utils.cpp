@@ -70,15 +70,6 @@ namespace math {
 } //math
 
 namespace core {
-
-	uint log2ui(uint n) {
-		uint l;
-		asm("bsr %1, %0\n"
-		  : "=r"(l)
-		  : "r" (n));
-		return l;
-	}
-
 	uint hash(const void *key, uint len, uint seed) {
 		uint m = 0x5bd1e995;
 		int r = 24;

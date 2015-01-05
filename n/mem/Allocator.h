@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_MEM_ALLOCATOR_H
 
 
-#include <n/utils.h>
+#include "FixedSizeAllocator.h"
 #include <n/core/List.h>
 
 namespace n {
@@ -26,119 +26,72 @@ namespace mem {
 
 class Allocator : core::NonCopyable
 {
-	class Region : core::NonCopyable
-	{
-		public:
-			Region(uint blckSize, uint nBlck = 0) : blockSize(blckSize), size(nBlck ? nBlck : std::min(16, 1 << (14 - blckSize))), left(size), mem(malloc(blockSize * size)), ptr(mem) {
-				byte *it = (byte *)mem;
-				void **last = (void **)ptr;
-				for(uint i = 0; i != size; i++, it += blockSize) {
-					*last = it;
-					last = (void **)it;
-				}
-				*last = 0;
-			}
-
-			~Region() {
-				free(mem);
-			}
-
-			void *allocate() {
-				if(!ptr) {
-					return 0;
-				}
-				void **addr = (void **)ptr;
-				ptr = *addr;
-				left--;
-				return addr;
-			}
-
-			bool desallocate(void *p) {
-				if(!contains(p)) {
-					return false;
-				}
-				*((void **)p) = ptr;
-				ptr = p;
-				left++;
-				return true;
-			}
-
-			uint getFreeCapacity() const {
-				return left;
-			}
-
-			bool isEmpty() const {
-				return !left;
-			}
-
-			bool contains(void *p) const {
-				return p >= mem && p <= ((byte *)mem + blockSize * size);
-			}
-
-		private:
-			uint blockSize;
-			uint size;
-			uint left;
-			void *mem;
-			void *ptr;
-
-	};
-
-
 	public:
-		Allocator() : regTable(new core::List<Region *>[regs]) {
+		Allocator() {
+			for(uint i = 0; i != regs; i++)	{
+				allocTable[i] = new FixedSizeAllocator(toSize(i));
+			}
 		}
 
 		~Allocator() {
-			exit(-2);
+			for(uint i = 0; i != regs; i++) {
+				delete allocTable[i];
+			}
 		}
 
-
 		void *allocate(uint size) {
-			size = std::min(size, sizeof(void *));
-			uint l2 = core::log2ui(size);
-			l2 += (1u << l2) != size;
-			l2 -= core::log2ui(sizeof(void *));
-			if(l2 < regs) {
-				for(core::List<Region *>::iterator it = regTable[l2].begin(); it != regTable[l2].end(); ++it) {
-					Region *reg = *it;
-					void *ptr = reg->allocate();
-					if(ptr) {
-						regTable[l2].remove(it);
-						regTable[l2].prepend(reg);
-						return ptr;
-					}
-				}
-				regTable[l2].prepend(new Region(sizeof(void *) << l2));
-				return regTable[l2].first()->allocate();
+			uint i = toIndex(size);
+			if(i < regs) {
+				return allocTable[i]->allocate();
 			}
 			return malloc(size);
 		}
 
 		void desallocate(void *ptr) {
 			for(uint i = 0; i != regs; i++) {
-				for(core::List<Region *>::iterator it = regTable[i].begin(); it != regTable[i].end(); ++it) {
-					Region *reg = *it;
-					if(reg->desallocate(ptr)) {
-						regTable[i].remove(it);
-						if(reg->isEmpty()) {
-							delete reg;
-						} else {
-							regTable[i].prepend(reg);
-						}
-						return;
-					}
+				if(allocTable[i]->desallocate(ptr)) {
+					return;
 				}
 			}
 			free(ptr);
 		}
 
+		void desallocate(void *ptr, uint size) {
+			uint i = toIndex(size);
+			if(allocTable[i]->desallocate(ptr)) {
+				return;
+			}
+			desallocate(ptr);
+		}
+
+		/*void *operator()(uint size) {
+			return allocate(size);
+		}
+
+		void operator()(void *ptr) {
+			return desallocate(ptr);
+		}
+
+		void operator()(void *ptr, uint size) {
+			return desallocate(ptr, size);
+		}*/
 
 	private:
-		static const uint regs = 12;
-		core::List<Region *> *regTable;
+		static constexpr uint regs = 12;
+		static constexpr uint logBytes = core::log2ui(sizeof(void *));
 
+		uint toIndex(uint size) {
+			size = std::min(size, sizeof(void *));
+			uint l2 = core::log2ui(size);
+			l2 += (1u << l2) < size;
+			return l2 - logBytes;
+		}
 
+		uint toSize(uint index) {
+			return sizeof(void *) << index;
+		}
+
+		FixedSizeAllocator *allocTable[regs];
 };
 
 

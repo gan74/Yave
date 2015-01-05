@@ -12,7 +12,7 @@
 #include <n/core/SmartPtr.h>
 #include <n/core/Lazy.h>
 
-#include <n/mem/Allocator.h>
+#include <n/mem/SmallObject.h>
 
 #include <n/concurent/Thread.h>
 #include <n/concurent/Mutex.h>
@@ -34,29 +34,30 @@
 
 #include <n/graphics/ImageLoader.h>
 
+#include <n/signals/Signal.h>
+
 
 using namespace n::graphics;
 using namespace	n::concurent;
+using namespace	n::signals;
 using namespace n::assets;
 using namespace n::core;
 using namespace n::math;
 using namespace n::io;
 using namespace n;
 
-struct RGBATest
+class BusyThread : public Thread
 {
-	uint32 red : 8;
-	uint32 green : 8;
-	uint32 blue : 8;
-	uint32 alpha : 8;
-
+	public:
+		virtual void run() override {
+			while(true);
+		}
 };
 
-static_assert(sizeof(RGBATest) == sizeof(uint32), "RGBATest is not 32 bits");
 
 int main(int, char **) {
 	//std::cout<<sizeof(long double)<<std::endl;
-	Image ima = ImageLoader::load("test.png");
+	/*Image ima = ImageLoader::load("test.png");
 	while(ima.isNull()) {
 		if(!ima.isValid()) {
 			fatal("Unable to read png");
@@ -74,6 +75,17 @@ int main(int, char **) {
 		std::cout<<std::endl;
 	}
 	std::cout<<std::endl;
+	AsyncSignal<int> sig;
+	sig.connect([](int i) {
+		std::cout<<i<<std::endl;
+		return i;
+	});
+	sig(17);
+
+	for(uint i = 0; i != 8; i++) {
+		(new BusyThread())->start();
+	}
+	while(true);*/
 
 	return 0;
 }

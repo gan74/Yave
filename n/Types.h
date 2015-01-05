@@ -16,6 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_TYPES_H
 #define N_TYPES_H
 
+#include <n/defines.h>
+
 #include <cstdint>
 #include <cstdlib>
 #include <algorithm>

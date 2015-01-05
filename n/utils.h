@@ -164,7 +164,10 @@ namespace core {
 	};
 
 	uint hash(const void *key, uint len, uint seed = 0x1000193);
-	uint log2ui(uint n);
+
+	constexpr uint log2ui(uint n) {
+		return n >> 1 ? log2ui(n >> 1) + 1 : 0;
+	}
 
 	template<typename I>
 	void radixSort(I beg, I end) {
