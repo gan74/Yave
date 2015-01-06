@@ -17,10 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CONCURENT_SPINLOCK_H
 #define N_CONCURENT_SPINLOCK_H
 
-#include <pthread.h>
 #include <n/utils.h>
-
-#include <n/defines.h>
+#include "Atomic.h"
 
 namespace n {
 namespace concurent {
@@ -29,13 +27,18 @@ class SpinLock : core::NonCopyable
 {
 	public:
 		SpinLock();
+		~SpinLock();
 
 		void lock();
 		void unlock();
 		bool trylock();
 
 	private:
-		pthread_spinlock_t spin;
+		#ifdef N_USE_PTHREAD_SPINLOCK
+		void *spin;
+		#else
+		volatile abool spin;
+		#endif
 };
 
 

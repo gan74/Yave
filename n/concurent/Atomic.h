@@ -16,9 +16,18 @@ class Atomic : public std::atomic<T>
 		template<typename... Args>
 		Atomic(Args... args) : std::atomic<T>(args...) {
 		}
+
+		void operator=(const T &t) {
+			store(t);
+		}
+
+		void operator=(const T &t) volatile {
+			this->store(t);
+		}
 };
 
 typedef Atomic<uint> auint;
+typedef Atomic<bool> abool;
 
 }
 }
