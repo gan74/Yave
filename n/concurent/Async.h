@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 namespace concurent {
+namespace internal {
 
 template<typename T>
 class AsyncTask : public Thread
@@ -59,14 +60,21 @@ class AsyncTask<void> : public Thread
 		Promise<void> promise;
 };
 
+}
+
 template<typename R>
 static SharedFuture<R> Async(const core::Functor<R()> &f, bool pool = true) {
 	if(pool) {
 		static DefaultThreadPool threads;
+		std::cout<<threads.getThreadCount()<<std::endl;
 		return threads(f);
 	}
 	Promise<R> promise;
-	(new AsyncTask<R>(promise, f))->start();
+	internal::AsyncTask<R> *task = new internal::AsyncTask<R>(promise, f);
+	if(!task->start()) {
+		delete task;
+		return Async(f, true);
+	}
 	return promise.getFuture();
 }
 

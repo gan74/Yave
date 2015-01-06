@@ -157,17 +157,18 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 	private:
 		void updateThreadCount() {
 			threadMutex.lock();
-			if(!threads.size()) {
-				addOne();
-			} else {
-				uint desired = std::max(1u, this->desiredThreadCount(threads.size(), queue.size()));
-				if(desired != threads.size()) {
-					while(threads.size() != desired && this->shouldAjust(threads.size(), desired)) {
-						if(threads.size() < desired) {
-							addOne();
-						} else {
-							removeOne();
+			uint desired = std::max(1u, this->desiredThreadCount(threads.size(), queue.size()));
+			if(desired != threads.size()) {
+				while(threads.size() != desired && this->shouldAjust(threads.size(), desired)) {
+					if(threads.size() < desired) {
+						if(!addOne()) {
+							if(threads.isEmpty()) {
+								fatal("Unable to start thread, thread-pool needs at least one thread.");
+							}
+							break;
 						}
+					} else {
+						removeOne();
 					}
 				}
 			}
@@ -203,10 +204,14 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 			}
 		}
 
-		void addOne() {
+		bool addOne() {
 			WorkerThread *th = new WorkerThread(this);
-			th->start();
-			threads.append(th);
+			if(th->start()) {
+				threads.append(th);
+				return true;
+			}
+			delete th;
+			return false;
 		}
 
 		SynchronizedQueue<core::Functor<void()>> queue;
