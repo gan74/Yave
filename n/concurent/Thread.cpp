@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "Thread.h"
-#include <n/core/Timer.h>
+#include "HazardPtr.h"
 #include <pthread.h>
 
 #if defined WIN32 || defined _WIN32 || defined __CYGWIN__
@@ -78,9 +78,11 @@ void Thread::sleep(double sec) {
 void *Thread::threadCreate(void *arg) {
 	self = (Thread *)arg;
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
+	{ HazardPtr<int>(0); } // init Hazard stuffs
 	self->running = true;
 	self->run();
 	self->running = false;
+	internal::closeThreadHazards();
 	if(self->willBeDeleted()) {
 		delete self;
 	}
