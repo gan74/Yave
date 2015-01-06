@@ -18,66 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_TIMER_H
 
 #include <n/defines.h>
-
-#ifndef N_USE_STD_TIME
-	#ifdef N_OS_WIN
-		#define N_USE_WIN_TIME
-	#endif
-#endif
-
-
-#ifdef N_USE_WIN_TIME
-#include <windows.h>
-
-namespace n {
-namespace core {
-
-class Timer
-{
-	public:
-		Timer() {
-			start();
-		}
-
-		void start() {
-			QueryPerformanceCounter(&time) ;
-		}
-
-		double startTime() const {
-			LARGE_INTEGER freq;
-			QueryPerformanceFrequency(&freq);
-			return (double)time.QuadPart / (double)freq.QuadPart;
-		}
-
-		double reset() {
-			double t = elapsed();
-			start();
-			return t;
-		}
-
-		double elapsed() const {
-			LARGE_INTEGER t;
-			QueryPerformanceCounter(&t) ;
-			LARGE_INTEGER freq;
-			QueryPerformanceFrequency(&freq);
-			return (double)((t.QuadPart - time.QuadPart) / (double)freq.QuadPart);
-		}
-
-		static double step() {
-			LARGE_INTEGER freq;
-			QueryPerformanceFrequency(&freq);
-			return 1.0 / (double)freq.QuadPart;
-		}
-
-	private:
-		 LARGE_INTEGER time;
-};
-
-} //core
-} //n
-
-#else
-
 #include <chrono>
 
 namespace n {
@@ -85,6 +25,8 @@ namespace core {
 
 class Timer
 {
+	typedef std::chrono::duration<double, std::nano> Nano;
+
 	public:
 		Timer() : time(std::chrono::high_resolution_clock::now()) {
 		}
@@ -93,10 +35,6 @@ class Timer
 			time = std::chrono::high_resolution_clock::now();
 		}
 
-		double startTime() const {
-			return std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()).count();
-		}
-
 		double reset() {
 			double t = elapsed();
 			start();
@@ -104,13 +42,8 @@ class Timer
 		}
 
 		double elapsed() const {
-			return (double)(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - time)).count() / 1000;
+			return std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - time).count() / 1000000000;
 		}
-
-		static double step() {
-			return (double)std::chrono::high_resolution_clock::period::num / std::chrono::high_resolution_clock::period::den;
-		}
-
 
 	private:
 		 std::chrono::time_point<std::chrono::high_resolution_clock> time;
@@ -118,8 +51,6 @@ class Timer
 
 } //core
 } //n
-
-#endif
 
 
 #endif // N_CORE_TIMER_H
