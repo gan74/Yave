@@ -66,7 +66,6 @@ template<typename R>
 static SharedFuture<R> Async(const core::Functor<R()> &f, bool pool = true) {
 	if(pool) {
 		static DefaultThreadPool threads;
-		std::cout<<threads.getThreadCount()<<std::endl;
 		return threads(f);
 	}
 	Promise<R> promise;

@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/test/TestTemplate.h>
 #include <n/core/List.h>
 #include <n/test/Test.h>
-#include <iostream>
 
 namespace n {
 namespace test {

@@ -15,7 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Machine.h"
-#include <iostream>
 
 namespace n {
 namespace script {

@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_COLOR_H
 #define N_GRAPHICS_COLOR_H
 
-#include <iostream>
-
 #include <n/math/Vec.h>
 #include <n/utils.h>
 
