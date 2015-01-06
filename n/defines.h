@@ -30,12 +30,6 @@ void unused(T) {}
 
 /* defines stuffs here */
 
-#ifdef N_DEBUG
-#define nError(msg) n::fatal((msg), __FILE__, __LINE__)
-#else
-#define nError(msg) n::fatal((msg))
-#endif
-
 #ifndef __GNUC__
 #define N_NO_FORCE_INLINE
 #endif
