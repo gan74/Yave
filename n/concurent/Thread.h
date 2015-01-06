@@ -41,7 +41,6 @@ class Thread : core::NonCopyable
 
 		bool isRunning() const;
 		bool start();
-		void kill();
 		void join() const;
 		void deleteLater();
 		bool willBeDeleted() const;
@@ -51,12 +50,11 @@ class Thread : core::NonCopyable
 		virtual void run() = 0;
 
 	private:
-		static void *threadCreate(void *arg);
+		static void *createThread(void *arg);
 
 		static thread_local Thread *self;
 
 		Internal *internal;
-		bool running;
 		bool toDelete;
 };
 

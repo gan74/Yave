@@ -15,6 +15,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "Thread.h"
 #include "HazardPtr.h"
+#include "Mutex.h"
+#include <iostream>
 #include <pthread.h>
 
 #if defined WIN32 || defined _WIN32 || defined __CYGWIN__
@@ -34,13 +36,13 @@ thread_local Thread *Thread::self = 0;
 struct Thread::Internal
 {
 	pthread_t handle;
+	Mutex join;
 };
 
-Thread::Thread() : internal(new Internal), running(false), toDelete(false) {
+Thread::Thread() : internal(new Internal), toDelete(false) {
 }
 
 Thread::~Thread() {
-	join();
 }
 
 Thread *Thread::getCurrent() {
@@ -48,19 +50,35 @@ Thread *Thread::getCurrent() {
 }
 
 bool Thread::isRunning() const {
-	return running;
+	if(internal->join.trylock()) {
+		internal->join.unlock();
+		return false;
+	}
+	return true;
 }
 
 bool Thread::start() {
-	return !pthread_create(&internal->handle, 0, Thread::threadCreate, this);
-}
-
-void Thread::kill() {
-	pthread_cancel(internal->handle);
+	internal->join.lock();
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	if(!pthread_create(&internal->handle, &attr, Thread::createThread, this)) {
+		pthread_attr_destroy(&attr);
+		return true;
+	}
+	pthread_attr_destroy(&attr);
+	internal->join.unlock();
+	return false;
 }
 
 void Thread::join() const {
-	pthread_join(internal->handle, 0);
+	#ifdef N_DEBUG
+	if(willBeDeleted()) {
+		fatal("Auto deleted threads should not be joined");
+	}
+	#endif
+	internal->join.lock();
+	internal->join.unlock();
 }
 
 void Thread::deleteLater() {
@@ -75,18 +93,15 @@ void Thread::sleep(double sec) {
 	tsleep(sec);
 }
 
-void *Thread::threadCreate(void *arg) {
+void *Thread::createThread(void *arg) {
 	self = (Thread *)arg;
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
 	{ HazardPtr<int>(0); } // init Hazard stuffs
-	self->running = true;
 	self->run();
-	self->running = false;
+	self->internal->join.unlock();
 	internal::closeThreadHazards();
 	if(self->willBeDeleted()) {
 		delete self;
 	}
-	pthread_exit(0);
 	return 0;
 }
 
