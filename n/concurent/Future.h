@@ -53,19 +53,17 @@ class SharedFuture
 
 		core::Option<T> get() {
 			wait();
-			Internal i = getInternal();
-			if(i.state != Succeded) {
+			if(!isSuccess()) {
 				return core::Option<T>();
 			}
-			return i.val;
+			return shared->val;
 		}
 
 		core::Option<T> tryGet() {
-			Internal i = getInternal();
-			if(i.state != Succeded) {
+			if(!isSuccess()) {
 				return core::Option<T>();
 			}
-			return i.val;
+			return shared->val;
 		}
 
 		void wait() {
@@ -90,9 +88,11 @@ class SharedFuture
 			}
 
 			~Internal() {
+				mutex.lock();
 				if(state == Succeded) {
 					val.~TI();
 				}
+				mutex.unlock();
 			}
 
 			State state;
@@ -114,8 +114,8 @@ class SharedFuture
 				nError("Invalid future state");
 				m->notifyAll();
 			}
-			shared->state = Succeded;
 			new(&(shared->val)) TI(e);
+			shared->state = Succeded;
 			m->unlock();
 			m->notifyAll();
 		}
@@ -135,10 +135,6 @@ class SharedFuture
 
 		Mutex *getMutex() {
 			return &shared->mutex;
-		}
-
-		Internal *getInternal() {
-			return shared.pointer();
 		}
 
 		MultiThreadPtr<Internal> shared;
