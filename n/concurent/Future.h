@@ -111,7 +111,7 @@ class SharedFuture
 			m->lock();
 			if(!isWaiting()) {
 				m->unlock();
-				nError("Invalid future state");
+				fatal("Invalid future state");
 				m->notifyAll();
 			}
 			new(&(shared->val)) TI(e);
@@ -125,7 +125,7 @@ class SharedFuture
 			m->lock();
 			if(!isWaiting()) {
 				m->unlock();
-				nError("Invalid future state");
+				fatal("Invalid future state");
 				m->notifyAll();
 			}
 			shared->state = Failed;
