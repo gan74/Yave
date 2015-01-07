@@ -17,12 +17,14 @@ class Atomic : public std::atomic<T>
 		Atomic(Args... args) : std::atomic<T>(args...) {
 		}
 
-		void operator=(const T &t) {
+		T operator=(const T &t) {
 			store(t);
+			return t;
 		}
 
-		void operator=(const T &t) volatile {
+		T operator=(const T &t) volatile {
 			this->store(t);
+			return t;
 		}
 };
 
