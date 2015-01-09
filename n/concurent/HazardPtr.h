@@ -102,8 +102,14 @@ class HazardPtr : core::NonCopyable
 			internal::hazard->ptr = ptr;
 		}
 
+		HazardPtr(HazardPtr<T> &&p) : HazardPtr(p.ptr) {
+			p.ptr = 0;
+		}
+
 		~HazardPtr() {
-			internal::hazard->ptr = 0;
+			if(internal::hazard->ptr == ptr) {
+				internal::hazard->ptr = 0;
+			}
 		}
 
 		const T &operator*() const {

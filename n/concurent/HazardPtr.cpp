@@ -83,7 +83,7 @@ void freeIfPossible(core::Array<const void **> &hz, core::Array<DeleteNode*> &no
 			node->free();
 			delete node;
 		}
-		return free;
+		return !free;
 	});
 }
 
