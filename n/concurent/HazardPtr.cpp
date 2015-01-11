@@ -72,18 +72,14 @@ uint getHazardCount() {
 
 void freeIfPossible(core::Array<const void **> &hz, core::Array<DeleteNode*> &nodes) {
 	nodes.filter([&hz](DeleteNode *node) {
-		bool free = true;
 		for(const void **h : hz) {
 			if(node->ptr == *h) {
-				free = false;
-				break;
+				return true;
 			}
 		}
-		if(free) {
-			node->free();
-			delete node;
-		}
-		return !free;
+		node->free();
+		delete node;
+		return false;
 	});
 }
 

@@ -120,6 +120,10 @@ class HazardPtr : core::NonCopyable
 			return ptr;
 		}
 
+		operator const T *() const {
+			return ptr;
+		}
+
 		static void deleteLater(T *ptr) {
 			new internal::DeleteNodeTemplate<T>(ptr);
 		}
