@@ -49,16 +49,16 @@ class ImageLoader
 		};
 
 
-		static Image load(const core::String &filename)  {
+		static Image load(const core::String &filename, bool async = true)  {
 			ImageLoader *ld = getLoader();
-			return Image(ld->asyncBuffer.load(filename));
+			return async ? Image(ld->asyncBuffer.load(filename)) : Image(ld->immediateBuffer.load(filename));
 		}
 
 
 		template<typename T>
 		void addCodec(const T &t) {
 			asyncBuffer.addLoader<core::String>(t);
-			imediateBuffer.addLoader<core::String>(t);
+			immediateBuffer.addLoader<core::String>(t);
 		}
 
 	private:
@@ -73,7 +73,7 @@ class ImageLoader
 		}
 
 		assets::AssetBuffer<ImageInternal, assets::AsyncLoadingPolicy<ImageInternal>> asyncBuffer;
-		assets::AssetBuffer<ImageInternal, assets::ImediateLoadingPolicy<ImageInternal>> imediateBuffer;
+		assets::AssetBuffer<ImageInternal, assets::ImmediateLoadingPolicy<ImageInternal>> immediateBuffer;
 };
 
 

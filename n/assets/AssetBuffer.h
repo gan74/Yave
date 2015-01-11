@@ -26,12 +26,12 @@ namespace n {
 namespace assets {
 
 template<typename T>
-class ImediateLoadingPolicy
+class ImmediateLoadingPolicy
 {
 	public:
 		template<typename... Args>
 		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
-			AssetPtr<T> t = AssetPtr<T>(new T*(loader(args...)));
+			AssetPtr<T> t = AssetPtr<T>(new const T*(loader(args...)));
 			if(t.isNull()) {
 				t.invalidate();
 			}
