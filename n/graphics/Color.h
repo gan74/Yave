@@ -89,13 +89,13 @@ struct ImageFormat
 			case R10G10B10A2:
 				return ch == Alpha ? 2 : 10;
 			case F32:
-				return ch == Float ? 32 : 0;
+				return 32;
 			default:
 				return 0;
 		}
 	}
 
-	uint64 rawData(void *cdt, Channel ch) const {
+	uint64 rawData(const void *cdt, Channel ch) const {
 		if(!hasAlpha() && ch == Alpha) {
 			return 0;
 		}
@@ -121,7 +121,7 @@ struct ImageFormat
 			} break;
 
 			case F32:
-				return (uint64)((double)*(float *)cdt) * ((uint64)-1);
+				return (uint64)(((double)*(float *)cdt) * ((uint32)-1));
 
 			default:
 				return 0;
@@ -129,7 +129,7 @@ struct ImageFormat
 		return 0;
 	}
 
-	double normalizedData(void *data, Channel ch) const {
+	double normalizedData(const void *data, Channel ch) const {
 		uint64 d = rawData(data, ch);
 		return d ? double(d) / double((uint64(1) << getBits(ch)) - 1) : 0.0;
 	}
@@ -141,12 +141,12 @@ struct ImageFormat
 template<typename T = float>
 class Color : public math::Vec<4, T>
 {
-
 	public:
-		Color(void *data, ImageFormat format) : math::Vec<4, T>(math::normalizedConversion<T>(format.normalizedData(data, ImageFormat::Red)),
-																math::normalizedConversion<T>(format.normalizedData(data, ImageFormat::Green)),
-																math::normalizedConversion<T>(format.normalizedData(data, ImageFormat::Blue)),
-																math::normalizedConversion<T>(format.normalizedData(data, ImageFormat::Alpha))) {
+		template<typename U>
+		Color(const U &t, ImageFormat format) : math::Vec<4, T>(math::normalizedConversion<T>(format.normalizedData(&t, ImageFormat::Red)),
+																math::normalizedConversion<T>(format.normalizedData(&t, ImageFormat::Green)),
+																math::normalizedConversion<T>(format.normalizedData(&t, ImageFormat::Blue)),
+																math::normalizedConversion<T>(format.normalizedData(&t, ImageFormat::Alpha))) {
 		}
 
 		template<typename... Args>
