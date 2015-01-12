@@ -22,6 +22,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cfloat>
 
 namespace n {
+namespace graphics {
+namespace gl {}
+}
+namespace concurent {}
+namespace signals {}
+namespace assets {}
+namespace core {}
+namespace math {}
+namespace io {}
+}
+
+namespace n {
 	static constexpr void *null = 0;
 
 namespace math {
