@@ -40,6 +40,12 @@ class Option
 			}
 		}
 
+		Option(const Option<T> &o) : Option<T>() {
+			if(o) {
+				set(o);
+			}
+		}
+
 		~Option() {
 			clear();
 		}
