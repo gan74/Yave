@@ -5,11 +5,14 @@ CONFIG -= Qt
 win32:DEFINES += WIN32
 
 LIBS += -lpthread
+LIBS += -lmingw32
+LIBS += -lSDL2main
+LIBS += -lSDL2.dll
 
-DEFINES += N_DEBUG
-
+DEFINES += GLEW_STATIC
 DEFINES += N_USE_LODEPNG
 
+DEFINES += N_DEBUG
 
 QMAKE_CXXFLAGS += -pedantic
 QMAKE_CXXFLAGS += -Winline
@@ -26,7 +29,8 @@ SOURCES += main.cpp \
 		   n/test/*.cpp \
 		   n/test/defaults/*.cpp \
 		   n/script/*.cpp \
-		   n/graphics/*.cpp
+		   n/graphics/*.cpp \
+		   n/graphics/gl/*.cpp
 
 HEADERS += n/*.h \
 		   n/core/*.h \
@@ -38,11 +42,13 @@ HEADERS += n/*.h \
 		   n/assets/*.h \
 		   n/script/*.h \
 		   n/graphics/*.h \
-		   n/signals/*.h
+		   n/signals/*.h \
+		   n/graphics/gl/*.h
 
 
 SOURCES += dependencies/lodepng/*.cpp
 HEADERS += dependencies/lodepng/*.h
+SOURCES += dependencies/glew/glew.c
 
 
 CONFIG(debug, debug|release) {

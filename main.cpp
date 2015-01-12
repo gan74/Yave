@@ -1,92 +1,87 @@
 #include <iostream>
 
-#include<n/types.h>
-#include <n/utils.h>
-#include <n/core/Array.h>
-#include <n/core/String.h>
-#include <n/core/Set.h>
-#include <n/core/Timer.h>
-#include <n/test/Test.h>
-#include <n/core/Map.h>
-#include <n/core/Functor.h>
-#include <n/core/SmartPtr.h>
-#include <n/core/Lazy.h>
 
-#include <n/mem/SmallObject.h>
-
-#include <n/concurent/Thread.h>
-#include <n/concurent/Mutex.h>
-#include <n/concurent/Promise.h>
-#include <n/concurent/Async.h>
-#include <n/concurent/ThreadPool.h>
-
-#include <n/io/ConsoleStream.h>
-
-#include <n/math/Vec.h>
-#include <n/math/Matrix.h>
-#include <n/math/Quaternion.h>
-#include <n/math/Transform.h>
-
-#include <n/assets/AssetBuffer.h>
-
-#include <n/script/Lexer.h>
-#include <n/script/Machine.h>
-
+#include <SDL2/SDL.h>
 #include <n/graphics/ImageLoader.h>
+#include <n/graphics/gl/Context.h>
+#include <n/graphics/gl/Texture.h>
+#include <n/graphics/gl/GL.h>
+#include <n/graphics/gl/Buffer.h>
+#include <n/graphics/gl/TriangleBuffer.h>
+#include <n/graphics/gl/VertexArrayObject.h>
 
-#include <n/signals/Signal.h>
-
-
-using namespace n::graphics;
-using namespace	n::concurent;
-using namespace	n::signals;
-using namespace n::assets;
-using namespace n::core;
-using namespace n::math;
-using namespace n::io;
 using namespace n;
+using namespace n::graphics;
+using namespace n::math;
+using namespace n::core;
 
-class BusyThread : public Thread
-{
-	public:
-		virtual void run() override {
-			while(true);
+SDL_Window *createWindow() {
+	SDL_Window *mainWindow = 0;
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+		fatal("Unable to initialize SDL");
+	}
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	if(!(mainWindow = SDL_CreateWindow("n 2.1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN))) {
+		fatal("Unable to create window");
+	}
+	SDL_GL_CreateContext(mainWindow);
+	SDL_GL_SetSwapInterval(0);
+
+	gl::Context::getContext();
+
+	return mainWindow;
+}
+
+bool run(SDL_Window *mainWindow) {
+	SDL_GL_SwapWindow(mainWindow);
+	SDL_Event e;
+	bool cc = true;
+	while(SDL_PollEvent(&e)) {
+		if(e.type == SDL_QUIT || (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) {
+			cc = false;
+			break;
 		}
-};
+	}
+	return cc;
+}
 
 
 int main(int, char **) {
-	//std::cout<<sizeof(long double)<<std::endl;
-	/*Image ima = ImageLoader::load("test.png");
-	while(ima.isNull()) {
-		if(!ima.isValid()) {
-			fatal("Unable to read png");
+	SDL_Window *win = createWindow();
+
+	Image image = ImageLoader::load("mq1.png", false);
+	gl::Texture tex(image);
+
+	gl::TriangleBuffer<> tris;
+	tris.append(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1));
+	gl::VertexArrayObject<> vao(tris);
+
+	while(run(win)) {
+
+		tex.bind();
+		glClear(GL_COLOR_BUFFER_BIT);
+		/*glColor3f(1, 1, 1);
+		glBegin(GL_QUADS);
+			glVertex2f(-1, -1);
+				glTexCoord2f(0, 0);
+			glVertex2f(1, -1);
+				glTexCoord2f(1, 0);
+			glVertex2f(1, 1);
+				glTexCoord2f(1, 1);
+			glVertex2f(-1, 1);
+				glTexCoord2f(0, 1);
+		glEnd();*/
+
+		gl::Context::getContext()->processTasks();
+		glFlush();
+		if(glGetError()) {
+			fatal("GL error");
 		}
 	}
-	//std::cout<<ima.getSize().x()<<" * "<<ima.getSize().y()<<std::endl<<std::endl;
-	for(uint i = 0; i != ima.getSize().x(); i++) {
-		for(uint j = 0; j != ima.getSize().y(); j++) {
-			if(ima.getPixel(Vec2ui(i, j)).sum() > 1.5) {
-				std::cout<<" ";
-			} else {
-				std::cout<<(byte)178;
-			}
-		}
-		std::cout<<std::endl;
-	}
-	std::cout<<std::endl;
-	AsyncSignal<int> sig;
-	sig.connect([](int i) {
-		std::cout<<i<<std::endl;
-		return i;
-	});
-	sig(17);
-
-	for(uint i = 0; i != 8; i++) {
-		(new BusyThread())->start();
-	}
-	while(true);*/
-
 	return 0;
 }
+
 
