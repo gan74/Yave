@@ -123,7 +123,7 @@ class Map : public RBTree<Pair<const T, U>, MapOp<const T, U, Comp>, MapOp<const
 		}
 
 		const U &get(const T &t, const U &def) const {
-			iterator it = find(t);
+			const_iterator it = find(t);
 			return it == end() ? def : (*it)._2;
 		}
 
