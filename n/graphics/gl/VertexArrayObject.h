@@ -30,15 +30,45 @@ template<typename T = float>
 class VertexArrayObject
 {
 	public:
-		VertexArrayObject(const TriangleBuffer<T> &tr) : data(tr.getVertices().size() * sizeof(Vertex<T>) / sizeof(T)), indexes(tr.getTriangles().size()) {
+		VertexArrayObject(const TriangleBuffer<T> &tr) : size(tr.triangles.size()), data(tr.vertices.size() * sizeof(Vertex<T>) / sizeof(T)), indexes(size * 3), handle(0) {
 			tr.freeze();
 			data.fill((const T *)tr.vertices.begin());
 			indexes.fill((const uint *)tr.trianglesData.begin());
 		}
 
+		void bind() {
+			if(!handle) {
+				glGenVertexArrays(1, &handle);
+				glBindVertexArray(handle);
+				data.bind();
+				indexes.bind();
+				glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
+				glVertexAttribPointer(1, 2, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T)));
+				glVertexAttribPointer(2, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
+				glVertexAttribPointer(3, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
+				glEnableVertexAttribArray(0);
+				//glEnableVertexAttribArray(1);
+				//glEnableVertexAttribArray(2);
+				//glEnableVertexAttribArray(3);
+			} else {
+				glBindVertexArray(handle);
+			}
+		}
+
+		void draw(uint instances = 1, uint beg = 0, uint end = 0) {
+			bind();
+			if(end <= beg) {
+				end = size;
+			}
+			glDrawElementsInstanced(GL_TRIANGLES, 3 * (end - beg), GLType<uint>::value, (const void *)(3 * beg * sizeof(uint)), instances);
+		}
+
 	private:
+		uint size;
 		Buffer<T, Array> data;
 		Buffer<uint, Index> indexes;
+
+		GLuint handle;
 };
 
 

@@ -65,6 +65,9 @@ class Matrix
 	}
 
 	public:
+		typedef T * iterator;
+		typedef const T * const_iterator;
+
 		Matrix() {
 		}
 
@@ -210,6 +213,30 @@ class Matrix
 			return mat;
 		}
 
+		const T *operator*() const {
+			return &rows[0][0];
+		}
+
+		const_iterator begin() const {
+			return &rows[0][0];
+		}
+
+		const_iterator end() const {
+			return (&rows[0][0]) + (M * N);
+		}
+
+		T *operator*() {
+			return &rows[0][0];
+		}
+
+		iterator begin() {
+			return &rows[0][0];
+		}
+
+		iterator end() {
+			return (&rows[0][0]) + (M * N);
+		}
+
 	private:
 		static constexpr void chksq() {
 			static_assert(isSquare(), "The matrix must be square");
@@ -244,6 +271,10 @@ namespace internal {
 		return mat[0][0];
 	}
 }
+
+using Matrix4 = Matrix<4, 4>;
+using Matrix3 = Matrix<3, 3>;
+using Matrix2 = Matrix<2, 2>;
 
 }
 }

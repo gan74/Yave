@@ -32,7 +32,7 @@ class Vertex
 		typedef T * iterator;
 		typedef const T * const_iterator;
 
-		Vertex(const math::Vec<3, T> &p, const math::Vec<3, T> &n = math::Vec<3, T>(), const math::Vec<2, T> &t = math::Vec<2, T>()) : tex(t), norm(n), pos(p) {
+		Vertex(const math::Vec<3, T> &p, const math::Vec<3, T> &n = math::Vec<3, T>(), const math::Vec<2, T> &t = math::Vec<2, T>()) : pos(p), tex(t), norm(n) {
 		}
 
 		const math::Vec<3, T> &getPosition() const {
@@ -84,9 +84,9 @@ class Vertex
 		}
 
 	private:
+		math::Vec<3, T> pos;
 		math::Vec<2, T> tex;
 		math::Vec<3, T> norm;
-		math::Vec<3, T> pos;
 		math::Vec<3, T> tang;
 };
 

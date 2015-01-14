@@ -29,57 +29,57 @@ namespace graphics {
 namespace gl {
 
 template<typename T>
-class GLType
+struct GLType
 {
 	static constexpr GLenum value = 0;
 };
 
 template<>
-class GLType<float>
+struct GLType<float>
 {
 	static_assert(sizeof(float) == 4, "float should be 4 byte long.");
 	static constexpr GLenum value = GL_FLOAT;
 };
 
 template<>
-class GLType<double>
+struct GLType<double>
 {
 	static_assert(sizeof(double) == 8, "double should be 8 byte long.");
 	static constexpr GLenum value = GL_DOUBLE;
 };
 
 template<>
-class GLType<int8>
+struct GLType<int8>
 {
 	static constexpr GLenum value = GL_BYTE;
 };
 
 template<>
-class GLType<uint8>
+struct GLType<uint8>
 {
 	static constexpr GLenum value = GL_UNSIGNED_BYTE;
 };
 
 template<>
-class GLType<int16>
+struct GLType<int16>
 {
 	static constexpr GLenum value = GL_SHORT;
 };
 
 template<>
-class GLType<uint16>
+struct GLType<uint16>
 {
 	static constexpr GLenum value = GL_UNSIGNED_SHORT;
 };
 
 template<>
-class GLType<int32>
+struct GLType<int32>
 {
 	static constexpr GLenum value = GL_INT;
 };
 
 template<>
-class GLType<uint32>
+struct GLType<uint32>
 {
 	static constexpr GLenum value = GL_UNSIGNED_INT;
 };

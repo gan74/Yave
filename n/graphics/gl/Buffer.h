@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_GL_BUFFER
 #define N_GRAPHICS_GL_BUFFER
 
-#include <iostream>
 #include "GL.h"
 #include <n/core/String.h>
 #include <n/core/Ref.h>

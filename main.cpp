@@ -9,6 +9,7 @@
 #include <n/graphics/gl/Buffer.h>
 #include <n/graphics/gl/TriangleBuffer.h>
 #include <n/graphics/gl/VertexArrayObject.h>
+#include <n/graphics/gl/ShaderCombinaison.h>
 
 using namespace n;
 using namespace n::graphics;
@@ -56,24 +57,32 @@ int main(int, char **) {
 	gl::Texture tex(image);
 
 	gl::TriangleBuffer<> tris;
-	tris.append(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1));
+	tris.append(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(-1, -1, 0));
 	gl::VertexArrayObject<> vao(tris);
+	gl::Shader<gl::VertexShader> vert("#version 420 core\n"
+										"layout(location = 0) in vec3 n_VertexPosition;"
+										"void main() {"
+											"gl_Position = vec4(n_VertexPosition, 1.0);"
+										"}");
+
+	gl::Shader<gl::FragmentShader> frag("#version 420 core\n"
+										"uniform vec3 color;"
+										"layout(location = 0) out vec4 n_FragColor;"
+										"void main() {"
+											"n_FragColor = vec4(color, 1.0);"
+										"}");
+
+	gl::ShaderCombinaison shader(&frag, &vert, 0);
+	if(!shader.isValid()) {
+		std::cerr<<shader.getLogs()<<std::endl;
+		fatal("Unable to compile shader.");
+	}
 
 	while(run(win)) {
 
-		tex.bind();
 		glClear(GL_COLOR_BUFFER_BIT);
-		/*glColor3f(1, 1, 1);
-		glBegin(GL_QUADS);
-			glVertex2f(-1, -1);
-				glTexCoord2f(0, 0);
-			glVertex2f(1, -1);
-				glTexCoord2f(1, 0);
-			glVertex2f(1, 1);
-				glTexCoord2f(1, 1);
-			glVertex2f(-1, 1);
-				glTexCoord2f(0, 1);
-		glEnd();*/
+		shader.bind();
+		vao.draw();
 
 		gl::Context::getContext()->processTasks();
 		glFlush();
