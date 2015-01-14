@@ -33,10 +33,10 @@ class String
 		typedef char const * const_iterator;
 
 		template<typename T, typename... Args>
-		String(const T &s) : String(build(s)) {
+		explicit String(const T &s) : String(build(s)) {
 		}
 
-		explicit String(const char *cst, uint l);
+		/*explicit */String(const char *cst, uint l);
 
 		String();
 		String(const char *cst);
@@ -130,7 +130,7 @@ class String
 			String str;
 			for(char *c = data; c != data + length; c++) {
 				if(f(*c)) {
-					str += *c;
+					str += String(*c);
 				}
 			}
 			return str;

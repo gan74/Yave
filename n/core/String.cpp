@@ -149,11 +149,11 @@ String String::replaced(const String &oldS, const String &newS) const {
 	} else {
 		return *this;
 	}
-	return concat;
+	return String(concat);
 }
 
 String String::replaced(uint beg, uint len, const String &newS) const {
-	return Array<String>(subString(0, beg), newS, subString(beg + len));
+	return String(Array<String>(subString(0, beg), newS, subString(beg + len)));
 }
 
 void String::clear() {
