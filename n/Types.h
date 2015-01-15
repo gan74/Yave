@@ -225,16 +225,22 @@ namespace internal {
 	};
 }
 
-template<typename T>
-struct VoidToNothing
+template<bool I, typename Then, typename Else>
+struct If
 {
-	typedef T type;
+	typedef Then type;
 };
 
-template<>
-struct VoidToNothing<void>
+
+template<typename Then, typename Else>
+struct If<false, Then, Else>
 {
-	typedef Nothing type;
+	typedef Else type;
+};
+
+template<typename T>
+struct VoidToNothing : If<!std::is_void<T>::value, T, Nothing>
+{
 };
 
 
