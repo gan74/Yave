@@ -34,6 +34,12 @@ class Buffer : core::NonCopyable
 			fill(d);
 		}
 
+		template<typename U>
+		Buffer(const core::Array<U> &arr) : bufferSize(arr.size() * sizeof(U) / sizeof(T)), buffer(new T[bufferSize]), modified(true), handle(0) {
+			static_assert(TypeInfo<U>::isPod, "Buffer should only containt pod");
+			fill((const T *)arr.begin());
+		}
+
 		void fill(const T *d) {
 			if(d) {
 				memcpy(buffer, d, bufferSize * sizeof(T));
@@ -41,7 +47,7 @@ class Buffer : core::NonCopyable
 			modified = true;
 		}
 
-		core::Ref<T> operator[](uint i) {
+		/*core::Ref<T> operator[](uint i) {
 			return core::Ref<T>(buffer[i], [=]() { modified = true; });
 		}
 
@@ -51,7 +57,7 @@ class Buffer : core::NonCopyable
 
 		bool isModified() {
 			return modified;
-		}
+		}*/
 
 		void bind() {
 			if(modified) {
@@ -66,6 +72,8 @@ class Buffer : core::NonCopyable
 		}
 
 	private:
+		friend class ShaderCombinaison;
+
 		void update() {
 			if(!handle) {
 				glGenBuffers(1, &handle);

@@ -30,10 +30,8 @@ template<typename T = float>
 class VertexArrayObject
 {
 	public:
-		VertexArrayObject(const TriangleBuffer<T> &tr) : size(tr.triangles.size()), data(tr.vertices.size() * sizeof(Vertex<T>) / sizeof(T)), indexes(size * 3), handle(0) {
+		VertexArrayObject(const TriangleBuffer<T> &tr) : size(tr.triangles.size()), data(tr.vertices.getVertices()), indexes(tr.trianglesData), handle(0) {
 			tr.freeze();
-			data.fill((const T *)tr.vertices.begin());
-			indexes.fill((const uint *)tr.trianglesData.begin());
 		}
 
 		void bind() {

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/defines.h>
 #ifndef N_NO_GL
 
+#include <iostream>
 #include "Texture.h"
 #include "Context.h"
 #include "Buffer.h"
@@ -27,25 +28,14 @@ namespace n {
 namespace graphics {
 namespace gl {
 
-struct Texture::Data
-{
-	Data() : handle(0) {
-	}
 
-	~Data() {
-		if(handle) {
-			glDeleteTextures(1, &handle);
-		}
-	}
-
-	GLuint handle;
-};
 
 Texture::Texture(const Image &i) : image(i), data(0) {
 }
 
 Texture::~Texture() {
 }
+
 
 void Texture::bind() const {
 	if(!data) {

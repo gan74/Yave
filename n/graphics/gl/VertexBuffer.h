@@ -78,6 +78,10 @@ class VertexBuffer
 			return vertices.size();
 		}
 
+		const core::Array<gl::Vertex<T>> &getVertices() const {
+			return vertices;
+		}
+
 	private:
 		core::Array<gl::Vertex<T>> vertices;
 };

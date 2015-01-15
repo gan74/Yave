@@ -17,7 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_GL_SHADERCOMBINAISON
 #define N_GRAPHICS_GL_SHADERCOMBINAISON
 
+#include <iostream>
 #include "Shader.h"
+#include "Buffer.h"
+#include "Texture.h"
 #include <n/core/Map.h>
 #include <n/math/Matrix.h>
 #include <n/defines.h>
@@ -39,7 +42,34 @@ class ShaderCombinaison
 			uint size;
 		};
 
+		struct BlockInfo
+		{
+			GLuint addr;
+			GLuint slot;
+		};
+
 	public:
+		class Uniform : core::NonCopyable
+		{
+			public:
+				Uniform(Uniform &&u) : sh(u.sh), addr(u.addr) {
+				}
+
+				template<typename T>
+				T operator=(const T &t) {
+					sh->setValue(addr, t);
+					return t;
+				}
+
+			private:
+				friend class ShaderCombinaison;
+				Uniform(ShaderCombinaison *s, UniformAddr a) : sh(s), addr(a) {
+				}
+
+				ShaderCombinaison *sh;
+				UniformAddr addr;
+		};
+
 		ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0) : handle(0) {
 			shaders[FragmentShader] = frag;
 			shaders[VertexShader] = vert;
@@ -59,31 +89,51 @@ class ShaderCombinaison
 			glUseProgram(handle);
 		}
 
+		UniformAddr getAddr(const core::String &name) {
+			return getInfo(name).addr;
+		}
+
+		Uniform operator[](const core::String &name) {
+			return Uniform(this, getAddr(name));
+		}
+
+		template<typename T>
+		void setValue(const core::String &name, const T &t) {
+			UniformAddr i = getAddr(name);
+			if(i != UniformAddr(GL_INVALID_INDEX)) {
+				setValue(i, t);
+			}
+		}
+
 		void setValue(UniformAddr addr, int a) {
-			glProgramUniform1iv(handle, addr, 1, &a);
+			glProgramUniform1i(handle, addr, a);
+		}
+
+		void setValue(UniformAddr addr, uint a) {
+			glProgramUniform1ui(handle, addr, a);
 		}
 
 		void setValue(UniformAddr addr, float f) {
-			glProgramUniform1fv(handle, addr, 1, &f);
+			glProgramUniform1f(handle, addr, f);
 		}
 
-		void setValue(UniformAddr addr, math::Vec2i v) {
+		void setValue(UniformAddr addr, const math::Vec2i &v) {
 			glProgramUniform2iv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, math::Vec3i v) {
+		void setValue(UniformAddr addr, const math::Vec3i &v) {
 			glProgramUniform3iv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, math::Vec2 v) {
+		void setValue(UniformAddr addr, const math::Vec2 &v) {
 			glProgramUniform2fv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, math::Vec3 v) {
+		void setValue(UniformAddr addr, const math::Vec3 &v) {
 			glProgramUniform3fv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, math::Vec4 v) {
+		void setValue(UniformAddr addr, const math::Vec4 &v) {
 			glProgramUniform4fv(handle, addr, 1, v.begin());
 		}
 
@@ -91,18 +141,45 @@ class ShaderCombinaison
 			glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
 		}
 
+		void setValue(UniformAddr addr, const Texture &t) {
+			setValue(addr, t.data ? t.data->handle : 0);
+		}
+
+		/*template<typename T>
+		void setBuffer(const core::String &name, const Buffer<T, Uniform> *buffer) {
+			core::Map<core::String, GLint>::const_iterator it = blocks.find(name);
+			BlockInfo infos{GLuint(GL_INVALID_INDEX), 0};
+			if(it == blocks.end()) {
+				GLint index = glGetUniformBlockIndex(handle, name.toChar());
+				static uint bs = 0;
+				blocks[name] = infos = BlockInfo{index, bs++};
+				glUniformBlockBinding(handle, infos.addr, infos.slot);
+			} else {
+				infos = it->_2;
+			}
+			if(infos.addr != GLuint(GL_INVALID_INDEX)) {
+				if(buffer) {
+					buffer->bind(infos.slot);
+				} else {
+					glBindBufferBase(GL_UNIFORM_BUFFER, slot, 0);
+				}
+			}
+		}*/
+
 	private:
 		void compile() {
 			handle = glCreateProgram();
+			bool val = true;
 			for(uint i = 0; i != 3; i++) {
 				if(shaders[i]) {
 					glAttachShader(handle, shaders[i]->handle);
+					val &= shaders[i]->isValid();
 				}
 			}
 			glLinkProgram(handle);
 			int res = 0;
 			glGetProgramiv(handle, GL_LINK_STATUS, &res);
-			if(!res) {
+			if(!res || !val) {
 				int size = 0;
 				glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &size);
 				char *msg = new char[size + 1];
@@ -134,10 +211,15 @@ class ShaderCombinaison
 			}
 		}
 
+		UniformInfo getInfo(const core::String &name) {
+			return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
+		}
+
 		internal::ShaderBase *shaders[3];
 		GLuint handle;
 		core::String logs;
 		core::Map<core::String, UniformInfo> uniformsInfo;
+		core::Map<core::String, BlockInfo> blocks;
 };
 
 }

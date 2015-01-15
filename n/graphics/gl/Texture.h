@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/graphics/Image.h>
 #include <n/defines.h>
+#include "GL.h"
 #ifndef N_NO_GL
 
 namespace n {
@@ -27,7 +28,19 @@ namespace gl {
 
 class Texture
 {
-	struct Data;
+	struct Data
+	{
+		Data() : handle(0) {
+		}
+
+		~Data() {
+			if(handle) {
+				glDeleteTextures(1, &handle);
+			}
+		}
+
+		GLuint handle;
+	};
 
 	public:
 		Texture(const Image &i);
@@ -36,6 +49,10 @@ class Texture
 		void bind() const;
 
 	private:
+		friend class ShaderCombinaison;
+
+		int getHandle() const;
+
 		Image image;
 		mutable core::SmartPtr<Data> data;
 };

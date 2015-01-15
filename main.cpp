@@ -67,20 +67,28 @@ int main(int, char **) {
 
 	gl::Shader<gl::FragmentShader> frag("#version 420 core\n"
 										"uniform vec3 color;"
+										"uniform sampler2D tex;"
 										"layout(location = 0) out vec4 n_FragColor;"
 										"void main() {"
-											"n_FragColor = vec4(color, 1.0);"
+											"n_FragColor = vec4(texture(tex, gl_FragCoord.xy / vec2(800, 600)).rgb, 1.0);"
 										"}");
+
 
 	gl::ShaderCombinaison shader(&frag, &vert, 0);
 	if(!shader.isValid()) {
 		std::cerr<<shader.getLogs()<<std::endl;
+		std::cerr<<frag.getLogs()<<std::endl;
+		std::cerr<<vert.getLogs()<<std::endl;
 		fatal("Unable to compile shader.");
 	}
+
+	shader["color"] = math::Vec3(1, 1, 0);
+	shader["tex"] = 0;
 
 	while(run(win)) {
 
 		glClear(GL_COLOR_BUFFER_BIT);
+		tex.bind();
 		shader.bind();
 		vao.draw();
 

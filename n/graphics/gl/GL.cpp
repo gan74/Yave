@@ -21,8 +21,8 @@ namespace n {
 namespace graphics {
 namespace gl {
 
-GLenum getBufferUsage(BufferBinding b) {
-	return b == Uniform ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+GLenum getBufferUsage(BufferBinding) {
+	return GL_STATIC_DRAW;
 }
 
 }

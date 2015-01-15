@@ -87,11 +87,10 @@ struct GLType<uint32>
 enum BufferBinding
 {
 	Array = GL_ARRAY_BUFFER,
-	Uniform = GL_UNIFORM_BUFFER,
 	Index = GL_ELEMENT_ARRAY_BUFFER
 };
 
-GLenum getBufferUsage(BufferBinding b);
+GLenum getBufferUsage(BufferBinding);
 
 }
 }
