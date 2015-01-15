@@ -288,7 +288,7 @@ template<typename T>
 struct TypeInfo
 {
 	static constexpr bool isPrimitive = !std::is_class<T>::value && !std::is_union<T>::value;
-	static constexpr bool isPod = std::is_trivial<T>::value || isPrimitive;
+	static constexpr bool isPod = std::has_trivial_copy_constructor<T>::value || isPrimitive;
 	static constexpr bool isPointer = false;
 	static constexpr bool isConst = false;
 	static constexpr bool isRef = false;
