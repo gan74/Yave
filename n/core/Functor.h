@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/types.h>
 #include <tuple>
 #include <n/utils.h>
-
+#include "Map.h"
 #include "SmartPtr.h"
 
 namespace n {
@@ -161,6 +161,18 @@ class Functor<R(Args...)>
 
 		Functor<R()> curried(std::tuple<Args...> args) const {
 			return Functor<R()>(Curry(*this, args));
+		}
+
+		Functor<R(Args...)> memo() const {
+			SmartPtr<FuncBase> f = func;
+			return Functor<R(Args...)>([=](Args... args) {
+				static Map<std::tuple<Args...>, R> map;
+				typename Map<std::tuple<Args...>, R>::iterator it = map.find(std::make_tuple(args...));
+				if(it == map.end()) {
+					return map[std::make_tuple(args...)] = f->apply(args...);
+				}
+				return (*it)._2;
+			});
 		}
 
 		explicit operator Functor<void(Args...)>() {
