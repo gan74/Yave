@@ -29,17 +29,7 @@ template<typename T = float>
 class VertexBuffer
 {
 	public:
-		class Vertex
-		{
-			public:
-			private:
-				friend class VertexBuffer;
-
-				Vertex(uint i) : index(i) {
-				}
-
-				uint index;
-		};
+		typedef uint Vertex;
 
 		Vertex append(const gl::Vertex<T> &v) {
 			vertices.append(v);
@@ -47,15 +37,15 @@ class VertexBuffer
 		}
 
 		const gl::Vertex<T> &operator()(Vertex v) const {
-			return vertices[v.index];
+			return vertices[v];
 		}
 
 		gl::Vertex<T> &operator[](Vertex v) {
-			return vertices[v.index];
+			return vertices[v];
 		}
 
 		const gl::Vertex<T> &operator[](Vertex v) const {
-			return vertices[v.index];
+			return vertices[v];
 		}
 
 		typename core::Array<gl::Vertex<T>>::iterator begin() {

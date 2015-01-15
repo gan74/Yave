@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_GL_VERTEXARRAYOBJECT
 
 #include "TriangleBuffer.h"
-#include "Buffer.h"
+#include "StaticBuffer.h"
 #include <n/defines.h>
 #ifndef N_NO_GL
 
@@ -30,8 +30,7 @@ template<typename T = float>
 class VertexArrayObject
 {
 	public:
-		VertexArrayObject(const TriangleBuffer<T> &tr) : size(tr.triangles.size()), data(tr.vertices.getVertices()), indexes(tr.trianglesData), handle(0) {
-			tr.freeze();
+		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : size(tr.indexes.size() / 3), data(tr.vertices), indexes(tr.indexes), handle(0) {
 		}
 
 		void bind() {
@@ -63,8 +62,8 @@ class VertexArrayObject
 
 	private:
 		uint size;
-		Buffer<T, Array> data;
-		Buffer<uint, Index> indexes;
+		StaticBuffer<Vertex<T>, Array> data;
+		StaticBuffer<uint, Index> indexes;
 
 		GLuint handle;
 };

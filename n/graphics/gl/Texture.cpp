@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include "Texture.h"
 #include "Context.h"
-#include "Buffer.h"
+#include "StaticBuffer.h"
 #include "GL.h"
 
 namespace n {

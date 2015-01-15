@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 #include "Shader.h"
-#include "Buffer.h"
+#include "StaticBuffer.h"
 #include "Texture.h"
 #include <n/core/Map.h>
 #include <n/math/Matrix.h>

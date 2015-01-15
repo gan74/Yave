@@ -6,7 +6,7 @@
 #include <n/graphics/gl/Context.h>
 #include <n/graphics/gl/Texture.h>
 #include <n/graphics/gl/GL.h>
-#include <n/graphics/gl/Buffer.h>
+#include <n/graphics/gl/StaticBuffer.h>
 #include <n/graphics/gl/TriangleBuffer.h>
 #include <n/graphics/gl/VertexArrayObject.h>
 #include <n/graphics/gl/ShaderCombinaison.h>
@@ -58,7 +58,7 @@ int main(int, char **) {
 
 	gl::TriangleBuffer<> tris;
 	tris.append(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(-1, -1, 0));
-	gl::VertexArrayObject<> vao(tris);
+	gl::VertexArrayObject<> vao(tris.freezed());
 	gl::Shader<gl::VertexShader> vert("#version 420 core\n"
 										"layout(location = 0) in vec3 n_VertexPosition;"
 										"void main() {"

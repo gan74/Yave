@@ -14,10 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_BUFFER
-#define N_GRAPHICS_GL_BUFFER
+#ifndef N_GRAPHICS_GL_STATICBUFFER
+#define N_GRAPHICS_GL_STATICBUFFER
+
 
 #include "GL.h"
+#include <n/core/AsCollection.h>
 #include <n/core/String.h>
 #include <n/core/Ref.h>
 #ifndef N_NO_GL
@@ -27,44 +29,25 @@ namespace graphics {
 namespace gl {
 
 template<typename T, BufferBinding Binding>
-class Buffer : core::NonCopyable
+class StaticBuffer : core::NonCopyable
 {
+	static_assert(TypeInfo<T>::isPod, "Buffer should only containt pod");
+	//typedef If<core::Collection<T>::isCollection, core::Collection<T>::ElementType, T> Type;
+
 	public:
-		Buffer(uint s, const T *d = 0) : bufferSize(s), buffer(new T[bufferSize]), modified(true), handle(0) {
-			fill(d);
+		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), buffer(malloc(sizeof(T) * bufferSize)), handle(0) {
+			memcpy(buffer, arr.begin(), bufferSize * sizeof(T));
+			setUp();
 		}
 
-		template<typename U>
-		Buffer(const core::Array<U> &arr) : bufferSize(arr.size() * sizeof(U) / sizeof(T)), buffer(new T[bufferSize]), modified(true), handle(0) {
-			static_assert(TypeInfo<U>::isPod, "Buffer should only containt pod");
-			fill((const T *)arr.begin());
-		}
-
-		void fill(const T *d) {
-			if(d) {
-				memcpy(buffer, d, bufferSize * sizeof(T));
+		~StaticBuffer() {
+			if(buffer) {
+				free(buffer);
 			}
-			modified = true;
 		}
-
-		/*core::Ref<T> operator[](uint i) {
-			return core::Ref<T>(buffer[i], [=]() { modified = true; });
-		}
-
-		const core::Ref<T> operator[](uint i) const {
-			return core::Ref<T>(buffer[i], [=]() { modified = true; });
-		}
-
-		bool isModified() {
-			return modified;
-		}*/
 
 		void bind() {
-			if(modified) {
-				update();
-			} else {
-				glBindBuffer(Binding, handle);
-			}
+			glBindBuffer(Binding, handle);
 		}
 
 		uint size() const {
@@ -72,13 +55,11 @@ class Buffer : core::NonCopyable
 		}
 
 	private:
-		friend class ShaderCombinaison;
-
-		void update() {
+		void setUp() {
 			if(!handle) {
 				glGenBuffers(1, &handle);
 				glBindBuffer(Binding, handle);
-				glBufferData(Binding, sizeof(T) * bufferSize, buffer, getBufferUsage(Binding));
+				glBufferData(Binding, sizeof(T) * bufferSize, buffer, GL_STATIC_DRAW);
 			} else {
 				glBindBuffer(Binding, handle);
 				void *p = glMapBuffer(Binding, GL_WRITE_ONLY);
@@ -89,12 +70,10 @@ class Buffer : core::NonCopyable
 					glUnmapBuffer(Binding);
 				}
 			}
-			modified = false;
 		}
 
 		uint bufferSize;
-		T *buffer;
-		bool modified;
+		void *buffer;
 
 		GLuint handle;
 };
@@ -105,5 +84,5 @@ class Buffer : core::NonCopyable
 
 #endif
 
-#endif // N_GRAPHICS_GL_BUFFER
+#endif // N_GRAPHICS_GL_STATICBUFFER
 

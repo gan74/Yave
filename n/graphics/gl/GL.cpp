@@ -21,10 +21,6 @@ namespace n {
 namespace graphics {
 namespace gl {
 
-GLenum getBufferUsage(BufferBinding) {
-	return GL_STATIC_DRAW;
-}
-
 }
 }
 }

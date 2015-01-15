@@ -90,8 +90,6 @@ enum BufferBinding
 	Index = GL_ELEMENT_ARRAY_BUFFER
 };
 
-GLenum getBufferUsage(BufferBinding);
-
 }
 }
 }
