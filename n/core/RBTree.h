@@ -62,7 +62,8 @@ class RBTree
 	class IteratorBase
 	{
 		public:
-			IteratorBase(const I &it) : node(it.node) {
+			template<typename J>
+			IteratorBase(const J &it) : node(it.node) {
 			}
 
 			I &operator++() { // ++prefix
