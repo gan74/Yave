@@ -33,11 +33,11 @@ class TriangleBuffer
 {
 	struct TriData
 	{
-		typedef const typename VertexBuffer<T>::Vertex * const_iterator;
-		TriData(typename VertexBuffer<T>::Vertex a, typename VertexBuffer<T>::Vertex b, typename VertexBuffer<T>::Vertex c) : vts{a, b, c} {
+		typedef const uint * const_iterator;
+		TriData(uint a, uint b, uint c) : vts{a, b, c} {
 		}
 
-		typename VertexBuffer<T>::Vertex vts[3];
+		uint vts[3];
 
 		const_iterator begin() const {
 			return vts;

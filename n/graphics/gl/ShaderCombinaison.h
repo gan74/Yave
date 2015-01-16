@@ -17,9 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_GL_SHADERCOMBINAISON
 #define N_GRAPHICS_GL_SHADERCOMBINAISON
 
-#include <iostream>
 #include "Shader.h"
-#include "StaticBuffer.h"
+#include "UniformBuffer.h"
 #include "Texture.h"
 #include <n/core/Map.h>
 #include <n/math/Matrix.h>
@@ -52,22 +51,28 @@ class ShaderCombinaison
 		class Uniform : core::NonCopyable
 		{
 			public:
-				Uniform(Uniform &&u) : sh(u.sh), addr(u.addr) {
+				Uniform(Uniform &&u) : sh(u.sh), name(u.name) {
 				}
 
 				template<typename T>
 				T operator=(const T &t) {
-					sh->setValue(addr, t);
+					sh->setValue(name, t);
+					return t;
+				}
+
+				template<typename T>
+				const UniformBuffer<T> &operator=(const UniformBuffer<T> &t) {
+					sh->setBuffer(name, &t);
 					return t;
 				}
 
 			private:
 				friend class ShaderCombinaison;
-				Uniform(ShaderCombinaison *s, UniformAddr a) : sh(s), addr(a) {
+				Uniform(ShaderCombinaison *s, const core::String &a) : sh(s), name(a) {
 				}
 
 				ShaderCombinaison *sh;
-				UniformAddr addr;
+				core::String name;
 		};
 
 		ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0) : handle(0) {
@@ -94,7 +99,7 @@ class ShaderCombinaison
 		}
 
 		Uniform operator[](const core::String &name) {
-			return Uniform(this, getAddr(name));
+			return Uniform(this, name);
 		}
 
 		template<typename T>
@@ -145,26 +150,27 @@ class ShaderCombinaison
 			setValue(addr, t.data ? t.data->handle : 0);
 		}
 
-		/*template<typename T>
-		void setBuffer(const core::String &name, const Buffer<T, Uniform> *buffer) {
-			core::Map<core::String, GLint>::const_iterator it = blocks.find(name);
+		template<typename T>
+		void setBuffer(const core::String &name, const UniformBuffer<T> *buffer) {
+			core::Map<core::String, BlockInfo>::const_iterator it = blocks.find(name);
 			BlockInfo infos{GLuint(GL_INVALID_INDEX), 0};
 			if(it == blocks.end()) {
 				GLint index = glGetUniformBlockIndex(handle, name.toChar());
 				static uint bs = 0;
-				blocks[name] = infos = BlockInfo{index, bs++};
+				blocks[name] = infos = BlockInfo{GLuint(index), bs++};
 				glUniformBlockBinding(handle, infos.addr, infos.slot);
 			} else {
-				infos = it->_2;
+				infos = (*it)._2;
 			}
 			if(infos.addr != GLuint(GL_INVALID_INDEX)) {
 				if(buffer) {
-					buffer->bind(infos.slot);
+					buffer->update();
+					glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, buffer->handle);
 				} else {
-					glBindBufferBase(GL_UNIFORM_BUFFER, slot, 0);
+					glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, 0);
 				}
 			}
-		}*/
+		}
 
 	private:
 		void compile() {

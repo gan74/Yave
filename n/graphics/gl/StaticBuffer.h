@@ -31,8 +31,7 @@ namespace gl {
 template<typename T, BufferBinding Binding>
 class StaticBuffer : core::NonCopyable
 {
-	static_assert(TypeInfo<T>::isPod, "Buffer should only containt pod");
-	//typedef If<core::Collection<T>::isCollection, core::Collection<T>::ElementType, T> Type;
+	static_assert(TypeInfo<T>::isPod, "StaticBuffer should only contain pod");
 
 	public:
 		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), buffer(malloc(sizeof(T) * bufferSize)), handle(0) {
@@ -43,6 +42,9 @@ class StaticBuffer : core::NonCopyable
 		~StaticBuffer() {
 			if(buffer) {
 				free(buffer);
+			}
+			if(handle) {
+				glDeleteBuffers(1, &handle);
 			}
 		}
 

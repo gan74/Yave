@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/defines.h>
 #ifndef N_NO_GL
 
-#include <iostream>
 #include "Texture.h"
 #include "Context.h"
 #include "StaticBuffer.h"

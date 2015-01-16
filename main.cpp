@@ -66,11 +66,11 @@ int main(int, char **) {
 										"}");
 
 	gl::Shader<gl::FragmentShader> frag("#version 420 core\n"
-										"uniform vec3 color;"
+										"layout(std140) uniform colors { vec3 color[512]; };"
 										"uniform sampler2D tex;"
 										"layout(location = 0) out vec4 n_FragColor;"
 										"void main() {"
-											"n_FragColor = vec4(texture(tex, gl_FragCoord.xy / vec2(800, 600)).rgb, 1.0);"
+											"n_FragColor = vec4(color[2], 1.0);"
 										"}");
 
 
@@ -82,14 +82,20 @@ int main(int, char **) {
 		fatal("Unable to compile shader.");
 	}
 
+	gl::UniformBuffer<Vec4> colors(512);
+	for(uint i = 0; i != 512; i++) {
+		colors[i] = Vec4(1, 0.5, 0.25, 0.0);
+	}
+
+	shader.bind();
 	shader["color"] = math::Vec3(1, 1, 0);
 	shader["tex"] = 0;
+	shader["colors"] = colors;
 
 	while(run(win)) {
 
 		glClear(GL_COLOR_BUFFER_BIT);
 		tex.bind();
-		shader.bind();
 		vao.draw();
 
 		gl::Context::getContext()->processTasks();

@@ -29,38 +29,36 @@ template<typename T = float>
 class VertexBuffer
 {
 	public:
-		typedef uint Vertex;
-
-		Vertex append(const gl::Vertex<T> &v) {
+		uint append(const Vertex<T> &v) {
 			vertices.append(v);
 			return vertices.size() - 1;
 		}
 
-		const gl::Vertex<T> &operator()(Vertex v) const {
+		const Vertex<T> &operator()(uint v) const {
 			return vertices[v];
 		}
 
-		gl::Vertex<T> &operator[](Vertex v) {
+		Vertex<T> &operator[](uint v) {
 			return vertices[v];
 		}
 
-		const gl::Vertex<T> &operator[](Vertex v) const {
+		const Vertex<T> &operator[](uint v) const {
 			return vertices[v];
 		}
 
-		typename core::Array<gl::Vertex<T>>::iterator begin() {
+		typename core::Array<Vertex<T>>::iterator begin() {
 			return vertices.begin();
 		}
 
-		typename core::Array<gl::Vertex<T>>::iterator end() {
+		typename core::Array<Vertex<T>>::iterator end() {
 			return vertices.end();
 		}
 
-		typename core::Array<gl::Vertex<T>>::const_iterator begin() const {
+		typename core::Array<Vertex<T>>::const_iterator begin() const {
 			return vertices.begin();
 		}
 
-		typename core::Array<gl::Vertex<T>>::const_iterator end() const {
+		typename core::Array<Vertex<T>>::const_iterator end() const {
 			return vertices.end();
 		}
 
@@ -68,12 +66,12 @@ class VertexBuffer
 			return vertices.size();
 		}
 
-		const core::Array<gl::Vertex<T>> &getVertices() const {
+		const core::Array<Vertex<T>> &getVertices() const {
 			return vertices;
 		}
 
 	private:
-		core::Array<gl::Vertex<T>> vertices;
+		core::Array<Vertex<T>> vertices;
 };
 
 }
