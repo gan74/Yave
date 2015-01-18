@@ -25,50 +25,61 @@ namespace n {
 namespace graphics {
 namespace gl {
 
+namespace internal {
+	class UniformBufferBase : core::NonCopyable
+	{
+		public:
+			UniformBufferBase(uint si) : size(si), buffer(malloc(size)), handle(0), modified(true) {
+			}
+
+			~UniformBufferBase() {
+				free(buffer);
+			}
+
+		protected:
+			friend class gl::ShaderCombinaison;
+			void update() const {
+				if(modified) {
+					if(!handle) {
+						glGenBuffers(1, (GLuint *)&handle);
+						glBindBuffer(GL_UNIFORM_BUFFER, handle);
+						glBufferData(GL_UNIFORM_BUFFER, size, buffer, GL_DYNAMIC_DRAW);
+					} else {
+						glBindBuffer(GL_UNIFORM_BUFFER, handle);
+						void *p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+						if(!p) {
+							glBufferSubData(GL_UNIFORM_BUFFER, 0, size, buffer);
+						} else {
+							memcpy(p, buffer, size);
+							glUnmapBuffer(GL_UNIFORM_BUFFER);
+						}
+					}
+					modified = false;
+				}
+			}
+
+			uint size;
+			void *buffer;
+			GLuint handle;
+			mutable bool modified;
+	};
+
+}
+
 template<typename T>
-class UniformBuffer : core::NonCopyable
+class UniformBuffer : public internal::UniformBufferBase
 {
 	static_assert(TypeInfo<T>::isPod, "UniformBuffer should only contain pod");
 
 	public:
-
-		UniformBuffer(uint si) : size(si), buffer(new T[size]), handle(0), modified(true) {
-		}
-
-		~UniformBuffer() {
-			delete buffer;
+		UniformBuffer(uint si) : internal::UniformBufferBase(si * sizeof(T)) {
 		}
 
 		core::Ref<T> operator[](uint i) {
-			return core::Ref<T>(buffer[i], [=]() { modified = true; });
+			return core::Ref<T>(((T *)buffer)[i], [=]() { modified = true; });
 		}
 
-	private:
-		friend class ShaderCombinaison;
-		void update() const {
-			if(modified) {
-				if(!handle) {
-					glGenBuffers(1, (GLuint *)&handle);
-					glBindBuffer(GL_UNIFORM_BUFFER, handle);
-					glBufferData(GL_UNIFORM_BUFFER, sizeof(T) * size, buffer, GL_DYNAMIC_DRAW);
-				} else {
-					glBindBuffer(GL_UNIFORM_BUFFER, handle);
-					void *p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-					if(!p) {
-						glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(T) * size, buffer);
-					} else {
-						memcpy(p, buffer, sizeof(T) * size);
-						glUnmapBuffer(GL_UNIFORM_BUFFER);
-					}
-				}
-				modified = false;
-			}
-		}
 
-		uint size;
-		T *buffer;
-		GLuint handle;
-		mutable bool modified;
 };
 
 }

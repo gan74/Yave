@@ -45,6 +45,7 @@ class ShaderCombinaison
 		{
 			GLuint addr;
 			GLuint slot;
+			const internal::UniformBufferBase *buffer;
 		};
 
 	public:
@@ -92,6 +93,13 @@ class ShaderCombinaison
 
 		void bind() const {
 			glUseProgram(handle);
+			for(const core::Pair<const core::String, BlockInfo> &i : blocks) {
+				const BlockInfo &infos = i._2;
+				if(infos.buffer && infos.addr != GLuint(GL_INVALID_INDEX)) {
+					infos.buffer->update();
+					glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, infos.buffer->handle);
+				}
+			}
 		}
 
 		UniformAddr getAddr(const core::String &name) {
@@ -152,27 +160,31 @@ class ShaderCombinaison
 
 		template<typename T>
 		void setBuffer(const core::String &name, const UniformBuffer<T> *buffer) {
-			core::Map<core::String, BlockInfo>::const_iterator it = blocks.find(name);
-			BlockInfo infos{GLuint(GL_INVALID_INDEX), 0};
+			core::Map<core::String, BlockInfo>::iterator it = blocks.find(name);
+			BlockInfo infos{GLuint(GL_INVALID_INDEX), 0, 0};
 			if(it == blocks.end()) {
 				GLint index = glGetUniformBlockIndex(handle, name.toChar());
 				static uint bs = 0;
-				blocks[name] = infos = BlockInfo{GLuint(index), bs++};
+				blocks[name] = infos = BlockInfo{GLuint(index), bs++, 0};
 				glUniformBlockBinding(handle, infos.addr, infos.slot);
 			} else {
 				infos = (*it)._2;
 			}
-			if(infos.addr != GLuint(GL_INVALID_INDEX)) {
-				if(buffer) {
+			(*it)._2.buffer = buffer;
+			if(buffer) {
+				if(isCurrent() && infos.addr != GLuint(GL_INVALID_INDEX)) {
 					buffer->update();
 					glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, buffer->handle);
-				} else {
-					glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, 0);
 				}
 			}
+
 		}
 
 	private:
+		bool isCurrent() const {
+			return true;
+		}
+
 		void compile() {
 			handle = glCreateProgram();
 			bool val = true;
