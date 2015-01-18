@@ -139,6 +139,10 @@ class Functor<R(Args...)>
 		Functor(R (*f)(Args...)) : func(new FuncPtr(f)) {
 		}
 
+		Functor() : Functor<R(Args...)>(Nothing()) {
+		}
+
+
 		R operator()(Args... args) {
 			return func->apply(args...);
 		}
