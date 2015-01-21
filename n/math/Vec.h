@@ -49,19 +49,21 @@ class Vec
 		typedef T * iterator;
 		typedef const T *const_iterator;
 
-		template<typename... Args>
-		Vec(T x, Args... args) {
+		template<typename U, typename... Args>
+		Vec(U x, Args... args) {
 			build<0>(x, args...);
 		}
 
-		template<uint M, typename... Args>
-		Vec(const Vec<M, T> &v, Args... args) {
-			build<0>(v, args...);
-		}
-
-		explicit Vec(T t = T(0)) {
+		template<typename U>
+		explicit Vec(U t) {
 			for(uint i = 0; i != N; i++) {
 				vec[i] = t;
+			}
+		}
+
+		Vec() {
+			for(uint i = 0; i != N; i++) {
+				vec[i] = T(0);
 			}
 		}
 
@@ -71,7 +73,6 @@ class Vec
 				vec[i] = v[i];
 			}
 		}
-
 
 		T length2() const {
 			T sum = 0;
