@@ -267,7 +267,7 @@ class Type
 		}
 
 		template<typename T>
-		Type(T) : Type(typeid(T)) {
+		Type(const T &t) : Type(typeid(t)) {
 		}
 
 
@@ -279,8 +279,12 @@ class Type
 			return !operator ==(t);
 		}
 
-		bool operator<(const Type &t) const {
+		bool operator>(const Type &t) const {
 			return info->before(*t.info);
+		}
+
+		bool operator<(const Type &t) const {
+			return t.info->before(*info);
 		}
 
 		core::String name() const;
