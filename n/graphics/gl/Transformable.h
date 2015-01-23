@@ -33,9 +33,11 @@ class Transformable
 			return transform;
 		}
 
+		virtual ~Transformable() {
+		}
+
 	protected:
 		math::Transform<T> transform;
-
 };
 
 }
