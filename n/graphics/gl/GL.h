@@ -18,11 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_GL_GL
 
 #include <n/defines.h>
-#ifndef N_NO_GL
-
 #include <n/types.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
