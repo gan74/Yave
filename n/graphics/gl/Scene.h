@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_GL_SCENE_H
 
 #include "Transformable.h"
+#include <n/math/Volume.h>
 #include <n/core/Pair.h>
 #include <n/types.h>
 #ifndef N_NO_GL
@@ -88,20 +89,29 @@ class Scene : core::NonCopyable
 			typeMap.append(core::Pair<const Type, core::Array<Transformable<T> *>>(ty, a));
 		}
 
-		template<typename U>
+		template<typename U = Transformable<T>>
 		core::Array<U *> get() {
 			if(std::is_same<U, Transformable<T>>::value) {
-				return *reinterpret_cast<const core::Array<U *> *>(&transformables);
+				const core::Array<U *> *arr = reinterpret_cast<const core::Array<U *> *>(&transformables);
+				return *arr;
 			}
 			core::Array<U *> array(transformables.size());
 			for(const core::Pair<const Type, core::Array<Transformable<T> *>> &p : typeMap) {
 				if(!p._2.isEmpty()) {
 					if(dynamic_cast<const U *>(p._2.first())) {
-						array.append(*(reinterpret_cast<const core::Array<U *> *>(&p._2)));
+						const core::Array<U *> *arr = (reinterpret_cast<const core::Array<U *> *>(&p._2));
+						array.append(*arr);
 					}
 				}
 			}
 			return array;
+		}
+
+		template<typename U = Transformable<T>, typename V>
+		core::Array<U *> query(const V &vol) {
+			return get<U>().filtered([&](U *u) {
+				return vol.isInside(u->getTransform().getPosition(), u.getRadius());
+			});
 		}
 
 	private:

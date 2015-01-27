@@ -33,10 +33,15 @@ class Transformable
 			return transform;
 		}
 
+		T getRadius() const {
+			return radius;
+		}
+
 		virtual ~Transformable() {
 		}
 
 	protected:
+		T radius;
 		math::Transform<T> transform;
 };
 

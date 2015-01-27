@@ -26,7 +26,18 @@ template<typename T>
 class Volume
 {
 	public:
-		virtual bool isInside(const Vec<3, T> &) const = 0;
+		enum IntersectionState
+		{
+			Outside = 0,
+			Inside = 1,
+			Intersect = 2
+		};
+
+		virtual bool isInside(const Vec<3, T> &v) const {
+			return isInside(v, 0);
+		}
+
+		virtual IntersectionState isInside(const Vec<3, T> &, T) const = 0;
 };
 
 }

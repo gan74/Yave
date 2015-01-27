@@ -39,8 +39,15 @@ class Plane final : public Volume<T>
 		Plane(const Edge<T> &a, const Edge<T> &b) : Plane(a.getVec() ^ b.getVec(), a.getBegin()) {
 		}
 
-		virtual bool isInside(const Vec<3, T> &v) const override {
-			return getSignedDistance(v) < 0;
+		virtual typename Volume<T>::IntersectionState isInside(const Vec<3, T> &v, T r) const override {
+			T d = getSignedDistance(v);
+			if(d > r) {
+				return Volume<T>::Outside;
+			}
+			if(d < -r) {
+				return Volume<T>::Inside;
+			}
+			return Volume<T>::Intersect;
 		}
 
 		T getDistance(const Vec<3, T> &v) const {
