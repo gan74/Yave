@@ -87,6 +87,13 @@ class Matrix
 			}
 		}
 
+		template<typename X>
+		Matrix(const Matrix<N, M, X> &m) {
+			for(uint i = 0; i != N; i++) {
+				rows[i] = m[i];
+			}
+		}
+
 		Vec<M, T> &operator[](uint i) {
 			return rows[i];
 		}
@@ -272,9 +279,12 @@ namespace internal {
 	}
 }
 
-using Matrix4 = Matrix<4, 4>;
-using Matrix3 = Matrix<3, 3>;
-using Matrix2 = Matrix<2, 2>;
+template<typename T = float>
+using Matrix4 = Matrix<4, 4, T>;
+template<typename T = float>
+using Matrix3 = Matrix<3, 3, T>;
+template<typename T = float>
+using Matrix2 = Matrix<2, 2, T>;
 
 }
 }
