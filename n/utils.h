@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_UTILS_H
 
 #include <n/types.h>
-#include <vector>
 #include <cfloat>
 
 namespace n {
@@ -181,7 +180,7 @@ namespace core {
 		return n >> 1 ? log2ui(n >> 1) + 1 : 0;
 	}
 
-	template<typename I>
+	/*template<typename I>
 	void radixSort(I beg, I end) {
 		typedef typename TypeContent<I>::type ElemType;
 		static_assert(std::is_integral<ElemType>::value, "Element type needs to be integral");
@@ -204,7 +203,7 @@ namespace core {
 				buckets[j].clear();
 			}
 		}
-	}
+	}*/
 } //core
 } //n
 
