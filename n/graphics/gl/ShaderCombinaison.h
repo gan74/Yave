@@ -150,7 +150,7 @@ class ShaderCombinaison
 			glProgramUniform4fv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, const math::Matrix4 &m) {
+		void setValue(UniformAddr addr, const math::Matrix4<float> &m) {
 			glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
 		}
 
