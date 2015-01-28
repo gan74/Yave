@@ -110,7 +110,7 @@ class Scene : core::NonCopyable
 		template<typename U = Transformable<T>, typename V>
 		core::Array<U *> query(const V &vol) {
 			return get<U>().filtered([&](U *u) {
-				return vol.isInside(u->getTransform().getPosition(), u.getRadius());
+				return vol.isInside(u->getTransform().getPosition(), u->getRadius());
 			});
 		}
 
