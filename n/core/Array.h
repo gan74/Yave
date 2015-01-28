@@ -376,8 +376,8 @@ class Array : public ResizePolicy
 		}
 
 		template<typename C = std::less<T>>
-		void sort() {
-			std::sort(begin(), end(), C());
+		void sort(const C &c = C()) {
+			std::sort(begin(), end(), c);
 		}
 
 		bool isSorted() const {
