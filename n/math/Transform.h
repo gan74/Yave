@@ -64,11 +64,11 @@ class Transform
 			return pos;
 		}
 
-		Matrix<3, 3, T> getBasis() const {
+		Matrix3<T> getBasis() const {
 			return Matrix<3, 3, T>(getX(), getY(), getZ()).transposed();
 		}
 
-		Matrix<4, 4, T> getMatrix() const {
+		Matrix4<T> getMatrix() const {
 			return Matrix<4, 4, T>(getX(), 0,
 								   getY(), 0,
 								   getZ(), 0,
