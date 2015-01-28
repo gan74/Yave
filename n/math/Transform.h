@@ -71,7 +71,7 @@ class Transform
 		Matrix<4, 4, T> getMatrix() const {
 			return Matrix<4, 4, T>(getX(), 0,
 								   getY(), 0,
-								   getY(), 0,
+								   getZ(), 0,
 								   pos, 1).transposed();
 		}
 
