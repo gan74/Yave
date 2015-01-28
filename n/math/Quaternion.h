@@ -144,12 +144,12 @@ class Quaternion
 		}
 
 		static Quaternion<T> fromEuler(T yaw, T pitch, T roll) {
-			T cosYaw = cos(yaw * T(0.5));
-			T sinYaw = sin(yaw * T(0.5));
-			T cosPitch = cos(pitch * T(0.5));
-			T sinPitch = sin(pitch * T(0.5));
-			T cosRoll = cos(roll * T(0.5));
-			T sinRoll = sin(roll * T(0.5));
+			T cosYaw = cos(pitch * T(0.5));
+			T sinYaw = sin(pitch * T(0.5));
+			T cosPitch = cos(roll * T(0.5));
+			T sinPitch = sin(roll * T(0.5));
+			T cosRoll = cos(yaw * T(0.5));
+			T sinRoll = sin(yaw * T(0.5));
 			return Quaternion<T>(cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw,
 								 cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw,
 								 sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw,
