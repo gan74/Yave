@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Shader.h"
 #include "UniformBuffer.h"
+#include "Context.h"
 #include "Texture.h"
 #include <n/core/Map.h>
 #include <n/math/Matrix.h>
@@ -100,6 +101,7 @@ class ShaderCombinaison
 					glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, infos.buffer->handle);
 				}
 			}
+			Context::getContext()->shader = const_cast<ShaderCombinaison *>(this);
 		}
 
 		UniformAddr getAddr(const core::String &name) {

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_NO_GL
 
 #include "Context.h"
+#include "ShaderCombinaison.h"
 #include "GL.h"
 #include <n/concurent/Thread.h>
 #include <n/core/Timer.h>
@@ -61,7 +62,47 @@ Context::Context() {
 }
 
 Context::~Context() {
+}
 
+
+bool Context::checkGLError() {
+	int error = glGetError();
+	if(error) {
+		fatal(("Warning : error : " + (error == GL_INVALID_OPERATION ? core::String("INVALID OPERATION") :
+			(error == GL_INVALID_ENUM ? core::String("INVALID ENUM") :
+			(error == GL_INVALID_VALUE ? core::String("INVALID VALUE") :
+			(error == GL_OUT_OF_MEMORY ? core::String("OUT OF MEMORY") : core::String(error)))))).toChar());
+		return true; // just in case...
+	}
+	return false;
+}
+
+void Context::setModelMatrix(const math::Matrix4<> &m) {
+	model = m;
+	#ifdef N_USE_MATRIX_BUFFER
+	matrixBuffer->set(model, 0);
+	matrixBuffer->bind(0);
+	#else
+	shader->setValue("n_ModelMatrix", model);
+	#endif
+}
+
+void Context::setViewMatrix(const math::Matrix4<> &m) {
+	if(view == m) {
+		return;
+	}
+	view = m;
+	shader->setValue("n_ViewMatrix", m);
+	shader->setValue("n_ViewProjectionMatrix", projection * m);
+}
+
+void Context::setProjectionMatrix(const math::Matrix4<> &m) {
+	if(projection == m) {
+		return;
+	}
+	projection = m;
+	shader->setValue("n_ProjectionMatrix", m);
+	shader->setValue("n_ViewProjectionMatrix", m * view);
 }
 
 }

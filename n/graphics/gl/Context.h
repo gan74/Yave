@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/concurent/SynchronizedQueue.h>
 #include <n/core/Functor.h>
+#include <n/math/Matrix.h>
 #include <n/defines.h>
 #ifndef N_NO_GL
 
@@ -27,6 +28,8 @@ namespace n {
 namespace graphics {
 namespace gl {
 
+class ShaderCombinaison;
+
 class Context
 {
 	public:
@@ -34,13 +37,27 @@ class Context
 
 		void addGLTask(const core::Functor<void()> &f);
 
+		void setProjectionMatrix(const math::Matrix4<> &m);
+		void setViewMatrix(const math::Matrix4<> &m);
+		void setModelMatrix(const math::Matrix4<> &m);
+
 		bool processTasks();
 
+		static bool checkGLError();
+
 	private:
+		friend class ShaderCombinaison;
+
 		Context();
 		~Context();
 
 		concurent::SynchronizedQueue<core::Functor<void()>> tasks;
+
+		math::Matrix4<> projection;
+		math::Matrix4<> view;
+		math::Matrix4<> model;
+
+		ShaderCombinaison *shader;
 };
 
 }
