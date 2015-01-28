@@ -37,7 +37,7 @@ class Volume
 			return isInside(v, 0);
 		}
 
-		virtual IntersectionState isInside(const Vec<3, T> &, T) const = 0;
+		virtual bool isInside(const Vec<3, T> &, T) const = 0;
 };
 
 }

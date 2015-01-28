@@ -42,16 +42,13 @@ class StaticConvexVolume final : public Volume<T>
 			return &planes + N;
 		}
 
-		virtual typename Volume<T>::IntersectionState isInside(const Vec<3, T> &v, T r) const override {
-			typename Volume<T>::IntersectionState i = Volume<T>::Inside;
+		virtual bool isInside(const Vec<3, T> &v, T r) const override {
 			for(const Plane<T> &p : *this) {
-				typename Volume<T>::IntersectionState ir = p.isInside(v, r);
-				if(ir == Volume<T>::Outside) {
-					return Volume<T>::Outside;
+				if(!p.isInside(v, r)) {
+					return false;
 				}
-				i |= ir;
 			}
-			return i & Volume<T>::Intersect ? Volume<T>::Intersect : Volume<T>::Inside;
+			return N;
 		}
 
 	private:
