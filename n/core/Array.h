@@ -70,9 +70,23 @@ class Array : public ResizePolicy
 		Array() : ResizePolicy(), data(0), dataEnd(0), allocEnd(0) {
 		}
 
+		~Array() {
+			makeEmpty();
+			free(data);
+		}
+
 		template<typename C>
 		Array(const C &c) : Array() {
 			append(c);
+		}
+
+		template<typename C>
+		Array(const Array<C> &a) : Array() {
+			append(a);
+		}
+
+		Array(const Array<T> &a) : Array() {
+			append(a);
 		}
 
 		Array(uint s) : Array() {
