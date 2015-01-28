@@ -29,6 +29,9 @@ template<typename T = float>
 class VertexBuffer
 {
 	public:
+		VertexBuffer(const core::Array<Vertex<T>> &a = core::Array<Vertex<T>>()) : vertices(a) {
+		}
+
 		uint append(const Vertex<T> &v) {
 			vertices.append(v);
 			return vertices.size() - 1;
