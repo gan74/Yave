@@ -35,35 +35,35 @@ class Vertex
 		Vertex(const math::Vec<3, T> &p, const math::Vec<3, T> &n = math::Vec<3, T>(), const math::Vec<2, T> &t = math::Vec<2, T>()) : pos(p), tex(t), norm(n) {
 		}
 
-		const math::Vec<3, T> &getPosition() const {
+		const math::Vec<3, T> &p() const {
 			return pos;
 		}
 
-		const math::Vec<3, T> &getNormal() const {
+		const math::Vec<3, T> &n() const {
 			return norm;
 		}
 
-		const math::Vec<2, T> &getTexCoord() const {
+		const math::Vec<2, T> &c() const {
 			return tex;
 		}
 
-		const math::Vec<3, T> &getTangent() const {
+		const math::Vec<3, T> &t() const {
 			return tang;
 		}
 
-		math::Vec<3, T> &getPosition() {
+		math::Vec<3, T> &p() {
 			return pos;
 		}
 
-		math::Vec<3, T> &getNormal() {
+		math::Vec<3, T> &n() {
 			return norm;
 		}
 
-		math::Vec<2, T> &getTexCoord() {
+		math::Vec<2, T> &c() {
 			return tex;
 		}
 
-		math::Vec<3, T> &getTangent() {
+		math::Vec<3, T> &t() {
 			return tang;
 		}
 

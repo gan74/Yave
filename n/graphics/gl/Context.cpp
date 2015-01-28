@@ -58,6 +58,9 @@ Context::Context() {
 	std::cout<<"Running on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using GL "<<glGetString(GL_VERSION)<<std::endl;
 
 	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_CULL_FACE);
+
+	std::cerr<<"NO DEPTH BUFFERING"<<std::endl;
 	glGetError();
 }
 

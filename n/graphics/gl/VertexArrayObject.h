@@ -40,11 +40,11 @@ class VertexArrayObject
 				data.bind();
 				indexes.bind();
 				glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
-				glVertexAttribPointer(1, 2, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T)));
-				glVertexAttribPointer(2, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
+				glVertexAttribPointer(1, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
+				glVertexAttribPointer(2, 2, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T)));
 				glVertexAttribPointer(3, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
 				glEnableVertexAttribArray(0);
-				//glEnableVertexAttribArray(1);
+				glEnableVertexAttribArray(1);
 				//glEnableVertexAttribArray(2);
 				//glEnableVertexAttribArray(3);
 			} else {

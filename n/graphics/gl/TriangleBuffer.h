@@ -67,17 +67,26 @@ class TriangleBuffer
 				friend class TriangleBuffer;
 				FreezedTriangleBuffer(const TriangleBuffer &b) : indexes(b.trianglesData), vertices(b.vertices.getVertices()) {
 					for(const TriData &t : b.trianglesData) {
-						math::Vec<3, T> edges[] = {vertices[t.vts[1]].getPosition() - vertices[t.vts[0]].getPosition(), vertices[t.vts[2]].getPosition() - vertices[t.vts[0]].getPosition()};
-						T dt[] = {vertices[t.vts[1]].getTexCoord().y() - vertices[t.vts[0]].getTexCoord().y(), vertices[t.vts[2]].getTexCoord().y() - vertices[t.vts[0]].getTexCoord().y()};
-						T db[] = {vertices[t.vts[1]].getTexCoord().x() - vertices[t.vts[0]].getTexCoord().x(), vertices[t.vts[2]].getTexCoord().x() - vertices[t.vts[0]].getTexCoord().x()};
+						math::Vec<3, T> edges[] = {vertices[t.vts[1]].p() - vertices[t.vts[0]].p(), vertices[t.vts[2]].p() - vertices[t.vts[0]].p()};
+						T dt[] = {vertices[t.vts[1]].t().y() - vertices[t.vts[0]].t().y(), vertices[t.vts[2]].t().y() - vertices[t.vts[0]].t().y()};
+						T db[] = {vertices[t.vts[1]].t().x() - vertices[t.vts[0]].t().x(), vertices[t.vts[2]].t().x() - vertices[t.vts[0]].t().x()};
 						T scale = T(1) / ((db[0] * dt[1]) - (db[1] * dt[0]));
 						math::Vec<3, T> ta = ((edges[0] * dt[1]) - (edges[1] * dt[0])) * scale;
-						vertices[t.vts[0]].getTangent() += ta;
-						vertices[t.vts[1]].getTangent() += ta;
-						vertices[t.vts[2]].getTangent() += ta;
+						vertices[t.vts[0]].t() += ta;
+						vertices[t.vts[1]].t() += ta;
+						vertices[t.vts[2]].t() += ta;
+					}
+					if(!vertices.isEmpty() && vertices.first().n().isNull()) {
+						for(const TriData &t : b.trianglesData) {
+							math::Vec<3, T> nr = (vertices[t.vts[1]].p() - vertices[t.vts[0]].p()).cross(vertices[t.vts[2]].p() - vertices[t.vts[0]].p()).normalized();
+							vertices[t.vts[0]].n() += nr;
+							vertices[t.vts[1]].n() += nr;
+							vertices[t.vts[2]].n() += nr;
+						}
 					}
 					for(Vertex<T> &v : vertices) {
-						v.getTangent().normalize();
+						v.t().normalize();
+						v.n().normalize();
 					}
 				}
 

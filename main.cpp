@@ -14,13 +14,13 @@
 #include <n/graphics/gl/TriangleBuffer.h>
 #include <n/graphics/gl/VertexArrayObject.h>
 #include <n/graphics/gl/ShaderCombinaison.h>
+#include <n/graphics/gl/Camera.h>
 
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>
 
 using namespace n;
 using namespace n::graphics;
-using namespace n::graphics::gl;
 using namespace n::math;
 using namespace n::core;
 
@@ -63,25 +63,24 @@ int main(int, char **) {
 	Image image = ImageLoader::load("mq1.png", false);
 	gl::Texture tex(image);
 
-	gl::TriangleBuffer<> tris;
-	tris.append(Vec3(-1, -1, 0), Vec3(0, 0, 0), Vec3(1, -1, 0));
-	tris.append(Vec3(1, 1, 0), Vec3(0, 0, 0), Vec3(1, -1, 0));
-	gl::VertexArrayObject<> vao(tris.freezed());
+	gl::VertexArrayObject<> vao(gl::TriangleBuffer<>::getSphere());
 	gl::Shader<gl::VertexShader> vert("#version 420 core\n"
 										"layout(location = 0) in vec3 n_VertexPosition;"
-										"layout(std140) uniform colors { vec3 color[512]; };"
-										"out vec3 c;"
+										"layout(location = 1) in vec3 n_VertexNormal;"
+										"uniform mat4 n_ViewProjectionMatrix;"
+										"uniform mat4 n_ModelMatrix;"
+										"out vec3 color;"
 										"void main() {"
-											"c = color[gl_VertexID];"
-											"gl_Position = vec4(n_VertexPosition, 1.0);"
+											"gl_Position = n_ViewProjectionMatrix * n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
+											"color = (n_VertexNormal + 1) * 0.5;"
 										"}");
 
 	gl::Shader<gl::FragmentShader> frag("#version 420 core\n"
-										"in vec3 c;"
-										"uniform sampler2D tex;"
 										"layout(location = 0) out vec4 n_FragColor;"
+										"in vec3 color;"
+										"in float id;"
 										"void main() {"
-											"n_FragColor = vec4(c, 1.0);"
+											"n_FragColor = vec4(vec3(color), 1.0);"
 										"}");
 
 
@@ -93,16 +92,16 @@ int main(int, char **) {
 		fatal("Unable to compile shader.");
 	}
 
-	gl::UniformBuffer<Vec4> colors(512);
-	for(uint i = 0; i != 512; i++) {
-		colors[i] = Vec4(random(), random(), random(), 0.0);
-	}
-
-	shader["color"] = math::Vec3(1, 1, 0);
-	shader["tex"] = 0;
-	shader["colors"] = colors;
-
 	shader.bind();
+
+	gl::Camera<> cam;
+	cam.setPosition(Vec3(0, 0, 3));
+	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
+	std::cout<<cam.getForward()<<std::endl;
+
+	gl::Context::getContext()->setModelMatrix(Matrix4<>::identity());
+	gl::Context::getContext()->setProjectionMatrix(cam.getProjectionMatrix());
+	gl::Context::getContext()->setViewMatrix(cam.getViewMatrix());
 
 	while(run(win)) {
 
@@ -112,7 +111,8 @@ int main(int, char **) {
 
 		gl::Context::getContext()->processTasks();
 		glFlush();
-		if(glGetError()) {
+
+		if(gl::Context::checkGLError()) {
 			fatal("GL error");
 		}
 	}
