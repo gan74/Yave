@@ -30,10 +30,10 @@ template<typename T = float>
 class VertexArrayObject
 {
 	public:
-		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : size(tr.indexes.size() / 3), data(tr.vertices), indexes(tr.indexes), handle(0) {
+		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius), size(tr.indexes.size() / 3), data(tr.vertices), indexes(tr.indexes), handle(0) {
 		}
 
-		void bind() {
+		void bind() const {
 			if(!handle) {
 				glGenVertexArrays(1, &handle);
 				glBindVertexArray(handle);
@@ -45,14 +45,14 @@ class VertexArrayObject
 				glVertexAttribPointer(3, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
 				glEnableVertexAttribArray(0);
 				glEnableVertexAttribArray(1);
-				//glEnableVertexAttribArray(2);
-				//glEnableVertexAttribArray(3);
+				glEnableVertexAttribArray(2);
+				glEnableVertexAttribArray(3);
 			} else {
 				glBindVertexArray(handle);
 			}
 		}
 
-		void draw(uint instances = 1, uint beg = 0, uint end = 0) {
+		void draw(uint instances = 1, uint beg = 0, uint end = 0) const {
 			bind();
 			if(end <= beg) {
 				end = size;
@@ -60,12 +60,17 @@ class VertexArrayObject
 			glDrawElementsInstanced(GL_TRIANGLES, 3 * (end - beg), GLType<uint>::value, (const void *)(3 * beg * sizeof(uint)), instances);
 		}
 
+		T getRadius() const {
+			return radius;
+		}
+
 	private:
+		T radius;
 		uint size;
 		StaticBuffer<Vertex<T>, Array> data;
 		StaticBuffer<uint, Index> indexes;
 
-		GLuint handle;
+		mutable GLuint handle;
 };
 
 

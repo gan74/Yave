@@ -62,6 +62,7 @@ class TriangleBuffer
 
 				core::Array<uint> indexes;
 				core::Array<Vertex<T>> vertices;
+				T radius;
 
 			private:
 				friend class TriangleBuffer;
@@ -85,9 +86,11 @@ class TriangleBuffer
 						}
 					}
 					for(Vertex<T> &v : vertices) {
+						radius = std::max(v.p().length2(), radius);
 						v.t().normalize();
 						v.n().normalize();
 					}
+					radius = sqrt(radius);
 				}
 
 

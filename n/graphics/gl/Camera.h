@@ -29,9 +29,9 @@ namespace gl {
 template<typename T = float>
 class Camera final : public Transformable<T>, public math::Volume<T>
 {
-	using Transformable<T>::transform; // WHY ?
-	using Transformable<T>::radius; // WHY ?
-
+	protected:
+		using Transformable<T>::transform; // WHY ?
+		using Transformable<T>::radius; // WHY ?
 
 	public:
 		Camera() : far(1000), near(1), ratio(1), fov(math::pi<T>() / 2) {

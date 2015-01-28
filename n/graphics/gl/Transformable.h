@@ -37,12 +37,38 @@ class Transformable
 			return radius;
 		}
 
+		const math::Vec<3, T> getPosition() const {
+			return transform.getPosition();
+		}
+
+		const math::Quaternion<T> getRotation() const {
+			return transform.getRotation();
+		}
+
 		virtual ~Transformable() {
 		}
 
 	protected:
 		T radius;
 		math::Transform<T> transform;
+};
+
+template<typename T = float>
+class Movable : public Transformable<T>
+{
+
+	public:
+		void setPosition(const math::Vec<3, T> &pos) {
+			transform = math::Transform<T>(transform.getRotation(), pos);
+		}
+
+		void setRotation(const math::Quaternion<T> &q) {
+			transform = math::Transform<T>(q, transform.getPosition());
+		}
+
+	protected:
+		using Transformable<T>::transform;
+		using Transformable<T>::radius;
 };
 
 }

@@ -48,7 +48,7 @@ class StaticBuffer : core::NonCopyable
 			}
 		}
 
-		void bind() {
+		void bind() const {
 			glBindBuffer(Binding, handle);
 		}
 
