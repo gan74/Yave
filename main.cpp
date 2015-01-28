@@ -63,24 +63,27 @@ int main(int, char **) {
 	Image image = ImageLoader::load("mq1.png", false);
 	gl::Texture tex(image);
 
-	gl::VertexArrayObject<> vao(gl::TriangleBuffer<>::getSphere());
+	gl::VertexArrayObject<> vao(gl::TriangleBuffer<>::getCube());
 	gl::Shader<gl::VertexShader> vert("#version 420 core\n"
 										"layout(location = 0) in vec3 n_VertexPosition;"
 										"layout(location = 1) in vec3 n_VertexNormal;"
 										"uniform mat4 n_ViewProjectionMatrix;"
 										"uniform mat4 n_ModelMatrix;"
+										"out vec3 normal;"
 										"out vec3 color;"
 										"void main() {"
 											"gl_Position = n_ViewProjectionMatrix * n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
-											"color = (n_VertexNormal + 1) * 0.5;"
+											"normal = (n_ModelMatrix * vec4(n_VertexNormal, 1.0)).xyz;"
+											"color = n_VertexNormal;"
 										"}");
 
 	gl::Shader<gl::FragmentShader> frag("#version 420 core\n"
 										"layout(location = 0) out vec4 n_FragColor;"
+										"in vec3 normal;"
 										"in vec3 color;"
-										"in float id;"
 										"void main() {"
-											"n_FragColor = vec4(vec3(color), 1.0);"
+											"n_FragColor = vec4(color * 0.5 + 0.5, 1.0);"
+											"/*vec4(vec3(dot(normal, normalize(vec3(1, 1, 1))) * 0.75 + 0.25), 1.0);*/"
 										"}");
 
 
@@ -99,11 +102,22 @@ int main(int, char **) {
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
 	std::cout<<cam.getForward()<<std::endl;
 
-	gl::Context::getContext()->setModelMatrix(Matrix4<>::identity());
 	gl::Context::getContext()->setProjectionMatrix(cam.getProjectionMatrix());
 	gl::Context::getContext()->setViewMatrix(cam.getViewMatrix());
+	Transform<> tr;
+	Vec3 axis(random(), random(), random());
 
+	Timer timer;
 	while(run(win)) {
+		gl::Context::getContext()->setModelMatrix(tr.getMatrix());
+
+		double t = timer.reset() * 5;
+		axis = (axis * (1 - t) + Vec3(random(), random(), random()) * t).normalized();
+		Quaternion<> q = Quaternion<>::fromAxisAngle(axis * 2 - 1, random() * t);
+		tr = Transform<>(tr.getRotation() * q, tr.getPosition());
+
+
+
 
 		glClear(GL_COLOR_BUFFER_BIT);
 		tex.bind();
