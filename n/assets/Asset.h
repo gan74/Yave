@@ -32,14 +32,13 @@ class AssetPtr : public core::SmartPtr<const T *, concurent::auint>
 		}
 
 		bool isValid() const {
-			return this->operator*() != InvalidPtr;
+			return this->pointer() && this->operator*() != InvalidPtr;
 		}
 
 		void invalidate() const {
-			if(this->operator*() && isValid()) {
-				this->operator*();
+			if(isValid()) {
+				this->operator*() = InvalidPtr;
 			}
-			this->operator*() = InvalidPtr;
 		}
 };
 
@@ -76,6 +75,14 @@ class Asset
 
 		bool isNull() const {
 			return !*ptr || !isValid();
+		}
+
+		bool operator==(const Asset<T> &a) const {
+			return ptr == a.ptr;
+		}
+
+		bool operator!=(const Asset<T> &a) const {
+			return !operator==(a);
 		}
 
 	private:

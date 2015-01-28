@@ -63,7 +63,7 @@ class SmartPtr
 		}
 
 		uint getReferenceCount() const {
-			return *count;
+			return count ? uint(*count) : 0;
 		}
 
 		T *pointer() {
@@ -131,6 +131,9 @@ class SmartPtr
 		}
 
 	private:
+		friend class SmartPtr<const T>;
+		friend class SmartPtr<typename TypeInfo<T>::nonConst>;
+
 		void ref(const SmartPtr<T, C, Proxy> &p) {
 			if((count = p.count)) {
 				(*count)++;
