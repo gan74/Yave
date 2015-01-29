@@ -14,57 +14,47 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_TEXTURE_H
-#define N_GRAPHICS_GL_TEXTURE_H
+#ifndef N_GRPHICS_GL_RENDERBATCH
+#define N_GRPHICS_GL_RENDERBATCH
 
-#include <n/graphics/Image.h>
-#include <n/defines.h>
-#include "GL.h"
+#include <n/math/Matrix.h>
+#include "VertexArrayObject.h"
+#include "Context.h"
 #ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
 namespace gl {
 
-class Texture
+template<typename T = float>
+class RenderBatch
 {
-	struct Data
-	{
-		Data() : handle(0) {
+	public:
+		RenderBatch(const math::Matrix4<T> &m, const VertexArrayObject<T> *va) : instanciable(true), vao(va), matrix(m) {
 		}
 
-		~Data() {
-			if(handle) {
-				glDeleteTextures(1, &handle);
+		void operator()() const {
+			if(vao) {
+				gl::Context::getContext()->setModelMatrix(matrix);
+				vao->draw();
 			}
 		}
 
-		GLuint handle;
-	};
-
-	public:
-		Texture(const Image &i);
-		Texture();
-		~Texture();
-
-		void bind() const;
-
-		bool operator==(const Texture &t) const;
-		bool operator!=(const Texture &t) const;
+		bool isInstanciable() const {
+			return instanciable;
+		}
 
 	private:
-		friend class ShaderCombinaison;
+		bool instanciable;
 
-		int getHandle() const;
-
-		Image image;
-		mutable core::SmartPtr<Data> data;
+		const VertexArrayObject<T> *vao;
+		math::Matrix4<T> matrix;
 };
 
 }
 }
 }
-
 #endif
 
-#endif // N_GRAPHICS_GL_TEXTURE_H
+#endif // N_GRPHICS_GL_RENDERBATCH
+

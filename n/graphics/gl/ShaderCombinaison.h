@@ -93,6 +93,9 @@ class ShaderCombinaison
 		}
 
 		void bind() const {
+			if(Context::getContext()->shader == this) {
+				return;
+			}
 			glUseProgram(handle);
 			for(const core::Pair<const core::String, BlockInfo> &i : blocks) {
 				const BlockInfo &infos = i._2;

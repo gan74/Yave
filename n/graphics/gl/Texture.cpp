@@ -32,9 +32,19 @@ namespace gl {
 Texture::Texture(const Image &i) : image(i), data(0) {
 }
 
+Texture::Texture() : data(0) {
+}
+
 Texture::~Texture() {
 }
 
+bool Texture::operator==(const Texture &t) const {
+	return image == t.image;
+}
+
+bool Texture::operator!=(const Texture &t) const {
+	return !operator==(t);
+}
 
 void Texture::bind() const {
 	if(!data) {

@@ -75,6 +75,11 @@ class Transform
 								   pos, 1).transposed();
 		}
 
+
+		operator Matrix4<T>() const {
+			return getMatrix();
+		}
+
 	private:
 		Vec<3, T> pos;
 		Quaternion<T> rot;

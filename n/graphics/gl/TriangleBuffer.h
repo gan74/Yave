@@ -66,7 +66,7 @@ class TriangleBuffer
 
 			private:
 				friend class TriangleBuffer;
-				FreezedTriangleBuffer(const TriangleBuffer &b) : indexes(b.trianglesData), vertices(b.vertices.getVertices()) {
+				FreezedTriangleBuffer(const TriangleBuffer &b) : indexes(b.trianglesData), vertices(b.vertices.getVertices()), radius(0) {
 					for(const TriData &t : b.trianglesData) {
 						math::Vec<3, T> edges[] = {vertices[t.vts[1]].p() - vertices[t.vts[0]].p(), vertices[t.vts[2]].p() - vertices[t.vts[0]].p()};
 						T dt[] = {vertices[t.vts[1]].t().y() - vertices[t.vts[0]].t().y(), vertices[t.vts[2]].t().y() - vertices[t.vts[0]].t().y()};

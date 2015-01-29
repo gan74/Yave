@@ -72,7 +72,7 @@ class Scene : core::NonCopyable
 		}
 
 		template<typename U>
-		void add(U *tr) {
+		void insert(U *tr) {
 			if((void *)((Transformable<T> *)tr) != (void *)tr) {
 				fatal("Virtual inherited Transformable<>");
 			}

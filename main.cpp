@@ -15,6 +15,8 @@
 #include <n/graphics/gl/VertexArrayObject.h>
 #include <n/graphics/gl/ShaderCombinaison.h>
 #include <n/graphics/gl/Camera.h>
+#include <n/graphics/gl/StaticMesh.h>
+#include <n/graphics/gl/Material.h>
 
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>
@@ -57,13 +59,25 @@ bool run(SDL_Window *mainWindow) {
 	return cc;
 }
 
+const gl::VertexArrayObject<> *getCube() {
+	static gl::VertexArrayObject<> *c = 0;
+	if(!c) {
+		c = new gl::VertexArrayObject<>(gl::TriangleBuffer<>::getCube());
+	}
+	return c;
+}
+
+
+class Cube : public gl::StaticMesh<>
+{
+	public:
+		Cube() : gl::StaticMesh<>(getCube()) {
+		}
+};
+
 int main(int, char **) {
 	SDL_Window *win = createWindow();
 
-	Image image = ImageLoader::load("mq1.png", false);
-	gl::Texture tex(image);
-
-	gl::VertexArrayObject<> vao(gl::TriangleBuffer<>::getCube());
 	gl::Shader<gl::VertexShader> vert("#version 420 core\n"
 										"layout(location = 0) in vec3 n_VertexPosition;"
 										"layout(location = 1) in vec3 n_VertexNormal;"
@@ -86,6 +100,8 @@ int main(int, char **) {
 											"/*vec4(vec3(dot(normal, normalize(vec3(1, 1, 1))) * 0.75 + 0.25), 1.0);*/"
 										"}");
 
+	gl::Material<> mat;
+	mat.setColor(Vec4(1, 0, 0, 1));
 
 	gl::ShaderCombinaison shader(&frag, &vert, 0);
 	if(!shader.isValid()) {
@@ -100,28 +116,34 @@ int main(int, char **) {
 	gl::Camera<> cam;
 	cam.setPosition(Vec3(0, 0, 3));
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
-	std::cout<<cam.getForward()<<std::endl;
 
 	gl::Context::getContext()->setProjectionMatrix(cam.getProjectionMatrix());
 	gl::Context::getContext()->setViewMatrix(cam.getViewMatrix());
-	Transform<> tr;
-	Vec3 axis(random(), random(), random());
+	/*Transform<> tr;
+	Vec3 axis(random(), random(), random());*/
 
-	Timer timer;
+	gl::Scene<> scene;
+	for(uint i = 0; i != 1000; i++) {
+		Cube *cube = new Cube();
+		cube->setPosition(Vec3(random(), random(), random()) * 100 - 50);
+		scene.insert(cube);
+	}
+
 	while(run(win)) {
-		gl::Context::getContext()->setModelMatrix(tr.getMatrix());
-
-		double t = timer.reset() * 5;
-		axis = (axis * (1 - t) + Vec3(random(), random(), random()) * t).normalized();
-		Quaternion<> q = Quaternion<>::fromAxisAngle(axis * 2 - 1, random() * t);
-		tr = Transform<>(tr.getRotation() * q, tr.getPosition());
-
-
-
 
 		glClear(GL_COLOR_BUFFER_BIT);
-		tex.bind();
-		vao.draw();
+
+
+		Timer timer;
+		Array<gl::StaticMesh<> *> meshes = scene.query<gl::StaticMesh<>>(cam);
+		std::cout<<meshes.size()<<" in "<<timer.elapsed() * 1000<<"ms"<<std::endl;
+		gl::RenderQueue<> queue;
+		for(gl::Renderable<> *m : meshes) {
+			m->render(queue);
+		}
+		for(auto q : queue.getBatches()) {
+			q();
+		}
 
 		gl::Context::getContext()->processTasks();
 		glFlush();

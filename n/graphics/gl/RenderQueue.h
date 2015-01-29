@@ -14,14 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_STATICMESH
-#define N_GRAPHICS_GL_STATICMESH
+#ifndef N_GRAPHICS_GL_RENDERQUEUE
+#define N_GRAPHICS_GL_RENDERQUEUE
 
-#include "Transformable.h"
-#include "VertexArrayObject.h"
-#include "Renderable.h"
-#include "Context.h"
-#include <n/defines.h>
+#include <n/core/Array.h>
+#include <n/core/Functor.h>
+#include "RenderBatch.h"
 #ifndef N_NO_GL
 
 namespace n {
@@ -29,40 +27,46 @@ namespace graphics {
 namespace gl {
 
 template<typename T = float>
-class StaticMesh : public Movable<T>, public Renderable<T>
+class RenderQueue
 {
 	public:
-		StaticMesh(const VertexArrayObject<T> *v) : vao(v) {
-			radius = vao ? vao->getRadius() : 0;
+		//typedef core::Array<core::Functor<void()>>::const_iterator const_iterator;
+
+		RenderQueue() {
 		}
 
-		virtual void render(RenderQueue<T> &q) override {
-			q.insert(RenderBatch<T>(this->getTransform(), vao));
+		void insert(const core::Functor<void()> &f) {
+			funcs.append(f);
 		}
 
-		const VertexArrayObject<T> *getVertexArrayObject() const {
-			return vao;
+		void insert(const RenderBatch<T> &b) {
+			batches.append(b);
+		}
+
+		template<typename U>
+		RenderQueue &operator<<(const U &u) {
+			insert(u);
+			return *this;
+		}
+
+		const core::Array<core::Functor<void()>> &getFunctions() const {
+			return funcs;
+		}
+
+		const core::Array<RenderBatch<T>> &getBatches() const {
+			return batches;
 		}
 
 	private:
-		void draw() const {
-			if(vao) {
-				gl::Context::getContext()->setModelMatrix(this->getTransform());
-				vao->draw();
-			}
-		}
-
-		const VertexArrayObject<T> *vao;
-
-	protected:
-		using Transformable<T>::radius;
+		core::Array<RenderBatch<T>> batches;
+		core::Array<core::Functor<void()>> funcs;
 };
 
 }
 }
 }
 
-
 #endif
-#endif // N_GRAPHICS_GL_STATICMESH
+
+#endif // N_GRAPHICS_GL_RENDERQUEUE
 

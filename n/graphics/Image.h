@@ -89,6 +89,15 @@ class Image : private assets::Asset<ImageInternal>
 			return Color<T>((void *)(((byte *)in->data) + offset * in->format.bytePerPixel()), in->format);
 		}
 
+		bool operator==(const Image &i) const {
+			return Asset<ImageInternal>::operator==(i);
+		}
+
+		bool operator!=(const Image &i) const {
+			return !operator==(i);
+		}
+
+
 	private:
 		Image(const assets::Asset<ImageInternal> &t) : assets::Asset<ImageInternal>(t) {
 		}

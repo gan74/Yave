@@ -34,10 +34,11 @@ class Camera final : public Transformable<T>, public math::Volume<T>
 		using Transformable<T>::radius; // WHY ?
 
 	public:
-		Camera() : far(1000), near(1), ratio(1), fov(math::pi<T>() / 2) {
-			radius = far;
+		Camera() : zFar(1000), zNear(1), ratio(1), fov(math::pi<T>() / 2) {
+			radius = zFar;
 			computeViewMatrix();
 			computeProjectionMatrix();
+			computeFrustum();
 		}
 
 		void setPosition(const math::Vec<3, T> &pos) {
@@ -74,7 +75,7 @@ class Camera final : public Transformable<T>, public math::Volume<T>
 		virtual bool isInside(const math::Vec<3, T> &p, T r) const override {
 			math::Vec<3, T> w = (p - transform.getPosition());
 			T z = -w.dot(forward);
-			return z + r > near && z - r < far
+			return z + r > zNear && z - r < zFar
 					&& w.dot(frustum[0]) + r > 0
 					&& w.dot(frustum[1]) + r > 0
 					&& w.dot(frustum[2]) + r > 0
@@ -95,8 +96,8 @@ class Camera final : public Transformable<T>, public math::Volume<T>
 
 		void computeProjectionMatrix() {
 			T f = cos(fov / 2.0) / sin(fov / 2.0);
-			T z = far - near;
-			proj = math::Matrix4<T>(1.0 / (tan(fov / 2) * ratio), 0, 0, 0, 0, f, 0, 0, 0, 0, -(far + near) / z, -1, 0, 0, -(2 * far * near) / z, 0).transposed();
+			T z = zFar - zNear;
+			proj = math::Matrix4<T>(1.0 / (tan(fov / 2) * ratio), 0, 0, 0, 0, f, 0, 0, 0, 0, -(zFar + zNear) / z, -1, 0, 0, -(2 * zFar * zNear) / z, 0).transposed();
 		}
 
 		void computeFrustum() {
@@ -113,8 +114,8 @@ class Camera final : public Transformable<T>, public math::Volume<T>
 		}
 
 
-		float far;
-		float near;
+		float zFar;
+		float zNear;
 
 		float ratio;
 		float fov;
