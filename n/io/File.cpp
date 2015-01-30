@@ -26,6 +26,10 @@ File::File(const core::String &fileName) : IODevice(),
 	name(fileName), mode(IODevice::None) {
 }
 
+const core::String &File::getName() const {
+	return name;
+}
+
 bool File::open(int m) {
 	#ifndef N_IO_USE_C_FILE
 	if(m == IODevice::None) {
@@ -65,7 +69,7 @@ bool File::open(int m) {
 	if(isOpen()) {
 		close();
 	}
-	core::String openMode;
+	core::String openMode = "r";
 	if(m & IODevice::Read && m & IODevice::Write) {
 		openMode = "r+";
 	} else if(m & IODevice::Write) {

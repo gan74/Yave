@@ -44,6 +44,8 @@ class File : public IODevice, core::NonCopyable
 		uint writeBytes(const char *b, uint len) override;
 		uint readBytes(char *b, uint len = -1) override;
 
+		const core::String &getName() const;
+
 
 	private:
 		#ifndef N_IO_USE_C_FILE
