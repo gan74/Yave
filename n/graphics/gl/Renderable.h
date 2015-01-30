@@ -24,13 +24,12 @@ namespace n {
 namespace graphics {
 namespace gl {
 
-template<typename T = float>
 class Renderable
 {
 	public:
-		virtual void render(RenderQueue<T> &q) = 0;
+		virtual void render(RenderQueue &q) = 0;
 
-		virtual void renderDebug(RenderQueue<T> &q) {
+		virtual void renderDebug(RenderQueue &q) {
 			render(q);
 		}
 };

@@ -28,19 +28,18 @@ namespace n {
 namespace graphics {
 namespace gl {
 
-template<typename T = float>
-class StaticMesh : public Movable<T>, public Renderable<T>
+class StaticMesh : public Movable<float>, public Renderable
 {
 	public:
-		StaticMesh(const VertexArrayObject<T> *v) : vao(v) {
+		StaticMesh(const VertexArrayObject<float> *v) : vao(v) {
 			radius = vao ? vao->getRadius() : 0;
 		}
 
-		virtual void render(RenderQueue<T> &q) override {
-			q.insert(RenderBatch<T>(this->getTransform(), vao));
+		virtual void render(RenderQueue &q) override {
+			q.insert(RenderBatch(this->getTransform(), vao));
 		}
 
-		const VertexArrayObject<T> *getVertexArrayObject() const {
+		const VertexArrayObject<float> *getVertexArrayObject() const {
 			return vao;
 		}
 
@@ -52,10 +51,9 @@ class StaticMesh : public Movable<T>, public Renderable<T>
 			}
 		}
 
-		const VertexArrayObject<T> *vao;
-
 	protected:
-		using Transformable<T>::radius;
+		const VertexArrayObject<float> *vao;
+		using Transformable<>::radius;
 };
 
 }

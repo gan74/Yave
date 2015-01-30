@@ -26,7 +26,6 @@ namespace n {
 namespace graphics {
 namespace gl {
 
-template<typename T = float>
 class RenderQueue
 {
 	public:
@@ -39,7 +38,7 @@ class RenderQueue
 			funcs.append(f);
 		}
 
-		void insert(const RenderBatch<T> &b) {
+		void insert(const RenderBatch &b) {
 			batches.append(b);
 		}
 
@@ -53,12 +52,12 @@ class RenderQueue
 			return funcs;
 		}
 
-		const core::Array<RenderBatch<T>> &getBatches() const {
+		const core::Array<RenderBatch> &getBatches() const {
 			return batches;
 		}
 
 	private:
-		core::Array<RenderBatch<T>> batches;
+		core::Array<RenderBatch> batches;
 		core::Array<core::Functor<void()>> funcs;
 };
 

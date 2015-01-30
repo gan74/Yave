@@ -26,11 +26,10 @@ namespace n {
 namespace graphics {
 namespace gl {
 
-template<typename T = float>
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<T> &m, const VertexArrayObject<T> *va) : instanciable(true), vao(va), matrix(m) {
+		RenderBatch(const math::Matrix4<> &m, const VertexArrayObject<float> *va) : instanciable(true), vao(va), matrix(m) {
 		}
 
 		void operator()() const {
@@ -47,8 +46,8 @@ class RenderBatch
 	private:
 		bool instanciable;
 
-		const VertexArrayObject<T> *vao;
-		math::Matrix4<T> matrix;
+		const VertexArrayObject<float> *vao;
+		math::Matrix4<> matrix;
 };
 
 }
