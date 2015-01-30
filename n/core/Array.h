@@ -67,6 +67,17 @@ class Array : public ResizePolicy
 		typedef T * iterator;
 		typedef T const * const_iterator;
 
+		class Size
+		{
+			public:
+				Size(uint s) : size(s) {
+				}
+
+			private:
+				friend class Array<T, ResizePolicy>;
+				const uint size;
+		};
+
 		Array() : ResizePolicy(), data(0), dataEnd(0), allocEnd(0) {
 		}
 
@@ -81,24 +92,20 @@ class Array : public ResizePolicy
 		}
 
 		template<typename C>
-		Array(const Array<C> &a) : Array() {
+		Array(const Array<C> &a) : Array(Size(a.size())) {
 			append(a);
 		}
 
-		Array(const Array<T> &a) : Array() {
+		Array(const Array<T> &a) : Array(Size(a.size())) {
 			append(a);
 		}
 
-		Array(uint s) : Array() {
-			setCapacityUnsafe(0, s);
-		}
-
-		Array(int s) : Array() {
-			setCapacityUnsafe(0, s);
+		Array(Size s) : Array() {
+			setCapacityUnsafe(0, s.size);
 		}
 
 		template<typename A, typename B, typename... Args>
-		Array(const A &a, const B &b, const Args&... args) : Array(ResizePolicy::size(sizeof...(args) + 2)) {
+		Array(const A &a, const B &b, const Args&... args) : Array(Size(ResizePolicy::size(sizeof...(args) + 2))) {
 			append(a);
 			append(b);
 			append(args...);
@@ -106,7 +113,7 @@ class Array : public ResizePolicy
 
 		template<typename C>
 		void append(const C &c) {
-			appendDispatch(c, BoolToType<TypeConversion<C, const T>::exists>());
+			appendDispatch(c, BoolToType<TypeConversion<C, const T>::exists>());  // <------------------------ This is the line you are looking for
 		}
 
 		template<typename A, typename B, typename... Args>
@@ -639,6 +646,23 @@ class Array : public ResizePolicy
 		template<typename C>
 		void appendDispatch(const C &c, FalseType) {
 			static_assert(Collection<C>::isCollection, "Can not build n::core::Array<T> from given type. (type is not convertible to T and is not a collection of T)");
+			/*setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
+			for(const auto &e : c) {
+				append(e);
+			}*/
+			buildDispatch(c, BoolToType<TypeConversion<typename Collection<C>::ElementType, const T>::canBuild>());
+		}
+
+		template<typename C>
+		void buildDispatch(const C &c, TrueType) {
+			setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
+			for(const auto &e : c) {
+				appendDispatch(e, TrueType());
+			}
+		}
+
+		template<typename C>
+		void buildDispatch(const C &c, FalseType) {
 			setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
 			for(const auto &e : c) {
 				append(e);

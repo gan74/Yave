@@ -291,7 +291,7 @@ Array<String> String::split(const String &str) const {
 		from = p + str.size();
 	}
 	arr.append(subString(from));
-	return arr;
+	return arr.filtered([](const String &s) { return !s.isEmpty(); });
 }
 
 String String::toLower() const {

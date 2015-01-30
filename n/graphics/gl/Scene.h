@@ -94,7 +94,7 @@ class Scene : core::NonCopyable
 				const core::Array<U *> *arr = reinterpret_cast<const core::Array<U *> *>(&transformables);
 				return *arr;
 			}
-			core::Array<U *> array(transformables.size());
+			core::Array<U *> array(typename core::Array<U *>::Size(transformables.size()));
 			for(const core::Pair<const Type, core::Array<Transformable<> *>> &p : typeMap) {
 				if(!p._2.isEmpty()) {
 					if(dynamic_cast<const U *>(p._2.first())) {

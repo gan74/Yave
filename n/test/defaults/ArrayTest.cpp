@@ -69,6 +69,7 @@ class ArrayTest : public TestTemplate<ArrayTest>
 			auto w = c.insert(d.begin(), d.end(), it);
 			test(c, t, "Insert test failed");
 			test(*w, T(10), "Insert test failed");
+			test(core::Array<T>(1, core::Array<T>(2, 3, 4), 5, 6, core::Array<T>(7), 8, 9, 10, core::Array<T>(11, core::Array<T>(12, core::Array<T>(13, 14), core::Array<T>(15)))).size(), 15u, "Flatten test failed");
 		}
 };
 

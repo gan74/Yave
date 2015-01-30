@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <cxxabi.h>
 
-n::core::String demangle(const char* name) {
+const char *demangle(const char* name) {
 	int status = 0;
 	const char *d = abi::__cxa_demangle(name, NULL, NULL, &status);
 	return !status ? d : name;
@@ -30,7 +30,7 @@ n::core::String demangle(const char* name) {
 
 #else
 
-core::String demangle(const char* name) {
+const char *demangle(const char* name) {
 	return name;
 }
 
@@ -39,7 +39,7 @@ core::String demangle(const char* name) {
 namespace n {
 	uint typeId = 0;
 
-	core::String Type::name() const {
+	/*core::String */const char *Type::name() const {
 		return demangle(info->name());
 	}
 }

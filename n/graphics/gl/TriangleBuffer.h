@@ -138,6 +138,10 @@ class TriangleBuffer
 			return tr;
 		}
 
+		uint append(const Vertex<T> &a) {
+			return vertices.append(a);
+		}
+
 		uint size() const {
 			return triangles.size();
 		}

@@ -250,6 +250,17 @@ class TypeConversion
 	typedef byte Yes[1];
 	typedef byte No[2];
 
+	struct CanBuildFrom
+	{
+		template<typename U>
+		static Yes &build(decltype(U(makeOne<From>()))*);
+
+		template<typename U>
+		static No &build(...);
+
+		static const bool value = sizeof(build<To>(0)) == sizeof(Yes);
+	};
+
 	static_assert(sizeof(Yes) != sizeof(No), "SFINAE : sizeof(Yes) == sizeof(No)");
 
 	static Yes &test(To);
@@ -257,6 +268,7 @@ class TypeConversion
 
 	public:
 		static constexpr bool exists = sizeof(test(makeOne<From>())) == sizeof(Yes);
+		static constexpr bool canBuild = exists || CanBuildFrom::value;
 
 };
 
@@ -287,7 +299,7 @@ class Type
 			return t.info->before(*info);
 		}
 
-		core::String name() const;
+		const char *name() const;
 
 	private:
 		const std::type_info *info;

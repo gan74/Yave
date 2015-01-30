@@ -290,7 +290,7 @@ DynamicPrimitive Machine::run(DynamicBytecode *code) {
 					tmpPtr = stackPtr;
 				}
 				tmp.type() = PrimitiveType::Array;
-				tmp.data().ptr = new core::Array<DynamicPrimitive>(stackPtr - tmpPtr);
+				tmp.data().ptr = new core::Array<DynamicPrimitive>(core::Array<DynamicPrimitive>::Size(stackPtr - tmpPtr));
 				for(DynamicPrimitive *it = tmpPtr + 1; it != stackPtr + 1; it++) {
 					tmp.data().to<core::Array<DynamicPrimitive>>().append(*it);
 				}
