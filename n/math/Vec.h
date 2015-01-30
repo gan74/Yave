@@ -25,9 +25,9 @@ namespace math {
 template<uint N, typename T = float>
 class Vec
 {
-	template<uint P, typename... Args>
-	void build(T t, Args... args) {
-		vec[P] = t;
+	template<uint P, typename U, typename... Args>
+	void build(U t, Args... args) {
+		vec[P] = T(t);
 		build<P + 1>(args...);
 	}
 
