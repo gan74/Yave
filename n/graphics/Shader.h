@@ -46,7 +46,7 @@ class ShaderBase : core::NonCopyable
 
 		~ShaderBase() {
 			if(handle) {
-				gl::glDeleteShader(handle);
+				GLContext::getContext()->addGLTask([=]() { gl::glDeleteShader(handle); });
 			}
 		}
 
