@@ -81,6 +81,12 @@ class ShaderCombinaison : core::NonCopyable
 			compile();
 		}
 
+		~ShaderCombinaison() {
+			if(handle) {
+				GLContext::getContext()->addGLTask([=]() { gl::glDeleteProgram(handle); });
+			}
+		}
+
 		bool isValid() const {
 			return handle;
 		}

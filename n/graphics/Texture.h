@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_TEXTURE_H
 
 #include <n/graphics/Image.h>
-#include <n/defines.h>
+#include "GLContext.h"
 #include "GL.h"
 
 namespace n {
@@ -33,7 +33,7 @@ class Texture
 
 		~Data() {
 			if(handle) {
-				gl::glDeleteTextures(1, &handle);
+				GLContext::getContext()->addGLTask([=]() { gl::glDeleteTextures(1, &handle); });
 			}
 		}
 

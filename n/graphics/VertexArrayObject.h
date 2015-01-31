@@ -30,6 +30,12 @@ class VertexArrayObject : core::NonCopyable
 		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius), size(tr.indexes.size() / 3), data(tr.vertices), indexes(tr.indexes), handle(0) {
 		}
 
+		~VertexArrayObject() {
+			if(handle) {
+				GLContext::getContext()->addGLTask([=]() { gl::glDeleteBuffers(1, &handle); });
+			}
+		}
+
 		void bind() const {
 			if(!handle) {
 				gl::glGenVertexArrays(1, &handle);
