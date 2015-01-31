@@ -14,57 +14,44 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_TEXTURE_H
-#define N_GRAPHICS_GL_TEXTURE_H
+#ifndef N_GRAPHICS_STATICMESH
+#define N_GRAPHICS_STATICMESH
 
-#include <n/graphics/Image.h>
-#include <n/defines.h>
-#include "GL.h"
-#ifndef N_NO_GL
+#include "Transformable.h"
+#include "MeshInstance.h"
+#include "Renderable.h"
+#include "GLContext.h"
 
 namespace n {
 namespace graphics {
-namespace gl {
 
-class Texture
+class StaticMesh : public Movable<float>, public Renderable
 {
-	struct Data
-	{
-		Data() : handle(0) {
-		}
-
-		~Data() {
-			if(handle) {
-				glDeleteTextures(1, &handle);
-			}
-		}
-
-		GLuint handle;
-	};
-
 	public:
-		Texture(const Image &i);
-		Texture();
-		~Texture();
+		StaticMesh(const MeshInstance<> &i = MeshInstance<>()) : inst(i) {
+			radius = inst.getRadius();
+		}
 
-		void bind() const;
+		virtual void render(RenderQueue &q) override {
+			q.insert(RenderBatch(this->getTransform(), inst));
+		}
 
-		bool operator==(const Texture &t) const;
-		bool operator!=(const Texture &t) const;
+		const MeshInstance<> &getMeshInstance() const {
+			return inst;
+		}
 
 	private:
-		friend class ShaderCombinaison;
+		void draw() const {
+			inst.draw();
+		}
 
-		int getHandle() const;
-
-		Image image;
-		mutable core::SmartPtr<Data> data;
+	protected:
+		MeshInstance<> inst;
+		using Transformable<>::radius;
 };
 
 }
 }
-}
 
-#endif
+#endif // N_GRAPHICS_STATICMESH
 
-#endif // N_GRAPHICS_GL_TEXTURE_H

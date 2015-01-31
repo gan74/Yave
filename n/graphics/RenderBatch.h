@@ -19,12 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/math/Matrix.h>
 #include "MeshInstance.h"
-#include "Context.h"
-#ifndef N_NO_GL
+#include "GLContext.h"
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 class RenderBatch
 {
@@ -33,7 +31,7 @@ class RenderBatch
 		}
 
 		void operator()() const {
-			gl::Context::getContext()->setModelMatrix(matrix);
+			GLContext::getContext()->setModelMatrix(matrix);
 			inst.draw();
 		}
 
@@ -50,8 +48,6 @@ class RenderBatch
 
 }
 }
-}
-#endif
 
 #endif // N_GRPHICS_GL_RENDERBATCH
 

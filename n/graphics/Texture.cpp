@@ -15,19 +15,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 
-#include <n/defines.h>
-#ifndef N_NO_GL
-
 #include "Texture.h"
-#include "Context.h"
+#include "GLContext.h"
 #include "StaticBuffer.h"
 #include "GL.h"
 
 namespace n {
 namespace graphics {
-namespace gl {
-
-
 
 Texture::Texture(const Image &i) : image(i), data(0) {
 }
@@ -49,26 +43,23 @@ bool Texture::operator!=(const Texture &t) const {
 void Texture::bind() const {
 	if(!data) {
 		if(image.isNull()) {
-			glBindTexture(GL_TEXTURE_2D, 0);
+			gl::glBindTexture(GL_TEXTURE_2D, 0);
 		} else {
 			if(image.getFormat() != ImageFormat::R8G8B8A8) {
 				fatal("Unsuported texture format");
 			}
 			data = new Data();
-			Context::getContext()->addGLTask([=]() {
-				glGenTextures(1, &(data->handle));
-				glBindTexture(GL_TEXTURE_2D, data->handle);
-				glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, image.getSize().x(), image.getSize().y());
-				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.getSize().x(), image.getSize().y(), GL_RGBA, GL_UNSIGNED_BYTE, image.data());
+			GLContext::getContext()->addGLTask([=]() {
+				gl::glGenTextures(1, &(data->handle));
+				gl::glBindTexture(GL_TEXTURE_2D, data->handle);
+				gl::glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, image.getSize().x(), image.getSize().y());
+				gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.getSize().x(), image.getSize().y(), GL_RGBA, GL_UNSIGNED_BYTE, image.data());
 			});
 		}
 	} else {
-		glBindTexture(GL_TEXTURE_2D, data->handle);
+		gl::glBindTexture(GL_TEXTURE_2D, data->handle);
 	}
 }
 
 }
 }
-}
-
-#endif

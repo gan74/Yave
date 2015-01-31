@@ -14,26 +14,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_CONTEXT_H
-#define N_GRAPHICS_GL_CONTEXT_H
+#ifndef N_GRAPHICS_CONTEXT_H
+#define N_GRAPHICS_CONTEXT_H
 
 #include <n/concurent/SynchronizedQueue.h>
 #include <n/core/Functor.h>
 #include <n/math/Matrix.h>
-#include <n/defines.h>
-#ifndef N_NO_GL
-
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 class ShaderCombinaison;
 
-class Context
+class GLContext
 {
 	public:
-		static Context *getContext();
+		static GLContext *getContext();
 
 		void addGLTask(const core::Functor<void()> &f);
 
@@ -48,8 +44,8 @@ class Context
 	private:
 		friend class ShaderCombinaison;
 
-		Context();
-		~Context();
+		GLContext();
+		~GLContext();
 
 		concurent::SynchronizedQueue<core::Functor<void()>> tasks;
 
@@ -62,8 +58,6 @@ class Context
 
 }
 }
-}
 
-#endif
 
-#endif // N_GRAPHICS_GL_CONTEXT_H
+#endif // N_GRAPHICS_CONTEXT_H

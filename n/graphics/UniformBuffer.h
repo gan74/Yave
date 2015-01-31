@@ -14,16 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_UNIFORMBUFFER
-#define N_GRAPHICS_GL_UNIFORMBUFFER
+#ifndef N_GRAPHICS_UNIFORMBUFFER
+#define N_GRAPHICS_UNIFORMBUFFER
 
 #include "GL.h"
 #include <n/core/Ref.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 namespace internal {
 	class UniformBufferBase : core::NonCopyable
@@ -37,21 +35,22 @@ namespace internal {
 			}
 
 		protected:
-			friend class gl::ShaderCombinaison;
+			friend class graphics::ShaderCombinaison;
+
 			void update() const {
 				if(modified) {
 					if(!handle) {
-						glGenBuffers(1, (GLuint *)&handle);
-						glBindBuffer(GL_UNIFORM_BUFFER, handle);
-						glBufferData(GL_UNIFORM_BUFFER, size, buffer, GL_DYNAMIC_DRAW);
+						gl::glGenBuffers(1, (gl::GLuint *)&handle);
+						gl::glBindBuffer(GL_UNIFORM_BUFFER, handle);
+						gl::glBufferData(GL_UNIFORM_BUFFER, size, buffer, GL_DYNAMIC_DRAW);
 					} else {
-						glBindBuffer(GL_UNIFORM_BUFFER, handle);
-						void *p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+						gl::glBindBuffer(GL_UNIFORM_BUFFER, handle);
+						void *p = gl::glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
 						if(!p) {
-							glBufferSubData(GL_UNIFORM_BUFFER, 0, size, buffer);
+							gl::glBufferSubData(GL_UNIFORM_BUFFER, 0, size, buffer);
 						} else {
 							memcpy(p, buffer, size);
-							glUnmapBuffer(GL_UNIFORM_BUFFER);
+							gl::glUnmapBuffer(GL_UNIFORM_BUFFER);
 						}
 					}
 					modified = false;
@@ -60,7 +59,7 @@ namespace internal {
 
 			uint size;
 			void *buffer;
-			GLuint handle;
+			gl::GLuint handle;
 			mutable bool modified;
 	};
 
@@ -84,8 +83,6 @@ class UniformBuffer : public internal::UniformBufferBase
 
 }
 }
-}
 
-#endif
-#endif // N_GRAPHICS_GL_UNIFORMBUFFER
+#endif // N_GRAPHICS_UNIFORMBUFFER
 

@@ -14,16 +14,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_VERTEX
-#define N_GRAPHICS_GL_VERTEX
+#ifndef N_GRAPHICS_VERTEX
+#define N_GRAPHICS_VERTEX
 
 #include <n/math/Vec.h>
-#include <n/defines.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 template<typename T = float>
 class Vertex
@@ -92,7 +89,6 @@ class Vertex
 
 }
 }
-}
-#endif
-#endif // N_GRAPHICS_GL_VERTEX
+
+#endif // N_GRAPHICS_VERTEX
 

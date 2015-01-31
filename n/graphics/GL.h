@@ -14,73 +14,75 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_GL
-#define N_GRAPHICS_GL_GL
+#ifndef N_GRAPHICS_GL
+#define N_GRAPHICS_GL
 
 #include <n/defines.h>
 #include <n/types.h>
-#include <GL/glew.h>
-#include <GL/gl.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
 namespace gl {
 
+#include <GL/glew.h>
+#include <GL/gl.h>
+
+}
+
 template<typename T>
 struct GLType
 {
-	static constexpr GLenum value = 0;
+	static constexpr gl::GLenum value = 0;
 };
 
 template<>
 struct GLType<float>
 {
 	static_assert(sizeof(float) == 4, "float should be 4 byte long.");
-	static constexpr GLenum value = GL_FLOAT;
+	static constexpr gl::GLenum value = GL_FLOAT;
 };
 
 template<>
 struct GLType<double>
 {
 	static_assert(sizeof(double) == 8, "double should be 8 byte long.");
-	static constexpr GLenum value = GL_DOUBLE;
+	static constexpr gl::GLenum value = GL_DOUBLE;
 };
 
 template<>
 struct GLType<int8>
 {
-	static constexpr GLenum value = GL_BYTE;
+	static constexpr gl::GLenum value = GL_BYTE;
 };
 
 template<>
 struct GLType<uint8>
 {
-	static constexpr GLenum value = GL_UNSIGNED_BYTE;
+	static constexpr gl::GLenum value = GL_UNSIGNED_BYTE;
 };
 
 template<>
 struct GLType<int16>
 {
-	static constexpr GLenum value = GL_SHORT;
+	static constexpr gl::GLenum value = GL_SHORT;
 };
 
 template<>
 struct GLType<uint16>
 {
-	static constexpr GLenum value = GL_UNSIGNED_SHORT;
+	static constexpr gl::GLenum value = GL_UNSIGNED_SHORT;
 };
 
 template<>
 struct GLType<int32>
 {
-	static constexpr GLenum value = GL_INT;
+	static constexpr gl::GLenum value = GL_INT;
 };
 
 template<>
 struct GLType<uint32>
 {
-	static constexpr GLenum value = GL_UNSIGNED_INT;
+	static constexpr gl::GLenum value = GL_UNSIGNED_INT;
 };
 
 enum BufferBinding
@@ -91,10 +93,7 @@ enum BufferBinding
 
 }
 }
-}
+//}
 
-#endif
-
-
-#endif // N_GRAPHICS_GL_GL
+#endif // N_GRAPHICS_GL
 

@@ -14,16 +14,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_TRIANGLEBUFFER
-#define N_GRAPHICS_GL_TRIANGLEBUFFER
+#ifndef N_GRAPHICS_TRIANGLEBUFFER
+#define N_GRAPHICS_TRIANGLEBUFFER
 
 #include "VertexBuffer.h"
-#include <n/defines.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 template<typename T>
 class VertexArrayObject;
@@ -247,9 +244,6 @@ const typename TriangleBuffer<T>::FreezedTriangleBuffer &TriangleBuffer<T>::getC
 
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_TRIANGLEBUFFER
+#endif // N_GRAPHICS_TRIANGLEBUFFER
 

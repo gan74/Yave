@@ -14,17 +14,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_CAMERA
-#define N_GRAPHICS_GL_CAMERA
+#ifndef N_GRAPHICS_CAMERA
+#define N_GRAPHICS_CAMERA
 
-#include <n/graphics/gl/Transformable.h>
+#include "Transformable.h"
 #include <n/math/Volume.h>
 #include <n/utils.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 class Camera final : public Transformable<>, public math::Volume<>
 {
@@ -133,9 +131,6 @@ class Camera final : public Transformable<>, public math::Volume<>
 
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_CAMERA
+#endif // N_GRAPHICS_CAMERA
 

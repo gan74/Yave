@@ -14,26 +14,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_SHADERCOMBINAISON
-#define N_GRAPHICS_GL_SHADERCOMBINAISON
+#ifndef N_GRAPHICS_SHADERCOMBINAISON
+#define N_GRAPHICS_SHADERCOMBINAISON
 
 #include "Shader.h"
 #include "UniformBuffer.h"
-#include "Context.h"
+#include "GLContext.h"
 #include "Texture.h"
 #include <n/core/Map.h>
 #include <n/math/Matrix.h>
-#include <n/defines.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 class ShaderCombinaison : core::NonCopyable
 {
 	public:
-		typedef GLint UniformAddr;
+		typedef gl::GLint UniformAddr;
 
 	private:
 		struct UniformInfo
@@ -44,8 +41,8 @@ class ShaderCombinaison : core::NonCopyable
 
 		struct BlockInfo
 		{
-			GLuint addr;
-			GLuint slot;
+			gl::GLuint addr;
+			gl::GLuint slot;
 			const internal::UniformBufferBase *buffer;
 		};
 
@@ -93,18 +90,18 @@ class ShaderCombinaison : core::NonCopyable
 		}
 
 		void bind() const {
-			if(Context::getContext()->shader == this) {
+			if(GLContext::getContext()->shader == this) {
 				return;
 			}
-			glUseProgram(handle);
+			gl::glUseProgram(handle);
 			for(const core::Pair<const core::String, BlockInfo> &i : blocks) {
 				const BlockInfo &infos = i._2;
-				if(infos.buffer && infos.addr != GLuint(GL_INVALID_INDEX)) {
+				if(infos.buffer && infos.addr != gl::GLuint(GL_INVALID_INDEX)) {
 					infos.buffer->update();
-					glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, infos.buffer->handle);
+					gl::glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, infos.buffer->handle);
 				}
 			}
-			Context::getContext()->shader = const_cast<ShaderCombinaison *>(this);
+			GLContext::getContext()->shader = const_cast<ShaderCombinaison *>(this);
 		}
 
 		UniformAddr getAddr(const core::String &name) {
@@ -124,39 +121,39 @@ class ShaderCombinaison : core::NonCopyable
 		}
 
 		void setValue(UniformAddr addr, int a) {
-			glProgramUniform1i(handle, addr, a);
+			gl::glProgramUniform1i(handle, addr, a);
 		}
 
 		void setValue(UniformAddr addr, uint a) {
-			glProgramUniform1ui(handle, addr, a);
+			gl::glProgramUniform1ui(handle, addr, a);
 		}
 
 		void setValue(UniformAddr addr, float f) {
-			glProgramUniform1f(handle, addr, f);
+			gl::glProgramUniform1f(handle, addr, f);
 		}
 
 		void setValue(UniformAddr addr, const math::Vec2i &v) {
-			glProgramUniform2iv(handle, addr, 1, v.begin());
+			gl::glProgramUniform2iv(handle, addr, 1, v.begin());
 		}
 
 		void setValue(UniformAddr addr, const math::Vec3i &v) {
-			glProgramUniform3iv(handle, addr, 1, v.begin());
+			gl::glProgramUniform3iv(handle, addr, 1, v.begin());
 		}
 
 		void setValue(UniformAddr addr, const math::Vec2 &v) {
-			glProgramUniform2fv(handle, addr, 1, v.begin());
+			gl::glProgramUniform2fv(handle, addr, 1, v.begin());
 		}
 
 		void setValue(UniformAddr addr, const math::Vec3 &v) {
-			glProgramUniform3fv(handle, addr, 1, v.begin());
+			gl::glProgramUniform3fv(handle, addr, 1, v.begin());
 		}
 
 		void setValue(UniformAddr addr, const math::Vec4 &v) {
-			glProgramUniform4fv(handle, addr, 1, v.begin());
+			gl::glProgramUniform4fv(handle, addr, 1, v.begin());
 		}
 
 		void setValue(UniformAddr addr, const math::Matrix4<float> &m) {
-			glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
+			gl::glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
 		}
 
 		void setValue(UniformAddr addr, const Texture &t) {
@@ -166,20 +163,20 @@ class ShaderCombinaison : core::NonCopyable
 		template<typename T>
 		void setBuffer(const core::String &name, const UniformBuffer<T> *buffer) {
 			core::Map<core::String, BlockInfo>::iterator it = blocks.find(name);
-			BlockInfo infos{GLuint(GL_INVALID_INDEX), 0, 0};
+			BlockInfo infos{gl::GLuint(GL_INVALID_INDEX), 0, 0};
 			if(it == blocks.end()) {
-				GLint index = glGetUniformBlockIndex(handle, name.toChar());
+				gl::GLint index = gl::glGetUniformBlockIndex(handle, name.toChar());
 				static uint bs = 0;
-				blocks[name] = infos = BlockInfo{GLuint(index), bs++, 0};
-				glUniformBlockBinding(handle, infos.addr, infos.slot);
+				blocks[name] = infos = BlockInfo{gl::GLuint(index), bs++, 0};
+				gl::glUniformBlockBinding(handle, infos.addr, infos.slot);
 			} else {
 				infos = (*it)._2;
 			}
 			(*it)._2.buffer = buffer;
 			if(buffer) {
-				if(isCurrent() && infos.addr != GLuint(GL_INVALID_INDEX)) {
+				if(isCurrent() && infos.addr != gl::GLuint(GL_INVALID_INDEX)) {
 					buffer->update();
-					glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, buffer->handle);
+					gl::glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, buffer->handle);
 				}
 			}
 
@@ -191,23 +188,23 @@ class ShaderCombinaison : core::NonCopyable
 		}
 
 		void compile() {
-			handle = glCreateProgram();
+			handle = gl::glCreateProgram();
 			bool val = true;
 			for(uint i = 0; i != 3; i++) {
 				if(shaders[i]) {
-					glAttachShader(handle, shaders[i]->handle);
+					gl::glAttachShader(handle, shaders[i]->handle);
 					val &= shaders[i]->isValid();
 				}
 			}
-			glLinkProgram(handle);
+			gl::glLinkProgram(handle);
 			int res = 0;
-			glGetProgramiv(handle, GL_LINK_STATUS, &res);
+			gl::glGetProgramiv(handle, GL_LINK_STATUS, &res);
 			if(!res || !val) {
 				int size = 0;
-				glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &size);
+				gl::glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &size);
 				char *msg = new char[size + 1];
-				glGetProgramInfoLog(handle, size, &res, msg);
-				glDeleteProgram(handle);
+				gl::glGetProgramInfoLog(handle, size, &res, msg);
+				gl::glDeleteProgram(handle);
 				handle = 0;
 				msg[size] = '\0';
 				logs = msg;
@@ -221,16 +218,16 @@ class ShaderCombinaison : core::NonCopyable
 			const uint max = 512;
 			char name[max];
 			int uniforms = 0;
-			glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniforms);
+			gl::glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniforms);
 			for(uint i = 0; i != (uint)uniforms; i++) {
 				int size = 0;
-				GLenum type = GL_NONE;
-				glGetActiveUniform(handle, i, max, 0, &size, &type, name);
+				gl::GLenum type = GL_NONE;
+				gl::glGetActiveUniform(handle, i, max, 0, &size, &type, name);
 				core::String uniform = name;
 				if(uniform.endWith("[0]")) {
 					uniform = uniform.subString(0, uniform.size() - 3);
 				}
-				uniformsInfo[uniform] = UniformInfo({glGetUniformLocation(handle, name), (uint)size});
+				uniformsInfo[uniform] = UniformInfo({gl::glGetUniformLocation(handle, name), (uint)size});
 			}
 		}
 
@@ -239,7 +236,7 @@ class ShaderCombinaison : core::NonCopyable
 		}
 
 		internal::ShaderBase *shaders[3];
-		GLuint handle;
+		gl::GLuint handle;
 		core::String logs;
 		core::Map<core::String, UniformInfo> uniformsInfo;
 		core::Map<core::String, BlockInfo> blocks;
@@ -247,9 +244,6 @@ class ShaderCombinaison : core::NonCopyable
 
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_SHADERCOMBINAISON
+#endif // N_GRAPHICS_SHADERCOMBINAISON
 

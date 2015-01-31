@@ -14,17 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_SHADER
-#define N_GRAPHICS_GL_SHADER
+#ifndef N_GRAPHICS_SHADER
+#define N_GRAPHICS_SHADER
 
 #include <n/core/String.h>
 #include "GL.h"
-#include <n/defines.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 class ShaderCombinaison;
 
@@ -42,18 +39,18 @@ class ShaderBase : core::NonCopyable
 		}
 
 	protected:
-		friend class gl::ShaderCombinaison;
+		friend class graphics::ShaderCombinaison;
 
 		ShaderBase() : handle(0) {
 		}
 
 		~ShaderBase() {
 			if(handle) {
-				glDeleteShader(handle);
+				gl::glDeleteShader(handle);
 			}
 		}
 
-		GLuint handle;
+		gl::GLuint handle;
 		core::String logs;
 };
 
@@ -79,19 +76,19 @@ class Shader : public internal::ShaderBase
 
 	private:
 		void load(const core::String &src) {
-			GLenum glType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
-			handle = glCreateShader(glType[Type]);
+			gl::GLenum glType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
+			handle = gl::glCreateShader(glType[Type]);
 			const char *str = src.toChar();
-			glShaderSource(handle, 1, &str, 0);
-			glCompileShader(handle);
+			gl::glShaderSource(handle, 1, &str, 0);
+			gl::glCompileShader(handle);
 			int res = 0;
-			glGetShaderiv(handle, GL_COMPILE_STATUS, &res);
+			gl::glGetShaderiv(handle, GL_COMPILE_STATUS, &res);
 			if(!res) {
 				int size = 0;
-				glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &size);
+				gl::glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &size);
 				char *msg = new char[size + 1];
-				glGetShaderInfoLog(handle, size, &size, msg);
-				glDeleteShader(handle);
+				gl::glGetShaderInfoLog(handle, size, &size, msg);
+				gl::glDeleteShader(handle);
 				handle = 0;
 				msg[size] = '\0';
 				logs = msg;
@@ -104,9 +101,6 @@ class Shader : public internal::ShaderBase
 
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_SHADER
+#endif // N_GRAPHICS_SHADER
 

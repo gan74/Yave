@@ -14,17 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_MESHINSTANCE
-#define N_GRAPHICS_GL_MESHINSTANCE
+#ifndef N_GRAPHICS_MESHINSTANCE
+#define N_GRAPHICS_MESHINSTANCE
 
 #include "TriangleBuffer.h"
 #include <n/assets/Asset.h>
-#include <n/defines.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 namespace internal {
 	template<typename T = float>
@@ -95,8 +92,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 
 }
 }
-}
 
-#endif
-#endif // N_GRAPHICS_GL_MESHINSTANCE
+
+#endif // N_GRAPHICS_MESHINSTANCE
 

@@ -14,17 +14,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_RENDERQUEUE
-#define N_GRAPHICS_GL_RENDERQUEUE
+#ifndef N_GRAPHICS_RENDERQUEUE
+#define N_GRAPHICS_RENDERQUEUE
 
 #include <n/core/Array.h>
 #include <n/core/Functor.h>
 #include "RenderBatch.h"
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 class RenderQueue
 {
@@ -63,9 +61,6 @@ class RenderQueue
 
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_RENDERQUEUE
+#endif // N_GRAPHICS_RENDERQUEUE
 

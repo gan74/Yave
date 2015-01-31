@@ -14,50 +14,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_STATICMESH
-#define N_GRAPHICS_GL_STATICMESH
+#ifndef N_GRAPHICS_RENDERABLE
+#define N_GRAPHICS_RENDERABLE
 
-#include "Transformable.h"
-#include "MeshInstance.h"
-#include "Renderable.h"
-#include "Context.h"
-#include <n/defines.h>
-#ifndef N_NO_GL
+#include "RenderQueue.h"
 
 namespace n {
 namespace graphics {
-namespace gl {
 
-class StaticMesh : public Movable<float>, public Renderable
+class Renderable
 {
 	public:
-		StaticMesh(const MeshInstance<> &i = MeshInstance<>()) : inst(i) {
-			radius = inst.getRadius();
-		}
+		virtual void render(RenderQueue &q) = 0;
 
-		virtual void render(RenderQueue &q) override {
-			q.insert(RenderBatch(this->getTransform(), inst));
+		virtual void renderDebug(RenderQueue &q) {
+			render(q);
 		}
-
-		const MeshInstance<> &getMeshInstance() const {
-			return inst;
-		}
-
-	private:
-		void draw() const {
-			inst.draw();
-		}
-
-	protected:
-		MeshInstance<> inst;
-		using Transformable<>::radius;
 };
 
-}
+
 }
 }
 
-
-#endif
-#endif // N_GRAPHICS_GL_STATICMESH
+#endif // N_GRAPHICS_RENDERABLE
 

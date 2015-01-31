@@ -29,8 +29,7 @@ SOURCES += main.cpp \
 		   n/test/*.cpp \
 		   n/test/defaults/*.cpp \
 		   n/script/*.cpp \
-		   n/graphics/*.cpp \
-		   n/graphics/gl/*.cpp
+		   n/graphics/*.cpp
 
 HEADERS += n/*.h \
 		   n/core/*.h \
@@ -42,8 +41,7 @@ HEADERS += n/*.h \
 		   n/assets/*.h \
 		   n/script/*.h \
 		   n/graphics/*.h \
-		   n/signals/*.h \
-		   n/graphics/gl/*.h
+		   n/signals/*.h
 
 
 SOURCES += dependencies/lodepng/*.cpp

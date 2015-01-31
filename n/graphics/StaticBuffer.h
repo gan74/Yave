@@ -14,19 +14,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_STATICBUFFER
-#define N_GRAPHICS_GL_STATICBUFFER
+#ifndef N_GRAPHICS_STATICBUFFER
+#define N_GRAPHICS_STATICBUFFER
 
 
 #include "GL.h"
 #include <n/core/AsCollection.h>
 #include <n/core/String.h>
 #include <n/core/Ref.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 template<typename T, BufferBinding Binding>
 class StaticBuffer : core::NonCopyable
@@ -35,17 +33,17 @@ class StaticBuffer : core::NonCopyable
 
 	public:
 		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), handle(0) {
-			glGenBuffers(1, &handle);
-			glBindBuffer(Binding, handle);
-			glBufferData(Binding, sizeof(T) * bufferSize, arr.begin(), GL_STATIC_DRAW);
+			gl::glGenBuffers(1, &handle);
+			gl::glBindBuffer(Binding, handle);
+			gl::glBufferData(Binding, sizeof(T) * bufferSize, arr.begin(), GL_STATIC_DRAW);
 		}
 
 		~StaticBuffer() {
-			glDeleteBuffers(1, &handle);
+			gl::glDeleteBuffers(1, &handle);
 		}
 
 		void bind() const {
-			glBindBuffer(Binding, handle);
+			gl::glBindBuffer(Binding, handle);
 		}
 
 		uint size() const {
@@ -54,14 +52,11 @@ class StaticBuffer : core::NonCopyable
 
 	private:
 		uint bufferSize;
-		GLuint handle;
+		gl::GLuint handle;
 };
 
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_STATICBUFFER
+#endif // N_GRAPHICS_STATICBUFFER
 

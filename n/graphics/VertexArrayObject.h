@@ -14,17 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_VERTEXARRAYOBJECT
-#define N_GRAPHICS_GL_VERTEXARRAYOBJECT
+#ifndef N_GRAPHICS_VERTEXARRAYOBJECT
+#define N_GRAPHICS_VERTEXARRAYOBJECT
 
 #include "TriangleBuffer.h"
 #include "StaticBuffer.h"
-#include <n/defines.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 template<typename T = float>
 class VertexArrayObject : core::NonCopyable
@@ -35,20 +32,20 @@ class VertexArrayObject : core::NonCopyable
 
 		void bind() const {
 			if(!handle) {
-				glGenVertexArrays(1, &handle);
-				glBindVertexArray(handle);
+				gl::glGenVertexArrays(1, &handle);
+				gl::glBindVertexArray(handle);
 				data.bind();
 				indexes.bind();
-				glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
-				glVertexAttribPointer(1, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
-				glVertexAttribPointer(2, 2, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T)));
-				glVertexAttribPointer(3, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
-				glEnableVertexAttribArray(0);
-				glEnableVertexAttribArray(1);
-				glEnableVertexAttribArray(2);
-				glEnableVertexAttribArray(3);
+				gl::glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
+				gl::glVertexAttribPointer(1, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
+				gl::glVertexAttribPointer(2, 2, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T)));
+				gl::glVertexAttribPointer(3, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
+				gl::glEnableVertexAttribArray(0);
+				gl::glEnableVertexAttribArray(1);
+				gl::glEnableVertexAttribArray(2);
+				gl::glEnableVertexAttribArray(3);
 			} else {
-				glBindVertexArray(handle);
+				gl::glBindVertexArray(handle);
 			}
 		}
 
@@ -57,7 +54,7 @@ class VertexArrayObject : core::NonCopyable
 			if(end <= beg) {
 				end = size;
 			}
-			glDrawElementsInstanced(GL_TRIANGLES, 3 * (end - beg), GLType<uint>::value, (const void *)(3 * beg * sizeof(uint)), instances);
+			gl::glDrawElementsInstanced(GL_TRIANGLES, 3 * (end - beg), GLType<uint>::value, (const void *)(3 * beg * sizeof(uint)), instances);
 		}
 
 		T getRadius() const {
@@ -70,15 +67,12 @@ class VertexArrayObject : core::NonCopyable
 		StaticBuffer<Vertex<T>, Array> data;
 		StaticBuffer<uint, Index> indexes;
 
-		mutable GLuint handle;
+		mutable gl::GLuint handle;
 };
 
 
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_VERTEXARRAYOBJECT
+#endif // N_GRAPHICS_VERTEXARRAYOBJECT
 

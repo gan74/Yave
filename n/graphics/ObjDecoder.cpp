@@ -14,8 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#include <n/defines.h>
-#ifndef N_NO_GL
 
 #include <iostream>
 #include <n/io/File.h>
@@ -23,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 MeshLoader *MeshLoader::loader = 0;
 
@@ -133,7 +130,4 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 
 }
 }
-}
-
-#endif
 

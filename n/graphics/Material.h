@@ -14,16 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_MATERIAL
-#define N_GRAPHICS_GL_MATERIAL
+#ifndef N_GRAPHICS_MATERIAL
+#define N_GRAPHICS_MATERIAL
 
 #include <n/math/Vec.h>
 #include "Texture.h"
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 template<typename T = float>
 class Material
@@ -78,9 +76,6 @@ core::Array<Material<T> *> Material<T>::cache = core::Array<Material<T> *>();
 
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_MATERIAL
+#endif // N_GRAPHICS_MATERIAL
 

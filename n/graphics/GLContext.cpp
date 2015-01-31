@@ -14,10 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#include <n/defines.h>
-#ifndef N_NO_GL
-
-#include "Context.h"
+#include "GLContext.h"
 #include "ShaderCombinaison.h"
 #include "GL.h"
 #include <n/concurent/Thread.h>
@@ -27,18 +24,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 namespace graphics {
-namespace gl {
 
-Context *Context::getContext() {
-	static Context *ct = new Context();
+GLContext *GLContext::getContext() {
+	static GLContext *ct = new GLContext();
 	return ct;
 }
 
-void Context::addGLTask(const core::Functor<void()> &f) {
+void GLContext::addGLTask(const core::Functor<void()> &f) {
 	tasks.queue(f);
 }
 
-bool Context::processTasks() {
+bool GLContext::processTasks() {
 	core::Option<core::Functor<void()>> tsk = tasks.tryDequeue();
 	if(tsk) {
 		tsk.get()();
@@ -47,29 +43,29 @@ bool Context::processTasks() {
 	return false;
 }
 
-Context::Context() {
+GLContext::GLContext() {
 	if(concurent::Thread::getCurrent()) {
-		fatal("n::graphics::gl::Context not created on main thread.");
+		fatal("n::graphics::Context not created on main thread.");
 	}
-	glewExperimental = true;
-	if (glewInit() != GLEW_OK) {
+	gl::glewExperimental = true;
+	if(gl::glewInit() != GLEW_OK) {
 		fatal("Unable to initialize glew.");
 	}
-	std::cout<<"Running on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using GL "<<glGetString(GL_VERSION)<<std::endl;
+	std::cout<<"Running on "<<gl::glGetString(GL_VENDOR)<<" "<<gl::glGetString(GL_RENDERER)<<" using GL "<<gl::glGetString(GL_VERSION)<<std::endl;
 
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_CULL_FACE);
+	gl::glEnable(GL_TEXTURE_2D);
+	gl::glEnable(GL_CULL_FACE);
 
 	std::cerr<<"NO DEPTH BUFFERING"<<std::endl;
-	glGetError();
+	gl::glGetError();
 }
 
-Context::~Context() {
+GLContext::~GLContext() {
 }
 
 
-bool Context::checkGLError() {
-	int error = glGetError();
+bool GLContext::checkGLError() {
+	int error = gl::glGetError();
 	if(error) {
 		fatal(("Warning : error : " + (error == GL_INVALID_OPERATION ? core::String("INVALID OPERATION") :
 			(error == GL_INVALID_ENUM ? core::String("INVALID ENUM") :
@@ -80,7 +76,7 @@ bool Context::checkGLError() {
 	return false;
 }
 
-void Context::setModelMatrix(const math::Matrix4<> &m) {
+void GLContext::setModelMatrix(const math::Matrix4<> &m) {
 	model = m;
 	#ifdef N_USE_MATRIX_BUFFER
 	matrixBuffer->set(model, 0);
@@ -90,7 +86,7 @@ void Context::setModelMatrix(const math::Matrix4<> &m) {
 	#endif
 }
 
-void Context::setViewMatrix(const math::Matrix4<> &m) {
+void GLContext::setViewMatrix(const math::Matrix4<> &m) {
 	if(view == m) {
 		return;
 	}
@@ -99,7 +95,7 @@ void Context::setViewMatrix(const math::Matrix4<> &m) {
 	shader->setValue("n_ViewProjectionMatrix", projection * m);
 }
 
-void Context::setProjectionMatrix(const math::Matrix4<> &m) {
+void GLContext::setProjectionMatrix(const math::Matrix4<> &m) {
 	if(projection == m) {
 		return;
 	}
@@ -110,7 +106,5 @@ void Context::setProjectionMatrix(const math::Matrix4<> &m) {
 
 }
 }
-}
 
-#endif
 

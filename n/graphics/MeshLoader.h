@@ -14,18 +14,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_MESHLOADER
-#define N_GRAPHICS_GL_MESHLOADER
+#ifndef N_GRAPHICS_MESHLOADER
+#define N_GRAPHICS_MESHLOADER
 
 #include "MeshInstance.h"
 #include <n/assets/Asset.h>
 #include <n/assets/AssetBuffer.h>
-#include <n/defines.h>
-#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
-namespace gl {
 
 class MeshLoader
 {
@@ -86,10 +83,7 @@ typename MeshLoader::MeshDecoder<T, Args...>::Runner MeshLoader::MeshDecoder<T, 
 
 }
 }
-}
 
 
-
-#endif
-#endif // N_GRAPHICS_GL_MESHLOADER
+#endif // N_GRAPHICS_MESHLOADER
 

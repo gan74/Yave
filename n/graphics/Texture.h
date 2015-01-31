@@ -14,32 +14,52 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_GL_RENDERABLE
-#define N_GRAPHICS_GL_RENDERABLE
+#ifndef N_GRAPHICS_TEXTURE_H
+#define N_GRAPHICS_TEXTURE_H
 
-#include "RenderQueue.h"
-#ifndef N_NO_GL
+#include <n/graphics/Image.h>
+#include <n/defines.h>
+#include "GL.h"
 
 namespace n {
 namespace graphics {
-namespace gl {
 
-class Renderable
+class Texture
 {
-	public:
-		virtual void render(RenderQueue &q) = 0;
-
-		virtual void renderDebug(RenderQueue &q) {
-			render(q);
+	struct Data
+	{
+		Data() : handle(0) {
 		}
+
+		~Data() {
+			if(handle) {
+				gl::glDeleteTextures(1, &handle);
+			}
+		}
+
+		gl::GLuint handle;
+	};
+
+	public:
+		Texture(const Image &i);
+		Texture();
+		~Texture();
+
+		void bind() const;
+
+		bool operator==(const Texture &t) const;
+		bool operator!=(const Texture &t) const;
+
+	private:
+		friend class ShaderCombinaison;
+
+		int getHandle() const;
+
+		Image image;
+		mutable core::SmartPtr<Data> data;
 };
 
-
 }
 }
-}
 
-#endif
-
-#endif // N_GRAPHICS_GL_RENDERABLE
-
+#endif // N_GRAPHICS_TEXTURE_H
