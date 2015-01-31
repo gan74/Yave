@@ -66,7 +66,7 @@ class String
 		bool endWith(const String &s) const;
 		void detach();
 		void swap(String &str);
-		Array<String> split(const String &str) const;
+		Array<String> split(const String &str, bool empties = false) const;
 		String toLower() const;
 		String toUpper() const;
 		bool isShared() const;

@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRPHICS_GL_RENDERBATCH
 
 #include <n/math/Matrix.h>
-#include "VertexArrayObject.h"
+#include "MeshInstance.h"
 #include "Context.h"
 #ifndef N_NO_GL
 
@@ -29,14 +29,12 @@ namespace gl {
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<> &m, const VertexArrayObject<float> *va) : instanciable(true), vao(va), matrix(m) {
+		RenderBatch(const math::Matrix4<> &m, const MeshInstance<> &i) : instanciable(true), inst(i), matrix(m) {
 		}
 
 		void operator()() const {
-			if(vao) {
-				gl::Context::getContext()->setModelMatrix(matrix);
-				vao->draw();
-			}
+			gl::Context::getContext()->setModelMatrix(matrix);
+			inst.draw();
 		}
 
 		bool isInstanciable() const {
@@ -46,7 +44,7 @@ class RenderBatch
 	private:
 		bool instanciable;
 
-		const VertexArrayObject<float> *vao;
+		MeshInstance<> inst;
 		math::Matrix4<> matrix;
 };
 

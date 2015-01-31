@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_ASSETS_ASSET_H
 #define N_ASSETS_ASSET_H
 
-#include <n/concurent/Atomic.h>
 #include <n/core/SmartPtr.h>
 
 namespace n {

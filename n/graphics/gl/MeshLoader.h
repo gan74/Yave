@@ -14,21 +14,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_IMAGELOADER_H
-#define N_GRAPHICS_IMAGELOADER_H
+#ifndef N_GRAPHICS_GL_MESHLOADER
+#define N_GRAPHICS_GL_MESHLOADER
 
-#include "Image.h"
+#include "MeshInstance.h"
+#include <n/assets/Asset.h>
 #include <n/assets/AssetBuffer.h>
+#include <n/defines.h>
+#ifndef N_NO_GL
 
 namespace n {
 namespace graphics {
+namespace gl {
 
-class ImageLoader
+class MeshLoader
 {
-	static ImageLoader *loader;
+	static MeshLoader *loader;
 	public:
 		template<typename T, typename... Args>
-		class ImageDecoder
+		class MeshDecoder
 		{
 			struct Runner
 			{
@@ -38,20 +42,20 @@ class ImageLoader
 			};
 
 			public:
-				ImageDecoder() {
+				MeshDecoder() {
 					n::unused(runner);
 				}
 
-				virtual ImageInternal *operator()(Args...) = 0;
+				virtual internal::MeshInstance<> *operator()(Args...) = 0;
 
 			private:
 				static Runner runner;
 		};
 
 		template<typename... Args>
-		static Image load(Args... args, bool async = true)  {
-			ImageLoader *ld = getLoader();
-			return async ? Image(ld->asyncBuffer.load(args...)) : Image(ld->immediateBuffer.load(args...));
+		static MeshInstance<> load(Args... args, bool async = true)  {
+			MeshLoader *ld = getLoader();
+			return async ? MeshInstance<>(ld->asyncBuffer.load(args...)) : MeshInstance<>(ld->immediateBuffer.load(args...));
 		}
 
 		template<typename... Args, typename T>
@@ -61,25 +65,31 @@ class ImageLoader
 		}
 
 	private:
-		static ImageLoader *getLoader() {
+		static MeshLoader *getLoader() {
 			if(!loader) {
-				loader = new ImageLoader();
+				loader = new MeshLoader();
 			}
 			return loader;
 		}
 
-		ImageLoader() {
+		MeshLoader() {
 		}
 
-		assets::AssetBuffer<ImageInternal, assets::AsyncLoadingPolicy<ImageInternal>> asyncBuffer;
-		assets::AssetBuffer<ImageInternal, assets::ImmediateLoadingPolicy<ImageInternal>> immediateBuffer;
+		assets::AssetBuffer<internal::MeshInstance<>, assets::AsyncLoadingPolicy<internal::MeshInstance<>>> asyncBuffer;
+		assets::AssetBuffer<internal::MeshInstance<>, assets::ImmediateLoadingPolicy<internal::MeshInstance<>>> immediateBuffer;
+
 };
 
-
 template<typename T, typename... Args>
-typename ImageLoader::ImageDecoder<T, Args...>::Runner ImageLoader::ImageDecoder<T, Args...>::runner = ImageLoader::ImageDecoder<T,Args...>::Runner();
+typename MeshLoader::MeshDecoder<T, Args...>::Runner MeshLoader::MeshDecoder<T, Args...>::runner = MeshLoader::MeshDecoder<T,Args...>::Runner();
+
 
 }
 }
+}
 
-#endif // N_GRAPHICS_IMAGELOADER_H
+
+
+#endif
+#endif // N_GRAPHICS_GL_MESHLOADER
+

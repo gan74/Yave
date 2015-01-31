@@ -21,17 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/utils.h>
 #include <n/defines.h>
 
-
 namespace n {
 namespace graphics {
 
-class PngDecoder : public graphics::ImageLoader::ImageDecoder<PngDecoder>
+class PngDecoder : public graphics::ImageLoader::ImageDecoder<PngDecoder, core::String>
 {
 	public:
-		PngDecoder() : graphics::ImageLoader::ImageDecoder<PngDecoder>() {
+		PngDecoder() : graphics::ImageLoader::ImageDecoder<PngDecoder, core::String>() {
 		}
 
-		graphics::ImageInternal *operator()(const core::String &name) override {
+		graphics::ImageInternal *operator()(core::String name) override {
 			std::vector<byte> image;
 			uint width = 0;
 			uint height = 0;

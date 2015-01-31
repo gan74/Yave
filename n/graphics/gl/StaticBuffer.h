@@ -34,18 +34,14 @@ class StaticBuffer : core::NonCopyable
 	static_assert(TypeInfo<T>::isPod, "StaticBuffer should only contain pod");
 
 	public:
-		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), buffer(malloc(sizeof(T) * bufferSize)), handle(0) {
-			memcpy(buffer, arr.begin(), bufferSize * sizeof(T));
-			setUp();
+		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), handle(0) {
+			glGenBuffers(1, &handle);
+			glBindBuffer(Binding, handle);
+			glBufferData(Binding, sizeof(T) * bufferSize, arr.begin(), GL_STATIC_DRAW);
 		}
 
 		~StaticBuffer() {
-			if(buffer) {
-				free(buffer);
-			}
-			if(handle) {
-				glDeleteBuffers(1, &handle);
-			}
+			glDeleteBuffers(1, &handle);
 		}
 
 		void bind() const {
@@ -57,26 +53,7 @@ class StaticBuffer : core::NonCopyable
 		}
 
 	private:
-		void setUp() {
-			if(!handle) {
-				glGenBuffers(1, &handle);
-				glBindBuffer(Binding, handle);
-				glBufferData(Binding, sizeof(T) * bufferSize, buffer, GL_STATIC_DRAW);
-			} else {
-				glBindBuffer(Binding, handle);
-				void *p = glMapBuffer(Binding, GL_WRITE_ONLY);
-				if(!p) {
-					glBufferSubData(Binding, 0, sizeof(T) * bufferSize, buffer);
-				} else {
-					memcpy(p, buffer, sizeof(T) * bufferSize);
-					glUnmapBuffer(Binding);
-				}
-			}
-		}
-
 		uint bufferSize;
-		void *buffer;
-
 		GLuint handle;
 };
 

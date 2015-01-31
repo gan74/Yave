@@ -12,3 +12,5 @@
 *.out
 *.txt
 *.png
+*.obj
+*.mtl

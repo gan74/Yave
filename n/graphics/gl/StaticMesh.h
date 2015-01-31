@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_GL_STATICMESH
 
 #include "Transformable.h"
-#include "VertexArrayObject.h"
+#include "MeshInstance.h"
 #include "Renderable.h"
 #include "Context.h"
 #include <n/defines.h>
@@ -31,28 +31,25 @@ namespace gl {
 class StaticMesh : public Movable<float>, public Renderable
 {
 	public:
-		StaticMesh(const VertexArrayObject<float> *v) : vao(v) {
-			radius = vao ? vao->getRadius() : 0;
+		StaticMesh(const MeshInstance<> &i = MeshInstance<>()) : inst(i) {
+			radius = inst.getRadius();
 		}
 
 		virtual void render(RenderQueue &q) override {
-			q.insert(RenderBatch(this->getTransform(), vao));
+			q.insert(RenderBatch(this->getTransform(), inst));
 		}
 
-		const VertexArrayObject<float> *getVertexArrayObject() const {
-			return vao;
+		const MeshInstance<> &getMeshInstance() const {
+			return inst;
 		}
 
 	private:
 		void draw() const {
-			if(vao) {
-				gl::Context::getContext()->setModelMatrix(this->getTransform());
-				vao->draw();
-			}
+			inst.draw();
 		}
 
 	protected:
-		const VertexArrayObject<float> *vao;
+		MeshInstance<> inst;
 		using Transformable<>::radius;
 };
 

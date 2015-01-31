@@ -27,7 +27,7 @@ namespace graphics {
 namespace gl {
 
 template<typename T = float>
-class VertexArrayObject
+class VertexArrayObject : core::NonCopyable
 {
 	public:
 		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius), size(tr.indexes.size() / 3), data(tr.vertices), indexes(tr.indexes), handle(0) {

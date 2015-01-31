@@ -30,7 +30,7 @@ namespace n {
 namespace graphics {
 namespace gl {
 
-class ShaderCombinaison
+class ShaderCombinaison : core::NonCopyable
 {
 	public:
 		typedef GLint UniformAddr;

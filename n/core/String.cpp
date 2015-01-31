@@ -282,7 +282,7 @@ void String::swap(String &str) {
 	length = l;
 }
 
-Array<String> String::split(const String &str) const {
+Array<String> String::split(const String &str, bool empties) const {
 	Array<String> arr;
 	uint p = -1;
 	uint from = 0;
@@ -291,7 +291,7 @@ Array<String> String::split(const String &str) const {
 		from = p + str.size();
 	}
 	arr.append(subString(from));
-	return arr.filtered([](const String &s) { return !s.isEmpty(); });
+	return empties ? arr : arr.filtered([](const String &s) { return !s.isEmpty(); });
 }
 
 String String::toLower() const {

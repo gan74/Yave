@@ -30,7 +30,7 @@ class ShaderCombinaison;
 
 namespace internal {
 
-class ShaderBase
+class ShaderBase : core::NonCopyable
 {
 	public:
 		const core::String &getLogs() const {
@@ -67,7 +67,7 @@ enum ShaderType
 };
 
 template<ShaderType Type>
-class Shader : core::NonCopyable, public internal::ShaderBase
+class Shader : public internal::ShaderBase
 {
 	public:
 		Shader(const core::String &src) : internal::ShaderBase() {
