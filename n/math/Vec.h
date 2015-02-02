@@ -54,7 +54,7 @@ class Vec
 			build<0>(x, y, args...);
 		}
 
-		template<typename U>
+		template<typename U, typename C = typename std::enable_if<TypeConversion<U, T>::exists, U>::type>
 		Vec(U t) {
 			for(uint i = 0; i != N; i++) {
 				vec[i] = t;

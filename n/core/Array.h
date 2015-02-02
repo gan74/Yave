@@ -87,7 +87,7 @@ class Array : public ResizePolicy
 		}
 
 		template<typename C>
-		Array(const C &c) : Array() {
+		explicit Array(const C &c) : Array() {
 			append(c);
 		}
 
@@ -113,7 +113,7 @@ class Array : public ResizePolicy
 
 		template<typename C>
 		void append(const C &c) {
-			appendDispatch(c, BoolToType<TypeConversion<C, const T>::exists>());  // <------------------------ This is the line you are looking for
+			appendDispatch(c, BoolToType<TypeConversion<C, const T>::canBuild>());  // <------------------------ This is the line you are looking for
 		}
 
 		template<typename A, typename B, typename... Args>
@@ -646,23 +646,6 @@ class Array : public ResizePolicy
 		template<typename C>
 		void appendDispatch(const C &c, FalseType) {
 			static_assert(Collection<C>::isCollection, "Can not build n::core::Array<T> from given type. (type is not convertible to T and is not a collection of T)");
-			/*setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
-			for(const auto &e : c) {
-				append(e);
-			}*/
-			buildDispatch(c, BoolToType<TypeConversion<typename Collection<C>::ElementType, const T>::canBuild>());
-		}
-
-		template<typename C>
-		void buildDispatch(const C &c, TrueType) {
-			setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
-			for(const auto &e : c) {
-				appendDispatch(e, TrueType());
-			}
-		}
-
-		template<typename C>
-		void buildDispatch(const C &c, FalseType) {
 			setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
 			for(const auto &e : c) {
 				append(e);

@@ -78,7 +78,7 @@ class Cube : public StaticMesh
 			axis = ((Vec3(random(), random(), random()) - 0.5) * 2).normalized();
 		}
 
-		void update() {
+		virtual void render(RenderQueue &qu) override {
 			static Timer timer;
 			static double x = 0;
 			double t = timer.reset();
@@ -86,6 +86,7 @@ class Cube : public StaticMesh
 			Quaternion<> q = Quaternion<>::fromAxisAngle(axis.cross(Vec3(1, 0, 0)).cross(axis), t);
 			axis = q(axis);
 			setRotation(Quaternion<>::fromAxisAngle(axis, x));
+			StaticMesh::render(qu);
 		}
 
 	private:
@@ -94,7 +95,6 @@ class Cube : public StaticMesh
 
 
 int main(int, char **) {
-
 	SDL_Window *win = createWindow();
 
 	Shader<VertexShader> vert("#version 420 core\n"
@@ -149,18 +149,10 @@ int main(int, char **) {
 	scene.insert(new Cube());
 
 	while(run(win)) {
-
+		Timer timer;
 		gl::glClear(GL_COLOR_BUFFER_BIT);
 
-
-		Timer timer;
 		core::Array<StaticMesh *> meshes = scene.query<StaticMesh>(cam);
-		for(auto x : scene.get<Cube>()) {
-			x->update();
-		}
-		if(timer.elapsed() > 0.002) {
-			std::cout<<meshes.size()<<" in "<<timer.elapsed() * 1000<<"ms"<<std::endl;
-		}
 		RenderQueue queue;
 		for(Renderable *m : meshes) {
 			m->render(queue);
@@ -170,11 +162,11 @@ int main(int, char **) {
 		}
 
 		GLContext::getContext()->processTasks();
-		gl::glFlush();
 
 		if(GLContext::checkGLError()) {
 			fatal("GL error");
 		}
+		gl::glFinish();
 	}
 	return 0;
 }
