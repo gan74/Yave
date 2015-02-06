@@ -607,12 +607,25 @@ class Collection
 template<typename C, typename ElementType>
 struct ShouldInsertAsCollection
 {
-	static constexpr bool isCollectionOfCompatibles = Collection<C>::isCollection && TypeConversion<typename Collection<C>::ElementType, const ElementType>::existsWeak;
-	static constexpr bool value = !(TypeConversion<C, const ElementType>::exists ||
-									   (TypeConversion<C, const ElementType>::canBuild &&
-										!isCollectionOfCompatibles));
+	template<typename E, bool Col>
+	struct Compat // E, true
+	{
+		static constexpr bool value = TypeConversion<typename Collection<E>::ElementType, const ElementType>::existsWeak || Compat<typename Collection<E>::ElementType, Collection<E>::isCollection>::value;
+	};
 
-	typedef BoolToType<value> type;
+	template<typename E>
+	struct Compat<E, false>
+	{
+		static constexpr bool value = false;
+	};
+
+	public:
+		static constexpr bool isCollectionOfCompatibles = Compat<C, Collection<C>::isCollection>::value;
+		static constexpr bool value = !(TypeConversion<C, const ElementType>::exists ||
+										   (TypeConversion<C, const ElementType>::canBuild &&
+											!isCollectionOfCompatibles));
+
+		typedef BoolToType<value> type;
 
 };
 
