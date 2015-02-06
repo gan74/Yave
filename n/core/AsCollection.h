@@ -45,7 +45,6 @@ namespace internal {
 	N_GEN_TYPE_HAS_METHOD(HasEquals, operator==)
 }
 
-
 template<typename T>
 class Collection
 {
@@ -160,6 +159,7 @@ class Collection
 		typedef typename InternalType::SubCollection SubCollection;
 
 		static constexpr bool isCollection = !std::is_same<ElementType, NullType>::value;
+
 
 		template<typename U>
 		struct isCollectionOf
@@ -602,6 +602,16 @@ class Collection
 			}
 			return str + U(*end);
 		}
+};
+
+template<typename C, typename ElementType>
+struct ShouldInsertAsCollection
+{
+	static constexpr bool value = TypeConversion<C, const ElementType>::exists ||
+								 (TypeConversion<C, const ElementType>::canBuild &&
+								 !(Collection<C>::isCollection && TypeConversion<typename Collection<C>::ElementType, const ElementType>::exists));
+
+	typedef BoolToType<value> type;
 };
 
 template<typename T>

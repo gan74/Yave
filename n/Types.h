@@ -327,6 +327,7 @@ struct TypeInfo
 	typedef T nonRef;
 	typedef T nonConst;
 	typedef T nonPtr;
+	typedef T decayed;
 };
 
 template<typename T>
@@ -351,6 +352,7 @@ struct TypeInfo<T *>
 	typedef typename TypeInfo<T>::nonRef *nonRef;
 	typedef typename TypeInfo<T>::nonConst *nonConst;
 	typedef T nonPtr;
+	typedef typename TypeInfo<T>::decayed decayed;
 };
 
 template<typename T>
@@ -374,6 +376,7 @@ struct TypeInfo<const T>
 	typedef const typename TypeInfo<T>::nonRef nonRef;
 	typedef T nonConst;
 	typedef const typename TypeInfo<T>::nonPtr nonPtr;
+	typedef typename TypeInfo<T>::decayed decayed;
 };
 
 template<typename T>
@@ -397,6 +400,7 @@ struct TypeInfo<T &>
 	typedef T nonRef;
 	typedef typename TypeInfo<T>::nonConst &nonConst;
 	typedef typename TypeInfo<T>::nonPtr &nonPtr;
+	typedef typename TypeInfo<T>::decayed decayed;
 };
 
 template<typename T>
@@ -420,6 +424,7 @@ struct TypeInfo<T[]>
 	typedef T nonRef;
 	typedef typename TypeInfo<T>::nonConst &nonConst;
 	typedef typename TypeInfo<T>::nonPtr &nonPtr;
+	typedef typename TypeInfo<T>::decayed decayed;
 };
 
 template<typename T, uint N>
@@ -443,6 +448,7 @@ struct TypeInfo<T[N]>
 	typedef T nonRef;
 	typedef typename TypeInfo<T>::nonConst &nonConst;
 	typedef typename TypeInfo<T>::nonPtr &nonPtr;
+	typedef typename TypeInfo<T>::decayed decayed;
 };
 
 template<typename T>

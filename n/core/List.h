@@ -195,7 +195,7 @@ class List
 
 		template<typename C>
 		void prepend(const C &c) {
-			prependDispatch(c, BoolToType<TypeConversion<C, const T>::canBuild>());
+			prependDispatch(c, typename ShouldInsertAsCollection<C, T>::type());
 		}
 
 		template<typename C>

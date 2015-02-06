@@ -95,7 +95,6 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					return 0;
 				}
 				for(uint i = 0; i != 3; i++) {
-					auto w = fl[i].split("/", true);
 					core::Array<uint> uis = fl[i].split("/", true).mapped([](const core::String &str) { return str.isEmpty() ? 0 : uint(str); });
 					for(; uis.size() < 3;) {
 						uis += 0;
