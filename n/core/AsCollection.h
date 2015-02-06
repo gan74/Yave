@@ -161,6 +161,12 @@ class Collection
 
 		static constexpr bool isCollection = !std::is_same<ElementType, NullType>::value;
 
+		template<typename U>
+		struct isCollectionOf
+		{
+			static constexpr bool value = isCollection && TypeConversion<ElementType, U>::exists;
+		};
+
 		iterator begin() {
 			return collection.begin();
 		}

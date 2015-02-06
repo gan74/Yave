@@ -41,7 +41,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 	private:
 		internal::MeshInstance<> *load(io::File &file) {
 		if(!file.open(io::IODevice::Read)) {
-			std::cout<<file.getName()<<" not found"<<std::endl;
+			std::cerr<<file.getName()<<" not found"<<std::endl;
 			return 0;
 		}
 		char *data = new char[file.size()];
@@ -62,20 +62,22 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 				continue;
 			}
 			if(l.beginWith("v ")) {
-				core::Array<float> fl = l.subString(2).split(" ");
+				core::Array<float> fl = l.subString(2).split(" ").mapped([](const core::String &s) { return s.to<float>(); });
 				if(fl.size() != 3) {
 					return 0;
 				}
 				positions.append(math::Vec3(fl[0], fl[1], fl[2]));
 			} else if(l.beginWith("vn ")) {
-				core::Array<float> fl = l.subString(3).split(" ");
+				core::Array<float> fl = l.subString(3).split(" ").mapped([](const core::String &s) { return s.to<float>(); });
 				if(fl.size() != 3) {
+					std::cerr<<"Invalid normal"<<std::endl;
 					return 0;
 				}
 				normals.append(math::Vec3(fl[0], fl[1], fl[2]));
 			} else if(l.beginWith("vt ")) {
-				core::Array<float> fl = l.subString(3).split(" ");
+				core::Array<float> fl = l.subString(3).split(" ").mapped([](const core::String &s) { return s.to<float>(); });
 				if(fl.size() != 2) {
+					std::cerr<<"Invalid texture coord"<<std::endl;
 					return 0;
 				}
 				coords.append(math::Vec2(fl[0], fl[1]));
@@ -93,6 +95,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					return 0;
 				}
 				for(uint i = 0; i != 3; i++) {
+					auto w = fl[i].split("/", true);
 					core::Array<uint> uis = fl[i].split("/", true).mapped([](const core::String &str) { return str.isEmpty() ? 0 : uint(str); });
 					for(; uis.size() < 3;) {
 						uis += 0;
@@ -107,6 +110,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 							coords.append(math::Vec2(acos(p.x()) / math::pi<>(), asin(p.z()) / math::pi<float>()));
 						}
 						if(v.x() >= positions.size() || v.z() >= normals.size() || vy >= coords.size()) {
+							std::cerr<<"Index out of bound : "<<math::Vec3ui(v.x(), vy, v.z())<<std::endl;
 							return 0;
 						}
 						face[i] = vmap[v] = tr.append(Vertex<>(positions[v.x()], normals[v.z()], coords[vy]));

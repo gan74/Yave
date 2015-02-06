@@ -86,13 +86,15 @@ class Cube : public StaticMesh
 			Quaternion<> q = Quaternion<>::fromAxisAngle(axis.cross(Vec3(1, 0, 0)).cross(axis), t);
 			axis = q(axis);
 			setRotation(Quaternion<>::fromAxisAngle(axis, x));
+			if(!getMeshInstance().isValid()) {
+				fatal("Unable to load mesh");
+			}
 			StaticMesh::render(qu);
 		}
 
 	private:
 		Vec3 axis;
 };
-
 
 int main(int, char **) {
 	SDL_Window *win = createWindow();
@@ -151,7 +153,6 @@ int main(int, char **) {
 	while(run(win)) {
 		Timer timer;
 		gl::glClear(GL_COLOR_BUFFER_BIT);
-
 		core::Array<StaticMesh *> meshes = scene.query<StaticMesh>(cam);
 		RenderQueue queue;
 		for(Renderable *m : meshes) {
@@ -160,13 +161,11 @@ int main(int, char **) {
 		for(const auto &q : queue.getBatches()) {
 			q();
 		}
-
 		GLContext::getContext()->processTasks();
-
 		if(GLContext::checkGLError()) {
 			fatal("GL error");
 		}
-		gl::glFinish();
+		gl::glFlush();
 	}
 	return 0;
 }
