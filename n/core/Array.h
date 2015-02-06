@@ -61,7 +61,7 @@ class CompactArrayResizePolicy
 };
 
 template<typename T, typename ResizePolicy = DefaultArrayResizePolicy>
-class Array : public ResizePolicy
+class Array : public ResizePolicy // Be SUPER careful when adding collections directly, will use the lazyest cast possible, can be wrong !
 {
 	public:
 		typedef T * iterator;
