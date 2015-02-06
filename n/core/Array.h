@@ -113,7 +113,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 
 		template<typename C>
 		void append(const C &c) {
-			appendDispatch(c, typename ShouldInsertAsCollection<C, T>::type()); // <------------------------ This is the line you are looking for
+			appendDispatch(c, BoolToType<!ShouldInsertAsCollection<C, T>::value>()); // <------------------------ This is the line you are looking for
 		}
 
 		template<typename A, typename B, typename... Args>

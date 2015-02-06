@@ -267,7 +267,10 @@ class TypeConversion
 	static No &test(...);
 
 	public:
+		static constexpr bool makeArithmeticSence = !std::is_arithmetic<From>::value || !std::is_arithmetic<To>::value ||
+											(std::is_floating_point<From>::value == std::is_floating_point<To>::value && sizeof(To) >= sizeof(From));
 		static constexpr bool exists = sizeof(test(makeOne<From>())) == sizeof(Yes);
+		static constexpr bool existsWeak = exists && makeArithmeticSence;
 		static constexpr bool canBuild = exists || CanBuildFrom::value;
 
 };

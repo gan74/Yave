@@ -62,20 +62,23 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 				continue;
 			}
 			if(l.beginWith("v ")) {
-				core::Array<float> fl = l.subString(2).split(" ").mapped([](const core::String &s) { return s.to<float>(); });
+				core::Array<float> fl = l.subString(2).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
 				if(fl.size() != 3) {
+					for(auto x : fl) {
+						std::cout<<x<<std::endl;
+					}
 					return 0;
 				}
 				positions.append(math::Vec3(fl[0], fl[1], fl[2]));
 			} else if(l.beginWith("vn ")) {
-				core::Array<float> fl = l.subString(3).split(" ").mapped([](const core::String &s) { return s.to<float>(); });
+				core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
 				if(fl.size() != 3) {
 					std::cerr<<"Invalid normal"<<std::endl;
 					return 0;
 				}
 				normals.append(math::Vec3(fl[0], fl[1], fl[2]));
 			} else if(l.beginWith("vt ")) {
-				core::Array<float> fl = l.subString(3).split(" ").mapped([](const core::String &s) { return s.to<float>(); });
+				core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
 				if(fl.size() != 2) {
 					std::cerr<<"Invalid texture coord"<<std::endl;
 					return 0;
