@@ -425,8 +425,8 @@ struct TypeInfo<T[]>
 	static const Type type;
 
 	typedef T nonRef;
-	typedef typename TypeInfo<T>::nonConst &nonConst;
-	typedef typename TypeInfo<T>::nonPtr &nonPtr;
+	typedef typename TypeInfo<T>::nonConst nonConst;
+	typedef typename TypeInfo<T>::nonPtr nonPtr;
 	typedef typename TypeInfo<T>::decayed decayed;
 };
 
@@ -452,6 +452,12 @@ struct TypeInfo<T[N]>
 	typedef typename TypeInfo<T>::nonConst &nonConst;
 	typedef typename TypeInfo<T>::nonPtr &nonPtr;
 	typedef typename TypeInfo<T>::decayed decayed;
+};
+
+template<typename T>
+struct IsThreadSafe
+{
+	static constexpr bool value = TypeInfo<typename TypeInfo<T>::decayed>::isPod;
 };
 
 template<typename T>
