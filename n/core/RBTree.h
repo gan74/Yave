@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/types.h>
 #include <algorithm>
+#include "AsCollection.h"
 
 namespace n {
 namespace core {
@@ -139,23 +140,6 @@ class RBTree
 				}
 		};
 
-	private:
-		template<bool C, typename U>
-		struct Adder
-		{
-			RBTree<T, Comp, Eq>::iterator operator()(RBTree<T, Comp, Eq> &set, const U &e) const {
-				return set.insertOne(e);
-			}
-		};
-
-		template<typename U>
-		struct Adder<false, U>
-		{
-			RBTree<T, Comp, Eq>::iterator operator()(RBTree<T, Comp, Eq> &set, const U &e) const {
-				return set.insertCollection(e);
-			}
-		};
-
 	public:
 		RBTree() : guard(new Node()), root(guard), setSize(0) {
 		}
@@ -233,7 +217,7 @@ class RBTree
 
 		template<typename C>
 		iterator insert(const C &c) {
-			return Adder<TypeConversion<C, const T>::exists, C>()(*this, c);
+			return insertDispatch(c, typename ShouldInsertAsCollection<C, T>::type());
 		}
 
 		template<typename A, typename B, typename... Args>
@@ -434,6 +418,16 @@ class RBTree
 		}
 
 	private:
+		template<typename C>
+		iterator insertDispatch(const C &c, TrueType) {
+			insertCollection(c);
+		}
+
+		template<typename C>
+		iterator insertDispatch(const C &c, FalseType) {
+			return insertOne(c);
+		}
+
 		Node *guard;
 		Node *root;
 		uint setSize;
@@ -635,11 +629,12 @@ class RBTree
 			return m;
 		}
 
-		iterator insertOne(const T &e) {
+		template<typename C>
+		iterator insertOne(const C &e) {
 			Comp comp;
 			Eq eq;
 			if(!root->color) {
-				guard->children[0] = guard->children[1] = root = new Node(e, guard, guard, guard);
+				guard->children[0] = guard->children[1] = root = new Node(T(e), guard, guard, guard);
 				root->color = Node::Black;
 				setSize = 1;
 				return iterator(root);
