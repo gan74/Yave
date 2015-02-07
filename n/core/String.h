@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace core {
 
-class String
+class String // CoW not TSAFE at all (holding a copy of a string from a different thread can corrupt everything)
 {
 	public:
 		typedef char const * const_iterator;
