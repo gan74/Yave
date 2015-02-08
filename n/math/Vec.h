@@ -25,16 +25,16 @@ namespace math {
 template<uint N, typename T = float>
 class Vec
 {
-	template<uint P, typename U, typename... Args>
-	void build(U t, Args... args) {
-		vec[P] = T(t);
+	template<uint P, typename... Args>
+	void build(T t, Args... args) {
+		vec[P] = t;
 		build<P + 1>(args...);
 	}
 
-	template<uint P, uint Q, typename U, typename... Args>
-	void build(const Vec<Q, U> &t, Args... args) {
+	template<uint P, uint Q, typename... Args>
+	void build(const Vec<Q, T> &t, Args... args) {
 		for(uint i = 0; i != Q; i++) {
-			vec[P + i] = T(t[i]);
+			vec[P + i] = t[i];
 		}
 		build<P + Q>(args...);
 	}
