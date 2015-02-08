@@ -32,10 +32,21 @@ SpinLock::SpinLock() {
 	#endif
 }
 
+SpinLock::SpinLock(SpinLock &&s) {
+	#ifndef N_USE_PTHREAD_SPINLOCK
+	spin = false;
+	#else
+	spin = s.spin;
+	s.spin = 0;
+	#endif
+}
+
 SpinLock::~SpinLock() {
 	#ifdef N_USE_PTHREAD_SPINLOCK
-	pthread_spin_destroy((pthread_spinlock_t *)spin);
-	free(spin);
+	if(spin) {
+		pthread_spin_destroy((pthread_spinlock_t *)spin);
+		free(spin);
+	}
 	#endif
 }
 

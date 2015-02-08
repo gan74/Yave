@@ -27,6 +27,7 @@ class SpinLock : core::NonCopyable
 {
 	public:
 		SpinLock();
+		SpinLock(SpinLock &&s);
 		~SpinLock();
 
 		void lock();

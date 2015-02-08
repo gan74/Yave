@@ -42,6 +42,8 @@ class Mutex : core::NonCopyable
 	public:
 		Mutex(RecursionMode r = NonRecursive);
 
+		Mutex(Mutex &&m);
+
 		void lock();
 		void unlock();
 		bool trylock();

@@ -40,6 +40,10 @@ Mutex::Mutex(RecursionMode r) : mutex(r == NonRecursive ?  PTHREAD_MUTEX_INITIAL
 {
 }
 
+Mutex::Mutex(Mutex &&m) : mutex(m.mutex) {
+	m.mutex = 0;
+}
+
 void Mutex::lock() {
 	pthread_mutex_lock(&mutex);
 	#ifdef N_DEBUG
