@@ -64,9 +64,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			if(l.beginWith("v ")) {
 				core::Array<float> fl = l.subString(2).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
 				if(fl.size() != 3) {
-					for(auto x : fl) {
-						std::cout<<x<<std::endl;
-					}
+					std::cerr<<"Invalid position"<<std::endl;
 					return 0;
 				}
 				positions.append(math::Vec3(fl[0], fl[1], fl[2]));

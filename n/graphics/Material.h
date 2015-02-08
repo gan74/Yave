@@ -23,32 +23,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-template<typename T = float>
-class Material
-{
-	public:
-		Material() : index(cache.size()), roughtness(1), specular(0) { // not tsafe
+
+namespace internal {
+	template<typename T = float>
+	struct Material
+	{
+		static concurent::Mutex mutex;
+		static core::Array<Material<T> *> cache;
+
+		Material() {
+			mutex.lock();
 			cache.append(this);
+			mutex.unlock();
 		}
 
-		void setColor(const Color<T> &c) {
-			color = c;
-			updateCache();
+		~Material() {
+			mutex.lock();
+			cache.remove(this);
+			mutex.unlock();
 		}
 
 		bool operator<(const Material<T> &m) const {
-			return index < m.index;
-		}
-
-	private:
-		static core::Array<Material<T> *> cache;
-
-		bool cacheCompare(const Material<T> &m) const {
 			if(color != m.color) {
 				return color < m.color;
 			}
-			if(roughtness != m.roughtness) {
-				return roughtness < m.roughtness;
+			if(roughness != m.roughness) {
+				return roughness < m.roughness;
 			}
 			if(specular != m.specular) {
 				return specular < m.specular;
@@ -57,22 +57,76 @@ class Material
 		}
 
 		static void updateCache() {
-			cache.sort([](const Material *a, const Material *b) { return a->cacheCompare(*b); });
+			mutex.lock();
+			cache.sort([](const Material<T> *a, const Material<T> *b) { return a->operator<(*b); });
 			for(uint i = 0; i != cache.size(); i++) {
 				cache[i]->index = i;
 			}
+			mutex.unlock();
 		}
 
-		uint index;
-
 		Color<T> color;
-		T roughtness;
 		T specular;
+		T roughness;
 		Texture diffuse;
+
+		uint index;
+	};
+
+
+	template<typename T>
+	core::Array<Material<T> *> Material<T>::cache = core::Array<Material<T> *>();
+
+	template<typename T>
+	concurent::Mutex Material<T>::mutex = concurent::Mutex();
+}
+
+template<typename T = float>
+class Material : private assets::Asset<internal::Material<T>>
+{
+	public:
+		Material() : assets::Asset<internal::Material<T>>() {
+		}
+
+		bool operator<(const Material<T> &m) const {
+			return getInternalIndex() < m.getInternalIndex();
+		}
+
+
+		bool isValid() const {
+			return assets::Asset<internal::Material<T>>::isValid();
+		}
+
+		bool isNull() const {
+			return assets::Asset<internal::Material<T>>::isNull();
+		}
+
+		Color<T> getColor() const {
+			const internal::Material<T> *i = getInternal();
+			return i ? i->color : Color<T>();
+		}
+
+	private:
+		friend class MaterialLoader;
+
+		Material(const assets::Asset<internal::Material<T>> &t) : assets::Asset<internal::Material<T>>(t) {
+		}
+
+		Material(internal::Material<T> *i) : assets::Asset<internal::Material<T>>(std::move(i)) {
+		}
+
+		const internal::Material<T> *getInternal() const {
+			return this->isValid() ? &(this->operator*()) : (const internal::Material<T> *)0;
+		}
+
+		uint getInternalIndex() const {
+			const internal::Material<T> *i = getInternal();
+			return i ? i->index : 0;
+		}
+
 };
 
-template<typename T>
-core::Array<Material<T> *> Material<T>::cache = core::Array<Material<T> *>();
+static_assert(!IsThreadSafe<Material<>>::value, "n::graphics::Material<T> should not be treated as thread-safe");
 
 }
 }

@@ -14,22 +14,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_MESHLOADER
-#define N_GRAPHICS_MESHLOADER
+#ifndef N_GRAPHICS_MATERIALLOADER
+#define N_GRAPHICS_MATERIALLOADER
 
-#include "MeshInstance.h"
+#include "Material.h"
 #include <n/assets/Asset.h>
 #include <n/assets/AssetBuffer.h>
 
 namespace n {
 namespace graphics {
 
-class MeshLoader
+class MaterialLoader
 {
-	static MeshLoader *loader;
+	static MaterialLoader *loader;
+
 	public:
 		template<typename T, typename... Args>
-		class MeshDecoder
+		class MaterialDecoder
 		{
 			struct Runner
 			{
@@ -39,20 +40,20 @@ class MeshLoader
 			};
 
 			public:
-				MeshDecoder() {
+				MaterialDecoder() {
 					n::unused(runner);
 				}
 
-				virtual internal::MeshInstance<> *operator()(Args...) = 0;
+				virtual internal::Material<> *operator()(Args...) = 0;
 
 			private:
 				static Runner runner;
 		};
 
 		template<typename... Args>
-		static MeshInstance<> load(Args... args, bool async = true)  {
-			MeshLoader *ld = getLoader();
-			return async ? MeshInstance<>(ld->asyncBuffer.load(args...)) : MeshInstance<>(ld->immediateBuffer.load(args...));
+		static Material<> load(Args... args, bool async = true)  {
+			MaterialLoader *ld = getLoader();
+			return async ? Material<>(ld->asyncBuffer.load(args...)) : Material<>(ld->immediateBuffer.load(args...));
 		}
 
 		template<typename... Args, typename T>
@@ -62,28 +63,28 @@ class MeshLoader
 		}
 
 	private:
-		static MeshLoader *getLoader() {
+		static MaterialLoader *getLoader() {
 			if(!loader) {
-				loader = new MeshLoader();
+				loader = new MaterialLoader();
 			}
 			return loader;
 		}
 
-		MeshLoader() {
+		MaterialLoader() {
 		}
 
-		assets::AssetBuffer<internal::MeshInstance<>, assets::AsyncLoadingPolicy<internal::MeshInstance<>>> asyncBuffer;
-		assets::AssetBuffer<internal::MeshInstance<>, assets::ImmediateLoadingPolicy<internal::MeshInstance<>>> immediateBuffer;
+		assets::AssetBuffer<internal::Material<>, assets::AsyncLoadingPolicy<internal::Material<>>> asyncBuffer;
+		assets::AssetBuffer<internal::Material<>, assets::ImmediateLoadingPolicy<internal::Material<>>> immediateBuffer;
 
 };
 
 template<typename T, typename... Args>
-typename MeshLoader::MeshDecoder<T, Args...>::Runner MeshLoader::MeshDecoder<T, Args...>::runner = MeshLoader::MeshDecoder<T, Args...>::Runner();
+typename MaterialLoader::MaterialDecoder<T, Args...>::Runner MaterialLoader::MaterialDecoder<T, Args...>::runner = MaterialLoader::MaterialDecoder<T, Args...>::Runner();
 
 
 }
 }
 
 
-#endif // N_GRAPHICS_MESHLOADER
+#endif // MATERIALLOADER
 

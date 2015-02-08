@@ -21,6 +21,7 @@
 #include <n/graphics/StaticMesh.h>
 #include <n/graphics/Material.h>
 #include <n/graphics/MeshLoader.h>
+#include <n/graphics/MaterialLoader.h>
 
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>
@@ -121,10 +122,6 @@ int main(int, char **) {
 											"n_FragColor = vec4(vec3(dot(normal, normalize(vec3(1, 1, 1))) * 0.75 + 0.25), 1.0);"
 										"}");
 
-	Material<> mat;
-	mat.setColor(Vec4(1, 0, 0, 1));
-
-
 	ShaderCombinaison shader(&frag, &vert, 0);
 	if(!shader.isValid()) {
 		std::cerr<<shader.getLogs()<<std::endl;
@@ -132,6 +129,10 @@ int main(int, char **) {
 		std::cerr<<vert.getLogs()<<std::endl;
 		fatal("Unable to compile shader.");
 	}
+
+	Material<> mat = MaterialLoader::load<String, String>("scube.mtl", "Material", false);
+	std::cout<<mat.isNull()<<std::endl;
+	std::cout<<mat.getColor()<<std::endl;
 
 	shader.bind();
 
