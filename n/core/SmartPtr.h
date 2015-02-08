@@ -144,7 +144,7 @@ class SmartPtr
 		void unref() {
 			if(count && !--(*count)) {
 				delete ptr;
-				delete count;
+				delete count; // can fail
 			}
 			ptr = 0;
 			count = 0;
