@@ -454,11 +454,18 @@ struct TypeInfo<T[N]>
 	typedef typename TypeInfo<T>::decayed decayed;
 };
 
-template<typename T>
+template<typename T, typename... Args>
 struct IsThreadSafe
+{
+	static constexpr bool value = IsThreadSafe<T>::value && IsThreadSafe<Args...>::value;
+};
+
+template<typename T>
+struct IsThreadSafe<T>
 {
 	static constexpr bool value = TypeInfo<typename TypeInfo<T>::decayed>::isPod;
 };
+
 
 template<typename T>
 const uint TypeInfo<T>::baseId = typeId++; // dependent on compilation, but NOT on execution flow
