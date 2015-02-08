@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_MESHINSTANCE
 
 #include "TriangleBuffer.h"
+#include "Material.h"
 #include <n/assets/Asset.h>
 
 namespace n {
@@ -27,7 +28,7 @@ namespace internal {
 	template<typename T = float>
 	struct MeshInstance : core::NonCopyable
 	{
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b) : buffer(b), vao(0) {
+		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m) : buffer(b), vao(0), material(m) {
 		}
 
 		~MeshInstance() {
@@ -38,12 +39,14 @@ namespace internal {
 			if(!vao) {
 				vao = new VertexArrayObject<T>(buffer);
 			}
+			material.bind();
 			vao->draw(instances, beg, end);
 		}
 
 
 		typename TriangleBuffer<T>::FreezedTriangleBuffer buffer;
 		mutable VertexArrayObject<T> *vao;
+		graphics::Material<T> material;
 	};
 }
 
@@ -69,6 +72,11 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 		T getRadius() const {
 			const internal::MeshInstance<T> *i = getInternal();
 			return i ? i->buffer.radius : 0;
+		}
+
+		Material<T> getMaterial() const {
+			const internal::MeshInstance<T> *i = getInternal();
+			return i ? i->material : Material<T>();
 		}
 
 		void draw(uint instances = 1, uint beg = 0, uint end = 0) const {

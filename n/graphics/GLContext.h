@@ -41,6 +41,10 @@ class GLContext
 
 		static bool checkGLError();
 
+		const ShaderCombinaison *getShader() const {
+			return shader;
+		}
+
 	private:
 		friend class ShaderCombinaison;
 

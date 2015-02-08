@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/math/Vec.h>
 #include "Texture.h"
+#include "ShaderCombinaison.h"
 
 namespace n {
 namespace graphics {
@@ -104,6 +105,16 @@ class Material : private assets::Asset<internal::Material<T>>
 		Color<T> getColor() const {
 			const internal::Material<T> *i = getInternal();
 			return i ? i->color : Color<T>();
+		}
+
+		void bind() const {
+			const internal::Material<T> *i = getInternal();
+			if(i) {
+				const ShaderCombinaison *sh = GLContext::getContext()->getShader();
+				sh->setValue("n_Color", i->color);
+			} else {
+
+			}
 		}
 
 	private:

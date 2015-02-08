@@ -67,10 +67,10 @@ class ShaderCombinaison : core::NonCopyable
 
 			private:
 				friend class ShaderCombinaison;
-				Uniform(ShaderCombinaison *s, const core::String &a) : sh(s), name(a) {
+				Uniform(const ShaderCombinaison *s, const core::String &a) : sh(s), name(a) {
 				}
 
-				ShaderCombinaison *sh;
+				const ShaderCombinaison *sh;
 				core::String name;
 		};
 
@@ -110,64 +110,64 @@ class ShaderCombinaison : core::NonCopyable
 			GLContext::getContext()->shader = const_cast<ShaderCombinaison *>(this);
 		}
 
-		UniformAddr getAddr(const core::String &name) {
+		UniformAddr getAddr(const core::String &name) const {
 			return getInfo(name).addr;
 		}
 
-		Uniform operator[](const core::String &name) {
+		Uniform operator[](const core::String &name) const {
 			return Uniform(this, name);
 		}
 
 		template<typename T>
-		void setValue(const core::String &name, const T &t) {
+		void setValue(const core::String &name, const T &t) const {
 			UniformAddr i = getAddr(name);
 			if(i != UniformAddr(GL_INVALID_INDEX)) {
 				setValue(i, t);
 			}
 		}
 
-		void setValue(UniformAddr addr, int a) {
+		void setValue(UniformAddr addr, int a) const {
 			gl::glProgramUniform1i(handle, addr, a);
 		}
 
-		void setValue(UniformAddr addr, uint a) {
+		void setValue(UniformAddr addr, uint a) const {
 			gl::glProgramUniform1ui(handle, addr, a);
 		}
 
-		void setValue(UniformAddr addr, float f) {
+		void setValue(UniformAddr addr, float f) const {
 			gl::glProgramUniform1f(handle, addr, f);
 		}
 
-		void setValue(UniformAddr addr, const math::Vec2i &v) {
+		void setValue(UniformAddr addr, const math::Vec2i &v) const {
 			gl::glProgramUniform2iv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, const math::Vec3i &v) {
+		void setValue(UniformAddr addr, const math::Vec3i &v) const {
 			gl::glProgramUniform3iv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, const math::Vec2 &v) {
+		void setValue(UniformAddr addr, const math::Vec2 &v) const {
 			gl::glProgramUniform2fv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, const math::Vec3 &v) {
+		void setValue(UniformAddr addr, const math::Vec3 &v) const {
 			gl::glProgramUniform3fv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, const math::Vec4 &v) {
+		void setValue(UniformAddr addr, const math::Vec4 &v) const {
 			gl::glProgramUniform4fv(handle, addr, 1, v.begin());
 		}
 
-		void setValue(UniformAddr addr, const math::Matrix4<float> &m) {
+		void setValue(UniformAddr addr, const math::Matrix4<float> &m) const {
 			gl::glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
 		}
 
-		void setValue(UniformAddr addr, const Texture &t) {
+		void setValue(UniformAddr addr, const Texture &t) const {
 			setValue(addr, t.data ? t.data->handle : 0);
 		}
 
 		template<typename T>
-		void setBuffer(const core::String &name, const UniformBuffer<T> *buffer) {
+		void setBuffer(const core::String &name, const UniformBuffer<T> *buffer) const {
 			core::Map<core::String, BlockInfo>::iterator it = blocks.find(name);
 			BlockInfo infos{gl::GLuint(GL_INVALID_INDEX), 0, 0};
 			if(it == blocks.end()) {
@@ -190,7 +190,7 @@ class ShaderCombinaison : core::NonCopyable
 
 	private:
 		bool isCurrent() const {
-			return true;
+			return	GLContext::getContext()->shader == this;
 		}
 
 		void compile() {
@@ -237,7 +237,7 @@ class ShaderCombinaison : core::NonCopyable
 			}
 		}
 
-		UniformInfo getInfo(const core::String &name) {
+		UniformInfo getInfo(const core::String &name) const {
 			return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
 		}
 
@@ -245,7 +245,7 @@ class ShaderCombinaison : core::NonCopyable
 		gl::GLuint handle;
 		core::String logs;
 		core::Map<core::String, UniformInfo> uniformsInfo;
-		core::Map<core::String, BlockInfo> blocks;
+		mutable core::Map<core::String, BlockInfo> blocks;
 };
 
 }

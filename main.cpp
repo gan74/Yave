@@ -90,6 +90,7 @@ class Cube : public StaticMesh
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
+			std::cout<<getMeshInstance().getMaterial().getColor()<<std::endl;
 			StaticMesh::render(qu);
 		}
 
@@ -106,20 +107,18 @@ int main(int, char **) {
 										"uniform mat4 n_ViewProjectionMatrix;"
 										"uniform mat4 n_ModelMatrix;"
 										"out vec3 normal;"
-										"out vec3 color;"
 										"void main() {"
 											"gl_Position = n_ViewProjectionMatrix * n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
 											"normal = (n_ModelMatrix * vec4(n_VertexNormal, 1.0)).xyz;"
-											"color = n_VertexNormal;"
 										"}");
 
 	Shader<FragmentShader> frag("#version 420 core\n"
 										"layout(location = 0) out vec4 n_FragColor;"
 										"in vec3 normal;"
-										"in vec3 color;"
+										"uniform vec4 n_Color;"
 										"void main() {"
 											//"n_FragColor = vec4(color * 0.5 + 0.5, 1.0);"
-											"n_FragColor = vec4(vec3(dot(normal, normalize(vec3(1, 1, 1))) * 0.75 + 0.25), 1.0);"
+											"n_FragColor = vec4(vec3(dot(normal, normalize(vec3(1, 1, 1))) * 0.75 + 0.25) * n_Color.rgb, n_Color.a);"
 										"}");
 
 	ShaderCombinaison shader(&frag, &vert, 0);
@@ -129,10 +128,6 @@ int main(int, char **) {
 		std::cerr<<vert.getLogs()<<std::endl;
 		fatal("Unable to compile shader.");
 	}
-
-	Material<> mat = MaterialLoader::load<String, String>("scube.mtl", "Material", false);
-	std::cout<<mat.isNull()<<std::endl;
-	std::cout<<mat.getColor()<<std::endl;
 
 	shader.bind();
 

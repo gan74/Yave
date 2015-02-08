@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <n/io/File.h>
 #include "MeshLoader.h"
+#include "MaterialLoader.h"
 
 namespace n {
 namespace graphics {
@@ -85,9 +86,11 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			}
 		}
 		//std::cout<<positions.size()<<" "<<normals.size()<<" "<<coords.size()<<std::endl;
+		core::String mtllib;
 		core::Map<math::Vec3ui, uint> vmap;
 		bool smooth = false;
 		TriangleBuffer<> tr;
+		Material<> mat;
 		for(const core::String &l : lines) {
 			if(l.beginWith("f ")) {
 				core::Array<core::String> fl = l.subString(2).split(" ");
@@ -122,13 +125,16 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			} else if(l.beginWith("s ")) {
 				core::String sm = l.subString(2).toLower().filtered([](char c) { return !isspace(c); });
 				smooth = !(sm == "off" || sm == "0");
-			} else if(l.beginWith("usemtl")) {
+			} else if(l.beginWith("usemtl ")) {
+				mat = MaterialLoader::load<core::String, core::String>(mtllib, l.subString(7));
 				if(!tr.getTriangles().isEmpty()) {
-					fatal("Unsupported feature");
+					fatal("Unsuported feature");
 				}
+			} else if(l.beginWith("mtllib ")) {
+				mtllib = l.subString(7);
 			}
 		}
-		return new internal::MeshInstance<>(std::move(tr.freezed()));
+		return new internal::MeshInstance<>(std::move(tr.freezed()), mat);
 	}
 };
 
