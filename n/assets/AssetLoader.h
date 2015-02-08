@@ -25,9 +25,8 @@ namespace n {
 namespace assets {
 
 template<typename T>
-class AssetLoader
+class AssetLoader : core::NonCopyable
 {
-
 	using ArgumentTypes = core::Array<Type>;
 
 	template<typename... Ar>
