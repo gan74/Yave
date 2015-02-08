@@ -137,9 +137,16 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			return erase(b, b + 1);
 		}
 
+		iterator remove(const T &e) {
+			return remove(find(e));
+		}
+
 		iterator erase(const_iterator b, const_iterator e) {
 			if(e < b) {
 				std::swap(b, e);
+			}
+			if(b >= dataEnd) {
+				return dataEnd;
 			}
 			uint diff = e - b;
 			if(e == dataEnd) {
