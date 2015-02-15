@@ -282,7 +282,7 @@ class Type
 		}
 
 		template<typename T>
-		Type(const T &t) : Type(typeid(t)) {
+		explicit Type(const T &t) : Type(typeid(t)) {
 		}
 
 
