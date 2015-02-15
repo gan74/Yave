@@ -60,20 +60,34 @@ class AsyncLoadingPolicy
 		}
 };
 
-template<typename T, typename LoadPolicy>
+template<typename T, typename LoadPolicy, bool Memo = true>
 class AssetBuffer : protected LoadPolicy, core::NonCopyable
 {
+	struct MapOp
+	{
+		public:
+			bool operator()(const typename AssetLoader<T>::ArgumentTypes &a, const typename AssetLoader<T>::ArgumentTypes &b) const {
+				if(a.size() == b.size()) {
+					auto x = a.begin();
+					auto y = b.begin();
+					while(x != a.end()) {
+						if(*x++ < *y++) {
+							return true;
+						}
+					}
+					return false;
+				}
+				return a.size() < b.size();
+			}
+	};
+
 	public:
 		AssetBuffer() {
 		}
 
 		template<typename... Args>
 		Asset<T> load(Args... args) {
-			AssetPtr<T> asset(LoadPolicy::operator()(loader, args...));
-			mutex.lock();
-			assets.append(asset);
-			mutex.unlock();
-			return Asset<T>(asset);
+			return load(BoolToType<Memo>(), args...);
 		}
 
 		template<typename... Args, typename U>
@@ -83,18 +97,40 @@ class AssetBuffer : protected LoadPolicy, core::NonCopyable
 			mutex.unlock();
 		}
 
-		void gc() {
+		/*void gc() {
 			mutex.lock();
 			assets.filter([](const AssetPtr<T> &ptr) {
 				return ptr.getReferenceCount() > 1;
 			});
 			mutex.unlock();
-		}
+		}*/
 
 	private:
+
+		template<typename... Args>
+		Asset<T> load(TrueType, Args... args) {
+			typename AssetLoader<T>::ArgumentTypes tps = AssetLoader<T>::template getArgumentTypes<Args...>();
+			mutex.lock();
+			auto it = assets.find(tps);
+			if(it == assets.end()) {
+				it = assets.insert(tps, LoadPolicy::operator()(loader, args...));
+			}
+			mutex.unlock();
+			return (*it)._2;
+		}
+
+		template<typename... Args>
+		Asset<T> load(FalseType, Args... args) {
+			AssetPtr<T> asset(LoadPolicy::operator()(loader, args...));
+			mutex.lock();
+			assets.append(asset);
+			mutex.unlock();
+			return asset;
+		}
+
 		concurent::Mutex mutex;
 		AssetLoader<T> loader;
-		core::Array<AssetPtr<T>> assets;
+		typename If<Memo, core::Map<typename AssetLoader<T>::ArgumentTypes, AssetPtr<T>, MapOp>, core::Array<AssetPtr<T>>>::type assets;
 };
 
 }

@@ -27,69 +27,79 @@ namespace assets {
 template<typename T>
 class AssetLoader : core::NonCopyable
 {
-	using ArgumentTypes = core::Array<Type>;
+	public:
+		using ArgumentTypes = core::Array<Type>;
 
-	template<typename... Ar>
-	class TypeArray
-	{
-		template<typename W, typename... A>
-		struct TypeHelper
+	private:
+		template<typename... Ar>
+		class TypeArray
 		{
-			static ArgumentTypes args() {
-				return ArgumentTypes(typeid(W), TypeHelper<A...>::args());
-			}
+			template<typename W, typename... A>
+			struct TypeHelper
+			{
+				static ArgumentTypes args() {
+					return ArgumentTypes(typeid(W), TypeHelper<A...>::args());
+				}
+			};
+
+			template<typename W, typename Z>
+			struct TypeHelper<W, Z>
+			{
+				static ArgumentTypes args() {
+					return ArgumentTypes(typeid(W), typeid(Z));
+				}
+			};
+
+			public:
+				static ArgumentTypes args() {
+					ArgumentTypes arr = TypeHelper<Ar..., NullType, NullType>::args();
+					arr.pop();
+					arr.pop();
+					if(arr.size() != sizeof...(Ar)) {
+						fatal("SFINAE error : invalid type list.");
+					}
+					return arr;
+				}
 		};
 
-		template<typename W, typename Z>
-		struct TypeHelper<W, Z>
+		class LoaderBase
 		{
-			static ArgumentTypes args() {
-				return ArgumentTypes(typeid(W), typeid(Z));
-			}
+			public:
+				virtual ArgumentTypes args() const = 0;
 		};
 
-		public:
-			static ArgumentTypes args() {
-				ArgumentTypes arr = TypeHelper<Ar..., NullType, NullType>::args();
-				arr.pop();
-				arr.pop();
-				return arr;
-			}
-	};
+		template<typename... Args>
+		class LoaderFunc : public LoaderBase
+		{
+			public:
+				template<typename U>
+				LoaderFunc(U u) : func(u) {
+				}
 
-	class LoaderBase
-	{
-		public:
-			virtual ArgumentTypes args() const = 0;
-	};
+				ArgumentTypes args() const override {
+					return TypeArray<Args...>::args();
+				}
 
-	template<typename... Args>
-	class LoaderFunc : public LoaderBase
-	{
-		public:
-			template<typename U>
-			LoaderFunc(U u) : func(u) {
-			}
+				T *operator()(Args... args) {
+					return func(args...);
+				}
 
-			ArgumentTypes args() const override {
-				return TypeArray<Args...>::args();
-			}
-
-			T *operator()(Args... args) {
-				return func(args...);
-			}
-
-		private:
-			core::Functor<T *(Args...)> func;
-	};
+			private:
+				core::Functor<T *(Args...)> func;
+		};
 
 	public:
 		AssetLoader() {
 		}
 
 		template<typename... Args>
+		static ArgumentTypes getArgumentTypes() {
+			return TypeArray<Args...>::args();
+		}
+
+		template<typename... Args>
 		T *operator()(Args... args) const {
-			ArgumentTypes argTypes = TypeArray<Args...>::args();
+			ArgumentTypes argTypes = getArgumentTypes<Args...>();
 			core::Array<LoaderBase *> valid;
 			for(LoaderBase *b : bases) {
 				if(b->args() == argTypes) {

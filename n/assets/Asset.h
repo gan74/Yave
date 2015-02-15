@@ -41,7 +41,7 @@ class AssetPtr : public core::SmartPtr<const T *, concurent::auint>
 		}
 };
 
-template<typename T, typename LoadPolicy>
+template<typename T, typename LoadPolicy, bool Memo>
 class AssetBuffer;
 
 template<typename T>
@@ -55,7 +55,7 @@ class Asset
 		}
 
 		~Asset() {
-			if(ptr.getReferenceCount() < 2) {
+			if(ptr.getReferenceCount() < 1) {
 				ptr.invalidate();
 			}
 		}
@@ -85,7 +85,7 @@ class Asset
 		}
 
 	private:
-		template<typename U, typename P>
+		template<typename U, typename P, bool M>
 		friend class AssetBuffer;
 
 		Asset(AssetPtr<T> &p) : ptr(p) {
