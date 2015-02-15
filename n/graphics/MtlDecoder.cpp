@@ -47,8 +47,10 @@ class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::Stri
 			std::cerr<<file.getName()<<" not found"<<std::endl;
 			return 0;
 		}
-		char *data = new char[file.size()];
+		uint fs = file.size();
+		char *data = new char[fs + 1];
 		file.readBytes(data);
+		data[fs] = 0;
 		core::Array<core::String> lines = core::String(data).split("\n");
 		delete[] data;
 		file.close();
@@ -58,6 +60,7 @@ class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::Stri
 			if(l.beginWith("newmtl ")) {
 				if(l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
 					if(mat) {
+						std::cerr<<"Material \""<<name<<"\""<<" is already defined"<<std::endl;
 						fatal("Material already defined");
 					}
 					mat = new internal::Material<>();

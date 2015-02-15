@@ -45,8 +45,10 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			std::cerr<<file.getName()<<" not found"<<std::endl;
 			return 0;
 		}
-		char *data = new char[file.size()];
+		uint fs = file.size();
+		char *data = new char[fs + 1];
 		file.readBytes(data);
+		data[fs] = 0;
 		core::Array<core::String> lines = core::String(data).split("\n");
 		delete[] data;
 		file.close();
