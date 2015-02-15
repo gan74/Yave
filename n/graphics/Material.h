@@ -113,7 +113,7 @@ class Material : private assets::Asset<internal::Material<T>>
 				const ShaderCombinaison *sh = GLContext::getContext()->getShader();
 				sh->setValue("n_Color", i->color);
 			} else {
-
+				#warning not implemented
 			}
 		}
 
