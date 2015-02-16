@@ -64,18 +64,10 @@ bool run(SDL_Window *mainWindow) {
 	return cc;
 }
 
-MeshInstance<> getCube() {
-	static MeshInstance<> *c = 0;
-	if(!c) {
-		c = new MeshInstance<>(MeshLoader::load<String>("scube.obj"));
-	}
-	return *c;
-}
-
 class Cube : public StaticMesh
 {
 	public:
-		Cube() : StaticMesh(getCube()) {
+		Cube() : StaticMesh(MeshLoader::load<String>("scube.obj")) {
 			axis = ((Vec3(random(), random(), random()) - 0.5) * 2).normalized();
 		}
 
@@ -90,7 +82,6 @@ class Cube : public StaticMesh
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
-			std::cout<<getMeshInstance().getMaterial().getColor()<<std::endl;
 			StaticMesh::render(qu);
 		}
 
@@ -99,6 +90,7 @@ class Cube : public StaticMesh
 };
 
 int main(int, char **) {
+
 	SDL_Window *win = createWindow();
 
 	Shader<VertexShader> vert("#version 420 core\n"
