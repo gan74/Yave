@@ -94,7 +94,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 		}
 
 		const internal::MeshInstance<T> *getInternal() const {
-			return isValid() ? &(this->operator*()) : (const internal::MeshInstance<T> *)0;
+			return isValid() ? this->operator->() : (const internal::MeshInstance<T> *)0;
 		}
 };
 
