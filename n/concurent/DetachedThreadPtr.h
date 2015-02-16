@@ -38,11 +38,11 @@ class DetachedThreadPtr : core::NonCopyable
 			return *obj;
 		}
 
-		T &operator->() {
+		T *operator->() {
 			return *obj;
 		}
 
-		const T &operator->() const {
+		const T *operator->() const {
 			return *obj;
 		}
 

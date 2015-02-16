@@ -103,7 +103,7 @@ class Image : private assets::Asset<ImageInternal>
 		}
 
 		const ImageInternal *getInternal() const {
-			return isValid() ? &(this->operator*()) : (const ImageInternal *)0;
+			return isValid() ? this->operator->() : (const ImageInternal *)0;
 		}
 
 };

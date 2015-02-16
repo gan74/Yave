@@ -26,16 +26,15 @@ template<typename T>
 class LockingProxy
 {
 	public:
-		LockingProxy(T *obj, Mutex *mut) : ptr(obj), mutex(mut) {
-			mutex->lock();
-		}
-
-		LockingProxy(T *obj) : ptr(obj), mutex(0) {
+		LockingProxy(T *obj) : ptr(obj) {
+			if(ptr) {
+				ptr->lock();
+			}
 		}
 
 		~LockingProxy() {
-			if(mutex) {
-				mutex->unlock();
+			if(ptr) {
+				ptr->unlock();
 			}
 		}
 
@@ -45,7 +44,6 @@ class LockingProxy
 
 	private:
 		T *ptr;
-		Mutex *mutex;
 };
 
 }

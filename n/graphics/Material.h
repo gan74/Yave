@@ -127,7 +127,7 @@ class Material : private assets::Asset<internal::Material<T>>
 		}
 
 		const internal::Material<T> *getInternal() const {
-			return this->isValid() ? &(this->operator*()) : (const internal::Material<T> *)0;
+			return this->isValid() ? this->operator->() : (const internal::Material<T> *)0;
 		}
 
 		uint getInternalIndex() const {

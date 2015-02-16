@@ -60,8 +60,8 @@ class Asset
 			}
 		}
 
-		const T &operator->() const {
-			return **ptr;
+		const T *operator->() const {
+			return *ptr;
 		}
 
 		const T &operator*() const {
