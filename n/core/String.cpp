@@ -23,50 +23,56 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace core {
 
+typedef String::CounterType SCType;
+
 N_FORCE_INLINE uint sizeForStrAlloc(uint s) {
 	uint mod = s % sizeof(uint);
 	return s + (mod ? sizeof(uint) - mod : 0);
 }
 
-N_FORCE_INLINE char *allocStr(uint **count, uint s) {
+N_FORCE_INLINE char *allocStr(SCType **count, uint s) {
 	if(!s) {
 		return 0;
 	}
 	uint allocSize = sizeForStrAlloc(s);
-	uint *cptr = (uint *)malloc(allocSize + 2 * sizeof(uint));
-	*cptr = 1;
-	cptr[1] = allocSize;
-	*count = cptr;
-	return (char *)(cptr + 2);
+	byte *cptr = (byte *)malloc(allocSize + sizeof(uint) + sizeof(SCType));
+	if((uint)cptr % sizeof(SCType)) {
+		fatal("Unaligned alloc (this should not happen");
+	}
+	*count = new(cptr) SCType(1);
+	new(cptr + sizeof(SCType)) uint(allocSize);
+
+	return (char *)(cptr + sizeof(SCType) + sizeof(uint));
 }
 
 
-N_FORCE_INLINE void freeStr(uint **count, char *) {
+N_FORCE_INLINE void freeStr(SCType **count, char *) {
 	if(!*count) {
 		return;
 	}
+	((SCType *)(*count))->~SCType();
 	free(*count);
 }
 
-N_FORCE_INLINE char *reallocStr(uint **count, uint s) {
+N_FORCE_INLINE char *reallocStr(SCType **count, uint s) {
 	if(!s) {
 		freeStr(count, 0);
 		*count = 0;
 		return 0;
 	}
-	uint *cptr = *count;
+	SCType *cptr = *count;
 	if(!cptr) {
 		return allocStr(count, s);
 	}
-	uint allocated = cptr[1];
+	uint allocated = *(uint *)(cptr + 1);
 	uint optAllocSize =  sizeForStrAlloc(s);
 	if(s > allocated || allocated + 2 * sizeof(uint) < optAllocSize) {
 		//cppcheck-suppress memleakOnRealloc
-		cptr = (uint *)realloc(cptr, optAllocSize + 2 * sizeof(uint));
-		cptr[1] = optAllocSize;
+		cptr = (SCType *)realloc(cptr, optAllocSize + sizeof(uint) + sizeof(SCType));
+		*(uint *)(cptr + 1) = optAllocSize;
 	}
 	*count = cptr;
-	return (char *)(cptr + 2);
+	return (char *)(cptr + sizeof(SCType) + sizeof(uint));
 }
 
 String::String() : length(0), count(0), data(0) {
@@ -105,14 +111,14 @@ String::~String() {
 		if(isUnique()) {
 			freeStr(&count, data);
 		} else {
-			(*count)--;
+			--(*count);
 		}
 	}
 }
 
 String::String(const String &str, uint beg, uint len) : length(len), count(str.count), data(str.data + beg) {
 	if(count) {
-		(*count)++;
+		++(*count);
 	}
 }
 
@@ -273,7 +279,7 @@ void String::detach() {
 void String::swap(String &str) {
 	uint l = str.length;
 	char *ch = str.data;
-	uint *c = str.count;
+	SCType *c = str.count;
 	str.length = length;
 	str.data = data;
 	str.count = count;

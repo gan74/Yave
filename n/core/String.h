@@ -21,16 +21,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Array.h"
 #include "AsCollection.h"
 #include <n/defines.h>
+#include <n/concurent/Atomic.h>
 
 #define N_STRINGIFY(m) n::core::String(#m)
 
 namespace n {
 namespace core {
 
-class String // CoW not TSAFE at all (holding a copy of a string from a different thread can corrupt everything)
+class String
 {
 	public:
+		typedef concurent::auint CounterType;
 		typedef char const * const_iterator;
+
+		static_assert(TypeInfo<CounterType>::isPod, "String::CounterType need to be POD");
 
 		template<typename T, typename... Args>
 		explicit String(const T &s) : String(build(s)) {
@@ -229,7 +233,7 @@ class String // CoW not TSAFE at all (holding a copy of a string from a differen
 		void detach(uint s) const;
 
 		mutable uint length;
-		mutable uint *count;
+		mutable CounterType *count;
 		mutable char *data;
 };
 
