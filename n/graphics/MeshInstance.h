@@ -26,12 +26,12 @@ namespace graphics {
 
 namespace internal {
 	template<typename T = float>
-	struct MeshInstance : core::NonCopyable
+	struct MeshInstanceBase : core::NonCopyable
 	{
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m) : buffer(b), vao(0), material(m) {
+		MeshInstanceBase(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m) : buffer(b), vao(0), material(m) {
 		}
 
-		~MeshInstance() {
+		~MeshInstanceBase() {
 			delete vao;
 		}
 
@@ -43,10 +43,41 @@ namespace internal {
 			vao->draw(instances, beg, end);
 		}
 
-
 		typename TriangleBuffer<T>::FreezedTriangleBuffer buffer;
 		mutable VertexArrayObject<T> *vao;
 		graphics::Material<T> material;
+	};
+
+	template<typename T = float>
+	struct MeshInstance : core::NonCopyable
+	{
+		MeshInstance(const core::Array<MeshInstanceBase<T> *> &b) : bases(b), radius(0) {
+			for(const MeshInstanceBase<T> *ba : bases) {
+				radius = std::max(radius, ba->buffer.radius);
+			}
+		}
+
+		~MeshInstance() {
+			for(const MeshInstanceBase<T> *b : bases) {
+				delete b;
+			}
+		}
+
+		void draw(uint instances = 1) const {
+			for(const MeshInstanceBase<T> *b : bases) {
+				b->draw(instances);
+			}
+		}
+
+		T getRadius() const {
+			return radius;
+		}
+
+
+		private:
+			core::Array<MeshInstanceBase<T> *> bases;
+			T radius;
+
 	};
 }
 
@@ -71,7 +102,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 
 		T getRadius() const {
 			const internal::MeshInstance<T> *i = getInternal();
-			return i ? i->buffer.radius : 0;
+			return i ? i->getRadius() : 0;
 		}
 
 		Material<T> getMaterial() const {
@@ -79,10 +110,10 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 			return i ? i->material : Material<T>();
 		}
 
-		void draw(uint instances = 1, uint beg = 0, uint end = 0) const {
+		void draw(uint instances = 1) const {
 			const internal::MeshInstance<T> *i = getInternal();
 			if(i) {
-				i->draw(instances, beg, end);
+				i->draw(instances);
 			}
 		}
 

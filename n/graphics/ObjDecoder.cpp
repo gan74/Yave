@@ -93,6 +93,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 		bool smooth = false;
 		TriangleBuffer<> tr;
 		Material<> mat;
+		core::Array<internal::MeshInstanceBase<> *> bases;
 		for(const core::String &l : lines) {
 			if(l.beginWith("f ")) {
 				core::Array<core::String> fl = l.subString(2).split(" ");
@@ -130,13 +131,16 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			} else if(l.beginWith("usemtl ")) {
 				mat = MaterialLoader::load<core::String, core::String>(mtllib, l.subString(7));
 				if(!tr.getTriangles().isEmpty()) {
-					fatal("Unsuported feature");
+					bases.append(new internal::MeshInstanceBase<>(std::move(tr.freezed()), mat));
 				}
 			} else if(l.beginWith("mtllib ")) {
 				mtllib = l.subString(7);
 			}
 		}
-		return new internal::MeshInstance<>(std::move(tr.freezed()), mat);
+		if(!tr.getTriangles().isEmpty()) {
+			bases.append(new internal::MeshInstanceBase<>(std::move(tr.freezed()), mat));
+		}
+		return new internal::MeshInstance<>(bases);
 	}
 };
 
