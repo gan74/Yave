@@ -98,19 +98,40 @@ int main(int, char **) {
 										"layout(location = 1) in vec3 n_VertexNormal;"
 										"uniform mat4 n_ViewProjectionMatrix;"
 										"uniform mat4 n_ModelMatrix;"
+										"uniform vec3 n_Camera;"
+
 										"out vec3 normal;"
+										"out vec3 view;"
+
 										"void main() {"
-											"gl_Position = n_ViewProjectionMatrix * n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
+											"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
+											"gl_Position = n_ViewProjectionMatrix * model;"
+											"view = n_Camera - model.xyz;"
 											"normal = (n_ModelMatrix * vec4(n_VertexNormal, 1.0)).xyz;"
 										"}");
 
 	Shader<FragmentShader> frag("#version 420 core\n"
 										"layout(location = 0) out vec4 n_FragColor;"
 										"in vec3 normal;"
+										"in vec3 view;"
 										"uniform vec4 n_Color;"
+										"uniform vec3 n_Roughness;"
+
 										"void main() {"
-											//"n_FragColor = vec4(color * 0.5 + 0.5, 1.0);"
-											"n_FragColor = vec4(vec3(dot(normal, normalize(vec3(1, 1, 1))) * 0.75 + 0.25) * n_Color.rgb, n_Color.a);"
+											"vec3 L = normalize(vec3(1, 1, 1));"
+											"float o2 = n_Roughness * n_Roughness;"
+											"float A = 1.0 - 0.5 * o2 / (o2 + 0.33);"
+											"float B = (0.45 * o2) / (o2 + 0.09);"
+											"float vn = dot(view, normal);"
+											"float ln = dot(L, normal);"
+											"float I = max(0.0, ln);"
+											"float avn = acos(vn);"
+											"float aln = acos(ln);"
+											"float diff = max(0.0, dot(normalize(view - normal * vn), normalize(L - normal * ln)));"
+											"float alpha = max(avn, aln);"
+											"float beta = min(avn, aln);"
+											"n_FragColor = n_Color * I * A + B * diff * sin(alpha) * tan(beta);"
+
 										"}");
 
 	ShaderCombinaison shader(&frag, &vert, 0);
@@ -125,6 +146,7 @@ int main(int, char **) {
 
 	Camera cam;
 	cam.setPosition(Vec3(0, 0, 3));
+	shader["n_Camera"] = Vec3(0, 0, 3);
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
 
 	GLContext::getContext()->setProjectionMatrix(cam.getProjectionMatrix());
