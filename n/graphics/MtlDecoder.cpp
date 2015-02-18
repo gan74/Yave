@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <n/io/File.h>
 #include "MaterialLoader.h"
+#include "ImageLoader.h"
 
 namespace n {
 namespace graphics {
@@ -82,6 +83,8 @@ class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::Stri
 						return 0;
 					}
 					mat->specular = (fl[0] + fl[1] + fl[2]) / 3;
+				} else if(l.toLower().beginWith("map_kd ")) {
+					mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })));l.subString(7);
 				}
 			}
 		}

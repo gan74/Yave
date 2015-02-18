@@ -67,7 +67,7 @@ bool run(SDL_Window *mainWindow) {
 class Cube : public StaticMesh
 {
 	public:
-		Cube() : StaticMesh(MeshLoader::load<String>("scube.obj")) {
+		Cube() : StaticMesh(MeshLoader::load<String>("sphere.obj")) {
 			axis = ((Vec3(random(), random(), random()) - 0.5) * 2).normalized();
 		}
 
@@ -115,10 +115,10 @@ int main(int, char **) {
 										"in vec3 normal;"
 										"in vec3 view;"
 										"uniform vec4 n_Color;"
-										"uniform vec3 n_Roughness;"
+										"uniform float n_Roughness;"
 
 										"void main() {"
-											"vec3 L = normalize(vec3(1, 1, 1));"
+											"vec3 L = normalize(vec3(0, 0, 1));"
 											"float o2 = n_Roughness * n_Roughness;"
 											"float A = 1.0 - 0.5 * o2 / (o2 + 0.33);"
 											"float B = (0.45 * o2) / (o2 + 0.09);"
@@ -131,6 +131,7 @@ int main(int, char **) {
 											"float alpha = max(avn, aln);"
 											"float beta = min(avn, aln);"
 											"n_FragColor = n_Color * I * A + B * diff * sin(alpha) * tan(beta);"
+											//"n_FragColor = n_Color * dot(L, normal);"
 
 										"}");
 
@@ -145,8 +146,8 @@ int main(int, char **) {
 	shader.bind();
 
 	Camera cam;
-	cam.setPosition(Vec3(0, 0, 3));
-	shader["n_Camera"] = Vec3(0, 0, 3);
+	cam.setPosition(Vec3(0, 0, 2));
+	shader["n_Camera"] = cam.getPosition();
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
 
 	GLContext::getContext()->setProjectionMatrix(cam.getProjectionMatrix());
@@ -159,9 +160,8 @@ int main(int, char **) {
 	}*/
 
 	scene.insert(new Cube());
-
+	Timer timer;
 	while(run(win)) {
-		Timer timer;
 		gl::glClear(GL_COLOR_BUFFER_BIT);
 		core::Array<StaticMesh *> meshes = scene.query<StaticMesh>(cam);
 		RenderQueue queue;
@@ -175,6 +175,7 @@ int main(int, char **) {
 		if(GLContext::checkGLError()) {
 			fatal("GL error");
 		}
+		shader["n_Roughness"] = (1 + sin(timer.elapsed())) / 2;
 		gl::glFlush();
 	}
 	return 0;

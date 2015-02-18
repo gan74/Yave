@@ -138,6 +138,10 @@ class ShaderCombinaison : core::NonCopyable
 			gl::glProgramUniform1f(handle, addr, f);
 		}
 
+		void setValue(UniformAddr addr, double f) const {
+			gl::glProgramUniform1f(handle, addr, f);
+		}
+
 		void setValue(UniformAddr addr, const math::Vec2i &v) const {
 			gl::glProgramUniform2iv(handle, addr, 1, v.begin());
 		}
