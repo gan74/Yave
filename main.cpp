@@ -64,10 +64,10 @@ bool run(SDL_Window *mainWindow) {
 	return cc;
 }
 
-class Cube : public StaticMesh
+class Obj : public StaticMesh
 {
 	public:
-		Cube() : StaticMesh(MeshLoader::load<String>("sphere.obj")) {
+		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)) {
 			axis = ((Vec3(random(), random(), random()) - 0.5) * 2).normalized();
 		}
 
@@ -106,8 +106,8 @@ int main(int, char **) {
 										"void main() {"
 											"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
 											"gl_Position = n_ViewProjectionMatrix * model;"
-											"view = n_Camera - model.xyz;"
-											"normal = (n_ModelMatrix * vec4(n_VertexNormal, 1.0)).xyz;"
+											"view = normalize(model.xyz - n_Camera);"
+											"normal = mat3(n_ModelMatrix) * n_VertexNormal;"
 										"}");
 
 	Shader<FragmentShader> frag("#version 420 core\n"
@@ -117,22 +117,21 @@ int main(int, char **) {
 										"uniform vec4 n_Color;"
 										"uniform float n_Roughness;"
 
-										"void main() {"
-											"vec3 L = normalize(vec3(0, 0, 1));"
-											"float o2 = n_Roughness * n_Roughness;"
-											"float A = 1.0 - 0.5 * o2 / (o2 + 0.33);"
-											"float B = (0.45 * o2) / (o2 + 0.09);"
-											"float vn = dot(view, normal);"
-											"float ln = dot(L, normal);"
-											"float I = max(0.0, ln);"
-											"float avn = acos(vn);"
-											"float aln = acos(ln);"
-											"float diff = max(0.0, dot(normalize(view - normal * vn), normalize(L - normal * ln)));"
-											"float alpha = max(avn, aln);"
-											"float beta = min(avn, aln);"
-											"n_FragColor = n_Color * I * A + B * diff * sin(alpha) * tan(beta);"
-											//"n_FragColor = n_Color * dot(L, normal);"
+										"float ON(vec3 L, vec3 V, vec3 N, float R) {"
+											"float R2 = R * R;"
+											"float A = 1.0 + 0.5 * R2 / (R2 + 0.33);"
+											"float B = 0.45 * R2 / (R2 + 0.09);"
+											"float LdotV = dot(L, V);"
+											"float NdotL = dot(L, N);"
+											"float NdotV = dot(N, V);"
+											"float s = LdotV - NdotL * NdotV;"
+											"float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));"
+											"return max(0.0, NdotL) * (A + B * s / t);"
+										"}"
 
+										"void main() {"
+											"vec3 L = vec3(0.0, 0.0, 1.0);"
+											"n_FragColor = n_Color * ON(L, view, normal, n_Roughness);"
 										"}");
 
 	ShaderCombinaison shader(&frag, &vert, 0);
@@ -146,7 +145,7 @@ int main(int, char **) {
 	shader.bind();
 
 	Camera cam;
-	cam.setPosition(Vec3(0, 0, 2));
+	cam.setPosition(Vec3(0, 0, 5));
 	shader["n_Camera"] = cam.getPosition();
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
 
@@ -159,7 +158,16 @@ int main(int, char **) {
 		scene.insert(cube);
 	}*/
 
-	scene.insert(new Cube());
+	auto c = new Obj("sphere.obj");
+	c->setPosition(Vec3(0, 2.5, 0));
+	scene.insert(c);
+	c = new Obj("cube.obj");
+	c->setPosition(Vec3(0, 0, 0));
+	scene.insert(c);
+	c = new Obj("sphere.obj");
+	c->setPosition(Vec3(0, -2.5, 0));
+	scene.insert(c);
+
 	Timer timer;
 	while(run(win)) {
 		gl::glClear(GL_COLOR_BUFFER_BIT);
@@ -168,14 +176,17 @@ int main(int, char **) {
 		for(Renderable *m : meshes) {
 			m->render(queue);
 		}
+		int r = 0;
 		for(const auto &q : queue.getBatches()) {
+			shader["n_Roughness"] = r++ / 2.0;
 			q();
+
 		}
 		GLContext::getContext()->processTasks();
 		if(GLContext::checkGLError()) {
 			fatal("GL error");
 		}
-		shader["n_Roughness"] = (1 + sin(timer.elapsed())) / 2;
+		//shader["n_Roughness"] = (1 + sin(timer.elapsed()));
 		gl::glFlush();
 	}
 	return 0;
