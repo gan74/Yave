@@ -35,11 +35,11 @@ class Transformable
 			return radius;
 		}
 
-		const math::Vec<3, T> getPosition() const {
+		const math::Vec<3, T> &getPosition() const {
 			return transform.getPosition();
 		}
 
-		const math::Quaternion<T> getRotation() const {
+		const math::Quaternion<T> &getRotation() const {
 			return transform.getRotation();
 		}
 

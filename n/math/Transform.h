@@ -56,11 +56,11 @@ class Transform
 			return rot(Vec<3, T>(0, 0, 1));
 		}
 
-		Quaternion<T> getRotation() const {
+		const Quaternion<T> &getRotation() const {
 			return rot;
 		}
 
-		Vec<3, T> getPosition() const {
+		const Vec<3, T> &getPosition() const {
 			return pos;
 		}
 
