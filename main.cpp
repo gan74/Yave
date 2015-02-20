@@ -106,16 +106,48 @@ int main(int, char **) {
 										"void main() {"
 											"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
 											"gl_Position = n_ViewProjectionMatrix * model;"
-											"view = normalize(model.xyz - n_Camera);"
+											"view = normalize(n_Camera - model.xyz);"
 											"normal = mat3(n_ModelMatrix) * n_VertexNormal;"
 										"}");
 
 	Shader<FragmentShader> frag("#version 420 core\n"
+										"#define PI 3.14159\n"
 										"layout(location = 0) out vec4 n_FragColor;"
 										"in vec3 normal;"
 										"in vec3 view;"
+										"uniform vec4 n_F0;"
 										"uniform vec4 n_Color;"
+										"uniform float n_Metallic;"
 										"uniform float n_Roughness;"
+
+										"float saturate(float x) {"
+											"return min(max(x, 0.0), 1.0);"
+										"}"
+
+										"float GGX(vec3 N, vec3 H, float R) {"
+											"float NdotH = dot(N, H);"
+											"float R2 = max(R * R, 0.0005);"
+											"float NdotH2 = NdotH * NdotH;"
+											"float D = NdotH2 * R2 + (1.0 - NdotH2);"
+											"return R2 / (PI * D * D);"
+										"}"
+
+										"float G1(vec3 V, vec3 N, float R) {"
+											/*"float K = R + 1.0;"
+											"K = K * K / 8.0;"*/
+											"float K = (R * R) * 0.5;"
+											"float NdotV = max(0.0, dot(N, V));"
+											"return NdotV / (NdotV * (1.0 - K) + K);"
+										"}"
+
+										"float GGGX(vec3 L, vec3 V, vec3 N, float R) {"
+											"return G1(L, N, R) * G1(V, N, R);"
+										"}"
+
+										"vec3 F(float cosT, vec3 C) {"
+											"vec3 F0 = vec3(n_F0) * (1.0 - n_Metallic) + C * n_Metallic;"
+											"return F0 + (1.0 - F0) * pow(1.0 - cosT, 5.0);"
+										"}"
 
 										"float ON(vec3 L, vec3 V, vec3 N, float R) {"
 											"float R2 = R * R;"
@@ -129,9 +161,17 @@ int main(int, char **) {
 											"return max(0.0, NdotL) * (A + B * s / t);"
 										"}"
 
+										"float lambert(vec3 L, vec3 V, vec3 N, float R) {"
+											"return dot(L, N);"
+										"}"
+
 										"void main() {"
-											"vec3 L = vec3(0.0, 0.0, 1.0);"
-											"n_FragColor = n_Color * ON(L, view, normal, n_Roughness);"
+											"vec3 L = normalize(vec3(0.5, 0.5, 1.0));"
+											"vec3 H = normalize(view + L);"
+											"float S = GGGX(L, view, normal, n_Roughness) * GGX(normal, H, n_Roughness) /** F(dot(L, H), n_Color.rgb)*/;"
+											"float IS = 1.0 / max(1.0, 4.0 * dot(normal, L) * dot(normal, view));"
+											"S = S * IS;"
+											"n_FragColor = vec4(n_Color.rgb * (ON(L, view, normal, n_Roughness) + max(0.0, S)), n_Color.a);"
 										"}");
 
 	ShaderCombinaison shader(&frag, &vert, 0);
@@ -168,6 +208,10 @@ int main(int, char **) {
 	c->setPosition(Vec3(0, -2.5, 0));
 	scene.insert(c);
 
+
+	shader["n_F0"] = 0.34;
+	shader["n_Metallic"] = 0.0;
+
 	Timer timer;
 	while(run(win)) {
 		gl::glClear(GL_COLOR_BUFFER_BIT);
@@ -178,7 +222,12 @@ int main(int, char **) {
 		}
 		int r = 0;
 		for(const auto &q : queue.getBatches()) {
-			shader["n_Roughness"] = r++ / 2.0;
+			if(r == 1) {
+				shader["n_Roughness"] = sin(timer.elapsed()) * 0.5 + 0.5;
+			} else {
+				shader["n_Roughness"] = r * 0.5;
+			}
+			r++;
 			q();
 
 		}
