@@ -4,10 +4,6 @@ float sqr(float x) {
 	return x * x; 
 }
 
-vec3 lerp(vec3 X, vec3 Y, float t) {
-	return X * (1.0 - t) + Y * t;
-}
-
 float GGX(float alpha, float NdotH) {
 	float NdotH2 = sqr(NdotH);
 	float D = NdotH2 * alpha + (1.0 - NdotH2);
@@ -38,7 +34,7 @@ vec3 s_BRDF(vec3 C, vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 	
 	float D = GGX(alpha, dot(N, H));
 	float G = G1(alpha, NdotL) * G1(alpha, NdotV);
-	vec3 F = lerp(vec3(1.0), C, n_Metallic) /* F(f0, dot(L, H))*/;
+	vec3 F = mix(vec3(1.0), C, n_Metallic) /* F(f0, dot(L, H))*/;
 	return vec3(D * G * F / d);
 }
 
