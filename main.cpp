@@ -115,7 +115,7 @@ int main(int, char **) {
 										"layout(location = 0) out vec4 n_FragColor;"
 										"in vec3 normal;"
 										"in vec3 view;"
-										"uniform vec4 n_F0;"
+										"uniform float n_F0;"
 										"uniform vec4 n_Color;"
 										"uniform float n_Metallic;"
 										"uniform float n_Roughness;"
@@ -144,20 +144,21 @@ int main(int, char **) {
 											"return G1(L, N, R) * G1(V, N, R);"
 										"}"
 
-										"vec3 F(float cosT, vec3 C) {"
-											"vec3 F0 = vec3(n_F0) * (1.0 - n_Metallic) + C * n_Metallic;"
+										"vec3 F(float cosT, vec3 C, float M) {"
+											"vec3 F0 = vec3(n_F0) * (1.0 - M) + C * M;"
 											"return F0 + (1.0 - F0) * pow(1.0 - cosT, 5.0);"
 										"}"
 
 										"float ON(vec3 L, vec3 V, vec3 N, float R) {"
 											"float R2 = R * R;"
-											"float A = 1.0 + 0.5 * R2 / (R2 + 0.33);"
+											"float A = 1.0 - 0.5 * R2 / (R2 + 0.33);"
 											"float B = 0.45 * R2 / (R2 + 0.09);"
 											"float LdotV = dot(L, V);"
 											"float NdotL = dot(L, N);"
 											"float NdotV = dot(N, V);"
 											"float s = LdotV - NdotL * NdotV;"
 											"float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));"
+											"float d = max(0.0, dot(normalize(V - N * NdotV), normalize(L - N * NdotL)));"
 											"return max(0.0, NdotL) * (A + B * s / t);"
 										"}"
 
@@ -168,10 +169,11 @@ int main(int, char **) {
 										"void main() {"
 											"vec3 L = normalize(vec3(0.5, 0.5, 1.0));"
 											"vec3 H = normalize(view + L);"
-											"float S = GGGX(L, view, normal, n_Roughness) * GGX(normal, H, n_Roughness) /** F(dot(L, H), n_Color.rgb)*/;"
+											"vec3 S = GGGX(L, view, normal, n_Roughness) * GGX(normal, H, n_Roughness) * F(dot(L, H), n_Color.rgb, n_Metallic);"
 											"float IS = 1.0 / max(1.0, 4.0 * dot(normal, L) * dot(normal, view));"
 											"S = S * IS;"
-											"n_FragColor = vec4(n_Color.rgb * (ON(L, view, normal, n_Roughness) + max(0.0, S)), n_Color.a);"
+											"n_FragColor = vec4(n_Color.rgb * (ON(L, view, normal, n_Roughness)) + S, n_Color.a);"
+											//"n_FragColor = vec4(S, 1.0);"
 										"}");
 
 	ShaderCombinaison shader(&frag, &vert, 0);
@@ -210,7 +212,6 @@ int main(int, char **) {
 
 
 	shader["n_F0"] = 0.34;
-	shader["n_Metallic"] = 0.0;
 
 	Timer timer;
 	while(run(win)) {
@@ -220,13 +221,11 @@ int main(int, char **) {
 		for(Renderable *m : meshes) {
 			m->render(queue);
 		}
+		shader["n_Metallic"] = sin(timer.elapsed()) * 0.5 + 0.5;
 		int r = 0;
 		for(const auto &q : queue.getBatches()) {
-			if(r == 1) {
-				shader["n_Roughness"] = sin(timer.elapsed()) * 0.5 + 0.5;
-			} else {
-				shader["n_Roughness"] = r * 0.5;
-			}
+
+			shader["n_Roughness"] = r * 0.5;
 			r++;
 			q();
 
