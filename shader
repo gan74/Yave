@@ -35,9 +35,8 @@ vec3 s_BRDF(vec3 C, vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 	float D = GGX(alpha, dot(N, H));
 	float G = G1(alpha, NdotL) * G1(alpha, NdotV);
 	vec3 F = mix(vec3(1.0), C, n_Metallic) /* F(f0, dot(L, H))*/;
-	return vec3(D * G * F / d);
+	return max(vec3(0.0), D * G * F / d);
 }
-
 
 vec3 d_BRDF(vec3 C, vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 	float R2 = sqr(n_Roughness);
@@ -49,5 +48,5 @@ vec3 d_BRDF(vec3 C, vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 	float s = LdotV - NdotL * NdotV;
 	float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));
 	float d = max(0.0, dot(normalize(V - N * NdotV), normalize(L - N * NdotL)));
-	return C * max(0.0, NdotL) * (A + B * s / t);
+	return max(vec3(0.0), C * max(0.0, NdotL) * (A + B * s / t));
 }
