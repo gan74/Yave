@@ -32,7 +32,7 @@ namespace internal {
 		static concurent::Mutex mutex;
 		static core::Array<Material<T> *> cache;
 
-		Material() {
+		Material() : roughness(0), metallic(0) {
 			mutex.lock();
 			cache.append(this);
 			mutex.unlock();
@@ -51,9 +51,6 @@ namespace internal {
 			if(roughness != m.roughness) {
 				return roughness < m.roughness;
 			}
-			if(specular != m.specular) {
-				return specular < m.specular;
-			}
 			return false;
 		}
 
@@ -67,8 +64,8 @@ namespace internal {
 		}
 
 		Color<T> color;
-		T specular;
 		T roughness;
+		T metallic;
 		Texture diffuse;
 
 		uint index;
@@ -112,6 +109,8 @@ class Material : private assets::Asset<internal::Material<T>>
 			if(i) {
 				const ShaderCombinaison *sh = GLContext::getContext()->getShader();
 				sh->setValue("n_Color", i->color);
+				sh->setValue("n_Roughness", i->roughness);
+				sh->setValue("n_Metallic", i->metallic);
 			} else {
 				#warning not implemented
 			}

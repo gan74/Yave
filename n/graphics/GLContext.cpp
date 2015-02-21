@@ -55,8 +55,8 @@ GLContext::GLContext() {
 
 	gl::glEnable(GL_TEXTURE_2D);
 	gl::glEnable(GL_CULL_FACE);
+	gl::glEnable(GL_DEPTH_TEST);
 
-	std::cerr<<"NO DEPTH BUFFERING"<<std::endl;
 	gl::glGetError();
 }
 

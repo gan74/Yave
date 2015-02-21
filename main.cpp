@@ -82,6 +82,7 @@ class Obj : public StaticMesh
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
+			setPosition(Vec3(0, -getMeshInstance().getRadius() * 0.25, 0));
 			StaticMesh::render(qu);
 		}
 
@@ -96,85 +97,58 @@ int main(int, char **) {
 	Shader<VertexShader> vert("#version 420 core\n"
 										"layout(location = 0) in vec3 n_VertexPosition;"
 										"layout(location = 1) in vec3 n_VertexNormal;"
+										"layout(location = 2) in vec3 n_VertexTangent;"
 										"uniform mat4 n_ViewProjectionMatrix;"
 										"uniform mat4 n_ModelMatrix;"
 										"uniform vec3 n_Camera;"
 
-										"out vec3 normal;"
-										"out vec3 view;"
+										"out vec3 N;"
+										"out vec3 V;"
+										"out vec3 T;"
+										"out vec3 B;"
 
 										"void main() {"
 											"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
 											"gl_Position = n_ViewProjectionMatrix * model;"
-											"view = normalize(n_Camera - model.xyz);"
-											"normal = mat3(n_ModelMatrix) * n_VertexNormal;"
+
+											"V = normalize(n_Camera - model.xyz);"
+											"N = mat3(n_ModelMatrix) * n_VertexNormal;"
+											"T = mat3(n_ModelMatrix) * n_VertexTangent;"
+											"B = cross(N, T);"
 										"}");
 
-	Shader<FragmentShader> frag("#version 420 core\n"
-										"#define PI 3.14159\n"
-										"layout(location = 0) out vec4 n_FragColor;"
-										"in vec3 normal;"
-										"in vec3 view;"
-										"uniform float n_F0;"
-										"uniform vec4 n_Color;"
-										"uniform float n_Metallic;"
-										"uniform float n_Roughness;"
+	io::File glsl("shader");
+	if(!glsl.open(io::IODevice::Read)) {
+		fatal("Unable to open shader");
+	}
+	char *brdfc = new char[glsl.size() + 1];
+	glsl.readBytes(brdfc);
+	brdfc[glsl.size()] = 0;
+	String brdf(brdfc);
+	delete[] brdfc;
+	glsl.close();
 
-										"float saturate(float x) {"
-											"return min(max(x, 0.0), 1.0);"
-										"}"
+	String fragStr = "#version 420 core\n"
+					 "#define PI 3.14159265358979323846\n"
+					 "layout(location = 0) out vec4 n_FragColor;"
+					 "uniform vec4 n_Color;"
+					 "uniform float n_Roughness;"
+					 "uniform float n_Metallic;"
+					 "in vec3 N;"
+					 "in vec3 V;"
+					 "in vec3 T;"
+					 "in vec3 B;"
 
-										"float GGX(vec3 N, vec3 H, float R) {"
-											"float NdotH = dot(N, H);"
-											"float R2 = max(R * R, 0.0005);"
-											"float NdotH2 = NdotH * NdotH;"
-											"float D = NdotH2 * R2 + (1.0 - NdotH2);"
-											"return R2 / (PI * D * D);"
-										"}"
+					 + brdf +
 
-										"float G1(vec3 V, vec3 N, float R) {"
-											/*"float K = R + 1.0;"
-											"K = K * K / 8.0;"*/
-											"float K = (R * R) * 0.5;"
-											"float NdotV = max(0.0, dot(N, V));"
-											"return NdotV / (NdotV * (1.0 - K) + K);"
-										"}"
+					"void main() {"
+						"vec3 C = n_Color.rgb;"
+						"vec3 L = normalize(vec3(0.5, 0.5, 1.0));"
+						"n_FragColor = vec4(d_BRDF(C, L, V, N, T, B) + s_BRDF(C, L, V, N, T, B), n_Color.a);"
+					"}";
 
-										"float GGGX(vec3 L, vec3 V, vec3 N, float R) {"
-											"return G1(L, N, R) * G1(V, N, R);"
-										"}"
+	Shader<FragmentShader> frag(fragStr);
 
-										"vec3 F(float cosT, vec3 C, float M) {"
-											"vec3 F0 = vec3(n_F0) * (1.0 - M) + C * M;"
-											"return F0 + (1.0 - F0) * pow(1.0 - cosT, 5.0);"
-										"}"
-
-										"float ON(vec3 L, vec3 V, vec3 N, float R) {"
-											"float R2 = R * R;"
-											"float A = 1.0 - 0.5 * R2 / (R2 + 0.33);"
-											"float B = 0.45 * R2 / (R2 + 0.09);"
-											"float LdotV = dot(L, V);"
-											"float NdotL = dot(L, N);"
-											"float NdotV = dot(N, V);"
-											"float s = LdotV - NdotL * NdotV;"
-											"float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));"
-											"float d = max(0.0, dot(normalize(V - N * NdotV), normalize(L - N * NdotL)));"
-											"return max(0.0, NdotL) * (A + B * s / t);"
-										"}"
-
-										"float lambert(vec3 L, vec3 V, vec3 N, float R) {"
-											"return dot(L, N);"
-										"}"
-
-										"void main() {"
-											"vec3 L = normalize(vec3(0.5, 0.5, 1.0));"
-											"vec3 H = normalize(view + L);"
-											"vec3 S = GGGX(L, view, normal, n_Roughness) * GGX(normal, H, n_Roughness) * F(dot(L, H), n_Color.rgb, n_Metallic);"
-											"float IS = 1.0 / max(1.0, 4.0 * dot(normal, L) * dot(normal, view));"
-											"S = S * IS;"
-											"n_FragColor = vec4(n_Color.rgb * (ON(L, view, normal, n_Roughness)) + S, n_Color.a);"
-											//"n_FragColor = vec4(S, 1.0);"
-										"}");
 
 	ShaderCombinaison shader(&frag, &vert, 0);
 	if(!shader.isValid()) {
@@ -187,48 +161,34 @@ int main(int, char **) {
 	shader.bind();
 
 	Camera cam;
-	cam.setPosition(Vec3(0, 0, 5));
+	cam.setPosition(Vec3(0, 0, 15));
 	shader["n_Camera"] = cam.getPosition();
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
 
 	GLContext::getContext()->setProjectionMatrix(cam.getProjectionMatrix());
 	GLContext::getContext()->setViewMatrix(cam.getViewMatrix());
 	Scene scene;
-	/*for(uint i = 0; i != 1000; i++) {
-		Cube *cube = new Cube();
-		cube->setPosition(Vec3(random(), random(), random()) * 100 - 50);
-		scene.insert(cube);
-	}*/
 
-	auto c = new Obj("sphere.obj");
-	c->setPosition(Vec3(0, 2.5, 0));
+	auto c = new Obj("teapot.obj");
+	/*c->setPosition(Vec3(0, 2.5, 0));
 	scene.insert(c);
-	c = new Obj("cube.obj");
+	c = new Obj("teapot.obj");
 	c->setPosition(Vec3(0, 0, 0));
 	scene.insert(c);
-	c = new Obj("sphere.obj");
-	c->setPosition(Vec3(0, -2.5, 0));
+	c = new Obj("teapot.obj");
+	c->setPosition(Vec3(0, -2.5, 0));*/
 	scene.insert(c);
-
-
-	shader["n_F0"] = 0.34;
 
 	Timer timer;
 	while(run(win)) {
-		gl::glClear(GL_COLOR_BUFFER_BIT);
+		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		core::Array<StaticMesh *> meshes = scene.query<StaticMesh>(cam);
 		RenderQueue queue;
 		for(Renderable *m : meshes) {
 			m->render(queue);
 		}
-		shader["n_Metallic"] = sin(timer.elapsed()) * 0.5 + 0.5;
-		int r = 0;
 		for(const auto &q : queue.getBatches()) {
-
-			shader["n_Roughness"] = r * 0.5;
-			r++;
 			q();
-
 		}
 		GLContext::getContext()->processTasks();
 		if(GLContext::checkGLError()) {
