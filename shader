@@ -45,8 +45,9 @@ vec3 d_BRDF(vec3 C, vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 	float LdotV = dot(L, V);
 	float NdotL = dot(L, N);
 	float NdotV = dot(N, V);
-	float s = LdotV - NdotL * NdotV;
-	float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));
 	float d = max(0.0, dot(normalize(V - N * NdotV), normalize(L - N * NdotL)));
-	return max(vec3(0.0), C * max(0.0, NdotL) * (A + B * s / t));
+	
+	float avn = acos(NdotV);
+	float aln = acos(NdotL);
+	return max(vec3(0.0), C * max(0.0, NdotL) * (A + B * d * sin(max(avn, aln)) * tan(min(avn, aln))));
 }
