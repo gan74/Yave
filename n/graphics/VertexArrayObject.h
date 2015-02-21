@@ -36,24 +36,7 @@ class VertexArrayObject : core::NonCopyable
 			}
 		}
 
-		void bind() const {
-			if(!handle) {
-				gl::glGenVertexArrays(1, &handle);
-				gl::glBindVertexArray(handle);
-				data.bind();
-				indexes.bind();
-				gl::glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
-				gl::glVertexAttribPointer(1, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
-				gl::glVertexAttribPointer(2, 2, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T)));
-				gl::glVertexAttribPointer(3, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
-				gl::glEnableVertexAttribArray(0);
-				gl::glEnableVertexAttribArray(1);
-				gl::glEnableVertexAttribArray(2);
-				gl::glEnableVertexAttribArray(3);
-			} else {
-				gl::glBindVertexArray(handle);
-			}
-		}
+
 
 		void draw(uint instances = 1, uint beg = 0, uint end = 0) const {
 			bind();
@@ -68,6 +51,26 @@ class VertexArrayObject : core::NonCopyable
 		}
 
 	private:
+		void bind() const {
+			if(!handle) {
+				gl::glGenVertexArrays(1, &handle);
+				gl::glBindVertexArray(handle);
+				gl::glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
+				gl::glVertexAttribPointer(1, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
+				gl::glVertexAttribPointer(2, 2, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T)));
+				gl::glVertexAttribPointer(3, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
+				gl::glEnableVertexAttribArray(0);
+				gl::glEnableVertexAttribArray(1);
+				gl::glEnableVertexAttribArray(2);
+				gl::glEnableVertexAttribArray(3);
+			} else {
+				gl::glBindVertexArray(handle);
+			}
+			data.bind();
+			indexes.bind();
+		}
+
+
 		T radius;
 		uint size;
 		StaticBuffer<Vertex<T>, Array> data;

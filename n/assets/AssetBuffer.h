@@ -54,7 +54,6 @@ class AsyncLoadingPolicy
 				} else {
 					ptr.invalidate();
 				}
-				return Nothing();
 			}, args...);
 			return ptr;
 		}
@@ -63,22 +62,80 @@ class AsyncLoadingPolicy
 template<typename T, typename LoadPolicy, bool Memo = true>
 class AssetBuffer : protected LoadPolicy, core::NonCopyable
 {
-	struct MapOp
+	class Key
 	{
+
+		struct KeyStoreBase : core::NonCopyable
+		{
+			virtual bool operator<(const KeyStoreBase &) const = 0;
+			virtual bool operator==(const KeyStoreBase &) const = 0;
+
+			virtual KeyStoreBase *clone() const = 0;
+
+			virtual ~KeyStoreBase() {
+			}
+		};
+
+		template<typename... Args>
+		struct KeyStore : public KeyStoreBase
+		{
+			KeyStore(Args... args) : tuple(args...) {
+			}
+
+			KeyStore(const std::tuple<Args...> &t) : tuple(t) {
+			}
+
+			virtual bool operator<(const KeyStoreBase &k) const override {
+				const KeyStore<Args...> *p = dynamic_cast<const KeyStore<Args...> *>(&k);
+				return tuple < p->tuple;
+			}
+
+			virtual bool operator==(const KeyStoreBase &k) const override {
+				const KeyStore<Args...> *p = dynamic_cast<const KeyStore<Args...> *>(&k);
+				return tuple == p->tuple;
+			}
+
+
+			virtual KeyStoreBase *clone() const override {
+				return new KeyStore(tuple);
+			}
+
+			std::tuple<Args...> tuple;
+		};
+
 		public:
-			bool operator()(const typename AssetLoader<T>::ArgumentTypes &a, const typename AssetLoader<T>::ArgumentTypes &b) const {
-				if(a.size() == b.size()) {
-					auto x = a.begin();
-					auto y = b.begin();
-					while(x != a.end()) {
+			template<typename... Args>
+			Key(Args... args) : types(AssetLoader<T>::template getArgumentTypes<Args...>()), base(new KeyStore<Args...>(args...)) {
+			}
+
+			Key(const Key &k) : types(k.types), base(k.base->clone()) {
+			}
+
+			~Key() {
+				delete base;
+			}
+
+			bool operator<(const Key &k) const {
+				if(types.size() == k.types.size()) {
+					auto x = types.begin();
+					auto y = k.types.begin();
+					while(x != types.end()) {
 						if(*x++ < *y++) {
 							return true;
 						}
 					}
-					return false;
+					return base->operator<(*k.base);
 				}
-				return a.size() < b.size();
+				return types.size() < k.types.size();
 			}
+
+			bool operator==(const Key &k) const {
+				return types == k.types &&  base->operator==(*k.base);
+			}
+
+		private:
+			typename AssetLoader<T>::ArgumentTypes types;
+			KeyStoreBase *base;
 	};
 
 	public:
@@ -107,13 +164,18 @@ class AssetBuffer : protected LoadPolicy, core::NonCopyable
 
 	private:
 
+		template<typename W, typename... A>
+		W getF(W t, A...) {
+			return t;
+		}
+
 		template<typename... Args>
 		Asset<T> load(TrueType, Args... args) {
-			typename AssetLoader<T>::ArgumentTypes tps = AssetLoader<T>::template getArgumentTypes<Args...>();
+			Key k(args...);
 			mutex.lock();
-			auto it = assets.find(tps);
+			auto it = assets.find(k);
 			if(it == assets.end()) {
-				it = assets.insert(tps, LoadPolicy::operator()(loader, args...));
+				it = assets.insert(k, LoadPolicy::operator()(loader, args...));
 			}
 			mutex.unlock();
 			return (*it)._2;
@@ -130,7 +192,7 @@ class AssetBuffer : protected LoadPolicy, core::NonCopyable
 
 		concurent::Mutex mutex;
 		AssetLoader<T> loader;
-		typename If<Memo, core::Map<typename AssetLoader<T>::ArgumentTypes, AssetPtr<T>, MapOp>, core::Array<AssetPtr<T>>>::type assets;
+		typename If<Memo, core::Map<Key, AssetPtr<T>>, core::Array<AssetPtr<T>>>::type assets;
 };
 
 }

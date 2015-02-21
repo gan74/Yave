@@ -67,7 +67,7 @@ bool run(SDL_Window *mainWindow) {
 class Obj : public StaticMesh
 {
 	public:
-		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)) {
+		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)), model(n) {
 			axis = ((Vec3(random(), random(), random()) - 0.5) * 2).normalized();
 		}
 
@@ -82,11 +82,11 @@ class Obj : public StaticMesh
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
-			setPosition(Vec3(0, -getMeshInstance().getRadius() * 0.25, 0));
 			StaticMesh::render(qu);
 		}
 
 	private:
+		String model;
 		Vec3 axis;
 };
 
@@ -161,7 +161,7 @@ int main(int, char **) {
 	shader.bind();
 
 	Camera cam;
-	cam.setPosition(Vec3(0, 0, 15));
+	cam.setPosition(Vec3(0, 0, 5));
 	shader["n_Camera"] = cam.getPosition();
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
 
@@ -169,14 +169,14 @@ int main(int, char **) {
 	GLContext::getContext()->setViewMatrix(cam.getViewMatrix());
 	Scene scene;
 
-	auto c = new Obj("teapot.obj");
-	/*c->setPosition(Vec3(0, 2.5, 0));
+	auto c = new Obj("scube.obj");
+	c->setPosition(Vec3(0, 2.5, 0));
 	scene.insert(c);
-	c = new Obj("teapot.obj");
+	c = new Obj("sphere.obj");
 	c->setPosition(Vec3(0, 0, 0));
 	scene.insert(c);
-	c = new Obj("teapot.obj");
-	c->setPosition(Vec3(0, -2.5, 0));*/
+	c = new Obj("scube.obj");
+	c->setPosition(Vec3(0, -2.5, 0));
 	scene.insert(c);
 
 	Timer timer;

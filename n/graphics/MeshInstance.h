@@ -117,6 +117,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 			}
 		}
 
+
 	private:
 		MeshInstance(const assets::Asset<internal::MeshInstance<T>> &t) : assets::Asset<internal::MeshInstance<T>>(t) {
 		}
