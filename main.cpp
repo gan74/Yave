@@ -75,7 +75,7 @@ class Obj : public StaticMesh
 			static Timer timer;
 			static double x = 0;
 			double t = timer.reset();
-			x += t;
+			x += t * 0.5;
 			Quaternion<> q = Quaternion<>::fromAxisAngle(axis.cross(Vec3(1, 0, 0)).cross(axis), t);
 			axis = q(axis);
 			setRotation(Quaternion<>::fromAxisAngle(axis, x));
@@ -91,7 +91,6 @@ class Obj : public StaticMesh
 };
 
 int main(int, char **) {
-
 	SDL_Window *win = createWindow();
 
 	Shader<VertexShader> vert("#version 420 core\n"
@@ -122,8 +121,7 @@ int main(int, char **) {
 		fatal("Unable to open shader");
 	}
 	char *brdfc = new char[glsl.size() + 1];
-	glsl.readBytes(brdfc);
-	brdfc[glsl.size()] = 0;
+	brdfc[glsl.readBytes(brdfc)] = 0;
 	String brdf(brdfc);
 	delete[] brdfc;
 	glsl.close();
