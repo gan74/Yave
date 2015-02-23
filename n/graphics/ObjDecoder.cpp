@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/io/File.h>
 #include "MeshLoader.h"
 #include "MaterialLoader.h"
+#include <n/core/Timer.h>
 
 namespace n {
 namespace graphics {
@@ -41,107 +42,116 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 
 	private:
 		internal::MeshInstance<> *load(io::File &file) {
-		if(!file.open(io::IODevice::Read)) {
-			std::cerr<<file.getName()<<" not found"<<std::endl;
-			return 0;
-		}
-		uint fs = file.size();
-		char *data = new char[fs + 1];
-		file.readBytes(data);
-		data[fs] = 0;
-		core::Array<core::String> lines = core::String(data).split("\n");
-		delete[] data;
-		file.close();
+			core::Timer timer;
+			if(!file.open(io::IODevice::Read)) {
+				std::cerr<<file.getName()<<" not found"<<std::endl;
+				return 0;
+			}
+			uint fs = file.size();
+			char *data = new char[fs + 1];
+			file.readBytes(data);
+			data[fs] = 0;
+			core::Array<core::String> lines = core::String(data).split("\n");
+			delete[] data;
+			file.close();
 
-		core::Array<math::Vec3> positions;
-		positions.append(math::Vec3());
-		core::Array<math::Vec3> normals;
-		normals.append(math::Vec3());
-		core::Array<math::Vec2> coords;
-		coords.append(math::Vec2());
+			core::Array<math::Vec3> positions;
+			positions.append(math::Vec3());
+			core::Array<math::Vec3> normals;
+			normals.append(math::Vec3());
+			core::Array<math::Vec2> coords;
+			coords.append(math::Vec2());
 
-		for(const core::String &l : lines) {
-			if(l.size() < 4) {
-				continue;
+			for(const core::String &l : lines) {
+				if(l.size() < 4) {
+					continue;
+				}
+				if(l.beginWith("v ")) {
+					/*core::Array<float> fl = l.subString(2).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
+					if(fl.size() != 3) {
+						std::cerr<<"Invalid position"<<std::endl;
+						return 0;
+					}*/
+					float fl[3] = {0};
+					sscanf(l.toChar(), "v %f %f %f", &fl[0], &fl[1], &fl[2]);
+					positions.append(math::Vec3(fl[0], fl[1], fl[2]));
+
+				} else if(l.beginWith("vn ")) {
+					/*core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
+					if(fl.size() != 3) {
+						std::cerr<<"Invalid normal"<<std::endl;
+						return 0;
+					}*/
+					float fl[3] = {0};
+					sscanf(l.toChar(), "vn %f %f %f", &fl[0], &fl[1], &fl[2]);
+					normals.append(math::Vec3(fl[0], fl[1], fl[2]));
+				} else if(l.beginWith("vt ")) {
+					/*core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
+					if(fl.size() != 2) {
+						std::cerr<<"Invalid texture coord"<<std::endl;
+						return 0;
+					}*/
+					float fl[2] = {0};
+					sscanf(l.toChar(), "vt %f %f", &fl[0], &fl[1]);
+					coords.append(math::Vec2(fl[0], fl[1]));
+				}
 			}
-			if(l.beginWith("v ")) {
-				core::Array<float> fl = l.subString(2).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
-				if(fl.size() != 3) {
-					std::cerr<<"Invalid position"<<std::endl;
-					return 0;
-				}
-				positions.append(math::Vec3(fl[0], fl[1], fl[2]));
-			} else if(l.beginWith("vn ")) {
-				core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
-				if(fl.size() != 3) {
-					std::cerr<<"Invalid normal"<<std::endl;
-					return 0;
-				}
-				normals.append(math::Vec3(fl[0], fl[1], fl[2]));
-			} else if(l.beginWith("vt ")) {
-				core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
-				if(fl.size() != 2) {
-					std::cerr<<"Invalid texture coord"<<std::endl;
-					return 0;
-				}
-				coords.append(math::Vec2(fl[0], fl[1]));
-			}
-		}
-		//std::cout<<positions.size()<<" "<<normals.size()<<" "<<coords.size()<<std::endl;
-		core::String mtllib;
-		core::Map<math::Vec3ui, uint> vmap;
-		bool smooth = false;
-		TriangleBuffer<> tr;
-		Material<> mat;
-		core::Array<internal::MeshInstanceBase<> *> bases;
-		for(const core::String &l : lines) {
-			if(l.beginWith("f ")) {
-				core::Array<core::String> fl = l.subString(2).split(" ");
-				uint face[] = {0, 0, 0};
-				if(fl.size() != 3) {
-					return 0;
-				}
-				for(uint i = 0; i != 3; i++) {
-					core::Array<uint> uis = fl[i].split("/", true).mapped([](const core::String &str) { return str.isEmpty() ? 0 : uint(str); });
-					for(; uis.size() < 3;) {
-						uis += 0;
+			//std::cout<<positions.size()<<" "<<normals.size()<<" "<<coords.size()<<std::endl;
+			core::String mtllib;
+			core::Map<math::Vec3ui, uint> vmap;
+			bool smooth = false;
+			TriangleBuffer<> tr;
+			Material<> mat;
+			core::Array<internal::MeshInstanceBase<> *> bases;
+			for(const core::String &l : lines) {
+				if(l.beginWith("f ")) {
+					core::Array<core::String> fl = l.subString(2).split(" ");
+					uint face[] = {0, 0, 0};
+					if(fl.size() != 3) {
+						return 0;
 					}
-					math::Vec3ui v(uis[0], uis[1], smooth ? 0 : uis[2]);
-					core::Map<math::Vec3ui, uint>::const_iterator it = vmap.find(v);
-					if(it == vmap.end()) {
-						uint vy = v.y();
-						if(!vy) {
-							math::Vec3 p = positions[v.x()].normalized();
-							vy = coords.size();
-							coords.append(math::Vec2(acos(p.x()) / math::pi<>(), asin(p.z()) / math::pi<float>()));
+					for(uint i = 0; i != 3; i++) {
+						core::Array<uint> uis = fl[i].split("/", true).mapped([](const core::String &str) { return str.isEmpty() ? 0 : uint(str); });
+						for(; uis.size() < 3;) {
+							uis += 0;
 						}
-						if(v.x() >= positions.size() || v.z() >= normals.size() || vy >= coords.size()) {
-							std::cerr<<"Index out of bound : "<<math::Vec3ui(v.x(), vy, v.z())<<std::endl;
-							return 0;
+						math::Vec3ui v(uis[0], uis[1], smooth ? 0 : uis[2]);
+						core::Map<math::Vec3ui, uint>::const_iterator it = vmap.find(v);
+						if(it == vmap.end()) {
+							uint vy = v.y();
+							if(!vy) {
+								math::Vec3 p = positions[v.x()].normalized();
+								vy = coords.size();
+								coords.append(math::Vec2(acos(p.x()) / math::pi<>(), asin(p.z()) / math::pi<float>()));
+							}
+							if(v.x() >= positions.size() || v.z() >= normals.size() || vy >= coords.size()) {
+								std::cerr<<"Index out of bound : "<<math::Vec3ui(v.x(), vy, v.z())<<std::endl;
+								return 0;
+							}
+							face[i] = vmap[v] = tr.append(Vertex<>(positions[v.x()], normals[v.z()], coords[vy]));
+						} else {
+							face[i] = (*it)._2;
 						}
-						face[i] = vmap[v] = tr.append(Vertex<>(positions[v.x()], normals[v.z()], coords[vy]));
-					} else {
-						face[i] = (*it)._2;
 					}
+					tr.append(face[0], face[1], face[2]);
+				} else if(l.beginWith("s ")) {
+					core::String sm = l.subString(2).toLower().filtered([](char c) { return !isspace(c); });
+					smooth = !(sm == "off" || sm == "0");
+				} else if(l.beginWith("usemtl ")) {
+					mat = MaterialLoader::load<core::String, core::String>(mtllib, l.subString(7));
+					if(!tr.getTriangles().isEmpty()) {
+						bases.append(new internal::MeshInstanceBase<>(std::move(tr.freezed()), mat));
+					}
+				} else if(l.beginWith("mtllib ")) {
+					mtllib = l.subString(7);
 				}
-				tr.append(face[0], face[1], face[2]);
-			} else if(l.beginWith("s ")) {
-				core::String sm = l.subString(2).toLower().filtered([](char c) { return !isspace(c); });
-				smooth = !(sm == "off" || sm == "0");
-			} else if(l.beginWith("usemtl ")) {
-				mat = MaterialLoader::load<core::String, core::String>(mtllib, l.subString(7));
-				if(!tr.getTriangles().isEmpty()) {
-					bases.append(new internal::MeshInstanceBase<>(std::move(tr.freezed()), mat));
-				}
-			} else if(l.beginWith("mtllib ")) {
-				mtllib = l.subString(7);
 			}
+			if(!tr.getTriangles().isEmpty()) {
+				bases.append(new internal::MeshInstanceBase<>(std::move(tr.freezed()), mat));
+			}
+			//std::cout<<file.getName()<<" loaded in "<<timer.elapsed() * 1000<<"ms ["<<bases.first()->buffer.indexes.size() / 3<<"]"<<std::endl;
+			return new internal::MeshInstance<>(bases);
 		}
-		if(!tr.getTriangles().isEmpty()) {
-			bases.append(new internal::MeshInstanceBase<>(std::move(tr.freezed()), mat));
-		}
-		return new internal::MeshInstance<>(bases);
-	}
 };
 
 }
