@@ -1,4 +1,4 @@
-const float f0 = 0.54;
+const float f0 = 0.04;
 
 float sqr(float x) { 
 	return x * x; 
@@ -29,12 +29,14 @@ vec3 s_BRDF(vec3 C, vec3 L, vec3 V, vec3 N) {
 	float d = max(0.0, 4.0 * NdotV * NdotL) + 0.001; 
 	float D = GGX(alpha, dot(N, H));
 	float G = G1(alpha, NdotL) * G1(alpha, NdotV);
-	vec3 F = mix(vec3(1.0), C, n_Metallic) /* F(f0, dot(L, H))*/;
+	vec3 F = mix(vec3(1.0), C, n_Metallic) * (1.0 - F(f0, dot(L, H)));
 	return max(vec3(0.0), D * G * F / d);
 }
 
 vec3 d_BRDF(vec3 C, vec3 L, vec3 V, vec3 N) {
-	return max(vec3(0.0), C * (1.0 - F(f0, dot(normalize(L + V), V))) * dot(N, L));
+	vec3 H = normalize(L + V);	
+	float F = (1.0 - F(f0, dot(H, V)));
+	return max(vec3(0.0), C * F * dot(N, L));
 	/*float R2 = sqr(n_Roughness);
 	float A = 1.0 - 0.5 * R2 / (R2 + 0.33);
 	float B = 0.45 * R2 / (R2 + 0.09);
