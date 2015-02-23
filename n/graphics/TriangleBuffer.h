@@ -65,10 +65,11 @@ class TriangleBuffer
 				friend class TriangleBuffer;
 				FreezedTriangleBuffer(const TriangleBuffer &b) : indexes(b.trianglesData), vertices(b.vertices.getVertices()), radius(0) {
 					for(const TriData &t : b.trianglesData) {
-						math::Vec<3, T> edges[] = {vertices[t.vts[1]].p() - vertices[t.vts[0]].p(), vertices[t.vts[2]].p() - vertices[t.vts[0]].p()};
-						T dt[] = {vertices[t.vts[1]].t().y() - vertices[t.vts[0]].t().y(), vertices[t.vts[2]].t().y() - vertices[t.vts[0]].t().y()};
-						T db[] = {vertices[t.vts[1]].t().x() - vertices[t.vts[0]].t().x(), vertices[t.vts[2]].t().x() - vertices[t.vts[0]].t().x()};
-						T scale = T(1) / ((db[0] * dt[1]) - (db[1] * dt[0]));
+						math::Vec<3, T> edges[] = {vertices[t.vts[1]].p() - vertices[t.vts[0]].p(), vertices[t.vts[2]].p() - vertices[t.vts[0]].p(), };
+						T dt[] = {vertices[t.vts[1]].c().y() - vertices[t.vts[0]].c().y(), vertices[t.vts[2]].c().y() - vertices[t.vts[0]].c().y()};
+						T db[] = {vertices[t.vts[1]].c().x() - vertices[t.vts[0]].c().x(), vertices[t.vts[2]].c().x() - vertices[t.vts[0]].c().x()};
+						T d = T((db[0] * dt[1]) - (db[1] * dt[0]));
+						T scale = d ? T(1) / d : T(1);
 						math::Vec<3, T> ta = ((edges[0] * dt[1]) - (edges[1] * dt[0])) * scale;
 						vertices[t.vts[0]].t() += ta;
 						vertices[t.vts[1]].t() += ta;
