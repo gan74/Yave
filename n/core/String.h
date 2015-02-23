@@ -96,8 +96,17 @@ class String
 
 		std::string toStdString() const;
 
+		template<typename T>
+		explicit operator T() const {
+			return to<T>();
+		}
+
 		template<typename T, typename F = Nothing>
 		T to(F f = F()) const {
+			if(std::is_same<T, std::string>::value) {
+				std::string s = toStdString();
+				return *reinterpret_cast<T *>(&s);
+			}
 			std::istringstream str;
 			str.rdbuf()->pubsetbuf(data, length);
 			T t;
@@ -108,9 +117,8 @@ class String
 			return t;
 		}
 
-		template<typename T>
-		explicit operator T() const {
-			return to<T>();
+		operator std::string() const {
+			return toStdString();
 		}
 
 		explicit operator bool() const {
@@ -158,12 +166,6 @@ class String
 		}
 
 	private:
-		struct StrData
-		{
-			uint count;
-			char str[sizeof(uint)];
-		};
-
 		String(const String &str, uint beg, uint len);
 
 		struct StringConverter;
