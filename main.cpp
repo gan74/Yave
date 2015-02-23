@@ -142,7 +142,8 @@ int main(int, char **) {
 					"void main() {"
 						"vec3 C = n_Color.rgb;"
 						"vec3 L = normalize(vec3(0.5, 0.5, 1.0));"
-						"n_FragColor = vec4(d_BRDF(C, L, V, N, T, B) + s_BRDF(C, L, V, N, T, B), n_Color.a);"
+						"vec3 NN = normalize(N);"
+						"n_FragColor = vec4((d_BRDF(C, L, V, NN) + s_BRDF(C, L, V, NN)), n_Color.a);"
 					"}";
 
 	Shader<FragmentShader> frag(fragStr);
