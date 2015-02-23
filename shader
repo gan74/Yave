@@ -5,13 +5,16 @@ float sqr(float x) {
 }
 
 float GGX(float alpha, float cosT) {
+	//return alpha / (PI * sqr(sqr(cosT)* (sqr(alpha) - 1.0) + 1.0));
 	float cos2 = sqr(cosT);
 	float tan2 = (1.0 - cos2) / cos2;
 	return 1.0 / PI * sqr(alpha / (cos2 * (sqr(alpha) + tan2)));
+	
 }
 
 float G1(float alpha, float cosT) {
-	//return cosT / (cosT * (1.0 - alpha) + alpha);
+	/*float k = sqr(0.8 + 0.5 * alpha) * 0.5;
+	return cosT / (cosT * (1.0 - k) + k);*/
 	float g = cosT + sqrt(1.0 + alpha * (1.0 - sqr(cosT)));
 	return 2.0 * cosT / g;
 }
