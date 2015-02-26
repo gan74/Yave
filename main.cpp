@@ -193,7 +193,7 @@ int main(int, char **) {
 		if(GLContext::checkGLError()) {
 			fatal("GL error");
 		}
-		//shader["n_Roughness"] = (1 + sin(timer.elapsed()));
+		concurent::Thread::sleep(0.01);
 		gl::glFlush();
 	}
 	return 0;
