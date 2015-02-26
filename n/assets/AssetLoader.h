@@ -24,43 +24,51 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace assets {
 
+using ArgumentTypes = core::Array<Type>;
+
+namespace internal {
+	template<typename... Ar>
+	class TypeArray
+	{
+		template<typename W, typename... A>
+		struct TypeHelper
+		{
+			static ArgumentTypes args() {
+				return ArgumentTypes(typeid(W), TypeHelper<A...>::args());
+			}
+		};
+
+		template<typename W, typename Z>
+		struct TypeHelper<W, Z>
+		{
+			static ArgumentTypes args() {
+				return ArgumentTypes(typeid(W), typeid(Z));
+			}
+		};
+
+		public:
+			static ArgumentTypes args() {
+				ArgumentTypes arr = TypeHelper<Ar..., NullType, NullType>::args();
+				arr.pop();
+				arr.pop();
+				if(arr.size() != sizeof...(Ar)) {
+					fatal("SFINAE error : invalid type list.");
+				}
+				return arr;
+			}
+	};
+}
+
+template<typename... Args>
+ArgumentTypes getArgumentTypes() {
+	return internal::TypeArray<Args...>::args();
+}
+
 template<typename T>
 class AssetLoader : core::NonCopyable
 {
-	public:
-		using ArgumentTypes = core::Array<Type>;
-
 	private:
-		template<typename... Ar>
-		class TypeArray
-		{
-			template<typename W, typename... A>
-			struct TypeHelper
-			{
-				static ArgumentTypes args() {
-					return ArgumentTypes(typeid(W), TypeHelper<A...>::args());
-				}
-			};
 
-			template<typename W, typename Z>
-			struct TypeHelper<W, Z>
-			{
-				static ArgumentTypes args() {
-					return ArgumentTypes(typeid(W), typeid(Z));
-				}
-			};
-
-			public:
-				static ArgumentTypes args() {
-					ArgumentTypes arr = TypeHelper<Ar..., NullType, NullType>::args();
-					arr.pop();
-					arr.pop();
-					if(arr.size() != sizeof...(Ar)) {
-						fatal("SFINAE error : invalid type list.");
-					}
-					return arr;
-				}
-		};
 
 		class LoaderBase
 		{
@@ -77,7 +85,7 @@ class AssetLoader : core::NonCopyable
 				}
 
 				ArgumentTypes args() const override {
-					return TypeArray<Args...>::args();
+					return getArgumentTypes<Args...>();
 				}
 
 				T *operator()(Args... args) {
@@ -90,11 +98,6 @@ class AssetLoader : core::NonCopyable
 
 	public:
 		AssetLoader() {
-		}
-
-		template<typename... Args>
-		static ArgumentTypes getArgumentTypes() {
-			return TypeArray<Args...>::args();
 		}
 
 		template<typename... Args>

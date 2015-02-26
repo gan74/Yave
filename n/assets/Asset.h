@@ -41,8 +41,8 @@ class AssetPtr : public core::SmartPtr<const T *, concurent::auint>
 		}
 };
 
-template<typename T, typename LoadPolicy, bool Memo>
-class AssetBuffer;
+template<typename T, typename LoadPolicy>
+class AssetManager;
 
 template<typename T>
 class Asset
@@ -85,8 +85,8 @@ class Asset
 		}
 
 	private:
-		template<typename U, typename P, bool M>
-		friend class AssetBuffer;
+		template<typename U, typename P>
+		friend class AssetManager;
 
 		Asset(AssetPtr<T> &p) : ptr(p) {
 		}

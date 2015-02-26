@@ -25,46 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace assets {
 
-template<typename T>
-class ImmediateLoadingPolicy
-{
-	public:
-		template<typename... Args>
-		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
-			AssetPtr<T> t = AssetPtr<T>(new const T*(loader(args...)));
-			if(t.isNull()) {
-				t.invalidate();
-			}
-			return t;
-		}
-};
-
-template<typename T>
-class AsyncLoadingPolicy
-{
-	public:
-		template<typename... Args>
-		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
-			//static_assert(IsThreadSafe<Args...>::value, "Only thread-safe types should be used with AssetBuffer<T, AsyncLoadingPolicy>");
-			AssetPtr<T> ptr(new const T*(0));
-			concurent::Async([=, &loader](Args... args) {
-				T *o = loader(args...);
-				if(o) {
-					*ptr = o;
-				} else {
-					ptr.invalidate();
-				}
-			}, args...);
-			return ptr;
-		}
-};
-
-template<typename T, typename LoadPolicy, bool Memo = true>
-class AssetBuffer : protected LoadPolicy, core::NonCopyable
-{
-	class Key
+namespace internal {
+	template<typename T>
+	class AssetKey
 	{
-
 		struct KeyStoreBase : core::NonCopyable
 		{
 			virtual bool operator<(const KeyStoreBase &) const = 0;
@@ -105,17 +69,17 @@ class AssetBuffer : protected LoadPolicy, core::NonCopyable
 
 		public:
 			template<typename... Args>
-			Key(Args... args) : types(AssetLoader<T>::template getArgumentTypes<Args...>()), base(new KeyStore<Args...>(args...)) {
+			AssetKey(Args... args) : types(getArgumentTypes<Args...>()), base(new KeyStore<Args...>(args...)) {
 			}
 
-			Key(const Key &k) : types(k.types), base(k.base->clone()) {
+			AssetKey(const AssetKey &k) : types(k.types), base(k.base->clone()) {
 			}
 
-			~Key() {
+			~AssetKey() {
 				delete base;
 			}
 
-			bool operator<(const Key &k) const {
+			bool operator<(const AssetKey &k) const {
 				if(types.size() == k.types.size()) {
 					auto x = types.begin();
 					auto y = k.types.begin();
@@ -129,22 +93,87 @@ class AssetBuffer : protected LoadPolicy, core::NonCopyable
 				return types.size() < k.types.size();
 			}
 
-			bool operator==(const Key &k) const {
+			bool operator==(const AssetKey &k) const {
 				return types == k.types &&  base->operator==(*k.base);
 			}
 
 		private:
-			typename AssetLoader<T>::ArgumentTypes types;
+			ArgumentTypes types;
 			KeyStoreBase *base;
 	};
+}
+
+template<typename T>
+class ImmediateLoadingPolicy
+{
+	public:
+		template<typename... Args>
+		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
+			AssetPtr<T> t = AssetPtr<T>(new const T*(loader(args...)));
+			if(t.isNull()) {
+				t.invalidate();
+			}
+			return t;
+		}
+};
+
+template<typename T>
+class AsyncLoadingPolicy
+{
+	public:
+		template<typename... Args>
+		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
+			//static_assert(IsThreadSafe<Args...>::value, "Only thread-safe types should be used with AssetBuffer<T, AsyncLoadingPolicy>");
+			AssetPtr<T> ptr(new const T*(0));
+			concurent::Async([=, &loader](Args... args) {
+				T *o = loader(args...);
+				if(o) {
+					*ptr = o;
+				} else {
+					ptr.invalidate();
+				}
+			}, args...);
+			return ptr;
+		}
+};
+
+template<typename T>
+class AssetBuffer
+{
+	public:
+		AssetBuffer() : buffer(new core::Map<internal::AssetKey<T>, AssetPtr<T>>()) {
+		}
+
+	private:
+		template<typename U, typename P>
+		friend class AssetManager;
+
+		core::SmartPtr<core::Map<internal::AssetKey<T>, AssetPtr<T>>> buffer;
+};
+
+template<typename T, typename LoadPolicy>
+class AssetManager : protected LoadPolicy, core::NonCopyable
+{
+
 
 	public:
-		AssetBuffer() {
+		AssetManager(const AssetBuffer<T> &b = AssetBuffer<T>()) : assets(b) {
 		}
 
 		template<typename... Args>
 		Asset<T> load(Args... args) {
-			return load(BoolToType<Memo>(), args...);
+			internal::AssetKey<T> k(args...);
+			mutex.lock();
+			auto it = assets.buffer->find(k);
+			if(it == assets.buffer->end()) {
+				it = assets.buffer->insert(k, LoadPolicy::operator()(loader, args...));
+			}
+			mutex.unlock();
+			return (*it)._2;
+		}
+
+		const AssetBuffer<T> &getAssetBuffer() const {
+			return assets;
 		}
 
 		template<typename... Args, typename U>
@@ -154,45 +183,18 @@ class AssetBuffer : protected LoadPolicy, core::NonCopyable
 			mutex.unlock();
 		}
 
-		/*void gc() {
+		void gc() {
 			mutex.lock();
-			assets.filter([](const AssetPtr<T> &ptr) {
+			assets->filter([](const AssetPtr<T> &ptr) {
 				return ptr.getReferenceCount() > 1;
 			});
 			mutex.unlock();
-		}*/
+		}
 
 	private:
-
-		template<typename W, typename... A>
-		W getF(W t, A...) {
-			return t;
-		}
-
-		template<typename... Args>
-		Asset<T> load(TrueType, Args... args) {
-			Key k(args...);
-			mutex.lock();
-			auto it = assets.find(k);
-			if(it == assets.end()) {
-				it = assets.insert(k, LoadPolicy::operator()(loader, args...));
-			}
-			mutex.unlock();
-			return (*it)._2;
-		}
-
-		template<typename... Args>
-		Asset<T> load(FalseType, Args... args) {
-			AssetPtr<T> asset(LoadPolicy::operator()(loader, args...));
-			mutex.lock();
-			assets.append(asset);
-			mutex.unlock();
-			return asset;
-		}
-
 		concurent::Mutex mutex;
 		AssetLoader<T> loader;
-		typename If<Memo, core::Map<Key, AssetPtr<T>>, core::Array<AssetPtr<T>>>::type assets;
+		AssetBuffer<T> assets;
 };
 
 }

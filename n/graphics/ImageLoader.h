@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_IMAGELOADER_H
 
 #include "Image.h"
-#include <n/assets/AssetBuffer.h>
+#include <n/assets/AssetManager.h>
 
 namespace n {
 namespace graphics {
@@ -71,8 +71,8 @@ class ImageLoader
 		ImageLoader() {
 		}
 
-		assets::AssetBuffer<ImageInternal, assets::AsyncLoadingPolicy<ImageInternal>> asyncBuffer;
-		assets::AssetBuffer<ImageInternal, assets::ImmediateLoadingPolicy<ImageInternal>> immediateBuffer;
+		assets::AssetManager<ImageInternal, assets::AsyncLoadingPolicy<ImageInternal>> asyncBuffer;
+		assets::AssetManager<ImageInternal, assets::ImmediateLoadingPolicy<ImageInternal>> immediateBuffer;
 };
 
 

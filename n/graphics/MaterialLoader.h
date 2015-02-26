@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Material.h"
 #include <n/assets/Asset.h>
-#include <n/assets/AssetBuffer.h>
+#include <n/assets/AssetManager.h>
 
 namespace n {
 namespace graphics {
@@ -73,8 +73,8 @@ class MaterialLoader
 		MaterialLoader() {
 		}
 
-		assets::AssetBuffer<internal::Material<>, assets::AsyncLoadingPolicy<internal::Material<>>> asyncBuffer;
-		assets::AssetBuffer<internal::Material<>, assets::ImmediateLoadingPolicy<internal::Material<>>> immediateBuffer;
+		assets::AssetManager<internal::Material<>, assets::AsyncLoadingPolicy<internal::Material<>>> asyncBuffer;
+		assets::AssetManager<internal::Material<>, assets::ImmediateLoadingPolicy<internal::Material<>>> immediateBuffer;
 
 };
 

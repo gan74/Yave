@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "MeshInstance.h"
 #include <n/assets/Asset.h>
-#include <n/assets/AssetBuffer.h>
+#include <n/assets/AssetManager.h>
 
 namespace n {
 namespace graphics {
@@ -72,8 +72,8 @@ class MeshLoader
 		MeshLoader() {
 		}
 
-		assets::AssetBuffer<internal::MeshInstance<>, assets::AsyncLoadingPolicy<internal::MeshInstance<>>> asyncBuffer;
-		assets::AssetBuffer<internal::MeshInstance<>, assets::ImmediateLoadingPolicy<internal::MeshInstance<>>> immediateBuffer;
+		assets::AssetManager<internal::MeshInstance<>, assets::AsyncLoadingPolicy<internal::MeshInstance<>>> asyncBuffer;
+		assets::AssetManager<internal::MeshInstance<>, assets::ImmediateLoadingPolicy<internal::MeshInstance<>>> immediateBuffer;
 
 };
 
