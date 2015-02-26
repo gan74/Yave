@@ -68,9 +68,11 @@ class ImageLoader
 			return loader;
 		}
 
-		ImageLoader() {
+		ImageLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
 
+
+		assets::AssetBuffer<ImageInternal> buffer;
 		assets::AssetManager<ImageInternal, assets::AsyncLoadingPolicy<ImageInternal>> asyncBuffer;
 		assets::AssetManager<ImageInternal, assets::ImmediateLoadingPolicy<ImageInternal>> immediateBuffer;
 };

@@ -154,8 +154,6 @@ class AssetBuffer
 template<typename T, typename LoadPolicy>
 class AssetManager : protected LoadPolicy, core::NonCopyable
 {
-
-
 	public:
 		AssetManager(const AssetBuffer<T> &b = AssetBuffer<T>()) : assets(b) {
 		}

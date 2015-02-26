@@ -69,9 +69,10 @@ class MeshLoader
 			return loader;
 		}
 
-		MeshLoader() {
+		MeshLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
 
+		assets::AssetBuffer<internal::MeshInstance<>> buffer;
 		assets::AssetManager<internal::MeshInstance<>, assets::AsyncLoadingPolicy<internal::MeshInstance<>>> asyncBuffer;
 		assets::AssetManager<internal::MeshInstance<>, assets::ImmediateLoadingPolicy<internal::MeshInstance<>>> immediateBuffer;
 

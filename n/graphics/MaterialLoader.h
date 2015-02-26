@@ -70,9 +70,10 @@ class MaterialLoader
 			return loader;
 		}
 
-		MaterialLoader() {
+		MaterialLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
 
+		assets::AssetBuffer<internal::Material<>> buffer;
 		assets::AssetManager<internal::Material<>, assets::AsyncLoadingPolicy<internal::Material<>>> asyncBuffer;
 		assets::AssetManager<internal::Material<>, assets::ImmediateLoadingPolicy<internal::Material<>>> immediateBuffer;
 
