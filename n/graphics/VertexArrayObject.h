@@ -53,6 +53,7 @@ class VertexArrayObject : core::NonCopyable
 	private:
 		void bind() const {
 			if(!handle) {
+				data.bind();
 				gl::glGenVertexArrays(1, &handle);
 				gl::glBindVertexArray(handle);
 				gl::glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
@@ -66,7 +67,6 @@ class VertexArrayObject : core::NonCopyable
 			} else {
 				gl::glBindVertexArray(handle);
 			}
-			data.bind();
 			indexes.bind();
 		}
 
