@@ -105,7 +105,8 @@ class String
 		T to(F f = F()) const {
 			if(std::is_same<T, std::string>::value) {
 				std::string s = toStdString();
-				return *reinterpret_cast<T *>(&s);
+				void *v = &s;
+				return *reinterpret_cast<T *>(v);
 			}
 			std::istringstream str;
 			str.rdbuf()->pubsetbuf(data, length);
