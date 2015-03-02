@@ -17,15 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "HazardPtr.h"
 #include "Mutex.h"
 #include <pthread.h>
-
-#if defined WIN32 || defined _WIN32 || defined __CYGWIN__
-#include <windows.h>
-#define tsleep(sec) Sleep((sec) * 1000)
-#endif
-#ifdef Linux
-#include <unistd.h>
-#define tsleep(sec) sleep((sec))
-#endif
+#include <chrono>
+#include <thread>
 
 namespace n {
 namespace concurent {
@@ -89,7 +82,7 @@ bool Thread::willBeDeleted() const {
 }
 
 void Thread::sleep(double sec) {
-	tsleep(sec);
+	std::this_thread::sleep_for(std::chrono::microseconds(long(sec * 1000000)));
 }
 
 void *Thread::createThread(void *arg) {
