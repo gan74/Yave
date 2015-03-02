@@ -77,6 +77,11 @@ class String
 		bool isUnique() const;
 		bool isSharedSubset() const;
 
+		template<typename T>
+		String &operator=(const T &e) {
+			return operator=(String(e));
+		}
+
 		String &operator+=(const String &s);
 		String operator+(const String &s) const;
 		bool operator==(const String &str) const;
@@ -87,7 +92,7 @@ class String
 		String &operator=(String &&s);
 		bool operator<(const String &s) const;
 
-		char operator[](uint i) const {
+		const char &operator[](uint i) const {
 			return data[i];
 		}
 

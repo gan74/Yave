@@ -228,6 +228,9 @@ bool String::contains(const String &str) const {
 }
 
 String String::subString(uint beg, uint len) const {
+	if(!len) {
+		return String();
+	}
 	return String(*this, beg, len);
 }
 
