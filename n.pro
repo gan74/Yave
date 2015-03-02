@@ -31,7 +31,8 @@ SOURCES += main.cpp \
 		   n/script/*.cpp \
 		   n/graphics/*.cpp
 
-HEADERS += n/*.h \
+HEADERS += *h \
+		   n/*.h \
 		   n/core/*.h \
 		   n/io/*.h \
 		   n/concurent/*.h \

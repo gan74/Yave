@@ -112,6 +112,7 @@ class Material : private assets::Asset<internal::Material<T>>
 				sh->setValue("n_Roughness", i->roughness);
 				sh->setValue("n_Metallic", i->metallic);
 			} else {
+				fatal("No shader");
 				#warning not implemented
 			}
 		}

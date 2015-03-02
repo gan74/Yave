@@ -61,7 +61,9 @@ struct Nothing
 	Nothing(Args...) {}
 
 	template<typename... Args>
-	void operator()(Args...) const {}
+	Nothing operator()(Args...) const {
+		return *this;
+	}
 
 	template<typename T>
 	operator T() const {

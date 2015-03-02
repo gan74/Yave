@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class StaticMesh : public Movable<float>, public Renderable
+class StaticMesh : public Movable<>, public Renderable
 {
 	public:
 		StaticMesh(const MeshInstance<> &i = MeshInstance<>()) : inst(i) {

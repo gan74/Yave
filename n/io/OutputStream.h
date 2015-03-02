@@ -28,6 +28,12 @@ class OutputStream
 		virtual bool canWrite() const = 0;
 		virtual uint writeBytes(const char *b, uint len) = 0;
 		virtual void flush() = 0;
+
+		virtual void write(const core::String &str) {
+			if(str.size()) {
+				writeBytes(&str[0], str.size());
+			}
+		}
 };
 
 
