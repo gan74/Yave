@@ -2,6 +2,9 @@
 #ifdef ALL
 #include "main.h"
 
+
+	Console console;
+
 int main(int, char **) {
 	SDL_Window *win = createWindow();
 
@@ -98,8 +101,8 @@ int main(int, char **) {
 
 	SceneRenderer renderer(&scene);
 
-	Console console;
 	console.start();
+
 	while(run(win)) {
 		Timer timer;
 		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -111,7 +114,7 @@ int main(int, char **) {
 		gl::glFlush();
 		gl::glFinish();
 
-		float fps = float(console("framerate"));
+		float fps = float(console("$framerate"));
 		if(fps) {
 			fps = (1.0 / fps);
 			fps -= timer.elapsed();

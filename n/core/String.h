@@ -117,7 +117,7 @@ class String
 			str.rdbuf()->pubsetbuf(data, length);
 			T t;
 			str>>t;
-			if(str.fail()) {
+			if(str.fail() || !str.eof()) {
 				f();
 			}
 			return t;

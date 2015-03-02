@@ -34,14 +34,8 @@ class Console : public n::concurent::Thread
 {
 	public:
 		Console() {
-			funcs["print"] = [](String s) -> String {
-				std::cout<<s<<std::endl;
-				return "";
-			};
-
 			funcs["exit"] = [&](String s) -> String {
 				one(s);
-				save();
 				exit(0);
 				return "";
 			};
@@ -90,31 +84,37 @@ class Console : public n::concurent::Thread
 
 	private:
 		String one(const String &line) {
-			core::Array<String> x = line.split(" ").mapped([](const String &s) { return s.split("="); });
-			if(x.isEmpty()) {
-				return "";
+			String cmd = removeSpaces(line);
+			if(isNum(cmd)) {
+				return cmd;
 			}
-			String cmd = x.first();
-			String rest = removeSpaces(line.subString(cmd.size()));
-			auto it = funcs.find(cmd);
-			if(it == funcs.end()) {
-				if(rest.isEmpty()) {
-					return vars[cmd];
-				}
-				if(rest[0] == '=') {
-					rest = removeSpaces(rest.subString(1));
-					if(isNum(rest)) {
-						return vars[cmd] = rest;
+			if(cmd.beginWith("$")) {
+				uint i = cmd.find("=");
+				if(i == -1u) {
+					if(AsCollection(cmd).findOne([] (char c) { return isspace(c); }) != cmd.end()) {
+						std::cerr<<"Invalid variable name \""<<cmd<<"\""<<std::endl;
+						return "";
 					} else {
-						return vars[cmd] = one(rest);
+						return vars[cmd];
 					}
 				} else {
-					std::cerr<<"Unknown command \""<<rest<<"\""<<std::endl;
-					return "";
+					String name = removeSpaces(cmd.subString(0, i));
+					return vars[name] = one(cmd.subString(i + 1));
 				}
 			} else {
-				return (*it)._2(rest);
+				uint i = cmd.find(" ");
+				String s = removeSpaces(cmd.subString(0, i));
+				auto it = funcs.find(s);
+				if(it == funcs.end()) {
+					std::cerr<<"Unknown command \""<<s<<"\""<<std::endl;
+					return "";
+				} else {
+					return (*it)._2(removeSpaces(cmd.subString(s.size())));
+				}
+
 			}
+			std::cerr<<"Unknown error \""<<line<<"\""<<std::endl;
+			return "";
 		}
 
 		static bool isNum(const String &s) {
@@ -126,6 +126,9 @@ class Console : public n::concurent::Thread
 		static String removeSpaces(String s) {
 			while(!s.isEmpty() && isspace(s[0])) {
 				s = s.subString(1);
+			}
+			while(!s.isEmpty() && isspace(s[s.size() - 1])) {
+				s = s.subString(0, s.size() - 1);
 			}
 			return s;
 		}

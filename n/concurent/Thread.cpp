@@ -35,6 +35,7 @@ Thread::Thread() : internal(new Internal), toDelete(false) {
 }
 
 Thread::~Thread() {
+	delete internal;
 }
 
 Thread *Thread::getCurrent() {

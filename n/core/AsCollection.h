@@ -100,7 +100,7 @@ class Collection
 		struct CollectionInternal<U, true, false>
 		{
 			using const_iterator = typename U::const_iterator;
-			typedef NullType iterator;
+			typedef const_iterator iterator;
 			typedef typename TypeContent<const_iterator>::type type;
 
 			class SubCollection
@@ -459,8 +459,8 @@ class Collection
 		}
 
 		template<typename U>
-		iterator findOneDispatch(FalseType, const U &f, const_iterator from) {
-			for(iterator i = const_cast<iterator>(from); i != collection.end(); ++i) {
+		iterator findOneDispatch(FalseType, const U &f, iterator from) {
+			for(iterator i = from; i != collection.end(); ++i) {
 				if(f(*i)) {
 					return i;
 				}
@@ -476,6 +476,16 @@ class Collection
 				}
 			}
 			return collection.end();
+		}
+
+		template<typename U>
+		iterator findOneDispatch(FalseType, const U &f) {
+			return findDispatch(FalseType(), f, collection.begin());
+		}
+
+		template<typename U>
+		const_iterator findOneDispatch(FalseType, const U &f) const {
+			return findDispatch(FalseType(), f, collection.begin());
 		}
 
 		template<typename U>
