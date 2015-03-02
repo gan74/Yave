@@ -85,6 +85,9 @@ class Console : public n::concurent::Thread
 	private:
 		String one(const String &line) {
 			String cmd = removeSpaces(line);
+			if(cmd.isEmpty()) {
+				return "";
+			}
 			if(isNum(cmd)) {
 				return cmd;
 			}
@@ -138,15 +141,15 @@ class Console : public n::concurent::Thread
 
 		bool load(const String &f = "") {
 			io::File file(f.isEmpty() ? cfg : f);
-			if(file.open(io::IODevice::Read)) {
+			if(file.open(io::IODevice::Read || io::IODevice::Binary)) {
 				char *data = new char[file.size() + 1];
-				file.readBytes(data);
-				data[file.size()] = 0;
-				file.close();
-				for(const String &line : String(data).split("\n")) {
+				data[file.readBytes(data)] = 0;
+				String all(data);
+				for(const String &line : all.split("\n")) {
 					one(line);
 				}
 				delete[] data;
+				file.close();
 				return true;
 			}
 			std::cerr<<"Unable to load config from \""<<(f.isEmpty() ? cfg : f)<<"\""<<std::endl;

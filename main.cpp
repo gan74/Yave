@@ -95,13 +95,17 @@ int main(int, char **) {
 	c->setPosition(Vec3(0, -2.5, 0));
 	scene.insert(c);
 
-	for(uint i = 0; i != 500 - 3; i++) {
+	uint num = 1;
+	uint count = console("$objCount").to<uint>([&](){ num = 0; });
+	for(uint i = 0; i < (count * num); i++) {
 		scene.insert(new RandObj());
 	}
 
 	SceneRenderer renderer(&scene);
 
+
 	console.start();
+
 
 	while(run(win)) {
 		Timer timer;
