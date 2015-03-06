@@ -26,15 +26,12 @@ template<typename T>
 class SmallObject
 {
 	public:
-		void *operator new(uint size) {
+		N_FORCE_INLINE void *operator new(uint size) {
 			return getAllocator()->allocate(size);
 		}
 
-		void operator delete(void *ptr, uint size) {
+		N_FORCE_INLINE void operator delete(void *ptr, uint size) {
 			getAllocator()->desallocate(ptr, size);
-		}
-
-		virtual ~SmallObject() {
 		}
 
 		template<typename... Args>
