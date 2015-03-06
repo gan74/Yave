@@ -181,4 +181,19 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 } // core
 } // n
 
+template<typename T, typename U, typename Comp, typename Eq>
+n::core::Map<T, Comp, Eq> operator+(const T &i, n::core::Map<T, Comp, Eq>  &a) {
+	n::core::Map<T, Comp, Eq>  b(a);
+	b.insert(i);
+	return b;
+}
+
+template<typename T, typename U, typename Comp, typename Eq>
+n::core::Map<T, Comp, Eq> operator+(const n::core::Map<T, Comp, Eq>  &a, const T &i) {
+	n::core::Map<T, Comp, Eq>  b(a);
+	b.insert(i);
+	return b;
+}
+
+
 #endif // N_CORE_MAP_H

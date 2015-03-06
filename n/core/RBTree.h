@@ -311,8 +311,7 @@ class RBTree
 			return *this;
 		}
 
-		template<typename C>
-		RBTree<T, Comp, Eq> operator+(const C &e) const {
+		RBTree<T, Comp, Eq> operator+(const RBTree<T, Comp, Eq> &e) const {
 			RBTree<T, Comp, Eq> a(*this);
 			for(const T &i : e) {
 				a.insert(i);
@@ -673,5 +672,20 @@ class RBTree
 
 }
 }
+
+template<typename T, typename Comp, typename Eq>
+n::core::RBTree<T, Comp, Eq> operator+(const T &i, n::core::RBTree<T, Comp, Eq>  &a) {
+	n::core::RBTree<T, Comp, Eq>  b(a);
+	b.insert(i);
+	return b;
+}
+
+template<typename T, typename Comp, typename Eq>
+n::core::RBTree<T, Comp, Eq> operator+(const n::core::RBTree<T, Comp, Eq>  &a, const T &i) {
+	n::core::RBTree<T, Comp, Eq>  b(a);
+	b.insert(i);
+	return b;
+}
+
 
 #endif // N_CORE_RBTREE_H

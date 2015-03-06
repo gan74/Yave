@@ -215,7 +215,6 @@ class List
 			remove(--end());
 		}
 
-
 		void move(iterator from, iterator to) {
 			if(from == to) {
 				return;
@@ -296,6 +295,10 @@ class List
 		template<typename C>
 		List<T> &operator=(const C &l) {
 			assign(l);
+		}
+
+		List<T> operator=(const List<T> &l) {
+			append(l);
 		}
 
 		uint size() const {
@@ -587,5 +590,16 @@ class List
 
 }
 }
+
+template<typename T>
+n::core::List<T> operator+(const T &i, const n::core::List<T> &a) {
+	return n::core::List<T>(i, a);
+}
+
+template<typename T>
+n::core::List<T> operator+(const n::core::List<T> &a, const T &i) {
+	return n::core::List<T>(a, i);
+}
+
 
 #endif // N_CORE_LIST_H

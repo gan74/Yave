@@ -279,15 +279,16 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		}
 
 		template<typename C>
-		Array<T, ResizePolicy> operator+(const C &e) const {
-			Array<T, ResizePolicy> a(*this, e);
-			return a;
-		}
-
-		template<typename C>
 		Array<T, ResizePolicy> &operator+=(const C &e) {
 			append(e);
 			return *this;
+		}
+
+		template<typename C>
+		Array<T, ResizePolicy> operator+(const Array<T> &e) {
+			Array<T, ResizePolicy> x(Size(size() + e.size()));
+			x.append(*this, e);
+			return x;
 		}
 
 		template<typename C>
@@ -685,5 +686,34 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 
 } //core
 } //n
+
+
+template<typename T>
+n::core::Array<T> operator+(const T &i, const n::core::Array<T> &a) {
+	return n::core::Array<T>(i, a);
+}
+
+template<typename T>
+n::core::Array<T> operator+(const n::core::Array<T> &a, const T &i) {
+	return n::core::Array<T>(a, i);
+}
+
+template<typename T>
+n::core::Array<T> operator,(const T &a, const T &b) {
+	return n::core::Array<T>(a, b);
+}
+
+template<typename T>
+n::core::Array<T> operator,(const n::core::Array<T> &a, const T &b) {
+	return n::core::Array<T>(a, b);
+}
+
+
+
+
+
+
+
+
 
 #endif // N_CORE_ARRAY_H
