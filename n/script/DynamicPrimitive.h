@@ -31,6 +31,8 @@ class DynamicPrimitive
 		DynamicPrimitive(const DynamicPrimitive &t);
 		DynamicPrimitive(PrimitiveType t, Primitive value = Primitive());
 
+		DynamicPrimitive &operator=(const DynamicPrimitive &t);
+
 		bool operator==(const DynamicPrimitive &o) const;
 		bool operator!=(const DynamicPrimitive &o) const;
 

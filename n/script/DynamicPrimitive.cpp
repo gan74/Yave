@@ -31,6 +31,12 @@ DynamicPrimitive::DynamicPrimitive(PrimitiveType t, Primitive value) {
 	new(raw + 1) Primitive(value);
 }
 
+
+DynamicPrimitive &DynamicPrimitive::operator=(const DynamicPrimitive &t) {
+	memcpy(raw, t.raw, sizeof(raw));
+	return *this;
+}
+
 bool DynamicPrimitive::operator==(const DynamicPrimitive &o) const {
 	if(type() == o.type()) {
 
