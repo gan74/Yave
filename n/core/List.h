@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_LIST_H
 
 #include <n/types.h>
+#include <n/utils.h>
 #include "AsCollection.h"
 
 namespace n {
@@ -25,7 +26,7 @@ namespace core {
 template<typename T>
 class List
 {
-	class ListElem
+	class ListElem : NonCopyable
 	{
 		public:
 			ListElem(const T &t, ListElem *n = 0, ListElem *p = 0) : ListElem(n, p) {
@@ -75,11 +76,11 @@ class List
 					return it;
 				}
 
-				bool operator!=(const iterator &t) const {
+				bool operator!=(iterator t) const {
 					return t.elem != elem;
 				}
 
-				bool operator==(const iterator &t) const {
+				bool operator==(iterator t) const {
 					return t.elem == elem;
 				}
 
@@ -130,11 +131,11 @@ class List
 					return it;
 				}
 
-				bool operator!=(const const_iterator &t) const {
+				bool operator!=(const_iterator t) const {
 					return t.elem != elem;
 				}
 
-				bool operator==(const const_iterator &t) const {
+				bool operator==(const_iterator t) const {
 					return t.elem == elem;
 				}
 
@@ -142,7 +143,7 @@ class List
 					return elem->elem;
 				}
 
-				const_iterator(const iterator &i) : const_iterator(i.elem) {
+				const_iterator(iterator i) : const_iterator(i.elem) {
 				}
 
 			private:
@@ -214,6 +215,20 @@ class List
 			remove(--end());
 		}
 
+
+		void move(iterator from, iterator to) {
+			if(from == to) {
+				return;
+			}
+			from.elem->prev->next = from.elem->next;
+			from.elem->next->prev = from.elem->prev;
+
+			from.elem->next = to.elem;
+			from.elem->prev = to.elem->prev;
+			to.elem->prev->next = from.elem;
+			to.elem->prev = from.elem;
+		}
+
 		iterator remove(iterator t) {
 			if(t == begin()) {
 				popFront();
@@ -228,7 +243,7 @@ class List
 		}
 
 		template<typename C>
-		iterator insert(const C &e, const const_iterator &t) {
+		iterator insert(const C &e, const_iterator t) {
 			if(t == begin()) {
 				prepend(e);
 				return begin();
@@ -307,26 +322,6 @@ class List
 			return *(--end());
 		}
 
-		template<typename U>
-		iterator find(const U &f, const const_iterator &from) {
-			for(iterator i = from; i != end(); ++i) {
-				if(f(*i)) {
-					return i;
-				}
-			}
-			return end();
-		}
-
-		template<typename U>
-		const_iterator find(const U &f, const const_iterator &from) const {
-			for(const_iterator i = from; i != end(); ++i) {
-				if(f(*i)) {
-					return i;
-				}
-			}
-			return end();
-		}
-
 		bool isSorted() const {
 			if(isEmpty()) {
 				return true;
@@ -384,7 +379,7 @@ class List
 		}
 
 		template<typename U>
-		iterator find(const U &f, const_iterator from) {
+		iterator find(const U &f, iterator from) {
 			return findOne(f, from);
 		}
 
@@ -552,7 +547,7 @@ class List
 		void appendDispatch(const C &t, TrueType) {
 			ListElem *e = new ListElem(t, tail, 0);
 			if(head == tail) {
-				head =  e;
+				head = e;
 			} else {
 				tail->prev->next = e;
 				e->prev = tail->prev;
@@ -570,19 +565,16 @@ class List
 
 		template<typename C>
 		void prependDispatch(const C &t, TrueType) {
-			if(isEmpty()) {
-				append(t);
-			} else {
-				ListElem *e = new ListElem(t, head, 0);
-				head = head->prev = e;
-				lSize++;
-			}
+			ListElem *e = new ListElem(t, head, 0);
+			head->prev = e;
+			head = e;
+			lSize++;
 		}
 
 		template<typename C>
 		void prependDispatch(const C &c, FalseType) {
 			for(const auto &e : c) {
-				append(e);
+				prepend(e);
 			}
 		}
 

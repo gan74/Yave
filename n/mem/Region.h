@@ -25,7 +25,7 @@ namespace mem {
 class Region : core::NonCopyable
 {
 	public:
-		Region(uint blckSize, uint nBlck = 0) : blockSize(blckSize), size(nBlck ? nBlck : std::min(16, 1 << (14 - blckSize))), left(size), mem(malloc(blockSize * size)), ptr(mem) {
+		Region(uint blckSize, uint nBlck = 0) : blockSize(blckSize), size(nBlck ? nBlck : std::max(16, 1 << (16 - core::log2ui(blckSize)))), left(size), mem(malloc(blockSize * size)), ptr(mem) {
 			byte *it = (byte *)mem;
 			void **last = (void **)ptr;
 			for(uint i = 0; i != size; i++, it += blockSize) {

@@ -40,7 +40,7 @@ class Allocator : core::NonCopyable
 		}
 
 		void *allocate(uint size) {
-			uint i = toIndex(size);
+			uint i =  toIndex(size);
 			if(i < regs) {
 				return allocTable[i]->allocate();
 			}
@@ -81,7 +81,7 @@ class Allocator : core::NonCopyable
 		static constexpr uint logBytes = core::log2ui(sizeof(void *));
 
 		uint toIndex(uint size) {
-			size = std::min(size, sizeof(void *));
+			size = std::max(size, sizeof(void *));
 			uint l2 = core::log2ui(size);
 			l2 += (1u << l2) < size;
 			return l2 - logBytes;

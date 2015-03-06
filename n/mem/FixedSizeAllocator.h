@@ -40,11 +40,11 @@ class FixedSizeAllocator : core::NonCopyable
 				Region *reg = *it;
 				void *ptr = reg->allocate();
 				if(ptr) {
-					regs.remove(it);
-					regs.prepend(reg);
+					regs.move(it, regs.begin());
 					return ptr;
 				}
 			}
+
 			regs.prepend(new Region(size));
 			return regs.first()->allocate();
 		}
@@ -56,11 +56,11 @@ class FixedSizeAllocator : core::NonCopyable
 			for(core::List<Region *>::iterator it = regs.begin(); it != regs.end(); ++it) {
 				Region *reg = *it;
 				if(reg->desallocate(ptr)) {
-					regs.remove(it);
 					if(reg->isEmpty()) {
+						regs.remove(it);
 						delete reg;
-					} else {
-						regs.prepend(reg);
+					} else if(it != regs.begin()) {
+						regs.move(it, regs.begin());
 					}
 					return true;
 				}
