@@ -75,6 +75,13 @@ namespace internal {
 			AssetKey(const AssetKey &k) : types(k.types), base(k.base->clone()) {
 			}
 
+			AssetKey &operator=(const AssetKey &k) {
+				delete base;
+				types = k.types;
+				base = k.base->clone();
+				return *this;
+			}
+
 			~AssetKey() {
 				delete base;
 			}
