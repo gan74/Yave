@@ -698,22 +698,5 @@ n::core::Array<T> operator+(const n::core::Array<T> &a, const T &i) {
 	return n::core::Array<T>(a, i);
 }
 
-template<typename T>
-n::core::Array<T> operator,(const T &a, const T &b) {
-	return n::core::Array<T>(a, b);
-}
-
-template<typename T>
-n::core::Array<T> operator,(const n::core::Array<T> &a, const T &b) {
-	return n::core::Array<T>(a, b);
-}
-
-
-
-
-
-
-
-
 
 #endif // N_CORE_ARRAY_H
