@@ -67,7 +67,7 @@ struct Nothing
 
 	template<typename T>
 	operator T() const {
-		throw Nothing();
+		return fatal("Nothing used.");
 	}
 };
 

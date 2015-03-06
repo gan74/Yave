@@ -106,7 +106,10 @@ class Console : public n::concurent::Thread
 				}
 			} else {
 				uint i = cmd.find(" ");
-				String s = removeSpaces(cmd.subString(0, i));
+				String s = cmd;
+				if(i != -1u) {
+					s = removeSpaces(s.subString(0, i));
+				}
 				auto it = funcs.find(s);
 				if(it == funcs.end()) {
 					std::cerr<<"Unknown command \""<<s<<"\""<<std::endl;
@@ -141,7 +144,7 @@ class Console : public n::concurent::Thread
 
 		bool load(const String &f = "") {
 			io::File file(f.isEmpty() ? cfg : f);
-			if(file.open(io::IODevice::Read || io::IODevice::Binary)) {
+			if(file.open(io::IODevice::Read)) {
 				char *data = new char[file.size() + 1];
 				data[file.readBytes(data)] = 0;
 				String all(data);
