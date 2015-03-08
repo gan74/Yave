@@ -92,7 +92,7 @@ class Shader : public internal::ShaderBase
 				handle = 0;
 				msg[size] = '\0';
 				logs = msg;
-				delete msg;
+				delete[] msg;
 			}
 		}
 
