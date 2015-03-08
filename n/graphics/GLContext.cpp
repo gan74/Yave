@@ -25,6 +25,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+GLAPIENTRY void debugOut(gl::GLenum, gl::GLenum type, gl::GLuint, gl::GLuint sev, gl::GLsizei len, const char *msg, const void *) {
+	if(sev == GL_DEBUG_SEVERITY_NOTIFICATION) {
+		return;
+	}
+	core::String t;
+	switch(type) {
+		case GL_DEBUG_TYPE_PERFORMANCE:
+			t = "perf";
+		break;
+		case GL_DEBUG_TYPE_PORTABILITY:
+			t = "port";
+		break;
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+			t = "depr";
+		break;
+		default:
+			t = "err";
+		break;
+	}
+
+	std::cerr<<"[GL]"<<(sev == GL_DEBUG_SEVERITY_HIGH ? "[HIGH]" : "")<<"["<<t<<"] "<<core::String(msg, len)<<std::endl;
+}
+
 GLContext *GLContext::getContext() {
 	static GLContext *ct = new GLContext();
 	return ct;
@@ -57,12 +80,21 @@ GLContext::GLContext() {
 	gl::glEnable(GL_CULL_FACE);
 	gl::glEnable(GL_DEPTH_TEST);
 
+	gl::glEnable(GL_DEBUG_OUTPUT);
+	gl::glDebugMessageCallback(&debugOut, 0);
 	gl::glGetError();
 }
 
 GLContext::~GLContext() {
 }
 
+void GLContext::setDebugEnabled(bool deb) {
+	if(deb) {
+		gl::glEnable(GL_DEBUG_OUTPUT);
+	} else {
+		gl::glDisable(GL_DEBUG_OUTPUT);
+	}
+}
 
 bool GLContext::checkGLError() {
 	int error = gl::glGetError();

@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "utils.h"
+#include <n/concurent/Atomic.h>
 #include <n/defines.h>
 #include <ctime>
 #include <iostream>
@@ -70,6 +71,12 @@ namespace math {
 } //math
 
 namespace core {
+	uint uniqueId() {
+		static concurent::auint counter;
+		return ++counter;
+	}
+
+
 	uint hash(const void *key, uint len, uint seed) {
 		uint m = 0x5bd1e995;
 		int r = 24;

@@ -174,6 +174,9 @@ namespace core {
 			NonCopyable &operator=(const NonCopyable &) = delete;
 	};
 
+
+	uint uniqueId();
+
 	uint hash(const void *key, uint len, uint seed = 0x1000193);
 
 	constexpr uint log2ui(uint n) {

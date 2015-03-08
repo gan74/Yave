@@ -45,6 +45,8 @@ class GLContext
 			return shader;
 		}
 
+		void setDebugEnabled(bool deb);
+
 	private:
 		friend class ShaderCombinaison;
 
