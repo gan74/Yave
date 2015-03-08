@@ -14,35 +14,49 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifdef N_USE_LODEPNG
+#ifndef N_GRAPHICS_FRAMEBUFFER_H
+#define N_GRAPHICS_FRAMEBUFFER_H
 
-#include "ImageLoader.h"
-#include <dependencies/lodepng/lodepng.h>
 #include <n/utils.h>
-#include <n/defines.h>
+#include "Texture.h"
+#include "GL.h"
 
 namespace n {
 namespace graphics {
 
-class PngDecoder : public graphics::ImageLoader::ImageDecoder<PngDecoder, core::String>
+class FrameBuffer : public core::NonCopyable
 {
 	public:
-		PngDecoder() : graphics::ImageLoader::ImageDecoder<PngDecoder, core::String>() {
+		FrameBuffer(const math::Vec2ui &s);
+		~FrameBuffer();
+
+		void setAttachmentEnabled(uint slot, bool enabled);
+		void setDepthEnabled(bool enabled);
+		bool isAttachmentEnabled(uint slot) const;
+		bool isDepthEnabled() const;
+
+		bool isActive() const;
+
+		void bind();
+
+		math::Vec2ui getSize() const {
+			return base.getSize();
 		}
 
-		graphics::internal::Image *operator()(core::String name) override {
-			std::vector<byte> image;
-			uint width = 0;
-			uint height = 0;
-			uint err = lodepng::decode(image, width, height, name.toChar());
-			if(err) {
-				return 0;
-			}
-			return new internal::Image(math::Vec2ui(width, height), image.data());
-		}
+	private:
+		void setModified();
+		void setUnmodified();
+
+		Image base;
+		Texture *attachments;
+		Texture *depth;
+		gl::GLenum *drawBuffers;
+		gl::GLuint handle;
+
+		bool modified;
 };
 
 }
 }
 
-#endif
+#endif // N_GRAPHICS_FRAMEBUFFER_H

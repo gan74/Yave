@@ -127,12 +127,16 @@ class SmartPtr
 		}
 
 		operator SmartPtr<const T>() const {
-			return *this;
+			return SmartPtr<const T>(ptr, count);
 		}
 
 	private:
 		friend class SmartPtr<const T>;
 		friend class SmartPtr<typename TypeInfo<T>::nonConst>;
+
+		SmartPtr(T *p, C *c) : ptr(p), count(c) {
+			++(*count);
+		}
 
 		void ref(const SmartPtr<T, C, Proxy> &p) {
 			if((count = p.count)) {
@@ -144,7 +148,7 @@ class SmartPtr
 		void unref() {
 			if(count && !--(*count)) {
 				delete ptr;
-				delete count; // can fail
+				delete count;
 			}
 			ptr = 0;
 			count = 0;

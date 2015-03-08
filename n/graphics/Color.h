@@ -31,7 +31,8 @@ struct ImageFormat
 		R8G8B8A8,
 		R8G8B8,
 		R10G10B10A2,
-		F32
+		F32,
+		Depth32
 	};
 
 	enum Channel
@@ -74,7 +75,10 @@ struct ImageFormat
 	bool hasAlpha() const {
 		switch(format) {
 			case R8G8B8:
+			case F32:
+			case Depth32:
 				return false;
+
 			default:
 				return true;
 		}
@@ -89,6 +93,7 @@ struct ImageFormat
 			case R10G10B10A2:
 				return ch == Alpha ? 2 : 10;
 			case F32:
+			case Depth32:
 				return 32;
 			default:
 				return 0;
@@ -120,6 +125,7 @@ struct ImageFormat
 				}
 			} break;
 
+			case Depth32:
 			case F32:
 				return (uint64)(((double)*(float *)cdt) * ((uint32)-1));
 

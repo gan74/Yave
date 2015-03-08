@@ -25,11 +25,22 @@ namespace n {
 namespace graphics {
 
 class ShaderCombinaison;
+class FrameBuffer;
 
 class GLContext
 {
 	public:
+		enum HWInt
+		{
+			MaxFboAttachements = 0,
+			Max = 1
+		};
+
 		static GLContext *getContext();
+
+
+		math::Vec2ui getViewport() const;
+		void setViewport(const math::Vec2ui &view);
 
 		void addGLTask(const core::Functor<void()> &f);
 
@@ -39,16 +50,26 @@ class GLContext
 
 		bool processTasks();
 
+		void setDebugEnabled(bool deb);
 		static bool checkGLError();
+
 
 		const ShaderCombinaison *getShader() const {
 			return shader;
 		}
 
-		void setDebugEnabled(bool deb);
+		const FrameBuffer *getFrameBuffer() const {
+			return frameBuffer;
+		}
+
+
+		int getHWInt(HWInt hw) {
+			return hwInts[hw];
+		}
 
 	private:
 		friend class ShaderCombinaison;
+		friend class FrameBuffer;
 
 		GLContext();
 		~GLContext();
@@ -60,6 +81,11 @@ class GLContext
 		math::Matrix4<> model;
 
 		ShaderCombinaison *shader;
+		FrameBuffer *frameBuffer;
+
+		int hwInts[Max];
+
+		math::Vec2ui viewport;
 };
 
 }

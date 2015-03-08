@@ -60,7 +60,6 @@ class Console : public n::concurent::Thread
 
 		virtual void run() override {
 			while(true) {
-				std::cout<<std::endl<<">>>";
 				std::string line;
 				std::getline(std::cin, line);
 				String cmd = String(line);

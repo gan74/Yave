@@ -38,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/MeshLoader.h>
 #include <n/graphics/MaterialLoader.h>
 #include <n/graphics/SceneRenderer.h>
+#include <n/graphics/FrameBuffer.h>
 
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>

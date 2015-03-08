@@ -23,9 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-struct ImageInternal : core::NonCopyable
+namespace internal {
+struct Image : core::NonCopyable
 {
-	ImageInternal(const math::Vec2ui &s, void *c, ImageFormat f = ImageFormat::R8G8B8A8) : format(f), size(s), data(new byte[s.mul() * format.bytePerPixel()]) {
+	Image(const math::Vec2ui &s, void *c, ImageFormat f = ImageFormat::R8G8B8A8) : format(f), size(s), data(new byte[s.mul() * format.bytePerPixel()]) {
 		if(c) {
 			memcpy((void *)data, c, s.mul() * format.bytePerPixel());
 		}
@@ -36,22 +37,28 @@ struct ImageInternal : core::NonCopyable
 	const void *data;
 
 };
+}
 
-class Image : private assets::Asset<ImageInternal>
+
+
+class Image : private assets::Asset<internal::Image>
 {
 	friend class ImageLoader;
 	public:
 		Image() {
 		}
 
-		Image(const Image &image) : Image((assets::Asset<ImageInternal>)image) {
+		Image(const Image &image) : Image((assets::Asset<internal::Image>)image) {
 		}
 
-		Image(ImageInternal *i) : assets::Asset<ImageInternal>(std::move(i)) {
+		Image(internal::Image *i) : assets::Asset<internal::Image>(std::move(i)) {
+		}
+
+		Image(const math::Vec2ui &s, void *c = 0, ImageFormat f = ImageFormat::R8G8B8A8) : Image(new internal::Image(s, c, f)) {
 		}
 
 		math::Vec2ui getSize() const {
-			const ImageInternal *in = getInternal();
+			const internal::Image *in = getInternal();
 			if(!in) {
 				return math::Vec2ui(0);
 			}
@@ -59,15 +66,15 @@ class Image : private assets::Asset<ImageInternal>
 		}
 
 		bool isValid() const {
-			return assets::Asset<ImageInternal>::isValid();
+			return assets::Asset<internal::Image>::isValid();
 		}
 
 		bool isNull() const {
-			return assets::Asset<ImageInternal>::isNull();
+			return assets::Asset<internal::Image>::isNull();
 		}
 
 		const void *data() const {
-			const ImageInternal *in = getInternal();
+			const internal::Image *in = getInternal();
 			if(!in) {
 				return 0;
 			}
@@ -75,7 +82,7 @@ class Image : private assets::Asset<ImageInternal>
 		}
 
 		ImageFormat getFormat() const {
-			const ImageInternal *in = getInternal();
+			const internal::Image *in = getInternal();
 			if(!in)  {
 				return ImageFormat(ImageFormat::None);
 			}
@@ -84,13 +91,13 @@ class Image : private assets::Asset<ImageInternal>
 
 		template<typename T = float>
 		const Color<T> getPixel(const math::Vec2ui &pos) const {
-			const ImageInternal *in = getInternal();
+			const internal::Image *in = getInternal();
 			uint offset = pos.x() * in->size.y() + pos.y();
 			return Color<T>((void *)(((byte *)in->data) + offset * in->format.bytePerPixel()), in->format);
 		}
 
 		bool operator==(const Image &i) const {
-			return Asset<ImageInternal>::operator==(i);
+			return Asset<internal::Image>::operator==(i);
 		}
 
 		bool operator!=(const Image &i) const {
@@ -99,11 +106,11 @@ class Image : private assets::Asset<ImageInternal>
 
 
 	private:
-		Image(const assets::Asset<ImageInternal> &t) : assets::Asset<ImageInternal>(t) {
+		Image(const assets::Asset<internal::Image> &t) : assets::Asset<internal::Image>(t) {
 		}
 
-		const ImageInternal *getInternal() const {
-			return isValid() ? this->operator->() : (const ImageInternal *)0;
+		const internal::Image *getInternal() const {
+			return isValid() ? this->operator->() : (const internal::Image *)0;
 		}
 
 };

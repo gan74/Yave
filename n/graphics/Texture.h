@@ -45,15 +45,17 @@ class Texture
 		Texture();
 		~Texture();
 
-		void bind() const;
+		void bind(bool sync = false) const;
 
 		bool operator==(const Texture &t) const;
 		bool operator!=(const Texture &t) const;
 
 	private:
 		friend class ShaderCombinaison;
+		friend class FrameBuffer;
 
-		int getHandle() const;
+		gl::GLuint getHandle() const;
+		void upload() const;
 
 		Image image;
 		mutable core::SmartPtr<Data> data;

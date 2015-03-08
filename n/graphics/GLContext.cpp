@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GLContext.h"
 #include "ShaderCombinaison.h"
 #include "GL.h"
+#include "FrameBuffer.h"
 #include <n/concurent/Thread.h>
 #include <n/core/Timer.h>
 
@@ -45,7 +46,7 @@ GLAPIENTRY void debugOut(gl::GLenum, gl::GLenum type, gl::GLuint, gl::GLuint sev
 		break;
 	}
 
-	std::cerr<<"[GL]"<<(sev == GL_DEBUG_SEVERITY_HIGH ? "[HIGH]" : "")<<"["<<t<<"] "<<core::String(msg, len)<<std::endl;
+	std::cerr<<std::endl<<"[GL]"<<(sev == GL_DEBUG_SEVERITY_HIGH ? "[HIGH]" : "")<<"["<<t<<"] "<<core::String(msg, len)<<std::endl;
 }
 
 GLContext *GLContext::getContext() {
@@ -66,7 +67,7 @@ bool GLContext::processTasks() {
 	return false;
 }
 
-GLContext::GLContext() {
+GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
 	if(concurent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
@@ -76,13 +77,24 @@ GLContext::GLContext() {
 	}
 	std::cout<<"Running on "<<gl::glGetString(GL_VENDOR)<<" "<<gl::glGetString(GL_RENDERER)<<" using GL "<<gl::glGetString(GL_VERSION)<<std::endl;
 
+
 	gl::glEnable(GL_TEXTURE_2D);
 	gl::glEnable(GL_CULL_FACE);
 	gl::glEnable(GL_DEPTH_TEST);
 
-	gl::glEnable(GL_DEBUG_OUTPUT);
-	gl::glDebugMessageCallback(&debugOut, 0);
+	gl::glViewport(0, 0, viewport.x(), viewport.y());
+
+	for(uint i = 0; i != Max; i++) {
+		hwInts[i] = 0;
+	}
+	hwInts[Max] = 0;
+
+	gl::glGetIntegerv(GL_MAX_DRAW_BUFFERS, &hwInts[MaxFboAttachements]);
+
 	gl::glGetError();
+
+	gl::glDebugMessageCallback(&debugOut, 0);
+	gl::glEnable(GL_DEBUG_OUTPUT);
 }
 
 GLContext::~GLContext() {
@@ -94,6 +106,17 @@ void GLContext::setDebugEnabled(bool deb) {
 	} else {
 		gl::glDisable(GL_DEBUG_OUTPUT);
 	}
+}
+
+void GLContext::setViewport(const math::Vec2ui &view) {
+	viewport = view;
+	if(!frameBuffer) {
+		gl::glViewport(0, 0, viewport.x(), viewport.y());
+	}
+}
+
+math::Vec2ui GLContext::getViewport() const {
+	return frameBuffer ? frameBuffer->getSize() : viewport;
 }
 
 bool GLContext::checkGLError() {

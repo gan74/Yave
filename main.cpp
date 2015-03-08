@@ -74,6 +74,9 @@ int main(int, char **) {
 
 	shader.bind();
 
+	FrameBuffer buffer(Vec2ui(512));
+	buffer.bind();
+
 	Camera cam;
 	cam.setPosition(Vec3(0, 0, 5));
 	shader["n_Camera"] = cam.getPosition();
@@ -103,7 +106,7 @@ int main(int, char **) {
 
 	SceneRenderer renderer(&scene);
 
-	//console.start();
+	console.start();
 
 	while(run(win)) {
 		Timer timer;
@@ -124,16 +127,6 @@ int main(int, char **) {
 				concurent::Thread::sleep(fps);
 			}
 		}
-
-
-		/*Vec2i mouse;
-		SDL_GetMouseState(&mouse.x(), &mouse.y());
-		Vec2 mf = Vec2(mouse) * 0.01;
-		Quaternion<> q = Quaternion<>::fromEuler(Vec3(0, -mf.y(), -mf.x()));
-		cam.setRotation(q);
-		cam.setPosition(q(Vec3(-7, 0, 0)));
-		shader["n_Camera"] = cam.getPosition();
-		GLContext::getContext()->setViewMatrix(cam.getViewMatrix());*/
 	}
 	return 0;
 }

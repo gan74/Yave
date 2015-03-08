@@ -42,7 +42,7 @@ class ImageLoader
 					n::unused(runner);
 				}
 
-				virtual ImageInternal *operator()(Args...) = 0;
+				virtual internal::Image *operator()(Args...) = 0;
 
 			private:
 				static Runner runner;
@@ -72,9 +72,9 @@ class ImageLoader
 		}
 
 
-		assets::AssetBuffer<ImageInternal> buffer;
-		assets::AssetManager<ImageInternal, assets::AsyncLoadingPolicy<ImageInternal>> asyncBuffer;
-		assets::AssetManager<ImageInternal, assets::ImmediateLoadingPolicy<ImageInternal>> immediateBuffer;
+		assets::AssetBuffer<internal::Image> buffer;
+		assets::AssetManager<internal::Image, assets::AsyncLoadingPolicy<internal::Image>> asyncBuffer;
+		assets::AssetManager<internal::Image, assets::ImmediateLoadingPolicy<internal::Image>> immediateBuffer;
 };
 
 
