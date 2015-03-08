@@ -59,7 +59,7 @@ void FrameBuffer::setDepthEnabled(bool enabled) {
 		return;
 	}
 	if(enabled) {
-		depth = new Texture(Image(base.getSize(), 0, ImageFormat::Depth32));
+		depth = new Texture(Image(base.getSize(), ImageFormat::Depth32));
 	} else {
 		delete depth;
 		depth = 0;

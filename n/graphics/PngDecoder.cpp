@@ -38,7 +38,7 @@ class PngDecoder : public graphics::ImageLoader::ImageDecoder<PngDecoder, core::
 			if(err) {
 				return 0;
 			}
-			return new internal::Image(math::Vec2ui(width, height), image.data());
+			return new internal::Image(math::Vec2ui(width, height), ImageFormat::R8G8B8A8, image.data());
 		}
 };
 

@@ -29,6 +29,7 @@ struct ImageFormat
 	{
 		None,
 		R8G8B8A8,
+		R16G16B16A16,
 		R8G8B8,
 		R10G10B10A2,
 		F32,
@@ -88,6 +89,8 @@ struct ImageFormat
 		switch(format) {
 			case R8G8B8A8:
 				return 8;
+			case R16G16B16A16:
+				return 16;
 			case R8G8B8:
 				return ch == Alpha ? 0 : 8;
 			case R10G10B10A2:
@@ -108,6 +111,9 @@ struct ImageFormat
 			case R8G8B8:
 			case R8G8B8A8:
 				return ((byte *)cdt)[ch];
+
+			case R16G16B16A16:
+				return ((uint16 *)cdt)[ch];
 
 			case R10G10B10A2: {
 				R10G10B10A2_t data = *(R10G10B10A2_t *)cdt;

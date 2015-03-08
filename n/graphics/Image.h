@@ -26,10 +26,14 @@ namespace graphics {
 namespace internal {
 struct Image : core::NonCopyable
 {
-	Image(const math::Vec2ui &s, void *c, ImageFormat f = ImageFormat::R8G8B8A8) : format(f), size(s), data(new byte[s.mul() * format.bytePerPixel()]) {
+	Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::R8G8B8A8, void *c = 0) : format(f), size(s), data(c ? new byte[s.mul() * format.bytePerPixel()] : 0) {
 		if(c) {
 			memcpy((void *)data, c, s.mul() * format.bytePerPixel());
 		}
+	}
+
+	~Image() {
+		delete[] data;
 	}
 
 	const ImageFormat format;
@@ -54,7 +58,7 @@ class Image : private assets::Asset<internal::Image>
 		Image(internal::Image *i) : assets::Asset<internal::Image>(std::move(i)) {
 		}
 
-		Image(const math::Vec2ui &s, void *c = 0, ImageFormat f = ImageFormat::R8G8B8A8) : Image(new internal::Image(s, c, f)) {
+		Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::R8G8B8A8, void *c = 0) : Image(new internal::Image(s, f, c)) {
 		}
 
 		math::Vec2ui getSize() const {

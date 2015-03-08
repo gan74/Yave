@@ -105,7 +105,7 @@ int main(int, char **) {
 
 	SceneRenderer renderer(&scene);
 
-	console.start();
+	//console.start();
 
 	while(run(win)) {
 		Timer timer;

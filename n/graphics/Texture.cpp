@@ -14,11 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-
 #include "Texture.h"
 #include "GLContext.h"
 #include "StaticBuffer.h"
 #include "GL.h"
+
+#include <iostream>
 
 #define N_NO_TEX_STORAGE
 
@@ -42,6 +43,9 @@ GLTexFormat getTextureFormat(ImageFormat format) {
 		break;
 		case ImageFormat::R8G8B8A8:
 			return GLTexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE);
+		break;
+		case ImageFormat::R16G16B16A16:
+			return GLTexFormat(GL_RGBA, GL_RGBA16, GL_UNSIGNED_SHORT);
 		break;
 		default:
 			return fatal("Unsuported texture format.");
