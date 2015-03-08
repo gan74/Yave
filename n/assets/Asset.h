@@ -73,7 +73,7 @@ class Asset
 		}
 
 		bool isNull() const {
-			return !*ptr || !isValid();
+			return !ptr || !*ptr || !isValid();
 		}
 
 		bool operator==(const Asset<T> &a) const {
