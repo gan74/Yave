@@ -75,7 +75,6 @@ int main(int, char **) {
 	shader.bind();
 
 	FrameBuffer buffer(Vec2ui(512));
-	buffer.bind();
 
 	Camera cam;
 	cam.setPosition(Vec3(0, 0, 5));
@@ -110,14 +109,22 @@ int main(int, char **) {
 
 	while(run(win)) {
 		Timer timer;
+		buffer.bind();
 		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderer();
 		GLContext::getContext()->processTasks();
-		if(GLContext::checkGLError()) {
-			fatal("GL error");
-		}
+
+		FrameBuffer::unbind();
+		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		buffer.blit();
+
+
 		gl::glFlush();
 		gl::glFinish();
+
+
+
+
 
 		float fps = float(console("$framerate"));
 		if(fps) {

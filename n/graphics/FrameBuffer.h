@@ -38,6 +38,9 @@ class FrameBuffer : public core::NonCopyable
 		bool isActive() const;
 
 		void bind();
+		static void unbind();
+
+		void blit() const;
 
 		math::Vec2ui getSize() const {
 			return base.getSize();

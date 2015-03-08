@@ -77,6 +77,7 @@ GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
 	}
 	std::cout<<"Running on "<<gl::glGetString(GL_VENDOR)<<" "<<gl::glGetString(GL_RENDERER)<<" using GL "<<gl::glGetString(GL_VERSION)<<std::endl;
 
+	gl::glClearColor(0, 0, 0, 1);
 
 	gl::glEnable(GL_TEXTURE_2D);
 	gl::glEnable(GL_CULL_FACE);
@@ -87,7 +88,6 @@ GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
 	for(uint i = 0; i != Max; i++) {
 		hwInts[i] = 0;
 	}
-	hwInts[Max] = 0;
 
 	gl::glGetIntegerv(GL_MAX_DRAW_BUFFERS, &hwInts[MaxFboAttachements]);
 
