@@ -33,7 +33,7 @@ struct Image : core::NonCopyable
 	}
 
 	~Image() {
-		delete[] data;
+		delete[] (byte *)data;
 	}
 
 	const ImageFormat format;
