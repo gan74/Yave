@@ -103,9 +103,7 @@ int main(int, char **) {
 
 	SceneRenderer renderer(&scene);
 
-
-	console.start();
-
+	//console.start();
 
 	while(run(win)) {
 		Timer timer;
@@ -126,6 +124,16 @@ int main(int, char **) {
 				concurent::Thread::sleep(fps);
 			}
 		}
+
+
+		/*Vec2i mouse;
+		SDL_GetMouseState(&mouse.x(), &mouse.y());
+		Vec2 mf = Vec2(mouse) * 0.01;
+		Quaternion<> q = Quaternion<>::fromEuler(Vec3(0, -mf.y(), -mf.x()));
+		cam.setRotation(q);
+		cam.setPosition(q(Vec3(-7, 0, 0)));
+		shader["n_Camera"] = cam.getPosition();
+		GLContext::getContext()->setViewMatrix(cam.getViewMatrix());*/
 	}
 	return 0;
 }
@@ -133,10 +141,41 @@ int main(int, char **) {
 
 #else
 
-#include <n/core/Array.h>
+#include <iostream>
+#include <n/core/Timer.h>
+#include <n/mem/SmallObject.h>
+
+using namespace n;
+using namespace n::core;
+
+class I : public mem::SmallObject<I>
+{
+	public:
+		I(int x) : i(x) {
+		}
+
+		const int i;
+};
+
+class W
+{
+	public:
+		void *operator new(uint size) {
+			return malloc(size);
+		}
+
+};
+
+class J : public W
+{
+	public:
+		J(int x) : i(x) {
+		}
+
+		const int i;
+};
 
 int main(int, char **) {
-	return 0;
 }
 
 #endif
