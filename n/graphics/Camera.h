@@ -69,6 +69,11 @@ class Camera final : public Transformable<>, public math::Volume<>
 			return view;
 		}
 
+		void setRatio(float r) {
+			ratio = r;
+			computeProjectionMatrix();
+		}
+
 		virtual bool isInside(const math::Vec3 &p, float r) const override {
 			math::Vec3 w = (p - transform.getPosition());
 			float z = -w.dot(forward);
