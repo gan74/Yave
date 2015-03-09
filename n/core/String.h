@@ -119,6 +119,7 @@ class String
 			str>>t;
 			if(str.fail() || !str.eof()) {
 				f();
+				return T();
 			}
 			return t;
 		}
