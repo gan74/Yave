@@ -33,7 +33,11 @@ class Texture
 
 		~Data() {
 			if(handle) {
-				GLContext::getContext()->addGLTask([=]() { gl::glDeleteTextures(1, &handle); });
+				gl::GLuint *p = new gl::GLuint(handle);
+				GLContext::getContext()->addGLTask([=]() {
+					gl::glDeleteTextures(1, p);
+					delete p;
+				});
 			}
 		}
 

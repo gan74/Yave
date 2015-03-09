@@ -26,18 +26,25 @@ uint getMaxAttachment() {
 	return GLContext::getContext()->getHWInt(GLContext::MaxFboAttachements);
 }
 
-FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Texture[getMaxAttachment()]), depth(0), drawBuffers(new gl::GLenum[getMaxAttachment()]), modified(false) {
+FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Texture[getMaxAttachment()]), depth(0), drawBuffers(new gl::GLenum[getMaxAttachment()]), handle(0), modified(false) {
 	for(uint i = 0; i != getMaxAttachment(); i++) {
 		drawBuffers[i] = GL_NONE;
 		attachments[i] = Texture(base);
 	}
 	gl::glGenFramebuffers(1, &handle);
+	if(!handle) {
+		fatal("Unable to allocatre framebuffer.");
+	}
 	setAttachmentEnabled(0, true);
 	setDepthEnabled(true);
 }
 
 FrameBuffer::~FrameBuffer() {
+	if(isActive()) {
+		unbind();
+	}
 	gl::glDeleteFramebuffers(1, &handle);
+	delete depth;
 	delete[] drawBuffers;
 	delete[] attachments;
 }

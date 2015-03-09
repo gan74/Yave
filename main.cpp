@@ -74,7 +74,7 @@ int main(int, char **) {
 
 	shader.bind();
 
-	FrameBuffer buffer(Vec2ui(512));
+	FrameBuffer *buffer = 0;
 
 	Camera cam;
 	cam.setPosition(Vec3(0, 0, 5));
@@ -105,25 +105,37 @@ int main(int, char **) {
 
 	SceneRenderer renderer(&scene);
 
-	//console.start();
+	console.start();
 
 	while(run(win)) {
 		Timer timer;
-		buffer.bind();
+		uint size = uint(console("$size"));
+		size = size ? size : 600;
+		if(!buffer || (size && buffer->getSize().min() != size)) {
+			delete buffer;
+			math::Vec2ui vSize(size * Vec2(4, 3) / 3);
+			std::cout<<"framebuffer size = "<<vSize<<std::endl;
+			buffer = new FrameBuffer(vSize);
+			GLContext::getContext()->setViewport(math::Vec2ui(800, 600));
+		}
+		buffer->bind();
+
 		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderer();
+
 		GLContext::getContext()->processTasks();
 
 		FrameBuffer::unbind();
 		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		buffer.blit();
+		buffer->blit();
 
 
 		gl::glFlush();
 		gl::glFinish();
 
-
-
+		if(GLContext::getContext()->checkGLError()) {
+			fatal("OpenGL error");
+		}
 
 
 		float fps = float(console("$framerate"));
