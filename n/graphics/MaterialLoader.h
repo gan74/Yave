@@ -82,7 +82,6 @@ class MaterialLoader
 template<typename T, typename... Args>
 typename MaterialLoader::MaterialDecoder<T, Args...>::Runner MaterialLoader::MaterialDecoder<T, Args...>::runner = MaterialLoader::MaterialDecoder<T, Args...>::Runner();
 
-
 }
 }
 

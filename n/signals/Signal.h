@@ -30,7 +30,7 @@ class ImmediateCall : core::NonCopyable
 	public:
 		template<typename... Args>
 		void call(const core::Array<core::Functor<void(Args...)>> &slots, Args... args) const {
-			for(auto f : slots) {
+			for(const core::Functor<void(Args...)> &f : slots) {
 				f(args...);
 			}
 		}
@@ -42,7 +42,7 @@ class AsyncCall : core::NonCopyable
 		template<typename... Args>
 		void call(const core::Array<core::Functor<void(Args...)>> &slots, Args... args) const {
 			concurent::Async([=]() {
-				for(auto f : slots) {
+				for(const core::Functor<void(Args...)> &f : slots) {
 					f(args...);
 				}
 			});
@@ -71,21 +71,21 @@ class Signal : private CallingPolicy
 			lock.unlock();
 		}
 
-		void connect(const core::Functor<void(Args...)> &f) {
+		void connect(const core::Functor<void(Args...)> &f) const {
 			lock.lock();
 			connected.append(f);
 			lock.unlock();
 		}
 
 		template<typename T, typename R>
-		void connect(T *t, R (T::*f)(Args...)) {
+		void connect(T *t, R (T::*f)(Args...)) const {
 			connect([=](Args... args) {
 				(t->*f)(args...);
 			});
 		}
 
 		template<typename T>
-		void connect(const T &t) {
+		void connect(const T &t) const {
 			connect(core::Functor<void(Args...)>([=] (Args... args) {
 				t(args...);
 			}));
@@ -93,7 +93,7 @@ class Signal : private CallingPolicy
 
 	private:
 		mutable Lock lock;
-		core::Array<core::Functor<void(Args...)>> connected;
+		mutable core::Array<core::Functor<void(Args...)>> connected;
 };
 
 template<typename... Args>

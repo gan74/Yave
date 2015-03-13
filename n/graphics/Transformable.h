@@ -43,6 +43,10 @@ class Transformable
 			return transform.getRotation();
 		}
 
+		T getScale() const {
+			return transform.getScale();
+		}
+
 		virtual ~Transformable() {
 		}
 
@@ -57,11 +61,15 @@ class Movable : public Transformable<T>
 
 	public:
 		void setPosition(const math::Vec<3, T> &pos) {
-			transform = math::Transform<T>(transform.getRotation(), pos);
+			transform = math::Transform<T>(transform.getRotation(), pos, transform.getScale());
 		}
 
 		void setRotation(const math::Quaternion<T> &q) {
-			transform = math::Transform<T>(q, transform.getPosition());
+			transform = math::Transform<T>(q, transform.getPosition(), transform.getScale());
+		}
+
+		void setScale(T s) {
+			transform = math::Transform<T>(transform.getRotation(), transform.getPosition(), s);
 		}
 
 	protected:

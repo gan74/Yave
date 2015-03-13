@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 
-#define N_NO_TEX_STORAGE
+//#define N_NO_TEX_STORAGE
 
 namespace n {
 namespace graphics {
@@ -81,10 +81,15 @@ void Texture::upload() const {
 
 	#ifndef N_NO_TEX_STORAGE
 	gl::glTexStorage2D(GL_TEXTURE_2D, 1, format.internalFormat, image.getSize().x(), image.getSize().y());
-	gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.getSize().x(), image.getSize().y(), format.format, format.type, image.data());
+	if(image.data()) {
+		gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.getSize().x(), image.getSize().y(), format.format, format.type, image.data()); // crashes if data = 0...
+	}
 	#else
 	gl::glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat, image.getSize().x(), image.getSize().y(), 0, format.format, format.type, image.data());
 	#endif
+
+	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void Texture::bind(bool sync) const {

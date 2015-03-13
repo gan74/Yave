@@ -18,17 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_SCENERENDERER
 
 #include <n/utils.h>
+#include "Renderer.h"
 #include "Scene.h"
 #include "Camera.h"
 #include "Renderable.h"
 #include <n/core/Timer.h>
 
-#include <iostream>
-
 namespace n {
 namespace graphics {
 
-class SceneRenderer : core::NonCopyable
+class SceneRenderer : public Renderer
 {
 	public:
 		struct PerfData
@@ -37,23 +36,15 @@ class SceneRenderer : core::NonCopyable
 			uint objects;
 		};
 
-		SceneRenderer(const Scene *sc) : sce(sc) {
-		}
-
-		void operator()() {
-			prep();
+		SceneRenderer(const Scene *sc) : Renderer(), sce(sc) {
 		}
 
 		PerfData getPerfData() const {
 			return perfData;
 		}
 
-	private:
-		const Scene *sce;
-
-		PerfData perfData;
-
-		void prep() {
+	protected:
+		virtual void *prepare() override {
 			core::Array<Camera *> arr = sce->get<Camera>();
 			if(arr.size() == 1) {
 				Camera *cam = arr.first();
@@ -65,18 +56,29 @@ class SceneRenderer : core::NonCopyable
 				for(Renderable *re : res) {
 					re->render(*queue);
 				}
-
-				GLContext::getContext()->addGLTask([=]() {
-					for(const auto q : queue->getBatches()) {
-						q();
-					}
-					for(const auto q : queue->getFunctions()) {
-						q();
-					}
-					delete queue;
-				});
+				return queue;
 			}
+			return 0;
 		}
+
+		virtual void render(void *ptr) override {
+			if(!ptr) {
+				return;
+			}
+
+			RenderQueue *queue = (RenderQueue *)ptr;
+			for(const auto q : queue->getBatches()) {
+				q();
+			}
+			for(const auto q : queue->getFunctions()) {
+				q();
+			}
+			delete queue;
+		}
+
+	private:
+		const Scene *sce;
+		PerfData perfData;
 };
 
 

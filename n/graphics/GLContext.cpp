@@ -67,6 +67,13 @@ bool GLContext::processTasks() {
 	return false;
 }
 
+void GLContext::finishTasks() {
+	core::List<core::Functor<void()>> tsk = tasks.getAndClear();
+	for(const core::Functor<void()> &f : tsk) {
+		f();
+	}
+}
+
 GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
 	if(concurent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
@@ -77,7 +84,6 @@ GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
 	}
 	std::cout<<"Running on "<<gl::glGetString(GL_VENDOR)<<" "<<gl::glGetString(GL_RENDERER)<<" using GL "<<gl::glGetString(GL_VERSION)<<std::endl;
 
-	gl::glClearColor(0, 0, 0, 1);
 
 	gl::glEnable(GL_TEXTURE_2D);
 	gl::glEnable(GL_CULL_FACE);

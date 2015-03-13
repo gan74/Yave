@@ -45,6 +45,9 @@ namespace internal {
 		}
 
 		bool operator<(const Material<T> &m) const {
+			if(diffuse.getPtr() != m.diffuse.getPtr()) {
+				return diffuse.getPtr() < m.diffuse.getPtr();
+			}
 			if(color != m.color) {
 				return color < m.color;
 			}
@@ -54,7 +57,7 @@ namespace internal {
 			return false;
 		}
 
-		static void updateCache() {
+		static void updateCache() { // not called yet
 			mutex.lock();
 			cache.sort([](const Material<T> *a, const Material<T> *b) { return a->operator<(*b); });
 			for(uint i = 0; i != cache.size(); i++) {
@@ -111,6 +114,7 @@ class Material : private assets::Asset<internal::Material<T>>
 				sh->setValue("n_Color", i->color);
 				sh->setValue("n_Roughness", i->roughness);
 				sh->setValue("n_Metallic", i->metallic);
+				sh->setValue("n_Diffuse", i->diffuse);
 			} else {
 				fatal("No shader");
 				#warning not implemented

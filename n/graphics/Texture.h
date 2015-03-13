@@ -54,6 +54,14 @@ class Texture
 		bool operator==(const Texture &t) const;
 		bool operator!=(const Texture &t) const;
 
+		math::Vec2ui getSize() const {
+			return image.getSize();
+		}
+
+		const void *getPtr() const {
+			return data.pointer();
+		}
+
 	private:
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;

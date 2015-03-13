@@ -167,7 +167,9 @@ class ShaderCombinaison : core::NonCopyable
 		}
 
 		void setValue(UniformAddr addr, const Texture &t) const {
-			setValue(addr, t.data ? t.data->handle : 0);
+			#warning temporary texture binding hack
+			t.bind();
+			setValue(addr, 0);
 		}
 
 		template<typename T>

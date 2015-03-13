@@ -42,15 +42,13 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 
 	private:
 		internal::MeshInstance<> *load(io::File &file) {
-			core::Timer timer;
 			if(!file.open(io::IODevice::Read)) {
 				std::cerr<<file.getName()<<" not found"<<std::endl;
 				return 0;
 			}
 			uint fs = file.size();
 			char *data = new char[fs + 1];
-			file.readBytes(data);
-			data[fs] = 0;
+			data[file.readBytes(data)] = 0;
 			core::Array<core::String> lines = core::String(data).split("\n");
 			delete[] data;
 			file.close();
@@ -75,7 +73,6 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					float fl[3] = {0};
 					sscanf(l.toChar(), "v %f %f %f", &fl[0], &fl[1], &fl[2]);
 					positions.append(math::Vec3(fl[0], fl[1], fl[2]));
-
 				} else if(l.beginWith("vn ")) {
 					/*core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
 					if(fl.size() != 3) {
@@ -108,6 +105,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					core::Array<core::String> fl = l.subString(2).split(" ");
 					uint face[] = {0, 0, 0};
 					if(fl.size() != 3) {
+						std::cerr<<"Invalid (non triangle) face. \""<<l<<"\""<<std::endl;
 						return 0;
 					}
 					for(uint i = 0; i != 3; i++) {
@@ -118,17 +116,11 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 						math::Vec3ui v(uis[0], uis[1], smooth ? 0 : uis[2]);
 						core::Map<math::Vec3ui, uint>::const_iterator it = vmap.find(v);
 						if(it == vmap.end()) {
-							uint vy = v.y();
-							if(!vy) {
-								math::Vec3 p = positions[v.x()].normalized();
-								vy = coords.size();
-								coords.append(math::Vec2(acos(p.x()) / math::pi<>(), asin(p.z()) / math::pi<float>()));
-							}
-							if(v.x() >= positions.size() || v.z() >= normals.size() || vy >= coords.size()) {
-								std::cerr<<"Index out of bound : "<<math::Vec3ui(v.x(), vy, v.z())<<std::endl;
+							if(v.x() >= positions.size() || v.z() >= normals.size() || v.y() >= coords.size()) {
+								std::cerr<<"Index out of bound : "<<v<<std::endl;
 								return 0;
 							}
-							face[i] = vmap[v] = tr.append(Vertex<>(positions[v.x()], normals[v.z()], coords[vy]));
+							face[i] = vmap[v] = tr.append(Vertex<>(positions[v.x()], normals[v.z()], coords[v.y()]));
 						} else {
 							face[i] = (*it)._2;
 						}

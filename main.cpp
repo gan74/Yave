@@ -2,7 +2,6 @@
 #ifdef ALL
 #include "main.h"
 
-
 	Console console;
 
 int main(int, char **) {
@@ -12,14 +11,16 @@ int main(int, char **) {
 										"layout(location = 0) in vec3 n_VertexPosition;"
 										"layout(location = 1) in vec3 n_VertexNormal;"
 										"layout(location = 2) in vec3 n_VertexTangent;"
+										"layout(location = 3) in vec2 n_VertexCoord;"
 										"uniform mat4 n_ViewProjectionMatrix;"
 										"uniform mat4 n_ModelMatrix;"
 										"uniform vec3 n_Camera;"
 
-										"out vec3 N;"
+										"smooth out vec3 N;"
 										"out vec3 V;"
 										"out vec3 T;"
 										"out vec3 B;"
+										"out vec2 U;"
 
 										"void main() {"
 											"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
@@ -28,6 +29,7 @@ int main(int, char **) {
 											"V = normalize(n_Camera - model.xyz);"
 											"N = mat3(n_ModelMatrix) * n_VertexNormal;"
 											"T = mat3(n_ModelMatrix) * n_VertexTangent;"
+											"U = n_VertexCoord;"
 											"B = cross(N, T);"
 										"}");
 
@@ -47,21 +49,25 @@ int main(int, char **) {
 					 "uniform vec4 n_Color;"
 					 "uniform float n_Roughness;"
 					 "uniform float n_Metallic;"
-					 "in vec3 N;"
+					 "uniform sampler2D n_Diffuse;"
+					 "smooth in vec3 N;"
 					 "in vec3 V;"
 					 "in vec3 T;"
 					 "in vec3 B;"
+					 "in vec2 U;"
 
 					 + brdf +
 
 					"void main() {"
-						"vec3 C = n_Color.rgb;"
+						"vec4 C = n_Color * texture(n_Diffuse, U);"
 						"vec3 L = normalize(vec3(0.5, 0.5, 1.0));"
 						"vec3 NN = normalize(N);"
-						"n_FragColor = vec4((d_BRDF(C, L, V, NN) + s_BRDF(C, L, V, NN)), n_Color.a);"
+						"n_FragColor = vec4((d_BRDF(C.rgb, L, V, NN) + s_BRDF(C.rgb, L, V, NN) * 0), C.a);"
 					"}";
 
 	Shader<FragmentShader> frag(fragStr);
+
+	//GLContext::getContext()->setViewport(math::Vec2ui(1600, 900));
 
 
 	ShaderCombinaison shader(&frag, &vert, 0);
@@ -78,6 +84,7 @@ int main(int, char **) {
 
 	Camera cam;
 	cam.setPosition(Vec3(0, 0, 5));
+	cam.setRatio(4/3.0);
 	shader["n_Camera"] = cam.getPosition();
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
 
@@ -87,7 +94,7 @@ int main(int, char **) {
 
 	scene.insert(&cam);
 
-	auto c = new Obj("scube.obj");
+	/*auto c = new Obj("scube.obj");
 	c->setPosition(Vec3(0, 2.5, 0));
 	scene.insert(c);
 	c = new Obj("sphere.obj");
@@ -95,7 +102,13 @@ int main(int, char **) {
 	scene.insert(c);
 	c = new Obj("scube.obj");
 	c->setPosition(Vec3(0, -2.5, 0));
+	scene.insert(c);*/
+
+	auto c = new Obj("MP5_Scene.obj");
+	c->setPosition(Vec3(0, 0, 0));
+	c->setScale(10);
 	scene.insert(c);
+
 
 	uint num = 1;
 	uint count = console("$objCount").to<uint>([&](){ num = 0; });
@@ -116,14 +129,13 @@ int main(int, char **) {
 			math::Vec2ui vSize(size * Vec2(4, 3) / 3);
 			std::cout<<"framebuffer size = "<<vSize<<std::endl;
 			buffer = new FrameBuffer(vSize);
-			GLContext::getContext()->setViewport(math::Vec2ui(800, 600));
 		}
 		buffer->bind();
 
 		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderer();
 
-		GLContext::getContext()->processTasks();
+		GLContext::getContext()->finishTasks();
 
 		FrameBuffer::unbind();
 		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -155,6 +167,8 @@ int main(int, char **) {
 
 #include <iostream>
 #include <n/core/Timer.h>
+#include <n/core/Array.h>
+#include <n/core/Functor.h>
 #include <n/mem/SmallObject.h>
 
 using namespace n;
@@ -188,6 +202,7 @@ class J : public W
 };
 
 int main(int, char **) {
+	std::cout<<ShouldInsertAsCollection<core::Array<core::Functor<void()>>, core::Array<core::Functor<void()>>>::value<<std::endl;
 }
 
 #endif

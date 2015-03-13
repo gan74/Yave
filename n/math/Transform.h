@@ -30,7 +30,7 @@ class Transform
 		Transform() {
 		}
 
-		Transform(const Quaternion<T> &q, const Vec<3, T> &p = Vec<3, T>()) : pos(p), rot(q) {
+		Transform(const Quaternion<T> &q, const Vec<3, T> &p = Vec<3, T>(), T s = 1) : pos(p), scale(s), rot(q) {
 		}
 
 		Transform(const Vec<3, T> &p) : pos(p) {
@@ -41,19 +41,19 @@ class Transform
 		}
 
 		Vec<3, T> toGlobal(const Vec<3, T> &v) const {
-			return pos + rot(v);
+			return pos + rot(v / scale);
 		}
 
 		Vec<3, T> getX() const {
-			return rot(Vec<3, T>(1, 0, 0));
+			return rot(Vec<3, T>(scale, 0, 0));
 		}
 
 		Vec<3, T> getY() const {
-			return rot(Vec<3, T>(0, 1, 0));
+			return rot(Vec<3, T>(0, scale, 0));
 		}
 
 		Vec<3, T> getZ() const {
-			return rot(Vec<3, T>(0, 0, 1));
+			return rot(Vec<3, T>(0, 0, scale));
 		}
 
 		const Quaternion<T> &getRotation() const {
@@ -62,6 +62,10 @@ class Transform
 
 		const Vec<3, T> &getPosition() const {
 			return pos;
+		}
+
+		T getScale() const {
+			return scale;
 		}
 
 		Matrix3<T> getBasis() const {
@@ -82,6 +86,7 @@ class Transform
 
 	private:
 		Vec<3, T> pos;
+		T scale;
 		Quaternion<T> rot;
 };
 

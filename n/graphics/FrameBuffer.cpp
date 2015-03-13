@@ -32,9 +32,6 @@ FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Textu
 		attachments[i] = Texture(base);
 	}
 	gl::glGenFramebuffers(1, &handle);
-	if(!handle) {
-		fatal("Unable to allocatre framebuffer.");
-	}
 	setAttachmentEnabled(0, true);
 	setDepthEnabled(true);
 }

@@ -49,6 +49,7 @@ class GLContext
 		void setModelMatrix(const math::Matrix4<> &m);
 
 		bool processTasks();
+		void finishTasks();
 
 		void setDebugEnabled(bool deb);
 		static bool checkGLError();

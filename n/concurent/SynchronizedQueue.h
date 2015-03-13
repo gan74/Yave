@@ -71,6 +71,14 @@ class SynchronizedQueue
 			return l;
 		}
 
+		core::List<T> getAndClear() {
+			core::List<T> l;
+			mutex.lock();
+			list.swap(l);
+			mutex.unlock();
+			return l;
+		}
+
 		uint size() const {
 			return list.size();
 		}

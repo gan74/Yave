@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "GL.h"
 #include <n/core/Ref.h>
+#include "GLContext.h"
 
 namespace n {
 namespace graphics {
@@ -32,6 +33,13 @@ namespace internal {
 
 			~UniformBufferBase() {
 				free(buffer);
+				if(handle) {
+					gl::GLuint *h = new gl::GLuint(handle);
+					GLContext::getContext()->addGLTask([=]() {
+						gl::glDeleteBuffers(1, h);
+						delete h;
+					});
+				}
 			}
 
 		protected:
