@@ -45,11 +45,11 @@ void unused(T) {}
 #endif
 
 
-#ifdef N_NO_PTHREAD_SPINLOCK
+/*#ifdef N_NO_PTHREAD_SPINLOCK
 #undef N_USE_PTHREAD_SPINLOCK
 #else
 #define N_USE_PTHREAD_SPINLOCK
-#endif
+#endif*/
 
 /****************** OS DEFINES BELOW ******************/
 

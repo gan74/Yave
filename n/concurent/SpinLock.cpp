@@ -27,6 +27,7 @@ SpinLock::SpinLock() {
 	#ifndef N_USE_PTHREAD_SPINLOCK
 	spin = false;
 	#else
+	#wrning SpinLokcs are a pthread extension !
 	spin = malloc(sizeof(pthread_spinlock_t));
 	pthread_spin_init((pthread_spinlock_t *)spin, PTHREAD_PROCESS_PRIVATE);
 	#endif
@@ -34,7 +35,7 @@ SpinLock::SpinLock() {
 
 SpinLock::SpinLock(SpinLock &&s) {
 	#ifndef N_USE_PTHREAD_SPINLOCK
-	spin = false;
+	spin = s.spin;
 	#else
 	spin = s.spin;
 	s.spin = 0;
