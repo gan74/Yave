@@ -40,7 +40,10 @@ class StaticBuffer : core::NonCopyable
 		}
 
 		~StaticBuffer() {
-			GLContext::getContext()->addGLTask([=]() { gl::glDeleteBuffers(1, &handle); });
+			gl::GLuint h = handle;
+			GLContext::getContext()->addGLTask([=]() {
+				gl::glDeleteBuffers(1, &h);
+			});
 		}
 
 		void bind() const {

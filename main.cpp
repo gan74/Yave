@@ -16,7 +16,7 @@ int main(int, char **) {
 										"uniform mat4 n_ModelMatrix;"
 										"uniform vec3 n_Camera;"
 
-										"smooth out vec3 N;"
+										"out vec3 N;"
 										"out vec3 V;"
 										"out vec3 T;"
 										"out vec3 B;"
@@ -50,7 +50,7 @@ int main(int, char **) {
 					 "uniform float n_Roughness;"
 					 "uniform float n_Metallic;"
 					 "uniform sampler2D n_Diffuse;"
-					 "smooth in vec3 N;"
+					 "in vec3 N;"
 					 "in vec3 V;"
 					 "in vec3 T;"
 					 "in vec3 B;"
@@ -202,7 +202,11 @@ class J : public W
 };
 
 int main(int, char **) {
-	std::cout<<ShouldInsertAsCollection<core::Array<core::Functor<void()>>, core::Array<core::Functor<void()>>>::value<<std::endl;
+	List<int> l;
+	for(int i = 0; i != 100; i++) {
+		l.append(i);
+	}
+	std::cout<<l.size()<<std::endl;
 }
 
 #endif

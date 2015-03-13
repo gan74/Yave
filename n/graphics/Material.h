@@ -117,7 +117,7 @@ class Material : private assets::Asset<internal::Material<T>>
 				sh->setValue("n_Diffuse", i->diffuse);
 			} else {
 				fatal("No shader");
-				#warning not implemented
+				//#warning not implemented
 			}
 		}
 

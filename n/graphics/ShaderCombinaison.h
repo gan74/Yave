@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Shader.h"
 #include "UniformBuffer.h"
 #include "GLContext.h"
-#include "Texture.h"
+#include "TextureBinding.h"
 #include <n/core/Map.h>
 #include <n/math/Matrix.h>
 
@@ -74,7 +74,7 @@ class ShaderCombinaison : core::NonCopyable
 				core::String name;
 		};
 
-		ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0) : handle(0) {
+		ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0) : handle(0), bindings(0) {
 			shaders[FragmentShader] = frag;
 			shaders[VertexShader] = vert;
 			shaders[GeometryShader] = geom;
@@ -83,8 +83,12 @@ class ShaderCombinaison : core::NonCopyable
 
 		~ShaderCombinaison() {
 			if(handle) {
-				GLContext::getContext()->addGLTask([=]() { gl::glDeleteProgram(handle); });
+				gl::GLuint h = handle;
+				GLContext::getContext()->addGLTask([=]() {
+					gl::glDeleteProgram(h);
+				});
 			}
+			delete[] bindings;
 		}
 
 		bool isValid() const {
@@ -106,6 +110,9 @@ class ShaderCombinaison : core::NonCopyable
 					infos.buffer->update();
 					gl::glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, infos.buffer->handle);
 				}
+			}
+			for(uint i = 0; i != samplers.size(); i++) {
+				bindings[i].bind(i);
 			}
 			GLContext::getContext()->shader = const_cast<ShaderCombinaison *>(this);
 		}
@@ -169,13 +176,13 @@ class ShaderCombinaison : core::NonCopyable
 		void setValue(UniformAddr addr, const Texture &t) const {
 			core::Map<UniformAddr, uint>::const_iterator it = samplers.find(addr);
 			if(it != samplers.end()) {
-				static uint active = 0;
 				uint slot = (*it)._2;
-				if(active != slot) {
-					gl::glActiveTexture(GL_TEXTURE0 + slot);
-					active += slot;
+				bindings[slot] = t;
+				if(isCurrent()) {
+					bindings[slot].bind(slot);
+				} else {
+					t.prepare();
 				}
-				t.bind();
 			}
 		}
 
@@ -254,6 +261,7 @@ class ShaderCombinaison : core::NonCopyable
 					samplers[info.addr] = slot;
 				}
 			}
+			bindings = new internal::TextureBinding[samplers.size()];
 		}
 
 		UniformInfo getInfo(const core::String &name) const {
@@ -265,6 +273,7 @@ class ShaderCombinaison : core::NonCopyable
 		core::String logs;
 		core::Map<core::String, UniformInfo> uniformsInfo;
 		core::Map<UniformAddr, uint> samplers;
+		internal::TextureBinding *bindings;
 		mutable core::Map<core::String, BlockInfo> blocks;
 
 };

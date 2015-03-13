@@ -34,10 +34,9 @@ namespace internal {
 			~UniformBufferBase() {
 				free(buffer);
 				if(handle) {
-					gl::GLuint *h = new gl::GLuint(handle);
+					gl::GLuint h = handle;
 					GLContext::getContext()->addGLTask([=]() {
-						gl::glDeleteBuffers(1, h);
-						delete h;
+						gl::glDeleteBuffers(1, &h);
 					});
 				}
 			}

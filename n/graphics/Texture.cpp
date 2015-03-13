@@ -18,10 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GLContext.h"
 #include "StaticBuffer.h"
 #include "GL.h"
+#include "TextureBinding.h"
 
-#include <iostream>
-
-//#define N_NO_TEX_STORAGE
+#define N_NO_TEX_STORAGE
 
 namespace n {
 namespace graphics {
@@ -53,10 +52,10 @@ GLTexFormat getTextureFormat(ImageFormat format) {
 	}
 }
 
-Texture::Texture(const Image &i) : image(i), data(0) {
+Texture::Texture(const Image &i) : image(i), data(new Data()) {
 }
 
-Texture::Texture() : data(0) {
+Texture::Texture() : data(new Data()) {
 }
 
 Texture::~Texture() {
@@ -94,29 +93,29 @@ void Texture::upload() const {
 
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	internal::TextureBinding::dirty();
 }
 
 void Texture::bind(bool sync) const {
-	if(!data) {
-		if(image.isNull()) {
-			gl::glBindTexture(GL_TEXTURE_2D, 0);
+	prepare(sync);
+	gl::glBindTexture(GL_TEXTURE_2D, getHandle());
+}
+
+void Texture::prepare(bool sync) const {
+	if(data->lock.trylock() && !image.isNull()) {
+		if(sync) {
+			upload();
 		} else {
-			data = new Data();
-			if(sync) {
+			GLContext::getContext()->addGLTask([=]() {
 				upload();
-			} else {
-				GLContext::getContext()->addGLTask([=]() {
-					upload();
-				});
-			}
+			});
 		}
-	} else {
-		gl::glBindTexture(GL_TEXTURE_2D, data->handle);
 	}
 }
 
 gl::GLuint Texture::getHandle() const {
-	return data ? data->handle : 0;
+	return data->handle;
 }
 
 }

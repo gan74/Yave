@@ -17,12 +17,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_TEXTURE_H
 #define N_GRAPHICS_TEXTURE_H
 
-#include <n/graphics/Image.h>
+#include <n/concurent/SpinLock.h>
+#include "Image.h"
 #include "GLContext.h"
 #include "GL.h"
 
 namespace n {
 namespace graphics {
+
+namespace internal {
+	class TextureBinding;
+}
 
 class Texture
 {
@@ -32,15 +37,17 @@ class Texture
 		}
 
 		~Data() {
+			lock.trylock();
+			lock.unlock();
 			if(handle) {
-				gl::GLuint *p = new gl::GLuint(handle);
+				gl::GLuint h = handle;
 				GLContext::getContext()->addGLTask([=]() {
-					gl::glDeleteTextures(1, p);
-					delete p;
+					gl::glDeleteTextures(1, &h);
 				});
 			}
 		}
 
+		concurent::SpinLock lock;
 		gl::GLuint handle;
 	};
 
@@ -58,9 +65,12 @@ class Texture
 			return image.getSize();
 		}
 
+		void prepare(bool sync = true) const;
+
 	private:
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;
+		friend class internal::TextureBinding;
 
 		void bind(bool sync = false) const;
 
