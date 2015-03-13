@@ -108,6 +108,10 @@ class Image : private assets::Asset<internal::Image>
 			return !operator==(i);
 		}
 
+		bool operator<(const Image &i) const {
+			return operator->() < i.operator->();
+		}
+
 
 	private:
 		Image(const assets::Asset<internal::Image> &t) : assets::Asset<internal::Image>(t) {

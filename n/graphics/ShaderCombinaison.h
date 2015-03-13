@@ -167,9 +167,16 @@ class ShaderCombinaison : core::NonCopyable
 		}
 
 		void setValue(UniformAddr addr, const Texture &t) const {
-			#warning temporary texture binding hack
-			t.bind();
-			setValue(addr, 0);
+			core::Map<UniformAddr, uint>::const_iterator it = samplers.find(addr);
+			if(it != samplers.end()) {
+				static uint active = 0;
+				uint slot = (*it)._2;
+				if(active != slot) {
+					gl::glActiveTexture(GL_TEXTURE0 + slot);
+					active += slot;
+				}
+				t.bind();
+			}
 		}
 
 		template<typename T>
@@ -239,7 +246,13 @@ class ShaderCombinaison : core::NonCopyable
 				if(uniform.endWith("[0]")) {
 					uniform = uniform.subString(0, uniform.size() - 3);
 				}
-				uniformsInfo[uniform] = UniformInfo({gl::glGetUniformLocation(handle, name), (uint)size});
+				UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});
+				uniformsInfo[uniform] = info;
+				if(type == GL_SAMPLER_2D) {
+					uint slot = samplers.size();
+					setValue(info.addr, int(slot));
+					samplers[info.addr] = slot;
+				}
 			}
 		}
 
@@ -251,7 +264,9 @@ class ShaderCombinaison : core::NonCopyable
 		gl::GLuint handle;
 		core::String logs;
 		core::Map<core::String, UniformInfo> uniformsInfo;
+		core::Map<UniformAddr, uint> samplers;
 		mutable core::Map<core::String, BlockInfo> blocks;
+
 };
 
 }

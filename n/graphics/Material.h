@@ -45,8 +45,8 @@ namespace internal {
 		}
 
 		bool operator<(const Material<T> &m) const {
-			if(diffuse.getPtr() != m.diffuse.getPtr()) {
-				return diffuse.getPtr() < m.diffuse.getPtr();
+			if(diffuse != m.diffuse) {
+				return diffuse < m.diffuse;
 			}
 			if(color != m.color) {
 				return color < m.color;

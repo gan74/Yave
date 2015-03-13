@@ -49,22 +49,20 @@ class Texture
 		Texture();
 		~Texture();
 
-		void bind(bool sync = false) const;
 
 		bool operator==(const Texture &t) const;
 		bool operator!=(const Texture &t) const;
+		bool operator<(const Texture &t) const;
 
 		math::Vec2ui getSize() const {
 			return image.getSize();
 		}
 
-		const void *getPtr() const {
-			return data.pointer();
-		}
-
 	private:
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;
+
+		void bind(bool sync = false) const;
 
 		gl::GLuint getHandle() const;
 		void upload() const;

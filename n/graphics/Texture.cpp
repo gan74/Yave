@@ -66,6 +66,10 @@ bool Texture::operator==(const Texture &t) const {
 	return image == t.image;
 }
 
+bool Texture::operator<(const Texture &t) const {
+	return image < t.image;
+}
+
 bool Texture::operator!=(const Texture &t) const {
 	return !operator==(t);
 }
