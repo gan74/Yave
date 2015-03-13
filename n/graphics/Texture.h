@@ -65,14 +65,12 @@ class Texture
 			return image.getSize();
 		}
 
-		void prepare(bool sync = true) const;
-
 	private:
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;
 		friend class internal::TextureBinding;
 
-		void bind(bool sync = false) const;
+		void prepare(bool sync = true) const;
 
 		gl::GLuint getHandle() const;
 		void upload() const;

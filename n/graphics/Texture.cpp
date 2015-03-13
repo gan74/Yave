@@ -93,24 +93,22 @@ void Texture::upload() const {
 
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	internal::TextureBinding::dirty();
-}
-
-void Texture::bind(bool sync) const {
-	prepare(sync);
-	gl::glBindTexture(GL_TEXTURE_2D, getHandle());
 }
 
 void Texture::prepare(bool sync) const {
-	if(data->lock.trylock() && !image.isNull()) {
-		if(sync) {
-			upload();
-		} else {
-			GLContext::getContext()->addGLTask([=]() {
+	if(data->lock.trylock()) {
+		if(!image.isNull()) {
+			if(sync) {
 				upload();
-			});
+			} else {
+				GLContext::getContext()->addGLTask([=]() {
+					upload();
+					internal::TextureBinding::dirty();
+				});
+			}
 		}
+	} else if(sync) {
+		gl::glBindTexture(GL_TEXTURE_2D, data->handle);
 	}
 }
 

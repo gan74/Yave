@@ -44,8 +44,7 @@ void TextureBinding::bind(uint slot) const {
 			gl::glActiveTexture(GL_TEXTURE0 + slot);
 			active = slot;
 		}
-		tex.bind();
-		bindings[slot] = tex.getHandle();
+		gl::glBindTexture(GL_TEXTURE_2D, bindings[slot] = tex.getHandle());
 	} else {
 		tex.prepare();
 	}

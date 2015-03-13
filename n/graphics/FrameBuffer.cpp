@@ -15,9 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "FrameBuffer.h"
-
-#include <iostream>
-
+#include "TextureBinding.h"
 
 namespace n {
 namespace graphics {
@@ -90,20 +88,21 @@ void FrameBuffer::setUnmodified() {
 	}
 	for(uint i = 0; i != getMaxAttachment(); i++) {
 		if(isAttachmentEnabled(i)) {
-			attachments[i].bind(true);
+			attachments[i].prepare(true);
 			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachments[i].getHandle(), 0);
 		} else {
 			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
 		}
 	}
 	if(depth) {
-		depth->bind(true);
+		depth->prepare(true);
 		gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,  depth->getHandle(), 0);
 	} else {
 		gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,  0, 0);
 	}
 
 	gl::glDrawBuffers(getMaxAttachment(), drawBuffers);
+	internal::TextureBinding::dirty();
 	modified = false;
 
 	if(gl::glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
