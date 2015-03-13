@@ -97,7 +97,9 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		}
 
 		Array(const Array<T> &a) : Array(Size(a.size())) {
-			append(a);
+			copy(data, a.data, a.size());
+			dataEnd = data + a.size();
+
 		}
 
 		Array(Size s) : Array() {

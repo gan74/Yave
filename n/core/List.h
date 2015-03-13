@@ -166,8 +166,27 @@ class List
 			append(l);
 		}
 
+		List(List<T> &&l) : List() {
+			swap(l);
+		}
+
+
 		List(const List<T> &l) : List() {
-			append(l);
+			for(const T &x : l) {
+				append(x);
+			}
+		}
+
+		void swap(List<T> &l) {
+			ListElem *h = head;
+			ListElem *t = tail;
+			uint s = lSize;
+			head = l.head;
+			tail = l.tail;
+			lSize = l.lSize;
+			l.head = h;
+			l.tail = t;
+			lSize = s;
 		}
 
 		template<typename A, typename... Args>
