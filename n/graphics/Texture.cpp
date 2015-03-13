@@ -90,7 +90,6 @@ void Texture::upload() const {
 	#else
 	gl::glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat, image.getSize().x(), image.getSize().y(), 0, format.format, format.type, image.data());
 	#endif
-	std::cout<<image.getSize()<<" up"<<std::endl;
 
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
