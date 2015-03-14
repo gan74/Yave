@@ -38,12 +38,8 @@ class FrameBufferRenderer : public Renderer
 			child->render(ptr);
 			if(GLContext::getContext()->getFrameBuffer() == &child->getFrameBuffer()) {
 				FrameBuffer::unbind();
-				child->getFrameBuffer().blit();
-				child->getFrameBuffer().bind();
-			} else {
-				child->getFrameBuffer().blit();
 			}
-
+			child->getFrameBuffer().blit();
 		}
 
 	private:
