@@ -35,11 +35,7 @@ class SpinLock : core::NonCopyable
 		bool trylock();
 
 	private:
-		#ifdef N_USE_PTHREAD_SPINLOCK
-		void *spin;
-		#else
-		volatile abool spin;
-		#endif
+		volatile abool *spin;
 };
 
 

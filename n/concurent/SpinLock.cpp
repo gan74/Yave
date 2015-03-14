@@ -23,60 +23,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace concurent {
 
-SpinLock::SpinLock() {
-	#ifndef N_USE_PTHREAD_SPINLOCK
-	spin = false;
-	#else
-	#wrning SpinLokcs are a pthread extension !
-	spin = malloc(sizeof(pthread_spinlock_t));
-	pthread_spin_init((pthread_spinlock_t *)spin, PTHREAD_PROCESS_PRIVATE);
-	#endif
+SpinLock::SpinLock() : spin(new abool(false)) {
 }
 
 SpinLock::SpinLock(SpinLock &&s) {
-	#ifndef N_USE_PTHREAD_SPINLOCK
-	spin = s.spin;
-	#else
-	spin = s.spin;
-	s.spin = 0;
-	#endif
+	std::swap(s.spin, spin);
+
 }
 
 SpinLock::~SpinLock() {
-	#ifdef N_USE_PTHREAD_SPINLOCK
-	if(spin) {
-		pthread_spin_destroy((pthread_spinlock_t *)spin);
-		free(spin);
-	}
-	#endif
+	delete spin;
 }
 
 void SpinLock::lock() {
-	#ifdef N_USE_PTHREAD_SPINLOCK
-	pthread_spin_lock((pthread_spinlock_t *)spin);
-	#else
-	while(spin.load(std::memory_order_acquire) || spin.exchange(true, std::memory_order_acquire)) {
+	while(spin->load(std::memory_order_acquire) || spin->exchange(true, std::memory_order_acquire)) {
 	}
-	#endif
 }
 
 bool SpinLock::trylock() {
-	#ifdef N_USE_PTHREAD_SPINLOCK
-	if(!pthread_spin_trylock((pthread_spinlock_t *)spin)) {
-		return true;
-	}
-	return false;
-	#else
-	return !spin.load(std::memory_order_acquire) && !spin.exchange(true, std::memory_order_acquire);
-	#endif
+	return !spin->load(std::memory_order_acquire) && !spin->exchange(true, std::memory_order_acquire);
 }
 
 void SpinLock::unlock() {
-	#ifdef N_USE_PTHREAD_SPINLOCK
-	pthread_spin_unlock((pthread_spinlock_t *)spin);
-	#else
-	spin.store(false, std::memory_order_release);
-	#endif
+	spin->store(false, std::memory_order_release);
 }
 
 }
