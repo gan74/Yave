@@ -51,7 +51,7 @@ class SharedFuture
 			return shared->state == Succeded;
 		}
 
-		core::Option<T> get() {
+		core::Option<T> get() const {
 			wait();
 			if(!isSuccess()) {
 				return core::Option<T>();
@@ -59,14 +59,14 @@ class SharedFuture
 			return shared->val;
 		}
 
-		core::Option<T> tryGet() {
+		core::Option<T> tryGet() const {
 			if(!isSuccess()) {
 				return core::Option<T>();
 			}
 			return shared->val;
 		}
 
-		void wait() {
+		void wait() const {
 			Mutex *m = getMutex();
 			m->lock();
 			while(isWaiting()) {
@@ -75,7 +75,7 @@ class SharedFuture
 			m->unlock();
 		}
 
-		operator T() {
+		operator T() const {
 			return get();
 		}
 
@@ -133,9 +133,10 @@ class SharedFuture
 			m->notifyAll();
 		}
 
-		Mutex *getMutex() {
+		Mutex *getMutex() const {
 			return &shared->mutex;
 		}
+
 
 		MultiThreadPtr<Internal> shared;
 };

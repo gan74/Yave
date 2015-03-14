@@ -14,34 +14,46 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_RENDERER
-#define N_GRAPHICS_RENDERER
+#ifndef N_GRAPHICS_FRAMEBUFFERRENDERER
+#define N_GRAPHICS_FRAMEBUFFERRENDERER
 
 #include <n/utils.h>
-#include <n/signals/Signal.h>
-#include "GLContext.h"
+#include "BufferedRenderer.h"
 
 namespace n {
 namespace graphics {
 
-class Renderer : core::NonCopyable
+class FrameBufferRenderer : public Renderer
 {
 	public:
-		Renderer() {
+		FrameBufferRenderer(BufferedRenderer *c) : Renderer(), child(c) {
 		}
 
-		void operator()() {
-			render(prepare());
+	protected:
+		virtual void *prepare() override {
+			return child->prepare();
 		}
 
-	public:
-		virtual void *prepare() = 0;
-		virtual void render(void *ptr) = 0;
+		virtual void render(void *ptr) override {
+			child->render(ptr);
+			if(GLContext::getContext()->getFrameBuffer() == &child->getFrameBuffer()) {
+				FrameBuffer::unbind();
+				child->getFrameBuffer().blit();
+				child->getFrameBuffer().bind();
+			} else {
+				child->getFrameBuffer().blit();
+			}
+
+		}
+
+	private:
+		BufferedRenderer *child;
+
 
 };
 
 }
 }
 
-#endif // N_GRAPHICS_RENDERER
+#endif // N_GRAPHICS_FRAMEBUFFERRENDERER
 

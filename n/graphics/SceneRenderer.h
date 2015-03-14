@@ -62,10 +62,10 @@ class SceneRenderer : public Renderer
 		}
 
 		virtual void render(void *ptr) override {
+			gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			if(!ptr) {
 				return;
 			}
-
 			RenderQueue *queue = (RenderQueue *)ptr;
 			for(const auto q : queue->getBatches()) {
 				q();

@@ -80,8 +80,6 @@ int main(int, char **) {
 
 	shader.bind();
 
-	FrameBuffer *buffer = 0;
-
 	Camera cam;
 	cam.setPosition(Vec3(0, 0, 5));
 	cam.setRatio(4/3.0);
@@ -116,31 +114,15 @@ int main(int, char **) {
 		scene.insert(new RandObj());
 	}
 
-	SceneRenderer renderer(&scene);
+	FrameBufferRenderer renderer(new BufferedRenderer(new SceneRenderer(&scene)));
 
 	console.start();
 
 	while(run(win)) {
 		Timer timer;
-		uint size = uint(console("$size"));
-		size = size ? size : 600;
-		if(!buffer || (size && buffer->getSize().min() != size)) {
-			delete buffer;
-			math::Vec2ui vSize(size * Vec2(4, 3) / 3);
-			std::cout<<"framebuffer size = "<<vSize<<std::endl;
-			buffer = new FrameBuffer(vSize);
-		}
-		buffer->bind();
-
-		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderer();
 
 		GLContext::getContext()->finishTasks();
-
-		FrameBuffer::unbind();
-		gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		buffer->blit();
-
 
 		gl::glFlush();
 		gl::glFinish();
@@ -148,7 +130,6 @@ int main(int, char **) {
 		if(GLContext::getContext()->checkGLError()) {
 			fatal("OpenGL error");
 		}
-
 
 		float fps = float(console("$framerate"));
 		if(fps) {
@@ -170,9 +151,13 @@ int main(int, char **) {
 #include <n/core/Array.h>
 #include <n/core/Functor.h>
 #include <n/mem/SmallObject.h>
+#include <n/concurent/SpinLock.h>
+#include <n/concurent/Async.h>
+#include <n/concurent/Mutex.h>
 
 using namespace n;
 using namespace n::core;
+using namespace n::concurent;
 
 class I : public mem::SmallObject<I>
 {
@@ -202,11 +187,30 @@ class J : public W
 };
 
 int main(int, char **) {
-	List<int> l;
-	for(int i = 0; i != 100; i++) {
-		l.append(i);
+	SpinLock lock;
+	Array<SharedFuture<void>> futures;
+	Timer ti;
+	uint threads = 10;
+	uint max = 1000000;
+	for(uint i = 0; i != threads; i++) {
+		futures += Async([=, &lock]() {
+			for(uint j = 0; j != max; j++) {
+				lock.lock();
+				lock.unlock();
+			}
+		});
 	}
-	std::cout<<l.size()<<std::endl;
+	for(const SharedFuture<void> &f : futures) {
+		f.wait();
+	}
+	std::cout<<ti.reset() * 1000<<"ms"<<std::endl;
+	for(uint j = 0; j != max * threads; j++) {
+		lock.lock();
+		lock.unlock();
+	}
+	std::cout<<ti.reset() * 1000<<"ms"<<std::endl;
+
+
 }
 
 #endif
