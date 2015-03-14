@@ -54,6 +54,10 @@ GLContext *GLContext::getContext() {
 	return ct;
 }
 
+void GLContext::flush() {
+	gl::glFlush();
+}
+
 void GLContext::addGLTask(const core::Functor<void()> &f) {
 	tasks.queue(f);
 }

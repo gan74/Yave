@@ -123,13 +123,11 @@ int main(int, char **) {
 		renderer();
 
 		GLContext::getContext()->finishTasks();
+		GLContext::getContext()->flush();
 
-		gl::glFlush();
-		gl::glFinish();
-
-		if(GLContext::getContext()->checkGLError()) {
+		/*if(GLContext::getContext()->checkGLError()) {
 			fatal("OpenGL error");
-		}
+		}*/
 
 		float fps = float(console("$framerate"));
 		if(fps) {

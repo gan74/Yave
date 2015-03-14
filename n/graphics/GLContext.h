@@ -51,6 +51,8 @@ class GLContext
 		bool processTasks();
 		void finishTasks();
 
+		void flush();
+
 		void setDebugEnabled(bool deb);
 		static bool checkGLError();
 
