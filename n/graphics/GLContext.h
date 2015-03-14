@@ -81,8 +81,8 @@ class GLContext
 		math::Matrix4<> view;
 		math::Matrix4<> model;
 
-		ShaderCombinaison *shader;
-		FrameBuffer *frameBuffer;
+		const ShaderCombinaison *shader;
+		const FrameBuffer *frameBuffer;
 
 		int hwInts[Max];
 

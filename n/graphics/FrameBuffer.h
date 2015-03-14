@@ -37,7 +37,7 @@ class FrameBuffer : public core::NonCopyable
 
 		bool isActive() const;
 
-		void bind();
+		void bind() const;
 		static void unbind();
 
 		void blit() const;
@@ -48,7 +48,7 @@ class FrameBuffer : public core::NonCopyable
 
 	private:
 		void setModified();
-		void setUnmodified();
+		void setUnmodified() const;
 
 		Image base;
 		Texture *attachments;
@@ -56,7 +56,7 @@ class FrameBuffer : public core::NonCopyable
 		gl::GLenum *drawBuffers;
 		gl::GLuint handle;
 
-		bool modified;
+		mutable bool modified;
 };
 
 }

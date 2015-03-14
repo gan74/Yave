@@ -114,7 +114,7 @@ class ShaderCombinaison : core::NonCopyable
 			for(uint i = 0; i != samplers.size(); i++) {
 				bindings[i].bind(i);
 			}
-			GLContext::getContext()->shader = const_cast<ShaderCombinaison *>(this);
+			GLContext::getContext()->shader = this;
 		}
 
 		UniformAddr getAddr(const core::String &name) const {

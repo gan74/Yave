@@ -82,7 +82,7 @@ void FrameBuffer::setModified() {
 	setUnmodified();
 }
 
-void FrameBuffer::setUnmodified() {
+void FrameBuffer::setUnmodified() const {
 	if(!modified || !isActive()) {
 		return;
 	}
@@ -127,7 +127,7 @@ bool FrameBuffer::isActive() const {
 	return GLContext::getContext()->frameBuffer == this;
 }
 
-void FrameBuffer::bind() {
+void FrameBuffer::bind() const {
 	if(GLContext::getContext()->frameBuffer != this) {
 		gl::glBindFramebuffer(GL_FRAMEBUFFER, handle);
 		GLContext::getContext()->frameBuffer = this;
