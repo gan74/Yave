@@ -61,7 +61,7 @@ class Asset
 		}
 
 		const T *operator->() const {
-			return *ptr;
+			return ptr ? *ptr : 0;
 		}
 
 		const T &operator*() const {
