@@ -56,6 +56,7 @@ class SceneRenderer : public Renderer
 				for(Renderable *re : res) {
 					re->render(*queue);
 				}
+				queue->prepare();
 				return queue;
 			}
 			return 0;

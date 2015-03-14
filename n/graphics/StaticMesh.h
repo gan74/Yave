@@ -33,7 +33,7 @@ class StaticMesh : public Movable<>, public Renderable
 		}
 
 		virtual void render(RenderQueue &q) override {
-			q.insert(RenderBatch(this->getTransform(), inst));
+			q.insert(this->getTransform(), inst);
 		}
 
 		const MeshInstance<> &getMeshInstance() const {

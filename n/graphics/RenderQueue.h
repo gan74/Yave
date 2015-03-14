@@ -36,6 +36,12 @@ class RenderQueue
 			funcs.append(f);
 		}
 
+		void insert(const math::Matrix4<> &t, const MeshInstance<> &m) {
+			for(MeshInstanceBase<> *base : m) {
+				insert(RenderBatch(t, base));
+			}
+		}
+
 		void insert(const RenderBatch &b) {
 			batches.append(b);
 		}
@@ -44,6 +50,10 @@ class RenderQueue
 		RenderQueue &operator<<(const U &u) {
 			insert(u);
 			return *this;
+		}
+
+		void prepare() {
+			batches.sort();
 		}
 
 		const core::Array<core::Functor<void()>> &getFunctions() const {

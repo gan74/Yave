@@ -27,22 +27,26 @@ namespace graphics {
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<> &m, const MeshInstance<> &i) : instanciable(true), inst(i), matrix(m) {
+		RenderBatch(const math::Matrix4<> &m, MeshInstanceBase<> *i) : instanciable(true), inst(i), matrix(m) {
 		}
 
 		void operator()() const {
 			GLContext::getContext()->setModelMatrix(matrix);
-			inst.draw();
+			inst->draw();
 		}
 
 		bool isInstanciable() const {
 			return instanciable;
 		}
 
+		bool operator<(const RenderBatch &o) const {
+			return inst->getMaterial() < o.inst->getMaterial();
+		}
+
 	private:
 		bool instanciable;
 
-		MeshInstance<> inst;
+		MeshInstanceBase<> *inst;
 		math::Matrix4<> matrix;
 };
 

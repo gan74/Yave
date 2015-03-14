@@ -24,10 +24,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-namespace internal {
-	template<typename T = float>
-	struct MeshInstanceBase : core::NonCopyable
-	{
+template<typename T = float>
+class MeshInstanceBase : core::NonCopyable
+{
+	public:
 		MeshInstanceBase(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m) : buffer(b), vao(0), material(m) {
 		}
 
@@ -43,17 +43,29 @@ namespace internal {
 			vao->draw(instances, beg, end);
 		}
 
+		const Material<T> &getMaterial() const {
+			return material;
+		}
+
+		T getRadius() const {
+			return buffer.radius;
+		}
+
+	private:
 		typename TriangleBuffer<T>::FreezedTriangleBuffer buffer;
 		mutable VertexArrayObject<T> *vao;
-		graphics::Material<T> material;
-	};
+		Material<T> material;
+};
 
+namespace internal {
 	template<typename T = float>
 	struct MeshInstance : core::NonCopyable
 	{
+		typedef typename core::Array<MeshInstanceBase<T> *>::const_iterator const_iterator;
+
 		MeshInstance(const core::Array<MeshInstanceBase<T> *> &b) : bases(b), radius(0) {
 			for(const MeshInstanceBase<T> *ba : bases) {
-				radius = std::max(radius, ba->buffer.radius);
+				radius = std::max(radius, ba->getRadius());
 			}
 		}
 
@@ -73,6 +85,13 @@ namespace internal {
 			return radius;
 		}
 
+		const_iterator begin() const {
+			return bases.begin();
+		}
+
+		const_iterator end() const {
+			return bases.end();
+		}
 
 		private:
 			core::Array<MeshInstanceBase<T> *> bases;
@@ -86,6 +105,8 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 {
 	friend class MeshLoader;
 	public:
+		typedef typename internal::MeshInstance<T>::const_iterator const_iterator;
+
 		MeshInstance() :  assets::Asset<internal::MeshInstance<T>>() {
 		}
 
@@ -105,11 +126,6 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 			return i ? i->getRadius() : 0;
 		}
 
-		Material<T> getMaterial() const {
-			const internal::MeshInstance<T> *i = getInternal();
-			return i ? i->material : Material<T>();
-		}
-
 		void draw(uint instances = 1) const {
 			const internal::MeshInstance<T> *i = getInternal();
 			if(i) {
@@ -117,7 +133,15 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 			}
 		}
 
+		const_iterator begin() const {
+			const internal::MeshInstance<T> *i = getInternal();
+			return i ? i->begin() : 0;
+		}
 
+		const_iterator end() const {
+			const internal::MeshInstance<T> *i = getInternal();
+			return i ? i->end() : 0;
+		}
 	private:
 		MeshInstance(const assets::Asset<internal::MeshInstance<T>> &t) : assets::Asset<internal::MeshInstance<T>>(t) {
 		}

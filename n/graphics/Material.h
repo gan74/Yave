@@ -21,22 +21,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Texture.h"
 #include "ShaderCombinaison.h"
 
-#include <iostream>
-
 namespace n {
 namespace graphics {
-
 
 namespace internal {
 	template<typename T = float>
 	struct Material
 	{
 		static concurent::Mutex mutex;
+		static bool sorted;
 		static core::Array<Material<T> *> cache;
 
 		Material() : roughness(0), metallic(0) {
 			mutex.lock();
 			cache.append(this);
+			sorted = false;
 			mutex.unlock();
 		}
 
@@ -59,12 +58,16 @@ namespace internal {
 			return false;
 		}
 
-		static void updateCache() { // not called yet
+		static void updateCache() {
+			if(sorted) {
+				return;
+			}
 			mutex.lock();
 			cache.sort([](const Material<T> *a, const Material<T> *b) { return a->operator<(*b); });
 			for(uint i = 0; i != cache.size(); i++) {
 				cache[i]->index = i;
 			}
+			sorted = true;
 			mutex.unlock();
 		}
 
@@ -82,6 +85,9 @@ namespace internal {
 
 	template<typename T>
 	concurent::Mutex Material<T>::mutex = concurent::Mutex();
+
+	template<typename T>
+	bool Material<T>::sorted = true;
 }
 
 template<typename T = float>
@@ -94,7 +100,6 @@ class Material : private assets::Asset<internal::Material<T>>
 		bool operator<(const Material<T> &m) const {
 			return getInternalIndex() < m.getInternalIndex();
 		}
-
 
 		bool isValid() const {
 			return assets::Asset<internal::Material<T>>::isValid();
@@ -139,6 +144,7 @@ class Material : private assets::Asset<internal::Material<T>>
 		}
 
 		uint getInternalIndex() const {
+			internal::Material<T>::updateCache();
 			const internal::Material<T> *i = getInternal();
 			return i ? i->index : 0;
 		}
