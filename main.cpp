@@ -49,6 +49,7 @@ int main(int, char **) {
 					 "uniform vec4 n_Color;"
 					 "uniform float n_Roughness;"
 					 "uniform float n_Metallic;"
+					 "uniform float n_DiffuseMul;"
 					 "uniform sampler2D n_Diffuse;"
 					 "in vec3 N;"
 					 "in vec3 V;"
@@ -59,7 +60,7 @@ int main(int, char **) {
 					 + brdf +
 
 					"void main() {"
-						"vec4 C = n_Color * texture(n_Diffuse, U);"
+						"vec4 C = n_Color * mix(vec4(1.0), texture(n_Diffuse, U), n_DiffuseMul);"
 						"vec3 L = normalize(vec3(0.5, 0.5, 1.0));"
 						"vec3 NN = normalize(N);"
 						"n_FragColor = vec4((d_BRDF(C.rgb, L, V, NN) + s_BRDF(C.rgb, L, V, NN) * 0), C.a);"
@@ -115,6 +116,7 @@ int main(int, char **) {
 	}
 
 	FrameBufferRenderer renderer(new BufferedRenderer(new SceneRenderer(&scene)));
+	//SceneRenderer renderer(&scene);
 
 	console.start();
 

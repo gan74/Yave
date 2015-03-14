@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Texture.h"
 #include "ShaderCombinaison.h"
 
+#include <iostream>
+
 namespace n {
 namespace graphics {
 
@@ -114,6 +116,8 @@ class Material : private assets::Asset<internal::Material<T>>
 				sh->setValue("n_Color", i->color);
 				sh->setValue("n_Roughness", i->roughness);
 				sh->setValue("n_Metallic", i->metallic);
+
+				sh->setValue("n_DiffuseMul", i->diffuse.isNull() ? 0.0 : 1.0);
 				sh->setValue("n_Diffuse", i->diffuse);
 			} else {
 				fatal("No shader");

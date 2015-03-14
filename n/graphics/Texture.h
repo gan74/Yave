@@ -61,6 +61,10 @@ class Texture
 		bool operator!=(const Texture &t) const;
 		bool operator<(const Texture &t) const;
 
+		bool isNull() const {
+			return !data->handle && image.isNull();
+		}
+
 		math::Vec2ui getSize() const {
 			return image.getSize();
 		}
