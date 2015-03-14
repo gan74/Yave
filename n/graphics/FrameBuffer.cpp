@@ -130,8 +130,11 @@ bool FrameBuffer::isActive() const {
 void FrameBuffer::bind() const {
 	if(GLContext::getContext()->frameBuffer != this) {
 		gl::glBindFramebuffer(GL_FRAMEBUFFER, handle);
+		math::Vec2ui vp = GLContext::getContext()->getViewport();
 		GLContext::getContext()->frameBuffer = this;
-		gl::glViewport(0, 0, base.getSize().x(), base.getSize().y());
+		if(vp != base.getSize()) {
+			gl::glViewport(0, 0, base.getSize().x(), base.getSize().y());
+		}
 		setUnmodified();
 	}
 }
@@ -139,15 +142,19 @@ void FrameBuffer::bind() const {
 void FrameBuffer::unbind() {
 	if(GLContext::getContext()->frameBuffer) {
 		gl::glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if(GLContext::getContext()->getViewport() != GLContext::getContext()->getFrameBuffer()->getSize()) {
+			gl::glViewport(0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y());
+		}
 		GLContext::getContext()->frameBuffer = 0;
-		gl::glViewport(0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y());
 	}
 }
 
 void FrameBuffer::blit() const {
-	gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
+	if(GLContext::getContext()->frameBuffer != this) {
+		gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
+	}
 	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), GL_COLOR_BUFFER_BIT | (isDepthEnabled() ? GL_DEPTH_BUFFER_BIT : 0), GL_NEAREST);
-	gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, GLContext::getContext()->frameBuffer ? GLContext::getContext()->frameBuffer->handle : 0);
+	//gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, GLContext::getContext()->frameBuffer ? GLContext::getContext()->frameBuffer->handle : 0);
 }
 
 }
