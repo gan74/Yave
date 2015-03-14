@@ -32,7 +32,8 @@ class VertexArrayObject : core::NonCopyable
 
 		~VertexArrayObject() {
 			if(handle) {
-				GLContext::getContext()->addGLTask([=]() { gl::glDeleteBuffers(1, &handle); });
+				gl::GLuint h = handle;
+				GLContext::getContext()->addGLTask([=]() { gl::glDeleteBuffers(1, &h); });
 			}
 		}
 
