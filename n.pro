@@ -2,6 +2,8 @@ CONFIG += console
 CONFIG += c++11
 CONFIG -= Qt
 
+#QT -= core gui widgets
+
 win32:DEFINES += WIN32
 
 LIBS += -lpthread
@@ -16,8 +18,6 @@ DEFINES += N_DEBUG
 
 QMAKE_CXXFLAGS += -pedantic
 QMAKE_CXXFLAGS += -Winline
-QMAKE_CXXFLAGS_DEBUG += -pg
-QMAKE_LFLAGS_DEBUG += -pg
 
 INCLUDEPATH += ./
 
