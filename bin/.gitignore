@@ -1,0 +1,7 @@
+/n/
+/dependencies/
+/CMakeFiles/
+*.exe
+*.cbp
+/Makefile
+*.cmake
