@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef CONSOLE
 #define CONSOLE
 
-#include <n/concurent/Thread.h>
+#include <n/concurrent/Thread.h>
 #include <n/core/Map.h>
 #include <n/core/Functor.h>
 #include <n/core/String.h>
@@ -30,7 +30,7 @@ using namespace n::graphics;
 using namespace n::math;
 using namespace n::core;
 
-class Console : public n::concurent::Thread
+class Console : public n::concurrent::Thread
 {
 	public:
 		Console() {

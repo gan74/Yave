@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_TEXTURE_H
 #define N_GRAPHICS_TEXTURE_H
 
-#include <n/concurent/SpinLock.h>
+#include <n/concurrent/SpinLock.h>
 #include "Image.h"
 #include "GLContext.h"
 #include "GL.h"
@@ -47,7 +47,7 @@ class Texture
 			}
 		}
 
-		concurent::SpinLock lock;
+		concurrent::SpinLock lock;
 		gl::GLuint handle;
 	};
 

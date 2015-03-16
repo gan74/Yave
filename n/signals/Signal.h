@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_SIGNALS_SIGNAL
 #define N_SIGNALS_SIGNAL
 
-#include <n/concurent/SpinLock.h>
-#include <n/concurent/Async.h>
+#include <n/concurrent/SpinLock.h>
+#include <n/concurrent/Async.h>
 #include <n/core/Array.h>
 #include <n/core/Functor.h>
 
@@ -41,7 +41,7 @@ class AsyncCall : core::NonCopyable
 	public:
 		template<typename... Args>
 		void call(const core::Array<core::Functor<void(Args...)>> &slots, Args... args) const {
-			concurent::Async([=]() {
+			concurrent::Async([=]() {
 				for(const core::Functor<void(Args...)> &f : slots) {
 					f(args...);
 				}
@@ -52,7 +52,7 @@ class AsyncCall : core::NonCopyable
 template<typename CallingPolicy, typename... Args>
 class Signal : private CallingPolicy
 {
-	using Lock = concurent::SpinLock;
+	using Lock = concurrent::SpinLock;
 	public:
 		template<typename... PArgs>
 		Signal(PArgs... args) : CallingPolicy(args...) {

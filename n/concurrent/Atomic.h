@@ -5,7 +5,7 @@
 #include <atomic>
 
 namespace n {
-namespace concurent {
+namespace concurrent {
 
 template<typename T>
 class Atomic : public std::atomic<T>

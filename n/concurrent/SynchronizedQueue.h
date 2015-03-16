@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Mutex.h"
 
 namespace n {
-namespace concurent {
+namespace concurrent {
 
 template<typename T>
 class SynchronizedQueue

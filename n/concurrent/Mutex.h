@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Thread.h"
 
 namespace n {
-namespace concurent {
+namespace concurrent {
 
 class WaitCondition
 {

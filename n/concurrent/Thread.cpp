@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <thread>
 
 namespace n {
-namespace concurent {
+namespace concurrent {
 
 thread_local Thread *Thread::self = 0;
 

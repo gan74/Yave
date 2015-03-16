@@ -19,8 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/core/Array.h>
 #include "AssetLoader.h"
-#include <n/concurent/Async.h>
-#include <n/concurent/Mutex.h>
+#include <n/concurrent/Async.h>
+#include <n/concurrent/Mutex.h>
 
 namespace n {
 namespace assets {
@@ -132,7 +132,7 @@ class AsyncLoadingPolicy
 		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
 			//static_assert(IsThreadSafe<Args...>::value, "Only thread-safe types should be used with AssetBuffer<T, AsyncLoadingPolicy>");
 			AssetPtr<T> ptr(new const T*(0));
-			concurent::Async([=, &loader](Args... args) {
+			concurrent::Async([=, &loader](Args... args) {
 				T *o = loader(args...);
 				if(o) {
 					*ptr = o;
@@ -197,7 +197,7 @@ class AssetManager : protected LoadPolicy, core::NonCopyable
 		}
 
 	private:
-		concurent::Mutex mutex;
+		concurrent::Mutex mutex;
 		AssetLoader<T> loader;
 		AssetBuffer<T> assets;
 };

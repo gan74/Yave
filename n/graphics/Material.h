@@ -28,7 +28,7 @@ namespace internal {
 	template<typename T = float>
 	struct Material
 	{
-		static concurent::Mutex mutex;
+		static concurrent::Mutex mutex;
 		static bool sorted;
 		static core::Array<Material<T> *> cache;
 
@@ -84,7 +84,7 @@ namespace internal {
 	core::Array<Material<T> *> Material<T>::cache = core::Array<Material<T> *>();
 
 	template<typename T>
-	concurent::Mutex Material<T>::mutex = concurent::Mutex();
+	concurrent::Mutex Material<T>::mutex = concurrent::Mutex();
 
 	template<typename T>
 	bool Material<T>::sorted = true;

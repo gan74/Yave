@@ -2,7 +2,8 @@
 #ifdef ALL
 #include "main.h"
 
-	Console console;
+Console console;
+static_assert(sizeof(void *) == 4, "compiler should be 32bits");
 
 int main(int, char **) {
 	SDL_Window *win = createWindow();
@@ -136,7 +137,7 @@ int main(int, char **) {
 			fps = (1.0 / fps);
 			fps -= timer.elapsed();
 			if(fps > 0.0) {
-				concurent::Thread::sleep(fps);
+				concurrent::Thread::sleep(fps);
 			}
 		}
 	}
@@ -151,13 +152,13 @@ int main(int, char **) {
 #include <n/core/Array.h>
 #include <n/core/Functor.h>
 #include <n/mem/SmallObject.h>
-#include <n/concurent/SpinLock.h>
-#include <n/concurent/Async.h>
-#include <n/concurent/Mutex.h>
+#include <n/concurrent/SpinLock.h>
+#include <n/concurrent/Async.h>
+#include <n/concurrent/Mutex.h>
 
 using namespace n;
 using namespace n::core;
-using namespace n::concurent;
+using namespace n::concurrent;
 
 class I : public mem::SmallObject<I>
 {

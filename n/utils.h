@@ -24,7 +24,7 @@ namespace n {
 namespace graphics {
 namespace gl {}
 }
-namespace concurent {}
+namespace concurrent {}
 namespace signals {}
 namespace assets {}
 namespace core {}
@@ -109,13 +109,13 @@ namespace math {
 	template<typename T>
 	typename ToFloatingPoint<T>::type toDeg(T a) {
 		typedef typename ToFloatingPoint<T>::type type;
-		return a * type(180) / pi<type>();
+		return type(a) * type(180) / pi<type>();
 	}
 
 	template<typename T>
 	typename ToFloatingPoint<T>::type toRad(T a) {
 		typedef typename ToFloatingPoint<T>::type type;
-		return a / type(180) * pi<type>();
+		return type(a) / type(180) * pi<type>();
 	}
 
 	uint random(uint max, uint min = 0);

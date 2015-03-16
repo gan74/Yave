@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Array.h>
 
 namespace n {
-namespace concurent {
+namespace concurrent {
 namespace internal {
 
 	void registerHazard(const void **ptr);

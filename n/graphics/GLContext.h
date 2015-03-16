@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_CONTEXT_H
 #define N_GRAPHICS_CONTEXT_H
 
-#include <n/concurent/SynchronizedQueue.h>
+#include <n/concurrent/SynchronizedQueue.h>
 #include <n/core/Functor.h>
 #include <n/math/Matrix.h>
 
@@ -77,7 +77,7 @@ class GLContext
 		GLContext();
 		~GLContext();
 
-		concurent::SynchronizedQueue<core::Functor<void()>> tasks;
+		concurrent::SynchronizedQueue<core::Functor<void()>> tasks;
 
 		math::Matrix4<> projection;
 		math::Matrix4<> view;

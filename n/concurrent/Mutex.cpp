@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/defines.h>
 
 namespace n {
-namespace concurent {
+namespace concurrent {
 
 WaitCondition::WaitCondition() : condition(PTHREAD_COND_INITIALIZER) {
 }

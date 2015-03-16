@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Array.h"
 #include "AsCollection.h"
 #include <n/defines.h>
-#include <n/concurent/Atomic.h>
+#include <n/concurrent/Atomic.h>
 
 #define N_STRINGIFY(m) n::core::String(#m)
 
@@ -31,7 +31,7 @@ namespace core {
 class String
 {
 	public:
-		typedef concurent::auint CounterType;
+		typedef concurrent::auint CounterType;
 		typedef char const * const_iterator;
 
 		static_assert(TypeInfo<CounterType>::isPod, "String::CounterType need to be POD");

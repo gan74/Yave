@@ -14,51 +14,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_THREAD_H
-#define N_CONCURENT_THREAD_H
+#ifndef N_CONCURENT_MULTITHREADPTR_H
+#define N_CONCURENT_MULTITHREADPTR_H
 
-#include <n/utils.h>
+#include "Atomic.h"
+#include <n/core/SmartPtr.h>
 
 namespace n {
+namespace concurrent {
 
-namespace concurent {
-
-enum RecursionMode
-{
-	Recursive,
-	NonRecursive
-};
-
-class Thread : core::NonCopyable
-{
-	struct Internal;
-	public:
-		Thread();
-
-		virtual ~Thread();
-
-		static Thread *getCurrent();
-
-		bool isRunning() const;
-		bool start();
-		void join() const;
-		void deleteLater();
-		bool willBeDeleted() const;
-		static void sleep(double sec);
-
-	protected:
-		virtual void run() = 0;
-
-	private:
-		static void *createThread(void *arg);
-
-		static thread_local Thread *self;
-
-		Internal *internal;
-		bool toDelete;
-};
+template<typename T, typename Proxy = core::NoProxy<T>>
+using MultiThreadPtr = core::SmartPtr<T, auint, Proxy>;
 
 }
 }
 
-#endif // N_CONCURENT_THREAD_H
+#endif // N_CONCURENT_LOCKINGPTR_H

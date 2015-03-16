@@ -23,11 +23,11 @@ namespace n {
 namespace assets {
 
 template<typename T>
-class AssetPtr : public core::SmartPtr<const T *, concurent::auint>
+class AssetPtr : public core::SmartPtr<const T *, concurrent::auint>
 {
 	static constexpr T *InvalidPtr = (T *)0x1;
 	public:
-		AssetPtr(const T **a) : core::SmartPtr<const T *, concurent::auint>(std::move(a)) {
+		AssetPtr(const T **a) : core::SmartPtr<const T *, concurrent::auint>(std::move(a)) {
 		}
 
 		bool isValid() const {

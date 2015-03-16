@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "utils.h"
-#include <n/concurent/Atomic.h>
+#include <n/concurrent/Atomic.h>
 #include <n/defines.h>
 #include <ctime>
 #include <iostream>
@@ -72,7 +72,7 @@ namespace math {
 
 namespace core {
 	uint uniqueId() {
-		static concurent::auint counter;
+		static concurrent::auint counter;
 		return ++counter;
 	}
 

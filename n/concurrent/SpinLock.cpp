@@ -14,19 +14,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_MULTITHREADPTR_H
-#define N_CONCURENT_MULTITHREADPTR_H
+#include "SpinLock.h"
 
-#include "Atomic.h"
-#include <n/core/SmartPtr.h>
+#ifdef N_USE_PTHREAD_SPINLOCK
+#include <pthread.h>
+#endif
 
 namespace n {
-namespace concurent {
+namespace concurrent {
 
-template<typename T, typename Proxy = core::NoProxy<T>>
-using MultiThreadPtr = core::SmartPtr<T, auint, Proxy>;
+SpinLock::SpinLock() : spin(new abool(false)) {
+}
+
+SpinLock::SpinLock(SpinLock &&s) {
+	std::swap(s.spin, spin);
+
+}
+
+SpinLock::~SpinLock() {
+	delete spin;
+}
+
+void SpinLock::lock() {
+	while(spin->load(std::memory_order_acquire) || spin->exchange(true, std::memory_order_acquire)) {
+	}
+}
+
+bool SpinLock::trylock() {
+	return !spin->load(std::memory_order_acquire) && !spin->exchange(true, std::memory_order_acquire);
+}
+
+void SpinLock::unlock() {
+	spin->store(false, std::memory_order_release);
+}
 
 }
 }
-
-#endif // N_CONCURENT_LOCKINGPTR_H

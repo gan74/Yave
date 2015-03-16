@@ -14,39 +14,51 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#include "SpinLock.h"
+#ifndef N_CONCURENT_THREAD_H
+#define N_CONCURENT_THREAD_H
 
-#ifdef N_USE_PTHREAD_SPINLOCK
-#include <pthread.h>
-#endif
+#include <n/utils.h>
 
 namespace n {
-namespace concurent {
 
-SpinLock::SpinLock() : spin(new abool(false)) {
+namespace concurrent {
+
+enum RecursionMode
+{
+	Recursive,
+	NonRecursive
+};
+
+class Thread : core::NonCopyable
+{
+	struct Internal;
+	public:
+		Thread();
+
+		virtual ~Thread();
+
+		static Thread *getCurrent();
+
+		bool isRunning() const;
+		bool start();
+		void join() const;
+		void deleteLater();
+		bool willBeDeleted() const;
+		static void sleep(double sec);
+
+	protected:
+		virtual void run() = 0;
+
+	private:
+		static void *createThread(void *arg);
+
+		static thread_local Thread *self;
+
+		Internal *internal;
+		bool toDelete;
+};
+
+}
 }
 
-SpinLock::SpinLock(SpinLock &&s) {
-	std::swap(s.spin, spin);
-
-}
-
-SpinLock::~SpinLock() {
-	delete spin;
-}
-
-void SpinLock::lock() {
-	while(spin->load(std::memory_order_acquire) || spin->exchange(true, std::memory_order_acquire)) {
-	}
-}
-
-bool SpinLock::trylock() {
-	return !spin->load(std::memory_order_acquire) && !spin->exchange(true, std::memory_order_acquire);
-}
-
-void SpinLock::unlock() {
-	spin->store(false, std::memory_order_release);
-}
-
-}
-}
+#endif // N_CONCURENT_THREAD_H

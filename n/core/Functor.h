@@ -95,13 +95,13 @@ class Functor<R(Args...)>
 	};
 
 	template<typename T>
-	FuncBase *vodify(const T &t, FalseType) {
+	FuncBase *voidify(const T &t, FalseType) {
 		return new Func<T>(t);
 	}
 
 	template<typename T>
-	FuncBase *vodify(const T &t, TrueType) {
-		return vodify([=] (Args... args) -> void {
+	FuncBase *voidify(const T &t, TrueType) {
+		return voidify([=] (Args... args) -> void {
 			t(args...);
 		}, FalseType());
 	}
@@ -133,7 +133,7 @@ class Functor<R(Args...)>
 		typedef R ReturnType;
 
 		template<typename T>
-		Functor(const T &t) : func(vodify(t, BoolToType<std::is_void<R>::value>())) {
+		Functor(const T &t) : func(voidify(t, BoolToType<std::is_void<R>::value>())) {
 		}
 
 		Functor(R (*f)(Args...)) : func(new FuncPtr(f)) {

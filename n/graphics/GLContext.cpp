@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderCombinaison.h"
 #include "GL.h"
 #include "FrameBuffer.h"
-#include <n/concurent/Thread.h>
+#include <n/concurrent/Thread.h>
 #include <n/core/Timer.h>
 
 #include <iostream>
@@ -81,7 +81,7 @@ void GLContext::finishTasks() {
 }
 
 GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
-	if(concurent::Thread::getCurrent()) {
+	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
 	gl::glewExperimental = true;

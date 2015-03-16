@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/defines.h>
 
 namespace n {
-namespace concurent {
+namespace concurrent {
 
 class DefaultThreadNumberPolicy
 {
@@ -157,7 +157,7 @@ class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
 	private:
 		void updateThreadCount() {
 			threadMutex.lock();
-			uint desired = std::max(1u, this->desiredThreadCount(threads.size(), queue.size()));
+			uint desired = std::max(uint(1), this->desiredThreadCount(threads.size(), queue.size()));
 			if(desired != threads.size()) {
 				while(threads.size() != desired && this->shouldAjust(threads.size(), desired)) {
 					if(threads.size() < desired) {
