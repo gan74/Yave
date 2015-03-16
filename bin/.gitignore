@@ -5,3 +5,4 @@
 *.cbp
 /Makefile
 *.cmake
+*.dll

@@ -1,5 +1,4 @@
-*.pro.user
-*.o
+
 /debug/
 /release/
 /old/
@@ -9,6 +8,7 @@
 /object_script.n.Debug
 /object_script.n.Release
 /cppcheck
+/.idea
 *.out
 *.txt
 *.png
@@ -16,4 +16,5 @@
 *.mtl
 *.csv
 *.cfg
-*.pro
+*.o
+*.user
