@@ -33,20 +33,22 @@ GLAPIENTRY void debugOut(gl::GLenum, gl::GLenum type, gl::GLuint, gl::GLuint sev
 	core::String t;
 	switch(type) {
 		case GL_DEBUG_TYPE_PERFORMANCE:
-			t = "perf";
+			t = "[perf]";
 		break;
 		case GL_DEBUG_TYPE_PORTABILITY:
-			t = "port";
+			t = "[port]";
 		break;
 		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-			t = "depr";
+			t = "[depr]";
+		break;
+		case GL_DEBUG_TYPE_ERROR:
+			t = "[err]";
 		break;
 		default:
-			t = "err";
 		break;
 	}
 
-	std::cerr<<std::endl<<"[GL]"<<(sev == GL_DEBUG_SEVERITY_HIGH ? "[HIGH]" : "")<<"["<<t<<"] "<<core::String(msg, len)<<std::endl;
+	std::cerr<<std::endl<<"[GL]"<<(sev == GL_DEBUG_SEVERITY_HIGH ? "[HIGH]" : "")<<t<<" "<<core::String(msg, len)<<std::endl;
 }
 
 GLContext *GLContext::getContext() {
