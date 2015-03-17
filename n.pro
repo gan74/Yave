@@ -25,7 +25,7 @@ SOURCES += main.cpp \
 		   n/*.cpp \
 		   n/core/*.cpp \
 		   n/io/*.cpp \
-		   n/concurent/*.cpp \
+		   n/concurrent/*.cpp \
 		   n/test/*.cpp \
 		   n/test/defaults/*.cpp \
 		   n/script/*.cpp \
@@ -35,7 +35,7 @@ HEADERS += *h \
 		   n/*.h \
 		   n/core/*.h \
 		   n/io/*.h \
-		   n/concurent/*.h \
+		   n/concurrent/*.h \
 		   n/test/*.h \
 		   n/math/*.h \
 		   n/mem/*.h \

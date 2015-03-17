@@ -25,7 +25,7 @@ namespace graphics {
 namespace gl {
 
 #include <GL/glew.h>
-#include <GL/gl.h>
+//#include <GL/gl.h>
 
 }
 
