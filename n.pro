@@ -1,10 +1,11 @@
 CONFIG += console
 CONFIG += c++11
 CONFIG -= Qt
-
 #QT -= core gui widgets
 
 win32:DEFINES += WIN32
+
+DESTDIR = bin/
 
 LIBS += -lpthread
 LIBS += -lmingw32
@@ -51,13 +52,11 @@ SOURCES += dependencies/glew/glew.c
 
 
 CONFIG(debug, debug|release) {
-	OBJECTS_DIR = debug
-	DESTDIR = debug
+	OBJECTS_DIR = bin/debug
 	DEFINES += N_DEBUG
 	DEFINES	+= N_AUTO_TEST
 } else {
-	OBJECTS_DIR = release
-	DESTDIR = release
+	OBJECTS_DIR = bin/release
 	QMAKE_CXXFLAGS += -flto
 	QMAKE_LFLAGS += -flto
 }
