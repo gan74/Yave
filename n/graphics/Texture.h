@@ -69,6 +69,11 @@ class Texture
 			return image.getSize();
 		}
 
+
+		ImageFormat getFormat() const {
+			return image.getFormat();
+		}
+
 	private:
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;

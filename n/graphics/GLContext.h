@@ -48,6 +48,10 @@ class GLContext
 		void setViewMatrix(const math::Matrix4<> &m);
 		void setModelMatrix(const math::Matrix4<> &m);
 
+		const math::Matrix4<> &getProjectionMatrix() const;
+		const math::Matrix4<> &getViewMatrix() const;
+		const math::Matrix4<> &getModelMatrix() const;
+
 		bool processTasks();
 		void finishTasks();
 
@@ -64,7 +68,6 @@ class GLContext
 		const FrameBuffer *getFrameBuffer() const {
 			return frameBuffer;
 		}
-
 
 		int getHWInt(HWInt hw) {
 			return hwInts[hw];

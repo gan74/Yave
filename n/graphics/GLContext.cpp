@@ -149,7 +149,9 @@ void GLContext::setModelMatrix(const math::Matrix4<> &m) {
 	matrixBuffer->set(model, 0);
 	matrixBuffer->bind(0);
 	#else
-	shader->setValue("n_ModelMatrix", model);
+	if(shader) {
+		shader->setValue("n_ModelMatrix", model);
+	}
 	#endif
 }
 
@@ -158,8 +160,10 @@ void GLContext::setViewMatrix(const math::Matrix4<> &m) {
 		return;
 	}
 	view = m;
-	shader->setValue("n_ViewMatrix", m);
-	shader->setValue("n_ViewProjectionMatrix", projection * m);
+	if(shader) {
+		shader->setValue("n_ViewMatrix", m);
+		shader->setValue("n_ViewProjectionMatrix", projection * m);
+	}
 }
 
 void GLContext::setProjectionMatrix(const math::Matrix4<> &m) {
@@ -167,8 +171,22 @@ void GLContext::setProjectionMatrix(const math::Matrix4<> &m) {
 		return;
 	}
 	projection = m;
-	shader->setValue("n_ProjectionMatrix", m);
-	shader->setValue("n_ViewProjectionMatrix", m * view);
+	if(shader) {
+		shader->setValue("n_ProjectionMatrix", m);
+		shader->setValue("n_ViewProjectionMatrix", m * view);
+	}
+}
+
+const math::Matrix4<> &GLContext::getProjectionMatrix() const {
+	return projection;
+}
+
+const math::Matrix4<> &GLContext::getViewMatrix() const {
+	return view;
+}
+
+const math::Matrix4<> &GLContext::getModelMatrix() const {
+	return model;
 }
 
 }

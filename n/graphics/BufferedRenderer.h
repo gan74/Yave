@@ -46,8 +46,10 @@ class BufferedRenderer : public Renderer
 			child->render(ptr);
 		}
 
-	private:
+	protected:
 		FrameBuffer buffer;
+
+	private:
 		Renderer *child;
 };
 

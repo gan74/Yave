@@ -75,7 +75,7 @@ class Shader : public internal::ShaderBase
 		}
 
 	private:
-		void load(const core::String &src) {
+		void load(core::String src = "") {
 			gl::GLenum glType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
 			handle = gl::glCreateShader(glType[Type]);
 			const char *str = src.toChar();

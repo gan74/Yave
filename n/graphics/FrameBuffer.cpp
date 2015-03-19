@@ -25,9 +25,10 @@ uint getMaxAttachment() {
 }
 
 FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Texture[getMaxAttachment()]), depth(0), drawBuffers(new gl::GLenum[getMaxAttachment()]), handle(0), modified(false) {
+	Image baseImage(base);
 	for(uint i = 0; i != getMaxAttachment(); i++) {
 		drawBuffers[i] = GL_NONE;
-		attachments[i] = Texture(base);
+		attachments[i] = Texture(baseImage);
 	}
 	gl::glGenFramebuffers(1, &handle);
 	setAttachmentEnabled(0, true);
@@ -47,11 +48,18 @@ FrameBuffer::~FrameBuffer() {
 void FrameBuffer::setAttachmentEnabled(uint slot, bool enabled) {
 	if(!enabled && isAttachmentEnabled(slot)) {
 		drawBuffers[slot] = GL_NONE;
-		attachments[slot] = Texture(base);
+		attachments[slot] = Texture(Image());
 		setModified();
 	}
 	if(enabled && !isAttachmentEnabled(slot)) {
 		drawBuffers[slot] = GL_COLOR_ATTACHMENT0 + slot;
+		setModified();
+	}
+}
+
+void FrameBuffer::setAttachmentFormat(uint slot, ImageFormat format) {
+	if(attachments[slot].getFormat() != format) {
+		attachments[slot] = Image(getSize(), format);
 		setModified();
 	}
 }
@@ -61,7 +69,7 @@ void FrameBuffer::setDepthEnabled(bool enabled) {
 		return;
 	}
 	if(enabled) {
-		depth = new Texture(Image(base.getSize(), ImageFormat::Depth32));
+		depth = new Texture(Image(base, ImageFormat::Depth32));
 	} else {
 		delete depth;
 		depth = 0;
@@ -132,8 +140,8 @@ void FrameBuffer::bind() const {
 		gl::glBindFramebuffer(GL_FRAMEBUFFER, handle);
 		math::Vec2ui vp = GLContext::getContext()->getViewport();
 		GLContext::getContext()->frameBuffer = this;
-		if(vp != base.getSize()) {
-			gl::glViewport(0, 0, base.getSize().x(), base.getSize().y());
+		if(vp != base) {
+			gl::glViewport(0, 0, base.x(), base.y());
 		}
 		setUnmodified();
 	}

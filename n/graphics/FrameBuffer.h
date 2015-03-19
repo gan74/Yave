@@ -24,12 +24,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class FrameBuffer : public core::NonCopyable
+class FrameBuffer : core::NonCopyable
 {
 	public:
 		FrameBuffer(const math::Vec2ui &s);
 		~FrameBuffer();
 
+
+		void setAttachmentFormat(uint slot, ImageFormat format);
 		void setAttachmentEnabled(uint slot, bool enabled);
 		void setDepthEnabled(bool enabled);
 		bool isAttachmentEnabled(uint slot) const;
@@ -43,14 +45,14 @@ class FrameBuffer : public core::NonCopyable
 		void blit() const;
 
 		math::Vec2ui getSize() const {
-			return base.getSize();
+			return base;
 		}
 
 	private:
 		void setModified();
 		void setUnmodified() const;
 
-		Image base;
+		math::Vec2ui base;
 		Texture *attachments;
 		Texture *depth;
 		gl::GLenum *drawBuffers;

@@ -393,6 +393,9 @@ class Vec
 		}
 
 	private:
+		template<uint M, typename U>
+		friend class Vec;
+
 		T vec[N];
 
 };
@@ -417,7 +420,7 @@ typedef Vec<4, uint> Vec4ui;
 }
 }
 
-#define N_VEC_OP(op) template<n::uint N, typename T, typename I> n::math::Vec<N, T> operator op(const n::math::Vec<N, T> &v, const I &i) { return v op n::math::Vec<N, T>(i); } \
+#define N_VEC_OP(op) /*template<n::uint N, typename T, typename I> n::math::Vec<N, T> operator op(const n::math::Vec<N, T> &v, const I &i) { return v op n::math::Vec<N, T>(i); }*/ \
 template<n::uint N, typename T, typename I> n::math::Vec<N, T> operator op(const I &i, const n::math::Vec<N, T> &v) { return n::math::Vec<N, T>(i) op v; }
 
 

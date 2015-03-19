@@ -74,7 +74,6 @@ class SmartPtr
 			return ptr;
 		}
 
-
 		T &operator*() const {
 			return *ptr;
 		}
