@@ -258,6 +258,9 @@ class ShaderCombinaison : core::NonCopyable
 				if(shaders[i]) {
 					gl::glAttachShader(handle, shaders[i]->handle);
 					val &= shaders[i]->isValid();
+					if(!shaders[i]->getLogs().isEmpty()) {
+						logs += shaders[i]->getLogs() + "\n";
+					}
 				}
 			}
 			gl::glLinkProgram(handle);
@@ -271,7 +274,7 @@ class ShaderCombinaison : core::NonCopyable
 				gl::glDeleteProgram(handle);
 				handle = 0;
 				msg[size] = '\0';
-				logs = msg;
+				logs += msg;
 				delete[] msg;
 			} else {
 				getUniforms();
