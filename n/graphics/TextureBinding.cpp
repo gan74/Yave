@@ -21,6 +21,10 @@ namespace n {
 namespace graphics {
 namespace internal {
 
+uint maxTextures() {
+	return GLContext::getContext()->getHWInt(GLContext::MaxTextures);
+}
+
 gl::GLuint *TextureBinding::bindings = 0;
 uint TextureBinding::active = 0;
 
@@ -34,9 +38,8 @@ TextureBinding &TextureBinding::operator=(const Texture &t) {
 
 void TextureBinding::bind(uint slot) const {
 	if(!bindings) {
-		#warning 8 textures
-		bindings = new gl::GLuint[8];
-		for(uint i = 0; i != 8; i++) {
+		bindings = new gl::GLuint[maxTextures()];
+		for(uint i = 0; i != maxTextures(); i++) {
 			bindings[i] = 0;
 		}
 	}
