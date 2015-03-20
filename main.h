@@ -99,7 +99,7 @@ class Obj : public StaticMesh
 			static Timer timer;
 			static double x = 0;
 			double t = timer.reset();
-			x += t * 0.5;
+			x += t * 0.25;
 			Quaternion<> q = Quaternion<>::fromAxisAngle(axis.cross(Vec3(1, 0, 0)).cross(axis), t);
 			axis = q(axis);
 			setRotation(Quaternion<>::fromAxisAngle(axis, x));
@@ -107,15 +107,23 @@ class Obj : public StaticMesh
 				fatal("Unable to load mesh");
 			}
 			//StaticMesh::render(qu);
+			if(autoScale && !getMeshInstance().isNull()) {
+				setScale(autoScale / getMeshInstance().getRadius());
+			}
 			for(MeshInstanceBase<> *b : getMeshInstance()) {
 				qu.insert(RenderBatch(getTransform().getMatrix(), b, attribs));
 			}
+		}
+
+		void setAutoScale(float s) {
+			autoScale = s;
 		}
 
 	private:
 		VertexAttribs attribs;
 		String model;
 		Vec3 axis;
+		float autoScale;
 };
 
 class RandObj : public Obj

@@ -29,6 +29,7 @@ class StaticMesh : public Movable<>, public Renderable
 {
 	public:
 		StaticMesh(const MeshInstance<> &i = MeshInstance<>()) : inst(i) {
+			#warning StaticMesh radius = 0 if not loaded on creation
 			radius = inst.getRadius();
 		}
 

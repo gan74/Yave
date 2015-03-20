@@ -12,7 +12,7 @@ int main(int, char **) {
 	SDL_Window *win = createWindow();
 
 	Camera cam;
-	cam.setPosition(Vec3(0, 0, 5));
+	cam.setPosition(Vec3(0, 0, 10));
 	cam.setRatio(4/3.0);
 	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
 
@@ -22,9 +22,9 @@ int main(int, char **) {
 	Scene scene;
 	scene.insert(&cam);
 
-	auto c = new Obj("MP5_Scene.obj");
+	auto c = new Obj("sphere.obj");
 	c->setPosition(Vec3(0, 0, 0));
-	c->setScale(10);
+	c->setAutoScale(6);
 	scene.insert(c);
 
 	uint num = 1;
