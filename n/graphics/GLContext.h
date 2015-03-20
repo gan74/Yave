@@ -33,7 +33,9 @@ class GLContext
 		enum HWInt
 		{
 			MaxFboAttachements = 0,
-			Max = 1
+			MaxTextures = 1,
+			MaxVertexAttribs = 2,
+			Max = 3
 		};
 
 		static GLContext *getContext();

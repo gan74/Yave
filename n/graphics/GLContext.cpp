@@ -102,6 +102,8 @@ GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
 	}
 
 	gl::glGetIntegerv(GL_MAX_DRAW_BUFFERS, &hwInts[MaxFboAttachements]);
+	gl::glGetIntegerv(GL_MAX_TEXTURE_UNITS, &hwInts[MaxTextures]);
+	gl::glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
 
 	gl::glGetError();
 

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "TriangleBuffer.h"
 #include "StaticBuffer.h"
+#include "VertexAttribs.h"
 
 namespace n {
 namespace graphics {
@@ -27,24 +28,26 @@ template<typename T = float>
 class VertexArrayObject : core::NonCopyable
 {
 	public:
-		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius), size(tr.indexes.size() / 3), data(tr.vertices), indexes(tr.indexes), handle(0) {
+		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius), size(tr.indexes.size() / 3), data(tr.vertices), indexes(tr.indexes), attribs(new bool[maxAttribs()]), handle(0) {
+			for(uint i = 0; i != maxAttribs(); i++) {
+				attribs[i] = false;
+			}
 		}
 
 		~VertexArrayObject() {
+			delete[] attribs;
 			if(handle) {
 				gl::GLuint h = handle;
-				GLContext::getContext()->addGLTask([=]() { gl::glDeleteBuffers(1, &h); });
+				GLContext::getContext()->addGLTask([=]() {
+					gl::glDeleteVertexArrays(1, &h);
+				});
 			}
 		}
 
-
-
-		void draw(uint instances = 1, uint beg = 0, uint end = 0) const {
+		void draw(const VertexAttribs &attributes, uint instances = 1) const {
 			bind();
-			if(end <= beg) {
-				end = size;
-			}
-			gl::glDrawElementsInstanced(GL_TRIANGLES, 3 * (end - beg), GLType<uint>::value, (const void *)(3 * beg * sizeof(uint)), instances);
+			bindAttribs(attributes);
+			gl::glDrawElementsInstanced(GL_TRIANGLES, 3 * size, GLType<uint>::value, 0, instances);
 		}
 
 		T getRadius() const {
@@ -52,6 +55,42 @@ class VertexArrayObject : core::NonCopyable
 		}
 
 	private:
+		static uint maxAttribs() {
+			return GLContext::getContext()->getHWInt(GLContext::MaxVertexAttribs) - 4;
+		}
+
+		void bindAttribs(const VertexAttribs &attributes) const {
+			bool *att = new bool[maxAttribs()];
+			for(uint i = 0; i != maxAttribs(); i++) {
+				att[i] = false;
+			}
+			for(const VertexAttribs::Attrib &attrib : attributes.attribs) {
+				if(attrib.slot <= 3) {
+					fatal("Vertex attribs slots <= 3 are reserved.");
+				}
+				if(attrib.slot - 4 >= maxAttribs()) {
+					fatal("No enought vertex attribs slots.");
+				}
+				if(att[attrib.slot - 4]) {
+					fatal("Multiple vertex attribs on same slot.");
+				}
+				att[attrib.slot - 4] = true;
+				attrib.buffer->update(true);
+				gl::glVertexAttribPointer(attrib.slot, attrib.size, attrib.type, GL_FALSE, 0, 0);
+			}
+			for(uint i = 0; i != maxAttribs(); i++) {
+				if(attribs[i] != att[i]) {
+					if(att[i]) {
+						gl::glEnableVertexAttribArray(i + 4);
+					} else {
+						gl::glDisableVertexAttribArray(i + 4);
+					}
+				}
+			}
+			std::swap(attribs, att);
+			delete[] att;
+		}
+
 		void bind() const {
 			if(!handle) {
 				data.bind();
@@ -77,6 +116,7 @@ class VertexArrayObject : core::NonCopyable
 		StaticBuffer<Vertex<T>, Array> data;
 		StaticBuffer<uint, Index> indexes;
 
+		mutable bool *attribs;
 		mutable gl::GLuint handle;
 };
 

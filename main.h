@@ -40,6 +40,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/SceneRenderer.h>
 #include <n/graphics/FrameBufferRenderer.h>
 #include <n/graphics/FrameBuffer.h>
+#include <n/graphics/GBufferRenderer.h>
+#include <n/graphics/FontCache.h>
+#include <n/graphics/DynamicBuffer.h>
 
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>
@@ -86,6 +89,10 @@ class Obj : public StaticMesh
 			axis = ((Vec3(random(), random(), random()) - 0.5) * 2).normalized();
 		}
 
+		void setAttribs(const VertexAttribs &a) {
+			attribs = a;
+		}
+
 		virtual void render(RenderQueue &qu) override {
 			static Timer timer;
 			static double x = 0;
@@ -97,10 +104,14 @@ class Obj : public StaticMesh
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
-			StaticMesh::render(qu);
+			//StaticMesh::render(qu);
+			for(MeshInstanceBase<> *b : getMeshInstance()) {
+				qu.insert(RenderBatch(getTransform().getMatrix(), b, attribs));
+			}
 		}
 
 	private:
+		VertexAttribs attribs;
 		String model;
 		Vec3 axis;
 };

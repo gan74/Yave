@@ -25,13 +25,14 @@ namespace n {
 namespace graphics {
 
 namespace internal {
-	class UniformBufferBase : core::NonCopyable
+	template<gl::GLenum Type>
+	class DynamicBufferBase : core::NonCopyable
 	{
 		public:
-			UniformBufferBase(uint si) : size(si), buffer(malloc(size)), handle(0), modified(true) {
+			DynamicBufferBase(uint si) : size(si), buffer(malloc(size)), handle(0), modified(true) {
 			}
 
-			~UniformBufferBase() {
+			~DynamicBufferBase() {
 				free(buffer);
 				if(handle) {
 					gl::GLuint h = handle;
@@ -44,23 +45,28 @@ namespace internal {
 		protected:
 			friend class graphics::ShaderCombinaison;
 
-			void update() const {
+			template<typename T>
+			friend class VertexArrayObject;
+
+			void update(bool forceBind = false) const {
 				if(modified) {
 					if(!handle) {
 						gl::glGenBuffers(1, (gl::GLuint *)&handle);
-						gl::glBindBuffer(GL_UNIFORM_BUFFER, handle);
-						gl::glBufferData(GL_UNIFORM_BUFFER, size, buffer, GL_DYNAMIC_DRAW);
+						gl::glBindBuffer(Type, handle);
+						gl::glBufferData(Type, size, buffer, GL_DYNAMIC_DRAW);
 					} else {
-						gl::glBindBuffer(GL_UNIFORM_BUFFER, handle);
-						void *p = gl::glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+						gl::glBindBuffer(Type, handle);
+						void *p = gl::glMapBuffer(Type, GL_WRITE_ONLY);
 						if(!p) {
-							gl::glBufferSubData(GL_UNIFORM_BUFFER, 0, size, buffer);
+							gl::glBufferSubData(Type, 0, size, buffer);
 						} else {
 							memcpy(p, buffer, size);
-							gl::glUnmapBuffer(GL_UNIFORM_BUFFER);
+							gl::glUnmapBuffer(Type);
 						}
 					}
 					modified = false;
+				} else if(forceBind) {
+					gl::glBindBuffer(Type, handle);
 				}
 			}
 
@@ -70,26 +76,159 @@ namespace internal {
 			mutable bool modified;
 	};
 
+	template<typename T, gl::GLenum Type>
+	class TypedDynamicBufferBase : public internal::DynamicBufferBase<Type>
+	{
+		static_assert(TypeInfo<T>::isPod, "TypedDynamicBufferBase should only contain pod");
+
+		using DynamicBufferBase<Type>::buffer;
+		using DynamicBufferBase<Type>::size;
+		using DynamicBufferBase<Type>::modified;
+
+		public:
+			class const_iterator
+			{
+				public:
+					const_iterator &operator++() { // ++prefix
+						it++;
+						return *this;
+					}
+
+					const_iterator &operator--() { // --prefix
+						it--;
+						return *this;
+					}
+
+					const_iterator &operator++(int) { // postfix++
+						it++;
+						return const_iterator(it - 1);
+					}
+
+					const_iterator &operator--(int) { // postfix--
+						it--;
+						return const_iterator(it + 1);
+					}
+
+					const T &operator*() const {
+						return *it;
+					}
+
+					bool operator==(const const_iterator &i) const {
+						return i.it == it;
+					}
+
+					bool operator!=(const const_iterator &i) const {
+						return i.it != it;
+					}
+
+				private:
+					friend class iterator;
+					friend class TypedDynamicBufferBase;
+
+					const_iterator(const T *i) : it(i){
+					}
+
+					const T *it;
+			};
+
+
+			class iterator
+			{
+				public:
+					iterator &operator++() { // ++prefix
+						it++;
+						return *this;
+					}
+
+					iterator &operator--() { // --prefix
+						it--;
+						return *this;
+					}
+
+					iterator &operator++(int) { // postfix++
+						it++;
+						return iterator(it - 1);
+					}
+
+					iterator &operator--(int) { // postfix--
+						it--;
+						return iterator(it + 1);
+					}
+
+					T &operator*() {
+						return *it;
+					}
+
+					const T &operator*() const {
+						return *it;
+					}
+
+					operator const_iterator() const {
+						return const_iterator(it);
+					}
+
+					bool operator==(const const_iterator &i) const {
+						return i.it == it;
+					}
+
+					bool operator!=(const const_iterator &i) const {
+						return i.it != it;
+					}
+
+				private:
+					friend class TypedDynamicBufferBase;
+					iterator(T *i) : it(i){
+					}
+
+					T *it;
+			};
+
+
+			uint getSize() const {
+				return size / sizeof(T);
+			}
+
+			TypedDynamicBufferBase(uint si) : internal::DynamicBufferBase<Type>(si * sizeof(T)) {
+			}
+
+			core::Ref<T> operator[](uint i) {
+				return core::Ref<T>(((T *)buffer)[i], [=]() { modified = true; });
+			}
+
+			iterator begin() {
+				return iterator((T *)buffer);
+			}
+
+			iterator end() {
+				return iterator(((T *)buffer) + getSize());
+			}
+
+			const_iterator begin() const {
+				return iterator((T *)buffer);
+			}
+
+			const_iterator end() const {
+				return const_iterator(((T *)buffer) + getSize());
+			}
+		protected:
+			void *getBuffer() {
+				return buffer;
+			}
+	};
+
 }
 
 template<typename T>
-class UniformBuffer : public internal::UniformBufferBase
+class UniformBuffer : public internal::TypedDynamicBufferBase<T, GL_UNIFORM_BUFFER>
 {
-	static_assert(TypeInfo<T>::isPod, "UniformBuffer should only contain pod");
-
 	public:
-		UniformBuffer(uint si) : internal::UniformBufferBase(si * sizeof(T)) {
+		UniformBuffer(uint s) : internal::TypedDynamicBufferBase<T, GL_UNIFORM_BUFFER>(s) {
 		}
-
-		core::Ref<T> operator[](uint i) {
-			return core::Ref<T>(((T *)buffer)[i], [=]() { modified = true; });
-		}
-
-
 };
 
 }
 }
+
 
 #endif // N_GRAPHICS_UNIFORMBUFFER
 

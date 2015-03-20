@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_MESHINSTANCE
 
 #include "TriangleBuffer.h"
+#include "VertexAttribs.h"
 #include "Material.h"
 #include <n/assets/Asset.h>
 
@@ -35,12 +36,12 @@ class MeshInstanceBase : core::NonCopyable
 			delete vao;
 		}
 
-		void draw(uint instances = 1, uint beg = 0, uint end = 0) const {
+		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
 			if(!vao) {
 				vao = new VertexArrayObject<T>(buffer);
 			}
 			material.bind();
-			vao->draw(instances, beg, end);
+			vao->draw(attribs, instances);
 		}
 
 		const Material<T> &getMaterial() const {
@@ -75,9 +76,9 @@ namespace internal {
 			}
 		}
 
-		void draw(uint instances = 1) const {
+		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
 			for(const MeshInstanceBase<T> *b : bases) {
-				b->draw(instances);
+				b->draw(attribs, instances);
 			}
 		}
 
@@ -126,10 +127,10 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 			return i ? i->getRadius() : 0;
 		}
 
-		void draw(uint instances = 1) const {
+		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
 			const internal::MeshInstance<T> *i = getInternal();
 			if(i) {
-				i->draw(instances);
+				i->draw(attribs, instances);
 			}
 		}
 

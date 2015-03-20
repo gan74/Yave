@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/defines.h>
 #include <n/types.h>
 
+#include <n/math/Vec.h>
+
 namespace n {
 namespace graphics {
 namespace gl {
@@ -33,6 +35,7 @@ template<typename T>
 struct GLType
 {
 	static constexpr gl::GLenum value = 0;
+	static constexpr uint size = 0;
 };
 
 template<>
@@ -40,6 +43,7 @@ struct GLType<float>
 {
 	static_assert(sizeof(float) == 4, "float should be 4 byte long.");
 	static constexpr gl::GLenum value = GL_FLOAT;
+	static constexpr uint size = 1;
 };
 
 template<>
@@ -47,42 +51,56 @@ struct GLType<double>
 {
 	static_assert(sizeof(double) == 8, "double should be 8 byte long.");
 	static constexpr gl::GLenum value = GL_DOUBLE;
+	static constexpr uint size = 1;
 };
 
 template<>
 struct GLType<int8>
 {
 	static constexpr gl::GLenum value = GL_BYTE;
+	static constexpr uint size = 1;
 };
 
 template<>
 struct GLType<uint8>
 {
 	static constexpr gl::GLenum value = GL_UNSIGNED_BYTE;
+	static constexpr uint size = 1;
 };
 
 template<>
 struct GLType<int16>
 {
 	static constexpr gl::GLenum value = GL_SHORT;
+	static constexpr uint size = 1;
 };
 
 template<>
 struct GLType<uint16>
 {
 	static constexpr gl::GLenum value = GL_UNSIGNED_SHORT;
+	static constexpr uint size = 1;
 };
 
 template<>
 struct GLType<int32>
 {
 	static constexpr gl::GLenum value = GL_INT;
+	static constexpr uint size = 1;
 };
 
 template<>
 struct GLType<uint32>
 {
 	static constexpr gl::GLenum value = GL_UNSIGNED_INT;
+	static constexpr uint size = 1;
+};
+
+template<uint N, typename T>
+struct GLType<math::Vec<N, T>>
+{
+	static constexpr gl::GLenum value = GLType<T>::value;
+	static constexpr uint size = N;
 };
 
 enum BufferBinding

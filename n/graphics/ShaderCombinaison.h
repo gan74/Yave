@@ -43,7 +43,7 @@ class ShaderCombinaison : core::NonCopyable
 		{
 			gl::GLuint addr;
 			gl::GLuint slot;
-			const internal::UniformBufferBase *buffer;
+			const typename internal::DynamicBufferBase<GL_UNIFORM_BUFFER> *buffer;
 		};
 
 	public:

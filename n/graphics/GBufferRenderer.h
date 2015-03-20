@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "BufferedRenderer.h"
 #include "ShaderCombinaison.h"
 #include "Shader.h"
-#include <iostream>
 
 namespace n {
 namespace graphics {

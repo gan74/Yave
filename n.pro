@@ -43,7 +43,8 @@ HEADERS += *h \
 		   n/assets/*.h \
 		   n/script/*.h \
 		   n/graphics/*.h \
-		   n/signals/*.h
+		   n/signals/*.h \
+    n/graphics/VertexAttribs.h
 
 
 SOURCES += dependencies/lodepng/*.cpp

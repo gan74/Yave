@@ -27,12 +27,12 @@ namespace graphics {
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<> &m, MeshInstanceBase<> *i) : instanciable(true), inst(i), matrix(m) {
+		RenderBatch(const math::Matrix4<> &m, MeshInstanceBase<> *i, const VertexAttribs &attr = VertexAttribs()) : instanciable(true), inst(i), matrix(m), attribs(attr) {
 		}
 
 		void operator()() const {
 			GLContext::getContext()->setModelMatrix(matrix);
-			inst->draw();
+			inst->draw(attribs);
 		}
 
 		bool isInstanciable() const {
@@ -48,6 +48,7 @@ class RenderBatch
 
 		MeshInstanceBase<> *inst;
 		math::Matrix4<> matrix;
+		VertexAttribs attribs;
 };
 
 }
