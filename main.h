@@ -43,6 +43,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/GBufferRenderer.h>
 #include <n/graphics/FontCache.h>
 #include <n/graphics/DynamicBuffer.h>
+#include <n/graphics/ShaderRenderer.h>
+
 
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>
