@@ -96,7 +96,8 @@ class ShaderCombinaison : core::NonCopyable
 
 								"void main() {"
 									"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
-									"n_Position = (gl_Position = n_ViewProjectionMatrix * model).xyz;"
+									"gl_Position = n_ViewProjectionMatrix * model;"
+									"n_Position = model.xyz;"
 									"n_View = normalize(n_Camera - model.xyz);"
 									"n_Normal = mat3(n_ModelMatrix) * n_VertexNormal;"
 									"n_Tangent = mat3(n_ModelMatrix) * n_VertexTangent;"
