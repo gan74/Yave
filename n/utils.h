@@ -180,7 +180,7 @@ namespace core {
 	uint hash(const void *key, uint len, uint seed = 0x1000193);
 
 	constexpr uint log2ui(uint n) {
-		return n >> 1 ? log2ui(n >> 1) + 1 : 0;
+		return (n >> 1) ? log2ui(n >> 1) + 1 : 0;
 	}
 
 	void *safeRealloc(void *c, uint size);
