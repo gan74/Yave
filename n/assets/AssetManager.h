@@ -76,9 +76,11 @@ namespace internal {
 			}
 
 			AssetKey &operator=(const AssetKey &k) {
-				delete base;
+				if(k.base != base) {
+					delete base;
+					base = k.base->clone();
+				}
 				types = k.types;
-				base = k.base->clone();
 				return *this;
 			}
 
