@@ -14,35 +14,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifdef N_USE_LODEPNG
+#ifndef N_GRAPHICS_DEFERREDSHADINGRENDERER
+#define N_GRAPHICS_DEFERREDSHADINGRENDERER
 
-#include "ImageLoader.h"
-#include <dependencies/lodepng/lodepng.h>
-#include <n/utils.h>
-#include <n/defines.h>
+#include "GBufferRenderer.h"
 
 namespace n {
 namespace graphics {
 
-class PngDecoder : public graphics::ImageLoader::ImageDecoder<PngDecoder, core::String>
+class DeferredShadingRenderer : public BufferedRenderer
 {
 	public:
-		PngDecoder() : graphics::ImageLoader::ImageDecoder<PngDecoder, core::String>() {
-		}
+		DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s = math::Vec2ui(0));
 
-		graphics::internal::Image *operator()(core::String name) override {
-			std::vector<byte> image;
-			uint32 width = 0;
-			uint32 height = 0;
-			uint err = lodepng::decode(image, width, height, name.toChar());
-			if(err) {
-				return 0;
-			}
-			return new internal::Image(math::Vec2ui(width, height), ImageFormat::R8G8B8A8, image.data());
-		}
+		virtual void *prepare() override;
+		virtual void render(void *) override;
+
+	private:
+		GBufferRenderer *child;
+
+		static ShaderCombinaison *getShader();
 };
 
 }
 }
 
-#endif
+
+#endif // N_GRAPHICS_DEFERREDSHADINGRENDERER
+

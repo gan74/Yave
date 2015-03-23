@@ -3,10 +3,9 @@
 #include "main.h"
 
 Console console;
-static_assert(sizeof(void *) == 4, "compiler should be 32bits");
-
 
 ShaderCombinaison *createShader();
+ShaderCombinaison *createLightShader();
 
 int main(int, char **) {
 	SDL_Window *win = createWindow();
@@ -33,8 +32,8 @@ int main(int, char **) {
 		scene.insert(new RandObj());
 	}
 
-	//FrameBufferRenderer renderer(new GBufferRenderer(new SceneRenderer(&scene)));
-	ShaderRenderer renderer(new SceneRenderer(&scene), createShader());
+	FrameBufferRenderer renderer(new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene))));
+	//ShaderRenderer renderer(new SceneRenderer(&scene), createShader());
 
 	console.start();
 
@@ -68,10 +67,9 @@ int main(int, char **) {
 
 
 
-
-
-
-
+ShaderCombinaison *createLightShader() {
+	return 0;
+}
 
 ShaderCombinaison *createShader() {
 	Shader<FragmentShader> *frag = new Shader<FragmentShader>("#version 420 core\n"
@@ -79,26 +77,42 @@ ShaderCombinaison *createShader() {
 		"uniform float width;"
 		"in vec3 bc;"
 
+		"in flat int id;"
+
 		"float edgeFactor() {"
 			"vec3 d = fwidth(bc);"
 			"vec3 a3 = smoothstep(vec3(0.0), d * width, bc);"
 			"return min(min(a3.x, a3.y), a3.z);"
 		"}"
 
+		"float vertexFactor() {"
+			"vec3 a3 = bc;"
+			"float m = max(max(a3.x, a3.y), a3.z);"
+			"return a3.x + a3.y + a3.z - m;"
+		"}"
+
+
 		"void main() {"
 			"color = vec4(vec3(mix(0.0, 0.7, edgeFactor())), 1.0);"
+			/*"if(vertexFactor() < 0.1) {"
+				"vec3 b = vec3((id >> 0) & 0xFF, (id >> 8) & 0xFF, (id >> 16) & 0xFF);"
+				"color = vec4(vec3(b / vec3(0xFF, 16, 0xFF)), 1.0);"
+			"}"*/
 		"}"
 	);
 
 	Shader<GeometryShader> *geom = new Shader<GeometryShader>("#version 420 core\n"
 		"layout(triangles) in;"
 		"layout (triangle_strip, max_vertices = 3) out;"
+		"in int n_VertexID[3];"
 		"in vec3 n_Position[3];"
 		"out vec3 bc;"
+		"out flat int id;"
 		"void main() {"
 			"vec3 bcs[3] = vec3[3](vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0));"
 			"for(int i = 0; i < gl_in.length(); i++) {"
 				"gl_Position = gl_in[i].gl_Position;"
+				"id = n_VertexID[i];"
 				"bc = bcs[i];"
 				"EmitVertex();"
 			"}"

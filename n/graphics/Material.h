@@ -76,6 +76,8 @@ namespace internal {
 		T metallic;
 		Texture diffuse;
 
+		core::Map<core::String, Texture> textures;
+
 		uint index;
 	};
 
@@ -116,17 +118,20 @@ class Material : private assets::Asset<internal::Material<T>>
 
 		void bind() const {
 			const internal::Material<T> *i = getInternal();
-			if(i) {
-				const ShaderCombinaison *sh = GLContext::getContext()->getShader();
+			const ShaderCombinaison *sh = GLContext::getContext()->getShader();
+			if(i && sh) {
 				sh->setValue("n_Color", i->color);
 				sh->setValue("n_Roughness", i->roughness);
 				sh->setValue("n_Metallic", i->metallic);
 
 				sh->setValue("n_DiffuseMul", i->diffuse.isNull() ? 0.0 : 1.0);
 				sh->setValue("n_Diffuse", i->diffuse);
+
+				for(const auto &p : i->textures) {
+					sh->setValue(p._1, p._2);
+				}
 			} else {
-				fatal("No shader");
-				//#warning not implemented
+				fatal("No shader or no material");
 			}
 		}
 

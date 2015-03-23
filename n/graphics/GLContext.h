@@ -27,6 +27,9 @@ namespace graphics {
 class ShaderCombinaison;
 class FrameBuffer;
 
+template<typename T>
+class VertexArrayObject;
+
 class GLContext
 {
 	public:
@@ -75,6 +78,8 @@ class GLContext
 			return hwInts[hw];
 		}
 
+		const VertexArrayObject<float> &getScreen() const;
+
 	private:
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;
@@ -94,6 +99,8 @@ class GLContext
 		int hwInts[Max];
 
 		math::Vec2ui viewport;
+
+		mutable VertexArrayObject<float> *screen;
 };
 
 }

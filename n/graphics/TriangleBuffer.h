@@ -53,6 +53,7 @@ class TriangleBuffer
 				FreezedTriangleBuffer(FreezedTriangleBuffer &&fr) {
 					indexes.swap(fr.indexes);
 					vertices.swap(fr.vertices);
+					radius = fr.radius;
 				}
 
 				FreezedTriangleBuffer(const FreezedTriangleBuffer &b) = default;
@@ -174,6 +175,7 @@ class TriangleBuffer
 
 		static const FreezedTriangleBuffer &getSphere();
 		static const FreezedTriangleBuffer &getCube();
+		static const FreezedTriangleBuffer &getScreen();
 
 	private:
 		template<typename U>
@@ -239,6 +241,26 @@ const typename TriangleBuffer<T>::FreezedTriangleBuffer &TriangleBuffer<T>::getC
 	}
 	return *fr;
 }
+
+template<typename T>
+const typename TriangleBuffer<T>::FreezedTriangleBuffer &TriangleBuffer<T>::getScreen() {
+	static FreezedTriangleBuffer *fr = 0;
+	if(!fr) {
+		TriangleBuffer<T> tris(VertexBuffer<T>(core::Array<Vertex<T>>(
+			Vertex<T>(math::Vec<3, T>(-1.0, -1.0, 0.0), math::Vec<2, T>(0.0, 0.0)),
+			Vertex<T>(math::Vec<3, T>(1.0, -1.0, 0.0), math::Vec<2, T>(1.0, 0.0)),
+			Vertex<T>(math::Vec<3, T>(1.0, 1.0, 0.0), math::Vec<2, T>(1.0, 1.0)),
+			Vertex<T>(math::Vec<3, T>(-1.0, 1.0, 0.0), math::Vec<2, T>(0.0, 1.0)))));
+
+		uint indexes[] = {0, 1, 2, 2, 3, 0};
+		for(uint i = 0; i < sizeof(indexes) / sizeof(uint); i += 3) {
+			tris.append(indexes[i], indexes[i + 1], indexes[i + 2]);
+		}
+		fr = new FreezedTriangleBuffer(tris.freezed());
+	}
+	return *fr;
+}
+
 
 
 

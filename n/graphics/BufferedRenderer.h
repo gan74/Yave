@@ -29,28 +29,15 @@ namespace graphics {
 class BufferedRenderer : public Renderer
 {
 	public:
-		BufferedRenderer(Renderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : Renderer(), buffer(s.isNull() ? GLContext::getContext()->getViewport() : s), child(c) {
+		BufferedRenderer(const math::Vec2ui &s = math::Vec2ui(0)) : Renderer(), buffer(s.isNull() ? GLContext::getContext()->getViewport() : s) {
 		}
 
 		const FrameBuffer &getFrameBuffer() const {
 			return buffer;
 		}
 
-	public:
-		virtual void *prepare() override {
-			return child->prepare();
-		}
-
-		virtual void render(void *ptr) override {
-			buffer.bind();
-			child->render(ptr);
-		}
-
 	protected:
 		FrameBuffer buffer;
-
-	private:
-		Renderer *child;
 };
 
 }

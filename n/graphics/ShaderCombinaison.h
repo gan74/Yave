@@ -93,10 +93,12 @@ class ShaderCombinaison : core::NonCopyable
 								"out vec3 n_Binormal;"
 								"out vec3 n_View;"
 								"out vec2 n_TexCoord;"
+								"out int n_VertexID;"
 
 								"void main() {"
 									"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
 									"gl_Position = n_ViewProjectionMatrix * model;"
+									"n_VertexID = gl_VertexID;"
 									"n_Position = model.xyz;"
 									"n_View = normalize(n_Camera - model.xyz);"
 									"n_Normal = mat3(n_ModelMatrix) * n_VertexNormal;"

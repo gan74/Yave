@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderCombinaison.h"
 #include "GL.h"
 #include "FrameBuffer.h"
+#include "VertexArrayObject.h"
 #include <n/concurrent/Thread.h>
 #include <n/core/Timer.h>
 
@@ -80,7 +81,7 @@ void GLContext::finishTasks() {
 	}
 }
 
-GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
+GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600), screen(0) {
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
@@ -105,6 +106,10 @@ GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
 	gl::glGetIntegerv(GL_MAX_TEXTURE_UNITS, &hwInts[MaxTextures]);
 	gl::glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
 
+	if(hwInts[MaxVertexAttribs] <= 4) {
+		fatal("No enought vertex attribs.");
+	}
+
 	gl::glGetError();
 
 	gl::glDebugMessageCallback(&debugOut, 0);
@@ -112,6 +117,8 @@ GLContext::GLContext() : shader(0), frameBuffer(0), viewport(800, 600) {
 }
 
 GLContext::~GLContext() {
+	delete screen;
+	finishTasks();
 }
 
 void GLContext::setDebugEnabled(bool deb) {
@@ -189,6 +196,13 @@ const math::Matrix4<> &GLContext::getViewMatrix() const {
 
 const math::Matrix4<> &GLContext::getModelMatrix() const {
 	return model;
+}
+
+const VertexArrayObject<float> &GLContext::getScreen() const {
+	if(!screen) {
+		screen = new VertexArrayObject<float>(TriangleBuffer<>::getScreen());
+	}
+	return *screen;
 }
 
 }

@@ -44,6 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/FontCache.h>
 #include <n/graphics/DynamicBuffer.h>
 #include <n/graphics/ShaderRenderer.h>
+#include <n/graphics/DeferredShadingRenderer.h>
 
 
 #include <n/math/StaticConvexVolume.h>
@@ -87,7 +88,7 @@ bool run(SDL_Window *mainWindow) {
 class Obj : public StaticMesh
 {
 	public:
-		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)), model(n) {
+		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)), model(n), autoScale(0) {
 			axis = ((Vec3(random(), random(), random()) - 0.5) * 2).normalized();
 		}
 

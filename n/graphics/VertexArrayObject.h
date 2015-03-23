@@ -28,7 +28,9 @@ template<typename T = float>
 class VertexArrayObject : core::NonCopyable
 {
 	public:
-		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius), size(tr.indexes.size() / 3), data(tr.vertices), indexes(tr.indexes), attribs(new bool[maxAttribs()]), handle(0) {
+		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius),
+			size(tr.indexes.size() % 3 ? uint(fatal("Invalid non-trianglulated mesh.")) : tr.indexes.size() / 3),
+			data(tr.vertices), indexes(tr.indexes), attribs(new bool[maxAttribs()]), handle(0) {
 			for(uint i = 0; i != maxAttribs(); i++) {
 				attribs[i] = false;
 			}

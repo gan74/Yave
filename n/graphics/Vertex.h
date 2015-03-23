@@ -32,6 +32,9 @@ class Vertex
 		Vertex(const math::Vec<3, T> &p, const math::Vec<3, T> &n = math::Vec<3, T>(), const math::Vec<2, T> &t = math::Vec<2, T>()) : pos(p), tex(t), norm(n) {
 		}
 
+		Vertex(const math::Vec<3, T> &p, const math::Vec<2, T> &t) : Vertex(p, math::Vec<3, T>(), t) {
+		}
+
 		const math::Vec<3, T> &p() const {
 			return pos;
 		}

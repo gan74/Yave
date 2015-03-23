@@ -34,8 +34,34 @@ class GBufferRenderer : public BufferedRenderer
 			RGBDiffuseRGBNormal = 0
 		};
 
-		GBufferRenderer(Renderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : BufferedRenderer(c, s) {
-			shader = new ShaderCombinaison(frag = new Shader<FragmentShader>("#version 420 core\n"
+		GBufferRenderer(Renderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : BufferedRenderer(s), child(c) {
+			shader = new ShaderCombinaison(createShader());
+			setFormat(RGBDiffuseRGBNormal);
+		}
+
+		~GBufferRenderer() {
+			delete shader;
+		}
+
+		void setFormat(BufferFormat) {
+			buffer.setAttachmentEnabled(0, true);
+			buffer.setAttachmentEnabled(1, true);
+			buffer.setDepthEnabled(true);
+		}
+
+		virtual void *prepare() override {
+			return child->prepare();
+		}
+
+		virtual void render(void *ptr) override {
+			shader->bind();
+			buffer.bind();
+			child->render(ptr);
+		}
+
+	private:
+		static Shader<FragmentShader> *createShader() {
+			static Shader<FragmentShader> *sh = new Shader<FragmentShader>("#version 420 core\n"
 					"layout(location = 0) out vec4 n_0;"
 					"layout(location = 1) out vec4 n_1;"
 
@@ -51,29 +77,12 @@ class GBufferRenderer : public BufferedRenderer
 
 					"void main() {"
 						"n_0 = n_Color * mix(vec4(1.0), texture(n_Diffuse, n_TexCoord), n_DiffuseMul);"
-						"n_1 = vec4(n_Normal * 0.5 + 0.5, 1.0);"
-					"}"));
-			setFormat(RGBDiffuseRGBNormal);
+						"n_1 = vec4(normalize(n_Normal) * 0.5 + 0.5, n_Roughness);"
+					"}");
+			return sh;
 		}
 
-		~GBufferRenderer() {
-			delete frag;
-			delete shader;
-		}
-
-		void setFormat(BufferFormat) {
-			buffer.setAttachmentEnabled(0, true);
-			buffer.setAttachmentEnabled(1, true);
-			buffer.setDepthEnabled(true);
-		}
-
-		virtual void render(void *ptr) override {
-			shader->bind();
-			BufferedRenderer::render(ptr);
-		}
-
-	private:
-		Shader<FragmentShader> *frag;
+		Renderer *child;
 		ShaderCombinaison *shader;
 
 };

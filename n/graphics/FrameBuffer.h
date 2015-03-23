@@ -48,6 +48,15 @@ class FrameBuffer : core::NonCopyable
 			return base;
 		}
 
+		const Texture &getAttachement(uint slot) const {
+			return attachments[slot];
+		}
+
+		Texture getDepthAttachement() const {
+			return depth ? *depth : Texture();
+		}
+
+
 	private:
 		void setModified();
 		void setUnmodified() const;
