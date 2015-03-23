@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "PrimitieType.h"
 #include "Primitive.h"
+#include <n/defines.h>
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
@@ -64,6 +66,8 @@ class DynamicPrimitive
 
 }
 }
+
+#endif
 
 
 #endif // N_SCRIPT_DYNAMIC_PRIMITIVE_H

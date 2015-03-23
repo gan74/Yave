@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Bytecode.h"
 #include "DynamicBytecode.h"
 #include "PrimitieType.h"
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
@@ -30,3 +31,5 @@ static_assert(sizeof(PrimitiveType) == 2, "sizeof(PrimitiveType) should be 16 bi
 
 }
 }
+
+#endif

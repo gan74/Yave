@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_SCRIPT_PRIMITIETYPE_H
 
 #include <n/types.h>
+#include <n/defines.h>
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
@@ -91,6 +93,8 @@ class PrimitiveType
 
 }
 }
+
+#endif
 
 
 #endif // N_SCRIPT_PRIMITIETYPE_H

@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/core/Functor.h>
 #include "Token.h"
+#include <n/defines.h>
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
-
 
 class Lexer
 {
@@ -156,5 +157,7 @@ class Lexer
 
 }
 }
+
+#endif
 
 #endif // N_SCRIPT_LEXER_H

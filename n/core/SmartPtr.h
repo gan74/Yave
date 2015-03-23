@@ -42,7 +42,7 @@ template<typename T, typename C = concurrent::auint, typename Proxy = NoProxy<T>
 class SmartPtr
 {
 	public:
-		SmartPtr(T *&&p = 0) : ptr(p), count(ptr ? new C(1) : 0) {
+		SmartPtr(T *&&p = 0) : ptr(p), count(new C(1)) {
 		}
 
 		SmartPtr(const SmartPtr<T, C, Proxy> &p) : ptr(0), count(0) {

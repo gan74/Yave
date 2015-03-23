@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "DynamicBytecode.h"
 #include <n/core/String.h>
+#include <n/defines.h>
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
@@ -55,5 +57,7 @@ class Machine
 
 }
 }
+
+#endif
 
 #endif // N_CORE_MACHINE_H

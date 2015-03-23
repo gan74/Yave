@@ -17,11 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_SCRIPT_PRIMITIVE_H
 #define N_SCRIPT_PRIMITIVE_H
 
+#include <n/defines.h>
+#ifndef N_NO_SCRIPT
+
 namespace n {
 namespace script {
 
 union Primitive
 {
+	typedef void *PtrType;
+
 	Primitive() : Primitive(0) {
 	}
 
@@ -57,10 +62,12 @@ union Primitive
 
 	int32 Int;
 	float Float;
-	void *ptr;
+	PtrType ptr;
 };
 
 }
 }
+
+#endif
 
 #endif // N_SCRIPT_PRIMITIVE_H

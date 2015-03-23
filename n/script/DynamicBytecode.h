@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Bytecode.h"
 #include "DynamicPrimitive.h"
+#include <n/defines.h>
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
@@ -91,5 +93,7 @@ struct DynamicBytecode
 
 }
 }
+
+#endif
 
 #endif // N_SCRIPT_DYMANIC_BYTECODE_H

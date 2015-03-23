@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/types.h>
 #include <n/defines.h>
 #include "Primitive.h"
+#include <n/defines.h>
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
@@ -50,5 +52,7 @@ struct Bytecode
 
 }
 }
+
+#endif
 
 #endif // N_SCRIPT_BYTECODE_H

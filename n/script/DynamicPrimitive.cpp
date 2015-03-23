@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "DynamicPrimitive.h"
 #include "Machine.h"
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
@@ -121,3 +122,5 @@ bool DynamicPrimitive::equals(const Primitive &o) const {
 
 }
 }
+
+#endif

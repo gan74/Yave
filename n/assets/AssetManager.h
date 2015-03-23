@@ -116,7 +116,7 @@ class ImmediateLoadingPolicy
 	public:
 		template<typename... Args>
 		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
-			AssetPtr<T> t = AssetPtr<T>(new const T*(loader(args...)));
+			AssetPtr<T> t(new typename AssetPtr<T>::PtrType(loader(args...)));
 			if(t.isNull()) {
 				t.invalidate();
 			}
@@ -131,7 +131,7 @@ class AsyncLoadingPolicy
 		template<typename... Args>
 		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
 			//static_assert(IsThreadSafe<Args...>::value, "Only thread-safe types should be used with AssetBuffer<T, AsyncLoadingPolicy>");
-			AssetPtr<T> ptr(new const T*(0));
+			AssetPtr<T> ptr(new concurrent::AtomicAssignable<const T *>(0));
 			concurrent::Async([=, &loader](Args... args) {
 				T *o = loader(args...);
 				if(o) {

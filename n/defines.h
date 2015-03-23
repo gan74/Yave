@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_DEFINES
 #define N_DEFINES
 
+#include <cstdint>
+
 namespace n {
 
 class Nothing;
@@ -29,6 +31,16 @@ void unused(T) {}
 }
 
 /* defines stuffs here */
+
+#ifndef PTRDIFF_MAX
+#error PTRDIFF_MAX not defined
+#endif
+
+#if (PTRDIFF_MAX == 0x7FFFFFFF)
+#define N_32BITS
+#else
+#define N_NOT_32BITS
+#endif
 
 #ifndef __GNUC__
 #define N_NO_FORCE_INLINE
@@ -44,12 +56,9 @@ void unused(T) {}
 #define N_FORCE_INLINE inline  __attribute__((always_inline))
 #endif
 
-
-/*#ifdef N_NO_PTHREAD_SPINLOCK
-#undef N_USE_PTHREAD_SPINLOCK
-#else
-#define N_USE_PTHREAD_SPINLOCK
-#endif*/
+#ifdef N_NOT_32BITS
+#define N_NO_SCRIPT
+#endif
 
 /****************** OS DEFINES BELOW ******************/
 

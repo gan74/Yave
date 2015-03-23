@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Machine.h"
+#ifndef N_NO_SCRIPT
 
 namespace n {
 namespace script {
@@ -326,5 +327,7 @@ DynamicPrimitive Machine::run(DynamicBytecode *code) {
 
 }
 }
+
+#endif
 
 #undef MATCH_ERROR
