@@ -109,5 +109,16 @@ namespace core {
 		h ^= h >> 15;
 		return h;
 	}
+
+	void *safeRealloc(void *c, uint size)  {
+		void *cc = realloc(c, size);
+		if(cc) {
+			return cc;
+		}
+		cc = malloc(size);
+		memcpy(cc, c, size);
+		free(c);
+		return cc;
+	}
 } //core
 } //n

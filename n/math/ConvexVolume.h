@@ -42,7 +42,7 @@ class ConvexVolume : public Volume<T>
 			return planes + count;
 		}
 
-		virtual typename Volume<T>::IntersectionState isInside(const Vec<3, T> &v, T r) const override {
+		virtual bool isInside(const Vec<3, T> &v, T r) const override {
 			for(const Plane<T> &p : *this) {
 				if(!p.isInside(v, r)) {
 					return false;

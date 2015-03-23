@@ -26,7 +26,7 @@ template<typename T>
 class Ref : NonCopyable
 {
 	public:
-		Ref(T &t, const Functor<void()> f = Nothing()) : value(t), modified(f) {
+		Ref(T &t, const Functor<void()> &f = Nothing()) : value(t), modified(f) {
 		}
 
 		Ref(Ref<T> &&r) : value(r.value), modified(r.modified) {

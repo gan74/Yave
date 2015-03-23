@@ -47,9 +47,6 @@ class PrimitiveType
 		PrimitiveType(uint16 t) : type(t) {
 		}
 
-		PrimitiveType(const PrimitiveType &c) : type(c.type) {
-		}
-
 		operator Type() const {
 			return Type(type);
 		}

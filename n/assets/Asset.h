@@ -25,7 +25,7 @@ namespace assets {
 template<typename T>
 class AssetPtr : public core::SmartPtr<concurrent::AtomicAssignable<const T *>, concurrent::auint>
 {
-	static constexpr T *InvalidPtr = (T *)0x1;
+	static constexpr T *InvalidPtr = (T *)0x1; // I know...
 	public:
 		using PtrType = concurrent::AtomicAssignable<const T *>;
 

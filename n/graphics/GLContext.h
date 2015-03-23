@@ -42,7 +42,7 @@ class GLContext
 
 
 		math::Vec2ui getViewport() const;
-		void setViewport(const math::Vec2ui &view);
+		void setViewport(const math::Vec2ui &v);
 
 		void addGLTask(const core::Functor<void()> &f);
 

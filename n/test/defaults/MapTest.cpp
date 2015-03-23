@@ -50,7 +50,7 @@ class MapTest : public TestTemplate<MapTest>
 				test(it != map.end(), true, "Iteration test failed");
 				test((*it)._1, i, "Iterator key test failed");
 				test((*it)._2, vals[i], "Iterator value test failed");
-				it++;
+				++it;
 			}
 			test(it, map.end(), "Iteration end test failed");
 			it = map.find(4);

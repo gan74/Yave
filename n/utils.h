@@ -183,6 +183,8 @@ namespace core {
 		return n >> 1 ? log2ui(n >> 1) + 1 : 0;
 	}
 
+	void *safeRealloc(void *c, uint size);
+
 	/*template<typename I>
 	void radixSort(I beg, I end) {
 		typedef typename TypeContent<I>::type ElemType;

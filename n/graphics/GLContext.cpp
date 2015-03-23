@@ -122,8 +122,8 @@ void GLContext::setDebugEnabled(bool deb) {
 	}
 }
 
-void GLContext::setViewport(const math::Vec2ui &view) {
-	viewport = view;
+void GLContext::setViewport(const math::Vec2ui &v) {
+	viewport = v;
 	if(!frameBuffer) {
 		gl::glViewport(0, 0, viewport.x(), viewport.y());
 	}

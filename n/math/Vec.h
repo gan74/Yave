@@ -45,6 +45,9 @@ class Vec
 	}
 
 
+	static_assert(N != 0, "Can not create a Vec of dimension 0");
+
+
 	public:
 		typedef T * iterator;
 		typedef const T *const_iterator;
@@ -190,26 +193,32 @@ class Vec
 		}
 
 		T &y() {
+			static_assert(N > 1, "Accessing out of bound member");
 			return vec[1];
 		}
 
 		const T &y() const {
+			static_assert(N > 1, "Accessing out of bound member");
 			return vec[1];
 		}
 
 		T &z() {
+			static_assert(N > 2, "Accessing out of bound member");
 			return vec[2];
 		}
 
 		const T &z() const {
+			static_assert(N > 2, "Accessing out of bound member");
 			return vec[2];
 		}
 
 		T &w() {
+			static_assert(N > 3, "Accessing out of bound member");
 			return vec[3];
 		}
 
 		const T &w() const {
+			static_assert(N > 3, "Accessing out of bound member");
 			return vec[3];
 		}
 

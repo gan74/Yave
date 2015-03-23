@@ -39,7 +39,6 @@ void unused(T) {}
 #if (PTRDIFF_MAX == 0x7FFFFFFF)
 #define N_32BITS
 #else
-#warning ypu are not compiling using a 32 bits compiler.
 #define N_NOT_32BITS
 #endif
 
@@ -58,6 +57,7 @@ void unused(T) {}
 #endif
 
 #ifdef N_NOT_32BITS
+#warning you are not compiling using a 32 bits compiler.
 #define N_NO_SCRIPT
 #endif
 

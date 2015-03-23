@@ -99,7 +99,7 @@ class Obj : public StaticMesh
 			static Timer timer;
 			static double x = 0;
 			double t = timer.reset();
-			x += t * 0.25;
+			x += t * 0.1;
 			Quaternion<> q = Quaternion<>::fromAxisAngle(axis.cross(Vec3(1, 0, 0)).cross(axis), t);
 			axis = q(axis);
 			setRotation(Quaternion<>::fromAxisAngle(axis, x));

@@ -667,8 +667,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 
 		void setCapacityUnsafe(uint s, uint ns) {
 			if(TypeInfo<T>::isPod) {
-				// cppcheck-suppress memleakOnRealloc
-				data = (T *)realloc(data, ns * sizeof(T));
+				data = (T *)safeRealloc(data, ns * sizeof(T));
 			} else {
 				T *n = (T *)malloc(ns * sizeof(T));
 				move(n, data, s);

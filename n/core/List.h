@@ -186,7 +186,7 @@ class List
 			lSize = l.lSize;
 			l.head = h;
 			l.tail = t;
-			lSize = s;
+			l.lSize = s;
 		}
 
 		template<typename A, typename... Args>

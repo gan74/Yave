@@ -67,8 +67,7 @@ N_FORCE_INLINE char *reallocStr(SCType **count, uint s) {
 	uint allocated = *(uint *)(cptr + 1);
 	uint optAllocSize =  sizeForStrAlloc(s);
 	if(s > allocated || allocated + 2 * sizeof(uint) < optAllocSize) {
-		//cppcheck-suppress memleakOnRealloc
-		cptr = (SCType *)realloc(cptr, optAllocSize + sizeof(uint) + sizeof(SCType));
+		cptr = (SCType *)safeRealloc(cptr, optAllocSize + sizeof(uint) + sizeof(SCType));
 		*(uint *)(cptr + 1) = optAllocSize;
 	}
 	*count = cptr;
@@ -98,7 +97,7 @@ String::String(const char *cst, uint l) : length(l), count(0), data(0) {
 
 String::String(const String &str) : length(str.length), count(str.count), data(str.data) {
 	if(count) {
-		(*count)++;
+		++(*count);
 	}
 }
 
@@ -419,7 +418,7 @@ void String::detach(uint s) const {
 		if(isUnique() && !isSharedSubset()) {
 			data = reallocStr(&count, s);
 		} else {
-			(*count)--;
+			--(*count);
 			char *d = allocStr(&count, s);
 			memcpy(d, data, std::min(length, s) * sizeof(char));
 			data = d;

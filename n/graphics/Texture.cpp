@@ -74,7 +74,8 @@ bool Texture::operator!=(const Texture &t) const {
 }
 
 void Texture::upload() const {
-	if(!image.getSize().mul()) {
+	math::Vec2ui size = image.getSize();
+	if(!size.mul()) {
 		fatal("Invalid image size.");
 	}
 	gl::glGenTextures(1, &(data->handle));
@@ -83,12 +84,12 @@ void Texture::upload() const {
 	GLTexFormat format = getTextureFormat(image.getFormat());
 
 	#ifndef N_NO_TEX_STORAGE
-	gl::glTexStorage2D(GL_TEXTURE_2D, 1, format.internalFormat, image.getSize().x(), image.getSize().y());
+	gl::glTexStorage2D(GL_TEXTURE_2D, 1, format.internalFormat, size.x(), size.y());
 	if(image.data()) {
-		gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.getSize().x(), image.getSize().y(), format.format, format.type, image.data()); // crashes if data = 0...
+		gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format.format, format.type, image.data()); // crashes if data = 0...
 	}
 	#else
-	gl::glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat, image.getSize().x(), image.getSize().y(), 0, format.format, format.type, image.data());
+	gl::glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat, size.x(), size.y(), 0, format.format, format.type, image.data());
 	#endif
 
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

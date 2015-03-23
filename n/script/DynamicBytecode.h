@@ -82,6 +82,7 @@ struct DynamicBytecode
 	DynamicBytecode(Type t, float f) : DynamicBytecode(t, DynamicPrimitive(PrimitiveType::Float, f)) {
 	}
 
+	DynamicBytecode &operator=(const DynamicBytecode &bc) = default;
 
 	const uint16 op;
 	union
