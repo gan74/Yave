@@ -74,6 +74,14 @@ class Camera final : public Transformable<>, public math::Volume<>
 			computeProjectionMatrix();
 		}
 
+		void setForward(math::Vec3 f) {
+			f.normalize();
+			float d = f.dot(math::Vec3(1, 0, 0));
+			float ang = -acos(d);
+			math::Vec3 axis = f.cross(math::Vec3(1, 0, 0)).normalized();
+			setRotation(math::Quaternion<>::fromAxisAngle(axis, ang));
+		}
+
 		virtual bool isInside(const math::Vec3 &p, float r) const override {
 			math::Vec3 w = (p - transform.getPosition());
 			float z = -w.dot(forward);

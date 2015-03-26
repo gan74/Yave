@@ -13,18 +13,21 @@ int main(int, char **) {
 	Camera cam;
 	cam.setPosition(Vec3(0, 0, 10));
 	cam.setRatio(4/3.0);
-	cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
-
-	GLContext::getContext()->setProjectionMatrix(cam.getProjectionMatrix());
-	GLContext::getContext()->setViewMatrix(cam.getViewMatrix());
+	//cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
+	cam.setForward(Vec3(0, 0, -1));
 
 	Scene scene;
 	scene.insert(&cam);
 
-	auto c = new Obj("sphere.obj");
+	auto c = new Obj("g2.obj");
 	c->setPosition(Vec3(0, 0, 0));
 	c->setAutoScale(6);
 	scene.insert(c);
+
+	/*c = new Obj("scube.obj");
+	c->setPosition(Vec3(0, 0, 0));
+	c->setAutoScale(6);
+	scene.insert(c);*/
 
 	uint num = 1;
 	uint count = console("$objCount").to<uint>([&](){ num = 0; });
@@ -39,6 +42,9 @@ int main(int, char **) {
 
 	while(run(win)) {
 		Timer timer;
+
+		cam.setPosition(trackballToSphere(trackball) * 10);
+		cam.setForward(-cam.getPosition());
 
 		renderer();
 

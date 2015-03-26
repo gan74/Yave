@@ -52,6 +52,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Console.h"
 
+Vec2 trackball;
+
 SDL_Window *createWindow() {
 	SDL_Window *mainWindow = 0;
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -72,14 +74,29 @@ SDL_Window *createWindow() {
 	return mainWindow;
 }
 
+Vec3 trackballToSphere(const Vec2 &tb) {
+	float t = toRad(tb.y());
+	float p = toRad(tb.x());
+	Vec2 h(cos(p), sin(p));
+	return Vec3(h, cos(t)).normalized();
+
+}
+
 bool run(SDL_Window *mainWindow) {
 	SDL_GL_SwapWindow(mainWindow);
 	SDL_Event e;
 	bool cc = true;
+	static bool m1 = false;
 	while(SDL_PollEvent(&e)) {
 		if(e.type == SDL_QUIT || (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) {
 			cc = false;
 			break;
+		} else if(e.type == SDL_MOUSEMOTION && m1) {
+			trackball += Vec2(e.motion.xrel, e.motion.yrel) * 0.2;
+		} else if(e.type == SDL_MOUSEBUTTONDOWN) {
+			m1 |= e.button.button == SDL_BUTTON_LEFT;
+		} else if(e.type == SDL_MOUSEBUTTONUP) {
+			m1 &= e.button.button != SDL_BUTTON_LEFT;
 		}
 	}
 	return cc;
@@ -89,7 +106,6 @@ class Obj : public StaticMesh
 {
 	public:
 		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)), model(n), autoScale(0) {
-			axis = ((Vec3(random(), random(), random()) - 0.5) * 2).normalized();
 		}
 
 		void setAttribs(const VertexAttribs &a) {
@@ -97,17 +113,9 @@ class Obj : public StaticMesh
 		}
 
 		virtual void render(RenderQueue &qu) override {
-			static Timer timer;
-			static double x = 0;
-			double t = timer.reset();
-			x += t * 0.1;
-			Quaternion<> q = Quaternion<>::fromAxisAngle(axis.cross(Vec3(1, 0, 0)).cross(axis), t);
-			axis = q(axis);
-			setRotation(Quaternion<>::fromAxisAngle(axis, x));
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
-			//StaticMesh::render(qu);
 			if(autoScale && !getMeshInstance().isNull()) {
 				setScale(autoScale / getMeshInstance().getRadius());
 			}
@@ -123,7 +131,6 @@ class Obj : public StaticMesh
 	private:
 		VertexAttribs attribs;
 		String model;
-		Vec3 axis;
 		float autoScale;
 };
 

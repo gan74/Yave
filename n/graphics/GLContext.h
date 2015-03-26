@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/concurrent/SynchronizedQueue.h>
 #include <n/core/Functor.h>
 #include <n/math/Matrix.h>
+#include <n/assets/Asset.h>
 
 namespace n {
 namespace graphics {
@@ -29,6 +30,14 @@ class FrameBuffer;
 
 template<typename T>
 class VertexArrayObject;
+
+template<typename T>
+class Material;
+
+namespace internal {
+	template<typename T>
+	struct Material;
+}
 
 class GLContext
 {
@@ -65,7 +74,6 @@ class GLContext
 		void setDebugEnabled(bool deb);
 		static bool checkGLError();
 
-
 		const ShaderCombinaison *getShader() const {
 			return shader;
 		}
@@ -80,9 +88,13 @@ class GLContext
 
 		const VertexArrayObject<float> &getScreen() const;
 
+
 	private:
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;
+
+		template<typename T>
+		friend class Material;
 
 		GLContext();
 		~GLContext();
@@ -95,6 +107,7 @@ class GLContext
 
 		const ShaderCombinaison *shader;
 		const FrameBuffer *frameBuffer;
+		assets::Asset<internal::Material<float>> material;
 
 		int hwInts[Max];
 

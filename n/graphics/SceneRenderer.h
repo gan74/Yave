@@ -48,6 +48,9 @@ class SceneRenderer : public Renderer
 			core::Array<Camera *> arr = sce->get<Camera>();
 			if(arr.size() == 1) {
 				Camera *cam = arr.first();
+				GLContext::getContext()->setProjectionMatrix(cam->getProjectionMatrix());
+				GLContext::getContext()->setViewMatrix(cam->getViewMatrix());
+
 				core::Timer timer;
 				core::Array<Renderable *> res = sce->query<Renderable>(*cam);
 				perfData.time = timer.elapsed();

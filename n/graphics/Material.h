@@ -21,8 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Texture.h"
 #include "ShaderCombinaison.h"
 
+#include <iostream>
+
 namespace n {
 namespace graphics {
+
+enum CullMode {
+	DontCull = 2,
+	Back = 0,
+	Front = 1
+};
 
 namespace internal {
 	template<typename T = float>
@@ -32,7 +40,7 @@ namespace internal {
 		static bool sorted;
 		static core::Array<Material<T> *> cache;
 
-		Material() : roughness(0), metallic(0) {
+		Material() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), cull(CullMode::Back) {
 			mutex.lock();
 			cache.append(this);
 			sorted = false;
@@ -74,6 +82,10 @@ namespace internal {
 		Color<T> color;
 		T roughness;
 		T metallic;
+		bool depthTested;
+		bool depthWrite;
+		CullMode cull;
+
 		Texture diffuse;
 
 		core::Map<core::String, Texture> textures;
@@ -95,6 +107,11 @@ namespace internal {
 template<typename T = float>
 class Material : private assets::Asset<internal::Material<T>>
 {
+	static const assets::Asset<internal::Material<T>> &getNull() {
+		static assets::Asset<internal::Material<T>> null(new internal::Material<T>());
+		return null;
+	}
+
 	public:
 		Material() : assets::Asset<internal::Material<T>>() {
 		}
@@ -118,8 +135,12 @@ class Material : private assets::Asset<internal::Material<T>>
 
 		void bind() const {
 			const internal::Material<T> *i = getInternal();
+			const internal::Material<T> *c = GLContext::getContext()->material.operator->();
 			const ShaderCombinaison *sh = GLContext::getContext()->getShader();
-			if(i && sh) {
+			if(!i) {
+				i = getNull().operator->();
+			}
+			if(sh) {
 				sh->setValue("n_Color", i->color);
 				sh->setValue("n_Roughness", i->roughness);
 				sh->setValue("n_Metallic", i->metallic);
@@ -133,10 +154,38 @@ class Material : private assets::Asset<internal::Material<T>>
 			} else {
 				fatal("No shader or no material");
 			}
+			if(!c || c->depthTested != i->depthTested) {
+				if(i->depthTested) {
+					gl::glEnable(GL_DEPTH_TEST);
+				} else {
+					gl::glDisable(GL_DEPTH_TEST);
+				}
+			}
+			if(!c || c->depthWrite != i->depthWrite) {
+				gl::glDepthMask(i->depthWrite);
+			}
+			if(!c || c->cull != i->cull) {
+				if(i->cull == DontCull) {
+					gl::glDisable(GL_CULL_FACE);
+				} else {
+					if(!c || c->cull == DontCull) {
+						gl::glEnable(GL_CULL_FACE);
+					}
+					gl::GLenum glc[] = {GL_BACK, GL_FRONT};
+					gl::glCullFace(glc[i->cull]);
+				}
+			}
+
+			if(isNull()) {
+				GLContext::getContext()->material = getNull();
+			} else {
+				GLContext::getContext()->material =  *this;
+			}
 		}
 
 	private:
 		friend class MaterialLoader;
+		friend class GLContext;
 
 		Material(const assets::Asset<internal::Material<T>> &t) : assets::Asset<internal::Material<T>>(t) {
 		}
