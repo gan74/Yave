@@ -25,7 +25,7 @@ namespace graphics {
 struct FrameData
 {
 	Camera *cam;
-	core::Array<Movable<> *> lights;
+	core::Array<Light *> lights;
 	void *child;
 };
 
@@ -60,7 +60,8 @@ void DeferredShadingRenderer::render(void *ptr) {
 
 	getMaterial().bind();
 
-	for(const Light<> *l : data->lights) {
+	for(const Light *l : data->lights) {
+		//std::cout<<l->getPosition()<<std::endl;
 		sh->setValue("n_Dir", l->getPosition().normalized());
 		GLContext::getContext()->getScreen().draw(VertexAttribs());
 	}
@@ -73,6 +74,7 @@ const Material<float> &DeferredShadingRenderer::getMaterial() {
 	if(mat.isNull()) {
 		internal::Material<> i;
 		i.blend = Add;
+		i.depthTested = false;
 		mat = Material<>(i);
 	}
 	return mat;
