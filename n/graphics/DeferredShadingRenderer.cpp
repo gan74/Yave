@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "VertexArrayObject.h"
 #include "GL.h"
 
-#include <iostream>
-
 namespace n {
 namespace graphics {
 
@@ -29,19 +27,33 @@ DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math:
 }
 
 void *DeferredShadingRenderer::prepare() {
-	(*child)();
-	return 0;
+	core::Array<Camera *> arr = child->getRenderer()->getScene()->get<Camera>();
+	if(arr.size() != 1) {
+		return 0;
+	}
+	return new core::Pair<Camera *, void *>(arr.first(), child->prepare());
 }
 
-void DeferredShadingRenderer::render(void *) {
+void DeferredShadingRenderer::render(void *ptr) {
+	core::Pair<Camera *, void *> *pair = (core::Pair<Camera *, void *> *)ptr;
+	Camera *cam = pair->_1;
+	child->render(pair->_2);
+	delete pair;
+
 	buffer.bind();
 	gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	ShaderCombinaison *sh = getShader();
 	sh->bind();
+
 	sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
 	sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
 	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
+	sh->setValue("n_Inv", (cam->getProjectionMatrix() * cam->getViewMatrix()).inverse());
+	sh->setValue("n_Cam", cam->getPosition());
+
+	sh->setValue("n_Dir", math::Vec3(1, 1, 1).normalized());
+
 	GLContext::getContext()->getScreen().draw(VertexAttribs());
 }
 
@@ -51,14 +63,34 @@ ShaderCombinaison *DeferredShadingRenderer::getShader() {
 		Shader<FragmentShader> *frag = new Shader<FragmentShader>("#version 420\n"
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
-			"in vec2 texCoord;"
+			"uniform sampler2D n_D;"
+			"uniform mat4 n_Inv;"
+			"uniform vec3 n_Cam;"
 
-			"out vec4 color;"
+			"uniform vec3 n_Dir;"
+
+			"in vec2 n_Tex;"
+			"in vec4 n_Pos;"
+
+			"out vec4 n_Out;"
+
+			"vec3 unproj(vec2 C) { "
+				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
+				"vec4 P = n_Inv * VP;"
+				"return P.xyz / P.w; "
+			"}"
+
+			"vec3 unproj() {"
+				"return unproj((n_Pos.xy / n_Pos.w) * 0.5 + 0.5);"
+			"}"
 
 			"void main() {"
-				"vec3 normal = texture(n_1, texCoord).xyz * 2 - 1;"
-				"float NoL = dot(normal, normalize(vec3(1, 1, 1)));"
-				"color = texture(n_0, texCoord) * NoL;"
+				"vec3 pos = unproj();"
+				"vec4 packedNR = texture(n_1, n_Tex);"
+				"vec4 albedo = texture(n_0, n_Tex);"
+				"vec3 normal = normalize(packedNR.xyz * 2.0 - 1.0);"
+				"float NoL = dot(normal, n_Dir);"
+				"n_Out = vec4(albedo.rgb * NoL, albedo.a);"
 			"}");
 
 		Shader<VertexShader> *vert = new Shader<VertexShader>("#version 420\n"
@@ -67,12 +99,14 @@ ShaderCombinaison *DeferredShadingRenderer::getShader() {
 			"layout(location = 2) in vec3 n_VertexTangent;"
 			"layout(location = 3) in vec2 n_VertexCoord;"
 
-			"out vec2 texCoord;"
+			"out vec2 n_Tex;"
+			"out vec4 n_Pos;"
 
 			"void main() {"
-				"gl_Position = vec4(n_VertexPosition, 1.0);"
-				"texCoord = n_VertexCoord;"
+				"n_Pos = gl_Position = vec4(n_VertexPosition, 1.0);"
+				"n_Tex = n_VertexCoord;"
 			"}");
+
 		shader = new ShaderCombinaison(frag, vert);
 		if(!shader->getLogs().isEmpty()) {
 			std::cerr<<shader->getLogs()<<std::endl;

@@ -11,10 +11,10 @@ int main(int, char **) {
 	SDL_Window *win = createWindow();
 
 	Camera cam;
-	cam.setPosition(Vec3(0, 0, 10));
+	cam.setPosition(Vec3(10, 0, 0));
 	cam.setRatio(4/3.0);
+	cam.setForward(-cam.getPosition());
 	//cam.setRotation(Quaternion<>::fromEuler(0, toRad(90), 0));
-	cam.setForward(Vec3(0, 0, -1));
 
 	Scene scene;
 	scene.insert(&cam);
@@ -43,7 +43,7 @@ int main(int, char **) {
 	while(run(win)) {
 		Timer timer;
 
-		cam.setPosition(trackballToSphere(trackball) * 10);
+		cam.setPosition(Quaternion<>::fromEuler(Vec3(0, mouse.y(), mouse.x()))(Vec3(10, 0, 0)));
 		cam.setForward(-cam.getPosition());
 
 		renderer();

@@ -103,7 +103,7 @@ namespace math {
 
 	template<typename T = double>
 	static constexpr typename ToFloatingPoint<T>::type epsilon() {
-		return ToFloatingPoint<T>::type(FLT_EPSILON * 2.0);
+		return typename ToFloatingPoint<T>::type(FLT_EPSILON);
 	}
 
 	template<typename T>

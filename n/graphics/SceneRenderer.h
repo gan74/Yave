@@ -43,26 +43,25 @@ class SceneRenderer : public Renderer
 			return perfData;
 		}
 
-	protected:
 		virtual void *prepare() override {
 			core::Array<Camera *> arr = sce->get<Camera>();
-			if(arr.size() == 1) {
-				Camera *cam = arr.first();
-				GLContext::getContext()->setProjectionMatrix(cam->getProjectionMatrix());
-				GLContext::getContext()->setViewMatrix(cam->getViewMatrix());
-
-				core::Timer timer;
-				core::Array<Renderable *> res = sce->query<Renderable>(*cam);
-				perfData.time = timer.elapsed();
-				perfData.objects = res.size();
-				RenderQueue *queue = new RenderQueue();
-				for(Renderable *re : res) {
-					re->render(*queue);
-				}
-				queue->prepare();
-				return queue;
+			if(arr.size() != 1) {
+				return 0;
 			}
-			return 0;
+			Camera *cam = arr.first();
+			GLContext::getContext()->setProjectionMatrix(cam->getProjectionMatrix());
+			GLContext::getContext()->setViewMatrix(cam->getViewMatrix());
+
+			core::Timer timer;
+			core::Array<Renderable *> res = sce->query<Renderable>(*cam);
+			perfData.time = timer.elapsed();
+			perfData.objects = res.size();
+			RenderQueue *queue = new RenderQueue();
+			for(Renderable *re : res) {
+				re->render(*queue);
+			}
+			queue->prepare();
+			return queue;
 		}
 
 		virtual void render(void *ptr) override {
@@ -78,6 +77,10 @@ class SceneRenderer : public Renderer
 				q();
 			}
 			delete queue;
+		}
+
+		const Scene *getScene() const {
+			return sce;
 		}
 
 	private:

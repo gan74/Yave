@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_MATH_QUATERNION_H
 
 #include "Vec.h"
-
 namespace n {
 namespace math {
 
@@ -29,7 +28,6 @@ class Quaternion
 		static constexpr uint yawIndex = 2;
 		static constexpr uint pitchIndex = 1;
 		static constexpr uint rollIndex = 0;
-
 
 		template<typename U>
 		Quaternion(const Vec<4, U> &q) : quat(q.normalized()) {
@@ -54,7 +52,7 @@ class Quaternion
 			return Quaternion<T>(-quat.sub(3), quat.w());
 		}
 
-		operator Vec<4, T>() const {
+		explicit operator Vec<4, T>() const {
 			return quat;
 		}
 
@@ -108,7 +106,6 @@ class Quaternion
 							 w() * q.w() - x() * q.x() - y() * q.y() - z() * q.z());
 		}
 
-
 		T x() const {
 			 return quat.x();
 		}
@@ -141,6 +138,18 @@ class Quaternion
 
 		Vec<3, T> toPacked() const {
 			return quat.sub(3);
+		}
+
+		static Quaternion<T> fromLookAt(Vec<3, T> f) {
+			f.normalize();
+			Vec<3, T> axis(1, 0, 0);
+			T d = f.dot(axis);
+			if(fabs(d + T(1.0)) < math::epsilon<T>()) {
+				return fromAxisAngle(math::Vec<3, T>(0, 0, 1), math::pi<T>());
+			} else if(fabs(d - T(1.0)) < math::epsilon<T>()) {
+				return Quaternion<T>();
+			}
+			return fromAxisAngle(f.cross(axis), -acos(d));
 		}
 
 		static Quaternion<T> fromEuler(T yaw, T pitch, T roll) {

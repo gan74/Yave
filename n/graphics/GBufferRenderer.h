@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_GBUFFERRENDERER
 
 #include "BufferedRenderer.h"
+#include "SceneRenderer.h"
 #include "ShaderCombinaison.h"
 #include "Shader.h"
 
@@ -34,13 +35,17 @@ class GBufferRenderer : public BufferedRenderer
 			RGBDiffuseRGBNormal = 0
 		};
 
-		GBufferRenderer(Renderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : BufferedRenderer(s), child(c) {
+		GBufferRenderer(SceneRenderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : BufferedRenderer(s), child(c) {
 			shader = new ShaderCombinaison(createShader());
 			setFormat(RGBDiffuseRGBNormal);
 		}
 
 		~GBufferRenderer() {
 			delete shader;
+		}
+
+		SceneRenderer *getRenderer() const {
+			return child;
 		}
 
 		void setFormat(BufferFormat) {
@@ -82,7 +87,7 @@ class GBufferRenderer : public BufferedRenderer
 			return sh;
 		}
 
-		Renderer *child;
+		SceneRenderer *child;
 		ShaderCombinaison *shader;
 
 };

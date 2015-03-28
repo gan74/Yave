@@ -72,6 +72,10 @@ class Movable : public Transformable<T>
 			transform = math::Transform<T>(transform.getRotation(), transform.getPosition(), s);
 		}
 
+		void setForward(math::Vec3 f) {
+			setRotation(math::Quaternion<>::fromLookAt(f));
+		}
+
 	protected:
 		using Transformable<T>::transform;
 		using Transformable<T>::radius;
