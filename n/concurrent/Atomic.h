@@ -44,6 +44,9 @@ class AtomicAssignable : private std::atomic<T>
 		AtomicAssignable(const T &t = T()) : std::atomic<T>(t) {
 		}
 
+		AtomicAssignable(const AtomicAssignable<T> &t) : std::atomic<T>(static_cast<std::atomic<T>>(t)) {
+		}
+
 		T operator=(const T &t) {
 			this->store(t);
 			return t;
@@ -56,6 +59,10 @@ class AtomicAssignable : private std::atomic<T>
 
 		operator T() const {
 			return this->load();
+		}
+
+		T operator=(const AtomicAssignable<T> &t) {
+			return std::atomic<T>::operator=(static_cast<std::atomic<T>>(t));
 		}
 };
 

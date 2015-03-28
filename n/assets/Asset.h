@@ -25,20 +25,25 @@ namespace assets {
 template<typename T>
 class AssetPtr : public core::SmartPtr<concurrent::AtomicAssignable<const T *>, concurrent::auint>
 {
-	static constexpr T *InvalidPtr = (T *)0x1; // I know...
 	public:
 		using PtrType = concurrent::AtomicAssignable<const T *>;
+		typedef typename core::SmartPtr<PtrType, concurrent::auint> InternalType;
 
-		AssetPtr(PtrType *a) : core::SmartPtr<PtrType, concurrent::auint>(std::move(a)) {
+	private:
+		static const InternalType invalidPtr;
+
+	public:
+
+		AssetPtr(PtrType *a = 0) : InternalType(std::move(a)) {
 		}
 
 		bool isValid() const {
-			return this->pointer() && this->operator*() != InvalidPtr;
+			return (*this) != invalidPtr;
 		}
 
 		void invalidate() const {
 			if(isValid()) {
-				this->operator*() = InvalidPtr;
+				const_cast<AssetPtr<T> *>(this)->InternalType::operator=(invalidPtr);
 			}
 		}
 };
@@ -63,7 +68,7 @@ class Asset
 		}
 
 		const T *operator->() const {
-			return ptr.isValid() ? (const T *)(*ptr) : 0;
+			return ptr ? (const T *)(*ptr) : 0;
 		}
 
 		const T &operator*() const {
@@ -71,11 +76,11 @@ class Asset
 		}
 
 		bool isValid() const {
-			return ptr.isValid();
+			return !ptr || ptr.isValid();
 		}
 
 		bool isNull() const {
-			return !ptr || !*ptr || !isValid();
+			return !ptr || !*ptr;
 		}
 
 		bool operator==(const Asset<T> &a) const {
@@ -90,11 +95,17 @@ class Asset
 		template<typename U, typename P>
 		friend class AssetManager;
 
-		Asset(AssetPtr<T> &p) : ptr(p) {
+		Asset(const AssetPtr<T> &p) : ptr(p) {
 		}
 
 		AssetPtr<T> ptr;
 };
+
+
+template<typename T>
+const typename AssetPtr<T>::InternalType AssetPtr<T>::invalidPtr = AssetPtr<T>::InternalType();
+
+
 
 }
 }
