@@ -30,6 +30,11 @@ enum CullMode {
 	Front = 1
 };
 
+enum BlendMode {
+	None,
+	Add
+};
+
 namespace internal {
 	template<typename T = float>
 	struct Material
@@ -38,7 +43,7 @@ namespace internal {
 		static bool sorted;
 		static core::Array<Material<T> *> cache;
 
-		Material() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), cull(CullMode::Back) {
+		Material() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back) {
 			mutex.lock();
 			cache.append(this);
 			sorted = false;
@@ -82,6 +87,8 @@ namespace internal {
 		T metallic;
 		bool depthTested;
 		bool depthWrite;
+
+		BlendMode blend;
 		CullMode cull;
 
 		Texture diffuse;
@@ -112,6 +119,9 @@ class Material : private assets::Asset<internal::Material<T>>
 
 	public:
 		Material() : assets::Asset<internal::Material<T>>() {
+		}
+
+		Material(const internal::Material<T> &i) : Material(new internal::Material<T>(i)) {
 		}
 
 		bool operator<(const Material<T> &m) const {
@@ -171,6 +181,18 @@ class Material : private assets::Asset<internal::Material<T>>
 					}
 					gl::GLenum glc[] = {GL_BACK, GL_FRONT};
 					gl::glCullFace(glc[i->cull]);
+				}
+			}
+			if(!c || c->blend != i->blend) {
+				if(i->blend == None) {
+					gl::glDisable(GL_BLEND);
+				} else {
+					if(!c || c->blend == None) {
+						gl::glEnable(GL_BLEND);
+					}
+					if(i->blend == Add) {
+						gl::glBlendFunc(GL_ONE, GL_ONE);
+					}
 				}
 			}
 

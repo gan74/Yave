@@ -15,11 +15,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "DeferredShadingRenderer.h"
+#include "Light.h"
 #include "VertexArrayObject.h"
 #include "GL.h"
 
 namespace n {
 namespace graphics {
+
+struct FrameData
+{
+	Camera *cam;
+	core::Array<Movable<> *> lights;
+	void *child;
+};
 
 DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c) {
 	buffer.setAttachmentEnabled(0, true);
@@ -31,14 +39,12 @@ void *DeferredShadingRenderer::prepare() {
 	if(arr.size() != 1) {
 		return 0;
 	}
-	return new core::Pair<Camera *, void *>(arr.first(), child->prepare());
+	return new FrameData({arr.first(), child->getRenderer()->getScene()->get<Light>(), child->prepare()});
 }
 
 void DeferredShadingRenderer::render(void *ptr) {
-	core::Pair<Camera *, void *> *pair = (core::Pair<Camera *, void *> *)ptr;
-	Camera *cam = pair->_1;
-	child->render(pair->_2);
-	delete pair;
+	FrameData *data = (FrameData *)ptr;
+	child->render(data->child);
 
 	buffer.bind();
 	gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -49,12 +55,27 @@ void DeferredShadingRenderer::render(void *ptr) {
 	sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
 	sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
 	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
-	sh->setValue("n_Inv", (cam->getProjectionMatrix() * cam->getViewMatrix()).inverse());
-	sh->setValue("n_Cam", cam->getPosition());
+	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
+	sh->setValue("n_Cam", data->cam->getPosition());
 
-	sh->setValue("n_Dir", math::Vec3(1, 1, 1).normalized());
+	getMaterial().bind();
 
-	GLContext::getContext()->getScreen().draw(VertexAttribs());
+	for(const Light<> *l : data->lights) {
+		sh->setValue("n_Dir", l->getPosition().normalized());
+		GLContext::getContext()->getScreen().draw(VertexAttribs());
+	}
+
+	delete data;
+}
+
+const Material<float> &DeferredShadingRenderer::getMaterial() {
+	static Material<> mat;
+	if(mat.isNull()) {
+		internal::Material<> i;
+		i.blend = Add;
+		mat = Material<>(i);
+	}
+	return mat;
 }
 
 ShaderCombinaison *DeferredShadingRenderer::getShader() {

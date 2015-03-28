@@ -24,6 +24,10 @@ int main(int, char **) {
 	c->setAutoScale(6);
 	scene.insert(c);
 
+	Light *l = new Light();
+	l->setPosition(Vec3(5, 5, 0));
+	scene.insert(l);
+
 	/*c = new Obj("scube.obj");
 	c->setPosition(Vec3(0, 0, 0));
 	c->setAutoScale(6);

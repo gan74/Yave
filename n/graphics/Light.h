@@ -14,32 +14,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_DEFERREDSHADINGRENDERER
-#define N_GRAPHICS_DEFERREDSHADINGRENDERER
+#ifndef N_GRAPHICS_LIGHT
+#define N_GRAPHICS_LIGHT
 
-#include "GBufferRenderer.h"
+#include "Transformable.h"
+#include <n/math/Volume.h>
+#include <n/utils.h>
 
 namespace n {
 namespace graphics {
 
-class DeferredShadingRenderer : public BufferedRenderer
+class Light : public Movable<>
 {
 	public:
-		DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s = math::Vec2ui(0));
-
-		virtual void *prepare() override;
-		virtual void render(void *ptr) override;
-
-	private:
-		GBufferRenderer *child;
-
-		static ShaderCombinaison *getShader();
-		static const Material<float> &getMaterial();
+		Light() : Movable<>() {
+		}
 };
 
 }
 }
 
 
-#endif // N_GRAPHICS_DEFERREDSHADINGRENDERER
+#endif // LIGHT
 
