@@ -26,27 +26,43 @@ namespace n {
 namespace assets {
 
 template<typename T>
-class AssetPtrStorage : public concurrent::AtomicAssignable<const T *>
+class AssetPtrStorage
 {
 	typedef const T *ConstPtr;
-	public:
-		AssetPtrStorage(ConstPtr &&a) : concurrent::AtomicAssignable<const T *>(a)
-									#ifdef N_ASSET_ID
-									, id(core::uniqueId())
-									#endif
-									{
 
+	public:
+		AssetPtrStorage(ConstPtr &&a) : ptr(a) {
+			#ifdef N_ASSET_ID
+			id = core::uniqueId();
+			#endif
 		}
 
-		AssetPtrStorage<T> &operator=(ConstPtr &&a) {
-			concurrent::AtomicAssignable<const T *>::operator=(a);
+		AssetPtrStorage<T> &operator=(const ConstPtr &t) {
+			ptr.store(t);
 			return *this;
 		}
 
+		AssetPtrStorage<T> &operator=(const ConstPtr &t) volatile {
+			ptr.store(t);
+			return *this;
+		}
+
+		operator ConstPtr() const {
+			return ptr.load();
+		}
+
 		#ifdef N_ASSET_ID
-		const uint id;
+		uint getId() const {
+			return id;
+		}
 		#endif
 
+	private:
+		concurrent::Atomic<ConstPtr> ptr;
+
+		#ifdef N_ASSET_ID
+		uint id;
+		#endif
 };
 
 template<typename T>
@@ -120,7 +136,7 @@ class Asset
 
 		#ifdef N_ASSET_ID
 		uint getId() const {
-			return !ptr ? 0 : ptr->id;
+			return !ptr ? 0 : ptr->getId();
 		}
 		#endif
 

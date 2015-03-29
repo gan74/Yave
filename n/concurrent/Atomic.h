@@ -34,31 +34,6 @@ typedef Atomic<bool> abool;
 template<typename T>
 using AtomicPtr = Atomic<T *>;
 
-
-template<typename T>
-class AtomicAssignable : private std::atomic<T>
-{
-	static_assert(std::is_integral<T>::value || std::is_pointer<T>::value, "Atomic type should be integral or pointer");
-
-	public:
-		AtomicAssignable(const T &t = T()) : std::atomic<T>(t) {
-		}
-
-		T operator=(const T &t) {
-			this->store(t);
-			return t;
-		}
-
-		T operator=(const T &t) volatile {
-			this->store(t);
-			return t;
-		}
-
-		operator T() const {
-			return this->load();
-		}
-};
-
 }
 }
 
