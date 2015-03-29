@@ -133,7 +133,7 @@ class AsyncLoadingPolicy
 		template<typename... Args>
 		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
 			//static_assert(IsThreadSafe<Args...>::value, "Only thread-safe types should be used with AssetBuffer<T, AsyncLoadingPolicy>");
-			AssetPtr<T> ptr(new concurrent::AtomicAssignable<const T *>(0));
+			AssetPtr<T> ptr(new typename AssetPtr<T>::PtrType(0));
 			concurrent::Async([=, &loader](Args... args) {
 				T *o = loader(args...);
 				if(o) {

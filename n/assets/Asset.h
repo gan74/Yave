@@ -18,22 +18,48 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_ASSETS_ASSET_H
 
 #include <n/core/SmartPtr.h>
+#include <n/utils.h>
+
+//#define N_ASSET_ID
 
 namespace n {
 namespace assets {
 
 template<typename T>
-class AssetPtr : public core::SmartPtr<concurrent::AtomicAssignable<const T *>, concurrent::auint>
+class AssetPtrStorage : public concurrent::AtomicAssignable<const T *>
+{
+	typedef const T *ConstPtr;
+	public:
+		AssetPtrStorage(ConstPtr &&a) : concurrent::AtomicAssignable<const T *>(a)
+									#ifdef N_ASSET_ID
+									, id(core::uniqueId())
+									#endif
+									{
+
+		}
+
+		AssetPtrStorage<T> &operator=(ConstPtr &&a) {
+			concurrent::AtomicAssignable<const T *>::operator=(a);
+			return *this;
+		}
+
+		#ifdef N_ASSET_ID
+		const uint id;
+		#endif
+
+};
+
+template<typename T>
+class AssetPtr : public core::SmartPtr<AssetPtrStorage<T>, concurrent::auint>
 {
 	public:
-		using PtrType = concurrent::AtomicAssignable<const T *>;
+		typedef AssetPtrStorage<T> PtrType;
 		typedef typename core::SmartPtr<PtrType, concurrent::auint> InternalType;
 
 	private:
 		static const InternalType invalidPtr;
 
 	public:
-
 		AssetPtr(PtrType *a = 0) : InternalType(std::move(a)) {
 		}
 
@@ -54,11 +80,12 @@ class AssetManager;
 template<typename T>
 class Asset
 {
+	typedef const T *ConstPtr;
 	public:
 		Asset() : ptr(0) {
 		}
 
-		Asset(T *&&p) : ptr(AssetPtr<T>(new typename AssetPtr<T>::PtrType(p))) {
+		Asset(ConstPtr &&p) : ptr(AssetPtr<T>(new typename AssetPtr<T>::PtrType(std::move(p)))) {
 		}
 
 		~Asset() {
@@ -90,6 +117,12 @@ class Asset
 		bool operator!=(const Asset<T> &a) const {
 			return !operator==(a);
 		}
+
+		#ifdef N_ASSET_ID
+		uint getId() const {
+			return !ptr ? 0 : ptr->id;
+		}
+		#endif
 
 	private:
 		template<typename U, typename P>
