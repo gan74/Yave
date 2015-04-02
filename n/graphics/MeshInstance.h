@@ -52,6 +52,10 @@ class MeshInstanceBase : core::NonCopyable
 			return buffer.radius;
 		}
 
+		const typename TriangleBuffer<T>::FreezedTriangleBuffer &getTriangleBuffer() const {
+			return buffer;
+		}
+
 	private:
 		typename TriangleBuffer<T>::FreezedTriangleBuffer buffer;
 		mutable VertexArrayObject<T> *vao;
@@ -68,6 +72,9 @@ namespace internal {
 			for(const MeshInstanceBase<T> *ba : bases) {
 				radius = std::max(radius, ba->getRadius());
 			}
+		}
+
+		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b) : MeshInstance<T>(core::Array<MeshInstanceBase<T> *>(new MeshInstanceBase<T>(std::move(b), graphics::Material<T>()))) {
 		}
 
 		~MeshInstance() {
@@ -111,7 +118,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 		MeshInstance() :  assets::Asset<internal::MeshInstance<T>>() {
 		}
 
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b) : MeshInstance(new internal::MeshInstance<T>(b)) {
+		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b) : MeshInstance(new internal::MeshInstance<T>(std::move(b))) {
 		}
 
 		bool isValid() const {

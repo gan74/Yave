@@ -59,7 +59,7 @@ class TriangleBuffer
 				FreezedTriangleBuffer(const FreezedTriangleBuffer &b) = default;
 				FreezedTriangleBuffer &operator=(const FreezedTriangleBuffer &b) = default;
 
-				core::Array<uint> indexes;
+				core::Array<uint>  indexes;
 				core::Array<Vertex<T>> vertices;
 				T radius;
 

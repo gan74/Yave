@@ -103,6 +103,9 @@ class Obj : public StaticMesh
 		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)), model(n), autoScale(0) {
 		}
 
+		Obj(const MeshInstance<> &n) : StaticMesh(n), model(""), autoScale(0) {
+		}
+
 		void setAttribs(const VertexAttribs &a) {
 			attribs = a;
 		}

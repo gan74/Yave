@@ -46,6 +46,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 				std::cerr<<file.getName()<<" not found"<<std::endl;
 				return 0;
 			}
+			//core::Timer timer;
 			uint fs = file.size();
 			char *data = new char[fs + 1];
 			data[file.readBytes(data)] = 0;
@@ -141,7 +142,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			if(!tr.getTriangles().isEmpty()) {
 				bases.append(new MeshInstanceBase<>(std::move(tr.freezed()), mat));
 			}
-			//std::cout<<file.getName()<<" loaded in "<<timer.elapsed() * 1000<<"ms ["<<bases.first()->buffer.indexes.size() / 3<<"]"<<std::endl;
+			//std::cout<<file.getName()<<" loaded in "<<timer.elapsed() * 1000<<"ms ["<<bases.first()->getTriangleBuffer().indexes.size() / 3<<"]"<<std::endl;
 			return new internal::MeshInstance<>(bases);
 		}
 };

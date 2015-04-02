@@ -2,8 +2,6 @@
 #ifdef ALL
 #include "main.h"
 
-Console console;
-
 ShaderCombinaison *createShader();
 ShaderCombinaison *createLightShader();
 
@@ -19,36 +17,24 @@ int main(int, char **) {
 	Scene scene;
 	scene.insert(&cam);
 
-	auto c = new Obj("g2.obj");
+	auto c = new Obj(MeshInstance<>(std::move(TriangleBuffer<>::getSphere())));
 	c->setPosition(Vec3(0, 0, 0));
 	c->setAutoScale(6);
 	scene.insert(c);
 
 	Light *l = new Light();
-	l->setPosition(Vec3(5, 5, 0));
+	l->setPosition(Vec3(0, 0, -5));
 	scene.insert(l);
-
-	/*c = new Obj("scube.obj");
-	c->setPosition(Vec3(0, 0, 0));
-	c->setAutoScale(6);
-	scene.insert(c);*/
-
-	uint num = 1;
-	uint count = console("$objCount").to<uint>([&](){ num = 0; });
-	for(uint i = 0; i < (count * num); i++) {
-		scene.insert(new RandObj());
-	}
+	l = new Light();
+	l->setPosition(Vec3(0, 0, 5));
+	scene.insert(l);
 
 	FrameBufferRenderer renderer(new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene))));
 	//ShaderRenderer renderer(new SceneRenderer(&scene), createShader());
 
-	console.start();
-
 	while(run(win)) {
-		Timer timer;
 
-		cam.setPosition(Quaternion<>::fromEuler(Vec3(0, mouse.y(), mouse.x()))(Vec3(10, 0, 0)));
-		cam.setForward(-cam.getPosition());
+		c->setRotation(c->getRotation() * Quaternion<>::fromAxisAngle(Vec3(0, 0, 1), dMouse.x()) * Quaternion<>::fromAxisAngle(Vec3(0, 1, 0), dMouse.y()));
 
 		renderer();
 
@@ -57,15 +43,6 @@ int main(int, char **) {
 
 		if(GLContext::getContext()->checkGLError()) {
 			fatal("OpenGL error");
-		}
-
-		float fps = float(console("$framerate"));
-		if(fps) {
-			fps = (1.0 / fps);
-			fps -= timer.elapsed();
-			if(fps > 0.0) {
-				concurrent::Thread::sleep(fps);
-			}
 		}
 	}
 

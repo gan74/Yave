@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/core/SmartPtr.h>
 #include <n/utils.h>
+#include <n/defines.h>
 
 //#define N_ASSET_ID
 
@@ -30,6 +31,12 @@ class AssetPtrStorage
 {
 	typedef const T *ConstPtr;
 
+	#ifdef N_32BITS
+	typedef concurrent::Atomic<ConstPtr> PtrContainer;
+	#else
+	typedef ConstPtr PtrContainer;
+	#endif
+
 	public:
 		AssetPtrStorage(ConstPtr &&a) : ptr(a) {
 			#ifdef N_ASSET_ID
@@ -37,18 +44,18 @@ class AssetPtrStorage
 			#endif
 		}
 
-		AssetPtrStorage<T> &operator=(const ConstPtr &t) {
-			ptr.store(t);
+		AssetPtrStorage<T> &operator=(ConstPtr t) {
+			ptr = t;
 			return *this;
 		}
 
-		AssetPtrStorage<T> &operator=(const ConstPtr &t) volatile {
-			ptr.store(t);
+		AssetPtrStorage<T> &operator=(ConstPtr t) volatile {
+			ptr = t;
 			return *this;
 		}
 
 		operator ConstPtr() const {
-			return ptr.load();
+			return ptr;
 		}
 
 		#ifdef N_ASSET_ID
@@ -58,7 +65,7 @@ class AssetPtrStorage
 		#endif
 
 	private:
-		concurrent::Atomic<ConstPtr> ptr;
+		PtrContainer ptr;
 
 		#ifdef N_ASSET_ID
 		uint id;

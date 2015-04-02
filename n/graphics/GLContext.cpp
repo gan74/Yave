@@ -90,12 +90,16 @@ GLContext::GLContext() : shader(0), frameBuffer(0), material(0), viewport(800, 6
 	if(gl::glewInit() != GLEW_OK) {
 		fatal("Unable to initialize glew.");
 	}
-	std::cout<<"Running on "<<gl::glGetString(GL_VENDOR)<<" "<<gl::glGetString(GL_RENDERER)<<" using GL "<<gl::glGetString(GL_VERSION)<<std::endl;
+	std::cout<<"Running on "<<gl::glGetString(GL_VENDOR)<<" "<<gl::glGetString(GL_RENDERER)<<" using GL "<<gl::glGetString(GL_VERSION);
+	#ifdef N_32BITS
+	std::cout<<" (32 bits)";
+	#endif
+	std::cout<<std::endl;
 
 
 	gl::glEnable(GL_TEXTURE_2D);
-	gl::glEnable(GL_CULL_FACE);
-	gl::glEnable(GL_DEPTH_TEST);
+	//gl::glEnable(GL_CULL_FACE);
+	//gl::glEnable(GL_DEPTH_TEST);
 
 	gl::glViewport(0, 0, viewport.x(), viewport.y());
 

@@ -174,6 +174,10 @@ class Quaternion
 			return Quaternion<T>(axis.x() * s, axis.y() * s, axis.z() * s, cos(ang * T(0.5)));
 		}
 
+		static Quaternion<T> fromAxisAngle(const Vec<3, T> &axisAng) {
+			return fromAxisAngle(axisAng, axisAng.length());
+		}
+
 		static Quaternion<T> fromAxisAngle(const Vec<4, T> &v) {
 			return fromAxisAngle(v.sub(3), v.w());
 		}
