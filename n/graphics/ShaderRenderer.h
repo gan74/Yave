@@ -25,6 +25,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+class ScreenQuadRenderer : public Renderer
+{
+	public:
+		ScreenQuadRenderer() : Renderer() {
+		}
+
+		~ScreenQuadRenderer() {
+		}
+
+		virtual void *prepare() override {
+			return 0;
+		}
+
+		virtual void render(void *) override {
+			GLContext::getContext()->getScreen().draw(VertexAttribs());
+		}
+
+	private:
+
+};
+
 class ShaderRenderer : public Renderer
 {
 	public:
