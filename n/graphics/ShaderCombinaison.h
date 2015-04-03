@@ -32,6 +32,12 @@ class ShaderCombinaison : core::NonCopyable
 	public:
 		typedef gl::GLint UniformAddr;
 
+		enum StandardVertexShader
+		{
+			ProjectionShader = 0,
+			NoProjectionShader = 1
+		};
+
 	private:
 		struct UniformInfo
 		{
@@ -45,6 +51,63 @@ class ShaderCombinaison : core::NonCopyable
 			gl::GLuint slot;
 			const typename internal::DynamicBufferBase<GL_UNIFORM_BUFFER> *buffer;
 		};
+
+		static Shader<VertexShader> *getDefaultVertexShader(StandardVertexShader type = ProjectionShader) {
+			static Shader<VertexShader> **def = 0;
+			if(!def) {
+					def = new Shader<VertexShader>*[2];
+					def[ProjectionShader] = new Shader<VertexShader>("#version 420 core\n"
+								"layout(location = 0) in vec3 n_VertexPosition;"
+								"layout(location = 1) in vec3 n_VertexNormal;"
+								"layout(location = 2) in vec3 n_VertexTangent;"
+								"layout(location = 3) in vec2 n_VertexCoord;"
+								"uniform mat4 n_ViewProjectionMatrix;"
+								"uniform mat4 n_ModelMatrix;"
+								"uniform vec3 n_Camera;"
+
+								"out vec3 n_Position;"
+								"out vec3 n_Normal;"
+								"out vec3 n_Tangent;"
+								"out vec3 n_Binormal;"
+								"out vec3 n_View;"
+								"out vec2 n_TexCoord;"
+								"out int n_VertexID;"
+
+								"void main() {"
+									"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
+									"gl_Position = n_ViewProjectionMatrix * model;"
+									"n_VertexID = gl_VertexID;"
+									"n_Position = model.xyz;"
+									"n_View = normalize(n_Camera - model.xyz);"
+									"n_Normal = mat3(n_ModelMatrix) * n_VertexNormal;"
+									"n_Tangent = mat3(n_ModelMatrix) * n_VertexTangent;"
+									"n_TexCoord = n_VertexCoord;"
+									"n_Binormal = cross(n_Normal, n_Tangent);"
+								"}");
+					def[NoProjectionShader] = new Shader<VertexShader>("#version 420 core\n"
+								"layout(location = 0) in vec3 n_VertexPosition;"
+								"layout(location = 1) in vec3 n_VertexNormal;"
+								"layout(location = 2) in vec3 n_VertexTangent;"
+								"layout(location = 3) in vec2 n_VertexCoord;"
+
+								"out vec3 n_Position;"
+								"out vec3 n_Normal;"
+								"out vec3 n_Tangent;"
+								"out vec3 n_Binormal;"
+								"out vec2 n_TexCoord;"
+								"out int n_VertexID;"
+
+								"void main() {"
+									"gl_Position = vec4(n_Position = n_VertexPosition, 1.0);"
+									"n_VertexID = gl_VertexID;"
+									"n_Normal = n_VertexNormal;"
+									"n_Tangent = n_VertexTangent;"
+									"n_TexCoord = n_VertexCoord;"
+									"n_Binormal = cross(n_Normal, n_Tangent);"
+								"}");
+				}
+				return def[type];
+		}
 
 	public:
 		class Uniform : core::NonCopyable
@@ -75,44 +138,16 @@ class ShaderCombinaison : core::NonCopyable
 		};
 
 		ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0) : handle(0), bindings(0) {
-			static Shader<VertexShader> *def = 0;
 			if(!vert) {
-				if(!def) {
-					def = new Shader<VertexShader>("#version 420 core\n"
-								"layout(location = 0) in vec3 n_VertexPosition;"
-								"layout(location = 1) in vec3 n_VertexNormal;"
-								"layout(location = 2) in vec3 n_VertexTangent;"
-								"layout(location = 3) in vec2 n_VertexCoord;"
-								"uniform mat4 n_ViewProjectionMatrix;"
-								"uniform mat4 n_ModelMatrix;"
-								"uniform vec3 n_Camera;"
-
-								"out vec3 n_Position;"
-								"out vec3 n_Normal;"
-								"out vec3 n_Tangent;"
-								"out vec3 n_Binormal;"
-								"out vec3 n_View;"
-								"out vec2 n_TexCoord;"
-								"out int n_VertexID;"
-
-								"void main() {"
-									"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
-									"gl_Position = n_ViewProjectionMatrix * model;"
-									"n_VertexID = gl_VertexID;"
-									"n_Position = model.xyz;"
-									"n_View = normalize(n_Camera - model.xyz);"
-									"n_Normal = mat3(n_ModelMatrix) * n_VertexNormal;"
-									"n_Tangent = mat3(n_ModelMatrix) * n_VertexTangent;"
-									"n_TexCoord = n_VertexCoord;"
-									"n_Binormal = cross(n_Normal, n_Tangent);"
-								"}");
-				}
-				vert = def;
+				vert = getDefaultVertexShader();
 			}
 			shaders[FragmentShader] = frag;
 			shaders[VertexShader] = vert;
 			shaders[GeometryShader] = geom;
 			compile();
+		}
+
+		ShaderCombinaison(Shader<FragmentShader> *frag, StandardVertexShader vs) : ShaderCombinaison(frag, getDefaultVertexShader(vs)) {
 		}
 
 		~ShaderCombinaison() {

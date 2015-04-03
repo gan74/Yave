@@ -41,7 +41,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/FrameBufferRenderer.h>
 #include <n/graphics/FrameBuffer.h>
 #include <n/graphics/GBufferRenderer.h>
-#include <n/graphics/FontCache.h>
 #include <n/graphics/DynamicBuffer.h>
 #include <n/graphics/ShaderRenderer.h>
 #include <n/graphics/DeferredShadingRenderer.h>

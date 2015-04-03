@@ -6,3 +6,4 @@
 /Makefile
 *.cmake
 *.dll
+*.zip

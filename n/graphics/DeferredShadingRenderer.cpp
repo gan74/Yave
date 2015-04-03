@@ -92,8 +92,8 @@ ShaderCombinaison *DeferredShadingRenderer::getShader() {
 
 			"uniform vec3 n_Dir;"
 
-			"in vec2 n_Tex;"
-			"in vec4 n_Pos;"
+			"in vec2 n_TexCoord;"
+			"in vec4 n_Position;"
 
 			"out vec4 n_Out;"
 
@@ -104,33 +104,19 @@ ShaderCombinaison *DeferredShadingRenderer::getShader() {
 			"}"
 
 			"vec3 unproj() {"
-				"return unproj((n_Pos.xy / n_Pos.w) * 0.5 + 0.5);"
+				"return unproj((n_Position.xy / n_Position.w) * 0.5 + 0.5);"
 			"}"
 
 			"void main() {"
 				"vec3 pos = unproj();"
-				"vec4 packedNR = texture(n_1, n_Tex);"
-				"vec4 albedo = texture(n_0, n_Tex);"
+				"vec4 packedNR = texture(n_1, n_TexCoord);"
+				"vec4 albedo = texture(n_0, n_TexCoord);"
 				"vec3 normal = normalize(packedNR.xyz * 2.0 - 1.0);"
 				"float NoL = dot(normal, n_Dir);"
 				"n_Out = vec4(albedo.rgb * NoL, albedo.a);"
 			"}");
 
-		Shader<VertexShader> *vert = new Shader<VertexShader>("#version 420\n"
-			"layout(location = 0) in vec3 n_VertexPosition;"
-			"layout(location = 1) in vec3 n_VertexNormal;"
-			"layout(location = 2) in vec3 n_VertexTangent;"
-			"layout(location = 3) in vec2 n_VertexCoord;"
-
-			"out vec2 n_Tex;"
-			"out vec4 n_Pos;"
-
-			"void main() {"
-				"n_Pos = gl_Position = vec4(n_VertexPosition, 1.0);"
-				"n_Tex = n_VertexCoord;"
-			"}");
-
-		shader = new ShaderCombinaison(frag, vert);
+		shader = new ShaderCombinaison(frag, ShaderCombinaison::NoProjectionShader);
 		if(!shader->getLogs().isEmpty()) {
 			std::cerr<<shader->getLogs()<<std::endl;
 		}
