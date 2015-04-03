@@ -56,7 +56,7 @@ class ShaderCombinaison : core::NonCopyable
 			static Shader<VertexShader> **def = 0;
 			if(!def) {
 					def = new Shader<VertexShader>*[2];
-					def[ProjectionShader] = new Shader<VertexShader>("#version 420 core\n"
+					def[ProjectionShader] = new Shader<VertexShader>(
 								"layout(location = 0) in vec3 n_VertexPosition;"
 								"layout(location = 1) in vec3 n_VertexNormal;"
 								"layout(location = 2) in vec3 n_VertexTangent;"
@@ -84,7 +84,7 @@ class ShaderCombinaison : core::NonCopyable
 									"n_TexCoord = n_VertexCoord;"
 									"n_Binormal = cross(n_Normal, n_Tangent);"
 								"}");
-					def[NoProjectionShader] = new Shader<VertexShader>("#version 420 core\n"
+					def[NoProjectionShader] = new Shader<VertexShader>(
 								"layout(location = 0) in vec3 n_VertexPosition;"
 								"layout(location = 1) in vec3 n_VertexNormal;"
 								"layout(location = 2) in vec3 n_VertexTangent;"
@@ -105,8 +105,8 @@ class ShaderCombinaison : core::NonCopyable
 									"n_TexCoord = n_VertexCoord;"
 									"n_Binormal = cross(n_Normal, n_Tangent);"
 								"}");
-				}
-				return def[type];
+			}
+			return def[type];
 		}
 
 	public:

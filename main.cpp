@@ -17,7 +17,7 @@ int main(int, char **) {
 	Scene scene;
 	scene.insert(&cam);
 
-	auto c = new Obj(MeshInstance<>(std::move(TriangleBuffer<>::getSphere())));
+	auto c = new Obj("scube.obj");
 	c->setPosition(Vec3(0, 0, 0));
 	c->setAutoScale(6);
 	scene.insert(c);
@@ -55,9 +55,9 @@ int main(int, char **) {
 
 
 ShaderCombinaison *createNoiseShader() {
-	Shader<FragmentShader> *frag = new Shader<FragmentShader>("#version 420 core\n"
+	Shader<FragmentShader> *frag = new Shader<FragmentShader>("#version 400\n"
 		"float rand(vec2 co) {"
-			"return fract(sin(dot(co, vec2(12.98,78.23))) * 43.54);"
+			"return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);"
 		"}"
 
 		"vec2 grd(vec2 c) {"
@@ -115,13 +115,13 @@ ShaderCombinaison *createNoiseShader() {
 	ShaderCombinaison *shader = new ShaderCombinaison(frag, ShaderCombinaison::NoProjectionShader);
 	std::cerr<<shader->getLogs()<<std::endl;
 	(*shader)["scale"] = 2.464;
-	(*shader)["d"] = 10;
+	(*shader)["d"] = 5;
 	(*shader)["br"] = 0.02;
 	return shader ;
 }
 
 ShaderCombinaison *createShader() {
-	Shader<FragmentShader> *frag = new Shader<FragmentShader>("#version 420 core\n"
+	Shader<FragmentShader> *frag = new Shader<FragmentShader>(
 		"out vec4 color;"
 		"uniform float width;"
 		"in vec3 bc;"
@@ -150,7 +150,7 @@ ShaderCombinaison *createShader() {
 		"}"
 	);
 
-	Shader<GeometryShader> *geom = new Shader<GeometryShader>("#version 420 core\n"
+	Shader<GeometryShader> *geom = new Shader<GeometryShader>(
 		"layout(triangles) in;"
 		"layout (triangle_strip, max_vertices = 3) out;"
 		"in int n_VertexID[3];"

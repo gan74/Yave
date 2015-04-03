@@ -34,8 +34,12 @@ class ShaderBase : core::NonCopyable
 			return logs;
 		}
 
+		uint getVersion() const {
+			return version;
+		}
+
 		bool isValid() {
-			return handle;
+			return handle && version;
 		}
 
 	protected:
@@ -51,6 +55,7 @@ class ShaderBase : core::NonCopyable
 		}
 
 		gl::GLuint handle;
+		uint version;
 		core::String logs;
 };
 
@@ -67,19 +72,44 @@ template<ShaderType Type>
 class Shader : public internal::ShaderBase
 {
 	public:
-		Shader(const core::String &src) : internal::ShaderBase() {
-			load(src);
+		Shader(const core::String &src, uint vers = 420) : internal::ShaderBase() {
+			version = load(src, vers);
 		}
 
 		~Shader() {
 		}
 
 	private:
-		void load(core::String src = "") {
+		uint load(core::String src, uint vers) {
+			core::String libs[] = {
+					"vec4 n_gbuffer0(vec4 color, vec3 normal, float roughness, float metal) {"
+						"return color;"
+					"}"
+					"vec4 n_gbuffer1(vec4 color, vec3 normal, float roughness, float metal) {"
+						"return vec4(normalize(normal) * 0.5 + 0.5, roughness);"
+					"}",
+					"",
+					""
+			};
+			uint vit = src.find("#version");
+			if(vit != -1u) {
+				uint l = src.find("\n", vit);
+				if(l != -1u) {
+					bool ok = true;
+					uint v = src.subString(vit + 9).get<uint>([&]() { ok = false; });
+					if(ok && v) {
+						vers = v;
+					} else {
+						logs += "Unable to parse #version.\n";
+					}
+				}
+				src.replace("#version", "//#version");
+			}
 			gl::GLenum glType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
 			handle = gl::glCreateShader(glType[Type]);
-			const char *str = src.toChar();
-			gl::glShaderSource(handle, 1, &str, 0);
+			core::String ver = core::String("#version ") + vers + "\n";
+			const char *strs[] = {ver.toChar(), libs[Type].toChar(), src.toChar()};
+			gl::glShaderSource(handle, 3, strs, 0);
 			gl::glCompileShader(handle);
 			int res = 0;
 			gl::glGetShaderiv(handle, GL_COMPILE_STATUS, &res);
@@ -91,9 +121,11 @@ class Shader : public internal::ShaderBase
 				gl::glDeleteShader(handle);
 				handle = 0;
 				msg[size] = '\0';
-				logs = msg;
+				logs += msg;
 				delete[] msg;
+				return 0;
 			}
+			return vers;
 		}
 
 };

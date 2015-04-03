@@ -66,7 +66,7 @@ class GBufferRenderer : public BufferedRenderer
 
 	private:
 		static Shader<FragmentShader> *createShader() {
-			static Shader<FragmentShader> *sh = new Shader<FragmentShader>("#version 420 core\n"
+			static Shader<FragmentShader> *sh = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
 					"layout(location = 1) out vec4 n_1;"
 
@@ -81,9 +81,11 @@ class GBufferRenderer : public BufferedRenderer
 					"in vec2 n_TexCoord;"
 
 					"void main() {"
-						"n_0 = n_Color * mix(vec4(1.0), texture(n_Diffuse, n_TexCoord), n_DiffuseMul);"
-						"n_1 = vec4(normalize(n_Normal) * 0.5 + 0.5, n_Roughness);"
+						"vec4 color = n_Color * mix(vec4(1.0), texture(n_Diffuse, n_TexCoord), n_DiffuseMul);"
+						"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
+						"n_1 = n_gbuffer1(color, n_Normal, n_Roughness, n_Metallic);"
 					"}");
+					std::cout<<sh->getLogs()<<std::endl;
 			return sh;
 		}
 

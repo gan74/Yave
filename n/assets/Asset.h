@@ -31,7 +31,7 @@ class AssetPtrStorage
 {
 	typedef const T *ConstPtr;
 
-	#ifdef N_32BITS
+	#ifndef N_32BITS
 	typedef concurrent::Atomic<ConstPtr> PtrContainer;
 	#else
 	typedef ConstPtr PtrContainer;

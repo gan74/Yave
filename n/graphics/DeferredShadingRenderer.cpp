@@ -83,7 +83,7 @@ const Material<float> &DeferredShadingRenderer::getMaterial() {
 ShaderCombinaison *DeferredShadingRenderer::getShader() {
 	static ShaderCombinaison *shader = 0;
 	if(!shader) {
-		Shader<FragmentShader> *frag = new Shader<FragmentShader>("#version 420\n"
+		Shader<FragmentShader> *frag = new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
 			"uniform sampler2D n_D;"
