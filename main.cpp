@@ -56,44 +56,41 @@ int main(int, char **) {
 
 ShaderCombinaison *createNoiseShader() {
 	Shader<FragmentShader> *frag = new Shader<FragmentShader>("#version 420 core\n"
-		"vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }"
-		"vec2 fade(vec2 t) { return t*t*t*(t*(t*6.0-15.0)+10.0); }"
-		"vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }"
-		"vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }"
-		"float cnoise(vec2 P) {"
-			"vec4 iP = floor(P.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);"
-			"vec4 fP = fract(P.xyxy) - vec4(0.0, 0.0, 1.0, 1.0);"
-			"iP = mod289(iP);"
-			"vec4 ix = iP.xzxz;"
-			"vec4 iy = iP.yyww;"
-			"vec4 fx = fP.xzxz;"
-			"vec4 fy = fP.yyww;"
-			"vec4 i = permute(permute(ix) + iy);"
-			"vec4 gx = fract(i * (1.0 / 41.0)) * 2.0 - 1.0 ;"
-			"vec4 gy = abs(gx) - 0.5 ;"
-			"vec4 tx = floor(gx + 0.5);"
-			"gx = gx - tx;"
-			"vec2 g00 = vec2(gx.x,gy.x);"
-			"vec2 g10 = vec2(gx.y,gy.y);"
-			"vec2 g01 = vec2(gx.z,gy.z);"
-			"vec2 g11 = vec2(gx.w,gy.w);"
-			"vec4 norm = taylorInvSqrt(vec4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11)));"
-			"g00 *= norm.x;"
-			"g01 *= norm.y;"
-			"g10 *= norm.z;"
-			"g11 *= norm.w;"
-			"float n00 = dot(g00, vec2(fx.x, fy.x));"
-			"float n10 = dot(g10, vec2(fx.y, fy.y));"
-			"float n01 = dot(g01, vec2(fx.z, fy.z));"
-			"float n11 = dot(g11, vec2(fx.w, fy.w));"
-			"vec2 fade_xy = fade(fP.xy);"
-			"vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);"
-			"float n_xy = mix(n_x.x, n_x.y, fade_xy.y);"
-			"return (2.3 * n_xy) * 0.5 + 0.5;"
+		"float rand(vec2 co) {"
+			"return fract(sin(dot(co, vec2(12.98,78.23))) * 43.54);"
 		"}"
 
-		"float rand(vec2 co) {"
-			"return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);"
+		"vec2 grd(vec2 c) {"
+			"float gx = rand(c);"
+			"return vec2(gx, 1.0 - gx * gx);"
+		"}"
+
+		"float dotGrd(vec2 p, ivec2 c) {"
+			"return dot(grd(vec2(c)) * 2 - 1, p - vec2(c));"
+		"}"
+
+		"float fade(float x) {"
+			"return x * x * (3.0 - 2.0 * x);"
+		"}"
+
+		"vec2 fade(vec2 x) {"
+			"return vec2(fade(fade(x.x)), fade(fade(x.y)));"
+		"}"
+
+		"float cnoise(vec2 p) {"
+			"ivec2 cell = ivec2(floor(p));"
+			"ivec2 x0y0 = cell;"
+			"ivec2 x1y0 = cell + ivec2(1, 0);"
+			"ivec2 x0y1 = cell + ivec2(0, 1);"
+			"ivec2 x1y1 = cell + ivec2(1, 1);"
+			"float s = dotGrd(p, x0y0);"
+			"float t = dotGrd(p, x1y0);"
+			"float u = dotGrd(p, x0y1);"
+			"float v = dotGrd(p, x1y1);"
+			"vec2 faded = fade(fract(p));"
+			"vec2 f2 = mix(vec2(s, u), vec2(t, v), faded.x);"
+			"float f = mix(f2.x, f2.y, faded.y);"
+			"return f + 0.5;"
 		"}"
 
 		"uniform float scale;"
@@ -118,7 +115,7 @@ ShaderCombinaison *createNoiseShader() {
 	ShaderCombinaison *shader = new ShaderCombinaison(frag, ShaderCombinaison::NoProjectionShader);
 	std::cerr<<shader->getLogs()<<std::endl;
 	(*shader)["scale"] = 2.464;
-	(*shader)["d"] = 5;
+	(*shader)["d"] = 10;
 	(*shader)["br"] = 0.02;
 	return shader ;
 }
