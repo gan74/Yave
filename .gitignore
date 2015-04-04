@@ -1,6 +1,5 @@
 
-/debug/
-/release/
+/bin/
 /old/
 /Makefile.Debug
 /Makefile.Release
