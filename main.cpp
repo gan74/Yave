@@ -2,6 +2,7 @@
 #ifdef ALL
 #include "main.h"
 
+Shader<FragmentShader> *createFrag();
 ShaderCombinaison *createShader();
 ShaderCombinaison *createNoiseShader();
 
@@ -17,9 +18,9 @@ int main(int, char **) {
 	Scene scene;
 	scene.insert(&cam);
 
-	auto c = new Obj("scube.obj");
+	auto c = new Obj("MP5_Scene.obj");
 	c->setPosition(Vec3(0, 0, 0));
-	c->setAutoScale(6);
+	c->setAutoScale(10);
 	scene.insert(c);
 
 	Light *l = new Light();
@@ -29,8 +30,8 @@ int main(int, char **) {
 	l->setPosition(Vec3(0, 0, 5));
 	scene.insert(l);
 
-	//FrameBufferRenderer renderer(new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene))));
-	ShaderRenderer renderer(new ScreenQuadRenderer(), createNoiseShader());
+	FrameBufferRenderer renderer(/*new ScreenShaderRenderer(createFrag(), "n_0", */new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)))/*, FrameBuffer::Depth)*/);
+	//ShaderRenderer renderer(new ScreenQuadRenderer(), createNoiseShader());
 
 	while(run(win)) {
 
@@ -51,6 +52,21 @@ int main(int, char **) {
 
 
 
+
+Shader<FragmentShader> *createFrag() {
+	return new Shader<FragmentShader>(
+		"uniform sampler2D n_0;"
+
+		"in vec2 n_TexCoord;"
+		"out vec4 color;"
+		"void main() { "
+			//"float d = texture(n_0, n_TexCoord).r;"
+			"vec4 d4 = textureGather(n_0, n_TexCoord, 0);"
+			"float d2 = (d4.x + d4.y + d4.z + d4.w) * 0.25;"
+			"color = vec4(fwidth(d2));"
+		"}"
+	);
+}
 
 
 

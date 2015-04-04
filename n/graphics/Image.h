@@ -26,9 +26,9 @@ namespace graphics {
 namespace internal {
 struct Image : core::NonCopyable
 {
-	Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::R8G8B8A8, void *c = 0) : format(f), size(s), data(c ? new byte[s.mul() * format.bytePerPixel()] : 0) {
+	Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::R8G8B8A8, void *c = 0) : format(f), size(s), data(c ? new byte[s.mul() * f.bytesPerPixel()] : 0) {
 		if(c) {
-			memcpy((void *)data, c, s.mul() * format.bytePerPixel());
+			memcpy((void *)data, c, s.mul() * format.bytesPerPixel());
 		}
 	}
 
@@ -97,7 +97,8 @@ class Image : private assets::Asset<internal::Image>
 		const Color<T> getPixel(const math::Vec2ui &pos) const {
 			const internal::Image *in = getInternal();
 			uint offset = pos.x() * in->size.y() + pos.y();
-			return Color<T>((void *)(((byte *)in->data) + offset * in->format.bytePerPixel()), in->format);
+			byte *colorData = (byte *)in->data;
+			return Color<T>(colorData + offset * in->format.bytesPerPixel(), in->format);
 		}
 
 		bool operator==(const Image &i) const {

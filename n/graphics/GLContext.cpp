@@ -97,7 +97,7 @@ GLContext::GLContext() : shader(0), frameBuffer(0), material(0), viewport(800, 6
 	std::cout<<std::endl;
 
 
-	gl::glEnable(GL_TEXTURE_2D);
+	//gl::glEnable(GL_TEXTURE_2D);
 	//gl::glEnable(GL_CULL_FACE);
 	//gl::glEnable(GL_DEPTH_TEST);
 

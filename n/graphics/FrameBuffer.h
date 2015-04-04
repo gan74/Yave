@@ -27,6 +27,7 @@ namespace graphics {
 class FrameBuffer : core::NonCopyable
 {
 	public:
+		static constexpr uint Depth = -1u;
 		FrameBuffer(const math::Vec2ui &s);
 		~FrameBuffer();
 
@@ -42,14 +43,14 @@ class FrameBuffer : core::NonCopyable
 		void bind() const;
 		static void unbind();
 
-		void blit() const;
+		void blit(bool color = true, bool dept = true) const;
 
 		math::Vec2ui getSize() const {
 			return base;
 		}
 
-		const Texture &getAttachement(uint slot) const {
-			return attachments[slot];
+		Texture getAttachement(uint slot) const {
+			return slot == Depth ? getDepthAttachement() : attachments[slot];
 		}
 
 		Texture getDepthAttachement() const {

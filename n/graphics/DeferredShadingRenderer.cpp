@@ -47,7 +47,8 @@ void DeferredShadingRenderer::render(void *ptr) {
 	child->render(data->child);
 
 	buffer.bind();
-	gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	child->getFrameBuffer().blit(false);
+	gl::glClear(GL_COLOR_BUFFER_BIT);
 
 	ShaderCombinaison *sh = getShader();
 	sh->bind();

@@ -11,9 +11,11 @@ LIBS += -lpthread
 LIBS += -lmingw32
 LIBS += -lSDL2main
 LIBS += -lSDL2.dll
+LIBS += -lSDL2_Image
+LIBS += -lSDL2_Image.dll
 
 DEFINES += GLEW_STATIC
-DEFINES += N_USE_LODEPNG
+DEFINES += N_USE_SDL_IMAGE
 
 DEFINES += N_DEBUG
 

@@ -46,6 +46,10 @@ FrameBuffer::~FrameBuffer() {
 }
 
 void FrameBuffer::setAttachmentEnabled(uint slot, bool enabled) {
+	if(slot == Depth) {
+		setDepthEnabled(enabled);
+		return;
+	}
 	if(!enabled && isAttachmentEnabled(slot)) {
 		drawBuffers[slot] = GL_NONE;
 		attachments[slot] = Texture(Image());
@@ -58,6 +62,11 @@ void FrameBuffer::setAttachmentEnabled(uint slot, bool enabled) {
 }
 
 void FrameBuffer::setAttachmentFormat(uint slot, ImageFormat format) {
+	if(slot == Depth) {
+		if(format != ImageFormat::Depth32) {
+			fatal("Invalid depth format.");
+		}
+	}
 	if(attachments[slot].getFormat() != format) {
 		attachments[slot] = Image(getSize(), format);
 		setModified();
@@ -82,7 +91,7 @@ bool FrameBuffer::isDepthEnabled() const {
 }
 
 bool FrameBuffer::isAttachmentEnabled(uint slot) const {
-	return drawBuffers[slot] != GL_NONE;
+	return slot == Depth ? isDepthEnabled() : drawBuffers[slot] != GL_NONE;
 }
 
 void FrameBuffer::setModified() {
@@ -157,11 +166,11 @@ void FrameBuffer::unbind() {
 	}
 }
 
-void FrameBuffer::blit() const {
+void FrameBuffer::blit(bool color, bool dept) const {
 	if(GLContext::getContext()->frameBuffer != this) {
 		gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
 	}
-	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), GL_COLOR_BUFFER_BIT | (isDepthEnabled() ? GL_DEPTH_BUFFER_BIT : 0), GL_NEAREST);
+	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), (color ? GL_COLOR_BUFFER_BIT : 0) | (dept ? GL_DEPTH_BUFFER_BIT : 0), GL_NEAREST);
 	//gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, GLContext::getContext()->frameBuffer ? GLContext::getContext()->frameBuffer->handle : 0);
 }
 

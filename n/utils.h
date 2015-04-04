@@ -154,6 +154,12 @@ namespace math {
 	}
 
 	template<typename T>
+	T normalizedConversion(T u) {
+		return u;
+	}
+
+
+	template<typename T>
 	T isqrt(T s) {
 		T x	= s / 2;
 		T lx = x;
