@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <n/concurrent/Mutex.h>
 #include <n/utils.h>
 #include <n/defines.h>
 #include "ImageLoader.h"
@@ -32,9 +33,12 @@ class SDLImageDecoder : public graphics::ImageLoader::ImageDecoder<SDLImageDecod
 		}
 
 		graphics::internal::Image *operator()(core::String name) override {
+			static concurrent::Mutex lock;
+			lock.lock();
 			SDL_Surface *surf = IMG_Load(name.toChar());
 			if(!surf) {
 				std::cerr<<"Failed to load \""<<name<<"\" : "<<IMG_GetError()<<std::endl;
+				lock.unlock();
 				return 0;
 			}
 			SDL_LockSurface(surf);
@@ -47,12 +51,19 @@ class SDLImageDecoder : public graphics::ImageLoader::ImageDecoder<SDLImageDecod
 			frm.Gmask = 0x0000FF00;
 			frm.Bmask = 0x00FF0000;
 			frm.Amask = 0xFF000000;
+
+			if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+				std::swap(frm.Amask, frm.Rmask);
+				std::swap(frm.Bmask, frm.Gmask);
+			}
+
 			SDL_Surface* cs = SDL_ConvertSurface(surf, &frm, SDL_SWSURFACE);
 			SDL_LockSurface(cs);
 			void *dat = cs->pixels;
 			cs->pixels = 0;
 			SDL_LockSurface(surf);
 			SDL_LockSurface(cs);
+			lock.unlock();
 			return new internal::Image(size, ImageFormat::R8G8B8A8, dat);
 		}
 };
