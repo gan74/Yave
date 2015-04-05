@@ -2,9 +2,14 @@
 #ifdef ALL
 #include "main.h"
 
-Shader<FragmentShader> *createFrag();
-ShaderCombinaison *createShader();
+Shader<FragmentShader> *createRecBlurFrag();
+Shader<FragmentShader> *createHBlurFrag();
+Shader<FragmentShader> *createVBlurFrag();
 ShaderCombinaison *createNoiseShader();
+BufferedRenderer *createHBlurRenderer(BufferedRenderer *r);
+BufferedRenderer *createVBlurRenderer(BufferedRenderer *r);
+BufferedRenderer *createRecBlurRenderer(BufferedRenderer *r);
+BufferedRenderer *createRecBlurRenderer(BufferedRenderer *r, uint x);
 
 int main(int, char **) {
 	SDL_Window *win = createWindow();
@@ -18,21 +23,23 @@ int main(int, char **) {
 	Scene scene;
 	scene.insert(&cam);
 
-	auto c = new Obj("MP5_Scene.obj");
+	auto c = new Obj("scube.obj");
 	c->setPosition(Vec3(0, 0, 0));
-	c->setAutoScale(10);
+	c->setAutoScale(6);
 	scene.insert(c);
 
 	Light *l = new Light();
-	l->setPosition(Vec3(0, 0, -5));
-	scene.insert(l);
-	l = new Light();
-	l->setPosition(Vec3(0, 0, 5));
+	l->setPosition(Vec3(5, 0, 5));
 	scene.insert(l);
 
-	FrameBufferRenderer renderer(/*new ScreenShaderRenderer(createFrag(), "n_0", */new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)))/*, FrameBuffer::Depth)*/);
-	//ShaderRenderer renderer(new ScreenQuadRenderer(), createNoiseShader());
+	BufferedRenderer *ri = 0;
+	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 
+	//FrameBufferRenderer renderer(createRecBlurRenderer(ri, 500));
+	FrameBufferRenderer renderer(/*createHBlurRenderer*/(createVBlurRenderer(ri)));
+	//FrameBufferRenderer renderer(ri);
+
+	std::cout<<"Started ..."<<std::endl;
 	while(run(win)) {
 
 		c->setRotation(c->getRotation() * Quaternion<>::fromAxisAngle(Vec3(0, 0, 1), dMouse.x()) * Quaternion<>::fromAxisAngle(Vec3(0, 1, 0), dMouse.y()));
@@ -52,23 +59,97 @@ int main(int, char **) {
 
 
 
+BufferedRenderer *createRecBlurRenderer(BufferedRenderer *r, uint x) {
+	return x ? createRecBlurRenderer(createRecBlurRenderer(r, x - 1)) : r;
+}
 
-Shader<FragmentShader> *createFrag() {
+BufferedRenderer *createRecBlurRenderer(BufferedRenderer *r) {
+	return new ScreenShaderRenderer(new ShaderCombinaison(createRecBlurFrag(), ShaderCombinaison::NoProjectionShader), r, "n_0");
+}
+
+
+BufferedRenderer *createHBlurRenderer(BufferedRenderer *r) {
+	return new ScreenShaderRenderer(new ShaderCombinaison(createHBlurFrag(), ShaderCombinaison::NoProjectionShader), r, "n_0");
+}
+
+BufferedRenderer *createVBlurRenderer(BufferedRenderer *r) {
+	return new ScreenShaderRenderer(new ShaderCombinaison(createVBlurFrag(), ShaderCombinaison::NoProjectionShader), r, "n_0");
+}
+
+Shader<FragmentShader> *createRecBlurFrag() {
 	return new Shader<FragmentShader>(
 		"uniform sampler2D n_0;"
 
 		"in vec2 n_TexCoord;"
 		"out vec4 color;"
-		"void main() { "
-			//"float d = texture(n_0, n_TexCoord).r;"
-			"vec4 d4 = textureGather(n_0, n_TexCoord, 0);"
-			"float d2 = (d4.x + d4.y + d4.z + d4.w) * 0.25;"
-			"color = vec4(fwidth(d2));"
+		"void main() {"
+			"vec2 offset = vec2(1.0) / vec2(800, 600);"
+			"vec4 acc = vec4(0);"
+			"for(int x = -1; x != 2; x++) {"
+				"for(int y = -1; y != 2; y++) {"
+					"acc += texture(n_0, n_TexCoord + vec2(x, y) * offset);"
+				"}"
+			"}"
+			"color = acc / 9;"
 		"}"
 	);
 }
 
+Shader<FragmentShader> *createHBlurFrag() {
+	return new Shader<FragmentShader>(
+		"uniform sampler2D n_0;"
 
+		"in vec2 n_TexCoord;"
+		"out vec4 color;"
+
+		"vec2 cl(vec2 x) { return clamp(x, vec2(0), vec2(1)); }"
+		"float sqr(float x) { return x * x; }"
+		"float iv(float x) { return 1.0 / (sqr(x * 0.1) * 10); }"
+		"void main() {"
+			"vec2 offset = vec2(1.0) / vec2(800, 600);"
+			"vec4 acc = vec4(0);"
+			"float sum = 0;"
+			"int size = 300;"
+			"float isize = iv(float(size));"
+			"int hsize = size / 2;"
+			"float mi = exp(-sqr(hsize + 1) * isize);"
+			"for(int x = -hsize; x != hsize; x++) {"
+				"float w = exp(-sqr(x) * isize) - mi;"
+				"acc += w * texture(n_0, cl(n_TexCoord + vec2(x, 0) * offset));"
+				"sum += w;"
+			"}"
+			"color = acc / sum;"
+		"}"
+	);
+}
+
+Shader<FragmentShader> *createVBlurFrag() {
+	return new Shader<FragmentShader>(
+		"uniform sampler2D n_0;"
+
+		"in vec2 n_TexCoord;"
+		"out vec4 color;"
+
+		"vec2 cl(vec2 x) { return clamp(x, vec2(0), vec2(1)); }"
+		"float sqr(float x) { return x * x; }"
+		"float iv(float x) { return 1.0 / (sqr(x * 0.1) * 10); }"
+		"void main() {"
+			"vec2 offset = vec2(1.0) / vec2(800, 600);"
+			"vec4 acc = vec4(0);"
+			"float sum = 0;"
+			"int size = 300;"
+			"float isize = iv(float(size));"
+			"int hsize = size / 2;"
+			"float mi = exp(-sqr(hsize + 1) * isize);"
+			"for(int x = -hsize; x != hsize; x++) {"
+				"float w = exp(-sqr(x) * isize) - mi;"
+				"acc += w * texture(n_0, cl(n_TexCoord + vec2(0, x) * offset));"
+				"sum += w;"
+			"}"
+			"color = acc / sum;"
+		"}"
+	);
+}
 
 ShaderCombinaison *createNoiseShader() {
 	Shader<FragmentShader> *frag = new Shader<FragmentShader>("#version 400\n"
@@ -136,7 +217,7 @@ ShaderCombinaison *createNoiseShader() {
 	return shader ;
 }
 
-ShaderCombinaison *createShader() {
+/*ShaderCombinaison *createShader() {
 	Shader<FragmentShader> *frag = new Shader<FragmentShader>(
 		"out vec4 color;"
 		"uniform float width;"
@@ -159,10 +240,10 @@ ShaderCombinaison *createShader() {
 
 		"void main() {"
 			"color = vec4(vec3(mix(0.0, 0.7, edgeFactor())), 1.0);"
-			/*"if(vertexFactor() < 0.1) {"
-				"vec3 b = vec3((id >> 0) & 0xFF, (id >> 8) & 0xFF, (id >> 16) & 0xFF);"
-				"color = vec4(vec3(b / vec3(0xwFF, 16, 0xFF)), 1.0);"
-			"}"*/
+			//"if(vertexFactor() < 0.1) {"
+			//	"vec3 b = vec3((id >> 0) & 0xFF, (id >> 8) & 0xFF, (id >> 16) & 0xFF);"
+			//	"color = vec4(vec3(b / vec3(0xwFF, 16, 0xFF)), 1.0);"
+			//"}"
 		"}"
 	);
 
@@ -189,7 +270,7 @@ ShaderCombinaison *createShader() {
 	(*shader)["width"] = 1.0;
 	std::cerr<<shader->getLogs()<<std::endl;
 	return shader ;
-}
+}*/
 
 #else
 

@@ -26,14 +26,14 @@ namespace graphics {
 class ScreenShaderRenderer : public BufferedRenderer
 {
 	public:
-		ScreenShaderRenderer(Shader<FragmentShader> *sh, const core::String &name, BufferedRenderer *c, uint slt = 0, const math::Vec2ui &s = math::Vec2ui(0));
+		ScreenShaderRenderer(ShaderCombinaison *sh, BufferedRenderer *c = 0, const core::String &name = "tex", uint slt = 0, const math::Vec2ui &s = math::Vec2ui(0));
 
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;
 
 	private:
 		BufferedRenderer *child;
-		ShaderCombinaison shader;
+		ShaderCombinaison *shader;
 		uint slot;
 		core::String uName;
 

@@ -21,23 +21,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-ScreenShaderRenderer::ScreenShaderRenderer(Shader<FragmentShader> *sh, const core::String &name, BufferedRenderer *c, uint slt, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c), shader(sh, ShaderCombinaison::NoProjectionShader), slot(slt), uName(name) {
+ScreenShaderRenderer::ScreenShaderRenderer(ShaderCombinaison *sh, BufferedRenderer *c, const core::String &name, uint slt, const math::Vec2ui &s) : BufferedRenderer(s.isNull() && c ? c->getFrameBuffer().getSize() : s), child(c), shader(sh), slot(slt), uName(name) {
 	buffer.setAttachmentEnabled(0, true);
 	buffer.setDepthEnabled(false);
 }
 
 void *ScreenShaderRenderer::prepare() {
-	return child->prepare();
+	return child ? child->prepare() : 0;
 }
 
 void ScreenShaderRenderer::render(void *ptr) {
-	child->render(ptr);
+	if(child) {
+		child->render(ptr);
+	}
 
 	buffer.bind();
 	gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	shader.bind();
-	shader.setValue(uName, child->getFrameBuffer().getAttachement(slot));
+	shader->bind();
+
+	if(child) {
+		shader->setValue(uName, child->getFrameBuffer().getAttachement(slot));
+	}
 
 	GLContext::getContext()->getScreen().draw(VertexAttribs());
 }
