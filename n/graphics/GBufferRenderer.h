@@ -51,7 +51,7 @@ class GBufferRenderer : public BufferedRenderer
 		void setFormat(BufferFormat) {
 			buffer.setAttachmentEnabled(0, true);
 			buffer.setAttachmentEnabled(1, true);
-			buffer.setAttachmentFormat(1, ImageFormat::R16G16);
+			buffer.setAttachmentFormat(1, ImageFormat::RG16);
 			buffer.setAttachmentEnabled(2, true);
 			buffer.setDepthEnabled(true);
 		}

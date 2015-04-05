@@ -64,7 +64,7 @@ class SDLImageDecoder : public graphics::ImageLoader::ImageDecoder<SDLImageDecod
 			SDL_LockSurface(surf);
 			SDL_LockSurface(cs);
 			lock.unlock();
-			return new internal::Image(size, ImageFormat::R8G8B8A8, dat);
+			return new internal::Image(size, ImageFormat::RGBA8, dat);
 		}
 };
 
