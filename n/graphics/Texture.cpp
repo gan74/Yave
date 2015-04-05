@@ -40,6 +40,12 @@ GLTexFormat getTextureFormat(ImageFormat format) {
 		case ImageFormat::Depth32:
 			return GLTexFormat(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT32, GL_FLOAT);
 		break;
+		case ImageFormat::R32FG32FB32FA32F:
+			return GLTexFormat(GL_RGBA, GL_RGBA32F, GL_FLOAT);
+		break;
+		case ImageFormat::R16G16:
+			return GLTexFormat(GL_RG, GL_RG16, GL_UNSIGNED_SHORT);
+		break;
 		case ImageFormat::R8G8B8A8:
 			return GLTexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE);
 		break;

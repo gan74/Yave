@@ -36,8 +36,8 @@ int main(int, char **) {
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 
 	//FrameBufferRenderer renderer(createRecBlurRenderer(ri, 500));
-	FrameBufferRenderer renderer(/*createHBlurRenderer*/(createVBlurRenderer(ri)));
-	//FrameBufferRenderer renderer(ri);
+	//FrameBufferRenderer renderer(/*createHBlurRenderer*/(createVBlurRenderer(ri)));
+	FrameBufferRenderer renderer(ri);
 
 	std::cout<<"Started ..."<<std::endl;
 	while(run(win)) {

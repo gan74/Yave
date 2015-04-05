@@ -85,8 +85,11 @@ class Shader : public internal::ShaderBase
 					"vec4 n_gbuffer0(vec4 color, vec3 normal, float roughness, float metal) {"
 						"return color;"
 					"}"
-					"vec4 n_gbuffer1(vec4 color, vec3 normal, float roughness, float metal) {"
-						"return vec4(normalize(normal) * 0.5 + 0.5, roughness);"
+					"vec2 n_gbuffer1(vec4 color, vec3 normal, float roughness, float metal) {"
+						"return normalize(normal).yz;" // this on is R16G16
+					"}"
+					"vec4 n_gbuffer2(vec4 color, vec3 normal, float roughness, float metal) {"
+						"return vec4(roughness, metal, 0, 0);"
 					"}",
 					"",
 					""

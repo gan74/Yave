@@ -51,6 +51,8 @@ class GBufferRenderer : public BufferedRenderer
 		void setFormat(BufferFormat) {
 			buffer.setAttachmentEnabled(0, true);
 			buffer.setAttachmentEnabled(1, true);
+			buffer.setAttachmentFormat(1, ImageFormat::R16G16);
+			buffer.setAttachmentEnabled(2, true);
 			buffer.setDepthEnabled(true);
 		}
 
@@ -68,7 +70,7 @@ class GBufferRenderer : public BufferedRenderer
 		static Shader<FragmentShader> *createShader() {
 			static Shader<FragmentShader> *sh = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
-					"layout(location = 1) out vec4 n_1;"
+					"layout(location = 1) out vec2 n_1;"
 
 					"uniform vec4 n_Color;"
 					"uniform float n_Roughness;"
@@ -85,7 +87,6 @@ class GBufferRenderer : public BufferedRenderer
 						"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
 						"n_1 = n_gbuffer1(color, n_Normal, n_Roughness, n_Metallic);"
 					"}");
-					std::cout<<sh->getLogs()<<std::endl;
 			return sh;
 		}
 

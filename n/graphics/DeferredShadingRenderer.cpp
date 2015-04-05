@@ -55,6 +55,7 @@ void DeferredShadingRenderer::render(void *ptr) {
 
 	sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
 	sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
+	sh->setValue("n_2", child->getFrameBuffer().getAttachement(2));
 	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
 	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
 	sh->setValue("n_Cam", data->cam->getPosition());
@@ -87,6 +88,7 @@ ShaderCombinaison *DeferredShadingRenderer::getShader() {
 		Shader<FragmentShader> *frag = new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
+			"uniform sampler2D n_2;"
 			"uniform sampler2D n_D;"
 			"uniform mat4 n_Inv;"
 			"uniform vec3 n_Cam;"
@@ -98,21 +100,23 @@ ShaderCombinaison *DeferredShadingRenderer::getShader() {
 
 			"out vec4 n_Out;"
 
-			"vec3 unproj(vec2 C) { "
+			"vec3 unproj(vec2 C) {"
 				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
 				"vec4 P = n_Inv * VP;"
-				"return P.xyz / P.w; "
+				"return P.xyz / P.w;"
 			"}"
 
 			"vec3 unproj() {"
 				"return unproj((n_Position.xy / n_Position.w) * 0.5 + 0.5);"
 			"}"
 
+			"float sqr(float x) { return x * x; }"
+
 			"void main() {"
 				"vec3 pos = unproj();"
-				"vec4 packedNR = texture(n_1, n_TexCoord);"
 				"vec4 albedo = texture(n_0, n_TexCoord);"
-				"vec3 normal = normalize(packedNR.xyz * 2.0 - 1.0);"
+				"vec3 normal = vec3(texture(n_1, n_TexCoord).xy, 0);"
+				"normal.z = sqrt(1.0 - (sqr(normal.x) + sqr(normal.y)));"
 				"float NoL = dot(normal, n_Dir);"
 				"n_Out = vec4(albedo.rgb * NoL, albedo.a);"
 			"}");
