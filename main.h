@@ -55,6 +55,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Vec2 mouse;
 Vec2 dMouse;
 
+
+class IThread : public n::concurrent::Thread
+{
+	public:
+		IThread(uint *x) : n::concurrent::Thread(), i(x) {
+		}
+
+		virtual void run() override {
+			while(true) {
+				int w = -1;
+				std::cin>>w;
+				if(w < 0 || w > 2) {
+					std::cerr<<"Invalid input"<<std::endl;
+					continue;
+				}
+				*i = uint(w);
+			}
+		}
+
+	private:
+		uint *i;
+
+};
+
 SDL_Window *createWindow() {
 	SDL_Window *mainWindow = 0;
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
