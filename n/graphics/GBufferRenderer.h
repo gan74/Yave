@@ -36,12 +36,10 @@ class GBufferRenderer : public BufferedRenderer
 		};
 
 		GBufferRenderer(SceneRenderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : BufferedRenderer(s), child(c) {
-			shader = new ShaderCombinaison(createShader());
 			setFormat(RGBDiffuseRGBNormal);
 		}
 
 		~GBufferRenderer() {
-			delete shader;
 		}
 
 		SceneRenderer *getRenderer() const {
@@ -61,13 +59,13 @@ class GBufferRenderer : public BufferedRenderer
 		}
 
 		virtual void render(void *ptr) override {
-			shader->bind();
+			getShader()->bindAsDefault();
 			buffer.bind();
 			child->render(ptr);
 		}
 
 	private:
-		static Shader<FragmentShader> *createShader() {
+		static Shader<FragmentShader> *getShader() {
 			static Shader<FragmentShader> *sh = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
 					"layout(location = 1) out vec2 n_1;"
@@ -91,7 +89,6 @@ class GBufferRenderer : public BufferedRenderer
 		}
 
 		SceneRenderer *child;
-		ShaderCombinaison *shader;
 
 };
 

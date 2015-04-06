@@ -54,7 +54,11 @@ GLAPIENTRY void debugOut(gl::GLenum, gl::GLenum type, gl::GLuint, gl::GLuint sev
 }
 
 GLContext *GLContext::getContext() {
-	static GLContext *ct = new GLContext();
+	static GLContext *ct = 0;
+	if(!ct) {
+		ct = new GLContext();
+		ShaderProgram(ct->program).bind();
+	}
 	return ct;
 }
 
@@ -82,7 +86,7 @@ void GLContext::finishTasks() {
 	}
 }
 
-GLContext::GLContext() : shader(0), frameBuffer(0), material(0), viewport(800, 600), screen(0) {
+GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), frameBuffer(0), material(0), viewport(800, 600), screen(0) {
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}

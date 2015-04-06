@@ -93,15 +93,18 @@ class SmartPtr
 			return *this;
 		}
 
-		bool operator==(const T *p) const {
+		template<typename U>
+		bool operator==(const U *p) const {
 			return ptr == p;
 		}
 
-		bool operator!=(const T *p) const {
+		template<typename U>
+		bool operator!=(const U *p) const {
 			return ptr != p;
 		}
 
-		bool operator<(const T *p) const {
+		template<typename U>
+		bool operator<(const U *p) const {
 			return ptr < p;
 		}
 

@@ -37,19 +37,15 @@ int main(int, char **) {
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 
 	//FrameBufferRenderer renderer(createRecBlurRenderer(ri, 500));
-	FrameBufferRenderer *renderer[] = {new FrameBufferRenderer(createBlurRenderer(ri)), new FrameBufferRenderer(createUBlurRenderer(ri)), new FrameBufferRenderer(ri)};
-	//FrameBufferRenderer renderer(ri);
+	//FrameBufferRenderer *renderer[] = {new FrameBufferRenderer(createBlurRenderer(ri)), new FrameBufferRenderer(createUBlurRenderer(ri)), new FrameBufferRenderer(ri)};
+	FrameBufferRenderer renderer(ri);
 
-
-	uint index = 0;
-	IThread ithread(&index);
-	ithread.start();
 
 	while(run(win)) {
 
 		c->setRotation(c->getRotation() * Quaternion<>::fromAxisAngle(Vec3(0, 0, 1), dMouse.x()) * Quaternion<>::fromAxisAngle(Vec3(0, 1, 0), dMouse.y()));
 
-		(*renderer[index])();
+		(renderer)();
 
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
@@ -61,7 +57,7 @@ int main(int, char **) {
 
 	return 0;
 }
-
+/*
 BufferedRenderer *createRecBlurRenderer(BufferedRenderer *r, uint x) {
 	return x ? createRecBlurRenderer(createRecBlurRenderer(r, x - 1)) : r;
 }
@@ -125,7 +121,7 @@ ShaderCombinaison *createBlurShader(Vec2 dir) {
 				"vec4 acc = vec4(0);"
 				"float sum = 0;"
 				"vec2 dir = vec2(" + String(dir.x()) + ", " + String(dir.y()) + ") / textureSize(n_0, 0);"
-				"const float size = 300;"
+				"float size = 300;"
 				"float isize = iv(size);"
 				"float hsize = ceil(size / 2);"
 				"float mi = exp(-sqr(hsize + 1) * isize);"
@@ -240,7 +236,7 @@ ShaderCombinaison *createNoiseShader() {
 		(*shader)["br"] = 0.02;
 	}
 	return shader;
-}
+}*/
 
 /*ShaderCombinaison *createShader() {
 	Shader<FragmentShader> *frag = new Shader<FragmentShader>(

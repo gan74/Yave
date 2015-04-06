@@ -18,7 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_SHADER
 
 #include <n/core/String.h>
+#include "ShaderProgram.h"
+#include "GLContext.h"
 #include "GL.h"
+
+#ifdef N_DEBUG
+#define N_SHADER_SRC // for debugging
+#endif
 
 namespace n {
 namespace graphics {
@@ -42,6 +48,12 @@ class ShaderBase : core::NonCopyable
 			return handle && version;
 		}
 
+		#ifdef N_SHADER_SRC
+		const core::String &getSrc() const {
+			return source;
+		}
+		#endif
+
 	protected:
 		friend class graphics::ShaderCombinaison;
 
@@ -57,16 +69,13 @@ class ShaderBase : core::NonCopyable
 		gl::GLuint handle;
 		uint version;
 		core::String logs;
+
+		#ifdef N_SHADER_SRC
+		core::String source;
+		#endif
 };
 
 }
-
-enum ShaderType
-{
-	FragmentShader = 0,
-	VertexShader = 1,
-	GeometryShader = 2
-};
 
 template<ShaderType Type>
 class Shader : public internal::ShaderBase
@@ -77,10 +86,20 @@ class Shader : public internal::ShaderBase
 		}
 
 		~Shader() {
+			if(ShaderProgram::isDefaultShader(this)) {
+				ShaderProgram::setDefaultShader((Shader<Type> *)0);
+			}
+		}
+
+		void bindAsDefault() {
+			ShaderProgram::setDefaultShader(this);
 		}
 
 	private:
 		uint load(core::String src, uint vers) {
+			#ifdef N_SHADER_SRC
+			source = src;
+			#endif
 			core::String libs[] = {
 					"vec4 n_gbuffer0(vec4 color, vec3 normal, float roughness, float metal) {"
 						"return color;"

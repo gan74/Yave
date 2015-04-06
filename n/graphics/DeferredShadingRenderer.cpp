@@ -22,6 +22,64 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+const Material<float> &getMaterial() {
+	static Material<> mat;
+	if(mat.isNull()) {
+		internal::Material<> i;
+		i.blend = Add;
+		i.depthTested = false;
+		mat = Material<>(i);
+	}
+	return mat;
+}
+
+ShaderCombinaison *getShader() {
+	static ShaderCombinaison *shader = 0;
+	if(!shader) {
+		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+			"uniform sampler2D n_0;"
+			"uniform sampler2D n_1;"
+			"uniform sampler2D n_2;"
+			"uniform sampler2D n_D;"
+			"uniform mat4 n_Inv;"
+			"uniform vec3 n_Cam;"
+
+			"uniform vec3 n_Dir;"
+
+			"in vec2 n_TexCoord;"
+			"in vec4 n_Position;"
+
+			"out vec4 n_Out;"
+
+			"vec3 unproj(vec2 C) {"
+				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
+				"vec4 P = n_Inv * VP;"
+				"return P.xyz / P.w;"
+			"}"
+
+			"vec3 unproj() {"
+				"return unproj((n_Position.xy / n_Position.w) * 0.5 + 0.5);"
+			"}"
+
+			"float sqr(float x) { return x * x; }"
+
+			"void main() {"
+				"vec3 pos = unproj();"
+				"vec4 albedo = texture(n_0, n_TexCoord);"
+				"vec3 normal = vec3(texture(n_1, n_TexCoord).xy, 0);"
+				"normal.z = sqrt(1.0 - (sqr(normal.x) + sqr(normal.y)));"
+				"float NoL = dot(normal, n_Dir);"
+				"n_Out = vec4(albedo.rgb * NoL, albedo.a);"
+			"}"), ShaderProgram::NoProjectionShader);
+		if(!shader->getLogs().isEmpty()) {
+			std::cerr<<shader->getLogs()<<std::endl;
+			fatal("Unable to compiler deferred shaders.");
+		}
+	}
+	return shader;
+}
+
+
 struct FrameData
 {
 	Camera *cam;
@@ -63,70 +121,13 @@ void DeferredShadingRenderer::render(void *ptr) {
 	getMaterial().bind();
 
 	for(const Light *l : data->lights) {
-		//std::cout<<l->getPosition()<<std::endl;
 		sh->setValue("n_Dir", l->getPosition().normalized());
 		GLContext::getContext()->getScreen().draw(VertexAttribs());
 	}
 
+	sh->unbind();
+
 	delete data;
-}
-
-const Material<float> &DeferredShadingRenderer::getMaterial() {
-	static Material<> mat;
-	if(mat.isNull()) {
-		internal::Material<> i;
-		i.blend = Add;
-		i.depthTested = false;
-		mat = Material<>(i);
-	}
-	return mat;
-}
-
-ShaderCombinaison *DeferredShadingRenderer::getShader() {
-	static ShaderCombinaison *shader = 0;
-	if(!shader) {
-		Shader<FragmentShader> *frag = new Shader<FragmentShader>(
-			"uniform sampler2D n_0;"
-			"uniform sampler2D n_1;"
-			"uniform sampler2D n_2;"
-			"uniform sampler2D n_D;"
-			"uniform mat4 n_Inv;"
-			"uniform vec3 n_Cam;"
-
-			"uniform vec3 n_Dir;"
-
-			"in vec2 n_TexCoord;"
-			"in vec4 n_Position;"
-
-			"out vec4 n_Out;"
-
-			"vec3 unproj(vec2 C) {"
-				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
-				"vec4 P = n_Inv * VP;"
-				"return P.xyz / P.w;"
-			"}"
-
-			"vec3 unproj() {"
-				"return unproj((n_Position.xy / n_Position.w) * 0.5 + 0.5);"
-			"}"
-
-			"float sqr(float x) { return x * x; }"
-
-			"void main() {"
-				"vec3 pos = unproj();"
-				"vec4 albedo = texture(n_0, n_TexCoord);"
-				"vec3 normal = vec3(texture(n_1, n_TexCoord).xy, 0);"
-				"normal.z = sqrt(1.0 - (sqr(normal.x) + sqr(normal.y)));"
-				"float NoL = dot(normal, n_Dir);"
-				"n_Out = vec4(albedo.rgb * NoL, albedo.a);"
-			"}");
-
-		shader = new ShaderCombinaison(frag, ShaderCombinaison::NoProjectionShader);
-		if(!shader->getLogs().isEmpty()) {
-			std::cerr<<shader->getLogs()<<std::endl;
-		}
-	}
-	return shader;
 }
 
 }

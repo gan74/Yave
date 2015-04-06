@@ -37,6 +37,8 @@ class Material;
 namespace internal {
 	template<typename T>
 	struct Material;
+
+	struct ShaderProgram;
 }
 
 class GLContext
@@ -91,6 +93,7 @@ class GLContext
 
 	private:
 		friend class ShaderCombinaison;
+		friend class ShaderProgram;
 		friend class FrameBuffer;
 
 		template<typename T>
@@ -106,6 +109,7 @@ class GLContext
 		math::Matrix4<> model;
 
 		const ShaderCombinaison *shader;
+		core::SmartPtr<internal::ShaderProgram> program;
 		const FrameBuffer *frameBuffer;
 		assets::Asset<internal::Material<float>> material;
 

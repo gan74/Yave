@@ -32,9 +32,6 @@ class DeferredShadingRenderer : public BufferedRenderer
 
 	private:
 		GBufferRenderer *child;
-
-		static ShaderCombinaison *getShader();
-		static const Material<float> &getMaterial();
 };
 
 }

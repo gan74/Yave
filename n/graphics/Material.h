@@ -142,6 +142,7 @@ class Material : private assets::Asset<internal::Material<T>>
 		}
 
 		void bind() const {
+			#warning binding shader after binding material will fail
 			const internal::Material<T> *i = getInternal();
 			const internal::Material<T> *c = GLContext::getContext()->material.operator->();
 			const ShaderCombinaison *sh = GLContext::getContext()->getShader();
