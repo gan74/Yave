@@ -134,7 +134,7 @@ struct ImageFormat
 					return norm(((uint16 *)cdt)[ch]);
 
 				case RGB10A2: {
-					R10G10B10A2_t data = *(R10G10B10A2_t *)cdt;
+					const R10G10B10A2_t data = *reinterpret_cast<const R10G10B10A2_t *>(cdt);
 					switch(ch) {
 						case Red:
 							return norm(data.r, 10);

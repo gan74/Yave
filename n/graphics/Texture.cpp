@@ -35,6 +35,7 @@ struct GLTexFormat
 	const gl::GLenum type;
 };
 
+
 GLTexFormat getTextureFormat(ImageFormat format) {
 	switch(format) {
 		case ImageFormat::Depth32:
@@ -63,6 +64,26 @@ GLTexFormat getTextureFormat(ImageFormat format) {
 		break;
 	}
 }
+
+bool Texture::isHWSupported(ImageFormat format) {
+	if(format == ImageFormat::RGB10A2) {
+		return false;
+	}
+	static core::Map<ImageFormat, bool> support;
+	core::Map<ImageFormat, bool>::const_iterator it = support.find(format);
+	if(it == support.end()) {
+		gl::GLint s = 0;
+		gl::glGetInternalformativ(GL_TEXTURE_2D, getTextureFormat(format).internalFormat, GL_INTERNALFORMAT_SUPPORTED, sizeof(gl::GLint), &s);
+		/*gl::GLint p = 0;
+		gl::glGetInternalformativ(GL_TEXTURE_2D, getTextureFormat(format).internalFormat, GL_INTERNALFORMAT_PREFERRED, sizeof(gl::GLint), &p);
+		if(p != gl::GLint(getTextureFormat(format).internalFormat)) {
+			std::cerr<<"Texture format not fully supported"<<std::endl;
+		}*/
+		return support[format] = (s == GL_TRUE);
+	}
+	return (*it)._2;
+}
+
 
 Texture::Texture(const Image &i) : image(i), data(new Data()) {
 }

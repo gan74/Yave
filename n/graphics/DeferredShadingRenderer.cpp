@@ -101,7 +101,7 @@ void *DeferredShadingRenderer::prepare() {
 }
 
 void DeferredShadingRenderer::render(void *ptr) {
-	FrameData *data = (FrameData *)ptr;
+	FrameData *data = reinterpret_cast<FrameData *>(ptr);
 	child->render(data->child);
 
 	buffer.bind();

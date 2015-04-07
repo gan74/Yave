@@ -87,7 +87,7 @@ void Thread::sleep(double sec) {
 }
 
 void *Thread::createThread(void *arg) {
-	self = (Thread *)arg;
+	self = reinterpret_cast<Thread *>(arg);
 	{ HazardPtr<int>(0); } // init Hazard stuffs
 	self->run();
 	self->internal->join.unlock();

@@ -118,7 +118,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 						core::Map<math::Vec3ui, uint>::const_iterator it = vmap.find(v);
 						if(it == vmap.end()) {
 							if(v.x() >= positions.size() || v.z() >= normals.size() || v.y() >= coords.size()) {
-								std::cerr<<"Index out of bound : "<<v<<std::endl;
+								std::cerr<<"Index out of bound : "<<core::String(v)<<std::endl;
 								return 0;
 							}
 							face[i] = vmap[v] = tr.append(Vertex<>(positions[v.x()], normals[v.z()], coords[v.y()]));

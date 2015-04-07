@@ -91,6 +91,7 @@ class String
 		String &operator=(const String &s);
 		String &operator=(String &&s);
 		bool operator<(const String &s) const;
+		bool operator>(const String &s) const;
 
 		const char &operator[](uint i) const {
 			return data[i];
@@ -275,15 +276,19 @@ struct String::StringConverter : public String
 }
 }
 
-template<typename T>
-n::core::String operator+(const T &i, const n::core::String &s) {
-	return n::core::String(i) + s;
-}
+
 
 template<typename T>
 n::core::String operator+(const n::core::String &s, const T &i) {
 	return s + n::core::String(i);
 }
+
+N_GEN_CLASS_OP(n::core::String, +)
+N_GEN_CLASS_OP(n::core::String, <)
+N_GEN_CLASS_OP(n::core::String, >)
+N_GEN_CLASS_OP(n::core::String, ==)
+N_GEN_CLASS_OP(n::core::String, !=)
+
 
 std::istream &operator>>(std::istream &s, n::core::String &str);
 std::ostream &operator<<(std::ostream &s, const n::core::String &str);

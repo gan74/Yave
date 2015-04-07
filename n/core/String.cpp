@@ -397,6 +397,19 @@ bool String::operator<(const String &s) const {
 	return length < s.length;
 }
 
+bool String::operator>(const String &s) const {
+	if(data && s.data) {
+		for(uint i = 0, min = std::min(length, s.length); i != min; i++) {
+			if(data[i] > s.data[i]) {
+				return true;
+			} else if(data[i] < s.data[i]) {
+				return false;
+			}
+		}
+	}
+	return length > s.length;
+}
+
 String::operator const char *() const {
 	return toChar();
 }

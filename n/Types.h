@@ -145,6 +145,12 @@ class className { \
 		static constexpr bool value = SFINAE<HasMethodType, std::is_fundamental<HasMethodType>::value>::type::value; \
 };
 
+#define N_GEN_CLASS_OP(cl, op) \
+template<typename T \
+/*, typename X = typename std::enable_if<!n::TypeConversion<T, cl>::exists>::type*/> \
+decltype(n::makeOne<cl>() op n::makeOne<cl>()) \
+operator op(const T &i, const cl &s) { return (cl(i) op s); }
+
 namespace internal {
 	N_GEN_TYPE_HAS_MEMBER(IsConstIterableInternal, const_iterator)
 	N_GEN_TYPE_HAS_MEMBER(IsNonConstIterableInternal, iterator)

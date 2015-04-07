@@ -119,6 +119,17 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 		fatal("No enought vertex attribs.");
 	}
 
+
+	#define CHECK_TEX_FORMAT(frm) if(!Texture::isHWSupported(ImageFormat::frm)) { fatal(("Texture format " + core::String(#frm) + " not supported").toChar()); }
+
+	CHECK_TEX_FORMAT(RGBA32F);
+	CHECK_TEX_FORMAT(RGBA16);
+	CHECK_TEX_FORMAT(RG16);
+	CHECK_TEX_FORMAT(F32);
+	CHECK_TEX_FORMAT(Depth32);
+
+	#undef CHECK_TEX_FORMAT
+
 	gl::glGetError();
 
 	gl::glDebugMessageCallback(&debugOut, 0);
@@ -216,5 +227,7 @@ const VertexArrayObject<float> &GLContext::getScreen() const {
 
 }
 }
+
+
 
 

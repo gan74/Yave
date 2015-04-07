@@ -74,6 +74,8 @@ class Texture
 			return image.getFormat();
 		}
 
+		static bool isHWSupported(ImageFormat format);
+
 	private:
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;

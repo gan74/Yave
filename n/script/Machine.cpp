@@ -301,7 +301,7 @@ DynamicPrimitive Machine::run(DynamicBytecode *code) {
 
 			case DynamicBytecode::Ex:
 				stackPtr++;
-				*stackPtr = run((DynamicBytecode *)stackPtr->toType(PrimitiveType::Bytecode));
+				*stackPtr = run(reinterpret_cast<DynamicBytecode *>(stackPtr->toType(PrimitiveType::Bytecode).ptr));
 			break;
 
 			case DynamicBytecode::Cast:

@@ -1,4 +1,4 @@
-#define ALL
+//#define ALL
 #ifdef ALL
 #include "main.h"
 
@@ -10,6 +10,7 @@ BufferedRenderer *createBlurRenderer(BufferedRenderer *r);
 BufferedRenderer *createUBlurRenderer(BufferedRenderer *r);
 BufferedRenderer *createRecBlurRenderer(BufferedRenderer *r);
 BufferedRenderer *createRecBlurRenderer(BufferedRenderer *r, uint x);
+
 
 int main(int, char **) {
 	SDL_Window *win = createWindow();
@@ -297,67 +298,22 @@ ShaderCombinaison *createNoiseShader() {
 
 #include <iostream>
 #include <n/core/Timer.h>
+#include <n/core/String.h>
 #include <n/core/Array.h>
 #include <n/core/Functor.h>
+#include <n/math/Vec.h>
 #include <n/mem/SmallObject.h>
 #include <n/concurrent/SpinLock.h>
 #include <n/concurrent/Async.h>
 #include <n/concurrent/Mutex.h>
 
+
 using namespace n;
-using namespace n::core;
-using namespace n::concurrent;
 
-class I : public mem::SmallObject<I>
-{
-	public:
-		I(int x) : i(x) {
-		}
-
-		const int i;
-};
-
-class W
-{
-	public:
-		void *operator new(uint size) {
-			return malloc(size);
-		}
-
-};
-
-class J : public W
-{
-	public:
-		J(int x) : i(x) {
-		}
-
-		const int i;
-		};
 
 int main(int, char **) {
-	SpinLock lock;
-	Array<SharedFuture<void>> futures;
-	Timer ti;
-	uint threads = 10;
-	uint max = 1000000;
-	for(uint i = 0; i != threads; i++) {
-		futures += Async([=, &lock]() {
-			for(uint j = 0; j != max; j++) {
-				lock.lock();
-				lock.unlock();
-			}
-		});
-	}
-	for(cnst SharedFuture<void> &f : futures) {
-		f.wait();
-	}
-	std::cout<<ti.reset() * 1000<<"ms"<<std::endl;
-	for(uint j = 0; j != max * threads; j++) {
-		lock.lock();
-		lock.unlock();
-	}
-	std::cout<<ti.reset() * 1000<<"ms"<<std::endl;
+	core::String str = "lol";
+	std::cout<<(str < "lil")<<" "<<("lal" < str)<<std::endl;
 
 
 }

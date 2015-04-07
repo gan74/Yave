@@ -65,7 +65,7 @@ class IThread : public n::concurrent::Thread
 
 		virtual void run() override {
 			while(true) {
-				int w = -1;
+				int w = 4;
 				std::cin>>w;
 				if(w < 0 || w > 2) {
 					std::cerr<<"Invalid input"<<std::endl;

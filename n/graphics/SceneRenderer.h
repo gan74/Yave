@@ -36,7 +36,7 @@ class SceneRenderer : public Renderer
 			uint objects;
 		};
 
-		SceneRenderer(const Scene *sc) : Renderer(), sce(sc) {
+		SceneRenderer(const Scene *sc) : Renderer(), sce(sc), perfData({0, 0}) {
 		}
 
 		PerfData getPerfData() const {
@@ -69,7 +69,7 @@ class SceneRenderer : public Renderer
 			if(!ptr) {
 				return;
 			}
-			RenderQueue *queue = (RenderQueue *)ptr;
+			RenderQueue *queue = reinterpret_cast<RenderQueue *>(ptr);
 			for(const auto q : queue->getBatches()) {
 				q();
 			}
