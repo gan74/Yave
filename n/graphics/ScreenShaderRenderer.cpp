@@ -45,6 +45,8 @@ void ScreenShaderRenderer::render(void *ptr) {
 	}
 
 	GLContext::getContext()->getScreen().draw(VertexAttribs());
+
+	shader->unbind();
 }
 
 }
