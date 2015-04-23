@@ -88,6 +88,8 @@ namespace internal {
 		bool depthTested;
 		bool depthWrite;
 
+		graphics::ShaderProgram prog;
+
 		BlendMode blend;
 		CullMode cull;
 
@@ -144,6 +146,9 @@ class Material : private assets::Asset<internal::Material<T>>
 		void bind() const {
 			#warning binding shader after binding material will fail
 			const internal::Material<T> *i = getInternal();
+			if(i) {
+				i->prog.bind();
+			}
 			const internal::Material<T> *c = GLContext::getContext()->material.operator->();
 			const ShaderCombinaison *sh = GLContext::getContext()->getShader();
 			if(!i) {

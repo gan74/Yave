@@ -45,6 +45,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/DynamicBuffer.h>
 #include <n/graphics/DeferredShadingRenderer.h>
 #include <n/graphics/ScreenShaderRenderer.h>
+#include <n/graphics/ShaderRenderer.h>
 #include <n/graphics/Light.h>
 
 
@@ -164,6 +165,117 @@ class RandObj : public Obj
 		}
 };
 
+/*ShaderCombinaison *createPerlinShader() {
+	static ShaderCombinaison *shader = 0;
+	if(!shader) {
+
+
+		shader = new ShaderCombinaison(frag, vert);
+		std::cerr<<shader->getLogs()<<std::endl;
+		(*shader)["scale"] = 2.464;
+		(*shader)["d"] = 5;
+		(*shader)["br"] = 0.02;
+	}
+	return shader;
+}*/
+
+Material<> createPerlinMat() {
+		String str = "const float pi = " + String(pi<>()) + ";"
+			"const float scale = 2.4;"
+			"const int d = 5;"
+			"const float br = 0.0;"
+			"float rand(vec2 co) {"
+				"return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);"
+			"}"
+			"vec2 grd(vec2 c) {"
+				"float gx = rand(c);"
+				"gx = gx * 2.0 * pi;"
+				"return /*normalize*/(vec2(cos(gx), sin(gx)));"
+			"}"
+			"float dotGrd(vec2 p, ivec2 c) {"
+				"return dot(grd(vec2(c)), p - vec2(c));"
+			"}"
+			"float smoothStep(float x) {"
+				"return x * x * (3.0 - 2.0 * x);"
+			"}"
+			"vec2 fade(vec2 x) {"
+				"return vec2(smoothStep(smoothStep(x.x)), smoothStep(smoothStep(x.y)));"
+			"}"
+			"float cnoise(vec2 p) {"
+				"ivec2 cell = ivec2(floor(p));"
+				"ivec2 x0y0 = cell;"
+				"ivec2 x1y0 = cell + ivec2(1, 0);"
+				"ivec2 x0y1 = cell + ivec2(0, 1);"
+				"ivec2 x1y1 = cell + ivec2(1, 1);"
+				"float s = dotGrd(p, x0y0);"
+				"float t = dotGrd(p, x1y0);"
+				"float u = dotGrd(p, x0y1);"
+				"float v = dotGrd(p, x1y1);"
+				"vec2 faded = fade(fract(p));"
+				"vec2 f2 = mix(vec2(s, u), vec2(t, v), faded.x);"
+				"float f = mix(f2.x, f2.y, faded.y);"
+				"return f + 0.5;"
+			"}"
+			"float pnoise(vec2 p) {"
+				"float tot = 0;"
+				"float n = 0;"
+				"for(int i = 0; i < d; i++) {"
+					"float w = pow(0.5, i);"
+					"n += w * cnoise(p * (1 + scale) / w);"
+					"tot += w;"
+				"}"
+				"n /= tot;"
+				"float r = rand(p);"
+				"return mix(n, r, br);"
+			"}";
+
+		Shader<FragmentShader> *frag = new Shader<FragmentShader>(
+			"in vec3 normal;"
+			"layout(location = 0) out vec4 n_0;"
+			"layout(location = 1) out vec2 n_1;"
+			"void main() {"
+				"vec2 n = vec2(dFdx(h), dFdy(h));"
+				"n_0 = n_gbuffer0(vec4(1), vec3(0), 1, 0);"
+				"n_1 = n_gbuffer1(vec4(1), vec3(n, sqrt(1.0 - dot(n, n))), 1, 0);"
+			"}");
+
+		Shader<VertexShader> *vert = new Shader<VertexShader>(str +
+			"layout(location = 0) in vec3 n_VertexPosition;"
+			"layout(location = 3) in vec2 n_VertexCoord;"
+			"uniform mat4 n_ViewProjectionMatrix;"
+			"uniform mat4 n_ModelMatrix;"
+			"out vec3 normal;"
+			"void main() {"
+				"coord = n_VertexCoord;"
+				"float height = pnoise(n_VertexCoord);"
+				"float offset = 0.01;"
+				"normal = vec3(pnoise(n_VertexCoord) + vec(offset, 0) - (pnoise(n_VertexCoord) - vec(offset, 0)),"
+							  "pnoise(n_VertexCoord) + vec(0, offset) - (pnoise(n_VertexCoord) - vec(0, offset)), 0);"
+				"normal.xy /= 2 * offset;"
+
+				"normal.z"
+				"vec4 model = n_ModelMatrix * vec4(n_VertexPosition.xy, height * 10, 1.0);"
+				"gl_Position = n_ViewProjectionMatrix * model;"
+			"}");
+
+	graphics::internal::Material<> mat;
+	mat.prog = ShaderProgram(frag, vert);
+	return Material<>(mat);
+}
+
+
+class PerlinTerrain : public StaticMesh
+{
+	public:
+		PerlinTerrain() : StaticMesh(MeshInstance<>(std::move(TriangleBuffer<>::getGrid(100)), createPerlinMat())) {
+		}
+
+		virtual void render(RenderQueue &qu) override {
+			for(MeshInstanceBase<> *b : getMeshInstance()) {
+				qu.insert(RenderBatch(getTransform().getMatrix(), b, VertexAttribs()));
+			}
+		}
+};
 
 
 template<int I>

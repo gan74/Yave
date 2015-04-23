@@ -66,8 +66,8 @@ ShaderCombinaison *getShader() {
 			"void main() {"
 				"vec3 pos = unproj();"
 				"vec4 albedo = texture(n_0, n_TexCoord);"
-				"vec3 normal = vec3(texture(n_1, n_TexCoord).xy, 0);"
-				"normal.z = sqrt(1.0 - (sqr(normal.x) + sqr(normal.y)));"
+				"vec3 normal = vec3(texture(n_1, n_TexCoord).xy * 2.0 - 1.0, 0);"
+				"normal.z = sqrt(1.0 - dot(normal, normal));"
 				"float NoL = dot(normal, n_Dir);"
 				"n_Out = vec4(albedo.rgb * NoL, albedo.a);"
 			"}"), ShaderProgram::NoProjectionShader);
@@ -108,6 +108,8 @@ void DeferredShadingRenderer::render(void *ptr) {
 	child->getFrameBuffer().blit(false);
 	gl::glClear(GL_COLOR_BUFFER_BIT);
 
+	getMaterial().bind();
+
 	ShaderCombinaison *sh = getShader();
 	sh->bind();
 
@@ -117,8 +119,6 @@ void DeferredShadingRenderer::render(void *ptr) {
 	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
 	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
 	sh->setValue("n_Cam", data->cam->getPosition());
-
-	getMaterial().bind();
 
 	for(const Light *l : data->lights) {
 		sh->setValue("n_Dir", l->getPosition().normalized());

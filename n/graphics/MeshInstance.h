@@ -74,7 +74,7 @@ namespace internal {
 			}
 		}
 
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b) : MeshInstance<T>(core::Array<MeshInstanceBase<T> *>(new MeshInstanceBase<T>(std::move(b), graphics::Material<T>()))) {
+		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m = graphics::Material<T>()) : MeshInstance<T>(core::Array<MeshInstanceBase<T> *>(new MeshInstanceBase<T>(std::move(b), m))) {
 		}
 
 		~MeshInstance() {
@@ -118,7 +118,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 		MeshInstance() :  assets::Asset<internal::MeshInstance<T>>() {
 		}
 
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b) : MeshInstance(new internal::MeshInstance<T>(std::move(b))) {
+		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const Material<T> &m = Material<T>()) : MeshInstance(new internal::MeshInstance<T>(std::move(b), m)) {
 		}
 
 		bool isValid() const {

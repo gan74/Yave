@@ -61,9 +61,13 @@ namespace internal {
 			}
 			return geom < c.geom;
 		}
+
+		bool isNull() const {
+			return !frag && !vert && !geom;
+		}
 	};
 
-	struct ShaderProgram
+	struct ShaderProgram : core::NonCopyable
 	{
 		ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom);
 		~ShaderProgram();
@@ -86,10 +90,10 @@ class ShaderProgram
 			NoProjectionShader = 1
 		};
 
-		ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0);
+		ShaderProgram(Shader<FragmentShader> *frag = 0, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0);
 		ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader vert, Shader<GeometryShader> *geom = 0);
 
-		void bind();
+		void bind() const;
 
 		bool isActive() const;
 

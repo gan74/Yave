@@ -176,6 +176,7 @@ class TriangleBuffer
 		static const FreezedTriangleBuffer &getSphere();
 		static const FreezedTriangleBuffer &getCube();
 		static const FreezedTriangleBuffer &getScreen();
+		static FreezedTriangleBuffer getGrid(uint size);
 
 	private:
 		template<typename U>
@@ -262,7 +263,24 @@ const typename TriangleBuffer<T>::FreezedTriangleBuffer &TriangleBuffer<T>::getS
 }
 
 
-
+template<typename T>
+typename TriangleBuffer<T>::FreezedTriangleBuffer TriangleBuffer<T>::getGrid(uint size) {
+	core::Array<Vertex<T>> vertices;
+	for(uint x = 0; x != size; x++) {
+		for(uint y = 0; y != size; y++) {
+			vertices.append(Vertex<T>(math::Vec<3, T>(x - T(size) / 2, y - T(size) / 2, 0), math::Vec<2, T>(x / T(size), y / T(size))));
+		}
+	}
+	VertexBuffer<T> vb(vertices);
+	TriangleBuffer<T> tris(vb);
+	for(uint x = 0; x != size - 1; x++) {
+		for(uint y = 0; y != size - 1; y++) {
+			tris.append(x + y * size, x + (y + 1) * size, (x + 1) + y * size);
+			tris.append((x + 1) + y * size, x + (y + 1) * size, (x + 1) + (y + 1) * size);
+		}
+	}
+	return FreezedTriangleBuffer(tris.freezed());
+}
 
 
 }
