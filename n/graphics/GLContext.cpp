@@ -99,6 +99,14 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	std::cout<<" (32 bits)";
 	#endif
 	std::cout<<std::endl;
+	
+	int major = 0;
+	int minor = 0;
+	gl::glGetIntegerv(GL_MAJOR_VERSION, &major);
+	gl::glGetIntegerv(GL_MINOR_VERSION, &minor);
+	if(major > 4 || (major == 4 && minor > 3)) {
+		fatal("This needs OpenGL 4.3 or newer to run");
+	}
 
 
 	//gl::glEnable(GL_TEXTURE_2D);
