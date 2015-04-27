@@ -37,6 +37,10 @@ class TextInputStream : public InputStream
 			return stream->readBytes(b, len);
 		}
 
+		bool atEnd() const override {
+			return stream->atEnd();
+		}
+
 		core::String readLine() {
 			core::Array<char> arr;
 			char c;
