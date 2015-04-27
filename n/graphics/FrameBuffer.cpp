@@ -159,10 +159,11 @@ void FrameBuffer::bind() const {
 void FrameBuffer::unbind() {
 	if(GLContext::getContext()->frameBuffer) {
 		gl::glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		if(GLContext::getContext()->getViewport() != GLContext::getContext()->getFrameBuffer()->getSize()) {
+		const FrameBuffer *fb = GLContext::getContext()->frameBuffer;
+		GLContext::getContext()->frameBuffer = 0;
+		if(GLContext::getContext()->getViewport() != fb->getSize()) {
 			gl::glViewport(0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y());
 		}
-		GLContext::getContext()->frameBuffer = 0;
 	}
 }
 
