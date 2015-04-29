@@ -41,10 +41,8 @@ N_FORCE_INLINE char *allocStr(SCType **count, uint s) {
 	}
 	*count = new(cptr) SCType(1);
 	new(cptr + sizeof(SCType)) uint(allocSize);
-
 	return (char *)(cptr + sizeof(SCType) + sizeof(uint));
 }
-
 
 N_FORCE_INLINE void freeStr(SCType **count, char *) {
 	if(!*count) {
@@ -71,7 +69,7 @@ N_FORCE_INLINE char *reallocStr(SCType **count, uint s) {
 		*(uint *)(cptr + 1) = optAllocSize;
 	}
 	*count = cptr;
-	return (char *)(cptr + sizeof(SCType) + sizeof(uint));
+	return ((char *)cptr) + sizeof(SCType) + sizeof(uint);
 }
 
 String::String() : length(0), count(0), data(0) {
@@ -428,7 +426,7 @@ uint String::getHash() const {
 
 void String::detach(uint s) const {
 	if(s) {
-		if(isUnique() && !isSharedSubset()) {
+		if(isUnique()) {
 			data = reallocStr(&count, s);
 		} else {
 			--(*count);
@@ -447,11 +445,11 @@ void String::detach(uint s) const {
 }
 
 bool String::isUnique() const {
-	return (!count || *count == 1);
+	return (!count || *count <= 1);
 }
 
 bool String::isSharedSubset() const {
-	return count && (char *)(count + 1)	!= data;
+	return count && ((char *)count) + sizeof(SCType) + sizeof(uint)	!= data;
 }
 
 bool String::isShared() const {
