@@ -90,7 +90,7 @@ class Console : public n::concurrent::Thread
 			if(isNum(cmd)) {
 				return cmd;
 			}
-			if(cmd.beginWith("$")) {
+			if(cmd.beginsWith("$")) {
 				uint i = cmd.find("=");
 				if(i == -1u) {
 					if(AsCollection(cmd).findOne([] (char c) { return isspace(c); }) != cmd.end()) {

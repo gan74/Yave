@@ -279,7 +279,7 @@ class ShaderCombinaison : core::NonCopyable
 				gl::GLenum type = GL_NONE;
 				gl::glGetActiveUniform(handle, i, max, 0, &size, &type, name);
 				core::String uniform = name;
-				if(uniform.endWith("[0]")) {
+				if(uniform.endsWith("[0]")) {
 					uniform = uniform.subString(0, uniform.size() - 3);
 				}
 				UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});

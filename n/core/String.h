@@ -66,8 +66,8 @@ class String
 		bool contains(const String &str) const;
 		String subString(uint beg, uint len) const;
 		String subString(uint beg) const;
-		bool beginWith(const String &s) const;
-		bool endWith(const String &s) const;
+		bool beginsWith(const String &s) const;
+		bool endsWith(const String &s) const;
 		void detach();
 		void swap(String &str);
 		Array<String> split(const String &str, bool empties = false) const;

@@ -70,6 +70,7 @@ ShaderCombinaison *getShader() {
 				"normal.z = sqrt(1.0 - dot(normal, normal));"
 				"float NoL = dot(normal, n_Dir);"
 				"n_Out = vec4(albedo.rgb * NoL, albedo.a);"
+				//"n_Out = vec4(normal * 0.5 + 0.5, 1.0);"
 			"}"), ShaderProgram::NoProjectionShader);
 		if(!shader->getLogs().isEmpty()) {
 			std::cerr<<shader->getLogs()<<std::endl;

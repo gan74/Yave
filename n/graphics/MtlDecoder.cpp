@@ -35,7 +35,7 @@ class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::Stri
 		}
 
 		internal::Material<> *operator()(core::String fileName, core::String name) override {
-			if(!fileName.endWith(".mtl")) {
+			if(!fileName.endsWith(".mtl")) {
 				return 0;
 			}
 			io::File file(fileName);
@@ -58,7 +58,7 @@ class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::Stri
 
 		internal::Material<> *mat = 0;
 		for(const core::String &l : lines) {
-			if(l.beginWith("newmtl ")) {
+			if(l.beginsWith("newmtl ")) {
 				if(l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
 					if(mat) {
 						std::cerr<<"Material \""<<name<<"\""<<" is already defined"<<std::endl;
@@ -69,17 +69,17 @@ class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::Stri
 					break;
 				}
 			} else if(mat) {
-				if(l.toLower().beginWith("kd ")) {
+				if(l.toLower().beginsWith("kd ")) {
 					core::Array<float> fl = l.subString(3).split(" ");
 					if(fl.size() != 3) {
 						std::cerr<<"Invalid color"<<std::endl;
 						return 0;
 					}
 					mat->color = Color<>(fl[0], fl[1], fl[2], 1);
-				} else if(l.toLower().beginWith("ni ")) {
+				} else if(l.toLower().beginsWith("ni ")) {
 					float ni = float(l.subString(3));
 					mat->roughness = sqrt(2 / (ni + 2));
-				} else if(l.toLower().beginWith("map_kd ")) {
+				} else if(l.toLower().beginsWith("map_kd ")) {
 					mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })));l.subString(7);
 				}
 			}

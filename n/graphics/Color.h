@@ -207,6 +207,10 @@ class Color : public math::Vec<4, T>
 		template<typename... Args>
 		Color(Args... args) : math::Vec<4, T>(args...) {
 		}
+
+		operator math::Vec<4, T>() const {
+			return *this;
+		}
 };
 
 }

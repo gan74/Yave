@@ -63,6 +63,24 @@ class TriangleBuffer
 				core::Array<Vertex<T>> vertices;
 				T radius;
 
+				template<uint N>
+				core::String V2S(const math::Vec<N, T> &t) const {
+					return "(" + (core::AsCollection<math::Vec<N, T>>(t)).make(core::String(", ")) + ")";
+				}
+
+				core::String toCpp() const {
+					core::String str = "Vec3 *vertices = new Vec3[" + core::String(vertices.size()) + "] {";
+					for(const Vertex<T> &v : vertices) {
+						str += "Vec3" + V2S(v.p()) + ", ";
+					}
+					str += "Vec3()};\nuint *indexes = new uint[" + core::String(indexes.size()) + "] {";
+					for(uint i = 0; i != indexes.size(); i++) {
+						str += core::String(indexes[i]) + ", ";
+					}
+					str += "0};";
+					return str;
+				}
+
 			private:
 				friend class TriangleBuffer;
 				FreezedTriangleBuffer(const TriangleBuffer &b) : indexes(b.trianglesData), vertices(b.vertices.getVertices()), radius(0) {

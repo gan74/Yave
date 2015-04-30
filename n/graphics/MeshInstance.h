@@ -101,6 +101,10 @@ namespace internal {
 			return bases.end();
 		}
 
+		const core::Array<MeshInstanceBase<T> *> &getBases() const {
+			return bases;
+		}
+
 		private:
 			core::Array<MeshInstanceBase<T> *> bases;
 			T radius;
@@ -150,6 +154,12 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 			const internal::MeshInstance<T> *i = getInternal();
 			return i ? i->end() : 0;
 		}
+
+		core::Array<MeshInstanceBase<T> *> getBases() const {
+			const internal::MeshInstance<T> *i = getInternal();
+			return i ? i->getBases() : core::Array<MeshInstanceBase<T> *>();
+		}
+
 	private:
 		MeshInstance(const assets::Asset<internal::MeshInstance<T>> &t) : assets::Asset<internal::MeshInstance<T>>(t) {
 		}

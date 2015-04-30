@@ -235,7 +235,7 @@ String String::subString(uint beg) const {
 	return subString(beg, length - beg);
 }
 
-bool String::beginWith(const String &s) const {
+bool String::beginsWith(const String &s) const {
 	if(length < s.length) {
 		return false;
 	}
@@ -253,7 +253,7 @@ bool String::beginWith(const String &s) const {
 	return true;
 }
 
-bool String::endWith(const String &s) const {
+bool String::endsWith(const String &s) const {
 	if(length < s.length) {
 		return false;
 	}

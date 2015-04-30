@@ -1,4 +1,4 @@
-#define ALL
+//#define ALL
 #ifdef ALL
 #include "main.h"
 
@@ -52,6 +52,8 @@ int main(int, char **) {
 
 #include <iostream>
 #include <n/core/Timer.h>
+#include <n/io/File.h>
+#include <n/io/TextInputStream.h>
 #include <n/core/String.h>
 #include <n/core/Array.h>
 #include <n/core/Functor.h>
@@ -61,15 +63,10 @@ int main(int, char **) {
 #include <n/concurrent/Async.h>
 #include <n/concurrent/Mutex.h>
 
-
 using namespace n;
-
+using namespace n::io;
 
 int main(int, char **) {
-	core::String str = "lol";
-	std::cout<<(str < "lil")<<" "<<("lal" < str)<<std::endl;
-
-
 }
 
 #endif

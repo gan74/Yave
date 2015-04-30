@@ -33,7 +33,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 		}
 
 		internal::MeshInstance<> *operator()(core::String name) override {
-			if(!name.endWith(".obj")) {
+			if(!name.endsWith(".obj")) {
 				return 0;
 			}
 			io::File file(name);
@@ -65,7 +65,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 				if(l.size() < 4) {
 					continue;
 				}
-				if(l.beginWith("v ")) {
+				if(l.beginsWith("v ")) {
 					/*core::Array<float> fl = l.subString(2).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
 					if(fl.size() != 3) {
 						std::cerr<<"Invalid position"<<std::endl;
@@ -74,7 +74,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					float fl[3] = {0};
 					sscanf(l.toChar(), "v %f %f %f", &fl[0], &fl[1], &fl[2]);
 					positions.append(math::Vec3(fl[0], fl[1], fl[2]));
-				} else if(l.beginWith("vn ")) {
+				} else if(l.beginsWith("vn ")) {
 					/*core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
 					if(fl.size() != 3) {
 						std::cerr<<"Invalid normal"<<std::endl;
@@ -83,7 +83,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					float fl[3] = {0};
 					sscanf(l.toChar(), "vn %f %f %f", &fl[0], &fl[1], &fl[2]);
 					normals.append(math::Vec3(fl[0], fl[1], fl[2]));
-				} else if(l.beginWith("vt ")) {
+				} else if(l.beginsWith("vt ")) {
 					/*core::Array<float> fl = l.subString(3).split(" ");//.mapped([](const core::String &s) { return s.to<float>(); });
 					if(fl.size() != 2) {
 						std::cerr<<"Invalid texture coord"<<std::endl;
@@ -102,7 +102,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			Material<> mat;
 			core::Array<MeshInstanceBase<> *> bases;
 			for(const core::String &l : lines) {
-				if(l.beginWith("f ")) {
+				if(l.beginsWith("f ")) {
 					core::Array<core::String> fl = l.subString(2).split(" ");
 					uint face[] = {0, 0, 0};
 					if(fl.size() != 3) {
@@ -127,15 +127,15 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 						}
 					}
 					tr.append(face[0], face[1], face[2]);
-				} else if(l.beginWith("s ")) {
+				} else if(l.beginsWith("s ")) {
 					core::String sm = l.subString(2).toLower().filtered([](char c) { return !isspace(c); });
 					smooth = !(sm == "off" || sm == "0");
-				} else if(l.beginWith("usemtl ")) {
+				} else if(l.beginsWith("usemtl ")) {
 					mat = MaterialLoader::load<core::String, core::String>(mtllib, l.subString(7));
 					if(!tr.getTriangles().isEmpty()) {
 						bases.append(new MeshInstanceBase<>(std::move(tr.freezed()), mat));
 					}
-				} else if(l.beginWith("mtllib ")) {
+				} else if(l.beginsWith("mtllib ")) {
 					mtllib = l.subString(7);
 				}
 			}

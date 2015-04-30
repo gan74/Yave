@@ -46,6 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/DeferredShadingRenderer.h>
 #include <n/graphics/ScreenShaderRenderer.h>
 #include <n/graphics/ShaderRenderer.h>
+#include <n/graphics/TriangleBuffer.h>
 #include <n/graphics/Light.h>
 
 
@@ -229,11 +230,12 @@ Material<> createPerlinMat() {
 				"return mix(n, r, br);"
 			"}";
 
-		Shader<FragmentShader> *frag = new Shader<FragmentShader>(
-			"in vec3 normal;"
+		Shader<FragmentShader> *frag = new Shader<FragmentShader>(str +
+			"in vec2 tex;"
 			"layout(location = 0) out vec4 n_0;"
 			"layout(location = 1) out vec2 n_1;"
 			"void main() {"
+				"float h = pnoise(tex) * 100;"
 				"vec2 n = vec2(dFdx(h), dFdy(h));"
 				"n_0 = n_gbuffer0(vec4(1), vec3(0), 1, 0);"
 				"n_1 = n_gbuffer1(vec4(1), vec3(n, sqrt(1.0 - dot(n, n))), 1, 0);"
@@ -244,19 +246,17 @@ Material<> createPerlinMat() {
 			"layout(location = 3) in vec2 n_VertexCoord;"
 			"uniform mat4 n_ViewProjectionMatrix;"
 			"uniform mat4 n_ModelMatrix;"
-			"out vec3 normal;"
+			"out vec2 tex;"
 			"void main() {"
-				"coord = n_VertexCoord;"
+				"tex = n_VertexCoord;"
 				"float height = pnoise(n_VertexCoord);"
-				"float offset = 0.01;"
-				"normal = vec3(pnoise(n_VertexCoord) + vec(offset, 0) - (pnoise(n_VertexCoord) - vec(offset, 0)),"
-							  "pnoise(n_VertexCoord) + vec(0, offset) - (pnoise(n_VertexCoord) - vec(0, offset)), 0);"
-				"normal.xy /= 2 * offset;"
-
-				"normal.z"
-				"vec4 model = n_ModelMatrix * vec4(n_VertexPosition.xy, height * 10, 1.0);"
+				"float h = height * 10;"
+				"vec4 model = n_ModelMatrix * vec4(n_VertexPosition.xy, h, 1.0);"
 				"gl_Position = n_ViewProjectionMatrix * model;"
 			"}");
+
+		std::cout<<vert->getLogs()<<std::endl;
+		std::cout<<frag->getLogs()<<std::endl;
 
 	graphics::internal::Material<> mat;
 	mat.prog = ShaderProgram(frag, vert);

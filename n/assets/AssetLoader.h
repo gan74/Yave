@@ -74,6 +74,7 @@ class AssetLoader : core::NonCopyable
 		{
 			public:
 				virtual ArgumentTypes args() const = 0;
+
 		};
 
 		template<typename... Args>
@@ -94,6 +95,7 @@ class AssetLoader : core::NonCopyable
 
 			private:
 				core::Functor<T *(Args...)> func;
+
 		};
 
 	public:
