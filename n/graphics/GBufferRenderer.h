@@ -49,7 +49,7 @@ class GBufferRenderer : public BufferedRenderer
 		void setFormat(BufferFormat) {
 			buffer.setAttachmentEnabled(0, true);
 			buffer.setAttachmentEnabled(1, true);
-			buffer.setAttachmentFormat(1, ImageFormat::RG16);
+			buffer.setAttachmentFormat(1, ImageFormat::RGBA16);
 			buffer.setAttachmentEnabled(2, true);
 			buffer.setDepthEnabled(true);
 		}
@@ -68,7 +68,7 @@ class GBufferRenderer : public BufferedRenderer
 		static Shader<FragmentShader> *getShader() {
 			static Shader<FragmentShader> *sh = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
-					"layout(location = 1) out vec2 n_1;"
+					"layout(location = 1) out vec3 n_1;"
 
 					"uniform vec4 n_Color;"
 					"uniform float n_Roughness;"

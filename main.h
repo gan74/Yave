@@ -233,7 +233,7 @@ Material<> createPerlinMat() {
 		Shader<FragmentShader> *frag = new Shader<FragmentShader>(str +
 			"in vec2 tex;"
 			"layout(location = 0) out vec4 n_0;"
-			"layout(location = 1) out vec2 n_1;"
+			"layout(location = 1) out vec3 n_1;"
 			"void main() {"
 				"float h = pnoise(tex) * 100;"
 				"vec2 n = vec2(dFdx(h), dFdy(h));"

@@ -1,4 +1,4 @@
-//#define ALL
+#define ALL
 #ifdef ALL
 #include "main.h"
 
@@ -12,6 +12,8 @@ int main(int, char **) {
 
 	Scene scene;
 	scene.insert(&cam);
+
+	//std::cout<<TriangleBuffer<>::getSphere().toCpp()<<std::endl;
 
 	auto c = new PerlinTerrain();
 	//auto c = new Obj("scube.obj");
