@@ -33,10 +33,27 @@ const Material<float> &getMaterial() {
 	return mat;
 }
 
-ShaderCombinaison *getShader() {
-	static ShaderCombinaison *shader = 0;
-	if(!shader) {
-		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+enum LightType
+{
+	Point,
+	Directional,
+
+	Max
+};
+
+struct FrameData
+{
+	Camera<> *cam;
+	core::Array<Light<> *> lights[LightType::Max];
+	void *child;
+};
+
+ShaderCombinaison *getShader(LightType type) {
+	static ShaderCombinaison *shader[LightType::Max] = {0};
+	core::String computeDir[LightType::Max] = {"return n_LightPos - x;", "return n_LightPos;"};
+	core::String attenuate[LightType::Max] = {"float a = 1.0 - x / n_LightRadius; return a * a * a;", "return 1.0;"};
+	if(!shader[type]) {
+		shader[type] = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
 			"uniform sampler2D n_2;"
@@ -44,7 +61,9 @@ ShaderCombinaison *getShader() {
 			"uniform mat4 n_Inv;"
 			"uniform vec3 n_Cam;"
 
-			"uniform vec3 n_Dir;"
+			"uniform vec3 n_LightPos;"
+			"uniform vec3 n_LightColor;"
+			"uniform float n_LightRadius;"
 
 			"in vec2 n_TexCoord;"
 			"in vec4 n_Position;"
@@ -61,32 +80,52 @@ ShaderCombinaison *getShader() {
 				"return unproj((n_Position.xy / n_Position.w) * 0.5 + 0.5);"
 			"}"
 
-			"float sqr(float x) { return x * x; }"
+			"float attenuate(float x) {"
+				+ attenuate[type] +
+			"}"
+
+			"vec3 computeDir(vec3 x) {"
+				+ computeDir[type] +
+			"}"
 
 			"void main() {"
 				"vec3 pos = unproj();"
 				"vec4 albedo = texture(n_0, n_TexCoord);"
 				"vec3 normal = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
-				//"normal.z = sqrt(1.0 - dot(normal, normal));"
-				"float NoL = dot(normal, n_Dir);"
-				"n_Out = vec4(albedo.rgb * NoL, albedo.a);"
+				"vec3 dir = computeDir(pos);"
+				"float dist = length(dir);"
+				"dir /= dist;"
+				"float NoL = dot(normal, dir);"
+				"float att = attenuate(dist);"
+				"n_Out = vec4(albedo.rgb * n_LightColor * NoL * att, albedo.a);"
 				//"n_Out = vec4(normal * 0.5 + 0.5, 1.0);"
+				//"n_Out = vec4(att);"
 			"}"), ShaderProgram::NoProjectionShader);
-		if(!shader->getLogs().isEmpty()) {
-			std::cerr<<shader->getLogs()<<std::endl;
-			fatal("Unable to compiler deferred shaders.");
-		}
 	}
-	return shader;
+	return shader[type];
 }
 
+template<LightType Type>
+ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
+	ShaderCombinaison *sh = getShader(Type);
+	sh->bind();
 
-struct FrameData
-{
-	Camera *cam;
-	core::Array<Light *> lights;
-	void *child;
-};
+	sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
+	sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
+	sh->setValue("n_2", child->getFrameBuffer().getAttachement(2));
+	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
+	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
+	sh->setValue("n_Cam", data->cam->getPosition());
+
+	for(const Light<> *l : data->lights[Type]) {
+		sh->setValue("n_LightPos", l->getPosition());
+		sh->setValue("n_LightRadius", l->getRadius());
+		sh->setValue("n_LightColor", l->getColor().sub(3));
+		GLContext::getContext()->getScreen().draw(VertexAttribs());
+	}
+
+	return sh;
+}
 
 DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c) {
 	buffer.setAttachmentEnabled(0, true);
@@ -94,11 +133,14 @@ DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math:
 }
 
 void *DeferredShadingRenderer::prepare() {
-	core::Array<Camera *> arr = child->getRenderer()->getScene()->get<Camera>();
+	core::Array<Camera<> *> arr = child->getRenderer()->getScene()->get<Camera<>>();
 	if(arr.size() != 1) {
 		return 0;
 	}
-	return new FrameData({arr.first(), child->getRenderer()->getScene()->get<Light>(), child->prepare()});
+	return new FrameData({arr.first(),
+						  {child->getRenderer()->getScene()->query<PointLight<>>(*child->getRenderer()->getCamera()),
+							   child->getRenderer()->getScene()->get<DirectionalLight<>>()},
+						  child->prepare()});
 }
 
 void DeferredShadingRenderer::render(void *ptr) {
@@ -111,22 +153,9 @@ void DeferredShadingRenderer::render(void *ptr) {
 
 	getMaterial().bind();
 
-	ShaderCombinaison *sh = getShader();
-	sh->bind();
 
-	sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
-	sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
-	sh->setValue("n_2", child->getFrameBuffer().getAttachement(2));
-	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
-	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
-	sh->setValue("n_Cam", data->cam->getPosition());
-
-	for(const Light *l : data->lights) {
-		sh->setValue("n_Dir", l->getPosition().normalized());
-		GLContext::getContext()->getScreen().draw(VertexAttribs());
-	}
-
-	sh->unbind();
+	lightPass<Directional>(data, child);
+	lightPass<Point>(data, child)->unbind();
 
 	delete data;
 }

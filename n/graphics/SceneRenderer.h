@@ -36,7 +36,7 @@ class SceneRenderer : public Renderer
 			uint objects;
 		};
 
-		SceneRenderer(const Scene *sc) : Renderer(), sce(sc), perfData({0, 0}) {
+		SceneRenderer(const Scene<> *sc) : Renderer(), sce(sc), perfData({0, 0}) {
 		}
 
 		PerfData getPerfData() const {
@@ -44,11 +44,11 @@ class SceneRenderer : public Renderer
 		}
 
 		virtual void *prepare() override {
-			core::Array<Camera *> arr = sce->get<Camera>();
-			if(arr.size() != 1) {
-				return 0;
+			const Camera<> *cam = getCamera();
+			if(!cam) {
+				fatal("Camera not found");
 			}
-			Camera *cam = arr.first();
+
 			GLContext::getContext()->setProjectionMatrix(cam->getProjectionMatrix());
 			GLContext::getContext()->setViewMatrix(cam->getViewMatrix());
 
@@ -62,6 +62,14 @@ class SceneRenderer : public Renderer
 			}
 			queue->prepare();
 			return queue;
+		}
+
+		const Camera<> *getCamera() {
+			core::Array<Camera<> *> arr = sce->get<Camera<>>();
+			if(arr.size() != 1) {
+				return 0;
+			}
+			return arr.first();
 		}
 
 		virtual void render(void *ptr) override {
@@ -79,12 +87,12 @@ class SceneRenderer : public Renderer
 			delete queue;
 		}
 
-		const Scene *getScene() const {
+		const Scene<> *getScene() const {
 			return sce;
 		}
 
 	private:
-		const Scene *sce;
+		const Scene<> *sce;
 		PerfData perfData;
 };
 

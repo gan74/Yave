@@ -31,6 +31,7 @@ class DeferredShadingRenderer : public BufferedRenderer
 		virtual void render(void *ptr) override;
 
 	private:
+
 		GBufferRenderer *child;
 };
 

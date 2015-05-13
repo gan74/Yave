@@ -86,7 +86,7 @@ void GLContext::finishTasks() {
 	}
 }
 
-GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), frameBuffer(0), material(0), viewport(800, 600), screen(0) {
+GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), frameBuffer(0), material(0), viewport(1024, 768), screen(0) {
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
@@ -99,7 +99,7 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	std::cout<<" (32 bits)";
 	#endif
 	std::cout<<std::endl;
-	
+
 	int major = 0;
 	int minor = 0;
 	gl::glGetIntegerv(GL_MAJOR_VERSION, &major);

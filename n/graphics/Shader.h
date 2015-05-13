@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_SHADER
 
 #include <n/core/String.h>
+#include <exception>
 #include "ShaderProgram.h"
 #include "GLContext.h"
 #include "GL.h"
@@ -77,6 +78,22 @@ class ShaderBase : core::NonCopyable
 
 }
 
+class ShaderCompilationException : public std::exception
+{
+	public:
+		virtual const char *what() const throw() override {
+			return m.toChar();
+		}
+
+	private:
+		template<ShaderType Type>
+		friend class Shader;
+		ShaderCompilationException(const core::String &msg) : std::exception(), m(msg) {
+		}
+
+		const core::String m;
+};
+
 template<ShaderType Type>
 class Shader : public internal::ShaderBase
 {
@@ -113,6 +130,7 @@ class Shader : public internal::ShaderBase
 					"",
 					""
 			};
+			core::String common = "float sqr(float x) { return x * x; }";
 			uint vit = src.find("#version");
 			if(vit != -1u) {
 				uint l = src.find("\n", vit);
@@ -130,8 +148,8 @@ class Shader : public internal::ShaderBase
 			gl::GLenum glType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
 			handle = gl::glCreateShader(glType[Type]);
 			core::String ver = core::String("#version ") + vers + "\n";
-			const char *strs[] = {ver.toChar(), libs[Type].toChar(), src.toChar()};
-			gl::glShaderSource(handle, 3, strs, 0);
+			const char *strs[] = {ver.toChar(), common.toChar(), libs[Type].toChar(), src.toChar()};
+			gl::glShaderSource(handle, sizeof(strs) / sizeof(strs[0]), strs, 0);
 			gl::glCompileShader(handle);
 			int res = 0;
 			gl::glGetShaderiv(handle, GL_COMPILE_STATUS, &res);
@@ -143,9 +161,9 @@ class Shader : public internal::ShaderBase
 				gl::glDeleteShader(handle);
 				handle = 0;
 				msg[size] = '\0';
-				logs += msg;
+				logs = msg;
 				delete[] msg;
-				return 0;
+				throw ShaderCompilationException(logs);
 			}
 			return vers;
 		}

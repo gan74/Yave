@@ -18,17 +18,59 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_LIGHT
 
 #include "Transformable.h"
+#include "Color.h"
 #include <n/math/Volume.h>
 #include <n/utils.h>
 
 namespace n {
 namespace graphics {
 
-class Light : public Movable<>
+template<typename T = float>
+class Light : public Movable<T>
 {
 	public:
-		Light() : Movable<>() {
+		Light() : Movable<T>(), color(1) {
 		}
+
+		virtual ~Light() {
+		}
+
+		const Color<T> &getColor() const {
+			return color;
+		}
+
+		void setColor(const Color<T> &c) {
+			color = c;
+		}
+
+	private:
+		Color<T> color;
+};
+
+template<typename T = float>
+class DirectionalLight : public Light<T>
+{
+	public:
+		DirectionalLight() : Light<T>() {
+		}
+};
+
+template<typename T = float>
+class PointLight : public Light<T>
+{
+	using Transformable<T>::radius;
+	public:
+		PointLight() : Light<T>() {
+			Transformable<T>::radius = 1;
+		}
+
+		virtual ~PointLight() {
+		}
+
+		void setRadius(T r) {
+			radius = r;
+		}
+
 };
 
 }

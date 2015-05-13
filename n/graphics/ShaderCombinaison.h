@@ -27,6 +27,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+class ShaderLinkingException : public std::exception
+{
+	public:
+		virtual const char *what() const throw() override {
+			return m.toChar();
+		}
+
+	private:
+		friend class ShaderCombinaison;
+		ShaderLinkingException(const core::String &msg) : std::exception(), m(msg) {
+		}
+
+		const core::String m;
+};
+
 class ShaderCombinaison : core::NonCopyable
 {
 	public:
@@ -262,8 +277,9 @@ class ShaderCombinaison : core::NonCopyable
 				gl::glDeleteProgram(handle);
 				handle = 0;
 				msg[size] = '\0';
-				logs += msg;
+				logs = msg;
 				delete[] msg;
+				throw ShaderLinkingException(logs);
 			} else {
 				getUniforms();
 			}

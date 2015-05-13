@@ -90,7 +90,7 @@ SDL_Window *createWindow() {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	if(!(mainWindow = SDL_CreateWindow("n 2.1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN))) {
+	if(!(mainWindow = SDL_CreateWindow("n 2.1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN))) {
 		fatal("Unable to create window");
 	}
 	SDL_GL_CreateContext(mainWindow);
@@ -292,7 +292,7 @@ class DummyObj : public Dummy<I>, public DummyObj<I - 1>
 {
 
 	public:
-		static void insert(uint max, Scene *s) {
+		static void insert(uint max, Scene<> *s) {
 			for(uint i = 0; i != max; i++) {
 				s->insert(new DummyObj<I>());
 			}
@@ -307,7 +307,7 @@ class DummyObj<0> : public Movable<>, public Renderable
 		virtual void render(RenderQueue &) override {
 		}
 
-		static void insert(uint max, Scene *s) {
+		static void insert(uint max, Scene<> *s) {
 			for(uint i = 0; i != max; i++) {
 				s->insert(new DummyObj<0>());
 			}

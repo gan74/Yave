@@ -189,15 +189,29 @@ struct ImageFormat
 		const Format format;
 };
 
+enum BaseColor
+{
+	White,
+	Black,
+	Red,
+	Green,
+	Blue,
+};
+
 template<typename T = float>
 class Color : public math::Vec<4, T>
 {
+	static math::Vec3 colors[Blue + 1];
+
 	public:
 		template<typename U>
 		Color(const U *t, ImageFormat format) : math::Vec<4, T>(math::normalizedConversion<T>(format.normalizedData(t, ImageFormat::Red)),
 																math::normalizedConversion<T>(format.normalizedData(t, ImageFormat::Green)),
 																math::normalizedConversion<T>(format.normalizedData(t, ImageFormat::Blue)),
 																math::normalizedConversion<T>(format.normalizedData(t, ImageFormat::Alpha))) {
+		}
+
+		Color(BaseColor c) : Color(colors[c], 1) {
 		}
 
 		template<typename U>
@@ -227,9 +241,10 @@ class Color : public math::Vec<4, T>
 		bool operator>(const Color<T> &c) const {
 			return math::Vec<4, T>(*this) > math::Vec<4, T>(c);
 		}
-
-
 };
+
+template<typename T>
+math::Vec3 Color<T>::colors[] = {math::Vec3(1), math::Vec3(0), math::Vec3(1, 0, 0), math::Vec3(0, 1, 0), math::Vec3(0, 0, 1)};
 
 }
 }

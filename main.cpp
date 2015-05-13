@@ -5,12 +5,12 @@
 int main(int, char **) {
 	SDL_Window *win = createWindow();
 
-	Camera cam;
+	Camera<> cam;
 	cam.setPosition(Vec3(-10, 0, 10));
 	cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
-	Scene scene;
+	Scene<> scene;
 	scene.insert(&cam);
 
 	auto obj = new Obj("scube.obj");
@@ -18,9 +18,18 @@ int main(int, char **) {
 	obj->setPosition(Vec3(0, 0, 0));
 	scene.insert(obj);
 
-	Light *l = new Light();
-	l->setPosition(Vec3(0, 0, 5));
-	scene.insert(l);
+	{
+		PointLight<> *l = new PointLight<>();
+		l->setPosition(Vec3(-5, 5, 10));
+		l->setRadius(50);
+		scene.insert(l);
+	}
+	{
+		DirectionalLight<> *l = new DirectionalLight<>();
+		l->setPosition(Vec3(-5, -5, 5));
+		l->setColor(Color<>(Blue) * 2);
+		scene.insert(l);
+	}
 
 	BufferedRenderer *ri = 0;
 	//ri = new GBufferRenderer(new SceneRenderer(&scene));
@@ -33,7 +42,7 @@ int main(int, char **) {
 
 	while(run(win)) {
 		double dt = timer.reset();
-		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 10);
+		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 50);
 		Vec2 angle = mouse * 0.01;
 		float p2 = pi<>() * 0.5 - 0.01;
 		angle.y() = std::min(std::max(angle.y(), -p2), p2);
@@ -48,7 +57,6 @@ int main(int, char **) {
 			fatal("OpenGL error");
 		}
 	}
-
 	return 0;
 }
 
