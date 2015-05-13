@@ -26,6 +26,9 @@ template<typename T, typename U = T>
 class Pair
 {
 	public:
+		Pair() {
+		}
+
 		Pair(const T &a, const U &b) : _1(a), _2(b) {
 		}
 
