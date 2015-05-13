@@ -103,6 +103,10 @@ class RBTree
 				return node->data;
 			}
 
+			const T *operator->() const {
+				return node->data;
+			}
+
 		protected:
 			friend class RBTree;
 			IteratorBase(Node *n) : node(n) {
