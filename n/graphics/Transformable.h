@@ -32,7 +32,7 @@ class Transformable
 		}
 
 		T getRadius() const {
-			return radius;
+			return radius * getScale();
 		}
 
 		const math::Vec<3, T> &getPosition() const {

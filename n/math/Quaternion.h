@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_MATH_QUATERNION_H
 
 #include "Vec.h"
+
 namespace n {
 namespace math {
 
@@ -100,10 +101,10 @@ class Quaternion
 		}
 
 		Quaternion<T> operator*(const Quaternion<T> &q) const {
-		return Quaternion<T>(w() * q.x() + x() * q.w() + y() * q.z() - z() * q.y(),
-							 w() * q.y() + y() * q.w() + z() * q.x() - x() * q.z(),
-							 w() * q.z() + z() * q.w() + x() * q.y() - y() * q.x(),
-							 w() * q.w() - x() * q.x() - y() * q.y() - z() * q.z());
+			return Quaternion<T>(w() * q.x() + x() * q.w() + y() * q.z() - z() * q.y(),
+								 w() * q.y() + y() * q.w() + z() * q.x() - x() * q.z(),
+								 w() * q.z() + z() * q.w() + x() * q.y() - y() * q.x(),
+								 w() * q.w() - x() * q.x() - y() * q.y() - z() * q.z());
 		}
 
 		T x() const {
@@ -163,6 +164,12 @@ class Quaternion
 								 cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw,
 								 sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw,
 								 cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw);
+		}
+
+		static Quaternion<T> fromBase(const Vec<3, T> &forward, const Vec<3, T> &side, const Vec<3, T> &up) {
+			T w = sqrt(1 + forward.x() + side.y() + up.z()) * 0.5;
+			Vec<3, T> q(side.z() - up.y(), up.x() - forward.z(), forward.y() - side.x());
+			return Quaternion<T>(q / (4 * w), w);
 		}
 
 		static Quaternion<T> fromEuler(const Vec<3, T> &euler) {

@@ -211,6 +211,24 @@ class Color : public math::Vec<4, T>
 		operator math::Vec<4, T>() const {
 			return *this;
 		}
+
+		bool operator==(const Color<T> &c) const {
+			return math::Vec<4, T>(*this) == math::Vec<4, T>(c);
+		}
+
+		bool operator!=(const Color<T> &c) const {
+			return math::Vec<4, T>(*this) != math::Vec<4, T>(c);
+		}
+
+		bool operator<(const Color<T> &c) const {
+			return math::Vec<4, T>(*this) < math::Vec<4, T>(c);
+		}
+
+		bool operator>(const Color<T> &c) const {
+			return math::Vec<4, T>(*this) > math::Vec<4, T>(c);
+		}
+
+
 };
 
 }

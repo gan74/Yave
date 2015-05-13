@@ -56,8 +56,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Console.h"
 
 Vec2 mouse;
-Vec2 dMouse;
-
+Vec2 wasd;
 
 class IThread : public n::concurrent::Thread
 {
@@ -107,13 +106,16 @@ bool run(SDL_Window *mainWindow) {
 	SDL_Event e;
 	bool cc = true;
 	static bool m1 = false;
-	dMouse = Vec2();
 	while(SDL_PollEvent(&e)) {
 		if(e.type == SDL_QUIT || (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) {
 			cc = false;
 			break;
+		} else if(e.type == SDL_KEYDOWN && !e.key.repeat) {
+			wasd += Vec2((e.key.keysym.sym == 'z') - (e.key.keysym.sym == 's'), (e.key.keysym.sym == 'q') - (e.key.keysym.sym == 'd'));
+		} else if(e.type == SDL_KEYUP && !e.key.repeat) {
+			wasd -= Vec2((e.key.keysym.sym == 'z') - (e.key.keysym.sym == 's'), (e.key.keysym.sym == 'q') - (e.key.keysym.sym == 'd'));
 		} else if(e.type == SDL_MOUSEMOTION && m1) {
-			mouse += dMouse = Vec2(e.motion.xrel, e.motion.yrel) * 0.01;
+			mouse += Vec2(-e.motion.xrel, e.motion.yrel);
 		} else if(e.type == SDL_MOUSEBUTTONDOWN) {
 			m1 |= e.button.button == SDL_BUTTON_LEFT;
 		} else if(e.type == SDL_MOUSEBUTTONUP) {
@@ -125,6 +127,7 @@ bool run(SDL_Window *mainWindow) {
 
 class Obj : public StaticMesh
 {
+	using Transformable<>::radius;
 	public:
 		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)), model(n), autoScale(0) {
 		}
@@ -140,6 +143,7 @@ class Obj : public StaticMesh
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
+			radius = getMeshInstance().getRadius();
 			if(autoScale && !getMeshInstance().isNull()) {
 				setScale(autoScale / getMeshInstance().getRadius());
 			}

@@ -31,6 +31,12 @@ class Camera final : public Transformable<>, public math::Volume<>
 		using Transformable<>::radius; // WHY ?
 
 	public:
+		enum RotationAxis
+		{
+			Side,
+			Up
+		};
+
 		Camera() : Transformable(), math::Volume<>(), zFar(1000), zNear(1), ratio(1), fov(math::pi<>() / 2) {
 			radius = zFar;
 			computeViewMatrix();
@@ -74,8 +80,15 @@ class Camera final : public Transformable<>, public math::Volume<>
 			computeProjectionMatrix();
 		}
 
-		void setForward(math::Vec3 f) {
-			setRotation(math::Quaternion<>::fromLookAt(f));
+		void setForward(math::Vec3 f, RotationAxis r = Up) {
+			f.normalize();
+			if(fabs(f.dot(forward)) == 1.0) {
+				return;
+			}
+			math::Vec3 s = (r == Side ? math::Vec3(0, -1, 0) : math::Vec3(0, 0, -1)) ^ f;
+			math::Vec3 u = (s ^ f).normalized();
+			s = (u ^ f).normalized();
+			setRotation(math::Quaternion<>::fromBase(f, s, u));
 		}
 
 		virtual bool isInside(const math::Vec3 &p, float r) const override {

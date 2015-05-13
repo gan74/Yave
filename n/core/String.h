@@ -198,7 +198,7 @@ class String
 
 		template<typename T>
 		N_FORCE_INLINE String build(const T &t) const {
-			return convertDispatch(t, BoolToType<TypeConversion<T, StringConverter>::exists>());
+			return convertDispatch(t, BoolToType<TypeConversion<T, StringConverter>::canBuild>());
 		}
 
 		template<typename T>
@@ -265,10 +265,9 @@ class String
 		mutable char *data;
 };
 
-struct String::StringConverter : public String
+struct String::StringConverter
 {
-	template<typename T>
-	explicit StringConverter(const T &t) : String(t) {
+	StringConverter(const String &) {
 	}
 };
 

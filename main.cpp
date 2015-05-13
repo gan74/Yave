@@ -13,13 +13,10 @@ int main(int, char **) {
 	Scene scene;
 	scene.insert(&cam);
 
-	//std::cout<<TriangleBuffer<>::getSphere().toCpp()<<std::endl;
-
-	auto c = new PerlinTerrain();
-	//auto c = new Obj("scube.obj");
-	//c->setAutoScale(6);
-	c->setPosition(Vec3(0, 0, 0));
-	scene.insert(c);
+	auto obj = new Obj("scube.obj");
+	obj->setAutoScale(6);
+	obj->setPosition(Vec3(0, 0, 0));
+	scene.insert(obj);
 
 	Light *l = new Light();
 	l->setPosition(Vec3(0, 0, 5));
@@ -32,9 +29,15 @@ int main(int, char **) {
 	//FrameBufferRenderer renderer(createBlurRenderer(ri));
 	FrameBufferRenderer renderer(ri);
 
-	while(run(win)) {
+	Timer timer;
 
-		c->setRotation(Quaternion<>::fromEuler(mouse.x(), 0, 0));
+	while(run(win)) {
+		double dt = timer.reset();
+		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 10);
+		Vec2 angle = mouse * 0.01;
+		float p2 = pi<>() * 0.5 - 0.01;
+		angle.y() = std::min(std::max(angle.y(), -p2), p2);
+		cam.setForward(Vec3(Vec2(cos(angle.x()), sin(angle.x())) * cos(angle.y()), -sin(angle.y())));
 
 		(renderer)();
 
