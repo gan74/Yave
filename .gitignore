@@ -9,7 +9,6 @@
 /cppcheck
 /.idea
 *.out
-*.txt
 *.png
 *.obj
 *.mtl
@@ -17,3 +16,4 @@
 *.cfg
 *.o
 *.user
+/cmake/
