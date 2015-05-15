@@ -25,8 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Future.h"
 #include <n/defines.h>
 
-#include <iostream>
-
 namespace n {
 namespace concurrent {
 
