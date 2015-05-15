@@ -33,6 +33,7 @@ class DeferredShadingRenderer : public BufferedRenderer
 	private:
 
 		GBufferRenderer *child;
+		FrameBuffer lightBuffer;
 };
 
 }
