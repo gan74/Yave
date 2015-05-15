@@ -20,21 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GL.h"
 #include "TextureBinding.h"
 
-#define N_NO_TEX_STORAGE
+//#define N_NO_TEX_STORAGE
 
 namespace n {
 namespace graphics {
-
-struct GLTexFormat
-{
-	GLTexFormat(gl::GLenum f, gl::GLenum i, gl::GLenum t) : format(f), internalFormat(i), type(t) {
-	}
-
-	const gl::GLenum format;
-	const gl::GLenum internalFormat;
-	const gl::GLenum type;
-};
-
 
 GLTexFormat getTextureFormat(ImageFormat format) {
 	switch(format) {
@@ -84,11 +73,10 @@ bool Texture::isHWSupported(ImageFormat format) {
 	return (*it)._2;
 }
 
-
-Texture::Texture(const Image &i) : image(i), data(new Data()) {
+Texture::Texture(const Image &i) : TextureBase<Texture2D>(), image(i) {
 }
 
-Texture::Texture() : data(new Data()) {
+Texture::Texture() : TextureBase<Texture2D>() {
 }
 
 Texture::~Texture() {
@@ -146,10 +134,6 @@ void Texture::prepare(bool sync) const {
 			gl::glBindTexture(GL_TEXTURE_2D, data->handle);
 		}
 	}
-}
-
-gl::GLuint Texture::getHandle() const {
-	return data->handle;
 }
 
 }

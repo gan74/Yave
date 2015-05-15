@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Shader.h"
 #include "UniformBuffer.h"
 #include "GLContext.h"
+#include "Texture.h"
+#include "CubeMap.h"
 #include "TextureBinding.h"
 #include <n/core/Map.h>
 #include <n/math/Matrix.h>
@@ -221,6 +223,19 @@ class ShaderCombinaison : core::NonCopyable
 			}
 		}
 
+		void setValue(UniformAddr addr, const CubeMap &t) const {
+			core::Map<UniformAddr, uint>::const_iterator it = samplers.find(addr);
+			if(it != samplers.end()) {
+				uint slot = (*it)._2;
+				bindings[slot] = t;
+				if(isCurrent()) {
+					bindings[slot].bind(slot);
+				} else {
+					t.prepare();
+				}
+			}
+		}
+
 		template<typename T>
 		void setBuffer(const core::String &name, const UniformBuffer<T> *buffer) const {
 			core::Map<core::String, BlockInfo>::iterator it = blocks.find(name);
@@ -300,7 +315,7 @@ class ShaderCombinaison : core::NonCopyable
 				}
 				UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});
 				uniformsInfo[uniform] = info;
-				if(type == GL_SAMPLER_2D) {
+				if(type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE) {
 					uint slot = samplers.size();
 					setValue(info.addr, int(slot));
 					samplers[info.addr] = slot;

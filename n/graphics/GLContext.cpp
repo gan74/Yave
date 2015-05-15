@@ -112,6 +112,7 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	//gl::glEnable(GL_TEXTURE_2D);
 	//gl::glEnable(GL_CULL_FACE);
 	//gl::glEnable(GL_DEPTH_TEST);
+	gl::glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	gl::glViewport(0, 0, viewport.x(), viewport.y());
 
@@ -120,7 +121,7 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	}
 
 	gl::glGetIntegerv(GL_MAX_DRAW_BUFFERS, &hwInts[MaxFboAttachements]);
-	gl::glGetIntegerv(GL_MAX_TEXTURE_UNITS, &hwInts[MaxTextures]);
+	gl::glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &hwInts[MaxTextures]);
 	gl::glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
 
 	if(hwInts[MaxVertexAttribs] <= 4) {

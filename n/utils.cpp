@@ -23,18 +23,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
-	Nothing fatal(const char *msg, const char *file, int line) {
-		std::cerr<<msg;
-		if(file) {
-			std::cerr<<" in file "<<file;
-			if(line) {
-				std::cerr<<" at line "<<line;
-			}
+Nothing fatal(const char *msg, const char *file, int line) {
+	std::cerr<<msg;
+	if(file) {
+		std::cerr<<" in file "<<file;
+		if(line) {
+			std::cerr<<" at line "<<line;
 		}
-		std::cerr<<std::endl;
-		exit(1);
-		return Nothing();
 	}
+	std::cerr<<std::endl;
+	exit(1);
+	return Nothing();
+}
 
 namespace math {
 	uint randHelper() {

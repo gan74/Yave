@@ -32,10 +32,7 @@ int main(int, char **) {
 	}
 
 	BufferedRenderer *ri = 0;
-	//ri = new GBufferRenderer(new SceneRenderer(&scene));
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
-	//ri = new ScreenShaderRenderer(createNoiseShader());
-	//FrameBufferRenderer renderer(createBlurRenderer(ri));
 	FrameBufferRenderer renderer(ri);
 
 	Timer timer;

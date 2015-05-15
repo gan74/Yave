@@ -109,6 +109,16 @@ enum BufferBinding
 	Index = GL_ELEMENT_ARRAY_BUFFER
 };
 
+struct GLTexFormat
+{
+	GLTexFormat(gl::GLenum f, gl::GLenum i, gl::GLenum t) : format(f), internalFormat(i), type(t) {
+	}
+
+	const gl::GLenum format;
+	const gl::GLenum internalFormat;
+	const gl::GLenum type;
+};
+
 }
 }
 //}

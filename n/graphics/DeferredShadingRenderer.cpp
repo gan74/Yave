@@ -19,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "VertexArrayObject.h"
 #include "GL.h"
 
+#include "ImageLoader.h"
+#include "CubeMap.h"
+
 namespace n {
 namespace graphics {
 
@@ -31,6 +34,19 @@ const Material<float> &getMaterial() {
 		mat = Material<>(i);
 	}
 	return mat;
+}
+
+const CubeMap &getCube() {
+	static CubeMap *c = 0;
+	if(!c) {
+		c = new CubeMap(Texture(ImageLoader::load<core::String>("skybox/top.tga")),
+						Texture(ImageLoader::load<core::String>("skybox/bottom.tga")),
+						Texture(ImageLoader::load<core::String>("skybox/right.tga")),
+						Texture(ImageLoader::load<core::String>("skybox/left.tga")),
+						Texture(ImageLoader::load<core::String>("skybox/front.tga")),
+						Texture(ImageLoader::load<core::String>("skybox/back.tga")));
+	}
+	return *c;
 }
 
 enum LightType
@@ -58,6 +74,7 @@ ShaderCombinaison *getShader(LightType type) {
 			"uniform sampler2D n_1;"
 			"uniform sampler2D n_2;"
 			"uniform sampler2D n_D;"
+			"uniform samplerCube n_Cube;"
 			"uniform mat4 n_Inv;"
 			"uniform vec3 n_Cam;"
 
@@ -93,6 +110,7 @@ ShaderCombinaison *getShader(LightType type) {
 				"vec4 albedo = texture(n_0, n_TexCoord);"
 				"vec3 normal = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
 				"vec3 dir = computeDir(pos);"
+				"vec3 view = normalize(pos - n_Cam);"
 				"float dist = length(dir);"
 				"dir /= dist;"
 				"float NoL = dot(normal, dir);"
@@ -116,6 +134,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
 	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
 	sh->setValue("n_Cam", data->cam->getPosition());
+	sh->setValue("n_Cube", getCube());
 
 	for(const Light<> *l : data->lights[Type]) {
 		sh->setValue("n_LightPos", l->getPosition());

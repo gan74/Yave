@@ -15,7 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "TextureBinding.h"
-#include <iostream>
 
 namespace n {
 namespace graphics {
@@ -25,38 +24,42 @@ uint maxTextures() {
 	return GLContext::getContext()->getHWInt(GLContext::MaxTextures);
 }
 
-gl::GLuint *TextureBinding::bindings = 0;
-uint TextureBinding::active = 0;
+struct BindingData
+{
+	BindingData() : handle(0), type(TextureType::Texture2D) {
+	}
+
+	gl::GLuint handle;
+	gl::GLenum type;
+};
+
+static BindingData *bindings = 0;
+static uint active = 0;
 
 TextureBinding::TextureBinding() {
 }
 
-TextureBinding &TextureBinding::operator=(const Texture &t) {
-	tex = t;
-	return *this;
-}
-
 void TextureBinding::bind(uint slot) const {
 	if(!bindings) {
-		bindings = new gl::GLuint[maxTextures()];
-		for(uint i = 0; i != maxTextures(); i++) {
-			bindings[i] = 0;
-		}
+		bindings = new BindingData[maxTextures()];
 	}
-	if(bindings[slot] != tex.getHandle()) {
+	BindingData t;
+	if(tex) {
+		t.handle = tex->handle;
+		t.type = tex->type;
+	}
+	if(bindings[slot].handle != t.handle) {
 		if(slot != active) {
 			gl::glActiveTexture(GL_TEXTURE0 + slot);
 			active = slot;
 		}
-		gl::glBindTexture(GL_TEXTURE_2D, bindings[slot] = tex.getHandle());
-	} else {
-		tex.prepare();
+		gl::glBindTexture(bindings[slot].type = t.type, bindings[slot].handle = t.handle);
 	}
 }
 
 void TextureBinding::dirty() {
 	if(bindings) {
-		gl::glBindTexture(GL_TEXTURE_2D, bindings[active]);
+		gl::glBindTexture(bindings[active].type, bindings[active].handle);
 	}
 }
 

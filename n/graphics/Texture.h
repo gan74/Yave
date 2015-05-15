@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_TEXTURE_H
 #define N_GRAPHICS_TEXTURE_H
 
-#include <n/concurrent/SpinLock.h>
+#include "TextureBase.h"
 #include "Image.h"
 #include "GLContext.h"
 #include "GL.h"
@@ -25,50 +25,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-namespace internal {
-	class TextureBinding;
-}
+GLTexFormat getTextureFormat(ImageFormat format);
 
-class Texture
+class Texture : public TextureBase<Texture2D>
 {
-	struct Data
-	{
-		Data() : handle(0) {
-		}
-
-		~Data() {
-			lock.trylock();
-			lock.unlock();
-			if(handle) {
-				gl::GLuint h = handle;
-				GLContext::getContext()->addGLTask([=]() {
-					gl::glDeleteTextures(1, &h);
-				});
-			}
-		}
-
-		concurrent::SpinLock lock;
-		gl::GLuint handle;
-	};
-
 	public:
 		Texture(const Image &i);
 		Texture();
 		~Texture();
-
 
 		bool operator==(const Texture &t) const;
 		bool operator!=(const Texture &t) const;
 		bool operator<(const Texture &t) const;
 
 		bool isNull() const {
-			return !data->handle && image.isNull();
+			return !getHandle();
 		}
 
 		math::Vec2ui getSize() const {
 			return image.getSize();
 		}
-
 
 		ImageFormat getFormat() const {
 			return image.getFormat();
@@ -80,14 +56,13 @@ class Texture
 		friend class ShaderCombinaison;
 		friend class FrameBuffer;
 		friend class internal::TextureBinding;
+		friend class CubeMap;
 
-		void prepare(bool sync = true) const;
-
-		gl::GLuint getHandle() const;
 		void upload() const;
 
+		void prepare(bool sync = false) const;
+
 		Image image;
-		mutable core::SmartPtr<Data> data;
 };
 
 }

@@ -14,36 +14,48 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_TEXTUREBINDING
-#define N_GRAPHICS_TEXTUREBINDING
+#ifndef N_GRAPHICS_CUBEMAP
+#define N_GRAPHICS_CUBEMAP
 
+#include "Texture.h"
 #include "TextureBase.h"
 
 namespace n {
 namespace graphics {
-namespace internal {
 
-class TextureBinding
+class CubeMap : public TextureBase<TextureCubeMap>
 {
 	public:
-		TextureBinding();
-
-		template<typename T>
-		TextureBinding &operator=(const T &t) {
-			t.prepare();
-			tex = t.data;
-			return *this;
+		CubeMap(const Texture &top, const Texture &bottom, const Texture &right, const Texture &left, const Texture &front, const Texture &back);
+		CubeMap(const Texture &tex) : CubeMap(tex, tex, tex, tex, tex, tex) {
 		}
 
-		void bind(uint slot) const;
-		static void dirty();
+		bool isNull() const {
+			return !getHandle();
+		}
+
+		bool isComplete() const {
+			for(uint i = 0; i != 6; i++) {
+				if(sides[i].isNull()) {
+					return false;
+				}
+			}
+			return true;
+		}
 
 	private:
-		core::SmartPtr<TextureBase::Data> tex;
+		friend class ShaderCombinaison;
+		friend class internal::TextureBinding;
+
+		void upload() const;
+
+		void prepare(bool sync = false) const;
+
+		Texture sides[6];
 };
 
 }
 }
-}
-#endif // N_GRAPHICS_TEXTUREBINDING
+
+#endif // N_GRAPHICS_CUBEMAP
 
