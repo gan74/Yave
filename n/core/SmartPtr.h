@@ -120,6 +120,10 @@ class SmartPtr
 			return ptr < p.ptr;
 		}
 
+		bool operator>(const SmartPtr<const T> &p) const {
+			return ptr > p.ptr;
+		}
+
 		bool operator!() const {
 			return isNull();
 		}
