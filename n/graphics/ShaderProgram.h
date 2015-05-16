@@ -62,6 +62,16 @@ namespace internal {
 			return geom < c.geom;
 		}
 
+		bool operator>(const ShaderProgramCombinaison &c) const {
+			if(frag != c.frag) {
+				return frag > c.frag;
+			}
+			if(vert != c.vert) {
+				return vert > c.vert;
+			}
+			return geom > c.geom;
+		}
+
 		bool isNull() const {
 			return !frag && !vert && !geom;
 		}
@@ -108,6 +118,23 @@ class ShaderProgram
 
 		static Shader<VertexShader> *getDefaultVertexShader(StandardVertexShader type = ProjectionShader);
 		static Shader<FragmentShader> *getDefaultFragmentShader();
+
+		bool operator==(const ShaderProgram &p) const {
+			return ptr->base == p.ptr->base;
+		}
+
+		bool operator!=(const ShaderProgram &p) const {
+			return ptr->base != p.ptr->base;
+		}
+
+		bool operator<(const ShaderProgram &p) const {
+			return ptr->base < p.ptr->base;
+		}
+
+		bool operator>(const ShaderProgram &p) const {
+			return ptr->base > p.ptr->base;
+		}
+
 
 	private:
 		friend class GLContext;

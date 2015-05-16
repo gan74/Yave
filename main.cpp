@@ -2,8 +2,12 @@
 #ifdef ALL
 #include "main.h"
 
-int main(int, char **) {
+int main(int argc, char **argv) {
 	SDL_Window *win = createWindow();
+
+	if(argc > 1 && argv[1] == String("--no-debug")) {
+		GLContext::getContext()->setDebugEnabled(false);
+	}
 
 	Camera<> cam;
 	cam.setPosition(Vec3(-10, 0, 10));
@@ -21,13 +25,13 @@ int main(int, char **) {
 	{
 		PointLight<> *l = new PointLight<>();
 		l->setPosition(Vec3(-5, 5, 10));
-		l->setRadius(50);
+		l->setRadius(25);
 		scene.insert(l);
 	}
 	{
 		DirectionalLight<> *l = new DirectionalLight<>();
 		l->setPosition(Vec3(-5, -5, 5));
-		l->setColor(Color<>(Blue) * 2);
+		l->setColor(Color<>(Blue));
 		scene.insert(l);
 	}
 

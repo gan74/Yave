@@ -37,6 +37,7 @@ class TextureBinding
 
 		void bind(uint slot) const;
 		static void dirty();
+		static void clear();
 
 	private:
 		core::SmartPtr<TextureBase::Data> tex;

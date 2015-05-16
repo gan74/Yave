@@ -83,6 +83,7 @@ Shader<VertexShader> *ShaderProgram::getDefaultVertexShader(StandardVertexShader
 						"uniform vec3 n_Camera;"
 
 						"out vec3 n_Position;"
+						"out vec4 n_ScreenPosition;"
 						"out vec3 n_Normal;"
 						"out vec3 n_Tangent;"
 						"out vec3 n_Binormal;"
@@ -92,7 +93,7 @@ Shader<VertexShader> *ShaderProgram::getDefaultVertexShader(StandardVertexShader
 
 						"void main() {"
 							"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
-							"gl_Position = n_ViewProjectionMatrix * model;"
+							"gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * model;"
 							"n_VertexID = gl_VertexID;"
 							"n_Position = model.xyz;"
 							"n_View = normalize(n_Camera - model.xyz);"
@@ -108,6 +109,7 @@ Shader<VertexShader> *ShaderProgram::getDefaultVertexShader(StandardVertexShader
 						"layout(location = 3) in vec2 n_VertexCoord;"
 
 						"out vec3 n_Position;"
+						"out vec4 n_ScreenPosition;"
 						"out vec3 n_Normal;"
 						"out vec3 n_Tangent;"
 						"out vec3 n_Binormal;"
@@ -115,7 +117,7 @@ Shader<VertexShader> *ShaderProgram::getDefaultVertexShader(StandardVertexShader
 						"out int n_VertexID;"
 
 						"void main() {"
-							"gl_Position = vec4(n_Position = n_VertexPosition, 1.0);"
+							"gl_Position = n_ScreenPosition = vec4(n_Position = n_VertexPosition, 1.0);"
 							"n_VertexID = gl_VertexID;"
 							"n_Normal = n_VertexNormal;"
 							"n_Tangent = n_VertexTangent;"

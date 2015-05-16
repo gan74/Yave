@@ -35,6 +35,12 @@ enum BlendMode {
 	Add
 };
 
+enum DepthMode {
+	Lesser,
+	Greater,
+	Always
+};
+
 namespace internal {
 	template<typename T = float>
 	struct Material
@@ -43,7 +49,7 @@ namespace internal {
 		static bool sorted;
 		static core::Array<Material<T> *> cache;
 
-		Material() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back) {
+		Material() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser) {
 			mutex.lock();
 			cache.append(this);
 			sorted = false;
@@ -56,18 +62,19 @@ namespace internal {
 			mutex.unlock();
 		}
 
+		#define N_MAT_COMPARE(mem) if(mem != m.mem) { return mem < m.mem; }
+
 		bool operator<(const Material<T> &m) const {
-			if(diffuse != m.diffuse) {
-				return diffuse < m.diffuse;
-			}
-			if(color != m.color) {
-				return color < m.color;
-			}
-			if(roughness != m.roughness) {
-				return roughness < m.roughness;
-			}
+			N_MAT_COMPARE(prog)
+			N_MAT_COMPARE(diffuse)
+			N_MAT_COMPARE(depthWrite)
+			N_MAT_COMPARE(depthTested)
+			N_MAT_COMPARE(depth)
+			N_MAT_COMPARE(cull)
 			return false;
 		}
+
+		#undef N_MAT_COMPARE
 
 		static void updateCache() {
 			if(sorted) {
@@ -88,10 +95,12 @@ namespace internal {
 		bool depthTested;
 		bool depthWrite;
 
+
 		graphics::ShaderProgram prog;
 
 		BlendMode blend;
 		CullMode cull;
+		DepthMode depth;
 
 		Texture diffuse;
 
@@ -174,6 +183,10 @@ class Material : private assets::Asset<internal::Material<T>>
 				} else {
 					gl::glDisable(GL_DEPTH_TEST);
 				}
+			}
+			if(!c || c->depth != i->depth) {
+				gl::GLenum funcs[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
+				gl::glDepthFunc(funcs[i->depth]);
 			}
 			if(!c || c->depthWrite != i->depthWrite) {
 				gl::glDepthMask(i->depthWrite);

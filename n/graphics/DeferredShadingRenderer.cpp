@@ -25,15 +25,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-const Material<float> &getLightMaterial() {
-	static Material<> mat;
-	if(mat.isNull()) {
+
+enum LightType
+{
+	Point,
+	Directional,
+
+	Max
+};
+
+template<LightType Type>
+const Material<> &getLightMaterial() {
+	static Material<> mat[LightType::Max];
+	if(mat[Type].isNull()) {
 		internal::Material<> i;
 		i.blend = Add;
-		i.depthTested = false;
-		mat = Material<>(i);
+		i.depthWrite = false;
+		if(Type == Directional) {
+			i.depth = Always;
+		} else {
+			i.depth = Greater;
+			i.cull = Front;
+		}
+		mat[Type] = Material<>(i);
 	}
-	return mat;
+	return mat[Type];
 }
 
 const Material<float> &getCompositionMaterial() {
@@ -59,13 +75,13 @@ const CubeMap &getCube() {
 	return *c;
 }
 
-enum LightType
-{
-	Point,
-	Directional,
-
-	Max
-};
+const VertexArrayObject<> &getSphere() {
+	static VertexArrayObject<> *sphere = 0;
+	if(!sphere) {
+		sphere = new VertexArrayObject<>(TriangleBuffer<>::getSphere());
+	}
+	return *sphere;
+}
 
 struct FrameData
 {
@@ -74,12 +90,13 @@ struct FrameData
 	void *child;
 };
 
-ShaderCombinaison *getShader(LightType type) {
+template<LightType Type>
+ShaderCombinaison *getShader() {
 	static ShaderCombinaison *shader[LightType::Max] = {0};
 	core::String computeDir[LightType::Max] = {"return n_LightPos - x;", "return n_LightPos;"};
 	core::String attenuate[LightType::Max] = {"float a = 1.0 - x / n_LightRadius; return a * a * a;", "return 1.0;"};
-	if(!shader[type]) {
-		shader[type] = new ShaderCombinaison(new Shader<FragmentShader>(
+	if(!shader[Type]) {
+		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_1;"
 			"uniform sampler2D n_2;"
 			"uniform sampler2D n_D;"
@@ -91,8 +108,7 @@ ShaderCombinaison *getShader(LightType type) {
 			"uniform vec3 n_LightColor;"
 			"uniform float n_LightRadius;"
 
-			"in vec2 n_TexCoord;"
-			"in vec4 n_Position;"
+			"in vec4 n_ScreenPosition;"
 
 			"out vec4 n_Out;"
 
@@ -102,21 +118,22 @@ ShaderCombinaison *getShader(LightType type) {
 				"return P.xyz / P.w;"
 			"}"
 
-			"vec3 unproj() {"
-				"return unproj((n_Position.xy / n_Position.w) * 0.5 + 0.5);"
+			"vec2 computeTexCoord() {"
+				"return (n_ScreenPosition.xy / n_ScreenPosition.w) * 0.5 + 0.5;"
 			"}"
 
 			"float attenuate(float x) {"
-				+ attenuate[type] +
+				+ attenuate[Type] +
 			"}"
 
 			"vec3 computeDir(vec3 x) {"
-				+ computeDir[type] +
+				+ computeDir[Type] +
 			"}"
 
 			"void main() {"
-				"vec3 pos = unproj();"
-				"vec3 normal = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
+				"vec2 texCoord = computeTexCoord();"
+				"vec3 pos = unproj(texCoord);"
+				"vec3 normal = normalize(texture(n_1, texCoord).xyz * 2.0 - 1.0);"
 				"vec3 dir = computeDir(pos);"
 				"vec3 view = normalize(pos - n_Cam);"
 				"float dist = length(dir);"
@@ -124,9 +141,10 @@ ShaderCombinaison *getShader(LightType type) {
 				"float NoL = dot(normal, dir);"
 				"float att = attenuate(dist);"
 				"n_Out = vec4(n_LightColor * NoL * att, 1.0);"
-			"}"), ShaderProgram::NoProjectionShader);
+				//"n_Out = vec4(vec3(NoL * att), 1);"
+			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 	}
-	return shader[type];
+	return shader[Type];
 }
 
 ShaderCombinaison *getCompositionShader() {
@@ -157,6 +175,10 @@ ShaderCombinaison *getCompositionShader() {
 				"return unproj((n_Position.xy / n_Position.w) * 0.5 + 0.5);"
 			"}"
 
+			"float rgbLum(vec3 rgb) {"
+				"return dot(vec3(0.299, 0.587, 0.114), rgb);"
+			"}"
+
 			"void main() {"
 				"vec4 color = texture(n_0, n_TexCoord);"
 				"vec4 light = texture(n_1, n_TexCoord);"
@@ -168,7 +190,7 @@ ShaderCombinaison *getCompositionShader() {
 
 template<LightType Type>
 ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
-	ShaderCombinaison *sh = getShader(Type);
+	ShaderCombinaison *sh = getShader<Type>();
 	sh->bind();
 
 	sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
@@ -181,7 +203,13 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 		sh->setValue("n_LightPos", l->getPosition());
 		sh->setValue("n_LightRadius", l->getRadius());
 		sh->setValue("n_LightColor", l->getColor().sub(3));
-		GLContext::getContext()->getScreen().draw(VertexAttribs());
+		if(Type == Directional) {
+			GLContext::getContext()->getScreen().draw(VertexAttribs());
+		} else {
+			math::Transform<> tr(l->getPosition(), l->getRadius() * 1.1);
+			GLContext::getContext()->setModelMatrix(tr.getMatrix());
+			getSphere().draw(VertexAttribs());
+		}
 	}
 
 	return sh;
@@ -205,7 +233,6 @@ ShaderCombinaison *compositionPass(const FrameData *data, GBufferRenderer *child
 }
 
 DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), lightBuffer(getFrameBuffer().getSize()), child(c) {
-	lightBuffer.setDepthEnabled(false);
 	buffer.setAttachmentEnabled(0, true);
 	buffer.setDepthEnabled(true);
 }
@@ -225,14 +252,21 @@ void DeferredShadingRenderer::render(void *ptr) {
 	FrameData *data = reinterpret_cast<FrameData *>(ptr);
 	child->render(data->child);
 
+	GLContext::getContext()->setProjectionMatrix(data->cam->getProjectionMatrix());
+	GLContext::getContext()->setViewMatrix(data->cam->getViewMatrix());
+
 	{
-		getLightMaterial().bind();
-
 		lightBuffer.bind();
-		gl::glClear(GL_COLOR_BUFFER_BIT);
 
-		lightPass<Directional>(data, child);
+		gl::glClear(GL_COLOR_BUFFER_BIT);
+		child->getFrameBuffer().blit(false);
+
+
+		getLightMaterial<Point>().bind();
 		lightPass<Point>(data, child);
+
+		getLightMaterial<Directional>().bind(); // needed last for composition.
+		lightPass<Directional>(data, child);
 	}
 
 	{

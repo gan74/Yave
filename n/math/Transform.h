@@ -30,7 +30,7 @@ class Transform
 		Transform(const Quaternion<T> &q, const Vec<3, T> &p = Vec<3, T>(), T s = 1) : pos(p), scale(s), rot(q) {
 		}
 
-		Transform(const Vec<3, T> &p = Vec<3, T>()) : pos(p), scale(1) {
+		Transform(const Vec<3, T> &p = Vec<3, T>(), T s = 1) : pos(p), scale(s) {
 		}
 
 		Vec<3, T> toLocal(const Vec<3, T> &v) const {

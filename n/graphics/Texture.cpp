@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GL.h"
 #include "TextureBinding.h"
 
-//#define N_NO_TEX_STORAGE
+#define N_NO_TEX_STORAGE
 
 namespace n {
 namespace graphics {

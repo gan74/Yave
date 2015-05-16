@@ -63,6 +63,15 @@ void TextureBinding::dirty() {
 	}
 }
 
+void TextureBinding::clear() {
+	if(bindings) {
+		for(uint i = 0; i != maxTextures(); i++) {
+			gl::glActiveTexture(GL_TEXTURE0 + (active = i));
+			gl::glBindTexture(bindings[active].type, bindings[active].handle = 0);
+		}
+	}
+}
+
 }
 }
 }
