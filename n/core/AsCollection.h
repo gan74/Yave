@@ -630,7 +630,7 @@ struct ShouldInsertAsCollection
 	};
 
 	public:
-		static constexpr bool isCollectionOfCompatibles = Compat<C, Collection<C>::isCollection>::value;
+		static constexpr bool isCollectionOfCompatibles = Compat<C, !std::is_same<C, ElementType>::value && Collection<C>::isCollection>::value;
 		static constexpr bool value = !std::is_same<C, ElementType>::value &&
 										 !(TypeConversion<C, const ElementType>::exists ||
 										   (TypeConversion<C, const ElementType>::canBuild &&
