@@ -17,10 +17,12 @@ int main(int argc, char **argv) {
 	Scene<> scene;
 	scene.insert(&cam);
 
-	auto obj = new Obj("scube.obj");
-	obj->setAutoScale(6);
-	obj->setPosition(Vec3(0, 0, 0));
-	scene.insert(obj);
+	for(uint i = 0; i != 100; i++) {
+		auto obj = new Obj("scube.obj");
+		obj->setAutoScale(6);
+		obj->setPosition(Vec3(random(), random(), random()) * 100 - 50);
+		scene.insert(obj);
+	}
 
 	{
 		PointLight<> *l = new PointLight<>();
@@ -31,7 +33,7 @@ int main(int argc, char **argv) {
 	{
 		DirectionalLight<> *l = new DirectionalLight<>();
 		l->setPosition(Vec3(-5, -5, 5));
-		l->setColor(Color<>(Blue));
+		l->setColor(Color<>(Blue) * 2);
 		scene.insert(l);
 	}
 
@@ -40,6 +42,7 @@ int main(int argc, char **argv) {
 	FrameBufferRenderer renderer(ri);
 
 	Timer timer;
+	Timer total;
 
 	while(run(win)) {
 		double dt = timer.reset();
@@ -57,6 +60,10 @@ int main(int argc, char **argv) {
 		if(GLContext::getContext()->checkGLError()) {
 			fatal("OpenGL error");
 		}
+
+		/*if(total.elapsed() > 20) {
+			break;
+		}*/
 	}
 	return 0;
 }
@@ -65,6 +72,7 @@ int main(int argc, char **argv) {
 #else
 
 #include <iostream>
+#include <n/perf/perf.h>
 #include <n/core/Timer.h>
 #include <n/io/File.h>
 #include <n/io/TextInputStream.h>
@@ -80,7 +88,34 @@ int main(int argc, char **argv) {
 using namespace n;
 using namespace n::io;
 
+void b() {
+	N_LOG_FUNC_PERF();
+	for(uint i = 0; i != 1000000; i++);
+}
+
+void d() {
+	N_LOG_FUNC_PERF();
+	for(uint i = 0; i != 2000000; i++);
+}
+
+void c() {
+	N_LOG_FUNC_PERF();
+	for(uint i = 0; i != 200; i++) {
+		b();
+	}
+}
+
+void a() {
+	N_LOG_FUNC_PERF();
+	c();
+	for(uint i = 0; i != 1000; i++) {
+		b();
+	}
+}
+
 int main(int, char **) {
+	a();
+	perf::printThreadLogs();
 }
 
 #endif

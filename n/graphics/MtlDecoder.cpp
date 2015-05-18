@@ -44,48 +44,48 @@ class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::Stri
 
 	private:
 		internal::Material<> *load(io::File &file, const core::String &name) {
-		if(!file.open(io::IODevice::Read)) {
-			std::cerr<<file.getName()<<" not found"<<std::endl;
-			return 0;
-		}
-		uint fs = file.size();
-		char *data = new char[fs + 1];
-		file.readBytes(data);
-		data[fs] = 0;
-		core::Array<core::String> lines = core::String(data).split("\n");
-		delete[] data;
-		file.close();
+			if(!file.open(io::IODevice::Read)) {
+				std::cerr<<file.getName()<<" not found"<<std::endl;
+				return 0;
+			}
+			uint fs = file.size();
+			char *data = new char[fs + 1];
+			file.readBytes(data);
+			data[fs] = 0;
+			core::Array<core::String> lines = core::String(data).split("\n");
+			delete[] data;
+			file.close();
 
-		internal::Material<> *mat = 0;
-		for(const core::String &l : lines) {
-			if(l.beginsWith("newmtl ")) {
-				if(l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
-					if(mat) {
-						std::cerr<<"Material \""<<name<<"\""<<" is already defined"<<std::endl;
-						fatal("Material already defined");
+			internal::Material<> *mat = 0;
+			for(const core::String &l : lines) {
+				if(l.beginsWith("newmtl ")) {
+					if(l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
+						if(mat) {
+							std::cerr<<"Material \""<<name<<"\""<<" is already defined"<<std::endl;
+							fatal("Material already defined");
+						}
+						mat = new internal::Material<>();
+					} else if(mat) {
+						break;
 					}
-					mat = new internal::Material<>();
 				} else if(mat) {
-					break;
-				}
-			} else if(mat) {
-				if(l.toLower().beginsWith("kd ")) {
-					core::Array<float> fl = l.subString(3).split(" ");
-					if(fl.size() != 3) {
-						std::cerr<<"Invalid color"<<std::endl;
-						return 0;
+					if(l.toLower().beginsWith("kd ")) {
+						core::Array<float> fl = l.subString(3).split(" ");
+						if(fl.size() != 3) {
+							std::cerr<<"Invalid color"<<std::endl;
+							return 0;
+						}
+						mat->color = Color<>(fl[0], fl[1], fl[2], 1);
+					} else if(l.toLower().beginsWith("ni ")) {
+						float ni = float(l.subString(3));
+						mat->roughness = sqrt(2 / (ni + 2));
+					} else if(l.toLower().beginsWith("map_kd ")) {
+						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })));l.subString(7);
 					}
-					mat->color = Color<>(fl[0], fl[1], fl[2], 1);
-				} else if(l.toLower().beginsWith("ni ")) {
-					float ni = float(l.subString(3));
-					mat->roughness = sqrt(2 / (ni + 2));
-				} else if(l.toLower().beginsWith("map_kd ")) {
-					mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })));l.subString(7);
 				}
 			}
+			return mat;
 		}
-		return mat;
-	}
 };
 
 }

@@ -50,8 +50,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/Light.h>
 #include <n/graphics/CubeMap.h>
 #include <n/graphics/TextureBinding.h>
-
-
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>
 
