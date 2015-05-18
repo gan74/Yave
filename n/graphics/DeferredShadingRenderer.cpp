@@ -94,7 +94,7 @@ template<LightType Type>
 ShaderCombinaison *getShader() {
 	static ShaderCombinaison *shader[LightType::Max] = {0};
 	core::String computeDir[LightType::Max] = {"return n_LightPos - x;", "return n_LightPos;"};
-	core::String attenuate[LightType::Max] = {"float a = 1.0 - x / n_LightRadius; return a * a * a;", "return 1.0;"};
+	core::String attenuate[LightType::Max] = {"float a = 1.0 - min(1.0, x / n_LightRadius); return a * a * a;", "return 1.0;"};
 	if(!shader[Type]) {
 		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_1;"
@@ -232,7 +232,7 @@ ShaderCombinaison *compositionPass(const FrameData *data, GBufferRenderer *child
 	return sh;
 }
 
-DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), lightBuffer(getFrameBuffer().getSize()), child(c) {
+DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c), lightBuffer(getFrameBuffer().getSize()) {
 	buffer.setAttachmentEnabled(0, true);
 	buffer.setDepthEnabled(true);
 }
