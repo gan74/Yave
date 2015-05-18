@@ -57,8 +57,12 @@ CONFIG(debug, debug|release) {
 	OBJECTS_DIR = bin/debug
 	DEFINES += N_DEBUG
 	DEFINES	+= N_AUTO_TEST
+	QMAKE_CXXFLAGS += -ftest-coverage -fprofile-generate -fprofile-correction
+	QMAKE_LFLAGS += -ftest-coverage -fprofile-generate -fprofile-correction
 } else {
 	OBJECTS_DIR = bin/release
 	QMAKE_CXXFLAGS += -flto
 	QMAKE_LFLAGS += -flto
+	QMAKE_CXXFLAGS += -fprofile-use -fprofile-correction
+	QMAKE_LFLAGS += -fprofile-use -fprofile-correction
 }
