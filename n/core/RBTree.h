@@ -104,7 +104,7 @@ class RBTree
 			}
 
 			const T *operator->() const {
-				return node->data;
+				return &node->data;
 			}
 
 		protected:

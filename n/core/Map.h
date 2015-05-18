@@ -63,6 +63,10 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 					return const_cast<Pair<const T, U> &>(MapType::iterator::operator*()); // makes sence
 				}
 
+				Pair<const T, U> *operator->() {
+					return &operator*();
+				}
+
 			private:
 				friend class Map;
 				iterator(const typename MapType::const_iterator &it) : MapType::iterator(*((typename MapType::iterator *)&it)) {
