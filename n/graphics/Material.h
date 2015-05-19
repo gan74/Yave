@@ -209,10 +209,15 @@ class Material : private assets::Asset<internal::Material<T>>
 					if(!c || c->blend == None) {
 						gl::glEnable(GL_BLEND);
 					}
-					if(i->blend == Add) {
-						gl::glBlendFunc(GL_ONE, GL_ONE);
+					static BlendMode blendMode = None;
+					if(blendMode != i->blend) {
+						if(i->blend == Add) {
+							gl::glBlendFunc(GL_ONE, GL_ONE);
+						}
+						blendMode = i->blend;
 					}
 				}
+
 			}
 
 			if(isNull()) {
