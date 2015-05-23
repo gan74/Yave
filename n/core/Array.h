@@ -63,6 +63,7 @@ class CompactArrayResizePolicy
 template<typename T, typename ResizePolicy = DefaultArrayResizePolicy>
 class Array : public ResizePolicy // Be SUPER careful when adding collections directly, will use the lazyest cast possible, can be wrong !
 {
+	typedef typename TypeInfo<T>::nonConst TT;
 	public:
 		typedef T * iterator;
 		typedef T const * const_iterator;
@@ -584,7 +585,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 
 
 	private:
-		void copy(T *dst, const T *src, uint n) {
+		void copy(TT *dst, const TT *src, uint n) {
 			if(TypeInfo<T>::isPod) {
 				memcpy(dst, src, sizeof(T) * n);
 			} else {
@@ -594,7 +595,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			}
 		}
 
-		void move(T *dst, const T *src, uint n) {
+		void move(TT *dst, const TT *src, uint n) {
 			if(TypeInfo<T>::isPod) {
 				memmove(dst, src, sizeof(T) * n);
 			} else {
@@ -604,7 +605,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			}
 		}
 
-		void moveBack(T *dst, uint n, uint interval = 1) {
+		void moveBack(TT *dst, uint n, uint interval = 1) {
 			n -= interval;
 			if(TypeInfo<T>::isPod) {
 				memmove(dst, dst + interval, sizeof(T) * n);
@@ -619,10 +620,10 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			}
 		}
 
-		void clear(T *src, uint n) {
+		void clear(TT *src, uint n) {
 			if(!TypeInfo<T>::isPod) {
 				for(; n; n--) {
-					(src++)->~T();
+					(src++)->~TT();
 				}
 			}
 		}
@@ -667,9 +668,9 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 
 		void setCapacityUnsafe(uint s, uint ns) {
 			if(TypeInfo<T>::isPod) {
-				data = (T *)safeRealloc(data, ns * sizeof(T));
+				data = (TT *)safeRealloc(data, ns * sizeof(T));
 			} else {
-				T *n = (T *)malloc(ns * sizeof(T));
+				TT *n = (TT *)malloc(ns * sizeof(T));
 				move(n, data, s);
 				clear(data, s);
 				free(data);
@@ -679,9 +680,9 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			allocEnd = data + ns;
 		}
 
-		T *data;
-		T *dataEnd;
-		T *allocEnd;
+		TT *data;
+		TT *dataEnd;
+		TT *allocEnd;
 };
 
 

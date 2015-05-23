@@ -361,7 +361,7 @@ struct TypeInfo<T *>
 	static const Type type;
 
 	typedef typename TypeInfo<T>::nonRef *nonRef;
-	typedef typename TypeInfo<T>::nonConst *nonConst;
+	typedef T* nonConst;
 	typedef T nonPtr;
 	typedef typename TypeInfo<T>::decayed decayed;
 };
@@ -409,7 +409,7 @@ struct TypeInfo<T &>
 	static const Type type;
 
 	typedef T nonRef;
-	typedef typename TypeInfo<T>::nonConst &nonConst;
+	typedef T& nonConst;
 	typedef typename TypeInfo<T>::nonPtr &nonPtr;
 	typedef typename TypeInfo<T>::decayed decayed;
 };
