@@ -1,4 +1,4 @@
-#define ALL
+//#define ALL
 #ifdef ALL
 #include "main.h"
 
@@ -72,50 +72,34 @@ int main(int argc, char **argv) {
 #else
 
 #include <iostream>
-#include <n/perf/perf.h>
+#include <cstring>
+#include <n/utils.h>
 #include <n/core/Timer.h>
-#include <n/io/File.h>
-#include <n/io/TextInputStream.h>
 #include <n/core/String.h>
-#include <n/core/Array.h>
-#include <n/core/Functor.h>
-#include <n/math/Vec.h>
-#include <n/mem/SmallObject.h>
-#include <n/concurrent/SpinLock.h>
-#include <n/concurrent/Async.h>
-#include <n/concurrent/Mutex.h>
+
 
 using namespace n;
+using namespace n::core;
 using namespace n::io;
 
-void b() {
-	N_LOG_FUNC_PERF();
-	for(uint i = 0; i != 1000000; i++);
-}
-
-void d() {
-	N_LOG_FUNC_PERF();
-	for(uint i = 0; i != 2000000; i++);
-}
-
-void c() {
-	N_LOG_FUNC_PERF();
-	for(uint i = 0; i != 200; i++) {
-		b();
-	}
-}
-
-void a() {
-	N_LOG_FUNC_PERF();
-	c();
-	for(uint i = 0; i != 1000; i++) {
-		b();
-	}
-}
-
 int main(int, char **) {
-	a();
-	perf::printThreadLogs();
+	String str = "utfvybpouvbsdpovbqdspdf";
+	uint max = 1 << 24;
+	uint p = 0;
+	std::cout<<"Generating ...."<<std::endl<<"0%";
+	while(str.size() < max) {
+		str += char('a' + rand() % 26);
+		uint p2 = round(double(str.size()) / max * 100);
+		if(p2 != p) {
+			std::cout<<"\r"<<p2<<"%";
+			p = p2;
+		}
+	}
+	std::cout<<std::endl;
+	Timer timer;
+	uint64 h = hash(&str[0], str.size());
+	double t = timer.elapsed();
+	std::cout<<"hash = "<<h<<" ("<<t * 1000<<"ms : "<<str.size() / t<<" bps)"<<std::endl;
 }
 
 #endif

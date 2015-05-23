@@ -82,6 +82,16 @@ class String
 			return operator=(String(e));
 		}
 
+		template<typename T>
+		String operator+(const T &i) const {
+			return operator+(String(i));
+		}
+
+		template<typename T>
+		String &operator+=(const T &i) {
+			return operator+=(String(i));
+		}
+
 		String &operator+=(const String &s);
 		String operator+(const String &s) const;
 		bool operator==(const String &str) const;
@@ -94,6 +104,11 @@ class String
 		bool operator>(const String &s) const;
 
 		const char &operator[](uint i) const {
+			return data[i];
+		}
+
+		char &operator[](uint i) {
+			detach();
 			return data[i];
 		}
 
@@ -275,12 +290,6 @@ struct String::StringConverter
 }
 }
 
-
-
-template<typename T>
-n::core::String operator+(const n::core::String &s, const T &i) {
-	return s + n::core::String(i);
-}
 
 N_GEN_CLASS_OP(n::core::String, +)
 N_GEN_CLASS_OP(n::core::String, <)

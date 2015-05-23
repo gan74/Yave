@@ -183,7 +183,7 @@ namespace core {
 
 	uint uniqueId();
 
-	uint hash(const void *key, uint len, uint seed = 0x1000193);
+	uint64 hash(const void *key, uint64 len, uint64 seed = 2166136261);
 
 	constexpr uint log2ui(uint n) {
 		return (n >> 1) ? log2ui(n >> 1) + 1 : 0;
