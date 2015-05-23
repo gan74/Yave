@@ -127,9 +127,11 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		}
 
 		template<typename A, typename... Args>
-		void insert(const A &a, const Args&... args) {
+		iterator insert(const A &a, const Args&... args) {
+			uint pos = size();
 			append(a);
 			append(args...);
+			return data + pos;
 		}
 
 		iterator remove(const_iterator b) {
