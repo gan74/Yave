@@ -331,7 +331,7 @@ struct TypeInfo
 	static constexpr bool isNonConstIterable = internal::IsNonConstIterable<T>::value;
 	static constexpr bool isIterable = internal::IsConstIterable<T>::value || isNonConstIterable;
 
-	static constexpr bool isDereferenceable = internal::IsDereferenceable<T, isPod>::value;
+	static constexpr bool isDereferenceable = internal::IsDereferenceable<T, isPrimitive>::value;
 
 	static const Type type;
 
@@ -520,7 +520,7 @@ const Type TypeInfo<T[N]>::type = typeid(T[N]);
 template<typename T>
 struct TypeContent
 {
-	typedef typename internal::TypeContentInternal<T, TypeInfo<T>::isPod || !TypeInfo<T>::isDereferenceable>::type type;
+	typedef typename internal::TypeContentInternal<T, TypeInfo<T>::isPrimitive || !TypeInfo<T>::isDereferenceable>::type type;
 };
 
 
