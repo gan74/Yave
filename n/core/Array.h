@@ -430,6 +430,16 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		}
 
 		template<typename U>
+		iterator findOne(const U &f) {
+			return findOne(f, begin());
+		}
+
+		template<typename U>
+		const_iterator findOne(const U &f) const {
+			return findOne(f, begin());
+		}
+
+		template<typename U>
 		uint countAll(const U &f) const {
 			uint c = 0;
 			for(const_iterator i = begin(); i != end(); i++) {
