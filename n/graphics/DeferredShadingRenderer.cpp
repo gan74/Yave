@@ -94,7 +94,7 @@ template<LightType Type>
 ShaderCombinaison *getShader() {
 	static ShaderCombinaison *shader[LightType::Max] = {0};
 	core::String computeDir[LightType::Max] = {"return n_LightPos - x;", "return n_LightPos;"};
-	core::String attenuate[LightType::Max] = {"float a = 1.0 - min(1.0, x / n_LightRadius); return a * a * a;", "return 1.0;"};
+	core::String attenuate[LightType::Max] = {"return max(0.0, sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0));", "return 1.0;"};
 	if(!shader[Type]) {
 		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_1;"
@@ -206,7 +206,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 		if(Type == Directional) {
 			GLContext::getContext()->getScreen().draw(VertexAttribs());
 		} else {
-			math::Transform<> tr(l->getPosition(), l->getRadius() * 1.1);
+			math::Transform<> tr(l->getPosition(), l->getRadius() + 1);
 			GLContext::getContext()->setModelMatrix(tr.getMatrix());
 			getSphere().draw(VertexAttribs());
 		}
