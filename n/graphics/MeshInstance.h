@@ -135,7 +135,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 
 		T getRadius() const {
 			const internal::MeshInstance<T> *i = getInternal();
-			return i ? i->getRadius() : 0;
+			return i ? i->getRadius() : -1;
 		}
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {

@@ -92,7 +92,7 @@ class Scene : core::NonCopyable
 					if(u) {
 						uint off = (uint)u - (uint)p._2.first();
 						array.append(p._2
-							.filtered([&](Transformable<T> *v) { return vol.isInside(v->getPosition(), v->getRadius()); })
+							.filtered([&](Transformable<T> *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
 							.mapped([=](Transformable<T> *v) { return (U *)((byte *)v + off); }));
 
 					}
