@@ -94,7 +94,7 @@ template<LightType Type>
 ShaderCombinaison *getShader() {
 	static ShaderCombinaison *shader[LightType::Max] = {0};
 	core::String computeDir[LightType::Max] = {"return n_LightPos - x;", "return n_LightPos;"};
-	core::String attenuate[LightType::Max] = {"return max(0.0, sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0));", "return 1.0;"};
+	core::String attenuate[LightType::Max] = {"x = min(x, n_LightRadius); return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);", "return 1.0;"};
 	if(!shader[Type]) {
 		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_1;"
@@ -183,6 +183,7 @@ ShaderCombinaison *getCompositionShader() {
 				"vec4 color = texture(n_0, n_TexCoord);"
 				"vec4 light = texture(n_1, n_TexCoord);"
 				"n_Out = color * n_Ambient + color * light * (1.0 - n_Ambient);"
+				//"n_Out = light;"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
 	return shader;
