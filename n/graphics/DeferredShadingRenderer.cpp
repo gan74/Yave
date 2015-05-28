@@ -202,7 +202,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 	for(const Light<> *l : data->lights[Type]) {
 		sh->setValue("n_LightPos", l->getPosition());
 		sh->setValue("n_LightRadius", l->getRadius());
-		sh->setValue("n_LightColor", l->getColor().sub(3));
+		sh->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
 		if(Type == Directional) {
 			GLContext::getContext()->getScreen().draw(VertexAttribs());
 		} else {

@@ -29,21 +29,31 @@ template<typename T = float>
 class Light : public Movable<T>
 {
 	public:
-		Light() : Movable<T>(), color(1) {
+		Light() : Movable<T>(), intensity(1), color(1) {
 		}
 
 		virtual ~Light() {
 		}
+
 
 		const Color<T> &getColor() const {
 			return color;
 		}
 
 		void setColor(const Color<T> &c) {
-			color = c;
+			color = c.withLightness(1);
+		}
+
+		T getIntensity() const {
+			return intensity;
+		}
+
+		void setIntensity(T t) {
+			intensity = t;
 		}
 
 	private:
+		T intensity;
 		Color<T> color;
 };
 

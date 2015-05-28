@@ -241,6 +241,42 @@ class Color : public math::Vec<4, T>
 		bool operator>(const Color<T> &c) const {
 			return math::Vec<4, T>(*this) > math::Vec<4, T>(c);
 		}
+
+		T &r() {
+			return this->x();
+		}
+
+		T &g() {
+			return this->y();
+		}
+
+		T &b() {
+			return this->z();
+		}
+
+		T &a() {
+			return this->w();
+		}
+
+		const T &r()const  {
+			return this->x();
+		}
+
+		const T &g()const  {
+			return this->y();
+		}
+
+		const T &b()const  {
+			return this->z();
+		}
+
+		const T &a()const  {
+			return this->w();
+		}
+
+		Color<T> withLightness(T t) const {
+			return math::Vec<4, T>(*this) * t / math::Vec<3, T>(0., 0.59, 0.1).dot(this->sub(3));
+		}
 };
 
 template<typename T>
