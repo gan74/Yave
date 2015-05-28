@@ -26,8 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-MaterialLoader *MaterialLoader::loader = 0;
-
 class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::String, core::String>
 {
 	public:
@@ -80,7 +78,7 @@ class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::Stri
 						float ni = float(l.subString(3));
 						mat->roughness = sqrt(2 / (ni + 2));
 					} else if(l.toLower().beginsWith("map_kd ")) {
-						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })));l.subString(7);
+						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })));
 					}
 				}
 			}

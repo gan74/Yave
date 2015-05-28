@@ -26,8 +26,6 @@ namespace graphics {
 
 class MaterialLoader
 {
-	static MaterialLoader *loader;
-
 	public:
 		template<typename T, typename... Args>
 		class MaterialDecoder
@@ -64,6 +62,7 @@ class MaterialLoader
 
 	private:
 		static MaterialLoader *getLoader() {
+			static MaterialLoader *loader = 0;
 			if(!loader) {
 				loader = new MaterialLoader();
 			}
