@@ -135,6 +135,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					if(!tr.getTriangles().isEmpty()) {
 						bases.append(new MeshInstanceBase<>(std::move(tr.freezed()), mat));
 					}
+					tr = TriangleBuffer<>();
 				} else if(l.beginsWith("mtllib ")) {
 					mtllib = l.subString(7);
 				}
