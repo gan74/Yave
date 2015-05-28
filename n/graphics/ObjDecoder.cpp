@@ -131,11 +131,11 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					core::String sm = l.subString(2).toLower().filtered([](char c) { return !isspace(c); });
 					smooth = !(sm == "off" || sm == "0");
 				} else if(l.beginsWith("usemtl ")) {
-					mat = MaterialLoader::load<core::String, core::String>(mtllib, l.subString(7));
 					if(!tr.getTriangles().isEmpty()) {
 						bases.append(new MeshInstanceBase<>(std::move(tr.freezed()), mat));
+						tr = TriangleBuffer<>();
 					}
-					tr = TriangleBuffer<>();
+					mat = MaterialLoader::load<core::String, core::String>(mtllib, l.subString(7));
 				} else if(l.beginsWith("mtllib ")) {
 					mtllib = l.subString(7);
 				}
