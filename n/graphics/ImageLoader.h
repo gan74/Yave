@@ -25,7 +25,6 @@ namespace graphics {
 
 class ImageLoader
 {
-	static ImageLoader *loader;
 	public:
 		template<typename T, typename... Args>
 		class ImageDecoder
@@ -62,6 +61,7 @@ class ImageLoader
 
 	private:
 		static ImageLoader *getLoader() {
+			static ImageLoader *loader = 0;
 			if(!loader) {
 				loader = new ImageLoader();
 			}
