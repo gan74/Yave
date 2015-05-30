@@ -33,7 +33,7 @@ class TextInputStream : public InputStream
 			return stream->canRead();
 		}
 
-		uint readBytes(char *b, uint len = -1) override {
+		uint readBytes(void *b, uint len = -1) override {
 			return stream->readBytes(b, len);
 		}
 

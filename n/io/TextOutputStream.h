@@ -36,7 +36,7 @@ class TextOutputStream : public OutputStream
 			stream->flush();
 		}
 
-		uint writeBytes(const char *b, uint len) override {
+		uint writeBytes(const void *b, uint len) override {
 			return stream->writeBytes(b, len);
 		}
 

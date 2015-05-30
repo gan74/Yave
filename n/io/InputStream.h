@@ -31,9 +31,11 @@ namespace io {
 class InputStream
 {
 	public:
+		virtual ~InputStream() {}
+
 		virtual bool atEnd() const = 0;
 		virtual bool canRead() const = 0;
-		virtual uint readBytes(char *b, uint l = -1) = 0;
+		virtual uint readBytes(void *b, uint l = -1) = 0;
 
 };
 

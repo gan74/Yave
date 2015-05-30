@@ -71,7 +71,7 @@ bool File::open(int m) {
 	}
 	core::String openMode = "r";
 	if(m & IODevice::Read && m & IODevice::Write) {
-		openMode = "r+";
+		openMode = "w+";
 	} else if(m & IODevice::Write) {
 		openMode = "w";
 	}
@@ -166,7 +166,7 @@ int File::getOpenMode() const {
 	return mode;
 }
 
-uint File::writeBytes(const char *b, uint len) {
+uint File::writeBytes(const void *b, uint len) {
 	if(!canWrite()) {
 		return 0;
 	}
@@ -179,7 +179,7 @@ uint File::writeBytes(const char *b, uint len) {
 	#endif
 }
 
-uint File::readBytes(char *b, uint len) {
+uint File::readBytes(void *b, uint len) {
 	if(!canRead()) {
 		return 0;
 	}

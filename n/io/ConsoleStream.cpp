@@ -31,7 +31,7 @@ bool ConsoleInputStream::canRead() const {
 	return true;
 }
 
-uint ConsoleInputStream::readBytes(char *b, uint l) {
+uint ConsoleInputStream::readBytes(void *b, uint l) {
 	return fread(b, sizeof(char), l, stdin);
 }
 
@@ -42,7 +42,7 @@ bool ConsoleOutputStream::canWrite() const {
 	return true;
 }
 
-uint ConsoleOutputStream::writeBytes(const char *b, uint len) {
+uint ConsoleOutputStream::writeBytes(const void *b, uint len) {
 	fwrite(b, sizeof(char), len, channel == ConsoleOutputStream::Out ? stdout : stderr);
 	return len;
 }

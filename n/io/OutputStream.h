@@ -25,8 +25,10 @@ namespace io {
 class OutputStream
 {
 	public:
+		virtual ~OutputStream() {}
+
 		virtual bool canWrite() const = 0;
-		virtual uint writeBytes(const char *b, uint len) = 0;
+		virtual uint writeBytes(const void *b, uint len) = 0;
 		virtual void flush() = 0;
 
 		virtual void write(const core::String &str) {

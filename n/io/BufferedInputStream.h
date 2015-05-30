@@ -30,7 +30,7 @@ class BufferedInputStream : public InputStream
 
 		bool atEnd() const override;
 		bool canRead() const override;
-		uint readBytes(char *b, uint l = -1) override;
+		uint readBytes(void *b, uint l = -1) override;
 
 		uint getBufferUsedSize() const;
 

@@ -41,8 +41,8 @@ class File : public IODevice, core::NonCopyable
 		void flush() override;
 		uint size() const;
 		int getOpenMode() const override;
-		uint writeBytes(const char *b, uint len) override;
-		uint readBytes(char *b, uint len = -1) override;
+		uint writeBytes(const void *b, uint len) override;
+		uint readBytes(void *b, uint len = -1) override;
 
 		const core::String &getName() const;
 

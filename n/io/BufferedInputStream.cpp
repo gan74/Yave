@@ -41,7 +41,7 @@ uint BufferedInputStream::getBufferUsedSize() const {
 	return bufferUsed;
 }
 
-uint BufferedInputStream::readBytes(char *b, uint l) {
+uint BufferedInputStream::readBytes(void *b, uint l) {
 	uint offset = bufferSize - bufferUsed;
 	if(l > bufferUsed || l == (uint)-1) {
 		memcpy(b, buffer + offset, bufferUsed);
@@ -51,9 +51,9 @@ uint BufferedInputStream::readBytes(char *b, uint l) {
 			if(!fillBuffer()) {
 				return read;
 			}
-			return read + readBytes(b + read, l - read);
+			return read + readBytes((byte *)b + read, l - read);
 		} else {
-			return stream->readBytes(b + read, -1) + read;
+			return stream->readBytes((byte *)b + read, -1) + read;
 		}
 	} else {
 		memcpy(b, buffer + offset, l);

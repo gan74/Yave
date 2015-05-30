@@ -36,7 +36,7 @@ class ConsoleInputStream : public TextInputStream
 
 		bool atEnd() const override;
 		bool canRead() const override;
-		uint readBytes(char *b, uint l = -1) override;
+		uint readBytes(void *b, uint l = -1) override;
 };
 
 class RawConsoleOutputStream;
@@ -53,7 +53,7 @@ class ConsoleOutputStream : public TextOutputStream
 		ConsoleOutputStream(Channel ch = Out);
 
 		bool canWrite() const override;
-		uint writeBytes(const char *b, uint len) override;
+		uint writeBytes(const void *b, uint len) override;
 		void flush() override;
 
 	private:
