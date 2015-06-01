@@ -22,7 +22,7 @@ namespace n {
 namespace io {
 
 
-BufferedInputStream::BufferedInputStream(InputStream *st) : stream(st), bufferSize(512), bufferUsed(0), buffer(new char[bufferSize]) {
+BufferedInputStream::BufferedInputStream(InputStream *st, uint si) : stream(st), bufferSize(si), bufferUsed(0), buffer(new char[bufferSize]) {
 }
 
 BufferedInputStream::~BufferedInputStream() {

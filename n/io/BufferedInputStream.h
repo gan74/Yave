@@ -25,7 +25,7 @@ namespace io {
 class BufferedInputStream : public InputStream
 {
 	public:
-		BufferedInputStream(InputStream *st);
+		BufferedInputStream(InputStream *st, uint si = 64 * 1024);
 		~BufferedInputStream();
 
 		bool atEnd() const override;
