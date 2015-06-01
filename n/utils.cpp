@@ -36,7 +36,7 @@ Nothing fatal(const char *msg, const char *file, int line) {
 	return Nothing();
 }
 
-namespace math {
+namespace internal {
 	uint randHelper() {
 		uint bits = core::log2ui(RAND_MAX);
 		uint num = 0;
@@ -45,30 +45,30 @@ namespace math {
 		}
 		return num;
 	}
+}
 
-	uint random(uint max, uint min) {
-		static bool seed = false;
-		if(!seed) {
-			#ifdef N_DEBUG
-			srand(0);
-			#else
-			time_t now = time(0);
-			srand(hash(&now, sizeof(now)));
-			#endif
-			seed = true;
-		}
-		if(max < min) {
-			uint t = max;
-			max = min;
-			min = t;
-		}
-		return (randHelper() % (max - min)) + min;
+uint random(uint max, uint min) {
+	static bool seed = false;
+	if(!seed) {
+		#ifdef N_DEBUG
+		srand(0);
+		#else
+		time_t now = time(0);
+		srand(hash(&now, sizeof(now)));
+		#endif
+		seed = true;
 	}
+	if(max < min) {
+		uint t = max;
+		max = min;
+		min = t;
+	}
+	return (internal::randHelper() % (max - min)) + min;
+}
 
-	float random() {
-		return (float)(randHelper() & 0x7FFFFF) * 1.0f / (0x7FFFFF + 1.0f);
-	}
-} //math
+float random() {
+	return (float)(internal::randHelper() & 0x7FFFFF) * 1.0f / (0x7FFFFF + 1.0f);
+}
 
 namespace core {
 	uint uniqueId() {

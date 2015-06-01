@@ -118,9 +118,6 @@ namespace math {
 		return type(a) / type(180) * pi<type>();
 	}
 
-	uint random(uint max, uint min = 0);
-	float random();
-
 	template<typename T>
 	const T &clamp(const T &val, const T &mi, const T &ma) {
 		return val < mi ? mi : (val < ma) ? val : ma;
@@ -170,6 +167,10 @@ namespace math {
 		return x;
 	}
 } //math
+
+
+	uint random(uint max, uint min = 0);
+	float random();
 
 namespace core {
 	class NonCopyable

@@ -581,7 +581,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		void shuffle() {
 			uint s = size();
 			for(uint i = 0; i != s; i++) {
-				uint a = math::random(s);
+				uint a = random(s);
 				if(a != i) {
 					std::swap(data[a], data[i]);
 				}
