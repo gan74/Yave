@@ -26,6 +26,158 @@ namespace graphics {
 
 class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 {
+
+	struct HashPair
+	{
+		HashPair(const math::Vec3ui &v, uint i = 0) : _1(v), _2(i) {
+		}
+
+		math::Vec3ui _1;
+		uint _2;
+		bool operator==(const HashPair &p) const {
+			return _1 == p._1;
+		}
+
+		uint64 hash() const {
+			return core::hash(&_1, sizeof(_1));
+		}
+	};
+
+
+	template<typename T, typename Eq = std::equal_to<T>>
+	class Hash
+	{
+		typedef uint64 hashType;
+
+		template<typename W>
+		hashType hashFunc(const W &e) {
+			return e.hash();
+		}
+
+		public:
+			class iterator
+			{
+				public:
+					iterator &operator++() { // ++prefix
+						++it;
+						if(it == bi->end()) {
+							it = (++bi)->begin();
+						}
+						return *this;
+					}
+
+					iterator operator++(int) { // postfix++
+						iterator it(*this);
+						operator++();
+						return it;
+					}
+
+					bool operator==(const iterator &i) const {
+						return it == i.it;
+					}
+
+					bool operator!=(const iterator &i) const {
+						return it != i.it;
+					}
+
+					const T &operator*() const {
+						return *it;
+					}
+
+					const T *operator->() const {
+						return &(*it);
+					}
+
+				private:
+					friend class Hash;
+					iterator(core::Array<T> *b) : bi(b), it(bi->begin()) {
+					}
+
+					iterator(core::Array<T> *b, typename core::Array<T>::iterator i) : bi(b), it(i) {
+					}
+
+					core::Array<T> *bi;
+					typename core::Array<T>::iterator it;
+			};
+
+			typedef iterator const_iterator;
+
+			Hash() : bucketCount(7), hSize(0), buckets(new core::Array<T>[bucketCount + 1]) {
+			}
+
+			~Hash() {
+				delete[] buckets;
+			}
+
+			iterator insert(const T &t) {
+				uint b1 = bucketCount + 1;
+				if(hSize > b1 >> 2) {
+					resize((b1 << 2) - 1);
+				}
+				hashType h = hashFunc(t);
+				core::Array<T> &a = buckets[h % bucketCount];
+				typename core::Array<T>::iterator it = a.find(t);
+				if(it != a.end()) {
+					return iterator(&a, it);
+				}
+				hSize++;
+				return iterator(&a, a.insert(t));
+			}
+
+			iterator find(const T &t) {
+				hashType h = hashFunc(t);
+				core::Array<T> &a = buckets[h % bucketCount];
+				typename core::Array<T>::iterator it = a.find(t);
+				if(it != a.end()) {
+					return iterator(&a, it);
+				}
+				return end();
+			}
+
+			iterator begin() {
+				return iterator(buckets);
+			}
+
+			iterator end() {
+				return iterator(buckets + bucketCount);
+			}
+
+			const_iterator begin() const {
+				return const_iterator(buckets);
+			}
+
+			const_iterator end() const {
+				return const_iterator(buckets + bucketCount);
+			}
+
+			uint size() const {
+				return hSize;
+			}
+
+			uint getCapacity() const {
+				return (bucketCount + 1) >> 2;
+			}
+
+		private:
+			void resize(uint s) {
+				core::Array<T> *b = buckets;
+				uint l = bucketCount;
+				bucketCount = s;
+				buckets = new core::Array<T>[bucketCount + 1];
+				for(uint i = 0; i != l; i++) {
+					for(const T &e : b[i]) {
+						insert(e);
+					}
+				}
+				delete[] b;
+			}
+
+			uint bucketCount;
+			uint hSize;
+			core::Array<T> *buckets;
+	};
+
+
 	public:
 		ObjDecoder() : MeshLoader::MeshDecoder<ObjDecoder, core::String>() {
 		}
@@ -92,7 +244,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 				}
 			}
 			core::String mtllib;
-			core::Map<math::Vec3ui, uint> vmap;
+			Hash<HashPair> vmap;
 			bool smooth = false;
 			TriangleBuffer<> tr;
 			Material<> mat;
@@ -111,13 +263,16 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 						if(smooth) {
 							v[2] = 0;
 						}
-						core::Map<math::Vec3ui, uint>::const_iterator it = vmap.find(v);
+						Hash<HashPair>::const_iterator it = vmap.find(HashPair(v));
 						if(it == vmap.end()) {
 							if(v.x() >= positions.size() || v.z() >= normals.size() || v.y() >= coords.size()) {
 								std::cerr<<"Index out of bound : "<<core::String(v)<<std::endl;
 								return 0;
 							}
-							face[i] = vmap[v] = tr.append(Vertex<>(positions[v.x()], normals[v.z()], coords[v.y()]));
+							Vertex<> vert = Vertex<>(positions[v.x()], normals[v.z()], coords[v.y()]);
+							uint index = tr.append(vert);
+							vmap.insert(HashPair(v, index));
+							face[i] = index;
 						} else {
 							face[i] = (*it)._2;
 						}
