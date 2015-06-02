@@ -337,9 +337,6 @@ bool String::operator==(const String &str) const {
 	if(str.length != length) {
 		return false;
 	}
-	if(count && count == str.count) {
-		return true;
-	}
 	for(uint i = 0; i != length; i++) {
 		if(data[i] != str.data[i]) {
 			return false;
