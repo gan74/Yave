@@ -155,7 +155,6 @@ namespace math {
 		return u;
 	}
 
-
 	template<typename T>
 	T isqrt(T s) {
 		T x	= s / 2;

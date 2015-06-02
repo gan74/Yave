@@ -30,13 +30,15 @@ GLTexFormat getTextureFormat(ImageFormat format);
 class Texture : public TextureBase<Texture2D>
 {
 	public:
-		Texture(const Image &i);
+		Texture(const Image &i, bool mip = false);
 		Texture();
 		~Texture();
 
 		bool operator==(const Texture &t) const;
 		bool operator!=(const Texture &t) const;
 		bool operator<(const Texture &t) const;
+
+		void computeMipMaps(bool sync = false);
 
 		bool isNull() const {
 			return !getHandle();
@@ -57,6 +59,10 @@ class Texture : public TextureBase<Texture2D>
 		friend class FrameBuffer;
 		friend class internal::TextureBinding;
 		friend class CubeMap;
+
+		bool isMipCapable() const {
+			return getSize().max() / (getSize().min() + 1) < sqrt(2);
+		}
 
 		void upload() const;
 

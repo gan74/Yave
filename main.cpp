@@ -20,23 +20,29 @@ int main(int argc, char **argv) {
 	Scene<> scene;
 	scene.insert(&cam);
 
-	for(uint i = 0; i != 100; i++) {
+	/*for(uint i = 0; i != 50; i++) {
 		auto obj = new Obj("scube.obj");
-		obj->setAutoScale(6);
-		obj->setPosition(Vec3(random(), random(), random()) * 100 - 50);
+		obj->setAutoScale(10);
+		obj->setPosition(Vec3(random(), random(), random() + 0.5) * 1000 - 500);
+		scene.insert(obj);
+	}*/
+
+	{
+		auto obj = new Obj("sponza.obj");
+		obj->setAutoScale(800);
 		scene.insert(obj);
 	}
 
 	{
 		PointLight<> *l = new PointLight<>();
 		l->setPosition(Vec3(-5, 5, 10));
-		l->setRadius(25);
-		scene.insert(light = l);
+		l->setColor(Color<>(Blue));
+		l->setRadius(250);
+		//scene.insert(light = l);
 	}
 	{
 		DirectionalLight<> *l = new DirectionalLight<>();
 		l->setPosition(Vec3(-5, -5, 5));
-		l->setColor(Color<>(Blue) * 2);
 		scene.insert(l);
 	}
 
@@ -56,9 +62,9 @@ int main(int argc, char **argv) {
 		cam.setForward(Vec3(Vec2(cos(angle.x()), sin(angle.x())) * cos(angle.y()), -sin(angle.y())));
 
 		if(light) {
-			light->setColor(Vec4(exp(
-					(sin(total.elapsed()) + 1) * 2
-				)));
+			light->setIntensity(exp(
+					(sin(total.elapsed()) + 1) * 4
+				));
 		}
 
 		(renderer)();
@@ -87,13 +93,15 @@ int main(int argc, char **argv) {
 #include <n/core/Pair.h>
 #include <n/core/String.h>
 #include <n/core/Set.h>
+#include <n/io/File.h>
+#include <csetjmp>
 
 
 using namespace n;
 using namespace n::core;
 using namespace n::io;
 
-template<typename T, typename Eq = std::equal_to<T>>
+/*template<typename T, typename Eq = std::equal_to<T>>
 class Hash
 {
 	typedef uint64 hashType;
@@ -237,56 +245,341 @@ class Hash
 		uint bucketCount;
 		uint hSize;
 		Array<T> *buckets;
-};
+};*/
 
 //static_assert(Collection<Hash<int>>::isCollection, "hash not col");
 
+#include <n/core/Map.h>
+#include <n/utils.h>
 
-uint max = 467576;
-Array<String> array;
-const char *cstr = "azertyuiopqsdfghjklmwxcvbn123456789";
-
-void init() {
-	while(array.size() < max) {
-		array.append((math::random(0, max * 2)) + String(cstr));
-	}
-}
-
-template<typename T>
-float test(uint r, uint &x) {
-	init();
-	T h;
-	Timer ti;
-	for(uint i = 0; i != max; i++) {
-		h.insert(String(i % (max / r)) + String(cstr));
-	}
-	for(const String &w : array) {
-		if(h.find(w) != h.end()) {
-			x++;
+class AckMap
+{
+	static constexpr uint max = 1 << 21;
+	struct element
+	{
+		element(uint64 t = 0) : _2(t) {
 		}
+
+		uint64 _2;
+
+		element &operator=(const element &e) {
+			_2 = e._2;
+			return *this;
+		}
+
+		operator uint64() const {
+			return _2;
+		}
+	};
+
+	class Page
+	{
+		public:
+			Page(uint64 m, uint64 n, AckMap *p) : parent(p), pair(m, n), file(0), data(new element[max]) {
+				parent->loaded();
+			}
+
+			void offload() {
+				if(!file) {
+					file = new File("./stk/" + String(uniqueId()) + ".map");
+					//std::cout<<"saving memoization data as \""<<file->getName()<<"\""<<std::endl;
+					if(!file->open(IODevice::Write | IODevice::Binary)) {
+						fatal("Unable to open file");
+					}
+					file->writeBytes(data, max * sizeof(element));
+					file->close();
+					delete[] data;
+					data = 0;
+					parent->unloaded();
+				}
+			}
+
+			void reload() {
+				if(file) {
+					parent->loaded();
+					if(!file->open(IODevice::Read | IODevice::Binary)) {
+						fatal("Unable to open file");
+					}
+					if(file->readBytes(data, max * sizeof(element)) != max * sizeof(element)) {
+						fatal("Unable to restore memoization data");
+					}
+					file->close();
+					delete file;
+					file = 0;
+				}
+			}
+
+			element *find(const Pair<uint64> &p) {
+				if(pair._1 != p._1) {
+					return 0;
+				}
+				reload();
+				if(!data) {
+					fatal("Null page");
+				}
+				uint64 n = p._2 - pair._2;
+				if(n >= max) {
+					return 0;
+				}
+				if(!data[n]) {
+					//std::cout<<"("<<p._1<<", "<<p._2<<") not found"<<std::endl;
+					return 0;
+				}
+				return data + n;
+			}
+
+			element *operator[](const Pair<uint64> &p) {
+				if(pair._1 != p._1) {
+					fatal("Wrong page");
+				}
+				reload();
+				if(!data) {
+					fatal("Null page");
+				}
+				uint64 n = p._2 - pair._2;
+				if(n >= max) {
+					return 0;
+				}
+				return data + n;
+			}
+
+		private:
+			AckMap *parent;
+			Pair<uint64> pair;
+			File *file;
+			element *data;
+
+	};
+
+	public:
+		AckMap() : lives(0) {
+		}
+
+		uint64 &operator[](const Pair<uint64> &p) {
+			if(!p._1) {
+				aux = p._2 + 1;
+				return aux._2;
+			}
+			element *e = findPage(p)[p];
+			if(!e) {
+				fatal("Mapping error");
+			}
+			return e->_2;
+		}
+
+		element *find(const Pair<uint64> &p) {
+			if(!p._1) {
+				aux = p._2 + 1;
+				return &aux;
+			}
+			return findPage(p).find(p);
+		}
+
+		element *end() const {
+			return 0;
+		}
+
+	private:
+		Page &findPage(const Pair<uint64> &p) {
+			while(pages.size() < p._1) {
+				pages.append(Array<Page *>());
+			}
+			Array<Page *> &row = pages[p._1 - 1];
+			uint64 index = p._2 / max;
+			while(row.size() <= index) {
+				//std::cout<<lives<<" live pages ("<<lives * max * sizeof(element) / (1024 * 1024)<<"MB)"<<std::endl;
+
+				Page *pa = new Page(p._1, row.size() * max, this);
+				all.append(pa);
+				row.append(pa);
+			}
+			return *(row[index]);
+		}
+
+		void loaded() {
+			lives++;
+			while(lives * max * sizeof(element) / (1024 * 1024) > 512) {
+				uint r = random(all.size(), 0);
+				all[r]->offload();
+				//std::cout<<"offloading "<<r<<std::endl;
+			}
+		}
+
+		void unloaded() {
+			lives--;
+		}
+
+
+		Array<Page *> all;
+		Array<Array<Page *>> pages;
+		uint lives;
+		element aux;
+};
+
+class AckStack
+{
+	static constexpr uint max = 1 << 20;
+
+	public:
+		AckStack() : data(new Pair<uint64>[max]), end(data){
+		}
+
+		~AckStack() {
+			delete[] data;
+		}
+
+		void push(const Pair<uint64> &p) {
+			if(end == data + max) {
+				offload();
+			}
+			new(end++) Pair<uint64>(p);
+		}
+
+		Pair<uint64> pop() {
+			if(end == data) {
+				reload();
+			}
+			return *(--end);
+		}
+
+		bool isEmpty() const {
+			return end == data && files.isEmpty();
+		}
+
+		void operator<<(const Pair<uint64> &p) {
+			push(p);
+		}
+
+	private:
+		void offload() {
+			File *save = new File("./stk/" + String(uniqueId()) + ".stk");
+			//std::cout<<"saving stack as \""<<save->getName()<<"\""<<std::endl;
+			if(!save->open(IODevice::Write | IODevice::Binary)) {
+				fatal("Unable to open file");
+			}
+			files << save;
+			save->writeBytes(data, max * sizeof(Pair<uint64>));
+			save->close();
+			end = data;
+		}
+
+		void reload() {
+			File *f = files.last();
+			files.pop();
+			if(!f->open(IODevice::Read | IODevice::Binary)) {
+				fatal("Unable to open file");
+			}
+			if(f->readBytes((char *)data, max * sizeof(Pair<uint64>)) != max * sizeof(Pair<uint64>)) {
+				fatal("Unable to restore stack");
+			}
+			f->close();
+			delete f;
+			end = data + max;
+		}
+
+		Pair<uint64> *data;
+		Array<File *> files;
+		Pair<uint64> *end;
+};
+
+uint64 ack(uint64 m, uint64 n) {
+	static AckMap map;
+	AckStack stack;
+	Pair<uint64> p(m, n);
+	auto w = map.find(Pair<uint64>(m, n));
+	if(w != map.end()) {
+		return w->_2;
 	}
-	return ti.elapsed();
+	while(true) {
+		if(!p._1) {
+			uint x = map[p] = p._2 + 1;
+			if(stack.isEmpty()) {
+				return x;
+			}
+			p = stack.pop();
+		} else if(!p._2) {
+			Pair<uint64> p2(p._1 - 1, 1);
+			auto it = map.find(p2);
+			if(it == map.end()) {
+				stack << p;
+				p = p2;
+			} else {
+				uint x = map[p] = it->_2;
+				if(stack.isEmpty()) {
+					return x;
+				}
+				p = stack.pop();
+			}
+		} else {
+			Pair<uint64> p2(p._1, p._2 - 1);
+			auto it = map.find(p2);
+			if(it == map.end()) {
+				stack << p;
+				p = p2;
+			} else {
+				uint64 val = it->_2;
+				Pair<uint64> p3(p._1 - 1, val);
+				it = map.find(p3);
+				if(it == map.end()) {
+					stack << p;
+					p = p3;
+				} else {
+					uint x = map[p] = it->_2;
+					if(stack.isEmpty()) {
+						return x;
+					}
+					p = stack.pop();
+				}
+			}
+		}
+		/*return map[p] =
+			m ? n ? ack(m - 1, ack(m, n - 1)) : ack(m - 1, 1) : n + 1;*/
+	}
+	return 0;
 }
 
+uint64 rack(uint64 m, uint64 n) {
+	static Map<Pair<uint64>, uint64> map;
+	Pair<uint64> p(m, n);
+	auto it = map.find(p);
+	if(it == map.end()) {
+		return map[p] =
+				m ? n ? rack(m - 1, rack(m, n - 1)) : rack(m - 1, 1) : n + 1;
+	}
+	return it->_2;
+}
+
+#include <n/io/TextInputStream.h>
+#include <n/io/BufferedInputStream.h>
 
 int main(int, char **) {
-	double t10 = 0;
-	double t20 = 0;
-	for(uint r = 2; r != 100; r++) {
-		uint a = 0;
-		uint b = 0;
-		float t1 = test<Hash<String>>(r, a);
-		float t2 = test<Set<String>>(r, b);
-		t10 += t1;
-		t20 += t2;
-		std::cout<<"R = "<<r<<" ("<<a<<"/"<<b<<")"<<std::endl;
-		std::cout<<"    Hash = "<<round(t1 * 1000)<<"ms"<<std::endl;
-		std::cout<<"    Set  = "<<round(t2 * 1000)<<"ms"<<std::endl;
-		std::cout<<std::endl;
+	File f("person.csv");
+	f.open(IODevice::Read);
+	TextInputStream s(new BufferedInputStream(&f));
+	while(s.canRead()) {
+		String line = s.readLine();
+		auto values = line.split("\t");
+		if(values.size() < 9) {
+			continue;
+		}
+		uint id = uint(values.first());
+		String bib = values[8];
+		String quote = values[4];
+		String triv = values[3];
+		if(bib == "\\N") {
+			bib = "";
+		}
+		if(triv == "\\N") {
+			triv = "";
+		}
+		if(quote == "\\N") {
+			quote = "";
+		}
+		if(bib.isEmpty() && triv.isEmpty() && quote.isEmpty()) {
+			continue;
+		}
+		std::cout<<id<<", "<<triv<<", "<<quote<<", "<<bib<<std::endl;
 	}
-	std::cout<<"Total : "<<std::endl;
-	std::cout<<"    Hash = "<<round(t10 * 1000)<<"ms"<<std::endl;
-	std::cout<<"    Set  = "<<round(t20 * 1000)<<"ms"<<std::endl;
 	return 0;
 }
 

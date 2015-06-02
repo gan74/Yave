@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GL.h"
 #include "TextureBinding.h"
 
-#define N_NO_TEX_STORAGE
+//#define N_NO_TEX_STORAGE
 
 namespace n {
 namespace graphics {
@@ -73,7 +73,8 @@ bool Texture::isHWSupported(ImageFormat format) {
 	return (*it)._2;
 }
 
-Texture::Texture(const Image &i) : TextureBase<Texture2D>(), image(i) {
+Texture::Texture(const Image &i, bool mip) : TextureBase<Texture2D>(), image(i) {
+	data->hasMips = mip;
 }
 
 Texture::Texture() : TextureBase<Texture2D>() {
@@ -99,22 +100,47 @@ void Texture::upload() const {
 	if(!size.mul()) {
 		fatal("Invalid image size.");
 	}
+	if(getHandle()) {
+		gl::glDeleteTextures(1, &(data->handle));
+	}
 	gl::glGenTextures(1, &(data->handle));
 	gl::glBindTexture(GL_TEXTURE_2D, data->handle);
 
 	GLTexFormat format = getTextureFormat(image.getFormat());
 
+	data->hasMips &= isMipCapable();
+	uint maxMips = hasMipmaps() ? 1 + floor(log2(getSize().max())) : 1;
 	#ifndef N_NO_TEX_STORAGE
-	gl::glTexStorage2D(GL_TEXTURE_2D, 1, format.internalFormat, size.x(), size.y());
+	gl::glTexStorage2D(GL_TEXTURE_2D,  maxMips, format.internalFormat, size.x(), size.y());
 	if(image.data()) {
 		gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format.format, format.type, image.data()); // crashes if data = 0...
 	}
 	#else
 	gl::glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat, size.x(), size.y(), 0, format.format, format.type, image.data());
 	#endif
+	if(hasMipmaps()) {
+		gl::glGenerateMipmap(GL_TEXTURE_2D);
+	}
 
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, hasMipmaps() ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+}
+
+void Texture::computeMipMaps(bool sync) {
+	if(hasMipmaps() || !isMipCapable()) {
+		return;
+	}
+	data->hasMips = true;
+	if(getHandle()) {
+		if(sync) {
+			upload();
+		} else {
+			GLContext::getContext()->addGLTask([=]() {
+				upload();
+				internal::TextureBinding::dirty();
+			});
+		}
+	}
 }
 
 void Texture::prepare(bool sync) const {

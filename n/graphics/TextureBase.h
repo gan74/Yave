@@ -38,7 +38,7 @@ namespace internal {
 	{
 		struct Data
 		{
-			Data(TextureType t) : type(t), handle(0) {
+			Data(TextureType t) : type(t), handle(0), hasMips(false) {
 			}
 
 			~Data() {
@@ -55,6 +55,7 @@ namespace internal {
 			const TextureType type;
 			concurrent::SpinLock lock;
 			gl::GLuint handle;
+			bool hasMips;
 		};
 
 		TextureBase(TextureType t) : data(new Data(t)) {
@@ -69,6 +70,10 @@ class TextureBase : protected internal::TextureBase
 {
 	public:
 		TextureBase() : internal::TextureBase(Type) {
+		}
+
+		bool hasMipmaps() const {
+			return data->hasMips;
 		}
 
 	protected:
