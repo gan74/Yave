@@ -51,7 +51,6 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			core::Array<core::String> lines = core::String(data).split("\n");
 			delete[] data;
 			file.close();
-
 			core::Array<math::Vec3> positions;
 			positions.append(math::Vec3());
 			core::Array<math::Vec3> normals;
@@ -92,7 +91,6 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 					coords.append(math::Vec2(fl[0], fl[1]));
 				}
 			}
-			//std::cout<<positions.size()<<" "<<normals.size()<<" "<<coords.size()<<std::endl;
 			core::String mtllib;
 			core::Map<math::Vec3ui, uint> vmap;
 			bool smooth = false;
@@ -108,11 +106,11 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 						return 0;
 					}
 					for(uint i = 0; i != 3; i++) {
-						core::Array<uint> uis = fl[i].split("/", true).mapped([](const core::String &str) { return str.isEmpty() ? 0 : uint(str); });
-						for(; uis.size() < 3;) {
-							uis += 0;
+						math::Vec3ui v;
+						sscanf(fl[i].toChar(), "%u/%u/%u", &v[0], &v[1], &v[2]);
+						if(smooth) {
+							v[2] = 0;
 						}
-						math::Vec3ui v(uis[0], uis[1], smooth ? 0 : uis[2]);
 						core::Map<math::Vec3ui, uint>::const_iterator it = vmap.find(v);
 						if(it == vmap.end()) {
 							if(v.x() >= positions.size() || v.z() >= normals.size() || v.y() >= coords.size()) {
@@ -141,7 +139,6 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 			if(!tr.getTriangles().isEmpty()) {
 				bases.append(new MeshInstanceBase<>(std::move(tr.freezed()), mat));
 			}
-			//std::cout<<file.getName()<<" loaded in "<<timer.elapsed() * 1000<<"ms ["<<bases.first()->getTriangleBuffer().indexes.size() / 3<<"]"<<std::endl;
 			return new internal::MeshInstance<>(bases);
 		}
 };
