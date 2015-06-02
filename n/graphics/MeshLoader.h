@@ -26,7 +26,6 @@ namespace graphics {
 
 class MeshLoader
 {
-	static MeshLoader *loader;
 	public:
 		template<typename T, typename... Args>
 		class MeshDecoder
@@ -63,6 +62,7 @@ class MeshLoader
 
 	private:
 		static MeshLoader *getLoader() {
+			static MeshLoader *loader = 0;
 			if(!loader) {
 				loader = new MeshLoader();
 			}

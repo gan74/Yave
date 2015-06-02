@@ -24,8 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-MeshLoader *MeshLoader::loader = 0;
-
 class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 {
 	public:
