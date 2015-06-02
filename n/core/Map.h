@@ -119,10 +119,15 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 			return end();
 		}
 
+		Map<T, U, Comp, Eq> &operator=(const Map<T, U, Comp, Eq> &o) {
+			MapType::operator=(o);
+			return *this;
+		}
+
 		template<typename C>
 		Map<T, U, Comp, Eq> &operator=(const C &o) {
 			MapType::operator=(o);
-			return this;
+			return *this;
 		}
 
 		Map<T, U, Comp, Eq> &operator=(MapType &&o) {

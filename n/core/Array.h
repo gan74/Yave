@@ -302,6 +302,11 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			return *this;
 		}
 
+		Array<T, ResizePolicy> &operator=(const Array<T, ResizePolicy> &e) {
+			assign(e);
+			return *this;
+		}
+
 		template<typename C>
 		Array<T, ResizePolicy> &operator=(const C &e) {
 			assign(e);

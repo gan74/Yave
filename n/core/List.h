@@ -314,10 +314,12 @@ class List
 		template<typename C>
 		List<T> &operator=(const C &l) {
 			assign(l);
+			return *this;
 		}
 
-		List<T> operator=(const List<T> &l) {
-			append(l);
+		List<T> &operator=(const List<T> &l) {
+			assign(l);
+			return *this;
 		}
 
 		uint size() const {
@@ -356,7 +358,6 @@ class List
 				l = it;
 			}
 			return true;
-
 		}
 
 		template<typename U>

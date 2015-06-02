@@ -303,6 +303,12 @@ class RBTree
 			setSize = s;
 		}
 
+		RBTree<T, Comp, Eq> &operator=(const RBTree<T, Comp, Eq> &o) {
+			clear();
+			insert(o);
+			return *this;
+		}
+
 		template<typename C>
 		RBTree<T, Comp, Eq> &operator=(const C &o) {
 			clear();
