@@ -18,3 +18,5 @@
 *.user
 /cmake/
 /cov/
+*.Debug
+*.Release
