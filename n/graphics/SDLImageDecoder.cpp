@@ -62,8 +62,8 @@ class SDLImageDecoder : public graphics::ImageLoader::ImageDecoder<SDLImageDecod
 			SDL_LockSurface(cs);
 			void *dat = cs->pixels;
 			cs->pixels = 0;
-			SDL_LockSurface(surf);
-			SDL_LockSurface(cs);
+			SDL_UnlockSurface(surf);
+			SDL_UnlockSurface(cs);
 			lock.unlock();
 			return new internal::Image(size, ImageFormat::RGBA8, dat);
 		}
