@@ -586,7 +586,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 				}
 			});
 			dataEnd = it;
-			setCapacity(it - begin());
+			shrinkIfNeeded();
 		}
 
 		void shuffle() {
