@@ -179,6 +179,9 @@ char const *String::toChar() const {
 	if(!data) {
 		return (char *)&null;
 	}
+	if(!data[length]) {
+		return data;
+	}
 	detach(length + 1);
 	length--;
 	data[length] = '\0';
