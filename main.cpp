@@ -36,14 +36,15 @@ int main(int argc, char **argv) {
 	{
 		PointLight<> *l = new PointLight<>();
 		l->setPosition(Vec3(-5, 5, 10));
-		l->setColor(Color<>(Blue));
+		//l->setColor(Color<>(Blue));
 		l->setRadius(250);
-		//scene.insert(light = l);
+		scene.insert(light = l);
 	}
 	{
 		DirectionalLight<> *l = new DirectionalLight<>();
 		l->setPosition(Vec3(-5, -5, 5));
-		scene.insert(l);
+		l->setIntensity(5);
+		//	scene.insert(l);
 	}
 
 	BufferedRenderer *ri = 0;
@@ -63,7 +64,7 @@ int main(int argc, char **argv) {
 
 		if(light) {
 			light->setIntensity(exp(
-					(sin(total.elapsed()) + 1) * 4
+					(sin(total.elapsed()) + 2) * 4
 				));
 		}
 

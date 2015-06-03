@@ -130,17 +130,52 @@ ShaderCombinaison *getShader() {
 				+ computeDir[Type] +
 			"}"
 
+			"float brdf_lambert(vec3 L, vec3 V, vec3 N, vec4 M) {"
+				"return 1.0 / pi;"
+			"}"
+
+			"float brdf_cook_torrance(vec3 L, vec3 V, vec3 N, vec4 M) {"
+				"const float epsilon = 0.0001;"
+				"float NoV = abs(dot(N, V)) + epsilon;"
+				"vec3 H = normalize(L + V);"
+				"float LoH = saturate(dot(L, H));"
+				"float NoH = saturate(dot(N, H));"
+				"float NoL = saturate(dot(N, L));"
+				"float roughness = M.x + epsilon;"
+				"float a2 = sqr(roughness);"
+
+				"float D = a2 / (pi * (sqr(NoH) * (a2 - 1) + 1));"
+
+				"float K = sqr(roughness + 1) / 8.0;"
+				"float G1L = NoL / (NoL * (1.0 - K) + K);"
+				"float G1V = NoV / (NoV * (1.0 - K) + K);"
+				"float G = G1L * G1V;"
+
+				"float F0 = 0.04;"
+				"float F = F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0);"
+
+				"return D * F * G / (4.0 * NoL * NoV);"
+			"}"
+
+			"float brdf(vec3 L, vec3 V, vec3 N, vec4 M) {"
+				"return brdf_lambert(L, V, N, M) + brdf_cook_torrance(L, V, N, M);"
+			"}"
+
+
+
 			"void main() {"
 				"vec2 texCoord = computeTexCoord();"
 				"vec3 pos = unproj(texCoord);"
 				"vec3 normal = normalize(texture(n_1, texCoord).xyz * 2.0 - 1.0);"
+				"vec4 material = texture(n_2, texCoord);"
 				"vec3 dir = computeDir(pos);"
 				"vec3 view = normalize(pos - n_Cam);"
 				"float dist = length(dir);"
 				"dir /= dist;"
 				"float NoL = dot(normal, dir);"
 				"float att = attenuate(dist);"
-				"n_Out = vec4(n_LightColor * NoL * att, 1.0);"
+				"n_Out = vec4(n_LightColor * NoL * att * brdf(dir, view, normal, material), 1.0);"
+				//"n_Out = vec4(vec3(brdf(dir, view, normal, material)), 1.0);"
 				//"n_Out = vec4(vec3(NoL * att), 1);"
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 	}
@@ -182,6 +217,7 @@ ShaderCombinaison *getCompositionShader() {
 			"void main() {"
 				"vec4 color = texture(n_0, n_TexCoord);"
 				"vec4 light = texture(n_1, n_TexCoord);"
+				//"if(n_TexCoord.x < 0.5) { light = vec4(1.0); } else { color = vec4(1.0); }"
 				"n_Out = color * n_Ambient + color * light * (1.0 - n_Ambient);"
 				//"n_Out = light;"
 			"}"), ShaderProgram::NoProjectionShader);

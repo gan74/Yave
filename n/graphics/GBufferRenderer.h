@@ -68,7 +68,8 @@ class GBufferRenderer : public BufferedRenderer
 		static Shader<FragmentShader> *getShader() {
 			static Shader<FragmentShader> *sh = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
-					"layout(location = 1) out vec3 n_1;"
+					"layout(location = 1) out vec4 n_1;"
+					"layout(location = 2) out vec4 n_2;"
 
 					"uniform vec4 n_Color;"
 					"uniform float n_Roughness;"
@@ -84,6 +85,7 @@ class GBufferRenderer : public BufferedRenderer
 						"vec4 color = n_Color * mix(vec4(1.0), texture(n_Diffuse, n_TexCoord), n_DiffuseMul);"
 						"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
 						"n_1 = n_gbuffer1(color, n_Normal, n_Roughness, n_Metallic);"
+						"n_2 = n_gbuffer2(color, n_Normal, n_Roughness, n_Metallic);"
 					"}");
 			return sh;
 		}
