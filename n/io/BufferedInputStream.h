@@ -18,11 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_IO_BUFFEREDINPUTSTREAM_H
 
 #include "InputStream.h"
+#include <n/utils.h>
 
 namespace n {
 namespace io {
 
-class BufferedInputStream : public InputStream
+class BufferedInputStream : public InputStream, core::NonCopyable
 {
 	public:
 		BufferedInputStream(InputStream *st, uint si = 64 * 1024);

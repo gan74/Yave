@@ -34,7 +34,7 @@ bool BufferedInputStream::atEnd() const {
 }
 
 bool BufferedInputStream::canRead() const {
-	return stream->canRead() || bufferUsed;
+	return (stream->canRead() || bufferUsed) && !atEnd();
 }
 
 uint BufferedInputStream::getBufferUsedSize() const {
