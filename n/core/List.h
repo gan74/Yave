@@ -161,6 +161,13 @@ class List
 		List() : lSize(0), tail(new ListElem()), head(tail) {
 		}
 
+		template<typename C>
+		List(std::initializer_list<C> l) : List() {
+			for(auto x : l) {
+				append(x);
+			}
+		}
+
 		template<typename U>
 		List(const List<U> &l) : List() {
 			append(l);
@@ -169,7 +176,6 @@ class List
 		List(List<T> &&l) : List() {
 			swap(l);
 		}
-
 
 		List(const List<T> &l) : List() {
 			for(const T &x : l) {

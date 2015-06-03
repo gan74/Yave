@@ -100,7 +100,13 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		Array(const Array<T> &a) : Array(Size(a.size())) {
 			copy(data, a.data, a.size());
 			dataEnd = data + a.size();
+		}
 
+		template<typename C>
+		Array(std::initializer_list<C> l) : Array(l.size()) {
+			for(auto x : l) {
+				append(x);
+			}
 		}
 
 		Array(Size s) : Array() {
@@ -667,7 +673,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			if(dataEnd == allocEnd) {
 				expend();
 			}
-			new(dataEnd++) T(e);
+			new(dataEnd++) TT(e);
 		}
 
 

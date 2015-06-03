@@ -158,6 +158,18 @@ class RBTree
 			swap(std::move(o));
 		}
 
+		template<typename C>
+		RBTree(std::initializer_list<C> l) : RBTree() {
+			for(auto x : l) {
+				insert(x);
+			}
+		}
+
+		template<typename... Args>
+		RBTree(Args... args) : RBTree() {
+			insert(args...);
+		}
+
 		~RBTree() {
 			clear();
 			delete guard;
