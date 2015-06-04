@@ -57,6 +57,9 @@ class FrameBuffer : core::NonCopyable
 			return depth ? *depth : Texture();
 		}
 
+		bool isModified() const {
+			return modified;
+		}
 
 	private:
 		void setModified();
