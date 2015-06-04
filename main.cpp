@@ -38,21 +38,21 @@ int main(int argc, char **argv) {
 		l->setPosition(Vec3(-5, 5, 10));
 		//l->setColor(Color<>(Blue));
 		l->setRadius(250);
+		l->setIntensity(100000);
 		scene.insert(light = l);
 	}
 	{
 		DirectionalLight<> *l = new DirectionalLight<>();
 		l->setPosition(Vec3(-5, -5, 5));
 		l->setIntensity(5);
-		//	scene.insert(l);
+		//scene.insert(l);
 	}
 
 	BufferedRenderer *ri = 0;
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
-	FrameBufferRenderer renderer(ri);
+	ToneMapRenderer renderer(ri);
 
 	Timer timer;
-	Timer total;
 
 	while(run(win)) {
 		double dt = timer.reset();
@@ -62,11 +62,11 @@ int main(int argc, char **argv) {
 		angle.y() = std::min(std::max(angle.y(), -p2), p2);
 		cam.setForward(Vec3(Vec2(cos(angle.x()), sin(angle.x())) * cos(angle.y()), -sin(angle.y())));
 
-		if(light) {
+		/*if(light) {
 			light->setIntensity(exp(
 					(sin(total.elapsed()) + 2) * 4
 				));
-		}
+		}*/
 
 		(renderer)();
 

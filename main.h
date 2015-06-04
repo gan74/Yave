@@ -52,6 +52,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/TextureBinding.h>
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>
+#include <n/graphics/ToneMapRenderer.h>
+#include <n/graphics/BufferRenderer.h>
 
 #include "Console.h"
 
