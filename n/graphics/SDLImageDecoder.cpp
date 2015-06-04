@@ -58,14 +58,13 @@ class SDLImageDecoder : public graphics::ImageLoader::ImageDecoder<SDLImageDecod
 				std::swap(frm.Bmask, frm.Gmask);
 			}
 
-			SDL_Surface* cs = SDL_ConvertSurface(surf, &frm, SDL_SWSURFACE);
+			SDL_Surface *cs = SDL_ConvertSurface(surf, &frm, SDL_SWSURFACE);
 			SDL_LockSurface(cs);
-			void *dat = cs->pixels;
-			cs->pixels = 0;
+			internal::Image *i = new internal::Image(size, ImageFormat::RGBA8, cs->pixels);
 			SDL_UnlockSurface(surf);
 			SDL_UnlockSurface(cs);
 			lock.unlock();
-			return new internal::Image(size, ImageFormat::RGBA8, dat);
+			return i;
 		}
 };
 

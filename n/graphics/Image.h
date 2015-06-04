@@ -26,9 +26,19 @@ namespace graphics {
 namespace internal {
 struct Image : core::NonCopyable
 {
-	Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, void *c = 0) : format(f), size(s), data(c ? new byte[s.mul() * f.bytesPerPixel()] : 0) {
+	Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, const void *c = 0, bool flip = true) : format(f), size(s), data(c ? new byte[s.mul() * f.bytesPerPixel()] : 0) {
 		if(c) {
-			memcpy((void *)data, c, s.mul() * format.bytesPerPixel());
+			if(flip) {
+				uint bpp = format.bytesPerPixel();
+				for(uint i = 0; i != size.y(); i++) {
+					byte *dat = (byte *)data;
+					const byte *bc = (const byte *)c;
+					uint j = size.y() - (i + 1);
+					memcpy(dat + i * size.x() * bpp, bc + j * size.x() * bpp, size.x() * bpp);
+				}
+			} else {
+				memcpy((void *)data, c, s.mul() * format.bytesPerPixel());
+			}
 		}
 	}
 
