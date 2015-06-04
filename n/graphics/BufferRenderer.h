@@ -14,42 +14,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_FRAMEBUFFERRENDERER
-#define N_GRAPHICS_FRAMEBUFFERRENDERER
+#ifndef N_GRAPHICS_BUFFERRENDERER
+#define N_GRAPHICS_BUFFERRENDERER
 
-#include <n/utils.h>
 #include "BufferableRenderer.h"
+#include "BufferedRenderer.h"
 
 namespace n {
 namespace graphics {
 
-class FrameBufferRenderer : public BufferableRenderer
+class BufferRenderer : public BufferedRenderer
 {
 	public:
-		FrameBufferRenderer(BufferedRenderer *c) : BufferableRenderer(), child(c) {
+		BufferRenderer(BufferableRenderer *c, const math::Vec2ui &s = math::Vec2ui()) : BufferedRenderer(s), child(c) {
 		}
 
-	protected:
 		virtual void *prepare() override {
 			return child->prepare();
 		}
 
 		virtual void render(void *ptr) override {
+			getFrameBuffer().bind();
 			child->render(ptr);
-			if(GLContext::getContext()->getFrameBuffer() == &child->getFrameBuffer()) {
-				FrameBuffer::unbind();
-			}
-			child->getFrameBuffer().blit();
 		}
 
+
 	private:
-		BufferedRenderer *child;
-
-
+		BufferableRenderer *child;
 };
 
 }
 }
 
-#endif // N_GRAPHICS_FRAMEBUFFERRENDERER
+
+#endif // N_GRAPHICS_TBUFFERRENDERER
+
 

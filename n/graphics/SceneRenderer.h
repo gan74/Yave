@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_SCENERENDERER
 
 #include <n/utils.h>
-#include "Renderer.h"
+#include "BufferableRenderer.h"
 #include "Scene.h"
 #include "Camera.h"
 #include "Renderable.h"
@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class SceneRenderer : public Renderer
+class SceneRenderer : public BufferableRenderer
 {
 	public:
 		struct PerfData
@@ -36,7 +36,7 @@ class SceneRenderer : public Renderer
 			uint objects;
 		};
 
-		SceneRenderer(const Scene<> *sc) : Renderer(), sce(sc), perfData({0, 0}) {
+		SceneRenderer(const Scene<> *sc) : BufferableRenderer(), sce(sc), perfData({0, 0}) {
 		}
 
 		PerfData getPerfData() const {
