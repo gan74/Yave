@@ -44,15 +44,17 @@ int main(int argc, char **argv) {
 	{
 		DirectionalLight<> *l = new DirectionalLight<>();
 		l->setPosition(Vec3(-5, -5, 5));
-		l->setIntensity(5);
-		//scene.insert(l);
+		l->setIntensity(1);
+		scene.insert(l);
 	}
 
 	BufferedRenderer *ri = 0;
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 	ToneMapRenderer renderer(ri);
+	tone = &renderer;
 
 	Timer timer;
+	Timer total;
 
 	while(run(win)) {
 		double dt = timer.reset();
@@ -62,11 +64,11 @@ int main(int argc, char **argv) {
 		angle.y() = std::min(std::max(angle.y(), -p2), p2);
 		cam.setForward(Vec3(Vec2(cos(angle.x()), sin(angle.x())) * cos(angle.y()), -sin(angle.y())));
 
-		/*if(light) {
+		if(light) {
 			light->setIntensity(exp(
 					(sin(total.elapsed()) + 2) * 4
 				));
-		}*/
+		}
 
 		(renderer)();
 

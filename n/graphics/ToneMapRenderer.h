@@ -32,11 +32,28 @@ class ToneMapRenderer : public BufferableRenderer
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;
 
+		float getExposure() const {
+			return exposure;
+		}
+
+		float getWhiteThreshold() const {
+			return white;
+		}
+
+		void setExposure(float e) {
+			exposure = e;
+		}
+
+		void setWhiteThreshold(float t) {
+			white = t;
+		}
 
 	private:
 		BufferedRenderer *child;
 		FrameBuffer *buffers[2];
 		uint slot;
+		float exposure;
+		float white;
 };
 
 }

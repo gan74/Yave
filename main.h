@@ -59,6 +59,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Vec2 mouse;
 Vec2 wasd;
+ToneMapRenderer *tone;
 
 class IThread : public n::concurrent::Thread
 {
@@ -114,6 +115,13 @@ bool run(SDL_Window *mainWindow) {
 			break;
 		} else if(e.type == SDL_KEYDOWN && !e.key.repeat) {
 			wasd += Vec2((e.key.keysym.sym == 'z') - (e.key.keysym.sym == 's'), (e.key.keysym.sym == 'q') - (e.key.keysym.sym == 'd'));
+			if(tone) {
+				if(e.key.keysym.sym == 'u') { tone->setExposure(tone->getExposure() + 0.05); std::cout<<"exp = "<<tone->getExposure()<<std::endl; }
+				if(e.key.keysym.sym == 'j') { tone->setExposure(tone->getExposure() - 0.05); std::cout<<"exp = "<<tone->getExposure()<<std::endl; }
+
+				if(e.key.keysym.sym == 'h') { tone->setWhiteThreshold(tone->getWhiteThreshold() + 0.1); std::cout<<"wht = "<<tone->getWhiteThreshold()<<std::endl; }
+				if(e.key.keysym.sym == 'k') { tone->setWhiteThreshold(tone->getWhiteThreshold() - 0.1); std::cout<<"wht = "<<tone->getWhiteThreshold()<<std::endl; }
+			}
 		} else if(e.type == SDL_KEYUP && !e.key.repeat) {
 			wasd -= Vec2((e.key.keysym.sym == 'z') - (e.key.keysym.sym == 's'), (e.key.keysym.sym == 'q') - (e.key.keysym.sym == 'd'));
 		} else if(e.type == SDL_MOUSEMOTION && m1) {
