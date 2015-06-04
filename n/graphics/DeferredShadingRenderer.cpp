@@ -164,7 +164,6 @@ ShaderCombinaison *getShader() {
 			"}"
 
 
-
 			"void main() {"
 				"vec2 texCoord = computeTexCoord();"
 				"vec3 pos = unproj(texCoord);"
@@ -174,7 +173,7 @@ ShaderCombinaison *getShader() {
 				"vec3 view = normalize(n_Cam - pos);"
 				"float dist = length(dir);"
 				"dir /= dist;"
-				"float NoL = dot(normal, dir);"
+				"float NoL = saturate(dot(normal, dir));"
 				"float att = attenuate(dist);"
 				"n_Out = vec4(n_LightColor * NoL * att * brdf(dir, view, normal, material), 1.0);"
 				//"n_Out = vec4(vec3(brdf(dir, view, normal, material)), 1.0);"
