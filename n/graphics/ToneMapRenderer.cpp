@@ -60,11 +60,17 @@ ShaderCombinaison *getToneShader() {
 			"}"
 
 			"void main() {"
-				"vec4 tex = textureGather(n_1, (0.5 / textureSize(n_1, 0)), 0);"
-				"float lum = exp(clampLum((tex.x + tex.y + tex.z + tex.w) * 0.25));"
+				"vec2 offset = 0.5 / textureSize(n_1, 0);"
+				"vec4 avgLum4 = textureGather(n_1, offset, 0);"
+				//"vec4 maxLum4 = textureGather(n_1, offset, 1);"
+				"float avgLum = exp(clampLum((avgLum4.x + avgLum4.y + avgLum4.z + avgLum4.w) * 0.25));"
+				//"float maxLum = max(max(maxLum4.x, maxLum4.y), max(maxLum4.z, maxLum4.w));"
+
 				"vec4 color = texture(n_0, n_TexCoord);"
-				"n_Out = vec4((reinhard(color.rgb, exposure, lum, white)), color.a);"
-				"if(n_TexCoord.x < 0.1 && n_TexCoord.y > 0.9) { n_Out = vec4(lum); }"
+				"vec3 rein = reinhard(color.rgb, exposure, avgLum, white);"
+				"n_Out = vec4(rein, color.a);"
+
+				"if(n_TexCoord.x < 0.1 && n_TexCoord.y > 0.9) { n_Out = vec4(avgLum); }"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
 	return shader;
@@ -87,7 +93,8 @@ ShaderCombinaison *getLogShader() {
 
 			"void main() {"
 				"vec4 color = texture(n_0, n_TexCoord);"
-				"n_Out = log(epsilon + max(0.0, rgbLum(color.rgb)));"
+				"float lum = rgbLum(color.rgb);"
+				"n_Out = log(epsilon + lum);"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
 	return shader;
@@ -109,8 +116,10 @@ ShaderCombinaison *getDSShader() {
 			"}"
 
 			"void main() {"
-				"vec4 tex = textureGather(n_0, rescale(n_TexCoord), 0);"
-				"n_Out = (tex.x + tex.y + tex.z + tex.w) * 0.25;"
+				"vec4 avgLum = textureGather(n_0, rescale(n_TexCoord), 0);"
+				//"vec4 maxLum = textureGather(n_0, rescale(n_TexCoord), 1);"
+				"n_Out.x = (avgLum.x + avgLum.y + avgLum.z + avgLum.w) * 0.25;"
+				//"n_Out.y = max(max(maxLum.x, maxLum.y), max(maxLum.z, maxLum.w));"
 			"}"), new Shader<VertexShader>(
 			"layout(location = 0) in vec3 n_VertexPosition;"
 			"layout(location = 3) in vec2 n_VertexCoord;"
@@ -196,10 +205,13 @@ void ToneMapRenderer::render(void *ptr) {
 	sh->setValue("logMin", log(0.055));
 	sh->setValue("logMax", log(0.55));
 	sh->setValue("exposure", 0.33);
-	sh->setValue("white", 1.0);
+	sh->setValue("white", 2.0);
 
 	sh->setValue("n_0", child->getFrameBuffer().getAttachement(slot));
 	sh->setValue("n_1", lum);
+	/*float lums[2] = { -1, -1 };
+	gl::glGetTextureSubImage(lum.getHandle(), 0, 0, 0, 0, 1, 1, 1, GL_RG, GL_FLOAT, 2 * sizeof(float), lums);
+	std::cout<<lum.getHandle()<<"  max = "<<lums[1]<<", avg = "<<exp(lums[0])<<std::endl;*/
 
 	GLContext::getContext()->getScreen().draw(VertexAttribs());
 }
