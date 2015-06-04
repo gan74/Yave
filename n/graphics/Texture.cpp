@@ -39,6 +39,9 @@ GLTexFormat getTextureFormat(ImageFormat format) {
 		case ImageFormat::RG16:
 			return GLTexFormat(GL_RG, GL_RG16, GL_UNSIGNED_SHORT);
 		break;
+		case ImageFormat::RG16F:
+			return GLTexFormat(GL_RG, GL_RG16F, GL_UNSIGNED_SHORT);
+		break;
 		case ImageFormat::RGBA8:
 			return GLTexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE);
 		break;
@@ -47,6 +50,9 @@ GLTexFormat getTextureFormat(ImageFormat format) {
 		break;
 		case ImageFormat::RGBA16:
 			return GLTexFormat(GL_RGBA, GL_RGBA16, GL_UNSIGNED_SHORT);
+		break;
+		case ImageFormat::RGBA16F:
+			return GLTexFormat(GL_RGBA, GL_RGBA16F, GL_UNSIGNED_SHORT);
 		break;
 		default:
 			return fatal("Unsuported texture format.");

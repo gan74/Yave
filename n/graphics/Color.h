@@ -32,10 +32,12 @@ struct ImageFormat
 			RGBA16,
 			RGB8,
 			RGB10A2,
+			RGBA16F,
 			RGBA32F,
 			RG16,
+			RG16F,
 			F32,
-			R32 = F32,
+			R32F = F32,
 			Depth32
 		};
 
@@ -79,6 +81,7 @@ struct ImageFormat
 					return 0;
 
 				case RGBA16:
+				case RGBA16F:
 					return 8;
 
 				case RGBA32F:
@@ -120,7 +123,7 @@ struct ImageFormat
 				case Depth32:
 					return 32;
 				default:
-					return 0;
+					return fatal("Unsupported image format");
 			}
 		}
 
@@ -160,7 +163,7 @@ struct ImageFormat
 					return ((const float *)cdt)[0];
 
 				default:
-					return 0;
+					return fatal("Unsupported image format");
 			}
 			return 0;
 		}
