@@ -142,9 +142,11 @@ ShaderCombinaison *getShader() {
 				"float NoH = saturate(dot(N, H));"
 				"float NoL = saturate(dot(N, L));"
 				"float roughness = M.x + epsilon;"
-				"float a2 = sqr(roughness);"
+				"float a = sqr(roughness);"
+				"float a2 = sqr(a);"
 
-				"float D = a2 / (pi * (sqr(NoH) * (a2 - 1) + 1));"
+				"float d = (NoH * a2 - NoH) * NoH + 1;"
+				"float D = a2 / (pi * d * d);"
 
 				"float K = sqr(roughness + 1) / 8.0;"
 				"float G1L = NoL / (NoL * (1.0 - K) + K);"
@@ -169,7 +171,7 @@ ShaderCombinaison *getShader() {
 				"vec3 normal = normalize(texture(n_1, texCoord).xyz * 2.0 - 1.0);"
 				"vec4 material = texture(n_2, texCoord);"
 				"vec3 dir = computeDir(pos);"
-				"vec3 view = normalize(pos - n_Cam);"
+				"vec3 view = normalize(n_Cam - pos);"
 				"float dist = length(dir);"
 				"dir /= dist;"
 				"float NoL = dot(normal, dir);"
