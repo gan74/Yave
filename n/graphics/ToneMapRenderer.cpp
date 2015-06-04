@@ -30,6 +30,11 @@ ShaderCombinaison *getToneShader() {
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
 
+			"uniform float logMin;"
+			"uniform float logMax;"
+			"uniform float exposure;"
+			"uniform float white;"
+
 			"in vec2 n_TexCoord;"
 
 			"out vec4 n_Out;"
@@ -38,19 +43,28 @@ ShaderCombinaison *getToneShader() {
 				"return dot(vec3(0.299, 0.587, 0.114), rgb);"
 			"}"
 
-			"vec3 reinhard(vec3 col, float exp, float key, float white) {"
+			"float clampLum(float l) {"
+				"return clamp(l, logMin, logMax);"
+			"}"
+
+			"vec3 reinhard(vec3 col, float exp, float key, float w) {"
 				"float cL = rgbLum(col);"
 				"float lum = cL * exp / key;"
-				"float W = 1 + lum / sqr(white);"
+				"float W = 1 + lum / sqr(w);"
 				"lum *= W / (lum + 1);"
 				"return col * lum / cL;"
 			"}"
 
+			"vec3 gamma(vec3 col) {"
+				"return pow(col, vec3(1.0 / 2.2));"
+			"}"
+
 			"void main() {"
 				"vec4 tex = textureGather(n_1, (0.5 / textureSize(n_1, 0)), 0);"
-				"float lum = exp((tex.x + tex.y + tex.z + tex.w) * 0.25);"
+				"float lum = exp(clampLum((tex.x + tex.y + tex.z + tex.w) * 0.25));"
 				"vec4 color = texture(n_0, n_TexCoord);"
-				"n_Out = vec4(reinhard(color.rgb, 0.33, lum, 1.0), color.a);"
+				"n_Out = vec4((reinhard(color.rgb, exposure, lum, white)), color.a);"
+				"if(n_TexCoord.x < 0.1 && n_TexCoord.y > 0.9) { n_Out = vec4(lum); }"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
 	return shader;
@@ -73,7 +87,7 @@ ShaderCombinaison *getLogShader() {
 
 			"void main() {"
 				"vec4 color = texture(n_0, n_TexCoord);"
-				"n_Out = max(0.0, log(epsilon + rgbLum(color.rgb)));"
+				"n_Out = log(epsilon + max(0.0, rgbLum(color.rgb)));"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
 	return shader;
@@ -179,6 +193,11 @@ void ToneMapRenderer::render(void *ptr) {
 
 	ShaderCombinaison *sh = getToneShader();
 	sh->bind();
+	sh->setValue("logMin", log(0.055));
+	sh->setValue("logMax", log(0.55));
+	sh->setValue("exposure", 0.33);
+	sh->setValue("white", 1.0);
+
 	sh->setValue("n_0", child->getFrameBuffer().getAttachement(slot));
 	sh->setValue("n_1", lum);
 
