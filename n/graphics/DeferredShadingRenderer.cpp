@@ -154,7 +154,7 @@ ShaderCombinaison *getShader() {
 				"float F0 = 0.04;"
 				"float F = F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0);"
 
-				"return D * F * G / (4.0 * NoL * NoV);"
+				"return max(0.0, D) * max(0.0, F) * max(0.0, G) / max(epsilon, 4.0 * NoL * NoV);"
 			"}"
 
 			"float brdf(vec3 L, vec3 V, vec3 N, vec4 M) {"
@@ -199,20 +199,6 @@ ShaderCombinaison *getCompositionShader() {
 			"in vec4 n_Position;"
 
 			"out vec4 n_Out;"
-
-			"vec3 unproj(vec2 C) {"
-				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
-				"vec4 P = n_Inv * VP;"
-				"return P.xyz / P.w;"
-			"}"
-
-			"vec3 unproj() {"
-				"return unproj((n_Position.xy / n_Position.w) * 0.5 + 0.5);"
-			"}"
-
-			"float rgbLum(vec3 rgb) {"
-				"return dot(vec3(0.299, 0.587, 0.114), rgb);"
-			"}"
 
 			"void main() {"
 				"vec4 color = texture(n_0, n_TexCoord);"
@@ -270,7 +256,11 @@ ShaderCombinaison *compositionPass(const FrameData *data, GBufferRenderer *child
 }
 
 DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c), lightBuffer(getFrameBuffer().getSize()) {
+	lightBuffer.setAttachmentEnabled(0, true);
+	lightBuffer.setAttachmentFormat(0, ImageFormat::RGBA16F);
+
 	buffer.setAttachmentEnabled(0, true);
+	buffer.setAttachmentFormat(0, ImageFormat::RGBA16F);
 	buffer.setDepthEnabled(true);
 }
 
