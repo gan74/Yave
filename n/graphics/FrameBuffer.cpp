@@ -32,7 +32,6 @@ FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Textu
 	}
 	gl::glGenFramebuffers(1, &handle);
 	setAttachmentEnabled(0, true);
-	setDepthEnabled(true);
 }
 
 FrameBuffer::~FrameBuffer() {
@@ -171,7 +170,7 @@ void FrameBuffer::blit(bool color, bool dept) const {
 	if(GLContext::getContext()->frameBuffer != this) {
 		gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
 	}
-	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), (color ? GL_COLOR_BUFFER_BIT : 0) | (dept ? GL_DEPTH_BUFFER_BIT : 0), GL_NEAREST);
+	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), (color ? GL_COLOR_BUFFER_BIT : 0) | (dept  && isDepthEnabled() ? GL_DEPTH_BUFFER_BIT : 0), GL_NEAREST);
 	//gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, GLContext::getContext()->frameBuffer ? GLContext::getContext()->frameBuffer->handle : 0);
 }
 
