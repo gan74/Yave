@@ -124,6 +124,9 @@ bool run(SDL_Window *mainWindow) {
 			}
 		} else if(e.type == SDL_KEYUP && !e.key.repeat) {
 			wasd -= Vec2((e.key.keysym.sym == 'z') - (e.key.keysym.sym == 's'), (e.key.keysym.sym == 'q') - (e.key.keysym.sym == 'd'));
+			if(tone && e.key.keysym.sym == 'e') {
+				tone->setDebugEnabled(!tone->isDebugEnabled());
+			}
 		} else if(e.type == SDL_MOUSEMOTION && m1) {
 			mouse += Vec2(-e.motion.xrel, e.motion.yrel);
 		} else if(e.type == SDL_MOUSEBUTTONDOWN) {

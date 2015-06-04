@@ -23,10 +23,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-ShaderCombinaison *getToneShader() {
-	static ShaderCombinaison *shader = 0;
-	if(!shader) {
-		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+ShaderCombinaison *getToneShader(bool debug = false) {
+	static ShaderCombinaison *shaders[2] = {0, 0};
+	if(!shaders[debug]) {
+		static core::String deb[2] = {"", "\n#define DEBUG\n"};
+		shaders[debug] = new ShaderCombinaison(new Shader<FragmentShader>(
+			deb[debug] +
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
 
@@ -62,18 +64,18 @@ ShaderCombinaison *getToneShader() {
 			"void main() {"
 				"vec2 offset = 0.5 / textureSize(n_1, 0);"
 				"vec4 avgLum4 = textureGather(n_1, offset, 0);"
-				//"vec4 maxLum4 = textureGather(n_1, offset, 1);"
 				"float avgLum = exp(clampLum((avgLum4.x + avgLum4.y + avgLum4.z + avgLum4.w) * 0.25));"
-				//"float maxLum = max(max(maxLum4.x, maxLum4.y), max(maxLum4.z, maxLum4.w));"
 
 				"vec4 color = texture(n_0, n_TexCoord);"
 				"vec3 rein = reinhard(color.rgb, exposure, avgLum, white);"
 				"n_Out = vec4(rein, color.a);"
-
+				"\n#ifdef DEBUG\n"
 				"if(n_TexCoord.x < 0.1 && n_TexCoord.y > 0.9) { n_Out = vec4(avgLum); }"
+				"if(n_TexCoord.x > 0.5) { n_Out = color; }"
+				"\n#endif\n"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
-	return shader;
+	return shaders[debug];
 }
 
 ShaderCombinaison *getLogShader() {
@@ -168,7 +170,7 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	return buffers[last]->getAttachement(0);
 }
 
-ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), slot(s), exposure(0.1), white(1.0) {
+ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), slot(s), exposure(0.1), white(1.0), range(0.1, 10000), debug(false) {
 	uint ls = core::log2ui(child->getFrameBuffer().getSize().min());
 	math::Vec2ui size = math::Vec2ui(1 << ls);
 	buffers[0] = new FrameBuffer(size);
@@ -200,10 +202,10 @@ void ToneMapRenderer::render(void *ptr) {
 		FrameBuffer::unbind();
 	}
 
-	ShaderCombinaison *sh = getToneShader();
+	ShaderCombinaison *sh = getToneShader(debug);
 	sh->bind();
-	sh->setValue("logMin", log(0.055));
-	sh->setValue("logMax", log(0.55));
+	sh->setValue("logMin", log(range.x()));
+	sh->setValue("logMax", log(range.y()));
 	sh->setValue("exposure", exposure);
 	sh->setValue("white", white);
 

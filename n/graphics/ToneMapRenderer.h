@@ -48,12 +48,29 @@ class ToneMapRenderer : public BufferableRenderer
 			white = t;
 		}
 
+		void setRange(float min, float max) {
+			if(max < min) {
+				std::swap(min, max);
+			}
+			range = math::Vec2(min, max);
+		}
+
+		void setDebugEnabled(bool d) {
+			debug = d;
+		}
+
+		bool isDebugEnabled() const {
+			return debug;
+		}
+
 	private:
 		BufferedRenderer *child;
 		FrameBuffer *buffers[2];
 		uint slot;
 		float exposure;
 		float white;
+		math::Vec2 range;
+		bool debug;
 };
 
 }
