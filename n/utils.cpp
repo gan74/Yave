@@ -90,10 +90,8 @@ namespace core {
 		if(cc) {
 			return cc;
 		}
-		cc = malloc(size);
-		memcpy(cc, c, size);
 		free(c);
-		return cc;
+		return 0;
 	}
 } //core
 } //n
