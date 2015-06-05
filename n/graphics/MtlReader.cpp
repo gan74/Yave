@@ -55,7 +55,8 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 			file.close();
 
 			internal::Material<> *mat = 0;
-			for(const core::String &l : lines) {
+			for(const core::String &li : lines) {
+				core::String l = li.trim();
 				if(l.beginsWith("newmtl ")) {
 					if(l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
 						if(mat) {
