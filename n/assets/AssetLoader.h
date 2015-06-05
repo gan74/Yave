@@ -117,7 +117,7 @@ class AssetLoader : core::NonCopyable
 			if(valid.isEmpty()) {
 				fatal(core::String("Unable to load asset : no compatible loader found for " + argsToString(argTypes) + ", candidates are : " + AsCollection(bases.mapped([](const LoaderBase *b) {
 						return "\n  " + argsToString(b->args());
-					})).make(core::String(" or "))).toChar());
+					})).make(core::String(" or "))).toChar()) + ".";
 			} else {
 				for(LoaderBase *b : valid) {
 					LoaderFunc<Args...> *ld = dynamic_cast<LoaderFunc<Args...> *>(b);

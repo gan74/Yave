@@ -103,7 +103,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		}
 
 		template<typename C>
-		Array(std::initializer_list<C> l) : Array(l.size()) {
+		Array(std::initializer_list<C> l) : Array(Size(l.size())) {
 			for(auto x : l) {
 				append(x);
 			}
@@ -111,6 +111,10 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 
 		Array(Size s) : Array() {
 			setCapacityUnsafe(0, s.size);
+		}
+
+		Array(Array<T> &&a) : Array() {
+			swap(std::move(a));
 		}
 
 		template<typename A, typename B, typename... Args>
@@ -613,7 +617,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 				memcpy(dst, src, sizeof(T) * n);
 			} else {
 				for(; n; n--) {
-					new(dst++) T(*(src++));
+					new(dst++) TT(*(src++));
 				}
 			}
 		}
@@ -623,7 +627,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 				memmove(dst, src, sizeof(T) * n);
 			} else {
 				for(; n; n--) {
-					new(dst++) T(std::move(*(src++)));
+					new(dst++) TT(std::move(*(src++)));
 				}
 			}
 		}

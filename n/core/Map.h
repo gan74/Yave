@@ -80,6 +80,10 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 		Map(const MapType &m) : MapType(m) {
 		}
 
+		Map(MapType &&m) : Map() {
+			this->swap(std::move(m));
+		}
+
 		Map() : MapType() {
 		}
 
