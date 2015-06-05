@@ -27,17 +27,17 @@ class ImageLoader
 {
 	public:
 		template<typename T, typename... Args>
-		class ImageDecoder
+		class ImageReader
 		{
 			struct Runner
 			{
 				Runner() {
-					getLoader()->addDec<Args...>(T());
+					getLoader()->addReader<Args...>(T());
 				}
 			};
 
 			public:
-				ImageDecoder() {
+				ImageReader() {
 					n::unused(runner);
 				}
 
@@ -54,7 +54,7 @@ class ImageLoader
 		}
 
 		template<typename... Args, typename T>
-		void addDec(const T &t) {
+		void addReader(const T &t) {
 			asyncBuffer.addLoader<Args...>(t);
 			immediateBuffer.addLoader<Args...>(t);
 		}
@@ -79,7 +79,7 @@ class ImageLoader
 
 
 template<typename T, typename... Args>
-typename ImageLoader::ImageDecoder<T, Args...>::Runner ImageLoader::ImageDecoder<T, Args...>::runner = ImageLoader::ImageDecoder<T,Args...>::Runner();
+typename ImageLoader::ImageReader<T, Args...>::Runner ImageLoader::ImageReader<T, Args...>::runner = ImageLoader::ImageReader<T,Args...>::Runner();
 
 }
 }

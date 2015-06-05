@@ -28,17 +28,17 @@ class MaterialLoader
 {
 	public:
 		template<typename T, typename... Args>
-		class MaterialDecoder
+		class MaterialReader
 		{
 			struct Runner
 			{
 				Runner() {
-					getLoader()->addDec<Args...>(T());
+					getLoader()->addReader<Args...>(T());
 				}
 			};
 
 			public:
-				MaterialDecoder() {
+				MaterialReader() {
 					n::unused(runner);
 				}
 
@@ -55,7 +55,7 @@ class MaterialLoader
 		}
 
 		template<typename... Args, typename T>
-		void addDec(const T &t) {
+		void addReader(const T &t) {
 			asyncBuffer.addLoader<Args...>(t);
 			immediateBuffer.addLoader<Args...>(t);
 		}
@@ -79,7 +79,7 @@ class MaterialLoader
 };
 
 template<typename T, typename... Args>
-typename MaterialLoader::MaterialDecoder<T, Args...>::Runner MaterialLoader::MaterialDecoder<T, Args...>::runner = MaterialLoader::MaterialDecoder<T, Args...>::Runner();
+typename MaterialLoader::MaterialReader<T, Args...>::Runner MaterialLoader::MaterialReader<T, Args...>::runner = MaterialLoader::MaterialReader<T, Args...>::Runner();
 
 }
 }

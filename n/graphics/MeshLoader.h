@@ -28,17 +28,17 @@ class MeshLoader
 {
 	public:
 		template<typename T, typename... Args>
-		class MeshDecoder
+		class MeshReader
 		{
 			struct Runner
 			{
 				Runner() {
-					getLoader()->addDec<Args...>(T());
+					getLoader()->addReader<Args...>(T());
 				}
 			};
 
 			public:
-				MeshDecoder() {
+				MeshReader() {
 					n::unused(runner);
 				}
 
@@ -55,7 +55,7 @@ class MeshLoader
 		}
 
 		template<typename... Args, typename T>
-		void addDec(const T &t) {
+		void addReader(const T &t) {
 			asyncBuffer.addLoader<Args...>(t);
 			immediateBuffer.addLoader<Args...>(t);
 		}
@@ -79,7 +79,7 @@ class MeshLoader
 };
 
 template<typename T, typename... Args>
-typename MeshLoader::MeshDecoder<T, Args...>::Runner MeshLoader::MeshDecoder<T, Args...>::runner = MeshLoader::MeshDecoder<T, Args...>::Runner();
+typename MeshLoader::MeshReader<T, Args...>::Runner MeshLoader::MeshReader<T, Args...>::runner = MeshLoader::MeshReader<T, Args...>::Runner();
 
 
 }

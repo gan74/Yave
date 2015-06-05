@@ -26,10 +26,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class MtlDecoder : public MaterialLoader::MaterialDecoder<MtlDecoder, core::String, core::String>
+class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String, core::String>
 {
 	public:
-		MtlDecoder() : MaterialLoader::MaterialDecoder<MtlDecoder, core::String, core::String>() {
+		MtlReader() : MaterialLoader::MaterialReader<MtlReader, core::String, core::String>() {
 		}
 
 		internal::Material<> *operator()(core::String fileName, core::String name) override {

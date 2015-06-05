@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
+class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 {
 
 	struct HashPair
@@ -179,7 +179,7 @@ class ObjDecoder : public MeshLoader::MeshDecoder<ObjDecoder, core::String>
 
 
 	public:
-		ObjDecoder() : MeshLoader::MeshDecoder<ObjDecoder, core::String>() {
+		ObjReader() : MeshLoader::MeshReader<ObjReader, core::String>() {
 		}
 
 		internal::MeshInstance<> *operator()(core::String name) override {
