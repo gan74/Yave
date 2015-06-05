@@ -311,6 +311,19 @@ String String::toUpper() const {
 	return mapped([](char c) -> char { return toupper(c); });
 }
 
+String String::trim() const {
+	uint t = 0;
+	while(isspace(data[t])) {
+		t++;
+	}
+	uint si = size();
+	uint e = 0;
+	while(isspace(data[si - e - 1])) {
+		e++;
+	}
+	return subString(t, (si - e) - t);
+}
+
 std::string String::toStdString() const {
 	return std::string(data, length);
 }
