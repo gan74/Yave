@@ -170,7 +170,7 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	return buffers[last]->getAttachement(0);
 }
 
-ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), slot(s), exposure(0.1), white(1.0), range(0.1, 10000), debug(false) {
+ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), slot(s), exposure(0.1), white(1.0), range(0.055, 10000), debug(false) {
 	uint ls = core::log2ui(child->getFrameBuffer().getSize().min());
 	math::Vec2ui size = math::Vec2ui(1 << ls);
 	buffers[0] = new FrameBuffer(size);

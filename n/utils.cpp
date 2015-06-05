@@ -59,9 +59,7 @@ uint random(uint max, uint min) {
 		seed = true;
 	}
 	if(max < min) {
-		uint t = max;
-		max = min;
-		min = t;
+		std::swap(min, max);
 	}
 	return (internal::randHelper() % (max - min)) + min;
 }

@@ -153,10 +153,10 @@ ShaderCombinaison *getShader() {
 				"float G1V = NoV / (NoV * (1.0 - K) + K);"
 				"float G = G1L * G1V;"
 
-				"float F0 = 0.04;"
+				"float F0 = M.z;"
 				"float F = F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0);"
 
-				"return max(0.0, D) * max(0.0, F) * max(0.0, G) / max(epsilon, 4.0 * NoL * NoV);"
+				"return saturate(F) * saturate(G) * max(0.0, D) / max(epsilon, 4.0 * NoL * NoV);"
 			"}"
 
 			"float brdf(vec3 L, vec3 V, vec3 N, vec4 M) {"

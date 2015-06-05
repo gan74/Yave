@@ -122,10 +122,10 @@ class Shader : public internal::ShaderBase
 						"return color;"
 					"}"
 					"vec4 n_gbuffer1(vec4 color, vec3 normal, float roughness, float metal) {"
-						"return vec4(normalize(normal).xyz * 0.5 + 0.5, 0.0);" // this on is RGBA16
+						"return vec4(normalize(normal).xyz * 0.5 + 0.5, 0.0);"
 					"}"
 					"vec4 n_gbuffer2(vec4 color, vec3 normal, float roughness, float metal) {"
-						"return vec4(roughness, metal, 0, 0);"
+						"return vec4(roughness, metal, 0.04, 0);"
 					"}",
 					"",
 					""

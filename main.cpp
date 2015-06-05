@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
 
 	BufferedRenderer *ri = 0;
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
+	//FrameBufferRenderer renderer(ri);
 	ToneMapRenderer renderer(ri);
 	tone = &renderer;
 
