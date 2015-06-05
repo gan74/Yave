@@ -100,12 +100,13 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 			for(const core::String &l : lines) {
 				if(l.beginsWith("f ")) {
 					core::Array<core::String> fl = l.subString(2).split(" ");
-					uint face[] = {0, 0, 0};
-					if(fl.size() != 3) {
-						std::cerr<<"Invalid (non triangle) face. \""<<l<<"\""<<std::endl;
+					uint face[] = {0, 0, 0, 0};
+					uint vertCount = fl.size();
+					if(vertCount < 3 || vertCount > 4) {
+						std::cerr<<"Invalid (non triangle/non quad) face. \""<<l<<"\""<<std::endl;
 						return 0;
 					}
-					for(uint i = 0; i != 3; i++) {
+					for(uint i = 0; i != vertCount; i++) {
 						math::Vec3ui v;
 						sscanf(fl[i].toChar(), "%u/%u/%u", &v[0], &v[1], &v[2]);
 						if(smooth) {
@@ -126,6 +127,9 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 						}
 					}
 					tr.append(face[0], face[1], face[2]);
+					if(vertCount == 4) {
+						tr.append(face[2], face[3], face[0]);
+					}
 				} else if(l.beginsWith("s ")) {
 					core::String sm = l.subString(2).toLower().filtered([](char c) { return !isspace(c); });
 					smooth = !(sm == "off" || sm == "0");
