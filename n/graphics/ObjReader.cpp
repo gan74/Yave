@@ -106,11 +106,14 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 						std::cerr<<"Invalid (non triangle/non quad) face. \""<<l<<"\""<<std::endl;
 						return 0;
 					}
+					bool noNorm = false;
 					for(uint i = 0; i != vertCount; i++) {
 						math::Vec3ui v;
 						sscanf(fl[i].toChar(), "%u/%u/%u", &v[0], &v[1], &v[2]);
 						if(smooth) {
 							v[2] = 0;
+						} else {
+							noNorm |= !v[2];
 						}
 						core::Map<math::Vec3ui, uint>::const_iterator it = vmap.find(v);
 						if(it == vmap.end()) {
@@ -124,6 +127,14 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 							face[i] = index;
 						} else {
 							face[i] = (*it)._2;
+						}
+					}
+					if(noNorm) {
+						math::Vec3 n = tr.getNormal(face[0], face[1], face[2]);
+						for(uint i = 0; i != vertCount; i++) {
+							Vertex<> v = tr.getVertices()[face[i]];
+							v.n() = n;
+							face[i] = tr.append(v);
 						}
 					}
 					tr.append(face[0], face[1], face[2]);

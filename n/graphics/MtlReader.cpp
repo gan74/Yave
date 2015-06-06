@@ -79,8 +79,10 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 						float ni = float(l.subString(3));
 						mat->roughness = sqrt(2 / (ni + 2));
 					} else if(l.toLower().beginsWith("map_kd ")) {
-						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })), true);
-					}
+						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })));
+					} /*else if(l.toLower().beginsWith("map_bump ")) {
+						mat->bump = Texture(ImageLoader::load<core::String>(l.subString(9).filtered([](char c) { return !isspace(c); })));
+					}*/
 				}
 			}
 			return mat;

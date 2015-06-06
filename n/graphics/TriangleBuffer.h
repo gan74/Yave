@@ -155,6 +155,14 @@ class TriangleBuffer
 			return tr;
 		}
 
+		math::Vec<3, T> getNormal(Triangle t) const {
+			return (vertices[t.vts[1]].p() - vertices[t.vts[0]].p()).cross(vertices[t.vts[2]].p() - vertices[t.vts[0]].p()).normalized();
+		}
+
+		math::Vec<3, T> getNormal(uint a, uint b, uint c) const {
+			return (vertices[b].p() - vertices[a].p()).cross(vertices[c].p() - vertices[a].p()).normalized();
+		}
+
 		uint append(const Vertex<T> &a) {
 			return vertices.append(a);
 		}
