@@ -35,8 +35,11 @@ class FrameBufferRenderer : public BufferableRenderer
 		}
 
 		virtual void render(void *ptr) override {
+			const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
 			child->render(ptr);
-			if(GLContext::getContext()->getFrameBuffer() == &child->getFrameBuffer()) {
+			if(fb) {
+				fb->bind();
+			} else {
 				FrameBuffer::unbind();
 			}
 			child->getFrameBuffer().blit(slot);
