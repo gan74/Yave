@@ -110,7 +110,7 @@ ShaderCombinaison *getShader() {
 
 			"in vec4 n_ScreenPosition;"
 
-			"out vec4 n_Out;"
+			"layout(location = 1) out vec4 n_Out;"
 
 			"vec3 unproj(vec2 C) {"
 				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
@@ -199,13 +199,14 @@ ShaderCombinaison *getCompositionShader() {
 			"in vec2 n_TexCoord;"
 			"in vec4 n_Position;"
 
-			"out vec4 n_Out;"
+			"layout(location = 0) out vec4 n_Out;"
 
 			"void main() {"
 				"vec4 color = texture(n_0, n_TexCoord);"
 				"vec4 light = texture(n_1, n_TexCoord);"
 				//"if(n_TexCoord.x < 0.5) { light = vec4(1.0); } else { color = vec4(1.0); }"
 				"n_Out = color * n_Ambient + color * light * (1.0 - n_Ambient);"
+				//"n_Out1 = light;"
 				//"n_Out = light;"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
@@ -244,7 +245,7 @@ ShaderCombinaison *compositionPass(const FrameData *data, GBufferRenderer *child
 	sh->bind();
 
 	sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
-	sh->setValue("n_1", light.getAttachement(0));
+	sh->setValue("n_1", light.getAttachement(1));
 	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
 	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
 	sh->setValue("n_Cam", data->cam->getPosition());
@@ -256,12 +257,11 @@ ShaderCombinaison *compositionPass(const FrameData *data, GBufferRenderer *child
 	return sh;
 }
 
-DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c), lightBuffer(getFrameBuffer().getSize()) {
-	lightBuffer.setAttachmentEnabled(0, true);
-	lightBuffer.setAttachmentFormat(0, ImageFormat::RGBA16F);
-
+DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c) {
 	buffer.setAttachmentEnabled(0, true);
 	buffer.setAttachmentFormat(0, ImageFormat::RGBA16F);
+	buffer.setAttachmentEnabled(1, true);
+	buffer.setAttachmentFormat(1, ImageFormat::RGBA16F);
 	buffer.setDepthEnabled(true);
 }
 
@@ -284,11 +284,10 @@ void DeferredShadingRenderer::render(void *ptr) {
 	GLContext::getContext()->setViewMatrix(data->cam->getViewMatrix());
 
 	{
-		lightBuffer.bind();
+		buffer.bind();
 
 		gl::glClear(GL_COLOR_BUFFER_BIT);
 		child->getFrameBuffer().blit(FrameBuffer::Depth);
-
 
 		getLightMaterial<Point>().bind();
 		lightPass<Point>(data, child);
@@ -298,11 +297,9 @@ void DeferredShadingRenderer::render(void *ptr) {
 	}
 
 	{
+		buffer.bind(0x10);
 		getCompositionMaterial().bind();
-
-		buffer.bind();
-		child->getFrameBuffer().blit(FrameBuffer::Depth);
-		compositionPass(data, child, lightBuffer)->unbind();
+		compositionPass(data, child, buffer)->unbind();
 	}
 
 	delete data;
