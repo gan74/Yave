@@ -71,6 +71,7 @@ class Texture : public TextureBase<Texture2D>
 		}
 
 		void upload() const;
+		void uploadMips() const;
 
 		void prepare(bool sync = false) const;
 

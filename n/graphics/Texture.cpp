@@ -106,9 +106,7 @@ void Texture::upload() const {
 	if(!size.mul()) {
 		fatal("Invalid image size.");
 	}
-	if(getHandle()) {
-		gl::glDeleteTextures(1, &(data->handle));
-	}
+	gl::GLuint h = data->handle;
 	gl::glGenTextures(1, &(data->handle));
 	gl::glBindTexture(GL_TEXTURE_2D, data->handle);
 
@@ -124,6 +122,10 @@ void Texture::upload() const {
 	#else
 	gl::glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat, size.x(), size.y(), 0, format.format, format.type, image.data());
 	#endif
+	uploadMips();
+}
+
+void Texture::uploadMips() const {
 	if(hasMipmaps()) {
 		gl::glGenerateMipmap(GL_TEXTURE_2D);
 	}
@@ -139,11 +141,14 @@ void Texture::computeMipMaps(bool sync) {
 	data->hasMips = true;
 	if(getHandle()) {
 		if(sync) {
-			upload();
+			gl::glBindTexture(GL_TEXTURE_2D, getHandle());
+			uploadMips();
+			internal::TextureBinding::dirty();
 		} else {
 			Texture self(*this);
 			GLContext::getContext()->addGLTask([=]() {
-				self.upload();
+				gl::glBindTexture(GL_TEXTURE_2D, self.getHandle());
+				self.uploadMips();
 				internal::TextureBinding::dirty();
 			});
 		}
@@ -165,7 +170,7 @@ void Texture::prepare(bool sync) const {
 		}
 	} else {
 		if(sync) {
-			gl::glBindTexture(GL_TEXTURE_2D, data->handle);
+			gl::glBindTexture(GL_TEXTURE_2D, getHandle());
 		}
 	}
 }
