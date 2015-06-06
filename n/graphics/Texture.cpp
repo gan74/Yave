@@ -106,7 +106,6 @@ void Texture::upload() const {
 	if(!size.mul()) {
 		fatal("Invalid image size.");
 	}
-	gl::GLuint h = data->handle;
 	gl::glGenTextures(1, &(data->handle));
 	gl::glBindTexture(GL_TEXTURE_2D, data->handle);
 
@@ -114,7 +113,7 @@ void Texture::upload() const {
 
 	data->hasMips &= isMipCapable();
 	#ifndef N_NO_TEX_STORAGE
-	uint maxMips = hasMipmaps() ? 1 + floor(log2(getSize().max())) : 1;
+	uint maxMips = getMipmapLevels();
 	gl::glTexStorage2D(GL_TEXTURE_2D,  maxMips, format.internalFormat, size.x(), size.y());
 	if(image.data()) {
 		gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format.format, format.type, image.data()); // crashes if data = 0...
@@ -122,37 +121,13 @@ void Texture::upload() const {
 	#else
 	gl::glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat, size.x(), size.y(), 0, format.format, format.type, image.data());
 	#endif
-	uploadMips();
-}
 
-void Texture::uploadMips() const {
 	if(hasMipmaps()) {
 		gl::glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, hasMipmaps() ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-}
-
-void Texture::computeMipMaps(bool sync) {
-	if(hasMipmaps() || !isMipCapable()) {
-		return;
-	}
-	data->hasMips = true;
-	if(getHandle()) {
-		if(sync) {
-			gl::glBindTexture(GL_TEXTURE_2D, getHandle());
-			uploadMips();
-			internal::TextureBinding::dirty();
-		} else {
-			Texture self(*this);
-			GLContext::getContext()->addGLTask([=]() {
-				gl::glBindTexture(GL_TEXTURE_2D, self.getHandle());
-				self.uploadMips();
-				internal::TextureBinding::dirty();
-			});
-		}
-	}
 }
 
 void Texture::prepare(bool sync) const {

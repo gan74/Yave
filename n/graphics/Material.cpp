@@ -24,6 +24,7 @@ namespace graphics {
 namespace internal {
 
 Texture bumpToNormal(Texture bump) {
+	const FrameBuffer *fbo = GLContext::getContext()->getFrameBuffer();
 	static ShaderCombinaison *sh = 0;
 	if(!sh) {
 		sh = new ShaderCombinaison(new Shader<FragmentShader>(
@@ -34,7 +35,7 @@ Texture bumpToNormal(Texture bump) {
 				"vec3 tex = texture(bump, n_TexCoord).xyz;"
 				"float height = (tex.x + tex.y + tex.z) * 0.333333;"
 				"vec2 nxy = vec2(dFdx(height), dFdy(height));"
-				"vec3 n = vec3(nxy * 10, height);"
+				"vec3 n = vec3(nxy * 5, height);"
 				"n_Out = vec4(normalize(n) * 0.5 + 0.5, 0.5);"
 			"}"), graphics::ShaderProgram::NoProjectionShader);
 	}
@@ -45,6 +46,11 @@ Texture bumpToNormal(Texture bump) {
 	sh->setValue("bump", bump);
 	GLContext::getContext()->getScreen().draw(VertexAttribs());
 	Texture normals = fb.getAttachement(0);
+	if(fbo) {
+		fbo->bind();
+	} else {
+		FrameBuffer::unbind();
+	}
 	return normals;
 }
 

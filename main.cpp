@@ -28,31 +28,33 @@ int main(int argc, char **argv) {
 	}*/
 
 	{
-		auto obj = new Obj("sponza.obj");
+		auto obj = new Obj("./crytek-sponza/sponza.obj");
+		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi<>() * 0.5));
 		obj->setAutoScale(800);
 		scene.insert(obj);
 	}
 
 	{
 		PointLight<> *l = new PointLight<>();
-		l->setPosition(Vec3(-5, 5, 10));
+		l->setPosition(Vec3(0, 0, 50));
 		//l->setColor(Color<>(Blue));
-		l->setRadius(250);
+		l->setRadius(750);
 		l->setIntensity(100000);
 		scene.insert(light = l);
 	}
 	{
 		DirectionalLight<> *l = new DirectionalLight<>();
-		l->setPosition(Vec3(-5, -5, 5));
-		l->setIntensity(1);
-		scene.insert(l);
+		l->setPosition(Vec3(1, 1, 5));
+		l->setIntensity(5);
+		//scene.insert(l);
 	}
 
 	BufferedRenderer *ri = 0;
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
-	//FrameBufferRenderer renderer(ri);
-	ToneMapRenderer renderer(ri);
-	tone = &renderer;
+	//ri = new GBufferRenderer(new SceneRenderer(&scene));
+	FrameBufferRenderer renderer(ri, 1);
+	//ToneMapRenderer renderer(ri);
+	//tone = &renderer;
 
 	Timer timer;
 	Timer total;
@@ -67,7 +69,7 @@ int main(int argc, char **argv) {
 
 		if(light) {
 			light->setIntensity(exp(
-					(sin(total.elapsed()) + 2) * 4
+					(sin(total.elapsed() * 0.5) + 3) * 3
 				));
 		}
 

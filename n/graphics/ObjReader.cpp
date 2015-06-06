@@ -112,9 +112,8 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 						sscanf(fl[i].toChar(), "%u/%u/%u", &v[0], &v[1], &v[2]);
 						if(smooth) {
 							v[2] = 0;
-						} else {
-							noNorm |= !v[2];
 						}
+						noNorm |= !v[2];
 						core::Map<math::Vec3ui, uint>::const_iterator it = vmap.find(v);
 						if(it == vmap.end()) {
 							if(v.x() >= positions.size() || v.z() >= normals.size() || v.y() >= coords.size()) {
@@ -129,7 +128,7 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 							face[i] = (*it)._2;
 						}
 					}
-					if(noNorm) {
+					if(noNorm && !smooth) {
 						math::Vec3 n = tr.getNormal(face[0], face[1], face[2]);
 						for(uint i = 0; i != vertCount; i++) {
 							Vertex<> v = tr.getVertices()[face[i]];

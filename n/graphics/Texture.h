@@ -38,8 +38,6 @@ class Texture : public TextureBase<Texture2D>
 		bool operator!=(const Texture &t) const;
 		bool operator<(const Texture &t) const;
 
-		void computeMipMaps(bool sync = false);
-
 		bool isNull() const {
 			return !getHandle();
 		}
@@ -54,6 +52,10 @@ class Texture : public TextureBase<Texture2D>
 
 		const Image &getImage() const {
 			return image;
+		}
+
+		uint getMipmapLevels() const {
+			return hasMipmaps() ? 1 + floor(log2(getSize().max())) : 1;
 		}
 
 		void synchronize(bool immediate = true);
@@ -71,7 +73,6 @@ class Texture : public TextureBase<Texture2D>
 		}
 
 		void upload() const;
-		void uploadMips() const;
 
 		void prepare(bool sync = false) const;
 

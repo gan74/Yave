@@ -106,7 +106,7 @@ namespace internal {
 
 		Texture diffuse;
 		Texture normal;
-		Texture bump;
+		//Texture bump;
 
 		core::Map<core::String, Texture> textures;
 
@@ -175,9 +175,9 @@ class Material : private assets::Asset<internal::Material<T>>
 				sh->setValue("n_DiffuseMap", i->diffuse);
 				sh->setValue("n_DiffuseMul", i->diffuse.isNull() ? 0.0 : 1.0);
 
-				if(i->normal.isNull() && !i->bump.getImage().isNull()) {
+				/*if(i->normal.isNull() && !i->bump.getImage().isNull()) {
 					const_cast<internal::Material<T> *>(i)->normal = internal::bumpToNormal(i->bump);
-				}
+				}*/
 
 				sh->setValue("n_NormalMap", i->normal);
 				sh->setValue("n_NormalMul", i->normal.isNull() ? 0.0 : 1.0);
