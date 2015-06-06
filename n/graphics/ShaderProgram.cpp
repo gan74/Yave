@@ -128,6 +128,9 @@ Shader<VertexShader> *ShaderProgram::getDefaultVertexShader(StandardVertexShader
 	return def[type];
 }
 
+ShaderProgram::ShaderProgram() : ptr(getNullProgram()) {
+}
+
 ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, vert, geom)) {
 }
 
