@@ -24,7 +24,7 @@ uint getMaxAttachment() {
 	return GLContext::getContext()->getHWInt(GLContext::MaxFboAttachements);
 }
 
-FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Texture[getMaxAttachment()]), depth(0), drawBuffers(new gl::GLenum[getMaxAttachment()]), handle(0), modified(false) {
+FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Texture[getMaxAttachment()]), depth(0), drawBuffers(new gl::GLenum[getMaxAttachment()]), handle(0), modified(false), lastMask(0xFFFFFFFF) {
 	Image baseImage(base);
 	for(uint i = 0; i != getMaxAttachment(); i++) {
 		drawBuffers[i] = GL_NONE;
@@ -102,7 +102,8 @@ void FrameBuffer::setUnmodified() const {
 	if(!modified || !isActive()) {
 		return;
 	}
-	for(uint i = 0; i != getMaxAttachment(); i++) {
+	uint att = getMaxAttachment();
+	for(uint i = 0; i != att; i++) {
 		if(isAttachmentEnabled(i)) {
 			attachments[i].prepare(true);
 			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachments[i].getHandle(), 0);
@@ -116,9 +117,9 @@ void FrameBuffer::setUnmodified() const {
 	} else {
 		gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,  0, 0);
 	}
-
-	gl::glDrawBuffers(getMaxAttachment(), drawBuffers);
+	gl::glDrawBuffers(att, drawBuffers);
 	internal::TextureBinding::dirty();
+	lastMask = 0xFFFFFFFF;
 	modified = false;
 
 	if(gl::glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -143,7 +144,7 @@ bool FrameBuffer::isActive() const {
 	return GLContext::getContext()->frameBuffer == this;
 }
 
-void FrameBuffer::bind() const {
+void FrameBuffer::bind(uint32 mask) const {
 	if(GLContext::getContext()->frameBuffer != this) {
 		gl::glBindFramebuffer(GL_FRAMEBUFFER, handle);
 		math::Vec2ui vp = GLContext::getContext()->getViewport();
@@ -152,7 +153,36 @@ void FrameBuffer::bind() const {
 			gl::glViewport(0, 0, base.x(), base.y());
 		}
 		setUnmodified();
+		setDrawBuffers(mask);
+	} else if(lastMask != mask) {
+		setDrawBuffers(mask);
 	}
+}
+
+void FrameBuffer::setDrawBuffers(uint32 mask) const {
+	if(mask == lastMask) {
+		return;
+	}
+	lastMask = mask;
+	uint att = getMaxAttachment();
+	if(mask == 0xFFFFFFFF) {
+		gl::glDrawBuffers(att, drawBuffers);
+		return;
+	}
+	static gl::GLenum *buffers = 0;
+	if(!buffers) {
+		buffers = new gl::GLenum[att];
+	}
+	for(uint i = 0; i != att; i++) {
+		buffers[i] = GL_NONE;
+	}
+	for(uint i = 0; mask; i++) {
+		if(mask & 0x1) {
+			buffers[i] = drawBuffers[i];
+		}
+		mask >>= 1;
+	}
+	gl::glDrawBuffers(att, buffers);
 }
 
 void FrameBuffer::unbind() {
