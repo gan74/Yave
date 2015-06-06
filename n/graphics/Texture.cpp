@@ -115,8 +115,8 @@ void Texture::upload() const {
 	GLTexFormat format = getTextureFormat(image.getFormat());
 
 	data->hasMips &= isMipCapable();
-	uint maxMips = hasMipmaps() ? 1 + floor(log2(getSize().max())) : 1;
 	#ifndef N_NO_TEX_STORAGE
+	uint maxMips = hasMipmaps() ? 1 + floor(log2(getSize().max())) : 1;
 	gl::glTexStorage2D(GL_TEXTURE_2D,  maxMips, format.internalFormat, size.x(), size.y());
 	if(image.data()) {
 		gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format.format, format.type, image.data()); // crashes if data = 0...
@@ -141,8 +141,9 @@ void Texture::computeMipMaps(bool sync) {
 		if(sync) {
 			upload();
 		} else {
+			Texture self(*this);
 			GLContext::getContext()->addGLTask([=]() {
-				upload();
+				self.upload();
 				internal::TextureBinding::dirty();
 			});
 		}
@@ -155,8 +156,9 @@ void Texture::prepare(bool sync) const {
 			if(sync) {
 				upload();
 			} else {
+				Texture self(*this);
 				GLContext::getContext()->addGLTask([=]() {
-					upload();
+					self.upload();
 					internal::TextureBinding::dirty();
 				});
 			}
@@ -165,6 +167,22 @@ void Texture::prepare(bool sync) const {
 		if(sync) {
 			gl::glBindTexture(GL_TEXTURE_2D, data->handle);
 		}
+	}
+}
+
+void Texture::synchronize(bool immediate) {
+	if(!isNull()) {
+		return;
+	}
+	if(!immediate) {
+		Texture *self = new Texture(*this);
+		GLContext::getContext()->addGLTask([=]() {
+			self->synchronize(true);
+			delete self;
+		});
+	} else {
+		prepare(true);
+		internal::TextureBinding::dirty();
 	}
 }
 

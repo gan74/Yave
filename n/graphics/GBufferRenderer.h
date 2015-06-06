@@ -74,18 +74,26 @@ class GBufferRenderer : public BufferedRenderer
 					"uniform vec4 n_Color;"
 					"uniform float n_Roughness;"
 					"uniform float n_Metallic;"
+
 					"uniform float n_DiffuseMul;"
-					"uniform sampler2D n_Diffuse;"
+					"uniform sampler2D n_DiffuseMap;"
+
+					"uniform float n_NormalMul;"
+					"uniform sampler2D n_NormalMap;"
 
 					"in vec3 n_Position;"
 					"in vec3 n_Normal;"
+					"in vec3 n_Tangent;"
+					"in vec3 n_Binormal;"
 					"in vec2 n_TexCoord;"
 
 					"void main() {"
-						"vec4 color = n_Color * mix(vec4(1.0), texture(n_Diffuse, n_TexCoord), n_DiffuseMul);"
-						"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
-						"n_1 = n_gbuffer1(color, n_Normal, n_Roughness, n_Metallic);"
-						"n_2 = n_gbuffer2(color, n_Normal, n_Roughness, n_Metallic);"
+						"vec3 nm = texture(n_NormalMap, n_TexCoord).rgb;"
+						"vec3 normal = mix(n_Normal, normalize(n_Normal) * nm.b + normalize(n_Tangent) * nm.g + normalize(n_Binormal) * nm.r, n_NormalMul);"
+						"vec4 color = n_Color * mix(vec4(1.0), texture(n_DiffuseMap, n_TexCoord), n_DiffuseMul);"
+						"n_0 = n_gbuffer0(color, normal, n_Roughness, n_Metallic);"
+						"n_1 = n_gbuffer1(color, normal, n_Roughness, n_Metallic);"
+						"n_2 = n_gbuffer2(color, normal, n_Roughness, n_Metallic);"
 					"}");
 			return sh;
 		}

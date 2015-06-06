@@ -42,6 +42,8 @@ enum DepthMode {
 };
 
 namespace internal {
+	extern Texture bumpToNormal(Texture bump);
+
 	template<typename T = float>
 	struct Material
 	{
@@ -103,6 +105,8 @@ namespace internal {
 		DepthMode depth;
 
 		Texture diffuse;
+		Texture normal;
+		Texture bump;
 
 		core::Map<core::String, Texture> textures;
 
@@ -168,8 +172,15 @@ class Material : private assets::Asset<internal::Material<T>>
 				sh->setValue("n_Roughness", i->roughness);
 				sh->setValue("n_Metallic", i->metallic);
 
+				sh->setValue("n_DiffuseMap", i->diffuse);
 				sh->setValue("n_DiffuseMul", i->diffuse.isNull() ? 0.0 : 1.0);
-				sh->setValue("n_Diffuse", i->diffuse);
+
+				if(i->normal.isNull() && !i->bump.getImage().isNull()) {
+					const_cast<internal::Material<T> *>(i)->normal = internal::bumpToNormal(i->bump);
+				}
+
+				sh->setValue("n_NormalMap", i->normal);
+				sh->setValue("n_NormalMul", i->normal.isNull() ? 0.0 : 1.0);
 
 				for(const auto &p : i->textures) {
 					sh->setValue(p._1, p._2);

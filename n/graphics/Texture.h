@@ -52,6 +52,12 @@ class Texture : public TextureBase<Texture2D>
 			return image.getFormat();
 		}
 
+		const Image &getImage() const {
+			return image;
+		}
+
+		void synchronize(bool immediate = true);
+
 		static bool isHWSupported(ImageFormat format);
 
 	private:
