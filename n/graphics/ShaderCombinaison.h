@@ -91,28 +91,9 @@ class ShaderCombinaison : core::NonCopyable
 				core::String name;
 		};
 
-		ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom = 0) : handle(0), bindings(0) {
-			/*if(!vert) {
-				vert = ShaderProgram::getDefaultVertexShader();
-			}*/
-			shaders[FragmentShader] = frag;
-			shaders[VertexShader] = vert;
-			shaders[GeometryShader] = geom;
-			compile();
-		}
-
-		ShaderCombinaison(Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vs) : ShaderCombinaison(frag, ShaderProgram::getDefaultVertexShader(vs)) {
-		}
-
-		~ShaderCombinaison() {
-			if(handle) {
-				gl::GLuint h = handle;
-				GLContext::getContext()->addGLTask([=]() {
-					gl::glDeleteProgram(h);
-				});
-			}
-			delete[] bindings;
-		}
+		ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom = 0);
+		ShaderCombinaison(Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vs);
+		~ShaderCombinaison();
 
 		bool isValid() const {
 			return handle;
@@ -122,30 +103,7 @@ class ShaderCombinaison : core::NonCopyable
 			return logs;
 		}
 
-		void bind() {
-			if(GLContext::getContext()->shader == this) {
-				return;
-			}
-			gl::glUseProgram(handle);
-			for(const core::Pair<const core::String, BlockInfo> &i : blocks) {
-				const BlockInfo &infos = i._2;
-				if(infos.buffer && infos.addr != gl::GLuint(GL_INVALID_INDEX)) {
-					infos.buffer->update();
-					gl::glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, infos.buffer->handle);
-				}
-			}
-			for(uint i = 0; i != samplers.size(); i++) {
-				bindings[i].bind(i);
-			}
-
-			setValue("n_ModelMatrix", GLContext::getContext()->getModelMatrix());
-			setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
-			setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());
-			setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
-
-			GLContext::getContext()->shader = this;
-			GLContext::getContext()->program = 0;
-		}
+		void bind();
 
 		void unbind() {
 			if(GLContext::getContext()->shader != this) {
@@ -269,60 +227,8 @@ class ShaderCombinaison : core::NonCopyable
 			return GLContext::getContext()->shader == this;
 		}
 
-		void compile() {
-			handle = gl::glCreateProgram();
-			bool val = true;
-			for(uint i = 0; i != 3; i++) {
-				if(shaders[i]) {
-					gl::glAttachShader(handle, shaders[i]->handle);
-					val &= shaders[i]->isValid();
-					if(!shaders[i]->getLogs().isEmpty()) {
-						logs += shaders[i]->getLogs() + "\n";
-					}
-				}
-			}
-			gl::glLinkProgram(handle);
-			int res = 0;
-			gl::glGetProgramiv(handle, GL_LINK_STATUS, &res);
-			if(!res || !val) {
-				int size = 0;
-				gl::glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &size);
-				char *msg = new char[size + 1];
-				gl::glGetProgramInfoLog(handle, size, &res, msg);
-				gl::glDeleteProgram(handle);
-				handle = 0;
-				msg[size] = '\0';
-				logs = msg;
-				delete[] msg;
-				throw ShaderLinkingException(logs);
-			} else {
-				getUniforms();
-			}
-		}
-
-		void getUniforms() {
-			const uint max = 512;
-			char name[max];
-			int uniforms = 0;
-			gl::glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniforms);
-			for(uint i = 0; i != (uint)uniforms; i++) {
-				int size = 0;
-				gl::GLenum type = GL_NONE;
-				gl::glGetActiveUniform(handle, i, max, 0, &size, &type, name);
-				core::String uniform = name;
-				if(uniform.endsWith("[0]")) {
-					uniform = uniform.subString(0, uniform.size() - 3);
-				}
-				UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});
-				uniformsInfo[uniform] = info;
-				if(type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE) {
-					uint slot = samplers.size();
-					setValue(info.addr, int(slot));
-					samplers[info.addr] = slot;
-				}
-			}
-			bindings = new internal::TextureBinding[samplers.size()];
-		}
+		void compile();
+		void getUniforms();
 
 		UniformInfo getInfo(const core::String &name) const {
 			return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
@@ -334,6 +240,7 @@ class ShaderCombinaison : core::NonCopyable
 		core::Map<core::String, UniformInfo> uniformsInfo;
 		core::Map<UniformAddr, uint> samplers;
 		internal::TextureBinding *bindings;
+		core::Array<gl::GLint> outputs;
 		mutable core::Map<core::String, BlockInfo> blocks;
 
 };
