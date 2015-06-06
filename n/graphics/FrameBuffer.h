@@ -43,7 +43,7 @@ class FrameBuffer : core::NonCopyable
 		void bind() const;
 		static void unbind();
 
-		void blit(bool color = true, bool dept = true) const;
+		void blit(uint slot = 0, bool depth = true) const;
 
 		math::Vec2ui getSize() const {
 			return base;

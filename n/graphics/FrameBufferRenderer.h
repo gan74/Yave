@@ -26,7 +26,7 @@ namespace graphics {
 class FrameBufferRenderer : public BufferableRenderer
 {
 	public:
-		FrameBufferRenderer(BufferedRenderer *c) : BufferableRenderer(), child(c) {
+		FrameBufferRenderer(BufferedRenderer *c, uint s = 0) : BufferableRenderer(), child(c), slot(s) {
 		}
 
 	protected:
@@ -39,11 +39,12 @@ class FrameBufferRenderer : public BufferableRenderer
 			if(GLContext::getContext()->getFrameBuffer() == &child->getFrameBuffer()) {
 				FrameBuffer::unbind();
 			}
-			child->getFrameBuffer().blit();
+			child->getFrameBuffer().blit(slot);
 		}
 
 	private:
 		BufferedRenderer *child;
+		uint slot;
 
 
 };

@@ -287,7 +287,7 @@ void DeferredShadingRenderer::render(void *ptr) {
 		lightBuffer.bind();
 
 		gl::glClear(GL_COLOR_BUFFER_BIT);
-		child->getFrameBuffer().blit(false);
+		child->getFrameBuffer().blit(FrameBuffer::Depth);
 
 
 		getLightMaterial<Point>().bind();
@@ -301,7 +301,7 @@ void DeferredShadingRenderer::render(void *ptr) {
 		getCompositionMaterial().bind();
 
 		buffer.bind();
-		child->getFrameBuffer().blit(false);
+		child->getFrameBuffer().blit(FrameBuffer::Depth);
 		compositionPass(data, child, lightBuffer)->unbind();
 	}
 

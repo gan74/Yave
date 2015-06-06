@@ -166,11 +166,18 @@ void FrameBuffer::unbind() {
 	}
 }
 
-void FrameBuffer::blit(bool color, bool dept) const {
+void FrameBuffer::blit(uint slot, bool depth) const {
 	if(GLContext::getContext()->frameBuffer != this) {
 		gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
 	}
-	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), (color ? GL_COLOR_BUFFER_BIT : 0) | (dept  && isDepthEnabled() ? GL_DEPTH_BUFFER_BIT : 0), GL_NEAREST);
+	if(slot != Depth) {
+		static uint readBuffer = 0;
+		if(slot != readBuffer) {
+			gl::glReadBuffer(GL_COLOR_ATTACHMENT0 + slot);
+			readBuffer = slot;
+		}
+	}
+	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), (slot == Depth || depth ? GL_DEPTH_BUFFER_BIT : 0) | (slot != Depth ? GL_COLOR_BUFFER_BIT : 0), GL_NEAREST);
 	//gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, GLContext::getContext()->frameBuffer ? GLContext::getContext()->frameBuffer->handle : 0);
 }
 
