@@ -62,6 +62,7 @@ class GBufferRenderer : public BufferedRenderer
 			getShader()->bindAsDefault();
 			buffer.bind();
 			child->render(ptr);
+			ShaderProgram::setDefaultShader((Shader<FragmentShader> *)0);
 		}
 
 	private:
