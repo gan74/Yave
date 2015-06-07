@@ -28,6 +28,9 @@ class ScreenShaderRenderer : public BufferedRenderer
 	public:
 		ScreenShaderRenderer(ShaderCombinaison *sh, BufferedRenderer *c = 0, const core::String &name = "tex", uint slt = 0, const math::Vec2ui &s = math::Vec2ui(0));
 
+		virtual ~ScreenShaderRenderer() {
+		}
+
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;
 

@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MAIN
 #define MAIN
 
+#include <windows.h>
+
 #include <n/core/Timer.h>
 
 #include <n/math/Plane.h>
@@ -86,6 +88,7 @@ class IThread : public n::concurrent::Thread
 };
 
 SDL_Window *createWindow() {
+	SetConsoleOutputCP(65001);
 	SDL_Window *mainWindow = 0;
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		fatal("Unable to initialize SDL");

@@ -93,7 +93,7 @@ struct FrameData
 template<LightType Type>
 ShaderCombinaison *getShader() {
 	static ShaderCombinaison *shader[LightType::Max] = {0};
-	core::String computeDir[LightType::Max] = {"return n_LightPos - x;", "return n_LightPos;"};
+	core::String computeDir[LightType::Max] = {"return n_LightPos - x;", "return n_LightForward;"};
 	core::String attenuate[LightType::Max] = {"x = min(x, n_LightRadius); return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);", "return 1.0;"};
 	if(!shader[Type]) {
 		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
@@ -105,6 +105,7 @@ ShaderCombinaison *getShader() {
 			"uniform vec3 n_Cam;"
 
 			"uniform vec3 n_LightPos;"
+			"uniform vec3 n_LightForward;"
 			"uniform vec3 n_LightColor;"
 			"uniform float n_LightRadius;"
 
@@ -226,6 +227,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 
 	for(const Light<> *l : data->lights[Type]) {
 		sh->setValue("n_LightPos", l->getPosition());
+		sh->setValue("n_LightForward", -l->getTransform().getX());
 		sh->setValue("n_LightRadius", l->getRadius());
 		sh->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
 		if(Type == Directional) {

@@ -39,7 +39,7 @@ class GBufferRenderer : public BufferedRenderer
 			setFormat(RGBDiffuseRGBNormal);
 		}
 
-		~GBufferRenderer() {
+		virtual ~GBufferRenderer() {
 		}
 
 		SceneRenderer *getRenderer() const {

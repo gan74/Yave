@@ -2,7 +2,6 @@
 #ifdef ALL
 #include "main.h"
 
-
 int main(int argc, char **argv) {
 	SDL_Window *win = createWindow();
 
@@ -44,7 +43,7 @@ int main(int argc, char **argv) {
 	}
 	{
 		DirectionalLight<> *l = new DirectionalLight<>();
-		l->setPosition(Vec3(1, 1, 5));
+		l->setForward(-Vec3(1, 1, 5));
 		l->setIntensity(5);
 		scene.insert(l);
 	}

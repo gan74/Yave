@@ -29,6 +29,9 @@ class FrameBufferRenderer : public BufferableRenderer
 		FrameBufferRenderer(BufferedRenderer *c, uint s = 0) : BufferableRenderer(), child(c), slot(s) {
 		}
 
+		virtual ~FrameBufferRenderer() {
+		}
+
 	protected:
 		virtual void *prepare() override {
 			return child->prepare();

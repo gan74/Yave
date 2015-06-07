@@ -29,6 +29,9 @@ class BufferRenderer : public BufferedRenderer
 		BufferRenderer(BufferableRenderer *c, const math::Vec2ui &s = math::Vec2ui()) : BufferedRenderer(s), child(c) {
 		}
 
+		virtual ~BufferRenderer() {
+		}
+
 		virtual void *prepare() override {
 			return child->prepare();
 		}

@@ -32,6 +32,9 @@ class BufferedRenderer : public Renderer
 		BufferedRenderer(const math::Vec2ui &s = math::Vec2ui(0)) : Renderer(), buffer(s.isNull() ? GLContext::getContext()->getViewport() : s) {
 		}
 
+		virtual ~BufferedRenderer() {
+		}
+
 		const FrameBuffer &getFrameBuffer() const {
 			return buffer;
 		}

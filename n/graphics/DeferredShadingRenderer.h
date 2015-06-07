@@ -27,6 +27,9 @@ class DeferredShadingRenderer : public BufferedRenderer
 	public:
 		DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s = math::Vec2ui(0));
 
+		virtual ~DeferredShadingRenderer() {
+		}
+
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;
 

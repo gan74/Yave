@@ -27,7 +27,7 @@ class ToneMapRenderer : public BufferableRenderer
 {
 	public:
 		ToneMapRenderer(BufferedRenderer *c, uint s = 0);
-		~ToneMapRenderer();
+		virtual ~ToneMapRenderer();
 
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;

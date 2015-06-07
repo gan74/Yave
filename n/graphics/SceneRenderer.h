@@ -29,6 +29,13 @@ namespace graphics {
 
 class SceneRenderer : public BufferableRenderer
 {
+	struct FrameData
+	{
+		math::Matrix4<> proj;
+		math::Matrix4<> view;
+		RenderQueue queue;
+	};
+
 	public:
 		struct PerfData
 		{
@@ -37,6 +44,9 @@ class SceneRenderer : public BufferableRenderer
 		};
 
 		SceneRenderer(const Scene<> *sc) : BufferableRenderer(), sce(sc), perfData({0, 0}) {
+		}
+
+		virtual ~SceneRenderer() {
 		}
 
 		PerfData getPerfData() const {
@@ -48,20 +58,24 @@ class SceneRenderer : public BufferableRenderer
 			if(!cam) {
 				fatal("Camera not found");
 			}
+			return prepare(*cam);
+		}
 
-			GLContext::getContext()->setProjectionMatrix(cam->getProjectionMatrix());
-			GLContext::getContext()->setViewMatrix(cam->getViewMatrix());
-
+		template<typename T>
+		void *prepare(const T &vol) {
+			T cam(vol);
 			core::Timer timer;
-			core::Array<Renderable *> res = sce->query<Renderable>(*cam);
+			FrameData *data = new FrameData();
+			data->proj = cam.getProjectionMatrix();
+			data->view = cam.getViewMatrix();
+			core::Array<Renderable *> res = sce->query<Renderable>(cam);
 			perfData.time = timer.elapsed();
 			perfData.objects = res.size();
-			RenderQueue *queue = new RenderQueue();
 			for(Renderable *re : res) {
-				re->render(*queue);
+				re->render(data->queue);
 			}
-			queue->prepare();
-			return queue;
+			data->queue.prepare();
+			return data;
 		}
 
 		const Camera<> *getCamera() {
@@ -77,14 +91,16 @@ class SceneRenderer : public BufferableRenderer
 			if(!ptr) {
 				return;
 			}
-			RenderQueue *queue = reinterpret_cast<RenderQueue *>(ptr);
-			for(const auto q : queue->getBatches()) {
+			FrameData *data = reinterpret_cast<FrameData *>(ptr);
+			GLContext::getContext()->setProjectionMatrix(data->proj);
+			GLContext::getContext()->setViewMatrix(data->view);
+			for(const auto q : data->queue.getBatches()) {
 				q();
 			}
-			for(const auto q : queue->getFunctions()) {
+			for(const auto q : data->queue.getFunctions()) {
 				q();
 			}
-			delete queue;
+			delete data;
 		}
 
 		const Scene<> *getScene() const {
