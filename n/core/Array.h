@@ -494,9 +494,18 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 			}
 		}
 
+		Array<T, ResizePolicy> range(const_iterator from, const_iterator to = 0) const {
+			to = to ? to : end();
+			Array<T, ResizePolicy> a(to - from);
+			a.assign(from, to);
+			return a;
+		}
+
 		template<typename U>
-		iterator findOne(const U &f, const_iterator from) {
-			for(iterator i = const_cast<iterator>(from); i != end(); i++) {
+		iterator findOne(const U &f, const_iterator from = 0, const_iterator to = 0) {
+			from = from ? from : begin();
+			to = to ? to : end();
+			for(iterator i = const_cast<iterator>(from); i != to; i++) {
 				if(f(*i)) {
 					return i;
 				}
@@ -505,8 +514,10 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		}
 
 		template<typename U>
-		const_iterator findOne(const U &f, const_iterator from) const {
-			for(const_iterator i = from; i != end(); i++) {
+		const_iterator findOne(const U &f, const_iterator from = 0, const_iterator to = 0) const {
+			from = from ? from : begin();
+			to = to ? to : end();
+			for(const_iterator i = from; i != to; i++) {
 				if(f(*i)) {
 					return i;
 				}
@@ -515,9 +526,11 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		}
 
 		template<typename U>
-		uint countAll(const U &f, const_iterator from) const {
+		uint countAll(const U &f, const_iterator from = 0, const_iterator to = 0) const {
+			from = from ? from : begin();
+			to = to ? to : end();
 			uint c = 0;
-			for(const_iterator i = from; i != end(); i++) {
+			for(const_iterator i = from; i != to; i++) {
 				if(f(*i)) {
 					c++;
 				}
@@ -526,8 +539,10 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		}
 
 		template<typename V>
-		bool existsOne(const V &f, const_iterator from) const {
-			for(const_iterator i = from; i != end(); i++) {
+		bool existsOne(const V &f, const_iterator from = 0, const_iterator to = 0) const {
+			from = from ? from : begin();
+			to = to ? to : end();
+			for(const_iterator i = from; i != to; i++) {
 				if(f(*i)) {
 					return true;
 				}
@@ -535,48 +550,20 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 			return false;
 		}
 
-		template<typename V>
-		bool existsOne(const V &f) const {
-			return existsOne(f, begin());
+		iterator find(const T &e, const_iterator from = 0, const_iterator to = 0) {
+			return findOne([&](const T &t) { return t == e; }, from, to);
 		}
 
-		template<typename U>
-		iterator findOne(const U &f) {
-			return findOne(f, begin());
+		const_iterator find(const T &e, const_iterator from = 0, const_iterator to = 0) const {
+			return findOne([&](const T &t) { return t == e; }, from, to);
 		}
 
-		template<typename U>
-		const_iterator findOne(const U &f) const {
-			return findOne(f, begin());
+		uint count(const T &e, const_iterator from = 0, const_iterator to = 0) const {
+			return countAll([&](const T &t) { return t == e; }, from, to);
 		}
 
-		template<typename U>
-		uint countAll(const U &f) const {
-			return countAll(f, begin());
-		}
-
-		iterator find(const T &e) {
-			return findOne([&](const T &t) { return t == e; });
-		}
-
-		iterator find(const T &e, const_iterator from) {
-			return findOne([&](const T &t) { return t == e; }, from);
-		}
-
-		const_iterator find(const T &e) const {
-			return findOne([&](const T &t) { return t == e; });
-		}
-
-		const_iterator find(const T &e, const_iterator from) const {
-			return findOne([&](const T &t) { return t == e; }, from);
-		}
-
-		uint count(const T &e) const {
-			return countAll([&](const T &t) { return t == e; });
-		}
-
-		bool exists(const T &e) const {
-			return existsOne([&](const T &t) { return t == e; });
+		bool exists(const T &e, const_iterator from = 0, const_iterator to = 0) const {
+			return existsOne([&](const T &t) { return t == e; }, from, to);
 		}
 
 	private:
@@ -687,13 +674,9 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 
 template<typename T>
 n::core::Array<T> operator+(const T &i, const n::core::Array<T> &a) {
-	return n::core::Array<T>(i, a);
+	return n::core::Array<T>({i}) + a;
 }
 
-template<typename T>
-n::core::Array<T> operator+(const n::core::Array<T> &a, const T &i) {
-	return n::core::Array<T>(a, i);
-}
 
 
 #endif // N_CORE_ARRAY_H
