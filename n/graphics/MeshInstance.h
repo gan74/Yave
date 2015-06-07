@@ -74,7 +74,7 @@ namespace internal {
 			}
 		}
 
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m = graphics::Material<T>()) : MeshInstance<T>(core::Array<MeshInstanceBase<T> *>(new MeshInstanceBase<T>(std::move(b), m))) {
+		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m = graphics::Material<T>()) : MeshInstance<T>(core::Array<MeshInstanceBase<T> *>({new MeshInstanceBase<T>(std::move(b), m)})) {
 		}
 
 		~MeshInstance() {

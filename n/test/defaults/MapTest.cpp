@@ -31,7 +31,7 @@ class MapTest : public TestTemplate<MapTest>
 
 		bool run() override {
 			core::Map<int, core::String> map;
-			core::Array<core::String> vals("Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine");
+			core::Array<core::String> vals({"Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"});
 			map.insert(0, "Zero");
 			map.insert(1, "One");
 			map.insert(2, "Two");

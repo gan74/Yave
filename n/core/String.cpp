@@ -156,7 +156,7 @@ String String::replaced(const String &oldS, const String &newS) const {
 }
 
 String String::replaced(uint beg, uint len, const String &newS) const {
-	return String(Array<String>(subString(0, beg), newS, subString(beg + len)));
+	return String(Array<String>({subString(0, beg), newS, subString(beg + len)}));
 }
 
 void String::clear() {

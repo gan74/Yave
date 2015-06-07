@@ -61,14 +61,14 @@ class CompactArrayResizePolicy
 };
 
 template<typename T, typename ResizePolicy = DefaultArrayResizePolicy>
-class Array : public ResizePolicy // Be SUPER careful when adding collections directly, will use the lazyest cast possible, can be wrong !
+class Array : public ResizePolicy// Be SUPER careful when adding collections directly, will use the lazyest cast possible, can be wrong !
 {
 	typedef typename TypeInfo<T>::nonConst TT;
 	public:
 		typedef T * iterator;
 		typedef T const * const_iterator;
 
-		class Size
+		/*class Size
 		{
 			public:
 				Size(uint s) : size(s) {
@@ -77,7 +77,9 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			private:
 				friend class Array<T, ResizePolicy>;
 				const uint size;
-		};
+		};*/
+
+		typedef uint Size;
 
 		Array() : ResizePolicy(), data(0), dataEnd(0), allocEnd(0) {
 		}
@@ -87,19 +89,18 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			free(data);
 		}
 
-		template<typename C>
-		explicit Array(const C &c) : Array() {
-			append(c);
+		Array(const Array<T, ResizePolicy> &a) : Array(Size(a.size())) {
+			copy(data, a.data, a.size());
+			dataEnd = data + a.size();
+		}
+
+		Array(Array<T> &&a) : Array() {
+			swap(std::move(a));
 		}
 
 		template<typename C>
 		Array(const Array<C> &a) : Array(Size(a.size())) {
 			append(a);
-		}
-
-		Array(const Array<T> &a) : Array(Size(a.size())) {
-			copy(data, a.data, a.size());
-			dataEnd = data + a.size();
 		}
 
 		template<typename C>
@@ -109,51 +110,22 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			}
 		}
 
-		Array(Size s) : Array() {
-			setCapacityUnsafe(0, s.size);
-		}
-
-		Array(Array<T> &&a) : Array() {
-			swap(std::move(a));
-		}
-
-		template<typename A, typename B, typename... Args>
-		Array(const A &a, const B &b, const Args&... args) : Array(Size(ResizePolicy::size(sizeof...(args) + 2))) {
-			append(a);
-			append(b);
-			append(args...);
+		Array(uint s) : Array() {
+			setCapacityUnsafe(0, s);
 		}
 
 		template<typename C>
-		void append(const C &c) {
+		Array<T, ResizePolicy> &append(const C &c) {
 			appendDispatch(c, BoolToType<!ShouldInsertAsCollection<C, T>::value>()); // <------------------------ This is the line you are looking for
+			return *this;
 		}
 
-		template<typename A, typename B, typename... Args>
-		void append(const A &a, const B &b, const Args&... args) {
-			append(a);
-			append(b);
-			append(args...);
-		}
-
-		template<typename A, typename... Args>
-		iterator insert(const A &a, const Args&... args) {
-			uint pos = size();
-			append(a);
-			append(args...);
-			return data + pos;
-		}
-
-		iterator remove(const_iterator b) {
-			return erase(b);
+		iterator remove(const T &e) {
+			return erase(find(e));
 		}
 
 		iterator erase(const_iterator b) {
 			return erase(b, b + 1);
-		}
-
-		iterator remove(const T &e) {
-			return remove(find(e));
 		}
 
 		iterator erase(const_iterator b, const_iterator e) {
@@ -205,6 +177,12 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		}
 
 		template<typename C>
+		iterator insert(const C &e) {
+			append(e);
+			return end() - 1;
+		}
+
+		template<typename C>
 		void assign(const C &c) {
 			makeEmpty();
 			append(c);
@@ -216,6 +194,7 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			for(; b != e; ++b) {
 				append(*b);
 			}
+			shrinkIfNeeded();
 		}
 
 		template<typename RP>
@@ -300,9 +279,9 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		}
 
 		template<typename C>
-		Array<T, ResizePolicy> operator+(const Array<T> &e) {
-			Array<T, ResizePolicy> x(Size(size() + e.size()));
-			x.append(*this, e);
+		Array<T, ResizePolicy> operator+(const C &e) {
+			Array<T, ResizePolicy> x(*this);
+			x.append(e);
 			return x;
 		}
 
@@ -427,101 +406,6 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 		}
 
 		template<typename U>
-		iterator findOne(const U &f, const_iterator from) {
-			for(iterator i = const_cast<iterator>(from); i != end(); i++) {
-				if(f(*i)) {
-					return i;
-				}
-			}
-			return end();
-		}
-
-		template<typename U>
-		const_iterator findOne(const U &f, const_iterator from) const {
-			for(const_iterator i = from; i != end(); i++) {
-				if(f(*i)) {
-					return i;
-				}
-			}
-			return end();
-		}
-
-		template<typename U>
-		iterator findOne(const U &f) {
-			return findOne(f, begin());
-		}
-
-		template<typename U>
-		const_iterator findOne(const U &f) const {
-			return findOne(f, begin());
-		}
-
-		template<typename U>
-		uint countAll(const U &f) const {
-			uint c = 0;
-			for(const_iterator i = begin(); i != end(); i++) {
-				if(f(*i)) {
-					c++;
-				}
-			}
-			return c;
-		}
-
-		template<typename V>
-		bool existsOne(const V &f) const {
-			for(const_iterator i = begin(); i != end(); i++) {
-				if(f(*i)) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		template<typename U>
-		iterator find(const U &f, const_iterator from) {
-			return findOne(f, from);
-		}
-
-		template<typename U>
-		const_iterator find(const U &f, const_iterator from) const {
-			return findOne(f, from);
-		}
-
-		template<typename U>
-		uint count(const U &f) const {
-			return countAll(f);
-		}
-
-		template<typename V>
-		bool exists(const V &f) const {
-			return existsOne(f);
-		}
-
-		iterator find(const T &e) {
-			return findOne([&](const T &t) { return t == e; }, begin());
-		}
-
-		iterator find(const T &e, const_iterator from) {
-			return findOne([&](const T &t) { return t == e; }, from);
-		}
-
-		const_iterator find(const T &e) const {
-			return findOne([&](const T &t) { return t == e; }, begin());
-		}
-
-		const_iterator find(const T &e, const_iterator from) const {
-			return findOne([&](const T &t) { return t == e; }, from);
-		}
-
-		uint count(const T &e) const {
-			return countAll([&](const T &t) { return t == e; });
-		}
-
-		bool exists(const T &e) const {
-			return existsOne([&](const T &t) { return t == e; });
-		}
-
-		template<typename U>
 		void foreach(const U &f) {
 			std::for_each(begin(), end(), f);
 		}
@@ -610,6 +494,90 @@ class Array : public ResizePolicy // Be SUPER careful when adding collections di
 			}
 		}
 
+		template<typename U>
+		iterator findOne(const U &f, const_iterator from) {
+			for(iterator i = const_cast<iterator>(from); i != end(); i++) {
+				if(f(*i)) {
+					return i;
+				}
+			}
+			return end();
+		}
+
+		template<typename U>
+		const_iterator findOne(const U &f, const_iterator from) const {
+			for(const_iterator i = from; i != end(); i++) {
+				if(f(*i)) {
+					return i;
+				}
+			}
+			return end();
+		}
+
+		template<typename U>
+		uint countAll(const U &f, const_iterator from) const {
+			uint c = 0;
+			for(const_iterator i = from; i != end(); i++) {
+				if(f(*i)) {
+					c++;
+				}
+			}
+			return c;
+		}
+
+		template<typename V>
+		bool existsOne(const V &f, const_iterator from) const {
+			for(const_iterator i = from; i != end(); i++) {
+				if(f(*i)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		template<typename V>
+		bool existsOne(const V &f) const {
+			return existsOne(f, begin());
+		}
+
+		template<typename U>
+		iterator findOne(const U &f) {
+			return findOne(f, begin());
+		}
+
+		template<typename U>
+		const_iterator findOne(const U &f) const {
+			return findOne(f, begin());
+		}
+
+		template<typename U>
+		uint countAll(const U &f) const {
+			return countAll(f, begin());
+		}
+
+		iterator find(const T &e) {
+			return findOne([&](const T &t) { return t == e; });
+		}
+
+		iterator find(const T &e, const_iterator from) {
+			return findOne([&](const T &t) { return t == e; }, from);
+		}
+
+		const_iterator find(const T &e) const {
+			return findOne([&](const T &t) { return t == e; });
+		}
+
+		const_iterator find(const T &e, const_iterator from) const {
+			return findOne([&](const T &t) { return t == e; }, from);
+		}
+
+		uint count(const T &e) const {
+			return countAll([&](const T &t) { return t == e; });
+		}
+
+		bool exists(const T &e) const {
+			return existsOne([&](const T &t) { return t == e; });
+		}
 
 	private:
 		void copy(TT *dst, const TT *src, uint n) {

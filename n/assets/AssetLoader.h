@@ -34,7 +34,8 @@ namespace internal {
 		struct TypeHelper
 		{
 			static ArgumentTypes args() {
-				return ArgumentTypes(typeid(W), TypeHelper<A...>::args());
+				ArgumentTypes a({Type(typeid(W))});
+				return a.append(TypeHelper<A...>::args());
 			}
 		};
 
@@ -42,7 +43,7 @@ namespace internal {
 		struct TypeHelper<W, Z>
 		{
 			static ArgumentTypes args() {
-				return ArgumentTypes(typeid(W), typeid(Z));
+				return ArgumentTypes({Type(typeid(W)), Type(typeid(Z))});
 			}
 		};
 

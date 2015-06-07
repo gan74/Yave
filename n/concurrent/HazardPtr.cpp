@@ -40,7 +40,7 @@ void registerHazard(const void **ptr) {
 
 void unregisterHazard(const void **ptr) {
 	globalHazardLock.lock();
-	globalHazards.remove(globalHazards.find(ptr));
+	globalHazards.erase(globalHazards.find(ptr));
 	globalHazardCount--;
 	globalHazardLock.unlock();
 }

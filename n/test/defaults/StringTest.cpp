@@ -97,7 +97,7 @@ class StringTest : public TestTemplate<StringTest>
 			test(core::String("a") + 9.5f, "a9.5", "Float concat test failed");
 			test(9.5f + core::String("f"), "9.5f", "Float concat test 2 failed");
 			test("9."+ core::String("5") + "f", "9.5f", "char * concat test 2 failed");
-			core::Array<char> arr('4', 'a', '{', 'K');
+			core::Array<char> arr({'4', 'a', '{', 'K'});
 			test(core::String(arr), "4a{K", "Array test failed");
 			test(core::String(Convertible()), "this is a convertible", "Conversion test failed");
 		}
