@@ -23,7 +23,7 @@ namespace n {
 namespace graphics {
 namespace internal {
 
-Texture bumpToNormal(Texture bump) {
+/*Texture bumpToNormal(Texture bump) {
 	const FrameBuffer *fbo = GLContext::getContext()->getFrameBuffer();
 	static ShaderCombinaison *sh = 0;
 	if(!sh) {
@@ -52,7 +52,7 @@ Texture bumpToNormal(Texture bump) {
 		FrameBuffer::unbind();
 	}
 	return normals;
-}
+}*/
 
 }
 }

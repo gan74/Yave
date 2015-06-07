@@ -92,7 +92,7 @@ class GBufferRenderer : public BufferedRenderer
 						"vec3 normal = n_Normal;"
 						"if(n_NormalMul != 0) {"
 							"vec2 normalXY = texture(n_NormalMap, n_TexCoord).xy * 2.0 - 1.0;"
-							"vec3 normalMap = vec3(normalXY, sqrt(1.0 - dot(normalXY, normalXY)));"
+							"vec3 normalMap = vec3(normalXY * n_NormalMul, sqrt(1.0 - dot(normalXY, normalXY)));"
 							"mat3 TBN = mat3(normalize(n_Tangent), normalize(n_Binormal), normalize(n_Normal));"
 							"normal = TBN * normalMap;"
 						"}"

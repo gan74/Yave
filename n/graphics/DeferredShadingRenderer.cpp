@@ -177,7 +177,7 @@ ShaderCombinaison *getShader() {
 				"float att = attenuate(dist);"
 				"n_Out = vec4(n_LightColor * NoL * att * brdf(dir, view, normal, material), 1.0);"
 				//"n_Out = vec4(vec3(brdf(dir, view, normal, material)), 1.0);"
-				"n_Out = vec4(vec3(NoL), 1);"
+				//"n_Out = vec4(vec3(NoL), 1);"
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 	}
 	return shader[Type];
@@ -298,7 +298,7 @@ void DeferredShadingRenderer::render(void *ptr) {
 
 	{
 		#ifdef N_DEBUG
-		buffer.bind(0x10);
+		buffer.bind(0x01);
 		#endif
 		getCompositionMaterial().bind();
 		compositionPass(data, child, buffer)->unbind();

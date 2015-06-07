@@ -88,7 +88,7 @@ class TriangleBuffer
 						math::Vec<3, T> edges[] = {vertices[t.vts[1]].p() - vertices[t.vts[0]].p(), vertices[t.vts[2]].p() - vertices[t.vts[0]].p()};
 						math::Vec<2, T> c[] = {vertices[t.vts[0]].c(), vertices[t.vts[1]].c(), vertices[t.vts[2]].c()};
 						T dt[] = {c[1].y() - c[0].y(), c[2].y() - c[0].y()};
-						math::Vec<3, T> ta = ((edges[0] * dt[1]) - (edges[1] * dt[0])).normalized();
+						math::Vec<3, T> ta = -((edges[0] * dt[1]) - (edges[1] * dt[0])).normalized();
 						vertices[t.vts[0]].t() += ta;
 						vertices[t.vts[1]].t() += ta;
 						vertices[t.vts[2]].t() += ta;

@@ -46,13 +46,13 @@ int main(int argc, char **argv) {
 		DirectionalLight<> *l = new DirectionalLight<>();
 		l->setPosition(Vec3(1, 1, 5));
 		l->setIntensity(5);
-		//scene.insert(l);
+		scene.insert(l);
 	}
 
 	BufferedRenderer *ri = 0;
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 	//ri = new GBufferRenderer(new SceneRenderer(&scene));
-	FrameBufferRenderer renderer(ri, 1);
+	FrameBufferRenderer renderer(ri);
 	//ToneMapRenderer renderer(ri);
 	//tone = &renderer;
 

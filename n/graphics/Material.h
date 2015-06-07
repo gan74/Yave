@@ -42,7 +42,7 @@ enum DepthMode {
 };
 
 namespace internal {
-	extern Texture bumpToNormal(Texture bump);
+	//extern Texture bumpToNormal(Texture bump);
 
 	template<typename T = float>
 	struct Material
@@ -51,7 +51,7 @@ namespace internal {
 		static bool sorted;
 		static core::Array<Material<T> *> cache;
 
-		Material() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser) {
+		Material() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5) {
 			mutex.lock();
 			cache.append(this);
 			sorted = false;
@@ -106,6 +106,7 @@ namespace internal {
 
 		Texture diffuse;
 		Texture normal;
+		T normalIntencity;
 		//Texture bump;
 
 		core::Map<core::String, Texture> textures;
@@ -180,7 +181,7 @@ class Material : private assets::Asset<internal::Material<T>>
 				}*/
 
 				sh->setValue("n_NormalMap", i->normal);
-				sh->setValue("n_NormalMul", i->normal.isNull() ? 0.0 : 1.0);
+				sh->setValue("n_NormalMul", i->normal.isNull() ? 0.0 : i->normalIntencity);
 
 				for(const auto &p : i->textures) {
 					sh->setValue(p._1, p._2);
