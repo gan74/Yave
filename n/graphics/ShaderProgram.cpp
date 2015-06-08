@@ -56,14 +56,14 @@ Shader<FragmentShader> *ShaderProgram::getDefaultFragmentShader() {
 					"uniform float n_Roughness;"
 					"uniform float n_Metallic;"
 					"uniform float n_DiffuseMul;"
-					"uniform sampler2D n_Diffuse;"
+					"uniform sampler2D n_DiffuseMap;"
 
 					"in vec3 n_Position;"
 					"in vec3 n_Normal;"
 					"in vec2 n_TexCoord;"
 
 					"void main() {"
-						"vec4 color = n_Color * mix(vec4(1.0), texture(n_Diffuse, n_TexCoord), n_DiffuseMul);"
+						"vec4 color = n_Color * mix(vec4(1.0), texture(n_DiffuseMap, n_TexCoord), n_DiffuseMul);"
 						"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
 					"}");
 	return def;

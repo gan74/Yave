@@ -58,6 +58,10 @@ class GBufferRenderer : public BufferedRenderer
 			return child->prepare();
 		}
 
+		virtual SceneRenderer::FrameData *getSceneRendererData(void *d) const {
+			return reinterpret_cast<SceneRenderer::FrameData *>(d);
+		}
+
 		virtual void render(void *ptr) override {
 			getShader()->bindAsDefault();
 			buffer.bind();

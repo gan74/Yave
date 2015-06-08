@@ -56,6 +56,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/math/ConvexVolume.h>
 #include <n/math/Quaternion.h>
 #include <n/graphics/ToneMapRenderer.h>
+#include <n/graphics/OrthographicCamera.h>
+#include <n/graphics/PerspectiveCamera.h>
 #include <n/graphics/BufferRenderer.h>
 
 #include "Console.h"

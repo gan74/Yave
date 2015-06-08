@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "BufferableRenderer.h"
 #include "Scene.h"
 #include "Camera.h"
+#include "OrthographicCamera.h"
 #include "Renderable.h"
 #include <n/core/Timer.h>
 
@@ -29,28 +30,19 @@ namespace graphics {
 
 class SceneRenderer : public BufferableRenderer
 {
-	struct FrameData
-	{
-		math::Matrix4<> proj;
-		math::Matrix4<> view;
-		RenderQueue queue;
-	};
-
 	public:
-		struct PerfData
+		struct FrameData
 		{
-			double time;
-			uint objects;
+			math::Matrix4<> proj;
+			math::Matrix4<> view;
+			const Camera<> *camera;
+			RenderQueue queue;
 		};
 
-		SceneRenderer(const Scene<> *sc) : BufferableRenderer(), sce(sc), perfData({0, 0}) {
+		SceneRenderer(const Scene<> *sc) : BufferableRenderer(), sce(sc) {
 		}
 
 		virtual ~SceneRenderer() {
-		}
-
-		PerfData getPerfData() const {
-			return perfData;
 		}
 
 		virtual void *prepare() override {
@@ -58,19 +50,15 @@ class SceneRenderer : public BufferableRenderer
 			if(!cam) {
 				fatal("Camera not found");
 			}
-			return prepare(*cam);
+			return prepare(cam);
 		}
 
-		template<typename T>
-		void *prepare(const T &vol) {
-			T cam(vol);
-			core::Timer timer;
+		void *prepare(const Camera<> *cam) {
 			FrameData *data = new FrameData();
-			data->proj = cam.getProjectionMatrix();
-			data->view = cam.getViewMatrix();
-			core::Array<Renderable *> res = sce->query<Renderable>(cam);
-			perfData.time = timer.elapsed();
-			perfData.objects = res.size();
+			data->proj = cam->getProjectionMatrix();
+			data->view = cam->getViewMatrix();
+			data->camera = cam;
+			core::Array<Renderable *> res = sce->query<Renderable>(*cam);
 			for(Renderable *re : res) {
 				re->render(data->queue);
 			}
@@ -80,7 +68,7 @@ class SceneRenderer : public BufferableRenderer
 
 		const Camera<> *getCamera() {
 			core::Array<Camera<> *> arr = sce->get<Camera<>>();
-			if(arr.size() != 1) {
+			if(arr.isEmpty()) {
 				return 0;
 			}
 			return arr.first();
@@ -109,9 +97,7 @@ class SceneRenderer : public BufferableRenderer
 
 	private:
 		const Scene<> *sce;
-		PerfData perfData;
 };
-
 
 }
 }

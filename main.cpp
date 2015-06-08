@@ -9,9 +9,9 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->setDebugEnabled(false);
 	}
 
-	Camera<> cam;
+	OrthographicCamera<> cam;
 	cam.setPosition(Vec3(-10, 0, 10));
-	cam.setRatio(4/3.0);
+	//cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
 	Light<> *light = 0;
@@ -51,7 +51,8 @@ int main(int argc, char **argv) {
 	BufferedRenderer *ri = 0;
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 	//ri = new GBufferRenderer(new SceneRenderer(&scene));
-	FrameBufferRenderer renderer(ri);
+	//FrameBufferRenderer renderer(ri);
+	SceneRenderer renderer(&scene);
 	//ToneMapRenderer renderer(ri);
 	//tone = &renderer;
 

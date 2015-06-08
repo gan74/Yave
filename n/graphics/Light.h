@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_LIGHT
 
 #include "Transformable.h"
+#include "ShadowRenderer.h"
 #include "Color.h"
 #include <n/math/Volume.h>
 #include <n/utils.h>
@@ -34,7 +35,6 @@ class Light : public Movable<T>
 
 		virtual ~Light() {
 		}
-
 
 		const Color<T> &getColor() const {
 			return color;
@@ -61,8 +61,16 @@ template<typename T = float>
 class DirectionalLight : public Light<T>
 {
 	public:
-		DirectionalLight() : Light<T>() {
+		DirectionalLight() : Light<T>(), shadow(0) {
 		}
+
+		virtual ~DirectionalLight() override {
+			delete shadow;
+		}
+
+
+	private:
+		ShadowRenderer *shadow;
 };
 
 template<typename T = float>

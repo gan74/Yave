@@ -83,9 +83,18 @@ const VertexArrayObject<> &getSphere() {
 	return *sphere;
 }
 
+math::Vec3 posFromView(const math::Matrix4<> &view) {
+	math::Vec4 pos;
+	for(uint i = 0; i != 3; i++) {
+		pos -= view[i] * view[i].w();
+	}
+	return pos.sub(3);
+}
+
 struct FrameData
 {
-	Camera<> *cam;
+	math::Vec3 pos;
+	math::Matrix4<> inv;
 	core::Array<Light<> *> lights[LightType::Max];
 	void *child;
 };
@@ -177,7 +186,7 @@ ShaderCombinaison *getShader() {
 				"float NoL = saturate(dot(normal, dir));"
 				"float att = attenuate(dist);"
 				"n_Out = vec4(n_LightColor * NoL * att * brdf(dir, view, normal, material), 1.0);"
-				//"n_Out = vec4(vec3(brdf(dir, view, normal, material)), 1.0);"
+				//"n_Out = vec4(vec3(brdf(dir, view, normal, material) + 0.25), 1.0);"
 				//"n_Out = vec4(vec3(NoL), 1);"
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 	}
@@ -222,8 +231,8 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 	sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
 	sh->setValue("n_2", child->getFrameBuffer().getAttachement(2));
 	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
-	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
-	sh->setValue("n_Cam", data->cam->getPosition());
+	sh->setValue("n_Inv", data->inv);
+	sh->setValue("n_Cam", data->pos);
 
 	for(const Light<> *l : data->lights[Type]) {
 		sh->setValue("n_LightPos", l->getPosition());
@@ -249,8 +258,8 @@ ShaderCombinaison *compositionPass(const FrameData *data, GBufferRenderer *child
 	sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
 	sh->setValue("n_1", light.getAttachement(1));
 	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
-	sh->setValue("n_Inv", (data->cam->getProjectionMatrix() * data->cam->getViewMatrix()).inverse());
-	sh->setValue("n_Cam", data->cam->getPosition());
+	sh->setValue("n_Inv", data->inv);
+	sh->setValue("n_Cam", data->pos);
 	sh->setValue("n_Cube", getCube());
 	sh->setValue("n_Ambient", 0.0);
 
@@ -268,22 +277,23 @@ DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math:
 }
 
 void *DeferredShadingRenderer::prepare() {
-	core::Array<Camera<> *> arr = child->getRenderer()->getScene()->get<Camera<>>();
-	if(arr.size() != 1) {
-		return 0;
-	}
-	return new FrameData({arr.first(),
-						  {child->getRenderer()->getScene()->query<PointLight<>>(*child->getRenderer()->getCamera()),
+	void *ptr = child->prepare();
+	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(ptr);
+	return new FrameData({sceneData->camera->getPosition(),
+						  (sceneData->proj * sceneData->view).inverse(),
+						  {child->getRenderer()->getScene()->query<PointLight<>>(*sceneData->camera),
 							   child->getRenderer()->getScene()->get<DirectionalLight<>>()},
-						  child->prepare()});
+						  ptr});
 }
 
 void DeferredShadingRenderer::render(void *ptr) {
 	FrameData *data = reinterpret_cast<FrameData *>(ptr);
+	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(data->child);
+
 	child->render(data->child);
 
-	GLContext::getContext()->setProjectionMatrix(data->cam->getProjectionMatrix());
-	GLContext::getContext()->setViewMatrix(data->cam->getViewMatrix());
+	GLContext::getContext()->setProjectionMatrix(sceneData->proj);
+	GLContext::getContext()->setViewMatrix(sceneData->view);
 
 	{
 		buffer.bind();
