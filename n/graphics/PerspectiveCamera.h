@@ -34,7 +34,7 @@ class PerspectiveCamera final : public Camera<T>
 		using Camera<T>::proj; // WHY ?
 
 	public:
-		PerspectiveCamera() : Camera<T>(), zFar(1000), zNear(1), ratio(1), fov(math::pi<T>() / 2) {
+		PerspectiveCamera(T fv = math::pi<T>() / 2, T ZFar = 1000) : Camera<T>(), zFar(ZFar), zNear(std::min(zFar * 0.1, 1.0)), ratio(1), fov(fv) {
 			radius = zFar;
 			computeViewMatrix();
 			computeProjectionMatrix();
@@ -43,9 +43,9 @@ class PerspectiveCamera final : public Camera<T>
 
 		void setPosition(const math::Vec<3, T> &pos) {
 			transform = math::Transform<T>(transform.getRotation(), pos);
-			view[0][3] = -side.dot(pos);
+			view[0][3] = side.dot(pos);
 			view[1][3] = -up.dot(pos);
-			view[2][3] = -forward.dot(pos);
+			view[2][3] = forward.dot(pos);
 		}
 
 		void setRotation(const math::Quaternion<T> &q) {
@@ -55,7 +55,7 @@ class PerspectiveCamera final : public Camera<T>
 		}
 
 		math::Vec<3, T> getForward() const {
-			return -forward;
+			return forward;
 		}
 
 		void setFov(T f) {
@@ -90,7 +90,7 @@ class PerspectiveCamera final : public Camera<T>
 
 		virtual bool isInside(const math::Vec<3, T> &p, T r) const override {
 			math::Vec<3, T> w = (p - transform.getPosition());
-			T z = -w.dot(forward);
+			T z = w.dot(forward);
 			return z + r > zNear && z - r < zFar
 					&& w.dot(frustum[0]) + r > 0
 					&& w.dot(frustum[1]) + r > 0
@@ -100,13 +100,13 @@ class PerspectiveCamera final : public Camera<T>
 
 	private:
 		void computeViewMatrix() {
-			forward = -transform.getX();
+			forward = transform.getX();
 			up = transform.getZ();
-			side = -transform.getY();
+			side = transform.getY();
 			math::Vec<3, T> p = transform.getPosition();
-			view = math::Matrix4<T>(side.x(), side.y(), side.z(), -side.dot(p),
-			up.x(), up.y(), up.z(), -up.dot(p),
-			forward.x(), forward.y(), forward.z(), -forward.dot(p),
+			view = math::Matrix4<T>(-side, side.dot(p),
+									up, -up.dot(p),
+									-forward, forward.dot(p),
 			0, 0, 0, 1);
 		}
 
@@ -121,12 +121,12 @@ class PerspectiveCamera final : public Camera<T>
 			T hFovR = atan(tan(fovR) * ratio);
 			T c = cos(fovR);
 			T s = sin(fovR);
-			frustum[0] = -forward * s + up * c;
-			frustum[1] = -forward * s - up * c;
+			frustum[0] = forward * s + up * c;
+			frustum[1] = forward * s - up * c;
 			c = cos(hFovR);
 			s = sin(hFovR);
-			frustum[2] = -forward * s + side * c;
-			frustum[3] = -forward * s - side * c;
+			frustum[2] = forward * s + side * c;
+			frustum[3] = forward * s - side * c;
 		}
 
 

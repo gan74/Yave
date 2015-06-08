@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "BufferableRenderer.h"
 #include "Scene.h"
 #include "Camera.h"
-#include "OrthographicCamera.h"
 #include "Renderable.h"
 #include <n/core/Timer.h>
 

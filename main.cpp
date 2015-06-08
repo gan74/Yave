@@ -9,9 +9,9 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->setDebugEnabled(false);
 	}
 
-	PerspectiveCamera<> cam;
+	OrthographicCamera<> cam(1000);
 	cam.setPosition(Vec3(-10, 0, 10));
-	cam.setRatio(4/3.0);
+	//cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
 	Light<> *light = 0;
@@ -31,23 +31,36 @@ int main(int argc, char **argv) {
 	}*/
 
 	{
+		auto obj = new Obj("scube.obj");
+		obj->setAutoScale(10);
+		obj->setPosition(Vec3(100, 0, 50));
+		scene.insert(obj);
+	}
+	{
+		auto obj = new Obj("scube.obj");
+		obj->setAutoScale(10);
+		obj->setPosition(Vec3(100, 25, 50));
+		scene.insert(obj);
+	}
+
+	{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
 		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi<>() * 0.5));
 		obj->setAutoScale(800);
 		scene.insert(obj);
 	}
 
-	{
+	/*{
 		PointLight<> *l = new PointLight<>();
 		l->setPosition(Vec3(0, 0, 50));
 		//l->setColor(Color<>(Blue));
 		l->setRadius(750);
 		l->setIntensity(100000);
 		scene.insert(light = l);
-	}
+	}*/
 	{
-		DirectionalLight<> *l = new DirectionalLight<>();
-		l->setForward(-Vec3(1, 1, 5));
+		Light<> *l = new DirectionalLight<>();
+		l->setForward(Vec3(0.25, 0.5, -1));
 		l->setIntensity(5);
 		scene.insert(l);
 	}
@@ -55,8 +68,8 @@ int main(int argc, char **argv) {
 	BufferedRenderer *ri = 0;
 	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 	//ri = new GBufferRenderer(new SceneRenderer(&scene));
-	//FrameBufferRenderer renderer(ri);
-	SceneRenderer renderer(&scene);
+	FrameBufferRenderer renderer(ri);
+	//SceneRenderer renderer(&scene);
 	//ToneMapRenderer renderer(ri);
 	//tone = &renderer;
 
@@ -69,12 +82,15 @@ int main(int argc, char **argv) {
 		Vec2 angle = mouse * 0.01;
 		float p2 = pi<>() * 0.5 - 0.01;
 		angle.y() = std::min(std::max(angle.y(), -p2), p2);
-		cam.setForward(Vec3(Vec2(cos(angle.x()), sin(angle.x())) * cos(angle.y()), -sin(angle.y())));
+		Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
+		cam.setForward(f);
 
 		if(light) {
-			light->setIntensity(exp(
+			/*light->setIntensity(exp(
 					(sin(total.elapsed() * 0.5) + 3) * 3
-				));
+				));*/
+			double t = total.elapsed();
+			light->setForward(Vec3(cos(t), 0, sin(t)));
 		}
 
 		(renderer)();

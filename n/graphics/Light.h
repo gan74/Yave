@@ -61,17 +61,36 @@ template<typename T = float>
 class DirectionalLight : public Light<T>
 {
 	public:
-		DirectionalLight() : Light<T>(), shadow(0) {
+		DirectionalLight() : Light<T>() {
 		}
 
 		virtual ~DirectionalLight() override {
-			delete shadow;
+		}
+};
+
+
+template<typename T = float>
+class BoxLight : public Light<T>
+{
+	public:
+		BoxLight(const math::Vec<3, T> &s = math::Vec<3, T>(10)) : Light<T>(), size(s) {
 		}
 
+		virtual ~BoxLight() override {
+		}
+
+		const math::Vec<3, T> &getSize() const {
+			return size;
+		}
+
+		void setSize(const math::Vec<3, T> &s) {
+			size = s;
+		}
 
 	private:
-		ShadowRenderer *shadow;
+		math::Vec<3, T> size;
 };
+
 
 template<typename T = float>
 class PointLight : public Light<T>

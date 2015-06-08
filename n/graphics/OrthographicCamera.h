@@ -32,7 +32,7 @@ class OrthographicCamera final : public Camera<T>
 		using Camera<T>::proj;
 
 	public:
-		OrthographicCamera() : Camera<T>(), size(100) {
+		OrthographicCamera(const math::Vec<3, T> &s) : Camera<T>(), size(s) {
 			radius = size.length();
 			computeVectors();
 			computeViewMatrix();
@@ -41,9 +41,9 @@ class OrthographicCamera final : public Camera<T>
 
 		void setPosition(const math::Vec<3, T> &pos) {
 			transform = math::Transform<T>(transform.getRotation(), pos);
-			view[0][3] = -side.dot(pos);
+			view[0][3] = side.dot(pos);
 			view[1][3] = -up.dot(pos);
-			view[2][3] = -forward.dot(pos);
+			view[2][3] = forward.dot(pos);
 		}
 
 		void setRotation(const math::Quaternion<T> &q) {
@@ -94,17 +94,17 @@ class OrthographicCamera final : public Camera<T>
 
 	private:
 		void computeVectors() {
-			forward = -transform.getX();
-			side = -transform.getY();
+			forward = transform.getX();
+			side = transform.getY();
 			up = transform.getZ();
 		}
 
 		void computeViewMatrix() {
-			math::Vec<3, T> p = this->getPosition();
-			view = math::Matrix4<T>(side.x(), side.y(), side.z(), -side.dot(p),
-									up.x(), up.y(), up.z(), -up.dot(p),
-									forward.x(), forward.y(), forward.z(), -forward.dot(p),
-									0, 0, 0, 1);
+			math::Vec<3, T> p = transform.getPosition();
+			view = math::Matrix4<T>(-side, side.dot(p),
+									up, -up.dot(p),
+									-forward, forward.dot(p),
+			0, 0, 0, 1);
 		}
 
 		void computeProjectionMatrix() {

@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Light.h"
 #include "VertexArrayObject.h"
 #include "GL.h"
-
 #include "ImageLoader.h"
 #include "CubeMap.h"
 
@@ -30,6 +29,7 @@ enum LightType
 {
 	Point,
 	Directional,
+	Box,
 
 	Max
 };
@@ -83,6 +83,15 @@ const VertexArrayObject<> &getSphere() {
 	return *sphere;
 }
 
+const VertexArrayObject<> &getBox() {
+	static VertexArrayObject<> *box = 0;
+	if(!box) {
+		box = new VertexArrayObject<>(TriangleBuffer<>::getCube());
+	}
+	return *box;
+}
+
+
 math::Vec3 posFromView(const math::Matrix4<> &view) {
 	math::Vec4 pos;
 	for(uint i = 0; i != 3; i++) {
@@ -102,8 +111,13 @@ struct FrameData
 template<LightType Type>
 ShaderCombinaison *getShader() {
 	static ShaderCombinaison *shader[LightType::Max] = {0};
-	core::String computeDir[LightType::Max] = {"return n_LightPos - x;", "return n_LightForward;"};
-	core::String attenuate[LightType::Max] = {"x = min(x, n_LightRadius); return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);", "return 1.0;"};
+	core::String computeDir[LightType::Max] = {"return n_LightPos - pos;",
+											   "return n_LightMatrix[0];",
+											   "return n_LightMatrix[0];"};
+	core::String attenuate[LightType::Max] = {"float x = min(lightDist, n_LightRadius); "
+												  "return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
+											  "return 1.0;",
+											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
 	if(!shader[Type]) {
 		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_1;"
@@ -114,7 +128,8 @@ ShaderCombinaison *getShader() {
 			"uniform vec3 n_Cam;"
 
 			"uniform vec3 n_LightPos;"
-			"uniform vec3 n_LightForward;"
+			"uniform mat3 n_LightMatrix;"
+			"uniform vec3 n_LightSize;"
 			"uniform vec3 n_LightColor;"
 			"uniform float n_LightRadius;"
 
@@ -132,11 +147,11 @@ ShaderCombinaison *getShader() {
 				"return (n_ScreenPosition.xy / n_ScreenPosition.w) * 0.5 + 0.5;"
 			"}"
 
-			"float attenuate(float x) {"
+			"float attenuate(vec3 lightDir, vec3 pos, float lightDist) {"
 				+ attenuate[Type] +
 			"}"
 
-			"vec3 computeDir(vec3 x) {"
+			"vec3 computeDir(vec3 pos) {"
 				+ computeDir[Type] +
 			"}"
 
@@ -179,15 +194,16 @@ ShaderCombinaison *getShader() {
 				"vec3 pos = unproj(texCoord);"
 				"vec3 normal = normalize(texture(n_1, texCoord).xyz * 2.0 - 1.0);"
 				"vec4 material = texture(n_2, texCoord);"
-				"vec3 dir = computeDir(pos);"
 				"vec3 view = normalize(n_Cam - pos);"
-				"float dist = length(dir);"
-				"dir /= dist;"
-				"float NoL = saturate(dot(normal, dir));"
-				"float att = attenuate(dist);"
-				"n_Out = vec4(n_LightColor * NoL * att * brdf(dir, view, normal, material), 1.0);"
+				"vec3 lightDir = computeDir(pos);"
+				"float lightDist = length(lightDir);"
+				"vec3 lightVec = lightDir / lightDist;"
+				"float att = attenuate(lightDir, pos, lightDist);"
+				"float NoL = saturate(dot(normal, lightDir));"
+				"n_Out = vec4(n_LightColor * NoL * att * brdf(lightDir, view, normal, material), 1.0);"
 				//"n_Out = vec4(vec3(brdf(dir, view, normal, material) + 0.25), 1.0);"
 				//"n_Out = vec4(vec3(NoL), 1);"
+				//"n_Out = vec4(pos, 1.0);"
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 	}
 	return shader[Type];
@@ -216,7 +232,6 @@ ShaderCombinaison *getCompositionShader() {
 				"vec4 light = texture(n_1, n_TexCoord);"
 				//"if(n_TexCoord.x < 0.5) { light = vec4(1.0); } else { color = vec4(1.0); }"
 				"n_Out = color * n_Ambient + color * light * (1.0 - n_Ambient);"
-				//"n_Out1 = light;"
 				//"n_Out = light;"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
@@ -235,16 +250,34 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 	sh->setValue("n_Cam", data->pos);
 
 	for(const Light<> *l : data->lights[Type]) {
+		math::Transform<> transform = l->getTransform();
+		math::Matrix3<> lightMatrix(-transform.getX().normalized(), -transform.getY().normalized(), -transform.getZ().normalized());
+
 		sh->setValue("n_LightPos", l->getPosition());
-		sh->setValue("n_LightForward", -l->getTransform().getX());
 		sh->setValue("n_LightRadius", l->getRadius());
 		sh->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
-		if(Type == Directional) {
-			GLContext::getContext()->getScreen().draw(VertexAttribs());
-		} else {
-			math::Transform<> tr(l->getPosition(), l->getRadius() + 1);
-			GLContext::getContext()->setModelMatrix(tr.getMatrix());
-			getSphere().draw(VertexAttribs());
+		sh->setValue("n_LightMatrix", lightMatrix.transposed());
+
+		switch(Type) {
+			case Directional:
+				GLContext::getContext()->getScreen().draw(VertexAttribs());
+			break;
+
+			case Box: {
+				const BoxLight<> *box = dynamic_cast<const BoxLight<> *>(l);
+				GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * box->getScale(), 0,
+																		lightMatrix[1] * box->getSize().y() * box->getScale(), 0,
+																		lightMatrix[2] * box->getSize().z() * box->getScale(), 0,
+																		0, 0, 0, 1).transposed());
+				sh->setValue("n_LightSize", box->getSize() * box->getScale());
+				getBox().draw(VertexAttribs());
+				//GLContext::getContext()->getScreen().draw(VertexAttribs());
+			} break;
+
+			case Point: {
+				GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
+				getSphere().draw(VertexAttribs());
+			} break;
 		}
 	}
 
@@ -282,7 +315,8 @@ void *DeferredShadingRenderer::prepare() {
 	return new FrameData({sceneData->camera->getPosition(),
 						  (sceneData->proj * sceneData->view).inverse(),
 						  {child->getRenderer()->getScene()->query<PointLight<>>(*sceneData->camera),
-							   child->getRenderer()->getScene()->get<DirectionalLight<>>()},
+							   child->getRenderer()->getScene()->get<DirectionalLight<>>(),
+							   child->getRenderer()->getScene()->get<BoxLight<>>()},
 						  ptr});
 }
 
@@ -303,6 +337,9 @@ void DeferredShadingRenderer::render(void *ptr) {
 
 		getLightMaterial<Point>().bind();
 		lightPass<Point>(data, child);
+
+		getLightMaterial<Box>().bind();
+		lightPass<Box>(data, child);
 
 		getLightMaterial<Directional>().bind(); // needed last for composition.
 		lightPass<Directional>(data, child);

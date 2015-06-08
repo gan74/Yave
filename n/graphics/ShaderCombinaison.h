@@ -164,6 +164,14 @@ class ShaderCombinaison : core::NonCopyable
 			gl::glProgramUniform4fv(handle, addr, 1, v.begin());
 		}
 
+		void setValue(UniformAddr addr, const math::Matrix2<float> &m) const {
+			gl::glProgramUniformMatrix2fv(handle, addr, 1, GL_TRUE, m.begin());
+		}
+
+		void setValue(UniformAddr addr, const math::Matrix3<float> &m) const {
+			gl::glProgramUniformMatrix3fv(handle, addr, 1, GL_TRUE, m.begin());
+		}
+
 		void setValue(UniformAddr addr, const math::Matrix4<float> &m) const {
 			gl::glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
 		}

@@ -117,7 +117,7 @@ bool run(SDL_Window *mainWindow) {
 				tone->setDebugEnabled(!tone->isDebugEnabled());
 			}
 		} else if(e.type == SDL_MOUSEMOTION && m1) {
-			mouse += Vec2(-e.motion.xrel, e.motion.yrel);
+			mouse += Vec2(e.motion.xrel, e.motion.yrel);
 		} else if(e.type == SDL_MOUSEBUTTONDOWN) {
 			m1 |= e.button.button == SDL_BUTTON_LEFT;
 		} else if(e.type == SDL_MOUSEBUTTONUP) {
