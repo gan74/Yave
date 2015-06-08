@@ -75,9 +75,9 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 							return 0;
 						}
 						mat->color = Color<>(fl[0], fl[1], fl[2], 1);
-					} else if(l.toLower().beginsWith("ni ")) {
-						float ni = float(l.subString(3));
-						mat->roughness = sqrt(2 / (ni + 2));
+					} else if(l.toLower().beginsWith("ns ")) {
+						float ns = float(l.subString(3));
+						mat->roughness = sqrt(2 / (ns + 2));
 					} else if(l.toLower().beginsWith("map_kd ")) {
 						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })), true);
 					} else if(l.toLower().beginsWith("map_bump ")) {
