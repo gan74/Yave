@@ -9,15 +9,19 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->setDebugEnabled(false);
 	}
 
-	OrthographicCamera<> cam;
+	PerspectiveCamera<> cam;
 	cam.setPosition(Vec3(-10, 0, 10));
-	//cam.setRatio(4/3.0);
+	cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
 	Light<> *light = 0;
 
 	Scene<> scene;
 	scene.insert(&cam);
+
+	/*for(uint i = 0; i != 25 * 1000; i++) {
+		scene.insert(new DummyRenderable());
+	}*/
 
 	/*for(uint i = 0; i != 50; i++) {
 		auto obj = new Obj("scube.obj");
