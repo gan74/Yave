@@ -82,8 +82,9 @@ class Scene : core::NonCopyable
 		template<typename U = Transformable<T>, typename V>
 		core::Array<U *> query(const V &vol) const {
 			if(std::is_same<U, Transformable<T>>::value) {
-				const core::Array<U *> *arr = reinterpret_cast<const core::Array<U *> *>(&transformables);
-				return *arr;
+				return transformables
+						.filtered([&](Transformable<T> *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
+						.mapped([=](Transformable<T> *v) { return reinterpret_cast<U *>(v); });
 			}
 			core::Array<U *> array(typename core::Array<U *>::Size(transformables.size()));
 			for(const TypedArray &p : typeMap) {
