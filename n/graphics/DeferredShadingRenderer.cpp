@@ -166,9 +166,9 @@ void lightGeometryPass(const Light<> *l, ShaderCombinaison *sh, const math::Vec3
 		case Box: {
 			const BoxLight<> *box = dynamic_cast<const BoxLight<> *>(l);
 			math::Matrix3<> lightMatrix(forward, -l->getTransform().getY().normalized(), -l->getTransform().getZ().normalized());
-			GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * box->getScale() * -2, 0,
-																	lightMatrix[1] * box->getSize().y() * box->getScale() * -2, 0,
-																	lightMatrix[2] * box->getSize().z() * box->getScale() * -2, 0,
+			GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * -2, 0,
+																	lightMatrix[1] * box->getSize().y() * -2, 0,
+																	lightMatrix[2] * box->getSize().z() * -2, 0,
 																	0, 0, 0, 1).transposed());
 			sh->setValue("n_LightSize", box->getSize() * box->getScale());
 			sh->setValue("n_LightMatrix", lightMatrix);
