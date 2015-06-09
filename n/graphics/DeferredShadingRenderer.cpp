@@ -50,8 +50,8 @@ template<LightType Type>
 ShaderCombinaison *getShader() {
 	static ShaderCombinaison *shader[LightType::Max] = {0};
 	core::String computeDir[LightType::Max] = {"return n_LightPos - pos;",
-											   "return n_LightMatrix[0];",
-											   "return n_LightMatrix[0];"};
+											   "return n_LightForward;",
+											   "return n_LightForward;"};
 	core::String attenuate[LightType::Max] = {"float x = min(lightDist, n_LightRadius); "
 												  "return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
 											  "return 1.0;",
@@ -66,10 +66,12 @@ ShaderCombinaison *getShader() {
 			"uniform vec3 n_Cam;"
 
 			"uniform vec3 n_LightPos;"
+			"uniform vec3 n_LightForward;"
+			"uniform vec3 n_LightColor;"
+
+			"uniform float n_LightRadius;"
 			"uniform mat3 n_LightMatrix;"
 			"uniform vec3 n_LightSize;"
-			"uniform vec3 n_LightColor;"
-			"uniform float n_LightRadius;"
 
 			"uniform sampler2D n_LightShadow;"
 			"uniform float n_LightShadowMul;"
@@ -91,7 +93,7 @@ ShaderCombinaison *getShader() {
 			"float computeShadow(vec3 pos) {"
 				"vec3 proj = projectShadow(pos);"
 				"float d = texture(n_LightShadow, proj.xy).x;"
-				"return d < proj.z ? 0.0 : 1.0;"
+				"return step(proj.z, d);"
 			"}"
 
 			"vec3 unproj(vec2 C) {"
@@ -155,7 +157,7 @@ ShaderCombinaison *getShader() {
 
 
 template<LightType Type>
-void lightGeometryPass(const Light<> *l, ShaderCombinaison *sh, const math::Matrix3<> &lightMatrix) {
+void lightGeometryPass(const Light<> *l, ShaderCombinaison *sh, const math::Vec3 &forward) {
 	switch(Type) {
 		case Directional:
 			GLContext::getContext()->getScreen().draw(VertexAttribs());
@@ -163,18 +165,20 @@ void lightGeometryPass(const Light<> *l, ShaderCombinaison *sh, const math::Matr
 
 		case Box: {
 			const BoxLight<> *box = dynamic_cast<const BoxLight<> *>(l);
-			GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * -box->getScale(), 0,
-																	lightMatrix[1] * box->getSize().y() * -box->getScale(), 0,
-																	lightMatrix[2] * box->getSize().z() * -box->getScale(), 0,
+			math::Matrix3<> lightMatrix(forward, -l->getTransform().getY().normalized(), -l->getTransform().getZ().normalized());
+			GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * box->getScale() * -2, 0,
+																	lightMatrix[1] * box->getSize().y() * box->getScale() * -2, 0,
+																	lightMatrix[2] * box->getSize().z() * box->getScale() * -2, 0,
 																	0, 0, 0, 1).transposed());
-			sh->setValue("n_LightSize", box->getSize() * box->getScale() * 2);
+			sh->setValue("n_LightSize", box->getSize() * box->getScale());
+			sh->setValue("n_LightMatrix", lightMatrix);
 			getBox().draw(VertexAttribs());
 		} break;
 
-		case Point: {
+		case Point:
 			GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
 			getSphere().draw(VertexAttribs());
-		} break;
+		break;
 	}
 }
 
@@ -201,19 +205,18 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 
 	for(const LightData &ld : data->lights[Type]) {
 		const Light<> *l = ld.light;
-		math::Transform<> transform = l->getTransform();
-		math::Matrix3<> lightMatrix(-transform.getX().normalized(), -transform.getY().normalized(), -transform.getZ().normalized());
+		math::Vec3 forward = -l->getTransform().getX().normalized();
 
 		sh->setValue("n_LightPos", l->getPosition());
 		sh->setValue("n_LightRadius", l->getRadius());
 		sh->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
-		sh->setValue("n_LightMatrix", lightMatrix.transposed());
+		sh->setValue("n_LightForward", forward);
 		sh->setValue("n_LightShadowMul", l->castShadows() ? 1.0 : 0.0);
 		if(l->castShadows()) {
 			sh->setValue("n_LightShadow", l->getShadowRenderer()->getDepth());
 			sh->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
 		}
-		lightGeometryPass<Type>(l, sh, lightMatrix);
+		lightGeometryPass<Type>(l, sh, forward);
 	}
 
 	return sh;
