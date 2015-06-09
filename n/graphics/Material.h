@@ -62,7 +62,6 @@ struct MaterialData
 	Texture diffuse;
 	Texture normal;
 	T normalIntencity;
-	//Texture bump;
 
 	core::Map<core::String, Texture> textures;
 };
@@ -71,7 +70,7 @@ namespace internal {
 	//extern Texture bumpToNormal(Texture bump);
 
 	template<typename T = float>
-	struct Material
+	struct Material : core::NonCopyable
 	{
 		static concurrent::Mutex mutex;
 		static bool sorted;
