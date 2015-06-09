@@ -68,7 +68,9 @@ class Scene : core::NonCopyable
 					if(u) {
 						int off = (int)u - (int)p._2.first();
 						if(off) {
-							array.append(p._2.mapped([=](Transformable<T> *v) { return (U *)((byte *)v + off); }));
+							for(Transformable<T> *v : p._2) {
+								array.append((U *)((byte *)v + off));
+							}
 						} else {
 							const core::Array<U *> *arr = (reinterpret_cast<const core::Array<U *> *>(&p._2));
 							array.append(*arr);
@@ -92,9 +94,15 @@ class Scene : core::NonCopyable
 					U *u = dynamic_cast<U *>(p._2.first());
 					if(u) {
 						uint off = (uint)u - (uint)p._2.first();
-						array.append(p._2
+						for(Transformable<T> *v : p._2) {
+							if(v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius())) {
+								array.append((U *)((byte *)v + off));
+							}
+						}
+
+						/*array.append(p._2
 							.filtered([&](Transformable<T> *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
-							.mapped([=](Transformable<T> *v) { return (U *)((byte *)v + off); }));
+							.mapped([=](Transformable<T> *v) { return (U *)((byte *)v + off); }));*/
 
 					}
 				}

@@ -104,8 +104,8 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	int minor = 0;
 	gl::glGetIntegerv(GL_MAJOR_VERSION, &major);
 	gl::glGetIntegerv(GL_MINOR_VERSION, &minor);
-	if(major > 4 || (major == 4 && minor < 3)) {
-		fatal("This needs OpenGL 4.3 or newer to run");
+	if(major < 4 || (major == 4 && minor < 3)) {
+		fatal("This needs OpenGL 4.3 or newer to run.");
 	}
 
 	//gl::glEnable(GL_TEXTURE_2D);
@@ -124,11 +124,11 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	gl::glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
 
 	if(hwInts[MaxVertexAttribs] <= 4) {
-		fatal("No enought vertex attribs.");
+		fatal("Not enought vertex attribs.");
 	}
 
 
-	#define CHECK_TEX_FORMAT(frm) if(!Texture::isHWSupported(ImageFormat::frm)) { fatal(("Texture format " + core::String(#frm) + " not supported").toChar()); }
+	#define CHECK_TEX_FORMAT(frm) if(!Texture::isHWSupported(ImageFormat::frm)) { fatal(("Texture format " + core::String(#frm) + " not supported.").toChar()); }
 
 	CHECK_TEX_FORMAT(RGBA32F);
 	CHECK_TEX_FORMAT(RGBA16);

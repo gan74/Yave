@@ -53,6 +53,9 @@ HEADERS += dependencies/lodepng/*.h
 SOURCES += dependencies/glew/glew.c
 
 
+QMAKE_CXXFLAGS += -ffast-math #-mstackrealign -msse3
+QMAKE_LFLAGS += -ffast-math #-mstackrealign -msse3
+
 CONFIG(debug, debug|release) {
 	OBJECTS_DIR = bin/debug
 	DEFINES += N_DEBUG
@@ -61,8 +64,8 @@ CONFIG(debug, debug|release) {
 	QMAKE_LFLAGS += -ftest-coverage -fprofile-generate -fprofile-correction
 } else {
 	OBJECTS_DIR = bin/release
-	QMAKE_CXXFLAGS += -flto
-	QMAKE_LFLAGS += -flto
+	QMAKE_CXXFLAGS += -O3 -flto
+	QMAKE_LFLAGS += -O3 -flto
 	QMAKE_CXXFLAGS += -fprofile-use -fprofile-correction
 	QMAKE_LFLAGS += -fprofile-use -fprofile-correction
 }

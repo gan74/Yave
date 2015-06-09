@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "DeferredShadingRenderer.h"
 #include "DeferredCommon.h"
 
-#include <iostream>
-
 namespace n {
 namespace graphics {
 

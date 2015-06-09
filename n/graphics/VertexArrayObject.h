@@ -71,7 +71,7 @@ class VertexArrayObject : core::NonCopyable
 					fatal("Vertex attribs slots <= 3 are reserved.");
 				}
 				if(attrib.slot - 4 >= maxAttribs()) {
-					fatal("No enought vertex attribs slots.");
+					fatal("Not enought vertex attribs slots.");
 				}
 				if(att[attrib.slot - 4]) {
 					fatal("Multiple vertex attribs on same slot.");
