@@ -52,6 +52,24 @@ class SceneRenderer : public BufferableRenderer
 			return prepare(cam);
 		}
 
+		const Camera<> *getCamera() {
+			core::Array<Camera<> *> arr = sce->get<Camera<>>();
+			if(arr.isEmpty()) {
+				return 0;
+			}
+			return arr.first();
+		}
+
+		virtual void render(void *ptr) override {
+			render(ptr, RenderFlag::None);
+		}
+
+		const Scene<> *getScene() const {
+			return sce;
+		}
+
+
+
 		void *prepare(const Camera<> *cam) {
 			FrameData *data = new FrameData();
 			data->proj = cam->getProjectionMatrix();
@@ -65,15 +83,7 @@ class SceneRenderer : public BufferableRenderer
 			return data;
 		}
 
-		const Camera<> *getCamera() {
-			core::Array<Camera<> *> arr = sce->get<Camera<>>();
-			if(arr.isEmpty()) {
-				return 0;
-			}
-			return arr.first();
-		}
-
-		virtual void render(void *ptr) override {
+		void render(void *ptr, uint renderFlags) {
 			FrameBuffer::clear(true, true);
 			if(!ptr) {
 				return;
@@ -82,16 +92,12 @@ class SceneRenderer : public BufferableRenderer
 			GLContext::getContext()->setProjectionMatrix(data->proj);
 			GLContext::getContext()->setViewMatrix(data->view);
 			for(const auto q : data->queue.getBatches()) {
-				q();
+				q(renderFlags);
 			}
 			for(const auto q : data->queue.getFunctions()) {
 				q();
 			}
 			delete data;
-		}
-
-		const Scene<> *getScene() const {
-			return sce;
 		}
 
 	private:

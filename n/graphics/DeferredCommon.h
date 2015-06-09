@@ -40,13 +40,13 @@ const Material<> &getLightMaterial() {
 	static Material<> mat[LightType::Max];
 	if(mat[Type].isNull()) {
 		MaterialData<> i;
-		i.blend = Add;
+		i.blend = MaterialData<>::Add;
 		i.depthWrite = false;
 		if(Type == Directional) {
-			i.depth = Always;
+			i.depth = MaterialData<>::Always;
 		} else {
-			i.depth = Greater;
-			i.cull = Front;
+			i.depth = MaterialData<>::Greater;
+			i.cull = MaterialData<>::Front;
 		}
 		mat[Type] = Material<>(i);
 	}

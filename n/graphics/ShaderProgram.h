@@ -120,6 +120,10 @@ class ShaderProgram
 		static Shader<VertexShader> *getDefaultVertexShader(StandardVertexShader type = ProjectionShader);
 		static Shader<FragmentShader> *getDefaultFragmentShader();
 
+		bool isDefaultProgram() const {
+			return ptr->base.isNull();
+		}
+
 		bool operator==(const ShaderProgram &p) const {
 			return ptr->base == p.ptr->base;
 		}

@@ -36,11 +36,11 @@ class MeshInstanceBase : core::NonCopyable
 			delete vao;
 		}
 
-		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
+		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
 			if(!vao) {
 				vao = new VertexArrayObject<T>(buffer);
 			}
-			material.bind();
+			material.bind(renderFlags);
 			vao->draw(attribs, instances);
 		}
 

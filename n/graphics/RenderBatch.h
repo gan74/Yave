@@ -30,9 +30,9 @@ class RenderBatch
 		RenderBatch(const math::Matrix4<> &m, MeshInstanceBase<> *i, const VertexAttribs &attr = VertexAttribs()) : instanciable(true), inst(i), matrix(m), attribs(attr) {
 		}
 
-		void operator()() const {
+		void operator()(uint renderFlags = RenderFlag::None) const {
 			GLContext::getContext()->setModelMatrix(matrix);
-			inst->draw(attribs);
+			inst->draw(attribs, renderFlags);
 		}
 
 		bool isInstanciable() const {

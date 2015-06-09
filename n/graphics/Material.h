@@ -24,26 +24,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-enum CullMode {
-	DontCull = 2,
-	Back = 0,
-	Front = 1
-};
-
-enum BlendMode {
-	None,
-	Add
-};
-
-enum DepthMode {
-	Lesser,
-	Greater,
-	Always
+enum RenderFlag
+{
+	None = 0x00,
+	FastDepth = 0x01
 };
 
 template<typename T = float>
 struct MaterialData
 {
+	enum CullMode {
+		DontCull = 2,
+		Back = 0,
+		Front = 1
+	};
+
+	enum BlendMode {
+		None,
+		Add
+	};
+
+	enum DepthMode {
+		Lesser,
+		Greater,
+		Always
+	};
+
 	MaterialData() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5) {
 	}
 
@@ -164,7 +170,7 @@ class Material : private assets::Asset<internal::Material<T>>
 			return getData().color;
 		}
 
-		void bind() const {
+		void bind(uint flags = RenderFlag::None) const {
 			#warning binding shader after binding material will fail
 			const internal::Material<T> *i = getInternal();
 			if(i) {
@@ -172,6 +178,13 @@ class Material : private assets::Asset<internal::Material<T>>
 			}
 			const internal::Material<T> *c = GLContext::getContext()->material.operator->();
 			const ShaderCombinaison *sh = GLContext::getContext()->getShader();
+
+			if(flags & RenderFlag::FastDepth) {
+				if(i->data.prog.isDefaultProgram()) {
+					sh = 0;
+				}
+			}
+
 			if(!i) {
 				i = getNull().operator->();
 			}
@@ -189,8 +202,6 @@ class Material : private assets::Asset<internal::Material<T>>
 				for(const auto &p : i->data.textures) {
 					sh->setValue(p._1, p._2);
 				}
-			} else {
-				fatal("No shader or no material");
 			}
 			if(!c || c->data.depthTested != i->data.depthTested) {
 				if(i->data.depthTested) {
@@ -202,9 +213,9 @@ class Material : private assets::Asset<internal::Material<T>>
 			if(!c || c->data.depth != i->data.depth) {
 				gl::GLenum funcs[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
 				gl::glDepthFunc(funcs[i->data.depth]);
-				if(i->data.depth == Greater) {
+				if(i->data.depth == MaterialData<T>::Greater) {
 					gl::glEnable(GL_DEPTH_CLAMP);
-				} else if(i->data.depth == Lesser) {
+				} else if(i->data.depth == MaterialData<T>::Lesser || i->data.depth == MaterialData<T>::Always) {
 					gl::glDisable(GL_DEPTH_CLAMP);
 				}
 			}
@@ -212,10 +223,10 @@ class Material : private assets::Asset<internal::Material<T>>
 				gl::glDepthMask(i->data.depthWrite);
 			}
 			if(!c || c->data.cull != i->data.cull) {
-				if(i->data.cull == DontCull) {
+				if(i->data.cull == MaterialData<T>::DontCull) {
 					gl::glDisable(GL_CULL_FACE);
 				} else {
-					if(!c || c->data.cull == DontCull) {
+					if(!c || c->data.cull == MaterialData<T>::DontCull) {
 						gl::glEnable(GL_CULL_FACE);
 					}
 					gl::GLenum glc[] = {GL_BACK, GL_FRONT};
@@ -223,15 +234,15 @@ class Material : private assets::Asset<internal::Material<T>>
 				}
 			}
 			if(!c || c->data.blend != i->data.blend) {
-				if(i->data.blend == None) {
+				if(i->data.blend == MaterialData<T>::None) {
 					gl::glDisable(GL_BLEND);
 				} else {
-					if(!c || c->data.blend == None) {
+					if(!c || c->data.blend == MaterialData<T>::None) {
 						gl::glEnable(GL_BLEND);
 					}
-					static BlendMode blendMode = None;
+					static typename MaterialData<T>::BlendMode blendMode = MaterialData<T>::None;
 					if(blendMode != i->data.blend) {
-						if(i->data.blend == Add) {
+						if(i->data.blend == MaterialData<T>::Add) {
 							gl::glBlendFunc(GL_ONE, GL_ONE);
 						}
 						blendMode = i->data.blend;
