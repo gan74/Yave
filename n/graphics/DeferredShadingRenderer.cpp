@@ -40,7 +40,7 @@ ShaderCombinaison *getShader() {
 	core::String attenuate[LightType::Max] = {"float x = min(lightDist, n_LightRadius); "
 												  "return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
 											  "return 1.0;",
-											  "return /*any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : */1.0;"};
+											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
 	if(!shader[Type]) {
 		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
@@ -62,6 +62,8 @@ ShaderCombinaison *getShader() {
 
 			"const float epsilon = 0.0001;"
 
+			+ getBRDFs() +
+
 			"vec3 unproj(vec2 C) {"
 				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
 				"vec4 P = n_Inv * VP;"
@@ -79,8 +81,6 @@ ShaderCombinaison *getShader() {
 			"vec3 computeDir(vec3 pos) {"
 				+ computeDir[Type] +
 			"}"
-
-			+ getBRDFs() +
 
 			"void main() {"
 				"vec2 texCoord = computeTexCoord();"
