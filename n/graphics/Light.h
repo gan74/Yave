@@ -97,8 +97,8 @@ class PointLight : public Light<T>
 {
 	using Transformable<T>::radius;
 	public:
-		PointLight() : Light<T>() {
-			Transformable<T>::radius = 1;
+		PointLight(T r = T(1)) : Light<T>() {
+			Transformable<T>::radius = r;
 		}
 
 		virtual ~PointLight() {

@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "DeferredShadingRenderer.h"
 #include "DeferredCommon.h"
 
+#include <iostream>
+
 namespace n {
 namespace graphics {
 
@@ -38,7 +40,7 @@ ShaderCombinaison *getShader() {
 	core::String attenuate[LightType::Max] = {"float x = min(lightDist, n_LightRadius); "
 												  "return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
 											  "return 1.0;",
-											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
+											  "return /*any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : */1.0;"};
 	if(!shader[Type]) {
 		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
@@ -101,7 +103,7 @@ ShaderCombinaison *getShader() {
 
 				//"n_Out = vec4(vec3(brdf(dir, view, normal, material) + 0.25), 1.0);"
 				//"n_Out = vec4(vec3(NoL), 1);"
-				//"n_Out = vec4(pos, 1.0);"
+				//"n_Out = vec4(1.0);"
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 	}
 	return shader[Type];
@@ -136,9 +138,9 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 
 			case Box: {
 				const BoxLight<> *box = dynamic_cast<const BoxLight<> *>(l);
-				GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * box->getScale(), 0,
-																		lightMatrix[1] * box->getSize().y() * box->getScale(), 0,
-																		lightMatrix[2] * box->getSize().z() * box->getScale(), 0,
+				GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * -box->getScale(), 0,
+																		lightMatrix[1] * box->getSize().y() * -box->getScale(), 0,
+																		lightMatrix[2] * box->getSize().z() * -box->getScale(), 0,
 																		0, 0, 0, 1).transposed());
 				sh->setValue("n_LightSize", box->getSize() * box->getScale());
 				getBox().draw(VertexAttribs());
