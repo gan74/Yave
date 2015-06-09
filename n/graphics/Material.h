@@ -202,6 +202,11 @@ class Material : private assets::Asset<internal::Material<T>>
 			if(!c || c->data.depth != i->data.depth) {
 				gl::GLenum funcs[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
 				gl::glDepthFunc(funcs[i->data.depth]);
+				if(i->data.depth == Greater) {
+					gl::glEnable(GL_DEPTH_CLAMP);
+				} else if(i->data.depth == Lesser) {
+					gl::glDisable(GL_DEPTH_CLAMP);
+				}
 			}
 			if(!c || c->data.depthWrite != i->data.depthWrite) {
 				gl::glDepthMask(i->data.depthWrite);
