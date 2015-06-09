@@ -34,8 +34,8 @@ class SynchronizedQueue
 		void queue(const T &e) {
 			mutex.lock();
 			list.append(e);
-			mutex.unlock();
 			mutex.notify();
+			mutex.unlock();
 		}
 
 		T dequeue() {
