@@ -68,8 +68,7 @@ int main(int argc, char **argv) {
 
 	{
 		BoxLight<> *l = new BoxLight<>(800);
-		//l->setForward(Vec3(0.25, 0.5, -1));
-		l->setForward(Vec3(0, 0, -1));
+		l->setForward(Vec3(0.25, 0.5, -1));
 		l->setIntensity(5);
 		l->setCastShadows(&scene, 4 * 1024);
 		scene.insert(light = l);

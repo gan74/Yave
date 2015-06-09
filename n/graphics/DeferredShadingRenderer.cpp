@@ -91,7 +91,7 @@ ShaderCombinaison *getShader() {
 			"float computeShadow(vec3 pos) {"
 				"vec3 proj = projectShadow(pos);"
 				"float d = texture(n_LightShadow, proj.xy).x;"
-				"return d + epsilon < proj.z ? 0.0 : 1.0;"
+				"return d < proj.z ? 0.0 : 1.0;"
 			"}"
 
 			"vec3 unproj(vec2 C) {"

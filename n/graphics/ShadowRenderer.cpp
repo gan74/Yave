@@ -40,10 +40,17 @@ void *BoxLightShadowRenderer::prepare() {
 
 void BoxLightShadowRenderer::render(void *ptr) {
 	SceneRenderer::FrameData *sceneData = reinterpret_cast<SceneRenderer::FrameData *>(ptr);
+
 	gl::glColorMask(false, false, false, false);
+	gl::glEnable(GL_POLYGON_OFFSET_FILL);
+	gl::glPolygonOffset(4.0, 1.0);
+
 	buffer.bind();
 	child->render(ptr, RenderFlag::FastDepth);
+
 	gl::glColorMask(true, true, true, true);
+	gl::glDisable(GL_POLYGON_OFFSET_FILL);
+
 	delete sceneData->camera;
 	FrameBuffer::unbind();
 }
