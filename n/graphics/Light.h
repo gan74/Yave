@@ -93,7 +93,7 @@ class BoxLight : public Light<T>
 		}
 
 		const math::Vec<3, T> &getSize() const {
-			return size;
+			return size * getScale();
 		}
 
 		void setSize(const math::Vec<3, T> &s) {
