@@ -15,71 +15,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "DeferredShadingRenderer.h"
-#include "Light.h"
-#include "VertexArrayObject.h"
-#include "GL.h"
-#include "ImageLoader.h"
-#include "CubeMap.h"
+#include "DeferredCommon.h"
 
 namespace n {
 namespace graphics {
-
-
-enum LightType
-{
-	Point,
-	Directional,
-	Box,
-
-	Max
-};
-
-template<LightType Type>
-const Material<> &getLightMaterial() {
-	static Material<> mat[LightType::Max];
-	if(mat[Type].isNull()) {
-		MaterialData<> i;
-		i.blend = Add;
-		i.depthWrite = false;
-		if(Type == Directional) {
-			i.depth = Always;
-		} else {
-			i.depth = Greater;
-			i.cull = Front;
-		}
-		mat[Type] = Material<>(i);
-	}
-	return mat[Type];
-}
-
-const CubeMap &getCube() {
-	static CubeMap *c = 0;
-	if(!c) {
-		c = new CubeMap(Texture(ImageLoader::load<core::String>("skybox/top.tga")),
-						Texture(ImageLoader::load<core::String>("skybox/bottom.tga")),
-						Texture(ImageLoader::load<core::String>("skybox/right.tga")),
-						Texture(ImageLoader::load<core::String>("skybox/left.tga")),
-						Texture(ImageLoader::load<core::String>("skybox/front.tga")),
-						Texture(ImageLoader::load<core::String>("skybox/back.tga")));
-	}
-	return *c;
-}
-
-const VertexArrayObject<> &getSphere() {
-	static VertexArrayObject<> *sphere = 0;
-	if(!sphere) {
-		sphere = new VertexArrayObject<>(TriangleBuffer<>::getSphere());
-	}
-	return *sphere;
-}
-
-const VertexArrayObject<> &getBox() {
-	static VertexArrayObject<> *box = 0;
-	if(!box) {
-		box = new VertexArrayObject<>(TriangleBuffer<>::getCube());
-	}
-	return *box;
-}
 
 struct FrameData
 {
@@ -88,6 +27,7 @@ struct FrameData
 	core::Array<Light<> *> lights[LightType::Max];
 	void *child;
 };
+
 
 template<LightType Type>
 ShaderCombinaison *getShader() {
@@ -138,33 +78,7 @@ ShaderCombinaison *getShader() {
 				+ computeDir[Type] +
 			"}"
 
-			"float brdf_lambert(vec3 L, vec3 V, vec3 N, vec4 M) {"
-				"return 1.0 / pi;"
-			"}"
-
-			"float brdf_cook_torrance(vec3 L, vec3 V, vec3 N, vec4 M) {"
-				"float NoV = abs(dot(N, V)) + epsilon;"
-				"vec3 H = normalize(L + V);"
-				"float LoH = saturate(dot(L, H));"
-				"float NoH = saturate(dot(N, H));"
-				"float NoL = saturate(dot(N, L));"
-				"float roughness = M.x + epsilon;"
-				"float a = sqr(roughness);"
-				"float a2 = sqr(a);"
-
-				"float d = (NoH * a2 - NoH) * NoH + 1;"
-				"float D = a2 / (pi * d * d);"
-
-				"float K = sqr(roughness + 1) / 8.0;"
-				"float G1L = NoL / (NoL * (1.0 - K) + K);"
-				"float G1V = NoV / (NoV * (1.0 - K) + K);"
-				"float G = G1L * G1V;"
-
-				"float F0 = M.z;"
-				"float F = F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0);"
-
-				"return saturate(F) * saturate(G) * max(0.0, D) / max(epsilon, 4.0 * NoL * NoV);"
-			"}"
+			+ getBRDFs() +
 
 			"void main() {"
 				"vec2 texCoord = computeTexCoord();"
@@ -192,6 +106,7 @@ ShaderCombinaison *getShader() {
 	}
 	return shader[Type];
 }
+
 
 template<LightType Type>
 ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
