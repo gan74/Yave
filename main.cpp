@@ -65,11 +65,14 @@ int main(int argc, char **argv) {
 		l->setIntensity(100000);
 		scene.insert(light = l);
 	}*/
+
 	{
-		Light<> *l = new DirectionalLight<>();
-		l->setForward(Vec3(0.25, 0.5, -1));
+		BoxLight<> *l = new BoxLight<>(800);
+		//l->setForward(Vec3(0.25, 0.5, -1));
+		l->setForward(Vec3(0, 0, -1));
 		l->setIntensity(5);
-		scene.insert(l);
+		l->setCastShadows(&scene, 4 * 1024);
+		scene.insert(light = l);
 	}
 
 	BufferedRenderer *ri = 0;
@@ -85,7 +88,7 @@ int main(int argc, char **argv) {
 
 	while(run(win)) {
 		double dt = timer.reset();
-		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 50);
+		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 100);
 		Vec2 angle = mouse * 0.01;
 		float p2 = pi<>() * 0.5 - 0.01;
 		angle.y() = std::min(std::max(angle.y(), -p2), p2);
@@ -96,8 +99,9 @@ int main(int argc, char **argv) {
 			/*light->setIntensity(exp(
 					(sin(total.elapsed() * 0.5) + 3) * 3
 				));*/
-			double t = total.elapsed();
-			light->setForward(Vec3(cos(t), 0, sin(t)));
+			double t = (fmod(total.elapsed() * 0.01, 0.5) + 0.25) * -pi<>();
+			light->setForward(Vec3(0, cos(t), sin(t)));
+			//light->setForward(f);
 		}
 
 		(renderer)();

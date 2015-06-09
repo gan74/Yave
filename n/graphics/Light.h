@@ -30,10 +30,11 @@ template<typename T = float>
 class Light : public Movable<T>
 {
 	public:
-		Light() : Movable<T>(), intensity(1), color(1) {
+		Light() : Movable<T>(), intensity(1), color(1), shadows(0) {
 		}
 
 		virtual ~Light() {
+			delete shadows;
 		}
 
 		const Color<T> &getColor() const {
@@ -52,9 +53,20 @@ class Light : public Movable<T>
 			intensity = t;
 		}
 
+		bool castShadows() const {
+			return shadows;
+		}
+
+		ShadowRenderer<T> *getShadowRenderer() const {
+			return shadows;
+		}
+
 	private:
 		T intensity;
 		Color<T> color;
+
+	protected:
+		ShadowRenderer<T> *shadows;
 };
 
 template<typename T = float>
@@ -72,11 +84,12 @@ class DirectionalLight : public Light<T>
 template<typename T = float>
 class BoxLight : public Light<T>
 {
+	using Light<T>::shadows;
 	public:
 		BoxLight(const math::Vec<3, T> &s = math::Vec<3, T>(10)) : Light<T>(), size(s) {
 		}
 
-		virtual ~BoxLight() override {
+		virtual ~BoxLight() {
 		}
 
 		const math::Vec<3, T> &getSize() const {
@@ -85,6 +98,14 @@ class BoxLight : public Light<T>
 
 		void setSize(const math::Vec<3, T> &s) {
 			size = s;
+		}
+
+		void setCastShadows(const Scene<T> *sc, uint res = 1024) {
+			delete shadows;
+			shadows = 0;
+			if(sc) {
+				shadows = new BoxLightShadowRenderer(this, sc, res);
+			}
 		}
 
 	private:

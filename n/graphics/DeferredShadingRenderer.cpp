@@ -22,13 +22,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+struct LightData
+{
+	LightData(Light<> *l) : light(l), shadowData(light->castShadows() ? light->getShadowRenderer()->prepare() : 0) {
+	}
+
+	Light<> *light;
+	void *shadowData;
+};
+
 struct FrameData
 {
 	math::Vec3 pos;
 	math::Matrix4<> inv;
-	core::Array<Light<> *> lights[LightType::Max];
+	core::Array<LightData> lights[LightType::Max];
 	void *child;
 };
+
+
+
+
+
+
+
+
 
 
 template<LightType Type>
@@ -56,6 +73,10 @@ ShaderCombinaison *getShader() {
 			"uniform vec3 n_LightColor;"
 			"uniform float n_LightRadius;"
 
+			"uniform sampler2D n_LightShadow;"
+			"uniform float n_LightShadowMul;"
+			"uniform mat4 n_LightShadowMatrix;"
+
 			"in vec4 n_ScreenPosition;"
 
 			"out vec4 n_Out;"
@@ -63,6 +84,17 @@ ShaderCombinaison *getShader() {
 			"const float epsilon = 0.0001;"
 
 			+ getBRDFs() +
+
+			"vec3 projectShadow(vec3 p) {"
+				"vec4 proj = n_LightShadowMatrix * vec4(p, 1);"
+				"return (proj.xyz / proj.w) * 0.5 + 0.5;"
+			"}"
+
+			"float computeShadow(vec3 pos) {"
+				"vec3 proj = projectShadow(pos);"
+				"float d = texture(n_LightShadow, proj.xy).x;"
+				"return d + epsilon < proj.z ? 0.0 : 1.0;"
+			"}"
 
 			"vec3 unproj(vec2 C) {"
 				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
@@ -92,10 +124,16 @@ ShaderCombinaison *getShader() {
 				"vec3 lightDir = computeDir(pos);"
 				"float lightDist = length(lightDir);"
 				"vec3 lightVec = lightDir / lightDist;"
+				"float metallic = material.y;"
+
+				"float shadow = 1.0;"
+				"if(n_LightShadowMul != 0.0) {"
+					"shadow = computeShadow(pos);"
+				"}"
+
 				"float att = attenuate(lightDir, pos, lightDist);"
 				"float NoL = saturate(dot(normal, lightDir));"
-				"vec3 light = n_LightColor * NoL * att;"
-				"float metallic = material.y;"
+				"vec3 light = n_LightColor * NoL * att * shadow;"
 
 				"float diffuse = brdf_lambert(lightDir, view, normal, material);"
 				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
@@ -103,11 +141,52 @@ ShaderCombinaison *getShader() {
 
 				//"n_Out = vec4(vec3(brdf(dir, view, normal, material) + 0.25), 1.0);"
 				//"n_Out = vec4(vec3(NoL), 1);"
-				//"n_Out = vec4(1.0);"
+				//"n_Out = vec4(shadow);"
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 	}
 	return shader[Type];
 }
+
+
+
+
+
+
+
+
+
+
+template<LightType Type>
+void lightGeometryPass(const Light<> *l, ShaderCombinaison *sh, const math::Matrix3<> &lightMatrix) {
+	switch(Type) {
+		case Directional:
+			GLContext::getContext()->getScreen().draw(VertexAttribs());
+		break;
+
+		case Box: {
+			const BoxLight<> *box = dynamic_cast<const BoxLight<> *>(l);
+			GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * -box->getScale(), 0,
+																	lightMatrix[1] * box->getSize().y() * -box->getScale(), 0,
+																	lightMatrix[2] * box->getSize().z() * -box->getScale(), 0,
+																	0, 0, 0, 1).transposed());
+			sh->setValue("n_LightSize", box->getSize() * box->getScale() * 2);
+			getBox().draw(VertexAttribs());
+		} break;
+
+		case Point: {
+			GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
+			getSphere().draw(VertexAttribs());
+		} break;
+	}
+}
+
+
+
+
+
+
+
+
 
 
 template<LightType Type>
@@ -122,7 +201,8 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 	sh->setValue("n_Inv", data->inv);
 	sh->setValue("n_Cam", data->pos);
 
-	for(const Light<> *l : data->lights[Type]) {
+	for(const LightData &ld : data->lights[Type]) {
+		const Light<> *l = ld.light;
 		math::Transform<> transform = l->getTransform();
 		math::Matrix3<> lightMatrix(-transform.getX().normalized(), -transform.getY().normalized(), -transform.getZ().normalized());
 
@@ -130,31 +210,26 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 		sh->setValue("n_LightRadius", l->getRadius());
 		sh->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
 		sh->setValue("n_LightMatrix", lightMatrix.transposed());
-
-		switch(Type) {
-			case Directional:
-				GLContext::getContext()->getScreen().draw(VertexAttribs());
-			break;
-
-			case Box: {
-				const BoxLight<> *box = dynamic_cast<const BoxLight<> *>(l);
-				GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * -box->getScale(), 0,
-																		lightMatrix[1] * box->getSize().y() * -box->getScale(), 0,
-																		lightMatrix[2] * box->getSize().z() * -box->getScale(), 0,
-																		0, 0, 0, 1).transposed());
-				sh->setValue("n_LightSize", box->getSize() * box->getScale());
-				getBox().draw(VertexAttribs());
-			} break;
-
-			case Point: {
-				GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
-				getSphere().draw(VertexAttribs());
-			} break;
+		sh->setValue("n_LightShadowMul", l->castShadows() ? 1.0 : 0.0);
+		if(l->castShadows()) {
+			sh->setValue("n_LightShadow", l->getShadowRenderer()->getDepth());
+			sh->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
 		}
+		lightGeometryPass<Type>(l, sh, lightMatrix);
 	}
 
 	return sh;
 }
+
+
+
+
+
+
+
+
+
+
 
 DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c) {
 	buffer.setAttachmentEnabled(0, true);
@@ -165,11 +240,12 @@ DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math:
 void *DeferredShadingRenderer::prepare() {
 	void *ptr = child->prepare();
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(ptr);
+
 	return new FrameData({sceneData->camera->getPosition(),
 						  (sceneData->proj * sceneData->view).inverse(),
 						  {child->getRenderer()->getScene()->query<PointLight<>>(*sceneData->camera),
-							   child->getRenderer()->getScene()->get<DirectionalLight<>>(),
-							   child->getRenderer()->getScene()->get<BoxLight<>>()},
+						   child->getRenderer()->getScene()->get<DirectionalLight<>>(),
+						   child->getRenderer()->getScene()->get<BoxLight<>>()},
 						  ptr});
 }
 
@@ -178,6 +254,14 @@ void DeferredShadingRenderer::render(void *ptr) {
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(data->child);
 
 	child->render(data->child);
+
+	for(uint i = 0; i != LightType::Max; i++) {
+		data->lights[i].foreach([](const LightData &l) {
+			if(l.light->castShadows()) {
+				l.light->getShadowRenderer()->render(l.shadowData);
+			}
+		});
+	}
 
 	GLContext::getContext()->setProjectionMatrix(sceneData->proj);
 	GLContext::getContext()->setViewMatrix(sceneData->view);
