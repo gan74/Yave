@@ -67,26 +67,19 @@ struct MaterialData
 };
 
 namespace internal {
-	//extern Texture bumpToNormal(Texture bump);
-
 	template<typename T = float>
 	struct Material : core::NonCopyable
 	{
-		static concurrent::Mutex mutex;
-		static bool sorted;
-		static core::Array<Material<T> *> cache;
 
-		Material(const MaterialData<T> &d = MaterialData<T>()) : data(d) {
-			mutex.lock();
-			cache.append(this);
-			sorted = false;
-			mutex.unlock();
+		Material(const MaterialData<T> &d = MaterialData<T>()) : data(d), index(0) {
 		}
 
 		~Material() {
-			mutex.lock();
-			cache.remove(this);
-			mutex.unlock();
+			if(index) {
+				mutex.lock();
+				cache.remove(this);
+				mutex.unlock();
+			}
 		}
 
 		#define N_MAT_COMPARE(mem) if(data.mem != m.data.mem) { return data.mem < m.data.mem; }
@@ -103,33 +96,39 @@ namespace internal {
 
 		#undef N_MAT_COMPARE
 
-		static void updateCache() {
-			if(sorted) {
-				return;
-			}
-			mutex.lock();
-			cache.sort([](const Material<T> *a, const Material<T> *b) { return a->operator<(*b); });
-			for(uint i = 0; i != cache.size(); i++) {
-				cache[i]->index = i;
-			}
-			sorted = true;
-			mutex.unlock();
+		const MaterialData<T> data;
+
+		uint getIndex() const {
+			updateIfNeeded();
+			return index;
 		}
 
-		MaterialData<T> data;
+		private:
+			static concurrent::Mutex mutex;
+			static core::Array<const Material<T> *> cache;
 
-		uint index;
+			void updateIfNeeded() const {
+				if(index) {
+					mutex.lock();
+					cache.append(this);
+					cache.sort([](const Material<T> *a, const Material<T> *b) { return a->operator<(*b); });
+					uint max = cache.size() + 1;
+					for(uint i = 1; i != max; i++) {
+						cache[i]->index = i;
+					}
+					mutex.unlock();
+				}
+			}
+
+			mutable uint index;
 	};
 
 
 	template<typename T>
-	core::Array<Material<T> *> Material<T>::cache = core::Array<Material<T> *>();
+	core::Array<const Material<T> *> Material<T>::cache = core::Array<const Material<T> *>();
 
 	template<typename T>
 	concurrent::Mutex Material<T>::mutex = concurrent::Mutex();
-
-	template<typename T>
-	bool Material<T>::sorted = true;
 }
 
 
@@ -144,9 +143,6 @@ class Material : private assets::Asset<internal::Material<T>>
 
 	public:
 		Material() : assets::Asset<internal::Material<T>>() {
-		}
-
-		Material(const internal::Material<T> &i) : Material(new internal::Material<T>(i)) {
 		}
 
 		Material(const MaterialData<T> &i) : Material(new internal::Material<T>(i)) {
@@ -257,6 +253,9 @@ class Material : private assets::Asset<internal::Material<T>>
 		friend class MaterialLoader;
 		friend class GLContext;
 
+		Material(const internal::Material<T> &i) : Material(new internal::Material<T>(i)) {
+		}
+
 		Material(const assets::Asset<internal::Material<T>> &t) : assets::Asset<internal::Material<T>>(t) {
 		}
 
@@ -268,9 +267,8 @@ class Material : private assets::Asset<internal::Material<T>>
 		}
 
 		uint getInternalIndex() const {
-			internal::Material<T>::updateCache();
 			const internal::Material<T> *i = getInternal();
-			return i ? i->index : 0;
+			return i ? i->getIndex() : 0;
 		}
 
 };
