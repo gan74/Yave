@@ -41,6 +41,32 @@ enum DepthMode {
 	Always
 };
 
+template<typename T = float>
+struct MaterialData
+{
+	MaterialData() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5) {
+	}
+
+	Color<T> color;
+	T roughness;
+	T metallic;
+	bool depthTested;
+	bool depthWrite;
+
+	graphics::ShaderProgram prog;
+
+	BlendMode blend;
+	CullMode cull;
+	DepthMode depth;
+
+	Texture diffuse;
+	Texture normal;
+	T normalIntencity;
+	//Texture bump;
+
+	core::Map<core::String, Texture> textures;
+};
+
 namespace internal {
 	//extern Texture bumpToNormal(Texture bump);
 
@@ -51,7 +77,7 @@ namespace internal {
 		static bool sorted;
 		static core::Array<Material<T> *> cache;
 
-		Material() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5) {
+		Material(const MaterialData<T> &d = MaterialData<T>()) : data(d) {
 			mutex.lock();
 			cache.append(this);
 			sorted = false;
@@ -64,7 +90,7 @@ namespace internal {
 			mutex.unlock();
 		}
 
-		#define N_MAT_COMPARE(mem) if(mem != m.mem) { return mem < m.mem; }
+		#define N_MAT_COMPARE(mem) if(data.mem != m.data.mem) { return data.mem < m.data.mem; }
 
 		bool operator<(const Material<T> &m) const {
 			N_MAT_COMPARE(prog)
@@ -91,25 +117,7 @@ namespace internal {
 			mutex.unlock();
 		}
 
-		Color<T> color;
-		T roughness;
-		T metallic;
-		bool depthTested;
-		bool depthWrite;
-
-
-		graphics::ShaderProgram prog;
-
-		BlendMode blend;
-		CullMode cull;
-		DepthMode depth;
-
-		Texture diffuse;
-		Texture normal;
-		T normalIntencity;
-		//Texture bump;
-
-		core::Map<core::String, Texture> textures;
+		MaterialData<T> data;
 
 		uint index;
 	};
@@ -124,6 +132,8 @@ namespace internal {
 	template<typename T>
 	bool Material<T>::sorted = true;
 }
+
+
 
 template<typename T = float>
 class Material : private assets::Asset<internal::Material<T>>
@@ -140,6 +150,9 @@ class Material : private assets::Asset<internal::Material<T>>
 		Material(const internal::Material<T> &i) : Material(new internal::Material<T>(i)) {
 		}
 
+		Material(const MaterialData<T> &i) : Material(new internal::Material<T>(i)) {
+		}
+
 		bool operator<(const Material<T> &m) const {
 			return getInternalIndex() < m.getInternalIndex();
 		}
@@ -153,15 +166,14 @@ class Material : private assets::Asset<internal::Material<T>>
 		}
 
 		Color<T> getColor() const {
-			const internal::Material<T> *i = getInternal();
-			return i ? i->color : Color<T>();
+			return getData().color;
 		}
 
 		void bind() const {
 			#warning binding shader after binding material will fail
 			const internal::Material<T> *i = getInternal();
 			if(i) {
-				i->prog.bind();
+				i->data.prog.bind();
 			}
 			const internal::Material<T> *c = GLContext::getContext()->material.operator->();
 			const ShaderCombinaison *sh = GLContext::getContext()->getShader();
@@ -169,74 +181,77 @@ class Material : private assets::Asset<internal::Material<T>>
 				i = getNull().operator->();
 			}
 			if(sh) {
-				sh->setValue("n_Color", i->color);
-				sh->setValue("n_Roughness", i->roughness);
-				sh->setValue("n_Metallic", i->metallic);
+				sh->setValue("n_Color", i->data.color);
+				sh->setValue("n_Roughness", i->data.roughness);
+				sh->setValue("n_Metallic", i->data.metallic);
 
-				sh->setValue("n_DiffuseMap", i->diffuse);
-				sh->setValue("n_DiffuseMul", i->diffuse.isNull() ? 0.0 : 1.0);
+				sh->setValue("n_DiffuseMap", i->data.diffuse);
+				sh->setValue("n_DiffuseMul", i->data.diffuse.isNull() ? 0.0 : 1.0);
 
-				/*if(i->normal.isNull() && !i->bump.getImage().isNull()) {
-					const_cast<internal::Material<T> *>(i)->normal = internal::bumpToNormal(i->bump);
-				}*/
+				sh->setValue("n_NormalMap", i->data.normal);
+				sh->setValue("n_NormalMul", i->data.normal.isNull() ? 0.0 : i->data.normalIntencity);
 
-				sh->setValue("n_NormalMap", i->normal);
-				sh->setValue("n_NormalMul", i->normal.isNull() ? 0.0 : i->normalIntencity);
-
-				for(const auto &p : i->textures) {
+				for(const auto &p : i->data.textures) {
 					sh->setValue(p._1, p._2);
 				}
 			} else {
 				fatal("No shader or no material");
 			}
-			if(!c || c->depthTested != i->depthTested) {
-				if(i->depthTested) {
+			if(!c || c->data.depthTested != i->data.depthTested) {
+				if(i->data.depthTested) {
 					gl::glEnable(GL_DEPTH_TEST);
 				} else {
 					gl::glDisable(GL_DEPTH_TEST);
 				}
 			}
-			if(!c || c->depth != i->depth) {
+			if(!c || c->data.depth != i->data.depth) {
 				gl::GLenum funcs[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
-				gl::glDepthFunc(funcs[i->depth]);
+				gl::glDepthFunc(funcs[i->data.depth]);
 			}
-			if(!c || c->depthWrite != i->depthWrite) {
-				gl::glDepthMask(i->depthWrite);
+			if(!c || c->data.depthWrite != i->data.depthWrite) {
+				gl::glDepthMask(i->data.depthWrite);
 			}
-			if(!c || c->cull != i->cull) {
-				if(i->cull == DontCull) {
+			if(!c || c->data.cull != i->data.cull) {
+				if(i->data.cull == DontCull) {
 					gl::glDisable(GL_CULL_FACE);
 				} else {
-					if(!c || c->cull == DontCull) {
+					if(!c || c->data.cull == DontCull) {
 						gl::glEnable(GL_CULL_FACE);
 					}
 					gl::GLenum glc[] = {GL_BACK, GL_FRONT};
-					gl::glCullFace(glc[i->cull]);
+					gl::glCullFace(glc[i->data.cull]);
 				}
 			}
-			if(!c || c->blend != i->blend) {
-				if(i->blend == None) {
+			if(!c || c->data.blend != i->data.blend) {
+				if(i->data.blend == None) {
 					gl::glDisable(GL_BLEND);
 				} else {
-					if(!c || c->blend == None) {
+					if(!c || c->data.blend == None) {
 						gl::glEnable(GL_BLEND);
 					}
 					static BlendMode blendMode = None;
-					if(blendMode != i->blend) {
-						if(i->blend == Add) {
+					if(blendMode != i->data.blend) {
+						if(i->data.blend == Add) {
 							gl::glBlendFunc(GL_ONE, GL_ONE);
 						}
-						blendMode = i->blend;
+						blendMode = i->data.blend;
 					}
 				}
 
 			}
-
 			if(isNull()) {
 				GLContext::getContext()->material = getNull();
 			} else {
-				GLContext::getContext()->material =  *this;
+				GLContext::getContext()->material =  this->operator->();
 			}
+		}
+
+		MaterialData<T> getData() const {
+			const internal::Material<T> *i = getInternal();
+			if(i) {
+				return i->data;
+			}
+			return MaterialData<T>();
 		}
 
 	private:

@@ -9,9 +9,9 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->setDebugEnabled(false);
 	}
 
-	OrthographicCamera<> cam(1000);
+	PerspectiveCamera<> cam;
 	cam.setPosition(Vec3(-10, 0, 10));
-	//cam.setRatio(4/3.0);
+	cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
 	Light<> *light = 0;
@@ -43,11 +43,18 @@ int main(int argc, char **argv) {
 		scene.insert(obj);
 	}
 
+	/*{
+		auto obj = new Obj(MeshInstance<>(std::move(TriangleBuffer<>::getSphere())));
+		obj->setAutoScale(50);
+		scene.insert(obj);
+	}*/
+
 	{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
 		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi<>() * 0.5));
 		obj->setAutoScale(800);
 		scene.insert(obj);
+
 	}
 
 	/*{

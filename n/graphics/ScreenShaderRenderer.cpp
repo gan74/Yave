@@ -36,7 +36,7 @@ void ScreenShaderRenderer::render(void *ptr) {
 	}
 
 	buffer.bind();
-	gl::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	buffer.clear(true, true);
 
 	shader->bind();
 

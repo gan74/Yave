@@ -54,7 +54,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 			delete[] data;
 			file.close();
 
-			internal::Material<> *mat = 0;
+			MaterialData<> *mat = 0;
 			for(const core::String &li : lines) {
 				core::String l = li.trim();
 				if(l.beginsWith("newmtl ")) {
@@ -63,29 +63,34 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 							std::cerr<<"Material \""<<name<<"\""<<" is already defined"<<std::endl;
 							fatal("Material already defined");
 						}
-						mat = new internal::Material<>();
+						mat = new MaterialData<>();
 					} else if(mat) {
 						break;
 					}
 				} else if(mat) {
-					if(l.toLower().beginsWith("kd ")) {
+					l = l.toLower();
+					if(l.beginsWith("kd ")) {
 						core::Array<float> fl = l.subString(3).split(" ");
 						if(fl.size() != 3) {
 							std::cerr<<"Invalid color"<<std::endl;
 							return 0;
 						}
 						mat->color = Color<>(fl[0], fl[1], fl[2], 1);
-					} else if(l.toLower().beginsWith("ns ")) {
+					} else if(l.beginsWith("ns ")) {
 						float ns = float(l.subString(3));
 						mat->roughness = sqrt(2 / (ns + 2));
-					} else if(l.toLower().beginsWith("map_kd ")) {
+					} else if(l.beginsWith("map_kd ")) {
 						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })), true);
-					} else if(l.toLower().beginsWith("map_bump ")) {
+					} else if(l.beginsWith("map_bump ")) {
 						mat->normal = Texture(ImageLoader::load<core::String>(l.subString(9).filtered([](char c) { return !isspace(c); })), true);
+					} else if(l.beginsWith("illum ")) {
+						mat->metallic = int(l.subString(6)) == 2 ? 0.0 : 1.0;
 					}
 				}
 			}
-			return mat;
+			internal::Material<> *imat = new internal::Material<>(*mat);
+			delete mat;
+			return imat;
 		}
 };
 

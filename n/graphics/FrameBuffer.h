@@ -40,10 +40,11 @@ class FrameBuffer : core::NonCopyable
 
 		bool isActive() const;
 
-		void bind(uint32 mask = 0xFFFFFFFF) const;
+		void bind() const;
+		static void clear(bool color, bool depth);
 		static void unbind();
 
-		void blit(uint slot = 0, bool depth = true) const;
+		void blit(uint slot = 0, bool depth = false) const;
 
 		math::Vec2ui getSize() const {
 			return base;
@@ -65,8 +66,6 @@ class FrameBuffer : core::NonCopyable
 		void setModified();
 		void setUnmodified() const;
 
-		void setDrawBuffers(uint32 mask) const;
-
 		math::Vec2ui base;
 		Texture *attachments;
 		Texture *depth;
@@ -74,7 +73,6 @@ class FrameBuffer : core::NonCopyable
 		gl::GLuint handle;
 
 		mutable bool modified;
-		mutable uint32 lastMask;
 };
 
 }

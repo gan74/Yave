@@ -34,6 +34,9 @@ class VertexArrayObject;
 template<typename T>
 class Material;
 
+template<typename T>
+struct MaterialData;
+
 namespace internal {
 	template<typename T>
 	struct Material;
@@ -83,6 +86,8 @@ class GLContext
 		const FrameBuffer *getFrameBuffer() const {
 			return frameBuffer;
 		}
+
+		MaterialData<float> getMaterial() const;
 
 		int getHWInt(HWInt hw) {
 			return hwInts[hw];

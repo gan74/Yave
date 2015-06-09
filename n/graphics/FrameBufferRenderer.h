@@ -45,7 +45,7 @@ class FrameBufferRenderer : public BufferableRenderer
 			} else {
 				FrameBuffer::unbind();
 			}
-			child->getFrameBuffer().blit(slot);
+			child->getFrameBuffer().blit(slot, true);
 		}
 
 	private:
