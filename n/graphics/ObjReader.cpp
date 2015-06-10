@@ -95,7 +95,7 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 			core::Map<math::Vec3ui, uint> vmap;
 			bool smooth = false;
 			TriangleBuffer<> tr;
-			Material<> mat;
+			Material mat;
 			core::Array<MeshInstanceBase<> *> bases;
 			for(const core::String &l : lines) {
 				if(l.beginsWith("f ")) {

@@ -42,16 +42,16 @@ class MaterialLoader
 					n::unused(runner);
 				}
 
-				virtual internal::Material<> *operator()(Args...) = 0;
+				virtual internal::Material *operator()(Args...) = 0;
 
 			private:
 				static Runner runner;
 		};
 
 		template<typename... Args>
-		static Material<> load(Args... args, bool async = true)  {
+		static Material load(Args... args, bool async = true)  {
 			MaterialLoader *ld = getLoader();
-			return async ? Material<>(ld->asyncBuffer.load(args...)) : Material<>(ld->immediateBuffer.load(args...));
+			return async ? Material(ld->asyncBuffer.load(args...)) : Material(ld->immediateBuffer.load(args...));
 		}
 
 		template<typename... Args, typename T>
@@ -72,9 +72,9 @@ class MaterialLoader
 		MaterialLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
 
-		assets::AssetBuffer<internal::Material<>> buffer;
-		assets::AssetManager<internal::Material<>, assets::AsyncLoadingPolicy<internal::Material<>>> asyncBuffer;
-		assets::AssetManager<internal::Material<>, assets::ImmediateLoadingPolicy<internal::Material<>>> immediateBuffer;
+		assets::AssetBuffer<internal::Material> buffer;
+		assets::AssetManager<internal::Material, assets::AsyncLoadingPolicy<internal::Material>> asyncBuffer;
+		assets::AssetManager<internal::Material, assets::ImmediateLoadingPolicy<internal::Material>> immediateBuffer;
 
 };
 

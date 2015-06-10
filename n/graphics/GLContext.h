@@ -27,20 +27,15 @@ namespace graphics {
 
 class ShaderCombinaison;
 class FrameBuffer;
+class Material;
+struct MaterialData;
 
 template<typename T>
 class VertexArrayObject;
 
-template<typename T>
-class Material;
-
-template<typename T>
-struct MaterialData;
 
 namespace internal {
-	template<typename T>
 	struct Material;
-
 	struct ShaderProgram;
 }
 
@@ -87,7 +82,7 @@ class GLContext
 			return frameBuffer;
 		}
 
-		MaterialData<float> getMaterial() const;
+		MaterialData getMaterial() const;
 
 		int getHWInt(HWInt hw) {
 			return hwInts[hw];
@@ -100,8 +95,6 @@ class GLContext
 		friend class ShaderCombinaison;
 		friend class ShaderProgram;
 		friend class FrameBuffer;
-
-		template<typename T>
 		friend class Material;
 
 		GLContext();
@@ -116,7 +109,7 @@ class GLContext
 		const ShaderCombinaison *shader;
 		core::SmartPtr<internal::ShaderProgram> program;
 		const FrameBuffer *frameBuffer;
-		assets::Asset<internal::Material<float>> material;
+		assets::Asset<internal::Material> material;
 
 		int hwInts[Max];
 

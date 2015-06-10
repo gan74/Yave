@@ -29,7 +29,7 @@ template<typename T = float>
 class MeshInstanceBase : core::NonCopyable
 {
 	public:
-		MeshInstanceBase(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m) : buffer(b), vao(0), material(m) {
+		MeshInstanceBase(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material &m) : buffer(b), vao(0), material(m) {
 		}
 
 		~MeshInstanceBase() {
@@ -44,7 +44,7 @@ class MeshInstanceBase : core::NonCopyable
 			vao->draw(attribs, instances);
 		}
 
-		const Material<T> &getMaterial() const {
+		const Material &getMaterial() const {
 			return material;
 		}
 
@@ -59,7 +59,7 @@ class MeshInstanceBase : core::NonCopyable
 	private:
 		typename TriangleBuffer<T>::FreezedTriangleBuffer buffer;
 		mutable VertexArrayObject<T> *vao;
-		Material<T> material;
+		Material material;
 };
 
 namespace internal {
@@ -74,7 +74,7 @@ namespace internal {
 			}
 		}
 
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material<T> &m = graphics::Material<T>()) : MeshInstance<T>(core::Array<MeshInstanceBase<T> *>({new MeshInstanceBase<T>(std::move(b), m)})) {
+		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material()) : MeshInstance<T>(core::Array<MeshInstanceBase<T> *>({new MeshInstanceBase<T>(std::move(b), m)})) {
 		}
 
 		~MeshInstance() {
@@ -122,7 +122,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
 		MeshInstance() :  assets::Asset<internal::MeshInstance<T>>() {
 		}
 
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const Material<T> &m = Material<T>()) : MeshInstance(new internal::MeshInstance<T>(std::move(b), m)) {
+		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const Material &m = Material()) : MeshInstance(new internal::MeshInstance<T>(std::move(b), m)) {
 		}
 
 		bool isValid() const {

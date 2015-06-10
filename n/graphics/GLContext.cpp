@@ -168,8 +168,8 @@ math::Vec2ui GLContext::getViewport() const {
 	return frameBuffer ? frameBuffer->getSize() : viewport;
 }
 
-MaterialData<float> GLContext::getMaterial() const {
-	return material.isNull() ? MaterialData<float>() : material->data;
+MaterialData GLContext::getMaterial() const {
+	return material.isNull() ? MaterialData() : material->data;
 }
 
 bool GLContext::checkGLError() {

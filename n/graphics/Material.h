@@ -30,7 +30,6 @@ enum RenderFlag
 	FastDepth = 0x01
 };
 
-template<typename T = float>
 struct MaterialData
 {
 	enum CullMode {
@@ -53,9 +52,9 @@ struct MaterialData
 	MaterialData() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5) {
 	}
 
-	Color<T> color;
-	T roughness;
-	T metallic;
+	Color<> color;
+	float roughness;
+	float metallic;
 	bool depthTested;
 	bool depthWrite;
 
@@ -67,17 +66,16 @@ struct MaterialData
 
 	Texture diffuse;
 	Texture normal;
-	T normalIntencity;
+	float normalIntencity;
 
 	core::Map<core::String, Texture> textures;
 };
 
 namespace internal {
-	template<typename T = float>
 	struct Material : core::NonCopyable
 	{
 
-		Material(const MaterialData<T> &d = MaterialData<T>()) : data(d), index(0) {
+		Material(const MaterialData &d = MaterialData()) : data(d), index(0) {
 		}
 
 		~Material() {
@@ -90,7 +88,7 @@ namespace internal {
 
 		#define N_MAT_COMPARE(mem) if(data.mem != m.data.mem) { return data.mem < m.data.mem; }
 
-		bool operator<(const Material<T> &m) const {
+		bool operator<(const Material &m) const {
 			N_MAT_COMPARE(prog)
 			N_MAT_COMPARE(diffuse)
 			N_MAT_COMPARE(depthWrite)
@@ -102,7 +100,7 @@ namespace internal {
 
 		#undef N_MAT_COMPARE
 
-		const MaterialData<T> data;
+		const MaterialData data;
 
 		uint getIndex() const {
 			updateIfNeeded();
@@ -111,13 +109,13 @@ namespace internal {
 
 		private:
 			static concurrent::Mutex mutex;
-			static core::Array<const Material<T> *> cache;
+			static core::Array<const Material *> cache;
 
 			void updateIfNeeded() const {
 				if(index) {
 					mutex.lock();
 					cache.append(this);
-					cache.sort([](const Material<T> *a, const Material<T> *b) { return a->operator<(*b); });
+					cache.sort([](const Material *a, const Material *b) { return a->operator<(*b); });
 					uint max = cache.size() + 1;
 					for(uint i = 1; i != max; i++) {
 						cache[i]->index = i;
@@ -128,55 +126,47 @@ namespace internal {
 
 			mutable uint index;
 	};
-
-
-	template<typename T>
-	core::Array<const Material<T> *> Material<T>::cache = core::Array<const Material<T> *>();
-
-	template<typename T>
-	concurrent::Mutex Material<T>::mutex = concurrent::Mutex();
 }
 
 
 
-template<typename T = float>
-class Material : private assets::Asset<internal::Material<T>>
+class Material : private assets::Asset<internal::Material>
 {
-	static const assets::Asset<internal::Material<T>> &getNull() {
-		static assets::Asset<internal::Material<T>> null(new internal::Material<T>());
+	static const assets::Asset<internal::Material> &getNull() {
+		static assets::Asset<internal::Material> null(new internal::Material());
 		return null;
 	}
 
 	public:
-		Material() : assets::Asset<internal::Material<T>>() {
+		Material() : assets::Asset<internal::Material>() {
 		}
 
-		Material(const MaterialData<T> &i) : Material(new internal::Material<T>(i)) {
+		Material(const MaterialData &i) : Material(new internal::Material(i)) {
 		}
 
-		bool operator<(const Material<T> &m) const {
+		bool operator<(const Material &m) const {
 			return getInternalIndex() < m.getInternalIndex();
 		}
 
 		bool isValid() const {
-			return assets::Asset<internal::Material<T>>::isValid();
+			return assets::Asset<internal::Material>::isValid();
 		}
 
 		bool isNull() const {
-			return assets::Asset<internal::Material<T>>::isNull();
+			return assets::Asset<internal::Material>::isNull();
 		}
 
-		Color<T> getColor() const {
+		Color<> getColor() const {
 			return getData().color;
 		}
 
 		void bind(uint flags = RenderFlag::None) const {
 			#warning binding shader after binding material will fail
-			const internal::Material<T> *i = getInternal();
+			const internal::Material *i = getInternal();
 			if(i) {
 				i->data.prog.bind();
 			}
-			const internal::Material<T> *c = GLContext::getContext()->material.operator->();
+			const internal::Material *c = GLContext::getContext()->material.operator->();
 			const ShaderCombinaison *sh = GLContext::getContext()->getShader();
 
 			if(flags & RenderFlag::FastDepth) {
@@ -213,9 +203,9 @@ class Material : private assets::Asset<internal::Material<T>>
 			if(!c || c->data.depth != i->data.depth) {
 				gl::GLenum funcs[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
 				gl::glDepthFunc(funcs[i->data.depth]);
-				if(i->data.depth == MaterialData<T>::Greater) {
+				if(i->data.depth == MaterialData::Greater) {
 					gl::glEnable(GL_DEPTH_CLAMP);
-				} else if(i->data.depth == MaterialData<T>::Lesser || i->data.depth == MaterialData<T>::Always) {
+				} else if(i->data.depth == MaterialData::Lesser || i->data.depth == MaterialData::Always) {
 					gl::glDisable(GL_DEPTH_CLAMP);
 				}
 			}
@@ -223,10 +213,10 @@ class Material : private assets::Asset<internal::Material<T>>
 				gl::glDepthMask(i->data.depthWrite);
 			}
 			if(!c || c->data.cull != i->data.cull) {
-				if(i->data.cull == MaterialData<T>::DontCull) {
+				if(i->data.cull == MaterialData::DontCull) {
 					gl::glDisable(GL_CULL_FACE);
 				} else {
-					if(!c || c->data.cull == MaterialData<T>::DontCull) {
+					if(!c || c->data.cull == MaterialData::DontCull) {
 						gl::glEnable(GL_CULL_FACE);
 					}
 					gl::GLenum glc[] = {GL_BACK, GL_FRONT};
@@ -234,15 +224,15 @@ class Material : private assets::Asset<internal::Material<T>>
 				}
 			}
 			if(!c || c->data.blend != i->data.blend) {
-				if(i->data.blend == MaterialData<T>::None) {
+				if(i->data.blend == MaterialData::None) {
 					gl::glDisable(GL_BLEND);
 				} else {
-					if(!c || c->data.blend == MaterialData<T>::None) {
+					if(!c || c->data.blend == MaterialData::None) {
 						gl::glEnable(GL_BLEND);
 					}
-					static typename MaterialData<T>::BlendMode blendMode = MaterialData<T>::None;
+					static typename MaterialData::BlendMode blendMode = MaterialData::None;
 					if(blendMode != i->data.blend) {
-						if(i->data.blend == MaterialData<T>::Add) {
+						if(i->data.blend == MaterialData::Add) {
 							gl::glBlendFunc(GL_ONE, GL_ONE);
 						}
 						blendMode = i->data.blend;
@@ -257,39 +247,39 @@ class Material : private assets::Asset<internal::Material<T>>
 			}
 		}
 
-		MaterialData<T> getData() const {
-			const internal::Material<T> *i = getInternal();
+		MaterialData getData() const {
+			const internal::Material *i = getInternal();
 			if(i) {
 				return i->data;
 			}
-			return MaterialData<T>();
+			return MaterialData();
 		}
 
 	private:
 		friend class MaterialLoader;
 		friend class GLContext;
 
-		Material(const internal::Material<T> &i) : Material(new internal::Material<T>(i)) {
+		/*Material(const internal::Material &i) : Material(new internal::Material(i)) {
+		}*/
+
+		Material(const assets::Asset<internal::Material> &t) : assets::Asset<internal::Material>(t) {
 		}
 
-		Material(const assets::Asset<internal::Material<T>> &t) : assets::Asset<internal::Material<T>>(t) {
+		Material(internal::Material *i) : assets::Asset<internal::Material>(std::move(i)) {
 		}
 
-		Material(internal::Material<T> *i) : assets::Asset<internal::Material<T>>(std::move(i)) {
-		}
-
-		const internal::Material<T> *getInternal() const {
-			return this->isValid() ? this->operator->() : (const internal::Material<T> *)0;
+		const internal::Material *getInternal() const {
+			return this->isValid() ? this->operator->() : (const internal::Material *)0;
 		}
 
 		uint getInternalIndex() const {
-			const internal::Material<T> *i = getInternal();
+			const internal::Material *i = getInternal();
 			return i ? i->getIndex() : 0;
 		}
 
 };
 
-static_assert(!IsThreadSafe<Material<>>::value, "n::graphics::Material<T> should not be treated as thread-safe");
+static_assert(!IsThreadSafe<Material>::value, "n::graphics::Material should not be treated as thread-safe");
 
 }
 }

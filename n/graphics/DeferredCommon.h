@@ -36,19 +36,19 @@ enum LightType
 };
 
 template<LightType Type>
-const Material<> &getLightMaterial() {
-	static Material<> mat[LightType::Max];
+const Material &getLightMaterial() {
+	static Material mat[LightType::Max];
 	if(mat[Type].isNull()) {
-		MaterialData<> i;
-		i.blend = MaterialData<>::Add;
+		MaterialData i;
+		i.blend = MaterialData::Add;
 		i.depthWrite = false;
 		if(Type == Directional) {
-			i.depth = MaterialData<>::Always;
+			i.depth = MaterialData::Always;
 		} else {
-			i.depth = MaterialData<>::Greater;
-			i.cull = MaterialData<>::Front;
+			i.depth = MaterialData::Greater;
+			i.cull = MaterialData::Front;
 		}
-		mat[Type] = Material<>(i);
+		mat[Type] = Material(i);
 	}
 	return mat[Type];
 }

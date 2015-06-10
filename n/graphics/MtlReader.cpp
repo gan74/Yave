@@ -32,7 +32,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 		MtlReader() : MaterialLoader::MaterialReader<MtlReader, core::String, core::String>() {
 		}
 
-		internal::Material<> *operator()(core::String fileName, core::String name) override {
+		internal::Material *operator()(core::String fileName, core::String name) override {
 			if(!fileName.endsWith(".mtl")) {
 				return 0;
 			}
@@ -41,7 +41,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 		}
 
 	private:
-		internal::Material<> *load(io::File &file, const core::String &name) {
+		internal::Material *load(io::File &file, const core::String &name) {
 			if(!file.open(io::IODevice::Read)) {
 				std::cerr<<file.getName()<<" not found"<<std::endl;
 				return 0;
@@ -54,7 +54,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 			delete[] data;
 			file.close();
 
-			MaterialData<> *mat = 0;
+			MaterialData *mat = 0;
 			for(const core::String &li : lines) {
 				core::String l = li.trim();
 				if(l.beginsWith("newmtl ")) {
@@ -63,7 +63,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 							std::cerr<<"Material \""<<name<<"\""<<" is already defined"<<std::endl;
 							fatal("Material already defined");
 						}
-						mat = new MaterialData<>();
+						mat = new MaterialData();
 					} else if(mat) {
 						break;
 					}
@@ -88,7 +88,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 					}
 				}
 			}
-			internal::Material<> *imat = new internal::Material<>(*mat);
+			internal::Material *imat = new internal::Material(*mat);
 			delete mat;
 			return imat;
 		}

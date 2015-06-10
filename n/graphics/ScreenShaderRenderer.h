@@ -40,7 +40,7 @@ class ScreenShaderRenderer : public BufferedRenderer
 		uint slot;
 		core::String uName;
 
-		static const Material<float> &getMaterial();
+		static const Material &getMaterial();
 };
 
 }

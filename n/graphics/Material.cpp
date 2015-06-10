@@ -23,36 +23,8 @@ namespace n {
 namespace graphics {
 namespace internal {
 
-/*Texture bumpToNormal(Texture bump) {
-	const FrameBuffer *fbo = GLContext::getContext()->getFrameBuffer();
-	static ShaderCombinaison *sh = 0;
-	if(!sh) {
-		sh = new ShaderCombinaison(new Shader<FragmentShader>(
-			"uniform sampler2D bump;"
-			"in vec2 n_TexCoord;"
-			"out vec4 n_Out;"
-			"void main() {"
-				"vec3 tex = texture(bump, n_TexCoord).xyz;"
-				"float height = (tex.x + tex.y + tex.z) * 0.333333;"
-				"vec2 nxy = vec2(dFdx(height), dFdy(height));"
-				"vec3 n = vec3(nxy * 5, height);"
-				"n_Out = vec4(normalize(n) * 0.5 + 0.5, 0.5);"
-			"}"), graphics::ShaderProgram::NoProjectionShader);
-	}
-	bump.synchronize();
-	FrameBuffer fb(bump.getSize());
-	fb.bind();
-	sh->bind();
-	sh->setValue("bump", bump);
-	GLContext::getContext()->getScreen().draw(VertexAttribs());
-	Texture normals = fb.getAttachement(0);
-	if(fbo) {
-		fbo->bind();
-	} else {
-		FrameBuffer::unbind();
-	}
-	return normals;
-}*/
+core::Array<const Material *> Material::cache = core::Array<const Material *>();
+concurrent::Mutex Material::mutex = concurrent::Mutex();
 
 }
 }

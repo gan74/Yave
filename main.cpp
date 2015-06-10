@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 		scene.insert(light = l);
 	}
 
-	BufferedRenderer *ri = 0;
+	//BufferedRenderer *ri = 0;
 	//ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 	//ri = new GBufferRenderer(new SceneRenderer(&scene));
 	//FrameBufferRenderer renderer(ri);
