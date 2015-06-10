@@ -151,7 +151,7 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 		buffers[1]->bind();
 	}
 	buffers[0]->bind();
-	GLContext::getContext()->getScreen().draw(VertexAttribs());
+	GLContext::getContext()->getScreen().draw(Material());
 
 	sh = getDSShader();
 	sh->bind();
@@ -166,7 +166,7 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 		last = !last;
 		scale *= 0.5;
 		baseSize /= 2;
-		GLContext::getContext()->getScreen().draw(VertexAttribs());
+		GLContext::getContext()->getScreen().draw(Material());
 	}
 	return buffers[last]->getAttachement(0);
 }
@@ -216,7 +216,7 @@ void ToneMapRenderer::render(void *ptr) {
 	gl::glGetTextureSubImage(lum.getHandle(), 0, 0, 0, 0, 1, 1, 1, GL_RG, GL_FLOAT, 2 * sizeof(float), lums);
 	std::cout<<lum.getHandle()<<"  max = "<<lums[1]<<", avg = "<<exp(lums[0])<<std::endl;*/
 
-	GLContext::getContext()->getScreen().draw(VertexAttribs());
+	GLContext::getContext()->getScreen().draw(Material());
 }
 
 

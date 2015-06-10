@@ -104,7 +104,7 @@ class ShaderProgram
 		ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0);
 		ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader vert, Shader<GeometryShader> *geom = 0);
 
-		void bind() const;
+		const ShaderCombinaison *bind() const;
 
 		bool isActive() const;
 

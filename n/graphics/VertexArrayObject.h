@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "TriangleBuffer.h"
 #include "StaticBuffer.h"
 #include "VertexAttribs.h"
+#include "Material.h"
 
 namespace n {
 namespace graphics {
@@ -46,7 +47,8 @@ class VertexArrayObject : core::NonCopyable
 			}
 		}
 
-		void draw(const VertexAttribs &attributes, uint instances = 1) const {
+		void draw(const Material &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
+			mat.bind(renderFlags);
 			bind();
 			bindAttribs(attributes);
 			gl::glDrawElementsInstanced(GL_TRIANGLES, 3 * size, GLType<uint>::value, 0, instances);

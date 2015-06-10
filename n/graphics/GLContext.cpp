@@ -86,7 +86,7 @@ void GLContext::finishTasks() {
 	}
 }
 
-GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), frameBuffer(0), material(0), viewport(1024, 768), screen(0) {
+GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), frameBuffer(0), viewport(1024, 768), screen(0) {
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
@@ -166,10 +166,6 @@ void GLContext::setViewport(const math::Vec2ui &v) {
 
 math::Vec2ui GLContext::getViewport() const {
 	return frameBuffer ? frameBuffer->getSize() : viewport;
-}
-
-MaterialData GLContext::getMaterial() const {
-	return material.isNull() ? MaterialData() : material->data;
 }
 
 bool GLContext::checkGLError() {

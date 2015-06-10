@@ -103,6 +103,19 @@ class Option
 			return *this;
 		}
 
+		Option<T> &operator=(const Option<T> &o) {
+			if(o) {
+				set(o);
+			}
+			return *this;
+		}
+
+		template<typename U>
+		Option<T> &operator=(const U &o) {
+			set(o);
+			return *this;
+		}
+
 	private:
 		union
 		{

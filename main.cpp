@@ -28,8 +28,8 @@ int main(int argc, char **argv) {
 	}
 
 	{
-		auto obj = new Obj("plane.obj");
-		//obj->setRotation(Quaternion<>::fromEuler(0, 0, pi<>() * 0.5));
+		auto obj = new Obj("./crytek-sponza/sponza.obj");
+		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi<>() * 0.5));
 		obj->setAutoScale(800);
 		scene.insert(obj);
 
@@ -45,19 +45,19 @@ int main(int argc, char **argv) {
 	}*/
 
 	{
-		BoxLight *l = new BoxLight(Vec3(50, 50, 100));
+		DirectionalLight *l = new DirectionalLight();
+		l->setForward(Vec3(0, 0, -1));
 		l->setPosition(Vec3(0, 0, 10));
-		l->setRotation(Quaternion<>::fromBase(Vec3(0, -1, -1), Vec3(1, 0, 1), Vec3(0, -1, -1) ^ Vec3(1, 0, 1)));
-		l->setIntensity(1);
-		l->setCastShadows(&scene, 128);
+		//l->setRotation(Quaternion<>::fromBase(Vec3(0, -1, -1), Vec3(1, 0, 1), Vec3(0, -1, -1) ^ Vec3(1, 0, 1)));
+		//l->setIntensity(5);
+		//l->setCastShadows(&scene, 2048);
 		scene.insert(light = l);
 	}
 
-	//BufferedRenderer *ri = 0;
-	//ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
+	BufferedRenderer *ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 	//ri = new GBufferRenderer(new SceneRenderer(&scene));
-	//FrameBufferRenderer renderer(ri);
-	SceneRenderer renderer(&scene);
+	FrameBufferRenderer renderer(ri);
+	//SceneRenderer renderer(&scene);
 	//ToneMapRenderer renderer(ri);
 	//tone = &renderer;
 
@@ -73,8 +73,13 @@ int main(int argc, char **argv) {
 		Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
 		cam.setForward(f);
 
+		if(light) {
+			double t = (fmod(total.elapsed() * 0.01, 0.5) + 0.25) * -pi<>();
+			light->setForward(Vec3(0, cos(t), sin(t)));
+		}
+
 		if(tr) {
-			tr->setPosition(Vec3(0, 0, 10 + sin(total.elapsed()) * 5));
+			tr->setPosition(Vec3(0, 0, 15 + sin(total.elapsed()) * 5));
 		}
 
 		(renderer)();

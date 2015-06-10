@@ -137,7 +137,7 @@ ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> 
 ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader vert, Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, getDefaultVertexShader(vert), geom)) {
 }
 
-void ShaderProgram::bind() const {
+const ShaderCombinaison *ShaderProgram::bind() const {
 	Combinaison c = ptr->getCombinaison();
 	core::Map<Combinaison, ShaderCombinaison *>::const_iterator it = ptr->shaders.find(c);
 	ShaderCombinaison *n = 0;
@@ -148,6 +148,7 @@ void ShaderProgram::bind() const {
 	}
 	n->bind();
 	GLContext::getContext()->program = ptr;
+	return n;
 }
 
 bool ShaderProgram::isActive() const {

@@ -155,12 +155,11 @@ ShaderCombinaison *getShader() {
 
 
 
-
 template<LightType Type>
 void lightGeometryPass(const Light *l, ShaderCombinaison *sh, const math::Vec3 &forward) {
 	switch(Type) {
 		case Directional:
-			GLContext::getContext()->getScreen().draw(VertexAttribs());
+			GLContext::getContext()->getScreen().draw(getLightMaterial<Type>(), VertexAttribs(), RenderFlag::NoShader);
 		break;
 
 		case Box: {
@@ -172,12 +171,12 @@ void lightGeometryPass(const Light *l, ShaderCombinaison *sh, const math::Vec3 &
 																	0, 0, 0, 1).transposed());
 			sh->setValue("n_LightSize", box->getSize() * box->getScale());
 			sh->setValue("n_LightMatrix", lightMatrix);
-			getBox().draw(VertexAttribs());
+			getBox().draw(getLightMaterial<Type>(), VertexAttribs(), RenderFlag::NoShader);
 		} break;
 
 		case Point:
 			GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
-			getSphere().draw(VertexAttribs());
+			getSphere().draw(getLightMaterial<Type>(), VertexAttribs(), RenderFlag::NoShader);
 		break;
 	}
 }
@@ -272,13 +271,10 @@ void DeferredShadingRenderer::render(void *ptr) {
 		buffer.clear(true, false);
 		child->getFrameBuffer().blit(FrameBuffer::Depth);
 
-		getLightMaterial<Point>().bind();
 		lightPass<Point>(data, child);
 
-		getLightMaterial<Box>().bind();
 		lightPass<Box>(data, child);
 
-		getLightMaterial<Directional>().bind();
 		lightPass<Directional>(data, child)->unbind();
 	}
 

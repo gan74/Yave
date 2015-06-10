@@ -25,11 +25,6 @@ uint getMaxAttachment() {
 	return GLContext::getContext()->getHWInt(GLContext::MaxFboAttachements);
 }
 
-bool isGLDepthEnabled() {
-	auto x = GLContext::getContext()->getMaterial();
-	return GLContext::getContext()->getMaterial().depthWrite;
-}
-
 FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Texture[getMaxAttachment()]), depth(0), drawBuffers(new gl::GLenum[getMaxAttachment()]), handle(0), modified(false) {
 	Image baseImage(base);
 	for(uint i = 0; i != getMaxAttachment(); i++) {
@@ -174,13 +169,8 @@ void FrameBuffer::unbind() {
 
 void FrameBuffer::clear(bool color, bool depth) {
 	gl::GLbitfield bits = (color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0);
-	if(depth && !isGLDepthEnabled()) {
-		gl::glDepthMask(true);
-		gl::glClear(bits);
-		gl::glDepthMask(false);
-	} else {
-		gl::glClear(bits);
-	}
+	Material().bind(RenderFlag::DepthWriteOnly);
+	gl::glClear(bits);
 }
 
 void FrameBuffer::blit(uint slot, bool depth) const {
@@ -197,14 +187,8 @@ void FrameBuffer::blit(uint slot, bool depth) const {
 		}
 	}
 	gl::GLbitfield bits = (color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0);
-	if(depth && !isGLDepthEnabled()) {
-		gl::glDepthMask(true);
-		gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), bits, GL_NEAREST);
-		gl::glDepthMask(false);
-	} else {
-		gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), bits, GL_NEAREST);
-	}
-	//gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, GLContext::getContext()->frameBuffer ? GLContext::getContext()->frameBuffer->handle : 0);
+	Material().bind(RenderFlag::DepthWriteOnly);
+	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), bits, GL_NEAREST);
 }
 
 }

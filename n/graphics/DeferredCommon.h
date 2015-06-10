@@ -35,6 +35,11 @@ enum LightType
 	Max
 };
 
+
+const VertexArrayObject<> &getSphere();
+const VertexArrayObject<> &getBox();
+core::String getBRDFs();
+
 template<LightType Type>
 const Material &getLightMaterial() {
 	static Material mat[LightType::Max];
@@ -52,10 +57,6 @@ const Material &getLightMaterial() {
 	}
 	return mat[Type];
 }
-
-const VertexArrayObject<> &getSphere();
-const VertexArrayObject<> &getBox();
-core::String getBRDFs();
 
 }
 }

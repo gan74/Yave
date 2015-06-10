@@ -46,8 +46,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/GBufferRenderer.h>
 #include <n/graphics/DynamicBuffer.h>
 #include <n/graphics/DeferredShadingRenderer.h>
-#include <n/graphics/ScreenShaderRenderer.h>
-#include <n/graphics/ShaderRenderer.h>
 #include <n/graphics/TriangleBuffer.h>
 #include <n/graphics/Light.h>
 #include <n/graphics/CubeMap.h>

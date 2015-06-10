@@ -40,8 +40,7 @@ class SubMeshInstance : core::NonCopyable
 			if(!vao) {
 				vao = new VertexArrayObject<>(buffer);
 			}
-			material.bind(renderFlags);
-			vao->draw(attribs, instances);
+			vao->draw(material, attribs, renderFlags, instances);
 		}
 
 		const Material &getMaterial() const {

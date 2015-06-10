@@ -61,6 +61,18 @@ void unused(T) {}
 #define N_NO_SCRIPT
 #endif
 
+#ifndef restrict
+	#ifdef __restrict__
+		#define restrict __restrict__
+	#else
+		#ifdef __restrict
+			#define restrict __restrict
+		#else
+			#define restrict
+		#endif
+	#endif
+#endif
+
 /****************** OS DEFINES BELOW ******************/
 
 #ifdef __WIN32

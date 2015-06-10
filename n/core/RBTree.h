@@ -441,7 +441,7 @@ class RBTree
 	private:
 		template<typename C>
 		iterator insertDispatch(const C &c, TrueType) {
-			insertCollection(c);
+			return insertCollection(c);
 		}
 
 		template<typename C>

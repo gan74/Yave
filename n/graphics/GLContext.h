@@ -82,8 +82,6 @@ class GLContext
 			return frameBuffer;
 		}
 
-		MaterialData getMaterial() const;
-
 		int getHWInt(HWInt hw) {
 			return hwInts[hw];
 		}
@@ -109,7 +107,6 @@ class GLContext
 		const ShaderCombinaison *shader;
 		core::SmartPtr<internal::ShaderProgram> program;
 		const FrameBuffer *frameBuffer;
-		assets::Asset<internal::Material> material;
 
 		int hwInts[Max];
 
