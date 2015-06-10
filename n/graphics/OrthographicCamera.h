@@ -72,12 +72,9 @@ class OrthographicCamera final : public Camera
 
 		void setForward(math::Vec3 f, Camera::RotationAxis r = Camera::Up) {
 			f.normalize();
-			if(fabs(f.dot(forward)) == 1.0) {
-				return;
-			}
-			math::Vec3 s = (r == Camera::Side ? math::Vec3(0, -1, 0) : math::Vec3(0, 0, -1)) ^ f;
-			math::Vec3 u = (s ^ f).normalized();
-			s = (u ^ f).normalized();
+			math::Vec3 s = (r ==  Camera::Side ? math::Vec3(0, -1, 0) : math::Vec3(0, 0, -1)) ^ f;
+			math::Vec3 u = ((s ^ f) + math::Vec3(0, 0, 2 * math::epsilon<float>())).normalized();
+			s = ((u ^ f) + math::Vec3(0, 2 * math::epsilon<float>(), 0)).normalized();
 			setRotation(math::Quaternion<>::fromBase(f, s, u));
 		}
 
