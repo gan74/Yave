@@ -26,30 +26,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-template<typename T = float>
-class Light : public Movable<T>
+class Light : public Movable
 {
 	public:
-		Light() : Movable<T>(), intensity(1), color(1), shadows(0) {
+		Light() : Movable(), intensity(1), color(1), shadows(0) {
 		}
 
 		virtual ~Light() {
 			delete shadows;
 		}
 
-		const Color<T> &getColor() const {
+		const Color<> &getColor() const {
 			return color;
 		}
 
-		void setColor(const Color<T> &c) {
+		void setColor(const Color<> &c) {
 			color = c.withLightness(1);
 		}
 
-		T getIntensity() const {
+		float getIntensity() const {
 			return intensity;
 		}
 
-		void setIntensity(T t) {
+		void setIntensity(float t) {
 			intensity = t;
 		}
 
@@ -57,50 +56,46 @@ class Light : public Movable<T>
 			return shadows;
 		}
 
-		ShadowRenderer<T> *getShadowRenderer() const {
+		ShadowRenderer *getShadowRenderer() const {
 			return shadows;
 		}
 
 	private:
-		T intensity;
-		Color<T> color;
+		float intensity;
+		Color<> color;
 
 	protected:
-		ShadowRenderer<T> *shadows;
+		ShadowRenderer *shadows;
 };
 
-template<typename T = float>
-class DirectionalLight : public Light<T>
+class DirectionalLight : public Light
 {
 	public:
-		DirectionalLight() : Light<T>() {
+		DirectionalLight() : Light() {
 		}
 
 		virtual ~DirectionalLight() override {
 		}
 };
 
-
-template<typename T = float>
-class BoxLight : public Light<T>
+class BoxLight : public Light
 {
-	using Light<T>::shadows;
 	public:
-		BoxLight(const math::Vec<3, T> &s = math::Vec<3, T>(10)) : Light<T>(), size(s) {
+		BoxLight(const math::Vec3 &s = math::Vec3(10)) : Light(), size(s) {
 		}
 
 		virtual ~BoxLight() {
 		}
 
-		const math::Vec<3, T> &getSize() const {
+		math::Vec3 getSize() const {
 			return size * getScale();
 		}
 
-		void setSize(const math::Vec<3, T> &s) {
+		void setSize(const math::Vec3 &s) {
 			size = s;
 		}
 
-		void setCastShadows(const Scene<T> *sc, uint res = 1024) {
+		void setCastShadows(const Scene *sc, uint res = 1024) {
 			delete shadows;
 			shadows = 0;
 			if(sc) {
@@ -109,23 +104,21 @@ class BoxLight : public Light<T>
 		}
 
 	private:
-		math::Vec<3, T> size;
+		math::Vec3 size;
 };
 
 
-template<typename T = float>
-class PointLight : public Light<T>
+class PointLight : public Light
 {
-	using Transformable<T>::radius;
 	public:
-		PointLight(T r = T(1)) : Light<T>() {
-			Transformable<T>::radius = r;
+		PointLight(float r = 1) : Light() {
+			Transformable::radius = r;
 		}
 
 		virtual ~PointLight() {
 		}
 
-		void setRadius(T r) {
+		void setRadius(float r) {
 			radius = r;
 		}
 

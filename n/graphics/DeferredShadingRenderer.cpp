@@ -22,10 +22,10 @@ namespace graphics {
 
 struct LightData
 {
-	LightData(Light<> *l) : light(l), shadowData(light->castShadows() ? light->getShadowRenderer()->prepare() : 0) {
+	LightData(Light *l) : light(l), shadowData(light->castShadows() ? light->getShadowRenderer()->prepare() : 0) {
 	}
 
-	Light<> *light;
+	Light *light;
 	void *shadowData;
 };
 
@@ -157,14 +157,14 @@ ShaderCombinaison *getShader() {
 
 
 template<LightType Type>
-void lightGeometryPass(const Light<> *l, ShaderCombinaison *sh, const math::Vec3 &forward) {
+void lightGeometryPass(const Light *l, ShaderCombinaison *sh, const math::Vec3 &forward) {
 	switch(Type) {
 		case Directional:
 			GLContext::getContext()->getScreen().draw(VertexAttribs());
 		break;
 
 		case Box: {
-			const BoxLight<> *box = dynamic_cast<const BoxLight<> *>(l);
+			const BoxLight *box = dynamic_cast<const BoxLight *>(l);
 			math::Matrix3<> lightMatrix(forward, -l->getTransform().getY().normalized(), -l->getTransform().getZ().normalized());
 			GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * -2, 0,
 																	lightMatrix[1] * box->getSize().y() * -2, 0,
@@ -204,7 +204,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 	sh->setValue("n_Cam", data->pos);
 
 	for(const LightData &ld : data->lights[Type]) {
-		const Light<> *l = ld.light;
+		const Light *l = ld.light;
 		math::Vec3 forward = -l->getTransform().getX().normalized();
 
 		sh->setValue("n_LightPos", l->getPosition());
@@ -244,9 +244,9 @@ void *DeferredShadingRenderer::prepare() {
 
 	return new FrameData({sceneData->camera->getPosition(),
 						  (sceneData->proj * sceneData->view).inverse(),
-						  {child->getRenderer()->getScene()->query<PointLight<>>(*sceneData->camera),
-						   child->getRenderer()->getScene()->get<DirectionalLight<>>(),
-						   child->getRenderer()->getScene()->get<BoxLight<>>()},
+						  {child->getRenderer()->getScene()->query<PointLight>(*sceneData->camera),
+						   child->getRenderer()->getScene()->get<DirectionalLight>(),
+						   child->getRenderer()->getScene()->get<BoxLight>()},
 						  ptr});
 }
 

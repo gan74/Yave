@@ -25,11 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-template<typename T = float>
 class Scene : core::NonCopyable
 {
 
-	typedef core::Pair<const Type, core::Array<Transformable<T> *>> TypedArray;
+	typedef core::Pair<const Type, core::Array<Transformable *>> TypedArray;
 	public:
 		Scene() {
 		}
@@ -39,7 +38,7 @@ class Scene : core::NonCopyable
 
 		template<typename U>
 		void insert(U *tr) {
-			if((void *)((Transformable<T> *)tr) != (void *)tr) {
+			if((void *)((Transformable *)tr) != (void *)tr) {
 				fatal("Virtual inherited Transformable<T>");
 			}
 			transformables.append(tr);
@@ -50,14 +49,14 @@ class Scene : core::NonCopyable
 					return;
 				}
 			}
-			core::Array<Transformable<T> *> a;
+			core::Array<Transformable *> a;
 			a.append(tr);
 			typeMap.append(TypedArray(ty, a));
 		}
 
-		template<typename U = Transformable<T>>
+		template<typename U = Transformable>
 		core::Array<U *> get() const {
-			if(std::is_same<U, Transformable<T>>::value) {
+			if(std::is_same<U, Transformable>::value) {
 				const core::Array<U *> *arr = reinterpret_cast<const core::Array<U *> *>(&transformables);
 				return *arr;
 			}
@@ -68,7 +67,7 @@ class Scene : core::NonCopyable
 					if(u) {
 						int off = (int)u - (int)p._2.first();
 						if(off) {
-							for(Transformable<T> *v : p._2) {
+							for(Transformable *v : p._2) {
 								array.append((U *)((byte *)v + off));
 							}
 						} else {
@@ -81,12 +80,12 @@ class Scene : core::NonCopyable
 			return array;
 		}
 
-		template<typename U = Transformable<T>, typename V>
+		template<typename U = Transformable, typename V>
 		core::Array<U *> query(const V &vol) const {
-			if(std::is_same<U, Transformable<T>>::value) {
+			if(std::is_same<U, Transformable>::value) {
 				return transformables
-						.filtered([&](Transformable<T> *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
-						.mapped([=](Transformable<T> *v) { return reinterpret_cast<U *>(v); });
+						.filtered([&](Transformable *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
+						.mapped([=](Transformable *v) { return reinterpret_cast<U *>(v); });
 			}
 			core::Array<U *> array(typename core::Array<U *>::Size(transformables.size()));
 			for(const TypedArray &p : typeMap) {
@@ -94,15 +93,15 @@ class Scene : core::NonCopyable
 					U *u = dynamic_cast<U *>(p._2.first());
 					if(u) {
 						uint off = (uint)u - (uint)p._2.first();
-						for(Transformable<T> *v : p._2) {
+						for(Transformable *v : p._2) {
 							if(v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius())) {
 								array.append((U *)((byte *)v + off));
 							}
 						}
 
 						/*array.append(p._2
-							.filtered([&](Transformable<T> *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
-							.mapped([=](Transformable<T> *v) { return (U *)((byte *)v + off); }));*/
+							.filtered([&](Transformable *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
+							.mapped([=](Transformable *v) { return (U *)((byte *)v + off); }));*/
 
 					}
 				}
@@ -111,7 +110,7 @@ class Scene : core::NonCopyable
 		}
 
 	private:
-		core::Array<Transformable<T> *> transformables;
+		core::Array<Transformable *> transformables;
 		core::Array<TypedArray> typeMap;
 
 

@@ -24,13 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-template<typename T = float>
-class Camera : public Transformable<T>, public math::Volume<T>
+class Camera : public Transformable, public math::Volume<>
 {
-	protected:
-		using Transformable<T>::transform; // WHY ?
-		using Transformable<T>::radius; // WHY ?
-
 	public:
 		enum RotationAxis
 		{
@@ -38,20 +33,20 @@ class Camera : public Transformable<T>, public math::Volume<T>
 			Up
 		};
 
-		Camera() : Transformable<T>(), math::Volume<T>() {
+		Camera() : Transformable(), math::Volume<>() {
 		}
 
-		const math::Matrix4<T> &getProjectionMatrix() const {
+		const math::Matrix4<> &getProjectionMatrix() const {
 			return proj;
 		}
 
-		const math::Matrix4<T> &getViewMatrix() const {
+		const math::Matrix4<> &getViewMatrix() const {
 			return view;
 		}
 
 	protected:
-		math::Matrix4<T> view;
-		math::Matrix4<T> proj;
+		math::Matrix4<> view;
+		math::Matrix4<> proj;
 };
 
 

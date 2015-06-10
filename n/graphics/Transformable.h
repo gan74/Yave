@@ -23,27 +23,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-template<typename T = float>
 class Transformable
 {
 	public:
-		const math::Transform<T> &getTransform() const {
+		const math::Transform<> &getTransform() const {
 			return transform;
 		}
 
-		T getRadius() const {
+		float getRadius() const {
 			return radius * getScale();
 		}
 
-		const math::Vec<3, T> &getPosition() const {
+		const math::Vec3 &getPosition() const {
 			return transform.getPosition();
 		}
 
-		const math::Quaternion<T> &getRotation() const {
+		const math::Quaternion<> &getRotation() const {
 			return transform.getRotation();
 		}
 
-		T getScale() const {
+		float getScale() const {
 			return transform.getScale();
 		}
 
@@ -51,25 +50,24 @@ class Transformable
 		}
 
 	protected:
-		T radius;
-		math::Transform<T> transform;
+		float radius;
+		math::Transform<> transform;
 };
 
-template<typename T = float>
-class Movable : public Transformable<T>
+class Movable : public Transformable
 {
 
 	public:
-		void setPosition(const math::Vec<3, T> &pos) {
-			transform = math::Transform<T>(transform.getRotation(), pos, transform.getScale());
+		void setPosition(const math::Vec3 &pos) {
+			transform = math::Transform<>(transform.getRotation(), pos, transform.getScale());
 		}
 
-		void setRotation(const math::Quaternion<T> &q) {
-			transform = math::Transform<T>(q, transform.getPosition(), transform.getScale());
+		void setRotation(const math::Quaternion<> &q) {
+			transform = math::Transform<>(q, transform.getPosition(), transform.getScale());
 		}
 
-		void setScale(T s) {
-			transform = math::Transform<T>(transform.getRotation(), transform.getPosition(), s);
+		void setScale(float s) {
+			transform = math::Transform<>(transform.getRotation(), transform.getPosition(), s);
 		}
 
 		void setForward(math::Vec3 f) {
@@ -77,8 +75,6 @@ class Movable : public Transformable<T>
 		}
 
 	protected:
-		using Transformable<T>::transform;
-		using Transformable<T>::radius;
 };
 
 }

@@ -9,49 +9,27 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->setDebugEnabled(false);
 	}
 
-	PerspectiveCamera<> cam;
+	PerspectiveCamera cam;
 	cam.setPosition(Vec3(-10, 0, 10));
 	cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
-	Light<> *light = 0;
+	Light *light = 0;
+	Obj *tr;
 
-	Scene<> scene;
+	Scene scene;
 	scene.insert(&cam);
 
-	/*for(uint i = 0; i != 25 * 1000; i++) {
-		scene.insert(new DummyRenderable());
-	}*/
-
-	/*for(uint i = 0; i != 50; i++) {
-		auto obj = new Obj("scube.obj");
-		obj->setAutoScale(10);
-		obj->setPosition(Vec3(random(), random(), random() + 0.5) * 1000 - 500);
-		scene.insert(obj);
-	}*/
 
 	{
 		auto obj = new Obj("scube.obj");
-		obj->setAutoScale(10);
-		obj->setPosition(Vec3(100, 0, 50));
-		scene.insert(obj);
-	}
-	{
-		auto obj = new Obj("scube.obj");
-		obj->setAutoScale(10);
-		obj->setPosition(Vec3(100, 25, 50));
-		scene.insert(obj);
+		obj->setAutoScale(5);
+		scene.insert(tr = obj);
 	}
 
-	/*{
-		auto obj = new Obj(MeshInstance<>(std::move(TriangleBuffer<>::getSphere())));
-		obj->setAutoScale(50);
-		scene.insert(obj);
-	}*/
-
 	{
-		auto obj = new Obj("./crytek-sponza/sponza.obj");
-		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi<>() * 0.5));
+		auto obj = new Obj("plane.obj");
+		//obj->setRotation(Quaternion<>::fromEuler(0, 0, pi<>() * 0.5));
 		obj->setAutoScale(800);
 		scene.insert(obj);
 
@@ -67,18 +45,19 @@ int main(int argc, char **argv) {
 	}*/
 
 	{
-		BoxLight<> *l = new BoxLight<>(800);
-		l->setForward(Vec3(0.25, 0.5, -1));
-		l->setIntensity(5);
-		l->setCastShadows(&scene, 4 * 1024);
+		BoxLight *l = new BoxLight(Vec3(50, 50, 100));
+		l->setPosition(Vec3(0, 0, 10));
+		l->setRotation(Quaternion<>::fromBase(Vec3(0, -1, -1), Vec3(1, 0, 1), Vec3(0, -1, -1) ^ Vec3(1, 0, 1)));
+		l->setIntensity(1);
+		l->setCastShadows(&scene, 128);
 		scene.insert(light = l);
 	}
 
 	BufferedRenderer *ri = 0;
-	ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
+	//ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 	//ri = new GBufferRenderer(new SceneRenderer(&scene));
-	FrameBufferRenderer renderer(ri);
-	//SceneRenderer renderer(&scene);
+	//FrameBufferRenderer renderer(ri);
+	SceneRenderer renderer(&scene);
 	//ToneMapRenderer renderer(ri);
 	//tone = &renderer;
 
@@ -94,13 +73,8 @@ int main(int argc, char **argv) {
 		Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
 		cam.setForward(f);
 
-		if(light) {
-			/*light->setIntensity(exp(
-					(sin(total.elapsed() * 0.5) + 3) * 3
-				));*/
-			double t = (fmod(total.elapsed() * 0.01, 0.5) + 0.25) * -pi<>();
-			light->setForward(Vec3(0, cos(t), sin(t)));
-			//light->setForward(f);
+		if(tr) {
+			tr->setPosition(Vec3(0, 0, 10 + sin(total.elapsed()) * 5));
 		}
 
 		(renderer)();

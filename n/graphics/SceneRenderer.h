@@ -34,26 +34,26 @@ class SceneRenderer : public BufferableRenderer
 		{
 			math::Matrix4<> proj;
 			math::Matrix4<> view;
-			const Camera<> *camera;
+			const Camera *camera;
 			RenderQueue queue;
 		};
 
-		SceneRenderer(const Scene<> *sc) : BufferableRenderer(), sce(sc) {
+		SceneRenderer(const Scene *sc) : BufferableRenderer(), sce(sc) {
 		}
 
 		virtual ~SceneRenderer() {
 		}
 
 		virtual void *prepare() override {
-			const Camera<> *cam = getCamera();
+			const Camera *cam = getCamera();
 			if(!cam) {
 				fatal("Camera not found");
 			}
 			return prepare(cam);
 		}
 
-		const Camera<> *getCamera() {
-			core::Array<Camera<> *> arr = sce->get<Camera<>>();
+		const Camera *getCamera() {
+			core::Array<Camera *> arr = sce->get<Camera>();
 			if(arr.isEmpty()) {
 				return 0;
 			}
@@ -64,13 +64,13 @@ class SceneRenderer : public BufferableRenderer
 			render(ptr, RenderFlag::None);
 		}
 
-		const Scene<> *getScene() const {
+		const Scene *getScene() const {
 			return sce;
 		}
 
 
 
-		void *prepare(const Camera<> *cam) {
+		void *prepare(const Camera *cam) {
 			FrameData *data = new FrameData();
 			data->proj = cam->getProjectionMatrix();
 			data->view = cam->getViewMatrix();
@@ -101,7 +101,7 @@ class SceneRenderer : public BufferableRenderer
 		}
 
 	private:
-		const Scene<> *sce;
+		const Scene *sce;
 };
 
 }

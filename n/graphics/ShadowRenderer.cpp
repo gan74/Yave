@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-BoxLightShadowRenderer::BoxLightShadowRenderer(BoxLight<float> *li, const Scene<> *sc, uint si) :  ShadowRenderer(si), child(new SceneRenderer(sc)), light(li) {
+BoxLightShadowRenderer::BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si) :  ShadowRenderer(si), child(new SceneRenderer(sc)), light(li) {
 }
 
 BoxLightShadowRenderer::~BoxLightShadowRenderer() {
@@ -30,7 +30,7 @@ BoxLightShadowRenderer::~BoxLightShadowRenderer() {
 }
 
 void *BoxLightShadowRenderer::prepare() {
-	OrthographicCamera<> *cam = new OrthographicCamera<>(light->getSize());
+	OrthographicCamera *cam = new OrthographicCamera(light->getSize());
 	cam->setPosition(light->getPosition());
 	cam->setRotation(light->getRotation());
 	proj = cam->getProjectionMatrix();

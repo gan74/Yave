@@ -23,10 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-template<typename T>
 class BoxLight;
 
-template<typename T>
 class ShadowRenderer : public BufferedRenderer
 {
 	public:
@@ -35,11 +33,11 @@ class ShadowRenderer : public BufferedRenderer
 			buffer.setDepthEnabled(true);
 		}
 
-		const math::Matrix4<T> &getProjectionMatrix() const {
+		const math::Matrix4<> &getProjectionMatrix() const {
 			return proj;
 		}
 
-		const math::Matrix4<T> &getViewMatrix() const {
+		const math::Matrix4<> &getViewMatrix() const {
 			return view;
 		}
 
@@ -47,19 +45,19 @@ class ShadowRenderer : public BufferedRenderer
 			return buffer.getDepthAttachement();
 		}
 
-		math::Matrix4<T> getShadowMatrix() const {
+		math::Matrix4<> getShadowMatrix() const {
 			return proj * view;
 		}
 
 	protected:
-		math::Matrix4<T> view;
-		math::Matrix4<T> proj;
+		math::Matrix4<> view;
+		math::Matrix4<> proj;
 };
 
-class BoxLightShadowRenderer : public ShadowRenderer<float>
+class BoxLightShadowRenderer : public ShadowRenderer
 {
 	public:
-		BoxLightShadowRenderer(BoxLight<float> *li, const Scene<> *sc, uint si = 1024);
+		BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si = 1024);
 
 		virtual ~BoxLightShadowRenderer();
 
@@ -68,7 +66,7 @@ class BoxLightShadowRenderer : public ShadowRenderer<float>
 
 	private:
 		SceneRenderer *child;
-		BoxLight<float> *light;
+		BoxLight *light;
 
 
 };

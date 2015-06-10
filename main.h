@@ -129,7 +129,6 @@ bool run(SDL_Window *mainWindow) {
 
 class Obj : public StaticMesh
 {
-	using Transformable<>::radius;
 	public:
 		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)), model(n), autoScale(0) {
 		}
@@ -164,12 +163,10 @@ class Obj : public StaticMesh
 		float autoScale;
 };
 
-class DummyRenderable : public Movable<>, public Renderable
+class DummyRenderable : public Movable, public Renderable
 {
-	using Transformable<>::radius;
-
 	public:
-		DummyRenderable() : Movable<>(), Renderable() {
+		DummyRenderable() : Movable(), Renderable() {
 			radius = 1.0;
 			setPosition(Vec3(random(), random(), random()) * 800 - 400);
 		}
@@ -196,7 +193,7 @@ class DummyObj : public Dummy<I>, public DummyObj<I - 1>
 {
 
 	public:
-		static void insert(uint max, Scene<> *s) {
+		static void insert(uint max, Scene *s) {
 			for(uint i = 0; i != max; i++) {
 				s->insert(new DummyObj<I>());
 			}
@@ -205,13 +202,13 @@ class DummyObj : public Dummy<I>, public DummyObj<I - 1>
 };
 
 template<>
-class DummyObj<0> : public Movable<>, public Renderable
+class DummyObj<0> : public Movable, public Renderable
 {
 	public:
 		virtual void render(RenderQueue &) override {
 		}
 
-		static void insert(uint max, Scene<> *s) {
+		static void insert(uint max, Scene *s) {
 			for(uint i = 0; i != max; i++) {
 				s->insert(new DummyObj<0>());
 			}

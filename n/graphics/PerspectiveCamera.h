@@ -24,73 +24,72 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-template<typename T = float>
-class PerspectiveCamera final : public Camera<T>
+class PerspectiveCamera final : public Camera
 {
 	protected:
-		using Transformable<T>::transform; // WHY ?
-		using Transformable<T>::radius; // WHY ?
-		using Camera<T>::view; // WHY ?
-		using Camera<T>::proj; // WHY ?
+		using Transformable::transform; // WHY ?
+		using Transformable::radius; // WHY ?
+		using Camera::view; // WHY ?
+		using Camera::proj; // WHY ?
 
 	public:
-		PerspectiveCamera(T fv = math::pi<T>() / 2, T ZFar = 1000) : Camera<T>(), zFar(ZFar), zNear(std::min(zFar * 0.1, 1.0)), ratio(1), fov(fv) {
+		PerspectiveCamera(float fv = math::pi<>() / 2, float ZFar = 1000) : Camera(), zFar(ZFar), zNear(std::min(zFar * 0.1, 1.0)), ratio(1), fov(fv) {
 			radius = zFar;
 			computeViewMatrix();
 			computeProjectionMatrix();
 			computeFrustum();
 		}
 
-		void setPosition(const math::Vec<3, T> &pos) {
-			transform = math::Transform<T>(transform.getRotation(), pos);
+		void setPosition(const math::Vec3 &pos) {
+			transform = math::Transform<>(transform.getRotation(), pos);
 			view[0][3] = side.dot(pos);
 			view[1][3] = -up.dot(pos);
 			view[2][3] = forward.dot(pos);
 		}
 
-		void setRotation(const math::Quaternion<T> &q) {
-			transform = math::Transform<T>(q, transform.getPosition());
+		void setRotation(const math::Quaternion<> &q) {
+			transform = math::Transform<>(q, transform.getPosition());
 			computeViewMatrix();
 			computeFrustum();
 		}
 
-		math::Vec<3, T> getForward() const {
+		math::Vec3 getForward() const {
 			return forward;
 		}
 
-		void setFov(T f) {
+		void setFov(float f) {
 			fov = f;
 			computeProjectionMatrix();
 			computeFrustum();
 		}
 
-		const math::Matrix4<T> &getProjectionMatrix() const {
+		const math::Matrix4<> &getProjectionMatrix() const {
 			return proj;
 		}
 
-		const math::Matrix4<T> &getViewMatrix() const {
+		const math::Matrix4<> &getViewMatrix() const {
 			return view;
 		}
 
-		void setRatio(T r) {
+		void setRatio(float r) {
 			ratio = r;
 			computeProjectionMatrix();
 		}
 
-		void setForward(math::Vec<3, T> f, typename Camera<T>::RotationAxis r =  Camera<T>::Up) {
+		void setForward(math::Vec3 f, Camera::RotationAxis r =  Camera::Up) {
 			f.normalize();
 			if(fabs(f.dot(forward)) == 1.0) {
 				return;
 			}
-			math::Vec<3, T> s = (r ==  Camera<T>::Side ? math::Vec<3, T>(0, -1, 0) : math::Vec<3, T>(0, 0, -1)) ^ f;
-			math::Vec<3, T> u = (s ^ f).normalized();
+			math::Vec3 s = (r ==  Camera::Side ? math::Vec3(0, -1, 0) : math::Vec3(0, 0, -1)) ^ f;
+			math::Vec3 u = (s ^ f).normalized();
 			s = (u ^ f).normalized();
-			setRotation(math::Quaternion<T>::fromBase(f, s, u));
+			setRotation(math::Quaternion<>::fromBase(f, s, u));
 		}
 
-		virtual bool isInside(const math::Vec<3, T> &p, T r) const override {
-			math::Vec<3, T> w = (p - transform.getPosition());
-			T z = w.dot(forward);
+		virtual bool isInside(const math::Vec3 &p, float r) const override {
+			math::Vec3 w = (p - transform.getPosition());
+			float z = w.dot(forward);
 			return z + r > zNear && z - r < zFar
 					&& w.dot(frustum[0]) + r > 0
 					&& w.dot(frustum[1]) + r > 0
@@ -103,24 +102,24 @@ class PerspectiveCamera final : public Camera<T>
 			forward = transform.getX();
 			up = transform.getZ();
 			side = transform.getY();
-			math::Vec<3, T> p = transform.getPosition();
-			view = math::Matrix4<T>(-side, side.dot(p),
+			math::Vec3 p = transform.getPosition();
+			view = math::Matrix4<>(-side, side.dot(p),
 									up, -up.dot(p),
 									-forward, forward.dot(p),
 			0, 0, 0, 1);
 		}
 
 		void computeProjectionMatrix() {
-			T f = cos(fov / 2.0) / sin(fov / 2.0);
-			T z = zFar - zNear;
-			proj = math::Matrix4<T>(1.0 / (tan(fov / 2) * ratio), 0, 0, 0, 0, f, 0, 0, 0, 0, -(zFar + zNear) / z, -1, 0, 0, -(2 * zFar * zNear) / z, 0).transposed();
+			float f = cos(fov / 2.0) / sin(fov / 2.0);
+			float z = zFar - zNear;
+			proj = math::Matrix4<>(1.0 / (tan(fov / 2) * ratio), 0, 0, 0, 0, f, 0, 0, 0, 0, -(zFar + zNear) / z, -1, 0, 0, -(2 * zFar * zNear) / z, 0).transposed();
 		}
 
 		void computeFrustum() {
-			T fovR = fov / 2;
-			T hFovR = atan(tan(fovR) * ratio);
-			T c = cos(fovR);
-			T s = sin(fovR);
+			float fovR = fov / 2;
+			float hFovR = atan(tan(fovR) * ratio);
+			float c = cos(fovR);
+			float s = sin(fovR);
 			frustum[0] = forward * s + up * c;
 			frustum[1] = forward * s - up * c;
 			c = cos(hFovR);
@@ -130,17 +129,17 @@ class PerspectiveCamera final : public Camera<T>
 		}
 
 
-		T zFar;
-		T zNear;
+		float zFar;
+		float zNear;
 
-		T ratio;
-		T fov;
+		float ratio;
+		float fov;
 
-		math::Vec<3, T> forward;
-		math::Vec<3, T> up;
-		math::Vec<3, T> side;
+		math::Vec3 forward;
+		math::Vec3 up;
+		math::Vec3 side;
 
-		math::Vec<3, T> frustum[4];
+		math::Vec3 frustum[4];
 };
 
 
