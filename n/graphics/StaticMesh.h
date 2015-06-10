@@ -28,7 +28,7 @@ namespace graphics {
 class StaticMesh : public Movable, public Renderable
 {
 	public:
-		StaticMesh(const MeshInstance<> &i = MeshInstance<>()) : inst(i) {
+		StaticMesh(const MeshInstance &i = MeshInstance()) : inst(i) {
 			this->radius = -1;
 		}
 
@@ -37,7 +37,7 @@ class StaticMesh : public Movable, public Renderable
 			q.insert(this->getTransform(), inst);
 		}
 
-		const MeshInstance<> &getMeshInstance() const {
+		const MeshInstance &getMeshInstance() const {
 			return inst;
 		}
 
@@ -47,7 +47,7 @@ class StaticMesh : public Movable, public Renderable
 		}
 
 	protected:
-		MeshInstance<> inst;
+		MeshInstance inst;
 };
 
 }

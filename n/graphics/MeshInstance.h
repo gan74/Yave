@@ -19,26 +19,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "TriangleBuffer.h"
 #include "VertexAttribs.h"
+#include "VertexArrayObject.h"
 #include "Material.h"
 #include <n/assets/Asset.h>
 
 namespace n {
 namespace graphics {
 
-template<typename T = float>
-class MeshInstanceBase : core::NonCopyable
+class SubMeshInstance : core::NonCopyable
 {
 	public:
-		MeshInstanceBase(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material &m) : buffer(b), vao(0), material(m) {
+		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m) : buffer(b), vao(0), material(m) {
 		}
 
-		~MeshInstanceBase() {
+		~SubMeshInstance() {
 			delete vao;
 		}
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
 			if(!vao) {
-				vao = new VertexArrayObject<T>(buffer);
+				vao = new VertexArrayObject<>(buffer);
 			}
 			material.bind(renderFlags);
 			vao->draw(attribs, instances);
@@ -48,48 +48,47 @@ class MeshInstanceBase : core::NonCopyable
 			return material;
 		}
 
-		T getRadius() const {
+		float getRadius() const {
 			return buffer.radius;
 		}
 
-		const typename TriangleBuffer<T>::FreezedTriangleBuffer &getTriangleBuffer() const {
+		const typename TriangleBuffer<>::FreezedTriangleBuffer &getTriangleBuffer() const {
 			return buffer;
 		}
 
 	private:
-		typename TriangleBuffer<T>::FreezedTriangleBuffer buffer;
-		mutable VertexArrayObject<T> *vao;
+		typename TriangleBuffer<>::FreezedTriangleBuffer buffer;
+		mutable VertexArrayObject<> *vao;
 		Material material;
 };
 
 namespace internal {
-	template<typename T = float>
 	struct MeshInstance : core::NonCopyable
 	{
-		typedef typename core::Array<MeshInstanceBase<T> *>::const_iterator const_iterator;
+		typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
 
-		MeshInstance(const core::Array<MeshInstanceBase<T> *> &b) : bases(b), radius(0) {
-			for(const MeshInstanceBase<T> *ba : bases) {
+		MeshInstance(const core::Array<SubMeshInstance *> &b) : bases(b), radius(0) {
+			for(const SubMeshInstance *ba : bases) {
 				radius = std::max(radius, ba->getRadius());
 			}
 		}
 
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material()) : MeshInstance<T>(core::Array<MeshInstanceBase<T> *>({new MeshInstanceBase<T>(std::move(b), m)})) {
+		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material()) : MeshInstance(core::Array<SubMeshInstance *>({new SubMeshInstance(std::move(b), m)})) {
 		}
 
 		~MeshInstance() {
-			for(const MeshInstanceBase<T> *b : bases) {
+			for(const SubMeshInstance *b : bases) {
 				delete b;
 			}
 		}
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
-			for(const MeshInstanceBase<T> *b : bases) {
+			for(const SubMeshInstance *b : bases) {
 				b->draw(attribs, instances);
 			}
 		}
 
-		T getRadius() const {
+		float getRadius() const {
 			return radius;
 		}
 
@@ -101,74 +100,73 @@ namespace internal {
 			return bases.end();
 		}
 
-		const core::Array<MeshInstanceBase<T> *> &getBases() const {
+		const core::Array<SubMeshInstance *> &getBases() const {
 			return bases;
 		}
 
 		private:
-			core::Array<MeshInstanceBase<T> *> bases;
-			T radius;
+			core::Array<SubMeshInstance *> bases;
+			float radius;
 
 	};
 }
 
-template<typename T = float>
-class MeshInstance : private assets::Asset<internal::MeshInstance<T>>
+class MeshInstance : private assets::Asset<internal::MeshInstance>
 {
 	friend class MeshLoader;
 	public:
-		typedef typename internal::MeshInstance<T>::const_iterator const_iterator;
+		typedef typename internal::MeshInstance::const_iterator const_iterator;
 
-		MeshInstance() :  assets::Asset<internal::MeshInstance<T>>() {
+		MeshInstance() :  assets::Asset<internal::MeshInstance>() {
 		}
 
-		MeshInstance(const typename TriangleBuffer<T>::FreezedTriangleBuffer &&b, const Material &m = Material()) : MeshInstance(new internal::MeshInstance<T>(std::move(b), m)) {
+		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m = Material()) : MeshInstance(new internal::MeshInstance(std::move(b), m)) {
 		}
 
 		bool isValid() const {
-			return assets::Asset<internal::MeshInstance<T>>::isValid();
+			return assets::Asset<internal::MeshInstance>::isValid();
 		}
 
 		bool isNull() const {
-			return assets::Asset<internal::MeshInstance<T>>::isNull();
+			return assets::Asset<internal::MeshInstance>::isNull();
 		}
 
-		T getRadius() const {
-			const internal::MeshInstance<T> *i = getInternal();
+		float getRadius() const {
+			const internal::MeshInstance *i = getInternal();
 			return i ? i->getRadius() : -1;
 		}
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
-			const internal::MeshInstance<T> *i = getInternal();
+			const internal::MeshInstance *i = getInternal();
 			if(i) {
 				i->draw(attribs, instances);
 			}
 		}
 
 		const_iterator begin() const {
-			const internal::MeshInstance<T> *i = getInternal();
+			const internal::MeshInstance *i = getInternal();
 			return i ? i->begin() : 0;
 		}
 
 		const_iterator end() const {
-			const internal::MeshInstance<T> *i = getInternal();
+			const internal::MeshInstance *i = getInternal();
 			return i ? i->end() : 0;
 		}
 
-		core::Array<MeshInstanceBase<T> *> getBases() const {
-			const internal::MeshInstance<T> *i = getInternal();
-			return i ? i->getBases() : core::Array<MeshInstanceBase<T> *>();
+		core::Array<SubMeshInstance *> getBases() const {
+			const internal::MeshInstance *i = getInternal();
+			return i ? i->getBases() : core::Array<SubMeshInstance *>();
 		}
 
 	private:
-		MeshInstance(const assets::Asset<internal::MeshInstance<T>> &t) : assets::Asset<internal::MeshInstance<T>>(t) {
+		MeshInstance(const assets::Asset<internal::MeshInstance> &t) : assets::Asset<internal::MeshInstance>(t) {
 		}
 
-		MeshInstance(internal::MeshInstance<T> *i) : assets::Asset<internal::MeshInstance<T>>(std::move(i)) {
+		MeshInstance(internal::MeshInstance *i) : assets::Asset<internal::MeshInstance>(std::move(i)) {
 		}
 
-		const internal::MeshInstance<T> *getInternal() const {
-			return isValid() ? this->operator->() : (const internal::MeshInstance<T> *)0;
+		const internal::MeshInstance *getInternal() const {
+			return isValid() ? this->operator->() : (const internal::MeshInstance *)0;
 		}
 };
 

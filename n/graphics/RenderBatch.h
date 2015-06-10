@@ -27,7 +27,7 @@ namespace graphics {
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<> &m, MeshInstanceBase<> *i, const VertexAttribs &attr = VertexAttribs()) : instanciable(true), inst(i), matrix(m), attribs(attr) {
+		RenderBatch(const math::Matrix4<> &m, SubMeshInstance *i, const VertexAttribs &attr = VertexAttribs()) : instanciable(true), inst(i), matrix(m), attribs(attr) {
 		}
 
 		void operator()(uint renderFlags = RenderFlag::None) const {
@@ -46,7 +46,7 @@ class RenderBatch
 	private:
 		bool instanciable;
 
-		MeshInstanceBase<> *inst;
+		SubMeshInstance *inst;
 		math::Matrix4<> matrix;
 		VertexAttribs attribs;
 };

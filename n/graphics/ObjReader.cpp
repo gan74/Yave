@@ -30,7 +30,7 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 		ObjReader() : MeshLoader::MeshReader<ObjReader, core::String>() {
 		}
 
-		internal::MeshInstance<> *operator()(core::String name) override {
+		internal::MeshInstance *operator()(core::String name) override {
 			if(!name.endsWith(".obj")) {
 				return 0;
 			}
@@ -39,7 +39,7 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 		}
 
 	private:
-		internal::MeshInstance<> *load(io::File &file) {
+		internal::MeshInstance *load(io::File &file) {
 			if(!file.open(io::IODevice::Read)) {
 				std::cerr<<file.getName()<<" not found"<<std::endl;
 				return 0;
@@ -96,7 +96,7 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 			bool smooth = false;
 			TriangleBuffer<> tr;
 			Material mat;
-			core::Array<MeshInstanceBase<> *> bases;
+			core::Array<SubMeshInstance *> bases;
 			for(const core::String &l : lines) {
 				if(l.beginsWith("f ")) {
 					core::Array<core::String> fl = l.subString(2).split(" ");
@@ -145,7 +145,7 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 					smooth = !(sm == "off" || sm == "0");
 				} else if(l.beginsWith("usemtl ")) {
 					if(!tr.getTriangles().isEmpty()) {
-						bases.append(new MeshInstanceBase<>(std::move(tr.freezed()), mat));
+						bases.append(new SubMeshInstance(std::move(tr.freezed()), mat));
 						tr = TriangleBuffer<>();
 						vmap.clear();
 					}
@@ -155,9 +155,9 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 				}
 			}
 			if(!tr.getTriangles().isEmpty()) {
-				bases.append(new MeshInstanceBase<>(std::move(tr.freezed()), mat));
+				bases.append(new SubMeshInstance(std::move(tr.freezed()), mat));
 			}
-			return new internal::MeshInstance<>(bases);
+			return new internal::MeshInstance(bases);
 		}
 };
 

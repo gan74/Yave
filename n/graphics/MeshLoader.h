@@ -42,16 +42,16 @@ class MeshLoader
 					n::unused(runner);
 				}
 
-				virtual internal::MeshInstance<> *operator()(Args...) = 0;
+				virtual internal::MeshInstance *operator()(Args...) = 0;
 
 			private:
 				static Runner runner;
 		};
 
 		template<typename... Args>
-		static MeshInstance<> load(Args... args, bool async = true)  {
+		static MeshInstance load(Args... args, bool async = true)  {
 			MeshLoader *ld = getLoader();
-			return async ? MeshInstance<>(ld->asyncBuffer.load(args...)) : MeshInstance<>(ld->immediateBuffer.load(args...));
+			return async ? MeshInstance(ld->asyncBuffer.load(args...)) : MeshInstance(ld->immediateBuffer.load(args...));
 		}
 
 		template<typename... Args, typename T>
@@ -72,9 +72,9 @@ class MeshLoader
 		MeshLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
 
-		assets::AssetBuffer<internal::MeshInstance<>> buffer;
-		assets::AssetManager<internal::MeshInstance<>, assets::AsyncLoadingPolicy<internal::MeshInstance<>>> asyncBuffer;
-		assets::AssetManager<internal::MeshInstance<>, assets::ImmediateLoadingPolicy<internal::MeshInstance<>>> immediateBuffer;
+		assets::AssetBuffer<internal::MeshInstance> buffer;
+		assets::AssetManager<internal::MeshInstance, assets::AsyncLoadingPolicy<internal::MeshInstance>> asyncBuffer;
+		assets::AssetManager<internal::MeshInstance, assets::ImmediateLoadingPolicy<internal::MeshInstance>> immediateBuffer;
 
 };
 

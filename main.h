@@ -133,7 +133,7 @@ class Obj : public StaticMesh
 		Obj(String n) : StaticMesh(MeshLoader::load<String>(n)), model(n), autoScale(0) {
 		}
 
-		Obj(const MeshInstance<> &n) : StaticMesh(n), model(""), autoScale(0) {
+		Obj(const MeshInstance &n) : StaticMesh(n), model(""), autoScale(0) {
 		}
 
 		void setAttribs(const VertexAttribs &a) {
@@ -148,7 +148,7 @@ class Obj : public StaticMesh
 			if(autoScale && !getMeshInstance().isNull()) {
 				setScale(autoScale / getMeshInstance().getRadius());
 			}
-			for(MeshInstanceBase<> *b : getMeshInstance()) {
+			for(SubMeshInstance *b : getMeshInstance()) {
 				qu.insert(RenderBatch(getTransform().getMatrix(), b, attribs));
 			}
 		}

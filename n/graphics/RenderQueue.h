@@ -36,8 +36,8 @@ class RenderQueue
 			funcs.append(f);
 		}
 
-		void insert(const math::Matrix4<> &t, const MeshInstance<> &m) {
-			for(MeshInstanceBase<> *base : m) {
+		void insert(const math::Matrix4<> &t, const MeshInstance &m) {
+			for(SubMeshInstance *base : m) {
 				insert(RenderBatch(t, base));
 			}
 		}
