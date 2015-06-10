@@ -26,12 +26,6 @@ namespace graphics {
 
 class PerspectiveCamera final : public Camera
 {
-	protected:
-		using Transformable::transform; // WHY ?
-		using Transformable::radius; // WHY ?
-		using Camera::view; // WHY ?
-		using Camera::proj; // WHY ?
-
 	public:
 		PerspectiveCamera(float fv = math::pi<>() / 2, float ZFar = 1000) : Camera(), zFar(ZFar), zNear(std::min(zFar * 0.1, 1.0)), ratio(1), fov(fv) {
 			radius = zFar;

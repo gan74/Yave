@@ -24,7 +24,6 @@ namespace graphics {
 
 class OrthographicCamera final : public Camera
 {
-
 	public:
 		OrthographicCamera(const math::Vec3 &s) : Camera(), size(s) {
 			radius = size.length();
