@@ -58,6 +58,7 @@ GLContext *GLContext::getContext() {
 	if(!ct) {
 		ct = new GLContext();
 		ShaderProgram(ct->program).bind();
+		Material().bind(RenderFlag::ForceMaterialRebind);
 	}
 	return ct;
 }
@@ -126,7 +127,6 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	if(hwInts[MaxVertexAttribs] <= 4) {
 		fatal("Not enought vertex attribs.");
 	}
-
 
 	#define CHECK_TEX_FORMAT(frm) if(!Texture::isHWSupported(ImageFormat::frm)) { fatal(("Texture format " + core::String(#frm) + " not supported.").toChar()); }
 
