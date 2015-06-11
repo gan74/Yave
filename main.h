@@ -69,6 +69,7 @@ using namespace n::graphics;
 Vec2 mouse;
 Vec2 wasd;
 ToneMapRenderer *tone;
+bool bench = false;
 
 SDL_Window *createWindow() {
 	SetConsoleOutputCP(65001);
@@ -114,6 +115,7 @@ bool run(SDL_Window *mainWindow) {
 			if(tone && e.key.keysym.sym == 'e') {
 				tone->setDebugEnabled(!tone->isDebugEnabled());
 			}
+			bench |= e.key.keysym.sym == 'b';
 		} else if(e.type == SDL_MOUSEMOTION && m1) {
 			mouse += Vec2(e.motion.xrel, e.motion.yrel);
 		} else if(e.type == SDL_MOUSEBUTTONDOWN) {

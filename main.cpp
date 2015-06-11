@@ -62,24 +62,31 @@ int main(int argc, char **argv) {
 	//tone = &renderer;
 
 	Timer timer;
-	Timer total;
+
+	uint64 frames = 0;
 
 	while(run(win)) {
-		double dt = timer.reset();
-		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 100);
-		Vec2 angle = mouse * 0.01;
-		float p2 = pi<>() * 0.5 - 0.01;
-		angle.y() = std::min(std::max(angle.y(), -p2), p2);
-		Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
-		cam.setForward(f);
+		if(!bench) {
+			frames = 0;
+			double dt = timer.reset();
+			cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 100);
+			Vec2 angle = mouse * 0.01;
+			float p2 = pi<>() * 0.5 - 0.01;
+			angle.y() = std::min(std::max(angle.y(), -p2), p2);
+			Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
+			cam.setForward(f);
+		} else {
+			double tt = timer.elapsed();
+			frames++;
+			float ang = tt * 0.33;
+			cam.setPosition(Vec3(cos(ang) * 350, sin(ang) * 100, 185));
+			cam.setForward(Vec3(-cos(ang), -sin(ang), -0.2));
+			if(tt > 10) {
+				frames++;
+				bench = false;
+				std::cout<<frames<<" frames in "<<tt<<" seconds ("<<frames / tt<<" fps, "<<tt / frames * 1000<<"ms)"<<std::endl;
+			}
 
-		if(light) {
-			double t = (fmod(total.elapsed() * 0.01, 0.5) + 0.25) * -pi<>();
-			light->setForward(Vec3(0, cos(t), sin(t)));
-		}
-
-		if(tr) {
-			tr->setPosition(Vec3(0, 0, 15 + sin(total.elapsed()) * 5));
 		}
 
 		(renderer)();
@@ -90,10 +97,6 @@ int main(int argc, char **argv) {
 		if(GLContext::getContext()->checkGLError()) {
 			fatal("OpenGL error");
 		}
-
-		/*if(total.elapsed() > 20) {
-			break;
-		}*/
 	}
 	return 0;
 }
