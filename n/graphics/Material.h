@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Texture.h"
 #include "ShaderCombinaison.h"
 
-#define N_MATERIAL_FANCYNESS
+//#define N_MATERIAL_FANCYNESS
 #define N_MATERIAL_CACHING
 
 namespace n {
