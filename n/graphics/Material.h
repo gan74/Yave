@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderCombinaison.h"
 
 #define N_MATERIAL_FANCYNESS
+#define N_MATERIAL_CACHING
 
 namespace n {
 namespace graphics {
@@ -195,12 +196,18 @@ class Material : private assets::Asset<internal::Material>
 		}
 
 		MaterialData getData() const {
+			#ifdef N_MATERIAL_CACHING
 			if(cache.data.hasValue()) {
 				return cache.data;
 			}
+			#endif
 			const internal::Material *i = getInternal();
 			if(i) {
-				return cache.data = i->data;
+				return
+				#ifdef N_MATERIAL_CACHING
+					cache.data =
+				#endif
+					i->data;
 			}
 			return MaterialData();
 		}
@@ -240,7 +247,9 @@ class Material : private assets::Asset<internal::Material>
 			}
 
 			uint index;
+			#ifdef N_MATERIAL_CACHING
 			core::Option<MaterialData> data;
+			#endif
 		};
 
 		mutable Cache cache;

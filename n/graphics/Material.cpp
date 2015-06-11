@@ -31,11 +31,11 @@ concurrent::Mutex Material::mutex = concurrent::Mutex();
 }
 
 static internal::Material *const nullInternal = new internal::Material();
-static const internal::Material *currentMat = 0;
+static MaterialData current;
 static typename MaterialData::BlendMode blendMode = MaterialData::None;
 
 
-void setShaderParams(const ShaderCombinaison *restrict sh, const MaterialData &restrict data) {
+N_FORCE_INLINE void setShaderParams(const ShaderCombinaison *restrict sh, const MaterialData &restrict data) {
 	sh->setValue("n_Color", data.color);
 	sh->setValue("n_Roughness", data.roughness);
 	sh->setValue("n_Metallic", data.metallic);
@@ -91,21 +91,18 @@ void fullBind(const MaterialData &restrict data) {
 		}
 		blendMode = data.blend;
 	}
+	current = data;
 }
 
 void Material::bind(uint flags) const {
-	const internal::Material *restrict intern = getInternal();
-	MaterialData data = intern ? intern->data : MaterialData();
+	MaterialData data = getData();
 
-	const internal::Material *c = currentMat;
-	if(!c || flags & ForceMaterialRebind) {
+	if(flags & ForceMaterialRebind) {
 		fullBind(data);
 	} else {
-		MaterialData curr = c->data;
-
 		if(flags & DepthWriteOnly) {
-			if(curr.depthWrite != data.depthWrite) {
-				gl::glDepthMask(data.depthWrite);
+			if(current.depthWrite != data.depthWrite) {
+				gl::glDepthMask(current.depthWrite = data.depthWrite);
 			}
 			return;
 		}
@@ -117,17 +114,18 @@ void Material::bind(uint flags) const {
 			setShaderParams(sh, data);
 		}
 		#ifdef N_MATERIAL_FANCYNESS
-		if(curr.fancy || data.fancy)
+		if(current.fancy || data.fancy)
 		#endif
 		{
-			if(curr.depthTested != data.depthTested) {
+			if(current.depthTested != data.depthTested) {
 				if(data.depthTested) {
 					gl::glEnable(GL_DEPTH_TEST);
 				} else {
 					gl::glDisable(GL_DEPTH_TEST);
 				}
+				current.depthTested = data.depthTested;
 			}
-			if(curr.depth != data.depth) {
+			if(current.depth != data.depth) {
 				gl::GLenum funcs[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
 				gl::glDepthFunc(funcs[data.depth]);
 				if(data.depth == MaterialData::Greater) {
@@ -135,26 +133,28 @@ void Material::bind(uint flags) const {
 				} else {
 					gl::glDisable(GL_DEPTH_CLAMP);
 				}
+				current.depth = data.depth;
 			}
-			if(curr.depthWrite != data.depthWrite) {
-				gl::glDepthMask(data.depthWrite);
+			if(current.depthWrite != data.depthWrite) {
+				gl::glDepthMask(current.depthWrite = data.depthWrite);
 			}
-			if(curr.cull != data.cull) {
+			if(current.cull != data.cull) {
 				if(data.cull == MaterialData::DontCull) {
 					gl::glDisable(GL_CULL_FACE);
 				} else {
-					if(curr.cull == MaterialData::DontCull) {
+					if(current.cull == MaterialData::DontCull) {
 						gl::glEnable(GL_CULL_FACE);
 					}
 					gl::GLenum glc[] = {GL_BACK, GL_FRONT};
 					gl::glCullFace(glc[data.cull]);
 				}
+				current.cull = data.cull;
 			}
-			if(curr.blend != data.blend) {
+			if(current.blend != data.blend) {
 				if(data.blend == MaterialData::None) {
 					gl::glDisable(GL_BLEND);
 				} else {
-					if(curr.blend == MaterialData::None) {
+					if(current.blend == MaterialData::None) {
 						gl::glEnable(GL_BLEND);
 					}
 					if(blendMode != data.blend) {
@@ -164,10 +164,10 @@ void Material::bind(uint flags) const {
 						blendMode = data.blend;
 					}
 				}
+				current.blend = data.blend;
 			}
 		}
 	}
-	currentMat = intern ? intern : nullInternal;
 }
 
 }
