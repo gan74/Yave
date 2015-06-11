@@ -114,9 +114,11 @@ void Material::bind(uint flags) const {
 			setShaderParams(sh, data);
 		}
 		#ifdef N_MATERIAL_FANCYNESS
-		if(current.fancy || data.fancy)
+		if(current.fancy || data.fancy) {
+			current.fancy = data.fancy;
+		#else
+			{
 		#endif
-		{
 			if(current.depthTested != data.depthTested) {
 				if(data.depthTested) {
 					gl::glEnable(GL_DEPTH_TEST);

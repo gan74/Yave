@@ -229,7 +229,7 @@ class Material : private assets::Asset<internal::Material>
 		Material(internal::Material *i) : assets::Asset<internal::Material>(std::move(i)) {
 		}
 
-		const internal::Material *getInternal() const {
+		N_FORCE_INLINE const internal::Material *getInternal() const {
 			return this->isValid() ? this->operator->() : (const internal::Material *)0;
 		}
 
