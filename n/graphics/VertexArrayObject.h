@@ -31,14 +31,10 @@ class VertexArrayObject : core::NonCopyable
 	public:
 		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius),
 			size(tr.indexes.size() % 3 ? uint(fatal("Invalid non-trianglulated mesh.")) : tr.indexes.size() / 3),
-			data(tr.vertices), indexes(tr.indexes), attribs(new bool[maxAttribs()]), handle(0) {
-			for(uint i = 0; i != maxAttribs(); i++) {
-				attribs[i] = false;
-			}
+			data(tr.vertices), indexes(tr.indexes), handle(0) {
 		}
 
 		~VertexArrayObject() {
-			delete[] attribs;
 			if(handle) {
 				gl::GLuint h = handle;
 				GLContext::getContext()->addGLTask([=]() {
@@ -63,36 +59,11 @@ class VertexArrayObject : core::NonCopyable
 			return GLContext::getContext()->getHWInt(GLContext::MaxVertexAttribs) - 4;
 		}
 
-		void bindAttribs(const VertexAttribs &attributes) const {
-			bool *att = new bool[maxAttribs()];
-			for(uint i = 0; i != maxAttribs(); i++) {
-				att[i] = false;
+		void bindAttribs(const VertexAttribs &att) const {
+			if(att.attribs.isEmpty()) {
+				return;
 			}
-			for(const VertexAttribs::Attrib &attrib : attributes.attribs) {
-				if(attrib.slot <= 3) {
-					fatal("Vertex attribs slots <= 3 are reserved.");
-				}
-				if(attrib.slot - 4 >= maxAttribs()) {
-					fatal("Not enought vertex attribs slots.");
-				}
-				if(att[attrib.slot - 4]) {
-					fatal("Multiple vertex attribs on same slot.");
-				}
-				att[attrib.slot - 4] = true;
-				attrib.buffer->update(true);
-				gl::glVertexAttribPointer(attrib.slot, attrib.size, attrib.type, GL_FALSE, 0, 0);
-			}
-			for(uint i = 0; i != maxAttribs(); i++) {
-				if(attribs[i] != att[i]) {
-					if(att[i]) {
-						gl::glEnableVertexAttribArray(i + 4);
-					} else {
-						gl::glDisableVertexAttribArray(i + 4);
-					}
-				}
-			}
-			std::swap(attribs, att);
-			delete[] att;
+			fatal("Attribs not supported");
 		}
 
 		void bind() const {
@@ -120,7 +91,6 @@ class VertexArrayObject : core::NonCopyable
 		StaticBuffer<Vertex<T>, Array> data;
 		StaticBuffer<uint, Index> indexes;
 
-		mutable bool *attribs;
 		mutable gl::GLuint handle;
 };
 
