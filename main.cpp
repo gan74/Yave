@@ -35,31 +35,18 @@ int main(int argc, char **argv) {
 
 	}
 
-	/*{
-		PointLight<> *l = new PointLight<>();
-		l->setPosition(Vec3(0, 0, 50));
-		//l->setColor(Color<>(Blue));
-		l->setRadius(750);
-		l->setIntensity(100000);
-		scene.insert(light = l);
-	}*/
-
 	{
-		DirectionalLight *l = new DirectionalLight();
+		BoxLight *l = new BoxLight(800);
 		l->setForward(Vec3(0, 0, -1));
 		l->setPosition(Vec3(0, 0, 10));
-		//l->setRotation(Quaternion<>::fromBase(Vec3(0, -1, -1), Vec3(1, 0, 1), Vec3(0, -1, -1) ^ Vec3(1, 0, 1)));
-		//l->setIntensity(5);
-		//l->setCastShadows(&scene, 2048);
-		scene.insert(light = l);
+		l->setIntensity(5);
+		l->setCastShadows(&scene, 2048);
+		scene.insert(l);
 	}
 
 	BufferedRenderer *ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
-	//ri = new GBufferRenderer(new SceneRenderer(&scene));
 	FrameBufferRenderer renderer(ri);
 	//SceneRenderer renderer(&scene);
-	//ToneMapRenderer renderer(ri);
-	//tone = &renderer;
 
 	Timer timer;
 
@@ -81,12 +68,10 @@ int main(int argc, char **argv) {
 			float ang = tt * 0.33;
 			cam.setPosition(Vec3(cos(ang) * 350, sin(ang) * 100, 185));
 			cam.setForward(Vec3(-cos(ang), -sin(ang), -0.2));
-			if(tt > 10) {
-				frames++;
+			if(tt > 15) {
 				bench = false;
 				std::cout<<frames<<" frames in "<<tt<<" seconds ("<<frames / tt<<" fps, "<<tt / frames * 1000<<"ms)"<<std::endl;
 			}
-
 		}
 
 		(renderer)();
@@ -570,34 +555,27 @@ uint64 rack(uint64 m, uint64 n) {
 #include <n/io/TextInputStream.h>
 #include <n/io/BufferedInputStream.h>
 
-int main(int, char **) {
-	File f("person.csv");
-	f.open(IODevice::Read);
-	TextInputStream s(new BufferedInputStream(&f));
-	while(s.canRead()) {
-		String line = s.readLine();
-		auto values = line.split("\t");
-		if(values.size() < 9) {
-			continue;
-		}
-		uint id = uint(values.first());
-		String bib = values[8];
-		String quote = values[4];
-		String triv = values[3];
-		if(bib == "\\N") {
-			bib = "";
-		}
-		if(triv == "\\N") {
-			triv = "";
-		}
-		if(quote == "\\N") {
-			quote = "";
-		}
-		if(bib.isEmpty() && triv.isEmpty() && quote.isEmpty()) {
-			continue;
-		}
-		std::cout<<id<<", "<<triv<<", "<<quote<<", "<<bib<<std::endl;
+
+class A
+{
+	virtual void lel() {
 	}
+};
+
+class C
+{
+};
+
+struct B  : public C, public virtual A
+{
+	virtual void lel() override {
+	}
+};
+
+int main(int, char **) {
+
+	A *b = new B();
+	std::cout<<dynamic_cast<B *>(b)<<", "<<reinterpret_cast<B *>(b)<<std::endl;
 	return 0;
 }
 
