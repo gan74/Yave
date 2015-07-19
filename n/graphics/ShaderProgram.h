@@ -40,9 +40,9 @@ class ShaderCombinaison;
 namespace internal {
 	struct ShaderProgramCombinaison
 	{
-		Shader<FragmentShader> *frag;
-		Shader<VertexShader> *vert;
-		Shader<GeometryShader> *geom;
+		const Shader<FragmentShader> *frag;
+		const Shader<VertexShader> *vert;
+		const Shader<GeometryShader> *geom;
 
 		bool operator==(const ShaderProgramCombinaison &c) const {
 			return frag == c.frag && vert == c.vert && geom == c.geom;
@@ -79,7 +79,7 @@ namespace internal {
 
 	struct ShaderProgram : core::NonCopyable
 	{
-		ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom);
+		ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom);
 		~ShaderProgram();
 
 		ShaderProgramCombinaison getCombinaison() const;
@@ -101,20 +101,20 @@ class ShaderProgram
 		};
 
 		ShaderProgram();
-		ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert = 0, Shader<GeometryShader> *geom = 0);
-		ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader vert, Shader<GeometryShader> *geom = 0);
+		ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert = 0, const Shader<GeometryShader> *geom = 0);
+		ShaderProgram(const Shader<FragmentShader> *frag, StandardVertexShader vert, const Shader<GeometryShader> *geom = 0);
 
 		const ShaderCombinaison *bind() const;
 
 		bool isActive() const;
 
-		static void setDefaultShader(Shader<FragmentShader> *s);
-		static void setDefaultShader(Shader<VertexShader> *s);
-		static void setDefaultShader(Shader<GeometryShader> *s);
+		static void setDefaultShader(const Shader<FragmentShader> *s);
+		static void setDefaultShader(const Shader<VertexShader> *s);
+		static void setDefaultShader(const Shader<GeometryShader> *s);
 
-		static bool isDefaultShader(Shader<FragmentShader> *s);
-		static bool isDefaultShader(Shader<VertexShader> *s);
-		static bool isDefaultShader(Shader<GeometryShader> *s);
+		static bool isDefaultShader(const Shader<FragmentShader> *s);
+		static bool isDefaultShader(const Shader<VertexShader> *s);
+		static bool isDefaultShader(const Shader<GeometryShader> *s);
 
 
 		static Shader<VertexShader> *getDefaultVertexShader(StandardVertexShader type = ProjectionShader);
@@ -138,6 +138,18 @@ class ShaderProgram
 
 		bool operator>(const ShaderProgram &p) const {
 			return ptr->base > p.ptr->base;
+		}
+
+		const Shader<FragmentShader> *getFragmentShader() const {
+			return ptr->base.frag;
+		}
+
+		const Shader<VertexShader> *getVertexShader() const {
+			return ptr->base.vert;
+		}
+
+		const Shader<GeometryShader> *getGeometryShader() const {
+			return ptr->base.geom;
 		}
 
 

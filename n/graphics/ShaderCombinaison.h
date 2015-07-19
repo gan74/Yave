@@ -91,8 +91,8 @@ class ShaderCombinaison : core::NonCopyable
 				core::String name;
 		};
 
-		ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom = 0);
-		ShaderCombinaison(Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vs);
+		ShaderCombinaison(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom = 0);
+		ShaderCombinaison(const Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vs);
 		~ShaderCombinaison();
 
 		bool isValid() const {
@@ -242,7 +242,7 @@ class ShaderCombinaison : core::NonCopyable
 			return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
 		}
 
-		internal::ShaderBase *shaders[3];
+		const internal::ShaderBase *shaders[3];
 		gl::GLuint handle;
 		core::String logs;
 		core::Map<core::String, UniformInfo> uniformsInfo;

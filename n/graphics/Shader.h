@@ -45,7 +45,7 @@ class ShaderBase : core::NonCopyable
 			return version;
 		}
 
-		bool isValid() {
+		bool isValid() const {
 			return handle && version;
 		}
 

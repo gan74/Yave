@@ -21,14 +21,14 @@ namespace n {
 namespace graphics {
 
 
-ShaderCombinaison::ShaderCombinaison(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : handle(0), bindings(0) {
+ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : handle(0), bindings(0) {
 	shaders[FragmentShader] = frag;
 	shaders[VertexShader] = vert;
 	shaders[GeometryShader] = geom;
 	compile();
 }
 
-ShaderCombinaison::ShaderCombinaison(Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vs) : ShaderCombinaison(frag, ShaderProgram::getDefaultVertexShader(vs)) {
+ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vs) : ShaderCombinaison(frag, ShaderProgram::getDefaultVertexShader(vs)) {
 }
 
 ShaderCombinaison::~ShaderCombinaison() {

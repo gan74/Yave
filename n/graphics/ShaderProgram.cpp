@@ -23,13 +23,13 @@ namespace graphics {
 
 typedef internal::ShaderProgramCombinaison Combinaison;
 
-static Shader<FragmentShader> *defaultFrag = 0;
-static Shader<VertexShader> *defaultVert = 0;
-static Shader<GeometryShader> *defaultGeom = 0;
+static const Shader<FragmentShader> *defaultFrag = 0;
+static const Shader<VertexShader> *defaultVert = 0;
+static const Shader<GeometryShader> *defaultGeom = 0;
 
 namespace internal {
 
-ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : base({frag, vert, geom}) {
+ShaderProgram::ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : base({frag, vert, geom}) {
 }
 
 ShaderProgram::~ShaderProgram() {
@@ -131,10 +131,10 @@ Shader<VertexShader> *ShaderProgram::getDefaultVertexShader(StandardVertexShader
 ShaderProgram::ShaderProgram() : ptr(getNullProgram()) {
 }
 
-ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, vert, geom)) {
+ShaderProgram::ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, vert, geom)) {
 }
 
-ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader vert, Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, getDefaultVertexShader(vert), geom)) {
+ShaderProgram::ShaderProgram(const Shader<FragmentShader> *frag, StandardVertexShader vert, const Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, getDefaultVertexShader(vert), geom)) {
 }
 
 const ShaderCombinaison *ShaderProgram::bind() const {
@@ -155,36 +155,36 @@ bool ShaderProgram::isActive() const {
 	return ptr == GLContext::getContext()->program;
 }
 
-void ShaderProgram::setDefaultShader(Shader<FragmentShader> *s) {
+void ShaderProgram::setDefaultShader(const Shader<FragmentShader> *s) {
 	defaultFrag = s;
 	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.frag) {
 		rebind();
 	}
 }
 
-void ShaderProgram::setDefaultShader(Shader<VertexShader> *s) {
+void ShaderProgram::setDefaultShader(const Shader<VertexShader> *s) {
 	defaultVert = s;
 	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.vert) {
 		rebind();
 	}
 }
 
-void ShaderProgram::setDefaultShader(Shader<GeometryShader> *s) {
+void ShaderProgram::setDefaultShader(const Shader<GeometryShader> *s) {
 	defaultGeom = s;
 	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.geom) {
 		rebind();
 	}
 }
 
-bool ShaderProgram::isDefaultShader(Shader<FragmentShader> *s) {
+bool ShaderProgram::isDefaultShader(const Shader<FragmentShader> *s) {
 	return defaultFrag == s;
 }
 
-bool ShaderProgram::isDefaultShader(Shader<VertexShader> *s) {
+bool ShaderProgram::isDefaultShader(const Shader<VertexShader> *s) {
 	return defaultVert == s;
 }
 
-bool ShaderProgram::isDefaultShader(Shader<GeometryShader> *s) {
+bool ShaderProgram::isDefaultShader(const Shader<GeometryShader> *s) {
 	return defaultGeom == s;
 }
 
