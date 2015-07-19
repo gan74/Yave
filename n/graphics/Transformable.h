@@ -74,6 +74,10 @@ class Movable : public Transformable
 			setRotation(math::Quaternion<>::fromLookAt(f));
 		}
 
+		void setTransform(const math::Transform<> &tr) {
+			transform = tr;
+		}
+
 	protected:
 };
 
