@@ -26,19 +26,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class SubMeshInstance : core::NonCopyable
+class SubMeshInstance
 {
 	public:
-		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m) : buffer(b), vao(0), material(m) {
+		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m) : buffer(new TriangleBuffer<>::FreezedTriangleBuffer(b)), vao(0), material(m) {
 		}
 
-		~SubMeshInstance() {
-			delete vao;
+		SubMeshInstance(const SubMeshInstance &b, const graphics::Material &m) : buffer(b.buffer), vao(b.vao), material(m) {
 		}
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
 			if(!vao) {
-				vao = new VertexArrayObject<>(buffer);
+				vao = new VertexArrayObject<>(*buffer);
 			}
 			vao->draw(material, attribs, renderFlags, instances);
 		}
@@ -48,16 +47,16 @@ class SubMeshInstance : core::NonCopyable
 		}
 
 		float getRadius() const {
-			return buffer.radius;
+			return buffer->radius;
 		}
 
 		const typename TriangleBuffer<>::FreezedTriangleBuffer &getTriangleBuffer() const {
-			return buffer;
+			return *buffer;
 		}
 
 	private:
-		typename TriangleBuffer<>::FreezedTriangleBuffer buffer;
-		mutable VertexArrayObject<> *vao;
+		core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
+		mutable core::SmartPtr<VertexArrayObject<>> vao;
 		Material material;
 };
 
@@ -72,7 +71,7 @@ namespace internal {
 			}
 		}
 
-		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material()) : MeshInstance(core::Array<SubMeshInstance *>({new SubMeshInstance(std::move(b), m)})) {
+		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material()) : MeshInstance(core::Array<SubMeshInstance *>({new SubMeshInstance(b, m)})) {
 		}
 
 		~MeshInstance() {
@@ -116,7 +115,10 @@ class MeshInstance : private assets::Asset<internal::MeshInstance>
 	public:
 		typedef typename internal::MeshInstance::const_iterator const_iterator;
 
-		MeshInstance() :  assets::Asset<internal::MeshInstance>() {
+		MeshInstance() : assets::Asset<internal::MeshInstance>() {
+		}
+
+		MeshInstance(core::Array<SubMeshInstance *> &subs) : MeshInstance(new internal::MeshInstance(subs)) {
 		}
 
 		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m = Material()) : MeshInstance(new internal::MeshInstance(std::move(b), m)) {
