@@ -145,11 +145,26 @@ class className { \
 		static constexpr bool value = SFINAE<HasMethodType, std::is_fundamental<HasMethodType>::value>::type::value; \
 };
 
+template<typename T>
+class StrongTypeHelper
+{
+	public:
+		StrongTypeHelper(const T &e) : t(e){
+		}
+
+		const T &get() const {
+			return t;
+		}
+
+	private:
+		T t;
+};
+
 #define N_GEN_CLASS_OP(cl, op) \
 template<typename T \
 /*, typename X = typename std::enable_if<!n::TypeConversion<T, cl>::exists>::type*/> \
 decltype(n::makeOne<cl>() op n::makeOne<cl>()) \
-operator op(const T &i, const cl &s) { return (cl(i) op s); }
+operator op(const T &i, const n::StrongTypeHelper<cl> &s) { return (cl(i) op s.get()); }
 
 namespace internal {
 	N_GEN_TYPE_HAS_MEMBER(IsConstIterableInternal, const_iterator)
