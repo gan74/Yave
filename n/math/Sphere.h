@@ -35,8 +35,8 @@ class Sphere final : public Volume<T>
 		Sphere(T rad) : r(rad) {
 		}
 
-		virtual bool isInside(const Vec<3, T> &v) const override {
-			return (p - v).length2() < (r * r);
+		virtual bool isInside(const Vec<3, T> &v, T rad) const override {
+			return (p - v).length2() < ((r + rad) * (r + rad));
 		}
 
 		const Vec<3, T> &getPosition() const {
