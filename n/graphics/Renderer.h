@@ -30,6 +30,9 @@ class Renderer : core::NonCopyable
 		Renderer() {
 		}
 
+		virtual ~Renderer() {
+		}
+
 		void operator()() {
 			render(prepare());
 		}
