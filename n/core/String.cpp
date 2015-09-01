@@ -312,11 +312,16 @@ String String::toUpper() const {
 }
 
 String String::trim() const {
-	uint t = 0;
-	while(isspace(data[t])) {
-		t++;
+	if(isEmpty()) {
+		return *this;
 	}
+	uint t = 0;
 	uint si = size();
+	while(isspace(data[t])) {
+		if(++t == si) {
+			return "";
+		}
+	}
 	uint e = 0;
 	while(isspace(data[si - e - 1])) {
 		e++;
