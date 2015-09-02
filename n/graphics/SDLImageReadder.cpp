@@ -44,21 +44,7 @@ class SDLImageReader : public graphics::ImageLoader::ImageReader<SDLImageReader,
 			}
 			SDL_LockSurface(surf);
 			math::Vec2ui size(surf->w, surf->h);
-			SDL_PixelFormat frm;
-			frm.format = SDL_PIXELFORMAT_RGBA8888;
-			frm.BitsPerPixel = 32;
-			frm.BytesPerPixel = 4;
-			frm.Rmask = 0x000000FF;
-			frm.Gmask = 0x0000FF00;
-			frm.Bmask = 0x00FF0000;
-			frm.Amask = 0xFF000000;
-
-			if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-				std::swap(frm.Amask, frm.Rmask);
-				std::swap(frm.Bmask, frm.Gmask);
-			}
-
-			SDL_Surface *cs = SDL_ConvertSurface(surf, &frm, SDL_SWSURFACE);
+			SDL_Surface *cs = SDL_ConvertSurfaceFormat(surf, SDL_BYTEORDER == SDL_BIG_ENDIAN ? SDL_PIXELFORMAT_RGBA8888 : SDL_PIXELFORMAT_ABGR8888, 0);
 			SDL_LockSurface(cs);
 			internal::Image *i = new internal::Image(size, ImageFormat::RGBA8, cs->pixels);
 			SDL_UnlockSurface(surf);
