@@ -40,15 +40,15 @@ ShaderProgram::~ShaderProgram() {
 
 ShaderProgramCombinaison ShaderProgram::getCombinaison() const {
 	Combinaison c = base;
-	c.frag = c.frag ? c.frag : (defaultFrag ? defaultFrag : graphics::ShaderProgram::getDefaultFragmentShader());
-	c.vert = c.vert ? c.vert : (defaultVert ? defaultVert : graphics::ShaderProgram::getDefaultVertexShader());
-	c.geom = c.geom ? c.geom : defaultGeom;
+	c.shaders.frag = c.shaders.frag ? c.shaders.frag : (defaultFrag ? defaultFrag : graphics::ShaderProgram::getStandardFragmentShader());
+	c.shaders.vert = c.shaders.vert ? c.shaders.vert : (defaultVert ? defaultVert : graphics::ShaderProgram::getStandardVertexShader());
+	c.shaders.geom = c.shaders.geom ? c.shaders.geom : defaultGeom;
 	return c;
 }
 
 }
 
-Shader<FragmentShader> *ShaderProgram::getDefaultFragmentShader() {
+Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
 	static Shader<FragmentShader> *def = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
 
@@ -69,7 +69,7 @@ Shader<FragmentShader> *ShaderProgram::getDefaultFragmentShader() {
 	return def;
 }
 
-Shader<VertexShader> *ShaderProgram::getDefaultVertexShader(StandardVertexShader type) {
+Shader<VertexShader> *ShaderProgram::getStandardVertexShader(StandardVertexShader type) {
 	static Shader<VertexShader> **def = 0;
 	if(!def) {
 			def = new Shader<VertexShader>*[2];
@@ -134,7 +134,7 @@ ShaderProgram::ShaderProgram() : ptr(getNullProgram()) {
 ShaderProgram::ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, vert, geom)) {
 }
 
-ShaderProgram::ShaderProgram(const Shader<FragmentShader> *frag, StandardVertexShader vert, const Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, getDefaultVertexShader(vert), geom)) {
+ShaderProgram::ShaderProgram(const Shader<FragmentShader> *frag, StandardVertexShader vert, const Shader<GeometryShader> *geom) : ptr(new internal::ShaderProgram(frag, getStandardVertexShader(vert), geom)) {
 }
 
 const ShaderCombinaison *ShaderProgram::bind() const {
@@ -142,7 +142,7 @@ const ShaderCombinaison *ShaderProgram::bind() const {
 	core::Map<Combinaison, ShaderCombinaison *>::const_iterator it = ptr->shaders.find(c);
 	ShaderCombinaison *n = 0;
 	if(it == ptr->shaders.end()) {
-		ptr->shaders[c] = n = new ShaderCombinaison(c.frag, c.vert, c.geom);
+		ptr->shaders[c] = n = new ShaderCombinaison(c.shaders.frag, c.shaders.vert, c.shaders.geom);
 	} else {
 		n = (*it)._2;
 	}
@@ -157,21 +157,21 @@ bool ShaderProgram::isActive() const {
 
 void ShaderProgram::setDefaultShader(const Shader<FragmentShader> *s) {
 	defaultFrag = s;
-	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.frag) {
+	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.shaders.frag) {
 		rebind();
 	}
 }
 
 void ShaderProgram::setDefaultShader(const Shader<VertexShader> *s) {
 	defaultVert = s;
-	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.vert) {
+	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.shaders.vert) {
 		rebind();
 	}
 }
 
 void ShaderProgram::setDefaultShader(const Shader<GeometryShader> *s) {
 	defaultGeom = s;
-	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.geom) {
+	if(GLContext::getContext()->program && !GLContext::getContext()->program->base.shaders.geom) {
 		rebind();
 	}
 }

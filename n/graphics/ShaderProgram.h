@@ -40,12 +40,25 @@ class ShaderCombinaison;
 namespace internal {
 	struct ShaderProgramCombinaison
 	{
-		const Shader<FragmentShader> *frag;
-		const Shader<VertexShader> *vert;
-		const Shader<GeometryShader> *geom;
+		union
+		{
+			struct
+			{
+				const Shader<FragmentShader> *frag;
+				const Shader<VertexShader> *vert;
+				const Shader<GeometryShader> *geom;
+			} shaders;
+			const void *ptrs[3];
+		};
+
 
 		bool operator==(const ShaderProgramCombinaison &c) const {
-			return frag == c.frag && vert == c.vert && geom == c.geom;
+			for(uint i = 0; i != 3; i++) {
+				if(ptrs[i] != c.ptrs[i]) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		bool operator!=(const ShaderProgramCombinaison &c) const {
@@ -53,27 +66,30 @@ namespace internal {
 		}
 
 		bool operator<(const ShaderProgramCombinaison &c) const {
-			if(frag != c.frag) {
-				return frag < c.frag;
+			for(uint i = 0; i != 3; i++) {
+				if(ptrs[i] != c.ptrs[i]) {
+					return ptrs[i] < c.ptrs[i];
+				}
 			}
-			if(vert != c.vert) {
-				return vert < c.vert;
-			}
-			return geom < c.geom;
+			return false;
 		}
 
 		bool operator>(const ShaderProgramCombinaison &c) const {
-			if(frag != c.frag) {
-				return frag > c.frag;
+			for(uint i = 0; i != 3; i++) {
+				if(ptrs[i] != c.ptrs[i]) {
+					return ptrs[i] > c.ptrs[i];
+				}
 			}
-			if(vert != c.vert) {
-				return vert > c.vert;
-			}
-			return geom > c.geom;
+			return false;
 		}
 
 		bool isNull() const {
-			return !frag && !vert && !geom;
+			for(uint i = 0; i != 3; i++) {
+				if(ptrs[i]) {
+					return false;
+				}
+			}
+			return false;
 		}
 	};
 
@@ -117,8 +133,8 @@ class ShaderProgram
 		static bool isDefaultShader(const Shader<GeometryShader> *s);
 
 
-		static Shader<VertexShader> *getDefaultVertexShader(StandardVertexShader type = ProjectionShader);
-		static Shader<FragmentShader> *getDefaultFragmentShader();
+		static Shader<VertexShader> *getStandardVertexShader(StandardVertexShader type = ProjectionShader);
+		static Shader<FragmentShader> *getStandardFragmentShader();
 
 		bool isDefaultProgram() const {
 			return ptr->base.isNull();
@@ -140,18 +156,10 @@ class ShaderProgram
 			return ptr->base > p.ptr->base;
 		}
 
-		const Shader<FragmentShader> *getFragmentShader() const {
-			return ptr->base.frag;
+		template<ShaderType Type>
+		const Shader<Type> *getShader() const {
+			return reinterpret_cast<const Shader<Type> *>(ptr->base.ptrs[Type]);
 		}
-
-		const Shader<VertexShader> *getVertexShader() const {
-			return ptr->base.vert;
-		}
-
-		const Shader<GeometryShader> *getGeometryShader() const {
-			return ptr->base.geom;
-		}
-
 
 	private:
 		friend class GLContext;

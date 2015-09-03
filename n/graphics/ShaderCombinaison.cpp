@@ -28,7 +28,7 @@ ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, const S
 	compile();
 }
 
-ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vs) : ShaderCombinaison(frag, ShaderProgram::getDefaultVertexShader(vs)) {
+ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vs) : ShaderCombinaison(frag, ShaderProgram::getStandardVertexShader(vs)) {
 }
 
 ShaderCombinaison::~ShaderCombinaison() {
