@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-BoxLightShadowRenderer::BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si) :  ShadowRenderer(si), child(new SceneRenderer(sc)), light(li) {
+BoxLightShadowRenderer::BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si) : ShadowRenderer(si), child(new SceneRenderer(sc)), light(li) {
 }
 
 BoxLightShadowRenderer::~BoxLightShadowRenderer() {
@@ -40,6 +40,7 @@ void *BoxLightShadowRenderer::prepare() {
 
 void BoxLightShadowRenderer::render(void *ptr) {
 	SceneRenderer::FrameData *sceneData = reinterpret_cast<SceneRenderer::FrameData *>(ptr);
+	const Camera *cam = sceneData->camera;
 
 	gl::glColorMask(false, false, false, false);
 	gl::glEnable(GL_POLYGON_OFFSET_FILL);
@@ -51,7 +52,7 @@ void BoxLightShadowRenderer::render(void *ptr) {
 	gl::glColorMask(true, true, true, true);
 	gl::glDisable(GL_POLYGON_OFFSET_FILL);
 
-	delete sceneData->camera;
+	delete cam;
 	FrameBuffer::unbind();
 }
 
