@@ -27,6 +27,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+namespace internal {
+	static gl::GLuint &getCurrentVao() {
+		static gl::GLuint current = 0;
+		return current;
+	}
+}
+
 template<typename T, BufferBinding Binding>
 class StaticBuffer : core::NonCopyable
 {
@@ -34,7 +41,7 @@ class StaticBuffer : core::NonCopyable
 
 	public:
 		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), handle(0) {
-			gl::glBindVertexArray(0);
+			gl::glBindVertexArray(internal::getCurrentVao() = 0);
 			gl::glGenBuffers(1, &handle);
 			gl::glBindBuffer(Binding, handle);
 			gl::glBufferData(Binding, sizeof(T) * bufferSize, arr.begin(), GL_STATIC_DRAW);

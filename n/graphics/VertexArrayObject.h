@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_VERTEXARRAYOBJECT
 #define N_GRAPHICS_VERTEXARRAYOBJECT
 
-#include <iostream>
-
 #include "TriangleBuffer.h"
 #include "StaticBuffer.h"
 #include "VertexAttribs.h"
@@ -46,14 +44,22 @@ class VertexArrayObject : core::NonCopyable
 		}
 
 		void draw(const Material &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
+			draw(mat, attributes, renderFlags, instances, 0, size, 0);
+		}
+
+		void draw(const Material &mat, const VertexAttribs &attributes, uint renderFlags, uint instances, uint start, uint tris, uint vertexBase) const {
 			mat.bind(renderFlags);
 			bind();
 			bindAttribs(attributes);
-			gl::glDrawElementsInstanced(GL_TRIANGLES, 3 * size, GLType<uint>::value, 0, instances);
+			gl::glDrawElementsInstancedBaseVertex(GL_TRIANGLES, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
 		}
 
 		T getRadius() const {
 			return radius;
+		}
+
+		uint triangleCount() const {
+			return size;
 		}
 
 	private:
@@ -72,7 +78,7 @@ class VertexArrayObject : core::NonCopyable
 			if(!handle) {
 				data.bind();
 				gl::glGenVertexArrays(1, &handle);
-				gl::glBindVertexArray(handle);
+				gl::glBindVertexArray(internal::getCurrentVao() = handle);
 				indexes.bind();
 				gl::glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
 				gl::glVertexAttribPointer(1, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
@@ -83,7 +89,9 @@ class VertexArrayObject : core::NonCopyable
 				gl::glEnableVertexAttribArray(2);
 				gl::glEnableVertexAttribArray(3);
 			} else {
-				gl::glBindVertexArray(handle);
+				if(internal::getCurrentVao() != handle) {
+					gl::glBindVertexArray(internal::getCurrentVao() = handle);
+				}
 			}
 		}
 
@@ -94,8 +102,9 @@ class VertexArrayObject : core::NonCopyable
 		StaticBuffer<uint, Index> indexes;
 
 		mutable gl::GLuint handle;
-};
 
+		static gl::GLuint current;
+};
 
 }
 }

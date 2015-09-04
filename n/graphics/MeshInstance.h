@@ -19,12 +19,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "TriangleBuffer.h"
 #include "VertexAttribs.h"
-#include "VertexArrayObject.h"
+#include "VertexArraySubObject.h"
 #include "Material.h"
 #include <n/assets/Asset.h>
 
 namespace n {
 namespace graphics {
+
+class SubMeshInstance;
+
+namespace internal {
+	class MeshInstance;
+
+	struct VaoAllocInfo;
+	static void optimisedVaoAlloc(VaoAllocInfo *);
+}
 
 class SubMeshInstance
 {
@@ -36,10 +45,14 @@ class SubMeshInstance
 		}
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
-			if(!vao) {
-				vao = new VertexArrayObject<>(*buffer);
+			if(vao.isNull()) {
+				if(allocInfos) {
+					internal::optimisedVaoAlloc(allocInfos);
+				} else {
+					vao = VertexArraySubObject<>(new VertexArrayObject<>(*buffer));
+				}
 			}
-			vao->draw(material, attribs, renderFlags, instances);
+			vao.draw(material, attribs, renderFlags, instances);
 		}
 
 		const Material &getMaterial() const {
@@ -54,58 +67,99 @@ class SubMeshInstance
 			return *buffer;
 		}
 
+		bool operator<(const SubMeshInstance &o) const {
+			return vao < o.vao;
+		}
+
 	private:
+		friend void internal::optimisedVaoAlloc(VaoAllocInfo *);
+		friend class internal::MeshInstance;
+
 		core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
-		mutable core::SmartPtr<VertexArrayObject<>> vao;
+
+		internal::VaoAllocInfo *allocInfos;
+		mutable VertexArraySubObject<> vao;
+
 		Material material;
 };
 
 namespace internal {
-	struct MeshInstance : core::NonCopyable
+	struct VaoAllocInfo
 	{
-		typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
+		core::Array<SubMeshInstance *> subs;
+		float radius;
+	};
 
-		MeshInstance(const core::Array<SubMeshInstance *> &b) : bases(b), radius(0) {
-			for(const SubMeshInstance *ba : bases) {
-				radius = std::max(radius, ba->getRadius());
+	static void optimisedVaoAlloc(VaoAllocInfo *infos) {
+		core::Array<uint> indexes;
+		core::Array<Vertex<>> vertices;
+		for(SubMeshInstance *sub : infos->subs) {
+			indexes += sub->getTriangleBuffer().indexes;
+			vertices += sub->getTriangleBuffer().vertices;
+			sub->allocInfos = 0;
+		}
+		core::SmartPtr<VertexArrayObject<>> vao(new VertexArrayObject<>(TriangleBuffer<>::FreezedTriangleBuffer(indexes, vertices, infos->radius)));
+		uint iCount = 0;
+		uint vCount = 0;
+		for(SubMeshInstance *sub : infos->subs) {
+			uint num = sub->getTriangleBuffer().indexes.size() / 3;
+			sub->vao = VertexArraySubObject<>(vao, iCount, num, vCount, sub->getRadius());
+			iCount += num;
+			vCount += sub->getTriangleBuffer().vertices.size();
+		}
+		delete infos;
+	}
+
+	class MeshInstance : core::NonCopyable
+	{
+		public:
+			typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
+
+			MeshInstance(const core::Array<SubMeshInstance *> &b) : subs(b), radius(0) {
+				for(const SubMeshInstance *sub : subs) {
+					radius = std::max(radius, sub->getRadius());
+				}
+
+				VaoAllocInfo *allocInfos = new VaoAllocInfo{subs, radius};
+				for(SubMeshInstance *sub : subs) {
+					sub->allocInfos = allocInfos;
+				}
 			}
-		}
 
-		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material()) : MeshInstance(core::Array<SubMeshInstance *>({new SubMeshInstance(b, m)})) {
-		}
-
-		~MeshInstance() {
-			for(const SubMeshInstance *b : bases) {
-				delete b;
+			MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material()) : MeshInstance(core::Array<SubMeshInstance *>({new SubMeshInstance(b, m)})) {
 			}
-		}
 
-		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
-			for(const SubMeshInstance *b : bases) {
-				b->draw(attribs, instances);
+			~MeshInstance() {
+				for(const SubMeshInstance *b : subs) {
+					delete b;
+				}
 			}
-		}
 
-		float getRadius() const {
-			return radius;
-		}
+			void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
+				for(const SubMeshInstance *b : subs) {
+					b->draw(attribs, instances);
+				}
+			}
 
-		const_iterator begin() const {
-			return bases.begin();
-		}
+			float getRadius() const {
+				return radius;
+			}
 
-		const_iterator end() const {
-			return bases.end();
-		}
+			const_iterator begin() const {
+				return subs.begin();
+			}
 
-		const core::Array<SubMeshInstance *> &getBases() const {
-			return bases;
-		}
+			const_iterator end() const {
+				return subs.end();
+			}
+
+			const core::Array<SubMeshInstance *> &getBases() const {
+				return subs;
+			}
 
 		private:
-			core::Array<SubMeshInstance *> bases;
+			core::Array<SubMeshInstance *> subs;
 			float radius;
-
 	};
 }
 

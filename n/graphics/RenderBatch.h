@@ -40,7 +40,14 @@ class RenderBatch
 		}
 
 		bool operator<(const RenderBatch &o) const {
-			return inst->getMaterial() < o.inst->getMaterial();
+			#ifdef N_BATCH_MATERIAL
+			bool m = inst->getMaterial() < o.inst->getMaterial();
+			return m ? true : o.inst->getMaterial() < inst->getMaterial() ? false : *inst < *o.inst;
+			#else
+			bool m = *inst < *o.inst;
+			return m ? true : *o.inst < *inst ? false : inst->getMaterial() < o.inst->getMaterial();
+			#endif
+
 		}
 
 	private:
