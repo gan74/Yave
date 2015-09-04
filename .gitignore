@@ -20,3 +20,4 @@
 /cov/
 *.Debug
 *.Release
+/stash/
