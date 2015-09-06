@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "VarianceShadowRenderer.h"
+#include "FrameBufferPool.h"
 
 namespace n {
 namespace graphics {
@@ -38,17 +39,8 @@ ShaderCombinaison *getVSMShader() {
 	return shader;
 }
 
-VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) : ShadowRenderer(c->getFrameBuffer().getSize().x()), child(c), temp(buffer.getSize()), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
+VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) : ShadowRenderer(c->getSize().x()), child(c), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
 	mapIndex = 0;
-	buffer.setDepthEnabled(false);
-	buffer.setAttachmentEnabled(0, true);
-	buffer.setAttachmentFormat(0, ImageFormat::RG32F);
-	temp.setDepthEnabled(false);
-	temp.setAttachmentEnabled(0, true);
-	temp.setAttachmentFormat(0, ImageFormat::RG32F);
-	blurs[0]->setValue("n_0", buffer.getAttachement(0));
-	blurs[1]->setValue("n_0", temp.getAttachement(0));
-
 	shaderCode = "vec3 proj = projectShadow(pos);"
 				 "float distance = (proj.z * 0.5 + 0.5);"
 				 "vec2 moments = texture(n_LightShadow, proj.xy).xy;"
@@ -62,24 +54,37 @@ VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) :
 				 "return clamp(p_max, 0.0, 1.0);";
 }
 
+void VarianceShadowRenderer::createBuffer() {
+	if(!buffer) {
+		buffer = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
+	}
+}
+
 void VarianceShadowRenderer::render(void *ptr) {
+	createBuffer();
 	child->render(ptr);
 
-	buffer.bind();
+	buffer->bind();
 	ShaderCombinaison *sh = getVSMShader();
-	sh->bind();
 	sh->setValue("n_0", child->getShadowMap());
+	sh->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
-	temp.bind();
+	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
+	blurs[1]->setValue("n_0", temp->getAttachement(0));
+	blurs[0]->setValue("n_0", buffer->getAttachement(0));
+
+	temp->bind();
 	blurs[0]->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
-	buffer.bind();
+	buffer->bind();
 	blurs[1]->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 	blurs[1]->unbind();
+	GLContext::getContext()->getFrameBufferPool().add(temp);
+	child->poolBuffer();
 }
 
 }

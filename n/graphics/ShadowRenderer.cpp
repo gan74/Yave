@@ -23,6 +23,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+void ShadowRenderer::poolBuffer() {
+	if(buffer) {
+		GLContext::getContext()->getFrameBufferPool().add(buffer);
+		buffer = 0;
+	}
+}
+
+void ShadowRenderer::createBuffer() {
+	if(!buffer) {
+		buffer = GLContext::getContext()->getFrameBufferPool().get(size, true, false);
+	}
+}
+
 CameraShadowRenderer::CameraShadowRenderer(const Scene *sc, uint si) : ShadowRenderer(si), child(new SceneRenderer(sc)) {
 }
 
@@ -35,6 +48,8 @@ void *CameraShadowRenderer::prepare() {
 }
 
 void CameraShadowRenderer::render(void *ptr) {
+	createBuffer();
+
 	SceneRenderer::FrameData *sceneData = reinterpret_cast<SceneRenderer::FrameData *>(ptr);
 	const Camera *cam = sceneData->camera;
 
@@ -42,7 +57,7 @@ void CameraShadowRenderer::render(void *ptr) {
 	gl::glEnable(GL_POLYGON_OFFSET_FILL);
 	gl::glPolygonOffset(4.0, 1.0);
 
-	buffer.bind();
+	buffer->bind();
 	child->render(ptr, RenderFlag::FastDepth);
 
 	gl::glColorMask(true, true, true, true);
@@ -50,7 +65,6 @@ void CameraShadowRenderer::render(void *ptr) {
 
 	delete cam;
 }
-
 
 Camera *BoxLightShadowRenderer::createCamera() {
 	OrthographicCamera *cam = new OrthographicCamera(light->getSize());

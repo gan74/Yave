@@ -26,15 +26,17 @@ namespace graphics {
 class BoxLight;
 class SpotLight;
 
-class ShadowRenderer : public BufferedRenderer
+class ShadowRenderer : public Renderer
 {
 	public:
-		ShadowRenderer(uint res) : BufferedRenderer(res) {
-			buffer.setAttachmentEnabled(0, false);
-			buffer.setDepthEnabled(true);
+		ShadowRenderer(uint res) : Renderer(), buffer(0), size(res) {
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
 						 "return step(proj.z, d);";
+		}
+
+		virtual ~ShadowRenderer() {
+			poolBuffer();
 		}
 
 		const math::Matrix4<> &getProjectionMatrix() const {
@@ -45,8 +47,12 @@ class ShadowRenderer : public BufferedRenderer
 			return view;
 		}
 
+		const math::Vec2ui &getSize() const {
+			return size;
+		}
+
 		Texture getShadowMap() {
-			return buffer.getAttachement(mapIndex);
+			return buffer->getAttachement(mapIndex);
 		}
 
 		math::Matrix4<> getShadowMatrix() const {
@@ -57,9 +63,16 @@ class ShadowRenderer : public BufferedRenderer
 			return shaderCode;
 		}
 
+		void poolBuffer();
+
+		virtual void createBuffer();
+
 	protected:
 		uint mapIndex = FrameBuffer::Depth;
 		core::String shaderCode;
+
+		FrameBuffer *buffer;
+		math::Vec2ui size;
 		math::Matrix4<> view;
 		math::Matrix4<> proj;
 };

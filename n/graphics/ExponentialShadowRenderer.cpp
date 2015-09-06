@@ -42,42 +42,46 @@ ShaderCombinaison *getExpShader(float exp) {
 }
 
 
-ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep, float exp) : ShadowRenderer(c->getFrameBuffer().getSize().x()), child(c), exponent(exp), temp(buffer.getSize()), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
+ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep, float exp) : ShadowRenderer(c->getSize().x()), child(c), exponent(exp), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
 	mapIndex = 0;
-	buffer.setDepthEnabled(false);
-	buffer.setAttachmentEnabled(0, true);
-	buffer.setAttachmentFormat(0, ImageFormat::R32F);
-	temp.setDepthEnabled(false);
-	temp.setAttachmentEnabled(0, true);
-	temp.setAttachmentFormat(0, ImageFormat::R32F);
-
-	blurs[0]->setValue("n_0", buffer.getAttachement(0));
-	blurs[1]->setValue("n_0", temp.getAttachement(0));
-
 	shaderCode = "vec3 proj = projectShadow(pos);"
 				 "float eD = exp(-" + core::String(abs(exp)) + " * proj.z);"
 				 "float depth = texture(n_LightShadow, proj.xy).x;"
 				 "return clamp((eD * depth), 0.0, 1.0);";
 }
 
+void ExponentialShadowRenderer::createBuffer() {
+	if(!buffer) {
+		buffer = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::R32F);
+	}
+}
+
 void ExponentialShadowRenderer::render(void *ptr) {
+	createBuffer();
 	child->render(ptr);
 
-	buffer.bind();
+	buffer->bind();
 	ShaderCombinaison *sh = getExpShader(exponent);
-	sh->bind();
 	sh->setValue("n_0", child->getShadowMap());
+	sh->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
-	temp.bind();
+	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::R32F);
+
+	blurs[1]->setValue("n_0", temp->getAttachement(0));
+	blurs[0]->setValue("n_0", buffer->getAttachement(0));
+
+	temp->bind();
 	blurs[0]->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
-	buffer.bind();
+	buffer->bind();
 	blurs[1]->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 	blurs[1]->unbind();
+	GLContext::getContext()->getFrameBufferPool().add(temp);
+	child->poolBuffer();
 }
 
 }

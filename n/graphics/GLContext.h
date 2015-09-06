@@ -29,6 +29,7 @@ class ShaderCombinaison;
 class FrameBuffer;
 class Material;
 struct MaterialData;
+struct FrameBufferPool;
 
 template<typename T>
 class VertexArrayObject;
@@ -86,6 +87,10 @@ class GLContext
 			return hwInts[hw];
 		}
 
+		FrameBufferPool &getFrameBufferPool() const {
+			return *fbPool;
+		}
+
 		const VertexArrayObject<float> &getScreen() const;
 
 
@@ -107,6 +112,8 @@ class GLContext
 		const ShaderCombinaison *shader;
 		core::SmartPtr<internal::ShaderProgram> program;
 		const FrameBuffer *frameBuffer;
+
+		FrameBufferPool *fbPool;
 
 		int hwInts[Max];
 

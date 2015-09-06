@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "BufferedRenderer.h"
 #include "ShadowRenderer.h"
 #include "BlurBufferRenderer.h"
+#include "GLContext.h"
 
 namespace n {
 namespace graphics {
@@ -27,17 +28,8 @@ namespace graphics {
 class BSShadowRenderer : public ShadowRenderer
 {
 	public:
-		BSShadowRenderer(ShadowRenderer *c, uint fHStep, float sharpness = 30) : ShadowRenderer(c->getFrameBuffer().getSize().x()), child(c), temp(buffer.getSize()), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
+		BSShadowRenderer(ShadowRenderer *c, uint fHStep, float sharpness = 30) : ShadowRenderer(c->getSize().x()), child(c), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
 			mapIndex = 0;
-			buffer.setDepthEnabled(false);
-			buffer.setAttachmentEnabled(0, true);
-			buffer.setAttachmentFormat(0, ImageFormat::R32F);
-			temp.setDepthEnabled(false);
-			temp.setAttachmentEnabled(0, true);
-			temp.setAttachmentFormat(0, ImageFormat::R32F);
-			blurs[0]->setValue("n_0", child->getShadowMap());
-			blurs[1]->setValue("n_0", temp.getAttachement(0));
-
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
 						 "float diff = proj.z - d;"
@@ -57,22 +49,34 @@ class BSShadowRenderer : public ShadowRenderer
 		}
 
 		virtual void render(void *ptr) override {
+			createBuffer();
 			child->render(ptr);
 
-			temp.bind();
+			FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
+			blurs[0]->setValue("n_0", child->getShadowMap());
+			blurs[1]->setValue("n_0", temp->getAttachement(0));
+
+			temp->bind();
 			blurs[0]->bind();
 			GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
-			buffer.bind();
+			buffer->bind();
 			blurs[1]->bind();
 			GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 			blurs[1]->unbind();
+			GLContext::getContext()->getFrameBufferPool().add(temp);
+			child->poolBuffer();
+		}
+
+		virtual void createBuffer() override {
+			if(!buffer) {
+				buffer = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::R32F);
+			}
 		}
 
 	private:
 		ShadowRenderer *child;
-		FrameBuffer temp;
 		ShaderCombinaison *blurs[2];
 };
 

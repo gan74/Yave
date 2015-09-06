@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GLContext.h"
 #include "ShaderCombinaison.h"
 #include "GL.h"
-#include "FrameBuffer.h"
+#include "FrameBufferPool.h"
 #include "Material.h"
 #include "VertexArrayObject.h"
 #include <n/concurrent/Thread.h>
@@ -90,7 +90,7 @@ void GLContext::finishTasks() {
 	}
 }
 
-GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), frameBuffer(0), viewport(1024, 768), screen(0) {
+GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), frameBuffer(0), fbPool(new FrameBufferPool()), viewport(1024, 768), screen(0) {
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}

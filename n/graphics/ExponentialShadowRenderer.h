@@ -43,10 +43,11 @@ class ExponentialShadowRenderer : public ShadowRenderer
 
 		virtual void render(void *ptr) override;
 
+		virtual void createBuffer() override;
+
 	private:
 		ShadowRenderer *child;
 		float exponent;
-		FrameBuffer temp;
 		ShaderCombinaison *blurs[2];
 };
 
