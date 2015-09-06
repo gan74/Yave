@@ -104,7 +104,7 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 												  "return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
 											  "float x = min(lightDist, n_LightRadius); "
 												  "float falloff = sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);"
-												  "float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), 0.5);"
+												  "float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), n_LightExponent);"
 												  "return max(0.0, falloff * spotFalloff);",
 											  "return 1.0;",
 											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
@@ -125,6 +125,7 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 			"uniform float n_LightRadius;"
 			"uniform float n_LightScale;"
 			"uniform float n_LightCosCutOff;"
+			"uniform float n_LightExponent;"
 			"uniform mat3 n_LightMatrix;"
 			"uniform vec3 n_LightSize;"
 
@@ -232,8 +233,8 @@ void lightGeometryPass(const PointLight *l, ShaderCombinaison *, const math::Vec
 void lightGeometryPass(const SpotLight *l, ShaderCombinaison *sh, const math::Vec3 &) {
 	GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
 	sh->setValue("n_LightCosCutOff", cos(l->getCutOff() * 0.5));
+	sh->setValue("n_LightExponent", l->getExponent());
 	getSphere().draw(getLightMaterial<Spot>(), VertexAttribs(), RenderFlag::NoShader);
-
 }
 
 

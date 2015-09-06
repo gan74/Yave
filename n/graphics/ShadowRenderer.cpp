@@ -63,7 +63,7 @@ Camera *BoxLightShadowRenderer::createCamera() {
 
 
 Camera *SpotLightShadowRenderer::createCamera() {
-	PerspectiveCamera *cam = new PerspectiveCamera(light->getCutOff());
+	PerspectiveCamera *cam = new PerspectiveCamera(light->getCutOff(), light->getRadius());
 	cam->setPosition(light->getPosition());
 	cam->setRotation(light->getRotation());
 	proj = cam->getProjectionMatrix();
