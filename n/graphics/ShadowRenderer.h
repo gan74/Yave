@@ -24,6 +24,7 @@ namespace n {
 namespace graphics {
 
 class BoxLight;
+class SpotLight;
 
 class ShadowRenderer : public BufferedRenderer
 {
@@ -63,22 +64,59 @@ class ShadowRenderer : public BufferedRenderer
 		math::Matrix4<> proj;
 };
 
-class BoxLightShadowRenderer : public ShadowRenderer
+class CameraShadowRenderer : public ShadowRenderer
 {
 	public:
-		BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si = 1024);
+		CameraShadowRenderer(const Scene *sc, uint si = 1024);
 
-		virtual ~BoxLightShadowRenderer();
+		virtual ~CameraShadowRenderer();
 
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;
 
+	protected:
+		virtual Camera *createCamera() = 0;
+
 	private:
 		SceneRenderer *child;
-		BoxLight *light;
 
 
 };
+
+class BoxLightShadowRenderer : public CameraShadowRenderer
+{
+	public:
+		BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si = 1024) : CameraShadowRenderer(sc, si), light(li) {
+		}
+
+		virtual ~BoxLightShadowRenderer() {
+		}
+
+	protected:
+		virtual Camera *createCamera();
+
+	private:
+		BoxLight *light;
+};
+
+
+class SpotLightShadowRenderer : public CameraShadowRenderer
+{
+	public:
+		SpotLightShadowRenderer(SpotLight *li, const Scene *sc, uint si = 1024) : CameraShadowRenderer(sc, si), light(li) {
+		}
+
+		virtual ~SpotLightShadowRenderer() {
+		}
+
+	protected:
+		virtual Camera *createCamera();
+
+	private:
+		SpotLight *light;
+};
+
+
 
 }
 }

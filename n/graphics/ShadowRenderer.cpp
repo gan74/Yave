@@ -17,28 +17,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "VertexArrayObject.h"
 #include "ShadowRenderer.h"
 #include "OrthographicCamera.h"
+#include "PerspectiveCamera.h"
 #include "Light.h"
 
 namespace n {
 namespace graphics {
 
-BoxLightShadowRenderer::BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si) : ShadowRenderer(si), child(new SceneRenderer(sc)), light(li) {
+CameraShadowRenderer::CameraShadowRenderer(const Scene *sc, uint si) : ShadowRenderer(si), child(new SceneRenderer(sc)) {
 }
 
-BoxLightShadowRenderer::~BoxLightShadowRenderer() {
+CameraShadowRenderer::~CameraShadowRenderer() {
 	delete child;
 }
 
-void *BoxLightShadowRenderer::prepare() {
-	OrthographicCamera *cam = new OrthographicCamera(light->getSize());
-	cam->setPosition(light->getPosition());
-	cam->setRotation(light->getRotation());
-	proj = cam->getProjectionMatrix();
-	view = cam->getViewMatrix();
-	return child->prepare(cam);
+void *CameraShadowRenderer::prepare() {
+	return child->prepare(createCamera());
 }
 
-void BoxLightShadowRenderer::render(void *ptr) {
+void CameraShadowRenderer::render(void *ptr) {
 	SceneRenderer::FrameData *sceneData = reinterpret_cast<SceneRenderer::FrameData *>(ptr);
 	const Camera *cam = sceneData->camera;
 
@@ -53,8 +49,28 @@ void BoxLightShadowRenderer::render(void *ptr) {
 	gl::glDisable(GL_POLYGON_OFFSET_FILL);
 
 	delete cam;
-	FrameBuffer::unbind();
 }
+
+
+Camera *BoxLightShadowRenderer::createCamera() {
+	OrthographicCamera *cam = new OrthographicCamera(light->getSize());
+	cam->setPosition(light->getPosition());
+	cam->setRotation(light->getRotation());
+	proj = cam->getProjectionMatrix();
+	view = cam->getViewMatrix();
+	return cam;
+}
+
+
+Camera *SpotLightShadowRenderer::createCamera() {
+	PerspectiveCamera *cam = new PerspectiveCamera(light->getCutOff());
+	cam->setPosition(light->getPosition());
+	cam->setRotation(light->getRotation());
+	proj = cam->getProjectionMatrix();
+	view = cam->getViewMatrix();
+	return cam;
+}
+
 
 }
 }

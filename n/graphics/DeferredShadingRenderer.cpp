@@ -231,7 +231,7 @@ void lightGeometryPass(const PointLight *l, ShaderCombinaison *, const math::Vec
 
 void lightGeometryPass(const SpotLight *l, ShaderCombinaison *sh, const math::Vec3 &) {
 	GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
-	sh->setValue("n_LightCosCutOff", cos(math::toRad(l->getCutOff() * 0.5)));
+	sh->setValue("n_LightCosCutOff", cos(l->getCutOff() * 0.5));
 	getSphere().draw(getLightMaterial<Spot>(), VertexAttribs(), RenderFlag::NoShader);
 
 }
