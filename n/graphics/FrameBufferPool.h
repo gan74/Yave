@@ -84,7 +84,7 @@ class FrameBufferPool : core::NonCopyable
 
 		template<typename... Args>
 		FrameBuffer *get(const math::Vec2ui &size, bool depth, Args... args) {
-			core::Array<FrameBuffer *> arr = buffers.filtered([depth, size](FrameBuffer *fb) { return fb->getSize() != size, fb->isDepthEnabled() == depth; });
+			core::Array<FrameBuffer *> arr = buffers.filtered([depth, size](FrameBuffer *fb) { return fb->getSize() == size && fb->isDepthEnabled() == depth; });
 			filter(0, arr, args...);
 			if(arr.isEmpty()) {
 				return createFrameBuffer(size, depth, args...);
