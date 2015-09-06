@@ -188,7 +188,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 	for(const LightData &ld : data->lights[Type]) {
 		const Light *l = ld.light;
 		math::Vec3 forward = -l->getTransform().getX().normalized();
-		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0");
+		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;");
 		if(sh != shader) {
 			shader = sh;
 			sh->bind();
