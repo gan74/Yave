@@ -81,8 +81,8 @@ class Matrix
 			build<0>(t, args...);
 		}
 
-		Matrix(const Vec<N, T> r[M]) {
-			for(uint i = 0; i != M; i++) {
+		Matrix(const Vec<N, T> r[N]) {
+			for(uint i = 0; i != N; i++) {
 				rows[i] = r[i];
 			}
 		}
