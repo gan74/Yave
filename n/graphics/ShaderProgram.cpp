@@ -94,6 +94,7 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(StandardVertexShade
 						"void main() {"
 							"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
 							"gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * model;"
+							//"gl_Position *= gl_Position.w;"//-----------------------------------------------------------------
 							"n_VertexID = gl_VertexID;"
 							"n_Position = model.xyz;"
 							"n_View = normalize(n_Camera - model.xyz);"

@@ -31,6 +31,9 @@ class ShadowRenderer : public BufferedRenderer
 		ShadowRenderer(uint res) : BufferedRenderer(res) {
 			buffer.setAttachmentEnabled(0, false);
 			buffer.setDepthEnabled(true);
+			shaderCode = "vec3 proj = projectShadow(pos);"
+						 "float d = texture(n_LightShadow, proj.xy).x;"
+						 "return step(proj.z, d);";
 		}
 
 		const math::Matrix4<> &getProjectionMatrix() const {
@@ -41,15 +44,21 @@ class ShadowRenderer : public BufferedRenderer
 			return view;
 		}
 
-		Texture getDepth() {
-			return buffer.getDepthAttachement();
+		Texture getShadowMap() {
+			return buffer.getAttachement(mapIndex);
 		}
 
 		math::Matrix4<> getShadowMatrix() const {
 			return proj * view;
 		}
 
+		const core::String getCompareCode() const {
+			return shaderCode;
+		}
+
 	protected:
+		uint mapIndex = FrameBuffer::Depth;
+		core::String shaderCode;
 		math::Matrix4<> view;
 		math::Matrix4<> proj;
 };

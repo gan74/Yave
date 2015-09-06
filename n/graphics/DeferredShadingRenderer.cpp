@@ -47,8 +47,9 @@ struct FrameData
 
 
 template<LightType Type>
-ShaderCombinaison *getShader() {
-	static ShaderCombinaison *shader[LightType::Max] = {0};
+ShaderCombinaison *getShader(const core::String &shadow) {
+	static core::Map<core::String, ShaderCombinaison *> shaders[LightType::Max];
+
 	core::String computeDir[LightType::Max] = {"return n_LightPos - pos;",
 											   "return n_LightForward;",
 											   "return n_LightForward;"};
@@ -56,8 +57,9 @@ ShaderCombinaison *getShader() {
 												  "return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
 											  "return 1.0;",
 											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
-	if(!shader[Type]) {
-		shader[Type] = new ShaderCombinaison(new Shader<FragmentShader>(
+	ShaderCombinaison *shader = shaders[Type].get(shadow, 0);
+	if(!shader) {
+		shader = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
 			"uniform sampler2D n_2;"
@@ -91,9 +93,7 @@ ShaderCombinaison *getShader() {
 			"}"
 
 			"float computeShadow(vec3 pos) {"
-				"vec3 proj = projectShadow(pos);"
-				"float d = texture(n_LightShadow, proj.xy).x;"
-				"return step(proj.z, d);"
+				+ shadow +
 			"}"
 
 			"vec3 unproj(vec2 C) {"
@@ -139,12 +139,11 @@ ShaderCombinaison *getShader() {
 				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
 				"n_Out = vec4(light * (diffuse * albedo.rgb * (1.0 - metallic) + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
 
-				//"n_Out = vec4(vec3(brdf(dir, view, normal, material) + 0.25), 1.0);"
-				//"n_Out = vec4(vec3(NoL), 1);"
-				//"n_Out = vec4(shadow);"
+				//s"n_Out = vec4(shadow);"
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
+		shaders[Type][shadow] = shader;
 	}
-	return shader[Type];
+	return shader;
 }
 
 
@@ -183,44 +182,37 @@ void lightGeometryPass(const Light *l, ShaderCombinaison *sh, const math::Vec3 &
 
 
 
-
-
-
-
-
-
-
 template<LightType Type>
 ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
-	ShaderCombinaison *sh = getShader<Type>();
-	sh->bind();
-
-	sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
-	sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
-	sh->setValue("n_2", child->getFrameBuffer().getAttachement(2));
-	sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
-	sh->setValue("n_Inv", data->inv);
-	sh->setValue("n_Cam", data->pos);
-
+	ShaderCombinaison *shader = 0;
 	for(const LightData &ld : data->lights[Type]) {
 		const Light *l = ld.light;
 		math::Vec3 forward = -l->getTransform().getX().normalized();
-
+		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0");
+		if(sh != shader) {
+			shader = sh;
+			sh->bind();
+			sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
+			sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
+			sh->setValue("n_2", child->getFrameBuffer().getAttachement(2));
+			sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
+			sh->setValue("n_Inv", data->inv);
+			sh->setValue("n_Cam", data->pos);
+		}
 		sh->setValue("n_LightPos", l->getPosition());
 		sh->setValue("n_LightRadius", l->getRadius());
 		sh->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
 		sh->setValue("n_LightForward", forward);
 		sh->setValue("n_LightShadowMul", l->castShadows() ? 1.0 : 0.0);
 		if(l->castShadows()) {
-			sh->setValue("n_LightShadow", l->getShadowRenderer()->getDepth());
+			sh->setValue("n_LightShadow", l->getShadowRenderer()->getShadowMap());
 			sh->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
 		}
 		lightGeometryPass<Type>(l, sh, forward);
 	}
 
-	return sh;
+	return shader;
 }
-
 
 
 
@@ -275,7 +267,11 @@ void DeferredShadingRenderer::render(void *ptr) {
 
 		lightPass<Box>(data, child);
 
-		lightPass<Directional>(data, child)->unbind();
+		ShaderCombinaison *sh = lightPass<Directional>(data, child);
+
+		if(sh) {
+			sh->unbind();
+		}
 	}
 
 	delete data;

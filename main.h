@@ -57,6 +57,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/OrthographicCamera.h>
 #include <n/graphics/PerspectiveCamera.h>
 #include <n/graphics/BufferRenderer.h>
+#include <n/graphics/BlurBufferRenderer.h>
+#include <n/graphics/VarianceShadowRenderer.h>
 
 
 using namespace n;
@@ -70,8 +72,9 @@ Vec2 mouse;
 Vec2 wasd;
 ToneMapRenderer *tone;
 bool bench = false;
+uint rendererIndex = 0;
 
-SDL_Window *createWindow() {
+SDL_Window *createWindow(Vec2ui winS = Vec2ui(1024, 768)) {
 	SetConsoleOutputCP(65001);
 	SDL_Window *mainWindow = 0;
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -81,13 +84,13 @@ SDL_Window *createWindow() {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	if(!(mainWindow = SDL_CreateWindow("n 2.1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN))) {
+	if(!(mainWindow = SDL_CreateWindow("n 2.1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winS.x(), winS.y(), SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN))) {
 		fatal("Unable to create window");
 	}
 	SDL_GL_CreateContext(mainWindow);
 	SDL_GL_SetSwapInterval(0);
 
-	GLContext::getContext();
+	GLContext::getContext()->setViewport(winS);
 
 	return mainWindow;
 }
@@ -109,6 +112,9 @@ bool run(SDL_Window *mainWindow) {
 
 				if(e.key.keysym.sym == 'h') { tone->setWhiteThreshold(tone->getWhiteThreshold() + 0.1); std::cout<<"wht = "<<tone->getWhiteThreshold()<<std::endl; }
 				if(e.key.keysym.sym == 'k') { tone->setWhiteThreshold(tone->getWhiteThreshold() - 0.1); std::cout<<"wht = "<<tone->getWhiteThreshold()<<std::endl; }
+			}
+			if(e.key.keysym.sym >= '1' && e.key.keysym.sym <= '9') {
+				rendererIndex = e.key.keysym.sym - '1';
 			}
 		} else if(e.type == SDL_KEYUP && !e.key.repeat) {
 			wasd -= Vec2((e.key.keysym.sym == 'z') - (e.key.keysym.sym == 's'), (e.key.keysym.sym == 'q') - (e.key.keysym.sym == 'd'));

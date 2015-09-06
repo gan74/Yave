@@ -20,6 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Transformable.h"
 #include "ShadowRenderer.h"
 #include "Color.h"
+#include "BlurBufferRenderer.h"
+#include "VarianceShadowRenderer.h"
+#include "ExponentialShadowRenderer.h"
+#include "BSShadowRenderer.h"
 #include <n/math/Volume.h>
 #include <n/utils.h>
 
@@ -95,11 +99,11 @@ class BoxLight : public Light
 			size = s;
 		}
 
-		void setCastShadows(const Scene *sc, uint res = 1024) {
+		void setCastShadows(const Scene *sc, uint res = 512, uint fHStep = 2) {
 			delete shadows;
 			shadows = 0;
 			if(sc) {
-				shadows = new BoxLightShadowRenderer(this, sc, res);
+				shadows = new ExponentialShadowRenderer(new BoxLightShadowRenderer(this, sc, res), fHStep);
 			}
 		}
 

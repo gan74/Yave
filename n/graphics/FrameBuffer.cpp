@@ -108,6 +108,9 @@ void FrameBuffer::setUnmodified() const {
 		if(isAttachmentEnabled(i)) {
 			attachments[i].prepare(true);
 			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachments[i].getHandle(), 0);
+			if(!attachments[i].getHandle()) {
+				fatal("Unable to create attachement.");
+			}
 		} else {
 			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
 		}

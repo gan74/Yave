@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
 	cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
+
 	Light *light = 0;
 	Obj *tr;
 
@@ -21,10 +22,12 @@ int main(int argc, char **argv) {
 	scene.insert(&cam);
 
 
-	{
+	for(uint i = 0; i != 15; i++) {
 		auto obj = new Obj("scube.obj");
 		obj->setAutoScale(5);
+		obj->setPosition(Vec3(3, 0, 5) * i);
 		scene.insert(tr = obj);
+
 	}
 
 	{
@@ -36,19 +39,22 @@ int main(int argc, char **argv) {
 	}
 
 	{
-		BoxLight *l = new BoxLight(800);
+		BoxLight *l = new BoxLight(600);
 		l->setForward(Vec3(0, 0, -1));
 		l->setPosition(Vec3(0, 0, 10));
 		l->setIntensity(5);
-		l->setCastShadows(&scene, 2048);
-		scene.insert(l);
+		l->setCastShadows(&scene, 2048, 5);
+		scene.insert(light = l);
 	}
 
 	BufferedRenderer *ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
-	FrameBufferRenderer renderer(ri);
+	FrameBufferRenderer *renderers[2] {new FrameBufferRenderer(ri),
+									   new FrameBufferRenderer(light->getShadowRenderer())};
+
 	//SceneRenderer renderer(&scene);
 
 	Timer timer;
+	Timer total;
 
 	uint64 frames = 0;
 
@@ -62,6 +68,8 @@ int main(int argc, char **argv) {
 			angle.y() = std::min(std::max(angle.y(), -p2), p2);
 			Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
 			cam.setForward(f);
+			float tt = total.elapsed() * 0.15;
+			//light->setForward(Vec3(0, cos(tt), -fabs(sin(tt)) - 1));
 		} else {
 			double tt = timer.elapsed();
 			frames++;
@@ -74,7 +82,7 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		(renderer)();
+		(*renderers[rendererIndex % (sizeof(renderers) / sizeof(void *))])();
 
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
