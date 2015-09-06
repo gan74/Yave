@@ -38,10 +38,7 @@ namespace internal {
 class SubMeshInstance
 {
 	public:
-		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m) : buffer(new TriangleBuffer<>::FreezedTriangleBuffer(b)), vao(0), material(m) {
-		}
-
-		SubMeshInstance(const SubMeshInstance &b, const graphics::Material &m) : buffer(b.buffer), vao(b.vao), material(m) {
+		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m) : buffer(new TriangleBuffer<>::FreezedTriangleBuffer(b)), allocInfos(0), material(m) {
 		}
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
@@ -116,11 +113,14 @@ namespace internal {
 			typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
 
 			MeshInstance(const core::Array<SubMeshInstance *> &b) : subs(b), radius(0) {
-				for(const SubMeshInstance *sub : subs) {
+				core::Array<SubMeshInstance *> toAlloc;
+				for(SubMeshInstance *sub : subs) {
 					radius = std::max(radius, sub->getRadius());
+					if(sub->vao.isNull() && !sub->allocInfos) {
+						toAlloc.append(sub);
+					}
 				}
-
-				VaoAllocInfo *allocInfos = new VaoAllocInfo{subs, radius};
+				VaoAllocInfo *allocInfos = new VaoAllocInfo{toAlloc, radius};
 				for(SubMeshInstance *sub : subs) {
 					sub->allocInfos = allocInfos;
 				}

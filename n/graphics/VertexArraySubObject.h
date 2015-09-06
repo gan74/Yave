@@ -36,7 +36,9 @@ class VertexArraySubObject
 		}
 
 		void draw(const Material &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
-			object->draw(mat, attributes, renderFlags, instances, start, size, base);
+			if(object) {
+				object->draw(mat, attributes, renderFlags, instances, start, size, base);
+			}
 		}
 
 		uint triangleCount() const {
