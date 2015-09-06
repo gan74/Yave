@@ -78,7 +78,7 @@ class DirectionalLight : public Light
 		DirectionalLight() : Light() {
 		}
 
-		virtual ~DirectionalLight() override {
+		virtual ~DirectionalLight() {
 		}
 };
 
@@ -126,6 +126,32 @@ class PointLight : public Light
 			radius = r;
 		}
 
+};
+
+class SpotLight : public Light
+{
+	public:
+		SpotLight(float r = 1, float ang = 90) : Light(), angle(ang) {
+			Transformable::radius = r;
+		}
+
+		virtual ~SpotLight() {
+		}
+
+		float getCutOff() const {
+			return angle;
+		}
+
+		void setCutOff(float ang) {
+			angle = ang;
+		}
+
+		void setRadius(float r) {
+			radius = r;
+		}
+
+	private:
+		float angle;
 };
 
 }
