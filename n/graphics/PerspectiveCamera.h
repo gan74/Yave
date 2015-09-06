@@ -27,7 +27,7 @@ namespace graphics {
 class PerspectiveCamera final : public Camera
 {
 	public:
-		PerspectiveCamera(float fv = math::pi<>() * 0.5, float ZFar = 1000) : Camera(), zFar(ZFar), zNear(std::min(zFar * 0.1, 1.0)), ratio(1), fov(fv) {
+		PerspectiveCamera(float fv = math::pi * 0.5, float ZFar = 1000) : Camera(), zFar(ZFar), zNear(std::min(zFar * 0.1, 1.0)), ratio(1), fov(fv) {
 			radius = zFar;
 			computeViewMatrix();
 			computeProjectionMatrix();

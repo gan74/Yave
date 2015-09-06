@@ -25,27 +25,29 @@ int main(int argc, char **argv) {
 	for(uint i = 0; i != 15; i++) {
 		auto obj = new Obj("scube.obj");
 		obj->setAutoScale(5);
-		obj->setPosition(Vec3(3, 0, 5) * i);
+		obj->setPosition(Vec3(0, 0, 5) * i);
 		scene.insert(tr = obj);
 
 	}
 
 	{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
-		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi<>() * 0.5));
+		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
 		obj->setAutoScale(800);
 		scene.insert(obj);
 
 	}
 
-
+	for(uint i = 0; i != 4; i++)
 	{
 		SpotLight *l = new SpotLight();
-		l->setForward(Vec3(5, 0, -1));
-		l->setPosition(Vec3(0, 0, 50));
+		//l->setForward(Vec3(5, 0, -1));
+		l->setPosition(Vec3(cos(i * pi * 0.3), sin(i * pi * 0.3), 2) * 25);
+		std::cout<<l->getPosition()<<std::endl;
+		l->setForward(-l->getPosition());
 		l->setScale(100);
-		l->setIntensity(5);
-		l->setCastShadows(&scene, 64);
+		l->setIntensity(2.5);
+		l->setCastShadows(&scene);
 		scene.insert(light = l);
 	}
 
@@ -76,7 +78,7 @@ int main(int argc, char **argv) {
 			double dt = timer.reset();
 			cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 100);
 			Vec2 angle = mouse * 0.01;
-			float p2 = pi<>() * 0.5 - 0.01;
+			float p2 = pi * 0.5 - 0.01;
 			angle.y() = std::min(std::max(angle.y(), -p2), p2);
 			Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
 			cam.setForward(f);

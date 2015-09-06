@@ -146,7 +146,7 @@ class Quaternion
 			Vec<3, T> axis(1, 0, 0);
 			T d = f.dot(axis);
 			if(fabs(d + T(1.0)) < math::epsilon<T>()) {
-				return fromAxisAngle(math::Vec<3, T>(0, 0, 1), math::pi<T>());
+				return fromAxisAngle(math::Vec<3, T>(0, 0, 1), math::pi);
 			} else if(fabs(d - T(1.0)) < math::epsilon<T>()) {
 				return Quaternion<T>();
 			}

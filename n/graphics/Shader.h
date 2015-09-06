@@ -130,7 +130,7 @@ class Shader : public internal::ShaderBase
 					"",
 					""
 			};
-			core::String common = "const float pi = " + core::String(math::pi<>()) + "; float sqr(float x) { return x * x; }  float saturate(float x) { return clamp(x, 0.0, 1.0); }";
+			core::String common = "const float pi = " + core::String(math::pi) + "; float sqr(float x) { return x * x; }  float saturate(float x) { return clamp(x, 0.0, 1.0); }";
 			uint vit = src.find("#version");
 			if(vit != -1u) {
 				uint l = src.find("\n", vit);

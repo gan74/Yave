@@ -32,6 +32,9 @@ GLAPIENTRY void debugOut(gl::GLenum, gl::GLenum type, gl::GLuint, gl::GLuint sev
 	if(sev == GL_DEBUG_SEVERITY_NOTIFICATION) {
 		return;
 	}
+	if(type == GL_DEBUG_TYPE_PERFORMANCE) {
+		return;
+	}
 	core::String t;
 	switch(type) {
 		case GL_DEBUG_TYPE_PERFORMANCE:

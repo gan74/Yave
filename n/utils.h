@@ -96,10 +96,7 @@ namespace math {
 			typedef typename internal::ToFloatingPoint<T, std::is_floating_point<T>::value>::type type;
 	};
 
-	template<typename T = double>
-	static constexpr typename ToFloatingPoint<T>::type pi() {
-		return typename ToFloatingPoint<T>::type(3.1415926535897932384626433832795028841971693993751058);
-	}
+	static constexpr double pi = 3.1415926535897932384626433832795028841971693993751058;
 
 	template<typename T = double>
 	static constexpr typename ToFloatingPoint<T>::type epsilon() {
@@ -109,13 +106,13 @@ namespace math {
 	template<typename T>
 	typename ToFloatingPoint<T>::type toDeg(T a) {
 		typedef typename ToFloatingPoint<T>::type type;
-		return type(a) * type(180) / pi<type>();
+		return type(a) * type(180) / type(pi);
 	}
 
 	template<typename T>
 	typename ToFloatingPoint<T>::type toRad(T a) {
 		typedef typename ToFloatingPoint<T>::type type;
-		return type(a) / type(180) * pi<type>();
+		return type(a) / type(180) * type(pi);
 	}
 
 	template<typename T>

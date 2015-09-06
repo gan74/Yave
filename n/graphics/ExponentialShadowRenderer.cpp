@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-ShaderCombinaison *getExpShader() {
-	static ShaderCombinaison *shader = 0;
-	if(!shader) {
-		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+ShaderCombinaison *getExpShader(float exp) {
+	core::Map<float, ShaderCombinaison *> shaders;
+	ShaderCombinaison *sh = shaders.get(exp, 0);
+	if(!sh) {
+		sh = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 
 			"in vec2 n_TexCoord;"
@@ -33,14 +34,15 @@ ShaderCombinaison *getExpShader() {
 				/*"float dx = dFdx(depth);"
 				"float dy = dFdy(depth);"
 				"depth += (dx * dx + dy * dy);"*/
-				"n_Out = exp(30.0 * depth);"
+				"n_Out = exp(" + core::String(abs(exp)) + " * depth);"
 			"}"), ShaderProgram::NoProjectionShader);
+		shaders[exp] = sh;
 	}
-	return shader;
+	return sh;
 }
 
 
-ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep) : ShadowRenderer(c->getFrameBuffer().getSize().x()), child(c), temp(buffer.getSize()), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
+ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep, float exp) : ShadowRenderer(c->getFrameBuffer().getSize().x()), child(c), exponent(exp), temp(buffer.getSize()), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
 	mapIndex = 0;
 	buffer.setDepthEnabled(false);
 	buffer.setAttachmentEnabled(0, true);
@@ -53,7 +55,7 @@ ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHS
 	blurs[1]->setValue("n_0", temp.getAttachement(0));
 
 	shaderCode = "vec3 proj = projectShadow(pos);"
-				 "float eD = exp(-30.0 * proj.z);"
+				 "float eD = exp(-" + core::String(abs(exp)) + " * proj.z);"
 				 "float depth = texture(n_LightShadow, proj.xy).x;"
 				 "return clamp((eD * depth), 0.0, 1.0);";
 }
@@ -62,7 +64,7 @@ void ExponentialShadowRenderer::render(void *ptr) {
 	child->render(ptr);
 
 	buffer.bind();
-	ShaderCombinaison *sh = getExpShader();
+	ShaderCombinaison *sh = getExpShader(exponent);
 	sh->bind();
 	sh->setValue("n_0", child->getShadowMap());
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);

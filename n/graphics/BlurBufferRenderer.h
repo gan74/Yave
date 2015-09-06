@@ -59,7 +59,7 @@ class BlurBufferRenderer : public BufferedRenderer
 {
 	public:
 		static ShaderCombinaison *createBlurShader(bool vertical, uint hSteps, float var = 2.0) {
-			double mul = 1.0 / sqrt(2.0 * math::pi<>() * var * var);
+			double mul = 1.0 / sqrt(2.0 * math::pi * var * var);
 			double tot = 0.0;
 			core::String a = vertical ? "0, " : "";
 			core::String b = vertical ? "" : ", 0";

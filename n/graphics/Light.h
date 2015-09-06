@@ -131,7 +131,7 @@ class PointLight : public Light
 class SpotLight : public Light
 {
 	public:
-		SpotLight(float r = 1, float ang = math::pi<>() * 0.5, float e = 0.5) : Light(), angle(ang), exp(e) {
+		SpotLight(float r = 1, float ang = math::pi * 0.5, float e = 0.5) : Light(), angle(ang), exp(e) {
 			Transformable::radius = r;
 		}
 
@@ -158,7 +158,7 @@ class SpotLight : public Light
 			return exp;
 		}
 
-		void setCastShadows(const Scene *sc, uint res = 256, uint fHStep = 2) {
+		void setCastShadows(const Scene *sc, uint res = 256, uint fHStep = 1) {
 			delete shadows;
 			shadows = 0;
 			if(sc) {

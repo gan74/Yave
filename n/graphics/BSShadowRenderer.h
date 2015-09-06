@@ -27,7 +27,7 @@ namespace graphics {
 class BSShadowRenderer : public ShadowRenderer
 {
 	public:
-		BSShadowRenderer(ShadowRenderer *c, uint fHStep) : ShadowRenderer(c->getFrameBuffer().getSize().x()), child(c), temp(buffer.getSize()), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
+		BSShadowRenderer(ShadowRenderer *c, uint fHStep, float sharpness = 30) : ShadowRenderer(c->getFrameBuffer().getSize().x()), child(c), temp(buffer.getSize()), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
 			mapIndex = 0;
 			buffer.setDepthEnabled(false);
 			buffer.setAttachmentEnabled(0, true);
@@ -41,7 +41,7 @@ class BSShadowRenderer : public ShadowRenderer
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
 						 "float diff = proj.z - d;"
-						 "return pow(1.0 - clamp(diff, 0.0, 1.0), 30.0);";
+						 "return pow(1.0 - clamp(diff, 0.0, 1.0), " + core::String(sharpness) + ");";
 		}
 
 		~BSShadowRenderer() {
