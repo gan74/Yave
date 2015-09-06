@@ -21,10 +21,7 @@ namespace n {
 namespace graphics {
 
 
-ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : handle(0), bindings(0) {
-	shaders[FragmentShader] = frag;
-	shaders[VertexShader] = vert;
-	shaders[GeometryShader] = geom;
+ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : shaders{frag, vert, geom}, handle(0), bindings(0) {
 	compile();
 }
 

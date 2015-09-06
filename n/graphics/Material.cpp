@@ -108,7 +108,7 @@ void Material::bind(uint flags) const {
 		}
 
 		const ShaderCombinaison *sh = (flags & RenderFlag::FastDepth && data.prog.isDefaultProgram()) ? 0 :
-										(flags & RenderFlag::NoShader ? GLContext::getContext()->getShader() : data.prog.bind());
+										((flags & RenderFlag::NoShader) ? GLContext::getContext()->getShader() : data.prog.bind());
 
 		if(sh) {
 			setShaderParams(sh, data);

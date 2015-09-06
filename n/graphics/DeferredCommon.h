@@ -29,6 +29,7 @@ namespace graphics {
 enum LightType
 {
 	Point,
+	Spot,
 	Directional,
 	Box,
 

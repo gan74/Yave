@@ -20,7 +20,7 @@ namespace n {
 namespace graphics {
 
 ShaderCombinaison *getVSMShader() {
-	ShaderCombinaison *shader = 0;
+	static ShaderCombinaison *shader = 0;
 	if(!shader) {
 		shader = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"

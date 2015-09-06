@@ -20,7 +20,7 @@ namespace n {
 namespace graphics {
 
 ShaderCombinaison *getExpShader() {
-	ShaderCombinaison *shader = 0;
+	static ShaderCombinaison *shader = 0;
 	if(!shader) {
 		shader = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
@@ -76,8 +76,6 @@ void ExponentialShadowRenderer::render(void *ptr) {
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 	blurs[1]->unbind();
-
-	sh->unbind();
 }
 
 }

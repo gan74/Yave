@@ -20,12 +20,58 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+template<typename T>
+constexpr LightType getLightType() {
+	return LightType::Max;
+}
+
+template<>
+constexpr LightType getLightType<PointLight>() {
+	return LightType::Point;
+}
+
+template<>
+constexpr LightType getLightType<SpotLight>() {
+	return LightType::Spot;
+}
+
+template<>
+constexpr LightType getLightType<DirectionalLight>() {
+	return LightType::Directional;
+}
+
+template<>
+constexpr LightType getLightType<BoxLight>() {
+	return LightType::Box;
+}
+
+
+
+
+
+
+
 struct LightData
 {
-	LightData(Light *l) : light(l), shadowData(light->castShadows() ? light->getShadowRenderer()->prepare() : 0) {
+	template<typename T>
+	LightData(T *l) : light(l), shadowData(l->castShadows() ? l->getShadowRenderer()->prepare() : 0) {
+		if((void *)((Light *)l) != (void *)l) {
+			fatal("Virtual inherited Light");
+		}
 	}
 
-	Light *light;
+	template<typename T>
+	T *to() {
+		return reinterpret_cast<T *>(light);
+	}
+
+	template<typename T>
+	const T *to() const {
+		return reinterpret_cast<const T *>(light);
+	}
+
+
+	void *light;
 	void *shadowData;
 };
 
@@ -51,10 +97,15 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 	static core::Map<core::String, ShaderCombinaison *> shaders[LightType::Max];
 
 	core::String computeDir[LightType::Max] = {"return n_LightPos - pos;",
+											   "return n_LightPos - pos;",
 											   "return n_LightForward;",
 											   "return n_LightForward;"};
 	core::String attenuate[LightType::Max] = {"float x = min(lightDist, n_LightRadius); "
 												  "return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
+											  "float x = min(lightDist, n_LightRadius); "
+												  "float falloff = sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);"
+												  "float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), 0.5);"
+												  "return falloff * spotFalloff;",
 											  "return 1.0;",
 											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
 	ShaderCombinaison *shader = shaders[Type].get(shadow, 0);
@@ -72,6 +123,8 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 			"uniform vec3 n_LightColor;"
 
 			"uniform float n_LightRadius;"
+			"uniform float n_LightScale;"
+			"uniform float n_LightCosCutOff;"
 			"uniform mat3 n_LightMatrix;"
 			"uniform vec3 n_LightSize;"
 
@@ -124,6 +177,7 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 				"vec3 lightDir = computeDir(pos);"
 				"float lightDist = length(lightDir);"
 				"vec3 lightVec = lightDir / lightDist;"
+				"lightDist /= n_LightScale;"
 				"float metallic = material.y;"
 
 				"float shadow = 1.0;"
@@ -131,7 +185,7 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 					"shadow = computeShadow(pos);"
 				"}"
 
-				"float att = attenuate(lightDir, pos, lightDist);"
+				"float att = attenuate(lightVec, pos, lightDist);"
 				"float NoL = saturate(dot(normal, lightDir));"
 				"vec3 light = n_LightColor * NoL * att * shadow;"
 
@@ -139,7 +193,7 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
 				"n_Out = vec4(light * (diffuse * albedo.rgb * (1.0 - metallic) + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
 
-				//s"n_Out = vec4(shadow);"
+				//"n_Out = vec4(att);"
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 		shaders[Type][shadow] = shader;
 	}
@@ -154,39 +208,41 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 
 
 
-template<LightType Type>
-void lightGeometryPass(const Light *l, ShaderCombinaison *sh, const math::Vec3 &forward) {
-	switch(Type) {
-		case Directional:
-			GLContext::getContext()->getScreen().draw(getLightMaterial<Type>(), VertexAttribs(), RenderFlag::NoShader);
-		break;
-
-		case Box: {
-			const BoxLight *box = dynamic_cast<const BoxLight *>(l);
-			math::Matrix3<> lightMatrix(forward, -l->getTransform().getY().normalized(), -l->getTransform().getZ().normalized());
-			GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * box->getSize().x() * -2, 0,
-																	lightMatrix[1] * box->getSize().y() * -2, 0,
-																	lightMatrix[2] * box->getSize().z() * -2, 0,
-																	0, 0, 0, 1).transposed());
-			sh->setValue("n_LightSize", box->getSize() * box->getScale());
-			sh->setValue("n_LightMatrix", lightMatrix);
-			getBox().draw(getLightMaterial<Type>(), VertexAttribs(), RenderFlag::NoShader);
-		} break;
-
-		case Point:
-			GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
-			getSphere().draw(getLightMaterial<Type>(), VertexAttribs(), RenderFlag::NoShader);
-		break;
-	}
+void lightGeometryPass(const DirectionalLight *, ShaderCombinaison *, const math::Vec3 &) {
+	GLContext::getContext()->getScreen().draw(getLightMaterial<Directional>(), VertexAttribs(), RenderFlag::NoShader);
 }
 
 
+void lightGeometryPass(const BoxLight *l, ShaderCombinaison *sh, const math::Vec3 &forward) {
+	math::Matrix3<> lightMatrix(forward, -l->getTransform().getY().normalized(), -l->getTransform().getZ().normalized());
+	GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * l->getSize().x() * -2, 0,
+															lightMatrix[1] * l->getSize().y() * -2, 0,
+															lightMatrix[2] * l->getSize().z() * -2, 0,
+															0, 0, 0, 1).transposed());
+	sh->setValue("n_LightSize", l->getSize() * l->getScale());
+	sh->setValue("n_LightMatrix", lightMatrix);
+	getBox().draw(getLightMaterial<Box>(), VertexAttribs(), RenderFlag::NoShader);
+}
 
-template<LightType Type>
+void lightGeometryPass(const PointLight *l, ShaderCombinaison *, const math::Vec3 &) {
+	GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
+	getSphere().draw(getLightMaterial<Point>(), VertexAttribs(), RenderFlag::NoShader);
+}
+
+void lightGeometryPass(const SpotLight *l, ShaderCombinaison *sh, const math::Vec3 &) {
+	GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
+	sh->setValue("n_LightCosCutOff", cos(math::toRad(l->getCutOff() * 0.5)));
+	getSphere().draw(getLightMaterial<Spot>(), VertexAttribs(), RenderFlag::NoShader);
+
+}
+
+
+template<typename T>
 ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
+	constexpr LightType Type = getLightType<T>();
 	ShaderCombinaison *shader = 0;
 	for(const LightData &ld : data->lights[Type]) {
-		const Light *l = ld.light;
+		const T *l = ld.to<T>();
 		math::Vec3 forward = -l->getTransform().getX().normalized();
 		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;");
 		if(sh != shader) {
@@ -200,7 +256,8 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 			sh->setValue("n_Cam", data->pos);
 		}
 		sh->setValue("n_LightPos", l->getPosition());
-		sh->setValue("n_LightRadius", l->getRadius());
+		sh->setValue("n_LightScale", l->getScale());
+		sh->setValue("n_LightRadius", l->getRadius() / l->getScale());
 		sh->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
 		sh->setValue("n_LightForward", forward);
 		sh->setValue("n_LightShadowMul", l->castShadows() ? 1.0 : 0.0);
@@ -208,7 +265,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 			sh->setValue("n_LightShadow", l->getShadowRenderer()->getShadowMap());
 			sh->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
 		}
-		lightGeometryPass<Type>(l, sh, forward);
+		lightGeometryPass(l, sh, forward);
 	}
 
 	return shader;
@@ -236,6 +293,7 @@ void *DeferredShadingRenderer::prepare() {
 	return new FrameData({sceneData->camera->getPosition(),
 						  (sceneData->proj * sceneData->view).inverse(),
 						  {child->getRenderer()->getScene()->query<PointLight>(*sceneData->camera),
+						   child->getRenderer()->getScene()->query<SpotLight>(*sceneData->camera),
 						   child->getRenderer()->getScene()->get<DirectionalLight>(),
 						   child->getRenderer()->getScene()->get<BoxLight>()},
 						  ptr});
@@ -249,8 +307,8 @@ void DeferredShadingRenderer::render(void *ptr) {
 
 	for(uint i = 0; i != LightType::Max; i++) {
 		data->lights[i].foreach([](const LightData &l) {
-			if(l.light->castShadows()) {
-				l.light->getShadowRenderer()->render(l.shadowData);
+			if(l.to<Light>()->castShadows()) {
+				l.to<Light>()->getShadowRenderer()->render(l.shadowData);
 			}
 		});
 	}
@@ -263,11 +321,13 @@ void DeferredShadingRenderer::render(void *ptr) {
 		buffer.clear(true, false);
 		child->getFrameBuffer().blit(FrameBuffer::Depth);
 
-		lightPass<Point>(data, child);
+		lightPass<PointLight>(data, child);
 
-		lightPass<Box>(data, child);
+		lightPass<SpotLight>(data, child);
 
-		ShaderCombinaison *sh = lightPass<Directional>(data, child);
+		lightPass<BoxLight>(data, child);
+
+		ShaderCombinaison *sh = lightPass<DirectionalLight>(data, child);
 
 		if(sh) {
 			sh->unbind();

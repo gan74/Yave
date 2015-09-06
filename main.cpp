@@ -38,18 +38,28 @@ int main(int argc, char **argv) {
 
 	}
 
-	{
+	/*{
 		BoxLight *l = new BoxLight(600);
 		l->setForward(Vec3(0, 0, -1));
 		l->setPosition(Vec3(0, 0, 10));
 		l->setIntensity(5);
-		l->setCastShadows(&scene, 2048, 5);
+		l->setCastShadows(&scene, 1024, 5);
 		scene.insert(light = l);
+	}*/
+
+	{
+		SpotLight *l = new SpotLight(1);
+		l->setForward(Vec3(0, 0, -1));
+		l->setPosition(Vec3(0, 0, 25));
+		l->setScale(300);
+		l->setIntensity(1);
+		//l->setCastShadows(&scene, 1024, 5);
+		scene.insert(l);
 	}
 
 	BufferedRenderer *ri = new DeferredShadingRenderer(new GBufferRenderer(new SceneRenderer(&scene)));
 	FrameBufferRenderer *renderers[2] {new FrameBufferRenderer(ri),
-									   new FrameBufferRenderer(light->getShadowRenderer())};
+									   new FrameBufferRenderer(light && light->castShadows() ? light->getShadowRenderer() : ri)};
 
 	//SceneRenderer renderer(&scene);
 
