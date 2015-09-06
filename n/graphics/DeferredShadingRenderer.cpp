@@ -105,7 +105,7 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 											  "float x = min(lightDist, n_LightRadius); "
 												  "float falloff = sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);"
 												  "float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), 0.5);"
-												  "return falloff * spotFalloff;",
+												  "return max(0.0, falloff * spotFalloff);",
 											  "return 1.0;",
 											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
 	ShaderCombinaison *shader = shaders[Type].get(shadow, 0);
@@ -247,27 +247,26 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;");
 		if(sh != shader) {
 			shader = sh;
-			sh->bind();
-			sh->setValue("n_0", child->getFrameBuffer().getAttachement(0));
-			sh->setValue("n_1", child->getFrameBuffer().getAttachement(1));
-			sh->setValue("n_2", child->getFrameBuffer().getAttachement(2));
-			sh->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
-			sh->setValue("n_Inv", data->inv);
-			sh->setValue("n_Cam", data->pos);
+			shader->bind();
+			shader->setValue("n_0", child->getFrameBuffer().getAttachement(0));
+			shader->setValue("n_1", child->getFrameBuffer().getAttachement(1));
+			shader->setValue("n_2", child->getFrameBuffer().getAttachement(2));
+			shader->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
+			shader->setValue("n_Inv", data->inv);
+			shader->setValue("n_Cam", data->pos);
 		}
-		sh->setValue("n_LightPos", l->getPosition());
-		sh->setValue("n_LightScale", l->getScale());
-		sh->setValue("n_LightRadius", l->getRadius() / l->getScale());
-		sh->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
-		sh->setValue("n_LightForward", forward);
-		sh->setValue("n_LightShadowMul", l->castShadows() ? 1.0 : 0.0);
+		shader->setValue("n_LightPos", l->getPosition());
+		shader->setValue("n_LightScale", l->getScale());
+		shader->setValue("n_LightRadius", l->getRadius() / l->getScale());
+		shader->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
+		shader->setValue("n_LightForward", forward);
+		shader->setValue("n_LightShadowMul", l->castShadows() ? 1.0 : 0.0);
 		if(l->castShadows()) {
-			sh->setValue("n_LightShadow", l->getShadowRenderer()->getShadowMap());
-			sh->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
+			shader->setValue("n_LightShadow", l->getShadowRenderer()->getShadowMap());
+			shader->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
 		}
-		lightGeometryPass(l, sh, forward);
+		lightGeometryPass(l, shader, forward);
 	}
-
 	return shader;
 }
 
