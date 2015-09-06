@@ -36,6 +36,7 @@ struct ImageFormat
 			RGBA32F,
 			RG16,
 			RG16F,
+			RG32F,
 			F32,
 			R32F = F32,
 			Depth32
@@ -82,6 +83,7 @@ struct ImageFormat
 
 				case RGBA16:
 				case RGBA16F:
+				case RG32F:
 					return 8;
 
 				case RGBA32F:
@@ -97,6 +99,8 @@ struct ImageFormat
 				case None:
 				case RGB8:
 				case RG16:
+				case RG16F:
+				case RG32F:
 				case F32:
 				case Depth32:
 					return false;
@@ -118,6 +122,8 @@ struct ImageFormat
 					return ch == Alpha ? 0 : 8;
 				case RGB10A2:
 					return ch == Alpha ? 2 : 10;
+				case RG32F:
+					return ch > Green ? 32 : 0;
 				case RGBA32F:
 				case F32:
 				case Depth32:
@@ -155,6 +161,7 @@ struct ImageFormat
 				case RG16:
 					return norm(((uint16 *)cdt)[ch]);
 
+				case RG32F:
 				case RGBA32F:
 					return ((const float *)cdt)[ch];
 

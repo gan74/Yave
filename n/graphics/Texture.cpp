@@ -42,6 +42,9 @@ GLTexFormat getTextureFormat(ImageFormat format) {
 		case ImageFormat::RG16F:
 			return GLTexFormat(GL_RG, GL_RG16F, GL_UNSIGNED_SHORT);
 		break;
+		case ImageFormat::RG32F:
+			return GLTexFormat(GL_RG, GL_RG32F, GL_FLOAT);
+		break;
 		case ImageFormat::RGBA8:
 			return GLTexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE);
 		break;
@@ -132,15 +135,17 @@ void Texture::upload() const {
 
 void Texture::prepare(bool sync) const {
 	if(!image.isNull()) {
-		if(data->lock.trylock()) {
-			if(sync) {
-				upload();
-			} else {
-				Texture self(*this);
-				GLContext::getContext()->addGLTask([=]() {
-					self.upload();
-					internal::TextureBinding::dirty();
-				});
+		if(image.data() || sync) {
+			if(data->lock.trylock()) {
+				if(sync) {
+					upload();
+				} else {
+					Texture self(*this);
+					GLContext::getContext()->addGLTask([=]() {
+						self.upload();
+						internal::TextureBinding::dirty();
+					});
+				}
 			}
 		}
 	} else {
