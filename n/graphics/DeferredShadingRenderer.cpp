@@ -93,9 +93,10 @@ struct FrameData
 
 
 template<LightType Type>
-ShaderCombinaison *getShader(const core::String &shadow) {
-	static core::Map<core::String, ShaderCombinaison *> shaders[LightType::Max];
+ShaderCombinaison *getShader(const core::String &shadow, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
+	static core::Map<core::String, ShaderCombinaison *> shaders[LightType::Max][DeferredShadingRenderer::Max];
 
+	core::String debugStrs[] = {"", "n_Out = vec4(vec3(att), 1.0);", "n_Out = vec4(vec3(shadow), 1.0);"};
 	core::String computeDir[LightType::Max] = {"return n_LightPos - pos;",
 											   "return n_LightPos - pos;",
 											   "return n_LightForward;",
@@ -108,7 +109,7 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 												  "return max(0.0, falloff * spotFalloff);",
 											  "return 1.0;",
 											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
-	ShaderCombinaison *shader = shaders[Type].get(shadow, 0);
+	ShaderCombinaison *shader = shaders[Type][debug].get(shadow, 0);
 	if(!shader) {
 		shader = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
@@ -194,9 +195,10 @@ ShaderCombinaison *getShader(const core::String &shadow) {
 				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
 				"n_Out = vec4(light * (diffuse * albedo.rgb * (1.0 - metallic) + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
 
-				//"n_Out = vec4(att);"
+				+ debugStrs[debug] +
+
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
-		shaders[Type][shadow] = shader;
+		shaders[Type][debug][shadow] = shader;
 	}
 	return shader;
 }
@@ -239,13 +241,13 @@ void lightGeometryPass(const SpotLight *l, ShaderCombinaison *sh, const math::Ve
 
 
 template<typename T>
-ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
+ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
 	constexpr LightType Type = getLightType<T>();
 	ShaderCombinaison *shader = 0;
 	for(const LightData &ld : data->lights[Type]) {
 		const T *l = ld.to<T>();
 		math::Vec3 forward = -l->getTransform().getX().normalized();
-		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;");
+		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;", debug);
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();
@@ -280,7 +282,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child) {
 
 
 
-DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c) {
+DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c), debugMode(None) {
 	buffer.setAttachmentEnabled(0, true);
 	buffer.setAttachmentFormat(0, ImageFormat::RGBA16F);
 	buffer.setDepthEnabled(true);
@@ -321,11 +323,11 @@ void DeferredShadingRenderer::render(void *ptr) {
 		buffer.clear(true, false);
 		child->getFrameBuffer().blit(FrameBuffer::Depth);
 
-		lightPass<PointLight>(data, child);
+		lightPass<PointLight>(data, child, debugMode);
 
-		lightPass<SpotLight>(data, child);
+		lightPass<SpotLight>(data, child, debugMode);
 
-		lightPass<BoxLight>(data, child);
+		lightPass<BoxLight>(data, child, debugMode);
 
 		ShaderCombinaison *sh = lightPass<DirectionalLight>(data, child);
 

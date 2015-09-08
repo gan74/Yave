@@ -80,7 +80,7 @@ class ShadowRenderer : public Renderer
 class CameraShadowRenderer : public ShadowRenderer
 {
 	public:
-		CameraShadowRenderer(const Scene *sc, uint si = 1024);
+		CameraShadowRenderer(const Scene *sc, uint s);
 
 		virtual ~CameraShadowRenderer();
 
@@ -99,7 +99,7 @@ class CameraShadowRenderer : public ShadowRenderer
 class BoxLightShadowRenderer : public CameraShadowRenderer
 {
 	public:
-		BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si = 1024) : CameraShadowRenderer(sc, si), light(li) {
+		BoxLightShadowRenderer(BoxLight *li, const Scene *sc, uint si) : CameraShadowRenderer(sc, si), light(li) {
 		}
 
 		virtual ~BoxLightShadowRenderer() {
@@ -116,7 +116,7 @@ class BoxLightShadowRenderer : public CameraShadowRenderer
 class SpotLightShadowRenderer : public CameraShadowRenderer
 {
 	public:
-		SpotLightShadowRenderer(SpotLight *li, const Scene *sc, uint si = 1024) : CameraShadowRenderer(sc, si), light(li) {
+		SpotLightShadowRenderer(SpotLight *li, const Scene *sc, uint si) : CameraShadowRenderer(sc, si), light(li) {
 		}
 
 		virtual ~SpotLightShadowRenderer() {

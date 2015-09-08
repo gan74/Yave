@@ -36,7 +36,7 @@ void ShadowRenderer::createBuffer() {
 	}
 }
 
-CameraShadowRenderer::CameraShadowRenderer(const Scene *sc, uint si) : ShadowRenderer(si), child(new SceneRenderer(sc)) {
+CameraShadowRenderer::CameraShadowRenderer(const Scene *sc, uint s) : ShadowRenderer(s), child(new SceneRenderer(sc)) {
 }
 
 CameraShadowRenderer::~CameraShadowRenderer() {

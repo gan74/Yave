@@ -39,7 +39,7 @@ ShaderCombinaison *getVSMShader() {
 	return shader;
 }
 
-VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) : ShadowRenderer(c->getSize().x()), child(c), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
+VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) : ShadowRenderer(c->getSize().x()), child(c), blurs{BlurBufferRenderer::createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), BlurBufferRenderer::createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
 	mapIndex = 0;
 	shaderCode = "vec3 proj = projectShadow(pos);"
 				 "float distance = (proj.z * 0.5 + 0.5);"

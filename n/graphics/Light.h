@@ -99,11 +99,12 @@ class BoxLight : public Light
 			size = s;
 		}
 
-		void setCastShadows(const Scene *sc, uint res = 512, uint fHStep = 3) {
+		template<typename T = BSShadowRenderer, typename... Args>
+		void setCastShadows(const Scene *sc, uint res = 512, Args... args) {
 			delete shadows;
 			shadows = 0;
 			if(sc) {
-				shadows = new VarianceShadowRenderer(new BoxLightShadowRenderer(this, sc, res), fHStep);
+				shadows = new T(new BoxLightShadowRenderer(this, sc, res), args...);
 			}
 		}
 
@@ -158,11 +159,12 @@ class SpotLight : public Light
 			return exp;
 		}
 
-		void setCastShadows(const Scene *sc, uint res = 256, uint fHStep = 2) {
+		template<typename T = BSShadowRenderer, typename... Args>
+		void setCastShadows(const Scene *sc, uint res = 128, Args... args) {
 			delete shadows;
 			shadows = 0;
 			if(sc) {
-				shadows = new VarianceShadowRenderer(new SpotLightShadowRenderer(this, sc, res), fHStep);
+				shadows = new T(new SpotLightShadowRenderer(this, sc, res), args...);
 			}
 		}
 

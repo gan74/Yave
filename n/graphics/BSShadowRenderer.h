@@ -28,12 +28,12 @@ namespace graphics {
 class BSShadowRenderer : public ShadowRenderer
 {
 	public:
-		BSShadowRenderer(ShadowRenderer *c, uint fHStep, float sharpness = 30) : ShadowRenderer(c->getSize().x()), child(c), blurs{BlurBufferRenderer::createBlurShader(false, fHStep), BlurBufferRenderer::createBlurShader(true, fHStep)} {
+		BSShadowRenderer(ShadowRenderer *c, uint fHStep = 0, float sharpness = 30) : ShadowRenderer(c->getSize().x()), child(c), blurs{BlurBufferRenderer::createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), BlurBufferRenderer::createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
 			mapIndex = 0;
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
-						 "float diff = proj.z - d;"
-						 "return pow(1.0 - clamp(diff, 0.0, 1.0), " + core::String(sharpness) + ");";
+						 "float diff = clamp(proj.z - d, 0.0, 1.0);"
+						 "return pow(1.0 - diff, " + core::String(sharpness) + ");";
 		}
 
 		~BSShadowRenderer() {

@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 		scene.insert(obj);
 	}
 
-	for(uint i = 0; i != 1; i++)
+	/*for(uint i = 0; i != 1; i++)
 	{
 		SpotLight *l = new SpotLight();
 		l->setPosition(Vec3(cos(i * pi * 0.3), sin(i * pi * 0.3), 2) * 25);
@@ -53,20 +53,20 @@ int main(int argc, char **argv) {
 		l->setIntensity(2.5);
 		l->setCastShadows(&scene, 64, 2);
 		scene.insert(l);
-	}
+	}*/
 
 	{
 		BoxLight *l = new BoxLight(600);
 		l->setForward(Vec3(0, 0, -1));
 		l->setPosition(Vec3(0, 0, 10));
 		l->setIntensity(5);
-		l->setCastShadows(&scene, 512, 10);
+		l->setCastShadows(&scene, 1024);
 		scene.insert(light = l);
 	}
 
 
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
-	BufferedRenderer *ri = new DeferredShadingRenderer(new GBufferRenderer(sceRe));
+	DeferredShadingRenderer *ri = new DeferredShadingRenderer(new GBufferRenderer(sceRe));
 	Renderer *renderers[] {new FrameBufferRenderer(ri),
 						   sceRe};
 
@@ -99,7 +99,11 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		(*renderers[rendererIndex % (sizeof(renderers) / sizeof(void *))])();
+		uint rCount = sizeof(renderers) / sizeof(void *);
+		uint rIndex = rendererIndex >= rCount ? 0 : rendererIndex;
+		uint dIndex = (std::max(rCount, rendererIndex) - rCount) % DeferredShadingRenderer::Max;
+		ri->setDebugMode(DeferredShadingRenderer::LightingDebugMode(dIndex));
+		(*renderers[rIndex])();
 
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();

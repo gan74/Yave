@@ -27,7 +27,7 @@ namespace graphics {
 class VarianceShadowRenderer : public ShadowRenderer
 {
 	public:
-		VarianceShadowRenderer(ShadowRenderer *c, uint fHStep = 1);
+		VarianceShadowRenderer(ShadowRenderer *c, uint fHStep = 0);
 
 		~VarianceShadowRenderer() {
 			delete blurs[0];

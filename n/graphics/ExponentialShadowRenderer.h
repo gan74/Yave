@@ -27,7 +27,7 @@ namespace graphics {
 class ExponentialShadowRenderer : public ShadowRenderer
 {
 	public:
-		ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep = 1, float exp = 30);
+		ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep = 0, float exp = 30);
 
 		~ExponentialShadowRenderer() {
 			delete blurs[0];

@@ -25,6 +25,15 @@ namespace graphics {
 class DeferredShadingRenderer : public BufferedRenderer
 {
 	public:
+		enum LightingDebugMode
+		{
+			None,
+			Attenuation,
+			Shadows,
+
+			Max
+		};
+
 		DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s = math::Vec2ui(0));
 
 		virtual ~DeferredShadingRenderer() {
@@ -33,8 +42,13 @@ class DeferredShadingRenderer : public BufferedRenderer
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;
 
+		void setDebugMode(LightingDebugMode m) {
+			debugMode = m;
+		}
+
 	private:
 		GBufferRenderer *child;
+		LightingDebugMode debugMode;
 };
 
 }
