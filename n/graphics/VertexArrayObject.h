@@ -102,8 +102,6 @@ class VertexArrayObject : core::NonCopyable
 		StaticBuffer<uint, Index> indexes;
 
 		mutable gl::GLuint handle;
-
-		static gl::GLuint current;
 };
 
 }

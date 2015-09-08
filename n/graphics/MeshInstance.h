@@ -112,7 +112,7 @@ namespace internal {
 		public:
 			typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
 
-			MeshInstance(const core::Array<SubMeshInstance *> &b) : subs(b), radius(0) {
+			MeshInstance(const core::Array<SubMeshInstance *> &b, bool optAlloc = true) : subs(b), radius(0) {
 				core::Array<SubMeshInstance *> toAlloc;
 				for(SubMeshInstance *sub : subs) {
 					radius = std::max(radius, sub->getRadius());
@@ -120,9 +120,11 @@ namespace internal {
 						toAlloc.append(sub);
 					}
 				}
-				VaoAllocInfo *allocInfos = new VaoAllocInfo{toAlloc, radius};
-				for(SubMeshInstance *sub : subs) {
-					sub->allocInfos = allocInfos;
+				if(optAlloc) {
+					VaoAllocInfo *allocInfos = new VaoAllocInfo{toAlloc, radius};
+					for(SubMeshInstance *sub : subs) {
+						sub->allocInfos = allocInfos;
+					}
 				}
 			}
 
