@@ -30,11 +30,12 @@ class BufferedRenderer : public Renderer
 {
 	public:
 		template<typename... Args>
-		BufferedRenderer(const math::Vec2ui &s = math::Vec2ui(0), bool depth = true, Args... args) : Renderer(), buffer(0), size(s.isNull() ? GLContext::getContext()->getViewport() : s) {
+		BufferedRenderer(const math::Vec2ui &s = math::Vec2ui(0), bool depth = true, Args... args) : Renderer(), buffer(0), size(s.isNull() ? GLContext::getContext()->getViewport() : s), pooling(true) {
 			setupBufferFunc(depth, args...);
 		}
 
 		virtual ~BufferedRenderer() {
+			pooling = true;
 			poolBuffer();
 		}
 
@@ -43,7 +44,7 @@ class BufferedRenderer : public Renderer
 		}
 
 		void poolBuffer() {
-			if(buffer) {
+			if(buffer && pooling) {
 				GLContext::getContext()->getFrameBufferPool().add(buffer);
 				buffer = 0;
 			}
@@ -60,6 +61,10 @@ class BufferedRenderer : public Renderer
 		}
 
 	protected:
+		void setAllowPooling(bool allow) {
+			pooling = allow;
+		}
+
 		template<typename... Args>
 		void setBufferFormat(bool depth, Args... args) {
 			setupBufferFunc(depth, args...);
@@ -81,6 +86,7 @@ class BufferedRenderer : public Renderer
 		}
 
 		math::Vec2ui size;
+		bool pooling;
 		core::Functor<FrameBuffer *()> createBufferFunc;
 };
 
