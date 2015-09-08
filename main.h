@@ -57,7 +57,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/OrthographicCamera.h>
 #include <n/graphics/PerspectiveCamera.h>
 #include <n/graphics/BufferRenderer.h>
-#include <n/graphics/BlurBufferRenderer.h>
 #include <n/graphics/VarianceShadowRenderer.h>
 
 

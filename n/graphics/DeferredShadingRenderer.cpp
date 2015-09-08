@@ -282,10 +282,10 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child, Defe
 
 
 
-DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s.isNull() ? c->getFrameBuffer().getSize() : s), child(c), debugMode(None) {
-	buffer.setAttachmentEnabled(0, true);
+DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s, true, ImageFormat::RGBA16F), child(c), debugMode(None) {
+	/*buffer.setAttachmentEnabled(0, true);
 	buffer.setAttachmentFormat(0, ImageFormat::RGBA16F);
-	buffer.setDepthEnabled(true);
+	buffer.setDepthEnabled(true);*/
 }
 
 void *DeferredShadingRenderer::prepare() {
@@ -318,9 +318,12 @@ void DeferredShadingRenderer::render(void *ptr) {
 	GLContext::getContext()->setProjectionMatrix(sceneData->proj);
 	GLContext::getContext()->setViewMatrix(sceneData->view);
 
+
+
+	createBuffer();
 	{
-		buffer.bind();
-		buffer.clear(true, false);
+		buffer->bind();
+		buffer->clear(true, false);
 		child->getFrameBuffer().blit(FrameBuffer::Depth);
 
 		lightPass<PointLight>(data, child, debugMode);

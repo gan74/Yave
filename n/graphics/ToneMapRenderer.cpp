@@ -18,10 +18,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderCombinaison.h"
 #include "VertexArrayObject.h"
 #include <n/utils.h>
-#include <iostream>
 
 namespace n {
 namespace graphics {
+
+const Material &getMaterial() {
+	static Material mat;
+	if(mat.isNull()) {
+		MaterialData i;
+		i.depth = MaterialData::Always;
+		mat = Material(i);
+	}
+	return mat;
+}
+
 
 ShaderCombinaison *getToneShader(bool debug = false) {
 	static ShaderCombinaison *shaders[2] = {0, 0};
@@ -147,9 +157,6 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	sh->bind();
 	sh->setValue("n_0", in);
 
-	if(buffers[1]->isModified()) {
-		buffers[1]->bind();
-	}
 	buffers[0]->bind();
 	GLContext::getContext()->getScreen().draw(Material());
 
@@ -172,19 +179,9 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 }
 
 ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), slot(s), exposure(0.35), white(1.5), range(0.055, 10000), debug(false) {
-	uint ls = core::log2ui(child->getFrameBuffer().getSize().min());
-	math::Vec2ui size = math::Vec2ui(1 << ls);
-	buffers[0] = new FrameBuffer(size);
-	buffers[0]->setAttachmentEnabled(0, true);
-	buffers[0]->setAttachmentFormat(0, ImageFormat::R32F);
-	buffers[1] = new FrameBuffer(size);
-	buffers[1]->setAttachmentEnabled(0, true);
-	buffers[1]->setAttachmentFormat(0, ImageFormat::R32F);
 }
 
 ToneMapRenderer::~ToneMapRenderer() {
-	delete buffers[0];
-	delete buffers[1];
 }
 
 void *ToneMapRenderer::prepare() {
@@ -194,6 +191,11 @@ void *ToneMapRenderer::prepare() {
 void ToneMapRenderer::render(void *ptr) {
 	const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
 	child->render(ptr);
+
+	uint ls = core::log2ui(child->getFrameBuffer().getSize().min());
+	math::Vec2ui size = math::Vec2ui(1 << ls);
+	FrameBuffer *buffers[] = {GLContext::getContext()->getFrameBufferPool().get(size, false, ImageFormat::R32F),
+							  GLContext::getContext()->getFrameBufferPool().get(size, false, ImageFormat::R32F)};
 
 	Texture lum = computeLum(child->getFrameBuffer().getAttachement(slot), buffers);
 
@@ -216,7 +218,10 @@ void ToneMapRenderer::render(void *ptr) {
 	gl::glGetTextureSubImage(lum.getHandle(), 0, 0, 0, 0, 1, 1, 1, GL_RG, GL_FLOAT, 2 * sizeof(float), lums);
 	std::cout<<lum.getHandle()<<"  max = "<<lums[1]<<", avg = "<<exp(lums[0])<<std::endl;*/
 
-	GLContext::getContext()->getScreen().draw(Material());
+	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
+
+	GLContext::getContext()->getFrameBufferPool().add(buffers[0]);
+	GLContext::getContext()->getFrameBufferPool().add(buffers[1]);
 }
 
 

@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "BufferedRenderer.h"
 #include "ShadowRenderer.h"
-#include "BlurBufferRenderer.h"
 
 namespace n {
 namespace graphics {
@@ -42,8 +41,6 @@ class VarianceShadowRenderer : public ShadowRenderer
 		}
 
 		virtual void render(void *ptr) override;
-
-		virtual void createBuffer() override;
 
 	private:
 		ShadowRenderer *child;

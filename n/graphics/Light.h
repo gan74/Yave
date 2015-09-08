@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Transformable.h"
 #include "ShadowRenderer.h"
 #include "Color.h"
-#include "BlurBufferRenderer.h"
 #include "VarianceShadowRenderer.h"
 #include "ExponentialShadowRenderer.h"
 #include "BSShadowRenderer.h"

@@ -35,8 +35,7 @@ class GBufferRenderer : public BufferedRenderer
 			RGBDiffuseRGBNormal = 0
 		};
 
-		GBufferRenderer(SceneRenderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : BufferedRenderer(s), child(c) {
-			setFormat(RGBDiffuseRGBNormal);
+		GBufferRenderer(SceneRenderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : BufferedRenderer(s, true, true, ImageFormat::RGBA16, true), child(c), bufferFormat(RGBDiffuseRGBNormal) {
 		}
 
 		virtual ~GBufferRenderer() {
@@ -46,12 +45,15 @@ class GBufferRenderer : public BufferedRenderer
 			return child;
 		}
 
-		void setFormat(BufferFormat) {
-			buffer.setAttachmentEnabled(0, true);
-			buffer.setAttachmentEnabled(1, true);
-			buffer.setAttachmentFormat(1, ImageFormat::RGBA16);
-			buffer.setAttachmentEnabled(2, true);
-			buffer.setDepthEnabled(true);
+		void setFormat(BufferFormat b) {
+			if(b != bufferFormat) {
+				bufferFormat = b;
+				switch(bufferFormat) {
+					case RGBDiffuseRGBNormal:
+						setBufferFormat(true, true, ImageFormat::RGBA16, true);
+					break;
+				}
+			}
 		}
 
 		virtual void *prepare() override {
@@ -63,8 +65,9 @@ class GBufferRenderer : public BufferedRenderer
 		}
 
 		virtual void render(void *ptr) override {
+			createBuffer();
 			getShader()->bindAsDefault();
-			buffer.bind();
+			buffer->bind();
 			child->render(ptr);
 			ShaderProgram::setDefaultShader((Shader<FragmentShader> *)0);
 		}
@@ -109,6 +112,7 @@ class GBufferRenderer : public BufferedRenderer
 		}
 
 		SceneRenderer *child;
+		BufferFormat bufferFormat;
 
 };
 

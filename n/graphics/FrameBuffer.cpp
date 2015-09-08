@@ -21,20 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-uint getMaxAttachment() {
-	return GLContext::getContext()->getHWInt(GLContext::MaxFboAttachements);
-}
-
-FrameBuffer::FrameBuffer(const math::Vec2ui &s) : base(s), attachments(new Texture[getMaxAttachment()]), depth(0), drawBuffers(new gl::GLenum[getMaxAttachment()]), handle(0), modified(false) {
-	Image baseImage(base);
-	for(uint i = 0; i != getMaxAttachment(); i++) {
-		drawBuffers[i] = GL_NONE;
-		attachments[i] = Texture(baseImage);
-	}
-	gl::glGenFramebuffers(1, &handle);
-	setAttachmentEnabled(0, true);
-}
-
 FrameBuffer::~FrameBuffer() {
 	if(isActive()) {
 		unbind();
@@ -45,47 +31,6 @@ FrameBuffer::~FrameBuffer() {
 	delete[] attachments;
 }
 
-void FrameBuffer::setAttachmentEnabled(uint slot, bool enabled) {
-	if(slot == Depth) {
-		setDepthEnabled(enabled);
-		return;
-	}
-	if(!enabled && isAttachmentEnabled(slot)) {
-		drawBuffers[slot] = GL_NONE;
-		attachments[slot] = Texture(Image());
-		setModified();
-	}
-	if(enabled && !isAttachmentEnabled(slot)) {
-		drawBuffers[slot] = GL_COLOR_ATTACHMENT0 + slot;
-		setModified();
-	}
-}
-
-void FrameBuffer::setAttachmentFormat(uint slot, ImageFormat format) {
-	if(slot == Depth) {
-		if(format != ImageFormat::Depth32) {
-			fatal("Invalid depth format.");
-		}
-	}
-	if(attachments[slot].getFormat() != format) {
-		attachments[slot] = Image(getSize(), format);
-		setModified();
-	}
-}
-
-void FrameBuffer::setDepthEnabled(bool enabled) {
-	if(enabled == isDepthEnabled()) {
-		return;
-	}
-	if(enabled) {
-		depth = new Texture(Image(base, ImageFormat::Depth32));
-	} else {
-		delete depth;
-		depth = 0;
-	}
-	setModified();
-}
-
 bool FrameBuffer::isDepthEnabled() const {
 	return depth;
 }
@@ -94,15 +39,9 @@ bool FrameBuffer::isAttachmentEnabled(uint slot) const {
 	return slot == Depth ? isDepthEnabled() : drawBuffers[slot] != GL_NONE;
 }
 
-void FrameBuffer::setModified() {
-	modified = true;
-	setUnmodified();
-}
-
-void FrameBuffer::setUnmodified() const {
-	if(!modified || !isActive()) {
-		return;
-	}
+void FrameBuffer::setup() {
+	gl::glGenFramebuffers(1, &handle);
+	bind();
 	uint att = getMaxAttachment();
 	for(uint i = 0; i != att; i++) {
 		if(isAttachmentEnabled(i)) {
@@ -123,7 +62,6 @@ void FrameBuffer::setUnmodified() const {
 	}
 	gl::glDrawBuffers(att, drawBuffers);
 	internal::TextureBinding::dirty();
-	modified = false;
 
 	if(gl::glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		switch(gl::glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
@@ -155,7 +93,6 @@ void FrameBuffer::bind() const {
 		if(vp != base) {
 			gl::glViewport(0, 0, base.x(), base.y());
 		}
-		setUnmodified();
 	}
 }
 

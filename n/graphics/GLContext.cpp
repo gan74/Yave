@@ -25,6 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 
+#define GL_AUDIT_SATET
+
 namespace n {
 namespace graphics {
 
@@ -158,6 +160,17 @@ void GLContext::setDebugEnabled(bool deb) {
 	} else {
 		gl::glDisable(GL_DEBUG_OUTPUT);
 	}
+}
+
+void GLContext::auditGLState() {
+	#ifdef GL_AUDIT_SATET
+	#warning GL state auditing enabled
+	int handle = 0;
+	gl::glGetIntegerv(GL_FRAMEBUFFER_BINDING, &handle);
+	if(handle != int(frameBuffer ? frameBuffer->handle : 0)) {
+		fatal("Invalid GL framebuffer state.");
+	}
+	#endif
 }
 
 void GLContext::setViewport(const math::Vec2ui &v) {

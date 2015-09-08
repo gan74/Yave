@@ -73,6 +73,7 @@ class GLContext
 		void flush();
 
 		void setDebugEnabled(bool deb);
+		void auditGLState();
 		static bool checkGLError();
 
 		const ShaderCombinaison *getShader() const {

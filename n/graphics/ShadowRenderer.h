@@ -26,17 +26,16 @@ namespace graphics {
 class BoxLight;
 class SpotLight;
 
-class ShadowRenderer : public Renderer
+ShaderCombinaison *createBlurShader(bool vertical, uint hSteps, float var = 2.0);
+
+class ShadowRenderer : public BufferedRenderer
 {
 	public:
-		ShadowRenderer(uint res) : Renderer(), buffer(0), size(res) {
+		template<typename... Args>
+		ShadowRenderer(uint res, bool depth = true, Args... args) : BufferedRenderer(math::Vec2ui(res), depth, args...) {
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
 						 "return step(proj.z, d);";
-		}
-
-		virtual ~ShadowRenderer() {
-			poolBuffer();
 		}
 
 		const math::Matrix4<> &getProjectionMatrix() const {
@@ -45,10 +44,6 @@ class ShadowRenderer : public Renderer
 
 		const math::Matrix4<> &getViewMatrix() const {
 			return view;
-		}
-
-		const math::Vec2ui &getSize() const {
-			return size;
 		}
 
 		Texture getShadowMap() {
@@ -63,16 +58,10 @@ class ShadowRenderer : public Renderer
 			return shaderCode;
 		}
 
-		void poolBuffer();
-
-		virtual void createBuffer();
-
 	protected:
 		uint mapIndex = FrameBuffer::Depth;
 		core::String shaderCode;
 
-		FrameBuffer *buffer;
-		math::Vec2ui size;
 		math::Matrix4<> view;
 		math::Matrix4<> proj;
 };

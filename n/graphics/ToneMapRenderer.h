@@ -65,7 +65,6 @@ class ToneMapRenderer : public BufferableRenderer
 
 	private:
 		BufferedRenderer *child;
-		FrameBuffer *buffers[2];
 		uint slot;
 		float exposure;
 		float white;

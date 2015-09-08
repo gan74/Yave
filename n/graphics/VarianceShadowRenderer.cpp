@@ -39,7 +39,7 @@ ShaderCombinaison *getVSMShader() {
 	return shader;
 }
 
-VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) : ShadowRenderer(c->getSize().x()), child(c), blurs{BlurBufferRenderer::createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), BlurBufferRenderer::createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
+VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) : ShadowRenderer(c->getSize().x(), false, ImageFormat::RG32F), child(c), blurs{createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
 	mapIndex = 0;
 	shaderCode = "vec3 proj = projectShadow(pos);"
 				 "float distance = (proj.z * 0.5 + 0.5);"
@@ -52,12 +52,6 @@ VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) :
 				 "variance = max(variance, 0.00002);"
 				 "float p_max = variance / (variance + sqr(distance - moments.x));"
 				 "return clamp(p_max, 0.0, 1.0);";
-}
-
-void VarianceShadowRenderer::createBuffer() {
-	if(!buffer) {
-		buffer = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
-	}
 }
 
 void VarianceShadowRenderer::render(void *ptr) {

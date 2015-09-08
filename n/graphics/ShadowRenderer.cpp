@@ -23,17 +23,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-void ShadowRenderer::poolBuffer() {
-	if(buffer) {
-		GLContext::getContext()->getFrameBufferPool().add(buffer);
-		buffer = 0;
+ShaderCombinaison *createBlurShader(bool vertical, uint hSteps, float var) {
+	double mul = 1.0 / sqrt(2.0 * math::pi * var * var);
+	double tot = 0.0;
+	core::String a = vertical ? "0, " : "";
+	core::String b = vertical ? "" : ", 0";
+	core::String acc;
+	for(int i = -int(hSteps); i != int(hSteps + 1); i++) {
+		double w = mul * exp(-(i * i / (2 * var * var)));
+		tot += w;
+		acc = acc + "acc += " + w + " * textureOffset(n_0, n_TexCoord, ivec2(" + a + i + b + "));";
 	}
-}
-
-void ShadowRenderer::createBuffer() {
-	if(!buffer) {
-		buffer = GLContext::getContext()->getFrameBufferPool().get(size, true, false);
-	}
+	return new ShaderCombinaison(new Shader<FragmentShader>(
+		"uniform sampler2D n_0;"
+		"out vec4 n_Out;"
+		"in vec2 n_TexCoord;"
+		"void main() {"
+			"vec4 acc;"
+			+ acc +
+			"n_Out = acc / " + tot + ";"
+		"}"), ShaderProgram::NoProjectionShader);
 }
 
 CameraShadowRenderer::CameraShadowRenderer(const Scene *sc, uint s) : ShadowRenderer(s), child(new SceneRenderer(sc)) {

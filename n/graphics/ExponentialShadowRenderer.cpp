@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "ExponentialShadowRenderer.h"
+#include "FrameBufferPool.h"
 
 namespace n {
 namespace graphics {
@@ -42,18 +43,12 @@ ShaderCombinaison *getExpShader(float exp) {
 }
 
 
-ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep, float exp) : ShadowRenderer(c->getSize().x()), child(c), exponent(exp), blurs{BlurBufferRenderer::createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), BlurBufferRenderer::createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
+ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep, float exp) : ShadowRenderer(c->getSize().x(), false, ImageFormat::R32F), child(c), exponent(exp), blurs{createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
 	mapIndex = 0;
 	shaderCode = "vec3 proj = projectShadow(pos);"
 				 "float eD = exp(-" + core::String(abs(exp)) + " * proj.z);"
 				 "float depth = texture(n_LightShadow, proj.xy).x;"
 				 "return clamp((eD * depth), 0.0, 1.0);";
-}
-
-void ExponentialShadowRenderer::createBuffer() {
-	if(!buffer) {
-		buffer = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::R32F);
-	}
 }
 
 void ExponentialShadowRenderer::render(void *ptr) {

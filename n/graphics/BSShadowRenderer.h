@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "BufferedRenderer.h"
 #include "ShadowRenderer.h"
-#include "BlurBufferRenderer.h"
+#include "FrameBufferPool.h"
 #include "GLContext.h"
 
 namespace n {
@@ -28,7 +28,7 @@ namespace graphics {
 class BSShadowRenderer : public ShadowRenderer
 {
 	public:
-		BSShadowRenderer(ShadowRenderer *c, uint fHStep = 0, float sharpness = 30) : ShadowRenderer(c->getSize().x()), child(c), blurs{BlurBufferRenderer::createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), BlurBufferRenderer::createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
+		BSShadowRenderer(ShadowRenderer *c, uint fHStep = 0, float sharpness = 30) : ShadowRenderer(c->getSize().x(), false, ImageFormat::R32F), child(c), blurs{createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
 			mapIndex = 0;
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
@@ -67,12 +67,6 @@ class BSShadowRenderer : public ShadowRenderer
 			blurs[1]->unbind();
 			GLContext::getContext()->getFrameBufferPool().add(temp);
 			child->poolBuffer();
-		}
-
-		virtual void createBuffer() override {
-			if(!buffer) {
-				buffer = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::R32F);
-			}
 		}
 
 	private:

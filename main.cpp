@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 		l->setForward(-l->getPosition());
 		l->setScale(100);
 		l->setIntensity(2.5);
-		l->setCastShadows(&scene, 64, 2);
+		//l->setCastShadows(&scene, 1024);
 		scene.insert(l);
 	}*/
 
@@ -66,9 +66,13 @@ int main(int argc, char **argv) {
 
 
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
-	DeferredShadingRenderer *ri = new DeferredShadingRenderer(new GBufferRenderer(sceRe));
+	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
+	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
 	Renderer *renderers[] {new FrameBufferRenderer(ri),
-						   sceRe};
+						   new FrameBufferRenderer(gRe, 0),
+						   new FrameBufferRenderer(gRe, 1),
+						   new FrameBufferRenderer(gRe, 2),
+						   tone = new ToneMapRenderer(ri)};
 
 	Timer timer;
 	Timer total;
@@ -101,7 +105,7 @@ int main(int argc, char **argv) {
 
 		uint rCount = sizeof(renderers) / sizeof(void *);
 		uint rIndex = rendererIndex >= rCount ? 0 : rendererIndex;
-		uint dIndex = (std::max(rCount, rendererIndex) - rCount) % DeferredShadingRenderer::Max;
+		uint dIndex = ((std::max(rCount, rendererIndex) - rCount) % (DeferredShadingRenderer::Max));
 		ri->setDebugMode(DeferredShadingRenderer::LightingDebugMode(dIndex));
 		(*renderers[rIndex])();
 

@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/utils.h>
 #include "Renderer.h"
-#include "FrameBuffer.h"
+#include "FrameBufferPool.h"
 
 namespace n {
 namespace graphics {
@@ -29,18 +29,59 @@ namespace graphics {
 class BufferedRenderer : public Renderer
 {
 	public:
-		BufferedRenderer(const math::Vec2ui &s = math::Vec2ui(0)) : Renderer(), buffer(s.isNull() ? GLContext::getContext()->getViewport() : s) {
+		template<typename... Args>
+		BufferedRenderer(const math::Vec2ui &s = math::Vec2ui(0), bool depth = true, Args... args) : Renderer(), buffer(0), size(s.isNull() ? GLContext::getContext()->getViewport() : s) {
+			setupBufferFunc(depth, args...);
 		}
 
 		virtual ~BufferedRenderer() {
+			poolBuffer();
 		}
 
 		const FrameBuffer &getFrameBuffer() const {
-			return buffer;
+			return *buffer;
+		}
+
+		void poolBuffer() {
+			if(buffer) {
+				GLContext::getContext()->getFrameBufferPool().add(buffer);
+				buffer = 0;
+			}
+		}
+
+		void createBuffer() {
+			if(!buffer) {
+				buffer = createBufferFunc();
+			}
+		}
+
+		math::Vec2ui getSize() const {
+			return size;
 		}
 
 	protected:
-		FrameBuffer buffer;
+		template<typename... Args>
+		void setBufferFormat(bool depth, Args... args) {
+			setupBufferFunc(depth, args...);
+			poolBuffer();
+			createBuffer();
+		}
+
+		FrameBuffer *buffer;
+
+	private:
+		template<typename... Args>
+		void setupBufferFunc(bool depth, Args... args) {
+			std::tuple<bool, Args...> arg(depth, args...);
+			createBufferFunc = core::Functor<FrameBuffer *()>([arg, this]() {
+				return core::Functor<FrameBuffer *(bool, Args...)>([arg, this](bool d, Args... args){
+					return GLContext::getContext()->getFrameBufferPool().get(getSize(), d, args...);
+				})(arg);
+			});
+		}
+
+		math::Vec2ui size;
+		core::Functor<FrameBuffer *()> createBufferFunc;
 };
 
 }

@@ -41,40 +41,6 @@ class FrameBufferPool : core::NonCopyable
 		arr.filter([index, format](FrameBuffer *fb) { return fb->isAttachmentEnabled(index) && fb->getAttachement(index).getFormat() == format; });
 	}
 
-	template<typename T, typename U>
-	static void setUpAttachments(FrameBuffer *buffer, uint index, T t, U u) {
-		setUpAttachment(buffer, index, t);
-		setUpAttachment(buffer, index, u);
-	}
-
-	template<typename T, typename... Args>
-	static void setUpAttachments(FrameBuffer *buffer, uint index, T t, Args... args) {
-		setUpAttachment(buffer, index, t);
-		setUpAttachments(buffer, index + 1, args...);
-	}
-
-	static void setUpAttachments(FrameBuffer *, uint) {
-	}
-
-	template<typename... Args>
-	static void setUpAttachment(FrameBuffer *buffer, uint index, bool att) {
-		buffer->setAttachmentEnabled(index, att);
-	}
-
-	template<typename... Args>
-	static void setUpAttachment(FrameBuffer *buffer, uint index, ImageFormat::Format format) {
-		buffer->setAttachmentEnabled(index, true);
-		buffer->setAttachmentFormat(index, format);
-	}
-
-	template<typename... Args>
-	static FrameBuffer *createFrameBuffer(const math::Vec2ui &size, bool depth, Args... args) {
-		FrameBuffer *buffer = new FrameBuffer(size);
-		buffer->setDepthEnabled(depth);
-		setUpAttachments(buffer, 0, args...);
-		return buffer;
-	}
-
 	public:
 		FrameBufferPool() {
 		}
@@ -87,7 +53,7 @@ class FrameBufferPool : core::NonCopyable
 			core::Array<FrameBuffer *> arr = buffers.filtered([depth, size](FrameBuffer *fb) { return fb->getSize() == size && fb->isDepthEnabled() == depth; });
 			filter(0, arr, args...);
 			if(arr.isEmpty()) {
-				return createFrameBuffer(size, depth, args...);
+				return new FrameBuffer(size, depth, args...);
 			}
 			buffers.remove(arr.first());
 			return arr.first();
