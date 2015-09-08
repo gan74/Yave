@@ -81,7 +81,7 @@ ShaderCombinaison *getToneShader(bool debug = false) {
 				"n_Out = vec4(rein, color.a);"
 				"\n#ifdef DEBUG\n"
 				"if(color.x > 1 || color.y > 1 || color.z > 1) { n_Out = vec4(1, 0, 0, 1); }"
-				"if(n_TexCoord.x < 0.1 && n_TexCoord.y > 0.9) { n_Out = vec4(avgLum); }"
+				"if(n_TexCoord.x < 0.1 && n_TexCoord.y > 0.9) { n_Out = vec4(log(avgLum)); }"
 				"if(n_TexCoord.x > 0.5) { n_Out = color; }"
 				"\n#endif\n"
 			"}"), ShaderProgram::NoProjectionShader);
@@ -158,7 +158,7 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	sh->setValue("n_0", in);
 
 	buffers[0]->bind();
-	GLContext::getContext()->getScreen().draw(Material());
+	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
 
 	sh = getDSShader();
 	sh->bind();
@@ -173,12 +173,12 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 		last = !last;
 		scale *= 0.5;
 		baseSize /= 2;
-		GLContext::getContext()->getScreen().draw(Material());
+		GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
 	}
 	return buffers[last]->getAttachement(0);
 }
 
-ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), slot(s), exposure(0.35), white(1.5), range(0.055, 10000), debug(false) {
+ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), slot(s), exposure(0.1), white(1.5), range(0.055, 10000), debug(false) {
 }
 
 ToneMapRenderer::~ToneMapRenderer() {
@@ -192,7 +192,7 @@ void ToneMapRenderer::render(void *ptr) {
 	const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
 	child->render(ptr);
 
-	uint ls = core::log2ui(child->getFrameBuffer().getSize().min());
+	uint ls = core::log2ui(child->getSize().min());
 	math::Vec2ui size = math::Vec2ui(1 << ls);
 	FrameBuffer *buffers[] = {GLContext::getContext()->getFrameBufferPool().get(size, false, ImageFormat::R32F),
 							  GLContext::getContext()->getFrameBufferPool().get(size, false, ImageFormat::R32F)};
