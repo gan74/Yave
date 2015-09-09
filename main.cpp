@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 		scene.insert(obj);
 	}
 
-	/*for(uint i = 0; i != 1025; i++) {
+	/*for(uint i = 0; i != 1024; i++) {
 		auto obj = new Obj("./test meshes/ (" + String(i + 1) + ").obj");
 		obj->setAutoScale(5);
 		obj->setPosition(Vec3(random(), random(), random()) * 250 - 125);
@@ -85,7 +85,15 @@ int main(int argc, char **argv) {
 
 	uint64 frames = 0;
 
+	GpuTimer gpu;
+	double totalCpu = 0;
+	uint totalFrames = 0;
+	std::cout<<" ";
+
+
 	while(run(win)) {
+		gpu.start();
+		Timer frame;
 		if(!bench) {
 			frames = 0;
 			double dt = timer.reset();
@@ -96,27 +104,49 @@ int main(int argc, char **argv) {
 			Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
 			cam.setForward(f);
 			float tt = total.elapsed() * 0.15;
-			light->setForward(Vec3(0, cos(tt), -fabs(sin(tt)) - 1));
+			if(light) {
+				light->setForward(Vec3(0, cos(tt), -fabs(sin(tt)) - 1));
+			}
 		} else {
 			double tt = timer.elapsed();
 			frames++;
 			float ang = tt * 0.33;
 			cam.setPosition(Vec3(cos(ang) * 350, sin(ang) * 100, 185));
 			cam.setForward(Vec3(-cos(ang), -sin(ang), -0.2));
-			if(tt > 15) {
+			if(tt > 60) {
 				bench = false;
 				std::cout<<frames<<" frames in "<<tt<<" seconds ("<<frames / tt<<" fps, "<<tt / frames * 1000<<"ms)"<<std::endl;
+			}
+			if(light) {
+				light->setForward(Vec3(0, 0.15, -1));
 			}
 		}
 
 		uint rCount = sizeof(renderers) / sizeof(void *);
-		uint rIndex = rendererIndex >= rCount ? 0 : rendererIndex;
-		uint dIndex = ((std::max(rCount, rendererIndex) - rCount) % (DeferredShadingRenderer::Max));
+		bool warp = rendererIndex >= rCount;
+		uint rIndex = warp ? 0 : rendererIndex;
+		uint dIndex = ((std::max(rCount, rendererIndex) - rCount) % (DeferredShadingRenderer::Max - warp)) + warp;
 		ri->setDebugMode(DeferredShadingRenderer::LightingDebugMode(dIndex));
 		(*renderers[rIndex])();
 
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
+
+		gl::glFinish();
+		gpu.stop();
+		double frameTime = frame.elapsed() * 1000;
+		while(!gpu.areResultsAvailable());
+		double gpuTime = gpu.elapsed() * 1000;
+		totalCpu += frameTime - gpuTime;
+		totalFrames++;
+
+		if(total.elapsed() < 5) {
+			totalCpu = 0;
+			totalFrames = 0;
+		}
+
+		std::cout<<"\rcpu = "<<(String(frameTime - gpuTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / totalFrames) + "0000").subString(0, 4)<<" ms)      gpu = "<<(String(gpuTime) + "0000").subString(0, 4)<<" ms";
+
 
 		if(GLContext::getContext()->checkGLError()) {
 			fatal("OpenGL error");

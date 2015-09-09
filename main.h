@@ -67,6 +67,45 @@ using namespace n::graphics;
 
 #include <iostream>
 
+
+class GpuTimer
+{
+	public:
+		GpuTimer() {
+			gl::glGenQueries(2, queries);
+		}
+
+		~GpuTimer() {
+			gl::glDeleteQueries(2, queries);
+		}
+
+		void start() {
+			gl::glQueryCounter(queries[0], GL_TIMESTAMP);
+		}
+
+		void stop() {
+			gl::glQueryCounter(queries[1], GL_TIMESTAMP);
+		}
+
+		bool areResultsAvailable() const {
+			int av = 0;
+			gl::glGetQueryObjectiv(queries[1], GL_QUERY_RESULT_AVAILABLE, &av);
+			return av;
+		}
+
+		double elapsed() const {
+			uint64 start = 0;
+			uint64 stop = 0;
+			gl::glGetQueryObjectui64v(queries[0], GL_QUERY_RESULT, &start);
+			gl::glGetQueryObjectui64v(queries[1], GL_QUERY_RESULT, &stop);
+			double d = stop - start;
+			return d / (1000 * 1000 * 1000);
+		}
+
+	private:
+		uint queries[2];
+};
+
 Vec2 mouse;
 Vec2 wasd;
 ToneMapRenderer *tone;
