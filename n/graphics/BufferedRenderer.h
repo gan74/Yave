@@ -29,30 +29,35 @@ namespace graphics {
 class BufferedRenderer : public Renderer
 {
 	public:
+		enum BufferKeepingPolicy
+		{
+			AlwaysKeep,
+			CanDiscard
+		};
+
 		template<typename... Args>
-		BufferedRenderer(const math::Vec2ui &s = math::Vec2ui(0), bool depth = true, Args... args) : Renderer(), buffer(0), size(s.isNull() ? GLContext::getContext()->getViewport() : s), pooling(true) {
+		BufferedRenderer(const math::Vec2ui &s = math::Vec2ui(0), bool depth = true, Args... args) : BufferedRenderer(s, AlwaysKeep, depth, args...) {
+		}
+
+		template<typename... Args>
+		BufferedRenderer(const math::Vec2ui &s, BufferKeepingPolicy keeps, bool depth = true, Args... args) : Renderer(), buffer(0), size(s.isNull() ? GLContext::getContext()->getViewport() : s), keepPolicy(keeps) {
 			setupBufferFunc(depth, args...);
 		}
 
 		virtual ~BufferedRenderer() {
-			pooling = true;
-			poolBuffer();
+			keepPolicy = CanDiscard;
+			discardBuffer();
 		}
 
 		const FrameBuffer &getFrameBuffer() const {
+			const_cast<BufferedRenderer *>(this)->createBuffer();
 			return *buffer;
 		}
 
-		void poolBuffer() {
-			if(buffer && pooling) {
+		void discardBuffer() {
+			if(buffer && keepPolicy == CanDiscard) {
 				GLContext::getContext()->getFrameBufferPool().add(buffer);
 				buffer = 0;
-			}
-		}
-
-		void createBuffer() {
-			if(!buffer) {
-				buffer = createBufferFunc();
 			}
 		}
 
@@ -61,18 +66,12 @@ class BufferedRenderer : public Renderer
 		}
 
 	protected:
-		void setAllowPooling(bool allow) {
-			pooling = allow;
-		}
-
 		template<typename... Args>
 		void setBufferFormat(bool depth, Args... args) {
 			setupBufferFunc(depth, args...);
-			poolBuffer();
+			discardBuffer();
 			createBuffer();
 		}
-
-		FrameBuffer *buffer;
 
 	private:
 		template<typename... Args>
@@ -85,8 +84,15 @@ class BufferedRenderer : public Renderer
 			});
 		}
 
+		void createBuffer() {
+			if(!buffer) {
+				buffer = createBufferFunc();
+			}
+		}
+
+		FrameBuffer *buffer;
 		math::Vec2ui size;
-		bool pooling;
+		BufferKeepingPolicy keepPolicy;
 		core::Functor<FrameBuffer *()> createBufferFunc;
 };
 

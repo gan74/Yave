@@ -305,8 +305,6 @@ void DeferredShadingRenderer::render(void *ptr) {
 	FrameData *data = reinterpret_cast<FrameData *>(ptr);
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(data->child);
 
-	child->render(data->child);
-
 	for(uint i = 0; i != LightType::Max; i++) {
 		data->lights[i].foreach([](const LightData &l) {
 			if(l.to<Light>()->castShadows()) {
@@ -315,15 +313,16 @@ void DeferredShadingRenderer::render(void *ptr) {
 		});
 	}
 
+	child->render(data->child);
+
+	GLContext::getContext()->auditGLState();
+
 	GLContext::getContext()->setProjectionMatrix(sceneData->proj);
 	GLContext::getContext()->setViewMatrix(sceneData->view);
 
-
-
-	createBuffer();
 	{
-		buffer->bind();
-		buffer->clear(true, false);
+		getFrameBuffer().bind();
+		getFrameBuffer().clear(true, false);
 		child->getFrameBuffer().blit(FrameBuffer::Depth);
 
 		lightPass<PointLight>(data, child, debugMode);

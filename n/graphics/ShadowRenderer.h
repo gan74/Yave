@@ -32,7 +32,7 @@ class ShadowRenderer : public BufferedRenderer
 {
 	public:
 		template<typename... Args>
-		ShadowRenderer(uint res, bool depth = true, Args... args) : BufferedRenderer(math::Vec2ui(res), depth, args...) {
+		ShadowRenderer(uint res, bool depth = true, Args... args) : BufferedRenderer(math::Vec2ui(res), BufferedRenderer::CanDiscard, depth, args...) {
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
 						 "return step(proj.z, d);";
@@ -47,7 +47,7 @@ class ShadowRenderer : public BufferedRenderer
 		}
 
 		Texture getShadowMap() {
-			return buffer->getAttachement(mapIndex);
+			return getFrameBuffer().getAttachement(mapIndex);
 		}
 
 		math::Matrix4<> getShadowMatrix() const {

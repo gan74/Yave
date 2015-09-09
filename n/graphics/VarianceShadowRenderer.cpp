@@ -55,10 +55,9 @@ VarianceShadowRenderer::VarianceShadowRenderer(ShadowRenderer *c, uint fHStep) :
 }
 
 void VarianceShadowRenderer::render(void *ptr) {
-	createBuffer();
 	child->render(ptr);
 
-	buffer->bind();
+	getFrameBuffer().bind();
 	ShaderCombinaison *sh = getVSMShader();
 	sh->setValue("n_0", child->getShadowMap());
 	sh->bind();
@@ -66,19 +65,19 @@ void VarianceShadowRenderer::render(void *ptr) {
 
 	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
 	blurs[1]->setValue("n_0", temp->getAttachement(0));
-	blurs[0]->setValue("n_0", buffer->getAttachement(0));
+	blurs[0]->setValue("n_0", getFrameBuffer().getAttachement(0));
 
 	temp->bind();
 	blurs[0]->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
-	buffer->bind();
+	getFrameBuffer().bind();
 	blurs[1]->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 	blurs[1]->unbind();
 	GLContext::getContext()->getFrameBufferPool().add(temp);
-	child->poolBuffer();
+	child->discardBuffer();
 }
 
 }

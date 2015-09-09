@@ -57,8 +57,6 @@ void *CameraShadowRenderer::prepare() {
 }
 
 void CameraShadowRenderer::render(void *ptr) {
-	createBuffer();
-
 	SceneRenderer::FrameData *sceneData = reinterpret_cast<SceneRenderer::FrameData *>(ptr);
 	const Camera *cam = sceneData->camera;
 
@@ -66,7 +64,7 @@ void CameraShadowRenderer::render(void *ptr) {
 	gl::glEnable(GL_POLYGON_OFFSET_FILL);
 	gl::glPolygonOffset(4.0, 1.0);
 
-	buffer->bind();
+	getFrameBuffer().bind();
 	child->render(ptr, RenderFlag::FastDepth);
 
 	gl::glColorMask(true, true, true, true);

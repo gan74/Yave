@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 	}
 
 	PerspectiveCamera cam;
-	cam.setPosition(Vec3(-10, 0, 10));
+	cam.setPosition(Vec3(-25, 0, 25));
 	cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
@@ -27,7 +27,6 @@ int main(int argc, char **argv) {
 		obj->setAutoScale(5);
 		obj->setPosition(Vec3(0, 0, 5) * i);
 		scene.insert(tr = obj);
-
 	}
 
 	{
@@ -43,6 +42,13 @@ int main(int argc, char **argv) {
 		obj->setPosition(Vec3(0, 0, -5));
 		scene.insert(obj);
 	}
+
+	/*for(uint i = 0; i != 1025; i++) {
+		auto obj = new Obj("./test meshes/ (" + String(i + 1) + ").obj");
+		obj->setAutoScale(5);
+		obj->setPosition(Vec3(random(), random(), random()) * 250 - 125);
+		scene.insert(tr = obj);
+	}*/
 
 	/*for(uint i = 0; i != 1; i++)
 	{

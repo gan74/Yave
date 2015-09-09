@@ -49,7 +49,6 @@ class BSShadowRenderer : public ShadowRenderer
 		}
 
 		virtual void render(void *ptr) override {
-			createBuffer();
 			child->render(ptr);
 
 			FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
@@ -60,13 +59,13 @@ class BSShadowRenderer : public ShadowRenderer
 			blurs[0]->bind();
 			GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
-			buffer->bind();
+			getFrameBuffer().bind();
 			blurs[1]->bind();
 			GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 			blurs[1]->unbind();
 			GLContext::getContext()->getFrameBufferPool().add(temp);
-			child->poolBuffer();
+			child->discardBuffer();
 		}
 
 	private:

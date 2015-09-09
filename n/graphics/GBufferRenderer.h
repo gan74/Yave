@@ -32,7 +32,7 @@ class GBufferRenderer : public BufferedRenderer
 	public:
 		enum BufferFormat
 		{
-			RGBDiffuseRGBNormal = 0
+			RGBDiffuseRGBNormal
 		};
 
 		GBufferRenderer(SceneRenderer *c, const math::Vec2ui &s = math::Vec2ui(0)) : BufferedRenderer(s, true, true, ImageFormat::RGBA16, true), child(c), bufferFormat(RGBDiffuseRGBNormal) {
@@ -65,9 +65,9 @@ class GBufferRenderer : public BufferedRenderer
 		}
 
 		virtual void render(void *ptr) override {
-			createBuffer();
 			getShader()->bindAsDefault();
-			buffer->bind();
+			getFrameBuffer().bind();
+			GLContext::getContext()->auditGLState();
 			child->render(ptr);
 			ShaderProgram::setDefaultShader((Shader<FragmentShader> *)0);
 		}
