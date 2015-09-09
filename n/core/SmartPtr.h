@@ -108,19 +108,19 @@ class SmartPtr
 			return ptr < p;
 		}
 
-		bool operator==(const SmartPtr<const T> &p) const {
+		bool operator==(const SmartPtr<T> &p) const {
 			return ptr == p.ptr;
 		}
 
-		bool operator!=(const SmartPtr<const T> &p) const {
+		bool operator!=(const SmartPtr<T> &p) const {
 			return ptr != p.ptr;
 		}
 
-		bool operator<(const SmartPtr<const T> &p) const {
+		bool operator<(const SmartPtr<T> &p) const {
 			return ptr < p.ptr;
 		}
 
-		bool operator>(const SmartPtr<const T> &p) const {
+		bool operator>(const SmartPtr<T> &p) const {
 			return ptr > p.ptr;
 		}
 
@@ -132,9 +132,9 @@ class SmartPtr
 			return !isNull();
 		}
 
-		operator SmartPtr<const T>() const {
+		/*operator SmartPtr<const T>() const {
 			return SmartPtr<const T>(ptr, count);
-		}
+		}*/
 
 	private:
 		friend class SmartPtr<const T>;
