@@ -31,7 +31,7 @@ class Hash
 	public:
 		typedef Pair<T, U> element;
 
-		Hash() : size(0) {
+		Hash() : tSize(0) {
 			allocTable(93);
 		}
 
@@ -42,7 +42,7 @@ class Hash
 		void insert(const element &e) {
 			auto h = hash(e._1) % values.size();
 			values[h].append(e);
-			size++;
+			tSize++;
 		}
 
 		U &operator[](const T &t) {
@@ -53,6 +53,7 @@ class Hash
 				arr.append(element(t, U()));
 				it = arr.end();
 				it--;
+				tSize++;
 			}
 			return it->_2;
 		}
@@ -66,6 +67,10 @@ class Hash
 
 		const U &get(const T &t) const {
 			return get(t, U());
+		}
+
+		uint size() const {
+			return tSize;
 		}
 
 	private:
@@ -86,7 +91,7 @@ class Hash
 			}
 		}
 
-		uint size;
+		uint tSize;
 		Array<Array<element>> values;
 };
 

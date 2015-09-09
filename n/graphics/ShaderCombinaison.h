@@ -177,10 +177,9 @@ class ShaderCombinaison : core::NonCopyable
 			gl::glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
 		}
 
-		void setValue(UniformAddr addr, const Texture &t) const {
-			core::Map<UniformAddr, uint>::const_iterator it = samplers.find(addr);
-			if(it != samplers.end()) {
-				uint slot = (*it)._2;
+		void setValue(const core::String &name, const Texture &t) const {
+			int slot = samplersInfo.get(name, -1);
+			if(slot >= 0) {
 				bindings[slot] = t;
 				if(isCurrent()) {
 					bindings[slot].bind(slot);
@@ -190,10 +189,9 @@ class ShaderCombinaison : core::NonCopyable
 			}
 		}
 
-		void setValue(UniformAddr addr, const CubeMap &t) const {
-			core::Map<UniformAddr, uint>::const_iterator it = samplers.find(addr);
-			if(it != samplers.end()) {
-				uint slot = (*it)._2;
+		void setValue(const core::String &name, const CubeMap &t) const {
+			int slot = samplersInfo.get(name, -1);
+			if(slot >= 0) {
 				bindings[slot] = t;
 				if(isCurrent()) {
 					bindings[slot].bind(slot);
@@ -247,7 +245,8 @@ class ShaderCombinaison : core::NonCopyable
 		gl::GLuint handle;
 		core::String logs;
 		core::Hash<core::String, UniformInfo> uniformsInfo;
-		core::Map<UniformAddr, uint> samplers;
+		core::Hash<core::String, uint> samplersInfo;
+		uint samplerCount;
 		internal::TextureBinding *bindings;
 		core::Array<gl::GLint> outputs;
 		mutable core::Map<core::String, BlockInfo> blocks;

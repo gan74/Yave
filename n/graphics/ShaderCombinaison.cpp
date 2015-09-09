@@ -21,7 +21,7 @@ namespace n {
 namespace graphics {
 
 
-ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : shaders{frag, vert, geom}, handle(0), bindings(0) {
+ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : shaders{frag, vert, geom}, handle(0), samplerCount(0), bindings(0) {
 	compile();
 }
 
@@ -50,7 +50,7 @@ void ShaderCombinaison::bind() {
 			gl::glBindBufferBase(GL_UNIFORM_BUFFER, infos.slot, infos.buffer->handle);
 		}
 	}
-	for(uint i = 0; i != samplers.size(); i++) {
+	for(uint i = 0; i != samplerCount; i++) {
 		bindings[i].bind(i);
 	}
 
@@ -108,11 +108,12 @@ void ShaderCombinaison::getUniforms() {
 			uniform = uniform.subString(0, uniform.size() - 3);
 		}
 		UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});
-		uniformsInfo[uniform] = info;
 		if(type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE) {
-			uint slot = samplers.size();
+			uint slot = samplersInfo.size();
 			setValue(info.addr, int(slot));
-			samplers[info.addr] = slot;
+			samplersInfo[uniform] = slot;
+		} else {
+			uniformsInfo[uniform] = info;
 		}
 	}
 	gl::GLint outs = 0;
@@ -126,7 +127,7 @@ void ShaderCombinaison::getUniforms() {
 			outputs.append(loc);
 		}
 	}
-	bindings = new internal::TextureBinding[samplers.size()];
+	bindings = new internal::TextureBinding[samplerCount = samplersInfo.size()];
 }
 
 
