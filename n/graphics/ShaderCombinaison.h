@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "CubeMap.h"
 #include "TextureBinding.h"
 #include <n/core/Map.h>
+#include <n/core/Hash.h>
 #include <n/math/Matrix.h>
 
 namespace n {
@@ -245,7 +246,7 @@ class ShaderCombinaison : core::NonCopyable
 		const internal::ShaderBase *shaders[3];
 		gl::GLuint handle;
 		core::String logs;
-		core::Map<core::String, UniformInfo> uniformsInfo;
+		core::Hash<core::String, UniformInfo> uniformsInfo;
 		core::Map<UniformAddr, uint> samplers;
 		internal::TextureBinding *bindings;
 		core::Array<gl::GLint> outputs;
