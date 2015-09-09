@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "utils.h"
+#include <n/core/String.h>
 #include <n/concurrent/Atomic.h>
 #include <n/defines.h>
 #include <ctime>
@@ -74,6 +75,9 @@ namespace core {
 		return ++counter;
 	}
 
+	uint64 hash(const core::String &str) {
+		return str.getHash();
+	}
 
 	uint64 hash(const void *key, uint64 len, uint64 seed) { // FVN-1A from : http://isthe.com/chongo/tech/comp/fnv/
 		constexpr uint64 prime = 1099511628211;

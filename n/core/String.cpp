@@ -441,7 +441,7 @@ String::const_iterator String::end() const {
 	return data + length;
 }
 
-uint String::getHash() const {
+uint64 String::getHash() const {
 	return data ? hash(data, length) : hash(&null, 1);
 }
 

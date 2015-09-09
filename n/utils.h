@@ -180,6 +180,13 @@ namespace core {
 
 	uint uniqueId();
 
+	template<typename T>
+	uint64 hash(const T &t) {
+		static_assert(TypeInfo<T>::isPod, "Only POD can be hashed");
+		return hash(&t, sizeof(T));
+	}
+
+	uint64 hash(const core::String &str);
 	uint64 hash(const void *key, uint64 len, uint64 seed = 2166136261);
 
 	constexpr uint log2ui(uint n) {

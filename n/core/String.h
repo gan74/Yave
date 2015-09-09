@@ -50,7 +50,7 @@ class String
 
 		const_iterator begin() const;
 		const_iterator end() const;
-		uint getHash() const;
+		uint64 getHash() const;
 
 		void replace(uint beg, uint len, const String &newS);
 		void replace(const String &oldS, const String &newS);
