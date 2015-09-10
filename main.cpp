@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
 	GpuTimer gpu;
 	double totalCpu = 0;
 	uint totalFrames = 0;
+	int skipped = 0;
 	std::cout<<" ";
 
 
@@ -115,7 +116,7 @@ int main(int argc, char **argv) {
 			cam.setForward(Vec3(-cos(ang), -sin(ang), -0.2));
 			if(tt > 60) {
 				bench = false;
-				std::cout<<frames<<" frames in "<<tt<<" seconds ("<<frames / tt<<" fps, "<<tt / frames * 1000<<"ms)"<<std::endl;
+				std::cout<<"\r"<<frames<<" frames in "<<tt<<" seconds ("<<frames / tt<<" fps, "<<tt / frames * 1000<<"ms)"<<std::endl<<" ";
 			}
 			if(light) {
 				light->setForward(Vec3(0, 0.15, -1));
@@ -132,20 +133,44 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
 
+
+
+
+
+
 		gl::glFinish();
 		gpu.stop();
 		double frameTime = frame.elapsed() * 1000;
 		while(!gpu.areResultsAvailable());
 		double gpuTime = gpu.elapsed() * 1000;
-		totalCpu += frameTime - gpuTime;
-		totalFrames++;
-
-		if(total.elapsed() < 5) {
-			totalCpu = 0;
+		double thisFrame = frameTime - gpuTime;
+		if(skipped > 10) {
 			totalFrames = 0;
+			totalCpu = 0;
+			skipped = 0;
 		}
+		if(totalFrames > 10) {
+			double diff = 1.0;
+			if(totalFrames > 20) {
+				diff = thisFrame / (totalCpu / (totalFrames - 10));
+				diff = std::max(diff, 1.0 / diff);
+			}
+			if(diff >= 1.5) {
+				skipped++;
+			} else {
+				totalCpu += thisFrame;
+				totalFrames++;
+				skipped = std::max(skipped - 2, 0);
+			}
+		} else {
+			totalFrames++;
+		}
+		std::cout<<"\rcpu = "<<(String(frameTime - gpuTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / (totalFrames - 10)) + "0000").subString(0, 4)<<" ms)      gpu = "<<(String(gpuTime) + "0000").subString(0, 4)<<" ms";
 
-		std::cout<<"\rcpu = "<<(String(frameTime - gpuTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / totalFrames) + "0000").subString(0, 4)<<" ms)      gpu = "<<(String(gpuTime) + "0000").subString(0, 4)<<" ms";
+
+
+
+
 
 
 		if(GLContext::getContext()->checkGLError()) {
