@@ -44,10 +44,14 @@ class RenderBatch
 			bool m = inst->getMaterial() < o.inst->getMaterial();
 			return m ? true : o.inst->getMaterial() < inst->getMaterial() ? false : *inst < *o.inst;
 			#else
-			bool m = *inst < *o.inst;
-			return m ? true : *o.inst < *inst ? false : inst->getMaterial() < o.inst->getMaterial();
+			bool m = inst->getVertexArrayObject() < o.inst->getVertexArrayObject();
+			return m ? true : o.inst->getVertexArrayObject() < inst->getVertexArrayObject() ? false : inst->getMaterial() < o.inst->getMaterial();
 			#endif
 
+		}
+
+		bool canInstanciate(const RenderBatch &o) const {
+			return isInstanciable() && o.isInstanciable() && inst == o.inst;
 		}
 
 	private:

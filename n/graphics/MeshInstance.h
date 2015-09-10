@@ -64,8 +64,8 @@ class SubMeshInstance
 			return *buffer;
 		}
 
-		bool operator<(const SubMeshInstance &o) const {
-			return vao < o.vao;
+		const VertexArraySubObject<> &getVertexArrayObject() const {
+			return vao;
 		}
 
 	private:
