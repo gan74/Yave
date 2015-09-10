@@ -370,6 +370,9 @@ bool String::operator==(const String &str) const {
 }
 
 bool String::operator==(const char *str) const {
+	if(strlen(str) != length) {
+		return false;
+	}
 	for(uint i = 0; i != length; i++) {
 		if(data[i] != str[i]) {
 			return false;
