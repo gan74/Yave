@@ -20,6 +20,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+const char *ShaderCombinaison::StandardValueName[ShaderCombinaison::Max] =
+	{
+		"n_Color",
+		"n_Roughness",
+		"n_Metallic",
+		"n_DiffuseMap",
+		"n_DiffuseMul",
+		"n_NormalMap",
+		"n_NormalMul",
+		"n_0",
+		"n_1",
+		"n_2",
+		"n_3",
+	};
+
 
 ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : shaders{frag, vert, geom}, handle(0), samplerCount(0), bindings(0) {
 	compile();
@@ -94,11 +109,23 @@ void ShaderCombinaison::compile() {
 	}
 }
 
+ShaderCombinaison::UniformAddr ShaderCombinaison::computeStandardIndex(const core::String &name) {
+	for(uint i = 0; i != Max; i++) {
+		if(name == StandardValueName[i]) {
+			return i;
+		}
+	}
+	return UniformAddr(GL_INVALID_INDEX);
+}
+
 void ShaderCombinaison::getUniforms() {
 	const uint max = 512;
 	char name[max];
 	int uniforms = 0;
 	gl::glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniforms);
+	for(uint i = 0; i != Max; i++) {
+		standards[i] = UniformAddr(GL_INVALID_INDEX);
+	}
 	for(uint i = 0; i != (uint)uniforms; i++) {
 		gl::GLsizei size = 0;
 		gl::GLenum type = GL_NONE;
@@ -109,11 +136,14 @@ void ShaderCombinaison::getUniforms() {
 		}
 		UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});
 		if(type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE) {
-			uint slot = samplersInfo.size();
+			uint slot = samplerCount++;
 			setValue(info.addr, int(slot));
-			samplersInfo[uniform] = slot;
-		} else {
-			uniformsInfo[uniform] = info;
+			info.addr = slot;
+		}
+		uniformsInfo[uniform] = info;
+		int std = computeStandardIndex(uniform);
+		if(std != UniformAddr(GL_INVALID_INDEX)) {
+			standards[std] = info.addr;
 		}
 	}
 	gl::GLint outs = 0;
@@ -127,7 +157,7 @@ void ShaderCombinaison::getUniforms() {
 			outputs.append(loc);
 		}
 	}
-	bindings = new internal::TextureBinding[samplerCount = samplersInfo.size()];
+	bindings = new internal::TextureBinding[samplerCount];
 }
 
 

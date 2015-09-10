@@ -251,9 +251,9 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child, Defe
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();
-			shader->setValue("n_0", child->getFrameBuffer().getAttachement(0));
-			shader->setValue("n_1", child->getFrameBuffer().getAttachement(1));
-			shader->setValue("n_2", child->getFrameBuffer().getAttachement(2));
+			shader->setValue(ShaderCombinaison::Texture0, child->getFrameBuffer().getAttachement(0));
+			shader->setValue(ShaderCombinaison::Texture1, child->getFrameBuffer().getAttachement(1));
+			shader->setValue(ShaderCombinaison::Texture2, child->getFrameBuffer().getAttachement(2));
 			shader->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
 			shader->setValue("n_Inv", data->inv);
 			shader->setValue("n_Cam", data->pos);

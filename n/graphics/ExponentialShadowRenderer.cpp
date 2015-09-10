@@ -56,14 +56,14 @@ void ExponentialShadowRenderer::render(void *ptr) {
 
 	getFrameBuffer().bind();
 	ShaderCombinaison *sh = getExpShader(exponent);
-	sh->setValue("n_0", child->getShadowMap());
+	sh->setValue(ShaderCombinaison::Texture0, child->getShadowMap());
 	sh->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::R32F);
 
-	blurs[1]->setValue("n_0", temp->getAttachement(0));
-	blurs[0]->setValue("n_0", getFrameBuffer().getAttachement(0));
+	blurs[1]->setValue(ShaderCombinaison::Texture0, temp->getAttachement(0));
+	blurs[0]->setValue(ShaderCombinaison::Texture0, getFrameBuffer().getAttachement(0));
 
 	temp->bind();
 	blurs[0]->bind();

@@ -64,7 +64,26 @@ class ShaderCombinaison : core::NonCopyable
 			const typename internal::DynamicBufferBase<GL_UNIFORM_BUFFER> *buffer;
 		};
 
+
 	public:
+		enum StandardValue
+		{
+			Color,
+			Roughness,
+			Metallic,
+			DiffuseMap,
+			DiffuseMul,
+			NormalMap,
+			NormalMul,
+			Texture0,
+			Texture1,
+			Texture2,
+			Texture3,
+			Max
+		};
+
+		static const char *StandardValueName[Max];
+
 		class Uniform : core::NonCopyable
 		{
 			public:
@@ -129,6 +148,14 @@ class ShaderCombinaison : core::NonCopyable
 			}
 		}
 
+		template<typename T>
+		void setValue(StandardValue val, const T &t) const {
+			UniformAddr i = standards[val];
+			if(i != UniformAddr(GL_INVALID_INDEX)) {
+				setValue(i, t);
+			}
+		}
+
 		void setValue(UniformAddr addr, int a) const {
 			gl::glProgramUniform1i(handle, addr, a);
 		}
@@ -177,9 +204,8 @@ class ShaderCombinaison : core::NonCopyable
 			gl::glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
 		}
 
-		void setValue(const core::String &name, const Texture &t) const {
-			int slot = samplersInfo.get(name, -1);
-			if(slot >= 0) {
+		void setValue(UniformAddr slot, const Texture &t) const {
+			if(slot != UniformAddr(GL_INVALID_INDEX)) {
 				bindings[slot] = t;
 				if(isCurrent()) {
 					bindings[slot].bind(slot);
@@ -189,9 +215,8 @@ class ShaderCombinaison : core::NonCopyable
 			}
 		}
 
-		void setValue(const core::String &name, const CubeMap &t) const {
-			int slot = samplersInfo.get(name, -1);
-			if(slot >= 0) {
+		void setValue(UniformAddr slot, const CubeMap &t) const {
+			if(slot != UniformAddr(GL_INVALID_INDEX)) {
 				bindings[slot] = t;
 				if(isCurrent()) {
 					bindings[slot].bind(slot);
@@ -235,6 +260,7 @@ class ShaderCombinaison : core::NonCopyable
 		}
 
 		void compile();
+		UniformAddr computeStandardIndex(const core::String &name);
 		void getUniforms();
 
 		UniformInfo getInfo(const core::String &name) const {
@@ -245,7 +271,7 @@ class ShaderCombinaison : core::NonCopyable
 		gl::GLuint handle;
 		core::String logs;
 		core::Hash<core::String, UniformInfo> uniformsInfo;
-		core::Hash<core::String, uint> samplersInfo;
+		UniformAddr standards[Max];
 		uint samplerCount;
 		internal::TextureBinding *bindings;
 		core::Array<gl::GLint> outputs;

@@ -167,7 +167,7 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	bool last = false;
 	uint baseSize = buffers[0]->getSize().x();
 	while(baseSize != 2) {
-		sh->setValue("n_0", buffers[last]->getAttachement(0));
+		sh->setValue(ShaderCombinaison::Texture0, buffers[last]->getAttachement(0));
 		sh->setValue("scale", scale);
 		buffers[!last]->bind();
 		last = !last;
@@ -212,8 +212,8 @@ void ToneMapRenderer::render(void *ptr) {
 	sh->setValue("exposure", exposure);
 	sh->setValue("white", white);
 
-	sh->setValue("n_0", child->getFrameBuffer().getAttachement(slot));
-	sh->setValue("n_1", lum);
+	sh->setValue(ShaderCombinaison::Texture0, child->getFrameBuffer().getAttachement(slot));
+	sh->setValue(ShaderCombinaison::Texture1, lum);
 	/*float lums[2] = { -1, -1 };
 	gl::glGetTextureSubImage(lum.getHandle(), 0, 0, 0, 0, 1, 1, 1, GL_RG, GL_FLOAT, 2 * sizeof(float), lums);
 	std::cout<<lum.getHandle()<<"  max = "<<lums[1]<<", avg = "<<exp(lums[0])<<std::endl;*/

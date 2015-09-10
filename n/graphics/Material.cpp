@@ -36,15 +36,15 @@ static typename MaterialData::BlendMode blendMode = MaterialData::None;
 
 
 N_FORCE_INLINE void setShaderParams(const ShaderCombinaison *restrict sh, const MaterialData &restrict data) {
-	sh->setValue("n_Color", data.color);
-	sh->setValue("n_Roughness", data.roughness);
-	sh->setValue("n_Metallic", data.metallic);
+	sh->setValue(ShaderCombinaison::Color, data.color);
+	sh->setValue(ShaderCombinaison::Roughness, data.roughness);
+	sh->setValue(ShaderCombinaison::Metallic, data.metallic);
 
-	sh->setValue("n_DiffuseMap", data.diffuse);
-	sh->setValue("n_DiffuseMul", data.diffuse.isNull() ? 0.0 : 1.0);
+	sh->setValue(ShaderCombinaison::DiffuseMap, data.diffuse);
+	sh->setValue(ShaderCombinaison::DiffuseMul, data.diffuse.isNull() ? 0.0 : 1.0);
 
-	sh->setValue("n_NormalMap", data.normal);
-	sh->setValue("n_NormalMul", data.normal.isNull() ? 0.0 : data.normalIntencity);
+	sh->setValue(ShaderCombinaison::NormalMap, data.normal);
+	sh->setValue(ShaderCombinaison::NormalMul, data.normal.isNull() ? 0.0 : data.normalIntencity);
 
 	/*if(data.textures) {
 		for(const auto &p : *data.textures) {
