@@ -22,8 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+
 class DeferredShadingRenderer : public BufferedRenderer
 {
+	struct FrameData;
 	public:
 		enum LightingDebugMode
 		{
@@ -32,6 +34,12 @@ class DeferredShadingRenderer : public BufferedRenderer
 			Shadows,
 
 			Max
+		};
+
+		enum ShadowOptimisationMode
+		{
+			Memory,
+			DrawCalls
 		};
 
 		DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s = math::Vec2ui(0));
@@ -47,8 +55,12 @@ class DeferredShadingRenderer : public BufferedRenderer
 		}
 
 	private:
+		template<typename T>
+		friend ShaderCombinaison *lightPass(const FrameData *data, DeferredShadingRenderer *renderer);
+
 		GBufferRenderer *child;
 		LightingDebugMode debugMode;
+		ShadowOptimisationMode shadowMode;
 };
 
 }

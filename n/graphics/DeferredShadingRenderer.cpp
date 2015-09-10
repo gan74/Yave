@@ -75,17 +75,33 @@ struct LightData
 	void *shadowData;
 };
 
-struct FrameData
+struct DeferredShadingRenderer::FrameData
 {
 	math::Vec3 pos;
 	math::Matrix4<> inv;
 	core::Array<LightData> lights[LightType::Max];
 	void *child;
+
+	void renderShadows() {
+		for(uint i = 0; i != LightType::Max; i++) {
+			lights[i].foreach([](const LightData &l) {
+				if(l.to<Light>()->castShadows()) {
+					l.to<Light>()->getShadowRenderer()->render(l.shadowData);
+				}
+			});
+		}
+	}
+
+	void discardShadows() {
+		for(uint i = 0; i != LightType::Max; i++) {
+			lights[i].foreach([](const LightData &l) {
+				if(l.to<Light>()->castShadows()) {
+					l.to<Light>()->getShadowRenderer()->discardBuffer();
+				}
+			});
+		}
+	}
 };
-
-
-
-
 
 
 
@@ -241,20 +257,23 @@ void lightGeometryPass(const SpotLight *l, ShaderCombinaison *sh, const math::Ve
 
 
 template<typename T>
-ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
+ShaderCombinaison *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
 	constexpr LightType Type = getLightType<T>();
 	ShaderCombinaison *shader = 0;
 	for(const LightData &ld : data->lights[Type]) {
 		const T *l = ld.to<T>();
 		math::Vec3 forward = -l->getTransform().getX().normalized();
-		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;", debug);
+		if(l->castShadows() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
+			l->getShadowRenderer()->render(ld.shadowData);
+		}
+		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;", renderer->debugMode);
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();
-			shader->setValue(ShaderCombinaison::Texture0, child->getFrameBuffer().getAttachement(0));
-			shader->setValue(ShaderCombinaison::Texture1, child->getFrameBuffer().getAttachement(1));
-			shader->setValue(ShaderCombinaison::Texture2, child->getFrameBuffer().getAttachement(2));
-			shader->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
+			shader->setValue(ShaderCombinaison::Texture0, renderer->child->getFrameBuffer().getAttachement(0));
+			shader->setValue(ShaderCombinaison::Texture1, renderer->child->getFrameBuffer().getAttachement(1));
+			shader->setValue(ShaderCombinaison::Texture2, renderer->child->getFrameBuffer().getAttachement(2));
+			shader->setValue("n_D", renderer->child->getFrameBuffer().getDepthAttachement());
 			shader->setValue("n_Inv", data->inv);
 			shader->setValue("n_Cam", data->pos);
 		}
@@ -268,9 +287,17 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child, Defe
 			shader->setValue("n_LightShadow", l->getShadowRenderer()->getShadowMap());
 			shader->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
 		}
+		renderer->getFrameBuffer().bind();
 		lightGeometryPass(l, shader, forward);
+		if(l->castShadows() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
+			l->getShadowRenderer()->discardBuffer();
+		}
 	}
 	return shader;
+}
+
+ShaderCombinaison *rnn(ShaderCombinaison *a, ShaderCombinaison *b) {
+	return b ? b : a;
 }
 
 
@@ -282,10 +309,7 @@ ShaderCombinaison *lightPass(const FrameData *data, GBufferRenderer *child, Defe
 
 
 
-DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s, true, ImageFormat::RGBA16F), child(c), debugMode(None) {
-	/*buffer.setAttachmentEnabled(0, true);
-	buffer.setAttachmentFormat(0, ImageFormat::RGBA16F);
-	buffer.setDepthEnabled(true);*/
+DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math::Vec2ui &s) : BufferedRenderer(s, true, ImageFormat::RGBA16F), child(c), debugMode(None), shadowMode(Memory) {
 }
 
 void *DeferredShadingRenderer::prepare() {
@@ -305,41 +329,40 @@ void DeferredShadingRenderer::render(void *ptr) {
 	FrameData *data = reinterpret_cast<FrameData *>(ptr);
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(data->child);
 
-	for(uint i = 0; i != LightType::Max; i++) {
-		data->lights[i].foreach([](const LightData &l) {
-			if(l.to<Light>()->castShadows()) {
-				l.to<Light>()->getShadowRenderer()->render(l.shadowData);
-			}
-		});
+	if(shadowMode == DrawCalls) {
+		data->renderShadows();
 	}
 
 	child->render(data->child);
 
-	GLContext::getContext()->auditGLState();
-
 	GLContext::getContext()->setProjectionMatrix(sceneData->proj);
 	GLContext::getContext()->setViewMatrix(sceneData->view);
 
-	{
-		getFrameBuffer().bind();
-		getFrameBuffer().clear(true, false);
-		child->getFrameBuffer().blit(FrameBuffer::Depth);
+	getFrameBuffer().bind();
+	getFrameBuffer().clear(true, false);
+	child->getFrameBuffer().blit(FrameBuffer::Depth);
 
-		lightPass<PointLight>(data, child, debugMode);
+	ShaderCombinaison *sh = 0;
 
-		lightPass<SpotLight>(data, child, debugMode);
+	sh = rnn(sh, lightPass<PointLight>(data, this));
 
-		lightPass<BoxLight>(data, child, debugMode);
+	sh = rnn(sh, lightPass<SpotLight>(data, this));
 
-		ShaderCombinaison *sh = lightPass<DirectionalLight>(data, child);
+	sh = rnn(sh, lightPass<BoxLight>(data, this));
 
-		if(sh) {
-			sh->unbind();
-		}
+	sh = rnn(sh, lightPass<DirectionalLight>(data, this));
+
+	if(sh) {
+		sh->unbind();
+	}
+
+	if(shadowMode == DrawCalls) {
+		data->discardShadows();
 	}
 
 	delete data;
 }
+
 
 }
 }
