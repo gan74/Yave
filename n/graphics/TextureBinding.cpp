@@ -36,15 +36,14 @@ struct BindingData
 
 static BindingData *bindings = 0;
 static uint active = 0;
-static gl::GLuint samplers[TextureSampler::Default][2] = {{0}, {0}};
+static gl::GLuint samplers[TextureSampler::Default][2] = {0};
 
 void init() {
-	gl::glGenSamplers(TextureSampler::Default, samplers[0]);
-	gl::glGenSamplers(TextureSampler::Default, samplers[1]);
+	gl::glGenSamplers(uint(TextureSampler::Default) * 2, samplers[0]);
 	gl::GLenum glSamplers[][2] = {{GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST}, {GL_LINEAR, GL_LINEAR_MIPMAP_NEAREST}, {GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR}};
 	for(uint b = 0; b != 2; b++) {
 		for(uint i = 0; i != TextureSampler::Default; i++) {
-			gl::GLuint smp = samplers[b][i];
+			gl::GLuint smp = samplers[i][b];
 			gl::glBindSampler(active, smp);
 			gl::glSamplerParameteri(smp, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			gl::glSamplerParameteri(smp, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -74,7 +73,7 @@ void TextureBinding::bind(uint slot) const {
 	if(tex) {
 		t.handle = tex->handle;
 		t.type = tex->type;
-		t.sampler = samplers[tex->hasMips][smp];
+		t.sampler = samplers[smp][tex->hasMips];
 	}
 	if(bindings[slot].handle != t.handle) {
 		setActive(slot);
@@ -88,6 +87,7 @@ void TextureBinding::bind(uint slot) const {
 void TextureBinding::dirty() {
 	if(bindings) {
 		gl::glBindTexture(bindings[active].type, bindings[active].handle);
+		gl::glBindSampler(active, bindings[active].sampler);
 	}
 }
 
@@ -96,6 +96,7 @@ void TextureBinding::clear() {
 		for(uint i = 0; i != maxTextures(); i++) {
 			gl::glActiveTexture(GL_TEXTURE0 + (active = i));
 			gl::glBindTexture(bindings[active].type, bindings[active].handle = 0);
+			gl::glBindSampler(active, bindings[active].sampler = 0);
 		}
 	}
 }
