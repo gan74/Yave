@@ -26,6 +26,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+enum MeshOptimisationOptions
+{
+	MergeVAO = 0x01,
+
+};
+
 class SubMeshInstance;
 
 namespace internal {
@@ -112,7 +118,7 @@ namespace internal {
 		public:
 			typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
 
-			MeshInstance(const core::Array<SubMeshInstance *> &b, bool optAlloc = true) : subs(b), radius(0) {
+			MeshInstance(const core::Array<SubMeshInstance *> &b, uint opt = MeshOptimisationOptions::MergeVAO) : subs(b), radius(0) {
 				core::Array<SubMeshInstance *> toAlloc;
 				for(SubMeshInstance *sub : subs) {
 					radius = std::max(radius, sub->getRadius());
@@ -120,7 +126,7 @@ namespace internal {
 						toAlloc.append(sub);
 					}
 				}
-				if(optAlloc) {
+				if(opt & MeshOptimisationOptions::MergeVAO) {
 					VaoAllocInfo *allocInfos = new VaoAllocInfo{toAlloc, radius};
 					for(SubMeshInstance *sub : subs) {
 						sub->allocInfos = allocInfos;

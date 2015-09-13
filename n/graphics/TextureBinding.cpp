@@ -26,34 +26,62 @@ uint maxTextures() {
 
 struct BindingData
 {
-	BindingData() : handle(0), type(TextureType::Texture2D) {
+	BindingData() : handle(0), type(TextureType::Texture2D), sampler(0) {
 	}
 
 	gl::GLuint handle;
 	gl::GLenum type;
+	gl::GLuint sampler;
 };
 
 static BindingData *bindings = 0;
 static uint active = 0;
+static gl::GLuint samplers[TextureSampler::Default][2] = {{0}, {0}};
 
-TextureBinding::TextureBinding() {
+void init() {
+	gl::glGenSamplers(TextureSampler::Default, samplers[0]);
+	gl::glGenSamplers(TextureSampler::Default, samplers[1]);
+	gl::GLenum glSamplers[][2] = {{GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST}, {GL_LINEAR, GL_LINEAR_MIPMAP_NEAREST}, {GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR}};
+	for(uint b = 0; b != 2; b++) {
+		for(uint i = 0; i != TextureSampler::Default; i++) {
+			gl::GLuint smp = samplers[b][i];
+			gl::glBindSampler(active, smp);
+			gl::glSamplerParameteri(smp, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			gl::glSamplerParameteri(smp, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			gl::glSamplerParameteri(smp, GL_TEXTURE_MAG_FILTER, glSamplers[i][0]);
+			gl::glSamplerParameteri(smp, GL_TEXTURE_MIN_FILTER, glSamplers[i][b]);
+		}
+	}
+	bindings = new BindingData[maxTextures()];
+}
+
+void setActive(uint slot) {
+	if(slot != active) {
+		gl::glActiveTexture(GL_TEXTURE0 + slot);
+		active = slot;
+	}
+}
+
+TextureBinding::TextureBinding() : sampler(TextureSampler::Default) {
 }
 
 void TextureBinding::bind(uint slot) const {
+	TextureSampler smp = sampler == TextureSampler::Default ? GLContext::getContext()->getDefaultSampler() : sampler;
 	if(!bindings) {
-		bindings = new BindingData[maxTextures()];
+		init();
 	}
 	BindingData t;
 	if(tex) {
 		t.handle = tex->handle;
 		t.type = tex->type;
+		t.sampler = samplers[tex->hasMips][smp];
 	}
 	if(bindings[slot].handle != t.handle) {
-		if(slot != active) {
-			gl::glActiveTexture(GL_TEXTURE0 + slot);
-			active = slot;
-		}
+		setActive(slot);
 		gl::glBindTexture(bindings[slot].type = t.type, bindings[slot].handle = t.handle);
+	}
+	if(bindings[slot].sampler != t.sampler) {
+		gl::glBindSampler(slot, bindings[slot].sampler = t.sampler);
 	}
 }
 

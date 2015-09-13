@@ -25,6 +25,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+enum TextureSampler
+{
+	Nearest,
+	Bilinear,
+	Trilinear,
+
+
+	Default
+};
+
 class ShaderCombinaison;
 class FrameBuffer;
 class Material;
@@ -90,6 +100,10 @@ class GLContext
 
 		FrameBufferPool &getFrameBufferPool() const {
 			return *fbPool;
+		}
+
+		TextureSampler getDefaultSampler() {
+			return TextureSampler::Trilinear;
 		}
 
 		const VertexArrayObject<float> &getScreen() const;

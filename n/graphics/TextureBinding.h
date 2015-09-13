@@ -35,12 +35,18 @@ class TextureBinding
 			return *this;
 		}
 
+		TextureBinding &operator=(TextureSampler smp) {
+			sampler = smp;
+			return *this;
+		}
+
 		void bind(uint slot) const;
 		static void dirty();
 		static void clear();
 
 	private:
 		core::SmartPtr<TextureBase::Data> tex;
+		TextureSampler sampler;
 };
 
 }

@@ -140,19 +140,19 @@ class ShaderCombinaison : core::NonCopyable
 			return Uniform(this, name);
 		}
 
-		template<typename T>
-		void setValue(const core::String &name, const T &t) const {
+		template<typename T, typename... Args>
+		void setValue(const core::String &name, const T &t, Args... args) const {
 			UniformAddr i = getAddr(name);
 			if(i != UniformAddr(GL_INVALID_INDEX)) {
-				setValue(i, t);
+				setValue(i, t, args...);
 			}
 		}
 
-		template<typename T>
-		void setValue(StandardValue val, const T &t) const {
+		template<typename T, typename... Args>
+		void setValue(StandardValue val, const T &t, Args... args) const {
 			UniformAddr i = standards[val];
 			if(i != UniformAddr(GL_INVALID_INDEX)) {
-				setValue(i, t);
+				setValue(i, t, args...);
 			}
 		}
 
@@ -204,9 +204,10 @@ class ShaderCombinaison : core::NonCopyable
 			gl::glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
 		}
 
-		void setValue(UniformAddr slot, const Texture &t) const {
+		void setValue(UniformAddr slot, const Texture &t, TextureSampler sampler = TextureSampler::Default) const {
 			if(slot != UniformAddr(GL_INVALID_INDEX)) {
 				bindings[slot] = t;
+				bindings[slot] = sampler;
 				if(isCurrent()) {
 					bindings[slot].bind(slot);
 				} else {
@@ -215,9 +216,10 @@ class ShaderCombinaison : core::NonCopyable
 			}
 		}
 
-		void setValue(UniformAddr slot, const CubeMap &t) const {
+		void setValue(UniformAddr slot, const CubeMap &t, TextureSampler sampler = TextureSampler::Default) const {
 			if(slot != UniformAddr(GL_INVALID_INDEX)) {
 				bindings[slot] = t;
+				bindings[slot] = sampler;
 				if(isCurrent()) {
 					bindings[slot].bind(slot);
 				} else {
