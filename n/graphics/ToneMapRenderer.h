@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "BufferableRenderer.h"
 #include "BufferedRenderer.h"
+#include <n/core/Timer.h>
 
 namespace n {
 namespace graphics {
@@ -70,6 +71,8 @@ class ToneMapRenderer : public BufferableRenderer
 		float exposure;
 		float white;
 		math::Vec2 range;
+		core::Timer timer;
+		float adaptation;
 		bool debug;
 };
 

@@ -99,6 +99,7 @@ ShaderCombinaison *getLumShader() {
 
 			"uniform float logMin;"
 			"uniform float logMax;"
+			"uniform float blend;"
 
 			"in vec2 n_TexCoord;"
 			"out vec4 n_Out;"
@@ -110,7 +111,7 @@ ShaderCombinaison *getLumShader() {
 			"void main() {"
 				"vec2 offset = 0.5 / textureSize(n_0, 0);"
 				"vec4 avgLum4 = textureGather(n_0, offset, 0);"
-				"n_Out = vec4(vec3(exp(clampLum((avgLum4.x + avgLum4.y + avgLum4.z + avgLum4.w) * 0.25))), 0.005);"
+				"n_Out = vec4(vec3(exp(clampLum((avgLum4.x + avgLum4.y + avgLum4.z + avgLum4.w) * 0.25))), blend);"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
 	return shader;
@@ -203,7 +204,7 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	return buffers[last]->getAttachement(0);
 }
 
-ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), luma(GLContext::getContext()->getFrameBufferPool().get(math::Vec2ui(1), true, ImageFormat::R32F)), slot(s), exposure(0.1), white(1.5), range(0.055, 10000), debug(false) {
+ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), luma(GLContext::getContext()->getFrameBufferPool().get(math::Vec2ui(1), true, ImageFormat::R32F)), slot(s), exposure(0.1), white(1.5), range(0.055, 10000), adaptation(0.5), debug(false) {
 }
 
 ToneMapRenderer::~ToneMapRenderer() {
@@ -225,11 +226,14 @@ void ToneMapRenderer::render(void *ptr) {
 
 	Texture lum = computeLum(child->getFrameBuffer().getAttachement(slot), buffers);
 
+	double dt = std::min(float(timer.reset()), adaptation);
+
 	ShaderCombinaison *lumSh = getLumShader();
 	lumSh->bind();
 	lumSh->setValue(ShaderCombinaison::Texture0, lum);
 	lumSh->setValue("logMin", log(range.x()));
 	lumSh->setValue("logMax", log(range.y()));
+	lumSh->setValue("blend", dt / adaptation);
 	luma->bind();
 	GLContext::getContext()->getScreen().draw(getLumMaterial(), VertexAttribs(), RenderFlag::NoShader);
 
@@ -240,12 +244,12 @@ void ToneMapRenderer::render(void *ptr) {
 	}
 
 	ShaderCombinaison *sh = getToneShader(debug);
-	sh->bind();
 	sh->setValue("exposure", exposure);
 	sh->setValue("white", white);
 
 	sh->setValue(ShaderCombinaison::Texture0, child->getFrameBuffer().getAttachement(slot));
 	sh->setValue(ShaderCombinaison::Texture1, luma->getAttachement(0));
+	sh->bind();
 
 	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
 
