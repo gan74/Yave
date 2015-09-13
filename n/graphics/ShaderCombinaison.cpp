@@ -36,6 +36,53 @@ const char *ShaderCombinaison::StandardValueName[ShaderCombinaison::Max] =
 	};
 
 
+bool isSampler(gl::GLenum type) {
+	static constexpr gl::GLenum samplers[] = {
+	GL_SAMPLER_1D,
+	GL_SAMPLER_2D,
+	GL_SAMPLER_3D,
+	GL_SAMPLER_CUBE,
+	GL_SAMPLER_1D_SHADOW,
+	GL_SAMPLER_2D_SHADOW,
+	GL_SAMPLER_1D_ARRAY,
+	GL_SAMPLER_2D_ARRAY,
+	GL_SAMPLER_1D_ARRAY_SHADOW,
+	GL_SAMPLER_2D_ARRAY_SHADOW,
+	GL_SAMPLER_2D_MULTISAMPLE,
+	GL_SAMPLER_2D_MULTISAMPLE_ARRAY,
+	GL_SAMPLER_CUBE_SHADOW,
+	GL_SAMPLER_BUFFER,
+	GL_SAMPLER_2D_RECT,
+	GL_SAMPLER_2D_RECT_SHADOW,
+	GL_INT_SAMPLER_1D,
+	GL_INT_SAMPLER_2D,
+	GL_INT_SAMPLER_3D,
+	GL_INT_SAMPLER_CUBE,
+	GL_INT_SAMPLER_1D_ARRAY,
+	GL_INT_SAMPLER_2D_ARRAY,
+	GL_INT_SAMPLER_2D_MULTISAMPLE,
+	GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY,
+	GL_INT_SAMPLER_BUFFER,
+	GL_INT_SAMPLER_2D_RECT,
+	GL_UNSIGNED_INT_SAMPLER_1D,
+	GL_UNSIGNED_INT_SAMPLER_2D,
+	GL_UNSIGNED_INT_SAMPLER_3D,
+	GL_UNSIGNED_INT_SAMPLER_CUBE,
+	GL_UNSIGNED_INT_SAMPLER_1D_ARRAY,
+	GL_UNSIGNED_INT_SAMPLER_2D_ARRAY,
+	GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE,
+	GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY,
+	GL_UNSIGNED_INT_SAMPLER_BUFFER,
+	GL_UNSIGNED_INT_SAMPLER_2D_RECT};
+	for(uint i = 0; i != sizeof(samplers) / sizeof(samplers[0]); i++) {
+		if(type == samplers[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 ShaderCombinaison::ShaderCombinaison(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : shaders{frag, vert, geom}, handle(0), samplerCount(0), bindings(0) {
 	compile();
 }
@@ -135,7 +182,7 @@ void ShaderCombinaison::getUniforms() {
 			uniform = uniform.subString(0, uniform.size() - 3);
 		}
 		UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});
-		if(type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE) {
+		if(isSampler(type)) {
 			uint slot = samplerCount++;
 			setValue(info.addr, int(slot));
 			info.addr = slot;
