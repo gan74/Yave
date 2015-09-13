@@ -40,6 +40,7 @@ bool FrameBuffer::isAttachmentEnabled(uint slot) const {
 }
 
 void FrameBuffer::setup() {
+	const FrameBuffer *fb = GLContext::getContext()->frameBuffer;
 	gl::glGenFramebuffers(1, &handle);
 	bind();
 	uint att = getMaxAttachment();
@@ -78,6 +79,11 @@ void FrameBuffer::setup() {
 				fatal("Unable to modify frame-buffer-object.");
 			break;
 		}
+	}
+	if(fb) {
+		fb->bind();
+	} else {
+		FrameBuffer::unbind();
 	}
 }
 
