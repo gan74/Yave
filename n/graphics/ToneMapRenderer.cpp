@@ -32,6 +32,16 @@ const Material &getMaterial() {
 	return mat;
 }
 
+const Material &getLumMaterial() {
+	static Material mat;
+	if(mat.isNull()) {
+		MaterialData i;
+		i.blend = MaterialData::SrcAlpha;
+		i.depth = MaterialData::Always;
+		mat = Material(i);
+	}
+	return mat;
+}
 
 ShaderCombinaison *getToneShader(bool debug = false) {
 	static ShaderCombinaison *shaders[2] = {0, 0};
@@ -42,8 +52,6 @@ ShaderCombinaison *getToneShader(bool debug = false) {
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
 
-			"uniform float logMin;"
-			"uniform float logMax;"
 			"uniform float exposure;"
 			"uniform float white;"
 
@@ -53,10 +61,6 @@ ShaderCombinaison *getToneShader(bool debug = false) {
 
 			"float rgbLum(vec3 rgb) {"
 				"return dot(vec3(0.299, 0.587, 0.114), rgb);"
-			"}"
-
-			"float clampLum(float l) {"
-				"return clamp(l, logMin, logMax);"
 			"}"
 
 			"vec3 reinhard(vec3 col, float exp, float key, float w) {"
@@ -72,22 +76,46 @@ ShaderCombinaison *getToneShader(bool debug = false) {
 			"}"
 
 			"void main() {"
-				"vec2 offset = 0.5 / textureSize(n_1, 0);"
-				"vec4 avgLum4 = textureGather(n_1, offset, 0);"
-				"float avgLum = exp(clampLum((avgLum4.x + avgLum4.y + avgLum4.z + avgLum4.w) * 0.25));"
+				"float avgLum = texelFetch(n_1, ivec2(0), 0).x;"
 
 				"vec4 color = texture(n_0, n_TexCoord);"
 				"vec3 rein = reinhard(color.rgb, exposure, avgLum, white);"
 				"n_Out = vec4(rein, color.a);"
 				"\n#ifdef DEBUG\n"
 				"if(color.x > 1 || color.y > 1 || color.z > 1) { n_Out = vec4(1, 0, 0, 1); }"
-				"if(n_TexCoord.x < 0.1 && n_TexCoord.y > 0.9) { n_Out = vec4(log(avgLum)); }"
+				"if(n_TexCoord.x < 0.1 && n_TexCoord.y > 0.9) { n_Out = vec4((avgLum)); }"
 				"if(n_TexCoord.x > 0.5) { n_Out = color; }"
 				"\n#endif\n"
 			"}"), ShaderProgram::NoProjectionShader);
 	}
 	return shaders[debug];
 }
+
+ShaderCombinaison *getLumShader() {
+	static ShaderCombinaison *shader = 0;
+	if(!shader) {
+		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+			"uniform sampler2D n_0;"
+
+			"uniform float logMin;"
+			"uniform float logMax;"
+
+			"in vec2 n_TexCoord;"
+			"out vec4 n_Out;"
+
+			"float clampLum(float l) {"
+				"return clamp(l, logMin, logMax);"
+			"}"
+
+			"void main() {"
+				"vec2 offset = 0.5 / textureSize(n_0, 0);"
+				"vec4 avgLum4 = textureGather(n_0, offset, 0);"
+				"n_Out = vec4(vec3(exp(clampLum((avgLum4.x + avgLum4.y + avgLum4.z + avgLum4.w) * 0.25))), 0.005);"
+			"}"), ShaderProgram::NoProjectionShader);
+	}
+	return shader;
+}
+
 
 ShaderCombinaison *getLogShader() {
 	static ShaderCombinaison *shader = 0;
@@ -100,7 +128,6 @@ ShaderCombinaison *getLogShader() {
 			"float rgbLum(vec3 rgb) {"
 				"return dot(vec3(0.299, 0.587, 0.114), rgb);"
 			"}"
-
 
 			"const float epsilon = 0.0001;"
 
@@ -130,9 +157,7 @@ ShaderCombinaison *getDSShader() {
 
 			"void main() {"
 				"vec4 avgLum = textureGather(n_0, rescale(n_TexCoord), 0);"
-				//"vec4 maxLum = textureGather(n_0, rescale(n_TexCoord), 1);"
 				"n_Out.x = (avgLum.x + avgLum.y + avgLum.z + avgLum.w) * 0.25;"
-				//"n_Out.y = max(max(maxLum.x, maxLum.y), max(maxLum.z, maxLum.w));"
 			"}"), new Shader<VertexShader>(
 			"layout(location = 0) in vec3 n_VertexPosition;"
 			"layout(location = 3) in vec2 n_VertexCoord;"
@@ -154,8 +179,8 @@ ShaderCombinaison *getDSShader() {
 
 Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	ShaderCombinaison *sh = getLogShader();
+	sh->setValue(ShaderCombinaison::Texture0, in);
 	sh->bind();
-	sh->setValue("n_0", in);
 
 	buffers[0]->bind();
 	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
@@ -178,10 +203,11 @@ Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	return buffers[last]->getAttachement(0);
 }
 
-ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), slot(s), exposure(0.1), white(1.5), range(0.055, 10000), debug(false) {
+ToneMapRenderer::ToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), luma(GLContext::getContext()->getFrameBufferPool().get(math::Vec2ui(1), true, ImageFormat::R32F)), slot(s), exposure(0.1), white(1.5), range(0.055, 10000), debug(false) {
 }
 
 ToneMapRenderer::~ToneMapRenderer() {
+	GLContext::getContext()->getFrameBufferPool().add(luma);
 }
 
 void *ToneMapRenderer::prepare() {
@@ -199,6 +225,14 @@ void ToneMapRenderer::render(void *ptr) {
 
 	Texture lum = computeLum(child->getFrameBuffer().getAttachement(slot), buffers);
 
+	ShaderCombinaison *lumSh = getLumShader();
+	lumSh->bind();
+	lumSh->setValue(ShaderCombinaison::Texture0, lum);
+	lumSh->setValue("logMin", log(range.x()));
+	lumSh->setValue("logMax", log(range.y()));
+	luma->bind();
+	GLContext::getContext()->getScreen().draw(getLumMaterial(), VertexAttribs(), RenderFlag::NoShader);
+
 	if(fb) {
 		fb->bind();
 	} else {
@@ -207,16 +241,11 @@ void ToneMapRenderer::render(void *ptr) {
 
 	ShaderCombinaison *sh = getToneShader(debug);
 	sh->bind();
-	sh->setValue("logMin", log(range.x()));
-	sh->setValue("logMax", log(range.y()));
 	sh->setValue("exposure", exposure);
 	sh->setValue("white", white);
 
 	sh->setValue(ShaderCombinaison::Texture0, child->getFrameBuffer().getAttachement(slot));
-	sh->setValue(ShaderCombinaison::Texture1, lum);
-	/*float lums[2] = { -1, -1 };
-	gl::glGetTextureSubImage(lum.getHandle(), 0, 0, 0, 0, 1, 1, 1, GL_RG, GL_FLOAT, 2 * sizeof(float), lums);
-	std::cout<<lum.getHandle()<<"  max = "<<lums[1]<<", avg = "<<exp(lums[0])<<std::endl;*/
+	sh->setValue(ShaderCombinaison::Texture1, luma->getAttachement(0));
 
 	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
 
