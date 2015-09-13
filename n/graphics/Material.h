@@ -47,7 +47,8 @@ struct MaterialData
 
 	enum BlendMode {
 		None,
-		Add
+		Add,
+		SrcAlpha
 	};
 
 	enum DepthMode {

@@ -86,8 +86,16 @@ void fullBind(const MaterialData &restrict data) {
 		gl::glDisable(GL_BLEND);
 	} else {
 		gl::glEnable(GL_BLEND);
-		if(data.blend == MaterialData::Add) {
-			gl::glBlendFunc(GL_ONE, GL_ONE);
+		switch(data.blend) {
+			case MaterialData::Add:
+				gl::glBlendFunc(GL_ONE, GL_ONE);
+			break;
+
+			case MaterialData::SrcAlpha:
+				gl::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			break;
+
+			default: break;
 		}
 		blendMode = data.blend;
 	}
@@ -160,8 +168,16 @@ void Material::bind(uint flags) const {
 						gl::glEnable(GL_BLEND);
 					}
 					if(blendMode != data.blend) {
-						if(data.blend == MaterialData::Add) {
-							gl::glBlendFunc(GL_ONE, GL_ONE);
+						switch(data.blend) {
+							case MaterialData::Add:
+								gl::glBlendFunc(GL_ONE, GL_ONE);
+							break;
+
+							case MaterialData::SrcAlpha:
+								gl::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+							break;
+
+							default: break;
 						}
 						blendMode = data.blend;
 					}
