@@ -23,12 +23,13 @@ namespace graphics {
 const char *ShaderCombinaison::StandardValueName[ShaderCombinaison::Max] =
 	{
 		"n_Color",
-		"n_Roughness",
 		"n_Metallic",
 		"n_DiffuseMap",
 		"n_DiffuseMul",
 		"n_NormalMap",
 		"n_NormalMul",
+		"n_RoughnessMap",
+		"n_RoughnessMul",
 		"n_0",
 		"n_1",
 		"n_2",

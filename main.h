@@ -53,7 +53,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/math/StaticConvexVolume.h>
 #include <n/math/ConvexVolume.h>
 #include <n/math/Quaternion.h>
-#include <n/graphics/ToneMapRenderer.h>
+#include <n/graphics/BasicToneMapRenderer.h>
 #include <n/graphics/OrthographicCamera.h>
 #include <n/graphics/PerspectiveCamera.h>
 #include <n/graphics/BufferRenderer.h>
@@ -108,7 +108,7 @@ class GpuTimer
 
 Vec2 mouse;
 Vec2 wasd;
-ToneMapRenderer *tone;
+BasicToneMapRenderer *tone;
 bool bench = false;
 uint rendererIndex = 0;
 

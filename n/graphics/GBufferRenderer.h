@@ -80,7 +80,6 @@ class GBufferRenderer : public BufferedRenderer
 					"layout(location = 2) out vec4 n_2;"
 
 					"uniform vec4 n_Color;"
-					"uniform float n_Roughness;"
 					"uniform float n_Metallic;"
 
 					"uniform float n_DiffuseMul;"
@@ -88,6 +87,9 @@ class GBufferRenderer : public BufferedRenderer
 
 					"uniform float n_NormalMul;"
 					"uniform sampler2D n_NormalMap;"
+
+					"uniform float n_RoughnessMul;"
+					"uniform sampler2D n_RoughnessMap;"
 
 					"in vec3 n_Position;"
 					"in vec3 n_Normal;"
@@ -103,10 +105,11 @@ class GBufferRenderer : public BufferedRenderer
 							"mat3 TBN = mat3(normalize(n_Tangent), normalize(n_Binormal), normalize(n_Normal));"
 							"normal = TBN * normalMap;"
 						"}"
+						"float roughness = texture(n_RoughnessMap, n_TexCoord).x * n_RoughnessMul;"
 						"vec4 color = n_Color * mix(vec4(1.0), texture(n_DiffuseMap, n_TexCoord), n_DiffuseMul);"
-						"n_0 = n_gbuffer0(color, normal, n_Roughness, n_Metallic);"
-						"n_1 = n_gbuffer1(color, normal, n_Roughness, n_Metallic);"
-						"n_2 = n_gbuffer2(color, normal, n_Roughness, n_Metallic);"
+						"n_0 = n_gbuffer0(color, normal, roughness, n_Metallic);"
+						"n_1 = n_gbuffer1(color, normal, roughness, n_Metallic);"
+						"n_2 = n_gbuffer2(color, normal, roughness, n_Metallic);"
 					"}");
 			return sh;
 		}

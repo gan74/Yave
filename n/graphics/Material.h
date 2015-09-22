@@ -57,7 +57,7 @@ struct MaterialData
 		Always
 	};
 
-	MaterialData() : color(1, 1, 1, 1), roughness(0), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5)/*, textures(0)*/
+	MaterialData() : color(1, 1, 1, 1), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5)/*, textures(0)*/
 	#ifdef N_MATERIAL_FANCYNESS
 		, fancy(true)
 	#endif
@@ -69,7 +69,6 @@ struct MaterialData
 	}
 
 	Color<> color;
-	float roughness;
 	float metallic;
 	bool depthTested;
 	bool depthWrite;
@@ -82,6 +81,7 @@ struct MaterialData
 
 	Texture diffuse;
 	Texture normal;
+	Texture roughness;
 	float normalIntencity;
 
 	//core::Map<core::String, Texture> *textures;

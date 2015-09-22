@@ -66,8 +66,8 @@ int main(int argc, char **argv) {
 		l->setForward(Vec3(0, 0, -1));
 		l->setPosition(Vec3(0, 0, 10));
 		l->setIntensity(5);
-		l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
-		scene.insert(l);
+		//l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
+		scene.insert(light = l);
 	}
 
 
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 						   new FrameBufferRenderer(gRe, 0),
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2),
-						   tone = new ToneMapRenderer(ri)};
+						   tone = new BasicToneMapRenderer(ri)};
 
 	Timer timer;
 	Timer total;
@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 			cam.setForward(f);
 			float tt = total.elapsed() * 0.15;
 			if(light) {
-				light->setForward(Vec3(0, cos(tt), -fabs(sin(tt)) - 1));
+				//light->setForward(Vec3(0, cos(tt), -fabs(sin(tt)) - 2));
 			}
 		} else {
 			double tt = timer.elapsed();
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 		} else {
 			totalFrames++;
 		}
-		std::cout<<"\rcpu = "<<(String(frameTime - gpuTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / (totalFrames - 10)) + "0000").subString(0, 4)<<" ms)      gpu = "<<(String(gpuTime) + "0000").subString(0, 4)<<" ms";
+		//std::cout<<"\rcpu = "<<(String(frameTime - gpuTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / (totalFrames - 10)) + "0000").subString(0, 4)<<" ms)      gpu = "<<(String(gpuTime) + "0000").subString(0, 4)<<" ms";
 
 
 

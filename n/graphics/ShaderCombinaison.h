@@ -69,12 +69,13 @@ class ShaderCombinaison : core::NonCopyable
 		enum StandardValue
 		{
 			Color,
-			Roughness,
 			Metallic,
 			DiffuseMap,
 			DiffuseMul,
 			NormalMap,
 			NormalMul,
+			RoughnessMap,
+			RoughnessMul,
 			Texture0,
 			Texture1,
 			Texture2,

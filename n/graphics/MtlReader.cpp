@@ -23,6 +23,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MaterialLoader.h"
 #include "ImageLoader.h"
 
+
+#include <dependencies/lodepng/lodepng.h>
+void encodeWithState(const char* filename, const unsigned char* image, unsigned width, unsigned height)
+{
+  unsigned error;
+  unsigned char* png;
+  size_t pngsize;
+  LodePNGState state;
+
+  lodepng_state_init(&state);
+  /*optionally customize the state*/
+
+  error = lodepng_encode(&png, &pngsize, image, width, height, &state);
+  if(!error) lodepng_save_file(png, pngsize, filename);
+
+  /*if there's an error, display it*/
+  if(error) printf("error %u: %s\n", error, lodepng_error_text(error));
+
+  lodepng_state_cleanup(&state);
+  free(png);
+}
+
+
 namespace n {
 namespace graphics {
 
@@ -76,11 +99,13 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 							return 0;
 						}
 						mat->color = Color<>(fl[0], fl[1], fl[2], 1);
-					} else if(l.beginsWith("ns ")) {
+					}/* else if(l.beginsWith("ns ")) {
 						float ns = float(l.subString(3));
 						mat->roughness = sqrt(2 / (ns + 2));
-					} else if(l.beginsWith("map_kd ")) {
+					}*/ else if(l.beginsWith("map_kd ")) {
 						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })), true);
+					} else if(l.beginsWith("map_ks ")) {
+						mat->roughness = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); }), false), true);
 					} else if(l.beginsWith("map_bump ")) {
 						mat->normal = Texture(ImageLoader::load<core::String>(l.subString(9).filtered([](char c) { return !isspace(c); })), true);
 					} else if(l.beginsWith("illum ")) {
