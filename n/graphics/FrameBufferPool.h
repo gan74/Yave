@@ -65,6 +65,13 @@ class FrameBufferPool : core::NonCopyable
 			}
 		}
 
+		void purge() {
+			for(FrameBuffer *b : buffers) {
+				delete b;
+			}
+			buffers.clear();
+		}
+
 	private:
 		core::Array<FrameBuffer *> buffers;
 };

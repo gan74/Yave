@@ -44,18 +44,19 @@ namespace internal {
 class SubMeshInstance
 {
 	public:
-		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m) : buffer(new TriangleBuffer<>::FreezedTriangleBuffer(b)), allocInfos(0), material(m) {
+		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m) : SubMeshInstance(new TriangleBuffer<>::FreezedTriangleBuffer(b), m) {
 		}
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
-			if(vao.isNull()) {
-				if(allocInfos) {
-					internal::optimisedVaoAlloc(allocInfos);
-				} else {
-					vao = VertexArraySubObject<>(new VertexArrayObject<>(*buffer));
-				}
-			}
+			alloc();
 			vao.draw(material, attribs, renderFlags, instances);
+		}
+
+		SubMeshInstance withMaterial(const graphics::Material &m) const {
+			alloc();
+			SubMeshInstance s(buffer, m);
+			s.vao = vao;
+			return s;
 		}
 
 		const Material &getMaterial() const {
@@ -77,6 +78,19 @@ class SubMeshInstance
 	private:
 		friend void internal::optimisedVaoAlloc(VaoAllocInfo *);
 		friend class internal::MeshInstance;
+
+		SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const graphics::Material &m) : buffer(b), allocInfos(0), material(m) {
+		}
+
+		void alloc() const {
+			if(vao.isNull()) {
+				if(allocInfos) {
+					internal::optimisedVaoAlloc(allocInfos);
+				} else {
+					vao = VertexArraySubObject<>(new VertexArrayObject<>(*buffer));
+				}
+			}
+		}
 
 		core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
 

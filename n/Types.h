@@ -26,6 +26,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
+template<typename T>
+class Operators
+{
+	public:
+		T &operator==(const T &o) const {
+			return !(*this != o);
+		}
+
+
+		T &operator!=(const T &o) const {
+			return !(*this == o);
+		}
+
+		T &operator<(const T &o) const {
+			return !(*this > o || operator==(o));
+		}
+
+		T &operator>(const T &o) const {
+			return !(*this < o || operator==(o));
+		}
+};
+
 namespace core {
 	class String;
 }

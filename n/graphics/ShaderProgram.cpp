@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ShaderProgram.h"
 #include "ShaderCombinaison.h"
+#include "GBufferRenderer.h"
 
 namespace n {
 namespace graphics {
@@ -49,7 +50,8 @@ ShaderProgramCombinaison ShaderProgram::getCombinaison() const {
 }
 
 Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
-	static Shader<FragmentShader> *def = new Shader<FragmentShader>(
+	return GBufferRenderer::getShader();
+	/*static Shader<FragmentShader> *def = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
 
 					"uniform vec4 n_Color;"
@@ -66,7 +68,7 @@ Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
 						"vec4 color = n_Color * mix(vec4(1.0), texture(n_DiffuseMap, n_TexCoord), n_DiffuseMul);"
 						"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
 					"}");
-	return def;
+	return def;*/
 }
 
 Shader<VertexShader> *ShaderProgram::getStandardVertexShader(StandardVertexShader type) {

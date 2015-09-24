@@ -120,6 +120,14 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 			return *this;
 		}
 
+		template<typename C>
+		Array<T, ResizePolicy> &append(std::initializer_list<C> l) {
+			for(auto x : l) {
+				append(x);
+			}
+			return *this;
+		}
+
 		iterator remove(const T &e) {
 			return erase(find(e));
 		}

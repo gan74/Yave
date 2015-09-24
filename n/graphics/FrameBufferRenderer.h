@@ -32,6 +32,14 @@ class FrameBufferRenderer : public BufferableRenderer
 		virtual ~FrameBufferRenderer() {
 		}
 
+		const BufferedRenderer *getChild() const {
+			return child;
+		}
+
+		uint getSlot() const {
+			return slot;
+		}
+
 	protected:
 		virtual void *prepare() override {
 			return child->prepare();

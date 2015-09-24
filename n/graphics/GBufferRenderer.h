@@ -72,7 +72,6 @@ class GBufferRenderer : public BufferedRenderer
 			ShaderProgram::setDefaultShader((Shader<FragmentShader> *)0);
 		}
 
-	private:
 		static Shader<FragmentShader> *getShader() {
 			static Shader<FragmentShader> *sh = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
@@ -114,6 +113,7 @@ class GBufferRenderer : public BufferedRenderer
 			return sh;
 		}
 
+	private:
 		SceneRenderer *child;
 		BufferFormat bufferFormat;
 
