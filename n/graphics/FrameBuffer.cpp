@@ -129,7 +129,7 @@ void FrameBuffer::blit(uint slot, bool depth) const {
 		/*static uint readBuffer = 0;
 		if(slot != readBuffer)*/ {
 			gl::glReadBuffer(GL_COLOR_ATTACHMENT0 + slot);
-			readBuffer = slot;
+			//readBuffer = slot;
 		}
 	}
 	gl::GLbitfield bits = (color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0);
