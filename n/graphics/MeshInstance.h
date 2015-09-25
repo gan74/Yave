@@ -47,16 +47,16 @@ class SubMeshInstance
 		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m) : SubMeshInstance(new TriangleBuffer<>::FreezedTriangleBuffer(b), m) {
 		}
 
+		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m) {
+			s.alloc();
+			buffer = s.buffer;
+			vao = s.vao;
+			material = m;
+		}
+
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
 			alloc();
 			vao.draw(material, attribs, renderFlags, instances);
-		}
-
-		SubMeshInstance withMaterial(const graphics::Material &m) const {
-			alloc();
-			SubMeshInstance s(buffer, m);
-			s.vao = vao;
-			return s;
 		}
 
 		const Material &getMaterial() const {
@@ -194,7 +194,7 @@ class MeshInstance : private assets::Asset<internal::MeshInstance>
 		MeshInstance() : assets::Asset<internal::MeshInstance>() {
 		}
 
-		MeshInstance(core::Array<SubMeshInstance *> &subs) : MeshInstance(new internal::MeshInstance(subs)) {
+		MeshInstance(const core::Array<SubMeshInstance *> &subs) : MeshInstance(new internal::MeshInstance(subs)) {
 		}
 
 		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m = Material()) : MeshInstance(new internal::MeshInstance(std::move(b), m)) {

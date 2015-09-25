@@ -178,6 +178,7 @@ void GLContext::setViewport(const math::Vec2ui &v) {
 	if(!frameBuffer) {
 		gl::glViewport(0, 0, viewport.x(), viewport.y());
 	}
+	shader->setValue("n_ViewportSize", math::Vec2(viewport));
 }
 
 math::Vec2ui GLContext::getViewport() const {

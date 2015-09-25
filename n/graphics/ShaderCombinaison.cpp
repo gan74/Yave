@@ -121,6 +121,7 @@ void ShaderCombinaison::bind() {
 	setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
 	setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());
 	setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
+	setValue("n_ViewportSize", math::Vec2(GLContext::getContext()->getViewport()));
 
 	GLContext::getContext()->shader = this;
 	GLContext::getContext()->program = 0;

@@ -127,15 +127,15 @@ namespace internal {
 				}
 			}
 
-			#define N_MAT_COMPARE(mem) if(data.mem != m.data.mem) { return data.mem < m.data.mem; }
+			#define N_MAT_COMPARE(mem, op) if(data.mem != m.data.mem) { return data.mem op m.data.mem; }
 
 			bool operator<(const Material &m) const {
-				N_MAT_COMPARE(prog)
-				N_MAT_COMPARE(diffuse)
-				N_MAT_COMPARE(depthWrite)
-				N_MAT_COMPARE(depthTested)
-				N_MAT_COMPARE(depth)
-				N_MAT_COMPARE(cull)
+				N_MAT_COMPARE(depthTested, <)
+				N_MAT_COMPARE(depth, <)
+				N_MAT_COMPARE(cull, <)
+				N_MAT_COMPARE(prog, <)
+				N_MAT_COMPARE(diffuse, <)
+				N_MAT_COMPARE(depthWrite, <)
 				return false;
 			}
 
