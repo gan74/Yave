@@ -22,13 +22,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace math {
 
-template<typename T>
+template<typename T = float>
 class Ray final : public Volume<T>
 {
 	public:
-		Ray(const Vec<3, T> &beg, const Vec<3, T> &dir) : b(beg), d(dir) {
-			len = d.length();
-			d /= len;
+		Ray(const Vec<3, T> &beg, const Vec<3, T> &dir) : b(beg), d(dir.normalized()) {
 		}
 
 		virtual bool isInside(const Vec<3, T> &v, T r) const override {
@@ -37,10 +35,17 @@ class Ray final : public Volume<T>
 			return p.length2() - dot * dot < (r * r);
 		}
 
+		const Vec<3, T> &getDirection() const {
+			return d;
+		}
+
+		const Vec<3, T> &getPoint() const {
+			return b;
+		}
+
 	private:
 		Vec<3, T> b;
 		Vec<3, T> d;
-		T l;
 };
 
 }

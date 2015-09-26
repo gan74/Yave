@@ -130,7 +130,7 @@ namespace internal {
 			#define N_MAT_COMPARE(mem, op) if(data.mem != m.data.mem) { return data.mem op m.data.mem; }
 
 			bool operator<(const Material &m) const {
-				N_MAT_COMPARE(depthTested, <)
+				N_MAT_COMPARE(depthTested, >)
 				N_MAT_COMPARE(depth, <)
 				N_MAT_COMPARE(cull, <)
 				N_MAT_COMPARE(prog, <)

@@ -19,11 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Volume.h"
 #include "Edge.h"
+#include "Ray.h"
 
 namespace n {
 namespace math {
 
-template<typename T>
+template<typename T = float>
 class Plane final : public Volume<T>
 {
 	public:
@@ -58,6 +59,11 @@ class Plane final : public Volume<T>
 
 		T getW() {
 			return d;
+		}
+
+		Vec<3, T> intersection(const Ray<T> &r) const {
+			T t = -(r.getPoint().dot(n) + d) / (r.getDirection().dot(n));
+			return r.getPoint() + r.getDirection() * t;
 		}
 
 	private:
