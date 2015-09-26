@@ -33,7 +33,8 @@ enum RenderFlag
 	FastDepth = 0x01,
 	ForceMaterialRebind = 0x02,
 	NoShader = 0x04,
-	DepthWriteOnly = 0x08
+	DepthWriteOnly = 0x08,
+	Overlay = 0x10
 
 };
 

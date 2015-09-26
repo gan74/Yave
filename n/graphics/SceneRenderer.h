@@ -84,9 +84,11 @@ class SceneRenderer : public BufferableRenderer
 		}
 
 		void render(void *ptr, uint renderFlags) {
-			FrameBuffer::clear(true, true);
 			if(!ptr) {
 				return;
+			}
+			if(!(renderFlags & RenderFlag::Overlay)) {
+				FrameBuffer::clear(true, true);
 			}
 			FrameData *data = reinterpret_cast<FrameData *>(ptr);
 			GLContext::getContext()->setProjectionMatrix(data->proj);
