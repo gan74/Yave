@@ -60,7 +60,7 @@ class FrameBuffer : core::NonCopyable
 	}
 
 	public:
-		static constexpr uint Depth = -1u;
+		static constexpr uint Depth = -1;
 
 		static uint getMaxAttachment() {
 			return GLContext::getContext()->getHWInt(GLContext::MaxFboAttachements);

@@ -132,9 +132,9 @@ class Shader : public internal::ShaderBase
 			};
 			core::String common = "const float pi = " + core::String(math::pi) + "; float sqr(float x) { return x * x; }  float saturate(float x) { return clamp(x, 0.0, 1.0); }";
 			uint vit = src.find("#version");
-			if(vit != -1u) {
+			if(vit != uint(-1)) {
 				uint l = src.find("\n", vit);
-				if(l != -1u) {
+				if(l != uint(-1)) {
 					bool ok = true;
 					uint v = src.subString(vit + 9).get<uint>([&]() { ok = false; });
 					if(ok && v) {

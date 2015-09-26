@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MeshInstance.h"
 #include "GLContext.h"
 
+#define N_BATCH_MATERIAL
+
 namespace n {
 namespace graphics {
 
@@ -42,7 +44,7 @@ class RenderBatch
 		bool operator<(const RenderBatch &o) const {
 			#ifdef N_BATCH_MATERIAL
 			bool m = inst->getMaterial() < o.inst->getMaterial();
-			return m ? true : o.inst->getMaterial() < inst->getMaterial() ? false : *inst < *o.inst;
+			return m ? true : o.inst->getMaterial() < inst->getMaterial() ? false : inst->getVertexArrayObject() < o.inst->getVertexArrayObject();
 			#else
 			bool m = inst->getVertexArrayObject() < o.inst->getVertexArrayObject();
 			return m ? true : o.inst->getVertexArrayObject() < inst->getVertexArrayObject() ? false : inst->getMaterial() < o.inst->getMaterial();
