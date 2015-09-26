@@ -34,7 +34,7 @@ class Plane final : public Volume<T>
 		Plane(const Vec<3, T> &e, T f) : n(e.normalized()), d(f) {
 		}
 
-		Plane(const Vec<3, T> &norm, const Vec<3, T> &p) : n(norm.normalized()), d(p.dot(n)) {
+		Plane(const Vec<3, T> &norm, const Vec<3, T> &p) : n(norm.normalized()), d(-p.dot(n)) {
 		}
 
 		Plane(const Edge<T> &a, const Edge<T> &b) : Plane(a.getVec() ^ b.getVec(), a.getBegin()) {
