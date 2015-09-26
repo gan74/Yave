@@ -62,8 +62,8 @@ class Plane final : public Volume<T>
 		}
 
 		Vec<3, T> intersection(const Ray<T> &r) const {
-			T t = -(r.getPoint().dot(n) + d) / (r.getDirection().dot(n));
-			return r.getPoint() + r.getDirection() * t;
+			T t = -(r.getStart().dot(n) + d) / (r.getDirection().dot(n));
+			return r.getStart() + r.getDirection() * t;
 		}
 
 	private:

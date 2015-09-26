@@ -35,11 +35,17 @@ class Ray final : public Volume<T>
 			return p.length2() - dot * dot < (r * r);
 		}
 
+		T distance(const Vec<3, T> &v) const {
+			Vec<3, T> p(v - b);
+			T dot = d.dot(p);
+			return sqrt(p.length2() - dot * dot);
+		}
+
 		const Vec<3, T> &getDirection() const {
 			return d;
 		}
 
-		const Vec<3, T> &getPoint() const {
+		const Vec<3, T> &getStart() const {
 			return b;
 		}
 
