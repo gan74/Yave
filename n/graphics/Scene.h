@@ -39,7 +39,7 @@ class Scene : core::NonCopyable
 		template<typename U>
 		void insert(U *tr) {
 			if((void *)((Transformable *)tr) != (void *)tr) {
-				fatal("Virtual inherited Transformable<T>");
+				fatal("Virtual inherited Transformable");
 			}
 			transformables.append(tr);
 			Type ty(*tr);
@@ -52,6 +52,22 @@ class Scene : core::NonCopyable
 			core::Array<Transformable *> a;
 			a.append(tr);
 			typeMap.append(TypedArray(ty, a));
+		}
+
+		template<typename U>
+		void remove(U *tr) {
+			transformables.filter([=](Transformable *t) {
+				return t != tr;
+			});
+			Type ty(*tr);
+			for(TypedArray &p : typeMap) {
+				if(p._1 == ty) {
+					p._2.filter([=](Transformable *t) {
+						return t != tr;
+					});
+					return;
+				}
+			}
 		}
 
 		template<typename U = Transformable>
