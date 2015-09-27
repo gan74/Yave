@@ -69,8 +69,6 @@ template<typename T>
 class AssetLoader : core::NonCopyable
 {
 	private:
-
-
 		class LoaderBase
 		{
 			public:

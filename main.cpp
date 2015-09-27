@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 		ri->setDebugMode(DeferredShadingRenderer::LightingDebugMode(dIndex));
 		(*renderers[rIndex])();
 
-		GLContext::getContext()->finishTasks();
+		GLContext::getContext()->processTasks();
 		GLContext::getContext()->flush();
 
 

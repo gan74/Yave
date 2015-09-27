@@ -53,6 +53,15 @@ class VertexArraySubObject
 			return radius;
 		}
 
+		VertexArraySubObject<T> &operator=(const VertexArraySubObject<T> &o) {
+			object = o.object;
+			start = o.start;
+			size = o.size;
+			base = o.base;
+			radius = o.radius;
+			return *this;
+		}
+
 		bool operator==(const VertexArraySubObject<T> &o) const {
 			return object == o.object && start == o.start && size == o.size && base == o.base;
 		}

@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "VertexArraySubObject.h"
 #include "Material.h"
 #include <n/assets/Asset.h>
+#include <n/concurrent/Future.h>
 
 namespace n {
 namespace graphics {
@@ -32,152 +33,49 @@ enum MeshOptimisationOptions
 
 };
 
-class SubMeshInstance;
-
 namespace internal {
 	class MeshInstance;
-
-	struct VaoAllocInfo;
-	static void optimisedVaoAlloc(VaoAllocInfo *);
 }
 
 class SubMeshInstance
 {
 	public:
-		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m) : SubMeshInstance(new TriangleBuffer<>::FreezedTriangleBuffer(b), m) {
-		}
+		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m);
+		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m);
 
-		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m) {
-			s.alloc();
-			buffer = s.buffer;
-			vao = s.vao;
-			material = m;
-		}
-
-		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
-			alloc();
-			vao.draw(material, attribs, renderFlags, instances);
-		}
-
-		const Material &getMaterial() const {
-			return material;
-		}
-
-		float getRadius() const {
-			return buffer->radius;
-		}
-
-		const typename TriangleBuffer<>::FreezedTriangleBuffer &getTriangleBuffer() const {
-			return *buffer;
-		}
-
-		const VertexArraySubObject<> &getVertexArrayObject() const {
-			return vao;
-		}
+		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const;
+		const Material &getMaterial() const;
+		float getRadius() const;
+		const typename TriangleBuffer<>::FreezedTriangleBuffer &getTriangleBuffer() const;
+		const VertexArraySubObject<> &getVertexArrayObject() const;
 
 	private:
-		friend void internal::optimisedVaoAlloc(VaoAllocInfo *);
 		friend class internal::MeshInstance;
 
-		SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const graphics::Material &m) : buffer(b), allocInfos(0), material(m) {
-		}
-
-		void alloc() const {
-			if(vao.isNull()) {
-				if(allocInfos) {
-					internal::optimisedVaoAlloc(allocInfos);
-				} else {
-					vao = VertexArraySubObject<>(new VertexArrayObject<>(*buffer));
-				}
-			}
-		}
+		SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const graphics::Material &m);
 
 		core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
-
-		internal::VaoAllocInfo *allocInfos;
-		mutable VertexArraySubObject<> vao;
-
 		Material material;
+
+		mutable VertexArraySubObject<> vao;
+		concurrent::SharedFuture<VertexArraySubObject<>> future;
 };
 
 namespace internal {
-	struct VaoAllocInfo
-	{
-		core::Array<SubMeshInstance *> subs;
-		float radius;
-	};
-
-	static void optimisedVaoAlloc(VaoAllocInfo *infos) {
-		core::Array<uint> indexes;
-		core::Array<Vertex<>> vertices;
-		for(SubMeshInstance *sub : infos->subs) {
-			indexes += sub->getTriangleBuffer().indexes;
-			vertices += sub->getTriangleBuffer().vertices;
-			sub->allocInfos = 0;
-		}
-		core::SmartPtr<VertexArrayObject<>> vao(new VertexArrayObject<>(TriangleBuffer<>::FreezedTriangleBuffer(indexes, vertices, infos->radius)));
-		uint iCount = 0;
-		uint vCount = 0;
-		for(SubMeshInstance *sub : infos->subs) {
-			uint num = sub->getTriangleBuffer().indexes.size() / 3;
-			sub->vao = VertexArraySubObject<>(vao, iCount, num, vCount, sub->getRadius());
-			iCount += num;
-			vCount += sub->getTriangleBuffer().vertices.size();
-		}
-		delete infos;
-	}
-
 	class MeshInstance : core::NonCopyable
 	{
 		public:
 			typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
 
-			MeshInstance(const core::Array<SubMeshInstance *> &b, uint opt = MeshOptimisationOptions::MergeVAO) : subs(b), radius(0) {
-				core::Array<SubMeshInstance *> toAlloc;
-				for(SubMeshInstance *sub : subs) {
-					radius = std::max(radius, sub->getRadius());
-					if(sub->vao.isNull() && !sub->allocInfos) {
-						toAlloc.append(sub);
-					}
-				}
-				if(opt & MeshOptimisationOptions::MergeVAO) {
-					VaoAllocInfo *allocInfos = new VaoAllocInfo{toAlloc, radius};
-					for(SubMeshInstance *sub : subs) {
-						sub->allocInfos = allocInfos;
-					}
-				}
-			}
+			MeshInstance(const core::Array<SubMeshInstance *> &b, uint opt = MeshOptimisationOptions::MergeVAO);
+			MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material());
+			~MeshInstance();
 
-			MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material()) : MeshInstance(core::Array<SubMeshInstance *>({new SubMeshInstance(b, m)})) {
-			}
-
-			~MeshInstance() {
-				for(const SubMeshInstance *b : subs) {
-					delete b;
-				}
-			}
-
-			void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
-				for(const SubMeshInstance *b : subs) {
-					b->draw(attribs, instances);
-				}
-			}
-
-			float getRadius() const {
-				return radius;
-			}
-
-			const_iterator begin() const {
-				return subs.begin();
-			}
-
-			const_iterator end() const {
-				return subs.end();
-			}
-
-			const core::Array<SubMeshInstance *> &getBases() const {
-				return subs;
-			}
+			void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const;
+			float getRadius() const;
+			const_iterator begin() const;
+			const_iterator end() const;
+			const core::Array<SubMeshInstance *> &getBases() const;
 
 		private:
 			core::Array<SubMeshInstance *> subs;
@@ -191,60 +89,23 @@ class MeshInstance : private assets::Asset<internal::MeshInstance>
 	public:
 		typedef typename internal::MeshInstance::const_iterator const_iterator;
 
-		MeshInstance() : assets::Asset<internal::MeshInstance>() {
-		}
+		MeshInstance();
+		MeshInstance(const core::Array<SubMeshInstance *> &subs);
+		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m = Material());
 
-		MeshInstance(const core::Array<SubMeshInstance *> &subs) : MeshInstance(new internal::MeshInstance(subs)) {
-		}
-
-		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m = Material()) : MeshInstance(new internal::MeshInstance(std::move(b), m)) {
-		}
-
-		bool isValid() const {
-			return assets::Asset<internal::MeshInstance>::isValid();
-		}
-
-		bool isNull() const {
-			return assets::Asset<internal::MeshInstance>::isNull();
-		}
-
-		float getRadius() const {
-			const internal::MeshInstance *i = getInternal();
-			return i ? i->getRadius() : -1;
-		}
-
-		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const {
-			const internal::MeshInstance *i = getInternal();
-			if(i) {
-				i->draw(attribs, instances);
-			}
-		}
-
-		const_iterator begin() const {
-			const internal::MeshInstance *i = getInternal();
-			return i ? i->begin() : 0;
-		}
-
-		const_iterator end() const {
-			const internal::MeshInstance *i = getInternal();
-			return i ? i->end() : 0;
-		}
-
-		core::Array<SubMeshInstance *> getBases() const {
-			const internal::MeshInstance *i = getInternal();
-			return i ? i->getBases() : core::Array<SubMeshInstance *>();
-		}
+		bool isValid() const;
+		bool isNull() const;
+		float getRadius() const;
+		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const;
+		const_iterator begin() const;
+		const_iterator end() const;
+		core::Array<SubMeshInstance *> getBases() const;
 
 	private:
-		MeshInstance(const assets::Asset<internal::MeshInstance> &t) : assets::Asset<internal::MeshInstance>(t) {
-		}
+		MeshInstance(const assets::Asset<internal::MeshInstance> &t);
+		MeshInstance(internal::MeshInstance *i);
 
-		MeshInstance(internal::MeshInstance *i) : assets::Asset<internal::MeshInstance>(std::move(i)) {
-		}
-
-		const internal::MeshInstance *getInternal() const {
-			return isValid() ? this->operator->() : (const internal::MeshInstance *)0;
-		}
+		const internal::MeshInstance *getInternal() const;
 };
 
 }
