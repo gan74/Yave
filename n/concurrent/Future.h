@@ -36,8 +36,12 @@ class SharedFuture
 		{
 			Waiting,
 			Failed,
-			Succeded
+			Succeded,
+			Uninitialized
 		};
+
+		SharedFuture() : shared(new Internal(Uninitialized)) {
+		}
 
 		bool isWaiting() const {
 			return shared->state == Waiting;
@@ -49,6 +53,14 @@ class SharedFuture
 
 		bool isSuccess() const {
 			return shared->state == Succeded;
+		}
+
+		bool isUninitialized() const {
+			return shared->state == Uninitialized;
+		}
+
+		State getState() const {
+			return shared->state;
 		}
 
 		core::Option<T> get() const {
@@ -65,6 +77,29 @@ class SharedFuture
 			}
 			return shared->val;
 		}
+
+		const TI &get(const TI &def) const {
+			wait();
+			if(!isSuccess()) {
+				return def;
+			}
+			return shared->val;
+		}
+
+		const TI &tryGet(const TI &def) const {
+			if(!isSuccess()) {
+				return def;
+			}
+			return shared->val;
+		}
+
+		const TI &unsafeGet() const {
+			if(!isSuccess()) {
+				fatal("SharedFuture<T>::unsafeGet failed.");
+			}
+			return shared->val;
+		}
+
 
 		void wait() const {
 			Mutex *m = getMutex();
@@ -84,7 +119,7 @@ class SharedFuture
 
 		struct Internal
 		{
-			Internal() : state(Waiting) {
+			Internal(State st = Waiting) : state(st) {
 			}
 
 			~Internal() {
@@ -103,7 +138,7 @@ class SharedFuture
 			};
 		};
 
-		SharedFuture() : shared(new Internal()){
+		SharedFuture(const Promise<T> &) : shared(new Internal()){
 		}
 
 		void complete(TI e) {

@@ -28,7 +28,7 @@ class Promise
 {
 	typedef typename VoidToNothing<T>::type TI;
 	public:
-		Promise() {
+		Promise() : future(*this) {
 		}
 
 		void success(const TI &e) {
