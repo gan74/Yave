@@ -51,6 +51,7 @@ class VertexArrayObject : core::NonCopyable
 			mat.bind(renderFlags);
 			bind();
 			bindAttribs(attributes);
+			ShaderProgram::bindStandards();
 			gl::glDrawElementsInstancedBaseVertex(GL_TRIANGLES, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
 		}
 

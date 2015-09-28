@@ -67,18 +67,19 @@ int main(int argc, char **argv) {
 		l->setPosition(Vec3(0, 0, 10));
 		l->setIntensity(5);
 		//l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
-		scene.insert(light = l);
+		scene.insert(l);
 	}
 
 
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
-	Renderer *renderers[] {new FrameBufferRenderer(ri),
+	/*Renderer *renderers[] {new FrameBufferRenderer(ri),
 						   new FrameBufferRenderer(gRe, 0),
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2),
-						   tone = new BasicToneMapRenderer(ri)};
+						   tone = new BasicToneMapRenderer(ri)};*/
+	Renderer *renderers[] = {sceRe};
 
 	Timer timer;
 	Timer total;
@@ -106,7 +107,7 @@ int main(int argc, char **argv) {
 			cam.setForward(f);
 			float tt = total.elapsed() * 0.15;
 			if(light) {
-				//light->setForward(Vec3(0, cos(tt), -fabs(sin(tt)) - 2));
+				light->setForward(Vec3(0, cos(tt), -fabs(sin(tt)) - 2));
 			}
 		} else {
 			double tt = timer.elapsed();

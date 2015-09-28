@@ -109,8 +109,8 @@ struct DeferredShadingRenderer::FrameData
 
 
 template<LightType Type>
-ShaderCombinaison *getShader(const core::String &shadow, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
-	static core::Map<core::String, ShaderCombinaison *> shaders[LightType::Max][DeferredShadingRenderer::Max];
+ShaderProgram *getShader(const core::String &shadow, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
+	static core::Map<core::String, ShaderProgram *> shaders[LightType::Max][DeferredShadingRenderer::Max];
 
 	core::String debugStrs[] = {"", "n_Out = vec4(vec3(att), 1.0);", "n_Out = vec4(vec3(shadow), 1.0);"};
 	core::String computeDir[LightType::Max] = {"return n_LightPos - pos;",
@@ -125,9 +125,9 @@ ShaderCombinaison *getShader(const core::String &shadow, DeferredShadingRenderer
 												  "return max(0.0, falloff * spotFalloff);",
 											  "return 1.0;",
 											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
-	ShaderCombinaison *shader = shaders[Type][debug].get(shadow, 0);
+	ShaderProgram *shader = shaders[Type][debug].get(shadow, 0);
 	if(!shader) {
-		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+		shader = new ShaderProgram(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
 			"uniform sampler2D n_2;"
@@ -227,12 +227,12 @@ ShaderCombinaison *getShader(const core::String &shadow, DeferredShadingRenderer
 
 
 
-void lightGeometryPass(const DirectionalLight *, ShaderCombinaison *, const math::Vec3 &) {
+void lightGeometryPass(const DirectionalLight *, ShaderProgram *, const math::Vec3 &) {
 	GLContext::getContext()->getScreen().draw(getLightMaterial<Directional>(), VertexAttribs(), RenderFlag::NoShader);
 }
 
 
-void lightGeometryPass(const BoxLight *l, ShaderCombinaison *sh, const math::Vec3 &forward) {
+void lightGeometryPass(const BoxLight *l, ShaderProgram *sh, const math::Vec3 &forward) {
 	math::Matrix3<> lightMatrix(forward, -l->getTransform().getY().normalized(), -l->getTransform().getZ().normalized());
 	GLContext::getContext()->setModelMatrix(math::Matrix4<>(lightMatrix[0] * l->getSize().x() * -2, 0,
 															lightMatrix[1] * l->getSize().y() * -2, 0,
@@ -243,12 +243,12 @@ void lightGeometryPass(const BoxLight *l, ShaderCombinaison *sh, const math::Vec
 	getBox().draw(getLightMaterial<Box>(), VertexAttribs(), RenderFlag::NoShader);
 }
 
-void lightGeometryPass(const PointLight *l, ShaderCombinaison *, const math::Vec3 &) {
+void lightGeometryPass(const PointLight *l, ShaderProgram *, const math::Vec3 &) {
 	GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
 	getSphere().draw(getLightMaterial<Point>(), VertexAttribs(), RenderFlag::NoShader);
 }
 
-void lightGeometryPass(const SpotLight *l, ShaderCombinaison *sh, const math::Vec3 &) {
+void lightGeometryPass(const SpotLight *l, ShaderProgram *sh, const math::Vec3 &) {
 	GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
 	sh->setValue("n_LightCosCutOff", cos(l->getCutOff() * 0.5));
 	sh->setValue("n_LightExponent", l->getExponent());
@@ -257,22 +257,22 @@ void lightGeometryPass(const SpotLight *l, ShaderCombinaison *sh, const math::Ve
 
 
 template<typename T>
-ShaderCombinaison *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
+ShaderProgram *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
 	constexpr LightType Type = getLightType<T>();
-	ShaderCombinaison *shader = 0;
+	ShaderProgram *shader = 0;
 	for(const LightData &ld : data->lights[Type]) {
 		const T *l = ld.to<T>();
 		math::Vec3 forward = -l->getTransform().getX().normalized();
 		if(l->castShadows() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
 			l->getShadowRenderer()->render(ld.shadowData);
 		}
-		ShaderCombinaison *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;", renderer->debugMode);
+		ShaderProgram *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;", renderer->debugMode);
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();
-			shader->setValue(ShaderCombinaison::Texture0, renderer->child->getFrameBuffer().getAttachement(0));
-			shader->setValue(ShaderCombinaison::Texture1, renderer->child->getFrameBuffer().getAttachement(1));
-			shader->setValue(ShaderCombinaison::Texture2, renderer->child->getFrameBuffer().getAttachement(2));
+			shader->setValue(ShaderValue::SVTexture0, renderer->child->getFrameBuffer().getAttachement(0));
+			shader->setValue(ShaderValue::SVTexture1, renderer->child->getFrameBuffer().getAttachement(1));
+			shader->setValue(ShaderValue::SVTexture2, renderer->child->getFrameBuffer().getAttachement(2));
 			shader->setValue("n_D", renderer->child->getFrameBuffer().getDepthAttachement());
 			shader->setValue("n_Inv", data->inv);
 			shader->setValue("n_Cam", data->pos);
@@ -296,7 +296,7 @@ ShaderCombinaison *lightPass(const DeferredShadingRenderer::FrameData *data, Def
 	return shader;
 }
 
-ShaderCombinaison *rnn(ShaderCombinaison *a, ShaderCombinaison *b) {
+ShaderProgram *rnn(ShaderProgram *a, ShaderProgram *b) {
 	return b ? b : a;
 }
 
@@ -342,7 +342,7 @@ void DeferredShadingRenderer::render(void *ptr) {
 	getFrameBuffer().clear(true, false);
 	child->getFrameBuffer().blit(FrameBuffer::Depth);
 
-	ShaderCombinaison *sh = 0;
+	ShaderProgram *sh = 0;
 
 	sh = rnn(sh, lightPass<PointLight>(data, this));
 

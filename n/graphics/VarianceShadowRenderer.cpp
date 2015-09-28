@@ -20,10 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-ShaderCombinaison *getVSMShader() {
-	static ShaderCombinaison *shader = 0;
+ShaderProgram *getVSMShader() {
+	static ShaderProgram *shader = 0;
 	if(!shader) {
-		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+		shader = new ShaderProgram(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 
 			"in vec2 n_TexCoord;"
@@ -58,14 +58,14 @@ void VarianceShadowRenderer::render(void *ptr) {
 	child->render(ptr);
 
 	getFrameBuffer().bind();
-	ShaderCombinaison *sh = getVSMShader();
-	sh->setValue(ShaderCombinaison::Texture0, child->getShadowMap());
+	ShaderProgram *sh = getVSMShader();
+	sh->setValue(ShaderValue::SVTexture0, child->getShadowMap());
 	sh->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
-	blurs[1]->setValue(ShaderCombinaison::Texture0, temp->getAttachement(0));
-	blurs[0]->setValue(ShaderCombinaison::Texture0, getFrameBuffer().getAttachement(0));
+	blurs[1]->setValue(ShaderValue::SVTexture0, temp->getAttachement(0));
+	blurs[0]->setValue(ShaderValue::SVTexture0, getFrameBuffer().getAttachement(0));
 
 	temp->bind();
 	blurs[0]->bind();

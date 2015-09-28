@@ -35,7 +35,7 @@ enum TextureSampler
 	Default
 };
 
-class ShaderCombinaison;
+class ShaderProgram;
 class FrameBuffer;
 class Material;
 struct MaterialData;
@@ -47,7 +47,7 @@ class VertexArrayObject;
 
 namespace internal {
 	struct Material;
-	struct ShaderProgram;
+	struct ShaderProgramData;
 }
 
 class GLContext
@@ -58,7 +58,8 @@ class GLContext
 			MaxFboAttachements = 0,
 			MaxTextures = 1,
 			MaxVertexAttribs = 2,
-			Max = 3
+			MaxVaryings = 3,
+			Max = 4
 		};
 
 		static GLContext *getContext();
@@ -86,9 +87,7 @@ class GLContext
 		void auditGLState();
 		static bool checkGLError();
 
-		const ShaderCombinaison *getShader() const {
-			return shader;
-		}
+		ShaderProgram getShaderProgram() const;
 
 		const FrameBuffer *getFrameBuffer() const {
 			return frameBuffer;
@@ -110,7 +109,6 @@ class GLContext
 
 
 	private:
-		friend class ShaderCombinaison;
 		friend class ShaderProgram;
 		friend class FrameBuffer;
 		friend class Material;
@@ -124,8 +122,7 @@ class GLContext
 		math::Matrix4<> view;
 		math::Matrix4<> model;
 
-		const ShaderCombinaison *shader;
-		core::SmartPtr<internal::ShaderProgram> program;
+		core::SmartPtr<internal::ShaderProgramData> shader;
 		const FrameBuffer *frameBuffer;
 
 		FrameBufferPool *fbPool;

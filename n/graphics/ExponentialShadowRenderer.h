@@ -45,7 +45,7 @@ class ExponentialShadowRenderer : public ShadowRenderer
 	private:
 		ShadowRenderer *child;
 		float exponent;
-		ShaderCombinaison *blurs[2];
+		ShaderProgram *blurs[2];
 };
 
 

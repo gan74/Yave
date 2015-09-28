@@ -43,7 +43,7 @@ namespace internal {
 			}
 
 		protected:
-			friend class graphics::ShaderCombinaison;
+			friend class graphics::ShaderProgram;
 
 			template<typename T>
 			friend class VertexArrayObject;

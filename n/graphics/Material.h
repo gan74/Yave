@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/math/Vec.h>
 #include "Texture.h"
-#include "ShaderCombinaison.h"
+#include "ShaderProgram.h"
 
 //#define N_MATERIAL_FANCYNESS
 #define N_MATERIAL_CACHING

@@ -44,7 +44,7 @@ class CubeMap : public TextureBase<TextureCubeMap>
 		}
 
 	private:
-		friend class ShaderCombinaison;
+		friend class ShaderProgram;
 		friend class internal::TextureBinding;
 
 		void upload() const;

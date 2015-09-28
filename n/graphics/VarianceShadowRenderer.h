@@ -44,7 +44,7 @@ class VarianceShadowRenderer : public ShadowRenderer
 
 	private:
 		ShadowRenderer *child;
-		ShaderCombinaison *blurs[2];
+		ShaderProgram *blurs[2];
 };
 
 

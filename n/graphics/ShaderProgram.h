@@ -14,168 +14,102 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_SHADERPROGRAM
-#define N_GRAPHICS_SHADERPROGRAM
+#ifndef N_GRAPHICS_SHADERPROGRAM_H
+#define N_GRAPHICS_SHADERPROGRAM_H
 
-#include <n/core/Map.h>
-#include <n/core/SmartPtr.h>
+#include "Shader.h"
+#include "TextureBinding.h"
 
 namespace n {
 namespace graphics {
 
-enum ShaderType
-{
-	FragmentShader = 0,
-	VertexShader = 1,
-	GeometryShader = 2
-};
-
-
-template<ShaderType Type>
-class Shader;
-
-class ShaderCombinaison;
-
-
 namespace internal {
-	struct ShaderProgramCombinaison
+	struct ShaderProgramData
 	{
-		union
+		enum NullPolicy
 		{
-			struct
-			{
-				const Shader<FragmentShader> *frag;
-				const Shader<VertexShader> *vert;
-				const Shader<GeometryShader> *geom;
-			} shaders;
-			const void *ptrs[3];
+			Keep,
+			Replace
 		};
 
+		gl::GLuint handle;
+		ShaderBase *bases[3];
+		NullPolicy policies[3];
 
-		bool operator==(const ShaderProgramCombinaison &c) const {
-			for(uint i = 0; i != 3; i++) {
-				if(ptrs[i] != c.ptrs[i]) {
-					return false;
-				}
+
+		~ShaderProgramData() {
+			if(handle) {
+				gl::GLuint h = handle;
+				GLContext::getContext()->addGLTask([=]() { gl::glDeleteProgramPipelines(1, &h); });
 			}
-			return true;
-		}
-
-		bool operator!=(const ShaderProgramCombinaison &c) const {
-			return !operator==(c);
-		}
-
-		bool operator<(const ShaderProgramCombinaison &c) const {
-			for(uint i = 0; i != 3; i++) {
-				if(ptrs[i] != c.ptrs[i]) {
-					return ptrs[i] < c.ptrs[i];
-				}
-			}
-			return false;
-		}
-
-		bool operator>(const ShaderProgramCombinaison &c) const {
-			for(uint i = 0; i != 3; i++) {
-				if(ptrs[i] != c.ptrs[i]) {
-					return ptrs[i] > c.ptrs[i];
-				}
-			}
-			return false;
-		}
-
-		bool isNull() const {
-			for(uint i = 0; i != 3; i++) {
-				if(ptrs[i]) {
-					return false;
-				}
-			}
-			return false;
 		}
 	};
 
-	struct ShaderProgram : core::NonCopyable
-	{
-		ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom);
-		~ShaderProgram();
-
-		ShaderProgramCombinaison getCombinaison() const;
-
-		ShaderProgramCombinaison base;
-		core::Map<ShaderProgramCombinaison, ShaderCombinaison *> shaders;
-	};
 }
 
 class ShaderProgram
 {
-	typedef core::SmartPtr<internal::ShaderProgram> ShaderProgramPtr;
+	typedef internal::ShaderProgramData Data;
 	public:
-
 		enum StandardVertexShader
 		{
 			ProjectionShader = 0,
 			NoProjectionShader = 1
 		};
 
+
+		ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom = 0);
+		ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader std = ProjectionShader, Shader<GeometryShader> *geom = 0);
 		ShaderProgram();
-		ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert = 0, const Shader<GeometryShader> *geom = 0);
-		ShaderProgram(const Shader<FragmentShader> *frag, StandardVertexShader vert, const Shader<GeometryShader> *geom = 0);
+		~ShaderProgram();
 
-		const ShaderCombinaison *bind() const;
+		void bind() const;
+		void unbind() const;
+		void rebind() const;
 
-		bool isActive() const;
+		bool operator==(const ShaderProgram &p) const;
+		bool operator!=(const ShaderProgram &p) const;
+		bool operator<(const ShaderProgram &p) const;
 
-		static void setDefaultShader(const Shader<FragmentShader> *s);
-		static void setDefaultShader(const Shader<VertexShader> *s);
-		static void setDefaultShader(const Shader<GeometryShader> *s);
-
-		static bool isDefaultShader(const Shader<FragmentShader> *s);
-		static bool isDefaultShader(const Shader<VertexShader> *s);
-		static bool isDefaultShader(const Shader<GeometryShader> *s);
-
-
-		static Shader<VertexShader> *getStandardVertexShader(StandardVertexShader type = ProjectionShader);
-		static Shader<FragmentShader> *getStandardFragmentShader();
-
-		bool isDefaultProgram() const {
-			return ptr->base.isNull();
+		template<typename... Args>
+		void setValue(Args... args) const {
+			if(isCurrent()) {
+				for(uint i = 0; i != 3; i++) {
+					if(bound[i]) {
+						bound[i]->setValue(args...);
+					}
+				}
+			} else {
+				for(uint i = 0; i != 3; i++) {
+					if(data->bases[i]) {
+						data->bases[i]->setValue(args...);
+					}
+				}
+			}
 		}
 
-		bool operator==(const ShaderProgram &p) const {
-			return ptr->base == p.ptr->base;
-		}
 
-		bool operator!=(const ShaderProgram &p) const {
-			return ptr->base != p.ptr->base;
-		}
+		bool isCurrent() const;
 
-		bool operator<(const ShaderProgram &p) const {
-			return ptr->base < p.ptr->base;
-		}
 
-		bool operator>(const ShaderProgram &p) const {
-			return ptr->base > p.ptr->base;
-		}
-
-		template<ShaderType Type>
-		const Shader<Type> *getShader() const {
-			return reinterpret_cast<const Shader<Type> *>(ptr->base.ptrs[Type]);
-		}
+		static void bindStandards();
 
 	private:
 		friend class GLContext;
-		friend class ShaderCombinaison;
 
-		static const ShaderProgramPtr &getNullProgram();
-		static void rebind();
+		ShaderProgram(core::SmartPtr<Data> ptr);
 
-		ShaderProgram(const ShaderProgramPtr &p) : ptr(p) {
-		}
+		void setup() const;
 
-		ShaderProgramPtr ptr;
+		core::SmartPtr<Data> data;
+
+		static core::SmartPtr<ShaderProgram::Data> nullData;
+		static ShaderBase *bound[3];
 };
 
+
+
 }
 }
 
-#endif // N_GRAPHICS_SHADERPROGRAM
-
+#endif // N_GRAPHICS_SHADERPROGRAM_H

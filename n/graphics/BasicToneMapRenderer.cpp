@@ -15,7 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "BasicToneMapRenderer.h"
-#include "ShaderCombinaison.h"
+#include "ShaderProgram.h"
 #include "VertexArrayObject.h"
 #include <n/utils.h>
 
@@ -43,11 +43,11 @@ static const Material &getLumMaterial() {
 	return mat;
 }
 
-static ShaderCombinaison *getToneShader(bool debug = false) {
-	static ShaderCombinaison *shaders[2] = {0, 0};
+static ShaderProgram *getToneShader(bool debug = false) {
+	static ShaderProgram *shaders[2] = {0, 0};
 	if(!shaders[debug]) {
 		static core::String deb[2] = {"", "\n#define DEBUG\n"};
-		shaders[debug] = new ShaderCombinaison(new Shader<FragmentShader>(
+		shaders[debug] = new ShaderProgram(new Shader<FragmentShader>(
 			deb[debug] +
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
@@ -91,10 +91,10 @@ static ShaderCombinaison *getToneShader(bool debug = false) {
 	return shaders[debug];
 }
 
-static ShaderCombinaison *getLumShader() {
-	static ShaderCombinaison *shader = 0;
+static ShaderProgram *getLumShader() {
+	static ShaderProgram *shader = 0;
 	if(!shader) {
-		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+		shader = new ShaderProgram(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 
 			"uniform float logMin;"
@@ -118,10 +118,10 @@ static ShaderCombinaison *getLumShader() {
 }
 
 
-static ShaderCombinaison *getLogShader() {
-	static ShaderCombinaison *shader = 0;
+static ShaderProgram *getLogShader() {
+	static ShaderProgram *shader = 0;
 	if(!shader) {
-		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+		shader = new ShaderProgram(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"in vec2 n_TexCoord;"
 			"out float n_Out;"
@@ -141,10 +141,10 @@ static ShaderCombinaison *getLogShader() {
 	return shader;
 }
 
-static ShaderCombinaison *getDSShader() {
-	static ShaderCombinaison *shader = 0;
+static ShaderProgram *getDSShader() {
+	static ShaderProgram *shader = 0;
 	if(!shader) {
-		shader = new ShaderCombinaison(new Shader<FragmentShader>(
+		shader = new ShaderProgram(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"in vec2 n_TexCoord;"
 			"out float n_Out;"
@@ -179,8 +179,8 @@ static ShaderCombinaison *getDSShader() {
 }
 
 static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
-	ShaderCombinaison *sh = getLogShader();
-	sh->setValue(ShaderCombinaison::Texture0, in);
+	ShaderProgram *sh = getLogShader();
+	sh->setValue(ShaderValue::SVTexture0, in);
 	sh->bind();
 
 	buffers[0]->bind();
@@ -193,7 +193,7 @@ static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	bool last = false;
 	uint baseSize = buffers[0]->getSize().x();
 	while(baseSize != 2) {
-		sh->setValue(ShaderCombinaison::Texture0, buffers[last]->getAttachement(0));
+		sh->setValue(ShaderValue::SVTexture0, buffers[last]->getAttachement(0));
 		sh->setValue("scale", scale);
 		buffers[!last]->bind();
 		last = !last;
@@ -228,9 +228,9 @@ void BasicToneMapRenderer::render(void *ptr) {
 
 	double dt = std::min(float(timer.reset()), adaptation);
 
-	ShaderCombinaison *lumSh = getLumShader();
+	ShaderProgram *lumSh = getLumShader();
 	lumSh->bind();
-	lumSh->setValue(ShaderCombinaison::Texture0, lum);
+	lumSh->setValue(ShaderValue::SVTexture0, lum);
 	lumSh->setValue("logMin", log(range.x()));
 	lumSh->setValue("logMax", log(range.y()));
 	lumSh->setValue("blend", dt / adaptation);
@@ -243,12 +243,12 @@ void BasicToneMapRenderer::render(void *ptr) {
 		FrameBuffer::unbind();
 	}
 
-	ShaderCombinaison *sh = getToneShader(debug);
+	ShaderProgram *sh = getToneShader(debug);
 	sh->setValue("exposure", exposure);
 	sh->setValue("white", white);
 
-	sh->setValue(ShaderCombinaison::Texture0, child->getFrameBuffer().getAttachement(slot));
-	sh->setValue(ShaderCombinaison::Texture1, luma->getAttachement(0));
+	sh->setValue(ShaderValue::SVTexture0, child->getFrameBuffer().getAttachement(slot));
+	sh->setValue(ShaderValue::SVTexture1, luma->getAttachement(0));
 	sh->bind();
 
 	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
