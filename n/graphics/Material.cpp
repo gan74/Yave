@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Material.h"
 #include "VertexArrayObject.h"
 #include "FrameBuffer.h"
-#include "ShaderProgram.h"
+#include "ShaderInstance.h"
 
 #include <n/defines.h>
 
@@ -35,18 +35,22 @@ static MaterialData current;
 static typename MaterialData::BlendMode blendMode = MaterialData::None;
 
 
-N_FORCE_INLINE void setShaderParams(const ShaderProgram &sh, const MaterialData &restrict data) {
-	sh.setValue(ShaderValue::SVColor, data.color);
-	sh.setValue(ShaderValue::SVMetallic, data.metallic);
+N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const MaterialData &restrict data) {
+	if(!sh) {
+		return;
+	}
 
-	sh.setValue(ShaderValue::SVDiffuseMap, data.diffuse);
-	sh.setValue(ShaderValue::SVDiffuseMul, data.diffuse.isNull() ? 0.0 : 1.0);
+	sh->setValue(ShaderValue::SVColor, data.color);
+	sh->setValue(ShaderValue::SVMetallic, data.metallic);
 
-	sh.setValue(ShaderValue::SVNormalMap, data.normal);
-	sh.setValue(ShaderValue::SVNormalMul, data.normal.isNull() ? 0.0 : data.normalIntencity);
+	sh->setValue(ShaderValue::SVDiffuseMap, data.diffuse);
+	sh->setValue(ShaderValue::SVDiffuseMul, data.diffuse.isNull() ? 0.0 : 1.0);
 
-	sh.setValue(ShaderValue::SVRoughnessMap, data.roughness);
-	sh.setValue(ShaderValue::SVRoughnessMul, data.roughness.isNull() ? 0.0 : 1.0);
+	sh->setValue(ShaderValue::SVNormalMap, data.normal);
+	sh->setValue(ShaderValue::SVNormalMul, data.normal.isNull() ? 0.0 : data.normalIntencity);
+
+	sh->setValue(ShaderValue::SVRoughnessMap, data.roughness);
+	sh->setValue(ShaderValue::SVRoughnessMul, data.roughness.isNull() ? 0.0 : 1.0);
 
 
 	/*if(data.textures) {
@@ -57,8 +61,7 @@ N_FORCE_INLINE void setShaderParams(const ShaderProgram &sh, const MaterialData 
 }
 
 void fullBind(const MaterialData &restrict data) {
-	data.prog.bind();
-	setShaderParams(data.prog, data);
+	setShaderParams(data.prog.bind(), data);
 
 	if(data.depthTested) {
 		gl::glEnable(GL_DEPTH_TEST);
@@ -119,8 +122,7 @@ void Material::bind(uint flags) const {
 		}
 
 		if(!(flags & RenderFlag::NoShader)) {
-			data.prog.bind();
-			setShaderParams(data.prog, data);
+			setShaderParams(data.prog.bind(), data);
 		}
 		#ifdef N_MATERIAL_FANCYNESS
 		if(current.fancy || data.fancy) {

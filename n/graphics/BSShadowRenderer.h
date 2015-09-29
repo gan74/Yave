@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_BSSHADOWRENDERER
 
 #include "BufferedRenderer.h"
+#include "ShaderInstance.h"
 #include "ShadowRenderer.h"
 #include "FrameBufferPool.h"
 #include "GLContext.h"
@@ -70,7 +71,7 @@ class BSShadowRenderer : public ShadowRenderer
 
 	private:
 		ShadowRenderer *child;
-		ShaderProgram *blurs[2];
+		ShaderInstance *blurs[2];
 };
 
 

@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "StaticBuffer.h"
 #include "VertexAttribs.h"
 #include "Material.h"
+#include "ShaderInstance.h"
 
 namespace n {
 namespace graphics {
@@ -51,6 +52,7 @@ class VertexArrayObject : core::NonCopyable
 			mat.bind(renderFlags);
 			bind();
 			bindAttribs(attributes);
+			ShaderInstance::getCurrent()->bindStandards();
 			gl::glDrawElementsInstancedBaseVertex(GL_TRIANGLES, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
 		}
 

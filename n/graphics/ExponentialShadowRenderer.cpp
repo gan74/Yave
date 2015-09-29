@@ -20,11 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-ShaderProgram *getExpShader(float exp) {
-	core::Map<float, ShaderProgram *> shaders;
-	ShaderProgram *sh = shaders.get(exp, 0);
+ShaderInstance *getExpShader(float exp) {
+	core::Map<float, ShaderInstance *> shaders;
+	ShaderInstance *sh = shaders.get(exp, 0);
 	if(!sh) {
-		sh = new ShaderProgram(new Shader<FragmentShader>(
+		sh = new ShaderInstance(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 
 			"in vec2 n_TexCoord;"
@@ -55,7 +55,7 @@ void ExponentialShadowRenderer::render(void *ptr) {
 	child->render(ptr);
 
 	getFrameBuffer().bind();
-	ShaderProgram *sh = getExpShader(exponent);
+	ShaderInstance *sh = getExpShader(exponent);
 	sh->setValue(ShaderValue::SVTexture0, child->getShadowMap());
 	sh->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);

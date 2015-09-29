@@ -20,10 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-ShaderProgram *getVSMShader() {
-	static ShaderProgram *shader = 0;
+ShaderInstance *getVSMShader() {
+	static ShaderInstance *shader = 0;
 	if(!shader) {
-		shader = new ShaderProgram(new Shader<FragmentShader>(
+		shader = new ShaderInstance(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 
 			"in vec2 n_TexCoord;"
@@ -58,7 +58,7 @@ void VarianceShadowRenderer::render(void *ptr) {
 	child->render(ptr);
 
 	getFrameBuffer().bind();
-	ShaderProgram *sh = getVSMShader();
+	ShaderInstance *sh = getVSMShader();
 	sh->setValue(ShaderValue::SVTexture0, child->getShadowMap());
 	sh->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);

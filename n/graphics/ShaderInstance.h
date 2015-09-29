@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_SHADERINSTANCE_H
 
 #include "Shader.h"
+#include "ShaderProgram.h"
 
 namespace n {
 namespace graphics {
@@ -51,10 +52,17 @@ class ShaderInstance : core::NonCopyable
 		};
 
 	public:
-		ShaderInstance(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom);
+		ShaderInstance(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom = 0);
+		ShaderInstance(Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vert, Shader<GeometryShader> *geom = 0);
 		~ShaderInstance();
 
 		void bind();
+		void rebind();
+		void unbind();
+
+		void bindStandards() const;
+
+		static const ShaderInstance *getCurrent();
 
 		void setValue(UniformAddr addr, int a) const;
 		void setValue(UniformAddr addr, uint a) const;
@@ -89,8 +97,11 @@ class ShaderInstance : core::NonCopyable
 		UniformAddr getAddr(const core::String &name) const;
 		UniformInfo getInfo(const core::String &name) const;
 
+
+
 	private:
 		friend class ShaderProgram;
+		friend class GLContext;
 
 		void compile();
 		void getUniforms();

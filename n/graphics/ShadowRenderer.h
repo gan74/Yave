@@ -26,7 +26,7 @@ namespace graphics {
 class BoxLight;
 class SpotLight;
 
-ShaderProgram *createBlurShader(bool vertical, uint hSteps, float var = 2.0);
+ShaderInstance *createBlurShader(bool vertical, uint hSteps, float var = 2.0);
 
 class ShadowRenderer : public BufferedRenderer
 {

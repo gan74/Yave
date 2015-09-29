@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Shader.h"
 #include "TextureBinding.h"
-#include "ShaderInstance.h"
 
 namespace n {
 namespace graphics {
@@ -27,14 +26,7 @@ namespace graphics {
 namespace internal {
 	struct ShaderProgramData
 	{
-		enum NullPolicy
-		{
-			Keep,
-			Replace
-		};
-
 		ShaderBase *bases[3];
-		NullPolicy policies[3];
 	};
 }
 
@@ -44,7 +36,7 @@ class ShaderProgram
 	typedef internal::ShaderProgramData Data;
 
 
-	class UniformBase : core::NonCopyable
+	/*class UniformBase : core::NonCopyable
 	{
 		public:
 			virtual ~UniformBase() {
@@ -68,7 +60,7 @@ class ShaderProgram
 
 			U name;
 			T data;
-	};
+	};*/
 
 	public:
 		enum StandardVertexShader
@@ -77,6 +69,8 @@ class ShaderProgram
 			NoProjectionShader = 1
 		};
 
+		static Shader<VertexShader> *getStandardVertexShader(StandardVertexShader std = ShaderProgram::ProjectionShader);
+
 
 		ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom = 0);
 		ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader std = ProjectionShader, Shader<GeometryShader> *geom = 0);
@@ -84,9 +78,9 @@ class ShaderProgram
 		~ShaderProgram();
 
 
-		void bind() const;
+		const ShaderInstance *bind() const;
+		const ShaderInstance *rebind() const;
 		void unbind() const;
-		void rebind() const;
 
 		bool operator==(const ShaderProgram &p) const;
 		bool operator!=(const ShaderProgram &p) const;
@@ -94,7 +88,7 @@ class ShaderProgram
 
 		bool isCurrent() const;
 
-		template<typename T>
+		/*template<typename T>
 		void setValue(const core::String &name, const T &t) const {
 			if(isCurrent()) {
 				ShaderInstance::current->setValue(name, t);
@@ -112,7 +106,7 @@ class ShaderProgram
 				UniformBase *b = new Uniform<ShaderValue, T>(name, t);
 				uniforms.append(b);
 			}
-		}
+		}*/
 
 
 	private:
@@ -122,7 +116,7 @@ class ShaderProgram
 
 		core::SmartPtr<Data> data;
 
-		mutable core::Array<UniformBase *> uniforms;
+		//mutable core::Array<UniformBase *> uniforms;
 
 		static core::SmartPtr<ShaderProgram::Data> nullData;
 };

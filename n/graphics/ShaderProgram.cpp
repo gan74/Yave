@@ -21,9 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-core::SmartPtr<ShaderProgram::Data> ShaderProgram::nullData = new ShaderProgram::Data{{0}, {ShaderProgram::Data::Replace, ShaderProgram::Data::Replace, ShaderProgram::Data::Replace}};
-
-Shader<VertexShader> *getStandardVertexShader(ShaderProgram::StandardVertexShader type = ShaderProgram::ProjectionShader) {
+Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::StandardVertexShader type) {
 	static Shader<VertexShader> **def = 0;
 	if(!def) {
 
@@ -93,6 +91,7 @@ Shader<FragmentShader> *getDefaultFrag() {
 					"uniform sampler2D n_DiffuseMap;"
 
 					"in vec2 n_TexCoord;"
+					"in vec3 n_Normal;"
 
 					"void main() {"
 						"vec4 color = n_Color * mix(vec4(1.0), texture(n_DiffuseMap, n_TexCoord), n_DiffuseMul);"
@@ -102,7 +101,11 @@ Shader<FragmentShader> *getDefaultFrag() {
 }
 
 
-ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : data(new Data{{frag, vert, geom}, {Data::Replace, Data::Replace, Data::Replace}}) {
+
+core::SmartPtr<ShaderProgram::Data> ShaderProgram::nullData = new ShaderProgram::Data{{0}};
+
+
+ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : data(new Data{{frag, vert, geom}}) {
 }
 
 ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader std, Shader<GeometryShader> *geom) : ShaderProgram(frag, getStandardVertexShader(std), geom) {
@@ -119,44 +122,36 @@ ShaderProgram::~ShaderProgram() {
 
 
 bool ShaderProgram::isCurrent() const {
-	return GLContext::getContext()->shader == data;
+	return GLContext::getContext()->program == data;
 }
 
-void ShaderProgram::bind() const {
-	if(GLContext::getContext()->shader != data) {
-		rebind();
+const ShaderInstance *ShaderProgram::bind() const {
+	if(GLContext::getContext()->program != data) {
+		return rebind();
 	}
+	return ShaderInstance::getCurrent();
 }
 
 
 
-void ShaderProgram::rebind() const {
+const ShaderInstance *ShaderProgram::rebind() const {
 	Shader<FragmentShader> *frag = (Shader<FragmentShader> *)(data->bases[0] ? data->bases[0] : ShaderBase::currents[0]);
 	Shader<VertexShader> *vert = (Shader<VertexShader> *)(data->bases[1] ? data->bases[1] : ShaderBase::currents[1]);
 	Shader<GeometryShader> *geom = (Shader<GeometryShader> *)(data->bases[2] ? data->bases[2] : ShaderBase::currents[2]);
+	frag = frag ? frag : getDefaultFrag();
+	vert = vert ? vert : getStandardVertexShader();
+
 	ShaderInstance *inst = GLContext::getContext()->getShaderFactory().get(frag, vert, geom);
-	ShaderInstance::current = inst;
-	if(inst) {
-		inst->bind();
-		for(UniformBase *u : uniforms) {
-			delete u;
-		}
-	}  else {
-		for(UniformBase *u : uniforms) {
-			u->set(inst);
-			delete u;
-		}
-	}
-	uniforms.clear();
+	inst->bind();
+	GLContext::getContext()->program = data;
+	return inst;
 }
 
 void ShaderProgram::unbind() const {
-	if(GLContext::getContext()->shader != data) {
+	if(GLContext::getContext()->program != data) {
 		ShaderProgram(nullData).bind();
 	}
 }
-
-
 
 bool ShaderProgram::operator==(const ShaderProgram &p) const {
 	for(uint i = 0; i != 3; i++) {
@@ -179,26 +174,6 @@ bool ShaderProgram::operator!=(const ShaderProgram &p) const {
 bool ShaderProgram::operator<(const ShaderProgram &p) const {
 	return data < p.data;
 }
-
-
-/*void ShaderProgram::bindStandards() {
-	setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
-	setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());
-	setValue("n_ViewportSize", math::Vec2(GLContext::getContext()->getViewport()));
-	setValue("n_ModelMatrix", GLContext::getContext()->getModelMatrix());
-	setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
-}
-
-
-
-ShaderProgram::UniformInfo ShaderProgram::getInfo(const core::String &name) const {
-	return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
-}
-
-ShaderProgram::UniformAddr ShaderProgram::getAddr(const core::String &name) const {
-	return getInfo(name).addr;
-}*/
-
 
 }
 }

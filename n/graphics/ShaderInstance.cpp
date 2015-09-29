@@ -25,8 +25,12 @@ namespace graphics {
 ShaderInstance *ShaderInstance::current = 0;
 
 
-ShaderInstance::ShaderInstance(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : handle(0), bases{frag, vert, geom} {
+ShaderInstance::ShaderInstance(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : handle(0), samplerCount(0), bases{frag, vert, geom} {
 	compile();
+}
+
+ShaderInstance::ShaderInstance(Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vert, Shader<GeometryShader> *geom) : ShaderInstance(frag, ShaderProgram::getStandardVertexShader(vert), geom) {
+
 }
 
 ShaderInstance::~ShaderInstance() {
@@ -36,8 +40,26 @@ ShaderInstance::~ShaderInstance() {
 	}
 }
 
+const ShaderInstance *ShaderInstance::getCurrent() {
+	return current;
+}
+
 void ShaderInstance::bind() {
+	GLContext::getContext()->program = 0;
+	if(current != this) {
+		rebind();
+	}
+}
+
+void ShaderInstance::rebind() {
+	GLContext::getContext()->program = 0;
 	gl::glUseProgram(handle);
+	current = this;
+	//bindStandards();
+}
+
+void ShaderInstance::unbind() {
+	fatal("ll");
 }
 
 void ShaderInstance::compile() {
@@ -108,6 +130,13 @@ ShaderInstance::UniformAddr ShaderInstance::computeStandardIndex(const core::Str
 	return UniformAddr(GL_INVALID_INDEX);
 }
 
+void ShaderInstance::bindStandards() const {
+	setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
+	setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());
+	setValue("n_ViewportSize", math::Vec2(GLContext::getContext()->getViewport()));
+	setValue("n_ModelMatrix", GLContext::getContext()->getModelMatrix());
+	setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
+}
 
 void ShaderInstance::setValue(UniformAddr addr, int a) const {
 	gl::glProgramUniform1i(handle, addr, a);
@@ -173,8 +202,7 @@ ShaderInstance::UniformAddr ShaderInstance::getAddr(const core::String &name) co
 	return getInfo(name).addr;
 }
 
-ShaderInstance::UniformInfo ShaderInstance::getInfo(const core::String &name) const {
-	return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
+ShaderInstance::UniformInfo ShaderInstance::getInfo(const core::String &name) const {	return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
 }
 
 }

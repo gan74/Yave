@@ -93,7 +93,7 @@ void GLContext::finishTasks() {
 	}
 }
 
-GLContext::GLContext() : shader(0), frameBuffer(0), fbPool(new FrameBufferPool()), shFactory(new ShaderInstanceFactory()), viewport(1024, 768), screen(0) {
+GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool()), shFactory(new ShaderInstanceFactory()), viewport(1024, 768), screen(0) {
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
@@ -182,7 +182,6 @@ void GLContext::setViewport(const math::Vec2ui &v) {
 	if(!frameBuffer) {
 		gl::glViewport(0, 0, viewport.x(), viewport.y());
 	}
-	ShaderProgram(shader).setValue("n_ViewportSize", math::Vec2(viewport));
 }
 
 math::Vec2ui GLContext::getViewport() const {
@@ -207,9 +206,6 @@ void GLContext::setModelMatrix(const math::Matrix4<> &m) {
 	matrixBuffer->set(model, 0);
 	matrixBuffer->bind(0);
 	#else
-	if(shader) {
-		ShaderProgram(shader).setValue("n_ModelMatrix", model);
-	}
 	#endif
 }
 
@@ -218,10 +214,6 @@ void GLContext::setViewMatrix(const math::Matrix4<> &m) {
 		return;
 	}
 	view = m;
-	if(shader) {
-		ShaderProgram(shader).setValue("n_ViewMatrix", m);
-		ShaderProgram(shader).setValue("n_ViewProjectionMatrix", projection * m);
-	}
 }
 
 void GLContext::setProjectionMatrix(const math::Matrix4<> &m) {
@@ -229,10 +221,6 @@ void GLContext::setProjectionMatrix(const math::Matrix4<> &m) {
 		return;
 	}
 	projection = m;
-	if(shader) {
-		ShaderProgram(shader).setValue("n_ProjectionMatrix", m);
-		ShaderProgram(shader).setValue("n_ViewProjectionMatrix", m * view);
-	}
 }
 
 const math::Matrix4<> &GLContext::getProjectionMatrix() const {
@@ -255,7 +243,7 @@ const VertexArrayObject<float> &GLContext::getScreen() const {
 }
 
 ShaderProgram GLContext::getShaderProgram() const {
-	return ShaderProgram(shader);
+	return ShaderProgram(program);
 }
 
 

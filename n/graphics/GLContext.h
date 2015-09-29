@@ -115,6 +115,7 @@ class GLContext
 
 	private:
 		friend class ShaderProgram;
+		friend class ShaderInstance;
 		friend class FrameBuffer;
 		friend class Material;
 
@@ -127,7 +128,7 @@ class GLContext
 		math::Matrix4<> view;
 		math::Matrix4<> model;
 
-		core::SmartPtr<internal::ShaderProgramData> shader;
+		core::SmartPtr<internal::ShaderProgramData> program;
 		const FrameBuffer *frameBuffer;
 
 		FrameBufferPool *fbPool;
