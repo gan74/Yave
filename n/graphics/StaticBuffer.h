@@ -28,7 +28,7 @@ namespace n {
 namespace graphics {
 
 namespace internal {
-	static gl::GLuint &getCurrentVao() {
+	inline gl::GLuint &getCurrentVao() {
 		static gl::GLuint current = 0;
 		return current;
 	}
