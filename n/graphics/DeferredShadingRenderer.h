@@ -56,7 +56,7 @@ class DeferredShadingRenderer : public BufferedRenderer
 
 	private:
 		template<typename T>
-		friend ShaderInstance *lightPass(const FrameData *data, DeferredShadingRenderer *renderer);
+		friend ShaderCombinaison *lightPass(const FrameData *data, DeferredShadingRenderer *renderer);
 
 		GBufferRenderer *child;
 		LightingDebugMode debugMode;

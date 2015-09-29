@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-ShaderInstance *createBlurShader(bool vertical, uint hSteps, float var) {
+ShaderCombinaison *createBlurShader(bool vertical, uint hSteps, float var) {
 	double mul = 1.0 / sqrt(2.0 * math::pi * var * var);
 	double tot = 0.0;
 	core::String a = vertical ? "0, " : "";
@@ -34,7 +34,7 @@ ShaderInstance *createBlurShader(bool vertical, uint hSteps, float var) {
 		tot += w;
 		acc = acc + "acc += " + w + " * textureOffset(n_0, n_TexCoord, ivec2(" + a + i + b + "));";
 	}
-	return new ShaderInstance(new Shader<FragmentShader>(
+	return new ShaderCombinaison(new Shader<FragmentShader>(
 		"uniform sampler2D n_0;"
 		"out vec4 n_Out;"
 		"in vec2 n_TexCoord;"

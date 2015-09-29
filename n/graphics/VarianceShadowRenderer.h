@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "BufferedRenderer.h"
 #include "ShadowRenderer.h"
-#include "ShaderInstance.h"
 
 namespace n {
 namespace graphics {
@@ -45,7 +44,7 @@ class VarianceShadowRenderer : public ShadowRenderer
 
 	private:
 		ShadowRenderer *child;
-		ShaderInstance *blurs[2];
+		ShaderCombinaison *blurs[2];
 };
 
 

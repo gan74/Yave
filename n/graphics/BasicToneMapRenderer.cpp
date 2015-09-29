@@ -43,11 +43,11 @@ static const Material &getLumMaterial() {
 	return mat;
 }
 
-static ShaderInstance *getToneShader(bool debug = false) {
-	static ShaderInstance *shaders[2] = {0, 0};
+static ShaderCombinaison *getToneShader(bool debug = false) {
+	static ShaderCombinaison *shaders[2] = {0, 0};
 	if(!shaders[debug]) {
 		static core::String deb[2] = {"", "\n#define DEBUG\n"};
-		shaders[debug] = new ShaderInstance(new Shader<FragmentShader>(
+		shaders[debug] = new ShaderCombinaison(new Shader<FragmentShader>(
 			deb[debug] +
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
@@ -91,10 +91,10 @@ static ShaderInstance *getToneShader(bool debug = false) {
 	return shaders[debug];
 }
 
-static ShaderInstance *getLumShader() {
-	static ShaderInstance *shader = 0;
+static ShaderCombinaison *getLumShader() {
+	static ShaderCombinaison *shader = 0;
 	if(!shader) {
-		shader = new ShaderInstance(new Shader<FragmentShader>(
+		shader = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 
 			"uniform float logMin;"
@@ -118,10 +118,10 @@ static ShaderInstance *getLumShader() {
 }
 
 
-static ShaderInstance *getLogShader() {
-	static ShaderInstance *shader = 0;
+static ShaderCombinaison *getLogShader() {
+	static ShaderCombinaison *shader = 0;
 	if(!shader) {
-		shader = new ShaderInstance(new Shader<FragmentShader>(
+		shader = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"in vec2 n_TexCoord;"
 			"out float n_Out;"
@@ -141,10 +141,10 @@ static ShaderInstance *getLogShader() {
 	return shader;
 }
 
-static ShaderInstance *getDSShader() {
-	static ShaderInstance *shader = 0;
+static ShaderCombinaison *getDSShader() {
+	static ShaderCombinaison *shader = 0;
 	if(!shader) {
-		shader = new ShaderInstance(new Shader<FragmentShader>(
+		shader = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 			"in vec2 n_TexCoord;"
 			"out float n_Out;"
@@ -179,8 +179,8 @@ static ShaderInstance *getDSShader() {
 }
 
 static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
-	ShaderInstance *sh = getLogShader();
-	sh->setValue(ShaderValue::SVTexture0, in);
+	ShaderCombinaison *sh = getLogShader();
+	sh->setValue(SVTexture0, in);
 	sh->bind();
 
 	buffers[0]->bind();
@@ -193,7 +193,7 @@ static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	bool last = false;
 	uint baseSize = buffers[0]->getSize().x();
 	while(baseSize != 2) {
-		sh->setValue(ShaderValue::SVTexture0, buffers[last]->getAttachement(0));
+		sh->setValue(SVTexture0, buffers[last]->getAttachement(0));
 		sh->setValue("scale", scale);
 		buffers[!last]->bind();
 		last = !last;
@@ -228,9 +228,9 @@ void BasicToneMapRenderer::render(void *ptr) {
 
 	double dt = std::min(float(timer.reset()), adaptation);
 
-	ShaderInstance *lumSh = getLumShader();
+	ShaderCombinaison *lumSh = getLumShader();
 	lumSh->bind();
-	lumSh->setValue(ShaderValue::SVTexture0, lum);
+	lumSh->setValue(SVTexture0, lum);
 	lumSh->setValue("logMin", log(range.x()));
 	lumSh->setValue("logMax", log(range.y()));
 	lumSh->setValue("blend", dt / adaptation);
@@ -243,12 +243,12 @@ void BasicToneMapRenderer::render(void *ptr) {
 		FrameBuffer::unbind();
 	}
 
-	ShaderInstance *sh = getToneShader(debug);
+	ShaderCombinaison *sh = getToneShader(debug);
 	sh->setValue("exposure", exposure);
 	sh->setValue("white", white);
 
-	sh->setValue(ShaderValue::SVTexture0, child->getFrameBuffer().getAttachement(slot));
-	sh->setValue(ShaderValue::SVTexture1, luma->getAttachement(0));
+	sh->setValue(SVTexture0, child->getFrameBuffer().getAttachement(slot));
+	sh->setValue(SVTexture1, luma->getAttachement(0));
 	sh->bind();
 
 	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);

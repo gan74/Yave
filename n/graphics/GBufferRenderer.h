@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "BufferedRenderer.h"
 #include "SceneRenderer.h"
-#include "ShaderProgram.h"
+#include "ShaderInstance.h"
 #include "Shader.h"
 
 namespace n {

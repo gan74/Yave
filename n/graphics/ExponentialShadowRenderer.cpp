@@ -20,11 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-ShaderInstance *getExpShader(float exp) {
-	core::Map<float, ShaderInstance *> shaders;
-	ShaderInstance *sh = shaders.get(exp, 0);
+ShaderCombinaison *getExpShader(float exp) {
+	core::Map<float, ShaderCombinaison *> shaders;
+	ShaderCombinaison *sh = shaders.get(exp, 0);
 	if(!sh) {
-		sh = new ShaderInstance(new Shader<FragmentShader>(
+		sh = new ShaderCombinaison(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
 
 			"in vec2 n_TexCoord;"
@@ -55,15 +55,15 @@ void ExponentialShadowRenderer::render(void *ptr) {
 	child->render(ptr);
 
 	getFrameBuffer().bind();
-	ShaderInstance *sh = getExpShader(exponent);
-	sh->setValue(ShaderValue::SVTexture0, child->getShadowMap());
+	ShaderCombinaison *sh = getExpShader(exponent);
+	sh->setValue(SVTexture0, child->getShadowMap());
 	sh->bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
 	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::R32F);
 
-	blurs[1]->setValue(ShaderValue::SVTexture0, temp->getAttachement(0));
-	blurs[0]->setValue(ShaderValue::SVTexture0, getFrameBuffer().getAttachement(0));
+	blurs[1]->setValue(SVTexture0, temp->getAttachement(0));
+	blurs[0]->setValue(SVTexture0, getFrameBuffer().getAttachement(0));
 
 	temp->bind();
 	blurs[0]->bind();

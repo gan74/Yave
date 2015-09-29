@@ -54,6 +54,9 @@ void ShaderInstance::bind() {
 void ShaderInstance::rebind() {
 	GLContext::getContext()->program = 0;
 	gl::glUseProgram(handle);
+	for(uint i = 0; i != samplerCount; i++) {
+		bindings[i].bind(i);
+	}
 	current = this;
 	//bindStandards();
 }
