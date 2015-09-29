@@ -59,7 +59,8 @@ void ShaderInstance::rebind() {
 }
 
 void ShaderInstance::unbind() {
-	fatal("ll");
+	current = 0;
+	internal::rebindProgram();
 }
 
 void ShaderInstance::compile() {

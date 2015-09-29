@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 		l->setForward(Vec3(0, 0, -1));
 		l->setPosition(Vec3(0, 0, 10));
 		l->setIntensity(5);
-		//l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
+		l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
 		scene.insert(l);
 	}
 
@@ -75,12 +75,11 @@ int main(int argc, char **argv) {
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
-	/*Renderer *renderers[] {new FrameBufferRenderer(ri),
+	Renderer *renderers[] {new FrameBufferRenderer(ri),
 						   new FrameBufferRenderer(gRe, 0),
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2),
-						   tone = new BasicToneMapRenderer(ri)};*/
-	Renderer *renderers[] = {sceRe};
+						   tone = new BasicToneMapRenderer(ri)};
 
 	Timer timer;
 	Timer total;

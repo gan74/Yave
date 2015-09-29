@@ -114,7 +114,7 @@ ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader 
 ShaderProgram::ShaderProgram() : data(nullData) {
 }
 
-ShaderProgram::ShaderProgram(core::SmartPtr<Data> ptr) : data(ptr) {
+ShaderProgram::ShaderProgram(core::SmartPtr<Data> ptr) : data(ptr ? ptr : nullData) {
 }
 
 ShaderProgram::~ShaderProgram() {
