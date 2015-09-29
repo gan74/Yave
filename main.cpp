@@ -3,6 +3,7 @@
 #include "main.h"
 
 int main(int argc, char **argv) {
+
 	SDL_Window *win = createWindow();
 
 	if(argc > 1 && argv[1] == String("--no-debug")) {

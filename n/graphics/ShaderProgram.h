@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Shader.h"
 #include "TextureBinding.h"
+#include "ShaderInstance.h"
 
 namespace n {
 namespace graphics {
@@ -32,24 +33,43 @@ namespace internal {
 			Replace
 		};
 
-		gl::GLuint handle;
 		ShaderBase *bases[3];
 		NullPolicy policies[3];
-
-
-		~ShaderProgramData() {
-			if(handle) {
-				gl::GLuint h = handle;
-				GLContext::getContext()->addGLTask([=]() { gl::glDeleteProgramPipelines(1, &h); });
-			}
-		}
 	};
-
 }
+
 
 class ShaderProgram
 {
 	typedef internal::ShaderProgramData Data;
+
+
+	class UniformBase : core::NonCopyable
+	{
+		public:
+			virtual ~UniformBase() {
+			}
+
+			virtual void set(ShaderInstance *inst) = 0;
+	};
+
+
+
+	template<typename U, typename T>
+	class Uniform : public UniformBase
+	{
+		public:
+			Uniform(U u, T t) : name(u), data(t) {
+			}
+
+			virtual void set(ShaderInstance *inst) override {
+				inst->setValue(name, data);
+			}
+
+			U name;
+			T data;
+	};
+
 	public:
 		enum StandardVertexShader
 		{
@@ -63,6 +83,7 @@ class ShaderProgram
 		ShaderProgram();
 		~ShaderProgram();
 
+
 		void bind() const;
 		void unbind() const;
 		void rebind() const;
@@ -71,40 +92,39 @@ class ShaderProgram
 		bool operator!=(const ShaderProgram &p) const;
 		bool operator<(const ShaderProgram &p) const;
 
-		template<typename... Args>
-		void setValue(Args... args) const {
+		bool isCurrent() const;
+
+		template<typename T>
+		void setValue(const core::String &name, const T &t) const {
 			if(isCurrent()) {
-				for(uint i = 0; i != 3; i++) {
-					if(bound[i]) {
-						bound[i]->setValue(args...);
-					}
-				}
+				ShaderInstance::current->setValue(name, t);
 			} else {
-				for(uint i = 0; i != 3; i++) {
-					if(data->bases[i]) {
-						data->bases[i]->setValue(args...);
-					}
-				}
+				UniformBase *b = new Uniform<core::String, T>(name, t);
+				uniforms.append(b);
 			}
 		}
 
+		template<typename T>
+		void setValue(ShaderValue name, const T &t) const {
+			if(isCurrent()) {
+				ShaderInstance::current->setValue(name, t);
+			} else {
+				UniformBase *b = new Uniform<ShaderValue, T>(name, t);
+				uniforms.append(b);
+			}
+		}
 
-		bool isCurrent() const;
-
-
-		static void bindStandards();
 
 	private:
 		friend class GLContext;
 
 		ShaderProgram(core::SmartPtr<Data> ptr);
 
-		void setup() const;
-
 		core::SmartPtr<Data> data;
 
+		mutable core::Array<UniformBase *> uniforms;
+
 		static core::SmartPtr<ShaderProgram::Data> nullData;
-		static ShaderBase *bound[3];
 };
 
 

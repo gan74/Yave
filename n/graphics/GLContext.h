@@ -40,6 +40,7 @@ class FrameBuffer;
 class Material;
 struct MaterialData;
 struct FrameBufferPool;
+class ShaderInstanceFactory;
 
 template<typename T>
 class VertexArrayObject;
@@ -101,6 +102,10 @@ class GLContext
 			return *fbPool;
 		}
 
+		ShaderInstanceFactory &getShaderFactory() const {
+			return *shFactory;
+		}
+
 		TextureSampler getDefaultSampler() {
 			return TextureSampler::Trilinear;
 		}
@@ -126,6 +131,7 @@ class GLContext
 		const FrameBuffer *frameBuffer;
 
 		FrameBufferPool *fbPool;
+		ShaderInstanceFactory *shFactory;
 
 		int hwInts[Max];
 

@@ -32,6 +32,7 @@ namespace n {
 namespace graphics {
 
 class ShaderProgram;
+class ShaderInstance;
 class ShaderBase;
 
 enum ShaderType
@@ -98,16 +99,6 @@ class ShaderCompilationException : public std::exception
 class ShaderBase : core::NonCopyable
 {
 	public:
-		typedef gl::GLint UniformAddr;
-
-	private:
-		struct UniformInfo
-		{
-			UniformAddr addr;
-			uint size;
-		};
-
-	public:
 		~ShaderBase();
 
 		const core::String &getLogs() const;
@@ -115,36 +106,6 @@ class ShaderBase : core::NonCopyable
 		uint getVersion() const;
 		bool isCurrent() const;
 		ShaderType getType() const;
-		UniformAddr getAddr(const core::String &name) const;
-
-		template<typename T, typename... Args>
-		bool setValue(const core::String &name, const T &t, Args... args) const {
-			UniformAddr i = getAddr(name);
-			if(i != UniformAddr(GL_INVALID_INDEX)) {
-				setValue(i, t, args...);
-				return true;
-			}
-			return false;
-		}
-
-		template<typename T, typename... Args>
-		bool setValue(ShaderValue v, const T &t, Args... args) const {
-			return setValue(ShaderValueName[v], t, args...);
-		}
-
-		void setValue(UniformAddr addr, int a) const;
-		void setValue(UniformAddr addr, uint a) const;
-		void setValue(UniformAddr addr, float f) const;
-		void setValue(UniformAddr addr, double f) const;
-		void setValue(UniformAddr addr, const math::Vec2i &v) const;
-		void setValue(UniformAddr addr, const math::Vec3i &v) const;
-		void setValue(UniformAddr addr, const math::Vec2 &v) const;
-		void setValue(UniformAddr addr, const math::Vec3 &v) const;
-		void setValue(UniformAddr addr, const math::Vec4 &v) const;
-		void setValue(UniformAddr addr, const math::Matrix2<float> &m) const;
-		void setValue(UniformAddr addr, const math::Matrix3<float> &m) const;
-		void setValue(UniformAddr addr, const math::Matrix4<float> &m) const;
-		void setValue(UniformAddr slot, const Texture &t, TextureSampler sampler = TextureSampler::Default) const;
 
 		#ifdef N_SHADER_SRC
 		const core::String &getSrc() const {
@@ -152,25 +113,17 @@ class ShaderBase : core::NonCopyable
 		}
 		#endif
 
-
-		void bindStandards();
-
 	protected:
+		friend class graphics::ShaderInstance;
 		friend class graphics::ShaderProgram;
 
 		ShaderBase(ShaderType t);
 
-		UniformInfo getInfo(const core::String &name) const;
 		uint load(core::String src, uint vers);
 		core::String parse(core::String src, uint vers);
-		void getUniforms();
-
 		ShaderType type;
 		uint version;
 		gl::GLuint handle;
-		core::Hash<core::String, UniformInfo> uniformsInfo;
-		uint samplerCount;
-		internal::TextureBinding *bindings;
 
 		core::String logs;
 

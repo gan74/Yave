@@ -65,7 +65,7 @@ class Texture : public TextureBase<Texture2D>
 		static bool isHWSupported(ImageFormat format);
 
 	private:
-		friend class ShaderBase;
+		friend class ShaderInstance;
 		friend class FrameBuffer;
 		friend class internal::TextureBinding;
 		friend class CubeMap;

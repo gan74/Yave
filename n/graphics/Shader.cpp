@@ -36,46 +36,27 @@ uint ShaderBase::load(core::String src, uint vers) {
 	#ifdef N_SHADER_SRC
 	source = src;
 	#endif
-
 	gl::GLenum glType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
-
-	const char *data = src.toChar();
-	handle = gl::glCreateShaderProgramv(glType[type], 1, &data);
+	handle = gl::glCreateShader(glType[type]);
+	const char *str = src.toChar();
+	gl::glShaderSource(handle, 1, &str, 0);
+	gl::glCompileShader(handle);
 	int res = 0;
-	gl::glGetProgramiv(handle, GL_LINK_STATUS, &res);
-	if(!res || !handle) {
+	gl::glGetShaderiv(handle, GL_COMPILE_STATUS, &res);
+	if(!res) {
 		int size = 0;
-		gl::glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &size);
+		gl::glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &size);
 		char *msg = new char[size + 1];
-		gl::glGetProgramInfoLog(handle, size, &res, msg);
-		gl::glDeleteProgram(handle);
+		gl::glGetShaderInfoLog(handle, size, &size, msg);
+		gl::glDeleteShader(handle);
 		handle = 0;
 		msg[size] = '\0';
 		logs = msg;
 		delete[] msg;
 		throw ShaderCompilationException(logs);
 	}
-	getUniforms();
 	return vers;
 }
-
-static core::String getDefines() {
-	uint max = GLContext::getContext()->getHWInt(GLContext::MaxVaryings);
-	core::String varyings[] = {"n_Position",
-							   "n_ScreenPosition",
-							   "n_Normal",
-							   "n_Tangent",
-							   "n_Binormal",
-							   "n_View",
-							   "n_TexCoord"};
-
-	core::String defs;
-	for(uint i = 0; i != sizeof(varyings) / sizeof(varyings[0]); i++) {
-		defs += "\n#define " + varyings[i] + "Location " + (max - i - 1) + "\n";
-	}
-	return defs;
-}
-
 
 core::String ShaderBase::parse(core::String src, uint vers) {
 	core::String libs[] = {
@@ -110,49 +91,18 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 		}
 		src.replace("#version", "//#version");
 	}
-	return ver + getDefines() + common + libs[type] + src;
+	return ver + common + libs[type] + src;
 }
 
-void ShaderBase::getUniforms() {
-	const uint max = 512;
-	char name[max];
-	int uniforms = 0;
-	gl::glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniforms);
-	for(uint i = 0; i != uint(uniforms); i++) {
-		gl::GLsizei size = 0;
-		gl::GLenum type = GL_NONE;
-		gl::glGetActiveUniform(handle, i, max - 1, 0, &size, &type, name);
-		core::String uniform = name;
-		if(uniform.endsWith("[0]")) {
-			uniform = uniform.subString(0, uniform.size() - 3);
-		}
-		UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});
-		if(isSampler(type)) {
-			uint slot = samplerCount++;
-			setValue(info.addr, int(slot));
-			info.addr = slot;
-		}
-		uniformsInfo[uniform] = info;
-	}
-	bindings = new internal::TextureBinding[samplerCount];
-}
 
-ShaderBase::ShaderBase(ShaderType t) : type(t), version(0), handle(0), samplerCount(0), bindings(0) {
+ShaderBase::ShaderBase(ShaderType t) : type(t), version(0), handle(0) {
 }
 
 ShaderBase::~ShaderBase() {
 	if(handle) {
 		gl::GLuint h = handle;
-		GLContext::getContext()->addGLTask([=]() { gl::glDeleteProgram(h); });
+		GLContext::getContext()->addGLTask([=]() { gl::glDeleteShader(h); });
 	}
-}
-
-void ShaderBase::bindStandards() {
-	setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
-	setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());
-	setValue("n_ViewportSize", math::Vec2(GLContext::getContext()->getViewport()));
-	setValue("n_ModelMatrix", GLContext::getContext()->getModelMatrix());
-	setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
 }
 
 const core::String &ShaderBase::getLogs() const {
@@ -167,10 +117,6 @@ uint ShaderBase::getVersion() const {
 	return version;
 }
 
-ShaderBase::UniformAddr ShaderBase::getAddr(const core::String &name) const {
-	return getInfo(name).addr;
-}
-
 bool ShaderBase::isCurrent() const {
 	return currents[type] == this;
 }
@@ -179,70 +125,6 @@ ShaderType ShaderBase::getType() const {
 	return type;
 }
 
-
-void ShaderBase::setValue(UniformAddr addr, int a) const {
-	gl::glProgramUniform1i(handle, addr, a);
-}
-
-void ShaderBase::setValue(UniformAddr addr, uint a) const {
-	gl::glProgramUniform1ui(handle, addr, a);
-}
-
-void ShaderBase::setValue(UniformAddr addr, float f) const {
-	gl::glProgramUniform1f(handle, addr, f);
-}
-
-void ShaderBase::setValue(UniformAddr addr, double f) const {
-	gl::glProgramUniform1f(handle, addr, f);
-}
-
-void ShaderBase::setValue(UniformAddr addr, const math::Vec2i &v) const {
-	gl::glProgramUniform2iv(handle, addr, 1, v.begin());
-}
-
-void ShaderBase::setValue(UniformAddr addr, const math::Vec3i &v) const {
-	gl::glProgramUniform3iv(handle, addr, 1, v.begin());
-}
-
-void ShaderBase::setValue(UniformAddr addr, const math::Vec2 &v) const {
-	gl::glProgramUniform2fv(handle, addr, 1, v.begin());
-}
-
-void ShaderBase::setValue(UniformAddr addr, const math::Vec3 &v) const {
-	gl::glProgramUniform3fv(handle, addr, 1, v.begin());
-}
-
-void ShaderBase::setValue(UniformAddr addr, const math::Vec4 &v) const {
-	gl::glProgramUniform4fv(handle, addr, 1, v.begin());
-}
-
-void ShaderBase::setValue(UniformAddr addr, const math::Matrix2<float> &m) const {
-	gl::glProgramUniformMatrix2fv(handle, addr, 1, GL_TRUE, m.begin());
-}
-
-void ShaderBase::setValue(UniformAddr addr, const math::Matrix3<float> &m) const {
-	gl::glProgramUniformMatrix3fv(handle, addr, 1, GL_TRUE, m.begin());
-}
-
-void ShaderBase::setValue(UniformAddr addr, const math::Matrix4<float> &m) const {
-	gl::glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
-}
-
-void ShaderBase::setValue(UniformAddr slot, const Texture &t, TextureSampler sampler) const {
-	if(slot != UniformAddr(GL_INVALID_INDEX)) {
-		bindings[slot] = t;
-		bindings[slot] = sampler;
-		if(isCurrent()) {
-			bindings[slot].bind(slot);
-		} else {
-			t.prepare();
-		}
-	}
-}
-
-ShaderBase::UniformInfo ShaderBase::getInfo(const core::String &name) const {
-	return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
-}
 
 }
 }
