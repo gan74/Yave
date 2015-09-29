@@ -53,6 +53,7 @@ class SubMeshInstance
 		friend class internal::MeshInstance;
 
 		SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const graphics::Material &m);
+		void alloc() const;
 
 		core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
 		Material material;

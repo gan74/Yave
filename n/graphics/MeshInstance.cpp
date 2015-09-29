@@ -31,13 +31,7 @@ SubMeshInstance::SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>:
 }
 
 void SubMeshInstance::draw(const VertexAttribs &attribs, uint renderFlags, uint instances) const {
-	if(vao.isNull()) {
-		if(future.isSuccess()) {
-			vao = future.unsafeGet();
-		} else if(future.isUninitialized()) {
-			vao = VertexArraySubObject<>(new VertexArrayObject<>(*buffer));
-		}
-	}
+	alloc();
 	if(!vao.isNull()) {
 		vao.draw(material, attribs, renderFlags, instances);
 	}
@@ -57,9 +51,19 @@ const typename TriangleBuffer<>::FreezedTriangleBuffer &SubMeshInstance::getTria
 }
 
 const VertexArraySubObject<> &SubMeshInstance::getVertexArrayObject() const {
+	alloc();
 	return vao;
 }
 
+void SubMeshInstance::alloc() const {
+	if(vao.isNull()) {
+		if(future.isSuccess()) {
+			vao = future.unsafeGet();
+		} else if(future.isUninitialized()) {
+			vao = VertexArraySubObject<>(new VertexArrayObject<>(*buffer));
+		}
+	}
+}
 
 static void optimizedAlloc(const core::Array<core::Pair<SubMeshInstance *, concurrent::Promise<VertexArraySubObject<>> *>> &toAlloc, float radius) {
 	core::Array<uint> indexes;
