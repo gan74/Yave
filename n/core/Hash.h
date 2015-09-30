@@ -32,7 +32,7 @@ class Hash
 		typedef Pair<T, U> element;
 
 		Hash() : tSize(0) {
-			allocTable(93);
+			allocTable(97);
 		}
 
 		void insert(const T &t, const U &u) {
@@ -46,6 +46,9 @@ class Hash
 		}
 
 		U &operator[](const T &t) {
+			if(tSize > values.size()) {
+				rehash(values.size() * 2 - 1);
+			}
 			auto h = hash(t) % values.size();
 			Array<element> &arr = values[h];
 			typename Array<element>::iterator it = arr.findOne([&](const element &e) { return e._1 == t; });
@@ -58,15 +61,11 @@ class Hash
 			return it->_2;
 		}
 
-		const U &get(const T &t, const U &def) const {
+		const U &get(const T &t, const U &def = U()) const {
 			auto h = hash(t) % values.size();
 			const Array<element> &arr = values[h];
 			typename Array<element>::const_iterator it = arr.findOne([&](const element &e) { return e._1 == t; });
 			return it == arr.end() ? def : it->_2;
-		}
-
-		const U &get(const T &t) const {
-			return get(t, U());
 		}
 
 		uint size() const {
