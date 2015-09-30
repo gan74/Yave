@@ -38,6 +38,7 @@ ShaderInstance::~ShaderInstance() {
 		gl::GLuint h = handle;
 		GLContext::getContext()->addGLTask([=]() { gl::glDeleteProgram(h); });
 	}
+	delete[] bindings;
 }
 
 const ShaderInstance *ShaderInstance::getCurrent() {
