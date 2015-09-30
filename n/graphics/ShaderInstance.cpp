@@ -45,6 +45,11 @@ const ShaderInstance *ShaderInstance::getCurrent() {
 	return current;
 }
 
+void ShaderInstance::validateState() {
+	current->bindStandards();
+	current->bindTextures();
+}
+
 void ShaderInstance::bind() {
 	GLContext::getContext()->program = 0;
 	if(current != this) {
@@ -55,11 +60,7 @@ void ShaderInstance::bind() {
 void ShaderInstance::rebind() {
 	GLContext::getContext()->program = 0;
 	gl::glUseProgram(handle);
-	for(uint i = 0; i != samplerCount; i++) {
-		bindings[i].bind(i);
-	}
 	current = this;
-	//bindStandards();
 }
 
 void ShaderInstance::unbind() {
@@ -143,6 +144,13 @@ void ShaderInstance::bindStandards() const {
 	setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
 }
 
+void ShaderInstance::bindTextures() const {
+	for(uint i = 0; i != samplerCount; i++) {
+		bindings[i].bind(i);
+	}
+}
+
+
 void ShaderInstance::setValue(UniformAddr addr, int a) const {
 	gl::glProgramUniform1i(handle, addr, a);
 }
@@ -195,9 +203,9 @@ void ShaderInstance::setValue(UniformAddr slot, const Texture &t, TextureSampler
 	if(slot != UniformAddr(GL_INVALID_INDEX)) {
 		bindings[slot] = t;
 		bindings[slot] = sampler;
-		if(current == this) {
+		/*if(current == this) {
 			bindings[slot].bind(slot);
-		} else {
+		} else*/ {
 			t.prepare();
 		}
 	}

@@ -52,7 +52,7 @@ class VertexArrayObject : core::NonCopyable
 			mat.bind(renderFlags);
 			bind();
 			bindAttribs(attributes);
-			ShaderInstance::getCurrent()->bindStandards();
+			ShaderInstance::validateState();
 			gl::glDrawElementsInstancedBaseVertex(GL_TRIANGLES, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
 		}
 

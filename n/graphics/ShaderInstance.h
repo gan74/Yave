@@ -60,9 +60,8 @@ class ShaderInstance : core::NonCopyable
 		void rebind();
 		void unbind();
 
-		void bindStandards() const;
-
 		static const ShaderInstance *getCurrent();
+		static void validateState();
 
 		void setValue(UniformAddr addr, int a) const;
 		void setValue(UniformAddr addr, uint a) const;
@@ -98,10 +97,12 @@ class ShaderInstance : core::NonCopyable
 		UniformInfo getInfo(const core::String &name) const;
 
 
-
 	private:
 		friend class ShaderProgram;
 		friend class GLContext;
+
+		void bindStandards() const;
+		void bindTextures() const;
 
 		void compile();
 		void getUniforms();
