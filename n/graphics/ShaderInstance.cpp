@@ -17,19 +17,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderInstance.h"
 #include "GLContext.h"
 
+#include <iostream>
+
 namespace n {
 namespace graphics {
 
+const char *ShaderValueName[ShaderValue::SVMax] = {
+	"n_Color",
+	"n_Metallic",
+	"n_DiffuseMap",
+	"n_DiffuseMul",
+	"n_NormalMap",
+	"n_NormalMul",
+	"n_RoughnessMap",
+	"n_RoughnessMul",
+	"n_0",
+	"n_1",
+	"n_2",
+	"n_3"
+};
+
 
 ShaderInstance *ShaderInstance::current = 0;
-
 
 ShaderInstance::ShaderInstance(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : handle(0), samplerCount(0), bases{frag, vert, geom} {
 	compile();
 }
 
 ShaderInstance::ShaderInstance(const Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vert, const Shader<GeometryShader> *geom) : ShaderInstance(frag, ShaderProgram::getStandardVertexShader(vert), geom) {
-
 }
 
 ShaderInstance::~ShaderInstance() {
@@ -37,7 +52,8 @@ ShaderInstance::~ShaderInstance() {
 		gl::GLuint h = handle;
 		GLContext::getContext()->addGLTask([=]() { gl::glDeleteProgram(h); });
 	}
-	delete[] bindings;
+	delete[] texBindings;
+	delete[] bufferBindings;
 }
 
 const ShaderInstance *ShaderInstance::getCurrent() {
@@ -95,18 +111,21 @@ void ShaderInstance::compile() {
 }
 
 void ShaderInstance::getUniforms() {
-	const uint max = 512;
+	const uint max = 1024;
 	char name[max];
 	int uniforms = 0;
 	gl::glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniforms);
 	for(uint i = 0; i != SVMax; i++) {
 		standards[i] = UniformAddr(GL_INVALID_INDEX);
 	}
-	for(uint i = 0; i != (uint)uniforms; i++) {
+	for(uint i = 0; i != uint(uniforms); i++) {
 		gl::GLsizei size = 0;
 		gl::GLenum type = GL_NONE;
 		gl::glGetActiveUniform(handle, i, max - 1, 0, &size, &type, name);
 		core::String uniform = name;
+		if(uniform.contains(".")) {
+			continue;
+		}
 		if(uniform.endsWith("[0]")) {
 			uniform = uniform.subString(0, uniform.size() - 3);
 		}
@@ -122,7 +141,26 @@ void ShaderInstance::getUniforms() {
 			standards[std] = info.addr;
 		}
 	}
-	bindings = new internal::TextureBinding[samplerCount];
+	texBindings = new internal::TextureBinding[samplerCount];
+
+	UniformAddr *texAddr = new UniformAddr[samplerCount];
+	for(uint i = 0; i != samplerCount; i++) {
+		texAddr[i] = i;
+	}
+	setValue("n_Textures", texAddr, samplerCount);
+	delete[] texAddr;
+
+
+	gl::glGetProgramiv(handle, GL_ACTIVE_UNIFORM_BLOCKS, &uniforms);
+	bufferBindings = new core::SmartPtr<DynamicBufferBase::Data>[uniforms];
+	for(uint i = 0; i != uint(uniforms); i++) {
+		int len = 0;
+		gl::glGetActiveUniformBlockName(handle, i, max, &len, name);
+		uint index = gl::glGetUniformBlockIndex(handle, name);
+		gl::glUniformBlockBinding(handle, index, buffers.size());
+		bufferBindings[i] = 0;
+		buffers.insert(core::String(name, len), index);
+	}
 }
 
 ShaderInstance::UniformAddr ShaderInstance::computeStandardIndex(const core::String &name) {
@@ -144,10 +182,17 @@ void ShaderInstance::bindStandards() const {
 
 void ShaderInstance::bindTextures() const {
 	for(uint i = 0; i != samplerCount; i++) {
-		bindings[i].bind(i);
+		texBindings[i].bind(i);
 	}
 }
 
+void ShaderInstance::bindBuffers() const {
+	for(uint i = 0; i != buffers.size(); i++) {
+		if(bufferBindings[i]) {
+			bufferBindings[i]->update(true);
+		}
+	}
+}
 
 void ShaderInstance::setValue(UniformAddr addr, const int *a, uint count) const {
 	gl::glProgramUniform1iv(handle, addr, count, a);
@@ -195,8 +240,8 @@ void ShaderInstance::setValue(UniformAddr addr, const math::Matrix4<float> *m, u
 
 void ShaderInstance::setValue(UniformAddr slot, const Texture &t, TextureSampler sampler) const {
 	if(slot != UniformAddr(GL_INVALID_INDEX)) {
-		bindings[slot] = t;
-		bindings[slot] = sampler;
+		texBindings[slot] = t;
+		texBindings[slot] = sampler;
 		/*if(current == this) {
 			bindings[slot].bind(slot);
 		} else*/ {

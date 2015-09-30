@@ -72,11 +72,7 @@ class VertexArrayObject : core::NonCopyable
 			return GLContext::getContext()->getHWInt(GLContext::MaxVertexAttribs) - 4;
 		}
 
-		void bindAttribs(const VertexAttribs &att) const {
-			if(att.attribs.isEmpty()) {
-				return;
-			}
-			fatal("Attribs not supported");
+		void bindAttribs(const VertexAttribs &) const {
 		}
 
 		void bind() const {

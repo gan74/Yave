@@ -59,20 +59,6 @@ enum ShaderValue
 	SVMax
 };
 
-static const char *ShaderValueName[ShaderValue::SVMax] = {
-	"n_Color",
-	"n_Metallic",
-	"n_DiffuseMap",
-	"n_DiffuseMul",
-	"n_NormalMap",
-	"n_NormalMul",
-	"n_RoughnessMap",
-	"n_RoughnessMul",
-	"n_0",
-	"n_1",
-	"n_2",
-	"n_3",
-};
 
 namespace internal {
 	void rebindProgram();

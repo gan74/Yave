@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Shader.h"
 #include "ShaderProgram.h"
+#include "UniformBuffer.h"
 
 namespace n {
 namespace graphics {
@@ -95,7 +96,15 @@ class ShaderInstance : core::NonCopyable
 
 		template<typename T, typename... Args>
 		void setValue(ShaderValue v, const T &t, Args... args) const {
-			setValue(ShaderValueName[v], t, args...);
+			setValue(standards[v], t, args...);
+		}
+
+		template<typename T>
+		void setBuffer(const core::String &name, const UniformBuffer<T> &buffer) {
+			uint slot = buffers.get(name, GL_INVALID_INDEX);
+			if(slot != GL_INVALID_INDEX) {
+				bufferBindings[slot] = buffer.data;
+			}
 		}
 
 		UniformAddr getAddr(const core::String &name) const;
@@ -108,6 +117,7 @@ class ShaderInstance : core::NonCopyable
 
 		void bindStandards() const;
 		void bindTextures() const;
+		void bindBuffers() const;
 
 		void compile();
 		void getUniforms();
@@ -116,7 +126,11 @@ class ShaderInstance : core::NonCopyable
 		gl::GLuint handle;
 
 		uint samplerCount;
-		internal::TextureBinding *bindings;
+		internal::TextureBinding *texBindings;
+
+		core::SmartPtr<DynamicBufferBase::Data> *bufferBindings;
+		core::Hash<core::String, uint> buffers;
+
 		UniformAddr standards[SVMax];
 		core::Hash<core::String, UniformInfo> uniformsInfo;
 

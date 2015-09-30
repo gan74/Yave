@@ -24,28 +24,6 @@ namespace graphics {
 
 class VertexAttribs
 {
-	struct Attrib
-	{
-		uint slot;
-		internal::DynamicBufferBase<Array> *buffer;
-		gl::GLuint type;
-		uint size;
-	};
-
-	public:
-		VertexAttribs() {
-		}
-
-		template<typename T>
-		void addAttrib(uint slot, DynamicBuffer<T> *buffer) {
-			attribs.append(Attrib({slot, buffer, GLType<T>::value, GLType<T>::size}));
-		}
-
-	private:
-		template<typename T>
-		friend class VertexArrayObject;
-
-		core::Array<Attrib> attribs;
 };
 
 }
