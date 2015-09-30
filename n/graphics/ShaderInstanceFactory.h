@@ -14,48 +14,37 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_CUBEMAP
-#define N_GRAPHICS_CUBEMAP
+#ifndef N_GRAPHICS_SHADERINSTANCEFACTORY
+#define N_GRAPHICS_SHADERINSTANCEFACTORY
 
-#include "Texture.h"
-#include "TextureBase.h"
+#include "ShaderInstance.h"
+#include "Shader.h"
+#include <n/core/Hash.h>
 
 namespace n {
 namespace graphics {
 
-class CubeMap : public TextureBase<TextureCubeMap>
+class ShaderInstanceFactory : core::NonCopyable
 {
 	public:
-		CubeMap(const Texture &top, const Texture &bottom, const Texture &right, const Texture &left, const Texture &front, const Texture &back);
-		CubeMap(const Texture &tex) : CubeMap(tex, tex, tex, tex, tex, tex) {
+		ShaderInstanceFactory() {
 		}
 
-		bool isNull() const {
-			return !getHandle();
-		}
-
-		bool isComplete() const {
-			for(uint i = 0; i != 6; i++) {
-				if(sides[i].isNull()) {
-					return false;
-				}
+		ShaderInstance *get(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) {
+			std::tuple<ShaderBase *, ShaderBase *, ShaderBase *> tu(frag, vert, geom);
+			ShaderInstance *i = instances.get(tu, 0);
+			if(!i) {
+				instances[tu] = i = new ShaderInstance(frag, vert, geom);
 			}
-			return true;
+			return i;
 		}
 
 	private:
-		friend class ShaderProgram;
-		friend class internal::TextureBinding;
-
-		void upload() const;
-
-		void prepare(bool sync = false) const;
-
-		Texture sides[6];
+		core::Hash<std::tuple<ShaderBase *, ShaderBase *, ShaderBase *>, ShaderInstance *> instances;
 };
 
 }
 }
 
-#endif // N_GRAPHICS_CUBEMAP
+#endif // N_GRAPHICS_SHADERINSTANCEFACTORY
 

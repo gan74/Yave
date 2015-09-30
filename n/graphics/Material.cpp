@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Material.h"
 #include "VertexArrayObject.h"
 #include "FrameBuffer.h"
-#include "ShaderProgram.h"
+#include "ShaderInstance.h"
 
 #include <n/defines.h>
 
@@ -35,18 +35,22 @@ static MaterialData current;
 static typename MaterialData::BlendMode blendMode = MaterialData::None;
 
 
-N_FORCE_INLINE void setShaderParams(const ShaderCombinaison *restrict sh, const MaterialData &restrict data) {
-	sh->setValue(ShaderCombinaison::Color, data.color);
-	sh->setValue(ShaderCombinaison::Metallic, data.metallic);
+N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const MaterialData &restrict data) {
+	if(!sh) {
+		return;
+	}
 
-	sh->setValue(ShaderCombinaison::DiffuseMap, data.diffuse);
-	sh->setValue(ShaderCombinaison::DiffuseMul, data.diffuse.isNull() ? 0.0 : 1.0);
+	sh->setValue(ShaderValue::SVColor, data.color);
+	sh->setValue(ShaderValue::SVMetallic, data.metallic);
 
-	sh->setValue(ShaderCombinaison::NormalMap, data.normal);
-	sh->setValue(ShaderCombinaison::NormalMul, data.normal.isNull() ? 0.0 : data.normalIntencity);
+	sh->setValue(ShaderValue::SVDiffuseMap, data.diffuse);
+	sh->setValue(ShaderValue::SVDiffuseMul, data.diffuse.isNull() ? 0.0 : 1.0);
 
-	sh->setValue(ShaderCombinaison::RoughnessMap, data.roughness);
-	sh->setValue(ShaderCombinaison::RoughnessMul, data.roughness.isNull() ? 0.0 : 1.0);
+	sh->setValue(ShaderValue::SVNormalMap, data.normal);
+	sh->setValue(ShaderValue::SVNormalMul, data.normal.isNull() ? 0.0 : data.normalIntencity);
+
+	sh->setValue(ShaderValue::SVRoughnessMap, data.roughness);
+	sh->setValue(ShaderValue::SVRoughnessMul, data.roughness.isNull() ? 0.0 : 1.0);
 
 
 	/*if(data.textures) {
@@ -57,8 +61,7 @@ N_FORCE_INLINE void setShaderParams(const ShaderCombinaison *restrict sh, const 
 }
 
 void fullBind(const MaterialData &restrict data) {
-	const ShaderCombinaison *restrict sh = data.prog.bind();
-	setShaderParams(sh, data);
+	setShaderParams(data.prog.bind(), data);
 
 	if(data.depthTested) {
 		gl::glEnable(GL_DEPTH_TEST);
@@ -118,11 +121,8 @@ void Material::bind(uint flags) const {
 			return;
 		}
 
-		const ShaderCombinaison *sh = (flags & RenderFlag::FastDepth && data.prog.isDefaultProgram()) ? 0 :
-										((flags & RenderFlag::NoShader) ? GLContext::getContext()->getShader() : data.prog.bind());
-
-		if(sh && !(flags & RenderFlag::NoShader)) {
-			setShaderParams(sh, data);
+		if(!(flags & RenderFlag::NoShader)) {
+			setShaderParams(data.prog.bind(), data);
 		}
 		#ifdef N_MATERIAL_FANCYNESS
 		if(current.fancy || data.fancy) {

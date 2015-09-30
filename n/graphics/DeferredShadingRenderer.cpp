@@ -270,9 +270,9 @@ ShaderCombinaison *lightPass(const DeferredShadingRenderer::FrameData *data, Def
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();
-			shader->setValue(ShaderCombinaison::Texture0, renderer->child->getFrameBuffer().getAttachement(0));
-			shader->setValue(ShaderCombinaison::Texture1, renderer->child->getFrameBuffer().getAttachement(1));
-			shader->setValue(ShaderCombinaison::Texture2, renderer->child->getFrameBuffer().getAttachement(2));
+			shader->setValue(SVTexture0, renderer->child->getFrameBuffer().getAttachement(0));
+			shader->setValue(SVTexture1, renderer->child->getFrameBuffer().getAttachement(1));
+			shader->setValue(SVTexture2, renderer->child->getFrameBuffer().getAttachement(2));
 			shader->setValue("n_D", renderer->child->getFrameBuffer().getDepthAttachement());
 			shader->setValue("n_Inv", data->inv);
 			shader->setValue("n_Cam", data->pos);

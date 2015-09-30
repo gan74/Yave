@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "BufferedRenderer.h"
 #include "SceneRenderer.h"
-#include "ShaderCombinaison.h"
+#include "ShaderInstance.h"
 #include "Shader.h"
 
 namespace n {
@@ -69,7 +69,7 @@ class GBufferRenderer : public BufferedRenderer
 			getFrameBuffer().bind();
 			GLContext::getContext()->auditGLState();
 			child->render(ptr);
-			ShaderProgram::setDefaultShader((Shader<FragmentShader> *)0);
+			Shader<FragmentShader>::setDefault(0);
 		}
 
 		static Shader<FragmentShader> *getShader() {

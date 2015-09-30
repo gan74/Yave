@@ -25,6 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+class ShaderBase;
+
 GLTexFormat getTextureFormat(ImageFormat format);
 
 class Texture : public TextureBase<Texture2D>
@@ -63,7 +65,7 @@ class Texture : public TextureBase<Texture2D>
 		static bool isHWSupported(ImageFormat format);
 
 	private:
-		friend class ShaderCombinaison;
+		friend class ShaderInstance;
 		friend class FrameBuffer;
 		friend class internal::TextureBinding;
 		friend class CubeMap;

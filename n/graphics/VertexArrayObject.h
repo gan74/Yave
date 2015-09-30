@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "StaticBuffer.h"
 #include "VertexAttribs.h"
 #include "Material.h"
+#include "ShaderInstance.h"
 
 namespace n {
 namespace graphics {
@@ -29,12 +30,15 @@ template<typename T = float>
 class VertexArrayObject : core::NonCopyable
 {
 	public:
-		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : radius(tr.radius),
-			size(tr.indexes.size() % 3 ? uint(fatal("Invalid non-trianglulated mesh.")) : tr.indexes.size() / 3),
-			data(tr.vertices), indexes(tr.indexes), handle(0) {
+		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : VertexArrayObject(new typename TriangleBuffer<T>::FreezedTriangleBuffer(tr)) {
+		}
+
+		VertexArrayObject(const core::SmartPtr<typename TriangleBuffer<T>::FreezedTriangleBuffer> &tr) :radius(tr->radius), size(tr->indexes.size() % 3 ? uint(fatal("Invalid non-trianglulated mesh.")) : tr->indexes.size() / 3), buffer(tr), data(0), indexes(0), handle(0) {
 		}
 
 		~VertexArrayObject() {
+			delete data;
+			delete indexes;
 			if(handle) {
 				gl::GLuint h = handle;
 				GLContext::getContext()->addGLTask([=]() {
@@ -51,6 +55,7 @@ class VertexArrayObject : core::NonCopyable
 			mat.bind(renderFlags);
 			bind();
 			bindAttribs(attributes);
+			ShaderInstance::validateState();
 			gl::glDrawElementsInstancedBaseVertex(GL_TRIANGLES, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
 		}
 
@@ -76,10 +81,14 @@ class VertexArrayObject : core::NonCopyable
 
 		void bind() const {
 			if(!handle) {
-				data.bind();
+				data = new StaticBuffer<Vertex<T>, Array>(buffer->vertices);
+				indexes = new StaticBuffer<uint, Index>(buffer->indexes);
+				buffer = 0;
+
+				data->bind();
 				gl::glGenVertexArrays(1, &handle);
 				gl::glBindVertexArray(internal::getCurrentVao() = handle);
-				indexes.bind();
+				indexes->bind();
 				gl::glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
 				gl::glVertexAttribPointer(1, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
 				gl::glVertexAttribPointer(2, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
@@ -98,8 +107,10 @@ class VertexArrayObject : core::NonCopyable
 
 		T radius;
 		uint size;
-		StaticBuffer<Vertex<T>, Array> data;
-		StaticBuffer<uint, Index> indexes;
+
+		mutable core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
+		mutable StaticBuffer<Vertex<T>, Array> *data;
+		mutable StaticBuffer<uint, Index> *indexes;
 
 		mutable gl::GLuint handle;
 };

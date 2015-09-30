@@ -15,7 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "BasicToneMapRenderer.h"
-#include "ShaderCombinaison.h"
+#include "ShaderInstance.h"
 #include "VertexArrayObject.h"
 #include <n/utils.h>
 
@@ -180,7 +180,7 @@ static ShaderCombinaison *getDSShader() {
 
 static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	ShaderCombinaison *sh = getLogShader();
-	sh->setValue(ShaderCombinaison::Texture0, in);
+	sh->setValue(SVTexture0, in);
 	sh->bind();
 
 	buffers[0]->bind();
@@ -193,7 +193,7 @@ static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	bool last = false;
 	uint baseSize = buffers[0]->getSize().x();
 	while(baseSize != 2) {
-		sh->setValue(ShaderCombinaison::Texture0, buffers[last]->getAttachement(0));
+		sh->setValue(SVTexture0, buffers[last]->getAttachement(0));
 		sh->setValue("scale", scale);
 		buffers[!last]->bind();
 		last = !last;
@@ -230,7 +230,7 @@ void BasicToneMapRenderer::render(void *ptr) {
 
 	ShaderCombinaison *lumSh = getLumShader();
 	lumSh->bind();
-	lumSh->setValue(ShaderCombinaison::Texture0, lum);
+	lumSh->setValue(SVTexture0, lum);
 	lumSh->setValue("logMin", log(range.x()));
 	lumSh->setValue("logMax", log(range.y()));
 	lumSh->setValue("blend", dt / adaptation);
@@ -247,8 +247,8 @@ void BasicToneMapRenderer::render(void *ptr) {
 	sh->setValue("exposure", exposure);
 	sh->setValue("white", white);
 
-	sh->setValue(ShaderCombinaison::Texture0, child->getFrameBuffer().getAttachement(slot));
-	sh->setValue(ShaderCombinaison::Texture1, luma->getAttachement(0));
+	sh->setValue(SVTexture0, child->getFrameBuffer().getAttachement(slot));
+	sh->setValue(SVTexture1, luma->getAttachement(0));
 	sh->bind();
 
 	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);

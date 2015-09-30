@@ -33,7 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/StaticBuffer.h>
 #include <n/graphics/TriangleBuffer.h>
 #include <n/graphics/VertexArrayObject.h>
-#include <n/graphics/ShaderCombinaison.h>
 #include <n/graphics/ShaderProgram.h>
 #include <n/graphics/Camera.h>
 #include <n/graphics/StaticMesh.h>

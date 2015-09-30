@@ -17,65 +17,65 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_SHADER
 #define N_GRAPHICS_SHADER
 
+#include <n/types.h>
+#include <n/utils.h>
 #include <n/core/String.h>
+#include <n/core/Hash.h>
 #include <exception>
-#include "ShaderProgram.h"
 #include "GLContext.h"
+#include "Texture.h"
+#include "CubeMap.h"
+#include "TextureBinding.h"
 #include "GL.h"
-
-#ifdef N_DEBUG
-#define N_SHADER_SRC // for debugging
-#endif
 
 namespace n {
 namespace graphics {
 
-class ShaderCombinaison;
+class ShaderProgram;
+class ShaderInstance;
+class ShaderBase;
 
-namespace internal {
-
-class ShaderBase : core::NonCopyable
+enum ShaderType
 {
-	public:
-		const core::String &getLogs() const {
-			return logs;
-		}
-
-		uint getVersion() const {
-			return version;
-		}
-
-		bool isValid() const {
-			return handle && version;
-		}
-
-		#ifdef N_SHADER_SRC
-		const core::String &getSrc() const {
-			return source;
-		}
-		#endif
-
-	protected:
-		friend class graphics::ShaderCombinaison;
-
-		ShaderBase() : handle(0) {
-		}
-
-		~ShaderBase() {
-			if(handle) {
-				GLContext::getContext()->addGLTask([=]() { gl::glDeleteShader(handle); });
-			}
-		}
-
-		gl::GLuint handle;
-		uint version;
-		core::String logs;
-
-		#ifdef N_SHADER_SRC
-		core::String source;
-		#endif
+	FragmentShader,
+	VertexShader,
+	GeometryShader
 };
 
+enum ShaderValue
+{
+	SVColor,
+	SVMetallic,
+	SVDiffuseMap,
+	SVDiffuseMul,
+	SVNormalMap,
+	SVNormalMul,
+	SVRoughnessMap,
+	SVRoughnessMul,
+	SVTexture0,
+	SVTexture1,
+	SVTexture2,
+	SVTexture3,
+	SVMax
+};
+
+static const char *ShaderValueName[ShaderValue::SVMax] = {
+	"n_Color",
+	"n_Metallic",
+	"n_DiffuseMap",
+	"n_DiffuseMul",
+	"n_NormalMap",
+	"n_NormalMul",
+	"n_RoughnessMap",
+	"n_RoughnessMul",
+	"n_0",
+	"n_1",
+	"n_2",
+	"n_3",
+};
+
+namespace internal {
+	void rebindProgram();
 }
 
 class ShaderCompilationException : public std::exception
@@ -88,88 +88,76 @@ class ShaderCompilationException : public std::exception
 	private:
 		template<ShaderType Type>
 		friend class Shader;
+		friend class ShaderBase;
+
 		ShaderCompilationException(const core::String &msg) : std::exception(), m(msg) {
 		}
 
 		const core::String m;
 };
 
-template<ShaderType Type>
-class Shader : public internal::ShaderBase
+class ShaderBase : core::NonCopyable
 {
 	public:
-		Shader(const core::String &src, uint vers = 420) : internal::ShaderBase() {
+		~ShaderBase();
+
+		const core::String &getLogs() const;
+		bool isValid() const;
+		uint getVersion() const;
+		bool isCurrent() const;
+		ShaderType getType() const;
+
+		#ifdef N_SHADER_SRC
+		const core::String &getSrc() const {
+			return source;
+		}
+		#endif
+
+	protected:
+		friend class graphics::ShaderInstance;
+		friend class graphics::ShaderProgram;
+
+		ShaderBase(ShaderType t);
+
+		uint load(core::String src, uint vers);
+		core::String parse(core::String src, uint vers);
+		ShaderType type;
+		uint version;
+		gl::GLuint handle;
+
+		core::String logs;
+
+		#ifdef N_SHADER_SRC
+		core::String source;
+		#endif
+
+
+		static ShaderBase *currents[3];
+};
+
+
+template<ShaderType Type>
+class Shader : public ShaderBase
+{
+
+	public:
+		Shader(const core::String &src, uint vers = 420) : ShaderBase(Type) {
 			version = load(src, vers);
 		}
 
-		~Shader() {
-			if(ShaderProgram::isDefaultShader(this)) {
-				ShaderProgram::setDefaultShader((Shader<Type> *)0);
+		static void setDefault(Shader<Type> *t) {
+			if(currents[Type] != t) {
+				currents[Type] = t;
+				internal::rebindProgram();
 			}
 		}
 
 		void bindAsDefault() {
-			ShaderProgram::setDefaultShader(this);
+			setDefault(this);
 		}
 
-	private:
-		uint load(core::String src, uint vers) {
-			#ifdef N_SHADER_SRC
-			source = src;
-			#endif
-			core::String libs[] = {
-					"vec4 n_gbuffer0(vec4 color, vec3 normal, float roughness, float metal) {"
-						"return color;"
-					"}"
-					"vec4 n_gbuffer1(vec4 color, vec3 normal, float roughness, float metal) {"
-						"return vec4(normalize(normal).xyz * 0.5 + 0.5, 0.0);"
-					"}"
-					"vec4 n_gbuffer2(vec4 color, vec3 normal, float roughness, float metal) {"
-						"return vec4(roughness, metal, 0.04, 0);"
-					"}",
-					"",
-					""
-			};
-			core::String common = "const float pi = " + core::String(math::pi) + "; float sqr(float x) { return x * x; }  float saturate(float x) { return clamp(x, 0.0, 1.0); }";
-			uint vit = src.find("#version");
-			if(vit != uint(-1)) {
-				uint l = src.find("\n", vit);
-				if(l != uint(-1)) {
-					bool ok = true;
-					uint v = src.subString(vit + 9).get<uint>([&]() { ok = false; });
-					if(ok && v) {
-						vers = v;
-					} else {
-						logs += "Unable to parse #version.\n";
-					}
-				}
-				src.replace("#version", "//#version");
-			}
-			gl::GLenum glType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
-			handle = gl::glCreateShader(glType[Type]);
-			core::String ver = core::String("#version ") + vers + "\n";
-			const char *strs[] = {ver.toChar(), common.toChar(), libs[Type].toChar(), src.toChar()};
-			gl::glShaderSource(handle, sizeof(strs) / sizeof(strs[0]), strs, 0);
-			gl::glCompileShader(handle);
-			int res = 0;
-			gl::glGetShaderiv(handle, GL_COMPILE_STATUS, &res);
-			if(!res) {
-				int size = 0;
-				gl::glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &size);
-				char *msg = new char[size + 1];
-				gl::glGetShaderInfoLog(handle, size, &size, msg);
-				gl::glDeleteShader(handle);
-				handle = 0;
-				msg[size] = '\0';
-				logs = msg;
-				delete[] msg;
-				throw ShaderCompilationException(logs);
-			}
-			return vers;
-		}
 
 };
-
 
 }
 }

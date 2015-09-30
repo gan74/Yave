@@ -15,17 +15,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "GLContext.h"
-#include "ShaderCombinaison.h"
+#include "ShaderProgram.h"
 #include "GL.h"
 #include "FrameBufferPool.h"
 #include "Material.h"
 #include "VertexArrayObject.h"
+#include "ShaderInstanceFactory.h"
 #include <n/concurrent/Thread.h>
 #include <n/core/Timer.h>
 
 #include <iostream>
 
-#define GL_AUDIT_SATET
+#define GL_AUDIT_STATE
 
 namespace n {
 namespace graphics {
@@ -62,7 +63,7 @@ GLContext *GLContext::getContext() {
 	static GLContext *ct = 0;
 	if(!ct) {
 		ct = new GLContext();
-		ShaderProgram(ct->program).bind();
+		ShaderProgram().bind();
 		Material().bind(RenderFlag::ForceMaterialRebind);
 	}
 	return ct;
@@ -92,7 +93,7 @@ void GLContext::finishTasks() {
 	}
 }
 
-GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), frameBuffer(0), fbPool(new FrameBufferPool()), viewport(1024, 768), screen(0) {
+GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool()), shFactory(new ShaderInstanceFactory()), viewport(1024, 768), screen(0) {
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
@@ -128,6 +129,7 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	gl::glGetIntegerv(GL_MAX_DRAW_BUFFERS, &hwInts[MaxFboAttachements]);
 	gl::glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &hwInts[MaxTextures]);
 	gl::glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
+	gl::glGetIntegerv(GL_MAX_VARYING_VECTORS, &hwInts[MaxVaryings]);
 
 	if(hwInts[MaxVertexAttribs] <= 4) {
 		fatal("Not enought vertex attribs.");
@@ -146,7 +148,7 @@ GLContext::GLContext() : shader(0), program(ShaderProgram::getNullProgram()), fr
 	gl::glGetError();
 
 	gl::glDebugMessageCallback(&debugOut, 0);
-	gl::glEnable(GL_DEBUG_OUTPUT);
+	setDebugEnabled(true);
 }
 
 GLContext::~GLContext() {
@@ -157,13 +159,15 @@ GLContext::~GLContext() {
 void GLContext::setDebugEnabled(bool deb) {
 	if(deb) {
 		gl::glEnable(GL_DEBUG_OUTPUT);
+		gl::glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		#warning Synchronous debuging
 	} else {
 		gl::glDisable(GL_DEBUG_OUTPUT);
 	}
 }
 
 void GLContext::auditGLState() {
-	#ifdef GL_AUDIT_SATET
+	#ifdef GL_AUDIT_STATE
 	#warning GL state auditing enabled
 	int handle = 0;
 	gl::glGetIntegerv(GL_FRAMEBUFFER_BINDING, &handle);
@@ -178,7 +182,6 @@ void GLContext::setViewport(const math::Vec2ui &v) {
 	if(!frameBuffer) {
 		gl::glViewport(0, 0, viewport.x(), viewport.y());
 	}
-	shader->setValue("n_ViewportSize", math::Vec2(viewport));
 }
 
 math::Vec2ui GLContext::getViewport() const {
@@ -203,9 +206,6 @@ void GLContext::setModelMatrix(const math::Matrix4<> &m) {
 	matrixBuffer->set(model, 0);
 	matrixBuffer->bind(0);
 	#else
-	if(shader) {
-		shader->setValue("n_ModelMatrix", model);
-	}
 	#endif
 }
 
@@ -214,10 +214,6 @@ void GLContext::setViewMatrix(const math::Matrix4<> &m) {
 		return;
 	}
 	view = m;
-	if(shader) {
-		shader->setValue("n_ViewMatrix", m);
-		shader->setValue("n_ViewProjectionMatrix", projection * m);
-	}
 }
 
 void GLContext::setProjectionMatrix(const math::Matrix4<> &m) {
@@ -225,10 +221,6 @@ void GLContext::setProjectionMatrix(const math::Matrix4<> &m) {
 		return;
 	}
 	projection = m;
-	if(shader) {
-		shader->setValue("n_ProjectionMatrix", m);
-		shader->setValue("n_ViewProjectionMatrix", m * view);
-	}
 }
 
 const math::Matrix4<> &GLContext::getProjectionMatrix() const {
@@ -249,6 +241,11 @@ const VertexArrayObject<float> &GLContext::getScreen() const {
 	}
 	return *screen;
 }
+
+ShaderProgram GLContext::getShaderProgram() const {
+	return ShaderProgram(program);
+}
+
 
 }
 }

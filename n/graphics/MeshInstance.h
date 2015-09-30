@@ -40,13 +40,13 @@ namespace internal {
 class SubMeshInstance
 {
 	public:
-		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m);
+		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const Material &m);
 		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m);
+		SubMeshInstance(const VertexArraySubObject<> &b, const Material &m);
 
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const;
 		const Material &getMaterial() const;
 		float getRadius() const;
-		const typename TriangleBuffer<>::FreezedTriangleBuffer &getTriangleBuffer() const;
 		const VertexArraySubObject<> &getVertexArrayObject() const;
 
 	private:
@@ -55,11 +55,10 @@ class SubMeshInstance
 		SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const graphics::Material &m);
 		void alloc() const;
 
-		core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
 		Material material;
 
+		mutable core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
 		mutable VertexArraySubObject<> vao;
-		concurrent::SharedFuture<VertexArraySubObject<>> future;
 };
 
 namespace internal {

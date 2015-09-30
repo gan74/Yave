@@ -119,6 +119,8 @@ struct GLTexFormat
 	const gl::GLenum type;
 };
 
+bool isSampler(gl::GLenum type);
+
 }
 }
 //}

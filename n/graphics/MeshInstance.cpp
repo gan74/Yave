@@ -17,25 +17,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MeshInstance.h"
 #include <n/concurrent/Promise.h>
 
+#include <iostream>
+
 
 namespace n {
 namespace graphics {
 
-SubMeshInstance::SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const graphics::Material &m) : SubMeshInstance(new TriangleBuffer<>::FreezedTriangleBuffer(b), m) {
+SubMeshInstance::SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const Material &m) : SubMeshInstance(new TriangleBuffer<>::FreezedTriangleBuffer(b), m) {
 }
 
-SubMeshInstance::SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m) : buffer(s.buffer), material(m), vao(s.vao) {
+SubMeshInstance::SubMeshInstance(const SubMeshInstance &s, const Material &m) : material(m), buffer(s.buffer), vao(s.vao) {
 }
 
-SubMeshInstance::SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const graphics::Material &m) : buffer(b), material(m) {
+SubMeshInstance::SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const Material &m) : material(m), buffer(b) {
+}
+
+SubMeshInstance::SubMeshInstance(const VertexArraySubObject<> &b, const Material &m) : material(m), vao(b) {
 }
 
 void SubMeshInstance::draw(const VertexAttribs &attribs, uint renderFlags, uint instances) const {
-	alloc();
-	if(!vao.isNull()) {
-		vao.draw(material, attribs, renderFlags, instances);
+	if(vao.isNull() && buffer) {
+		vao = VertexArraySubObject<>(new VertexArrayObject<>(buffer));
+		buffer = 0;
 	}
-
+	vao.draw(material, attribs, renderFlags, instances);
 }
 
 const Material &SubMeshInstance::getMaterial() const {
@@ -43,72 +48,38 @@ const Material &SubMeshInstance::getMaterial() const {
 }
 
 float SubMeshInstance::getRadius() const {
-	return buffer->radius;
-}
-
-const typename TriangleBuffer<>::FreezedTriangleBuffer &SubMeshInstance::getTriangleBuffer() const {
-	return *buffer;
+	return buffer ? buffer->radius : vao.getRadius();
 }
 
 const VertexArraySubObject<> &SubMeshInstance::getVertexArrayObject() const {
-	alloc();
 	return vao;
 }
 
-void SubMeshInstance::alloc() const {
-	if(vao.isNull()) {
-		if(future.isSuccess()) {
-			vao = future.unsafeGet();
-		} else if(future.isUninitialized()) {
-			vao = VertexArraySubObject<>(new VertexArrayObject<>(*buffer));
-		}
-	}
-}
 
-static void optimizedAlloc(const core::Array<core::Pair<SubMeshInstance *, concurrent::Promise<VertexArraySubObject<>> *>> &toAlloc, float radius) {
-	core::Array<uint> indexes;
-	core::Array<Vertex<>> vertices;
-	for(core::Pair<SubMeshInstance *, concurrent::Promise<VertexArraySubObject<>> *> p : toAlloc) {
-		indexes += p._1->getTriangleBuffer().indexes;
-		vertices += p._1->getTriangleBuffer().vertices;
-	}
-	core::SmartPtr<VertexArrayObject<>> vao(new VertexArrayObject<>(TriangleBuffer<>::FreezedTriangleBuffer(indexes, vertices, radius)));
-	uint iCount = 0;
-	uint vCount = 0;
-	for(core::Pair<SubMeshInstance *, concurrent::Promise<VertexArraySubObject<>> *> p : toAlloc)  {
-		uint num = p._1->getTriangleBuffer().indexes.size() / 3;
-		p._2->success(VertexArraySubObject<>(vao, iCount, num, vCount, p._1->getRadius()));
-		iCount += num;
-		vCount += p._1->getTriangleBuffer().vertices.size();
-		delete p._2;
-	}
-}
+
 
 
 internal::MeshInstance::MeshInstance(const core::Array<SubMeshInstance *> &b, uint opt) : subs(b), radius(0) {
-	core::Array<SubMeshInstance *> toAlloc;
 	for(SubMeshInstance *sub : subs) {
 		radius = std::max(radius, sub->getRadius());
-		if(sub->future.isUninitialized()) {
-			toAlloc.append(sub);
-		}
 	}
 	if(opt & MeshOptimisationOptions::MergeVAO) {
-		GLContext::getContext()->addGLTask([=]() {
-			optimizedAlloc(toAlloc.mapped([](SubMeshInstance *sub) {
-				concurrent::Promise<VertexArraySubObject<>> *promise = new concurrent::Promise<VertexArraySubObject<>>();
-				sub->future = promise->getFuture();
-				return core::Pair<SubMeshInstance *, concurrent::Promise<VertexArraySubObject<>> *>(sub, promise);
-			}), radius);
-		});
-	} else {
-		for(SubMeshInstance *sub : toAlloc) {
-			concurrent::Promise<VertexArraySubObject<>> *promise = new concurrent::Promise<VertexArraySubObject<>>();
-			sub->future = promise->getFuture();
-			GLContext::getContext()->addGLTask([=]() {
-				promise->success(VertexArraySubObject<>(new VertexArrayObject<>(*sub->buffer)));
-				delete promise;
-			});
+		core::Array<uint> indexes;
+		core::Array<Vertex<>> vertices;
+		for(SubMeshInstance * p : subs) {
+			indexes += p->buffer->indexes;
+			vertices += p->buffer->vertices;
+		}
+		core::SmartPtr<VertexArrayObject<>> vao(new VertexArrayObject<>(TriangleBuffer<>::FreezedTriangleBuffer(indexes, vertices, radius)));
+		uint iCount = 0;
+		uint vCount = 0;
+
+		for(SubMeshInstance *p : subs) {
+			core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer = p->buffer;
+			uint num = buffer->indexes.size() / 3;
+			p->vao = VertexArraySubObject<>(vao, iCount, num, vCount, buffer->radius);
+			iCount += num;
+			vCount += buffer->vertices.size();
 		}
 	}
 }
