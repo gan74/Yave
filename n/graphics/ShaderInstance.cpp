@@ -151,52 +151,48 @@ void ShaderInstance::bindTextures() const {
 }
 
 
-void ShaderInstance::setValue(UniformAddr addr, int a) const {
-	gl::glProgramUniform1i(handle, addr, a);
+void ShaderInstance::setValue(UniformAddr addr, const int *a, uint count) const {
+	gl::glProgramUniform1iv(handle, addr, count, a);
 }
 
-void ShaderInstance::setValue(UniformAddr addr, uint a) const {
-	gl::glProgramUniform1ui(handle, addr, a);
+void ShaderInstance::setValue(UniformAddr addr, const uint *a, uint count) const {
+	gl::glProgramUniform1uiv(handle, addr, count, a);
 }
 
-void ShaderInstance::setValue(UniformAddr addr, float f) const {
-	gl::glProgramUniform1f(handle, addr, f);
+void ShaderInstance::setValue(UniformAddr addr, const float *f, uint count) const {
+	gl::glProgramUniform1fv(handle, addr, count, f);
 }
 
-void ShaderInstance::setValue(UniformAddr addr, double f) const {
-	gl::glProgramUniform1f(handle, addr, f);
+void ShaderInstance::setValue(UniformAddr addr, const math::Vec2i *v, uint count) const {
+	gl::glProgramUniform2iv(handle, addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec2i &v) const {
-	gl::glProgramUniform2iv(handle, addr, 1, v.begin());
+void ShaderInstance::setValue(UniformAddr addr, const math::Vec3i *v, uint count) const {
+	gl::glProgramUniform3iv(handle, addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec3i &v) const {
-	gl::glProgramUniform3iv(handle, addr, 1, v.begin());
+void ShaderInstance::setValue(UniformAddr addr, const math::Vec2 *v, uint count) const {
+	gl::glProgramUniform2fv(handle, addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec2 &v) const {
-	gl::glProgramUniform2fv(handle, addr, 1, v.begin());
+void ShaderInstance::setValue(UniformAddr addr, const math::Vec3 *v, uint count) const {
+	gl::glProgramUniform3fv(handle, addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec3 &v) const {
-	gl::glProgramUniform3fv(handle, addr, 1, v.begin());
+void ShaderInstance::setValue(UniformAddr addr, const math::Vec4 *v, uint count) const {
+	gl::glProgramUniform4fv(handle, addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec4 &v) const {
-	gl::glProgramUniform4fv(handle, addr, 1, v.begin());
+void ShaderInstance::setValue(UniformAddr addr, const math::Matrix2<float> *m, uint count) const {
+	gl::glProgramUniformMatrix2fv(handle, addr, count, GL_TRUE, m->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Matrix2<float> &m) const {
-	gl::glProgramUniformMatrix2fv(handle, addr, 1, GL_TRUE, m.begin());
+void ShaderInstance::setValue(UniformAddr addr, const math::Matrix3<float> *m, uint count) const {
+	gl::glProgramUniformMatrix3fv(handle, addr, count, GL_TRUE, m->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Matrix3<float> &m) const {
-	gl::glProgramUniformMatrix3fv(handle, addr, 1, GL_TRUE, m.begin());
-}
-
-void ShaderInstance::setValue(UniformAddr addr, const math::Matrix4<float> &m) const {
-	gl::glProgramUniformMatrix4fv(handle, addr, 1, GL_TRUE, m.begin());
+void ShaderInstance::setValue(UniformAddr addr, const math::Matrix4<float> *m, uint count) const {
+	gl::glProgramUniformMatrix4fv(handle, addr, count, GL_TRUE, m->begin());
 }
 
 void ShaderInstance::setValue(UniformAddr slot, const Texture &t, TextureSampler sampler) const {

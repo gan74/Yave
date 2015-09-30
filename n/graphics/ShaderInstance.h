@@ -63,34 +63,39 @@ class ShaderInstance : core::NonCopyable
 		static const ShaderInstance *getCurrent();
 		static void validateState();
 
-		void setValue(UniformAddr addr, int a) const;
-		void setValue(UniformAddr addr, uint a) const;
-		void setValue(UniformAddr addr, float f) const;
-		void setValue(UniformAddr addr, double f) const;
-		void setValue(UniformAddr addr, const math::Vec2i &v) const;
-		void setValue(UniformAddr addr, const math::Vec3i &v) const;
-		void setValue(UniformAddr addr, const math::Vec2 &v) const;
-		void setValue(UniformAddr addr, const math::Vec3 &v) const;
-		void setValue(UniformAddr addr, const math::Vec4 &v) const;
-		void setValue(UniformAddr addr, const math::Matrix2<float> &m) const;
-		void setValue(UniformAddr addr, const math::Matrix3<float> &m) const;
-		void setValue(UniformAddr addr, const math::Matrix4<float> &m) const;
+		void setValue(UniformAddr addr, const int *a, uint count) const;
+		void setValue(UniformAddr addr, const uint *a, uint count) const;
+		void setValue(UniformAddr addr, const float *f, uint count) const;
+		void setValue(UniformAddr addr, const math::Vec2i *v, uint count) const;
+		void setValue(UniformAddr addr, const math::Vec3i *v, uint count) const;
+		void setValue(UniformAddr addr, const math::Vec2 *v, uint count) const;
+		void setValue(UniformAddr addr, const math::Vec3 *v, uint count) const;
+		void setValue(UniformAddr addr, const math::Vec4 *v, uint count) const;
+		void setValue(UniformAddr addr, const math::Matrix2<float> *m, uint count) const;
+		void setValue(UniformAddr addr, const math::Matrix3<float> *m, uint count) const;
+		void setValue(UniformAddr addr, const math::Matrix4<float> *m, uint count) const;
 		void setValue(UniformAddr slot, const Texture &t, TextureSampler sampler = TextureSampler::Default) const;
 
-
 		template<typename T>
-		bool setValue(const core::String &name, const T &t) const {
-			UniformAddr i = getAddr(name);
-			if(i != UniformAddr(GL_INVALID_INDEX)) {
-				setValue(i, t);
-				return true;
-			}
-			return false;
+		void setValue(UniformAddr addr, const T &t) const {
+			setValue(addr, &t, 1);
+		}
+
+		void setValue(UniformAddr addr, const double &t) const {
+			setValue(addr, float(t));
 		}
 
 		template<typename T, typename... Args>
-		bool setValue(ShaderValue v, const T &t, Args... args) const {
-			return setValue(ShaderValueName[v], t, args...);
+		void setValue(const core::String &name, const T &t, Args... args) const {
+			UniformAddr i = getAddr(name);
+			if(i != UniformAddr(GL_INVALID_INDEX)) {
+				setValue(i, t, args...);
+			}
+		}
+
+		template<typename T, typename... Args>
+		void setValue(ShaderValue v, const T &t, Args... args) const {
+			setValue(ShaderValueName[v], t, args...);
 		}
 
 		UniformAddr getAddr(const core::String &name) const;
