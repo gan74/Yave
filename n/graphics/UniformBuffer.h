@@ -193,7 +193,7 @@ class TypedDynamicBuffer : public DynamicBufferBase
 			return data->size / sizeof(T);
 		}
 
-		TypedDynamicBuffer(uint si) : DynamicBufferBase(si, Type) {
+		TypedDynamicBuffer(uint si) : DynamicBufferBase(si * sizeof(T), Type) {
 		}
 
 		core::Ref<T> operator[](uint i) {
@@ -201,10 +201,12 @@ class TypedDynamicBuffer : public DynamicBufferBase
 		}
 
 		iterator begin() {
+			data->modified = true;
 			return iterator((T *)data->buffer);
 		}
 
 		iterator end() {
+			data->modified = true;
 			return iterator(((T *)data->buffer) + getSize());
 		}
 

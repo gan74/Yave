@@ -24,7 +24,8 @@ namespace graphics {
 Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::StandardVertexShader type) {
 	static Shader<VertexShader> **def = 0;
 	if(!def) {
-
+			//core::String matrix = "uniform mat4 n_ModelMatrix;";
+			core::String matrix = "layout(std140, row_major) uniform n_ModelMatrixBuffer { mat4 n_ModelMatrix[1024]; };";
 			def = new Shader<VertexShader>*[2];
 			def[ShaderProgram::ProjectionShader] = new Shader<VertexShader>(
 						"layout(location = 0) in vec3 n_VertexPosition;"
@@ -32,7 +33,9 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 						"layout(location = 2) in vec3 n_VertexTangent;"
 						"layout(location = 3) in vec2 n_VertexCoord;"
 						"uniform mat4 n_ViewProjectionMatrix;"
-						"uniform mat4 n_ModelMatrix;"
+
+						+ matrix +
+
 						"uniform vec3 n_Camera;"
 
 						"out vec3 n_Position;"
@@ -44,13 +47,14 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 						"out vec2 n_TexCoord;"
 
 						"void main() {"
-							"vec4 model = n_ModelMatrix * vec4(n_VertexPosition, 1.0);"
+							"mat4 modelMat = n_ModelMatrix[gl_InstanceID];"
+							"vec4 model = modelMat * vec4(n_VertexPosition, 1.0);"
 							"gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * model;"
 							//"gl_Position *= gl_Position.w;"//-----------------------------------------------------------------
 							"n_Position = model.xyz;"
 							"n_View = normalize(n_Camera - model.xyz);"
-							"n_Normal = mat3(n_ModelMatrix) * n_VertexNormal;"
-							"n_Tangent = mat3(n_ModelMatrix) * n_VertexTangent;"
+							"n_Normal = mat3(modelMat) * n_VertexNormal;"
+							"n_Tangent = mat3(modelMat) * n_VertexTangent;"
 							"n_TexCoord = n_VertexCoord;"
 							"n_Binormal = cross(n_Normal, n_Tangent);"
 						"}");

@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderInstance.h"
 #include "GLContext.h"
 
-#include <iostream>
-
 namespace n {
 namespace graphics {
 
@@ -63,6 +61,7 @@ const ShaderInstance *ShaderInstance::getCurrent() {
 void ShaderInstance::validateState() {
 	current->bindStandards();
 	current->bindTextures();
+	current->bindBuffers();
 }
 
 void ShaderInstance::bind() {
@@ -150,7 +149,6 @@ void ShaderInstance::getUniforms() {
 	setValue("n_Textures", texAddr, samplerCount);
 	delete[] texAddr;
 
-
 	gl::glGetProgramiv(handle, GL_ACTIVE_UNIFORM_BLOCKS, &uniforms);
 	bufferBindings = new core::SmartPtr<DynamicBufferBase::Data>[uniforms];
 	for(uint i = 0; i != uint(uniforms); i++) {
@@ -173,11 +171,16 @@ ShaderInstance::UniformAddr ShaderInstance::computeStandardIndex(const core::Str
 }
 
 void ShaderInstance::bindStandards() const {
+	static UniformBuffer<math::Matrix4<>> *model = new UniformBuffer<math::Matrix4<>>(1);
+
+	*model->begin() = GLContext::getContext()->getModelMatrix();
+	setBuffer("n_ModelMatrixBuffer", *model);
+
 	setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
 	setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());
 	setValue("n_ViewportSize", math::Vec2(GLContext::getContext()->getViewport()));
-	setValue("n_ModelMatrix", GLContext::getContext()->getModelMatrix());
 	setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
+
 }
 
 void ShaderInstance::bindTextures() const {
@@ -189,7 +192,8 @@ void ShaderInstance::bindTextures() const {
 void ShaderInstance::bindBuffers() const {
 	for(uint i = 0; i != buffers.size(); i++) {
 		if(bufferBindings[i]) {
-			bufferBindings[i]->update(true);
+			bufferBindings[i]->update();
+			gl::glBindBufferBase(GL_UNIFORM_BUFFER, i, bufferBindings[i]->handle);
 		}
 	}
 }

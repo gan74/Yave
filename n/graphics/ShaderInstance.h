@@ -100,7 +100,7 @@ class ShaderInstance : core::NonCopyable
 		}
 
 		template<typename T>
-		void setBuffer(const core::String &name, const UniformBuffer<T> &buffer) {
+		void setBuffer(const core::String &name, const UniformBuffer<T> &buffer) const {
 			uint slot = buffers.get(name, GL_INVALID_INDEX);
 			if(slot != GL_INVALID_INDEX) {
 				bufferBindings[slot] = buffer.data;
