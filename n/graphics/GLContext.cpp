@@ -159,8 +159,8 @@ GLContext::~GLContext() {
 void GLContext::setDebugEnabled(bool deb) {
 	if(deb) {
 		gl::glEnable(GL_DEBUG_OUTPUT);
-		gl::glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		#warning Synchronous debuging
+		/*gl::glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		#warning Synchronous debuging*/
 	} else {
 		gl::glDisable(GL_DEBUG_OUTPUT);
 	}

@@ -171,10 +171,11 @@ ShaderInstance::UniformAddr ShaderInstance::computeStandardIndex(const core::Str
 }
 
 void ShaderInstance::bindStandards() const {
-	static UniformBuffer<math::Matrix4<>> *model = new UniformBuffer<math::Matrix4<>>(1);
-
+	/*static UniformBuffer<math::Matrix4<>> *model = new UniformBuffer<math::Matrix4<>>(1);
 	*model->begin() = GLContext::getContext()->getModelMatrix();
-	setBuffer("n_ModelMatrixBuffer", *model);
+	setBuffer("n_ModelMatrixBuffer", *model);*/
+
+	setValue("n_ModelMatrix", GLContext::getContext()->getModelMatrix());
 
 	setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
 	setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());

@@ -24,8 +24,8 @@ namespace graphics {
 Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::StandardVertexShader type) {
 	static Shader<VertexShader> **def = 0;
 	if(!def) {
-			//core::String matrix = "uniform mat4 n_ModelMatrix;";
-			core::String matrix = "layout(std140, row_major) uniform n_ModelMatrixBuffer { mat4 n_ModelMatrix[1024]; };";
+			core::String matrix = "uniform mat4 n_ModelMatrix[1];";
+			//core::String matrix = "layout(std140, row_major) uniform n_ModelMatrixBuffer { mat4 n_ModelMatrix[1024]; };";
 			def = new Shader<VertexShader>*[2];
 			def[ShaderProgram::ProjectionShader] = new Shader<VertexShader>(
 						"layout(location = 0) in vec3 n_VertexPosition;"
