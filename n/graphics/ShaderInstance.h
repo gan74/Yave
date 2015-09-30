@@ -127,8 +127,6 @@ class ShaderInstance : core::NonCopyable
 		static ShaderInstance *current;
 };
 
-typedef ShaderInstance ShaderCombinaison;
-
 
 }
 }
