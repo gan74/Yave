@@ -79,7 +79,7 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 	return def[type];
 }
 
-Shader<FragmentShader> *getDefaultFrag() {
+Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
 	//return GBufferRenderer::getShader();
 	static Shader<FragmentShader> *def = new Shader<FragmentShader>(
 					"layout(location = 0) out vec4 n_0;"
@@ -105,10 +105,10 @@ Shader<FragmentShader> *getDefaultFrag() {
 core::SmartPtr<ShaderProgram::Data> ShaderProgram::nullData = new ShaderProgram::Data{{0}};
 
 
-ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : data(new Data{{frag, vert, geom}}) {
+ShaderProgram::ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : data(new Data{{frag, vert, geom}}) {
 }
 
-ShaderProgram::ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader std, Shader<GeometryShader> *geom) : ShaderProgram(frag, getStandardVertexShader(std), geom) {
+ShaderProgram::ShaderProgram(const Shader<FragmentShader> *frag, StandardVertexShader std, const Shader<GeometryShader> *geom) : ShaderProgram(frag, getStandardVertexShader(std), geom) {
 }
 
 ShaderProgram::ShaderProgram() : data(nullData) {
@@ -138,7 +138,7 @@ const ShaderInstance *ShaderProgram::rebind() const {
 	Shader<FragmentShader> *frag = (Shader<FragmentShader> *)(data->bases[0] ? data->bases[0] : ShaderBase::currents[0]);
 	Shader<VertexShader> *vert = (Shader<VertexShader> *)(data->bases[1] ? data->bases[1] : ShaderBase::currents[1]);
 	Shader<GeometryShader> *geom = (Shader<GeometryShader> *)(data->bases[2] ? data->bases[2] : ShaderBase::currents[2]);
-	frag = frag ? frag : getDefaultFrag();
+	frag = frag ? frag : getStandardFragmentShader();
 	vert = vert ? vert : getStandardVertexShader();
 
 	ShaderInstance *inst = GLContext::getContext()->getShaderFactory().get(frag, vert, geom);

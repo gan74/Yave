@@ -26,7 +26,7 @@ namespace graphics {
 namespace internal {
 	struct ShaderProgramData
 	{
-		ShaderBase *bases[3];
+		const ShaderBase *bases[3];
 	};
 }
 
@@ -70,10 +70,11 @@ class ShaderProgram
 		};
 
 		static Shader<VertexShader> *getStandardVertexShader(StandardVertexShader std = ShaderProgram::ProjectionShader);
+		static Shader<FragmentShader> *getStandardFragmentShader();
 
 
-		ShaderProgram(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom = 0);
-		ShaderProgram(Shader<FragmentShader> *frag, StandardVertexShader std = ProjectionShader, Shader<GeometryShader> *geom = 0);
+		ShaderProgram(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom = 0);
+		ShaderProgram(const Shader<FragmentShader> *frag, StandardVertexShader std = ProjectionShader, const Shader<GeometryShader> *geom = 0);
 		ShaderProgram();
 		~ShaderProgram();
 
@@ -88,26 +89,10 @@ class ShaderProgram
 
 		bool isCurrent() const;
 
-		/*template<typename T>
-		void setValue(const core::String &name, const T &t) const {
-			if(isCurrent()) {
-				ShaderInstance::current->setValue(name, t);
-			} else {
-				UniformBase *b = new Uniform<core::String, T>(name, t);
-				uniforms.append(b);
-			}
+		template<ShaderType Type>
+		const Shader<Type> *getShader() const {
+			return static_cast<const Shader<Type> *>(data->bases[Type]);
 		}
-
-		template<typename T>
-		void setValue(ShaderValue name, const T &t) const {
-			if(isCurrent()) {
-				ShaderInstance::current->setValue(name, t);
-			} else {
-				UniformBase *b = new Uniform<ShaderValue, T>(name, t);
-				uniforms.append(b);
-			}
-		}*/
-
 
 	private:
 		friend class GLContext;

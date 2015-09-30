@@ -52,8 +52,8 @@ class ShaderInstance : core::NonCopyable
 		};
 
 	public:
-		ShaderInstance(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom = 0);
-		ShaderInstance(Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vert, Shader<GeometryShader> *geom = 0);
+		ShaderInstance(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom = 0);
+		ShaderInstance(const Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vert, const Shader<GeometryShader> *geom = 0);
 		~ShaderInstance();
 
 		void bind();
@@ -121,7 +121,7 @@ class ShaderInstance : core::NonCopyable
 		core::Hash<core::String, UniformInfo> uniformsInfo;
 
 
-		ShaderBase *bases[3];
+		const ShaderBase *bases[3];
 
 
 		static ShaderInstance *current;

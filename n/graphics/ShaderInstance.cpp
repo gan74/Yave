@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderInstance.h"
 #include "GLContext.h"
 
-
 namespace n {
 namespace graphics {
 
@@ -25,11 +24,11 @@ namespace graphics {
 ShaderInstance *ShaderInstance::current = 0;
 
 
-ShaderInstance::ShaderInstance(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) : handle(0), samplerCount(0), bases{frag, vert, geom} {
+ShaderInstance::ShaderInstance(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : handle(0), samplerCount(0), bases{frag, vert, geom} {
 	compile();
 }
 
-ShaderInstance::ShaderInstance(Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vert, Shader<GeometryShader> *geom) : ShaderInstance(frag, ShaderProgram::getStandardVertexShader(vert), geom) {
+ShaderInstance::ShaderInstance(const Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vert, const Shader<GeometryShader> *geom) : ShaderInstance(frag, ShaderProgram::getStandardVertexShader(vert), geom) {
 
 }
 
@@ -91,9 +90,8 @@ void ShaderInstance::compile() {
 		core::String logs = msg;
 		delete[] msg;
 		throw ShaderLinkingException(logs);
-	} else {
-		getUniforms();
 	}
+	getUniforms();
 }
 
 void ShaderInstance::getUniforms() {

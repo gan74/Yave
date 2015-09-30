@@ -26,12 +26,13 @@ namespace graphics {
 
 class ShaderInstanceFactory : core::NonCopyable
 {
+	typedef std::tuple<const ShaderBase *, const ShaderBase *, const ShaderBase *> ShaderTuple;
 	public:
 		ShaderInstanceFactory() {
 		}
 
-		ShaderInstance *get(Shader<FragmentShader> *frag, Shader<VertexShader> *vert, Shader<GeometryShader> *geom) {
-			std::tuple<ShaderBase *, ShaderBase *, ShaderBase *> tu(frag, vert, geom);
+		ShaderInstance *get(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) {
+			ShaderTuple tu(frag, vert, geom);
 			ShaderInstance *i = instances.get(tu, 0);
 			if(!i) {
 				instances[tu] = i = new ShaderInstance(frag, vert, geom);
@@ -40,7 +41,7 @@ class ShaderInstanceFactory : core::NonCopyable
 		}
 
 	private:
-		core::Hash<std::tuple<ShaderBase *, ShaderBase *, ShaderBase *>, ShaderInstance *> instances;
+		core::Hash<ShaderTuple, ShaderInstance *> instances;
 };
 
 }
