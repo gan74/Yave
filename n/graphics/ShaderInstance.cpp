@@ -181,7 +181,6 @@ void ShaderInstance::bindStandards() const {
 	setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());
 	setValue("n_ViewportSize", math::Vec2(GLContext::getContext()->getViewport()));
 	setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
-
 }
 
 void ShaderInstance::bindTextures() const {

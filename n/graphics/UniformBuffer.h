@@ -51,13 +51,15 @@ class DynamicBufferBase
 						gl::glBufferData(type, size, buffer, GL_DYNAMIC_DRAW);
 					} else {
 						gl::glBindBuffer(type, handle);
-						void *p = gl::glMapBuffer(type, GL_WRITE_ONLY);
+						/*void *p = gl::glMapBuffer(type, GL_WRITE_ONLY);
 						if(!p) {
 							gl::glBufferSubData(type, 0, size, buffer);
 						} else {
 							memcpy(p, buffer, size);
 							gl::glUnmapBuffer(type);
-						}
+						}*/
+						gl::glBufferSubData(type, 0, size, 0);
+						gl::glBufferSubData(type, 0, size, buffer);
 					}
 					modified = false;
 				} else if(forceBind) {
