@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Texture.h"
+#include "TextureBinding.h"
 #include "GLContext.h"
 #include "StaticBuffer.h"
 #include "GL.h"
@@ -165,6 +166,23 @@ bool Texture::prepare(bool sync) const {
 		}
 	}
 	return getHandle();
+}
+
+bool Texture::synchronize(bool immediate) {
+	if(!isNull()) {
+		return true;
+	}
+	if(!immediate) {
+		Texture *self = new Texture(*this);
+		GLContext::getContext()->addGLTask([=]() {
+			self->synchronize(true);
+			delete self;
+		});
+	} else {
+		prepare(true);
+		internal::TextureBinding::dirty();
+	}
+	return !isNull();
 }
 
 }

@@ -61,6 +61,8 @@ class Texture : public TextureBase<Texture2D>
 		}
 
 		static bool isHWSupported(ImageFormat format);
+		
+		bool synchronize(bool immediate = false);
 
 	private:
 		friend class ShaderInstance;
