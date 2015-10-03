@@ -55,7 +55,7 @@ struct Image : core::NonCopyable
 
 
 
-class Image : private assets::Asset<internal::Image>
+class Image : public assets::Asset<internal::Image>
 {
 	friend class ImageLoader;
 	public:
@@ -77,14 +77,6 @@ class Image : private assets::Asset<internal::Image>
 				return math::Vec2ui(0);
 			}
 			return in->size;
-		}
-
-		bool isValid() const {
-			return assets::Asset<internal::Image>::isValid();
-		}
-
-		bool isNull() const {
-			return assets::Asset<internal::Image>::isNull();
 		}
 
 		const void *data() const {

@@ -105,12 +105,6 @@ class Asset
 {
 	typedef const T *ConstPtr;
 	public:
-		Asset() : ptr(0) {
-		}
-
-		Asset(ConstPtr &&p) : ptr(AssetPtr<T>(new typename AssetPtr<T>::PtrType(std::move(p)))) {
-		}
-
 		~Asset() {
 			if(ptr.getReferenceCount() < 1) {
 				ptr.invalidate();
@@ -133,6 +127,10 @@ class Asset
 			return !ptr || !*ptr;
 		}
 
+		bool isLoading() const {
+			return ptr && !*ptr;
+		}
+
 		bool operator==(const Asset<T> &a) const {
 			return ptr == a.ptr;
 		}
@@ -146,6 +144,13 @@ class Asset
 			return !ptr ? 0 : ptr->getId();
 		}
 		#endif
+
+	protected:
+		Asset() : ptr(0) {
+		}
+
+		Asset(ConstPtr &&p) : ptr(AssetPtr<T>(new typename AssetPtr<T>::PtrType(std::move(p)))) {
+		}
 
 	private:
 		template<typename U, typename P>

@@ -83,7 +83,7 @@ namespace internal {
 	};
 }
 
-class MeshInstance : private assets::Asset<internal::MeshInstance>
+class MeshInstance : public assets::Asset<internal::MeshInstance>
 {
 	friend class MeshLoader;
 	public:

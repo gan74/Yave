@@ -172,7 +172,7 @@ namespace internal {
 
 
 
-class Material : private assets::Asset<internal::Material>
+class Material : public assets::Asset<internal::Material>
 {
 	public:
 		Material() : assets::Asset<internal::Material>() {
