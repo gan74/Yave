@@ -23,16 +23,52 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 namespace graphics {
-namespace internal {
 
-core::Array<const Material *> Material::cache = core::Array<const Material *>();
-concurrent::Mutex Material::mutex = concurrent::Mutex();
+core::Array<const MaterialData *> matCache = core::Array<const MaterialData *>();
+concurrent::Mutex cacheMutex;
 
+MaterialData *const nullData = new MaterialData();
+MaterialData current;
+typename MaterialData::BlendMode blendMode = MaterialData::None;
+
+void MaterialData::addToCache() {
+	if(!index) {
+		cacheMutex.lock();
+		matCache.append(this);
+		matCache.sort([](const MaterialData *a, const MaterialData *b) {
+			if(a->depthTested != b->depthTested) {
+				return a->depthTested > b->depthTested;
+			}
+			if(a->depthWrite != b->depthWrite) {
+				return a->depthWrite > b->depthWrite;
+			}
+			if(a->prog != b->prog) {
+				return a->prog < b->prog;
+			}
+			if(a->cull != b->cull) {
+				return a->cull < b->cull;
+			}
+			if(a->blend != b->blend) {
+				return a->blend < b->blend;
+			}
+			if(a->depth != b->depth) {
+				return a->depth < b->depth;
+			}
+			return false;
+		});
+		uint max = matCache.size();
+		for(uint i = 0; i != max; i++) {
+			matCache[i]->index = i + 1;
+		}
+		cacheMutex.unlock();
+	}
 }
 
-static internal::Material *const nullInternal = new internal::Material();
-static MaterialData current;
-static typename MaterialData::BlendMode blendMode = MaterialData::None;
+void MaterialData::removeFromCache() {
+	cacheMutex.lock();
+	matCache.remove(this);
+	cacheMutex.unlock();
+}
 
 
 N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const MaterialData &restrict data) {
@@ -109,7 +145,8 @@ void fullBind(const MaterialData &restrict data) {
 }
 
 void Material::bind(uint flags) const {
-	MaterialData data = getData();
+	const MaterialData *d = getInternal();
+	MaterialData data = *(d ? d : nullData);
 
 	if(flags & ForceMaterialRebind) {
 		fullBind(data);

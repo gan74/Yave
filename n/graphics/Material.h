@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Texture.h"
 #include "ShaderProgram.h"
 
-//#define N_MATERIAL_FANCYNESS
 #define N_MATERIAL_CACHING
 
 namespace n {
@@ -58,15 +57,11 @@ struct MaterialData
 		Always
 	};
 
-	MaterialData() : color(1, 1, 1, 1), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5)/*, textures(0)*/
-	#ifdef N_MATERIAL_FANCYNESS
-		, fancy(true)
-	#endif
-	{
+	MaterialData() : color(1, 1, 1, 1), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5), index(0) {
 	}
 
 	~MaterialData() {
-		//delete textures;
+		removeFromCache();
 	}
 
 	Color<> color;
@@ -85,125 +80,32 @@ struct MaterialData
 	Texture roughness;
 	float normalIntencity;
 
-	//core::Map<core::String, Texture> *textures;
-
 	private:
 		friend class Material;
-		friend class internal::Material;
 
-		#ifdef N_MATERIAL_FANCYNESS
-		mutable bool fancy;
+		mutable uint index;
 
-		void computeFancy() const {
-			fancy =  blend != None ||
-					 cull != Back ||
-					 depth != Lesser ||
-					 depthTested != true ||
-					 depthWrite != true;
-		}
-		#endif
+		void addToCache();
+		void removeFromCache();
+
 
 };
 
-namespace internal {
-	class Material : core::NonCopyable
-	{
-
-		const MaterialData &computeFancyness(const MaterialData &d) {
-			#ifdef N_MATERIAL_FANCYNESS
-			d.computeFancy();
-			#endif
-			return d;
-		}
-
-		public:
-			Material(const MaterialData &d = MaterialData()) : data(computeFancyness(d)), index(0) {
-			}
-
-			~Material() {
-				if(index) {
-					mutex.lock();
-					cache.remove(this);
-					mutex.unlock();
-				}
-			}
-
-			#define N_MAT_COMPARE(mem, op) if(data.mem != m.data.mem) { return data.mem op m.data.mem; }
-
-			bool operator<(const Material &m) const {
-				N_MAT_COMPARE(depthTested, >)
-				N_MAT_COMPARE(depth, <)
-				N_MAT_COMPARE(cull, <)
-				N_MAT_COMPARE(prog, <)
-				N_MAT_COMPARE(diffuse, <)
-				N_MAT_COMPARE(depthWrite, <)
-				return false;
-			}
-
-			#undef N_MAT_COMPARE
-
-			const MaterialData data;
-
-			uint getIndex() const {
-				updateIfNeeded();
-				return index;
-			}
-
-		private:
-			static concurrent::Mutex mutex;
-			static core::Array<const Material *> cache;
-
-			void updateIfNeeded() const {
-				if(!index) {
-					mutex.lock();
-					cache.append(this);
-					cache.sort([](const Material *a, const Material *b) { return a->operator<(*b); });
-					uint max = cache.size();
-					for(uint i = 0; i != max; i++) {
-						cache[i]->index = i + 1;
-					}
-					mutex.unlock();
-				}
-			}
-
-			mutable uint index;
-	};
-}
-
-
-
-class Material : public assets::Asset<internal::Material>
+class Material : public assets::Asset<MaterialData>
 {
 	public:
-		Material() : assets::Asset<internal::Material>() {
+		Material() : assets::Asset<MaterialData>() {
 		}
 
-		Material(const MaterialData &i) : Material(new internal::Material(i)) {
+		Material(const MaterialData &i) : Material(new MaterialData(i)) {
+		}
+
+
+		Material(const MaterialData *i) : assets::Asset<MaterialData>(std::move(i)) {
 		}
 
 		bool operator<(const Material &m) const {
 			return getInternalIndex() < m.getInternalIndex();
-		}
-
-		Color<> getColor() const {
-			return getData().color;
-		}
-
-		MaterialData getData() const {
-			#ifdef N_MATERIAL_CACHING
-			if(cache.data.hasValue()) {
-				return cache.data;
-			}
-			#endif
-			const internal::Material *i = getInternal();
-			if(i) {
-				return
-				#ifdef N_MATERIAL_CACHING
-					cache.data =
-				#endif
-					i->data;
-			}
-			return MaterialData();
 		}
 
 	private:
@@ -217,20 +119,17 @@ class Material : public assets::Asset<internal::Material>
 
 		void bind(uint flags = RenderFlag::None) const;
 
-		Material(const assets::Asset<internal::Material> &t) : assets::Asset<internal::Material>(t) {
+		Material(const assets::Asset<MaterialData> &t) : assets::Asset<MaterialData>(t) {
 		}
 
-		Material(internal::Material *i) : assets::Asset<internal::Material>(std::move(i)) {
-		}
-
-		N_FORCE_INLINE const internal::Material *getInternal() const {
-			return this->isValid() ? this->operator->() : (const internal::Material *)0;
+		N_FORCE_INLINE const MaterialData *getInternal() const {
+			return this->isValid() ? this->operator->() : 0;
 		}
 
 		uint getInternalIndex() const {
 			if(!cache.index) {
-				const internal::Material *i = getInternal();
-				return cache.index = (i ? i->getIndex() : 0);
+				const MaterialData *i = getInternal();
+				return cache.index = (i ? i->index : 0);
 			}
 			return cache.index;
 		}

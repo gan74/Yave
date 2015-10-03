@@ -42,7 +42,7 @@ class MaterialLoader
 					n::unused(runner);
 				}
 
-				virtual internal::Material *operator()(Args...) = 0;
+				virtual MaterialData *operator()(Args...) = 0;
 
 			private:
 				static Runner runner;
@@ -72,9 +72,9 @@ class MaterialLoader
 		MaterialLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
 
-		assets::AssetBuffer<internal::Material> buffer;
-		assets::AssetManager<internal::Material, assets::AsyncLoadingPolicy<internal::Material>> asyncBuffer;
-		assets::AssetManager<internal::Material, assets::ImmediateLoadingPolicy<internal::Material>> immediateBuffer;
+		assets::AssetBuffer<MaterialData> buffer;
+		assets::AssetManager<MaterialData, assets::AsyncLoadingPolicy<MaterialData>> asyncBuffer;
+		assets::AssetManager<MaterialData, assets::ImmediateLoadingPolicy<MaterialData>> immediateBuffer;
 
 };
 

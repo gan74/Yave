@@ -55,7 +55,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 		MtlReader() : MaterialLoader::MaterialReader<MtlReader, core::String, core::String>() {
 		}
 
-		internal::Material *operator()(core::String fileName, core::String name) override {
+		MaterialData *operator()(core::String fileName, core::String name) override {
 			if(!fileName.endsWith(".mtl")) {
 				return 0;
 			}
@@ -64,7 +64,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 		}
 
 	private:
-		internal::Material *load(io::File &file, const core::String &name) {
+		MaterialData *load(io::File &file, const core::String &name) {
 			if(!file.open(io::IODevice::Read)) {
 				std::cerr<<file.getName()<<" not found"<<std::endl;
 				return 0;
@@ -113,9 +113,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 					}
 				}
 			}
-			internal::Material *imat = new internal::Material(*mat);
-			delete mat;
-			return imat;
+			return mat;
 		}
 };
 
