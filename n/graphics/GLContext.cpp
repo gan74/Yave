@@ -94,10 +94,11 @@ void GLContext::finishTasks() {
 }
 
 GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool()), shFactory(new ShaderInstanceFactory()), viewport(1024, 768), screen(0) {
+	using namespace gl;
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
-	gl::glewExperimental = true;
+	glewExperimental = true;
 	if(gl::glewInit() != GLEW_OK) {
 		fatal("Unable to initialize glew.");
 	}
@@ -109,27 +110,28 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 
 	int major = 0;
 	int minor = 0;
-	gl::glGetIntegerv(GL_MAJOR_VERSION, &major);
-	gl::glGetIntegerv(GL_MINOR_VERSION, &minor);
+	glGetIntegerv(GL_MAJOR_VERSION, &major);
+	glGetIntegerv(GL_MINOR_VERSION, &minor);
 	if(major < 4 || (major == 4 && minor < 3)) {
 		fatal("This needs OpenGL 4.3 or newer to run.");
 	}
 
-	//gl::glEnable(GL_TEXTURE_2D);
-	//gl::glEnable(GL_CULL_FACE);
-	//gl::glEnable(GL_DEPTH_TEST);
-	gl::glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-	gl::glViewport(0, 0, viewport.x(), viewport.y());
+	glViewport(0, 0, viewport.x(), viewport.y());
 
 	for(uint i = 0; i != Max; i++) {
 		hwInts[i] = 0;
 	}
 
-	gl::glGetIntegerv(GL_MAX_DRAW_BUFFERS, &hwInts[MaxFboAttachements]);
-	gl::glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &hwInts[MaxTextures]);
-	gl::glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
-	gl::glGetIntegerv(GL_MAX_VARYING_VECTORS, &hwInts[MaxVaryings]);
+	glGetIntegerv(GL_MAX_DRAW_BUFFERS, &hwInts[MaxFboAttachements]);
+	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &hwInts[MaxTextures]);
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
+	glGetIntegerv(GL_MAX_VARYING_VECTORS, &hwInts[MaxVaryings]);
+
+	if(GLEW_ARB_bindless_texture) {
+		hwInts[BindlessTextureSupport] = true;
+	}
 
 	if(hwInts[MaxVertexAttribs] <= 4) {
 		fatal("Not enought vertex attribs.");
@@ -145,9 +147,9 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 
 	#undef CHECK_TEX_FORMAT
 
-	gl::glGetError();
+	glGetError();
 
-	gl::glDebugMessageCallback(&debugOut, 0);
+	glDebugMessageCallback(&debugOut, 0);
 	setDebugEnabled(true);
 }
 

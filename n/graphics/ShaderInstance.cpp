@@ -115,7 +115,7 @@ void ShaderInstance::getUniforms() {
 	int uniforms = 0;
 	gl::glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniforms);
 	for(uint i = 0; i != SVMax; i++) {
-		standards[i] = UniformAddr(GL_INVALID_INDEX);
+		standards[i] = UniformInfo{UniformAddr(GL_INVALID_INDEX), 0, gl::GLenum(GL_NONE)};
 	}
 	for(uint i = 0; i != uint(uniforms); i++) {
 		gl::GLsizei size = 0;
@@ -128,16 +128,16 @@ void ShaderInstance::getUniforms() {
 		if(uniform.endsWith("[0]")) {
 			uniform = uniform.subString(0, uniform.size() - 3);
 		}
-		UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size});
+		UniformInfo info({gl::glGetUniformLocation(handle, name), (uint)size, type});
 		if(isSampler(type)) {
 			uint slot = samplerCount++;
-			setValue(info.addr, int(slot));
+			setValue(info, int(slot));
 			info.addr = slot;
 		}
 		uniformsInfo[uniform] = info;
 		int std = computeStandardIndex(uniform);
 		if(std != UniformAddr(GL_INVALID_INDEX)) {
-			standards[std] = info.addr;
+			standards[std] = info;
 		}
 	}
 	texBindings = new internal::TextureBinding[samplerCount];
@@ -171,10 +171,6 @@ ShaderInstance::UniformAddr ShaderInstance::computeStandardIndex(const core::Str
 }
 
 void ShaderInstance::bindStandards() const {
-	/*static UniformBuffer<math::Matrix4<>> *model = new UniformBuffer<math::Matrix4<>>(1);
-	*model->begin() = GLContext::getContext()->getModelMatrix();
-	setBuffer("n_ModelMatrixBuffer", *model);*/
-
 	setValue("n_ModelMatrix", GLContext::getContext()->getModelMatrix());
 
 	setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
@@ -198,67 +194,65 @@ void ShaderInstance::bindBuffers() const {
 	}
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const int *a, uint count) const {
-	gl::glProgramUniform1iv(handle, addr, count, a);
+void ShaderInstance::setValue(UniformInfo info, const int *a, uint count) const {
+	gl::glProgramUniform1iv(handle, info.addr, count, a);
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const uint *a, uint count) const {
-	gl::glProgramUniform1uiv(handle, addr, count, a);
+void ShaderInstance::setValue(UniformInfo info, const uint *a, uint count) const {
+	gl::glProgramUniform1uiv(handle, info.addr, count, a);
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const float *f, uint count) const {
-	gl::glProgramUniform1fv(handle, addr, count, f);
+void ShaderInstance::setValue(UniformInfo info, const float *f, uint count) const {
+	gl::glProgramUniform1fv(handle, info.addr, count, f);
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec2i *v, uint count) const {
-	gl::glProgramUniform2iv(handle, addr, count, v->begin());
+void ShaderInstance::setValue(UniformInfo info, const math::Vec2i *v, uint count) const {
+	gl::glProgramUniform2iv(handle, info.addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec3i *v, uint count) const {
-	gl::glProgramUniform3iv(handle, addr, count, v->begin());
+void ShaderInstance::setValue(UniformInfo info, const math::Vec3i *v, uint count) const {
+	gl::glProgramUniform3iv(handle, info.addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec2 *v, uint count) const {
-	gl::glProgramUniform2fv(handle, addr, count, v->begin());
+void ShaderInstance::setValue(UniformInfo info, const math::Vec2 *v, uint count) const {
+	gl::glProgramUniform2fv(handle, info.addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec3 *v, uint count) const {
-	gl::glProgramUniform3fv(handle, addr, count, v->begin());
+void ShaderInstance::setValue(UniformInfo info, const math::Vec3 *v, uint count) const {
+	gl::glProgramUniform3fv(handle, info.addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Vec4 *v, uint count) const {
-	gl::glProgramUniform4fv(handle, addr, count, v->begin());
+void ShaderInstance::setValue(UniformInfo info, const math::Vec4 *v, uint count) const {
+	gl::glProgramUniform4fv(handle, info.addr, count, v->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Matrix2<float> *m, uint count) const {
-	gl::glProgramUniformMatrix2fv(handle, addr, count, GL_TRUE, m->begin());
+void ShaderInstance::setValue(UniformInfo info, const math::Matrix2<float> *m, uint count) const {
+	gl::glProgramUniformMatrix2fv(handle, info.addr, count, GL_TRUE, m->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Matrix3<float> *m, uint count) const {
-	gl::glProgramUniformMatrix3fv(handle, addr, count, GL_TRUE, m->begin());
+void ShaderInstance::setValue(UniformInfo info, const math::Matrix3<float> *m, uint count) const {
+	gl::glProgramUniformMatrix3fv(handle, info.addr, count, GL_TRUE, m->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr addr, const math::Matrix4<float> *m, uint count) const {
-	gl::glProgramUniformMatrix4fv(handle, addr, count, GL_TRUE, m->begin());
+void ShaderInstance::setValue(UniformInfo info, const math::Matrix4<float> *m, uint count) const {
+	gl::glProgramUniformMatrix4fv(handle, info.addr, count, GL_TRUE, m->begin());
 }
 
-void ShaderInstance::setValue(UniformAddr slot, const Texture &t, TextureSampler sampler) const {
-	if(slot != UniformAddr(GL_INVALID_INDEX)) {
-		texBindings[slot] = t;
-		texBindings[slot] = sampler;
-		/*if(current == this) {
-			bindings[slot].bind(slot);
-		} else*/ {
-			t.prepare();
+void ShaderInstance::setValue(UniformInfo info, const Texture &t, TextureSampler sampler) const {
+	if(info.type == GL_UNSIGNED_INT_VEC2 && GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
+		t.prepare();
+		gl::glProgramUniformHandleui64ARB(handle, info.addr, t.getBindlessId());
+	} else {
+		UniformAddr slot = info.addr;
+		if(slot != UniformAddr(GL_INVALID_INDEX)) {
+			texBindings[slot] = t;
+			texBindings[slot] = sampler;
 		}
 	}
 }
 
-ShaderInstance::UniformAddr ShaderInstance::getAddr(const core::String &name) const {
-	return getInfo(name).addr;
-}
-
-ShaderInstance::UniformInfo ShaderInstance::getInfo(const core::String &name) const {	return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0});
+ShaderInstance::UniformInfo ShaderInstance::getInfo(const core::String &name) const {
+	return uniformsInfo.get(name, UniformInfo{UniformAddr(GL_INVALID_INDEX), 0, gl::GLenum(GL_NONE)});
 }
 
 }

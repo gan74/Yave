@@ -60,6 +60,7 @@ class GLContext
 			MaxTextures = 1,
 			MaxVertexAttribs = 2,
 			MaxVaryings = 3,
+			BindlessTextureSupport = 4,
 			Max = 4
 		};
 

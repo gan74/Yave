@@ -46,17 +46,21 @@ void FrameBuffer::setup() {
 	uint att = getMaxAttachment();
 	for(uint i = 0; i != att; i++) {
 		if(isAttachmentEnabled(i)) {
-			attachments[i].prepare(true);
-			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachments[i].getHandle(), 0);
-			if(!attachments[i].getHandle()) {
+			if(!attachments[i].prepare(true)) {
 				fatal("Unable to create attachement.");
 			}
+			gl::glBindTexture(GL_TEXTURE_2D, attachments[i].getHandle());
+			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachments[i].getHandle(), 0);
+
 		} else {
 			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
 		}
 	}
 	if(depth) {
-		depth->prepare(true);
+		if(!depth->prepare(true)) {
+			fatal("Unable to create depth attachement.");
+		}
+		gl::glBindTexture(GL_TEXTURE_2D, depth->getHandle());
 		gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,  depth->getHandle(), 0);
 	} else {
 		gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,  0, 0);
@@ -126,11 +130,7 @@ void FrameBuffer::blit(uint slot, bool depth) const {
 	depth |= slot == Depth;
 	bool color = slot != Depth;
 	if(color) {
-		/*static uint readBuffer = 0;
-		if(slot != readBuffer)*/ {
-			gl::glReadBuffer(GL_COLOR_ATTACHMENT0 + slot);
-			//readBuffer = slot;
-		}
+		gl::glReadBuffer(GL_COLOR_ATTACHMENT0 + slot);
 	}
 	gl::GLbitfield bits = (color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0);
 	Material().bind(RenderFlag::DepthWriteOnly);

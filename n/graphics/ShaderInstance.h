@@ -50,6 +50,7 @@ class ShaderInstance : core::NonCopyable
 		{
 			UniformAddr addr;
 			uint size;
+			gl::GLenum type;
 		};
 
 	public:
@@ -64,32 +65,32 @@ class ShaderInstance : core::NonCopyable
 		static const ShaderInstance *getCurrent();
 		static void validateState();
 
-		void setValue(UniformAddr addr, const int *a, uint count) const;
-		void setValue(UniformAddr addr, const uint *a, uint count) const;
-		void setValue(UniformAddr addr, const float *f, uint count) const;
-		void setValue(UniformAddr addr, const math::Vec2i *v, uint count) const;
-		void setValue(UniformAddr addr, const math::Vec3i *v, uint count) const;
-		void setValue(UniformAddr addr, const math::Vec2 *v, uint count) const;
-		void setValue(UniformAddr addr, const math::Vec3 *v, uint count) const;
-		void setValue(UniformAddr addr, const math::Vec4 *v, uint count) const;
-		void setValue(UniformAddr addr, const math::Matrix2<float> *m, uint count) const;
-		void setValue(UniformAddr addr, const math::Matrix3<float> *m, uint count) const;
-		void setValue(UniformAddr addr, const math::Matrix4<float> *m, uint count) const;
-		void setValue(UniformAddr slot, const Texture &t, TextureSampler sampler = TextureSampler::Default) const;
+		void setValue(UniformInfo addr, const int *a, uint count) const;
+		void setValue(UniformInfo addr, const uint *a, uint count) const;
+		void setValue(UniformInfo addr, const float *f, uint count) const;
+		void setValue(UniformInfo addr, const math::Vec2i *v, uint count) const;
+		void setValue(UniformInfo addr, const math::Vec3i *v, uint count) const;
+		void setValue(UniformInfo addr, const math::Vec2 *v, uint count) const;
+		void setValue(UniformInfo addr, const math::Vec3 *v, uint count) const;
+		void setValue(UniformInfo addr, const math::Vec4 *v, uint count) const;
+		void setValue(UniformInfo addr, const math::Matrix2<float> *m, uint count) const;
+		void setValue(UniformInfo addr, const math::Matrix3<float> *m, uint count) const;
+		void setValue(UniformInfo addr, const math::Matrix4<float> *m, uint count) const;
+		void setValue(UniformInfo slot, const Texture &t, TextureSampler sampler = TextureSampler::Default) const;
 
 		template<typename T>
-		void setValue(UniformAddr addr, const T &t) const {
+		void setValue(UniformInfo addr, const T &t) const {
 			setValue(addr, &t, 1);
 		}
 
-		void setValue(UniformAddr addr, const double &t) const {
+		void setValue(UniformInfo addr, const double &t) const {
 			setValue(addr, float(t));
 		}
 
 		template<typename T, typename... Args>
 		void setValue(const core::String &name, const T &t, Args... args) const {
-			UniformAddr i = getAddr(name);
-			if(i != UniformAddr(GL_INVALID_INDEX)) {
+			UniformInfo i = getInfo(name);
+			if(i.addr != UniformAddr(GL_INVALID_INDEX)) {
 				setValue(i, t, args...);
 			}
 		}
@@ -107,7 +108,6 @@ class ShaderInstance : core::NonCopyable
 			}
 		}
 
-		UniformAddr getAddr(const core::String &name) const;
 		UniformInfo getInfo(const core::String &name) const;
 
 
@@ -131,7 +131,7 @@ class ShaderInstance : core::NonCopyable
 		core::SmartPtr<DynamicBufferBase::Data> *bufferBindings;
 		core::Hash<core::String, uint> buffers;
 
-		UniformAddr standards[SVMax];
+		UniformInfo standards[SVMax];
 		core::Hash<core::String, UniformInfo> uniformsInfo;
 
 

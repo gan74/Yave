@@ -38,7 +38,7 @@ namespace internal {
 	{
 		struct Data
 		{
-			Data(TextureType t) : type(t), handle(0), hasMips(false) {
+			Data(TextureType t) : type(t), handle(0), bindless(0), hasMips(false) {
 			}
 
 			~Data() {
@@ -55,6 +55,7 @@ namespace internal {
 			const TextureType type;
 			concurrent::SpinLock lock;
 			gl::GLuint handle;
+			uint64 bindless;
 			bool hasMips;
 		};
 
@@ -74,6 +75,10 @@ class TextureBase : protected internal::TextureBase
 
 		bool hasMipmaps() const {
 			return data->hasMips;
+		}
+
+		uint64 getBindlessId() const {
+			return data->bindless;
 		}
 
 	protected:

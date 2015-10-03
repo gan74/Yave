@@ -91,7 +91,7 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 		}
 		src.replace("#version", "//#version");
 	}
-	return ver + common + libs[type] + src;
+	return ver + common + libs[type] + "\n" + src;
 }
 
 

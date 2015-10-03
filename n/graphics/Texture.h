@@ -60,8 +60,6 @@ class Texture : public TextureBase<Texture2D>
 			return hasMipmaps() ? 1 + floor(log2(getSize().max())) : 1;
 		}
 
-		void synchronize(bool immediate = true);
-
 		static bool isHWSupported(ImageFormat format);
 
 	private:
@@ -76,7 +74,7 @@ class Texture : public TextureBase<Texture2D>
 
 		void upload() const;
 
-		void prepare(bool sync = false) const;
+		bool prepare(bool sync = false) const;
 
 		Image image;
 };

@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GLContext.h"
 #include "StaticBuffer.h"
 #include "GL.h"
-#include "TextureBinding.h"
 
 #define N_NO_TEX_STORAGE
 
@@ -129,46 +128,43 @@ void Texture::upload() const {
 		gl::glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
-	/*gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	gl::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
+	if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
+		gl::GLuint sampler = 0;
+		gl::glGenSamplers(1, &sampler);
+		for(uint i = 0; i != 8; i++) {
+			gl::glBindSampler(i, sampler);
+		}
+		gl::glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		gl::glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		gl::glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		gl::glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, hasMipmaps() ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+
+		data->bindless = gl::glGetTextureSamplerHandleARB(data->handle, sampler);
+		gl::glMakeTextureHandleResidentARB(data->bindless);
+	}
 }
 
-void Texture::prepare(bool sync) const {
-	if(!image.isNull()) {
-		if(image.data() || sync) {
-			if(data->lock.trylock()) {
-				if(sync) {
-					upload();
-				} else {
-					Texture self(*this);
-					GLContext::getContext()->addGLTask([=]() {
-						self.upload();
-						internal::TextureBinding::dirty();
-					});
-				}
-			}
-		}
-	} else {
+bool Texture::prepare(bool sync) const {
+	if(getHandle()) {
+		return true;
+	}
+	if(image.isLoading()) {
+		return false;
+	}
+	if(image.isNull()) {
+		return true;
+	}
+	if(data->lock.trylock()) {
 		if(sync) {
-			gl::glBindTexture(GL_TEXTURE_2D, getHandle());
+			upload();
+		} else {
+			Texture self(*this);
+			GLContext::getContext()->addGLTask([=]() {
+				self.upload();
+			});
 		}
 	}
-}
-
-void Texture::synchronize(bool immediate) {
-	if(!isNull()) {
-		return;
-	}
-	if(!immediate) {
-		Texture *self = new Texture(*this);
-		GLContext::getContext()->addGLTask([=]() {
-			self->synchronize(true);
-			delete self;
-		});
-	} else {
-		prepare(true);
-		internal::TextureBinding::dirty();
-	}
+	return getHandle();
 }
 
 }
