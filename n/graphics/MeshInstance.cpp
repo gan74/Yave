@@ -126,14 +126,6 @@ MeshInstance::MeshInstance(const core::Array<SubMeshInstance *> &subs) : MeshIns
 MeshInstance::MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m) : MeshInstance(new internal::MeshInstance(std::move(b), m)) {
 }
 
-bool MeshInstance::isValid() const {
-	return assets::Asset<internal::MeshInstance>::isValid();
-}
-
-bool MeshInstance::isNull() const {
-	return assets::Asset<internal::MeshInstance>::isNull();
-}
-
 float MeshInstance::getRadius() const {
 	const internal::MeshInstance *i = getInternal();
 	return i ? i->getRadius() : -1;

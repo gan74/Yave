@@ -93,8 +93,6 @@ class MeshInstance : public assets::Asset<internal::MeshInstance>
 		MeshInstance(const core::Array<SubMeshInstance *> &subs);
 		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m = Material());
 
-		bool isValid() const;
-		bool isNull() const;
 		float getRadius() const;
 		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const;
 		const_iterator begin() const;

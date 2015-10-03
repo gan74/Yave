@@ -185,14 +185,6 @@ class Material : public assets::Asset<internal::Material>
 			return getInternalIndex() < m.getInternalIndex();
 		}
 
-		bool isValid() const {
-			return assets::Asset<internal::Material>::isValid();
-		}
-
-		bool isNull() const {
-			return assets::Asset<internal::Material>::isNull();
-		}
-
 		Color<> getColor() const {
 			return getData().color;
 		}
