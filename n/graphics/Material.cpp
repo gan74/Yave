@@ -145,8 +145,7 @@ void fullBind(const MaterialData &restrict data) {
 }
 
 void Material::bind(uint flags) const {
-	const MaterialData *d = getInternal();
-	MaterialData data = *(d ? d : nullData);
+	MaterialData data = getData();
 
 	if(flags & ForceMaterialRebind) {
 		fullBind(data);
@@ -226,6 +225,24 @@ void Material::bind(uint flags) const {
 			}
 		}
 	}
+}
+
+
+const MaterialData &Material::getData() const {
+	#ifdef N_MATERIAL_CACHING
+	if(cache.data.hasValue()) {
+		return cache.data;
+	}
+	#endif
+	const MaterialData *i = getInternal();
+	if(i) {
+		return
+		#ifdef N_MATERIAL_CACHING
+			cache.data =
+		#endif
+			*i;
+	}
+	return *nullData;
 }
 
 }

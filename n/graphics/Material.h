@@ -108,6 +108,8 @@ class Material : public assets::Asset<MaterialData>
 			return getInternalIndex() < m.getInternalIndex();
 		}
 
+		const MaterialData &getData() const;
+
 	private:
 		friend class MaterialLoader;
 		friend class GLContext;
