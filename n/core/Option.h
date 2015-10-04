@@ -91,7 +91,7 @@ class Option
 			return hasVal;
 		}
 
-		operator T() const {
+		operator const T &() const {
 			return val;
 		}
 
