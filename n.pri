@@ -1,6 +1,6 @@
 CONFIG += c++11
 
-LIBS += -lpthread
+LIBS += -lpthread -lopengl32
 
 DEPENDPATH += $$PWD
 INCLUDEPATH += $$PWD

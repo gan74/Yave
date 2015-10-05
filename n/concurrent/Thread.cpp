@@ -16,9 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Thread.h"
 #include "HazardPtr.h"
 #include "Mutex.h"
-#include <pthread.h>
-#include <chrono>
-#include <thread>
+#include <unistd.h>
 
 namespace n {
 namespace concurrent {
@@ -83,7 +81,7 @@ bool Thread::willBeDeleted() const {
 }
 
 void Thread::sleep(double sec) {
-	std::this_thread::sleep_for(std::chrono::microseconds(long(sec * 1000000)));
+	usleep(sec * 1000000);
 }
 
 void *Thread::createThread(void *arg) {

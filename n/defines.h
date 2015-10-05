@@ -33,7 +33,7 @@ void unused(T) {}
 /* defines stuffs here */
 
 #ifndef PTRDIFF_MAX
-#error PTRDIFF_MAX not defined
+//#error PTRDIFF_MAX not defined
 #endif
 
 #if (PTRDIFF_MAX == 0x7FFFFFFF)
