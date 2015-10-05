@@ -353,12 +353,18 @@ class Type
 		const std::type_info *info;
 };
 
+#ifdef N_USE_GCC_4
+#define N_HAS_CPY_CTOR has_trivial_copy_constructor<T>
+#else
+#define N_HAS_CPY_CTOR is_trivially_copy_constructible<T>
+#endif
+
 
 template<typename T>
 struct TypeInfo
 {
 	static constexpr bool isPrimitive = !std::is_class<T>::value && !std::is_union<T>::value;
-	static constexpr bool isPod = std::has_trivial_copy_constructor<T>::value || isPrimitive;
+	static constexpr bool isPod = std::N_HAS_CPY_CTOR::value || isPrimitive;
 	static constexpr bool isPointer = false;
 	static constexpr bool isConst = false;
 	static constexpr bool isRef = false;
@@ -377,6 +383,8 @@ struct TypeInfo
 	typedef T nonPtr;
 	typedef T decayed;
 };
+
+#undef N_HAS_CPY_CTOR
 
 template<typename T>
 struct TypeInfo<T *>

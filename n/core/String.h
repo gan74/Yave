@@ -34,8 +34,6 @@ class String
 		typedef concurrent::auint CounterType;
 		typedef char const * const_iterator;
 
-		static_assert(TypeInfo<CounterType>::isPod, "String::CounterType need to be POD");
-
 		template<typename T, typename... Args>
 		explicit String(const T &s) : String(build(s)) {
 		}
