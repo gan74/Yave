@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 
 #define GL_AUDIT_STATE
+//#define N_SYNCHRONOUS_GL_DEBUG
 
 namespace n {
 namespace graphics {
@@ -161,10 +162,15 @@ GLContext::~GLContext() {
 void GLContext::setDebugEnabled(bool deb) {
 	if(deb) {
 		gl::glEnable(GL_DEBUG_OUTPUT);
-		/*gl::glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		#warning Synchronous debuging*/
+		#ifdef N_SYNCHRONOUS_GL_DEBUG
+		gl::glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		#warning Synchronous debugging
+		#endif
 	} else {
 		gl::glDisable(GL_DEBUG_OUTPUT);
+		#ifdef N_SYNCHRONOUS_GL_DEBUG
+		gl::glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		#endif
 	}
 }
 
