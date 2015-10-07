@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_TIMER_H
 #define N_CORE_TIMER_H
 
-#include <n/defines.h>
 #include <chrono>
 
 namespace n {

@@ -268,6 +268,16 @@ namespace internal {
 	{
 		static constexpr bool value = false;
 	};
+
+	template<typename T, bool B>
+	class InheritAlready : public T
+	{
+	};
+
+	template<typename T>
+	class InheritAlready<T, true>
+	{
+	};
 }
 
 template<bool I, typename Then, typename Else>
@@ -288,6 +298,11 @@ struct VoidToNothing : If<!std::is_void<T>::value, T, Nothing>
 {
 };
 
+
+template<typename T, typename Base>
+class InheritIfNotAlready : public internal::InheritAlready<Base, std::is_base_of<Base, T>::value>
+{
+};
 
 template<typename From, typename To> // U from T
 class TypeConversion

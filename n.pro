@@ -13,7 +13,6 @@ LIBS += -lSDL2_Image.dll
 
 DEFINES += N_USE_SDL_IMAGE
 
-
 SOURCES += main.cpp
 HEADERS += *.h
 
