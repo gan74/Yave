@@ -248,7 +248,7 @@ template<>
 class DummyObj<0> : public Movable, public Renderable
 {
 	public:
-		virtual void render(RenderQueue &, uint) override {
+		virtual void render(RenderQueue &, uint ) override {
 		}
 
 		static void insert(uint max, Scene *s) {

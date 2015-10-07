@@ -285,7 +285,7 @@ class Color : public math::Vec<4, T>
 		}
 
 		Color<T> withLightness(T t) const {
-			return math::Vec<4, T>(*this) * t / math::Vec<3, T>(0., 0.59, 0.1).dot(this->sub(3));
+			return math::Vec<4, T>(*this) * t / math::Vec<3, T>(0.2126, 0.7152, 0.0722).dot(this->sub(3));
 		}
 };
 
