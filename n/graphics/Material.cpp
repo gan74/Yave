@@ -31,7 +31,7 @@ MaterialData *const nullData = new MaterialData();
 MaterialData current;
 typename MaterialData::BlendMode blendMode = MaterialData::None;
 
-void MaterialData::addToCache() {
+void MaterialData::addToCache() const {
 	if(!index) {
 		cacheMutex.lock();
 		matCache.append(this);
@@ -60,6 +60,7 @@ void MaterialData::addToCache() {
 			return false;
 		});
 		uint max = matCache.size();
+		//std::cout<<max<<" mats in cache"<<std::endl;
 		for(uint i = 0; i != max; i++) {
 			matCache[i]->index = i + 1;
 		}

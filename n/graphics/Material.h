@@ -87,7 +87,7 @@ struct MaterialData
 
 		mutable uint index;
 
-		void addToCache();
+		void addToCache() const;
 		void removeFromCache();
 
 
@@ -104,6 +104,9 @@ class Material : public assets::Asset<MaterialData>
 
 
 		Material(const MaterialData *i) : assets::Asset<MaterialData>(std::move(i)) {
+			if(i) {
+				i->addToCache();
+			}
 		}
 
 		bool operator<(const Material &m) const {
