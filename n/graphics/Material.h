@@ -57,7 +57,7 @@ struct MaterialData
 		Always
 	};
 
-	MaterialData() : color(1, 1, 1, 1), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5), index(0) {
+	MaterialData() : color(1, 1, 1, 1), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5), renderPriority(0), index(0) {
 	}
 
 	~MaterialData() {
@@ -79,6 +79,8 @@ struct MaterialData
 	Texture normal;
 	Texture roughness;
 	float normalIntencity;
+
+	uint renderPriority;
 
 	private:
 		friend class Material;

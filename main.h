@@ -183,7 +183,7 @@ class Obj : public StaticMesh
 			attribs = a;
 		}
 
-		virtual void render(RenderQueue &qu) override {
+		virtual void render(RenderQueue &qu, uint rf) override {
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
@@ -192,7 +192,7 @@ class Obj : public StaticMesh
 				setScale(autoScale / getMeshInstance().getRadius());
 			}
 			for(SubMeshInstance *b : getMeshInstance()) {
-				qu.insert(RenderBatch(getTransform().getMatrix(), b, attribs));
+				qu.insert(RenderBatch(getTransform().getMatrix(), b, attribs, rf));
 			}
 		}
 
@@ -214,7 +214,7 @@ class DummyRenderable : public Movable, public Renderable
 			setPosition(Vec3(random(), random(), random()) * 800 - 400);
 		}
 
-		virtual void render(RenderQueue &) override {
+		virtual void render(RenderQueue &, uint) override {
 		}
 };
 
@@ -248,7 +248,7 @@ template<>
 class DummyObj<0> : public Movable, public Renderable
 {
 	public:
-		virtual void render(RenderQueue &) override {
+		virtual void render(RenderQueue &, uint) override {
 		}
 
 		static void insert(uint max, Scene *s) {

@@ -45,11 +45,7 @@ class SceneRenderer : public BufferableRenderer
 		}
 
 		virtual void *prepare() override {
-			const Camera *cam = getCamera();
-			if(!cam) {
-				fatal("Camera not found");
-			}
-			return prepare(cam);
+			return prepare(RenderFlag::None);
 		}
 
 		const Camera *getCamera() {
@@ -68,16 +64,23 @@ class SceneRenderer : public BufferableRenderer
 			return sce;
 		}
 
+		void *prepare(uint renderFlags) {
+			const Camera *cam = getCamera();
+			if(!cam) {
+				fatal("Camera not found");
+			}
+			return prepare(cam, renderFlags);
+		}
 
 
-		void *prepare(const Camera *cam) {
+		void *prepare(const Camera *cam, uint renderFlags = RenderFlag::None) {
 			FrameData *data = new FrameData();
 			data->proj = cam->getProjectionMatrix();
 			data->view = cam->getViewMatrix();
 			data->camera = cam;
 			core::Array<Renderable *> res = sce->query<Renderable>(*cam);
 			for(Renderable *re : res) {
-				re->render(data->queue);
+				re->render(data->queue,renderFlags);
 			}
 			data->queue.prepare();
 			return data;

@@ -25,10 +25,10 @@ namespace graphics {
 class Renderable
 {
 	public:
-		virtual void render(RenderQueue &q) = 0;
+		virtual void render(RenderQueue &q, uint renderFlags) = 0;
 
-		virtual void renderDebug(RenderQueue &q) {
-			render(q);
+		virtual void renderDebug(RenderQueue &q, uint f) {
+			render(q, f);
 		}
 };
 

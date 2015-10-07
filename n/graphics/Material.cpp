@@ -36,6 +36,9 @@ void MaterialData::addToCache() {
 		cacheMutex.lock();
 		matCache.append(this);
 		matCache.sort([](const MaterialData *a, const MaterialData *b) {
+			if(a->renderPriority != b->renderPriority) {
+				return a->renderPriority < b->renderPriority;
+			}
 			if(a->depthTested != b->depthTested) {
 				return a->depthTested > b->depthTested;
 			}
