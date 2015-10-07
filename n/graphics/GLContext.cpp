@@ -70,6 +70,14 @@ GLContext *GLContext::getContext() {
 	return ct;
 }
 
+void GLContext::setBindlessTextureEnabled(bool e) {
+	using namespace gl;
+	hwInts[BindlessTextureSupport] = e;
+	if(!GLEW_ARB_bindless_texture) {
+		hwInts[BindlessTextureSupport] = false;
+	}
+}
+
 void GLContext::flush() {
 	gl::glFlush();
 }
@@ -130,9 +138,7 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
 	glGetIntegerv(GL_MAX_VARYING_VECTORS, &hwInts[MaxVaryings]);
 
-	if(GLEW_ARB_bindless_texture) {
-		hwInts[BindlessTextureSupport] = true;
-	}
+	setBindlessTextureEnabled(true);
 
 	if(hwInts[MaxVertexAttribs] <= 4) {
 		fatal("Not enought vertex attribs.");
