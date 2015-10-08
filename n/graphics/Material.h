@@ -21,8 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Texture.h"
 #include "ShaderProgram.h"
 
-#define N_MATERIAL_CACHING
-
 namespace n {
 namespace graphics {
 
@@ -102,11 +100,7 @@ class Material : public assets::Asset<MaterialData>
 		Material(const MaterialData &i) : Material(new MaterialData(i)) {
 		}
 
-
 		Material(const MaterialData *i) : assets::Asset<MaterialData>(std::move(i)) {
-			if(i) {
-				i->addToCache();
-			}
 		}
 
 		bool operator<(const Material &m) const {
@@ -134,25 +128,13 @@ class Material : public assets::Asset<MaterialData>
 		}
 
 		uint getInternalIndex() const {
-			if(!cache.index) {
-				const MaterialData *i = getInternal();
-				return cache.index = (i ? i->index : 0);
+			const MaterialData *i = getInternal();
+			if(i && !i->index) {
+				i->addToCache();
 			}
-			return cache.index;
+			return (i ? i->index : 0);
 		}
 
-		struct Cache
-		{
-			Cache() : index(0) {
-			}
-
-			uint index;
-			#ifdef N_MATERIAL_CACHING
-			core::Option<MaterialData> data;
-			#endif
-		};
-
-		mutable Cache cache;
 
 };
 
