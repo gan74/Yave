@@ -60,7 +60,6 @@ void MaterialData::addToCache() const {
 			return false;
 		});
 		uint max = matCache.size();
-		//std::cout<<max<<" mats in cache"<<std::endl;
 		for(uint i = 0; i != max; i++) {
 			matCache[i]->index = i + 1;
 		}
@@ -69,11 +68,12 @@ void MaterialData::addToCache() const {
 }
 
 void MaterialData::removeFromCache() {
-	cacheMutex.lock();
-	matCache.remove(this);
-	cacheMutex.unlock();
+	if(index) {
+		cacheMutex.lock();
+		matCache.remove(this);
+		cacheMutex.unlock();
+	}
 }
-
 
 N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const MaterialData &restrict data) {
 	if(!sh) {

@@ -44,6 +44,10 @@ class AssetPtrStorage
 			#endif
 		}
 
+		~AssetPtrStorage() {
+			delete ptr;
+		}
+
 		AssetPtrStorage<T> &operator=(ConstPtr t) {
 			ptr = t;
 			return *this;
@@ -106,9 +110,6 @@ class Asset
 	typedef const T *ConstPtr;
 	public:
 		~Asset() {
-			if(ptr.getReferenceCount() < 1) {
-				ptr.invalidate();
-			}
 		}
 
 		const T *operator->() const {
