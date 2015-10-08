@@ -267,8 +267,8 @@ bool String::endsWith(const String &s) const {
 		return true;
 	}
 	uint offset = length - s.length;
-	for(uint i = s.length - 1; i; i--) {
-		if(data[offset + i] != s.data[i]) {
+	for(uint i = s.length; i; i--) {
+		if(data[offset + i - 1] != s.data[i - 1]) {
 			return false;
 		}
 	}
