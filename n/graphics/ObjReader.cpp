@@ -44,6 +44,7 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 				std::cerr<<file.getName()<<" not found"<<std::endl;
 				return 0;
 			}
+			core::String path = file.getPath();
 			//core::Timer timer;
 			uint fs = file.size();
 			char *data = new char[fs + 1];
@@ -152,6 +153,9 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 					mat = MaterialLoader::load<core::String, core::String>(mtllib, l.subString(7));
 				} else if(l.beginsWith("mtllib ")) {
 					mtllib = l.subString(7);
+					if(!io::File::exists(mtllib)) {
+						mtllib = path + "/" + mtllib;
+					}
 				}
 			}
 			if(!tr.getTriangles().isEmpty()) {
