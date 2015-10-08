@@ -43,9 +43,12 @@ class File : public IODevice, core::NonCopyable
 		int getOpenMode() const override;
 		uint writeBytes(const void *b, uint len) override;
 		uint readBytes(void *b, uint len = -1) override;
+		bool exists() const;
 
 		const core::String &getName() const;
+		core::String getPath() const;
 
+		static bool exists(const core::String &fileName);
 
 	private:
 		#ifndef N_IO_USE_C_FILE

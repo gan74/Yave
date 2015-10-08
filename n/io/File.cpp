@@ -19,6 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 
+bool File::exists(const core::String &fileName) {
+	FILE *file = fopen(fileName.toChar(), "r");
+	if(!file) {
+		return false;
+	}
+	fclose(file);
+	return true;
+}
+
 File::File(const core::String &fileName) : IODevice(),
 #ifdef N_IO_USE_C_FILE
 	file(0),
@@ -28,6 +37,27 @@ File::File(const core::String &fileName) : IODevice(),
 
 const core::String &File::getName() const {
 	return name;
+}
+
+core::String File::getPath() const {
+	core::String pname = name.replaced("\\", "/").replaced("//", "/");
+	if(pname.endsWith("/")) {
+		return pname;
+	}
+	uint it = pname.find("/");
+	uint last = it;
+	if(it == uint(-1)) {
+		return ".";
+	}
+	while(it != uint(-1)) {
+		last = it;
+		it = pname.find("/", last + 1);
+	}
+	return pname.subString(0, last);
+}
+
+bool File::exists() const {
+	return exists(getName());
 }
 
 bool File::open(int m) {
