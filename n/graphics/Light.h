@@ -43,8 +43,8 @@ class Light : public Movable
 			return color;
 		}
 
-		void setColor(const Color<> &c) {
-			color = c.withLightness(1);
+		void setColor(const Color<> &c, bool normY = false) {
+			color = normY ? c.withLightness(1) : c;
 		}
 
 		float getIntensity() const {
