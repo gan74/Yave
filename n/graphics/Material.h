@@ -110,13 +110,11 @@ class Material : public assets::Asset<MaterialData>
 		const MaterialData &getData() const;
 
 	private:
-		friend class MaterialLoader;
-		friend class GLContext;
-
-		friend class FrameBuffer;
-
 		template<typename T>
 		friend class VertexArrayObject;
+		friend class MaterialLoader;
+		friend class GLContext;
+		friend class FrameBuffer;
 
 		void bind(uint flags = RenderFlag::None) const;
 

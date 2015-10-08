@@ -29,39 +29,21 @@ class RenderQueue
 	public:
 		//typedef core::Array<core::Functor<void()>>::const_iterator const_iterator;
 
-		RenderQueue() {
-		}
+		RenderQueue();
 
-		void insert(const core::Functor<void()> &f) {
-			funcs.append(f);
-		}
+		void insert(const core::Functor<void()> &f);
+		void insert(const math::Matrix4<> &t, const MeshInstance &m);
+		void insert(const RenderBatch &b);
 
-		void insert(const math::Matrix4<> &t, const MeshInstance &m) {
-			for(SubMeshInstance *base : m) {
-				insert(RenderBatch(t, base));
-			}
-		}
+		void prepare();
 
-		void insert(const RenderBatch &b) {
-			batches.append(b);
-		}
+		const core::Array<core::Functor<void()>> &getFunctions() const;
+		const core::Array<RenderBatch> &getBatches() const;
 
 		template<typename U>
 		RenderQueue &operator<<(const U &u) {
 			insert(u);
 			return *this;
-		}
-
-		void prepare() {
-			batches.sort();
-		}
-
-		const core::Array<core::Functor<void()>> &getFunctions() const {
-			return funcs;
-		}
-
-		const core::Array<RenderBatch> &getBatches() const {
-			return batches;
 		}
 
 	private:

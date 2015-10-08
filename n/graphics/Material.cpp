@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-core::Array<const MaterialData *> matCache = core::Array<const MaterialData *>();
+core::Array<const MaterialData *> matCache;
 concurrent::Mutex cacheMutex;
 
 MaterialData *const nullData = new MaterialData();
@@ -57,7 +57,7 @@ void MaterialData::addToCache() const {
 			if(a->depth != b->depth) {
 				return a->depth < b->depth;
 			}
-			return false;
+			return a < b;
 		});
 		uint max = matCache.size();
 		for(uint i = 0; i != max; i++) {
