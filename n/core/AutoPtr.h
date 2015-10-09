@@ -14,42 +14,38 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CORE_REF
-#define N_CORE_REF
+#ifndef N_CORE_AUTOPTR
+#define N_CORE_AUTOPTR
 
-#include <n/core/Functor.h>
+#include "Ptr.h"
+
 
 namespace n {
 namespace core {
 
 template<typename T>
-class Ref : NonCopyable
+class AutoPtr : public Ptr<T>
 {
+	using Ptr<T>::ptr;
+	static_assert(!std::is_polymorphic<T>::value, "AutoPtr<T> can not store polymorphic objects.");
 	public:
-		Ref(T &t, const Functor<void()> &f = Nothing()) : value(t), modified(f) {
+		AutoPtr(T *t = 0) : Ptr<T>(std::move(t)) {
 		}
 
-		Ref(Ref<T> &&r) : value(r.value), modified(r.modified) {
+		AutoPtr(const AutoPtr<T> &p) : Ptr<T>(0) {
+			operator=(p);
 		}
 
-		template<typename U>
-		T operator=(const U &t) {
-			value = t;
-			modified();
-			return value;
+		AutoPtr<T> &operator=(const AutoPtr<T> &p) {
+			delete ptr;
+			ptr = p.ptr ? 0 : new T(*p.ptr);
+			return *this;
 		}
 
-		operator T() const {
-			return value;
-		}
-
-	private:
-		T &value;
-		Functor<void()> modified;
 };
 
 }
 }
 
-#endif // N_CORE_REF
+#endif // N_CORE_AUTOPTR
 

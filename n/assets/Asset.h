@@ -94,9 +94,9 @@ class AssetPtr : public core::SmartPtr<AssetPtrStorage<T>, concurrent::auint>
 			return (*this) != invalidPtr;
 		}
 
-		void invalidate() const {
+		void invalidate() {
 			if(isValid()) {
-				const_cast<AssetPtr<T> *>(this)->InternalType::operator=(invalidPtr);
+				InternalType::operator=(invalidPtr);
 			}
 		}
 };
@@ -112,7 +112,7 @@ class Asset
 		~Asset() {
 		}
 
-		const T *operator->() const {
+		T const *operator->() const {
 			return ptr ? (const T *)(*ptr) : 0;
 		}
 
@@ -171,5 +171,6 @@ const typename AssetPtr<T>::InternalType AssetPtr<T>::invalidPtr = AssetPtr<T>::
 
 }
 }
+
 
 #endif // N_ASSETS_ASSET_H

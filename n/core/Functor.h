@@ -189,7 +189,7 @@ class Functor<R(Args...)>
 		using ArgType = typename std::tuple_element<N, std::tuple<Args...>>::type;
 
 	private:
-		SmartPtr<FuncBase> func;
+		mutable SmartPtr<FuncBase> func;
 
 };
 

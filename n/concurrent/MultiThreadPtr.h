@@ -23,8 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace concurrent {
 
-template<typename T, typename Proxy = core::NoProxy<T>>
-using MultiThreadPtr = core::SmartPtr<T, auint, Proxy>;
+template<typename T>
+using MultiThreadPtr = core::SmartPtr<T, auint>;
 
 }
 }

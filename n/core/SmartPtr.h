@@ -17,35 +17,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_SMARTPTR_H
 #define N_CORE_SMARTPTR_H
 
-#include <n/types.h>
+#include <n/utils.h>
 #include <n/concurrent/Atomic.h>
+#include "Ptr.h"
+
+
 
 namespace n {
 namespace core {
 
-template<typename T>
-class NoProxy
+template<typename T, typename C = concurrent::auint>
+class SmartPtr : public Ptr<T>
 {
+	using Ptr<T>::ptr;
 	public:
-		NoProxy(T *t) : obj(t) {
+		SmartPtr(T *&&p = 0) : Ptr<T>(std::move(p)), count(new C(1)) {
 		}
 
-		T *operator->() const {
-			return obj;
-		}
-
-	private:
-		T *obj;
-};
-
-template<typename T, typename C = concurrent::auint, typename Proxy = NoProxy<T>>
-class SmartPtr
-{
-	public:
-		SmartPtr(T *&&p = 0) : ptr(p), count(new C(1)) {
-		}
-
-		SmartPtr(const SmartPtr<T, C, Proxy> &p) : ptr(0), count(0) {
+		SmartPtr(const SmartPtr<T, C> &p) : Ptr<T>(0), count(0) {
 			ref(p);
 		}
 
@@ -53,98 +42,35 @@ class SmartPtr
 			unref();
 		}
 
-		void swap(SmartPtr<T, C, Proxy> &p) {
+		void swap(SmartPtr<T, C> &p) {
 			std::swap(ptr, p.ptr);
 			std::swap(count, p.count);
-		}
-
-		bool isNull() const {
-			return !ptr;
 		}
 
 		uint getReferenceCount() const {
 			return count ? uint(*count) : 0;
 		}
 
-		T *pointer() {
-			return ptr;
-		}
-
-		const T *pointer() const {
-			return ptr;
-		}
-
-		T &operator*() const {
-			return *ptr;
-		}
-
-		Proxy operator->() const {
-			return Proxy(ptr);
-		}
-
-		SmartPtr<T, C, Proxy> &operator=(const SmartPtr<T, C, Proxy> &p) {
+		SmartPtr<T, C> &operator=(const SmartPtr<T, C> &p) {
 			unref();
 			ref(p);
 			return *this;
 		}
 
-		SmartPtr<T, C, Proxy> &operator=(SmartPtr<T, C, Proxy> &&p) {
+		SmartPtr<T, C> &operator=(SmartPtr<T, C> &&p) {
 			swap(p);
 			return *this;
 		}
-
-		template<typename U>
-		bool operator==(const U *p) const {
-			return ptr == p;
-		}
-
-		template<typename U>
-		bool operator!=(const U *p) const {
-			return ptr != p;
-		}
-
-		template<typename U>
-		bool operator<(const U *p) const {
-			return ptr < p;
-		}
-
-		bool operator==(const SmartPtr<T> &p) const {
-			return ptr == p.ptr;
-		}
-
-		bool operator!=(const SmartPtr<T> &p) const {
-			return ptr != p.ptr;
-		}
-
-		bool operator<(const SmartPtr<T> &p) const {
-			return ptr < p.ptr;
-		}
-
-		bool operator>(const SmartPtr<T> &p) const {
-			return ptr > p.ptr;
-		}
-
-		bool operator!() const {
-			return isNull();
-		}
-
-		explicit operator bool() const {
-			return !isNull();
-		}
-
-		/*operator SmartPtr<const T>() const {
-			return SmartPtr<const T>(ptr, count);
-		}*/
 
 	private:
 		friend class SmartPtr<const T>;
 		friend class SmartPtr<typename TypeInfo<T>::nonConst>;
 
-		SmartPtr(T *p, C *c) : ptr(p), count(c) {
+		SmartPtr(T *p, C *c) : Ptr<T>(p), count(c) {
 			++(*count);
 		}
 
-		void ref(const SmartPtr<T, C, Proxy> &p) {
+		void ref(const SmartPtr<T, C> &p) {
 			if((count = p.count)) {
 				(*count)++;
 			}
@@ -160,7 +86,6 @@ class SmartPtr
 			count = 0;
 		}
 
-		T *ptr;
 		C *count;
 
 };

@@ -67,7 +67,7 @@ class Region : core::NonCopyable
 		}
 
 		bool isEmpty() const {
-			return !left;
+			return left == size;
 		}
 
 		bool contains(void *p) const {

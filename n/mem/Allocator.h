@@ -64,18 +64,6 @@ class Allocator : core::NonCopyable
 			desallocate(ptr);
 		}
 
-		/*void *operator()(uint size) {
-			return allocate(size);
-		}
-
-		void operator()(void *ptr) {
-			return desallocate(ptr);
-		}
-
-		void operator()(void *ptr, uint size) {
-			return desallocate(ptr, size);
-		}*/
-
 	private:
 		static constexpr uint regs = 12;
 		static constexpr uint logBytes = core::log2ui(sizeof(void *));

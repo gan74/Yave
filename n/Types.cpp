@@ -15,7 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "types.h"
-#include <n/core/String.h>
 
 #ifdef __GNUG__
 #include <cstdlib>

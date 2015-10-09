@@ -59,7 +59,11 @@ class ImageLoader
 			immediateBuffer.addLoader<Args...>(t);
 		}
 
-	private:
+		void gc() {
+			asyncBuffer.gc();
+			immediateBuffer.gc();
+		}
+
 		static ImageLoader *getLoader() {
 			static ImageLoader *loader = 0;
 			if(!loader) {
@@ -68,6 +72,7 @@ class ImageLoader
 			return loader;
 		}
 
+	private:
 		ImageLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
 

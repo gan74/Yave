@@ -166,11 +166,7 @@ int main(int argc, char **argv) {
 		} else {
 			totalFrames++;
 		}
-		//std::cout<<"\rcpu = "<<(String(frameTime - gpuTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / (totalFrames - 10)) + "0000").subString(0, 4)<<" ms)      gpu = "<<(String(gpuTime) + "0000").subString(0, 4)<<" ms";
-
-
-
-
+		std::cout<<"\rcpu = "<<(String(frameTime - gpuTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / (totalFrames - 10)) + "0000").subString(0, 4)<<" ms)      gpu = "<<(String(gpuTime) + "0000").subString(0, 4)<<" ms";
 
 
 

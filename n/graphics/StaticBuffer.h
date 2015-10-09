@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GL.h"
 #include <n/core/AsCollection.h>
 #include <n/core/String.h>
-#include <n/core/Ref.h>
 #include "GLContext.h"
 
 namespace n {

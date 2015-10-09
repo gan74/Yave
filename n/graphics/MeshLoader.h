@@ -60,7 +60,11 @@ class MeshLoader
 			immediateBuffer.addLoader<Args...>(t);
 		}
 
-	private:
+		void gc() {
+			asyncBuffer.gc();
+			immediateBuffer.gc();
+		}
+
 		static MeshLoader *getLoader() {
 			static MeshLoader *loader = 0;
 			if(!loader) {
@@ -69,6 +73,7 @@ class MeshLoader
 			return loader;
 		}
 
+	private:
 		MeshLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
 

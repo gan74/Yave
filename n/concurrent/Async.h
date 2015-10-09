@@ -78,7 +78,7 @@ static SharedFuture<R> Async(const core::Functor<R()> &f, bool pool = true) {
 }
 
 template<typename T, typename... Args, typename R = typename std::result_of<T(Args...)>::type>
-static SharedFuture<R> Async(const T f, Args... args) {
+static SharedFuture<R> Async(const T &f, Args... args) {
 	return Async<R>(core::Functor<R(Args...)>(f).curried(args...));
 }
 

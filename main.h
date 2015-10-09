@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/math/Plane.h>
 #include <n/io/File.h>
+#include <n/core/Lazy.h>
+#include <n/core/AutoPtr.h>
 
 #include <SDL2/SDL.h>
 #include <n/graphics/ImageLoader.h>

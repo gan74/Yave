@@ -173,7 +173,7 @@ class SharedFuture
 		}
 
 
-		MultiThreadPtr<Internal> shared;
+		mutable MultiThreadPtr<Internal> shared;
 };
 
 }

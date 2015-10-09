@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_UNIFORMBUFFER
 
 #include "GL.h"
-#include <n/core/Ref.h>
 #include "GLContext.h"
 
 namespace n {
@@ -196,10 +195,6 @@ class TypedDynamicBuffer : public DynamicBufferBase
 		}
 
 		TypedDynamicBuffer(uint si) : DynamicBufferBase(si * sizeof(T), Type) {
-		}
-
-		core::Ref<T> operator[](uint i) {
-			return core::Ref<T>(((T *)data->buffer)[i], [=]() { data->modified = true; });
 		}
 
 		iterator begin() {

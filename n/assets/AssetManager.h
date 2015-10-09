@@ -132,17 +132,18 @@ class AsyncLoadingPolicy
 	public:
 		template<typename... Args>
 		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
-			//static_assert(IsThreadSafe<Args...>::value, "Only thread-safe types should be used with AssetBuffer<T, AsyncLoadingPolicy>");
-			AssetPtr<T> ptr(new typename AssetPtr<T>::PtrType(0));
+			AssetPtr<T> *ptr = new AssetPtr<T>(new typename AssetPtr<T>::PtrType(0));
+			AssetPtr<T> r(*ptr);
 			concurrent::Async([=, &loader](Args... args) {
 				T *o = loader(args...);
 				if(o) {
-					*ptr = o;
+					**ptr = o;
 				} else {
-					ptr.invalidate();
+					ptr->invalidate();
 				}
+				delete ptr;
 			}, args...);
-			return ptr;
+			return r;
 		}
 };
 
@@ -150,14 +151,34 @@ template<typename T>
 class AssetBuffer
 {
 	public:
-		AssetBuffer() : buffer(new core::Map<internal::AssetKey<T>, AssetPtr<T>>()) {
+		AssetBuffer() : buffer(new core::Pair<concurrent::Mutex, core::Map<internal::AssetKey<T>, AssetPtr<T>>>()) {
+		}
+
+		void gc() {
+			lock();
+			getBuffer().filter([](const core::Pair<const internal::AssetKey<T>, AssetPtr<T>> &p) -> bool {
+				return p._2.getReferenceCount() > 1;
+			});
+			unlock();
+		}
+
+		void lock() {
+			buffer->_1.lock();
+		}
+
+		void unlock() {
+			buffer->_1.unlock();
 		}
 
 	private:
 		template<typename U, typename P>
 		friend class AssetManager;
 
-		core::SmartPtr<core::Map<internal::AssetKey<T>, AssetPtr<T>>> buffer;
+		core::Map<internal::AssetKey<T>, AssetPtr<T>> &getBuffer() {
+			return buffer->_2;
+		}
+
+		core::SmartPtr<core::Pair<concurrent::Mutex, core::Map<internal::AssetKey<T>, AssetPtr<T>>>> buffer;
 };
 
 template<typename T, typename LoadPolicy>
@@ -170,12 +191,12 @@ class AssetManager : protected LoadPolicy, core::NonCopyable
 		template<typename... Args>
 		Asset<T> load(Args... args) {
 			internal::AssetKey<T> k(args...);
-			mutex.lock();
-			auto it = assets.buffer->find(k);
-			if(it == assets.buffer->end()) {
-				it = assets.buffer->insert(k, LoadPolicy::operator()(loader, args...));
+			assets.lock();
+			auto it = assets.getBuffer().find(k);
+			if(it == assets.getBuffer().end()) {
+				it = assets.getBuffer().insert(k, LoadPolicy::operator()(loader, args...));
 			}
-			mutex.unlock();
+			assets.unlock();
 			return (*it)._2;
 		}
 
@@ -191,11 +212,7 @@ class AssetManager : protected LoadPolicy, core::NonCopyable
 		}
 
 		void gc() {
-			mutex.lock();
-			assets->filter([](const AssetPtr<T> &ptr) {
-				return ptr.getReferenceCount() > 1;
-			});
-			mutex.unlock();
+			assets.gc();
 		}
 
 	private:
