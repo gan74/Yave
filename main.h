@@ -185,7 +185,7 @@ class Obj : public StaticMesh
 			attribs = a;
 		}
 
-		virtual void render(RenderQueue &qu, uint rf) override {
+		virtual void render(RenderQueue &qu, RenderFlag rf) override {
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
 			}
@@ -216,7 +216,7 @@ class DummyRenderable : public Movable, public Renderable
 			setPosition(Vec3(random(), random(), random()) * 800 - 400);
 		}
 
-		virtual void render(RenderQueue &, uint) override {
+		virtual void render(RenderQueue &, RenderFlag) override {
 		}
 };
 
@@ -250,7 +250,7 @@ template<>
 class DummyObj<0> : public Movable, public Renderable
 {
 	public:
-		virtual void render(RenderQueue &, uint ) override {
+		virtual void render(RenderQueue &, RenderFlag) override {
 		}
 
 		static void insert(uint max, Scene *s) {
