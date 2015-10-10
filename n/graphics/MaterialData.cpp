@@ -14,27 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_RENDERABLE
-#define N_GRAPHICS_RENDERABLE
-
-#include "RenderQueue.h"
-
-namespace n {
-namespace graphics {
-
-class Renderable
-{
-	public:
-		virtual void render(RenderQueue &q, RenderFlag renderFlags) = 0;
-
-		virtual void renderDebug(RenderQueue &q, RenderFlag f) {
-			render(q, f);
-		}
-};
+#include "MaterialData.h"
 
 
-}
-}
-
-#endif // N_GRAPHICS_RENDERABLE
 

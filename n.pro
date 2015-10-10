@@ -16,8 +16,8 @@ DEFINES += N_USE_SDL_IMAGE
 SOURCES += main.cpp
 HEADERS += *.h
 
-QMAKE_CXXFLAGS += -ffast-math #-mstackrealign -msse3
-QMAKE_LFLAGS += -ffast-math #-mstackrealign -msse3
+QMAKE_CXXFLAGS += -ffast-math
+QMAKE_LFLAGS += -ffast-math
 
 CONFIG(debug, debug|release) {
 	OBJECTS_DIR = bin/debug

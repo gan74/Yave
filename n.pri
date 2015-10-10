@@ -36,7 +36,6 @@ DEFINES += N_DEBUG
 win32:DEFINES += WIN32
 
 QMAKE_CXXFLAGS += -pedantic
-QMAKE_CXXFLAGS += -Winline
 CONFIG(debug, debug|release) {
 	DEFINES += N_DEBUG
 } else {

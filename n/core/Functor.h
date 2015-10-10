@@ -17,11 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CORE_FUNCTOR_H
 #define N_CORE_FUNCTOR_H
 
-#include <n/types.h>
-#include <tuple>
-#include <n/utils.h>
-#include "Map.h"
 #include "SmartPtr.h"
+#include <tuple>
+#include "Map.h"
 
 namespace n {
 
@@ -72,6 +70,9 @@ class Functor<R(Args...)>
 			Func(const T &t) : f(t) {
 			}
 
+			virtual ~Func() {
+			}
+
 			virtual R apply(Args... args) override {
 				return f(args...);
 			}
@@ -84,6 +85,9 @@ class Functor<R(Args...)>
 	{
 		public:
 			FuncPtr(R (*t)(Args...)) : f(t) {
+			}
+
+			virtual ~FuncPtr() {
 			}
 
 			virtual R apply(Args... args) override {

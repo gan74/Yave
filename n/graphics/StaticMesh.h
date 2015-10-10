@@ -32,7 +32,7 @@ class StaticMesh : public Movable, public Renderable
 			this->radius = -1;
 		}
 
-		virtual void render(RenderQueue &q, uint) override {
+		virtual void render(RenderQueue &q, RenderFlag) override {
 			radius = inst.getRadius();
 			q.insert(this->getTransform(), inst);
 		}

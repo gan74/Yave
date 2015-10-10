@@ -21,8 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MeshInstance.h"
 #include "GLContext.h"
 
-#define N_BATCH_MATERIAL
-
 namespace n {
 namespace graphics {
 
@@ -42,18 +40,34 @@ class RenderBatch
 		}
 
 		bool operator<(const RenderBatch &o) const {
-			#ifdef N_BATCH_MATERIAL
-			bool m = inst->getMaterial() < o.inst->getMaterial();
-			return m ? true : o.inst->getMaterial() < inst->getMaterial() ? false : inst->getVertexArrayObject() < o.inst->getVertexArrayObject();
-			#else
-			bool m = inst->getVertexArrayObject() < o.inst->getVertexArrayObject();
-			return m ? true : o.inst->getVertexArrayObject() < inst->getVertexArrayObject() ? false : inst->getMaterial() < o.inst->getMaterial();
-			#endif
-
+			bool inf = getMaterial() < o.getMaterial();
+			if(inf) {
+				return false;
+			}
+			if(o.getMaterial() < getMaterial()) {
+				return false;
+			}
+			return getVertexArrayObject() < o.getVertexArrayObject();
 		}
 
 		bool canInstanciate(const RenderBatch &o) const {
 			return isInstanciable() && o.isInstanciable() && inst == o.inst;
+		}
+
+		const math::Matrix4<> &getMatrix() const {
+			return matrix;
+		}
+
+		const Material &getMaterial() const {
+			return inst->getMaterial();
+		}
+
+		const VertexArraySubObject<> &getVertexArrayObject() const {
+			return inst->getVertexArrayObject();
+		}
+
+		bool isDepthSorted() const {
+			return getMaterial().getData().fancy.depthSortable;
 		}
 
 	private:

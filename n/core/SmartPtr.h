@@ -21,8 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/concurrent/Atomic.h>
 #include "Ptr.h"
 
-
-
 namespace n {
 namespace core {
 

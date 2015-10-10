@@ -27,13 +27,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class SDLImageReader : public graphics::ImageLoader::ImageReader<SDLImageReader, core::String>
+class SDLImageReader : public ImageLoader::ImageReader<SDLImageReader, core::String>
 {
 	public:
-		SDLImageReader() : graphics::ImageLoader::ImageReader<SDLImageReader, core::String>() {
+		SDLImageReader() : ImageLoader::ImageReader<SDLImageReader, core::String>() {
 		}
 
-		graphics::internal::Image *operator()(core::String name) override {
+		ImageData *operator()(core::String name) override {
 			static concurrent::Mutex lock;
 			lock.lock();
 			SDL_Surface *surf = IMG_Load(name.toChar());
@@ -46,7 +46,7 @@ class SDLImageReader : public graphics::ImageLoader::ImageReader<SDLImageReader,
 			math::Vec2ui size(surf->w, surf->h);
 			SDL_Surface *cs = SDL_ConvertSurfaceFormat(surf, SDL_BYTEORDER == SDL_BIG_ENDIAN ? SDL_PIXELFORMAT_RGBA8888 : SDL_PIXELFORMAT_ABGR8888, 0);
 			SDL_LockSurface(cs);
-			internal::Image *i = new internal::Image(size, ImageFormat::RGBA8, cs->pixels);
+			ImageData *i = new ImageData(size, ImageFormat::RGBA8, cs->pixels);
 			SDL_UnlockSurface(surf);
 			SDL_UnlockSurface(cs);
 			lock.unlock();

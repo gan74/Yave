@@ -24,56 +24,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-core::Array<const MaterialData *> matCache;
-concurrent::Mutex cacheMutex;
-
 MaterialData *const nullData = new MaterialData();
 MaterialData current;
-typename MaterialData::BlendMode blendMode = MaterialData::None;
+uint16 blendMode = MaterialData::None;
 
-void MaterialData::addToCache() const {
-	if(!index) {
-		cacheMutex.lock();
-		matCache.append(this);
-		matCache.sort([](const MaterialData *a, const MaterialData *b) {
-			if(a->renderPriority != b->renderPriority) {
-				return a->renderPriority < b->renderPriority;
-			}
-			if(a->depthTested != b->depthTested) {
-				return a->depthTested > b->depthTested;
-			}
-			if(a->depthWrite != b->depthWrite) {
-				return a->depthWrite > b->depthWrite;
-			}
-			if(a->prog != b->prog) {
-				return a->prog < b->prog;
-			}
-			if(a->cull != b->cull) {
-				return a->cull < b->cull;
-			}
-			if(a->blend != b->blend) {
-				return a->blend < b->blend;
-			}
-			if(a->depth != b->depth) {
-				return a->depth < b->depth;
-			}
-			return a < b;
-		});
-		uint max = matCache.size();
-		for(uint i = 0; i != max; i++) {
-			matCache[i]->index = i + 1;
-		}
-		cacheMutex.unlock();
-	}
-}
-
-void MaterialData::removeFromCache() {
-	if(index) {
-		cacheMutex.lock();
-		matCache.remove(this);
-		cacheMutex.unlock();
-	}
-}
 
 N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const MaterialData &restrict data) {
 	if(!sh) {
@@ -91,48 +45,41 @@ N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const Mat
 
 	sh->setValue(ShaderValue::SVRoughnessMap, data.roughness);
 	sh->setValue(ShaderValue::SVRoughnessMul, data.roughness.isNull() ? 0.0 : 1.0);
-
-
-	/*if(data.textures) {
-		for(const auto &p : *data.textures) {
-			sh->setValue(p._1, p._2);
-		}r
-	}*/
 }
 
 void fullBind(const MaterialData &restrict data) {
 	setShaderParams(data.prog.bind(), data);
 
-	if(data.depthTested) {
+	if(data.fancy.depthTested) {
 		gl::glEnable(GL_DEPTH_TEST);
 	} else {
 		gl::glDisable(GL_DEPTH_TEST);
 	}
 
 	gl::GLenum funcs[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
-	gl::glDepthFunc(funcs[data.depth]);
+	gl::glDepthFunc(funcs[data.fancy.depth]);
 
-	if(data.depth == MaterialData::Greater) {
+	if(data.fancy.depth == MaterialData::Greater) {
 		gl::glEnable(GL_DEPTH_CLAMP);
 	} else {
 		gl::glDisable(GL_DEPTH_CLAMP);
 	}
 
-	gl::glDepthMask(data.depthWrite);
+	gl::glDepthMask(data.fancy.depthWrite);
 
-	if(data.cull == MaterialData::DontCull) {
+	if(data.fancy.cull == MaterialData::DontCull) {
 		gl::glDisable(GL_CULL_FACE);
 	} else {
 		gl::glEnable(GL_CULL_FACE);
 		gl::GLenum glc[] = {GL_BACK, GL_FRONT};
-		gl::glCullFace(glc[data.cull]);
+		gl::glCullFace(glc[data.fancy.cull]);
 	}
 
-	if(data.blend == MaterialData::None) {
+	if(data.fancy.blend == MaterialData::None) {
 		gl::glDisable(GL_BLEND);
 	} else {
 		gl::glEnable(GL_BLEND);
-		switch(data.blend) {
+		switch(data.fancy.blend) {
 			case MaterialData::Add:
 				gl::glBlendFunc(GL_ONE, GL_ONE);
 			break;
@@ -143,7 +90,7 @@ void fullBind(const MaterialData &restrict data) {
 
 			default: break;
 		}
-		blendMode = data.blend;
+		blendMode = data.fancy.blend;
 	}
 	current = data;
 }
@@ -155,8 +102,8 @@ void Material::bind(uint flags) const {
 		fullBind(data);
 	} else {
 		if(flags & DepthWriteOnly) {
-			if(current.depthWrite != data.depthWrite) {
-				gl::glDepthMask(current.depthWrite = data.depthWrite);
+			if(current.fancy.depthWrite != data.fancy.depthWrite) {
+				gl::glDepthMask(current.fancy.depthWrite = data.fancy.depthWrite);
 			}
 			return;
 		}
@@ -164,54 +111,49 @@ void Material::bind(uint flags) const {
 		if(!(flags & RenderFlag::NoShader)) {
 			setShaderParams(data.prog.bind(), data);
 		}
-		#ifdef N_MATERIAL_FANCYNESS
-		if(current.fancy || data.fancy) {
-			current.fancy = data.fancy;
-		#else
-			{
-		#endif
-			if(current.depthTested != data.depthTested) {
-				if(data.depthTested) {
+		{
+			if(current.fancy.depthTested != data.fancy.depthTested) {
+				if(data.fancy.depthTested) {
 					gl::glEnable(GL_DEPTH_TEST);
 				} else {
 					gl::glDisable(GL_DEPTH_TEST);
 				}
-				current.depthTested = data.depthTested;
+				current.fancy.depthTested = data.fancy.depthTested;
 			}
-			if(current.depth != data.depth) {
+			if(current.fancy.depth != data.fancy.depth) {
 				gl::GLenum funcs[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
-				gl::glDepthFunc(funcs[data.depth]);
-				if(data.depth == MaterialData::Greater) {
+				gl::glDepthFunc(funcs[data.fancy.depth]);
+				if(data.fancy.depth == MaterialData::Greater) {
 					gl::glEnable(GL_DEPTH_CLAMP);
 				} else {
 					gl::glDisable(GL_DEPTH_CLAMP);
 				}
-				current.depth = data.depth;
+				current.fancy.depth = data.fancy.depth;
 			}
-			if(current.depthWrite != data.depthWrite) {
-				gl::glDepthMask(current.depthWrite = data.depthWrite);
+			if(current.fancy.depthWrite != data.fancy.depthWrite) {
+				gl::glDepthMask(current.fancy.depthWrite = data.fancy.depthWrite);
 			}
-			if(current.cull != data.cull) {
-				if(data.cull == MaterialData::DontCull) {
+			if(current.fancy.cull != data.fancy.cull) {
+				if(data.fancy.cull == MaterialData::DontCull) {
 					gl::glDisable(GL_CULL_FACE);
 				} else {
-					if(current.cull == MaterialData::DontCull) {
+					if(current.fancy.cull == MaterialData::DontCull) {
 						gl::glEnable(GL_CULL_FACE);
 					}
 					gl::GLenum glc[] = {GL_BACK, GL_FRONT};
-					gl::glCullFace(glc[data.cull]);
+					gl::glCullFace(glc[data.fancy.cull]);
 				}
-				current.cull = data.cull;
+				current.fancy.cull = data.fancy.cull;
 			}
-			if(current.blend != data.blend) {
-				if(data.blend == MaterialData::None) {
+			if(current.fancy.blend != data.fancy.blend) {
+				if(data.fancy.blend == MaterialData::None) {
 					gl::glDisable(GL_BLEND);
 				} else {
-					if(current.blend == MaterialData::None) {
+					if(current.fancy.blend == MaterialData::None) {
 						gl::glEnable(GL_BLEND);
 					}
-					if(blendMode != data.blend) {
-						switch(data.blend) {
+					if(blendMode != data.fancy.blend) {
+						switch(data.fancy.blend) {
 							case MaterialData::Add:
 								gl::glBlendFunc(GL_ONE, GL_ONE);
 							break;
@@ -222,10 +164,10 @@ void Material::bind(uint flags) const {
 
 							default: break;
 						}
-						blendMode = data.blend;
+						blendMode = data.fancy.blend;
 					}
 				}
-				current.blend = data.blend;
+				current.fancy.blend = data.fancy.blend;
 			}
 		}
 	}
@@ -233,7 +175,7 @@ void Material::bind(uint flags) const {
 
 
 const MaterialData &Material::getData() const {
-	const MaterialData *i = getInternal();
+	const MaterialData *i = operator->();
 	return i ? *i : *nullData;
 }
 

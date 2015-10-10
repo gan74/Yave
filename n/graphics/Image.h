@@ -18,61 +18,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_IMAGE_H
 
 #include <n/assets/Asset.h>
-#include "Color.h"
+#include "ImageData.h"
 
 namespace n {
 namespace graphics {
 
-namespace internal {
-struct Image : core::NonCopyable
-{
-	Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, const void *c = 0, bool flip = true) : format(f), size(s), data(c ? new byte[s.mul() * f.bytesPerPixel()] : 0) {
-		if(c) {
-			if(flip) {
-				uint bpp = format.bytesPerPixel();
-				for(uint i = 0; i != size.y(); i++) {
-					byte *dat = (byte *)data;
-					const byte *bc = (const byte *)c;
-					uint j = size.y() - (i + 1);
-					memcpy(dat + i * size.x() * bpp, bc + j * size.x() * bpp, size.x() * bpp);
-				}
-			} else {
-				memcpy((void *)data, c, s.mul() * format.bytesPerPixel());
-			}
-		}
-	}
-
-	~Image() {
-		delete[] (byte *)data;
-	}
-
-	const ImageFormat format;
-	const math::Vec2ui size;
-	const void *data;
-
-};
-}
-
-
-
-class Image : public assets::Asset<internal::Image>
+class Image : public assets::Asset<ImageData>
 {
 	friend class ImageLoader;
 	public:
 		Image() {
 		}
 
-		Image(const Image &image) : Image((assets::Asset<internal::Image>)image) {
+		Image(const Image &image) : Image((assets::Asset<ImageData>)image) {
 		}
 
-		Image(internal::Image *i) : assets::Asset<internal::Image>(std::move(i)) {
+		Image(ImageData *i) : assets::Asset<ImageData>(std::move(i)) {
 		}
 
-		Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, void *c = 0) : Image(new internal::Image(s, f, c)) {
+		Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, void *c = 0) : Image(new ImageData(s, f, c)) {
 		}
 
 		math::Vec2ui getSize() const {
-			const internal::Image *in = getInternal();
+			const ImageData *in = getInternal();
 			if(!in) {
 				return math::Vec2ui(0);
 			}
@@ -80,7 +48,7 @@ class Image : public assets::Asset<internal::Image>
 		}
 
 		const void *data() const {
-			const internal::Image *in = getInternal();
+			const ImageData *in = getInternal();
 			if(!in) {
 				return 0;
 			}
@@ -88,7 +56,7 @@ class Image : public assets::Asset<internal::Image>
 		}
 
 		ImageFormat getFormat() const {
-			const internal::Image *in = getInternal();
+			const ImageData *in = getInternal();
 			if(!in)  {
 				return ImageFormat(ImageFormat::None);
 			}
@@ -97,14 +65,14 @@ class Image : public assets::Asset<internal::Image>
 
 		template<typename T = float>
 		const Color<T> getPixel(const math::Vec2ui &pos) const {
-			const internal::Image *in = getInternal();
+			const ImageData *in = getInternal();
 			uint offset = pos.x() * in->size.y() + pos.y();
 			byte *colorData = (byte *)in->data;
 			return Color<T>(colorData + offset * in->format.bytesPerPixel(), in->format);
 		}
 
 		bool operator==(const Image &i) const {
-			return Asset<internal::Image>::operator==(i);
+			return Asset<ImageData>::operator==(i);
 		}
 
 		bool operator!=(const Image &i) const {
@@ -117,11 +85,11 @@ class Image : public assets::Asset<internal::Image>
 
 
 	private:
-		Image(const assets::Asset<internal::Image> &t) : assets::Asset<internal::Image>(t) {
+		Image(const assets::Asset<ImageData> &t) : assets::Asset<ImageData>(t) {
 		}
 
-		const internal::Image *getInternal() const {
-			return isValid() ? this->operator->() : (const internal::Image *)0;
+		const ImageData *getInternal() const {
+			return isValid() ? this->operator->() : (const ImageData *)0;
 		}
 
 };

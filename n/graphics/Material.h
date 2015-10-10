@@ -17,79 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_MATERIAL
 #define N_GRAPHICS_MATERIAL
 
-#include <n/math/Vec.h>
-#include "Texture.h"
-#include "ShaderProgram.h"
+#include "MaterialData.h"
 
 namespace n {
 namespace graphics {
-
-enum RenderFlag
-{
-	None = 0x00,
-	FastDepth = 0x01,
-	ForceMaterialRebind = 0x02,
-	NoShader = 0x04,
-	DepthWriteOnly = 0x08,
-	Overlay = 0x10
-
-};
-
-struct MaterialData
-{
-	enum CullMode {
-		DontCull = 2,
-		Back = 0,
-		Front = 1
-	};
-
-	enum BlendMode {
-		None,
-		Add,
-		SrcAlpha
-	};
-
-	enum DepthMode {
-		Lesser,
-		Greater,
-		Always
-	};
-
-	MaterialData() : color(1, 1, 1, 1), metallic(0), depthTested(true), depthWrite(true), blend(None), cull(Back), depth(Lesser), normalIntencity(0.5), renderPriority(0), index(0) {
-	}
-
-	~MaterialData() {
-		removeFromCache();
-	}
-
-	Color<> color;
-	float metallic;
-	bool depthTested;
-	bool depthWrite;
-
-	graphics::ShaderProgram prog;
-
-	BlendMode blend;
-	CullMode cull;
-	DepthMode depth;
-
-	Texture diffuse;
-	Texture normal;
-	Texture roughness;
-	float normalIntencity;
-
-	uint renderPriority;
-
-	private:
-		friend class Material;
-
-		mutable uint index;
-
-		void addToCache() const;
-		void removeFromCache();
-
-
-};
 
 class Material : public assets::Asset<MaterialData>
 {
@@ -104,7 +35,7 @@ class Material : public assets::Asset<MaterialData>
 		}
 
 		bool operator<(const Material &m) const {
-			return getInternalIndex() < m.getInternalIndex();
+			return getData().fancy16() < m.getData().fancy16();
 		}
 
 		const MaterialData &getData() const;
@@ -119,18 +50,6 @@ class Material : public assets::Asset<MaterialData>
 		void bind(uint flags = RenderFlag::None) const;
 
 		Material(const assets::Asset<MaterialData> &t) : assets::Asset<MaterialData>(t) {
-		}
-
-		N_FORCE_INLINE const MaterialData *getInternal() const {
-			return this->isValid() ? this->operator->() : 0;
-		}
-
-		uint getInternalIndex() const {
-			const MaterialData *i = getInternal();
-			if(i && !i->index) {
-				i->addToCache();
-			}
-			return (i ? i->index : 0);
 		}
 
 
