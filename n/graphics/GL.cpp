@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Map.h>
 #include <GL/glew.h>
 
-#define N_OGL_DOES_NOTHING
+//#define N_OGL_DOES_NOTHING
 
 namespace n {
 namespace graphics {
@@ -204,6 +204,291 @@ void texImage2D(TextureType, int, uint, uint, int, TextureFormat, const void *) 
 void generateMipmap(TextureType) {}
 uint64 getTextureSamplerHandle(Handle) { return 1; }
 void makeTextureHandleResident(uint64) {}
+
+#else
+
+GLenum textureType[] = {GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP};
+GLenum bufferType[] = {GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_UNIFORM_BUFFER};
+GLenum bufferUsage[] = {GL_STREAM_DRAW, GL_STATIC_DRAW, GL_DYNAMIC_DRAW};
+GLenum framebufferType[] = {GL_FRAMEBUFFER};
+GLenum dataType[] = {GL_NONE, GL_FLOAT, GL_INT, GL_UNSIGNED_INT, GL_SHORT, GL_UNSIGNED_SHORT, GL_BYTE, GL_UNSIGNED_BYTE, GL_DOUBLE};
+GLenum textureFilter[] = {GL_NEAREST, GL_LINEAR};
+GLenum shaderType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
+GLenum shaderParam[] = {GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_LINK_STATUS, GL_ACTIVE_UNIFORMS};
+GLenum features[] = {GL_DEPTH_TEST, GL_DEPTH_CLAMP, GL_CULL_FACE, GL_BLEND};
+GLenum primitiveMode[] = {GL_TRIANGLES};
+GLenum depthMode[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
+GLenum blendModeSrc[] = {GL_ONE, GL_ONE, GL_SRC_ALPHA};
+GLenum blendModeDst[] = {GL_ZERO, GL_ONE, GL_ONE_MINUS_SRC_ALPHA};
+GLenum cullMode[] = {GL_NONE, GL_BACK, GL_FRONT};
+
+
+GLenum toGLAttachement(Attachment att) {
+	if(att == DepthAtt) {
+		return GL_DEPTH_ATTACHMENT;
+	}
+	if(att == NoAtt) {
+		return GL_NONE;
+	}
+	return GL_COLOR_ATTACHMENT0 + att;
+}
+
+void genTextures(uint count, Handle *textures) {
+	glGenTextures(count, textures);
+}
+
+void genBuffers(uint count, Handle *buffers) {
+	glGenBuffers(count, buffers);
+}
+
+void genVertexArrays(uint count, Handle *arrays) {
+	glGenVertexArrays(count, arrays);
+}
+
+void genFramebuffers(uint count, Handle *framebuffers) {
+	glGenFramebuffers(count, framebuffers);
+}
+
+void deleteTextures(uint count, const Handle *textures) {
+	glDeleteTextures(count, textures);
+}
+
+void deleteBuffers(uint count, const Handle *buffers) {
+	glDeleteBuffers(count, buffers);
+}
+
+void deleteVertexArrays(uint count, const Handle *arrays) {
+	glDeleteVertexArrays(count, arrays);
+}
+
+void deleteFramebuffers(uint count, const Handle *buffers) {
+	glDeleteFramebuffers(count, buffers);
+}
+
+void bindTexture(TextureType type, Handle tex) {
+	glBindTexture(textureType[type], tex);
+}
+
+void activeTexture(uint slot) {
+	glActiveTexture(GL_TEXTURE0 + slot);
+}
+
+void bindTextureUnit(uint slot, Handle tex) {
+	fatal("lelelle");
+}
+
+void bindSampler(uint slot, Handle sampler) {
+	glBindSampler(slot, sampler);
+}
+
+void bindBuffer(BufferTarget target, Handle buffer) {
+	glBindBuffer(bufferType[target], buffer);
+}
+
+void bindBufferBase(BufferTarget target, uint index, Handle buffer) {
+	glBindBufferBase(bufferType[target], index, buffer);
+}
+
+void bufferData(BufferTarget target, uint size, const void *data, BufferAlloc usage) {
+	glBufferData(bufferType[target], size, data, bufferUsage[usage]);
+}
+
+void bufferSubData(BufferTarget target, uint offset, uint size, const void *data) {
+	glBufferSubData(bufferType[target], offset, size, data);
+}
+
+void bindVertexArray(Handle array) {
+	glBindVertexArray(array);
+}
+
+void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr) {
+	glVertexAttribPointer(index, size, dataType[type], norm, stride, ptr);
+
+}
+void enableVertexAttribArray(uint index) {
+	glEnableVertexAttribArray(index);
+}
+void framebufferTexture2D(FrameBufferType target, Attachment attachement, TextureType texture, Handle handle, uint level) {
+	glFramebufferTexture2D(framebufferType[target], toGLAttachement(attachement), texture, handle, level);
+}
+
+void drawBuffers(uint count, const Attachment *buffers) {
+	GLenum *att = new GLenum[count];
+	for(uint i = 0; i != count; i++) {
+		att[count] = toGLAttachement(buffers[i]);
+	}
+	glDrawBuffers(count, att);
+	delete[] att;
+}
+
+FrameBufferStatus checkFramebufferStatus(FrameBufferType framebuffer) {
+	#warning checkFramebufferStatus does nothing
+	return FboOk;
+}
+
+
+void bindFramebuffer(FrameBufferType target, Handle fbo) {
+	glBindFramebuffer(framebufferType[target], fbo);
+}
+
+void readBuffer(Attachment attachment) {
+	glReadBuffer(toGLAttachement(attachment));
+}
+
+void clear(BitField buffers) {
+	GLbitfield b = (buffers & ColorBit ? GL_COLOR_BUFFER_BIT : 0) | (buffers & DepthBit ? GL_DEPTH_BUFFER_BIT : 0);
+	glClear(b);
+}
+
+void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BitField mask, Filter filter) {
+	GLbitfield b = (mask & ColorBit ? GL_COLOR_BUFFER_BIT : 0) | (mask & DepthBit ? GL_DEPTH_BUFFER_BIT : 0);
+	glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, b, textureFilter[filter]);
+}
+
+Handle createShader(ShaderType type) {
+	return glCreateShader(shaderType[type]);
+}
+
+void shaderSource(Handle shader, uint count, const char * const *src, const int *len) {
+	glShaderSource(shader, count, src, len);
+}
+
+void compileShader(Handle shader) {
+	glCompileShader(shader);
+}
+
+void getShaderiv(Handle shader, ShaderParam param, int *i) {
+	glGetShaderiv(shader, shaderParam[param], i);
+}
+
+void getShaderInfoLog(Handle shader, uint max, int *len, char *log) {
+	glGetShaderInfoLog(shader, max, len, log);
+}
+
+void deleteShader(Handle shader) {
+	glDeleteShader(shader);
+}
+
+Handle createProgram() {
+	return glCreateProgram();
+}
+
+void deleteProgram(Handle prog) {
+	glDeleteProgram(prog);
+}
+
+void useProgram(Handle prog) {
+	glUseProgram(prog);
+}
+
+void attachShader(Handle prog, Handle shader) {
+	glAttachShader(prog, shader);
+}
+
+void linkProgram(Handle prog) {
+	glLinkProgram(prog);
+}
+
+void getProgramiv(Handle prog, ShaderParam param, int *i) {
+	glGetProgramiv(prog, shaderParam[param], i);
+}
+
+void getProgramInfoLog(Handle prog, uint max, int *len, char *log) {
+	glGetProgramInfoLog(prog, max, len, log);
+}
+void getActiveUniform(Handle prog, uint index, uint max, int *len, int *size, UniformType *type, char *name) {
+	glGetActiveUniform(prog, index, max, len, size, type, name);
+}
+
+void getActiveUniformBlockName(Handle prog, uint index, uint max, int *len, char *name) {
+	glGetActiveUniformBlockName(prog, index, max, len, name);
+}
+
+int getUniformLocation(Handle shader, const char *name) {
+	return glGetUniformLocation(shader, name);
+}
+
+uint getUniformBlockIndex(Handle shader, const char *name) {
+	return glGetUniformBlockIndex(shader, name);
+}
+void uniformBlockBinding(Handle prog, uint index, uint binding) {
+	glUniformBlockBinding(prog, index, binding);
+}
+
+void viewport(int srcX0, int srcY0, int srcX1, int srcY1) {
+	glViewport(srcX0, srcY0, srcX1, srcY1);
+}
+
+void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type type, void *indices, uint primCount, uint baseVertex) {
+	glDrawElementsInstancedBaseVertex(primitiveMode[mode], count, dataType[type], indices, primCount, baseVertex);
+}
+
+void enable(Feature fe) {
+	glEnable(features[fe]);
+}
+void disable(Feature fe) {
+	glDisable(features[fe]);
+}
+
+void depthFunc(DepthMode mode) {
+	glDepthFunc(depthMode[mode]);
+}
+
+void blendFunc(BlendMode mode) {
+	glBlendFunc(blendModeSrc[mode], blendModeDst[mode]);
+}
+
+void depthMask(bool mask) {
+	glDepthMask(mask);
+}
+
+void cullFace(CullMode cull) {
+	glCullFace(cullMode[cull]);
+}
+
+void colorMask(bool r, bool g, bool b, bool a) {
+	glColorMask(r, g, b, a);
+}
+
+void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data) {
+	glTexImage2D(textureType[target], level, format.internalFormat, width, height, border, format.format, format.type, data);
+}
+
+void generateMipmap(TextureType type) {
+	glGenerateMipmap(textureType[type]);
+}
+
+uint64 getTextureSamplerHandle(Handle tex) {
+	GLuint sampler = 0;
+	glGenSamplers(1, &sampler);
+	for(uint i = 0; i != 8; i++) {
+		glBindSampler(i, sampler);
+	}
+	glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	return glGetTextureSamplerHandleARB(tex, sampler);
+}
+void makeTextureHandleResident(uint64 handle) {
+	glMakeTextureHandleResidentARB(handle);
+}
+
+
+
+
+void programUniform1iv(Handle, int, uint, const int *) {}
+void programUniform1uiv(Handle, int, uint, const uint *) {}
+void programUniform1fv(Handle, int, uint, const float *) {}
+void programUniform2iv(Handle, int, uint, const int *) {}
+void programUniform3iv(Handle, int, uint, const int *) {}
+void programUniform2fv(Handle, int, uint, const float *) {}
+void programUniform3fv(Handle, int, uint, const float *) {}
+void programUniform4fv(Handle, int, uint, const float *) {}
+void programUniformMatrix2fv(Handle, int, uint, bool, const float *) {}
+void programUniformMatrix3fv(Handle, int, uint, bool, const float *) {}
+void programUniformMatrix4fv(Handle, int, uint, bool, const float *) {}
+void programUniformHandleui64(Handle, int, uint64) {}
 
 #endif
 

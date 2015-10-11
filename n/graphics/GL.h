@@ -25,7 +25,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-enum BufferBinding
+enum BufferTarget
 {
 	ArrayBuffer,
 	IndexBuffer,
@@ -95,6 +95,7 @@ enum Feature
 	Blend
 };
 
+
 enum BufferAlloc
 {
 	Stream,
@@ -123,8 +124,8 @@ enum PrimitiveType
 enum Attachment : uint
 {
 	NoAtt = uint(-1),
-	DepthAtt = 0,
-	ColorAtt0 = 1
+	DepthAtt = uint(-2),
+	ColorAtt0 = 0
 };
 
 enum FrameBufferStatus
@@ -160,6 +161,7 @@ struct TextureFormat
 	private:
 		friend TextureFormat getTextureFormat(ImageFormat);
 		friend bool isHWSupported(ImageFormat);
+		friend void texImage2D(TextureType, int, uint, uint, int, TextureFormat, const void *);
 
 		TextureFormat(uint f, uint i, uint t) : format(f), internalFormat(i), type(t) {
 		}
@@ -170,58 +172,58 @@ struct TextureFormat
 };
 
 bool isHWSupported(ImageFormat format);
-void genTextures(uint count, Handle *tex);
-void deleteTextures(uint count, const Handle *tex);
+void genTextures(uint count, Handle *textures);
+void deleteTextures(uint count, const Handle *textures);
 void genBuffers(uint c, Handle *buffers);
 void deleteBuffers(uint count, const Handle *buffers);
 void genVertexArrays(uint count, Handle *arrays);
 void deleteVertexArrays(uint count, const Handle *arrays);
-void genFramebuffers(uint count, Handle *fbo);
+void genFramebuffers(uint count, Handle *framebuffers);
 void deleteFramebuffers(uint count, const Handle *fbo);
-void bindTexture(TextureType t, Handle tex);
+void bindTexture(TextureType type, Handle tex);
 void activeTexture(uint s);
-void bindTextureUnit(uint slot, Handle h);
-void bindSampler(uint slot, Handle s);
-void bindBuffer(BufferBinding b, Handle buffer);
-void bindBufferBase(BufferBinding b, uint index, Handle buffer);
-void bufferData(BufferBinding t, uint size, const void *data, BufferAlloc alloc);
-void bufferSubData(BufferBinding t, uint start, uint size, const void *data);
-void bindVertexArray(Handle vao);
-void vertexAttribPointer(uint index, uint size, Type t, bool transpose, uint stride, const void *buffer);
+void bindTextureUnit(uint slot, Handle tex);
+void bindSampler(uint slot, Handle sampler);
+void bindBuffer(BufferTarget binding, Handle buffer);
+void bindBufferBase(BufferTarget target, uint index, Handle buffer);
+void bufferData(BufferTarget target, uint size, const void *data, BufferAlloc usage);
+void bufferSubData(BufferTarget t, uint offset, uint start, const void *data);
+void bindVertexArray(Handle array);
+void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr);
 void enableVertexAttribArray(uint index);
-void framebufferTexture2D(FrameBufferType t, Attachment attachement, TextureType tt, Handle handle, uint mip);
+void framebufferTexture2D(FrameBufferType target, Attachment attachement, TextureType texture, Handle handle, uint level);
 void drawBuffers(uint count, const Attachment *att);
-FrameBufferStatus checkFramebufferStatus(FrameBufferType t);
-void bindFramebuffer(FrameBufferType, Handle fbo);
+FrameBufferStatus checkFramebufferStatus(FrameBufferType framebuffer);
+void bindFramebuffer(FrameBufferType target, Handle fbo);
 void readBuffer(Attachment att);
-void clear(BitField targets);
+void clear(BitField buffers);
 void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BitField mask, Filter filter);
-Handle createShader(ShaderType type);
-void shaderSource(Handle h, uint srcCount, const char **srcs, const uint *len);
-void compileShader(Handle h);
-void getShaderiv(Handle h, ShaderParam p, int *i);
-void getShaderInfoLog(Handle h, uint maxSize, int *len, char *log);
-void deleteShader(Handle h);
+Handle createShader(ShaderType shaderType);
+void shaderSource(Handle shader, uint count, const char * const *src, const int *len);
+void compileShader(Handle shader);
+void getShaderiv(Handle shader, ShaderParam param, int *i);
+void getShaderInfoLog(Handle shader, uint max, int *len, char *log);
+void deleteShader(Handle shader);
 Handle createProgram();
-void deleteProgram(Handle p);
-void useProgram(Handle p);
-void attachShader(Handle p, Handle s);
-void linkProgram(Handle h);
-void getProgramiv(Handle h, ShaderParam p, int *i);
+void deleteProgram(Handle prog);
+void useProgram(Handle prog);
+void attachShader(Handle p, Handle shader);
+void linkProgram(Handle prog);
+void getProgramiv(Handle prog, ShaderParam param, int *i);
 void getProgramInfoLog(Handle h, uint maxSize, int *len, char *log);
-void getActiveUniform(Handle p, uint index, uint max, uint *len, int *size, UniformType *param, char *n);
-void getActiveUniformBlockName(Handle p, uint index, uint max, int *len, char *name);
-int getUniformLocation(Handle h, const char *n);
-uint getUniformBlockIndex(Handle h, const char *n);
-void uniformBlockBinding(Handle p, uint index, uint binding);
+void getActiveUniform(Handle prog, uint index, uint max, int *len, int *size, UniformType *type, char *name);
+void getActiveUniformBlockName(Handle prog, uint index, uint max, int *len, char *name);
+int getUniformLocation(Handle shader, const char *name);
+uint getUniformBlockIndex(Handle shader, const char *name);
+void uniformBlockBinding(Handle prog, uint index, uint binding);
 void viewport(int srcX0, int srcY0, int srcX1, int srcY1);
-void drawElementsInstancedBaseVertex(PrimitiveType p, uint pCount, Type t, void *start, uint instances, uint vertexBase);
-void enable(Feature f);
-void disable(Feature f);
-void depthFunc(DepthMode m);
-void blendFunc(BlendMode m);
-void depthMask(bool m);
-void cullFace(CullMode m);
+void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type p, void *indices, uint primCount, uint baseVertex);
+void enable(Feature fe);
+void disable(Feature fe);
+void depthFunc(DepthMode mode);
+void blendFunc(BlendMode mode);
+void depthMask(bool mask);
+void cullFace(CullMode cull);
 void colorMask(bool r, bool g, bool b, bool a);
 void programUniform1iv(Handle h, int loc, uint count, const int *a);
 void programUniform1uiv(Handle h, int loc, uint count, const uint *a);
@@ -235,10 +237,10 @@ void programUniformMatrix2fv(Handle h, int loc, uint count, bool tr, const float
 void programUniformMatrix3fv(Handle h, int loc, uint count, bool tr, const float *m);
 void programUniformMatrix4fv(Handle h, int loc, uint count, bool tr, const float *m);
 void programUniformHandleui64(Handle h, int loc, uint64 handle);
-void texImage2D(TextureType t, int level, uint w, uint h, int b, TextureFormat f, const void *d);
-void generateMipmap(TextureType t);
-uint64 getTextureSamplerHandle(Handle h);
-void makeTextureHandleResident(uint64 h);
+void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data);
+void generateMipmap(TextureType type);
+uint64 getTextureSamplerHandle(Handle tex);
+void makeTextureHandleResident(uint64 handle);
 }
 
 

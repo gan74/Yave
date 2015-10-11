@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 
-//#define GL_AUDIT_STATE
+#define GL_AUDIT_STATE
 //#define N_SYNCHRONOUS_GL_DEBUG
 
 #include <GL/glew.h>

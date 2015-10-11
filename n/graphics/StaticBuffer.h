@@ -33,7 +33,7 @@ namespace internal {
 	}
 }
 
-template<typename T, BufferBinding Binding>
+template<typename T, BufferTarget Binding>
 class StaticBuffer : core::NonCopyable
 {
 	static_assert(TypeInfo<T>::isPod, "StaticBuffer should only contain pod");

@@ -29,7 +29,7 @@ class DynamicBufferBase
 	public:
 		struct Data : core::NonCopyable
 		{
-			Data(uint si, BufferBinding tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
+			Data(uint si, BufferTarget tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
 			}
 
 			~Data() {
@@ -66,7 +66,7 @@ class DynamicBufferBase
 				}
 			}
 
-			const BufferBinding type;
+			const BufferTarget type;
 			uint size;
 			void *buffer;
 			gl::GLuint handle;
@@ -74,7 +74,7 @@ class DynamicBufferBase
 		};
 
 
-		DynamicBufferBase(uint si, BufferBinding tpe) : data(new Data(si, tpe)) {
+		DynamicBufferBase(uint si, BufferTarget tpe) : data(new Data(si, tpe)) {
 		}
 
 		void update(bool force = false) {
