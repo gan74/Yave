@@ -58,7 +58,10 @@ void RenderQueue::prepare(math::Vec3 cpos, float max) {
 	for(const RenderBatch &b : sortable) {
 		math::Vec3 v = (b.getMatrix() * math::Vec4(0, 0, 0, 1)).sub(3);
 		float dist = std::max((cpos - v).length() - b.getVertexArrayObject().getRadius(), 0.0f);
-		buckets[exp(dist + 1) - exp(1)].append(b);
+		uint index = exp(dist + 1) - exp(1);
+		if(index < size) {
+			buckets[index].append(b);
+		}
 	}
 	sortable.makeEmpty();
 	for(uint i = 0; i != size; i++) {
