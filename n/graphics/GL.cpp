@@ -210,17 +210,17 @@ void makeTextureHandleResident(uint64) {}
 GLenum textureType[] = {GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP};
 GLenum bufferType[] = {GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_UNIFORM_BUFFER};
 GLenum bufferUsage[] = {GL_STREAM_DRAW, GL_STATIC_DRAW, GL_DYNAMIC_DRAW};
-GLenum framebufferType[] = {GL_FRAMEBUFFER};
+GLenum framebufferType[] = {GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER};
 GLenum dataType[] = {GL_NONE, GL_FLOAT, GL_INT, GL_UNSIGNED_INT, GL_SHORT, GL_UNSIGNED_SHORT, GL_BYTE, GL_UNSIGNED_BYTE, GL_DOUBLE};
 GLenum textureFilter[] = {GL_NEAREST, GL_LINEAR};
 GLenum shaderType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
-GLenum shaderParam[] = {GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_LINK_STATUS, GL_ACTIVE_UNIFORMS};
+GLenum shaderParam[] = {GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_LINK_STATUS, GL_ACTIVE_UNIFORMS, GL_ACTIVE_UNIFORM_BLOCKS};
 GLenum features[] = {GL_DEPTH_TEST, GL_DEPTH_CLAMP, GL_CULL_FACE, GL_BLEND};
 GLenum primitiveMode[] = {GL_TRIANGLES};
 GLenum depthMode[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
 GLenum blendModeSrc[] = {GL_ONE, GL_ONE, GL_SRC_ALPHA};
 GLenum blendModeDst[] = {GL_ZERO, GL_ONE, GL_ONE_MINUS_SRC_ALPHA};
-GLenum cullMode[] = {GL_NONE, GL_BACK, GL_FRONT};
+GLenum cullMode[] = {GL_BACK, GL_FRONT, GL_NONE};
 
 
 GLenum toGLAttachement(Attachment att) {
@@ -309,20 +309,33 @@ void enableVertexAttribArray(uint index) {
 	glEnableVertexAttribArray(index);
 }
 void framebufferTexture2D(FrameBufferType target, Attachment attachement, TextureType texture, Handle handle, uint level) {
-	glFramebufferTexture2D(framebufferType[target], toGLAttachement(attachement), texture, handle, level);
+	glFramebufferTexture2D(framebufferType[target], toGLAttachement(attachement), textureType[texture], handle, level);
 }
 
 void drawBuffers(uint count, const Attachment *buffers) {
 	GLenum *att = new GLenum[count];
 	for(uint i = 0; i != count; i++) {
-		att[count] = toGLAttachement(buffers[i]);
+		att[i] = toGLAttachement(buffers[i]);
 	}
 	glDrawBuffers(count, att);
 	delete[] att;
 }
 
 FrameBufferStatus checkFramebufferStatus(FrameBufferType framebuffer) {
-	#warning checkFramebufferStatus does nothing
+	GLenum ok = glCheckFramebufferStatus(framebufferType[framebuffer]);
+	if(ok != GL_FRAMEBUFFER_COMPLETE) {
+		switch(ok) {
+			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+				return FboMissingAtt;
+			break;
+			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+				return FboIncomplete;
+			break;
+			default:
+				return FboUnsupported;
+			break;
+		}
+	}
 	return FboOk;
 }
 
@@ -477,18 +490,53 @@ void makeTextureHandleResident(uint64 handle) {
 
 
 
-void programUniform1iv(Handle, int, uint, const int *) {}
-void programUniform1uiv(Handle, int, uint, const uint *) {}
-void programUniform1fv(Handle, int, uint, const float *) {}
-void programUniform2iv(Handle, int, uint, const int *) {}
-void programUniform3iv(Handle, int, uint, const int *) {}
-void programUniform2fv(Handle, int, uint, const float *) {}
-void programUniform3fv(Handle, int, uint, const float *) {}
-void programUniform4fv(Handle, int, uint, const float *) {}
-void programUniformMatrix2fv(Handle, int, uint, bool, const float *) {}
-void programUniformMatrix3fv(Handle, int, uint, bool, const float *) {}
-void programUniformMatrix4fv(Handle, int, uint, bool, const float *) {}
-void programUniformHandleui64(Handle, int, uint64) {}
+void programUniform1iv(Handle prog, int loc, uint count, const int *a) {
+	glProgramUniform1iv(prog, loc, count, a);
+}
+
+void programUniform1uiv(Handle prog, int loc, uint count, const uint *a) {
+	glProgramUniform1uiv(prog, loc, count, a);
+}
+
+void programUniform1fv(Handle prog, int loc, uint count, const float *a) {
+	glProgramUniform1fv(prog, loc, count, a);
+}
+
+void programUniform2iv(Handle prog, int loc, uint count, const int *v) {
+	glProgramUniform2iv(prog, loc, count, v);
+}
+
+void programUniform3iv(Handle prog, int loc, uint count, const int *v) {
+	glProgramUniform3iv(prog, loc, count, v);
+}
+
+void programUniform2fv(Handle prog, int loc, uint count, const float *v) {
+	glProgramUniform2fv(prog, loc, count, v);
+}
+
+void programUniform3fv(Handle prog, int loc, uint count, const float *v) {
+	glProgramUniform3fv(prog, loc, count, v);
+}
+
+void programUniform4fv(Handle prog, int loc, uint count, const float *v) {
+	glProgramUniform4fv(prog, loc, count, v);
+}
+
+void programUniformMatrix2fv(Handle prog, int loc, uint count, bool tr, const float *m) {
+	glProgramUniformMatrix2fv(prog, loc, count, tr, m);
+}
+
+void programUniformMatrix3fv(Handle prog, int loc, uint count, bool tr, const float *m) {
+	glProgramUniformMatrix3fv(prog, loc, count, tr, m);
+}
+
+void programUniformMatrix4fv(Handle prog, int loc, uint count, bool tr, const float *m) {
+	glProgramUniformMatrix4fv(prog, loc, count, tr, m);
+}
+
+void programUniformHandleui64(Handle prog, int loc, uint64 handle) {
+	glProgramUniformHandleui64ARB(prog, loc, handle);
+}
 
 #endif
 
