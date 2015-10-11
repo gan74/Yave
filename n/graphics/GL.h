@@ -144,9 +144,6 @@ enum Filter
 
 enum ShaderParam
 {
-	CompileResult,
-	LogLength,
-	LinkStatus,
 	ActiveUniforms,
 	ActiveBlocks
 };
@@ -172,6 +169,10 @@ bool isHWSupported(ImageFormat format);
 Handle createProgram();
 Handle createShader(ShaderType shaderType);
 void useProgram(Handle prog);
+bool linkProgram(Handle prog);
+bool compileShader(Handle shader);
+core::String getProgramInfoLog(Handle prog);
+core::String getShaderInfoLog(Handle shader);
 
 void setDepthMode(DepthMode mode);
 void setCullFace(CullMode mode);
@@ -179,6 +180,7 @@ void setBlendMode(BlendMode mode);
 void setEnabled(Feature feat, bool e);
 void setDepthMask(bool mask);
 void setColorMask(bool r, bool g, bool b, bool a);
+
 
 void genTextures(uint count, Handle *textures);
 void deleteTextures(uint count, const Handle *textures);
@@ -207,15 +209,11 @@ void readBuffer(Attachment att);
 void clear(BitField buffers);
 void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BitField mask, Filter filter);
 void shaderSource(Handle shader, uint count, const char * const *src, const int *len);
-void compileShader(Handle shader);
 void getShaderiv(Handle shader, ShaderParam param, int *i);
-void getShaderInfoLog(Handle shader, uint max, int *len, char *log);
 void deleteShader(Handle shader);
 void deleteProgram(Handle prog);
 void attachShader(Handle porg, Handle shader);
-void linkProgram(Handle prog);
 void getProgramiv(Handle prog, ShaderParam param, int *i);
-void getProgramInfoLog(Handle h, uint maxSize, int *len, char *log);
 void getActiveUniform(Handle prog, uint index, uint max, int *len, int *size, UniformType *type, char *name);
 void getActiveUniformBlockName(Handle prog, uint index, uint max, int *len, char *name);
 UniformAddr getUniformLocation(Handle shader, const char *name);

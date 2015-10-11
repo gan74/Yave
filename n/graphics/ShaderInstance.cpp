@@ -91,20 +91,8 @@ void ShaderInstance::compile() {
 			val &= bases[i]->isValid();
 		}
 	}
-	gl::linkProgram(handle);
-	int res = 0;
-	gl::getProgramiv(handle, gl::LinkStatus, &res);
-	if(!res || !val) {
-		int size = 0;
-		gl::getProgramiv(handle, gl::LogLength, &size);
-		char *msg = new char[size + 1];
-		gl::getProgramInfoLog(handle, size, &res, msg);
-		gl::deleteProgram(handle);
-		handle = 0;
-		msg[size] = '\0';
-		core::String logs = msg;
-		delete[] msg;
-		throw ShaderLinkingException(logs);
+	if(!gl::linkProgram(handle) || !val) {
+		throw ShaderLinkingException(gl::getProgramInfoLog(handle));
 	}
 	getUniforms();
 }

@@ -39,20 +39,8 @@ uint ShaderBase::load(core::String src, uint vers) {
 	handle = gl::createShader(type);
 	const char *str = src.toChar();
 	gl::shaderSource(handle, 1, &str, 0);
-	gl::compileShader(handle);
-	int res = 0;
-	gl::getShaderiv(handle, gl::CompileResult, &res);
-	if(!res) {
-		int size = 0;
-		gl::getShaderiv(handle, gl::LogLength, &size);
-		char *msg = new char[size + 1];
-		gl::getShaderInfoLog(handle, size, &size, msg);
-		gl::deleteShader(handle);
-		handle = 0;
-		msg[size] = '\0';
-		logs = msg;
-		delete[] msg;
-		throw ShaderCompilationException(logs);
+	if(!gl::compileShader(handle)) {
+		throw ShaderCompilationException(gl::getShaderInfoLog(handle));
 	}
 	return vers;
 }

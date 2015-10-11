@@ -214,7 +214,7 @@ GLenum framebufferType[] = {GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER};
 GLenum dataType[] = {GL_NONE, GL_FLOAT, GL_INT, GL_UNSIGNED_INT, GL_SHORT, GL_UNSIGNED_SHORT, GL_BYTE, GL_UNSIGNED_BYTE, GL_DOUBLE};
 GLenum textureFilter[] = {GL_NEAREST, GL_LINEAR};
 GLenum shaderType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
-GLenum shaderParam[] = {GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_LINK_STATUS, GL_ACTIVE_UNIFORMS, GL_ACTIVE_UNIFORM_BLOCKS};
+GLenum shaderParam[] = {GL_ACTIVE_UNIFORMS, GL_ACTIVE_UNIFORM_BLOCKS};
 GLenum features[] = {GL_DEPTH_TEST, GL_DEPTH_CLAMP, GL_CULL_FACE, GL_BLEND};
 GLenum primitiveMode[] = {GL_TRIANGLES};
 GLenum depthMode[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
@@ -366,8 +366,11 @@ void shaderSource(Handle shader, uint count, const char * const *src, const int 
 	glShaderSource(shader, count, src, len);
 }
 
-void compileShader(Handle shader) {
+bool compileShader(Handle shader) {
 	glCompileShader(shader);
+	int res = 0;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &res);
+	return res;
 }
 
 void getShaderiv(Handle shader, ShaderParam param, int *i) {
@@ -398,8 +401,32 @@ void attachShader(Handle prog, Handle shader) {
 	glAttachShader(prog, shader);
 }
 
-void linkProgram(Handle prog) {
+bool linkProgram(Handle prog) {
 	glLinkProgram(prog);
+	int res = 0;
+	glGetProgramiv(prog, GL_LINK_STATUS, &res);
+	return res;
+}
+
+core::String getProgramInfoLog(Handle prog) {
+	int len = 0;
+	glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+	char *log = new char[len + 1];
+	glGetProgramInfoLog(prog, len + 1, &len, log);
+	core::String str(log, len);
+	delete[] log;
+	return str;
+}
+
+
+core::String getShaderInfoLog(Handle shader) {
+	int len = 0;
+	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
+	char *log = new char[len + 1];
+	glGetShaderInfoLog(shader, len + 1, &len, log);
+	core::String str(log, len);
+	delete[] log;
+	return str;
 }
 
 void getProgramiv(Handle prog, ShaderParam param, int *i) {
@@ -409,6 +436,7 @@ void getProgramiv(Handle prog, ShaderParam param, int *i) {
 void getProgramInfoLog(Handle prog, uint max, int *len, char *log) {
 	glGetProgramInfoLog(prog, max, len, log);
 }
+
 void getActiveUniform(Handle prog, uint index, uint max, int *len, int *size, UniformType *type, char *name) {
 	glGetActiveUniform(prog, index, max, len, size, type, name);
 }
