@@ -272,7 +272,7 @@ void bindTexture(TextureType type, Handle tex) {
 	Handle bound[MaxBindings] = {0};
 	if(bound[activeTextureUnit] != tex) {
 		glBindTexture(textureType[type], tex);
-		bound[activeTextureUnit] != tex;
+		bound[activeTextureUnit] = tex;
 	}
 }
 
