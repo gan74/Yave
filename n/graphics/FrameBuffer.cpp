@@ -25,7 +25,7 @@ FrameBuffer::~FrameBuffer() {
 	if(isActive()) {
 		unbind();
 	}
-	gl::deleteFramebuffers(1, &handle);
+	gl::deleteFramebuffer(handle);
 	delete depth;
 	delete[] drawBuffers;
 	delete[] attachments;
@@ -41,7 +41,7 @@ bool FrameBuffer::isAttachmentEnabled(uint slot) const {
 
 void FrameBuffer::setup() {
 	const FrameBuffer *fb = GLContext::getContext()->frameBuffer;
-	gl::genFramebuffers(1, &handle);
+	handle = gl::createFramebuffer();
 	bind();
 	uint att = getMaxAttachment();
 	for(uint i = 0; i != att; i++) {

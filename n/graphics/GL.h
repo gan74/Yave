@@ -166,8 +166,6 @@ struct TextureFormat
 
 bool isSampler(UniformType type);
 bool isHWSupported(ImageFormat format);
-Handle createProgram();
-Handle createShader(ShaderType shaderType);
 void useProgram(Handle prog);
 bool linkProgram(Handle prog);
 bool compileShader(Handle shader);
@@ -182,19 +180,39 @@ void setEnabled(Feature feat, bool e);
 void setDepthMask(bool mask);
 void setColorMask(bool r, bool g, bool b, bool a);
 
+Handle createProgram();
+Handle createShader(ShaderType shaderType);
+Handle createTexture();
+Handle createBuffer();
+Handle createVertexArray();
+Handle createFramebuffer();
 
-void genTextures(uint count, Handle *textures);
-void deleteTextures(uint count, const Handle *textures);
-void genBuffers(uint c, Handle *buffers);
-void deleteBuffers(uint count, const Handle *buffers);
-void genVertexArrays(uint count, Handle *arrays);
-void deleteVertexArrays(uint count, const Handle *arrays);
-void genFramebuffers(uint count, Handle *framebuffers);
-void deleteFramebuffers(uint count, const Handle *fbo);
+void deleteTexture(Handle handle);
+void deleteBuffer(Handle handle);
+void deleteVertexArray(Handle handle);
+void deleteFramebuffer(Handle handle);
+void deleteShader(Handle shader);
+void deleteProgram(Handle prog);
+
 void bindTexture(TextureType type, Handle tex);
 void setActiveTexture(uint s);
 void bindTextureUnit(uint slot, TextureType type, Handle tex);
 void bindSampler(uint slot, Handle sampler);
+
+core::String getActiveUniformInfo(Handle prog, uint index, uint *size, UniformType *type);
+UniformAddr getUniformLocation(Handle shader, const char *name);
+UniformAddr getUniformLocation(Handle shader, const core::String &name);
+core::String getActiveUniformBlockName(Handle prog, uint index);
+uint getUniformBlockIndex(Handle shader, const core::String &name);
+uint getUniformBlockIndex(Handle shader, const char *name);
+
+void attachShader(Handle porg, Handle shader);
+
+
+
+//    vvvvvvvvvvvv   Unfinished    vvvvvvvvvvvv
+
+
 void bindBuffer(BufferTarget binding, Handle buffer);
 void bindBufferBase(BufferTarget target, uint index, Handle buffer);
 void bufferData(BufferTarget target, uint size, const void *data, BufferAlloc usage);
@@ -211,13 +229,6 @@ void clear(BitField buffers);
 void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BitField mask, Filter filter);
 void shaderSource(Handle shader, uint count, const char * const *src, const int *len);
 void getShaderiv(Handle shader, ShaderParam param, int *i);
-void deleteShader(Handle shader);
-void deleteProgram(Handle prog);
-void attachShader(Handle porg, Handle shader);
-void getActiveUniform(Handle prog, uint index, uint max, int *len, int *size, UniformType *type, char *name);
-void getActiveUniformBlockName(Handle prog, uint index, uint max, int *len, char *name);
-UniformAddr getUniformLocation(Handle shader, const char *name);
-uint getUniformBlockIndex(Handle shader, const char *name);
 void uniformBlockBinding(Handle prog, uint index, uint binding);
 void viewport(int srcX0, int srcY0, int srcX1, int srcY1);
 void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type p, void *indices, uint primCount, uint baseVertex);

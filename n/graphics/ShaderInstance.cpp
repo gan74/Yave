@@ -98,16 +98,14 @@ void ShaderInstance::compile() {
 }
 
 void ShaderInstance::getUniforms() {
-	const uint max = 1024;
-	char name[max];
 	int uniforms = gl::getProgramInt(handle, gl::ActiveUniforms);
 	for(uint i = 0; i != SVMax; i++) {
 		standards[i] = UniformInfo{UniformAddr(gl::InvalidIndex), 0, gl::UniformType()};
 	}
 	for(uint i = 0; i != uint(uniforms); i++) {
-		int size = 0;
+		uint size = 0;
 		gl::UniformType type;
-		gl::getActiveUniform(handle, i, max - 1, 0, &size, &type, name);
+		core::String name = gl::getActiveUniformInfo(handle, 0, &size, &type);
 		core::String uniform = name;
 		if(uniform.contains(".")) {
 			continue;
@@ -139,12 +137,11 @@ void ShaderInstance::getUniforms() {
 	uniforms = gl::getProgramInt(handle, gl::ActiveBlocks);
 	bufferBindings = new core::SmartPtr<DynamicBufferBase::Data>[uniforms];
 	for(uint i = 0; i != uint(uniforms); i++) {
-		int len = 0;
-		gl::getActiveUniformBlockName(handle, i, max, &len, name);
+		core::String name = gl::getActiveUniformBlockName(handle, i);
 		uint index = gl::getUniformBlockIndex(handle, name);
 		gl::uniformBlockBinding(handle, index, buffers.size());
 		bufferBindings[i] = 0;
-		buffers.insert(core::String(name, len), index);
+		buffers.insert(name, index);
 	}
 }
 

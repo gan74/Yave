@@ -37,7 +37,7 @@ class DynamicBufferBase
 				if(handle) {
 					gl::Handle h = handle;
 					GLContext::getContext()->addGLTask([=]() {
-						gl::deleteBuffers(1, &h);
+						gl::deleteBuffer(h);
 					});
 				}
 			}
@@ -45,7 +45,7 @@ class DynamicBufferBase
 			void update(bool forceBind = false) const {
 				if(modified) {
 					if(!handle) {
-						gl::genBuffers(1, &handle);
+						handle = gl::createBuffer();
 						gl::bindBuffer(type, handle);
 						gl::bufferData(type, size, buffer, gl::Dynamic);
 					} else {

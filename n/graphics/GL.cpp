@@ -127,85 +127,7 @@ bool isBindlessHandle(UniformType t) {
 	return t == GL_UNSIGNED_INT_VEC2;
 }
 
-#ifdef N_OGL_DOES_NOTHING
 
-void genDummies(uint c, Handle *x) {
-	for(uint i = 0; i != c; i++) {
-		x[i] = 1;
-	}
-}
-
-void genTextures(uint c, Handle *t) { genDummies(c, t); }
-void genBuffers(uint c, Handle *t) { genDummies(c, t); }
-void genVertexArrays(uint c, Handle *t) { genDummies(c, t); }
-void genFramebuffers(uint c, Handle *t) { genDummies(c, t); }
-void deleteTextures(uint, const Handle *) {}
-void deleteBuffers(uint, const Handle *) {}
-void deleteVertexArrays(uint, const Handle *) {}
-void deleteFramebuffers(uint, const Handle *) {}
-void bindTexture(TextureType, Handle) {}
-void activeTexture(uint) {}
-void bindTextureUnit(uint, Handle) {}
-void bindSampler(uint, Handle) {}
-void bindBuffer(BufferBinding, Handle) {}
-void bindBufferBase(BufferBinding, uint, Handle) {}
-void bufferData(BufferBinding, uint, const void *, BufferAlloc) {}
-void bufferSubData(BufferBinding, uint, uint, const void *) {}
-void bindVertexArray(Handle) {}
-void vertexAttribPointer(uint, uint, Type, bool, uint, const void *) {}
-void enableVertexAttribArray(uint) {}
-void framebufferTexture2D(FrameBufferType, Attachment, TextureType, Handle, uint) {}
-void drawBuffers(uint, const Attachment *) {}
-FrameBufferStatus checkFramebufferStatus(FrameBufferType) { return FboOk; }
-void bindFramebuffer(FrameBufferType, Handle) {}
-void readBuffer(Attachment) {}
-void clear(BitField) {}
-void blitFramebuffer(int, int, int, int, int, int, int, int, BitField, Filter) {}
-Handle createShader(ShaderType) { return 1; }
-void shaderSource(Handle, uint, const char **, const uint *) {}
-void compileShader(Handle) {}
-void getShaderiv(Handle, ShaderParam, int *i) { *i = 1; }
-void getShaderInfoLog(Handle, uint, int *, char *) {}
-void deleteShader(Handle) {}
-Handle createProgram() { return 1; }
-void deleteProgram(Handle) {}
-void useProgram(Handle) {}
-void attachShader(Handle, Handle) {}
-void linkProgram(Handle) {}
-void getProgramiv(Handle, ShaderParam p, int *i) { *i = p == gl::LinkStatus; }
-void getProgramInfoLog(Handle, uint, int *, char *) {}
-void getActiveUniform(Handle, uint, uint, uint *, int *, UniformType *, char *) {}
-void getActiveUniformBlockName(Handle, uint, uint, int *, char *) {}
-int getUniformLocation(Handle, const char *) { return InvalidIndex; }
-uint getUniformBlockIndex(Handle, const char *) { return 0; }
-void uniformBlockBinding(Handle, uint, uint) {}
-void viewport(int, int, int, int) {}
-void drawElementsInstancedBaseVertex(PrimitiveType, uint, Type, void *, uint, uint) {}
-void enable(Feature) {}
-void disable(Feature) {}
-void depthFunc(DepthMode) {}
-void blendFunc(BlendMode) {}
-void depthMask(bool) {}
-void cullFace(CullMode) {}
-void colorMask(bool, bool, bool, bool) {}
-void programUniform1iv(Handle, int, uint, const int *) {}
-void programUniform1uiv(Handle, int, uint, const uint *) {}
-void programUniform1fv(Handle, int, uint, const float *) {}
-void programUniform2iv(Handle, int, uint, const int *) {}
-void programUniform3iv(Handle, int, uint, const int *) {}
-void programUniform2fv(Handle, int, uint, const float *) {}
-void programUniform3fv(Handle, int, uint, const float *) {}
-void programUniform4fv(Handle, int, uint, const float *) {}
-void programUniformMatrix2fv(Handle, int, uint, bool, const float *) {}
-void programUniformMatrix3fv(Handle, int, uint, bool, const float *) {}
-void programUniformMatrix4fv(Handle, int, uint, bool, const float *) {}
-void programUniformHandleui64(Handle, int, uint64) {}
-void texImage2D(TextureType, int, uint, uint, int, TextureFormat, const void *) {}
-void generateMipmap(TextureType) {}
-uint64 getTextureSamplerHandle(Handle) { return 1; }
-void makeTextureHandleResident(uint64) {}
-
-#else
 
 GLenum textureType[] = {GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP};
 GLenum bufferType[] = {GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_UNIFORM_BUFFER};
@@ -236,36 +158,54 @@ GLenum toGLAttachement(Attachment att) {
 	return GL_COLOR_ATTACHMENT0 + att;
 }
 
-void genTextures(uint count, Handle *textures) {
-	glGenTextures(count, textures);
+
+
+
+
+
+
+
+
+
+
+Handle createTexture() {
+	Handle h = 0;
+	glGenTextures(1, &h);
+	return h;
 }
 
-void genBuffers(uint count, Handle *buffers) {
-	glGenBuffers(count, buffers);
+Handle createBuffer() {
+	Handle h = 0;
+	glGenBuffers(1, &h);
+	return h;
 }
 
-void genVertexArrays(uint count, Handle *arrays) {
-	glGenVertexArrays(count, arrays);
+Handle createVertexArray() {
+	Handle h = 0;
+	glGenVertexArrays(1, &h);
+	return h;
 }
 
-void genFramebuffers(uint count, Handle *framebuffers) {
-	glGenFramebuffers(count, framebuffers);
+Handle createFramebuffer() {
+	Handle h = 0;
+	glGenFramebuffers(1, &h);
+	return h;
 }
 
-void deleteTextures(uint count, const Handle *textures) {
-	glDeleteTextures(count, textures);
+void deleteTexture(Handle handle) {
+	glDeleteTextures(1, &handle);
 }
 
-void deleteBuffers(uint count, const Handle *buffers) {
-	glDeleteBuffers(count, buffers);
+void deleteBuffer(Handle handle) {
+	glDeleteBuffers(1, &handle);
 }
 
-void deleteVertexArrays(uint count, const Handle *arrays) {
-	glDeleteVertexArrays(count, arrays);
+void deleteVertexArray(Handle handle) {
+	glDeleteVertexArrays(1, &handle);
 }
 
-void deleteFramebuffers(uint count, const Handle *buffers) {
-	glDeleteFramebuffers(count, buffers);
+void deleteFramebuffer(Handle handle) {
+	glDeleteFramebuffers(1, &handle);
 }
 
 void bindTexture(TextureType type, Handle tex) {
@@ -295,6 +235,194 @@ void bindSampler(uint slot, Handle sampler) {
 		bound[slot] = sampler;
 	}
 }
+
+Handle createShader(ShaderType type) {
+	return glCreateShader(shaderType[type]);
+}
+
+void shaderSource(Handle shader, uint count, const char * const *src, const int *len) {
+	glShaderSource(shader, count, src, len);
+}
+
+bool compileShader(Handle shader) {
+	glCompileShader(shader);
+	int res = 0;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &res);
+	return res;
+}
+
+void getShaderiv(Handle shader, ShaderParam param, int *i) {
+	glGetShaderiv(shader, shaderParam[param], i);
+}
+
+void getShaderInfoLog(Handle shader, uint max, int *len, char *log) {
+	glGetShaderInfoLog(shader, max, len, log);
+}
+
+void deleteShader(Handle shader) {
+	glDeleteShader(shader);
+}
+
+Handle createProgram() {
+	return glCreateProgram();
+}
+
+void deleteProgram(Handle prog) {
+	glDeleteProgram(prog);
+}
+
+void useProgram(Handle prog) {
+	glUseProgram(prog);
+}
+
+void attachShader(Handle prog, Handle shader) {
+	glAttachShader(prog, shader);
+}
+
+bool linkProgram(Handle prog) {
+	glLinkProgram(prog);
+	int res = 0;
+	glGetProgramiv(prog, GL_LINK_STATUS, &res);
+	return res;
+}
+
+core::String getProgramInfoLog(Handle prog) {
+	int len = 0;
+	glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+	char *log = new char[len + 1];
+	glGetProgramInfoLog(prog, len + 1, &len, log);
+	core::String str(log, len);
+	delete[] log;
+	return str;
+}
+
+core::String getShaderInfoLog(Handle shader) {
+	int len = 0;
+	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
+	char *log = new char[len + 1];
+	glGetShaderInfoLog(shader, len + 1, &len, log);
+	core::String str(log, len);
+	delete[] log;
+	return str;
+}
+
+int getProgramInt(Handle prog, ShaderParam param) {
+	int res = 0;
+	glGetProgramiv(prog, shaderParam[param], &res);
+	return res;
+}
+
+core::String getActiveUniformInfo(Handle prog, uint index, uint *size, UniformType *type) {
+	static constexpr uint MaxSize = 1024;
+	static char nameBuffer[1024];
+	int len = 0;
+	UniformType ty = 0;
+	int si = 0;
+	glGetActiveUniform(prog, index, MaxSize, &len, &si, &ty, nameBuffer);
+	if(size) {
+		*size = si;
+	}
+	if(type) {
+		*type = ty;
+	}
+	return core::String(nameBuffer, len);
+}
+
+core::String getActiveUniformBlockName(Handle prog, uint index) {
+	static constexpr uint MaxSize = 1024;
+	static char nameBuffer[1024];
+	int len = 0;
+	glGetActiveUniformBlockName(prog, index, MaxSize, &len, nameBuffer);
+	return core::String(nameBuffer, len);
+}
+
+UniformAddr getUniformLocation(Handle shader, const core::String &name) {
+	return getUniformLocation(shader, name.toChar());
+}
+
+UniformAddr getUniformLocation(Handle shader, const char *name) {
+	return glGetUniformLocation(shader, name);
+}
+
+void setEnabled(Feature feat, bool e) {
+	static bool feats[3] = {false};
+	if(feats[feat] == e) {
+		return;
+	}
+	if((feats[feat] = e)) {
+		glEnable(features[feat]);
+	} else {
+		glDisable(features[feat]);
+	}
+}
+
+void setDepthMode(DepthMode mode) {
+	static DepthMode current = DepthMode::Lesser;
+	if(mode != current) {
+		glDepthFunc(depthMode[current = mode]);
+	}
+}
+
+void setBlendMode(BlendMode mode) {
+	static BlendMode current = BlendMode::DontBlend;
+	if(mode != current) {
+		if(mode == BlendMode::DontBlend) {
+			glDisable(GL_BLEND);
+		} else {
+			if(current == BlendMode::DontBlend) {
+				glEnable(GL_BLEND);
+			}
+			glBlendFunc(blendModeSrc[mode], blendModeDst[mode]);
+		}
+		current = mode;
+	}
+}
+
+void setDepthMask(bool mask) {
+	static bool m = true;
+	if(mask != m) {
+		glDepthMask(m = mask);
+	}
+}
+
+void setCullFace(CullMode mode) {
+	static CullMode current = CullMode::DontCull;
+	if(mode != current) {
+		if(mode == CullMode::DontCull) {
+			glDisable(GL_CULL_FACE);
+		} else {
+			if(current == CullMode::DontCull) {
+				glEnable(GL_CULL_FACE);
+			}
+			glCullFace(cullMode[mode]);
+		}
+		current = mode;
+	}
+}
+
+void setColorMask(bool r, bool g, bool b, bool a) {
+	glColorMask(r, g, b, a);
+}
+
+uint getUniformBlockIndex(Handle shader, const core::String &name) {
+	return getUniformBlockIndex(shader, name.toChar());
+}
+
+uint getUniformBlockIndex(Handle shader, const char *name) {
+	return glGetUniformBlockIndex(shader, name);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 void bindBuffer(BufferTarget target, Handle buffer) {
 	glBindBuffer(bufferType[target], buffer);
@@ -374,99 +502,6 @@ void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int 
 	glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, b, textureFilter[filter]);
 }
 
-Handle createShader(ShaderType type) {
-	return glCreateShader(shaderType[type]);
-}
-
-void shaderSource(Handle shader, uint count, const char * const *src, const int *len) {
-	glShaderSource(shader, count, src, len);
-}
-
-bool compileShader(Handle shader) {
-	glCompileShader(shader);
-	int res = 0;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &res);
-	return res;
-}
-
-void getShaderiv(Handle shader, ShaderParam param, int *i) {
-	glGetShaderiv(shader, shaderParam[param], i);
-}
-
-void getShaderInfoLog(Handle shader, uint max, int *len, char *log) {
-	glGetShaderInfoLog(shader, max, len, log);
-}
-
-void deleteShader(Handle shader) {
-	glDeleteShader(shader);
-}
-
-Handle createProgram() {
-	return glCreateProgram();
-}
-
-void deleteProgram(Handle prog) {
-	glDeleteProgram(prog);
-}
-
-void useProgram(Handle prog) {
-	glUseProgram(prog);
-}
-
-void attachShader(Handle prog, Handle shader) {
-	glAttachShader(prog, shader);
-}
-
-bool linkProgram(Handle prog) {
-	glLinkProgram(prog);
-	int res = 0;
-	glGetProgramiv(prog, GL_LINK_STATUS, &res);
-	return res;
-}
-
-core::String getProgramInfoLog(Handle prog) {
-	int len = 0;
-	glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
-	char *log = new char[len + 1];
-	glGetProgramInfoLog(prog, len + 1, &len, log);
-	core::String str(log, len);
-	delete[] log;
-	return str;
-}
-
-
-core::String getShaderInfoLog(Handle shader) {
-	int len = 0;
-	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
-	char *log = new char[len + 1];
-	glGetShaderInfoLog(shader, len + 1, &len, log);
-	core::String str(log, len);
-	delete[] log;
-	return str;
-}
-
-
-int getProgramInt(Handle prog, ShaderParam param) {
-	int res = 0;
-	glGetProgramiv(prog, shaderParam[param], &res);
-	return res;
-}
-
-void getActiveUniform(Handle prog, uint index, uint max, int *len, int *size, UniformType *type, char *name) {
-	glGetActiveUniform(prog, index, max, len, size, type, name);
-}
-
-void getActiveUniformBlockName(Handle prog, uint index, uint max, int *len, char *name) {
-	glGetActiveUniformBlockName(prog, index, max, len, name);
-}
-
-UniformAddr getUniformLocation(Handle shader, const char *name) {
-	return glGetUniformLocation(shader, name);
-}
-
-uint getUniformBlockIndex(Handle shader, const char *name) {
-	return glGetUniformBlockIndex(shader, name);
-}
 void uniformBlockBinding(Handle prog, uint index, uint binding) {
 	glUniformBlockBinding(prog, index, binding);
 }
@@ -479,65 +514,6 @@ void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type type, 
 	glDrawElementsInstancedBaseVertex(primitiveMode[mode], count, dataType[type], indices, primCount, baseVertex);
 }
 
-void setEnabled(Feature feat, bool e) {
-	static bool feats[3] = {false};
-	if(feats[feat] == e) {
-		return;
-	}
-	if((feats[feat] = e)) {
-		glEnable(features[feat]);
-	} else {
-		glDisable(features[feat]);
-	}
-}
-
-void setDepthMode(DepthMode mode) {
-	static DepthMode current = DepthMode::Lesser;
-	if(mode != current) {
-		glDepthFunc(depthMode[current = mode]);
-	}
-}
-
-void setBlendMode(BlendMode mode) {
-	static BlendMode current = BlendMode::DontBlend;
-	if(mode != current) {
-		if(mode == BlendMode::DontBlend) {
-			glDisable(GL_BLEND);
-		} else {
-			if(current == BlendMode::DontBlend) {
-				glEnable(GL_BLEND);
-			}
-			glBlendFunc(blendModeSrc[mode], blendModeDst[mode]);
-		}
-		current = mode;
-	}
-}
-
-void setDepthMask(bool mask) {
-	static bool m = true;
-	if(mask != m) {
-		glDepthMask(m = mask);
-	}
-}
-
-void setCullFace(CullMode mode) {
-	static CullMode current = CullMode::DontCull;
-	if(mode != current) {
-		if(mode == CullMode::DontCull) {
-			glDisable(GL_CULL_FACE);
-		} else {
-			if(current == CullMode::DontCull) {
-				glEnable(GL_CULL_FACE);
-			}
-			glCullFace(cullMode[mode]);
-		}
-		current = mode;
-	}
-}
-
-void setColorMask(bool r, bool g, bool b, bool a) {
-	glColorMask(r, g, b, a);
-}
 
 void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data) {
 	glTexImage2D(textureType[target], level, format.internalFormat, width, height, border, format.format, format.type, data);
@@ -563,9 +539,6 @@ uint64 getTextureSamplerHandle(Handle tex) {
 void makeTextureHandleResident(uint64 handle) {
 	glMakeTextureHandleResidentARB(handle);
 }
-
-
-
 
 void programUniform1iv(Handle prog, UniformAddr loc, uint count, const int *a) {
 	glProgramUniform1iv(prog, loc, count, a);
@@ -614,9 +587,6 @@ void programUniformMatrix4fv(Handle prog, UniformAddr loc, uint count, bool tr, 
 void programUniformHandleui64(Handle prog, UniformAddr loc, uint64 handle) {
 	glProgramUniformHandleui64ARB(prog, loc, handle);
 }
-
-#endif
-
 
 
 

@@ -42,7 +42,7 @@ class VertexArrayObject : core::NonCopyable
 			if(handle) {
 				gl::Handle h = handle;
 				GLContext::getContext()->addGLTask([=]() {
-					gl::deleteVertexArrays(1, &h);
+					gl::deleteVertexArray(h);
 				});
 			}
 		}
@@ -82,7 +82,7 @@ class VertexArrayObject : core::NonCopyable
 				buffer = 0;
 
 				data->bind();
-				gl::genVertexArrays(1, &handle);
+				handle = gl::createVertexArray();
 				gl::bindVertexArray(internal::getCurrentVao() = handle);
 				indexes->bind();
 				gl::vertexAttribPointer(0, 3, GLType<T>::value, false, sizeof(Vertex<T>), 0);

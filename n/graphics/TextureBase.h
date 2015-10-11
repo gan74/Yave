@@ -41,7 +41,7 @@ namespace internal {
 				if(handle) {
 					gl::Handle h = handle;
 					GLContext::getContext()->addGLTask([=]() {
-						gl::deleteTextures(1, &h);
+						gl::deleteTexture(h);
 					});
 				}
 			}

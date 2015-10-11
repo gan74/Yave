@@ -58,7 +58,7 @@ void Texture::upload() const {
 	if(!size.mul()) {
 		fatal("Invalid image size.");
 	}
-	gl::genTextures(1, &(data->handle));
+	data->handle = gl::createTexture();
 	gl::bindTexture(Texture2D, data->handle);
 
 	gl::TextureFormat format = gl::getTextureFormat(image.getFormat());
