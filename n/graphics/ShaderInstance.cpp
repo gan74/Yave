@@ -100,8 +100,7 @@ void ShaderInstance::compile() {
 void ShaderInstance::getUniforms() {
 	const uint max = 1024;
 	char name[max];
-	int uniforms = 0;
-	gl::getProgramiv(handle, gl::ActiveUniforms, &uniforms);
+	int uniforms = gl::getProgramInt(handle, gl::ActiveUniforms);
 	for(uint i = 0; i != SVMax; i++) {
 		standards[i] = UniformInfo{UniformAddr(gl::InvalidIndex), 0, gl::UniformType()};
 	}
@@ -137,7 +136,7 @@ void ShaderInstance::getUniforms() {
 	setValue("n_Textures", texAddr, samplerCount);
 	delete[] texAddr;
 
-	gl::getProgramiv(handle, gl::ActiveBlocks, &uniforms);
+	uniforms = gl::getProgramInt(handle, gl::ActiveBlocks);
 	bufferBindings = new core::SmartPtr<DynamicBufferBase::Data>[uniforms];
 	for(uint i = 0; i != uint(uniforms); i++) {
 		int len = 0;

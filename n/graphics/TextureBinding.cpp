@@ -34,48 +34,24 @@ struct BindingData
 	TextureSampler sampler;
 };
 
-static BindingData *bindings = 0;
-static uint active = 0;
-
-void init() {
-	bindings = new BindingData[maxTextures()];
-}
-
-void setActive(uint slot) {
-	if(slot != active) {
-		gl::activeTexture(slot);
-		active = slot;
-	}
-}
 
 TextureBinding::TextureBinding() : sampler(TextureSampler::Default) {
 }
 
 void TextureBinding::bind(uint slot) const {
 	TextureSampler smp = sampler == TextureSampler::Default ? GLContext::getContext()->getDefaultSampler() : sampler;
-	if(!bindings) {
-		init();
-	}
 	BindingData t;
 	if(tex) {
 		t.handle = tex->handle;
 		t.type = tex->type;
 		t.sampler = smp;
 	}
-	if(bindings[slot].handle != t.handle) {
-		setActive(slot);
-		gl::bindTexture(bindings[slot].type = t.type, bindings[slot].handle = t.handle);
-	}
-	if(bindings[slot].sampler != t.sampler) {
-		gl::bindSampler(slot, bindings[slot].sampler = t.sampler);
-	}
+	gl::bindTextureUnit(slot, t.type, t.handle);
+	gl::bindSampler(slot, t.sampler);
+
 }
 
 void TextureBinding::dirty() {
-	if(bindings) {
-		gl::bindTexture(bindings[active].type, bindings[active].handle);
-		gl::bindSampler(active, bindings[active].sampler);
-	}
 }
 
 }

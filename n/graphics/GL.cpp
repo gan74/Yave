@@ -222,6 +222,9 @@ GLenum blendModeSrc[] = {GL_ONE, GL_ONE, GL_SRC_ALPHA};
 GLenum blendModeDst[] = {GL_ZERO, GL_ONE, GL_ONE_MINUS_SRC_ALPHA};
 GLenum cullMode[] = {GL_BACK, GL_FRONT, GL_NONE};
 
+static constexpr uint MaxBindings = 256;
+static uint activeTextureUnit = 0;
+
 
 GLenum toGLAttachement(Attachment att) {
 	if(att == DepthAtt) {
@@ -266,19 +269,31 @@ void deleteFramebuffers(uint count, const Handle *buffers) {
 }
 
 void bindTexture(TextureType type, Handle tex) {
-	glBindTexture(textureType[type], tex);
+	Handle bound[MaxBindings] = {0};
+	if(bound[activeTextureUnit] != tex) {
+		glBindTexture(textureType[type], tex);
+		bound[activeTextureUnit] != tex;
+	}
 }
 
-void activeTexture(uint slot) {
-	glActiveTexture(GL_TEXTURE0 + slot);
+void setActiveTexture(uint slot) {
+	if(activeTextureUnit != slot) {
+		glActiveTexture(GL_TEXTURE0 + slot);
+		activeTextureUnit = slot;
+	}
 }
 
-void bindTextureUnit(uint slot, Handle tex) {
-	fatal("lelelle");
+void bindTextureUnit(uint slot, TextureType type, Handle tex) {
+	setActiveTexture(slot);
+	bindTexture(type, tex);
 }
 
 void bindSampler(uint slot, Handle sampler) {
-	glBindSampler(slot, sampler);
+	Handle bound[MaxBindings] = {0};
+	if(bound[slot] != sampler) {
+		glBindSampler(slot, sampler);
+		bound[slot] = sampler;
+	}
 }
 
 void bindBuffer(BufferTarget target, Handle buffer) {
@@ -303,11 +318,12 @@ void bindVertexArray(Handle array) {
 
 void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr) {
 	glVertexAttribPointer(index, size, dataType[type], norm, stride, ptr);
-
 }
+
 void enableVertexAttribArray(uint index) {
 	glEnableVertexAttribArray(index);
 }
+
 void framebufferTexture2D(FrameBufferType target, Attachment attachement, TextureType texture, Handle handle, uint level) {
 	glFramebufferTexture2D(framebufferType[target], toGLAttachement(attachement), textureType[texture], handle, level);
 }
@@ -429,12 +445,11 @@ core::String getShaderInfoLog(Handle shader) {
 	return str;
 }
 
-void getProgramiv(Handle prog, ShaderParam param, int *i) {
-	glGetProgramiv(prog, shaderParam[param], i);
-}
 
-void getProgramInfoLog(Handle prog, uint max, int *len, char *log) {
-	glGetProgramInfoLog(prog, max, len, log);
+int getProgramInt(Handle prog, ShaderParam param) {
+	int res = 0;
+	glGetProgramiv(prog, shaderParam[param], &res);
+	return res;
 }
 
 void getActiveUniform(Handle prog, uint index, uint max, int *len, int *size, UniformType *type, char *name) {
