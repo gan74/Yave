@@ -40,7 +40,7 @@ class VertexArrayObject : core::NonCopyable
 			delete data;
 			delete indexes;
 			if(handle) {
-				gl::GLuint h = handle;
+				gl::Handle h = handle;
 				GLContext::getContext()->addGLTask([=]() {
 					gl::deleteVertexArrays(1, &h);
 				});
@@ -108,7 +108,7 @@ class VertexArrayObject : core::NonCopyable
 		mutable StaticBuffer<Vertex<T>, ArrayBuffer> *data;
 		mutable StaticBuffer<uint, IndexBuffer> *indexes;
 
-		mutable gl::GLuint handle;
+		mutable gl::Handle handle;
 };
 
 }

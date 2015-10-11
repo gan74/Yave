@@ -417,7 +417,7 @@ void getActiveUniformBlockName(Handle prog, uint index, uint max, int *len, char
 	glGetActiveUniformBlockName(prog, index, max, len, name);
 }
 
-int getUniformLocation(Handle shader, const char *name) {
+UniformAddr getUniformLocation(Handle shader, const char *name) {
 	return glGetUniformLocation(shader, name);
 }
 
@@ -436,30 +436,63 @@ void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type type, 
 	glDrawElementsInstancedBaseVertex(primitiveMode[mode], count, dataType[type], indices, primCount, baseVertex);
 }
 
-void enable(Feature fe) {
-	glEnable(features[fe]);
-}
-void disable(Feature fe) {
-	glDisable(features[fe]);
-}
-
-void depthFunc(DepthMode mode) {
-	glDepthFunc(depthMode[mode]);
-}
-
-void blendFunc(BlendMode mode) {
-	glBlendFunc(blendModeSrc[mode], blendModeDst[mode]);
+void setEnabled(Feature feat, bool e) {
+	static bool feats[3] = {false};
+	if(feats[feat] == e) {
+		return;
+	}
+	if((feats[feat] = e)) {
+		glEnable(features[feat]);
+	} else {
+		glDisable(features[feat]);
+	}
 }
 
-void depthMask(bool mask) {
-	glDepthMask(mask);
+void setDepthMode(DepthMode mode) {
+	static DepthMode current = DepthMode::Lesser;
+	if(mode != current) {
+		glDepthFunc(depthMode[current = mode]);
+	}
 }
 
-void cullFace(CullMode cull) {
-	glCullFace(cullMode[cull]);
+void setBlendMode(BlendMode mode) {
+	static BlendMode current = BlendMode::DontBlend;
+	if(mode != current) {
+		if(mode == BlendMode::DontBlend) {
+			glDisable(GL_BLEND);
+		} else {
+			if(current == BlendMode::DontBlend) {
+				glEnable(GL_BLEND);
+			}
+			glBlendFunc(blendModeSrc[mode], blendModeDst[mode]);
+		}
+		current = mode;
+	}
 }
 
-void colorMask(bool r, bool g, bool b, bool a) {
+void setDepthMask(bool mask) {
+	static bool m = true;
+	if(mask != m) {
+		glDepthMask(m = mask);
+	}
+}
+
+void setCullFace(CullMode mode) {
+	static CullMode current = CullMode::DontCull;
+	if(mode != current) {
+		if(mode == CullMode::DontCull) {
+			glDisable(GL_CULL_FACE);
+		} else {
+			if(current == CullMode::DontCull) {
+				glEnable(GL_CULL_FACE);
+			}
+			glCullFace(cullMode[mode]);
+		}
+		current = mode;
+	}
+}
+
+void setColorMask(bool r, bool g, bool b, bool a) {
 	glColorMask(r, g, b, a);
 }
 
@@ -483,6 +516,7 @@ uint64 getTextureSamplerHandle(Handle tex) {
 	glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	return glGetTextureSamplerHandleARB(tex, sampler);
 }
+
 void makeTextureHandleResident(uint64 handle) {
 	glMakeTextureHandleResidentARB(handle);
 }
@@ -490,51 +524,51 @@ void makeTextureHandleResident(uint64 handle) {
 
 
 
-void programUniform1iv(Handle prog, int loc, uint count, const int *a) {
+void programUniform1iv(Handle prog, UniformAddr loc, uint count, const int *a) {
 	glProgramUniform1iv(prog, loc, count, a);
 }
 
-void programUniform1uiv(Handle prog, int loc, uint count, const uint *a) {
+void programUniform1uiv(Handle prog, UniformAddr loc, uint count, const uint *a) {
 	glProgramUniform1uiv(prog, loc, count, a);
 }
 
-void programUniform1fv(Handle prog, int loc, uint count, const float *a) {
+void programUniform1fv(Handle prog, UniformAddr loc, uint count, const float *a) {
 	glProgramUniform1fv(prog, loc, count, a);
 }
 
-void programUniform2iv(Handle prog, int loc, uint count, const int *v) {
+void programUniform2iv(Handle prog, UniformAddr loc, uint count, const int *v) {
 	glProgramUniform2iv(prog, loc, count, v);
 }
 
-void programUniform3iv(Handle prog, int loc, uint count, const int *v) {
+void programUniform3iv(Handle prog, UniformAddr loc, uint count, const int *v) {
 	glProgramUniform3iv(prog, loc, count, v);
 }
 
-void programUniform2fv(Handle prog, int loc, uint count, const float *v) {
+void programUniform2fv(Handle prog, UniformAddr loc, uint count, const float *v) {
 	glProgramUniform2fv(prog, loc, count, v);
 }
 
-void programUniform3fv(Handle prog, int loc, uint count, const float *v) {
+void programUniform3fv(Handle prog, UniformAddr loc, uint count, const float *v) {
 	glProgramUniform3fv(prog, loc, count, v);
 }
 
-void programUniform4fv(Handle prog, int loc, uint count, const float *v) {
+void programUniform4fv(Handle prog, UniformAddr loc, uint count, const float *v) {
 	glProgramUniform4fv(prog, loc, count, v);
 }
 
-void programUniformMatrix2fv(Handle prog, int loc, uint count, bool tr, const float *m) {
+void programUniformMatrix2fv(Handle prog, UniformAddr loc, uint count, bool tr, const float *m) {
 	glProgramUniformMatrix2fv(prog, loc, count, tr, m);
 }
 
-void programUniformMatrix3fv(Handle prog, int loc, uint count, bool tr, const float *m) {
+void programUniformMatrix3fv(Handle prog, UniformAddr loc, uint count, bool tr, const float *m) {
 	glProgramUniformMatrix3fv(prog, loc, count, tr, m);
 }
 
-void programUniformMatrix4fv(Handle prog, int loc, uint count, bool tr, const float *m) {
+void programUniformMatrix4fv(Handle prog, UniformAddr loc, uint count, bool tr, const float *m) {
 	glProgramUniformMatrix4fv(prog, loc, count, tr, m);
 }
 
-void programUniformHandleui64(Handle prog, int loc, uint64 handle) {
+void programUniformHandleui64(Handle prog, UniformAddr loc, uint64 handle) {
 	glProgramUniformHandleui64ARB(prog, loc, handle);
 }
 

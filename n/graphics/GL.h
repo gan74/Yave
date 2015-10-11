@@ -70,13 +70,10 @@ namespace gl {
 
 struct TextureFormat;
 
-typedef uint GLuint;
-typedef uint GLsizei;
-typedef uint GLenum;
-typedef int GLint;
 typedef uint Handle;
 typedef uint BitField;
 typedef uint UniformType;
+typedef int UniformAddr;
 
 static constexpr BitField ColorBit = 0x01;
 static constexpr BitField DepthBit = 0x02;
@@ -90,9 +87,7 @@ bool isSampler(UniformType type);
 enum Feature
 {
 	DepthTest,
-	DepthClamp,
-	CullFace,
-	Blend
+	DepthClamp
 };
 
 
@@ -171,7 +166,20 @@ struct TextureFormat
 		const uint type;
 };
 
+
+bool isSampler(UniformType type);
 bool isHWSupported(ImageFormat format);
+Handle createProgram();
+Handle createShader(ShaderType shaderType);
+void useProgram(Handle prog);
+
+void setDepthMode(DepthMode mode);
+void setCullFace(CullMode mode);
+void setBlendMode(BlendMode mode);
+void setEnabled(Feature feat, bool e);
+void setDepthMask(bool mask);
+void setColorMask(bool r, bool g, bool b, bool a);
+
 void genTextures(uint count, Handle *textures);
 void deleteTextures(uint count, const Handle *textures);
 void genBuffers(uint c, Handle *buffers);
@@ -198,45 +206,35 @@ void bindFramebuffer(FrameBufferType target, Handle fbo);
 void readBuffer(Attachment att);
 void clear(BitField buffers);
 void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BitField mask, Filter filter);
-Handle createShader(ShaderType shaderType);
 void shaderSource(Handle shader, uint count, const char * const *src, const int *len);
 void compileShader(Handle shader);
 void getShaderiv(Handle shader, ShaderParam param, int *i);
 void getShaderInfoLog(Handle shader, uint max, int *len, char *log);
 void deleteShader(Handle shader);
-Handle createProgram();
 void deleteProgram(Handle prog);
-void useProgram(Handle prog);
-void attachShader(Handle p, Handle shader);
+void attachShader(Handle porg, Handle shader);
 void linkProgram(Handle prog);
 void getProgramiv(Handle prog, ShaderParam param, int *i);
 void getProgramInfoLog(Handle h, uint maxSize, int *len, char *log);
 void getActiveUniform(Handle prog, uint index, uint max, int *len, int *size, UniformType *type, char *name);
 void getActiveUniformBlockName(Handle prog, uint index, uint max, int *len, char *name);
-int getUniformLocation(Handle shader, const char *name);
+UniformAddr getUniformLocation(Handle shader, const char *name);
 uint getUniformBlockIndex(Handle shader, const char *name);
 void uniformBlockBinding(Handle prog, uint index, uint binding);
 void viewport(int srcX0, int srcY0, int srcX1, int srcY1);
 void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type p, void *indices, uint primCount, uint baseVertex);
-void enable(Feature fe);
-void disable(Feature fe);
-void depthFunc(DepthMode mode);
-void blendFunc(BlendMode mode);
-void depthMask(bool mask);
-void cullFace(CullMode cull);
-void colorMask(bool r, bool g, bool b, bool a);
-void programUniform1iv(Handle h, int loc, uint count, const int *a);
-void programUniform1uiv(Handle h, int loc, uint count, const uint *a);
-void programUniform1fv(Handle h, int loc, uint count, const float *a);
-void programUniform2iv(Handle h, int loc, uint count, const int *v);
-void programUniform3iv(Handle h, int loc, uint count, const int *v);
-void programUniform2fv(Handle h, int loc, uint count, const float *v);
-void programUniform3fv(Handle h, int loc, uint count, const float *v);
-void programUniform4fv(Handle h, int loc, uint count, const float *v);
-void programUniformMatrix2fv(Handle h, int loc, uint count, bool tr, const float *m);
-void programUniformMatrix3fv(Handle h, int loc, uint count, bool tr, const float *m);
-void programUniformMatrix4fv(Handle h, int loc, uint count, bool tr, const float *m);
-void programUniformHandleui64(Handle prog, int loc, uint64 handle);
+void programUniform1iv(Handle h, UniformAddr loc, uint count, const int *a);
+void programUniform1uiv(Handle h, UniformAddr loc, uint count, const uint *a);
+void programUniform1fv(Handle h, UniformAddr loc, uint count, const float *a);
+void programUniform2iv(Handle h, UniformAddr loc, uint count, const int *v);
+void programUniform3iv(Handle h, UniformAddr loc, uint count, const int *v);
+void programUniform2fv(Handle h, UniformAddr loc, uint count, const float *v);
+void programUniform3fv(Handle h, UniformAddr loc, uint count, const float *v);
+void programUniform4fv(Handle h, UniformAddr loc, uint count, const float *v);
+void programUniformMatrix2fv(Handle h, UniformAddr loc, uint count, bool tr, const float *m);
+void programUniformMatrix3fv(Handle h, UniformAddr loc, uint count, bool tr, const float *m);
+void programUniformMatrix4fv(Handle h, UniformAddr loc, uint count, bool tr, const float *m);
+void programUniformHandleui64(Handle prog, UniformAddr loc, uint64 handle);
 void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data);
 void generateMipmap(TextureType type);
 uint64 getTextureSamplerHandle(Handle tex);
@@ -315,9 +313,6 @@ struct GLType<math::Vec<N, T>>
 	static constexpr gl::Type value = GLType<T>::value;
 	static constexpr uint size = N;
 };
-
-
-bool isSampler(gl::GLenum type);
 
 }
 }

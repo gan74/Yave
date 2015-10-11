@@ -25,8 +25,6 @@ namespace n {
 namespace graphics {
 
 MaterialData *const nullData = new MaterialData();
-MaterialData current;
-uint16 blendMode = BlendMode::DontBlend;
 
 
 N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const MaterialData &restrict data) {
@@ -50,37 +48,12 @@ N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const Mat
 void fullBind(const MaterialData &restrict data) {
 	setShaderParams(data.prog.bind(), data);
 
-	if(data.fancy.depthTested) {
-		gl::enable(gl::DepthTest);
-	} else {
-		gl::disable(gl::DepthTest);
-	}
-
-	gl::depthFunc(DepthMode(data.fancy.depth));
-
-	if(data.fancy.depth == DepthMode::Greater) {
-		gl::enable(gl::DepthClamp);
-	} else {
-		gl::disable(gl::DepthClamp);
-	}
-
-	gl::depthMask(data.fancy.depthWrite);
-
-	if(data.fancy.cull == CullMode::DontCull) {
-		gl::disable(gl::CullFace);
-	} else {
-		gl::enable(gl::CullFace);
-		gl::cullFace(CullMode(data.fancy.cull));
-	}
-
-	if(data.fancy.blend == BlendMode::DontBlend) {
-		gl::disable(gl::Blend);
-	} else {
-		gl::enable(gl::Blend);
-		gl::blendFunc(BlendMode(data.fancy.blend));
-		blendMode = data.fancy.blend;
-	}
-	current = data;
+	gl::setEnabled(gl::DepthTest, data.fancy.depthTested);
+	gl::setDepthMode(DepthMode(data.fancy.depth));
+	gl::setEnabled(gl::DepthClamp, data.fancy.depth == DepthMode::Greater);
+	gl::setDepthMask(data.fancy.depthWrite);
+	gl::setCullFace(CullMode(data.fancy.cull));
+	gl::setBlendMode(BlendMode(data.fancy.blend));
 }
 
 void Material::bind(uint flags) const {
@@ -90,62 +63,19 @@ void Material::bind(uint flags) const {
 		fullBind(data);
 	} else {
 		if(flags & DepthWriteOnly) {
-			if(current.fancy.depthWrite != data.fancy.depthWrite) {
-				gl::depthMask((current.fancy.depthWrite = data.fancy.depthWrite));
-			}
+			gl::setDepthMask(data.fancy.depthWrite);
 			return;
 		}
 
 		if(!(flags & RenderFlag::NoShader)) {
 			setShaderParams(data.prog.bind(), data);
 		}
-		{
-			if(current.fancy.depthTested != data.fancy.depthTested) {
-				if(data.fancy.depthTested) {
-					gl::enable(gl::DepthTest);
-				} else {
-					gl::disable(gl::DepthTest);
-				}
-				current.fancy.depthTested = data.fancy.depthTested;
-			}
-			if(current.fancy.depth != data.fancy.depth) {
-				gl::depthFunc(DepthMode(data.fancy.depth));
-				if(data.fancy.depth == DepthMode::Greater) {
-					gl::enable(gl::DepthClamp);
-				} else {
-					gl::disable(gl::DepthClamp);
-				}
-				current.fancy.depth = data.fancy.depth;
-			}
-			if(current.fancy.depthWrite != data.fancy.depthWrite) {
-				gl::depthMask((current.fancy.depthWrite = data.fancy.depthWrite));
-			}
-			if(current.fancy.cull != data.fancy.cull) {
-				if(data.fancy.cull == CullMode::DontCull) {
-					gl::disable(gl::CullFace);
-				} else {
-					if(current.fancy.cull == CullMode::DontCull) {
-						gl::enable(gl::CullFace);
-					}
-					gl::cullFace(CullMode(data.fancy.cull));
-				}
-				current.fancy.cull = data.fancy.cull;
-			}
-			if(current.fancy.blend != data.fancy.blend) {
-				if(data.fancy.blend == BlendMode::DontBlend) {
-					gl::disable(gl::Blend);
-				} else {
-					if(current.fancy.blend == BlendMode::DontBlend) {
-						gl::enable(gl::Blend);
-					}
-					if(blendMode != data.fancy.blend) {
-						gl::blendFunc(BlendMode(data.fancy.blend));
-						blendMode = data.fancy.blend;
-					}
-				}
-				current.fancy.blend = data.fancy.blend;
-			}
-		}
+		gl::setEnabled(gl::DepthTest, data.fancy.depthTested);
+		gl::setDepthMode(DepthMode(data.fancy.depth));
+		gl::setEnabled(gl::DepthClamp, data.fancy.depth == DepthMode::Greater);
+		gl::setDepthMask(data.fancy.depthWrite);
+		gl::setCullFace(CullMode(data.fancy.cull));
+		gl::setBlendMode(BlendMode(data.fancy.blend));
 	}
 }
 

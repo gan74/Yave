@@ -35,7 +35,7 @@ class DynamicBufferBase
 			~Data() {
 				free(buffer);
 				if(handle) {
-					gl::GLuint h = handle;
+					gl::Handle h = handle;
 					GLContext::getContext()->addGLTask([=]() {
 						gl::deleteBuffers(1, &h);
 					});
@@ -45,7 +45,7 @@ class DynamicBufferBase
 			void update(bool forceBind = false) const {
 				if(modified) {
 					if(!handle) {
-						gl::genBuffers(1, (gl::GLuint *)&handle);
+						gl::genBuffers(1, &handle);
 						gl::bindBuffer(type, handle);
 						gl::bufferData(type, size, buffer, gl::Dynamic);
 					} else {
@@ -69,7 +69,7 @@ class DynamicBufferBase
 			const BufferTarget type;
 			uint size;
 			void *buffer;
-			gl::GLuint handle;
+			mutable gl::Handle handle;
 			mutable bool modified;
 		};
 
@@ -87,7 +87,7 @@ class DynamicBufferBase
 
 };
 
-template<typename T, gl::GLenum Type>
+template<typename T, BufferTarget Type>
 class TypedDynamicBuffer : public DynamicBufferBase
 {
 	static_assert(TypeInfo<T>::isPod, "TypedDynamicBufferBase<T> should only contain pod");

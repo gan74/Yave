@@ -47,7 +47,7 @@ ShaderInstance::ShaderInstance(const Shader<FragmentShader> *frag, ShaderProgram
 
 ShaderInstance::~ShaderInstance() {
 	if(handle) {
-		gl::GLuint h = handle;
+		gl::Handle h = handle;
 		GLContext::getContext()->addGLTask([=]() { gl::deleteProgram(h); });
 	}
 	delete[] texBindings;

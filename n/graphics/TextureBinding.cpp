@@ -29,7 +29,7 @@ struct BindingData
 	BindingData() : handle(0), type(TextureType::Texture2D), sampler(TextureSampler::Default) {
 	}
 
-	gl::GLuint handle;
+	gl::Handle handle;
 	TextureType type;
 	TextureSampler sampler;
 };

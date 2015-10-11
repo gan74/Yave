@@ -99,7 +99,7 @@ ShaderBase::ShaderBase(ShaderType t) : type(t), version(0), handle(0) {
 
 ShaderBase::~ShaderBase() {
 	if(handle) {
-		gl::GLuint h = handle;
+		gl::Handle h = handle;
 		GLContext::getContext()->addGLTask([=]() { gl::deleteShader(h); });
 	}
 }

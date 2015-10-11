@@ -27,8 +27,8 @@ namespace n {
 namespace graphics {
 
 namespace internal {
-	inline gl::GLuint &getCurrentVao() {
-		static gl::GLuint current = 0;
+	inline gl::Handle &getCurrentVao() {
+		static gl::Handle current = 0;
 		return current;
 	}
 }
@@ -47,7 +47,7 @@ class StaticBuffer : core::NonCopyable
 		}
 
 		~StaticBuffer() {
-			gl::GLuint h = handle;
+			gl::Handle h = handle;
 			GLContext::getContext()->addGLTask([=]() {
 				gl::deleteBuffers(1, &h);
 			});
@@ -63,7 +63,7 @@ class StaticBuffer : core::NonCopyable
 
 	private:
 		uint bufferSize;
-		gl::GLuint handle;
+		gl::Handle handle;
 };
 
 }

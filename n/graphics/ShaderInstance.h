@@ -43,7 +43,7 @@ class ShaderLinkingException : public std::exception
 class ShaderInstance : core::NonCopyable
 {
 	public:
-		typedef gl::GLint UniformAddr;
+		typedef gl::UniformAddr UniformAddr;
 
 	private:
 		struct UniformInfo
@@ -123,7 +123,7 @@ class ShaderInstance : core::NonCopyable
 		void getUniforms();
 		UniformAddr computeStandardIndex(const core::String &name);
 
-		gl::GLuint handle;
+		gl::Handle handle;
 
 		uint samplerCount;
 		internal::TextureBinding *texBindings;

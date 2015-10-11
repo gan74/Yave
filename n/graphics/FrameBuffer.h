@@ -114,7 +114,7 @@ class FrameBuffer : core::NonCopyable
 		Texture *attachments;
 		Texture *depth;
 		gl::Attachment *drawBuffers;
-		gl::GLuint handle;
+		gl::Handle handle;
 };
 
 }

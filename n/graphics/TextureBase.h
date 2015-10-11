@@ -39,7 +39,7 @@ namespace internal {
 				lock.trylock();
 				lock.unlock();
 				if(handle) {
-					gl::GLuint h = handle;
+					gl::Handle h = handle;
 					GLContext::getContext()->addGLTask([=]() {
 						gl::deleteTextures(1, &h);
 					});
@@ -48,7 +48,7 @@ namespace internal {
 
 			const TextureType type;
 			concurrent::SpinLock lock;
-			gl::GLuint handle;
+			gl::Handle handle;
 			uint64 bindless;
 			bool hasMips;
 		};
@@ -78,7 +78,7 @@ class TextureBase : protected internal::TextureBase
 	protected:
 		friend class internal::TextureBinding;
 
-		gl::GLuint getHandle() const {
+		gl::Handle getHandle() const {
 			return data->handle;
 		}
 };
