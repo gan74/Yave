@@ -25,7 +25,7 @@ FrameBuffer::~FrameBuffer() {
 	if(isActive()) {
 		unbind();
 	}
-	gl::glDeleteFramebuffers(1, &handle);
+	gl::deleteFramebuffers(1, &handle);
 	delete depth;
 	delete[] drawBuffers;
 	delete[] attachments;
@@ -36,12 +36,12 @@ bool FrameBuffer::isDepthEnabled() const {
 }
 
 bool FrameBuffer::isAttachmentEnabled(uint slot) const {
-	return slot == Depth ? isDepthEnabled() : drawBuffers[slot] != GL_NONE;
+	return slot == Depth ? isDepthEnabled() : drawBuffers[slot] != gl::NoAtt;
 }
 
 void FrameBuffer::setup() {
 	const FrameBuffer *fb = GLContext::getContext()->frameBuffer;
-	gl::glGenFramebuffers(1, &handle);
+	gl::genFramebuffers(1, &handle);
 	bind();
 	uint att = getMaxAttachment();
 	for(uint i = 0; i != att; i++) {
@@ -49,34 +49,34 @@ void FrameBuffer::setup() {
 			if(!attachments[i].prepare(true)) {
 				fatal("Unable to create attachement.");
 			}
-			gl::glBindTexture(GL_TEXTURE_2D, attachments[i].getHandle());
-			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachments[i].getHandle(), 0);
+			gl::bindTexture(Texture2D, attachments[i].getHandle());
+			gl::framebufferTexture2D(gl::FrameBuffer, gl::Attachment(gl::ColorAtt0 + i), Texture2D, attachments[i].getHandle(), 0);
 
 		} else {
-			gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+			gl::framebufferTexture2D(gl::FrameBuffer, gl::Attachment(gl::ColorAtt0 + i), Texture2D, 0, 0);
 		}
 	}
 	if(depth) {
 		if(!depth->prepare(true)) {
 			fatal("Unable to create depth attachement.");
 		}
-		gl::glBindTexture(GL_TEXTURE_2D, depth->getHandle());
-		gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,  depth->getHandle(), 0);
+		gl::bindTexture(Texture2D, depth->getHandle());
+		gl::framebufferTexture2D(gl::FrameBuffer, gl::DepthAtt, Texture2D,  depth->getHandle(), 0);
 	} else {
-		gl::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,  0, 0);
+		gl::framebufferTexture2D(gl::FrameBuffer, gl::DepthAtt, Texture2D,  0, 0);
 	}
-	gl::glDrawBuffers(att, drawBuffers);
+	gl::drawBuffers(att, drawBuffers);
 	internal::TextureBinding::dirty();
 
-	if(gl::glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		switch(gl::glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
-			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+	if(gl::checkFramebufferStatus(gl::FrameBuffer) != gl::FboOk) {
+		switch(gl::checkFramebufferStatus(gl::FrameBuffer)) {
+			case gl::FboMissingAtt:
 				fatal("Unable to modify frame-buffer-object : missing attachment.");
 			break;
-			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+			case gl::FboIncomplete:
 				fatal("Unable to modify frame-buffer-object : incomplete attachment.");
 			break;
-			case GL_FRAMEBUFFER_UNSUPPORTED:
+			case gl::FboUnsupported:
 				fatal("Unable to modify frame-buffer-object : unsuported feature.");
 			break;
 			default:
@@ -97,44 +97,44 @@ bool FrameBuffer::isActive() const {
 
 void FrameBuffer::bind() const {
 	if(GLContext::getContext()->frameBuffer != this) {
-		gl::glBindFramebuffer(GL_FRAMEBUFFER, handle);
+		gl::bindFramebuffer(gl::FrameBuffer, handle);
 		math::Vec2ui vp = GLContext::getContext()->getViewport();
 		GLContext::getContext()->frameBuffer = this;
 		if(vp != base) {
-			gl::glViewport(0, 0, base.x(), base.y());
+			gl::viewport(0, 0, base.x(), base.y());
 		}
 	}
 }
 
 void FrameBuffer::unbind() {
 	if(GLContext::getContext()->frameBuffer) {
-		gl::glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		gl::bindFramebuffer(gl::FrameBuffer, 0);
 		const FrameBuffer *fb = GLContext::getContext()->frameBuffer;
 		GLContext::getContext()->frameBuffer = 0;
 		if(GLContext::getContext()->getViewport() != fb->getSize()) {
-			gl::glViewport(0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y());
+			gl::viewport(0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y());
 		}
 	}
 }
 
 void FrameBuffer::clear(bool color, bool depth) {
-	gl::GLbitfield bits = (color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0);
+	gl::BitField bits = (color ? gl::ColorBit : 0) | (depth ? gl::DepthBit : 0);
 	Material().bind(RenderFlag::DepthWriteOnly);
-	gl::glClear(bits);
+	gl::clear(bits);
 }
 
 void FrameBuffer::blit(uint slot, bool depth) const {
 	if(GLContext::getContext()->frameBuffer != this) {
-		gl::glBindFramebuffer(GL_READ_FRAMEBUFFER, handle);
+		gl::bindFramebuffer(gl::ReadBuffer, handle);
 	}
 	depth |= slot == Depth;
 	bool color = slot != Depth;
 	if(color) {
-		gl::glReadBuffer(GL_COLOR_ATTACHMENT0 + slot);
+		gl::readBuffer(gl::Attachment(gl::ColorAtt0 + slot));
 	}
-	gl::GLbitfield bits = (color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0);
+	gl::BitField bits = (color ? gl::ColorBit : 0) | (depth ? gl::DepthBit : 0);
 	Material().bind(RenderFlag::DepthWriteOnly);
-	gl::glBlitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), bits, GL_NEAREST);
+	gl::blitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), bits, gl::Nearest);
 }
 
 }

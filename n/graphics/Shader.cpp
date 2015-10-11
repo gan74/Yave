@@ -36,19 +36,18 @@ uint ShaderBase::load(core::String src, uint vers) {
 	#ifdef N_SHADER_SRC
 	source = src;
 	#endif
-	gl::GLenum glType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
-	handle = gl::glCreateShader(glType[type]);
+	handle = gl::createShader(type);
 	const char *str = src.toChar();
-	gl::glShaderSource(handle, 1, &str, 0);
-	gl::glCompileShader(handle);
+	gl::shaderSource(handle, 1, &str, 0);
+	gl::compileShader(handle);
 	int res = 0;
-	gl::glGetShaderiv(handle, GL_COMPILE_STATUS, &res);
+	gl::getShaderiv(handle, gl::CompileResult, &res);
 	if(!res) {
 		int size = 0;
-		gl::glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &size);
+		gl::getShaderiv(handle, gl::LogLength, &size);
 		char *msg = new char[size + 1];
-		gl::glGetShaderInfoLog(handle, size, &size, msg);
-		gl::glDeleteShader(handle);
+		gl::getShaderInfoLog(handle, size, &size, msg);
+		gl::deleteShader(handle);
 		handle = 0;
 		msg[size] = '\0';
 		logs = msg;
@@ -101,7 +100,7 @@ ShaderBase::ShaderBase(ShaderType t) : type(t), version(0), handle(0) {
 ShaderBase::~ShaderBase() {
 	if(handle) {
 		gl::GLuint h = handle;
-		GLContext::getContext()->addGLTask([=]() { gl::glDeleteShader(h); });
+		GLContext::getContext()->addGLTask([=]() { gl::deleteShader(h); });
 	}
 }
 

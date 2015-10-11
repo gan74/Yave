@@ -50,7 +50,7 @@ class ShaderInstance : core::NonCopyable
 		{
 			UniformAddr addr;
 			uint size;
-			gl::GLenum type;
+			gl::UniformType type;
 		};
 
 	public:
@@ -90,7 +90,7 @@ class ShaderInstance : core::NonCopyable
 		template<typename T, typename... Args>
 		void setValue(const core::String &name, const T &t, Args... args) const {
 			UniformInfo i = getInfo(name);
-			if(i.addr != UniformAddr(GL_INVALID_INDEX)) {
+			if(i.addr != UniformAddr(gl::InvalidIndex)) {
 				setValue(i, t, args...);
 			}
 		}
@@ -102,8 +102,8 @@ class ShaderInstance : core::NonCopyable
 
 		template<typename T>
 		void setBuffer(const core::String &name, const UniformBuffer<T> &buffer) const {
-			uint slot = buffers.get(name, GL_INVALID_INDEX);
-			if(slot != GL_INVALID_INDEX) {
+			uint slot = buffers.get(name, gl::InvalidIndex);
+			if(slot != gl::InvalidIndex) {
 				bufferBindings[slot] = buffer.data;
 			}
 		}

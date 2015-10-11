@@ -17,10 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "CubeMap.h"
 #include "TextureBinding.h"
 
-namespace n {
+/*namespace n {
 namespace graphics {
 
-CubeMap::CubeMap(const Texture &top, const Texture &bottom, const Texture &right, const Texture &left, const Texture &front, const Texture &back) : TextureBase<TextureCubeMap>(), sides{top, bottom, right, left, front, back} {
+CubeMap::CubeMap(const Texture &top, const Texture &bottom, const Texture &right, const Texture &left, const Texture &front, const Texture &back) : TextureBase<TextureCube>(), sides{top, bottom, right, left, front, back} {
 }
 
 void CubeMap::upload() const {
@@ -72,4 +72,4 @@ void CubeMap::prepare(bool sync) const {
 }
 
 }
-}
+}*/

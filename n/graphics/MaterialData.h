@@ -35,25 +35,10 @@ enum RenderFlag : uint32
 
 };
 
+
 struct MaterialData
 {
-	enum CullMode : uint16 {
-		DontCull = 2,
-		Back = 0,
-		Front = 1
-	};
 
-	enum BlendMode : uint16 {
-		None = 0,
-		Add = 1,
-		SrcAlpha = 2
-	};
-
-	enum DepthMode : uint16 {
-		Lesser = 0,
-		Greater = 1,
-		Always = 2
-	};
 
 	MaterialData() : color(1, 1, 1, 1), metallic(0), normalIntencity(0.5), fancy{0, true, true, true, None, Lesser, Back} {
 	}

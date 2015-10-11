@@ -27,8 +27,6 @@ namespace graphics {
 
 class ShaderBase;
 
-GLTexFormat getTextureFormat(ImageFormat format);
-
 class Texture : public TextureBase<Texture2D>
 {
 	public:
@@ -61,7 +59,7 @@ class Texture : public TextureBase<Texture2D>
 		}
 
 		static bool isHWSupported(ImageFormat format);
-		
+
 		bool synchronize(bool immediate = false);
 
 	private:

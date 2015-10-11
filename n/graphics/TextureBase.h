@@ -25,12 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-enum TextureType
-{
-	Texture2D = GL_TEXTURE_2D,
-	TextureCubeMap = GL_TEXTURE_CUBE_MAP
-};
-
 namespace internal {
 	class TextureBinding;
 
@@ -47,7 +41,7 @@ namespace internal {
 				if(handle) {
 					gl::GLuint h = handle;
 					GLContext::getContext()->addGLTask([=]() {
-						gl::glDeleteTextures(1, &h);
+						gl::deleteTextures(1, &h);
 					});
 				}
 			}

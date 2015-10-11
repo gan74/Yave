@@ -40,21 +40,21 @@ class StaticBuffer : core::NonCopyable
 
 	public:
 		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), handle(0) {
-			gl::glBindVertexArray(internal::getCurrentVao() = 0);
-			gl::glGenBuffers(1, &handle);
-			gl::glBindBuffer(Binding, handle);
-			gl::glBufferData(Binding, sizeof(T) * bufferSize, arr.begin(), GL_STATIC_DRAW);
+			gl::bindVertexArray(internal::getCurrentVao() = 0);
+			gl::genBuffers(1, &handle);
+			gl::bindBuffer(Binding, handle);
+			gl::bufferData(Binding, sizeof(T) * bufferSize, arr.begin(), gl::Static);
 		}
 
 		~StaticBuffer() {
 			gl::GLuint h = handle;
 			GLContext::getContext()->addGLTask([=]() {
-				gl::glDeleteBuffers(1, &h);
+				gl::deleteBuffers(1, &h);
 			});
 		}
 
 		void bind() const {
-			gl::glBindBuffer(Binding, handle);
+			gl::bindBuffer(Binding, handle);
 		}
 
 		uint size() const {

@@ -42,7 +42,7 @@ class VertexArrayObject : core::NonCopyable
 			if(handle) {
 				gl::GLuint h = handle;
 				GLContext::getContext()->addGLTask([=]() {
-					gl::glDeleteVertexArrays(1, &h);
+					gl::deleteVertexArrays(1, &h);
 				});
 			}
 		}
@@ -56,7 +56,7 @@ class VertexArrayObject : core::NonCopyable
 			bind();
 			bindAttribs(attributes);
 			ShaderInstance::validateState();
-			gl::glDrawElementsInstancedBaseVertex(GL_TRIANGLES, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
+			gl::drawElementsInstancedBaseVertex(gl::Triangles, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
 		}
 
 		T getRadius() const {
@@ -77,25 +77,25 @@ class VertexArrayObject : core::NonCopyable
 
 		void bind() const {
 			if(!handle) {
-				data = new StaticBuffer<Vertex<T>, Array>(buffer->vertices);
-				indexes = new StaticBuffer<uint, Index>(buffer->indexes);
+				data = new StaticBuffer<Vertex<T>, ArrayBuffer>(buffer->vertices);
+				indexes = new StaticBuffer<uint, IndexBuffer>(buffer->indexes);
 				buffer = 0;
 
 				data->bind();
-				gl::glGenVertexArrays(1, &handle);
-				gl::glBindVertexArray(internal::getCurrentVao() = handle);
+				gl::genVertexArrays(1, &handle);
+				gl::bindVertexArray(internal::getCurrentVao() = handle);
 				indexes->bind();
-				gl::glVertexAttribPointer(0, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), 0);
-				gl::glVertexAttribPointer(1, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
-				gl::glVertexAttribPointer(2, 3, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
-				gl::glVertexAttribPointer(3, 2, GLType<T>::value, GL_FALSE, sizeof(Vertex<T>), (void *)(3 * sizeof(T)));
-				gl::glEnableVertexAttribArray(0);
-				gl::glEnableVertexAttribArray(1);
-				gl::glEnableVertexAttribArray(2);
-				gl::glEnableVertexAttribArray(3);
+				gl::vertexAttribPointer(0, 3, GLType<T>::value, false, sizeof(Vertex<T>), 0);
+				gl::vertexAttribPointer(1, 3, GLType<T>::value, false, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
+				gl::vertexAttribPointer(2, 3, GLType<T>::value, false, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
+				gl::vertexAttribPointer(3, 2, GLType<T>::value, false, sizeof(Vertex<T>), (void *)(3 * sizeof(T)));
+				gl::enableVertexAttribArray(0);
+				gl::enableVertexAttribArray(1);
+				gl::enableVertexAttribArray(2);
+				gl::enableVertexAttribArray(3);
 			} else {
 				if(internal::getCurrentVao() != handle) {
-					gl::glBindVertexArray(internal::getCurrentVao() = handle);
+					gl::bindVertexArray(internal::getCurrentVao() = handle);
 				}
 			}
 		}
@@ -105,8 +105,8 @@ class VertexArrayObject : core::NonCopyable
 		uint size;
 
 		mutable core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
-		mutable StaticBuffer<Vertex<T>, Array> *data;
-		mutable StaticBuffer<uint, Index> *indexes;
+		mutable StaticBuffer<Vertex<T>, ArrayBuffer> *data;
+		mutable StaticBuffer<uint, IndexBuffer> *indexes;
 
 		mutable gl::GLuint handle;
 };

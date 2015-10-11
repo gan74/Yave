@@ -26,13 +26,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 
-#define GL_AUDIT_STATE
+//#define GL_AUDIT_STATE
 //#define N_SYNCHRONOUS_GL_DEBUG
+
+#include <GL/glew.h>
 
 namespace n {
 namespace graphics {
 
-GLAPIENTRY void debugOut(gl::GLenum, gl::GLenum type, gl::GLuint, gl::GLuint sev, gl::GLsizei len, const char *msg, const void *) {
+GLAPIENTRY void debugOut(GLenum, GLenum type, GLuint, GLuint sev, GLsizei len, const char *msg, const void *) {
 	if(sev == GL_DEBUG_SEVERITY_NOTIFICATION) {
 		return;
 	}
@@ -79,7 +81,7 @@ void GLContext::setBindlessTextureEnabled(bool e) {
 }
 
 void GLContext::flush() {
-	gl::glFlush();
+	glFlush();
 }
 
 void GLContext::addGLTask(const core::Functor<void()> &f) {
@@ -108,10 +110,10 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 		fatal("n::graphics::Context not created on main thread.");
 	}
 	glewExperimental = true;
-	if(gl::glewInit() != GLEW_OK) {
+	if(glewInit() != GLEW_OK) {
 		fatal("Unable to initialize glew.");
 	}
-	std::cout<<"Running on "<<gl::glGetString(GL_VENDOR)<<" "<<gl::glGetString(GL_RENDERER)<<" using GL "<<gl::glGetString(GL_VERSION);
+	std::cout<<"Running on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using GL "<<glGetString(GL_VERSION);
 	#ifdef N_32BITS
 	std::cout<<" (32 bits)";
 	#endif
@@ -167,15 +169,15 @@ GLContext::~GLContext() {
 
 void GLContext::setDebugEnabled(bool deb) {
 	if(deb) {
-		gl::glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT);
 		#ifdef N_SYNCHRONOUS_GL_DEBUG
-		gl::glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		#warning Synchronous debugging
 		#endif
 	} else {
-		gl::glDisable(GL_DEBUG_OUTPUT);
+		glDisable(GL_DEBUG_OUTPUT);
 		#ifdef N_SYNCHRONOUS_GL_DEBUG
-		gl::glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		#endif
 	}
 }
@@ -184,7 +186,7 @@ void GLContext::auditGLState() {
 	#ifdef GL_AUDIT_STATE
 	#warning GL state auditing enabled
 	int handle = 0;
-	gl::glGetIntegerv(GL_FRAMEBUFFER_BINDING, &handle);
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &handle);
 	if(handle != int(frameBuffer ? frameBuffer->handle : 0)) {
 		fatal("Invalid GL framebuffer state.");
 	}
@@ -194,7 +196,7 @@ void GLContext::auditGLState() {
 void GLContext::setViewport(const math::Vec2ui &v) {
 	viewport = v;
 	if(!frameBuffer) {
-		gl::glViewport(0, 0, viewport.x(), viewport.y());
+		glViewport(0, 0, viewport.x(), viewport.y());
 	}
 }
 
@@ -203,7 +205,7 @@ math::Vec2ui GLContext::getViewport() const {
 }
 
 bool GLContext::checkGLError() {
-	int error = gl::glGetError();
+	int error = glGetError();
 	if(error) {
 		fatal(("Warning : error : " + (error == GL_INVALID_OPERATION ? core::String("INVALID OPERATION") :
 			(error == GL_INVALID_ENUM ? core::String("INVALID ENUM") :

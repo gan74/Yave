@@ -31,14 +31,14 @@ class RenderQueue
 
 		RenderQueue();
 
+		void insert(const core::Functor<void(RenderFlag)> &f);
 		void insert(const core::Functor<void()> &f);
 		void insert(const math::Matrix4<> &t, const MeshInstance &m);
 		void insert(const RenderBatch &b);
 
-		void prepare();
+		void prepare(math::Vec3 cpos, float max);
 
-		const core::Array<core::Functor<void()>> &getFunctions() const;
-		const core::Array<RenderBatch> &getBatches() const;
+		void operator()(RenderFlag flags = RenderFlag::None);
 
 		template<typename U>
 		RenderQueue &operator<<(const U &u) {
@@ -47,8 +47,9 @@ class RenderQueue
 		}
 
 	private:
-		core::Array<RenderBatch> batches;
-		core::Array<core::Functor<void()>> funcs;
+		core::Array<RenderBatch> sortable;
+		core::Array<RenderBatch> notSortable;
+		core::Array<core::Functor<void(RenderFlag)>> funcs;
 };
 
 }

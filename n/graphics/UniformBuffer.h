@@ -29,7 +29,7 @@ class DynamicBufferBase
 	public:
 		struct Data : core::NonCopyable
 		{
-			Data(uint si, gl::GLenum tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
+			Data(uint si, BufferBinding tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
 			}
 
 			~Data() {
@@ -37,7 +37,7 @@ class DynamicBufferBase
 				if(handle) {
 					gl::GLuint h = handle;
 					GLContext::getContext()->addGLTask([=]() {
-						gl::glDeleteBuffers(1, &h);
+						gl::deleteBuffers(1, &h);
 					});
 				}
 			}
@@ -45,11 +45,11 @@ class DynamicBufferBase
 			void update(bool forceBind = false) const {
 				if(modified) {
 					if(!handle) {
-						gl::glGenBuffers(1, (gl::GLuint *)&handle);
-						gl::glBindBuffer(type, handle);
-						gl::glBufferData(type, size, buffer, GL_DYNAMIC_DRAW);
+						gl::genBuffers(1, (gl::GLuint *)&handle);
+						gl::bindBuffer(type, handle);
+						gl::bufferData(type, size, buffer, gl::Dynamic);
 					} else {
-						gl::glBindBuffer(type, handle);
+						gl::bindBuffer(type, handle);
 						/*void *p = gl::glMapBuffer(type, GL_WRITE_ONLY);
 						if(!p) {
 							gl::glBufferSubData(type, 0, size, buffer);
@@ -57,16 +57,16 @@ class DynamicBufferBase
 							memcpy(p, buffer, size);
 							gl::glUnmapBuffer(type);
 						}*/
-						gl::glBufferSubData(type, 0, size, 0);
-						gl::glBufferSubData(type, 0, size, buffer);
+						gl::bufferSubData(type, 0, size, 0);
+						gl::bufferSubData(type, 0, size, buffer);
 					}
 					modified = false;
 				} else if(forceBind) {
-					gl::glBindBuffer(type, handle);
+					gl::bindBuffer(type, handle);
 				}
 			}
 
-			const gl::GLenum type;
+			const BufferBinding type;
 			uint size;
 			void *buffer;
 			gl::GLuint handle;
@@ -74,7 +74,7 @@ class DynamicBufferBase
 		};
 
 
-		DynamicBufferBase(uint si, gl::GLenum tpe) : data(new Data(si, tpe)) {
+		DynamicBufferBase(uint si, BufferBinding tpe) : data(new Data(si, tpe)) {
 		}
 
 		void update(bool force = false) {
@@ -218,10 +218,10 @@ class TypedDynamicBuffer : public DynamicBufferBase
 };
 
 template<typename T>
-class UniformBuffer : public TypedDynamicBuffer<T, GL_UNIFORM_BUFFER>
+class UniformBuffer : public TypedDynamicBuffer<T, UniformArrayBuffer>
 {
 	public:
-		UniformBuffer(uint s) : TypedDynamicBuffer<T, GL_UNIFORM_BUFFER>(s) {
+		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformArrayBuffer>(s) {
 		}
 };
 

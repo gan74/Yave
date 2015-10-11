@@ -35,13 +35,6 @@ class ShaderProgram;
 class ShaderInstance;
 class ShaderBase;
 
-enum ShaderType
-{
-	FragmentShader,
-	VertexShader,
-	GeometryShader
-};
-
 enum ShaderValue
 {
 	SVColor,
