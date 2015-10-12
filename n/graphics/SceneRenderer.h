@@ -64,7 +64,7 @@ class SceneRenderer : public BufferableRenderer
 			return sce;
 		}
 
-		void *prepare(uint renderFlags) {
+		void *prepare(RenderFlag renderFlags) {
 			const Camera *cam = getCamera();
 			if(!cam) {
 				fatal("Camera not found");
@@ -73,20 +73,20 @@ class SceneRenderer : public BufferableRenderer
 		}
 
 
-		void *prepare(const Camera *cam, uint renderFlags = RenderFlag::None) {
+		void *prepare(const Camera *cam, RenderFlag renderFlags = RenderFlag::None) {
 			FrameData *data = new FrameData();
 			data->proj = cam->getProjectionMatrix();
 			data->view = cam->getViewMatrix();
 			data->camera = cam;
 			core::Array<Renderable *> res = sce->query<Renderable>(*cam);
 			for(Renderable *re : res) {
-				re->render(data->queue,renderFlags);
+				re->render(data->queue, renderFlags);
 			}
 			data->queue.prepare();
 			return data;
 		}
 
-		void render(void *ptr, uint renderFlags) {
+		void render(void *ptr, RenderFlag renderFlags) {
 			if(!ptr) {
 				return;
 			}
