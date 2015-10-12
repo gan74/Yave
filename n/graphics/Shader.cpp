@@ -74,9 +74,6 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 	};
 	core::String ver = core::String("#version ") + vers + "\n";
 	core::String common = "const float pi = " + core::String(math::pi) + "; float sqr(float x) { return x * x; }  float saturate(float x) { return clamp(x, 0.0, 1.0); }";
-	if((type == VertexShader || type == GeometryShader) && src.find("gl_PerVertex") == uint(-1)) {
-		common += "out gl_PerVertex { vec4 gl_Position; };";
-	}
 	uint vit = src.find("#version");
 	if(vit != uint(-1)) {
 		uint l = src.find("\n", vit);
