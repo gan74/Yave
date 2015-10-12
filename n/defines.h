@@ -73,6 +73,12 @@ void unused(T) {}
 	#endif
 #endif
 
+#ifdef __GNUC__
+#if __GNUC__ < 4
+#define N_GCC_4
+#endif
+#endif
+
 /****************** OS DEFINES BELOW ******************/
 
 #ifdef __WIN32

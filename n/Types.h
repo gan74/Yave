@@ -368,7 +368,7 @@ class Type
 		const std::type_info *info;
 };
 
-#ifdef N_USE_GCC_4
+#ifdef N_GCC_4
 #define N_HAS_CPY_CTOR has_trivial_copy_constructor<T>
 #else
 #define N_HAS_CPY_CTOR is_trivially_copy_constructible<T>
