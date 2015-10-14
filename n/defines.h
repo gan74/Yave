@@ -74,7 +74,7 @@ void unused(T) {}
 #endif
 
 #ifdef __GNUC__
-#if __GNUC__ < 4
+#if __GNUC__ <= 4
 #define N_GCC_4
 #endif
 #endif
