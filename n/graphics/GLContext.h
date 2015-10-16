@@ -113,8 +113,6 @@ class GLContext
 
 		const VertexArrayObject<float> &getScreen() const;
 
-		void setBindlessTextureEnabled(bool e);
-
 	private:
 		friend class ShaderProgram;
 		friend class ShaderInstance;

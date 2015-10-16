@@ -70,14 +70,6 @@ GLContext *GLContext::getContext() {
 	return ct;
 }
 
-void GLContext::setBindlessTextureEnabled(bool e) {
-	using namespace gl;
-	hwInts[BindlessTextureSupport] = e;
-	if(!GLEW_ARB_bindless_texture) {
-		hwInts[BindlessTextureSupport] = false;
-	}
-}
-
 void GLContext::flush() {
 	gl::glFlush();
 }
@@ -108,10 +100,10 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 		fatal("n::graphics::Context not created on main thread.");
 	}
 	glewExperimental = true;
-	if(gl::glewInit() != GLEW_OK) {
+	if(glewInit() != GLEW_OK) {
 		fatal("Unable to initialize glew.");
 	}
-	std::cout<<"Running on "<<gl::glGetString(GL_VENDOR)<<" "<<gl::glGetString(GL_RENDERER)<<" using GL "<<gl::glGetString(GL_VERSION);
+	std::cout<<"Running on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using GL "<<glGetString(GL_VERSION)<<" using GLSL "<<glGetString(GL_SHADING_LANGUAGE_VERSION);
 	#ifdef N_32BITS
 	std::cout<<" (32 bits)";
 	#endif
@@ -138,7 +130,9 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
 	glGetIntegerv(GL_MAX_VARYING_VECTORS, &hwInts[MaxVaryings]);
 
-	setBindlessTextureEnabled(true);
+
+	const unsigned char *ext = glGetString(GL_EXTENSIONS);
+	hwInts[BindlessTextureSupport] = ext && core::String(ext).contains("GL_ARB_bindless_texture");
 
 	if(hwInts[MaxVertexAttribs] <= 4) {
 		fatal("Not enought vertex attribs.");
