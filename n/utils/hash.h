@@ -26,6 +26,7 @@ namespace core {
 }
 
 
+
 template<typename T>
 uint64 hash(const T &t) {
 	static_assert(TypeInfo<T>::isPod, "Only POD can be hashed");
@@ -33,7 +34,7 @@ uint64 hash(const T &t) {
 }
 
 uint64 hash(const core::String &str);
-uint64 hash(const void *key, uint64 len, uint64 seed = 2166136261);
+uint64 hash(const void *key, uint64 len, uint64 seed = 14695981039346656037UL);
 
 }
 

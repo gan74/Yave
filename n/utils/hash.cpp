@@ -17,20 +17,49 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hash.h"
 #include <n/core/String.h>
 
+
+
 namespace n {
+
+
+
 
 uint64 hash(const core::String &str) {
 	return str.getHash();
 }
 
-uint64 hash(const void *key, uint64 len, uint64 seed) { // FVN-1A from : http://isthe.com/chongo/tech/comp/fnv/
-	constexpr uint64 prime = 1099511628211;
-	uint64 h = seed;
-	for(const byte *i = static_cast<const byte *>(key); i != static_cast<const byte *>(key) + len; i++) {
-		h ^= uint64(*i);
-		h *= prime;
+uint64 hash(const void *key, uint64 len, uint64 seed) { // Murmurhash 2.0 from https://sites.google.com/site/murmurhash/
+	static_assert(isLittleEndian(), "n::hash doesn't work on non little endian systems");
+	const uint64 m = 0xc6a4a7935bd1e995;
+	const int r = 47;
+	uint64 h = seed ^ (len * m);
+	const uint64 * data = (const uint64 *)key;
+	const uint64 * end = data + (len / 8);
+	while(data != end) {
+		uint64 k = *data++;
+		k *= m;
+		k ^= k >> r;
+		k *= m;
+		h ^= k;
+		h *= m;
 	}
+	const byte *data2 = (const byte *)data;
+	switch(len & 7) {
+		case 7: h ^= uint64(data2[6]) << 48;
+		case 6: h ^= uint64(data2[5]) << 40;
+		case 5: h ^= uint64(data2[4]) << 32;
+		case 4: h ^= uint64(data2[3]) << 24;
+		case 3: h ^= uint64(data2[2]) << 16;
+		case 2: h ^= uint64(data2[1]) << 8;
+		case 1: h ^= uint64(data2[0]);
+				h *= m;
+	};
+	h ^= h >> r;
+	h *= m;
+	h ^= h >> r;
 	return h;
 }
+
+
 
 }

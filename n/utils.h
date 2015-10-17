@@ -59,15 +59,20 @@ constexpr bool is64Bits() {
 }
 
 namespace internal {
-	union Endianess {
-		uint32 ui;
-		byte by[4];
-	};
+	static constexpr uint32 endian = 0x01020304; // http://stackoverflow.com/questions/1583791/constexpr-and-endianness
+	static constexpr uint32 endianness = (const byte&)endian;
+}
 
-}
 constexpr bool isLittleEndian() {
-	return internal::Endianess{1}.by[0];
+	return internal::endianness == 0x04;
 }
+
+constexpr bool isBigEndian() {
+	return internal::endianness == 0x01;
+}
+
+static_assert(isLittleEndian() || isBigEndian(), "Unable to determine endianness !");
+
 
 }
 
