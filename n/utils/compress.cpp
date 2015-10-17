@@ -17,9 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "compress.h"
 #include <n/core/Array.h>
 
-#include <iostream>
-
 namespace n {
+
+constexpr uint MaxBits = 10;
 
 struct ByteFreqs
 {
@@ -45,7 +45,7 @@ struct HuffReverseElem
 
 struct HuffReverse
 {
-	HuffReverseElem elems[256 * 256];
+	HuffReverseElem elems[1 << MaxBits];
 };
 
 struct HuffNode
@@ -112,6 +112,9 @@ void buildHuffTableRec(HuffTable &table, HuffNode *node, HuffTableElem elem) {
 		buildHuffTableRec(table, node->left, l);
 		buildHuffTableRec(table, node->right, r);
 	} else {
+		if(elem.nbBits > MaxBits) {
+			fatal("Maximum per-byte bits reached.");
+		}
 		table.elems[node->b] = elem;
 	}
 }
@@ -195,8 +198,8 @@ HuffReverse buildReverseHuff(HuffTable t) {
 		if(t.elems[i].nbBits) {
 			uint nb = t.elems[i].nbBits;
 			uint b = t.elems[i].bits;
-			for(uint j = 0; j != 256 * 256; j++) {
-				if((j >> (16 - nb)) == b) {
+			for(uint j = 0; j != 1 << MaxBits; j++) {
+				if((j >> (MaxBits - nb)) == b) {
 					rev.elems[j].b = i;
 					rev.elems[j].nbBits = nb;
 				}
@@ -210,14 +213,16 @@ void huffUncompress(HuffReverse rev, const byte *data, byte *out, uint size) {
 	uint32 buffer = 0;
 	uint bufferBits = 0;
 	byte *end = out + size;
+	uint32 mask = uint32(0xFFFFFFFFF);
+	mask = ~(mask << MaxBits);
 	while(out != end) {
-		while(bufferBits < 16) {
+		while(bufferBits < MaxBits) {
 			buffer <<= 8;
 			buffer |= *data;
 			data++;
 			bufferBits += 8;
 		}
-		uint16 index = buffer >> (bufferBits - 16);
+		uint32 index = (buffer >> (bufferBits - MaxBits)) & mask;
 		HuffReverseElem e = rev.elems[index];
 		*out = e.b;
 		out++;
