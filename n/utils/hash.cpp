@@ -14,32 +14,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_SPINLOCK_H
-#define N_CONCURENT_SPINLOCK_H
-
-#include <n/utils.h>
-#include "Atomic.h"
+#include "hash.h"
+#include <n/core/String.h>
 
 namespace n {
-namespace concurrent {
 
-class SpinLock : NonCopyable
-{
-	public:
-		SpinLock();
-		SpinLock(SpinLock &&s);
-		~SpinLock();
-
-		void lock();
-		void unlock();
-		bool trylock();
-
-	private:
-		volatile abool *spin;
-};
-
-
-}
+uint64 hash(const core::String &str) {
+	return str.getHash();
 }
 
-#endif // N_CONCURENT_SPINLOCK_H
+uint64 hash(const void *key, uint64 len, uint64 seed) { // FVN-1A from : http://isthe.com/chongo/tech/comp/fnv/
+	constexpr uint64 prime = 1099511628211;
+	uint64 h = seed;
+	for(const byte *i = static_cast<const byte *>(key); i != static_cast<const byte *>(key) + len; i++) {
+		h ^= uint64(*i);
+		h *= prime;
+	}
+	return h;
+}
+
+}

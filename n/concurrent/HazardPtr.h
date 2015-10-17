@@ -38,7 +38,7 @@ namespace internal {
 	extern thread_local HazardPtr *hazard;
 	extern thread_local core::Array<DeleteNode *> *deleteList;
 
-	struct HazardPtr : core::NonCopyable
+	struct HazardPtr : NonCopyable
 	{
 		HazardPtr() : ptr(0) {
 			registerHazard(&ptr);
@@ -51,7 +51,7 @@ namespace internal {
 		const void *ptr;
 	};
 
-	struct DeleteNode : core::NonCopyable
+	struct DeleteNode : NonCopyable
 	{
 		DeleteNode(const void *p) : ptr(p) {
 			if(!deleteList) {
@@ -89,7 +89,7 @@ namespace internal {
 }
 
 template<typename T>
-class HazardPtr : core::NonCopyable
+class HazardPtr : NonCopyable
 {
 	public:
 		HazardPtr(const T *p) : ptr(p) {

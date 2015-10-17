@@ -40,7 +40,7 @@ class ShaderLinkingException : public std::exception
 		const core::String m;
 };
 
-class ShaderInstance : core::NonCopyable
+class ShaderInstance : NonCopyable
 {
 	public:
 		typedef gl::GLint UniformAddr;

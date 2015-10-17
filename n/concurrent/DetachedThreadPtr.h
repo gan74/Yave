@@ -24,7 +24,7 @@ namespace n {
 namespace concurent {
 
 template<typename T>
-class DetachedThreadPtr : core::NonCopyable
+class DetachedThreadPtr : NonCopyable
 {
 	public:
 		DetachedThreadPtr(DetachedThreadPtr<T> &&p) : original(p.original), obj(p.obj) {

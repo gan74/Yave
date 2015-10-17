@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace mem {
 
-class Allocator : core::NonCopyable
+class Allocator : NonCopyable
 {
 	public:
 		Allocator() {
@@ -66,11 +66,11 @@ class Allocator : core::NonCopyable
 
 	private:
 		static constexpr uint regs = 12;
-		static constexpr uint logBytes = core::log2ui(sizeof(void *));
+		static constexpr uint logBytes = log2ui(sizeof(void *));
 
 		uint toIndex(uint size) {
 			size = std::max(size, sizeof(void *));
-			uint l2 = core::log2ui(size);
+			uint l2 = log2ui(size);
 			l2 += (1u << l2) < size;
 			return l2 - logBytes;
 		}

@@ -219,7 +219,7 @@ void BasicToneMapRenderer::render(void *ptr) {
 	const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
 	child->render(ptr);
 
-	uint ls = core::log2ui(child->getSize().min());
+	uint ls = log2ui(child->getSize().min());
 	math::Vec2ui size = math::Vec2ui(1 << ls);
 	FrameBuffer *buffers[] = {GLContext::getContext()->getFrameBufferPool().get(size, false, ImageFormat::R32F),
 							  GLContext::getContext()->getFrameBufferPool().get(size, false, ImageFormat::R32F)};

@@ -14,45 +14,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-
-#ifndef N_SCRIPT_BYTECODE_H
-#define N_SCRIPT_BYTECODE_H
-
-#include <n/types.h>
-#include <n/defines.h>
-#include "Primitive.h"
-#include <n/defines.h>
-#ifndef N_NO_SCRIPT
+#include "random.h"
+#include <n/utils.h>
 
 namespace n {
-namespace script {
 
-struct Bytecode
-{
-	enum Type
-	{
-		Nop,
-		End,
-		SwMode,
-
-		Max
-	};
-
-	Bytecode(Type t) : op(t) {
+uint randHelper() {
+	uint bits = log2ui(RAND_MAX);
+	uint num = 0;
+	for(uint i = 0; i < sizeof(uint) * 8; i += bits) {
+		num = (num << bits) | rand();
 	}
-
-	const uint16 op;
-	uint16 rad;
-	union
-	{
-		Primitive data;
-		uint16 ad[2];
-	};
-};
-
-}
+	return num;
 }
 
-#endif
+uint random(uint max, uint min) {
+	static bool seed = false;
+	if(!seed) {
+		#ifdef N_DEBUG
+		srand(0);
+		#else
+		time_t now = time(0);
+		srand(hash(&now, sizeof(now)));
+		#endif
+		seed = true;
+	}
+	if(max < min) {
+		std::swap(min, max);
+	}
+	return (randHelper() % (max - min)) + min;
+}
 
-#endif // N_SCRIPT_BYTECODE_H
+float random() {
+	return float(randHelper() & 0x7FFFFF) * 1.0f / (0x7FFFFF + 1.0f);
+}
+
+}

@@ -34,7 +34,7 @@ namespace internal {
 }
 
 template<typename T, BufferBinding Binding>
-class StaticBuffer : core::NonCopyable
+class StaticBuffer : NonCopyable
 {
 	static_assert(TypeInfo<T>::isPod, "StaticBuffer should only contain pod");
 

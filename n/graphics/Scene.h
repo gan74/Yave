@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class Scene : core::NonCopyable
+class Scene : NonCopyable
 {
 
 	typedef core::Pair<const Type, core::Array<Transformable *>> TypedArray;

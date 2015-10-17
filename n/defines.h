@@ -31,17 +31,6 @@ void unused(T) {}
 }
 
 /* defines stuffs here */
-
-#ifndef PTRDIFF_MAX
-//#error PTRDIFF_MAX not defined
-#endif
-
-#if (PTRDIFF_MAX == 0x7FFFFFFF)
-#define N_32BITS
-#else
-#define N_NOT_32BITS
-#endif
-
 #ifndef __GNUC__
 #define N_NO_FORCE_INLINE
 #endif
@@ -56,10 +45,6 @@ void unused(T) {}
 #define N_FORCE_INLINE inline  __attribute__((always_inline))
 #endif
 
-#ifdef N_NOT_32BITS
-#warning you are not compiling using a 32 bits compiler.
-#define N_NO_SCRIPT
-#endif
 
 #ifndef restrict
 	#ifdef __restrict__

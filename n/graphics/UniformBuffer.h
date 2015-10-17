@@ -27,7 +27,7 @@ namespace graphics {
 class DynamicBufferBase
 {
 	public:
-		struct Data : core::NonCopyable
+		struct Data : NonCopyable
 		{
 			Data(uint si, gl::GLenum tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
 			}

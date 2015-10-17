@@ -29,7 +29,7 @@ namespace internal {
 	template<typename T>
 	class AssetKey
 	{
-		struct KeyStoreBase : core::NonCopyable
+		struct KeyStoreBase : NonCopyable
 		{
 			virtual bool operator<(const KeyStoreBase &) const = 0;
 			virtual bool operator==(const KeyStoreBase &) const = 0;
@@ -182,7 +182,7 @@ class AssetBuffer
 };
 
 template<typename T, typename LoadPolicy>
-class AssetManager : protected LoadPolicy, core::NonCopyable
+class AssetManager : protected LoadPolicy, NonCopyable
 {
 	public:
 		AssetManager(const AssetBuffer<T> &b = AssetBuffer<T>()) : assets(b) {

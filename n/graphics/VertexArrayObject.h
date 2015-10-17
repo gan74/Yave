@@ -27,7 +27,7 @@ namespace n {
 namespace graphics {
 
 template<typename T = float>
-class VertexArrayObject : core::NonCopyable
+class VertexArrayObject : NonCopyable
 {
 	public:
 		VertexArrayObject(const typename TriangleBuffer<T>::FreezedTriangleBuffer &tr) : VertexArrayObject(new typename TriangleBuffer<T>::FreezedTriangleBuffer(tr)) {

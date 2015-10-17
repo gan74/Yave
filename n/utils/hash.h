@@ -14,32 +14,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_SPINLOCK_H
-#define N_CONCURENT_SPINLOCK_H
+#ifndef N_UTILS_HASH
+#define N_UTILS_HASH
 
-#include <n/utils.h>
-#include "Atomic.h"
+#include <n/types.h>
 
 namespace n {
-namespace concurrent {
 
-class SpinLock : NonCopyable
-{
-	public:
-		SpinLock();
-		SpinLock(SpinLock &&s);
-		~SpinLock();
-
-		void lock();
-		void unlock();
-		bool trylock();
-
-	private:
-		volatile abool *spin;
-};
-
-
-}
+namespace core {
+	class String;
 }
 
-#endif // N_CONCURENT_SPINLOCK_H
+
+template<typename T>
+uint64 hash(const T &t) {
+	static_assert(TypeInfo<T>::isPod, "Only POD can be hashed");
+	return hash(&t, sizeof(T));
+}
+
+uint64 hash(const core::String &str);
+uint64 hash(const void *key, uint64 len, uint64 seed = 2166136261);
+
+}
+
+#endif // N_UTILS_HASH
+

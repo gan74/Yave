@@ -28,7 +28,7 @@ namespace graphics {
 class BSShadowRenderer : public ShadowRenderer
 {
 	public:
-		BSShadowRenderer(ShadowRenderer *c, uint fHStep = 0, float sharpness = 30) : ShadowRenderer(c->getSize().x(), false, ImageFormat::R32F), child(c), blurs{createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
+		BSShadowRenderer(ShadowRenderer *c, uint fHStep = 0, float sharpness = 30) : ShadowRenderer(c->getSize().x(), false, ImageFormat::R32F), child(c), blurs{createBlurShader(false, fHStep ? fHStep : log2ui(c->getSize().x())), createBlurShader(true, fHStep ? fHStep : log2ui(c->getSize().x()))} {
 			mapIndex = 0;
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"

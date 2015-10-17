@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 
-class File : public IODevice, core::NonCopyable
+class File : public IODevice, NonCopyable
 {
 	public:
 		File(const core::String &fileName);

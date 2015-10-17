@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 
-class BufferedInputStream : public InputStream, core::NonCopyable
+class BufferedInputStream : public InputStream, NonCopyable
 {
 	public:
 		BufferedInputStream(InputStream *st, uint si = 64 * 1024);

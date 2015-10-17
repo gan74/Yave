@@ -36,7 +36,7 @@ class ShaderProgram
 	typedef internal::ShaderProgramData Data;
 
 
-	/*class UniformBase : core::NonCopyable
+	/*class UniformBase : NonCopyable
 	{
 		public:
 			virtual ~UniformBase() {
