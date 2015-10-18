@@ -24,10 +24,10 @@ namespace n {
 namespace graphics {
 
 template<typename T>
-class DynamicBuffer : public TypedDynamicBuffer<T, Array>
+class DynamicBuffer : public TypedDynamicBuffer<T, ArrayBuffer>
 {
 	public:
-		DynamicBuffer(uint s) : TypedDynamicBuffer<T, Array>(s) {
+		DynamicBuffer(uint s) : TypedDynamicBuffer<T, ArrayBuffer>(s) {
 		}
 };
 

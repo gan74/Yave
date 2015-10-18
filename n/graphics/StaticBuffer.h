@@ -27,34 +27,34 @@ namespace n {
 namespace graphics {
 
 namespace internal {
-	inline gl::GLuint &getCurrentVao() {
-		static gl::GLuint current = 0;
+	inline gl::Handle &getCurrentVao() {
+		static gl::Handle current = 0;
 		return current;
 	}
 }
 
-template<typename T, BufferBinding Binding>
+template<typename T, BufferTarget Binding>
 class StaticBuffer : NonCopyable
 {
 	static_assert(TypeInfo<T>::isPod, "StaticBuffer should only contain pod");
 
 	public:
 		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), handle(0) {
-			gl::glBindVertexArray(internal::getCurrentVao() = 0);
-			gl::glGenBuffers(1, &handle);
-			gl::glBindBuffer(Binding, handle);
-			gl::glBufferData(Binding, sizeof(T) * bufferSize, arr.begin(), GL_STATIC_DRAW);
+			gl::bindVertexArray(internal::getCurrentVao() = 0);
+			handle = gl::createBuffer();
+			gl::bindBuffer(Binding, handle);
+			gl::bufferData(Binding, sizeof(T) * bufferSize, arr.begin(), gl::Static);
 		}
 
 		~StaticBuffer() {
-			gl::GLuint h = handle;
+			gl::Handle h = handle;
 			GLContext::getContext()->addGLTask([=]() {
-				gl::glDeleteBuffers(1, &h);
+				gl::deleteBuffer(h);
 			});
 		}
 
 		void bind() const {
-			gl::glBindBuffer(Binding, handle);
+			gl::bindBuffer(Binding, handle);
 		}
 
 		uint size() const {
@@ -63,7 +63,7 @@ class StaticBuffer : NonCopyable
 
 	private:
 		uint bufferSize;
-		gl::GLuint handle;
+		gl::Handle handle;
 };
 
 }

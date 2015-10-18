@@ -86,7 +86,6 @@ int main(int argc, char **argv) {
 
 	uint64 frames = 0;
 
-	GpuTimer gpu;
 	double totalCpu = 0;
 	uint totalFrames = 0;
 	int skipped = 0;
@@ -94,7 +93,6 @@ int main(int argc, char **argv) {
 
 
 	while(run(win)) {
-		gpu.start();
 		Timer frame;
 		if(!bench) {
 			frames = 0;
@@ -138,13 +136,8 @@ int main(int argc, char **argv) {
 
 
 
-
-		gl::glFinish();
-		gpu.stop();
 		double frameTime = frame.elapsed() * 1000;
-		while(!gpu.areResultsAvailable());
-		double gpuTime = gpu.elapsed() * 1000;
-		double thisFrame = frameTime - gpuTime;
+		double thisFrame = frameTime;
 		if(skipped > 10) {
 			totalFrames = 0;
 			totalCpu = 0;
@@ -166,13 +159,9 @@ int main(int argc, char **argv) {
 		} else {
 			totalFrames++;
 		}
-		std::cout<<"\rcpu = "<<(String(frameTime - gpuTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / (totalFrames - 10)) + "0000").subString(0, 4)<<" ms)      gpu = "<<(String(gpuTime) + "0000").subString(0, 4)<<" ms";
+		std::cout<<"\rcpu = "<<(String(frameTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / (totalFrames - 10)) + "0000").subString(0, 4)<<" ms)";
 
-
-
-		if(GLContext::getContext()->checkGLError()) {
-			fatal("OpenGL error");
-		}
+		GLContext::getContext()->fatalIfError();
 	}
 	return 0;
 }

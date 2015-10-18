@@ -16,7 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "GLContext.h"
 #include "ShaderProgram.h"
-#include "GL.h"
 #include "FrameBufferPool.h"
 #include "Material.h"
 #include "VertexArrayObject.h"
@@ -26,39 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 
-#define GL_AUDIT_STATE
-//#define N_SYNCHRONOUS_GL_DEBUG
+#define N_SYNCHRONOUS_GL_DEBUG
 
 namespace n {
 namespace graphics {
-
-GLAPIENTRY void debugOut(gl::GLenum, gl::GLenum type, gl::GLuint, gl::GLuint sev, gl::GLsizei len, const char *msg, const void *) {
-	if(sev == GL_DEBUG_SEVERITY_NOTIFICATION) {
-		return;
-	}
-	if(type == GL_DEBUG_TYPE_PERFORMANCE) {
-		return;
-	}
-	core::String t;
-	switch(type) {
-		case GL_DEBUG_TYPE_PERFORMANCE:
-			t = "[perf]";
-		break;
-		case GL_DEBUG_TYPE_PORTABILITY:
-			t = "[port]";
-		break;
-		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-			t = "[depr]";
-		break;
-		case GL_DEBUG_TYPE_ERROR:
-			t = "[err]";
-		break;
-		default:
-		break;
-	}
-
-	std::cerr<<std::endl<<"[GL]"<<(sev == GL_DEBUG_SEVERITY_HIGH ? "[HIGH]" : "")<<t<<" "<<core::String(msg, len)<<std::endl;
-}
 
 GLContext *GLContext::getContext() {
 	static GLContext *ct = 0;
@@ -71,7 +41,7 @@ GLContext *GLContext::getContext() {
 }
 
 void GLContext::flush() {
-	gl::glFlush();
+	gl::flush();
 }
 
 void GLContext::addGLTask(const core::Functor<void()> &f) {
@@ -95,44 +65,33 @@ void GLContext::finishTasks() {
 }
 
 GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool()), shFactory(new ShaderInstanceFactory()), viewport(1024, 768), screen(0) {
-	using namespace gl;
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
-	glewExperimental = true;
-	if(glewInit() != GLEW_OK) {
-		fatal("Unable to initialize glew.");
-	}
-	std::cout<<"Running on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using GL "<<glGetString(GL_VERSION)<<" using GLSL "<<glGetString(GL_SHADING_LANGUAGE_VERSION);
-	#ifdef N_32BITS
-	std::cout<<" (32 bits)";
-	#endif
-	std::cout<<std::endl;
 
-	int major = 0;
-	int minor = 0;
-	glGetIntegerv(GL_MAJOR_VERSION, &major);
-	glGetIntegerv(GL_MINOR_VERSION, &minor);
+	if(!gl::initialize()) {
+		fatal("Unable to create OpenGL context");
+	}
+
+	int major = gl::getInt(gl::MajorVersion);
+	int minor = getInt(gl::MajorVersion);
 	if(major < 4 || (major == 4 && minor < 3)) {
 		fatal("This needs OpenGL 4.3 or newer to run.");
 	}
 
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	gl::setEnabled(gl::SeamlessCubeMaps);
 
-	glViewport(0, 0, viewport.x(), viewport.y());
+	gl::setViewport(math::Vec2i(0), viewport);
 
 	for(uint i = 0; i != Max; i++) {
 		hwInts[i] = 0;
 	}
 
-	glGetIntegerv(GL_MAX_DRAW_BUFFERS, &hwInts[MaxFboAttachements]);
-	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &hwInts[MaxTextures]);
-	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &hwInts[MaxVertexAttribs]);
-	glGetIntegerv(GL_MAX_VARYING_VECTORS, &hwInts[MaxVaryings]);
-
-
-	const unsigned char *ext = glGetString(GL_EXTENSIONS);
-	hwInts[BindlessTextureSupport] = ext && core::String(ext).contains("GL_ARB_bindless_texture");
+	hwInts[MaxFboAttachements] = gl::getInt(gl::MaxFboAttachements);
+	hwInts[MaxTextures] = gl::getInt(gl::MaxTextureUnits);
+	hwInts[MaxVertexAttribs] = gl::getInt(gl::MaxVertexAttrib);
+	hwInts[MaxVaryings] = gl::getInt(gl::MaxVaryingVectors);
+	hwInts[BindlessTextureSupport] = gl::isExtensionSupported("GL_ARB_bindless_texture");
 
 	if(hwInts[MaxVertexAttribs] <= 4) {
 		fatal("Not enought vertex attribs.");
@@ -148,10 +107,12 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 
 	#undef CHECK_TEX_FORMAT
 
-	glGetError();
-
-	glDebugMessageCallback(&debugOut, 0);
 	setDebugEnabled(true);
+
+	#ifdef N_SYNCHRONOUS_GL_DEBUG
+	gl::setEnabled(gl::SynchronousDebugging);
+	#warning Synchronous debugging
+	#endif
 }
 
 GLContext::~GLContext() {
@@ -160,35 +121,17 @@ GLContext::~GLContext() {
 }
 
 void GLContext::setDebugEnabled(bool deb) {
-	if(deb) {
-		gl::glEnable(GL_DEBUG_OUTPUT);
-		#ifdef N_SYNCHRONOUS_GL_DEBUG
-		gl::glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		#warning Synchronous debugging
-		#endif
-	} else {
-		gl::glDisable(GL_DEBUG_OUTPUT);
-		#ifdef N_SYNCHRONOUS_GL_DEBUG
-		gl::glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		#endif
-	}
+	gl::setEnabled(gl::Debug, deb);
 }
 
 void GLContext::auditGLState() {
-	#ifdef GL_AUDIT_STATE
-	#warning GL state auditing enabled
-	int handle = 0;
-	gl::glGetIntegerv(GL_FRAMEBUFFER_BINDING, &handle);
-	if(handle != int(frameBuffer ? frameBuffer->handle : 0)) {
-		fatal("Invalid GL framebuffer state.");
-	}
-	#endif
+	// ???
 }
 
 void GLContext::setViewport(const math::Vec2ui &v) {
 	viewport = v;
 	if(!frameBuffer) {
-		gl::glViewport(0, 0, viewport.x(), viewport.y());
+		gl::setViewport(math::Vec2i(0), v);
 	}
 }
 
@@ -196,16 +139,10 @@ math::Vec2ui GLContext::getViewport() const {
 	return frameBuffer ? frameBuffer->getSize() : viewport;
 }
 
-bool GLContext::checkGLError() {
-	int error = gl::glGetError();
-	if(error) {
-		fatal(("Warning : error : " + (error == GL_INVALID_OPERATION ? core::String("INVALID OPERATION") :
-			(error == GL_INVALID_ENUM ? core::String("INVALID ENUM") :
-			(error == GL_INVALID_VALUE ? core::String("INVALID VALUE") :
-			(error == GL_OUT_OF_MEMORY ? core::String("OUT OF MEMORY") : core::String(error)))))).toChar());
-		return true; // just in case...
+void GLContext::fatalIfError() {
+	if(gl::checkError()) {
+		fatal("OpenGL error, exiting...");
 	}
-	return false;
 }
 
 void GLContext::setModelMatrix(const math::Matrix4<> &m) {

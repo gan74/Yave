@@ -46,13 +46,13 @@ const Material &getLightMaterial() {
 	static Material mat[LightType::Max];
 	if(mat[Type].isNull()) {
 		MaterialData i;
-		i.fancy.blend = MaterialData::Add;
+		i.fancy.blend = BlendMode::Add;
 		i.fancy.depthWrite = false;
 		if(Type == Directional) {
-			i.fancy.depth = MaterialData::Always;
+			i.fancy.depth = DepthMode::Always;
 		} else {
-			i.fancy.depth = MaterialData::Greater;
-			i.fancy.cull = MaterialData::Front;
+			i.fancy.depth = DepthMode::Greater;
+			i.fancy.cull = CullMode::Front;
 		}
 		mat[Type] = Material(i);
 	}

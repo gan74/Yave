@@ -20,10 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Texture.h"
 #include "TextureBase.h"
 
-namespace n {
+/*namespace n {
 namespace graphics {
 
-class CubeMap : public TextureBase<TextureCubeMap>
+class CubeMap : public TextureBase<TextureCube>
 {
 	public:
 		CubeMap(const Texture &top, const Texture &bottom, const Texture &right, const Texture &left, const Texture &front, const Texture &back);
@@ -55,7 +55,7 @@ class CubeMap : public TextureBase<TextureCubeMap>
 };
 
 }
-}
+}*/
 
 #endif // N_GRAPHICS_CUBEMAP
 

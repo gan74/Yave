@@ -29,15 +29,15 @@ class DynamicBufferBase
 	public:
 		struct Data : NonCopyable
 		{
-			Data(uint si, gl::GLenum tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
+			Data(uint si, BufferTarget tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
 			}
 
 			~Data() {
 				free(buffer);
 				if(handle) {
-					gl::GLuint h = handle;
+					gl::Handle h = handle;
 					GLContext::getContext()->addGLTask([=]() {
-						gl::glDeleteBuffers(1, &h);
+						gl::deleteBuffer(h);
 					});
 				}
 			}
@@ -45,11 +45,11 @@ class DynamicBufferBase
 			void update(bool forceBind = false) const {
 				if(modified) {
 					if(!handle) {
-						gl::glGenBuffers(1, (gl::GLuint *)&handle);
-						gl::glBindBuffer(type, handle);
-						gl::glBufferData(type, size, buffer, GL_DYNAMIC_DRAW);
+						handle = gl::createBuffer();
+						gl::bindBuffer(type, handle);
+						gl::bufferData(type, size, buffer, gl::Dynamic);
 					} else {
-						gl::glBindBuffer(type, handle);
+						gl::bindBuffer(type, handle);
 						/*void *p = gl::glMapBuffer(type, GL_WRITE_ONLY);
 						if(!p) {
 							gl::glBufferSubData(type, 0, size, buffer);
@@ -57,24 +57,24 @@ class DynamicBufferBase
 							memcpy(p, buffer, size);
 							gl::glUnmapBuffer(type);
 						}*/
-						gl::glBufferSubData(type, 0, size, 0);
-						gl::glBufferSubData(type, 0, size, buffer);
+						gl::bufferSubData(type, 0, size, 0);
+						gl::bufferSubData(type, 0, size, buffer);
 					}
 					modified = false;
 				} else if(forceBind) {
-					gl::glBindBuffer(type, handle);
+					gl::bindBuffer(type, handle);
 				}
 			}
 
-			const gl::GLenum type;
+			const BufferTarget type;
 			uint size;
 			void *buffer;
-			gl::GLuint handle;
+			mutable gl::Handle handle;
 			mutable bool modified;
 		};
 
 
-		DynamicBufferBase(uint si, gl::GLenum tpe) : data(new Data(si, tpe)) {
+		DynamicBufferBase(uint si, BufferTarget tpe) : data(new Data(si, tpe)) {
 		}
 
 		void update(bool force = false) {
@@ -87,7 +87,7 @@ class DynamicBufferBase
 
 };
 
-template<typename T, gl::GLenum Type>
+template<typename T, BufferTarget Type>
 class TypedDynamicBuffer : public DynamicBufferBase
 {
 	static_assert(TypeInfo<T>::isPod, "TypedDynamicBufferBase<T> should only contain pod");
@@ -218,10 +218,10 @@ class TypedDynamicBuffer : public DynamicBufferBase
 };
 
 template<typename T>
-class UniformBuffer : public TypedDynamicBuffer<T, GL_UNIFORM_BUFFER>
+class UniformBuffer : public TypedDynamicBuffer<T, UniformArrayBuffer>
 {
 	public:
-		UniformBuffer(uint s) : TypedDynamicBuffer<T, GL_UNIFORM_BUFFER>(s) {
+		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformArrayBuffer>(s) {
 		}
 };
 

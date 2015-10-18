@@ -26,7 +26,7 @@ static const Material &getMaterial() {
 	static Material mat;
 	if(mat.isNull()) {
 		MaterialData i;
-		i.fancy.depth = MaterialData::Always;
+		i.fancy.depth = DepthMode::Always;
 		mat = Material(i);
 	}
 	return mat;
@@ -36,8 +36,8 @@ static const Material &getLumMaterial() {
 	static Material mat;
 	if(mat.isNull()) {
 		MaterialData i;
-		i.fancy.blend = MaterialData::SrcAlpha;
-		i.fancy.depth = MaterialData::Always;
+		i.fancy.blend = BlendMode::SrcAlpha;
+		i.fancy.depth = DepthMode::Always;
 		mat = Material(i);
 	}
 	return mat;

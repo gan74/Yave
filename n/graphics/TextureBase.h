@@ -25,12 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-enum TextureType
-{
-	Texture2D = GL_TEXTURE_2D,
-	TextureCubeMap = GL_TEXTURE_CUBE_MAP
-};
-
 namespace internal {
 	class TextureBinding;
 
@@ -45,16 +39,16 @@ namespace internal {
 				lock.trylock();
 				lock.unlock();
 				if(handle) {
-					gl::GLuint h = handle;
+					gl::Handle h = handle;
 					GLContext::getContext()->addGLTask([=]() {
-						gl::glDeleteTextures(1, &h);
+						gl::deleteTexture(h);
 					});
 				}
 			}
 
 			const TextureType type;
 			concurrent::SpinLock lock;
-			gl::GLuint handle;
+			gl::Handle handle;
 			uint64 bindless;
 			bool hasMips;
 		};
@@ -84,7 +78,7 @@ class TextureBase : protected internal::TextureBase
 	protected:
 		friend class internal::TextureBinding;
 
-		gl::GLuint getHandle() const {
+		gl::Handle getHandle() const {
 			return data->handle;
 		}
 };

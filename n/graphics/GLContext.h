@@ -21,19 +21,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Functor.h>
 #include <n/math/Matrix.h>
 #include <n/assets/Asset.h>
+#include "GL.h"
 
 namespace n {
 namespace graphics {
-
-enum TextureSampler
-{
-	Nearest,
-	Bilinear,
-	Trilinear,
-
-
-	Default
-};
 
 class ShaderProgram;
 class FrameBuffer;
@@ -87,7 +78,7 @@ class GLContext
 
 		void setDebugEnabled(bool deb);
 		void auditGLState();
-		static bool checkGLError();
+		static void fatalIfError();
 
 		ShaderProgram getShaderProgram() const;
 

@@ -82,7 +82,7 @@ class SceneRenderer : public BufferableRenderer
 			for(Renderable *re : res) {
 				re->render(data->queue, renderFlags);
 			}
-			data->queue.prepare();
+			data->queue.prepare(cam->getPosition(), 1000);
 			return data;
 		}
 
@@ -96,12 +96,7 @@ class SceneRenderer : public BufferableRenderer
 			FrameData *data = reinterpret_cast<FrameData *>(ptr);
 			GLContext::getContext()->setProjectionMatrix(data->proj);
 			GLContext::getContext()->setViewMatrix(data->view);
-			for(const auto q : data->queue.getBatches()) {
-				q(renderFlags);
-			}
-			for(const auto q : data->queue.getFunctions()) {
-				q();
-			}
+			data->queue(renderFlags);
 			delete data;
 		}
 

@@ -25,61 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-GLTexFormat getTextureFormat(ImageFormat format) {
-	switch(format) {
-		case ImageFormat::Depth32:
-			return GLTexFormat(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT32, GL_FLOAT);
-		break;
-		case ImageFormat::F32:
-			return GLTexFormat(GL_RED, GL_R32F, GL_FLOAT);
-		break;
-		case ImageFormat::RGBA32F:
-			return GLTexFormat(GL_RGBA, GL_RGBA32F, GL_FLOAT);
-		break;
-		case ImageFormat::RG16:
-			return GLTexFormat(GL_RG, GL_RG16, GL_UNSIGNED_SHORT);
-		break;
-		case ImageFormat::RG16F:
-			return GLTexFormat(GL_RG, GL_RG16F, GL_UNSIGNED_SHORT);
-		break;
-		case ImageFormat::RG32F:
-			return GLTexFormat(GL_RG, GL_RG32F, GL_FLOAT);
-		break;
-		case ImageFormat::RGBA8:
-			return GLTexFormat(GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE);
-		break;
-		case ImageFormat::RGB8:
-			return GLTexFormat(GL_RGB, GL_RGB8, GL_UNSIGNED_BYTE);
-		break;
-		case ImageFormat::RGBA16:
-			return GLTexFormat(GL_RGBA, GL_RGBA16, GL_UNSIGNED_SHORT);
-		break;
-		case ImageFormat::RGBA16F:
-			return GLTexFormat(GL_RGBA, GL_RGBA16F, GL_UNSIGNED_SHORT);
-		break;
-		default:
-			return fatal("Unsuported texture format.");
-		break;
-	}
-}
+
 
 bool Texture::isHWSupported(ImageFormat format) {
-	if(format == ImageFormat::RGB10A2) {
-		return false;
-	}
-	static core::Map<ImageFormat, bool> support;
-	core::Map<ImageFormat, bool>::const_iterator it = support.find(format);
-	if(it == support.end()) {
-		gl::GLint s = 0;
-		gl::glGetInternalformativ(GL_TEXTURE_2D, getTextureFormat(format).internalFormat, GL_INTERNALFORMAT_SUPPORTED, sizeof(gl::GLint), &s);
-		/*gl::GLint p = 0;
-		gl::glGetInternalformativ(GL_TEXTURE_2D, getTextureFormat(format).internalFormat, GL_INTERNALFORMAT_PREFERRED, sizeof(gl::GLint), &p);
-		if(p != gl::GLint(getTextureFormat(format).internalFormat)) {
-			std::cerr<<"Texture format not fully supported"<<std::endl;
-		}*/
-		return support[format] = (s == GL_TRUE);
-	}
-	return (*it)._2;
+	return gl::isHWSupported(format);
 }
 
 Texture::Texture(const Image &i, bool mip) : TextureBase<Texture2D>(), image(i) {
@@ -109,10 +58,10 @@ void Texture::upload() const {
 	if(!size.mul()) {
 		fatal("Invalid image size.");
 	}
-	gl::glGenTextures(1, &(data->handle));
-	gl::glBindTexture(GL_TEXTURE_2D, data->handle);
+	data->handle = gl::createTexture();
+	gl::bindTexture(Texture2D, data->handle);
 
-	GLTexFormat format = getTextureFormat(image.getFormat());
+	gl::TextureFormat format = gl::getTextureFormat(image.getFormat());
 
 	data->hasMips &= isMipCapable();
 	#ifndef N_NO_TEX_STORAGE
@@ -122,26 +71,16 @@ void Texture::upload() const {
 		gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format.format, format.type, image.data()); // crashes if data = 0...
 	}
 	#else
-	gl::glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat, size.x(), size.y(), 0, format.format, format.type, image.data());
+	gl::texImage2D(Texture2D, 0, size.x(), size.y(), 0, format, image.data());
 	#endif
 
 	if(hasMipmaps()) {
-		gl::glGenerateMipmap(GL_TEXTURE_2D);
+		gl::generateMipmap(Texture2D);
 	}
 
 	if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-		gl::GLuint sampler = 0;
-		gl::glGenSamplers(1, &sampler);
-		for(uint i = 0; i != 8; i++) {
-			gl::glBindSampler(i, sampler);
-		}
-		gl::glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		gl::glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		gl::glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		gl::glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, hasMipmaps() ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-
-		data->bindless = gl::glGetTextureSamplerHandleARB(data->handle, sampler);
-		gl::glMakeTextureHandleResidentARB(data->bindless);
+		data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
+		gl::makeTextureHandleResident(data->bindless);
 	}
 }
 

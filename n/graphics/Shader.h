@@ -35,13 +35,6 @@ class ShaderProgram;
 class ShaderInstance;
 class ShaderBase;
 
-enum ShaderType
-{
-	FragmentShader,
-	VertexShader,
-	GeometryShader
-};
-
 enum ShaderValue
 {
 	SVColor,
@@ -109,7 +102,7 @@ class ShaderBase : NonCopyable
 		core::String parse(core::String src, uint vers);
 		ShaderType type;
 		uint version;
-		gl::GLuint handle;
+		gl::Handle handle;
 
 		core::String logs;
 

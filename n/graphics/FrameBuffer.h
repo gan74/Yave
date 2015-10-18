@@ -50,12 +50,12 @@ class FrameBuffer : NonCopyable
 
 	void setupAttachment(uint index, bool enabled) {
 		assertAttachements(index);
-		drawBuffers[index] = enabled ? GL_COLOR_ATTACHMENT0 + index : GL_NONE;
+		drawBuffers[index] = enabled ? gl::Attachment(gl::ColorAtt0 + index) : gl::NoAtt;
 	}
 
 	void setupAttachment(uint index, ImageFormat::Format format) {
 		assertAttachements(index);
-		drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index;
+		drawBuffers[index] = gl::Attachment(gl::ColorAtt0 + index);
 		attachments[index] = Image(getSize(), format);
 	}
 
@@ -97,10 +97,10 @@ class FrameBuffer : NonCopyable
 		friend class FrameBufferPool;
 
 		template<typename... Args>
-		FrameBuffer(const math::Vec2ui &s, bool depthEnabled, Args... args): base(s), attachments(new Texture[getMaxAttachment()]), drawBuffers(new gl::GLenum[getMaxAttachment()]) {
+		FrameBuffer(const math::Vec2ui &s, bool depthEnabled, Args... args): base(s), attachments(new Texture[getMaxAttachment()]), drawBuffers(new gl::Attachment[getMaxAttachment()]) {
 			Image baseImage(base);
 			for(uint i = 0; i != getMaxAttachment(); i++) {
-				drawBuffers[i] = GL_NONE;
+				drawBuffers[i] = gl::NoAtt;
 				attachments[i] = Texture(baseImage);
 			}
 			depth = depthEnabled ? new Texture(Image(base, ImageFormat::Depth32)) : 0;
@@ -113,8 +113,8 @@ class FrameBuffer : NonCopyable
 		math::Vec2ui base;
 		Texture *attachments;
 		Texture *depth;
-		gl::GLenum *drawBuffers;
-		gl::GLuint handle;
+		gl::Attachment *drawBuffers;
+		gl::Handle handle;
 };
 
 }
