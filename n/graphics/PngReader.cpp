@@ -24,13 +24,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class PngReader : public graphics::ImageLoader::ImageReader<PngReader, core::String>
+class PngReader : public ImageLoader::ImageReader<PngReader, core::String>
 {
 	public:
-		PngReader() : graphics::ImageLoader::ImageReader<PngReader, core::String>() {
+		PngReader() : ImageLoader::ImageReader<PngReader, core::String>() {
 		}
 
-		graphics::internal::Image *operator()(core::String name) override {
+		ImageData *operator()(core::String name) override {
 			std::vector<byte> image;
 			uint32 width = 0;
 			uint32 height = 0;
@@ -38,7 +38,7 @@ class PngReader : public graphics::ImageLoader::ImageReader<PngReader, core::Str
 			if(err) {
 				return 0;
 			}
-			return new internal::Image(math::Vec2ui(width, height), ImageFormat::RGBA8, image.data());
+			return new ImageData(math::Vec2ui(width, height), ImageFormat::RGBA8, image.data());
 		}
 };
 
