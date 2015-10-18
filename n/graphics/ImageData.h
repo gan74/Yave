@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-struct ImageData : core::NonCopyable
+struct ImageData : NonCopyable
 {
 	ImageData(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, const void *c = 0, bool flip = true) : format(f), size(s), data(c ? new byte[s.mul() * f.bytesPerPixel()] : 0) {
 		if(c) {

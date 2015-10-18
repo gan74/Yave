@@ -38,7 +38,7 @@ class WaitCondition
 		pthread_cond_t condition;
 };
 
-class Mutex : core::NonCopyable
+class Mutex : NonCopyable
 {
 	public:
 		Mutex(RecursionMode r = NonRecursive);

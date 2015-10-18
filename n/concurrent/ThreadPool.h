@@ -90,7 +90,7 @@ class FixedThreadNumberPolicy
 };
 
 template<typename ThreadNumberPolicy = DefaultThreadNumberPolicy>
-class ThreadPool : public ThreadNumberPolicy, core::NonCopyable
+class ThreadPool : public ThreadNumberPolicy, NonCopyable
 {
 	class WorkerThread : public Thread
 	{

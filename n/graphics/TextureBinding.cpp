@@ -31,7 +31,7 @@ struct BindingData
 
 	gl::Handle handle;
 	TextureType type;
-	TextureSampler sampler;
+	gl::Handle sampler;
 };
 
 
@@ -39,12 +39,16 @@ TextureBinding::TextureBinding() : sampler(TextureSampler::Default) {
 }
 
 void TextureBinding::bind(uint slot) const {
+	static gl::Handle samplers[TextureSampler::Default][2] = {{0}};
 	TextureSampler smp = sampler == TextureSampler::Default ? GLContext::getContext()->getDefaultSampler() : sampler;
 	BindingData t;
 	if(tex) {
 		t.handle = tex->handle;
 		t.type = tex->type;
-		t.sampler = smp;
+		if(!samplers[smp][tex->hasMips]) {
+			samplers[smp][tex->hasMips] = gl::createSampler(smp, tex->hasMips);
+		}
+		t.sampler = samplers[smp][tex->hasMips];
 	}
 	gl::bindTextureUnit(slot, t.type, t.handle);
 	gl::bindSampler(slot, t.sampler);

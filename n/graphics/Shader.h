@@ -75,7 +75,7 @@ class ShaderCompilationException : public std::exception
 		const core::String m;
 };
 
-class ShaderBase : core::NonCopyable
+class ShaderBase : NonCopyable
 {
 	public:
 		~ShaderBase();

@@ -7,22 +7,22 @@ INCLUDEPATH += $$PWD
 
 SOURCES += $$PWD/n/*.cpp \
 		   $$PWD/n/core/*.cpp \
+		   $$PWD/n/utils/*.cpp \
 		   $$PWD/n/io/*.cpp \
 		   $$PWD/n/concurrent/*.cpp \
 		   $$PWD/n/test/*.cpp \
 		   $$PWD/n/test/defaults/*.cpp \
-		   $$PWD/n/script/*.cpp \
 		   $$PWD/n/graphics/*.cpp
 
 HEADERS += $$PWD/n/*.h \
 		   $$PWD/n/core/*.h \
+		   $$PWD/n/utils/*.h \
 		   $$PWD/n/io/*.h \
 		   $$PWD/n/concurrent/*.h \
 		   $$PWD/n/test/*.h \
 		   $$PWD/n/math/*.h \
 		   $$PWD/n/mem/*.h \
 		   $$PWD/n/assets/*.h \
-		   $$PWD/n/script/*.h \
 		   $$PWD/n/graphics/*.h \
 		   $$PWD/n/signals/*.h
 

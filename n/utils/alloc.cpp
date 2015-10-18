@@ -14,32 +14,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_SPINLOCK_H
-#define N_CONCURENT_SPINLOCK_H
-
-#include <n/utils.h>
-#include "Atomic.h"
+#include "alloc.h"
 
 namespace n {
-namespace concurrent {
 
-class SpinLock : NonCopyable
-{
-	public:
-		SpinLock();
-		SpinLock(SpinLock &&s);
-		~SpinLock();
-
-		void lock();
-		void unlock();
-		bool trylock();
-
-	private:
-		volatile abool *spin;
-};
-
-
-}
+void *safeRealloc(void *c, uint size)  {
+	void *cc = realloc(c, size);
+	if(cc) {
+		return cc;
+	}
+	free(c);
+	return 0;
 }
 
-#endif // N_CONCURENT_SPINLOCK_H
+}

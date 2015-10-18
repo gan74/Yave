@@ -62,7 +62,7 @@ class SubMeshInstance
 };
 
 namespace internal {
-	class MeshInstance : core::NonCopyable
+	class MeshInstance : NonCopyable
 	{
 		public:
 			typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;

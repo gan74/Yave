@@ -14,32 +14,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_SPINLOCK_H
-#define N_CONCURENT_SPINLOCK_H
-
+#include "random.h"
 #include <n/utils.h>
-#include "Atomic.h"
 
 namespace n {
-namespace concurrent {
 
-class SpinLock : NonCopyable
-{
-	public:
-		SpinLock();
-		SpinLock(SpinLock &&s);
-		~SpinLock();
-
-		void lock();
-		void unlock();
-		bool trylock();
-
-	private:
-		volatile abool *spin;
-};
-
-
-}
+uint randHelper() {
+	uint bits = log2ui(RAND_MAX);
+	uint num = 0;
+	for(uint i = 0; i < sizeof(uint) * 8; i += bits) {
+		num = (num << bits) | rand();
+	}
+	return num;
 }
 
-#endif // N_CONCURENT_SPINLOCK_H
+uint random(uint max, uint min) {
+	static bool seed = false;
+	if(!seed) {
+		#ifdef N_DEBUG
+		srand(0);
+		#else
+		time_t now = time(0);
+		srand(hash(&now, sizeof(now)));
+		#endif
+		seed = true;
+	}
+	if(max < min) {
+		std::swap(min, max);
+	}
+	return (randHelper() % (max - min)) + min;
+}
+
+float random() {
+	return float(randHelper() & 0x7FFFFF) * 1.0f / (0x7FFFFF + 1.0f);
+}
+
+}

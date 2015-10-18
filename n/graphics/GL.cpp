@@ -19,11 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Map.h>
 #include <GL/glew.h>
 
+#include <iostream>
+
 namespace n {
 namespace graphics {
 namespace gl {
 
-bool isSampler(UniformType type) {
+bool isSamplerType(UniformType type) {
 	static constexpr GLenum samplers[] = {
 	GL_SAMPLER_1D,
 	GL_SAMPLER_2D,
@@ -135,12 +137,16 @@ GLenum dataType[] = {GL_NONE, GL_FLOAT, GL_INT, GL_UNSIGNED_INT, GL_SHORT, GL_UN
 GLenum textureFilter[] = {GL_NEAREST, GL_LINEAR};
 GLenum shaderType[] = {GL_FRAGMENT_SHADER, GL_VERTEX_SHADER, GL_GEOMETRY_SHADER};
 GLenum shaderParam[] = {GL_ACTIVE_UNIFORMS, GL_ACTIVE_UNIFORM_BLOCKS};
-GLenum features[] = {GL_DEPTH_TEST, GL_DEPTH_CLAMP, GL_CULL_FACE, GL_BLEND};
+GLenum features[] = {GL_DEPTH_TEST, GL_DEPTH_CLAMP, GL_DEBUG_OUTPUT, GL_DEBUG_OUTPUT_SYNCHRONOUS, GL_TEXTURE_CUBE_MAP_SEAMLESS};
 GLenum primitiveMode[] = {GL_TRIANGLES};
 GLenum depthMode[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
 GLenum blendModeSrc[] = {GL_ONE, GL_ONE, GL_SRC_ALPHA};
 GLenum blendModeDst[] = {GL_ZERO, GL_ONE, GL_ONE_MINUS_SRC_ALPHA};
 GLenum cullMode[] = {GL_BACK, GL_FRONT, GL_NONE};
+GLenum intParams[] = {GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_ATTRIBS, GL_MAX_VARYING_VECTORS, GL_MAJOR_VERSION, GL_MINOR_VERSION};
+GLenum magSamplers[] {GL_NEAREST, GL_LINEAR, GL_LINEAR};
+GLenum minSamplers[] {GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR};
+
 
 static constexpr uint MaxBindings = 256;
 static uint activeTextureUnit = 0;
@@ -157,6 +163,33 @@ GLenum toGLAttachement(Attachment att) {
 }
 
 
+GLAPIENTRY void debugOut(GLenum, GLenum type, GLuint, GLuint sev, GLsizei len, const char *msg, const void *) {
+	if(sev == GL_DEBUG_SEVERITY_NOTIFICATION) {
+		return;
+	}
+	if(type == GL_DEBUG_TYPE_PERFORMANCE) {
+		return;
+	}
+	core::String t;
+	switch(type) {
+		case GL_DEBUG_TYPE_PERFORMANCE:
+			t = "[perf]";
+		break;
+		case GL_DEBUG_TYPE_PORTABILITY:
+			t = "[port]";
+		break;
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+			t = "[depr]";
+		break;
+		case GL_DEBUG_TYPE_ERROR:
+			t = "[err]";
+		break;
+		default:
+		break;
+	}
+
+	std::cerr<<std::endl<<"[GL]"<<(sev == GL_DEBUG_SEVERITY_HIGH ? "[HIGH]" : "")<<t<<" "<<core::String(msg, len)<<std::endl;
+}
 
 
 
@@ -164,7 +197,50 @@ GLenum toGLAttachement(Attachment att) {
 
 
 
+bool initialize() {
+	static bool init = false;
+	if(!init) {
+		glewExperimental = true;
+		if(glewInit() != GLEW_OK) {
+			std::cerr<<"Unable to initialize glew."<<std::endl;
+			return false;
+		}
+		std::cout<<"Running on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using GL "<<glGetString(GL_VERSION)<<" using GLSL "<<glGetString(GL_SHADING_LANGUAGE_VERSION);
+		if(!is64Bits()) {
+			std::cout<<" (32 bits)";
+		}
+		std::cout<<std::endl;
+		glDebugMessageCallback(&debugOut, 0);
+		glGetError();
+	}
+	return init = true;
+}
 
+bool checkError() {
+	int error = glGetError();
+	if(error) {
+		std::cerr<<"Warning : OpenGL error : ";
+		switch(error) {
+			case GL_INVALID_OPERATION:
+				std::cerr<<"INVALID OPERATION";
+				break;
+			case GL_INVALID_ENUM:
+				std::cerr<<"INVALID ENUM";
+				break;
+			case GL_INVALID_VALUE:
+				std::cerr<<"INVALID VALUE";
+				break;
+			case GL_OUT_OF_MEMORY:
+				std::cerr<<"OUT OF MEMORY";
+				break;
+			default:
+				std::cerr<<"error #"<<error;
+		}
+		std::cerr<<std::endl;
+		return true;
+	}
+	return false;
+}
 
 Handle createTexture() {
 	Handle h = 0;
@@ -227,7 +303,7 @@ void bindTextureUnit(uint slot, TextureType type, Handle tex) {
 }
 
 void bindSampler(uint slot, Handle sampler) {
-	Handle bound[MaxBindings] = {0};
+	static Handle bound[MaxBindings] = {0};
 	if(bound[slot] != sampler) {
 		glBindSampler(slot, sampler);
 		bound[slot] = sampler;
@@ -236,6 +312,16 @@ void bindSampler(uint slot, Handle sampler) {
 
 Handle createShader(ShaderType type) {
 	return glCreateShader(shaderType[type]);
+}
+
+Handle createSampler(TextureSampler sampler, bool mipmap) {
+	Handle h = 0;
+	glGenSamplers(1, &h);
+	glSamplerParameteri(h, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glSamplerParameteri(h, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glSamplerParameteri(h, GL_TEXTURE_MAG_FILTER, magSamplers[sampler]);
+	glSamplerParameteri(h, GL_TEXTURE_MIN_FILTER, (mipmap ? minSamplers : magSamplers)[sampler]);
+	return h;
 }
 
 void shaderSource(Handle shader, uint count, const char * const *src, const int *len) {
@@ -343,7 +429,7 @@ UniformAddr getUniformLocation(Handle shader, const char *name) {
 }
 
 void setEnabled(Feature feat, bool e) {
-	static bool feats[3] = {false};
+	static bool feats[MaxFeatures] = {false};
 	if(feats[feat] == e) {
 		return;
 	}
@@ -410,8 +496,23 @@ uint getUniformBlockIndex(Handle shader, const char *name) {
 	return glGetUniformBlockIndex(shader, name);
 }
 
+void setViewport(math::Vec2i a, math::Vec2i b) {
+	glViewport(a.x(), a.y(), b.x(), b.y());
+}
 
+int getInt(IntParam i) {
+	int v = 0;
+	glGetIntegerv(intParams[i], &v);
+	return v;
+}
 
+bool isExtensionSupported(core::String extName) {
+	static core::String exts;
+	if(!exts.isEmpty()) {
+		exts = glGetString(GL_EXTENSIONS);
+	}
+	return exts.contains(extName);
+}
 
 
 
@@ -504,10 +605,6 @@ void uniformBlockBinding(Handle prog, uint index, uint binding) {
 	glUniformBlockBinding(prog, index, binding);
 }
 
-void viewport(int srcX0, int srcY0, int srcX1, int srcY1) {
-	glViewport(srcX0, srcY0, srcX1, srcY1);
-}
-
 void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type type, void *indices, uint primCount, uint baseVertex) {
 	glDrawElementsInstancedBaseVertex(primitiveMode[mode], count, dataType[type], indices, primCount, baseVertex);
 }
@@ -521,16 +618,11 @@ void generateMipmap(TextureType type) {
 	glGenerateMipmap(textureType[type]);
 }
 
-uint64 getTextureSamplerHandle(Handle tex) {
-	GLuint sampler = 0;
-	glGenSamplers(1, &sampler);
-	for(uint i = 0; i != 8; i++) {
-		glBindSampler(i, sampler);
+uint64 getTextureSamplerHandle(Handle tex, TextureSampler smp, bool mipmap) {
+	static Handle sampler = 0;
+	if(!sampler) {
+		sampler = createSampler(smp, mipmap);
 	}
-	glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	return glGetTextureSamplerHandleARB(tex, sampler);
 }
 
@@ -584,6 +676,10 @@ void programUniformMatrix4fv(Handle prog, UniformAddr loc, uint count, bool tr, 
 
 void programUniformHandleui64(Handle prog, UniformAddr loc, uint64 handle) {
 	glProgramUniformHandleui64ARB(prog, loc, handle);
+}
+
+void flush() {
+	glFlush();
 }
 
 

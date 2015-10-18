@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class ShaderInstanceFactory : core::NonCopyable
+class ShaderInstanceFactory : NonCopyable
 {
 	typedef std::tuple<const ShaderBase *, const ShaderBase *, const ShaderBase *> ShaderTuple;
 	public:

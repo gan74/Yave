@@ -22,10 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace mem {
 
-class Region : core::NonCopyable
+class Region : NonCopyable
 {
 	public:
-		Region(uint blckSize, uint nBlck = 0) : blockSize(blckSize), size(nBlck ? nBlck : std::max(16, 1 << (16 - core::log2ui(blckSize)))), left(size), mem(malloc(blockSize * size)), ptr(mem) {
+		Region(uint blckSize, uint nBlck = 0) : blockSize(blckSize), size(nBlck ? nBlck : std::max(16, 1 << (16 - log2ui(blckSize)))), left(size), mem(malloc(blockSize * size)), ptr(mem) {
 			byte *it = (byte *)mem;
 			void **last = (void **)ptr;
 			for(uint i = 0; i != size; i++, it += blockSize) {

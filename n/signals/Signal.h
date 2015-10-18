@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace signals {
 
-class ImmediateCall : core::NonCopyable
+class ImmediateCall : NonCopyable
 {
 	public:
 		template<typename... Args>
@@ -36,7 +36,7 @@ class ImmediateCall : core::NonCopyable
 		}
 };
 
-class AsyncCall : core::NonCopyable
+class AsyncCall : NonCopyable
 {
 	public:
 		template<typename... Args>

@@ -101,7 +101,7 @@ void FrameBuffer::bind() const {
 		math::Vec2ui vp = GLContext::getContext()->getViewport();
 		GLContext::getContext()->frameBuffer = this;
 		if(vp != base) {
-			gl::viewport(0, 0, base.x(), base.y());
+			gl::setViewport(math::Vec2i(0), base);
 		}
 	}
 }
@@ -112,7 +112,7 @@ void FrameBuffer::unbind() {
 		const FrameBuffer *fb = GLContext::getContext()->frameBuffer;
 		GLContext::getContext()->frameBuffer = 0;
 		if(GLContext::getContext()->getViewport() != fb->getSize()) {
-			gl::viewport(0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y());
+			gl::setViewport(math::Vec2i(0), GLContext::getContext()->getViewport());
 		}
 	}
 }
@@ -134,7 +134,9 @@ void FrameBuffer::blit(uint slot, bool depth) const {
 	}
 	gl::BitField bits = (color ? gl::ColorBit : 0) | (depth ? gl::DepthBit : 0);
 	Material().bind(RenderFlag::DepthWriteOnly);
+	#warning Blitting into framebuffer 0 with a float texture will cause an error
 	gl::blitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), bits, gl::Nearest);
+
 }
 
 }

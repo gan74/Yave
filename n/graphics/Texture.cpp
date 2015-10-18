@@ -79,7 +79,7 @@ void Texture::upload() const {
 	}
 
 	if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-		data->bindless = gl::getTextureSamplerHandle(data->handle);
+		data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
 		gl::makeTextureHandleResident(data->bindless);
 	}
 }

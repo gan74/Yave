@@ -25,6 +25,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+enum TextureSampler
+{
+	Nearest,
+	Bilinear,
+	Trilinear,
+
+	Default
+};
+
+
 enum BufferTarget
 {
 	ArrayBuffer,
@@ -82,12 +92,18 @@ static constexpr uint InvalidType = uint(-1);
 
 TextureFormat getTextureFormat(ImageFormat format);
 bool isBindlessHandle(UniformType t);
-bool isSampler(UniformType type);
+bool isSamplerType(UniformType type);
 
 enum Feature
 {
 	DepthTest,
-	DepthClamp
+	DepthClamp,
+	Debug,
+	SynchronousDebugging,
+	SeamlessCubeMaps,
+
+
+	MaxFeatures
 };
 
 
@@ -148,6 +164,17 @@ enum ShaderParam
 	ActiveBlocks
 };
 
+enum IntParam
+{
+	MaxFboAttachements,
+	MaxTextureUnits,
+	MaxVertexAttrib,
+	MaxVaryingVectors,
+	MajorVersion,
+	MinorVersion
+};
+
+
 struct TextureFormat
 {
 	private:
@@ -163,8 +190,10 @@ struct TextureFormat
 		const uint type;
 };
 
+bool initialize();
+bool checkError();
 
-bool isSampler(UniformType type);
+bool isSamplerType(UniformType type);
 bool isHWSupported(ImageFormat format);
 void useProgram(Handle prog);
 bool linkProgram(Handle prog);
@@ -176,12 +205,13 @@ int getProgramInt(Handle prog, ShaderParam param);
 void setDepthMode(DepthMode mode);
 void setCullFace(CullMode mode);
 void setBlendMode(BlendMode mode);
-void setEnabled(Feature feat, bool e);
+void setEnabled(Feature feat, bool e = true);
 void setDepthMask(bool mask);
 void setColorMask(bool r, bool g, bool b, bool a);
 
 Handle createProgram();
 Handle createShader(ShaderType shaderType);
+Handle createSampler(TextureSampler sampler, bool mipmap);
 Handle createTexture();
 Handle createBuffer();
 Handle createVertexArray();
@@ -208,6 +238,10 @@ uint getUniformBlockIndex(Handle shader, const char *name);
 
 void attachShader(Handle porg, Handle shader);
 
+void setViewport(math::Vec2i a, math::Vec2i b);
+int getInt(IntParam i);
+bool isExtensionSupported(core::String extName);
+
 
 
 //    vvvvvvvvvvvv   Unfinished    vvvvvvvvvvvv
@@ -230,7 +264,6 @@ void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int 
 void shaderSource(Handle shader, uint count, const char * const *src, const int *len);
 void getShaderiv(Handle shader, ShaderParam param, int *i);
 void uniformBlockBinding(Handle prog, uint index, uint binding);
-void viewport(int srcX0, int srcY0, int srcX1, int srcY1);
 void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type p, void *indices, uint primCount, uint baseVertex);
 void programUniform1iv(Handle h, UniformAddr loc, uint count, const int *a);
 void programUniform1uiv(Handle h, UniformAddr loc, uint count, const uint *a);
@@ -246,8 +279,9 @@ void programUniformMatrix4fv(Handle h, UniformAddr loc, uint count, bool tr, con
 void programUniformHandleui64(Handle prog, UniformAddr loc, uint64 handle);
 void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data);
 void generateMipmap(TextureType type);
-uint64 getTextureSamplerHandle(Handle tex);
+uint64 getTextureSamplerHandle(Handle tex, TextureSampler smp, bool mipmap);
 void makeTextureHandleResident(uint64 handle);
+void flush();
 }
 
 

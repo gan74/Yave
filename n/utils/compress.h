@@ -14,45 +14,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-
-#ifndef N_SCRIPT_BYTECODE_H
-#define N_SCRIPT_BYTECODE_H
+#ifndef N_UTILS_COMPRESS
+#define N_UTILS_COMPRESS
 
 #include <n/types.h>
-#include <n/defines.h>
-#include "Primitive.h"
-#include <n/defines.h>
-#ifndef N_NO_SCRIPT
 
 namespace n {
-namespace script {
 
-struct Bytecode
-{
-	enum Type
-	{
-		Nop,
-		End,
-		SwMode,
 
-		Max
-	};
-
-	Bytecode(Type t) : op(t) {
-	}
-
-	const uint16 op;
-	uint16 rad;
-	union
-	{
-		Primitive data;
-		uint16 ad[2];
-	};
-};
+void *compress(const void *data, uint size, uint *compressedSize);
+void *uncompress(const void *data, uint *uncompressedSize);
 
 }
-}
 
-#endif
+#endif // N_UTILS_COMPRESS
 
-#endif // N_SCRIPT_BYTECODE_H

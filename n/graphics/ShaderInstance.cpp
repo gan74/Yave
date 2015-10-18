@@ -114,7 +114,7 @@ void ShaderInstance::getUniforms() {
 			uniform = uniform.subString(0, uniform.size() - 3);
 		}
 		UniformInfo info({gl::getUniformLocation(handle, name), (uint)size, type});
-		if(gl::isSampler(type)) {
+		if(gl::isSamplerType(type)) {
 			uint slot = samplerCount++;
 			setValue(info, int(slot));
 			info.addr = slot;

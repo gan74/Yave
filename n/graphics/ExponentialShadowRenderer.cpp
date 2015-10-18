@@ -43,7 +43,7 @@ ShaderInstance *getExpShader(float exp) {
 }
 
 
-ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep, float exp) : ShadowRenderer(c->getSize().x(), false, ImageFormat::R32F), child(c), exponent(exp), blurs{createBlurShader(false, fHStep ? fHStep : core::log2ui(c->getSize().x())), createBlurShader(true, fHStep ? fHStep : core::log2ui(c->getSize().x()))} {
+ExponentialShadowRenderer::ExponentialShadowRenderer(ShadowRenderer *c, uint fHStep, float exp) : ShadowRenderer(c->getSize().x(), false, ImageFormat::R32F), child(c), exponent(exp), blurs{createBlurShader(false, fHStep ? fHStep : log2ui(c->getSize().x())), createBlurShader(true, fHStep ? fHStep : log2ui(c->getSize().x()))} {
 	mapIndex = 0;
 	shaderCode = "vec3 proj = projectShadow(pos);"
 				 "float eD = exp(-" + core::String(abs(exp)) + " * proj.z);"

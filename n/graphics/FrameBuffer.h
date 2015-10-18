@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class FrameBuffer : core::NonCopyable
+class FrameBuffer : NonCopyable
 {
 	void assertAttachements(uint index) {
 		if(index >= getMaxAttachment()) {

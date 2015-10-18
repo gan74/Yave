@@ -29,7 +29,7 @@ enum RecursionMode
 	NonRecursive
 };
 
-class Thread : core::NonCopyable
+class Thread : NonCopyable
 {
 	struct Internal;
 	public:

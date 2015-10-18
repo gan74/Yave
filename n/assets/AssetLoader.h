@@ -66,7 +66,7 @@ ArgumentTypes getArgumentTypes() {
 }
 
 template<typename T>
-class AssetLoader : core::NonCopyable
+class AssetLoader : NonCopyable
 {
 	private:
 		class LoaderBase

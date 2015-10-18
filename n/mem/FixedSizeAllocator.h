@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace mem {
 
-class FixedSizeAllocator : core::NonCopyable
+class FixedSizeAllocator : NonCopyable
 {
 	public:
 		FixedSizeAllocator(uint s) : size(toAllocableSize(s)) {

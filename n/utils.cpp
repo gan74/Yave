@@ -37,65 +37,9 @@ Nothing fatal(const char *msg, const char *file, int line) {
 	return Nothing();
 }
 
-namespace internal {
-	uint randHelper() {
-		uint bits = core::log2ui(RAND_MAX);
-		uint num = 0;
-		for(uint i = 0; i < sizeof(uint) * 8; i += bits) {
-			num = (num << bits) | rand();
-		}
-		return num;
-	}
+uint uniqueId() {
+	static concurrent::auint counter;
+	return ++counter;
 }
 
-uint random(uint max, uint min) {
-	static bool seed = false;
-	if(!seed) {
-		#ifdef N_DEBUG
-		srand(0);
-		#else
-		time_t now = time(0);
-		srand(hash(&now, sizeof(now)));
-		#endif
-		seed = true;
-	}
-	if(max < min) {
-		std::swap(min, max);
-	}
-	return (internal::randHelper() % (max - min)) + min;
 }
-
-float random() {
-	return (float)(internal::randHelper() & 0x7FFFFF) * 1.0f / (0x7FFFFF + 1.0f);
-}
-
-namespace core {
-	uint uniqueId() {
-		static concurrent::auint counter;
-		return ++counter;
-	}
-
-	uint64 hash(const core::String &str) {
-		return str.getHash();
-	}
-
-	uint64 hash(const void *key, uint64 len, uint64 seed) { // FVN-1A from : http://isthe.com/chongo/tech/comp/fnv/
-		constexpr uint64 prime = 1099511628211;
-		uint64 h = seed;
-		for(const byte *i = static_cast<const byte *>(key); i != static_cast<const byte *>(key) + len; i++) {
-			h ^= uint64(*i);
-			h *= prime;
-		}
-		return h;
-	}
-
-	void *safeRealloc(void *c, uint size)  {
-		void *cc = realloc(c, size);
-		if(cc) {
-			return cc;
-		}
-		free(c);
-		return 0;
-	}
-} //core
-} //n

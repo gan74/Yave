@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class FrameBufferPool : core::NonCopyable
+class FrameBufferPool : NonCopyable
 {
 	template<typename T, typename... Args>
 	static void filter(uint index, core::Array<FrameBuffer *> &arr, T t, Args... args) {
