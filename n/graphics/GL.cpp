@@ -19,8 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Map.h>
 #include <GL/glew.h>
 
-//#define N_OGL_DOES_NOTHING
-
 namespace n {
 namespace graphics {
 namespace gl {

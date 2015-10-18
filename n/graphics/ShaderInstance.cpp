@@ -105,7 +105,7 @@ void ShaderInstance::getUniforms() {
 	for(uint i = 0; i != uint(uniforms); i++) {
 		uint size = 0;
 		gl::UniformType type;
-		core::String name = gl::getActiveUniformInfo(handle, 0, &size, &type);
+		core::String name = gl::getActiveUniformInfo(handle, i, &size, &type);
 		core::String uniform = name;
 		if(uniform.contains(".")) {
 			continue;
