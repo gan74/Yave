@@ -112,8 +112,8 @@ bool isInRange(const T &v, const T &min, const T &max) {
 }
 
 template<typename T>
-T sign(T x) {
-	return (T(0) < x) - (x < T(0));
+int sign(T x) {
+	return int(T(0) < x) - int(x < T(0));
 }
 
 template<typename T>
