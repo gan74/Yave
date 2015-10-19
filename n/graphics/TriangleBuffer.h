@@ -47,6 +47,34 @@ class TriangleBuffer
 	};
 
 	public:
+		class Triangle
+		{
+			public:
+				const Vertex<T> &operator[](uint i) const {
+					return getVertex(i);
+				}
+
+				const Vertex<T> &getVertex(uint i) const {
+					return buffer->vertices[buffer->trianglesData[index].vts[i]];
+				}
+
+				bool operator!=(const Triangle &t) const {
+					return index != t.index || buffer != t.buffer;
+				}
+
+				bool operator==(const Triangle &t) const {
+					return index == t.index && buffer == t.buffer;
+				}
+
+			private:
+				friend class TriangleBuffer;
+				Triangle(uint i, TriangleBuffer<T> *b) : index(i), buffer(b) {
+				}
+
+				uint index;
+				TriangleBuffer<T> *buffer;
+		};
+
 		class FreezedTriangleBuffer
 		{
 			public:
@@ -111,31 +139,7 @@ class TriangleBuffer
 					}
 					radius = sqrt(radius);
 				}
-		};
 
-		class Triangle
-		{
-			public:
-				const Vertex<T> &operator[](uint i) const {
-					return getVertex(i);
-				}
-
-				const Vertex<T> &getVertex(uint i) const {
-					return buffer->vertices[buffer->trianglesData[index][i]];
-				}
-
-			private:
-				friend class TriangleBuffer;
-				Triangle(uint i, TriangleBuffer<T> *b) : index(i), buffer(b) {
-				}
-
-				Vertex<T> &getVertexNC(uint i) {
-					buffer->modified = true;
-					return buffer->vertices[buffer->trianglesData[index][i]];
-				}
-
-				uint index;
-				TriangleBuffer<T> *buffer;
 		};
 
 		TriangleBuffer(const VertexBuffer<T> &vb = VertexBuffer<T>()) : vertices(vb) {
