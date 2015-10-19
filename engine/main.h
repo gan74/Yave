@@ -13,10 +13,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-
-#ifndef MAIN
-#define MAIN
-
 #include <windows.h>
 
 #include <n/core/Timer.h>
@@ -169,58 +165,4 @@ class Obj : public StaticMesh
 		float autoScale;
 };
 
-class DummyRenderable : public Movable, public Renderable
-{
-	public:
-		DummyRenderable() : Movable(), Renderable() {
-			radius = 1.0;
-			setPosition(Vec3(random(), random(), random()) * 800 - 400);
-		}
-
-		virtual void render(RenderQueue &, RenderFlag) override {
-		}
-};
-
-class RandObj : public Obj
-{
-	public:
-		RandObj(float x = 1000) : Obj("scube.obj") {
-			setPosition(Vec3(random(), random(), random()) * 1000 - x / 2);
-		}
-};
-
-template<int I>
-class Dummy
-{
-};
-
-template<int I>
-class DummyObj : public Dummy<I>, public DummyObj<I - 1>
-{
-
-	public:
-		static void insert(uint max, Scene *s) {
-			for(uint i = 0; i != max; i++) {
-				s->insert(new DummyObj<I>());
-			}
-			DummyObj<I - 1>::insert(max, s);
-		}
-};
-
-template<>
-class DummyObj<0> : public Movable, public Renderable
-{
-	public:
-		virtual void render(RenderQueue &, RenderFlag) override {
-		}
-
-		static void insert(uint max, Scene *s) {
-			for(uint i = 0; i != max; i++) {
-				s->insert(new DummyObj<0>());
-			}
-		}
-
-};
-
-#endif // MAIN
 
