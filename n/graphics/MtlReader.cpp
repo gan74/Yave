@@ -79,7 +79,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 
 			MaterialData *mat = 0;
 			for(const core::String &li : lines) {
-				core::String l = li.trim();
+				core::String l = li.trimmed();
 				if(l.beginsWith("newmtl ")) {
 					if(l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
 						if(mat) {

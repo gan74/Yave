@@ -71,7 +71,7 @@ class String
 		Array<String> split(const String &str, bool empties = false) const;
 		String toLower() const;
 		String toUpper() const;
-		String trim() const;
+		String trimmed() const;
 		bool isShared() const;
 		bool isUnique() const;
 		bool isSharedSubset() const;

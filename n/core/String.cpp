@@ -311,7 +311,7 @@ String String::toUpper() const {
 	return mapped([](char c) -> char { return toupper(c); });
 }
 
-String String::trim() const {
+String String::trimmed() const {
 	if(isEmpty()) {
 		return *this;
 	}
