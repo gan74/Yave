@@ -508,8 +508,8 @@ int getInt(IntParam i) {
 
 bool isExtensionSupported(core::String extName) {
 	static core::String exts;
-	if(!exts.isEmpty()) {
-		exts = glGetString(GL_EXTENSIONS);
+	if(exts.isNull()) {
+		exts = reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS));
 	}
 	return exts.contains(extName);
 }
