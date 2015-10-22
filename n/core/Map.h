@@ -99,6 +99,10 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 			return MapType::find(t, MapFindComp(), MapFindEq());
 		}
 
+		bool exists(const T &t) const {
+			return find(t) != end();
+		}
+
 		iterator begin() {
 			return iterator(MapType::begin());
 		}

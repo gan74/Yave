@@ -303,6 +303,10 @@ class RBTree
 			return setSize;
 		}
 
+		bool isEmpty() const {
+			return !setSize;
+		}
+
 		void swap(RBTree<T, Comp, Eq> &&o) {
 			Node *r = o.root;
 			Node *g = o.guard;
