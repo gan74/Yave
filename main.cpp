@@ -3,7 +3,6 @@
 #include "main.h"
 
 int main(int argc, char **argv) {
-
 	SDL_Window *win = createWindow();
 
 	if(argc > 1 && argv[1] == String("--no-debug")) {
@@ -43,24 +42,6 @@ int main(int argc, char **argv) {
 		obj->setPosition(Vec3(0, 0, -5));
 		scene.insert(obj);
 	}
-
-	/*for(uint i = 0; i != 1024; i++) {
-		auto obj = new Obj("./test meshes/ (" + String(i + 1) + ").obj");
-		obj->setAutoScale(5);
-		obj->setPosition(Vec3(random(), random(), random()) * 250 - 125);
-		scene.insert(tr = obj);
-	}*/
-
-	/*for(uint i = 0; i != 1; i++)
-	{
-		SpotLight *l = new SpotLight();
-		l->setPosition(Vec3(cos(i * pi * 0.3), sin(i * pi * 0.3), 2) * 25);
-		l->setForward(-l->getPosition());
-		l->setScale(100);
-		l->setIntensity(2.5);
-		//l->setCastShadows(&scene, 1024);
-		scene.insert(l);
-	}*/
 
 	{
 		BoxLight *l = new BoxLight(600);

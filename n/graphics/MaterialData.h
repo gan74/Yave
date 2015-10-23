@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/utils.h>
 #include "Texture.h"
+#include "UniformBuffer.h"
 #include "ShaderProgram.h"
 
 namespace n {
@@ -39,10 +40,10 @@ enum RenderFlag : uint32
 struct MaterialData
 {
 
+	static constexpr uint DefaultPriority = 1 << 22;
 
-	MaterialData() : color(1, 1, 1, 1), metallic(0), normalIntencity(0.5), fancy{0, true, true, true, None, Lesser, Back} {
+	MaterialData() : color(1, 1, 1, 1), metallic(0), normalIntencity(0.5), fancy{DefaultPriority, true, true, true, None, Lesser, Back} {
 	}
-
 
 	Color<> color;
 	float metallic;
@@ -54,23 +55,25 @@ struct MaterialData
 	Texture roughness;
 	float normalIntencity;
 
+	DynamicBufferBase uniforms;
+
 	struct Fancy
 	{
-		uint16 renderPriority : 7; // uint8
-		uint16 depthTested    : 1; // bool
-		uint16 depthWrite     : 1; // bool
-		uint16 depthSortable  : 1; // bool
-		uint16 blend          : 2; // BlendMode
-		uint16 depth          : 2; // DepthMode
-		uint16 cull           : 2; // CullMode
+		uint32 renderPriority : 23; // uint23
+		uint32 depthTested    : 1; // bool
+		uint32 depthWrite     : 1; // bool
+		uint32 depthSortable  : 1; // bool
+		uint32 blend          : 2; // BlendMode
+		uint32 depth          : 2; // DepthMode
+		uint32 cull           : 2; // CullMode
 	} fancy;
 
-	uint16 fancy16() const {
+	uint16 fancy32() const {
 		const void *wf = &fancy;
-		return *reinterpret_cast<const uint16 *>(wf);
+		return *reinterpret_cast<const uint32 *>(wf);
 	}
 
-	static_assert(sizeof(MaterialData::fancy) == 2, "MaterialData::fancy should be 16 bit.");
+	static_assert(sizeof(MaterialData::fancy) == 4, "MaterialData::fancy should be 32 bit.");
 };
 
 }

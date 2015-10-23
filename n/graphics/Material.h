@@ -35,7 +35,7 @@ class Material : public assets::Asset<MaterialData>
 		}
 
 		bool operator<(const Material &m) const {
-			return getData().fancy16() < m.getData().fancy16();
+			return getData().fancy32() < m.getData().fancy32();
 		}
 
 		const MaterialData &getData() const;

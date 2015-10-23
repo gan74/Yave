@@ -81,6 +81,9 @@ class DynamicBufferBase
 			data->update(force);
 		}
 
+		DynamicBufferBase() : data(0) {
+		}
+
 	protected:
 		friend class ShaderInstance;
 		core::SmartPtr<Data> data;

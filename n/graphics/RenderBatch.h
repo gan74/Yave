@@ -70,6 +70,10 @@ class RenderBatch
 			return getMaterial().getData().fancy.depthSortable;
 		}
 
+		uint getRenderPriority() const {
+			return getMaterial().getData().fancy.renderPriority;
+		}
+
 	private:
 		bool instanciable;
 		uint flags;
