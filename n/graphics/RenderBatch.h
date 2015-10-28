@@ -27,7 +27,7 @@ namespace graphics {
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<> &m, SubMeshInstance *i, const VertexAttribs &attr = VertexAttribs(), uint renderFlags = RenderFlag::None) : instanciable(true), flags(renderFlags), inst(i), matrix(m), attribs(attr) {
+		RenderBatch(const math::Matrix4<> &m, SubMeshInstance *i, const VertexAttribs &attr = VertexAttribs(), uint renderFlags = RenderFlag::None, bool instaciate = true) : instanciable(instaciate), flags(renderFlags), inst(i), matrix(m), attribs(attr) {
 		}
 
 		void operator()(uint renderFlags = RenderFlag::None) const {
@@ -40,7 +40,7 @@ class RenderBatch
 		}
 
 		bool isInstanciable() const {
-			return true;
+			return instanciable;
 		}
 
 		bool canInstanciate(const RenderBatch &o) const {
