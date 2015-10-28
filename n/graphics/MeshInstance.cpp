@@ -32,12 +32,12 @@ SubMeshInstance::SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>:
 SubMeshInstance::SubMeshInstance(const VertexArraySubObject<> &b, const Material &m) : material(m), vao(b) {
 }
 
-void SubMeshInstance::draw(const VertexAttribs &attribs, uint renderFlags, uint instances) const {
+void SubMeshInstance::draw(const VertexAttribs &attribs, uint renderFlags, uint instances, uint base) const {
 	if(vao.isNull() && buffer) {
 		vao = VertexArraySubObject<>(new VertexArrayObject<>(buffer));
 		buffer = 0;
 	}
-	vao.draw(material, attribs, renderFlags, instances);
+	vao.draw(material, attribs, renderFlags, instances, base);
 }
 
 const Material &SubMeshInstance::getMaterial() const {

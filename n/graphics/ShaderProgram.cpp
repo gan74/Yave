@@ -24,8 +24,6 @@ namespace graphics {
 Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::StandardVertexShader type) {
 	static Shader<VertexShader> **def = 0;
 	if(!def) {
-			core::String matrix = "uniform mat4 n_ModelMatrix[1];";
-			//core::String matrix = "layout(std140, row_major) uniform n_ModelMatrixBuffer { mat4 n_ModelMatrix[1024]; };";
 			def = new Shader<VertexShader>*[2];
 			def[ShaderProgram::ProjectionShader] = new Shader<VertexShader>(
 						"layout(location = 0) in vec3 n_VertexPosition;"
@@ -34,7 +32,7 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 						"layout(location = 3) in vec2 n_VertexCoord;"
 						"uniform mat4 n_ViewProjectionMatrix;"
 
-						+ matrix +
+						"N_DECLARE_MODEL_MATRIX"
 
 						"uniform vec3 n_Camera;"
 
@@ -47,7 +45,7 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 						"out vec2 n_TexCoord;"
 
 						"void main() {"
-							"mat4 modelMat = n_ModelMatrix[gl_InstanceID];"
+							"mat4 modelMat = n_ModelMatrix;"
 							"vec4 model = modelMat * vec4(n_VertexPosition, 1.0);"
 							"gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * model;"
 							//"gl_Position *= gl_Position.w;"//-----------------------------------------------------------------

@@ -44,7 +44,7 @@ class SubMeshInstance
 		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m);
 		SubMeshInstance(const VertexArraySubObject<> &b, const Material &m);
 
-		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const;
+		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1, uint base = 0) const;
 		const Material &getMaterial() const;
 		float getRadius() const;
 		const VertexArraySubObject<> &getVertexArrayObject() const;

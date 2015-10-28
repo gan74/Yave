@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Material.h"
 #include "ShaderInstance.h"
 
+#include <iostream>
+
 namespace n {
 namespace graphics {
 
@@ -48,14 +50,15 @@ class VertexArrayObject : NonCopyable
 		}
 
 		void draw(const Material &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
-			draw(mat, attributes, renderFlags, instances, 0, size, 0);
+			draw(mat, attributes, renderFlags, instances, 0, size, 0, 0);
 		}
 
-		void draw(const Material &mat, const VertexAttribs &attributes, uint renderFlags, uint instances, uint start, uint tris, uint vertexBase) const {
+		void draw(const Material &mat, const VertexAttribs &attributes, uint renderFlags, uint instances, uint start, uint tris, uint vertexBase, uint instanceBase) const {
 			mat.bind(renderFlags);
 			bind();
 			bindAttribs(attributes);
 			ShaderInstance::validateState();
+			ShaderInstance::getCurrent()->setValue(SVBaseInstance, instanceBase);
 			gl::drawElementsInstancedBaseVertex(gl::Triangles, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
 		}
 

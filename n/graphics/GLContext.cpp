@@ -91,6 +91,7 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 	hwInts[MaxTextures] = gl::getInt(gl::MaxTextureUnits);
 	hwInts[MaxVertexAttribs] = gl::getInt(gl::MaxVertexAttrib);
 	hwInts[MaxVaryings] = gl::getInt(gl::MaxVaryingVectors);
+	hwInts[MaxUBOBytes] = gl::getInt(gl::MaxUBOSize);
 	hwInts[BindlessTextureSupport] = gl::isExtensionSupported("GL_ARB_bindless_texture");
 
 	if(hwInts[MaxVertexAttribs] <= 4) {
@@ -146,12 +147,13 @@ void GLContext::fatalIfError() {
 }
 
 void GLContext::setModelMatrix(const math::Matrix4<> &m) {
-	model = m;
-	#ifdef N_USE_MATRIX_BUFFER
-	matrixBuffer->set(model, 0);
-	matrixBuffer->bind(0);
-	#else
-	#endif
+	static UniformBuffer<math::Matrix4<>> buffer(1);
+	buffer[0] = m;
+	models = buffer;
+}
+
+void GLContext::setMatrixBuffer(const UniformBuffer<math::Matrix4<> > &buffer) {
+	models = buffer;
 }
 
 void GLContext::setViewMatrix(const math::Matrix4<> &m) {
@@ -176,9 +178,6 @@ const math::Matrix4<> &GLContext::getViewMatrix() const {
 	return view;
 }
 
-const math::Matrix4<> &GLContext::getModelMatrix() const {
-	return model;
-}
 
 const VertexArrayObject<float> &GLContext::getScreen() const {
 	if(!screen) {

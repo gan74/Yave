@@ -35,9 +35,9 @@ class VertexArraySubObject
 		VertexArraySubObject(const core::SmartPtr<VertexArrayObject<T>> &obj, uint beg, uint num, uint vertOffset, T rad) : object(obj), start(beg), size(num), base(vertOffset), radius(rad) {
 		}
 
-		void draw(const Material &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const {
+		void draw(const Material &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1, uint instanceBase = 0) const {
 			if(object) {
-				object->draw(mat, attributes, renderFlags, instances, start, size, base);
+				object->draw(mat, attributes, renderFlags, instances, start, size, base, instanceBase);
 			}
 		}
 

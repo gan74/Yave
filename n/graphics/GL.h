@@ -170,6 +170,7 @@ enum IntParam
 	MaxTextureUnits,
 	MaxVertexAttrib,
 	MaxVaryingVectors,
+	MaxUBOSize,
 	MajorVersion,
 	MinorVersion
 };

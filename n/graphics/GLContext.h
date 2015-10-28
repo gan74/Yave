@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Functor.h>
 #include <n/math/Matrix.h>
 #include <n/assets/Asset.h>
-#include "GL.h"
+#include "UniformBuffer.h"
 
 namespace n {
 namespace graphics {
@@ -32,6 +32,10 @@ class Material;
 struct MaterialData;
 struct FrameBufferPool;
 class ShaderInstanceFactory;
+
+template<typename T>
+class VertexArrayObject;
+
 
 template<typename T>
 class VertexArrayObject;
@@ -52,7 +56,8 @@ class GLContext
 			MaxVertexAttribs = 2,
 			MaxVaryings = 3,
 			BindlessTextureSupport = 4,
-			Max = 5
+			MaxUBOBytes = 5,
+			Max
 		};
 
 		static GLContext *getContext();
@@ -66,10 +71,10 @@ class GLContext
 		void setProjectionMatrix(const math::Matrix4<> &m);
 		void setViewMatrix(const math::Matrix4<> &m);
 		void setModelMatrix(const math::Matrix4<> &m);
+		void setMatrixBuffer(const UniformBuffer<math::Matrix4<>> &buffer);
 
 		const math::Matrix4<> &getProjectionMatrix() const;
 		const math::Matrix4<> &getViewMatrix() const;
-		const math::Matrix4<> &getModelMatrix() const;
 
 		bool processTasks();
 		void finishTasks();
@@ -117,7 +122,7 @@ class GLContext
 
 		math::Matrix4<> projection;
 		math::Matrix4<> view;
-		math::Matrix4<> model;
+		DynamicBufferBase models;
 
 		core::SmartPtr<internal::ShaderProgramData> program;
 		const FrameBuffer *frameBuffer;

@@ -22,32 +22,37 @@ int main(int argc, char **argv) {
 	scene.insert(&cam);
 
 
-	for(uint i = 0; i != 15; i++) {
-		auto obj = new Obj("scube.obj");
-		obj->setAutoScale(5);
-		obj->setPosition(Vec3(0, 0, 5) * i);
-		scene.insert(tr = obj);
+	for(uint x = 0; x != 15; x++) {
+		for(uint y = 0; y != 15; y++) {
+			for(uint z = 0; z != 15; z++) {
+				auto obj = new Obj("scube.obj");
+				obj->setAutoScale(5);
+				obj->setPosition(Vec3(x, y, z) * 10);
+				scene.insert(tr = obj);
+			}
+		}
 	}
 
-	{
+	/*{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
 		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
 		obj->setAutoScale(800);
 		scene.insert(obj);
-	}
+	}*/
 
 	{
 		auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
 		obj->setPosition(Vec3(0, 0, -5));
-		scene.insert(obj);
+		//scene.insert(obj);
 	}
 
 	{
-		BoxLight *l = new BoxLight(600);
+		PointLight *l = new PointLight(6000);
+
 		l->setForward(Vec3(0, 0, -1));
 		l->setPosition(Vec3(0, 0, 10));
-		l->setIntensity(5);
+		l->setIntensity(5000);
 		//l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
 		scene.insert(l);
 	}
@@ -142,7 +147,7 @@ int main(int argc, char **argv) {
 		}
 		std::cout<<"\rcpu = "<<(String(frameTime) + "0000").subString(0, 4)<<" ms (avg = "<<(String(totalCpu / (totalFrames - 10)) + "0000").subString(0, 4)<<" ms)";
 
-		GLContext::getContext()->fatalIfError();
+		//GLContext::getContext()->fatalIfError();
 	}
 	return 0;
 }

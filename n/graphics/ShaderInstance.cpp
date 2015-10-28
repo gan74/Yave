@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ShaderInstance.h"
 #include "GLContext.h"
+#include <iostream>
 
 namespace n {
 namespace graphics {
@@ -32,7 +33,14 @@ const char *ShaderValueName[ShaderValue::SVMax] = {
 	"n_0",
 	"n_1",
 	"n_2",
-	"n_3"
+	"n_3",
+	"n_Uniforms",
+	"n_ModelMatrixBuffer",
+	"n_BaseInstance",
+	"n_ProjectionMatrix",
+	"n_ViewMatrix",
+	"n_ViewportSize",
+	"n_ViewProjectionMatrix"
 };
 
 
@@ -100,7 +108,7 @@ void ShaderInstance::compile() {
 void ShaderInstance::getUniforms() {
 	int uniforms = gl::getProgramInt(handle, gl::ActiveUniforms);
 	for(uint i = 0; i != SVMax; i++) {
-		standards[i] = UniformInfo{UniformAddr(gl::InvalidIndex), 0, gl::UniformType()};
+		standards[i] = UniformInfo{gl::InvalidIndex, 0, gl::InvalidType};
 	}
 	for(uint i = 0; i != uint(uniforms); i++) {
 		uint size = 0;
@@ -121,7 +129,7 @@ void ShaderInstance::getUniforms() {
 		}
 		uniformsInfo[uniform] = info;
 		int std = computeStandardIndex(uniform);
-		if(std != UniformAddr(gl::InvalidIndex)) {
+		if(std != gl::InvalidIndex) {
 			standards[std] = info;
 		}
 	}
@@ -138,10 +146,14 @@ void ShaderInstance::getUniforms() {
 	bufferBindings = new core::SmartPtr<DynamicBufferBase::Data>[uniforms];
 	for(uint i = 0; i != uint(uniforms); i++) {
 		core::String name = gl::getActiveUniformBlockName(handle, i);
-		uint index = gl::getUniformBlockIndex(handle, name);
+		int index = gl::getUniformBlockIndex(handle, name);
 		gl::uniformBlockBinding(handle, index, buffers.size());
 		bufferBindings[i] = 0;
 		buffers.insert(name, index);
+		int std = computeStandardIndex(name);
+		if(std != gl::InvalidIndex) {
+			standards[std] = UniformInfo({index, 0, 0});
+		}
 	}
 }
 
@@ -151,16 +163,16 @@ ShaderInstance::UniformAddr ShaderInstance::computeStandardIndex(const core::Str
 			return i;
 		}
 	}
-	return UniformAddr(gl::InvalidIndex);
+	return gl::InvalidIndex;
 }
 
 void ShaderInstance::bindStandards() const {
-	setValue("n_ModelMatrix", GLContext::getContext()->getModelMatrix());
+	setBuffer(SVModelMatrixBuffer, GLContext::getContext()->models);
 
-	setValue("n_ProjectionMatrix", GLContext::getContext()->getProjectionMatrix());
-	setValue("n_ViewMatrix", GLContext::getContext()->getViewMatrix());
-	setValue("n_ViewportSize", math::Vec2(GLContext::getContext()->getViewport()));
-	setValue("n_ViewProjectionMatrix", GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
+	setValue(SVProjMatrix, GLContext::getContext()->getProjectionMatrix());
+	setValue(SVViewMatrix, GLContext::getContext()->getViewMatrix());
+	setValue(SVViewportSize, math::Vec2(GLContext::getContext()->getViewport()));
+	setValue(SVViewProjMatrix, GLContext::getContext()->getProjectionMatrix() * GLContext::getContext()->getViewMatrix());
 }
 
 void ShaderInstance::bindTextures() const {
@@ -232,6 +244,19 @@ void ShaderInstance::setValue(UniformInfo info, const Texture &t, TextureSampler
 			texBindings[slot] = t;
 			texBindings[slot] = sampler;
 		}
+	}
+}
+
+void ShaderInstance::setBuffer(const core::String &name, const DynamicBufferBase &buffer) const {
+	int slot = buffers.get(name, gl::InvalidIndex);
+	if(slot != gl::InvalidIndex) {
+		bufferBindings[slot] = buffer.data;
+	}
+}
+
+void ShaderInstance::setBuffer(ShaderValue v, const DynamicBufferBase &buffer) const {
+	if(standards[v].addr != gl::InvalidIndex) {
+		bufferBindings[standards[v].addr] = buffer.data;
 	}
 }
 

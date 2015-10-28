@@ -49,6 +49,14 @@ enum ShaderValue
 	SVTexture1,
 	SVTexture2,
 	SVTexture3,
+	SVUniformBuffer,
+	SVModelMatrixBuffer,
+	SVBaseInstance,
+	SVProjMatrix,
+	SVViewMatrix,
+	SVViewportSize,
+	SVViewProjMatrix,
+
 	SVMax
 };
 

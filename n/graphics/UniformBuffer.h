@@ -18,53 +18,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_UNIFORMBUFFER
 
 #include "GL.h"
-#include "GLContext.h"
+#include <n/core/SmartPtr.h>
 
 namespace n {
 namespace graphics {
-
 
 class DynamicBufferBase
 {
 	public:
 		struct Data : NonCopyable
 		{
-			Data(uint si, BufferTarget tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
-			}
+			Data(uint si, BufferTarget tpe);
+			~Data();
 
-			~Data() {
-				free(buffer);
-				if(handle) {
-					gl::Handle h = handle;
-					GLContext::getContext()->addGLTask([=]() {
-						gl::deleteBuffer(h);
-					});
-				}
-			}
-
-			void update(bool forceBind = false) const {
-				if(modified) {
-					if(!handle) {
-						handle = gl::createBuffer();
-						gl::bindBuffer(type, handle);
-						gl::bufferData(type, size, buffer, gl::Dynamic);
-					} else {
-						gl::bindBuffer(type, handle);
-						/*void *p = gl::glMapBuffer(type, GL_WRITE_ONLY);
-						if(!p) {
-							gl::glBufferSubData(type, 0, size, buffer);
-						} else {
-							memcpy(p, buffer, size);
-							gl::glUnmapBuffer(type);
-						}*/
-						gl::bufferSubData(type, 0, size, 0);
-						gl::bufferSubData(type, 0, size, buffer);
-					}
-					modified = false;
-				} else if(forceBind) {
-					gl::bindBuffer(type, handle);
-				}
-			}
+			void update(bool forceBind = false) const;
 
 			const BufferTarget type;
 			uint size;
@@ -74,17 +41,14 @@ class DynamicBufferBase
 		};
 
 
-		DynamicBufferBase(uint si, BufferTarget tpe) : data(new Data(si, tpe)) {
-		}
+		DynamicBufferBase(uint si, BufferTarget tpe);
+		DynamicBufferBase();
 
-		void update(bool force = false) {
-			data->update(force);
-		}
-
-		DynamicBufferBase() : data(0) {
-		}
+		void update(bool force = false);
 
 	protected:
+		static uint maxBytes();
+
 		friend class ShaderInstance;
 		core::SmartPtr<Data> data;
 
@@ -193,11 +157,24 @@ class TypedDynamicBuffer : public DynamicBufferBase
 				T *it;
 		};
 
+		static uint getMaxSize() {
+			return maxBytes() / sizeof(T);
+		}
+
 		uint getSize() const {
 			return data->size / sizeof(T);
 		}
 
-		TypedDynamicBuffer(uint si) : DynamicBufferBase(si * sizeof(T), Type) {
+		TypedDynamicBuffer(uint si) : DynamicBufferBase(std::min(getMaxSize(), si) * sizeof(T), Type) {
+		}
+
+		T &operator[](uint i) {
+			data->modified = true;
+			return ((T *)data->buffer)[i];
+		}
+
+		const T &operator[](uint i) const {
+			return ((T *)data->buffer)[i];
 		}
 
 		iterator begin() {

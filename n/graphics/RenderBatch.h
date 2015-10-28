@@ -35,19 +35,12 @@ class RenderBatch
 			inst->draw(attribs, renderFlags | renderFlags);
 		}
 
-		bool isInstanciable() const {
-			return instanciable;
+		void operator()(uint renderFlags, uint instances, uint base) const {
+			inst->draw(attribs, renderFlags | renderFlags, instances, base);
 		}
 
-		bool operator<(const RenderBatch &o) const {
-			bool inf = getMaterial() < o.getMaterial();
-			if(inf) {
-				return false;
-			}
-			if(o.getMaterial() < getMaterial()) {
-				return false;
-			}
-			return getVertexArrayObject() < o.getVertexArrayObject();
+		bool isInstanciable() const {
+			return true;
 		}
 
 		bool canInstanciate(const RenderBatch &o) const {
