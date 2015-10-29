@@ -540,7 +540,10 @@ void bufferSubData(BufferTarget target, uint offset, uint size, const void *data
 }
 
 void bindVertexArray(Handle array) {
-	glBindVertexArray(array);
+	static Handle arr = 0;
+	if(arr != array) {
+		glBindVertexArray(arr = array);
+	}
 }
 
 void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr) {

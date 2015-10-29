@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderProgram.h"
 #include "FrameBufferPool.h"
 #include "Material.h"
+#include "VertexArrayFactory.h"
 #include "VertexArrayObject.h"
 #include "ShaderInstanceFactory.h"
 #include <n/concurrent/Thread.h>
@@ -64,7 +65,7 @@ void GLContext::finishTasks() {
 	}
 }
 
-GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool()), shFactory(new ShaderInstanceFactory()), viewport(1024, 768), screen(0) {
+GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool()), vaoFactory(0), shFactory(new ShaderInstanceFactory()), viewport(1024, 768), screen(0) {
 	if(concurrent::Thread::getCurrent()) {
 		fatal("n::graphics::Context not created on main thread.");
 	}
@@ -107,6 +108,8 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 	CHECK_TEX_FORMAT(Depth32);
 
 	#undef CHECK_TEX_FORMAT
+
+	vaoFactory = new VertexArrayFactory<>();
 
 	setDebugEnabled(true);
 
@@ -178,10 +181,9 @@ const math::Matrix4<> &GLContext::getViewMatrix() const {
 	return view;
 }
 
-
-const VertexArrayObject<float> &GLContext::getScreen() const {
+const VertexArrayObject<> &GLContext::getScreen() const {
 	if(!screen) {
-		screen = new VertexArrayObject<float>(TriangleBuffer<>::getScreen());
+		screen = new VertexArrayObject<>((*vaoFactory)(TriangleBuffer<>::getScreen()));
 	}
 	return *screen;
 }
@@ -190,6 +192,9 @@ ShaderProgram GLContext::getShaderProgram() const {
 	return ShaderProgram(program);
 }
 
+VertexArrayFactory<> &GLContext::getVertexArrayFactory() {
+	return *vaoFactory;
+}
 
 }
 }

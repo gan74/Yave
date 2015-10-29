@@ -16,9 +16,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "UniformBuffer.h"
 #include "GLContext.h"
+#include "VertexArrayFactory.h"
 
 namespace n {
 namespace graphics {
+
+namespace internal {
+uint maxUboBytes() {
+	return GLContext::getContext()->getHWInt(GLContext::MaxUBOBytes);
+}
+}
 
 DynamicBufferBase::Data::Data(uint si, BufferTarget tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
 }
@@ -35,19 +42,15 @@ DynamicBufferBase::Data::~Data() {
 
 void DynamicBufferBase::Data::update(bool forceBind) const {
 	if(modified) {
+		if(!forceBind) {
+			gl::bindVertexArray(VertexArrayBase::currentVao() = 0);
+		}
 		if(!handle) {
 			handle = gl::createBuffer();
 			gl::bindBuffer(type, handle);
 			gl::bufferData(type, size, buffer, gl::Dynamic);
 		} else {
 			gl::bindBuffer(type, handle);
-			/*void *p = gl::glMapBuffer(type, GL_WRITE_ONLY);
-			if(!p) {
-				gl::glBufferSubData(type, 0, size, buffer);
-			} else {
-				memcpy(p, buffer, size);
-				gl::glUnmapBuffer(type);
-			}*/
 			gl::bufferSubData(type, 0, size, 0);
 			gl::bufferSubData(type, 0, size, buffer);
 		}
@@ -56,12 +59,6 @@ void DynamicBufferBase::Data::update(bool forceBind) const {
 		gl::bindBuffer(type, handle);
 	}
 }
-
-
-uint DynamicBufferBase::maxBytes() {
-	return GLContext::getContext()->getHWInt(GLContext::MaxUBOBytes);
-}
-
 
 DynamicBufferBase::DynamicBufferBase(uint si, BufferTarget tpe) : data(new Data(si, tpe)) {
 }

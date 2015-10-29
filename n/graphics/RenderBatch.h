@@ -55,7 +55,7 @@ class RenderBatch
 			return inst->getMaterial();
 		}
 
-		const VertexArraySubObject<> &getVertexArrayObject() const {
+		const VertexArrayObject<> &getVertexArrayObject() const {
 			return inst->getVertexArrayObject();
 		}
 

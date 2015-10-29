@@ -22,16 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/AsCollection.h>
 #include <n/core/String.h>
 #include "GLContext.h"
+#include "VertexArrayFactory.h"
 
 namespace n {
 namespace graphics {
-
-namespace internal {
-	inline gl::Handle &getCurrentVao() {
-		static gl::Handle current = 0;
-		return current;
-	}
-}
 
 template<typename T, BufferTarget Binding>
 class StaticBuffer : NonCopyable
@@ -40,7 +34,7 @@ class StaticBuffer : NonCopyable
 
 	public:
 		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), handle(0) {
-			gl::bindVertexArray(internal::getCurrentVao() = 0);
+			gl::bindVertexArray(VertexArrayBase::currentVao() = 0);
 			handle = gl::createBuffer();
 			gl::bindBuffer(Binding, handle);
 			gl::bufferData(Binding, sizeof(T) * bufferSize, arr.begin(), gl::Static);

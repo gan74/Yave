@@ -23,6 +23,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+
+namespace internal {
+	uint maxUboBytes();
+}
+
 class DynamicBufferBase
 {
 	public:
@@ -47,8 +52,6 @@ class DynamicBufferBase
 		void update(bool force = false);
 
 	protected:
-		static uint maxBytes();
-
 		friend class ShaderInstance;
 		core::SmartPtr<Data> data;
 
@@ -157,15 +160,11 @@ class TypedDynamicBuffer : public DynamicBufferBase
 				T *it;
 		};
 
-		static uint getMaxSize() {
-			return maxBytes() / sizeof(T);
-		}
-
 		uint getSize() const {
 			return data->size / sizeof(T);
 		}
 
-		TypedDynamicBuffer(uint si) : DynamicBufferBase(std::min(getMaxSize(), si) * sizeof(T), Type) {
+		TypedDynamicBuffer(uint si) : DynamicBufferBase(si * sizeof(T), Type) {
 		}
 
 		T &operator[](uint i) {
@@ -195,14 +194,23 @@ class TypedDynamicBuffer : public DynamicBufferBase
 			return const_iterator(((T *)data->buffer) + getSize());
 		}
 
+
+		bool isModified() const {
+			return data->modified;
+		}
 };
 
 template<typename T>
 class UniformBuffer : public TypedDynamicBuffer<T, UniformArrayBuffer>
 {
 	public:
-		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformArrayBuffer>(s) {
+		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformArrayBuffer>(std::min(getMaxSize(), s)) {
 		}
+
+		static uint getMaxSize() {
+			return internal::maxUboBytes() / sizeof(T);
+		}
+
 };
 
 }

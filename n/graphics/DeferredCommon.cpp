@@ -15,6 +15,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "DeferredCommon.h"
+#include "GLContext.h"
+#include "VertexArrayFactory.h"
 
 namespace n {
 namespace graphics {
@@ -22,7 +24,7 @@ namespace graphics {
 const VertexArrayObject<> &getSphere() {
 	static VertexArrayObject<> *sphere = 0;
 	if(!sphere) {
-		sphere = new VertexArrayObject<>(TriangleBuffer<>::getSphere());
+		sphere = new VertexArrayObject<>(GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getSphere()));
 	}
 	return *sphere;
 }
@@ -30,7 +32,7 @@ const VertexArrayObject<> &getSphere() {
 const VertexArrayObject<> &getBox() {
 	static VertexArrayObject<> *box = 0;
 	if(!box) {
-		box = new VertexArrayObject<>(TriangleBuffer<>::getCube());
+		box = new VertexArrayObject<>(GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getCube()));
 	}
 	return *box;
 }

@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "MeshInstance.h"
+#include "VertexArrayFactory.h"
 #include <n/concurrent/Promise.h>
 
 namespace n {
@@ -29,15 +30,16 @@ SubMeshInstance::SubMeshInstance(const SubMeshInstance &s, const Material &m) : 
 SubMeshInstance::SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const Material &m) : material(m), buffer(b) {
 }
 
-SubMeshInstance::SubMeshInstance(const VertexArraySubObject<> &b, const Material &m) : material(m), vao(b) {
+SubMeshInstance::SubMeshInstance(const VertexArrayObject<> &b, const Material &m) : material(m), vao(b) {
 }
 
 void SubMeshInstance::draw(const VertexAttribs &attribs, uint renderFlags, uint instances, uint base) const {
 	if(vao.isNull() && buffer) {
-		vao = VertexArraySubObject<>(new VertexArrayObject<>(buffer));
+		vao = GLContext::getContext()->getVertexArrayFactory()(*buffer);
 		buffer = 0;
+	} else {
+		vao.draw(material, attribs, renderFlags, instances, base);
 	}
-	vao.draw(material, attribs, renderFlags, instances, base);
 }
 
 const Material &SubMeshInstance::getMaterial() const {
@@ -48,7 +50,7 @@ float SubMeshInstance::getRadius() const {
 	return buffer ? buffer->radius : vao.getRadius();
 }
 
-const VertexArraySubObject<> &SubMeshInstance::getVertexArrayObject() const {
+const VertexArrayObject<> &SubMeshInstance::getVertexArrayObject() const {
 	return vao;
 }
 
@@ -56,28 +58,9 @@ const VertexArraySubObject<> &SubMeshInstance::getVertexArrayObject() const {
 
 
 
-internal::MeshInstance::MeshInstance(const core::Array<SubMeshInstance *> &b, uint opt) : subs(b), radius(0) {
+internal::MeshInstance::MeshInstance(const core::Array<SubMeshInstance *> &b) : subs(b), radius(0) {
 	for(SubMeshInstance *sub : subs) {
 		radius = std::max(radius, sub->getRadius());
-	}
-	if(opt & MeshOptimisationOptions::MergeVAO) {
-		core::Array<uint> indexes;
-		core::Array<Vertex<>> vertices;
-		for(SubMeshInstance * p : subs) {
-			indexes += p->buffer->indexes;
-			vertices += p->buffer->vertices;
-		}
-		core::SmartPtr<VertexArrayObject<>> vao(new VertexArrayObject<>(TriangleBuffer<>::FreezedTriangleBuffer(indexes, vertices, radius)));
-		uint iCount = 0;
-		uint vCount = 0;
-
-		for(SubMeshInstance *p : subs) {
-			core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer = p->buffer;
-			uint num = buffer->indexes.size() / 3;
-			p->vao = VertexArraySubObject<>(vao, iCount, num, vCount, buffer->radius);
-			iCount += num;
-			vCount += buffer->vertices.size();
-		}
 	}
 }
 

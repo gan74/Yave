@@ -33,13 +33,11 @@ struct MaterialData;
 struct FrameBufferPool;
 class ShaderInstanceFactory;
 
-template<typename T>
+template<typename T = float>
 class VertexArrayObject;
 
-
-template<typename T>
-class VertexArrayObject;
-
+template<typename T = float>
+class VertexArrayFactory;
 
 namespace internal {
 	struct Material;
@@ -107,7 +105,8 @@ class GLContext
 			return TextureSampler::Trilinear;
 		}
 
-		const VertexArrayObject<float> &getScreen() const;
+		const VertexArrayObject<> &getScreen() const;
+		VertexArrayFactory<> &getVertexArrayFactory();
 
 	private:
 		friend class ShaderProgram;
@@ -128,6 +127,7 @@ class GLContext
 		const FrameBuffer *frameBuffer;
 
 		FrameBufferPool *fbPool;
+		VertexArrayFactory<> *vaoFactory;
 		ShaderInstanceFactory *shFactory;
 
 		int hwInts[Max];
