@@ -51,6 +51,10 @@ class DynamicBufferBase
 
 		void update(bool force = false);
 
+		bool isModified() const {
+			return data->modified;
+		}
+
 	protected:
 		friend class ShaderInstance;
 		core::SmartPtr<Data> data;
@@ -63,102 +67,8 @@ class TypedDynamicBuffer : public DynamicBufferBase
 	static_assert(TypeInfo<T>::isPod, "TypedDynamicBufferBase<T> should only contain pod");
 
 	public:
-		class const_iterator
-		{
-			public:
-				const_iterator &operator++() { // ++prefix
-					it++;
-					return *this;
-				}
-
-				const_iterator &operator--() { // --prefix
-					it--;
-					return *this;
-				}
-
-				const_iterator &operator++(int) { // postfix++
-					it++;
-					return const_iterator(it - 1);
-				}
-
-				const_iterator &operator--(int) { // postfix--
-					it--;
-					return const_iterator(it + 1);
-				}
-
-				const T &operator*() const {
-					return *it;
-				}
-
-				bool operator==(const const_iterator &i) const {
-					return i.it == it;
-				}
-
-				bool operator!=(const const_iterator &i) const {
-					return i.it != it;
-				}
-
-			private:
-				friend class iterator;
-				friend class TypedDynamicBuffer;
-
-				const_iterator(const T *i) : it(i){
-				}
-
-				const T *it;
-		};
-
-
-		class iterator
-		{
-			public:
-				iterator &operator++() { // ++prefix
-					it++;
-					return *this;
-				}
-
-				iterator &operator--() { // --prefix
-					it--;
-					return *this;
-				}
-
-				iterator &operator++(int) { // postfix++
-					it++;
-					return iterator(it - 1);
-				}
-
-				iterator &operator--(int) { // postfix--
-					it--;
-					return iterator(it + 1);
-				}
-
-				T &operator*() {
-					return *it;
-				}
-
-				const T &operator*() const {
-					return *it;
-				}
-
-				operator const_iterator() const {
-					return const_iterator(it);
-				}
-
-				bool operator==(const const_iterator &i) const {
-					return i.it == it;
-				}
-
-				bool operator!=(const const_iterator &i) const {
-					return i.it != it;
-				}
-
-			private:
-				friend class TypedDynamicBuffer;
-				iterator(T *i) : it(i){
-				}
-
-				T *it;
-		};
+		typedef T * iterator;
+		typedef T const * const_iterator;
 
 		uint getSize() const {
 			return data->size / sizeof(T);
@@ -192,11 +102,6 @@ class TypedDynamicBuffer : public DynamicBufferBase
 
 		const_iterator end() const {
 			return const_iterator(((T *)data->buffer) + getSize());
-		}
-
-
-		bool isModified() const {
-			return data->modified;
 		}
 };
 

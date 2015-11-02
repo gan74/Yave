@@ -43,7 +43,7 @@ DynamicBufferBase::Data::~Data() {
 void DynamicBufferBase::Data::update(bool forceBind) const {
 	if(modified) {
 		if(!forceBind) {
-			gl::bindVertexArray(VertexArrayBase::currentVao() = 0);
+			gl::bindVertexArray(0);
 		}
 		if(!handle) {
 			handle = gl::createBuffer();

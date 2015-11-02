@@ -27,72 +27,86 @@ namespace n {
 namespace graphics {
 
 template<typename T>
-class VertexPool;
-
-template<typename T>
 class VertexArrayObject
 {
+	struct AllocData
+	{
+		VertexArrayFactory<T> *object;
+		uint count;
+		uint start;
+		uint size;
+		uint base;
+		T radius;
+	};
+
 	public:
-		VertexArrayObject() : object(0), start(0), size(0), base(0), radius(0) {
+
+		VertexArrayObject() : data{0, 0, 0, 0, 0, 0} {
+		}
+
+		~VertexArrayObject() {
 		}
 
 		void draw(const Material &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1, uint instanceBase = 0) const {
-			if(object) {
-				draw(mat, attributes, renderFlags, instances, start, size, base, instanceBase);
+			if(data.object) {
+				draw(mat, attributes, renderFlags, instances, data.start, data.size, data.base, instanceBase);
 			}
 		}
 
 		uint triangleCount() const {
-			return size;
+			return data.size;
 		}
 
 		bool isNull() const {
-			return !object;
+			return !data.object;
 		}
 
 		T getRadius() const {
-			return radius;
-		}
-
-		VertexArrayObject<T> &operator=(const VertexArrayObject<T> &o) {
-			object = o.object;
-			start = o.start;
-			size = o.size;
-			base = o.base;
-			radius = o.radius;
-			return *this;
-		}
-
-		bool operator==(const VertexArrayObject<T> &o) const {
-			return object == o.object && start == o.start && size == o.size && base == o.base;
+			return data.radius;
 		}
 
 		bool operator<(const VertexArrayObject<T> &o) const {
-			bool obj = object < o.object;
-			if(!obj && object == o.object) {
-				return start < o.start;
+			bool obj = data.object < o.data.object;
+			if(!obj && data.object == o.data.object) {
+				return data.start < o.data.start;
 			}
 			return obj;
 		}
 
 	private:
+		friend class VertexArrayFactory<T>;
+
+		VertexArrayObject(const AllocData &d) : data(d), alloc(new AllocObject(d)) {
+		}
+
+		void bind() const;
+
+		AllocData data;
+
+
 		void draw(const Material &mat, const VertexAttribs &, uint renderFlags, uint instances, uint start, uint tris, uint vertexBase, uint instanceBase) const {
 			mat.bind(renderFlags);
 			ShaderInstance::validateState();
 			ShaderInstance::getCurrent()->setValue(SVBaseInstance, instanceBase);
 			bind();
-			gl::drawElementsInstancedBaseVertex(gl::Triangles, 3 * tris, GLType<uint>::value, (void *)(sizeof(uint) * 3 * start), instances, vertexBase);
+			gl::drawElementsInstancedBaseVertex(gl::Triangles, tris, GLType<uint>::value, (void *)(sizeof(uint) * start), instances, vertexBase);
 		}
 
-		void bind() const;
 
-		friend class VertexArrayFactory<T>;
+		struct AllocObject
+		{
+			AllocObject(const AllocData &d) : data(d) {
+			}
 
-		VertexArrayFactory<T> *object;
-		uint start;
-		uint size;
-		uint base;
-		T radius;
+			~AllocObject() {
+				data.object->free(data);
+			}
+
+			AllocData data;
+		};
+
+		core::SmartPtr<AllocObject> alloc;
+
 };
 
 }

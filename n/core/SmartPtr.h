@@ -40,7 +40,7 @@ class SmartPtr : public Ptr<T>
 			unref();
 		}
 
-		void swap(SmartPtr<T, C> &p) {
+		void swap(SmartPtr<T, C> &&p) {
 			std::swap(ptr, p.ptr);
 			std::swap(count, p.count);
 		}
@@ -56,7 +56,7 @@ class SmartPtr : public Ptr<T>
 		}
 
 		SmartPtr<T, C> &operator=(SmartPtr<T, C> &&p) {
-			swap(p);
+			swap(std::move(p));
 			return *this;
 		}
 

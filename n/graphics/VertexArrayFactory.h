@@ -21,55 +21,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Vertex.h"
 #include "VertexArrayObject.h"
 #include <n/core/Timer.h>
-#include <iostream>
 
 namespace n {
 namespace graphics {
 
-
-class VertexArrayBase
-{
-	private:
-		template<typename T>
-		friend class VertexArrayFactory;
-		template<typename T, BufferTarget Binding>
-		friend class StaticBuffer;
-		friend class DynamicBufferBase;
-
-		static gl::Handle &currentVao() {
-			static gl::Handle current = 0;
-			return current;
-		}
-};
-
 template<typename T>
 class VertexArrayFactory : NonCopyable
 {
+	struct Empty
+	{
+		uint start;
+		uint end;
+
+		uint size() const {
+			return end - start;
+		}
+	};
+
+
 	public:
 		static constexpr uint DefaultSize = 1024 * 1024;
 
-		VertexArrayFactory() : vertices(DefaultSize), indexes(DefaultSize), handle(0), verticesUsed(0), indexesUsed(0) {
+		VertexArrayFactory() : vertices(DefaultSize), indexes(DefaultSize), handle(0) {
 			setup();
 		}
 
 		VertexArrayObject<T> operator()(const typename TriangleBuffer<T>::FreezedTriangleBuffer &buff) {
 			mutex.lock();
-			VertexArrayObject<T> vao;
+
+			mergeBlocks(vertexEmpties);
+			mergeBlocks(indexEmpties);
+
+			uint vert = alloc(vertexEmpties, buff.vertices.size());
+			memcpy(vertices.begin() + vert, buff.vertices.begin(), buff.vertices.size() * sizeof(Vertex<T>));
+
+			uint index = alloc(indexEmpties, buff.indexes.size());
+			memcpy(indexes.begin() + index, buff.indexes.begin(), buff.indexes.size() * sizeof(uint));
+
+			mutex.unlock();
+
+			typename VertexArrayObject<T>::AllocData vao;
+			vao.base = vert;
+			vao.start = index;
 			vao.object = this;
 			vao.radius = buff.radius;
-			vao.size = buff.indexes.size() / 3;
-			vao.start = indexesUsed / 3;
-			vao.base = verticesUsed;
+			vao.size = buff.indexes.size();
+			vao.count = buff.vertices.size();
 
-			for(const Vertex<T> &b : buff.vertices) {
-				vertices[verticesUsed++] = b;
-			}
-			for(uint b : buff.indexes) {
-				indexes[indexesUsed++] = b;
-			}
-			mutex.unlock();
-			return vao;
+			return VertexArrayObject<T>(vao);
 		}
+
+
 
 
 	private:
@@ -79,14 +81,61 @@ class VertexArrayFactory : NonCopyable
 		TypedDynamicBuffer<uint, IndexBuffer> indexes;
 		gl::Handle handle;
 
-		uint verticesUsed;
-		uint indexesUsed;
+		core::Array<Empty> vertexEmpties;
+		core::Array<Empty> indexEmpties;
 
 		concurrent::Mutex mutex;
 
+		uint alloc(core::Array<Empty> &empties, uint size) {
+			if(empties.isEmpty()) {
+				return fatal("Unable to allocated vertex buffer");
+			}
+			typename core::Array<Empty>::iterator best = empties.begin();
+			for(typename core::Array<Empty>::iterator it = empties.begin(); it != empties.end(); it++) {
+				if(it->size() >= size && it->size() > best->size()) {
+					best = it;
+				}
+			}
+			if(best->size() < size) {
+				return fatal("Unable to allocated vertex buffer");
+			}
+			uint e = best->start;
+			if(size == best->size()) {
+				empties.erase(best);
+			} else {
+				best->start += size;
+			}
+			return e;
+		}
+
+		void mergeBlocks(core::Array<Empty> &empties) {
+			if(empties.size() < 2) {
+				return;
+			}
+			empties.sort([](Empty a, Empty b) {
+				return a.start < b.start;
+			});
+			core::Array<Empty> merged;
+			for(typename core::Array<Empty>::iterator it = empties.begin(); it != empties.end();) {
+				typename core::Array<Empty>::iterator next = it + 1;
+				while(next != empties.end()) {
+					if(next->start != it->end) {
+						break;
+					}
+				}
+				for(typename core::Array<Empty>::iterator i = it; i != next; i++) {
+					merged.append(*i);
+				}
+				it = next;
+			}
+			empties = merged;
+		}
+
 		void setup() {
+			vertexEmpties.append(Empty{0, vertices.getSize()});
+			indexEmpties.append(Empty{0, indexes.getSize()});
 			handle = gl::createVertexArray();
-			gl::bindVertexArray(VertexArrayBase::currentVao() = handle);
+			gl::bindVertexArray(handle);
 			vertices.update(true);
 			indexes.update(true);
 			gl::vertexAttribPointer(0, 3, GLType<T>::value, false, sizeof(Vertex<T>), 0);
@@ -100,28 +149,31 @@ class VertexArrayFactory : NonCopyable
 		}
 
 		void bind() {
-			if(VertexArrayBase::currentVao() != handle) {
-				if(vertices.isModified()) {
-					mutex.lock();
-					core::Timer timer;
-					vertices.update();
-					indexes.update();
-					std::cout<<timer.elapsed()<<"s"<<std::endl;
-					mutex.unlock();
-				}
-				gl::bindVertexArray(VertexArrayBase::currentVao() = handle);
+			if(vertices.isModified()) {
+				mutex.lock();
+				core::Timer timer;
+				vertices.update();
+				indexes.update();
+				//std::cout<<"Vertex buffer update : "<<round(timer.elapsed() * 10000) * 0.1<<"ms"<<std::endl;
+				mutex.unlock();
 			}
+			gl::bindVertexArray(handle);
 		}
 
-
-
-
+		void free(const typename VertexArrayObject<T>::AllocData &vao) {
+			mutex.lock();
+			vertexEmpties.append(Empty{vao.base, vao.base + vao.count});
+			indexEmpties.append(Empty{vao.start, vao.start + vao.size});
+			mutex.unlock();
+			//std::cout<<"Vertex buffer freed"<<std::endl;
+		}
 };
 
 template<typename T>
 void VertexArrayObject<T>::bind() const {
-	object->bind();
+	data.object->bind();
 }
+
 
 
 

@@ -49,11 +49,10 @@ void RenderQueue::insert(const RenderBatch &b) {
 	batches.append(b);
 }
 
-void RenderQueue::prepare(math::Vec3 cpos, float max) {
+void RenderQueue::prepare(math::Vec3 , float) {
 	batches.sort([](const RenderBatch &a, const RenderBatch &b) {
-		return a.getVertexArrayObject() < b.getVertexArrayObject();
+		return a.getMaterial() < b.getMaterial();
 	});
-	//notSortable.sort();
 }
 
 template<typename I>

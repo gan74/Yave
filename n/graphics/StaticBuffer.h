@@ -34,7 +34,7 @@ class StaticBuffer : NonCopyable
 
 	public:
 		StaticBuffer(const core::Array<T> &arr) : bufferSize(arr.size()), handle(0) {
-			gl::bindVertexArray(VertexArrayBase::currentVao() = 0);
+			gl::bindVertexArray(0);
 			handle = gl::createBuffer();
 			gl::bindBuffer(Binding, handle);
 			gl::bufferData(Binding, sizeof(T) * bufferSize, arr.begin(), gl::Static);
