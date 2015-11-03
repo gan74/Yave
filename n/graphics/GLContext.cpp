@@ -24,7 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/concurrent/Thread.h>
 #include <n/core/Timer.h>
 
-#include <iostream>
 
 #define N_SYNCHRONOUS_GL_DEBUG
 

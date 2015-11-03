@@ -14,39 +14,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_LOCKINGPROXY_H
-#define N_CONCURENT_LOCKINGPROXY_H
+#ifndef N_UTILS_LOG
+#define N_UTILS_LOG
 
-#include "Mutex.h"
+#include <n/types.h>
 
 namespace n {
-namespace concurent {
 
-template<typename T>
-class LockingProxy
+enum LogType
 {
-	public:
-		LockingProxy(T *obj) : ptr(obj) {
-			if(ptr) {
-				ptr->lock();
-			}
-		}
-
-		~LockingProxy() {
-			if(ptr) {
-				ptr->unlock();
-			}
-		}
-
-		T *operator->() const {
-			return ptr;
-		}
-
-	private:
-		T *ptr;
+	InfoLog,
+	ErrorLog,
+	PerfLog
 };
 
-}
-}
+void logMsg(const core::String &msg, LogType type = InfoLog);
 
-#endif // N_CONCURENT_LOCKINGPROXY_H
+}
+#endif // N_UTILS_LOG
+

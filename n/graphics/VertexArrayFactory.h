@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Vertex.h"
 #include "VertexArrayObject.h"
 #include <n/core/Timer.h>
+#include <n/concurrent/LockGuard.h>
 
 namespace n {
 namespace graphics {
@@ -47,7 +48,7 @@ class VertexArrayFactory : NonCopyable
 		}
 
 		VertexArrayObject<T> operator()(const typename TriangleBuffer<T>::FreezedTriangleBuffer &buff) {
-			mutex.lock();
+			N_LOCK(mutex);
 
 			mergeBlocks(vertexEmpties);
 			mergeBlocks(indexEmpties);
@@ -57,8 +58,6 @@ class VertexArrayFactory : NonCopyable
 
 			uint index = alloc(indexEmpties, buff.indexes.size());
 			memcpy(indexes.begin() + index, buff.indexes.begin(), buff.indexes.size() * sizeof(uint));
-
-			mutex.unlock();
 
 			typename VertexArrayObject<T>::AllocData vao;
 			vao.base = vert;
@@ -70,9 +69,6 @@ class VertexArrayFactory : NonCopyable
 
 			return VertexArrayObject<T>(vao);
 		}
-
-
-
 
 	private:
 		friend class VertexArrayObject<T>;
@@ -154,7 +150,7 @@ class VertexArrayFactory : NonCopyable
 				core::Timer timer;
 				vertices.update();
 				indexes.update();
-				//std::cout<<"Vertex buffer update : "<<round(timer.elapsed() * 10000) * 0.1<<"ms"<<std::endl;
+				logMsg(core::String("Vertex buffer update : ") + round(timer.elapsed() * 10000) * 0.1 + "ms", PerfLog);
 				mutex.unlock();
 			}
 			gl::bindVertexArray(handle);
@@ -165,7 +161,6 @@ class VertexArrayFactory : NonCopyable
 			vertexEmpties.append(Empty{vao.base, vao.base + vao.count});
 			indexEmpties.append(Empty{vao.start, vao.start + vao.size});
 			mutex.unlock();
-			//std::cout<<"Vertex buffer freed"<<std::endl;
 		}
 };
 

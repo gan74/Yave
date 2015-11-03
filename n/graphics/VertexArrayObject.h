@@ -83,7 +83,6 @@ class VertexArrayObject
 
 		AllocData data;
 
-
 		void draw(const Material &mat, const VertexAttribs &, uint renderFlags, uint instances, uint start, uint tris, uint vertexBase, uint instanceBase) const {
 			mat.bind(renderFlags);
 			ShaderInstance::validateState();

@@ -14,26 +14,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#include "Test.h"
+#include "logs.h"
+#include <n/core/String.h>
+#include <n/concurrent/SpinLock.h>
+#include <n/concurrent/LockGuard.h>
+#include <iostream>
 
 namespace n {
-namespace test {
 
-#ifdef N_AUTO_TEST
-class AutoTestWarning
-{
-	private:
-		AutoTestWarning() {
-			log("----- Running automatic tests -----");
-		}
+void logMsg(const core::String &msg, LogType type) {
+	static concurrent::SpinLock lock;
+	const core::String logTypes[] = {"[info] ", "[error] ", "[perf] "};
+	N_LOCK(lock);
 
-		static AutoTestWarning warning;
-};
+	std::cout<<logTypes[type]<<msg<<std::endl;
+	lock.unlock();
+}
 
-AutoTestWarning AutoTestWarning::warning = AutoTestWarning();
-#endif
-
-
-
-} //test
-} //n
+}

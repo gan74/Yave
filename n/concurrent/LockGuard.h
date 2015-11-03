@@ -14,26 +14,46 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#include "Test.h"
+#ifndef N_CONCURENT_LOCKGUARD
+#define N_CONCURENT_LOCKGUARD
+
+#include <n/Types.h>
 
 namespace n {
-namespace test {
+namespace concurrent {
 
-#ifdef N_AUTO_TEST
-class AutoTestWarning
+template<typename T>
+class LockGuard : NonCopyable
 {
-	private:
-		AutoTestWarning() {
-			log("----- Running automatic tests -----");
+	public:
+		LockGuard(T &t) : lock(&t) {
+			t.lock();
 		}
 
-		static AutoTestWarning warning;
+		LockGuard(LockGuard<T> &&l) : lock(0) {
+			std::swap(lock, l.lock);
+		}
+
+		~LockGuard() {
+			if(lock) {
+				lock->unlock();
+			}
+		}
+
+	private:
+		T *lock;
 };
 
-AutoTestWarning AutoTestWarning::warning = AutoTestWarning();
-#endif
+template<typename T>
+LockGuard<T> lockGuard(T &t) {
+	return LockGuard<T>(t);
+}
+
+#define N_LOCK(l) auto _lockGuard = lockGuard(l)
+
+}
+}
 
 
+#endif // N_CONCURENT_LOCKGUARD
 
-} //test
-} //n

@@ -167,28 +167,14 @@ GLAPIENTRY void debugOut(GLenum, GLenum type, GLuint, GLuint sev, GLsizei len, c
 	if(sev == GL_DEBUG_SEVERITY_NOTIFICATION) {
 		return;
 	}
+	LogType logT = InfoLog;
 	if(type == GL_DEBUG_TYPE_PERFORMANCE) {
-		return;
+		logT = PerfLog;
 	}
-	core::String t;
-	switch(type) {
-		case GL_DEBUG_TYPE_PERFORMANCE:
-			t = "[perf]";
-		break;
-		case GL_DEBUG_TYPE_PORTABILITY:
-			t = "[port]";
-		break;
-		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-			t = "[depr]";
-		break;
-		case GL_DEBUG_TYPE_ERROR:
-			t = "[err]";
-		break;
-		default:
-		break;
+	if(type == GL_DEBUG_TYPE_ERROR) {
+		logT = ErrorLog;
 	}
-
-	std::cerr<<std::endl<<"[GL]"<<(sev == GL_DEBUG_SEVERITY_HIGH ? "[HIGH]" : "")<<t<<" "<<core::String(msg, len)<<std::endl;
+	logMsg((sev == GL_DEBUG_SEVERITY_HIGH ? "[GL][HIGH] " : "[GL] ") + core::String(msg, len), logT);
 }
 
 
@@ -202,14 +188,10 @@ bool initialize() {
 	if(!init) {
 		glewExperimental = true;
 		if(glewInit() != GLEW_OK) {
-			std::cerr<<"Unable to initialize glew."<<std::endl;
+			logMsg("Unable to initialize glew.", ErrorLog);
 			return false;
 		}
-		std::cout<<"Running on "<<glGetString(GL_VENDOR)<<" "<<glGetString(GL_RENDERER)<<" using GL "<<glGetString(GL_VERSION)<<" using GLSL "<<glGetString(GL_SHADING_LANGUAGE_VERSION);
-		if(!is64Bits()) {
-			std::cout<<" (32 bits)";
-		}
-		std::cout<<std::endl;
+		logMsg(core::String("Running on ") + glGetString(GL_VENDOR) + " " + glGetString(GL_RENDERER) + " using GL " + glGetString(GL_VERSION) + " using GLSL " + glGetString(GL_SHADING_LANGUAGE_VERSION) + "(" + sizeof(void *) + " bits)");
 		glDebugMessageCallback(&debugOut, 0);
 		glGetError();
 	}

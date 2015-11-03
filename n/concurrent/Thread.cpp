@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
+
 #include "Thread.h"
-#include "HazardPtr.h"
 #include "Mutex.h"
 #include <unistd.h>
 
@@ -86,10 +86,8 @@ void Thread::sleep(double sec) {
 
 void *Thread::createThread(void *arg) {
 	self = reinterpret_cast<Thread *>(arg);
-	{ HazardPtr<int>(0); } // init Hazard stuffs
 	self->run();
 	self->internal->join.unlock();
-	internal::closeThreadHazards();
 	if(self->willBeDeleted()) {
 		delete self;
 	}
