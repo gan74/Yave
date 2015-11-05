@@ -26,6 +26,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
+class NonCopyable
+{
+	public:
+		NonCopyable() {}
+		NonCopyable(const NonCopyable &) = delete;
+		NonCopyable &operator=(const NonCopyable &) = delete;
+};
+
 template<typename T>
 class Operators
 {

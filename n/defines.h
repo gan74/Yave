@@ -64,6 +64,10 @@ void unused(T) {}
 #endif
 #endif
 
+#ifndef __PRETTY_FUNCTION__
+#define __FUNC__ __PRETTY_FUNCTION__
+#endif
+
 /****************** OS DEFINES BELOW ******************/
 
 #ifdef __WIN32

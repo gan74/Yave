@@ -69,6 +69,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 				std::cerr<<file.getName()<<" not found"<<std::endl;
 				return 0;
 			}
+			N_LOG_PERF;
 			uint fs = file.size();
 			char *data = new char[fs + 1];
 			file.readBytes(data);

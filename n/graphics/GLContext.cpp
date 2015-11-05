@@ -49,6 +49,7 @@ void GLContext::addGLTask(const core::Functor<void()> &f) {
 }
 
 bool GLContext::processTasks() {
+	N_LOG_PERF;
 	core::Option<core::Functor<void()>> tsk = tasks.tryDequeue();
 	if(tsk) {
 		tsk.get()();
@@ -58,6 +59,7 @@ bool GLContext::processTasks() {
 }
 
 void GLContext::finishTasks() {
+	N_LOG_PERF;
 	core::List<core::Functor<void()>> tsk = tasks.getAndClear();
 	for(const core::Functor<void()> &f : tsk) {
 		f();

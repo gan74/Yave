@@ -49,7 +49,7 @@ LockGuard<T> lockGuard(T &t) {
 	return LockGuard<T>(t);
 }
 
-#define N_LOCK(l) auto _lockGuard = lockGuard(l)
+#define N_LOCK(l) auto _lockGuard = n::concurrent::lockGuard(l)
 
 }
 }

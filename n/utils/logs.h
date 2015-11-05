@@ -18,8 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_UTILS_LOG
 
 #include <n/types.h>
+#include <n/defines.h>
 
 namespace n {
+namespace io {
+class TextOutputStream;
+}
 
 enum LogType
 {
@@ -28,8 +32,30 @@ enum LogType
 	PerfLog
 };
 
-void logMsg(const core::String &msg, LogType type = InfoLog);
+class FunctionTimer : NonCopyable
+{
+	public:
+		FunctionTimer(FunctionTimer &&t);
+		~FunctionTimer();
 
+	private:
+		friend FunctionTimer logFuncPerf(const core::String &);
+		FunctionTimer(const core::String &nm);
+
+		bool logEnd;
+};
+
+void logMsg(const core::String &msg, LogType type = InfoLog);
+FunctionTimer logFuncPerf(const core::String &funName);
+void dumpAllThreadPerfData();
+void dumpAllThreadPerfData(io::TextOutputStream &stream);
 }
+
+#ifdef N_PERF_LOG_ENABLED
+#define N_LOG_PERF auto _perf = n::logFuncPerf( __PRETTY_FUNCTION__)
+#else
+#define N_LOG_PERF
+#endif
+
 #endif // N_UTILS_LOG
 

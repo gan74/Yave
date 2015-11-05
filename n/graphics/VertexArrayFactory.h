@@ -146,6 +146,7 @@ class VertexArrayFactory : NonCopyable
 
 		void bind() {
 			if(vertices.isModified()) {
+				N_LOG_PERF;
 				mutex.lock();
 				core::Timer timer;
 				vertices.update();
