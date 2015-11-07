@@ -3,7 +3,9 @@
 #include "main.h"
 
 int main(int argc, char **argv) {
-	io::File("./dump.json").remove();
+	io::File *traceFile = new io::File("./perfdump.json");
+	traceFile->open(io::IODevice::Write);
+	setTraceOutputStream(traceFile);
 
 	SDL_Window *win = createWindow();
 
@@ -16,24 +18,8 @@ int main(int argc, char **argv) {
 	cam.setRatio(4/3.0);
 	cam.setForward(-cam.getPosition());
 
-
-	Light *light = 0;
-	Obj *tr;
-
 	Scene scene;
 	scene.insert(&cam);
-
-
-	/*for(uint x = 0; x != 15; x++) {
-		for(uint y = 0; y != 15; y++) {
-			for(uint z = 0; z != 15; z++) {
-				auto obj = new Obj("scube.obj");
-				obj->setAutoScale(5);
-				obj->setPosition(Vec3(x, y, z) * 10);
-				scene.insert(tr = obj);
-			}
-		}
-	}*/
 
 	{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
@@ -41,13 +27,6 @@ int main(int argc, char **argv) {
 		obj->setAutoScale(800);
 		scene.insert(obj);
 	}
-
-	/*{
-		auto obj = new Obj("plane.obj");
-		obj->setAutoScale(800);
-		obj->setPosition(Vec3(0, 0, -5));
-		//scene.insert(obj);
-	}*/
 
 	{
 		BoxLight *l = new BoxLight(600);
@@ -90,7 +69,6 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->processTasks();
 		GLContext::getContext()->flush();
 	}
-	dumpAllThreadPerfData();
 	return 0;
 }
 

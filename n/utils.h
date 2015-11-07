@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/utils/math.h>
 #include <n/utils/random.h>
 #include <n/utils/logs.h>
+#include <n/utils/perf.h>
 #include <n/utils/SysInfo.h>
 
 namespace n {
