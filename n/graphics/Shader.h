@@ -128,7 +128,7 @@ class Shader : public ShaderBase
 {
 
 	public:
-		Shader(const core::String &src, uint vers = 420) : ShaderBase(Type) {
+		Shader(const core::String &src, uint vers = 430) : ShaderBase(Type) {
 			version = load(src, vers);
 		}
 
