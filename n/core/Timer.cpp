@@ -14,34 +14,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CORE_TIMER_H
-#define N_CORE_TIMER_H
-
-#include <chrono>
+#include "Timer.h"
+#include <n/defines.h>
 
 namespace n {
 namespace core {
 
-class Timer
-{
-	typedef std::chrono::duration<double, std::nano> Nano;
+Timer::Timer() : time(std::chrono::high_resolution_clock::now()) {
+}
 
-	public:
-		Timer();
+void Timer::start() {
+	time = std::chrono::high_resolution_clock::now();
+}
 
-		void start();
+double Timer::reset() {
+	double t = elapsed();
+	start();
+	return t;
+}
 
-		double reset();
+double Timer::elapsed() const {
+	return std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - time).count() / 1000000000;
+}
 
-		double elapsed() const;
-
-
-	private:
-		 std::chrono::time_point<std::chrono::high_resolution_clock> time;
-};
-
-} //core
-} //n
+}
+}
 
 
-#endif // N_CORE_TIMER_H
