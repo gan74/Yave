@@ -16,12 +16,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Thread.h"
 #include "Mutex.h"
+#include "Atomic.h"
 #include <unistd.h>
 
 namespace n {
 namespace concurrent {
 
 thread_local Thread *Thread::self = 0;
+thread_local uint Thread::currentId = 0;
+auint threadId(0);
 
 struct Thread::Internal
 {
@@ -29,7 +32,7 @@ struct Thread::Internal
 	Mutex join;
 };
 
-Thread::Thread() : internal(new Internal), toDelete(false) {
+Thread::Thread() : internal(new Internal), toDelete(false), id(++threadId) {
 }
 
 Thread::~Thread() {
@@ -38,6 +41,10 @@ Thread::~Thread() {
 
 Thread *Thread::getCurrent() {
 	return self;
+}
+
+uint Thread::getCurrentId() {
+	return currentId;
 }
 
 bool Thread::isRunning() const {
@@ -86,8 +93,10 @@ void Thread::sleep(double sec) {
 
 void *Thread::createThread(void *arg) {
 	self = reinterpret_cast<Thread *>(arg);
+	currentId = self->id;
 	self->run();
 	self->internal->join.unlock();
+	dumpThreadPerfData();
 	if(self->willBeDeleted()) {
 		delete self;
 	}

@@ -14,37 +14,49 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_IO_BUFFEREDINPUTSTREAM_H
-#define N_IO_BUFFEREDINPUTSTREAM_H
+#ifndef N_IO_SYNCHRONIZEDOUTPUTSTREAM
+#define N_IO_SYNCHRONIZEDOUTPUTSTREAM
 
-#include "InputStream.h"
-#include <n/utils.h>
+#include "OutputStream.h"
+#include <n/concurrent/Mutex.h>
+#include <n/concurrent/LockGuard.h>
 
 namespace n {
 namespace io {
 
-class BufferedInputStream : public InputStream
+class SynchronizedOutputStream : public OutputStream
 {
 	public:
-		BufferedInputStream(InputStream *st, uint si = 64 * 1024);
-		~BufferedInputStream();
+		SynchronizedOutputStream(OutputStream *s) : stream(s) {
+		}
 
-		bool atEnd() const override;
-		bool canRead() const override;
-		uint readBytes(void *b, uint l = -1) override;
+		~SynchronizedOutputStream() {
+			lock.lock();
+			lock.unlock();
+		}
 
-		uint getBufferUsedSize() const;
+		bool canWrite() const override {
+			N_LOCK(lock);
+			return stream->canWrite();
+		}
+
+		void flush() override {
+			N_LOCK(lock);
+			stream->flush();
+		}
+
+		uint writeBytes(const void *b, uint len) override {
+			N_LOCK(lock);
+			return stream->writeBytes(b, len);
+		}
 
 	private:
-		uint fillBuffer();
-
-		InputStream *stream;
-		uint bufferSize;
-		uint bufferUsed;
-		char *buffer;
+		mutable concurrent::Mutex lock;
+		OutputStream *stream;
 };
 
 }
 }
 
-#endif // N_IO_BUFFEREDINPUTSTREAM_H
+#endif // N_IO_SYNCHRONIZEDOUTPUTSTREAM
+

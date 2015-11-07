@@ -32,12 +32,14 @@ enum RecursionMode
 class Thread : NonCopyable
 {
 	struct Internal;
+
 	public:
 		Thread();
 
 		virtual ~Thread();
 
 		static Thread *getCurrent();
+		static uint getCurrentId();
 
 		bool isRunning() const;
 		bool start();
@@ -53,9 +55,11 @@ class Thread : NonCopyable
 		static void *createThread(void *arg);
 
 		static thread_local Thread *self;
+		static thread_local uint currentId;
 
 		Internal *internal;
 		bool toDelete;
+		uint id;
 };
 
 }
