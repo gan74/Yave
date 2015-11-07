@@ -26,8 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/io/File.h>
 #include <n/concurrent/LockGuard.h>
 
-#include <iostream>
-
 namespace n {
 
 io::SynchronizedOutputStream *traceOut = 0;
