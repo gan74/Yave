@@ -165,13 +165,6 @@ class VertexArrayFactory : NonCopyable
 		}
 };
 
-template<typename T>
-void VertexArrayObject<T>::bind() const {
-	data.object->bind();
-}
-
-
-
 
 }
 }

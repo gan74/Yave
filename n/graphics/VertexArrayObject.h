@@ -113,3 +113,17 @@ class VertexArrayObject
 
 #endif // N_GRAPHICS_VERTEXARRAYOBJECT
 
+#include "VertexArrayFactory.h"
+
+
+#ifndef N_GRAPHICS_VERTEXARRAYOBJECT_IMPL
+#define N_GRAPHICS_VERTEXARRAYOBJECT_IMPL
+
+template<typename T>
+void n::graphics::VertexArrayObject<T>::bind() const {
+	data.object->bind();
+}
+
+#endif // N_GRAPHICS_VERTEXARRAYOBJECT_IMPL
+
+
