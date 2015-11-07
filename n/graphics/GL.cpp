@@ -191,7 +191,7 @@ bool initialize() {
 			logMsg("Unable to initialize glew.", ErrorLog);
 			return false;
 		}
-		logMsg(core::String("Running on ") + glGetString(GL_VENDOR) + " " + glGetString(GL_RENDERER) + " using GL " + glGetString(GL_VERSION) + " using GLSL " + glGetString(GL_SHADING_LANGUAGE_VERSION) + "(" + sizeof(void *) + " bits)");
+		logMsg(core::String("Running on ") + glGetString(GL_VENDOR) + " " + glGetString(GL_RENDERER) + " using GL " + glGetString(GL_VERSION) + " using GLSL " + glGetString(GL_SHADING_LANGUAGE_VERSION) + "(" + sizeof(void *) * 8 + " bits)");
 		glDebugMessageCallback(&debugOut, 0);
 		glGetError();
 	}
