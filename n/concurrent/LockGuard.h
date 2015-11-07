@@ -49,8 +49,9 @@ LockGuard<T> lockGuard(T &t) {
 	return LockGuard<T>(t);
 }
 
-#define N_LOCK(l) auto _lockGuard = n::concurrent::lockGuard(l)
-
+#define N_LOCK_LINE_HELPER(LOCK, LINE) auto _lockGuard_for_ ## LOCK ## _at_ ## LINE = n::concurrent::lockGuard(LOCK)
+#define N_LOCK_HELPER(LOCK, LINE) N_LOCK_LINE_HELPER(LOCK, LINE)
+#define N_LOCK(LOCK) N_LOCK_HELPER(LOCK, __LINE__)
 }
 }
 
