@@ -55,6 +55,7 @@ class GLContext
 			MaxVaryings = 3,
 			BindlessTextureSupport = 4,
 			MaxUBOBytes = 5,
+			MaxSSBOBytes = 6,
 			Max
 		};
 

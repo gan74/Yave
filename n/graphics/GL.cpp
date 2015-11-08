@@ -130,7 +130,7 @@ bool isBindlessHandle(UniformType t) {
 
 
 GLenum textureType[] = {GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP};
-GLenum bufferType[] = {GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_UNIFORM_BUFFER};
+GLenum bufferType[] = {GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_UNIFORM_BUFFER, GL_SHADER_STORAGE_BUFFER};
 GLenum bufferUsage[] = {GL_STREAM_DRAW, GL_STATIC_DRAW, GL_DYNAMIC_DRAW};
 GLenum framebufferType[] = {GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER};
 GLenum dataType[] = {GL_NONE, GL_FLOAT, GL_INT, GL_UNSIGNED_INT, GL_SHORT, GL_UNSIGNED_SHORT, GL_BYTE, GL_UNSIGNED_BYTE, GL_DOUBLE};
@@ -143,7 +143,7 @@ GLenum depthMode[] = {GL_LEQUAL, GL_GEQUAL, GL_ALWAYS};
 GLenum blendModeSrc[] = {GL_ONE, GL_ONE, GL_SRC_ALPHA};
 GLenum blendModeDst[] = {GL_ZERO, GL_ONE, GL_ONE_MINUS_SRC_ALPHA};
 GLenum cullMode[] = {GL_BACK, GL_FRONT, GL_NONE};
-GLenum intParams[] = {GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_ATTRIBS, GL_MAX_VARYING_VECTORS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_MAJOR_VERSION, GL_MINOR_VERSION};
+GLenum intParams[] = {GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_ATTRIBS, GL_MAX_VARYING_VECTORS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_MAX_SHADER_STORAGE_BLOCK_SIZE, GL_MAJOR_VERSION, GL_MINOR_VERSION};
 GLenum magSamplers[] {GL_NEAREST, GL_LINEAR, GL_LINEAR};
 GLenum minSamplers[] {GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR};
 
@@ -374,7 +374,11 @@ core::String getShaderInfoLog(Handle shader) {
 
 int getProgramInt(Handle prog, ShaderParam param) {
 	int res = 0;
-	glGetProgramiv(prog, shaderParam[param], &res);
+	if(param == ActiveBuffers) {
+		glGetProgramInterfaceiv(prog, GL_SHADER_STORAGE_BLOCK, GL_ACTIVE_RESOURCES, &res);
+	} else {
+		glGetProgramiv(prog, shaderParam[param], &res);
+	}
 	return res;
 }
 
@@ -399,6 +403,15 @@ core::String getActiveUniformBlockName(Handle prog, uint index) {
 	static char nameBuffer[1024];
 	int len = 0;
 	glGetActiveUniformBlockName(prog, index, MaxSize, &len, nameBuffer);
+	return core::String(nameBuffer, len);
+}
+
+
+core::String getActiveBufferName(Handle prog, uint index) {
+	static constexpr uint MaxSize = 1024;
+	static char nameBuffer[1024];
+	int len = 0;
+	glGetProgramResourceName(prog, GL_SHADER_STORAGE_BLOCK, index, MaxSize, &len, nameBuffer);
 	return core::String(nameBuffer, len);
 }
 
@@ -470,12 +483,21 @@ void setColorMask(bool r, bool g, bool b, bool a) {
 	glColorMask(r, g, b, a);
 }
 
-uint getUniformBlockIndex(Handle shader, const core::String &name) {
-	return getUniformBlockIndex(shader, name.toChar());
+void setUniformBlockBinding(Handle prog, const core::String &name, uint binding) {
+	setUniformBlockBinding(prog, name.toChar(), binding);
 }
 
-uint getUniformBlockIndex(Handle shader, const char *name) {
-	return glGetUniformBlockIndex(shader, name);
+void setUniformBlockBinding(Handle prog, const char *name, uint binding) {
+	glUniformBlockBinding(prog, glGetUniformBlockIndex(prog, name), binding);
+}
+
+
+void setStorageBlockBinding(Handle prog, const core::String &name, uint binding) {
+	setStorageBlockBinding(prog, name.toChar(), binding);
+}
+
+void setStorageBlockBinding(Handle prog, const char *name, uint binding) {
+	glShaderStorageBlockBinding(prog, glGetProgramResourceIndex(prog, GL_SHADER_STORAGE_BLOCK, name), binding);
 }
 
 void setViewport(math::Vec2i a, math::Vec2i b) {
@@ -584,10 +606,6 @@ void clear(BitField buffers) {
 void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BitField mask, Filter filter) {
 	GLbitfield b = (mask & ColorBit ? GL_COLOR_BUFFER_BIT : 0) | (mask & DepthBit ? GL_DEPTH_BUFFER_BIT : 0);
 	glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, b, textureFilter[filter]);
-}
-
-void uniformBlockBinding(Handle prog, uint index, uint binding) {
-	glUniformBlockBinding(prog, index, binding);
 }
 
 void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type type, void *indices, uint primCount, uint baseVertex) {

@@ -83,22 +83,25 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 
 Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
 	//return GBufferRenderer::getShader();
-	static Shader<FragmentShader> *def = new Shader<FragmentShader>(
-					"layout(location = 0) out vec4 n_0;"
+	static Shader<FragmentShader> *def = 0;
+	if(!def) {
+		def = new Shader<FragmentShader>(
+			"layout(location = 0) out vec4 n_0;"
 
-					"uniform vec4 n_Color;"
-					"uniform float n_Roughness;"
-					"uniform float n_Metallic;"
-					"uniform float n_DiffuseMul;"
-					"uniform sampler2D n_DiffuseMap;"
+			"uniform vec4 n_Color;"
+			"uniform float n_Roughness;"
+			"uniform float n_Metallic;"
+			"uniform float n_DiffuseMul;"
+			"uniform sampler2D n_DiffuseMap;"
 
-					"in vec2 n_TexCoord;"
-					"in vec3 n_Normal;"
+			"in vec2 n_TexCoord;"
+			"in vec3 n_Normal;"
 
-					"void main() {"
-						"vec4 color = n_Color * mix(vec4(1.0), texture(n_DiffuseMap, n_TexCoord), n_DiffuseMul);"
-						"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
-					"}");
+			"void main() {"
+				"vec4 color = n_Color * mix(vec4(1.0), texture(n_DiffuseMap, n_TexCoord), n_DiffuseMul);"
+				"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
+			"}");
+	}
 	return def;
 }
 

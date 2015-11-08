@@ -94,6 +94,7 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 	hwInts[MaxVertexAttribs] = gl::getInt(gl::MaxVertexAttrib);
 	hwInts[MaxVaryings] = gl::getInt(gl::MaxVaryingVectors);
 	hwInts[MaxUBOBytes] = gl::getInt(gl::MaxUBOSize);
+	hwInts[MaxSSBOBytes] = gl::getInt(gl::MaxSSBOSize);
 	hwInts[BindlessTextureSupport] = gl::isExtensionSupported("GL_ARB_bindless_texture");
 
 	if(hwInts[MaxVertexAttribs] <= 4) {

@@ -39,7 +39,8 @@ enum BufferTarget
 {
 	ArrayBuffer,
 	IndexBuffer,
-	UniformArrayBuffer
+	UniformBufferObject,
+	StorageBufferObject
 };
 
 enum TextureType
@@ -161,7 +162,8 @@ enum Filter
 enum ShaderParam
 {
 	ActiveUniforms,
-	ActiveBlocks
+	ActiveBlocks,
+	ActiveBuffers
 };
 
 enum IntParam
@@ -171,6 +173,7 @@ enum IntParam
 	MaxVertexAttrib,
 	MaxVaryingVectors,
 	MaxUBOSize,
+	MaxSSBOSize,
 	MajorVersion,
 	MinorVersion
 };
@@ -234,8 +237,15 @@ core::String getActiveUniformInfo(Handle prog, uint index, uint *size, UniformTy
 UniformAddr getUniformLocation(Handle shader, const char *name);
 UniformAddr getUniformLocation(Handle shader, const core::String &name);
 core::String getActiveUniformBlockName(Handle prog, uint index);
+core::String getActiveBufferName(Handle prog, uint index);
 uint getUniformBlockIndex(Handle shader, const core::String &name);
 uint getUniformBlockIndex(Handle shader, const char *name);
+
+void setUniformBlockBinding(Handle prog, const core::String &name, uint binding);
+void setUniformBlockBinding(Handle prog, const char *name, uint binding);
+
+void setStorageBlockBinding(Handle prog, const core::String &name, uint binding);
+void setStorageBlockBinding(Handle prog, const char *name, uint binding);
 
 void attachShader(Handle porg, Handle shader);
 
@@ -264,7 +274,6 @@ void clear(BitField buffers);
 void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BitField mask, Filter filter);
 void shaderSource(Handle shader, uint count, const char * const *src, const int *len);
 void getShaderiv(Handle shader, ShaderParam param, int *i);
-void uniformBlockBinding(Handle prog, uint index, uint binding);
 void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type p, void *indices, uint primCount, uint baseVertex);
 void programUniform1iv(Handle h, UniformAddr loc, uint count, const int *a);
 void programUniform1uiv(Handle h, UniformAddr loc, uint count, const uint *a);

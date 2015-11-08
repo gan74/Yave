@@ -25,6 +25,11 @@ namespace internal {
 uint maxUboBytes() {
 	return GLContext::getContext()->getHWInt(GLContext::MaxUBOBytes);
 }
+
+uint maxSboBytes() {
+	return GLContext::getContext()->getHWInt(GLContext::MaxSSBOBytes);
+}
+
 }
 
 DynamicBufferBase::Data::Data(uint si, BufferTarget tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {

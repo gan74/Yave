@@ -16,7 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ShaderInstance.h"
 #include "GLContext.h"
-#include <iostream>
 
 namespace n {
 namespace graphics {
@@ -106,7 +105,7 @@ void ShaderInstance::compile() {
 }
 
 void ShaderInstance::getUniforms() {
-	int uniforms = gl::getProgramInt(handle, gl::ActiveUniforms);
+	uint uniforms = gl::getProgramInt(handle, gl::ActiveUniforms);
 	for(uint i = 0; i != SVMax; i++) {
 		standards[i] = UniformInfo{gl::InvalidIndex, 0, gl::InvalidType};
 	}
@@ -142,19 +141,35 @@ void ShaderInstance::getUniforms() {
 	setValue("n_Textures", texAddr, samplerCount);
 	delete[] texAddr;
 
+	uint bufferCount = gl::getProgramInt(handle, gl::ActiveBuffers);
 	uniforms = gl::getProgramInt(handle, gl::ActiveBlocks);
-	bufferBindings = new core::SmartPtr<DynamicBufferBase::Data>[uniforms];
-	for(uint i = 0; i != uint(uniforms); i++) {
+	bufferBindings = new core::SmartPtr<DynamicBufferBase::Data>[uniforms + bufferCount];
+
+	for(uint i = 0; i != uniforms; i++) {
 		core::String name = gl::getActiveUniformBlockName(handle, i);
-		int index = gl::getUniformBlockIndex(handle, name);
-		gl::uniformBlockBinding(handle, index, buffers.size());
+		gl::setUniformBlockBinding(handle, name, i);
 		bufferBindings[i] = 0;
-		buffers.insert(name, index);
+		buffers.insert(name, i);
+
 		int std = computeStandardIndex(name);
 		if(std != gl::InvalidIndex) {
-			standards[std] = UniformInfo({index, 0, 0});
+			standards[std] = UniformInfo({int(i), 0, 0});
 		}
 	}
+
+	for(uint j = 0; j != bufferCount; j++) {
+		core::String name = gl::getActiveBufferName(handle, j);
+		uint i = j + uniforms;
+		gl::setStorageBlockBinding(handle, name, i);
+		bufferBindings[i] = 0;
+		buffers.insert(name, i);
+
+		int std = computeStandardIndex(name);
+		if(std != gl::InvalidIndex) {
+			standards[std] = UniformInfo({int(i), 0, 0});
+		}
+	}
+
 }
 
 ShaderInstance::UniformAddr ShaderInstance::computeStandardIndex(const core::String &name) {
@@ -185,7 +200,7 @@ void ShaderInstance::bindBuffers() const {
 	for(uint i = 0; i != buffers.size(); i++) {
 		if(bufferBindings[i]) {
 			bufferBindings[i]->update();
-			gl::bindBufferBase(UniformArrayBuffer, i, bufferBindings[i]->handle);
+			gl::bindBufferBase(bufferBindings[i]->type, i, bufferBindings[i]->handle);
 		}
 	}
 }

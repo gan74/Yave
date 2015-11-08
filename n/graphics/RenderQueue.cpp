@@ -26,7 +26,7 @@ uint exp(float f) {
 
 
 
-RenderQueue::RenderQueue() : matrixBuffer(-1) {
+RenderQueue::RenderQueue() : matrixBuffer(2048) { // if 2048 is too big it will allocate max size instead.
 }
 
 void RenderQueue::insert(const core::Functor<void(RenderFlag)> &f) {

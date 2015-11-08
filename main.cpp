@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
 	Renderer *renderers[] {new FrameBufferRenderer(ri),
-						   new FrameBufferRenderer(gRe, 0),
+						   sceRe,
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2),
 						   tone = new BasicToneMapRenderer(ri)};

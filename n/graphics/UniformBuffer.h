@@ -26,6 +26,7 @@ namespace graphics {
 
 namespace internal {
 	uint maxUboBytes();
+	uint maxSboBytes();
 }
 
 class DynamicBufferBase
@@ -106,10 +107,10 @@ class TypedDynamicBuffer : public DynamicBufferBase
 };
 
 template<typename T>
-class UniformBuffer : public TypedDynamicBuffer<T, UniformArrayBuffer>
+class UniformBuffer : public TypedDynamicBuffer<T, UniformBufferObject>
 {
 	public:
-		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformArrayBuffer>(std::min(getMaxSize(), s)) {
+		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformBufferObject>(std::min(getMaxSize(), s)) {
 		}
 
 		static uint getMaxSize() {
@@ -117,6 +118,21 @@ class UniformBuffer : public TypedDynamicBuffer<T, UniformArrayBuffer>
 		}
 
 };
+
+
+template<typename T>
+class ShaderStorageBuffer : public TypedDynamicBuffer<T, StorageBufferObject>
+{
+	public:
+		ShaderStorageBuffer(uint s) : TypedDynamicBuffer<T, StorageBufferObject>(std::min(getMaxSize(), s)) {
+		}
+
+		static uint getMaxSize() {
+			return internal::maxSboBytes() / sizeof(T);
+		}
+
+};
+
 
 }
 }
