@@ -14,23 +14,35 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_UTILS_LOG
-#define N_UTILS_LOG
+#ifndef N_GRAPHICS_DRAWCOMMANDBUFFER_H
+#define N_GRAPHICS_DRAWCOMMANDBUFFER_H
 
-#include <n/types.h>
-#include <n/defines.h>
+#include "RenderBatch.h"
 
 namespace n {
-enum LogType
+namespace graphics {
+
+class DrawCommandBuffer
 {
-	InfoLog,
-	ErrorLog,
-	WarningLog,
-	PerfLog
+	public:
+		DrawCommandBuffer();
+		~DrawCommandBuffer();
+
+		bool push(const RenderBatch &r);
+		void present(RenderFlag flags);
+
+		bool isFull() const;
+		uint getSize() const;
+
+	private:
+		UniformBuffer<math::Matrix4<>> matrixBuffer;
+		UniformBuffer<MaterialBufferData> materialBuffer;
+		IndirectBuffer cmdBuffer;
+		MaterialData first;
+		uint index;
 };
 
-void logMsg(const core::String &msg, LogType type = InfoLog);
+}
 }
 
-#endif // N_UTILS_LOG
-
+#endif // N_GRAPHICS_DRAWCOMMANDBUFFER_H

@@ -40,12 +40,17 @@ class Material : public assets::Asset<MaterialData>
 
 		const MaterialData &getData() const;
 
+		MaterialBufferData getBufferData() const;
+
+		bool prepare() const;
+
 	private:
 		template<typename T>
 		friend class VertexArrayObject;
 		friend class MaterialLoader;
 		friend class GLContext;
 		friend class FrameBuffer;
+		friend class DrawCommandBuffer;
 
 		void bind(uint flags = RenderFlag::None) const;
 

@@ -30,6 +30,7 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 						"layout(location = 1) in vec3 n_VertexNormal;"
 						"layout(location = 2) in vec3 n_VertexTangent;"
 						"layout(location = 3) in vec2 n_VertexCoord;"
+						"layout(location = 4) in uint n_DrawID;"
 						"uniform mat4 n_ViewProjectionMatrix;"
 
 						"N_DECLARE_MODEL_MATRIX"
@@ -55,12 +56,14 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 							"n_Tangent = mat3(modelMat) * n_VertexTangent;"
 							"n_TexCoord = n_VertexCoord;"
 							"n_Binormal = cross(n_Normal, n_Tangent);"
+							"n_InstanceID = n_DrawID;"
 						"}");
 			def[ShaderProgram::NoProjectionShader] = new Shader<VertexShader>(
 						"layout(location = 0) in vec3 n_VertexPosition;"
 						"layout(location = 1) in vec3 n_VertexNormal;"
 						"layout(location = 2) in vec3 n_VertexTangent;"
 						"layout(location = 3) in vec2 n_VertexCoord;"
+						"layout(location = 4) in uint n_DrawID;"
 
 						"out vec3 n_Position;"
 						"out vec4 n_ScreenPosition;"
@@ -76,6 +79,7 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 							"n_Tangent = n_VertexTangent;"
 							"n_TexCoord = n_VertexCoord;"
 							"n_Binormal = cross(n_Normal, n_Tangent);"
+							"n_InstanceID = n_BaseInstance;"
 						"}");
 	}
 	return def[type];
@@ -85,21 +89,18 @@ Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
 	//return GBufferRenderer::getShader();
 	static Shader<FragmentShader> *def = 0;
 	if(!def) {
-		def = new Shader<FragmentShader>(
+		def = new Shader<FragmentShader>("#extension GL_ARB_bindless_texture : enable \n"
 			"layout(location = 0) out vec4 n_0;"
 
-			"uniform vec4 n_Color;"
-			"uniform float n_Roughness;"
-			"uniform float n_Metallic;"
-			"uniform float n_DiffuseMul;"
-			"uniform sampler2D n_DiffuseMap;"
+			"N_DECLARE_MATERIAL_BUFFER"
 
 			"in vec2 n_TexCoord;"
 			"in vec3 n_Normal;"
 
 			"void main() {"
-				"vec4 color = n_Color * mix(vec4(1.0), texture(n_DiffuseMap, n_TexCoord), n_DiffuseMul);"
-				"n_0 = n_gbuffer0(color, n_Normal, n_Roughness, n_Metallic);"
+				"n_MaterialType material = n_Material;"
+				"vec4 color = material.color * mix(vec4(1.0), texture(material.diffuse, n_TexCoord), material.diffuseIntencity);"
+				"n_0 = n_gbuffer0(vec4(0.5), n_Normal, material.roughnessIntencity, material.metallic);"
 			"}");
 	}
 	return def;

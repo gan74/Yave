@@ -40,7 +40,8 @@ enum BufferTarget
 	ArrayBuffer,
 	IndexBuffer,
 	UniformBufferObject,
-	StorageBufferObject
+	StorageBufferObject,
+	DrawIndirectBuffer
 };
 
 enum TextureType
@@ -178,6 +179,14 @@ enum IntParam
 	MinorVersion
 };
 
+struct DrawCommand
+{
+	uint count;
+	uint instanceCount;
+	void *start;
+	uint baseVertex;
+	uint baseInstance;
+};
 
 struct TextureFormat
 {
@@ -217,7 +226,7 @@ Handle createProgram();
 Handle createShader(ShaderType shaderType);
 Handle createSampler(TextureSampler sampler, bool mipmap);
 Handle createTexture();
-Handle createBuffer();
+Handle createBuffer(BufferTarget target, uint size, const void *data, BufferAlloc usage);
 Handle createVertexArray();
 Handle createFramebuffer();
 
@@ -249,6 +258,8 @@ void setStorageBlockBinding(Handle prog, const char *name, uint binding);
 
 void attachShader(Handle porg, Handle shader);
 
+void multiDrawElementsIndirect(PrimitiveType mode, uint cmdCount);
+
 void setViewport(math::Vec2i a, math::Vec2i b);
 int getInt(IntParam i);
 bool isExtensionSupported(core::String extName);
@@ -260,10 +271,9 @@ bool isExtensionSupported(core::String extName);
 
 void bindBuffer(BufferTarget binding, Handle buffer);
 void bindBufferBase(BufferTarget target, uint index, Handle buffer);
-void bufferData(BufferTarget target, uint size, const void *data, BufferAlloc usage);
 void bufferSubData(BufferTarget t, uint offset, uint start, const void *data);
 void bindVertexArray(Handle array);
-void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr);
+void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr, uint divisor = 0);
 void enableVertexAttribArray(uint index);
 void framebufferTexture2D(FrameBufferType target, Attachment attachement, TextureType texture, Handle handle, uint level);
 void drawBuffers(uint count, const Attachment *att);
@@ -274,7 +284,7 @@ void clear(BitField buffers);
 void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, BitField mask, Filter filter);
 void shaderSource(Handle shader, uint count, const char * const *src, const int *len);
 void getShaderiv(Handle shader, ShaderParam param, int *i);
-void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type p, void *indices, uint primCount, uint baseVertex);
+void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, void *indices, uint primCount, uint baseVertex);
 void programUniform1iv(Handle h, UniformAddr loc, uint count, const int *a);
 void programUniform1uiv(Handle h, UniformAddr loc, uint count, const uint *a);
 void programUniform1fv(Handle h, UniformAddr loc, uint count, const float *a);

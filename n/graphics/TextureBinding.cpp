@@ -26,7 +26,7 @@ uint maxTextures() {
 
 struct BindingData
 {
-	BindingData() : handle(0), type(TextureType::Texture2D), sampler(TextureSampler::Default) {
+	BindingData() : handle(0), type(TextureType::Texture2D), sampler(0) {
 	}
 
 	gl::Handle handle;

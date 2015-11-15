@@ -65,6 +65,10 @@ class VertexArrayObject
 			return data.radius;
 		}
 
+		gl::DrawCommand getCmd() const {
+			return gl::DrawCommand{data.size, 1, (void *)(sizeof(uint) * data.start), data.base, 0};
+		}
+
 		bool operator<(const VertexArrayObject<T> &o) const {
 			bool obj = data.object < o.data.object;
 			if(!obj && data.object == o.data.object) {
@@ -88,9 +92,8 @@ class VertexArrayObject
 			ShaderInstance::validateState();
 			ShaderInstance::getCurrent()->setValue(SVBaseInstance, instanceBase);
 			bind();
-			gl::drawElementsInstancedBaseVertex(gl::Triangles, tris, GLType<uint>::value, (void *)(sizeof(uint) * start), instances, vertexBase);
+			gl::drawElementsInstancedBaseVertex(gl::Triangles, tris, (void *)(sizeof(uint) * start), instances, vertexBase);
 		}
-
 
 		struct AllocObject
 		{
@@ -124,6 +127,6 @@ void n::graphics::VertexArrayObject<T>::bind() const {
 	data.object->bind();
 }
 
-#endif // N_GRAPHICS_VERTEXARRAYOBJECT_IMPL
+#endif // N_GRAPHICS_VERTEXARRAYOBJECT_IMPLGL_PATCHES
 
 

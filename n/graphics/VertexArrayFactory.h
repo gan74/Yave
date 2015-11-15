@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_VERTEXARRAYFACTORY
 #define N_GRAPHICS_VERTEXARRAYFACTORY
 
-#include "UniformBuffer.h"
+#include "DynamicBuffer.h"
+#include "StaticBuffer.h"
 #include "Vertex.h"
 #include "VertexArrayObject.h"
 #include <n/core/Timer.h>
@@ -72,9 +73,11 @@ class VertexArrayFactory : NonCopyable
 
 	private:
 		friend class VertexArrayObject<T>;
+		friend class DrawCommandBuffer;
 
 		TypedDynamicBuffer<Vertex<T>, ArrayBuffer> vertices;
 		TypedDynamicBuffer<uint, IndexBuffer> indexes;
+		StaticBuffer<uint, ArrayBuffer> *ids;
 		gl::Handle handle;
 
 		core::Array<Empty> vertexEmpties;
@@ -127,7 +130,13 @@ class VertexArrayFactory : NonCopyable
 			empties = merged;
 		}
 
-		void setup() {
+		void setup() {;
+			core::Array<uint> idArray;
+			for(uint i = 0; i != 2048; i++) {
+				idArray.append(i + 1);
+			}
+			ids = new StaticBuffer<uint, ArrayBuffer>(idArray);
+
 			vertexEmpties.append(Empty{0, vertices.getSize()});
 			indexEmpties.append(Empty{0, indexes.getSize()});
 			handle = gl::createVertexArray();
@@ -138,10 +147,13 @@ class VertexArrayFactory : NonCopyable
 			gl::vertexAttribPointer(1, 3, GLType<T>::value, false, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 3 * sizeof(T)));
 			gl::vertexAttribPointer(2, 3, GLType<T>::value, false, sizeof(Vertex<T>), (void *)(2 * sizeof(T) + 2 * 3 * sizeof(T)));
 			gl::vertexAttribPointer(3, 2, GLType<T>::value, false, sizeof(Vertex<T>), (void *)(3 * sizeof(T)));
+			ids->bind();
+			gl::vertexAttribPointer(4, 1, GLType<uint>::value, false, 0, 0, 1);
 			gl::enableVertexAttribArray(0);
 			gl::enableVertexAttribArray(1);
 			gl::enableVertexAttribArray(2);
 			gl::enableVertexAttribArray(3);
+			gl::enableVertexAttribArray(4);
 		}
 
 		void bind() {

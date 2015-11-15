@@ -25,7 +25,7 @@ namespace n {
 
 void logMsg(const core::String &msg, LogType type) {
 	static concurrent::SpinLock lock;
-	const core::String logTypes[] = {"[info] ", "[error] ", "[perf] "};
+	const core::String logTypes[] = {"[info] ", "[error] ", "[warning] ", "[perf] "};
 	N_LOCK(lock);
 
 	std::cout<<logTypes[type]<<msg<<std::endl;

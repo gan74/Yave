@@ -55,14 +55,35 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 			"}"
 			"vec4 n_gbuffer2(vec4 color, vec3 normal, float roughness, float metal) {"
 				"return vec4(roughness, metal, 0.04, 0);"
-			"}",
-			"",
+			"}"
+			"flat in uint n_InstanceID;",
+
+			"flat out uint n_InstanceID;",
+
 			""
 	};
+	uint bufferSize = UniformBuffer<math::Matrix4<>>::getMaxSize();
 	core::String ver = core::String("#version ") + vers + "\n";
-	core::String model = "\n#define n_ModelMatrix n_ModelMatrices[n_BaseInstance + gl_InstanceID] \n"
-						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(UniformBuffer<math::Matrix4<>>::getMaxSize()) + "]; }; uniform uint n_BaseInstance;\n";
-	core::String common = "layout(std140, row_major) uniform; layout (std140, row_major) buffer; const float pi = " + core::String(math::pi) + "; float sqr(float x) { return x * x; }  float saturate(float x) { return clamp(x, 0.0, 1.0); }";
+	core::String model = "\n #define n_ModelMatrix n_ModelMatrices[0] \n"
+						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(bufferSize) + "]; };";
+	core::String material = "layout(std140) uniform n_MaterialBuffer { n_MaterialType n_Materials[" + core::String(bufferSize) + "]; };"
+							"\n #define n_Material n_Materials[0] \n";
+	core::String common = "layout(std140, row_major) uniform; "
+						  "layout (std140, row_major) buffer; "
+						  "const float pi = " + core::String(math::pi) + "; "
+						  "float sqr(float x) { return x * x; } "
+						  "float saturate(float x) { return clamp(x, 0.0, 1.0); } "
+						  "uniform uint n_BaseInstance;"
+						  "struct n_MaterialType { "
+							  "vec4 color; "
+							  "float metallic; "
+							  "float diffuseIntencity; "
+							  "float normalIntencity; "
+							  "float roughnessIntencity; "
+							  "sampler2D diffuse; "
+							  "sampler2D normal; "
+							  "sampler2D roughness; "
+						  "};";
 	uint vit = src.find("#version");
 	if(vit != uint(-1)) {
 		uint l = src.find("\n", vit);
@@ -77,7 +98,7 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 		}
 		src.replace("#version", "//#version");
 	}
-	return ver + common + libs[type] + "\n" + (type == VertexShader ? src.replaced("N_DECLARE_MODEL_MATRIX", model) : src);
+	return ver + "\n" +  common + "\n" + libs[type] + "\n" + (type == VertexShader ? src.replaced("N_DECLARE_MODEL_MATRIX", model) : src).replaced("N_DECLARE_MATERIAL_BUFFER", material);
 }
 
 

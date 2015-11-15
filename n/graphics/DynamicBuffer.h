@@ -14,26 +14,139 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-
 #ifndef N_GRAPHICS_DYNAMICBUFFER
 #define N_GRAPHICS_DYNAMICBUFFER
 
-#include "UniformBuffer.h"
+#include "GL.h"
+#include <n/core/SmartPtr.h>
 
 namespace n {
 namespace graphics {
 
-template<typename T>
-class DynamicBuffer : public TypedDynamicBuffer<T, ArrayBuffer>
+
+namespace internal {
+	uint maxUboBytes();
+	uint maxSboBytes();
+}
+
+class DynamicBufferBase
 {
 	public:
-		DynamicBuffer(uint s) : TypedDynamicBuffer<T, ArrayBuffer>(s) {
+		struct Data : NonCopyable
+		{
+			Data(uint si, BufferTarget tpe);
+			~Data();
+
+			void update(bool forceBind = false) const;
+
+			const BufferTarget type;
+			uint size;
+			void *buffer;
+			mutable gl::Handle handle;
+			mutable bool modified;
+		};
+
+
+		DynamicBufferBase(uint si, BufferTarget tpe);
+		DynamicBufferBase();
+
+		void update(bool force = false);
+
+		bool isModified() const {
+			return data->modified;
+		}
+
+	protected:
+		friend class ShaderInstance;
+		core::SmartPtr<Data> data;
+
+};
+
+template<typename T, BufferTarget Type>
+class TypedDynamicBuffer : public DynamicBufferBase
+{
+	static_assert(TypeInfo<T>::isPod, "TypedDynamicBufferBase<T> should only contain pod");
+
+	public:
+		typedef T * iterator;
+		typedef T const * const_iterator;
+
+		uint getSize() const {
+			return data->size / sizeof(T);
+		}
+
+		TypedDynamicBuffer(uint si) : DynamicBufferBase(si * sizeof(T), Type) {
+		}
+
+		T &operator[](uint i) {
+			data->modified = true;
+			return ((T *)data->buffer)[i];
+		}
+
+		const T &operator[](uint i) const {
+			return ((T *)data->buffer)[i];
+		}
+
+		iterator begin() {
+			data->modified = true;
+			return iterator((T *)data->buffer);
+		}
+
+		iterator end() {
+			data->modified = true;
+			return iterator(((T *)data->buffer) + getSize());
+		}
+
+		const_iterator begin() const {
+			return iterator((T *)data->buffer);
+		}
+
+		const_iterator end() const {
+			return const_iterator(((T *)data->buffer) + getSize());
 		}
 };
 
+template<typename T>
+class UniformBuffer : public TypedDynamicBuffer<T, UniformBufferObject>
+{
+	public:
+		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformBufferObject>(std::min(getMaxSize(), s)) {
+		}
+
+		static uint getMaxSize() {
+			return internal::maxUboBytes() / sizeof(T);
+		}
+
+};
+
+
+template<typename T>
+class ShaderStorageBuffer : public TypedDynamicBuffer<T, StorageBufferObject>
+{
+	public:
+		ShaderStorageBuffer(uint s) : TypedDynamicBuffer<T, StorageBufferObject>(std::min(getMaxSize(), s)) {
+		}
+
+		static uint getMaxSize() {
+			return internal::maxSboBytes() / sizeof(T);
+		}
+
+};
+
+
+class IndirectBuffer : public TypedDynamicBuffer<gl::DrawCommand, DrawIndirectBuffer>
+{
+	public:
+		IndirectBuffer(uint s) : TypedDynamicBuffer<gl::DrawCommand, DrawIndirectBuffer>(s) {
+		}
+
+};
+
+
+
 }
 }
+
 
 #endif // N_GRAPHICS_DYNAMICBUFFER
-
 

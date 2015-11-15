@@ -98,7 +98,7 @@ class SceneRenderer : public BufferableRenderer
 			FrameData *data = reinterpret_cast<FrameData *>(ptr);
 			GLContext::getContext()->setProjectionMatrix(data->proj);
 			GLContext::getContext()->setViewMatrix(data->view);
-			data->queue(renderFlags);
+			data->queue.present(renderFlags);
 			delete data;
 		}
 

@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "RenderQueue.h"
+#include "DrawCommandBuffer.h"
 
 namespace n {
 namespace graphics {
@@ -26,7 +27,7 @@ uint exp(float f) {
 
 
 
-RenderQueue::RenderQueue() : matrixBuffer(2048) { // if 2048 is too big it will allocate max size instead.
+RenderQueue::RenderQueue() {
 }
 
 void RenderQueue::insert(const core::Functor<void(RenderFlag)> &f) {
@@ -55,40 +56,15 @@ void RenderQueue::prepare(math::Vec3 , float) {
 	});
 }
 
-template<typename I>
-void drawRangeInstanciate(I begin, I end, RenderFlag flags) {
-	if(end == begin + 1) {
-		(*begin)(flags, 1, 0);
-		return;
-	}
-	uint c = 0;
-	I inst = begin++;
-	for(I i = begin; i != end; i++) {
-		if(!inst->canInstanciate(*i)) {
-			uint count = i - inst;
-			(*inst)(flags, count, c);
-			c += count;
-			inst = i;
-		}
-	}
-	(*inst)(flags, end - inst, c);
-}
 
-void RenderQueue::operator()(RenderFlag flags) {
-	uint matIndex = 0;
-	core::Array<RenderBatch>::const_iterator drawIt = batches.begin();
-	GLContext::getContext()->setMatrixBuffer(matrixBuffer);
-	for(core::Array<RenderBatch>::const_iterator it = batches.begin(); it != batches.end(); it++) {
-		if(matIndex == matrixBuffer.getSize()) {
-			drawRangeInstanciate(drawIt, it, flags);
-			drawIt = it;
-			matIndex = 0;
+void RenderQueue::present(RenderFlag flags) {
+	DrawCommandBuffer buff;
+	for(const RenderBatch &r : batches) {
+		while(!buff.push(r)) {
+			buff.present(flags);
 		}
-		matrixBuffer[matIndex++] = it->getMatrix();
 	}
-	if(matIndex) {
-		drawRangeInstanciate(drawIt, batches.cend(), flags);
-	}
+	buff.present(flags);
 	for(const core::Functor<void(RenderFlag)> &f : funcs) {
 		f(flags);
 	}

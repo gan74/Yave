@@ -38,7 +38,6 @@ int main(int argc, char **argv) {
 		scene.insert(l);
 	}
 
-
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
@@ -49,6 +48,7 @@ int main(int argc, char **argv) {
 						   tone = new BasicToneMapRenderer(ri)};
 
 	Timer timer;
+
 
 	while(run(win)) {
 		double dt = timer.reset();
@@ -66,8 +66,9 @@ int main(int argc, char **argv) {
 		ri->setDebugMode(DeferredShadingRenderer::LightingDebugMode(dIndex));
 		(*renderers[rIndex])();
 
-		GLContext::getContext()->processTasks();
+		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
+		//GLContext::fatalIfError();
 	}
 	return 0;
 }
