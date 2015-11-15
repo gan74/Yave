@@ -112,16 +112,15 @@ bool Texture::synchronize(bool immediate) {
 		return true;
 	}
 	if(!immediate) {
-		Texture *self = new Texture(*this);
-		GLContext::getContext()->addGLTask([=]() {
-			self->synchronize(true);
-			delete self;
-		});
+		prepare(false);
 	} else {
 		prepare(true);
+	}
+	bool p = prepare(immediate);
+	if(immediate) {
 		internal::TextureBinding::dirty();
 	}
-	return !isNull();
+	return p;
 }
 
 }
