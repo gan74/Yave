@@ -34,12 +34,8 @@ SubMeshInstance::SubMeshInstance(const VertexArrayObject<> &b, const Material &m
 }
 
 void SubMeshInstance::draw(const VertexAttribs &attribs, uint renderFlags, uint instances, uint base) const {
-	if(vao.isNull() && buffer) {
-		vao = GLContext::getContext()->getVertexArrayFactory()(*buffer);
-		buffer = 0;
-	} else {
-		vao.draw(material, attribs, renderFlags, instances, base);
-	}
+	alloc();
+	vao.draw(material, attribs, renderFlags, instances, base);
 }
 
 const Material &SubMeshInstance::getMaterial() const {
@@ -51,7 +47,15 @@ float SubMeshInstance::getRadius() const {
 }
 
 const VertexArrayObject<> &SubMeshInstance::getVertexArrayObject() const {
+	alloc();
 	return vao;
+}
+
+void SubMeshInstance::alloc() const {
+	if(vao.isNull() && buffer) {
+		vao = GLContext::getContext()->getVertexArrayFactory()(*buffer);
+		buffer = 0;
+	}
 }
 
 
