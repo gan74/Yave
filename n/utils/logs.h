@@ -14,32 +14,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_IO_OUTPOUTSTREAM_H
-#define N_IO_OUTPOUTSTREAM_H
+#ifndef N_UTILS_LOG
+#define N_UTILS_LOG
 
-#include <n/core/String.h>
+#include <n/types.h>
+#include <n/defines.h>
 
 namespace n {
-namespace io {
-
-class OutputStream : NonCopyable
+enum LogType
 {
-	public:
-		virtual ~OutputStream() {}
-
-		virtual bool canWrite() const = 0;
-		virtual uint writeBytes(const void *b, uint len) = 0;
-		virtual void flush() = 0;
-
-		virtual void write(const core::String &str) {
-			if(str.size()) {
-				writeBytes(&str[0], str.size());
-			}
-		}
+	InfoLog,
+	ErrorLog,
+	PerfLog
 };
 
+void logMsg(const core::String &msg, LogType type = InfoLog);
+}
 
-} // io
-} // n
+#endif // N_UTILS_LOG
 
-#endif // N_IO_OUTPOUTSTREAM_H

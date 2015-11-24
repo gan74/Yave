@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Functor.h>
 #include <n/math/Matrix.h>
 #include <n/assets/Asset.h>
-#include "GL.h"
+#include "UniformBuffer.h"
 
 namespace n {
 namespace graphics {
@@ -33,9 +33,11 @@ struct MaterialData;
 struct FrameBufferPool;
 class ShaderInstanceFactory;
 
-template<typename T>
+template<typename T = float>
 class VertexArrayObject;
 
+template<typename T = float>
+class VertexArrayFactory;
 
 namespace internal {
 	struct Material;
@@ -52,7 +54,9 @@ class GLContext
 			MaxVertexAttribs = 2,
 			MaxVaryings = 3,
 			BindlessTextureSupport = 4,
-			Max = 5
+			MaxUBOBytes = 5,
+			MaxSSBOBytes = 6,
+			Max
 		};
 
 		static GLContext *getContext();
@@ -66,10 +70,10 @@ class GLContext
 		void setProjectionMatrix(const math::Matrix4<> &m);
 		void setViewMatrix(const math::Matrix4<> &m);
 		void setModelMatrix(const math::Matrix4<> &m);
+		void setMatrixBuffer(const UniformBuffer<math::Matrix4<>> &buffer);
 
 		const math::Matrix4<> &getProjectionMatrix() const;
 		const math::Matrix4<> &getViewMatrix() const;
-		const math::Matrix4<> &getModelMatrix() const;
 
 		bool processTasks();
 		void finishTasks();
@@ -102,7 +106,8 @@ class GLContext
 			return TextureSampler::Trilinear;
 		}
 
-		const VertexArrayObject<float> &getScreen() const;
+		const VertexArrayObject<> &getScreen() const;
+		VertexArrayFactory<> &getVertexArrayFactory();
 
 	private:
 		friend class ShaderProgram;
@@ -117,12 +122,13 @@ class GLContext
 
 		math::Matrix4<> projection;
 		math::Matrix4<> view;
-		math::Matrix4<> model;
+		DynamicBufferBase models;
 
 		core::SmartPtr<internal::ShaderProgramData> program;
 		const FrameBuffer *frameBuffer;
 
 		FrameBufferPool *fbPool;
+		VertexArrayFactory<> *vaoFactory;
 		ShaderInstanceFactory *shFactory;
 
 		int hwInts[Max];

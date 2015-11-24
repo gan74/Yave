@@ -18,53 +18,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_UNIFORMBUFFER
 
 #include "GL.h"
-#include "GLContext.h"
+#include <n/core/SmartPtr.h>
 
 namespace n {
 namespace graphics {
 
+
+namespace internal {
+	uint maxUboBytes();
+	uint maxSboBytes();
+}
 
 class DynamicBufferBase
 {
 	public:
 		struct Data : NonCopyable
 		{
-			Data(uint si, BufferTarget tpe) : type(tpe), size(si), buffer(malloc(size)), handle(0), modified(true) {
-			}
+			Data(uint si, BufferTarget tpe);
+			~Data();
 
-			~Data() {
-				free(buffer);
-				if(handle) {
-					gl::Handle h = handle;
-					GLContext::getContext()->addGLTask([=]() {
-						gl::deleteBuffer(h);
-					});
-				}
-			}
-
-			void update(bool forceBind = false) const {
-				if(modified) {
-					if(!handle) {
-						handle = gl::createBuffer();
-						gl::bindBuffer(type, handle);
-						gl::bufferData(type, size, buffer, gl::Dynamic);
-					} else {
-						gl::bindBuffer(type, handle);
-						/*void *p = gl::glMapBuffer(type, GL_WRITE_ONLY);
-						if(!p) {
-							gl::glBufferSubData(type, 0, size, buffer);
-						} else {
-							memcpy(p, buffer, size);
-							gl::glUnmapBuffer(type);
-						}*/
-						gl::bufferSubData(type, 0, size, 0);
-						gl::bufferSubData(type, 0, size, buffer);
-					}
-					modified = false;
-				} else if(forceBind) {
-					gl::bindBuffer(type, handle);
-				}
-			}
+			void update(bool forceBind = false) const;
 
 			const BufferTarget type;
 			uint size;
@@ -74,14 +47,13 @@ class DynamicBufferBase
 		};
 
 
-		DynamicBufferBase(uint si, BufferTarget tpe) : data(new Data(si, tpe)) {
-		}
+		DynamicBufferBase(uint si, BufferTarget tpe);
+		DynamicBufferBase();
 
-		void update(bool force = false) {
-			data->update(force);
-		}
+		void update(bool force = false);
 
-		DynamicBufferBase() : data(0) {
+		bool isModified() const {
+			return data->modified;
 		}
 
 	protected:
@@ -96,108 +68,23 @@ class TypedDynamicBuffer : public DynamicBufferBase
 	static_assert(TypeInfo<T>::isPod, "TypedDynamicBufferBase<T> should only contain pod");
 
 	public:
-		class const_iterator
-		{
-			public:
-				const_iterator &operator++() { // ++prefix
-					it++;
-					return *this;
-				}
-
-				const_iterator &operator--() { // --prefix
-					it--;
-					return *this;
-				}
-
-				const_iterator &operator++(int) { // postfix++
-					it++;
-					return const_iterator(it - 1);
-				}
-
-				const_iterator &operator--(int) { // postfix--
-					it--;
-					return const_iterator(it + 1);
-				}
-
-				const T &operator*() const {
-					return *it;
-				}
-
-				bool operator==(const const_iterator &i) const {
-					return i.it == it;
-				}
-
-				bool operator!=(const const_iterator &i) const {
-					return i.it != it;
-				}
-
-			private:
-				friend class iterator;
-				friend class TypedDynamicBuffer;
-
-				const_iterator(const T *i) : it(i){
-				}
-
-				const T *it;
-		};
-
-
-		class iterator
-		{
-			public:
-				iterator &operator++() { // ++prefix
-					it++;
-					return *this;
-				}
-
-				iterator &operator--() { // --prefix
-					it--;
-					return *this;
-				}
-
-				iterator &operator++(int) { // postfix++
-					it++;
-					return iterator(it - 1);
-				}
-
-				iterator &operator--(int) { // postfix--
-					it--;
-					return iterator(it + 1);
-				}
-
-				T &operator*() {
-					return *it;
-				}
-
-				const T &operator*() const {
-					return *it;
-				}
-
-				operator const_iterator() const {
-					return const_iterator(it);
-				}
-
-				bool operator==(const const_iterator &i) const {
-					return i.it == it;
-				}
-
-				bool operator!=(const const_iterator &i) const {
-					return i.it != it;
-				}
-
-			private:
-				friend class TypedDynamicBuffer;
-				iterator(T *i) : it(i){
-				}
-
-				T *it;
-		};
+		typedef T * iterator;
+		typedef T const * const_iterator;
 
 		uint getSize() const {
 			return data->size / sizeof(T);
 		}
 
 		TypedDynamicBuffer(uint si) : DynamicBufferBase(si * sizeof(T), Type) {
+		}
+
+		T &operator[](uint i) {
+			data->modified = true;
+			return ((T *)data->buffer)[i];
+		}
+
+		const T &operator[](uint i) const {
+			return ((T *)data->buffer)[i];
 		}
 
 		iterator begin() {
@@ -217,16 +104,35 @@ class TypedDynamicBuffer : public DynamicBufferBase
 		const_iterator end() const {
 			return const_iterator(((T *)data->buffer) + getSize());
 		}
-
 };
 
 template<typename T>
-class UniformBuffer : public TypedDynamicBuffer<T, UniformArrayBuffer>
+class UniformBuffer : public TypedDynamicBuffer<T, UniformBufferObject>
 {
 	public:
-		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformArrayBuffer>(s) {
+		UniformBuffer(uint s) : TypedDynamicBuffer<T, UniformBufferObject>(std::min(getMaxSize(), s)) {
 		}
+
+		static uint getMaxSize() {
+			return internal::maxUboBytes() / sizeof(T);
+		}
+
 };
+
+
+template<typename T>
+class ShaderStorageBuffer : public TypedDynamicBuffer<T, StorageBufferObject>
+{
+	public:
+		ShaderStorageBuffer(uint s) : TypedDynamicBuffer<T, StorageBufferObject>(std::min(getMaxSize(), s)) {
+		}
+
+		static uint getMaxSize() {
+			return internal::maxSboBytes() / sizeof(T);
+		}
+
+};
+
 
 }
 }

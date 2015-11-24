@@ -155,6 +155,7 @@ class AssetBuffer
 		}
 
 		void gc() {
+			N_LOG_PERF;
 			lock();
 			getBuffer().filter([](const core::Pair<const internal::AssetKey<T>, AssetPtr<T>> &p) -> bool {
 				return p._2.getReferenceCount() > 1;

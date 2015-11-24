@@ -27,22 +27,14 @@ class Timer
 	typedef std::chrono::duration<double, std::nano> Nano;
 
 	public:
-		Timer() : time(std::chrono::high_resolution_clock::now()) {
-		}
+		Timer();
 
-		void start() {
-			time = std::chrono::high_resolution_clock::now();
-		}
+		void start();
 
-		double reset() {
-			double t = elapsed();
-			start();
-			return t;
-		}
+		double reset();
 
-		double elapsed() const {
-			return std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - time).count() / 1000000000;
-		}
+		double elapsed() const;
+
 
 	private:
 		 std::chrono::time_point<std::chrono::high_resolution_clock> time;

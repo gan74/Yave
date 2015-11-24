@@ -27,7 +27,7 @@ namespace graphics {
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<> &m, SubMeshInstance *i, const VertexAttribs &attr = VertexAttribs(), uint renderFlags = RenderFlag::None) : instanciable(true), flags(renderFlags), inst(i), matrix(m), attribs(attr) {
+		RenderBatch(const math::Matrix4<> &m, SubMeshInstance *i, const VertexAttribs &attr = VertexAttribs(), uint renderFlags = RenderFlag::None, bool instaciate = true) : instanciable(instaciate), flags(renderFlags), inst(i), matrix(m), attribs(attr) {
 		}
 
 		void operator()(uint renderFlags = RenderFlag::None) const {
@@ -35,19 +35,12 @@ class RenderBatch
 			inst->draw(attribs, renderFlags | renderFlags);
 		}
 
-		bool isInstanciable() const {
-			return instanciable;
+		void operator()(uint renderFlags, uint instances, uint base) const {
+			inst->draw(attribs, renderFlags | renderFlags, instances, base);
 		}
 
-		bool operator<(const RenderBatch &o) const {
-			bool inf = getMaterial() < o.getMaterial();
-			if(inf) {
-				return false;
-			}
-			if(o.getMaterial() < getMaterial()) {
-				return false;
-			}
-			return getVertexArrayObject() < o.getVertexArrayObject();
+		bool isInstanciable() const {
+			return instanciable;
 		}
 
 		bool canInstanciate(const RenderBatch &o) const {
@@ -62,7 +55,7 @@ class RenderBatch
 			return inst->getMaterial();
 		}
 
-		const VertexArraySubObject<> &getVertexArrayObject() const {
+		const VertexArrayObject<> &getVertexArrayObject() const {
 			return inst->getVertexArrayObject();
 		}
 

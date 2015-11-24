@@ -44,7 +44,7 @@ N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const Mat
 	sh->setValue(ShaderValue::SVRoughnessMap, data.roughness);
 	sh->setValue(ShaderValue::SVRoughnessMul, data.roughness.isNull() ? 0.0 : 1.0);
 
-	sh->setBuffer("uniforms", data.uniforms);
+	sh->setBuffer(ShaderValue::SVUniformBuffer, data.uniforms);
 }
 
 void fullBind(const MaterialData &restrict data) {

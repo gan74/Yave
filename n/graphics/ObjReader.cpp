@@ -44,6 +44,7 @@ class ObjReader : public MeshLoader::MeshReader<ObjReader, core::String>
 				std::cerr<<file.getName()<<" not found"<<std::endl;
 				return 0;
 			}
+			N_LOG_PERF;
 			core::String path = file.getPath();
 			//core::Timer timer;
 			uint fs = file.size();

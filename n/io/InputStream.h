@@ -28,7 +28,7 @@ class String;
 namespace n {
 namespace io {
 
-class InputStream
+class InputStream : NonCopyable
 {
 	public:
 		virtual ~InputStream() {}

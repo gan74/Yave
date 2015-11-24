@@ -15,7 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Test.h"
-#include <iostream>
 
 namespace n {
 namespace test {
@@ -25,7 +24,7 @@ class AutoTestWarning
 {
 	private:
 		AutoTestWarning() {
-			std::cout<<"----- Running automatic tests -----"<<std::endl;
+			log("----- Running automatic tests -----");
 		}
 
 		static AutoTestWarning warning;

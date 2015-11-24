@@ -34,6 +34,7 @@ class SDLImageReader : public ImageLoader::ImageReader<SDLImageReader, core::Str
 		}
 
 		ImageData *operator()(core::String name) override {
+			N_LOG_PERF;
 			static concurrent::Mutex lock;
 			lock.lock();
 			SDL_Surface *surf = IMG_Load(name.toChar());

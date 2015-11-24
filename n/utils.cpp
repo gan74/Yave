@@ -20,19 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/concurrent/Atomic.h>
 #include <n/defines.h>
 #include <ctime>
-#include <iostream>
 
 namespace n {
 
 Nothing fatal(const char *msg, const char *file, int line) {
-	std::cerr<<msg;
-	if(file) {
-		std::cerr<<" in file "<<file;
-		if(line) {
-			std::cerr<<" at line "<<line;
-		}
-	}
-	std::cerr<<std::endl;
+	logMsg(msg + (file ? core::String(" in file ") + file + (line ? core::String(" at line ") + line : core::String()) : core::String()), ErrorLog);
 	exit(1);
 	return Nothing();
 }

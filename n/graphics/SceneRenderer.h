@@ -74,6 +74,7 @@ class SceneRenderer : public BufferableRenderer
 
 
 		void *prepare(const Camera *cam, RenderFlag renderFlags = RenderFlag::None) {
+			N_LOG_PERF;
 			FrameData *data = new FrameData();
 			data->proj = cam->getProjectionMatrix();
 			data->view = cam->getViewMatrix();
@@ -90,6 +91,7 @@ class SceneRenderer : public BufferableRenderer
 			if(!ptr) {
 				return;
 			}
+			N_LOG_PERF;
 			if(!(renderFlags & RenderFlag::Overlay)) {
 				FrameBuffer::clear(true, true);
 			}

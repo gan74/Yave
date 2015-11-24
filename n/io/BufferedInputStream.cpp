@@ -16,11 +16,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "BufferedInputStream.h"
 #include <n/defines.h>
-#include <iostream>
 
 namespace n {
 namespace io {
-
 
 BufferedInputStream::BufferedInputStream(InputStream *st, uint si) : stream(st), bufferSize(si), bufferUsed(0), buffer(new char[bufferSize]) {
 }

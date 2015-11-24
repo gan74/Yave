@@ -14,55 +14,47 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_THREAD_H
-#define N_CONCURENT_THREAD_H
+#ifndef N_CONCURENT_LOCKGUARD
+#define N_CONCURENT_LOCKGUARD
 
-#include <n/utils.h>
+#include <n/Types.h>
 
 namespace n {
-
 namespace concurrent {
 
-enum RecursionMode
+template<typename T>
+class LockGuard : NonCopyable
 {
-	Recursive,
-	NonRecursive
-};
-
-class Thread : NonCopyable
-{
-	struct Internal;
-
 	public:
-		Thread();
+		LockGuard(T &t) : lock(&t) {
+			t.lock();
+		}
 
-		virtual ~Thread();
+		LockGuard(LockGuard<T> &&l) : lock(0) {
+			std::swap(lock, l.lock);
+		}
 
-		static Thread *getCurrent();
-		static uint getCurrentId();
-
-		bool isRunning() const;
-		bool start();
-		void join() const;
-		void deleteLater();
-		bool willBeDeleted() const;
-		static void sleep(double sec);
-
-	protected:
-		virtual void run() = 0;
+		~LockGuard() {
+			if(lock) {
+				lock->unlock();
+			}
+		}
 
 	private:
-		static void *createThread(void *arg);
-
-		static thread_local Thread *self;
-		static thread_local uint currentId;
-
-		Internal *internal;
-		bool toDelete;
-		uint id;
+		T *lock;
 };
 
+template<typename T>
+LockGuard<T> lockGuard(T &t) {
+	return LockGuard<T>(t);
+}
+
+#define N_LOCK_LINE_HELPER(LOCK, LINE) auto _lockGuard_for_ ## LOCK ## _at_ ## LINE = n::concurrent::lockGuard(LOCK)
+#define N_LOCK_HELPER(LOCK, LINE) N_LOCK_LINE_HELPER(LOCK, LINE)
+#define N_LOCK(LOCK) N_LOCK_HELPER(LOCK, __LINE__)
 }
 }
 
-#endif // N_CONCURENT_THREAD_H
+
+#endif // N_CONCURENT_LOCKGUARD
+

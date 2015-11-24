@@ -314,6 +314,7 @@ DeferredShadingRenderer::DeferredShadingRenderer(GBufferRenderer *c, const math:
 
 void *DeferredShadingRenderer::prepare() {
 	void *ptr = child->prepare();
+	N_LOG_PERF;
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(ptr);
 
 	return new FrameData({sceneData->camera->getPosition(),
@@ -326,6 +327,7 @@ void *DeferredShadingRenderer::prepare() {
 }
 
 void DeferredShadingRenderer::render(void *ptr) {
+	N_LOG_PERF;
 	FrameData *data = reinterpret_cast<FrameData *>(ptr);
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(data->child);
 

@@ -21,6 +21,7 @@ QMAKE_LFLAGS += -ffast-math
 
 CONFIG(debug, debug|release) {
 	OBJECTS_DIR = bin/debug
+	DEFINES += N_PERF_LOG_ENABLED
 	#QMAKE_CXXFLAGS += -ftest-coverage -fprofile-generate -fprofile-correction
 	#QMAKE_LFLAGS += -ftest-coverage -fprofile-generate -fprofile-correction
 } else {

@@ -100,12 +100,8 @@ class ShaderInstance : NonCopyable
 			setValue(standards[v], t, args...);
 		}
 
-		void setBuffer(const core::String &name, const DynamicBufferBase &buffer) const {
-			int slot = buffers.get(name, gl::InvalidIndex);
-			if(slot != gl::InvalidIndex) {
-				bufferBindings[slot] = buffer.data;
-			}
-		}
+		void setBuffer(const core::String &name, const DynamicBufferBase &buffer) const;
+		void setBuffer(ShaderValue v, const DynamicBufferBase &buffer) const;
 
 		UniformInfo getInfo(const core::String &name) const;
 

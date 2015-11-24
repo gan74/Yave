@@ -14,39 +14,49 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_LOCKINGPROXY_H
-#define N_CONCURENT_LOCKINGPROXY_H
+#ifndef N_IO_SYNCHRONIZEDOUTPUTSTREAM
+#define N_IO_SYNCHRONIZEDOUTPUTSTREAM
 
-#include "Mutex.h"
+#include "OutputStream.h"
+#include <n/concurrent/Mutex.h>
+#include <n/concurrent/LockGuard.h>
 
 namespace n {
-namespace concurent {
+namespace io {
 
-template<typename T>
-class LockingProxy
+class SynchronizedOutputStream : public OutputStream
 {
 	public:
-		LockingProxy(T *obj) : ptr(obj) {
-			if(ptr) {
-				ptr->lock();
-			}
+		SynchronizedOutputStream(OutputStream *s) : stream(s) {
 		}
 
-		~LockingProxy() {
-			if(ptr) {
-				ptr->unlock();
-			}
+		~SynchronizedOutputStream() {
+			lock.lock();
+			lock.unlock();
 		}
 
-		T *operator->() const {
-			return ptr;
+		bool canWrite() const override {
+			N_LOCK(lock);
+			return stream->canWrite();
+		}
+
+		void flush() override {
+			N_LOCK(lock);
+			stream->flush();
+		}
+
+		uint writeBytes(const void *b, uint len) override {
+			N_LOCK(lock);
+			return stream->writeBytes(b, len);
 		}
 
 	private:
-		T *ptr;
+		mutable concurrent::Mutex lock;
+		OutputStream *stream;
 };
 
 }
 }
 
-#endif // N_CONCURENT_LOCKINGPROXY_H
+#endif // N_IO_SYNCHRONIZEDOUTPUTSTREAM
+

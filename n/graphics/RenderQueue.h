@@ -36,7 +36,7 @@ class RenderQueue
 		void insert(const math::Matrix4<> &t, const MeshInstance &m);
 		void insert(const RenderBatch &b);
 
-		void prepare(math::Vec3 cpos, float max);
+		void prepare(math::Vec3, float);
 
 		void operator()(RenderFlag flags = RenderFlag::None);
 
@@ -47,9 +47,9 @@ class RenderQueue
 		}
 
 	private:
-		core::Array<RenderBatch> sortable;
-		core::Array<RenderBatch> notSortable;
+		core::Array<RenderBatch> batches;
 		core::Array<core::Functor<void(RenderFlag)>> funcs;
+		UniformBuffer<math::Matrix4<>> matrixBuffer;
 };
 
 }

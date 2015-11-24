@@ -31,6 +31,7 @@ class PngReader : public ImageLoader::ImageReader<PngReader, core::String>
 		}
 
 		ImageData *operator()(core::String name) override {
+			N_LOG_PERF;
 			std::vector<byte> image;
 			uint32 width = 0;
 			uint32 height = 0;

@@ -14,32 +14,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_IO_OUTPOUTSTREAM_H
-#define N_IO_OUTPOUTSTREAM_H
-
-#include <n/core/String.h>
+#include "Timer.h"
+#include <n/defines.h>
 
 namespace n {
-namespace io {
+namespace core {
 
-class OutputStream : NonCopyable
-{
-	public:
-		virtual ~OutputStream() {}
+Timer::Timer() : time(std::chrono::high_resolution_clock::now()) {
+}
 
-		virtual bool canWrite() const = 0;
-		virtual uint writeBytes(const void *b, uint len) = 0;
-		virtual void flush() = 0;
+void Timer::start() {
+	time = std::chrono::high_resolution_clock::now();
+}
 
-		virtual void write(const core::String &str) {
-			if(str.size()) {
-				writeBytes(&str[0], str.size());
-			}
-		}
-};
+double Timer::reset() {
+	double t = elapsed();
+	start();
+	return t;
+}
+
+double Timer::elapsed() const {
+	return std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - time).count() / 1000000000;
+}
+
+}
+}
 
 
-} // io
-} // n
-
-#endif // N_IO_OUTPOUTSTREAM_H

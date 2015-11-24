@@ -21,6 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/utils/hash.h>
 #include <n/utils/math.h>
 #include <n/utils/random.h>
+#include <n/utils/logs.h>
+#include <n/utils/perf.h>
+#include <n/utils/SysInfo.h>
 
 namespace n {
 namespace graphics {
@@ -37,15 +40,6 @@ namespace io {}
 namespace n {
 
 static constexpr void *null = 0;
-
-class NonCopyable
-{
-	public:
-		NonCopyable() {}
-		NonCopyable(const NonCopyable &) = delete;
-		NonCopyable &operator=(const NonCopyable &) = delete;
-};
-
 
 uint uniqueId();
 

@@ -51,9 +51,9 @@ void ConsoleOutputStream::flush() {
 	fflush(channel == ConsoleOutputStream::Out ? stdout : stderr);
 }
 
-ConsoleInputStream in = ConsoleInputStream();
+/*ConsoleInputStream in = ConsoleInputStream();
 ConsoleOutputStream out = ConsoleOutputStream(ConsoleOutputStream::Out);
-ConsoleOutputStream err = ConsoleOutputStream(ConsoleOutputStream::Error);
+ConsoleOutputStream err = ConsoleOutputStream(ConsoleOutputStream::Error);*/
 
 }
 }

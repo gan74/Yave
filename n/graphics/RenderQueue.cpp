@@ -15,8 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "RenderQueue.h"
-#include <iostream>
-
 
 namespace n {
 namespace graphics {
@@ -28,7 +26,7 @@ uint exp(float f) {
 
 
 
-RenderQueue::RenderQueue() {
+RenderQueue::RenderQueue() : matrixBuffer(2048) { // if 2048 is too big it will allocate max size instead.
 }
 
 void RenderQueue::insert(const core::Functor<void(RenderFlag)> &f) {
@@ -48,36 +46,48 @@ void RenderQueue::insert(const math::Matrix4<> &t, const MeshInstance &m) {
 }
 
 void RenderQueue::insert(const RenderBatch &b) {
-	(b.isDepthSorted() ? sortable : notSortable).append(b);
+	batches.append(b);
 }
 
-void RenderQueue::prepare(math::Vec3 cpos, float max) {
-	uint size = exp(max + 1) - exp(1);
-	core::Array<RenderBatch> *buckets = new core::Array<RenderBatch>[size];
+void RenderQueue::prepare(math::Vec3 , float) {
+	batches.sort([](const RenderBatch &a, const RenderBatch &b) {
+		return a.getMaterial() < b.getMaterial();
+	});
+}
 
-	for(const RenderBatch &b : sortable) {
-		math::Vec3 v = (b.getMatrix() * math::Vec4(0, 0, 0, 1)).sub(3);
-		float dist = std::max((cpos - v).length() - b.getVertexArrayObject().getRadius(), 0.0f);
-		uint index = exp(dist + 1) - exp(1);
-		if(index < size) {
-			buckets[index].append(b);
+template<typename I>
+void drawRangeInstanciate(I begin, I end, RenderFlag flags) {
+	if(end == begin + 1) {
+		(*begin)(flags, 1, 0);
+		return;
+	}
+	uint c = 0;
+	I inst = begin++;
+	for(I i = begin; i != end; i++) {
+		if(!inst->canInstanciate(*i)) {
+			uint count = i - inst;
+			(*inst)(flags, count, c);
+			c += count;
+			inst = i;
 		}
 	}
-	sortable.makeEmpty();
-	for(uint i = 0; i != size; i++) {
-		buckets[i].sort();
-		sortable.append(buckets[i]);
-	}
-	delete[] buckets;
-	notSortable.sort();
+	(*inst)(flags, end - inst, c);
 }
 
 void RenderQueue::operator()(RenderFlag flags) {
-	for(const RenderBatch &b : sortable) {
-		b(flags);
+	uint matIndex = 0;
+	core::Array<RenderBatch>::const_iterator drawIt = batches.begin();
+	GLContext::getContext()->setMatrixBuffer(matrixBuffer);
+	for(core::Array<RenderBatch>::const_iterator it = batches.begin(); it != batches.end(); it++) {
+		if(matIndex == matrixBuffer.getSize()) {
+			drawRangeInstanciate(drawIt, it, flags);
+			drawIt = it;
+			matIndex = 0;
+		}
+		matrixBuffer[matIndex++] = it->getMatrix();
 	}
-	for(const RenderBatch &b : notSortable) {
-		b(flags);
+	if(matIndex) {
+		drawRangeInstanciate(drawIt, batches.cend(), flags);
 	}
 	for(const core::Functor<void(RenderFlag)> &f : funcs) {
 		f(flags);

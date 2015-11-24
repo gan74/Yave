@@ -20,12 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "IODevice.h"
 #include <n/core/String.h>
 
-#define N_IO_USE_C_FILE
-
 namespace n {
 namespace io {
 
-class File : public IODevice, NonCopyable
+class File : public IODevice
 {
 	public:
 		File(const core::String &fileName);
@@ -44,6 +42,7 @@ class File : public IODevice, NonCopyable
 		uint writeBytes(const void *b, uint len) override;
 		uint readBytes(void *b, uint len = -1) override;
 		bool exists() const;
+		bool remove();
 
 		const core::String &getName() const;
 		core::String getPath() const;
@@ -51,11 +50,7 @@ class File : public IODevice, NonCopyable
 		static bool exists(const core::String &fileName);
 
 	private:
-		#ifndef N_IO_USE_C_FILE
-		mutable std::fstream stream;
-		#else
 		FILE *file;
-		#endif
 
 		core::String name;
 		int mode;

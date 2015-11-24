@@ -19,19 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "TriangleBuffer.h"
 #include "VertexAttribs.h"
-#include "VertexArraySubObject.h"
+#include "VertexArrayObject.h"
 #include "Material.h"
 #include <n/assets/Asset.h>
 #include <n/concurrent/Future.h>
 
 namespace n {
 namespace graphics {
-
-enum MeshOptimisationOptions
-{
-	MergeVAO = 0x01,
-
-};
 
 namespace internal {
 	class MeshInstance;
@@ -42,12 +36,12 @@ class SubMeshInstance
 	public:
 		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const Material &m);
 		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m);
-		SubMeshInstance(const VertexArraySubObject<> &b, const Material &m);
+		SubMeshInstance(const VertexArrayObject<> &b, const Material &m);
 
-		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1) const;
+		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1, uint base = 0) const;
 		const Material &getMaterial() const;
 		float getRadius() const;
-		const VertexArraySubObject<> &getVertexArrayObject() const;
+		const VertexArrayObject<> &getVertexArrayObject() const;
 
 	private:
 		friend class internal::MeshInstance;
@@ -58,7 +52,7 @@ class SubMeshInstance
 		Material material;
 
 		mutable core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
-		mutable VertexArraySubObject<> vao;
+		mutable VertexArrayObject<> vao;
 };
 
 namespace internal {
@@ -67,7 +61,7 @@ namespace internal {
 		public:
 			typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
 
-			MeshInstance(const core::Array<SubMeshInstance *> &b, uint opt = MeshOptimisationOptions::MergeVAO);
+			MeshInstance(const core::Array<SubMeshInstance *> &b);
 			MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material());
 			~MeshInstance();
 

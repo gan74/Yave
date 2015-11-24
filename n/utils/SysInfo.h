@@ -14,55 +14,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_THREAD_H
-#define N_CONCURENT_THREAD_H
+#ifndef N_UTILS_SYSINFO
+#define N_UTILS_SYSINFO
 
-#include <n/utils.h>
+#include <n/types.h>
 
 namespace n {
 
-namespace concurrent {
-
-enum RecursionMode
+class SysInfo
 {
-	Recursive,
-	NonRecursive
-};
-
-class Thread : NonCopyable
-{
-	struct Internal;
-
 	public:
-		Thread();
-
-		virtual ~Thread();
-
-		static Thread *getCurrent();
-		static uint getCurrentId();
-
-		bool isRunning() const;
-		bool start();
-		void join() const;
-		void deleteLater();
-		bool willBeDeleted() const;
-		static void sleep(double sec);
-
-	protected:
-		virtual void run() = 0;
-
-	private:
-		static void *createThread(void *arg);
-
-		static thread_local Thread *self;
-		static thread_local uint currentId;
-
-		Internal *internal;
-		bool toDelete;
-		uint id;
+		static uint pid();
 };
 
-}
+
 }
 
-#endif // N_CONCURENT_THREAD_H
+#endif // N_UTILS_SYSINFO
+

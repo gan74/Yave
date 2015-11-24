@@ -30,6 +30,7 @@ class IODevice : public InputStream, public OutputStream
 		static const int Read = 0x01;
 		static const int Write = 0x02;
 		static const int Binary = 0x04;
+		static const int Append = 0x08;
 
 
 		IODevice() {
