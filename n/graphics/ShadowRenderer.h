@@ -32,7 +32,7 @@ class ShadowRenderer : public BufferedRenderer
 {
 	public:
 		template<typename... Args>
-		ShadowRenderer(uint res, bool depth = true, Args... args) : BufferedRenderer(math::Vec2ui(res), BufferedRenderer::CanDiscard, depth, args...) {
+		ShadowRenderer(uint res, bool depth = true, Args... args) : BufferedRenderer(math::Vec2ui(res), BufferedRenderer::DiscardAllowed, depth, args...) {
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
 						 "return step(proj.z, d);";
