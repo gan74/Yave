@@ -65,8 +65,8 @@ class VertexArrayObject
 			return data.radius;
 		}
 
-		gl::DrawCommand getCmd() const {
-			return gl::DrawCommand{data.size, 1, data.start, data.base, 0};
+		gl::DrawCommand getCmd(uint instanceBase = 0) const {
+			return gl::DrawCommand{data.size, 1, data.start, data.base, instanceBase};
 		}
 
 		bool operator<(const VertexArrayObject<T> &o) const {

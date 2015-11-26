@@ -40,7 +40,7 @@ bool DrawCommandBuffer::push(const RenderBatch &r) {
 	}
 	matrixBuffer[index] = r.getMatrix();
 	materialBuffer[index] = r.getMaterial().getBufferData();
-	cmdBuffer[index] = r.getVertexArrayObject().getCmd();
+	cmdBuffer[index] = r.getVertexArrayObject().getCmd(index);
 	index++;
 	return true;
 }
@@ -65,10 +65,6 @@ void DrawCommandBuffer::present(RenderFlag flags) {
 	GLContext::getContext()->getVertexArrayFactory().bind();
 	cmdBuffer.update(true);
 	gl::multiDrawElementsIndirect(gl::Triangles, index);
-	/*for(uint i = 0; i != index; i++) {
-		ShaderInstance::getCurrent()->setValue(SVBaseInstance, i);
-		gl::drawElementsInstancedBaseVertex(gl::Triangles, cmdBuffer[i].count, cmdBuffer[i].start, 1, cmdBuffer[i].baseVertex);
-	}*/
 	index = 0;
 }
 

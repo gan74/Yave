@@ -101,8 +101,7 @@ Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
 				"n_MaterialType material = n_Material;"
 				"vec4 color = material.color * mix(vec4(1.0), texture(material.diffuse, n_TexCoord), material.diffuseIntencity);"
 				"n_0 = n_gbuffer0(color, n_Normal, material.roughnessIntencity, material.metallic);"
-				"n_0 = vec4(1, 0, 0, 1);"
-				"if(n_InstanceID != 0) { n_0 = vec4(0, 1, 0, 1); }"
+				//n_0 = vec4(vec3(float(n_InstanceID) * 0.0025), 1);"
 			"}");
 	}
 	return def;

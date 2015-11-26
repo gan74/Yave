@@ -554,7 +554,11 @@ void bindVertexArray(Handle array) {
 }
 
 void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr, uint divisor) {
-	glVertexAttribPointer(index, size, dataType[type], norm, stride, ptr);
+	if(type == Float || type == Double) {
+		glVertexAttribPointer(index, size, dataType[type], norm, stride, ptr);
+	} else {
+		glVertexAttribIPointer(index, size, dataType[type], stride, ptr);
+	}
 	if(divisor) {
 		glVertexAttribDivisor(index, divisor);
 	}
