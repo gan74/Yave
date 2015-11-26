@@ -108,7 +108,19 @@ bool Texture::prepare(bool sync) const {
 }
 
 bool Texture::synchronize(bool immediate) {
-	return prepare(immediate);
+	if(!isNull()) {
+		return true;
+	}
+	if(!immediate) {
+		prepare(false);
+	} else {
+		prepare(true);
+	}
+	bool p = prepare(immediate);
+	if(immediate) {
+		internal::TextureBinding::dirty();
+	}
+	return p;
 }
 
 }

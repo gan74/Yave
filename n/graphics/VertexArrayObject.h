@@ -66,7 +66,7 @@ class VertexArrayObject
 		}
 
 		gl::DrawCommand getCmd() const {
-			return gl::DrawCommand{data.size, 1, (void *)(sizeof(uint) * data.start), data.base, 0};
+			return gl::DrawCommand{data.size, 1, data.start, data.base, 0};
 		}
 
 		bool operator<(const VertexArrayObject<T> &o) const {

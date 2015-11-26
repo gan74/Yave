@@ -53,7 +53,7 @@ CameraShadowRenderer::~CameraShadowRenderer() {
 }
 
 void *CameraShadowRenderer::prepare() {
-	return child->prepare(createCamera());
+	return child->prepare(createCamera(), RenderFlag::FastDepth);
 }
 
 void CameraShadowRenderer::render(void *ptr) {

@@ -133,7 +133,7 @@ class VertexArrayFactory : NonCopyable
 		void setup() {;
 			core::Array<uint> idArray;
 			for(uint i = 0; i != 2048; i++) {
-				idArray.append(i + 1);
+				idArray.append(i);
 			}
 			ids = new StaticBuffer<uint, ArrayBuffer>(idArray);
 

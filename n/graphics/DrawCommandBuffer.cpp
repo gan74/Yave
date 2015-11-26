@@ -63,12 +63,12 @@ void DrawCommandBuffer::present(RenderFlag flags) {
 	ShaderInstance::getCurrent()->setBuffer("n_MaterialBuffer", materialBuffer);
 	ShaderInstance::validateState();
 	GLContext::getContext()->getVertexArrayFactory().bind();
-	//gl::multiDrawElementsIndirect(gl::Triangles, index);
-	for(uint i = 0; i != index; i++) {
+	cmdBuffer.update(true);
+	gl::multiDrawElementsIndirect(gl::Triangles, index);
+	/*for(uint i = 0; i != index; i++) {
 		ShaderInstance::getCurrent()->setValue(SVBaseInstance, i);
 		gl::drawElementsInstancedBaseVertex(gl::Triangles, cmdBuffer[i].count, cmdBuffer[i].start, 1, cmdBuffer[i].baseVertex);
-	}
-	std::cout<<index<<" drawn !"<<std::endl;
+	}*/
 	index = 0;
 }
 

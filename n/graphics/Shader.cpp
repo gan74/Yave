@@ -64,10 +64,10 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 	};
 	uint bufferSize = UniformBuffer<math::Matrix4<>>::getMaxSize();
 	core::String ver = core::String("#version ") + vers + "\n";
-	core::String model = "\n #define n_ModelMatrix n_ModelMatrices[0] \n"
+	core::String model = "\n #define n_ModelMatrix n_ModelMatrices[0] \n" // <---------------------------------------------------------------------- THIS
 						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(bufferSize) + "]; };";
 	core::String material = "layout(std140) uniform n_MaterialBuffer { n_MaterialType n_Materials[" + core::String(bufferSize) + "]; };"
-							"\n #define n_Material n_Materials[0] \n";
+							"\n #define n_Material n_Materials[n_InstanceID] \n";
 	core::String common = "layout(std140, row_major) uniform; "
 						  "layout (std140, row_major) buffer; "
 						  "const float pi = " + core::String(math::pi) + "; "

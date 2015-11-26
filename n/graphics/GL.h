@@ -183,7 +183,7 @@ struct DrawCommand
 {
 	uint count;
 	uint instanceCount;
-	void *start;
+	uint start;
 	uint baseVertex;
 	uint baseInstance;
 };

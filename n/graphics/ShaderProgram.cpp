@@ -79,7 +79,7 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 							"n_Tangent = n_VertexTangent;"
 							"n_TexCoord = n_VertexCoord;"
 							"n_Binormal = cross(n_Normal, n_Tangent);"
-							"n_InstanceID = n_BaseInstance;"
+							"n_InstanceID = n_DrawID;"
 						"}");
 	}
 	return def[type];
@@ -100,7 +100,9 @@ Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
 			"void main() {"
 				"n_MaterialType material = n_Material;"
 				"vec4 color = material.color * mix(vec4(1.0), texture(material.diffuse, n_TexCoord), material.diffuseIntencity);"
-				"n_0 = n_gbuffer0(vec4(0.5), n_Normal, material.roughnessIntencity, material.metallic);"
+				"n_0 = n_gbuffer0(color, n_Normal, material.roughnessIntencity, material.metallic);"
+				"n_0 = vec4(1, 0, 0, 1);"
+				"if(n_InstanceID != 0) { n_0 = vec4(0, 1, 0, 1); }"
 			"}");
 	}
 	return def;

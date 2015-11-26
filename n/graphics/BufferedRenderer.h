@@ -32,7 +32,7 @@ class BufferedRenderer : public Renderer
 		enum BufferKeepingPolicy
 		{
 			AlwaysKeep,
-			CanDiscard
+			DiscardAllowed
 		};
 
 		template<typename... Args>
@@ -45,7 +45,7 @@ class BufferedRenderer : public Renderer
 		}
 
 		virtual ~BufferedRenderer() {
-			keepPolicy = CanDiscard;
+			keepPolicy = DiscardAllowed;
 			discardBuffer();
 		}
 
@@ -55,7 +55,7 @@ class BufferedRenderer : public Renderer
 		}
 
 		void discardBuffer() {
-			if(buffer && keepPolicy == CanDiscard) {
+			if(buffer && keepPolicy == DiscardAllowed) {
 				GLContext::getContext()->getFrameBufferPool().add(buffer);
 				buffer = 0;
 			}

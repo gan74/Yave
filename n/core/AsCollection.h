@@ -129,13 +129,13 @@ class Collection
 
 		typedef CollectionInternal<T, TypeInfo<T>::isIterable, TypeInfo<T>::isNonConstIterable> InternalType;
 
-		template<typename O, typename...>
+		template<typename O>
 		static O &makeOne();
 
-		template<typename... Args>
+		template<typename Arg>
 		struct MappedType
 		{
-			typedef decltype(((T *)0)->template mapped<Args...>(makeOne<Args...>())) type;
+			typedef decltype(makeOne<T>().template mapped<Arg>(makeOne<Arg>())) type;
 		};
 
 	private:
@@ -149,7 +149,6 @@ class Collection
 		}
 
 		Collection(const Collection<T> &c) : collection(c.collection){
-
 		}
 
 	public:
@@ -168,19 +167,19 @@ class Collection
 		};
 
 		iterator begin() {
-			return collection.begin();
+			return std::begin(collection);
 		}
 
 		iterator end() {
-			return collection.end();
+			return std::end(collection);
 		}
 
 		const_iterator begin() const {
-			return collection.begin();
+			return  std::begin(collection);
 		}
 
 		const_iterator end() const {
-			return collection.end();
+			return  std::end(collection);
 		}
 
 		bool isEmpty() const {
@@ -273,6 +272,7 @@ class Collection
 			return filterDispatch(BoolToType<internal::HasFilter<T, void, Args...>::value>(), f...);
 		}
 
+
 		template<typename... Args, typename C = T>
 		C filtered(Args... f) const {
 			return filteredDispatch<C, Args...>(BoolToType<internal::HasFiltered<T, C, Args...>::value>(), f...);
@@ -319,7 +319,7 @@ class Collection
 			if(internal::HasSize<C, uint>::value && internal::HasSize<T, uint>::value && Collection(c).size() != size()) {
 				return false;
 			}
-			const_iterator i = collection.begin();
+			const_iterator i = begin();
 			for(typename C::const_iterator it = c.begin(), en = c.end(); it != en; ++it) {
 				if(!(*it == *i)) {
 					return false;
@@ -439,17 +439,18 @@ class Collection
 
 		template<typename U>
 		void foreachDispatch(FalseType, const U &f) const {
-			std::for_each(collection.begin(), collection.end(), f);
+			std::for_each(begin(), end(), f);
 		}
 
 		template<typename U>
 		void foreachDispatch(FalseType, const U &f) {
-			std::for_each(collection.begin(), collection.end(), f);
+			std::for_each(begin(), end(), f);
 		}
 
 		bool isSortedDispatch(FalseType) const {
-			const_iterator l = collection.begin();
-			for(const_iterator it = ++collection.begin(); it != collection.end(); ++it) {
+			const_iterator l = begin();
+			const_iterator en = end();
+			for(const_iterator it = ++begin(); it != en; ++it) {
 				if(*it < *l) {
 					return false;
 				}
@@ -460,38 +461,41 @@ class Collection
 
 		template<typename U>
 		iterator findOneDispatch(FalseType, const U &f, iterator from) {
-			for(iterator i = from; i != collection.end(); ++i) {
+			const_iterator en = end();
+			for(iterator i = from; i != en; ++i) {
 				if(f(*i)) {
 					return i;
 				}
 			}
-			return collection.end();
+			return end();
 		}
 
 		template<typename U>
 		const_iterator findOneDispatch(FalseType, const U &f, const_iterator from) const {
-			for(const_iterator i = from; i != collection.end(); ++i) {
+			const_iterator en = end();
+			for(const_iterator i = from; i != en; ++i) {
 				if(f(*i)) {
 					return i;
 				}
 			}
-			return collection.end();
+			return en;
 		}
 
 		template<typename U>
 		iterator findOneDispatch(FalseType, const U &f) {
-			return findDispatch(FalseType(), f, collection.begin());
+			return findDispatch(FalseType(), f, begin());
 		}
 
 		template<typename U>
 		const_iterator findOneDispatch(FalseType, const U &f) const {
-			return findDispatch(FalseType(), f, collection.begin());
+			return findDispatch(FalseType(), f, begin());
 		}
 
 		template<typename U>
 		uint countAllDispatch(FalseType, const U &f) const {
 			uint c = 0;
-			for(const_iterator i = collection.begin(); i != collection.end(); ++i) {
+			const_iterator en = end();
+			for(const_iterator i = begin(); i != en; ++i) {
 				if(f(*i)) {
 					c++;
 				}
@@ -501,7 +505,8 @@ class Collection
 
 		template<typename V>
 		bool existsOneDispatch(FalseType, const V &f) const {
-			for(const_iterator i = collection.begin(); i != collection.end(); ++i) {
+			const_iterator en = end();
+			for(const_iterator i = begin(); i != en; ++i) {
 				if(f(*i)) {
 					return true;
 				}
@@ -530,7 +535,7 @@ class Collection
 		}
 
 		iterator findDispatch(FalseType, const ElementType &e) {
-			return findOne([&](const ElementType &t) { return t == e; }, collection.begin());
+			return findOne([&](const ElementType &t) { return t == e; }, begin());
 		}
 
 		iterator findDispatch(FalseType, const ElementType &e, const_iterator from) {
@@ -538,7 +543,7 @@ class Collection
 		}
 
 		const_iterator findDispatch(FalseType, const ElementType &e) const {
-			return findOne([&](const ElementType &t) { return t == e; }, collection.begin());
+			return findOne([&](const ElementType &t) { return t == e; }, begin());
 		}
 
 		const_iterator findDispatch(FalseType, const ElementType &e, const_iterator from) const {
@@ -585,12 +590,13 @@ class Collection
 
 		template<typename V>
 		void mapDispatch(FalseType, const V &f) {
-			std::for_each(collection.begin(), collection.end(), [&](T &e) { e = f(e); });
+			std::for_each(begin(), end(), [&](T &e) { e = f(e); });
 		}
 
 		template<typename U>
 		void filterDispatch(FalseType, const U &f) {
-			for(iterator it = collection.begin(); it != collection.end();) {
+			const_iterator en = end();
+			for(iterator it = begin(); it != en;) {
 				if(!f(*it)) {
 					it = collection.remove(it);
 				} else {
@@ -605,12 +611,12 @@ class Collection
 			if(this->isEmpty()) {
 				return U();
 			}
-			const_iterator end = collection.end();
-			--end;
-			for(const_iterator it = collection.begin(); it != end; ++it) {
+			const_iterator en = end();
+			--en;
+			for(const_iterator it = begin(); it != en; ++it) {
 				str += U(*it) + f;
 			}
-			return str + U(*end);
+			return str + U(*en);
 		}
 };
 

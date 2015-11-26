@@ -107,6 +107,14 @@ class BoxLight : public Light
 			}
 		}
 
+		void setCastUnfilteredShadows(const Scene *sc, uint res = 512) {
+			delete shadows;
+			shadows = 0;
+			if(sc) {
+				shadows = new BoxLightShadowRenderer(this, sc, res);
+			}
+		}
+
 	private:
 		math::Vec3 size;
 };
