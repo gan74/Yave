@@ -100,7 +100,7 @@ const MaterialData &Material::getData() const {
 
 MaterialBufferData Material::getBufferData() const {
 	MaterialData d = getData();
-	return MaterialBufferData{d.color, d.metallic, d.diffuse.getBindlessId() ? 1.f : 0.f, d.normalIntencity, d.roughness.getBindlessId() ? 1.f : 0.f, d.diffuse.getBindlessId(), d.normal.getBindlessId(), d.roughness.getBindlessId(), {0, 0}};
+	return MaterialBufferData{d.color, d.metallic, d.diffuse.getBindlessId() ? 1.f : 0.f, d.normal.getBindlessId() ? d.normalIntencity : 0.f, d.roughness.getBindlessId() ? 1.f : 0.f, d.diffuse.getBindlessId(), d.normal.getBindlessId(), d.roughness.getBindlessId(), {0, 0}};
 }
 
 }

@@ -89,7 +89,7 @@ Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
 	//return GBufferRenderer::getShader();
 	static Shader<FragmentShader> *def = 0;
 	if(!def) {
-		def = new Shader<FragmentShader>("#extension GL_ARB_bindless_texture : enable \n"
+		def = new Shader<FragmentShader>(
 			"layout(location = 0) out vec4 n_0;"
 
 			"N_DECLARE_MATERIAL_BUFFER"
