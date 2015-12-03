@@ -262,6 +262,19 @@ void ShaderInstance::setValue(UniformInfo info, const Texture &t, TextureSampler
 	}
 }
 
+void ShaderInstance::setValue(UniformInfo info, const CubeMap &t, TextureSampler sampler) const {
+	if(gl::isBindlessHandle(info.type) && GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
+		t.prepare();
+		gl::programUniformHandleui64(handle, info.addr, t.getBindlessId());
+	} else {
+		UniformAddr slot = info.addr;
+		if(slot != UniformAddr(gl::InvalidIndex)) {
+			texBindings[slot] = t;
+			texBindings[slot] = sampler;
+		}
+	}
+}
+
 void ShaderInstance::setBuffer(const core::String &name, const DynamicBufferBase &buffer) const {
 	int slot = buffers.get(name, gl::InvalidIndex);
 	if(slot != gl::InvalidIndex) {

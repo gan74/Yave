@@ -20,13 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Texture.h"
 #include "TextureBase.h"
 
-/*namespace n {
+namespace n {
 namespace graphics {
 
 class CubeMap : public TextureBase<TextureCube>
 {
 	public:
-		CubeMap(const Texture &top, const Texture &bottom, const Texture &right, const Texture &left, const Texture &front, const Texture &back);
+		CubeMap(const Texture &pz, const Texture &nz, const Texture &py, const Texture &ny, const Texture &px, const Texture &nx);
 		CubeMap(const Texture &tex) : CubeMap(tex, tex, tex, tex, tex, tex) {
 		}
 
@@ -43,19 +43,23 @@ class CubeMap : public TextureBase<TextureCube>
 			return true;
 		}
 
+		bool synchronize(bool immediate = false);
+
 	private:
-		friend class ShaderProgram;
+		friend class ShaderInstance;
+		friend class FrameBuffer;
 		friend class internal::TextureBinding;
 
 		void upload() const;
 
-		void prepare(bool sync = false) const;
+		bool prepare(bool sync = false) const;
+		bool prepareSides(bool sync = false) const;
 
 		Texture sides[6];
 };
 
 }
-}*/
+}
 
 #endif // N_GRAPHICS_CUBEMAP
 

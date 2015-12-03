@@ -17,59 +17,61 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "CubeMap.h"
 #include "TextureBinding.h"
 
-/*namespace n {
+namespace n {
 namespace graphics {
 
-CubeMap::CubeMap(const Texture &top, const Texture &bottom, const Texture &right, const Texture &left, const Texture &front, const Texture &back) : TextureBase<TextureCube>(), sides{top, bottom, right, left, front, back} {
+CubeMap::CubeMap(const Texture &pz, const Texture &nz, const Texture &py, const Texture &ny, const Texture &px, const Texture &nx) : TextureBase<TextureCube>(), sides{pz, nz, py, ny, px, nx} {
 }
 
 void CubeMap::upload() const {
-	 gl::GLenum glSides[] = {
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_X
-	};
-	gl::glGenTextures(1, &(data->handle));
-	gl::glBindTexture(GL_TEXTURE_CUBE_MAP, data->handle);
-	gl::GLubyte* data = new gl::GLubyte[sides[0].getSize().mul() * 4];
-	for(uint i = 0; i != 6; i++) {
-		gl::glBindTexture(GL_TEXTURE_2D, sides[i].getHandle());
-		math::Vec2ui size = sides[i].getSize();
-		gl::glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		gl::glTexImage2D(glSides[i], 0, GL_RGBA8, size.x(), size.y(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	}
-	gl::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	gl::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	gl::glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	delete[] data;
+	data->handle = gl::createTexture();
+	//gl::bindTexture(TextureCube, data->handle);
+
+
+	gl::texCube3D(data->handle, gl::getTextureFormat(sides[0].getFormat()), sides[0].getSize(), sides[0].getHandle(), sides[1].getHandle(), sides[2].getHandle(), sides[3].getHandle(), sides[4].getHandle(), sides[5].getHandle());
+
+
 }
 
-void CubeMap::prepare(bool sync) const {
-	if(isComplete()) {
+bool CubeMap::prepare(bool sync) const {
+	if(getHandle()) {
+		return true;
+	}
+	if(prepareSides(sync)) {
 		if(data->lock.trylock()) {
 			if(sync) {
 				upload();
 			} else {
+				CubeMap self(*this);
 				GLContext::getContext()->addGLTask([=]() {
-					upload();
-					internal::TextureBinding::dirty();
+					self.upload();
 				});
 			}
 		}
-	} else {
-		for(uint i = 0; i != 6; i++) {
-			if(sides[i].isNull()) {
-				sides[i].prepare(sync);
-			}
-		}
-		if(sync) {
-			gl::glBindTexture(GL_TEXTURE_CUBE_MAP, data->handle);
-		}
 	}
+	return getHandle();
 }
 
+
+bool CubeMap::prepareSides(bool sync) const {
+	bool rdy = true;
+	for(uint i = 0; i != 6; i++) {
+		rdy &= sides[i].prepare(sync);
+	}
+	return rdy;
 }
-}*/
+
+bool CubeMap::synchronize(bool immediate) {
+	if(!isNull()) {
+		return true;
+	}
+	bool p = prepare(immediate);
+	if(immediate) {
+		internal::TextureBinding::dirty();
+	}
+	return p;
+}
+
+
+}
+}

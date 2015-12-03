@@ -46,7 +46,8 @@ enum BufferTarget
 enum TextureType
 {
 	Texture2D,
-	TextureCube
+	TextureCube,
+	Texture2DArray
 };
 
 enum CullMode : uint16
@@ -128,6 +129,16 @@ enum Type
 	Double,
 };
 
+enum CubeMapFace
+{
+	PositiveZ,
+	NegativeZ,
+	PositiveY,
+	NegativeY,
+	PositiveX,
+	NegativeX
+};
+
 enum PrimitiveType
 {
 	Triangles
@@ -185,6 +196,7 @@ struct TextureFormat
 		friend TextureFormat getTextureFormat(ImageFormat);
 		friend bool isHWSupported(ImageFormat);
 		friend void texImage2D(TextureType, int, uint, uint, int, TextureFormat, const void *);
+		friend void texCube3D(Handle cube, TextureFormat format, math::Vec2ui size, Handle pz, Handle nz, Handle py, Handle ny, Handle px, Handle nx);
 
 		TextureFormat(uint f, uint i, uint t) : format(f), internalFormat(i), type(t) {
 		}
@@ -288,6 +300,7 @@ void programUniformMatrix3fv(Handle h, UniformAddr loc, uint count, bool tr, con
 void programUniformMatrix4fv(Handle h, UniformAddr loc, uint count, bool tr, const float *m);
 void programUniformHandleui64(Handle prog, UniformAddr loc, uint64 handle);
 void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data);
+void texCube3D(Handle cube, TextureFormat format, math::Vec2ui size, Handle pz, Handle nz, Handle py, Handle ny, Handle px, Handle nx);
 void generateMipmap(TextureType type);
 uint64 getTextureSamplerHandle(Handle tex, TextureSampler smp, bool mipmap);
 void makeTextureHandleResident(uint64 handle);

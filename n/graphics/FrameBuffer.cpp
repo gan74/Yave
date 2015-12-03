@@ -136,7 +136,6 @@ void FrameBuffer::blit(uint slot, bool depth) const {
 	Material().bind(RenderFlag::DepthWriteOnly);
 	#warning Blitting into framebuffer 0 with a float texture will cause an error
 	gl::blitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), bits, gl::Nearest);
-
 }
 
 }
