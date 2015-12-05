@@ -20,8 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "StaticBuffer.h"
 #include "GL.h"
 
-#define N_NO_TEX_STORAGE
-
 namespace n {
 namespace graphics {
 
@@ -36,6 +34,15 @@ Texture::Texture(const Image &i, bool mip) : TextureBase<Texture2D>(), image(i) 
 }
 
 Texture::Texture() : TextureBase<Texture2D>() {
+}
+
+Texture::Texture(const internal::TextureBase &base, Image im) : TextureBase(base), image(im) {
+	if(data->handle) {
+		if(!data->bindless && GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
+			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
+			gl::makeTextureHandleResident(data->bindless);
+		}
+	}
 }
 
 Texture::~Texture() {
@@ -58,25 +65,10 @@ void Texture::upload() const {
 	if(!size.mul()) {
 		fatal("Invalid image size.");
 	}
-	data->handle = gl::createTexture();
-	gl::bindTexture(Texture2D, data->handle);
-
+	data->hasMips &= isMipCapable();
 	gl::TextureFormat format = gl::getTextureFormat(image.getFormat());
 
-	data->hasMips &= isMipCapable();
-	#ifndef N_NO_TEX_STORAGE
-	uint maxMips = getMipmapLevels();
-	gl::glTexStorage2D(GL_TEXTURE_2D,  maxMips, format.internalFormat, size.x(), size.y());
-	if(image.data()) {
-		gl::glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format.format, format.type, image.data()); // crashes if data = 0...
-	}
-	#else
-	gl::texImage2D(Texture2D, 0, size.x(), size.y(), 0, format, image.data());
-	#endif
-
-	if(hasMipmaps()) {
-		gl::generateMipmap(Texture2D);
-	}
+	data->handle = gl::createTexture2D(size, getMipmapLevels(), format, image.data());
 
 	if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
 		data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());

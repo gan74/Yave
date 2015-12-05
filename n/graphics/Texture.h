@@ -66,7 +66,9 @@ class Texture : public TextureBase<Texture2D>
 		friend class ShaderInstance;
 		friend class FrameBuffer;
 		friend class internal::TextureBinding;
-		friend class CubeMap;
+		friend class TextureArray;
+
+		Texture(const internal::TextureBase &base, Image im);
 
 		bool isMipCapable() const {
 			return getSize().max() / (getSize().min() + 1) < sqrt(2);

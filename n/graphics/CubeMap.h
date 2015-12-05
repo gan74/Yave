@@ -26,36 +26,9 @@ namespace graphics {
 class CubeMap : public TextureBase<TextureCube>
 {
 	public:
-		CubeMap(const Texture &pz, const Texture &nz, const Texture &py, const Texture &ny, const Texture &px, const Texture &nx);
-		CubeMap(const Texture &tex) : CubeMap(tex, tex, tex, tex, tex, tex) {
-		}
-
-		bool isNull() const {
-			return !getHandle();
-		}
-
-		bool isComplete() const {
-			for(uint i = 0; i != 6; i++) {
-				if(sides[i].isNull()) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		bool synchronize(bool immediate = false);
 
 	private:
-		friend class ShaderInstance;
-		friend class FrameBuffer;
-		friend class internal::TextureBinding;
 
-		void upload() const;
-
-		bool prepare(bool sync = false) const;
-		bool prepareSides(bool sync = false) const;
-
-		Texture sides[6];
 };
 
 }

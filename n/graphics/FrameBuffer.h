@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_FRAMEBUFFER_H
 
 #include <n/utils.h>
-#include "Texture.h"
+#include "TextureArray.h"
 #include "GL.h"
 
 namespace n {
@@ -68,7 +68,6 @@ class FrameBuffer : NonCopyable
 
 		~FrameBuffer();
 
-
 		bool isAttachmentEnabled(uint slot) const;
 		bool isDepthEnabled() const;
 
@@ -88,16 +87,19 @@ class FrameBuffer : NonCopyable
 			return slot == Depth ? getDepthAttachement() : attachments[slot];
 		}
 
+		TextureArray asTextureArray() const {
+			if(attArray) {
+				return *attArray;
+			}
+			return TextureArray();
+		}
+
 		Texture getDepthAttachement() const {
 			return depth ? *depth : Texture();
 		}
 
-	private:
-		friend class GLContext;
-		friend class FrameBufferPool;
-
 		template<typename... Args>
-		FrameBuffer(const math::Vec2ui &s, bool depthEnabled, Args... args): base(s), attachments(new Texture[getMaxAttachment()]), drawBuffers(new gl::Attachment[getMaxAttachment()]) {
+		FrameBuffer(const math::Vec2ui &s, bool depthEnabled, Args... args): base(s), attachments(new Texture[getMaxAttachment()]), attArray(0), drawBuffers(new gl::Attachment[getMaxAttachment()]) {
 			Image baseImage(base);
 			for(uint i = 0; i != getMaxAttachment(); i++) {
 				drawBuffers[i] = gl::NoAtt;
@@ -108,11 +110,16 @@ class FrameBuffer : NonCopyable
 			setup();
 		}
 
+	private:
+		friend class GLContext;
+		friend class FrameBufferPool;
+
 		void setup();
 
 		math::Vec2ui base;
 		Texture *attachments;
 		Texture *depth;
+		TextureArray *attArray;
 		gl::Attachment *drawBuffers;
 		gl::Handle handle;
 };

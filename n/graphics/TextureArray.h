@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_TEXTUREARRAY
 
 #include "TextureBase.h"
+#include "Texture.h"
 
 namespace n {
 namespace graphics {
@@ -26,15 +27,37 @@ class TextureArray : public TextureBase<Texture2DArray>
 {
 
 	public:
-		TextureArray(const math::Vec3ui &si) : TextureBase<Texture2DArray>(), size(si) {
+		TextureArray(const math::Vec3ui &si, ImageFormat format);
+		TextureArray();
+		~TextureArray();
+
+		const math::Vec3ui &getSize() const;
+
+		Texture getTexture(uint index) const;
+
+		bool isNull() const {
+			return !getHandle();
 		}
 
-		const math::Vec3ui &getSize() const {
-			return size;
+		bool isValid() {
+			return size.mul() != 0;
 		}
+
+		bool synchronize(bool immediate = false);
 
 	private:
 		math::Vec3ui size;
+		ImageFormat imgFormat;
+
+		bool isMipCapable() const {
+			return getSize().sub(2).max() / (getSize().sub(2).min() + 1) < sqrt(2);
+		}
+
+		bool prepare(bool sync = false) const;
+		void upload() const;
+
+		mutable Texture *textures;
+
 
 };
 

@@ -195,8 +195,9 @@ struct TextureFormat
 	private:
 		friend TextureFormat getTextureFormat(ImageFormat);
 		friend bool isHWSupported(ImageFormat);
-		friend void texImage2D(TextureType, int, uint, uint, int, TextureFormat, const void *);
-		friend void texCube3D(Handle cube, TextureFormat format, math::Vec2ui size, Handle pz, Handle nz, Handle py, Handle ny, Handle px, Handle nx);
+		friend Handle createTexture2D(const math::Vec2ui &, uint, TextureFormat, const void *);
+		friend Handle createTexture2DArray(const math::Vec3ui &, uint, TextureFormat, const void *);
+		friend Handle createTexture2DView(Handle, uint, uint, TextureFormat);
 
 		TextureFormat(uint f, uint i, uint t) : format(f), internalFormat(i), type(t) {
 		}
@@ -228,7 +229,9 @@ void setColorMask(bool r, bool g, bool b, bool a);
 Handle createProgram();
 Handle createShader(ShaderType shaderType);
 Handle createSampler(TextureSampler sampler, bool mipmap);
-Handle createTexture();
+Handle createTexture2D(const math::Vec2ui &size, uint mips, TextureFormat format, const void *data);
+Handle createTexture2DArray(const math::Vec3ui &size, uint mips, TextureFormat format, const void *data);
+Handle createTexture2DView(Handle array, uint layer, uint mips, TextureFormat format);
 Handle createBuffer();
 Handle createVertexArray();
 Handle createFramebuffer();
@@ -300,7 +303,6 @@ void programUniformMatrix3fv(Handle h, UniformAddr loc, uint count, bool tr, con
 void programUniformMatrix4fv(Handle h, UniformAddr loc, uint count, bool tr, const float *m);
 void programUniformHandleui64(Handle prog, UniformAddr loc, uint64 handle);
 void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data);
-void texCube3D(Handle cube, TextureFormat format, math::Vec2ui size, Handle pz, Handle nz, Handle py, Handle ny, Handle px, Handle nx);
 void generateMipmap(TextureType type);
 uint64 getTextureSamplerHandle(Handle tex, TextureSampler smp, bool mipmap);
 void makeTextureHandleResident(uint64 handle);

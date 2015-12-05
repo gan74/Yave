@@ -224,9 +224,41 @@ bool checkError() {
 	return false;
 }
 
-Handle createTexture() {
+
+
+Handle createTexture2D(const math::Vec2ui &size, uint mips, TextureFormat format, const void *data) {
 	Handle h = 0;
 	glGenTextures(1, &h);
+	bindTexture(Texture2D, h);
+	glTexStorage2D(GL_TEXTURE_2D,  mips, format.internalFormat, size.x(), size.y());
+	if(data) {
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format.format, format.type, data); // crashes if data = 0...
+	}
+	if(mips) {
+		generateMipmap(Texture2D);
+	}
+	return h;
+}
+
+Handle createTexture2DArray(const math::Vec3ui &size, uint mips, TextureFormat format, const void *data) {
+	Handle h = 0;
+	glGenTextures(1, &h);
+	bindTexture(Texture2DArray, h);
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY,  mips, format.internalFormat, size.x(), size.y(), size.z());
+	if(data) {
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, size.x(), size.y(), size.z(), format.format, format.type, data);
+	}
+	if(mips) {
+		generateMipmap(Texture2DArray);
+	}
+	return h;
+}
+
+
+Handle createTexture2DView(Handle array, uint layer, uint mips, TextureFormat format) {
+	Handle h = 0;
+	glGenTextures(1, &h);
+	glTextureView(h, GL_TEXTURE_2D, array, format.internalFormat, 0, mips, layer, 1);
 	return h;
 }
 
@@ -610,27 +642,6 @@ void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int 
 
 void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type type, void *indices, uint primCount, uint baseVertex) {
 	glDrawElementsInstancedBaseVertex(primitiveMode[mode], count, dataType[type], indices, primCount, baseVertex);
-}
-
-void texCube3D(Handle cube, TextureFormat format, math::Vec2ui size, Handle pz, Handle nz, Handle py, Handle ny, Handle px, Handle nx) {
-	Handle sides[] = {pz, nz, py, ny, px, nx};
-	Handle fbo = createFramebuffer();
-	Handle array = createTexture();
-	bindTexture(Texture2DArray, array);
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, format.internalFormat, size.x(), size.y(), 6);
-	bindFramebuffer(ReadBuffer, fbo);
-	for(uint i = 0; i != 6; i++) {
-		bindTexture(Texture2D, sides[i]);
-		framebufferTexture2D(ReadBuffer, ColorAtt0, Texture2D, sides[i], 0);
-		glCopyTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, 0, 0, size.x(), size.y());
-	}
-	deleteFramebuffer(fbo);
-	glTextureView(cube, GL_TEXTURE_CUBE_MAP, array,  format.internalFormat, 0, 1, 0, 6);
-	deleteTexture(array);
-}
-
-void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data) {
-	glTexImage2D(textureType[target], level, format.internalFormat, width, height, border, format.format, format.type, data);
 }
 
 void generateMipmap(TextureType type) {

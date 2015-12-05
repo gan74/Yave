@@ -29,10 +29,10 @@ int main(int argc, char **argv) {
 	}
 
 	{
-		BoxLight *l = new BoxLight(600);
+		DirectionalLight *l = new DirectionalLight(/*600*/);
 
-		l->setForward(Vec3(0, 0, -1));
-		l->setPosition(Vec3(0, 0, 10));
+		l->setForward(Vec3(0, 1, -1));
+		//l->setPosition(Vec3(0, 0, 10));
 		l->setIntensity(5);
 		//l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
 		scene.insert(l);

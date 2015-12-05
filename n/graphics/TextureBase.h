@@ -79,6 +79,9 @@ class TextureBase : protected internal::TextureBase
 	protected:
 		friend class internal::TextureBinding;
 
+		TextureBase(const internal::TextureBase &base) : internal::TextureBase(base) {
+		}
+
 		gl::Handle getHandle() const {
 			return data->handle;
 		}
