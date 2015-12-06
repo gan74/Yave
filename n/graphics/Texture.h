@@ -71,7 +71,7 @@ class Texture : public TextureBase<Texture2D>
 		Texture(const internal::TextureBase &base, Image im);
 
 		bool isMipCapable() const {
-			return getSize().max() / (getSize().min() + 1) < sqrt(2);
+			return getSize().max() / float(getSize().min() + 1) < sqrt(2);
 		}
 
 		void upload() const;

@@ -234,7 +234,7 @@ Handle createTexture2D(const math::Vec2ui &size, uint mips, TextureFormat format
 	if(data) {
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format.format, format.type, data); // crashes if data = 0...
 	}
-	if(mips) {
+	if(mips > 1) {
 		generateMipmap(Texture2D);
 	}
 	return h;

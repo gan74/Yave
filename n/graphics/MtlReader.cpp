@@ -23,29 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MaterialLoader.h"
 #include "ImageLoader.h"
 
-
-#include <dependencies/lodepng/lodepng.h>
-void encodeWithState(const char* filename, const unsigned char* image, unsigned width, unsigned height)
-{
-  unsigned error;
-  unsigned char* png;
-  size_t pngsize;
-  LodePNGState state;
-
-  lodepng_state_init(&state);
-  /*optionally customize the state*/
-
-  error = lodepng_encode(&png, &pngsize, image, width, height, &state);
-  if(!error) lodepng_save_file(png, pngsize, filename);
-
-  /*if there's an error, display it*/
-  if(error) printf("error %u: %s\n", error, lodepng_error_text(error));
-
-  lodepng_state_cleanup(&state);
-  free(png);
-}
-
-
 namespace n {
 namespace graphics {
 
