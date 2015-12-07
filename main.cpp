@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
 		scene.insert(obj);
 	}
 
+	scene.insert(new MetalTest());
+
 	{
 		DirectionalLight *l = new DirectionalLight(/*600*/);
 

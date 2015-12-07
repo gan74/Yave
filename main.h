@@ -169,6 +169,32 @@ class Obj : public StaticMesh
 		float autoScale;
 };
 
+class MetalTest : public Transformable, public Renderable
+{
+	public:
+		MetalTest() : Transformable(), Renderable(), inst(0) {
+			transform = Transform<>(Quaternion<>(), Vec3(0, 0, 10), 10);
+		}
+
+		virtual void render(RenderQueue &qu, RenderFlag rf) override {
+			if(vao.isNull()) {
+				vao = GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getSphere());
+			}
+			delete inst;
+			MaterialData data;
+			data.metallic = cos(time.elapsed()) * 0.5 + 0.5;
+			inst = new SubMeshInstance(vao, Material(data));
+			qu.insert(RenderBatch(transform.getMatrix(), inst, VertexAttribs(), rf));
+		}
+
+	private:
+		Timer time;
+		SubMeshInstance *inst;
+		static VertexArrayObject<> vao;
+};
+
+VertexArrayObject<> MetalTest::vao;
+
 class DummyRenderable : public Movable, public Renderable
 {
 	public:
