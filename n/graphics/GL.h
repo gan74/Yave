@@ -198,6 +198,7 @@ struct TextureFormat
 		friend Handle createTexture2D(const math::Vec2ui &, uint, TextureFormat, const void *);
 		friend Handle createTexture2DArray(const math::Vec3ui &, uint, TextureFormat, const void *);
 		friend Handle createTexture2DView(Handle, uint, uint, TextureFormat);
+		friend Handle createTextureCubeView(Handle, uint, TextureFormat);
 
 		TextureFormat(uint f, uint i, uint t) : format(f), internalFormat(i), type(t) {
 		}
@@ -232,6 +233,7 @@ Handle createSampler(TextureSampler sampler, bool mipmap);
 Handle createTexture2D(const math::Vec2ui &size, uint mips, TextureFormat format, const void *data);
 Handle createTexture2DArray(const math::Vec3ui &size, uint mips, TextureFormat format, const void *data);
 Handle createTexture2DView(Handle array, uint layer, uint mips, TextureFormat format);
+Handle createTextureCubeView(Handle array, uint mips, TextureFormat format);
 Handle createBuffer();
 Handle createVertexArray();
 Handle createFramebuffer();

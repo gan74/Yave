@@ -262,6 +262,14 @@ Handle createTexture2DView(Handle array, uint layer, uint mips, TextureFormat fo
 	return h;
 }
 
+
+Handle createTextureCubeView(Handle array, uint mips, TextureFormat format) {
+	Handle h = 0;
+	glGenTextures(1, &h);
+	glTextureView(h, GL_TEXTURE_CUBE_MAP, array, format.internalFormat, 0, mips, 0, 6);
+	return h;
+}
+
 Handle createBuffer() {
 	Handle h = 0;
 	glGenBuffers(1, &h);
@@ -649,11 +657,11 @@ void generateMipmap(TextureType type) {
 }
 
 uint64 getTextureSamplerHandle(Handle tex, TextureSampler smp, bool mipmap) {
-	static Handle sampler = 0;
-	if(!sampler) {
-		sampler = createSampler(smp, mipmap);
+	static Handle samplers[Default + 1] = {0};
+	if(!samplers[smp]) {
+		samplers[smp] = createSampler(smp, mipmap);
 	}
-	return glGetTextureSamplerHandleARB(tex, sampler);
+	return glGetTextureSamplerHandleARB(tex, samplers[smp]);
 }
 
 void makeTextureHandleResident(uint64 handle) {
