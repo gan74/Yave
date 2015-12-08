@@ -50,7 +50,7 @@ void FrameBuffer::setup() {
 	bool array = true;
 	for(uint i = 0; i != att; i++) {
 		if(isAttachmentEnabled(i)) {
-			max = i;
+			max = i + 1;
 			array &= attachments[i].getFormat() == attachments[0].getFormat();
 		}
 	}
@@ -65,7 +65,7 @@ void FrameBuffer::setup() {
 	}
 	for(uint i = 0; i != att; i++) {
 		if(isAttachmentEnabled(i)) {
-			if(!attachments[i].prepare(true)) {
+			if(!attachments[i].synchronize(true)) {
 				fatal("Unable to create attachement.");
 			}
 			gl::bindTexture(Texture2D, attachments[i].getHandle());
@@ -75,7 +75,7 @@ void FrameBuffer::setup() {
 		}
 	}
 	if(depth) {
-		if(!depth->prepare(true)) {
+		if(!depth->synchronize(true)) {
 			fatal("Unable to create depth attachement.");
 		}
 		gl::bindTexture(Texture2D, depth->getHandle());

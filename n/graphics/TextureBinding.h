@@ -30,7 +30,7 @@ class TextureBinding
 
 		template<typename T>
 		TextureBinding &operator=(const T &t) {
-			t.prepare();
+			t.synchronize();
 			tex = t.data;
 			return *this;
 		}

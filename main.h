@@ -182,7 +182,8 @@ class MetalTest : public Transformable, public Renderable
 			}
 			delete inst;
 			MaterialData data;
-			data.metallic = cos(time.elapsed()) * 0.5 + 0.5;
+			data.color = Vec4(0.5);
+			data.metallic = 1.0;
 			inst = new SubMeshInstance(vao, Material(data));
 			qu.insert(RenderBatch(transform.getMatrix(), inst, VertexAttribs(), rf));
 		}

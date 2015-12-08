@@ -22,6 +22,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+CubeMap buildCube(Texture tex) {
+	while(!tex.synchronize(true)) {
+	}
+	auto f = tex.getFormat();
+	FrameBuffer fbo(tex.getSize(), false, f, f, f, f, f, f);
+	ShaderInstance shader(new Shader<FragmentShader>(
+		"uniform sampler2D n_In;"
+		"layout(location = 0) out vec4 n_0;"
+		"layout(location = 1) out vec4 n_1;"
+		"layout(location = 2) out vec4 n_2;"
+		"layout(location = 3) out vec4 n_3;"
+		"layout(location = 4) out vec4 n_4;"
+		"layout(location = 5) out vec4 n_5;"
+
+		"in vec2 n_TexCoord;"
+
+		"void main() { n_0 = n_1 = n_2 = n_3 = n_4 = n_5 = texture(n_In, n_TexCoord); }"
+	), ShaderProgram::NoProjectionShader);
+	shader.bind();
+	shader.setValue("n_In", tex);
+	fbo.bind();
+	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
+	return CubeMap(fbo.asTextureArray());
+}
+
 template<typename T>
 constexpr LightType getLightType() {
 	return LightType::Max;
@@ -137,7 +162,8 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 			"uniform mat4 n_Inv;"
 			"uniform vec3 n_Cam;"
 
-			"uniform sampler2D n_SphereMap;"
+			//"uniform sampler2D n_SphereMap;"
+			"uniform samplerCube n_Cube;"
 
 			"uniform vec3 n_LightPos;"
 			"uniform vec3 n_LightForward;"
@@ -190,7 +216,8 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 			"}"
 
 			"vec4 ambient(vec3 view, vec3 normal) {"
-				"return texture(n_SphereMap, sphereMap(view, normal));"
+				//"return texture(n_SphereMap, sphereMap(view, normal));"
+				"return texture(n_Cube, normal);"
 			"}"
 
 			"void main() {"
@@ -218,9 +245,11 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				"float diffuse = brdf_lambert(lightDir, view, normal, material);"
 				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
 				"vec3 ambient = ambient(view, normal).rgb;"
-				"n_Out = vec4(light * (mix(vec3(diffuse), ambient, metallic) * albedo.rgb + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
+				"n_Out = vec4((mix(light * diffuse, ambient, metallic) * albedo.rgb + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
 
 				+ debugStrs[debug] +
+
+				//"n_Out = vec4(ambient, albedo.a);"
 
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 		shaders[Type][debug][shadow] = shader;
@@ -267,7 +296,8 @@ void lightGeometryPass(const SpotLight *l, ShaderInstance *sh, const math::Vec3 
 
 template<typename T>
 ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
-	static Texture cube = Texture(Image(ImageLoader::load<core::String>("sky.jpg")));
+	static CubeMap *cube = 0;
+	if(!cube) { cube = new CubeMap(buildCube(Texture(Image(ImageLoader::load<core::String>("sky.png"))))); }
 	constexpr LightType Type = getLightType<T>();
 	ShaderInstance *shader = 0;
 	for(const LightData &ld : data->lights[Type]) {
@@ -286,7 +316,8 @@ ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, Deferr
 			shader->setValue("n_D", renderer->child->getFrameBuffer().getDepthAttachement());
 			shader->setValue("n_Inv", data->inv);
 			shader->setValue("n_Cam", data->pos);
-			shader->setValue("n_SphereMap", cube);
+			//shader->setValue("n_SphereMap", cube);
+			shader->setValue("n_Cube", *cube);
 		}
 
 		shader->setValue("n_LightPos", l->getPosition());

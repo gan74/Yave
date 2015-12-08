@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_CUBEMAP
 
 #include "Texture.h"
-#include "TextureBase.h"
+#include "TextureArray.h"
 
 namespace n {
 namespace graphics {
@@ -26,9 +26,16 @@ namespace graphics {
 class CubeMap : public TextureBase<TextureCube>
 {
 	public:
+		CubeMap(const TextureArray &array);
+		CubeMap(const Texture &sides);
+
+
+		bool synchronize(bool sync = false) const;
 
 	private:
+		void upload() const;
 
+		TextureArray texArray;
 };
 
 }

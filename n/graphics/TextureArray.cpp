@@ -27,7 +27,8 @@ TextureArray::TextureArray() : TextureArray(math::Vec3ui(0), ImageFormat(ImageFo
 }
 
 TextureArray::~TextureArray() {
-	delete[] textures;
+	#warning fixme double delete
+	//delete[] textures;
 }
 
 const math::Vec3ui &TextureArray::getSize() const {
@@ -35,13 +36,12 @@ const math::Vec3ui &TextureArray::getSize() const {
 }
 
 Texture TextureArray::getTexture(uint index) const {
-	if(isNull() && !prepare(true)) {
+	if(isNull() && !synchronize(true)) {
 		return Texture();
 	}
 	if(!textures) {
 		textures = new Texture[size.z()];
 	}
-
 	if(textures[index].isNull()) {
 		internal::TextureBase base(Texture2D);
 		base.data->handle = gl::createTexture2DView(data->handle, index, 1, gl::getTextureFormat(imgFormat));
@@ -54,40 +54,33 @@ Texture TextureArray::getTexture(uint index) const {
 }
 
 void TextureArray::upload() const {
-	if(!size.mul()) {
-		fatal("Invalid image size.");
-	}
-	data->hasMips &= isMipCapable();
-	gl::TextureFormat format = gl::getTextureFormat(imgFormat);
+	if(!getHandle()) {
+		if(!size.mul()) {
+			fatal("Invalid image size.");
+		}
+		data->hasMips &= isMipCapable();
+		gl::TextureFormat format = gl::getTextureFormat(imgFormat);
 
-	data->handle = gl::createTexture2DArray(size, 1, format, 0);
+		data->handle = gl::createTexture2DArray(size, 1, format, 0);
 
-	if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-		data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
-		gl::makeTextureHandleResident(data->bindless);
-	}
+		if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
+			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
+			gl::makeTextureHandleResident(data->bindless);
+		}
 
-}
-
-bool TextureArray::synchronize(bool immediate) {
-	if(!isNull()) {
-		return true;
-	}
-	bool p = prepare(immediate);
-	if(immediate) {
 		internal::TextureBinding::dirty();
 	}
-	return p;
 }
 
-bool TextureArray::prepare(bool sync) const {
+bool TextureArray::synchronize(bool sync) const {
 	if(getHandle()) {
 		return true;
 	}
-	if(data->lock.trylock()) {
-		if(sync) {
-			upload();
-		} else {
+	if(sync) {
+		data->lock.trylock();
+		upload();
+	} else {
+		if(data->lock.trylock()) {
 			TextureArray self(*this);
 			GLContext::getContext()->addGLTask([=]() {
 				self.upload();

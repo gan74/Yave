@@ -43,18 +43,24 @@ class TextureArray : public TextureBase<Texture2DArray>
 			return size.mul() != 0;
 		}
 
-		bool synchronize(bool immediate = false);
+		bool synchronize(bool immediate = false) const;
+
+		ImageFormat getFormat() const {
+			return imgFormat;
+		}
 
 	private:
-		math::Vec3ui size;
-		ImageFormat imgFormat;
+		friend class CubeMap;
 
 		bool isMipCapable() const {
 			return getSize().sub(2).max() / (getSize().sub(2).min() + 1) < sqrt(2);
 		}
 
-		bool prepare(bool sync = false) const;
 		void upload() const;
+
+
+		math::Vec3ui size;
+		ImageFormat imgFormat;
 
 		mutable Texture *textures;
 

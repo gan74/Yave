@@ -57,6 +57,9 @@ namespace internal {
 		TextureBase(TextureType t) : data(new Data(t)) {
 		}
 
+		TextureBase(const TextureBase &b) : data(b.data) {
+		}
+
 		mutable core::SmartPtr<Data> data;
 	};
 }

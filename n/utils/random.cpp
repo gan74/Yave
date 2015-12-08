@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "random.h"
 #include <n/utils.h>
+#include <ctime>
 
 namespace n {
 

@@ -77,7 +77,7 @@ class ShaderInstance : NonCopyable
 		void setValue(UniformInfo addr, const math::Matrix3<float> *m, uint count) const;
 		void setValue(UniformInfo addr, const math::Matrix4<float> *m, uint count) const;
 		void setValue(UniformInfo slot, const Texture &t, TextureSampler sampler = TextureSampler::Default) const;
-		//void setValue(UniformInfo slot, const CubeMap &t, TextureSampler sampler = TextureSampler::Default) const;
+		void setValue(UniformInfo slot, const CubeMap &t, TextureSampler sampler = TextureSampler::Default) const;
 
 		template<typename T>
 		void setValue(UniformInfo addr, const T &t) const {

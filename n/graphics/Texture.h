@@ -60,12 +60,10 @@ class Texture : public TextureBase<Texture2D>
 
 		static bool isHWSupported(ImageFormat format);
 
-		bool synchronize(bool immediate = false);
+		bool synchronize(bool immediate = false) const;
 
 	private:
-		friend class ShaderInstance;
 		friend class FrameBuffer;
-		friend class internal::TextureBinding;
 		friend class TextureArray;
 
 		Texture(const internal::TextureBase &base, Image im);
@@ -75,8 +73,6 @@ class Texture : public TextureBase<Texture2D>
 		}
 
 		void upload() const;
-
-		bool prepare(bool sync = false) const;
 
 		Image image;
 };

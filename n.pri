@@ -32,7 +32,6 @@ SOURCES += $$PWD/dependencies/glew/glew.c
 
 
 DEFINES += GLEW_STATIC
-DEFINES += N_DEBUG
 win32:DEFINES += WIN32
 
 QMAKE_CXXFLAGS += -pedantic

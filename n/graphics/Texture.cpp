@@ -36,7 +36,7 @@ Texture::Texture(const Image &i, bool mip) : TextureBase<Texture2D>(), image(i) 
 Texture::Texture() : TextureBase<Texture2D>() {
 }
 
-Texture::Texture(const internal::TextureBase &base, Image im) : TextureBase(base), image(im) {
+Texture::Texture(const internal::TextureBase &base, Image im) : TextureBase<Texture2D>(base), image(im) {
 	if(data->handle) {
 		if(!data->bindless && GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
 			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
@@ -61,22 +61,26 @@ bool Texture::operator!=(const Texture &t) const {
 }
 
 void Texture::upload() const {
-	math::Vec2ui size = image.getSize();
-	if(!size.mul()) {
-		fatal("Invalid image size.");
-	}
-	data->hasMips &= isMipCapable();
-	gl::TextureFormat format = gl::getTextureFormat(image.getFormat());
+	if(!getHandle()) {
+		math::Vec2ui size = image.getSize();
+		if(!size.mul()) {
+			fatal("Invalid image size.");
+		}
+		data->hasMips &= isMipCapable();
+		gl::TextureFormat format = gl::getTextureFormat(image.getFormat());
 
-	data->handle = gl::createTexture2D(size, getMipmapLevels(), format, image.data());
+		data->handle = gl::createTexture2D(size, getMipmapLevels(), format, image.data());
 
-	if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-		data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
-		gl::makeTextureHandleResident(data->bindless);
+		if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
+			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
+			gl::makeTextureHandleResident(data->bindless);
+		}
+
+		internal::TextureBinding::dirty();
 	}
 }
 
-bool Texture::prepare(bool sync) const {
+bool Texture::synchronize(bool sync) const {
 	if(getHandle()) {
 		return true;
 	}
@@ -86,10 +90,11 @@ bool Texture::prepare(bool sync) const {
 	if(image.isNull()) {
 		return true;
 	}
-	if(data->lock.trylock()) {
-		if(sync) {
-			upload();
-		} else {
+	if(sync) {
+		data->lock.trylock();
+		upload();
+	} else {
+		if(data->lock.trylock()) {
 			Texture self(*this);
 			GLContext::getContext()->addGLTask([=]() {
 				self.upload();
@@ -99,16 +104,6 @@ bool Texture::prepare(bool sync) const {
 	return getHandle();
 }
 
-bool Texture::synchronize(bool immediate) {
-	if(!isNull()) {
-		return true;
-	}
-	bool p = prepare(immediate);
-	if(immediate) {
-		internal::TextureBinding::dirty();
-	}
-	return p;
-}
 
 }
 }

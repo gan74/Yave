@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/String.h>
 #include <n/concurrent/Atomic.h>
 #include <n/defines.h>
-#include <ctime>
 
 namespace n {
 
