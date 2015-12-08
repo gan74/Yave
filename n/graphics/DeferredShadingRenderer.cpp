@@ -22,13 +22,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-CubeMap buildCube(Texture tex) {
-	while(!tex.synchronize(true)) {
+CubeMap buildCube(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back) {
+	while(!top.synchronize(true)) {
+	}while(!bottom.synchronize(true)) {
+	}while(!right.synchronize(true)) {
+	}while(!left.synchronize(true)) {
+	}while(!front.synchronize(true)) {
+	}while(!back.synchronize(true)) {
 	}
-	auto f = tex.getFormat();
-	FrameBuffer fbo(tex.getSize(), false, f, f, f, f, f, f);
+	auto f = top.getFormat();
+	FrameBuffer fbo(top.getSize(), false, f, f, f, f, f, f);
 	ShaderInstance shader(new Shader<FragmentShader>(
-		"uniform sampler2D n_In;"
+		"uniform sampler2D top;"
+		"uniform sampler2D bottom;"
+		"uniform sampler2D right;"
+		"uniform sampler2D left;"
+		"uniform sampler2D front;"
+		"uniform sampler2D back;"
 		"layout(location = 0) out vec4 n_0;"
 		"layout(location = 1) out vec4 n_1;"
 		"layout(location = 2) out vec4 n_2;"
@@ -38,10 +48,22 @@ CubeMap buildCube(Texture tex) {
 
 		"in vec2 n_TexCoord;"
 
-		"void main() { n_0 = n_1 = n_2 = n_3 = n_4 = n_5 = texture(n_In, n_TexCoord); }"
+		"void main() { "
+			"n_4 = texture(top, n_TexCoord);"
+			"n_5 = texture(bottom, n_TexCoord);"
+			"n_2 = texture(right, n_TexCoord);"
+			"n_3 = texture(left, n_TexCoord);"
+			"n_1 = texture(back, n_TexCoord);"
+			"n_0 = texture(front, n_TexCoord);"
+		"}"
 	), ShaderProgram::NoProjectionShader);
 	shader.bind();
-	shader.setValue("n_In", tex);
+	shader.setValue("top", top);
+	shader.setValue("bottom", bottom);
+	shader.setValue("right", right);
+	shader.setValue("left", left);
+	shader.setValue("front", front);
+	shader.setValue("back", back);
 	fbo.bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 	return CubeMap(fbo.asTextureArray());
@@ -217,7 +239,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 			"vec4 ambient(vec3 view, vec3 normal) {"
 				//"return texture(n_SphereMap, sphereMap(view, normal));"
-				"return texture(n_Cube, normal);"
+				"return texture(n_Cube, -reflect(view, normal));"
 			"}"
 
 			"void main() {"
@@ -297,7 +319,15 @@ void lightGeometryPass(const SpotLight *l, ShaderInstance *sh, const math::Vec3 
 template<typename T>
 ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
 	static CubeMap *cube = 0;
-	if(!cube) { cube = new CubeMap(buildCube(Texture(Image(ImageLoader::load<core::String>("sky.png"))))); }
+	if(!cube) {
+		cube = new CubeMap(buildCube(
+			Texture(Image(ImageLoader::load<core::String>("skybox/top.tga"))),
+			Texture(Image(ImageLoader::load<core::String>("skybox/bottom.tga"))),
+			Texture(Image(ImageLoader::load<core::String>("skybox/right.tga"))),
+			Texture(Image(ImageLoader::load<core::String>("skybox/left.tga"))),
+			Texture(Image(ImageLoader::load<core::String>("skybox/front.tga"))),
+			Texture(Image(ImageLoader::load<core::String>("skybox/back.tga")))));
+	}
 	constexpr LightType Type = getLightType<T>();
 	ShaderInstance *shader = 0;
 	for(const LightData &ld : data->lights[Type]) {
