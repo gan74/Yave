@@ -25,6 +25,17 @@ namespace graphics {
 
 class TextureArray : public TextureBase<Texture2DArray>
 {
+	struct TextureViews
+	{
+		Texture *textures;
+
+		TextureViews(uint size) : textures(new Texture[size]) {
+		}
+
+		~TextureViews() {
+			delete[] textures;
+		}
+	};
 
 	public:
 		TextureArray(const math::Vec3ui &si, ImageFormat format);
@@ -62,7 +73,7 @@ class TextureArray : public TextureBase<Texture2DArray>
 		math::Vec3ui size;
 		ImageFormat imgFormat;
 
-		mutable Texture *textures;
+		mutable core::SmartPtr<TextureViews> views;
 
 
 };

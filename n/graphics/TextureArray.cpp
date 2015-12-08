@@ -20,15 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-TextureArray::TextureArray(const math::Vec3ui &si, ImageFormat format) : TextureBase<Texture2DArray>(), size(si), imgFormat(format), textures(0) {
+TextureArray::TextureArray(const math::Vec3ui &si, ImageFormat format) : TextureBase<Texture2DArray>(), size(si), imgFormat(format), views(0) {
 }
 
 TextureArray::TextureArray() : TextureArray(math::Vec3ui(0), ImageFormat(ImageFormat::RGBA8)) {
 }
 
 TextureArray::~TextureArray() {
-	#warning fixme double delete
-	//delete[] textures;
 }
 
 const math::Vec3ui &TextureArray::getSize() const {
@@ -39,18 +37,18 @@ Texture TextureArray::getTexture(uint index) const {
 	if(isNull() && !synchronize(true)) {
 		return Texture();
 	}
-	if(!textures) {
-		textures = new Texture[size.z()];
+	if(!views) {
+		views = new TextureViews(size.z());
 	}
-	if(textures[index].isNull()) {
+	if(views->textures[index].isNull()) {
 		internal::TextureBase base(Texture2D);
 		base.data->handle = gl::createTexture2DView(data->handle, index, 1, gl::getTextureFormat(imgFormat));
 		base.data->hasMips = false;
 		base.data->lock.lock();
 		base.data->parent = data->handle;
-		textures[index] = Texture(base, Image(new ImageData(size.sub(2), imgFormat)));
+		views->textures[index] = Texture(base, Image(new ImageData(size.sub(2), imgFormat)));
 	}
-	return textures[index];
+	return views->textures[index];
 }
 
 void TextureArray::upload() const {
