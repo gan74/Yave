@@ -657,11 +657,11 @@ void generateMipmap(TextureType type) {
 }
 
 uint64 getTextureSamplerHandle(Handle tex, TextureSampler smp, bool mipmap) {
-	static Handle samplers[Default + 1] = {0};
-	if(!samplers[smp]) {
-		samplers[smp] = createSampler(smp, mipmap);
+	static Handle samplers[Default + 1][2] = {{0}, {0}};
+	if(!samplers[smp][mipmap]) {
+		samplers[smp][mipmap] = createSampler(smp, mipmap);
 	}
-	return glGetTextureSamplerHandleARB(tex, samplers[smp]);
+	return glGetTextureSamplerHandleARB(tex, samplers[smp][mipmap]);
 }
 
 void makeTextureHandleResident(uint64 handle) {
