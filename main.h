@@ -173,7 +173,7 @@ class MetalTest : public Transformable, public Renderable
 {
 	public:
 		MetalTest() : Transformable(), Renderable(), inst(0) {
-			transform = Transform<>(Quaternion<>(), Vec3(0, 0, 10), 10);
+			transform = Transform<>(Quaternion<>(), Vec3(0, 0, 50), 10);
 		}
 
 		virtual void render(RenderQueue &qu, RenderFlag rf) override {

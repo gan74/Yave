@@ -63,11 +63,7 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 	core::String model = "\n#define n_ModelMatrix n_ModelMatrices[n_BaseInstance + gl_InstanceID] \n"
 						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(UniformBuffer<math::Matrix4<>>::getMaxSize()) + "]; }; uniform uint n_BaseInstance;\n";
 	core::String common = "layout(std140, row_major) uniform; layout (std140, row_major) buffer; const float pi = " + core::String(math::pi) + "; float sqr(float x) { return x * x; }  float saturate(float x) { return clamp(x, 0.0, 1.0); }" +
-	"vec2 sphereMap(vec3 U, vec3 N) {"
-		"vec3 R = reflect(U, N);"
-		"float m = -2.0 * sqrt(sqr(R.x) + sqr(R.y + 1.0) + sqr(R.z));"
-		"return R.xz / m + 0.5;"
-	"}";
+	"vec2 sphereMap(vec3 U, vec3 N) { vec3 R = reflect(U, N); float m = -2.0 * sqrt(sqr(R.x) + sqr(R.y + 1.0) + sqr(R.z)); return R.xz / m + 0.5; }";
 	uint vit = src.find("#version");
 	if(vit != uint(-1)) {
 		uint l = src.find("\n", vit);

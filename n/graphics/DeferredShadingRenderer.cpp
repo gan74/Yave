@@ -23,13 +23,13 @@ namespace n {
 namespace graphics {
 
 CubeMap buildCube(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back) {
-	while(!top.synchronize(true)) {
-	}while(!bottom.synchronize(true)) {
-	}while(!right.synchronize(true)) {
-	}while(!left.synchronize(true)) {
-	}while(!front.synchronize(true)) {
-	}while(!back.synchronize(true)) {
-	}
+	while(!top.synchronize(true));
+	while(!bottom.synchronize(true));
+	while(!right.synchronize(true));
+	while(!left.synchronize(true));
+	while(!front.synchronize(true));
+	while(!back.synchronize(true));
+
 	auto f = top.getFormat();
 	FrameBuffer fbo(top.getSize(), false, f, f, f, f, f, f);
 	ShaderInstance shader(new Shader<FragmentShader>(
@@ -57,16 +57,90 @@ CubeMap buildCube(Texture top, Texture bottom, Texture right, Texture left, Text
 			"n_0 = texture(front, n_TexCoord);"
 		"}"
 	), ShaderProgram::NoProjectionShader);
-	shader.bind();
 	shader.setValue("top", top);
 	shader.setValue("bottom", bottom);
 	shader.setValue("right", right);
 	shader.setValue("left", left);
 	shader.setValue("front", front);
 	shader.setValue("back", back);
+
+	shader.bind();
 	fbo.bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
-	return CubeMap(fbo.asTextureArray());
+
+	ShaderInstance blur(new Shader<FragmentShader>(""
+
+		"in vec2 n_TexCoord;"
+
+		"uniform samplerCube cube;"
+
+		//"layout(location = 0) out vec4 outs[6];"
+		"layout(location = 0) out vec4 n_0;"
+		"layout(location = 1) out vec4 n_1;"
+		"layout(location = 2) out vec4 n_2;"
+		"layout(location = 3) out vec4 n_3;"
+		"layout(location = 4) out vec4 n_4;"
+		"layout(location = 5) out vec4 n_5;"
+
+		"vec3 normal(uint side) {"
+			"vec2 tex = n_TexCoord * 2.0 - 1.0;"
+			"if(side == 0) return vec3(1.0, tex.y, -tex.x);"
+			"else if(side == 1) return vec3(-1.0, tex.y, tex.x);"
+			"else if(side == 2) return vec3(tex.x, -1.0, tex.y);"
+			"else if(side == 3) return vec3(tex.x, 1.0, -tex.y);"
+			"else if(side == 4) return vec3(tex, 1.0);"
+			"return vec3(-tex.x, tex.y, -1.0);"
+		"}"
+
+
+		"vec3 perp(vec3 N) { "
+			"return normalize(cross(N, vec3(0, -1, 0) + cross(N, vec3(1, 0, 0)))); "
+		"}"
+
+
+		"void main() {"
+			"vec4 outs[6];"
+			"for(uint i = 0; i != 6; i++) {"
+				"vec3 N = normalize(normal(i));"
+				"vec3 T = cross(N, perp(N));"
+				"vec3 B = cross(T, N);"
+
+				"vec4 total = vec4(0);"
+				"float weight = 0;"
+				"for(float x = 0; x < 1; x += 0.05) {"
+					"for(float y = 0; y < 1; y += 0.05) {"
+						"float theta = 2.0 * pi * x;"
+						"float u = 2.0 * y - 1.0;"
+						"float sqrtu = sqrt(1.0 - sqr(u));"
+						"vec3 p = vec3(sqrtu * cos(theta), sqrtu * sin(theta), u);"
+						"vec3 dir = normalize(B * p.x + T * p.y + N * p.z);"
+						"float w = max(0.0, dot(dir, N));"
+						"total += w * texture(cube, dir);"
+						"weight += w;"
+					"}"
+				"}"
+				"outs[i] = total / weight;"
+
+			"}"
+			"n_0 = outs[0];"
+			"n_1 = outs[1];"
+			"n_2 = outs[2];"
+			"n_3 = outs[3];"
+			"n_4 = outs[4];"
+			"n_5 = outs[5];"
+		"}"), ShaderProgram::NoProjectionShader);
+
+	CubeMap cube(fbo.asTextureArray());
+	while(!cube.synchronize(true));
+
+	blur.setValue("cube", cube);
+
+	FrameBuffer fbo2(top.getSize(), false, f, f, f, f, f, f);
+	blur.bind();
+	fbo2.bind();
+	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
+
+	return CubeMap(fbo2.asTextureArray());
 }
 
 template<typename T>
@@ -237,9 +311,10 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				+ computeDir[Type] +
 			"}"
 
-			"vec4 ambient(vec3 view, vec3 normal) {"
+			"vec4 irradiance(vec3 normal) {"
 				//"return texture(n_SphereMap, sphereMap(view, normal));"
-				"return texture(n_Cube, -reflect(view, normal));"
+				//"return texture(n_Cube, -reflect(view, normal));"
+				"return texture(n_Cube, normal);"
 			"}"
 
 			"void main() {"
@@ -266,8 +341,8 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 				"float diffuse = brdf_lambert(lightDir, view, normal, material);"
 				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
-				"vec3 ambient = ambient(view, normal).rgb;"
-				"n_Out = vec4((mix(light * diffuse, ambient, metallic) * albedo.rgb + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
+				"vec3 irr = irradiance(normal).rgb;"
+				"n_Out = vec4((mix(light * diffuse, irr, metallic) * albedo.rgb + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
 
 				+ debugStrs[debug] +
 
