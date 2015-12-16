@@ -22,127 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-CubeMap buildCube(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back) {
-	while(!top.synchronize(true));
-	while(!bottom.synchronize(true));
-	while(!right.synchronize(true));
-	while(!left.synchronize(true));
-	while(!front.synchronize(true));
-	while(!back.synchronize(true));
-
-	auto f = top.getFormat();
-	FrameBuffer fbo(top.getSize(), false, f, f, f, f, f, f);
-	ShaderInstance shader(new Shader<FragmentShader>(
-		"uniform sampler2D top;"
-		"uniform sampler2D bottom;"
-		"uniform sampler2D right;"
-		"uniform sampler2D left;"
-		"uniform sampler2D front;"
-		"uniform sampler2D back;"
-		"layout(location = 0) out vec4 n_0;"
-		"layout(location = 1) out vec4 n_1;"
-		"layout(location = 2) out vec4 n_2;"
-		"layout(location = 3) out vec4 n_3;"
-		"layout(location = 4) out vec4 n_4;"
-		"layout(location = 5) out vec4 n_5;"
-
-		"in vec2 n_TexCoord;"
-
-		"void main() { "
-			"n_4 = texture(top, n_TexCoord);"
-			"n_5 = texture(bottom, n_TexCoord);"
-			"n_2 = texture(right, n_TexCoord);"
-			"n_3 = texture(left, n_TexCoord);"
-			"n_1 = texture(back, n_TexCoord);"
-			"n_0 = texture(front, n_TexCoord);"
-		"}"
-	), ShaderProgram::NoProjectionShader);
-	shader.setValue("top", top);
-	shader.setValue("bottom", bottom);
-	shader.setValue("right", right);
-	shader.setValue("left", left);
-	shader.setValue("front", front);
-	shader.setValue("back", back);
-
-	shader.bind();
-	fbo.bind();
-	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
-
-	ShaderInstance blur(new Shader<FragmentShader>(""
-
-		"in vec2 n_TexCoord;"
-
-		"uniform samplerCube cube;"
-
-		//"layout(location = 0) out vec4 outs[6];"
-		"layout(location = 0) out vec4 n_0;"
-		"layout(location = 1) out vec4 n_1;"
-		"layout(location = 2) out vec4 n_2;"
-		"layout(location = 3) out vec4 n_3;"
-		"layout(location = 4) out vec4 n_4;"
-		"layout(location = 5) out vec4 n_5;"
-
-		"vec3 normal(uint side) {"
-			"vec2 tex = n_TexCoord * 2.0 - 1.0;"
-			"if(side == 0) return vec3(1.0, tex.y, -tex.x);"
-			"else if(side == 1) return vec3(-1.0, tex.y, tex.x);"
-			"else if(side == 2) return vec3(tex.x, -1.0, tex.y);"
-			"else if(side == 3) return vec3(tex.x, 1.0, -tex.y);"
-			"else if(side == 4) return vec3(tex, 1.0);"
-			"return vec3(-tex.x, tex.y, -1.0);"
-		"}"
-
-
-		"vec3 perp(vec3 N) { "
-			"return normalize(cross(N, vec3(0, -1, 0) + cross(N, vec3(1, 0, 0)))); "
-		"}"
-
-
-		"void main() {"
-			"vec4 outs[6];"
-			"for(uint i = 0; i != 6; i++) {"
-				"vec3 N = normalize(normal(i));"
-				"vec3 T = cross(N, perp(N));"
-				"vec3 B = cross(T, N);"
-
-				"vec4 total = vec4(0);"
-				"float weight = 0;"
-				"for(float x = 0; x < 1; x += 0.05) {"
-					"for(float y = 0; y < 1; y += 0.05) {"
-						"float theta = 2.0 * pi * x;"
-						"float u = 2.0 * y - 1.0;"
-						"float sqrtu = sqrt(1.0 - sqr(u));"
-						"vec3 p = vec3(sqrtu * cos(theta), sqrtu * sin(theta), u);"
-						"vec3 dir = normalize(B * p.x + T * p.y + N * p.z);"
-						"float w = max(0.0, dot(dir, N));"
-						"total += w * texture(cube, dir);"
-						"weight += w;"
-					"}"
-				"}"
-				"outs[i] = total / weight;"
-
-			"}"
-			"n_0 = outs[0];"
-			"n_1 = outs[1];"
-			"n_2 = outs[2];"
-			"n_3 = outs[3];"
-			"n_4 = outs[4];"
-			"n_5 = outs[5];"
-		"}"), ShaderProgram::NoProjectionShader);
-
-	CubeMap cube(fbo.asTextureArray());
-	while(!cube.synchronize(true));
-
-	blur.setValue("cube", cube);
-
-	FrameBuffer fbo2(top.getSize(), false, f, f, f, f, f, f);
-	blur.bind();
-	fbo2.bind();
-	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
-
-	return CubeMap(fbo2.asTextureArray());
-}
-
 template<typename T>
 constexpr LightType getLightType() {
 	return LightType::Max;
@@ -395,13 +274,13 @@ template<typename T>
 ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
 	static CubeMap *cube = 0;
 	if(!cube) {
-		cube = new CubeMap(buildCube(
+		cube = new CubeMap(
 			Texture(Image(ImageLoader::load<core::String>("skybox/top.tga"))),
 			Texture(Image(ImageLoader::load<core::String>("skybox/bottom.tga"))),
 			Texture(Image(ImageLoader::load<core::String>("skybox/right.tga"))),
 			Texture(Image(ImageLoader::load<core::String>("skybox/left.tga"))),
 			Texture(Image(ImageLoader::load<core::String>("skybox/front.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/back.tga")))));
+			Texture(Image(ImageLoader::load<core::String>("skybox/back.tga"))));
 	}
 	constexpr LightType Type = getLightType<T>();
 	ShaderInstance *shader = 0;

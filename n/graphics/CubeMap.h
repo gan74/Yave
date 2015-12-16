@@ -25,17 +25,35 @@ namespace graphics {
 
 class CubeMap : public TextureBase<TextureCube>
 {
+
 	public:
+		struct Cube
+		{
+			Texture top;
+			Texture bottom;
+			Texture right;
+			Texture left;
+			Texture front;
+			Texture back;
+		};
+
+
 		CubeMap(const TextureArray &array);
-		CubeMap(const Texture &sides);
+		CubeMap(const Cube &sides);
+		CubeMap(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back) : CubeMap(Cube{top, bottom, right, left, front, back}) {
+		}
 
 
 		bool synchronize(bool sync = false) const;
 
 	private:
 		void upload() const;
+		bool syncCube(bool sync) const;
 
-		TextureArray texArray;
+		mutable core::SmartPtr<TextureArray> texArray;
+		mutable core::SmartPtr<Cube> cube;
+
+
 };
 
 }
