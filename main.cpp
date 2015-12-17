@@ -44,7 +44,8 @@ int main(int argc, char **argv) {
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
-	Renderer *renderers[] {new FrameBufferRenderer(ri),
+	Renderer *renderers[] {new DeferredIBLRenderer(gRe),
+						   new FrameBufferRenderer(ri),
 						   sceRe,
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2),

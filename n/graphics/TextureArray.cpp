@@ -71,7 +71,7 @@ void TextureArray::upload() const {
 }
 
 bool TextureArray::synchronize(bool sync) const {
-	if(getHandle()) {
+	if(getHandle() || !size.mul()) {
 		return true;
 	}
 	if(sync) {

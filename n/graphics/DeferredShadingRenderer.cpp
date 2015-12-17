@@ -137,9 +137,6 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 			"uniform mat4 n_Inv;"
 			"uniform vec3 n_Cam;"
 
-			//"uniform sampler2D n_SphereMap;"
-			"uniform samplerCube n_Cube;"
-
 			"uniform vec3 n_LightPos;"
 			"uniform vec3 n_LightForward;"
 			"uniform vec3 n_LightColor;"
@@ -190,12 +187,6 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				+ computeDir[Type] +
 			"}"
 
-			"vec4 irradiance(vec3 normal) {"
-				//"return texture(n_SphereMap, sphereMap(view, normal));"
-				//"return texture(n_Cube, -reflect(view, normal));"
-				"return texture(n_Cube, normal);"
-			"}"
-
 			"void main() {"
 				"vec2 texCoord = computeTexCoord();"
 				"vec4 albedo = texture(n_0, texCoord);"
@@ -220,8 +211,8 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 				"float diffuse = brdf_lambert(lightDir, view, normal, material);"
 				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
-				"vec3 irr = irradiance(normal).rgb;"
-				"n_Out = vec4((mix(light * diffuse, irr, metallic) * albedo.rgb + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
+				"n_Out = vec4(light * (diffuse * albedo.rgb * (1.0 - metallic) + specular * mix(vec3(1), albedo.rgb, metallic)), albedo.a);"
+
 
 				+ debugStrs[debug] +
 
@@ -272,16 +263,6 @@ void lightGeometryPass(const SpotLight *l, ShaderInstance *sh, const math::Vec3 
 
 template<typename T>
 ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
-	static CubeMap *cube = 0;
-	if(!cube) {
-		cube = new CubeMap(
-			Texture(Image(ImageLoader::load<core::String>("skybox/top.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/bottom.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/right.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/left.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/front.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/back.tga"))));
-	}
 	constexpr LightType Type = getLightType<T>();
 	ShaderInstance *shader = 0;
 	for(const LightData &ld : data->lights[Type]) {
@@ -300,8 +281,6 @@ ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, Deferr
 			shader->setValue("n_D", renderer->child->getFrameBuffer().getDepthAttachement());
 			shader->setValue("n_Inv", data->inv);
 			shader->setValue("n_Cam", data->pos);
-			//shader->setValue("n_SphereMap", cube);
-			shader->setValue("n_Cube", *cube);
 		}
 
 		shader->setValue("n_LightPos", l->getPosition());

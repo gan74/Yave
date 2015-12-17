@@ -24,8 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-TextureArray *buildCube(const CubeMap::Cube &cube) {
-	const FrameBuffer *buff = GLContext::getContext()->getFrameBuffer();
+TextureArray buildCube(const CubeMap::Cube &cube) {
+	const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
 
 	auto f = cube.top.getFormat();
 	FrameBuffer fbo(cube.top.getSize(), false, f, f, f, f, f, f);
@@ -65,37 +65,39 @@ TextureArray *buildCube(const CubeMap::Cube &cube) {
 	fbo.bind();
 	GLContext::getContext()->getScreen().draw(Material(), VertexAttribs(), RenderFlag::NoShader);
 
-	if(buff) {
-		buff->bind();
+	if(fb) {
+		fb->bind();
 	}
 
-	return new TextureArray(fbo.asTextureArray());
+	#warning leaking cubemap building shaders
+
+	return TextureArray(fbo.asTextureArray());
 }
 
-CubeMap::CubeMap(const TextureArray &array) : texArray(new TextureArray(array)), cube(0) {
+CubeMap::CubeMap(const TextureArray &array) : TextureBase<TextureCube>(), buildData(new BuildData{false, array, Cube()}) {
 }
 
-CubeMap::CubeMap(const Cube &sides) : texArray(0), cube(new Cube(sides)) {
+CubeMap::CubeMap(const Cube &sides, bool mip) : TextureBase<TextureCube>(), buildData(new BuildData{mip, TextureArray(), sides}) {
 }
 
 void CubeMap::upload() const {
-	if(!getHandle()) {
-		if(cube) {
-			texArray = buildCube(*cube);
+	if(!getHandle() && buildData) {
+		TextureArray texArray = buildData->array;
+		if(texArray.isNull()) {
+			texArray = buildCube(buildData->cube);
 		}
-		if(texArray->getSize().z() < 6) {
+		if(texArray.getSize().z() < 6) {
 			logMsg("Cube map build from array with less than 6 elements", ErrorLog);
 			return;
 		}
-		data->handle = gl::createTextureCubeView(texArray->getHandle(), 1, gl::getTextureFormat(texArray->getFormat()));
-		data->parent = texArray->getHandle();
+		data->handle = gl::createTextureCubeView(texArray.getHandle(), 1, gl::getTextureFormat(texArray.getFormat()));
+		data->parent = texArray.getHandle();
 
 		if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
 			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
 			gl::makeTextureHandleResident(data->bindless);
 		}
-		texArray = 0;
-		cube = 0;
+		buildData = 0;
 		internal::TextureBinding::dirty();
 	}
 }
@@ -104,14 +106,15 @@ bool CubeMap::synchronize(bool sync) const {
 	if(getHandle()) {
 		return true;
 	}
-	if(!cube) {
-		if(!texArray->synchronize(sync)) {
-			return false;
-		}
-	} else {
+	if(!buildData) {
+		return false;
+	}
+	if(buildData->array.isNull()) {
 		if(!syncCube(sync)) {
 			return false;
 		}
+	} else if(!buildData->array.synchronize(sync)) {
+		return false;
 	}
 	if(sync) {
 		data->lock.trylock();
@@ -129,12 +132,13 @@ bool CubeMap::synchronize(bool sync) const {
 
 bool CubeMap::syncCube(bool sync) const {
 	bool r = true;
-	r &= cube->top.synchronize(sync);
-	r &= cube->bottom.synchronize(sync);
-	r &= cube->right.synchronize(sync);
-	r &= cube->left.synchronize(sync);
-	r &= cube->front.synchronize(sync);
-	r &= cube->back.synchronize(sync);
+	Cube &cube = buildData->cube;
+	r &= cube.top.synchronize(sync);
+	r &= cube.bottom.synchronize(sync);
+	r &= cube.right.synchronize(sync);
+	r &= cube.left.synchronize(sync);
+	r &= cube.front.synchronize(sync);
+	r &= cube.back.synchronize(sync);
 	return r;
 }
 

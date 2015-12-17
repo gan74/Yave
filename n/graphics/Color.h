@@ -196,7 +196,7 @@ struct ImageFormat
 			return double(b) / double(m);
 		}
 
-		const Format format;
+		Format format;
 };
 
 enum BaseColor

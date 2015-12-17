@@ -39,8 +39,8 @@ class CubeMap : public TextureBase<TextureCube>
 
 
 		CubeMap(const TextureArray &array);
-		CubeMap(const Cube &sides);
-		CubeMap(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back) : CubeMap(Cube{top, bottom, right, left, front, back}) {
+		CubeMap(const Cube &sides, bool mip = false);
+		CubeMap(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back, bool mip = false) : CubeMap(Cube{top, bottom, right, left, front, back}, mip) {
 		}
 
 
@@ -50,8 +50,15 @@ class CubeMap : public TextureBase<TextureCube>
 		void upload() const;
 		bool syncCube(bool sync) const;
 
-		mutable core::SmartPtr<TextureArray> texArray;
-		mutable core::SmartPtr<Cube> cube;
+
+		struct BuildData
+		{
+			bool mips;
+			TextureArray array;
+			Cube cube;
+		};
+
+		mutable core::SmartPtr<BuildData> buildData;
 
 
 };
