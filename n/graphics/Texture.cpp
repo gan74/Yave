@@ -69,7 +69,7 @@ void Texture::upload() const {
 		data->hasMips &= isMipCapable();
 		gl::TextureFormat format = gl::getTextureFormat(image.getFormat());
 
-		data->handle = gl::createTexture2D(size, getMipmapLevels(), format, image.data());
+		data->handle = gl::createTexture2D(size, getMipmapLevel(), format, image.data());
 
 		if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
 			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());

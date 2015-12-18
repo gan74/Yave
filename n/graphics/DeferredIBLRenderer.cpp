@@ -42,7 +42,7 @@ CubeMap *getCube() {
 			Texture(Image(ImageLoader::load<core::String>("skybox/right.tga"))),
 			Texture(Image(ImageLoader::load<core::String>("skybox/left.tga"))),
 			Texture(Image(ImageLoader::load<core::String>("skybox/front.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/back.tga"))), true);
+			Texture(Image(ImageLoader::load<core::String>("skybox/back.tga"))));
 	}
 	return cube;
 }
@@ -64,7 +64,7 @@ ShaderInstance *getShader() {
 				"vec3 normal = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
 				"float metal = material.y;"
 				"float roughness = material.x;"
-				"n_Out = texture(n_Cube, normal);"
+				"n_Out = textureLod(n_Cube, normal, 8.0);"
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}

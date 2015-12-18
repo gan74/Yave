@@ -248,7 +248,7 @@ Handle createTexture2DArray(const math::Vec3ui &size, uint mips, TextureFormat f
 	if(data) {
 		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, size.x(), size.y(), size.z(), format.format, format.type, data);
 	}
-	if(mips) {
+	if(mips > 1) {
 		generateMipmap(Texture2DArray);
 	}
 	return h;

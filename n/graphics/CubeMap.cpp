@@ -74,30 +74,42 @@ TextureArray buildCube(const CubeMap::Cube &cube) {
 	return TextureArray(fbo.asTextureArray());
 }
 
-CubeMap::CubeMap(const TextureArray &array) : TextureBase<TextureCube>(), buildData(new BuildData{false, array, Cube()}) {
+CubeMap::CubeMap(const TextureArray &array) : TextureBase<TextureCube>(), buildData(new BuildData{array, Cube()}) {
 }
 
-CubeMap::CubeMap(const Cube &sides, bool mip) : TextureBase<TextureCube>(), buildData(new BuildData{mip, TextureArray(), sides}) {
+CubeMap::CubeMap(const Cube &sides) : TextureBase<TextureCube>(), buildData(new BuildData{TextureArray(), sides}) {
 }
 
 void CubeMap::upload() const {
 	if(!getHandle() && buildData) {
 		TextureArray texArray = buildData->array;
 		if(texArray.isNull()) {
-			texArray = buildCube(buildData->cube);
+			buildData->array = texArray = buildCube(buildData->cube);
 		}
 		if(texArray.getSize().z() < 6) {
 			logMsg("Cube map build from array with less than 6 elements", ErrorLog);
 			return;
 		}
-		data->handle = gl::createTextureCubeView(texArray.getHandle(), 1, gl::getTextureFormat(texArray.getFormat()));
+		if(texArray.getSize().x() != texArray.getSize().y()) {
+			logMsg("Cube map build sides should be square", ErrorLog);
+			return;
+		}
+		gl::bindTexture(Texture2DArray, texArray.getHandle());
+		uint mips = Texture::getMipmapLevelForSize(texArray.getSize().sub(2));
+		gl::generateMipmap(Texture2DArray);
+		data->handle = gl::createTextureCubeView(texArray.getHandle(), mips, gl::getTextureFormat(texArray.getFormat()));
 		data->parent = texArray.getHandle();
+		data->hasMips = mips > 1;
+
+		if(data->hasMips) {
+			gl::generateMipmap(TextureCube);
+		}
 
 		if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
 			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
 			gl::makeTextureHandleResident(data->bindless);
 		}
-		buildData = 0;
+		//buildData = 0;
 		internal::TextureBinding::dirty();
 	}
 }

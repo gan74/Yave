@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	scene.insert(new MetalTest());
 
 	{
-		DirectionalLight *l = new DirectionalLight(/*600*/);
+		BoxLight *l = new BoxLight(600);
 
 		l->setForward(Vec3(0, 1, -1));
 		//l->setPosition(Vec3(0, 0, 10));

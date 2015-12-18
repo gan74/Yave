@@ -54,8 +54,12 @@ class Texture : public TextureBase<Texture2D>
 			return image;
 		}
 
-		uint getMipmapLevels() const {
-			return hasMipmaps() ? 1 + floor(log2(getSize().max())) : 1;
+		uint getMipmapLevel() const {
+			return hasMipmaps() ? getMipmapLevelForSize(getSize()) : 1;
+		}
+
+		static uint getMipmapLevelForSize(const math::Vec2ui &size) {
+			return 1 + floor(log2(size.max()));
 		}
 
 		static bool isHWSupported(ImageFormat format);

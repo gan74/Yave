@@ -39,8 +39,8 @@ class CubeMap : public TextureBase<TextureCube>
 
 
 		CubeMap(const TextureArray &array);
-		CubeMap(const Cube &sides, bool mip = false);
-		CubeMap(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back, bool mip = false) : CubeMap(Cube{top, bottom, right, left, front, back}, mip) {
+		CubeMap(const Cube &sides);
+		CubeMap(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back) : CubeMap(Cube{top, bottom, right, left, front, back}) {
 		}
 
 
@@ -53,7 +53,6 @@ class CubeMap : public TextureBase<TextureCube>
 
 		struct BuildData
 		{
-			bool mips;
 			TextureArray array;
 			Cube cube;
 		};
