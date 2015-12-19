@@ -37,12 +37,12 @@ CubeMap *getCube() {
 	static CubeMap *cube = 0;
 	if(!cube) {
 		cube = new CubeMap(
-			Texture(Image(ImageLoader::load<core::String>("skybox/top.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/bottom.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/right.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/left.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/front.tga"))),
-			Texture(Image(ImageLoader::load<core::String>("skybox/back.tga"))));
+			(Image(ImageLoader::load<core::String>("skybox/top.tga"))),
+			(Image(ImageLoader::load<core::String>("skybox/bottom.tga"))),
+			(Image(ImageLoader::load<core::String>("skybox/right.tga"))),
+			(Image(ImageLoader::load<core::String>("skybox/left.tga"))),
+			(Image(ImageLoader::load<core::String>("skybox/front.tga"))),
+			(Image(ImageLoader::load<core::String>("skybox/back.tga"))));
 	}
 	return cube;
 }
@@ -58,6 +58,7 @@ ShaderInstance *getShader() {
 
 			"in vec2 n_TexCoord;"
 			"out vec4 n_Out;"
+			"in vec3 n_View;"
 
 			"void main() {"
 				"vec4 material = texture(n_2, n_TexCoord);"

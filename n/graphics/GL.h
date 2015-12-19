@@ -46,8 +46,7 @@ enum BufferTarget
 enum TextureType
 {
 	Texture2D,
-	TextureCube,
-	Texture2DArray
+	TextureCube
 };
 
 enum CullMode : uint16
@@ -196,9 +195,7 @@ struct TextureFormat
 		friend TextureFormat getTextureFormat(ImageFormat);
 		friend bool isHWSupported(ImageFormat);
 		friend Handle createTexture2D(const math::Vec2ui &, uint, TextureFormat, const void *);
-		friend Handle createTexture2DArray(const math::Vec3ui &, uint, TextureFormat, const void *);
-		friend Handle createTexture2DView(Handle, uint, uint, TextureFormat);
-		friend Handle createTextureCubeView(Handle, uint, TextureFormat);
+		friend Handle createTextureCube(const math::Vec2ui &, uint, TextureFormat, const void **);
 
 		TextureFormat(uint f, uint i, uint t) : format(f), internalFormat(i), type(t) {
 		}
@@ -231,9 +228,7 @@ Handle createProgram();
 Handle createShader(ShaderType shaderType);
 Handle createSampler(TextureSampler sampler, bool mipmap);
 Handle createTexture2D(const math::Vec2ui &size, uint mips, TextureFormat format, const void *data);
-Handle createTexture2DArray(const math::Vec3ui &size, uint mips, TextureFormat format, const void *data);
-Handle createTexture2DView(Handle array, uint layer, uint mips, TextureFormat format);
-Handle createTextureCubeView(Handle array, uint mips, TextureFormat format);
+Handle createTextureCube(const math::Vec2ui &size, uint mips, TextureFormat format, const void **data);
 Handle createBuffer();
 Handle createVertexArray();
 Handle createFramebuffer();

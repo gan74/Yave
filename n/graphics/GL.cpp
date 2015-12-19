@@ -146,6 +146,7 @@ GLenum cullMode[] = {GL_BACK, GL_FRONT, GL_NONE};
 GLenum intParams[] = {GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_ATTRIBS, GL_MAX_VARYING_VECTORS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_MAX_SHADER_STORAGE_BLOCK_SIZE, GL_MAJOR_VERSION, GL_MINOR_VERSION};
 GLenum magSamplers[] {GL_NEAREST, GL_LINEAR, GL_LINEAR};
 GLenum minSamplers[] {GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR};
+GLenum cubeSides[] = {GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X};
 
 
 static constexpr uint MaxBindings = 256;
@@ -240,33 +241,20 @@ Handle createTexture2D(const math::Vec2ui &size, uint mips, TextureFormat format
 	return h;
 }
 
-Handle createTexture2DArray(const math::Vec3ui &size, uint mips, TextureFormat format, const void *data) {
+
+Handle createTextureCube(const math::Vec2ui &size, uint mips, TextureFormat format, const void **data) {
 	Handle h = 0;
 	glGenTextures(1, &h);
-	bindTexture(Texture2DArray, h);
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY,  mips, format.internalFormat, size.x(), size.y(), size.z());
+	bindTexture(TextureCube, h);
+	glTexStorage2D(GL_TEXTURE_CUBE_MAP,  mips, format.internalFormat, size.x(), size.y());
 	if(data) {
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, size.x(), size.y(), size.z(), format.format, format.type, data);
+		for(uint i = 0; i != 6; i++) {
+			glTexSubImage2D(cubeSides[i], 0, 0, 0, size.x(), size.y(), format.format, format.type, data[i]);
+		}
 	}
 	if(mips > 1) {
-		generateMipmap(Texture2DArray);
+		generateMipmap(TextureCube);
 	}
-	return h;
-}
-
-
-Handle createTexture2DView(Handle array, uint layer, uint mips, TextureFormat format) {
-	Handle h = 0;
-	glGenTextures(1, &h);
-	glTextureView(h, GL_TEXTURE_2D, array, format.internalFormat, 0, mips, layer, 1);
-	return h;
-}
-
-
-Handle createTextureCubeView(Handle array, uint mips, TextureFormat format) {
-	Handle h = 0;
-	glGenTextures(1, &h);
-	glTextureView(h, GL_TEXTURE_CUBE_MAP, array, format.internalFormat, 0, mips, 0, 6);
 	return h;
 }
 

@@ -29,7 +29,6 @@ FrameBuffer::~FrameBuffer() {
 	delete depth;
 	delete[] drawBuffers;
 	delete[] attachments;
-	delete attArray;
 }
 
 bool FrameBuffer::isDepthEnabled() const {
@@ -45,24 +44,6 @@ void FrameBuffer::setup() {
 	handle = gl::createFramebuffer();
 	bind();
 	uint att = getMaxAttachment();
-
-	uint max = 0;
-	bool array = true;
-	for(uint i = 0; i != att; i++) {
-		if(isAttachmentEnabled(i)) {
-			max = i + 1;
-			array &= attachments[i].getFormat() == attachments[0].getFormat();
-		}
-	}
-	if(array && max) {
-		attArray = new TextureArray(math::Vec3ui(getSize(), max), attachments[0].getFormat());
-		attArray->synchronize(true);
-		for(uint i = 0; i != max; i++) {
-			if(isAttachmentEnabled(i)) {
-				attachments[i] = attArray->getTexture(i);
-			}
-		}
-	}
 	for(uint i = 0; i != att; i++) {
 		if(isAttachmentEnabled(i)) {
 			if(!attachments[i].synchronize(true)) {

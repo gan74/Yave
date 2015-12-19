@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_CUBEMAP
 
 #include "Texture.h"
-#include "TextureArray.h"
 
 namespace n {
 namespace graphics {
@@ -29,18 +28,17 @@ class CubeMap : public TextureBase<TextureCube>
 	public:
 		struct Cube
 		{
-			Texture top;
-			Texture bottom;
-			Texture right;
-			Texture left;
-			Texture front;
-			Texture back;
+			Image top;
+			Image bottom;
+			Image right;
+			Image left;
+			Image front;
+			Image back;
 		};
 
 
-		CubeMap(const TextureArray &array);
 		CubeMap(const Cube &sides);
-		CubeMap(Texture top, Texture bottom, Texture right, Texture left, Texture front, Texture back) : CubeMap(Cube{top, bottom, right, left, front, back}) {
+		CubeMap(Image top, Image bottom, Image right, Image left, Image front, Image back) : CubeMap(Cube{top, bottom, right, left, front, back}) {
 		}
 
 
@@ -48,16 +46,10 @@ class CubeMap : public TextureBase<TextureCube>
 
 	private:
 		void upload() const;
-		bool syncCube(bool sync) const;
+		bool cubeLoading() const;
+		bool cubeNull() const;
 
-
-		struct BuildData
-		{
-			TextureArray array;
-			Cube cube;
-		};
-
-		mutable core::SmartPtr<BuildData> buildData;
+		Cube cube;
 
 
 };
