@@ -16,8 +16,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "DeferredIBLRenderer.h"
 #include "ImageLoader.h"
+#include "DeferredCommon.h"
 
 #include <iostream>
+
 
 namespace n {
 namespace graphics {
@@ -55,17 +57,32 @@ ShaderInstance *getShader() {
 
 			"uniform sampler2D n_1;"
 			"uniform sampler2D n_2;"
+			"uniform sampler2D n_D;"
+
+			"uniform mat4 n_Inv;"
+			"uniform vec3 n_Cam;"
+			"uniform vec3 n_Tan;"
 
 			"in vec2 n_TexCoord;"
 			"out vec4 n_Out;"
-			"in vec3 n_View;"
+
+			"vec3 unproj(vec2 C) {"
+				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
+				"vec4 P = n_Inv * VP;"
+				"return P.xyz / P.w;"
+			"}"
+
+			+ getBRDFs() +
 
 			"void main() {"
+				"vec3 pos = unproj(n_TexCoord);"
+				"vec3 view = normalize(n_Cam - pos);"
 				"vec4 material = texture(n_2, n_TexCoord);"
 				"vec3 normal = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
-				"float metal = material.y;"
+				"float levels = textureQueryLevels(n_Cube);"
 				"float roughness = material.x;"
-				"n_Out = textureLod(n_Cube, normal, 8.0);"
+				"n_Out = textureLod(n_Cube, reflect(-view, normal), roughness * levels);"
+
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}
@@ -80,8 +97,13 @@ void *DeferredIBLRenderer::prepare() {
 }
 
 void DeferredIBLRenderer::render(void *ptr) {
+	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(ptr);
+	math::Matrix4<> invCam = (sceneData->proj * sceneData->view).inverse();
+	math::Vec3 cam = sceneData->camera->getPosition();
+
 	const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
 	child->render(ptr);
+
 	if(fb) {
 		fb->bind();
 	} else {
@@ -90,8 +112,11 @@ void DeferredIBLRenderer::render(void *ptr) {
 
 	ShaderInstance *shader = getShader();
 	shader->setValue("n_Cube", *getCube(), TextureSampler::Trilinear);
+	shader->setValue("n_Inv", invCam);;
+	shader->setValue("n_Cam", cam);
 	shader->setValue(SVTexture1, child->getFrameBuffer().getAttachement(1));
 	shader->setValue(SVTexture2, child->getFrameBuffer().getAttachement(2));
+	shader->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
 
 	shader->bind();
 	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);

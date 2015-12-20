@@ -39,12 +39,10 @@ const VertexArrayObject<> &getBox() {
 
 core::String getBRDFs() {
 	return "float cook_torrance_D(float NoH, float a2) {"
-				"float d = (NoH * a2 - NoH) * NoH + 1;"
-				"return max(0.0, a2 / (pi * d * d));"
+				"return max(0.0, a2 / (pi * sqr(sqr(NoH) * (a2 - 1.0) + 1.0)));"
 			"}"
 
-			"float cook_torrance_G(float NoL, float NoV, float roughness) {"
-				"float K = sqr(roughness + 1) / 8.0;"
+			"float cook_torrance_G(float NoL, float NoV, float K) {"
 				"float G1L = NoL / (NoL * (1.0 - K) + K);"
 				"float G1V = NoV / (NoV * (1.0 - K) + K);"
 				"return saturate(G1L * G1V);"
@@ -59,23 +57,25 @@ core::String getBRDFs() {
 			"}"
 
 			"float brdf_cook_torrance(vec3 L, vec3 V, vec3 N, vec4 M) {"
-				"float NoV = abs(dot(N, V)) + epsilon;"
 				"vec3 H = normalize(L + V);"
+				"float NoV = saturate(dot(N, V));"
 				"float LoH = saturate(dot(L, H));"
 				"float NoH = saturate(dot(N, H));"
 				"float NoL = saturate(dot(N, L));"
 				"float roughness = M.x + epsilon;"
 				"float a = sqr(roughness);"
 				"float a2 = sqr(a);"
+				"float K = sqr(roughness + 1) / 8.0;"
 
 				"float D = cook_torrance_D(NoH, a2);"
 
-				"float G = cook_torrance_G(NoL, NoV, roughness);"
+				"float G = cook_torrance_G(NoL, NoV, K);"
 
 				"float F = cook_torrance_F(LoH, M.z);"
 
 				"return F * G * D / cook_torrance_div(NoL, NoV);"
 			"}"
+
 
 			"float brdf_lambert(vec3 L, vec3 V, vec3 N, vec4 M) {"
 				"return 1.0 / pi;"

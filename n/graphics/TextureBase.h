@@ -32,7 +32,7 @@ namespace internal {
 	{
 		struct Data
 		{
-			Data(TextureType t) : type(t), handle(0), parent(0), bindless(0), hasMips(false) {
+			Data(TextureType t) : type(t), handle(0), bindless(0), hasMips(false) {
 			}
 
 			~Data() {
@@ -49,7 +49,6 @@ namespace internal {
 			const TextureType type;
 			concurrent::SpinLock lock;
 			gl::Handle handle;
-			gl::Handle parent;
 			uint64 bindless;
 			bool hasMips;
 		};

@@ -31,12 +31,25 @@ CubeMap::CubeMap(const Cube &sides) : TextureBase<TextureCube>(), cube(sides) {
 void CubeMap::upload() const {
 	if(!getHandle()) {
 		math::Vec2ui size = cube.top.getSize();
+		ImageFormat imgF = cube.top.getFormat();
+
 		if(!size.mul() || size.x() != size.y()) {
-			fatal("Invalid image size.");
+			fatal("Invalid image size : Cubemaps must be square.");
 		}
+
+		const Image *images = reinterpret_cast<const Image *>(&cube);
+		for(uint i = 0; i != 6; i++) {
+			if(images[i].getFormat() != imgF) {
+				fatal("Invalid image format : Cubemap images must be of the same format.");
+			}
+			if(images[i].getSize() != size) {
+				fatal("Invalid image size : Cubemap images must be of the same size.");
+			}
+		}
+
 		uint mips = Texture::getMipmapLevelForSize(size);
 		data->hasMips = mips > 1;
-		gl::TextureFormat format = gl::getTextureFormat(cube.top.getFormat());
+		gl::TextureFormat format = gl::getTextureFormat(imgF);
 
 		const void *datas[] = {cube.top.data(), cube.bottom.data(), cube.right.data(), cube.left.data(), cube.front.data(), cube.back.data()};
 		data->handle = gl::createTextureCube(size, mips, format, datas);

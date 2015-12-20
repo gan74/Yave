@@ -156,8 +156,6 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 			"out vec4 n_Out;"
 
-			"const float epsilon = 0.0001;"
-
 			+ getBRDFs() +
 
 			"vec3 projectShadow(vec3 p) {"

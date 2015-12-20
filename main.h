@@ -175,6 +175,7 @@ class MetalTest : public Transformable, public Renderable
 	public:
 		MetalTest() : Transformable(), Renderable(), inst(0) {
 			transform = Transform<>(Quaternion<>(), Vec3(0, 0, 50), 10);
+			radius = 10;
 		}
 
 		virtual void render(RenderQueue &qu, RenderFlag rf) override {
@@ -183,10 +184,37 @@ class MetalTest : public Transformable, public Renderable
 			}
 			delete inst;
 			MaterialData data;
+			data.prog = getShader();
 			data.color = Vec4(0.5);
 			data.metallic = 1.0;
 			inst = new SubMeshInstance(vao, Material(data));
 			qu.insert(RenderBatch(transform.getMatrix(), inst, VertexAttribs(), rf));
+		}
+
+		ShaderProgram getShader() {
+			static ShaderProgram *prog = 0;
+			if(!prog) {
+				prog = new ShaderProgram(new Shader<FragmentShader>(
+					"layout(location = 0) out vec4 n_0;"
+					"layout(location = 1) out vec4 n_1;"
+					"layout(location = 2) out vec4 n_2;"
+					"in vec3 n_Position;"
+					"in vec3 n_Normal;"
+					"in vec3 n_Tangent;"
+					"in vec3 n_Binormal;"
+					"in vec2 n_TexCoord;"
+					"uniform float n_Time;"
+					"void main() {"
+						"vec4 color = vec4(1.0);"
+						"float metal = 1.0;"
+						"float roughness = fract(n_Time * 0.25);"
+						"n_0 = n_gbuffer0(color, n_Normal, roughness, metal);"
+						"n_1 = n_gbuffer1(color, n_Normal, roughness, metal);"
+						"n_2 = n_gbuffer2(color, n_Normal, roughness, metal);"
+					"}"
+				));
+			}
+			return *prog;
 		}
 
 	private:

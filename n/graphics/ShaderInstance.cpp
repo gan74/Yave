@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ShaderInstance.h"
 #include "GLContext.h"
+#include <n/core/Timer.h>
 
 namespace n {
 namespace graphics {
@@ -182,8 +183,11 @@ ShaderInstance::UniformAddr ShaderInstance::computeStandardIndex(const core::Str
 }
 
 void ShaderInstance::bindStandards() const {
+	static core::Timer timer;
+
 	setBuffer(SVModelMatrixBuffer, GLContext::getContext()->models);
 
+	setValue("n_Time", timer.elapsed());
 	setValue(SVProjMatrix, GLContext::getContext()->getProjectionMatrix());
 	setValue(SVViewMatrix, GLContext::getContext()->getViewMatrix());
 	setValue(SVViewportSize, math::Vec2(GLContext::getContext()->getViewport()));

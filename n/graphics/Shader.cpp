@@ -62,8 +62,24 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 	core::String ver = core::String("#version ") + vers + "\n";
 	core::String model = "\n#define n_ModelMatrix n_ModelMatrices[n_BaseInstance + gl_InstanceID] \n"
 						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(UniformBuffer<math::Matrix4<>>::getMaxSize()) + "]; }; uniform uint n_BaseInstance;\n";
-	core::String common = "layout(std140, row_major) uniform; layout (std140, row_major) buffer; const float pi = " + core::String(math::pi) + "; float sqr(float x) { return x * x; }  float saturate(float x) { return clamp(x, 0.0, 1.0); }" +
-	"vec2 sphereMap(vec3 U, vec3 N) { vec3 R = reflect(U, N); float m = -2.0 * sqrt(sqr(R.x) + sqr(R.y + 1.0) + sqr(R.z)); return R.xz / m + 0.5; }";
+	core::String common = "layout(std140, row_major) uniform; "
+						  "layout (std140, row_major) buffer; "
+						  "const float pi = " + core::String(math::pi) + "; "
+						  "const float epsilon = 0.0001; "
+						  "float sqr(float x) { return x * x; }  "
+						  "float saturate(float x) { return clamp(x, 0.0, 1.0); }"
+						  "vec2 sphereMap(vec3 U, vec3 N) { vec3 R = reflect(U, N); float m = -2.0 * sqrt(sqr(R.x) + sqr(R.y + 1.0) + sqr(R.z)); return R.xz / m + 0.5; }"
+						  "vec3 hemisphereSample(vec2 uv) {float phi = uv.y * 2.0 * pi; float cosTheta = 1.0 - uv.x; float sinTheta = sqrt(1.0 - cosTheta * cosTheta); return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta); }"
+						  "vec2 hammersley(uint i, uint N) { "
+							  "uint bits = i;"
+							  "bits = (bits << 16u) | (bits >> 16u);"
+							  "bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);"
+							  "bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);"
+							  "bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);"
+							  "bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);"
+							  "float VdC = float(bits) * 2.3283064365386963e-10;"
+							  "return vec2(float(i) / float(N), VdC);"
+						  "}";
 	uint vit = src.find("#version");
 	if(vit != uint(-1)) {
 		uint l = src.find("\n", vit);
