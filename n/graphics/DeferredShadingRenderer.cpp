@@ -185,6 +185,11 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				+ computeDir[Type] +
 			"}"
 
+			"float test_brdf(vec3 L, vec3 V, vec3 N, vec4 M) {"
+				"vec3 R = reflect(-V, N);"
+				"return max(0.0, dot(L, R));"
+			"}"
+
 			"void main() {"
 				"vec2 texCoord = computeTexCoord();"
 				"vec4 albedo = texture(n_0, texCoord);"
@@ -194,7 +199,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				"vec3 view = normalize(n_Cam - pos);"
 				"vec3 lightDir = computeDir(pos);"
 				"float lightDist = length(lightDir);"
-				"vec3 lightVec = lightDir / lightDist;"
+				"lightDir /= lightDist;"
 				"lightDist /= n_LightScale;"
 				"float metallic = material.y;"
 
@@ -203,7 +208,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 					"shadow = computeShadow(pos);"
 				"}"
 
-				"float att = attenuate(lightVec, pos, lightDist);"
+				"float att = attenuate(lightDir, pos, lightDist);"
 				"float NoL = saturate(dot(normal, lightDir));"
 				"vec3 light = n_LightColor * NoL * att * shadow;"
 
