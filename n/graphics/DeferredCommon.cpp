@@ -39,19 +39,26 @@ const VertexArrayObject<> &getBox() {
 
 core::String getBRDFs() {
 	return
-			"float cook_torrance_D(float NoH, float a2) {"
+			// [Walter et al. 2007, "Microfacet models for refraction through rough surfaces"]
+			"float D_GGX(float NoH, float a2) {"
 				"float d = (NoH * a2 - NoH) * NoH + 1.0;"
 				"return a2 / (pi * d * d);"
 			"}"
 
-			"float cook_torrance_F(float LoH, float F0) {"
-				"return saturate(F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0));"
+			// [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
+			"float F_Schlick(float LoH, float F0) {"
+				"return F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0);"
 			"}"
 
-			"float cook_torrance_vis(float NoL, float NoV, float a2) {"
-				"float G1V = NoV + sqrt((NoV - NoV * a2) * NoV + a2);"
-				"float G1L = NoL + sqrt((NoL - NoL * a2) * NoL + a2);"
-				"return 1.0 / (G1L * G1V);"
+			"vec3 F_Schlick(float LoH, vec3 F0) {"
+				"return F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0);"
+			"}"
+
+			"float V_Schlick(float NoL, float NoV, float a) {"
+				"float k = a * 0.5;"
+				"float GV = NoV * (1.0 - k) + k;"
+				"float GL = NoL * (1.0 - k) + k;"
+				"return 0.25 / (GL * GV);"
 			"}"
 
 			"float brdf_cook_torrance(vec3 L, vec3 V, vec3 N, vec4 M) {"
@@ -62,16 +69,11 @@ core::String getBRDFs() {
 				"float LoH = saturate(dot(L, H));"
 				"float NoH = saturate(dot(N, H));"
 
-				"float roughness = M.x + epsilon;"
+				"float roughness = saturate(M.x + epsilon);"
 				"float a = sqr(roughness);"
 				"float a2 = sqr(a);"
 
-				"float D = cook_torrance_D(NoH, a2);"
-
-				"float F = cook_torrance_F(LoH, M.z);"
-
-
-				"return F * D * cook_torrance_vis(NoL, NoV, a);"
+				"return F_Schlick(LoH, M.z) * D_GGX(NoH, a) * V_Schlick(NoL, NoV, a);"
 			"}"
 
 
