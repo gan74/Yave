@@ -58,22 +58,32 @@ core::String getBRDFs() {
 				"float k = a * 0.5;"
 				"float GV = NoV * (1.0 - k) + k;"
 				"float GL = NoL * (1.0 - k) + k;"
-				"return 0.25 / (GL * GV);"
+				"return 0.25 / (GL * GV + epsilon);"
+			"}"
+
+			"float V_Smith(float NoL, float NoV, float a2) {"
+				"float GV = NoV + sqrt(NoV * (NoV - NoV * a2) + a2);"
+				"float GL = NoL + sqrt(NoL * (NoL - NoL * a2) + a2);"
+				"return 1.0 / (GL * GV + epsilon);"
 			"}"
 
 			"float brdf_cook_torrance(vec3 L, vec3 V, vec3 N, vec4 M) {"
 				"vec3 H = normalize(L + V);"
 
 				"float NoL = saturate(dot(N, L));"
-				"float NoV = saturate(dot(N, V));"
-				"float LoH = saturate(dot(L, H));"
+				"float NoV = max(dot(N, V), epsilon);"
+				"float VoH = saturate(dot(V, H));"
 				"float NoH = saturate(dot(N, H));"
 
 				"float roughness = saturate(M.x + epsilon);"
 				"float a = sqr(roughness);"
 				"float a2 = sqr(a);"
 
-				"return F_Schlick(LoH, M.z) * D_GGX(NoH, a) * V_Schlick(NoL, NoV, a);"
+				"return "
+					"F_Schlick(VoH, M.z) * "
+					"D_GGX(NoH, a) * "
+					"V_Schlick(NoL, NoV, a);"
+					//"V_Smith(NoL, NoV, a2);"
 			"}"
 
 			"float brdf_lambert(vec3 L, vec3 V, vec3 N, vec4 M) {"
@@ -81,36 +91,11 @@ core::String getBRDFs() {
 			"}"
 
 			//http://blog.selfshadow.com/publications/s2013-shading-course/#course_content
-			"vec3 brdf_importance_sample(vec2 Xi, float a, vec3 N) {"
+			"vec3 brdf_importance_sample(vec2 Xi, float a) {"
 				"float phi = 2.0 * pi * Xi.x;"
 				"float cosT = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));"
 				"float sinT = sqrt(1.0 - cosT * cosT);"
-				"vec3 H = vec3(sinT * cos(phi), sinT * sin(phi), cosT);"
-				"vec3 U = abs(N.z) > 0.999 ? vec3(1, 0, 0) : vec3(0, 0, 1);"
-				"vec3 X = normalize(cross(N, U));"
-				"vec3 Y = cross(X, N);"
-				"return H.z * N + H.y * Y + H.x * X;"
-			"}"
-
-			"vec2 brdf_integrate(float roughness, float NoV) {"
-				"vec3 V = vec3(sqrt(1.0 - sqr(NoV)), 0.0, NoV);"
-				"vec2 I = vec2(0);"
-				"float a = roughness * roughness;"
-				"const uint samples = 1024;"
-				"for(uint i = 0; i != samples; i++) {"
-					"vec2 Xi = hammersley(i, samples);"
-					"vec3 H = brdf_importance_sample(Xi, a, V);" // N ?
-					"vec3 L = 2.0 * dot(V, H) * H - V;"
-					"float NoL = saturate(L.z);"
-					"float NoH = saturate(H.z);"
-					"float VoH = saturate(dot(V, H));"
-					"if(NoL > 0.0) {"
-						"float vis = /*D_GGX(NoH, a * a) **/ V_Schlick(NoL, NoV, a);"
-						"float Fc = pow(1.0 - VoH, 5.0);"
-						"I += vec2(1.0 - Fc, Fc) * vis;"
-					"}"
-				"}"
-				"return I / samples;"
+				"return vec3(sinT * cos(phi), sinT * sin(phi), cosT);"
 			"}";
 
 

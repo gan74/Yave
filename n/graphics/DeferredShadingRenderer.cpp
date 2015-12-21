@@ -215,7 +215,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				"float diffuse = brdf_lambert(lightDir, view, normal, material);"
 				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
 
-				"vec3 diffuseColor = mix(albedo.rgb, vec3(0), metallic);"
+				"vec3 diffuseColor = mix(albedo.rgb, vec3(0.0), metallic);"
 				"vec3 specularColor = mix(vec3(1.0), albedo.rgb, metallic);"
 				"n_Out = vec4(light * (diffuse * diffuseColor + specular * specularColor), albedo.a);"
 

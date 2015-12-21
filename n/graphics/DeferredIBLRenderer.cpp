@@ -61,7 +61,6 @@ ShaderInstance *getShader() {
 
 			"uniform mat4 n_Inv;"
 			"uniform vec3 n_Cam;"
-			"uniform vec3 n_Tan;"
 
 			"in vec2 n_TexCoord;"
 			"out vec4 n_Out;"
@@ -74,32 +73,47 @@ ShaderInstance *getShader() {
 
 			+ getBRDFs() +
 
+			"mat3 genWorld(vec3 Z) {"
+				"vec3 U = abs(Z.z) > 0.999 ? vec3(1, 0, 0) : vec3(0, 0, 1);"
+				"vec3 X = normalize(cross(Z, U));"
+				"vec3 Y = cross(X, Z);"
+				"return mat3(X, Y, Z);"
+			"}"
 
 			"void main() {"
 				"vec3 pos = unproj(n_TexCoord);"
-				"vec3 view = normalize(n_Cam - pos);"
+				"vec3 V = normalize(n_Cam - pos);"
 				"vec4 material = texture(n_2, n_TexCoord);"
-				"vec3 normal = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
+				"vec3 N = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
 				"float levels = textureQueryLevels(n_Cube);"
-				"float roughness = material.x;"
+				"float roughness = saturate(material.x + epsilon);"
+				"float F0 = material.z;"
+				"float a = sqr(roughness);"
 
 				"const uint samples = 8;"
-				"vec3 acc = vec3(0.0);"
+
+				"vec3 reflection = reflect(-V, N);"
+				"mat3 world = genWorld(reflection);"
+				"float NoV = saturate(dot(N, V));"
+				"vec3 radiance = vec3(0);"
+
 				"for(uint i = 0; i != samples; i++) {"
 					"vec2 Xi = hammersley(i, samples);"
-					"vec2 sphere = Xi * 2.0 * pi;"
-					"vec3 D = normalize(brdf_importance_sample(Xi, roughness, normal));"
-					"float NoV = dot(D, normal);"
-					"if(NoV > 0) {"
-						"float w = brdf_cook_torrance(D, view, normal, material);"
-						"w += brdf_lambert(D, view, normal, material);"
-						"acc += w * textureLod(n_Cube, D, (roughness + NoV) * levels * 0.5).rgb;"
-					"}"
+					"vec3 S = brdf_importance_sample(Xi, roughness);"
+					"S = normalize(world * S);"
+					"vec3 H = normalize(V + S);"
+					"float cosT = saturate(dot(S, N));"
+					"float sinT = sqrt(1.0 - cosT * cosT);"
+					"float NoV = saturate(dot(N, V));"
+					"float NoL = saturate(dot(N, S));"
+					"float VoH = saturate(dot(V, H));"
+					"float F = F_Schlick(VoH, 1.0);"
+					"float G = V_Schlick(NoV, NoL, a);"
+					"float RoS = saturate(dot(reflection, S));"
+					"float bias = pow(1.0 - RoS, 0.25);"
+					"radiance += textureLod(n_Cube, S, (roughness + bias) * levels * 0.5).rgb * F * G;"
 				"}"
-				"n_Out = vec4(acc / samples, 1.0);"
-
-				//"n_Out = textureLod(n_Cube, reflect(-view, normal), log2(roughness + 1.0) * levels);"
-				//"n_Out = vec4(brdf_integrate(n_TexCoord.x, n_TexCoord.y), 0, 1);"
+				"n_Out = vec4(radiance / samples, 1.0);"
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}

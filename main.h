@@ -207,7 +207,7 @@ class MetalTest : public Transformable, public Renderable
 					"void main() {"
 						"vec4 color = vec4(1.0);"
 						"float metal = 1.0;"
-						"float roughness = fract(n_Time * 0.25);"
+						"float roughness = sin(n_Time) * 0.5 + 0.5;"
 						"n_0 = n_gbuffer0(color, n_Normal, roughness, metal);"
 						"n_1 = n_gbuffer1(color, n_Normal, roughness, metal);"
 						"n_2 = n_gbuffer2(color, n_Normal, roughness, metal);"
