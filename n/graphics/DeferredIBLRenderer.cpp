@@ -74,6 +74,7 @@ ShaderInstance *getShader() {
 
 			+ getBRDFs() +
 
+
 			"void main() {"
 				"vec3 pos = unproj(n_TexCoord);"
 				"vec3 view = normalize(n_Cam - pos);"
@@ -81,8 +82,24 @@ ShaderInstance *getShader() {
 				"vec3 normal = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
 				"float levels = textureQueryLevels(n_Cube);"
 				"float roughness = material.x;"
-				"n_Out = textureLod(n_Cube, reflect(-view, normal), roughness * levels);"
 
+				"const uint samples = 8;"
+				"vec3 acc = vec3(0.0);"
+				"for(uint i = 0; i != samples; i++) {"
+					"vec2 Xi = hammersley(i, samples);"
+					"vec2 sphere = Xi * 2.0 * pi;"
+					"vec3 D = normalize(brdf_importance_sample(Xi, roughness, normal));"
+					"float NoV = dot(D, normal);"
+					"if(NoV > 0) {"
+						"float w = brdf_cook_torrance(D, view, normal, material);"
+						"w += brdf_lambert(D, view, normal, material);"
+						"acc += w * textureLod(n_Cube, D, (roughness + NoV) * levels * 0.5).rgb;"
+					"}"
+				"}"
+				"n_Out = vec4(acc / samples, 1.0);"
+
+				//"n_Out = textureLod(n_Cube, reflect(-view, normal), log2(roughness + 1.0) * levels);"
+				//"n_Out = vec4(brdf_integrate(n_TexCoord.x, n_TexCoord.y), 0, 1);"
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}

@@ -76,10 +76,43 @@ core::String getBRDFs() {
 				"return F_Schlick(LoH, M.z) * D_GGX(NoH, a) * V_Schlick(NoL, NoV, a);"
 			"}"
 
-
 			"float brdf_lambert(vec3 L, vec3 V, vec3 N, vec4 M) {"
 				"return 1.0 / pi;"
+			"}"
+
+			//http://blog.selfshadow.com/publications/s2013-shading-course/#course_content
+			"vec3 brdf_importance_sample(vec2 Xi, float a, vec3 N) {"
+				"float phi = 2.0 * pi * Xi.x;"
+				"float cosT = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));"
+				"float sinT = sqrt(1.0 - cosT * cosT);"
+				"vec3 H = vec3(sinT * cos(phi), sinT * sin(phi), cosT);"
+				"vec3 U = abs(N.z) > 0.999 ? vec3(1, 0, 0) : vec3(0, 0, 1);"
+				"vec3 X = normalize(cross(N, U));"
+				"vec3 Y = cross(X, N);"
+				"return H.z * N + H.y * Y + H.x * X;"
+			"}"
+
+			"vec2 brdf_integrate(float roughness, float NoV) {"
+				"vec3 V = vec3(sqrt(1.0 - sqr(NoV)), 0.0, NoV);"
+				"vec2 I = vec2(0);"
+				"float a = roughness * roughness;"
+				"const uint samples = 1024;"
+				"for(uint i = 0; i != samples; i++) {"
+					"vec2 Xi = hammersley(i, samples);"
+					"vec3 H = brdf_importance_sample(Xi, a, V);" // N ?
+					"vec3 L = 2.0 * dot(V, H) * H - V;"
+					"float NoL = saturate(L.z);"
+					"float NoH = saturate(H.z);"
+					"float VoH = saturate(dot(V, H));"
+					"if(NoL > 0.0) {"
+						"float vis = /*D_GGX(NoH, a * a) **/ V_Schlick(NoL, NoV, a);"
+						"float Fc = pow(1.0 - VoH, 5.0);"
+						"I += vec2(1.0 - Fc, Fc) * vis;"
+					"}"
+				"}"
+				"return I / samples;"
 			"}";
+
 
 }
 
