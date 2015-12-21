@@ -46,12 +46,14 @@ core::String getBRDFs() {
 			"}"
 
 			// [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
-			"float F_Schlick(float LoH, float F0) {"
-				"return F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0);"
+			"float F_Schlick(float VoH, float F0) {"
+				"float Fc = pow(1 - VoH, 5.0);"
+				"return Fc + (1.0 - Fc) * F0;"
 			"}"
 
-			"vec3 F_Schlick(float LoH, vec3 F0) {"
-				"return F0 + (1.0 - F0) * pow(1.0 - LoH, 5.0);"
+			"vec3 F_Schlick(float VoH, vec3 F0) {"
+				"float Fc = pow(1 - VoH, 5.0);"
+				"return Fc + (1.0 - Fc) * F0;"
 			"}"
 
 			"float V_Schlick(float NoL, float NoV, float a) {"
@@ -65,6 +67,12 @@ core::String getBRDFs() {
 				"float GV = NoV + sqrt(NoV * (NoV - NoV * a2) + a2);"
 				"float GL = NoL + sqrt(NoL * (NoL - NoL * a2) + a2);"
 				"return 1.0 / (GL * GV + epsilon);"
+			"}"
+
+			"float V_SmithApprox(float NoL, float NoV, float a) {"
+				"float GV = NoL * (NoV * (1.0 - a) + a);"
+				"float GL = NoV * (NoL * (1.0 - a) + a);"
+				"return 0.5 / (GV + GL + epsilon);"
 			"}"
 
 			"float brdf_cook_torrance(vec3 L, vec3 V, vec3 N, vec4 M) {"
@@ -83,7 +91,6 @@ core::String getBRDFs() {
 					"F_Schlick(VoH, M.z) * "
 					"D_GGX(NoH, a) * "
 					"V_Schlick(NoL, NoV, a);"
-					//"V_Smith(NoL, NoV, a2);"
 			"}"
 
 			"float brdf_lambert(vec3 L, vec3 V, vec3 N, vec4 M) {"
