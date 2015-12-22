@@ -82,10 +82,14 @@ ShaderInstance *getShader() {
 			"}"
 
 
-			"float G_GGX_partial(float VoH, float a2) {"
+			"float G_Smith_partial(float VoH, float a2) {"
 				"float VoH2 = VoH * VoH;"
-				"float tan2 = (1.0 - VoH2 ) / VoH2;"
+				"float tan2 = (1.0 - VoH2) / VoH2;"
 				"return 2.0 / (1.0 + sqrt(1.0 + a2 * tan2));"
+			"}"
+
+			"float G_Smith(float VoH, float LoH, float a2) {"
+				"return G_Smith_partial(VoH, a2) * G_Smith_partial(LoH, a2);"
 			"}"
 
 			"void main() {"
@@ -103,32 +107,30 @@ ShaderInstance *getShader() {
 
 				"const uint samples = 8;"
 
-				"vec3 reflection = reflect(-V, N);"
-				"mat3 world = genWorld(reflection);"
 				"float NoV = saturate(dot(N, V));"
+				"vec3 R = reflect(-V, N);"
+				"mat3 world = genWorld(R);"
 				"vec3 radiance = vec3(0);"
 				"vec3 Ks = vec3(0);"
 
 				"for(uint i = 0; i != samples; i++) {"
 					"vec2 Xi = hammersley(i, samples);"
-					"vec3 S = brdf_importance_sample(Xi, roughness);"
-					"S = normalize(world * S);"
-					"vec3 H = normalize(V + S);"
-					"float cosT = saturate(dot(S, N));"
-					"float sinT = sqrt(1.0 - cosT * cosT);"
-					"float NoV = saturate(dot(N, V));"
-					"float NoL = saturate(dot(N, S));"
-					"float LoH = saturate(dot(H, S));"
-					"float VoH = saturate(dot(V, H));"
-					"float NoH = saturate(dot(N, H));"
-					"vec3 F = F_Schlick(VoH, F0);"
-					"float G = G_GGX_partial(VoH, a2) * G_GGX_partial(LoH,  a2) * sinT / saturate(4.0 * (NoV * NoH + 0.05));"
-					//"float G = V_Smith(VoH, LoH, a2);"
-					"float RoS = saturate(dot(reflection, S));"
-					//"float bias = pow(1.0 - RoS, 0.25);"
-					"float bias = roughness;"
-					"radiance += textureLod(n_Cube, S, (roughness + bias) * levels * 0.5).rgb * F * G;"
-					"Ks += F;"
+					"vec3 L = normalize(world * brdf_importance_sample(Xi, roughness));"
+					"vec3 H = normalize(V + L);"
+
+					"float NoL = dot(N, L);"
+
+					"if(NoL > 0.0) {"
+						"float NoH = saturate(dot(N, H));"
+						"float VoH = saturate(dot(V, H));"
+
+						"vec3 F = F_Schlick(VoH, F0);"
+						"float G = G_Smith(NoV, NoL,  a2);"
+						"vec3 BRDF = F * G * VoH / (NoH * NoV + epsilon);"
+						"radiance += textureLod(n_Cube, L, (roughness) * levels).rgb * BRDF;"
+						//"radiance += BRDF;"
+						"Ks += F;"
+					"}"
 				"}"
 				"vec3 specular = radiance / samples;"
 				"Ks = saturate(Ks / samples);"
@@ -140,8 +142,9 @@ ShaderInstance *getShader() {
 				"irradiance /= vec3(levels * pi);"
 				"vec3 diffuse = albedo.rgb * irradiance;"
 
-				//"n_Out = vec4(irradiance, albedo.a);"
+				//"n_Out = vec4(specular, albedo.a);"
 				"n_Out = vec4(diffuse * Kd + specular, 1.0);"
+
 
 			"}"
 		), ShaderProgram::NoProjectionShader);
