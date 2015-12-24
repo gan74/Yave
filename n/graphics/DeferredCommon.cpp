@@ -56,8 +56,8 @@ core::String getBRDFs() {
 				"return Fc + (1.0 - Fc) * F0;"
 			"}"
 
-			"float V_Schlick(float NoL, float NoV, float a) {"
-				"float k = a * 0.5;"
+			"float V_Schlick(float NoL, float NoV, float roughness) {"
+				"float k = sqr((roughness + 1.0) * 0.5);"
 				"float GV = NoV * (1.0 - k) + k;"
 				"float GL = NoL * (1.0 - k) + k;"
 				"return 0.25 / (GL * GV + epsilon);"
@@ -85,12 +85,11 @@ core::String getBRDFs() {
 
 				"float roughness = saturate(M.x + epsilon);"
 				"float a = sqr(roughness);"
-				"float a2 = sqr(a);"
 
 				"return "
 					"F_Schlick(VoH, M.z) * "
 					"D_GGX(NoH, a) * "
-					"V_Schlick(NoL, NoV, a);"
+					"V_Schlick(NoL, NoV, roughness);"
 			"}"
 
 			"float brdf_lambert(vec3 L, vec3 V, vec3 N, vec4 M) {"
