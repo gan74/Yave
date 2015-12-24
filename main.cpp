@@ -22,13 +22,23 @@ int main(int argc, char **argv) {
 	scene.insert(&cam);
 
 	{
-		auto obj = new Obj("./crytek-sponza/sponza.obj");
-		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
+		/*auto obj = new Obj("./crytek-sponza/sponza.obj");
+		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));*/
+		auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
 		scene.insert(obj);
 	}
 
-	scene.insert(new MetalTest());
+	uint max = 10;
+	float scale = 5;
+	for(uint i = 0; i != max; i++) {
+		for(uint j = 0; j != max; j++) {
+			auto m = new MaterialTest(i / float(max), j / float(max));
+			m->setScale(scale);
+			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, 1) * m->getRadius() * 2.5);
+			scene.insert(m);
+		}
+	}
 
 	{
 		BoxLight *l = new BoxLight(600);

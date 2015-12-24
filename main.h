@@ -170,24 +170,20 @@ class Obj : public StaticMesh
 		float autoScale;
 };
 
-class MetalTest : public Transformable, public Renderable
+class MaterialTest : public Movable, public Renderable
 {
 	public:
-		MetalTest() : Transformable(), Renderable(), inst(0) {
-			transform = Transform<>(Quaternion<>(), Vec3(0, 0, 50), 10);
-			radius = 10;
+		MaterialTest(float m, float r) : Movable(), Renderable(), inst(0) {
+			static VertexArrayObject<> vao = GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getSphere());
+			MaterialData data;
+			data.prog = getShader();
+			data.metallic = m;
+			data.roughness = Texture(Image(new ImageData(Vec2ui(1), ImageFormat::F32, &r)));
+			inst = new SubMeshInstance(vao, Material(data));
+			radius = vao.getRadius();
 		}
 
 		virtual void render(RenderQueue &qu, RenderFlag rf) override {
-			if(vao.isNull()) {
-				vao = GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getSphere());
-			}
-			delete inst;
-			MaterialData data;
-			data.prog = getShader();
-			data.color = Vec4(0.5);
-			data.metallic = 1.0;
-			inst = new SubMeshInstance(vao, Material(data));
 			qu.insert(RenderBatch(transform.getMatrix(), inst, VertexAttribs(), rf));
 		}
 
@@ -203,11 +199,15 @@ class MetalTest : public Transformable, public Renderable
 					"in vec3 n_Tangent;"
 					"in vec3 n_Binormal;"
 					"in vec2 n_TexCoord;"
-					"uniform float n_Time;"
+
+					"uniform float n_Metallic;"
+					"uniform sampler2D n_RoughnessMap;"
+
 					"void main() {"
 						"vec4 color = vec4(1.0);"
-						"float metal = 1.0;"
-						"float roughness = sin(n_Time) * 0.5 + 0.5;"
+						"float roughness = texture(n_RoughnessMap, n_TexCoord).r;"
+						"float metal = n_Metallic;"
+
 						"n_0 = n_gbuffer0(color, n_Normal, roughness, metal);"
 						"n_1 = n_gbuffer1(color, n_Normal, roughness, metal);"
 						"n_2 = n_gbuffer2(color, n_Normal, roughness, metal);"
@@ -218,12 +218,8 @@ class MetalTest : public Transformable, public Renderable
 		}
 
 	private:
-		Timer time;
 		SubMeshInstance *inst;
-		static VertexArrayObject<> vao;
 };
-
-VertexArrayObject<> MetalTest::vao;
 
 class DummyRenderable : public Movable, public Renderable
 {

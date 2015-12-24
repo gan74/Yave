@@ -130,8 +130,6 @@ static ShaderInstance *getLogShader() {
 				"return dot(vec3(0.299, 0.587, 0.114), rgb);"
 			"}"
 
-			"const float epsilon = 0.0001;"
-
 			"void main() {"
 				"vec4 color = texture(n_0, n_TexCoord);"
 				"float lum = rgbLum(color.rgb);"
