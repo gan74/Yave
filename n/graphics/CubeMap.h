@@ -45,6 +45,8 @@ class CubeMap : public TextureBase<TextureCube>
 		bool synchronize(bool sync = false) const;
 
 	private:
+		friend class CubeFrameBuffer;
+
 		void upload() const;
 		bool cubeLoading() const;
 		bool cubeNull() const;

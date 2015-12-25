@@ -14,43 +14,42 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_TEXTUREBINDING
-#define N_GRAPHICS_TEXTUREBINDING
+#ifndef N_GRAPHICS_FRAMEBUFFERBASE_H
+#define N_GRAPHICS_FRAMEBUFFERBASE_H
 
-#include "TextureBase.h"
+#include <n/utils.h>
+#include "GL.h"
 
 namespace n {
 namespace graphics {
-namespace internal {
 
-class TextureBinding
+class FrameBufferBase : NonCopyable
 {
 	public:
-		TextureBinding();
+		FrameBufferBase(const math::Vec2ui &si);
 
-		template<typename T>
-		TextureBinding &operator=(const T &t) {
-			t.synchronize();
-			tex = t.data;
-			return *this;
+		~FrameBufferBase();
+
+		static uint getMaxAttachment();
+
+		bool isActive() const;
+
+		void bind() const;
+		static void unbind();
+
+		math::Vec2ui getSize() const {
+			return size;
 		}
 
-		TextureBinding &operator=(TextureSampler smp) {
-			sampler = smp;
-			return *this;
-		}
+	protected:
+		friend class GLContext;
 
-		void bind(uint slot) const;
-
-		static void dirty();
-
-	private:
-		core::SmartPtr<TextureBase::Data> tex;
-		TextureSampler sampler;
+		math::Vec2ui size;
+		gl::Handle handle;
+		gl::Attachment *drawBuffers;
 };
 
 }
 }
-}
-#endif // N_GRAPHICS_TEXTUREBINDING
 
+#endif // N_GRAPHICS_FRAMEBUFFERBASE_H

@@ -46,7 +46,7 @@ class FrameBufferRenderer : public BufferableRenderer
 		}
 
 		virtual void render(void *ptr) override {
-			const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
+			const FrameBufferBase *fb = GLContext::getContext()->getFrameBuffer();
 			child->render(ptr);
 			if(fb) {
 				fb->bind();

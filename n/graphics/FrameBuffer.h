@@ -17,14 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_FRAMEBUFFER_H
 #define N_GRAPHICS_FRAMEBUFFER_H
 
-#include <n/utils.h>
+#include "FrameBufferBase.h"
 #include "Texture.h"
-#include "GL.h"
 
 namespace n {
 namespace graphics {
 
-class FrameBuffer : NonCopyable
+class FrameBuffer : public FrameBufferBase
 {
 	void assertAttachements(uint index) {
 		if(index >= getMaxAttachment()) {
@@ -60,28 +59,16 @@ class FrameBuffer : NonCopyable
 	}
 
 	public:
-		static constexpr uint Depth = -1;
-
-		static uint getMaxAttachment() {
-			return GLContext::getContext()->getHWInt(GLContext::MaxFboAttachements);
-		}
+		static constexpr uint Depth = gl::DepthAtt;
 
 		~FrameBuffer();
 
 		bool isAttachmentEnabled(uint slot) const;
 		bool isDepthEnabled() const;
 
-		bool isActive() const;
-
-		void bind() const;
 		static void clear(bool color, bool depth);
-		static void unbind();
 
 		void blit(uint slot = 0, bool depth = false) const;
-
-		math::Vec2ui getSize() const {
-			return base;
-		}
 
 		Texture getAttachement(uint slot) const {
 			return slot == Depth ? getDepthAttachement() : attachments[slot];
@@ -92,28 +79,24 @@ class FrameBuffer : NonCopyable
 		}
 
 		template<typename... Args>
-		FrameBuffer(const math::Vec2ui &s, bool depthEnabled, Args... args): base(s), attachments(new Texture[getMaxAttachment()]), drawBuffers(new gl::Attachment[getMaxAttachment()]) {
-			Image baseImage(base);
+		FrameBuffer(const math::Vec2ui &s, bool depthEnabled, Args... args) : FrameBufferBase(s), attachments(new Texture[getMaxAttachment()]) {
+			Image baseImage(size);
 			for(uint i = 0; i != getMaxAttachment(); i++) {
 				drawBuffers[i] = gl::NoAtt;
 				attachments[i] = Texture(baseImage);
 			}
-			depth = depthEnabled ? new Texture(Image(base, ImageFormat::Depth32)) : 0;
+			depth = depthEnabled ? new Texture(Image(size, ImageFormat::Depth32)) : 0;
 			setupAttachments(0, args...);
 			setup();
 		}
 
 	private:
-		friend class GLContext;
 		friend class FrameBufferPool;
 
 		void setup();
 
-		math::Vec2ui base;
 		Texture *attachments;
 		Texture *depth;
-		gl::Attachment *drawBuffers;
-		gl::Handle handle;
 };
 
 }

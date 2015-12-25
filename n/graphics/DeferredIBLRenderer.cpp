@@ -17,9 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "DeferredIBLRenderer.h"
 #include "ImageLoader.h"
 #include "DeferredCommon.h"
-
-#include <iostream>
-
+#include "CubeFrameBuffer.h"
 
 namespace n {
 namespace graphics {
@@ -45,6 +43,29 @@ CubeMap *getCube() {
 			(Image(ImageLoader::load<core::String>("skybox/left.tga"))),
 			(Image(ImageLoader::load<core::String>("skybox/front.tga"))),
 			(Image(ImageLoader::load<core::String>("skybox/back.tga"))));
+
+		/*ShaderInstance sh(new Shader<FragmentShader>(
+			"layout(location = 0) out vec4 n_0;"
+			"layout(location = 1) out vec4 n_1;"
+			"layout(location = 2) out vec4 n_2;"
+			"layout(location = 3) out vec4 n_3;"
+			"layout(location = 4) out vec4 n_4;"
+			"layout(location = 5) out vec4 n_5;"
+
+			"void main() {"
+				"n_0 = vec4(1, 0, 0, 1);"
+				"n_1 = vec4(1, 1, 0, 1);"
+				"n_2 = vec4(1, 0, 1, 1);"
+				"n_3 = vec4(0, 1, 0, 1);"
+				"n_4 = vec4(0, 1, 1, 1);"
+				"n_5 = vec4(0, 0, 1, 1);"
+			"}"
+		), ShaderProgram::NoProjectionShader);
+		sh.bind();
+		CubeFrameBuffer cbo(1024, ImageFormat::RGBA8);
+		cbo.bind();
+		GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
+		cube = new CubeMap(cbo.getAttachement());*/
 	}
 	return cube;
 }
@@ -82,70 +103,72 @@ ShaderInstance *getShader() {
 			"}"
 
 
-			"float G_Smith_partial(float VoH, float a2) {"
-				"float VoH2 = VoH * VoH;"
-				"float tan2 = (1.0 - VoH2) / VoH2;"
-				"return 2.0 / (1.0 + sqrt(1.0 + a2 * tan2));"
+			"float G_Smith_partial(float NoV, float k) {"
+				"return NoV / (NoV * (1.0 - k) + k);"
 			"}"
 
-			"float G_Smith(float VoH, float LoH, float a2) {"
-				"return G_Smith_partial(VoH, a2) * G_Smith_partial(LoH, a2);"
+			"float G_Smith(float VoH, float LoH, float k) {"
+				"return G_Smith_partial(VoH, k) * G_Smith_partial(LoH, k);"
+			"}"
+
+			"vec2 integrate(float roughness, float NoV) {"
+				"vec3 V = vec3(1.0 - sqr(NoV), 0, NoV);"
+				"vec2 I = vec2(0);"
+
+				"const uint samples = 1024;"
+				"float a = sqr(roughness);"
+				"float k = sqr((roughness + 1.0) * 0.5);"
+
+				"for(uint i = 0; i != samples; i++) {"
+					"vec2 Xi = hammersley(i, samples);"
+					"vec3 H = brdf_importance_sample(Xi, roughness);"
+					"vec3 L = reflect(-V, H);"
+
+					"float NoL = saturate(L.z);"
+					"float NoH = saturate(H.z);"
+					"float VoH = saturate(dot(V, H));"
+					"if(NoL > 0.0) {"
+						"float G = G_Smith(NoV, NoL, k);"
+						"float vis = G * VoH / (NoH * NoV);"
+						"float Fc = pow(1.0 - VoH, 5.0);"
+						//"I += vec2(vis, 0.0);"
+						"I += vec2(1.0 - Fc, Fc);"
+					"}"
+				"}"
+				"return I / samples;"
+			"}"
+
+			"vec3 filterEnv(float roughness, vec3 R) {"
+				"vec3 N = R;"
+				"vec3 V = R;"
+
+				"mat3 world = genWorld(N);"
+
+				"float sum = 0.0;"
+				"vec3 color = vec3(0.0);"
+
+				"const uint samples = 64;"
+				"for(uint i = 0; i != samples; i++) {"
+					"vec2 Xi = hammersley(i, samples);"
+					"vec3 H = normalize(world * brdf_importance_sample(Xi, roughness));"
+					"vec3 L = reflect(-V, H);"
+					"float NoL = saturate(dot(N, L));"
+					"if(NoL > 0.0) {"
+						"color += textureLod(n_Cube, L, 0.0).rgb * NoL;"
+						"sum += NoL;"
+					"}"
+				"}"
+				"return color / sum;"
 			"}"
 
 			"void main() {"
 				"vec3 pos = unproj(n_TexCoord);"
 				"vec4 albedo = texture(n_0, n_TexCoord);"
-				"vec3 V = normalize(n_Cam - pos);"
 				"vec4 material = texture(n_2, n_TexCoord);"
 				"vec3 N = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
-				"float levels = textureQueryLevels(n_Cube);"
 				"float roughness = saturate(material.x + epsilon);"
-				"float metal = material.y;"
-				"vec3 F0 = mix(vec3(material.z), albedo.rgb, metal);"
-				"float a = sqr(roughness);"
-				"float a2 = sqr(a);"
 
-				"const uint samples = 8;"
-
-				"float NoV = saturate(dot(N, V));"
-				"vec3 R = reflect(-V, N);"
-				"mat3 world = genWorld(R);"
-				"vec3 radiance = vec3(0);"
-				"vec3 Ks = vec3(0);"
-
-				"for(uint i = 0; i != samples; i++) {"
-					"vec2 Xi = hammersley(i, samples);"
-					"vec3 L = normalize(world * brdf_importance_sample(Xi, roughness));"
-					"vec3 H = normalize(V + L);"
-
-					"float NoL = dot(N, L);"
-
-					"if(NoL > 0.0) {"
-						"float NoH = saturate(dot(N, H));"
-						"float VoH = saturate(dot(V, H));"
-
-						"vec3 F = F_Schlick(VoH, F0);"
-						"float G = G_Smith(NoV, NoL,  a2);"
-						"vec3 BRDF = F * G * VoH / (NoH * NoV + epsilon);"
-						"radiance += textureLod(n_Cube, L, (roughness) * levels).rgb * BRDF;"
-						//"radiance += BRDF;"
-						"Ks += F;"
-					"}"
-				"}"
-				"vec3 specular = radiance / samples;"
-				"Ks = saturate(Ks / samples);"
-				"vec3 Kd = (vec3(1.0) - Ks) * (1.0 - metal);"
-				"vec3 irradiance = vec3(0);"
-				"for(uint i = 0; i != uint(levels); i++) {"
-					"irradiance += textureLod(n_Cube, N, i).rgb;"
-				"}"
-				"irradiance /= vec3(levels * pi);"
-				"vec3 diffuse = albedo.rgb * irradiance;"
-
-				//"n_Out = vec4(specular, albedo.a);"
-				"n_Out = vec4(diffuse * Kd + specular, 1.0);"
-
-
+				"n_Out = vec4(filterEnv(roughness, N), 1.0);"
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}
@@ -164,7 +187,7 @@ void DeferredIBLRenderer::render(void *ptr) {
 	math::Matrix4<> invCam = (sceneData->proj * sceneData->view).inverse();
 	math::Vec3 cam = sceneData->camera->getPosition();
 
-	const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
+	const FrameBufferBase *fb = GLContext::getContext()->getFrameBuffer();
 	child->render(ptr);
 
 	if(fb) {

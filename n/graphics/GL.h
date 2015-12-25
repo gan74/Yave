@@ -46,7 +46,7 @@ enum BufferTarget
 enum TextureType
 {
 	Texture2D,
-	TextureCube
+	TextureCube,
 };
 
 enum CullMode : uint16
@@ -128,7 +128,7 @@ enum Type
 	Double,
 };
 
-enum CubeMapFace
+enum TextureCubeFace
 {
 	PositiveZ,
 	NegativeZ,
@@ -145,8 +145,9 @@ enum PrimitiveType
 
 enum Attachment : uint
 {
-	NoAtt = uint(-1),
 	DepthAtt = uint(-2),
+	NoAtt = uint(-1),
+
 	ColorAtt0 = 0
 };
 
@@ -265,6 +266,11 @@ void setViewport(math::Vec2i a, math::Vec2i b);
 int getInt(IntParam i);
 bool isExtensionSupported(core::String extName);
 
+void attachFramebufferTexture(uint att, TextureType tex, Handle handle);
+void attachFramebufferTextureCube(Handle handle);
+
+void assertFboStatus();
+
 
 
 //    vvvvvvvvvvvv   Unfinished    vvvvvvvvvvvv
@@ -277,7 +283,6 @@ void bufferSubData(BufferTarget t, uint offset, uint start, const void *data);
 void bindVertexArray(Handle array);
 void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr);
 void enableVertexAttribArray(uint index);
-void framebufferTexture2D(FrameBufferType target, Attachment attachement, TextureType texture, Handle handle, uint level);
 void drawBuffers(uint count, const Attachment *att);
 FrameBufferStatus checkFramebufferStatus(FrameBufferType framebuffer);
 void bindFramebuffer(FrameBufferType target, Handle fbo);

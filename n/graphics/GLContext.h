@@ -27,7 +27,7 @@ namespace n {
 namespace graphics {
 
 class ShaderProgram;
-class FrameBuffer;
+class FrameBufferBase;
 class Material;
 struct MaterialData;
 struct FrameBufferPool;
@@ -86,7 +86,7 @@ class GLContext
 
 		ShaderProgram getShaderProgram() const;
 
-		const FrameBuffer *getFrameBuffer() const {
+		const FrameBufferBase *getFrameBuffer() const {
 			return frameBuffer;
 		}
 
@@ -112,7 +112,7 @@ class GLContext
 	private:
 		friend class ShaderProgram;
 		friend class ShaderInstance;
-		friend class FrameBuffer;
+		friend class FrameBufferBase;
 		friend class Material;
 
 		GLContext();
@@ -125,7 +125,7 @@ class GLContext
 		DynamicBufferBase models;
 
 		core::SmartPtr<internal::ShaderProgramData> program;
-		const FrameBuffer *frameBuffer;
+		const FrameBufferBase *frameBuffer;
 
 		FrameBufferPool *fbPool;
 		VertexArrayFactory<> *vaoFactory;

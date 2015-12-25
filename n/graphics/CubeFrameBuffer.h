@@ -14,43 +14,32 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_TEXTUREBINDING
-#define N_GRAPHICS_TEXTUREBINDING
+#ifndef N_GRAPHICS_CUBEFRAMEBUFFER
+#define N_GRAPHICS_CUBEFRAMEBUFFER
 
-#include "TextureBase.h"
+#include "FrameBuffer.h"
+#include "CubeMap.h"
 
 namespace n {
 namespace graphics {
-namespace internal {
 
-class TextureBinding
+class CubeFrameBuffer : public FrameBufferBase
 {
 	public:
-		TextureBinding();
+		CubeFrameBuffer(uint size, ImageFormat format);
 
-		template<typename T>
-		TextureBinding &operator=(const T &t) {
-			t.synchronize();
-			tex = t.data;
-			return *this;
+		const CubeMap &getAttachement() const {
+			return cube;
 		}
-
-		TextureBinding &operator=(TextureSampler smp) {
-			sampler = smp;
-			return *this;
-		}
-
-		void bind(uint slot) const;
-
-		static void dirty();
 
 	private:
-		core::SmartPtr<TextureBase::Data> tex;
-		TextureSampler sampler;
+		CubeMap cube;
+
+
 };
 
 }
 }
-}
-#endif // N_GRAPHICS_TEXTUREBINDING
+
+#endif // N_GRAPHICS_CUBEFRAMEBUFFER
 

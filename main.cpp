@@ -29,6 +29,8 @@ int main(int argc, char **argv) {
 		scene.insert(obj);
 	}
 
+	CubeFrameBuffer cbo(1024, ImageFormat::RGB8);
+
 	uint max = 10;
 	float scale = 5;
 	for(uint i = 0; i != max; i++) {
@@ -79,7 +81,7 @@ int main(int argc, char **argv) {
 		ri->setDebugMode(DeferredShadingRenderer::LightingDebugMode(dIndex));
 		(*renderers[rIndex])();
 
-		GLContext::getContext()->processTasks();
+		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
 	}
 	return 0;

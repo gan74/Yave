@@ -146,14 +146,14 @@ GLenum cullMode[] = {GL_BACK, GL_FRONT, GL_NONE};
 GLenum intParams[] = {GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_ATTRIBS, GL_MAX_VARYING_VECTORS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_MAX_SHADER_STORAGE_BLOCK_SIZE, GL_MAJOR_VERSION, GL_MINOR_VERSION};
 GLenum magSamplers[] {GL_NEAREST, GL_LINEAR, GL_LINEAR};
 GLenum minSamplers[] {GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR};
-GLenum cubeSides[] = {GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X};
+GLenum cubeFace[] = {GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X};
 
 
 static constexpr uint MaxBindings = 256;
 static uint activeTextureUnit = 0;
 
 
-GLenum toGLAttachement(Attachment att) {
+GLenum toGLAttachement(uint att) {
 	if(att == DepthAtt) {
 		return GL_DEPTH_ATTACHMENT;
 	}
@@ -247,9 +247,9 @@ Handle createTextureCube(const math::Vec2ui &size, uint mips, TextureFormat form
 	glGenTextures(1, &h);
 	bindTexture(TextureCube, h);
 	glTexStorage2D(GL_TEXTURE_CUBE_MAP,  mips, format.internalFormat, size.x(), size.y());
-	if(data) {
-		for(uint i = 0; i != 6; i++) {
-			glTexSubImage2D(cubeSides[i], 0, 0, 0, size.x(), size.y(), format.format, format.type, data[i]);
+	for(uint i = 0; i != 6; i++) {
+		if(data[i]) {
+			glTexSubImage2D(cubeFace[i], 0, 0, 0, size.x(), size.y(), format.format, format.type, data[i]);
 		}
 	}
 	if(mips > 1) {
@@ -588,6 +588,35 @@ void enableVertexAttribArray(uint index) {
 
 void framebufferTexture2D(FrameBufferType target, Attachment attachement, TextureType texture, Handle handle, uint level) {
 	glFramebufferTexture2D(framebufferType[target], toGLAttachement(attachement), textureType[texture], handle, level);
+}
+
+void attachFramebufferTexture(uint att, TextureType tex, Handle handle) {
+	glFramebufferTexture2D(framebufferType[FrameBuffer], toGLAttachement(att), textureType[tex], handle, 0);
+}
+
+void attachFramebufferTextureCube(Handle handle) {
+	for(uint i = 0; i != 6; i++) {
+		glFramebufferTexture2D(framebufferType[FrameBuffer], GL_COLOR_ATTACHMENT0 + i, cubeFace[i], handle, 0);
+	}
+}
+
+void assertFboStatus() {
+	if(gl::checkFramebufferStatus(gl::FrameBuffer) != gl::FboOk) {
+		switch(gl::checkFramebufferStatus(gl::FrameBuffer)) {
+			case gl::FboMissingAtt:
+				fatal("Unable to modify frame-buffer-object : missing attachment.");
+			break;
+			case gl::FboIncomplete:
+				fatal("Unable to modify frame-buffer-object : incomplete attachment.");
+			break;
+			case gl::FboUnsupported:
+				fatal("Unable to modify frame-buffer-object : unsuported feature.");
+			break;
+			default:
+				fatal("Unable to modify frame-buffer-object.");
+			break;
+		}
+	}
 }
 
 void drawBuffers(uint count, const Attachment *buffers) {

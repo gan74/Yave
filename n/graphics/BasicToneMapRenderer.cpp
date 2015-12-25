@@ -214,7 +214,7 @@ void *BasicToneMapRenderer::prepare() {
 }
 
 void BasicToneMapRenderer::render(void *ptr) {
-	const FrameBuffer *fb = GLContext::getContext()->getFrameBuffer();
+	const FrameBufferBase *fb = GLContext::getContext()->getFrameBuffer();
 	child->render(ptr);
 
 	uint ls = log2ui(child->getSize().min());

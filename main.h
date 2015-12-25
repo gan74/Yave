@@ -60,6 +60,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/BufferRenderer.h>
 #include <n/graphics/VarianceShadowRenderer.h>
 #include <n/graphics/DeferredIBLRenderer.h>
+#include <n/graphics/CubeFrameBuffer.h>
 
 
 using namespace n;
@@ -176,45 +177,15 @@ class MaterialTest : public Movable, public Renderable
 		MaterialTest(float m, float r) : Movable(), Renderable(), inst(0) {
 			static VertexArrayObject<> vao = GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getSphere());
 			MaterialData data;
-			data.prog = getShader();
+			data.color = Vec4(0.5);
 			data.metallic = m;
-			data.roughness = Texture(Image(new ImageData(Vec2ui(1), ImageFormat::F32, &r)));
+			data.roughness = Texture(Image(Vec2ui(1), ImageFormat::F32, &r));
 			inst = new SubMeshInstance(vao, Material(data));
 			radius = vao.getRadius();
 		}
 
 		virtual void render(RenderQueue &qu, RenderFlag rf) override {
 			qu.insert(RenderBatch(transform.getMatrix(), inst, VertexAttribs(), rf));
-		}
-
-		ShaderProgram getShader() {
-			static ShaderProgram *prog = 0;
-			if(!prog) {
-				prog = new ShaderProgram(new Shader<FragmentShader>(
-					"layout(location = 0) out vec4 n_0;"
-					"layout(location = 1) out vec4 n_1;"
-					"layout(location = 2) out vec4 n_2;"
-					"in vec3 n_Position;"
-					"in vec3 n_Normal;"
-					"in vec3 n_Tangent;"
-					"in vec3 n_Binormal;"
-					"in vec2 n_TexCoord;"
-
-					"uniform float n_Metallic;"
-					"uniform sampler2D n_RoughnessMap;"
-
-					"void main() {"
-						"vec4 color = vec4(1.0);"
-						"float roughness = texture(n_RoughnessMap, n_TexCoord).r;"
-						"float metal = n_Metallic;"
-
-						"n_0 = n_gbuffer0(color, n_Normal, roughness, metal);"
-						"n_1 = n_gbuffer1(color, n_Normal, roughness, metal);"
-						"n_2 = n_gbuffer2(color, n_Normal, roughness, metal);"
-					"}"
-				));
-			}
-			return *prog;
 		}
 
 	private:
