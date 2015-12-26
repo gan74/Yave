@@ -44,6 +44,14 @@ class CubeMap : public TextureBase<TextureCube>
 
 		bool synchronize(bool sync = false) const;
 
+		math::Vec2ui getSize() const {
+			return cube.top.getSize();
+		}
+
+		ImageFormat getFormat() const {
+			return cube.top.getFormat();
+		}
+
 	private:
 		friend class CubeFrameBuffer;
 

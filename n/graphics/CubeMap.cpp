@@ -47,8 +47,11 @@ void CubeMap::upload() const {
 			}
 		}
 
-		uint mips = Texture::getMipmapLevelForSize(size);
+		//uint mips = Texture::getMipmapLevelForSize(size);
+		#warning CubeMap mipmapiing disabled
+		uint mips = 1;
 		data->hasMips = mips > 1;
+		data->hasMips = false;
 		gl::TextureFormat format = gl::getTextureFormat(imgF);
 
 		const void *datas[] = {cube.top.data(), cube.bottom.data(), cube.right.data(), cube.left.data(), cube.front.data(), cube.back.data()};
