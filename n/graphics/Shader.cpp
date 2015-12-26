@@ -97,7 +97,7 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 		}
 		src.replace("#version", "//#version");
 	}
-	return ver + common + libs[type] + "\n" + (type == VertexShader ? src.replaced("N_DECLARE_MODEL_MATRIX", model) : src);
+	return ver + common + libs[type] + "\n" + src.replaced("N_DECLARE_MODEL_MATRIX", model);
 }
 
 

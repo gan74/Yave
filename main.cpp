@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 
 	PerspectiveCamera cam;
 	cam.setPosition(Vec3(-25, 0, 25));
-	cam.setRatio(4/3.0);
+	cam.setRatio(16/9.0);
 	cam.setForward(-cam.getPosition());
 
 	Scene scene;
@@ -52,12 +52,20 @@ int main(int argc, char **argv) {
 		scene.insert(l);
 	}
 
+	{
+		DirectionalLight *l = new DirectionalLight;
+
+		l->setForward(Vec3(0, -1, -1));
+		l->setIntensity(1);
+		l->setColor(BaseColor::Blue);
+		scene.insert(l);
+	}
+
 
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
-	Renderer *renderers[] {new DeferredIBLRenderer(gRe),
-						   new FrameBufferRenderer(ri),
+	Renderer *renderers[] {new FrameBufferRenderer(ri),
 						   sceRe,
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2),

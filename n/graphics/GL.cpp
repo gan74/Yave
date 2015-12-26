@@ -151,6 +151,7 @@ GLenum cubeFace[] = {GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIV
 
 static constexpr uint MaxBindings = 256;
 static uint activeTextureUnit = 0;
+static Handle boundVao = 0;
 
 
 GLenum toGLAttachement(uint att) {
@@ -572,9 +573,8 @@ void bufferSubData(BufferTarget target, uint offset, uint size, const void *data
 }
 
 void bindVertexArray(Handle array) {
-	static Handle arr = 0;
-	if(arr != array) {
-		glBindVertexArray(arr = array);
+	if(boundVao != array) {
+		glBindVertexArray(boundVao = array);
 	}
 }
 

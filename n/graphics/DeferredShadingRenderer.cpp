@@ -114,19 +114,20 @@ template<LightType Type>
 ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
 	static core::Map<core::String, ShaderInstance *> shaders[LightType::Max][DeferredShadingRenderer::Max];
 
-	core::String debugStrs[] = {"", "n_Out = vec4(vec3(att), 1.0);", "n_Out = vec4(vec3(shadow), 1.0);"};
-	core::String computeDir[LightType::Max] = {"return n_LightPos - pos;",
-											   "return n_LightPos - pos;",
-											   "return n_LightForward;",
-											   "return n_LightForward;"};
-	core::String attenuate[LightType::Max] = {"float x = min(lightDist, n_LightRadius); "
-												  "return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
-											  "float x = min(lightDist, n_LightRadius); "
-												  "float falloff = sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);"
-												  "float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), n_LightExponent);"
-												  "return max(0.0, falloff * spotFalloff);",
-											  "return 1.0;",
-											  "return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
+	static core::String debugStrs[] = {"", "n_Out = vec4(vec3(att), 1.0);", "n_Out = vec4(vec3(shadow), 1.0);"};
+	static core::String computeDir[LightType::Max] = { "return n_LightPos - pos;",
+													   "return n_LightPos - pos;",
+													   "return n_LightForward;",
+													   "return n_LightForward;"};
+	static core::String attenuate[LightType::Max] = {	"float x = min(lightDist, n_LightRadius); "
+															"return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
+														"float x = min(lightDist, n_LightRadius); "
+															  "float falloff = sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);"
+															  "float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), n_LightExponent);"
+															  "return max(0.0, falloff * spotFalloff);",
+														"return 1.0;",
+														"return 1.0;"
+														"return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
 	ShaderInstance *shader = shaders[Type][debug].get(shadow, 0);
 	if(!shader) {
 		shader = new ShaderInstance(new Shader<FragmentShader>(
@@ -205,7 +206,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 				"float shadow = 1.0;"
 				"if(n_LightShadowMul != 0.0) {"
-					"shadow = computeShadow(pos);"
+					"shadow = n_LightShadowMul * computeShadow(pos);"
 				"}"
 
 				"float att = attenuate(lightDir, pos, lightDist);"
@@ -219,10 +220,9 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				"vec3 specularColor = mix(vec3(1.0), albedo.rgb, metallic);"
 				"n_Out = vec4(light * (diffuse * diffuseColor + specular * specularColor), albedo.a);"
 
-
 				+ debugStrs[debug] +
 
-				//"n_Out = vec4(ambient, albedo.a);"
+				//"n_Out = vec4(vec3(0.8), albedo.a);"
 
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 		shaders[Type][debug][shadow] = shader;

@@ -48,7 +48,7 @@ void CubeMap::upload() const {
 		}
 
 		//uint mips = Texture::getMipmapLevelForSize(size);
-		#warning CubeMap mipmapiing disabled
+		#warning CubeMap mipmaping disabled
 		uint mips = 1;
 		data->hasMips = mips > 1;
 		data->hasMips = false;

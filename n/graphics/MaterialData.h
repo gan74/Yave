@@ -68,7 +68,7 @@ struct MaterialData
 		uint32 cull           : 2; // CullMode
 	} fancy;
 
-	uint16 fancy32() const {
+	uint32 fancy32() const {
 		const void *wf = &fancy;
 		return *reinterpret_cast<const uint32 *>(wf);
 	}
