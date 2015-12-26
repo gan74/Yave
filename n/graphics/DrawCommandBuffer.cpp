@@ -37,7 +37,7 @@ bool DrawCommandBuffer::push(const RenderBatch &r) {
 		if(!r.getMaterial().getData().canInstanciate(first)) {
 			return false;
 		}
-		if(index >= matrixBuffer.getSize()) {
+		if(isFull()) {
 			return false;
 		}
 	}
@@ -49,7 +49,7 @@ bool DrawCommandBuffer::push(const RenderBatch &r) {
 }
 
 bool DrawCommandBuffer::isFull() const {
-	return index == getSize();
+	return index >= getSize();
 }
 
 uint DrawCommandBuffer::getSize() const {
