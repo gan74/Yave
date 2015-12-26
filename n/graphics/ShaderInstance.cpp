@@ -296,5 +296,9 @@ ShaderInstance::UniformInfo ShaderInstance::getInfo(const core::String &name) co
 	return uniformsInfo.get(name, UniformInfo{UniformAddr(gl::InvalidIndex), 0, gl::UniformType()});
 }
 
+ShaderInstance::UniformInfo ShaderInstance::getInfo(ShaderValue v) const {
+	return standards[v];
+}
+
 }
 }

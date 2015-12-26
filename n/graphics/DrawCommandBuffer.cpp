@@ -37,6 +37,9 @@ bool DrawCommandBuffer::push(const RenderBatch &r) {
 		if(!r.getMaterial().getData().canInstanciate(first)) {
 			return false;
 		}
+		if(index >= matrixBuffer.getSize()) {
+			return false;
+		}
 	}
 	matrixBuffer[index] = r.getMatrix();
 	materialBuffer[index] = r.getMaterial().getBufferData();

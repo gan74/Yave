@@ -98,13 +98,17 @@ class ShaderInstance : NonCopyable
 
 		template<typename T, typename... Args>
 		void setValue(ShaderValue v, const T &t, Args... args) const {
-			setValue(standards[v], t, args...);
+			UniformInfo i = getInfo(v);
+			if(i.addr != UniformAddr(gl::InvalidIndex)) {
+				setValue(i, t, args...);
+			}
 		}
 
 		void setBuffer(const core::String &name, const DynamicBufferBase &buffer) const;
 		void setBuffer(ShaderValue v, const DynamicBufferBase &buffer) const;
 
 		UniformInfo getInfo(const core::String &name) const;
+		UniformInfo getInfo(ShaderValue v) const;
 
 
 	private:
