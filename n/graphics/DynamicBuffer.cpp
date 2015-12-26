@@ -47,7 +47,7 @@ DynamicBufferBase::Data::~Data() {
 
 void DynamicBufferBase::Data::update(bool forceBind) const {
 	if(modified) {
-		if(!forceBind) {
+		if(!forceBind && (type == ArrayBuffer || type == IndexBuffer)) {
 			gl::bindVertexArray(0);
 		}
 		if(!handle) {

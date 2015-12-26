@@ -152,6 +152,7 @@ GLenum cubeFace[] = {GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIV
 static constexpr uint MaxBindings = 256;
 static uint activeTextureUnit = 0;
 static Handle boundVao = 0;
+Handle boundTextures[MaxBindings] = {0};
 
 
 GLenum toGLAttachement(uint att) {
@@ -297,10 +298,9 @@ void deleteFramebuffer(Handle handle) {
 }
 
 void bindTexture(TextureType type, Handle tex) {
-	Handle bound[MaxBindings] = {0};
-	if(bound[activeTextureUnit] != tex) {
+	if(boundTextures[activeTextureUnit] != tex) {
 		glBindTexture(textureType[type], tex);
-		bound[activeTextureUnit] = tex;
+		boundTextures[activeTextureUnit] = tex;
 	}
 }
 
@@ -312,8 +312,10 @@ void setActiveTexture(uint slot) {
 }
 
 void bindTextureUnit(uint slot, TextureType type, Handle tex) {
-	setActiveTexture(slot);
-	bindTexture(type, tex);
+	if(boundTextures[slot] != tex) {
+		setActiveTexture(slot);
+		bindTexture(type, tex);
+	}
 }
 
 void bindSampler(uint slot, Handle sampler) {
