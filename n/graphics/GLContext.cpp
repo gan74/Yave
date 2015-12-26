@@ -77,8 +77,8 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 
 	int major = gl::getInt(gl::MajorVersion);
 	int minor = getInt(gl::MajorVersion);
-	if(major < 4 || (major == 4 && minor < 3)) {
-		fatal("This needs OpenGL 4.3 or newer to run.");
+	if(major < 4 || (major == 4 && minor < 4)) {
+		fatal("This needs OpenGL 4.4 or newer to run.");
 	}
 
 	gl::setEnabled(gl::SeamlessCubeMaps);
@@ -97,7 +97,11 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 	hwInts[MaxSSBOBytes] = gl::getInt(gl::MaxSSBOSize);
 	hwInts[BindlessTextureSupport] = gl::isExtensionSupported("GL_ARB_bindless_texture");
 
-	if(hwInts[MaxVertexAttribs] <= 4) {
+	if(!hwInts[BindlessTextureSupport]) {
+		logMsg("GL_ARB_bindless_texture not supported.", WarningLog);
+	}
+
+	if(hwInts[MaxVertexAttribs] <= 5) {
 		fatal("Not enought vertex attribs.");
 	}
 

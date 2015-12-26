@@ -129,8 +129,8 @@ bool isBindlessHandle(UniformType t) {
 
 
 
-GLenum textureType[] = {GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_2D_ARRAY};
-GLenum bufferType[] = {GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_UNIFORM_BUFFER, GL_SHADER_STORAGE_BUFFER};
+GLenum textureType[] = {GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP};
+GLenum bufferType[] = {GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_UNIFORM_BUFFER, GL_SHADER_STORAGE_BUFFER, GL_DRAW_INDIRECT_BUFFER};
 GLenum bufferUsage[] = {GL_STREAM_DRAW, GL_STATIC_DRAW, GL_DYNAMIC_DRAW};
 GLenum framebufferType[] = {GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER};
 GLenum dataType[] = {GL_NONE, GL_FLOAT, GL_INT, GL_UNSIGNED_INT, GL_SHORT, GL_UNSIGNED_SHORT, GL_BYTE, GL_UNSIGNED_BYTE, GL_DOUBLE};
@@ -193,7 +193,7 @@ bool initialize() {
 			logMsg("Unable to initialize glew.", ErrorLog);
 			return false;
 		}
-		logMsg(core::String("Running on ") + glGetString(GL_VENDOR) + " " + glGetString(GL_RENDERER) + " using GL " + glGetString(GL_VERSION) + " using GLSL " + glGetString(GL_SHADING_LANGUAGE_VERSION) + "(" + sizeof(void *) * 8 + " bits)");
+		logMsg(core::String("Running on ") + glGetString(GL_VENDOR) + " " + glGetString(GL_RENDERER) + " using GL " + glGetString(GL_VERSION) + " using GLSL " + glGetString(GL_SHADING_LANGUAGE_VERSION) + " (" + sizeof(void *) * 8 + " bits)");
 		glDebugMessageCallback(&debugOut, 0);
 		glGetError();
 	}
@@ -259,9 +259,12 @@ Handle createTextureCube(const math::Vec2ui &size, uint mips, TextureFormat form
 	return h;
 }
 
-Handle createBuffer() {
+Handle createBuffer(BufferTarget target, uint size, const void *data, BufferAlloc usage) {
 	Handle h = 0;
 	glGenBuffers(1, &h);
+	bindBuffer(target, h);
+	//glBufferStorage(bufferType[target], size, data, GL_MAP_WRITE_BIT | (usage == Static ? 0 : GL_DYNAMIC_STORAGE_BIT));
+	glBufferData(bufferType[target], size, data, bufferUsage[usage]);
 	return h;
 }
 
@@ -542,7 +545,11 @@ int getInt(IntParam i) {
 bool isExtensionSupported(core::String extName) {
 	static core::String exts;
 	if(exts.isNull()) {
-		exts = reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS));
+		int extCount = 0;
+		glGetIntegerv(GL_NUM_EXTENSIONS, &extCount);
+		for(int i = 0; i != extCount; i++) {
+			exts += reinterpret_cast<const char *>(glGetStringi(GL_EXTENSIONS, i));
+		}
 	}
 	return exts.contains(extName);
 }
@@ -564,10 +571,6 @@ void bindBufferBase(BufferTarget target, uint index, Handle buffer) {
 	glBindBufferBase(bufferType[target], index, buffer);
 }
 
-void bufferData(BufferTarget target, uint size, const void *data, BufferAlloc usage) {
-	glBufferData(bufferType[target], size, data, bufferUsage[usage]);
-}
-
 void bufferSubData(BufferTarget target, uint offset, uint size, const void *data) {
 	glBufferSubData(bufferType[target], offset, size, data);
 }
@@ -578,8 +581,15 @@ void bindVertexArray(Handle array) {
 	}
 }
 
-void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr) {
-	glVertexAttribPointer(index, size, dataType[type], norm, stride, ptr);
+void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr, uint divisor) {
+	if(type == Float || type == Double) {
+		glVertexAttribPointer(index, size, dataType[type], norm, stride, ptr);
+	} else {
+		glVertexAttribIPointer(index, size, dataType[type], stride, ptr);
+	}
+	if(divisor) {
+		glVertexAttribDivisor(index, divisor);
+	}
 }
 
 void enableVertexAttribArray(uint index) {
@@ -665,8 +675,12 @@ void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int 
 	glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, b, textureFilter[filter]);
 }
 
-void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, Type type, void *indices, uint primCount, uint baseVertex) {
-	glDrawElementsInstancedBaseVertex(primitiveMode[mode], count, dataType[type], indices, primCount, baseVertex);
+void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, void *indices, uint primCount, uint baseVertex) {
+	glDrawElementsInstancedBaseVertex(primitiveMode[mode], count, dataType[GLType<uint>::value], indices, primCount, baseVertex);
+}
+
+void multiDrawElementsIndirect(PrimitiveType mode, uint cmdCount) {
+	glMultiDrawElementsIndirect(primitiveMode[mode], dataType[GLType<uint>::value], 0, cmdCount, 0);
 }
 
 void generateMipmap(TextureType type) {

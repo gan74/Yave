@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#include "UniformBuffer.h"
+#include "DynamicBuffer.h"
 #include "GLContext.h"
 #include "VertexArrayFactory.h"
 
@@ -51,9 +51,8 @@ void DynamicBufferBase::Data::update(bool forceBind) const {
 			gl::bindVertexArray(0);
 		}
 		if(!handle) {
-			handle = gl::createBuffer();
+			handle = gl::createBuffer(type, size, buffer, gl::Dynamic);
 			gl::bindBuffer(type, handle);
-			gl::bufferData(type, size, buffer, gl::Dynamic);
 		} else {
 			gl::bindBuffer(type, handle);
 			gl::bufferSubData(type, 0, size, 0);

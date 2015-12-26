@@ -43,8 +43,6 @@ N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const Mat
 
 	sh->setValue(ShaderValue::SVRoughnessMap, data.roughness);
 	sh->setValue(ShaderValue::SVRoughnessMul, data.roughness.isNull() ? 0.0 : 1.0);
-
-	sh->setBuffer(ShaderValue::SVUniformBuffer, data.uniforms);
 }
 
 void fullBind(const MaterialData &restrict data) {
@@ -70,7 +68,10 @@ void Material::bind(uint flags) const {
 		}
 
 		if(!(flags & RenderFlag::NoShader)) {
-			setShaderParams(data.prog.bind(), data);
+			const ShaderInstance *sh = data.prog.bind();
+			if(!(flags & RenderFlag::NoUniforms)) {
+				setShaderParams(sh, data);
+			}
 		}
 		gl::setEnabled(gl::DepthTest, data.fancy.depthTested);
 		gl::setDepthMode(DepthMode(data.fancy.depth));
@@ -81,10 +82,25 @@ void Material::bind(uint flags) const {
 	}
 }
 
+bool Material::prepare() const {
+	MaterialData *i = const_cast<MaterialData *>(operator->());
+	if(i) {
+		bool s = i->diffuse.synchronize();
+		s &= i->normal.synchronize();
+		s &= i->roughness.synchronize();
+		return s;
+	}
+	return false;
+}
 
 const MaterialData &Material::getData() const {
 	const MaterialData *i = operator->();
 	return i ? *i : *nullData;
+}
+
+MaterialBufferData Material::getBufferData() const {
+	MaterialData d = getData();
+	return MaterialBufferData{d.color, d.metallic, d.diffuse.getBindlessId() ? 1.f : 0.f, d.normal.getBindlessId() ? d.normalIntencity : 0.f, d.roughness.getBindlessId() ? 1.f : 0.f, d.diffuse.getBindlessId(), d.normal.getBindlessId(), d.roughness.getBindlessId(), {0, 0}};
 }
 
 }

@@ -38,7 +38,7 @@ class RenderQueue
 
 		void prepare(math::Vec3, float);
 
-		void operator()(RenderFlag flags = RenderFlag::None);
+		void present(RenderFlag flags = RenderFlag::None);
 
 		template<typename U>
 		RenderQueue &operator<<(const U &u) {
@@ -49,7 +49,6 @@ class RenderQueue
 	private:
 		core::Array<RenderBatch> batches;
 		core::Array<core::Functor<void(RenderFlag)>> funcs;
-		UniformBuffer<math::Matrix4<>> matrixBuffer;
 };
 
 }

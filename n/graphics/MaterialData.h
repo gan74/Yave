@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/utils.h>
 #include "Texture.h"
-#include "UniformBuffer.h"
+#include "DynamicBuffer.h"
 #include "ShaderProgram.h"
 
 namespace n {
@@ -32,10 +32,27 @@ enum RenderFlag : uint32
 	ForceMaterialRebind = 0x02,
 	NoShader = 0x04,
 	DepthWriteOnly = 0x08,
-	Overlay = 0x10
+	Overlay = 0x10,
+	NoUniforms = 0x20
 
 };
 
+struct MaterialBufferData
+{
+	math::Vec4 color;
+
+	float metallic;
+	float diffuseIntencity;
+	float normalIntencity;
+	float roughnessIntencity;
+
+	uint64 diffuse;
+	uint64 normal;
+	uint64 roughness;
+	float padding[2];
+};
+
+static_assert(sizeof(MaterialBufferData) % 16 == 0, "sizeof(MaterialBufferData) should be a multiple of 16 bytes.");
 
 struct MaterialData
 {
@@ -55,8 +72,6 @@ struct MaterialData
 	Texture roughness;
 	float normalIntencity;
 
-	DynamicBufferBase uniforms;
-
 	struct Fancy
 	{
 		uint32 renderPriority : 23; // uint23
@@ -71,6 +86,10 @@ struct MaterialData
 	uint32 fancy32() const {
 		const void *wf = &fancy;
 		return *reinterpret_cast<const uint32 *>(wf);
+	}
+
+	bool canInstanciate(const MaterialData &m) const {
+		return prog == m.prog && fancy32() == m.fancy32();
 	}
 
 	static_assert(sizeof(MaterialData::fancy) == 4, "MaterialData::fancy should be 32 bit.");
