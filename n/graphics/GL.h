@@ -250,6 +250,8 @@ void deleteFramebuffer(Handle handle);
 void deleteShader(Handle shader);
 void deleteProgram(Handle prog);
 
+void updateBuffer(BufferTarget target, uint size, const void *data, BufferAlloc usage);
+
 void bindTexture(TextureType type, Handle tex);
 void setActiveTexture(uint s);
 void bindTextureUnit(uint slot, TextureType type, Handle tex);
@@ -286,10 +288,8 @@ void assertFboStatus();
 
 //    vvvvvvvvvvvv   Unfinished    vvvvvvvvvvvv
 
-
 void bindBuffer(BufferTarget binding, Handle buffer);
 void bindBufferBase(BufferTarget target, uint index, Handle buffer);
-void bufferSubData(BufferTarget t, uint offset, uint start, const void *data);
 void bindVertexArray(Handle array);
 void vertexAttribPointer(uint index, uint size, Type type, bool norm, uint stride, const void *ptr, uint divisor = 0);
 void enableVertexAttribArray(uint index);

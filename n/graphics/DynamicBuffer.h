@@ -41,7 +41,7 @@ class DynamicBufferBase
 
 			const BufferTarget type;
 			uint size;
-			void *buffer;
+			mutable void *buffer;
 			mutable gl::Handle handle;
 			mutable bool modified;
 		};

@@ -55,8 +55,7 @@ void DynamicBufferBase::Data::update(bool forceBind) const {
 			gl::bindBuffer(type, handle);
 		} else {
 			gl::bindBuffer(type, handle);
-			gl::bufferSubData(type, 0, size, 0);
-			gl::bufferSubData(type, 0, size, buffer);
+			gl::updateBuffer(type, size, buffer, gl::Dynamic);
 		}
 		modified = false;
 	} else if(forceBind) {

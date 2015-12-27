@@ -297,6 +297,11 @@ void deleteFramebuffer(Handle handle) {
 	glDeleteFramebuffers(1, &handle);
 }
 
+void updateBuffer(BufferTarget target, uint size, const void *data, BufferAlloc usage) {
+	glBufferData(bufferType[target], size, 0, bufferUsage[usage]);
+	glBufferSubData(bufferType[target], 0, size, data);
+}
+
 void bindTexture(TextureType type, Handle tex) {
 	if(boundTextures[activeTextureUnit] != tex) {
 		glBindTexture(textureType[type], tex);
@@ -571,10 +576,6 @@ void bindBuffer(BufferTarget target, Handle buffer) {
 
 void bindBufferBase(BufferTarget target, uint index, Handle buffer) {
 	glBindBufferBase(bufferType[target], index, buffer);
-}
-
-void bufferSubData(BufferTarget target, uint offset, uint size, const void *data) {
-	glBufferSubData(bufferType[target], offset, size, data);
 }
 
 void bindVertexArray(Handle array) {
