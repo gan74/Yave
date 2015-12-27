@@ -50,9 +50,10 @@ void RenderQueue::insert(const RenderBatch &b) {
 	batches.append(b);
 }
 
-void RenderQueue::prepare(math::Vec3 , float) {
+void RenderQueue::prepare() {
+	#warning no depth sorting
 	batches.sort([](const RenderBatch &a, const RenderBatch &b) {
-		return a.getMaterial() < b.getMaterial();
+		return a.getMaterial().getData() < b.getMaterial().getData();
 	});
 }
 

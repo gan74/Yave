@@ -42,21 +42,17 @@ const VertexArrayObject<> &getBox();
 core::String getBRDFs();
 
 template<LightType Type>
-const Material &getLightMaterial() {
-	static Material mat[LightType::Max];
-	if(mat[Type].isNull()) {
-		MaterialData i;
-		i.fancy.blend = BlendMode::Add;
-		i.fancy.depthWrite = false;
-		if(Type == Directional) {
-			i.fancy.depth = DepthMode::Always;
-		} else {
-			i.fancy.depth = DepthMode::Greater;
-			i.fancy.cull = CullMode::Front;
-		}
-		mat[Type] = Material(i);
+MaterialRenderData getLightMaterial() {
+	MaterialRenderData mat;
+	mat.blendMode = BlendMode::Add;
+	mat.depthWrite = false;
+	if(Type == Directional) {
+		mat.depthMode = DepthMode::Always;
+	} else {
+		mat.depthMode = DepthMode::Greater;
+		mat.cullMode = CullMode::Front;
 	}
-	return mat[Type];
+	return mat;
 }
 
 }

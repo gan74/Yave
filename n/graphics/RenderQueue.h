@@ -36,7 +36,7 @@ class RenderQueue
 		void insert(const math::Matrix4<> &t, const MeshInstance &m);
 		void insert(const RenderBatch &b);
 
-		void prepare(math::Vec3, float);
+		void prepare();
 
 		void present(RenderFlag flags = RenderFlag::None);
 

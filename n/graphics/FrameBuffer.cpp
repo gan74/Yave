@@ -74,7 +74,7 @@ void FrameBuffer::setup() {
 
 void FrameBuffer::clear(bool color, bool depth) {
 	gl::BitField bits = (color ? gl::ColorBit : 0) | (depth ? gl::DepthBit : 0);
-	Material().bind(RenderFlag::DepthWriteOnly);
+	MaterialRenderData().bind(RenderFlag::DepthWriteOnly);
 	gl::clear(bits);
 }
 
@@ -88,7 +88,7 @@ void FrameBuffer::blit(uint slot, bool depth) const {
 		gl::readBuffer(gl::Attachment(gl::ColorAtt0 + slot));
 	}
 	gl::BitField bits = (color ? gl::ColorBit : 0) | (depth ? gl::DepthBit : 0);
-	Material().bind(RenderFlag::DepthWriteOnly);
+	MaterialRenderData().bind(RenderFlag::DepthWriteOnly);
 	#warning Blitting into framebuffer 0 with a float texture will cause an error
 	gl::blitFramebuffer(0, 0, getSize().x(), getSize().y(), 0, 0, GLContext::getContext()->getViewport().x(), GLContext::getContext()->getViewport().y(), bits, gl::Nearest);
 }

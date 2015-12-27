@@ -22,14 +22,12 @@ int main(int argc, char **argv) {
 	scene.insert(&cam);
 
 	{
-		/*auto obj = new Obj("./crytek-sponza/sponza.obj");
-		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));*/
-		auto obj = new Obj("plane.obj");
+		auto obj = new Obj("./crytek-sponza/sponza.obj");
+		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
+		//auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
 		scene.insert(obj);
 	}
-
-	CubeFrameBuffer cbo(1024, ImageFormat::RGB8);
 
 	uint max = 10;
 	float scale = 5;
@@ -66,6 +64,7 @@ int main(int argc, char **argv) {
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
 	Renderer *renderers[] {new FrameBufferRenderer(ri),
+						   new DeferredIBLRenderer(gRe),
 						   sceRe,
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2),

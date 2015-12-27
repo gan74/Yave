@@ -60,11 +60,11 @@ class RenderBatch
 		}
 
 		bool isDepthSorted() const {
-			return getMaterial().getData().fancy.depthSortable;
+			return getMaterial().getData().render.depthSortable;
 		}
 
 		uint getRenderPriority() const {
-			return getMaterial().getData().fancy.renderPriority;
+			return getMaterial().getData().render.renderPriority;
 		}
 
 	private:

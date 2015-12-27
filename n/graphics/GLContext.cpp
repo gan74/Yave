@@ -35,7 +35,7 @@ GLContext *GLContext::getContext() {
 	if(!ct) {
 		ct = new GLContext();
 		ShaderProgram().bind();
-		Material().bind(RenderFlag::ForceMaterialRebind);
+		MaterialRenderData().bind();
 	}
 	return ct;
 }

@@ -30,42 +30,52 @@ DrawCommandBuffer::~DrawCommandBuffer() {
 }
 
 bool DrawCommandBuffer::push(const RenderBatch &r) {
-	r.getMaterial().prepare();
-	if(!index) {
-		first = r.getMaterial().getData();
-	} else {
-		if(!r.getMaterial().getData().canInstanciate(first)) {
-			return false;
-		}
-		if(isFull()) {
-			return false;
-		}
+	if(isFull()) {
+		return false;
+	}
+	r.getMaterial().synchronize();
+	if(isEmpty()) {
+		renderData = r.getMaterial()->render;
+		shader = r.getMaterial()->prog;
+	} else if(!r.getMaterial()->canInstanciate(renderData, shader)) {
+		return false;
 	}
 	matrixBuffer[index] = r.getMatrix();
-	materialBuffer[index] = r.getMaterial().getBufferData();
+	materialBuffer[index] = r.getMaterial()->surface.toBufferData();
 	cmdBuffer[index] = r.getVertexArrayObject().getCmd(index);
 	index++;
 	return true;
 }
 
 bool DrawCommandBuffer::isFull() const {
-	return index >= getSize();
+	return index >= getCapacity();
+}
+
+bool DrawCommandBuffer::isEmpty() const {
+	return !index;
+}
+
+uint DrawCommandBuffer::getCapacity() const {
+	return matrixBuffer.getSize();
 }
 
 uint DrawCommandBuffer::getSize() const {
-	return matrixBuffer.getSize();
-
+	return index;
 }
 
 void DrawCommandBuffer::present(RenderFlag flags) {
-	if(!index) {
+	if(isEmpty()) {
 		return;
 	}
+	renderData.bind(flags);
+
+	const ShaderInstance *sh = shader.bind();
+	sh->setBuffer("n_MaterialBuffer", materialBuffer);
 	GLContext::getContext()->setMatrixBuffer(matrixBuffer);
-	Material(first).bind(RenderFlag::NoUniforms | flags);
-	ShaderInstance::getCurrent()->setBuffer("n_MaterialBuffer", materialBuffer);
+
 	ShaderInstance::validateState();
 	GLContext::getContext()->getVertexArrayFactory().bind();
+
 	cmdBuffer.update(true);
 	gl::multiDrawElementsIndirect(gl::Triangles, index);
 	index = 0;

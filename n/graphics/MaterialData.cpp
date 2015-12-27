@@ -15,6 +15,74 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "MaterialData.h"
+#include "GL.h"
+
+namespace n {
+namespace graphics {
+
+MaterialSurfaceData::MaterialSurfaceData() : color(1, 1, 1, 1), metallic(0), normalIntencity(0.5) {
+}
+
+MaterialBufferData MaterialSurfaceData::toBufferData() const {
+	return MaterialBufferData{color,
+							  metallic,
+							  diffuse.getBindlessId() ? 1.f : 0.f,
+							  normal.getBindlessId() ? normalIntencity : 0.f,
+							  roughness.getBindlessId() ? 1.f : 0.f,
+							  diffuse.getBindlessId(),
+							  normal.getBindlessId(),
+							  roughness.getBindlessId(),
+							  {0, 0}};
+}
+
+bool MaterialSurfaceData::synchronize(bool immediate) const {
+	bool r = true;
+	r &= diffuse.synchronize(immediate);
+	r &= normal.synchronize(immediate);
+	r &= roughness.synchronize(immediate);
+	return r;
+}
+
+MaterialRenderData::MaterialRenderData() : renderPriority(DefaultPriority), depthTested(true), depthWrite(true), depthSortable(true), blendMode(None), depthMode(Lesser), cullMode(Back) {
+}
+
+void MaterialRenderData::bind(uint flags) const {
+	gl::setDepthMask(depthWrite);
+	if(!(flags & DepthWriteOnly)) {
+		gl::setEnabled(gl::DepthTest, depthTested);
+		gl::setDepthMode(DepthMode(depthMode));
+		gl::setEnabled(gl::DepthClamp, depthMode == DepthMode::Greater);
+		gl::setCullFace(CullMode(cullMode));
+		gl::setBlendMode(BlendMode(blendMode));
+	}
+}
+
+uint32 MaterialRenderData::toUint() const {
+	return *reinterpret_cast<const uint32 *>(this);
+}
 
 
+void MaterialData::bind(uint flags) const {
+	if(flags & DepthWriteOnly) {
+		gl::setDepthMask(render.depthWrite);
+		return;
+	}
+	if(!(flags & RenderFlag::NoShader)) {
+		prog.bind();
+	}
+}
 
+bool MaterialData::canInstanciate(const MaterialData &m) const {
+	return canInstanciate(m.render, m.prog);
+}
+
+bool MaterialData::canInstanciate(const MaterialRenderData &r, const ShaderProgram &p) const {
+	return prog == p && (render.toUint() & MaterialRenderData::PriorityMask) == (r.toUint() & MaterialRenderData::PriorityMask);
+}
+
+bool MaterialData::synchronize(bool immediate) const {
+	return surface.synchronize(immediate);
+}
+
+}
+}

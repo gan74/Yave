@@ -22,24 +22,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-static const Material &getMaterial() {
-	static Material mat;
-	if(mat.isNull()) {
-		MaterialData i;
-		i.fancy.depth = DepthMode::Always;
-		mat = Material(i);
-	}
+static MaterialRenderData getMaterial() {
+	MaterialRenderData mat;
+	mat.depthMode = DepthMode::Always;
 	return mat;
 }
 
-static const Material &getLumMaterial() {
-	static Material mat;
-	if(mat.isNull()) {
-		MaterialData i;
-		i.fancy.blend = BlendMode::SrcAlpha;
-		i.fancy.depth = DepthMode::Always;
-		mat = Material(i);
-	}
+static MaterialRenderData getLumMaterial() {
+	MaterialRenderData mat;
+	mat.blendMode = BlendMode::SrcAlpha;
+	mat.depthMode = DepthMode::Always;
 	return mat;
 }
 

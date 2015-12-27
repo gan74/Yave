@@ -83,7 +83,7 @@ class SceneRenderer : public BufferableRenderer
 			for(Renderable *re : res) {
 				re->render(data->queue, renderFlags);
 			}
-			data->queue.prepare(cam->getPosition(), 1000);
+			data->queue.prepare();
 			return data;
 		}
 

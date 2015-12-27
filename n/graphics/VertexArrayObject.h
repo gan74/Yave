@@ -47,7 +47,7 @@ class VertexArrayObject
 		~VertexArrayObject() {
 		}
 
-		void draw(const Material &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1, uint instanceBase = 0) const {
+		void draw(const MaterialRenderData &mat, const VertexAttribs &attributes = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1, uint instanceBase = 0) const {
 			if(data.object) {
 				draw(mat, attributes, renderFlags, instances, data.start, data.size, data.base, instanceBase);
 			}
@@ -83,11 +83,11 @@ class VertexArrayObject
 		VertexArrayObject(const AllocData &d) : data(d), alloc(new AllocObject(d)) {
 		}
 
-		void bind() const;
-
 		AllocData data;
 
-		void draw(const Material &mat, const VertexAttribs &, uint renderFlags, uint instances, uint start, uint tris, uint vertexBase, uint instanceBase) const {
+		void bind() const;
+
+		void draw(const MaterialRenderData &mat, const VertexAttribs &, uint renderFlags, uint instances, uint start, uint tris, uint vertexBase, uint instanceBase) const {
 			mat.bind(renderFlags);
 			ShaderInstance::validateState();
 			ShaderInstance::getCurrent()->setValue(SVBaseInstance, instanceBase);

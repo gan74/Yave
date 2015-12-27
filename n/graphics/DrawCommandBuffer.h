@@ -32,13 +32,16 @@ class DrawCommandBuffer
 		void present(RenderFlag flags);
 
 		bool isFull() const;
+		bool isEmpty() const;
+		uint getCapacity() const;
 		uint getSize() const;
 
 	private:
 		UniformBuffer<math::Matrix4<>> matrixBuffer;
 		UniformBuffer<MaterialBufferData> materialBuffer;
 		IndirectBuffer cmdBuffer;
-		MaterialData first;
+		MaterialRenderData renderData;
+		ShaderProgram shader;
 		uint index;
 };
 

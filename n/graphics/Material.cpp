@@ -26,81 +26,18 @@ namespace graphics {
 
 MaterialData *const nullData = new MaterialData();
 
-
-N_FORCE_INLINE void setShaderParams(const ShaderInstance *sh restrict, const MaterialData &restrict data) {
-	if(!sh) {
-		return;
-	}
-
-	sh->setValue(ShaderValue::SVColor, data.color);
-	sh->setValue(ShaderValue::SVMetallic, data.metallic);
-
-	sh->setValue(ShaderValue::SVDiffuseMap, data.diffuse);
-	sh->setValue(ShaderValue::SVDiffuseMul, data.diffuse.isNull() ? 0.0 : 1.0);
-
-	sh->setValue(ShaderValue::SVNormalMap, data.normal);
-	sh->setValue(ShaderValue::SVNormalMul, data.normal.isNull() ? 0.0 : data.normalIntencity);
-
-	sh->setValue(ShaderValue::SVRoughnessMap, data.roughness);
-	sh->setValue(ShaderValue::SVRoughnessMul, data.roughness.isNull() ? 0.0 : 1.0);
-}
-
-void fullBind(const MaterialData &restrict data) {
-	setShaderParams(data.prog.bind(), data);
-
-	gl::setEnabled(gl::DepthTest, data.fancy.depthTested);
-	gl::setDepthMode(DepthMode(data.fancy.depth));
-	gl::setEnabled(gl::DepthClamp, data.fancy.depth == DepthMode::Greater);
-	gl::setDepthMask(data.fancy.depthWrite);
-	gl::setCullFace(CullMode(data.fancy.cull));
-	gl::setBlendMode(BlendMode(data.fancy.blend));
-}
-
-void Material::bind(uint flags) const {
-	MaterialData data = getData();
-
-	if(flags & ForceMaterialRebind) {
-		fullBind(data);
-	} else {
-		if(flags & DepthWriteOnly) {
-			gl::setDepthMask(data.fancy.depthWrite);
-			return;
-		}
-
-		if(!(flags & RenderFlag::NoShader)) {
-			const ShaderInstance *sh = data.prog.bind();
-			if(!(flags & RenderFlag::NoUniforms)) {
-				setShaderParams(sh, data);
-			}
-		}
-		gl::setEnabled(gl::DepthTest, data.fancy.depthTested);
-		gl::setDepthMode(DepthMode(data.fancy.depth));
-		gl::setEnabled(gl::DepthClamp, data.fancy.depth == DepthMode::Greater);
-		gl::setDepthMask(data.fancy.depthWrite);
-		gl::setCullFace(CullMode(data.fancy.cull));
-		gl::setBlendMode(BlendMode(data.fancy.blend));
-	}
-}
-
-bool Material::prepare() const {
-	MaterialData *i = const_cast<MaterialData *>(operator->());
-	if(i) {
-		bool s = i->diffuse.synchronize();
-		s &= i->normal.synchronize();
-		s &= i->roughness.synchronize();
-		return s;
-	}
-	return false;
-}
-
 const MaterialData &Material::getData() const {
-	const MaterialData *i = operator->();
+	const MaterialData *i = Asset<MaterialData>::operator->();
 	return i ? *i : *nullData;
 }
 
-MaterialBufferData Material::getBufferData() const {
-	MaterialData d = getData();
-	return MaterialBufferData{d.color, d.metallic, d.diffuse.getBindlessId() ? 1.f : 0.f, d.normal.getBindlessId() ? d.normalIntencity : 0.f, d.roughness.getBindlessId() ? 1.f : 0.f, d.diffuse.getBindlessId(), d.normal.getBindlessId(), d.roughness.getBindlessId(), {0, 0}};
+const MaterialData *Material::operator->() const {
+	const MaterialData *i = Asset<MaterialData>::operator->();
+	return i ? i : nullData;
+}
+
+bool Material::synchronize(bool immediate) const {
+	return getData().synchronize(immediate);
 }
 
 }

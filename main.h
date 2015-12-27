@@ -177,9 +177,9 @@ class MaterialTest : public Movable, public Renderable
 		MaterialTest(float m, float r) : Movable(), Renderable(), inst(0) {
 			static VertexArrayObject<> vao = GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getSphere());
 			MaterialData data;
-			data.color = Vec4(0.5);
-			data.metallic = m;
-			data.roughness = Texture(Image(Vec2ui(1), ImageFormat::F32, &r));
+			data.surface.color = Vec4(0.5);
+			data.surface.metallic = m;
+			data.surface.roughness = Texture(Image(Vec2ui(1), ImageFormat::F32, &r));
 			inst = new SubMeshInstance(vao, Material(data));
 			radius = vao.getRadius();
 		}

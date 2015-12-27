@@ -22,13 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-Material getMaterial() {
-	Material mat;
-	if(mat.isNull()) {
-		MaterialData data;
-		data.fancy.depthTested = false;
-		mat = Material(data);
-	}
+MaterialRenderData getMaterial() {
+	MaterialRenderData mat;
+	mat.depthTested = false;
 	return mat;
 }
 
@@ -147,7 +143,7 @@ ShaderInstance *getShader() {
 				"float sum = 0.0;"
 				"vec3 color = vec3(0.0);"
 
-				"const uint samples = 64;"
+				"const uint samples = 256;"
 				"for(uint i = 0; i != samples; i++) {"
 					"vec2 Xi = hammersley(i, samples);"
 					"vec3 H = normalize(world * brdf_importance_sample(Xi, roughness));"

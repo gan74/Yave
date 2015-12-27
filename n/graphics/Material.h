@@ -34,30 +34,12 @@ class Material : public assets::Asset<MaterialData>
 		Material(const MaterialData *i) : assets::Asset<MaterialData>(std::move(i)) {
 		}
 
-		bool operator<(const Material &m) const {
-			return getData().fancy32() < m.getData().fancy32();
-		}
-
-		const MaterialData &getData() const;
-
-		MaterialBufferData getBufferData() const;
-
-		bool prepare() const;
-
-	private:
-		template<typename T>
-		friend class VertexArrayObject;
-		friend class MaterialLoader;
-		friend class GLContext;
-		friend class FrameBuffer;
-		friend class DrawCommandBuffer;
-
-		void bind(uint flags = RenderFlag::None) const;
-
 		Material(const assets::Asset<MaterialData> &t) : assets::Asset<MaterialData>(t) {
 		}
 
-
+		const MaterialData &getData() const;
+		const MaterialData *operator->() const;
+		bool synchronize(bool immediate = false) const;
 };
 
 static_assert(!IsThreadSafe<Material>::value, "n::graphics::Material should not be treated as thread-safe");

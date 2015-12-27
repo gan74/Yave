@@ -35,7 +35,7 @@ SubMeshInstance::SubMeshInstance(const VertexArrayObject<> &b, const Material &m
 
 void SubMeshInstance::draw(const VertexAttribs &attribs, uint renderFlags, uint instances, uint base) const {
 	if(alloc()) {
-		vao.draw(material, attribs, renderFlags, instances, base);
+		vao.draw(material.getData().render, attribs, renderFlags, instances, base);
 	}
 }
 

@@ -76,18 +76,18 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 							std::cerr<<"Invalid color"<<std::endl;
 							return 0;
 						}
-						mat->color = Color<>(fl[0], fl[1], fl[2], 1);
+						mat->surface.color = Color<>(fl[0], fl[1], fl[2], 1);
 					}/* else if(l.beginsWith("ns ")) {
 						float ns = float(l.subString(3));
 						mat->roughness = sqrt(2 / (ns + 2));
 					}*/ else if(l.beginsWith("map_kd ")) {
-						mat->diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })), true);
+						mat->surface.diffuse = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })), true);
 					} else if(l.beginsWith("map_ks ")) {
-						mat->roughness = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); }), false), true);
+						mat->surface.roughness = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); }), false), true);
 					} else if(l.beginsWith("map_bump ")) {
-						mat->normal = Texture(ImageLoader::load<core::String>(l.subString(9).filtered([](char c) { return !isspace(c); })), true);
+						mat->surface.normal = Texture(ImageLoader::load<core::String>(l.subString(9).filtered([](char c) { return !isspace(c); })), true);
 					} else if(l.beginsWith("illum ")) {
-						mat->metallic = int(l.subString(6)) == 2 ? 0.0 : 1.0;
+						mat->surface.metallic = int(l.subString(6)) == 2 ? 0.0 : 1.0;
 					}
 				}
 			}
