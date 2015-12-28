@@ -75,7 +75,6 @@ struct MaterialRenderData
 	uint32 toUint() const;
 	void bind(uint flags = None) const;
 
-	#warning renderPriority breaks instanciation
 	uint32 renderPriority : 23; // uint23
 	uint32 depthTested    : 1; // bool
 	uint32 depthWrite     : 1; // bool
