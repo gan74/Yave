@@ -68,8 +68,7 @@ class LinearInterpolator : public Interpolator<T>
 		}
 
 		virtual PrecomputedDistribution<T> toDistribution(uint pCount = 0) const override {
-			pCount = pCount ? pCount : 512;
-			pCount = pCount > points.size() - 1 ? points.size() - 1 : pCount;
+			pCount = pCount ? pCount : std::min(points.size() - 1, 512u);
 			T incr = (points.last().x() - points.first().x()) / pCount;
 			core::Array<T, core::OptimalArrayResizePolicy> distr(pCount + 1);
 			for(uint i = 0; i != pCount + 1; i++) {

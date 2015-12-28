@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_MATH_PRECOMPUTEDDISTRIBUTION
 
 #include <n/core/Array.h>
-#include <vector>
 
 namespace n {
 namespace math {
