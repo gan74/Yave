@@ -60,6 +60,18 @@ class CompactArrayResizePolicy
 		}
 };
 
+class OptimalArrayResizePolicy
+{
+	protected:
+		uint size(uint size) const {
+			return size;
+		}
+
+		bool shrink(uint s, uint cap) const {
+			return s < cap;
+		}
+};
+
 template<typename T, typename ResizePolicy = DefaultArrayResizePolicy>
 class Array : public ResizePolicy// Be SUPER careful when adding collections directly, will use the lazyest cast possible, can be wrong !
 {
@@ -94,12 +106,18 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 			dataEnd = data + a.size();
 		}
 
-		Array(Array<T> &&a) : Array() {
+		template<typename R>
+		Array(const Array<T, R> &a) : Array(Size(a.size())) {
+			copy(data, a.data, a.size());
+			dataEnd = data + a.size();
+		}
+
+		Array(Array<T, ResizePolicy> &&a) : Array() {
 			swap(std::move(a));
 		}
 
-		template<typename C>
-		Array(const Array<C> &a) : Array(Size(a.size())) {
+		template<typename C, typename R>
+		Array(const Array<C, R> &a) : Array(Size(a.size())) {
 			append(a);
 		}
 
@@ -575,6 +593,9 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		}
 
 	private:
+		template<typename U, typename R>
+		friend class Array;
+
 		void copy(TT *dst, const TT *src, uint n) {
 			if(TypeInfo<T>::isPod) {
 				memcpy(dst, src, sizeof(T) * n);
