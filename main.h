@@ -61,6 +61,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/graphics/VarianceShadowRenderer.h>
 #include <n/graphics/DeferredIBLRenderer.h>
 #include <n/graphics/CubeFrameBuffer.h>
+#include <n/math/Interpolator.h>
 
 
 using namespace n;

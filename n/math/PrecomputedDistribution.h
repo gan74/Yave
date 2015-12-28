@@ -22,25 +22,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace math {
 
-template<typename T = float>
+template<typename T>
 class PrecomputedDistribution // assumed continuous and key in [0, 1]
 {
 	public:
 		PrecomputedDistribution(const core::Array<T> &values) : pts(values) {
 		}
 
-		T eval(T key) const {
+		template<typename K>
+		T eval(K key) const {
 			if(pts.size() == 1) {
 				return pts.first();
 			}
 			key *= (pts.size() - 1);
 			uint fl = key;
-			T w = key - fl;
+			K w = key - fl;
 			return pts[fl] * (1.0 - w) + pts[fl + 1] * w;
 		}
 
-		T operator()(T key) const {
+		template<typename K>
+		T operator()(K key) const {
 			return eval(key);
+		}
+
+		T operator[](uint i) const {
+			return pts[i % pts.size()];
 		}
 
 		uint size() const {

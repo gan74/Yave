@@ -18,58 +18,63 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_MATH_INTERPOLATOR
 
 #include <n/core/Array.h>
+#include <n/core/Pair.h>
 #include "Vec.h"
 #include "PrecomputedDistribution.h"
 
 namespace n {
 namespace math {
 
-template<typename T = float>
+template<typename T, typename K = float>
 class Interpolator
 {
 	public:
 		virtual ~Interpolator() {
 		}
 
-		virtual T eval(T key) const = 0;
+		virtual T eval(K key) const = 0;
 		virtual PrecomputedDistribution<T> toDistribution(uint pCount = 0) const = 0;
 
-		T operator()(T key) const {
+		T operator()(K key) const {
 			return eval(key);
 		}
 };
 
-template<typename T = float>
-class LinearInterpolator : public Interpolator<T>
+template<typename T, typename K = float>
+class LinearInterpolator : public Interpolator<T, K>
 {
-	typedef core::Array<Vec<2, T>, core::OptimalArrayResizePolicy> Storage;
+	typedef core::Pair<K, T> E;
+	typedef core::Array<E, core::OptimalArrayResizePolicy> Storage;
+
 	public:
-		LinearInterpolator(const core::Array<Vec<2, T>> &controlPts) : Interpolator<T>(), points(controlPts) {
+		typedef E Element;
+
+		LinearInterpolator(const core::Array<E> &controlPts) : Interpolator<T, K>(), pts(controlPts) {
 		}
 
 		virtual ~LinearInterpolator() {
 		}
 
-		virtual T eval(T key) const final override  {
-			if(points.size() == 1) {
-				return points.first().y();
+		virtual T eval(K key) const final override  {
+			if(pts.size() == 1) {
+				return pts.first()._2;
 			}
-			if(key <= points.first().x()) {
-				return points.first().y();
+			if(key <= pts.first()._1) {
+				return pts.first()._2;
 			}
-			if(key >= points.last().x()) {
-				return points.last().y();
+			if(key >= pts.last()._1) {
+				return pts.last()._2;
 			}
-			if(points.size() == 2) {
-				return lerp(points.first(), points.last(), key);
+			if(pts.size() == 2) {
+				return lerp(pts.first(), pts.last(), key);
 			}
-			typename Storage::const_iterator it = find(key);
-			return lerp(*it, *(it + 1), key);
+			uint it = find(key);
+			return lerp(pts[it], pts[it + 1], key);
 		}
 
 		virtual PrecomputedDistribution<T> toDistribution(uint pCount = 0) const override {
-			pCount = pCount ? pCount : std::min(points.size() - 1, 512u);
-			T incr = (points.last().x() - points.first().x()) / pCount;
+			pCount = pCount ? pCount : std::min(pts.size() - 1, 512u);
+			K incr = (pts.last()._1 - pts.first()._1) / pCount;
 			core::Array<T, core::OptimalArrayResizePolicy> distr(pCount + 1);
 			for(uint i = 0; i != pCount + 1; i++) {
 				distr.append(eval(i * incr));
@@ -79,29 +84,23 @@ class LinearInterpolator : public Interpolator<T>
 
 
 	private:
-		static T lerp(Vec<2, T> a, Vec<2, T> b, T key) {
-			T w = (a.x() - key) / (a.x() - b.x());
-			return b.y() * w + a.y() * (1.0 - w);
+		static T lerp(E a, E b, K key) {
+			K w = (a._1 - key) / (a._1 - b._1);
+			return b._2 * w + a._2 * (1.0 - w);
 		}
 
-		template<typename U>
-		static U *middle(U *a, U *b) {
-			uint64 ua = uint64(a) / sizeof(U);
-			uint64 ub = uint64(b) / sizeof(U);
-			uint64 res = (ua + ub) / 2;
-			return (U*)(res * sizeof(U));
-		}
-
-		typename Storage::const_iterator find(T key) const {
-			typename Storage::const_iterator beg = points.begin();
-			typename Storage::const_iterator end = points.end();
-			typename Storage::const_iterator it;
-			while(true) { //*it > key || *(it + 1) < key
-				it = middle(beg, end);
-				if(key < it->x()) {
+		uint find(K key) const {
+			uint beg = 0;
+			uint end = pts.size();
+			uint it = 0;
+			while(true) {
+				it = (end + beg) / 2;
+				if(key == pts[it]._1) {
+					break;
+				} else if(key < pts[it]._1) {
 					end = it;
 				} else {
-					if(key <= (it + 1)->x()) {
+					if(key <= pts[it + 1]._1) {
 						break;
 					}
 					beg = it;
@@ -110,7 +109,7 @@ class LinearInterpolator : public Interpolator<T>
 			return it;
 		}
 
-		Storage points;
+		Storage pts;
 };
 
 }
