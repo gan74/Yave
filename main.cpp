@@ -64,11 +64,20 @@ int main(int argc, char **argv) {
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
 	Renderer *renderers[] {new FrameBufferRenderer(ri),
-						   new DeferredIBLRenderer(gRe),
 						   sceRe,
+						   new FrameBufferRenderer(gRe),
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2),
+						   new DeferredIBLRenderer(gRe),
 						   tone = new BasicToneMapRenderer(ri)};
+
+	String renderNames[] = {"Deferred shading",
+							"Scene",
+							"G-buffer 0",
+							"G-buffer 1",
+							"G-buffer 2",
+							"IBL",
+							"Tone mapped"};
 
 	Timer timer;
 
@@ -81,12 +90,10 @@ int main(int argc, char **argv) {
 		Vec3 f = Vec3(Vec2(cos(-angle.x()), sin(-angle.x())) * cos(angle.y()), -sin(angle.y()));
 		cam.setForward(f);
 
-		uint rCount = sizeof(renderers) / sizeof(void *);
-		bool warp = rendererIndex >= rCount;
-		uint rIndex = warp ? 0 : rendererIndex;
-		uint dIndex = ((std::max(rCount, rendererIndex) - rCount) % (DeferredShadingRenderer::Max - warp)) + warp;
-		ri->setDebugMode(DeferredShadingRenderer::LightingDebugMode(dIndex));
-		(*renderers[rIndex])();
+		uint count = sizeof(renderers) / sizeof(void *);
+		uint index = rendererIndex % count;
+		(*renderers[index])();
+		SDL_SetWindowTitle(win, renderNames[index].toChar());
 
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
