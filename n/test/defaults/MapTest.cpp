@@ -72,8 +72,8 @@ class MapTest : public TestTemplate<MapTest>
 			test(map.get(7), "Seven", "Get test failed");
 			test(map.get(8), "", "Get default test failed");
 			test(map.get(8, "Eight"), "Eight", "Get default test failed");
-			test(map.forall([&](const core::Map<int, core::String>::element &e) -> bool { return e._2 == vals[e._1]; }), true, "Forall test failed");
-			test(map.forall([&](const core::Map<int, core::String>::element &e) -> bool { return e._2 == vals[e._1] && (e._1 % 2); }), true, "Forall reject test failed");
+			test(map.forall([&](const core::Map<int, core::String>::Element &e) -> bool { return e._2 == vals[e._1]; }), true, "Forall test failed");
+			test(map.forall([&](const core::Map<int, core::String>::Element &e) -> bool { return e._2 == vals[e._1] && (e._1 % 2); }), true, "Forall reject test failed");
 			return true;
 		}
 

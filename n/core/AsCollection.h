@@ -154,16 +154,15 @@ class Collection
 	public:
 		typedef typename InternalType::const_iterator const_iterator;
 		typedef typename InternalType::iterator iterator;
-		typedef typename InternalType::type ElementType;
+		typedef typename InternalType::type Element;
 		typedef typename InternalType::SubCollection SubCollection;
 
-		static constexpr bool isCollection = !std::is_same<ElementType, NullType>::value;
-
+		static constexpr bool isCollection = !std::is_same<Element, NullType>::value;
 
 		template<typename U>
 		struct isCollectionOf
 		{
-			static constexpr bool value = isCollection && TypeConversion<ElementType, U>::exists;
+			static constexpr bool value = isCollection && TypeConversion<Element, U>::exists;
 		};
 
 		iterator begin() {
@@ -433,7 +432,7 @@ class Collection
 
 		uint sizeDispatch(FalseType) const {
 			uint s = 0;
-			foreach([&s](const ElementType &) { s++; });
+			foreach([&s](const Element &) { s++; });
 			return s;
 		}
 
@@ -534,35 +533,35 @@ class Collection
 			return existsOne(f);
 		}
 
-		iterator findDispatch(FalseType, const ElementType &e) {
-			return findOne([&](const ElementType &t) { return t == e; }, begin());
+		iterator findDispatch(FalseType, const Element &e) {
+			return findOne([&](const Element &t) { return t == e; }, begin());
 		}
 
-		iterator findDispatch(FalseType, const ElementType &e, const_iterator from) {
-			return findOne([&](const ElementType &t) { return t == e; }, from);
+		iterator findDispatch(FalseType, const Element &e, const_iterator from) {
+			return findOne([&](const Element &t) { return t == e; }, from);
 		}
 
-		const_iterator findDispatch(FalseType, const ElementType &e) const {
-			return findOne([&](const ElementType &t) { return t == e; }, begin());
+		const_iterator findDispatch(FalseType, const Element &e) const {
+			return findOne([&](const Element &t) { return t == e; }, begin());
 		}
 
-		const_iterator findDispatch(FalseType, const ElementType &e, const_iterator from) const {
-			return findOne([&](const ElementType &t) { return t == e; }, from);
+		const_iterator findDispatch(FalseType, const Element &e, const_iterator from) const {
+			return findOne([&](const Element &t) { return t == e; }, from);
 		}
 
-		uint countDispatch(FalseType, const ElementType &e) const {
-			return countAll([&](const ElementType &t) { return t == e; });
+		uint countDispatch(FalseType, const Element &e) const {
+			return countAll([&](const Element &t) { return t == e; });
 		}
 
-		bool existsDispatch(FalseType, const ElementType &e) const {
-			return existsOne([&](const ElementType &t) { return t == e; });
+		bool existsDispatch(FalseType, const Element &e) const {
+			return existsOne([&](const Element &t) { return t == e; });
 		}
 
 		template<typename C, typename V>
 		C mappedDispatch(FalseType, const V &f) const {
 			C a;
 			Collection(a).setMinCapacity(size());
-			foreach([&](const ElementType &e) { a.insert(f(e)); });
+			foreach([&](const Element &e) { a.insert(f(e)); });
 			return a;
 		}
 
@@ -570,7 +569,7 @@ class Collection
 		C filteredDispatch(FalseType, const U &f) const {
 			C a;
 			Collection(a).setMinCapacity(size());
-			foreach([&](const ElementType &e) {
+			foreach([&](const Element &e) {
 				if(f(e)) {
 					a.insert(e);
 				}
@@ -580,7 +579,7 @@ class Collection
 
 		template<typename U>
 		bool forallDispatch(FalseType, const U &f) const {
-			for(const ElementType &t : *this) {
+			for(const Element &t : *this) {
 				if(!f(t)) {
 					return false;
 				}
@@ -626,7 +625,7 @@ struct ShouldInsertAsCollection
 	template<typename E, bool Col>
 	struct Compat // E, true
 	{
-		static constexpr bool value = TypeConversion<typename Collection<E>::ElementType, const ElementType>::existsWeak || Compat<typename Collection<E>::ElementType, Collection<E>::isCollection>::value;
+		static constexpr bool value = TypeConversion<typename Collection<E>::Element, const ElementType>::existsWeak || Compat<typename Collection<E>::Element, Collection<E>::isCollection>::value;
 	};
 
 	template<typename E>

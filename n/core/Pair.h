@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_PAIR_H
 
 #include "Array.h"
+#include <n/math/Vec.h>
 
 namespace n {
 namespace core {
@@ -33,6 +34,12 @@ class Pair
 		}
 
 		Pair(const Pair<T, U> &p) : Pair(p._1, p._2) {
+		}
+
+		Pair(const std::pair<T, U> &p) : Pair(p.first, p.second) {
+		}
+
+		Pair(const math::Vec<2, T> &p) : Pair(p.x(), p.y()) {
 		}
 
 		bool operator<(const Pair<T, U> &p) const {

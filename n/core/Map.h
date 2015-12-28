@@ -75,7 +75,7 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 		};
 
 		typedef typename MapType::const_iterator const_iterator;
-		typedef Pair<const T, U> element;
+		typedef Pair<const T, U> Element;
 
 		Map(const MapType &m) : MapType(m) {
 		}
@@ -88,7 +88,7 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 		}
 
 		iterator insert(const T &t, const U &u) {
-			return MapType::insert(element(t, u));
+			return MapType::insert(Element(t, u));
 		}
 
 		iterator find(const T &t) {
@@ -179,13 +179,13 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 
 		template<typename V>
 		void map(const V &f) {
-			foreach([&](element &e) { e._2 = f(e); });
+			foreach([&](Element &e) { e._2 = f(e); });
 		}
 
-		template<typename V, typename C = Map<typename std::result_of<V(const element &)>::type, Comp, Eq>>
+		template<typename V, typename C = Map<typename std::result_of<V(const Element &)>::type, Comp, Eq>>
 		C mapped(const V &f) const {
 			C a;
-			foreach([&](const element &e) { a.insert(f(e)); });
+			foreach([&](const Element &e) { a.insert(f(e)); });
 			return a;
 		}
 

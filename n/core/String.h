@@ -218,7 +218,7 @@ class String
 
 		template<typename T>
 		N_FORCE_INLINE String convertDispatch(const T &t, FalseType) const {
-			return buildDispatch(t, BoolToType<Collection<T>::isCollection>(), BoolToType<std::is_same<typename Collection<T>::ElementType, String>::value>());
+			return buildDispatch(t, BoolToType<Collection<T>::isCollection>(), BoolToType<std::is_same<typename Collection<T>::Element, String>::value>());
 		}
 
 		N_FORCE_INLINE const String &convertDispatch(const String &t, TrueType) const {
