@@ -69,7 +69,7 @@ struct MaterialSurfaceData
 struct MaterialRenderData
 {
 	static constexpr uint32 DefaultPriority = 1 << 22;
-	static constexpr uint32 PriorityMask = ~0x01FF;
+	static constexpr uint32 PriorityMask = 0x01FF;
 
 	MaterialRenderData();
 	uint32 toUint() const;
