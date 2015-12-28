@@ -135,6 +135,7 @@ void GLContext::setDebugEnabled(bool deb) {
 }
 
 void GLContext::auditGLState() {
+	N_DEPRECATED;
 	// ???
 }
 
@@ -150,18 +151,21 @@ math::Vec2ui GLContext::getViewport() const {
 }
 
 void GLContext::fatalIfError() {
+	N_DEPRECATED;
 	if(gl::checkError()) {
 		fatal("OpenGL error, exiting...");
 	}
 }
 
 void GLContext::setModelMatrix(const math::Matrix4<> &m) {
+	N_DEPRECATED;
 	static UniformBuffer<math::Matrix4<>> buffer(1);
 	buffer[0] = m;
 	models = buffer;
 }
 
 void GLContext::setMatrixBuffer(const UniformBuffer<math::Matrix4<> > &buffer) {
+	N_DEPRECATED;
 	models = buffer;
 }
 

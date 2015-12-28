@@ -26,11 +26,15 @@ enum LogType
 	InfoLog,
 	ErrorLog,
 	WarningLog,
-	PerfLog
+	PerfLog,
+	DeprecatedLog
 };
 
 void logMsg(const core::String &msg, LogType type = InfoLog);
+void logMsg(const char *msg, LogType type = InfoLog);
 }
+
+#define N_DEPRECATED do {static bool _warn = false; if(!_warn) { _warn = true; n::logMsg(__PRETTY_FUNCTION__ + n::core::String(" is deprecated."), n::DeprecatedLog); }} while(0)
 
 #endif // N_UTILS_LOG
 
