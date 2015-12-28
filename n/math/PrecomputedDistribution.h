@@ -34,6 +34,9 @@ class PrecomputedDistribution // assumed continuous and key in [0, 1]
 			if(pts.size() == 1) {
 				return pts.first();
 			}
+			if(pts.size() == 2) {
+				return pts.first() * (1.0 - key) + pts.last() * key;
+			}
 			key *= (pts.size() - 1);
 			uint fl = key;
 			K w = key - fl;
