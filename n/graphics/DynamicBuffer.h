@@ -71,7 +71,7 @@ class TypedDynamicBuffer : public DynamicBufferBase
 		typedef T * iterator;
 		typedef T const * const_iterator;
 
-		uint getSize() const {
+		uint size() const {
 			return data->size / sizeof(T);
 		}
 
@@ -94,7 +94,7 @@ class TypedDynamicBuffer : public DynamicBufferBase
 
 		iterator end() {
 			data->modified = true;
-			return iterator(((T *)data->buffer) + getSize());
+			return iterator(((T *)data->buffer) + size());
 		}
 
 		const_iterator begin() const {
@@ -102,7 +102,7 @@ class TypedDynamicBuffer : public DynamicBufferBase
 		}
 
 		const_iterator end() const {
-			return const_iterator(((T *)data->buffer) + getSize());
+			return const_iterator(((T *)data->buffer) + size());
 		}
 };
 

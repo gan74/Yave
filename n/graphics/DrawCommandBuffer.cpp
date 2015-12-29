@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-DrawCommandBuffer::DrawCommandBuffer() : matrixBuffer(2048), materialBuffer(matrixBuffer.getSize()), cmdBuffer(matrixBuffer.getSize()), index(0) {
+DrawCommandBuffer::DrawCommandBuffer() : matrixBuffer(2048), materialBuffer(matrixBuffer.size()), cmdBuffer(matrixBuffer.size()), index(0) {
 }
 
 DrawCommandBuffer::~DrawCommandBuffer() {
@@ -56,10 +56,10 @@ bool DrawCommandBuffer::isEmpty() const {
 }
 
 uint DrawCommandBuffer::getCapacity() const {
-	return matrixBuffer.getSize();
+	return matrixBuffer.size();
 }
 
-uint DrawCommandBuffer::getSize() const {
+uint DrawCommandBuffer::size() const {
 	return index;
 }
 

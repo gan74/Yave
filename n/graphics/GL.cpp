@@ -632,6 +632,15 @@ void assertFboStatus() {
 	}
 }
 
+void drawNoAttrib(uint count) {
+	static Handle vao = 0;
+	if(!vao) {
+		vao = createVertexArray();
+	}
+	bindVertexArray(vao);
+	glDrawArrays(GL_POINTS, 0, count);
+}
+
 void drawBuffers(uint count, const Attachment *buffers) {
 	GLenum *att = new GLenum[count];
 	for(uint i = 0; i != count; i++) {

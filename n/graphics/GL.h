@@ -284,6 +284,8 @@ void attachFramebufferTextureCube(Handle handle);
 
 void assertFboStatus();
 
+void drawNoAttrib(uint count);
+
 
 
 //    vvvvvvvvvvvv   Unfinished    vvvvvvvvvvvv

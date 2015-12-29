@@ -14,38 +14,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_DRAWCOMMANDBUFFER_H
-#define N_GRAPHICS_DRAWCOMMANDBUFFER_H
+#ifndef N_GRAPHICS_PARTICLE
+#define N_GRAPHICS_PARTICLE
 
-#include "RenderBatch.h"
+#include <n/math/Vec.h>
 
 namespace n {
 namespace graphics {
 
-class DrawCommandBuffer
+struct Particle
 {
-	public:
-		DrawCommandBuffer();
-		~DrawCommandBuffer();
-
-		bool push(const RenderBatch &r);
-		void present(RenderFlag flags);
-
-		bool isFull() const;
-		bool isEmpty() const;
-		uint getCapacity() const;
-		uint size() const;
-
-	private:
-		UniformBuffer<math::Matrix4<>> matrixBuffer;
-		UniformBuffer<MaterialBufferData> materialBuffer;
-		IndirectBuffer cmdBuffer;
-		MaterialRenderData renderData;
-		ShaderProgram shader;
-		uint index;
+	math::Vec4 position;
+	math::Vec4 velocity;
+	float life;
+	float dLife;
+	float padd[2];
 };
 
 }
 }
 
-#endif // N_GRAPHICS_DRAWCOMMANDBUFFER_H
+#endif // N_GRAPHICS_PARTICLE
+

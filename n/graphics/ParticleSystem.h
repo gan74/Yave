@@ -14,38 +14,37 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_DRAWCOMMANDBUFFER_H
-#define N_GRAPHICS_DRAWCOMMANDBUFFER_H
+#ifndef N_GRAPHICS_PARTICLESYSTEM
+#define N_GRAPHICS_PARTICLESYSTEM
 
-#include "RenderBatch.h"
+#include <n/utils.h>
+#include "Particle.h"
+#include "DynamicBuffer.h"
+#include "Renderable.h"
+#include "Transformable.h"
 
 namespace n {
 namespace graphics {
 
-class DrawCommandBuffer
+class ParticleSystem : public Transformable, public Renderable
 {
 	public:
-		DrawCommandBuffer();
-		~DrawCommandBuffer();
+		ParticleSystem(uint max = 128);
 
-		bool push(const RenderBatch &r);
-		void present(RenderFlag flags);
+		virtual void render(RenderQueue &q, RenderFlag) override;
 
-		bool isFull() const;
-		bool isEmpty() const;
-		uint getCapacity() const;
-		uint size() const;
+		virtual void update(double sec);
 
 	private:
-		UniformBuffer<math::Matrix4<>> matrixBuffer;
-		UniformBuffer<MaterialBufferData> materialBuffer;
-		IndirectBuffer cmdBuffer;
-		MaterialRenderData renderData;
-		ShaderProgram shader;
-		uint index;
+		void draw();
+
+		UniformBuffer<Particle> particles;
+
+
 };
 
 }
 }
 
-#endif // N_GRAPHICS_DRAWCOMMANDBUFFER_H
+#endif // N_GRAPHICS_PARTICLESYSTEM
+

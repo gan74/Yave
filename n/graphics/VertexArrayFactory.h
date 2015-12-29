@@ -137,8 +137,8 @@ class VertexArrayFactory : NonCopyable
 			}
 			ids = new StaticBuffer<uint, ArrayBuffer>(idArray);
 
-			vertexEmpties.append(Empty{0, vertices.getSize()});
-			indexEmpties.append(Empty{0, indexes.getSize()});
+			vertexEmpties.append(Empty{0, vertices.size()});
+			indexEmpties.append(Empty{0, indexes.size()});
 			handle = gl::createVertexArray();
 			gl::bindVertexArray(handle);
 			vertices.update(true);

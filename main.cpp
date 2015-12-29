@@ -21,14 +21,6 @@ int main(int argc, char **argv) {
 	Scene scene;
 	scene.insert(&cam);
 
-	{
-		auto obj = new Obj("./crytek-sponza/sponza.obj");
-		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
-		//auto obj = new Obj("plane.obj");
-		obj->setAutoScale(800);
-		scene.insert(obj);
-	}
-
 	uint max = 10;
 	float scale = 5;
 	for(uint i = 0; i != max; i++) {
@@ -38,6 +30,14 @@ int main(int argc, char **argv) {
 			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, 1) * m->getRadius() * 2.5);
 			scene.insert(m);
 		}
+	}
+
+	/*{
+		auto obj = new Obj("./crytek-sponza/sponza.obj");
+		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
+		//auto obj = new Obj("plane.obj");
+		obj->setAutoScale(800);
+		scene.insert(obj);
 	}
 
 	{
@@ -57,7 +57,10 @@ int main(int argc, char **argv) {
 		l->setIntensity(1);
 		l->setColor(BaseColor::Blue);
 		scene.insert(l);
-	}
+	}*/
+
+	ParticleSystem *particles = new ParticleSystem();
+	scene.insert(particles);
 
 
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
@@ -97,6 +100,8 @@ int main(int argc, char **argv) {
 
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
+
+		particles->update(dt);
 	}
 	return 0;
 }
