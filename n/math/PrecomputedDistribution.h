@@ -29,6 +29,9 @@ class PrecomputedDistribution // assumed continuous and key in [0, 1]
 		PrecomputedDistribution(const core::Array<T> &values) : pts(values) {
 		}
 
+		PrecomputedDistribution(const T &u) : pts({u}) {
+		}
+
 		template<typename K>
 		T eval(K key) const {
 			if(pts.size() == 1) {

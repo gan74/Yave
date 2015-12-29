@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "DynamicBuffer.h"
 #include "Renderable.h"
 #include "Transformable.h"
+#include "ParticleEmitter.h"
 
 namespace n {
 namespace graphics {
@@ -29,15 +30,20 @@ namespace graphics {
 class ParticleSystem : public Transformable, public Renderable
 {
 	public:
+		static uint getMaxParticles();
+
 		ParticleSystem(uint max = 128);
+
+		void addEmiter(const ParticleEmitter &emitter);
 
 		virtual void render(RenderQueue &q, RenderFlag) override;
 
-		virtual void update(double sec);
+		virtual void update(float sec);
 
 	private:
 		void draw();
 
+		core::Array<ParticleEmitter> emitters;
 		UniformBuffer<Particle> particles;
 
 

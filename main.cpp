@@ -38,13 +38,12 @@ int main(int argc, char **argv) {
 		//auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
 		scene.insert(obj);
-	}
+	}*/
 
 	{
 		BoxLight *l = new BoxLight(600);
 
 		l->setForward(Vec3(0, 1, -1));
-		//l->setPosition(Vec3(0, 0, 10));
 		l->setIntensity(5);
 		//l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
 		scene.insert(l);
@@ -57,9 +56,20 @@ int main(int argc, char **argv) {
 		l->setIntensity(1);
 		l->setColor(BaseColor::Blue);
 		scene.insert(l);
-	}*/
+	}
 
-	ParticleSystem *particles = new ParticleSystem();
+	uint parts = ParticleSystem::getMaxParticles();
+	std::cout<<"MAX = "<<parts<<std::endl;
+	ParticleSystem *particles = new ParticleSystem(parts);
+
+	Array<Vec3> distr({Vec3(0.1, 0.1, 1) * 30, Vec3(-0.1, 0.1, 1) * 30, Vec3(-0.1, -0.1, 1) * 30, Vec3(0.1, -0.1, 1) * 30, Vec3(0.1, 0.1, 1) * 30});
+	uint index = 0;
+	LinearInterpolator<Vec3> inter(distr.mapped([&](Vec3 v) {
+		return LinearInterpolator<Vec3>::Element(index++, v);
+	}));
+	ParticleEmitter em(PrecomputedDistribution<Vec3>(Vec3(0)), inter.toDistribution(512), PrecomputedDistribution<float>(5));
+	em.setFlow(parts * 0.2);
+	particles->addEmiter(em);
 	scene.insert(particles);
 
 

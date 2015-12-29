@@ -30,24 +30,57 @@ class ParticleEmitter
 	typedef math::PrecomputedDistribution<float> F1;
 
 	public:
-		ParticleEmitter(const F3 &pos, const F3 &vel, const F &li) : index(7), spawn(pos), speed(vel), life(li) {
+		static constexpr uint Unlimited = uint(-1);
+		ParticleEmitter(const F3 &position, const F3 &velocity, const F1 &life) : flow(10), fraction(0), tank(Unlimited), index(7), positions(position), velocities(velocity), lives(life) {
+		}
+
+		float getFlow() const {
+			return flow;
+		}
+
+		uint getTank() const {
+			return tank;
+		}
+
+		void setFlow(float f) {
+			flow = f;
+		}
+
+		void setTank(uint t) {
+			tank = t;
 		}
 
 		Particle emit() {
 			Particle p;
-			p.position = spawn[index];
-			p.speed = speed[index];
+			p.position = math::Vec4(positions[index], 1.0);
+			p.velocity =  math::Vec4(velocities[index], 0.0);
 			p.life = 1;
-			p.lifeSpeed = 1.0 / life[index];
+			p.dLife = 1.0 / lives[index];
 			index++;
+			return p;
+		}
+
+		uint computeEmition(float sec) {
+			float f = std::min(float(tank), flow * sec + fraction);
+			uint intFlow = f;
+			fraction = f - intFlow;
+			if(tank != Unlimited) {
+				tank -= intFlow;
+			}
+			return intFlow;
 		}
 
 
 	private:
+		float flow;
+		float fraction;
+
+		uint tank;
+
 		uint index;
-		math::PrecomputedDistribution<math::Vec3> spawn;
-		math::PrecomputedDistribution<math::Vec3> speed;
-		math::PrecomputedDistribution<float> life;
+		math::PrecomputedDistribution<math::Vec3> positions;
+		math::PrecomputedDistribution<math::Vec3> velocities;
+		math::PrecomputedDistribution<float> lives;
 };
 
 }

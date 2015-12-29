@@ -28,7 +28,21 @@ struct Particle
 	math::Vec4 velocity;
 	float life;
 	float dLife;
-	float padd[2];
+	int material;
+	float padding;
+
+
+	static core::String toShader() {
+		return
+			"struct Particle {"
+				"vec4 position;"
+				"vec4 velocity;"
+				"float life;"
+				"float dLife;"
+				"int material;"
+				"float padding;"
+			"};";
+	}
 };
 
 }
