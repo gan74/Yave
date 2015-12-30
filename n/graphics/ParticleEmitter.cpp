@@ -29,8 +29,10 @@ static ShaderInstance *getShader() {
 				"out vec4 n_1;"
 				"out vec4 n_2;"
 
+				"in vec4 n_ParticleColor;"
+
 				"void main() {"
-					"vec4 color = vec4(1, 0, 0, 1);"
+					"vec4 color = n_ParticleColor;"
 					"float metal = 0;"
 					"float roughness = 1.0;"
 					"vec3 normal = vec3(0, 0, 1);"
@@ -62,10 +64,12 @@ static ShaderInstance *getShader() {
 				"uniform mat4 n_ViewProjectionMatrix;"
 
 				"uniform sampler2D n_SizeOverLife;"
+				"uniform sampler2D n_ColorOverLife;"
 
 				"out vec3 n_Position;"
 				"out vec4 n_ScreenPosition;"
 				"out vec2 n_TexCoord;"
+				"out vec4 n_ParticleColor;"
 
 				"in Particle particle[1];"
 
@@ -75,10 +79,12 @@ static ShaderInstance *getShader() {
 				"void main() {"
 					"n_InstanceID = 0;"
 					"if(particle[0].life > 0) {"
-						"float iLife = 1.0 - particle[0].life;"
+						"float iLife = 1.0 - saturate(particle[0].life);"
 						"float yRatio = n_ViewportSize.x / n_ViewportSize.y;"
 						"vec4 basePos = n_ScreenPosition = n_ViewProjectionMatrix * vec4(n_Position = particle[0].position, 1.0);"
-						"vec2 size = vec2(1, yRatio) * texture(n_SizeOverLife, vec2(iLife, 0.5)).xy;"
+						"vec2 size = texture(n_SizeOverLife, vec2(iLife, 0.5)).xy;"
+						"size.y *= yRatio;"
+						"n_ParticleColor = texture(n_ColorOverLife, vec2(iLife, 0.5));"
 						"for(int i = 0; i != 4; i++) {"
 							"n_TexCoord = coords[i];"
 							"gl_Position = basePos + vec4(quad[i] * size, 0, 0);"
@@ -97,6 +103,7 @@ uint ParticleEmitter::getMaxParticles() {
 
 ParticleEmitter::ParticleEmitter(uint max) : particles(max), flow(10), tank(Unlimited), fraction(0), positions(0), velocities(0), lives(0) {
 	setSizeOverLife(math::Vec2(0.1));
+	setColorOverLife(core::Array<Color<>>({Red, Blue}));
 	for(uint i = 0; i != particles.size(); i++) {
 		particles[i].life = -1.0;
 	}
@@ -124,11 +131,19 @@ void ParticleEmitter::setLifeDistribution(math::RandomDistribution<float> *l) {
 }
 
 void ParticleEmitter::setSizeOverLife(const math::PrecomputedRange<math::Vec2> &s) {
-	setSizeOverLife(Texture(new ImageData(math::Vec2ui(s.size(), 1), ImageFormat::RG16F, s.begin())));
+	setSizeOverLife(Texture(new ImageData(math::Vec2ui(s.size(), 1), ImageFormat::RG32F, s.begin())));
 }
 
 void ParticleEmitter::setSizeOverLife(const Texture &s) {
 	sizes = s;
+}
+
+void ParticleEmitter::setColorOverLife(const math::PrecomputedRange<Color<>> &c) {
+	setColorOverLife(Texture(new ImageData(math::Vec2ui(c.size(), 1), ImageFormat::RGBA32F, c.begin())));
+}
+
+void ParticleEmitter::setColorOverLife(const Texture &c) {
+	colors = c;
 }
 
 float ParticleEmitter::getFlow() const {
@@ -180,6 +195,7 @@ void ParticleEmitter::render(RenderQueue &q, RenderFlag) {
 
 		sh->setBuffer("n_ParticleBuffer", particles);
 		sh->setValue("n_SizeOverLife", sizes, TextureSampler::Bilinear | TextureSampler::Clamp);
+		sh->setValue("n_ColorOverLife", colors, TextureSampler::Bilinear | TextureSampler::Clamp);
 
 		MaterialRenderData rd;
 		rd.cullMode = DontCull;
@@ -204,7 +220,6 @@ void ParticleEmitter::update(float sec) {
 			}
 		} else {
 			particles[i].position += particles[i].velocity * sec;
-			//particles[i].size = sizes(1.0 - particles[i].life);
 			//particles[i].velocity += math::Vec4(0, 0, -9.8, 0) * sec;
 			particles[i].life -= particles[i].dLife * sec;
 		}

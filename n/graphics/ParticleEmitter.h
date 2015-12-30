@@ -45,6 +45,8 @@ class ParticleEmitter : public Transformable, public Renderable
 		void setLifeDistribution(math::RandomDistribution<float> *l);
 		void setSizeOverLife(const math::PrecomputedRange<math::Vec2> &s);
 		void setSizeOverLife(const Texture &s);
+		void setColorOverLife(const math::PrecomputedRange<Color<>> &c);
+		void setColorOverLife(const Texture &c);
 
 		float getFlow() const;
 		uint getTank() const;
@@ -73,6 +75,7 @@ class ParticleEmitter : public Transformable, public Renderable
 		math::RandomDistribution<float> *lives;
 
 		Texture sizes;
+		Texture colors;
 
 };
 

@@ -346,9 +346,9 @@ Handle createSampler(TextureSampler sampler, bool mipmap) {
 	}
 
 	if(sampler & Clamp) {
-		glSamplerParameteri(h, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-		glSamplerParameteri(h, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glSamplerParameteri(h, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	} else {
 		glSamplerParameteri(h, GL_TEXTURE_WRAP_R, GL_REPEAT);
 		glSamplerParameteri(h, GL_TEXTURE_WRAP_T, GL_REPEAT);

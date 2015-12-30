@@ -61,8 +61,9 @@ int main(int argc, char **argv) {
 	uint parts = ParticleEmitter::getMaxParticles();
 	ParticleEmitter *particles = new ParticleEmitter(parts);
 	particles->setVelocityDistribution(new UniformVec3Distribution<>(Vec3(0, 0, 1), pi * 0.5, 20, 20));
-	particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.1), Vec2(0.0)})));
-	particles->setFlow(parts);
+	particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.2), Vec2(0.22), Vec2(0)})));
+	particles->setLifeDistribution(new UniformDistribution<float>(1.5, 2.2));
+	particles->setFlow(parts * 0.2);
 	scene.insert(particles);
 
 
