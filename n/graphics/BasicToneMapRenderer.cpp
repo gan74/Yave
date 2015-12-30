@@ -174,7 +174,7 @@ static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	sh->bind();
 
 	buffers[0]->bind();
-	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(getMaterial());
 
 	sh = getDSShader();
 	sh->bind();
@@ -189,7 +189,7 @@ static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 		last = !last;
 		scale *= 0.5;
 		baseSize /= 2;
-		GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
+		GLContext::getContext()->getScreen().draw(getMaterial());
 	}
 	return buffers[last]->getAttachement(0);
 }
@@ -225,7 +225,7 @@ void BasicToneMapRenderer::render(void *ptr) {
 	lumSh->setValue("logMax", log(range.y()));
 	lumSh->setValue("blend", dt / adaptation);
 	luma->bind();
-	GLContext::getContext()->getScreen().draw(getLumMaterial(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(getLumMaterial());
 
 	if(fb) {
 		fb->bind();
@@ -241,7 +241,7 @@ void BasicToneMapRenderer::render(void *ptr) {
 	sh->setValue(SVTexture1, luma->getAttachement(0));
 	sh->bind();
 
-	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(getMaterial());
 
 	GLContext::getContext()->getFrameBufferPool().add(buffers[0]);
 	GLContext::getContext()->getFrameBufferPool().add(buffers[1]);

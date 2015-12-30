@@ -44,6 +44,7 @@ class ParticleEmitter : public Transformable, public Renderable
 		void setVelocityDistribution(math::RandomDistribution<math::Vec3> *v);
 		void setLifeDistribution(math::RandomDistribution<float> *l);
 		void setSizeOverLife(const math::PrecomputedRange<math::Vec2> &s);
+		void setSizeOverLife(const Texture &s);
 
 		float getFlow() const;
 		uint getTank() const;
@@ -70,7 +71,8 @@ class ParticleEmitter : public Transformable, public Renderable
 		math::RandomDistribution<math::Vec3> *positions;
 		math::RandomDistribution<math::Vec3> *velocities;
 		math::RandomDistribution<float> *lives;
-		math::PrecomputedRange<math::Vec2> sizes;
+
+		Texture sizes;
 
 };
 

@@ -57,11 +57,11 @@ class BSShadowRenderer : public ShadowRenderer
 
 			temp->bind();
 			blurs[0]->bind();
-			GLContext::getContext()->getScreen().draw(MaterialRenderData(), VertexAttribs(), RenderFlag::NoShader);
+			GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 			getFrameBuffer().bind();
 			blurs[1]->bind();
-			GLContext::getContext()->getScreen().draw(MaterialRenderData(), VertexAttribs(), RenderFlag::NoShader);
+			GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 			blurs[1]->unbind();
 			GLContext::getContext()->getFrameBufferPool().add(temp);

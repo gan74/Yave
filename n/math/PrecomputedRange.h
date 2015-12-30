@@ -59,6 +59,14 @@ class PrecomputedRange // assumed continuous and key in [0, 1]
 			return pts.size();
 		}
 
+		typename core::Array<T>::const_iterator begin() const {
+			return pts.begin();
+		}
+
+		typename core::Array<T>::const_iterator end() const {
+			return pts.end();
+		}
+
 	private:
 		core::Array<T, core::OptimalArrayResizePolicy> pts;
 };

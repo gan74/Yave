@@ -102,10 +102,6 @@ class GLContext
 			return *shFactory;
 		}
 
-		TextureSampler getDefaultSampler() {
-			return TextureSampler::Trilinear;
-		}
-
 		const VertexArrayObject<> &getScreen() const;
 		VertexArrayFactory<> &getVertexArrayFactory();
 

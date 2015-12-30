@@ -134,10 +134,10 @@ class ShaderStorageBuffer : public TypedDynamicBuffer<T, StorageBufferObject>
 };
 
 
-class IndirectBuffer : public TypedDynamicBuffer<gl::DrawCommand, DrawIndirectBuffer>
+class IndirectBuffer : public TypedDynamicBuffer<gl::DrawCommand, IndirectDrawBufferObject>
 {
 	public:
-		IndirectBuffer(uint s) : TypedDynamicBuffer<gl::DrawCommand, DrawIndirectBuffer>(s) {
+		IndirectBuffer(uint s) : TypedDynamicBuffer<gl::DrawCommand, IndirectDrawBufferObject>(s) {
 		}
 
 };

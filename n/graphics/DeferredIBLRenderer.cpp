@@ -60,7 +60,7 @@ CubeMap *getCube() {
 		sh.bind();
 		CubeFrameBuffer cbo(1024, ImageFormat::RGBA8);
 		cbo.bind();
-		GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
+		GLContext::getContext()->getScreen().draw(getMaterial());
 		cube = new CubeMap(cbo.getAttachement());*/
 	}
 	return cube;
@@ -202,7 +202,7 @@ void DeferredIBLRenderer::render(void *ptr) {
 	shader->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
 
 	shader->bind();
-	GLContext::getContext()->getScreen().draw(getMaterial(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(getMaterial());
 	shader->unbind();
 
 

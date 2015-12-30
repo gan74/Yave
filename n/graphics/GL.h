@@ -27,21 +27,30 @@ namespace graphics {
 
 enum TextureSampler
 {
-	Nearest,
-	Bilinear,
-	Trilinear,
+	Nearest = 0x00,
+	MipmapNearest = 0x00,
 
-	Default
+	Bilinear = 0x01,
+	MipmapLinear = 0x02,
+
+	Trilinear = Bilinear | MipmapLinear,
+
+	Clamp = 0x04,
+
+	MaxSamplers = 0x0F
 };
 
+inline TextureSampler operator|(TextureSampler a, TextureSampler b) {
+	return TextureSampler(uint(a) | uint(b));
+}
 
 enum BufferTarget
 {
-	ArrayBuffer,
-	IndexBuffer,
+	ArrayBufferObject,
+	IndexBufferObject,
 	UniformBufferObject,
 	StorageBufferObject,
-	DrawIndirectBuffer
+	IndirectDrawBufferObject
 };
 
 enum TextureType
@@ -318,7 +327,7 @@ void programUniformMatrix4fv(Handle h, UniformAddr loc, uint count, bool tr, con
 void programUniformHandleui64(Handle prog, UniformAddr loc, uint64 handle);
 void texImage2D(TextureType target, int level, uint width, uint height, int border, TextureFormat format, const void *data);
 void generateMipmap(TextureType type);
-uint64 getTextureSamplerHandle(Handle tex, TextureSampler smp, bool mipmap);
+uint64 getTextureBindlessHandle(Handle tex, TextureSampler smp, bool mipmap);
 void makeTextureHandleResident(uint64 handle);
 void flush();
 }

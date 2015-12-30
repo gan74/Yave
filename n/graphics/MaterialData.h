@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-enum RenderFlag : uint32
+enum RenderFlag
 {
 	None = 0x00,
 	FastDepth = 0x01,
@@ -35,6 +35,10 @@ enum RenderFlag : uint32
 	Overlay = 0x10,
 	NoUniforms = 0x20
 };
+
+inline RenderFlag operator|(RenderFlag a, RenderFlag b) {
+	return RenderFlag(uint(a) | uint(b));
+}
 
 struct MaterialBufferData
 {

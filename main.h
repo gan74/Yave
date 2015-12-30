@@ -146,10 +146,6 @@ class Obj : public StaticMesh
 		Obj(const MeshInstance &n) : StaticMesh(n), model(""), autoScale(0) {
 		}
 
-		void setAttribs(const VertexAttribs &a) {
-			attribs = a;
-		}
-
 		virtual void render(RenderQueue &qu, RenderFlag rf) override {
 			if(!getMeshInstance().isValid()) {
 				fatal("Unable to load mesh");
@@ -159,7 +155,7 @@ class Obj : public StaticMesh
 				setScale(autoScale / getMeshInstance().getRadius());
 			}
 			for(SubMeshInstance *b : getMeshInstance()) {
-				qu.insert(RenderBatch(getTransform().getMatrix(), b, attribs, rf));
+				qu.insert(RenderBatch(getTransform().getMatrix(), b, rf));
 			}
 		}
 
@@ -168,7 +164,6 @@ class Obj : public StaticMesh
 		}
 
 	private:
-		VertexAttribs attribs;
 		String model;
 		float autoScale;
 };
@@ -187,7 +182,7 @@ class MaterialTest : public Movable, public Renderable
 		}
 
 		virtual void render(RenderQueue &qu, RenderFlag rf) override {
-			qu.insert(RenderBatch(transform.getMatrix(), inst, VertexAttribs(), rf));
+			qu.insert(RenderBatch(transform.getMatrix(), inst, rf));
 		}
 
 	private:

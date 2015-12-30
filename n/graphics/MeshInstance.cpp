@@ -33,9 +33,9 @@ SubMeshInstance::SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>:
 SubMeshInstance::SubMeshInstance(const VertexArrayObject<> &b, const Material &m) : material(m), vao(b) {
 }
 
-void SubMeshInstance::draw(const VertexAttribs &attribs, uint renderFlags, uint instances, uint base) const {
+void SubMeshInstance::draw(RenderFlag renderFlags, uint instances, uint base) const {
 	if(alloc()) {
-		vao.draw(material.getData().render, attribs, renderFlags, instances, base);
+		vao.draw(material.getData().render, renderFlags, instances, base);
 	}
 }
 
@@ -80,9 +80,9 @@ internal::MeshInstance::~MeshInstance() {
 	}
 }
 
-void internal::MeshInstance::draw(const VertexAttribs &attribs, uint instances) const {
+void internal::MeshInstance::draw(RenderFlag flags) const {
 	for(const SubMeshInstance *b : subs) {
-		b->draw(attribs, instances);
+		b->draw(flags);
 	}
 }
 
@@ -121,10 +121,10 @@ float MeshInstance::getRadius() const {
 	return i ? i->getRadius() : -1;
 }
 
-void MeshInstance::draw(const VertexAttribs &attribs, uint instances) const {
+void MeshInstance::draw(RenderFlag flags) const {
 	const internal::MeshInstance *i = getInternal();
 	if(i) {
-		i->draw(attribs, instances);
+		i->draw(flags);
 	}
 }
 

@@ -29,10 +29,6 @@ struct Particle
 	math::Vec3 velocity;
 	float dLife;
 
-	math::Vec2 size;
-
-	math::Vec2 padding;
-
 
 	static core::String toShader() {
 		return
@@ -42,9 +38,6 @@ struct Particle
 
 				"vec3 velocity;"
 				"float dLife;"
-
-				"vec2 size;"
-				"vec2 padding;"
 			"};";
 	}
 };

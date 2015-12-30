@@ -39,7 +39,7 @@ Texture::Texture() : TextureBase<Texture2D>() {
 Texture::Texture(const internal::TextureBase &base, Image im) : TextureBase<Texture2D>(base), image(im) {
 	if(data->handle) {
 		if(!data->bindless && GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
+			data->bindless = gl::getTextureBindlessHandle(data->handle, TextureSampler::Trilinear, hasMipmaps());
 			gl::makeTextureHandleResident(data->bindless);
 		}
 	}
@@ -72,7 +72,8 @@ void Texture::upload() const {
 		data->handle = gl::createTexture2D(size, getMipmapLevel(), format, image.data());
 
 		if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
+			data->bindless = gl::getTextureBindlessHandle(data->handle, TextureSampler::Trilinear, hasMipmaps());
+
 			gl::makeTextureHandleResident(data->bindless);
 		}
 

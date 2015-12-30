@@ -61,7 +61,7 @@ void VarianceShadowRenderer::render(void *ptr) {
 	ShaderInstance *sh = getVSMShader();
 	sh->setValue(SVTexture0, child->getShadowMap());
 	sh->bind();
-	GLContext::getContext()->getScreen().draw(MaterialRenderData(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
 	blurs[1]->setValue(SVTexture0, temp->getAttachement(0));
@@ -69,11 +69,11 @@ void VarianceShadowRenderer::render(void *ptr) {
 
 	temp->bind();
 	blurs[0]->bind();
-	GLContext::getContext()->getScreen().draw(MaterialRenderData(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 	getFrameBuffer().bind();
 	blurs[1]->bind();
-	GLContext::getContext()->getScreen().draw(MaterialRenderData(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 	blurs[1]->unbind();
 	GLContext::getContext()->getFrameBufferPool().add(temp);

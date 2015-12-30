@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "ParticleEmitter.h"
+#include "FrameBuffer.h"
 
 namespace n {
 namespace graphics {
@@ -60,6 +61,8 @@ static ShaderInstance *getShader() {
 				"uniform vec2 n_ViewportSize;"
 				"uniform mat4 n_ViewProjectionMatrix;"
 
+				"uniform sampler2D n_SizeOverLife;"
+
 				"out vec3 n_Position;"
 				"out vec4 n_ScreenPosition;"
 				"out vec2 n_TexCoord;"
@@ -72,10 +75,10 @@ static ShaderInstance *getShader() {
 				"void main() {"
 					"n_InstanceID = 0;"
 					"if(particle[0].life > 0) {"
+						"float iLife = 1.0 - particle[0].life;"
 						"float yRatio = n_ViewportSize.x / n_ViewportSize.y;"
 						"vec4 basePos = n_ScreenPosition = n_ViewProjectionMatrix * vec4(n_Position = particle[0].position, 1.0);"
-
-						"vec2 size = vec2(particle[0].size.x, particle[0].size.y * yRatio);"
+						"vec2 size = vec2(1, yRatio) * texture(n_SizeOverLife, vec2(iLife, 0.5)).xy;"
 						"for(int i = 0; i != 4; i++) {"
 							"n_TexCoord = coords[i];"
 							"gl_Position = basePos + vec4(quad[i] * size, 0, 0);"
@@ -92,7 +95,8 @@ uint ParticleEmitter::getMaxParticles() {
 	return UniformBuffer<Particle>::getMaxSize();
 }
 
-ParticleEmitter::ParticleEmitter(uint max) : particles(max), flow(10), tank(Unlimited), fraction(0), positions(0), velocities(0), lives(0), sizes(math::Vec2(0.1)) {
+ParticleEmitter::ParticleEmitter(uint max) : particles(max), flow(10), tank(Unlimited), fraction(0), positions(0), velocities(0), lives(0) {
+	setSizeOverLife(math::Vec2(0.1));
 	for(uint i = 0; i != particles.size(); i++) {
 		particles[i].life = -1.0;
 	}
@@ -120,6 +124,10 @@ void ParticleEmitter::setLifeDistribution(math::RandomDistribution<float> *l) {
 }
 
 void ParticleEmitter::setSizeOverLife(const math::PrecomputedRange<math::Vec2> &s) {
+	setSizeOverLife(Texture(new ImageData(math::Vec2ui(s.size(), 1), ImageFormat::RG16F, s.begin())));
+}
+
+void ParticleEmitter::setSizeOverLife(const Texture &s) {
 	sizes = s;
 }
 
@@ -171,6 +179,7 @@ void ParticleEmitter::render(RenderQueue &q, RenderFlag) {
 		sh->bind();
 
 		sh->setBuffer("n_ParticleBuffer", particles);
+		sh->setValue("n_SizeOverLife", sizes, TextureSampler::Bilinear | TextureSampler::Clamp);
 
 		MaterialRenderData rd;
 		rd.cullMode = DontCull;
@@ -195,7 +204,7 @@ void ParticleEmitter::update(float sec) {
 			}
 		} else {
 			particles[i].position += particles[i].velocity * sec;
-			particles[i].size = sizes(1.0 - particles[i].life);
+			//particles[i].size = sizes(1.0 - particles[i].life);
 			//particles[i].velocity += math::Vec4(0, 0, -9.8, 0) * sec;
 			particles[i].life -= particles[i].dLife * sec;
 		}

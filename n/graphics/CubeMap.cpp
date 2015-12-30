@@ -58,7 +58,7 @@ void CubeMap::upload() const {
 		data->handle = gl::createTextureCube(size, mips, format, datas);
 
 		if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-			data->bindless = gl::getTextureSamplerHandle(data->handle, GLContext::getContext()->getDefaultSampler(), hasMipmaps());
+			data->bindless = gl::getTextureBindlessHandle(data->handle, TextureSampler::Trilinear, hasMipmaps());
 			gl::makeTextureHandleResident(data->bindless);
 		}
 

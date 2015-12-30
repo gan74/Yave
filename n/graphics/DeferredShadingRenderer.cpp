@@ -239,7 +239,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 
 void lightGeometryPass(const DirectionalLight *, ShaderInstance *, const math::Vec3 &) {
-	GLContext::getContext()->getScreen().draw(getLightMaterial<Directional>(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(getLightMaterial<Directional>());
 }
 
 
@@ -251,19 +251,19 @@ void lightGeometryPass(const BoxLight *l, ShaderInstance *sh, const math::Vec3 &
 															0, 0, 0, 1).transposed());
 	sh->setValue("n_LightSize", l->getSize() * l->getScale());
 	sh->setValue("n_LightMatrix", lightMatrix);
-	getBox().draw(getLightMaterial<Box>(), VertexAttribs(), RenderFlag::NoShader);
+	getBox().draw(getLightMaterial<Box>());
 }
 
 void lightGeometryPass(const PointLight *l, ShaderInstance *, const math::Vec3 &) {
 	GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
-	getSphere().draw(getLightMaterial<Point>(), VertexAttribs(), RenderFlag::NoShader);
+	getSphere().draw(getLightMaterial<Point>());
 }
 
 void lightGeometryPass(const SpotLight *l, ShaderInstance *sh, const math::Vec3 &) {
 	GLContext::getContext()->setModelMatrix(math::Transform<>(l->getPosition(), l->getRadius() + 1).getMatrix());
 	sh->setValue("n_LightCosCutOff", cos(l->getCutOff() * 0.5));
 	sh->setValue("n_LightExponent", l->getExponent());
-	getSphere().draw(getLightMaterial<Spot>(), VertexAttribs(), RenderFlag::NoShader);
+	getSphere().draw(getLightMaterial<Spot>());
 }
 
 

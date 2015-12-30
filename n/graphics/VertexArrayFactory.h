@@ -75,9 +75,9 @@ class VertexArrayFactory : NonCopyable
 		friend class VertexArrayObject<T>;
 		friend class DrawCommandBuffer;
 
-		TypedDynamicBuffer<Vertex<T>, ArrayBuffer> vertices;
-		TypedDynamicBuffer<uint, IndexBuffer> indexes;
-		StaticBuffer<uint, ArrayBuffer> *ids;
+		TypedDynamicBuffer<Vertex<T>, ArrayBufferObject> vertices;
+		TypedDynamicBuffer<uint, IndexBufferObject> indexes;
+		StaticBuffer<uint, ArrayBufferObject> *ids;
 		gl::Handle handle;
 
 		core::Array<Empty> vertexEmpties;
@@ -135,7 +135,7 @@ class VertexArrayFactory : NonCopyable
 			for(uint i = 0; i != 2048; i++) {
 				idArray.append(i);
 			}
-			ids = new StaticBuffer<uint, ArrayBuffer>(idArray);
+			ids = new StaticBuffer<uint, ArrayBufferObject>(idArray);
 
 			vertexEmpties.append(Empty{0, vertices.size()});
 			indexEmpties.append(Empty{0, indexes.size()});

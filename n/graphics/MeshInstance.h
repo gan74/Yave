@@ -38,7 +38,7 @@ class SubMeshInstance
 		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m);
 		SubMeshInstance(const VertexArrayObject<> &b, const Material &m);
 
-		void draw(const VertexAttribs &attribs = VertexAttribs(), uint renderFlags = RenderFlag::None, uint instances = 1, uint base = 0) const;
+		void draw(RenderFlag renderFlags = RenderFlag::None, uint instances = 1, uint base = 0) const;
 		const Material &getMaterial() const;
 		float getRadius() const;
 		const VertexArrayObject<> &getVertexArrayObject() const;
@@ -65,7 +65,7 @@ namespace internal {
 			MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material());
 			~MeshInstance();
 
-			void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const;
+			void draw(RenderFlag flags = RenderFlag::None) const;
 			float getRadius() const;
 			const_iterator begin() const;
 			const_iterator end() const;
@@ -88,7 +88,7 @@ class MeshInstance : public assets::Asset<internal::MeshInstance>
 		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m = Material());
 
 		float getRadius() const;
-		void draw(const VertexAttribs &attribs = VertexAttribs(), uint instances = 1) const;
+		void draw(RenderFlag flags = RenderFlag::None) const;
 		const_iterator begin() const;
 		const_iterator end() const;
 		core::Array<SubMeshInstance *> getBases() const;

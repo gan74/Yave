@@ -35,12 +35,12 @@ struct BindingData
 };
 
 
-TextureBinding::TextureBinding() : sampler(TextureSampler::Default) {
+TextureBinding::TextureBinding() : sampler(TextureSampler::MaxSamplers) {
 }
 
 void TextureBinding::bind(uint slot) const {
-	static gl::Handle samplers[TextureSampler::Default][2] = {{0}};
-	TextureSampler smp = sampler == TextureSampler::Default ? GLContext::getContext()->getDefaultSampler() : sampler;
+	static gl::Handle samplers[TextureSampler::MaxSamplers][2] = {{0}, {0}};
+	TextureSampler smp = sampler;
 	BindingData t;
 	if(tex) {
 		t.handle = tex->handle;

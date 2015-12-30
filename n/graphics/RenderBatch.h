@@ -27,16 +27,16 @@ namespace graphics {
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<> &m, SubMeshInstance *i, const VertexAttribs &attr = VertexAttribs(), uint renderFlags = RenderFlag::None, bool instaciate = true) : instanciable(instaciate), flags(renderFlags), inst(i), matrix(m), attribs(attr) {
+		RenderBatch(const math::Matrix4<> &m, SubMeshInstance *i, RenderFlag renderFlags = RenderFlag::None, bool instaciate = true) : instanciable(instaciate), flags(renderFlags), inst(i), matrix(m) {
 		}
 
-		void operator()(uint renderFlags = RenderFlag::None) const {
+		void operator()(RenderFlag renderFlags = RenderFlag::None) const {
 			GLContext::getContext()->setModelMatrix(matrix);
-			inst->draw(attribs, renderFlags | renderFlags);
+			inst->draw(renderFlags | renderFlags);
 		}
 
-		void operator()(uint renderFlags, uint instances, uint base) const {
-			inst->draw(attribs, renderFlags | renderFlags, instances, base);
+		void operator()(RenderFlag renderFlags, uint instances, uint base) const {
+			inst->draw(renderFlags | renderFlags, instances, base);
 		}
 
 		bool isInstanciable() const {
@@ -69,11 +69,10 @@ class RenderBatch
 
 	private:
 		bool instanciable;
-		uint flags;
+		RenderFlag flags;
 
 		SubMeshInstance *inst;
 		math::Matrix4<> matrix;
-		VertexAttribs attribs;
 };
 
 }

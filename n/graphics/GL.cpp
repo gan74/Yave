@@ -86,7 +86,7 @@ TextureFormat getTextureFormat(ImageFormat format) {
 			return TextureFormat(GL_RG, GL_RG16, GL_UNSIGNED_SHORT);
 		break;
 		case ImageFormat::RG16F:
-			return TextureFormat(GL_RG, GL_RG16F, GL_UNSIGNED_SHORT);
+			return TextureFormat(GL_RG, GL_RG16F, GL_FLOAT);
 		break;
 		case ImageFormat::RG32F:
 			return TextureFormat(GL_RG, GL_RG32F, GL_FLOAT);
@@ -101,7 +101,7 @@ TextureFormat getTextureFormat(ImageFormat format) {
 			return TextureFormat(GL_RGBA, GL_RGBA16, GL_UNSIGNED_SHORT);
 		break;
 		case ImageFormat::RGBA16F:
-			return TextureFormat(GL_RGBA, GL_RGBA16F, GL_UNSIGNED_SHORT);
+			return TextureFormat(GL_RGBA, GL_RGBA16F, GL_FLOAT);
 		break;
 		default:
 			return fatal("Unsuported texture format.");
@@ -144,8 +144,8 @@ GLenum blendModeSrc[] = {GL_ONE, GL_ONE, GL_SRC_ALPHA};
 GLenum blendModeDst[] = {GL_ZERO, GL_ONE, GL_ONE_MINUS_SRC_ALPHA};
 GLenum cullMode[] = {GL_BACK, GL_FRONT, GL_NONE};
 GLenum intParams[] = {GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_ATTRIBS, GL_MAX_VARYING_VECTORS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_MAX_SHADER_STORAGE_BLOCK_SIZE, GL_MAJOR_VERSION, GL_MINOR_VERSION};
-GLenum magSamplers[] {GL_NEAREST, GL_LINEAR, GL_LINEAR};
-GLenum minSamplers[] {GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR};
+GLenum magSamplers[] {GL_NEAREST, GL_LINEAR};
+GLenum minSamplers[] {GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR};
 GLenum cubeFace[] = {GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X};
 
 
@@ -338,10 +338,22 @@ Handle createShader(ShaderType type) {
 Handle createSampler(TextureSampler sampler, bool mipmap) {
 	Handle h = 0;
 	glGenSamplers(1, &h);
-	glSamplerParameteri(h, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glSamplerParameteri(h, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glSamplerParameteri(h, GL_TEXTURE_MAG_FILTER, magSamplers[sampler]);
-	glSamplerParameteri(h, GL_TEXTURE_MIN_FILTER, (mipmap ? minSamplers : magSamplers)[sampler]);
+	glSamplerParameteri(h, GL_TEXTURE_MAG_FILTER, magSamplers[sampler & ~(Clamp | MipmapLinear)]);
+	if(mipmap) {
+		glSamplerParameteri(h, GL_TEXTURE_MIN_FILTER, minSamplers[sampler & ~Clamp]);
+	} else {
+		glSamplerParameteri(h, GL_TEXTURE_MIN_FILTER, magSamplers[sampler & ~(Clamp | MipmapLinear)]);
+	}
+
+	if(sampler & Clamp) {
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	} else {
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_R, GL_REPEAT);
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glSamplerParameteri(h, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	}
 	return h;
 }
 
@@ -699,8 +711,8 @@ void generateMipmap(TextureType type) {
 	glGenerateMipmap(textureType[type]);
 }
 
-uint64 getTextureSamplerHandle(Handle tex, TextureSampler smp, bool mipmap) {
-	static Handle samplers[Default + 1][2] = {{0}, {0}};
+uint64 getTextureBindlessHandle(Handle tex, TextureSampler smp, bool mipmap) {
+	static Handle samplers[TextureSampler::MaxSamplers][2] = {{0}, {0}};
 	if(!samplers[smp][mipmap]) {
 		samplers[smp][mipmap] = createSampler(smp, mipmap);
 	}

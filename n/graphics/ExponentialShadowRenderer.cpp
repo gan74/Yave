@@ -58,7 +58,7 @@ void ExponentialShadowRenderer::render(void *ptr) {
 	ShaderInstance *sh = getExpShader(exponent);
 	sh->setValue(SVTexture0, child->getShadowMap());
 	sh->bind();
-	GLContext::getContext()->getScreen().draw(MaterialRenderData(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::R32F);
 
@@ -67,11 +67,11 @@ void ExponentialShadowRenderer::render(void *ptr) {
 
 	temp->bind();
 	blurs[0]->bind();
-	GLContext::getContext()->getScreen().draw(MaterialRenderData(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 	getFrameBuffer().bind();
 	blurs[1]->bind();
-	GLContext::getContext()->getScreen().draw(MaterialRenderData(), VertexAttribs(), RenderFlag::NoShader);
+	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 	blurs[1]->unbind();
 	GLContext::getContext()->getFrameBufferPool().add(temp);
