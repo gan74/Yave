@@ -17,12 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ParticleSystem.h"
 #include "ShaderInstance.h"
 
-#include <iostream>
-
 namespace n {
 namespace graphics {
 
-static ShaderInstance *getShader() {
+/*static ShaderInstance *getShader() {
 	static ShaderInstance *shader = 0;
 	if(!shader) {
 		shader = new ShaderInstance(
@@ -30,6 +28,9 @@ static ShaderInstance *getShader() {
 				"out vec4 n_0;"
 				"out vec4 n_1;"
 				"out vec4 n_2;"
+
+				"in float life;"
+
 				"void main() {"
 					"vec4 color = vec4(1, 0, 0, 1);"
 					"float metal = 0;"
@@ -65,14 +66,16 @@ static ShaderInstance *getShader() {
 				"uniform vec2 n_ViewportSize;"
 
 				"in Particle particle[1];"
+				"out float life;"
 
 				"vec2 quad[4] = vec2[](vec2(-1, 1), vec2(-1, -1), vec2(1, 1), vec2(1, -1));"
 
 				"void main() {"
 					"if(particle[0].life > 0) {"
+						"life = particle[0].life;"
 						"float yRatio = n_ViewportSize.x / n_ViewportSize.y;"
 						"for(int i = 0; i != 4; i++) {"
-							"gl_Position = particle[0].position + vec4(quad[i].x, quad[i].y * yRatio, 0, 0);"
+							"gl_Position = particle[0].position + vec4(quad[i].x, quad[i].y * yRatio, 0, 0) * 0.1;"
 							"EmitVertex();"
 						"}"
 					"}"
@@ -135,11 +138,12 @@ void ParticleSystem::draw() {
 
 	MaterialRenderData rd;
 	rd.cullMode = DontCull;
+	rd.blendMode = SrcAlpha;
 	rd.bind();
 	ShaderInstance::validateState();
 
 	gl::drawNoAttrib(particles.size());
-}
+}*/
 
 
 }

@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class ParticleSystem : public Transformable, public Renderable
+/*class ParticleSystem : public Transformable, public Renderable
 {
 	public:
 		static uint getMaxParticles();
@@ -37,7 +37,6 @@ class ParticleSystem : public Transformable, public Renderable
 		void addEmiter(const ParticleEmitter &emitter);
 
 		virtual void render(RenderQueue &q, RenderFlag) override;
-
 		virtual void update(float sec);
 
 	private:
@@ -47,7 +46,7 @@ class ParticleSystem : public Transformable, public Renderable
 		UniformBuffer<Particle> particles;
 
 
-};
+};*/
 
 }
 }

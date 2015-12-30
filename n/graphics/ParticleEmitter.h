@@ -17,70 +17,61 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_GRAPHICS_PARTICLEEMITTER
 #define N_GRAPHICS_PARTICLEEMITTER
 
-#include <n/math/PrecomputedDistribution.h>
+#include <n/math/RandomDistribution.h>
+#include <n/math/PrecomputedRange.h>
 #include <n/math/Vec.h>
 #include "Particle.h"
+#include "DynamicBuffer.h"
+#include "Renderable.h"
+#include "Transformable.h"
 
 namespace n {
 namespace graphics {
 
-class ParticleEmitter
+class ParticleEmitter : public Transformable, public Renderable
 {
-	typedef math::PrecomputedDistribution<math::Vec3> F3;
-	typedef math::PrecomputedDistribution<float> F1;
-
 	public:
 		static constexpr uint Unlimited = uint(-1);
-		ParticleEmitter(const F3 &position, const F3 &velocity, const F1 &life) : flow(10), fraction(0), tank(Unlimited), index(7), positions(position), velocities(velocity), lives(life) {
-		}
+		static uint getMaxParticles();
 
-		float getFlow() const {
-			return flow;
-		}
+		ParticleEmitter(uint max = 128);
+		virtual ~ParticleEmitter();
 
-		uint getTank() const {
-			return tank;
-		}
+		virtual void render(RenderQueue &q, RenderFlag) override;
+		virtual void update(float sec);
 
-		void setFlow(float f) {
-			flow = f;
-		}
+		void setPositionDistribution(math::RandomDistribution<math::Vec3> *p);
+		void setVelocityDistribution(math::RandomDistribution<math::Vec3> *v);
+		void setLifeDistribution(math::RandomDistribution<float> *l);
+		void setSizeOverLife(const math::PrecomputedRange<math::Vec2> &s);
 
-		void setTank(uint t) {
-			tank = t;
-		}
+		float getFlow() const;
+		uint getTank() const;
+		uint getMaxSize() const;
 
-		Particle emit() {
-			Particle p;
-			p.position = math::Vec4(positions[index], 1.0);
-			p.velocity =  math::Vec4(velocities[index], 0.0);
-			p.life = 1;
-			p.dLife = 1.0 / lives[index];
-			index++;
-			return p;
-		}
+		void setFlow(float f);
+		void setTank(uint t);
 
-		uint computeEmition(float sec) {
-			float f = std::min(float(tank), flow * sec + fraction);
-			uint intFlow = f;
-			fraction = f - intFlow;
-			if(tank != Unlimited) {
-				tank -= intFlow;
-			}
-			return intFlow;
-		}
-
+		Particle emit();
 
 	private:
-		float flow;
-		float fraction;
+		uint computeEmition(float sec);
+		math::Vec3 evalPosition();
+		math::Vec3 evalVelocity();
+		float evalDLife();
 
+		UniformBuffer<Particle> particles;
+
+		float flow;
 		uint tank;
 
-		uint index;
-		math::PrecomputedDistribution<math::Vec3> positions;
-		math::PrecomputedDistribution<math::Vec3> velocities;
-		math::PrecomputedDistribution<float> lives;
+		float fraction;
+
+		math::RandomDistribution<math::Vec3> *positions;
+		math::RandomDistribution<math::Vec3> *velocities;
+		math::RandomDistribution<float> *lives;
+		math::PrecomputedRange<math::Vec2> sizes;
+
 };
 
 }

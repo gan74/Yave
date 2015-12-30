@@ -24,6 +24,8 @@ namespace n {
 uint random(uint max, uint min = 0);
 float random();
 
+float randomGauss(float var, float med);
+
 }
 
 #endif // N_UTILS_RANDOM

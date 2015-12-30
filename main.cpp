@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 		for(uint j = 0; j != max; j++) {
 			auto m = new MaterialTest(i / float(max), j / float(max));
 			m->setScale(scale);
-			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, 1) * m->getRadius() * 2.5);
+			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, -1) * m->getRadius() * 2.5);
 			scene.insert(m);
 		}
 	}
@@ -58,18 +58,11 @@ int main(int argc, char **argv) {
 		scene.insert(l);
 	}
 
-	uint parts = ParticleSystem::getMaxParticles();
-	std::cout<<"MAX = "<<parts<<std::endl;
-	ParticleSystem *particles = new ParticleSystem(parts);
-
-	Array<Vec3> distr({Vec3(0.1, 0.1, 1) * 30, Vec3(-0.1, 0.1, 1) * 30, Vec3(-0.1, -0.1, 1) * 30, Vec3(0.1, -0.1, 1) * 30, Vec3(0.1, 0.1, 1) * 30});
-	uint index = 0;
-	LinearInterpolator<Vec3> inter(distr.mapped([&](Vec3 v) {
-		return LinearInterpolator<Vec3>::Element(index++, v);
-	}));
-	ParticleEmitter em(PrecomputedDistribution<Vec3>(Vec3(0)), inter.toDistribution(512), PrecomputedDistribution<float>(5));
-	em.setFlow(parts * 0.2);
-	particles->addEmiter(em);
+	uint parts = ParticleEmitter::getMaxParticles();
+	ParticleEmitter *particles = new ParticleEmitter(parts);
+	particles->setVelocityDistribution(new UniformVec3Distribution<>(Vec3(0, 0, 1), pi * 0.5, 20, 20));
+	particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.1), Vec2(0.0)})));
+	particles->setFlow(parts);
 	scene.insert(particles);
 
 

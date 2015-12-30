@@ -24,23 +24,27 @@ namespace graphics {
 
 struct Particle
 {
-	math::Vec4 position;
-	math::Vec4 velocity;
+	math::Vec3 position;
 	float life;
+	math::Vec3 velocity;
 	float dLife;
-	int material;
-	float padding;
+
+	math::Vec2 size;
+
+	math::Vec2 padding;
 
 
 	static core::String toShader() {
 		return
 			"struct Particle {"
-				"vec4 position;"
-				"vec4 velocity;"
+				"vec3 position;"
 				"float life;"
+
+				"vec3 velocity;"
 				"float dLife;"
-				"int material;"
-				"float padding;"
+
+				"vec2 size;"
+				"vec2 padding;"
 			"};";
 	}
 };

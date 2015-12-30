@@ -60,7 +60,7 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 
 			"flat out uint n_InstanceID;",
 
-			""
+			"flat out uint n_InstanceID;"
 	};
 	uint bufferSize = UniformBuffer<math::Matrix4<>>::getMaxSize();
 	core::String ver = core::String("#version ") + vers + "\n#extension GL_ARB_bindless_texture : enable \n";

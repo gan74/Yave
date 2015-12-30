@@ -35,14 +35,11 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 
 						"N_DECLARE_MODEL_MATRIX"
 
-						"uniform vec3 n_Camera;"
-
 						"out vec3 n_Position;"
 						"out vec4 n_ScreenPosition;"
 						"out vec3 n_Normal;"
 						"out vec3 n_Tangent;"
 						"out vec3 n_Binormal;"
-						"out vec3 n_View;"
 						"out vec2 n_TexCoord;"
 
 						"void main() {"
@@ -51,7 +48,6 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 							"gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * model;"
 							//"gl_Position *= gl_Position.w;"//-----------------------------------------------------------------
 							"n_Position = model.xyz;"
-							"n_View = normalize(n_Camera - model.xyz);"
 							"n_Normal = mat3(modelMat) * n_VertexNormal;"
 							"n_Tangent = mat3(modelMat) * n_VertexTangent;"
 							"n_TexCoord = n_VertexCoord;"
@@ -70,7 +66,6 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 						"out vec3 n_Normal;"
 						"out vec3 n_Tangent;"
 						"out vec3 n_Binormal;"
-						"out vec3 n_View;"
 						"out vec2 n_TexCoord;"
 
 						"void main() {"

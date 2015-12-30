@@ -488,7 +488,7 @@ void setBlendMode(BlendMode mode) {
 			glDisable(GL_BLEND);
 		} else {
 			if(current == BlendMode::DontBlend) {
-				glEnable(GL_BLEND);
+				glEnablei(GL_BLEND, 0);
 			}
 			glBlendFunc(blendModeSrc[mode], blendModeDst[mode]);
 		}

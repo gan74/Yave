@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_PRECOMPUTEDDISTRIBUTION
-#define N_MATH_PRECOMPUTEDDISTRIBUTION
+#ifndef N_MATH_PRECOMPUTEDRANGE
+#define N_MATH_PRECOMPUTEDRANGE
 
 #include <n/core/Array.h>
 
@@ -23,13 +23,13 @@ namespace n {
 namespace math {
 
 template<typename T>
-class PrecomputedDistribution // assumed continuous and key in [0, 1]
+class PrecomputedRange // assumed continuous and key in [0, 1]
 {
 	public:
-		PrecomputedDistribution(const core::Array<T> &values) : pts(values) {
+		PrecomputedRange(const core::Array<T> &values) : pts(values) {
 		}
 
-		PrecomputedDistribution(const T &u) : pts({u}) {
+		PrecomputedRange(const T &u) : pts({u}) {
 		}
 
 		template<typename K>
@@ -66,5 +66,5 @@ class PrecomputedDistribution // assumed continuous and key in [0, 1]
 }
 }
 
-#endif // N_MATH_PRECOMPUTEDDISTRIBUTION
+#endif // N_MATH_PRECOMPUTEDRANGE
 

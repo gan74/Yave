@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Array.h>
 #include <n/core/Pair.h>
 #include "Vec.h"
-#include "PrecomputedDistribution.h"
+#include "PrecomputedRange.h"
 
 namespace n {
 namespace math {
@@ -33,7 +33,7 @@ class Interpolator
 		}
 
 		virtual T eval(K key) const = 0;
-		virtual PrecomputedDistribution<T> toDistribution(uint pCount = 0) const = 0;
+		virtual PrecomputedRange<T> toPrecomputedRange(uint pCount = 0) const = 0;
 
 		T operator()(K key) const {
 			return eval(key);
@@ -72,14 +72,14 @@ class LinearInterpolator : public Interpolator<T, K>
 			return lerp(pts[it], pts[it + 1], key);
 		}
 
-		virtual PrecomputedDistribution<T> toDistribution(uint pCount = 0) const override {
+		virtual PrecomputedRange<T> toPrecomputedRange(uint pCount = 0) const override {
 			pCount = pCount ? pCount : std::min(pts.size() - 1, 512u);
 			K incr = (pts.last()._1 - pts.first()._1) / pCount;
 			core::Array<T, core::OptimalArrayResizePolicy> distr(pCount + 1);
 			for(uint i = 0; i != pCount + 1; i++) {
 				distr.append(eval(i * incr));
 			}
-			return PrecomputedDistribution<T>(distr);
+			return PrecomputedRange<T>(distr);
 		}
 
 
