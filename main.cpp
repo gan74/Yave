@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 
 	PerspectiveCamera cam;
 	cam.setPosition(Vec3(-25, 0, 25));
-	cam.setRatio(16/9.0);
+	cam.setRatio(1.0);
 	cam.setForward(-cam.getPosition());
 
 	Scene scene;
@@ -60,10 +60,11 @@ int main(int argc, char **argv) {
 
 	uint parts = ParticleEmitter::getMaxParticles();
 	ParticleEmitter *particles = new ParticleEmitter(parts);
-	particles->setVelocityDistribution(new UniformVec3Distribution<>(Vec3(0, 0, 1), pi * 0.5, 20, 20));
-	particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.2), Vec2(0.22), Vec2(0)})));
-	particles->setLifeDistribution(new UniformDistribution<float>(1.5, 2.2));
-	particles->setFlow(parts * 0.2);
+	particles->setVelocityDistribution(new UniformVec3Distribution<>(Vec3(0, 1, 1), 0, 2, 2));
+	particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.2), Vec2(0.2), Vec2(0)})));
+	particles->setLifeDistribution(new UniformDistribution<float>(20, 20));
+	particles->setFlow(2);
+	particles->setShape(ParticleEmitter::VelocityAlligned);
 	scene.insert(particles);
 
 

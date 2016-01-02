@@ -67,6 +67,7 @@ void MaterialData::bind(uint flags) const {
 		gl::setDepthMask(render.depthWrite);
 		return;
 	}
+	render.bind(flags);
 	if(!(flags & RenderFlag::NoShader)) {
 		prog.bind();
 	}

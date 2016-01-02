@@ -84,7 +84,7 @@ class UniformVec3Distribution : public RandomDistribution<Vec<3, T>>
 			Vec<3, T> up = fabs(direction.dot(Vec<3, T>(0, 0, 1))) > 0.999 ? Vec<3, T>(1, 0, 0) : Vec<3, T>(0, 0, 1);
 			Vec<3, T> side = direction.cross(up).normalized();
 			up = direction.cross(side);
-			matrix = Matrix3<T>(up, side, direction);
+			matrix = Matrix3<T>(up, side, direction).transposed();
 		}
 
 		virtual ~UniformVec3Distribution() {

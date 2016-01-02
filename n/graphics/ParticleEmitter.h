@@ -31,6 +31,14 @@ namespace graphics {
 class ParticleEmitter : public Transformable, public Renderable
 {
 	public:
+		enum ParticleShape
+		{
+			ScreenAlligned = 0,
+			VelocityAlligned = 1,
+
+			MaxShape = 2
+		};
+
 		static constexpr uint Unlimited = uint(-1);
 		static uint getMaxParticles();
 
@@ -47,6 +55,9 @@ class ParticleEmitter : public Transformable, public Renderable
 		void setSizeOverLife(const Texture &s);
 		void setColorOverLife(const math::PrecomputedRange<Color<>> &c);
 		void setColorOverLife(const Texture &c);
+		void setAcceleration(const math::Vec3 &f);
+		void setMaterial(Material mat);
+		void setShape(ParticleShape sh);
 
 		float getFlow() const;
 		uint getTank() const;
@@ -74,8 +85,13 @@ class ParticleEmitter : public Transformable, public Renderable
 		math::RandomDistribution<math::Vec3> *velocities;
 		math::RandomDistribution<float> *lives;
 
+		math::Vec3 accel;
+
+		ParticleShape shape;
+
 		Texture sizes;
 		Texture colors;
+		Material material;
 
 };
 

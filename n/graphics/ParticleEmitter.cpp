@@ -17,91 +17,120 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ParticleEmitter.h"
 #include "FrameBuffer.h"
 
+#include <iostream>
+
 namespace n {
 namespace graphics {
 
-static ShaderInstance *getShader() {
-	static ShaderInstance *shader = 0;
+static Shader<FragmentShader> *getDefaultFrag() {
+	static Shader<FragmentShader> *shader = 0;
 	if(!shader) {
-		shader = new ShaderInstance(
-			new Shader<FragmentShader>(
-				"out vec4 n_0;"
-				"out vec4 n_1;"
-				"out vec4 n_2;"
+		shader = new Shader<FragmentShader>(
+			"out vec4 n_0;"
+			"out vec4 n_1;"
+			"out vec4 n_2;"
 
-				"in vec4 n_ParticleColor;"
+			"in vec4 n_ParticleColor;"
 
-				"void main() {"
-					"vec4 color = n_ParticleColor;"
-					"float metal = 0;"
-					"float roughness = 1.0;"
-					"vec3 normal = vec3(0, 0, 1);"
-					"n_0 = n_gbuffer0(color, normal, roughness, metal);"
-					"n_1 = n_gbuffer1(color, normal, roughness, metal);"
-					"n_2 = n_gbuffer2(color, normal, roughness, metal);"
-				"}"),
-			new Shader<VertexShader>(
-				Particle::toShader() +
+			"in vec2 n_TexCoord;"
 
-				"const uint MAX = 1024;"
-
-				"uniform n_ParticleBuffer { "
-					"Particle particles[MAX];"
-				"};"
-
-				"out Particle particle;"
-
-				"void main() {"
-					"particle = particles[gl_VertexID];"
-					"gl_Position = vec4(0.0);"
-				"}"),
-			new Shader<GeometryShader>(
-				Particle::toShader() +
-				"layout(points) in;"
-				"layout(triangle_strip, max_vertices = 4) out;"
-
-				"uniform vec2 n_ViewportSize;"
-				"uniform mat4 n_ViewProjectionMatrix;"
-
-				"uniform sampler2D n_SizeOverLife;"
-				"uniform sampler2D n_ColorOverLife;"
-
-				"out vec3 n_Position;"
-				"out vec4 n_ScreenPosition;"
-				"out vec2 n_TexCoord;"
-				"out vec4 n_ParticleColor;"
-
-				"in Particle particle[1];"
-
-				"vec2 quad[4] = vec2[](vec2(-1, 1), vec2(-1, -1), vec2(1, 1), vec2(1, -1));"
-				"vec2 coords[4] = vec2[](vec2(-1, 1), vec2(-1, -1), vec2(1, 1), vec2(1, -1));"
-
-				"void main() {"
-					"n_InstanceID = 0;"
-					"if(particle[0].life > 0) {"
-						"float iLife = 1.0 - saturate(particle[0].life);"
-						"float yRatio = n_ViewportSize.x / n_ViewportSize.y;"
-						"vec4 basePos = n_ScreenPosition = n_ViewProjectionMatrix * vec4(n_Position = particle[0].position, 1.0);"
-						"vec2 size = texture(n_SizeOverLife, vec2(iLife, 0.5)).xy;"
-						"size.y *= yRatio;"
-						"n_ParticleColor = texture(n_ColorOverLife, vec2(iLife, 0.5));"
-						"for(int i = 0; i != 4; i++) {"
-							"n_TexCoord = coords[i];"
-							"gl_Position = basePos + vec4(quad[i] * size, 0, 0);"
-							"EmitVertex();"
-						"}"
-					"}"
-				"}"
-			));
+			"void main() {"
+				"vec4 color = n_ParticleColor;"
+				/*"float l = length(n_TexCoord - vec2(0.5)) * 2.0;"
+				"vec4 color = vec4(saturate(1.0 - l));"*/
+				"float metal = 0;"
+				"float roughness = 1.0;"
+				"vec3 normal = vec3(0, 0, 1);"
+				"n_0 = n_gbuffer0(color, normal, roughness, metal);"
+				"n_1 = n_gbuffer1(color, normal, roughness, metal);"
+				"n_2 = n_gbuffer2(color, normal, roughness, metal);"
+			"}");
 	}
 	return shader;
+}
+
+static Shader<VertexShader> *getDefaultVert() {
+	static Shader<VertexShader> *shader = 0;
+	if(!shader) {
+		shader = new Shader<VertexShader>(
+			Particle::toShader() +
+			"const uint MAX = 1024;"
+
+			"uniform n_ParticleBuffer { "
+				"Particle particles[MAX];"
+			"};"
+
+			"out Particle particle;"
+
+			"void main() {"
+				"particle = particles[gl_VertexID];"
+				"gl_Position = vec4(0.0);"
+			"}");
+	}
+	return shader;
+}
+
+
+static Shader<GeometryShader> *getDefaultGeom(ParticleEmitter::ParticleShape shape) {
+	static Shader<GeometryShader> *shaders[ParticleEmitter::MaxShape] = {0};
+	if(!shaders[shape]) {
+		shaders[shape] = new Shader<GeometryShader>(
+			Particle::toShader() +
+			"layout(points) in;"
+			"layout(triangle_strip, max_vertices = 4) out;"
+
+			"uniform vec2 n_ViewportSize;"
+			"uniform mat4 n_ViewProjectionMatrix;"
+			"uniform vec3 n_Forward;"
+
+			"uniform sampler2D n_SizeOverLife;"
+			"uniform sampler2D n_ColorOverLife;"
+
+			"out vec3 n_Position;"
+			"out vec4 n_ScreenPosition;"
+			"out vec2 n_TexCoord;"
+			"out vec4 n_ParticleColor;"
+
+			"in Particle particle[1];"
+
+			"vec2 quad[4] = vec2[](vec2(-1, 1), vec2(-1, -1), vec2(1, 1), vec2(1, -1));"
+			"vec2 coords[4] = vec2[](vec2(0, 1), vec2(0, 0), vec2(1, 1), vec2(1, 0));"
+
+			"void main() {"
+				"n_InstanceID = 0;"
+				"if(particle[0].life > 0) {"
+					"float yRatio = n_ViewportSize.x / n_ViewportSize.y;"
+					"float iLife = 1.0 - saturate(particle[0].life);"
+					"vec2 size = texture(n_SizeOverLife, vec2(iLife, 0.5)).xy;"
+					"size.y *= yRatio;"
+					"n_ParticleColor = texture(n_ColorOverLife, vec2(iLife, 0.5));"
+					"vec4 basePos = n_ViewProjectionMatrix * vec4(n_Position = particle[0].position, 1.0);"
+					"vec3 side = normalize(cross(n_Forward, particle[0].velocity));"
+					"for(int i = 0; i != 4; i++) {"
+						"n_TexCoord = coords[i];"
+						"vec2 v = quad[i] * size;"
+						+ (shape == ParticleEmitter::VelocityAlligned
+							? "gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * vec4(particle[0].position + v.x * particle[0].velocity + v.y * side, 1);"
+							: "gl_Position = n_ScreenPosition = basePos + vec4(v, 0, 0);"
+						) +
+						"EmitVertex();"
+					"}"
+				"}"
+			"}");
+	}
+	return shaders[shape];
 }
 
 uint ParticleEmitter::getMaxParticles() {
 	return UniformBuffer<Particle>::getMaxSize();
 }
 
-ParticleEmitter::ParticleEmitter(uint max) : particles(max), flow(10), tank(Unlimited), fraction(0), positions(0), velocities(0), lives(0) {
+ParticleEmitter::ParticleEmitter(uint max) : particles(max), flow(10), tank(Unlimited), fraction(0), positions(0), velocities(0), lives(0), shape(ScreenAlligned) {
+	radius = -1;
+	MaterialData md;
+	md.render.blendMode = SrcAlpha;
+	md.render.cullMode = DontCull;
+	material = Material(md);
 	setSizeOverLife(math::Vec2(0.1));
 	setColorOverLife(core::Array<Color<>>({Red, Blue}));
 	for(uint i = 0; i != particles.size(); i++) {
@@ -146,6 +175,10 @@ void ParticleEmitter::setColorOverLife(const Texture &c) {
 	colors = c;
 }
 
+void ParticleEmitter::setAcceleration(const math::Vec3 &f) {
+	accel = f;
+}
+
 float ParticleEmitter::getFlow() const {
 	return flow;
 }
@@ -164,6 +197,14 @@ void ParticleEmitter::setFlow(float f) {
 
 void ParticleEmitter::setTank(uint t) {
 	tank = t;
+}
+
+void ParticleEmitter::setMaterial(Material mat) {
+	material = mat;
+}
+
+void ParticleEmitter::setShape(ParticleShape sh) {
+	shape = sh;
 }
 
 uint ParticleEmitter::computeEmition(float sec) {
@@ -190,20 +231,25 @@ float ParticleEmitter::evalDLife() {
 
 void ParticleEmitter::render(RenderQueue &q, RenderFlag) {
 	q.insert([=](RenderFlag) {
-		ShaderInstance *sh = getShader();
-		sh->bind();
+		Shader<FragmentShader> *frag = getDefaultFrag()->bindAsDefault();
+		Shader<VertexShader> *vert = getDefaultVert()->bindAsDefault();
+		Shader<GeometryShader> *geom = getDefaultGeom(shape)->bindAsDefault();
+
+		material->bind();
+		const ShaderInstance *sh = ShaderInstance::getCurrent();
 
 		sh->setBuffer("n_ParticleBuffer", particles);
 		sh->setValue("n_SizeOverLife", sizes, TextureSampler::Bilinear | TextureSampler::Clamp);
 		sh->setValue("n_ColorOverLife", colors, TextureSampler::Bilinear | TextureSampler::Clamp);
+		sh->setValue("n_Forward", -GLContext::getContext()->getViewMatrix()[2].sub(3));
 
-		MaterialRenderData rd;
-		rd.cullMode = DontCull;
-		rd.blendMode = SrcAlpha;
-		rd.bind();
 		ShaderInstance::validateState();
 
 		gl::drawNoAttrib(particles.size());
+
+		Shader<FragmentShader>::setDefault(frag);
+		Shader<VertexShader>::setDefault(vert);
+		Shader<GeometryShader>::setDefault(geom);
 	});
 }
 
@@ -211,6 +257,7 @@ void ParticleEmitter::update(float sec) {
 	uint size = getMaxSize();
 	uint emitted = computeEmition(sec);
 
+	math::Vec3 f = accel * sec;
 	for(uint i = 0; i != size; i++) {
 		if(particles[i].life < 0) {
 			if(emitted) {
@@ -220,8 +267,8 @@ void ParticleEmitter::update(float sec) {
 			}
 		} else {
 			particles[i].position += particles[i].velocity * sec;
-			//particles[i].velocity += math::Vec4(0, 0, -9.8, 0) * sec;
 			particles[i].life -= particles[i].dLife * sec;
+			particles[i].velocity += f;
 		}
 	}
 	if(tank != Unlimited) {

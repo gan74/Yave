@@ -132,15 +132,21 @@ class Shader : public ShaderBase
 			version = load(src, vers);
 		}
 
-		static void setDefault(Shader<Type> *t) {
-			if(currents[Type] != t) {
+		static Shader<Type> *getDefault() {
+			return currents[Type];
+		}
+
+		static Shader<Type> *setDefault(Shader<Type> *t) {
+			Shader<Type> *old = reinterpret_cast<Shader<Type> *>(currents[Type]);
+			if(old != t) {
 				currents[Type] = t;
 				internal::rebindProgram();
 			}
+			return old;
 		}
 
-		void bindAsDefault() {
-			setDefault(this);
+		Shader<Type> *bindAsDefault() {
+			return setDefault(this);
 		}
 
 
