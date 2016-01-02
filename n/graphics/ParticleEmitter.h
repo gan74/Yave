@@ -31,12 +31,13 @@ namespace graphics {
 class ParticleEmitter : public Transformable, public Renderable
 {
 	public:
-		enum ParticleShape
+		enum ParticleFlags
 		{
-			ScreenAlligned = 0,
-			VelocityAlligned = 1,
+			None = 0x00,
+			VelocityOriented = 0x01,
+			VelocityScaled = 0x02,
 
-			MaxShape = 2
+			MaxFlags = 0x03
 		};
 
 		static constexpr uint Unlimited = uint(-1);
@@ -56,8 +57,9 @@ class ParticleEmitter : public Transformable, public Renderable
 		void setColorOverLife(const math::PrecomputedRange<Color<>> &c);
 		void setColorOverLife(const Texture &c);
 		void setAcceleration(const math::Vec3 &f);
+		void setDrag(float d);
 		void setMaterial(Material mat);
-		void setShape(ParticleShape sh);
+		void setFlags(ParticleFlags fl);
 
 		float getFlow() const;
 		uint getTank() const;
@@ -86,14 +88,19 @@ class ParticleEmitter : public Transformable, public Renderable
 		math::RandomDistribution<float> *lives;
 
 		math::Vec3 accel;
+		float drag;
 
-		ParticleShape shape;
+		ParticleFlags flags;
 
 		Texture sizes;
 		Texture colors;
 		Material material;
 
 };
+
+inline ParticleEmitter::ParticleFlags operator|(ParticleEmitter::ParticleFlags a, ParticleEmitter::ParticleFlags b) {
+	return ParticleEmitter::ParticleFlags(uint(a) | uint(b));
+}
 
 }
 }

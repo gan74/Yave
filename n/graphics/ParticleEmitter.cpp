@@ -71,10 +71,10 @@ static Shader<VertexShader> *getDefaultVert() {
 }
 
 
-static Shader<GeometryShader> *getDefaultGeom(ParticleEmitter::ParticleShape shape) {
-	static Shader<GeometryShader> *shaders[ParticleEmitter::MaxShape] = {0};
-	if(!shaders[shape]) {
-		shaders[shape] = new Shader<GeometryShader>(
+static Shader<GeometryShader> *getDefaultGeom(ParticleEmitter::ParticleFlags flags) {
+	static Shader<GeometryShader> *shaders[ParticleEmitter::MaxFlags] = {0};
+	if(!shaders[flags]) {
+		shaders[flags] = new Shader<GeometryShader>(
 			Particle::toShader() +
 			"layout(points) in;"
 			"layout(triangle_strip, max_vertices = 4) out;"
@@ -96,21 +96,32 @@ static Shader<GeometryShader> *getDefaultGeom(ParticleEmitter::ParticleShape sha
 			"vec2 quad[4] = vec2[](vec2(-1, 1), vec2(-1, -1), vec2(1, 1), vec2(1, -1));"
 			"vec2 coords[4] = vec2[](vec2(0, 1), vec2(0, 0), vec2(1, 1), vec2(1, 0));"
 
+			"vec4 sampleOverLife(sampler2D smp, float iLife) {"
+				"float si = textureSize(smp, 0).x;"
+				"float offset = 0.5 / si;"
+				"float range = (si - 1) / si;"
+				"return texture(smp, vec2(iLife * range + offset, 0.5));"
+			"}"
+
 			"void main() {"
 				"n_InstanceID = 0;"
 				"if(particle[0].life > 0) {"
 					"float yRatio = n_ViewportSize.x / n_ViewportSize.y;"
 					"float iLife = 1.0 - saturate(particle[0].life);"
-					"vec2 size = texture(n_SizeOverLife, vec2(iLife, 0.5)).xy;"
+					"vec2 size = sampleOverLife(n_SizeOverLife, iLife).xy;"
 					"size.y *= yRatio;"
-					"n_ParticleColor = texture(n_ColorOverLife, vec2(iLife, 0.5));"
+					"n_ParticleColor = sampleOverLife(n_ColorOverLife, iLife);"
 					"vec4 basePos = n_ViewProjectionMatrix * vec4(n_Position = particle[0].position, 1.0);"
 					"vec3 side = normalize(cross(n_Forward, particle[0].velocity));"
+					"vec3 vel = particle[0].velocity;"
+					"float vLen = max(epsilon, length(vel));"
+					"vel /= vLen;"
+					+ (flags & ParticleEmitter::VelocityScaled ? "size *= vLen;" : "") +
 					"for(int i = 0; i != 4; i++) {"
 						"n_TexCoord = coords[i];"
 						"vec2 v = quad[i] * size;"
-						+ (shape == ParticleEmitter::VelocityAlligned
-							? "gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * vec4(particle[0].position + v.x * particle[0].velocity + v.y * side, 1);"
+						+ (flags & ParticleEmitter::VelocityOriented
+							? "gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * vec4(particle[0].position + v.x * vel + v.y * side, 1);"
 							: "gl_Position = n_ScreenPosition = basePos + vec4(v, 0, 0);"
 						) +
 						"EmitVertex();"
@@ -118,14 +129,14 @@ static Shader<GeometryShader> *getDefaultGeom(ParticleEmitter::ParticleShape sha
 				"}"
 			"}");
 	}
-	return shaders[shape];
+	return shaders[flags];
 }
 
 uint ParticleEmitter::getMaxParticles() {
 	return UniformBuffer<Particle>::getMaxSize();
 }
 
-ParticleEmitter::ParticleEmitter(uint max) : particles(max), flow(10), tank(Unlimited), fraction(0), positions(0), velocities(0), lives(0), shape(ScreenAlligned) {
+ParticleEmitter::ParticleEmitter(uint max) : particles(max), flow(10), tank(Unlimited), fraction(0), positions(0), velocities(0), lives(0), drag(0), flags(None) {
 	radius = -1;
 	MaterialData md;
 	md.render.blendMode = SrcAlpha;
@@ -179,6 +190,10 @@ void ParticleEmitter::setAcceleration(const math::Vec3 &f) {
 	accel = f;
 }
 
+void ParticleEmitter::setDrag(float d) {
+	drag = d;
+}
+
 float ParticleEmitter::getFlow() const {
 	return flow;
 }
@@ -203,8 +218,8 @@ void ParticleEmitter::setMaterial(Material mat) {
 	material = mat;
 }
 
-void ParticleEmitter::setShape(ParticleShape sh) {
-	shape = sh;
+void ParticleEmitter::setFlags(ParticleFlags fl) {
+	flags = fl;
 }
 
 uint ParticleEmitter::computeEmition(float sec) {
@@ -233,7 +248,7 @@ void ParticleEmitter::render(RenderQueue &q, RenderFlag) {
 	q.insert([=](RenderFlag) {
 		Shader<FragmentShader> *frag = getDefaultFrag()->bindAsDefault();
 		Shader<VertexShader> *vert = getDefaultVert()->bindAsDefault();
-		Shader<GeometryShader> *geom = getDefaultGeom(shape)->bindAsDefault();
+		Shader<GeometryShader> *geom = getDefaultGeom(flags)->bindAsDefault();
 
 		material->bind();
 		const ShaderInstance *sh = ShaderInstance::getCurrent();
@@ -269,6 +284,12 @@ void ParticleEmitter::update(float sec) {
 			particles[i].position += particles[i].velocity * sec;
 			particles[i].life -= particles[i].dLife * sec;
 			particles[i].velocity += f;
+		}
+	}
+	float d = drag * sec;
+	if(drag) {
+		for(uint i = 0; i != size; i++) {
+			particles[i].velocity -= particles[i].velocity * std::min(1.0f, particles[i].velocity.length() * d); // should be length2 but too strong
 		}
 	}
 	if(tank != Unlimited) {
