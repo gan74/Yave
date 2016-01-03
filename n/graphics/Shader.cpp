@@ -31,6 +31,7 @@ namespace internal {
 ShaderBase *ShaderBase::currents[3] = {0};
 
 uint ShaderBase::load(core::String src, uint vers) {
+	N_LOG_PERF;
 	src = parse(src, vers);
 	#ifdef N_SHADER_SRC
 	source = src;
@@ -55,18 +56,21 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 			"vec4 n_gbuffer2(vec4 color, vec3 normal, float roughness, float metal) {"
 				"return vec4(roughness, metal, 0.04, 0);"
 			"}"
-			"flat in uint n_InstanceID;",
+			"flat in uint n_InstanceID;"
+			"\n#define n_BufferIndex n_InstanceID\n",
 
-			"flat out uint n_InstanceID;",
+			"layout(location = 4) in uint n_DrawID;"
+			"flat out uint n_InstanceID;"
+			"\n#define n_BufferIndex (n_InstanceID = n_DrawID)\n",
 
 			"flat out uint n_InstanceID;"
 	};
 	uint bufferSize = UniformBuffer<math::Matrix4<>>::getMaxSize();
 	core::String ver = core::String("#version ") + vers + "\n#extension GL_ARB_bindless_texture : enable \n";
-	core::String model = "\n #define n_ModelMatrix n_ModelMatrices[n_DrawID] \n"
+	core::String model = "\n #define n_ModelMatrix n_ModelMatrices[n_BufferIndex] \n"
 						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(bufferSize) + "]; };";
 	core::String material = "layout(std140) uniform n_MaterialBuffer { n_MaterialType n_Materials[" + core::String(bufferSize) + "]; };"
-							"\n #define n_Material n_Materials[n_InstanceID] \n";
+							"\n #define n_Material n_Materials[n_BufferIndex] \n";
 	core::String common = "layout(std140, row_major) uniform; "
 						  "layout (std140, row_major) buffer; "
 						  "const float pi = " + core::String(math::pi) + "; "

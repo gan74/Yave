@@ -47,7 +47,7 @@ class VertexArrayObject
 		~VertexArrayObject() {
 		}
 
-		void draw(const MaterialRenderData &mat, RenderFlag renderFlags = RenderFlag::None, uint instances = 1, uint instanceBase = 0) const {
+		void draw(const MaterialRenderData &mat = MaterialRenderData(), RenderFlag renderFlags = RenderFlag::None, uint instances = 1, uint instanceBase = 0) const {
 			if(data.object) {
 				draw(mat, renderFlags, instances, data.start, data.size, data.base, instanceBase);
 			}

@@ -30,7 +30,6 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 						"layout(location = 1) in vec3 n_VertexNormal;"
 						"layout(location = 2) in vec3 n_VertexTangent;"
 						"layout(location = 3) in vec2 n_VertexCoord;"
-						"layout(location = 4) in uint n_DrawID;"
 						"uniform mat4 n_ViewProjectionMatrix;"
 
 						"N_DECLARE_MODEL_MATRIX"
@@ -59,7 +58,6 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 						"layout(location = 1) in vec3 n_VertexNormal;"
 						"layout(location = 2) in vec3 n_VertexTangent;"
 						"layout(location = 3) in vec2 n_VertexCoord;"
-						"layout(location = 4) in uint n_DrawID;"
 
 						"out vec3 n_Position;"
 						"out vec4 n_ScreenPosition;"

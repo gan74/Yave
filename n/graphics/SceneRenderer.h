@@ -93,6 +93,7 @@ class SceneRenderer : public BufferableRenderer
 			}
 			N_LOG_PERF;
 			if(!(renderFlags & RenderFlag::Overlay)) {
+				N_LOG_PERF;
 				FrameBuffer::clear(true, true);
 			}
 			FrameData *data = reinterpret_cast<FrameData *>(ptr);

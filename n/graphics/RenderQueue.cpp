@@ -51,8 +51,8 @@ void RenderQueue::prepare() {
 	});
 }
 
-
 void RenderQueue::present(RenderFlag flags) {
+	N_LOG_PERF;
 	DrawCommandBuffer buff;
 	for(const RenderBatch &r : batches) {
 		while(!buff.push(r)) {
