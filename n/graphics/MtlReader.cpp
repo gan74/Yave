@@ -26,10 +26,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String, core::String>
+class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String, core::String>,
+				  public MaterialLoader::MaterialReader<MtlReader, core::String>
 {
 	public:
-		MtlReader() : MaterialLoader::MaterialReader<MtlReader, core::String, core::String>() {
+		MtlReader() : MaterialLoader::MaterialReader<MtlReader, core::String, core::String>(), MaterialLoader::MaterialReader<MtlReader, core::String>() {
 		}
 
 		MaterialData *operator()(core::String fileName, core::String name) override {
@@ -38,6 +39,10 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 			}
 			io::File file(fileName);
 			return load(file, name);
+		}
+
+		MaterialData *operator()(core::String fileName) override {
+			return operator()(fileName, "");
 		}
 
 	private:
@@ -59,7 +64,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 			for(const core::String &li : lines) {
 				core::String l = li.trimmed();
 				if(l.beginsWith("newmtl ")) {
-					if(l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
+					if(name.isEmpty() || l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
 						if(mat) {
 							std::cerr<<"Material \""<<name<<"\""<<" is already defined"<<std::endl;
 							fatal("Material already defined");
