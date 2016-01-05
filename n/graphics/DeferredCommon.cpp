@@ -75,7 +75,7 @@ core::String getBRDFs() {
 				"return 0.5 / (GV + GL + epsilon);"
 			"}"
 
-			"float brdf_cook_torrance(vec3 L, vec3 V, vec3 N, vec4 M) {"
+			"vec3 brdf_cook_torrance(vec3 L, vec3 V, vec3 N, float roughness, vec3 F0) {"
 				"vec3 H = normalize(L + V);"
 
 				"float NoL = saturate(dot(N, L));"
@@ -83,17 +83,17 @@ core::String getBRDFs() {
 				"float VoH = saturate(dot(V, H));"
 				"float NoH = saturate(dot(N, H));"
 
-				"float roughness = saturate(M.x + epsilon);"
+				//"roughness = saturate(roughness + epsilon);"
 				"float a = sqr(roughness);"
 
 				"return "
-					"F_Schlick(VoH, M.z) * "
+					"F_Schlick(VoH, F0) * "
 					"D_GGX(NoH, a) * "
 					"V_Schlick(NoL, NoV, roughness);"
 			"}"
 
-			"float brdf_lambert(vec3 L, vec3 V, vec3 N, vec4 M) {"
-				"return 1.0 / pi;"
+			"vec3 brdf_lambert(vec3 L, vec3 V, vec3 N, float roughness, vec3 F0) {"
+				"return F0 / pi;"
 			"}"
 
 			//http://blog.selfshadow.com/publications/s2013-shading-course/#course_content

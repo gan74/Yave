@@ -211,14 +211,16 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 				"float att = attenuate(lightDir, pos, lightDist);"
 				"float NoL = saturate(dot(normal, lightDir));"
+				"float roughness = material.x + epsilon;"
 				"vec3 light = n_LightColor * NoL * att * shadow;"
 
-				"float diffuse = brdf_lambert(lightDir, view, normal, material);"
-				"float specular = brdf_cook_torrance(lightDir, view, normal, material);"
-
 				"vec3 diffuseColor = mix(albedo.rgb, vec3(0.0), metallic);"
-				"vec3 specularColor = mix(vec3(1.0), albedo.rgb, metallic);"
-				"n_Out = vec4(light * (diffuse * diffuseColor + specular * specularColor), albedo.a);"
+				"vec3 specularColor = mix(vec3(0.04), albedo.rgb, metallic);"
+
+				"vec3 diffuse = brdf_lambert(lightDir, view, normal, roughness, diffuseColor);"
+				"vec3 specular = brdf_cook_torrance(lightDir, view, normal, roughness, specularColor);"
+
+				"n_Out = vec4(light * (diffuse + specular), albedo.a);"
 
 				+ debugStrs[debug] +
 
