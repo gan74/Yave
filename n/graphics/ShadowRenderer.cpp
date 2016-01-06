@@ -60,6 +60,8 @@ void CameraShadowRenderer::render(void *ptr) {
 	SceneRenderer::FrameData *sceneData = reinterpret_cast<SceneRenderer::FrameData *>(ptr);
 	const Camera *cam = sceneData->camera;
 
+	//const FrameBufferBase *fb = GLContext::getContext()->getFrameBuffer();
+
 	gl::setColorMask(false, false, false, false);
 	/*gl::glEnable(GL_POLYGON_OFFSET_FILL);
 	gl::glPolygonOffset(4.0, 1.0);*/
@@ -69,6 +71,12 @@ void CameraShadowRenderer::render(void *ptr) {
 
 	gl::setColorMask(true, true, true, true);
 	//gl::glDisable(GL_POLYGON_OFFSET_FILL);
+
+	/*if(fb) {
+		fb->bind();
+	} else {
+		FrameBufferBase::unbind();
+	}*/
 
 	delete cam;
 }

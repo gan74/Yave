@@ -126,7 +126,6 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 															  "float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), n_LightExponent);"
 															  "return max(0.0, falloff * spotFalloff);",
 														"return 1.0;",
-														"return 1.0;"
 														"return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
 	ShaderInstance *shader = shaders[Type][debug].get(shadow, 0);
 	if(!shader) {
@@ -160,7 +159,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 			+ getBRDFs() +
 
 			"vec3 projectShadow(vec3 p) {"
-				"vec4 proj = n_LightShadowMatrix * vec4(p, 1);"
+				"vec4 proj = n_LightShadowMatrix * vec4(p, 1.0);"
 				"return (proj.xyz / proj.w) * 0.5 + 0.5;"
 			"}"
 
@@ -223,8 +222,6 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				"n_Out = vec4(light * (diffuse + specular), albedo.a);"
 
 				+ debugStrs[debug] +
-
-				//"n_Out = vec4(vec3(0.8), albedo.a);"
 
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
 		shaders[Type][debug][shadow] = shader;

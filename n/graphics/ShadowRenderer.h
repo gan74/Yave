@@ -35,7 +35,7 @@ class ShadowRenderer : public BufferedRenderer
 		ShadowRenderer(uint res, bool depth = true, Args... args) : BufferedRenderer(math::Vec2ui(res), BufferedRenderer::DiscardAllowed, depth, args...) {
 			shaderCode = "vec3 proj = projectShadow(pos);"
 						 "float d = texture(n_LightShadow, proj.xy).x;"
-						 "return step(proj.z, d);";
+						 "return step(proj.z - epsilon, d);";
 		}
 
 		const math::Matrix4<> &getProjectionMatrix() const {

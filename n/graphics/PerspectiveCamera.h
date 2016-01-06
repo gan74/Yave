@@ -103,7 +103,10 @@ class PerspectiveCamera final : public Camera
 		void computeProjectionMatrix() {
 			float f = cos(fov / 2.0) / sin(fov / 2.0);
 			float z = zFar - zNear;
-			proj = math::Matrix4<>(1.0 / (tan(fov / 2) * ratio), 0, 0, 0, 0, f, 0, 0, 0, 0, -(zFar + zNear) / z, -1, 0, 0, -(2 * zFar * zNear) / z, 0).transposed();
+			proj = math::Matrix4<>(f / ratio, 0, 0, 0,
+								   0, f, 0, 0,
+								   0, 0, -(zFar + zNear) / z, -1,
+								   0, 0, -(2 * zFar * zNear) / z, 0).transposed();
 		}
 
 		void computeFrustum() {

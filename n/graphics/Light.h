@@ -175,6 +175,14 @@ class SpotLight : public Light
 			}
 		}
 
+		void setCastUnfilteredShadows(const Scene *sc, uint res = 128) {
+			delete shadows;
+			shadows = 0;
+			if(sc) {
+				shadows = new SpotLightShadowRenderer(this, sc, res);
+			}
+		}
+
 	private:
 		float angle;
 		float exp;

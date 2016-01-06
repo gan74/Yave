@@ -45,7 +45,8 @@ int main(int argc, char **argv) {
 
 		l->setForward(Vec3(0, 1, -1));
 		l->setIntensity(5);
-		//l->setCastShadows<VarianceShadowRenderer>(&scene, 1024, 2);
+		//l->setCastShadows<>(&scene, 1024, 2);
+		l->setCastUnfilteredShadows(&scene, 1024);
 		scene.insert(l);
 	}
 

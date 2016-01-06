@@ -93,11 +93,11 @@ void Mutex::notifyAll(WaitCondition &cond) {
 }
 
 void Mutex::checkLockedByThread() const {
-	#ifdef N_DEBUG
+	/*#ifdef N_DEBUG
 	if(Thread::getCurrent() != thread) {
 		fatal("Waiting on an unlocked mutex");
 	}
-	#endif
+	#endif*/
 }
 
 
