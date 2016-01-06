@@ -20,14 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-MaterialSurfaceData::MaterialSurfaceData() : color(1, 1, 1, 1), metallic(0), normalIntencity(0.5) {
+MaterialSurfaceData::MaterialSurfaceData() : color(1, 1, 1, 1), metallic(0), normalIntensity(0.5) {
 }
 
 MaterialBufferData MaterialSurfaceData::toBufferData() const {
 	return MaterialBufferData{color,
 							  metallic,
 							  diffuse.getBindlessId() ? 1.f : 0.f,
-							  normal.getBindlessId() ? normalIntencity : 0.f,
+							  normal.getBindlessId() ? normalIntensity : 0.f,
 							  roughness.getBindlessId() ? 1.f : 0.f,
 							  diffuse.getBindlessId(),
 							  normal.getBindlessId(),

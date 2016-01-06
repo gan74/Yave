@@ -45,9 +45,9 @@ struct MaterialBufferData
 	math::Vec4 color;
 
 	float metallic;
-	float diffuseIntencity;
-	float normalIntencity;
-	float roughnessIntencity;
+	float diffuseIntensity;
+	float normalIntensity;
+	float roughnessIntensity;
 
 	uint64 diffuse;
 	uint64 normal;
@@ -67,7 +67,7 @@ struct MaterialSurfaceData
 	Texture diffuse;
 	Texture normal;
 	Texture roughness;
-	float normalIntencity;
+	float normalIntensity;
 };
 
 struct MaterialRenderData
