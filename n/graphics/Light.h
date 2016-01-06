@@ -55,11 +55,11 @@ class Light : public Movable
 			intensity = t;
 		}
 
-		bool castShadows() const {
+		ShadowRenderer *getShadowRenderer() const {
 			return shadows;
 		}
 
-		ShadowRenderer *getShadowRenderer() const {
+		virtual bool castShadows() const {
 			return shadows;
 		}
 
@@ -79,6 +79,21 @@ class DirectionalLight : public Light
 
 		virtual ~DirectionalLight() {
 		}
+
+		virtual bool castShadows() const {
+			return Light::castShadows() || castSunShadows();
+		}
+
+		bool castSunShadows() const {
+			return sunShadows;
+		}
+
+		void setCastSunShadows(bool c) {
+			sunShadows = c;
+		}
+
+	protected:
+		bool sunShadows;
 };
 
 class BoxLight : public Light

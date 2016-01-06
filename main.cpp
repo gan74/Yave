@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 
 	PerspectiveCamera cam;
 	cam.setPosition(Vec3(-25, 0, 25));
-	cam.setRatio(1.0);
+	cam.setRatio(16.0 / 9.0);
 	cam.setForward(-cam.getPosition());
 
 	Scene scene;
@@ -41,12 +41,13 @@ int main(int argc, char **argv) {
 	}*/
 
 	{
-		BoxLight *l = new BoxLight(600);
+		//BoxLight *l = new BoxLight(600);
+		DirectionalLight *l = new DirectionalLight();
 
 		l->setForward(Vec3(0, 1, -1));
 		l->setIntensity(5);
-		//l->setCastShadows<>(&scene, 1024, 2);
-		l->setCastUnfilteredShadows(&scene, 1024);
+		l->setCastSunShadows(true);
+		//l->setCastUnfilteredShadows(&scene, 1024);
 		scene.insert(l);
 	}
 

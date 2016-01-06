@@ -54,7 +54,7 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 				"return vec4(normalize(normal).xyz * 0.5 + 0.5, 0.0);"
 			"}"
 			"vec4 n_gbuffer2(vec4 color, vec3 normal, float roughness, float metal) {"
-				"return vec4(roughness, metal, 0, 0);"
+				"return vec4(roughness, metal, 0, 1.0);"
 			"}"
 			"vec4 n_gbuffer2(vec4 color, vec3 normal, float roughness, float metal, float sun) {"
 				"return vec4(roughness, metal, 0, sun);"

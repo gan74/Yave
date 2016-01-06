@@ -80,6 +80,8 @@ class GBufferRenderer : public BufferedRenderer
 
 					"N_DECLARE_MATERIAL_BUFFER"
 
+					"uniform float n_Time;"
+
 					"in vec3 n_Position;"
 					"in vec3 n_Normal;"
 					"in vec3 n_Tangent;"

@@ -78,7 +78,7 @@ BasicToneMapRenderer *tone;
 bool bench = false;
 uint rendererIndex = 0;
 
-SDL_Window *createWindow(Vec2ui winS = Vec2ui(900)) {
+SDL_Window *createWindow(Vec2ui winS = Vec2ui(1600, 900)) {
 	SetConsoleOutputCP(65001);
 	SDL_Window *mainWindow = 0;
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {

@@ -56,7 +56,7 @@ constexpr LightType getLightType<BoxLight>() {
 struct LightData
 {
 	template<typename T>
-	LightData(T *l) : light(l), shadowData(l->castShadows() ? l->getShadowRenderer()->prepare() : 0) {
+	LightData(T *l) : light(l), shadowData(l->getShadowRenderer() ? l->getShadowRenderer()->prepare() : 0) {
 		if((void *)((Light *)l) != (void *)l) {
 			fatal("Virtual inherited Light");
 		}
@@ -87,7 +87,7 @@ struct DeferredShadingRenderer::FrameData
 	void renderShadows() {
 		for(uint i = 0; i != LightType::Max; i++) {
 			lights[i].foreach([](const LightData &l) {
-				if(l.to<Light>()->castShadows()) {
+				if(l.to<Light>()->getShadowRenderer()) {
 					l.to<Light>()->getShadowRenderer()->render(l.shadowData);
 				}
 			});
@@ -97,7 +97,7 @@ struct DeferredShadingRenderer::FrameData
 	void discardShadows() {
 		for(uint i = 0; i != LightType::Max; i++) {
 			lights[i].foreach([](const LightData &l) {
-				if(l.to<Light>()->castShadows()) {
+				if(l.to<Light>()->getShadowRenderer()) {
 					l.to<Light>()->getShadowRenderer()->discardBuffer();
 				}
 			});
@@ -163,7 +163,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				"return (proj.xyz / proj.w) * 0.5 + 0.5;"
 			"}"
 
-			"float computeShadow(vec3 pos) {"
+			"float computeShadow(vec3 pos, float sunShadows) {"
 				+ shadow +
 			"}"
 
@@ -205,7 +205,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 				"float shadow = 1.0;"
 				"if(n_LightShadowMul != 0.0) {"
-					"shadow = n_LightShadowMul * computeShadow(pos);"
+					"shadow = n_LightShadowMul * computeShadow(pos, material.w);"
 				"}"
 
 				"float att = attenuate(lightDir, pos, lightDist);"
@@ -265,6 +265,23 @@ void lightGeometryPass(const SpotLight *l, ShaderInstance *sh, const math::Vec3 
 	getSphere().draw(getLightMaterial<Spot>());
 }
 
+template<typename T>
+void setupShadows(const T *l, ShaderInstance *shader) {
+	if(l->getShadowRenderer()) {
+		shader->setValue("n_LightShadow", l->getShadowRenderer()->getShadowMap());
+		shader->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
+	}
+	shader->setValue("n_LightShadowMul", l->castShadows() ? 1.0 : 0.0);
+}
+
+template<typename T>
+const core::String getShadowCode(const T *l) {
+	return l->getShadowRenderer() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;";
+}
+
+const core::String getShadowCode(const DirectionalLight *l) {
+	return l->castSunShadows() ? "return sunShadows;" : getShadowCode<DirectionalLight>(l);
+}
 
 template<typename T>
 ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
@@ -273,10 +290,10 @@ ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, Deferr
 	for(const LightData &ld : data->lights[Type]) {
 		const T *l = ld.to<T>();
 		math::Vec3 forward = -l->getTransform().getX().normalized();
-		if(l->castShadows() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
+		if(l->getShadowRenderer() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
 			l->getShadowRenderer()->render(ld.shadowData);
 		}
-		ShaderInstance *sh = getShader<Type>(l->castShadows() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;", renderer->debugMode);
+		ShaderInstance *sh = getShader<Type>(getShadowCode(l), renderer->debugMode);
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();
@@ -293,14 +310,10 @@ ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, Deferr
 		shader->setValue("n_LightRadius", l->getRadius() / l->getScale());
 		shader->setValue("n_LightColor", l->getColor().sub(3) * l->getIntensity());
 		shader->setValue("n_LightForward", forward);
-		shader->setValue("n_LightShadowMul", l->castShadows() ? 1.0 : 0.0);
-		if(l->castShadows()) {
-			shader->setValue("n_LightShadow", l->getShadowRenderer()->getShadowMap());
-			shader->setValue("n_LightShadowMatrix", l->getShadowRenderer()->getShadowMatrix());
-		}
+		setupShadows(l, shader);
 		renderer->getFrameBuffer().bind();
 		lightGeometryPass(l, shader, forward);
-		if(l->castShadows() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
+		if(l->getShadowRenderer() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
 			l->getShadowRenderer()->discardBuffer();
 		}
 	}
