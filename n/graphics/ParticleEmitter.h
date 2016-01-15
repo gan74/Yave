@@ -40,6 +40,19 @@ class ParticleEmitter : public Transformable, public Renderable
 			MaxFlags = 0x03
 		};
 
+		class Modifier
+		{
+			public:
+				virtual ~Modifier() {
+				}
+
+				void operator()(Particle &p, double dt) {
+					modify(p, dt);
+				}
+
+				virtual void modify(Particle &, double dt) = 0;
+		};
+
 		static constexpr uint Unlimited = uint(-1);
 		static uint getMaxParticles();
 
@@ -68,6 +81,8 @@ class ParticleEmitter : public Transformable, public Renderable
 		void setFlow(float f);
 		void setTank(uint t);
 
+		void addModifier(Modifier *m);
+
 		Particle emit();
 
 	private:
@@ -75,6 +90,8 @@ class ParticleEmitter : public Transformable, public Renderable
 		math::Vec3 evalPosition();
 		math::Vec3 evalVelocity();
 		float evalDLife();
+
+		core::Array<Modifier *> modifiers;
 
 		UniformBuffer<Particle> particles;
 

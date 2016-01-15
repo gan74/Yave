@@ -32,13 +32,13 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	/*{
+	{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
 		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
 		//auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
-		scene.insert(obj);
-	}*/
+		//	scene.insert(obj);
+	}
 
 	{
 		//BoxLight *l = new BoxLight(600);
@@ -46,7 +46,6 @@ int main(int argc, char **argv) {
 
 		l->setForward(Vec3(0, 1, -1));
 		l->setIntensity(5);
-		l->setCastSunShadows(true);
 		//l->setCastUnfilteredShadows(&scene, 1024);
 		scene.insert(l);
 	}
@@ -60,16 +59,31 @@ int main(int argc, char **argv) {
 		scene.insert(l);
 	}
 
+	core::Array<ParticleEmitter *> emitters;
 	uint parts = ParticleEmitter::getMaxParticles();
-	ParticleEmitter *particles = new ParticleEmitter(parts);
-	particles->setVelocityDistribution(new UniformVec3Distribution<>(Vec3(0, 0, 1), pi, 25, 50));
-	particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.04, 0.01), Vec2(0.06, 0.01), Vec2(0)})));
-	particles->setLifeDistribution(new UniformDistribution<float>(5, 10));
-	particles->setAcceleration(Vec3(0, 0, -9.8));
-	particles->setFlow(100);
-	particles->setFlags(ParticleEmitter::VelocityOriented | ParticleEmitter::VelocityScaled);
-	particles->setDrag(0.1);
-	scene.insert(particles);
+	for(uint i = 0; i != 1; i++) {
+		class TestModifier : public ParticleEmitter::Modifier
+		{
+			public:
+				virtual void modify(Particle &p, double dt) override {
+					Vec3 v = p.position - Vec3(0, 10, 10);
+					p.velocity -= (v / v.length2()) * dt * 625; // v / r not r²
+				}
+		};
+
+		ParticleEmitter *particles = new ParticleEmitter(parts);
+		particles->setVelocityDistribution(new UniformVec3Distribution<>(Vec3(0, 0, 1), pi, 25, 50));
+		particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.01, 0.0025), Vec2(0.015, 0.0025), Vec2(0)})));
+		particles->setLifeDistribution(new UniformDistribution<float>(5, 10));
+		//particles->setAcceleration(Vec3(0, 0, -9.8));
+		particles->setFlow(parts / 10.0);
+		particles->setFlags(ParticleEmitter::VelocityOriented | ParticleEmitter::VelocityScaled);
+		//particles->setDrag(0.1);
+		particles->addModifier(new TestModifier());
+		scene.insert(particles);
+		emitters.append(particles);
+	}
+
 
 
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
@@ -110,7 +124,7 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
 
-		particles->update(dt);
+		emitters.foreach([=](ParticleEmitter *p) { p->update(dt); });
 	}
 	return 0;
 }

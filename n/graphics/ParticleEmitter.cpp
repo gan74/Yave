@@ -138,6 +138,7 @@ uint ParticleEmitter::getMaxParticles() {
 
 ParticleEmitter::ParticleEmitter(uint max) : particles(max), flow(10), tank(Unlimited), fraction(0), positions(0), velocities(0), lives(0), drag(0), flags(None) {
 	radius = -1;
+	#warning ParticleEmitter has infinite radius
 	MaterialData md;
 	md.render.blendMode = SrcAlpha;
 	md.render.cullMode = DontCull;
@@ -214,6 +215,10 @@ void ParticleEmitter::setTank(uint t) {
 	tank = t;
 }
 
+void ParticleEmitter::addModifier(Modifier *m) {
+	modifiers.append(m);
+}
+
 void ParticleEmitter::setMaterial(Material mat) {
 	material = mat;
 }
@@ -233,11 +238,11 @@ uint ParticleEmitter::computeEmition(float sec) {
 }
 
 math::Vec3 ParticleEmitter::evalPosition() {
-	return positions ? positions->eval() : math::Vec3(0);
+	return getPosition() + (positions ? getRotation()(positions->eval()) : math::Vec3(0));
 }
 
 math::Vec3 ParticleEmitter::evalVelocity() {
-	return velocities ? velocities->eval() : math::Vec3(0);
+	return velocities ? getRotation()(velocities->eval()) : math::Vec3(0);
 }
 
 float ParticleEmitter::evalDLife() {
@@ -290,6 +295,11 @@ void ParticleEmitter::update(float sec) {
 	if(drag) {
 		for(uint i = 0; i != size; i++) {
 			particles[i].velocity -= particles[i].velocity * std::min(1.0f, particles[i].velocity.length() * d); // should be length2 but too strong
+		}
+	}
+	for(Modifier *m : modifiers) {
+		for(uint i = 0; i != size; i++) {
+			m->modify(particles[i], sec);
 		}
 	}
 	if(tank != Unlimited) {

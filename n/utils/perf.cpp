@@ -192,6 +192,7 @@ void setTraceOutputStream(io::IODevice *out) {
 		traceOut = t;
 	}
 	#else
+	logMsg("Trace output stream specified while N_PERF_LOG_ENABLED is not defined.", WarningLog);
 	unused(out);
 	#endif
 }

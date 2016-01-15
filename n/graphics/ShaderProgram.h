@@ -35,33 +35,6 @@ class ShaderProgram
 {
 	typedef internal::ShaderProgramData Data;
 
-
-	/*class UniformBase : NonCopyable
-	{
-		public:
-			virtual ~UniformBase() {
-			}
-
-			virtual void set(ShaderInstance *inst) = 0;
-	};
-
-
-
-	template<typename U, typename T>
-	class Uniform : public UniformBase
-	{
-		public:
-			Uniform(U u, T t) : name(u), data(t) {
-			}
-
-			virtual void set(ShaderInstance *inst) override {
-				inst->setValue(name, data);
-			}
-
-			U name;
-			T data;
-	};*/
-
 	public:
 		enum StandardVertexShader
 		{
@@ -96,12 +69,11 @@ class ShaderProgram
 
 	private:
 		friend class GLContext;
+		friend class LowLevel;
 
 		ShaderProgram(core::SmartPtr<Data> ptr);
 
 		core::SmartPtr<Data> data;
-
-		//mutable core::Array<UniformBase *> uniforms;
 
 		static core::SmartPtr<ShaderProgram::Data> nullData;
 };
