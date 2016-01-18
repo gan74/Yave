@@ -111,8 +111,8 @@ struct DeferredShadingRenderer::FrameData
 
 
 template<LightType Type>
-ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
-	static core::Map<core::String, ShaderInstance *> shaders[LightType::Max][DeferredShadingRenderer::Max];
+ShaderInstance *getShader(const core::String &shadow, bool gBufferShadows = false, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
+	static core::Map<core::String, ShaderInstance *> shaders[LightType::Max][2][DeferredShadingRenderer::Max];
 
 	static core::String debugStrs[] = {"", "n_Out = vec4(vec3(att), 1.0);", "n_Out = vec4(vec3(shadow), 1.0);"};
 	static core::String computeDir[LightType::Max] = { "return n_LightPos - pos;",
@@ -127,7 +127,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 															  "return max(0.0, falloff * spotFalloff);",
 														"return 1.0;",
 														"return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
-	ShaderInstance *shader = shaders[Type][debug].get(shadow, 0);
+	ShaderInstance *shader = shaders[Type][gBufferShadows][debug].get(shadow, 0);
 	if(!shader) {
 		shader = new ShaderInstance(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
@@ -163,7 +163,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				"return (proj.xyz / proj.w) * 0.5 + 0.5;"
 			"}"
 
-			"float computeShadow(vec3 pos, float sunShadows) {"
+			"float computeShadow(vec3 pos) {"
 				+ shadow +
 			"}"
 
@@ -205,8 +205,9 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 				"float shadow = 1.0;"
 				"if(n_LightShadowMul != 0.0) {"
-					"shadow = n_LightShadowMul * computeShadow(pos, material.w);"
+					"shadow = n_LightShadowMul * computeShadow(pos);"
 				"}"
+				+ (gBufferShadows ? "shadow *= material.w;" : "") +
 
 				"float att = attenuate(lightDir, pos, lightDist);"
 				"float NoL = saturate(dot(normal, lightDir));"
@@ -224,7 +225,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				+ debugStrs[debug] +
 
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
-		shaders[Type][debug][shadow] = shader;
+		shaders[Type][gBufferShadows][debug][shadow] = shader;
 	}
 	return shader;
 }
@@ -240,7 +241,6 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 void lightGeometryPass(const DirectionalLight *, ShaderInstance *, const math::Vec3 &) {
 	GLContext::getContext()->getScreen().draw(getLightMaterial<Directional>());
 }
-
 
 void lightGeometryPass(const BoxLight *l, ShaderInstance *sh, const math::Vec3 &forward) {
 	math::Matrix3<> lightMatrix(forward, -l->getTransform().getY().normalized(), -l->getTransform().getZ().normalized());
@@ -279,10 +279,6 @@ const core::String getShadowCode(const T *l) {
 	return l->getShadowRenderer() ? l->getShadowRenderer()->getCompareCode() : "return 1.0;";
 }
 
-const core::String getShadowCode(const DirectionalLight *l) {
-	return l->castSunShadows() ? "return sunShadows;" : getShadowCode<DirectionalLight>(l);
-}
-
 template<typename T>
 ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
 	constexpr LightType Type = getLightType<T>();
@@ -293,7 +289,7 @@ ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, Deferr
 		if(l->getShadowRenderer() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
 			l->getShadowRenderer()->render(ld.shadowData);
 		}
-		ShaderInstance *sh = getShader<Type>(getShadowCode(l), renderer->debugMode);
+		ShaderInstance *sh = getShader<Type>(getShadowCode(l), l->castGBufferShadows(), renderer->debugMode);
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();

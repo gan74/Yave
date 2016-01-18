@@ -85,7 +85,7 @@ void dumpThreadPerfData();
 #define N_LOG_PERF_HELPER(LINE) N_LOG_PERF_LINE_HELPER(LINE)
 #define N_LOG_PERF N_LOG_PERF_HELPER(__LINE__)
 #else
-#define N_LOG_PERF
+#define N_LOG_PERF do {} while(0)
 #endif
 
 

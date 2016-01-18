@@ -7,6 +7,7 @@ int main(int argc, char **argv) {
 	traceFile->open(io::IODevice::Write);
 	setTraceOutputStream(traceFile);
 
+
 	SDL_Window *win = createWindow();
 
 	if(argc > 1 && argv[1] == String("--no-debug")) {
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
 		particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.01, 0.0025), Vec2(0.015, 0.0025), Vec2(0)})));
 		particles->setLifeDistribution(new UniformDistribution<float>(5, 10));
 		//particles->setAcceleration(Vec3(0, 0, -9.8));
-		particles->setFlow(parts / 10.0);
+		particles->setFlow(parts / 5.0);
 		particles->setFlags(ParticleEmitter::VelocityOriented | ParticleEmitter::VelocityScaled);
 		//particles->setDrag(0.1);
 		particles->addModifier(new TestModifier());
@@ -107,6 +108,7 @@ int main(int argc, char **argv) {
 
 	Timer timer;
 
+	try {
 	while(run(win)) {
 		double dt = timer.reset();
 		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 100);
@@ -126,6 +128,10 @@ int main(int argc, char **argv) {
 
 		emitters.foreach([=](ParticleEmitter *p) { p->update(dt); });
 	}
+	} catch(...) {
+		logMsg("Exception caught.", ErrorLog);
+	}
+
 	return 0;
 }
 
