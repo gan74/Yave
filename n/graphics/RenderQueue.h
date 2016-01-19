@@ -32,7 +32,7 @@ class RenderQueue
 		RenderQueue();
 
 		void insert(const core::Functor<void(RenderFlag)> &f);
-		void insert(const math::Matrix4<> &t, const MeshInstance &m);
+		void insert(const math::Matrix4<> &t, const MeshInstance &m, RenderFlag flags = RenderFlag::None);
 		void insert(const RenderBatch &b);
 
 		void prepare();

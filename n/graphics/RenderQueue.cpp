@@ -34,9 +34,9 @@ void RenderQueue::insert(const core::Functor<void(RenderFlag)> &f) {
 	funcs.append(f);
 }
 
-void RenderQueue::insert(const math::Matrix4<> &t, const MeshInstance &m) {
+void RenderQueue::insert(const math::Matrix4<> &t, const MeshInstance &m, RenderFlag flags) {
 	for(SubMeshInstance *base : m) {
-		insert(RenderBatch(t, base));
+		insert(RenderBatch(t, base, flags));
 	}
 }
 

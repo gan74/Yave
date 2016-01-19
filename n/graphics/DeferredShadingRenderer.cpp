@@ -235,8 +235,7 @@ ShaderInstance *getShader(const core::String &shadow, bool gBufferShadows = fals
 
 
 
-
-
+#warning box and spot lights shadow matrix are broken
 
 void lightGeometryPass(const DirectionalLight *, ShaderInstance *, const math::Vec3 &) {
 	GLContext::getContext()->getScreen().draw(getLightMaterial<Directional>());
