@@ -36,6 +36,7 @@ class SceneRenderer : public BufferableRenderer
 			math::Matrix4<> view;
 			const Camera *camera;
 			RenderQueue queue;
+			void *user;
 		};
 
 		SceneRenderer(const Scene *sc) : BufferableRenderer(), sce(sc) {
