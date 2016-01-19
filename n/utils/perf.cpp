@@ -169,7 +169,6 @@ FunctionTimer logFuncPerf(const char *name) {
 }
 
 io::IODevice *openDevice(io::IODevice *d) {
-	#ifdef N_PERF_LOG_ENABLED
 	if(d) {
 		if(!(d->getOpenMode() & io::IODevice::Append)) {
 			d->open(io::IODevice::Append);
@@ -178,13 +177,12 @@ io::IODevice *openDevice(io::IODevice *d) {
 			d = 0;
 		}
 	}
-	#endif
 	return d;
 }
 
 void setTraceOutputStream(io::IODevice *out) {
-	#ifdef N_PERF_LOG_ENABLED
 	out = openDevice(out);
+	#ifdef N_PERF_LOG_ENABLED
 	if(!traceOut && out) {
 		io::SynchronizedOutputStream *t = new io::SynchronizedOutputStream(out);
 		io::TextOutputStream stream(t);
@@ -192,8 +190,12 @@ void setTraceOutputStream(io::IODevice *out) {
 		traceOut = t;
 	}
 	#else
+	if(out) {
+		io::TextOutputStream stream(out);
+		stream<<"Trace output stream specified while N_PERF_LOG_ENABLED is not defined.";
+		out->close();
+	}
 	logMsg("Trace output stream specified while N_PERF_LOG_ENABLED is not defined.", WarningLog);
-	unused(out);
 	#endif
 }
 

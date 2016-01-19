@@ -85,6 +85,7 @@ struct DeferredShadingRenderer::FrameData
 	void *child;
 
 	void renderShadows() {
+		N_LOG_PERF;
 		for(uint i = 0; i != LightType::Max; i++) {
 			lights[i].foreach([](const LightData &l) {
 				if(l.to<Light>()->getShadowRenderer()) {
@@ -279,6 +280,12 @@ const core::String getShadowCode(const T *l) {
 }
 
 template<typename T>
+void renderOneShadow(const T *l, void *data) {
+	N_LOG_PERF;
+	l->getShadowRenderer()->render(data);
+}
+
+template<typename T>
 ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, DeferredShadingRenderer *renderer) {
 	constexpr LightType Type = getLightType<T>();
 	ShaderInstance *shader = 0;
@@ -286,7 +293,7 @@ ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, Deferr
 		const T *l = ld.to<T>();
 		math::Vec3 forward = -l->getTransform().getX().normalized();
 		if(l->getShadowRenderer() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
-			l->getShadowRenderer()->render(ld.shadowData);
+			renderOneShadow(l, ld.shadowData);
 		}
 		ShaderInstance *sh = getShader<Type>(getShadowCode(l), l->castGBufferShadows(), renderer->debugMode);
 		if(sh != shader) {
