@@ -47,11 +47,10 @@ void CubeMap::upload() const {
 			}
 		}
 
-		//uint mips = Texture::getMipmapLevelForSize(size);
-		#warning CubeMap mipmaping disabled
-		uint mips = 1;
+		uint mips = Texture::getMipmapLevelForSize(size);
+		/*#warning CubeMap mipmaping disabled
+		uint mips = 1;*/
 		data->hasMips = mips > 1;
-		data->hasMips = false;
 		gl::TextureFormat format = gl::getTextureFormat(imgF);
 
 		const void *datas[] = {cube.top.data(), cube.bottom.data(), cube.right.data(), cube.left.data(), cube.front.data(), cube.back.data()};
@@ -61,6 +60,8 @@ void CubeMap::upload() const {
 			data->bindless = gl::getTextureBindlessHandle(data->handle, TextureSampler::Trilinear, hasMipmaps());
 			gl::makeTextureHandleResident(data->bindless);
 		}
+
+		logMsg("Cubemap " + core::String(data->handle));
 
 		internal::TextureBinding::dirty();
 	}

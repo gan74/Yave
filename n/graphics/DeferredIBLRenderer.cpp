@@ -25,6 +25,7 @@ namespace graphics {
 MaterialRenderData getMaterial() {
 	MaterialRenderData mat;
 	mat.depthTested = false;
+	mat.blendMode = BlendMode::Add;
 	return mat;
 }
 
@@ -163,8 +164,12 @@ ShaderInstance *getShader() {
 				"vec4 material = texture(n_2, n_TexCoord);"
 				"vec3 N = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
 				"float roughness = saturate(material.x + epsilon);"
+				"float metal = material.y * 0.5;"
+				"float levels = textureQueryLevels(n_Cube);"
 
-				"n_Out = vec4(filterEnv(roughness, N), 1.0);"
+				//"n_Out = vec4(filterEnv(roughness, N), 1.0);"
+				"vec3 view = normalize(pos - n_Cam);"
+				"n_Out = vec4(textureLod(n_Cube, reflect(view, N), levels * log2(1 + roughness)).rgb * metal * albedo.rgb, 1.0);"
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}

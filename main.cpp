@@ -42,7 +42,6 @@ int main(int argc, char **argv) {
 	}
 
 	{
-		//BoxLight *l = new BoxLight(600);
 		DirectionalLight *l = new DirectionalLight();
 
 		l->setForward(Vec3(0, 1, -1));
@@ -120,7 +119,12 @@ int main(int argc, char **argv) {
 
 		uint count = sizeof(renderers) / sizeof(void *);
 		uint index = rendererIndex % count;
-		(*renderers[index])();
+		if(index == 5) {
+			(*renderers[0])();
+			(*renderers[5])();
+		} else {
+			(*renderers[index])();
+		}
 		SDL_SetWindowTitle(win, renderNames[index].toChar());
 
 		GLContext::getContext()->finishTasks();
