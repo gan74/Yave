@@ -84,8 +84,8 @@ ShaderInstance *getShader() {
 			"in vec2 n_TexCoord;"
 			"out vec4 n_Out;"
 
-			"vec3 unproj(vec2 C) {"
-				"vec4 VP = vec4(vec3(C, texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
+			"vec3 unproj(vec2 C, out float d) {"
+				"vec4 VP = vec4(vec3(C, d = texture(n_D, C).x) * 2.0 - 1.0, 1.0);"
 				"vec4 P = n_Inv * VP;"
 				"return P.xyz / P.w;"
 			"}"
@@ -159,7 +159,8 @@ ShaderInstance *getShader() {
 			"}"
 
 			"void main() {"
-				"vec3 pos = unproj(n_TexCoord);"
+				"float depth = 0;"
+				"vec3 pos = unproj(n_TexCoord, depth);"
 				"vec4 albedo = texture(n_0, n_TexCoord);"
 				"vec4 material = texture(n_2, n_TexCoord);"
 				"vec3 N = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
@@ -168,10 +169,15 @@ ShaderInstance *getShader() {
 				"float levels = textureQueryLevels(n_Cube);"
 
 				//"n_Out = vec4(filterEnv(roughness, N), 1.0);"
+
 				"vec3 view = normalize(pos - n_Cam);"
-				"vec3 spec = textureLod(n_Cube, reflect(view, N), levels * log2(1 + roughness)).rgb;"
-				"vec3 diff = textureLod(n_Cube, N, levels).rgb;"
-				"n_Out = vec4((mix(vec3(0.04), albedo.rgb, metal) * spec + albedo.rgb * diff) * 0.5, 1.0);" // bogus
+				"if(depth == 1) {"
+					"n_Out = textureLod(n_Cube, view, 0);"
+				"} else {"
+					"vec3 spec = textureLod(n_Cube, reflect(view, N), levels * log2(1 + roughness)).rgb;"
+					"vec3 diff = textureLod(n_Cube, N, levels).rgb;"
+					"n_Out = vec4((mix(vec3(0.04), albedo.rgb, metal) * spec + albedo.rgb * diff) * 0.5, 1.0);" // bogus
+				"}"
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}
