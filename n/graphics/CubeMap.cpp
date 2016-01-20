@@ -61,8 +61,6 @@ void CubeMap::upload() const {
 			gl::makeTextureHandleResident(data->bindless);
 		}
 
-		logMsg("Cubemap " + core::String(data->handle));
-
 		internal::TextureBinding::dirty();
 	}
 }

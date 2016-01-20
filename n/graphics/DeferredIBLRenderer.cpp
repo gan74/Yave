@@ -34,12 +34,12 @@ CubeMap *getCube() {
 	static CubeMap *cube = 0;
 	if(!cube) {
 		cube = new CubeMap(
-			(Image(ImageLoader::load<core::String>("skybox/top.tga"))),
-			(Image(ImageLoader::load<core::String>("skybox/bottom.tga"))),
-			(Image(ImageLoader::load<core::String>("skybox/right.tga"))),
-			(Image(ImageLoader::load<core::String>("skybox/left.tga"))),
-			(Image(ImageLoader::load<core::String>("skybox/front.tga"))),
-			(Image(ImageLoader::load<core::String>("skybox/back.tga"))));
+			(Image(ImageLoader::load<core::String>("./resources/skybox/top.tga"))),
+			(Image(ImageLoader::load<core::String>("./resources/skybox/bottom.tga"))),
+			(Image(ImageLoader::load<core::String>("./resources/skybox/right.tga"))),
+			(Image(ImageLoader::load<core::String>("./resources/skybox/left.tga"))),
+			(Image(ImageLoader::load<core::String>("./resources/skybox/front.tga"))),
+			(Image(ImageLoader::load<core::String>("./resources/skybox/back.tga"))));
 
 		/*ShaderInstance sh(new Shader<FragmentShader>(
 			"layout(location = 0) out vec4 n_0;"
@@ -169,7 +169,9 @@ ShaderInstance *getShader() {
 
 				//"n_Out = vec4(filterEnv(roughness, N), 1.0);"
 				"vec3 view = normalize(pos - n_Cam);"
-				"n_Out = vec4(textureLod(n_Cube, reflect(view, N), levels * log2(1 + roughness)).rgb * metal * albedo.rgb, 1.0);"
+				"vec3 spec = textureLod(n_Cube, reflect(view, N), levels * log2(1 + roughness)).rgb;"
+				"vec3 diff = textureLod(n_Cube, N, levels).rgb;"
+				"n_Out = vec4((mix(vec3(0.04), albedo.rgb, metal) * spec + albedo.rgb * diff) * 0.5, 1.0);" // bogus
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}
@@ -194,6 +196,7 @@ void DeferredIBLRenderer::render(void *ptr) {
 	if(fb) {
 		fb->bind();
 	} else {
+
 		FrameBuffer::unbind();
 	}
 
