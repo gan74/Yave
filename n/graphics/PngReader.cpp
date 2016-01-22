@@ -24,10 +24,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class PngReader : public ImageLoader::ImageReader<PngReader, core::String>
+class PngReader : public ImageLoader::AssetReader<PngReader, core::String>
 {
 	public:
-		PngReader() : ImageLoader::ImageReader<PngReader, core::String>() {
+		PngReader() : ImageLoader::AssetReader<PngReader, core::String>() {
 		}
 
 		ImageData *operator()(core::String name) override {

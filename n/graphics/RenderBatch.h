@@ -27,24 +27,10 @@ namespace graphics {
 class RenderBatch
 {
 	public:
-		RenderBatch(const math::Matrix4<> &m, SubMeshInstance *i, RenderFlag renderFlags = RenderFlag::None, bool instaciate = true) : instanciable(instaciate), flags(renderFlags), inst(i), matrix(m) {
+		RenderBatch(const math::Matrix4<> &m, const VertexArrayObject<> &vao, const Material &mat, RenderFlag renderFlags = RenderFlag::None) : flags(renderFlags), obj(vao), material(mat), matrix(m) {
 		}
 
-		void operator()(RenderFlag renderFlags = RenderFlag::None) const {
-			GLContext::getContext()->setModelMatrix(matrix);
-			inst->draw(renderFlags | renderFlags);
-		}
-
-		void operator()(RenderFlag renderFlags, uint instances, uint base) const {
-			inst->draw(renderFlags | renderFlags, instances, base);
-		}
-
-		bool isInstanciable() const {
-			return instanciable;
-		}
-
-		bool canInstanciate(const RenderBatch &o) const {
-			return isInstanciable() && o.isInstanciable() && inst == o.inst;
+		RenderBatch(const math::Matrix4<> &m, const SubMeshInstance &sub, RenderFlag renderFlags = RenderFlag::None) : RenderBatch(m, sub.getVertexArrayObject(), sub.getMaterial(), renderFlags) {
 		}
 
 		const math::Matrix4<> &getMatrix() const {
@@ -52,26 +38,27 @@ class RenderBatch
 		}
 
 		const Material &getMaterial() const {
-			return inst->getMaterial();
+			return material;
 		}
 
 		const VertexArrayObject<> &getVertexArrayObject() const {
-			return inst->getVertexArrayObject();
+			return obj;
 		}
 
 		bool isDepthSorted() const {
-			return getMaterial().getData().render.depthSortable;
+			return material.getData().render.depthSortable;
 		}
 
 		uint getRenderPriority() const {
-			return getMaterial().getData().render.renderPriority;
+			return material.getData().render.renderPriority;
 		}
 
 	private:
-		bool instanciable;
 		RenderFlag flags;
 
-		SubMeshInstance *inst;
+		VertexArrayObject<> obj;
+		Material material;
+
 		math::Matrix4<> matrix;
 };
 

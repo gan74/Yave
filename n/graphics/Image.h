@@ -25,7 +25,6 @@ namespace graphics {
 
 class Image : public assets::Asset<ImageData>
 {
-	friend class ImageLoader;
 	public:
 		Image() {
 		}
@@ -37,6 +36,9 @@ class Image : public assets::Asset<ImageData>
 		}
 
 		Image(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, void *c = 0) : Image(new ImageData(s, f, c)) {
+		}
+
+		Image(const assets::Asset<ImageData> &t) : assets::Asset<ImageData>(t) {
 		}
 
 		math::Vec2ui getSize() const {
@@ -85,8 +87,6 @@ class Image : public assets::Asset<ImageData>
 
 
 	private:
-		Image(const assets::Asset<ImageData> &t) : assets::Asset<ImageData>(t) {
-		}
 
 		const ImageData *getInternal() const {
 			return isValid() ? this->operator->() : (const ImageData *)0;

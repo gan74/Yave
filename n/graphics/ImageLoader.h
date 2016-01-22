@@ -18,73 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_IMAGELOADER_H
 
 #include "Image.h"
-#include <n/assets/AssetManager.h>
+#include <n/assets/GenericAssetLoader.h>
 
 namespace n {
 namespace graphics {
 
-class ImageLoader
-{
-	public:
-		template<typename T, typename... Args>
-		class ImageReader
-		{
-			struct Runner
-			{
-				Runner() {
-					getLoader()->addReader<Args...>(T());
-				}
-			};
-
-			public:
-				ImageReader() {
-					n::unused(runner);
-				}
-
-				virtual ImageData *operator()(Args...) = 0;
-
-			private:
-				static Runner runner;
-		};
-
-		template<typename... Args>
-		static Image load(Args... args, bool async = true)  {
-			ImageLoader *ld = getLoader();
-			return async ? Image(ld->asyncBuffer.load(args...)) : Image(ld->immediateBuffer.load(args...));
-		}
-
-		template<typename... Args, typename T>
-		void addReader(const T &t) {
-			asyncBuffer.addLoader<Args...>(t);
-			immediateBuffer.addLoader<Args...>(t);
-		}
-
-		void gc() {
-			asyncBuffer.gc();
-			immediateBuffer.gc();
-		}
-
-		static ImageLoader *getLoader() {
-			static ImageLoader *loader = 0;
-			if(!loader) {
-				loader = new ImageLoader();
-			}
-			return loader;
-		}
-
-	private:
-		ImageLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
-		}
-
-
-		assets::AssetBuffer<ImageData> buffer;
-		assets::AssetManager<ImageData, assets::AsyncLoadingPolicy<ImageData>> asyncBuffer;
-		assets::AssetManager<ImageData, assets::ImmediateLoadingPolicy<ImageData>> immediateBuffer;
-};
-
-
-template<typename T, typename... Args>
-typename ImageLoader::ImageReader<T, Args...>::Runner ImageLoader::ImageReader<T, Args...>::runner = ImageLoader::ImageReader<T,Args...>::Runner();
+using ImageLoader = assets::GenericAssetLoader<Image>;
 
 }
 }

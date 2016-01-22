@@ -41,11 +41,6 @@ class StaticMesh : public Movable, public Renderable
 			return inst;
 		}
 
-	private:
-		void draw() const {
-			inst.draw();
-		}
-
 	protected:
 		MeshInstance inst;
 };

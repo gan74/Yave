@@ -21,22 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-SubMeshInstance::SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const Material &m) : SubMeshInstance(new TriangleBuffer<>::FreezedTriangleBuffer(b), m) {
+SubMeshInstance::SubMeshInstance() {
 }
 
-SubMeshInstance::SubMeshInstance(const SubMeshInstance &s, const Material &m) : material(m), buffer(s.buffer), vao(s.vao) {
+SubMeshInstance::SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m) : SubMeshInstance(VertexArrayObject<>(GLContext::getContext()->getVertexArrayFactory()(b)), m) {
 }
 
-SubMeshInstance::SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const Material &m) : material(m), buffer(b) {
+SubMeshInstance::SubMeshInstance(const SubMeshInstance &s, const Material &m) : material(m), vao(s.vao) {
 }
 
 SubMeshInstance::SubMeshInstance(const VertexArrayObject<> &b, const Material &m) : material(m), vao(b) {
-}
-
-void SubMeshInstance::draw(RenderFlag renderFlags, uint instances, uint base) const {
-	if(alloc()) {
-		vao.draw(material.getData().render, renderFlags, instances, base);
-	}
 }
 
 const Material &SubMeshInstance::getMaterial() const {
@@ -44,113 +38,65 @@ const Material &SubMeshInstance::getMaterial() const {
 }
 
 float SubMeshInstance::getRadius() const {
-	return buffer ? buffer->radius : vao.getRadius();
+	return vao.getRadius();
 }
 
 const VertexArrayObject<> &SubMeshInstance::getVertexArrayObject() const {
-	alloc();
 	return vao;
 }
 
-bool SubMeshInstance::alloc() const {
-	if(vao.isNull() && buffer) {
-		vao = GLContext::getContext()->getVertexArrayFactory()(*buffer);
-		buffer = 0;
-		return false;
-	}
-	return true;
+
+
+
+
+MeshInstance::MeshInstance() : assets::Asset<AssetType>() {
 }
 
-
-
-
-
-internal::MeshInstance::MeshInstance(const core::Array<SubMeshInstance *> &b) : subs(b), radius(0) {
-	for(SubMeshInstance *sub : subs) {
-		radius = std::max(radius, sub->getRadius());
-	}
+MeshInstance::MeshInstance(const assets::Asset<AssetType> &a) : assets::Asset<AssetType>(a) {
 }
 
-internal::MeshInstance::MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m) : MeshInstance(core::Array<SubMeshInstance *>({new SubMeshInstance(b, m)})) {
+MeshInstance::MeshInstance(const AssetType &subs) : assets::Asset<AssetType>(new AssetType(subs)) {
 }
 
-internal::MeshInstance::~MeshInstance() {
-	for(const SubMeshInstance *b : subs) {
-		delete b;
-	}
+MeshInstance::MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m) : MeshInstance(SubMeshInstance(std::move(b), m)) {
 }
 
-void internal::MeshInstance::draw(RenderFlag flags) const {
-	for(const SubMeshInstance *b : subs) {
-		b->draw(flags);
-	}
+MeshInstance::MeshInstance(const SubMeshInstance &sub) : MeshInstance(new AssetType({sub})) {
 }
 
-float internal::MeshInstance::getRadius() const {
-	return radius;
-}
-
-internal::MeshInstance::const_iterator internal::MeshInstance::begin() const {
-	return subs.begin();
-}
-
-internal::MeshInstance::const_iterator internal::MeshInstance::end() const {
-	return subs.end();
-}
-
-const core::Array<SubMeshInstance *> &internal::MeshInstance::getBases() const {
-	return subs;
-}
-
-
-
-
-
-
-MeshInstance::MeshInstance() : assets::Asset<internal::MeshInstance>() {
-}
-
-MeshInstance::MeshInstance(const core::Array<SubMeshInstance *> &subs) : MeshInstance(new internal::MeshInstance(subs)) {
-}
-
-MeshInstance::MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m) : MeshInstance(new internal::MeshInstance(std::move(b), m)) {
+MeshInstance::MeshInstance(AssetType *a) : assets::Asset<AssetType>(a) {
 }
 
 float MeshInstance::getRadius() const {
-	const internal::MeshInstance *i = getInternal();
-	return i ? i->getRadius() : -1;
-}
-
-void MeshInstance::draw(RenderFlag flags) const {
-	const internal::MeshInstance *i = getInternal();
+	const AssetType *i = getInternal();
+	float r = -1;
 	if(i) {
-		i->draw(flags);
+		for(const SubMeshInstance &s : *i) {
+			if(r < 0 || s.getRadius() < r) {
+				r = s.getRadius();
+			}
+		}
 	}
+	return r;
+
 }
 
 MeshInstance::const_iterator MeshInstance::MeshInstance::begin() const {
-	const internal::MeshInstance *i = getInternal();
+	const AssetType *i = getInternal();
 	return i ? i->begin() : 0;
 }
 
 MeshInstance::const_iterator MeshInstance::end() const {
-	const internal::MeshInstance *i = getInternal();
+	const AssetType *i = getInternal();
 	return i ? i->end() : 0;
 }
 
-core::Array<SubMeshInstance *> MeshInstance::getBases() const {
-	const internal::MeshInstance *i = getInternal();
-	return i ? i->getBases() : core::Array<SubMeshInstance *>();
+MeshInstance::AssetType MeshInstance::getSubs() const {
+	return isValid() ? *this->operator->() : AssetType();
 }
 
-MeshInstance::MeshInstance(const assets::Asset<internal::MeshInstance> &t) : assets::Asset<internal::MeshInstance>(t) {
-}
-
-MeshInstance::MeshInstance(internal::MeshInstance *i) : assets::Asset<internal::MeshInstance>(std::move(i)) {
-}
-
-const internal::MeshInstance *MeshInstance::getInternal() const {
-	return isValid() ? this->operator->() : (const internal::MeshInstance *)0;
+const MeshInstance::AssetType *MeshInstance::getInternal() const {
+	return isValid() ? this->operator->() : (AssetType *)0;
 }
 
 }

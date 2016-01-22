@@ -109,6 +109,7 @@ class Asset
 {
 	typedef const T *ConstPtr;
 	public:
+		typedef T AssetType;
 		~Asset() {
 		}
 

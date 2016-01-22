@@ -27,77 +27,42 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-namespace internal {
-	class MeshInstance;
-}
-
 class SubMeshInstance
 {
 	public:
-		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const Material &m);
+		SubMeshInstance();
+		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m);
 		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m);
 		SubMeshInstance(const VertexArrayObject<> &b, const Material &m);
 
-		void draw(RenderFlag renderFlags = RenderFlag::None, uint instances = 1, uint base = 0) const;
 		const Material &getMaterial() const;
 		float getRadius() const;
 		const VertexArrayObject<> &getVertexArrayObject() const;
 
 	private:
-		friend class internal::MeshInstance;
-
-		SubMeshInstance(const core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> &b, const graphics::Material &m);
-		bool alloc() const;
-
 		Material material;
-
-		mutable core::SmartPtr<typename TriangleBuffer<>::FreezedTriangleBuffer> buffer;
-		mutable VertexArrayObject<> vao;
+		VertexArrayObject<> vao;
 };
 
-namespace internal {
-	class MeshInstance : NonCopyable
-	{
-		public:
-			typedef typename core::Array<SubMeshInstance *>::const_iterator const_iterator;
-
-			MeshInstance(const core::Array<SubMeshInstance *> &b);
-			MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const graphics::Material &m = graphics::Material());
-			~MeshInstance();
-
-			void draw(RenderFlag flags = RenderFlag::None) const;
-			float getRadius() const;
-			const_iterator begin() const;
-			const_iterator end() const;
-			const core::Array<SubMeshInstance *> &getBases() const;
-
-		private:
-			core::Array<SubMeshInstance *> subs;
-			float radius;
-	};
-}
-
-class MeshInstance : public assets::Asset<internal::MeshInstance>
+class MeshInstance : public assets::Asset<core::Array<SubMeshInstance>>
 {
-	friend class MeshLoader;
 	public:
-		typedef typename internal::MeshInstance::const_iterator const_iterator;
+		typedef AssetType::const_iterator const_iterator;
 
 		MeshInstance();
-		MeshInstance(const core::Array<SubMeshInstance *> &subs);
+		MeshInstance(const Asset<AssetType> &a);
+		MeshInstance(const SubMeshInstance &sub);
+		MeshInstance(const AssetType &subs);
+		MeshInstance(AssetType *a);
 		MeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m = Material());
 
 		float getRadius() const;
-		void draw(RenderFlag flags = RenderFlag::None) const;
 		const_iterator begin() const;
 		const_iterator end() const;
-		core::Array<SubMeshInstance *> getBases() const;
+		AssetType getSubs() const;
 
 	private:
-		MeshInstance(const assets::Asset<internal::MeshInstance> &t);
-		MeshInstance(internal::MeshInstance *i);
-
-		const internal::MeshInstance *getInternal() const;
+		const AssetType *getInternal() const;
 };
 
 }

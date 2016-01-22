@@ -154,7 +154,7 @@ class Obj : public StaticMesh
 			if(autoScale && !getMeshInstance().isNull()) {
 				setScale(autoScale / getMeshInstance().getRadius());
 			}
-			for(SubMeshInstance *b : getMeshInstance()) {
+			for(const SubMeshInstance &b : getMeshInstance()) {
 				qu.insert(RenderBatch(getTransform().getMatrix(), b, rf));
 			}
 		}
@@ -171,13 +171,13 @@ class Obj : public StaticMesh
 class MaterialTest : public Movable, public Renderable
 {
 	public:
-		MaterialTest(float m, float r) : Movable(), Renderable(), inst(0) {
+		MaterialTest(float m, float r) : Movable(), Renderable() {
 			static VertexArrayObject<> vao = GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getSphere());
 			MaterialData data;
 			data.surface.color = Vec4(0.5);
 			data.surface.metallic = m;
 			data.surface.roughness = Texture(Image(Vec2ui(1), ImageFormat::F32, &r));
-			inst = new SubMeshInstance(vao, Material(data));
+			inst = SubMeshInstance(vao, Material(data));
 			radius = vao.getRadius();
 		}
 
@@ -186,7 +186,7 @@ class MaterialTest : public Movable, public Renderable
 		}
 
 	private:
-		SubMeshInstance *inst;
+		SubMeshInstance inst;
 };
 
 class DummyRenderable : public Movable, public Renderable

@@ -19,73 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "MeshInstance.h"
 #include <n/assets/Asset.h>
-#include <n/assets/AssetManager.h>
+#include <n/assets/GenericAssetLoader.h>
 
 namespace n {
 namespace graphics {
 
-class MeshLoader
-{
-	public:
-		template<typename T, typename... Args>
-		class MeshReader
-		{
-			struct Runner
-			{
-				Runner() {
-					getLoader()->addReader<Args...>(T());
-				}
-			};
-
-			public:
-				MeshReader() {
-					n::unused(runner);
-				}
-
-				virtual internal::MeshInstance *operator()(Args...) = 0;
-
-			private:
-				static Runner runner;
-		};
-
-		template<typename... Args>
-		static MeshInstance load(Args... args, bool async = true)  {
-			MeshLoader *ld = getLoader();
-			return async ? MeshInstance(ld->asyncBuffer.load(args...)) : MeshInstance(ld->immediateBuffer.load(args...));
-		}
-
-		template<typename... Args, typename T>
-		void addReader(const T &t) {
-			asyncBuffer.addLoader<Args...>(t);
-			immediateBuffer.addLoader<Args...>(t);
-		}
-
-		void gc() {
-			asyncBuffer.gc();
-			immediateBuffer.gc();
-		}
-
-		static MeshLoader *getLoader() {
-			static MeshLoader *loader = 0;
-			if(!loader) {
-				loader = new MeshLoader();
-			}
-			return loader;
-		}
-
-	private:
-		MeshLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
-		}
-
-		assets::AssetBuffer<internal::MeshInstance> buffer;
-		assets::AssetManager<internal::MeshInstance, assets::AsyncLoadingPolicy<internal::MeshInstance>> asyncBuffer;
-		assets::AssetManager<internal::MeshInstance, assets::ImmediateLoadingPolicy<internal::MeshInstance>> immediateBuffer;
-
-};
-
-template<typename T, typename... Args>
-typename MeshLoader::MeshReader<T, Args...>::Runner MeshLoader::MeshReader<T, Args...>::runner = MeshLoader::MeshReader<T, Args...>::Runner();
-
+using MeshLoader = assets::GenericAssetLoader<MeshInstance>;
 
 }
 }

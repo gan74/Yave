@@ -46,6 +46,7 @@ class VertexArrayFactory : NonCopyable
 
 		VertexArrayFactory() : vertices(DefaultSize), indexes(DefaultSize), handle(0) {
 			setup();
+			logMsg(core::String((vertices.size() * sizeof(Vertex<T>) + indexes.size() * sizeof(uint)) / 1024) + "kB of vertex data allocated");
 		}
 
 		VertexArrayObject<T> operator()(const typename TriangleBuffer<T>::FreezedTriangleBuffer &buff) {
@@ -87,7 +88,7 @@ class VertexArrayFactory : NonCopyable
 
 		uint alloc(core::Array<Empty> &empties, uint size) {
 			if(empties.isEmpty()) {
-				return fatal("Unable to allocated vertex buffer");
+				return fatal("Unable to allocate vertex data");
 			}
 			typename core::Array<Empty>::iterator best = empties.begin();
 			for(typename core::Array<Empty>::iterator it = empties.begin(); it != empties.end(); it++) {
@@ -96,7 +97,7 @@ class VertexArrayFactory : NonCopyable
 				}
 			}
 			if(best->size() < size) {
-				return fatal("Unable to allocated vertex buffer");
+				return fatal("Unable to allocate vertex data");
 			}
 			uint e = best->start;
 			if(size == best->size()) {
@@ -130,7 +131,7 @@ class VertexArrayFactory : NonCopyable
 			empties = merged;
 		}
 
-		void setup() {;
+		void setup() {
 			core::Array<uint> idArray;
 			for(uint i = 0; i != 2048; i++) {
 				idArray.append(i);
@@ -157,16 +158,18 @@ class VertexArrayFactory : NonCopyable
 		}
 
 		void bind() {
+			setUnModified();
+			gl::bindVertexArray(handle);
+		}
+
+		void setUnModified() {
 			if(vertices.isModified()) {
 				N_LOG_PERF;
-				mutex.lock();
 				core::Timer timer;
-				vertices.update();
-				indexes.update();
+				this->vertices.update();
+				this->indexes.update();
 				logMsg(core::String("Vertex buffer update : ") + round(timer.elapsed() * 10000) * 0.1 + "ms", PerfLog);
-				mutex.unlock();
 			}
-			gl::bindVertexArray(handle);
 		}
 
 		void free(const typename VertexArrayObject<T>::AllocData &vao) {

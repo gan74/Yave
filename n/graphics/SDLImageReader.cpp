@@ -27,10 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class SDLImageReader : public ImageLoader::ImageReader<SDLImageReader, core::String>
+class SDLImageReader : public ImageLoader::AssetReader<SDLImageReader, core::String>
 {
 	public:
-		SDLImageReader() : ImageLoader::ImageReader<SDLImageReader, core::String>() {
+		SDLImageReader() : ImageLoader::AssetReader<SDLImageReader, core::String>() {
 		}
 
 		ImageData *operator()(core::String name) override {
