@@ -34,12 +34,12 @@ CubeMap *getCube() {
 	static CubeMap *cube = 0;
 	if(!cube) {
 		cube = new CubeMap(
-			(Image(ImageLoader::load<core::String>("./resources/skybox/top.tga"))),
-			(Image(ImageLoader::load<core::String>("./resources/skybox/bottom.tga"))),
-			(Image(ImageLoader::load<core::String>("./resources/skybox/right.tga"))),
-			(Image(ImageLoader::load<core::String>("./resources/skybox/left.tga"))),
-			(Image(ImageLoader::load<core::String>("./resources/skybox/front.tga"))),
-			(Image(ImageLoader::load<core::String>("./resources/skybox/back.tga"))));
+			(Image(ImageLoader::load<core::String>("./skybox/top.tga"))),
+			(Image(ImageLoader::load<core::String>("./skybox/bottom.tga"))),
+			(Image(ImageLoader::load<core::String>("./skybox/right.tga"))),
+			(Image(ImageLoader::load<core::String>("./skybox/left.tga"))),
+			(Image(ImageLoader::load<core::String>("./skybox/front.tga"))),
+			(Image(ImageLoader::load<core::String>("./skybox/back.tga"))));
 
 		/*ShaderInstance sh(new Shader<FragmentShader>(
 			"layout(location = 0) out vec4 n_0;"

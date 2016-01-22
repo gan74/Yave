@@ -61,6 +61,8 @@ uint32 MaterialRenderData::toUint() const {
 	return *reinterpret_cast<const uint32 *>(this);
 }
 
+MaterialData::MaterialData() {
+}
 
 void MaterialData::bind(uint flags) const {
 	if(flags & DepthWriteOnly) {

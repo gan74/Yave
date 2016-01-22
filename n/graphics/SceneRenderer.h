@@ -104,6 +104,10 @@ class SceneRenderer : public BufferableRenderer
 			delete data;
 		}
 
+		void setScene(const Scene *sc) {
+			sce = sc;
+		}
+
 	private:
 		const Scene *sce;
 };

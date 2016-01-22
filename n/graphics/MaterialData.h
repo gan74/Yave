@@ -93,6 +93,7 @@ static_assert(sizeof(MaterialBufferData) % 16 == 0, "sizeof(MaterialBufferData) 
 
 struct MaterialData
 {
+	MaterialData();
 	void bind(uint flags = None) const;
 	bool canInstanciate(const MaterialData &m) const;
 	bool canInstanciate(const MaterialRenderData &r, const ShaderProgram &p) const;

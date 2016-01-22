@@ -40,6 +40,10 @@ void RenderQueue::insert(const math::Matrix4<> &t, const MeshInstance &m, Render
 	}
 }
 
+void RenderQueue::insert(const math::Matrix4<> &t, const SubMeshInstance &m, RenderFlag flags) {
+	insert(RenderBatch(t, m.getVertexArrayObject(), m.getMaterial(), flags));
+}
+
 void RenderQueue::insert(const RenderBatch &b) {
 	batches.append(b);
 }

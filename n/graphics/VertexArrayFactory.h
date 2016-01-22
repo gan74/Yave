@@ -116,12 +116,13 @@ class VertexArrayFactory : NonCopyable
 				return a.start < b.start;
 			});
 			core::Array<Empty> merged;
-			for(typename core::Array<Empty>::iterator it = empties.begin(); it != empties.end();) {
+			for(typename core::Array<Empty>::iterator it = empties.begin(); it < empties.end();) {
 				typename core::Array<Empty>::iterator next = it + 1;
-				while(next != empties.end()) {
+				while(next < empties.end()) {
 					if(next->start != it->end) {
 						break;
 					}
+					next++;
 				}
 				for(typename core::Array<Empty>::iterator i = it; i != next; i++) {
 					merged.append(*i);
