@@ -183,7 +183,7 @@ static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 	bool last = false;
 	uint baseSize = buffers[0]->getSize().x();
 	while(baseSize != 2) {
-		sh->setValue(SVTexture0, buffers[last]->getAttachement(0));
+		sh->setValue(SVTexture0, buffers[last]->getAttachment(0));
 		sh->setValue("scale", scale);
 		buffers[!last]->bind();
 		last = !last;
@@ -191,7 +191,7 @@ static Texture computeLum(const Texture &in, FrameBuffer *buffers[]) {
 		baseSize /= 2;
 		GLContext::getContext()->getScreen().draw(getMaterial());
 	}
-	return buffers[last]->getAttachement(0);
+	return buffers[last]->getAttachment(0);
 }
 
 BasicToneMapRenderer::BasicToneMapRenderer(BufferedRenderer *c, uint s) : BufferableRenderer(), child(c), luma(GLContext::getContext()->getFrameBufferPool().get(math::Vec2ui(1), true, ImageFormat::R32F)), slot(s), exposure(0.1), white(2), range(0.001, 0.5), adaptation(0.5), debug(false) {
@@ -214,7 +214,7 @@ void BasicToneMapRenderer::render(void *ptr) {
 	FrameBuffer *buffers[] = {GLContext::getContext()->getFrameBufferPool().get(size, false, ImageFormat::R32F),
 							  GLContext::getContext()->getFrameBufferPool().get(size, false, ImageFormat::R32F)};
 
-	Texture lum = computeLum(child->getFrameBuffer().getAttachement(slot), buffers);
+	Texture lum = computeLum(child->getFrameBuffer().getAttachment(slot), buffers);
 
 	double dt = std::min(float(timer.reset()), adaptation);
 
@@ -237,8 +237,8 @@ void BasicToneMapRenderer::render(void *ptr) {
 	sh->setValue("exposure", exposure);
 	sh->setValue("white", white);
 
-	sh->setValue(SVTexture0, child->getFrameBuffer().getAttachement(slot));
-	sh->setValue(SVTexture1, luma->getAttachement(0));
+	sh->setValue(SVTexture0, child->getFrameBuffer().getAttachment(slot));
+	sh->setValue(SVTexture1, luma->getAttachment(0));
 	sh->bind();
 
 	GLContext::getContext()->getScreen().draw(getMaterial());

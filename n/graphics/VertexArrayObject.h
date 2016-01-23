@@ -40,7 +40,6 @@ class VertexArrayObject
 	};
 
 	public:
-
 		VertexArrayObject() : data{0, 0, 0, 0, 0, 0} {
 		}
 

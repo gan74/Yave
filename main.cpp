@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	Scene scene;
 	scene.insert(&cam);
 
-	uint max = 100;
+	uint max = 10;
 	float scale = 5;
 	for(uint i = 0; i != max; i++) {
 		for(uint j = 0; j != max; j++) {
@@ -33,13 +33,13 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	{
+	/*{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
 		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
 		//auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
 		//	scene.insert(obj);
-	}
+	}*/
 
 	{
 		DirectionalLight *l = new DirectionalLight();

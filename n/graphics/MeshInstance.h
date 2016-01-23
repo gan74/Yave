@@ -31,7 +31,7 @@ class SubMeshInstance
 {
 	public:
 		SubMeshInstance();
-		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m);
+		SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const Material &m);
 		SubMeshInstance(const SubMeshInstance &s, const graphics::Material &m);
 		SubMeshInstance(const VertexArrayObject<> &b, const Material &m);
 

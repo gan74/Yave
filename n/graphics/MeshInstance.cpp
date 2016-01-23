@@ -24,7 +24,7 @@ namespace graphics {
 SubMeshInstance::SubMeshInstance() {
 }
 
-SubMeshInstance::SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &&b, const Material &m) : SubMeshInstance(VertexArrayObject<>(GLContext::getContext()->getVertexArrayFactory()(b)), m) {
+SubMeshInstance::SubMeshInstance(const typename TriangleBuffer<>::FreezedTriangleBuffer &b, const Material &m) : SubMeshInstance(VertexArrayObject<>(GLContext::getContext()->getVertexArrayFactory()(b)), m) {
 }
 
 SubMeshInstance::SubMeshInstance(const SubMeshInstance &s, const Material &m) : material(m), vao(s.vao) {

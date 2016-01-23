@@ -47,7 +47,7 @@ class ShadowRenderer : public BufferedRenderer
 		}
 
 		Texture getShadowMap() {
-			return getFrameBuffer().getAttachement(mapIndex);
+			return getFrameBuffer().getAttachment(mapIndex);
 		}
 
 		math::Matrix4<> getShadowMatrix() const {

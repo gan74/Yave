@@ -64,8 +64,8 @@ void VarianceShadowRenderer::render(void *ptr) {
 	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
 	FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
-	blurs[1]->setValue(SVTexture0, temp->getAttachement(0));
-	blurs[0]->setValue(SVTexture0, getFrameBuffer().getAttachement(0));
+	blurs[1]->setValue(SVTexture0, temp->getAttachment(0));
+	blurs[0]->setValue(SVTexture0, getFrameBuffer().getAttachment(0));
 
 	temp->bind();
 	blurs[0]->bind();

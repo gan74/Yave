@@ -25,7 +25,7 @@ namespace graphics {
 
 class FrameBuffer : public FrameBufferBase
 {
-	void assertAttachements(uint index) {
+	void assertAttachments(uint index) {
 		if(index >= getMaxAttachment()) {
 			fatal("Too many framebuffer attachments.");
 		}
@@ -44,16 +44,16 @@ class FrameBuffer : public FrameBufferBase
 	}
 
 	void setupAttachments(uint index) {
-		assertAttachements(index);
+		assertAttachments(index);
 	}
 
 	void setupAttachment(uint index, bool enabled) {
-		assertAttachements(index);
+		assertAttachments(index);
 		drawBuffers[index] = enabled ? gl::Attachment(gl::ColorAtt0 + index) : gl::NoAtt;
 	}
 
 	void setupAttachment(uint index, ImageFormat::Format format) {
-		assertAttachements(index);
+		assertAttachments(index);
 		drawBuffers[index] = gl::Attachment(gl::ColorAtt0 + index);
 		attachments[index] = Image(getSize(), format);
 	}
@@ -70,11 +70,11 @@ class FrameBuffer : public FrameBufferBase
 
 		void blit(uint slot = 0, bool depth = false) const;
 
-		Texture getAttachement(uint slot) const {
-			return slot == Depth ? getDepthAttachement() : attachments[slot];
+		Texture getAttachment(uint slot) const {
+			return slot == Depth ? getDepthAttachment() : attachments[slot];
 		}
 
-		Texture getDepthAttachement() const {
+		Texture getDepthAttachment() const {
 			return depth ? *depth : Texture();
 		}
 

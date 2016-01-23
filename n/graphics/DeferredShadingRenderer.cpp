@@ -299,10 +299,10 @@ ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, Deferr
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();
-			shader->setValue(SVTexture0, renderer->child->getFrameBuffer().getAttachement(0));
-			shader->setValue(SVTexture1, renderer->child->getFrameBuffer().getAttachement(1));
-			shader->setValue(SVTexture2, renderer->child->getFrameBuffer().getAttachement(2));
-			shader->setValue("n_D", renderer->child->getFrameBuffer().getDepthAttachement());
+			shader->setValue(SVTexture0, renderer->child->getFrameBuffer().getAttachment(0));
+			shader->setValue(SVTexture1, renderer->child->getFrameBuffer().getAttachment(1));
+			shader->setValue(SVTexture2, renderer->child->getFrameBuffer().getAttachment(2));
+			shader->setValue("n_D", renderer->child->getFrameBuffer().getDepthAttachment());
 			shader->setValue("n_Inv", data->inv);
 			shader->setValue("n_Cam", data->pos);
 		}

@@ -38,7 +38,7 @@ class FrameBufferPool : NonCopyable
 	}
 
 	static void filter(uint index, core::Array<FrameBuffer *> &arr, ImageFormat::Format format) {
-		arr.filter([index, format](FrameBuffer *fb) { return fb->isAttachmentEnabled(index) && fb->getAttachement(index).getFormat() == format; });
+		arr.filter([index, format](FrameBuffer *fb) { return fb->isAttachmentEnabled(index) && fb->getAttachment(index).getFormat() == format; });
 	}
 
 	public:

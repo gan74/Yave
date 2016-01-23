@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "GL.h"
 #include <n/core/Map.h>
+#include <n/core/Timer.h>
 #include <GL/glew.h>
 
 #include <iostream>
@@ -155,7 +156,7 @@ static Handle boundVao = 0;
 Handle boundTextures[MaxBindings] = {0};
 
 
-GLenum toGLAttachement(uint att) {
+GLenum toGLAttachment(uint att) {
 	if(att == DepthAtt) {
 		return GL_DEPTH_ATTACHMENT;
 	}
@@ -362,9 +363,13 @@ void shaderSource(Handle shader, uint count, const char * const *src, const int 
 }
 
 bool compileShader(Handle shader) {
+	core::Timer timer;
 	glCompileShader(shader);
 	int res = 0;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &res);
+	if(timer.elapsed() > 0.1) {
+		logMsg("[GL] Shader compilation took more than 100 ms !", WarningLog);
+	}
 	return res;
 }
 
@@ -397,9 +402,13 @@ void attachShader(Handle prog, Handle shader) {
 }
 
 bool linkProgram(Handle prog) {
+	core::Timer timer;
 	glLinkProgram(prog);
 	int res = 0;
 	glGetProgramiv(prog, GL_LINK_STATUS, &res);
+	if(timer.elapsed() > 0.25) {
+		logMsg("[GL] Shader linking took more than 250 ms !", WarningLog);
+	}
 	return res;
 }
 
@@ -612,11 +621,11 @@ void enableVertexAttribArray(uint index) {
 }
 
 void framebufferTexture2D(FrameBufferType target, Attachment attachement, TextureType texture, Handle handle, uint level) {
-	glFramebufferTexture2D(framebufferType[target], toGLAttachement(attachement), textureType[texture], handle, level);
+	glFramebufferTexture2D(framebufferType[target], toGLAttachment(attachement), textureType[texture], handle, level);
 }
 
 void attachFramebufferTexture(uint att, TextureType tex, Handle handle) {
-	glFramebufferTexture2D(framebufferType[FrameBuffer], toGLAttachement(att), textureType[tex], handle, 0);
+	glFramebufferTexture2D(framebufferType[FrameBuffer], toGLAttachment(att), textureType[tex], handle, 0);
 }
 
 void attachFramebufferTextureCube(Handle handle) {
@@ -656,7 +665,7 @@ void drawNoAttrib(uint count) {
 void drawBuffers(uint count, const Attachment *buffers) {
 	GLenum *att = new GLenum[count];
 	for(uint i = 0; i != count; i++) {
-		att[i] = toGLAttachement(buffers[i]);
+		att[i] = toGLAttachment(buffers[i]);
 	}
 	glDrawBuffers(count, att);
 	delete[] att;
@@ -686,7 +695,7 @@ void bindFramebuffer(FrameBufferType target, Handle fbo) {
 }
 
 void readBuffer(Attachment attachment) {
-	glReadBuffer(toGLAttachement(attachment));
+	glReadBuffer(toGLAttachment(attachment));
 }
 
 void clear(BitField buffers) {

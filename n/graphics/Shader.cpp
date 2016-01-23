@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Shader.h"
 #include "ShaderProgram.h"
-
+#include <n/core/Timer.h>
 
 namespace n {
 namespace graphics {

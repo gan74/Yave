@@ -210,10 +210,10 @@ void DeferredIBLRenderer::render(void *ptr) {
 	shader->setValue("n_Cube", *getCube(), TextureSampler::Trilinear);
 	shader->setValue("n_Inv", invCam);;
 	shader->setValue("n_Cam", cam);
-	shader->setValue(SVTexture0, child->getFrameBuffer().getAttachement(0));
-	shader->setValue(SVTexture1, child->getFrameBuffer().getAttachement(1));
-	shader->setValue(SVTexture2, child->getFrameBuffer().getAttachement(2));
-	shader->setValue("n_D", child->getFrameBuffer().getDepthAttachement());
+	shader->setValue(SVTexture0, child->getFrameBuffer().getAttachment(0));
+	shader->setValue(SVTexture1, child->getFrameBuffer().getAttachment(1));
+	shader->setValue(SVTexture2, child->getFrameBuffer().getAttachment(2));
+	shader->setValue("n_D", child->getFrameBuffer().getDepthAttachment());
 
 	shader->bind();
 	GLContext::getContext()->getScreen().draw(getMaterial());

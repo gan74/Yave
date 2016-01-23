@@ -43,7 +43,7 @@ void FrameBuffer::setup() {
 	for(uint i = 0; i != att; i++) {
 		if(isAttachmentEnabled(i)) {
 			if(!attachments[i].synchronize(true)) {
-				fatal("Unable to create attachement.");
+				fatal("Unable to create Attachment.");
 			}
 			gl::bindTexture(Texture2D, attachments[i].getHandle());
 			gl::attachFramebufferTexture(i, Texture2D, attachments[i].getHandle());
@@ -53,7 +53,7 @@ void FrameBuffer::setup() {
 	}
 	if(depth) {
 		if(!depth->synchronize(true)) {
-			fatal("Unable to create depth attachement.");
+			fatal("Unable to create depth Attachment.");
 		}
 		gl::bindTexture(Texture2D, depth->getHandle());
 		gl::attachFramebufferTexture(gl::DepthAtt, Texture2D,  depth->getHandle());

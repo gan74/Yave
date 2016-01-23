@@ -118,7 +118,7 @@ const CubeMap &IBLProbe::getConvolution(uint index) {
 	sh->setValue("n_Cube", cube);
 	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 
-	convoluted[index] = new CubeMap(cbo.getAttachement());
+	convoluted[index] = new CubeMap(cbo.getAttachment());
 
 	if(fb) {
 		fb->bind();

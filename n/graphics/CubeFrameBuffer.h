@@ -28,7 +28,7 @@ class CubeFrameBuffer : public FrameBufferBase
 	public:
 		CubeFrameBuffer(uint size, ImageFormat format);
 
-		const CubeMap &getAttachement() const {
+		const CubeMap &getAttachment() const {
 			return cube;
 		}
 

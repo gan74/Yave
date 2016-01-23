@@ -53,7 +53,7 @@ class BSShadowRenderer : public ShadowRenderer
 
 			FrameBuffer *temp = GLContext::getContext()->getFrameBufferPool().get(getSize(), false, ImageFormat::RG32F);
 			blurs[0]->setValue(SVTexture0, child->getShadowMap());
-			blurs[1]->setValue(SVTexture0, temp->getAttachement(0));
+			blurs[1]->setValue(SVTexture0, temp->getAttachment(0));
 
 			temp->bind();
 			blurs[0]->bind();
