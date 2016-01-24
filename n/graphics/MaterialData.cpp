@@ -20,26 +20,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-MaterialSurfaceData::MaterialSurfaceData() : color(1, 1, 1, 1), metallic(0), normalIntensity(0.5) {
+static Texture getDefaultColor() {
+	static constexpr uint defaultColor = 0xFFFFFFFF;
+	static Texture tex = Texture(Image(new ImageData(math::Vec2ui(1), ImageFormat::RGBA8, &defaultColor)));
+	return tex;
+}
+
+static Texture getDefaultProperties() {
+	#warning MaterialSurfaceData::PropertyLayout assumes little endian
+	static constexpr MaterialSurfaceData::PropertyLayout defaultProps{127, 127, 127, 0};
+	static Texture tex = Texture(Image(new ImageData(math::Vec2ui(1), ImageFormat::RGBA8, &defaultProps)));
+	return tex;
+}
+
+
+MaterialSurfaceData::MaterialSurfaceData() : color(getDefaultColor()), properties(getDefaultProperties()) {
 }
 
 MaterialBufferData MaterialSurfaceData::toBufferData() const {
-	return MaterialBufferData{color,
-							  metallic,
-							  diffuse.getBindlessId() ? 1.f : 0.f,
-							  normal.getBindlessId() ? normalIntensity : 0.f,
-							  roughness.getBindlessId() ? 1.f : 0.f,
-							  diffuse.getBindlessId(),
-							  normal.getBindlessId(),
-							  roughness.getBindlessId(),
-							  {0, 0}};
+	return MaterialBufferData{color.getBindlessId(),
+							  properties.getBindlessId()};
 }
 
 bool MaterialSurfaceData::synchronize(bool immediate) const {
 	bool r = true;
-	r &= diffuse.synchronize(immediate);
-	r &= normal.synchronize(immediate);
-	r &= roughness.synchronize(immediate);
+	r &= color.synchronize(immediate);
+	r &= properties.synchronize(immediate);
 	return r;
 }
 

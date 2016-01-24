@@ -25,6 +25,7 @@ namespace graphics {
 MaterialRenderData getMaterial() {
 	MaterialRenderData mat;
 	mat.depthTested = false;
+	mat.depthWrite = false;
 	mat.blendMode = BlendMode::Add;
 	return mat;
 }
@@ -81,7 +82,6 @@ ShaderInstance *getShader() {
 			"uniform mat4 n_Inv;"
 			"uniform vec3 n_Cam;"
 
-			"in vec2 n_TexCoord;"
 			"out vec4 n_Out;"
 
 			"vec3 unproj(vec2 C, out float d) {"
@@ -161,11 +161,7 @@ ShaderInstance *getShader() {
 			"void main() {"
 				"float depth = 0;"
 				"vec3 pos = unproj(n_TexCoord, depth);"
-				"vec4 albedo = texture(n_0, n_TexCoord);"
-				"vec4 material = texture(n_2, n_TexCoord);"
-				"vec3 N = normalize(texture(n_1, n_TexCoord).xyz * 2.0 - 1.0);"
-				"float roughness = saturate(material.x + epsilon);"
-				"float metal = material.y * 0.5;"
+				"n_GBufferData gbuffer = n_unpackGBuffer(n_0, n_1, n_2, n_TexCoord);"
 				"float levels = textureQueryLevels(n_Cube);"
 
 				//"n_Out = vec4(filterEnv(roughness, N), 1.0);"
@@ -174,9 +170,9 @@ ShaderInstance *getShader() {
 				"if(depth == 1) {"
 					"n_Out = textureLod(n_Cube, view, 0);"
 				"} else {"
-					"vec3 spec = textureLod(n_Cube, reflect(view, N), levels * log2(1 + roughness)).rgb;"
-					"vec3 diff = textureLod(n_Cube, N, levels).rgb;"
-					"n_Out = vec4((mix(vec3(0.04), albedo.rgb, metal) * spec + albedo.rgb * diff) * 0.5, 1.0);" // bogus
+					"vec3 spec = textureLod(n_Cube, reflect(view, gbuffer.normal), levels * log2(1 + gbuffer.roughness)).rgb;"
+					"vec3 diff = textureLod(n_Cube, gbuffer.normal, levels).rgb;"
+					"n_Out = vec4((mix(vec3(0.04), gbuffer.color.rgb, gbuffer.metallic) * spec + gbuffer.color.rgb * diff) * 0.5, 1.0);" // bogus
 				"}"
 			"}"
 		), ShaderProgram::NoProjectionShader);

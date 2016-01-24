@@ -112,8 +112,8 @@ struct DeferredShadingRenderer::FrameData
 
 
 template<LightType Type>
-ShaderInstance *getShader(const core::String &shadow, bool gBufferShadows = false, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
-	static core::Map<core::String, ShaderInstance *> shaders[LightType::Max][2][DeferredShadingRenderer::Max];
+ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::LightingDebugMode debug = DeferredShadingRenderer::None) {
+	static core::Map<core::String, ShaderInstance *> shaders[LightType::Max][DeferredShadingRenderer::Max];
 
 	static core::String debugStrs[] = {"", "n_Out = vec4(vec3(att), 1.0);", "n_Out = vec4(vec3(shadow), 1.0);"};
 	static core::String computeDir[LightType::Max] = { "return n_LightPos - pos;",
@@ -128,7 +128,7 @@ ShaderInstance *getShader(const core::String &shadow, bool gBufferShadows = fals
 															  "return max(0.0, falloff * spotFalloff);",
 														"return 1.0;",
 														"return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
-	ShaderInstance *shader = shaders[Type][gBufferShadows][debug].get(shadow, 0);
+	ShaderInstance *shader = shaders[Type][debug].get(shadow, 0);
 	if(!shader) {
 		shader = new ShaderInstance(new Shader<FragmentShader>(
 			"uniform sampler2D n_0;"
@@ -186,47 +186,38 @@ ShaderInstance *getShader(const core::String &shadow, bool gBufferShadows = fals
 				+ computeDir[Type] +
 			"}"
 
-			"float test_brdf(vec3 L, vec3 V, vec3 N, vec4 M) {"
-				"vec3 R = reflect(-V, N);"
-				"return max(0.0, dot(L, R));"
-			"}"
-
 			"void main() {"
 				"vec2 texCoord = computeTexCoord();"
-				"vec4 albedo = texture(n_0, texCoord);"
 				"vec3 pos = unproj(texCoord);"
-				"vec3 normal = normalize(texture(n_1, texCoord).xyz * 2.0 - 1.0);"
-				"vec4 material = texture(n_2, texCoord);"
+				"n_GBufferData gbuffer = n_unpackGBuffer(n_0, n_1, n_2, texCoord);"
+
 				"vec3 view = normalize(n_Cam - pos);"
 				"vec3 lightDir = computeDir(pos);"
 				"float lightDist = length(lightDir);"
 				"lightDir /= lightDist;"
 				"lightDist /= n_LightScale;"
-				"float metallic = material.y;"
 
 				"float shadow = 1.0;"
 				"if(n_LightShadowMul != 0.0) {"
 					"shadow = n_LightShadowMul * computeShadow(pos);"
 				"}"
-				+ (gBufferShadows ? "shadow *= material.w;" : "") +
 
 				"float att = attenuate(lightDir, pos, lightDist);"
-				"float NoL = saturate(dot(normal, lightDir));"
-				"float roughness = material.x + epsilon;"
-				"vec3 light = n_LightColor * NoL * att * shadow;"
+				"float NoL = saturate(dot(gbuffer.normal, lightDir));"
+				"vec3 light = n_LightColor * (NoL * att * shadow);"
 
-				"vec3 diffuseColor = mix(albedo.rgb, vec3(0.0), metallic);"
-				"vec3 specularColor = mix(vec3(0.04), albedo.rgb, metallic);"
+				"vec3 diffuseColor = mix(gbuffer.color.rgb, vec3(0.0), gbuffer.metallic);"
+				"vec3 specularColor = mix(vec3(0.04), gbuffer.color.rgb, gbuffer.metallic);"
 
-				"vec3 diffuse = brdf_lambert(lightDir, view, normal, roughness, diffuseColor);"
-				"vec3 specular = brdf_cook_torrance(lightDir, view, normal, roughness, specularColor);"
+				"vec3 diffuse = brdf_lambert(lightDir, view, gbuffer.normal, gbuffer.roughness, diffuseColor);"
+				"vec3 specular = brdf_cook_torrance(lightDir, view, gbuffer.normal, gbuffer.roughness, specularColor);"
 
-				"n_Out = vec4(light * (diffuse + specular), albedo.a);"
+				"n_Out = vec4(light * (diffuse + specular), gbuffer.color.a);"
 
 				+ debugStrs[debug] +
 
 			"}"), Type == Directional ? ShaderProgram::NoProjectionShader : ShaderProgram::ProjectionShader);
-		shaders[Type][gBufferShadows][debug][shadow] = shader;
+		shaders[Type][debug][shadow] = shader;
 	}
 	return shader;
 }
@@ -295,7 +286,7 @@ ShaderInstance *lightPass(const DeferredShadingRenderer::FrameData *data, Deferr
 		if(l->getShadowRenderer() && renderer->shadowMode == DeferredShadingRenderer::Memory) {
 			renderOneShadow(l, ld.shadowData);
 		}
-		ShaderInstance *sh = getShader<Type>(getShadowCode(l), l->castGBufferShadows(), renderer->debugMode);
+		ShaderInstance *sh = getShader<Type>(getShadowCode(l), renderer->debugMode);
 		if(sh != shader) {
 			shader = sh;
 			shader->bind();

@@ -42,17 +42,8 @@ inline RenderFlag operator|(RenderFlag a, RenderFlag b) {
 
 struct MaterialBufferData
 {
-	math::Vec4 color;
-
-	float metallic;
-	float diffuseIntensity;
-	float normalIntensity;
-	float roughnessIntensity;
-
-	uint64 diffuse;
-	uint64 normal;
-	uint64 roughness;
-	float padding[2];
+	uint64 color;
+	uint64 properties;
 };
 
 struct MaterialSurfaceData
@@ -61,13 +52,17 @@ struct MaterialSurfaceData
 	MaterialBufferData toBufferData() const;
 	bool synchronize(bool immediate = false) const;
 
-	Color<> color;
-	float metallic;
 
-	Texture diffuse;
-	Texture normal;
-	Texture roughness;
-	float normalIntensity;
+	Texture color;
+	Texture properties;
+
+	struct PropertyLayout
+	{
+		byte normalX;
+		byte normalY;
+		byte roughness;
+		byte metallic;
+	};
 };
 
 struct MaterialRenderData

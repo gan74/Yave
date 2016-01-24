@@ -83,26 +83,12 @@ class GBufferRenderer : public BufferedRenderer
 					"uniform float n_Time;"
 
 					"in vec3 n_Position;"
-					"in vec3 n_Normal;"
-					"in vec3 n_Tangent;"
-					"in vec3 n_Binormal;"
-					"in vec2 n_TexCoord;"
 
 					"void main() {"
-						"vec3 normal = n_Normal;"
-						"n_MaterialType material = n_Material;"
-						"if(material.normalIntensity != 0) {"
-							"vec2 normalXY = texture(material.normal, n_TexCoord).xy * 2.0 - 1.0;"
-							"vec3 normalMap = vec3(normalXY * material.normalIntensity, sqrt(1.0 - dot(normalXY, normalXY)));"
-							"mat3 TBN = mat3(normalize(n_Tangent), normalize(n_Binormal), normalize(n_Normal));"
-							"normal = TBN * normalMap;"
-						"}"
-						"float roughness = texture(material.roughness, n_TexCoord).x * material.roughnessIntensity;"
-						"float metal = material.metallic;"
-						"vec4 color = material.color * mix(vec4(1.0), texture(material.diffuse, n_TexCoord), material.diffuseIntensity);"
-						"n_0 = n_gbuffer0(color, normal, roughness, metal);"
-						"n_1 = n_gbuffer1(color, normal, roughness, metal);"
-						"n_2 = n_gbuffer2(color, normal, roughness, metal);"
+						"n_GBufferData material = n_Material;"
+						"n_0 = n_packGBuffer0(material);"
+						"n_1 = n_packGBuffer1(material);"
+						"n_2 = n_packGBuffer2(material);"
 					"}");
 			return sh;
 		}

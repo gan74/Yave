@@ -134,6 +134,9 @@ class TriangleBuffer
 					}
 					for(Vertex<T> &v : vertices) {
 						radius = std::max(v.p().length2(), radius);
+						if(v.t().length2() < math::epsilon<T>()) {
+							v.t() = v.n().cross(math::Vec3(0, 0, 1));
+						}
 						v.t().normalize();
 						v.n().normalize();
 					}

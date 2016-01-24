@@ -132,8 +132,9 @@ int main(int argc, char **argv) {
 
 		emitters.foreach([=](ParticleEmitter *p) { p->update(dt); });
 	}
-	} catch(...) {
+	} catch(std::exception &e) {
 		logMsg("Exception caught.", ErrorLog);
+		logMsg(e.what(), ErrorLog);
 	}
 
 	return 0;

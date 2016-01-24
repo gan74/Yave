@@ -32,7 +32,7 @@ namespace graphics {
 class Light : public Movable
 {
 	public:
-		Light() : Movable(), intensity(1), color(1), shadows(0), gbufferShadow(false) {
+		Light() : Movable(), intensity(1), color(1), shadows(0) {
 		}
 
 		virtual ~Light() {
@@ -63,21 +63,12 @@ class Light : public Movable
 			return shadows;
 		}
 
-		bool castGBufferShadows() const {
-			return gbufferShadow;
-		}
-
-		void setCastGBufferShadow(bool c) {
-			gbufferShadow = c;
-		}
-
 	private:
 		float intensity;
 		Color<> color;
 
 	protected:
 		ShadowRenderer *shadows;
-		bool gbufferShadow;
 };
 
 class DirectionalLight : public Light

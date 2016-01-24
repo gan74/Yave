@@ -47,8 +47,9 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 							"gl_Position = n_ScreenPosition = n_ViewProjectionMatrix * model;"
 							//"gl_Position *= gl_Position.w;"//-----------------------------------------------------------------
 							"n_Position = model.xyz;"
-							"n_Normal = mat3(modelMat) * n_VertexNormal;"
-							"n_Tangent = mat3(modelMat) * n_VertexTangent;"
+							"mat3 mm = mat3(modelMat);"
+							"n_Normal = mm * n_VertexNormal;"
+							"n_Tangent = mm * n_VertexTangent;"
 							"n_TexCoord = n_VertexCoord;"
 							"n_Binormal = cross(n_Normal, n_Tangent);"
 							"n_InstanceID = n_DrawID;"
@@ -79,25 +80,7 @@ Shader<VertexShader> *ShaderProgram::getStandardVertexShader(ShaderProgram::Stan
 }
 
 Shader<FragmentShader> *ShaderProgram::getStandardFragmentShader() {
-	//return GBufferRenderer::getShader();
-	static Shader<FragmentShader> *def = 0;
-	if(!def) {
-		def = new Shader<FragmentShader>(
-			"layout(location = 0) out vec4 n_0;"
-
-			"N_DECLARE_MATERIAL_BUFFER"
-
-			"in vec2 n_TexCoord;"
-			"in vec3 n_Normal;"
-
-			"void main() {"
-				"n_MaterialType material = n_Material;"
-				"vec4 color = material.color * mix(vec4(1.0), texture(material.diffuse, n_TexCoord), material.diffuseIntensity);"
-				"n_0 = n_gbuffer0(color, n_Normal, material.roughnessIntensity, material.metallic);"
-				//n_0 = vec4(vec3(float(n_InstanceID) * 0.0025), 1);"
-			"}");
-	}
-	return def;
+	return GBufferRenderer::getShader();
 }
 
 

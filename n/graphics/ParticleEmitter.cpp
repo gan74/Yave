@@ -32,18 +32,15 @@ static Shader<FragmentShader> *getDefaultFrag() {
 
 			"in vec4 n_ParticleColor;"
 
-			"in vec2 n_TexCoord;"
-
 			"void main() {"
-				"vec4 color = n_ParticleColor;"
-				/*"float l = length(n_TexCoord - vec2(0.5)) * 2.0;"
-				"vec4 color = vec4(saturate(1.0 - l));"*/
-				"float metal = 0;"
-				"float roughness = 1.0;"
-				"vec3 normal = vec3(0, 0, 1);"
-				"n_0 = n_gbuffer0(color, normal, roughness, metal);"
-				"n_1 = n_gbuffer1(color, normal, roughness, metal);"
-				"n_2 = n_gbuffer2(color, normal, roughness, metal);"
+				"n_GBufferData data;"
+				"data.color = n_ParticleColor;"
+				"data.metallic = 0;"
+				"data.roughness = 1.0;"
+				"data.normal = vec3(0, 0, 1);"
+				"n_0 = n_packGBuffer0(data);"
+				"n_1 = n_packGBuffer1(data);"
+				"n_2 = n_packGBuffer2(data);"
 			"}");
 	}
 	return shader;
