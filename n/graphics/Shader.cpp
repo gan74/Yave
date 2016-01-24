@@ -99,7 +99,8 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 	core::String model = "\n #define n_ModelMatrix n_ModelMatrices[n_BufferIndex] \n"
 						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(bufferSize) + "]; };";
 	core::String material = "layout(std140) uniform n_MaterialBuffer { n_MaterialBufferType n_Materials[" + core::String(bufferSize) + "]; };"
-							"\n #define n_Material n_unpackMaterial(n_Materials[n_BufferIndex], n_TexCoord) \n";
+							"\n #define n_BufferMaterial n_Materials[n_BufferIndex]"
+							"\n #define n_Material n_unpackMaterial(n_BufferMaterial, n_TexCoord) \n";
 	core::String common = "layout(std140, row_major) uniform; "
 						  "layout (std140, row_major) buffer; "
 						  "const float pi = " + core::String(math::pi) + "; "
