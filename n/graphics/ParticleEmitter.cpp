@@ -38,9 +38,7 @@ static Shader<FragmentShader> *getDefaultFrag() {
 				"data.metallic = 0;"
 				"data.roughness = 1.0;"
 				"data.normal = vec3(0, 0, 1);"
-				"n_0 = n_packGBuffer0(data);"
-				"n_1 = n_packGBuffer1(data);"
-				"n_2 = n_packGBuffer2(data);"
+				"n_packGBuffer(data, n_0, n_1, n_2);"
 			"}");
 	}
 	return shader;

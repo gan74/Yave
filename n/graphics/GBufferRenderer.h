@@ -80,15 +80,9 @@ class GBufferRenderer : public BufferedRenderer
 
 					"N_DECLARE_MATERIAL_BUFFER"
 
-					"uniform float n_Time;"
-
-					"in vec3 n_Position;"
-
 					"void main() {"
 						"n_GBufferData material = n_Material;"
-						"n_0 = n_packGBuffer0(material);"
-						"n_1 = n_packGBuffer1(material);"
-						"n_2 = n_packGBuffer2(material);"
+						"n_packGBuffer(material, n_0, n_1, n_2);"
 					"}");
 			return sh;
 		}
