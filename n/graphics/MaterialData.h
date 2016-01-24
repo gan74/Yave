@@ -44,6 +44,18 @@ struct MaterialBufferData
 {
 	uint64 color;
 	uint64 properties;
+	uint64 aux0;
+	uint64 aux1;
+
+	static core::String toShader() {
+		return
+			"struct n_MaterialBufferData {"
+				"sampler2D color;"
+				"sampler2D properties;"
+				"sampler2D aux1;"
+				"sampler2D aux2;"
+			"};";
+	}
 };
 
 struct MaterialSurfaceData

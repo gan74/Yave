@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Shader.h"
 #include "ShaderProgram.h"
 #include <n/core/Timer.h>
+#include "MaterialData.h"
 
 namespace n {
 namespace graphics {
@@ -75,7 +76,7 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 				"gb.metallic = props.y;"
 				"return gb;"
 			"}"
-			"n_GBufferData n_unpackMaterial(n_MaterialBufferType mat, vec2 uv) {"
+			"n_GBufferData n_unpackMaterial(n_MaterialBufferData mat, vec2 uv) {"
 				"n_GBufferData gb;"
 				"gb.color = texture(mat.color, uv);"
 				"vec4 props = texture(mat.properties, uv);"
@@ -98,9 +99,9 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 	core::String ver = core::String("#version ") + vers + "\n#extension GL_ARB_bindless_texture : enable \n";
 	core::String model = "\n #define n_ModelMatrix n_ModelMatrices[n_BufferIndex] \n"
 						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(bufferSize) + "]; };";
-	core::String material = "layout(std140) uniform n_MaterialBuffer { n_MaterialBufferType n_Materials[" + core::String(bufferSize) + "]; };"
-							"\n #define n_BufferMaterial n_Materials[n_BufferIndex]"
-							"\n #define n_Material n_unpackMaterial(n_BufferMaterial, n_TexCoord) \n";
+	core::String material = "layout(std140) uniform n_MaterialBuffer { n_MaterialBufferData n_Materials[" + core::String(bufferSize) + "]; };"
+							"\n #define n_RawMaterial n_Materials[n_BufferIndex]"
+							"\n #define n_Material n_unpackMaterial(n_RawMaterial, n_TexCoord) \n";
 	core::String common = "layout(std140, row_major) uniform; "
 						  "layout (std140, row_major) buffer; "
 						  "const float pi = " + core::String(math::pi) + "; "
@@ -123,16 +124,13 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 							  "return vec2(float(i) / float(N), VdC);"
 						  "}"
 						  "uniform uint n_BaseInstance;"
-						  "struct n_MaterialBufferType { "
-							  "sampler2D color; "
-							  "sampler2D properties; "
-						  "};"
 						  "struct n_GBufferData {"
 							  "vec4 color;"
 							  "vec3 normal;"
 							  "float roughness;"
 							  "float metallic;"
-						  "};";
+						  "};"
+						  + MaterialBufferData::toShader();
 	uint vit = src.find("#version");
 	if(vit != uint(-1)) {
 		uint l = src.find("\n", vit);

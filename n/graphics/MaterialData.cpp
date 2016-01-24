@@ -39,7 +39,7 @@ MaterialSurfaceData::MaterialSurfaceData() : color(getDefaultColor()), propertie
 
 MaterialBufferData MaterialSurfaceData::toBufferData() const {
 	return MaterialBufferData{color.getBindlessId(),
-							  properties.getBindlessId()};
+							  properties.getBindlessId(), 0, 0};
 }
 
 bool MaterialSurfaceData::synchronize(bool immediate) const {
