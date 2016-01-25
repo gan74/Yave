@@ -183,6 +183,23 @@ class List
 			}
 		}
 
+		template<typename A, typename... Args>
+		List(const A &a, Args... args) : List() {
+			append(a);
+			append(args...);
+		}
+
+		~List() {
+			while(true) {
+				ListElem *d = head;
+				head = head->next;
+				delete d;
+				if(d == tail) {
+					break;
+				}
+			}
+		}
+
 		void swap(List<T> &l) {
 			ListElem *h = head;
 			ListElem *t = tail;
@@ -193,12 +210,6 @@ class List
 			l.head = h;
 			l.tail = t;
 			l.lSize = s;
-		}
-
-		template<typename A, typename... Args>
-		List(const A &a, Args... args) : List() {
-			append(a);
-			append(args...);
 		}
 
 		template<typename C>
