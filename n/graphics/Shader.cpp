@@ -96,10 +96,10 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 			"flat out uint n_InstanceID;"
 	};
 	uint bufferSize = UniformBuffer<math::Matrix4<>>::getMaxSize();
-	core::String ver = core::String("#version ") + vers + "\n#extension GL_ARB_bindless_texture : enable \n";
+	core::String ver = core::String("#version ") + vers + "\n#extension GL_ARB_bindless_texture : enable \n#define N_MAX_MATRIX_BUFFER_SIZE " + bufferSize + "\n";
 	core::String model = "\n #define n_ModelMatrix n_ModelMatrices[n_BufferIndex] \n"
-						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[" + core::String(bufferSize) + "]; };";
-	core::String material = "layout(std140) uniform n_MaterialBuffer { n_MaterialBufferData n_Materials[" + core::String(bufferSize) + "]; };"
+						 "uniform n_ModelMatrixBuffer { mat4 n_ModelMatrices[N_MAX_MATRIX_BUFFER_SIZE]; };";
+	core::String material = "layout(std140) uniform n_MaterialBuffer { n_MaterialBufferData n_Materials[N_MAX_MATRIX_BUFFER_SIZE]; };"
 							"\n #define n_RawMaterial n_Materials[n_BufferIndex]"
 							"\n #define n_Material n_unpackMaterial(n_RawMaterial, n_TexCoord) \n";
 	core::String common = "layout(std140, row_major) uniform; "

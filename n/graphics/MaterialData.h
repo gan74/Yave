@@ -52,8 +52,8 @@ struct MaterialBufferData
 			"struct n_MaterialBufferData {"
 				"sampler2D color;"
 				"sampler2D properties;"
+				"sampler2D aux0;"
 				"sampler2D aux1;"
-				"sampler2D aux2;"
 			"};";
 	}
 };
