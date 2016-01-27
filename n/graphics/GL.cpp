@@ -202,34 +202,6 @@ bool initialize() {
 	return init = true;
 }
 
-bool checkError() {
-	int error = glGetError();
-	if(error) {
-		std::cerr<<"Warning : OpenGL error : ";
-		switch(error) {
-			case GL_INVALID_OPERATION:
-				std::cerr<<"INVALID OPERATION";
-				break;
-			case GL_INVALID_ENUM:
-				std::cerr<<"INVALID ENUM";
-				break;
-			case GL_INVALID_VALUE:
-				std::cerr<<"INVALID VALUE";
-				break;
-			case GL_OUT_OF_MEMORY:
-				std::cerr<<"OUT OF MEMORY";
-				break;
-			default:
-				std::cerr<<"error #"<<error;
-		}
-		std::cerr<<std::endl;
-		return true;
-	}
-	return false;
-}
-
-
-
 Handle createTexture2D(const math::Vec2ui &size, uint mips, TextureFormat format, const void *data) {
 	Handle h = 0;
 	glGenTextures(1, &h);
@@ -712,8 +684,8 @@ void drawElementsInstancedBaseVertex(PrimitiveType mode, uint count, void *indic
 	glDrawElementsInstancedBaseVertex(primitiveMode[mode], count, dataType[GLType<uint>::value], indices, primCount, baseVertex);
 }
 
-void multiDrawElementsIndirect(PrimitiveType mode, uint cmdCount) {
-	glMultiDrawElementsIndirect(primitiveMode[mode], dataType[GLType<uint>::value], 0, cmdCount, 0);
+void multiDrawElementsIndirect(PrimitiveType mode, uint cmdCount, DrawCommand *ptr) {
+	glMultiDrawElementsIndirect(primitiveMode[mode], dataType[GLType<uint>::value], ptr, cmdCount, 0);
 }
 
 void generateMipmap(TextureType type) {

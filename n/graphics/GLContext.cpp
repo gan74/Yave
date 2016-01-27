@@ -150,13 +150,6 @@ math::Vec2ui GLContext::getViewport() const {
 	return frameBuffer ? frameBuffer->getSize() : viewport;
 }
 
-void GLContext::fatalIfError() {
-	N_DEPRECATED;
-	if(gl::checkError()) {
-		fatal("OpenGL error, exiting...");
-	}
-}
-
 void GLContext::setModelMatrix(const math::Matrix4<> &m) {
 	N_DEPRECATED;
 	static UniformBuffer<math::Matrix4<>> buffer(1);

@@ -201,11 +201,11 @@ enum IntParam
 
 struct DrawCommand
 {
-	uint count;
-	uint instanceCount;
-	uint start;
-	uint baseVertex;
-	uint baseInstance;
+	uint32 count;
+	uint32 instanceCount;
+	uint32 start;
+	uint32 baseVertex;
+	uint32 baseInstance;
 };
 
 struct TextureFormat
@@ -282,7 +282,7 @@ void setStorageBlockBinding(Handle prog, const char *name, uint binding);
 
 void attachShader(Handle porg, Handle shader);
 
-void multiDrawElementsIndirect(PrimitiveType mode, uint cmdCount);
+void multiDrawElementsIndirect(PrimitiveType mode, uint cmdCount, DrawCommand *ptr = 0);
 
 void setViewport(math::Vec2i a, math::Vec2i b);
 int getInt(IntParam i);

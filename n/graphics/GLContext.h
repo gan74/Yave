@@ -82,7 +82,6 @@ class GLContext
 
 		void setDebugEnabled(bool deb);
 		void auditGLState();
-		static void fatalIfError();
 
 		ShaderProgram getShaderProgram() const;
 
