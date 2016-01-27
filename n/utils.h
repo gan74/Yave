@@ -25,6 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/utils/perf.h>
 #include <n/utils/SysInfo.h>
 
+
+#define N_SCOPE_LINE_HELPER(CODE, LINE) auto _scope_exit_at_ ## LINE = n::scopeExit([=]() { CODE; })
+#define N_SCOPE_HELPER(CODE, LINE) N_SCOPE_LINE_HELPER(CODE, LINE)
+#define N_SCOPE(CODE) N_SCOPE_HELPER(CODE, __LINE__)
+
 namespace n {
 namespace graphics {
 	namespace gl {}
@@ -52,6 +57,10 @@ constexpr bool is64Bits() {
 	return sizeof(void *) == 8;
 }
 
+constexpr bool is32Bits() {
+	return sizeof(void *) == 4;
+}
+
 namespace internal {
 	static constexpr uint32 endian = 0x01020304; // http://stackoverflow.com/questions/1583791/constexpr-and-endianness
 	static constexpr uint32 endianness = (const byte&)endian;
@@ -66,7 +75,28 @@ constexpr bool isBigEndian() {
 }
 
 static_assert(isLittleEndian() || isBigEndian(), "Unable to determine endianness !");
+static_assert(isLittleEndian(), "This was designed for little endian systems, it may work on other architectures.");
 
+
+template<typename T>
+class ScopeExit
+{
+	public:
+		ScopeExit(T t) : ex(t) {
+		}
+
+		~ScopeExit() {
+			ex();
+		}
+
+	private:
+		T ex;
+};
+
+template<typename T>
+ScopeExit<T> scopeExit(T t) {
+	return ScopeExit<T>(t);
+}
 
 }
 
