@@ -15,7 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "FrameBuffer.h"
-#include "TextureBinding.h"
 #include "Material.h"
 
 namespace n {
@@ -61,7 +60,6 @@ void FrameBuffer::setup() {
 		gl::attachFramebufferTexture(gl::DepthAtt, Texture2D,  0);
 	}
 	gl::drawBuffers(att, drawBuffers);
-	internal::TextureBinding::dirty();
 
 	gl::assertFboStatus();
 

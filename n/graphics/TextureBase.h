@@ -25,49 +25,38 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-namespace internal {
-	class TextureBinding;
+class TextureBinding;
 
-	struct TextureBase
-	{
-		struct Data
+class TextureBase
+{
+	protected:
+		class Data
 		{
-			Data(TextureType t) : type(t), handle(0), bindless(0), hasMips(false) {
-			}
-
-			~Data() {
-				lock.trylock();
-				lock.unlock();
-				if(handle) {
-					gl::Handle h = handle;
-					GLContext::getContext()->addGLTask([=]() {
-						gl::deleteTexture(h);
-					});
+			public:
+				Data(TextureType t) : type(t), handle(0), bindless(0), hasMips(false) {
 				}
-			}
 
-			const TextureType type;
-			concurrent::SpinLock lock;
-			gl::Handle handle;
-			uint64 bindless;
-			bool hasMips;
+				~Data() {
+					lock.trylock();
+					lock.unlock();
+					if(handle) {
+						gl::Handle h = handle;
+						GLContext::getContext()->addGLTask([=]() {
+							gl::deleteTexture(h);
+						});
+					}
+				}
+
+				const TextureType type;
+				concurrent::SpinLock lock;
+				gl::Handle handle;
+				uint64 bindless;
+				bool hasMips;
 		};
 
-		TextureBase(TextureType t) : data(new Data(t)) {
-		}
 
-		TextureBase(const TextureBase &b) : data(b.data) {
-		}
-
-		mutable core::SmartPtr<Data> data;
-	};
-}
-
-template<TextureType Type>
-class TextureBase : protected internal::TextureBase
-{
 	public:
-		TextureBase() : internal::TextureBase(Type) {
+		TextureBase(TextureType type) : data(new Data(type)) {
 		}
 
 		bool hasMipmaps() const {
@@ -79,14 +68,13 @@ class TextureBase : protected internal::TextureBase
 		}
 
 	protected:
-		friend class internal::TextureBinding;
-
-		TextureBase(const internal::TextureBase &base) : internal::TextureBase(base) {
-		}
+		friend class ShaderInstanceBase;
 
 		gl::Handle getHandle() const {
 			return data->handle;
 		}
+
+		mutable core::SmartPtr<Data> data;
 };
 
 }

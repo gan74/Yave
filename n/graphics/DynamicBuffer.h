@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-
 namespace internal {
 	uint maxUboBytes();
 	uint maxSboBytes();
@@ -57,7 +56,7 @@ class DynamicBufferBase
 		}
 
 	protected:
-		friend class ShaderInstance;
+		friend class ShaderInstanceBase;
 		core::SmartPtr<Data> data;
 
 };

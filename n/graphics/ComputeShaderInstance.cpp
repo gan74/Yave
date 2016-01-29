@@ -13,44 +13,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-
-#ifndef N_GRAPHICS_TEXTUREBINDING
-#define N_GRAPHICS_TEXTUREBINDING
-
-#include "TextureBase.h"
+#include "ComputeShaderInstance.h"
 
 namespace n {
 namespace graphics {
-namespace internal {
 
-class TextureBinding
-{
-	public:
-		TextureBinding();
+ComputeShaderInstance::ComputeShaderInstance(const Shader<ComputeShader> *ker) : ShaderInstanceBase(), kernel(ker) {
+	compile(&kernel, 1);
+}
 
-		template<typename T>
-		TextureBinding &operator=(const T &t) {
-			t.synchronize();
-			tex = t.data;
-			return *this;
-		}
-
-		TextureBinding &operator=(TextureSampler smp) {
-			sampler = smp;
-			return *this;
-		}
-
-		void bind(uint slot) const;
-
-		static void dirty();
-
-	private:
-		core::SmartPtr<TextureBase::Data> tex;
-		TextureSampler sampler;
-};
+void ComputeShaderInstance::dispatch(const math::Vec3ui &size) {
+	bind();
+	validateState();
+	gl::dispatchCompute(size);
+}
 
 }
 }
-}
-#endif // N_GRAPHICS_TEXTUREBINDING
-

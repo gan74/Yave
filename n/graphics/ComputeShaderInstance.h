@@ -13,21 +13,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
+#ifndef N_GRAPHICS_COMPUTESHADER_H
+#define N_GRAPHICS_COMPUTESHADER_H
 
-#include "ShaderInstance.h"
-#include "GLContext.h"
-#include <n/core/Timer.h>
+#include "ShaderInstanceBase.h"
 
 namespace n {
 namespace graphics {
 
-ShaderInstance::ShaderInstance(const Shader<FragmentShader> *frag, const Shader<VertexShader> *vert, const Shader<GeometryShader> *geom) : ShaderInstanceBase(), bases{frag, vert, geom} {
-	compile(bases, 3);
+class ComputeShaderInstance : public ShaderInstanceBase
+{
+	public:
+		ComputeShaderInstance(const Shader<ComputeShader> *ker);
+
+		void dispatch(const math::Vec3ui &size);
+
+	private:
+		const ShaderBase *kernel;
+};
+
+}
 }
 
-ShaderInstance::ShaderInstance(const Shader<FragmentShader> *frag, ShaderProgram::StandardVertexShader vert, const Shader<GeometryShader> *geom) : ShaderInstance(frag, ShaderProgram::getStandardVertexShader(vert), geom) {
-}
-
-
-}
-}
+#endif // N_GRAPHICS_COMPUTESHADER_H

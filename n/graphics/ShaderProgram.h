@@ -18,22 +18,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_SHADERPROGRAM_H
 
 #include "Shader.h"
-#include "TextureBinding.h"
 
 namespace n {
 namespace graphics {
 
-namespace internal {
-	struct ShaderProgramData
-	{
-		const ShaderBase *bases[3];
-	};
-}
-
+struct ShaderProgramData
+{
+	const ShaderBase *bases[3];
+};
 
 class ShaderProgram
 {
-	typedef internal::ShaderProgramData Data;
+	typedef ShaderProgramData Data;
 
 	public:
 		enum StandardVertexShader
@@ -69,13 +65,12 @@ class ShaderProgram
 
 	private:
 		friend class GLContext;
-		friend class LowLevel;
 
 		ShaderProgram(core::SmartPtr<Data> ptr);
 
 		core::SmartPtr<Data> data;
 
-		static core::SmartPtr<ShaderProgram::Data> nullData;
+		static core::SmartPtr<Data> nullData;
 };
 
 

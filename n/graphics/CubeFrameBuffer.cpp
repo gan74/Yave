@@ -15,7 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "CubeFrameBuffer.h"
-#include "TextureBinding.h"
 
 namespace n {
 namespace graphics {
@@ -40,7 +39,6 @@ CubeFrameBuffer::CubeFrameBuffer(uint size, ImageFormat format) : FrameBufferBas
 	gl::attachFramebufferTexture(gl::DepthAtt, Texture2D,  0);
 
 	gl::drawBuffers(6, drawBuffers);
-	internal::TextureBinding::dirty();
 
 	gl::assertFboStatus();
 

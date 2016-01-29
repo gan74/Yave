@@ -84,7 +84,13 @@ enum ShaderType
 {
 	FragmentShader,
 	VertexShader,
-	GeometryShader
+	GeometryShader,
+	ComputeShader
+};
+
+enum TextureAccess
+{
+	ReadWrite
 };
 
 namespace gl {
@@ -104,6 +110,7 @@ static constexpr uint InvalidType = uint(-1);
 TextureFormat getTextureFormat(ImageFormat format);
 bool isBindlessHandle(UniformType t);
 bool isSamplerType(UniformType type);
+bool isImageType(UniformType type);
 
 enum Feature
 {
@@ -215,6 +222,7 @@ struct TextureFormat
 		friend bool isHWSupported(ImageFormat);
 		friend Handle createTexture2D(const math::Vec2ui &, uint, TextureFormat, const void *);
 		friend Handle createTextureCube(const math::Vec2ui &, uint, TextureFormat, const void **);
+		friend void bindTextureImage(uint, Handle, TextureAccess, TextureFormat);
 
 		TextureFormat(uint f, uint i, uint t) : format(f), internalFormat(i), type(t) {
 		}
@@ -264,6 +272,7 @@ void updateBuffer(BufferTarget target, uint size, const void *data, BufferAlloc 
 void bindTexture(TextureType type, Handle tex);
 void setActiveTexture(uint s);
 void bindTextureUnit(uint slot, TextureType type, Handle tex);
+void bindTextureImage(uint slot, Handle tex, TextureAccess access, TextureFormat format);
 void bindSampler(uint slot, Handle sampler);
 
 core::String getActiveUniformInfo(Handle prog, uint index, uint *size, UniformType *type);
@@ -294,6 +303,8 @@ void attachFramebufferTextureCube(Handle handle);
 void assertFboStatus();
 
 void drawNoAttrib(uint count);
+
+void dispatchCompute(math::Vec3ui size);
 
 
 

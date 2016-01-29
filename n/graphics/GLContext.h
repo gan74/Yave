@@ -32,17 +32,13 @@ class Material;
 struct MaterialData;
 struct FrameBufferPool;
 class ShaderInstanceFactory;
+struct ShaderProgramData;
 
 template<typename T = float>
 class VertexArrayObject;
 
 template<typename T = float>
 class VertexArrayFactory;
-
-namespace internal {
-	struct Material;
-	struct ShaderProgramData;
-}
 
 class GLContext
 {
@@ -106,7 +102,7 @@ class GLContext
 
 	private:
 		friend class ShaderProgram;
-		friend class ShaderInstance;
+		friend class ShaderInstanceBase;
 		friend class FrameBufferBase;
 		friend class Material;
 
@@ -119,7 +115,7 @@ class GLContext
 		math::Matrix4<> view;
 		DynamicBufferBase models;
 
-		core::SmartPtr<internal::ShaderProgramData> program;
+		core::SmartPtr<ShaderProgramData> program;
 		const FrameBufferBase *frameBuffer;
 
 		FrameBufferPool *fbPool;

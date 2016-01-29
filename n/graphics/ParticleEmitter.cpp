@@ -251,14 +251,14 @@ void ParticleEmitter::render(RenderQueue &q, RenderFlag) {
 		Shader<GeometryShader> *geom = getDefaultGeom(flags)->bindAsDefault();
 
 		material->bind();
-		const ShaderInstance *sh = ShaderInstance::getCurrent();
+		const ShaderInstanceBase *sh = ShaderInstanceBase::getCurrent();
 
 		sh->setBuffer("n_ParticleBuffer", particles);
 		sh->setValue("n_SizeOverLife", sizes, TextureSampler::Bilinear | TextureSampler::Clamp);
 		sh->setValue("n_ColorOverLife", colors, TextureSampler::Bilinear | TextureSampler::Clamp);
 		sh->setValue("n_Forward", -GLContext::getContext()->getViewMatrix()[2].sub(3));
 
-		ShaderInstance::validateState();
+		ShaderInstanceBase::validateState();
 
 		gl::drawNoAttrib(particles.size());
 

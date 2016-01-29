@@ -15,7 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "CubeMap.h"
-#include "TextureBinding.h"
 #include "FrameBuffer.h"
 #include "ShaderInstance.h"
 #include "Material.h"
@@ -25,7 +24,7 @@ namespace n {
 namespace graphics {
 
 
-CubeMap::CubeMap(const Cube &sides) : TextureBase<TextureCube>(), cube(sides) {
+CubeMap::CubeMap(const Cube &sides) : TextureBase(TextureCube), cube(sides) {
 }
 
 void CubeMap::upload() const {
@@ -48,8 +47,6 @@ void CubeMap::upload() const {
 		}
 
 		uint mips = Texture::getMipmapLevelForSize(size);
-		/*#warning CubeMap mipmaping disabled
-		uint mips = 1;*/
 		data->hasMips = mips > 1;
 		gl::TextureFormat format = gl::getTextureFormat(imgF);
 
@@ -60,8 +57,6 @@ void CubeMap::upload() const {
 			data->bindless = gl::getTextureBindlessHandle(data->handle, TextureSampler::Trilinear, hasMipmaps());
 			gl::makeTextureHandleResident(data->bindless);
 		}
-
-		internal::TextureBinding::dirty();
 	}
 }
 

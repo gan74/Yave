@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->setDebugEnabled(false);
 	}
 
-	PerspectiveCamera cam;
+	/*PerspectiveCamera cam;
 	cam.setPosition(Vec3(-25, 0, 25));
 	cam.setRatio(16.0 / 9.0);
 	cam.setForward(-cam.getPosition());
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	Scene scene;
 	scene.insert(&cam);
 
-	uint max = 10;
+	uint max = 100;
 	float scale = 5;
 	for(uint i = 0; i != max; i++) {
 		for(uint j = 0; j != max; j++) {
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, -1) * m->getRadius() * 2.5);
 			scene.insert(m);
 		}
-	}
+	}*/
 
 	/*{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 		//	scene.insert(obj);
 	}*/
 
-	{
+	/*{
 		DirectionalLight *l = new DirectionalLight();
 
 		l->setForward(Vec3(0, 1, -1));
@@ -82,11 +82,24 @@ int main(int argc, char **argv) {
 		particles->addModifier(new TestModifier());
 		scene.insert(particles);
 		emitters.append(particles);
-	}
+	}*/
 
 
+	FrameBuffer fbo(Vec2(512), false, true);
 
-	SceneRenderer *sceRe = new SceneRenderer(&scene);
+	ComputeShaderInstance cs(new Shader<ComputeShader>(
+		"uniform float roll;\
+		 layout(rgba8) uniform image2D destTex;\
+		 layout (local_size_x = 16, local_size_y = 16) in;\
+		 void main() {\
+			 ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);\
+			 float localCoef = length(vec2(ivec2(gl_LocalInvocationID.xy)-8)/8.0);\
+			 float globalCoef = sin(float(gl_WorkGroupID.x+gl_WorkGroupID.y)*0.1 + roll)*0.5;\
+			 imageStore(destTex, storePos, vec4(1.0-globalCoef*localCoef, 0.0, 0.0, 0.0));\
+		 }"));
+
+
+	/*SceneRenderer *sceRe = new SceneRenderer(&scene);
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
 	Renderer *renderers[] {new FrameBufferRenderer(ri),
@@ -103,13 +116,22 @@ int main(int argc, char **argv) {
 							"G-buffer 1",
 							"G-buffer 2",
 							"IBL",
-							"Tone mapped"};
+							"Tone mapped"};*/
 
 	Timer timer;
 
 	try {
 	while(run(win)) {
-		double dt = timer.reset();
+		cs.setValue("destTex", fbo.getAttachment(0), TextureAccess::ReadWrite);
+
+		cs.setValue("roll", timer.elapsed());
+		cs.dispatch(Vec3ui(512/16, 512/16, 1));
+
+		fbo.blit();
+
+
+
+		/*double dt = timer.reset();
 		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 100);
 		Vec2 angle = mouse * 0.01;
 		float p2 = pi * 0.5 - 0.01;
@@ -130,7 +152,7 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
 
-		emitters.foreach([=](ParticleEmitter *p) { p->update(dt); });
+		emitters.foreach([=](ParticleEmitter *p) { p->update(dt); });*/
 	}
 	} catch(std::exception &e) {
 		logMsg("Exception caught.", ErrorLog);

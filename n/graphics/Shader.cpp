@@ -41,6 +41,7 @@ uint ShaderBase::load(core::String src, uint vers) {
 	const char *str = src.toChar();
 	gl::shaderSource(handle, 1, &str, 0);
 	if(!gl::compileShader(handle)) {
+		logMsg(src);
 		throw ShaderCompilationException(gl::getShaderInfoLog(handle));
 	}
 	return vers;
@@ -48,6 +49,7 @@ uint ShaderBase::load(core::String src, uint vers) {
 
 core::String ShaderBase::parse(core::String src, uint vers) {
 	core::String libs[] = {
+			// FRAGMENT
 			"in vec3 n_Normal;"
 			"in vec3 n_Tangent;"
 			"in vec3 n_Binormal;"
@@ -89,11 +91,16 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 			"flat in uint n_InstanceID;"
 			"\n#define n_BufferIndex n_InstanceID\n",
 
+			// VERTEX
 			"layout(location = 4) in uint n_DrawID;"
 			"flat out uint n_InstanceID;"
 			"\n#define n_BufferIndex (n_InstanceID = n_DrawID)\n",
 
-			"flat out uint n_InstanceID;"
+			// GEOMETRY
+			"flat out uint n_InstanceID;",
+
+			// COMPUTE
+			""
 	};
 	uint bufferSize = UniformBuffer<math::Matrix4<>>::getMaxSize();
 	core::String ver = core::String("#version ") + vers + "\n#extension GL_ARB_bindless_texture : enable \n#define N_MAX_MATRIX_BUFFER_SIZE " + bufferSize + "\n";

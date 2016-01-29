@@ -112,7 +112,7 @@ const ShaderInstance *ShaderProgram::bind() const {
 	if(GLContext::getContext()->program != data) {
 		return rebind();
 	}
-	return ShaderInstance::getCurrent();
+	return static_cast<const ShaderInstance *>(ShaderInstanceBase::getCurrent());
 }
 
 

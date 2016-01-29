@@ -27,7 +27,7 @@ namespace graphics {
 
 class ShaderBase;
 
-class Texture : public TextureBase<Texture2D>
+class Texture : public TextureBase
 {
 	public:
 		Texture(const Image &i, bool mip = false);
@@ -70,7 +70,7 @@ class Texture : public TextureBase<Texture2D>
 		friend class FrameBuffer;
 		friend class TextureArray;
 
-		Texture(const internal::TextureBase &base, Image im);
+		//Texture(const TextureBase &base, Image im);
 
 		bool isMipCapable() const {
 			return getSize().max() / float(getSize().min() + 1) < sqrt(2);

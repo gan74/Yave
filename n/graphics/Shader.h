@@ -25,13 +25,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "GLContext.h"
 #include "Texture.h"
 #include "CubeMap.h"
-#include "TextureBinding.h"
 #include "GL.h"
 
 namespace n {
 namespace graphics {
 
 class ShaderProgram;
+class ShaderInstanceBase;
 class ShaderInstance;
 class ShaderBase;
 
@@ -101,7 +101,7 @@ class ShaderBase : NonCopyable
 		#endif
 
 	protected:
-		friend class graphics::ShaderInstance;
+		friend class graphics::ShaderInstanceBase;
 		friend class graphics::ShaderProgram;
 
 		ShaderBase(ShaderType t);
