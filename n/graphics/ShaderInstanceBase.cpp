@@ -89,7 +89,9 @@ ShaderInstanceBase::ImageBinding::ImageBinding() : access(TextureAccess::ReadWri
 }
 
 void ShaderInstanceBase::ImageBinding::bind(uint slot) const {
-	gl::bindTextureImage(slot, tex->handle, access, gl::getTextureFormat(format));
+	if(tex) {
+		gl::bindTextureImage(slot, tex->handle, access, gl::getTextureFormat(format));
+	}
 }
 
 

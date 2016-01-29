@@ -90,7 +90,9 @@ enum ShaderType
 
 enum TextureAccess
 {
-	ReadWrite
+	ReadWrite,
+	WriteOnly,
+	ReadOnly
 };
 
 namespace gl {

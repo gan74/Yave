@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->setDebugEnabled(false);
 	}
 
-	/*PerspectiveCamera cam;
+	PerspectiveCamera cam;
 	cam.setPosition(Vec3(-25, 0, 25));
 	cam.setRatio(16.0 / 9.0);
 	cam.setForward(-cam.getPosition());
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	Scene scene;
 	scene.insert(&cam);
 
-	uint max = 100;
+	uint max = 20;
 	float scale = 5;
 	for(uint i = 0; i != max; i++) {
 		for(uint j = 0; j != max; j++) {
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, -1) * m->getRadius() * 2.5);
 			scene.insert(m);
 		}
-	}*/
+	}
 
 	/*{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
@@ -41,12 +41,11 @@ int main(int argc, char **argv) {
 		//	scene.insert(obj);
 	}*/
 
-	/*{
+	{
 		DirectionalLight *l = new DirectionalLight();
 
 		l->setForward(Vec3(0, 1, -1));
 		l->setIntensity(5);
-		//l->setCastUnfilteredShadows(&scene, 1024);
 		scene.insert(l);
 	}
 
@@ -62,15 +61,6 @@ int main(int argc, char **argv) {
 	core::Array<ParticleEmitter *> emitters;
 	uint parts = ParticleEmitter::getMaxParticles();
 	for(uint i = 0; i != 1; i++) {
-		class TestModifier : public ParticleEmitter::Modifier
-		{
-			public:
-				virtual void modify(Particle &p, double dt) override {
-					Vec3 v = p.position - Vec3(0, 10, 10);
-					p.velocity -= (v / v.length2()) * dt * 625; // v / r not r²
-				}
-		};
-
 		ParticleEmitter *particles = new ParticleEmitter(parts);
 		particles->setVelocityDistribution(new UniformVec3Distribution<>(Vec3(0, 0, 1), pi, 25, 50));
 		particles->setSizeOverLife(PrecomputedRange<Vec2>(Array<Vec2>({Vec2(0.01, 0.0025), Vec2(0.015, 0.0025), Vec2(0)})));
@@ -82,56 +72,30 @@ int main(int argc, char **argv) {
 		particles->addModifier(new TestModifier());
 		scene.insert(particles);
 		emitters.append(particles);
-	}*/
+	}
 
 
-	FrameBuffer fbo(Vec2(512), false, true);
-
-	ComputeShaderInstance cs(new Shader<ComputeShader>(
-		"uniform float roll;\
-		 layout(rgba8) uniform image2D destTex;\
-		 layout (local_size_x = 16, local_size_y = 16) in;\
-		 void main() {\
-			 ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);\
-			 float localCoef = length(vec2(ivec2(gl_LocalInvocationID.xy)-8)/8.0);\
-			 float globalCoef = sin(float(gl_WorkGroupID.x+gl_WorkGroupID.y)*0.1 + roll)*0.5;\
-			 imageStore(destTex, storePos, vec4(1.0-globalCoef*localCoef, 0.0, 0.0, 0.0));\
-		 }"));
-
-
-	/*SceneRenderer *sceRe = new SceneRenderer(&scene);
+	SceneRenderer *sceRe = new SceneRenderer(&scene);
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
-	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
+	//DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
+	TiledDeferredShadingRenderer *ri = new TiledDeferredShadingRenderer(gRe);
 	Renderer *renderers[] {new FrameBufferRenderer(ri),
 						   sceRe,
 						   new FrameBufferRenderer(gRe),
 						   new FrameBufferRenderer(gRe, 1),
-						   new FrameBufferRenderer(gRe, 2),
-						   new DeferredIBLRenderer(gRe),
-						   tone = new BasicToneMapRenderer(ri)};
+						   new FrameBufferRenderer(gRe, 2)};
 
 	String renderNames[] = {"Deferred shading",
 							"Scene",
 							"G-buffer 0",
 							"G-buffer 1",
-							"G-buffer 2",
-							"IBL",
-							"Tone mapped"};*/
+							"G-buffer 2"};
 
 	Timer timer;
 
 	try {
 	while(run(win)) {
-		cs.setValue("destTex", fbo.getAttachment(0), TextureAccess::ReadWrite);
-
-		cs.setValue("roll", timer.elapsed());
-		cs.dispatch(Vec3ui(512/16, 512/16, 1));
-
-		fbo.blit();
-
-
-
-		/*double dt = timer.reset();
+		double dt = timer.reset();
 		cam.setPosition(cam.getPosition() + (wasd.x() * cam.getForward() + wasd.y() * cam.getTransform().getY()) * dt * 100);
 		Vec2 angle = mouse * 0.01;
 		float p2 = pi * 0.5 - 0.01;
@@ -152,7 +116,7 @@ int main(int argc, char **argv) {
 		GLContext::getContext()->finishTasks();
 		GLContext::getContext()->flush();
 
-		emitters.foreach([=](ParticleEmitter *p) { p->update(dt); });*/
+		emitters.foreach([=](ParticleEmitter *p) { p->update(dt); });
 	}
 	} catch(std::exception &e) {
 		logMsg("Exception caught.", ErrorLog);

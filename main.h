@@ -63,6 +63,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/math/Interpolator.h>
 #include <n/graphics/ParticleSystem.h>
 #include <n/graphics/ComputeShaderInstance.h>
+#include <n/graphics/TiledDeferredShadingRenderer.h>
 
 
 using namespace n;
@@ -192,6 +193,15 @@ class MaterialTest : public Movable, public Renderable
 
 	private:
 		SubMeshInstance inst;
+};
+
+class TestModifier : public ParticleEmitter::Modifier
+{
+	public:
+		virtual void modify(Particle &p, double dt) override {
+			Vec3 v = p.position - Vec3(0, 10, 10);
+			p.velocity -= (v / v.length2()) * dt * 625; // v / r not r²
+		}
 };
 
 class DummyRenderable : public Movable, public Renderable
