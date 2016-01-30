@@ -29,6 +29,8 @@ class TiledDeferredShadingRenderer : public BufferedRenderer
 	struct FrameData
 	{
 		void *gbufferData;
+		math::Vec3 camPos;
+		math::Matrix4<> inv;
 		core::Array<DirectionalLight *> directionals;
 	};
 

@@ -33,13 +33,13 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	/*{
+	{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
 		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
 		//auto obj = new Obj("plane.obj");
-		obj->setAutoScale(800);
-		//	scene.insert(obj);
-	}*/
+		obj->setAutoScale(4);
+		scene.insert(obj);
+	}
 
 	{
 		DirectionalLight *l = new DirectionalLight();
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 		//particles->setDrag(0.1);
 		particles->addModifier(new TestModifier());
 		scene.insert(particles);
-		emitters.append(particles);
+		//emitters.append(particles);
 	}
 
 
