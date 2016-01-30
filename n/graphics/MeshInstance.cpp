@@ -72,7 +72,7 @@ float MeshInstance::getRadius() const {
 	float r = -1;
 	if(i) {
 		for(const SubMeshInstance &s : *i) {
-			if(r < 0 || s.getRadius() < r) {
+			if(s.getRadius() > r) {
 				r = s.getRadius();
 			}
 		}
