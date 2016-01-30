@@ -189,7 +189,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 			"void main() {"
 				"vec2 texCoord = computeTexCoord();"
 				"vec3 pos = unproj(texCoord);"
-				"n_GBufferData gbuffer = n_unpackGBuffer(n_0, n_1, n_2, texCoord);"
+				"n_GBufferData gbuffer = n_unpackGBuffer(n_0, n_1, n_2, ivec2(gl_FragCoord.xy));"
 
 				"vec3 view = normalize(n_Cam - pos);"
 				"vec3 lightDir = computeDir(pos);"
@@ -212,7 +212,7 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 				"vec3 diffuse = brdf_lambert(lightDir, view, gbuffer.normal, gbuffer.roughness, diffuseColor);"
 				"vec3 specular = brdf_cook_torrance(lightDir, view, gbuffer.normal, gbuffer.roughness, specularColor);"
 
-				"n_Out = vec4(light * (diffuse + specular), gbuffer.color.a);"
+				"n_Out = vec4(light * (diffuse + specular), 1.0);"
 
 				+ debugStrs[debug] +
 

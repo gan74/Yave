@@ -16,8 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "TiledDeferredShadingRenderer.h"
 #include "DeferredCommon.h"
 
-#include <iostream>
-
 namespace n {
 namespace graphics {
 
@@ -77,7 +75,7 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 		"void main() {"
 			"ivec2 coord = ivec2(gl_GlobalInvocationID.xy);"
-			"vec2 uv = gl_GlobalInvocationID.xy / vec2(gl_NumWorkGroups.x * gl_WorkGroupSize);"
+			"vec2 uv = gl_GlobalInvocationID.xy / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);"
 
 			"float depth = texelFetch(n_D, coord, 0).x;"
 
@@ -164,13 +162,10 @@ void TiledDeferredShadingRenderer::render(void *ptr) {
 
 	for(uint i = 0; i != data->directionals.size(); i++) {
 		DirectionalLight *light = data->directionals[i];
-		directionals[i].color = (light->getColor() * light->getIntensity()).sub(3);
+		directionals[i].color = light->getColor().sub(3) * light->getIntensity();
 		directionals[i].forward = -light->getTransform().getX();
 	}
 	compute->setValue("n_DirectionalLightCount", data->directionals.size());
-
-	std::cout<<data->directionals.size()<<std::endl;
-
 
 
 

@@ -33,13 +33,13 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	{
+	/*{
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
 		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
 		//auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
 		scene.insert(obj);
-	}
+	}*/
 
 	{
 		DirectionalLight *l = new DirectionalLight();
@@ -77,15 +77,17 @@ int main(int argc, char **argv) {
 
 	SceneRenderer *sceRe = new SceneRenderer(&scene);
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
-	//DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
-	TiledDeferredShadingRenderer *ri = new TiledDeferredShadingRenderer(gRe);
-	Renderer *renderers[] {new FrameBufferRenderer(ri),
+	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
+	TiledDeferredShadingRenderer *ti = new TiledDeferredShadingRenderer(gRe);
+	Renderer *renderers[] {new FrameBufferRenderer(ti),
+						   new FrameBufferRenderer(ri),
 						   sceRe,
 						   new FrameBufferRenderer(gRe),
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2)};
 
-	String renderNames[] = {"Deferred shading",
+	String renderNames[] = {"Tiled shading",
+							"Deferred shading",
 							"Scene",
 							"G-buffer 0",
 							"G-buffer 1",
@@ -105,12 +107,7 @@ int main(int argc, char **argv) {
 
 		uint count = sizeof(renderers) / sizeof(void *);
 		uint index = rendererIndex % count;
-		if(index == 5) {
-			(*renderers[0])();
-			(*renderers[5])();
-		} else {
-			(*renderers[index])();
-		}
+		(*renderers[index])();
 		SDL_SetWindowTitle(win, renderNames[index].toChar());
 
 		GLContext::getContext()->finishTasks();
