@@ -34,16 +34,38 @@ class TiledDeferredShadingRenderer : public BufferedRenderer
 		core::Array<DirectionalLight *> directionals;
 	};
 
+	struct DirectionalLightData
+	{
+		math::Vec3 color;
+		int padding0;
+		math::Vec3 forward;
+		int padding1;
+
+		static core::String toShader() {
+			return
+				"struct n_DirectionalLightData {"
+					"vec3 color;"
+					"int padding0;"
+					"vec3 forward;"
+					"int padding1;"
+				"};";
+		}
+	};
+
 	public:
 		TiledDeferredShadingRenderer(GBufferRenderer *g, const math::Vec2ui &s = math::Vec2ui(0));
+		~TiledDeferredShadingRenderer();
 
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;
 
 
 	private:
+		static Shader<ComputeShader> *createComputeShader();
+
 		GBufferRenderer *gbuffer;
 		ComputeShaderInstance *compute;
+		UniformBuffer<DirectionalLightData> directionals;
 };
 
 }

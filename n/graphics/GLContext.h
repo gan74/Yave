@@ -52,6 +52,7 @@ class GLContext
 			BindlessTextureSupport = 4,
 			MaxUBOBytes = 5,
 			MaxSSBOBytes = 6,
+			MaxComputeGroupSize = 7,
 			Max
 		};
 

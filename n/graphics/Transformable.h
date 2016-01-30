@@ -26,6 +26,9 @@ namespace graphics {
 class Transformable
 {
 	public:
+		Transformable() : radius(-1) {
+		}
+
 		const math::Transform<> &getTransform() const {
 			return transform;
 		}
@@ -58,6 +61,9 @@ class Movable : public Transformable
 {
 
 	public:
+		Movable() : Transformable() {
+		}
+
 		void setPosition(const math::Vec3 &pos) {
 			transform = math::Transform<>(transform.getRotation(), pos, transform.getScale());
 		}

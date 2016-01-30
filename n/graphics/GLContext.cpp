@@ -96,6 +96,7 @@ GLContext::GLContext() : program(0), frameBuffer(0), fbPool(new FrameBufferPool(
 	hwInts[MaxUBOBytes] = gl::getInt(gl::MaxUBOSize);
 	hwInts[MaxSSBOBytes] = gl::getInt(gl::MaxSSBOSize);
 	hwInts[BindlessTextureSupport] = gl::isExtensionSupported("GL_ARB_bindless_texture");
+	hwInts[MaxComputeGroupSize] = gl::getInt(gl::MaxComputeGroupSize);
 
 	if(!hwInts[BindlessTextureSupport]) {
 		logMsg("GL_ARB_bindless_texture not supported.", WarningLog);

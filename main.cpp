@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 		auto obj = new Obj("./crytek-sponza/sponza.obj");
 		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
 		//auto obj = new Obj("plane.obj");
-		obj->setAutoScale(4);
+		obj->setAutoScale(800);
 		scene.insert(obj);
 	}
 

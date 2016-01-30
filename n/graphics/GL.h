@@ -205,7 +205,8 @@ enum IntParam
 	MaxUBOSize,
 	MaxSSBOSize,
 	MajorVersion,
-	MinorVersion
+	MinorVersion,
+	MaxComputeGroupSize,
 };
 
 struct DrawCommand
