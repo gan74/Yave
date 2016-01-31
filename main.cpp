@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 		//particles->setDrag(0.1);
 		particles->addModifier(new TestModifier());
 		scene.insert(particles);
-		//emitters.append(particles);
+		emitters.append(particles);
 	}
 
 
@@ -95,6 +95,8 @@ int main(int argc, char **argv) {
 
 	Timer timer;
 
+	concurrent::Thread::sleep(5);
+
 	try {
 	while(run(win)) {
 		double dt = timer.reset();
@@ -108,6 +110,7 @@ int main(int argc, char **argv) {
 		uint count = sizeof(renderers) / sizeof(void *);
 		uint index = rendererIndex % count;
 		(*renderers[index])();
+
 		SDL_SetWindowTitle(win, renderNames[index].toChar());
 
 		GLContext::getContext()->finishTasks();

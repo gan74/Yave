@@ -30,7 +30,6 @@ class TiledDeferredShadingRenderer : public BufferedRenderer
 	{
 		void *gbufferData;
 		math::Vec3 camPos;
-		math::Matrix4<> inv;
 		core::Array<DirectionalLight *> directionals;
 	};
 
@@ -48,6 +47,24 @@ class TiledDeferredShadingRenderer : public BufferedRenderer
 					"int padding0;"
 					"vec3 forward;"
 					"int padding1;"
+				"};";
+		}
+	};
+
+	struct PointLightData
+	{
+		math::Vec3 color;
+		float radius;
+		math::Vec3 position;
+		float scale;
+
+		static core::String toShader() {
+			return
+				"struct n_PointLightData {"
+					"vec3 color;"
+					"float radius;"
+					"vec3 position;"
+					"float scale;"
 				"};";
 		}
 	};
