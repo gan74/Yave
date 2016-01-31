@@ -193,7 +193,7 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 			// DIRECTIONAL SHADING
 			"vec3 finalColor = vec3(0.0);"
-			"for(uint i = 0; i != n_DirectionalLightCount; i++) {"
+			"for(uint i = 0; i < n_DirectionalLightCount; i++) {"
 				"n_DirectionalLightData light = n_DirectionalLights[i];"
 
 				"vec3 diffuse = brdf_lambert(light.forward, worldView, gbuffer.normal, gbuffer.roughness, diffuseColor);"
@@ -205,8 +205,10 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 			"}"
 
 
+			"barrier();"
+
 			// POINT CULLING
-			"uint threadCount = gl_NumWorkGroups.x * gl_NumWorkGroups.y;"
+			"uint threadCount = gl_WorkGroupSize.x * gl_WorkGroupSize.y;"
 			"uint range = 1 + (n_PointLightCount / threadCount);"
 			"uint start = gl_LocalInvocationIndex * range;"
 			"uint end = min(start + range, n_PointLightCount);"
@@ -236,7 +238,7 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 					"vec3 specular = brdf_cook_torrance(lightVec, worldView, gbuffer.normal, gbuffer.roughness, specularColor);"
 
 					"float NoL = saturate(dot(gbuffer.normal, lightVec));"
-					"float att = attenuate(dist / light.scale, light.radius);"
+					"float att = attenuate(dist / light.scale, light.radius / light.scale);"
 
 					"finalColor += light.color * NoL * att * (diffuse + specular);"
 				"}"
@@ -245,6 +247,9 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 			// WRITE
 			"imageStore(n_Out, coord, vec4(finalColor, 1.0));"
+
+			/*"float cc = tileLightCount;"
+			"imageStore(n_Out, coord, vec4(cc / 128.0));"*/
 		"}"
 	);
 }
@@ -271,10 +276,12 @@ TiledDeferredShadingRenderer::~TiledDeferredShadingRenderer() {
 
 void *TiledDeferredShadingRenderer::prepare() {
 	void *ptr = gbuffer->prepare();
+
 	SceneRenderer::FrameData *sceneData = gbuffer->getSceneRendererData(ptr);
 	return new FrameData{
 		ptr,
 		sceneData->camera->getPosition(),
+		(sceneData->proj * sceneData->view).inverse(),
 		gbuffer->getRenderer()->getScene()->get<DirectionalLight>(),
 		gbuffer->getRenderer()->getScene()->query<PointLight>(*sceneData->camera)
 	};
@@ -282,10 +289,9 @@ void *TiledDeferredShadingRenderer::prepare() {
 
 void TiledDeferredShadingRenderer::render(void *ptr) {
 	FrameData *data = reinterpret_cast<FrameData *>(ptr);
-	SceneRenderer::FrameData *sceneData = gbuffer->getSceneRendererData(data->gbufferData);
+	//SceneRenderer::FrameData *sceneData = gbuffer->getSceneRendererData(data->gbufferData);
 
 	gbuffer->render(data->gbufferData);
-
 
 	for(uint i = 0; i != data->directionals.size(); i++) {
 		DirectionalLight *light = data->directionals[i];
@@ -304,7 +310,7 @@ void TiledDeferredShadingRenderer::render(void *ptr) {
 	compute->setValue("n_DirectionalLightCount", data->directionals.size());
 	compute->setValue("n_PointLightCount", data->points.size());
 
-	compute->setValue("n_InvMatrix", (sceneData->proj * sceneData->view).inverse());
+	compute->setValue("n_InvMatrix", data->inv);
 	compute->setValue("n_Camera", data->camPos);
 	compute->dispatch(math::Vec3ui(getFrameBuffer().getSize() / math::Vec2(32, 30), 1));
 
