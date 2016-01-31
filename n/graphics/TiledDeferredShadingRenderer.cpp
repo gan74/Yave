@@ -22,7 +22,7 @@ namespace graphics {
 static constexpr uint MaxLights = 1024;
 
 Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
-	bool usePlanes = false;
+	bool usePlanes = true;
 	bool minMaxDepth = false;
 	bool debugLightCount = false;
 	return new Shader<ComputeShader>(
@@ -107,7 +107,12 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 			"return dot(v, v) - sqr(d);"
 		"}"
 
-		"bool isInFrustum(vec3 p, float rad, vec3 pos, vec3 dirs[5]) {" // not conservative
+		"bool isInFrustum(vec3 p, float rad, vec3 pos, vec3 dirs[4]) {" // not conservative
+			"vec3 v = p - pos;"
+			"float v2 = dot(v, v);"
+			"float r2 = rad * rad;"
+			"vec3 a = pos + dirs[0] * dot(dirs[0], v);"
+			"vec3 b = pos + dirs[1] * dot(dirs[1], v);"
 			"return dot(p - a, p - b) < 0 ||"
 				   "rayDistance2(v, v2, dirs[0]) < r2 ||"
 				   "rayDistance2(v, v2, dirs[1]) < r2 ||"
@@ -173,12 +178,11 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 				"planes[2] = frustumPlane(n_Camera, topRightTile, topLeftTile);" // top
 				"planes[3] = frustumPlane(n_Camera, botLeftTile, botRightTile);" // bottom
 				:
-				"vec3 dirs[5];"
+				"vec3 dirs[4];"
 				"dirs[0] = normalize(botLeftTile - n_Camera);"
 				"dirs[1] = normalize(botRightTile - n_Camera);"
 				"dirs[2] = normalize(topLeftTile - n_Camera);"
 				"dirs[3] = normalize(topRightTile - n_Camera);"
-				"dirs[4] = normalize(dirs[0] + dirs[1] + dirs[2] + dirs[3]);"
 			) +
 
 			// G-BUFFER
