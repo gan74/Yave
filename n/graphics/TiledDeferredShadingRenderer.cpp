@@ -24,6 +24,7 @@ static constexpr uint MaxLights = 1024;
 Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 	bool usePlanes = false;
 	bool minMaxDepth = false;
+	bool debugLightCount = false;
 	return new Shader<ComputeShader>(
 		"\n#define GROUP_X 32\n"
 		"\n#define GROUP_Y 30\n"
@@ -106,11 +107,9 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 			"return dot(v, v) - sqr(d);"
 		"}"
 
-		"bool isInFrustum(vec3 p, float rad, vec3 pos, vec3 dirs[4]) {"
-			"vec3 v = p - pos;"
-			"float v2 = dot(v, v);"
-			"float r2 = rad * rad;"
-			"return rayDistance2(v, v2, dirs[0]) < r2 ||"
+		"bool isInFrustum(vec3 p, float rad, vec3 pos, vec3 dirs[5]) {" // not conservative
+			"return dot(p - a, p - b) < 0 ||"
+				   "rayDistance2(v, v2, dirs[0]) < r2 ||"
 				   "rayDistance2(v, v2, dirs[1]) < r2 ||"
 				   "rayDistance2(v, v2, dirs[2]) < r2 ||"
 				   "rayDistance2(v, v2, dirs[3]) < r2;"
@@ -174,11 +173,12 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 				"planes[2] = frustumPlane(n_Camera, topRightTile, topLeftTile);" // top
 				"planes[3] = frustumPlane(n_Camera, botLeftTile, botRightTile);" // bottom
 				:
-				"vec3 dirs[4];"
+				"vec3 dirs[5];"
 				"dirs[0] = normalize(botLeftTile - n_Camera);"
 				"dirs[1] = normalize(botRightTile - n_Camera);"
 				"dirs[2] = normalize(topLeftTile - n_Camera);"
 				"dirs[3] = normalize(topRightTile - n_Camera);"
+				"dirs[4] = normalize(dirs[0] + dirs[1] + dirs[2] + dirs[3]);"
 			) +
 
 			// G-BUFFER
@@ -246,10 +246,14 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 
 			// WRITE
-			"imageStore(n_Out, coord, vec4(finalColor, 1.0));"
+			+ (debugLightCount ?
+				"float cc = tileLightCount;"
+				"imageStore(n_Out, coord, vec4(cc / 4.0));"
+				:
+				"imageStore(n_Out, coord, vec4(finalColor, 1.0));"
+			) +
 
-			/*"float cc = tileLightCount;"
-			"imageStore(n_Out, coord, vec4(cc / 128.0));"*/
+
 		"}"
 	);
 }

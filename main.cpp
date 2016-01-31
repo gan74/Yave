@@ -19,6 +19,15 @@ int main(int argc, char **argv) {
 	cam.setRatio(16.0 / 9.0);
 	cam.setForward(-cam.getPosition());
 
+	io::File file("settings.dat");
+	if(file.open(io::IODevice::Read | io::IODevice::Binary)) {
+		Vec3 pos;
+		file.readBytes(&pos, sizeof(Vec3));
+		file.readBytes(&mouse, sizeof(Vec2));
+		cam.setPosition(pos);
+		file.close();
+	}
+
 	Scene scene;
 	scene.insert(&cam);
 
@@ -28,25 +37,25 @@ int main(int argc, char **argv) {
 		for(uint j = 0; j != max; j++) {
 			auto m = new MaterialTest(i / float(max), j / float(max));
 			m->setScale(scale);
-			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, -1) * m->getRadius() * 2.5);
+			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, 1) * m->getRadius() * 2.5);
 			scene.insert(m);
 		}
 	}
 
-	/*{
-		auto obj = new Obj("./crytek-sponza/sponza.obj");
-		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
-		//auto obj = new Obj("plane.obj");
+	{
+		//auto obj = new Obj("./crytek-sponza/sponza.obj");
+		//obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
+		auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
 		scene.insert(obj);
-	}*/
+	}
 
 	{
 		DirectionalLight *l = new DirectionalLight();
 
 		l->setForward(Vec3(0, 1, -1));
 		l->setIntensity(5);
-		scene.insert(l);
+		//scene.insert(l);
 	}
 
 	{
@@ -55,6 +64,17 @@ int main(int argc, char **argv) {
 		l->setForward(Vec3(0, -1, -1));
 		l->setIntensity(1);
 		l->setColor(BaseColor::Blue);
+		//scene.insert(l);
+	}
+
+	for(uint i = 0; i != 1000; i++) {
+		PointLight *l = new PointLight;
+		l->setIntensity(50);
+		l->setRadius(1);
+		l->setPosition(Vec3((Vec2(random(), random()) * 2.0 - 1.0) * 350, 1));
+		l->setScale(random() * 50 + 25);
+
+		l->setColor(BaseColor(random(1, BaseColor::Blue + 1)));
 		scene.insert(l);
 	}
 
@@ -122,6 +142,11 @@ int main(int argc, char **argv) {
 		logMsg("Exception caught.", ErrorLog);
 		logMsg(e.what(), ErrorLog);
 	}
+
+	file.open(io::IODevice::Write | io::IODevice::Binary);
+	file.writeBytes(&cam.getPosition(), sizeof(Vec3));
+	file.writeBytes(&mouse, sizeof(Vec2));
+	file.close();
 
 	return 0;
 }

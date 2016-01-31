@@ -201,8 +201,8 @@ struct ImageFormat
 
 enum BaseColor
 {
-	White,
 	Black,
+	White,
 	Red,
 	Green,
 	Blue,
