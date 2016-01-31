@@ -31,6 +31,7 @@ class TiledDeferredShadingRenderer : public BufferedRenderer
 		void *gbufferData;
 		math::Vec3 camPos;
 		core::Array<DirectionalLight *> directionals;
+		core::Array<PointLight *> points;
 	};
 
 	struct DirectionalLightData
@@ -83,6 +84,7 @@ class TiledDeferredShadingRenderer : public BufferedRenderer
 		GBufferRenderer *gbuffer;
 		ComputeShaderInstance *compute;
 		UniformBuffer<DirectionalLightData> directionals;
+		UniformBuffer<PointLightData> points;
 };
 
 }
