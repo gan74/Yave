@@ -50,7 +50,7 @@ class Plane final : public Volume<T>
 		}
 
 		T getSignedDistance(const Vec<3, T> &v) const {
-			return n.dot(v - (n * d));
+			return n.dot(v) + w;
 		}
 
 		const Vec<3, T> &getNormal() const {
