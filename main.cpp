@@ -54,8 +54,8 @@ int main(int argc, char **argv) {
 		DirectionalLight *l = new DirectionalLight();
 
 		l->setForward(Vec3(0, 1, -1));
-		l->setIntensity(5);
-		//scene.insert(l);
+		l->setIntensity(1);
+		scene.insert(l);
 	}
 
 	{
@@ -64,15 +64,16 @@ int main(int argc, char **argv) {
 		l->setForward(Vec3(0, -1, -1));
 		l->setIntensity(1);
 		l->setColor(BaseColor::Blue);
-		//scene.insert(l);
+		scene.insert(l);
 	}
 
 	for(uint i = 0; i != 1000; i++) {
 		PointLight *l = new PointLight;
-		l->setIntensity(50);
+		l->setIntensity(5);
 		l->setRadius(1);
-		l->setPosition(Vec3((Vec2(random(), random()) * 2.0 - 1.0) * 350, 1));
-		l->setScale(random() * 50 + 25);
+		l->setPosition(Vec3((Vec2(random(), random()) * 2.0 - 1.0) * 400, 1));
+		l->setScale(random() * 150 + 75);
+		//l->setScale(150);
 
 		l->setColor(BaseColor(random(1, BaseColor::Blue + 1)));
 		scene.insert(l);

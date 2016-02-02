@@ -19,13 +19,18 @@ namespace n {
 namespace graphics {
 
 ComputeShaderInstance::ComputeShaderInstance(const Shader<ComputeShader> *ker) : ShaderInstanceBase(), kernel(ker) {
-	compile(&kernel, 1);
+	const ShaderBase *b = static_cast<const ShaderBase *>(kernel);
+	compile(&b, 1);
 }
 
 void ComputeShaderInstance::dispatch(const math::Vec3ui &size) {
 	bind();
 	validateState();
 	gl::dispatchCompute(size);
+}
+
+const Shader<ComputeShader> *ComputeShaderInstance::getKernel() const {
+	return kernel;
 }
 
 }

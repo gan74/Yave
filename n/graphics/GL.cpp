@@ -712,7 +712,9 @@ FrameBufferStatus checkFramebufferStatus(FrameBufferType framebuffer) {
 
 
 void dispatchCompute(math::Vec3ui size) {
+	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	glDispatchCompute(size.x(), size.y(), size.z());
+	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
 void bindFramebuffer(FrameBufferType target, Handle fbo) {

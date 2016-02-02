@@ -73,15 +73,27 @@ class TiledDeferredShadingRenderer : public BufferedRenderer
 	};
 
 	public:
+		enum Flags
+		{
+			None = 0x00000000,
+			UseMinMaxDepth = 0x00000001,
+
+			DebugLightCount = 0x00000002,
+		};
+
 		TiledDeferredShadingRenderer(GBufferRenderer *g, const math::Vec2ui &s = math::Vec2ui(0));
 		~TiledDeferredShadingRenderer();
+
+
+		void setFlags(Flags flags);
 
 		virtual void *prepare() override;
 		virtual void render(void *ptr) override;
 
-
 	private:
-		static Shader<ComputeShader> *createComputeShader();
+		static Shader<ComputeShader> *createComputeShader(Flags flags = None);
+
+		void setCompute(Shader<ComputeShader> *c);
 
 		GBufferRenderer *gbuffer;
 		ComputeShaderInstance *compute;

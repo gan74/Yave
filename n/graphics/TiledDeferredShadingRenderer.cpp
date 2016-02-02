@@ -21,15 +21,17 @@ namespace graphics {
 
 static constexpr uint MaxLights = 1024;
 
-Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
-	bool minMaxDepth = true;
-	bool debugLightCount = false;
+Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader(Flags flags) {
+	bool minMaxDepth = flags & UseMinMaxDepth;
+	bool debugLightCount = flags & DebugLightCount;
+
+
 	return new Shader<ComputeShader>(
 		"\n#define GROUP_X 32\n"
 		"\n#define GROUP_Y 30\n"
 		"\n#define MAX_LIGHTS " + core::String(MaxLights) + "\n"
 
-		"layout(rgba16f) uniform coherent writeonly image2D n_Out;"
+		"layout(rgba16f) uniform writeonly image2D n_Out;"
 		"layout(local_size_x = GROUP_X, local_size_y = GROUP_Y) in;"
 
 		"const uint MaxUint = uint(0xFFFFFFF);"
@@ -250,7 +252,22 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 
 
-TiledDeferredShadingRenderer::TiledDeferredShadingRenderer(GBufferRenderer *g, const math::Vec2ui &s) : BufferedRenderer(s, true, ImageFormat::RGBA16F), gbuffer(g), compute(new ComputeShaderInstance(createComputeShader())), directionals(MaxLights), points(MaxLights) {
+TiledDeferredShadingRenderer::TiledDeferredShadingRenderer(GBufferRenderer *g, const math::Vec2ui &s) : BufferedRenderer(s, true, ImageFormat::RGBA16F), gbuffer(g), compute(0), directionals(MaxLights), points(MaxLights) {
+	setCompute(createComputeShader());
+}
+
+void TiledDeferredShadingRenderer::setCompute(Shader<ComputeShader> *c) {
+	if(compute) {
+		const Shader<ComputeShader> *b = compute->getKernel();
+		delete b;
+		delete compute;
+	}
+	if(!c) {
+		compute = 0;
+		return;
+	}
+
+	compute = new ComputeShaderInstance(c);
 	compute->setValue("n_Out", getFrameBuffer().getAttachment(0), TextureAccess::WriteOnly);
 	compute->setValue("n_0", gbuffer->getFrameBuffer().getAttachment(0));
 	compute->setValue("n_1", gbuffer->getFrameBuffer().getAttachment(1));
@@ -261,7 +278,15 @@ TiledDeferredShadingRenderer::TiledDeferredShadingRenderer(GBufferRenderer *g, c
 }
 
 TiledDeferredShadingRenderer::~TiledDeferredShadingRenderer() {
-	delete compute;
+	if(compute) {
+		const Shader<ComputeShader> *b = compute->getKernel();
+		delete b;
+		delete compute;
+	}
+}
+
+void TiledDeferredShadingRenderer::setFlags(Flags flags) {
+	setCompute(createComputeShader(flags));
 }
 
 void *TiledDeferredShadingRenderer::prepare() {

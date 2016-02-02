@@ -28,8 +28,10 @@ class ComputeShaderInstance : public ShaderInstanceBase
 
 		void dispatch(const math::Vec3ui &size);
 
+		const Shader<ComputeShader> *getKernel() const;
+
 	private:
-		const ShaderBase *kernel;
+		const Shader<ComputeShader> *kernel;
 };
 
 }
