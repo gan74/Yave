@@ -22,8 +22,7 @@ namespace graphics {
 static constexpr uint MaxLights = 1024;
 
 Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
-	bool usePlanes = true;
-	bool minMaxDepth = false;
+	bool minMaxDepth = true;
 	bool debugLightCount = false;
 	return new Shader<ComputeShader>(
 		"\n#define GROUP_X 32\n"
@@ -33,7 +32,7 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 		"layout(rgba8) uniform coherent writeonly image2D n_Out;"
 		"layout(local_size_x = GROUP_X, local_size_y = GROUP_Y) in;"
 
-		"const uint MaxUint = uint(0xFFFFFFFF);"
+		"const uint MaxUint = uint(0xFFFFFFF);"
 		"shared uint iMinDepth = MaxUint;"
 		"shared uint iMaxDepth = 0;"
 
@@ -51,6 +50,7 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 		"uniform mat4 n_InvMatrix;"
 		"uniform vec3 n_Camera;"
+		"uniform vec3 n_CameraForward;"
 
 
 
@@ -71,6 +71,12 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 
 
+
+
+		"struct FrustumData {"
+			"vec4 planes[" + (minMaxDepth ? "6" : "4") + "];"
+		"};"
+
 		"vec4 frustumPlane(vec3 cam, vec3 corner0, vec3 corner1) {"
 			"vec3 norm = normalize(cross(cam - corner0, corner1 - corner0));"
 			"return	vec4(-norm, dot(cam, norm));"
@@ -88,37 +94,15 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 			"return planeDistance(p, plane) < rad;"
 		"}"
 
-		"bool isInFrustum(vec3 p, vec4 planes[4]) {"
-			"return isInside(p, planes[0]) &&"
-				   "isInside(p, planes[1]) &&"
-				   "isInside(p, planes[2]) &&"
-				   "isInside(p, planes[3]);"
-		"}"
-
-		"bool isInFrustum(vec3 p, float rad, vec4 planes[4]) {"
-			"return isInside(p, rad, planes[0]) &&"
-				   "isInside(p, rad, planes[1]) &&"
-				   "isInside(p, rad, planes[2]) &&"
-				   "isInside(p, rad, planes[3]);"
-		"}"
-
-		"float rayDistance2(vec3 v, float v2, vec3 dir) {"
-			"float d = dot(dir, v);"
-			"return dot(v, v) - sqr(d);"
-		"}"
-
-		"bool isInFrustum(vec3 p, float rad, vec3 pos, vec3 dirs[4]) {" // not conservative
-			"vec3 v = p - pos;"
-			"float v2 = dot(v, v);"
-			"float r2 = rad * rad;"
-			"vec3 a = pos + dirs[0] * dot(dirs[0], v);"
-			"vec3 b = pos + dirs[1] * dot(dirs[1], v);"
-			"return dot(p - a, p - b) < 0 ||"
-				   "rayDistance2(v, v2, dirs[0]) < r2 ||"
-				   "rayDistance2(v, v2, dirs[1]) < r2 ||"
-				   "rayDistance2(v, v2, dirs[2]) < r2 ||"
-				   "rayDistance2(v, v2, dirs[3]) < r2;"
-
+		"bool isInFrustum(vec3 p, float rad, FrustumData fr) {"
+			"return isInside(p, rad, fr.planes[0]) &&"
+				   "isInside(p, rad, fr.planes[1]) &&"
+				   "isInside(p, rad, fr.planes[2]) &&"
+				   "isInside(p, rad, fr.planes[3])"
+				   + (minMaxDepth ? " &&"
+				   "isInside(p, rad, fr.planes[4]) &&"
+				   "isInside(p, rad, fr.planes[5]);"
+				   :";") +
 		"}"
 
 		"vec3 unprojectNDC(vec4 vp) {"
@@ -142,23 +126,7 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 			"return i / float(MaxUint);"
 		"}"
 
-		"void main() {"
-			// DEPTH
-			"ivec2 coord = ivec2(gl_GlobalInvocationID.xy);"
-			"vec2 uv = gl_GlobalInvocationID.xy / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);"
-
-			"float depth = texelFetch(n_D, coord, 0).x;"
-
-			+ (minMaxDepth ?
-				"uint iDepth = float2uint(depth);"
-				"atomicMin(iMinDepth, iDepth);"
-				"atomicMax(iMaxDepth, iDepth);"
-				"float minDepth = uint2float(iMinDepth);"
-				"float maxDepth = uint2float(iMaxDepth);"
-				: ""
-			) +
-
-			// CULLING
+		"FrustumData createFrustum() {"
 			"vec3 topLeft = unprojectNDC(vec4(-1, 1, -1, 1));"
 			"vec3 botLeft = unprojectNDC(vec4(-1, -1, -1, 1));"
 			"vec3 botRight = unprojectNDC(vec4(1, -1, -1, 1));"
@@ -171,18 +139,34 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 			"vec3 topLeftTile = botLeft + xStep * gl_WorkGroupID.x + yStep * (gl_WorkGroupID.y + 1);"
 			"vec3 topRightTile = botLeft + xStep * (gl_WorkGroupID.x + 1) + yStep * (gl_WorkGroupID.y + 1);"
 
-			+ (usePlanes ?
-				"vec4 planes[4];"
-				"planes[0] = frustumPlane(n_Camera, topLeftTile, botLeftTile);" // left
-				"planes[1] = frustumPlane(n_Camera, botRightTile, topRightTile);" // right
-				"planes[2] = frustumPlane(n_Camera, topRightTile, topLeftTile);" // top
-				"planes[3] = frustumPlane(n_Camera, botLeftTile, botRightTile);" // bottom
-				:
-				"vec3 dirs[4];"
-				"dirs[0] = normalize(botLeftTile - n_Camera);"
-				"dirs[1] = normalize(botRightTile - n_Camera);"
-				"dirs[2] = normalize(topLeftTile - n_Camera);"
-				"dirs[3] = normalize(topRightTile - n_Camera);"
+			"FrustumData fr;"
+			"fr.planes[0] = frustumPlane(n_Camera, topLeftTile, botLeftTile);" // left
+			"fr.planes[1] = frustumPlane(n_Camera, botRightTile, topRightTile);" // right
+			"fr.planes[2] = frustumPlane(n_Camera, topRightTile, topLeftTile);" // top
+			"fr.planes[3] = frustumPlane(n_Camera, botLeftTile, botRightTile);" // bottom
+			+ (minMaxDepth ?
+				"float minDepth = uint2float(iMinDepth);"
+				"float maxDepth = uint2float(iMaxDepth);"
+				"vec3 far = unprojectNDC(vec4(0, 0, maxDepth * 2.0 - 1.0, 1));"
+				"vec3 near = unprojectNDC(vec4(0, 0, minDepth * 2.0 - 1.0, 1));"
+				"fr.planes[4] = vec4(-n_CameraForward, dot(near, n_CameraForward));"
+				"fr.planes[5] = vec4(n_CameraForward, -dot(far, n_CameraForward));"
+				: "") +
+			"return fr;"
+		"}"
+
+		"void main() {"
+			// DEPTH
+			"ivec2 coord = ivec2(gl_GlobalInvocationID.xy);"
+			"vec2 uv = gl_GlobalInvocationID.xy / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);"
+
+			"float depth = texelFetch(n_D, coord, 0).x;"
+
+			+ (minMaxDepth ?
+				"uint iDepth = float2uint(depth);"
+				"atomicMax(iMaxDepth, iDepth);"
+				"atomicMin(iMinDepth, iDepth);"
+				: ""
 			) +
 
 			// G-BUFFER
@@ -209,16 +193,18 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 			"}"
 
 
-			"barrier();"
+			+ (minMaxDepth ? "barrier();" : "") +
 
 			// POINT CULLING
+			"FrustumData frustum = createFrustum();"
+
 			"uint threadCount = gl_WorkGroupSize.x * gl_WorkGroupSize.y;"
 			"uint range = 1 + (n_PointLightCount / threadCount);"
 			"uint start = gl_LocalInvocationIndex * range;"
 			"uint end = min(start + range, n_PointLightCount);"
-			+ (minMaxDepth ? "barrier();" : "") +
+
 			"for(uint i = start; i < end; i++) {"
-				"bool intersects = isInFrustum(n_PointLights[i].position, n_PointLights[i].radius," + (usePlanes ? "planes" : "n_Camera, dirs") + ");"
+				"bool intersects = isInFrustum(n_PointLights[i].position, n_PointLights[i].radius, frustum);"
 				"if(intersects) {"
 					"uint index = atomicAdd(tileLightCount, 1);"
 					"tileLights[index] = i;"
@@ -252,7 +238,7 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 			// WRITE
 			+ (debugLightCount ?
 				"float cc = tileLightCount;"
-				"imageStore(n_Out, coord, vec4(cc / 4.0));"
+				"imageStore(n_Out, coord, vec4(cc / 64.0));"
 				:
 				"imageStore(n_Out, coord, vec4(finalColor, 1.0));"
 			) +
@@ -289,6 +275,7 @@ void *TiledDeferredShadingRenderer::prepare() {
 	return new FrameData{
 		ptr,
 		sceneData->camera->getPosition(),
+		sceneData->camera->getTransform().getX(),
 		(sceneData->proj * sceneData->view).inverse(),
 		gbuffer->getRenderer()->getScene()->get<DirectionalLight>(),
 		gbuffer->getRenderer()->getScene()->query<PointLight>(*sceneData->camera)
@@ -320,6 +307,7 @@ void TiledDeferredShadingRenderer::render(void *ptr) {
 
 	compute->setValue("n_InvMatrix", data->inv);
 	compute->setValue("n_Camera", data->camPos);
+	compute->setValue("n_CameraForward", data->camForward);
 	compute->dispatch(math::Vec3ui(getFrameBuffer().getSize() / math::Vec2(32, 30), 1));
 
 	delete data;

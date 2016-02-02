@@ -30,6 +30,7 @@ class TiledDeferredShadingRenderer : public BufferedRenderer
 	{
 		void *gbufferData;
 		math::Vec3 camPos;
+		math::Vec3 camForward;
 		math::Matrix4<> inv;
 		core::Array<DirectionalLight *> directionals;
 		core::Array<PointLight *> points;
