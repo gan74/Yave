@@ -40,6 +40,7 @@ enum LightType
 const VertexArrayObject<> &getSphere();
 const VertexArrayObject<> &getBox();
 core::String getBRDFs();
+core::String getAttenuations();
 
 template<LightType Type>
 MaterialRenderData getLightMaterial() {

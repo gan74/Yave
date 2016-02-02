@@ -37,6 +37,15 @@ const VertexArrayObject<> &getBox() {
 	return *box;
 }
 
+core::String getAttenuations() {
+	return
+		"float pl_attenuation(float dist, float radius) {"
+			"float x = min(dist, radius);"
+			"return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);"
+		"}";
+}
+
+
 core::String getBRDFs() {
 	return
 			// [Walter et al. 2007, "Microfacet models for refraction through rough surfaces"]

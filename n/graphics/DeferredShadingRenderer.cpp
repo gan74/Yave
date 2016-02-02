@@ -120,12 +120,10 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 													   "return n_LightPos - pos;",
 													   "return n_LightForward;",
 													   "return n_LightForward;"};
-	static core::String attenuate[LightType::Max] = {	"float x = min(lightDist, n_LightRadius); "
-															"return sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);",
-														"float x = min(lightDist, n_LightRadius); "
-															  "float falloff = sqr(1.0 - sqr(sqr(x / n_LightRadius))) / (sqr(x) + 1.0);"
-															  "float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), n_LightExponent);"
-															  "return max(0.0, falloff * spotFalloff);",
+	static core::String attenuate[LightType::Max] = {	"return pl_attenuation(min(lightDist, n_LightRadius), n_LightRadius);",
+														"float falloff = pl_attenuation(x, n_LightRadius);"
+														"float spotFalloff = pow((dot(lightDir, n_LightForward) - n_LightCosCutOff) / (1.0 - n_LightCosCutOff), n_LightExponent);"
+														"return max(0.0, falloff * spotFalloff);",
 														"return 1.0;",
 														"return any(greaterThan(abs(n_LightMatrix * (pos - n_LightPos)), n_LightSize)) ? 0.0 : 1.0;"};
 	ShaderInstance *shader = shaders[Type][debug].get(shadow, 0);
@@ -157,7 +155,8 @@ ShaderInstance *getShader(const core::String &shadow, DeferredShadingRenderer::L
 
 			"out vec4 n_Out;"
 
-			+ getBRDFs() +
+			+ getBRDFs()
+			+ getAttenuations() +
 
 			"vec3 projectShadow(vec3 p) {"
 				"vec4 proj = n_LightShadowMatrix * vec4(p, 1.0);"

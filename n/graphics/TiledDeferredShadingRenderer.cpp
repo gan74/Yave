@@ -29,16 +29,17 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 		"\n#define GROUP_Y 30\n"
 		"\n#define MAX_LIGHTS " + core::String(MaxLights) + "\n"
 
-		"layout(rgba8) uniform coherent writeonly image2D n_Out;"
+		"layout(rgba16f) uniform coherent writeonly image2D n_Out;"
 		"layout(local_size_x = GROUP_X, local_size_y = GROUP_Y) in;"
 
 		"const uint MaxUint = uint(0xFFFFFFF);"
 		"shared uint iMinDepth = MaxUint;"
 		"shared uint iMaxDepth = 0;"
 
-		+ DirectionalLightData::toShader() + ""
-		+ PointLightData::toShader() + ""
-		+ getBRDFs() +
+		+ DirectionalLightData::toShader()
+		+ PointLightData::toShader()
+		+ getBRDFs()
+		+ getAttenuations() +
 
 		"shared uint tileLights[MAX_LIGHTS];"
 		"shared uint tileLightCount = 0;"
@@ -112,10 +113,6 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 		"vec3 unproject(vec2 uv, float depth) {"
 			"return unprojectNDC(vec4(vec3(uv, depth) * 2.0 - vec3(1.0), 1.0));"
-		"}"
-
-		"float attenuate(float x, float rad) {"
-			"return sqr(1.0 - sqr(sqr(x / rad))) / (sqr(x) + 1.0);"
 		"}"
 
 		"uint float2uint(float f) {"
@@ -222,13 +219,12 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 					"vec3 lightVec = light.position - world;"
 					"float dist = length(lightVec);"
 					"lightVec /= dist;"
-					"dist = min(dist, light.radius);"
 
 					"vec3 diffuse = brdf_lambert(lightVec, worldView, gbuffer.normal, gbuffer.roughness, diffuseColor);"
 					"vec3 specular = brdf_cook_torrance(lightVec, worldView, gbuffer.normal, gbuffer.roughness, specularColor);"
 
 					"float NoL = saturate(dot(gbuffer.normal, lightVec));"
-					"float att = attenuate(dist / light.scale, light.radius / light.scale);"
+					"float att = pl_attenuation(dist / light.scale, light.radius / light.scale);"
 
 					"finalColor += light.color * NoL * att * (diffuse + specular);"
 				"}"
@@ -254,7 +250,7 @@ Shader<ComputeShader> *TiledDeferredShadingRenderer::createComputeShader() {
 
 
 
-TiledDeferredShadingRenderer::TiledDeferredShadingRenderer(GBufferRenderer *g, const math::Vec2ui &s) : BufferedRenderer(s, true, ImageFormat::RGBA8), gbuffer(g), compute(new ComputeShaderInstance(createComputeShader())), directionals(MaxLights), points(MaxLights) {
+TiledDeferredShadingRenderer::TiledDeferredShadingRenderer(GBufferRenderer *g, const math::Vec2ui &s) : BufferedRenderer(s, true, ImageFormat::RGBA16F), gbuffer(g), compute(new ComputeShaderInstance(createComputeShader())), directionals(MaxLights), points(MaxLights) {
 	compute->setValue("n_Out", getFrameBuffer().getAttachment(0), TextureAccess::WriteOnly);
 	compute->setValue("n_0", gbuffer->getFrameBuffer().getAttachment(0));
 	compute->setValue("n_1", gbuffer->getFrameBuffer().getAttachment(1));
