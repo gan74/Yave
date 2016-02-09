@@ -67,6 +67,8 @@ struct MaterialSurfaceData
 
 	Texture color;
 	Texture properties;
+	Texture aux0;
+	Texture aux1;
 
 	struct PropertyLayout
 	{

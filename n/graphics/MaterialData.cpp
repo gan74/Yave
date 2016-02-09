@@ -33,19 +33,23 @@ static Texture getDefaultProperties() {
 	return tex;
 }
 
-
 MaterialSurfaceData::MaterialSurfaceData() : color(getDefaultColor()), properties(getDefaultProperties()) {
 }
 
 MaterialBufferData MaterialSurfaceData::toBufferData() const {
 	return MaterialBufferData{color.getBindlessId(),
-							  properties.getBindlessId(), 0, 0};
+							  properties.getBindlessId(),
+							  aux0.getBindlessId(),
+							  aux1.getBindlessId()};
 }
 
 bool MaterialSurfaceData::synchronize(bool immediate) const {
 	bool r = true;
 	r &= color.synchronize(immediate);
 	r &= properties.synchronize(immediate);
+
+	r &= aux0.synchronize(immediate);
+	r &= aux1.synchronize(immediate);
 	return r;
 }
 

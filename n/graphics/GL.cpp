@@ -297,6 +297,9 @@ Handle createFramebuffer() {
 }
 
 void deleteTexture(Handle handle) {
+	if(boundTextures[activeTextureUnit] == handle) {
+		boundTextures[activeTextureUnit] = 0;
+	}
 	glDeleteTextures(1, &handle);
 }
 

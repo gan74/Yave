@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <n/concurrent/Mutex.h>
+#include <n/concurrent/LockGuard.h>
 #include <n/utils.h>
 #include <n/defines.h>
 #include "ImageLoader.h"
@@ -36,11 +37,10 @@ class SDLImageReader : public ImageLoader::AssetReader<SDLImageReader, core::Str
 		ImageData *operator()(core::String name) override {
 			N_LOG_PERF;
 			static concurrent::Mutex lock;
-			lock.lock();
+			N_LOCK(lock);
 			SDL_Surface *surf = IMG_Load(name.toChar());
 			if(!surf) {
 				std::cerr<<"Failed to load \""<<name<<"\" : "<<IMG_GetError()<<std::endl;
-				lock.unlock();
 				return 0;
 			}
 			SDL_LockSurface(surf);
@@ -50,7 +50,6 @@ class SDLImageReader : public ImageLoader::AssetReader<SDLImageReader, core::Str
 			ImageData *i = new ImageData(size, ImageFormat::RGBA8, cs->pixels);
 			SDL_UnlockSurface(surf);
 			SDL_UnlockSurface(cs);
-			lock.unlock();
 			return i;
 		}
 };
