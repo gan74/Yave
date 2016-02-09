@@ -33,23 +33,24 @@ static Texture getDefaultProperties() {
 	return tex;
 }
 
-MaterialSurfaceData::MaterialSurfaceData() : color(getDefaultColor()), properties(getDefaultProperties()) {
+MaterialSurfaceData::MaterialSurfaceData() {
+	textures[Color] = getDefaultColor();
+	textures[Properties] = getDefaultProperties();
 }
 
 MaterialBufferData MaterialSurfaceData::toBufferData() const {
-	return MaterialBufferData{color.getBindlessId(),
-							  properties.getBindlessId(),
-							  aux0.getBindlessId(),
-							  aux1.getBindlessId()};
+	MaterialBufferData buffer;
+	for(uint i = 0; i != TextureCount; i++) {
+		buffer.textures[i] = textures[i].getBindlessId();
+	}
+	return buffer;
 }
 
 bool MaterialSurfaceData::synchronize(bool immediate) const {
 	bool r = true;
-	r &= color.synchronize(immediate);
-	r &= properties.synchronize(immediate);
-
-	r &= aux0.synchronize(immediate);
-	r &= aux1.synchronize(immediate);
+	for(uint i = 0; i != TextureCount; i++) {
+		r &= textures[i].synchronize(immediate);
+	}
 	return r;
 }
 
@@ -73,6 +74,7 @@ uint32 MaterialRenderData::toUint() const {
 
 MaterialData::MaterialData() {
 }
+
 
 void MaterialData::bind(uint flags) const {
 	if(flags & DepthWriteOnly) {

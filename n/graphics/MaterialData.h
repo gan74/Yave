@@ -40,23 +40,7 @@ inline RenderFlag operator|(RenderFlag a, RenderFlag b) {
 	return RenderFlag(uint(a) | uint(b));
 }
 
-struct MaterialBufferData
-{
-	uint64 color;
-	uint64 properties;
-	uint64 aux0;
-	uint64 aux1;
-
-	static core::String toShader() {
-		return
-			"struct n_MaterialBufferData {"
-				"sampler2D color;"
-				"sampler2D properties;"
-				"sampler2D aux0;"
-				"sampler2D aux1;"
-			"};";
-	}
-};
+struct MaterialBufferData;
 
 struct MaterialSurfaceData
 {
@@ -64,11 +48,18 @@ struct MaterialSurfaceData
 	MaterialBufferData toBufferData() const;
 	bool synchronize(bool immediate = false) const;
 
-
-	Texture color;
+	/*Texture color;
 	Texture properties;
 	Texture aux0;
-	Texture aux1;
+	Texture aux1;*/
+
+	static constexpr uint Color = 0;
+	static constexpr uint Properties = 1;
+	static constexpr uint TextureCount = 4;
+
+	Texture textures[TextureCount];
+
+
 
 	struct PropertyLayout
 	{
@@ -78,6 +69,24 @@ struct MaterialSurfaceData
 		byte metallic;
 	};
 };
+
+struct MaterialBufferData
+{
+	uint64 textures[MaterialSurfaceData::TextureCount];
+
+	static core::String toShader() {
+		core::String str =
+			"struct n_MaterialBufferData {"
+				"sampler2D color;"
+				"sampler2D properties;";
+
+		for(uint i = 2; i < MaterialSurfaceData::TextureCount; i++) {
+			str += "sampler2D aux" + core::String(i - 2) + ";";
+		}
+		return str + "};";
+	}
+};
+
 
 struct MaterialRenderData
 {

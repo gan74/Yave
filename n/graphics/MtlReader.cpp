@@ -14,11 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_GRAPHICS_MTLDECODER
-#define N_GRAPHICS_MTLDECODER
+#ifndef N_GRAPHICS_MTLREADER
+#define N_GRAPHICS_MTLREADER
 
-
-#include <iostream>
 #include <n/io/File.h>
 #include "MaterialLoader.h"
 #include "ImageLoader.h"
@@ -48,7 +46,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 	private:
 		MaterialData *load(io::File &file, const core::String &name) {
 			if(!file.open(io::IODevice::Read)) {
-				std::cerr<<file.getName()<<" not found"<<std::endl;
+				logMsg(file.getName() + " not found", ErrorLog);
 				return 0;
 			}
 			N_LOG_PERF;
@@ -66,7 +64,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 				if(l.beginsWith("newmtl ")) {
 					if(name.isEmpty() || l.subString(7).filtered([](char c) { return !isspace(c); }) == name) {
 						if(mat) {
-							std::cerr<<"Material \""<<name<<"\""<<" is already defined"<<std::endl;
+							logMsg("Material \"" + name + "\" is already defined", ErrorLog);
 							fatal("Material already defined");
 						}
 						mat = new MaterialData();
@@ -86,7 +84,7 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 						float ns = float(l.subString(3));
 						mat->roughness = sqrt(2 / (ns + 2));
 					}*/ /*else */if(l.beginsWith("map_kd ")) {
-						mat->surface.color = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })), true);
+						mat->surface.textures[MaterialSurfaceData::Color] = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); })), true);
 					} /*else if(l.beginsWith("map_ks ")) {
 						mat->surface.roughness = Texture(ImageLoader::load<core::String>(l.subString(7).filtered([](char c) { return !isspace(c); }), false), true);
 					} else if(l.beginsWith("map_bump ")) {
@@ -105,5 +103,5 @@ class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String,
 
 
 
-#endif // N_GRAPHICS_MTLDECODER
+#endif // N_GRAPHICS_MTLREADER
 

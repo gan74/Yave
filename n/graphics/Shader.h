@@ -94,11 +94,9 @@ class ShaderBase : NonCopyable
 		bool isCurrent() const;
 		ShaderType getType() const;
 
-		#ifdef N_SHADER_SRC
 		const core::String &getSrc() const {
 			return source;
 		}
-		#endif
 
 	protected:
 		friend class graphics::ShaderInstanceBase;
@@ -106,18 +104,17 @@ class ShaderBase : NonCopyable
 
 		ShaderBase(ShaderType t);
 
-		uint load(core::String src, uint vers);
+		void load(core::String src, uint vers);
 		core::String parse(core::String src, uint vers);
+		void compile() const;
+
 		ShaderType type;
 		uint version;
-		gl::Handle handle;
+		mutable gl::Handle handle;
 
 		core::String logs;
 
-		#ifdef N_SHADER_SRC
 		core::String source;
-		#endif
-
 
 		static ShaderBase *currents[3];
 };
@@ -129,7 +126,7 @@ class Shader : public ShaderBase
 
 	public:
 		Shader(const core::String &src, uint vers = 430) : ShaderBase(Type) {
-			version = load(src, vers);
+			load(src, vers);
 		}
 
 		static Shader<Type> *getDefault() {

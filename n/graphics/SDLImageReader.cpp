@@ -40,7 +40,7 @@ class SDLImageReader : public ImageLoader::AssetReader<SDLImageReader, core::Str
 			N_LOCK(lock);
 			SDL_Surface *surf = IMG_Load(name.toChar());
 			if(!surf) {
-				std::cerr<<"Failed to load \""<<name<<"\" : "<<IMG_GetError()<<std::endl;
+				logMsg("Failed to load \"" + name + "\" : " + IMG_GetError(), ErrorLog);
 				return 0;
 			}
 			SDL_LockSurface(surf);

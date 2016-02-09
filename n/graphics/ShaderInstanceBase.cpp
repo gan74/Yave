@@ -150,6 +150,7 @@ void ShaderInstanceBase::compile(const ShaderBase **bases, uint count) {
 	bool val = true;
 	for(uint i = 0; i != count; i++) {
 		if(bases[i]) {
+			bases[i]->compile();
 			gl::attachShader(handle, bases[i]->handle);
 			val &= bases[i]->isValid();
 		}

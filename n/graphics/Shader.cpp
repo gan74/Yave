@@ -31,19 +31,21 @@ namespace internal {
 
 ShaderBase *ShaderBase::currents[3] = {0};
 
-uint ShaderBase::load(core::String src, uint vers) {
+void ShaderBase::load(core::String src, uint vers) {
 	N_LOG_PERF;
-	src = parse(src, vers);
-	#ifdef N_SHADER_SRC
-	source = src;
-	#endif
-	handle = gl::createShader(type);
-	const char *str = src.toChar();
-	gl::shaderSource(handle, 1, &str, 0);
-	if(!gl::compileShader(handle)) {
-		throw ShaderCompilationException(gl::getShaderInfoLog(handle));
+	source = parse(src, vers);
+	version = vers;
+}
+
+void ShaderBase::compile() const {
+	if(!handle) {
+		handle = gl::createShader(type);
+		const char *str = source.toChar();
+		gl::shaderSource(handle, 1, &str, 0);
+		if(!gl::compileShader(handle)) {
+			throw ShaderCompilationException(gl::getShaderInfoLog(handle));
+		}
 	}
-	return vers;
 }
 
 core::String ShaderBase::parse(core::String src, uint vers) {
