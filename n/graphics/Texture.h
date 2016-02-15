@@ -30,7 +30,7 @@ class ShaderBase;
 class Texture : public TextureBase
 {
 	public:
-		Texture(const Image &i, bool mip = false);
+		Texture(const Image &i, bool mip);
 		Texture();
 		~Texture();
 
@@ -58,6 +58,10 @@ class Texture : public TextureBase
 			return hasMipmaps() ? getMipmapLevelForSize(getSize()) : 1;
 		}
 
+		bool isMipCapable() const {
+			return getSize().max() / float(getSize().min() + 1) < sqrt(2);
+		}
+
 		static uint getMipmapLevelForSize(const math::Vec2ui &size) {
 			return 1 + floor(log2(size.max()));
 		}
@@ -72,9 +76,7 @@ class Texture : public TextureBase
 
 		//Texture(const TextureBase &base, Image im);
 
-		bool isMipCapable() const {
-			return getSize().max() / float(getSize().min() + 1) < sqrt(2);
-		}
+
 
 		void upload() const;
 

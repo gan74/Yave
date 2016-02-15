@@ -101,7 +101,7 @@ void ShaderInstanceBase::ImageBinding::bind(uint slot) const {
 
 
 
-ShaderInstanceBase::ShaderInstanceBase() : handle(0), samplerCount(0), imageCount(0), texBindings(0), imBindings(0), bufferBindings(0) {
+ShaderInstanceBase::ShaderInstanceBase() : handle(0), texBindings(0), samplerCount(0), imBindings(0), imageCount(0),  bufferBindings(0) {
 }
 
 ShaderInstanceBase::~ShaderInstanceBase() {

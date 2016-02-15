@@ -55,7 +55,7 @@ class FrameBuffer : public FrameBufferBase
 	void setupAttachment(uint index, ImageFormat::Format format) {
 		assertAttachments(index);
 		drawBuffers[index] = gl::Attachment(gl::ColorAtt0 + index);
-		attachments[index] = Image(getSize(), format);
+		attachments[index] = Texture(Image(getSize(), format), false);
 	}
 
 	public:
@@ -83,9 +83,9 @@ class FrameBuffer : public FrameBufferBase
 			Image baseImage(size);
 			for(uint i = 0; i != getMaxAttachment(); i++) {
 				drawBuffers[i] = gl::NoAtt;
-				attachments[i] = Texture(baseImage);
+				attachments[i] = Texture(baseImage, false);
 			}
-			depth = depthEnabled ? new Texture(Image(size, ImageFormat::Depth32)) : 0;
+			depth = depthEnabled ? new Texture(Image(size, ImageFormat::Depth32), false) : 0;
 			setupAttachments(0, args...);
 			setup();
 		}

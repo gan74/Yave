@@ -22,14 +22,14 @@ namespace graphics {
 
 static Texture getDefaultColor() {
 	static constexpr uint defaultColor = 0xFFFFFFFF;
-	static Texture tex = Texture(Image(new ImageData(math::Vec2ui(1), ImageFormat::RGBA8, &defaultColor)));
+	static Texture tex = Texture(Image(new ImageData(math::Vec2ui(1), ImageFormat::RGBA8, &defaultColor)), true);
 	return tex;
 }
 
 static Texture getDefaultProperties() {
 	#warning MaterialSurfaceData::PropertyLayout assumes little endian
 	static constexpr MaterialSurfaceData::PropertyLayout defaultProps{127, 127, 127, 0};
-	static Texture tex = Texture(Image(new ImageData(math::Vec2ui(1), ImageFormat::RGBA8, &defaultProps)));
+	static Texture tex = Texture(Image(new ImageData(math::Vec2ui(1), ImageFormat::RGBA8, &defaultProps)), true);
 	return tex;
 }
 

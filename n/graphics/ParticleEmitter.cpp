@@ -167,7 +167,7 @@ void ParticleEmitter::setLifeDistribution(math::RandomDistribution<float> *l) {
 }
 
 void ParticleEmitter::setSizeOverLife(const math::PrecomputedRange<math::Vec2> &s) {
-	setSizeOverLife(Texture(new ImageData(math::Vec2ui(s.size(), 1), ImageFormat::RG32F, s.begin())));
+	setSizeOverLife(Texture(new ImageData(math::Vec2ui(s.size(), 1), ImageFormat::RG32F, s.begin()), false));
 }
 
 void ParticleEmitter::setSizeOverLife(const Texture &s) {
@@ -175,7 +175,7 @@ void ParticleEmitter::setSizeOverLife(const Texture &s) {
 }
 
 void ParticleEmitter::setColorOverLife(const math::PrecomputedRange<Color<>> &c) {
-	setColorOverLife(Texture(new ImageData(math::Vec2ui(c.size(), 1), ImageFormat::RGBA32F, c.begin())));
+	setColorOverLife(Texture(new ImageData(math::Vec2ui(c.size(), 1), ImageFormat::RGBA32F, c.begin()), false));
 }
 
 void ParticleEmitter::setColorOverLife(const Texture &c) {

@@ -100,7 +100,7 @@ class NmtReader : public MaterialLoader::MaterialReader<NmtReader, core::String>
 					memcpy(&h, data + offset, sizeof(TexHeader));
 
 					core::String texName(data + offset, h.nameLen);
-					mat->surface.textures[i] = Texture(ImageLoader::load<core::String>(texName));
+					mat->surface.textures[i] = Texture(ImageLoader::load<core::String>(texName), true);
 				}
 			}
 
