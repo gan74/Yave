@@ -114,7 +114,7 @@ class Asset
 		}
 
 		T const *operator->() const {
-			return ptr ? (const T *)(*ptr) : 0;
+			return getPtr();
 		}
 
 		const T &operator*() const {
@@ -139,6 +139,10 @@ class Asset
 
 		bool operator!=(const Asset<T> &a) const {
 			return !operator==(a);
+		}
+
+		T const *getPtr() const {
+			return ptr ? (const T *)(*ptr) : 0;
 		}
 
 		#ifdef N_ASSET_ID

@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace assets {
 
-template<typename T>
+template<typename T, bool DefaultAsync = true>
 class GenericAssetLoader
 {
 	public:
@@ -50,7 +50,7 @@ class GenericAssetLoader
 		};
 
 		template<typename... Args>
-		static T load(Args... args, bool async = true)  {
+		static T load(Args... args, bool async = DefaultAsync)  {
 			GenericAssetLoader<T> *ld = getLoader();
 			return async ? T(ld->asyncBuffer.load(args...)) : T(ld->immediateBuffer.load(args...));
 		}
@@ -74,9 +74,13 @@ class GenericAssetLoader
 			return loader;
 		}
 
-	private:
+	protected:
 		GenericAssetLoader() : asyncBuffer(buffer), immediateBuffer(buffer) {
 		}
+
+	private:
+		template<typename U, bool D>
+		friend class GenericAssetLoader;
 
 		AssetBuffer<LoadedType> buffer;
 		AssetManager<LoadedType, AsyncLoadingPolicy<LoadedType>> asyncBuffer;
@@ -84,11 +88,11 @@ class GenericAssetLoader
 
 };
 
-template<typename T>
+template<typename T, bool D>
 template<typename U, typename... Args>
-typename GenericAssetLoader<T>::template AssetReader<U, Args...>::Runner
-GenericAssetLoader<T>::AssetReader<U, Args...>::runner =
-typename GenericAssetLoader<T>::template AssetReader<U, Args...>::Runner();
+typename GenericAssetLoader<T, D>::template AssetReader<U, Args...>::Runner
+GenericAssetLoader<T, D>::AssetReader<U, Args...>::runner =
+typename GenericAssetLoader<T, D>::template AssetReader<U, Args...>::Runner();
 
 }
 }

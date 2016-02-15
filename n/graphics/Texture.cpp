@@ -29,6 +29,7 @@ bool Texture::isHWSupported(ImageFormat format) {
 }
 
 Texture::Texture(const Image &i, bool mip) : TextureBase(Texture2D), image(i) {
+	#warning textures are not assets.
 	data->hasMips = mip;
 }
 

@@ -20,104 +20,103 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Array.h>
 #include "AssetLoader.h"
 #include <n/concurrent/Async.h>
-#include <n/concurrent/Mutex.h>
+#include <n/concurrent/LockGuard.h>
+#include <n/concurrent/SpinLock.h>
 
 namespace n {
 namespace assets {
 
-namespace internal {
-	template<typename T>
-	class AssetKey
+template<typename T>
+class AssetKey
+{
+	struct KeyStoreBase : NonCopyable
 	{
-		struct KeyStoreBase : NonCopyable
-		{
-			virtual bool operator<(const KeyStoreBase &) const = 0;
-			virtual bool operator==(const KeyStoreBase &) const = 0;
+		virtual bool operator<(const KeyStoreBase &) const = 0;
+		virtual bool operator==(const KeyStoreBase &) const = 0;
 
-			virtual KeyStoreBase *clone() const = 0;
+		virtual KeyStoreBase *clone() const = 0;
 
-			virtual ~KeyStoreBase() {
-			}
-		};
-
-		template<typename... Args>
-		struct KeyStore : public KeyStoreBase
-		{
-			KeyStore(Args... args) : tuple(args...) {
-			}
-
-			KeyStore(const std::tuple<Args...> &t) : tuple(t) {
-			}
-
-			virtual bool operator<(const KeyStoreBase &k) const override {
-				const KeyStore<Args...> *p = dynamic_cast<const KeyStore<Args...> *>(&k);
-				return tuple < p->tuple;
-			}
-
-			virtual bool operator==(const KeyStoreBase &k) const override {
-				const KeyStore<Args...> *p = dynamic_cast<const KeyStore<Args...> *>(&k);
-				return tuple == p->tuple;
-			}
-
-
-			virtual KeyStoreBase *clone() const override {
-				return new KeyStore(tuple);
-			}
-
-			std::tuple<Args...> tuple;
-		};
-
-		public:
-			template<typename... Args>
-			AssetKey(Args... args) : types(getArgumentTypes<Args...>()), base(new KeyStore<Args...>(args...)) {
-			}
-
-			AssetKey(const AssetKey &k) : types(k.types), base(k.base->clone()) {
-			}
-
-			AssetKey &operator=(const AssetKey &k) {
-				if(k.base != base) {
-					delete base;
-					base = k.base->clone();
-				}
-				types = k.types;
-				return *this;
-			}
-
-			~AssetKey() {
-				delete base;
-			}
-
-			bool operator<(const AssetKey &k) const {
-				if(types.size() == k.types.size()) {
-					auto x = types.begin();
-					auto y = k.types.begin();
-					while(x != types.end()) {
-						if(*x++ < *y++) {
-							return true;
-						}
-					}
-					return base->operator<(*k.base);
-				}
-				return types.size() < k.types.size();
-			}
-
-			bool operator==(const AssetKey &k) const {
-				return types == k.types &&  base->operator==(*k.base);
-			}
-
-		private:
-			ArgumentTypes types;
-			KeyStoreBase *base;
+		virtual ~KeyStoreBase() {
+		}
 	};
-}
+
+	template<typename... Args>
+	struct KeyStore : public KeyStoreBase
+	{
+		KeyStore(Args... args) : tuple(args...) {
+		}
+
+		KeyStore(const std::tuple<Args...> &t) : tuple(t) {
+		}
+
+		virtual bool operator<(const KeyStoreBase &k) const override {
+			const KeyStore<Args...> *p = dynamic_cast<const KeyStore<Args...> *>(&k);
+			return tuple < p->tuple;
+		}
+
+		virtual bool operator==(const KeyStoreBase &k) const override {
+			const KeyStore<Args...> *p = dynamic_cast<const KeyStore<Args...> *>(&k);
+			return tuple == p->tuple;
+		}
+
+
+		virtual KeyStoreBase *clone() const override {
+			return new KeyStore(tuple);
+		}
+
+		std::tuple<Args...> tuple;
+	};
+
+	public:
+		template<typename... Args>
+		AssetKey(Args... args) : types(getArgumentTypes<Args...>()), base(new KeyStore<Args...>(args...)) {
+		}
+
+		AssetKey(const AssetKey &k) : types(k.types), base(k.base->clone()) {
+		}
+
+		AssetKey &operator=(const AssetKey &k) {
+			if(k.base != base) {
+				delete base;
+				base = k.base->clone();
+			}
+			types = k.types;
+			return *this;
+		}
+
+		~AssetKey() {
+			delete base;
+		}
+
+		bool operator<(const AssetKey &k) const {
+			if(types.size() == k.types.size()) {
+				auto x = types.begin();
+				auto y = k.types.begin();
+				while(x != types.end()) {
+					if(*x++ < *y++) {
+						return true;
+					}
+				}
+				return base->operator<(*k.base);
+			}
+			return types.size() < k.types.size();
+		}
+
+		bool operator==(const AssetKey &k) const {
+			return types == k.types &&  base->operator==(*k.base);
+		}
+
+	private:
+		ArgumentTypes types;
+		KeyStoreBase *base;
+};
 
 template<typename T>
 class ImmediateLoadingPolicy
 {
 	public:
 		template<typename... Args>
-		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
+		AssetPtr<T> operator()(const AssetLoader<T> &loader, Args... args) {
 			AssetPtr<T> t(new typename AssetPtr<T>::PtrType(loader(args...)));
 			if(t.isNull()) {
 				t.invalidate();
@@ -131,7 +130,7 @@ class AsyncLoadingPolicy
 {
 	public:
 		template<typename... Args>
-		AssetPtr<T> operator()(AssetLoader<T> &loader, Args... args) {
+		AssetPtr<T> operator()(const AssetLoader<T> &loader, Args... args) {
 			AssetPtr<T> *ptr = new AssetPtr<T>(new typename AssetPtr<T>::PtrType(0));
 			AssetPtr<T> r(*ptr);
 			concurrent::Async([=, &loader](Args... args) {
@@ -151,16 +150,15 @@ template<typename T>
 class AssetBuffer
 {
 	public:
-		AssetBuffer() : buffer(new core::Pair<concurrent::Mutex, core::Map<internal::AssetKey<T>, AssetPtr<T>>>()) {
+		AssetBuffer() : buffer(new core::Pair<concurrent::SpinLock, core::Map<AssetKey<T>, AssetPtr<T>>>()) {
 		}
 
 		void gc() {
 			N_LOG_PERF;
-			lock();
-			getBuffer().filter([](const core::Pair<const internal::AssetKey<T>, AssetPtr<T>> &p) -> bool {
+			N_LOCK(*this);
+			getBuffer().filter([](const core::Pair<const AssetKey<T>, AssetPtr<T>> &p) -> bool {
 				return p._2.getReferenceCount() > 1;
 			});
-			unlock();
 		}
 
 		void lock() {
@@ -175,11 +173,11 @@ class AssetBuffer
 		template<typename U, typename P>
 		friend class AssetManager;
 
-		core::Map<internal::AssetKey<T>, AssetPtr<T>> &getBuffer() {
+		core::Map<AssetKey<T>, AssetPtr<T>> &getBuffer() {
 			return buffer->_2;
 		}
 
-		core::SmartPtr<core::Pair<concurrent::Mutex, core::Map<internal::AssetKey<T>, AssetPtr<T>>>> buffer;
+		core::SmartPtr<core::Pair<concurrent::SpinLock, core::Map<AssetKey<T>, AssetPtr<T>>>> buffer;
 };
 
 template<typename T, typename LoadPolicy>
@@ -191,13 +189,12 @@ class AssetManager : protected LoadPolicy, NonCopyable
 
 		template<typename... Args>
 		Asset<T> load(Args... args) {
-			internal::AssetKey<T> k(args...);
-			assets.lock();
+			AssetKey<T> k(args...);
+			N_LOCK(assets);
 			auto it = assets.getBuffer().find(k);
 			if(it == assets.getBuffer().end()) {
 				it = assets.getBuffer().insert(k, LoadPolicy::operator()(loader, args...));
 			}
-			assets.unlock();
 			return (*it)._2;
 		}
 
@@ -207,9 +204,7 @@ class AssetManager : protected LoadPolicy, NonCopyable
 
 		template<typename... Args, typename U>
 		void addLoader(U u) {
-			mutex.lock();
-			loader.addLoader<Args...>(u);
-			mutex.unlock();
+			loader.addLoader<Args...>(u); // NOT T-SAFE with load(...)
 		}
 
 		void gc() {
@@ -217,7 +212,6 @@ class AssetManager : protected LoadPolicy, NonCopyable
 		}
 
 	private:
-		concurrent::Mutex mutex;
 		AssetLoader<T> loader;
 		AssetBuffer<T> assets;
 };
