@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	Scene scene;
 	scene.insert(&cam);
 
-	uint max = 20;
+	/*uint max = 20;
 	float scale = 5;
 	for(uint i = 0; i != max; i++) {
 		for(uint j = 0; j != max; j++) {
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, 1) * m->getRadius() * 2.5);
 			scene.insert(m);
 		}
-	}
+	}*/
 
 	{
 		//auto obj = new Obj("./crytek-sponza/sponza.obj");
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 		scene.insert(l);
 	}
 
-	for(uint i = 0; i != 1000; i++) {
+	/*for(uint i = 0; i != 1000; i++) {
 		PointLight *l = new PointLight;
 		l->setIntensity(5);
 		l->setRadius(1);
@@ -77,6 +77,11 @@ int main(int argc, char **argv) {
 
 		l->setColor(BaseColor(random(1, BaseColor::Blue + 1)));
 		scene.insert(l);
+	}*/
+
+	for(uint i = 0; i != 1; i++) {
+		Test *t = new Test(MaterialLoader::load<String>("test.nmt"));
+		scene.insert(t);
 	}
 
 	core::Array<ParticleEmitter *> emitters;

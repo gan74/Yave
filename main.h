@@ -169,6 +169,23 @@ class Obj : public StaticMesh
 		float autoScale;
 };
 
+class Test : public Movable, public Renderable
+{
+	public:
+		Test(Material mat) : Movable(), Renderable() {
+			static VertexArrayObject<> vao = GLContext::getContext()->getVertexArrayFactory()(TriangleBuffer<>::getSphere());
+			inst = SubMeshInstance(vao, mat);
+			radius = vao.getRadius();
+		}
+
+		virtual void render(RenderQueue &qu, RenderFlag rf) override {
+			qu.insert(RenderBatch(transform.getMatrix(), inst, rf));
+		}
+
+	private:
+		SubMeshInstance inst;
+};
+
 class MaterialTest : public Movable, public Renderable
 {
 	public:

@@ -19,18 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-NmtReader::NmtReader() : MaterialLoader::MaterialReader<NmtReader, core::String>() {
+NmtMaterialReader::NmtMaterialReader() : MaterialLoader::MaterialReader<NmtMaterialReader, core::String>() {
 }
 
-MaterialData *NmtReader::operator()(core::String fileName) {
+MaterialData *NmtMaterialReader::operator()(core::String fileName) {
 	if(!fileName.endsWith(".nmt")) {
 		return 0;
 	}
 	io::File file(fileName);
-	return load(file);
-}
 
-MaterialData *NmtReader::load(io::File &file) {
 	if(!file.open(io::IODevice::Read)) {
 		logMsg(file.getName() + " not found", ErrorLog);
 		return 0;
@@ -43,21 +40,80 @@ MaterialData *NmtReader::load(io::File &file) {
 	file.close();
 	N_SCOPE(delete[] data);
 
+	NmtReader reader;
+	return reader.load(data);
+}
 
+
+
+
+
+NmtReader::NmtReader() {
+
+	addReader(FragShader, [](const char *data, uint offset, MaterialData *mat, void *) {
+		logMsg("shader");
+		uint length = 0;
+		memcpy(&length, data + offset, sizeof(uint));
+		if(length) {
+			core::String shader(data + offset + sizeof(uint), length);
+			mat->prog = ShaderProgram(new Shader<FragmentShader>(shader));
+		}
+	});
+
+	addReader(RenderData, [](const char *data, uint offset, MaterialData *mat, void *) {
+		logMsg("data");
+		memcpy(&mat->render, data + offset, sizeof(mat->render));
+	});
+
+	addReader(TextureName, [](const char *data, uint offset, MaterialData *mat, void *) {
+		logMsg("texture");
+		uint length = 0;
+		memcpy(&length, data + offset, sizeof(uint));
+		if(length) {
+			uint id = 0;
+			memcpy(&id, data + offset + sizeof(uint), sizeof(uint));
+			core::String texName(data + offset + 2 * sizeof(uint), length);
+			mat->surface.textures[id] = Texture(ImageLoader::load<core::String>(texName), true);
+		}
+	});
+}
+
+
+MaterialData *NmtReader::load(const char *data, void *args) {
 	uint version = 0;
 	memcpy(&version, data, sizeof(uint));
 
 	switch(version) {
 		case 1:
-			return loadV1(data);
+			return loadV1(data, args);
 
 		default:
-			return 0;
+			return loadV2(data, args);
 	}
 	return 0;
 }
 
-MaterialData *NmtReader::loadV1(char *data) {
+MaterialData *NmtReader::loadV2(const char *data, void *args) {
+	Version2Header header;
+	memcpy(&header, data, sizeof(header));
+
+	if(header.version != 2) {
+		logMsg("Invalid material version", ErrorLog);
+	}
+
+	DataHeader *datas = new DataHeader[header.numData];
+	memcpy(datas, data + sizeof(header), sizeof(DataHeader) * header.numData);
+
+	MaterialData *mat = new MaterialData();
+
+	for(uint i = 0; i != header.numData; i++) {
+		readers[datas[i].id](data, datas[i].offset, mat, args);
+	}
+
+	return mat;
+}
+
+MaterialData *NmtReader::loadV1(const char *data, void *) {
 	Version1Header header;
 	memcpy(&header, data, sizeof(Version1Header));
 	if(header.version != 1) {
@@ -65,7 +121,6 @@ MaterialData *NmtReader::loadV1(char *data) {
 	}
 
 	MaterialData *mat = new MaterialData();
-
 
 	if(header.renderDataOffset != 0) {
 		memcpy(&mat->render, data + header.renderDataOffset, sizeof(uint32));

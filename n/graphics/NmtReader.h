@@ -23,7 +23,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class NmtReader : public MaterialLoader::MaterialReader<NmtReader, core::String>
+class NmtMaterialReader : public MaterialLoader::MaterialReader<NmtMaterialReader, core::String>
+{
+	public:
+		NmtMaterialReader();
+		virtual MaterialData *operator()(core::String fileName) override;
+};
+
+
+class NmtReader
 {
 
 	public:
@@ -36,17 +44,43 @@ class NmtReader : public MaterialLoader::MaterialReader<NmtReader, core::String>
 			uint texHeaderOffset[4];
 		};
 
+		struct Version2Header
+		{
+			uint version;
+			uint numData;
+		};
+
 		struct Version1TexHeader
 		{
 			uint nameLen;
 		};
 
+		struct DataHeader
+		{
+			uint offset;
+			uint id;
+		};
+
+
+		constexpr static uint FragShader = 0;
+		constexpr static uint RenderData = 1;
+		constexpr static uint TextureName = 2;
+
+
+		template<typename T>
+		void addReader(uint id, T t) {
+			readers[id] = t;
+		}
+
 		NmtReader();
-		MaterialData *operator()(core::String fileName) override;
+		MaterialData *load(const char *data, void *args = 0);
 
 	private:
-		MaterialData *load(io::File &file);
-		MaterialData *loadV1(char *data);
+		core::Map<uint, core::Functor<void(const char *, uint, MaterialData *, void *)>> readers;
+
+
+		MaterialData *loadV1(const char *data, void *);
+		MaterialData *loadV2(const char *data, void *args);
 
 };
 
