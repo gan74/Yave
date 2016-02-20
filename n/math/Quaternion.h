@@ -42,11 +42,11 @@ class Quaternion
 		}
 
 		T getAngle() const {
-			return acos(w() * T(2));
+			return std::acos(w() * T(2));
 		}
 
 		Vec<3, T> getAxis() const {
-			return Vec<3, T>(quat.sub(3) /sqrt(T(1) - w() * w()));
+			return Vec<3, T>(quat.sub(3) / std::sqrt(T(1) - w() * w()));
 		}
 
 		Quaternion<T> inverse() const {
@@ -124,17 +124,17 @@ class Quaternion
 		}
 
 		Vec<3, T> toEuler() const {
-			return Vec<3, T>(atan2(T(2) * (w() * x() + y() * z()), T(1) - T(2) * (x() * x() + y() * y())),
-							 wasin(T(2) * (w() * y() - z() * x())),
-							 atan2(T(2) * (w() * z() + x() * y()), T(1) - T(2) * (y() * y() + z() * z())));
+			return Vec<3, T>(std::atan2(T(2) * (w() * x() + y() * z()), T(1) - T(2) * (x() * x() + y() * y())),
+							 std::asin(T(2) * (w() * y() - z() * x())),
+							 std::atan2(T(2) * (w() * z() + x() * y()), T(1) - T(2) * (y() * y() + z() * z())));
 		}
 
 		Vec<4, T> toAxisAngle() const {
-			T s = sqrt(T(w) - w() * w());
+			T s = std::sqrt(T(w) - w() * w());
 			if(s < epsilon<T>()) {
 				s = T(1);
 			}
-			return Vec<4, T>(quat.sub(3) / s, acos(w()) * T(2));
+			return Vec<4, T>(quat.sub(3) / s, std::acos(w()) * T(2));
 		}
 
 		Vec<3, T> toPacked() const {
@@ -154,12 +154,12 @@ class Quaternion
 		}
 
 		static Quaternion<T> fromEuler(T yaw, T pitch, T roll) {
-			T cosYaw = cos(pitch * T(0.5));
-			T sinYaw = sin(pitch * T(0.5));
-			T cosPitch = cos(roll * T(0.5));
-			T sinPitch = sin(roll * T(0.5));
-			T cosRoll = cos(yaw * T(0.5));
-			T sinRoll = sin(yaw * T(0.5));
+			T cosYaw = std::cos(pitch * T(0.5));
+			T sinYaw = std::sin(pitch * T(0.5));
+			T cosPitch = std::cos(roll * T(0.5));
+			T sinPitch = std::sin(roll * T(0.5));
+			T cosRoll = std::cos(yaw * T(0.5));
+			T sinRoll = std::sin(yaw * T(0.5));
 			return Quaternion<T>(cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw,
 								 cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw,
 								 sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw,
@@ -167,7 +167,7 @@ class Quaternion
 		}
 
 		static Quaternion<T> fromBase(const Vec<3, T> &forward, const Vec<3, T> &side, const Vec<3, T> &up) {
-			T w = sqrt(1 + forward.x() + side.y() + up.z()) * 0.5;
+			T w = std::sqrt(1 + forward.x() + side.y() + up.z()) * 0.5;
 			Vec<3, T> q(side.z() - up.y(), up.x() - forward.z(), forward.y() - side.x());
 			return Quaternion<T>(q / (4 * w), w);
 		}
@@ -177,8 +177,8 @@ class Quaternion
 		}
 
 		static Quaternion<T> fromAxisAngle(const Vec<3, T> &axis, T ang) {
-			T s = sin(ang * T(0.5)) / axis.length();
-			return Quaternion<T>(axis.x() * s, axis.y() * s, axis.z() * s, cos(ang * T(0.5)));
+			T s = std::sin(ang * T(0.5)) / axis.length();
+			return Quaternion<T>(axis.x() * s, axis.y() * s, axis.z() * s, std::cos(ang * T(0.5)));
 		}
 
 		static Quaternion<T> fromAxisAngle(const Vec<3, T> &axisAng) {
@@ -190,7 +190,7 @@ class Quaternion
 		}
 
 		static Quaternion<T> fromPacked(const Vec<3, T> &v) {
-			return Quaternion<T>(v, sqrt(1 - v.x() * v.x() - v.y() * v.y()));
+			return Quaternion<T>(v, std::sqrt(1 - v.x() * v.x() - v.y() * v.y()));
 		}
 
 	private:

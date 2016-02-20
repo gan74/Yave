@@ -16,8 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Mutex.h"
 
-#include <ctime>
 #include <n/defines.h>
+#include <ctime>
 
 namespace n {
 namespace concurrent {

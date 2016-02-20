@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/defines.h>
 
-#include <cstdint>
-#include <cstdlib>
 #include <algorithm>
 #include <type_traits>
 #include <typeinfo>

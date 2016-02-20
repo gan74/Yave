@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_DEFINES
 #define N_DEFINES
 
-#include <cstdint>
-
 namespace n {
 
 class Nothing;

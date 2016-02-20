@@ -38,7 +38,7 @@ class Ray final : public Volume<T>
 		T distance(const Vec<3, T> &v) const {
 			Vec<3, T> p(v - b);
 			T dot = d.dot(p);
-			return sqrt(p.length2() - dot * dot);
+			return std::sqrt(p.length2() - dot * dot);
 		}
 
 		const Vec<3, T> &getDirection() const {

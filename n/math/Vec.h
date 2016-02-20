@@ -86,7 +86,7 @@ class Vec
 		}
 
 		T length() const {
-			return sqrt(length2());
+			return std::sqrt(length2());
 		}
 
 		T dot(const Vec<N, T> &o) const {

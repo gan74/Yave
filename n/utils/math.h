@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_UTILS_MATH
 #define N_UTILS_MATH
 
-#include <cfloat>
+#include <numeric>
 
 namespace n {
 namespace math {
@@ -86,7 +86,7 @@ static constexpr double pi = 3.1415926535897932384626433832795028841971693993751
 
 template<typename T = double>
 static constexpr typename ToFloatingPoint<T>::type epsilon() {
-	return typename ToFloatingPoint<T>::type(FLT_EPSILON);
+	return std::numeric_limits<typename ToFloatingPoint<T>::type>::epsilon();
 }
 
 template<typename T>
@@ -137,18 +137,6 @@ template<typename T>
 T normalizedConversion(T u) {
 	return u;
 }
-
-template<typename T>
-T isqrt(T s) {
-	T x	= s / 2;
-	T lx = x;
-	do {
-		lx = x;
-		x = (x + (s / x)) / 2;
-	} while(std::max(x, lx) - std::min(x, lx) > 1);
-	return x;
-}
-
 }
 }
 

@@ -101,7 +101,7 @@ class PerspectiveCamera final : public Camera
 		}
 
 		void computeProjectionMatrix() {
-			float f = cos(fov / 2.0) / sin(fov / 2.0);
+			float f = std::cos(fov / 2.0) / std::sin(fov / 2.0);
 			float z = zFar - zNear;
 			proj = math::Matrix4<>(f / ratio, 0, 0, 0,
 								   0, f, 0, 0,
@@ -111,13 +111,13 @@ class PerspectiveCamera final : public Camera
 
 		void computeFrustum() {
 			float fovR = fov / 2;
-			float hFovR = atan(tan(fovR) * ratio);
-			float c = cos(fovR);
-			float s = sin(fovR);
+			float hFovR = std::atan(tan(fovR) * ratio);
+			float c = std::cos(fovR);
+			float s = std::sin(fovR);
 			frustum[0] = forward * s + up * c;
 			frustum[1] = forward * s - up * c;
-			c = cos(hFovR);
-			s = sin(hFovR);
+			c = std::cos(hFovR);
+			s = std::sin(hFovR);
 			frustum[2] = forward * s + side * c;
 			frustum[3] = forward * s - side * c;
 		}
