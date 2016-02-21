@@ -54,10 +54,6 @@ class Operators
 		}
 };
 
-namespace core {
-	class String;
-}
-
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
@@ -185,7 +181,7 @@ class StrongTypeHelper
 		}
 
 	private:
-		T t;
+		const T &t;
 };
 
 #define N_GEN_CLASS_OP(cl, op) \

@@ -21,11 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
-namespace core {
-	class String;
-}
-
-
 
 template<typename T>
 uint64 hash(const T &t) {

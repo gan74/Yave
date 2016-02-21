@@ -26,6 +26,12 @@ Nothing fatal(const char *msg, const char *file = 0, int line = 0);
 template<typename T>
 void unused(T) {}
 
+
+namespace core {
+	class String1;
+	using String = String1;
+}
+
 }
 
 /* defines stuffs here */
