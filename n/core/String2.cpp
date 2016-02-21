@@ -13,17 +13,43 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
+#include "String2.h"
 
-#ifndef MAIN
-#define MAIN
+namespace n {
+namespace core {
 
+char *String2::allocLong(uint len) {
+	char *a = new char[len + 1];
+	a[len] = 0;
+	return a;
+}
 
-#include <n/core/String2.h>
-#include <iostream>
+String2::String2() : s(ShortData()) {
+}
 
-using namespace n;
-using namespace n::core;
+String2::String2(const char *str, uint len) {
+	if(len <= MaxShortSize) {
+		s = ShortData(str, len);
+	} else {
+		l = LongData(str, len);
+	}
+}
 
+uint String2::size() const {
+	return isLong() ? l.length : s.length;
+}
 
-#endif // MAIN
+bool String2::isLong() const {
+	return l.length.isLong;
+}
 
+char *String2::data() {
+	return isLong() ? l.data : s.data;
+}
+
+const char *String2::data() const {
+	return isLong() ? l.data : s.data;
+}
+
+}
+}
