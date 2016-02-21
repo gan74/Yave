@@ -16,15 +16,17 @@ int main(int, char **) {
 
 	const char raw[] = "long/short test";
 
-	std::cout<<"Long and short test: "<<std::endl;
+	std::cout<<"Long and short test:"<<std::endl;
 	for(uint i = 0; i != sizeof(raw); i++) {
 		printInfos(String2(raw, i));
 	}
 
-	std::cout<<"Default test: "<<std::endl;
+
+	std::cout<<"Default test:"<<std::endl;
 	printInfos(String2());
 
-	std::cout<<"Copy test: "<<std::endl;
+
+	std::cout<<"Copy test:"<<std::endl;
 	String2 str("long copy test");
 	String2 cpy = str;
 	printInfos(cpy);
@@ -34,13 +36,23 @@ int main(int, char **) {
 	printInfos(cpy);
 
 
-	std::cout<<"Short + test: "<<std::endl;
+	std::cout<<"Short + test:"<<std::endl;
 	str = "+";
 	printInfos(str + " test");
+
 
 	std::cout<<"Long + test: "<<std::endl;
 	str = "long";
 	printInfos(str + " +" + " test");
+
+	std::cout<<"Operator < test:"<<std::endl;
+	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") < "abce")<<std::endl;
+	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") < "abc")<<std::endl<<std::endl;
+
+
+	std::cout<<"Operator > test:"<<std::endl;
+	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") > "abc")<<std::endl;
+	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") > "abcc")<<std::endl<<std::endl;
 
 	return 0;
 }

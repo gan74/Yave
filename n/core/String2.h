@@ -91,10 +91,20 @@ class String2
 
 		void swap(String2 &&str);
 
+		char &operator[](uint i);
+		char operator[](uint i) const;
+
 		String2 &operator=(const String2 &str);
 		String2 &operator=(String2 &&str);
 
 		String2 operator+(const String2 &rhs) const;
+
+		bool operator==(const String2 &str) const;
+		bool operator!=(const String2 &str) const;
+		bool operator<(const String2 &s) const;
+		bool operator>(const String2 &s) const;
+
+
 
 	private:
 		union

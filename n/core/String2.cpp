@@ -123,6 +123,14 @@ const char *String2::data() const {
 	return isLong() ? l.data : s.data;
 }
 
+char &String2::operator[](uint i) {
+	return data()[i];
+}
+
+char String2::operator[](uint i) const {
+	return data()[i];
+}
+
 String2 &String2::operator=(const String2 &str) {
 	if(isLong()) {
 		freeLong(l);
@@ -156,6 +164,57 @@ String2 String2::operator+(const String2 &rhs) const {
 	memcpy(d, data(), lhsize);
 	memcpy(d + lhsize, rhs.data(), rhsize);
 	return str;
+}
+
+bool String2::operator==(const String2 &str) const {
+	uint s = str.size();
+	if(s != size()) {
+		return false;
+	}
+	const char *lhs = data();
+	const char *rhs = str.data();
+	for(uint i = 0; i != s; i++) {
+		if(lhs[i] != rhs[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool String2::operator!=(const String2 &str) const {
+	return !operator==(str);
+}
+
+bool String2::operator<(const String2 &s) const {
+	uint lhsize = size();
+	uint rhsize = s.size();
+	uint min = std::min(lhsize, rhsize);
+	const char *lhs = data();
+	const char *rhs = s.data();
+	for(uint i = 0; i != min; i++) {
+		if(lhs[i] < rhs[i]) {
+			return true;
+		} else if(lhs[i] > rhs[i]) {
+			return false;
+		}
+	}
+	return lhsize < rhsize;
+}
+
+bool String2::operator>(const String2 &s) const {
+	uint lhsize = size();
+	uint rhsize = s.size();
+	uint min = std::min(lhsize, rhsize);
+	const char *lhs = data();
+	const char *rhs = s.data();
+	for(uint i = 0; i != min; i++) {
+		if(lhs[i] > rhs[i]) {
+			return true;
+		} else if(lhs[i] < rhs[i]) {
+			return false;
+		}
+	}
+	return lhsize > rhsize;
 }
 
 }
