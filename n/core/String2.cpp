@@ -14,9 +14,49 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "String2.h"
+#include <cstring>
 
 namespace n {
 namespace core {
+
+// --------------------------------------------------- LONG ---------------------------------------------------
+
+String2::LongData::LongData() : data(0), length(0) {
+}
+
+String2::LongData::LongData(const LongData &l) : LongData(l.data, l.length) {
+}
+
+String2::LongData::LongData(LongData &&l) : data(l.data), length(l.length) {
+	l.data = 0;
+}
+
+String2::LongData::LongData(const char *str, uint len) : data(allocLong(len)), length(len) {
+	memcpy(data, str, len);
+}
+
+
+// --------------------------------------------------- SHORT ---------------------------------------------------
+
+String2::ShortData::ShortData() : data{0}, length(0) {
+}
+
+String2::ShortData::ShortData(const ShortData &s) {
+	memcpy(this, &s, sizeof(ShortData));
+}
+
+String2::ShortData::ShortData(const char *str, uint len) : length(len) {
+	memcpy(data, str, len);
+	data[len] = 0;
+}
+
+String2::ShortData &String2::ShortData::operator=(const ShortData &s) {
+	memcpy(this, &s, sizeof(ShortData));
+	return *this;
+}
+
+
+// --------------------------------------------------- ALLOC ---------------------------------------------------
 
 char *String2::allocLong(uint len) {
 	char *a = new char[len + 1];
@@ -24,14 +64,42 @@ char *String2::allocLong(uint len) {
 	return a;
 }
 
+void String2::freeLong(LongData &d) {
+	delete[] d.data;
+}
+
+
+
+
+// --------------------------------------------------- STRING ---------------------------------------------------
+
 String2::String2() : s(ShortData()) {
+}
+
+String2::String2(const String2 &str) {
+	if(str.isLong()) {
+		new(&l) LongData(str.l);
+	} else {
+		s = str.s;
+	}
+}
+
+String2::String2(String2 &&str) {
+	if(str.isLong()) {
+		new(&l) LongData(std::move(str.l));
+	} else {
+		s = str.s;
+	}
+}
+
+String2::String2(const char *str) : String2(str, strlen(str)) {
 }
 
 String2::String2(const char *str, uint len) {
 	if(len <= MaxShortSize) {
 		s = ShortData(str, len);
 	} else {
-		l = LongData(str, len);
+		new(&l) LongData(str, len);
 	}
 }
 
@@ -49,6 +117,31 @@ char *String2::data() {
 
 const char *String2::data() const {
 	return isLong() ? l.data : s.data;
+}
+
+String2 &String2::operator=(const String2 &str) {
+	if(isLong()) {
+		freeLong(l);
+	}
+	if(str.isLong()) {
+		new(&l) LongData(str.l);
+	} else {
+		s = str.s;
+	}
+	return *this;
+}
+
+void String2::swap(String2 &&str) {
+	byte tmp[sizeof(ShortData)];
+	unused(tmp);
+	memcpy(tmp, &str.s, sizeof(ShortData));
+	memcpy(&str.s, &s, sizeof(ShortData));
+	memcpy(&s, tmp, sizeof(ShortData));
+}
+
+String2 &String2::operator=(String2 &&str) {
+	swap(std::move(str));
+	return *this;
 }
 
 }

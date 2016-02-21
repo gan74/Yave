@@ -24,7 +24,7 @@ class Nothing;
 Nothing fatal(const char *msg, const char *file = 0, int line = 0);
 
 template<typename T>
-void unused(T) {}
+void unused(T &) {}
 
 
 namespace core {

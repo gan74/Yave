@@ -54,12 +54,10 @@ class String2
 		char *data;
 		LongLenType length;
 
-		LongData() : data(0), length(0) {
-		}
-
-		LongData(const char *str, uint len) : data(allocLong(len)), length(len) {
-			memcpy(data, str, len);
-		}
+		LongData();
+		LongData(const LongData &l);
+		LongData(LongData &&l);
+		LongData(const char *str, uint len);
 	};
 
 	struct ShortData
@@ -67,13 +65,11 @@ class String2
 		char data[sizeof(LongData) - 1];
 		ShortLenType length;
 
-		ShortData() : data{0}, length(0) {
-		}
+		ShortData();
+		ShortData(const ShortData &s);
+		ShortData(const char *str, uint len);
 
-		ShortData(const char *str, uint len) : length(len) {
-			memcpy(data, str, len);
-			data[len] = 0;
-		}
+		ShortData &operator=(const ShortData &s);
 	};
 
 	static_assert(sizeof(ShortData) == sizeof(LongData), "String2::LongData should be the same length as String2::ShortData");
@@ -82,6 +78,9 @@ class String2
 
 	public:
 		String2();
+		String2(const String2 &str);
+		String2(String2 &&str);
+		String2(const char *str);
 		String2(const char *str, uint len);
 
 		uint size() const;
@@ -89,6 +88,11 @@ class String2
 
 		char *data();
 		const char *data() const;
+
+		void swap(String2 &&str);
+
+		String2 &operator=(const String2 &str);
+		String2 &operator=(String2 &&str);
 
 	private:
 		union
@@ -98,6 +102,7 @@ class String2
 		};
 
 		static char *allocLong(uint len);
+		static void freeLong(LongData &d);
 };
 
 }
