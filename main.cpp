@@ -33,5 +33,14 @@ int main(int, char **) {
 	cpy = str;
 	printInfos(cpy);
 
+
+	std::cout<<"Short + test: "<<std::endl;
+	str = "+";
+	printInfos(str + " test");
+
+	std::cout<<"Long + test: "<<std::endl;
+	str = "long";
+	printInfos(str + " +" + " test");
+
 	return 0;
 }

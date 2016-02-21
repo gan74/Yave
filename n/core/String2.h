@@ -94,6 +94,8 @@ class String2
 		String2 &operator=(const String2 &str);
 		String2 &operator=(String2 &&str);
 
+		String2 operator+(const String2 &rhs) const;
+
 	private:
 		union
 		{

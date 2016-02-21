@@ -32,7 +32,10 @@ String2::LongData::LongData(LongData &&l) : data(l.data), length(l.length) {
 }
 
 String2::LongData::LongData(const char *str, uint len) : data(allocLong(len)), length(len) {
-	memcpy(data, str, len);
+	if(str) {
+		memcpy(data, str, len);
+	}
+	data[len] = 0;
 }
 
 
@@ -46,7 +49,9 @@ String2::ShortData::ShortData(const ShortData &s) {
 }
 
 String2::ShortData::ShortData(const char *str, uint len) : length(len) {
-	memcpy(data, str, len);
+	if(str) {
+		memcpy(data, str, len);
+	}
 	data[len] = 0;
 }
 
@@ -60,7 +65,6 @@ String2::ShortData &String2::ShortData::operator=(const ShortData &s) {
 
 char *String2::allocLong(uint len) {
 	char *a = new char[len + 1];
-	a[len] = 0;
 	return a;
 }
 
@@ -142,6 +146,16 @@ void String2::swap(String2 &&str) {
 String2 &String2::operator=(String2 &&str) {
 	swap(std::move(str));
 	return *this;
+}
+
+String2 String2::operator+(const String2 &rhs) const {
+	uint lhsize = size();
+	uint rhsize = rhs.size();
+	String2 str(0, lhsize + rhsize);
+	char *d = str.data();
+	memcpy(d, data(), lhsize);
+	memcpy(d + lhsize, rhs.data(), rhsize);
+	return str;
 }
 
 }
