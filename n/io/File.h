@@ -28,17 +28,14 @@ class File : public IODevice
 	public:
 		File(const core::String &fileName);
 
-		bool open(int m) override;
+		bool open(OpenMode m) override;
 		void seek(uint pos);
 		uint getPos() const;
 		void close() override;
-		bool isOpen() const override;
 		bool atEnd() const override;
-		bool canWrite() const override;
-		bool canRead() const override;
 		void flush() override;
 		uint size() const;
-		int getOpenMode() const override;
+		OpenMode getOpenMode() const override;
 		uint writeBytes(const void *b, uint len) override;
 		uint readBytes(void *b, uint len = -1) override;
 		bool exists() const;
@@ -53,7 +50,7 @@ class File : public IODevice
 		FILE *file;
 
 		core::String name;
-		int mode;
+		OpenMode mode;
 		uint length;
 };
 

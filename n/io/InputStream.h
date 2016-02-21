@@ -20,12 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/types.h>
 
 namespace n {
-namespace core {
-class String;
-}
-}
-
-namespace n {
 namespace io {
 
 class InputStream : NonCopyable

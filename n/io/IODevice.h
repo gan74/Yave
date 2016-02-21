@@ -26,21 +26,40 @@ namespace io {
 class IODevice : public InputStream, public OutputStream
 {
 	public:
-		static const int None = 0x00;
-		static const int Read = 0x01;
-		static const int Write = 0x02;
-		static const int Binary = 0x04;
-		static const int Append = 0x08;
-
+		enum OpenMode
+		{
+			None = 0x00,
+			Read = 0x01,
+			Write = 0x02,
+			Binary = 0x04,
+			AtEnd = 0x08,
+			Append = Write | AtEnd
+		};
 
 		IODevice() {
 		}
 
-		virtual bool open(int) = 0;
+		virtual bool open(OpenMode) = 0;
 		virtual void close() = 0;
-		virtual bool isOpen() const = 0;
-		virtual int getOpenMode() const = 0;
+		virtual OpenMode getOpenMode() const = 0;
+
+
+		virtual bool isOpen() const {
+			return getOpenMode() != None;
+		}
+
+		bool canWrite() const override {
+			return getOpenMode() & Write;
+		}
+
+		bool canRead() const override {
+			return !atEnd() && getOpenMode() & Read;
+		}
 };
+
+inline IODevice::OpenMode operator|(IODevice::OpenMode a, IODevice::OpenMode b) {
+	return IODevice::OpenMode(uint(a) | uint(b));
+}
 
 } // io
 } // n

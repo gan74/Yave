@@ -65,6 +65,7 @@ class NmtReader
 		constexpr static uint FragShader = 0;
 		constexpr static uint RenderData = 1;
 		constexpr static uint TextureName = 2;
+		constexpr static uint Reserved = 1024;
 
 
 		template<typename T>

@@ -61,7 +61,7 @@ bool File::remove() {
 	return !::remove(name.toChar());
 }
 
-bool File::open(int m) {
+bool File::open(OpenMode m) {
 	if(m == IODevice::None) {
 		close();
 		return false;
@@ -75,7 +75,7 @@ bool File::open(int m) {
 		if(m & IODevice::Read) {
 			openMode += "+";
 		}
-	} else if(m & IODevice::Append) {
+	} else if(m & IODevice::AtEnd) {
 		openMode = "a";
 		if(m & IODevice::Read) {
 			openMode += "+";
@@ -116,20 +116,8 @@ void File::close() {
 	}
 }
 
-bool File::isOpen() const {
-	return mode != IODevice::None;
-}
-
 bool File::atEnd() const {
 	return !isOpen() || getPos() >= length;
-}
-
-bool File::canWrite() const {
-	return (mode & IODevice::Write) || (mode & IODevice::Append);
-}
-
-bool File::canRead() const {
-	return !atEnd() && mode & IODevice::Read;
 }
 
 void File::flush() {
@@ -145,7 +133,7 @@ uint File::size() const {
 	return length;
 }
 
-int File::getOpenMode() const {
+IODevice::OpenMode File::getOpenMode() const {
 	return mode;
 }
 

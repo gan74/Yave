@@ -193,13 +193,7 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 
 		template<typename C>
 		iterator insert(const C &e, iterator position) {
-			if(getCapacity() - size()) {
-				move(position + 1, position, dataEnd - position);
-				position->~T();
-				new(position) T(e);
-				return position + 1;
-			}
-			return insert(&e, (&e) + 1, position);
+			return insertDispatch(e, position, BoolToType<ShouldInsertAsCollection<C, T>::value>());
 		}
 
 		template<typename C>
@@ -654,6 +648,22 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 					setCapacityUnsafe(s, tc);
 				}
 			}
+		}
+
+		template<typename C>
+		iterator insertDispatch(const C &e, iterator position, FalseType) {
+			if(getCapacity() - size()) {
+				move(position + 1, position, dataEnd - position);
+				position->~T();
+				new(position) T(e);
+				return position + 1;
+			}
+			return insert(&e, (&e) + 1, position);
+		}
+
+		template<typename C>
+		iterator insertDispatch(const C &e, iterator position, TrueType) {
+			return insert(e.begin(), e.end(), position);
 		}
 
 		template<typename C>
