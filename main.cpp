@@ -54,5 +54,13 @@ int main(int, char **) {
 	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") > "abc")<<std::endl;
 	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") > "abcc")<<std::endl<<std::endl;
 
+
+	std::cout<<"Swap test:"<<std::endl;
+	str = ", rhs";
+	cpy = "left hand size";
+	cpy.swap(str);
+	std::cout<<"\t"<<str.data()<<cpy.data()<<std::endl<<std::endl;
+
+
 	return 0;
 }

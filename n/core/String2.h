@@ -77,6 +77,9 @@ class String2
 	static constexpr uint MaxShortSize = sizeof(ShortData::data);
 
 	public:
+		using iterator = char *;
+		using const_iterator = const char *;
+
 		String2();
 		String2(const String2 &str);
 		String2(String2 &&str);
@@ -84,18 +87,37 @@ class String2
 		String2(const char *str, uint len);
 
 		uint size() const;
+		bool isEmpty() const;
+
+		void clear();
+
 		bool isLong() const;
+
+		bool beginsWith(const String2 &str) const;
+		bool endsWith(const String2 &str) const;
+
+		const_iterator find(const String2 &str, uint from = 0) const;
+		iterator find(const String2 &str, uint from = 0);
+		bool contains(const String2 &str) const;
 
 		char *data();
 		const char *data() const;
 
-		void swap(String2 &&str);
+		iterator begin();
+		iterator end();
+		const_iterator begin() const;
+		const_iterator end() const;
+		const_iterator cbegin() const;
+		const_iterator cend() const;
+
+		void swap(String2 &str);
 
 		char &operator[](uint i);
 		char operator[](uint i) const;
 
 		String2 &operator=(const String2 &str);
 		String2 &operator=(String2 &&str);
+		String2 &operator+=(const String2 &rhs);
 
 		String2 operator+(const String2 &rhs) const;
 
@@ -103,8 +125,6 @@ class String2
 		bool operator!=(const String2 &str) const;
 		bool operator<(const String2 &s) const;
 		bool operator>(const String2 &s) const;
-
-
 
 	private:
 		union

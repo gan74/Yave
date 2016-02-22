@@ -111,8 +111,80 @@ uint String2::size() const {
 	return isLong() ? l.length : s.length;
 }
 
+bool String2::isEmpty() const {
+	return !size();
+}
+
+void String2::clear() {
+	operator=("");
+}
+
 bool String2::isLong() const {
 	return l.length.isLong;
+}
+
+bool String2::beginsWith(const String2 &str) const {
+	uint s = str.size();
+	if(size() < s) {
+		return false;
+	}
+	const char *d = str.data();
+	const char *td = data();
+	for(uint i = 0; i != s; i++) {
+		if(d[i] != td[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool String2::endsWith(const String2 &str) const {
+	uint s = str.size();
+	uint ts = size();
+	if(ts < s) {
+		return false;
+	}
+	ts--;
+	const char *d = str.data();
+	const char *td = data();
+	for(uint i = 0; i != s; i++) {
+		uint index = ts - i;
+		if(d[i] != td[index]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+String2::const_iterator String2::find(const String2 &str, uint from) const {
+	return const_iterator(const_cast<String2 *>(this)->find(str, from));
+}
+
+String2::iterator String2::find(const String2 &str, uint from) {
+	uint strSize = str.size();
+	uint len = size();
+	if(from + strSize > len) {
+		return end();
+	}
+	const char *d = str.data();
+	const char *td = data();
+	for(uint i = from, l = len - strSize; i <= l; i++) {
+		bool matched = true;
+		for(uint j = 0; j != strSize; j++) {
+			if(td[i + j] != d[j]) {
+				matched = false;
+				break;
+			}
+		}
+		if(matched) {
+			return begin() + i;
+		}
+	}
+	return end();
+}
+
+bool String2::contains(const String2 &str) const {
+	return find(str) != end();
 }
 
 char *String2::data() {
@@ -123,12 +195,53 @@ const char *String2::data() const {
 	return isLong() ? l.data : s.data;
 }
 
+String2::iterator String2::begin() {
+	return data();
+}
+
+String2::iterator String2::end() {
+	if(isLong()) {
+		return l.data + l.length;
+	}
+	return s.data + s.length;
+}
+
+String2::const_iterator String2::begin() const {
+	return data();
+}
+
+String2::const_iterator String2::end() const {
+	if(isLong()) {
+		return l.data + l.length;
+	}
+	return s.data + s.length;
+}
+
+String2::const_iterator String2::cbegin() const {
+	return data();
+}
+
+String2::const_iterator String2::cend() const {
+	if(isLong()) {
+		return l.data + l.length;
+	}
+	return s.data + s.length;
+}
+
 char &String2::operator[](uint i) {
 	return data()[i];
 }
 
 char String2::operator[](uint i) const {
 	return data()[i];
+}
+
+void String2::swap(String2 &str) {
+	byte tmp[sizeof(ShortData)];
+	unused(tmp);
+	memcpy(tmp, &str.s, sizeof(ShortData));
+	memcpy(&str.s, &s, sizeof(ShortData));
+	memcpy(&s, tmp, sizeof(ShortData));
 }
 
 String2 &String2::operator=(const String2 &str) {
@@ -143,17 +256,13 @@ String2 &String2::operator=(const String2 &str) {
 	return *this;
 }
 
-void String2::swap(String2 &&str) {
-	byte tmp[sizeof(ShortData)];
-	unused(tmp);
-	memcpy(tmp, &str.s, sizeof(ShortData));
-	memcpy(&str.s, &s, sizeof(ShortData));
-	memcpy(&s, tmp, sizeof(ShortData));
+String2 &String2::operator=(String2 &&str) {
+	swap(str);
+	return *this;
 }
 
-String2 &String2::operator=(String2 &&str) {
-	swap(std::move(str));
-	return *this;
+String2 &String2::operator+=(const String2 &rhs) {
+	return operator=(operator+(rhs));
 }
 
 String2 String2::operator+(const String2 &rhs) const {
