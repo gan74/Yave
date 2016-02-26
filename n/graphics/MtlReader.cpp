@@ -24,11 +24,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class MtlReader : public MaterialLoader::MaterialReader<MtlReader, core::String, core::String>,
-				  public MaterialLoader::MaterialReader<MtlReader, core::String>
+class MtlReader : public MaterialLoader::AssetReader<MtlReader, core::String, core::String>,
+				  public MaterialLoader::AssetReader<MtlReader, core::String>
 {
 	public:
-		MtlReader() : MaterialLoader::MaterialReader<MtlReader, core::String, core::String>(), MaterialLoader::MaterialReader<MtlReader, core::String>() {
+		MtlReader() : MaterialLoader::AssetReader<MtlReader, core::String, core::String>(), MaterialLoader::AssetReader<MtlReader, core::String>() {
 		}
 
 		MaterialData *operator()(core::String fileName, core::String name) override {

@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-class NmtMaterialReader : public MaterialLoader::MaterialReader<NmtMaterialReader, core::String>
+class NmtMaterialReader : public MaterialLoader::AssetReader<NmtMaterialReader, core::String>
 {
 	public:
 		NmtMaterialReader();

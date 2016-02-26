@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-NmtMaterialReader::NmtMaterialReader() : MaterialLoader::MaterialReader<NmtMaterialReader, core::String>() {
+NmtMaterialReader::NmtMaterialReader() : MaterialLoader::AssetReader<NmtMaterialReader, core::String>() {
 }
 
 MaterialData *NmtMaterialReader::operator()(core::String fileName) {
