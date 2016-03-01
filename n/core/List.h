@@ -158,6 +158,8 @@ class List
 				ListElem *elem;
 		};
 
+		typedef T Element;
+
 		List() : lSize(0), tail(new ListElem()), head(tail) {
 		}
 

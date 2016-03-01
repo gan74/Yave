@@ -92,6 +92,7 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		};*/
 
 		typedef uint Size;
+		typedef T Element;
 
 		Array() : ResizePolicy(), data(0), dataEnd(0), allocEnd(0) {
 		}

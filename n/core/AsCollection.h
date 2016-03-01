@@ -619,6 +619,23 @@ class Collection
 		}
 };
 
+template<typename T>
+struct Inserter
+{
+	using Element = typename Collection<T>::Element;
+
+	T &operator()(const Element &e) {
+		t.insert(e);
+		return t;
+	}
+
+	Inserter(T &w) : t(w) {
+	}
+
+	private:
+		T &t;
+};
+
 template<typename C, typename ElementType>
 struct ShouldInsertAsCollection
 {
@@ -653,6 +670,11 @@ constexpr Collection<T> AsCollection(T &t) {
 template<typename T>
 constexpr Collection<const T> AsCollection(const T &t) {
 	return Collection<const T>(t);
+}
+
+template<typename T>
+Inserter<T> inserter(T &t) {
+	return Inserter<T>(t);
 }
 
 

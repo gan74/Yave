@@ -98,31 +98,35 @@ class Scene : NonCopyable
 
 		template<typename U = Transformable, typename V>
 		core::Array<U *> query(const V &vol) const {
+			core::Array<U *> arr(transformables.size());
+			query<U>(vol, core::inserter(arr));
+			return arr;
+		}
+
+
+		template<typename U = Transformable, typename V, typename F>
+		void query(const V &vol, F f) const {
 			if(std::is_same<U, Transformable>::value) {
-				return transformables
-						.filtered([&](Transformable *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
-						.mapped([=](Transformable *v) { return reinterpret_cast<U *>(v); });
-			}
-			core::Array<U *> array(typename core::Array<U *>::Size(transformables.size()));
-			for(const TypedArray &p : typeMap) {
-				if(!p._2.isEmpty()) {
-					U *u = dynamic_cast<U *>(p._2.first());
-					if(u) {
-						uint off = (uint)u - (uint)p._2.first();
-						for(Transformable *v : p._2) {
-							if(v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius())) {
-								array.append((U *)((byte *)v + off));
+				for(Transformable *v : transformables) {
+					if(v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius())) {
+						f(reinterpret_cast<U *>(v));
+					}
+				}
+			} else {
+				for(const TypedArray &p : typeMap) {
+					if(!p._2.isEmpty()) {
+						U *u = dynamic_cast<U *>(p._2.first());
+						if(u) {
+							uint off = (uint)u - (uint)p._2.first();
+							for(Transformable *v : p._2) {
+								if(v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius())) {
+									f(reinterpret_cast<U *>((byte *)v + off));
+								}
 							}
 						}
-
-						/*array.append(p._2
-							.filtered([&](Transformable *v) { return v->getRadius() < 0 || vol.isInside(v->getPosition(), v->getRadius()); })
-							.mapped([=](Transformable *v) { return (U *)((byte *)v + off); }));*/
-
 					}
 				}
 			}
-			return array;
 		}
 
 	private:
