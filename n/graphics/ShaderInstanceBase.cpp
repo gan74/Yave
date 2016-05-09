@@ -301,6 +301,10 @@ void ShaderInstanceBase::setValue(UniformInfo info, const math::Vec3i *v, uint c
 	gl::programUniform3iv(handle, info.addr, count, v->begin());
 }
 
+void ShaderInstanceBase::setValue(UniformInfo info, const math::Vec4i *v, uint count) const {
+	gl::programUniform4iv(handle, info.addr, count, v->begin());
+}
+
 void ShaderInstanceBase::setValue(UniformInfo info, const math::Vec2 *v, uint count) const {
 	gl::programUniform2fv(handle, info.addr, count, v->begin());
 }
@@ -351,7 +355,11 @@ void ShaderInstanceBase::setValue(UniformInfo info, const CubeMap &t, TextureSam
 	}
 }
 
-void ShaderInstanceBase::setValue(UniformInfo info, const Texture &t, TextureAccess access) const {
+void ShaderInstanceBase::setValue(UniformInfo info, const RenderableTexture &t, TextureSampler sampler) const {
+	setValue(info, t.operator Texture(), sampler);
+}
+
+void ShaderInstanceBase::setValue(UniformInfo info, const RenderableTexture &t, TextureAccess access) const {
 	UniformAddr slot = info.addr;
 	if(slot != UniformAddr(gl::InvalidIndex)) {
 		imBindings[slot] = t;

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ImageLoader.h"
 #include "DeferredCommon.h"
 #include "CubeFrameBuffer.h"
+#include "IBLProbe.h"
 
 namespace n {
 namespace graphics {
@@ -31,16 +32,16 @@ MaterialRenderData getMaterial() {
 }
 
 
-CubeMap *getCube() {
-	static CubeMap *cube = 0;
+IBLProbe *getCube() {
+	static IBLProbe *cube = 0;
 	if(!cube) {
-		cube = new CubeMap(
+		cube = new IBLProbe(CubeMap(
 			(Image(ImageLoader::load<core::String>("./skybox/top.tga"))),
 			(Image(ImageLoader::load<core::String>("./skybox/bottom.tga"))),
 			(Image(ImageLoader::load<core::String>("./skybox/right.tga"))),
 			(Image(ImageLoader::load<core::String>("./skybox/left.tga"))),
 			(Image(ImageLoader::load<core::String>("./skybox/front.tga"))),
-			(Image(ImageLoader::load<core::String>("./skybox/back.tga"))));
+			(Image(ImageLoader::load<core::String>("./skybox/back.tga")))));
 
 		/*ShaderInstance sh(new Shader<FragmentShader>(
 			"layout(location = 0) out vec4 n_0;"
@@ -92,7 +93,7 @@ ShaderInstance *getShader() {
 
 			+ getBRDFs() +
 
-			"mat3 genWorld(vec3 Z) {"
+			/*"mat3 genWorld(vec3 Z) {"
 				"vec3 U = abs(Z.z) > 0.999 ? vec3(1, 0, 0) : vec3(0, 0, 1);"
 				"vec3 X = normalize(cross(Z, U));"
 				"vec3 Y = cross(X, Z);"
@@ -156,12 +157,12 @@ ShaderInstance *getShader() {
 					"}"
 				"}"
 				"return color / sum;"
-			"}"
+			"}"*/
 
 			"void main() {"
 				"float depth = 0;"
 				"vec3 pos = unproj(n_TexCoord, depth);"
-				"n_GBufferData gbuffer = n_unpackGBuffer(n_0, n_1, n_2, n_TexCoord);"
+				"n_GBufferData gbuffer = n_unpackGBuffer(n_0, n_1, n_2, ivec2(gl_FragCoord.xy));"
 				"float levels = textureQueryLevels(n_Cube);"
 
 				//"n_Out = vec4(filterEnv(roughness, N), 1.0);"
@@ -170,9 +171,10 @@ ShaderInstance *getShader() {
 				"if(depth == 1) {"
 					"n_Out = textureLod(n_Cube, view, 0);"
 				"} else {"
-					"vec3 spec = textureLod(n_Cube, reflect(view, gbuffer.normal), levels * log2(1 + gbuffer.roughness)).rgb;"
+					/*"vec3 spec = textureLod(n_Cube, reflect(view, gbuffer.normal), levels * log2(1 + gbuffer.roughness)).rgb;"
 					"vec3 diff = textureLod(n_Cube, gbuffer.normal, levels).rgb;"
-					"n_Out = vec4((mix(vec3(0.04), gbuffer.color.rgb, gbuffer.metallic) * spec + gbuffer.color.rgb * diff) * 0.5, 1.0);" // bogus
+					"n_Out = vec4((mix(vec3(0.04), gbuffer.color.rgb, gbuffer.metallic) * spec + gbuffer.color.rgb * diff) * 0.5, 1.0);" // bogus*/
+					"n_Out = textureLod(n_Cube, reflect(view, gbuffer.normal), 0);"
 				"}"
 			"}"
 		), ShaderProgram::NoProjectionShader);
@@ -188,6 +190,10 @@ void *DeferredIBLRenderer::prepare() {
 }
 
 void DeferredIBLRenderer::render(void *ptr) {
+
+	static core::Timer timer;
+
+
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(ptr);
 	math::Matrix4<> invCam = (sceneData->proj * sceneData->view).inverse();
 	math::Vec3 cam = sceneData->camera->getPosition();
@@ -198,13 +204,13 @@ void DeferredIBLRenderer::render(void *ptr) {
 	if(fb) {
 		fb->bind();
 	} else {
-
 		FrameBuffer::unbind();
 	}
+	FrameBuffer::clear(true, true); // <<------------------------------------ REMOVE
 
 	ShaderInstance *shader = getShader();
-	shader->setValue("n_Cube", *getCube(), TextureSampler::Trilinear);
-	shader->setValue("n_Inv", invCam);;
+	shader->setValue("n_Cube", getCube()->getConvolution(int(timer.elapsed()) % IBLProbe::LevelCount), TextureSampler::Trilinear);
+	shader->setValue("n_Inv", invCam);
 	shader->setValue("n_Cam", cam);
 	shader->setValue(SVTexture0, child->getFrameBuffer().getAttachment(0));
 	shader->setValue(SVTexture1, child->getFrameBuffer().getAttachment(1));

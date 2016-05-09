@@ -102,6 +102,15 @@ bool Texture::synchronize(bool sync) const {
 	}
 	return getHandle();
 }
+RenderableTexture::RenderableTexture() : Texture() {
+}
+
+RenderableTexture::RenderableTexture(const math::Vec2ui &s, ImageFormat f) : Texture(Image(s, f), false) {
+}
+
+RenderableTexture::operator Texture() const {
+	return *this;
+}
 
 
 }

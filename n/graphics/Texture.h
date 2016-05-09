@@ -26,6 +26,7 @@ namespace n {
 namespace graphics {
 
 class ShaderBase;
+class RenderableTexture;
 
 class Texture : public TextureBase
 {
@@ -81,6 +82,15 @@ class Texture : public TextureBase
 		void upload() const;
 
 		Image image;
+};
+
+class RenderableTexture : public Texture
+{
+	public:
+		RenderableTexture();
+		RenderableTexture(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8);
+
+		operator Texture() const;
 };
 
 }

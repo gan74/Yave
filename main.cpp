@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	Scene scene;
 	scene.insert(&cam);
 
-	/*uint max = 20;
+	uint max = 20;
 	float scale = 5;
 	for(uint i = 0; i != max; i++) {
 		for(uint j = 0; j != max; j++) {
@@ -40,21 +40,21 @@ int main(int argc, char **argv) {
 			m->setPosition(Vec3(i - max * 0.5, j - max * 0.5, 1) * m->getRadius() * 2.5);
 			scene.insert(m);
 		}
-	}*/
+	}
 
-	{
-		//auto obj = new Obj("./crytek-sponza/sponza.obj");
-		//obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
-		auto obj = new Obj("plane.obj");
+	/*{
+		auto obj = new Obj("./crytek-sponza/sponza.obj");
+		obj->setRotation(Quaternion<>::fromEuler(0, 0, pi * 0.5));
+		//auto obj = new Obj("plane.obj");
 		obj->setAutoScale(800);
 		scene.insert(obj);
-	}
+	}*/
 
 	{
 		DirectionalLight *l = new DirectionalLight();
 
 		l->setForward(Vec3(0, 1, -1));
-		l->setIntensity(1);
+		l->setIntensity(5);
 		scene.insert(l);
 	}
 
@@ -79,10 +79,10 @@ int main(int argc, char **argv) {
 		scene.insert(l);
 	}*/
 
-	for(uint i = 0; i != 1; i++) {
+	/*for(uint i = 0; i != 1; i++) {
 		Test *t = new Test(MaterialLoader::load<String>("test.nmt"));
 		scene.insert(t);
-	}
+	}*/
 
 	core::Array<ParticleEmitter *> emitters;
 	uint parts = ParticleEmitter::getMaxParticles();
@@ -105,14 +105,16 @@ int main(int argc, char **argv) {
 	GBufferRenderer *gRe = new GBufferRenderer(sceRe);
 	DeferredShadingRenderer *ri = new DeferredShadingRenderer(gRe);
 	TiledDeferredShadingRenderer *ti = new TiledDeferredShadingRenderer(gRe);
-	Renderer *renderers[] {new FrameBufferRenderer(ti),
+	Renderer *renderers[] {new DeferredIBLRenderer(gRe),
+						   new FrameBufferRenderer(ti),
 						   new FrameBufferRenderer(ri),
 						   sceRe,
 						   new FrameBufferRenderer(gRe),
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2)};
 
-	String renderNames[] = {"Tiled shading",
+	String renderNames[] = {"IBL"
+							"Tiled shading",
 							"Deferred shading",
 							"Scene",
 							"G-buffer 0",
@@ -120,8 +122,6 @@ int main(int argc, char **argv) {
 							"G-buffer 2"};
 
 	Timer timer;
-
-	concurrent::Thread::sleep(5);
 
 	try {
 	while(run(win)) {
@@ -161,44 +161,115 @@ int main(int argc, char **argv) {
 #else
 
 #include <iostream>
+#include <n/core/String.h>
+#include <n/io/File.h>
+#include <n/io/Dir.h>
 #include <n/core/Timer.h>
-#include <n/math/Interpolator.h>
 
 using namespace n;
 using namespace n::math;
 using namespace n::core;
 
-int main(int, char **) {
-	for(uint points = 0; points != 100; points++) {
-		Array<LinearInterpolator<Vec2>::Element> pts;
-		for(uint i = 0; i != points + 1; i++) {
-			pts.append(LinearInterpolator<Vec2>::Element(i / float(points), Vec2(0.5, 0.5)));
+/*Array<String> readLines(String f) {
+	io::File file(f);
+	if(!file.open(io::IODevice::Read)) {
+		std::cerr<<"ERROR : unable to open : "<<f<<std::endl;
+		return {};
+	}
+	char *data = new char[file.size() + 1];
+	data[file.readBytes(data)] = 0;
+	Array<String> lines = String(data).split("\n");
+	delete[] data;
+	file.close();
+	return lines;
+}
+
+void checkLen(String f, const Array<String> &lines) {
+	for(uint i = 0; i != lines.size(); i++) {
+		const String &l = lines[i];
+		uint tabs = AsCollection(l).count('\t');
+		uint len = l.size() + tabs * 3;
+		if(len > 85) {
+			std::cout<<f<<" at line "<<i<<" is too long."<<std::endl;
 		}
-		LinearInterpolator<Vec2> inter(pts);
-		PrecomputedDistribution<Vec2> distr = inter.toDistribution();
 
-
-		uint max = 1000000;
-		core::Timer timer;
-
-		Vec2 sum2 = 0.0;
-		for(uint i = 0; i != max + 1; i++) {
-			sum2 += distr(i / float(max));
-		}
-		double t2 = timer.reset();
-
-		Vec2 sum1 = 0.0;
-		for(uint i = 0; i != max + 1; i++) {
-			sum1 += inter.eval(i / float(max));
-		}
-		double t1 = timer.reset();
-
-		std::cout<<std::endl<<points + 1<<" control points"<<std::endl;
-		std::cout<<"Interpolator = "<<sum1<<" ("<<t1 * 1000<<"ms)"<<std::endl;
-		std::cout<<"Distribution = "<<sum2<<" ("<<t2 * 1000<<"ms)"<<std::endl;
-		std::cout<<"Distribution size = "<<distr.size()<<std::endl;
 	}
 
+}
+
+void checkFuncs(String f, const Array<String> &lines) {
+	int o = 0;
+	uint beg = 0;
+	for(uint i = 0; i != lines.size(); i++) {
+		const String &l = lines[i];
+		uint op = AsCollection(l).count('{');
+		uint cl = AsCollection(l).count('}');
+		int lo = o;
+		o = o + op - cl;
+		if(o && !lo) {
+			beg = i;
+		}
+		if(!o && lo) {
+			uint len = i - beg;
+			if(len > 120) {
+				std::cout<<f<<" at line "<<beg<<" function is too long."<<std::endl;
+			}
+		}
+	}
+
+}
+
+void parseh(String f) {
+	auto lines = readLines(f);
+	//std::cout<<f<<" has "<<lines.size()<<" lines"<<std::endl;
+	checkLen(f, lines);
+	for(auto l : lines) {
+		if(l.contains("{")) {
+			std::cout<<"\"{\" in "<<f<<std::endl;
+		}
+	}
+}
+
+
+void parsec(String f) {
+	auto lines = readLines(f);
+	//std::cout<<f<<" has "<<lines.size()<<" lines"<<std::endl;
+	checkLen(f, lines);
+	checkFuncs(f, lines);
+
+}
+
+int main(int, char **argv) {
+	if(!io::Dir::exists(argv[1])) {
+		std::cerr<<argv[1]<<" does not exists"<<std::endl;
+		return 1;
+	}
+	io::Dir dir(argv[1]);
+	for(auto f : dir.getContent()) {
+		if(f.endsWith(".h")) {
+			parseh(dir.getPath() + "\\" + f);
+		} else if(f.endsWith(".c") || f.endsWith(".cpp")) {
+			parsec(dir.getPath() + "\\" + f);
+		}
+	}
+
+	std::cout<<"DONE"<<std::endl;
+	return 0;
+}*/
+
+class Test {
+
+	public:
+		Test() : a(7) {
+			std::cout<<"truc("<<this<<")"<<std::endl;
+		}
+
+		int a;
+
+};
+
+int main(int, char **) {
+	new(0) Test();
 	return 0;
 }
 

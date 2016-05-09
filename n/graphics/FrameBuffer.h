@@ -55,7 +55,7 @@ class FrameBuffer : public FrameBufferBase
 	void setupAttachment(uint index, ImageFormat::Format format) {
 		assertAttachments(index);
 		drawBuffers[index] = gl::Attachment(gl::ColorAtt0 + index);
-		attachments[index] = Texture(Image(getSize(), format), false);
+		attachments[index] = RenderableTexture(getSize(), format);
 	}
 
 	public:
@@ -70,22 +70,21 @@ class FrameBuffer : public FrameBufferBase
 
 		void blit(uint slot = 0, bool depth = false) const;
 
-		Texture getAttachment(uint slot) const {
+		RenderableTexture getAttachment(uint slot) const {
 			return slot == Depth ? getDepthAttachment() : attachments[slot];
 		}
 
-		Texture getDepthAttachment() const {
-			return depth ? *depth : Texture();
+		RenderableTexture getDepthAttachment() const {
+			return depth ? *depth : RenderableTexture();
 		}
 
 		template<typename... Args>
-		FrameBuffer(const math::Vec2ui &s, bool depthEnabled, Args... args) : FrameBufferBase(s), attachments(new Texture[getMaxAttachment()]) {
-			Image baseImage(size);
+		FrameBuffer(const math::Vec2ui &s, bool depthEnabled, Args... args) : FrameBufferBase(s), attachments(new RenderableTexture[getMaxAttachment()]) {
 			for(uint i = 0; i != getMaxAttachment(); i++) {
 				drawBuffers[i] = gl::NoAtt;
-				attachments[i] = Texture(baseImage, false);
+				attachments[i] = RenderableTexture(size);
 			}
-			depth = depthEnabled ? new Texture(Image(size, ImageFormat::Depth32), false) : 0;
+			depth = depthEnabled ? new RenderableTexture(size, ImageFormat::Depth32) : 0;
 			setupAttachments(0, args...);
 			setup();
 		}
@@ -95,8 +94,8 @@ class FrameBuffer : public FrameBufferBase
 
 		void setup();
 
-		Texture *attachments;
-		Texture *depth;
+		RenderableTexture *attachments;
+		RenderableTexture *depth;
 };
 
 }

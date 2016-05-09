@@ -111,6 +111,7 @@ class ShaderInstanceBase : public NonCopyable
 		void setValue(UniformInfo addr, const float *f, uint count) const;
 		void setValue(UniformInfo addr, const math::Vec2i *v, uint count) const;
 		void setValue(UniformInfo addr, const math::Vec3i *v, uint count) const;
+		void setValue(UniformInfo addr, const math::Vec4i *v, uint count) const;
 		void setValue(UniformInfo addr, const math::Vec2 *v, uint count) const;
 		void setValue(UniformInfo addr, const math::Vec3 *v, uint count) const;
 		void setValue(UniformInfo addr, const math::Vec4 *v, uint count) const;
@@ -118,8 +119,9 @@ class ShaderInstanceBase : public NonCopyable
 		void setValue(UniformInfo addr, const math::Matrix3<float> *m, uint count) const;
 		void setValue(UniformInfo addr, const math::Matrix4<float> *m, uint count) const;
 		void setValue(UniformInfo slot, const Texture &t, TextureSampler sampler = TextureSampler::Trilinear) const;
+		void setValue(UniformInfo slot, const RenderableTexture &t, TextureSampler sampler = TextureSampler::Trilinear) const;
 		void setValue(UniformInfo slot, const CubeMap &t, TextureSampler sampler = TextureSampler::Trilinear) const;
-		void setValue(UniformInfo info, const Texture &t, TextureAccess access) const;
+		void setValue(UniformInfo info, const RenderableTexture &t, TextureAccess access) const;
 
 
 		template<typename T>

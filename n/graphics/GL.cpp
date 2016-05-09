@@ -782,6 +782,10 @@ void programUniform3iv(Handle prog, UniformAddr loc, uint count, const int *v) {
 	glProgramUniform3iv(prog, loc, count, v);
 }
 
+void programUniform4iv(Handle prog, UniformAddr loc, uint count, const int *v) {
+	glProgramUniform4iv(prog, loc, count, v);
+}
+
 void programUniform2fv(Handle prog, UniformAddr loc, uint count, const float *v) {
 	glProgramUniform2fv(prog, loc, count, v);
 }

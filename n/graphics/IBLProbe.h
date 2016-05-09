@@ -25,13 +25,14 @@ namespace graphics {
 class IBLProbe : NonCopyable
 {
 	public:
+		static constexpr uint LevelCount = 7;
 		IBLProbe(const CubeMap &env);
 
 		const CubeMap &getConvolution(uint index);
 
 	private:
 		CubeMap cube;
-		CubeMap *convoluted[6];
+		CubeMap *convoluted[LevelCount];
 };
 
 }

@@ -31,8 +31,6 @@ static ShaderInstance *getShader() {
 			"uniform samplerCube n_Cube;"
 			"uniform float roughness;"
 
-			"in vec2 n_TexCoord;"
-
 			"layout(location = 0) out vec4 n_0;"
 			"layout(location = 1) out vec4 n_1;"
 			"layout(location = 2) out vec4 n_2;"
@@ -84,7 +82,7 @@ static ShaderInstance *getShader() {
 				"}"
 
 				"void main() {"
-					"vec3 T = vec3(n_TexCoord, 1.0);"
+					//"vec3 T = vec3(n_TexCoord, 1.0);"
 					"n_0 = filterEnv(normal(0));"
 					"n_1 = filterEnv(normal(1));"
 					"n_2 = filterEnv(normal(2));"
@@ -97,10 +95,12 @@ static ShaderInstance *getShader() {
 	return inst;
 }
 
-IBLProbe::IBLProbe(const CubeMap &env) : cube(env), convoluted{&cube, 0, 0, 0, 0, 0} {
+IBLProbe::IBLProbe(const CubeMap &env) : cube(env), convoluted{&cube, 0, 0, 0, 0, 0, 0} {
 }
 
 const CubeMap &IBLProbe::getConvolution(uint index) {
+	const float rough[LevelCount] = {0, 0.05, 0.13, 0.25, 0.45, 0.66, 1};
+
 	if(convoluted[index]) {
 		return *convoluted[index];
 	}
@@ -114,7 +114,7 @@ const CubeMap &IBLProbe::getConvolution(uint index) {
 	cbo.bind();
 	ShaderInstance *sh = getShader();
 	sh->bind();
-	sh->setValue("roughness", index / 6.0);
+	sh->setValue("roughness", rough[index]);
 	sh->setValue("n_Cube", cube);
 	GLContext::getContext()->getScreen().draw(MaterialRenderData());
 

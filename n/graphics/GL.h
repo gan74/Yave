@@ -332,6 +332,7 @@ void programUniform1uiv(Handle h, UniformAddr loc, uint count, const uint *a);
 void programUniform1fv(Handle h, UniformAddr loc, uint count, const float *a);
 void programUniform2iv(Handle h, UniformAddr loc, uint count, const int *v);
 void programUniform3iv(Handle h, UniformAddr loc, uint count, const int *v);
+void programUniform4iv(Handle h, UniformAddr loc, uint count, const int *v);
 void programUniform2fv(Handle h, UniformAddr loc, uint count, const float *v);
 void programUniform3fv(Handle h, UniformAddr loc, uint count, const float *v);
 void programUniform4fv(Handle h, UniformAddr loc, uint count, const float *v);
