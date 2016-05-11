@@ -37,8 +37,9 @@ class CubeMap : public TextureBase
 		};
 
 
-		CubeMap(const Cube &sides);
-		CubeMap(Image top, Image bottom, Image right, Image left, Image front, Image back) : CubeMap(Cube{top, bottom, right, left, front, back}) {
+		CubeMap();
+		CubeMap(const Cube &sides, bool mip);
+		CubeMap(Image top, Image bottom, Image right, Image left, Image front, Image back, bool mip) : CubeMap(Cube{top, bottom, right, left, front, back}, mip) {
 		}
 
 
@@ -62,6 +63,15 @@ class CubeMap : public TextureBase
 		Cube cube;
 
 
+};
+
+class RenderableCubeMap : public CubeMap
+{
+	public:
+		RenderableCubeMap();
+		RenderableCubeMap(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, bool mip = false);
+
+		operator CubeMap() const;
 };
 
 }

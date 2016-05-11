@@ -83,10 +83,16 @@ class ShaderInstanceBase : public NonCopyable
 				return *this;
 			}
 
+			ImageBinding &operator=(uint m) {
+				mips = m;
+				return *this;
+			}
+
 		private:
 			core::SmartPtr<TextureBase::Data> tex;
 			TextureAccess access;
 			ImageFormat format;
+			uint mips;
 	};
 
 	public:
@@ -121,7 +127,8 @@ class ShaderInstanceBase : public NonCopyable
 		void setValue(UniformInfo slot, const Texture &t, TextureSampler sampler = TextureSampler::Trilinear) const;
 		void setValue(UniformInfo slot, const RenderableTexture &t, TextureSampler sampler = TextureSampler::Trilinear) const;
 		void setValue(UniformInfo slot, const CubeMap &t, TextureSampler sampler = TextureSampler::Trilinear) const;
-		void setValue(UniformInfo info, const RenderableTexture &t, TextureAccess access) const;
+		void setValue(UniformInfo info, const RenderableTexture &t, TextureAccess access, uint mip = 0) const;
+		void setValue(UniformInfo info, const RenderableCubeMap &t, TextureAccess access, uint mip = 0) const;
 
 
 		template<typename T>

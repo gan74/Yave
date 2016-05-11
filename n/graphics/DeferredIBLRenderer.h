@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_GRAPHICS_DEFERREDIBLRENDERER_H
 
 #include "GBufferRenderer.h"
+#include "IBLProbe.h"
 
 namespace n {
 namespace graphics {
@@ -32,6 +33,7 @@ class DeferredIBLRenderer : public BufferableRenderer
 
 	private:
 		GBufferRenderer *child;
+		UniformBuffer<IBLProbe::BufferData> probes;
 
 };
 

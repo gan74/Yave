@@ -342,9 +342,9 @@ void bindTextureUnit(uint slot, TextureType type, Handle tex) {
 }
 
 
-void bindTextureImage(uint slot, Handle tex, TextureAccess access, TextureFormat format) {
+void bindTextureImage(uint slot, Handle tex, TextureAccess access, TextureFormat format, uint mip) {
 	if(boundImages[slot] != tex) {
-		glBindImageTexture(slot, tex, 0, GL_FALSE, 0, textureAccess[access], format.internalFormat);
+		glBindImageTexture(slot, tex, mip, GL_TRUE, 0, textureAccess[access], format.internalFormat);
 	}
 }
 

@@ -23,8 +23,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
+CubeMap::CubeMap() : TextureBase(TextureCube) {
+}
 
-CubeMap::CubeMap(const Cube &sides) : TextureBase(TextureCube), cube(sides) {
+CubeMap::CubeMap(const Cube &sides, bool mip) : TextureBase(TextureCube), cube(sides) {
+	data->hasMips = mip;
 }
 
 void CubeMap::upload() const {
@@ -47,11 +50,11 @@ void CubeMap::upload() const {
 		}
 
 		uint mips = Texture::getMipmapLevelForSize(size);
-		data->hasMips = mips > 1;
+		data->hasMips &= mips > 1;
 		gl::TextureFormat format = gl::getTextureFormat(imgF);
 
 		const void *datas[] = {cube.top.data(), cube.bottom.data(), cube.right.data(), cube.left.data(), cube.front.data(), cube.back.data()};
-		data->handle = gl::createTextureCube(size, mips, format, datas);
+		data->handle = gl::createTextureCube(size, data->hasMips ? mips : 1, format, datas);
 
 		if(GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
 			data->bindless = gl::getTextureBindlessHandle(data->handle, TextureSampler::Trilinear, hasMipmaps());
@@ -101,6 +104,19 @@ bool CubeMap::cubeLoading() const {
 		   cube.front.isLoading() ||
 		   cube.back.isLoading();
 }
+
+
+RenderableCubeMap::RenderableCubeMap() : CubeMap() {
+}
+
+RenderableCubeMap::RenderableCubeMap(const math::Vec2ui &s, ImageFormat f, bool mip) : CubeMap({Image(s, f), Image(s, f), Image(s, f), Image(s, f), Image(s, f), Image(s, f)}, mip) {
+}
+
+RenderableCubeMap::operator CubeMap() const {
+	return *this;
+}
+
+
 
 }
 }

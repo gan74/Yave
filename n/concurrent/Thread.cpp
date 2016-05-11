@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Mutex.h"
 #include "Atomic.h"
 #include <unistd.h>
+#include <time.h>
 
 namespace n {
 namespace concurrent {
@@ -88,7 +89,8 @@ bool Thread::willBeDeleted() const {
 }
 
 void Thread::sleep(double sec) {
-	usleep(sec * 1000000);
+	timespec t = {time_t(sec), long(sec * 1000000) % 1000000};
+	nanosleep(&t, 0);
 }
 
 void *Thread::createThread(void *arg) {

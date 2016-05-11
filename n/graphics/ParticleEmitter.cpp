@@ -52,10 +52,10 @@ static Shader<VertexShader> *getDefaultVert() {
 			"const uint MAX = 1024;"
 
 			"uniform n_ParticleBuffer { "
-				"Particle particles[MAX];"
+				"n_Particle particles[MAX];"
 			"};"
 
-			"out Particle particle;"
+			"out n_Particle particle;"
 
 			"void main() {"
 				"particle = particles[gl_VertexID];"
@@ -86,7 +86,7 @@ static Shader<GeometryShader> *getDefaultGeom(ParticleEmitter::ParticleFlags fla
 			"out vec2 n_TexCoord;"
 			"out vec4 n_ParticleColor;"
 
-			"in Particle particle[1];"
+			"in n_Particle particle[1];"
 
 			"vec2 quad[4] = vec2[](vec2(-1, 1), vec2(-1, -1), vec2(1, 1), vec2(1, -1));"
 			"vec2 coords[4] = vec2[](vec2(0, 1), vec2(0, 0), vec2(1, 1), vec2(1, 0));"

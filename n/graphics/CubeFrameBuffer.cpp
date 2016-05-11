@@ -24,7 +24,7 @@ CubeMap::Cube buildCube(uint size, ImageFormat format) {
 	return CubeMap::Cube{img, img, img, img, img, img};
 }
 
-CubeFrameBuffer::CubeFrameBuffer(uint size, ImageFormat format) : FrameBufferBase(math::Vec2ui(size)), cube(buildCube(size, format)) {
+CubeFrameBuffer::CubeFrameBuffer(uint size, ImageFormat format) : FrameBufferBase(math::Vec2ui(size)), cube(buildCube(size, format), false) {
 	const FrameBufferBase *fb = GLContext::getContext()->getFrameBuffer();
 	bind();
 

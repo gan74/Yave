@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
 						   new FrameBufferRenderer(gRe, 1),
 						   new FrameBufferRenderer(gRe, 2)};
 
-	String renderNames[] = {"IBL"
+	String renderNames[] = {"IBL",
 							"Tiled shading",
 							"Deferred shading",
 							"Scene",

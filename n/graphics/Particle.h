@@ -32,7 +32,7 @@ struct Particle
 
 	static core::String toShader() {
 		return
-			"struct Particle {"
+			"struct n_Particle {"
 				"vec3 position;"
 				"float life;"
 

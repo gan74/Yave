@@ -85,12 +85,12 @@ void ShaderInstanceBase::TextureBinding::bind(uint slot) const {
 	gl::bindSampler(slot, t.sampler);
 }
 
-ShaderInstanceBase::ImageBinding::ImageBinding() : access(TextureAccess::ReadWrite), format(ImageFormat::RGBA8) {
+ShaderInstanceBase::ImageBinding::ImageBinding() : access(TextureAccess::ReadWrite), format(ImageFormat::RGBA8), mips(0) {
 }
 
 void ShaderInstanceBase::ImageBinding::bind(uint slot) const {
 	if(tex) {
-		gl::bindTextureImage(slot, tex->handle, access, gl::getTextureFormat(format));
+		gl::bindTextureImage(slot, tex->handle, access, gl::getTextureFormat(format), mips);
 	}
 }
 
@@ -330,28 +330,18 @@ void ShaderInstanceBase::setValue(UniformInfo info, const math::Matrix4<float> *
 }
 
 void ShaderInstanceBase::setValue(UniformInfo info, const Texture &t, TextureSampler sampler) const {
-	/*if(gl::isBindlessHandle(info.type) && GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-		t.synchronize();
-		gl::programUniformHandleui64(handle, info.addr, t.getBindlessId());
-	} else*/ {
-		UniformAddr slot = info.addr;
-		if(slot != UniformAddr(gl::InvalidIndex)) {
-			texBindings[slot] = t;
-			texBindings[slot] = sampler;
-		}
+	UniformAddr slot = info.addr;
+	if(slot != UniformAddr(gl::InvalidIndex)) {
+		texBindings[slot] = t;
+		texBindings[slot] = sampler;
 	}
 }
 
 void ShaderInstanceBase::setValue(UniformInfo info, const CubeMap &t, TextureSampler sampler) const {
-	/*if(gl::isBindlessHandle(info.type) && GLContext::getContext()->getHWInt(GLContext::BindlessTextureSupport)) {
-		t.synchronize();
-		gl::programUniformHandleui64(handle, info.addr, t.getBindlessId());
-	} else*/ {
-		UniformAddr slot = info.addr;
-		if(slot != UniformAddr(gl::InvalidIndex)) {
-			texBindings[slot] = t;
-			texBindings[slot] = sampler;
-		}
+	UniformAddr slot = info.addr;
+	if(slot != UniformAddr(gl::InvalidIndex)) {
+		texBindings[slot] = t;
+		texBindings[slot] = sampler;
 	}
 }
 
@@ -359,11 +349,21 @@ void ShaderInstanceBase::setValue(UniformInfo info, const RenderableTexture &t, 
 	setValue(info, t.operator Texture(), sampler);
 }
 
-void ShaderInstanceBase::setValue(UniformInfo info, const RenderableTexture &t, TextureAccess access) const {
+void ShaderInstanceBase::setValue(UniformInfo info, const RenderableTexture &t, TextureAccess access, uint mip) const {
 	UniformAddr slot = info.addr;
 	if(slot != UniformAddr(gl::InvalidIndex)) {
 		imBindings[slot] = t;
 		imBindings[slot] = access;
+		imBindings[slot] = mip;
+	}
+}
+
+void ShaderInstanceBase::setValue(UniformInfo info, const RenderableCubeMap &t, TextureAccess access, uint mip) const {
+	UniformAddr slot = info.addr;
+	if(slot != UniformAddr(gl::InvalidIndex)) {
+		imBindings[slot] = t;
+		imBindings[slot] = access;
+		imBindings[slot] = mip;
 	}
 }
 

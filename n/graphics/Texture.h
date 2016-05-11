@@ -88,7 +88,7 @@ class RenderableTexture : public Texture
 {
 	public:
 		RenderableTexture();
-		RenderableTexture(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8);
+		RenderableTexture(const math::Vec2ui &s, ImageFormat f = ImageFormat::RGBA8, bool mip = false);
 
 		operator Texture() const;
 };

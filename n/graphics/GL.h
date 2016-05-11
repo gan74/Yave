@@ -225,7 +225,7 @@ struct TextureFormat
 		friend bool isHWSupported(ImageFormat);
 		friend Handle createTexture2D(const math::Vec2ui &, uint, TextureFormat, const void *);
 		friend Handle createTextureCube(const math::Vec2ui &, uint, TextureFormat, const void **);
-		friend void bindTextureImage(uint, Handle, TextureAccess, TextureFormat);
+		friend void bindTextureImage(uint, Handle, TextureAccess, TextureFormat, uint);
 
 		TextureFormat(uint f, uint i, uint t) : format(f), internalFormat(i), type(t) {
 		}
@@ -275,7 +275,7 @@ void updateBuffer(BufferTarget target, uint size, const void *data, BufferAlloc 
 void bindTexture(TextureType type, Handle tex);
 void setActiveTexture(uint s);
 void bindTextureUnit(uint slot, TextureType type, Handle tex);
-void bindTextureImage(uint slot, Handle tex, TextureAccess access, TextureFormat format);
+void bindTextureImage(uint slot, Handle tex, TextureAccess access, TextureFormat format, uint mip = 0);
 void bindSampler(uint slot, Handle sampler);
 
 core::String getActiveUniformInfo(Handle prog, uint index, uint *size, UniformType *type);

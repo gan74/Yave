@@ -25,14 +25,45 @@ namespace graphics {
 class IBLProbe : NonCopyable
 {
 	public:
-		static constexpr uint LevelCount = 7;
+		struct BufferData
+		{
+			uint64 cube;
+			float roughnessPower;
+			int levels;
+			int padding[2];
+		};
+
 		IBLProbe(const CubeMap &env);
 
-		const CubeMap &getConvolution(uint index);
+		CubeMap getCubeMap();
+
+		uint getLevelCount() const;
+		float getRoughnessPower() const;
+
+		float remapRoughness(float r) const;
+
+		BufferData toBufferData();
+
+		static core::String toShader() {
+			return
+				"struct n_IBLProbe {"
+					"samplerCube cube;"
+
+					"float roughnessPower;"
+					"int levels;"
+					"int padding[2];"
+				"};"
+				"vec4 iblProbe(n_IBLProbe p, vec3 d, float r) {"
+					"r = pow(r, p.roughnessPower);"
+					"return textureLod(p.cube, d, r * p.levels);"
+				"}";
+		}
 
 	private:
 		CubeMap cube;
-		CubeMap *convoluted[LevelCount];
+		bool convoluted;
+
+		void computeConv();
 };
 
 }

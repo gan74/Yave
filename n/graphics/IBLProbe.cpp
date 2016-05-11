@@ -19,45 +19,42 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "CubeFrameBuffer.h"
 #include "VertexArrayObject.h"
 #include "DeferredCommon.h"
+#include "ComputeShaderInstance.h"
 
 namespace n {
 namespace graphics {
 
 
-static ShaderInstance *getShader() {
-	static ShaderInstance *inst = 0;
+static ComputeShaderInstance *getShader() {
+	static ComputeShaderInstance *inst = 0;
 	if(!inst) {
-		inst = new ShaderInstance(new Shader<FragmentShader>(
-			"uniform samplerCube n_Cube;"
-			"uniform float roughness;"
+		inst = new ComputeShaderInstance(new Shader<ComputeShader>(
+				"layout(local_size_x = 16, local_size_y = 16) in;"
+				"layout(rgba8) uniform writeonly volatile imageCube n_Out;"
 
-			"layout(location = 0) out vec4 n_0;"
-			"layout(location = 1) out vec4 n_1;"
-			"layout(location = 2) out vec4 n_2;"
-			"layout(location = 3) out vec4 n_3;"
-			"layout(location = 4) out vec4 n_4;"
-			"layout(location = 5) out vec4 n_5;"
+				"uniform samplerCube n_Cube;"
+				"uniform float roughness;"
 
-			+ getBRDFs() +
+				+ getBRDFs() +
 
-			"vec3 normal(uint side) {"
-				"vec2 tex = n_TexCoord * 2.0 - 1.0;"
-				"if(side == 0) return vec3(tex, 1.0);" // top
-				"else if(side == 1) return vec3(-tex.x, tex.y, -1.0);" // bottom"
-				"else if(side == 2) return vec3(tex.x, -1.0, tex.y);" // left
-				"else if(side == 3) return vec3(tex.x, 1.0, -tex.y);" // right
-				"else if(side == 4) return vec3(1.0, tex.y, -tex.x);" // front
-				"return vec3(-1.0, tex.y, tex.x);" // back
-			"}"
+				"vec3 normal(vec2 texCoord, uint side) {"
+					"vec2 tex = texCoord * 2.0 - 1.0;"
+					"if(side == 4) return vec3(tex, 1.0);" // top
+					"else if(side == 5) return vec3(-tex.x, tex.y, -1.0);" // bottom"
+					"else if(side == 2) return vec3(tex.x, -1.0, tex.y);" // left
+					"else if(side == 3) return vec3(tex.x, 1.0, -tex.y);" // right
+					"else if(side == 0) return vec3(1.0, tex.y, -tex.x);" // front
+					"return vec3(-1.0, tex.y, tex.x);" // back
+				"}"
 
-			"mat3 genWorld(vec3 Z) {"
-				"vec3 U = abs(Z.z) > 0.999 ? vec3(1, 0, 0) : vec3(0, 0, -1);"
-				"vec3 X = normalize(cross(Z, U));"
-				"vec3 Y = cross(X, Z);"
-				"return mat3(X, Y, Z);"
-			"}"
+				"mat3 genWorld(vec3 Z) {"
+					"vec3 U = abs(Z.z) > 0.999 ? vec3(1, 0, 0) : vec3(0, 0, -1);"
+					"vec3 X = normalize(cross(Z, U));"
+					"vec3 Y = cross(X, Z);"
+					"return mat3(X, Y, Z);"
+				"}"
 
-			"vec4 filterEnv(vec3 R) {"
+				"vec4 filterEnv(vec3 R) {"
 					"R = normalize(R);"
 
 					"vec3 N = R;"
@@ -83,51 +80,78 @@ static ShaderInstance *getShader() {
 
 				"void main() {"
 					//"vec3 T = vec3(n_TexCoord, 1.0);"
-					"n_0 = filterEnv(normal(0));"
-					"n_1 = filterEnv(normal(1));"
-					"n_2 = filterEnv(normal(2));"
-					"n_3 = filterEnv(normal(3));"
-					"n_4 = filterEnv(normal(4));"
-					"n_5 = filterEnv(normal(5));"
-				"}"),
-				ShaderProgram::NoProjectionShader);
+					"ivec2 coord = ivec2(gl_GlobalInvocationID.xy);"
+					"vec2 uv = gl_GlobalInvocationID.xy / vec2(imageSize(n_Out));"
+					"for(int i = 0; i != 6; i++) {"
+						"imageStore(n_Out, ivec3(coord, i), filterEnv(normal(uv, i)));"
+						//"imageStore(n_Out, ivec3(coord, i), vec4(0, 1, 0, 1));"
+					"}"
+
+				"}"));
 	}
 	return inst;
 }
 
-IBLProbe::IBLProbe(const CubeMap &env) : cube(env), convoluted{&cube, 0, 0, 0, 0, 0, 0} {
+IBLProbe::IBLProbe(const CubeMap &env) : cube(env), convoluted(false) {
 }
 
-const CubeMap &IBLProbe::getConvolution(uint index) {
-	const float rough[LevelCount] = {0, 0.05, 0.13, 0.25, 0.45, 0.66, 1};
-
-	if(convoluted[index]) {
-		return *convoluted[index];
-	}
-	if(!cube.synchronize(true)) {
+CubeMap IBLProbe::getCubeMap() {
+	if(convoluted) {
 		return cube;
 	}
+	if(cube.synchronize(true)) {
+		computeConv();
+		return cube;
+	}
+	return CubeMap();
+}
 
-	const FrameBufferBase *fb = GLContext::getContext()->getFrameBuffer();
+uint IBLProbe::getLevelCount() const {
+	return 6;
+}
 
-	CubeFrameBuffer cbo(cube.getSize().x(), cube.getFormat());
-	cbo.bind();
-	ShaderInstance *sh = getShader();
-	sh->bind();
-	sh->setValue("roughness", rough[index]);
-	sh->setValue("n_Cube", cube);
-	GLContext::getContext()->getScreen().draw(MaterialRenderData());
+float IBLProbe::getRoughnessPower() const {
+	return 2.0;
+}
 
-	convoluted[index] = new CubeMap(cbo.getAttachment());
+float IBLProbe::remapRoughness(float r) const {
+	return pow(r, getRoughnessPower());
+}
 
-	if(fb) {
-		fb->bind();
-	} else {
-		FrameBuffer::unbind();
+IBLProbe::BufferData IBLProbe::toBufferData() {
+	return BufferData{getCubeMap().getBindlessId(), float(1.0 / getRoughnessPower()), int(getLevelCount()), {0}};
+}
+
+
+void IBLProbe::computeConv() {
+	RenderableCubeMap conv(cube.getSize(), ImageFormat::RGBA8, true);
+
+	if(!conv.synchronize(true)) {
+		fatal("Unable to create cubemap");
 	}
 
-	return *convoluted[index];
+	ComputeShaderInstance *cs = getShader();
+	cs->setValue("n_Cube", cube);
+	for(uint i = 0; i != getLevelCount(); i++) {
+		cs->setValue("roughness", remapRoughness(float(i) / (getLevelCount() + 1)));
+		cs->setValue("n_Out", conv, TextureAccess::WriteOnly, i);
+		cs->dispatch(math::Vec3ui(cube.getSize() / math::Vec2ui(16 * (i + 1)), 1));
+	}
+
+	cube = conv;
+
+	convoluted = true;
 }
 
 }
 }
+
+
+
+
+
+
+
+
+
+

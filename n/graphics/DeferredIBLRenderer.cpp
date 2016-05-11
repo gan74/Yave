@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace graphics {
 
-MaterialRenderData getMaterial() {
+static MaterialRenderData getMaterial() {
 	MaterialRenderData mat;
 	mat.depthTested = false;
 	mat.depthWrite = false;
@@ -32,7 +32,7 @@ MaterialRenderData getMaterial() {
 }
 
 
-IBLProbe *getCube() {
+static IBLProbe *getCube() {
 	static IBLProbe *cube = 0;
 	if(!cube) {
 		cube = new IBLProbe(CubeMap(
@@ -41,39 +41,24 @@ IBLProbe *getCube() {
 			(Image(ImageLoader::load<core::String>("./skybox/right.tga"))),
 			(Image(ImageLoader::load<core::String>("./skybox/left.tga"))),
 			(Image(ImageLoader::load<core::String>("./skybox/front.tga"))),
-			(Image(ImageLoader::load<core::String>("./skybox/back.tga")))));
-
-		/*ShaderInstance sh(new Shader<FragmentShader>(
-			"layout(location = 0) out vec4 n_0;"
-			"layout(location = 1) out vec4 n_1;"
-			"layout(location = 2) out vec4 n_2;"
-			"layout(location = 3) out vec4 n_3;"
-			"layout(location = 4) out vec4 n_4;"
-			"layout(location = 5) out vec4 n_5;"
-
-			"void main() {"
-				"n_0 = vec4(1, 0, 0, 1);"
-				"n_1 = vec4(1, 1, 0, 1);"
-				"n_2 = vec4(1, 0, 1, 1);"
-				"n_3 = vec4(0, 1, 0, 1);"
-				"n_4 = vec4(0, 1, 1, 1);"
-				"n_5 = vec4(0, 0, 1, 1);"
-			"}"
-		), ShaderProgram::NoProjectionShader);
-		sh.bind();
-		CubeFrameBuffer cbo(1024, ImageFormat::RGBA8);
-		cbo.bind();
-		GLContext::getContext()->getScreen().draw(getMaterial());
-		cube = new CubeMap(cbo.getAttachement());*/
+			(Image(ImageLoader::load<core::String>("./skybox/back.tga"))), false));
 	}
 	return cube;
 }
 
-ShaderInstance *getShader() {
+static ShaderInstance *getShader() {
 	static ShaderInstance *shader = 0;
 	if(!shader) {
 		shader = new ShaderInstance(new Shader<FragmentShader>(
-			"uniform samplerCube n_Cube;"
+			"\n#define MAX 1\n"
+
+			+ IBLProbe::toShader() +
+
+
+			"uniform probeBuffer { "
+				"n_IBLProbe probes[MAX];"
+			"};"
+
 
 			"uniform sampler2D n_0;"
 			"uniform sampler2D n_1;"
@@ -93,88 +78,16 @@ ShaderInstance *getShader() {
 
 			+ getBRDFs() +
 
-			/*"mat3 genWorld(vec3 Z) {"
-				"vec3 U = abs(Z.z) > 0.999 ? vec3(1, 0, 0) : vec3(0, 0, 1);"
-				"vec3 X = normalize(cross(Z, U));"
-				"vec3 Y = cross(X, Z);"
-				"return mat3(X, Y, Z);"
-			"}"
-
-
-			"float G_Smith_partial(float NoV, float k) {"
-				"return NoV / (NoV * (1.0 - k) + k);"
-			"}"
-
-			"float G_Smith(float VoH, float LoH, float k) {"
-				"return G_Smith_partial(VoH, k) * G_Smith_partial(LoH, k);"
-			"}"
-
-			"vec2 integrate(float roughness, float NoV) {"
-				"vec3 V = vec3(1.0 - sqr(NoV), 0, NoV);"
-				"vec2 I = vec2(0);"
-
-				"const uint samples = 1024;"
-				"float a = sqr(roughness);"
-				"float k = sqr((roughness + 1.0) * 0.5);"
-
-				"for(uint i = 0; i != samples; i++) {"
-					"vec2 Xi = hammersley(i, samples);"
-					"vec3 H = brdf_importance_sample(Xi, roughness);"
-					"vec3 L = reflect(-V, H);"
-
-					"float NoL = saturate(L.z);"
-					"float NoH = saturate(H.z);"
-					"float VoH = saturate(dot(V, H));"
-					"if(NoL > 0.0) {"
-						"float G = G_Smith(NoV, NoL, k);"
-						"float vis = G * VoH / (NoH * NoV);"
-						"float Fc = pow(1.0 - VoH, 5.0);"
-						//"I += vec2(vis, 0.0);"
-						"I += vec2(1.0 - Fc, Fc);"
-					"}"
-				"}"
-				"return I / samples;"
-			"}"
-
-			"vec3 filterEnv(float roughness, vec3 R) {"
-				"vec3 N = R;"
-				"vec3 V = R;"
-
-				"mat3 world = genWorld(N);"
-
-				"float sum = 0.0;"
-				"vec3 color = vec3(0.0);"
-
-				"const uint samples = 256;"
-				"for(uint i = 0; i != samples; i++) {"
-					"vec2 Xi = hammersley(i, samples);"
-					"vec3 H = normalize(world * brdf_importance_sample(Xi, roughness));"
-					"vec3 L = reflect(-V, H);"
-					"float NoL = saturate(dot(N, L));"
-					"if(NoL > 0.0) {"
-						"color += textureLod(n_Cube, L, 0.0).rgb * NoL;"
-						"sum += NoL;"
-					"}"
-				"}"
-				"return color / sum;"
-			"}"*/
-
 			"void main() {"
 				"float depth = 0;"
 				"vec3 pos = unproj(n_TexCoord, depth);"
 				"n_GBufferData gbuffer = n_unpackGBuffer(n_0, n_1, n_2, ivec2(gl_FragCoord.xy));"
-				"float levels = textureQueryLevels(n_Cube);"
-
-				//"n_Out = vec4(filterEnv(roughness, N), 1.0);"
 
 				"vec3 view = normalize(pos - n_Cam);"
 				"if(depth == 1) {"
-					"n_Out = textureLod(n_Cube, view, 0);"
+					"n_Out = textureLod(probes[0].cube, view, 0);"
 				"} else {"
-					/*"vec3 spec = textureLod(n_Cube, reflect(view, gbuffer.normal), levels * log2(1 + gbuffer.roughness)).rgb;"
-					"vec3 diff = textureLod(n_Cube, gbuffer.normal, levels).rgb;"
-					"n_Out = vec4((mix(vec3(0.04), gbuffer.color.rgb, gbuffer.metallic) * spec + gbuffer.color.rgb * diff) * 0.5, 1.0);" // bogus*/
-					"n_Out = textureLod(n_Cube, reflect(view, gbuffer.normal), 0);"
+					"n_Out = iblProbe(probes[0], reflect(view, gbuffer.normal), gbuffer.roughness);"
 				"}"
 			"}"
 		), ShaderProgram::NoProjectionShader);
@@ -182,7 +95,7 @@ ShaderInstance *getShader() {
 	return shader;
 }
 
-DeferredIBLRenderer::DeferredIBLRenderer(GBufferRenderer *c) : BufferableRenderer(), child(c) {
+DeferredIBLRenderer::DeferredIBLRenderer(GBufferRenderer *c) : BufferableRenderer(), child(c), probes(1) {
 }
 
 void *DeferredIBLRenderer::prepare() {
@@ -190,8 +103,6 @@ void *DeferredIBLRenderer::prepare() {
 }
 
 void DeferredIBLRenderer::render(void *ptr) {
-
-	static core::Timer timer;
 
 
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(ptr);
@@ -208,8 +119,12 @@ void DeferredIBLRenderer::render(void *ptr) {
 	}
 	FrameBuffer::clear(true, true); // <<------------------------------------ REMOVE
 
+
+	probes[0] = getCube()->toBufferData();
+
 	ShaderInstance *shader = getShader();
-	shader->setValue("n_Cube", getCube()->getConvolution(int(timer.elapsed()) % IBLProbe::LevelCount), TextureSampler::Trilinear);
+
+	shader->setBuffer("probeBuffer", probes);
 	shader->setValue("n_Inv", invCam);
 	shader->setValue("n_Cam", cam);
 	shader->setValue(SVTexture0, child->getFrameBuffer().getAttachment(0));
