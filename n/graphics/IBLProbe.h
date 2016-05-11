@@ -44,21 +44,6 @@ class IBLProbe : NonCopyable
 
 		BufferData toBufferData();
 
-		static core::String toShader() {
-			return
-				"struct n_IBLProbe {"
-					"samplerCube cube;"
-
-					"float roughnessPower;"
-					"int levels;"
-					"int padding[2];"
-				"};"
-				"vec4 iblProbe(n_IBLProbe p, vec3 d, float r) {"
-					"r = pow(r, p.roughnessPower);"
-					"return textureLod(p.cube, d, r * p.levels);"
-				"}";
-		}
-
 	private:
 		CubeMap cube;
 		bool convoluted;

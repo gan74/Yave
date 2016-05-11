@@ -50,14 +50,10 @@ static ShaderInstance *getShader() {
 	static ShaderInstance *shader = 0;
 	if(!shader) {
 		shader = new ShaderInstance(new Shader<FragmentShader>(
-			"\n#define MAX 1\n"
 
-			+ IBLProbe::toShader() +
-
-
-			"uniform probeBuffer { "
-				"n_IBLProbe probes[MAX];"
-			"};"
+			"uniform samplerCube cube;"
+			"uniform float invRoughnessPower;"
+			"uniform uint levels;"
 
 
 			"uniform sampler2D n_0;"
@@ -85,9 +81,9 @@ static ShaderInstance *getShader() {
 
 				"vec3 view = normalize(pos - n_Cam);"
 				"if(depth == 1) {"
-					"n_Out = textureLod(probes[0].cube, view, 0);"
+					"n_Out = textureLod(cube, view, 0);"
 				"} else {"
-					"n_Out = iblProbe(probes[0], reflect(view, gbuffer.normal), gbuffer.roughness);"
+					"n_Out = iblProbe(cube, invRoughnessPower, levels, reflect(view, gbuffer.normal), gbuffer.roughness);"
 				"}"
 			"}"
 		), ShaderProgram::NoProjectionShader);
@@ -95,7 +91,7 @@ static ShaderInstance *getShader() {
 	return shader;
 }
 
-DeferredIBLRenderer::DeferredIBLRenderer(GBufferRenderer *c) : BufferableRenderer(), child(c), probes(1) {
+DeferredIBLRenderer::DeferredIBLRenderer(GBufferRenderer *c) : BufferableRenderer(), child(c) {
 }
 
 void *DeferredIBLRenderer::prepare() {
@@ -120,11 +116,13 @@ void DeferredIBLRenderer::render(void *ptr) {
 	FrameBuffer::clear(true, true); // <<------------------------------------ REMOVE
 
 
-	probes[0] = getCube()->toBufferData();
 
 	ShaderInstance *shader = getShader();
 
-	shader->setBuffer("probeBuffer", probes);
+	shader->setValue("cube", getCube()->getCubeMap());
+	shader->setValue("invRoughnessPower", 1.0 / getCube()->getRoughnessPower());
+	shader->setValue("levels", getCube()->getLevelCount());
+
 	shader->setValue("n_Inv", invCam);
 	shader->setValue("n_Cam", cam);
 	shader->setValue(SVTexture0, child->getFrameBuffer().getAttachment(0));

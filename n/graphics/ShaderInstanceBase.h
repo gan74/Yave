@@ -141,23 +141,27 @@ class ShaderInstanceBase : public NonCopyable
 		}
 
 		template<typename T, typename... Args>
-		void setValue(const core::String &name, const T &t, Args... args) const {
+		bool setValue(const core::String &name, const T &t, Args... args) const {
 			UniformInfo i = getInfo(name);
 			if(i.addr != UniformAddr(gl::InvalidIndex)) {
 				setValue(i, t, args...);
+				return true;
 			}
+			return false;
 		}
 
 		template<typename T, typename... Args>
-		void setValue(ShaderValue v, const T &t, Args... args) const {
+		bool setValue(ShaderValue v, const T &t, Args... args) const {
 			UniformInfo i = getInfo(v);
 			if(i.addr != UniformAddr(gl::InvalidIndex)) {
 				setValue(i, t, args...);
+				return true;
 			}
+			return false;
 		}
 
-		void setBuffer(const core::String &name, const DynamicBufferBase &buffer) const;
-		void setBuffer(ShaderValue v, const DynamicBufferBase &buffer) const;
+		bool setBuffer(const core::String &name, const DynamicBufferBase &buffer) const;
+		bool setBuffer(ShaderValue v, const DynamicBufferBase &buffer) const;
 
 		UniformInfo getInfo(const core::String &name) const;
 		UniformInfo getInfo(ShaderValue v) const;

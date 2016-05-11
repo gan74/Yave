@@ -33,7 +33,6 @@ class DeferredIBLRenderer : public BufferableRenderer
 
 	private:
 		GBufferRenderer *child;
-		UniformBuffer<IBLProbe::BufferData> probes;
 
 };
 

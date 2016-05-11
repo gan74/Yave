@@ -159,6 +159,12 @@ core::String ShaderBase::parse(core::String src, uint vers) {
 			"gb.roughness = props.z;"
 			"gb.metallic = props.w;"
 			"return gb;"
+		"}"
+
+		"vec4 iblProbe(samplerCube cube, float invRoughnessPower, uint levels, vec3 d, float r) {"
+			"r = pow(r, invRoughnessPower);"
+			"levels--;"
+			"return textureLod(cube, d, r * levels);"
 		"}";
 
 

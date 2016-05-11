@@ -367,17 +367,21 @@ void ShaderInstanceBase::setValue(UniformInfo info, const RenderableCubeMap &t, 
 	}
 }
 
-void ShaderInstanceBase::setBuffer(const core::String &name, const DynamicBufferBase &buffer) const {
+bool ShaderInstanceBase::setBuffer(const core::String &name, const DynamicBufferBase &buffer) const {
 	int slot = buffers.get(name, gl::InvalidIndex);
 	if(slot != gl::InvalidIndex) {
 		bufferBindings[slot] = buffer.data;
+		return true;
 	}
+	return false;
 }
 
-void ShaderInstanceBase::setBuffer(ShaderValue v, const DynamicBufferBase &buffer) const {
+bool ShaderInstanceBase::setBuffer(ShaderValue v, const DynamicBufferBase &buffer) const {
 	if(standards[v].addr != gl::InvalidIndex) {
 		bufferBindings[standards[v].addr] = buffer.data;
+		return true;
 	}
+	return false;
 }
 
 ShaderInstanceBase::UniformInfo ShaderInstanceBase::getInfo(const core::String &name) const {
