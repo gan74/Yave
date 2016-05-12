@@ -197,8 +197,12 @@ class MaterialTest : public Movable, public Renderable
 			props.normalY = 127;
 			props.roughness = r * 255;
 			props.metallic = m * 255;
-			uint color = 0xFF7F7F7F;
-			data.surface.textures[0] = Texture(Image(Vec2ui(1), ImageFormat::RGBA8, &color), false);
+			static Texture *tex = 0;
+			if(!tex) {
+				uint color = 0xFF7F7F7F;
+				tex = new Texture(Image(Vec2ui(1), ImageFormat::RGBA8, &color), false);
+			}
+			data.surface.textures[0] = *tex;
 			data.surface.textures[1] = Texture(Image(Vec2ui(1), ImageFormat::RGBA8, &props), false);
 			inst = SubMeshInstance(vao, Material(data));
 			radius = vao.getRadius();

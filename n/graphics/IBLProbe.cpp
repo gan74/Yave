@@ -38,19 +38,19 @@ static ComputeShaderInstance *getShader() {
 				+ getBRDFs() +
 
 				"vec3 normal(vec2 texCoord, uint side) {"
-					"vec2 tex = texCoord * 2.0 - 1.0;"
-					"if(side == 4) return vec3(tex, 1.0);" // top
-					"else if(side == 5) return vec3(-tex.x, tex.y, -1.0);" // bottom"
-					"else if(side == 2) return vec3(tex.x, -1.0, tex.y);" // left
-					"else if(side == 3) return vec3(tex.x, 1.0, -tex.y);" // right
-					"else if(side == 0) return vec3(1.0, tex.y, -tex.x);" // front
-					"return vec3(-1.0, tex.y, tex.x);" // back
+					"highp vec2 tex = texCoord * 2.0 - 1.0;"
+					"if(side == 4) return vec3(tex.x, -tex.y, 1.0);" // top
+					"if(side == 5) return vec3(-tex.x, -tex.y, -1.0);" // bottom"
+					"if(side == 2) return vec3(tex.x, 1.0, tex.y);" // left
+					"if(side == 3) return vec3(tex.x, -1.0, -tex.y);" // right
+					"if(side == 0) return vec3(1.0, -tex.y, -tex.x);" // front
+					"              return vec3(-1.0, -tex.y, tex.x);" // back
 				"}"
 
 				"mat3 genWorld(vec3 Z) {"
 					"vec3 U = abs(Z.z) > 0.999 ? vec3(1, 0, 0) : vec3(0, 0, -1);"
-					"vec3 X = normalize(cross(Z, U));"
-					"vec3 Y = cross(X, Z);"
+					"vec3 X = normalize(cross(U, Z));"
+					"vec3 Y = cross(Z, X);"
 					"return mat3(X, Y, Z);"
 				"}"
 
@@ -64,7 +64,7 @@ static ComputeShaderInstance *getShader() {
 					"float sum = 0.0;"
 					"vec4 color = vec4(0.0);"
 
-					"const uint samples = 1024;"
+					"uint samples = 256 + uint(roughness * 728);"
 					"for(uint i = 0; i != samples; i++) {"
 						"vec2 Xi = hammersley(i, samples);"
 						"vec3 H = normalize(W * brdf_importance_sample(Xi, roughness));"
@@ -79,12 +79,12 @@ static ComputeShaderInstance *getShader() {
 				"}"
 
 				"void main() {"
-					//"vec3 T = vec3(n_TexCoord, 1.0);"
 					"ivec2 coord = ivec2(gl_GlobalInvocationID.xy);"
-					"vec2 uv = gl_GlobalInvocationID.xy / vec2(imageSize(n_Out));"
+					"vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / vec2(imageSize(n_Out));"
 					"for(int i = 0; i != 6; i++) {"
 						"imageStore(n_Out, ivec3(coord, i), filterEnv(normal(uv, i)));"
-						//"imageStore(n_Out, ivec3(coord, i), vec4(0, 1, 0, 1));"
+						//"imageStore(n_Out, ivec3(coord, i), vec4(normalize(normal(uv, i)) * 0.5 + 0.5, 1.0));"
+						//"imageStore(n_Out, ivec3(coord, i), vec4(coord.x % 2));"
 					"}"
 
 				"}"));
@@ -118,11 +118,6 @@ float IBLProbe::remapRoughness(float r) const {
 	return pow(r, getRoughnessPower());
 }
 
-IBLProbe::BufferData IBLProbe::toBufferData() {
-	return BufferData{getCubeMap().getBindlessId(), float(1.0 / getRoughnessPower()), int(getLevelCount()), {0}};
-}
-
-
 void IBLProbe::computeConv() {
 	RenderableCubeMap conv(cube.getSize(), ImageFormat::RGBA8, true);
 
@@ -133,7 +128,7 @@ void IBLProbe::computeConv() {
 	ComputeShaderInstance *cs = getShader();
 	cs->setValue("n_Cube", cube);
 	for(uint i = 0; i != getLevelCount(); i++) {
-		cs->setValue("roughness", remapRoughness(float(i) / (getLevelCount() + 1)));
+		cs->setValue("roughness", remapRoughness(i / float(getLevelCount() - 1)));
 		cs->setValue("n_Out", conv, TextureAccess::WriteOnly, i);
 		cs->dispatch(math::Vec3ui(cube.getSize() / math::Vec2ui(16 * (i + 1)), 1));
 	}

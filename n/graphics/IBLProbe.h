@@ -25,14 +25,6 @@ namespace graphics {
 class IBLProbe : NonCopyable
 {
 	public:
-		struct BufferData
-		{
-			uint64 cube;
-			float roughnessPower;
-			int levels;
-			int padding[2];
-		};
-
 		IBLProbe(const CubeMap &env);
 
 		CubeMap getCubeMap();
@@ -41,8 +33,6 @@ class IBLProbe : NonCopyable
 		float getRoughnessPower() const;
 
 		float remapRoughness(float r) const;
-
-		BufferData toBufferData();
 
 	private:
 		CubeMap cube;

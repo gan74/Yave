@@ -72,6 +72,8 @@ static ShaderInstance *getShader() {
 				"return P.xyz / P.w;"
 			"}"
 
+			"uniform float n_Time;"
+
 			+ getBRDFs() +
 
 			"void main() {"
@@ -81,9 +83,10 @@ static ShaderInstance *getShader() {
 
 				"vec3 view = normalize(pos - n_Cam);"
 				"if(depth == 1) {"
-					"n_Out = textureLod(cube, view, 0);"
+					"n_Out = textureLod(cube, view, levels - 1);"
 				"} else {"
 					"n_Out = iblProbe(cube, invRoughnessPower, levels, reflect(view, gbuffer.normal), gbuffer.roughness);"
+					//"n_Out = textureLod(cube, gbuffer.normal, 0);" // <---------
 				"}"
 			"}"
 		), ShaderProgram::NoProjectionShader);
