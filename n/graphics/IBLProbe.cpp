@@ -83,8 +83,6 @@ static ComputeShaderInstance *getShader() {
 					"vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / vec2(imageSize(n_Out));"
 					"for(int i = 0; i != 6; i++) {"
 						"imageStore(n_Out, ivec3(coord, i), filterEnv(normal(uv, i)));"
-						//"imageStore(n_Out, ivec3(coord, i), vec4(normalize(normal(uv, i)) * 0.5 + 0.5, 1.0));"
-						//"imageStore(n_Out, ivec3(coord, i), vec4(coord.x % 2));"
 					"}"
 
 				"}"));
@@ -111,7 +109,7 @@ uint IBLProbe::getLevelCount() const {
 }
 
 float IBLProbe::getRoughnessPower() const {
-	return 2.0;
+	return 1.75;
 }
 
 float IBLProbe::remapRoughness(float r) const {
@@ -119,6 +117,7 @@ float IBLProbe::remapRoughness(float r) const {
 }
 
 void IBLProbe::computeConv() {
+	core::Timer timer;
 	RenderableCubeMap conv(cube.getSize(), ImageFormat::RGBA8, true);
 
 	if(!conv.synchronize(true)) {
@@ -135,6 +134,7 @@ void IBLProbe::computeConv() {
 
 	cube = conv;
 
+	logMsg(core::String("IBL probe convolution done in ") + timer.elapsed() * 1000 + "ms");
 	convoluted = true;
 }
 

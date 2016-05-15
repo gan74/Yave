@@ -19,9 +19,64 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "DeferredCommon.h"
 #include "CubeFrameBuffer.h"
 #include "IBLProbe.h"
+#include "ComputeShaderInstance.h"
+#include <n/io/File.h>
 
 namespace n {
 namespace graphics {
+
+math::Vec3 importanceSampleGGX(math::Vec2 Xi, float roughness, math::Vec3 N) {
+	float a = roughness * roughness;
+	float phi = 2 * math::pi * Xi.x();
+	float cosTheta = sqrt((1 - Xi.y()) / (1 + (a * a - 1) * Xi.y()));
+	float sinTheta = sqrt(1 - cosTheta * cosTheta);
+	math::Vec3 H(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+
+	math::Vec3 upVector = abs(N.z()) < 0.999 ? math::Vec3(0,0,1) : math::Vec3(1,0,0);
+	math::Vec3 tangentX = upVector.cross(N).normalized();
+	math::Vec3 tangentY = N.cross(tangentX);
+
+	return tangentX * H.x() + tangentY * H.y() + N * H.z();
+}
+
+float helper_G_smith(float dotVal, float k) {
+	return dotVal / (dotVal * (1 - k) + k);
+}
+
+float G_Smith(float dotNV, float dotNL, float roughness) {
+	float k = roughness * roughness * 0.5;
+	return helper_G_smith(dotNL,k) * helper_G_smith(dotNV,k);
+}
+
+math::Vec2 integrateBRDF(float roughness, float NoV) {
+	math::Vec3 V;
+	V.x() = sqrt(1.0f - NoV * NoV); // sin
+	V.y() = 0;
+	V.z() = NoV; // cos
+	float A = 0;
+	float B = 0;
+	const uint samples = 1 << 16;
+	for(uint i = 0; i < samples; i++) {
+		math::Vec2 Xi(random(), random());
+		math::Vec3 H = importanceSampleGGX(Xi, roughness, math::Vec3(0, 0, 1));
+		math::Vec3 L =  H * V.dot(H) * 2 - V;
+		float NoL = std::max(L.z(), 0.f);
+		float NoH = std::max(H.z(), 0.f);
+		float VoH = std::max(V.dot(H), 0.f);
+
+		if(NoL > 0) {
+			float G = G_Smith(NoV, NoL, roughness);
+			float G_Vis = G * VoH / (NoH * NoV);
+			float Fc = pow(1 - VoH, 5);
+			A += (1 - Fc) * G_Vis;
+			B += Fc * G_Vis;
+		}
+	}
+	return math::Vec2(A, B) / samples;
+}
+
+
+
 
 static MaterialRenderData getMaterial() {
 	MaterialRenderData mat;
@@ -32,7 +87,7 @@ static MaterialRenderData getMaterial() {
 }
 
 
-static IBLProbe *getCube() {
+static IBLProbe *getProbe() {
 	static IBLProbe *cube = 0;
 	if(!cube) {
 		cube = new IBLProbe(CubeMap(
@@ -54,6 +109,7 @@ static ShaderInstance *getShader() {
 			"uniform samplerCube cube;"
 			"uniform float invRoughnessPower;"
 			"uniform uint levels;"
+			"uniform sampler2D lut;"
 
 
 			"uniform sampler2D n_0;"
@@ -72,8 +128,6 @@ static ShaderInstance *getShader() {
 				"return P.xyz / P.w;"
 			"}"
 
-			"uniform float n_Time;"
-
 			+ getBRDFs() +
 
 			"void main() {"
@@ -88,10 +142,36 @@ static ShaderInstance *getShader() {
 					"n_Out = iblProbe(cube, invRoughnessPower, levels, reflect(view, gbuffer.normal), gbuffer.roughness);"
 					//"n_Out = textureLod(cube, gbuffer.normal, 0);" // <---------
 				"}"
+
+
+				"n_Out = texture(lut, n_TexCoord);"
 			"}"
 		), ShaderProgram::NoProjectionShader);
 	}
 	return shader;
+}
+
+Texture computeLut() {
+	uint size = 256;
+	core::Timer timer;
+	math::Vec2 *data = new math::Vec2[size * size];
+	for(uint x = 0; x != size; x++) {
+		for(uint y = 0; y != size; y++) {
+			data[x * size + y] = integrateBRDF(x / float(size - 1), (y + 1) / float(size));
+		}
+	}
+	logMsg(core::String("Lut generated in ") + timer.elapsed() + "s", PerfLog);
+
+	io::File file("lut.dat");
+	if(!file.open(io::IODevice::Write | io::IODevice::Binary)) {
+		fatal("Unable to open lut.dat");
+	}
+	file.writeBytes(data, sizeof(float) * size * size);
+	file.close();
+
+	Texture tex(Image(math::Vec2ui(size), ImageFormat::RG32F, data), false);
+	delete[] data;
+	return tex;
 }
 
 DeferredIBLRenderer::DeferredIBLRenderer(GBufferRenderer *c) : BufferableRenderer(), child(c) {
@@ -102,8 +182,6 @@ void *DeferredIBLRenderer::prepare() {
 }
 
 void DeferredIBLRenderer::render(void *ptr) {
-
-
 	SceneRenderer::FrameData *sceneData = child->getSceneRendererData(ptr);
 	math::Matrix4<> invCam = (sceneData->proj * sceneData->view).inverse();
 	math::Vec3 cam = sceneData->camera->getPosition();
@@ -116,15 +194,22 @@ void DeferredIBLRenderer::render(void *ptr) {
 	} else {
 		FrameBuffer::unbind();
 	}
-	FrameBuffer::clear(true, true); // <<------------------------------------ REMOVE
 
+
+
+
+	FrameBuffer::clear(true, true); // <<------------------------------------ REMOVE
+	/*if(lut.isNull()) {
+		lut = computeLut();
+	}*/
 
 
 	ShaderInstance *shader = getShader();
 
-	shader->setValue("cube", getCube()->getCubeMap());
-	shader->setValue("invRoughnessPower", 1.0 / getCube()->getRoughnessPower());
-	shader->setValue("levels", getCube()->getLevelCount());
+	shader->setValue("cube", getProbe()->getCubeMap());
+	shader->setValue("invRoughnessPower", 1.0 / getProbe()->getRoughnessPower());
+	shader->setValue("levels", getProbe()->getLevelCount());
+	shader->setValue("lut", lut);
 
 	shader->setValue("n_Inv", invCam);
 	shader->setValue("n_Cam", cam);

@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 	setTraceOutputStream(traceFile);
 
 
-	SDL_Window *win = createWindow();
+	SDL_Window *win = createWindow(Vec2ui(728));
 
 	if(argc > 1 && argv[1] == String("--no-debug")) {
 		GLContext::getContext()->setDebugEnabled(false);
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 	}*/
 
 	core::Array<ParticleEmitter *> emitters;
-	uint parts = ParticleEmitter::getMaxParticles();
+	/*uint parts = ParticleEmitter::getMaxParticles();
 	for(uint i = 0; i != 1; i++) {
 		ParticleEmitter *particles = new ParticleEmitter(parts);
 		particles->setVelocityDistribution(new UniformVec3Distribution<>(Vec3(0, 0, 1), pi, 25, 50));
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 		particles->addModifier(new TestModifier());
 		scene.insert(particles);
 		emitters.append(particles);
-	}
+	}*/
 
 
 	SceneRenderer *sceRe = new SceneRenderer(&scene);

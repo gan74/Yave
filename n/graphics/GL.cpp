@@ -818,6 +818,11 @@ void flush() {
 	glFlush();
 }
 
+void finish() {
+	logMsg("gl::finish() called", WarningLog);
+	glFinish();
+}
+
 
 
 }

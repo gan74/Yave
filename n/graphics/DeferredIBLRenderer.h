@@ -33,6 +33,7 @@ class DeferredIBLRenderer : public BufferableRenderer
 
 	private:
 		GBufferRenderer *child;
+		Texture lut;
 
 };
 

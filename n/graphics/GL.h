@@ -345,6 +345,7 @@ void generateMipmap(TextureType type);
 uint64 getTextureBindlessHandle(Handle tex, TextureSampler smp, bool mipmap);
 void makeTextureHandleResident(uint64 handle);
 void flush();
+void finish();
 }
 
 
