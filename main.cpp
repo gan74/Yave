@@ -13,6 +13,8 @@ void printInfos(const String2 &str) {
 }
 
 int main(int, char **) {
+	core::Array<int> arr;
+	arr = {1, 2, 3};
 
 	const char raw[] = "long/short test";
 

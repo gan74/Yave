@@ -98,6 +98,9 @@ String2::String2(String2 &&str) {
 	}
 }
 
+String2::String2(char c) : String2(&c, 1) {
+}
+
 String2::String2(const char *str) : String2(str, strlen(str)) {
 }
 
@@ -239,6 +242,33 @@ String2 String2::replaced(const String2 &oldS, const String2 &newS) const {
 		return *this;
 	}
 	return String2(concat);
+}
+
+String2 String2::toLower() const {
+	return mapped([](char c) -> char { return tolower(c); });
+}
+
+String2 String2::toUpper() const {
+	return mapped([](char c) -> char { return toupper(c); });
+}
+
+String2 String2::trimmed() const {
+	if(isEmpty()) {
+		return *this;
+	}
+	uint t = 0;
+	uint si = size();
+	const char *d = data();
+	while(isspace(d[t])) {
+		if(++t == si) {
+			return "";
+		}
+	}
+	uint e = 0;
+	while(isspace(d[si - e - 1])) {
+		e++;
+	}
+	return subString(t, (si - e) - t);
 }
 
 char *String2::data() {

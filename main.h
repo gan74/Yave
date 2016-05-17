@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <n/core/String2.h>
+#include <n/core/Array.h>
 #include <iostream>
 
 using namespace n;

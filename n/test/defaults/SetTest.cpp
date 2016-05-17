@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace test {
 
-class SetTest : public TestTemplate<SetTest>
+/*class SetTest : public TestTemplate<SetTest>
 {
 	public:
 		SetTest() : TestTemplate<SetTest>() {
@@ -45,11 +45,7 @@ class SetTest : public TestTemplate<SetTest>
 					s.insert(i);
 				}
 			}
-			T i = 0;
-			for(T e : s) {
-				test(e, i, "Ordering test failed");
-				i++;
-			}
+
 			for(T w = 0; w < max; w += (w % 3) ? 5 : 13) {
 				auto it = s.find(w);
 				if(test(it == s.end(), false, "Find test failed")) {
@@ -80,12 +76,11 @@ class SetTest : public TestTemplate<SetTest>
 		core::Array<T> genTestData(int max) {
 			core::Array<T> testArray(max);
 			for(int i = 0; i != max; i++) {
-				testArray.append(i);
+				testArray.append(rand());
 			}
-			testArray.shuffle();
 			return testArray;
 		}
-};
+};*/
 
 } // test
 } //n

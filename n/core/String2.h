@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_STRING2_H
 
 #include <n/utils.h>
+#include <sstream>
+#include "AsCollection.h"
 
 namespace n {
 namespace core {
@@ -83,13 +85,13 @@ class String2
 		String2();
 		String2(const String2 &str);
 		String2(String2 &&str);
+		String2(char c);
 		String2(const char *str);
 		String2(const char *str, uint len);
 		String2(const char *beg, const char *end);
 
 		template<typename T>
-		explicit String2(const T &t) : String2() {
-			#warning gvhbjnk
+		explicit String2(const T &t) : String2(build(t)) {
 		}
 
 		uint size() const;
@@ -116,6 +118,10 @@ class String2
 
 		String2 replaced(const String2 &oldS, const String2 &newS) const;
 
+		String2 toLower() const;
+		String2 toUpper() const;
+		String2 trimmed() const;
+
 		char *data();
 		const char *data() const;
 
@@ -133,18 +139,48 @@ class String2
 
 		String2 &operator=(const String2 &str);
 		String2 &operator=(String2 &&str);
+
+
 		String2 &operator+=(const String2 &rhs);
 
+
 		String2 operator+(const String2 &rhs) const;
+
 
 		bool operator==(const String2 &str) const;
 		bool operator!=(const String2 &str) const;
 		bool operator<(const String2 &s) const;
 		bool operator>(const String2 &s) const;
 
+
 		template<typename T>
 		String2 operator+(const T &t) const {
 			return operator+(String2(t));
+		}
+
+
+
+
+
+
+		template<typename T>
+		String2 filtered(const T &f) const {
+			String2 str;
+			for(char c : *this) {
+				if(f(c)) {
+					str += String2(c);
+				}
+			}
+			return str;
+		}
+
+		template<typename T>
+		String2 mapped(const T &f) const {
+			String2 str(*this);
+			for(char &c : str) {
+				c = f(c);
+			}
+			return str;
 		}
 
 	private:
@@ -156,6 +192,29 @@ class String2
 
 		static char *allocLong(uint len);
 		static void freeLong(LongData &d);
+
+
+
+		template<typename T>
+		String2 build(const T &c) {
+			return buildDispatch(c, BoolToType<ShouldInsertAsCollection<T, char>::value>());
+		}
+
+		template<typename T>
+		String2 buildDispatch(const T &c, TrueType) {
+			String str(0, c.size());
+			for(auto x : c) {
+				str += x;
+			}
+			return str;
+		}
+
+		template<typename T>
+		String2 buildDispatch(const T &c, FalseType) {
+			std::ostringstream oss;
+			oss<<c;
+			return oss.str().c_str();
+		}
 };
 
 }

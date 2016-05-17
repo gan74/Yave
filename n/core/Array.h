@@ -157,8 +157,6 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		Array<T, ResizePolicy> &operator<<(const C &e);
 
 
-		/*template<typename C>
-		Array<T, ResizePolicy> &operator=(const C &e);*/
 		template<typename P>
 		Array<T, ResizePolicy> &operator=(Array<T, P> &&arr);
 		Array<T, ResizePolicy> &operator=(const Array<T, ResizePolicy> &e);

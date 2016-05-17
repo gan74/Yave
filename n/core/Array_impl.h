@@ -189,6 +189,8 @@ typename Array<T, RP>::iterator Array<T, RP>::insert(const C &e) {
 
 
 
+
+
 template<typename T, typename RP>
 template<typename C>
 void Array<T, RP>::assign(const C &c) {
@@ -295,6 +297,8 @@ bool Array<T, RP>::isEmpty() const {
 
 
 
+
+
 template<typename T, typename RP>
 void Array<T, RP>::makeEmpty() {
 	clear(data, size());
@@ -307,6 +311,8 @@ void Array<T, RP>::clear() {
 	free(data);
 	data = dataEnd = allocEnd = 0;
 }
+
+
 
 
 
@@ -392,6 +398,10 @@ Array<T, RP> &Array<T, RP>::operator+=(const C &e) {
 
 
 
+
+
+
+
 template<typename T, typename RP>
 template<typename C>
 Array<T, RP> Array<T, RP>::operator+(const C &e) {
@@ -412,6 +422,11 @@ Array<T, RP> &Array<T, RP>::operator<<(const C &e) {
 
 
 
+
+
+
+
+
 template<typename T, typename RP>
 Array<T, RP> &Array<T, RP>::operator=(const Array<T, RP> &e) {
 	assign(e);
@@ -424,6 +439,13 @@ Array<T, RP> &Array<T, RP>::operator=(Array<T, P> &&arr) {
 	swap(arr);
 	return *this;
 }
+
+
+
+
+
+
+
 
 
 
@@ -627,6 +649,8 @@ template<typename U>
 void Array<T, RP>::foreach(const U &f) const {
 	std::for_each(begin(), end(), f);
 }
+
+
 
 
 
