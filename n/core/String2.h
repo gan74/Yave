@@ -85,6 +85,12 @@ class String2
 		String2(String2 &&str);
 		String2(const char *str);
 		String2(const char *str, uint len);
+		String2(const char *beg, const char *end);
+
+		template<typename T>
+		explicit String2(const T &t) : String2() {
+			#warning gvhbjnk
+		}
 
 		uint size() const;
 		bool isEmpty() const;
@@ -97,8 +103,18 @@ class String2
 		bool endsWith(const String2 &str) const;
 
 		const_iterator find(const String2 &str, uint from = 0) const;
+		const_iterator find(const String2 &str, const_iterator from) const;
 		iterator find(const String2 &str, uint from = 0);
+		iterator find(const String2 &str, const_iterator from);
+
 		bool contains(const String2 &str) const;
+
+		static String2 subString(const_iterator beg, uint len);
+		static String2 subString(const_iterator beg);
+		String2 subString(uint beg, uint len) const;
+		String2 subString(uint beg) const;
+
+		String2 replaced(const String2 &oldS, const String2 &newS) const;
 
 		char *data();
 		const char *data() const;
@@ -126,6 +142,11 @@ class String2
 		bool operator<(const String2 &s) const;
 		bool operator>(const String2 &s) const;
 
+		template<typename T>
+		String2 operator+(const T &t) const {
+			return operator+(String2(t));
+		}
+
 	private:
 		union
 		{
@@ -139,4 +160,12 @@ class String2
 
 }
 }
+
+template<typename T>
+n::core::String2 operator+(const T &lhs, const n::core::String2 &rhs) {
+	return n::core::String2(lhs) + rhs;
+}
+
+std::istream &operator>>(std::istream &s, n::core::String2 &str);
+std::ostream &operator<<(std::ostream &s, const n::core::String2 &str);
 #endif // N_CORE_STRING2_H

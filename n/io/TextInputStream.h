@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "InputStream.h"
 #include <n/core/String.h>
+#include <n/core/Array.h>
 
 namespace n {
 namespace io {

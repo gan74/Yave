@@ -17,6 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_CORE_STRING_H
 
 #include <n/defines.h>
-#include "String1.h"
+#include "String2.h"
 
 #endif // N_CORE_STRING_H

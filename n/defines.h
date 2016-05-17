@@ -28,8 +28,8 @@ void unused(T &) {}
 
 
 namespace core {
-	class String1;
-	using String = String1;
+	class String2;
+	using String = String2;
 }
 
 }

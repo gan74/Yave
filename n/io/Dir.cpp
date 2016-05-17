@@ -31,10 +31,10 @@ namespace n {
 namespace io {
 
 Dir::Dir(const core::String &dirName) : name(dirName), full(dirName) {
-	DIR *dir = opendir(name.toChar());
+	DIR *dir = opendir(name.data());
 	if(dir) {
 		char buffer[PATH_MAX + 1];
-		full = realpath(name.toChar(), buffer);
+		full = realpath(name.data(), buffer);
 		dirent *s = readdir(dir);
 		while(s) {
 			content.append(s->d_name);
@@ -72,7 +72,7 @@ core::Array<core::String> Dir::getFiles() const {
 
 
 bool Dir::exists(const core::String &dir) {
-	DIR *d = opendir(dir.toChar());
+	DIR *d = opendir(dir.data());
 	if(d) {
 		closedir(d);
 	}

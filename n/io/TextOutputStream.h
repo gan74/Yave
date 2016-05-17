@@ -43,7 +43,7 @@ class TextOutputStream : public OutputStream
 		template<typename T>
 		uint write(const T &t) {
 			core::String s(t);
-			return stream->writeBytes(s.toChar(), s.size());
+			return stream->writeBytes(s.data(), s.size());
 		}
 
 		template<typename T>

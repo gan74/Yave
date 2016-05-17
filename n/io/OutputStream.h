@@ -33,7 +33,7 @@ class OutputStream : NonCopyable
 
 		virtual void write(const core::String &str) {
 			if(str.size()) {
-				writeBytes(&str[0], str.size());
+				writeBytes(str.data(), str.size());
 			}
 		}
 };

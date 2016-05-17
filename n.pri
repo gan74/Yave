@@ -11,8 +11,7 @@ SOURCES += $$PWD/n/*.cpp \
 		   $$PWD/n/io/*.cpp \
 		   $$PWD/n/concurrent/*.cpp \
 		   $$PWD/n/test/*.cpp \
-		   $$PWD/n/test/defaults/*.cpp \
-		   $$PWD/n/graphics/*.cpp
+		   $$PWD/n/test/defaults/*.cpp
 
 HEADERS += $$PWD/n/*.h \
 		   $$PWD/n/core/*.h \
@@ -23,20 +22,16 @@ HEADERS += $$PWD/n/*.h \
 		   $$PWD/n/math/*.h \
 		   $$PWD/n/mem/*.h \
 		   $$PWD/n/assets/*.h \
-		   $$PWD/n/graphics/*.h \
 		   $$PWD/n/signals/*.h
 
-SOURCES += $$PWD/dependencies/lodepng/*.cpp
-HEADERS += $$PWD/dependencies/lodepng/*.h
-SOURCES += $$PWD/dependencies/glew/glew.c
 
 
-DEFINES += GLEW_STATIC
 win32:DEFINES += WIN32
 
 QMAKE_CXXFLAGS += -pedantic
 CONFIG(debug, debug|release) {
 	DEFINES += N_DEBUG
+	DEFINES += N_AUTO_TEST
 } else {
 	QMAKE_CXXFLAGS += -O3 -flto
 	QMAKE_LFLAGS += -O3 -flto

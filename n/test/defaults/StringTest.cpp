@@ -34,7 +34,7 @@ class StringTest : public TestTemplate<StringTest>
 
 	private:
 		void basicTests() {
-			struct Convertible
+			/*struct Convertible
 			{
 				operator core::String() const {
 					return "this is a convertible";
@@ -99,7 +99,7 @@ class StringTest : public TestTemplate<StringTest>
 			test("9."+ core::String("5") + "f", "9.5f", "char * concat test 2 failed");
 			core::Array<char> arr({'4', 'a', '{', 'K'});
 			test(core::String(arr), "4a{K", "Array test failed");
-			test(core::String(Convertible()), "this is a convertible", "Conversion test failed");
+			test(core::String(Convertible()), "this is a convertible", "Conversion test failed");*/
 		}
 };
 

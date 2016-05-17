@@ -429,18 +429,6 @@ typedef Vec<4, uint> Vec4ui;
 }
 }
 
-//template<n::uint N, typename T, typename I> n::math::Vec<N, T> operator op(const n::math::Vec<N, T> &v, const I &i) { return v op n::math::Vec<N, T>(i); }
-#define N_VEC_OP(op) \
-template<n::uint N, typename T> \
-n::math::Vec<N, T> operator op(const T &i, const n::math::Vec<N, T> &v) { return n::math::Vec<N, T>(i) op v; }
-
-N_VEC_OP(+)
-N_VEC_OP(*)
-N_VEC_OP(-)
-N_VEC_OP(/)
-
-
-#undef N_VEC_OP
 
 
 #endif // N_MATH_VEC_H

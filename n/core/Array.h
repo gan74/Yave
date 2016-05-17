@@ -27,7 +27,7 @@ namespace core {
 class DefaultArrayResizePolicy
 {
 	public:
-		static uint standardSize(uint size) {
+		static uint standard(uint size) {
 			static const uint offset = 12;
 			uint l = log2ui(size + offset);
 			return size < 2 ? 8 : (1 << (l + 1)) - offset;
@@ -35,7 +35,7 @@ class DefaultArrayResizePolicy
 
 	protected:
 		uint size(uint size) const {
-			return standardSize(size);
+			return standard(size);
 		}
 
 		bool shrink(uint, uint) const {
@@ -49,10 +49,10 @@ class CompactArrayResizePolicy
 		uint size(uint size) const {
 			static const uint linearThreshold = 11; // 2048
 			if(size > (1 << linearThreshold)) {
-				uint s = DefaultArrayResizePolicy::standardSize(2048);
+				uint s = DefaultArrayResizePolicy::standard(2048);
 				return s + ((1 << linearThreshold) * (((size - s) >> linearThreshold) + 1));
 			}
-			return DefaultArrayResizePolicy::standardSize(size);
+			return DefaultArrayResizePolicy::standard(size);
 		}
 
 		bool shrink(uint s, uint cap) const {
@@ -80,57 +80,22 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		typedef T * iterator;
 		typedef T const * const_iterator;
 
-		/*class Size
-		{
-			public:
-				Size(uint s) : size(s) {
-				}
+		Array();
 
-			private:
-				friend class Array<T, ResizePolicy>;
-				const uint size;
-		};*/
+		~Array();
 
-		typedef uint Size;
+		Array(uint s);
 
-		Array() : ResizePolicy(), data(0), dataEnd(0), allocEnd(0) {
-		}
+		Array(const Array<T, ResizePolicy> &a);
 
-		~Array() {
-			makeEmpty();
-			free(data);
-		}
-
-		Array(const Array<T, ResizePolicy> &a) : Array(Size(a.size())) {
-			copy(data, a.data, a.size());
-			dataEnd = data + a.size();
-		}
-
-		template<typename R>
-		Array(const Array<T, R> &a) : Array(Size(a.size())) {
-			copy(data, a.data, a.size());
-			dataEnd = data + a.size();
-		}
-
-		Array(Array<T, ResizePolicy> &&a) : Array() {
-			swap(std::move(a));
-		}
+		Array(Array<T, ResizePolicy> &&a);
 
 		template<typename C, typename R>
-		Array(const Array<C, R> &a) : Array(Size(a.size())) {
-			append(a);
-		}
+		Array(const Array<C, R> &a);
 
 		template<typename C>
-		Array(std::initializer_list<C> l) : Array(Size(l.size())) {
-			for(auto x : l) {
-				append(x);
-			}
-		}
+		Array(std::initializer_list<C> l);
 
-		Array(uint s) : Array() {
-			setCapacityUnsafe(0, s);
-		}
 
 		template<typename C>
 		Array<T, ResizePolicy> &append(const C &c) {
@@ -715,6 +680,8 @@ template<typename T>
 n::core::Array<T> operator+(const T &i, const n::core::Array<T> &a) {
 	return n::core::Array<T>({i}) + a;
 }
+
+#include "Array_impl.h"
 
 
 

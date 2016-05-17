@@ -25,7 +25,7 @@ namespace n {
 
 
 uint64 hash(const core::String &str) {
-	return str.getHash();
+	return hash(str.data(), str.size());
 }
 
 uint64 hash(const void *key, uint64 len, uint64 seed) { // Murmurhash 2.0 from https://sites.google.com/site/murmurhash/

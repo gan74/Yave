@@ -15,6 +15,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "String2.h"
 #include <cstring>
+#include <n/core/Array.h>
+#include <ostream>
 
 namespace n {
 namespace core {
@@ -107,6 +109,9 @@ String2::String2(const char *str, uint len) {
 	}
 }
 
+String2::String2(const char *beg, const char *end) : String2(beg, end - beg) {
+}
+
 uint String2::size() const {
 	return isLong() ? l.length : s.length;
 }
@@ -160,6 +165,10 @@ String2::const_iterator String2::find(const String2 &str, uint from) const {
 	return const_iterator(const_cast<String2 *>(this)->find(str, from));
 }
 
+String2::const_iterator String2::find(const String2 &str, const_iterator from) const {
+	return const_iterator(const_cast<String2 *>(this)->find(str, from));
+}
+
 String2::iterator String2::find(const String2 &str, uint from) {
 	uint strSize = str.size();
 	uint len = size();
@@ -183,8 +192,53 @@ String2::iterator String2::find(const String2 &str, uint from) {
 	return end();
 }
 
+String2::iterator String2::find(const String2 &str, const_iterator from) {
+	return find(str, from - begin());
+}
+
 bool String2::contains(const String2 &str) const {
 	return find(str) != end();
+}
+
+String2 String2::subString(const_iterator beg, uint len) {
+	if(!len) {
+		return String2();
+	}
+	return String2(beg, len);
+}
+
+String2 String2::subString(const_iterator beg) {
+	return String2(beg);
+}
+
+String2 String2::subString(uint beg, uint len) const {
+	if(!len) {
+		return String2();
+	}
+	return String2(data() + beg, len);
+}
+
+String2 String2::subString(uint beg) const {
+	return subString(beg, size() - beg);
+}
+
+String2 String2::replaced(const String2 &oldS, const String2 &newS) const {
+	Array<String2> concat;
+	const_iterator it = find(oldS);
+	if(it != end()) {
+		const_iterator from = 0;
+		uint offset = oldS.size();
+		do {
+			concat += String2(from, it);
+			concat += newS;
+			from = it + offset;
+			it = find(oldS, from);
+		} while(it != end());
+		concat += subString(from);
+	} else {
+		return *this;
+	}
+	return String2(concat);
 }
 
 char *String2::data() {
@@ -328,3 +382,17 @@ bool String2::operator>(const String2 &s) const {
 
 }
 }
+
+
+std::istream &operator>>(std::istream &s, n::core::String2 &str) {
+	std::string st;
+	s>>st;
+	str = n::core::String2(st.c_str());
+	return s;
+}
+
+std::ostream &operator<<(std::ostream &s, const n::core::String2 &str) {
+	s.write(str.data(), str.size());
+	return s;
+}
+

@@ -21,7 +21,7 @@ namespace n {
 namespace io {
 
 bool File::exists(const core::String &fileName) {
-	FILE *file = fopen(fileName.toChar(), "r");
+	FILE *file = fopen(fileName.data(), "r");
 	if(!file) {
 		return false;
 	}
@@ -41,16 +41,16 @@ core::String File::getPath() const {
 	if(pname.endsWith("/")) {
 		return pname;
 	}
-	uint it = pname.find("/");
-	uint last = it;
-	if(it == uint(-1)) {
+	core::String::iterator it = pname.find("/");
+	core::String::iterator last = it;
+	if(it == pname.end()) {
 		return ".";
 	}
-	while(it != uint(-1)) {
+	while(it != pname.end()) {
 		last = it;
 		it = pname.find("/", last + 1);
 	}
-	return pname.subString(0, last);
+	return core::String2(pname.begin(), last);
 }
 
 bool File::exists() const {
@@ -58,7 +58,7 @@ bool File::exists() const {
 }
 
 bool File::remove() {
-	return !::remove(name.toChar());
+	return !::remove(name.data());
 }
 
 bool File::open(OpenMode m) {
@@ -84,7 +84,7 @@ bool File::open(OpenMode m) {
 	if(m & IODevice::Binary)	{
 		openMode += "b";
 	}
-	file = fopen(name.toChar(), openMode.toChar());
+	file = fopen(name.data(), openMode.data());
 	if(!file) {
 		return false;
 	}

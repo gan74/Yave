@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Test.h"
+#include <n/utils.h>
 
 namespace n {
 namespace test {
@@ -24,7 +25,7 @@ class AutoTestWarning
 {
 	private:
 		AutoTestWarning() {
-			log("----- Running automatic tests -----");
+			logMsg("----- Running automatic tests -----");
 		}
 
 		static AutoTestWarning warning;
