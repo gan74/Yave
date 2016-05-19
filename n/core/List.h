@@ -158,6 +158,9 @@ class List
 				ListElem *elem;
 		};
 
+
+		typedef T Element;
+		
 		List();
 		List(List<T> &&l);
 		List(const List<T> &l);

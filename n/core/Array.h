@@ -79,6 +79,7 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 	public:
 		typedef T * iterator;
 		typedef T const * const_iterator;
+		typedef T Element;
 
 		Array();
 		Array(uint s);
