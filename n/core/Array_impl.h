@@ -58,6 +58,12 @@ Array<T,RP>::Array(uint s) : Array() {
 	setCapacityUnsafe(0, s);
 }
 
+template<typename T, typename RP>
+Array<T,RP>::Array(uint s, const T &e) : Array(s) {
+	for(uint i = 0; i != s; i++) {
+		append(e);
+	}
+}
 
 template<typename T, typename RP>
 Array<T, RP>::~Array() {

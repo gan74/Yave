@@ -83,6 +83,7 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 
 		Array();
 		Array(uint s);
+		Array(uint s, const T &e);
 		Array(const Array<T, ResizePolicy> &a);
 		Array(Array<T, ResizePolicy> &&a);
 
