@@ -349,6 +349,10 @@ String2 &String2::operator+=(const String2 &rhs) {
 	return operator=(operator+(rhs));
 }
 
+String2 &String2::operator<<(const String2 &rhs) {
+	return operator+=(rhs);
+}
+
 String2 String2::operator+(const String2 &rhs) const {
 	uint lhsize = size();
 	uint rhsize = rhs.size();

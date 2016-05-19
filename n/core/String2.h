@@ -142,6 +142,7 @@ class String2
 
 
 		String2 &operator+=(const String2 &rhs);
+		String2 &operator<<(const String2 &rhs);
 
 
 		String2 operator+(const String2 &rhs) const;
