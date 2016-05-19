@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace core {
 
-namespace internal {
+namespace details {
 
 template<typename T, typename U, typename C>
 struct MapOp
@@ -36,9 +36,9 @@ struct MapOp
 }
 
 template<typename T, typename U, typename Comp = std::less<T>, typename Eq = std::equal_to<T>>
-class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, internal::MapOp<const T, U, Eq>>
+class Map : public RBTree<Pair<const T, U>, details::MapOp<const T, U, Comp>, details::MapOp<const T, U, Eq>>
 {
-	using MapType = RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, internal::MapOp<const T, U, Eq>>;
+	using MapType = RBTree<Pair<const T, U>, details::MapOp<const T, U, Comp>, details::MapOp<const T, U, Eq>>;
 
 	template<typename C>
 	struct MapFindOp

@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
-namespace internal {
+namespace details {
 
 template<typename R, uint N>
 struct TupleProxy {
@@ -146,13 +146,12 @@ class Functor<R(Args...)>
 		Functor() : Functor<R(Args...)>(Nothing()) {
 		}
 
-
 		R operator()(Args... args) {
 			return func->apply(args...);
 		}
 
 		R operator()(const std::tuple<Args...> &args) {
-			return n::internal::TupleProxy<R, sizeof...(Args)>::apply(this, args);
+			return n::details::TupleProxy<R, sizeof...(Args)>::apply(this, args);
 		}
 
 		R operator()(Args... args) const {
@@ -160,7 +159,7 @@ class Functor<R(Args...)>
 		}
 
 		R operator()(const std::tuple<Args...> &args) const {
-			return n::internal::TupleProxy<R, sizeof...(Args)>::apply(this, args);
+			return n::details::TupleProxy<R, sizeof...(Args)>::apply(this, args);
 		}
 
 		Functor<R()> curried(Args... args) const {

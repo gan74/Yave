@@ -24,36 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
-class NonCopyable
-{
-	public:
-		NonCopyable() {}
-		NonCopyable(const NonCopyable &) = delete;
-		NonCopyable &operator=(const NonCopyable &) = delete;
-};
-
-template<typename T>
-class Operators
-{
-	public:
-		T &operator==(const T &o) const {
-			return !(*this != o);
-		}
-
-
-		T &operator!=(const T &o) const {
-			return !(*this == o);
-		}
-
-		T &operator<(const T &o) const {
-			return !(*this > o || operator==(o));
-		}
-
-		T &operator>(const T &o) const {
-			return !(*this < o || operator==(o));
-		}
-};
-
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
@@ -66,6 +36,28 @@ typedef int64_t int64;
 
 typedef uint8_t byte;
 typedef size_t uint;
+
+
+
+
+
+
+
+
+
+class NonCopyable
+{
+	public:
+		NonCopyable() {}
+		NonCopyable(const NonCopyable &) = delete;
+		NonCopyable &operator=(const NonCopyable &) = delete;
+};
+
+
+
+
+
+
 
 extern uint typeId;
 
@@ -190,7 +182,7 @@ template<typename T \
 decltype(n::makeOne<cl>() op n::makeOne<cl>()) \
 operator op(const T &i, const n::StrongTypeHelper<cl> &s) { return (cl(i) op s.get()); }
 
-namespace internal {
+namespace details {
 	N_GEN_TYPE_HAS_MEMBER(IsConstIterableInternal, const_iterator)
 	N_GEN_TYPE_HAS_MEMBER(IsNonConstIterableInternal, iterator)
 
@@ -302,7 +294,7 @@ struct VoidToNothing : If<!std::is_void<T>::value, T, Nothing>
 
 
 template<typename T, typename Base>
-class InheritIfNotAlready : public internal::InheritAlready<Base, std::is_base_of<Base, T>::value>
+class InheritIfNotAlready : public details::InheritAlready<Base, std::is_base_of<Base, T>::value>
 {
 };
 
@@ -388,10 +380,10 @@ struct TypeInfo
 	static const uint baseId;
 	static const uint id;
 
-	static constexpr bool isNonConstIterable = internal::IsNonConstIterable<T>::value;
-	static constexpr bool isIterable = internal::IsConstIterable<T>::value || isNonConstIterable;
+	static constexpr bool isNonConstIterable = details::IsNonConstIterable<T>::value;
+	static constexpr bool isIterable = details::IsConstIterable<T>::value || isNonConstIterable;
 
-	static constexpr bool isDereferenceable = internal::IsDereferenceable<T, isPrimitive>::value;
+	static constexpr bool isDereferenceable = details::IsDereferenceable<T, isPrimitive>::value;
 
 	static const Type type;
 
@@ -440,7 +432,7 @@ struct TypeInfo<const T>
 	static const uint id;
 
 	static constexpr bool isNonConstIterable = false;
-	static constexpr bool isIterable = internal::IsConstIterable<T>::value;
+	static constexpr bool isIterable = details::IsConstIterable<T>::value;
 
 	static constexpr bool isDereferenceable = TypeInfo<T>::isDereferenceable;
 
@@ -582,7 +574,7 @@ const Type TypeInfo<T[N]>::type = typeid(T[N]);
 template<typename T>
 struct TypeContent
 {
-	typedef typename internal::TypeContentInternal<T, TypeInfo<T>::isPrimitive || !TypeInfo<T>::isDereferenceable>::type type;
+	typedef typename details::TypeContentInternal<T, TypeInfo<T>::isPrimitive || !TypeInfo<T>::isDereferenceable>::type type;
 };
 
 

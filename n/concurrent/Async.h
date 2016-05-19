@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 namespace concurrent {
-namespace internal {
+namespace details {
 
 template<typename T>
 class AsyncTask : public Thread
@@ -69,7 +69,7 @@ static SharedFuture<R> Async(const core::Functor<R()> &f, bool pool = true) {
 		return threads(f);
 	}
 	Promise<R> promise;
-	internal::AsyncTask<R> *task = new internal::AsyncTask<R>(promise, f);
+	details::AsyncTask<R> *task = new details::AsyncTask<R>(promise, f);
 	if(!task->start()) {
 		delete task;
 		return Async(f, true);

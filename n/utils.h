@@ -31,9 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_SCOPE(CODE) N_SCOPE_HELPER(CODE, __LINE__)
 
 namespace n {
-namespace graphics {
-	namespace gl {}
-}
+namespace graphics {}
 namespace concurrent {}
 namespace signals {}
 namespace assets {}
@@ -61,22 +59,21 @@ constexpr bool is32Bits() {
 	return sizeof(void *) == 4;
 }
 
-namespace internal {
+namespace details {
 	static constexpr uint32 endian = 0x01020304; // http://stackoverflow.com/questions/1583791/constexpr-and-endianness
 	static constexpr uint32 endianness = (const byte&)endian;
 }
 
 constexpr bool isLittleEndian() {
-	return internal::endianness == 0x04;
+	return details::endianness == 0x04;
 }
 
 constexpr bool isBigEndian() {
-	return internal::endianness == 0x01;
+	return details::endianness == 0x01;
 }
 
 static_assert(isLittleEndian() || isBigEndian(), "Unable to determine endianness !");
 static_assert(isLittleEndian(), "This was designed for little endian systems, it may work on other architectures.");
-
 
 template<typename T>
 class ScopeExit

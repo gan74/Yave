@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "MultiThreadPtr.h"
 #include "Mutex.h"
-#include <n/core/Option.h>
 
 namespace n {
 namespace concurrent {
@@ -63,19 +62,19 @@ class SharedFuture
 			return shared->state;
 		}
 
-		core::Option<T> get() const {
+		T const *get() const {
 			wait();
 			if(!isSuccess()) {
-				return core::Option<T>();
+				return 0;
 			}
-			return shared->val;
+			return &shared->val;
 		}
 
-		core::Option<T> tryGet() const {
+		T const *tryGet() const {
 			if(!isSuccess()) {
-				return core::Option<T>();
+				return 0;
 			}
-			return shared->val;
+			return &shared->val;
 		}
 
 		const TI &get(const TI &def) const {
@@ -94,12 +93,11 @@ class SharedFuture
 		}
 
 		const TI &unsafeGet() const {
-			if(!isSuccess()) {
+			/*if(!isSuccess()) {
 				fatal("SharedFuture<T>::unsafeGet failed.");
-			}
+			}*/
 			return shared->val;
 		}
-
 
 		void wait() const {
 			Mutex *m = getMutex();
@@ -108,10 +106,6 @@ class SharedFuture
 				m->wait();
 			}
 			m->unlock();
-		}
-
-		operator T() const {
-			return get();
 		}
 
 	private:

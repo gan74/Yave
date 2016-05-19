@@ -26,7 +26,7 @@ namespace assets {
 
 using ArgumentTypes = core::Array<Type>;
 
-namespace internal {
+namespace details {
 	template<typename... Ar>
 	class TypeArray
 	{
@@ -62,7 +62,7 @@ namespace internal {
 
 template<typename... Args>
 ArgumentTypes getArgumentTypes() {
-	return internal::TypeArray<Args...>::args();
+	return details::TypeArray<Args...>::args();
 }
 
 template<typename T>
