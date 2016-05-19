@@ -1,11 +1,8 @@
-#include "main.h"
+#include <n/core/String.h>
+#include <iostream>
 
-struct String
-{
-	String() {
-		fatal("ERROR : String used");
-	}
-};
+using namespace n;
+using namespace n::core;
 
 void printInfos(const String2 &str) {
 	std::cout<<"\t"<<std::boolalpha<<"long = "<<str.isLong()<<" (size = "<<str.size()<<")"<<std::endl;
