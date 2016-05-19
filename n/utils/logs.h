@@ -27,6 +27,7 @@ enum LogType
 	ErrorLog,
 	WarningLog,
 	PerfLog,
+	DebugLog,
 	DeprecatedLog
 };
 
