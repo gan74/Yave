@@ -59,10 +59,10 @@ class ListTest : public TestTemplate<ListTest>
 			b.map([](const T &i) -> T { return i * 3 + 2; });
 			test(b, a.mapped([](const T &i) -> T { return i * 3 + 2; }), "Map test failed");
 
-			core::List<T> c(1, 2, 3, 4, 10, 11, 11);
-			core::List<T> d(5, 6, 7, 8, 9);
-			core::List<T> e(7, 8, 6, 9);
-			core::List<T> t(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11);
+			core::List<T> c({1, 2, 3, 4, 10, 11, 11});
+			core::List<T> d({5, 6, 7, 8, 9});
+			core::List<T> e({7, 8, 6, 9});
+			core::List<T> t({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11});
 			test(c.isSorted() && d.isSorted() && !e.isSorted(), true, "Sorted test failed");
 			auto it = c.find(10);
 			test(it != c.end() || *it == 10, true, "Find test failed");

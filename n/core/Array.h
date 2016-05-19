@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/types.h>
 #include <n/utils.h>
-#include "AsCollection.h"
+#include "Collection.h"
 
 namespace n {
 namespace core {
@@ -157,8 +157,9 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		Array<T, ResizePolicy> &operator<<(const C &e);
 
 
-		template<typename P>
-		Array<T, ResizePolicy> &operator=(Array<T, P> &&arr);
+		template<typename C>
+		Array<T, ResizePolicy> &operator=(const C &c);
+		Array<T, ResizePolicy> &operator=(Array<T, ResizePolicy> &&arr);
 		Array<T, ResizePolicy> &operator=(const Array<T, ResizePolicy> &e);
 
 
@@ -335,7 +336,7 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		template<typename C>
 		void appendDispatch(const C &c, FalseType) {
 			static_assert(Collection<C>::isCollection, "Can not build n::core::Array<T> from given type. (type is not convertible to T and is not a collection of T)");
-			setMinCapacity(size() + AsCollection(c).sizeOption().get(0));
+			setMinCapacity(size() + c.size());
 			for(const auto &e : c) {
 				append(e);
 			}

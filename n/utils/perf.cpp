@@ -40,7 +40,7 @@ struct TraceDumper
 		}
 		if(traceOut) {
 			io::TextOutputStream stream(traceOut);
-			stream<<"{}], \"displayTimeUnit\":\"ms\"}";
+			stream << "{}], \"displayTimeUnit\":\"ms\"}";
 			traceOut->flush();
 		}
 	}
@@ -117,28 +117,30 @@ void JsonPerfTracer::emptyBuffer() {
 	for(uint i = 0; i != traces; i++) {
 		Trace e = traceBuffer[i];
 		core::Array<core::String> trace;
-		trace<<"{";
-		trace<<tag("cat", "none")<<", ";
-		trace<<tag("pid", pid)<<", ";
-		trace<<tag("tid", tid)<<", ";
-		trace<<tag("ts", e.time * 1000000)<<", "; // ?????
+		trace << "{";
+		trace << tag("cat", "none") << ", ";
+		trace << tag("pid", pid) << ", ";
+		trace << tag("tid", tid) << ", ";
+		trace << tag("ts", e.time * 1000000) << ", "; // ?????
 		switch(e.type) {
 			case FuncBegin:
-				trace<<tag("ph", "B")<<", ";
-				trace<<tag("name", e.data);
+				trace << tag("ph", "B") << ", ";
+				trace << tag("name", e.data);
 				break;
 
 			case FuncEnd:
-				trace<<tag("ph", "E");
+				trace << tag("ph", "E");
 				break;
 
 			case Event:
-				trace<<tag("ph", "I");
-				trace<<tag("name", e.data);
+				trace << tag("ph", "I");
+				trace << tag("name", e.data);
 				break;
 		}
-		trace<<"},\n";
-		out<<AsCollection(trace).make<core::String>("");
+		trace << "},\n";
+		for(auto x : trace) {
+			out << x;
+		}
 	}
 	traces = 0;
 }
@@ -186,13 +188,13 @@ void setTraceOutputStream(io::IODevice *out) {
 	if(!traceOut && out) {
 		io::SynchronizedOutputStream *t = new io::SynchronizedOutputStream(out);
 		io::TextOutputStream stream(t);
-		stream<<"{\"traceEvents\":[\n";
+		stream << "{\"traceEvents\":[\n";
 		traceOut = t;
 	}
 	#else
 	if(out) {
 		io::TextOutputStream stream(out);
-		stream<<"Trace output stream specified while N_PERF_LOG_ENABLED is not defined.";
+		stream << "Trace output stream specified while N_PERF_LOG_ENABLED is not defined.";
 		out->close();
 	}
 	logMsg("Trace output stream specified while N_PERF_LOG_ENABLED is not defined.", WarningLog);

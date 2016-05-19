@@ -428,14 +428,20 @@ Array<T, RP> &Array<T, RP>::operator<<(const C &e) {
 
 
 template<typename T, typename RP>
+template<typename C>
+Array<T, RP> &Array<T, RP>::operator=(const C &c) {
+	assign(c);
+	return *this;
+}
+
+template<typename T, typename RP>
 Array<T, RP> &Array<T, RP>::operator=(const Array<T, RP> &e) {
 	assign(e);
 	return *this;
 }
 
 template<typename T, typename RP>
-template<typename P>
-Array<T, RP> &Array<T, RP>::operator=(Array<T, P> &&arr) {
+Array<T, RP> &Array<T, RP>::operator=(Array<T, RP> &&arr) {
 	swap(arr);
 	return *this;
 }
@@ -666,7 +672,10 @@ template<typename T, typename RP>
 template<typename V, typename C>
 C Array<T, RP>::mapped(const V &f) const {
 	C a;
-	AsCollection(a).setMinCapacity(size());
+	using ArrayType = Array<typename std::result_of<V(const T &)>::type, RP>;
+	if(std::is_same<C, ArrayType>::value) {
+		reinterpret_cast<ArrayType *>(&a)->setMinCapacity(size());
+	}
 	foreach([&](const T &e) { a.insert(f(e)); });
 	return a;
 }
@@ -707,7 +716,6 @@ template<typename T, typename RP>
 template<typename U, typename C>
 C Array<T, RP>::filtered(const U &f) const {
 	C a;
-	AsCollection(a).setMinCapacity(size());
 	foreach([&](const T &e) {
 		if(f(e)) {
 			a.insert(e);

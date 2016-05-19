@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_MATH_VEC_H
 #define N_MATH_VEC_H
 
-#include <n/core/String.h>
-
 namespace n {
 namespace math {
 
@@ -397,10 +395,6 @@ class Vec
 			return false;
 		}
 
-		operator core::String() const {
-			return "(" + (core::AsCollection<Vec<N, T>>(*this)).make(core::String(", ")) + ")";
-		}
-
 	private:
 		template<uint M, typename U>
 		friend class Vec;
@@ -429,6 +423,17 @@ typedef Vec<4, uint> Vec4ui;
 }
 }
 
+#define N_VEC_OP(op) \
+template<n::uint N, typename T> \
+n::math::Vec<N, T> operator op(const T &i, const n::math::Vec<N, T> &v) { return n::math::Vec<N, T>(i) op v; }
+
+N_VEC_OP(+)
+N_VEC_OP(*)
+N_VEC_OP(-)
+N_VEC_OP(/)
+
+
+#undef N_VEC_OP
 
 
 #endif // N_MATH_VEC_H

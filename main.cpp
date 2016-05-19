@@ -12,8 +12,44 @@ void printInfos(const String2 &str) {
 	std::cout<<"\t"<<"data = \""<<str.data()<<"\""<<std::endl<<std::endl;
 }
 
+
+class A
+{
+	public:
+		A(int i) {
+			std::cout<<i<<std::endl;
+		}
+
+		A(const std::string &str) {
+			std::cout<<str<<std::endl;
+		}
+
+		A(const  char *str) {
+			std::cout<<str<<std::endl;
+		}
+
+		A &operator=(A &&) {
+			std::cout<<"&&"<<std::endl;
+			return *this;
+		}
+
+};
+
 int main(int, char **) {
-	core::Array<int> arr;
+
+
+	std::string str("string");
+	A a(27);
+	a = str;
+
+	return 0;
+
+
+
+
+
+
+	/*core::Array<int> arr;
 	arr = {1, 2, 3};
 
 	const char raw[] = "long/short test";
@@ -64,5 +100,5 @@ int main(int, char **) {
 	std::cout<<"\t"<<str.data()<<cpy.data()<<std::endl<<std::endl;
 
 
-	return 0;
+	return 0;*/
 }

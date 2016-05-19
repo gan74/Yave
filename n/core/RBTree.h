@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/types.h>
 #include <algorithm>
-#include "AsCollection.h"
+#include "Collection.h"
 
 namespace n {
 namespace core {
@@ -145,302 +145,93 @@ class RBTree
 		};
 
 	public:
-		RBTree() : guard(new Node()), root(guard), setSize(0) {
-		}
-
-		RBTree(const RBTree<T, Comp, Eq> &o) : RBTree() {
-			for(const T &e : o) {
-				insertAtEnd(e);
-			}
-		}
-
-		RBTree(RBTree<T, Comp, Eq> &&o) : RBTree() {
-			swap(std::move(o));
-		}
-
+		RBTree();
+		RBTree(const RBTree<T, Comp, Eq> &o);
+		RBTree(RBTree<T, Comp, Eq> &&o);
 		template<typename C>
-		RBTree(std::initializer_list<C> l) : RBTree() {
-			for(auto x : l) {
-				insert(x);
-			}
-		}
+		RBTree(std::initializer_list<C> l);
 
-		template<typename... Args>
-		RBTree(Args... args) : RBTree() {
-			insert(args...);
-		}
 
-		~RBTree() {
-			clear();
-			delete guard;
-		}
+		~RBTree();
 
-		const_iterator begin() const {
-			return guard->children[1];
-		}
 
-		const_iterator end() const {
-			return guard;
-		}
+		const_iterator begin() const;
+		const_iterator end() const;
+		iterator begin();
+		iterator end();
+		const_iterator cbegin() const;
+		const_iterator cend() const;
 
-		iterator begin() {
-			return guard->children[1];
-		}
-
-		iterator end() {
-			return guard;
-		}
-
-		const_iterator cbegin() const {
-			return begin();
-		}
-
-		const_iterator cend() const {
-			return end();
-		}
 
 		template<typename U = T, typename C = Comp, typename E = Eq>
-		iterator find(const U &t, const C c = C(), const E e = E()) {
-			Node *n = root;
-			while(n->color) {
-				if(e(t, n->data)) {
-					return iterator(n);
-				}
-				if(c(t, n->data)) {
-					n = n->children[0];
-				} else {
-					n = n->children[1];
-				}
-			}
-			return end();
-		}
-
+		iterator find(const U &t, const C &c = C(), const E &e = E());
 		template<typename U = T, typename C = Comp, typename E = Eq>
-		const_iterator find(const U &t, const C c = C(), const E e = E()) const {
-			Node *n = root;
-			while(n->color) {
-				if(e(t, n->data)) {
-					return const_iterator(n);
-				}
-				if(c(t, n->data)) {
-					n = n->children[0];
-				} else {
-					n = n->children[1];
-				}
-			}
-			return end();
-		}
+		const_iterator find(const U &t, const C &c = C(), const E &e = E()) const;
+
 
 		template<typename C>
-		iterator insert(const C &c) {
-			return insertDispatch(c, typename ShouldInsertAsCollection<C, T>::type());
-		}
-
+		iterator insert(const C &c);
 		template<typename A, typename B, typename... Args>
-		iterator insert(const A &a, const B &b, const Args&... args) {
-			Comp c;
-			iterator it = insert(a);
-			iterator w = insert(b);
-			if(comp(w.node->data, it.node->data)) {
-				it = w;
-			}
-			w = insert(args...);
-			return comp(w.node->data, it.node->data) ? w : it;
-		}
+		iterator insert(const A &a, const B &b, const Args&... args);
 
-		void clear() {
-			clearOne(root);
-			root = guard->children[0] = guard->children[1] = guard->parent = guard;
-			setSize = 0;
-		}
 
-		iterator remove(iterator it) {
-			Node *z = it.node;
-			if(!z->color) {
-				return end();
-			}
-			setSize--;
-			Node *td = z;
-			++it;
-			for(uint i = 0; i != 2; i++) {
-				if(z == guard->children[i]) {
-					guard->children[i] = z->parent;
-				}
-			}
-			Node *y = z;
-			Node *x = guard;
-			byte color = y->color;
-			if(!z->children[0]->color) {
-				x = z->children[1];
-				transplant(z, z->children[1]);
-			} else if(!z->children[1]->color) {
-				x = z->children[0];
-				transplant(z, z->children[0]);
-			} else {
-				y = getMin(z->children[1]);
-				color = y->color;
-				x = y->children[1];
-				if(y->parent == z) {
-					x->parent = z;
-				} else {
-					transplant(y, y->children[1]);
-					y->children[1] = z->children[1];
-					y->children[1]->parent = y;
-				}
-				transplant(z, y);
-				y->children[0] = z->children[0];
-				y->children[0]->parent = y;
-				y->color = z->color;
-			}
-			if(color != Node::Red) {
-				RBremove(x);
-			}
-			delete td;
-			return it;
-		}
+		void clear();
 
-		uint size() const {
-			return setSize;
-		}
 
-		bool isEmpty() const {
-			return !setSize;
-		}
+		iterator remove(iterator it);
 
-		void swap(RBTree<T, Comp, Eq> &&o) {
-			Node *r = o.root;
-			Node *g = o.guard;
-			uint s = o.setSize;
-			o.root = root;
-			o.guard = guard;
-			o.setSize = setSize;
-			root = r;
-			guard = g;
-			setSize = s;
-		}
 
-		RBTree<T, Comp, Eq> &operator=(const RBTree<T, Comp, Eq> &o) {
-			clear();
-			insert(o);
-			return *this;
-		}
+		uint size() const;
+		bool isEmpty() const;
+
+
+		void swap(RBTree<T, Comp, Eq> &o);
+
 
 		template<typename C>
-		RBTree<T, Comp, Eq> &operator=(const C &o) {
-			clear();
-			insert(o);
-			return *this;
-		}
+		RBTree<T, Comp, Eq> &operator=(const C &o);
+		RBTree<T, Comp, Eq> &operator=(const RBTree<T, Comp, Eq> &o);
+		RBTree<T, Comp, Eq> &operator=(RBTree<T, Comp, Eq> &&o);
 
-		RBTree<T, Comp, Eq> &operator=(RBTree<T, Comp, Eq> &&o) {
-			swap(std::move(o));
-			return *this;
-		}
 
-		RBTree<T, Comp, Eq> operator+(const RBTree<T, Comp, Eq> &e) const {
-			RBTree<T, Comp, Eq> a(*this);
-			for(const T &i : e) {
-				a.insert(i);
-			}
-			return a;
-		}
+		RBTree<T, Comp, Eq> operator+(const RBTree<T, Comp, Eq> &e) const;
+
 
 		template<typename C>
-		RBTree<T, Comp, Eq> &operator+=(const C &e) {
-			insert(e);
-			return *this;
-		}
+		RBTree<T, Comp, Eq> &operator+=(const C &e);
+		template<typename C>
+		RBTree<T, Comp, Eq> &operator<<(const C &e);
+
 
 		template<typename C>
-		RBTree<T, Comp, Eq> &operator<<(const C &e) {
-			insert(e);
-			return *this;
-		}
-
+		bool operator==(const C &c) const;
 		template<typename C>
-		bool operator==(const C &c) const {
-			if(size() == c.size()) {
-				const_iterator a = begin();
-				const_iterator b = c.begin();
-				while(a != end()) {
-					if(*a != *b) {
-						return false;
-					}
-					++a;
-					++b;
-				}
-				return true;
-			}
-			return false;
-		}
-
+		bool operator!=(const C &c) const;
 		template<typename C>
-		bool operator!=(const C &c) const {
-			return !operator==(c);
-		}
+		bool operator<(const C &c) const;
 
-		template<typename C>
-		bool operator<(const C &c) const {
-			const_iterator a = begin();
-				const_iterator b = c.begin();
-				while(a != end() && b != c.end()) {
-					if(*a != *b) {
-						return false;
-					}
-					++a;
-					++b;
-				}
-			return size() < c.size();
-		}
 
 		template<typename U>
-		void foreach(const U &f) {
-			std::for_each(begin(), end(), f);
-		}
+		void foreach(const U &f);
+		template<typename U>
+		void foreach(const U &f) const;
+
 
 		template<typename U>
-		void foreach(const U &f) const {
-			std::for_each(begin(), end(), f);
-		}
+		bool forall(const U &f) const;
 
-		template<typename U>
-		bool forall(const U &f) const {
-			for(const T &t : *this) {
-				if(!f(t)) {
-					return false;
-				}
-			}
-			return true;
-		}
 
 		template<typename V, typename C = RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq>>
-		C mapped(const V &f) const {
-			RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq> a;
-			foreach([&](const T &e) { a.insert(f(e)); });
-			return a;
-		}
+		C mapped(const V &f) const;
+		template<typename V>
+		void map(const V &f);
+
 
 		template<typename U, typename C = RBTree<T, Comp, Eq>>
-		C filtered(const U &f) const {
-			RBTree<T, Comp, Eq> a;
-			foreach([&](const T &e) {
-				if(f(e)) {
-					a.insertAtEnd(e);
-				}
-			});
-			return a;
-		}
-
+		C filtered(const U &f) const;
 		template<typename U>
-		void filter(const U &f) {
-			for(iterator it = begin(); it != end();) {
-				if(!f(*it)) {
-					it = remove(it);
-				} else {
-					++it;
-				}
-			}
-		}
+		void filter(const U &f);
+
 
 	private:
 		template<typename C>
@@ -712,6 +503,8 @@ n::core::RBTree<T, Comp, Eq> operator+(const n::core::RBTree<T, Comp, Eq>  &a, c
 	b.insert(i);
 	return b;
 }
+
+#include "RBTree_impl.h"
 
 
 #endif // N_CORE_RBTREE_H

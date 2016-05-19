@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/utils.h>
 #include <sstream>
-#include "AsCollection.h"
+#include "Collection.h"
 
 namespace n {
 namespace core {

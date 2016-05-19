@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/types.h>
 #include <n/utils.h>
-#include "AsCollection.h"
+#include "Collection.h"
 
 namespace n {
 namespace core {
@@ -158,426 +158,149 @@ class List
 				ListElem *elem;
 		};
 
-		List() : lSize(0), tail(new ListElem()), head(tail) {
-		}
+		List();
+		List(List<T> &&l);
+		List(const List<T> &l);
+		template<typename C>
+		List(std::initializer_list<C> l);
+
+
+		~List();
+
+
+		void swap(List<T> &l);
+
 
 		template<typename C>
-		List(std::initializer_list<C> l) : List() {
-			for(auto x : l) {
-				append(x);
-			}
-		}
+		void append(const C &c);
+		template<typename C>
+		void append(std::initializer_list<C> c);
 
-		template<typename U>
-		List(const List<U> &l) : List() {
-			append(l);
-		}
-
-		List(List<T> &&l) : List() {
-			swap(l);
-		}
-
-		List(const List<T> &l) : List() {
-			for(const T &x : l) {
-				append(x);
-			}
-		}
-
-		template<typename A, typename... Args>
-		List(const A &a, Args... args) : List() {
-			append(a);
-			append(args...);
-		}
-
-		~List() {
-			while(true) {
-				ListElem *d = head;
-				head = head->next;
-				delete d;
-				if(d == tail) {
-					break;
-				}
-			}
-		}
-
-		void swap(List<T> &l) {
-			ListElem *h = head;
-			ListElem *t = tail;
-			uint s = lSize;
-			head = l.head;
-			tail = l.tail;
-			lSize = l.lSize;
-			l.head = h;
-			l.tail = t;
-			l.lSize = s;
-		}
 
 		template<typename C>
-		void append(const C &c) {
-			appendDispatch(c, BoolToType<!ShouldInsertAsCollection<C, T>::value>());
-		}
+		void prepend(const C &c);
 
-		template<typename A, typename B, typename... Args>
-		void append(const A &a, const B &b, Args... args) {
-			append(a);
-			append(b);
-			append(args...);
-		}
-
-		template<typename A, typename... Args>
-		void append(const A &a, Args... args) {
-			append(a);
-			append(args...);
-		}
 
 		template<typename C>
-		void prepend(const C &c) {
-			prependDispatch(c, BoolToType<!ShouldInsertAsCollection<C, T>::value>());
-		}
-
+		void insert(const C &c);
 		template<typename C>
-		void insert(const C &c) {
-			append(c);
-		}
-
-		void popFront() {
-			ListElem *e = head->next;
-			delete head;
-			head = e;
-			lSize--;
-		}
-
-		void pop() {
-			remove(--end());
-		}
-
-		void move(iterator from, iterator to) {
-			if(from == to) {
-				return;
-			}
-			from.elem->prev->next = from.elem->next;
-			from.elem->next->prev = from.elem->prev;
-
-			from.elem->next = to.elem;
-			from.elem->prev = to.elem->prev;
-			to.elem->prev->next = from.elem;
-			to.elem->prev = from.elem;
-		}
-
-		iterator remove(iterator t) {
-			if(t == begin()) {
-				popFront();
-				return begin();
-			}
-			lSize--;
-			t.elem->next->prev = t.elem->prev;
-			t.elem->prev->next = t.elem->next;
-			ListElem *e = t.elem->next;
-			delete t.elem;
-			return iterator(e);
-		}
-
-		template<typename C>
-		iterator insert(const C &e, const_iterator t) {
-			if(t == begin()) {
-				prepend(e);
-				return begin();
-			}
-			if(t == end()) {
-				append(e);
-				return --end();
-			}
-			ListElem *pr = t.elem->prev;
-			ListElem *ne = t.elem;
-			ListElem *n = new ListElem(e, ne, pr);
-			pr->next = n;
-			ne->prev = n;
-			lSize++;
-			return iterator(n);
-		}
-
+		iterator insert(const C &e, const_iterator t);
 		template<typename I>
-		iterator insert(I beg, I en, iterator pos) {
-			for(I it = beg; it != en; ++it) {
-				insert(*it, pos);
-			}
-			return pos;
-		}
+		iterator insert(I beg, I en, const_iterator pos);
 
-		void clear() {
-			lSize = 0;
-			ListElem *next = 0;
-			for(ListElem *i = head; i != tail; i = next) {
-				next = i.next;
-				delete i;
-			}
-		}
+
+		void popFront();
+		void pop();
+
+
+		void move(const_iterator from, const_iterator to);
+
+
+		iterator remove(const_iterator t);
+
+
+		void clear();
+
 
 		template<typename C>
-		void assign(const C &l) {
-			if(&l != this) {
-				assign(l.begin(), l.end());
-			}
-		}
-
+		void assign(const C &l);
 		template<typename I>
-		void assign(I b, I e) {
-			clear();
-			for(I i = b; i != e; i++) {
-				append(*i);
-			}
-		}
+		void assign(I b, I e);
+
 
 		template<typename C>
-		List<T> &operator=(const C &l) {
-			assign(l);
-			return *this;
-		}
+		List<T> &operator=(const C &l);
+		List<T> &operator=(List<T> &&l);
+		List<T> &operator=(const List<T> &l);
 
-		List<T> &operator=(const List<T> &l) {
-			assign(l);
-			return *this;
-		}
 
-		uint size() const {
-			return lSize;
-		}
+		uint size() const;
+		bool isEmpty() const;
 
-		bool isEmpty() const {
-			return !lSize;
-		}
 
-		const T &first() const {
-			return *begin();
-		}
+		const T &first() const;
+		const T &last() const;
+		T &first();
+		T &last();
 
-		const T &last() const {
-			return *(--end());
-		}
 
-		T &first() {
-			return *begin();
-		}
-
-		T &last() {
-			return *(--end());
-		}
-
-		bool isSorted() const {
-			if(isEmpty()) {
-				return true;
-			}
-			const_iterator l = begin();
-			for(const_iterator it = ++begin(); it != end(); ++it) {
-				if(*it < *l) {
-					return false;
-				}
-				l = it;
-			}
-			return true;
-		}
+		bool isSorted() const;
 
 		template<typename U>
-		iterator findOne(const U &f, const_iterator from) {
-			for(iterator i = from.nonConst(); i != end(); ++i) {
-				if(f(*i)) {
-					return i;
-				}
-			}
-			return end();
-		}
+		iterator findOne(const U &f, const_iterator from);
 
 		template<typename U>
-		const_iterator findOne(const U &f, const_iterator from) const {
-			for(const_iterator i = from; i != end(); ++i) {
-				if(f(*i)) {
-					return i;
-				}
-			}
-			return end();
-		}
+		const_iterator findOne(const U &f, const_iterator from) const;
 
 		template<typename U>
-		uint countAll(const U &f) const {
-			uint c = 0;
-			for(const_iterator i = begin(); i != end(); ++i) {
-				if(f(*i)) {
-					c++;
-				}
-			}
-			return c;
-		}
+		uint countAll(const U &f) const;
 
 		template<typename V>
-		bool existsOne(const V &f) const {
-			for(const_iterator i = begin(); i != end(); ++i) {
-				if(f(*i)) {
-					return true;
-				}
-			}
-			return false;
-		}
+		bool existsOne(const V &f) const;
 
 		template<typename U>
-		iterator find(const U &f, iterator from) {
-			return findOne(f, from);
-		}
+		iterator find(const U &f, iterator from);
 
 		template<typename U>
-		const_iterator find(const U &f, const_iterator from) const {
-			return findOne(f, from);
-		}
-
+		const_iterator find(const U &f, const_iterator from) const;
 		template<typename U>
-		uint count(const U &f) const {
-			return countAll(f);
-		}
+		uint count(const U &f) const;
 
 		template<typename V>
-		bool exists(const V &f) const {
-			return existsOne(f);
-		}
+		bool exists(const V &f) const;
 
-		iterator find(const T &e) {
-			return findOne([&](const T &t) { return t == e; }, begin());
-		}
+		iterator find(const T &e);
 
-		iterator find(const T &e, const_iterator from) {
-			return findOne([&](const T &t) { return t == e; }, from);
-		}
+		iterator find(const T &e, const_iterator from);
+		const_iterator find(const T &e) const;
 
-		const_iterator find(const T &e) const {
-			return findOne([&](const T &t) { return t == e; }, begin());
-		}
+		const_iterator find(const T &e, const_iterator from) const;
 
-		const_iterator find(const T &e, const_iterator from) const {
-			return findOne([&](const T &t) { return t == e; }, from);
-		}
+		uint count(const T &e) const;
 
-		uint count(const T &e) const {
-			return countAll([&](const T &t) { return t == e; });
-		}
-
-		bool exists(const T &e) const {
-			return existsOne([&](const T &t) { return t == e; });
-		}
+		bool exists(const T &e) const;
+		template<typename U>
+		void foreach(const U &f);
 
 		template<typename U>
-		void foreach(const U &f) {
-			std::for_each(begin(), end(), f);
-		}
-
-		template<typename U>
-		void foreach(const U &f) const {
-			std::for_each(begin(), end(), f);
-		}
+		void foreach(const U &f) const;
 
 		template<typename V, typename C = List<typename std::result_of<V(const T &)>::type>>
-		C mapped(const V &f) const {
-			C a;
-			foreach([&](const T &e) { a.insert(f(e)); });
-			return a;
-		}
+		C mapped(const V &f) const;
 
 		template<typename U, typename C = List<T>>
-		C filtered(const U &f) const {
-			C a;
-			foreach([&](const T &e) {
-				if(f(e)) {
-					a.insert(e);
-				}
-			});
-			return a;
-		}
+		C filtered(const U &f) const;
 
 		template<typename C = List<T>>
-		C reversed() const {
-			C re(*this);
-			re.reverse();
-			return re;
-		}
+		C reversed() const;
 
 		template<typename U>
-		bool forall(const U &f) const {
-			for(const T &t : *this) {
-				if(!f(t)) {
-					return false;
-				}
-			}
-			return true;
-		}
+		bool forall(const U &f) const;
 
 		template<typename V>
-		void map(const V &f) {
-			foreach([&](T &e) { e = f(e); });
-		}
-
+		void map(const V &f);
 		template<typename U>
-		void filter(const U &f) {
-			for(iterator it = begin(); it != end();) {
-				if(!f(*it)) {
-					it = remove(it);
-				} else {
-					++it;
-				}
-			}
-		}
+		void filter(const U &f);
 
-		const_iterator begin() const {
-			return const_iterator(head);
-		}
+		const_iterator begin() const;
 
-		const_iterator end() const {
-			return const_iterator(tail);
-		}
+		const_iterator end() const;
 
-		const_iterator cbegin() const {
-			return const_iterator(head);
-		}
+		const_iterator cbegin() const;
 
-		const_iterator cend() const {
-			return const_iterator(tail);
-		}
+		const_iterator cend() const;
+		iterator begin();
 
-		iterator begin() {
-			return iterator(head);
-		}
-
-		iterator end() {
-			return iterator(tail);
-		}
+		iterator end();
 
 		template<typename C>
-		bool operator==(const C &l) const {
-			if(size() == l.size()) {
-				const_iterator a = begin();
-				auto b = l.begin();
-				while(a != end()) {
-					if(*a++ != *b++) {
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
-		}
+		bool operator==(const C &l) const;
 
 		template<typename C>
-		bool operator!=(const C &l) const {
-			return !operator==(l);
-		}
+		bool operator!=(const C &l) const;
 
 		template<typename C>
-		bool operator<(const C &l) const {
-			iterator a = begin();
-			auto b = l.begin();
-			while(a != end() && b != l.end()) {
-				if(*a++ != *b++) {
-					return false;
-				}
-			}
-			return size() < l.size();
-		}
+		bool operator<(const C &l) const;
 
 	private:
 		void append() {
@@ -638,5 +361,6 @@ n::core::List<T> operator+(const n::core::List<T> &a, const T &i) {
 	return n::core::List<T>(a, i);
 }
 
+#include "List_impl.h"
 
 #endif // N_CORE_LIST_H

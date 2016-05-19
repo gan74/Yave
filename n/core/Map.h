@@ -77,140 +77,72 @@ class Map : public RBTree<Pair<const T, U>, internal::MapOp<const T, U, Comp>, i
 		typedef typename MapType::const_iterator const_iterator;
 		typedef Pair<const T, U> Element;
 
-		Map(const MapType &m) : MapType(m) {
-		}
 
-		Map(MapType &&m) : Map() {
-			this->swap(std::move(m));
-		}
 
-		Map() : MapType() {
-		}
 
-		iterator insert(const T &t, const U &u) {
-			return MapType::insert(Element(t, u));
-		}
+		Map();
+		Map(MapType &&m);
+		Map(const MapType &m);
+		template<typename C>
+		Map(std::initializer_list<C> l);
 
-		iterator find(const T &t) {
-			return MapType::find(t, MapFindComp(), MapFindEq());
-		}
 
-		const_iterator find(const T &t) const {
-			return MapType::find(t, MapFindComp(), MapFindEq());
-		}
+		iterator insert(const T &t, const U &u);
 
-		bool exists(const T &t) const {
-			return find(t) != end();
-		}
 
-		iterator begin() {
-			return iterator(MapType::begin());
-		}
+		const_iterator find(const T &t) const;
+		iterator find(const T &t);
 
-		iterator end() {
-			return iterator(MapType::end());
-		}
 
-		const_iterator begin() const {
-			return const_iterator(MapType::begin());
-		}
+		bool exists(const T &t) const;
 
-		const_iterator end() const {
-			return const_iterator(MapType::end());
-		}
 
-		const_iterator cbegin() const {
-			return begin();
-		}
+		iterator begin();
+		iterator end();
+		const_iterator begin() const;
+		const_iterator end() const;
+		const_iterator cbegin() const;
+		const_iterator cend() const;
 
-		const_iterator cend() const {
-			return end();
-		}
-
-		Map<T, U, Comp, Eq> &operator=(const Map<T, U, Comp, Eq> &o) {
-			MapType::operator=(o);
-			return *this;
-		}
 
 		template<typename C>
-		Map<T, U, Comp, Eq> &operator=(const C &o) {
-			MapType::operator=(o);
-			return *this;
-		}
+		Map<T, U, Comp, Eq> &operator=(const C &o);
+		Map<T, U, Comp, Eq> &operator=(MapType &&o);
+		Map<T, U, Comp, Eq> &operator=(const Map<T, U, Comp, Eq> &o);
 
-		Map<T, U, Comp, Eq> &operator=(MapType &&o) {
-			swap(std::move(o));
-			return *this;
-		}
 
-		const U &get(const T &t, const U &def) const {
-			const_iterator it = find(t);
-			return it == end() ? def : (*it)._2;
-		}
+		const U &get(const T &t) const;
+		const U &get(const T &t, const U &def) const;
 
-		const U &get(const T &t) const {
-			return get(t, U());
-		}
 
-		U &operator[](const T &t) {
-			iterator it = find(t);
-			if(it == end()) {
-				it = insert(t, U());
-			}
-			return (*it)._2;
-		}
+		U &operator[](const T &t);
+
 
 		template<typename E>
-		Map<T, U, Comp, Eq> operator+(const E &e) const {
-			return MapType::operator+(e);
-		}
+		Map<T, U, Comp, Eq> operator+(const E &e) const ;
+
 
 		template<typename E>
-		Map<T, U, Comp, Eq> &operator+=(const E &e) {
-			MapType::operator+=(e);
-			return *this;
-		}
-
+		Map<T, U, Comp, Eq> &operator+=(const E &e);
 		template<typename E>
-		Map<T, U, Comp, Eq> &operator<<(const E &e) {
-			MapType::operator<<(e);
-			return *this;
-		}
+		Map<T, U, Comp, Eq> &operator<<(const E &e);
 
-		template<typename V>
-		void map(const V &f) {
-			foreach([&](Element &e) { e._2 = f(e); });
-		}
 
 		template<typename V, typename C = Map<typename std::result_of<V(const Element &)>::type, Comp, Eq>>
-		C mapped(const V &f) const {
-			C a;
-			foreach([&](const Element &e) { a.insert(f(e)); });
-			return a;
-		}
+		C mapped(const V &f) const;
+		template<typename V>
+		void map(const V &f);
+
 
 		template<typename V, typename C = Map<T, U, Comp, Eq>>
-		C filtered(const V &f) const {
-			return	C(MapType::filtered(f));
-		}
+		C filtered(const V &f) const;
+		template<typename V>
+		void filter(const V &f);
 };
 
 } // core
 } // n
 
-template<typename T, typename U, typename Comp, typename Eq>
-n::core::Map<T, Comp, Eq> operator+(const T &i, n::core::Map<T, Comp, Eq>  &a) {
-	n::core::Map<T, Comp, Eq>  b(a);
-	b.insert(i);
-	return b;
-}
-
-template<typename T, typename U, typename Comp, typename Eq>
-n::core::Map<T, Comp, Eq> operator+(const n::core::Map<T, Comp, Eq>  &a, const T &i) {
-	n::core::Map<T, Comp, Eq>  b(a);
-	b.insert(i);
-	return b;
-}
-
+#include "Map_impl.h"
 
 #endif // N_CORE_MAP_H
