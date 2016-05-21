@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace math {
 
-namespace internal {
+namespace details {
 	template<typename T, bool B>
 	struct ToFloatingPoint
 	{
@@ -79,7 +79,7 @@ namespace internal {
 template<typename T>
 struct ToFloatingPoint
 {
-		typedef typename internal::ToFloatingPoint<T, std::is_floating_point<T>::value>::type type;
+		typedef typename details::ToFloatingPoint<T, std::is_floating_point<T>::value>::type type;
 };
 
 static constexpr double pi = 3.1415926535897932384626433832795028841971693993751058;
@@ -130,13 +130,21 @@ T modPow(T num, T pow, T mod) {
 
 template<typename T, typename U>
 T normalizedConversion(U u) {
-	return internal::NormalizedConversion<T, U, std::is_floating_point<T>::value, std::is_floating_point<U>::value>()(u);
+	return details::NormalizedConversion<T, U, std::is_floating_point<T>::value, std::is_floating_point<U>::value>()(u);
 }
 
 template<typename T>
 T normalizedConversion(T u) {
 	return u;
 }
+
+template<typename T>
+const T &clamp(const T &value, const T &mini, const T &maxi) {
+	const T &mi = std::min(mini, maxi);
+	const T &ma = std::max(mini, maxi);
+	return value < mi ? mi : (ma < value ? ma : value);
+}
+
 }
 }
 
