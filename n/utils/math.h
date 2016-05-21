@@ -108,7 +108,7 @@ const T &clamp(const T &val, const T &mi, const T &ma) {
 
 template<typename T>
 bool isInRange(const T &v, const T &min, const T &max) {
-	return min <= v  && v < max;
+	return (min < v || min == v)  && v < max;
 }
 
 template<typename T>
@@ -136,13 +136,6 @@ T normalizedConversion(U u) {
 template<typename T>
 T normalizedConversion(T u) {
 	return u;
-}
-
-template<typename T>
-const T &clamp(const T &value, const T &mini, const T &maxi) {
-	const T &mi = std::min(mini, maxi);
-	const T &ma = std::max(mini, maxi);
-	return value < mi ? mi : (ma < value ? ma : value);
 }
 
 }
