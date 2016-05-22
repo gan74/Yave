@@ -27,7 +27,7 @@ class String2
 {
 	struct LongLenType
 	{
-		uint len : 31;
+		uint len : 8 * sizeof(uint) - 1;
 		uint isLong : 1;
 
 		LongLenType(uint l = 0) : len(l), isLong(1) {
