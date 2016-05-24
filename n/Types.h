@@ -356,7 +356,7 @@ class Type
 			return t.info->before(*info);
 		}
 
-		const char *name() const;
+		core::String name() const;
 
 	private:
 		const std::type_info *info;

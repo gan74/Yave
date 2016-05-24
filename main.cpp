@@ -32,8 +32,17 @@ class A
 
 };
 
-int main(int, char **) {
+class complexe {};
 
+ std::ostream &operator <<(std::ostream &output, complexe const z) {
+	output << "prout";
+	return output;
+}
+
+
+int main(int, char **) {
+	complexe c;
+	std::cout << c;
 
 	std::string str("string");
 	A a(27);

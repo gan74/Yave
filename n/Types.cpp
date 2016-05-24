@@ -15,21 +15,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "types.h"
+#include <n/core/String.h>
 
 #ifdef __GNUG__
 #include <cstdlib>
 #include <memory>
 #include <cxxabi.h>
 
-const char *demangle(const char* name) {
+n::core::String demangle(const char* name) {
 	int status = 0;
-	const char *d = abi::__cxa_demangle(name, NULL, NULL, &status);
-	return !status ? d : name;
+	char *d = abi::__cxa_demangle(name, 0, 0, &status);
+	if(status) {
+		return name;
+	}
+	n::core::String str((const char *)d);
+	free(d);
+	return str;
 }
 
 #else
 
-const char *demangle(const char* name) {
+n::core::String demangle(const char* name) {
 	return name;
 }
 
@@ -38,7 +44,7 @@ const char *demangle(const char* name) {
 namespace n {
 	uint typeId = 0;
 
-	/*core::String */const char *Type::name() const {
+	core::String Type::name() const {
 		return demangle(info->name());
 	}
 }
