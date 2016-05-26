@@ -32,7 +32,6 @@ void logMsg(const core::String &msg, LogType type) {
 
 
 void logMsg(const char *msg, LogType type) {
-	static concurrent::SpinLock lock;
 	N_LOCK(lock);
 	std::cout<<logTypes[type]<<msg<<std::endl;
 }
