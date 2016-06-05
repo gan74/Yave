@@ -223,37 +223,5 @@ Map<T, U, Comp, Eq> &Map<T, U, Comp, Eq>::operator<<(const E &e) {
 
 
 
-
-
-template<typename T, typename U, typename Comp, typename Eq>
-template<typename V>
-void Map<T, U, Comp, Eq>::map(const V &f) {
-	foreach([&](Element &e) { e._2 = f(e); });
-}
-
-template<typename T, typename U, typename Comp, typename Eq>
-template<typename V, typename C>
-C Map<T, U, Comp, Eq>::mapped(const V &f) const {
-	C a;
-	foreach([&](const Element &e) { a.insert(f(e)); });
-	return a;
-}
-
-template<typename T, typename U, typename Comp, typename Eq>
-template<typename V, typename C>
-C Map<T, U, Comp, Eq>::filtered(const V &f) const {
-	return	C(MapType::filtered(f));
-}
-
-template<typename T, typename U, typename Comp, typename Eq>
-template<typename V>
-void Map<T, U, Comp, Eq>::filter(const V &f) {
-	for(iterator it = begin(); it != end(); ++it) {
-		if(!f(*it)) {
-			this->remove(it);
-		}
-	}
-}
-
 }
 }

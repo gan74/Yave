@@ -127,17 +127,6 @@ class Map : public RBTree<Pair<const T, U>, details::MapOp<const T, U, Comp>, de
 		template<typename E>
 		Map<T, U, Comp, Eq> &operator<<(const E &e);
 
-
-		template<typename V, typename C = Map<typename std::result_of<V(const Element &)>::type, Comp, Eq>>
-		C mapped(const V &f) const;
-		template<typename V>
-		void map(const V &f);
-
-
-		template<typename V, typename C = Map<T, U, Comp, Eq>>
-		C filtered(const V &f) const;
-		template<typename V>
-		void filter(const V &f);
 };
 
 } // core

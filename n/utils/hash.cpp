@@ -33,8 +33,8 @@ uint64 hash(const void *key, uint64 len, uint64 seed) { // Murmurhash 2.0 from h
 	const uint64 m = 0xc6a4a7935bd1e995;
 	const int r = 47;
 	uint64 h = seed ^ (len * m);
-	const uint64 * data = (const uint64 *)key;
-	const uint64 * end = data + (len / 8);
+	const uint64 *data = (const uint64 *)key;
+	const uint64 *end = data + (len / 8);
 	while(data != end) {
 		uint64 k = *data++;
 		k *= m;
