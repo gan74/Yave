@@ -22,22 +22,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
-static const core::String logTypes[] = {"[info] ", "[error] ", "[warning] ", "[perf] ", "[debug] ", "[depr] "};
-
-static concurrent::SpinLock &getLock() {
-	static concurrent::SpinLock lock;
-	return lock;
-}
-
 void logMsg(const core::String &msg, LogType type) {
-	N_LOCK(getLock());
-	std::cout<<logTypes[type]<<msg<<std::endl;
+	logMsg(msg, type);
 }
 
 
 void logMsg(const char *msg, LogType type) {
-	N_LOCK(getLock());
-	std::cout<<logTypes[type]<<msg<<std::endl;
+	static core::String logTypes[] = {"[info] ", "[error] ", "[warning] ", "[perf] ", "[debug] ", "[depr] "};
+	static concurrent::SpinLock lock;
+
+	N_LOCK(lock);
+	std::cout << logTypes[type] << msg << std::endl;
 }
 
 

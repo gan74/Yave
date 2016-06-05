@@ -11,8 +11,6 @@ LIBS += -lSDL2.dll
 LIBS += -lSDL2_Image
 LIBS += -lSDL2_Image.dll
 
-DEFINES += N_USE_SDL_IMAGE
-
 SOURCES += main.cpp
 
 QMAKE_CXXFLAGS += -ffast-math
