@@ -59,31 +59,40 @@ class Grammar
 
 	public:
 		template<typename T, typename... Args>
-		static Grammar expect(T t, Args... args) {
+		static Grammar expect(const core::String &name, T t, Args... args) {
 			core::Array<Element> e;
 			build(e, t, args...);
-			return Grammar(And, e);
+			return Grammar(name, And, e);
 		}
 
 		template<typename T, typename... Args>
-		static Grammar any(T t, Args... args) {
+		static Grammar any(const core::String &name, T t, Args... args) {
 			core::Array<Element> e;
 			build(e, t, args...);
-			return Grammar(Or, e);
+			return Grammar(name, Or, e);
+		}
+
+
+		Grammar() : type(Or) {
 		}
 
 		CompiledGrammar *compile() const;
 
 	private:
-		Grammar(GrammarType t, const core::Array<Element> &e) : type(t), expecteds(e) {
-		}
+		Grammar(const core::String &n, GrammarType t, const core::Array<Element> &e);
 
-		CompiledGrammar *compile(core::Map<const Grammar *, CompiledGrammar *> &compiled) const;
-		core::Set<const Grammar *> computeNexts(TokenType type) const;
-		core::Set<const Grammar *> computeNexts(core::Map<const Grammar *, core::Set<const Grammar *> > &done, TokenType tk) const;
+		void computeChildrenFixed(core::Set<TokenType> &fix, core::Set<const Grammar *> &done) const;
+		void computeAllChildren(core::Set<const Grammar *> &all) const;
+		core::Set<const Grammar *> getChildren() const;
 
+		void compile(CompiledGrammar *comp, const core::Map<const Grammar *, CompiledGrammar *> &compiled) const;
+
+		core::String name;
 		GrammarType type;
-		core::Array<Element> expecteds;
+
+		core::Set<TokenType> fixed;
+		core::Array<const Grammar *> depends;
+		core::Array<Element> elements;
 };
 
 }

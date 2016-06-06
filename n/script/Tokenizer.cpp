@@ -44,7 +44,7 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 	}
 
 	if(beg == str.size()) {
-		return Token(End);
+		return Token(End, "\0", beg);
 	}
 
 	bool alnum = !!isalnum(str[beg]);
@@ -84,9 +84,12 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 	if(tk.beginsWith("/")) {
 		return Token(Divide, "/", beg++);
 	}
-
-
-
+	if(tk.beginsWith("(")) {
+		return Token(LeftPar, "(", beg++);
+	}
+	if(tk.beginsWith(")")) {
+		return Token(RightPar, ")", beg++);
+	}
 
 	return Token(Error, tk, beg = end);
 }

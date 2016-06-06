@@ -20,95 +20,90 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace script {
 
-core::Set<const Grammar *> Grammar::computeNexts(TokenType type) const {
-	core::Map<const Grammar *, core::Set<const Grammar *>> done;
-	return computeNexts(done, type);
-}
 
-core::Set<const Grammar *> Grammar::computeNexts(core::Map<const Grammar *, core::Set<const Grammar *>> &done, TokenType tk) const {
-	auto it = done.find(this);
-	if(it != done.end()) {
-		return it->_2;
-	}
-
-	core::Set<const Grammar *> c;
-	done[this] = {};
-	switch(type) {
-		case Or:
-			for(Element e : expecteds) {
-				if(!e.grammar && e.token == tk) {
-					c += this;
-				}
+Grammar::Grammar(const core::String &n, GrammarType t, const core::Array<Element> &e) : name(n), type(t), elements(e) {
+	if(type == Or) {
+		for(Element e : elements) {
+			if(e.grammar) {
+				depends += e.grammar;
+			} else {
+				fixed += e.token;
 			}
-			done[this] = c;
-			for(Element e : expecteds) {
-				if(e.grammar) {
-					auto gc = e.grammar->computeNexts(done, tk);
-					if(!gc.isEmpty()) {
-						c += gc;
-						c += e.grammar;
-					}
-				}
-			}
-		break;
-
-		case And:
-			if(!expecteds.isEmpty()) {
-				Element e = expecteds.first();
-				if(e.grammar) {
-					auto gc = e.grammar->computeNexts(done, tk);
-					if(!gc.isEmpty()) {
-						c += gc;
-						c += e.grammar;
-					}
-				} else if(e.token == tk) {
-					c += this;
-				}
-			}
-		break;
-	}
-
-	done[this] = c;
-	return c;
-}
-
-CompiledGrammar *Grammar::compile() const {
-	core::Map<const Grammar *, CompiledGrammar *> c;
-	return compile(c);
-}
-
-
-CompiledGrammar *Grammar::compile(core::Map<const Grammar *, CompiledGrammar *> &compiled) const {
-	auto it = compiled.find(this);
-	if(it != compiled.end()) {
-		return it->_2;
-	}
-
-	CompiledGrammar *c = new CompiledGrammar();
-	compiled[this] = c;
-
-	for(uint i = 0; i != uint(TokenType::End) + 1; i++) {
-		c->nexts[i] = computeNexts(TokenType(i)).mapped([&](const Grammar *g) {
-			return g->compile(compiled);
-		});
-		/*for(const Grammar *g : nexts[i]) {
-			c->nexts[i] += g->compile(compiled)->nexts[i];
-		}*/
-	}
-
-	if(type == And && !expecteds.isEmpty()) {
-		core::Array<Element> nextElem(expecteds.begin() + 1, expecteds.end());
-		Grammar next(And, nextElem);
-		for(uint i = 0; i != uint(TokenType::End) + 1; i++) {
-			c->nexts[i] += next.computeNexts(TokenType(i)).mapped([&](const Grammar *g) {
-				return g->compile(compiled);
-			});
+		}
+	} else if(type == And) {
+		if(elements.first().grammar) {
+			depends += elements.first().grammar;
+		} else {
+			fixed += elements.first().token;
 		}
 	}
 
-
-	return c;
 }
+
+void Grammar::computeAllChildren(core::Set<const Grammar *> &all) const {
+	if(!all.exists(this)) {
+		all += this;
+		for(Element e : elements) {
+			if(e.grammar) {
+				e.grammar->computeAllChildren(all);
+			}
+		}
+	}
+}
+
+core::Set<const Grammar *> Grammar::getChildren() const {
+	core::Set<const Grammar *> children;
+	for(Element e : elements) {
+		if(e.grammar) {
+			children += e.grammar;
+		}
+	}
+	return children;
+}
+
+void Grammar::computeChildrenFixed(core::Set<TokenType> &fix, core::Set<const Grammar *> &done) const {
+	if(!done.exists(this)) {
+		done += this;
+		fix += fixed;
+		for(const Grammar *g : depends) {
+			g->computeChildrenFixed(fix, done);
+		}
+	}
+}
+
+CompiledGrammar *Grammar::compile() const {
+	core::Set<const Grammar *> all;
+	computeAllChildren(all);
+
+	core::Map<const Grammar *, CompiledGrammar *> compiled;
+	for(const Grammar *g : all) {
+		compiled[g] = new CompiledGrammar(g->name);
+	}
+
+	for(auto p : compiled) {
+		p._1->compile(p._2, compiled);
+	}
+
+	for(auto p : compiled) {
+		for(uint i = 0; i != uint(TokenType::End) + 1; i++) {
+			p._2->terminal &= p._2->nexts[i].isEmpty();
+		}
+	}
+	return compiled[this];
+}
+
+void Grammar::compile(CompiledGrammar *comp, const core::Map<const Grammar *, CompiledGrammar *> &compiled) const {
+	core::Set<const Grammar *> children = getChildren();
+	for(const Grammar *c : children) {
+		core::Set<TokenType> fix;
+		core::Set<const Grammar *> done;
+		c->computeChildrenFixed(fix, done);
+		for(TokenType tk : fix) {
+			comp->nexts[tk] += compiled.get(c, 0);
+		}
+	}
+}
+
 
 }
 }

@@ -25,18 +25,23 @@ namespace script {
 enum TokenType
 {
 	Identifier,
+
 	Assign,
 	Equals,
+
 	Plus,
 	Minus,
 	Multiply,
 	Divide,
 
+	LeftPar,
+	RightPar,
+
 	Error,
 	End
 };
 
-static constexpr const char *tokenName[] = {"identifier", "'='", "'=='", "'+'", "'-'", "'*'", "'/'", "", "'EOF'"};
+static constexpr const char *tokenName[] = {"identifier", "=", "==", "+", "-", "*", "/", "(", ")", "", "'EOF'"};
 
 class Token
 {

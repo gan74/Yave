@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "CompiledGrammar.h"
+#include <iostream>
 
 namespace n {
 namespace script {
@@ -54,7 +55,7 @@ const char *GrammarValidationException::what(const core::String &code) const noe
 	return str.data();
 }
 
-CompiledGrammar::CompiledGrammar() {
+CompiledGrammar::CompiledGrammar(const core::String &n) : name(n), terminal(true) {
 }
 
 core::Array<TokenType> CompiledGrammar::getExpected() const {
@@ -73,7 +74,7 @@ bool CompiledGrammar::validate(const core::Array<Token> &tokens) const {
 }
 
 bool CompiledGrammar::validate(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end, core::Array<Token>::const_iterator &last) const {
-	struct Elem
+	/*struct Elem
 	{
 		core::Array<Token>::const_iterator it;
 		const CompiledGrammar *grammar;
@@ -90,16 +91,29 @@ bool CompiledGrammar::validate(core::Array<Token>::const_iterator begin, core::A
 		if(current.grammar->nexts[current.it->type].size() <= current.index) {
 			last = std::max(current.it, last);
 			stack.pop();
+			std::cout << ">> " << current.grammar->name << std::endl;
 			if(stack.isEmpty()) {
 				throw GrammarValidationException(current.grammar->getExpected(), last);
 			}
 			stack.last().index++;
 		} else {
+			std::cout << "<< " << current.grammar->nexts[current.it->type][current.index]->name << std::endl;
 			stack += Elem{current.it + 1, current.grammar->nexts[current.it->type][current.index], 0};
 		}
-	}
-	return false;
+	}*/
 
+	if(nexts[begin->type].isEmpty()) {
+		return terminal;
+	}
+
+	for(CompiledGrammar *c : nexts[begin->type]) {
+		if(c->validate(begin + 1, end, last)) {
+			return true;
+		}
+	}
+
+
+	return false;
 }
 
 }

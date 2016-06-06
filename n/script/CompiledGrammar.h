@@ -40,7 +40,7 @@ class GrammarValidationException : public std::exception
 class CompiledGrammar
 {
 	public:
-		CompiledGrammar();
+		CompiledGrammar(const core::String &n);
 
 		core::Array<TokenType> getExpected() const;
 
@@ -51,6 +51,8 @@ class CompiledGrammar
 
 		bool validate(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end, core::Array<Token>::const_iterator &last) const;
 
+		core::String name;
+		bool terminal;
 		core::Array<CompiledGrammar *> nexts[uint(TokenType::End) + 1];
 };
 
