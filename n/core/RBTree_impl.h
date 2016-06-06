@@ -143,6 +143,17 @@ typename RBTree<T, Comp, Eq>::const_iterator RBTree<T, Comp, Eq>::find(const U &
 
 
 
+template<typename T, typename Comp, typename Eq>
+bool RBTree<T, Comp, Eq>::exists(const T &t) const {
+	return find(t) != end();
+}
+
+
+
+
+
+
+
 
 
 
@@ -459,7 +470,7 @@ bool RBTree<T, Comp, Eq>::forall(const U &f) const {
 template<typename T, typename Comp, typename Eq>
 template<typename V, typename C>
 C RBTree<T, Comp, Eq>::mapped(const V &f) const {
-	RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq> a;
+	RBTree<typename std::result_of<V(const T &)>::type> a;
 	foreach([&](const T &e) { a.insert(f(e)); });
 	return a;
 }
@@ -477,10 +488,10 @@ void RBTree<T, Comp, Eq>::map(const V &f) {
 template<typename T, typename Comp, typename Eq>
 template<typename U, typename C>
 C RBTree<T, Comp, Eq>::filtered(const U &f) const {
-	RBTree<T, Comp, Eq> a;
+	C a;
 	foreach([&](const T &e) {
 		if(f(e)) {
-			a.insertAtEnd(e);
+			a.insert(e);
 		}
 	});
 	return a;

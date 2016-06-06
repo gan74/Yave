@@ -169,6 +169,9 @@ class RBTree
 		const_iterator find(const U &t, const C &c = C(), const E &e = E()) const;
 
 
+		bool exists(const T &t) const;
+
+
 		template<typename C>
 		iterator insert(const C &c);
 		template<typename A, typename B, typename... Args>
@@ -221,7 +224,7 @@ class RBTree
 		bool forall(const U &f) const;
 
 
-		template<typename V, typename C = RBTree<typename std::result_of<V(const T &)>::type, Comp, Eq>>
+		template<typename V, typename C = RBTree<typename std::result_of<V(const T &)>::type>>
 		C mapped(const V &f) const;
 		template<typename V>
 		void map(const V &f);
