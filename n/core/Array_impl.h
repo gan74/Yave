@@ -39,6 +39,12 @@ Array<T, RP>::Array(const Array<C, R> &a) : Array<T, RP>(a.size()) {
 }
 
 template<typename T, typename RP>
+template<typename I>
+Array<T, RP>::Array(I b, I e) : Array<T, RP>() {
+	assign(b, e);
+}
+
+template<typename T, typename RP>
 template<typename C>
 Array<T, RP>::Array(std::initializer_list<C> l) : Array<T, RP>((l.size())) {
 	for(auto x : l) {

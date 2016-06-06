@@ -90,6 +90,9 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		template<typename C, typename R>
 		Array(const Array<C, R> &a);
 
+		template<typename I>
+		Array(I b, I e);
+
 		template<typename C>
 		Array(std::initializer_list<C> l);
 
