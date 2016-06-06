@@ -1,110 +1,71 @@
 #include <n/core/String.h>
 #include <iostream>
+#include <n/script/CompiledGrammar.h>
 
 using namespace n;
 using namespace n::core;
+using namespace n::script;
 
-void printInfos(const String2 &str) {
-	std::cout<<"\t"<<std::boolalpha<<"long = "<<str.isLong()<<" (size = "<<str.size()<<")"<<std::endl;
-	std::cout<<"\t"<<"data = \""<<str.data()<<"\""<<std::endl<<std::endl;
+
+void all(CompiledGrammar *g, Set<CompiledGrammar *> &s) {
+	if(s.find(g) == s.end()) {
+		s += g;
+		for(uint i = 0; i != uint(TokenType::End) + 1; i++) {
+			for(CompiledGrammar *c : g->nexts[i]) {
+				all(c, s);
+			}
+		}
+	}
 }
 
-
-class A
-{
-	public:
-		A(int i) {
-			std::cout<<i<<std::endl;
+void print(CompiledGrammar *g) {
+	std::cout << g << ":" << std::endl;
+	for(uint i = 0; i != 6; i++) {
+		if(!g->nexts[i].isEmpty()) {
+			std::cout << "  " << tokenName[i] << ":" << std::endl;
+			for(auto x : g->nexts[i]) {
+				std::cout << "    " << x << std::endl;
+			}
 		}
-
-		A(const std::string &str) {
-			std::cout<<str<<std::endl;
-		}
-
-		A(const  char *str) {
-			std::cout<<str<<std::endl;
-		}
-
-		A &operator=(A &&) {
-			std::cout<<"&&"<<std::endl;
-			return *this;
-		}
-
-};
-
-class complexe {};
-
- std::ostream &operator <<(std::ostream &output, complexe const z) {
-	output << "prout";
-	return output;
+	}
+	std::cout << std::endl;
 }
 
 
 int main(int, char **) {
-	complexe c;
-	std::cout << c;
 
-	std::string str("string");
-	A a(27);
-	a = str;
+	core::String code = "a+c-/b";
 
-	return 0;
+	Tokenizer tokenizer;
+	auto tks = tokenizer.tokenize(code);
+	tks.pop();
+
+	/*for(auto t : tks) {
+		std::cout << uint(t.type) << " '" << t.string << "'" << std::endl;
+	}*/
+
+	Grammar *expr = (Grammar *)malloc(sizeof(Grammar));
+	Grammar p = Grammar::expect(expr, Plus, expr);
+	Grammar m = Grammar::expect(expr, Minus, expr);
+	new(expr) Grammar(Grammar::any(&m, &p, Identifier));
+	/*Grammar grammar = Grammar::expect(expr, End);
+
+	Set<CompiledGrammar *> grammars;
+	all(expr->compile(), grammars);
+
+	for(auto x : grammars) {
+		print(x);
+	}*/
 
 
 
-
-
-
-	/*core::Array<int> arr;
-	arr = {1, 2, 3};
-
-	const char raw[] = "long/short test";
-
-	std::cout<<"Long and short test:"<<std::endl;
-	for(uint i = 0; i != sizeof(raw); i++) {
-		printInfos(String2(raw, i));
+	try {
+		std::cout << std::boolalpha << (expr->compile()->validate(tks)) << std::endl;
+	} catch(GrammarValidationException e) {
+		std::cerr << e.what(code) << std::endl;
 	}
 
 
-	std::cout<<"Default test:"<<std::endl;
-	printInfos(String2());
 
-
-	std::cout<<"Copy test:"<<std::endl;
-	String2 str("long copy test");
-	String2 cpy = str;
-	printInfos(cpy);
-	str = "s-test";
-	printInfos(str);
-	cpy = str;
-	printInfos(cpy);
-
-
-	std::cout<<"Short + test:"<<std::endl;
-	str = "+";
-	printInfos(str + " test");
-
-
-	std::cout<<"Long + test: "<<std::endl;
-	str = "long";
-	printInfos(str + " +" + " test");
-
-	std::cout<<"Operator < test:"<<std::endl;
-	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") < "abce")<<std::endl;
-	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") < "abc")<<std::endl<<std::endl;
-
-
-	std::cout<<"Operator > test:"<<std::endl;
-	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") > "abc")<<std::endl;
-	std::cout<<"\t"<<std::boolalpha<<(String2("abcd") > "abcc")<<std::endl<<std::endl;
-
-
-	std::cout<<"Swap test:"<<std::endl;
-	str = ", rhs";
-	cpy = "left hand size";
-	cpy.swap(str);
-	std::cout<<"\t"<<str.data()<<cpy.data()<<std::endl<<std::endl;
-
-
-	return 0;*/
+	return 0;
 }

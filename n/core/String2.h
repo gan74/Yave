@@ -213,7 +213,7 @@ class String2
 		template<typename T>
 		String2 buildDispatch(const T &c, FalseType) {
 			std::ostringstream oss;
-			oss<<c;
+			oss << c;
 			return oss.str().c_str();
 		}
 };
