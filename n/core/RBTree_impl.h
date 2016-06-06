@@ -323,7 +323,7 @@ RBTree<T, Comp, Eq> &RBTree<T, Comp, Eq>::operator=(const C &o) {
 
 template<typename T, typename Comp, typename Eq>
 RBTree<T, Comp, Eq> &RBTree<T, Comp, Eq>::operator=(RBTree<T, Comp, Eq> &&o) {
-	swap(std::move(o));
+	swap(o);
 	return *this;
 }
 
