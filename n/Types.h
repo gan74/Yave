@@ -55,21 +55,18 @@ class NonCopyable
 
 
 
-
-
-
-
-extern uint typeId;
+namespace details {
+	struct NullType
+	{
+		NullType() = delete;
+	};
+	extern uint typeId;
+}
 
 // be wary of templates therefor be wary of bullshit
 
 template<typename O, typename...>
 O &makeOne();
-
-struct NullType
-{
-	NullType() = delete;
-};
 
 struct Nothing
 {
@@ -97,6 +94,7 @@ template<bool B>
 struct BoolToType // false
 {
 	static constexpr bool value = B;
+
 	BoolToType() {}
 	BoolToType(std::false_type) {}
 	operator std::false_type() const {
@@ -108,6 +106,7 @@ template<>
 struct BoolToType<true>
 {
 	static constexpr bool value = true;
+
 	BoolToType() {}
 	BoolToType(std::true_type) {}
 	operator std::true_type() const {
@@ -118,8 +117,45 @@ struct BoolToType<true>
 typedef BoolToType<false> FalseType;
 typedef BoolToType<true> TrueType;
 
-#define N_GEN_TYPE_HAS_MEMBER(className, member) \
+template<bool I, typename Then, typename Else>
+struct If
+{
+	typedef Then type;
+};
+
+
+template<typename Then, typename Else>
+struct If<false, Then, Else>
+{
+	typedef Else type;
+};
+
+#define N_GEN_TYPE_HAS_MEMBER2(className, member) \
 template<typename HasMemberType> \
+class className { \
+	template<typename U, bool P> \
+	struct SFINAE { \
+		struct NoType { }; \
+		struct Fallback { NoType member; }; \
+		template<typename B> \
+		struct Derived : B, Fallback { }; \
+		template<typename T> \
+		static FalseType test(decltype(Derived<T>::member) *); \
+		template<typename T> \
+		static BoolToType<!std::is_same<typename T::member *, T *>::value> test(typename T::member *); \
+		static constexpr bool value = decltype(test<U>(0))::value; \
+	}; \
+	template<typename U> \
+	struct SFINAE<U, true> { \
+		static constexpr bool value = false; \
+	}; \
+	static constexpr bool isPrimitive = !std::is_class<HasMemberType>::value && !std::is_union<HasMemberType>::value; \
+	public: \
+		static constexpr bool value = SFINAE<HasMemberType, isPrimitive>::value; \
+};
+
+#define N_GEN_TYPE_HAS_MEMBER(className, member) N_GEN_TYPE_HAS_MEMBER2(className, member)
+/*template<typename HasMemberType> \
 class className { \
 	typedef byte Yes[1]; \
 	typedef byte No[2]; \
@@ -140,7 +176,8 @@ class className { \
 	static constexpr bool isPrimitive = !std::is_class<HasMemberType>::value && !std::is_union<HasMemberType>::value; \
 	public: \
 		static constexpr bool value = SFINAE<HasMemberType, isPrimitive>::value; \
-};
+};*/
+
 
 #define N_GEN_TYPE_HAS_METHOD(className, method) \
 template<typename HasMethodType, typename HasMethodRetType, typename... HasMethodArgsType> \
@@ -148,17 +185,17 @@ class className { \
 	template<typename U, bool B> \
 	struct SFINAE { \
 		template<typename V> \
-		static auto test(V *) -> typename std::is_same<decltype(std::declval<V>().method(std::declval<HasMethodArgsType>()...)), HasMethodRetType>::type; \
+		static auto test(V *) -> BoolToType<std::is_same<decltype(makeOne<V>().method(makeOne<HasMethodArgsType>()...)), HasMethodRetType>::value>; \
 		template<typename V> \
-		static std::false_type test(...); \
-		typedef decltype(test<U>(0)) type; \
+		static FalseType test(...); \
+		static constexpr bool value = decltype(test<U>(0))::value; \
 	}; \
 	template<typename U> \
 	struct SFINAE<U, true> { \
-		typedef std::false_type type; \
+		static constexpr bool value = false; \
 	}; \
 	public: \
-		static constexpr bool value = SFINAE<HasMethodType, std::is_fundamental<HasMethodType>::value>::type::value; \
+		static constexpr bool value = SFINAE<HasMethodType, std::is_fundamental<HasMethodType>::value>::value; \
 };
 
 template<typename T>
@@ -244,17 +281,14 @@ namespace details {
 	template<typename T, bool P>
 	struct IsDereferenceable // P = false
 	{
-		typedef byte Yes[1];
-		typedef byte No[2];
-
-		static_assert(sizeof(Yes) != sizeof(No), "SFINAE : sizeof(Yes) == sizeof(No)");
 
 		template<typename U>
-		static Yes &test(decltype(&U::operator*));
+		static TrueType &test(decltype(&U::operator*));
 		template<typename U>
-		static No &test(...);
+		static FalseType &test(...);
+
 		public:
-			static constexpr bool value = sizeof(test<T>(0)) == sizeof(Yes);
+			static constexpr bool value = decltype(test<T>(0))::value;
 	};
 
 	template<typename T>
@@ -274,19 +308,6 @@ namespace details {
 	};
 }
 
-template<bool I, typename Then, typename Else>
-struct If
-{
-	typedef Then type;
-};
-
-
-template<typename Then, typename Else>
-struct If<false, Then, Else>
-{
-	typedef Else type;
-};
-
 template<typename T>
 struct VoidToNothing : If<!std::is_void<T>::value, T, Nothing>
 {
@@ -301,29 +322,24 @@ class InheritIfNotAlready : public details::InheritAlready<Base, std::is_base_of
 template<typename From, typename To> // U from T
 class TypeConversion
 {
-	typedef byte Yes[1];
-	typedef byte No[2];
-
 	struct CanBuildFrom
 	{
 		template<typename U>
-		static Yes &build(decltype(U(makeOne<From>()))*);
+		static TrueType build(decltype(U(makeOne<From>()))*);
 
 		template<typename U>
-		static No &build(...);
+		static FalseType build(...);
 
-		static const bool value = sizeof(build<To>(0)) == sizeof(Yes);
+		static const bool value = decltype(build<To>(0))::value;
 	};
 
-	static_assert(sizeof(Yes) != sizeof(No), "SFINAE : sizeof(Yes) == sizeof(No)");
-
-	static Yes &test(To);
-	static No &test(...);
+	static TrueType test(To);
+	static FalseType test(...);
 
 	public:
 		static constexpr bool makeArithmeticSence = !std::is_arithmetic<From>::value || !std::is_arithmetic<To>::value ||
 											(std::is_floating_point<From>::value == std::is_floating_point<To>::value && sizeof(To) >= sizeof(From));
-		static constexpr bool exists = sizeof(test(std::move(makeOne<From>()))) == sizeof(Yes);
+		static constexpr bool exists = decltype(test(std::move(makeOne<From>())))::value;
 		static constexpr bool existsWeak = exists && makeArithmeticSence;
 		static constexpr bool canBuild = exists || CanBuildFrom::value;
 
@@ -530,42 +546,42 @@ struct IsThreadSafe<T>
 
 
 template<typename T>
-const uint TypeInfo<T>::baseId = typeId++; // dependent on compilation, but NOT on execution flow
+const uint TypeInfo<T>::baseId = details::typeId++; // dependent on compilation, but NOT on execution flow
 template<typename T>
 const uint TypeInfo<T>::id = TypeInfo<T>::baseId;
 template<typename T>
 const Type TypeInfo<T>::type = typeid(T);
 
 template<typename T>
-const uint TypeInfo<T *>::id = typeId++;
+const uint TypeInfo<T *>::id = details::typeId++;
 template<typename T>
 const uint TypeInfo<T *>::baseId = TypeInfo<T>::baseId;
 template<typename T>
 const Type TypeInfo<T *>::type = typeid(T *);
 
 template<typename T>
-const uint TypeInfo<const T>::id = typeId++;
+const uint TypeInfo<const T>::id = details::typeId++;
 template<typename T>
 const uint TypeInfo<const T>::baseId = TypeInfo<T>::baseId;
 template<typename T>
 const Type TypeInfo<const T>::type = typeid(const T);
 
 template<typename T>
-const uint TypeInfo<T &>::id = typeId++;
+const uint TypeInfo<T &>::id = details::typeId++;
 template<typename T>
 const uint TypeInfo<T &>::baseId = TypeInfo<T>::baseId;
 template<typename T>
 const Type TypeInfo<T &>::type = typeid(T &);
 
 template<typename T>
-const uint TypeInfo<T[]>::id = typeId++;
+const uint TypeInfo<T[]>::id = details::typeId++;
 template<typename T>
 const uint TypeInfo<T[]>::baseId = TypeInfo<T>::baseId;
 template<typename T>
 const Type TypeInfo<T[]>::type = typeid(T[]);
 
 template<typename T, uint N>
-const uint TypeInfo<T[N]>::id = typeId++;
+const uint TypeInfo<T[N]>::id = details::typeId++;
 template<typename T, uint N>
 const uint TypeInfo<T[N]>::baseId = TypeInfo<T>::baseId;
 template<typename T, uint N>

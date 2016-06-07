@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_CONCURENT_LOCKGUARD
 #define N_CONCURENT_LOCKGUARD
 
-#include <n/Types.h>
+#include <n/types.h>
 
 namespace n {
 namespace concurrent {

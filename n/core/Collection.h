@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/types.h>
 #include <algorithm>
+
 namespace n {
 namespace core {
 
@@ -29,10 +30,10 @@ class Collection
 		template<typename U, bool CI, bool NCI> // false, false
 		struct CollectionInternal
 		{
-			typedef NullType const_iterator;
-			typedef NullType iterator;
-			typedef NullType type;
-			typedef NullType SubCollection;
+			typedef details::NullType const_iterator;
+			typedef details::NullType iterator;
+			typedef details::NullType type;
+			typedef details::NullType SubCollection;
 		};
 
 		template<typename U>
@@ -60,7 +61,7 @@ class Collection
 		typedef typename InternalType::iterator iterator;
 		typedef typename InternalType::type Element;
 
-		static constexpr bool isCollection = !std::is_same<Element, NullType>::value;
+		static constexpr bool isCollection = !std::is_same<Element, details::NullType>::value;
 
 		template<typename U>
 		struct isCollectionOf

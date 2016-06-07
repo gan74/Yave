@@ -42,11 +42,13 @@ n::core::String demangle(const char* name) {
 #endif
 
 namespace n {
+namespace details {
 	uint typeId = 0;
+}
 
-	core::String Type::name() const {
-		return demangle(info->name());
-	}
+core::String Type::name() const {
+	return demangle(info->name());
+}
 }
 
 

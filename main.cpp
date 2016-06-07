@@ -1,45 +1,52 @@
 #include <n/core/String.h>
-#include <iostream>
-//#include <n/script/CompiledGrammar.h>
 #include <n/script/Parser.h>
+#include <n/core/Map.h>
+#include <iostream>
 
 using namespace n;
 using namespace n::core;
 using namespace n::script;
 
-/*void all(CompiledGrammar *g, Set<CompiledGrammar *> &s) {
-	if(s.find(g) == s.end()) {
-		s += g;
-		for(uint i = 0; i != uint(TokenType::End) + 1; i++) {
-			for(CompiledGrammar *c : g->nexts[i]) {
-				all(c, s);
-			}
-		}
-	}
-}
+struct Test {};
 
-void print(CompiledGrammar *g) {
-	std::cout << g->name << ":" ;
-	if(g->terminal) {
-		std::cout << "(term)";
-	}
-	std::cout << std::endl;
+/*template<typename T>
+struct TypeHasIterator {
 
-	for(uint i = 0; i != 6; i++) {
-		if(!g->nexts[i].isEmpty()) {
-			std::cout << "  " << tokenName[i] << ":" << std::endl;
-			for(auto x : g->nexts[i]) {
-				std::cout << "    " << x->name << std::endl;
-			}
-		}
-	}
-	std::cout << std::endl;
-}*/
+	struct NoType { };
+	struct Fallback { NoType iterator; };
+
+	template<typename B>
+	struct Derived : B, Fallback { };
+
+	template<typename V>
+	static FalseType test(decltype(Derived<V>::iterator) *);
+
+	template<typename V>
+	static BoolToType<!std::is_same<typename V::iterator *, V *>::value> test(typename V::iterator *);
+
+	static constexpr bool value = decltype(test<T>(0))::value;
+};*/
+
+N_GEN_TYPE_HAS_MEMBER2(TypeHasIterator, iterator)
 
 
 int main(int, char **) {
+	std::cout << std::boolalpha << bool(TypeHasIterator<int>::value) << std::endl;
+	std::cout<< "lele"<<std::endl;
+	std::cout << std::boolalpha << TypeHasIterator<Map<int, int>::iterator>::value << std::endl;
+	std::cout << std::boolalpha << TypeHasIterator<Map<int, int>>::value << std::endl;
+	std::cout << std::boolalpha << TypeHasIterator<Test>::value << std::endl << std::endl;
 
-	core::String code = "var a:Int = 7; x = a + b; lol; b = 7;";
+	//std::cout << Type(decltype(Map<int, int>::iterator::iterator)).name() << std::endl;
+
+	std::cout << std::boolalpha << TypeInfo<Map<int, int>::const_iterator>::isIterable << std::endl;
+	std::cout << std::boolalpha << TypeInfo<Map<int, int>::iterator>::isIterable << std::endl;
+	std::cout << std::boolalpha << TypeInfo<Array<int>::iterator>::isIterable << std::endl << std::endl;
+
+	std::cout << std::boolalpha << TypeInfo<Map<int, int>>::isIterable << std::endl;
+	std::cout << std::boolalpha << TypeInfo<Array<int>>::isIterable << std::endl;
+
+	core::String code = "var a:Int = 7; x = a + 1 * b * c; lol; b = 7;";
 
 	Tokenizer tokenizer;
 	auto tks = tokenizer.tokenize(code);
@@ -53,28 +60,6 @@ int main(int, char **) {
 	} catch(SynthaxErrorException &e) {
 		std::cerr << e.what(code) << std::endl;
 	}
-
-	/*Grammar *expr = new Grammar();
-	Grammar id = Grammar::expect("id", Identifier);
-	Grammar p = Grammar::expect("+", expr, Plus, expr);
-	Grammar m = Grammar::expect("-", expr, Minus, expr);
-	*expr = Grammar::any("expr", &id, &m, &p);
-	//Grammar grammar = Grammar::expect("g", expr, End);
-
-
-	Set<CompiledGrammar *> cc;
-	all(expr->compile(), cc);
-	for(auto g : cc) {
-		print(g);
-	}
-
-	try {
-		std::cout << std::boolalpha << (expr->compile()->validate(tks)) << std::endl;
-	} catch(GrammarValidationException e) {
-		std::cerr << e.what(code) << std::endl;
-	}*/
-
-
 
 	return 0;
 }
