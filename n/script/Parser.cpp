@@ -106,10 +106,10 @@ ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::
 				begin++;
 				return new ASTAssignation(id->string, parseExpr(begin, end));
 			}
-			return new ASTIdentifier(id->string);
+			return new ASTIdentifier(id->string, id->index);
 
 		case TokenType::Integer:
-			return new ASTInteger(id->string);
+			return new ASTInteger(id->string.to<int64>(), id->index);
 
 		case TokenType::LeftPar:
 			expr = parseExpr(begin, end);
@@ -165,9 +165,9 @@ ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core
 
 	if(begin->type == TokenType::Assign) {
 		begin++;
-		return new ASTDeclaration(name, type, parseExpr(begin, end));
+		return new ASTDeclaration(name, type, (begin - 1)->index, parseExpr(begin, end));
 	}
-	return new ASTDeclaration(name, type);
+	return new ASTDeclaration(name, type, (begin - 1)->index);
 }
 
 
@@ -176,9 +176,6 @@ ASTInstruction *parseInstrution(core::Array<Token>::const_iterator &begin, core:
 	switch(begin->type) {
 		case TokenType::Var:
 			instr = parseDeclaration(begin, end);
-		break;
-
-		case TokenType::End:
 		break;
 
 		default:
@@ -196,7 +193,7 @@ ASTInstruction *parseInstrution(core::Array<Token>::const_iterator &begin, core:
 Parser::Parser() {
 }
 
-ASTNode *Parser::parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const {
+ASTInstruction *Parser::parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const {
 	core::Array<ASTInstruction *> instrs;
 	while(begin != end && !begin->isEnd()) {
 		instrs.append(parseInstrution(begin, end));

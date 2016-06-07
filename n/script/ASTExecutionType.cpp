@@ -13,38 +13,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_PARSER_H
-#define N_SCRIPT_PARSER_H
-
-#include "ASTNode.h"
+#include "ASTExecutionType.h"
+#include <iostream>
 
 namespace n {
 namespace script {
 
-class SynthaxErrorException : public std::exception
-{
-	public:
-		SynthaxErrorException(const core::Array<TokenType> &e, core::Array<Token>::const_iterator p) : expected(e), position(p) {
-		}
+ASTExecutionType::ASTExecutionType(const core::String &typeName) : name(typeName) {
+}
 
-		virtual const char *what() const noexcept override;
-		virtual const char *what(const core::String &code) const noexcept;
+void ASTExecutionIntType::print(ASTExecutionVar a) const {
+	std::cout << a.integer << std::endl;
+}
 
-	private:
-		core::Array<TokenType> expected;
-		core::Array<Token>::const_iterator position;
-};
-
-class Parser
-{
-	public:
-		Parser();
-
-		ASTInstruction *parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const;
-
-};
+void ASTExecutionFloatType::print(ASTExecutionVar a) const {
+	std::cout << a.real << std::endl;
+}
 
 }
 }
-
-#endif // N_SCRIPT_PARSER_H

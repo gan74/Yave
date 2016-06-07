@@ -13,38 +13,39 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_PARSER_H
-#define N_SCRIPT_PARSER_H
+#ifndef N_SCRIPT_ASTEXECUTIONVARSTACK_H
+#define N_SCRIPT_ASTEXECUTIONVARSTACK_H
 
-#include "ASTNode.h"
+#include <n/core/Map.h>
+#include <n/core/Array.h>
+#include <n/core/String.h>
+#include "ASTExecutionType.h"
 
 namespace n {
 namespace script {
 
-class SynthaxErrorException : public std::exception
+class ASTExecutionVarStack
 {
 	public:
-		SynthaxErrorException(const core::Array<TokenType> &e, core::Array<Token>::const_iterator p) : expected(e), position(p) {
-		}
+		ASTExecutionVarStack();
 
-		virtual const char *what() const noexcept override;
-		virtual const char *what(const core::String &code) const noexcept;
+		ASTExecutionVar &declare(const core::String &name, ASTExecutionType *type);
+
+		void pushStack();
+		void popStack();
+
+		ASTExecutionVar &getVar(const core::String &name);
+		bool isDeclared(const core::String &name) const;
+
 
 	private:
-		core::Array<TokenType> expected;
-		core::Array<Token>::const_iterator position;
-};
+		using VarMap = core::Map<core::String, ASTExecutionVar>;
 
-class Parser
-{
-	public:
-		Parser();
-
-		ASTInstruction *parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const;
-
+		ASTExecutionVar invalid;
+		VarMap vars;
+		core::Array<core::Array<VarMap::iterator>> stack;
 };
 
 }
 }
-
-#endif // N_SCRIPT_PARSER_H
+#endif // N_SCRIPT_ASTEXECUTIONVARSTACK_H

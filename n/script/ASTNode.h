@@ -17,9 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_SCRIPT_ASTNODE_H
 
 #include "Tokenizer.h"
+#include "ASTExecutionVar.h"
 
 namespace n {
 namespace script {
+
+class ASTExecutionFrame;
 
 enum class ASTNodeType
 {
@@ -44,10 +47,11 @@ enum class ASTNodeType
 struct ASTNode : NonCopyable
 {
 
-	ASTNode(ASTNodeType tpe) : type(tpe) {
+	ASTNode(ASTNodeType tpe, uint i = 0) : type(tpe), index(i) {
 	}
 
 	const ASTNodeType type;
+	const uint index;
 
 	virtual ~ASTNode() {
 	}
@@ -59,25 +63,29 @@ struct ASTNode : NonCopyable
 
 struct ASTExpression : public ASTNode
 {
-	ASTExpression(ASTNodeType tpe, bool cons = false) : ASTNode(tpe), constant(cons) {
+	ASTExpression(ASTNodeType tpe, uint index, bool cons = false) : ASTNode(tpe, index), constant(cons) {
 	}
 
 	const bool constant;
+
+	virtual ASTExecutionVar eval(ASTExecutionFrame &) const = 0;
 };
 
 
 
 struct ASTInstruction : public ASTNode
 {
-	ASTInstruction(ASTNodeType tpe) : ASTNode(tpe) {
+	ASTInstruction(ASTNodeType tpe, uint index) : ASTNode(tpe, index) {
 	}
+
+	virtual void eval(ASTExecutionFrame &) const = 0;
 };
 
 
 
 struct ASTExprInstruction : public ASTInstruction
 {
-	ASTExprInstruction(ASTExpression *expr) : ASTInstruction(ASTNodeType::Expression), expression(expr) {
+	ASTExprInstruction(ASTExpression *expr) : ASTInstruction(ASTNodeType::Expression, expr->index), expression(expr) {
 	}
 
 	const ASTExpression *expression;
@@ -85,12 +93,14 @@ struct ASTExprInstruction : public ASTInstruction
 	virtual core::String toString() const override {
 		return expression->toString() + ";";
 	}
+
+	virtual void eval(ASTExecutionFrame &frame) const override;
 };
 
 
 struct ASTInstructionList : public ASTInstruction
 {
-	ASTInstructionList(const core::Array<ASTInstruction *> &instrs) : ASTInstruction(ASTNodeType::InstructionList), instructions(instrs) {
+	ASTInstructionList(const core::Array<ASTInstruction *> &instrs) : ASTInstruction(ASTNodeType::InstructionList, instrs.isEmpty() ? 0 : instrs.first()->index), instructions(instrs) {
 	}
 
 	const core::Array<ASTInstruction *> instructions;
@@ -102,12 +112,14 @@ struct ASTInstructionList : public ASTInstruction
 		}
 		return "{\n" + str + "}";
 	}
+
+	virtual void eval(ASTExecutionFrame &frame) const override;
 };
 
 
 struct ASTDeclaration : public ASTInstruction
 {
-	ASTDeclaration(const core::String &n, const core::String &tn, ASTExpression *val = 0) : ASTInstruction(ASTNodeType::Declaration), name(n), typeName(tn), value(val) {
+	ASTDeclaration(const core::String &n, const core::String &tn, uint index, ASTExpression *val = 0) : ASTInstruction(ASTNodeType::Declaration, index), name(n), typeName(tn), value(val) {
 	}
 
 	const core::String name;
@@ -117,13 +129,15 @@ struct ASTDeclaration : public ASTInstruction
 	virtual core::String toString() const override {
 		return "var " + name + ":" + typeName + (value ? " = " + value->toString() : core::String());
 	}
+
+	virtual void eval(ASTExecutionFrame &frame) const override;
 };
 
 
 
 struct ASTIdentifier : public ASTExpression
 {
-	ASTIdentifier(const core::String &n) : ASTExpression(ASTNodeType::Identifier), name(n) {
+	ASTIdentifier(const core::String &n, uint index) : ASTExpression(ASTNodeType::Identifier, false, index), name(n) {
 	}
 
 	const core::String name;
@@ -131,35 +145,41 @@ struct ASTIdentifier : public ASTExpression
 	virtual core::String toString() const override {
 		return name;
 	}
+
+	virtual ASTExecutionVar eval(ASTExecutionFrame &frame) const override;
 };
 
 
 
 struct ASTInteger : public ASTExpression
 {
-	ASTInteger(const core::String &v) : ASTExpression(ASTNodeType::Integer, true), value(v) {
+	ASTInteger(int64 v, uint index) : ASTExpression(ASTNodeType::Integer, true, index), value(v) {
 	}
 
-	const core::String value;
+	const int64 value;
 
 	virtual core::String toString() const override {
-		return value;
+		return core::String(value);
 	}
+
+	virtual ASTExecutionVar eval(ASTExecutionFrame &frame) const override;
 };
 
 
 
 struct ASTBinOp : public ASTExpression
 {
-	ASTBinOp(ASTExpression *l, ASTExpression *r, ASTNodeType t) : ASTExpression(t, l->constant && r->constant), lhs(l), rhs(r) {
+	ASTBinOp(ASTExpression *l, ASTExpression *r, ASTNodeType t) : ASTExpression(t, l->constant && r->constant, l->index), lhs(l), rhs(r) {
 	}
 
 	const ASTExpression *lhs;
 	const ASTExpression *rhs;
 
 	virtual core::String toString() const override {
-		return core::String(tokenName[uint(type)]) + "(" + lhs->toString() + " " + rhs->toString() + ")";
+		return "(" + lhs->toString() + " "  + core::String(tokenName[uint(type)]) + " " + rhs->toString() + ")";
 	}
+
+	virtual ASTExecutionVar eval(ASTExecutionFrame &frame) const override;
 };
 
 
@@ -167,7 +187,7 @@ struct ASTBinOp : public ASTExpression
 
 struct ASTAssignation : public ASTExpression
 {
-	ASTAssignation(const core::String &id, ASTExpression *val) : ASTExpression(ASTNodeType::Assignation, val->constant), name(id), value(val) {
+	ASTAssignation(const core::String &id, ASTExpression *val) : ASTExpression(ASTNodeType::Assignation, val->constant, val->index), name(id), value(val) {
 	}
 
 	const core::String name;
@@ -176,6 +196,8 @@ struct ASTAssignation : public ASTExpression
 	virtual core::String toString() const override {
 		return name + " = " + value->toString();
 	}
+
+	virtual ASTExecutionVar eval(ASTExecutionFrame &frame) const override;
 };
 
 
