@@ -160,10 +160,6 @@ class String2
 		}
 
 
-
-
-
-
 		template<typename T>
 		String2 filtered(const T &f) const {
 			String2 str;
@@ -182,6 +178,17 @@ class String2
 				c = f(c);
 			}
 			return str;
+		}
+
+
+		template<typename T>
+		T to() const {
+			#warning String::to temporary
+			T t;
+			std::stringstream oss;
+			oss << data();
+			oss >> t;
+			return t;
 		}
 
 	private:
