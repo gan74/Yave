@@ -21,15 +21,15 @@ namespace script {
 const char *SynthaxErrorException::what() const noexcept {
 	core::String str = "{ ";
 	for(TokenType t : expected) {
-		str << tokenName[t] << " ";
+		str << tokenName[uint(t)] << " ";
 	}
-	return ("Expected " + str + "} got " + tokenName[position->type] + " (\"" + position->string + "\")").data();
+	return ("Expected " + str + "} got " + tokenName[uint(position->type)] + " (\"" + position->string + "\")").data();
 }
 
 const char *SynthaxErrorException::what(const core::String &code) const noexcept {
 	core::String str = "{ ";
 	for(TokenType t : expected) {
-		str << tokenName[t] << " ";
+		str << tokenName[uint(t)] << " ";
 	}
 
 	uint line = 1;
@@ -39,8 +39,8 @@ const char *SynthaxErrorException::what(const core::String &code) const noexcept
 	core::String lineStr("at line ");
 	lineStr << core::String2(line) << ": \"";
 
-	str = "Expected " + str + "} got " + tokenName[position->type] + ":";
-	if(position->type == Identifier) {
+	str = "Expected " + str + "} got " + tokenName[uint(position->type)] + ":";
+	if(position->type == TokenType::Identifier) {
 		str += " \"" + position->string + "\"";
 	}
 	str += "\n" + lineStr;
@@ -58,21 +58,41 @@ const char *SynthaxErrorException::what(const core::String &code) const noexcept
 }
 
 
-void expected(core::Array<Token>::const_iterator it, const core::Array<TokenType> &expected) {
-	throw SynthaxErrorException(expected, --it);
+template<typename... Args>
+void expected(core::Array<Token>::const_iterator it, Args... args) {
+	throw SynthaxErrorException({args...}, --it);
 }
 
-void expect(TokenType type, core::Array<Token>::const_iterator &begin) {
-	if((begin++)->type != type) {
-		expected(begin, {type});
+void expect(core::Array<Token>::const_iterator it, TokenType type) {
+	if(it->type != type) {
+		it++;
+		expected(it, type);
+	}
+}
+
+void eat(core::Array<Token>::const_iterator &it, TokenType type) {
+	if((it++)->type != type) {
+		expected(it, type);
 	}
 }
 
 
+/*
+template<typename... Args>
+bool eatHelper(TokenType t, TokenType type, Args... args) {
+	return t == type ? true : eatHelper(t, args...);
+}
 
+bool eatHelper(TokenType) {
+	return false;
+}
 
-
-
+template<typename... Args>
+void eat(core::Array<Token>::const_iterator &begin, Args... args) {
+	if(!eatHelper((begin++)->type, args...)) {
+		expected(begin, args...);
+	}
+}*/
 
 ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
 
@@ -81,14 +101,21 @@ ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::
 	ASTExpression *expr = 0;
 	core::Array<Token>::const_iterator id = begin;
 	switch((begin++)->type) {
-		case Identifier:
+		case TokenType::Identifier:
+			if(begin->type == TokenType::Assign) {
+				begin++;
+				return new ASTAssignation(id->string, parseExpr(begin, end));
+			}
 			return new ASTIdentifier(id->string);
 
-		case LeftPar:
+		case TokenType::Integer:
+			return new ASTInteger(id->string);
+
+		case TokenType::LeftPar:
 			expr = parseExpr(begin, end);
-			if((begin++)->type != RightPar) {
+			if((begin++)->type != TokenType::RightPar) {
 				delete expr;
-				expected(begin, {RightPar});
+				expected(begin, TokenType::RightPar);
 			}
 			return expr;
 		break;
@@ -96,36 +123,28 @@ ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::
 		default:
 		break;
 	}
-	expected(begin, {Identifier, LeftPar});
+	expected(begin, TokenType::Identifier, TokenType::Integer, TokenType::LeftPar);
 	return 0;
 }
 
 ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	ASTExpression *expr = parseSimpleExpr(begin, end);
 	for(;;) {
-		ASTExpression *rhs = 0;
+
 		TokenType token = (begin++)->type;
 		switch(token) {
-			case Plus:
-			case Minus:
-				rhs = parseExpr(begin, end);
-				if(rhs) {
-					expr = new ASTBinOp(expr, rhs, token);
-				}
+			case TokenType::Plus:
+			case TokenType::Minus:
+				expr = new ASTBinOp(expr, parseExpr(begin, end), ASTNodeType(token));
 			break;
 
-			case Multiply:
-			case Divide:
-				rhs = parseSimpleExpr(begin, end);
-				if(rhs) {
-					expr = new ASTBinOp(expr, rhs, token);
-				}
+			case TokenType::Multiply:
+			case TokenType::Divide:
+				expr = new ASTBinOp(expr, parseSimpleExpr(begin, end), ASTNodeType(token));
 			break;
 
 			default:
 				begin--;
-				/*delete expr;
-				expected(begin, {Plus, Minus, Multiply, Divide});*/
 				return expr;
 		}
 	}
@@ -133,17 +152,56 @@ ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<
 }
 
 
+ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	eat(begin, TokenType::Var);
 
+	expect(begin, TokenType::Identifier);
+	core::String name = (begin++)->string;
+
+	eat(begin, TokenType::Colon);
+
+	expect(begin, TokenType::Identifier);
+	core::String type = (begin++)->string;
+
+	if(begin->type == TokenType::Assign) {
+		begin++;
+		return new ASTDeclaration(name, type, parseExpr(begin, end));
+	}
+	return new ASTDeclaration(name, type);
+}
+
+
+ASTInstruction *parseInstrution(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	ASTInstruction *instr = 0;
+	switch(begin->type) {
+		case TokenType::Var:
+			instr = parseDeclaration(begin, end);
+		break;
+
+		case TokenType::End:
+		break;
+
+		default:
+			instr = new ASTExprInstruction(parseExpr(begin, end));
+		break;
+	}
+	if(instr) {
+		eat(begin, TokenType::SemiColon);
+		return instr;
+	}
+	expected(begin, TokenType::Var);
+	return 0;
+}
 
 Parser::Parser() {
 }
 
 ASTNode *Parser::parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const {
-	ASTNode *node =  parseExpr(begin, end);
-	/*if(begin != end) {
-		expected(begin, {End});
-	}*/
-	return node;
+	core::Array<ASTInstruction *> instrs;
+	while(begin != end && !begin->isEnd()) {
+		instrs.append(parseInstrution(begin, end));
+	}
+	return new ASTInstructionList(instrs);
 }
 
 }

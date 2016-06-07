@@ -20,7 +20,6 @@ namespace n {
 namespace script {
 
 Tokenizer::Tokenizer() {
-
 }
 
 core::Array<Token> Tokenizer::tokenize(const core::String &code) {
@@ -44,13 +43,15 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 	}
 
 	if(beg == str.size()) {
-		return Token(End, "\0", beg);
+		return Token(TokenType::End, "\0", beg);
 	}
 
-	bool alnum = !!isalnum(str[beg]);
+	bool isNum = !!isdigit(str[beg]);
+	bool isAlpha = !!isalpha(str[beg]);
+	//bool alnum = isNum || isAlpha;
 	uint end = beg + 1;
 	while(end != str.size()) {
-		if(isspace(str[end]) || !!isalnum(str[end]) != alnum) {
+		if(isspace(str[end]) || (isAlpha && !isalnum(str[end])) || (isNum && !isdigit(str[end]))) {
 			break;
 		} else {
 			end++;
@@ -60,38 +61,52 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 	core::String tk = str.subString(beg, end - beg);
 
 
-	if(alnum) {
+	if(isAlpha) {
 		uint b = beg;
 		beg = end;
-		return Token(Identifier, tk, b);
+		if(tk == "var") {
+			return Token(TokenType::Var, tk, b);
+		}
+		return Token(TokenType::Identifier, tk, b);
+	}
+	if(isNum) {
+		uint b = beg;
+		beg = end;
+		return Token(TokenType::Integer, tk, b);
 	}
 	if(tk.beginsWith("==")) {
 		beg += 2;
-		return Token(Equals, "==", beg - 2);
+		return Token(TokenType::Equals, "==", beg - 2);
 	}
 	if(tk.beginsWith("=")) {
-		return Token(Assign, "=", beg++);
+		return Token(TokenType::Assign, "=", beg++);
 	}
 	if(tk.beginsWith("+")) {
-		return Token(Plus, "+", beg++);
+		return Token(TokenType::Plus, "+", beg++);
 	}
 	if(tk.beginsWith("-")) {
-		return Token(Minus, "-", beg++);
+		return Token(TokenType::Minus, "-", beg++);
 	}
 	if(tk.beginsWith("*")) {
-		return Token(Multiply, "*", beg++);
+		return Token(TokenType::Multiply, "*", beg++);
 	}
 	if(tk.beginsWith("/")) {
-		return Token(Divide, "/", beg++);
+		return Token(TokenType::Divide, "/", beg++);
 	}
 	if(tk.beginsWith("(")) {
-		return Token(LeftPar, "(", beg++);
+		return Token(TokenType::LeftPar, "(", beg++);
 	}
 	if(tk.beginsWith(")")) {
-		return Token(RightPar, ")", beg++);
+		return Token(TokenType::RightPar, ")", beg++);
+	}
+	if(tk.beginsWith(":")) {
+		return Token(TokenType::Colon, ":", beg++);
+	}
+	if(tk.beginsWith(";")) {
+		return Token(TokenType::SemiColon, ";", beg++);
 	}
 
-	return Token(Error, tk, beg = end);
+	return Token(TokenType::Error, tk, beg = end);
 }
 
 

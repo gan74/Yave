@@ -22,9 +22,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace script {
 
-enum TokenType
+enum class TokenType
 {
 	Identifier,
+	Integer,
+	Float,
 
 	Assign,
 	Equals,
@@ -37,11 +39,16 @@ enum TokenType
 	LeftPar,
 	RightPar,
 
+	Colon,
+	SemiColon,
+
+	Var,
+
 	Error,
 	End
 };
 
-static constexpr const char *tokenName[] = {"identifier", "=", "==", "+", "-", "*", "/", "(", ")", "", "'EOF'"};
+static constexpr const char *tokenName[] = {"identifier", "integer", "float", "=", "==", "+", "-", "*", "/", "'('", "')'", "':'", "';'", "'var'", "", "EOF"};
 
 class Token
 {
@@ -50,7 +57,7 @@ class Token
 		}
 
 		bool isEnd() const {
-			return type == End || type == Error;
+			return type == TokenType::End || type == TokenType::Error;
 		}
 
 		const TokenType type;

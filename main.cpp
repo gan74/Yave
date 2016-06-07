@@ -39,7 +39,7 @@ void print(CompiledGrammar *g) {
 
 int main(int, char **) {
 
-	core::String code = "a*(c-xb)";
+	core::String code = "var a:Int = 7; x = a + b; lol; b = 7;";
 
 	Tokenizer tokenizer;
 	auto tks = tokenizer.tokenize(code);
@@ -48,7 +48,8 @@ int main(int, char **) {
 
 
 	try {
-		std::cout << std::boolalpha << parser.parse(tks.begin(), tks.end())->toString() << std::endl;
+		ASTNode *node = parser.parse(tks.begin(), tks.end());
+		std::cout << std::boolalpha << node->toString() << std::endl;
 	} catch(SynthaxErrorException &e) {
 		std::cerr << e.what(code) << std::endl;
 	}

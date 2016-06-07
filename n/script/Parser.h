@@ -16,47 +16,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_SCRIPT_PARSER_H
 #define N_SCRIPT_PARSER_H
 
-#include "Tokenizer.h"
+#include "ASTNode.h"
 
 namespace n {
 namespace script {
-
-
-struct ASTNode : NonCopyable
-{
-	virtual ~ASTNode() {
-	}
-
-	virtual core::String toString() const  = 0;
-};
-
-struct ASTExpression : public ASTNode {};
-
-struct ASTIdentifier : public ASTExpression
-{
-	ASTIdentifier(const core::String &n) : name(n) {
-	}
-
-	const core::String name;
-
-	virtual core::String toString() const override {
-		return name;
-	}
-};
-
-struct ASTBinOp : public ASTExpression
-{
-	ASTBinOp(ASTExpression *l, ASTExpression *r, TokenType t) : type(t), lhs(l), rhs(r) {
-	}
-
-	const TokenType type;
-	const ASTExpression *lhs;
-	const ASTExpression *rhs;
-
-	virtual core::String toString() const override {
-		return core::String(tokenName[type]) + "(" + lhs->toString() + " " + rhs->toString() + ")";
-	}
-};
 
 class SynthaxErrorException : public std::exception
 {
