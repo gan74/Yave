@@ -5,12 +5,6 @@ CONFIG -= Qt
 
 DESTDIR = bin/
 
-LIBS += -lmingw32
-LIBS += -lSDL2main
-LIBS += -lSDL2.dll
-LIBS += -lSDL2_Image
-LIBS += -lSDL2_Image.dll
-
 SOURCES += main.cpp
 
 QMAKE_CXXFLAGS += -ffast-math
