@@ -30,6 +30,7 @@ enum class TokenType
 
 	Assign,
 	Equals,
+	NotEquals,
 
 	Plus,
 	Minus,
@@ -50,7 +51,7 @@ enum class TokenType
 	End
 };
 
-static constexpr const char *tokenName[] = {"identifier", "integer", "float", "=", "==", "+", "-", "*", "/", "'('", "')'", "':'", "';'", "'var'", "'if", "'while'", "", "EOF"};
+static constexpr const char *tokenName[] = {"identifier", "integer", "float", "=", "==", "!=", "+", "-", "*", "/", "'('", "')'", "':'", "';'", "'var'", "'if", "'while'", "", "EOF"};
 
 class Token
 {

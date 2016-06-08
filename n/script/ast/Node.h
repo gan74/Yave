@@ -37,8 +37,13 @@ enum class NodeType
 	Multiply	= TokenType::Multiply,
 	Divide		= TokenType::Divide,
 
+	Equals		= TokenType::Equals,
+	NotEquals	= TokenType::NotEquals,
+
 	Declaration,
 	Assignation,
+
+	Loop,
 
 	Expression,
 	InstructionList
@@ -138,7 +143,7 @@ struct Declaration : public Instruction
 	const Expression *value;
 
 	virtual core::String toString() const override {
-		return "var " + name + ":" + typeName + (value ? " = " + value->toString() : core::String());
+		return "var " + name + ":" + typeName + (value ? " = " + value->toString() : core::String()) + ";";
 	}
 
 	virtual void eval(ExecutionFrame &frame) const override;
@@ -211,6 +216,22 @@ struct Assignation : public Expression
 	virtual ExecutionVar eval(ExecutionFrame &frame) const override;
 };
 
+
+
+struct LoopInstruction : public Instruction
+{
+	LoopInstruction(Expression *cond, Instruction *bod) : Instruction(NodeType::Loop, cond->index), condition(cond), body(bod) {
+	}
+
+	const Expression *condition;
+	const Instruction *body;
+
+	virtual core::String toString() const override {
+		return "while" + condition->toString() + " " + body->toString();
+	}
+
+	virtual void eval(ExecutionFrame &frame) const override;
+};
 
 }
 }

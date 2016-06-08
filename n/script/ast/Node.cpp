@@ -85,6 +85,12 @@ ExecutionVar BinOp::eval(ExecutionFrame &frame) const {
 		case NodeType::Divide:
 			return l.type->div(l, r);
 
+		case NodeType::Equals:
+			return frame.intType->init(l.type->equals(l, r));
+
+		case NodeType::NotEquals:
+			return frame.intType->init(!l.type->equals(l, r));
+
 		default:
 		break;
 	}
@@ -94,10 +100,15 @@ ExecutionVar BinOp::eval(ExecutionFrame &frame) const {
 
 ExecutionVar Assignation::eval(ExecutionFrame &frame) const {
 	ExecutionVar &e = frame.varStack.getVar(name);
-	if(!e.type) {
-		throw ExecutionException("\"" + name + "\" has not been declared", index);
-	}
 	return e = value->eval(frame);
+}
+
+void LoopInstruction::eval(ExecutionFrame &frame) const {
+	ExecutionVar c = condition->eval(frame);
+	while(c.integer) {
+		body->eval(frame);
+		c = condition->eval(frame);
+	}
 }
 
 }

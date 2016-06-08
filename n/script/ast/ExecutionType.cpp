@@ -30,6 +30,10 @@ void ExecutionType::expectType(ExecutionVar a, const ExecutionType *type, uint i
 	}
 }
 
+bool ExecutionType::equals(ExecutionVar a, ExecutionVar b, uint index) const {
+	expectType(a, b.type, index);
+	return a.integer == b.integer;
+}
 
 
 
@@ -45,12 +49,6 @@ bool ExecutionIntType::greaterThan(ExecutionVar a, ExecutionVar b, uint index) c
 	//expectType(a, this, index);
 	expectType(b, this, index);
 	return a.integer > b.integer;
-}
-
-bool ExecutionIntType::equals(ExecutionVar a, ExecutionVar b, uint index) const {
-	//expectType(a, this, index);
-	expectType(b, this, index);
-	return a.integer == b.integer;
 }
 
 ExecutionVar ExecutionIntType::add(ExecutionVar a, ExecutionVar b, uint index) const {
@@ -96,12 +94,6 @@ bool ExecutionFloatType::greaterThan(ExecutionVar a, ExecutionVar b, uint index)
 	//expectType(a, this, index);
 	expectType(b, this, index);
 	return a.real > b.real;
-}
-
-bool ExecutionFloatType::equals(ExecutionVar a, ExecutionVar b, uint index) const {
-	//expectType(a, this, index);
-	expectType(b, this, index);
-	return a.real == b.real;
 }
 
 ExecutionVar ExecutionFloatType::add(ExecutionVar a, ExecutionVar b, uint index) const {

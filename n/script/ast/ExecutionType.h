@@ -39,7 +39,8 @@ class ExecutionType
 
 		virtual bool lessThan(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
 		virtual bool greaterThan(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
-		virtual bool equals(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
+
+		virtual bool equals(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const;
 
 		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
 		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
@@ -61,7 +62,6 @@ class ExecutionIntType : public ExecutionType
 
 		virtual bool lessThan(ExecutionVar a, ExecutionVar b, uint index) const override;
 		virtual bool greaterThan(ExecutionVar a, ExecutionVar b, uint index) const override;
-		virtual bool equals(ExecutionVar a, ExecutionVar b, uint index) const override;
 
 		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b, uint index) const override;
 		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b, uint index) const override;
@@ -79,7 +79,6 @@ class ExecutionFloatType : public ExecutionType
 
 		virtual bool lessThan(ExecutionVar a, ExecutionVar b, uint index) const override;
 		virtual bool greaterThan(ExecutionVar a, ExecutionVar b, uint index) const override;
-		virtual bool equals(ExecutionVar a, ExecutionVar b, uint index) const override;
 
 		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b, uint index) const override;
 		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b, uint index) const override;

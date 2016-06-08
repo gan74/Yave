@@ -82,6 +82,10 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 		beg += 2;
 		return Token(TokenType::Equals, "==", beg - 2);
 	}
+	if(tk.beginsWith("!=")) {
+		beg += 2;
+		return Token(TokenType::NotEquals, "!=", beg - 2);
+	}
 	if(tk.beginsWith("=")) {
 		return Token(TokenType::Assign, "=", beg++);
 	}

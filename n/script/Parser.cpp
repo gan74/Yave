@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "Parser.h"
+#include <iostream>
 
 namespace n {
 namespace script {
@@ -59,6 +60,8 @@ const char *SynthaxErrorException::what(const core::String &code) const noexcept
 }
 
 
+
+
 template<typename... Args>
 void expected(core::Array<Token>::const_iterator it, Args... args) {
 	throw SynthaxErrorException({args...}, --it);
@@ -77,29 +80,47 @@ void eat(core::Array<Token>::const_iterator &it, TokenType type) {
 	}
 }
 
+bool isOperator(TokenType type) {
+	switch(type) {
+		case TokenType::Plus:
+		case TokenType::Minus:
+		case TokenType::Multiply:
+		case TokenType::Divide:
+		case TokenType::Equals:
+		case TokenType::NotEquals:
+			return true;
+		break;
 
-/*
-template<typename... Args>
-bool eatHelper(TokenType t, TokenType type, Args... args) {
-	return t == type ? true : eatHelper(t, args...);
-}
-
-bool eatHelper(TokenType) {
+		default:
+			return false;
+	}
 	return false;
 }
 
-template<typename... Args>
-void eat(core::Array<Token>::const_iterator &begin, Args... args) {
-	if(!eatHelper((begin++)->type, args...)) {
-		expected(begin, args...);
+int assoc(TokenType type) {
+	switch(type) {
+		case TokenType::Multiply:
+		case TokenType::Divide:
+			return 1;
+
+		case TokenType::Plus:
+		case TokenType::Minus:
+			return 0;
+
+		default:
+			return -1;
 	}
-}*/
+	return 0;
+}
+
+
+
+
+
 
 ast::Expression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
 
-
 ast::Expression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
-	ast::Expression *expr = 0;
 	core::Array<Token>::const_iterator id = begin;
 	switch((begin++)->type) {
 		case TokenType::Identifier:
@@ -112,14 +133,14 @@ ast::Expression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core
 		case TokenType::Integer:
 			return new ast::Integer(id->string.to<int64>(), id->index);
 
-		case TokenType::LeftPar:
-			expr = parseExpr(begin, end);
+		case TokenType::LeftPar: {
+			ast::Expression *expr = parseExpr(begin, end);
 			if((begin++)->type != TokenType::RightPar) {
 				delete expr;
 				expected(begin, TokenType::RightPar);
 			}
 			return expr;
-		break;
+		} break;
 
 		default:
 		break;
@@ -129,29 +150,36 @@ ast::Expression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core
 }
 
 ast::Expression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
-	ast::Expression *expr = parseSimpleExpr(begin, end);
+	ast::Expression *lhs = parseSimpleExpr(begin, end);
+	TokenType a = begin->type;
+
+	if(!isOperator(a)) {
+		return lhs;
+	}
+	begin++;
+	ast::Expression *mhs = parseSimpleExpr(begin, end);
+
 	for(;;) {
+		TokenType b = begin->type;
 
-		TokenType token = (begin++)->type;
-		switch(token) {
-			case TokenType::Plus:
-			case TokenType::Minus:
-				expr = new ast::BinOp(expr, parseExpr(begin, end), ast::NodeType(token));
-			break;
+		if(isOperator(b)) {
+			begin++;
+		} else {
+			return new ast::BinOp(lhs, mhs, ast::NodeType(a));
+		}
 
-			case TokenType::Multiply:
-			case TokenType::Divide:
-				expr = new ast::BinOp(expr, parseSimpleExpr(begin, end), ast::NodeType(token));
-			break;
+		ast::Expression *rhs = parseSimpleExpr(begin, end);
 
-			default:
-				begin--;
-				return expr;
+		if(assoc(b) > assoc(a)) {
+			mhs = new ast::BinOp(mhs, rhs, ast::NodeType(b));
+		} else {
+			lhs = new ast::BinOp(lhs, mhs, ast::NodeType(a));
+			mhs = rhs;
+			a = b;
 		}
 	}
-	return expr;
+	return 0;
 }
-
 
 ast::Declaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	eat(begin, TokenType::Var);
@@ -172,12 +200,19 @@ ast::Declaration *parseDeclaration(core::Array<Token>::const_iterator &begin, co
 }
 
 
-ast::Instruction *parseInstrution(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+ast::Instruction *parseInstruction(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	ast::Instruction *instr = 0;
 	switch(begin->type) {
 		case TokenType::Var:
 			instr = parseDeclaration(begin, end);
 		break;
+
+		case TokenType::While: {
+			begin++;
+			expect(begin, TokenType::LeftPar);
+			ast::Expression *expr = parseExpr(begin, end);
+			return new ast::LoopInstruction(expr, parseInstruction(begin, end));
+		} break;
 
 		default:
 			instr = new ast::ExprInstruction(parseExpr(begin, end));
@@ -187,9 +222,11 @@ ast::Instruction *parseInstrution(core::Array<Token>::const_iterator &begin, cor
 		eat(begin, TokenType::SemiColon);
 		return instr;
 	}
-	expected(begin, TokenType::Var);
+	expected(begin, TokenType::Var, TokenType::While);
 	return 0;
 }
+
+
 
 Parser::Parser() {
 }
@@ -197,7 +234,7 @@ Parser::Parser() {
 ast::Instruction *Parser::parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const {
 	core::Array<ast::Instruction *> instrs;
 	while(begin != end && !begin->isEnd()) {
-		instrs.append(parseInstrution(begin, end));
+		instrs.append(parseInstruction(begin, end));
 	}
 	return instrs.size() == 1 ? instrs.first() : new ast::InstructionList(instrs);
 }

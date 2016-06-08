@@ -12,10 +12,8 @@ using namespace n::script;
 
 
 int main(int, char **) {
-	core::String code = "var x:Int = 7;			\n"
-						"var f:Float;			\n"
-						"x = (x + 2) * 3;		\n"
-						"9 + 2 + x;				\n";
+	core::String code = "var x:Int = 7;							\n"
+						"while(x - 1 != 2 - 1) x = x - 1;		\n";
 
 
 	Tokenizer tokenizer;
@@ -30,6 +28,7 @@ int main(int, char **) {
 	try {
 		//Timer timer;
 		ast::Instruction *node = parser.parse(tks.begin(), tks.end());
+		std::cout << node->toString() << std::endl;
 		/*if(dynamic_cast<ast::InstructionList *>(node)) {
 			const_cast<core::Array<ast::Instruction *> &>(dynamic_cast<ast::InstructionList *>(node)->instructions) += new ast::PrintInstruction(new ast::Identifier("x", uint(-1)));
 		}
