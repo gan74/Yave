@@ -136,6 +136,7 @@ class String2
 
 		char *data();
 		const char *data() const;
+		char *detachedData() const;
 
 		iterator begin();
 		iterator end();

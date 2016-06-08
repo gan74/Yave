@@ -319,6 +319,13 @@ const char *String2::data() const {
 	return isLong() ? l.data : s.data;
 }
 
+char *String2::detachedData() const {
+	char *c = new char[size() + 1];
+	memcpy(c, data(), size());
+	c[size() + 1] = 0;
+	return c;
+}
+
 String2::iterator String2::begin() {
 	return data();
 }
