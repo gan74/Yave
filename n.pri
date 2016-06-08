@@ -12,7 +12,8 @@ SOURCES += $$PWD/n/*.cpp \
 		   $$PWD/n/concurrent/*.cpp \
 		   $$PWD/n/test/*.cpp \
 		   $$PWD/n/test/defaults/*.cpp \
-		   $$PWD/n/script/*.cpp
+		   $$PWD/n/script/*.cpp \
+		   $$PWD/n/script/ast/*.cpp
 
 HEADERS += $$PWD/n/*.h \
 		   $$PWD/n/core/*.h \
@@ -24,7 +25,8 @@ HEADERS += $$PWD/n/*.h \
 		   $$PWD/n/mem/*.h \
 		   $$PWD/n/assets/*.h \
 		   $$PWD/n/signals/*.h \
-		   $$PWD/n/script/*.h
+		   $$PWD/n/script/*.h \
+		   $$PWD/n/script/ast/*.h
 
 
 

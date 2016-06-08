@@ -13,38 +13,44 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_PARSER_H
-#define N_SCRIPT_PARSER_H
+#ifndef N_SCRIPT_EXECUTIONVAR_H
+#define N_SCRIPT_EXECUTIONVAR_H
 
-#include "ast/Node.h"
+#include <n/types.h>
 
 namespace n {
 namespace script {
+namespace ast {
 
-class SynthaxErrorException : public std::exception
+class ExecutionType;
+
+struct ExecutionVar
 {
-	public:
-		SynthaxErrorException(const core::Array<TokenType> &e, core::Array<Token>::const_iterator p) : expected(e), position(p) {
-		}
+	const ExecutionType *type;
+	union
+	{
+		int64 integer;
+		double real;
+		void *object;
+	};
 
-		virtual const char *what() const noexcept override;
-		virtual const char *what(const core::String &code) const noexcept;
+	ExecutionVar() : type(0), integer(0) {
+	}
 
-	private:
-		core::Array<TokenType> expected;
-		core::Array<Token>::const_iterator position;
-};
+	ExecutionVar(const ExecutionType *t, int64 i) : type(t), integer(i) {
+	}
 
-class Parser
-{
-	public:
-		Parser();
+	ExecutionVar(const ExecutionType *t, double d) : type(t), real(d) {
+	}
 
-		ast::Instruction *parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const;
+	ExecutionVar(const ExecutionType *t, void *p) : type(t), object(p) {
+	}
 
+	//ExecutionVar(ExecutionType *t);
 };
 
 }
 }
+}
 
-#endif // N_SCRIPT_PARSER_H
+#endif // N_SCRIPT_EXECUTIONVAR_H

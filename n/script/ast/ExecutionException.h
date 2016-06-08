@@ -13,33 +13,33 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_ASTEXECUTIONVAR_H
-#define N_SCRIPT_ASTEXECUTIONVAR_H
+#ifndef N_SCRIPT_EXECUTIONEXCEPTION_H
+#define N_SCRIPT_EXECUTIONEXCEPTION_H
 
-#include <n/types.h>
+#include <n/core/String.h>
 
 namespace n {
 namespace script {
+namespace ast {
 
-class ASTExecutionType;
-
-struct ASTExecutionVar
+class ExecutionException : std::exception
 {
-	ASTExecutionType *type;
-	union
-	{
-		int64 integer;
-		double real;
-		void *object;
-	};
+	public:
+		virtual const char *what() const noexcept override;
+		virtual const char *what(const core::String &code) const noexcept;
 
-	ASTExecutionVar() : type(0), integer(0) {
-	}
+		ExecutionException(const core::String &m, uint ind);
 
-	//ASTExecutionVar(ASTExecutionType *t);
+	protected:
+		core::String locString(const core::String &code) const;
+
+	private:
+		core::String msg;
+		uint index;
 };
 
 }
 }
+}
 
-#endif // N_SCRIPT_ASTEXECUTIONVAR_H
+#endif // N_SCRIPT_EXECUTIONEXCEPTION_H

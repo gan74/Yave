@@ -13,41 +13,42 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#include "ASTExecutionVarStack.h"
+#include "ExecutionVarStack.h"
 
 namespace n {
 namespace script {
+namespace ast {
 
-ASTExecutionVarStack::ASTExecutionVarStack() {
+ExecutionVarStack::ExecutionVarStack() {
 	pushStack();
 }
 
-ASTExecutionVar &ASTExecutionVarStack::declare(const core::String &name, ASTExecutionType *type) {
+ExecutionVar &ExecutionVarStack::declare(const core::String &name, ExecutionType *type) {
 	VarMap::iterator it = vars.insert(name, type->init());
 	stack.last().append(it);
 	return it->_2;
 }
 
-void ASTExecutionVarStack::pushStack() {
+void ExecutionVarStack::pushStack() {
 	stack.append(decltype(stack)::Element());
 }
 
-void ASTExecutionVarStack::popStack() {
+void ExecutionVarStack::popStack() {
 	for(VarMap::iterator it : stack.last()) {
 		vars.remove(it);
 	}
 	stack.pop();
 }
 
-ASTExecutionVar &ASTExecutionVarStack::getVar(const core::String &name) {
+ExecutionVar &ExecutionVarStack::getVar(const core::String &name) {
 	VarMap::iterator it = vars.find(name);
 	return it == vars.end() ? invalid : it->_2;
 }
 
-bool ASTExecutionVarStack::isDeclared(const core::String &name) const {
+bool ExecutionVarStack::isDeclared(const core::String &name) const {
 	return vars.exists(name);
 }
 
-
+}
 }
 }

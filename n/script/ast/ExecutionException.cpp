@@ -13,28 +13,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#include "ASTExecutionFrame.h"
+#include "ExecutionException.h"
 
 namespace n {
 namespace script {
+namespace ast {
 
-ASTExecutionException::ASTExecutionException(const core::String &m, uint ind) : msg(m), index(ind) {
-}
-
-const char *ASTExecutionException::what() const noexcept {
-	return msg.data();
-}
-
-const char *ASTExecutionException::what(const core::String &code) const noexcept {
+core::String ExecutionException::locString(const core::String &code) const {
 	uint line = 1;
 	for(uint i = 0; i != index && i != code.size(); i++) {
 		line += code[i] == '\n';
 	}
 	core::String lineStr("at line ");
 	lineStr << core::String2(line) << ": \"";
-
-	core::String str = msg + ":\n" + lineStr;
-
+	core::String str = lineStr;
 	uint lineBeg = index;
 	for(; lineBeg != 0 && code[lineBeg - 1] != '\n'; lineBeg--);
 	uint end = code.find('\n', lineBeg) - code.begin();
@@ -43,12 +35,22 @@ const char *ASTExecutionException::what(const core::String &code) const noexcept
 		str += "~";
 	}
 	str += "^";
+	return str;
+}
+
+ExecutionException::ExecutionException(const core::String &m, uint ind) : msg(m), index(ind) {
+}
+
+const char *ExecutionException::what() const noexcept {
+	return msg.data();
+}
+
+const char *ExecutionException::what(const core::String &code) const noexcept {
+	core::String str = msg + ":\n" + locString(code);
 	return str.data();
 }
 
-ASTExecutionFrame::ASTExecutionFrame() {
-	types["Int"] = intType = new ASTExecutionIntType();
-}
 
+}
 }
 }

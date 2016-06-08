@@ -13,41 +13,29 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_ASTEXECUTIONFRAME_H
-#define N_SCRIPT_ASTEXECUTIONFRAME_H
+#ifndef N_SCRIPT_EXECUTIONFRAME_H
+#define N_SCRIPT_EXECUTIONFRAME_H
 
-#include "ASTExecutionVarStack.h"
+#include "ExecutionVarStack.h"
 
 namespace n {
 namespace script {
+namespace ast {
 
-class ASTExecutionException : std::exception
+class ExecutionFrame
 {
 	public:
-		virtual const char *what() const noexcept override;
-		virtual const char *what(const core::String &code) const noexcept;
+		ExecutionFrame();
 
-		ASTExecutionException(const core::String &m, uint ind);
+		ExecutionVarStack varStack;
 
-	private:
-		core::String msg;
-		uint index;
+		core::Map<core::String, ExecutionType *> types;
 
-};
-
-class ASTExecutionFrame
-{
-	public:
-		ASTExecutionFrame();
-
-		ASTExecutionVarStack varStack;
-
-		core::Map<core::String, ASTExecutionType *> types;
-
-		ASTExecutionIntType *intType;
+		ExecutionIntType *intType;
 };
 
 }
 }
+}
 
-#endif // N_SCRIPT_ASTEXECUTIONFRAME_H
+#endif // N_SCRIPT_EXECUTIONFRAME_H

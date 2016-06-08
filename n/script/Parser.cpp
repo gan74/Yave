@@ -94,22 +94,22 @@ void eat(core::Array<Token>::const_iterator &begin, Args... args) {
 	}
 }*/
 
-ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
+ast::Expression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
 
 
-ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
-	ASTExpression *expr = 0;
+ast::Expression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	ast::Expression *expr = 0;
 	core::Array<Token>::const_iterator id = begin;
 	switch((begin++)->type) {
 		case TokenType::Identifier:
 			if(begin->type == TokenType::Assign) {
 				begin++;
-				return new ASTAssignation(id->string, parseExpr(begin, end));
+				return new ast::Assignation(id->string, parseExpr(begin, end));
 			}
-			return new ASTIdentifier(id->string, id->index);
+			return new ast::Identifier(id->string, id->index);
 
 		case TokenType::Integer:
-			return new ASTInteger(id->string.to<int64>(), id->index);
+			return new ast::Integer(id->string.to<int64>(), id->index);
 
 		case TokenType::LeftPar:
 			expr = parseExpr(begin, end);
@@ -127,20 +127,20 @@ ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::
 	return 0;
 }
 
-ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
-	ASTExpression *expr = parseSimpleExpr(begin, end);
+ast::Expression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	ast::Expression *expr = parseSimpleExpr(begin, end);
 	for(;;) {
 
 		TokenType token = (begin++)->type;
 		switch(token) {
 			case TokenType::Plus:
 			case TokenType::Minus:
-				expr = new ASTBinOp(expr, parseExpr(begin, end), ASTNodeType(token));
+				expr = new ast::BinOp(expr, parseExpr(begin, end), ast::NodeType(token));
 			break;
 
 			case TokenType::Multiply:
 			case TokenType::Divide:
-				expr = new ASTBinOp(expr, parseSimpleExpr(begin, end), ASTNodeType(token));
+				expr = new ast::BinOp(expr, parseSimpleExpr(begin, end), ast::NodeType(token));
 			break;
 
 			default:
@@ -152,7 +152,7 @@ ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<
 }
 
 
-ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+ast::Declaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	eat(begin, TokenType::Var);
 
 	expect(begin, TokenType::Identifier);
@@ -165,21 +165,21 @@ ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core
 
 	if(begin->type == TokenType::Assign) {
 		begin++;
-		return new ASTDeclaration(name, type, (begin - 1)->index, parseExpr(begin, end));
+		return new ast::Declaration(name, type, (begin - 1)->index, parseExpr(begin, end));
 	}
-	return new ASTDeclaration(name, type, (begin - 1)->index);
+	return new ast::Declaration(name, type, (begin - 1)->index);
 }
 
 
-ASTInstruction *parseInstrution(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
-	ASTInstruction *instr = 0;
+ast::Instruction *parseInstrution(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	ast::Instruction *instr = 0;
 	switch(begin->type) {
 		case TokenType::Var:
 			instr = parseDeclaration(begin, end);
 		break;
 
 		default:
-			instr = new ASTExprInstruction(parseExpr(begin, end));
+			instr = new ast::ExprInstruction(parseExpr(begin, end));
 		break;
 	}
 	if(instr) {
@@ -193,12 +193,12 @@ ASTInstruction *parseInstrution(core::Array<Token>::const_iterator &begin, core:
 Parser::Parser() {
 }
 
-ASTInstruction *Parser::parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const {
-	core::Array<ASTInstruction *> instrs;
+ast::Instruction *Parser::parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const {
+	core::Array<ast::Instruction *> instrs;
 	while(begin != end && !begin->isEnd()) {
 		instrs.append(parseInstrution(begin, end));
 	}
-	return new ASTInstructionList(instrs);
+	return instrs.size() == 1 ? instrs.first() : new ast::InstructionList(instrs);
 }
 
 }

@@ -94,6 +94,12 @@ class String2
 		explicit String2(const T &t) : String2(build(t)) {
 		}
 
+		String2(int t) : String2(build(t)) {
+		}
+
+		String2(uint t) : String2(build(t)) {
+		}
+
 		uint size() const;
 		bool isEmpty() const;
 

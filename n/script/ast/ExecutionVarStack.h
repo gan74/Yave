@@ -13,22 +13,41 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#include "ASTExecutionType.h"
-#include <iostream>
+#ifndef N_SCRIPT_EXECUTIONVARSTACK_H
+#define N_SCRIPT_EXECUTIONVARSTACK_H
+
+#include <n/core/Map.h>
+#include <n/core/Array.h>
+#include <n/core/String.h>
+#include "ExecutionType.h"
 
 namespace n {
 namespace script {
+namespace ast {
 
-ASTExecutionType::ASTExecutionType(const core::String &typeName) : name(typeName) {
-}
+class ExecutionVarStack
+{
+	public:
+		ExecutionVarStack();
 
-void ASTExecutionIntType::print(ASTExecutionVar a) const {
-	std::cout << a.integer << std::endl;
-}
+		ExecutionVar &declare(const core::String &name, ExecutionType *type);
 
-void ASTExecutionFloatType::print(ASTExecutionVar a) const {
-	std::cout << a.real << std::endl;
-}
+		void pushStack();
+		void popStack();
+
+		ExecutionVar &getVar(const core::String &name);
+		bool isDeclared(const core::String &name) const;
+
+
+	private:
+		using VarMap = core::Map<core::String, ExecutionVar>;
+
+		ExecutionVar invalid;
+		VarMap vars;
+		core::Array<core::Array<VarMap::iterator>> stack;
+};
 
 }
 }
+}
+#endif // N_SCRIPT_EXECUTIONVARSTACK_H

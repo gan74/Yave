@@ -14,15 +14,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#include "ASTExecutionVar.h"
-#include "ASTExecutionType.h"
+#include "ExecutionVar.h"
+#include "ExecutionType.h"
 
 namespace n {
 namespace script {
+namespace ast {
 
 /*ASTExecutionVar::ASTExecutionVar(ASTExecutionType *t) : type(t) {
 	integer = t ? t->init().integer;
 }*/
 
+}
 }
 }
