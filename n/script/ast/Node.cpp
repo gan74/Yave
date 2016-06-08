@@ -25,6 +25,13 @@ namespace ast {
 
 void ExprInstruction::eval(ExecutionFrame &frame) const {
 	ExecutionVar r = expression->eval(frame);
+	if(frame.print) {
+		r.type->print(r);
+	}
+}
+
+void PrintInstruction::eval(ExecutionFrame &frame) const {
+	ExecutionVar r = expression->eval(frame);
 	r.type->print(r);
 }
 
@@ -42,7 +49,7 @@ void Declaration::eval(ExecutionFrame &frame) const {
 	}
 	core::Map<core::String, ExecutionType *>::iterator it = frame.types.find(typeName);
 	if(it == frame.types.end()) {
-		throw ExecutionException(typeName + " is not a type", index);
+		throw ExecutionException("\"" + typeName + "\" is not a type", index);
 	}
 	ExecutionVar &a = frame.varStack.declare(name, it->_2);
 	if(value) {
@@ -55,11 +62,7 @@ void Declaration::eval(ExecutionFrame &frame) const {
 }
 
 ExecutionVar Identifier::eval(ExecutionFrame &frame) const {
-	ExecutionVar e = frame.varStack.getVar(name);
-	if(!e.type) {
-		throw ExecutionException("\"" + name + "\" has not been declared", index);
-	}
-	return e;
+	return frame.varStack.getVar(name, index);
 }
 
 ExecutionVar Integer::eval(ExecutionFrame &frame) const {
@@ -92,7 +95,7 @@ ExecutionVar BinOp::eval(ExecutionFrame &frame) const {
 ExecutionVar Assignation::eval(ExecutionFrame &frame) const {
 	ExecutionVar &e = frame.varStack.getVar(name);
 	if(!e.type) {
-		throw ExecutionException(name + " has not been declared", index);
+		throw ExecutionException("\"" + name + "\" has not been declared", index);
 	}
 	return e = value->eval(frame);
 }

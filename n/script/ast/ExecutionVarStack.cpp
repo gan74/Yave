@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "ExecutionVarStack.h"
+#include "ExecutionException.h"
 
 namespace n {
 namespace script {
@@ -40,9 +41,12 @@ void ExecutionVarStack::popStack() {
 	stack.pop();
 }
 
-ExecutionVar &ExecutionVarStack::getVar(const core::String &name) {
+ExecutionVar &ExecutionVarStack::getVar(const core::String &name, uint index) {
 	VarMap::iterator it = vars.find(name);
-	return it == vars.end() ? invalid : it->_2;
+	if(it == vars.end()) {
+		throw ExecutionException("\"" + name + "\" has not been declared", index);
+	}
+	return it->_2;
 }
 
 bool ExecutionVarStack::isDeclared(const core::String &name) const {

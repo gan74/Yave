@@ -27,10 +27,11 @@ class ExecutionFrame
 	public:
 		ExecutionFrame();
 
+		void addType(ExecutionType *t);
+
+		bool print;
 		ExecutionVarStack varStack;
-
 		core::Map<core::String, ExecutionType *> types;
-
 		ExecutionIntType *intType;
 };
 

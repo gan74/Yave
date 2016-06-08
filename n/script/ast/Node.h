@@ -60,8 +60,6 @@ struct Node : NonCopyable
 	virtual core::String toString() const  = 0;
 };
 
-
-
 struct Expression : public Node
 {
 	Expression(NodeType tpe, uint index, bool cons = false) : Node(tpe, index), constant(cons) {
@@ -72,8 +70,6 @@ struct Expression : public Node
 	virtual ExecutionVar eval(ExecutionFrame &) const = 0;
 };
 
-
-
 struct Instruction : public Node
 {
 	Instruction(NodeType tpe, uint index) : Node(tpe, index) {
@@ -81,6 +77,8 @@ struct Instruction : public Node
 
 	virtual void eval(ExecutionFrame &) const = 0;
 };
+
+
 
 
 
@@ -93,6 +91,18 @@ struct ExprInstruction : public Instruction
 
 	virtual core::String toString() const override {
 		return expression->toString() + ";";
+	}
+
+	virtual void eval(ExecutionFrame &frame) const override;
+};
+
+struct PrintInstruction : public ExprInstruction
+{
+	PrintInstruction(Expression *expr) : ExprInstruction(expr) {
+	}
+
+	virtual core::String toString() const override {
+		return "print(" + expression->toString() + ");";
 	}
 
 	virtual void eval(ExecutionFrame &frame) const override;

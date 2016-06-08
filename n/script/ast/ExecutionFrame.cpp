@@ -19,8 +19,12 @@ namespace n {
 namespace script {
 namespace ast {
 
-ExecutionFrame::ExecutionFrame() {
-	types["Int"] = intType = new ExecutionIntType();
+ExecutionFrame::ExecutionFrame() : print(true) {
+	addType(intType = new ExecutionIntType());
+}
+
+void ExecutionFrame::addType(ExecutionType *t) {
+	types[t->name] = t;
 }
 
 }

@@ -37,19 +37,19 @@ class ExecutionType
 			return v;
 		}
 
-		virtual bool lessThan(ExecutionVar a, ExecutionVar b) const = 0;
-		virtual bool greaterThan(ExecutionVar a, ExecutionVar b) const = 0;
-		virtual bool equals(ExecutionVar a, ExecutionVar b) const = 0;
+		virtual bool lessThan(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
+		virtual bool greaterThan(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
+		virtual bool equals(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
 
-		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b) const = 0;
-		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b) const = 0;
-		virtual ExecutionVar mul(ExecutionVar a, ExecutionVar b) const = 0;
-		virtual ExecutionVar div(ExecutionVar a, ExecutionVar b) const = 0;
+		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
+		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
+		virtual ExecutionVar mul(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
+		virtual ExecutionVar div(ExecutionVar a, ExecutionVar b, uint index = uint(-1)) const = 0;
 
 		virtual void print(ExecutionVar a) const = 0;
 
 	protected:
-		void expectType(ExecutionVar a, const ExecutionType *type) const;
+		void expectType(ExecutionVar a, const ExecutionType *type, uint index = uint(-1)) const;
 
 };
 
@@ -59,14 +59,14 @@ class ExecutionIntType : public ExecutionType
 		ExecutionIntType() : ExecutionType("Int") {
 		}
 
-		virtual bool lessThan(ExecutionVar a, ExecutionVar b) const override;
-		virtual bool greaterThan(ExecutionVar a, ExecutionVar b) const override;
-		virtual bool equals(ExecutionVar a, ExecutionVar b) const override;
+		virtual bool lessThan(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual bool greaterThan(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual bool equals(ExecutionVar a, ExecutionVar b, uint index) const override;
 
-		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b) const override;
-		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b) const override;
-		virtual ExecutionVar mul(ExecutionVar a, ExecutionVar b) const override;
-		virtual ExecutionVar div(ExecutionVar a, ExecutionVar b) const override;
+		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual ExecutionVar mul(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual ExecutionVar div(ExecutionVar a, ExecutionVar b, uint index) const override;
 
 		virtual void print(ExecutionVar a) const override;
 };
@@ -77,14 +77,14 @@ class ExecutionFloatType : public ExecutionType
 		ExecutionFloatType() : ExecutionType("Float") {
 		}
 
-		virtual bool lessThan(ExecutionVar a, ExecutionVar b) const override;
-		virtual bool greaterThan(ExecutionVar a, ExecutionVar b) const override;
-		virtual bool equals(ExecutionVar a, ExecutionVar b) const override;
+		virtual bool lessThan(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual bool greaterThan(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual bool equals(ExecutionVar a, ExecutionVar b, uint index) const override;
 
-		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b) const override;
-		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b) const override;
-		virtual ExecutionVar mul(ExecutionVar a, ExecutionVar b) const override;
-		virtual ExecutionVar div(ExecutionVar a, ExecutionVar b) const override;
+		virtual ExecutionVar add(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual ExecutionVar sub(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual ExecutionVar mul(ExecutionVar a, ExecutionVar b, uint index) const override;
+		virtual ExecutionVar div(ExecutionVar a, ExecutionVar b, uint index) const override;
 
 		virtual void print(ExecutionVar a) const override;
 };

@@ -20,6 +20,9 @@ namespace script {
 namespace ast {
 
 core::String ExecutionException::locString(const core::String &code) const {
+	if(index == uint(-1)) {
+		return "";
+	}
 	uint line = 1;
 	for(uint i = 0; i != index && i != code.size(); i++) {
 		line += code[i] == '\n';
@@ -46,8 +49,8 @@ const char *ExecutionException::what() const noexcept {
 }
 
 const char *ExecutionException::what(const core::String &code) const noexcept {
-	core::String str = msg + ":\n" + locString(code);
-	return str.data();
+	buffer = msg + ":\n" + locString(code);
+	return buffer.data();
 }
 
 

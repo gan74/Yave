@@ -28,7 +28,7 @@ class ExecutionException : std::exception
 		virtual const char *what() const noexcept override;
 		virtual const char *what(const core::String &code) const noexcept;
 
-		ExecutionException(const core::String &m, uint ind);
+		ExecutionException(const core::String &m, uint ind = uint(-1));
 
 	protected:
 		core::String locString(const core::String &code) const;
@@ -36,6 +36,8 @@ class ExecutionException : std::exception
 	private:
 		core::String msg;
 		uint index;
+
+		mutable core::String buffer;
 };
 
 }

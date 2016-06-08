@@ -24,9 +24,9 @@ namespace ast {
 ExecutionType::ExecutionType(const core::String &typeName) : name(typeName) {
 }
 
-void ExecutionType::expectType(ExecutionVar a, const ExecutionType *type) const {
+void ExecutionType::expectType(ExecutionVar a, const ExecutionType *type, uint index) const {
 	if(a.type != type) {
-		throw ExecutionException("Invalid type \"" + a.type->name + "\" expected \"" + type->name + "\"", 0);
+		throw ExecutionException("Invalid type \"" + a.type->name + "\" expected \"" + type->name + "\"", index);
 	}
 }
 
@@ -35,43 +35,50 @@ void ExecutionType::expectType(ExecutionVar a, const ExecutionType *type) const 
 
 
 
-bool ExecutionIntType::lessThan(ExecutionVar a, ExecutionVar b) const {
+bool ExecutionIntType::lessThan(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return a.integer < b.integer;
 }
 
-bool ExecutionIntType::greaterThan(ExecutionVar a, ExecutionVar b) const {
+bool ExecutionIntType::greaterThan(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return a.integer > b.integer;
 }
 
-bool ExecutionIntType::equals(ExecutionVar a, ExecutionVar b) const {
+bool ExecutionIntType::equals(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return a.integer == b.integer;
 }
 
-ExecutionVar ExecutionIntType::add(ExecutionVar a, ExecutionVar b) const {
-	expectType(a, this);
-	expectType(b, this);
+ExecutionVar ExecutionIntType::add(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return ExecutionVar(this, a.integer + b.integer);
 }
 
-ExecutionVar ExecutionIntType::sub(ExecutionVar a, ExecutionVar b) const {
-	expectType(a, this);
-	expectType(b, this);
+ExecutionVar ExecutionIntType::sub(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return ExecutionVar(this, a.integer - b.integer);
 }
 
-ExecutionVar ExecutionIntType::mul(ExecutionVar a, ExecutionVar b) const {
-	expectType(a, this);
-	expectType(b, this);
+ExecutionVar ExecutionIntType::mul(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return ExecutionVar(this, a.integer * b.integer);
 }
 
-ExecutionVar ExecutionIntType::div(ExecutionVar a, ExecutionVar b) const {
-	expectType(a, this);
-	expectType(b, this);
+ExecutionVar ExecutionIntType::div(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return ExecutionVar(this, a.integer / b.integer);
 }
 
 void ExecutionIntType::print(ExecutionVar a) const {
+	//expectType(a, this);
 	std::cout << a.integer << std::endl;
 }
 
@@ -79,43 +86,50 @@ void ExecutionIntType::print(ExecutionVar a) const {
 
 
 
-bool ExecutionFloatType::lessThan(ExecutionVar a, ExecutionVar b) const {
+bool ExecutionFloatType::lessThan(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return a.real < b.real;
 }
 
-bool ExecutionFloatType::greaterThan(ExecutionVar a, ExecutionVar b) const {
+bool ExecutionFloatType::greaterThan(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return a.real > b.real;
 }
 
-bool ExecutionFloatType::equals(ExecutionVar a, ExecutionVar b) const {
+bool ExecutionFloatType::equals(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return a.real == b.real;
 }
 
-ExecutionVar ExecutionFloatType::add(ExecutionVar a, ExecutionVar b) const {
-	expectType(a, this);
-	expectType(b, this);
+ExecutionVar ExecutionFloatType::add(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return ExecutionVar(this, a.real + b.real);
 }
 
-ExecutionVar ExecutionFloatType::sub(ExecutionVar a, ExecutionVar b) const {
-	expectType(a, this);
-	expectType(b, this);
+ExecutionVar ExecutionFloatType::sub(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return ExecutionVar(this, a.real - b.real);
 }
 
-ExecutionVar ExecutionFloatType::mul(ExecutionVar a, ExecutionVar b) const {
-	expectType(a, this);
-	expectType(b, this);
+ExecutionVar ExecutionFloatType::mul(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return ExecutionVar(this, a.real * b.real);
 }
 
-ExecutionVar ExecutionFloatType::div(ExecutionVar a, ExecutionVar b) const {
-	expectType(a, this);
-	expectType(b, this);
+ExecutionVar ExecutionFloatType::div(ExecutionVar a, ExecutionVar b, uint index) const {
+	//expectType(a, this, index);
+	expectType(b, this, index);
 	return ExecutionVar(this, a.real / b.real);
 }
 
 void ExecutionFloatType::print(ExecutionVar a) const {
+	//expectType(a, this);
 	std::cout << a.real << std::endl;
 }
 

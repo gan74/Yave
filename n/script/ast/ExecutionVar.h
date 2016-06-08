@@ -49,6 +49,9 @@ struct ExecutionVar
 	//ExecutionVar(ExecutionType *t);
 };
 
+
+static_assert(sizeof(ExecutionVar) == 8 + sizeof(void *), "ExecutionVar::Data should be 64 bits");
+
 }
 }
 }

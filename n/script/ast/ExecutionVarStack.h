@@ -35,7 +35,7 @@ class ExecutionVarStack
 		void pushStack();
 		void popStack();
 
-		ExecutionVar &getVar(const core::String &name);
+		ExecutionVar &getVar(const core::String &name, uint index = uint(-1));
 		bool isDeclared(const core::String &name) const;
 
 

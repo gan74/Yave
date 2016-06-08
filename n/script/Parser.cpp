@@ -19,17 +19,18 @@ namespace n {
 namespace script {
 
 const char *SynthaxErrorException::what() const noexcept {
-	core::String str = "{ ";
+	buffer = "{ ";
 	for(TokenType t : expected) {
-		str << tokenName[uint(t)] << " ";
+		buffer << tokenName[uint(t)] << " ";
 	}
-	return ("Expected " + str + "} got " + tokenName[uint(position->type)] + " (\"" + position->string + "\")").data();
+	buffer = "Expected " + buffer + "} got " + tokenName[uint(position->type)] + " (\"" + position->string + "\")";
+	return buffer.data();
 }
 
 const char *SynthaxErrorException::what(const core::String &code) const noexcept {
-	core::String str = "{ ";
+	buffer = "{ ";
 	for(TokenType t : expected) {
-		str << tokenName[uint(t)] << " ";
+		buffer << tokenName[uint(t)] << " ";
 	}
 
 	uint line = 1;
@@ -39,22 +40,22 @@ const char *SynthaxErrorException::what(const core::String &code) const noexcept
 	core::String lineStr("at line ");
 	lineStr << core::String2(line) << ": \"";
 
-	str = "Expected " + str + "} got " + tokenName[uint(position->type)] + ":";
+	buffer = "Expected " + buffer + "} got " + tokenName[uint(position->type)] + ":";
 	if(position->type == TokenType::Identifier) {
-		str += " \"" + position->string + "\"";
+		buffer += " \"" + position->string + "\"";
 	}
-	str += "\n" + lineStr;
+	buffer += "\n" + lineStr;
 
 	uint lineBeg = position->index;
 	for(; lineBeg != 0 && code[lineBeg - 1] != '\n'; lineBeg--);
 	uint end = code.find('\n', lineBeg) - code.begin();
-	str += code.subString(lineBeg, end - lineBeg) + "\"\n";
+	buffer += code.subString(lineBeg, end - lineBeg) + "\"\n";
 	for(uint i = lineBeg; i != position->index + lineStr.size(); i++) {
-		str += "~";
+		buffer += "~";
 	}
-	str += "^";
+	buffer += "^";
 
-	return str.data();
+	return buffer.data();
 }
 
 

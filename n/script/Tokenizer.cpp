@@ -66,6 +66,10 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 		beg = end;
 		if(tk == "var") {
 			return Token(TokenType::Var, tk, b);
+		} else if(tk == "if") {
+			return Token(TokenType::If, tk, b);
+		} else if(tk == "while") {
+			return Token(TokenType::While, tk, b);
 		}
 		return Token(TokenType::Identifier, tk, b);
 	}

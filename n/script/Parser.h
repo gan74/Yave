@@ -33,6 +33,8 @@ class SynthaxErrorException : public std::exception
 	private:
 		core::Array<TokenType> expected;
 		core::Array<Token>::const_iterator position;
+
+		mutable core::String buffer;
 };
 
 class Parser

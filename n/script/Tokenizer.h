@@ -43,12 +43,14 @@ enum class TokenType
 	SemiColon,
 
 	Var,
+	If,
+	While,
 
 	Error,
 	End
 };
 
-static constexpr const char *tokenName[] = {"identifier", "integer", "float", "=", "==", "+", "-", "*", "/", "'('", "')'", "':'", "';'", "'var'", "", "EOF"};
+static constexpr const char *tokenName[] = {"identifier", "integer", "float", "=", "==", "+", "-", "*", "/", "'('", "')'", "':'", "';'", "'var'", "'if", "'while'", "", "EOF"};
 
 class Token
 {
