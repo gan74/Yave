@@ -79,6 +79,10 @@ class String2
 	static constexpr uint MaxShortSize = sizeof(ShortData::data);
 
 	public:
+		#ifdef N_STRING_DEBUG
+			static void printDebug();
+		#endif
+
 		using iterator = char *;
 		using const_iterator = const char *;
 
@@ -99,6 +103,8 @@ class String2
 
 		String2(uint t) : String2(build(t)) {
 		}
+
+		~String2();
 
 		uint size() const;
 		bool isEmpty() const;

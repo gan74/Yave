@@ -18,8 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Array.h>
 #include <ostream>
 
+#ifdef N_STRING_DEBUG
+#include <iostream>
+#endif
+
 namespace n {
 namespace core {
+
+#ifdef N_STRING_DEBUG
+core::Array<char *> allAllacatedStrings;
+#endif
 
 // --------------------------------------------------- LONG ---------------------------------------------------
 
@@ -67,13 +75,39 @@ String2::ShortData &String2::ShortData::operator=(const ShortData &s) {
 
 char *String2::allocLong(uint len) {
 	char *a = new char[len + 1];
+	#ifdef N_STRING_DEBUG
+	allAllacatedStrings += a;
+	#endif
 	return a;
 }
 
 void String2::freeLong(LongData &d) {
+	#ifdef N_STRING_DEBUG
+	allAllacatedStrings.remove(d.data);
+	#endif
 	delete[] d.data;
 }
 
+
+#ifdef N_STRING_DEBUG
+void String2::printDebug() {
+	for(uint i = 0; i != allAllacatedStrings.size(); i++) {
+
+		std::cout << i << ") " << (void *)allAllacatedStrings[i] << " [len = " << strlen(allAllacatedStrings[i]) << "] = \"";
+		for(uint j = 0; j != 32; j++) {
+			if(!allAllacatedStrings[i][j]) {
+				break;
+			}
+			if(allAllacatedStrings[i][j] == '\n') {
+				std::cout << "\\n";
+			} else {
+				std::cout << allAllacatedStrings[i][j];
+			}
+		}
+		std::cout << std::endl;
+	}
+}
+#endif
 
 
 
@@ -106,13 +140,19 @@ String2::String2(const char *str) : String2(str, strlen(str)) {
 
 String2::String2(const char *str, uint len) {
 	if(len <= MaxShortSize) {
-		s = ShortData(str, len);
+		new(&s) ShortData(str, len);
 	} else {
 		new(&l) LongData(str, len);
 	}
 }
 
 String2::String2(const char *beg, const char *end) : String2(beg, end - beg) {
+}
+
+String2::~String2() {
+	if(isLong()) {
+		freeLong(l);
+	}
 }
 
 uint String2::size() const {
