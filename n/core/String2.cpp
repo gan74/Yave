@@ -266,10 +266,10 @@ String2 String2::subString(uint beg) const {
 }
 
 String2 String2::replaced(const String2 &oldS, const String2 &newS) const {
-	Array<String2> concat;
 	const_iterator it = find(oldS);
 	if(it != end()) {
-		const_iterator from = 0;
+		String2 concat;
+		const_iterator from = begin();
 		uint offset = oldS.size();
 		do {
 			concat += String2(from, it);
@@ -277,11 +277,9 @@ String2 String2::replaced(const String2 &oldS, const String2 &newS) const {
 			from = it + offset;
 			it = find(oldS, from);
 		} while(it != end());
-		concat += subString(from);
-	} else {
-		return *this;
+		return concat += subString(from);
 	}
-	return String2(concat);
+	return *this;
 }
 
 String2 String2::toLower() const {

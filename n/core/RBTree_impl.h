@@ -165,23 +165,6 @@ typename RBTree<T, Comp, Eq>::iterator RBTree<T, Comp, Eq>::insert(const C &c) {
 	return insertDispatch(c, typename ShouldInsertAsCollection<C, T>::type());
 }
 
-template<typename T, typename Comp, typename Eq>
-template<typename A, typename B, typename... Args>
-typename RBTree<T, Comp, Eq>::iterator RBTree<T, Comp, Eq>::insert(const A &a, const B &b, const Args&... args) {
-	Comp c;
-	iterator it = insert(a);
-	iterator w = insert(b);
-	if(comp(w.node->data, it.node->data)) {
-		it = w;
-	}
-	w = insert(args...);
-	return comp(w.node->data, it.node->data) ? w : it;
-}
-
-
-
-
-
 
 
 

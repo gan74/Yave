@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace assets {
 
-using ArgumentTypes = core::Array<Type>;
+using ArgumentTypes = core::Array<TypeData>;
 
 namespace details {
 	template<typename... Ar>
@@ -34,7 +34,7 @@ namespace details {
 		struct TypeHelper
 		{
 			static ArgumentTypes args() {
-				ArgumentTypes a({Type(typeid(W))});
+				ArgumentTypes a({TypeData(typeid(W))});
 				return a.append(TypeHelper<A...>::args());
 			}
 		};
@@ -43,7 +43,7 @@ namespace details {
 		struct TypeHelper<W, Z>
 		{
 			static ArgumentTypes args() {
-				return ArgumentTypes({Type(typeid(W)), Type(typeid(Z))});
+				return ArgumentTypes({TypeData(typeid(W)), TypeData(typeid(Z))});
 			}
 		};
 
@@ -146,7 +146,7 @@ class AssetLoader : NonCopyable
 
 	private:
 		static core::String argsToString(const ArgumentTypes &types) {
-			return "{" + AsCollection(types.mapped([](const Type &t) {
+			return "{" + AsCollection(types.mapped([](const TypeData &t) {
 						return t.name();
 					})).make(core::String(", ")) + "}";
 		}

@@ -148,9 +148,9 @@ class RBTree
 		RBTree();
 		RBTree(const RBTree<T, Comp, Eq> &o);
 		RBTree(RBTree<T, Comp, Eq> &&o);
+
 		template<typename C>
 		RBTree(std::initializer_list<C> l);
-
 
 		~RBTree();
 
@@ -174,8 +174,6 @@ class RBTree
 
 		template<typename C>
 		iterator insert(const C &c);
-		template<typename A, typename B, typename... Args>
-		iterator insert(const A &a, const B &b, const Args&... args);
 
 
 		void clear();

@@ -46,7 +46,7 @@ namespace details {
 	uint typeId = 0;
 }
 
-core::String Type::name() const {
+core::String TypeData::name() const {
 	return demangle(info->name());
 }
 }

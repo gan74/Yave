@@ -345,30 +345,30 @@ class TypeConversion
 
 };
 
-class Type
+class TypeData
 {
 	public:
-		Type(const std::type_info &i) : info(&i) {
+		TypeData(const std::type_info &i) : info(&i) {
 		}
 
 		template<typename T>
-		explicit Type(const T &t) : Type(typeid(t)) {
+		explicit TypeData(const T &t) : TypeData(typeid(t)) {
 		}
 
 
-		bool operator==(const Type &t) const {
+		bool operator==(const TypeData &t) const {
 			return *info == *t.info;
 		}
 
-		bool operator!=(const Type &t) const {
+		bool operator!=(const TypeData &t) const {
 			return !operator ==(t);
 		}
 
-		bool operator>(const Type &t) const {
+		bool operator>(const TypeData &t) const {
 			return info->before(*t.info);
 		}
 
-		bool operator<(const Type &t) const {
+		bool operator<(const TypeData &t) const {
 			return t.info->before(*info);
 		}
 
@@ -401,7 +401,7 @@ struct TypeInfo
 
 	static constexpr bool isDereferenceable = details::IsDereferenceable<T, isPrimitive>::value;
 
-	static const Type type;
+	static const TypeData type;
 
 	typedef T nonRef;
 	typedef T nonConst;
@@ -428,7 +428,7 @@ struct TypeInfo<T *>
 
 	static constexpr bool isDereferenceable = true;
 
-	static const Type type;
+	static const TypeData type;
 
 	typedef typename TypeInfo<T>::nonRef *nonRef;
 	typedef T* nonConst;
@@ -452,7 +452,7 @@ struct TypeInfo<const T>
 
 	static constexpr bool isDereferenceable = TypeInfo<T>::isDereferenceable;
 
-	static const Type type;
+	static const TypeData type;
 
 	typedef const typename TypeInfo<T>::nonRef nonRef;
 	typedef T nonConst;
@@ -476,7 +476,7 @@ struct TypeInfo<T &>
 
 	static constexpr bool isDereferenceable = TypeInfo<T>::isDereferenceable;
 
-	static const Type type;
+	static const TypeData type;
 
 	typedef T nonRef;
 	typedef T& nonConst;
@@ -500,7 +500,7 @@ struct TypeInfo<T[]>
 
 	static constexpr bool isDereferenceable = true;
 
-	static const Type type;
+	static const TypeData type;
 
 	typedef T nonRef;
 	typedef typename TypeInfo<T>::nonConst nonConst;
@@ -524,7 +524,7 @@ struct TypeInfo<T[N]>
 
 	static constexpr bool isDereferenceable = true;
 
-	static const Type type;
+	static const TypeData type;
 
 	typedef T nonRef;
 	typedef typename TypeInfo<T>::nonConst &nonConst;
@@ -550,42 +550,42 @@ const uint TypeInfo<T>::baseId = details::typeId++; // dependent on compilation,
 template<typename T>
 const uint TypeInfo<T>::id = TypeInfo<T>::baseId;
 template<typename T>
-const Type TypeInfo<T>::type = typeid(T);
+const TypeData TypeInfo<T>::type = typeid(T);
 
 template<typename T>
 const uint TypeInfo<T *>::id = details::typeId++;
 template<typename T>
 const uint TypeInfo<T *>::baseId = TypeInfo<T>::baseId;
 template<typename T>
-const Type TypeInfo<T *>::type = typeid(T *);
+const TypeData TypeInfo<T *>::type = typeid(T *);
 
 template<typename T>
 const uint TypeInfo<const T>::id = details::typeId++;
 template<typename T>
 const uint TypeInfo<const T>::baseId = TypeInfo<T>::baseId;
 template<typename T>
-const Type TypeInfo<const T>::type = typeid(const T);
+const TypeData TypeInfo<const T>::type = typeid(const T);
 
 template<typename T>
 const uint TypeInfo<T &>::id = details::typeId++;
 template<typename T>
 const uint TypeInfo<T &>::baseId = TypeInfo<T>::baseId;
 template<typename T>
-const Type TypeInfo<T &>::type = typeid(T &);
+const TypeData TypeInfo<T &>::type = typeid(T &);
 
 template<typename T>
 const uint TypeInfo<T[]>::id = details::typeId++;
 template<typename T>
 const uint TypeInfo<T[]>::baseId = TypeInfo<T>::baseId;
 template<typename T>
-const Type TypeInfo<T[]>::type = typeid(T[]);
+const TypeData TypeInfo<T[]>::type = typeid(T[]);
 
 template<typename T, uint N>
 const uint TypeInfo<T[N]>::id = details::typeId++;
 template<typename T, uint N>
 const uint TypeInfo<T[N]>::baseId = TypeInfo<T>::baseId;
 template<typename T, uint N>
-const Type TypeInfo<T[N]>::type = typeid(T[N]);
+const TypeData TypeInfo<T[N]>::type = typeid(T[N]);
 
 template<typename T>
 struct TypeContent
