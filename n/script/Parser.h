@@ -16,7 +16,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_SCRIPT_PARSER_H
 #define N_SCRIPT_PARSER_H
 
-#include "ast/Node.h"
+#include "ASTNode.h"
+#include "Tokenizer.h"
+#include <n/core/Array.h>
 
 namespace n {
 namespace script {
@@ -24,15 +26,15 @@ namespace script {
 class SynthaxErrorException : public std::exception
 {
 	public:
-		SynthaxErrorException(const core::Array<TokenType> &e, core::Array<Token>::const_iterator p) : expected(e), position(p) {
+		SynthaxErrorException(const core::Array<Token::Type> &e, const Token &t) : expected(e), token(t) {
 		}
 
 		virtual const char *what() const noexcept override;
 		virtual const char *what(const core::String &code) const noexcept;
 
 	private:
-		core::Array<TokenType> expected;
-		core::Array<Token>::const_iterator position;
+		core::Array<Token::Type> expected;
+		Token token;
 
 		mutable core::String buffer;
 };
@@ -43,11 +45,11 @@ class Parser
 		Parser();
 
 
-		ast::Instruction *parse(const core::Array<Token> &tokens) const {
+		ASTInstruction *parse(const core::Array<Token> &tokens) const {
 			return parse(tokens.begin(), tokens.end());
 		}
 
-		ast::Instruction *parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const;
+		ASTInstruction *parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const;
 
 };
 

@@ -13,27 +13,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_TOKENIZER_H
-#define N_SCRIPT_TOKENIZER_H
-
-#include "Token.h"
-#include <n/core/Array.h>
+#include "ASTNode.h"
 
 namespace n {
 namespace script {
 
-class Tokenizer
-{
-	public:
-		Tokenizer();
-
-		core::Array<Token> tokenize(const core::String &code);
-
-	private:
-		Token next(const core::String &str, uint &beg);
-};
 
 }
 }
-
-#endif // N_SCRIPT_TOKENIZER_H

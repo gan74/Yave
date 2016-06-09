@@ -13,27 +13,49 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_TOKENIZER_H
-#define N_SCRIPT_TOKENIZER_H
+#ifndef N_SCRIPT_ASTNODE_H
+#define N_SCRIPT_ASTNODE_H
 
+#include <n/core/String.h>
 #include "Token.h"
-#include <n/core/Array.h>
 
 namespace n {
 namespace script {
 
-class Tokenizer
+class WorkTreeExpression;
+class WorkTreeInstruction;
+class WorkTreeBuilder;
+
+struct ASTNode : NonCopyable
 {
-	public:
-		Tokenizer();
+	ASTNode(const TokenPosition &pos) : position(pos) {
+	}
 
-		core::Array<Token> tokenize(const core::String &code);
+	virtual ~ASTNode() {
+	}
 
-	private:
-		Token next(const core::String &str, uint &beg);
+	const TokenPosition position;
+
+	virtual core::String toString() const = 0;
+};
+
+struct ASTExpression : public ASTNode
+{
+	ASTExpression(const TokenPosition &pos) : ASTNode(pos) {
+	}
+
+	virtual WorkTreeExpression *toWorkTree(WorkTreeBuilder &) const = 0;
+};
+
+struct ASTInstruction : public ASTNode
+{
+	ASTInstruction(const TokenPosition &pos) : ASTNode(pos) {
+	}
+
+	virtual WorkTreeInstruction *toWorkTree(WorkTreeBuilder &) const = 0;
 };
 
 }
 }
 
-#endif // N_SCRIPT_TOKENIZER_H
+#endif // N_SCRIPT_ASTNODE_H

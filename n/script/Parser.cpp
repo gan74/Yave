@@ -14,47 +14,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "Parser.h"
-#include <iostream>
+#include "ASTExpressions.h"
+#include "ASTInstructions.h"
 
 namespace n {
 namespace script {
 
 const char *SynthaxErrorException::what() const noexcept {
 	buffer = "{ ";
-	for(TokenType t : expected) {
-		buffer << tokenName[uint(t)] << " ";
+	for(Token::Type t : expected) {
+		buffer << Token::getName(t) << " ";
 	}
-	buffer = "Expected " + buffer + "} got " + tokenName[uint(position->type)] + " (\"" + position->string + "\")";
+	buffer = "Expected " + buffer + "} got " + Token::getName(token.type) + " (\"" + token.string + "\")";
 	return buffer.data();
 }
 
 const char *SynthaxErrorException::what(const core::String &code) const noexcept {
 	buffer = "{ ";
-	for(TokenType t : expected) {
-		buffer << tokenName[uint(t)] << " ";
+	for(Token::Type t : expected) {
+		buffer << Token::getName(t) << " ";
 	}
-
-	uint line = 1;
-	for(uint i = 0; i != position->index && i != code.size(); i++) {
-		line += code[i] == '\n';
+	buffer = "Expected " + buffer + "} got " + Token::getName(token.type) + ":";
+	if(token.type == Token::Identifier) {
+		buffer += " \"" + token.string + "\"";
 	}
-	core::String lineStr("at line ");
-	lineStr << core::String2(line) << ": \"";
-
-	buffer = "Expected " + buffer + "} got " + tokenName[uint(position->type)] + ":";
-	if(position->type == TokenType::Identifier) {
-		buffer += " \"" + position->string + "\"";
-	}
-	buffer += "\n" + lineStr;
-
-	uint lineBeg = position->index;
-	for(; lineBeg != 0 && code[lineBeg - 1] != '\n'; lineBeg--);
-	uint end = code.find('\n', lineBeg) - code.begin();
-	buffer += code.subString(lineBeg, end - lineBeg) + "\"\n";
-	for(uint i = lineBeg; i != position->index + lineStr.size(); i++) {
-		buffer += "~";
-	}
-	buffer += "^";
+	buffer += "\n" + token.position.toString(code);
 
 	return buffer.data();
 }
@@ -64,53 +48,28 @@ const char *SynthaxErrorException::what(const core::String &code) const noexcept
 
 template<typename... Args>
 void expected(core::Array<Token>::const_iterator it, Args... args) {
-	throw SynthaxErrorException({args...}, --it);
+	throw SynthaxErrorException({args...}, *(--it));
 }
 
-void expect(core::Array<Token>::const_iterator it, TokenType type) {
+void expect(core::Array<Token>::const_iterator it, Token::Type type) {
 	if(it->type != type) {
 		it++;
 		expected(it, type);
 	}
 }
 
-void eat(core::Array<Token>::const_iterator &it, TokenType type) {
+void eat(core::Array<Token>::const_iterator &it, Token::Type type) {
 	if((it++)->type != type) {
 		expected(it, type);
 	}
 }
 
-bool isOperator(TokenType type) {
-	switch(type) {
-		case TokenType::Plus:
-		case TokenType::Minus:
-		case TokenType::Multiply:
-		case TokenType::Divide:
-		case TokenType::Equals:
-		case TokenType::NotEquals:
-			return true;
-		break;
-
-		default:
-			return false;
-	}
-	return false;
+bool isOperator(Token::Type type) {
+	return !!(type & Token::isOperator);
 }
 
-int assoc(TokenType type) {
-	switch(type) {
-		case TokenType::Multiply:
-		case TokenType::Divide:
-			return 1;
-
-		case TokenType::Plus:
-		case TokenType::Minus:
-			return 0;
-
-		default:
-			return -1;
-	}
-	return 0;
+uint assoc(Token::Type type) {
+	return type & Token::associativityMask;
 }
 
 
@@ -118,26 +77,26 @@ int assoc(TokenType type) {
 
 
 
-ast::Expression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
+ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
 
-ast::Expression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	core::Array<Token>::const_iterator id = begin;
 	switch((begin++)->type) {
-		case TokenType::Identifier:
-			if(begin->type == TokenType::Assign) {
+		case Token::Identifier:
+			if(begin->type == Token::Assign) {
 				begin++;
-				return new ast::Assignation(id->string, parseExpr(begin, end));
+				return new ASTAssignation(id->string, parseExpr(begin, end));
 			}
-			return new ast::Identifier(id->string, id->index);
+			return new ASTIdentifier(id->string, id->position);
 
-		case TokenType::Integer:
-			return new ast::Integer(id->string.to<int64>(), id->index);
+		case Token::Integer:
+			return new ASTLiteral(*id);
 
-		case TokenType::LeftPar: {
-			ast::Expression *expr = parseExpr(begin, end);
-			if((begin++)->type != TokenType::RightPar) {
+		case Token::LeftPar: {
+			ASTExpression *expr = parseExpr(begin, end);
+			if((begin++)->type != Token::RightPar) {
 				delete expr;
-				expected(begin, TokenType::RightPar);
+				expected(begin, Token::RightPar);
 			}
 			return expr;
 		} break;
@@ -145,35 +104,35 @@ ast::Expression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core
 		default:
 		break;
 	}
-	expected(begin, TokenType::Identifier, TokenType::Integer, TokenType::LeftPar);
+	expected(begin, Token::Identifier, Token::Integer, Token::LeftPar);
 	return 0;
 }
 
-ast::Expression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
-	ast::Expression *lhs = parseSimpleExpr(begin, end);
-	TokenType a = begin->type;
+ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	ASTExpression *lhs = parseSimpleExpr(begin, end);
+	Token::Type a = begin->type;
 
 	if(!isOperator(a)) {
 		return lhs;
 	}
 	begin++;
-	ast::Expression *mhs = parseSimpleExpr(begin, end);
+	ASTExpression *mhs = parseSimpleExpr(begin, end);
 
 	for(;;) {
-		TokenType b = begin->type;
+		Token::Type b = begin->type;
 
 		if(isOperator(b)) {
 			begin++;
 		} else {
-			return new ast::BinOp(lhs, mhs, ast::NodeType(a));
+			return new ASTBinOp(lhs, mhs, a);
 		}
 
-		ast::Expression *rhs = parseSimpleExpr(begin, end);
+		ASTExpression *rhs = parseSimpleExpr(begin, end);
 
 		if(assoc(b) > assoc(a)) {
-			mhs = new ast::BinOp(mhs, rhs, ast::NodeType(b));
+			mhs = new ASTBinOp(mhs, rhs, b);
 		} else {
-			lhs = new ast::BinOp(lhs, mhs, ast::NodeType(a));
+			lhs = new ASTBinOp(lhs, mhs, a);
 			mhs = rhs;
 			a = b;
 		}
@@ -181,79 +140,82 @@ ast::Expression *parseExpr(core::Array<Token>::const_iterator &begin, core::Arra
 	return 0;
 }
 
-ast::Declaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
-	eat(begin, TokenType::Var);
+ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	eat(begin, Token::Var);
 
-	expect(begin, TokenType::Identifier);
+	expect(begin, Token::Identifier);
 	core::String name = (begin++)->string;
 
-	eat(begin, TokenType::Colon);
+	eat(begin, Token::Colon);
 
-	expect(begin, TokenType::Identifier);
+	expect(begin, Token::Identifier);
 	core::String type = (begin++)->string;
 
-	if(begin->type == TokenType::Assign) {
+	if(begin->type == Token::Assign) {
 		begin++;
-		return new ast::Declaration(name, type, (begin - 1)->index, parseExpr(begin, end));
+		return new ASTDeclaration(name, type, (begin - 1)->position, parseExpr(begin, end));
 	}
-	return new ast::Declaration(name, type, (begin - 1)->index);
+	return new ASTDeclaration(name, type, (begin - 1)->position);
 }
 
 
-ast::Instruction *parseInstruction(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
-	ast::Instruction *instr = 0;
+ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	ASTInstruction *instr = 0;
 	switch(begin->type) {
-		case TokenType::Var:
+		case Token::Var:
 			instr = parseDeclaration(begin, end);
 		break;
 
-		case TokenType::If: {
+		case Token::If: {
 			begin++;
-			expect(begin, TokenType::LeftPar);
-			ast::Expression *expr = parseExpr(begin, end);
-			return new ast::BranchInstruction(expr, parseInstruction(begin, end), 0);
+			expect(begin, Token::LeftPar);
+			ASTExpression *expr = parseExpr(begin, end);
+			return new ASTBranchInstruction(expr, parseInstruction(begin, end), 0);
 		}	break;
 
-		case TokenType::While: {
+		case Token::While: {
 			begin++;
-			expect(begin, TokenType::LeftPar);
-			ast::Expression *expr = parseExpr(begin, end);
-			return new ast::LoopInstruction(expr, parseInstruction(begin, end));
+			expect(begin, Token::LeftPar);
+			ASTExpression *expr = parseExpr(begin, end);
+			return new ASTLoopInstruction(expr, parseInstruction(begin, end));
 		} break;
 
-		case TokenType::LeftBrace: {
+		case Token::LeftBrace: {
 			begin++;
-			core::Array<ast::Instruction *> instrs;
-			while(begin->type != TokenType::RightBrace) {
+			core::Array<ASTInstruction *> instrs;
+			while(begin->type != Token::RightBrace) {
 				instrs.append(parseInstruction(begin, end));
 			}
 			begin++;
-			return new ast::InstructionList(instrs);
+			return new ASTInstructionList(instrs);
 		} break;
 
 		default:
-			instr = new ast::ExprInstruction(parseExpr(begin, end));
+			instr = new ASTExprInstruction(parseExpr(begin, end));
 		break;
 	}
 	if(instr) {
-		eat(begin, TokenType::SemiColon);
+		eat(begin, Token::SemiColon);
 		return instr;
 	}
-	expected(begin, TokenType::Var, TokenType::While, TokenType::If, TokenType::LeftBrace);
+	expected(begin, Token::Var, Token::While, Token::If, Token::LeftBrace);
 	return 0;
 }
+
+
+
 
 
 
 Parser::Parser() {
 }
 
-ast::Instruction *Parser::parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const {
-	core::Array<ast::Instruction *> instrs;
-	while(begin != end && !begin->isEnd()) {
+ASTInstruction *Parser::parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const {
+	core::Array<ASTInstruction *> instrs;
+	while(begin != end && !(begin->type & Token::isEnd)) {
 		instrs.append(parseInstruction(begin, end));
 	}
-	return instrs.size() == 1 ? instrs.first() : new ast::InstructionList(instrs);
+	return instrs.size() == 1 ? instrs.first() : new ASTInstructionList(instrs);
 }
 
 }

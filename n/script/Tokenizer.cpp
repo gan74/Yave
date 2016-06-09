@@ -26,7 +26,7 @@ core::Array<Token> Tokenizer::tokenize(const core::String &code) {
 	core::Array<Token> tks;
 	for(uint i = 0;;) {
 		tks << next(code, i);
-		if(tks.last().isEnd()) {
+		if(tks.last().type & Token::isEnd) {
 			break;
 		}
 	}
@@ -43,7 +43,7 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 	}
 
 	if(beg == str.size()) {
-		return Token(TokenType::End, "\0", beg);
+		return Token(Token::End, "\0", beg);
 	}
 
 	bool isNum = !!isdigit(str[beg]);
@@ -65,62 +65,62 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 		uint b = beg;
 		beg = end;
 		if(tk == "var") {
-			return Token(TokenType::Var, tk, b);
+			return Token(Token::Var, tk, b);
 		} else if(tk == "if") {
-			return Token(TokenType::If, tk, b);
+			return Token(Token::If, tk, b);
 		} else if(tk == "while") {
-			return Token(TokenType::While, tk, b);
+			return Token(Token::While, tk, b);
 		}
-		return Token(TokenType::Identifier, tk, b);
+		return Token(Token::Identifier, tk, b);
 	}
 	if(isNum) {
 		uint b = beg;
 		beg = end;
-		return Token(TokenType::Integer, tk, b);
+		return Token(Token::Integer, tk, b);
 	}
 	if(tk.beginsWith("==")) {
 		beg += 2;
-		return Token(TokenType::Equals, "==", beg - 2);
+		return Token(Token::Equals, "==", beg - 2);
 	}
 	if(tk.beginsWith("!=")) {
 		beg += 2;
-		return Token(TokenType::NotEquals, "!=", beg - 2);
+		return Token(Token::NotEquals, "!=", beg - 2);
 	}
 	if(tk.beginsWith("=")) {
-		return Token(TokenType::Assign, "=", beg++);
+		return Token(Token::Assign, "=", beg++);
 	}
 	if(tk.beginsWith("+")) {
-		return Token(TokenType::Plus, "+", beg++);
+		return Token(Token::Plus, "+", beg++);
 	}
 	if(tk.beginsWith("-")) {
-		return Token(TokenType::Minus, "-", beg++);
+		return Token(Token::Minus, "-", beg++);
 	}
 	if(tk.beginsWith("*")) {
-		return Token(TokenType::Multiply, "*", beg++);
+		return Token(Token::Multiply, "*", beg++);
 	}
 	if(tk.beginsWith("/")) {
-		return Token(TokenType::Divide, "/", beg++);
+		return Token(Token::Divide, "/", beg++);
 	}
 	if(tk.beginsWith("(")) {
-		return Token(TokenType::LeftPar, "(", beg++);
+		return Token(Token::LeftPar, "(", beg++);
 	}
 	if(tk.beginsWith(")")) {
-		return Token(TokenType::RightPar, ")", beg++);
+		return Token(Token::RightPar, ")", beg++);
 	}
 	if(tk.beginsWith("{")) {
-		return Token(TokenType::LeftBrace, "{", beg++);
+		return Token(Token::LeftBrace, "{", beg++);
 	}
 	if(tk.beginsWith("}")) {
-		return Token(TokenType::RightBrace, "}", beg++);
+		return Token(Token::RightBrace, "}", beg++);
 	}
 	if(tk.beginsWith(":")) {
-		return Token(TokenType::Colon, ":", beg++);
+		return Token(Token::Colon, ":", beg++);
 	}
 	if(tk.beginsWith(";")) {
-		return Token(TokenType::SemiColon, ";", beg++);
+		return Token(Token::SemiColon, ";", beg++);
 	}
 
-	return Token(TokenType::Error, tk, beg = end);
+	return Token(Token::Error, tk, beg = end);
 }
 
 
