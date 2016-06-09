@@ -107,6 +107,12 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 	if(tk.beginsWith(")")) {
 		return Token(TokenType::RightPar, ")", beg++);
 	}
+	if(tk.beginsWith("{")) {
+		return Token(TokenType::LeftBrace, "{", beg++);
+	}
+	if(tk.beginsWith("}")) {
+		return Token(TokenType::RightBrace, "}", beg++);
+	}
 	if(tk.beginsWith(":")) {
 		return Token(TokenType::Colon, ":", beg++);
 	}

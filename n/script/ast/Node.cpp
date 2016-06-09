@@ -25,7 +25,7 @@ namespace ast {
 
 void ExprInstruction::eval(ExecutionFrame &frame) const {
 	ExecutionVar r = expression->eval(frame);
-	if(frame.print) {
+	if(frame.print && print) {
 		r.type->print(r);
 	}
 }
@@ -108,6 +108,16 @@ void LoopInstruction::eval(ExecutionFrame &frame) const {
 	while(c.integer) {
 		body->eval(frame);
 		c = condition->eval(frame);
+	}
+}
+
+
+void BranchInstruction::eval(ExecutionFrame &frame) const {
+	ExecutionVar c = condition->eval(frame);
+	if(c.integer) {
+		thenBody->eval(frame);
+	} else if(elseBody) {
+		elseBody->eval(frame);
 	}
 }
 

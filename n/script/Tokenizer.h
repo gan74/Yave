@@ -40,6 +40,9 @@ enum class TokenType
 	LeftPar,
 	RightPar,
 
+	LeftBrace,
+	RightBrace,
+
 	Colon,
 	SemiColon,
 
@@ -51,7 +54,7 @@ enum class TokenType
 	End
 };
 
-static constexpr const char *tokenName[] = {"identifier", "integer", "float", "=", "==", "!=", "+", "-", "*", "/", "'('", "')'", "':'", "';'", "'var'", "'if", "'while'", "", "EOF"};
+static constexpr const char *tokenName[] = {"identifier", "integer", "float", "=", "==", "!=", "+", "-", "*", "/", "'('", "')'", "'{'", "'}'", "':'", "';'", "'var'", "'if", "'while'", "", "EOF"};
 
 class Token
 {

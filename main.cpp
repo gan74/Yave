@@ -10,10 +10,15 @@ using namespace n;
 using namespace n::core;
 using namespace n::script;
 
-
 int main(int, char **) {
-	core::String code = "var x:Int = 7;							\n"
-						"while(x - 1 != 2 - 1) x = x - 1;		\n";
+	core::String code = "var x:Int = 400000;					\n"
+						"var y:Int = 1;							\n"
+						"while(x) {								\n"
+						"	x = x - 1;							\n"
+						"	y = y + 1;							\n"
+						"	if(y == 46435) { y; }				\n"
+						"}										\n"
+						"y;										\n";
 
 
 	Tokenizer tokenizer;
@@ -23,18 +28,16 @@ int main(int, char **) {
 
 
 	ast::ExecutionFrame frame;
+	//frame.print = false;
 	frame.addType(new ast::ExecutionFloatType());
 
 	try {
-		//Timer timer;
-		ast::Instruction *node = parser.parse(tks.begin(), tks.end());
+		ast::Instruction *node = parser.parse(tks);
 		std::cout << node->toString() << std::endl;
-		/*if(dynamic_cast<ast::InstructionList *>(node)) {
-			const_cast<core::Array<ast::Instruction *> &>(dynamic_cast<ast::InstructionList *>(node)->instructions) += new ast::PrintInstruction(new ast::Identifier("x", uint(-1)));
-		}
-		std::cout << "parsing = " << timer.reset() * 1000 << "ms" << std::endl;*/
+
+		Timer timer;
 		node->eval(frame);
-		//std::cout << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl;
+		std::cout << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl;
 	} catch(SynthaxErrorException &e) {
 		std::cerr << e.what(code) << std::endl;
 	} catch(ast::ExecutionException &e) {

@@ -42,6 +42,11 @@ class Parser
 	public:
 		Parser();
 
+
+		ast::Instruction *parse(const core::Array<Token> &tokens) const {
+			return parse(tokens.begin(), tokens.end());
+		}
+
 		ast::Instruction *parse(core::Array<Token>::const_iterator begin, core::Array<Token>::const_iterator end) const;
 
 };

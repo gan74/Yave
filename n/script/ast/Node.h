@@ -44,6 +44,7 @@ enum class NodeType
 	Assignation,
 
 	Loop,
+	Branch,
 
 	Expression,
 	InstructionList
@@ -84,34 +85,6 @@ struct Instruction : public Node
 };
 
 
-
-
-
-struct ExprInstruction : public Instruction
-{
-	ExprInstruction(Expression *expr) : Instruction(NodeType::Expression, expr->index), expression(expr) {
-	}
-
-	const Expression *expression;
-
-	virtual core::String toString() const override {
-		return expression->toString() + ";";
-	}
-
-	virtual void eval(ExecutionFrame &frame) const override;
-};
-
-struct PrintInstruction : public ExprInstruction
-{
-	PrintInstruction(Expression *expr) : ExprInstruction(expr) {
-	}
-
-	virtual core::String toString() const override {
-		return "print(" + expression->toString() + ");";
-	}
-
-	virtual void eval(ExecutionFrame &frame) const override;
-};
 
 
 struct InstructionList : public Instruction
@@ -227,7 +200,53 @@ struct LoopInstruction : public Instruction
 	const Instruction *body;
 
 	virtual core::String toString() const override {
-		return "while" + condition->toString() + " " + body->toString();
+		return "while(" + condition->toString() + ") " + body->toString();
+	}
+
+	virtual void eval(ExecutionFrame &frame) const override;
+};
+
+struct BranchInstruction : public Instruction
+{
+	BranchInstruction(Expression *cond, Instruction *then, Instruction *el) : Instruction(NodeType::Branch, cond->index), condition(cond), thenBody(then), elseBody(el) {
+	}
+
+	const Expression *condition;
+	const Instruction *thenBody;
+	const Instruction *elseBody;
+
+	virtual core::String toString() const override {
+		return "if(" + condition->toString() + ") " + thenBody->toString() + (elseBody ? " else " + elseBody->toString() : "");
+	}
+
+	virtual void eval(ExecutionFrame &frame) const override;
+};
+
+struct ExprInstruction : public Instruction
+{
+	ExprInstruction(Expression *expr) : ExprInstruction(expr, !dynamic_cast<Assignation *>(expr)) {
+	}
+
+	ExprInstruction(Expression *expr, bool prt) : Instruction(NodeType::Expression, expr->index), print(prt), expression(expr) {
+	}
+
+	const bool print;
+	const Expression *expression;
+
+	virtual core::String toString() const override {
+		return expression->toString() + ";";
+	}
+
+	virtual void eval(ExecutionFrame &frame) const override;
+};
+
+struct PrintInstruction : public ExprInstruction
+{
+	PrintInstruction(Expression *expr) : ExprInstruction(expr) {
+	}
+
+	virtual core::String toString() const override {
+		return "print(" + expression->toString() + ");";
 	}
 
 	virtual void eval(ExecutionFrame &frame) const override;

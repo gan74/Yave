@@ -207,11 +207,28 @@ ast::Instruction *parseInstruction(core::Array<Token>::const_iterator &begin, co
 			instr = parseDeclaration(begin, end);
 		break;
 
+		case TokenType::If: {
+			begin++;
+			expect(begin, TokenType::LeftPar);
+			ast::Expression *expr = parseExpr(begin, end);
+			return new ast::BranchInstruction(expr, parseInstruction(begin, end), 0);
+		}	break;
+
 		case TokenType::While: {
 			begin++;
 			expect(begin, TokenType::LeftPar);
 			ast::Expression *expr = parseExpr(begin, end);
 			return new ast::LoopInstruction(expr, parseInstruction(begin, end));
+		} break;
+
+		case TokenType::LeftBrace: {
+			begin++;
+			core::Array<ast::Instruction *> instrs;
+			while(begin->type != TokenType::RightBrace) {
+				instrs.append(parseInstruction(begin, end));
+			}
+			begin++;
+			return new ast::InstructionList(instrs);
 		} break;
 
 		default:
@@ -222,7 +239,7 @@ ast::Instruction *parseInstruction(core::Array<Token>::const_iterator &begin, co
 		eat(begin, TokenType::SemiColon);
 		return instr;
 	}
-	expected(begin, TokenType::Var, TokenType::While);
+	expected(begin, TokenType::Var, TokenType::While, TokenType::If, TokenType::LeftBrace);
 	return 0;
 }
 
