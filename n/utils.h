@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/utils/SysInfo.h>
 
 
-#define N_SCOPE_LINE_HELPER(CODE, LINE) auto _scope_exit_at_ ## LINE = n::scopeExit([=]() { CODE; })
+#define N_SCOPE_LINE_HELPER(CODE, LINE) auto _scope_exit_at_ ## LINE = n::scopeExit([&]() { CODE; })
 #define N_SCOPE_HELPER(CODE, LINE) N_SCOPE_LINE_HELPER(CODE, LINE)
 #define N_SCOPE(CODE) N_SCOPE_HELPER(CODE, __LINE__)
 

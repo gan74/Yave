@@ -196,11 +196,10 @@ class String2
 
 		template<typename T>
 		T to() const {
-			#warning String::to temporary
+			std::istringstream str;
+			str.rdbuf()->pubsetbuf(const_cast<char *>(data()), size());
 			T t;
-			std::stringstream oss;
-			oss << data();
-			oss >> t;
+			str >> t;
 			return t;
 		}
 
