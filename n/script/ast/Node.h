@@ -27,11 +27,6 @@ class ExecutionFrame;
 
 enum class NodeType
 {
-	Identifier,
-
-	Integer,
-	Float,
-
 	Add			= TokenType::Plus,
 	Substract	= TokenType::Minus,
 	Multiply	= TokenType::Multiply,
@@ -39,6 +34,12 @@ enum class NodeType
 
 	Equals		= TokenType::Equals,
 	NotEquals	= TokenType::NotEquals,
+
+	Identifier,
+
+	Integer,
+	Float,
+
 
 	Declaration,
 	Assignation,
