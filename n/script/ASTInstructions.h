@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define N_SCRIPT_ASTINSTRUCTIONS_H
 
 #include "ASTNode.h"
-#include "WorkTreeNode.h"
-#include "WorkTreeBuilder.h"
+#include "WTNode.h"
+#include "WTBuilder.h"
 #include <n/core/Array.h>
 
 namespace n {
@@ -39,7 +39,7 @@ struct ASTInstructionList : public ASTInstruction
 		return "{\n" + str + "}";
 	}
 
-	virtual WorkTreeInstruction *toWorkTree(WorkTreeBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
 };
 
 struct ASTDeclaration : public ASTInstruction
@@ -55,7 +55,7 @@ struct ASTDeclaration : public ASTInstruction
 		return "var " + name + ":" + typeName + (value ? " = " + value->toString() : core::String()) + ";";
 	}
 
-	virtual WorkTreeInstruction *toWorkTree(WorkTreeBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
 };
 
 struct ASTLoopInstruction : public ASTInstruction
@@ -70,7 +70,7 @@ struct ASTLoopInstruction : public ASTInstruction
 		return "while(" + condition->toString() + ") " + body->toString();
 	}
 
-	virtual WorkTreeInstruction *toWorkTree(WorkTreeBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
 };
 
 struct ASTBranchInstruction : public ASTInstruction
@@ -86,7 +86,7 @@ struct ASTBranchInstruction : public ASTInstruction
 		return "if(" + condition->toString() + ") " + thenBody->toString() + (elseBody ? " else " + elseBody->toString() : "");
 	}
 
-	virtual WorkTreeInstruction *toWorkTree(WorkTreeBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
 };
 
 struct ASTExprInstruction : public ASTInstruction
@@ -104,7 +104,7 @@ struct ASTExprInstruction : public ASTInstruction
 		return expression->toString() + ";";
 	}
 
-	virtual WorkTreeInstruction *toWorkTree(WorkTreeBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
 };
 
 }

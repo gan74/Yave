@@ -46,21 +46,20 @@ const char *SynthaxErrorException::what(const core::String &code) const noexcept
 
 
 
-template<typename... Args>
-void expected(core::Array<Token>::const_iterator it, Args... args) {
-	throw SynthaxErrorException({args...}, *(--it));
+void expected(core::Array<Token>::const_iterator it, const core::Array<Token::Type> &types) {
+	throw SynthaxErrorException(types, *(--it));
 }
 
-void expect(core::Array<Token>::const_iterator it, Token::Type type) {
-	if(it->type != type) {
+void expect(core::Array<Token>::const_iterator it, const core::Array<Token::Type> &types) {
+	if(types.exists(it->type)) {
 		it++;
-		expected(it, type);
+		expected(it, types);
 	}
 }
 
 void eat(core::Array<Token>::const_iterator &it, Token::Type type) {
 	if((it++)->type != type) {
-		expected(it, type);
+		expected(it, {type});
 	}
 }
 
@@ -85,7 +84,7 @@ ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::
 		case Token::Identifier:
 			if(begin->type == Token::Assign) {
 				begin++;
-				return new ASTAssignation(id->string, parseExpr(begin, end));
+				return new ASTAssignation(id->string, parseExpr(begin, end), (id + 1)->position);
 			}
 			return new ASTIdentifier(id->string, id->position);
 
@@ -104,7 +103,7 @@ ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::
 		default:
 		break;
 	}
-	expected(begin, Token::Identifier, Token::Integer, Token::LeftPar);
+	expected(begin, {Token::Identifier, Token::Integer, Token::LeftPar});
 	return 0;
 }
 
@@ -152,8 +151,8 @@ ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core
 	core::String type = (begin++)->string;
 
 	if(begin->type == Token::Assign) {
-		begin++;
-		return new ASTDeclaration(name, type, (begin - 1)->position, parseExpr(begin, end));
+		core::Array<Token>::const_iterator p = begin++;
+		return new ASTDeclaration(name, type, p->position, parseExpr(begin, end));
 	}
 	return new ASTDeclaration(name, type, (begin - 1)->position);
 }
@@ -198,7 +197,7 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 		eat(begin, Token::SemiColon);
 		return instr;
 	}
-	expected(begin, Token::Var, Token::While, Token::If, Token::LeftBrace);
+	expected(begin, {Token::Var, Token::While, Token::If, Token::LeftBrace});
 	return 0;
 }
 

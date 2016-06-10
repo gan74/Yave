@@ -33,7 +33,7 @@ struct ASTIdentifier : public ASTExpression
 		return name;
 	}
 
-	virtual WorkTreeExpression *toWorkTree(WorkTreeBuilder &builder) const;
+	virtual WTExpression *toWorkTree(WTBuilder &builder) const;
 };
 
 struct ASTLiteral : public ASTExpression
@@ -47,7 +47,7 @@ struct ASTLiteral : public ASTExpression
 		return value.string;
 	}
 
-	virtual WorkTreeExpression *toWorkTree(WorkTreeBuilder &) const;
+	virtual WTExpression *toWorkTree(WTBuilder &builder) const;
 };
 
 struct ASTBinOp : public ASTExpression
@@ -63,12 +63,12 @@ struct ASTBinOp : public ASTExpression
 		return "(" + lhs->toString() + " "  + Token::getName(type) + " " + rhs->toString() + ")";
 	}
 
-	virtual WorkTreeExpression *toWorkTree(WorkTreeBuilder &builder) const;
+	virtual WTExpression *toWorkTree(WTBuilder &builder) const;
 };
 
 struct ASTAssignation : public ASTExpression
 {
-	ASTAssignation(const core::String &id, ASTExpression *val) : ASTExpression(val->position), name(id), value(val) {
+	ASTAssignation(const core::String &id, ASTExpression *val, const TokenPosition &tk) : ASTExpression(tk), name(id), value(val) {
 	}
 
 	const core::String name;
@@ -78,7 +78,7 @@ struct ASTAssignation : public ASTExpression
 		return name + " = " + value->toString();
 	}
 
-	virtual WorkTreeExpression *toWorkTree(WorkTreeBuilder &builder) const;
+	virtual WTExpression *toWorkTree(WTBuilder &builder) const;
 };
 
 }

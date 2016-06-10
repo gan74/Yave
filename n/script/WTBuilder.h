@@ -13,11 +13,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_WORKTREEBUILDER_H
-#define N_SCRIPT_WORKTREEBUILDER_H
+#ifndef N_SCRIPT_WTBUILDER_H
+#define N_SCRIPT_WTBUILDER_H
 
-#include "WorkTreeNode.h"
-#include "SymbolStack.h"
+#include "WTVariableStack.h"
+#include "WTTypeSystem.h"
 
 namespace n {
 namespace script {
@@ -38,43 +38,25 @@ class ValidationErrorException : public std::exception
 		mutable core::String buffer;
 };
 
-class WorkTreeBuilder : NonCopyable
+
+class WTBuilder : NonCopyable
 {
 	public:
-		class Guard : NonCopyable
-		{
-			public:
-				~Guard() {
-					if(builder) {
-						builder->popStack();
-					}
-				}
+		WTBuilder();
 
-				Guard(Guard &&g) : builder(g.builder) {
-					g.builder = 0;
-				}
+		WTVariable *declareVar(const core::String &name, const core::String &typeName, TokenPosition tk = TokenPosition());
+		WTVariable *getVar(const core::String &name, TokenPosition tk = TokenPosition()) const;
 
-			private:
-				friend class WorkTreeBuilder;
-				Guard(WorkTreeBuilder *b) : builder(b) {
-					builder->pushStack();
-				}
-
-				WorkTreeBuilder *builder;
-		};
-
-		WorkTreeBuilder();
-
-		WorkTreeVariable *declareVar(const core::String &name, const core::String &typeName, TokenPosition tk = TokenPosition());
-		WorkTreeVariable *getVar(const core::String &name, TokenPosition tk = TokenPosition());
-
-		Guard stack();
 		void pushStack();
 		void popStack();
 
+		WTTypeSystem *getTypeSystem() const;
+
 	private:
-		SymbolStack<WorkTreeVariable *> variablesStack;
-		core::Array<WorkTreeVariable *> variables;
+		WTTypeSystem *types;
+
+		WTVariableStack variablesStack;
+		core::Array<WTVariable *> variables;
 
 
 };

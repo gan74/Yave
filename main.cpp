@@ -3,8 +3,8 @@
 #include <n/core/Map.h>
 #include <n/core/Timer.h>
 #include <iostream>
-#include <n/script/WorkTreeNode.h>
-#include <n/script/WorkTreeBuilder.h>
+#include <n/script/WTNode.h>
+#include <n/script/WTBuilder.h>
 
 using namespace n;
 using namespace n::core;
@@ -134,16 +134,21 @@ void evalI(const ast::Instruction *node, ast::ExecutionFrame &frame) {
 int main(int, char **) {
 	core::String code = "var x:Int = 400000;					\n"
 						"var y:Int = 1;							\n"
-						"var z:Float = 1000000;					\n"
-						"if(x == y) var i:Int;"
-						"while(x - 2 != 2 * 3) {				\n"
+						"var z:Float = 1;						\n"
+						"x + y;									\n"
+						"y + z;									\n"
+						"z = x;									\n"
+						"x = z;									\n"
+						"1 + x = 3 * 2 + 1;						\n"
+						//"if(x == y) var i:Int;"
+						/*"while(x - 2 != 2 * 3) {				\n"
 						"	x = x - 1;							\n"
 						"	y = y + 1;							\n"
 						"	z = z / 2;							\n"
-						"	i = i + 1;							\n"
+						//"	i = i + 1;							\n"
 						"	if(y == 4643) { y; }				\n"
 						"}										\n"
-						"y;	z;									\n";
+						"y;	z;									\n"*/;
 
 
 	Tokenizer tokenizer;
@@ -155,7 +160,7 @@ int main(int, char **) {
 		ASTInstruction *node = parser.parse(tks);
 		std::cout << node->toString() << std::endl << std::endl;
 
-		WorkTreeBuilder builder;
+		WTBuilder builder;
 		node->toWorkTree(builder);
 
 

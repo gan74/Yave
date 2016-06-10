@@ -68,11 +68,11 @@ class Token
 			Equals			= isOperator | 4,
 			NotEquals		= isOperator | 5,
 
-			Identifier		= 6,
-			Integer			= 7,
-			Float			= 8,
+			Assign			= 6,
 
-			Assign			= 9,
+			Identifier		= 7,
+			Integer			= 8,
+			Float			= 9,
 
 			LeftPar			= 10,
 			RightPar		= 11,
@@ -92,7 +92,7 @@ class Token
 		};
 
 		static core::String getName(Type type) {
-			static constexpr const char *names[] = {"+", "-", "*", "/", "==", "!=", "identifier", "integer", "float", "=", "'('", "')'", "'{'", "'}'", "':'", "';'", "'var'", "'if", "'while'", "", "EOF"};
+			static constexpr const char *names[] = {"'+'", "'-'", "'*'", "'/'", "'=='", "'!='", "'='", "identifier", "integer", "float", "'('", "')'", "'{'", "'}'", "':'", "';'", "'var'", "'if'", "'while'", "", "EOF"};
 			return names[type & ~flagMask];
 		}
 

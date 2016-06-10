@@ -13,49 +13,45 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_ASTNODE_H
-#define N_SCRIPT_ASTNODE_H
+#ifndef N_SCRIPT_WTVARIABLESTACK_H
+#define N_SCRIPT_WTVARIABLESTACK_H
 
-#include <n/core/String.h>
-#include "Token.h"
+#include "WTNode.h"
+#include <n/core/Map.h>
 
 namespace n {
 namespace script {
 
-class WTExpression;
-class WTInstruction;
-class WTBuilder;
-
-struct ASTNode : NonCopyable
+class WTVariableStack
 {
-	ASTNode(const TokenPosition &pos) : position(pos) {
-	}
+	using VMap = core::Map<core::String, WTVariable *>;
 
-	virtual ~ASTNode() {
-	}
+	struct StackData
+	{
+		core::Array<typename VMap::iterator> vars;
+		uint registerIndex;
+	};
 
-	const TokenPosition position;
+	public:
+		WTVariableStack();
 
-	virtual core::String toString() const = 0;
-};
+		WTVariable *declare(const core::String &name, WTVariableType *type);
 
-struct ASTExpression : public ASTNode
-{
-	ASTExpression(const TokenPosition &pos) : ASTNode(pos) {
-	}
+		WTVariable *get(const core::String &name) const;
+		bool isDeclared(const core::String &name) const;
 
-	virtual WTExpression *toWorkTree(WTBuilder &) const = 0;
-};
+		void pushStack();
+		void popStack();
 
-struct ASTInstruction : public ASTNode
-{
-	ASTInstruction(const TokenPosition &pos) : ASTNode(pos) {
-	}
+	private:
 
-	virtual WTInstruction *toWorkTree(WTBuilder &) const = 0;
+		uint getRegisterIndex();
+
+		VMap variables;
+		core::Array<StackData> stack;
 };
 
 }
 }
 
-#endif // N_SCRIPT_ASTNODE_H
+#endif // N_SCRIPT_WTVARIABLESTACK_H
