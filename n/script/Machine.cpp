@@ -24,10 +24,18 @@ Machine::Machine() {
 
 int *Machine::run(const BytecodeInstruction *bcode) {
 	int *mem = new int[1 << 16];
+	for(uint i = 0; i != 1 << 16; i++) {
+		mem[i] = 0;
+	}
 
 	for(const BytecodeInstruction *i = bcode;; i++) {
-		int *m = memory + i->registers[0];
+		int *m = mem + i->registers[0];
+
 		switch(i->op) {
+
+			case Bytecode::Nope:
+			break;
+
 			case Bytecode::AddI:
 				*m = mem[i->registers[1]] + mem[i->registers[2]];
 			break;

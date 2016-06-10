@@ -52,6 +52,10 @@ struct BytecodeInstruction
 	DataType &data() {
 		return *(reinterpret_cast<DataType *>(this) + 1);
 	}
+
+	const DataType &data() const {
+		return *(reinterpret_cast<const DataType *>(this) + 1);
+	}
 };
 
 static_assert(sizeof(BytecodeInstruction::RegisterType) + sizeof(Bytecode) == sizeof(BytecodeInstruction::DataType), "BytecodeInstruction DataType should be 2 * RegisterType");

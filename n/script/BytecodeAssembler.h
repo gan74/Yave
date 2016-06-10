@@ -51,9 +51,11 @@ class BytecodeAssembler
 		BytecodeAssembler &copy(RegisterType to, RegisterType from);
 		BytecodeAssembler &set(RegisterType to, int64 value);
 
-
 		BytecodeAssembler &jump(Label to);
 		BytecodeAssembler &jumpNZ(RegisterType a, Label to);
+
+
+		BytecodeAssembler &exit();
 
 
 		BytecodeAssembler &operator<<(BytecodeInstruction i);

@@ -6,6 +6,7 @@
 #include <n/script/WTNode.h>
 #include <n/script/WTBuilder.h>
 #include <n/script/BytecodeCompiler.h>
+#include <n/script/Machine.h>
 
 using namespace n;
 using namespace n::core;
@@ -133,18 +134,10 @@ void evalI(const ast::Instruction *node, ast::ExecutionFrame &frame) {
 
 
 int main(int, char **) {
-	core::String code = "var x:Int = 400000;					\n"
-						//"x = z;									\n"
-						"1 + x = 3 * 2;							\n"
-						//"if(x == y) var i:Int;"
-						/*"while(x - 2 != 2 * 3) {				\n"
-						"	x = x - 1;							\n"
-						"	y = y + 1;							\n"
-						"	z = z / 2;							\n"
-						//"	i = i + 1;							\n"
-						"	if(y == 4643) { y; }				\n"
-						"}										\n"
-						"y;	z;									\n"*/;
+	core::String code = "var x:Int = 44444;					\n"
+						"var y:Int = 55555;					\n"
+						"y = 66666;							\n"
+						"x = y;								\n";
 
 
 	Tokenizer tokenizer;
@@ -161,6 +154,9 @@ int main(int, char **) {
 
 		BytecodeCompiler compiler;
 		BytecodeAssembler ass = compiler.compile(wt, builder.getTypeSystem());
+		ass.exit();
+
+
 		for(BytecodeInstruction i : ass.getInstructions()) {
 			std::cout << i.op << " $" << i.registers[0] << " ";
 			if(i.op == Bytecode::Set) {
@@ -170,6 +166,15 @@ int main(int, char **) {
 			}
 		}
 
+		Machine machine;
+		int *memory = machine.run(ass.getInstructions().begin());
+
+		std::cout << "--------------------------------------------------------------------------------" << std::endl;
+		for(uint i = 0; i != 8; i++) {
+			std::cout << std::hex << i << " ";
+			std::cout << memory[i] << std::endl;
+		}
+		delete[] memory;
 
 
 		/*{

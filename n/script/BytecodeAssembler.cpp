@@ -93,5 +93,9 @@ BytecodeAssembler &BytecodeAssembler::jumpNZ(RegisterType a, Label to) {
 	return ass(BCI{Bytecode::JumpNZ, tr(a), tr(to.index)});
 }
 
+BytecodeAssembler &BytecodeAssembler::exit() {
+	return ass(BCI{Bytecode::Exit, {0}});
+}
+
 }
 }
