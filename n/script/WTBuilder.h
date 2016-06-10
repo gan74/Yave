@@ -50,6 +50,8 @@ class WTBuilder : NonCopyable
 		void pushStack();
 		void popStack();
 
+		uint allocRegister();
+
 		WTTypeSystem *getTypeSystem() const;
 
 	private:

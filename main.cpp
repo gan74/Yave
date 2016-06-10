@@ -5,6 +5,7 @@
 #include <iostream>
 #include <n/script/WTNode.h>
 #include <n/script/WTBuilder.h>
+#include <n/script/BytecodeCompiler.h>
 
 using namespace n;
 using namespace n::core;
@@ -133,13 +134,8 @@ void evalI(const ast::Instruction *node, ast::ExecutionFrame &frame) {
 
 int main(int, char **) {
 	core::String code = "var x:Int = 400000;					\n"
-						"var y:Int = 1;							\n"
-						"var z:Float = 1;						\n"
-						"x + y;									\n"
-						"y + z;									\n"
-						"z = x;									\n"
-						"x = z;									\n"
-						"1 + x = 3 * 2 + 1;						\n"
+						//"x = z;									\n"
+						"1 + x = 3 * 2;							\n"
 						//"if(x == y) var i:Int;"
 						/*"while(x - 2 != 2 * 3) {				\n"
 						"	x = x - 1;							\n"
@@ -161,7 +157,18 @@ int main(int, char **) {
 		std::cout << node->toString() << std::endl << std::endl;
 
 		WTBuilder builder;
-		node->toWorkTree(builder);
+		WTInstruction *wt = node->toWorkTree(builder);
+
+		BytecodeCompiler compiler;
+		BytecodeAssembler ass = compiler.compile(wt, builder.getTypeSystem());
+		for(BytecodeInstruction i : ass.getInstructions()) {
+			std::cout << i.op << " $" << i.registers[0] << " ";
+			if(i.op == Bytecode::Set) {
+				std::cout << i.data() << std::endl;
+			} else {
+				std::cout << "$" << i.registers[1] << " $" << i.registers[2] << std::endl;
+			}
+		}
 
 
 

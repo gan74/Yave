@@ -39,7 +39,7 @@ class SynthaxErrorException : public std::exception
 		mutable core::String buffer;
 };
 
-class Parser
+class Parser : NonCopyable
 {
 	public:
 		Parser();

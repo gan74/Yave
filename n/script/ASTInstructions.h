@@ -39,7 +39,7 @@ struct ASTInstructionList : public ASTInstruction
 		return "{\n" + str + "}";
 	}
 
-	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
 };
 
 struct ASTDeclaration : public ASTInstruction
@@ -55,7 +55,7 @@ struct ASTDeclaration : public ASTInstruction
 		return "var " + name + ":" + typeName + (value ? " = " + value->toString() : core::String()) + ";";
 	}
 
-	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
 };
 
 struct ASTLoopInstruction : public ASTInstruction
@@ -70,7 +70,7 @@ struct ASTLoopInstruction : public ASTInstruction
 		return "while(" + condition->toString() + ") " + body->toString();
 	}
 
-	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
 };
 
 struct ASTBranchInstruction : public ASTInstruction
@@ -86,7 +86,7 @@ struct ASTBranchInstruction : public ASTInstruction
 		return "if(" + condition->toString() + ") " + thenBody->toString() + (elseBody ? " else " + elseBody->toString() : "");
 	}
 
-	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
 };
 
 struct ASTExprInstruction : public ASTInstruction
@@ -104,7 +104,7 @@ struct ASTExprInstruction : public ASTInstruction
 		return expression->toString() + ";";
 	}
 
-	virtual WTInstruction *toWorkTree(WTBuilder &builder) const;
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
 };
 
 }

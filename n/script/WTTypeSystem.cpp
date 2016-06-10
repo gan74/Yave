@@ -42,21 +42,24 @@ WTVariableType *WTTypeSystem::getFloatType() const {
 
 bool WTTypeSystem::assign(WTVariableType *lhs, WTVariableType *rhs) {
 	if(!lhs->isObject() && !rhs->isObject()) {
-		WTVariablePrimitiveType *l = static_cast<WTVariablePrimitiveType *>(lhs);
-		WTVariablePrimitiveType *r = static_cast<WTVariablePrimitiveType *>(rhs);
-		return l->getCoercionOrder() >= r->getCoercionOrder();
+		return primitiveOpCoerce(lhs, rhs) == lhs;
 	}
 	return false;
 }
 
 WTVariableType *WTTypeSystem::add(WTVariableType *lhs, WTVariableType *rhs) {
 	if(!lhs->isObject() && !rhs->isObject()) {
-		WTVariablePrimitiveType *l = static_cast<WTVariablePrimitiveType *>(lhs);
-		WTVariablePrimitiveType *r = static_cast<WTVariablePrimitiveType *>(rhs);
-		return l->getCoercionOrder() < r->getCoercionOrder() ? r : l;
+		return primitiveOpCoerce(lhs, rhs);
 	}
 	return 0;
 }
+
+WTVariableType *WTTypeSystem::primitiveOpCoerce(WTVariableType *lhs, WTVariableType *rhs) {
+	WTVariablePrimitiveType *l = static_cast<WTVariablePrimitiveType *>(lhs);
+	WTVariablePrimitiveType *r = static_cast<WTVariablePrimitiveType *>(rhs);
+	return l->getCoercionOrder() < r->getCoercionOrder() ? r : l;
+}
+
 
 }
 }

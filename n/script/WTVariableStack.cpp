@@ -25,7 +25,7 @@ WTVariableStack::WTVariableStack() {
 }
 
 WTVariable *WTVariableStack::declare(const core::String &name, WTVariableType *type) {
-	typename VMap::iterator it = variables.insert(name, new WTVariable(name, type, getRegisterIndex()));
+	typename VMap::iterator it = variables.insert(name, new WTVariable(name, type, allocRegister()));
 	stack.last().vars.append(it);
 	return it->_2;
 }
@@ -52,7 +52,7 @@ void WTVariableStack::popStack() {
 	stack.pop();
 }
 
-uint WTVariableStack::getRegisterIndex() {
+uint WTVariableStack::allocRegister() {
 	return stack.last().registerIndex++;
 }
 

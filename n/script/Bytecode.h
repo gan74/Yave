@@ -13,49 +13,50 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_ASTNODE_H
-#define N_SCRIPT_ASTNODE_H
+#ifndef N_SCRIPT_BYTECODE_H
+#define N_SCRIPT_BYTECODE_H
 
-#include <n/core/String.h>
-#include "Token.h"
+#include <n/types.h>
 
 namespace n {
 namespace script {
 
-class WTExpression;
-class WTInstruction;
-class WTBuilder;
-
-struct ASTNode : NonCopyable
+enum Bytecode : uint16
 {
-	ASTNode(const TokenPosition &pos) : position(pos) {
-	}
+	Nope,
 
-	virtual ~ASTNode() {
-	}
+	AddI,
+	MulI,
 
-	const TokenPosition position;
+	Copy,
 
-	virtual core::String toString() const = 0;
+	Set,
+
+	Jump,
+	JumpNZ,
+
+
+
+	Exit
+
 };
 
-struct ASTExpression : public ASTNode
+struct BytecodeInstruction
 {
-	ASTExpression(const TokenPosition &pos) : ASTNode(pos) {
-	}
+	using RegisterType = uint16;
+	using DataType = int32;
 
-	virtual WTExpression *toWorkTree(WTBuilder &, uint workReg) const = 0;
+	Bytecode op;
+	uint16 registers[3];
+
+	DataType &data() {
+		return *(reinterpret_cast<DataType *>(this) + 1);
+	}
 };
 
-struct ASTInstruction : public ASTNode
-{
-	ASTInstruction(const TokenPosition &pos) : ASTNode(pos) {
-	}
-
-	virtual WTInstruction *toWorkTree(WTBuilder &) const = 0;
-};
+static_assert(sizeof(BytecodeInstruction::RegisterType) + sizeof(Bytecode) == sizeof(BytecodeInstruction::DataType), "BytecodeInstruction DataType should be 2 * RegisterType");
+static_assert(sizeof(BytecodeInstruction) == 8, "BytecodeInstruction should be 64 bits");
 
 }
 }
-
-#endif // N_SCRIPT_ASTNODE_H
+#endif // N_SCRIPT_BYTECODE_H

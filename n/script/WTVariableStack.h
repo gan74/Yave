@@ -43,10 +43,9 @@ class WTVariableStack
 		void pushStack();
 		void popStack();
 
+		uint allocRegister();
+
 	private:
-
-		uint getRegisterIndex();
-
 		VMap variables;
 		core::Array<StackData> stack;
 };

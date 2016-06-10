@@ -33,7 +33,7 @@ struct ASTIdentifier : public ASTExpression
 		return name;
 	}
 
-	virtual WTExpression *toWorkTree(WTBuilder &builder) const;
+	virtual WTExpression *toWorkTree(WTBuilder &builder, uint) const override;
 };
 
 struct ASTLiteral : public ASTExpression
@@ -47,7 +47,7 @@ struct ASTLiteral : public ASTExpression
 		return value.string;
 	}
 
-	virtual WTExpression *toWorkTree(WTBuilder &builder) const;
+	virtual WTExpression *toWorkTree(WTBuilder &builder, uint workReg) const override;
 };
 
 struct ASTBinOp : public ASTExpression
@@ -63,7 +63,7 @@ struct ASTBinOp : public ASTExpression
 		return "(" + lhs->toString() + " "  + Token::getName(type) + " " + rhs->toString() + ")";
 	}
 
-	virtual WTExpression *toWorkTree(WTBuilder &builder) const;
+	virtual WTExpression *toWorkTree(WTBuilder &builder, uint workReg) const override;
 };
 
 struct ASTAssignation : public ASTExpression
@@ -78,7 +78,7 @@ struct ASTAssignation : public ASTExpression
 		return name + " = " + value->toString();
 	}
 
-	virtual WTExpression *toWorkTree(WTBuilder &builder) const;
+	virtual WTExpression *toWorkTree(WTBuilder &builder, uint) const override;
 };
 
 }

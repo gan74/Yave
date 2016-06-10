@@ -45,6 +45,10 @@ void WTBuilder::popStack() {
 	variablesStack.popStack();
 }
 
+uint WTBuilder::allocRegister() {
+	return variablesStack.allocRegister();
+}
+
 WTVariable *WTBuilder::declareVar(const core::String &name, const core::String &typeName, TokenPosition tk) {
 	if(variablesStack.isDeclared(name)) {
 		throw ValidationErrorException("\"" + name + "\" has already been declared", tk);
@@ -84,14 +88,14 @@ WTVariableType *notNull(WTVariableType *t, const TokenPosition &p) {
 
 
 
-WTExpression *ASTIdentifier::toWorkTree(WTBuilder &builder) const {
+WTExpression *ASTIdentifier::toWorkTree(WTBuilder &builder, uint) const {
 	return builder.getVar(name, position);
 }
 
-WTExpression *ASTLiteral::toWorkTree(WTBuilder &builder) const {
+WTExpression *ASTLiteral::toWorkTree(WTBuilder &builder, uint workReg) const {
 	switch(value.type) {
 		case Token::Integer:
-			return new WTInt(value.string.to<int64>(), builder.getTypeSystem()->getIntType());
+			return new WTInt(value.string.to<int64>(), builder.getTypeSystem()->getIntType(), workReg);
 
 		default:
 		break;
@@ -100,22 +104,24 @@ WTExpression *ASTLiteral::toWorkTree(WTBuilder &builder) const {
 	return 0;
 }
 
-WTExpression *ASTBinOp::toWorkTree(WTBuilder &builder) const {
-	WTExpression *l = lhs->toWorkTree(builder);
-	WTExpression *r = rhs->toWorkTree(builder);
+WTExpression *ASTBinOp::toWorkTree(WTBuilder &builder, uint workReg) const {
+	WTExpression *l = lhs->toWorkTree(builder, workReg);
+	builder.pushStack();
+	WTExpression *r = rhs->toWorkTree(builder, builder.allocRegister());
+	builder.popStack();
 	switch(type) {
 		case Token::Plus:
-			return new WTBinOp(WTNode::Add, l, r, notNull(builder.getTypeSystem()->add(l->expressionType, r->expressionType), position));
+			return new WTBinOp(WTNode::Add, l, r, notNull(builder.getTypeSystem()->add(l->expressionType, r->expressionType), position), workReg);
 		case Token::Minus:
-			return new WTBinOp(WTNode::Substract, l, r, builder.getTypeSystem()->getIntType());
+			return new WTBinOp(WTNode::Substract, l, r, builder.getTypeSystem()->getIntType(), workReg);
 		case Token::Multiply:
-			return new WTBinOp(WTNode::Multiply, l, r, builder.getTypeSystem()->getIntType());
+			return new WTBinOp(WTNode::Multiply, l, r, builder.getTypeSystem()->getIntType(), workReg);
 		case Token::Divide:
-			return new WTBinOp(WTNode::Divide, l, r, builder.getTypeSystem()->getIntType());
+			return new WTBinOp(WTNode::Divide, l, r, builder.getTypeSystem()->getIntType(), workReg);
 		case Token::Equals:
-			return new WTBinOp(WTNode::Equals, l, r, builder.getTypeSystem()->getIntType());
+			return new WTBinOp(WTNode::Equals, l, r, builder.getTypeSystem()->getIntType(), workReg);
 		case Token::NotEquals:
-			return new WTBinOp(WTNode::NotEquals, l, r, builder.getTypeSystem()->getIntType());
+			return new WTBinOp(WTNode::NotEquals, l, r, builder.getTypeSystem()->getIntType(), workReg);
 
 		default:
 		break;
@@ -126,44 +132,65 @@ WTExpression *ASTBinOp::toWorkTree(WTBuilder &builder) const {
 	return 0;
 }
 
-WTExpression *ASTAssignation::toWorkTree(WTBuilder &builder) const {
+WTExpression *ASTAssignation::toWorkTree(WTBuilder &builder, uint) const {
 	WTVariable *v = builder.getVar(name, position);
-	WTExpression *val = value->toWorkTree(builder);
+	WTExpression *val = value->toWorkTree(builder, v->registerIndex);
 	if(!builder.getTypeSystem()->assign(v->expressionType, val->expressionType)) {
 		throw ValidationErrorException("Assignation of incompatible types", position);
 	}
 	return new WTAssignation(v, val);
 }
 
+WTInstruction *ASTDeclaration::toWorkTree(WTBuilder &builder) const {
+	WTVariable *var = builder.declareVar(name, typeName, position);
+
+	builder.pushStack();
+	WTExpression *val = value ? value->toWorkTree(builder, var->registerIndex) : new WTInt(0, builder.getTypeSystem()->getType(typeName), var->registerIndex);
+	builder.popStack();
+
+	return new WTExprInstr(new WTAssignation(var, val));
+}
+
+
+
+
+
 WTInstruction *ASTInstructionList::toWorkTree(WTBuilder &builder) const {
 	builder.pushStack();
 	N_SCOPE(builder.popStack());
+
 	return new WTBlock(instructions.mapped([&](ASTInstruction *in) { return in->toWorkTree(builder); }));
 }
 
-WTInstruction *ASTDeclaration::toWorkTree(WTBuilder &builder) const {
-	WTExpression *v = value ? value->toWorkTree(builder) : 0;
-	return new WTDeclaration(builder.declareVar(name, typeName, position), v);
-}
-
 WTInstruction *ASTLoopInstruction::toWorkTree(WTBuilder &builder) const {
-	WTExpression *c = condition->toWorkTree(builder);
+	builder.pushStack();
+	WTExpression *c = condition->toWorkTree(builder, builder.allocRegister());
+	builder.popStack();
+
 	return new WTLoop(c, body->toWorkTree(builder));
 }
 
 WTInstruction *ASTBranchInstruction::toWorkTree(WTBuilder &builder) const {
-	WTExpression *c = condition->toWorkTree(builder);
+	builder.pushStack();
+	WTExpression *c = condition->toWorkTree(builder, builder.allocRegister());
+	builder.popStack();
+
 	builder.pushStack();
 	WTInstruction *t = thenBody->toWorkTree(builder);
 	builder.popStack();
+
 	builder.pushStack();
 	WTInstruction *e = elseBody ? elseBody->toWorkTree(builder) : 0;
 	builder.popStack();
+
 	return new WTBranch(c, t, e);
 }
 
 WTInstruction *ASTExprInstruction::toWorkTree(WTBuilder &builder) const {
-	return new WTExprInstr(expression->toWorkTree(builder));
+	builder.pushStack();
+	N_SCOPE(builder.popStack());
+
+	return new WTExprInstr(expression->toWorkTree(builder, builder.allocRegister()));
 }
 
 

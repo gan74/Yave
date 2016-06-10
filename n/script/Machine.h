@@ -13,38 +13,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_WTTYPESYSTEM_H
-#define N_SCRIPT_WTTYPESYSTEM_H
+#ifndef N_SCRIPT_MACHINE_H
+#define N_SCRIPT_MACHINE_H
 
-#include <n/core/Map.h>
-#include <n/core/String.h>
-#include "Tokenizer.h"
-#include "WTVariableType.h"
+#include "Bytecode.h"
 
 namespace n {
 namespace script {
 
-class WTTypeSystem : NonCopyable
+class Machine : NonCopyable
 {
 	public:
-		WTTypeSystem();
+		Machine();
 
-		WTVariableType *getType(const core::String &name) const;
-		WTVariableType *getIntType() const;
-		WTVariableType *getFloatType() const;
-
-		void addType(WTVariableType *type);
-
-		bool assign(WTVariableType *lhs, WTVariableType *rhs);
-		WTVariableType *add(WTVariableType *lhs, WTVariableType *rhs);
-
-	private:
-		WTVariableType *primitiveOpCoerce(WTVariableType *lhs, WTVariableType *rhs);
-
-		core::Map<core::String, WTVariableType *> types;
+		int *run(const BytecodeInstruction *bcode);
 };
 
 }
 }
 
-#endif // N_SCRIPT_WTTYPESYSTEM_H
+#endif // N_SCRIPT_MACHINE_H

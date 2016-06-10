@@ -40,7 +40,6 @@ struct WTNode : NonCopyable
 		Integer,
 
 		Assignation,
-		Declaration,
 
 		Loop,
 		Branch,
@@ -57,10 +56,12 @@ struct WTNode : NonCopyable
 
 struct WTExpression : public WTNode
 {
-	WTExpression(WTNode::Type t, WTVariableType *vt) : WTNode(t), expressionType(vt) {
+	WTExpression(WTNode::Type t, WTVariableType *vt, uint reg) : WTNode(t), expressionType(vt), registerIndex(reg) {
 	}
 
 	WTVariableType *expressionType;
+
+	uint registerIndex;
 };
 
 struct WTInstruction : public WTNode
@@ -71,7 +72,7 @@ struct WTInstruction : public WTNode
 
 struct WTBinOp : public WTExpression
 {
-	WTBinOp(WTNode::Type t, WTExpression *l, WTExpression *r, WTVariableType *ty) : WTExpression(t, ty), lhs(l), rhs(r) {
+	WTBinOp(WTNode::Type t, WTExpression *l, WTExpression *r, WTVariableType *ty, uint reg) : WTExpression(t, ty, reg), lhs(l), rhs(r) {
 	}
 
 	WTExpression *lhs;
@@ -81,16 +82,15 @@ struct WTBinOp : public WTExpression
 
 struct WTVariable : public WTExpression
 {
-	WTVariable(const core::String &n, WTVariableType *t, uint reg) : WTExpression(Variable, t), name(n), registerIndex(reg) {
+	WTVariable(const core::String &n, WTVariableType *t, uint reg) : WTExpression(Variable, t, reg), name(n) {
 	}
 
 	core::String name;
-	const uint registerIndex;
 };
 
 struct WTInt : public WTExpression
 {
-	WTInt(int64 val, WTVariableType *intType) : WTExpression(Integer, intType), value(val) {
+	WTInt(int64 val, WTVariableType *intType, uint reg) : WTExpression(Integer, intType, reg), value(val) {
 	}
 
 	int64 value;
@@ -98,16 +98,7 @@ struct WTInt : public WTExpression
 
 struct WTAssignation : public WTExpression
 {
-	WTAssignation(WTVariable *var, WTExpression *val) : WTExpression(Assignation, var->expressionType), variable(var), value(val) {
-	}
-
-	WTVariable *variable;
-	WTExpression *value;
-};
-
-struct WTDeclaration : public WTInstruction
-{
-	WTDeclaration(WTVariable *var, WTExpression *val) : WTInstruction(Declaration), variable(var), value(val) {
+	WTAssignation(WTVariable *var, WTExpression *val) : WTExpression(Assignation, var->expressionType, var->registerIndex), variable(var), value(val) {
 	}
 
 	WTVariable *variable;
