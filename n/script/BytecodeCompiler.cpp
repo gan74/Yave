@@ -30,6 +30,7 @@ BytecodeCompiler::BytecodeCompiler() {
 
 BytecodeAssembler BytecodeCompiler::compile(WTInstruction *node, WTTypeSystem *ts) {
 	Context context;
+	context.useIfDoWhile = true;
 	context.typeSystem = ts;
 
 	compile(context, node);
@@ -60,9 +61,15 @@ void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
 			context.assembler.nope();
 
 			compile(context, as<WTLoop>(node)->body);
-			context.assembler.jump(loop);
-			BytecodeAssembler::Label end = context.assembler.createLabel();
 
+			if(context.useIfDoWhile) {
+				compile(context, as<WTLoop>(node)->condition);
+				context.assembler.jumpNZ(as<WTLoop>(node)->condition->registerIndex, loop);
+			} else {
+				context.assembler.jump(loop);
+			}
+
+			BytecodeAssembler::Label end = context.assembler.createLabel();
 			context.assembler.seek(condJmp);
 			context.assembler.jumpZ(as<WTLoop>(node)->condition->registerIndex, end);
 

@@ -161,7 +161,7 @@ int main(int, char **) {
 
 		uint index = 0;
 		for(BytecodeInstruction i : ass.getInstructions()) {
-			std::cout << index++ << "   " << i.op << " $" << i.registers[0] << " ";
+			std::cout << index++ << "\t" << i.op << " $" << i.registers[0] << " ";
 			if(i.op == Bytecode::Set || i.op == Bytecode::Jump || i.op == Bytecode::JumpNZ) {
 				std::cout << i.data() << std::endl;
 			} else {
@@ -174,7 +174,7 @@ int main(int, char **) {
 
 		std::cout << std::endl << "--------------------------------------------------------------------------------" << std::endl;
 		for(uint i = 0; i != 8; i++) {
-			std::cout << i << " " << memory[i] << std::endl;
+			std::cout << i << "\t" << memory[i] << std::endl;
 		}
 		delete[] memory;
 

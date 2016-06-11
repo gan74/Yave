@@ -48,6 +48,8 @@ class BytecodeCompiler : NonCopyable
 	{
 		BytecodeAssembler assembler;
 		WTTypeSystem *typeSystem;
+
+		bool useIfDoWhile;
 	};
 
 	public:
