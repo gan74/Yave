@@ -48,6 +48,18 @@ void print(uint index, BytecodeInstruction i) {
 			std::cout << "jmpnz $" << i.registers[0] << " " << i.data() + 1;
 		break;
 
+		case Bytecode::Call:
+			std::cout << "call " << i.registers[0] << " " << i.data() + 1;
+		break;
+
+		case Bytecode::FuncHead:
+			std::cout << "function ";
+		break;
+
+		case Bytecode::Exit:
+			std::cout << "exit";
+		break;
+
 		default:
 			std::cout << names[i.op] << " $" << i.registers[0] << " $" << i.registers[1] << " $" << i.registers[2];
 
@@ -58,23 +70,20 @@ void print(uint index, BytecodeInstruction i) {
 
 
 int main(int, char **) {
-	core::String code = "var x:Int = 999;					\n"
-						"var y:Int = 5;						\n"
-						"var z:Int;							\n"
-						"if(x > 1000) {						\n"
-						"	y = 1000;						\n"
-						"} else {							\n"
-						"	y = 7;							\n"
-						"}									\n"
-						"z = 0;								\n"
-						"z = 0;								\n"
-						"z = 0;								\n"
-						"z = 0;								\n"
-						"z = 0;								\n"
-						"z = 0;								\n"
-						"while(x != y) {					\n"
-						"	x = x - 1;						\n"
-						"}									\n";
+	core::String code = "var x:Int = 1001000;					\n"
+						"var y:Int = x - x;						\n"
+						"if(x > 1000) {							\n"
+						"	y = 1000;							\n"
+						"} else {								\n"
+						"	y = 7;								\n"
+						"}										\n"
+						"def foobar(var a:Int) = {				\n"
+						"	while(a != y) {						\n"
+						"		a = a - 1;						\n"
+						"	}									\n"
+						"}										\n"
+						"var a:Int = 9;							\n"
+						"var w:Int = foobar(x);					\n";
 
 
 	Tokenizer tokenizer;
@@ -91,7 +100,6 @@ int main(int, char **) {
 
 		BytecodeCompiler compiler;
 		BytecodeAssembler ass = compiler.compile(wt, builder.getTypeSystem());
-		ass.exit();
 
 
 		uint index = 0;
@@ -99,27 +107,24 @@ int main(int, char **) {
 			print(index++, i);
 		}
 
+		Timer timer;
 		Machine machine;
+		machine.load(ass.getInstructions().begin(), ass.getInstructions().end());
 		int *memory = machine.run(ass.getInstructions().begin());
+		std::cout << std::endl << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl;
 
-		std::cout << std::endl << "--------------------------------------------------------------------------------" << std::endl;
+
+		/*std::cout << std::endl << std::endl << "------------------------------------------------------------------------------------------------------------------------" << std::endl;
 		for(uint i = 0; i != 8; i++) {
 			std::cout << i << "\t" << memory[i] << std::endl;
 		}
 		delete[] memory;
-
-
-		/*{
-			std::cout << std::endl;
-			Timer timer;
-			node->eval(frame);
-			std::cout << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl;
-		}*/
-
+		std::cout << "------------------------------------------------------------------------------------------------------------------------" << std::endl;*/
 	} catch(SynthaxErrorException &e) {
 		std::cerr << e.what(code) << std::endl;
 	} catch(ValidationErrorException &e) {
 		std::cerr << e.what(code) << std::endl;
 	}
+
 	return 0;
 }

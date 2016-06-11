@@ -51,7 +51,7 @@ void expected(core::Array<Token>::const_iterator it, const core::Array<Token::Ty
 }
 
 void expect(core::Array<Token>::const_iterator it, const core::Array<Token::Type> &types) {
-	if(types.exists(it->type)) {
+	if(!types.exists(it->type)) {
 		it++;
 		expected(it, types);
 	}
@@ -74,7 +74,8 @@ uint assoc(Token::Type type) {
 
 
 
-
+core::Array<ASTDeclaration *> parseArgDecls(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
+core::Array<ASTExpression *> parseArgs(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
 
 ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
 
@@ -85,6 +86,8 @@ ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::
 			if(begin->type == Token::Assign) {
 				begin++;
 				return new ASTAssignation(id->string, parseExpr(begin, end), (id + 1)->position);
+			} else if(begin->type == Token::LeftPar) {
+				return new ASTCall(id->string, parseArgs(begin, end), id->position);
 			}
 			return new ASTIdentifier(id->string, id->position);
 
@@ -142,12 +145,12 @@ ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<
 ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	eat(begin, Token::Var);
 
-	expect(begin, Token::Identifier);
+	expect(begin, {Token::Identifier});
 	core::String name = (begin++)->string;
 
 	eat(begin, Token::Colon);
 
-	expect(begin, Token::Identifier);
+	expect(begin, {Token::Identifier});
 	core::String type = (begin++)->string;
 
 	if(begin->type == Token::Assign) {
@@ -167,7 +170,7 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 
 		case Token::If: {
 			begin++;
-			expect(begin, Token::LeftPar);
+			expect(begin, {Token::LeftPar});
 			ASTExpression *expr = parseExpr(begin, end);
 			ASTInstruction *then = parseInstruction(begin, end);
 			if(begin->type == Token::Else) {
@@ -179,7 +182,7 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 
 		case Token::While: {
 			begin++;
-			expect(begin, Token::LeftPar);
+			expect(begin, {Token::LeftPar});
 			ASTExpression *expr = parseExpr(begin, end);
 			return new ASTLoopInstruction(expr, parseInstruction(begin, end));
 		} break;
@@ -194,6 +197,16 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 			return new ASTInstructionList(instrs);
 		} break;
 
+		case Token::Def: {
+			begin++;
+			expect(begin, {Token::Identifier});
+			core::String name = begin->string;
+			begin++;
+			core::Array<ASTDeclaration *> args = parseArgDecls(begin, end);
+			eat(begin, {Token::Assign});
+			return new ASTFunctionDeclaration(name, args, parseInstruction(begin, end));
+		} break;
+
 		default:
 			instr = new ASTExprInstruction(parseExpr(begin, end));
 		break;
@@ -204,6 +217,40 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 	}
 	expected(begin, {Token::Var, Token::While, Token::If, Token::LeftBrace});
 	return 0;
+}
+
+core::Array<ASTDeclaration *> parseArgDecls(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	eat(begin, {Token::LeftPar});
+	core::Array<ASTDeclaration *> args;
+	for(;;) {
+		if(begin->type == Token::RightPar) {
+			break;
+		}
+		args.append(parseDeclaration(begin, end));
+		if(begin->type != Token::Coma) {
+			break;
+		}
+		begin++;
+	}
+	eat(begin, {Token::RightPar});
+	return args;
+}
+
+core::Array<ASTExpression *> parseArgs(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+	eat(begin, {Token::LeftPar});
+	core::Array<ASTExpression *> args;
+	for(;;) {
+		if(begin->type == Token::RightPar) {
+			break;
+		}
+		args.append(parseExpr(begin, end));
+		if(begin->type != Token::Coma) {
+			break;
+		}
+		begin++;
+	}
+	eat(begin, {Token::RightPar});
+	return args;
 }
 
 

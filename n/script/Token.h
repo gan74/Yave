@@ -84,22 +84,25 @@ class Token
 			LeftBrace		= 16,
 			RightBrace		= 17,
 
-			Colon			= 18,
-			SemiColon		= 19,
+			Coma			= 18,
+			Colon			= 19,
+			SemiColon		= 20,
 
-			Var				= 20,
-			If				= 21,
-			Else			= 22,
-			While			= 23,
+			Var				= 21,
+			If				= 22,
+			Else			= 23,
+			While			= 24,
+			Def				= 25,
 
-			Error			= isEnd | 24,
-			End				= isEnd | 25
+			Error			= isEnd | 26,
+			End				= isEnd | 27
 		};
 
 		static core::String getName(Type type) {
 			static constexpr const char *names[] = {"'+'", "'-'", "'*'", "'/'", "'=='", "'!='", "'<'", "'>'", "", "",
-													"'='", "identifier", "integer", "float", "'('", "')'", "'{'", "'}'", "':'", "';'",
-													"'var'", "'if'", "'else'","'while'", "", "EOF"};
+													"'='", "identifier", "integer", "float", "'('", "')'", "'{'", "'}'", "','","':'", "';'",
+													"'var'", "'if'", "'else'","'while'", "'def'",
+													"", "EOF"};
 			return names[type & ~flagMask];
 		}
 

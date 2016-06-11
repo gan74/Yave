@@ -29,13 +29,22 @@ BytecodeCompiler::BytecodeCompiler() {
 }
 
 BytecodeAssembler BytecodeCompiler::compile(WTInstruction *node, WTTypeSystem *ts) {
-	Context context;
-	context.useIfDoWhile = false;
-	context.typeSystem = ts;
+	BytecodeAssembler assembler;
+	Context context{
+		core::Map<WTFunction *, BytecodeAssembler>(),
+		&assembler,
+		ts,
+		false};
 
 	compile(context, node);
 
-	return context.assembler;
+	assembler.exit();
+
+	for(const core::Pair<WTFunction * const, BytecodeAssembler> &p : context.externalAssemblers) {
+		assembler << p._2;
+	}
+
+	return assembler;
 }
 
 void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
@@ -54,24 +63,24 @@ void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
 
 
 		case WTNode::Loop: {
-			BytecodeAssembler::Label loop = context.assembler.createLabel();
+			BytecodeAssembler::Label loop = context.assembler->createLabel();
 			compile(context, as<WTLoop>(node)->condition);
 
-			BytecodeAssembler::Label condJmp = context.assembler.createLabel();
-			context.assembler.nope();
+			BytecodeAssembler::Label condJmp = context.assembler->createLabel();
+			context.assembler->nope();
 
 			compile(context, as<WTLoop>(node)->body);
 
 			if(context.useIfDoWhile) {
 				compile(context, as<WTLoop>(node)->condition);
-				context.assembler.jumpNZ(as<WTLoop>(node)->condition->registerIndex, loop);
+				context.assembler->jumpNZ(as<WTLoop>(node)->condition->registerIndex, loop);
 			} else {
-				context.assembler.jump(loop);
+				context.assembler->jump(loop);
 			}
 
-			context.assembler.seek(condJmp);
-			context.assembler.jumpZ(as<WTLoop>(node)->condition->registerIndex, context.assembler.end());
-			context.assembler.seek(context.assembler.end());
+			context.assembler->seek(condJmp);
+			context.assembler->jumpZ(as<WTLoop>(node)->condition->registerIndex, context.assembler->end());
+			context.assembler->seek(context.assembler->end());
 		}
 		return;
 
@@ -79,28 +88,28 @@ void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
 		case WTNode::Branch: {
 			compile(context, as<WTBranch>(node)->condition);
 
-			BytecodeAssembler::Label condJmp = context.assembler.createLabel();
-			context.assembler.nope();
+			BytecodeAssembler::Label condJmp = context.assembler->createLabel();
+			context.assembler->nope();
 
 			compile(context, as<WTBranch>(node)->thenBody);
 
 			if(as<WTBranch>(node)->elseBody) {
-				BytecodeAssembler::Label elseJmp = context.assembler.createLabel();
-				context.assembler.nope();
+				BytecodeAssembler::Label elseJmp = context.assembler->createLabel();
+				context.assembler->nope();
 
-				context.assembler.seek(condJmp);
-				context.assembler.jumpZ(as<WTLoop>(node)->condition->registerIndex, context.assembler.end());
-				context.assembler.seek(context.assembler.end());
+				context.assembler->seek(condJmp);
+				context.assembler->jumpZ(as<WTLoop>(node)->condition->registerIndex, context.assembler->end());
+				context.assembler->seek(context.assembler->end());
 
 				compile(context, as<WTBranch>(node)->elseBody);
 
-				context.assembler.seek(elseJmp);
-				context.assembler.jump(context.assembler.end());
+				context.assembler->seek(elseJmp);
+				context.assembler->jump(context.assembler->end());
 			} else {
-				context.assembler.seek(condJmp);
-				context.assembler.jumpZ(as<WTLoop>(node)->condition->registerIndex, context.assembler.end());
+				context.assembler->seek(condJmp);
+				context.assembler->jumpZ(as<WTLoop>(node)->condition->registerIndex, context.assembler->end());
 			}
-			context.assembler.seek(context.assembler.end());
+			context.assembler->seek(context.assembler->end());
 		}
 		return;
 
@@ -108,6 +117,17 @@ void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
 		default:
 			throw CompilationErrorException("Unknown node type", node);
 	}
+}
+
+void BytecodeCompiler::compile(Context &context, WTFunction *func) {
+	BytecodeAssembler *ass = context.assembler;
+	context.assembler = &context.externalAssemblers[func];
+
+	context.assembler->function(func->index);
+	compile(context, func->body);
+	context.assembler->exit();
+
+	context.assembler = ass;
 }
 
 void BytecodeCompiler::compile(Context &context, WTExpression *node) {
@@ -128,13 +148,20 @@ void BytecodeCompiler::compile(Context &context, WTExpression *node) {
 		case WTNode::Assignation:
 			compile(context, as<WTAssignation>(node)->value);
 			if(node->registerIndex != as<WTAssignation>(node)->value->registerIndex) {
-				context.assembler.copy(node->registerIndex, as<WTAssignation>(node)->value->registerIndex);
+				context.assembler->copy(node->registerIndex, as<WTAssignation>(node)->value->registerIndex);
 			}
+			return;
+
+		case WTNode::Call:
+			if(!context.externalAssemblers.exists(as<WTCall>(node)->func)) {
+				compile(context, as<WTCall>(node)->func);
+			}
+			context.assembler->call(as<WTCall>(node)->registerIndex, as<WTCall>(node)->func->index);
 			return;
 
 
 		case WTNode::Integer:
-			context.assembler.set(node->registerIndex, as<WTInt>(node)->value);
+			context.assembler->set(node->registerIndex, as<WTInt>(node)->value);
 			return;
 
 
@@ -156,35 +183,35 @@ void BytecodeCompiler::compile(Context &context, WTBinOp *node) {
 	uint r = node->rhs->registerIndex;
 	switch(node->type) {
 		case WTNode::Add:
-			context.assembler.addI(to, l, r);
+			context.assembler->addI(to, l, r);
 			return;
 
 		case WTNode::Substract:
-			context.assembler.subI(to, l, r);
+			context.assembler->subI(to, l, r);
 			return;
 
 		case WTNode::Multiply:
-			context.assembler.mulI(to, l, r);
+			context.assembler->mulI(to, l, r);
 			return;
 
 		case WTNode::Divide:
-			context.assembler.divI(to, l, r);
+			context.assembler->divI(to, l, r);
 			return;
 
 		case WTNode::Equals:
-			context.assembler.equals(to, l, r);
+			context.assembler->equals(to, l, r);
 			return;
 
 		case WTNode::NotEquals:
-			context.assembler.notEq(to, l, r);
+			context.assembler->notEq(to, l, r);
 			return;
 
 		case WTNode::LessThan:
-			context.assembler.lessI(to, l, r);
+			context.assembler->lessI(to, l, r);
 			return;
 
 		case WTNode::GreaterThan:
-			context.assembler.greaterI(to, l, r);
+			context.assembler->greaterI(to, l, r);
 			return;
 
 		default:

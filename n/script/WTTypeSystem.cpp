@@ -20,7 +20,7 @@ namespace script {
 
 WTTypeSystem::WTTypeSystem() {
 	addType(new WTVariableIntType());
-	addType(new WTVariableFloatType());
+	//addType(new WTVariableFloatType());
 }
 
 void WTTypeSystem::addType(WTVariableType *type) {

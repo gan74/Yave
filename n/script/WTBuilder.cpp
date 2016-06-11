@@ -31,6 +31,16 @@ const char *ValidationErrorException::what(const core::String &code) const noexc
 
 
 WTBuilder::WTBuilder() : types(new WTTypeSystem()) {
+	StackData<WTVariable *> vdat;
+	vdat.index = 0;
+	varStack.append(vdat);
+
+	StackData<WTFunction *> fdat;
+	fdat.index = 0;
+	funcStack.append(fdat);
+}
+
+WTBuilder::~WTBuilder() {
 }
 
 WTTypeSystem *WTBuilder::getTypeSystem() const {
@@ -38,41 +48,80 @@ WTTypeSystem *WTBuilder::getTypeSystem() const {
 }
 
 void WTBuilder::pushStack() {
-	variablesStack.pushStack();
+	StackData<WTVariable *> vdat;
+	vdat.index = varStack.last().index;
+	varStack.append(vdat);
+
+	StackData<WTFunction *> fdat;
+	fdat.index = funcStack.last().index;
+	funcStack.append(fdat);
 }
 
 void WTBuilder::popStack() {
-	variablesStack.popStack();
+	for(typename VMap::iterator it : varStack.last().all) {
+		varMap.remove(it);
+	}
+	varStack.pop();
+
+	for(typename FMap::iterator it : funcStack.last().all) {
+		funcMap.remove(it);
+	}
+	funcStack.pop();
 }
 
 uint WTBuilder::allocRegister() {
-	return variablesStack.allocRegister();
+	return varStack.last().index++;
+}
+
+uint WTBuilder::allocSlot() {
+	return funcStack.last().index++;
 }
 
 WTVariable *WTBuilder::declareVar(const core::String &name, const core::String &typeName, TokenPosition tk) {
-	if(variablesStack.isDeclared(name)) {
-		throw ValidationErrorException("\"" + name + "\" has already been declared", tk);
+	if(varMap.exists(name)) {
+		throw ValidationErrorException("\"" + name + "\" has already been declared in this scope", tk);
 	}
 	WTVariableType *type = types->getType(typeName);
 	if(!type) {
 		throw ValidationErrorException("\"" + typeName + "\" is not a type", tk);
 	}
-	WTVariable *v = variablesStack.declare(name, type);
+	WTVariable *v = new WTVariable(name, type, allocRegister());
+
+	typename VMap::iterator it = varMap.insert(name, v);
+	varStack.last().all.append(it);
 	variables.append(v);
+
 	return v;
 }
 
 WTVariable *WTBuilder::getVar(const core::String &name, TokenPosition tk) const {
-	WTVariable *v = variablesStack.get(name);
-	if(!v) {
-		throw ValidationErrorException("\"" + name + "\" has not been declared", tk);
+	typename VMap::const_iterator it = varMap.find(name);
+	if(it == varMap.end()) {
+		throw ValidationErrorException("\"" + name + "\" has not been declared in this scope", tk);
 	}
-	return v;
+	return it->_2;
 }
 
+WTFunction *WTBuilder::declareFunc(const core::String &name, const core::Array<WTVariable *> &args, WTInstruction *body, WTVariableType *ret, TokenPosition tk) {
+	if(funcMap.exists(name)) {
+		throw ValidationErrorException("\"" + name + "\" has already been declared in this scope", tk);
+	}
+	WTFunction *f = new WTFunction(name, args, body, ret, allocSlot());
 
+	typename FMap::iterator it = funcMap.insert(name, f);
+	funcStack.last().all.append(it);
+	functions.append(f);
 
+	return f;
+}
 
+WTFunction *WTBuilder::getFunc(const core::String &name, TokenPosition tk) const {
+	typename FMap::const_iterator it = funcMap.find(name);
+	if(it == funcMap.end()) {
+		throw ValidationErrorException("\"" + name + "\" has not been declared in this scope", tk);
+	}
+	return it->_2;
+}
 
 
 
@@ -145,6 +194,19 @@ WTExpression *ASTAssignation::toWorkTree(WTBuilder &builder, uint) const {
 	return new WTAssignation(v, val);
 }
 
+WTExpression *ASTCall::toWorkTree(WTBuilder &builder, uint workReg) const {
+	builder.pushStack();
+	core::Array<WTExpression *> arg = args.mapped([&](ASTExpression *e) { return e->toWorkTree(builder, builder.allocRegister()); });
+	builder.popStack();
+	return new WTCall(builder.getFunc(name, position), arg, workReg);
+}
+
+
+
+
+
+
+
 WTInstruction *ASTDeclaration::toWorkTree(WTBuilder &builder) const {
 	WTVariable *var = builder.declareVar(name, typeName, position);
 
@@ -155,15 +217,17 @@ WTInstruction *ASTDeclaration::toWorkTree(WTBuilder &builder) const {
 	return new WTExprInstr(new WTAssignation(var, val));
 }
 
-
-
-
-
 WTInstruction *ASTInstructionList::toWorkTree(WTBuilder &builder) const {
 	builder.pushStack();
-	N_SCOPE(builder.popStack());
-
-	return new WTBlock(instructions.mapped([&](ASTInstruction *in) { return in->toWorkTree(builder); }));
+	core::Array<WTInstruction *> in;
+	for(ASTInstruction *i : instructions) {
+		WTInstruction *ii = i->toWorkTree(builder);
+		if(ii) {
+			in.append(ii);
+		}
+	}
+	builder.popStack();
+	return new WTBlock(in);
 }
 
 WTInstruction *ASTLoopInstruction::toWorkTree(WTBuilder &builder) const {
@@ -197,6 +261,21 @@ WTInstruction *ASTExprInstruction::toWorkTree(WTBuilder &builder) const {
 	return new WTExprInstr(expression->toWorkTree(builder, builder.allocRegister()));
 }
 
+WTInstruction *ASTFunctionDeclaration::toWorkTree(WTBuilder &builder) const {
+	builder.pushStack();
+	core::Array<WTVariable *> arg;
+	for(ASTDeclaration *d : args) {
+		if(d->value) {
+			throw ValidationErrorException("Function parameter \"" + d->name + "\" should not have a value", position);
+		}
+		arg.append(builder.declareVar(d->name, d->typeName, d->position));
+	}
+	WTInstruction *b = body->toWorkTree(builder);
+	builder.popStack();
+
+	builder.declareFunc(name, arg, b, builder.getTypeSystem()->getIntType(), position);
+	return 0; //new WTExprInstr(new WTInt(0, builder.getTypeSystem()->getIntType(), 0));
+}
 
 }
 }

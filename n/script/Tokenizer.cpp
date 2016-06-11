@@ -72,6 +72,8 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 			return Token(Token::Else, tk, b);
 		} else if(tk == "while") {
 			return Token(Token::While, tk, b);
+		} else if(tk == "def") {
+			return Token(Token::Def, tk, b);
 		}
 		return Token(Token::Identifier, tk, b);
 	}
@@ -120,6 +122,9 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 	}
 	if(tk.beginsWith("}")) {
 		return Token(Token::RightBrace, "}", beg++);
+	}
+	if(tk.beginsWith(",")) {
+		return Token(Token::Coma, ",", beg++);
 	}
 	if(tk.beginsWith(":")) {
 		return Token(Token::Colon, ":", beg++);

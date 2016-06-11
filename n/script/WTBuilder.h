@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "WTVariableStack.h"
 #include "WTTypeSystem.h"
+#include "WTFunction.h"
 
 namespace n {
 namespace script {
@@ -41,11 +42,26 @@ class ValidationErrorException : public std::exception
 
 class WTBuilder : NonCopyable
 {
+
+	using VMap = core::Map<core::String, WTVariable *>;
+	using FMap = core::Map<core::String, WTFunction *>;
+
+	template<typename T>
+	struct StackData
+	{
+		core::Array<typename core::Map<core::String, T>::iterator> all;
+		uint index;
+	};
+
 	public:
 		WTBuilder();
+		~WTBuilder();
 
 		WTVariable *declareVar(const core::String &name, const core::String &typeName, TokenPosition tk = TokenPosition());
 		WTVariable *getVar(const core::String &name, TokenPosition tk = TokenPosition()) const;
+
+		WTFunction *declareFunc(const core::String &name, const core::Array<WTVariable *> &args, WTInstruction *body, WTVariableType *ret, TokenPosition tk = TokenPosition());
+		WTFunction *getFunc(const core::String &name, TokenPosition tk) const;
 
 		void pushStack();
 		void popStack();
@@ -55,10 +71,17 @@ class WTBuilder : NonCopyable
 		WTTypeSystem *getTypeSystem() const;
 
 	private:
+		uint allocSlot();
+
 		WTTypeSystem *types;
 
-		WTVariableStack variablesStack;
+		VMap varMap;
+		core::Array<StackData<WTVariable *>> varStack;
 		core::Array<WTVariable *> variables;
+
+		FMap funcMap;
+		core::Array<StackData<WTFunction *>> funcStack;
+		core::Array<WTFunction *> functions;
 
 
 };

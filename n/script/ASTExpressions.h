@@ -81,6 +81,25 @@ struct ASTAssignation : public ASTExpression
 	virtual WTExpression *toWorkTree(WTBuilder &builder, uint) const override;
 };
 
+struct ASTCall : public ASTExpression
+{
+	ASTCall(const core::String &id, const core::Array<ASTExpression *> &args, const TokenPosition &tk) : ASTExpression(tk), name(id), args(args) {
+	}
+
+	const core::String name;
+	const core::Array<ASTExpression *> args;
+
+	virtual core::String toString() const override {
+		core::String a;
+		for(ASTExpression *e : args) {
+			a += e->toString() + " ";
+		}
+		return name + "( " + a + ")";
+	}
+
+	virtual WTExpression *toWorkTree(WTBuilder &builder, uint workReg) const override;
+};
+
 }
 }
 

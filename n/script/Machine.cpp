@@ -21,13 +21,13 @@ namespace script {
 Machine::Machine() {
 }
 
-int *Machine::run(const BytecodeInstruction restrict *bcode) {
-	 int restrict *mem = new int[1 << 16];
+int *Machine::run(const BytecodeInstruction *restrict bcode) {
+	int *restrict mem = new int[1 << 16];
 	for(uint i = 0; i != 1 << 16; i++) {
 		mem[i] = 0;
 	}
 
-	for(const restrict BytecodeInstruction *i = bcode;; i++) {
+	for(const BytecodeInstruction *restrict i = bcode;; i++) {
 		int *m = mem + i->registers[0];
 		int tmp;
 
@@ -100,6 +100,15 @@ int *Machine::run(const BytecodeInstruction restrict *bcode) {
 				}
 			break;
 
+			case Bytecode::Call:
+				//delete[] run(funcTable[i->data()]);
+				*m = 0;
+			break;
+
+			case Bytecode::FuncHead:
+				fatal("FuncHead in bytecode");
+			break;
+
 			case Bytecode::Exit:
 				return mem;
 
@@ -108,6 +117,23 @@ int *Machine::run(const BytecodeInstruction restrict *bcode) {
 
 	return mem;
 
+}
+
+void Machine::load(const BytecodeInstruction *restrict bcode, const BytecodeInstruction *restrict end) {
+	for(const BytecodeInstruction *restrict i = bcode; i != end; i++) {
+		switch(i->op) {
+			case Bytecode::FuncHead:
+				while(funcTable.size() <= i->udata()) {
+					funcTable << nullptr;
+				}
+				funcTable[i->udata()] = i + 1;
+			break;
+
+
+			default:
+			break;
+		}
+	}
 }
 
 }

@@ -46,6 +46,9 @@ enum Bytecode : uint16
 	JumpZ,
 	JumpNZ,
 
+	Call,
+
+	FuncHead,
 
 	Exit
 
@@ -56,6 +59,8 @@ struct BytecodeInstruction
 	using RegisterType = uint16;
 	using DataType = int32;
 
+	using UnsignedDataType = std::make_unsigned<DataType>::type;
+
 	Bytecode op;
 	uint16 registers[3];
 
@@ -65,6 +70,14 @@ struct BytecodeInstruction
 
 	const DataType &data() const {
 		return *(reinterpret_cast<const DataType *>(this) + 1);
+	}
+
+	UnsignedDataType &udata() {
+		return *(reinterpret_cast<UnsignedDataType *>(this) + 1);
+	}
+
+	const UnsignedDataType &udata() const {
+		return *(reinterpret_cast<const UnsignedDataType *>(this) + 1);
 	}
 };
 

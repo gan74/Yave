@@ -65,6 +65,11 @@ class BytecodeAssembler
 		BytecodeAssembler &jumpNZ(RegisterType a, Label to);
 		BytecodeAssembler &jumpZ(RegisterType a, Label to);
 
+		BytecodeAssembler &call(RegisterType to, BytecodeInstruction::DataType index);
+
+
+		BytecodeAssembler &function(uint index);
+
 
 		BytecodeAssembler &exit();
 

@@ -56,7 +56,7 @@ BytecodeAssembler &BytecodeAssembler::operator<<(const BytecodeAssembler &a) {
 		} else if(i.op == Bytecode::JumpNZ) {
 			i.registers[1] += s;
 		}
-		in << i;
+		ass(i);
 	}
 	return *this;
 }
@@ -140,6 +140,18 @@ BytecodeAssembler &BytecodeAssembler::jumpNZ(RegisterType a, Label to) {
 BytecodeAssembler &BytecodeAssembler::jumpZ(RegisterType a, Label to) {
 	BCI i{Bytecode::JumpZ, {tr(a)}};
 	i.data() = to.index - 1;
+	return ass(i);
+}
+
+BytecodeAssembler &BytecodeAssembler::call(RegisterType to, BytecodeInstruction::DataType index) {
+	BCI i{Bytecode::Call, {tr(to)}};
+	i.data() = index - 1;
+	return ass(i);
+}
+
+BytecodeAssembler &BytecodeAssembler::function(uint index) {
+	BCI i{Bytecode::FuncHead, {0}};
+	i.udata() = index;
 	return ass(i);
 }
 

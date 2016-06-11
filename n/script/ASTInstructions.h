@@ -91,17 +91,33 @@ struct ASTBranchInstruction : public ASTInstruction
 
 struct ASTExprInstruction : public ASTInstruction
 {
-	ASTExprInstruction(ASTExpression *expr) : ASTExprInstruction(expr, !dynamic_cast<ASTAssignation *>(expr)) {
+	ASTExprInstruction(ASTExpression *expr) : ASTInstruction(expr->position), expression(expr) {
 	}
 
-	ASTExprInstruction(ASTExpression *expr, bool prt) : ASTInstruction(expr->position), print(prt), expression(expr) {
-	}
-
-	const bool print;
 	const ASTExpression *expression;
 
 	virtual core::String toString() const override {
 		return expression->toString() + ";";
+	}
+
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
+};
+
+struct ASTFunctionDeclaration : public ASTInstruction
+{
+	ASTFunctionDeclaration(const core::String &n, const core::Array<ASTDeclaration *> &a, ASTInstruction *bod) : ASTInstruction(bod->position), name(n), args(a), body(bod) {
+	}
+
+	const core::String name;
+	const core::Array<ASTDeclaration *> args;
+	const ASTInstruction *body;
+
+	virtual core::String toString() const override {
+		core::String a;
+		for(ASTDeclaration *d : args) {
+			a += d->toString() + " ";
+		}
+		return "def " + name + "( " + a + ") = " + body->toString();
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;

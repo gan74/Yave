@@ -46,7 +46,8 @@ class BytecodeCompiler : NonCopyable
 {
 	struct Context
 	{
-		BytecodeAssembler assembler;
+		core::Map<WTFunction *, BytecodeAssembler> externalAssemblers;
+		BytecodeAssembler *assembler;
 		WTTypeSystem *typeSystem;
 
 		bool useIfDoWhile;
@@ -60,6 +61,7 @@ class BytecodeCompiler : NonCopyable
 	private:
 		void compile(Context &context, WTInstruction *node);
 		void compile(Context &context, WTExpression *node);
+		void compile(Context &context, WTFunction *func);
 
 		void compile(Context &context, WTBinOp *node);
 };

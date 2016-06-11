@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/String.h>
 #include <n/core/Array.h>
 #include "WTVariableType.h"
+#include "WTFunction.h"
 
 namespace n {
 namespace script {
@@ -39,6 +40,8 @@ struct WTNode : NonCopyable
 
 		Variable,
 
+		Call,
+
 		Integer,
 
 		Assignation,
@@ -55,6 +58,8 @@ struct WTNode : NonCopyable
 
 	const Type type;
 };
+
+class WTFunction;
 
 struct WTExpression : public WTNode
 {
@@ -81,13 +86,22 @@ struct WTBinOp : public WTExpression
 	WTExpression *rhs;
 };
 
-
 struct WTVariable : public WTExpression
 {
 	WTVariable(const core::String &n, WTVariableType *t, uint reg) : WTExpression(Variable, t, reg), name(n) {
 	}
 
 	core::String name;
+};
+
+struct WTCall : public WTExpression
+{
+	WTCall(WTFunction *f, const core::Array<WTExpression *> &arg, uint reg) : WTExpression(Call, f->returnType, reg), func(f), args(arg) {
+	}
+
+	WTFunction *func;
+	core::Array<WTExpression *> args;
+
 };
 
 struct WTInt : public WTExpression

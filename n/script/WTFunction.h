@@ -13,31 +13,33 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef N_SCRIPT_MACHINE_H
-#define N_SCRIPT_MACHINE_H
+#ifndef N_SCRIPT_WTFUNCTION_H
+#define N_SCRIPT_WTFUNCTION_H
 
-#include "Bytecode.h"
+#include <n/core/String.h>
 #include <n/core/Array.h>
 
 namespace n {
 namespace script {
 
-class Machine : NonCopyable
+class WTInstruction;
+class WTVariable;
+class WTVariableType;
+
+struct WTFunction : NonCopyable
 {
-	public:
-		Machine();
+	WTFunction(const core::String &n, const core::Array<WTVariable *> &arg, WTInstruction *bod, WTVariableType *ret, uint ind) : name(n), body(bod), args(arg), returnType(ret), index(ind) {
+	}
 
-		void load(const BytecodeInstruction *restrict bcode, const BytecodeInstruction *restrict end);
+	core::String name;
+	WTInstruction *body;
+	core::Array<WTVariable *> args;
+	WTVariableType *returnType;
 
-		int *run(const BytecodeInstruction *restrict bcode);
-
-
-	private:
-		core::Array<const BytecodeInstruction *restrict> funcTable;
-
+	uint index;
 };
 
 }
 }
 
-#endif // N_SCRIPT_MACHINE_H
+#endif // N_SCRIPT_WTFUNCTION_H
