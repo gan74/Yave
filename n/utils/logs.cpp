@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 
 void logMsg(const core::String &msg, LogType type) {
-	logMsg(msg, type);
+	logMsg(msg.data(), type);
 }
 
 
