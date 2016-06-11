@@ -68,6 +68,8 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 			return Token(Token::Var, tk, b);
 		} else if(tk == "if") {
 			return Token(Token::If, tk, b);
+		} else if(tk == "else") {
+			return Token(Token::Else, tk, b);
 		} else if(tk == "while") {
 			return Token(Token::While, tk, b);
 		}
@@ -88,6 +90,12 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 	}
 	if(tk.beginsWith("=")) {
 		return Token(Token::Assign, "=", beg++);
+	}
+	if(tk.beginsWith("<")) {
+		return Token(Token::LessThan, "<", beg++);
+	}
+	if(tk.beginsWith(">")) {
+		return Token(Token::GreaterThan, ">", beg++);
 	}
 	if(tk.beginsWith("+")) {
 		return Token(Token::Plus, "+", beg++);

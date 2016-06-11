@@ -60,6 +60,8 @@ class BytecodeCompiler : NonCopyable
 	private:
 		void compile(Context &context, WTInstruction *node);
 		void compile(Context &context, WTExpression *node);
+
+		void compile(Context &context, WTBinOp *node);
 };
 
 }

@@ -32,7 +32,11 @@ enum Bytecode : uint16
 
 	Not,
 
+	Equals,
 	NotEq,
+
+	LessI,
+	GreaterI,
 
 	Copy,
 

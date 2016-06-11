@@ -30,7 +30,7 @@ BytecodeAssembler::BytecodeAssembler() : index(0) {
 }
 
 BytecodeAssembler::Label BytecodeAssembler::createLabel() {
-	return Label(in.size());
+	return Label(index);
 }
 
 BytecodeAssembler &BytecodeAssembler::ass(BytecodeInstruction i) {
@@ -95,8 +95,20 @@ BytecodeAssembler &BytecodeAssembler::notI(RegisterType to, RegisterType from) {
 	return ass(BCI{Bytecode::Not, tr(to), tr(from)});
 }
 
+BytecodeAssembler &BytecodeAssembler::equals(RegisterType to, RegisterType a, RegisterType b) {
+	return ass(BCI{Bytecode::Equals, tr(to), tr(a), tr(b)});
+}
+
 BytecodeAssembler &BytecodeAssembler::notEq(RegisterType to, RegisterType a, RegisterType b) {
 	return ass(BCI{Bytecode::NotEq, tr(to), tr(a), tr(b)});
+}
+
+BytecodeAssembler &BytecodeAssembler::lessI(RegisterType to, RegisterType a, RegisterType b) {
+	return ass(BCI{Bytecode::LessI, tr(to), tr(a), tr(b)});
+}
+
+BytecodeAssembler &BytecodeAssembler::greaterI(RegisterType to, RegisterType a, RegisterType b) {
+	return ass(BCI{Bytecode::GreaterI, tr(to), tr(a), tr(b)});
 }
 
 BytecodeAssembler &BytecodeAssembler::set(RegisterType to, int64 value) {

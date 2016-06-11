@@ -68,31 +68,38 @@ class Token
 			Equals			= isOperator | 4,
 			NotEquals		= isOperator | 5,
 
-			Assign			= 6,
+			LessThan		= isOperator | 6,
+			GreaterThan		= isOperator | 7,
 
-			Identifier		= 7,
-			Integer			= 8,
-			Float			= 9,
 
-			LeftPar			= 10,
-			RightPar		= 11,
+			Assign			= 10,
 
-			LeftBrace		= 12,
-			RightBrace		= 13,
+			Identifier		= 11,
+			Integer			= 12,
+			Float			= 13,
 
-			Colon			= 14,
-			SemiColon		= 15,
+			LeftPar			= 14,
+			RightPar		= 15,
 
-			Var				= 16,
-			If				= 17,
-			While			= 18,
+			LeftBrace		= 16,
+			RightBrace		= 17,
 
-			Error			= isEnd | 19,
-			End				= isEnd | 20
+			Colon			= 18,
+			SemiColon		= 19,
+
+			Var				= 20,
+			If				= 21,
+			Else			= 22,
+			While			= 23,
+
+			Error			= isEnd | 24,
+			End				= isEnd | 25
 		};
 
 		static core::String getName(Type type) {
-			static constexpr const char *names[] = {"'+'", "'-'", "'*'", "'/'", "'=='", "'!='", "'='", "identifier", "integer", "float", "'('", "')'", "'{'", "'}'", "':'", "';'", "'var'", "'if'", "'while'", "", "EOF"};
+			static constexpr const char *names[] = {"'+'", "'-'", "'*'", "'/'", "'=='", "'!='", "'<'", "'>'", "", "",
+													"'='", "identifier", "integer", "float", "'('", "')'", "'{'", "'}'", "':'", "';'",
+													"'var'", "'if'", "'else'","'while'", "", "EOF"};
 			return names[type & ~flagMask];
 		}
 

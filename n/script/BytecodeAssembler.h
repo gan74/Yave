@@ -53,7 +53,10 @@ class BytecodeAssembler
 
 		BytecodeAssembler &notI(RegisterType to, RegisterType from);
 
+		BytecodeAssembler &equals(RegisterType to, RegisterType a, RegisterType b);
 		BytecodeAssembler &notEq(RegisterType to, RegisterType a, RegisterType b);
+		BytecodeAssembler &lessI(RegisterType to, RegisterType a, RegisterType b);
+		BytecodeAssembler &greaterI(RegisterType to, RegisterType a, RegisterType b);
 
 		BytecodeAssembler &copy(RegisterType to, RegisterType from);
 		BytecodeAssembler &set(RegisterType to, int64 value);

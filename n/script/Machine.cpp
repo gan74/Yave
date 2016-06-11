@@ -60,8 +60,20 @@ int *Machine::run(const BytecodeInstruction restrict *bcode) {
 				*m = !mem[i->registers[1]];
 			break;
 
+			case Bytecode::Equals:
+				*m = mem[i->registers[1]] == mem[i->registers[2]];
+			break;
+
 			case Bytecode::NotEq:
 				*m = mem[i->registers[1]] != mem[i->registers[2]];
+			break;
+
+			case Bytecode::LessI:
+				*m = mem[i->registers[1]] < mem[i->registers[2]];
+			break;
+
+			case Bytecode::GreaterI:
+				*m = mem[i->registers[1]] > mem[i->registers[2]];
 			break;
 
 			case Bytecode::Copy:

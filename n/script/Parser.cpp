@@ -169,7 +169,12 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 			begin++;
 			expect(begin, Token::LeftPar);
 			ASTExpression *expr = parseExpr(begin, end);
-			return new ASTBranchInstruction(expr, parseInstruction(begin, end), 0);
+			ASTInstruction *then = parseInstruction(begin, end);
+			if(begin->type == Token::Else) {
+				begin++;
+				return new ASTBranchInstruction(expr, then, parseInstruction(begin, end));
+			}
+			return new ASTBranchInstruction(expr, then, 0);
 		}	break;
 
 		case Token::While: {

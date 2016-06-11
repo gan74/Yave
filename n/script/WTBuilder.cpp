@@ -122,6 +122,10 @@ WTExpression *ASTBinOp::toWorkTree(WTBuilder &builder, uint workReg) const {
 			return new WTBinOp(WTNode::Equals, l, r, builder.getTypeSystem()->getIntType(), workReg);
 		case Token::NotEquals:
 			return new WTBinOp(WTNode::NotEquals, l, r, builder.getTypeSystem()->getIntType(), workReg);
+		case Token::LessThan:
+			return new WTBinOp(WTNode::LessThan, l, r, builder.getTypeSystem()->getIntType(), workReg);
+		case Token::GreaterThan:
+			return new WTBinOp(WTNode::GreaterThan, l, r, builder.getTypeSystem()->getIntType(), workReg);
 
 		default:
 		break;

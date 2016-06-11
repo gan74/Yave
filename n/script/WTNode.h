@@ -34,6 +34,8 @@ struct WTNode : NonCopyable
 
 		Equals,
 		NotEquals,
+		LessThan,
+		GreaterThan,
 
 		Variable,
 

@@ -12,132 +12,67 @@ using namespace n;
 using namespace n::core;
 using namespace n::script;
 
+void print(uint index, BytecodeInstruction i) {
+	std::cout << index<< "\t";
+	Map<Bytecode, core::String> names;
+	names[Bytecode::AddI] = "addi";
+	names[Bytecode::SubI] = "subi";
+	names[Bytecode::MulI] = "muli";
+	names[Bytecode::DivI] = "divi";
+	names[Bytecode::LessI] = "lessi";
+	names[Bytecode::GreaterI] = "gri";
+	names[Bytecode::Equals] = "eq";
+	names[Bytecode::NotEq] = "neq";
+	switch(i.op) {
+		case Bytecode::Set:
+			std::cout << "set $" << i.registers[0] << " " << i.data();
+		break;
 
-/*template<typename T>
-const T *as(const ast::Node *n) {
-	return reinterpret_cast<const T *>(n);
-}
+		case Bytecode::Copy:
+			std::cout << "cpy $" << i.registers[0] << " $" << i.registers[1];
+		break;
 
-ast::ExecutionVar evalE(const ast::Expression *node, ast::ExecutionFrame &frame) {
-	uint index = node->index;
-	switch(node->type) {
-		case ast::NodeType::Identifier:
-			return frame.varStack.getVar(as<ast::Identifier>(node)->name, index);
+		case Bytecode::Not:
+			std::cout << "not $" << i.registers[0] << " $" << i.registers[1];
+		break;
 
-		case ast::NodeType::Assignation: {
-			ast::ExecutionVar &e = frame.varStack.getVar(as<ast::Assignation>(node)->name);
-			return e = evalE(as<ast::Assignation>(node)->value, frame);
-		}
+		case Bytecode::Jump:
+			std::cout << "jmp " << i.data() + 1;
+		break;
 
-		case ast::NodeType::Add: {
-			ast::ExecutionVar l = evalE(as<ast::BinOp>(node)->lhs, frame);
-			ast::ExecutionVar r = evalE(as<ast::BinOp>(node)->rhs, frame);
-			return l.type->add(l, r);
-		}
+		case Bytecode::JumpZ:
+			std::cout << "jmpz $" << i.registers[0] << " " << i.data() + 1;
+		break;
 
-		case ast::NodeType::Substract: {
-			ast::ExecutionVar l = evalE(as<ast::BinOp>(node)->lhs, frame);
-			ast::ExecutionVar r = evalE(as<ast::BinOp>(node)->rhs, frame);
-			return l.type->sub(l, r);
-		}
-
-		case ast::NodeType::Multiply: {
-			ast::ExecutionVar l = evalE(as<ast::BinOp>(node)->lhs, frame);
-			ast::ExecutionVar r = evalE(as<ast::BinOp>(node)->rhs, frame);
-			return l.type->mul(l, r);
-		}
-
-		case ast::NodeType::Divide: {
-			ast::ExecutionVar l = evalE(as<ast::BinOp>(node)->lhs, frame);
-			ast::ExecutionVar r = evalE(as<ast::BinOp>(node)->rhs, frame);
-			return l.type->div(l, r);
-		}
-
-		case ast::NodeType::Equals: {
-			ast::ExecutionVar l = evalE(as<ast::BinOp>(node)->lhs, frame);
-			ast::ExecutionVar r = evalE(as<ast::BinOp>(node)->rhs, frame);
-			return frame.intType->init(l.type->equals(l, r));
-		}
-
-		case ast::NodeType::NotEquals: {
-			ast::ExecutionVar l = evalE(as<ast::BinOp>(node)->lhs, frame);
-			ast::ExecutionVar r = evalE(as<ast::BinOp>(node)->rhs, frame);
-			return frame.intType->init(!l.type->equals(l, r));
-		}
-
-		case ast::NodeType::Integer:
-			return frame.intType->init(as<ast::Integer>(node)->value);
+		case Bytecode::JumpNZ:
+			std::cout << "jmpnz $" << i.registers[0] << " " << i.data() + 1;
+		break;
 
 		default:
-			fatal("ERROR");
+			std::cout << names[i.op] << " $" << i.registers[0] << " $" << i.registers[1] << " $" << i.registers[2];
+
+
 	}
-	return fatal("ERR");
+	std::cout << std::endl;
 }
-
-void evalI(const ast::Instruction *node, ast::ExecutionFrame &frame) {
-	uint index = node->index;
-	switch (node->type) {
-		case ast::NodeType::Expression: {
-			ast::ExecutionVar r = evalE(as<ast::ExprInstruction>(node)->expression, frame);
-			if(frame.print && as<ast::ExprInstruction>(node)->print) {
-				r.type->print(r);
-			}
-		} break;
-
-		case ast::NodeType::Branch: {
-			ast::ExecutionVar c = evalE(as<ast::BranchInstruction>(node)->condition, frame);
-			if(c.integer) {
-				evalI(as<ast::BranchInstruction>(node)->thenBody, frame);
-			} else if(as<ast::BranchInstruction>(node)->elseBody) {
-				evalI(as<ast::BranchInstruction>(node)->elseBody, frame);
-			}
-		} break;
-
-		case ast::NodeType::Loop: {
-			ast::ExecutionVar c = evalE(as<ast::LoopInstruction>(node)->condition, frame);
-			while(c.integer) {
-				evalI(as<ast::LoopInstruction>(node)->body, frame);
-				c = evalE(as<ast::LoopInstruction>(node)->condition, frame);
-			}
-		} break;
-
-		case ast::NodeType::InstructionList: {
-			frame.varStack.pushStack();
-			for(ast::Instruction *i : as<ast::InstructionList>(node)->instructions) {
-				evalI(i, frame);
-			}
-			frame.varStack.popStack();
-		} break;
-
-		case ast::NodeType::Declaration: {
-			if(frame.varStack.isDeclared(as<ast::Declaration>(node)->name)) {
-				throw ast::ExecutionException("\"" + as<ast::Declaration>(node)->name + "\" has already been declared", index);
-			}
-			core::Map<core::String, ast::ExecutionType *>::iterator it = frame.types.find(as<ast::Declaration>(node)->typeName);
-			if(it == frame.types.end()) {
-				throw ast::ExecutionException("\"" + as<ast::Declaration>(node)->typeName + "\" is not a type", index);
-			}
-			ast::ExecutionVar &a = frame.varStack.declare(as<ast::Declaration>(node)->name, it->_2);
-			if(as<ast::Declaration>(node)->value) {
-				ast::ExecutionVar v = evalE(as<ast::Declaration>(node)->value, frame);
-				if(a.type != v.type) {
-					throw ast::ExecutionException("Incompatible type affected to \"" + as<ast::Declaration>(node)->name + "\"", index);
-				}
-				a = v;
-			}
-		} break;
-
-		default:
-			fatal("ERROR");
-	}
-}*/
 
 
 int main(int, char **) {
-	core::String code = "var x:Int = 1000000;				\n"
+	core::String code = "var x:Int = 999;					\n"
 						"var y:Int = 5;						\n"
-						//"x = x * y - 3 * 20 + 7;			\n"
-						"while(x != 7) {					\n"
+						"var z:Int;							\n"
+						"if(x > 1000) {						\n"
+						"	y = 1000;						\n"
+						"} else {							\n"
+						"	y = 7;							\n"
+						"}									\n"
+						"z = 0;								\n"
+						"z = 0;								\n"
+						"z = 0;								\n"
+						"z = 0;								\n"
+						"z = 0;								\n"
+						"z = 0;								\n"
+						"while(x != y) {					\n"
 						"	x = x - 1;						\n"
 						"}									\n";
 
@@ -161,12 +96,7 @@ int main(int, char **) {
 
 		uint index = 0;
 		for(BytecodeInstruction i : ass.getInstructions()) {
-			std::cout << index++ << "\t" << i.op << " $" << i.registers[0] << " ";
-			if(i.op == Bytecode::Set || i.op == Bytecode::Jump || i.op == Bytecode::JumpNZ) {
-				std::cout << i.data() << std::endl;
-			} else {
-				std::cout << "$" << i.registers[1] << " $" << i.registers[2] << std::endl;
-			}
+			print(index++, i);
 		}
 
 		Machine machine;
