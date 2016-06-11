@@ -26,7 +26,7 @@ BytecodeInstruction::RegisterType tr(T i) {
 }
 
 
-BytecodeAssembler::BytecodeAssembler() {
+BytecodeAssembler::BytecodeAssembler() : index(0) {
 }
 
 BytecodeAssembler::Label BytecodeAssembler::createLabel() {
@@ -34,7 +34,12 @@ BytecodeAssembler::Label BytecodeAssembler::createLabel() {
 }
 
 BytecodeAssembler &BytecodeAssembler::ass(BytecodeInstruction i) {
-	in << i;
+	if(index == in.size()) {
+		in << i;
+	} else {
+		in[index] = i;
+	}
+	index++;
 	return *this;
 }
 
@@ -56,19 +61,42 @@ BytecodeAssembler &BytecodeAssembler::operator<<(const BytecodeAssembler &a) {
 	return *this;
 }
 
+void BytecodeAssembler::seek(Label to) {
+	index = to.index;
+}
+
+BytecodeAssembler::Label BytecodeAssembler::end() const {
+	return Label(in.size());
+}
 
 
 
-
-
-
+BytecodeAssembler &BytecodeAssembler::nope() {
+	return ass(BCI{Bytecode::Nope, {0}});
+}
 
 BytecodeAssembler &BytecodeAssembler::addI(RegisterType to, RegisterType a, RegisterType b) {
 	return ass(BCI{Bytecode::AddI, tr(to), tr(a), tr(b)});
 }
 
+BytecodeAssembler &BytecodeAssembler::subI(RegisterType to, RegisterType a, RegisterType b) {
+	return ass(BCI{Bytecode::SubI, tr(to), tr(a), tr(b)});
+}
+
 BytecodeAssembler &BytecodeAssembler::mulI(RegisterType to, RegisterType a, RegisterType b) {
 	return ass(BCI{Bytecode::MulI, tr(to), tr(a), tr(b)});
+}
+
+BytecodeAssembler &BytecodeAssembler::divI(RegisterType to, RegisterType a, RegisterType b) {
+	return ass(BCI{Bytecode::DivI, tr(to), tr(a), tr(b)});
+}
+
+BytecodeAssembler &BytecodeAssembler::notI(RegisterType to, RegisterType from) {
+	return ass(BCI{Bytecode::Not, tr(to), tr(from)});
+}
+
+BytecodeAssembler &BytecodeAssembler::notEq(RegisterType to, RegisterType a, RegisterType b) {
+	return ass(BCI{Bytecode::NotEq, tr(to), tr(a), tr(b)});
 }
 
 BytecodeAssembler &BytecodeAssembler::set(RegisterType to, int64 value) {
@@ -86,12 +114,23 @@ BytecodeAssembler &BytecodeAssembler::copy(RegisterType to, RegisterType from) {
 }
 
 BytecodeAssembler &BytecodeAssembler::jump(Label to) {
-	return ass(BCI{Bytecode::Jump, tr(to.index)});
+	BCI i{Bytecode::Jump, {0}};
+	i.data() = to.index - 1;
+	return ass(i);
 }
 
 BytecodeAssembler &BytecodeAssembler::jumpNZ(RegisterType a, Label to) {
-	return ass(BCI{Bytecode::JumpNZ, tr(a), tr(to.index)});
+	BCI i{Bytecode::JumpNZ, {tr(a)}};
+	i.data() = to.index - 1;
+	return ass(i);
 }
+
+BytecodeAssembler &BytecodeAssembler::jumpZ(RegisterType a, Label to) {
+	BCI i{Bytecode::JumpZ, {tr(a)}};
+	i.data() = to.index - 1;
+	return ass(i);
+}
+
 
 BytecodeAssembler &BytecodeAssembler::exit() {
 	return ass(BCI{Bytecode::Exit, {0}});

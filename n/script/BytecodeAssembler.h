@@ -44,19 +44,30 @@ class BytecodeAssembler
 		Label createLabel();
 
 
+		BytecodeAssembler &nope();
 
 		BytecodeAssembler &addI(RegisterType to, RegisterType a, RegisterType b);
+		BytecodeAssembler &subI(RegisterType to, RegisterType a, RegisterType b);
 		BytecodeAssembler &mulI(RegisterType to, RegisterType a, RegisterType b);
+		BytecodeAssembler &divI(RegisterType to, RegisterType a, RegisterType b);
+
+		BytecodeAssembler &notI(RegisterType to, RegisterType from);
+
+		BytecodeAssembler &notEq(RegisterType to, RegisterType a, RegisterType b);
 
 		BytecodeAssembler &copy(RegisterType to, RegisterType from);
 		BytecodeAssembler &set(RegisterType to, int64 value);
 
 		BytecodeAssembler &jump(Label to);
 		BytecodeAssembler &jumpNZ(RegisterType a, Label to);
+		BytecodeAssembler &jumpZ(RegisterType a, Label to);
 
 
 		BytecodeAssembler &exit();
 
+
+		void seek(Label to);
+		Label end() const;
 
 		BytecodeAssembler &operator<<(BytecodeInstruction i);
 		BytecodeAssembler &operator<<(const BytecodeAssembler &a);
@@ -69,6 +80,7 @@ class BytecodeAssembler
 		BytecodeAssembler &ass(BytecodeInstruction i);
 
 		core::Array<BytecodeInstruction> in;
+		uint index;
 };
 
 }

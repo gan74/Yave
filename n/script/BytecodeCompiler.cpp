@@ -39,17 +39,35 @@ BytecodeAssembler BytecodeCompiler::compile(WTInstruction *node, WTTypeSystem *t
 
 void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
 	switch(node->type) {
+
 		case WTNode::Block:
 			for(WTInstruction *i : as<WTBlock>(node)->instructions) {
 				compile(context, i);
 			}
 		break;
 
+
 		case WTNode::Expression:
 			compile(context, as<WTExprInstr>(node)->expression);
 		break;
 
 
+		case WTNode::Loop: {
+			BytecodeAssembler::Label loop = context.assembler.createLabel();
+			compile(context, as<WTLoop>(node)->condition);
+
+			BytecodeAssembler::Label condJmp = context.assembler.createLabel();
+			context.assembler.nope();
+
+			compile(context, as<WTLoop>(node)->body);
+			context.assembler.jump(loop);
+			BytecodeAssembler::Label end = context.assembler.createLabel();
+
+			context.assembler.seek(condJmp);
+			context.assembler.jumpZ(as<WTLoop>(node)->condition->registerIndex, end);
+
+			context.assembler.seek(context.assembler.end());
+		} break;
 
 		default:
 			throw CompilationErrorException("Unknown node type", node);
@@ -58,31 +76,60 @@ void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
 
 void BytecodeCompiler::compile(Context &context, WTExpression *node) {
 	switch(node->type) {
-		case WTNode::Add:
-			compile(context, as<WTBinOp>(node)->lhs);
-			compile(context, as<WTBinOp>(node)->rhs);
-			context.assembler.addI(node->registerIndex, as<WTBinOp>(node)->lhs->registerIndex, as<WTBinOp>(node)->rhs->registerIndex);
-		break;
 
+		case WTNode::Add:
+		case WTNode::Substract:
 		case WTNode::Multiply:
+		case WTNode::Divide:
+		case WTNode::NotEquals: {
 			compile(context, as<WTBinOp>(node)->lhs);
 			compile(context, as<WTBinOp>(node)->rhs);
-			context.assembler.mulI(node->registerIndex, as<WTBinOp>(node)->lhs->registerIndex, as<WTBinOp>(node)->rhs->registerIndex);
-		break;
+			uint to = node->registerIndex;
+			uint l = as<WTBinOp>(node)->lhs->registerIndex;
+			uint r = as<WTBinOp>(node)->rhs->registerIndex;
+			switch(node->type) {
+				case WTNode::Add:
+					context.assembler.addI(to, l, r);
+					return;
+
+				case WTNode::Substract:
+					context.assembler.subI(to, l, r);
+					return;
+
+				case WTNode::Multiply:
+					context.assembler.mulI(to, l, r);
+					return;
+
+				case WTNode::Divide:
+					context.assembler.divI(to, l, r);
+					return;
+
+				case WTNode::NotEquals:
+					context.assembler.notEq(to, l, r);
+					return;
+
+				default:
+					return;
+			}
+		}
+
 
 		case WTNode::Assignation:
 			compile(context, as<WTAssignation>(node)->value);
 			if(node->registerIndex != as<WTAssignation>(node)->value->registerIndex) {
 				context.assembler.copy(node->registerIndex, as<WTAssignation>(node)->value->registerIndex);
 			}
-		break;
+			return;
+
 
 		case WTNode::Integer:
 			context.assembler.set(node->registerIndex, as<WTInt>(node)->value);
-		break;
+			return;
+
 
 		case WTNode::Variable:
-		break;
+			return;
+
 
 		default:
 			throw CompilationErrorException("Unknown node type", node);

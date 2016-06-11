@@ -134,10 +134,12 @@ void evalI(const ast::Instruction *node, ast::ExecutionFrame &frame) {
 
 
 int main(int, char **) {
-	core::String code = "var x:Int = 44444;					\n"
-						"var y:Int = 55555;					\n"
-						"y = 66666;							\n"
-						"x = y;								\n";
+	core::String code = "var x:Int = 1000000;				\n"
+						"var y:Int = 5;						\n"
+						//"x = x * y - 3 * 20 + 7;			\n"
+						"while(x != 7) {					\n"
+						"	x = x - 1;						\n"
+						"}									\n";
 
 
 	Tokenizer tokenizer;
@@ -157,9 +159,10 @@ int main(int, char **) {
 		ass.exit();
 
 
+		uint index = 0;
 		for(BytecodeInstruction i : ass.getInstructions()) {
-			std::cout << i.op << " $" << i.registers[0] << " ";
-			if(i.op == Bytecode::Set) {
+			std::cout << index++ << "   " << i.op << " $" << i.registers[0] << " ";
+			if(i.op == Bytecode::Set || i.op == Bytecode::Jump || i.op == Bytecode::JumpNZ) {
 				std::cout << i.data() << std::endl;
 			} else {
 				std::cout << "$" << i.registers[1] << " $" << i.registers[2] << std::endl;
@@ -169,10 +172,9 @@ int main(int, char **) {
 		Machine machine;
 		int *memory = machine.run(ass.getInstructions().begin());
 
-		std::cout << "--------------------------------------------------------------------------------" << std::endl;
+		std::cout << std::endl << "--------------------------------------------------------------------------------" << std::endl;
 		for(uint i = 0; i != 8; i++) {
-			std::cout << std::hex << i << " ";
-			std::cout << memory[i] << std::endl;
+			std::cout << i << " " << memory[i] << std::endl;
 		}
 		delete[] memory;
 

@@ -21,15 +21,15 @@ namespace script {
 Machine::Machine() {
 }
 
-
-int *Machine::run(const BytecodeInstruction *bcode) {
-	int *mem = new int[1 << 16];
+int *Machine::run(const BytecodeInstruction restrict *bcode) {
+	 int restrict *mem = new int[1 << 16];
 	for(uint i = 0; i != 1 << 16; i++) {
 		mem[i] = 0;
 	}
 
-	for(const BytecodeInstruction *i = bcode;; i++) {
+	for(const restrict BytecodeInstruction *i = bcode;; i++) {
 		int *m = mem + i->registers[0];
+		int tmp;
 
 		switch(i->op) {
 
@@ -40,8 +40,28 @@ int *Machine::run(const BytecodeInstruction *bcode) {
 				*m = mem[i->registers[1]] + mem[i->registers[2]];
 			break;
 
+			case Bytecode::SubI:
+				*m = mem[i->registers[1]] - mem[i->registers[2]];
+			break;
+
 			case Bytecode::MulI:
 				*m = mem[i->registers[1]] * mem[i->registers[2]];
+			break;
+
+			case Bytecode::DivI:
+				tmp = mem[i->registers[2]];
+				if(!tmp) {
+					fatal("divide by zero");
+				}
+				*m = mem[i->registers[1]] / tmp;
+			break;
+
+			case Bytecode::Not:
+				*m = !mem[i->registers[1]];
+			break;
+
+			case Bytecode::NotEq:
+				*m = mem[i->registers[1]] != mem[i->registers[2]];
 			break;
 
 			case Bytecode::Copy:
@@ -53,12 +73,18 @@ int *Machine::run(const BytecodeInstruction *bcode) {
 			break;
 
 			case Bytecode::Jump:
-				bcode = bcode + i->registers[0] - 1;
+				i = bcode + i->data();
+			break;
+
+			case Bytecode::JumpZ:
+				if(!*m) {
+					i = bcode + i->data();
+				}
 			break;
 
 			case Bytecode::JumpNZ:
 				if(*m) {
-					bcode = bcode + i->registers[1] - 1;
+					i = bcode + i->data();
 				}
 			break;
 

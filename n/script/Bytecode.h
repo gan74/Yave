@@ -26,15 +26,21 @@ enum Bytecode : uint16
 	Nope,
 
 	AddI,
+	SubI,
 	MulI,
+	DivI,
+
+	Not,
+
+	NotEq,
 
 	Copy,
 
 	Set,
 
 	Jump,
+	JumpZ,
 	JumpNZ,
-
 
 
 	Exit
