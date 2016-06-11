@@ -49,16 +49,13 @@ namespace core {
 #define N_FORCE_INLINE inline  __attribute__((always_inline))
 #endif
 
-
-#ifndef restrict
-	#ifdef __restrict__
-		#define restrict __restrict__
+#ifdef __restrict__
+	#define restrict __restrict__
+#else
+	#ifdef __restrict
+		#define restrict __restrict
 	#else
-		#ifdef __restrict
-			#define restrict __restrict
-		#else
-			#define restrict
-		#endif
+		#define restrict
 	#endif
 #endif
 
