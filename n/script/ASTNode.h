@@ -37,6 +37,7 @@ struct ASTNode : NonCopyable
 	const TokenPosition position;
 
 	virtual core::String toString() const = 0;
+	//virtual void resolveFunctions(WTBuilder &) const = 0;
 };
 
 struct ASTExpression : public ASTNode
@@ -53,6 +54,7 @@ struct ASTInstruction : public ASTNode
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &) const = 0;
+	virtual void resolveFunctions(WTBuilder &) const = 0;
 };
 
 }

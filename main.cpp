@@ -49,11 +49,19 @@ void print(uint index, BytecodeInstruction i) {
 		break;
 
 		case Bytecode::Call:
-			std::cout << "call " << i.registers[0] << " " << i.data() + 1;
+			std::cout << "call $" << i.registers[0] << " " << i.data() + 1;
+		break;
+
+		case Bytecode::PushArg:
+			std::cout << "push $" << i.registers[0];
 		break;
 
 		case Bytecode::FuncHead:
-			std::cout << "function ";
+			std::cout << "function";
+		break;
+
+		case Bytecode::Ret:
+			std::cout << "ret $" << i.registers[0];
 		break;
 
 		case Bytecode::Exit:
@@ -70,32 +78,36 @@ void print(uint index, BytecodeInstruction i) {
 
 
 int main(int, char **) {
-	core::String code = "var x:Int = 1001000;					\n"
+	core::String code = "var x:Int = 1000100;					\n"
 						"var y:Int = x - x;						\n"
 						"if(x > 1000) {							\n"
 						"	y = 1000;							\n"
 						"} else {								\n"
 						"	y = 7;								\n"
 						"}										\n"
-						"def foobar(var a:Int) = {				\n"
+						"var a:Int = 13;						\n"
+						"x = foobar(x, y);						\n"
+						"def foobar(var a:Int, var y:Int) = {	\n"
 						"	while(a != y) {						\n"
 						"		a = a - 1;						\n"
 						"	}									\n"
-						"}										\n"
-						"var a:Int = 9;							\n"
-						"var w:Int = foobar(x);					\n";
+						"	return 21;							\n"
+						"}										\n";
+						//"var a:Int = 9;							\n"
+						//"var w:Int = foobar(x);					\n";
 
 
 	Tokenizer tokenizer;
 	auto tks = tokenizer.tokenize(code);
 
 	Parser parser;
+	WTBuilder builder;
 
 	try {
 		ASTInstruction *node = parser.parse(tks);
 		std::cout << node->toString() << std::endl << std::endl;
 
-		WTBuilder builder;
+		node->resolveFunctions(builder);
 		WTInstruction *wt = node->toWorkTree(builder);
 
 		BytecodeCompiler compiler;
@@ -104,22 +116,17 @@ int main(int, char **) {
 
 		uint index = 0;
 		for(BytecodeInstruction i : ass.getInstructions()) {
+			if(i.op == Bytecode::FuncHead) {
+				index = 0;
+			}
 			print(index++, i);
 		}
 
 		Timer timer;
 		Machine machine;
 		machine.load(ass.getInstructions().begin(), ass.getInstructions().end());
-		int *memory = machine.run(ass.getInstructions().begin());
-		std::cout << std::endl << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl;
-
-
-		/*std::cout << std::endl << std::endl << "------------------------------------------------------------------------------------------------------------------------" << std::endl;
-		for(uint i = 0; i != 8; i++) {
-			std::cout << i << "\t" << memory[i] << std::endl;
-		}
-		delete[] memory;
-		std::cout << "------------------------------------------------------------------------------------------------------------------------" << std::endl;*/
+		Machine::Primitive ret = machine.run(ass.getInstructions().begin());
+		std::cout << "return " << ret << std::endl << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl;
 	} catch(SynthaxErrorException &e) {
 		std::cerr << e.what(code) << std::endl;
 	} catch(ValidationErrorException &e) {

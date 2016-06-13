@@ -21,15 +21,25 @@ namespace script {
 Machine::Machine() {
 }
 
-int *Machine::run(const BytecodeInstruction *restrict bcode) {
-	int *restrict mem = new int[1 << 16];
-	for(uint i = 0; i != 1 << 16; i++) {
-		mem[i] = 0;
+Machine::Primitive Machine::run(const BytecodeInstruction *bcode, uint memSize) {
+	Primitive *memory = new Primitive[memSize];
+	for(uint i = 0; i != memSize; i++) {
+		memory[i] = 0;
 	}
+	Primitive ret;
+	run(bcode, memory, &ret);
 
-	for(const BytecodeInstruction *restrict i = bcode;; i++) {
-		int *m = mem + i->registers[0];
-		int tmp;
+	delete[] memory;
+	return ret;
+}
+
+void Machine::run(const BytecodeInstruction *bcode, Primitive *mem, Primitive *ret) {
+	Primitive *stackTop = mem;
+
+	for(const BytecodeInstruction *i = bcode;; i++) {
+
+		Primitive *m = mem + i->registers[0];
+		Primitive tmp;
 
 		switch(i->op) {
 
@@ -100,33 +110,35 @@ int *Machine::run(const BytecodeInstruction *restrict bcode) {
 				}
 			break;
 
-			case Bytecode::Call:
-				//delete[] run(funcTable[i->data()]);
-				*m = 0;
-			break;
-
 			case Bytecode::FuncHead:
-				fatal("FuncHead in bytecode");
+				stackTop = mem + i->registers[0];
 			break;
 
+			case Bytecode::Call:
+				run(funcTable[i->data()], stackTop, m);
+			break;
+
+			case Bytecode::PushArg:
+				args.append(*m);
+			break;
+
+			case Bytecode::Ret:
+				*ret = *m;
 			case Bytecode::Exit:
-				return mem;
+				return;
 
 		}
 	}
-
-	return mem;
-
 }
 
-void Machine::load(const BytecodeInstruction *restrict bcode, const BytecodeInstruction *restrict end) {
-	for(const BytecodeInstruction *restrict i = bcode; i != end; i++) {
+void Machine::load(const BytecodeInstruction *bcode, const BytecodeInstruction *end) {
+	for(const BytecodeInstruction *i = bcode; i != end; i++) {
 		switch(i->op) {
 			case Bytecode::FuncHead:
 				while(funcTable.size() <= i->udata()) {
 					funcTable << nullptr;
 				}
-				funcTable[i->udata()] = i + 1;
+				funcTable[i->udata()] = i;
 			break;
 
 

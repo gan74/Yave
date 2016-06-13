@@ -74,6 +74,8 @@ Token Tokenizer::next(const core::String &str, uint &beg) {
 			return Token(Token::While, tk, b);
 		} else if(tk == "def") {
 			return Token(Token::Def, tk, b);
+		} else if(tk == "return") {
+			return Token(Token::Return, tk, b);
 		}
 		return Token(Token::Identifier, tk, b);
 	}

@@ -28,7 +28,7 @@ class WTVariableType;
 
 struct WTFunction : NonCopyable
 {
-	WTFunction(const core::String &n, const core::Array<WTVariable *> &arg, WTInstruction *bod, WTVariableType *ret, uint ind) : name(n), body(bod), args(arg), returnType(ret), index(ind) {
+	WTFunction(const core::String &n, const core::Array<WTVariable *> &arg, WTInstruction *bod, WTVariableType *ret, uint ind) : name(n), body(bod), args(arg), returnType(ret), stackSize(0), index(ind) {
 	}
 
 	core::String name;
@@ -36,6 +36,7 @@ struct WTFunction : NonCopyable
 	core::Array<WTVariable *> args;
 	WTVariableType *returnType;
 
+	uint stackSize;
 	uint index;
 };
 

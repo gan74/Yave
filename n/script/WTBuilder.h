@@ -16,9 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_SCRIPT_WTBUILDER_H
 #define N_SCRIPT_WTBUILDER_H
 
-#include "WTVariableStack.h"
 #include "WTTypeSystem.h"
-#include "WTFunction.h"
+#include "WTNode.h"
 
 namespace n {
 namespace script {
@@ -42,15 +41,23 @@ class ValidationErrorException : public std::exception
 
 class WTBuilder : NonCopyable
 {
+	public:
 
 	using VMap = core::Map<core::String, WTVariable *>;
 	using FMap = core::Map<core::String, WTFunction *>;
 
-	template<typename T>
-	struct StackData
+	struct VarStackData
 	{
-		core::Array<typename core::Map<core::String, T>::iterator> all;
+		core::Array<typename core::Map<core::String, WTVariable *>::iterator> all;
 		uint index;
+	};
+
+	struct FuncData
+	{
+		VMap vars;
+		core::Array<VarStackData> varStack;
+		WTFunction *func;
+		uint maxReg;
 	};
 
 	public:
@@ -60,28 +67,29 @@ class WTBuilder : NonCopyable
 		WTVariable *declareVar(const core::String &name, const core::String &typeName, TokenPosition tk = TokenPosition());
 		WTVariable *getVar(const core::String &name, TokenPosition tk = TokenPosition()) const;
 
-		WTFunction *declareFunc(const core::String &name, const core::Array<WTVariable *> &args, WTInstruction *body, WTVariableType *ret, TokenPosition tk = TokenPosition());
-		WTFunction *getFunc(const core::String &name, TokenPosition tk) const;
+		WTFunction *declareFunc(const core::String &name, const core::Array<WTVariable *> &args, WTVariableType *ret, TokenPosition tk = TokenPosition());
+		WTFunction *getFunc(const core::String &name, TokenPosition tk = TokenPosition()) const;
 
-		void pushStack();
-		void popStack();
+		void enterScope();
+		void leaveScope();
+
+		void enterFunction(WTFunction *function = 0);
+		void leaveFunction();
 
 		uint allocRegister();
 
+		WTFunction *getCurrentFunction() const;
 		WTTypeSystem *getTypeSystem() const;
 
 	private:
-		uint allocSlot();
+		FuncData &getLocalData();
+		const FuncData &getLocalData() const;
 
 		WTTypeSystem *types;
 
-		VMap varMap;
-		core::Array<StackData<WTVariable *>> varStack;
-		core::Array<WTVariable *> variables;
+		core::Array<FuncData> funcStack;
 
 		FMap funcMap;
-		core::Array<StackData<WTFunction *>> funcStack;
-		core::Array<WTFunction *> functions;
 
 
 };

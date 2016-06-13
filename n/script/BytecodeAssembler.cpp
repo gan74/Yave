@@ -145,12 +145,20 @@ BytecodeAssembler &BytecodeAssembler::jumpZ(RegisterType a, Label to) {
 
 BytecodeAssembler &BytecodeAssembler::call(RegisterType to, BytecodeInstruction::DataType index) {
 	BCI i{Bytecode::Call, {tr(to)}};
-	i.data() = index - 1;
+	i.data() = index;
 	return ass(i);
 }
 
-BytecodeAssembler &BytecodeAssembler::function(uint index) {
-	BCI i{Bytecode::FuncHead, {0}};
+BytecodeAssembler &BytecodeAssembler::pushArg(RegisterType arg) {
+	return ass(BCI{Bytecode::PushArg, {tr(arg)}});
+}
+
+BytecodeAssembler &BytecodeAssembler::ret(RegisterType from) {
+	return ass(BCI{Bytecode::Ret, {tr(from)}});
+}
+
+BytecodeAssembler &BytecodeAssembler::function(uint index, uint stack) {
+	BCI i{Bytecode::FuncHead, {tr(stack)}};
 	i.udata() = index;
 	return ass(i);
 }

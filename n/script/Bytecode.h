@@ -46,9 +46,11 @@ enum Bytecode : uint16
 	JumpZ,
 	JumpNZ,
 
-	Call,
-
 	FuncHead,
+
+	Call,
+	PushArg,
+	Ret,
 
 	Exit
 

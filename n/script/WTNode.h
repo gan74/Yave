@@ -42,6 +42,8 @@ struct WTNode : NonCopyable
 
 		Call,
 
+		Return,
+
 		Integer,
 
 		Assignation,
@@ -96,12 +98,11 @@ struct WTVariable : public WTExpression
 
 struct WTCall : public WTExpression
 {
-	WTCall(WTFunction *f, const core::Array<WTExpression *> &arg, uint reg) : WTExpression(Call, f->returnType, reg), func(f), args(arg) {
+	WTCall(WTFunction *f, const core::Array<WTExpression *> &arg, uint reg) : WTExpression(Call, f ? f->returnType : 0, reg), func(f), args(arg) {
 	}
 
 	WTFunction *func;
 	core::Array<WTExpression *> args;
-
 };
 
 struct WTInt : public WTExpression
@@ -155,6 +156,14 @@ struct WTBlock : public WTInstruction
 	}
 
 	core::Array<WTInstruction *> instructions;
+};
+
+struct WTReturn : public WTInstruction
+{
+	WTReturn(WTExpression *val) : WTInstruction(Return), value(val) {
+	}
+
+	WTExpression *value;
 };
 
 

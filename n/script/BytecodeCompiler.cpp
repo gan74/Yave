@@ -38,6 +38,7 @@ BytecodeAssembler BytecodeCompiler::compile(WTInstruction *node, WTTypeSystem *t
 
 	compile(context, node);
 
+	assembler.ret(0);
 	assembler.exit();
 
 	for(const core::Pair<WTFunction * const, BytecodeAssembler> &p : context.externalAssemblers) {
@@ -54,12 +55,12 @@ void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
 			for(WTInstruction *i : as<WTBlock>(node)->instructions) {
 				compile(context, i);
 			}
-			return;
+		return;
 
 
 		case WTNode::Expression:
 			compile(context, as<WTExprInstr>(node)->expression);
-			return;
+		return;
 
 
 		case WTNode::Loop: {
@@ -114,6 +115,12 @@ void BytecodeCompiler::compile(Context &context, WTInstruction *node) {
 		return;
 
 
+		case WTNode::Return:
+			compile(context, as<WTReturn>(node)->value);
+			context.assembler->ret(as<WTReturn>(node)->value->registerIndex);
+		return;
+
+
 		default:
 			throw CompilationErrorException("Unknown node type", node);
 	}
@@ -123,7 +130,7 @@ void BytecodeCompiler::compile(Context &context, WTFunction *func) {
 	BytecodeAssembler *ass = context.assembler;
 	context.assembler = &context.externalAssemblers[func];
 
-	context.assembler->function(func->index);
+	context.assembler->function(func->index, func->stackSize);
 	compile(context, func->body);
 	context.assembler->exit();
 
@@ -142,7 +149,7 @@ void BytecodeCompiler::compile(Context &context, WTExpression *node) {
 		case WTNode::LessThan:
 		case WTNode::GreaterThan:
 			compile(context, as<WTBinOp>(node));
-			return;
+		return;
 
 
 		case WTNode::Assignation:
@@ -150,23 +157,27 @@ void BytecodeCompiler::compile(Context &context, WTExpression *node) {
 			if(node->registerIndex != as<WTAssignation>(node)->value->registerIndex) {
 				context.assembler->copy(node->registerIndex, as<WTAssignation>(node)->value->registerIndex);
 			}
-			return;
+		return;
 
 		case WTNode::Call:
 			if(!context.externalAssemblers.exists(as<WTCall>(node)->func)) {
 				compile(context, as<WTCall>(node)->func);
 			}
+			for(WTExpression *e : as<WTCall>(node)->args) {
+				compile(context, e);
+				context.assembler->pushArg(e->registerIndex);
+			}
 			context.assembler->call(as<WTCall>(node)->registerIndex, as<WTCall>(node)->func->index);
-			return;
+		return;
 
 
 		case WTNode::Integer:
 			context.assembler->set(node->registerIndex, as<WTInt>(node)->value);
-			return;
+		return;
 
 
 		case WTNode::Variable:
-			return;
+		return;
 
 
 		default:
@@ -184,35 +195,35 @@ void BytecodeCompiler::compile(Context &context, WTBinOp *node) {
 	switch(node->type) {
 		case WTNode::Add:
 			context.assembler->addI(to, l, r);
-			return;
+		return;
 
 		case WTNode::Substract:
 			context.assembler->subI(to, l, r);
-			return;
+		return;
 
 		case WTNode::Multiply:
 			context.assembler->mulI(to, l, r);
-			return;
+		return;
 
 		case WTNode::Divide:
 			context.assembler->divI(to, l, r);
-			return;
+		return;
 
 		case WTNode::Equals:
 			context.assembler->equals(to, l, r);
-			return;
+		return;
 
 		case WTNode::NotEquals:
 			context.assembler->notEq(to, l, r);
-			return;
+		return;
 
 		case WTNode::LessThan:
 			context.assembler->lessI(to, l, r);
-			return;
+		return;
 
 		case WTNode::GreaterThan:
 			context.assembler->greaterI(to, l, r);
-			return;
+		return;
 
 		default:
 			throw CompilationErrorException("Unknown node type", node);

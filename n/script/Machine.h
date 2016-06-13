@@ -25,15 +25,21 @@ namespace script {
 class Machine : NonCopyable
 {
 	public:
+		using Primitive = int;
+
 		Machine();
 
-		void load(const BytecodeInstruction *restrict bcode, const BytecodeInstruction *restrict end);
+		void load(const BytecodeInstruction *bcode, const BytecodeInstruction *end);
 
-		int *run(const BytecodeInstruction *restrict bcode);
+		Primitive run(const BytecodeInstruction *bcode, uint memSize = 1 << 16);
 
 
 	private:
-		core::Array<const BytecodeInstruction *restrict> funcTable;
+		void run(const BytecodeInstruction *bcode, Primitive *mem, Primitive *ret);
+
+
+		core::Array<const BytecodeInstruction *> funcTable;
+		core::Array<Primitive> args;
 
 };
 

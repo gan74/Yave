@@ -34,6 +34,7 @@ struct ASTIdentifier : public ASTExpression
 	}
 
 	virtual WTExpression *toWorkTree(WTBuilder &builder, uint) const override;
+	//virtual void resolveFunctions(WTBuilder &) const override;
 };
 
 struct ASTLiteral : public ASTExpression
@@ -48,6 +49,7 @@ struct ASTLiteral : public ASTExpression
 	}
 
 	virtual WTExpression *toWorkTree(WTBuilder &builder, uint workReg) const override;
+	//virtual void resolveFunctions(WTBuilder &) const override;
 };
 
 struct ASTBinOp : public ASTExpression
@@ -64,6 +66,7 @@ struct ASTBinOp : public ASTExpression
 	}
 
 	virtual WTExpression *toWorkTree(WTBuilder &builder, uint workReg) const override;
+	//virtual void resolveFunctions(WTBuilder &builder) const override;
 };
 
 struct ASTAssignation : public ASTExpression
@@ -79,6 +82,7 @@ struct ASTAssignation : public ASTExpression
 	}
 
 	virtual WTExpression *toWorkTree(WTBuilder &builder, uint) const override;
+	//virtual void resolveFunctions(WTBuilder &builder) const override;
 };
 
 struct ASTCall : public ASTExpression
@@ -98,6 +102,7 @@ struct ASTCall : public ASTExpression
 	}
 
 	virtual WTExpression *toWorkTree(WTBuilder &builder, uint workReg) const override;
+	//virtual void resolveFunctions(WTBuilder &builder) const override;
 };
 
 }

@@ -24,9 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace script {
 
-struct ASTInstructionList : public ASTInstruction
+struct ASTBlock : public ASTInstruction
 {
-	ASTInstructionList(const core::Array<ASTInstruction *> &instrs) : ASTInstruction(instrs.isEmpty() ? TokenPosition() : instrs.first()->position), instructions(instrs) {
+	ASTBlock(const core::Array<ASTInstruction *> &instrs) : ASTInstruction(instrs.isEmpty() ? TokenPosition() : instrs.first()->position), instructions(instrs) {
 	}
 
 	const core::Array<ASTInstruction *> instructions;
@@ -40,6 +40,7 @@ struct ASTInstructionList : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
+	virtual void resolveFunctions(WTBuilder &builder) const override;
 };
 
 struct ASTDeclaration : public ASTInstruction
@@ -56,11 +57,12 @@ struct ASTDeclaration : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
+	virtual void resolveFunctions(WTBuilder &) const override;
 };
 
-struct ASTLoopInstruction : public ASTInstruction
+struct ASTLoop : public ASTInstruction
 {
-	ASTLoopInstruction(ASTExpression *cond, ASTInstruction *bod) : ASTInstruction(cond->position), condition(cond), body(bod) {
+	ASTLoop(ASTExpression *cond, ASTInstruction *bod) : ASTInstruction(cond->position), condition(cond), body(bod) {
 	}
 
 	const ASTExpression *condition;
@@ -71,11 +73,12 @@ struct ASTLoopInstruction : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
+	virtual void resolveFunctions(WTBuilder &builder) const override;
 };
 
-struct ASTBranchInstruction : public ASTInstruction
+struct ASTBranch : public ASTInstruction
 {
-	ASTBranchInstruction(ASTExpression *cond, ASTInstruction *then, ASTInstruction *el) : ASTInstruction(cond->position), condition(cond), thenBody(then), elseBody(el) {
+	ASTBranch(ASTExpression *cond, ASTInstruction *then, ASTInstruction *el) : ASTInstruction(cond->position), condition(cond), thenBody(then), elseBody(el) {
 	}
 
 	const ASTExpression *condition;
@@ -87,6 +90,7 @@ struct ASTBranchInstruction : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
+	virtual void resolveFunctions(WTBuilder &builder) const override;
 };
 
 struct ASTExprInstruction : public ASTInstruction
@@ -101,6 +105,7 @@ struct ASTExprInstruction : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
+	virtual void resolveFunctions(WTBuilder &) const override;
 };
 
 struct ASTFunctionDeclaration : public ASTInstruction
@@ -121,6 +126,22 @@ struct ASTFunctionDeclaration : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
+	virtual void resolveFunctions(WTBuilder &builder) const override;
+};
+
+struct ASTReturn : public ASTInstruction
+{
+	ASTReturn(ASTExpression *expr) : ASTInstruction(expr->position), expression(expr) {
+	}
+
+	const ASTExpression *expression;
+
+	virtual core::String toString() const override {
+		return "return " + expression->toString() + ";";
+	}
+
+	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
+	virtual void resolveFunctions(WTBuilder &) const override;
 };
 
 }

@@ -74,12 +74,12 @@ uint assoc(Token::Type type) {
 
 
 
-core::Array<ASTDeclaration *> parseArgDecls(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
-core::Array<ASTExpression *> parseArgs(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
+static core::Array<ASTDeclaration *> parseArgDecls(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
+static core::Array<ASTExpression *> parseArgs(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
 
-ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
+static ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end);
 
-ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+static ASTExpression *parseSimpleExpr(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	core::Array<Token>::const_iterator id = begin;
 	switch((begin++)->type) {
 		case Token::Identifier:
@@ -142,7 +142,7 @@ ASTExpression *parseExpr(core::Array<Token>::const_iterator &begin, core::Array<
 	return 0;
 }
 
-ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+static ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	eat(begin, Token::Var);
 
 	expect(begin, {Token::Identifier});
@@ -160,8 +160,7 @@ ASTDeclaration *parseDeclaration(core::Array<Token>::const_iterator &begin, core
 	return new ASTDeclaration(name, type, (begin - 1)->position);
 }
 
-
-ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
+static ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core::Array<Token>::const_iterator end) {
 	ASTInstruction *instr = 0;
 	switch(begin->type) {
 		case Token::Var:
@@ -175,16 +174,16 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 			ASTInstruction *then = parseInstruction(begin, end);
 			if(begin->type == Token::Else) {
 				begin++;
-				return new ASTBranchInstruction(expr, then, parseInstruction(begin, end));
+				return new ASTBranch(expr, then, parseInstruction(begin, end));
 			}
-			return new ASTBranchInstruction(expr, then, 0);
+			return new ASTBranch(expr, then, 0);
 		}	break;
 
 		case Token::While: {
 			begin++;
 			expect(begin, {Token::LeftPar});
 			ASTExpression *expr = parseExpr(begin, end);
-			return new ASTLoopInstruction(expr, parseInstruction(begin, end));
+			return new ASTLoop(expr, parseInstruction(begin, end));
 		} break;
 
 		case Token::LeftBrace: {
@@ -194,7 +193,7 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 				instrs.append(parseInstruction(begin, end));
 			}
 			begin++;
-			return new ASTInstructionList(instrs);
+			return new ASTBlock(instrs);
 		} break;
 
 		case Token::Def: {
@@ -206,6 +205,11 @@ ASTInstruction *parseInstruction(core::Array<Token>::const_iterator &begin, core
 			eat(begin, {Token::Assign});
 			return new ASTFunctionDeclaration(name, args, parseInstruction(begin, end));
 		} break;
+
+		case Token::Return:
+			begin++;
+			instr = new ASTReturn(parseExpr(begin, end));
+		break;
 
 		default:
 			instr = new ASTExprInstruction(parseExpr(begin, end));
@@ -266,7 +270,7 @@ ASTInstruction *Parser::parse(core::Array<Token>::const_iterator begin, core::Ar
 	while(begin != end && !(begin->type & Token::isEnd)) {
 		instrs.append(parseInstruction(begin, end));
 	}
-	return instrs.size() == 1 ? instrs.first() : new ASTInstructionList(instrs);
+	return instrs.size() == 1 ? instrs.first() : new ASTBlock(instrs);
 }
 
 }
