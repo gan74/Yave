@@ -390,7 +390,7 @@ class RBTree
 		}
 
 		void RBremove(Node *x) {
-			while(x != root && x->color == Node::Black) {
+			while(x != root && x->color != Node::Red) {
 				bool l = x == x->parent->children[0];
 				Node *w = x->parent->children[l];
 				if(w->color == Node::Red) {

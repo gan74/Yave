@@ -220,7 +220,7 @@ typename RBTree<T, Comp, Eq>::iterator RBTree<T, Comp, Eq>::remove(iterator it) 
 		color = y->color;
 		x = y->children[1];
 		if(y->parent == z) {
-			x->parent = z;
+			x->parent = y;
 		} else {
 			transplant(y, y->children[1]);
 			y->children[1] = z->children[1];
