@@ -58,6 +58,14 @@ class Ptr : NonCopyable
 			return ptr;
 		}
 
+		operator void *() {
+			return ptr;
+		}
+
+		operator void const *() const {
+			return ptr;
+		}
+
 		bool operator==(const T * const t) const {
 			return t == ptr;
 		}
