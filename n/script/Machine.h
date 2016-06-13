@@ -39,7 +39,9 @@ class Machine : NonCopyable
 
 
 		core::Array<const BytecodeInstruction *> funcTable;
-		core::Array<Primitive> args;
+
+		Primitive *argStackTop;
+
 
 };
 

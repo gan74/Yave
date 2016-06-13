@@ -130,7 +130,7 @@ void BytecodeCompiler::compile(Context &context, WTFunction *func) {
 	BytecodeAssembler *ass = context.assembler;
 	context.assembler = &context.externalAssemblers[func];
 
-	context.assembler->function(func->index, func->stackSize);
+	context.assembler->function(func->index, func->stackSize, func->args.size());
 	compile(context, func->body);
 	context.assembler->exit();
 

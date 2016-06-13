@@ -56,8 +56,12 @@ void print(uint index, BytecodeInstruction i) {
 			std::cout << "push $" << i.registers[0];
 		break;
 
-		case Bytecode::FuncHead:
-			std::cout << "function";
+		case Bytecode::FuncHead1:
+			std::cout << "function1";
+		break;
+
+		case Bytecode::FuncHead2:
+			std::cout << "function2 " << i.registers[0] << " " << i.registers[1];
 		break;
 
 		case Bytecode::Ret:
@@ -76,23 +80,18 @@ void print(uint index, BytecodeInstruction i) {
 	std::cout << std::endl;
 }
 
+int fib(int a) {
+	if(a < 1) return 1;
+	return fib(a - 1) + fib(a - 2);
+}
+
 
 int main(int, char **) {
-	core::String code = "var x:Int = 1000100;					\n"
-						"var y:Int = x - x;						\n"
-						"if(x > 1000) {							\n"
-						"	y = 1000;							\n"
-						"} else {								\n"
-						"	y = 7;								\n"
-						"}										\n"
-						"var a:Int = 13;						\n"
-						"x = foobar(x, y);						\n"
-						"def foobar(var a:Int, var y:Int) = {	\n"
-						"	while(a != y) {						\n"
-						"		a = a - 1;						\n"
-						"	}									\n"
-						"	return 21;							\n"
-						"}										\n";
+	core::String code = "def fib(var a:Int) = {"
+						"if(a < 1) return 1;"
+						"return fib(a - 1) + fib(a - 2);"
+						"}"
+						"fib(256);";
 						//"var a:Int = 9;							\n"
 						//"var w:Int = foobar(x);					\n";
 
@@ -105,7 +104,7 @@ int main(int, char **) {
 
 	try {
 		ASTInstruction *node = parser.parse(tks);
-		std::cout << node->toString() << std::endl << std::endl;
+		std::cout << node->toString() << std::endl << std::endl << std::endl << std::endl;
 
 		node->resolveFunctions(builder);
 		WTInstruction *wt = node->toWorkTree(builder);
@@ -116,7 +115,7 @@ int main(int, char **) {
 
 		uint index = 0;
 		for(BytecodeInstruction i : ass.getInstructions()) {
-			if(i.op == Bytecode::FuncHead) {
+			if(i.op == Bytecode::FuncHead1) {
 				index = 0;
 			}
 			print(index++, i);
@@ -126,7 +125,7 @@ int main(int, char **) {
 		Machine machine;
 		machine.load(ass.getInstructions().begin(), ass.getInstructions().end());
 		Machine::Primitive ret = machine.run(ass.getInstructions().begin());
-		std::cout << "return " << ret << std::endl << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl;
+		std::cout << std::endl << "return " << ret << " expected " << fib(4) << std::endl << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl << std::endl;
 	} catch(SynthaxErrorException &e) {
 		std::cerr << e.what(code) << std::endl;
 	} catch(ValidationErrorException &e) {

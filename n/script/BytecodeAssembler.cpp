@@ -48,16 +48,18 @@ BytecodeAssembler &BytecodeAssembler::operator<<(BytecodeInstruction i) {
 }
 
 BytecodeAssembler &BytecodeAssembler::operator<<(const BytecodeAssembler &a) {
-	uint s = in.size();
+	/*uint s = in.size();
 	in.setMinCapacity(s + a.in.size());
 	for(BytecodeInstruction i : a.in) {
-		if(i.op == Bytecode::Jump) {
-			i.registers[0] += s;
-		} else if(i.op == Bytecode::JumpNZ) {
-			i.registers[1] += s;
+		if(i.op == Bytecode::Jump || i.op == Bytecode::JumpZ || i.op == Bytecode::JumpNZ) {
+			i.udata() += s;
 		}
 		ass(i);
+	}*/
+	if(index == in.size()) {
+		index += a.in.size();
 	}
+	in << a.in;
 	return *this;
 }
 
@@ -127,25 +129,25 @@ BytecodeAssembler &BytecodeAssembler::copy(RegisterType to, RegisterType from) {
 
 BytecodeAssembler &BytecodeAssembler::jump(Label to) {
 	BCI i{Bytecode::Jump, {0}};
-	i.data() = to.index - 1;
+	i.udata() = to.index - 1;
 	return ass(i);
 }
 
 BytecodeAssembler &BytecodeAssembler::jumpNZ(RegisterType a, Label to) {
 	BCI i{Bytecode::JumpNZ, {tr(a)}};
-	i.data() = to.index - 1;
+	i.udata() = to.index - 1;
 	return ass(i);
 }
 
 BytecodeAssembler &BytecodeAssembler::jumpZ(RegisterType a, Label to) {
 	BCI i{Bytecode::JumpZ, {tr(a)}};
-	i.data() = to.index - 1;
+	i.udata() = to.index - 1;
 	return ass(i);
 }
 
 BytecodeAssembler &BytecodeAssembler::call(RegisterType to, BytecodeInstruction::DataType index) {
 	BCI i{Bytecode::Call, {tr(to)}};
-	i.data() = index;
+	i.udata() = index;
 	return ass(i);
 }
 
@@ -157,10 +159,13 @@ BytecodeAssembler &BytecodeAssembler::ret(RegisterType from) {
 	return ass(BCI{Bytecode::Ret, {tr(from)}});
 }
 
-BytecodeAssembler &BytecodeAssembler::function(uint index, uint stack) {
-	BCI i{Bytecode::FuncHead, {tr(stack)}};
-	i.udata() = index;
-	return ass(i);
+BytecodeAssembler &BytecodeAssembler::function(uint index, uint stack, uint args) {
+	BCI a{Bytecode::FuncHead1, {0}};
+	a.udata() = index;
+	BCI b{Bytecode::FuncHead2, {tr(stack), tr(args)}};
+
+	ass(a);
+	return ass(b);
 }
 
 

@@ -46,7 +46,8 @@ enum Bytecode : uint16
 	JumpZ,
 	JumpNZ,
 
-	FuncHead,
+	FuncHead1, //  func id
+	FuncHead2, // arg num, stack size
 
 	Call,
 	PushArg,

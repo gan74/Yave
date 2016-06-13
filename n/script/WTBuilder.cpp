@@ -76,7 +76,7 @@ void WTBuilder::enterFunction(WTFunction *function) {
 	uint index = 0;
 	if(function) {
 		for(WTVariable *v : function->args) {
-			index = std::max(index, v->registerIndex);
+			index = std::max(index, v->registerIndex + 1);
 			data.vars[v->name] = v;
 		}
 	}

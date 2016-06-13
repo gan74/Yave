@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace script {
 
-Machine::Machine() {
+Machine::Machine() : argStackTop(new Primitive[1 << 16]) {
 }
 
 Machine::Primitive Machine::run(const BytecodeInstruction *bcode, uint memSize) {
@@ -61,7 +61,7 @@ void Machine::run(const BytecodeInstruction *bcode, Primitive *mem, Primitive *r
 			case Bytecode::DivI:
 				tmp = mem[i->registers[2]];
 				if(!tmp) {
-					fatal("divide by zero");
+					fatal("divided by zero");
 				}
 				*m = mem[i->registers[1]] / tmp;
 			break;
@@ -95,31 +95,36 @@ void Machine::run(const BytecodeInstruction *bcode, Primitive *mem, Primitive *r
 			break;
 
 			case Bytecode::Jump:
-				i = bcode + i->data();
+				i = bcode + i->udata();
 			break;
 
 			case Bytecode::JumpZ:
 				if(!*m) {
-					i = bcode + i->data();
+					i = bcode + i->udata();
 				}
 			break;
 
 			case Bytecode::JumpNZ:
 				if(*m) {
-					i = bcode + i->data();
+					i = bcode + i->udata();
 				}
 			break;
 
-			case Bytecode::FuncHead:
+			case Bytecode::FuncHead1:
+				i++;
+			case Bytecode::FuncHead2:
 				stackTop = mem + i->registers[0];
+				argStackTop -= i->registers[1];
+				memcpy(mem, argStackTop, sizeof(Primitive) * i->registers[1]);
 			break;
 
 			case Bytecode::Call:
-				run(funcTable[i->data()], stackTop, m);
+				run(funcTable[i->udata()], stackTop, m);
 			break;
 
 			case Bytecode::PushArg:
-				args.append(*m);
+				*argStackTop = *m;
+				argStackTop++;
 			break;
 
 			case Bytecode::Ret:
@@ -134,7 +139,7 @@ void Machine::run(const BytecodeInstruction *bcode, Primitive *mem, Primitive *r
 void Machine::load(const BytecodeInstruction *bcode, const BytecodeInstruction *end) {
 	for(const BytecodeInstruction *i = bcode; i != end; i++) {
 		switch(i->op) {
-			case Bytecode::FuncHead:
+			case Bytecode::FuncHead1:
 				while(funcTable.size() <= i->udata()) {
 					funcTable << nullptr;
 				}

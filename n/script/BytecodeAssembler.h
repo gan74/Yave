@@ -70,7 +70,7 @@ class BytecodeAssembler
 		BytecodeAssembler &ret(RegisterType from);
 
 
-		BytecodeAssembler &function(uint index, uint stack);
+		BytecodeAssembler &function(uint index, uint stack, uint args);
 
 
 		BytecodeAssembler &exit();
