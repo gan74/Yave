@@ -283,9 +283,9 @@ namespace details {
 	{
 
 		template<typename U>
-		static TrueType &test(decltype(&U::operator*));
+		static TrueType test(decltype(&U::operator*));
 		template<typename U>
-		static FalseType &test(...);
+		static FalseType test(...);
 
 		public:
 			static constexpr bool value = decltype(test<T>(0))::value;
