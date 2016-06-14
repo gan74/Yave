@@ -52,6 +52,7 @@ enum Bytecode : uint16
 	Call,
 	PushArg,
 	Ret,
+	RetIm,
 
 	Exit
 

@@ -159,6 +159,17 @@ BytecodeAssembler &BytecodeAssembler::ret(RegisterType from) {
 	return ass(BCI{Bytecode::Ret, {tr(from)}});
 }
 
+BytecodeAssembler &BytecodeAssembler::retIm(int64 value) {
+	if(value > std::numeric_limits<BytecodeInstruction::DataType>::max() || value < std::numeric_limits<BytecodeInstruction::DataType>::min()) {
+		#warning BytecodeAssembler fatal
+		fatal("BytecodeAssembler : value too big");
+	}
+	BCI i{Bytecode::RetIm, {0}};
+	i.data() = value;
+	return ass(i);
+}
+
+
 BytecodeAssembler &BytecodeAssembler::function(uint index, uint stack, uint args) {
 	BCI a{Bytecode::FuncHead1, {0}};
 	a.udata() = index;

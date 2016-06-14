@@ -127,6 +127,10 @@ void Machine::run(const BytecodeInstruction *bcode, Primitive *mem, Primitive *r
 				argStackTop++;
 			break;
 
+			case Bytecode::RetIm:
+				*ret = Primitive(i->data());
+				return;
+
 			case Bytecode::Ret:
 				*ret = *m;
 			case Bytecode::Exit:

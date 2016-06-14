@@ -68,6 +68,7 @@ class BytecodeAssembler
 		BytecodeAssembler &call(RegisterType to, BytecodeInstruction::DataType index);
 		BytecodeAssembler &pushArg(RegisterType arg);
 		BytecodeAssembler &ret(RegisterType from);
+		BytecodeAssembler &retIm(int64 value);
 
 
 		BytecodeAssembler &function(uint index, uint stack, uint args);
