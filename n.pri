@@ -29,6 +29,11 @@ HEADERS += $$PWD/n/*.h \
 
 win32:DEFINES += WIN32
 
+ALLWFLAGS = -Wconversion -Weffc++ -Wshadow
+WFLAGS = -pedantic -Wall -Wextra -Woverloaded-virtual -Wfloat-equal -Wwrite-strings -Wpointer-arith -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast
+QMAKE_CXXFLAGS += $$WFLAGS
+QMAKE_LFLAGS += $$WFLAGS
+
 QMAKE_CXXFLAGS += -pedantic
 CONFIG(debug, debug|release) {
 	DEFINES += N_DEBUG
