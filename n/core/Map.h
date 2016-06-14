@@ -69,7 +69,7 @@ class Map : public RBTree<Pair<const T, U>, details::MapOp<const T, U, Comp>, de
 
 			private:
 				friend class Map;
-				iterator(const typename MapType::const_iterator &it) : MapType::iterator(*((typename MapType::iterator *)&it)) {
+				iterator(const typename MapType::const_iterator &it) : MapType::iterator(*(reinterpret_cast<typename MapType::iterator *>(&it))) {
 				}
 
 		};

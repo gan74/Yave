@@ -54,7 +54,7 @@ struct ASTInstruction : public ASTNode
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &) const = 0;
-	virtual void resolveFunctions(WTBuilder &) const = 0;
+	virtual void lookupFunctions(WTBuilder &) const = 0;
 };
 
 }

@@ -76,7 +76,7 @@ void Mutex::wait(WaitCondition &cond) {
 bool Mutex::wait(double sec, WaitCondition &cond) {
 	checkLockedByThread();
 	timespec timer;
-	timer.tv_nsec = time(0) + (long)(sec * 1000000000);
+	timer.tv_nsec = time(0) + long(sec * 1000000000);
 	int err = pthread_cond_timedwait(&(cond.condition), &mutex, &timer);
 	if(err && err == ETIMEDOUT) {
 		return true;

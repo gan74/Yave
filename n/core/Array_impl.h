@@ -143,15 +143,15 @@ typename Array<T, RP>::iterator Array<T, RP>::erase(const_iterator b, const_iter
 	}
 	uint diff = e - b;
 	if(e == dataEnd) {
-		clear((T *)b, diff);
+		clear(const_cast<TT *>(b), diff);
 		dataEnd -= diff;
 		shrinkIfNeeded();
 		return dataEnd;
 	}
-	moveBack((T *)b, dataEnd - b, diff);
+	moveBack(const_cast<TT *>(b), dataEnd - b, diff);
 	dataEnd -= diff;
 	shrinkIfNeeded();
-	return (T *)b;
+	return const_cast<TT *>(b);
 }
 
 
@@ -515,7 +515,7 @@ typename Array<T, RP>::iterator Array<T, RP>::getIterator(uint i) {
 
 template<typename T, typename RP>
 typename Array<T, RP>::const_iterator Array<T, RP>::getIterator(uint i) const {
-	return (const_iterator)(data + i);
+	return const_iterator(data + i);
 }
 
 
@@ -533,22 +533,22 @@ typename Array<T, RP>::const_iterator Array<T, RP>::getIterator(uint i) const {
 
 template<typename T, typename RP>
 typename Array<T, RP>::const_iterator Array<T, RP>::begin() const {
-	return (const_iterator)data;
+	return const_iterator(data);
 }
 
 template<typename T, typename RP>
 typename Array<T, RP>::const_iterator Array<T, RP>::end() const {
-	return (const_iterator)dataEnd;
+	return const_iterator(dataEnd);
 }
 
 template<typename T, typename RP>
 typename Array<T, RP>::const_iterator Array<T, RP>::cbegin() const {
-	return (const_iterator)data;
+	return const_iterator(data);
 }
 
 template<typename T, typename RP>
 typename Array<T, RP>::const_iterator Array<T, RP>::cend() const {
-	return (const_iterator)dataEnd;
+	return const_iterator(dataEnd);
 }
 
 template<typename T, typename RP>
@@ -715,7 +715,7 @@ template<typename U>
 void Array<T, RP>::filter(const U &f) {
 	Array<T, RP>::iterator it = begin();
 	foreach([&](T &e) {
-		if(f((const T &)e)) {
+		if(f(reinterpret_cast<const T &>(e))) {
 			*it = std::move(e);
 			++it;
 		}

@@ -61,7 +61,7 @@ constexpr bool is32Bits() {
 
 namespace details {
 	static constexpr uint32 endian = 0x01020304; // http://stackoverflow.com/questions/1583791/constexpr-and-endianness
-	static constexpr uint32 endianness = (const byte&)endian;
+	static constexpr uint32 endianness = static_cast<const byte &>(endian);
 }
 
 constexpr bool isLittleEndian() {

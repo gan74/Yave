@@ -69,11 +69,11 @@ class RBTree
 
 			I &operator++() { // ++prefix
 				node = next(node);
-				return *(I *)this;
+				return *reinterpret_cast<I *>(this);
 			}
 
 			I operator++(int) { // postfix++
-				I it(*(I *)this);
+				I it(*reinterpret_cast<I *>(this));
 				operator++();
 				return it;
 			}

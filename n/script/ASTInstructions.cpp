@@ -90,30 +90,30 @@ WTInstruction *ASTReturn::toWorkTree(WTBuilder &builder) const {
 
 
 
-void ASTDeclaration::resolveFunctions(WTBuilder &) const {
+void ASTDeclaration::lookupFunctions(WTBuilder &) const {
 }
 
-void ASTBlock::resolveFunctions(WTBuilder &builder) const {
+void ASTBlock::lookupFunctions(WTBuilder &builder) const {
 	for(ASTInstruction *i : instructions) {
-		i->resolveFunctions(builder);
+		i->lookupFunctions(builder);
 	}
 }
 
-void ASTLoop::resolveFunctions(WTBuilder &builder) const {
-	body->resolveFunctions(builder);
+void ASTLoop::lookupFunctions(WTBuilder &builder) const {
+	body->lookupFunctions(builder);
 }
 
-void ASTBranch::resolveFunctions(WTBuilder &builder) const {
-	thenBody->resolveFunctions(builder);
+void ASTBranch::lookupFunctions(WTBuilder &builder) const {
+	thenBody->lookupFunctions(builder);
 	if(elseBody) {
-		elseBody->resolveFunctions(builder);
+		elseBody->lookupFunctions(builder);
 	}
 }
 
-void ASTExprInstruction::resolveFunctions(WTBuilder &) const {
+void ASTExprInstruction::lookupFunctions(WTBuilder &) const {
 }
 
-void ASTFunctionDeclaration::resolveFunctions(WTBuilder &builder) const {
+void ASTFunctionDeclaration::lookupFunctions(WTBuilder &builder) const {
 	builder.enterFunction();
 	core::Array<WTVariable *> arg;
 	for(ASTDeclaration *d : args) {
@@ -128,7 +128,7 @@ void ASTFunctionDeclaration::resolveFunctions(WTBuilder &builder) const {
 	builder.declareFunc(name, arg, builder.getTypeSystem()->getIntType(), position);
 }
 
-void ASTReturn::resolveFunctions(WTBuilder &) const {
+void ASTReturn::lookupFunctions(WTBuilder &) const {
 }
 
 }

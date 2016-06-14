@@ -33,7 +33,7 @@ uint64 hash(const void *key, uint64 len, uint64 seed) { // Murmurhash 2.0 from h
 	const uint64 m = 0xc6a4a7935bd1e995;
 	const int r = 47;
 	uint64 h = seed ^ (len * m);
-	const uint64 *data = (const uint64 *)key;
+	const uint64 *data = reinterpret_cast<const uint64 *>(key);
 	const uint64 *end = data + (len / 8);
 	while(data != end) {
 		uint64 k = *data++;
@@ -43,7 +43,7 @@ uint64 hash(const void *key, uint64 len, uint64 seed) { // Murmurhash 2.0 from h
 		h ^= k;
 		h *= m;
 	}
-	const byte *data2 = (const byte *)data;
+	const byte *data2 = reinterpret_cast<const byte *>(data);
 	switch(len & 7) {
 		case 7: h ^= uint64(data2[6]) << 48;
 		case 6: h ^= uint64(data2[5]) << 40;

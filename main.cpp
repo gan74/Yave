@@ -12,6 +12,8 @@ using namespace n;
 using namespace n::core;
 using namespace n::script;
 
+static_assert(isLittleEndian(), "not lilendian");
+
 void print(uint index, BytecodeInstruction i) {
 	std::cout << index<< "\t";
 	Map<Bytecode, core::String> names;
@@ -68,6 +70,10 @@ void print(uint index, BytecodeInstruction i) {
 			std::cout << "ret $" << i.registers[0];
 		break;
 
+		case Bytecode::RetIm:
+			std::cout << "retIm " << i.data();
+		break;
+
 		case Bytecode::Exit:
 			std::cout << "exit";
 		break;
@@ -80,7 +86,7 @@ void print(uint index, BytecodeInstruction i) {
 	std::cout << std::endl;
 }
 
-int fib(int a) {
+int fib(volatile int a) {
 	if(a < 1) return 1;
 	return fib(a - 1) + fib(a - 2);
 }
@@ -91,9 +97,7 @@ int main(int, char **) {
 						"if(a < 1) return 1;"
 						"return fib(a - 1) + fib(a - 2);"
 						"}"
-						"fib(256);";
-						//"var a:Int = 9;							\n"
-						//"var w:Int = foobar(x);					\n";
+						"fib(32);";
 
 
 	Tokenizer tokenizer;
@@ -106,7 +110,7 @@ int main(int, char **) {
 		ASTInstruction *node = parser.parse(tks);
 		std::cout << node->toString() << std::endl << std::endl << std::endl << std::endl;
 
-		node->resolveFunctions(builder);
+		node->lookupFunctions(builder);
 		WTInstruction *wt = node->toWorkTree(builder);
 
 		BytecodeCompiler compiler;
@@ -122,10 +126,15 @@ int main(int, char **) {
 		}
 
 		Timer timer;
+
 		Machine machine;
 		machine.load(ass.getInstructions().begin(), ass.getInstructions().end());
 		Machine::Primitive ret = machine.run(ass.getInstructions().begin());
-		std::cout << std::endl << "return " << ret << " expected " << fib(4) << std::endl << "eval = " << timer.elapsed() * 1000 << "ms" << std::endl << std::endl;
+
+		double time = timer.reset();
+		int cret = fib(32);
+		double ctime = timer.reset();
+		std::cout << std::endl << "return " << ret << " expected " << cret << std::endl << "eval = " << time * 1000 << "ms (vs " << ctime * 1000 << "ms)" << std::endl << std::endl;
 	} catch(SynthaxErrorException &e) {
 		std::cerr << e.what(code) << std::endl;
 	} catch(ValidationErrorException &e) {

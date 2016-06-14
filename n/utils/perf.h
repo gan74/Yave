@@ -39,7 +39,7 @@ class FunctionTimer : NonCopyable
 		bool logEnd;
 };
 
-class JsonPerfTracer
+class JsonPerfTracer : NonCopyable
 {
 	enum TraceType
 	{

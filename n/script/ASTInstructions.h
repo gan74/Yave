@@ -40,7 +40,7 @@ struct ASTBlock : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
-	virtual void resolveFunctions(WTBuilder &builder) const override;
+	virtual void lookupFunctions(WTBuilder &builder) const override;
 };
 
 struct ASTDeclaration : public ASTInstruction
@@ -57,7 +57,7 @@ struct ASTDeclaration : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
-	virtual void resolveFunctions(WTBuilder &) const override;
+	virtual void lookupFunctions(WTBuilder &) const override;
 };
 
 struct ASTLoop : public ASTInstruction
@@ -73,7 +73,7 @@ struct ASTLoop : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
-	virtual void resolveFunctions(WTBuilder &builder) const override;
+	virtual void lookupFunctions(WTBuilder &builder) const override;
 };
 
 struct ASTBranch : public ASTInstruction
@@ -90,7 +90,7 @@ struct ASTBranch : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
-	virtual void resolveFunctions(WTBuilder &builder) const override;
+	virtual void lookupFunctions(WTBuilder &builder) const override;
 };
 
 struct ASTExprInstruction : public ASTInstruction
@@ -105,7 +105,7 @@ struct ASTExprInstruction : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
-	virtual void resolveFunctions(WTBuilder &) const override;
+	virtual void lookupFunctions(WTBuilder &) const override;
 };
 
 struct ASTFunctionDeclaration : public ASTInstruction
@@ -126,7 +126,7 @@ struct ASTFunctionDeclaration : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
-	virtual void resolveFunctions(WTBuilder &builder) const override;
+	virtual void lookupFunctions(WTBuilder &builder) const override;
 };
 
 struct ASTReturn : public ASTInstruction
@@ -141,7 +141,7 @@ struct ASTReturn : public ASTInstruction
 	}
 
 	virtual WTInstruction *toWorkTree(WTBuilder &builder) const override;
-	virtual void resolveFunctions(WTBuilder &) const override;
+	virtual void lookupFunctions(WTBuilder &) const override;
 };
 
 }

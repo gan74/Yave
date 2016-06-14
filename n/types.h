@@ -275,7 +275,7 @@ namespace details {
 	template<typename T>
 	struct TypeContentInternal<T, false>
 	{
-		typedef decltype(((T *)0)->operator*()) type;
+		typedef decltype((reinterpret_cast<T *>(0))->operator*()) type;
 	};
 
 	template<typename T, bool P>

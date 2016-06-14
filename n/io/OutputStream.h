@@ -31,11 +31,11 @@ class OutputStream : NonCopyable
 		virtual uint writeBytes(const void *b, uint len) = 0;
 		virtual void flush() = 0;
 
-		virtual void write(const core::String &str) {
+		/*virtual void write(const core::String &str) {
 			if(str.size()) {
 				writeBytes(str.data(), str.size());
 			}
-		}
+		}*/
 };
 
 

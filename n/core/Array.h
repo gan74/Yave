@@ -75,7 +75,7 @@ class OptimalArrayResizePolicy
 template<typename T, typename ResizePolicy = DefaultArrayResizePolicy>
 class Array : public ResizePolicy// Be SUPER careful when adding collections directly, will use the lazyest cast possible, can be wrong !
 {
-	typedef typename TypeInfo<T>::nonConst TT;
+	using TT = typename TypeInfo<T>::nonConst;
 	public:
 		typedef T * iterator;
 		typedef T const * const_iterator;
@@ -352,9 +352,9 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 
 		void setCapacityUnsafe(uint s, uint ns) {
 			if(TypeInfo<T>::isPod) {
-				data = (TT *)safeRealloc(data, ns * sizeof(T));
+				data = reinterpret_cast<TT *>(safeRealloc(data, ns * sizeof(T)));
 			} else {
-				TT *n = (TT *)malloc(ns * sizeof(T));
+				TT *n = reinterpret_cast<TT *>(malloc(ns * sizeof(T)));
 				move(n, data, s);
 				clear(data, s);
 				free(data);

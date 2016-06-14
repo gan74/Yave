@@ -28,7 +28,7 @@ n::core::String demangle(const char* name) {
 	if(status) {
 		return name;
 	}
-	n::core::String str((const char *)d);
+	n::core::String str(const_cast<const char *>(d));
 	free(d);
 	return str;
 }
