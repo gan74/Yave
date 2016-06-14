@@ -82,7 +82,7 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 		typedef T Element;
 
 		Array();
-		Array(uint s);
+		explicit Array(uint s);
 		Array(uint s, const T &e);
 		Array(const Array<T, ResizePolicy> &a);
 		Array(Array<T, ResizePolicy> &&a);
