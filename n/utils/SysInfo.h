@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_UTILS_SYSINFO
-#define N_UTILS_SYSINFO
+#ifndef N_UTILS_SYSINFO_H
+#define N_UTILS_SYSINFO_H
 
 #include <n/types.h>
 
@@ -30,5 +30,5 @@ class SysInfo
 
 }
 
-#endif // N_UTILS_SYSINFO
+#endif // N_UTILS_SYSINFO_H
 

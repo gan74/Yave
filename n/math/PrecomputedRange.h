@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_PRECOMPUTEDRANGE
-#define N_MATH_PRECOMPUTEDRANGE
+#ifndef N_MATH_PRECOMPUTEDRANGE_H
+#define N_MATH_PRECOMPUTEDRANGE_H
 
 #include <n/core/Array.h>
 
@@ -74,5 +74,5 @@ class PrecomputedRange // assumed continuous and key in [0, 1]
 }
 }
 
-#endif // N_MATH_PRECOMPUTEDRANGE
+#endif // N_MATH_PRECOMPUTEDRANGE_H
 

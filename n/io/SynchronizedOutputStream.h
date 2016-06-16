@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_IO_SYNCHRONIZEDOUTPUTSTREAM
-#define N_IO_SYNCHRONIZEDOUTPUTSTREAM
+#ifndef N_IO_SYNCHRONIZEDOUTPUTSTREAM_H
+#define N_IO_SYNCHRONIZEDOUTPUTSTREAM_H
 
 #include "OutputStream.h"
 #include <n/concurrent/Mutex.h>
@@ -58,5 +58,5 @@ class SynchronizedOutputStream : public OutputStream
 }
 }
 
-#endif // N_IO_SYNCHRONIZEDOUTPUTSTREAM
+#endif // N_IO_SYNCHRONIZEDOUTPUTSTREAM_H
 

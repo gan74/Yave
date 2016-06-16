@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_DEFINES
-#define N_DEFINES
+#ifndef N_DEFINES_H
+#define N_DEFINES_H
 
 namespace n {
 
@@ -94,4 +94,4 @@ namespace core {
 
 //#define N_AUTO_TEST
 
-#endif //N_DEFINES
+#endif //N_DEFINES_H

@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_UTILS_PERF
-#define N_UTILS_PERF
+#ifndef N_UTILS_PERF_H
+#define N_UTILS_PERF_H
 
 #include <n/types.h>
 #include <n/defines.h>
@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 class SynchronizedOutputStream;
-class IODevice;
+class Device;
 }
 
 class FunctionTimer : NonCopyable
@@ -76,7 +76,7 @@ class JsonPerfTracer : NonCopyable
 };
 
 FunctionTimer logFuncPerf(const char *name);
-void setTraceOutputStream(io::IODevice *out);
+void setTraceOutputStream(io::Device *out);
 void dumpThreadPerfData();
 }
 
@@ -89,5 +89,5 @@ void dumpThreadPerfData();
 #endif
 
 
-#endif // N_UTILS_PERF
+#endif // N_UTILS_PERF_H
 

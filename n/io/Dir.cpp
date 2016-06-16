@@ -59,13 +59,13 @@ core::Array<core::String> Dir::getContent() const {
 
 core::Array<core::String> Dir::getSubDirs() const {
 	return content.filtered([=](const core::String &n) {
-		return !File::exists("\"" + full + "/" + n + "\"");
+		return n != "." && n != ".." && !File::exists(full + "/" + n);
 	});
 }
 
 core::Array<core::String> Dir::getFiles() const {
 	return content.filtered([=](const core::String &n) {
-		return File::exists("\"" + full + "/" + n + "\"");
+		return File::exists(full + "/" + n);
 	});
 }
 

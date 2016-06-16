@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_IO_IODEVICE_H
-#define N_IO_IODEVICE_H
+#ifndef N_IO_DEVICE_H
+#define N_IO_DEVICE_H
 
 #include "InputStream.h"
 #include "OutputStream.h"
@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 
-class IODevice : public InputStream, public OutputStream
+class Device : public InputStream, public OutputStream
 {
 	public:
 		enum OpenMode
@@ -36,7 +36,7 @@ class IODevice : public InputStream, public OutputStream
 			Append = Write | AtEnd
 		};
 
-		IODevice() {
+		Device() {
 		}
 
 		virtual bool open(OpenMode) = 0;
@@ -57,8 +57,8 @@ class IODevice : public InputStream, public OutputStream
 		}
 };
 
-inline IODevice::OpenMode operator|(IODevice::OpenMode a, IODevice::OpenMode b) {
-	return IODevice::OpenMode(uint(a) | uint(b));
+inline Device::OpenMode operator|(Device::OpenMode a, Device::OpenMode b) {
+	return Device::OpenMode(uint(a) | uint(b));
 }
 
 } // io

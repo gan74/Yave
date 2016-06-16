@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_UTILS_LOG
-#define N_UTILS_LOG
+#ifndef N_UTILS_LOGS_H
+#define N_UTILS_LOGS_H
 
 #include <n/types.h>
 #include <n/defines.h>
@@ -37,5 +37,5 @@ void logMsg(const char *msg, LogType type = InfoLog);
 
 #define N_DEPRECATED do {static bool _warn = false; if(!_warn) { _warn = true; n::logMsg(__PRETTY_FUNCTION__ + n::core::String(" is deprecated."), n::DeprecatedLog); }} while(0)
 
-#endif // N_UTILS_LOG
+#endif // N_UTILS_LOGS_H
 

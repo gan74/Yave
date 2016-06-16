@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_ASSETS_GENERICASSETLOADER
-#define N_ASSETS_GENERICASSETLOADER
+#ifndef N_ASSETS_GENERICASSETLOADER_H
+#define N_ASSETS_GENERICASSETLOADER_H
 
 #include "AssetManager.h"
 
@@ -97,5 +97,5 @@ typename GenericAssetLoader<T, D>::template AssetReader<U, Args...>::Runner();
 }
 }
 
-#endif // N_ASSETS_GENERICASSETLOADER
+#endif // N_ASSETS_GENERICASSETLOADER_H
 

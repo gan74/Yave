@@ -29,7 +29,7 @@ bool File::exists(const core::String &fileName) {
 	return true;
 }
 
-File::File(const core::String &fileName) : IODevice(), file(0), name(fileName), mode(IODevice::None) {
+File::File(const core::String &fileName) : Device(), file(0), name(fileName), mode(Device::None) {
 }
 
 const core::String &File::getName() const {
@@ -62,7 +62,7 @@ bool File::remove() {
 }
 
 bool File::open(OpenMode m) {
-	if(m == IODevice::None) {
+	if(m == Device::None) {
 		close();
 		return false;
 	}
@@ -70,18 +70,18 @@ bool File::open(OpenMode m) {
 		close();
 	}
 	core::String openMode = "r";
-	if(m & IODevice::Write) {
+	if(m & Device::Write) {
 		openMode = "w";
-		if(m & IODevice::Read) {
-			openMode += "+";
+		if(m & Device::Read) {
+			openMode = "r+";
 		}
-	} else if(m & IODevice::AtEnd) {
+	} else if(m & Device::AtEnd) {
 		openMode = "a";
-		if(m & IODevice::Read) {
+		if(m & Device::Read) {
 			openMode += "+";
 		}
 	}
-	if(m & IODevice::Binary)	{
+	if(m & Device::Binary)	{
 		openMode += "b";
 	}
 	file = fopen(name.data(), openMode.data());
@@ -112,7 +112,7 @@ void File::close() {
 	if(file) {
 		fclose(file);
 		file = 0;
-		mode = IODevice::None;
+		mode = Device::None;
 	}
 }
 
@@ -133,7 +133,7 @@ uint File::size() const {
 	return length;
 }
 
-IODevice::OpenMode File::getOpenMode() const {
+Device::OpenMode File::getOpenMode() const {
 	return mode;
 }
 

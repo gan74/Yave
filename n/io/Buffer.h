@@ -16,13 +16,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_IO_BUFFER_H
 #define N_IO_BUFFER_H
 
-#include "IODevice.h"
+#include "Device.h"
 #include <n/core/Array.h>
 
 namespace n {
 namespace io {
 
-class Buffer : public IODevice
+class Buffer : public Device
 {
 	public:
 		Buffer();

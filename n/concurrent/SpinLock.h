@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_SPINLOCK_H
-#define N_CONCURENT_SPINLOCK_H
+#ifndef N_CONCURRENT_SPINLOCK_H
+#define N_CONCURRENT_SPINLOCK_H
 
 #include <n/utils.h>
 #include "Atomic.h"
@@ -42,4 +42,4 @@ class SpinLock : NonCopyable
 }
 }
 
-#endif // N_CONCURENT_SPINLOCK_H
+#endif // N_CONCURRENT_SPINLOCK_H

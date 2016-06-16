@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_RANDOMDISTRIBUTION
-#define N_MATH_RANDOMDISTRIBUTION
+#ifndef N_MATH_RANDOMDISTRIBUTION_H
+#define N_MATH_RANDOMDISTRIBUTION_H
 
 #include "Matrix.h"
 
@@ -112,5 +112,5 @@ class UniformVec3Distribution : public RandomDistribution<Vec<3, T>>
 }
 }
 
-#endif // N_MATH_RANDOMDISTRIBUTION
+#endif // N_MATH_RANDOMDISTRIBUTION_H
 

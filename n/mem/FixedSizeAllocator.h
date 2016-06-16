@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MEM_FIXEDSIZEALLOCATOR
-#define N_MEM_FIXEDSIZEALLOCATOR
+#ifndef N_MEM_FIXEDSIZEALLOCATOR_H
+#define N_MEM_FIXEDSIZEALLOCATOR_H
 
 #include "Region.h"
 #include <n/core/List.h>
@@ -84,5 +84,5 @@ class FixedSizeAllocator : NonCopyable
 }
 
 
-#endif // N_MEM_FIXEDSIZEALLOCATOR
+#endif // N_MEM_FIXEDSIZEALLOCATOR_H
 

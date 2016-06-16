@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_INTERPOLATOR
-#define N_MATH_INTERPOLATOR
+#ifndef N_MATH_INTERPOLATOR_H
+#define N_MATH_INTERPOLATOR_H
 
 #include <n/core/Array.h>
 #include <n/core/Pair.h>
@@ -116,5 +116,5 @@ class LinearInterpolator : public Interpolator<T, K>
 }
 
 
-#endif // N_MATH_INTERPOLATOR
+#endif // N_MATH_INTERPOLATOR_H
 

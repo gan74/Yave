@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_THREAD_H
-#define N_CONCURENT_THREAD_H
+#ifndef N_CONCURRENT_THREAD_H
+#define N_CONCURRENT_THREAD_H
 
 #include <n/utils.h>
 
@@ -65,4 +65,4 @@ class Thread : NonCopyable
 }
 }
 
-#endif // N_CONCURENT_THREAD_H
+#endif // N_CONCURRENT_THREAD_H

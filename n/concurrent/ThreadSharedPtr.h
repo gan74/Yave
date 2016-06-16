@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_THREADSHAREDPTR
-#define N_CONCURENT_THREADSHAREDPTR
+#ifndef N_CONCURRENT_THREADSHAREDPTR_H
+#define N_CONCURRENT_THREADSHAREDPTR_H
 
 #include "HazardPtr.h"
 #include "DetachedThreadPtr.h"
@@ -54,5 +54,5 @@ class ThreadSharedPtr
 }
 }
 
-#endif // N_CONCURENT_THREADSHAREDPTR
+#endif // N_CONCURRENT_THREADSHAREDPTR_H
 

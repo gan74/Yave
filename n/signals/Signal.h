@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_SIGNALS_SIGNAL
-#define N_SIGNALS_SIGNAL
+#ifndef N_SIGNALS_SIGNAL_H
+#define N_SIGNALS_SIGNAL_H
 
 #include <n/concurrent/SpinLock.h>
 #include <n/concurrent/Async.h>
@@ -105,5 +105,5 @@ using AsyncSignal = Signal<AsyncCall, Args...>;
 }
 }
 
-#endif // N_SIGNALS_SIGNAL
+#endif // N_SIGNALS_SIGNAL_H
 

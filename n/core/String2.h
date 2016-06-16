@@ -90,6 +90,7 @@ class String2
 		String2(const String2 &str);
 		String2(String2 &&str);
 		String2(char c);
+		String2(char *str);
 		String2(const char *str);
 		String2(const char *str, uint len);
 		String2(const char *beg, const char *end);
@@ -124,6 +125,7 @@ class String2
 		bool contains(const String2 &str) const;
 
 		static String2 subString(const_iterator beg, uint len);
+		static String2 subString(const_iterator beg, const_iterator en);
 		static String2 subString(const_iterator beg);
 		String2 subString(uint beg, uint len) const;
 		String2 subString(uint beg) const;

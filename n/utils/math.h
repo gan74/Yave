@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_UTILS_MATH
-#define N_UTILS_MATH
+#ifndef N_UTILS_MATH_H
+#define N_UTILS_MATH_H
 
 #include <numeric>
 
@@ -141,5 +141,5 @@ T normalizedConversion(T u) {
 }
 }
 
-#endif // N_UTILS_MATH
+#endif // N_UTILS_MATH_H
 

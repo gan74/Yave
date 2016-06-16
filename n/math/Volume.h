@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_VOLUME
-#define N_MATH_VOLUME
+#ifndef N_MATH_VOLUME_H
+#define N_MATH_VOLUME_H
 
 #include "Vec.h"
 
@@ -36,5 +36,5 @@ class Volume
 }
 }
 
-#endif // N_MATH_VOLUME
+#endif // N_MATH_VOLUME_H
 

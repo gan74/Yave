@@ -1,5 +1,5 @@
-#ifndef N_CONCURENT_ATOMIC
-#define N_CONCURENT_ATOMIC
+#ifndef N_CONCURRENT_ATOMIC_H
+#define N_CONCURRENT_ATOMIC_H
 
 #include <n/types.h>
 #include <atomic>
@@ -37,5 +37,5 @@ using AtomicPtr = Atomic<T *>;
 }
 }
 
-#endif // N_CONCURENT_ATOMIC
+#endif // N_CONCURRENT_ATOMIC_H
 

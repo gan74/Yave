@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_UTILS_RANDOM
-#define N_UTILS_RANDOM
+#ifndef N_UTILS_RANDOM_H
+#define N_UTILS_RANDOM_H
 
 #include <n/types.h>
 
@@ -28,5 +28,5 @@ float randomGauss(float var, float med);
 
 }
 
-#endif // N_UTILS_RANDOM
+#endif // N_UTILS_RANDOM_H
 

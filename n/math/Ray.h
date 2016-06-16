@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_RAY
-#define N_MATH_RAY
+#ifndef N_MATH_RAY_H
+#define N_MATH_RAY_H
 
 #include "Volume.h"
 
@@ -57,5 +57,5 @@ class Ray final : public Volume<T>
 }
 }
 
-#endif // N_MATH_RAY
+#endif // N_MATH_RAY_H
 

@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MEM_SMALLOBJECT
-#define N_MEM_SMALLOBJECT
+#ifndef N_MEM_SMALLOBJECT_H
+#define N_MEM_SMALLOBJECT_H
 
 #include "Allocator.h"
 
@@ -55,5 +55,5 @@ class SmallObject
 }
 }
 
-#endif // N_MEM_SMALLOBJECT
+#endif // N_MEM_SMALLOBJECT_H
 

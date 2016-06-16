@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_EDGE
-#define N_MATH_EDGE
+#ifndef N_MATH_EDGE_H
+#define N_MATH_EDGE_H
 
 #include "Vec.h"
 
@@ -57,5 +57,5 @@ class Edge
 }
 }
 
-#endif // N_MATH_EDGE
+#endif // N_MATH_EDGE_H
 

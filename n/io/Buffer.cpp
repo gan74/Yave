@@ -18,25 +18,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 
-Buffer::Buffer() : IODevice(), mode(IODevice::None) {
+Buffer::Buffer() : Device(), mode(Device::None) {
 
 }
 
 bool Buffer::open(OpenMode m) {
 	close();
 	mode = m;
-	if(mode == IODevice::None) {
+	if(mode == Device::None) {
 		return false;
 	}
-	iterator = mode & IODevice::Append ? buffer.size() : 0;
+	iterator = mode & Device::Append ? buffer.size() : 0;
 	return true;
 }
 
 void Buffer::close() {
-	mode = IODevice::None;
+	mode = Device::None;
 }
 
-IODevice::OpenMode Buffer::getOpenMode() const {
+Device::OpenMode Buffer::getOpenMode() const {
 	return mode;
 }
 

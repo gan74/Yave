@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_FUTURE_H
-#define N_CONCURENT_FUTURE_H
+#ifndef N_CONCURRENT_FUTURE_H
+#define N_CONCURRENT_FUTURE_H
 
 #include "MultiThreadPtr.h"
 #include "Mutex.h"
@@ -173,4 +173,4 @@ class SharedFuture
 }
 }
 
-#endif // N_CONCURENT_FUTURE_H
+#endif // N_CONCURRENT_FUTURE_H

@@ -170,10 +170,10 @@ FunctionTimer logFuncPerf(const char *name) {
 	return FunctionTimer(name);
 }
 
-io::IODevice *openDevice(io::IODevice *d) {
+io::Device *openDevice(io::Device *d) {
 	if(d) {
-		if(!(d->getOpenMode() & io::IODevice::Append)) {
-			d->open(io::IODevice::Append);
+		if(!(d->getOpenMode() & io::Device::Append)) {
+			d->open(io::Device::Append);
 		}
 		if(!d->isOpen()) {
 			d = 0;
@@ -182,7 +182,7 @@ io::IODevice *openDevice(io::IODevice *d) {
 	return d;
 }
 
-void setTraceOutputStream(io::IODevice *out) {
+void setTraceOutputStream(io::Device *out) {
 	out = openDevice(out);
 	#ifdef N_PERF_LOG_ENABLED
 	if(!traceOut && out) {

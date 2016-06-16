@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_LOCKGUARD
-#define N_CONCURENT_LOCKGUARD
+#ifndef N_CONCURRENT_LOCKGUARD_H
+#define N_CONCURRENT_LOCKGUARD_H
 
 #include <n/types.h>
 
@@ -56,5 +56,5 @@ LockGuard<T> lockGuard(T &t) {
 }
 
 
-#endif // N_CONCURENT_LOCKGUARD
+#endif // N_CONCURRENT_LOCKGUARD_H
 

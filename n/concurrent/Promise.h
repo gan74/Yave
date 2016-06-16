@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_PROMISE_H
-#define N_CONCURENT_PROMISE_H
+#ifndef N_CONCURRENT_PROMISE_H
+#define N_CONCURRENT_PROMISE_H
 
 #include "Future.h"
 
@@ -74,4 +74,4 @@ class Promise
 }
 }
 
-#endif // N_CONCURENT_PROMISE_H
+#endif // N_CONCURRENT_PROMISE_H

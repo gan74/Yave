@@ -17,13 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef N_IO_FILE_H
 #define N_IO_FILE_H
 
-#include "IODevice.h"
+#include "Device.h"
 #include <n/core/String.h>
 
 namespace n {
 namespace io {
 
-class File : public IODevice
+class File : public Device
 {
 	public:
 		File(const core::String &fileName);

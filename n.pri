@@ -11,8 +11,7 @@ SOURCES += $$PWD/n/*.cpp \
 		   $$PWD/n/io/*.cpp \
 		   $$PWD/n/concurrent/*.cpp \
 		   $$PWD/n/test/*.cpp \
-		   $$PWD/n/test/defaults/*.cpp \
-		   $$PWD/n/script/*.cpp
+		   $$PWD/n/test/defaults/*.cpp
 
 HEADERS += $$PWD/n/*.h \
 		   $$PWD/n/core/*.h \
@@ -23,8 +22,7 @@ HEADERS += $$PWD/n/*.h \
 		   $$PWD/n/math/*.h \
 		   $$PWD/n/mem/*.h \
 		   $$PWD/n/assets/*.h \
-		   $$PWD/n/signals/*.h \
-		   $$PWD/n/script/*.h
+		   $$PWD/n/signals/*.h
 
 
 win32:DEFINES += WIN32

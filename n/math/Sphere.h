@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_SPHERE
-#define N_MATH_SPHERE
+#ifndef N_MATH_SPHERE_H
+#define N_MATH_SPHERE_H
 
 #include "Volume.h"
 
@@ -55,5 +55,5 @@ class Sphere final : public Volume<T>
 }
 }
 
-#endif // N_MATH_SPHERE
+#endif // N_MATH_SPHERE_H
 

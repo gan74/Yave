@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MEM_REGION
-#define N_MEM_REGION
+#ifndef N_MEM_REGION_H
+#define N_MEM_REGION_H
 
 #include <n/utils.h>
 
@@ -87,5 +87,5 @@ class Region : NonCopyable
 }
 
 
-#endif // N_MEM_REGION
+#endif // N_MEM_REGION_H
 

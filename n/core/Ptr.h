@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CORE_PTR
-#define N_CORE_PTR
+#ifndef N_CORE_PTR_H
+#define N_CORE_PTR_H
 
 #include <n/utils.h>
 
@@ -125,5 +125,5 @@ class NullCpyPtr : public Ptr<T>
 }
 
 
-#endif // N_CORE_PTR
+#endif // N_CORE_PTR_H
 

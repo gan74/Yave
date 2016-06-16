@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_MULTITHREADPTR_H
-#define N_CONCURENT_MULTITHREADPTR_H
+#ifndef N_CONCURRENT_MULTITHREADPTR_H
+#define N_CONCURRENT_MULTITHREADPTR_H
 
 #include "Atomic.h"
 #include <n/core/SmartPtr.h>

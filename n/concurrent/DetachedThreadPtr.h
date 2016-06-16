@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_HazardPtr
-#define N_CONCURENT_HazardPtr
+#ifndef N_CONCURRENT_DETACHEDTHREADPTR_H
+#define N_CONCURRENT_DETACHEDTHREADPTR_H
 
 #include "HazardPtr.h"
 #include <n/utils.h>
@@ -60,5 +60,5 @@ class DetachedThreadPtr : NonCopyable
 }
 }
 
-#endif // N_CONCURENT_HazardPtr
+#endif // N_CONCURRENT_DETACHEDTHREADPTR_H
 

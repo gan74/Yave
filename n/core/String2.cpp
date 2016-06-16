@@ -135,6 +135,9 @@ String2::String2(String2 &&str) {
 String2::String2(char c) : String2(&c, 1) {
 }
 
+String2::String2(char *str) : String2(str, strlen(str)) {
+}
+
 String2::String2(const char *str) : String2(str, strlen(str)) {
 }
 
@@ -192,12 +195,11 @@ bool String2::endsWith(const String2 &str) const {
 	if(ts < s) {
 		return false;
 	}
-	ts--;
+	ts -= s;
 	const char *d = str.data();
 	const char *td = data();
 	for(uint i = 0; i != s; i++) {
-		uint index = ts - i;
-		if(d[i] != td[index]) {
+		if(d[i] != td[ts + i]) {
 			return false;
 		}
 	}
@@ -248,6 +250,10 @@ String2 String2::subString(const_iterator beg, uint len) {
 		return String2();
 	}
 	return String2(beg, len);
+}
+
+String2 String2::subString(const_iterator beg, const_iterator en) {
+	return String2(beg, en);
 }
 
 String2 String2::subString(const_iterator beg) {

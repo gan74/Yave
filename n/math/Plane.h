@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_PLANE
-#define N_MATH_PLANE
+#ifndef N_MATH_PLANE_H
+#define N_MATH_PLANE_H
 
 #include "Volume.h"
 #include "Edge.h"
@@ -74,5 +74,5 @@ class Plane final : public Volume<T>
 }
 }
 
-#endif // N_MATH_PLANE
+#endif // N_MATH_PLANE_H
 

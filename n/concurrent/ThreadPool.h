@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_THREADPOOL_H
-#define N_CONCURENT_THREADPOOL_H
+#ifndef N_CONCURRENT_THREADPOOL_H
+#define N_CONCURRENT_THREADPOOL_H
 
 #include "Thread.h"
 #include "SpinLock.h"

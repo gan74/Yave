@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CONCURENT_MUTEX_H
-#define N_CONCURENT_MUTEX_H
+#ifndef N_CONCURRENT_MUTEX_H
+#define N_CONCURRENT_MUTEX_H
 
 #include "Thread.h"
 #include <pthread.h>
@@ -81,4 +81,4 @@ class RecursiveMutex : public Mutex
 }
 }
 
-#endif // N_CONCURENT_MUTEX_H
+#endif // N_CONCURRENT_MUTEX_H

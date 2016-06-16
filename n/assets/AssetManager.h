@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_ASSETS_ASSETBUFFER_H
-#define N_ASSETS_ASSETBUFFER_H
+#ifndef N_ASSETS_ASSETMANAGER_H
+#define N_ASSETS_ASSETMANAGER_H
 
 #include <n/core/Array.h>
 #include "AssetLoader.h"
@@ -219,4 +219,4 @@ class AssetManager : protected LoadPolicy, NonCopyable
 }
 }
 
-#endif // N_ASSETS_ASSETBUFFER_H
+#endif // N_ASSETS_ASSETMANAGER_H

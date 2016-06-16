@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_IO_DIR
-#define N_IO_DIR
+#ifndef N_IO_DIR_H
+#define N_IO_DIR_H
 
 #include <n/utils.h>
 #include <n/core/String.h>
@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace io {
 
-class Dir : NonCopyable
+class Dir
 {
 	public:
 		Dir(const core::String &dirName);
@@ -47,5 +47,5 @@ class Dir : NonCopyable
 }// n
 
 
-#endif // N_IO_DIR
+#endif // N_IO_DIR_H
 

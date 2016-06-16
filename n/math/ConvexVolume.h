@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_MATH_CONVEXVOLUME
-#define N_MATH_CONVEXVOLUME
+#ifndef N_MATH_CONVEXVOLUME_H
+#define N_MATH_CONVEXVOLUME_H
 
 #include "Plane.h"
 
@@ -60,5 +60,5 @@ class ConvexVolume : public Volume<T>
 }
 }
 
-#endif // N_MATH_CONVEXVOLUME
+#endif // N_MATH_CONVEXVOLUME_H
 

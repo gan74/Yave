@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_CORE_AUTOPTR
-#define N_CORE_AUTOPTR
+#ifndef N_CORE_AUTOPTR_H
+#define N_CORE_AUTOPTR_H
 
 #include "Ptr.h"
 
@@ -47,5 +47,5 @@ class AutoPtr : public Ptr<T>
 }
 }
 
-#endif // N_CORE_AUTOPTR
+#endif // N_CORE_AUTOPTR_H
 

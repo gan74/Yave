@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_UTILS_HASH
-#define N_UTILS_HASH
+#ifndef N_UTILS_HASH_H
+#define N_UTILS_HASH_H
 
 #include <n/types.h>
 #include <n/core/String.h>
@@ -44,5 +44,5 @@ constexpr uint64 chash(const char *str) {
 
 }
 
-#endif // N_UTILS_HASH
+#endif // N_UTILS_HASH_H
 

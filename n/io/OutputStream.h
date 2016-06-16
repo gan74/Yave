@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-#ifndef N_IO_OUTPOUTSTREAM_H
-#define N_IO_OUTPOUTSTREAM_H
+#ifndef N_IO_OUTPUTSTREAM_H
+#define N_IO_OUTPUTSTREAM_H
 
 #include <n/core/String.h>
 
@@ -42,4 +42,4 @@ class OutputStream : NonCopyable
 } // io
 } // n
 
-#endif // N_IO_OUTPOUTSTREAM_H
+#endif // N_IO_OUTPUTSTREAM_H
