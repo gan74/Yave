@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <n/core/Map.h>
 #include <n/core/Timer.h>
 #include <n/core/String.h>
+#include <n/core/SmartPtr.h>
 #include <n/io/TextOutputStream.h>
 #include <n/io/SynchronizedOutputStream.h>
 #include <n/concurrent/Thread.h>
@@ -28,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
-io::SynchronizedOutputStream *traceOut = 0;
+core::SmartPtr<io::SynchronizedOutputStream> traceOut = 0;
 thread_local JsonPerfTracer *tracer = 0;
 
 struct TraceDumper
@@ -38,7 +39,7 @@ struct TraceDumper
 		for(JsonPerfTracer *t : tracers) {
 			delete t;
 		}
-		if(traceOut) {
+		if(!!traceOut) {
 			io::TextOutputStream stream(traceOut);
 			stream << "{}], \"displayTimeUnit\":\"ms\"}";
 			traceOut->flush();
@@ -66,7 +67,7 @@ TraceDumper dumper;
 
 JsonPerfTracer *getThreadPerfTracer() {
 	#ifdef N_PERF_LOG_ENABLED
-	if(!tracer && traceOut) {
+	if(!tracer && !!traceOut) {
 		tracer = new JsonPerfTracer(traceOut);
 		dumper.addTracer(tracer);
 	}
@@ -183,13 +184,14 @@ io::Device *openDevice(io::Device *d) {
 }
 
 void setTraceOutputStream(io::Device *out) {
+	traceOut = 0;
 	out = openDevice(out);
 	#ifdef N_PERF_LOG_ENABLED
-	if(!traceOut && out) {
+	if(out) {
 		io::SynchronizedOutputStream *t = new io::SynchronizedOutputStream(out);
 		io::TextOutputStream stream(t);
 		stream << "{\"traceEvents\":[\n";
-		traceOut = t;
+		traceOut = std::move(t);
 	}
 	#else
 	if(out) {
