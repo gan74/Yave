@@ -32,16 +32,6 @@ uint64 hash(const T &t) {
 uint64 hash(const core::String &str);
 uint64 hash(const void *key, uint64 len, uint64 seed = 14695981039346656037UL);
 
-constexpr uint64 chash_helper(const char *str, uint i) {
-	return *str ? chash_helper(str + 1, i + 1) ^ (uint64(*str) << ((i % sizeof(uint64)) * 8)) : 14695981039346656037UL;
-}
-
-constexpr uint64 chash(const char *str) {
-	return chash_helper(str + 1, 0);
-}
-
-
-
 }
 
 #endif // N_UTILS_HASH_H
