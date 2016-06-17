@@ -50,8 +50,10 @@ class SmartPtr : public Ptr<T>
 		}
 
 		SmartPtr<T, C> &operator=(const SmartPtr<T, C> &p) {
-			unref();
-			ref(p);
+			if(&p != this) {
+				unref();
+				ref(p);
+			}
 			return *this;
 		}
 

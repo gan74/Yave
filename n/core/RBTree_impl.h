@@ -302,8 +302,10 @@ void RBTree<T, Comp, Eq>::swap(RBTree<T, Comp, Eq> &o) {
 
 template<typename T, typename Comp, typename Eq>
 RBTree<T, Comp, Eq> &RBTree<T, Comp, Eq>::operator=(const RBTree<T, Comp, Eq> &o) {
-	clear();
-	insert(o);
+	if(&o != this) {
+		clear();
+		insert(o);
+	}
 	return *this;
 }
 

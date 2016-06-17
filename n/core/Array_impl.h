@@ -448,7 +448,9 @@ Array<T, RP> &Array<T, RP>::operator=(const C &c) {
 
 template<typename T, typename RP>
 Array<T, RP> &Array<T, RP>::operator=(const Array<T, RP> &e) {
-	assign(e);
+	if(&e != this) {
+		assign(e);
+	}
 	return *this;
 }
 

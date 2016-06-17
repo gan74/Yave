@@ -311,7 +311,9 @@ List<T> &List<T>::operator=(List<T> &&l) {
 
 template<typename T>
 List<T> &List<T>::operator=(const List<T> &l) {
-	assign(l);
+	if(&l != this) {
+		assign(l);
+	}
 	return *this;
 }
 

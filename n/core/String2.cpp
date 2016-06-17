@@ -380,13 +380,15 @@ void String2::swap(String2 &str) {
 }
 
 String2 &String2::operator=(const String2 &str) {
-	if(isLong()) {
-		freeLong(l);
-	}
-	if(str.isLong()) {
-		new(&l) LongData(str.l);
-	} else {
-		s = str.s;
+	if(&str != this) {
+		if(isLong()) {
+			freeLong(l);
+		}
+		if(str.isLong()) {
+			new(&l) LongData(str.l);
+		} else {
+			s = str.s;
+		}
 	}
 	return *this;
 }
