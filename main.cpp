@@ -33,7 +33,7 @@ struct CC
 
 int main(int, char **) {
 
-	core::Array<int> l;
+	Array<int> l;
 	l << 1 << 2 << 3 << 5 << 6;
 
 	l.insert(4, l.find(5));

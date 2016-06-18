@@ -166,6 +166,26 @@ class className { \
 		static constexpr bool value = SFINAE<HasMethodType, std::is_fundamental<HasMethodType>::value>::value; \
 };
 
+#define N_GEN_TYPE_HAS_METHOD_NRET(className, method) \
+template<typename HasMethodType, typename... HasMethodArgsType> \
+class className { \
+	template<typename U, bool B> \
+	struct SFINAE { \
+		struct NoType { }; \
+		template<typename V> \
+		static auto test(V *) -> BoolToType<!std::is_same<decltype(makeOne<V>().method(makeOne<HasMethodArgsType>()...)), NoType>::value>; \
+		template<typename V> \
+		static FalseType test(...); \
+		static constexpr bool value = decltype(test<U>(0))::value; \
+	}; \
+	template<typename U> \
+	struct SFINAE<U, true> { \
+		static constexpr bool value = false; \
+	}; \
+	public: \
+		static constexpr bool value = SFINAE<HasMethodType, std::is_fundamental<HasMethodType>::value>::value; \
+};
+
 namespace details {
 	N_GEN_TYPE_HAS_MEMBER(IsConstIterableInternal, const_iterator)
 	N_GEN_TYPE_HAS_MEMBER(IsNonConstIterableInternal, iterator)

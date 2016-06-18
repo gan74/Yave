@@ -24,6 +24,9 @@ namespace core {
 template<typename I>
 class Range
 {
+
+	N_GEN_TYPE_HAS_METHOD_NRET(CanSub, operator-)
+
 	public:
 		Range(const I &b, const I &e) : beg(b), en(e) {
 		}
@@ -51,13 +54,21 @@ class Range
 		}
 
 		uint size() const {
+			return sizeDispatch(BoolToType<CanSub<I>::value || TypeInfo<I>::isPrimitive>());
+		}
+
+
+	private:
+		uint sizeDispatch(TrueType) const {
+			return en - beg;
+		}
+
+		uint sizeDispatch(FalseType) const {
 			uint s = 0;
 			for(I i = beg; i != en; ++i, s++);
 			return s;
 		}
 
-
-	private:
 		I beg;
 		I en;
 };
