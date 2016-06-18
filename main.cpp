@@ -62,15 +62,10 @@ int main(int, char **) {
 	std::cout << std::endl;
 
 
-	for(int i = 7; i != 100000000; i++) {
-		l << i;
+	for(int i : range(1, 7).reverse()) {
+		std::cout << i << " ";
 	}
-
-	{
-		Timer ti;
-		std::cout << range(l).size() << std::endl;
-		std::cout << ti.elapsed() * 1000 << "ms" << std::endl;
-	}
+	std::cout << std::endl;
 
 	return 0;
 }

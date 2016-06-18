@@ -21,6 +21,55 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace n {
 namespace core {
 
+template<typename T>
+class FakeIterator
+{
+	public:
+		FakeIterator(const T &t) : value(t) {
+		}
+
+		FakeIterator<T> &operator++() {
+			++value;
+			return *this;
+		}
+
+		FakeIterator<T> &operator--() {
+			--value;
+			return *this;
+		}
+
+		FakeIterator<T> operator++(int) {
+			FakeIterator<T> it(value);
+			++value;
+			return it;
+		}
+
+		FakeIterator<T> operator--(int) {
+			FakeIterator<T> it(value);
+			--value;
+			return it;
+		}
+
+		bool operator!=(const FakeIterator<T> &t) const {
+			return value != t.value;
+		}
+
+		bool operator==(const FakeIterator<T> &t) const {
+			return value == t.value;
+		}
+
+		const T &operator*() const {
+			return value;
+		}
+
+		const T *operator->() const {
+			return &value;
+		}
+
+	private:
+		T value;
+};
+
 template<typename I>
 class Range
 {
@@ -74,9 +123,9 @@ class Range
 };
 
 
-template<typename I>
-Range<I> range(const I &b, const I &e) {
-	return Range<I>(b, e);
+template<typename I, typename RI = typename If<TypeInfo<I>::isDereferenceable, I, FakeIterator<I>>::type>
+Range<RI> range(const I &b, const I &e) {
+	return Range<RI>(b, e);
 }
 
 template<typename C, typename I = decltype(makeOne<const C &>().begin())>
