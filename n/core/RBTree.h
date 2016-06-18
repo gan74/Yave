@@ -239,6 +239,9 @@ class RBTree
 
 
 	private:
+		Comp comp;
+		Eq eq;
+
 		template<typename C>
 		iterator insertDispatch(const C &c, TrueType) {
 			return insertCollection(c);
@@ -439,7 +442,6 @@ class RBTree
 
 		template<typename C>
 		iterator insertCollection(const C &c) {
-			Comp comp;
 			iterator m = end();
 			for(const auto &e : c) {
 				iterator it = insert(e);
@@ -452,8 +454,6 @@ class RBTree
 
 		template<typename C>
 		iterator insertOne(const C &e) {
-			Comp comp;
-			Eq eq;
 			if(!root->color) {
 				guard->children[0] = guard->children[1] = root = new Node(T(e), guard, guard, guard);
 				root->color = Node::Black;

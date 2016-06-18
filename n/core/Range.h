@@ -25,28 +25,28 @@ template<typename T>
 class ValueIterator
 {
 	public:
-		ValueIterator(const T &t) : value(t) {
+		ValueIterator(const T &t, const T &i) : value(t), incr(i) {
 		}
 
 		ValueIterator<T> &operator++() {
-			++value;
+			inc();
 			return *this;
 		}
 
 		ValueIterator<T> &operator--() {
-			--value;
+			dec();
 			return *this;
 		}
 
 		ValueIterator<T> operator++(int) {
-			ValueIterator<T> it(value);
-			++value;
+			ValueIterator<T> it(*this);
+			inc();
 			return it;
 		}
 
 		ValueIterator<T> operator--(int) {
-			ValueIterator<T> it(value);
-			--value;
+			ValueIterator<T> it(*this);
+			dec();
 			return it;
 		}
 
@@ -68,13 +68,23 @@ class ValueIterator
 
 	private:
 		T value;
+		T incr;
+
+		void inc() {
+			value = value + incr;
+		}
+
+		void dec() {
+			value = value - incr;
+		}
 };
+
 
 template<typename I>
 class Range
 {
-
 	N_GEN_TYPE_HAS_METHOD_NRET(CanSub, operator-)
+	constexpr static bool hasFastSize = CanSub<I>::value || TypeInfo<I>::isPrimitive;
 
 	public:
 		Range(const I &b, const I &e) : beg(b), en(e) {
@@ -103,11 +113,12 @@ class Range
 		}
 
 		uint size() const {
-			return sizeDispatch(BoolToType<CanSub<I>::value || TypeInfo<I>::isPrimitive>());
+			return sizeDispatch(BoolToType<hasFastSize>());
 		}
 
 
 	private:
+
 		uint sizeDispatch(TrueType) const {
 			return en - beg;
 		}
@@ -122,10 +133,32 @@ class Range
 		I en;
 };
 
+namespace details {
 
-template<typename I, typename RI = typename If<TypeInfo<I>::isDereferenceable, I, ValueIterator<I>>::type>
-Range<RI> range(const I &b, const I &e) {
-	return Range<RI>(b, e);
+template<typename I, typename RI = ValueIterator<I>>
+Range<RI> range(const I &b, const I &e, TrueType) {
+	struct Init { I i; };
+	Init init = Init();
+	I incr = init.i;
+	if(b < e) {
+		++incr;
+	} else {
+		--incr;
+	}
+	return Range<RI>(RI(b, incr), RI(e, incr));
+}
+
+template<typename I>
+Range<I> range(const I &b, const I &e, FalseType) {
+	return Range<I>(b, e);
+}
+
+}
+
+
+template<typename I, typename B = BoolToType<!TypeInfo<I>::isDereferenceable>, typename R = decltype(details::range(makeOne<I>(), makeOne<I>(), makeOne<B>()))>
+R range(const I &b, const I &e) {
+	return details::range(b, e, B());
 }
 
 template<typename C, typename I = decltype(makeOne<const C &>().begin())>
