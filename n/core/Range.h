@@ -22,39 +22,39 @@ namespace n {
 namespace core {
 
 template<typename T>
-class FakeIterator
+class ValueIterator
 {
 	public:
-		FakeIterator(const T &t) : value(t) {
+		ValueIterator(const T &t) : value(t) {
 		}
 
-		FakeIterator<T> &operator++() {
+		ValueIterator<T> &operator++() {
 			++value;
 			return *this;
 		}
 
-		FakeIterator<T> &operator--() {
+		ValueIterator<T> &operator--() {
 			--value;
 			return *this;
 		}
 
-		FakeIterator<T> operator++(int) {
-			FakeIterator<T> it(value);
+		ValueIterator<T> operator++(int) {
+			ValueIterator<T> it(value);
 			++value;
 			return it;
 		}
 
-		FakeIterator<T> operator--(int) {
-			FakeIterator<T> it(value);
+		ValueIterator<T> operator--(int) {
+			ValueIterator<T> it(value);
 			--value;
 			return it;
 		}
 
-		bool operator!=(const FakeIterator<T> &t) const {
+		bool operator!=(const ValueIterator<T> &t) const {
 			return value != t.value;
 		}
 
-		bool operator==(const FakeIterator<T> &t) const {
+		bool operator==(const ValueIterator<T> &t) const {
 			return value == t.value;
 		}
 
@@ -123,7 +123,7 @@ class Range
 };
 
 
-template<typename I, typename RI = typename If<TypeInfo<I>::isDereferenceable, I, FakeIterator<I>>::type>
+template<typename I, typename RI = typename If<TypeInfo<I>::isDereferenceable, I, ValueIterator<I>>::type>
 Range<RI> range(const I &b, const I &e) {
 	return Range<RI>(b, e);
 }
