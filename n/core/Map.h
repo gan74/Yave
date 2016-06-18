@@ -59,11 +59,11 @@ class Map : public RBTree<Pair<const T, U>, details::MapOp<const T, U, Comp>, de
 				iterator(const typename MapType::iterator &it) : MapType::iterator(it) {
 				}
 
-				Pair<const T, U> &operator*() {
+				Pair<const T, U> &operator*() const {
 					return const_cast<Pair<const T, U> &>(MapType::iterator::operator*()); // makes sence
 				}
 
-				Pair<const T, U> *operator->() {
+				Pair<const T, U> *operator->() const {
 					return &operator*();
 				}
 
@@ -83,8 +83,12 @@ class Map : public RBTree<Pair<const T, U>, details::MapOp<const T, U, Comp>, de
 		Map();
 		Map(MapType &&m);
 		Map(const MapType &m);
+
 		template<typename C>
 		Map(std::initializer_list<C> l);
+
+		template<typename C, typename CC = typename std::enable_if<Collection<C>::isCollection>::type>
+		Map(const C &c);
 
 
 		iterator insert(const T &t, const U &u);

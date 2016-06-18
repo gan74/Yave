@@ -4,36 +4,73 @@
 #include <n/core/Collection.h>
 #include <n/core/List.h>
 #include <n/core/Map.h>
+#include <n/core/Range.h>
+#include <n/core/Timer.h>
 
 using namespace n;
+using namespace n::core;
 
-template<typename T>
-struct DEREF // P = false
+
+struct CC
 {
+	using iterator = int*;
+	using const_iterator = const int*;
 
-	template<typename U>
-	static TrueType test(decltype(&U::operator*) *) {
-	std::cout << "lele"<<std::endl;
+	iterator begin() { return 0; }
+	iterator end() { return 0; }
+
+
+	const_iterator begin() const { return 0; }
+	const_iterator end() const { return 0; }
+
+	CC() {
 	}
 
-	template<typename U>
-	static FalseType test(...) {
-		std::cout << "wat ?" << std::endl;
+	CC(const CC &) {
+		std::cout << "CPY !" << std::endl;
 	}
-
-	static constexpr bool value = decltype(test<T>(0))::value;
 };
 
 int main(int, char **) {
-	using L = core::List<Nothing>;
-	using C = core::Collection<L>;
-	using I = typename L::iterator;
-	static_assert(TypeInfo<L>::isIterable && TypeInfo<L>::isNonConstIterable, "lelle");
-	std::cout << (typeid(typename core::Collection<L>::Element).name()) << std::endl;
 
-	std::cout << TypeInfo<decltype(&I::operator*)>::type.name() << std::endl;
+	core::Array<int> l;
+	l << 1 << 2 << 3 << 5 << 6;
 
-	 DEREF<I>::test<I>(0);
-	std::cout << TypeInfo<typename TypeContent<I>::type>::type.name() << std::endl;
+	l.insert(4, l.find(5));
+
+	for(auto x: l) {
+		std::cout << x << " ";
+	}
+	std::cout << std::endl;
+
+	auto e = l.end();
+	auto b = l.begin();
+	b--;
+	for(auto i = reverseIterator(--e); i != reverseIterator(b); i++) {
+		std::cout << *i << " ";
+	}
+	std::cout << std::endl << std::endl;
+
+	for(int i : range(l)) {
+		std::cout << i << " ";
+	}
+	std::cout << std::endl;
+
+	for(int i : range(l).reverse()) {
+		std::cout << i << " ";
+	}
+	std::cout << std::endl;
+
+
+	for(int i = 7; i != 100000000; i++) {
+		l << i;
+	}
+
+	{
+		Timer ti;
+		std::cout << range(l).size() << std::endl;
+		std::cout << ti.elapsed() * 1000 << "ms" << std::endl;
+	}
+
 	return 0;
 }

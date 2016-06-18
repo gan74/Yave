@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <n/test/TestTemplate.h>
 #include <n/core/List.h>
+#include <n/core/Range.h>
 #include <n/test/Test.h>
 
 namespace n {
@@ -66,7 +67,7 @@ class ListTest : public TestTemplate<ListTest>
 			test(c.isSorted() && d.isSorted() && !e.isSorted(), true, "Sorted test failed");
 			auto it = c.find(10);
 			test(it != c.end() || *it == 10, true, "Find test failed");
-			auto w = c.insert(d.begin(), d.end(), it);
+			auto w = c.insert(range(d.begin(), d.end()), it);
 			test(c, t, "Insert test failed");
 			test(*w, T(10), "Insert test failed");
 		}

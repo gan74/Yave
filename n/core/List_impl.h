@@ -18,6 +18,10 @@ namespace n {
 namespace core {
 
 template<typename T>
+List<T>::iterator::iterator(const const_iterator &i) : iterator(i.elem) {
+}
+
+template<typename T>
 List<T>::List() : lSize(0), tail(new ListElem()), head(tail) {
 }
 
@@ -25,6 +29,14 @@ template<typename T>
 template<typename C>
 List<T>::List(std::initializer_list<C> l) : List() {
 	for(auto x : l) {
+		append(x);
+	}
+}
+
+template<typename T>
+template<typename C, typename CC>
+List<T>::List(const C &c) : List() {
+	for(auto x : c) {
 		append(x);
 	}
 }
@@ -53,18 +65,6 @@ List<T>::~List() {
 	}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T>
 void List<T>::swap(List<T> &l) {
 	ListElem *h = head;
@@ -83,15 +83,6 @@ void List<T>::swap(List<T> &&l) {
 	swap(l);
 }
 
-
-
-
-
-
-
-
-
-
 template<typename T>
 template<typename C>
 void List<T>::append(const C &c) {
@@ -106,41 +97,17 @@ void List<T>::append(std::initializer_list<C> c) {
 	}
 }
 
-
-
-
-
-
-
-
-
 template<typename T>
 template<typename C>
 void List<T>::prepend(const C &c) {
 	prependDispatch(c, BoolToType<!ShouldInsertAsCollection<C, T>::value>());
 }
 
-
-
-
-
-
-
-
-
 template<typename T>
 template<typename C>
 void List<T>::insert(const C &c) {
 	append(c);
 }
-
-
-
-
-
-
-
-
 
 template<typename T>
 void List<T>::popFront() {
@@ -154,16 +121,6 @@ template<typename T>
 void List<T>::pop() {
 	remove(--end());
 }
-
-
-
-
-
-
-
-
-
-
 
 template<typename T>
 void List<T>::move(const_iterator from, const_iterator to) {
@@ -179,16 +136,6 @@ void List<T>::move(const_iterator from, const_iterator to) {
 	to.elem->prev = from.elem;
 }
 
-
-
-
-
-
-
-
-
-
-
 template<typename T>
 typename List<T>::iterator List<T>::remove(const_iterator t) {
 	if(t == begin()) {
@@ -203,33 +150,10 @@ typename List<T>::iterator List<T>::remove(const_iterator t) {
 	return iterator(e);
 }
 
-
-
-
-
-
-
-
-
-
 template<typename T>
 template<typename C>
 typename List<T>::iterator List<T>::insert(const C &e, const_iterator t) {
-	if(t == begin()) {
-		prepend(e);
-		return begin();
-	}
-	if(t == end()) {
-		append(e);
-		return --end();
-	}
-	ListElem *pr = t.elem->prev;
-	ListElem *ne = t.elem;
-	ListElem *n = new ListElem(e, ne, pr);
-	pr->next = n;
-	ne->prev = n;
-	lSize++;
-	return iterator(n);
+	return insertDispatch(e, t, BoolToType<ShouldInsertAsCollection<C, T>::value>());
 }
 
 template<typename T>
@@ -241,15 +165,6 @@ typename List<T>::iterator List<T>::insert(I beg, I en, const_iterator pos) {
 	return pos;
 }
 
-
-
-
-
-
-
-
-
-
 template<typename T>
 void List<T>::clear() {
 	lSize = 0;
@@ -259,15 +174,6 @@ void List<T>::clear() {
 		delete i;
 	}
 }
-
-
-
-
-
-
-
-
-
 
 template<typename T>
 template<typename C>
@@ -285,21 +191,6 @@ void List<T>::assign(I b, I e) {
 		append(*i);
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T>
 template<typename C>
@@ -322,16 +213,6 @@ List<T> &List<T>::operator=(const List<T> &l) {
 	return *this;
 }
 
-
-
-
-
-
-
-
-
-
-
 template<typename T>
 uint List<T>::size() const {
 	return lSize;
@@ -341,15 +222,6 @@ template<typename T>
 bool List<T>::isEmpty() const {
 	return !lSize;
 }
-
-
-
-
-
-
-
-
-
 
 template<typename T>
 const T &List<T>::first() const {
@@ -371,14 +243,6 @@ T &List<T>::last() {
 	return *(--end());
 }
 
-
-
-
-
-
-
-
-
 template<typename T>
 bool List<T>::isSorted() const {
 	if(isEmpty()) {
@@ -394,21 +258,10 @@ bool List<T>::isSorted() const {
 	return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 template<typename T>
 template<typename U>
 typename List<T>::iterator List<T>::findOne(const U &f, const_iterator from) {
-	for(iterator i = from.nonConst(); i != end(); ++i) {
+	for(iterator i = from; i != end(); ++i) {
 		if(f(*i)) {
 			return i;
 		}
@@ -606,6 +459,19 @@ bool List<T>::operator<(const C &l) const {
 	return size() < l.size();
 }
 
+template<typename T>
+template<typename C>
+List<T> &List<T>::operator+=(const C &l) {
+	append(l);
+	return *this;
+}
+
+template<typename T>
+template<typename C>
+List<T> &List<T>::operator<<(const C &l) {
+	append(l);
+	return *this;
+}
 
 }
 }

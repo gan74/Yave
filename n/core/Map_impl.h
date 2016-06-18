@@ -37,6 +37,11 @@ template<typename C>
 Map<T, U, Comp, Eq>::Map(std::initializer_list<C> l) : MapType(l) {
 }
 
+template<typename T, typename U, typename Comp, typename Eq>
+template<typename C, typename CC>
+Map<T, U, Comp, Eq>::Map(const C &c) : MapType(c) {
+}
+
 
 
 

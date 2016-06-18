@@ -152,6 +152,10 @@ class RBTree
 		template<typename C>
 		RBTree(std::initializer_list<C> l);
 
+		template<typename C, typename CC = typename std::enable_if<Collection<C>::isCollection>::type>
+		RBTree(const C &c);
+
+
 		~RBTree();
 
 

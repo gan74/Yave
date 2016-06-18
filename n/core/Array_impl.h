@@ -39,9 +39,9 @@ Array<T, RP>::Array(const Array<C, R> &a) : Array<T, RP>(a.size()) {
 }
 
 template<typename T, typename RP>
-template<typename I>
-Array<T, RP>::Array(I b, I e) : Array<T, RP>() {
-	assign(b, e);
+template<typename C, typename CC>
+Array<T, RP>::Array(const C &c) : Array<T, RP>(c.size()) {
+	assign(c.begin(), c.end());
 }
 
 template<typename T, typename RP>
@@ -51,13 +51,6 @@ Array<T, RP>::Array(std::initializer_list<C> l) : Array<T, RP>((l.size())) {
 		append(x);
 	}
 }
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 Array<T,RP>::Array(uint s) : Array() {
@@ -77,18 +70,6 @@ Array<T, RP>::~Array() {
 	free(data);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 template<typename C>
 Array<T, RP> &Array<T, RP>::append(const C &c) {
@@ -105,28 +86,10 @@ Array<T, RP> &Array<T, RP>::append(std::initializer_list<C> l) {
 	return *this;
 }
 
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 typename Array<T, RP>::iterator Array<T, RP>::remove(const T &e) {
 	return erase(find(e));
 }
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 typename Array<T, RP>::iterator Array<T, RP>::erase(const_iterator b) {
@@ -154,14 +117,6 @@ typename Array<T, RP>::iterator Array<T, RP>::erase(const_iterator b, const_iter
 	return const_cast<TT *>(b);
 }
 
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 template<typename I>
 typename Array<T, RP>::iterator Array<T, RP>::insert(I b, I e, iterator position) {
@@ -171,7 +126,7 @@ typename Array<T, RP>::iterator Array<T, RP>::insert(I b, I e, iterator position
 		}
 		return end();
 	}
-	Array<T, RP> buffer;
+	Array<T, RP> buffer(size());
 	buffer.assign(begin(), position);
 	buffer.insert(b, e, buffer.end());
 	uint pos = buffer.size();
@@ -193,16 +148,6 @@ typename Array<T, RP>::iterator Array<T, RP>::insert(const C &e) {
 	return end() - 1;
 }
 
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 template<typename C>
 void Array<T, RP>::assign(const C &c) {
@@ -219,16 +164,6 @@ void Array<T, RP>::assign(I b, I e) {
 	}
 	shrinkIfNeeded();
 }
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 template<typename R>
@@ -250,31 +185,12 @@ void Array<T, RP>::swap(Array<T, R> &&arr) {
 	swap(arr);
 }
 
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 void Array<T, RP>::pop() {
 	dataEnd--;
 	dataEnd->~T();
 	shrinkIfNeeded();
 }
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 uint Array<T, RP>::size() const {
@@ -291,18 +207,6 @@ bool Array<T, RP>::isEmpty() const {
 	return data == dataEnd;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 void Array<T, RP>::makeEmpty() {
 	clear(data, size());
@@ -316,18 +220,6 @@ void Array<T, RP>::clear() {
 	data = dataEnd = allocEnd = 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 const T &Array<T, RP>::operator[](uint i) const {
 	return data[i];
@@ -337,20 +229,6 @@ template<typename T, typename RP>
 T &Array<T, RP>::operator[](uint i) {
 	return data[i];
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 template<typename C>
@@ -374,44 +252,11 @@ bool Array<T, RP>::operator!=(const C &c) const {
 	return !(*this == c);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 template<typename C>
 Array<T, RP> &Array<T, RP>::operator+=(const C &e) {
 	append(e);
 	return *this;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename T, typename RP>
-template<typename C>
-Array<T, RP> Array<T, RP>::operator+(const C &e) {
-	Array<T, RP> x(*this);
-	x.append(e);
-	return x;
 }
 
 template<typename T, typename RP>
@@ -421,15 +266,13 @@ Array<T, RP> &Array<T, RP>::operator<<(const C &e) {
 	return *this;
 }
 
-
-
-
-
-
-
-
-
-
+template<typename T, typename RP>
+template<typename C>
+Array<T, RP> Array<T, RP>::operator+(const C &e) {
+	Array<T, RP> x(*this);
+	x.append(e);
+	return x;
+}
 
 template<typename T, typename RP>
 template<typename C>
@@ -451,19 +294,6 @@ Array<T, RP> &Array<T, RP>::operator=(Array<T, RP> &&arr) {
 	swap(arr);
 	return *this;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 void Array<T, RP>::setCapacity(uint cap) {
@@ -490,18 +320,6 @@ void Array<T, RP>::squeeze() {
 	setCapacityUnsafe(s, s);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 typename Array<T, RP>::iterator Array<T, RP>::getIterator(uint i) {
 	return data + i;
@@ -511,19 +329,6 @@ template<typename T, typename RP>
 typename Array<T, RP>::const_iterator Array<T, RP>::getIterator(uint i) const {
 	return const_iterator(data + i);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 typename Array<T, RP>::const_iterator Array<T, RP>::begin() const {
@@ -555,16 +360,6 @@ typename Array<T, RP>::iterator Array<T, RP>::end() {
 	return dataEnd;
 }
 
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 T &Array<T, RP>::first() {
 	return *data;
@@ -585,37 +380,10 @@ const T &Array<T, RP>::last() const {
 	return *(dataEnd - 1);
 }
 
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 bool Array<T, RP>::isValid(const_iterator i) const {
 	return i >= data && i < dataEnd;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 template<typename C>
@@ -635,21 +403,6 @@ bool Array<T, RP>::isSorted() const {
 	return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 template<typename U>
 void Array<T, RP>::foreach(const U &f) {
@@ -661,18 +414,6 @@ template<typename U>
 void Array<T, RP>::foreach(const U &f) const {
 	std::for_each(begin(), end(), f);
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 template<typename V, typename C>
@@ -691,18 +432,6 @@ template<typename V>
 void Array<T, RP>::map(const V &f) {
 	foreach([&](T &e) { e = f(e); });
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 template<typename U>
@@ -730,23 +459,6 @@ C Array<T, RP>::filtered(const U &f) const {
 	return a;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 template<typename U>
 bool Array<T, RP>::forall(const U &f) const {
@@ -757,20 +469,6 @@ bool Array<T, RP>::forall(const U &f) const {
 	}
 	return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename RP>
 template<typename U>
@@ -808,20 +506,6 @@ typename Array<T, RP>::const_iterator Array<T, RP>::find(const T &e, const_itera
 	return findOne([&](const T &t) { return t == e; }, from, to);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 template<typename U>
 uint Array<T, RP>::countAll(const U &f, const_iterator from, const_iterator to) const {
@@ -841,20 +525,6 @@ uint Array<T, RP>::count(const T &e, const_iterator from, const_iterator to) con
 	return countAll([&](const T &t) { return t == e; }, from, to);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename RP>
 template<typename V>
 bool Array<T, RP>::existsOne(const V &f, const_iterator from, const_iterator to) const {
@@ -872,7 +542,6 @@ template<typename T, typename RP>
 bool Array<T, RP>::exists(const T &e, const_iterator from, const_iterator to) const {
 	return existsOne([&](const T &t) { return t == e; }, from, to);
 }
-
 
 }
 }

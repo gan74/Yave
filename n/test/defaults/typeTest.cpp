@@ -76,14 +76,6 @@ struct TestCollection
 	static_assert(core::ShouldInsertAsCollection<T, E>::value, "TypeInfo test failure");
 };
 
-template<typename T>
-struct TestCollectionOf
-{
-	using A = core::Array<T>;
-	using S = core::Set<T>;
-	using L = core::List<T>;
-
-};
 
 class TypeTest : public TestTemplate<TypeTest>
 {
@@ -92,12 +84,13 @@ class TypeTest : public TestTemplate<TypeTest>
 			TestPrimitive<int> i;
 			TestPrimitive<int*> ip;
 
-			TestCollection<core::Map<int, int>, core::Pair<const int, int>> m;
+			TestCollection<core::Map<int, Nothing>, core::Pair<const int, Nothing>> m;
 			TestCollection<core::Array<Nothing>, Nothing> a;
 			TestCollection<core::String, char> s;
 			TestCollection<core::List<Nothing>, Nothing> l;
+			TestCollection<core::Set<Nothing>, const Nothing> st;
 
-			unused(i, ip, m, a, s, l);
+			unused(i, ip, m, a, s, l, st);
 			return true;
 		}
 };

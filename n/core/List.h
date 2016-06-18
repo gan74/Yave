@@ -51,6 +51,8 @@ class List
 	};
 
 	public:
+		class const_iterator;
+
 		class iterator
 		{
 			public:
@@ -84,8 +86,15 @@ class List
 					return t.elem == elem;
 				}
 
-				T &operator*() {
+				T &operator*() const {
 					return elem->elem;
+				}
+
+				T *operator->() const {
+					return elem->elem;
+				}
+
+				iterator(const iterator &i) : iterator(i.elem) {
 				}
 
 			private:
@@ -93,11 +102,7 @@ class List
 				iterator(ListElem *e) : elem(e) {
 				}
 
-
-				template<typename C>
-				iterator(const C &i) : iterator(i.elem) {
-				}
-
+				iterator(const const_iterator &i);
 
 				ListElem *elem;
 		};
@@ -139,16 +144,19 @@ class List
 					return elem->elem;
 				}
 
-				const_iterator(iterator i) : const_iterator(i.elem) {
+				const T *operator->() const {
+					return &elem->elem;
+				}
+
+				const_iterator(const iterator &i) : const_iterator(i.elem) {
+				}
+
+				const_iterator(const const_iterator &i) : const_iterator(i.elem) {
 				}
 
 			private:
 				friend class List;
 				const_iterator(ListElem *e) : elem(e) {
-				}
-
-				iterator nonConst() const {
-					return iterator(*this);
 				}
 
 				ListElem *elem;
@@ -160,8 +168,12 @@ class List
 		List();
 		List(List<T> &&l);
 		List(const List<T> &l);
+
 		template<typename C>
 		List(std::initializer_list<C> l);
+
+		template<typename C, typename CC = typename std::enable_if<Collection<C>::isCollection>::type>
+		List(const C &c);
 
 
 		~List();
@@ -290,21 +302,26 @@ class List
 		template<typename C>
 		bool operator<(const C &l) const;
 
+
+		template<typename C>
+		List<T> &operator+=(const C &e);
+		template<typename C>
+		List<T> &operator<<(const C &e);
+
 	private:
 		void append() {
 		}
 
 		template<typename C>
 		void appendDispatch(const C &t, TrueType) {
-			ListElem *e = new ListElem(t, tail, 0);
 			if(head == tail) {
-				head = e;
+				prependDispatch(t, TrueType());
 			} else {
-				tail->prev->next = e;
-				e->prev = tail->prev;
+				ListElem *e = new ListElem(t, tail, tail->prev);
+				tail->prev = e->prev->next = e;
+				lSize++;
 			}
-			tail->prev = e;
-			lSize++;
+
 		}
 
 		template<typename C>
@@ -316,7 +333,7 @@ class List
 
 		template<typename C>
 		void prependDispatch(const C &t, TrueType) {
-			ListElem *e = new ListElem(t, head, 0);
+			ListElem *e = new ListElem(t, head, tail);
 			head->prev = e;
 			head = e;
 			lSize++;
@@ -327,6 +344,30 @@ class List
 			for(const auto &e : c) {
 				prepend(e);
 			}
+		}
+
+		template<typename C>
+		iterator insertDispatch(const C &e, iterator t, FalseType) {
+			if(t == begin()) {
+				prepend(e);
+				return begin();
+			}
+			if(t == end()) {
+				append(e);
+				return --end();
+			}
+			ListElem *pr = t.elem->prev;
+			ListElem *ne = t.elem;
+			ListElem *n = new ListElem(e, ne, pr);
+			pr->next = n;
+			ne->prev = n;
+			lSize++;
+			return iterator(n);
+		}
+
+		template<typename C>
+		iterator insertDispatch(const C &e, iterator t, TrueType) {
+			return insert(e.begin(), e.end(), t);
 		}
 
 

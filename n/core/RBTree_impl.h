@@ -14,10 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
-
 namespace n {
 namespace core {
-
 
 template<typename T, typename Comp, typename Eq>
 RBTree<T, Comp, Eq>::RBTree() : guard(new Node()), root(guard), setSize(0) {
@@ -43,24 +41,19 @@ RBTree<T, Comp, Eq>::RBTree(std::initializer_list<C> l) : RBTree() {
 	}
 }
 
-
-
-
-
-
+template<typename T, typename Comp, typename Eq>
+template<typename C, typename CC>
+RBTree<T, Comp, Eq>::RBTree(const C &c) : RBTree() {
+	for(auto x : c) {
+		insert(x);
+	}
+}
 
 template<typename T, typename Comp, typename Eq>
 RBTree<T, Comp, Eq>::~RBTree() {
 	clear();
 	delete guard;
 }
-
-
-
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 typename RBTree<T, Comp, Eq>::const_iterator RBTree<T, Comp, Eq>::begin() const {
@@ -91,17 +84,6 @@ template<typename T, typename Comp, typename Eq>
 typename RBTree<T, Comp, Eq>::const_iterator RBTree<T, Comp, Eq>::cend() const {
 	return end();
 }
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 template<typename U, typename C, typename E>
@@ -137,27 +119,10 @@ typename RBTree<T, Comp, Eq>::const_iterator RBTree<T, Comp, Eq>::find(const U &
 	return end();
 }
 
-
-
-
-
-
-
 template<typename T, typename Comp, typename Eq>
 bool RBTree<T, Comp, Eq>::exists(const T &t) const {
 	return find(t) != end();
 }
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 template<typename C>
@@ -165,32 +130,12 @@ typename RBTree<T, Comp, Eq>::iterator RBTree<T, Comp, Eq>::insert(const C &c) {
 	return insertDispatch(c, typename ShouldInsertAsCollection<C, T>::type());
 }
 
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename Comp, typename Eq>
 void RBTree<T, Comp, Eq>::clear() {
 	clearOne(root);
 	root = guard->children[0] = guard->children[1] = guard->parent = guard;
 	setSize = 0;
 }
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 typename RBTree<T, Comp, Eq>::iterator RBTree<T, Comp, Eq>::remove(iterator it) {
@@ -238,18 +183,6 @@ typename RBTree<T, Comp, Eq>::iterator RBTree<T, Comp, Eq>::remove(iterator it) 
 	return it;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename Comp, typename Eq>
 uint RBTree<T, Comp, Eq>::size() const {
 	return setSize;
@@ -259,20 +192,6 @@ template<typename T, typename Comp, typename Eq>
 bool RBTree<T, Comp, Eq>::isEmpty() const {
 	return !setSize;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 void RBTree<T, Comp, Eq>::swap(RBTree<T, Comp, Eq> &o) {
@@ -286,19 +205,6 @@ void RBTree<T, Comp, Eq>::swap(RBTree<T, Comp, Eq> &o) {
 	guard = g;
 	setSize = s;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 RBTree<T, Comp, Eq> &RBTree<T, Comp, Eq>::operator=(const RBTree<T, Comp, Eq> &o) {
@@ -332,17 +238,6 @@ RBTree<T, Comp, Eq> RBTree<T, Comp, Eq>::operator+(const RBTree<T, Comp, Eq> &e)
 	return a;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename Comp, typename Eq>
 template<typename C>
 RBTree<T, Comp, Eq> &RBTree<T, Comp, Eq>::operator+=(const C &e) {
@@ -356,15 +251,6 @@ RBTree<T, Comp, Eq> &RBTree<T, Comp, Eq>::operator<<(const C &e) {
 	insert(e);
 	return *this;
 }
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 template<typename C>
@@ -405,19 +291,6 @@ bool RBTree<T, Comp, Eq>::operator<(const C &c) const {
 	return size() < c.size();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename Comp, typename Eq>
 template<typename U>
 void RBTree<T, Comp, Eq>::foreach(const U &f) {
@@ -429,17 +302,6 @@ template<typename U>
 void RBTree<T, Comp, Eq>::foreach(const U &f) const {
 	std::for_each(begin(), end(), f);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 template<typename U>
@@ -465,10 +327,6 @@ template<typename V>
 void RBTree<T, Comp, Eq>::map(const V &f) {
 	operator=(mapped(f));
 }
-
-
-
-
 
 template<typename T, typename Comp, typename Eq>
 template<typename U, typename C>

@@ -35,7 +35,6 @@ QMAKE_LFLAGS += $$WFLAGS
 QMAKE_CXXFLAGS += -pedantic
 CONFIG(debug, debug|release) {
 	DEFINES += N_DEBUG
-	#DEFINES += N_AUTO_TEST
 } else {
 	QMAKE_CXXFLAGS += -O3 -flto
 	QMAKE_LFLAGS += -O3 -flto
