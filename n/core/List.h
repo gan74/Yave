@@ -88,10 +88,6 @@ class List
 					return elem->elem;
 				}
 
-				const T &operator*() const {
-					return elem->elem;
-				}
-
 			private:
 				friend class List;
 				iterator(ListElem *e) : elem(e) {
@@ -160,7 +156,7 @@ class List
 
 
 		typedef T Element;
-		
+
 		List();
 		List(List<T> &&l);
 		List(const List<T> &l);
@@ -172,7 +168,7 @@ class List
 
 
 		void swap(List<T> &l);
-
+		void swap(List<T> &&l);
 
 		template<typename C>
 		void append(const C &c);
@@ -229,72 +225,61 @@ class List
 
 		bool isSorted() const;
 
+
+
+
+
 		template<typename U>
 		iterator findOne(const U &f, const_iterator from);
+		iterator find(const T &e);
+		iterator find(const T &e, const_iterator from);
 
 		template<typename U>
 		const_iterator findOne(const U &f, const_iterator from) const;
+		const_iterator find(const T &e) const;
+		const_iterator find(const T &e, const_iterator from) const;
+
 
 		template<typename U>
 		uint countAll(const U &f) const;
 
+		uint count(const T &e) const;
+
+
 		template<typename V>
 		bool existsOne(const V &f) const;
 
-		template<typename U>
-		iterator find(const U &f, iterator from);
-
-		template<typename U>
-		const_iterator find(const U &f, const_iterator from) const;
-		template<typename U>
-		uint count(const U &f) const;
-
-		template<typename V>
-		bool exists(const V &f) const;
-
-		iterator find(const T &e);
-
-		iterator find(const T &e, const_iterator from);
-		const_iterator find(const T &e) const;
-
-		const_iterator find(const T &e, const_iterator from) const;
-
-		uint count(const T &e) const;
-
 		bool exists(const T &e) const;
+
+
 		template<typename U>
 		void foreach(const U &f);
-
 		template<typename U>
 		void foreach(const U &f) const;
 
-		template<typename V, typename C = List<typename std::result_of<V(const T &)>::type>>
-		C mapped(const V &f) const;
-
-		template<typename U, typename C = List<T>>
-		C filtered(const U &f) const;
-
-		template<typename C = List<T>>
-		C reversed() const;
 
 		template<typename U>
 		bool forall(const U &f) const;
 
 		template<typename V>
 		void map(const V &f);
+		template<typename V, typename C = List<typename std::result_of<V(const T &)>::type>>
+		C mapped(const V &f) const;
+
+
 		template<typename U>
 		void filter(const U &f);
+		template<typename U, typename C = List<T>>
+		C filtered(const U &f) const;
 
-		const_iterator begin() const;
 
-		const_iterator end() const;
-
-		const_iterator cbegin() const;
-
-		const_iterator cend() const;
 		iterator begin();
-
 		iterator end();
+		const_iterator begin() const;
+		const_iterator end() const;
+		const_iterator cbegin() const;
+		const_iterator cend() const;
+
 
 		template<typename C>
 		bool operator==(const C &l) const;

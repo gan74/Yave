@@ -247,15 +247,7 @@ void Array<T, RP>::swap(Array<T, R> &arr) {
 template<typename T, typename RP>
 template<typename R>
 void Array<T, RP>::swap(Array<T, R> &&arr) {
-	T *e = arr.dataEnd;
-	T *a = arr.allocEnd;
-	T *d = arr.data;
-	arr.dataEnd = dataEnd;
-	arr.allocEnd = allocEnd;
-	arr.data = data;
-	dataEnd = e;
-	allocEnd = a;
-	data = d;
+	swap(arr);
 }
 
 

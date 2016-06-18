@@ -33,7 +33,6 @@ class Collection
 			typedef details::NullType const_iterator;
 			typedef details::NullType iterator;
 			typedef details::NullType type;
-			typedef details::NullType SubCollection;
 		};
 
 		template<typename U>
@@ -70,7 +69,7 @@ class Collection
 		};
 };
 
-template<typename C, typename ElementType>
+template<typename PotentialCollection, typename ElementType>
 struct ShouldInsertAsCollection
 {
 	template<typename E, bool Col>
@@ -86,11 +85,13 @@ struct ShouldInsertAsCollection
 	};
 
 	public:
-		static constexpr bool isCollectionOfCompatibles = Compat<C, !std::is_same<C, ElementType>::value && Collection<C>::isCollection>::value;
-		static constexpr bool value = !std::is_same<C, ElementType>::value &&
-										 !(TypeConversion<C, const ElementType>::exists ||
-										   (TypeConversion<C, const ElementType>::canBuild &&
-											!isCollectionOfCompatibles));
+		static constexpr bool isCollectionOfCompatibles = Compat<PotentialCollection, !std::is_same<PotentialCollection, ElementType>::value && Collection<PotentialCollection>::isCollection>::value;
+		static constexpr bool isElementType = std::is_same<PotentialCollection, ElementType>::value;
+		static constexpr bool canConvertToElement = TypeConversion<PotentialCollection, const ElementType>::exists;
+		static constexpr bool canBuildElementFrom = TypeConversion<PotentialCollection, const ElementType>::canBuild && !isCollectionOfCompatibles;
+
+
+		static constexpr bool value = !(isElementType || canConvertToElement || (canBuildElementFrom && !isCollectionOfCompatibles));
 
 		typedef BoolToType<value> type;
 

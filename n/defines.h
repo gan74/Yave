@@ -21,10 +21,10 @@ namespace n {
 
 class Nothing;
 
-Nothing fatal(const char *msg, const char *file = 0, int line = 0);
+void fatal(const char *msg, const char *file = 0, int line = 0);
 
-template<typename T>
-void unused(T &) {}
+template<typename... A>
+void unused(A...) {}
 
 
 namespace core {

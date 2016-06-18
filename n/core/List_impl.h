@@ -78,6 +78,11 @@ void List<T>::swap(List<T> &l) {
 	l.lSize = s;
 }
 
+template<typename T>
+void List<T>::swap(List<T> &&l) {
+	swap(l);
+}
+
 
 
 
@@ -446,30 +451,6 @@ bool List<T>::existsOne(const V &f) const {
 }
 
 template<typename T>
-template<typename U>
-typename List<T>::iterator List<T>::find(const U &f, iterator from) {
-	return findOne(f, from);
-}
-
-template<typename T>
-template<typename U>
-typename List<T>::const_iterator List<T>::find(const U &f, const_iterator from) const {
-	return findOne(f, from);
-}
-
-template<typename T>
-template<typename U>
-uint List<T>::count(const U &f) const {
-	return countAll(f);
-}
-
-template<typename T>
-template<typename V>
-bool List<T>::exists(const V &f) const {
-	return existsOne(f);
-}
-
-template<typename T>
 typename List<T>::iterator List<T>::find(const T &e) {
 	return findOne([&](const T &t) { return t == e; }, begin());
 }
@@ -529,14 +510,6 @@ C List<T>::filtered(const U &f) const {
 		}
 	});
 	return a;
-}
-
-template<typename T>
-template<typename C>
-C List<T>::reversed() const {
-	C re(*this);
-	re.reverse();
-	return re;
 }
 
 template<typename T>

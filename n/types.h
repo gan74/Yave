@@ -63,31 +63,19 @@ namespace details {
 	extern uint typeId;
 }
 
-// be wary of templates therefor be wary of bullshit
 
-template<typename O, typename...>
+template<typename O>
 O &makeOne();
 
 struct Nothing
 {
 	template<typename... Args>
-	Nothing(Args...) {}
+	explicit Nothing(Args...) {}
 
 	template<typename... Args>
 	Nothing operator()(Args...) const {
 		return *this;
 	}
-
-	template<typename T>
-	operator T() const {
-		return fatal("Nothing used.");
-	}
-};
-
-template<int I>
-struct IntToType
-{
-	static constexpr bool value = I;
 };
 
 template<bool B>
@@ -116,6 +104,8 @@ struct BoolToType<true>
 
 typedef BoolToType<false> FalseType;
 typedef BoolToType<true> TrueType;
+
+
 
 template<bool I, typename Then, typename Else>
 struct If
@@ -155,28 +145,6 @@ class className { \
 };
 
 #define N_GEN_TYPE_HAS_MEMBER(className, member) N_GEN_TYPE_HAS_MEMBER2(className, member)
-/*template<typename HasMemberType> \
-class className { \
-	typedef byte Yes[1]; \
-	typedef byte No[2]; \
-	template<typename U, bool B> \
-	struct SFINAE { \
-		struct Fallback { int member; }; \
-		struct Derived : HasMemberType, Fallback { }; \
-		template<class V> \
-		static No &test(decltype(V::member) *); \
-		template<typename V> \
-		static Yes &test(V *); \
-		static constexpr bool value = sizeof(test<Derived>(0)) == sizeof(Yes); \
-	}; \
-	template<typename U> \
-	struct SFINAE<U, true> { \
-		static constexpr bool value = false; \
-	}; \
-	static constexpr bool isPrimitive = !std::is_class<HasMemberType>::value && !std::is_union<HasMemberType>::value; \
-	public: \
-		static constexpr bool value = SFINAE<HasMemberType, isPrimitive>::value; \
-};*/
 
 
 #define N_GEN_TYPE_HAS_METHOD(className, method) \
@@ -197,27 +165,6 @@ class className { \
 	public: \
 		static constexpr bool value = SFINAE<HasMethodType, std::is_fundamental<HasMethodType>::value>::value; \
 };
-
-template<typename T>
-class StrongTypeHelper
-{
-	public:
-		StrongTypeHelper(const T &e) : t(e){
-		}
-
-		const T &get() const {
-			return t;
-		}
-
-	private:
-		const T &t;
-};
-
-#define N_GEN_CLASS_OP(cl, op) \
-template<typename T \
-/*, typename X = typename std::enable_if<!n::TypeConversion<T, cl>::exists>::type*/> \
-decltype(n::makeOne<cl>() op n::makeOne<cl>()) \
-operator op(const T &i, const n::StrongTypeHelper<cl> &s) { return (cl(i) op s.get()); }
 
 namespace details {
 	N_GEN_TYPE_HAS_MEMBER(IsConstIterableInternal, const_iterator)
@@ -260,23 +207,26 @@ namespace details {
 	};
 
 
-	template<typename T, bool P>
-	struct TypeContentInternal // P = false
+	template<typename T, bool Ptr, bool Deref>
+	struct TypeContentInternal // false false
 	{
 		typedef NullType type;
 	};
 
 	template<typename T>
-	struct TypeContentInternal<T *, true>
+	struct TypeContentInternal<T *, true, true>
 	{
 		typedef T type;
 	};
 
 	template<typename T>
-	struct TypeContentInternal<T, false>
+	struct TypeContentInternal<T, false, true>
 	{
 		typedef decltype((reinterpret_cast<T *>(0))->operator*()) type;
 	};
+
+
+
 
 	template<typename T, bool P>
 	struct IsDereferenceable // P = false
@@ -294,7 +244,7 @@ namespace details {
 	template<typename T>
 	struct IsDereferenceable<T, true>
 	{
-		static constexpr bool value = false;
+		static constexpr bool value = std::is_pointer<T>::value;
 	};
 
 	template<typename T, bool B>
@@ -590,7 +540,7 @@ const TypeData TypeInfo<T[N]>::type = typeid(T[N]);
 template<typename T>
 struct TypeContent
 {
-	typedef typename details::TypeContentInternal<T, TypeInfo<T>::isPrimitive || !TypeInfo<T>::isDereferenceable>::type type;
+	using type = typename details::TypeContentInternal<T, TypeInfo<T>::isPointer, TypeInfo<T>::isDereferenceable>::type;
 };
 
 

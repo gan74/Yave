@@ -22,10 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
-Nothing fatal(const char *msg, const char *file, int line) {
+void fatal(const char *msg, const char *file, int line) {
 	logMsg(msg + (file ? core::String(" in file ") + file + (line ? core::String(" at line ") + line : core::String()) : core::String()), ErrorLog);
 	exit(1);
-	return Nothing();
 }
 
 uint uniqueId() {
