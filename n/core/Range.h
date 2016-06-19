@@ -25,7 +25,7 @@ template<typename T>
 class ValueIterator
 {
 	public:
-		ValueIterator(const T &t, const T &i) : value(t), incr(i) {
+		ValueIterator(const T &t, bool rev = false) : value(t), reverse(rev) {
 		}
 
 		ValueIterator<T> &operator++() {
@@ -68,14 +68,22 @@ class ValueIterator
 
 	private:
 		T value;
-		T incr;
+		bool reverse;
 
 		void inc() {
-			value = value + incr;
+			if(reverse) {
+				--value;
+			} else {
+				++value;
+			}
 		}
 
 		void dec() {
-			value = value - incr;
+			if(reverse) {
+				++value;
+			} else {
+				--value;
+			}
 		}
 };
 
@@ -87,6 +95,9 @@ class Range
 	constexpr static bool hasFastSize = CanSub<I>::value || TypeInfo<I>::isPrimitive;
 
 	public:
+		using Element = typename TypeContent<Range<I>>::type;
+
+
 		Range(const I &b, const I &e) : beg(b), en(e) {
 		}
 
@@ -137,15 +148,8 @@ namespace details {
 
 template<typename I, typename RI = ValueIterator<I>>
 Range<RI> range(const I &b, const I &e, TrueType) {
-	struct Init { I i; };
-	Init init = Init();
-	I incr = init.i;
-	if(b < e) {
-		++incr;
-	} else {
-		--incr;
-	}
-	return Range<RI>(RI(b, incr), RI(e, incr));
+	bool r = e < b;
+	return Range<RI>(RI(b, r), RI(e, r));
 }
 
 template<typename I>

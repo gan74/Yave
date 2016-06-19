@@ -163,7 +163,7 @@ class List
 		};
 
 
-		typedef T Element;
+		using Element = T;
 
 		List();
 		List(List<T> &&l);
@@ -236,8 +236,6 @@ class List
 
 
 		bool isSorted() const;
-
-
 
 
 

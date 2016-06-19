@@ -24,7 +24,7 @@ namespace core {
 
 class Timer
 {
-	typedef std::chrono::duration<double, std::nano> Nano;
+	using Nano = std::chrono::duration<double, std::nano>;
 
 	public:
 		Timer();

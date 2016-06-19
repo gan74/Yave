@@ -29,7 +29,7 @@ class Promise;
 template<typename T>
 class SharedFuture
 {
-	typedef typename VoidToNothing<T>::type TI;
+	using TI = typename VoidToNothing<T>::type;
 	public:
 		enum State
 		{

@@ -134,7 +134,7 @@ class Functor<R(Args...)>
 	};
 
 	public:
-		typedef R ReturnType;
+		using ReturnType = R;
 
 		template<typename T>
 		Functor(const T &t) : func(voidify(t, BoolToType<std::is_void<R>::value>())) {

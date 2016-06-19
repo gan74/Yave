@@ -77,9 +77,9 @@ class Array : public ResizePolicy// Be SUPER careful when adding collections dir
 {
 	using TT = typename TypeInfo<T>::nonConst;
 	public:
-		typedef T * iterator;
-		typedef T const * const_iterator;
-		typedef T Element;
+		using iterator = T *;
+		using const_iterator = T const *;
+		using Element = T;
 
 		Array();
 		explicit Array(uint s);

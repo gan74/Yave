@@ -26,13 +26,13 @@ namespace details {
 	template<typename T, bool B>
 	struct ToFloatingPoint
 	{
-		typedef double type;
+		using type = double;
 	};
 
 	template<typename T>
 	struct ToFloatingPoint<T, true>
 	{
-		typedef T type;
+		using type = T;
 	};
 
 	template<typename T, typename U, bool A, bool B>
@@ -79,7 +79,7 @@ namespace details {
 template<typename T>
 struct ToFloatingPoint
 {
-		typedef typename details::ToFloatingPoint<T, std::is_floating_point<T>::value>::type type;
+		using type = typename details::ToFloatingPoint<T, std::is_floating_point<T>::value>::type;
 };
 
 static constexpr double pi = 3.1415926535897932384626433832795028841971693993751058;
@@ -91,13 +91,13 @@ static constexpr typename ToFloatingPoint<T>::type epsilon() {
 
 template<typename T>
 typename ToFloatingPoint<T>::type toDeg(T a) {
-	typedef typename ToFloatingPoint<T>::type type;
+	using type = typename ToFloatingPoint<T>::type;
 	return type(a) * type(180) / type(pi);
 }
 
 template<typename T>
 typename ToFloatingPoint<T>::type toRad(T a) {
-	typedef typename ToFloatingPoint<T>::type type;
+	using type = typename ToFloatingPoint<T>::type;
 	return type(a) / type(180) * type(pi);
 }
 

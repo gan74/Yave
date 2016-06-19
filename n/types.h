@@ -24,18 +24,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace n {
 
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
+using uint8 = uint8_t;
+using uint16 = uint16_t;
+using uint32 = uint32_t;
+using uint64 = uint64_t;
 
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
+using int8 = int8_t;
+using int16 = int16_t;
+using int32 = int32_t;
+using int64 = int64_t;
 
-typedef uint8_t byte;
-typedef size_t uint;
+using byte = uint8_t;
+using uint = size_t;
 
 
 
@@ -102,22 +102,22 @@ struct BoolToType<true>
 	}
 };
 
-typedef BoolToType<false> FalseType;
-typedef BoolToType<true> TrueType;
+using FalseType = BoolToType<false>;
+using TrueType = BoolToType<true>;
 
 
 
 template<bool I, typename Then, typename Else>
 struct If
 {
-	typedef Then type;
+	using type = Then ;
 };
 
 
 template<typename Then, typename Else>
 struct If<false, Then, Else>
 {
-	typedef Else type;
+	using type = Else;
 };
 
 #define N_GEN_TYPE_HAS_MEMBER2(className, member) \
@@ -226,26 +226,23 @@ namespace details {
 		static constexpr bool value = IsConstIterableDispatch<T, IsConstIterableInternal<T>::value>::value;
 	};
 
-
 	template<typename T, bool Ptr, bool Deref>
 	struct TypeContentInternal // false false
 	{
-		typedef NullType type;
+		using type = NullType;
 	};
 
 	template<typename T>
 	struct TypeContentInternal<T *, true, true>
 	{
-		typedef T type;
+		using type = T;
 	};
 
 	template<typename T>
 	struct TypeContentInternal<T, false, true>
 	{
-		typedef decltype((reinterpret_cast<T *>(0))->operator*()) type;
+		using type = decltype((reinterpret_cast<T *>(0))->operator*());
 	};
-
-
 
 
 	template<typename T, bool P>
@@ -373,10 +370,10 @@ struct TypeInfo
 
 	static const TypeData type;
 
-	typedef T nonRef;
-	typedef T nonConst;
-	typedef T nonPtr;
-	typedef T decayed;
+	using nonRef = T;
+	using nonConst = T;
+	using nonPtr = T;
+	using decayed = T;
 };
 
 #undef N_HAS_CPY_CTOR
@@ -400,10 +397,10 @@ struct TypeInfo<T *>
 
 	static const TypeData type;
 
-	typedef typename TypeInfo<T>::nonRef *nonRef;
-	typedef T* nonConst;
-	typedef T nonPtr;
-	typedef typename TypeInfo<T>::decayed decayed;
+	using nonRef = typename TypeInfo<T>::nonRef *;
+	using nonConst = T *;
+	using nonPtr = T;
+	using decayed = typename TypeInfo<T>::decayed;
 };
 
 template<typename T>
@@ -424,10 +421,10 @@ struct TypeInfo<const T>
 
 	static const TypeData type;
 
-	typedef const typename TypeInfo<T>::nonRef nonRef;
-	typedef T nonConst;
-	typedef const typename TypeInfo<T>::nonPtr nonPtr;
-	typedef typename TypeInfo<T>::decayed decayed;
+	using nonRef = const typename TypeInfo<T>::nonRef;
+	using nonConst = T;
+	using nonPtr = const typename TypeInfo<T>::nonPtr;
+	using decayed = typename TypeInfo<T>::decayed;
 };
 
 template<typename T>
@@ -448,10 +445,10 @@ struct TypeInfo<T &>
 
 	static const TypeData type;
 
-	typedef T nonRef;
-	typedef T& nonConst;
-	typedef typename TypeInfo<T>::nonPtr &nonPtr;
-	typedef typename TypeInfo<T>::decayed decayed;
+	using nonRef = T;
+	using nonConst = T&;
+	using nonPtr = typename TypeInfo<T>::nonPtr &;
+	using decayed = typename TypeInfo<T>::decayed;
 };
 
 template<typename T>
@@ -472,10 +469,10 @@ struct TypeInfo<T[]>
 
 	static const TypeData type;
 
-	typedef T nonRef;
-	typedef typename TypeInfo<T>::nonConst nonConst;
-	typedef typename TypeInfo<T>::nonPtr nonPtr;
-	typedef typename TypeInfo<T>::decayed decayed;
+	using nonRef = T;
+	using nonConst = typename TypeInfo<T>::nonConst;
+	using nonPtr = typename TypeInfo<T>::nonPtr;
+	using decayed = typename TypeInfo<T>::decayed;
 };
 
 template<typename T, uint N>
@@ -496,10 +493,10 @@ struct TypeInfo<T[N]>
 
 	static const TypeData type;
 
-	typedef T nonRef;
-	typedef typename TypeInfo<T>::nonConst &nonConst;
-	typedef typename TypeInfo<T>::nonPtr &nonPtr;
-	typedef typename TypeInfo<T>::decayed decayed;
+	using nonRef = T;
+	using nonConst = typename TypeInfo<T>::nonConst &;
+	using nonPtr = typename TypeInfo<T>::nonPtr &;
+	using decayed = typename TypeInfo<T>::decayed;
 };
 
 template<typename T, typename... Args>

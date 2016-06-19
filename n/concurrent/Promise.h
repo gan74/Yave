@@ -26,7 +26,7 @@ namespace concurrent {
 template<typename T>
 class Promise
 {
-	typedef typename VoidToNothing<T>::type TI;
+	using TI typename VoidToNothing<T>::type;
 	public:
 		Promise() : future(*this) {
 		}

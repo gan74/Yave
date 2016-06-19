@@ -26,7 +26,7 @@ template<typename T = float>
 class ConvexVolume : public Volume<T>
 {
 	public:
-		typedef const Plane<T> * const_iterator;
+		using const_iterator = const Plane<T> *;
 
 		ConvexVolume(const core::Array<Plane<T>> &pls) : count(pls.size()), planes(new Plane<T>[count]){
 			for(uint i = 0; i != count; i++) {

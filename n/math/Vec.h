@@ -47,8 +47,8 @@ class Vec
 
 
 	public:
-		typedef T * iterator;
-		typedef const T *const_iterator;
+		using iterator = T *;
+		using const_iterator = const T *;
 
 		template<typename U, typename V, typename... Args>
 		Vec(U x, V y, Args... args) {
@@ -404,21 +404,22 @@ class Vec
 };
 
 
-typedef Vec<2> Vec2;
-typedef Vec<3> Vec3;
-typedef Vec<4> Vec4;
+using Vec2 = Vec<2>;
+using Vec3 = Vec<3>;
+using Vec4 = Vec<4>;
 
-typedef Vec<2, double> Vec2d;
-typedef Vec<3, double> Vec3d;
-typedef Vec<4, double> Vec4d;
+using Vec2d = Vec<2, double>;
+using Vec3d = Vec<3, double>;
+using Vec4d = Vec<4, double>;
 
-typedef Vec<2, int> Vec2i;
-typedef Vec<3, int> Vec3i;
-typedef Vec<4, int> Vec4i;
+using Vec2i = Vec<2, int>;
+using Vec3i = Vec<3, int>;
+using Vec4i = Vec<4, int>;
 
-typedef Vec<2, uint> Vec2ui;
-typedef	Vec<3, uint> Vec3ui;
-typedef Vec<4, uint> Vec4ui;
+using Vec2ui = Vec<2, uint>;
+using Vec3ui = Vec<3, uint>;
+using Vec4ui = Vec<4, uint>;
+
 
 }
 }

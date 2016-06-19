@@ -61,8 +61,7 @@ int main(int, char **) {
 	}
 	std::cout << std::endl;
 
-
-	for(int i : range(1, 7).reverse()) {
+	for(int i : range(1, -5).reverse()) {
 		std::cout << i << " ";
 	}
 	std::cout << std::endl;

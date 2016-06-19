@@ -27,8 +27,8 @@ class Atomic : public std::atomic<T>
 		}
 };
 
-typedef Atomic<uint> auint;
-typedef Atomic<bool> abool;
+using auint = Atomic<uint>;
+using abool = Atomic<bool>;
 
 template<typename T>
 using AtomicPtr = Atomic<T *>;

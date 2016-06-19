@@ -29,12 +29,12 @@ namespace assets {
 template<typename T>
 class AssetPtrStorage
 {
-	typedef const T *ConstPtr;
+	using ConstPtr = const T *;
 
 	#ifndef N_32BITS
-	typedef concurrent::Atomic<ConstPtr> PtrContainer;
+	using PtrContainer = concurrent::Atomic<ConstPtr>;
 	#else
-	typedef ConstPtr PtrContainer;
+	using PtrContainer = ConstPtr;
 	#endif
 
 	public:
@@ -80,8 +80,8 @@ template<typename T>
 class AssetPtr : public core::SmartPtr<AssetPtrStorage<T>, concurrent::auint>
 {
 	public:
-		typedef AssetPtrStorage<T> PtrType;
-		typedef typename core::SmartPtr<PtrType, concurrent::auint> InternalType;
+		using PtrType = AssetPtrStorage<T> ;
+		using InternalType = typename core::SmartPtr<PtrType, concurrent::auint>;
 
 	private:
 		static const InternalType invalidPtr;
@@ -107,9 +107,10 @@ class AssetManager;
 template<typename T>
 class Asset
 {
-	typedef const T *ConstPtr;
+	using ConstPtr = const T *;
 	public:
-		typedef T AssetType;
+		using AssetType = T;
+		
 		~Asset() {
 		}
 

@@ -26,7 +26,7 @@ template<uint N, typename T = float>
 class StaticConvexVolume final : public Volume<T>
 {
 	public:
-		typedef const Plane<T> * const_iterator;
+		using const_iterator = const Plane<T> *;
 
 		StaticConvexVolume(Plane<T> pls[N]) {
 			for(uint i = 0; i != N; i++) {

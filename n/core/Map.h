@@ -49,8 +49,8 @@ class Map : public RBTree<Pair<const T, U>, details::MapOp<const T, U, Comp>, de
 		}
 	};
 
-	typedef MapFindOp<Eq> MapFindEq;
-	typedef MapFindOp<Comp> MapFindComp;
+	using MapFindEq = MapFindOp<Eq>;
+	using MapFindComp = MapFindOp<Comp>;
 
 	public:
 		class iterator : public MapType::iterator
@@ -74,8 +74,8 @@ class Map : public RBTree<Pair<const T, U>, details::MapOp<const T, U, Comp>, de
 
 		};
 
-		typedef typename MapType::const_iterator const_iterator;
-		typedef Pair<const T, U> Element;
+		using const_iterator = typename MapType::const_iterator;
+		using Element = Pair<const T, U>;
 
 
 

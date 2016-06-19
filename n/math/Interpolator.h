@@ -43,11 +43,11 @@ class Interpolator
 template<typename T, typename K = float>
 class LinearInterpolator : public Interpolator<T, K>
 {
-	typedef core::Pair<K, T> E;
-	typedef core::Array<E, core::OptimalArrayResizePolicy> Storage;
+	using E = core::Pair<K, T> ;
+	using Storage = core::Array<E, core::OptimalArrayResizePolicy>;
 
 	public:
-		typedef E Element;
+		using Element = E;
 
 		LinearInterpolator(const core::Array<E> &controlPts) : Interpolator<T, K>(), pts(controlPts) {
 		}

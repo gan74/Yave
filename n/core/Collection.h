@@ -27,38 +27,40 @@ template<typename T>
 class Collection
 {
 	private:
-		template<typename U, bool CI, bool NCI> // false, false
-		struct CollectionInternal
+		struct NotACollection
 		{
-			typedef details::NullType const_iterator;
-			typedef details::NullType iterator;
-			typedef details::NullType type;
+			using const_iterator = details::NullType;
+			using iterator = details::NullType;
+			using type = details::NullType;
 		};
 
 		template<typename U>
-		struct CollectionInternal<U, true, true>
+		struct NonConstCollection
 		{
 			using const_iterator = typename U::const_iterator;
 			using iterator = typename U::iterator;
-			typedef typename TypeContent<iterator>::type type;
+			using type = typename TypeContent<iterator>::type;
 		};
 
 		template<typename U>
-		struct CollectionInternal<U, true, false>
+		struct ConstCollection
 		{
 			using const_iterator = typename U::const_iterator;
-			typedef const_iterator iterator;
-			typedef typename TypeContent<const_iterator>::type type;
+			using iterator = const_iterator;
+			using type = typename TypeContent<const_iterator>::type;
 		};
 
-		typedef CollectionInternal<T, TypeInfo<T>::isIterable, TypeInfo<T>::isNonConstIterable> InternalType;
+		using InternalType = typename If<TypeInfo<T>::isNonConstIterable,
+										  NonConstCollection<T>,
+										  typename If<TypeInfo<T>::isIterable, ConstCollection<T>, NotACollection>::type
+										>::type;
 
 		Collection() = delete;
 
 	public:
-		typedef typename InternalType::const_iterator const_iterator;
-		typedef typename InternalType::iterator iterator;
-		typedef typename InternalType::type Element;
+		using const_iterator = typename InternalType::const_iterator;
+		using iterator = typename InternalType::iterator;
+		using Element = typename InternalType::type;
 
 		static constexpr bool isCollection = !std::is_same<Element, details::NullType>::value;
 
@@ -93,7 +95,7 @@ struct ShouldInsertAsCollection
 
 		static constexpr bool value = !(isElementType || canConvertToElement || (canBuildElementFrom && !isCollectionOfCompatibles));
 
-		typedef BoolToType<value> type;
+		using type = BoolToType<value>;
 
 };
 
