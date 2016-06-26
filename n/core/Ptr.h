@@ -50,13 +50,13 @@ class Ptr : NonCopyable
 			return ptr;
 		}
 
-		operator T *() {
+		/*operator T *() {
 			return ptr;
 		}
 
 		operator T const *() const{
 			return ptr;
-		}
+		}*/
 
 		operator void *() {
 			return ptr;
@@ -66,13 +66,13 @@ class Ptr : NonCopyable
 			return ptr;
 		}
 
-		bool operator==(const T * const t) const {
+		/*bool operator==(const T * const t) const {
 			return t == ptr;
 		}
 
 		bool operator!=(const T * const t) const {
 			return t != ptr;
-		}
+		}*/
 
 		bool operator<(const T * const t) const {
 			return ptr < t;
@@ -86,9 +86,9 @@ class Ptr : NonCopyable
 			return isNull();
 		}
 
-		explicit operator bool() const {
+		/*explicit operator bool() const {
 			return !isNull();
-		}
+		}*/
 
 		bool isNull() const {
 			return !ptr;
