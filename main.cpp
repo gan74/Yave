@@ -3,28 +3,39 @@
 #include <vector>
 #include <y/utils.h>
 #include <y/core/Range.h>
+#include <y/test/test.h>
 
 using namespace y;
 using namespace core;
-using namespace wildcard;
 
 template<typename T>
 void print(T t) {
 	std::cout << t << " ";
 }
 
-void test_range() {
-	std::cout << "0..10" << std::endl;
-	range(0, 10).foreach(print<int>);
-	std::cout << std::endl << std::endl;
+test_func("works test") {
+	return true;
+}
 
-	std::cout << "10..0" << std::endl;
-	range(10, 0).foreach(print<int>);
-	std::cout << std::endl << std::endl;
+test_func("works test") {
+	return true;
+}
 
-	std::cout << "0..10 % 2" << std::endl;
-	range(0, 10).map([](int i) { return i % 2; }).foreach(print<int>);
-	std::cout << std::endl << std::endl;
+test_func("works test") {
+	return true;
+}
+
+test_func("works test") {
+	return true;
+}
+
+test_func("works test") {
+	return true;
+}
+
+
+test_func("fails test") {
+	return false;
 }
 
 template<typename T>

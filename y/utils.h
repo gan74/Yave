@@ -16,15 +16,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_UTILS_H
 #define Y_UTILS_H
 
+#include "defines.h"
+#include <cstdint>
 #include <utility>
 #include <vector>
 #include <y/utils/deref.h>
 
 namespace y {
-
-template<typename T>
-using Vec = std::vector<T>;
-
 
 struct NonCopyable
 {
@@ -46,23 +44,52 @@ using i64 = int64_t;
 using usize = std::make_unsigned<size_t>::type;
 using isize = std::make_signed<size_t>::type;
 
+template<typename T>
+using Vec = std::vector<T>;
+
+
+
+
+
 
 template<bool B>
 using bool_type = typename std::integral_constant<bool, B>;
 
+
+
+
+
+
 template<typename T>
 struct dereference {
-	using type = typename std::remove_cv<typename std::remove_reference<decltype(*make_one<T>())>::type>::type;
+	using type = decltype(*make_one<T>());
 };
 
-namespace wildcard {
-struct _ {
+
+
+
+struct Nothing {
 	template<typename... Args>
-	_ operator()(Args...) const {
+	Nothing operator()(Args...) const {
 		return *this;
 	}
+
+	template<typename T>
+	operator T() const {
+		return fatal("y::detail::Anything used");
+	}
 };
+
+
+
+constexpr usize log2ui(usize n) {
+	return (n >> 1) ? log2ui(n >> 1) + 1 : 0;
 }
+
+
+template<typename... Args>
+void unused(Args...) {}
+
 
 }
 
