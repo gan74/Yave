@@ -23,13 +23,12 @@ namespace y {
 namespace core {
 
 template<typename T>
-class Box : NonCopyable
-{
+class Ptr : NonCopyable {
 	public:
-		Box(T *&&p = 0) : ptr(p) {
+		explicit Ptr(T *&&p = 0) : ptr(p) {
 		}
 
-		~Box() {
+		~Ptr() {
 			delete ptr;
 		}
 
@@ -86,11 +85,10 @@ class Box : NonCopyable
 };
 
 template<typename T, typename C = u32>
-class Rc : public Ptr<T>
-{
+class Rc : public Ptr<T> {
 	using Ptr<T>::ptr;
 	public:
-		Rc(T *&&p = 0) : Ptr<T>(std::move(p)), count(new C(1)) {
+		explicit Rc(T *&&p = 0) : Ptr<T>(std::move(p)), count(new C(1)) {
 		}
 
 		Rc(const Rc<T, C> &p) : Ptr<T>(0), count(0) {
@@ -149,6 +147,16 @@ class Rc : public Ptr<T>
 
 		C *count;
 };
+
+template<typename T>
+auto ptr(T &&t) {
+	return Ptr<Y>(std::move(t));
+}
+
+template<typename T>
+auto rc(T &&t) {
+	return Rc<Y>(std::move(t));
+}
 
 }
 }

@@ -17,9 +17,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_UTILS_H
 
 #include <utility>
+#include <vector>
 #include <y/utils/deref.h>
 
 namespace y {
+
+template<typename T>
+using Vec = std::vector<T>;
+
+
+struct NonCopyable
+{
+	NonCopyable() {}
+	NonCopyable(const NonCopyable &) = delete;
+	NonCopyable &operator=(const NonCopyable &) = delete;
+};
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -35,17 +47,22 @@ using usize = std::make_unsigned<size_t>::type;
 using isize = std::make_signed<size_t>::type;
 
 
-struct NonCopyable
-{
-	NonCopyable() {}
-	NonCopyable(const NonCopyable &) = delete;
-	NonCopyable &operator=(const NonCopyable &) = delete;
+template<bool B>
+using bool_type = typename std::integral_constant<bool, B>;
+
+template<typename T>
+struct dereference {
+	using type = typename std::remove_cv<typename std::remove_reference<decltype(*make_one<T>())>::type>::type;
 };
 
-
-
-template<bool B>
-using BoolType = typename std::integral_constant<bool, B>;
+namespace wildcard {
+struct _ {
+	template<typename... Args>
+	_ operator()(Args...) const {
+		return *this;
+	}
+};
+}
 
 }
 

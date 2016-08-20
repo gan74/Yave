@@ -21,42 +21,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace core {
 
-template<typename I>
-class ReverseIterator
-{
+template<typename Iter>
+class ReverseIterator {
 	public:
-		using Element = decltype(**make_one<I *>());
+		using Element = typename dereference<Iter>::type;
 
-		explicit ReverseIterator(const I &beg) : it(beg) {
+		explicit ReverseIterator(const Iter &beg) : it(beg) {
 		}
 
-		ReverseIterator<I> &operator++() {
+		ReverseIterator<Iter> &operator++() {
 			--it;
 			return *this;
 		}
 
-		ReverseIterator<I> &operator--() {
+		ReverseIterator<Iter> &operator--() {
 			++it;
 			return *this;
 		}
 
-		ReverseIterator<I> operator++(int) {
+		ReverseIterator<Iter> operator++(int) {
 			ReverseIterator p(*this);
 			--it;
 			return p;
 		}
 
-		ReverseIterator<I> operator--(int) {
+		ReverseIterator<Iter> operator--(int) {
 			ReverseIterator p(*this);
 			++it;
 			return p;
 		}
 
-		bool operator!=(const ReverseIterator<I> &i) const {
+		bool operator!=(const ReverseIterator<Iter> &i) const {
 			return it != i.it;
 		}
 
-		bool operator!=(const I &i) const {
+		bool operator!=(const Iter &i) const {
 			return it != i;
 		}
 
@@ -75,12 +74,12 @@ class ReverseIterator
 
 
 	private:
-		I it;
+		Iter it;
 };
 
-template<typename I>
-ReverseIterator<I> reverse_iterator(const I &i) {
-	return ReverseIterator<I>(i);
+template<typename Iter>
+ReverseIterator<Iter> reverse_iterator(const Iter &i) {
+	return ReverseIterator<Iter>(i);
 }
 
 }

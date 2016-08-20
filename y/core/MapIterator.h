@@ -21,42 +21,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace core {
 
-template<typename I, typename F>
-class MapIterator
-{
+template<typename Iter, typename Func>
+class MapIterator {
 	public:
-		using Element = typename std::result_of<F(decltype(**make_one<I *>()))>::type;
+		using Element = typename std::result_of<Func(typename dereference<Iter>::type)>::type;
 
-		MapIterator(const I &beg, const F &f) : it(beg), map(f) {
+		MapIterator(const Iter &beg, const Func &f) : it(beg), map(f) {
 		}
 
-		MapIterator<I, F> &operator++() {
+		MapIterator<Iter, Func> &operator++() {
 			++it;
 			return *this;
 		}
 
-		MapIterator<I, F> &operator--() {
+		MapIterator<Iter, Func> &operator--() {
 			--it;
 			return *this;
 		}
 
-		MapIterator<I, F> operator++(int) {
+		MapIterator<Iter, Func> operator++(int) {
 			MapIterator p(*this);
 			++it;
 			return p;
 		}
 
-		MapIterator<I, F> operator--(int) {
+		MapIterator<Iter, Func> operator--(int) {
 			MapIterator p(*this);
 			--it;
 			return p;
 		}
 
-		bool operator!=(const MapIterator<I, F> &i) const {
+		bool operator!=(const MapIterator<Iter, Func> &i) const {
 			return it != i.it || map != i.map;
 		}
 
-		bool operator!=(const I &i) const {
+		bool operator!=(const Iter &i) const {
 			return it != i;
 		}
 
@@ -71,8 +70,8 @@ class MapIterator
 
 
 	private:
-		I it;
-		F map;
+		Iter it;
+		Func map;
 };
 
 
