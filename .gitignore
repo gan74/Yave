@@ -21,3 +21,4 @@
 *.Debug
 *.Release
 /stash/
+/half instructions/
