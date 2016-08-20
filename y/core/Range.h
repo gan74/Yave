@@ -26,7 +26,8 @@ namespace core {
 template<typename Iter>
 class Range {
 	public:
-		using Element = typename dereference<Iter>::type;
+		using Return = typename dereference<Iter>::type;
+		using Element = typename std::decay<Return>::type;
 
 		Range(const Iter &b, const Iter &e) : beg(b), en(e) {
 		}
