@@ -1,24 +1,10 @@
+/debug/
+/release/
 
-/bin/
-/old/
-/Makefile.Debug
-/Makefile.Release
-/Makefile
-/object_script.n.Debug
-/object_script.n.Release
-/cppcheck
-/.idea
-*.out
-*.png
-*.obj
-*.mtl
-*.csv
-*.cfg
-*.o
-*.user
-/cmake/
-/cov/
+Makefile
 *.Debug
 *.Release
-/stash/
-/half instructions/
+*.out
+*.o
+*.user
+

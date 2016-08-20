@@ -22,8 +22,6 @@ void text_non_const(std::vector<int> c) {
 }*/
 
 int main(int, char **) {
-
-
 	std::cout << "0..10" << std::endl;
 	range(0, 10).foreach(print<int>);
 	std::cout << std::endl << std::endl;
@@ -35,10 +33,6 @@ int main(int, char **) {
 	std::cout << "0..10 % 2" << std::endl;
 	range(0, 10).map([](int i) { return i % 2; }).foreach(print<int>);
 	std::cout << std::endl << std::endl;
-
-
-
-
 
 
 	return 0;

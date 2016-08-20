@@ -93,7 +93,7 @@ class Rc : public Ptr<T>
 		Rc(T *&&p = 0) : Ptr<T>(std::move(p)), count(new C(1)) {
 		}
 
-		Rc(const SmartPtr<T, C> &p) : Ptr<T>(0), count(0) {
+		Rc(const Rc<T, C> &p) : Ptr<T>(0), count(0) {
 			ref(p);
 		}
 
@@ -106,11 +106,11 @@ class Rc : public Ptr<T>
 			std::swap(count, p.count);
 		}
 
-		C getReferenceCount() const {
+		C get_ref() const {
 			return count ? *count : 0;
 		}
 
-		RC<T, C> &operator=(const SmartPtr<T, C> &p) {
+		Rc<T, C> &operator=(const SmartPtr<T, C> &p) {
 			if(&p != this) {
 				unref();
 				ref(p);
