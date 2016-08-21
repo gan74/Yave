@@ -17,25 +17,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "test.h"
 #include <y/utils.h>
 #include <iostream>
+#include <cstring>
 
 namespace y {
 namespace test {
 namespace detail {
 
 const char *test_box_msg(const char *msg) {
-	return msg;
+	return msg ? msg : "unknown test function";
 }
 
 void test_assert(const char *msg, void (*func)(TestResult *)) {
-	if(msg) {
-		std::cout << msg << ": \t";
+	const char *ok		= "  [ OK ]   ";
+	const char *failure = "[ FAILED ] ";
+
+
+	std::cout << msg << ":";
+	for(usize size = strlen(msg) + 1; size != 80 - 11; size++) {
+		std::cout << " ";
 	}
+
+
 	TestResult res{true, nullptr, 0};
 	func(&res);
+
 	if(res.result) {
-		std::cout << "ok" << std::endl;
+		std::cout << ok << std::endl;
 	} else {
-		fatal("failed!", res.file, res.line);
+		std::cout << failure << std::endl;
+		fatal("\ty_test_assert failed!", res.file, res.line);
 	}
 }
 
