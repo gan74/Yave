@@ -28,8 +28,19 @@ class Ptr : NonCopyable {
 		explicit Ptr(T *&&p = 0) : ptr(p) {
 		}
 
+		explicit Ptr(T &&p) : Ptr(new T(std::move(p))) {
+		}
+
+		Ptr(Ptr &&p) : ptr(0) {
+			swap(p);
+		}
+
 		~Ptr() {
 			delete ptr;
+		}
+
+		void swap(Ptr &p) {
+			std::swap(ptr, p.ptr);
 		}
 
 		const T &operator*() const {
@@ -91,32 +102,36 @@ class Rc : public Ptr<T> {
 		explicit Rc(T *&&p = 0) : Ptr<T>(std::move(p)), count(new C(1)) {
 		}
 
-		Rc(const Rc<T, C> &p) : Ptr<T>(0), count(0) {
+		explicit Rc(T &&p) : Rc(new T(std::move(p))) {
+		}
+
+		Rc(const Rc &p) : Ptr<T>(0), count(0) {
 			ref(p);
 		}
 
 		~Rc() {
 			unref();
+			ptr = 0;
 		}
 
-		void swap(Rc<T, C> &&p) {
+		void swap(Rc &&p) {
 			std::swap(ptr, p.ptr);
 			std::swap(count, p.count);
 		}
 
-		C get_ref() const {
-			return count ? *count : 0;
+		C ref_count() const {
+			return *count;
 		}
 
-		Rc<T, C> &operator=(const SmartPtr<T, C> &p) {
-			if(&p != this) {
+		Rc &operator=(const Rc &p) {
+			if(p.count != count) {
 				unref();
 				ref(p);
 			}
 			return *this;
 		}
 
-		Rc<T, C> &operator=(Rc<T, C> &&p) {
+		Rc &operator=(Rc &&p) {
 			swap(std::move(p));
 			return *this;
 		}
@@ -129,7 +144,7 @@ class Rc : public Ptr<T> {
 			++(*count);
 		}
 
-		void ref(const Rc<T, C> &p) {
+		void ref(const Rc &p) {
 			if((count = p.count)) {
 				(*count)++;
 			}
@@ -137,12 +152,10 @@ class Rc : public Ptr<T> {
 		}
 
 		void unref() {
-			if(count && !--(*count)) {
+			if(!--(*count)) {
 				delete ptr;
 				delete count;
 			}
-			ptr = 0;
-			count = 0;
 		}
 
 		C *count;
@@ -150,12 +163,12 @@ class Rc : public Ptr<T> {
 
 template<typename T>
 auto ptr(T &&t) {
-	return Ptr<Y>(std::move(t));
+	return Ptr<T>(std::move(t));
 }
 
 template<typename T>
 auto rc(T &&t) {
-	return Rc<Y>(std::move(t));
+	return Rc<T>(std::move(t));
 }
 
 }
