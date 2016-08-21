@@ -6,6 +6,7 @@ DEPENDPATH += $$PWD
 INCLUDEPATH += $$PWD
 
 SOURCES += $$PWD/y/*.cpp \
+		   $$PWD/y/core/*.cpp \
 		   $$PWD/y/test/*.cpp
 
 HEADERS += $$PWD/y/*.h \

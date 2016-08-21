@@ -19,6 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace y {
 
+namespace detail {
+	usize StaticCounter::value = 0;
+}
+
 Nothing fatal(const char *msg, const char *file, int line) {
 	std::cerr << msg;
 	if(file) {

@@ -4,6 +4,7 @@
 #include <y/utils.h>
 #include <y/core/Range.h>
 #include <y/test/test.h>
+#include <y/core/Vector.h>
 
 using namespace y;
 using namespace core;
@@ -13,39 +14,19 @@ void print(T t) {
 	std::cout << t << " ";
 }
 
-test_func("works test") {
-	return true;
-}
-
-test_func("works test") {
-	return true;
-}
-
-test_func("works test") {
-	return true;
-}
-
-test_func("works test") {
-	return true;
-}
-
-test_func("works test") {
-	return true;
-}
-
-
-test_func("fails test") {
-	return false;
-}
 
 template<typename T>
-Vec<T> &operator<<(Vec<T> &vec, const T &value) {
-	vec.push_back(value);
+Vector<T> &operator<<(Vector<T> &vec, const T &value) {
+	vec.append(value);
 	return vec;
 }
 
+template<typename T>
+using Vec = Vector<T>;
+
 
 int main(int, char **) {
+
 
 	range(0, 10).collect<Vec>();
 	range(0, 10).collect(std::cout);

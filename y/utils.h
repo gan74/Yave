@@ -17,9 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_UTILS_H
 
 #include "defines.h"
+#include <new>
 #include <cstdint>
 #include <utility>
-#include <vector>
 #include <y/utils/deref.h>
 
 namespace y {
@@ -30,6 +30,9 @@ struct NonCopyable
 	NonCopyable(const NonCopyable &) = delete;
 	NonCopyable &operator=(const NonCopyable &) = delete;
 };
+
+
+
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -44,18 +47,12 @@ using i64 = int64_t;
 using usize = std::make_unsigned<size_t>::type;
 using isize = std::make_signed<size_t>::type;
 
-template<typename T>
-using Vec = std::vector<T>;
-
-
 
 
 
 
 template<bool B>
 using bool_type = typename std::integral_constant<bool, B>;
-
-
 
 
 
@@ -82,13 +79,45 @@ struct Nothing {
 
 
 
+
 constexpr usize log2ui(usize n) {
 	return (n >> 1) ? log2ui(n >> 1) + 1 : 0;
 }
 
 
+
+
 template<typename... Args>
 void unused(Args...) {}
+
+
+
+namespace detail {
+
+struct StaticCounter {
+	static usize value;
+};
+
+template<typename T>
+struct TypeUid : private detail::StaticCounter {
+	static usize value() {
+		static usize value = StaticCounter::value++;
+		return value;
+	}
+};
+
+}
+
+
+template<typename T>
+usize type_uid() {
+	return detail::TypeUid<T>::value();
+}
+
+template<typename T>
+usize type_uid(const T&) {
+	return detail::TypeUid<T>::value();
+}
 
 
 }

@@ -20,23 +20,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace y {
 namespace test {
+namespace detail {
 
 const char *test_box_msg(const char *msg) {
 	return msg;
 }
 
-void test_assert(const char *msg, bool sucess, const char *file, int line) {
+void test_assert(const char *msg, void (*func)(TestResult *)) {
 	if(msg) {
 		std::cout << msg << ": \t";
 	}
-	if(sucess) {
+	TestResult res{true, nullptr, 0};
+	func(&res);
+	if(res.result) {
 		std::cout << "ok" << std::endl;
 	} else {
-		fatal("failed!", file, line);
+		fatal("failed!", res.file, res.line);
 	}
 }
 
 
-
+}
 }
 }

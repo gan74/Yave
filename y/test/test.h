@@ -16,38 +16,50 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_TEST_H
 #define Y_TEST_H
 
+#include <y/utils.h>
+
 namespace y {
 namespace test {
+namespace detail {
+
+struct TestResult {
+	bool result;
+	const char *file;
+	int line;
+};
 
 const char *test_box_msg(const char *msg = 0);
-void test_assert(const char *msg, bool sucess, const char *file, int line);
+void test_assert(const char *msg, void (*func)(TestResult *));
 
 }
 }
+}
+
+#define Y_TEST_LINE_HELPER(prefix, LINE) _test_ ## prefix ## _at_ ## LINE
+#define Y_TEST_HELPER(prefix, LINE) Y_TEST_LINE_HELPER(prefix, LINE)
+#define Y_TEST_FUNC Y_TEST_HELPER(func, __LINE__)
+#define Y_TEST_RUNNER Y_TEST_HELPER(runner, __LINE__)
+#define Y_TEST_FAILED y::test::detail::TestResult { false, __FILE__, __LINE__ }
+
+#define y_test_assert(t) do { if(!(t)) { *_test_result_ptr = Y_TEST_FAILED; return; } } while(0)
 
 #ifdef Y_AUTO_TEST
-#define TEST_ASSERT(func, msg) y::test::test_assert(msg, func, __FILE__, __LINE__)
-#else
-#define TEST_ASSERT(func, msg)
-#endif
 
-#define N_TEST_LINE_HELPER(prefix, LINE) _test_ ## prefix ## _at_ ## LINE
-#define N_TEST_HELPER(prefix, LINE) N_TEST_LINE_HELPER(prefix, LINE)
-
-#define N_TEST_FUNC N_TEST_HELPER(func, __LINE__)
-#define N_TEST_RUNNER N_TEST_HELPER(runner, __LINE__)
-
-#define test_func(msg)																					\
-extern bool N_TEST_FUNC();																				\
-namespace test {																						\
-	class N_TEST_RUNNER {																				\
-		N_TEST_RUNNER() {																				\
-			TEST_ASSERT(N_TEST_FUNC(), msg);															\
+#define y_test_func(msg)																				\
+static void Y_TEST_FUNC(y::test::detail::TestResult *);													\
+namespace auto_tests {																					\
+	class Y_TEST_RUNNER {																				\
+		Y_TEST_RUNNER() {																				\
+			y::test::detail::test_assert(msg, &Y_TEST_FUNC);											\
 		}																								\
-		static N_TEST_RUNNER runner;																	\
+		static Y_TEST_RUNNER runner;																	\
 	};																									\
-	N_TEST_RUNNER N_TEST_RUNNER::runner = N_TEST_RUNNER();												\
+	Y_TEST_RUNNER Y_TEST_RUNNER::runner = Y_TEST_RUNNER();												\
 }																										\
-bool N_TEST_FUNC()
+void Y_TEST_FUNC(y::test::detail::TestResult *_test_result_ptr)
+
+#else
+#define test_func(msg) bool Y_TEST_FUNC()
+#endif
 
 #endif // Y_TEST_H
