@@ -22,22 +22,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace core {
 
-class DefaultVectorResizePolicy {
+struct DefaultVectorResizePolicy {
 	static constexpr usize threshold = 4096;
 	static constexpr usize step = 2048;
 
-	protected:
-		usize ideal_capacity(usize size) {
-			if(size < threshold) {
-				return 1 << (log2ui(size) + 1);
-			}
-			usize steps = (size - threshold) / step;
-			return threshold + steps * step;
+	usize ideal_capacity(usize size) {
+		if(!size) {
+			return 0;
 		}
+		if(size < threshold) {
+			return 1 << (log2ui(size) + 1);
+		}
+		usize steps = (size - threshold) / step;
+		return threshold + (steps + 1) * step;
+	}
 
-		bool shrink(usize size, usize capacity) {
-			return (capacity - size) > 2 * step;
-		}
+	bool shrink(usize size, usize capacity) {
+		return !size || (capacity - size) > 2 * step;
+	}
 };
 
 

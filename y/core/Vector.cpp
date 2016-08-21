@@ -80,6 +80,17 @@ y_test_func("Vector clear") {
 	y_test_assert(!vec.capacity());
 }
 
+y_test_func("DefaultVectorResizePolicy") {
+	DefaultVectorResizePolicy size;
+
+	y_test_assert(!size.ideal_capacity(0));
+	y_test_assert(size.shrink(0, 1));
+
+	for(usize i = 0; i != size.threshold + 3 * size.step; i++) {
+		y_test_assert(size.ideal_capacity(i) >= i);
+	}
+}
+
 
 }
 }
