@@ -63,7 +63,7 @@ class Range {
 			return Range<MapIterator<Iter, F>>(MapIterator<Iter, F>(begin(), f), MapIterator<Iter, F>(end(), f));
 		}
 
-		template<template<typename> typename Coll>
+		template<template<typename...> typename Coll>
 		auto collect() const {
 			Coll<Element> c;
 			collect(c);
