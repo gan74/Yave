@@ -92,5 +92,20 @@ y_test_func("DefaultVectorResizePolicy") {
 }
 
 
+y_test_func("Vector iteration") {
+	const int max = 256;
+
+	Vector<int> vec;
+
+	for(int i = 0; i != max; i++) {
+		vec.append(i);
+	}
+
+	int counter = 0;
+	for(int i : vec) {
+		y_test_assert(i == counter++);
+	}
+}
+
 }
 }

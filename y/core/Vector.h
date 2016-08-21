@@ -26,7 +26,7 @@ struct DefaultVectorResizePolicy {
 	static constexpr usize threshold = 4096;
 	static constexpr usize step = 2048;
 
-	usize ideal_capacity(usize size) {
+	usize ideal_capacity(usize size) const {
 		if(!size) {
 			return 0;
 		}
@@ -37,7 +37,7 @@ struct DefaultVectorResizePolicy {
 		return threshold + (steps + 1) * step;
 	}
 
-	bool shrink(usize size, usize capacity) {
+	bool shrink(usize size, usize capacity) const {
 		return !size || (capacity - size) > 2 * step;
 	}
 };
@@ -47,6 +47,8 @@ template<typename Elem, typename ResizePolicy = DefaultVectorResizePolicy>
 class Vector : DefaultVectorResizePolicy {
 
 	using Data = typename std::remove_const<Elem>::type;
+
+	static_assert(!std::is_polymorphic<Elem>::value, "Vector<T> should not containt polymorphic objects directly");
 
 	public:
 		using iterator = Elem *;
