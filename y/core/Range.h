@@ -73,6 +73,7 @@ class Range {
 		template<typename Stream>
 		auto collect(Stream &str) const {
 			for(const auto &e : *this) {
+				#warning Range<I>::collect use += instead of << ?
 				str << e;
 			}
 		}

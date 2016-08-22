@@ -24,6 +24,7 @@ T &make_one();
 
 namespace detail {
 
+// from somewhere on stack overflow (can't find the page anymore)
 struct DerefTag {
 	template<typename T>
 	DerefTag(const T &);
@@ -33,7 +34,7 @@ struct DerefTag {
 DerefTag operator*(const DerefTag &);
 
 // This is need in case of operator * return type is void
-DerefTag operator,(DerefTag, int);
+//DerefTag operator,(DerefTag, int);
 
 std::false_type (&deref_helper(DerefTag));
 
@@ -42,8 +43,8 @@ std::true_type deref_helper(const T &);
 
 template<typename T, typename Enable = void>
 struct DerefTrait {
-	//using type = decltype(deref_helper(((**make_one<T*>()), 0)));
-	using type = std::false_type;
+	using type = decltype(deref_helper((**make_one<T*>()/*, 0*/)));
+	//using type = std::false_type;
 };
 
 // specialization for void pointers
