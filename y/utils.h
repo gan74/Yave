@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include <utility>
 #include <y/utils/deref.h>
+#include <typeinfo>
 
 namespace y {
 
@@ -173,6 +174,44 @@ template<typename T>
 auto scope_exit(T t) {
 	return detail::ScopeExit<T>(t);
 }
+
+
+
+namespace detail {
+	const char *demangle_type_name(const char *name);
+}
+
+template<typename T>
+const char *type_name() {
+	return detail::demangle_type_name(typeid(T).name());
+}
+
+
+
+
+template<typename... Types>
+struct Coerce {
+};
+
+template<typename T>
+struct Coerce<T> {
+	using type = T;
+};
+
+template<typename T, typename U>
+struct Coerce<T, U> {
+	using type =  decltype(make_one<T>() + make_one<U>());
+};
+
+template<typename T, typename U, typename... Types>
+struct Coerce<T, U, Types...> {
+	using right = typename Coerce<U, Types...>::type;
+	using type = typename Coerce<T, right>::type;
+};
+
+static_assert(std::is_same<Coerce<int, float, double>::type, double>::value, "Coerce error");
+static_assert(std::is_same<Coerce<int, float, int>::type, float>::value, "Coerce error");
+static_assert(std::is_same<Coerce<int, int>::type, int>::value, "Coerce error");
 
 }
 

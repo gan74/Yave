@@ -17,11 +17,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 #include <iostream>
 
+#warning demangle leaks memory !
+#ifdef __GNUG__
+#include <cstdlib>
+#include <memory>
+#include <cxxabi.h>
+#endif
+
 namespace y {
 
 namespace detail {
 	usize StaticCounter::value = 0;
+
+	#ifdef __GNUG__
+	const char *demangle_type_name(const char* name) {
+	int status = 0;
+	char *d = abi::__cxa_demangle(name, 0, 0, &status);
+	if(status) {
+		return name;
+	}
+
+	return d;
+	}
+	#else
+	const char *demangle_type_name(const char* name) {
+		return name;
+	}
+	#endif
 }
+
 
 Nothing fatal(const char *msg, const char *file, int line) {
 	std::cerr << msg;

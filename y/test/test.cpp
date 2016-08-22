@@ -27,7 +27,7 @@ const char *test_box_msg(const char *msg) {
 	return msg ? msg : "unknown test function";
 }
 
-void test_assert(const char *msg, void (*func)(TestResult *)) {
+void test_assert(const char *msg, void (*func)(TestResult &)) {
 	const char *ok		= "  [ OK ]   ";
 	const char *failure = "[ FAILED ] ";
 
@@ -39,7 +39,7 @@ void test_assert(const char *msg, void (*func)(TestResult *)) {
 
 
 	TestResult res{true, nullptr, 0};
-	func(&res);
+	func(res);
 
 	if(res.result) {
 		std::cout << ok << std::endl;

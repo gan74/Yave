@@ -29,7 +29,7 @@ struct TestResult {
 };
 
 const char *test_box_msg(const char *msg = 0);
-void test_assert(const char *msg, void (*func)(TestResult *));
+void test_assert(const char *msg, void (*func)(TestResult &));
 
 }
 }
@@ -41,12 +41,12 @@ void test_assert(const char *msg, void (*func)(TestResult *));
 #define Y_TEST_RUNNER Y_TEST_HELPER(runner, __LINE__)
 #define Y_TEST_FAILED y::test::detail::TestResult { false, __FILE__, __LINE__ }
 
-#define y_test_assert(t) do { if(!(t)) { *_test_result_ptr = Y_TEST_FAILED; return; } } while(0)
+#define y_test_assert(t) do { if(!(t)) { _test_result_ptr = Y_TEST_FAILED; return; } } while(0)
 
 #ifdef Y_AUTO_TEST
 
 #define y_test_func(msg)																				\
-static void Y_TEST_FUNC(y::test::detail::TestResult *);													\
+static void Y_TEST_FUNC(y::test::detail::TestResult &);													\
 namespace auto_tests {																					\
 	class Y_TEST_RUNNER {																				\
 		Y_TEST_RUNNER() {																				\
@@ -56,7 +56,7 @@ namespace auto_tests {																					\
 	};																									\
 	Y_TEST_RUNNER Y_TEST_RUNNER::runner = Y_TEST_RUNNER();												\
 }																										\
-void Y_TEST_FUNC(y::test::detail::TestResult *_test_result_ptr)
+void Y_TEST_FUNC(y::test::detail::TestResult &_test_result_ptr)
 
 #else
 #define test_func(msg) bool Y_TEST_FUNC()
