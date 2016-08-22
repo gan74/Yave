@@ -47,7 +47,7 @@ void test_assert(const char *msg, void (*func)(TestResult &));
 
 #define y_test_func(msg)																				\
 static void Y_TEST_FUNC(y::test::detail::TestResult &);													\
-namespace auto_tests {																					\
+namespace {																								\
 	class Y_TEST_RUNNER {																				\
 		Y_TEST_RUNNER() {																				\
 			y::test::detail::test_assert(y::test::detail::test_box_msg(msg), &Y_TEST_FUNC);				\
