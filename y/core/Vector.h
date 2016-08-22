@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_CORE_VECTOR
 
 #include <y/utils.h>
+#include "Range.h"
 #include <cstring>
 
 namespace y {
@@ -77,6 +78,14 @@ class Vector : DefaultVectorResizePolicy {
 			new(dataEnd++) Data(elem);
 		}
 
+		template<typename I/*, typename E = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type*/>
+		void append(const Range<I> &rng) {
+			static_assert(std::is_same<typename Range<I>::Element, Element>::value, "Pushing invalid range into Vector");
+			for(const auto &i : rng) {
+				append(i);
+			}
+		}
+
 		usize size() const {
 			return dataEnd - data;
 		}
@@ -131,6 +140,22 @@ class Vector : DefaultVectorResizePolicy {
 
 		void clear() {
 			unsafe_set_capacity(0, 0);
+		}
+
+		bool operator!=(const Vector &v) const {
+			usize s = size();
+			if(s == v.size()) {
+				for(usize i = 0; i != s; i++) {
+					if(data[i] != v[i]) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		bool operator==(const Vector &v) const {
+			return !operator!=(v);
 		}
 
 	private:
@@ -229,6 +254,15 @@ auto vector(const T &t, Args... args) {
 
 static_assert(std::is_same<decltype(vector(1, 2, 3))::Element, int>::value, "Invalid vector(...) return type");
 static_assert(std::is_same<decltype(vector(1, 2.0, 3))::Element, double>::value, "Invalid vector(...) return type");
+
+
+
+
+template<typename T>
+Vector<T> &operator<<(Vector<T> &vec, const T &t) {
+	vec.append(t);
+	return vec;
+}
 
 }
 }

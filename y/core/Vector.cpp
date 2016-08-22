@@ -15,9 +15,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "Vector.h"
 #include <y/test/test.h>
+#include <vector>
 
 namespace y {
 namespace core {
+
+struct Base {
+};
+
+struct Derived : Base {
+};
+struct MoreDerived : Derived {
+};
+
+static_assert(std::is_same<std::common_type<MoreDerived, Derived>::type, Derived>::value, "std::common_type failure");
+
+y_test_func("DefaultVectorResizePolicy") {
+	DefaultVectorResizePolicy size;
+
+	y_test_assert(!size.ideal_capacity(0));
+	y_test_assert(size.shrink(0, 1));
+
+	for(usize i = 0; i != size.threshold + 3 * size.step; i++) {
+		y_test_assert(size.ideal_capacity(i) >= i);
+	}
+}
+
+
 
 y_test_func("Vector creation") {
 	Vector<int> vec;
@@ -80,18 +104,6 @@ y_test_func("Vector clear") {
 	y_test_assert(!vec.capacity());
 }
 
-y_test_func("DefaultVectorResizePolicy") {
-	DefaultVectorResizePolicy size;
-
-	y_test_assert(!size.ideal_capacity(0));
-	y_test_assert(size.shrink(0, 1));
-
-	for(usize i = 0; i != size.threshold + 3 * size.step; i++) {
-		y_test_assert(size.ideal_capacity(i) >= i);
-	}
-}
-
-
 y_test_func("Vector iteration") {
 	const int max = 256;
 
@@ -107,7 +119,7 @@ y_test_func("Vector iteration") {
 	}
 }
 
-y_test_func("Vector vector") {
+y_test_func("Vector vector(...)") {
 	auto vec = vector(1, 2, 3, 4, 5, 6, 7, 8);
 	y_test_assert(vec.capacity() >= 8);
 	y_test_assert(vec.size() == 8);
@@ -117,6 +129,40 @@ y_test_func("Vector vector") {
 		y_test_assert(i == ++counter);
 	}
 }
+
+y_test_func("Vector<Range<I>>") {
+	{
+		auto vec = vector(1, 2, 3, 4, 5, 6);
+		auto r = range(vec);
+
+		vec.append(r);
+		vec.append(r.reverse());
+		vec.append(r.map([](int i) { return i + 1; }));
+		vec.append(range(0, 10));
+
+		y_test_assert(vec.size() == 6 * 4 + 10);
+	}
+	{
+		Vector<Range<ValueIterator<int>>> vec;
+		vec.append(range(7, 11));
+
+		y_test_assert(vec.size() == 1);
+		y_test_assert(vec[0].collect<Vector>() == vector(7, 8, 9, 10));
+	}
+	{
+		std::vector<int> std_vec;
+		std_vec.push_back(1);
+		std_vec.push_back(2);
+		std_vec.push_back(3);
+
+		Vector<int> vec = vector(0);
+		vec.append(range(std_vec));
+
+		y_test_assert(vec.size() == 4);
+		y_test_assert(vec == vector(0, 1, 2, 3));
+	}
+}
+
 
 }
 }
