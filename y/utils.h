@@ -73,7 +73,7 @@ struct Nothing {
 
 	template<typename T>
 	operator T() const {
-		return fatal("y::detail::Anything used");
+		return fatal("y::detail::Nothing used");
 	}
 };
 
@@ -119,6 +119,60 @@ usize type_uid(const T&) {
 	return detail::TypeUid<T>::value();
 }
 
+
+
+
+constexpr bool is_64_bits() {
+	return sizeof(void *) == 8;
+}
+
+constexpr bool is_32_bits() {
+	return sizeof(void *) == 4;
+}
+
+
+
+
+namespace detail {
+	static constexpr u32 endian = 0x01020304; // http://stackoverflow.com/questions/1583791/constexpr-and-endianness
+	static constexpr u32 endianness = static_cast<const u8 &>(endian);
+}
+
+constexpr bool is_little_endian() {
+	return detail::endianness == 0x04;
+}
+
+constexpr bool is_big_endian() {
+	return detail::endianness == 0x01;
+}
+
+static_assert(is_little_endian() || is_big_endian(), "Unable to determine endianness");
+
+
+
+
+namespace detail {
+
+template<typename T>
+class ScopeExit {
+	public:
+		ScopeExit(T t) : ex(t) {
+		}
+
+		~ScopeExit() {
+			ex();
+		}
+
+	private:
+		T ex;
+};
+
+}
+
+template<typename T>
+auto scope_exit(T t) {
+	return detail::ScopeExit<T>(t);
+}
 
 }
 
