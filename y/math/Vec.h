@@ -72,7 +72,8 @@ class Vec
 			}
 		}
 
-		Vec(const Vec &v) {
+		template<typename X>
+		Vec(const Vec<N, X> &v) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] = v[i];
 			}
@@ -86,7 +87,7 @@ class Vec
 			return sum;
 		}
 
-		T length() const {
+		auto length() const {
 			return std::sqrt(length2());
 		}
 
@@ -99,6 +100,7 @@ class Vec
 		}
 
 		Vec cross(const Vec &o) const {
+			static_assert(std::is_signed<T>::value, "Vec<T>::cross makes no sense for T unsigned");
 			Vec v;
 			for(usize i = 0; i != N; i++) {
 				v[i] = vec[(i + 1) % N] * o.vec[(i + 2) % N] - vec[(i + 2) % N] * o.vec[(i + 1) % N];
@@ -119,6 +121,7 @@ class Vec
 		}
 
 		Vec abs() const {
+			static_assert(std::is_signed<T>::value, "Vec<T>::abs makes no sense for T unsigned");
 			Vec v(*this);
 			for(usize i = 0; i != N; i++) {
 				v[i] = vec[i] < 0 ? -vec[i] : vec[i];
@@ -293,6 +296,8 @@ class Vec
 };
 
 
+
+
 using Vec2 = Vec<2>;
 using Vec3 = Vec<3>;
 using Vec4 = Vec<4>;
@@ -308,6 +313,9 @@ using Vec4i = Vec<4, i32>;
 using Vec2ui = Vec<2, u32>;
 using Vec3ui = Vec<3, u32>;
 using Vec4ui = Vec<4, u32>;
+
+
+
 
 namespace detail {
 
@@ -382,6 +390,77 @@ static_assert(std::is_same<decltype(vec(1, 2.0)), Vec<2, double>>::value, "Inval
 static_assert(std::is_same<decltype(vec(1, 2.0f, 0)), Vec<3, float>>::value, "Invalid vec(...) return type");
 static_assert(std::is_same<decltype(vec(1, vec(2.0, 3))), Vec<3, double>>::value, "Invalid vec(...) return type");
 static_assert(std::is_same<decltype(vec(vec(1, 2))), Vec<2, int>>::value, "Invalid vec(...) return type");
+
+
+
+
+namespace detail {
+
+template<usize N, typename A, typename B>
+struct V {
+	using type = Vec<N, typename Coerce<A, B>::type>;
+};
+
+}
+
+
+template<usize N, typename T, typename R>
+auto operator+(const Vec<N, T> &v, const R &r) {
+	typename detail::V<N, T, R>::type vec(v);
+	vec += r;
+	return vec;
+}
+
+/*template<usize N, typename T, typename L>
+auto operator+(const L &l, Vec<N, T> v) {
+	v += l;
+	return v;
+}*/
+
+
+
+template<usize N, typename T, typename R>
+auto operator*(const Vec<N, T> &v, const R &r) {
+	typename detail::V<N, T, R>::type vec(v);
+	vec *= r;
+	return vec;
+}
+
+/*template<usize N, typename T, typename L>
+auto operator*(const L &l, Vec<N, T> v) {
+	v *= l;
+	return v;
+}*/
+
+
+
+
+template<usize N, typename T, typename R>
+auto operator-(const Vec<N, T> &v, const R &r) {
+	typename detail::V<N, T, R>::type vec(v);
+	vec -= r;
+	return vec;
+}
+
+/*template<usize N, typename T, typename L>
+auto operator-(const L &l, const Vec<N, T> &v) {
+	return -v + l;
+}*/
+
+
+
+template<usize N, typename T, typename R>
+auto operator/(const Vec<N, T> &v, const R &r) {
+	typename detail::V<N, T, R>::type vec(v);
+	vec /= r;
+	return vec;
+}
+
+/*template<usize N, typename T, typename L>
+auto operator/(const L &l, const Vec<N, T> &v) {
+	return vec(l) / v;
+}*/
+
 }
 }
 
