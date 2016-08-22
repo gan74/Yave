@@ -54,7 +54,7 @@ y_test_func("Vec vec(...)") {
 	y_test_assert(v.x() == 1 && v.y() == 2 && v.z() == 3 && v.w() == 4 && v[4] == 5);
 }
 
-y_test_func("Vec ops") {
+y_test_func("Vec operators") {
 	y_test_assert(vec(1, 2, 3) + 1 == vec(2, 3, 4));
 	y_test_assert(vec(1, 2, 3) * 2 == vec(2, 4, 6));
 	y_test_assert(vec(1, 2, 3) - 1 == vec(0, 1, 2));
