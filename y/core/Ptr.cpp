@@ -39,7 +39,7 @@ struct Raii : NonCopyable {
 bool Raii::ded = false;
 
 
-y_test_func("Ptr<T> RAII") {
+y_test_func("Ptr RAII") {
 	bool exists = false;
 
 	{
@@ -54,7 +54,7 @@ y_test_func("Ptr<T> RAII") {
 }
 
 
-y_test_func("Rc<T> RAII") {
+y_test_func("Rc RAII") {
 	bool exists = false;
 	{
 		auto p = rc(Raii(exists));
@@ -69,7 +69,7 @@ y_test_func("Rc<T> RAII") {
 }
 
 
-y_test_func("Rc<T> count") {
+y_test_func("Rc count") {
 	bool exists = false;
 	bool exists2 = false;
 	{

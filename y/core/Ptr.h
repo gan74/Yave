@@ -39,6 +39,11 @@ class Ptr : NonCopyable {
 			delete ptr;
 		}
 
+		Ptr &operator=(Ptr &&p) {
+			swap(p);
+			return *this;
+		}
+
 		void swap(Ptr &p) {
 			std::swap(ptr, p.ptr);
 		}
@@ -109,12 +114,15 @@ class Rc : public Ptr<T> {
 			ref(p);
 		}
 
-		~Rc() {
-			unref();
-			ptr = 0;
+		Rc(Rc &&p) : Ptr<T>(0), count(0) {
+			swap(p);
 		}
 
-		void swap(Rc &&p) {
+		~Rc() {
+			unref();
+		}
+
+		void swap(Rc &p) {
 			std::swap(ptr, p.ptr);
 			std::swap(count, p.count);
 		}
@@ -132,7 +140,7 @@ class Rc : public Ptr<T> {
 		}
 
 		Rc &operator=(Rc &&p) {
-			swap(std::move(p));
+			swap(p);
 			return *this;
 		}
 
@@ -152,10 +160,12 @@ class Rc : public Ptr<T> {
 		}
 
 		void unref() {
-			if(!--(*count)) {
+			if(count && !--(*count)) {
 				delete ptr;
 				delete count;
 			}
+			ptr = 0;
+			count = 0;
 		}
 
 		C *count;
