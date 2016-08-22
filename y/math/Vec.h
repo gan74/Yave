@@ -338,7 +338,7 @@ struct VecCoerce<T, U> {
 	using left = typename VecCoerce<T>::type;
 	using right = typename VecCoerce<U>::type;
 
-	using type =  decltype(make_one<left>() + make_one<right>());
+	using type = typename std::common_type<left, right>::type;
 };
 
 template<typename T, typename U, typename... Types>

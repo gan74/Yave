@@ -107,5 +107,16 @@ y_test_func("Vector iteration") {
 	}
 }
 
+y_test_func("Vector vector") {
+	auto vec = vector(1, 2, 3, 4, 5, 6, 7, 8);
+	y_test_assert(vec.capacity() >= 8);
+	y_test_assert(vec.size() == 8);
+
+	int counter = 0;
+	for(int i : vec) {
+		y_test_assert(i == ++counter);
+	}
+}
+
 }
 }

@@ -202,9 +202,33 @@ class Vector : DefaultVectorResizePolicy {
 		Data *data;
 		Data *dataEnd;
 		Data *allocEnd;
-
-
 };
+
+
+
+namespace detail {
+template<typename T>
+void append(Vector<T> &) {
+}
+
+template<typename T, typename U, typename... Args>
+void append(Vector<T> &vec, const U &u, Args... args) {
+	vec.append(u);
+	append(vec, args...);
+}
+}
+
+
+template<typename T, typename... Args>
+auto vector(const T &t, Args... args) {
+	auto vec = Vector<typename std::common_type<T, Args...>::type>();
+	vec.set_min_capacity(1 + sizeof...(args));
+	detail::append(vec, t, args...);
+	return vec;
+}
+
+static_assert(std::is_same<decltype(vector(1, 2, 3))::Element, int>::value, "Invalid vector(...) return type");
+static_assert(std::is_same<decltype(vector(1, 2.0, 3))::Element, double>::value, "Invalid vector(...) return type");
 
 }
 }
