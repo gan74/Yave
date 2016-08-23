@@ -411,11 +411,10 @@ auto operator+(const Vec<N, T> &v, const R &r) {
 	return vec;
 }
 
-/*template<usize N, typename T, typename L>
-auto operator+(const L &l, Vec<N, T> v) {
-	v += l;
-	return v;
-}*/
+template<usize N, typename T, typename L>
+auto operator+(const L &l, const Vec<N, T> &v) {
+	return v + l;
+}
 
 
 
@@ -426,11 +425,10 @@ auto operator*(const Vec<N, T> &v, const R &r) {
 	return vec;
 }
 
-/*template<usize N, typename T, typename L>
-auto operator*(const L &l, Vec<N, T> v) {
-	v *= l;
-	return v;
-}*/
+template<usize N, typename T, typename L>
+auto operator*(const L &l, const Vec<N, T> &v) {
+	return v * l;
+}
 
 
 
@@ -442,10 +440,10 @@ auto operator-(const Vec<N, T> &v, const R &r) {
 	return vec;
 }
 
-/*template<usize N, typename T, typename L>
+template<usize N, typename T, typename L>
 auto operator-(const L &l, const Vec<N, T> &v) {
 	return -v + l;
-}*/
+}
 
 
 
@@ -456,10 +454,10 @@ auto operator/(const Vec<N, T> &v, const R &r) {
 	return vec;
 }
 
-/*template<usize N, typename T, typename L>
+template<usize N, typename T, typename L>
 auto operator/(const L &l, const Vec<N, T> &v) {
 	return vec(l) / v;
-}*/
+}
 
 }
 }
