@@ -45,18 +45,18 @@ struct DefaultVectorResizePolicy {
 
 
 template<typename Elem, typename ResizePolicy = DefaultVectorResizePolicy>
-class Vector : DefaultVectorResizePolicy {
+class Vector : ResizePolicy {
 
 	using Data = typename std::remove_const<Elem>::type;
 
-	static_assert(!std::is_polymorphic<Elem>::value, "Vector<T> should not containt polymorphic objects directly");
+	static_assert(!std::is_polymorphic<Elem>::value, "Vector<T> should not contain polymorphic objects directly");
 
 	public:
 		using iterator = Elem *;
 		using const_iterator = Elem const *;
 		using Element = Elem;
 
-		Vector() : data(nullptr), dataEnd(nullptr), allocEnd(nullptr) {
+		Vector() : data(nullptr), data_end(nullptr), alloc_end(nullptr) {
 		}
 
 		template<typename RP>
@@ -72,13 +72,13 @@ class Vector : DefaultVectorResizePolicy {
 		}
 
 		void append(const Element &elem) {
-			if(dataEnd == allocEnd) {
+			if(data_end == alloc_end) {
 				expend();
 			}
-			new(dataEnd++) Data(elem);
+			new(data_end++) Data(elem);
 		}
 
-		template<typename I/*, typename E = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type*/>
+		template<typename I/*, typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type*/>
 		void append(const Range<I> &rng) {
 			static_assert(std::is_same<typename Range<I>::Element, Element>::value, "Pushing invalid range into Vector");
 			for(const auto &i : rng) {
@@ -87,15 +87,15 @@ class Vector : DefaultVectorResizePolicy {
 		}
 
 		usize size() const {
-			return dataEnd - data;
+			return data_end - data;
 		}
 
 		bool isEmpty() const {
-			return data == dataEnd;
+			return data == data_end;
 		}
 
 		usize capacity() const {
-			return allocEnd - data;
+			return alloc_end - data;
 		}
 
 		const_iterator begin() const {
@@ -103,7 +103,7 @@ class Vector : DefaultVectorResizePolicy {
 		}
 
 		const_iterator end() const {
-			return dataEnd;
+			return data_end;
 		}
 
 		const_iterator cbegin() const {
@@ -111,7 +111,7 @@ class Vector : DefaultVectorResizePolicy {
 		}
 
 		const_iterator cend() const {
-			return dataEnd;
+			return data_end;
 		}
 
 		iterator begin() {
@@ -119,7 +119,7 @@ class Vector : DefaultVectorResizePolicy {
 		}
 
 		iterator end() {
-			return dataEnd;
+			return data_end;
 		}
 
 		const Element &operator[](usize i) const {
@@ -135,11 +135,20 @@ class Vector : DefaultVectorResizePolicy {
 		}
 
 		void set_min_capacity(usize min_cap) {
-			unsafe_set_capacity(size(), ideal_capacity(min_cap));
+			unsafe_set_capacity(size(), this->ideal_capacity(min_cap));
 		}
 
 		void clear() {
 			unsafe_set_capacity(0, 0);
+		}
+
+		void squeeze() {
+			set_capacity(size());
+		}
+
+		void make_empty() {
+			clear(data, data_end);
+			data_end = data;
 		}
 
 		bool operator!=(const Vector &v) const {
@@ -158,31 +167,14 @@ class Vector : DefaultVectorResizePolicy {
 			return !operator!=(v);
 		}
 
-	private:
-		void copy_range(Data *dst, const Data *src, usize n) {
-			if(std::is_pod<Data>::value) {
-				memcpy(dst, src, sizeof(Data) * n);
-			} else {
-				for(; n; n--) {
-					new(dst++) Data(*(src++));
-				}
-			}
-		}
 
+	private:
 		void move_range(Data *dst, const Data *src, usize n) {
 			if(std::is_pod<Data>::value) {
 				memmove(dst, src, sizeof(Data) * n);
 			} else {
 				for(; n; n--) {
 					new(dst++) Data(std::move(*(src++)));
-				}
-			}
-		}
-
-		void clear(Data *src, usize n) {
-			if(!std::is_pod<Data>::value) {
-				while(n) {
-					(src + --n)->~Data();
 				}
 			}
 		}
@@ -196,18 +188,18 @@ class Vector : DefaultVectorResizePolicy {
 		}
 
 		void expend() {
-			unsafe_set_capacity(size(), ideal_capacity(size() + 1));
+			unsafe_set_capacity(size(), this->ideal_capacity(size() + 1));
 		}
 
 		void shrink() {
 			usize current = size();
 			usize cap = capacity();
-			if(current < cap && shrink(current, cap)) {
-				unsafe_set_capacity(current, ideal_capacity(current));
+			if(current < cap && this->shrink(current, cap)) {
+				unsafe_set_capacity(current, this->ideal_capacity(current));
 			}
 		}
 
-		// uses dataEnd !!
+		// uses data_end !!
 		void unsafe_set_capacity(usize num_to_move, usize new_cap) {
 			using byte = u8;
 
@@ -216,17 +208,17 @@ class Vector : DefaultVectorResizePolicy {
 			Data *new_data = new_cap ? reinterpret_cast<Data *>(new byte[new_cap * sizeof(Data)]) : nullptr;
 
 			move_range(new_data, data, num_to_move);
-			clear(data, dataEnd);
+			clear(data, data_end);
 
 			delete[] reinterpret_cast<byte *>(data);
 			data = new_data;
-			dataEnd = data + num_to_move;
-			allocEnd = data + new_cap;
+			data_end = data + num_to_move;
+			alloc_end = data + new_cap;
 		}
 
 		Data *data;
-		Data *dataEnd;
-		Data *allocEnd;
+		Data *data_end;
+		Data *alloc_end;
 };
 
 

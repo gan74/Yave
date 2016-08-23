@@ -22,13 +22,20 @@ namespace core {
 
 struct Base {
 };
-
 struct Derived : Base {
 };
 struct MoreDerived : Derived {
 };
 
+struct Polymorphic {
+	virtual ~Polymorphic() {
+	}
+};
+
+
 static_assert(std::is_same<std::common_type<MoreDerived, Derived>::type, Derived>::value, "std::common_type failure");
+static_assert(std::is_polymorphic<Polymorphic>::value, "std::is_polymorphic failure");
+static_assert(!std::is_polymorphic<Polymorphic *>::value, "std::is_polymorphic failure");
 
 y_test_func("DefaultVectorResizePolicy") {
 	DefaultVectorResizePolicy size;
@@ -40,7 +47,6 @@ y_test_func("DefaultVectorResizePolicy") {
 		y_test_assert(size.ideal_capacity(i) >= i);
 	}
 }
-
 
 
 y_test_func("Vector creation") {
