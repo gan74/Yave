@@ -173,12 +173,12 @@ class Rc : public Ptr<T> {
 
 template<typename T>
 auto ptr(T &&t) {
-	return Ptr<T>(std::move(t));
+	return Ptr<typename std::remove_reference<T>::type>(std::move(t));
 }
 
 template<typename T>
 auto rc(T &&t) {
-	return Rc<T>(std::move(t));
+	return Rc<typename std::remove_reference<T>::type>(std::move(t));
 }
 
 }
