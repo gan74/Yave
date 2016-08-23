@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_MATH_MATRIX_H
 #define Y_MATH_MATRIX_H
 
+#include <y/utils.h>
 #include "Vec.h"
 
 namespace y {

@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_CORE_RANGE_H
 #define Y_CORE_RANGE_H
 
+#include <y/utils.h>
 #include "ReverseIterator.h"
 #include "ValueIterator.h"
 #include "MapIterator.h"

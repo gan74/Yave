@@ -16,6 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_CORE_VALUEITERATOR_H
 #define Y_CORE_VALUEITERATOR_H
 
+#include <y/utils.h>
+
 namespace y {
 namespace core {
 
