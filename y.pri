@@ -1,7 +1,5 @@
 CONFIG += c++1z
 
-LIBS += -lpthread
-
 DEPENDPATH += $$PWD
 INCLUDEPATH += $$PWD
 
@@ -11,6 +9,7 @@ SOURCES += $$PWD/y/*.cpp \
 		   $$PWD/y/test/*.cpp
 
 HEADERS += $$PWD/y/*.h \
+		   $$PWD/y/utils/*.h \
 		   $$PWD/y/core/*.h \
 		   $$PWD/y/math/*.h \
 		   $$PWD/y/test/*.h
