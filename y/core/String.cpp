@@ -24,7 +24,7 @@ namespace y {
 namespace core {
 // --------------------------------------------------- LONG ---------------------------------------------------
 
-String::LongData::LongData() : data(0), length(0) {
+String::LongData::LongData() : data(0), capacity(0), length(0) {
 }
 
 String::LongData::LongData(const LongData &l) : LongData(l.data, l.length) {
@@ -114,6 +114,15 @@ String::~String() {
 	if(is_long()) {
 		free_long(l);
 	}
+}
+
+String String::from_owned(char *owned) {
+	usize len = strlen(owned);
+	String str;
+	str.l.length = len;
+	str.l.capacity = len;
+	str.l.data = owned;
+	return str;
 }
 
 usize String::size() const {
@@ -210,8 +219,13 @@ String &String::operator+=(const String &str) {
 	return *this;
 }
 
+char &String::operator[](usize i) {
+	return data()[i];
+}
 
-
+char String::operator[](usize i) const {
+	return data()[i];
+}
 
 
 
@@ -230,7 +244,7 @@ const char *get_long_c_str() {
 y_test_func("String short creation") {
 	auto s = str("lele");
 
-	y_test_assert(!strcmp(s.data(), "lele"));
+	y_test_assert(!strcmp(s, "lele"));
 	y_test_assert(s.size() == 4);
 	y_test_assert(s.capacity() == String::MaxShortSize);
 }
@@ -238,7 +252,7 @@ y_test_func("String short creation") {
 y_test_func("String long creation") {
 	auto s = str(get_long_c_str());
 
-	y_test_assert(!strcmp(s.data(), get_long_c_str()));
+	y_test_assert(!strcmp(s, get_long_c_str()));
 	y_test_assert(s.size() > String::MaxShortSize);
 	y_test_assert(s.capacity() >= s.size());
 	y_test_assert(s.is_long());
@@ -273,16 +287,49 @@ y_test_func("String add") {
 	a += str(c_str + 3, 3);
 
 	y_test_assert(a.size() == 6);
-	y_test_assert(!strncmp(a.data(), c_str, a.size()));
+	y_test_assert(!strncmp(a, c_str, a.size()));
 	y_test_assert(!a.is_long());
 
 	a += str(c_str + 6);
 	y_test_assert(a.is_long());
 	y_test_assert(a.size() == strlen(c_str));
-	y_test_assert(!strcmp(a.data(), c_str));
+	y_test_assert(!strcmp(a, c_str));
 
 	a += "?";
 }
+
+y_test_func("String from_owned") {
+	usize size = 28;
+	char *c_str = new char[size + 1];
+	memcpy(c_str, get_long_c_str(), size);
+	c_str[size] = 0;
+
+	auto str = str_from_owned(c_str);
+
+	usize index = size / 2;
+	str[index]++;
+	y_test_assert(str[index] == get_long_c_str()[index] + 1);
+}
+
+y_test_func("String from") {
+	{
+		auto s = str(125);
+		y_test_assert(!strcmp(s, "125"));
+	}
+	{
+		auto s = str("flubudu");
+		y_test_assert(!strcmp(s, "flubudu"));
+	}
+	{
+		auto s = str(3.1415f);
+		y_test_assert(!strcmp(s, "3.1415"));
+	}
+	{
+		auto s = str(2.71828);
+		y_test_assert(!strcmp(s, "2.71828"));
+	}
+}
+
 
 }
 }

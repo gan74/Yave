@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_CORE_STRING_H
 
 #include <y/utils.h>
+#include <sstream>
+
 
 namespace y {
 namespace core {
@@ -94,6 +96,10 @@ class String {
 
 		~String();
 
+		template<typename T>
+		static String from(const T &t);
+		static String from_owned(char *owned);
+
 		usize size() const;
 		usize capacity() const;
 		bool is_empty() const;
@@ -113,6 +119,9 @@ class String {
 		String &operator=(String &&str);
 
 		String &operator+=(const String &str);
+
+		char &operator[](usize i);
+		char operator[](usize i) const;
 
 
 		iterator begin() {
@@ -152,9 +161,49 @@ class String {
 
 };
 
+
+
+namespace detail {
+template<typename T>
+String str(const T &t, std::false_type) {
+	return String::from(t);
+}
+
+template<typename T>
+String str(const T &t, std::true_type) {
+	return String(t);
+}
+}
+
 template<typename... Args>
 String str(Args... args) {
 	return String(args...);
+}
+
+template<typename T>
+String str(const T &t) {
+	return detail::str(t, bool_type<std::is_convertible<T, String>::value>());
+}
+
+String str_from_owned(char *owned) {
+	return String::from_owned(owned);
+}
+
+template<typename T>
+String str_from(const T &t) {
+	return String::from(t);
+}
+
+
+
+
+
+
+template<typename T>
+String String::from(const T &t) {
+	std::ostringstream oss;
+	oss << t;
+	return oss.str().c_str();
 }
 
 }
