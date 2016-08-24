@@ -140,12 +140,12 @@ using Functor = detail::Functor<Rc, Ret, Args...>;
 
 
 template<typename T>
-auto function(const T &func) {
+inline auto function(const T &func) {
 	return typename detail::functor_t<T>::template type<Function>(func);
 }
 
 template<typename T>
-auto functor(const T &func) {
+inline auto functor(const T &func) {
 	return typename detail::functor_t<T>::template type<Functor>(func);
 }
 

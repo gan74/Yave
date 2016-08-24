@@ -78,7 +78,7 @@ class ReverseIterator {
 };
 
 template<typename Iter>
-ReverseIterator<Iter> reverse_iterator(const Iter &i) {
+inline ReverseIterator<Iter> reverse_iterator(const Iter &i) {
 	return ReverseIterator<Iter>(i);
 }
 

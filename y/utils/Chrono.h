@@ -15,8 +15,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 
-#ifndef Y_CHRONO_H
-#define Y_CHRONO_H
+#ifndef Y_UTILS_CHRONO_H
+#define Y_UTILS_CHRONO_H
 
 namespace y {
 
