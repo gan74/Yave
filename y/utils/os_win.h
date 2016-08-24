@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_UTILS_OS_WIN_H
 
 #include <y/defines.h>
-#include <iostream>
+#include "types.h"
 
 #ifdef Y_OS_WIN
 #include <windows.h>
@@ -51,6 +51,10 @@ bool func(Args... args) {																											\
 	return true;																													\
 }
 
+
+u64 filetime_to_ns(FILETIME time) {
+	return ((u64(time.dwHighDateTime) << 32) | u64(time.dwLowDateTime)) * 100;
+}
 
 #ifndef Y_NO_PSAPI
 Y_WIN_DYN_FUNC(psapi, GetProcessMemoryInfo)

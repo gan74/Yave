@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <y/utils.h>
 
+#include <iostream>
 
 namespace y {
 namespace os {
@@ -55,6 +56,29 @@ usize mem_usage() {
 	return windows::GetProcessMemoryInfo(GetCurrentProcess(), info, sizeof(info)) ? info.WorkingSetSize : 0;
 	#else
 	return 0;
+	#endif
+}
+
+
+u64 get_user_time_ns() {
+	#ifdef Y_OS_WIN
+	FILETIME time;
+	FILETIME garbage;
+	GetProcessTimes(GetCurrentProcess(), &garbage, &garbage, &garbage, &time);
+	return windows::filetime_to_ns(time);
+	#else
+	return MemInfo { 0, 0 };
+	#endif
+}
+
+u64 get_kernel_time_ns() {
+	#ifdef Y_OS_WIN
+	FILETIME time;
+	FILETIME garbage;
+	GetProcessTimes(GetCurrentProcess(), &garbage, &garbage, &time, &garbage);
+	return windows::filetime_to_ns(time);
+	#else
+	return MemInfo { 0, 0 };
 	#endif
 }
 
