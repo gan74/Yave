@@ -4,6 +4,7 @@ DEPENDPATH += $$PWD
 INCLUDEPATH += $$PWD
 
 SOURCES += $$PWD/y/*.cpp \
+		   $$PWD/y/utils/*.cpp \
 		   $$PWD/y/core/*.cpp \
 		   $$PWD/y/math/*.cpp \
 		   $$PWD/y/test/*.cpp
