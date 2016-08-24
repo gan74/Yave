@@ -25,13 +25,13 @@ namespace core {
 template<typename T>
 class Ptr : NonCopyable {
 	public:
-		explicit Ptr(T *&&p = 0) : ptr(p) {
+		explicit Ptr(T *&&p = nullptr) : ptr(p) {
 		}
 
 		explicit Ptr(T &&p) : Ptr(new T(std::move(p))) {
 		}
 
-		Ptr(Ptr &&p) : ptr(0) {
+		Ptr(Ptr &&p) : ptr(nullptr) {
 			swap(p);
 		}
 
@@ -104,17 +104,17 @@ template<typename T, typename C = u32>
 class Rc : public Ptr<T> {
 	using Ptr<T>::ptr;
 	public:
-		explicit Rc(T *&&p = 0) : Ptr<T>(std::move(p)), count(new C(1)) {
+		explicit Rc(T *&&p = nullptr) : Ptr<T>(std::move(p)), count(new C(1)) {
 		}
 
 		explicit Rc(T &&p) : Rc(new T(std::move(p))) {
 		}
 
-		Rc(const Rc &p) : Ptr<T>(0), count(0) {
+		Rc(const Rc &p) : Ptr<T>(nullptr), count(nullptr) {
 			ref(p);
 		}
 
-		Rc(Rc &&p) : Ptr<T>(0), count(0) {
+		Rc(Rc &&p) : Ptr<T>(nullptr), count(nullptr) {
 			swap(p);
 		}
 
@@ -164,8 +164,8 @@ class Rc : public Ptr<T> {
 				delete ptr;
 				delete count;
 			}
-			ptr = 0;
-			count = 0;
+			ptr = nullptr;
+			count = nullptr;
 		}
 
 		C *count;

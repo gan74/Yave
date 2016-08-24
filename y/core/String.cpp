@@ -24,7 +24,7 @@ namespace y {
 namespace core {
 // --------------------------------------------------- LONG ---------------------------------------------------
 
-String::LongData::LongData() : data(0), capacity(0), length(0) {
+String::LongData::LongData() : data(nullptr), capacity(0), length(0) {
 }
 
 String::LongData::LongData(const LongData &l) : LongData(l.data, l.length) {
@@ -215,7 +215,7 @@ String &String::operator+=(const String &str) {
 			self_data[s.length = total_size] = 0;
 		}
 	} else {
-		LongData new_dat(0, total_size);
+		LongData new_dat(nullptr, total_size);
 		memcpy(new_dat.data, self_data, self_size);
 		memcpy(new_dat.data + self_size, other_data, other_size);
 		new_dat.data[total_size] = 0;
