@@ -33,7 +33,7 @@ namespace windows {
 template<typename... Args>																											\
 bool func(Args... args) {																											\
 	static HMODULE module = nullptr;																								\
-	static void (*func_ptr)(Args...) = nullptr;																						\
+	static BOOL (*func_ptr)(Args...) = nullptr;																						\
 	static bool is_init = false;																									\
 	if(!is_init) {																													\
 		is_init = true;																												\
@@ -47,8 +47,7 @@ bool func(Args... args) {																											\
 	if(!func_ptr) {																													\
 		return false;																												\
 	}																																\
-	func_ptr(args...);																												\
-	return true;																													\
+	return !!func_ptr(args...);																										\
 }
 
 
