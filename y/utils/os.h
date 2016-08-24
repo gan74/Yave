@@ -16,10 +16,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_UTILS_OS_H
 #define Y_UTILS_OS_H
 
+#include "types.h"
+
 namespace y {
 
+namespace os {
+
+struct MemInfo {
+	u64 total;
+	u64 available;
+};
+
+usize pid();
+usize core_count();
+MemInfo phys_mem_info();
+usize mem_usage();
+
 }
-
-
+}
 
 #endif // Y_UTILS_OS_H

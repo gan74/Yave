@@ -20,9 +20,53 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef Y_OS_WIN
 #include <windows.h>
+
+#ifdef Y_USE_PSAPI
+#include <psapi.h>
+#endif
 #endif
 
 namespace y {
+
+namespace os {
+
+usize pid() {
+	return getpid();
+}
+
+usize core_count() {
+	#ifdef Y_OS_WIN
+		SYSTEM_INFO info;
+		GetSystemInfo(&info);
+		return info.dwNumberOfProcessors;
+	#else
+		return 0;
+	#endif
+}
+
+MemInfo phys_mem_info() {
+	#ifdef Y_OS_WIN
+	MEMORYSTATUSEX info;
+	info.dwLength = sizeof(info);
+	GlobalMemoryStatusEx(&info);
+	return MemInfo { info.ullTotalPhys, info.ullAvailPhys };
+	#else
+	return MemInfo { 0, 0 };
+	#endif
+}
+
+usize mem_usage() {
+	#if defined(Y_OS_WIN) && defined(Y_USE_PSAPI)
+	PROCESS_MEMORY_COUNTERS info;
+	info.cb = sizeof(info);
+	GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info));
+	return info.WorkingSetSize;
+	#else
+	return 0;
+	#endif
+}
+
+}
 
 }
 
