@@ -29,36 +29,38 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace windows {
 
-template<const char *name>
-HMODULE library() {
-	static HMODULE *h = 0;
-	if(!h) {
-		wchar_t buffer[256];
-		swprintf(buffer, 256, L"%hs", name);
-		auto lib = LoadLibrary(buffer);
-		if(!lib) {
-			fatal("Unable to load library");
-		}
-		h = new HMODULE(lib);
-	}
-	return *h;
+#define Y_WIN_DYN_FUNC(lib, func)																									\
+template<typename... Args>																											\
+bool func(Args... args) {																											\
+	static HMODULE module = nullptr;																								\
+	static void (*func_ptr)(Args...) = nullptr;																						\
+	static bool is_init = false;																									\
+	if(!is_init) {																													\
+		is_init = true;																												\
+		if(!(module = LoadLibrary(TEXT(#lib)))) {																					\
+			return false;																											\
+		}																															\
+		if(!(func_ptr = reinterpret_cast<decltype(func_ptr)>(GetProcAddress(module, #func)))) {										\
+			return false;																											\
+		}																															\
+	}																																\
+	if(!func_ptr) {																													\
+		return false;																												\
+	}																																\
+	func_ptr(args...);																												\
+	return true;																													\
 }
 
-static constexpr const char psapi[] = "psapi";
 
-template<typename... Args>
-bool call(const char *name, Args... args) {
-	auto func_ptr = reinterpret_cast<void (*)(Args...)>(GetProcAddress(library<psapi>(), name));
-	if(!func_ptr) {
-		return false;
-	}
-	func_ptr(args...);
-	return true;
-}
+#ifndef Y_NO_PSAPI
+Y_WIN_DYN_FUNC(psapi, GetProcessMemoryInfo)
+#endif
+
+#undef Y_WIN_DYN_FUNC
 
 }
 }
+
 
 #endif // Y_OS_WIN
-
 #endif // Y_UTILS_OS_WIN_H

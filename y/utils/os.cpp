@@ -52,7 +52,7 @@ usize mem_usage() {
 	#if defined(Y_OS_WIN) && !defined(Y_NO_PSAPI)
 	PROCESS_MEMORY_COUNTERS info;
 	info.cb = sizeof(info);
-	return windows::call("GetProcessMemoryInfo", GetCurrentProcess(), info, sizeof(info)) ? info.WorkingSetSize : 0;
+	return windows::GetProcessMemoryInfo(GetCurrentProcess(), info, sizeof(info)) ? info.WorkingSetSize : 0;
 	#else
 	return 0;
 	#endif
