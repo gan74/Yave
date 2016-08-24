@@ -67,6 +67,41 @@ class Vector : ResizePolicy {
 			}
 		}
 
+		Vector(const Vector &other) : Vector() {
+			set_min_capacity(other.size());
+			for(const Elem &e : other) {
+				append(e);
+			}
+		}
+
+		Vector(Vector &&other) : Vector() {
+			swap(other);
+		}
+
+		template<typename RP>
+		Vector &operator=(const Vector<Elem, RP> &other) {
+			Vector v(other);
+			swap(v);
+			return *this;
+		}
+
+		Vector &operator=(const Vector &other) {
+			Vector v(other);
+			swap(v);
+			return *this;
+		}
+
+		Vector &operator=(Vector &&other) {
+			swap(other);
+			return *this;
+		}
+
+		void swap(Vector &v) {
+			std::swap(data, v.data);
+			std::swap(data_end, v.data_end);
+			std::swap(alloc_end, v.alloc_end);
+		}
+
 		~Vector() {
 			clear();
 		}
@@ -151,20 +186,21 @@ class Vector : ResizePolicy {
 			data_end = data;
 		}
 
-		bool operator!=(const Vector &v) const {
+		bool operator==(const Vector &v) const {
 			usize s = size();
 			if(s == v.size()) {
 				for(usize i = 0; i != s; i++) {
 					if(data[i] != v[i]) {
-						return true;
+						return false;
 					}
 				}
+				return true;
 			}
 			return false;
 		}
 
-		bool operator==(const Vector &v) const {
-			return !operator!=(v);
+		bool operator!=(const Vector &v) const {
+			return !operator==(v);
 		}
 
 
@@ -201,16 +237,14 @@ class Vector : ResizePolicy {
 
 		// uses data_end !!
 		void unsafe_set_capacity(usize num_to_move, usize new_cap) {
-			using byte = u8;
-
 			num_to_move = num_to_move < new_cap ? num_to_move : new_cap;
 
-			Data *new_data = new_cap ? reinterpret_cast<Data *>(new byte[new_cap * sizeof(Data)]) : nullptr;
+			Data *new_data = new_cap ? reinterpret_cast<Data *>(new u8[new_cap * sizeof(Data)]) : nullptr;
 
 			move_range(new_data, data, num_to_move);
 			clear(data, data_end);
 
-			delete[] reinterpret_cast<byte *>(data);
+			delete[] reinterpret_cast<u8 *>(data);
 			data = new_data;
 			data_end = data + num_to_move;
 			alloc_end = data + new_cap;
@@ -225,24 +259,44 @@ class Vector : ResizePolicy {
 
 namespace detail {
 template<typename T>
-void append(Vector<T> &) {
+inline void append(Vector<T> &) {
 }
 
 template<typename T, typename U, typename... Args>
-void append(Vector<T> &vec, const U &u, Args... args) {
+inline void append(Vector<T> &vec, const U &u, Args... args) {
 	vec.append(u);
 	append(vec, args...);
 }
+
+template<typename T, typename U>
+inline void append(Vector<T> &vec, const U &u) {
+	vec.append(u);
 }
 
+}
 
-template<typename T, typename... Args>
-auto vector(const T &t, Args... args) {
-	auto vec = Vector<typename std::common_type<T, Args...>::type>();
-	vec.set_min_capacity(1 + sizeof...(args));
-	detail::append(vec, t, args...);
+template<typename T>
+inline auto vector_with_capacity(usize cap) {
+	auto vec = Vector<T>();
+	vec.set_min_capacity(cap);
 	return vec;
 }
+
+template<typename T, typename... Args>
+inline auto vector(Args... args) {
+	auto vec = vector_with_capacity<T>(sizeof...(args));
+	detail::append(vec, args...);
+	return vec;
+}
+
+template<typename T, typename... Args>
+inline auto vector(const T &t, Args... args) {
+	return vector<typename std::common_type<T, Args...>::type>(t, args...);
+}
+
+
+
+
 
 static_assert(std::is_same<decltype(vector(1, 2, 3))::Element, int>::value, "Invalid vector(...) return type");
 static_assert(std::is_same<decltype(vector(1, 2.0, 3))::Element, double>::value, "Invalid vector(...) return type");
