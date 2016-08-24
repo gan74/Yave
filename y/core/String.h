@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_CORE_STRING_H
 
 #include <y/utils.h>
+#include "Vector.h"
 #include <sstream>
 
 
@@ -110,6 +111,9 @@ class String {
 		char *data();
 		const char *data() const;
 
+		iterator find(const String &str);
+		const_iterator find(const String &str) const;
+
 		operator const char *() const;
 		operator char *();
 
@@ -122,6 +126,8 @@ class String {
 
 		char &operator[](usize i);
 		char operator[](usize i) const;
+
+		Vector<u32> to_unicode() const;
 
 
 		iterator begin() {
@@ -155,6 +161,10 @@ class String {
 			ShortData s;
 		};
 
+		const String *const_this() {
+			return this;
+		}
+
 		static char *alloc_long(usize capacity);
 		static usize compute_capacity(usize len);
 		static void free_long(LongData &d);
@@ -165,32 +175,32 @@ class String {
 
 namespace detail {
 template<typename T>
-String str(const T &t, std::false_type) {
+inline String str(const T &t, std::false_type) {
 	return String::from(t);
 }
 
 template<typename T>
-String str(const T &t, std::true_type) {
+inline String str(const T &t, std::true_type) {
 	return String(t);
 }
 }
 
 template<typename... Args>
-String str(Args... args) {
+inline String str(Args... args) {
 	return String(args...);
 }
 
 template<typename T>
-String str(const T &t) {
+inline String str(const T &t) {
 	return detail::str(t, bool_type<std::is_convertible<T, String>::value>());
 }
 
-String str_from_owned(char *owned) {
+inline String str_from_owned(char *owned) {
 	return String::from_owned(owned);
 }
 
 template<typename T>
-String str_from(const T &t) {
+inline String str_from(const T &t) {
 	return String::from(t);
 }
 

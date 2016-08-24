@@ -156,6 +156,15 @@ const char *String::data() const {
 	return is_long() ? l.data : s.data;
 }
 
+String::iterator String::find(const String &str) {
+	return const_cast<iterator>(const_this()->find(str));
+}
+
+String::const_iterator String::find(const String &str) const {
+	const_iterator found = strstr(data(), str);
+	return found ? found : end();
+}
+
 String::operator const char *() const {
 	return data();
 }
@@ -227,6 +236,37 @@ char String::operator[](usize i) const {
 	return data()[i];
 }
 
+
+usize utf8_len(char c) {
+	if(c & 0x80) {
+		usize len = 0;
+		for(; c & 0x80; c <<= 1) {
+			len++;
+		}
+		return len;
+	}
+	return 1;
+}
+
+Vector<u32> String::to_unicode() const {
+	usize si = size();
+	const char *dat = data();
+	auto utf8 = vector_with_capacity<u32>((si * 2) / 3);
+	while(dat < end()) {
+		usize len = utf8_len(*dat);
+		//u32 buffer = c & (0xFF >> len);
+		if(len == 1) {
+			utf8 << u32(*dat++);
+		} else {
+			u32 buffer = *dat++ & (0xFF >> len);
+			for(usize l = 1; l < len; l++) {
+				buffer = (buffer << 6) | (*dat++ & 0x3F);
+			}
+			utf8 << buffer;
+		}
+	}
+	return utf8;
+}
 
 
 
@@ -329,6 +369,27 @@ y_test_func("String from") {
 		y_test_assert(!strcmp(s, "2.71828"));
 	}
 }
+
+y_test_func("String find") {
+	auto s = str(get_long_c_str());
+
+	auto found = s.find("strings");
+	auto end = s.find("flubudu");
+
+	y_test_assert(found != s.end());
+	y_test_assert(end == s.end());
+}
+
+
+y_test_func("String unicode") {
+	auto s = str(u8"фa€\u0444");
+	y_test_assert(s.size() == 8);
+
+	auto utf = s.to_unicode();
+	y_test_assert(utf.size() == 4);
+	y_test_assert(utf == vector<u32>(0x0444, 'a', 0x20AC, 0x0444));
+}
+
 
 
 }
