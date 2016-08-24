@@ -15,9 +15,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "utils.h"
+#include <y/core/String.h>
 #include <iostream>
 
-#warning demangle leaks memory !
 #ifdef __GNUG__
 #include <cstdlib>
 #include <memory>
@@ -30,18 +30,18 @@ namespace detail {
 	usize StaticCounter::value = 0;
 
 	#ifdef __GNUG__
-	const char *demangle_type_name(const char* name) {
+	auto demangle_type_name(const char* name) {
 	int status = 0;
 	char *d = abi::__cxa_demangle(name, 0, 0, &status);
 	if(status) {
-		return name;
+		return core::str(name);
 	}
 
-	return d;
+	return core::str_from_owned(d);
 	}
 	#else
-	const char *demangle_type_name(const char* name) {
-		return name;
+	auto demangle_type_name(const char* name) {
+		return str(name);
 	}
 	#endif
 }

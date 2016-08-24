@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <chrono>
 
 #include <y/utils/deref.h>
+#include <y/utils/startup.h>
+#include <y/utils/os.h>
 #include <y/utils/Chrono.h>
 
 namespace y {
@@ -180,12 +182,16 @@ auto scope_exit(T t) {
 
 
 
+namespace core {
+	class String;
+}
+
 namespace detail {
-	const char *demangle_type_name(const char *name);
+	auto demangle_type_name(const char *name);
 }
 
 template<typename T>
-const char *type_name() {
+auto stype_name() {
 	return detail::demangle_type_name(typeid(T).name());
 }
 
