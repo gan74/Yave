@@ -15,19 +15,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "os.h"
+#include "os_win.h"
+
 #include <y/utils.h>
-#include <iostream>
 
-#ifdef Y_OS_WIN
-#include <windows.h>
-
-#ifdef Y_USE_PSAPI
-#include <psapi.h>
-#endif
-#endif
 
 namespace y {
-
 namespace os {
 
 usize pid() {
@@ -56,11 +49,10 @@ MemInfo phys_mem_info() {
 }
 
 usize mem_usage() {
-	#if defined(Y_OS_WIN) && defined(Y_USE_PSAPI)
+	#if defined(Y_OS_WIN) && !defined(Y_NO_PSAPI)
 	PROCESS_MEMORY_COUNTERS info;
 	info.cb = sizeof(info);
-	GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info));
-	return info.WorkingSetSize;
+	return windows::call("GetProcessMemoryInfo", GetCurrentProcess(), info, sizeof(info)) ? info.WorkingSetSize : 0;
 	#else
 	return 0;
 	#endif
