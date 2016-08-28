@@ -50,7 +50,6 @@ bool func(Args... args) {																											\
 	return !!func_ptr(args...);																										\
 }
 
-
 u64 filetime_to_ns(FILETIME time) {
 	return ((u64(time.dwHighDateTime) << 32) | u64(time.dwLowDateTime)) * 100;
 }

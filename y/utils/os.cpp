@@ -25,7 +25,11 @@ namespace y {
 namespace os {
 
 usize pid() {
+	#ifdef Y_OS_WIN
+	return GetCurrentProcessId();
+	#else
 	return getpid();
+	#endif
 }
 
 usize core_count() {
