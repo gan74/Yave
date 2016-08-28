@@ -48,7 +48,5 @@ Nothing fatal(const char *msg, const char *file = 0, int line = 0);
 #endif
 
 
-#define Y_AUTO_TEST
-
 
 #endif // Y_DEFINES_H
