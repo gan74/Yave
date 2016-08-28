@@ -74,18 +74,27 @@ class Vector : ResizePolicy {
 			}
 		}
 
+		template<typename T>
+		Vector(std::initializer_list<T> l) : Vector() {
+			set_min_capacity(l.size());
+			for(const auto &e : l) {
+				append(e);
+			}
+		}
+
+		Vector(usize size, const Elem &elem) : Vector() {
+			set_min_capacity(size);
+			for(usize i = 0; i != size; i++) {
+				append(elem);
+			}
+		}
+
 		Vector(Vector &&other) : Vector() {
 			swap(other);
 		}
 
-		template<typename RP>
-		Vector &operator=(const Vector<Elem, RP> &other) {
-			Vector v(other);
-			swap(v);
-			return *this;
-		}
-
-		Vector &operator=(const Vector &other) {
+		template<typename T>
+		Vector &operator=(const T &other) {
 			Vector v(other);
 			swap(v);
 			return *this;
@@ -163,6 +172,22 @@ class Vector : ResizePolicy {
 
 		Element &operator[](usize i) {
 			return data[i];
+		}
+
+		const Element &first() const {
+			return *data;
+		}
+
+		Element &first() {
+			return *data;
+		}
+
+		const Element &last() const {
+			return *(data_end - 1);
+		}
+
+		Element &last() {
+			return *(data_end - 1);
 		}
 
 		void set_capacity(usize cap) {

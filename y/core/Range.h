@@ -92,6 +92,16 @@ class Range {
 			}
 		}
 
+		template<typename T>
+		bool contains(const T &t) const {
+			for(const auto &e : *this) {
+				if(e == t) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 	private:
 		Iter beg;
 		Iter en;
