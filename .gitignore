@@ -8,3 +8,5 @@ Makefile
 *.o
 *.user
 
+/bin/
+/.idea/
