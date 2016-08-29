@@ -30,24 +30,24 @@ class FilterIterator {
 		}
 
 		FilterIterator<Iter, Func> &operator++() {
-			while(!filter(++it));
+			while(!filter(*(++it)));
 			return *this;
 		}
 
 		FilterIterator<Iter, Func> &operator--() {
-			while(!filter(--it));
+			while(!filter(*(--it)));
 			return *this;
 		}
 
 		FilterIterator<Iter, Func> operator++(int) {
 			FilterIterator p(*this);
-			while(!filter(++it));
+			while(!filter(*(++it)));
 			return p;
 		}
 
 		FilterIterator<Iter, Func> operator--(int) {
 			FilterIterator p(*this);
-			while(!filter(--it));
+			while(!filter(*(--it)));
 			return p;
 		}
 

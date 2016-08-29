@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ReverseIterator.h"
 #include "ValueIterator.h"
 #include "MapIterator.h"
+#include "FilterIterator.h"
 
 namespace y {
 namespace core {
@@ -63,6 +64,12 @@ class Range {
 		Range<MapIterator<Iter, F>> map(const F &f) const {
 			return Range<MapIterator<Iter, F>>(MapIterator<Iter, F>(begin(), f), MapIterator<Iter, F>(end(), f));
 		}
+
+		template<typename F>
+		Range<FilterIterator<Iter, F>> filter(const F &f) const {
+			return Range<FilterIterator<Iter, F>>(FilterIterator<Iter, F>(begin(), f), FilterIterator<Iter, F>(end(), f));
+		}
+
 
 		template<template<typename...> typename Coll>
 		auto collect() const {
