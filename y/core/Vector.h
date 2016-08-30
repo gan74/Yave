@@ -59,19 +59,26 @@ class Vector : ResizePolicy {
 		Vector() : data(nullptr), data_end(nullptr), alloc_end(nullptr) {
 		}
 
-		template<typename RP>
-		Vector(const Vector<Elem, RP> &other) : Vector() {
+		Vector(const Vector &other) : Vector() {
 			set_min_capacity(other.size());
 			for(const Elem &e : other) {
 				append(e);
 			}
 		}
 
-		Vector(const Vector &other) : Vector() {
-			set_min_capacity(other.size());
-			for(const Elem &e : other) {
-				append(e);
-			}
+		Vector(Vector &&other) : Vector() {
+			swap(other);
+		}
+
+		Vector &operator=(const Vector &other) {
+			Vector v(other);
+			swap(v);
+			return *this;
+		}
+
+		Vector &operator=(Vector &&other) {
+			swap(other);
+			return *this;
 		}
 
 		template<typename T>
@@ -89,19 +96,16 @@ class Vector : ResizePolicy {
 			}
 		}
 
-		Vector(Vector &&other) : Vector() {
-			swap(other);
+		template<typename T>
+		explicit Vector(const T &other) : Vector() {
+			set_min_capacity(other.size());
+			append(range(other));
 		}
 
 		template<typename T>
 		Vector &operator=(const T &other) {
 			Vector v(other);
 			swap(v);
-			return *this;
-		}
-
-		Vector &operator=(Vector &&other) {
-			swap(other);
 			return *this;
 		}
 
