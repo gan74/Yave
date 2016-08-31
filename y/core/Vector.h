@@ -256,8 +256,6 @@ class Vector : ResizePolicy {
 				while(en != beg) {
 					Data &to_del = *(--en);
 					to_del.~Data();
-					//std::cout << "WAT " << std::endl;
-					//(--en)->~Data();
 				}
 			}
 		}
