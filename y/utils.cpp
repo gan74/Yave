@@ -30,7 +30,7 @@ namespace detail {
 	usize StaticCounter::value = 0;
 
 	#ifdef __GNUG__
-	auto demangle_type_name(const char* name) {
+	core::String demangle_type_name(const char* name) {
 	int status = 0;
 	char *d = abi::__cxa_demangle(name, 0, 0, &status);
 	if(status) {
@@ -40,7 +40,7 @@ namespace detail {
 	return core::str_from_owned(d);
 	}
 	#else
-	auto demangle_type_name(const char* name) {
+	core::String demangle_type_name(const char* name) {
 		return str(name);
 	}
 	#endif

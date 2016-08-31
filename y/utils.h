@@ -156,24 +156,6 @@ auto scope_exit(T t) {
 	return detail::ScopeExit<T>(t);
 }
 
-
-
-namespace core {
-	class String;
-}
-
-namespace detail {
-	auto demangle_type_name(const char *name);
-}
-
-template<typename T>
-auto stype_name() {
-	return detail::demangle_type_name(typeid(T).name());
-}
-
-
-
-
 template<typename... Types>
 struct Coerce {
 };

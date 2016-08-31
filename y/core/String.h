@@ -207,8 +207,6 @@ inline String str_from(const T &t) {
 
 
 
-
-
 template<typename T>
 String String::from(const T &t) {
 	std::ostringstream oss;
@@ -216,7 +214,22 @@ String String::from(const T &t) {
 	return oss.str().c_str();
 }
 
+} // core
+
+
+
+
+
+// because we do need string in here
+namespace detail {
+	core::String demangle_type_name(const char *name);
 }
+
+template<typename T>
+auto type_name() {
+	return detail::demangle_type_name(typeid(T).name());
+}
+
 }
 
 #endif // Y_CORE_STRING_H

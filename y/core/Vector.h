@@ -126,6 +126,13 @@ class Vector : ResizePolicy {
 			new(data_end++) Data(elem);
 		}
 
+		void append(Element &&elem) {
+			if(data_end == alloc_end) {
+				expend();
+			}
+			new(data_end++) Data(std::move(elem));
+		}
+
 		template<typename I/*, typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type*/>
 		void append(const Range<I> &rng) {
 			static_assert(std::is_same<typename Range<I>::Element, Element>::value, "Pushing invalid range into Vector");
@@ -234,7 +241,7 @@ class Vector : ResizePolicy {
 
 
 	private:
-		void move_range(Data *dst, const Data *src, usize n) {
+		void move_range(Data *dst, Data *src, usize n) {
 			if(std::is_pod<Data>::value) {
 				memmove(dst, src, sizeof(Data) * n);
 			} else {
@@ -247,7 +254,10 @@ class Vector : ResizePolicy {
 		void clear(Data *beg, Data *en) {
 			if(!std::is_pod<Data>::value) {
 				while(en != beg) {
-					(--en)->~Data();
+					Data &to_del = *(--en);
+					to_del.~Data();
+					//std::cout << "WAT " << std::endl;
+					//(--en)->~Data();
 				}
 			}
 		}
@@ -292,14 +302,14 @@ inline void append(Vector<T> &) {
 }
 
 template<typename T, typename U, typename... Args>
-inline void append(Vector<T> &vec, const U &u, Args... args) {
+inline void append(Vector<T> &vec, U u, Args... args) {
 	vec.append(u);
-	append(vec, args...);
+	append(vec, std::forward<Args>(args)...);
 }
 
 template<typename T, typename U>
-inline void append(Vector<T> &vec, const U &u) {
-	vec.append(u);
+inline void append(Vector<T> &vec, U u) {
+	vec.append(std::forward<U>(u));
 }
 
 }
@@ -314,13 +324,13 @@ inline auto vector_with_capacity(usize cap) {
 template<typename T, typename... Args>
 inline auto vector(Args... args) {
 	auto vec = vector_with_capacity<T>(sizeof...(args));
-	detail::append(vec, args...);
+	detail::append(vec, std::forward<Args>(args)...);
 	return vec;
 }
 
 template<typename T, typename... Args>
-inline auto vector(const T &t, Args... args) {
-	return vector<typename std::common_type<T, Args...>::type>(t, args...);
+inline auto vector(T t, Args... args) {
+	return vector<typename std::common_type<T, Args...>::type>(std::forward<T>(t), std::forward<Args>(args)...);
 }
 
 

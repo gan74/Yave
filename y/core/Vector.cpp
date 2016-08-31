@@ -32,6 +32,23 @@ struct Polymorphic {
 	}
 };
 
+struct RaiiCounter : NonCopyable {
+	RaiiCounter(usize *ptr) : counter(ptr) {
+	}
+
+	RaiiCounter(RaiiCounter &&raii) : counter(nullptr) {
+		std::swap(raii.counter, counter);
+	}
+
+	~RaiiCounter() {
+		if(counter) {
+			(*counter)++;
+		}
+	}
+
+	usize *counter;
+};
+
 
 static_assert(std::is_same<std::common_type<MoreDerived, Derived>::type, Derived>::value, "std::common_type failure");
 static_assert(std::is_polymorphic<Polymorphic>::value, "std::is_polymorphic failure");
@@ -40,7 +57,7 @@ static_assert(!std::is_polymorphic<Polymorphic *>::value, "std::is_polymorphic f
 y_test_func("DefaultVectorResizePolicy") {
 	DefaultVectorResizePolicy size;
 
-	y_test_assert(!size.ideal_capacity(0));
+	y_test_assert(size.ideal_capacity(0) == 0);
 	y_test_assert(size.shrink(0, 1));
 
 	for(usize i = 0; i != size.threshold + 3 * size.step; i++) {
@@ -99,15 +116,15 @@ y_test_func("Vector clear") {
 		vec.append(0);
 	}
 	vec.clear();
-	y_test_assert(!vec.size());
-	y_test_assert(!vec.capacity());
+	y_test_assert(vec.size() == 0);
+	y_test_assert(vec.capacity() == 0);
 
 	while(vec.size() != max * 2) {
 		vec.append(0);
 	}
 	vec.clear();
-	y_test_assert(!vec.size());
-	y_test_assert(!vec.capacity());
+	y_test_assert(vec.size() == 0);
+	y_test_assert(vec.capacity() == 0);
 }
 
 y_test_func("Vector iteration") {
@@ -168,6 +185,26 @@ y_test_func("Vector<Range<I>>") {
 		y_test_assert(vec == vector(0, 1, 2, 3));
 	}
 }
+
+y_test_func("Vector dtors") {
+	usize counter = 0;
+	auto vec = vector(std::move(RaiiCounter(&counter)));
+
+	y_test_assert(counter == 0);
+
+	auto cap = vec.capacity();
+	do {
+		vec.append(RaiiCounter(&counter));
+	} while(cap == vec.capacity() || vec.capacity() < 32);
+
+	y_test_assert(counter == 0);
+
+	usize total = vec.size();
+	vec = vector<RaiiCounter>();
+
+	y_test_assert(counter == total);
+}
+
 
 
 }
