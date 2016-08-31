@@ -10,3 +10,7 @@ Makefile
 
 /bin/
 /.idea/
+/CMakeFiles/
+/CMakeCache.txt
+*.cmake
+*.cbp
