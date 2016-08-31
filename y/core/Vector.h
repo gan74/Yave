@@ -81,8 +81,7 @@ class Vector : ResizePolicy {
 			return *this;
 		}
 
-		template<typename T>
-		Vector(std::initializer_list<T> l) : Vector() {
+		Vector(std::initializer_list<Elem> l) : Vector() {
 			set_min_capacity(l.size());
 			for(const auto &e : l) {
 				append(e);
