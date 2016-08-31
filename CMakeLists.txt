@@ -12,12 +12,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -ffast-math -pedantic")
 
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-file(GLOB SOURCE_FILES
-		"y/*"
-		"y/utils/*"
-		"y/core/*"
-		"y/math/*"
-		"y/test/*"
+file(GLOB_RECURSE SOURCE_FILES
+		"y/*.h"
+		"y/*.cpp"
 		)
 
 add_library(y STATIC ${SOURCE_FILES})
