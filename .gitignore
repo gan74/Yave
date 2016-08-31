@@ -1,16 +1,2 @@
-/debug/
-/release/
-
-Makefile
-*.Debug
-*.Release
-*.out
-*.o
 *.user
-
-/bin/
-/.idea/
-/CMakeFiles/
-/CMakeCache.txt
-*.cmake
-*.cbp
+/build/

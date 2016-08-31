@@ -10,11 +10,9 @@ add_definitions("${EXTRA_WARNINGS} ${ULTIMATE_WARNINGS}")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -ffast-math -pedantic")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 file(GLOB SOURCE_FILES
-		"main.cpp"
-
 		"y/*"
 		"y/utils/*"
 		"y/core/*"
@@ -22,7 +20,9 @@ file(GLOB SOURCE_FILES
 		"y/test/*"
 		)
 
-add_executable(y ${SOURCE_FILES})
+add_library(y STATIC ${SOURCE_FILES})
 
+add_executable(main ${SOURCE_FILES} "main.cpp")
+target_link_libraries(main y)
 
-add_definitions(-DY_AUTO_TEST)
+target_compile_definitions(main PRIVATE -DY_AUTO_TEST)
