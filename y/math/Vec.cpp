@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Vec.h"
 #include <y/test/test.h>
+#include <iostream>
 
 namespace y {
 namespace math {
@@ -39,7 +40,7 @@ y_test_func("Vec zero") {
 	y_test_assert(v.length2() == 1);
 
 	auto v2 = v.normalized();
-	y_test_assert(v2 == v);
+	y_test_assert((v2 - v).length2() < 0.0001);
 }
 
 y_test_func("Vec cross") {
