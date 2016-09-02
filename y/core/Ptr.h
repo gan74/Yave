@@ -44,6 +44,11 @@ class Ptr : NonCopyable {
 			return *this;
 		}
 
+		Ptr &operator=(nullptr_t p) {
+			swap(Ptr(p));
+			return *this;
+		}
+
 		void swap(Ptr &p) {
 			std::swap(ptr, p.ptr);
 		}
@@ -136,6 +141,11 @@ class Rc : public Ptr<T> {
 				unref();
 				ref(p);
 			}
+			return *this;
+		}
+
+		Rc &operator=(nullptr_t) {
+			unref();
 			return *this;
 		}
 
