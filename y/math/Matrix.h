@@ -230,7 +230,7 @@ class Matrix
 			static_assert(is_square(), "The matrix must be square");
 		}
 
-		Vec<M, T> rows[N];
+		Vec<M, T> rows[N] = {Vec<M, T>()};
 };
 
 namespace detail {

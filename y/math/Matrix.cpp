@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace math {
 
-static_assert(std::is_trivial<Matrix4<>>::value, "Matrix<T> should be trivial");
+static_assert(std::is_trivially_copyable<Matrix4<>>::value, "Matrix<T> should be trivially copyable");
 
 y_test_func("Matrix vec multiply") {
 	Matrix3<> mat(1, 2, 3,

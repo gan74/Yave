@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace math {
 
-static_assert(std::is_trivial<Vec4>::value, "Vec<T> should be trivial");
+static_assert(std::is_trivially_copyable<Vec4>::value, "Vec<T> should be trivially copyable");
 
 y_test_func("Vec creation") {
 	Vec<2> a(1, 2);
@@ -30,6 +30,9 @@ y_test_func("Vec creation") {
 	Vec<6> d(a, 3, b);
 
 	y_test_assert(d == Vec<6>(1, 2, 3, 1, 2, 3));
+
+	Vec<3, i32> e(7);
+	y_test_assert(e.x() == 7 && e.y() == 7 && e.z() == 7);
 }
 
 y_test_func("Vec zero") {
