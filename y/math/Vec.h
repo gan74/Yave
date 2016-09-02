@@ -66,11 +66,7 @@ class Vec
 			}
 		}
 
-		Vec() {
-			for(usize i = 0; i != N; i++) {
-				vec[i] = T(0);
-			}
-		}
+
 
 		template<typename X>
 		Vec(const Vec<N, X> &v) {
@@ -78,6 +74,11 @@ class Vec
 				vec[i] = v[i];
 			}
 		}
+
+		Vec() = default;
+		Vec(const Vec &) = default;
+		Vec &operator=(const Vec &) = default;
+
 
 		T length2() const {
 			T sum = 0;

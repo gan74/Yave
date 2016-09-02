@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace math {
 
+static_assert(std::is_trivial<Vec4>::value, "Vec<T> should be trivial");
+
 y_test_func("Vec creation") {
 	Vec<2> a(1, 2);
 	Vec<3> b(a, 3);

@@ -69,9 +69,6 @@ class Matrix
 		using iterator = T *;
 		using const_iterator = const T *;
 
-		Matrix() {
-		}
-
 		template<typename U, typename... Args>
 		Matrix(U t, Args... args) {
 			build<0>(t, args...);
@@ -90,6 +87,10 @@ class Matrix
 				rows[i] = m[i];
 			}
 		}
+
+		Matrix() = default;
+		Matrix(const Matrix &) = default;
+		Matrix &operator=(const Matrix &) = default;
 
 		Vec<M, T> &operator[](usize i) {
 			return rows[i];
@@ -154,15 +155,6 @@ class Matrix
 				}
 			}
 			return tr;
-		}
-
-		Matrix &operator=(const Matrix &m) {
-			for(usize i = 0; i != N; i++) {
-				for(usize j = 0; j != M; j++) {
-					(*this)[i][j] = m[i][j];
-				}
-			}
-			return *this;
 		}
 
 		bool operator==(const Matrix &m) const {
