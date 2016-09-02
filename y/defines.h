@@ -24,6 +24,8 @@ Nothing fatal(const char *msg, const char *file = 0, int line = 0);
 }
 
 
+#define Y_TODO(msg)
+
 
 #ifndef __PRETTY_FUNCTION__
 #define __FUNC__ __PRETTY_FUNCTION__
