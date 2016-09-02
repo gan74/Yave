@@ -341,8 +341,8 @@ static_assert(std::is_same<decltype(vector(1, 2.0, 3))::Element, double>::value,
 
 
 template<typename T>
-Vector<T> &operator<<(Vector<T> &vec, const T &t) {
-	vec.append(t);
+Vector<T> &operator<<(Vector<T> &vec, T t) {
+	vec.append(std::forward<T>(t));
 	return vec;
 }
 
