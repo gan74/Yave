@@ -330,6 +330,10 @@ inline auto vector(T t, Args... args) {
 	return vector<typename std::common_type<T, Args...>::type>(std::forward<T>(t), std::forward<Args>(args)...);
 }
 
+template<typename I>
+inline auto vector(const Range<I> &rng) {
+	return Vector<typename Range<I>::Element>(rng);
+}
 
 
 

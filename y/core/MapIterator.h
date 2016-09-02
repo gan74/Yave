@@ -52,7 +52,7 @@ class MapIterator {
 		}
 
 		bool operator!=(const MapIterator<Iter, Func> &i) const {
-			return it != i.it || map != i.map;
+			return it != i.it/* || map != i.map*/;
 		}
 
 		bool operator!=(const Iter &i) const {
