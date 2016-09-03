@@ -60,4 +60,8 @@ Nothing fatal(const char *msg, const char *file, int line) {
 	return Nothing();
 }
 
+bool try_failed() {
+	return false;
+}
+
 }
