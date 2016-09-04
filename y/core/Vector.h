@@ -308,7 +308,6 @@ template<typename T, typename U>
 inline void append(Vector<T> &vec, U u) {
 	vec.append(std::forward<U>(u));
 }
-
 }
 
 template<typename T>
@@ -328,6 +327,11 @@ inline auto vector(Args... args) {
 template<typename T, typename... Args>
 inline auto vector(T t, Args... args) {
 	return vector<typename std::common_type<T, Args...>::type>(std::forward<T>(t), std::forward<Args>(args)...);
+}
+
+template<typename T>
+inline auto vector(std::initializer_list<T> lst) {
+	return Vector<T>(lst);
 }
 
 
