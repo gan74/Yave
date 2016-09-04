@@ -144,7 +144,7 @@ class Vector : ResizePolicy {
 			return data_end - data;
 		}
 
-		bool empty() const {
+		bool is_empty() const {
 			return data == data_end;
 		}
 

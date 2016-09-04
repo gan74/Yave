@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <new>
 #include <typeinfo>
 #include <chrono>
+#include <array>
 
 #include <y/utils/types.h>
 
