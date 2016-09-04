@@ -23,6 +23,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace math {
 
+namespace detail {
+struct identity_t : NonCopyable {
+	identity_t() = default;
+	identity_t(identity_t &&) {
+	}
+};
+}
+
+inline auto identity() {
+	return detail::identity_t();
+}
+
 template<usize N, typename T = float>
 class Vec
 {
@@ -71,6 +83,9 @@ class Vec
 			for(usize i = 0; i != N; i++) {
 				vec[i] = v[i];
 			}
+		}
+
+		Vec(detail::identity_t &&) : Vec() {
 		}
 
 		Vec() = default;

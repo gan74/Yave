@@ -88,6 +88,9 @@ class Matrix
 			}
 		}
 
+		Matrix(detail::identity_t &&) : Matrix(Matrix::identity()) {
+		}
+
 		Matrix() = default;
 		Matrix(const Matrix &) = default;
 		Matrix &operator=(const Matrix &) = default;
@@ -273,7 +276,6 @@ template<usize M, typename T, typename... Args>
 auto matrix(const Vec<M, T> &v, Args... args) {
 	return Matrix<sizeof...(args) + 1, M, T>(v, args...);
 }
-
 
 }
 }
