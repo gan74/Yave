@@ -132,9 +132,9 @@ class Vector : ResizePolicy {
 			new(data_end++) Data(std::move(elem));
 		}
 
-		template<typename I/*, typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type*/>
+		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type>
 		void append(const Range<I> &rng) {
-			static_assert(std::is_same<typename Range<I>::Element, Element>::value, "Pushing invalid range into Vector");
+			//static_assert(std::is_same<typename Range<I>::Element, Element>::value, "Pushing invalid range into Vector");
 			for(const auto &i : rng) {
 				append(i);
 			}
@@ -343,8 +343,8 @@ static_assert(std::is_same<decltype(vector(1, 2.0, 3))::Element, double>::value,
 
 
 
-template<typename T>
-Vector<T> &operator<<(Vector<T> &vec, T t) {
+template<typename U, typename T>
+inline Vector<U> &operator<<(Vector<U> &vec, T t) {
 	vec.append(std::forward<T>(t));
 	return vec;
 }
