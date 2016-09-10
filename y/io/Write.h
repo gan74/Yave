@@ -13,7 +13,36 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef WRITE_H
-#define WRITE_H
+#ifndef Y_IO_WRITE_H
+#define Y_IO_WRITE_H
 
-#endif // WRITE_H
+#include <y/utils.h>
+#include <y/core/Vector.h>
+
+namespace y {
+namespace io {
+
+class Write : NonCopyable {
+	public:
+		virtual ~Write() {
+		}
+
+		virtual usize write(const void *data, usize bytes) = 0;
+		virtual void flush() = 0;
+
+		template<typename T>
+		usize write(const T *data, usize size) {
+			return write(data, size * sizeof(T)) / sizeof(T);
+		}
+
+		template<typename T>
+		usize write(const core::Vector<T> &data) {
+			return write(data.begin(), data.size());
+		}
+
+};
+
+}
+}
+
+#endif // Y_IO_WRITE_H

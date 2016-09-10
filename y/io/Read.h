@@ -13,7 +13,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef READ_H
-#define READ_H
+#ifndef Y_IO_READ_H
+#define Y_IO_READ_H
 
-#endif // READ_H
+#include <y/utils.h>
+#include <y/core/Vector.h>
+
+namespace y {
+namespace io {
+
+class Read : NonCopyable {
+	public:
+		virtual ~Read() {
+		}
+
+		virtual usize read(void *data, usize bytes) = 0;
+		virtual usize read_all(core::Vector<u8> &data) = 0;
+
+		template<typename T>
+		usize read(T *data, usize size) {
+			return read(data, size * sizeof(T)) / sizeof(T);
+		}
+};
+
+}
+}
+
+#endif // Y_IO_READ_H

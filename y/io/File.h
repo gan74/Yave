@@ -13,14 +13,49 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef FILE_H
-#define FILE_H
+#ifndef Y_IO_FILE_H
+#define Y_IO_FILE_H
 
+#include <y/core/String.h>
 
-class File
-{
+#include "Read.h"
+#include "Write.h"
+
+namespace y {
+namespace io {
+
+class File : public Read, public Write {
+
 	public:
 		File();
+		virtual ~File();
+
+		File(File &&other);
+		File &operator=(File &&other);
+
+		static File create(const core::String &name);
+		static File open(const core::String &name);
+
+		usize size() const;
+		usize remaining() const;
+
+		bool at_end() const;
+
+		virtual usize read(void *data, usize bytes) override;
+		virtual usize read_all(core::Vector<u8> &data) override;
+
+		virtual usize write(const void *data, usize bytes) override;
+		virtual void flush() override;
+
+	private:
+		File(FILE *f);
+		void swap(File &other);
+
+		FILE *file;
 };
 
-#endif // FILE_H
+
+}
+}
+
+#endif // Y_IO_FILE_H

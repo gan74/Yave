@@ -13,14 +13,37 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef BUFFREADER_H
-#define BUFFREADER_H
+#ifndef Y_IO_BUFFREADER_H
+#define Y_IO_BUFFREADER_H
 
+#include "Read.h"
 
-class BuffReader
-{
+namespace y {
+namespace io {
+
+class BuffReader : public Read {
 	public:
+		BuffReader(Read &r);
+		virtual ~BuffReader();
+
+		BuffReader(BuffReader &&other);
+		BuffReader &operator=(BuffReader &&other);
+
+		virtual usize read(void *data, usize bytes) override;
+		virtual usize read_all(core::Vector<u8> &data) override;
+
+	private:
 		BuffReader();
+		void swap(BuffReader &other);
+
+		usize buffer_size;
+		usize buffer_offset;
+		usize buffer_used;
+		u8 *buffer;
+
+		Read *inner;
 };
 
-#endif // BUFFREADER_H
+}
+}
+#endif // Y_IO_BUFFREADER_H
