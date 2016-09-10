@@ -31,7 +31,7 @@ String::LongData::LongData(const LongData &l) : LongData(l.data, l.length) {
 }
 
 String::LongData::LongData(LongData &&l) : data(l.data), capacity(l.capacity), length(l.length) {
-	l.data = 0;
+	l.data = nullptr;
 }
 
 String::LongData::LongData(const char *str, usize len) : LongData(str, compute_capacity(len), len) {
@@ -41,7 +41,7 @@ String::LongData::LongData(const char *str, usize cap, usize len) : data(alloc_l
 	if(str) {
 		memcpy(data, str, len);
 	}
-	data[len] = 0;
+	*(data + len) = 0;
 }
 
 
@@ -58,7 +58,7 @@ String::ShortData::ShortData(const char *str, usize len) : length(len) {
 	if(str) {
 		memcpy(data, str, len);
 	}
-	data[len] = 0;
+	*(data + len) = 0;
 }
 
 // --------------------------------------------------- ALLOC ---------------------------------------------------

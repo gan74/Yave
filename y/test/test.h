@@ -28,7 +28,7 @@ struct TestResult {
 	int line;
 };
 
-const char *test_box_msg(const char *msg = 0);
+const char *test_box_msg(const char *msg = nullptr);
 void test_assert(const char *msg, void (*func)(TestResult &));
 
 }

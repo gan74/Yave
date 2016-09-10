@@ -44,8 +44,15 @@ class Ptr : NonCopyable {
 			return *this;
 		}
 
+		Ptr &operator=(T *&&p) {
+			Ptr ptr(std::move(p));
+			swap(ptr);
+			return *this;
+		}
+
 		Ptr &operator=(nullptr_t p) {
-			swap(Ptr(p));
+			Ptr ptr(p);
+			swap(ptr);
 			return *this;
 		}
 

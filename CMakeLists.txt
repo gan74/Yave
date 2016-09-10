@@ -3,14 +3,13 @@ project(y)
 
 include_directories(${y_SOURCE_DIR})
 
-set(ULTIMATE_WARNINGS, "-Wconversion -Weffc++ -Wshadow -Wfloat-equal")
-set(EXTRA_WARNINGS "-pedantic -Wall -Wextra -Woverloaded-virtual -Wwrite-strings -Wpointer-arith -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast")
+set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wnoexcept -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef -Winline")
+set(EXTRA_WARNINGS "-pedantic-errors -Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor")
 
-add_definitions("${EXTRA_WARNINGS} ${ULTIMATE_WARNINGS}")
+add_definitions("${EXTRA_WARNINGS}")
+add_definitions("${ULTIMATE_WARNINGS}")
+add_definitions("-std=c++1z -pedantic -Wall -Wextra")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -ffast-math -pedantic")
-
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 file(GLOB_RECURSE SOURCE_FILES
 		"y/*.h"
