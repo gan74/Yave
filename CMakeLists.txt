@@ -3,12 +3,22 @@ project(y)
 
 include_directories(${y_SOURCE_DIR})
 
-set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wnoexcept -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef -Winline")
-set(EXTRA_WARNINGS "-pedantic-errors -Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor")
+set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wnoexcept -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef")
+set(EXTRA_WARNINGS "-pedantic-errors -Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor -Wodr")
+set(EXTRA_OPTIMISATIONS "-ffast-math")
+
+if(CMAKE_BUILD_TYPE EQUAL "RELEASE")
+	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -flto")
+endif(CMAKE_BUILD_TYPE EQUAL "RELEASE")
+
 
 add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
+add_definitions("${EXTRA_OPTIMISATIONS}")
 add_definitions("-std=c++1z -pedantic -Wall -Wextra")
+
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_OPTIMISATIONS}")
+set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${EXTRA_OPTIMISATIONS}")
 
 
 file(GLOB_RECURSE SOURCE_FILES
