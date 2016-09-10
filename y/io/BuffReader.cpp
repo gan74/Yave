@@ -40,7 +40,7 @@ BuffReader &BuffReader::operator=(BuffReader &&other) {
 
 void BuffReader::swap(BuffReader &other) {
 	std::swap(buffer_size, other.buffer_size);
-	std::swap(buffer_offet, other.buffer_offset);
+	std::swap(buffer_offset, other.buffer_offset);
 	std::swap(buffer_used, other.buffer_used);
 	std::swap(buffer, other.buffer);
 	std::swap(inner, other.inner);
