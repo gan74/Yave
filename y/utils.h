@@ -182,6 +182,20 @@ static_assert(std::is_same<Coerce<int, float, double>::type, double>::value, "Co
 static_assert(std::is_same<Coerce<int, float, int>::type, float>::value, "Coerce error");
 static_assert(std::is_same<Coerce<int, int>::type, int>::value, "Coerce error");
 
+
+
+
+template<typename T>
+struct is_sane {
+	static constexpr bool is_polymorphic = std::is_polymorphic<T>::value;
+	static constexpr bool is_copyable = std::is_copy_constructible<T>::value;
+
+	static constexpr bool value = (is_polymorphic && !is_copyable) || !is_polymorphic;
+	using type = bool_type<value>;
+};
+
 }
+
+#define Y_ASSERT_SANE(type) static_assert(y::is_sane<type>::value, "\"" #type "\" is ill-formed")
 
 #endif

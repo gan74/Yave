@@ -19,10 +19,11 @@ namespace y {
 namespace io {
 
 
-BuffReader::BuffReader() : buffer_size(0), buffer_offset(0), buffer_used(0), buffer(nullptr), inner(nullptr) {
+BuffReader::BuffReader() : buffer_size(512), buffer_offset(0), buffer_used(0), buffer(new u8[buffer_size]) {
 }
 
-BuffReader::BuffReader(Read &r) : buffer_size(512), buffer_offset(0), buffer_used(0), buffer(new u8[buffer_size]), inner(&r) {
+BuffReader::BuffReader(Reader &r) : BuffReader() {
+	inner = r;
 }
 
 BuffReader::~BuffReader() {
@@ -46,6 +47,10 @@ void BuffReader::swap(BuffReader &other) {
 	std::swap(inner, other.inner);
 }
 
+bool BuffReader::at_end() const {
+	return inner->at_end() && !buffer_used;
+}
+
 usize BuffReader::read(void *data, usize bytes) {
 	usize in_buffer = std::min(bytes, buffer_used);
 
@@ -59,9 +64,9 @@ usize BuffReader::read(void *data, usize bytes) {
 		if(remaining > buffer_size) {
 			return in_buffer + inner->read(data8 + in_buffer, remaining);
 		} else {
-			inner->read(buffer, buffer_size);
-			buffer_offset = buffer_used = 0;
-			return in_buffer + read(data8 + in_buffer, remaining);
+			buffer_used = inner->read(buffer, buffer_size);
+			buffer_offset = 0;
+			return  in_buffer + (buffer_used ? read(data8 + in_buffer, remaining) : 0);
 		}
 	}
 	return in_buffer;

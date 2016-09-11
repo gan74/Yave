@@ -18,13 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <y/core/String.h>
 
-#include "Read.h"
-#include "Write.h"
+#include "Reader.h"
+#include "Writer.h"
 
 namespace y {
 namespace io {
 
-class File : public Read, public Write {
+class File : public Reader, public Writer {
 
 	public:
 		File();
@@ -39,7 +39,7 @@ class File : public Read, public Write {
 		usize size() const;
 		usize remaining() const;
 
-		bool at_end() const;
+		virtual bool at_end() const override;
 
 		virtual usize read(void *data, usize bytes) override;
 		virtual usize read_all(core::Vector<u8> &data) override;
@@ -54,6 +54,7 @@ class File : public Read, public Write {
 		FILE *file;
 };
 
+Y_ASSERT_SANE(File);
 
 }
 }

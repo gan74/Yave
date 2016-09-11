@@ -16,18 +16,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_IO_BUFFREADER_H
 #define Y_IO_BUFFREADER_H
 
-#include "Read.h"
+#include "Ref.h"
 
 namespace y {
 namespace io {
 
-class BuffReader : public Read {
+class BuffReader : public Reader {
+
 	public:
-		BuffReader(Read &r);
+		BuffReader(Reader &r);
+
+		template<typename T>
+		BuffReader(T &&r) : BuffReader() {
+			inner = std::move(r);
+		}
+
 		virtual ~BuffReader();
 
 		BuffReader(BuffReader &&other);
 		BuffReader &operator=(BuffReader &&other);
+
+		virtual bool at_end() const override;
 
 		virtual usize read(void *data, usize bytes) override;
 		virtual usize read_all(core::Vector<u8> &data) override;
@@ -41,8 +50,10 @@ class BuffReader : public Read {
 		usize buffer_used;
 		u8 *buffer;
 
-		Read *inner;
+		ReaderRef inner;
 };
+
+Y_ASSERT_SANE(BuffReader);
 
 }
 }

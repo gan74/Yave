@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef Y_IO_WRITE_H
-#define Y_IO_WRITE_H
+#ifndef Y_IO_READER_H
+#define Y_IO_READER_H
 
 #include <y/utils.h>
 #include <y/core/Vector.h>
@@ -22,22 +22,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace io {
 
-class Write : NonCopyable {
+class Reader : NonCopyable {
 	public:
-		virtual ~Write() {
+		virtual ~Reader() {
 		}
 
-		virtual usize write(const void *data, usize bytes) = 0;
-		virtual void flush() = 0;
+		virtual bool at_end() const = 0;
+
+		virtual usize read(void *data, usize bytes) = 0;
+		virtual usize read_all(core::Vector<u8> &data) = 0;
+
 
 		template<typename T>
-		usize write(const T *data, usize size) {
-			return write(data, size * sizeof(T)) / sizeof(T);
+		usize read(T *data, usize size) {
+			return read(reinterpret_cast<void *>(data), size * sizeof(T)) / sizeof(T);
 		}
 
-		template<typename T>
-		usize write(const core::Vector<T> &data) {
-			return write(data.begin(), data.size());
+		core::Vector<u8> to_vec() {
+			core::Vector<u8> vec;
+			read_all(vec);
+			return vec;
 		}
 
 };
@@ -45,4 +49,4 @@ class Write : NonCopyable {
 }
 }
 
-#endif // Y_IO_WRITE_H
+#endif // Y_IO_READER_H
