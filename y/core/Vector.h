@@ -200,6 +200,14 @@ class Vector : ResizePolicy {
 			return *(data_end - 1);
 		}
 
+		Range<iterator> to_range() {
+			return core::range(*this);
+		}
+
+		Range<const_iterator> to_range() const {
+			return core::range(*this);
+		}
+
 		void set_capacity(usize cap) {
 			unsafe_set_capacity(size(), cap);
 		}
@@ -253,8 +261,7 @@ class Vector : ResizePolicy {
 		void clear(Data *beg, Data *en) {
 			if(!std::is_pod<Data>::value) {
 				while(en != beg) {
-					Data &to_del = *(--en);
-					to_del.~Data();
+					(--en)->~Data();
 				}
 			}
 		}

@@ -101,6 +101,9 @@ class String {
 		static String from(const T &t);
 		static String from_owned(char *owned);
 
+		template<typename I, typename Enable = typename std::enable_if<std::is_convertible<typename Range<I>::Element, char>::value>::type>
+		static String from(const Range<I> &rng);
+
 		usize size() const;
 		usize capacity() const;
 		bool is_empty() const;
@@ -213,6 +216,16 @@ String String::from(const T &t) {
 	oss << t;
 	return oss.str().c_str();
 }
+
+template<typename I, typename Enable>
+String String::from(const Range<I> &rng) {
+	std::ostringstream oss;
+	for(const auto &e : rng) {
+		oss << e;
+	}
+	return oss.str().c_str();
+}
+
 
 } // core
 
