@@ -18,49 +18,70 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_UTILS_CHRONO_H
 #define Y_UTILS_CHRONO_H
 
+#include "types.h"
+
 namespace y {
 
-template<typename T>
-struct Sec {
-	T value;
+class Duration {
+	public:
+		Duration(u64 seconds, u32 subsec_nanos) : secs(seconds), subsec_ns(subsec_nanos) {
+		}
 
-	Sec(T v) : value(v) {
-	}
+		u64 to_nanos() const {
+			return secs * 1000000000 + subsec_ns;
+		}
 
-	operator T() const {
-		return value;
-	}
+		double to_micros() const {
+			return secs * 1000000 + subsec_ns / 1000.0;
+		}
 
-	operator T&() {
-		return value;
-	}
+		double to_millis() const {
+			return secs * 1000 + subsec_ns / 1000000.0;
+		}
+
+		double to_secs() const {
+			return secs + subsec_ns / 1000000000.0;
+		}
+
+		u64 seconds() const {
+			return secs;
+		}
+
+		u32 subsec_nanos() const {
+			return subsec_ns;
+		}
+
+	private:
+		u64 secs;
+		u32 subsec_ns;
 };
 
 
-template<typename T = double>
 class Chrono {
-	using Second = std::chrono::duration<T, std::ratio<1, 1>>;
-public:
-	Chrono() {
-		start();
-	}
+	using Nano = std::chrono::nanoseconds;
 
-	void start() {
-		time = std::chrono::high_resolution_clock::now();
-	}
+	public:
+		Chrono() {
+			start();
+		}
 
-	Sec<T> reset() {
-		auto e = elapsed();
-		start();
-		return e;
-	}
+		void start() {
+			time = std::chrono::high_resolution_clock::now();
+		}
 
-	Sec<T> elapsed() const {
-		return std::chrono::duration_cast<Second>(std::chrono::high_resolution_clock::now() - time).count();
-	}
+		Duration reset() {
+			auto e = elapsed();
+			start();
+			return e;
+		}
 
-private:
-	std::chrono::time_point<std::chrono::high_resolution_clock> time;
+		Duration elapsed() const {
+			auto nanos = std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - time).count();
+			return Duration(nanos / 1000000000, nanos % 1000000000);
+		}
+
+	private:
+		std::chrono::time_point<std::chrono::high_resolution_clock> time;
 };
 
 

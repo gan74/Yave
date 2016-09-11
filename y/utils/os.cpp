@@ -34,11 +34,11 @@ usize pid() {
 
 usize core_count() {
 	#ifdef Y_OS_WIN
-		SYSTEM_INFO info;
-		GetSystemInfo(&info);
-		return info.dwNumberOfProcessors;
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	return info.dwNumberOfProcessors;
 	#else
-		return 0;
+	return 0;
 	#endif
 }
 
@@ -71,7 +71,7 @@ u64 get_user_time_ns() {
 	GetProcessTimes(GetCurrentProcess(), &garbage, &garbage, &garbage, &time);
 	return windows::filetime_to_ns(time);
 	#else
-	return MemInfo { 0, 0 };
+	return 0;
 	#endif
 }
 
@@ -82,7 +82,19 @@ u64 get_kernel_time_ns() {
 	GetProcessTimes(GetCurrentProcess(), &garbage, &garbage, &time, &garbage);
 	return windows::filetime_to_ns(time);
 	#else
-	return MemInfo { 0, 0 };
+	return 0;
+	#endif
+}
+
+AppTimes get_times_ns() {
+	#ifdef Y_OS_WIN
+	FILETIME user;
+	FILETIME kernel;
+	FILETIME garbage;
+	GetProcessTimes(GetCurrentProcess(), &garbage, &garbage, &kernel, &user);
+	return AppTimes { windows::filetime_to_ns(kernel), windows::filetime_to_ns(user) };
+	#else
+	return AppTimes { 0, 0 };
 	#endif
 }
 
