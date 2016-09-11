@@ -19,10 +19,14 @@ namespace y {
 namespace io {
 
 
-BuffReader::BuffReader() : buffer_size(512), buffer_offset(0), buffer_used(0), buffer(new u8[buffer_size]) {
+BuffReader::BuffReader(usize buff_size) : buffer_size(buff_size), buffer_offset(0), buffer_used(0), buffer(buff_size ? new u8[buff_size] : nullptr) {
 }
 
-BuffReader::BuffReader(Reader &r) : BuffReader() {
+BuffReader::BuffReader(ReaderRef &&r, usize buff_size) : BuffReader(buff_size) {
+	inner = std::move(r);
+}
+
+BuffReader::BuffReader(const ReaderRef &r, usize buff_size) : BuffReader(buff_size) {
 	inner = r;
 }
 

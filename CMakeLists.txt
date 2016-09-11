@@ -4,7 +4,7 @@ project(y)
 include_directories(${y_SOURCE_DIR})
 
 set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wnoexcept -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef")
-set(EXTRA_WARNINGS "-pedantic-errors -Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor -Wodr")
+set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor -Wodr")
 set(EXTRA_OPTIMISATIONS "-ffast-math")
 
 if(CMAKE_BUILD_TYPE EQUAL "RELEASE")

@@ -45,11 +45,11 @@ void File::swap(File &other) {
 }
 
 File File::create(const core::String &name) {
-	return fopen(name.data(), "w+");
+	return fopen(name.data(), "wb+");
 }
 
 File File::open(const core::String &name) {
-	return fopen(name.data(), "r");
+	return fopen(name.data(), "rb");
 }
 
 usize File::size() const {

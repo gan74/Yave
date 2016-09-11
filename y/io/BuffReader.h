@@ -24,12 +24,8 @@ namespace io {
 class BuffReader : public Reader {
 
 	public:
-		BuffReader(Reader &r);
-
-		template<typename T>
-		BuffReader(T &&r) : BuffReader() {
-			inner = std::move(r);
-		}
+		BuffReader(ReaderRef &&r, usize buff_size = 512);
+		BuffReader(const ReaderRef &r, usize buff_size = 512);
 
 		virtual ~BuffReader();
 
@@ -42,7 +38,7 @@ class BuffReader : public Reader {
 		virtual usize read_all(core::Vector<u8> &data) override;
 
 	private:
-		BuffReader();
+		BuffReader(usize buff_size = 0);
 		void swap(BuffReader &other);
 
 		usize buffer_size;

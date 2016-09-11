@@ -17,54 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_IO_IO_H
 
 #include <y/utils.h>
-#include <y/core/Vector.h>
-#include <y/core/String.h>
-#include <y/math/Vec.h>
-
-#include <istream>
 
 namespace y {
 namespace io {
 
-template<typename T>
-void change_byte_order(T &t) {
-	static_assert(std::is_arithmetic<T>::value, "change_byte_order<T> only works on primitive types");
-	char *buffer = reinterpret_cast<char *>(&t);
-	for(usize i = 0; i != sizeof(T) / 2; i++) {
-		std::swap(buffer[i], buffer[sizeof(T) - (i + 1)]);
-	}
-}
-
-template<typename T, typename Enable = typename std::enable_if<std::is_arithmetic<T>::value>::type>
-bool decode(std::istream &stream, T &t) {
-	stream.read(reinterpret_cast<char *>(&t), sizeof(T));
-	if(!stream.good()) {
-		return false;
-	}
-	if(is_little_endian()) {
-		change_byte_order(t);
-	}
-	return true;
-}
-
-template<typename T, typename RP>
-bool decode(std::istream &stream, core::Vector<T, RP> &vec) {
-	u64 len = 0;
-	Y_TRY(decode(stream, len));
-	vec = core::Vector<T>(len, T());
-	for(u64 i = 0; i != len; i++) {
-		Y_TRY(decode(stream, vec[i]));
-	}
-	return true;
-}
-
-template<y::usize N, typename T>
-bool decode(std::istream &stream, math::Vec<N, T> &vec) {
-	for(usize i = 0; i != N; i++) {
-		Y_TRY(decode(stream, vec[i]));
-	}
-	return true;
-}
 
 }
 }

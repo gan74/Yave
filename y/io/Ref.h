@@ -24,12 +24,15 @@ namespace y {
 namespace io {
 
 template<typename T>
-class Ref : NonCopyable {
+class Ref {
 
 	Y_ASSERT_SANE(T);
 
 	public:
 		Ref() : ptr(nullptr), owned(false) {
+		}
+
+		Ref(const Ref &ref) : ptr(ref.ptr), owned(false) {
 		}
 
 		template<typename Derived>
@@ -52,6 +55,15 @@ class Ref : NonCopyable {
 
 		Ref &operator=(Ref &&other) {
 			swap(other);
+			return *this;
+		}
+
+		Ref &operator=(const Ref &other) {
+			if(owned) {
+				delete ptr;
+			}
+			ptr = other.ptr;
+			owned = false;
 			return *this;
 		}
 
