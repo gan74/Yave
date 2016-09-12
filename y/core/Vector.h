@@ -52,8 +52,8 @@ class Vector : ResizePolicy {
 	static_assert(!std::is_polymorphic<Elem>::value, "Vector<T> should not contain polymorphic objects directly");
 
 	public:
-		using iterator = Elem *;
-		using const_iterator = Elem const *;
+		using iterator = Elem*;
+		using const_iterator = Elem const*;
 		using Element = Elem;
 
 		Vector() : data(nullptr), data_end(nullptr), alloc_end(nullptr) {
@@ -248,7 +248,7 @@ class Vector : ResizePolicy {
 
 
 	private:
-		void move_range(Data *dst, Data *src, usize n) {
+		void move_range(Data* dst, Data* src, usize n) {
 			if(std::is_pod<Data>::value) {
 				memmove(dst, src, sizeof(Data) * n);
 			} else {
@@ -258,7 +258,7 @@ class Vector : ResizePolicy {
 			}
 		}
 
-		void clear(Data *beg, Data *en) {
+		void clear(Data* beg, Data* en) {
 			if(!std::is_pod<Data>::value) {
 				while(en != beg) {
 					(--en)->~Data();
@@ -282,20 +282,20 @@ class Vector : ResizePolicy {
 		void unsafe_set_capacity(usize num_to_move, usize new_cap) {
 			num_to_move = num_to_move < new_cap ? num_to_move : new_cap;
 
-			Data *new_data = new_cap ? reinterpret_cast<Data *>(new u8[new_cap * sizeof(Data)]) : nullptr;
+			Data* new_data = new_cap ? reinterpret_cast<Data*>(new u8[new_cap * sizeof(Data)]) : nullptr;
 
 			move_range(new_data, data, num_to_move);
 			clear(data, data_end);
 
-			delete[] reinterpret_cast<u8 *>(data);
+			delete[] reinterpret_cast<u8*>(data);
 			data = new_data;
 			data_end = data + num_to_move;
 			alloc_end = data + new_cap;
 		}
 
-		Data *data;
-		Data *data_end;
-		Data *alloc_end;
+		Data* data;
+		Data* data_end;
+		Data* alloc_end;
 };
 
 

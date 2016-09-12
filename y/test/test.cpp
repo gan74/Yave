@@ -23,13 +23,13 @@ namespace y {
 namespace test {
 namespace detail {
 
-const char *test_box_msg(const char *msg) {
+const char* test_box_msg(const char* msg) {
 	return msg ? msg : "unknown test function";
 }
 
-void test_assert(const char *msg, void (*func)(TestResult &)) {
-	const char *ok		= "  [ OK ]   ";
-	const char *failure = "[ FAILED ] ";
+void test_assert(const char* msg, void (*func)(TestResult &)) {
+	const char* ok		= "  [ OK ]   ";
+	const char* failure = "[ FAILED ] ";
 
 
 	std::cout << msg << ":";

@@ -34,7 +34,7 @@ struct Raii : NonCopyable {
 		*e = false;
 	}
 
-	bool *e;
+	bool* e;
 };
 bool Raii::ded = false;
 

@@ -57,7 +57,7 @@ class Decoder {
 		bool decode(core::String &str) {
 			u64 len = 0;
 			Y_TRY(decode<Order>(len));
-			char *str_data = new char[len + 1];
+			char* str_data = new char[len + 1];
 			auto read = inner->read(str_data, len);
 			str_data[read] = 0;
 			str = core::str_from_owned(str_data);

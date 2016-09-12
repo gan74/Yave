@@ -166,7 +166,7 @@ class Rc : public Ptr<T> {
 		friend class Rc<typename std::remove_const<T>::type>;
 
 		// only called by other Rc's so we take ownedship as well
-		Rc(T *p, C *c) : Ptr<T>(p), count(c) {
+		Rc(T* p, C* c) : Ptr<T>(p), count(c) {
 			++(*count);
 		}
 

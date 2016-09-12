@@ -75,11 +75,11 @@ class Ref {
 			return *ptr;
 		}
 
-		Owned<T> *operator->() {
+		Owned<T*> operator->() {
 			return ptr;
 		}
 
-		const Owned<T> *operator->() const {
+		Owned<const T*> operator->() const {
 			return ptr;
 		}
 
@@ -89,7 +89,7 @@ class Ref {
 			std::swap(owned, other.owned);
 		}
 
-		Owned<T> *ptr;
+		Owned<T*> ptr;
 		bool owned;
 
 };

@@ -63,7 +63,7 @@ class ValueIterator {
 			return value;
 		}
 
-		const T *operator->() const {
+		const T* operator->() const {
 			return &value;
 		}
 

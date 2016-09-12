@@ -41,17 +41,17 @@ class File : public Reader, public Writer {
 
 		virtual bool at_end() const override;
 
-		virtual usize read(void *data, usize bytes) override;
+		virtual usize read(void* data, usize bytes) override;
 		virtual usize read_all(core::Vector<u8> &data) override;
 
-		virtual usize write(const void *data, usize bytes) override;
+		virtual usize write(const void* data, usize bytes) override;
 		virtual void flush() override;
 
 	private:
-		File(FILE *f);
+		File(FILE* f);
 		void swap(File &other);
 
-		FILE *file;
+		FILE* file;
 };
 
 Y_ASSERT_SANE(File);

@@ -53,15 +53,15 @@ class String {
 
 	struct LongData
 	{
-		char *data;
+		char* data;
 		usize capacity;
 		LongLenType length;
 
 		LongData();
 		LongData(const LongData &l);
 		LongData(LongData &&l);
-		LongData(const char *str, usize cap, usize len);
-		LongData(const char *str, usize len);
+		LongData(const char* str, usize cap, usize len);
+		LongData(const char* str, usize len);
 
 		LongData &operator=(const LongData &) = delete;
 	};
@@ -73,7 +73,7 @@ class String {
 
 		ShortData();
 		ShortData(const ShortData &s);
-		ShortData(const char *str, usize len);
+		ShortData(const char* str, usize len);
 
 		ShortData &operator=(const ShortData &) = delete;
 
@@ -84,8 +84,8 @@ class String {
 	public:
 		static constexpr usize MaxShortSize = sizeof(ShortData::data);
 
-		using iterator = char *;
-		using const_iterator = const char *;
+		using iterator = char*;
+		using const_iterator = const char*;
 
 		String();
 		String(const String &str);
@@ -119,8 +119,8 @@ class String {
 		iterator find(const String &str);
 		const_iterator find(const String &str) const;
 
-		operator const char *() const;
-		operator char *();
+		operator const char*() const;
+		operator char*();
 
 		void swap(String &str);
 
@@ -166,11 +166,11 @@ class String {
 			ShortData s;
 		};
 
-		const String *const_this() {
+		const String* const_this() {
 			return this;
 		}
 
-		static char *alloc_long(usize capacity);
+		static char* alloc_long(usize capacity);
 		static usize compute_capacity(usize len);
 		static void free_long(LongData &d);
 
@@ -237,7 +237,7 @@ String String::from(const Range<I> &rng) {
 
 // because we do need string in here
 namespace detail {
-	core::String demangle_type_name(const char *name);
+	core::String demangle_type_name(const char* name);
 }
 
 template<typename T>

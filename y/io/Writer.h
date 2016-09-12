@@ -27,12 +27,12 @@ class Writer : NonCopyable {
 		virtual ~Writer() {
 		}
 
-		virtual usize write(const void *data, usize bytes) = 0;
+		virtual usize write(const void* data, usize bytes) = 0;
 		virtual void flush() = 0;
 
 		template<typename T>
-		usize write(const T *data, usize size) {
-			return write(reinterpret_cast<const void *>(data), size * sizeof(T)) / sizeof(T);
+		usize write(const T* data, usize size) {
+			return write(reinterpret_cast<const void*>(data), size * sizeof(T)) / sizeof(T);
 		}
 
 		template<typename T>

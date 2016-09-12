@@ -33,7 +33,7 @@ struct Polymorphic {
 };
 
 struct RaiiCounter : NonCopyable {
-	RaiiCounter(usize *ptr) : counter(ptr) {
+	RaiiCounter(usize* ptr) : counter(ptr) {
 	}
 
 	RaiiCounter(RaiiCounter &&raii) : counter(nullptr) {
@@ -46,13 +46,13 @@ struct RaiiCounter : NonCopyable {
 		}
 	}
 
-	usize *counter;
+	usize* counter;
 };
 
 
 static_assert(std::is_same<std::common_type<MoreDerived, Derived>::type, Derived>::value, "std::common_type failure");
 static_assert(std::is_polymorphic<Polymorphic>::value, "std::is_polymorphic failure");
-static_assert(!std::is_polymorphic<Polymorphic *>::value, "std::is_polymorphic failure");
+static_assert(!std::is_polymorphic<Polymorphic*>::value, "std::is_polymorphic failure");
 
 y_test_func("DefaultVectorResizePolicy") {
 	DefaultVectorResizePolicy size;

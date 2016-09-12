@@ -64,8 +64,8 @@ class Vec
 
 	public:
 		using Element = typename std::remove_const<T>::type;
-		using iterator = T *;
-		using const_iterator = const T *;
+		using iterator = T*;
+		using const_iterator = const T*;
 
 		template<typename A, typename B, typename... Args>
 		Vec(A a, B b, Args... args) {

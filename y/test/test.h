@@ -24,12 +24,12 @@ namespace detail {
 
 struct TestResult {
 	bool result;
-	const char *file;
+	const char* file;
 	int line;
 };
 
-const char *test_box_msg(const char *msg = nullptr);
-void test_assert(const char *msg, void (*func)(TestResult &));
+const char* test_box_msg(const char* msg = nullptr);
+void test_assert(const char* msg, void (*func)(TestResult &));
 
 }
 }

@@ -107,11 +107,11 @@ usize type_uid(const T&) {
 
 
 constexpr bool is_64_bits() {
-	return sizeof(void *) == 8;
+	return sizeof(void*) == 8;
 }
 
 constexpr bool is_32_bits() {
-	return sizeof(void *) == 4;
+	return sizeof(void*) == 4;
 }
 
 

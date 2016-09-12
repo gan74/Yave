@@ -22,7 +22,7 @@ namespace io {
 File::File() : file(nullptr) {
 }
 
-File::File(FILE *f) : file(f) {
+File::File(FILE* f) : file(f) {
 }
 
 File::~File() {
@@ -81,7 +81,7 @@ bool File::at_end() const {
 	return file ? feof(file) : true;
 }
 
-usize File::read(void *data, usize bytes) {
+usize File::read(void* data, usize bytes) {
 	if(!file) {
 		return 0;
 	}
@@ -94,7 +94,7 @@ usize File::read_all(core::Vector<u8> &data) {
 	return read(data.begin(), left);
 }
 
-usize File::write(const void *data, usize bytes) {
+usize File::write(const void* data, usize bytes) {
 	if(!file) {
 		return 0;
 	}

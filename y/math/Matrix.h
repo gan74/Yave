@@ -66,8 +66,8 @@ class Matrix
 	}
 
 	public:
-		using iterator = T *;
-		using const_iterator = const T *;
+		using iterator = T*;
+		using const_iterator = const T*;
 
 		template<typename U, typename... Args>
 		Matrix(U t, Args... args) {

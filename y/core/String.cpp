@@ -34,10 +34,10 @@ String::LongData::LongData(LongData &&l) : data(l.data), capacity(l.capacity), l
 	l.data = nullptr;
 }
 
-String::LongData::LongData(const char *str, usize len) : LongData(str, compute_capacity(len), len) {
+String::LongData::LongData(const char* str, usize len) : LongData(str, compute_capacity(len), len) {
 }
 
-String::LongData::LongData(const char *str, usize cap, usize len) : data(alloc_long(cap)), capacity(cap), length(len) {
+String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_long(cap)), capacity(cap), length(len) {
 	if(str) {
 		memcpy(data, str, len);
 	}
@@ -54,7 +54,7 @@ String::ShortData::ShortData(const ShortData &s) {
 	memcpy(this, &s, sizeof(ShortData));
 }
 
-String::ShortData::ShortData(const char *str, usize len) : length(len) {
+String::ShortData::ShortData(const char* str, usize len) : length(len) {
 	if(str) {
 		memcpy(data, str, len);
 	}
@@ -63,7 +63,7 @@ String::ShortData::ShortData(const char *str, usize len) : length(len) {
 
 // --------------------------------------------------- ALLOC ---------------------------------------------------
 
-char *String::alloc_long(usize capacity) {
+char* String::alloc_long(usize capacity) {
 	return new char[capacity + 1];
 }
 
@@ -96,10 +96,10 @@ String::String(String &&str) {
 	}
 }
 
-String::String(Owned<const char *> str) : String(str, strlen(str)) {
+String::String(Owned<const char*> str) : String(str, strlen(str)) {
 }
 
-String::String(Owned<const char *>, usize len) {
+String::String(Owned<const char*>, usize len) {
 	if(len > MaxShortSize) {
 		new(&l) LongData(str, len);
 	} else {
@@ -107,7 +107,7 @@ String::String(Owned<const char *>, usize len) {
 	}
 }
 
-String::String(Owned<const char *> beg, Owned<const char *> end) : String(beg, end - beg) {
+String::String(Owned<const char*> beg, Owned<const char*> end) : String(beg, end - beg) {
 }
 
 String::~String() {
@@ -165,11 +165,11 @@ String::const_iterator String::find(const String &str) const {
 	return found ? found : end();
 }
 
-String::operator const char *() const {
+String::operator const char*() const {
 	return data();
 }
 
-String::operator char *() {
+String::operator char*() {
 	return data();
 }
 
@@ -203,8 +203,8 @@ String &String::operator+=(const String &str) {
 	usize self_size = size();
 	usize other_size = str.size();
 	usize total_size = self_size + other_size;
-	char *self_data = data();
-	const char *other_data = str.data();
+	char* self_data = data();
+	const char* other_data = str.data();
 
 	if(capacity() >= total_size) {
 		// in place
@@ -250,7 +250,7 @@ usize utf8_len(char c) {
 
 Vector<u32> String::to_unicode() const {
 	usize si = size();
-	const char *dat = data();
+	const char* dat = data();
 	auto utf8 = vector_with_capacity<u32>((si * 2) / 3);
 	while(dat < end()) {
 		usize len = utf8_len(*dat);
@@ -277,7 +277,7 @@ Vector<u32> String::to_unicode() const {
 
 // --------------------------------------------------- TESTS ---------------------------------------------------
 
-const char *get_long_c_str() {
+const char* get_long_c_str() {
 	return "this is supposed to be a long string. it's used to force the creation of heap allocated strings during test. to be long enouht it has to be at least String::MaxShortSize+1 bytes long (which usually eq 3 machine words: so 12 bytes on 32bits systems and 24 on 64bits)";
 }
 
@@ -320,7 +320,7 @@ y_test_func("String copy") {
 
 
 y_test_func("String add") {
-	const char *c_str = get_long_c_str();
+	const char* c_str = get_long_c_str();
 	auto a = str(c_str, 3);
 	y_test_assert(a.capacity() >= 6);
 
@@ -340,7 +340,7 @@ y_test_func("String add") {
 
 y_test_func("String from_owned") {
 	usize size = 28;
-	char *c_str = new char[size + 1];
+	char* c_str = new char[size + 1];
 	memcpy(c_str, get_long_c_str(), size);
 	c_str[size] = 0;
 

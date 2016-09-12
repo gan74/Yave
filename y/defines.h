@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 
 struct Nothing;
-Nothing fatal(const char *msg, const char *file = nullptr, int line = 0);
+Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 bool try_failed();
 
 }

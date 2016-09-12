@@ -33,7 +33,7 @@ constexpr Byteorder system_byteorder() {
 template<typename T>
 void change_byteorder(T &t) {
 	static_assert(std::is_arithmetic<T>::value, "change_byte_order<T> only works on primitive types");
-	u8 *buffer = reinterpret_cast<u8 *>(&t);
+	u8* buffer = reinterpret_cast<u8*>(&t);
 	for(usize i = 0; i != sizeof(T) / 2; i++) {
 		std::swap(buffer[i], buffer[sizeof(T) - (i + 1)]);
 	}
