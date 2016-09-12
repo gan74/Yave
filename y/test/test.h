@@ -50,13 +50,13 @@ static void Y_TEST_FUNC(y::test::detail::TestResult &);													\
 namespace {																								\
 	class Y_TEST_RUNNER {																				\
 		Y_TEST_RUNNER() {																				\
-			y::test::detail::test_assert(y::test::detail::test_box_msg(msg), &Y_TEST_FUNC);				\
+			y::test::detail::test_assert(y::test::detail::test_box_msg(msg),& Y_TEST_FUNC);				\
 		}																								\
 		static Y_TEST_RUNNER runner;																	\
 	};																									\
 	Y_TEST_RUNNER Y_TEST_RUNNER::runner = Y_TEST_RUNNER();												\
 }																										\
-void Y_TEST_FUNC(y::test::detail::TestResult &_test_result)
+void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
 
 #else
 
@@ -69,7 +69,7 @@ namespace {																								\
 		}																								\
 	};																									\
 }																										\
-void Y_TEST_FUNC(y::test::detail::TestResult &_test_result)
+void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
 
 #endif
 

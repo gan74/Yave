@@ -39,7 +39,7 @@ struct FunctionBase : NonCopyable {
 template<typename T, typename Ret, typename... Args>
 struct Function : FunctionBase<Ret, Args...> {
 	public:
-		Function(const T &t) : f(t) {
+		Function(const T& t) : f(t) {
 		}
 
 		virtual Ret apply(Args... args) override {
@@ -59,7 +59,7 @@ struct Function : FunctionBase<Ret, Args...> {
 template<typename T, typename... Args>
 struct Function<T, void, Args...> : FunctionBase<void, Args...> {
 	public:
-		Function(const T &t) : f(t) {
+		Function(const T& t) : f(t) {
 		}
 
 		virtual void apply(Args... args) override {
@@ -82,19 +82,19 @@ template<template<typename...> typename Container, typename Ret, typename... Arg
 class Functor<Container, Ret(Args...)> {
 	public:
 		template<typename T>
-		Functor(const T &func) : function(new Function<T, Ret, Args...>(func)) {
+		Functor(const T& func) : function(new Function<T, Ret, Args...>(func)) {
 		}
 
 
-		Functor &operator=(const Functor &) = default;
+		Functor& operator=(const Functor &) = default;
 		Functor(const Functor &) = default;
 
 
-		Functor(Functor &&other) : function(nullptr) {
+		Functor(Functor&& other) : function(nullptr) {
 			std::swap(function, other.function);
 		}
 
-		Functor &operator=(Functor &&other) {
+		Functor& operator=(Functor&& other) {
 			std::swap(function, other.function);
 			return *this;
 		}
@@ -140,12 +140,12 @@ using Functor = detail::Functor<Rc, Ret, Args...>;
 
 
 template<typename T>
-inline auto function(const T &func) {
+inline auto function(const T& func) {
 	return typename detail::functor_t<T>::template type<Function>(func);
 }
 
 template<typename T>
-inline auto functor(const T &func) {
+inline auto functor(const T& func) {
 	return typename detail::functor_t<T>::template type<Functor>(func);
 }
 

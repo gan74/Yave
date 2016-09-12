@@ -30,11 +30,11 @@ class File : public Reader, public Writer {
 		File();
 		virtual ~File();
 
-		File(File &&other);
-		File &operator=(File &&other);
+		File(File&& other);
+		File& operator=(File&& other);
 
-		static File create(const core::String &name);
-		static File open(const core::String &name);
+		static File create(const core::String& name);
+		static File open(const core::String& name);
 
 		usize size() const;
 		usize remaining() const;
@@ -42,14 +42,14 @@ class File : public Reader, public Writer {
 		virtual bool at_end() const override;
 
 		virtual usize read(void* data, usize bytes) override;
-		virtual usize read_all(core::Vector<u8> &data) override;
+		virtual usize read_all(core::Vector<u8>& data) override;
 
 		virtual usize write(const void* data, usize bytes) override;
 		virtual void flush() override;
 
 	private:
 		File(FILE* f);
-		void swap(File &other);
+		void swap(File& other);
 
 		FILE* file;
 };

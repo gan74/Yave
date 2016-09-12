@@ -28,10 +28,10 @@ class Ptr : NonCopyable {
 		explicit Ptr(NotOwned<T*>&& p = nullptr) : ptr(p) {
 		}
 
-		explicit Ptr(T &&p) : Ptr(new T(std::move(p))) {
+		explicit Ptr(T&& p) : Ptr(new T(std::move(p))) {
 		}
 
-		Ptr(Ptr &&p) : ptr(nullptr) {
+		Ptr(Ptr&& p) : ptr(nullptr) {
 			swap(p);
 		}
 
@@ -39,32 +39,32 @@ class Ptr : NonCopyable {
 			delete ptr;
 		}
 
-		Ptr &operator=(Ptr &&p) {
+		Ptr& operator=(Ptr&& p) {
 			swap(p);
 			return *this;
 		}
 
-		Ptr &operator=(NotOwned<T*> &&p) {
+		Ptr& operator=(NotOwned<T*>&& p) {
 			Ptr ptr(std::move(p));
 			swap(ptr);
 			return *this;
 		}
 
-		Ptr &operator=(nullptr_t p) {
+		Ptr& operator=(nullptr_t p) {
 			Ptr ptr(p);
 			swap(ptr);
 			return *this;
 		}
 
-		void swap(Ptr &p) {
+		void swap(Ptr& p) {
 			std::swap(ptr, p.ptr);
 		}
 
-		const T &operator*() const {
+		const T& operator*() const {
 			return *ptr;
 		}
 
-		T &operator*() {
+		T& operator*() {
 			return *ptr;
 		}
 
@@ -116,17 +116,17 @@ template<typename T, typename C = u32>
 class Rc : public Ptr<T> {
 	using Ptr<T>::ptr;
 	public:
-		explicit Rc(NotOwned<T*> &&p = nullptr) : Ptr<T>(std::move(p)), count(new C(1)) {
+		explicit Rc(NotOwned<T*>&& p = nullptr) : Ptr<T>(std::move(p)), count(new C(1)) {
 		}
 
-		explicit Rc(T &&p) : Rc(new T(std::move(p))) {
+		explicit Rc(T&& p) : Rc(new T(std::move(p))) {
 		}
 
-		Rc(const Rc &p) : Ptr<T>(nullptr), count(nullptr) {
+		Rc(const Rc& p) : Ptr<T>(nullptr), count(nullptr) {
 			ref(p);
 		}
 
-		Rc(Rc &&p) : Ptr<T>(nullptr), count(nullptr) {
+		Rc(Rc&& p) : Ptr<T>(nullptr), count(nullptr) {
 			swap(p);
 		}
 
@@ -134,7 +134,7 @@ class Rc : public Ptr<T> {
 			unref();
 		}
 
-		void swap(Rc &p) {
+		void swap(Rc& p) {
 			std::swap(ptr, p.ptr);
 			std::swap(count, p.count);
 		}
@@ -143,7 +143,7 @@ class Rc : public Ptr<T> {
 			return *count;
 		}
 
-		Rc &operator=(const Rc &p) {
+		Rc& operator=(const Rc& p) {
 			if(p.count != count) {
 				unref();
 				ref(p);
@@ -151,12 +151,12 @@ class Rc : public Ptr<T> {
 			return *this;
 		}
 
-		Rc &operator=(nullptr_t) {
+		Rc& operator=(nullptr_t) {
 			unref();
 			return *this;
 		}
 
-		Rc &operator=(Rc &&p) {
+		Rc& operator=(Rc&& p) {
 			swap(p);
 			return *this;
 		}
@@ -170,7 +170,7 @@ class Rc : public Ptr<T> {
 			++(*count);
 		}
 
-		void ref(const Rc &p) {
+		void ref(const Rc& p) {
 			if((count = p.count)) {
 				(*count)++;
 			}
@@ -190,12 +190,12 @@ class Rc : public Ptr<T> {
 };
 
 template<typename T>
-inline auto ptr(T &&t) {
+inline auto ptr(T&& t) {
 	return Ptr<typename std::remove_reference<T>::type>(std::move(t));
 }
 
 template<typename T>
-inline auto rc(T &&t) {
+inline auto rc(T&& t) {
 	return Rc<typename std::remove_reference<T>::type>(std::move(t));
 }
 

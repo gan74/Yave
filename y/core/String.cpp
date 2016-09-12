@@ -27,10 +27,10 @@ namespace core {
 String::LongData::LongData() : data(nullptr), capacity(0), length(0) {
 }
 
-String::LongData::LongData(const LongData &l) : LongData(l.data, l.length) {
+String::LongData::LongData(const LongData& l) : LongData(l.data, l.length) {
 }
 
-String::LongData::LongData(LongData &&l) : data(l.data), capacity(l.capacity), length(l.length) {
+String::LongData::LongData(LongData&& l) : data(l.data), capacity(l.capacity), length(l.length) {
 	l.data = nullptr;
 }
 
@@ -50,8 +50,8 @@ String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_l
 String::ShortData::ShortData() : data{0}, length(0) {
 }
 
-String::ShortData::ShortData(const ShortData &s) {
-	memcpy(this, &s, sizeof(ShortData));
+String::ShortData::ShortData(const ShortData& s) {
+	memcpy(this,& s, sizeof(ShortData));
 }
 
 String::ShortData::ShortData(const char* str, usize len) : length(len) {
@@ -71,7 +71,7 @@ usize String::compute_capacity(usize len) {
 	return DefaultVectorResizePolicy().ideal_capacity(len);
 }
 
-void String::free_long(LongData &d) {
+void String::free_long(LongData& d) {
 	delete[] d.data;
 }
 
@@ -80,7 +80,7 @@ void String::free_long(LongData &d) {
 String::String() : s(ShortData()) {
 }
 
-String::String(const String &str) {
+String::String(const String& str) {
 	if(str.is_long()) {
 		new(&l) LongData(str.l);
 	} else {
@@ -88,7 +88,7 @@ String::String(const String &str) {
 	}
 }
 
-String::String(String &&str) {
+String::String(String&& str) {
 	if(str.is_long()) {
 		new(&l) LongData(std::move(str.l));
 	} else {
@@ -99,7 +99,7 @@ String::String(String &&str) {
 String::String(Owned<const char*> str) : String(str, strlen(str)) {
 }
 
-String::String(Owned<const char*>, usize len) {
+String::String(Owned<const char*> str, usize len) {
 	if(len > MaxShortSize) {
 		new(&l) LongData(str, len);
 	} else {
@@ -156,11 +156,11 @@ Owned<const char*> String::data() const {
 	return is_long() ? l.data : s.data;
 }
 
-String::iterator String::find(const String &str) {
+String::iterator String::find(const String& str) {
 	return const_cast<iterator>(const_this()->find(str));
 }
 
-String::const_iterator String::find(const String &str) const {
+String::const_iterator String::find(const String& str) const {
 	const_iterator found = strstr(data(), str);
 	return found ? found : end();
 }
@@ -173,14 +173,14 @@ String::operator char*() {
 	return data();
 }
 
-void String::swap(String &str) {
+void String::swap(String& str) {
 	u8 str_buffer[sizeof(ShortData)];
-	memcpy(str_buffer, &str.s, sizeof(ShortData));
-	memcpy(&str.s, &s, sizeof(ShortData));
+	memcpy(str_buffer,& str.s, sizeof(ShortData));
+	memcpy(&str.s,& s, sizeof(ShortData));
 	memcpy(&s, str_buffer, sizeof(ShortData));
 }
 
-String &String::operator=(const String &str) {
+String& String::operator=(const String& str) {
 	if(&str != this) {
 		if(is_long()) {
 			free_long(l);
@@ -194,12 +194,12 @@ String &String::operator=(const String &str) {
 	return *this;
 }
 
-String &String::operator=(String &&str) {
+String& String::operator=(String&& str) {
 	swap(str);
 	return *this;
 }
 
-String &String::operator+=(const String &str) {
+String& String::operator+=(const String& str) {
 	usize self_size = size();
 	usize other_size = str.size();
 	usize total_size = self_size + other_size;
@@ -223,12 +223,12 @@ String &String::operator+=(const String &str) {
 		if(is_long()) {
 			free_long(l);
 		}
-		memcpy(&l, &new_dat, sizeof(LongData));
+		memcpy(&l,& new_dat, sizeof(LongData));
 	}
 	return *this;
 }
 
-char &String::operator[](usize i) {
+char& String::operator[](usize i) {
 	return data()[i];
 }
 

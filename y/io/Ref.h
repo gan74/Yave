@@ -32,15 +32,15 @@ class Ref {
 		Ref() : ptr(nullptr), owned(false) {
 		}
 
-		Ref(const Ref &ref) : ptr(ref.ptr), owned(false) {
+		Ref(const Ref& ref) : ptr(ref.ptr), owned(false) {
 		}
 
 		template<typename Derived>
-		Ref(Derived &&x) : ptr(new Derived(std::move(x))), owned(true) {
+		Ref(Derived&& x) : ptr(new Derived(std::move(x))), owned(true) {
 		}
 
 		template<typename Derived>
-		Ref(Derived &x) : ptr(&x), owned(false) {
+		Ref(Derived& x) : ptr(&x), owned(false) {
 		}
 
 		~Ref() {
@@ -49,16 +49,16 @@ class Ref {
 			}
 		}
 
-		Ref(Ref &&other) : Ref() {
+		Ref(Ref&& other) : Ref() {
 			swap(other);
 		}
 
-		Ref &operator=(Ref &&other) {
+		Ref& operator=(Ref&& other) {
 			swap(other);
 			return *this;
 		}
 
-		Ref &operator=(const Ref &other) {
+		Ref& operator=(const Ref& other) {
 			if(owned) {
 				delete ptr;
 			}
@@ -84,7 +84,7 @@ class Ref {
 		}
 
 	private:
-		void swap(Ref &other) {
+		void swap(Ref& other) {
 			std::swap(ptr, other.ptr);
 			std::swap(owned, other.owned);
 		}

@@ -68,7 +68,7 @@ u64 get_user_time_ns() {
 	#ifdef Y_OS_WIN
 	FILETIME time;
 	FILETIME garbage;
-	GetProcessTimes(GetCurrentProcess(), &garbage, &garbage, &garbage, &time);
+	GetProcessTimes(GetCurrentProcess(),& garbage,& garbage,& garbage,& time);
 	return windows::filetime_to_ns(time);
 	#else
 	return 0;
@@ -79,7 +79,7 @@ u64 get_kernel_time_ns() {
 	#ifdef Y_OS_WIN
 	FILETIME time;
 	FILETIME garbage;
-	GetProcessTimes(GetCurrentProcess(), &garbage, &garbage, &time, &garbage);
+	GetProcessTimes(GetCurrentProcess(),& garbage,& garbage,& time,& garbage);
 	return windows::filetime_to_ns(time);
 	#else
 	return 0;
@@ -91,7 +91,7 @@ AppTimes get_times_ns() {
 	FILETIME user;
 	FILETIME kernel;
 	FILETIME garbage;
-	GetProcessTimes(GetCurrentProcess(), &garbage, &garbage, &kernel, &user);
+	GetProcessTimes(GetCurrentProcess(),& garbage,& garbage,& kernel,& user);
 	return AppTimes { windows::filetime_to_ns(kernel), windows::filetime_to_ns(user) };
 	#else
 	return AppTimes { 0, 0 };

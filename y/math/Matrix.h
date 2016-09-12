@@ -28,13 +28,13 @@ class Matrix;
 
 namespace detail {
 	template<typename T, usize N>
-	T determinant(const Matrix<N, N, T> &mat);
+	T determinant(const Matrix<N, N, T>& mat);
 
 	template<typename T>
-	T determinant(const Matrix<2, 2, T> &mat);
+	T determinant(const Matrix<2, 2, T>& mat);
 
 	template<typename T>
-	T determinant(const Matrix<1, 1, T> &mat);
+	T determinant(const Matrix<1, 1, T>& mat);
 }
 
 
@@ -48,7 +48,7 @@ class Matrix
 	}
 
 	template<usize P, usize Q, typename U, typename... Args>
-	void build(const Vec<Q, U> &t, Args... args) {
+	void build(const Vec<Q, U>& t, Args... args) {
 		for(usize i = 0; i != Q; i++) {
 			set_at(P + i, T(t[i]));
 		}
@@ -82,7 +82,7 @@ class Matrix
 		}
 
 		template<typename X>
-		Matrix(const Matrix<N, M, X> &m) {
+		Matrix(const Matrix<N, M, X>& m) {
 			for(usize i = 0; i != N; i++) {
 				rows[i] = m[i];
 			}
@@ -93,13 +93,13 @@ class Matrix
 
 		Matrix() = default;
 		Matrix(const Matrix &) = default;
-		Matrix &operator=(const Matrix &) = default;
+		Matrix& operator=(const Matrix &) = default;
 
-		Vec<M, T> &operator[](usize i) {
+		Vec<M, T>& operator[](usize i) {
 			return rows[i];
 		}
 
-		const Vec<M, T> &operator[](usize i) const {
+		const Vec<M, T>& operator[](usize i) const {
 			return rows[i];
 		}
 
@@ -108,7 +108,7 @@ class Matrix
 		}
 
 		template<typename U>
-		Vec<N, U> operator*(const Vec<M, U> &v) const {
+		Vec<N, U> operator*(const Vec<M, U>& v) const {
 			Vec<N, U> tr;
 			for(usize i = 0; i != M; i++) {
 				tr += column(i) * v[i];
@@ -117,7 +117,7 @@ class Matrix
 		}
 
 		template<typename U, usize P>
-		auto operator*(const Matrix<M, P, U> &m) const {
+		auto operator*(const Matrix<M, P, U>& m) const {
 			Matrix<N, P, decltype(make_one<T>() * make_one<U>())> mat;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != P; j++) {
@@ -132,7 +132,7 @@ class Matrix
 		}
 
 		template<typename U>
-		auto operator+(const Matrix<N, M, U> &m) const {
+		auto operator+(const Matrix<N, M, U>& m) const {
 			Matrix<N, M, decltype(make_one<T>() * make_one<U>())> mat;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != M; j++) {
@@ -160,7 +160,7 @@ class Matrix
 			return tr;
 		}
 
-		bool operator==(const Matrix &m) const {
+		bool operator==(const Matrix& m) const {
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != M; j++) {
 					if((*this)[i][j] != m[i][j]) {
@@ -213,7 +213,7 @@ class Matrix
 		}
 
 		const_iterator begin() const {
-			return &rows[0][0];
+			return& rows[0][0];
 		}
 
 		const_iterator end() const {
@@ -221,7 +221,7 @@ class Matrix
 		}
 
 		iterator begin() {
-			return &rows[0][0];
+			return& rows[0][0];
 		}
 
 		iterator end() {
@@ -238,7 +238,7 @@ class Matrix
 
 namespace detail {
 	template<typename T, usize N>
-	T determinant(const Matrix<N, N, T> &mat) {
+	T determinant(const Matrix<N, N, T>& mat) {
 		struct {
 			int operator()(int index) const {
 				return 2 * (index % 2) - 1;
@@ -252,13 +252,13 @@ namespace detail {
 	}
 
 	template<typename T>
-	T determinant(const Matrix<2, 2, T> &mat) {
+	T determinant(const Matrix<2, 2, T>& mat) {
 		return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 	}
 
 
 	template<typename T>
-	T determinant(const Matrix<1, 1, T> &mat) {
+	T determinant(const Matrix<1, 1, T>& mat) {
 		return mat[0][0];
 	}
 }
@@ -273,7 +273,7 @@ using Matrix2 = Matrix<2, 2, T>;
 
 
 template<usize M, typename T, typename... Args>
-auto matrix(const Vec<M, T> &v, Args... args) {
+auto matrix(const Vec<M, T>& v, Args... args) {
 	return Matrix<sizeof...(args) + 1, M, T>(v, args...);
 }
 

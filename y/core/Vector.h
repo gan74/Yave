@@ -59,36 +59,36 @@ class Vector : ResizePolicy {
 		Vector() : data(nullptr), data_end(nullptr), alloc_end(nullptr) {
 		}
 
-		Vector(const Vector &other) : Vector() {
+		Vector(const Vector& other) : Vector() {
 			set_min_capacity(other.size());
-			for(const Elem &e : other) {
+			for(const Elem& e : other) {
 				append(e);
 			}
 		}
 
-		Vector(Vector &&other) : Vector() {
+		Vector(Vector&& other) : Vector() {
 			swap(other);
 		}
 
-		Vector &operator=(const Vector &other) {
+		Vector& operator=(const Vector& other) {
 			Vector v(other);
 			swap(v);
 			return *this;
 		}
 
-		Vector &operator=(Vector &&other) {
+		Vector& operator=(Vector&& other) {
 			swap(other);
 			return *this;
 		}
 
 		Vector(std::initializer_list<Elem> l) : Vector() {
 			set_min_capacity(l.size());
-			for(const auto &e : l) {
+			for(const auto& e : l) {
 				append(e);
 			}
 		}
 
-		Vector(usize size, const Elem &elem) : Vector() {
+		Vector(usize size, const Elem& elem) : Vector() {
 			set_min_capacity(size);
 			for(usize i = 0; i != size; i++) {
 				append(elem);
@@ -96,19 +96,19 @@ class Vector : ResizePolicy {
 		}
 
 		template<typename T>
-		explicit Vector(const T &other) : Vector() {
+		explicit Vector(const T& other) : Vector() {
 			set_min_capacity(other.size());
 			append(range(other));
 		}
 
 		template<typename T>
-		Vector &operator=(const T &other) {
+		Vector& operator=(const T& other) {
 			Vector v(other);
 			swap(v);
 			return *this;
 		}
 
-		void swap(Vector &v) {
+		void swap(Vector& v) {
 			std::swap(data, v.data);
 			std::swap(data_end, v.data_end);
 			std::swap(alloc_end, v.alloc_end);
@@ -118,14 +118,14 @@ class Vector : ResizePolicy {
 			clear();
 		}
 
-		void append(const Element &elem) {
+		void append(const Element& elem) {
 			if(data_end == alloc_end) {
 				expend();
 			}
 			new(data_end++) Data(elem);
 		}
 
-		void append(Element &&elem) {
+		void append(Element&& elem) {
 			if(data_end == alloc_end) {
 				expend();
 			}
@@ -133,9 +133,9 @@ class Vector : ResizePolicy {
 		}
 
 		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type>
-		void append(const Range<I> &rng) {
+		void append(const Range<I>& rng) {
 			//static_assert(std::is_same<typename Range<I>::Element, Element>::value, "Pushing invalid range into Vector");
-			for(const auto &i : rng) {
+			for(const auto& i : rng) {
 				append(i);
 			}
 		}
@@ -176,27 +176,27 @@ class Vector : ResizePolicy {
 			return data_end;
 		}
 
-		const Element &operator[](usize i) const {
+		const Element& operator[](usize i) const {
 			return data[i];
 		}
 
-		Element &operator[](usize i) {
+		Element& operator[](usize i) {
 			return data[i];
 		}
 
-		const Element &first() const {
+		const Element& first() const {
 			return *data;
 		}
 
-		Element &first() {
+		Element& first() {
 			return *data;
 		}
 
-		const Element &last() const {
+		const Element& last() const {
 			return *(data_end - 1);
 		}
 
-		Element &last() {
+		Element& last() {
 			return *(data_end - 1);
 		}
 
@@ -229,7 +229,7 @@ class Vector : ResizePolicy {
 			data_end = data;
 		}
 
-		bool operator==(const Vector &v) const {
+		bool operator==(const Vector& v) const {
 			usize s = size();
 			if(s == v.size()) {
 				for(usize i = 0; i != s; i++) {
@@ -242,7 +242,7 @@ class Vector : ResizePolicy {
 			return false;
 		}
 
-		bool operator!=(const Vector &v) const {
+		bool operator!=(const Vector& v) const {
 			return !operator==(v);
 		}
 
@@ -306,13 +306,13 @@ inline void append(Vector<T> &) {
 }
 
 template<typename T, typename U, typename... Args>
-inline void append(Vector<T> &vec, U u, Args... args) {
+inline void append(Vector<T>& vec, U u, Args... args) {
 	vec.append(u);
 	append(vec, std::forward<Args>(args)...);
 }
 
 template<typename T, typename U>
-inline void append(Vector<T> &vec, U u) {
+inline void append(Vector<T>& vec, U u) {
 	vec.append(std::forward<U>(u));
 }
 }
@@ -351,7 +351,7 @@ static_assert(std::is_same<decltype(vector(1, 2.0, 3))::Element, double>::value,
 
 
 template<typename U, typename T>
-inline Vector<U> &operator<<(Vector<U> &vec, T t) {
+inline Vector<U>& operator<<(Vector<U>& vec, T t) {
 	vec.append(std::forward<T>(t));
 	return vec;
 }

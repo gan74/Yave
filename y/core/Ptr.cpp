@@ -22,12 +22,12 @@ namespace core {
 struct Raii : NonCopyable {
 	static bool ded;
 
-	Raii(bool &b) : e(&b) {
+	Raii(bool& b) : e(&b) {
 		*e = true;
 	}
 
-	Raii(Raii &&r) : e(r.e) {
-		r.e = &ded;
+	Raii(Raii&& r) : e(r.e) {
+		r.e =& ded;
 	}
 
 	~Raii() {

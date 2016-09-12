@@ -26,15 +26,15 @@ class FilterIterator {
 	public:
 		using Element = typename dereference<Iter>::type;
 
-		FilterIterator(const Iter &beg, const Func &f) : it(beg), filter(f) {
+		FilterIterator(const Iter& beg, const Func& f) : it(beg), filter(f) {
 		}
 
-		FilterIterator<Iter, Func> &operator++() {
+		FilterIterator<Iter, Func>& operator++() {
 			while(!filter(*(++it)));
 			return *this;
 		}
 
-		FilterIterator<Iter, Func> &operator--() {
+		FilterIterator<Iter, Func>& operator--() {
 			while(!filter(*(--it)));
 			return *this;
 		}
@@ -51,16 +51,16 @@ class FilterIterator {
 			return p;
 		}
 
-		bool operator!=(const FilterIterator<Iter, Func> &i) const {
+		bool operator!=(const FilterIterator<Iter, Func>& i) const {
 			return it != i.it || filter != i.filter;
 		}
 
-		bool operator!=(const Iter &i) const {
+		bool operator!=(const Iter& i) const {
 			return it != i;
 		}
 
 		template<typename T>
-		bool operator==(const T &t) const {
+		bool operator==(const T& t) const {
 			return !operator!=(t);
 		}
 

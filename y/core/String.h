@@ -58,12 +58,12 @@ class String {
 		LongLenType length;
 
 		LongData();
-		LongData(const LongData &l);
-		LongData(LongData &&l);
+		LongData(const LongData& l);
+		LongData(LongData&& l);
 		LongData(const char* str, usize cap, usize len);
 		LongData(const char* str, usize len);
 
-		LongData &operator=(const LongData &) = delete;
+		LongData& operator=(const LongData &) = delete;
 	};
 
 	struct ShortData
@@ -72,10 +72,10 @@ class String {
 		ShortLenType length;
 
 		ShortData();
-		ShortData(const ShortData &s);
+		ShortData(const ShortData& s);
 		ShortData(const char* str, usize len);
 
-		ShortData &operator=(const ShortData &) = delete;
+		ShortData& operator=(const ShortData &) = delete;
 
 	};
 
@@ -88,8 +88,8 @@ class String {
 		using const_iterator = const char*;
 
 		String();
-		String(const String &str);
-		String(String &&str);
+		String(const String& str);
+		String(String&& str);
 
 		String(Owned<const char*> str); // NOT explicit
 		String(Owned<const char*> , usize len);
@@ -98,13 +98,13 @@ class String {
 		~String();
 
 		template<typename T>
-		static String from(const T &t);
+		static String from(const T& t);
 
 		// the pointer is not owned anymore, String take ownership;
 		static String from_owned(NotOwned<char*> owned);
 
 		template<typename I, typename Enable = typename std::enable_if<std::is_convertible<typename Range<I>::Element, char>::value>::type>
-		static String from(const Range<I> &rng);
+		static String from(const Range<I>& rng);
 
 		usize size() const;
 		usize capacity() const;
@@ -116,20 +116,20 @@ class String {
 		Owned<char*> data();
 		Owned<const char*> data() const;
 
-		iterator find(const String &str);
-		const_iterator find(const String &str) const;
+		iterator find(const String& str);
+		const_iterator find(const String& str) const;
 
 		operator const char*() const;
 		operator char*();
 
-		void swap(String &str);
+		void swap(String& str);
 
-		String &operator=(const String &str);
-		String &operator=(String &&str);
+		String& operator=(const String& str);
+		String& operator=(String&& str);
 
-		String &operator+=(const String &str);
+		String& operator+=(const String& str);
 
-		char &operator[](usize i);
+		char& operator[](usize i);
 		char operator[](usize i) const;
 
 		Vector<u32> to_unicode() const;
@@ -172,7 +172,7 @@ class String {
 
 		static char* alloc_long(usize capacity);
 		static usize compute_capacity(usize len);
-		static void free_long(LongData &d);
+		static void free_long(LongData& d);
 
 };
 
@@ -180,12 +180,12 @@ class String {
 
 namespace detail {
 template<typename T>
-inline String str(const T &t, std::false_type) {
+inline String str(const T& t, std::false_type) {
 	return String::from(t);
 }
 
 template<typename T>
-inline String str(const T &t, std::true_type) {
+inline String str(const T& t, std::true_type) {
 	return String(t);
 }
 }
@@ -196,7 +196,7 @@ inline String str(Args... args) {
 }
 
 template<typename T>
-inline String str(const T &t) {
+inline String str(const T& t) {
 	return detail::str(t, bool_type<std::is_convertible<T, String>::value>());
 }
 
@@ -205,7 +205,7 @@ inline String str_from_owned(NotOwned<char*> owned) {
 }
 
 template<typename T>
-inline String str_from(const T &t) {
+inline String str_from(const T& t) {
 	return String::from(t);
 }
 
@@ -213,16 +213,16 @@ inline String str_from(const T &t) {
 
 
 template<typename T>
-String String::from(const T &t) {
+String String::from(const T& t) {
 	std::ostringstream oss;
 	oss << t;
 	return oss.str().c_str();
 }
 
 template<typename I, typename Enable>
-String String::from(const Range<I> &rng) {
+String String::from(const Range<I>& rng) {
 	std::ostringstream oss;
-	for(const auto &e : rng) {
+	for(const auto& e : rng) {
 		oss << e;
 	}
 	return oss.str().c_str();

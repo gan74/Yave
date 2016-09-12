@@ -20,7 +20,7 @@ namespace y {
 
 // short hand for std::declval
 template<typename T>
-T &make_one();
+T& make_one();
 
 namespace detail {
 

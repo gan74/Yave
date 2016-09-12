@@ -61,7 +61,7 @@ auto perspective(T fovy, T aspect, T z_near, T z_far) {
 }
 
 template<typename T>
-auto look_at(const Vec<3, T> &eye, const Vec<3, T> &center, const Vec<3, T> &up = Vec<3, T>(0, 0, 1)) {
+auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up = Vec<3, T>(0, 0, 1)) {
 		Vec<3, T> f((center - eye).normalized());
 		Vec<3, T> s(f.cross(up).normalized());
 		Vec<3, T> u(s.cross(f));
@@ -84,7 +84,7 @@ auto look_at(const Vec<3, T> &eye, const Vec<3, T> &center, const Vec<3, T> &up 
 }
 
 template<typename T>
-auto rotation(T angle, Vec<3, T> axis, const Matrix4<T> &base = identity()) {
+auto rotation(T angle, Vec<3, T> axis, const Matrix4<T>& base = identity()) {
 		T a = angle;
 		T c = cos(a);
 		T s = sin(a);

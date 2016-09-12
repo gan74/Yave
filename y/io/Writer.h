@@ -36,7 +36,7 @@ class Writer : NonCopyable {
 		}
 
 		template<typename T>
-		usize write_vec(const core::Vector<T> &data) {
+		usize write_vec(const core::Vector<T>& data) {
 			return write(data.begin(), data.size());
 		}
 

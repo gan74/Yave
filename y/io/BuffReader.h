@@ -24,22 +24,22 @@ namespace io {
 class BuffReader : public Reader {
 
 	public:
-		BuffReader(ReaderRef &&r, usize buff_size = 512);
-		BuffReader(const ReaderRef &r, usize buff_size = 512);
+		BuffReader(ReaderRef&& r, usize buff_size = 512);
+		BuffReader(const ReaderRef& r, usize buff_size = 512);
 
 		virtual ~BuffReader();
 
-		BuffReader(BuffReader &&other);
-		BuffReader &operator=(BuffReader &&other);
+		BuffReader(BuffReader&& other);
+		BuffReader& operator=(BuffReader&& other);
 
 		virtual bool at_end() const override;
 
 		virtual usize read(void *data, usize bytes) override;
-		virtual usize read_all(core::Vector<u8> &data) override;
+		virtual usize read_all(core::Vector<u8>& data) override;
 
 	private:
 		BuffReader(usize buff_size = 0);
-		void swap(BuffReader &other);
+		void swap(BuffReader& other);
 
 		usize buffer_size;
 		usize buffer_offset;

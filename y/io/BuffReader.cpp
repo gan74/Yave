@@ -22,11 +22,11 @@ namespace io {
 BuffReader::BuffReader(usize buff_size) : buffer_size(buff_size), buffer_offset(0), buffer_used(0), buffer(buff_size ? new u8[buff_size] : nullptr) {
 }
 
-BuffReader::BuffReader(ReaderRef &&r, usize buff_size) : BuffReader(buff_size) {
+BuffReader::BuffReader(ReaderRef&& r, usize buff_size) : BuffReader(buff_size) {
 	inner = std::move(r);
 }
 
-BuffReader::BuffReader(const ReaderRef &r, usize buff_size) : BuffReader(buff_size) {
+BuffReader::BuffReader(const ReaderRef& r, usize buff_size) : BuffReader(buff_size) {
 	inner = r;
 }
 
@@ -34,16 +34,16 @@ BuffReader::~BuffReader() {
 	delete[] buffer;
 }
 
-BuffReader::BuffReader(BuffReader &&other) : BuffReader() {
+BuffReader::BuffReader(BuffReader&& other) : BuffReader() {
 	swap(other);
 }
 
-BuffReader &BuffReader::operator=(BuffReader &&other) {
+BuffReader& BuffReader::operator=(BuffReader&& other) {
 	swap(other);
 	return *this;
 }
 
-void BuffReader::swap(BuffReader &other) {
+void BuffReader::swap(BuffReader& other) {
 	std::swap(buffer_size, other.buffer_size);
 	std::swap(buffer_offset, other.buffer_offset);
 	std::swap(buffer_used, other.buffer_used);
@@ -76,7 +76,7 @@ usize BuffReader::read(void* data, usize bytes) {
 	return in_buffer;
 }
 
-usize BuffReader::read_all(core::Vector<u8> &data) {
+usize BuffReader::read_all(core::Vector<u8>& data) {
 	usize l = inner->read_all(data);
 	auto vec = core::Vector<u8>(buffer_used, 0);
 	memcpy(vec.begin(), buffer + buffer_offset, buffer_used);

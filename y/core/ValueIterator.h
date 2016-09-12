@@ -26,15 +26,15 @@ class ValueIterator {
 	public:
 		using Element = T;
 
-		ValueIterator(const T &t, bool rev = false) : value(t), reverse(rev) {
+		ValueIterator(const T& t, bool rev = false) : value(t), reverse(rev) {
 		}
 
-		ValueIterator<T> &operator++() {
+		ValueIterator<T>& operator++() {
 			inc();
 			return *this;
 		}
 
-		ValueIterator<T> &operator--() {
+		ValueIterator<T>& operator--() {
 			dec();
 			return *this;
 		}
@@ -51,20 +51,20 @@ class ValueIterator {
 			return it;
 		}
 
-		bool operator!=(const ValueIterator<T> &t) const {
+		bool operator!=(const ValueIterator<T>& t) const {
 			return value != t.value;
 		}
 
-		bool operator==(const ValueIterator<T> &t) const {
+		bool operator==(const ValueIterator<T>& t) const {
 			return value == t.value;
 		}
 
-		const T &operator*() const {
+		const T& operator*() const {
 			return value;
 		}
 
 		const T* operator->() const {
-			return &value;
+			return& value;
 		}
 
 	private:

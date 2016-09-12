@@ -45,7 +45,7 @@ class Vec
 	}
 
 	template<usize P, usize Q, typename U, typename... Args>
-	void build(const Vec<Q, U> &t, Args... args) {
+	void build(const Vec<Q, U>& t, Args... args) {
 		for(usize i = 0; i != Q; i++) {
 			vec[P + i] = t[i];
 		}
@@ -79,7 +79,7 @@ class Vec
 		}
 
 		template<typename X>
-		Vec(const Vec<N, X> &v) {
+		Vec(const Vec<N, X>& v) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] = v[i];
 			}
@@ -90,7 +90,7 @@ class Vec
 
 		Vec() = default;
 		Vec(const Vec &) = default;
-		Vec &operator=(const Vec &) = default;
+		Vec& operator=(const Vec &) = default;
 
 		T length2() const {
 			T sum = 0;
@@ -104,7 +104,7 @@ class Vec
 			return std::sqrt(length2());
 		}
 
-		T dot(const Vec &o) const {
+		T dot(const Vec& o) const {
 			T sum = 0;
 			for(usize i = 0; i != N; i++) {
 				sum += vec[i] * o.vec[i];
@@ -112,7 +112,7 @@ class Vec
 			return sum;
 		}
 
-		Vec cross(const Vec &o) const {
+		Vec cross(const Vec& o) const {
 			static_assert(std::is_signed<T>::value, "Vec<T>::cross makes no sense for T unsigned");
 			Vec v;
 			for(usize i = 0; i != N; i++) {
@@ -142,40 +142,40 @@ class Vec
 			return v;
 		}
 
-		T &x() {
+		T& x() {
 			return vec[0];
 		}
 
-		const T &x() const {
+		const T& x() const {
 			return vec[0];
 		}
 
-		T &y() {
+		T& y() {
 			static_assert(N > 1, "Accessing out of bound member");
 			return vec[1];
 		}
 
-		const T &y() const {
+		const T& y() const {
 			static_assert(N > 1, "Accessing out of bound member");
 			return vec[1];
 		}
 
-		T &z() {
+		T& z() {
 			static_assert(N > 2, "Accessing out of bound member");
 			return vec[2];
 		}
 
-		const T &z() const {
+		const T& z() const {
 			static_assert(N > 2, "Accessing out of bound member");
 			return vec[2];
 		}
 
-		T &w() {
+		T& w() {
 			static_assert(N > 3, "Accessing out of bound member");
 			return vec[3];
 		}
 
-		const T &w() const {
+		const T& w() const {
 			static_assert(N > 3, "Accessing out of bound member");
 			return vec[3];
 		}
@@ -213,15 +213,15 @@ class Vec
 			return vec + N;
 		}
 
-		T &operator[](usize i) {
+		T& operator[](usize i) {
 			return vec[i];
 		}
 
-		const T &operator[](usize i) const {
+		const T& operator[](usize i) const {
 			return vec[i];
 		}
 
-		bool operator!=(const Vec<N, T> &o) const {
+		bool operator!=(const Vec<N, T>& o) const {
 			for(usize i = 0; i != N; i++) {
 				if(o.vec[i] != vec[i]) {
 					return true;
@@ -230,7 +230,7 @@ class Vec
 			return false;
 		}
 
-		bool operator==(const Vec<N, T> &o) const {
+		bool operator==(const Vec<N, T>& o) const {
 			return !operator!=(o);
 		}
 
@@ -242,28 +242,28 @@ class Vec
 			return t;
 		}
 
-		Vec &operator*=(const T &t) {
+		Vec& operator*=(const T& t) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] *= t;
 			}
 			return *this;
 		}
 
-		Vec &operator/=(const T &t) {
+		Vec& operator/=(const T& t) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] /= t;
 			}
 			return *this;
 		}
 
-		Vec &operator+=(const T &t) {
+		Vec& operator+=(const T& t) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] += t;
 			}
 			return *this;
 		}
 
-		Vec &operator-=(const T &t) {
+		Vec& operator-=(const T& t) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] -= t;
 			}
@@ -272,28 +272,28 @@ class Vec
 
 
 
-		Vec &operator*=(const Vec &v) {
+		Vec& operator*=(const Vec& v) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] *= v[i];
 			}
 			return *this;
 		}
 
-		Vec &operator/=(const Vec &v) {
+		Vec& operator/=(const Vec& v) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] /= v[i];
 			}
 			return *this;
 		}
 
-		Vec &operator+=(const Vec &v) {
+		Vec& operator+=(const Vec& v) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] += v[i];
 			}
 			return *this;
 		}
 
-		Vec &operator-=(const Vec &v) {
+		Vec& operator-=(const Vec& v) {
 			for(usize i = 0; i != N; i++) {
 				vec[i] -= v[i];
 			}
@@ -418,19 +418,19 @@ struct V {
 
 
 template<usize N, typename T, typename R>
-auto operator+(const Vec<N, T> &v, const R &r) {
+auto operator+(const Vec<N, T>& v, const R& r) {
 	typename detail::V<N, T, R>::type vec(v);
 	vec += r;
 	return vec;
 }
 
 template<usize N, typename T, typename L>
-auto operator+(const L &l, const Vec<N, T> &v) {
+auto operator+(const L& l, const Vec<N, T>& v) {
 	return v + l;
 }
 
 template<usize N, typename T>
-auto operator+(Vec<N, T> a, const Vec<N, T> &b) {
+auto operator+(Vec<N, T> a, const Vec<N, T>& b) {
 	a += b;
 	return a;
 }
@@ -439,19 +439,19 @@ auto operator+(Vec<N, T> a, const Vec<N, T> &b) {
 
 
 template<usize N, typename T, typename R>
-auto operator*(const Vec<N, T> &v, const R &r) {
+auto operator*(const Vec<N, T>& v, const R& r) {
 	typename detail::V<N, T, R>::type vec(v);
 	vec *= r;
 	return vec;
 }
 
 template<usize N, typename T, typename L>
-auto operator*(const L &l, const Vec<N, T> &v) {
+auto operator*(const L& l, const Vec<N, T>& v) {
 	return v * l;
 }
 
 template<usize N, typename T>
-auto operator*(Vec<N, T> a, const Vec<N, T> &b) {
+auto operator*(Vec<N, T> a, const Vec<N, T>& b) {
 	a *= b;
 	return a;
 }
@@ -460,19 +460,19 @@ auto operator*(Vec<N, T> a, const Vec<N, T> &b) {
 
 
 template<usize N, typename T, typename R>
-auto operator-(const Vec<N, T> &v, const R &r) {
+auto operator-(const Vec<N, T>& v, const R& r) {
 	typename detail::V<N, T, R>::type vec(v);
 	vec -= r;
 	return vec;
 }
 
 template<usize N, typename T, typename L>
-auto operator-(const L &l, const Vec<N, T> &v) {
+auto operator-(const L& l, const Vec<N, T>& v) {
 	return -v + l;
 }
 
 template<usize N, typename T>
-auto operator-(Vec<N, T> a, const Vec<N, T> &b) {
+auto operator-(Vec<N, T> a, const Vec<N, T>& b) {
 	a -= b;
 	return a;
 }
@@ -480,19 +480,19 @@ auto operator-(Vec<N, T> a, const Vec<N, T> &b) {
 
 
 template<usize N, typename T, typename R>
-auto operator/(const Vec<N, T> &v, const R &r) {
+auto operator/(const Vec<N, T>& v, const R& r) {
 	typename detail::V<N, T, R>::type vec(v);
 	vec /= r;
 	return vec;
 }
 
 template<usize N, typename T, typename L>
-auto operator/(const L &l, const Vec<N, T> &v) {
+auto operator/(const L& l, const Vec<N, T>& v) {
 	return vec(l) / v;
 }
 
 template<usize N, typename T>
-auto operator/(Vec<N, T> a, const Vec<N, T> &b) {
+auto operator/(Vec<N, T> a, const Vec<N, T>& b) {
 	a /= b;
 	return a;
 }

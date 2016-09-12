@@ -36,7 +36,7 @@ struct RaiiCounter : NonCopyable {
 	RaiiCounter(usize* ptr) : counter(ptr) {
 	}
 
-	RaiiCounter(RaiiCounter &&raii) : counter(nullptr) {
+	RaiiCounter(RaiiCounter&& raii) : counter(nullptr) {
 		std::swap(raii.counter, counter);
 	}
 

@@ -31,24 +31,24 @@ File::~File() {
 	}
 }
 
-File::File(File &&other) : File() {
+File::File(File&& other) : File() {
 	swap(other);
 }
 
-File &File::operator=(File &&other) {
+File& File::operator=(File&& other) {
 	swap(other);
 	return *this;
 }
 
-void File::swap(File &other) {
+void File::swap(File& other) {
 	std::swap(file, other.file);
 }
 
-File File::create(const core::String &name) {
+File File::create(const core::String& name) {
 	return fopen(name.data(), "wb+");
 }
 
-File File::open(const core::String &name) {
+File File::open(const core::String& name) {
 	return fopen(name.data(), "rb");
 }
 
@@ -57,10 +57,10 @@ usize File::size() const {
 		return 0;
 	}
 	fpos_t pos = {};
-	fgetpos(file, &pos);
+	fgetpos(file,& pos);
 	fseek(file, 0, SEEK_END);
 	usize len = ftell(file);
-	fsetpos(file, &pos);
+	fsetpos(file,& pos);
 	return len;
 }
 
@@ -69,11 +69,11 @@ usize File::remaining() const {
 		return 0;
 	}
 	fpos_t pos = {};
-	fgetpos(file, &pos);
+	fgetpos(file,& pos);
 	usize offset = ftell(file);
 	fseek(file, 0, SEEK_END);
 	usize len = ftell(file);
-	fsetpos(file, &pos);
+	fsetpos(file,& pos);
 	return len - offset;
 }
 
@@ -88,7 +88,7 @@ usize File::read(void* data, usize bytes) {
 	return fread(data, 1, bytes, file);
 }
 
-usize File::read_all(core::Vector<u8> &data) {
+usize File::read_all(core::Vector<u8>& data) {
 	usize left = remaining();
 	data = core::Vector<u8>(left, 0);
 	return read(data.begin(), left);

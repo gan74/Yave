@@ -31,14 +31,14 @@ class Range {
 		using Return = typename dereference<Iter>::type;
 		using Element = typename std::decay<Return>::type;
 
-		Range(const Iter &b, const Iter &e) : beg(b), en(e) {
+		Range(const Iter& b, const Iter& e) : beg(b), en(e) {
 		}
 
-		const Iter &begin() const {
+		const Iter& begin() const {
 			return beg;
 		}
 
-		const Iter &end() const {
+		const Iter& end() const {
 			return en;
 		}
 
@@ -61,12 +61,12 @@ class Range {
 		}
 
 		template<typename F>
-		Range<MapIterator<Iter, F>> map(const F &f) const {
+		Range<MapIterator<Iter, F>> map(const F& f) const {
 			return Range<MapIterator<Iter, F>>(MapIterator<Iter, F>(begin(), f), MapIterator<Iter, F>(end(), f));
 		}
 
 		template<typename F>
-		Range<FilterIterator<Iter, F>> filter(const F &f) const {
+		Range<FilterIterator<Iter, F>> filter(const F& f) const {
 			return Range<FilterIterator<Iter, F>>(FilterIterator<Iter, F>(begin(), f), FilterIterator<Iter, F>(end(), f));
 		}
 
@@ -79,29 +79,29 @@ class Range {
 		}
 
 		template<typename Stream>
-		auto collect(Stream &str) const {
-			for(const auto &e : *this) {
+		auto collect(Stream& str) const {
+			for(const auto& e : *this) {
 				str << e;
 			}
 		}
 
 		template<typename T>
-		void foreach(const T &t) const {
-			for(const auto &e : *this) {
+		void foreach(const T& t) const {
+			for(const auto& e : *this) {
 				t(e);
 			}
 		}
 
 		template<typename T>
-		void foreach(T &t) const {
-			for(const auto &e : *this) {
+		void foreach(T& t) const {
+			for(const auto& e : *this) {
 				t(e);
 			}
 		}
 
 		template<typename T>
-		bool contains(const T &t) const {
-			for(const auto &e : *this) {
+		bool contains(const T& t) const {
+			for(const auto& e : *this) {
 				if(e == t) {
 					return true;
 				}
@@ -117,14 +117,14 @@ class Range {
 namespace detail {
 
 template<typename Iter>
-inline auto range(const Iter &b, const Iter &e, std::true_type) {
+inline auto range(const Iter& b, const Iter& e, std::true_type) {
 	bool r = e < b;
 	using RI = ValueIterator<Iter>;
 	return Range<RI>(RI(b, r), RI(e, r));
 }
 
 template<typename Iter>
-inline auto range(const Iter &b, const Iter &e, std::false_type) {
+inline auto range(const Iter& b, const Iter& e, std::false_type) {
 	return Range<Iter>(b, e);
 }
 
@@ -132,17 +132,17 @@ inline auto range(const Iter &b, const Iter &e, std::false_type) {
 
 
 template<typename Iter>
-inline auto range(const Iter &b, const Iter &e) {
+inline auto range(const Iter& b, const Iter& e) {
 	return detail::range(b, e, bool_type<!is_dereferenceable<Iter>::value>());
 }
 
 template<typename Coll>
-inline auto range(const Coll &c) {
+inline auto range(const Coll& c) {
 	return range(c.begin(), c.end());
 }
 
 template<typename Coll>
-inline auto range(Coll &c) {
+inline auto range(Coll& c) {
 	return range(c.begin(), c.end());
 }
 
