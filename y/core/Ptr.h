@@ -25,7 +25,7 @@ namespace core {
 template<typename T>
 class Ptr : NonCopyable {
 	public:
-		explicit Ptr(T *&&p = nullptr) : ptr(p) {
+		explicit Ptr(NotOwned<T*>&& p = nullptr) : ptr(p) {
 		}
 
 		explicit Ptr(T &&p) : Ptr(new T(std::move(p))) {
@@ -44,7 +44,7 @@ class Ptr : NonCopyable {
 			return *this;
 		}
 
-		Ptr &operator=(T *&&p) {
+		Ptr &operator=(NotOwned<T*> &&p) {
 			Ptr ptr(std::move(p));
 			swap(ptr);
 			return *this;
@@ -68,27 +68,27 @@ class Ptr : NonCopyable {
 			return *ptr;
 		}
 
-		T const *operator->() const {
+		Owned<T const*> operator->() const {
 			return ptr;
 		}
 
-		T *operator->() {
+		Owned<T*> operator->() {
 			return ptr;
 		}
 
-		operator void *() {
+		operator Owned<void*>() {
 			return ptr;
 		}
 
-		operator void const *() const {
+		operator Owned<void const*>() const {
 			return ptr;
 		}
 
-		bool operator<(const T * const t) const {
+		bool operator<(const Owned<T* const> t) const {
 			return ptr < t;
 		}
 
-		bool operator>(const T * const t) const {
+		bool operator>(const Owned<T* const> t) const {
 			return ptr > t;
 		}
 
@@ -100,23 +100,23 @@ class Ptr : NonCopyable {
 			return !ptr;
 		}
 
-		T *as_ptr() {
+		Owned<T*> as_ptr() {
 			return ptr;
 		}
 
-		T const *as_ptr() const {
+		Owned<T const*> as_ptr() const {
 			return ptr;
 		}
 
 	protected:
-		T *ptr;
+		T* ptr;
 };
 
 template<typename T, typename C = u32>
 class Rc : public Ptr<T> {
 	using Ptr<T>::ptr;
 	public:
-		explicit Rc(T *&&p = nullptr) : Ptr<T>(std::move(p)), count(new C(1)) {
+		explicit Rc(NotOwned<T*> &&p = nullptr) : Ptr<T>(std::move(p)), count(new C(1)) {
 		}
 
 		explicit Rc(T &&p) : Rc(new T(std::move(p))) {
@@ -165,6 +165,7 @@ class Rc : public Ptr<T> {
 		friend class Rc<const T>;
 		friend class Rc<typename std::remove_const<T>::type>;
 
+		// only called by other Rc's so we take ownedship as well
 		Rc(T *p, C *c) : Ptr<T>(p), count(c) {
 			++(*count);
 		}
@@ -185,7 +186,7 @@ class Rc : public Ptr<T> {
 			count = nullptr;
 		}
 
-		C *count;
+		C* count;
 };
 
 template<typename T>

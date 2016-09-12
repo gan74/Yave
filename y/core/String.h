@@ -91,15 +91,17 @@ class String {
 		String(const String &str);
 		String(String &&str);
 
-		String(const char *str); // NOT explicit
-		String(const char *str, usize len);
-		String(const char *beg, const char *end);
+		String(Owned<const char*> str); // NOT explicit
+		String(Owned<const char*> , usize len);
+		String(Owned<const char*> beg, Owned<const char*> end);
 
 		~String();
 
 		template<typename T>
 		static String from(const T &t);
-		static String from_owned(char *owned);
+
+		// the pointer is not owned anymore, String take ownership;
+		static String from_owned(NotOwned<char*> owned);
 
 		template<typename I, typename Enable = typename std::enable_if<std::is_convertible<typename Range<I>::Element, char>::value>::type>
 		static String from(const Range<I> &rng);
@@ -111,8 +113,8 @@ class String {
 
 		void clear();
 
-		char *data();
-		const char *data() const;
+		Owned<char*> data();
+		Owned<const char*> data() const;
 
 		iterator find(const String &str);
 		const_iterator find(const String &str) const;
@@ -198,7 +200,7 @@ inline String str(const T &t) {
 	return detail::str(t, bool_type<std::is_convertible<T, String>::value>());
 }
 
-inline String str_from_owned(char *owned) {
+inline String str_from_owned(NotOwned<char*> owned) {
 	return String::from_owned(owned);
 }
 

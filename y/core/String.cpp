@@ -96,10 +96,10 @@ String::String(String &&str) {
 	}
 }
 
-String::String(const char *str) : String(str, strlen(str)) {
+String::String(Owned<const char *> str) : String(str, strlen(str)) {
 }
 
-String::String(const char *str, usize len) {
+String::String(Owned<const char *>, usize len) {
 	if(len > MaxShortSize) {
 		new(&l) LongData(str, len);
 	} else {
@@ -107,7 +107,7 @@ String::String(const char *str, usize len) {
 	}
 }
 
-String::String(const char *beg, const char *end) : String(beg, end - beg) {
+String::String(Owned<const char *> beg, Owned<const char *> end) : String(beg, end - beg) {
 }
 
 String::~String() {
@@ -116,7 +116,7 @@ String::~String() {
 	}
 }
 
-String String::from_owned(char *owned) {
+String String::from_owned(NotOwned<char*> owned) {
 	usize len = strlen(owned);
 	String str;
 	str.l.length = len;
@@ -148,11 +148,11 @@ void String::clear() {
 	new(&s) ShortData();
 }
 
-char *String::data() {
+Owned<char*> String::data() {
 	return is_long() ? l.data : s.data;
 }
 
-const char *String::data() const {
+Owned<const char*> String::data() const {
 	return is_long() ? l.data : s.data;
 }
 
