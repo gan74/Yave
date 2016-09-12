@@ -41,12 +41,12 @@ class BuffReader : public Reader {
 		BuffReader(usize buff_size = 0);
 		void swap(BuffReader& other);
 
-		usize buffer_size;
-		usize buffer_offset;
-		usize buffer_used;
-		u8 *buffer;
+		usize _size;
+		usize _offset;
+		usize _used;
+		u8* _buffer;
 
-		ReaderRef inner;
+		ReaderRef _inner;
 };
 
 Y_ASSERT_SANE(BuffReader);

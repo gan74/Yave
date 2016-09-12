@@ -26,17 +26,19 @@ namespace io {
 
 class Decoder {
 
+	Y_TODO(use exceptions for decoder)
+
 	public:
-		Decoder(const ReaderRef& r) : inner(r) {
+		Decoder(const ReaderRef& r) : _inner(r) {
 		}
 
-		Decoder(ReaderRef&& r) : inner(std::move(r)) {
+		Decoder(ReaderRef&& r) : _inner(std::move(r)) {
 		}
 
 		template<Byteorder Order, typename T>
 		bool decode(T& t) {
 			static_assert(Order == system_byteorder() || std::is_fundamental<T>::value, "Only fundamental types can be read from non system byteorder");
-			bool success = (sizeof(T) == inner->read(&t, sizeof(T)));
+			bool success = (sizeof(T) == _inner->read(&t, sizeof(T)));
 			set_byteorder<Order>(t);
 			return success;
 		}
@@ -58,7 +60,7 @@ class Decoder {
 			u64 len = 0;
 			Y_TRY(decode<Order>(len));
 			char* str_data = new char[len + 1];
-			auto read = inner->read(str_data, len);
+			auto read = _inner->read(str_data, len);
 			str_data[read] = 0;
 			str = core::str_from_owned(str_data);
 			return read == len;
@@ -85,7 +87,7 @@ class Decoder {
 		template<Byteorder Order, typename T>
 		bool fill_vec(core::Vector<T>& vec, u64 len, std::true_type) {
 			vec = core::Vector<T>(len, T());
-			Y_TRY(inner->read(vec.begin(), len * sizeof(T)) == len * sizeof(T));
+			Y_TRY(_inner->read(vec.begin(), len * sizeof(T)) == len * sizeof(T));
 			for(auto& u : vec) {
 				set_byteorder<Order>(u);
 			}
@@ -106,7 +108,7 @@ class Decoder {
 
 		template<Byteorder Order, typename T, usize Size>
 		bool decode_arr(std::array<T, Size>& arr, std::true_type) {
-			Y_TRY(inner->read(&arr, Size * sizeof(T)) == Size * sizeof(T));
+			Y_TRY(_inner->read(&arr, Size * sizeof(T)) == Size * sizeof(T));
 			for(auto& u : arr) {
 				set_byteorder<Order>(u);
 			}
@@ -121,7 +123,7 @@ class Decoder {
 			return true;
 		}
 
-		ReaderRef inner;
+		ReaderRef _inner;
 };
 
 }

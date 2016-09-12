@@ -56,7 +56,7 @@ class Vector : ResizePolicy {
 		using const_iterator = Elem const*;
 		using Element = Elem;
 
-		Vector() : data(nullptr), data_end(nullptr), alloc_end(nullptr) {
+		Vector() : _data(nullptr), _data_end(nullptr), _alloc_end(nullptr) {
 		}
 
 		Vector(const Vector& other) : Vector() {
@@ -109,9 +109,9 @@ class Vector : ResizePolicy {
 		}
 
 		void swap(Vector& v) {
-			std::swap(data, v.data);
-			std::swap(data_end, v.data_end);
-			std::swap(alloc_end, v.alloc_end);
+			std::swap(_data, v._data);
+			std::swap(_data_end, v._data_end);
+			std::swap(_alloc_end, v._alloc_end);
 		}
 
 		~Vector() {
@@ -119,17 +119,17 @@ class Vector : ResizePolicy {
 		}
 
 		void append(const Element& elem) {
-			if(data_end == alloc_end) {
+			if(_data_end == _alloc_end) {
 				expend();
 			}
-			new(data_end++) Data(elem);
+			new(_data_end++) Data(elem);
 		}
 
 		void append(Element&& elem) {
-			if(data_end == alloc_end) {
+			if(_data_end == _alloc_end) {
 				expend();
 			}
-			new(data_end++) Data(std::move(elem));
+			new(_data_end++) Data(std::move(elem));
 		}
 
 		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type>
@@ -141,63 +141,63 @@ class Vector : ResizePolicy {
 		}
 
 		usize size() const {
-			return data_end - data;
+			return _data_end - _data;
 		}
 
 		bool is_empty() const {
-			return data == data_end;
+			return _data == _data_end;
 		}
 
 		usize capacity() const {
-			return alloc_end - data;
+			return _alloc_end - _data;
 		}
 
 		const_iterator begin() const {
-			return data;
+			return _data;
 		}
 
 		const_iterator end() const {
-			return data_end;
+			return _data_end;
 		}
 
 		const_iterator cbegin() const {
-			return data;
+			return _data;
 		}
 
 		const_iterator cend() const {
-			return data_end;
+			return _data_end;
 		}
 
 		iterator begin() {
-			return data;
+			return _data;
 		}
 
 		iterator end() {
-			return data_end;
+			return _data_end;
 		}
 
 		const Element& operator[](usize i) const {
-			return data[i];
+			return _data[i];
 		}
 
 		Element& operator[](usize i) {
-			return data[i];
+			return _data[i];
 		}
 
 		const Element& first() const {
-			return *data;
+			return *_data;
 		}
 
 		Element& first() {
-			return *data;
+			return *_data;
 		}
 
 		const Element& last() const {
-			return *(data_end - 1);
+			return *(_data_end - 1);
 		}
 
 		Element& last() {
-			return *(data_end - 1);
+			return *(_data_end - 1);
 		}
 
 		Range<iterator> to_range() {
@@ -225,15 +225,15 @@ class Vector : ResizePolicy {
 		}
 
 		void make_empty() {
-			clear(data, data_end);
-			data_end = data;
+			clear(_data, _data_end);
+			_data_end = _data;
 		}
 
 		bool operator==(const Vector& v) const {
 			usize s = size();
 			if(s == v.size()) {
 				for(usize i = 0; i != s; i++) {
-					if(data[i] != v[i]) {
+					if(_data[i] != v[i]) {
 						return false;
 					}
 				}
@@ -284,18 +284,18 @@ class Vector : ResizePolicy {
 
 			Data* new_data = new_cap ? reinterpret_cast<Data*>(new u8[new_cap * sizeof(Data)]) : nullptr;
 
-			move_range(new_data, data, num_to_move);
-			clear(data, data_end);
+			move_range(new_data, _data, num_to_move);
+			clear(_data, _data_end);
 
-			delete[] reinterpret_cast<u8*>(data);
-			data = new_data;
-			data_end = data + num_to_move;
-			alloc_end = data + new_cap;
+			delete[] reinterpret_cast<u8*>(_data);
+			_data = new_data;
+			_data_end = _data + num_to_move;
+			_alloc_end = _data + new_cap;
 		}
 
-		Data* data;
-		Data* data_end;
-		Data* alloc_end;
+		Data* _data;
+		Data* _data_end;
+		Data* _alloc_end;
 };
 
 

@@ -29,23 +29,23 @@ class Ref {
 	Y_ASSERT_SANE(T);
 
 	public:
-		Ref() : ptr(nullptr), owned(false) {
+		Ref() : _ptr(nullptr), _owned(false) {
 		}
 
-		Ref(const Ref& ref) : ptr(ref.ptr), owned(false) {
-		}
-
-		template<typename Derived>
-		Ref(Derived&& x) : ptr(new Derived(std::move(x))), owned(true) {
+		Ref(const Ref& ref) : _ptr(ref._ptr), _owned(false) {
 		}
 
 		template<typename Derived>
-		Ref(Derived& x) : ptr(&x), owned(false) {
+		Ref(Derived&& x) : _ptr(new Derived(std::move(x))), _owned(true) {
+		}
+
+		template<typename Derived>
+		Ref(Derived& x) : _ptr(&x), _owned(false) {
 		}
 
 		~Ref() {
-			if(owned) {
-				delete ptr;
+			if(_owned) {
+				delete _ptr;
 			}
 		}
 
@@ -59,38 +59,39 @@ class Ref {
 		}
 
 		Ref& operator=(const Ref& other) {
-			if(owned) {
-				delete ptr;
+			if(_owned) {
+				delete _ptr;
 			}
-			ptr = other.ptr;
-			owned = false;
+			_ptr = other._ptr;
+			_owned = false;
 			return *this;
 		}
 
 		operator T&() {
-			return *ptr;
+			return *_ptr;
 		}
 
 		operator const T&() const {
-			return *ptr;
+			return *_ptr;
 		}
 
 		Owned<T*> operator->() {
-			return ptr;
+			return _ptr;
 		}
 
 		Owned<const T*> operator->() const {
-			return ptr;
+			return _ptr;
 		}
 
 	private:
 		void swap(Ref& other) {
-			std::swap(ptr, other.ptr);
-			std::swap(owned, other.owned);
+			std::swap(_ptr, other._ptr);
+			std::swap(_owned, other._owned);
 		}
 
-		Owned<T*> ptr;
-		bool owned;
+		// may be owned or not, depending on constructor (that's why we got _owned)
+		T* _ptr;
+		bool _owned;
 
 };
 

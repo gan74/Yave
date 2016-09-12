@@ -25,18 +25,18 @@ namespace core {
 template<typename T>
 class Ptr : NonCopyable {
 	public:
-		explicit Ptr(NotOwned<T*>&& p = nullptr) : ptr(p) {
+		explicit Ptr(NotOwned<T*>&& p = nullptr) : _ptr(p) {
 		}
 
 		explicit Ptr(T&& p) : Ptr(new T(std::move(p))) {
 		}
 
-		Ptr(Ptr&& p) : ptr(nullptr) {
+		Ptr(Ptr&& p) : _ptr(nullptr) {
 			swap(p);
 		}
 
 		~Ptr() {
-			delete ptr;
+			delete _ptr;
 		}
 
 		Ptr& operator=(Ptr&& p) {
@@ -57,39 +57,39 @@ class Ptr : NonCopyable {
 		}
 
 		void swap(Ptr& p) {
-			std::swap(ptr, p.ptr);
+			std::swap(_ptr, p._ptr);
 		}
 
 		const T& operator*() const {
-			return *ptr;
+			return *_ptr;
 		}
 
 		T& operator*() {
-			return *ptr;
+			return *_ptr;
 		}
 
 		Owned<T const*> operator->() const {
-			return ptr;
+			return _ptr;
 		}
 
 		Owned<T*> operator->() {
-			return ptr;
+			return _ptr;
 		}
 
 		operator Owned<void*>() {
-			return ptr;
+			return _ptr;
 		}
 
 		operator Owned<void const*>() const {
-			return ptr;
+			return _ptr;
 		}
 
 		bool operator<(const Owned<T* const> t) const {
-			return ptr < t;
+			return _ptr < t;
 		}
 
 		bool operator>(const Owned<T* const> t) const {
-			return ptr > t;
+			return _ptr > t;
 		}
 
 		bool operator!() const {
@@ -97,36 +97,36 @@ class Ptr : NonCopyable {
 		}
 
 		bool is_null() const {
-			return !ptr;
+			return !_ptr;
 		}
 
 		Owned<T*> as_ptr() {
-			return ptr;
+			return _ptr;
 		}
 
 		Owned<T const*> as_ptr() const {
-			return ptr;
+			return _ptr;
 		}
 
 	protected:
-		T* ptr;
+		T* _ptr;
 };
 
 template<typename T, typename C = u32>
 class Rc : public Ptr<T> {
-	using Ptr<T>::ptr;
+	using Ptr<T>::_ptr;
 	public:
-		explicit Rc(NotOwned<T*>&& p = nullptr) : Ptr<T>(std::move(p)), count(new C(1)) {
+		explicit Rc(NotOwned<T*>&& p = nullptr) : Ptr<T>(std::move(p)), _count(new C(1)) {
 		}
 
 		explicit Rc(T&& p) : Rc(new T(std::move(p))) {
 		}
 
-		Rc(const Rc& p) : Ptr<T>(nullptr), count(nullptr) {
+		Rc(const Rc& p) : Ptr<T>(nullptr), _count(nullptr) {
 			ref(p);
 		}
 
-		Rc(Rc&& p) : Ptr<T>(nullptr), count(nullptr) {
+		Rc(Rc&& p) : Ptr<T>(nullptr), _count(nullptr) {
 			swap(p);
 		}
 
@@ -135,16 +135,16 @@ class Rc : public Ptr<T> {
 		}
 
 		void swap(Rc& p) {
-			std::swap(ptr, p.ptr);
-			std::swap(count, p.count);
+			std::swap(_ptr, p._ptr);
+			std::swap(_count, p._count);
 		}
 
 		C ref_count() const {
-			return *count;
+			return *_count;
 		}
 
 		Rc& operator=(const Rc& p) {
-			if(p.count != count) {
+			if(p._count != _count) {
 				unref();
 				ref(p);
 			}
@@ -166,27 +166,27 @@ class Rc : public Ptr<T> {
 		friend class Rc<typename std::remove_const<T>::type>;
 
 		// only called by other Rc's so we take ownedship as well
-		Rc(T* p, C* c) : Ptr<T>(p), count(c) {
-			++(*count);
+		Rc(T* p, C* c) : Ptr<T>(p), _count(c) {
+			++(*_count);
 		}
 
 		void ref(const Rc& p) {
-			if((count = p.count)) {
-				(*count)++;
+			if((_count = p._count)) {
+				(*_count)++;
 			}
-			ptr = p.ptr;
+			_ptr = p._ptr;
 		}
 
 		void unref() {
-			if(count && !--(*count)) {
-				delete ptr;
-				delete count;
+			if(_count && !--(*_count)) {
+				delete _ptr;
+				delete _count;
 			}
-			ptr = nullptr;
-			count = nullptr;
+			_ptr = nullptr;
+			_count = nullptr;
 		}
 
-		C* count;
+		C* _count;
 };
 
 template<typename T>

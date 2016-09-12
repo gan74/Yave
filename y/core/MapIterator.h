@@ -26,37 +26,37 @@ class MapIterator {
 	public:
 		using Element = typename std::result_of<Func(typename dereference<Iter>::type)>::type;
 
-		MapIterator(const Iter& beg, const Func& f) : it(beg), map(f) {
+		MapIterator(const Iter& beg, const Func& f) : _it(beg), _map(f) {
 		}
 
 		MapIterator<Iter, Func>& operator++() {
-			++it;
+			++_it;
 			return *this;
 		}
 
 		MapIterator<Iter, Func>& operator--() {
-			--it;
+			--_it;
 			return *this;
 		}
 
 		MapIterator<Iter, Func> operator++(int) {
 			MapIterator p(*this);
-			++it;
+			++_it;
 			return p;
 		}
 
 		MapIterator<Iter, Func> operator--(int) {
 			MapIterator p(*this);
-			--it;
+			--_it;
 			return p;
 		}
 
 		bool operator!=(const MapIterator<Iter, Func>& i) const {
-			return it != i.it/* || map != i.map*/;
+			return _it != i._it/* || map != i.map*/;
 		}
 
 		bool operator!=(const Iter& i) const {
-			return it != i;
+			return _it != i;
 		}
 
 		template<typename T>
@@ -65,13 +65,13 @@ class MapIterator {
 		}
 
 		Element operator*() {
-			return map(*it);
+			return _map(*_it);
 		}
 
 
 	private:
-		Iter it;
-		Func map;
+		Iter _it;
+		Func _map;
 };
 
 

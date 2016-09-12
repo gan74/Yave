@@ -47,18 +47,18 @@ String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_l
 
 // --------------------------------------------------- SHORT ---------------------------------------------------
 
-String::ShortData::ShortData() : data{0}, length(0) {
+String::ShortData::ShortData() : _data{0}, _length(0) {
 }
 
 String::ShortData::ShortData(const ShortData& s) {
 	memcpy(this, &s, sizeof(ShortData));
 }
 
-String::ShortData::ShortData(const char* str, usize len) : length(len) {
+String::ShortData::ShortData(const char* str, usize len) : _length(len) {
 	if(str) {
-		memcpy(data, str, len);
+		memcpy(_data, str, len);
 	}
-	*(data + len) = 0;
+	*(_data + len) = 0;
 }
 
 // --------------------------------------------------- ALLOC ---------------------------------------------------
@@ -77,22 +77,22 @@ void String::free_long(LongData& d) {
 
 // --------------------------------------------------- STRING ---------------------------------------------------
 
-String::String() : s(ShortData()) {
+String::String() : _s(ShortData()) {
 }
 
 String::String(const String& str) {
 	if(str.is_long()) {
-		new(&l) LongData(str.l);
+		new(&_l) LongData(str._l);
 	} else {
-		new(&s) ShortData(str.s);
+		new(&_s) ShortData(str._s);
 	}
 }
 
 String::String(String&& str) {
 	if(str.is_long()) {
-		new(&l) LongData(std::move(str.l));
+		new(&_l) LongData(std::move(str._l));
 	} else {
-		new(&s) ShortData(str.s);
+		new(&_s) ShortData(str._s);
 	}
 }
 
@@ -101,9 +101,9 @@ String::String(Owned<const char*> str) : String(str, strlen(str)) {
 
 String::String(Owned<const char*> str, usize len) {
 	if(len > MaxShortSize) {
-		new(&l) LongData(str, len);
+		new(&_l) LongData(str, len);
 	} else {
-		new(&s) ShortData(str, len);
+		new(&_s) ShortData(str, len);
 	}
 }
 
@@ -112,25 +112,25 @@ String::String(Owned<const char*> beg, Owned<const char*> end) : String(beg, end
 
 String::~String() {
 	if(is_long()) {
-		free_long(l);
+		free_long(_l);
 	}
 }
 
 String String::from_owned(NotOwned<char*> owned) {
 	usize len = strlen(owned);
 	String str;
-	str.l.length = len;
-	str.l.capacity = len;
-	str.l.data = owned;
+	str._l.length = len;
+	str._l.capacity = len;
+	str._l.data = owned;
 	return str;
 }
 
 usize String::size() const {
-	return is_long() ? l.length : s.length;
+	return is_long() ? _l.length : _s._length;
 }
 
 usize String::capacity() const {
-	return is_long() ? l.capacity : MaxShortSize;
+	return is_long() ? _l.capacity : MaxShortSize;
 }
 
 bool String::is_empty() const {
@@ -138,22 +138,22 @@ bool String::is_empty() const {
 }
 
 bool String::is_long() const {
-	return l.length.is_long;
+	return _l.length._is_long;
 }
 
 void String::clear() {
 	if(is_long()) {
-		free_long(l);
+		free_long(_l);
 	}
-	new(&s) ShortData();
+	new(&_s) ShortData();
 }
 
 Owned<char*> String::data() {
-	return is_long() ? l.data : s.data;
+	return is_long() ? _l.data : _s._data;
 }
 
 Owned<const char*> String::data() const {
-	return is_long() ? l.data : s.data;
+	return is_long() ? _l.data : _s._data;
 }
 
 String::iterator String::find(const String& str) {
@@ -175,20 +175,20 @@ String::operator char*() {
 
 void String::swap(String& str) {
 	u8 str_buffer[sizeof(ShortData)];
-	memcpy(str_buffer, &str.s, sizeof(ShortData));
-	memcpy(&str.s, &s, sizeof(ShortData));
-	memcpy(&s, str_buffer, sizeof(ShortData));
+	memcpy(str_buffer, &str._s, sizeof(ShortData));
+	memcpy(&str._s, &_s, sizeof(ShortData));
+	memcpy(&_s, str_buffer, sizeof(ShortData));
 }
 
 String& String::operator=(const String& str) {
 	if(&str != this) {
 		if(is_long()) {
-			free_long(l);
+			free_long(_l);
 		}
 		if(str.is_long()) {
-			new(&l) LongData(str.l);
+			new(&_l) LongData(str._l);
 		} else {
-			new(&s) ShortData(str.s);
+			new(&_s) ShortData(str._s);
 		}
 	}
 	return *this;
@@ -210,9 +210,9 @@ String& String::operator+=(const String& str) {
 		// in place
 		memcpy(self_data + self_size, other_data, other_size);
 		if(is_long()) {
-			self_data[l.length = total_size] = 0;
+			self_data[_l.length = total_size] = 0;
 		} else {
-			self_data[s.length = total_size] = 0;
+			self_data[_s._length = total_size] = 0;
 		}
 	} else {
 		LongData new_dat(nullptr, total_size);
@@ -221,9 +221,9 @@ String& String::operator+=(const String& str) {
 		new_dat.data[total_size] = 0;
 
 		if(is_long()) {
-			free_long(l);
+			free_long(_l);
 		}
-		memcpy(&l, &new_dat, sizeof(LongData));
+		memcpy(&_l, &new_dat, sizeof(LongData));
 	}
 	return *this;
 }

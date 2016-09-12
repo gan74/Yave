@@ -31,29 +31,29 @@ class Range {
 		using Return = typename dereference<Iter>::type;
 		using Element = typename std::decay<Return>::type;
 
-		Range(const Iter& b, const Iter& e) : beg(b), en(e) {
+		Range(const Iter& b, const Iter& e) : _beg(b), _en(e) {
 		}
 
 		const Iter& begin() const {
-			return beg;
+			return _beg;
 		}
 
 		const Iter& end() const {
-			return en;
+			return _en;
 		}
 
 		ReverseIterator<Iter> rbegin() const {
-			Iter i(beg);
+			Iter i(_beg);
 			return reverse_iterator(--i);
 		}
 
 		ReverseIterator<Iter> rend() const {
-			Iter i(en);
+			Iter i(_en);
 			return reverse_iterator(--i);
 		}
 
 		usize size() const {
-			return en - beg;
+			return _en - _beg;
 		}
 
 		Range<ReverseIterator<Iter>> reverse() const {
@@ -110,8 +110,8 @@ class Range {
 		}
 
 	private:
-		Iter beg;
-		Iter en;
+		Iter _beg;
+		Iter _en;
 };
 
 namespace detail {

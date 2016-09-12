@@ -40,14 +40,14 @@ class Vec
 {
 	template<usize P, typename... Args>
 	void build(T t, Args... args) {
-		vec[P] = t;
+		_vec[P] = t;
 		build<P + 1>(args...);
 	}
 
 	template<usize P, usize Q, typename U, typename... Args>
 	void build(const Vec<Q, U>& t, Args... args) {
 		for(usize i = 0; i != Q; i++) {
-			vec[P + i] = t[i];
+			_vec[P + i] = t[i];
 		}
 		build<P + Q>(args...);
 	}
@@ -74,14 +74,14 @@ class Vec
 
 		Vec(T t) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] = t;
+				_vec[i] = t;
 			}
 		}
 
 		template<typename X>
 		Vec(const Vec<N, X>& v) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] = v[i];
+				_vec[i] = v[i];
 			}
 		}
 
@@ -95,7 +95,7 @@ class Vec
 		T length2() const {
 			T sum = 0;
 			for(usize i = 0; i != N; i++) {
-				sum += vec[i] * vec[i];
+				sum += _vec[i] * _vec[i];
 			}
 			return sum;
 		}
@@ -107,7 +107,7 @@ class Vec
 		T dot(const Vec& o) const {
 			T sum = 0;
 			for(usize i = 0; i != N; i++) {
-				sum += vec[i] * o.vec[i];
+				sum += _vec[i] * o._vec[i];
 			}
 			return sum;
 		}
@@ -116,7 +116,7 @@ class Vec
 			static_assert(std::is_signed<T>::value, "Vec<T>::cross makes no sense for T unsigned");
 			Vec v;
 			for(usize i = 0; i != N; i++) {
-				v[i] = vec[(i + 1) % N] * o.vec[(i + 2) % N] - vec[(i + 2) % N] * o.vec[(i + 1) % N];
+				v[i] = _vec[(i + 1) % N] * o._vec[(i + 2) % N] - _vec[(i + 2) % N] * o._vec[(i + 1) % N];
 			}
 			return v;
 		}
@@ -137,52 +137,52 @@ class Vec
 			static_assert(std::is_signed<T>::value, "Vec<T>::abs makes no sense for T unsigned");
 			Vec v(*this);
 			for(usize i = 0; i != N; i++) {
-				v[i] = vec[i] < 0 ? -vec[i] : vec[i];
+				v[i] = _vec[i] < 0 ? -_vec[i] : _vec[i];
 			}
 			return v;
 		}
 
 		T& x() {
-			return vec[0];
+			return _vec[0];
 		}
 
 		const T& x() const {
-			return vec[0];
+			return _vec[0];
 		}
 
 		T& y() {
 			static_assert(N > 1, "Accessing out of bound member");
-			return vec[1];
+			return _vec[1];
 		}
 
 		const T& y() const {
 			static_assert(N > 1, "Accessing out of bound member");
-			return vec[1];
+			return _vec[1];
 		}
 
 		T& z() {
 			static_assert(N > 2, "Accessing out of bound member");
-			return vec[2];
+			return _vec[2];
 		}
 
 		const T& z() const {
 			static_assert(N > 2, "Accessing out of bound member");
-			return vec[2];
+			return _vec[2];
 		}
 
 		T& w() {
 			static_assert(N > 3, "Accessing out of bound member");
-			return vec[3];
+			return _vec[3];
 		}
 
 		const T& w() const {
 			static_assert(N > 3, "Accessing out of bound member");
-			return vec[3];
+			return _vec[3];
 		}
 
 		bool is_zero() const {
 			for(usize i = 0; i != N; i++) {
-				if(vec[i]) {
+				if(_vec[i]) {
 					return false;
 				}
 			}
@@ -190,40 +190,40 @@ class Vec
 		}
 
 		const_iterator begin() const {
-			return vec;
+			return _vec;
 		}
 
 		const_iterator end() const {
-			return vec + N;
+			return _vec + N;
 		}
 
 		const_iterator cbegin() const {
-			return vec;
+			return _vec;
 		}
 
 		const_iterator cend() const {
-			return vec + N;
+			return _vec + N;
 		}
 
 		iterator begin() {
-			return vec;
+			return _vec;
 		}
 
 		iterator end() {
-			return vec + N;
+			return _vec + N;
 		}
 
 		T& operator[](usize i) {
-			return vec[i];
+			return _vec[i];
 		}
 
 		const T& operator[](usize i) const {
-			return vec[i];
+			return _vec[i];
 		}
 
 		bool operator!=(const Vec<N, T>& o) const {
 			for(usize i = 0; i != N; i++) {
-				if(o.vec[i] != vec[i]) {
+				if(o._vec[i] != _vec[i]) {
 					return true;
 				}
 			}
@@ -237,35 +237,35 @@ class Vec
 		Vec operator-() const {
 			Vec t;
 			for(usize i = 0; i != N; i++) {
-				t[i] = -vec[i];
+				t[i] = -_vec[i];
 			}
 			return t;
 		}
 
 		Vec& operator*=(const T& t) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] *= t;
+				_vec[i] *= t;
 			}
 			return *this;
 		}
 
 		Vec& operator/=(const T& t) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] /= t;
+				_vec[i] /= t;
 			}
 			return *this;
 		}
 
 		Vec& operator+=(const T& t) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] += t;
+				_vec[i] += t;
 			}
 			return *this;
 		}
 
 		Vec& operator-=(const T& t) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] -= t;
+				_vec[i] -= t;
 			}
 			return *this;
 		}
@@ -274,28 +274,28 @@ class Vec
 
 		Vec& operator*=(const Vec& v) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] *= v[i];
+				_vec[i] *= v[i];
 			}
 			return *this;
 		}
 
 		Vec& operator/=(const Vec& v) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] /= v[i];
+				_vec[i] /= v[i];
 			}
 			return *this;
 		}
 
 		Vec& operator+=(const Vec& v) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] += v[i];
+				_vec[i] += v[i];
 			}
 			return *this;
 		}
 
 		Vec& operator-=(const Vec& v) {
 			for(usize i = 0; i != N; i++) {
-				vec[i] -= v[i];
+				_vec[i] -= v[i];
 			}
 			return *this;
 		}
@@ -304,7 +304,7 @@ class Vec
 		template<usize M, typename U>
 		friend class Vec;
 
-		T vec[N] = {T(0)};
+		T _vec[N] = {T(0)};
 
 };
 

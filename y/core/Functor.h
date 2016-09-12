@@ -39,40 +39,40 @@ struct FunctionBase : NonCopyable {
 template<typename T, typename Ret, typename... Args>
 struct Function : FunctionBase<Ret, Args...> {
 	public:
-		Function(const T& t) : f(t) {
+		Function(const T& t) : _func(t) {
 		}
 
 		virtual Ret apply(Args... args) override {
-			return f(args...);
+			return _func(args...);
 		}
 
 		virtual Ret apply(Args... args) const override {
-			return f(args...);
+			return _func(args...);
 		}
 
 
 	private:
-		T f;
+		T _func;
 };
 
 // for boxing non void functions in void functors
 template<typename T, typename... Args>
 struct Function<T, void, Args...> : FunctionBase<void, Args...> {
 	public:
-		Function(const T& t) : f(t) {
+		Function(const T& t) : _func(t) {
 		}
 
 		virtual void apply(Args... args) override {
-			f(args...);
+			_func(args...);
 		}
 
 		virtual void apply(Args... args) const override {
-			f(args...);
+			_func(args...);
 		}
 
 
 	private:
-		T f;
+		T _func;
 };
 
 template<template<typename...> typename Container, typename Ret, typename... Args>
@@ -82,7 +82,7 @@ template<template<typename...> typename Container, typename Ret, typename... Arg
 class Functor<Container, Ret(Args...)> {
 	public:
 		template<typename T>
-		Functor(const T& func) : function(new Function<T, Ret, Args...>(func)) {
+		Functor(const T& func) : _function(new Function<T, Ret, Args...>(func)) {
 		}
 
 
@@ -90,26 +90,26 @@ class Functor<Container, Ret(Args...)> {
 		Functor(const Functor &) = default;
 
 
-		Functor(Functor&& other) : function(nullptr) {
-			std::swap(function, other.function);
+		Functor(Functor&& other) : _function(nullptr) {
+			std::swap(_function, other._function);
 		}
 
 		Functor& operator=(Functor&& other) {
-			std::swap(function, other.function);
+			std::swap(_function, other._function);
 			return *this;
 		}
 
 
 		Ret operator()(Args... args) {
-			return function->apply(args...);
+			return _function->apply(args...);
 		}
 
 		Ret operator()(Args... args) const {
-			return function->apply(args...);
+			return _function->apply(args...);
 		}
 
 	private:
-		Container<FunctionBase<Ret, Args...>> function;
+		Container<FunctionBase<Ret, Args...>> _function;
 };
 
 

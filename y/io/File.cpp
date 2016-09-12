@@ -19,15 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace io {
 
-File::File() : file(nullptr) {
+File::File() : _file(nullptr) {
 }
 
-File::File(FILE* f) : file(f) {
+File::File(FILE* f) : _file(f) {
 }
 
 File::~File() {
-	if(file) {
-		fclose(file);
+	if(_file) {
+		fclose(_file);
 	}
 }
 
@@ -41,7 +41,7 @@ File& File::operator=(File&& other) {
 }
 
 void File::swap(File& other) {
-	std::swap(file, other.file);
+	std::swap(_file, other._file);
 }
 
 File File::create(const core::String& name) {
@@ -53,39 +53,39 @@ File File::open(const core::String& name) {
 }
 
 usize File::size() const {
-	if(!file) {
+	if(!_file) {
 		return 0;
 	}
 	fpos_t pos = {};
-	fgetpos(file, &pos);
-	fseek(file, 0, SEEK_END);
-	usize len = ftell(file);
-	fsetpos(file, &pos);
+	fgetpos(_file, &pos);
+	fseek(_file, 0, SEEK_END);
+	usize len = ftell(_file);
+	fsetpos(_file, &pos);
 	return len;
 }
 
 usize File::remaining() const {
-	if(!file) {
+	if(!_file) {
 		return 0;
 	}
 	fpos_t pos = {};
-	fgetpos(file, &pos);
-	usize offset = ftell(file);
-	fseek(file, 0, SEEK_END);
-	usize len = ftell(file);
-	fsetpos(file, &pos);
+	fgetpos(_file, &pos);
+	usize offset = ftell(_file);
+	fseek(_file, 0, SEEK_END);
+	usize len = ftell(_file);
+	fsetpos(_file, &pos);
 	return len - offset;
 }
 
 bool File::at_end() const {
-	return file ? feof(file) : true;
+	return _file ? feof(_file) : true;
 }
 
 usize File::read(void* data, usize bytes) {
-	if(!file) {
+	if(!_file) {
 		return 0;
 	}
-	return fread(data, 1, bytes, file);
+	return fread(data, 1, bytes, _file);
 }
 
 usize File::read_all(core::Vector<u8>& data) {
@@ -95,15 +95,15 @@ usize File::read_all(core::Vector<u8>& data) {
 }
 
 usize File::write(const void* data, usize bytes) {
-	if(!file) {
+	if(!_file) {
 		return 0;
 	}
-	return fwrite(data, 1, bytes, file);
+	return fwrite(data, 1, bytes, _file);
 }
 
 void File::flush() {
-	if(file) {
-		fflush(file);
+	if(_file) {
+		fflush(_file);
 	}
 }
 

@@ -27,27 +27,27 @@ namespace core {
 class String {
 	struct LongLenType
 	{
-		usize len : 8 * sizeof(usize) - 1;
-		usize is_long : 1;
+		usize _len : 8 * sizeof(usize) - 1;
+		usize _is_long : 1;
 
-		LongLenType(usize l = 0) : len(l), is_long(1) {
+		LongLenType(usize l = 0) : _len(l), _is_long(1) {
 		}
 
 		operator usize() const {
-			return len;
+			return _len;
 		}
 	};
 
 	struct ShortLenType
 	{
-		u8 len : 7;
-		u8 is_long : 1;
+		u8 _len : 7;
+		u8 _is_long : 1;
 
-		ShortLenType(usize l = 0) : len(MaxShortSize - l), is_long(0) {
+		ShortLenType(usize l = 0) : _len(MaxShortSize - l), _is_long(0) {
 		}
 
 		operator usize() const {
-			return MaxShortSize - len;
+			return MaxShortSize - _len;
 		}
 	};
 
@@ -58,8 +58,8 @@ class String {
 		LongLenType length;
 
 		LongData();
-		LongData(const LongData& l);
-		LongData(LongData&& l);
+		LongData(const LongData& _l);
+		LongData(LongData&& _l);
 		LongData(const char* str, usize cap, usize len);
 		LongData(const char* str, usize len);
 
@@ -68,11 +68,11 @@ class String {
 
 	struct ShortData
 	{
-		char data[sizeof(LongData) - 1];
-		ShortLenType length;
+		char _data[sizeof(LongData) - 1];
+		ShortLenType _length;
 
 		ShortData();
-		ShortData(const ShortData& s);
+		ShortData(const ShortData& _s);
 		ShortData(const char* str, usize len);
 
 		ShortData& operator=(const ShortData &) = delete;
@@ -82,7 +82,7 @@ class String {
 	static_assert(sizeof(ShortData) == sizeof(LongData), "String::LongData should be the same length as String::ShortData");
 
 	public:
-		static constexpr usize MaxShortSize = sizeof(ShortData::data);
+		static constexpr usize MaxShortSize = sizeof(ShortData::_data);
 
 		using iterator = char*;
 		using const_iterator = const char*;
@@ -162,8 +162,8 @@ class String {
 	private:
 		union
 		{
-			LongData l;
-			ShortData s;
+			LongData _l;
+			ShortData _s;
 		};
 
 		const String* const_this() {

@@ -26,6 +26,8 @@ namespace io {
 
 class File : public Reader, public Writer {
 
+	Y_TODO(use exceptions for file)
+
 	public:
 		File();
 		virtual ~File();
@@ -51,7 +53,7 @@ class File : public Reader, public Writer {
 		File(FILE* f);
 		void swap(File& other);
 
-		FILE* file;
+		FILE* _file;
 };
 
 Y_ASSERT_SANE(File);

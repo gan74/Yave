@@ -62,7 +62,7 @@ class Matrix
 
 	template<typename U>
 	void set_at(usize i, U u) {
-		rows[i / M][i % M] = u;
+		_rows[i / M][i % M] = u;
 	}
 
 	public:
@@ -77,14 +77,14 @@ class Matrix
 
 		Matrix(const Vec<M, T> r[N]) {
 			for(usize i = 0; i != N; i++) {
-				rows[i] = r[i];
+				_rows[i] = r[i];
 			}
 		}
 
 		template<typename X>
 		Matrix(const Matrix<N, M, X>& m) {
 			for(usize i = 0; i != N; i++) {
-				rows[i] = m[i];
+				_rows[i] = m[i];
 			}
 		}
 
@@ -96,11 +96,11 @@ class Matrix
 		Matrix& operator=(const Matrix &) = default;
 
 		Vec<M, T>& operator[](usize i) {
-			return rows[i];
+			return _rows[i];
 		}
 
 		const Vec<M, T>& operator[](usize i) const {
-			return rows[i];
+			return _rows[i];
 		}
 
 		static constexpr bool is_square() {
@@ -123,7 +123,7 @@ class Matrix
 				for(usize j = 0; j != P; j++) {
 					decltype(make_one<T>() * make_one<U>()) tmp(0);
 					for(usize k = 0; k != M; k++) {
-						tmp = tmp + rows[i][k] * m[k][j];
+						tmp = tmp + _rows[i][k] * m[k][j];
 					}
 					mat[i][j] = tmp;
 				}
@@ -136,7 +136,7 @@ class Matrix
 			Matrix<N, M, decltype(make_one<T>() * make_one<U>())> mat;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != M; j++) {
-					mat[i][j] = rows[i][j] + m[i][j];
+					mat[i][j] = _rows[i][j] + m[i][j];
 				}
 			}
 			return mat;
@@ -145,7 +145,7 @@ class Matrix
 		Vec<N, T> column(usize col) const {
 			Vec<N, T> c;
 			for(usize i = 0; i != N; i++) {
-				c[i] = rows[i][col];
+				c[i] = _rows[i][col];
 			}
 			return c;
 		}
@@ -213,19 +213,19 @@ class Matrix
 		}
 
 		const_iterator begin() const {
-			return &rows[0][0];
+			return &_rows[0][0];
 		}
 
 		const_iterator end() const {
-			return (&rows[0][0]) + (M * N);
+			return (&_rows[0][0]) + (M * N);
 		}
 
 		iterator begin() {
-			return& rows[0][0];
+			return& _rows[0][0];
 		}
 
 		iterator end() {
-			return (&rows[0][0]) + (M * N);
+			return (&_rows[0][0]) + (M * N);
 		}
 
 	private:
@@ -233,7 +233,7 @@ class Matrix
 			static_assert(is_square(), "The matrix must be square");
 		}
 
-		Vec<M, T> rows[N] = {Vec<M, T>()};
+		Vec<M, T> _rows[N] = {Vec<M, T>()};
 };
 
 namespace detail {

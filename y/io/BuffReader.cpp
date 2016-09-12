@@ -19,19 +19,19 @@ namespace y {
 namespace io {
 
 
-BuffReader::BuffReader(usize buff_size) : buffer_size(buff_size), buffer_offset(0), buffer_used(0), buffer(buff_size ? new u8[buff_size] : nullptr) {
+BuffReader::BuffReader(usize buff_size) : _size(buff_size), _offset(0), _used(0), _buffer(buff_size ? new u8[buff_size] : nullptr) {
 }
 
 BuffReader::BuffReader(ReaderRef&& r, usize buff_size) : BuffReader(buff_size) {
-	inner = std::move(r);
+	_inner = std::move(r);
 }
 
 BuffReader::BuffReader(const ReaderRef& r, usize buff_size) : BuffReader(buff_size) {
-	inner = r;
+	_inner = r;
 }
 
 BuffReader::~BuffReader() {
-	delete[] buffer;
+	delete[] _buffer;
 }
 
 BuffReader::BuffReader(BuffReader&& other) : BuffReader() {
@@ -44,46 +44,46 @@ BuffReader& BuffReader::operator=(BuffReader&& other) {
 }
 
 void BuffReader::swap(BuffReader& other) {
-	std::swap(buffer_size, other.buffer_size);
-	std::swap(buffer_offset, other.buffer_offset);
-	std::swap(buffer_used, other.buffer_used);
-	std::swap(buffer, other.buffer);
-	std::swap(inner, other.inner);
+	std::swap(_size, other._size);
+	std::swap(_offset, other._offset);
+	std::swap(_used, other._used);
+	std::swap(_buffer, other._buffer);
+	std::swap(_inner, other._inner);
 }
 
 bool BuffReader::at_end() const {
-	return inner->at_end() && !buffer_used;
+	return _inner->at_end() && !_used;
 }
 
 usize BuffReader::read(void* data, usize bytes) {
-	usize in_buffer = std::min(bytes, buffer_used);
+	usize in_buffer = std::min(bytes, _used);
 
-	memcpy(data, buffer + buffer_offset, in_buffer);
-	buffer_offset += in_buffer;
-	buffer_used -= in_buffer;
+	memcpy(data, _buffer + _offset, in_buffer);
+	_offset += in_buffer;
+	_used -= in_buffer;
 
 	usize remaining = bytes - in_buffer;
 	if(remaining) {
 		u8* data8 = reinterpret_cast<u8*>(data);
-		if(remaining > buffer_size) {
-			return in_buffer + inner->read(data8 + in_buffer, remaining);
+		if(remaining > _size) {
+			return in_buffer + _inner->read(data8 + in_buffer, remaining);
 		} else {
-			buffer_used = inner->read(buffer, buffer_size);
-			buffer_offset = 0;
-			return  in_buffer + (buffer_used ? read(data8 + in_buffer, remaining) : 0);
+			_used = _inner->read(_buffer, _size);
+			_offset = 0;
+			return  in_buffer + (_used ? read(data8 + in_buffer, remaining) : 0);
 		}
 	}
 	return in_buffer;
 }
 
 usize BuffReader::read_all(core::Vector<u8>& data) {
-	usize l = inner->read_all(data);
-	auto vec = core::Vector<u8>(buffer_used, 0);
-	memcpy(vec.begin(), buffer + buffer_offset, buffer_used);
+	usize l = _inner->read_all(data);
+	auto vec = core::Vector<u8>(_used, 0);
+	memcpy(vec.begin(), _buffer + _offset, _used);
 	vec << core::range(data);
 	data = vec;
-	l += buffer_used;
-	buffer_used = 0;
+	l += _used;
+	_used = 0;
 	return l;
 }
 

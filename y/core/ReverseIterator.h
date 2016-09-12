@@ -26,37 +26,37 @@ class ReverseIterator {
 	public:
 		using Element = typename dereference<Iter>::type;
 
-		explicit ReverseIterator(const Iter& beg) : it(beg) {
+		explicit ReverseIterator(const Iter& beg) : _it(beg) {
 		}
 
 		ReverseIterator<Iter>& operator++() {
-			--it;
+			--_it;
 			return *this;
 		}
 
 		ReverseIterator<Iter>& operator--() {
-			++it;
+			++_it;
 			return *this;
 		}
 
 		ReverseIterator<Iter> operator++(int) {
 			ReverseIterator p(*this);
-			--it;
+			--_it;
 			return p;
 		}
 
 		ReverseIterator<Iter> operator--(int) {
 			ReverseIterator p(*this);
-			++it;
+			++_it;
 			return p;
 		}
 
 		bool operator!=(const ReverseIterator<Iter>& i) const {
-			return it != i.it;
+			return _it != i._it;
 		}
 
 		bool operator!=(const Iter& i) const {
-			return it != i;
+			return _it != i;
 		}
 
 		template<typename T>
@@ -65,16 +65,16 @@ class ReverseIterator {
 		}
 
 		const Element& operator*() const {
-			return *it;
+			return *_it;
 		}
 
 		Element& operator*() {
-			return *it;
+			return *_it;
 		}
 
 
 	private:
-		Iter it;
+		Iter _it;
 };
 
 template<typename Iter>
