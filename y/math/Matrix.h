@@ -213,7 +213,7 @@ class Matrix
 		}
 
 		const_iterator begin() const {
-			return& rows[0][0];
+			return &rows[0][0];
 		}
 
 		const_iterator end() const {

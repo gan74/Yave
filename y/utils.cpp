@@ -32,7 +32,7 @@ namespace detail {
 	#ifdef __GNUG__
 	core::String demangle_type_name(const char* name) {
 	int status = 0;
-	char* d = abi::__cxa_demangle(name, nullptr, nullptr,& status);
+	char* d = abi::__cxa_demangle(name, nullptr, nullptr, &status);
 	if(status) {
 		return core::str(name);
 	}

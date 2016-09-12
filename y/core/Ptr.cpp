@@ -27,7 +27,7 @@ struct Raii : NonCopyable {
 	}
 
 	Raii(Raii&& r) : e(r.e) {
-		r.e =& ded;
+		r.e = &ded;
 	}
 
 	~Raii() {

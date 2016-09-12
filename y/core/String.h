@@ -92,7 +92,7 @@ class String {
 		String(String&& str);
 
 		String(Owned<const char*> str); // NOT explicit
-		String(Owned<const char*> , usize len);
+		String(Owned<const char*> str, usize len);
 		String(Owned<const char*> beg, Owned<const char*> end);
 
 		~String();

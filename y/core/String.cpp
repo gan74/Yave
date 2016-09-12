@@ -51,7 +51,7 @@ String::ShortData::ShortData() : data{0}, length(0) {
 }
 
 String::ShortData::ShortData(const ShortData& s) {
-	memcpy(this,& s, sizeof(ShortData));
+	memcpy(this, &s, sizeof(ShortData));
 }
 
 String::ShortData::ShortData(const char* str, usize len) : length(len) {
@@ -175,8 +175,8 @@ String::operator char*() {
 
 void String::swap(String& str) {
 	u8 str_buffer[sizeof(ShortData)];
-	memcpy(str_buffer,& str.s, sizeof(ShortData));
-	memcpy(&str.s,& s, sizeof(ShortData));
+	memcpy(str_buffer, &str.s, sizeof(ShortData));
+	memcpy(&str.s, &s, sizeof(ShortData));
 	memcpy(&s, str_buffer, sizeof(ShortData));
 }
 
@@ -223,7 +223,7 @@ String& String::operator+=(const String& str) {
 		if(is_long()) {
 			free_long(l);
 		}
-		memcpy(&l,& new_dat, sizeof(LongData));
+		memcpy(&l, &new_dat, sizeof(LongData));
 	}
 	return *this;
 }
