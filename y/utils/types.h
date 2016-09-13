@@ -28,6 +28,7 @@ struct NonCopyable
 	NonCopyable& operator=(const NonCopyable &) = delete;
 };
 
+
 using u8 = uint8_t;
 using u16 = uint16_t;
 using u32 = uint32_t;
@@ -41,11 +42,20 @@ using i64 = int64_t;
 using usize = std::make_unsigned<size_t>::type;
 using isize = std::make_signed<size_t>::type;
 
+
 template<typename T>
 using Owned = T;
 
 template<typename T>
 using NotOwned = T;
+
+
+namespace detail {
+enum Enum { _ = u32(-1) };
+}
+
+using uenum = std::underlying_type<detail::Enum>::type;
+
 
 }
 

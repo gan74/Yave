@@ -72,7 +72,7 @@ constexpr usize log2ui(usize n) {
 
 
 template<typename... Args>
-void unused(Args...) {}
+constexpr void unused(Args...) {}
 
 
 
