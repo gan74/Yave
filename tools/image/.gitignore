@@ -1,0 +1,4 @@
+/target/
+*.lock
+*.jpg
+*.rgba

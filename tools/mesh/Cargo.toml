@@ -1,0 +1,8 @@
+[package]
+name = "mesh"
+version = "0.1.0"
+authors = ["gan74 <gregoire.angerand@epfl.ch>"]
+
+[dependencies]
+bincode = "*"
+rustc-serialize = "*"
