@@ -55,6 +55,11 @@ struct Nothing {
 		return *this;
 	}
 
+	template<typename... Args>
+	Nothing operator()(Args...) {
+		return *this;
+	}
+
 	template<typename T>
 	operator T() const {
 		return fatal("y::detail::Nothing used");
