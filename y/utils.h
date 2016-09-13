@@ -51,6 +51,10 @@ struct dereference {
 
 struct Nothing {
 	template<typename... Args>
+	Nothing(Args...) {
+	}
+
+	template<typename... Args>
 	Nothing operator()(Args...) const {
 		return *this;
 	}
