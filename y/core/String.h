@@ -43,6 +43,7 @@ class String {
 		u8 _len : 7;
 		u8 _is_long : 1;
 
+		Y_TODO(SSO implementation squeeze an extra byte at the cost of 0 initilisation. Bench needed)
 		ShortLenType(usize l = 0) : _len(MaxShortSize - l), _is_long(0) {
 		}
 
@@ -242,6 +243,7 @@ namespace detail {
 
 template<typename T>
 auto type_name() {
+	Y_TODO(disable this if no-rtti)
 	return detail::demangle_type_name(typeid(T).name());
 }
 

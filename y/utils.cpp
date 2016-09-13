@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "utils.h"
 #include <y/core/String.h>
+
 #include <iostream>
 
 #ifdef __GNUG__
@@ -58,10 +59,6 @@ Nothing fatal(const char* msg, const char* file, int line) {
 	std::cerr << std::endl;
 	exit(1);
 	return Nothing();
-}
-
-bool try_failed() {
-	return false;
 }
 
 }

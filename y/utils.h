@@ -194,8 +194,23 @@ struct is_sane {
 	using type = bool_type<value>;
 };
 
+namespace detail {
+struct TryFailed {
+	template<typename T>
+	operator T() const {
+		return T();
+	}
+
+	operator bool() const {
+		return false;
+	}
+};
+}
+
 }
 
 #define Y_ASSERT_SANE(type) static_assert(y::is_sane<type>::value, "\"" #type "\" is ill-formed")
+
+#define Y_TRY(expr)	do { if(!(expr)) { return y::detail::TryFailed(); } } while(false)
 
 #endif

@@ -20,14 +20,11 @@ namespace y {
 
 struct Nothing;
 Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
-bool try_failed();
 
 }
 
 
-#define Y_TODO(msg)
-
-#define Y_TRY(expr)	do { if(!(expr)) { return y::try_failed(); } } while(false)
+#define Y_TODO(msg) /* msg */
 
 
 #ifndef __PRETTY_FUNCTION__
