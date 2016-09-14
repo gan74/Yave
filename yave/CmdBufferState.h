@@ -13,19 +13,36 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#include "DisposableCmdBuffer.h"
+#ifndef YAVE_CMDBUFFERSTATE_H
+#define YAVE_CMDBUFFERSTATE_H
+
+#include "yave.h"
+#include "DeviceLinked.h"
 
 namespace yave {
 
-DisposableCmdBuffer::DisposableCmdBuffer(vk::CommandBuffer buffer) : _cmd_buffer(buffer) {
-}
+struct CmdBufferState : NonCopyable, public DeviceLinked {
 
-void DisposableCmdBuffer::submit(vk::Queue queue) {
-	queue.submit(vk::SubmitInfo()
-			.setCommandBufferCount(1)
-			.setPCommandBuffers(&_cmd_buffer)
-		, VK_NULL_HANDLE);
-}
+	public:
+		CmdBufferState(DevicePtr dptr, vk::CommandPool pool);
+		~CmdBufferState();
 
 
+		bool is_done() const;
+		void wait() const;
+
+		void submit(vk::Queue queue);
+
+		const vk::CommandBuffer& get_vk_cmd_buffer() const;
+		vk::Fence get_vk_fence() const;
+
+	private:
+		NotOwned<vk::CommandPool> _pool;
+		vk::CommandBuffer _cmd_buffer;
+		vk::Fence _fence;
+
+};
+
 }
+
+#endif // YAVE_CMDBUFFERSTATE_H

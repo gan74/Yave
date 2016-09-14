@@ -93,5 +93,11 @@ void destroy(DevicePtr dptr, vk::CommandPool pool) {
 	}
 }
 
+void destroy(DevicePtr dptr, vk::Fence fence) {
+	/*if(dptr)*/ {
+		dptr->get_vk_device().destroyFence(fence);
+	}
+}
+
 }
 }

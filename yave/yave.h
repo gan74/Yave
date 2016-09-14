@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <y/math/math.h>
 #include <y/math/Matrix.h>
 
+#include <y/core/Ptr.h>
 #include <y/core/Vector.h>
 #include <y/core/String.h>
 

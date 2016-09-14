@@ -44,9 +44,9 @@ StagingBufferMapping::~StagingBufferMapping() {
 	CpuVisibleMapping::swap(done);
 
 	DevicePtr device = _dst_ref->get_device();
-	auto transfer_queue = device->get_vk_queue(Device::Graphics);
+	auto transfer_queue = device->get_vk_queue(QueueFamily::Graphics);
 
-	auto transfer_cmd_buffer = device->ll_remove_me->create_disposable_command_buffer();
+	auto transfer_cmd_buffer = CmdBufferRecorder(device->create_disposable_command_buffer());
 	transfer_cmd_buffer.copy_buffer(_dst_ref, BufferMemoryReference<MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>(_src));
 	transfer_cmd_buffer.end().submit(transfer_queue);
 

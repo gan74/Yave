@@ -26,6 +26,8 @@ namespace yave {
 
 class Framebuffer : NonCopyable, public DeviceLinked {
 
+	Y_TODO(Framebuffer does not need DeviceLinked)
+
 	public:
 		Framebuffer() = default;
 		Framebuffer(DevicePtr dptr, RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color);

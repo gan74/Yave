@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Device.h"
+#include "CmdBufferState.h"
 
 namespace yave {
 
@@ -47,7 +48,7 @@ void Device::compute_queue_families() {
 		}
 
 		if(family.queueFlags & vk::QueueFlagBits::eGraphics) {
-			_queue_familiy_indices[QueueFamilies::Graphics] = i;
+			_queue_familiy_indices[QueueFamily::Graphics] = i;
 		}
 
 		if(are_families_complete()) {
@@ -60,7 +61,7 @@ void Device::compute_queue_families() {
 }
 
 void Device::create_device() {
-	std::array<vk::DeviceQueueCreateInfo, QueueFamilies::Max> queue_create_infos;
+	std::array<vk::DeviceQueueCreateInfo, QueueFamily::Max> queue_create_infos;
 
 	float priorities = 1.0f;
 	for(usize i = 0; i != _queues.size(); i++) {
@@ -85,9 +86,15 @@ void Device::create_device() {
 	for(usize i = 0; i != _queues.size(); i++) {
 		_queues[i] = _device.getQueue(_queue_familiy_indices[i], 0);
 	}
+
+	_cmd_pool = _device.createCommandPool(vk::CommandPoolCreateInfo()
+			.setQueueFamilyIndex(get_queue_family_index(QueueFamily::Graphics))
+			.setFlags(vk::CommandPoolCreateFlagBits::eTransient)
+		);
 }
 
 Device::~Device() {
+	destroy(_cmd_pool);
 	_device.destroy();
 }
 
@@ -116,5 +123,8 @@ bool Device::has_wsi_support(vk::SurfaceKHR surface) const {
 	return true;
 }
 
+core::Rc<CmdBufferState> Device::create_disposable_command_buffer() const {
+	return core::Rc<CmdBufferState>(new CmdBufferState(this, _cmd_pool));
+}
 
 }

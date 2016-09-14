@@ -33,6 +33,7 @@ void destroy(DevicePtr dptr, vk::ShaderModule module);
 void destroy(DevicePtr dptr, vk::Sampler sampler);
 void destroy(DevicePtr dptr, vk::SwapchainKHR swapchain);
 void destroy(DevicePtr dptr, vk::CommandPool pool);
+void destroy(DevicePtr dptr, vk::Fence fence);
 
 }
 }

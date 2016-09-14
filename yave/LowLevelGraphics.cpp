@@ -52,6 +52,8 @@ LowLevelGraphics::~LowLevelGraphics() {
 	delete material_compiler;
 	delete swapchain;
 
+	command_buffers.clear();
+
 	instance.get_vk_instance().destroySurfaceKHR(surface);
 
 	device.get_vk_device().destroyCommandPool(command_pool);
@@ -59,7 +61,7 @@ LowLevelGraphics::~LowLevelGraphics() {
 
 void LowLevelGraphics::create_command_pool() {
 	command_pool = device.get_vk_device().createCommandPool(vk::CommandPoolCreateInfo()
-			.setQueueFamilyIndex(device.get_queue_family_index(Device::Graphics))
+			.setQueueFamilyIndex(device.get_queue_family_index(QueueFamily::Graphics))
 		);
 }
 
@@ -98,23 +100,19 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 }
 
 void LowLevelGraphics::create_command_buffers() {
-	command_buffers = device.get_vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
-			.setCommandPool(command_pool)
-			.setLevel(vk::CommandBufferLevel::ePrimary)
-			.setCommandBufferCount(swapchain->buffer_count())
-		);
 
-	for(usize i = 0; i != command_buffers.size(); i++) {
-		const auto& command_buffer = command_buffers[i];
 
-		auto begin_info = vk::CommandBufferBeginInfo()
+	for(usize i = 0; i != swapchain->buffer_count(); i++) {
+		core::Rc<CmdBufferState> command_buffer(new CmdBufferState(&device, command_pool));
+		command_buffers << command_buffer;
+
+		/*auto begin_info = vk::CommandBufferBeginInfo()
 				.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 			;
 
-		command_buffer.begin(&begin_info);
+		command_buffer->get_vk_cmd_buffer().begin(&begin_info);*/
 
-
-		CmdBufferRecorder<Nothing> recorder(command_buffer);
+		CmdBufferRecorder recorder(command_buffer);
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
 		recorder.bind_pipeline(pipeline);
 		recorder.draw(static_mesh);
@@ -135,11 +133,11 @@ void LowLevelGraphics::draw() {
 			.setPWaitSemaphores(&image_acquired_semaphore)
 			.setPWaitDstStageMask(&pipe_stage_flags)
 			.setCommandBufferCount(1)
-			.setPCommandBuffers(&command_buffers[image_index])
+			.setPCommandBuffers(&command_buffers[image_index]->get_vk_cmd_buffer())
 			.setSignalSemaphoreCount(1)
 			.setPSignalSemaphores(&render_finished_semaphore);
 
-	auto graphic_queue = device.get_vk_queue(Device::Graphics);
+	auto graphic_queue = device.get_vk_queue(QueueFamily::Graphics);
 
 	graphic_queue.submit(1,& submit_info, VK_NULL_HANDLE);
 
@@ -169,7 +167,7 @@ void LowLevelGraphics::update(math::Vec2 angles) {
 }
 
 
-CmdBufferRecorder<DisposableCmdBuffer> LowLevelGraphics::create_disposable_command_buffer() const {
+/*DisposableCmdBuffer LowLevelGraphics::create_disposable_command_buffer() const {
 	auto cmd_buffer = device.get_vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
 			.setCommandBufferCount(1)
 			.setLevel(vk::CommandBufferLevel::ePrimary)
@@ -180,7 +178,7 @@ CmdBufferRecorder<DisposableCmdBuffer> LowLevelGraphics::create_disposable_comma
 		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
 	return cmd_buffer;
-}
+}*/
 
 void LowLevelGraphics::create_mesh() {
 	{

@@ -13,34 +13,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_RENDERPASS_H
-#define YAVE_RENDERPASS_H
 
-#include "yave.h"
-
-#include <yave/DeviceLinked.h>
-#include <yave/image/ImageFormat.h>
+#include "Queue.h"
 
 namespace yave {
 
-class RenderPass : NonCopyable, public DeviceLinked {
-	public:
-		RenderPass() = default;
-		RenderPass(DevicePtr dptr, ImageFormat depth_format, ImageFormat color_format);
-
-		RenderPass(RenderPass&& other);
-		RenderPass& operator=(RenderPass&& other);
-
-		~RenderPass();
-
-		vk::RenderPass get_vk_render_pass() const;
-
-	private:
-		void swap(RenderPass& other);
-
-		vk::RenderPass _render_pass;
-};
-
+QueueBase::QueueBase(DevicePtr dptr, vk::Queue queue) : DeviceLinked(dptr), _queue(queue) {
 }
 
-#endif // YAVE_RENDERPASS_H
+void QueueBase::swap(QueueBase& other) {
+	DeviceLinked::swap(other);
+	std::swap(_queue, other._queue);
+}
+
+vk::Queue QueueBase::get_vk_queue() const {
+	return _queue;
+}
+
+
+
+
+}

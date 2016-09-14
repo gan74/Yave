@@ -13,31 +13,56 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_DISPOSABLECMDBUFFERPOOL_H
-#define YAVE_DISPOSABLECMDBUFFERPOOL_H
+#ifndef YAVE_QUEUE_H
+#define YAVE_QUEUE_H
 
 #include "yave.h"
 #include "DeviceLinked.h"
-#include "CmdBufferRecorder.h"
-#include "DisposableCmdBuffer.h"
 
 namespace yave {
 
-class DisposableCmdBufferPool : NonCopyable, public DeviceLinked {
+class QueueBase : NonCopyable, public DeviceLinked {
 
 	public:
-		using Recorder = CmdBufferRecorder<DisposableCmdBuffer>;
+		vk::Queue get_vk_queue() const;
 
-		DisposableCmdBufferPool(DevicePtr dptr);
-		~DisposableCmdBufferPool();
+	protected:
+		QueueBase(DevicePtr dptr, vk::Queue queue);
 
-		Recorder allocate();
+		void swap(QueueBase& other);
 
 	private:
-		vk::CommandPool _pool;
-
+		// the device owns the queue
+		NotOwned<vk::Queue> _queue;
 };
+
+
+/*template<QueueFamily Family>
+class Queue : public QueueBase {
+
+	public:
+		Queue() = default;
+
+		Queue(Queue&& other) {
+			QueueBase::swap(other);
+		}
+
+		Queue &operator=(Queue&& other) {
+			QueueBase::swap(other);
+			return *this;
+		}
+
+	private:
+		friend class Device;
+
+		Queue(DevicePtr dptr, vk::Queue queue) : QueueBase(dptr, queue) {
+		}
+
+};*/
+
 
 }
 
-#endif // YAVE_DISPOSABLECMDBUFFERPOOL_H
+
+
+#endif // YAVE_QUEUE_H

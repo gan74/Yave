@@ -13,30 +13,31 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_DISPOSABLECMDBUFFER_H
-#define YAVE_DISPOSABLECMDBUFFER_H
+#ifndef YAVE_RECORDEDCMDBUFFER_H
+#define YAVE_RECORDEDCMDBUFFER_H
 
-#include "yave.h"
-#include "CmdBufferRecorder.h"
+#include "CmdBufferState.h"
 
 namespace yave {
 
+class CmdBufferRecorder;
 
-class DisposableCmdBuffer {
+class RecordedCmdBuffer {
 
 	public:
-		DisposableCmdBuffer(vk::CommandBuffer buffer);
-
-		void submit(vk::Queue queue);
-
-		vk::CommandBuffer get_vk_cmd_buffer() const {
-			return _cmd_buffer;
+		void submit(vk::Queue queue) {
+			_state->submit(queue);
 		}
 
 	private:
-		vk::CommandBuffer _cmd_buffer;
+		friend class CmdBufferRecorder;
+
+		RecordedCmdBuffer(const core::Rc<CmdBufferState> &cmd_buffer) : _state(cmd_buffer) {
+		}
+
+		core::Rc<CmdBufferState> _state;
 };
 
 }
 
-#endif // YAVE_DISPOSABLECMDBUFFER_H
+#endif // YAVE_RECORDEDCMDBUFFER_H

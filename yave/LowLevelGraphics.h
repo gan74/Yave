@@ -28,7 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "material/MaterialCompiler.h"
 #include "Framebuffer.h"
 #include "RenderPass.h"
-#include "DisposableCmdBuffer.h"
 #include "CmdBufferRecorder.h"
 #include "mesh/Vertex.h"
 #include "image/Image.h"
@@ -49,10 +48,6 @@ class LowLevelGraphics : NonCopyable {
 
 	Y_TODO(PLEEZ KILL MEEEEEE)
 
-	enum QueueFamilies {
-		Graphics,
-		Max
-	};
 
 	public:
 		LowLevelGraphics(DebugParams params);
@@ -72,14 +67,12 @@ class LowLevelGraphics : NonCopyable {
 		}
 
 		vk::Queue get_graphic_queue() const {
-			return device.get_vk_queue(Device::Graphics);
+			return device.get_vk_queue(QueueFamily::Graphics);
 		}
 
 		vk::PhysicalDeviceMemoryProperties get_memory_properties() const {
 			return device.get_physical_device().get_vk_memory_properties();
 		}
-
-		CmdBufferRecorder<DisposableCmdBuffer> create_disposable_command_buffer() const;
 
 	private:
 		void create_command_pool();
@@ -104,7 +97,7 @@ class LowLevelGraphics : NonCopyable {
 		GraphicPipeline pipeline;
 
 		vk::CommandPool command_pool;
-		core::Vector<vk::CommandBuffer> command_buffers;
+		core::Vector<core::Rc<CmdBufferState>> command_buffers;
 
 		Texture mesh_texture;
 		StaticMeshInstance static_mesh;

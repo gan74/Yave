@@ -119,7 +119,7 @@ void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, Imag
 	auto staging_buffer = get_staging_buffer(dptr, byte_size, data);
 	auto regions = get_copy_region(size, format);
 
-	auto cmd_buffer = dptr->ll_remove_me->create_disposable_command_buffer();
+	auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
 
 	transition_image_layout(cmd_buffer, image, format,
 			vk::ImageLayout::eUndefined, vk::AccessFlags(),
@@ -131,7 +131,7 @@ void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, Imag
 			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite,
 			usage.get_vk_image_layout(), usage.get_vk_access_flags());
 
-	auto graphic_queue = dptr->get_vk_queue(Device::Graphics);
+	auto graphic_queue = dptr->get_vk_queue(QueueFamily::Graphics);
 	cmd_buffer.end().submit(graphic_queue);
 	graphic_queue.waitIdle();
 }
@@ -177,12 +177,12 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 	if(data) {
 		upload_data(get_device(), get_vk_image(), _size, get_format(), usage, data);
 	} else {
-		auto cmd_buffer = dptr->ll_remove_me->create_disposable_command_buffer();
+		auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
 		transition_image_layout(cmd_buffer, get_vk_image(), format,
 				vk::ImageLayout::eUndefined, vk::AccessFlags(),
 				usage.get_vk_image_layout(), usage.get_vk_access_flags());
 
-		auto graphic_queue = dptr->get_vk_queue(Device::Graphics);
+		auto graphic_queue = dptr->get_vk_queue(QueueFamily::Graphics);
 		cmd_buffer.end().submit(graphic_queue);
 		graphic_queue.waitIdle();
 	}

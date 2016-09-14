@@ -23,13 +23,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
+class CmdBufferState;
+
+enum QueueFamily {
+	Graphics,
+	Max
+};
+
 class Device : NonCopyable {
 
 	public:
-		enum QueueFamilies {
-			Graphics,
-			Max
-		};
+
 
 	public:
 		Device(Instance& instance, const LowLevelGraphics* llg);
@@ -55,6 +59,9 @@ class Device : NonCopyable {
 			}
 		}
 
+
+		core::Rc<CmdBufferState> create_disposable_command_buffer() const;
+
 	private:
 		void compute_queue_families();
 		void create_device();
@@ -66,10 +73,11 @@ class Device : NonCopyable {
 
 		core::Vector<const char*> _extentions;
 
-		std::array<i32, QueueFamilies::Max> _queue_familiy_indices;
-		std::array<vk::Queue, QueueFamilies::Max> _queues;
+		std::array<i32, QueueFamily::Max> _queue_familiy_indices;
+		std::array<vk::Queue, QueueFamily::Max> _queues;
 
 		vk::Device _device;
+		vk::CommandPool _cmd_pool;
 };
 
 }
