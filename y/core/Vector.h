@@ -140,6 +140,10 @@ class Vector : ResizePolicy {
 			}
 		}
 
+		void pop() {
+			(--_data_end)->~Data();
+		}
+
 		usize size() const {
 			return _data_end - _data;
 		}
