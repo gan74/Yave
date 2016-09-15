@@ -47,7 +47,7 @@ class Queue : public QueueBase {
 			QueueBase::swap(other);
 		}
 
-		Queue &operator=(Queue&& other) {
+		Queue& operator=(Queue&& other) {
 			QueueBase::swap(other);
 			return *this;
 		}

@@ -13,47 +13,32 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_DEVICELINKED_H
-#define YAVE_DEVICELINKED_H
+#ifndef YAVE_CMDBUFFERPOOL_H
+#define YAVE_CMDBUFFERPOOL_H
 
-#include "yave.h"
+#include "CmdBufferState.h"
 
 namespace yave {
 
-class DeviceLinked {
+class CmdBufferPool : NonCopyable, public DeviceLinked {
+
 	public:
-		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
-		DeviceLinked() : _device(nullptr) {
-			// for putting breakpoints
-		}
+		CmdBufferPool() = default;
+		CmdBufferPool(DevicePtr dptr);
+		~CmdBufferPool();
 
-		DeviceLinked(DevicePtr dev) : _device(dev) {
-			if(!dev) {
-				fatal("Null device");
-			}
-		}
+		CmdBufferPool(CmdBufferPool&& other);
+		CmdBufferPool &operator=(CmdBufferPool&& other);
 
-		DevicePtr get_device() const {
-			return _device;
-		}
-
-	protected:
-		void swap(DeviceLinked& other) {
-			std::swap(_device, other._device);
-		}
-
-		template<typename T>
-		void destroy(T t); /* {
-			if(_device) {
-				_device->destroy(t);
-			}
-		}*/
+		core::Rc<CmdBufferState> get_buffer	();
 
 	private:
-		NotOwned<DevicePtr> _device;
+		void swap(CmdBufferPool& other);
 
+		vk::CommandPool _pool;
+		core::Vector<core::Rc<CmdBufferState>> _cmd_buffers;
 };
 
 }
 
-#endif // YAVE_DEVICELINKED_H
+#endif // YAVE_CMDBUFFERPOOL_H

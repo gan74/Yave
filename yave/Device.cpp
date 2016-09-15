@@ -87,14 +87,12 @@ void Device::create_device() {
 		_queues[i] = _device.getQueue(_queue_familiy_indices[i], 0);
 	}
 
-	_cmd_pool = _device.createCommandPool(vk::CommandPoolCreateInfo()
-			.setQueueFamilyIndex(get_queue_family_index(QueueFamily::Graphics))
-			.setFlags(vk::CommandPoolCreateFlagBits::eTransient)
-		);
+	_cmd_pool = CmdBufferPool(this);
 }
 
 Device::~Device() {
-	destroy(_cmd_pool);
+	// we need to destroy the pool before the device
+	_cmd_pool = CmdBufferPool();
 	_device.destroy();
 }
 
@@ -124,7 +122,8 @@ bool Device::has_wsi_support(vk::SurfaceKHR surface) const {
 }
 
 core::Rc<CmdBufferState> Device::create_disposable_command_buffer() const {
-	return core::Rc<CmdBufferState>(new CmdBufferState(this, _cmd_pool));
+	//return core::Rc<CmdBufferState>(new CmdBufferState(this, _cmd_pool));
+	return _cmd_pool.get_buffer();
 }
 
 }

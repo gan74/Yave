@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "CmdBufferState.h"
+#include "Device.h"
 
 #include <iostream>
 
@@ -37,12 +38,7 @@ CmdBufferState::CmdBufferState(DevicePtr dptr, vk::CommandPool pool) : DeviceLin
 }
 
 CmdBufferState::~CmdBufferState() {
-	Chrono c;
 	wait();
-	if(c.elapsed().to_nanos()) {
-		std::cout << "waited " << c.elapsed().to_micros() << "us to destroy command buffer!\n";
-	}
-
 	destroy(_fence);
 	get_device()->get_vk_device().freeCommandBuffers(_pool, _cmd_buffer);
 }
@@ -52,7 +48,11 @@ bool CmdBufferState::is_done() const {
 }
 
 void CmdBufferState::wait() const {
+	Chrono c;
 	get_device()->get_vk_device().waitForFences(_fence, true, u64(-1));
+	if(c.elapsed().to_nanos()) {
+		std::cout << "waited " << c.elapsed().to_micros() << "us for command buffer!\n";
+	}
 }
 
 void CmdBufferState::submit(vk::Queue queue) {

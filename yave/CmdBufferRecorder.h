@@ -33,7 +33,7 @@ class CmdBufferRecorder {
 	Y_TODO(make CmdBufferRecorder NonCopyable)
 
 	public:
-		CmdBufferRecorder(const core::Rc<CmdBufferState> &cmd_buffer);
+		CmdBufferRecorder(const core::Rc<CmdBufferState>& cmd_buffer);
 
 		vk::CommandBuffer get_vk_cmd_buffer() const;
 

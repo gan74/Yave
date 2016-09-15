@@ -64,11 +64,11 @@ void Framebuffer::swap(Framebuffer& other) {
 	std::swap(_framebuffer, other._framebuffer);
 }
 
-const math::Vec2ui &Framebuffer::size() const {
+const math::Vec2ui& Framebuffer::size() const {
 	return _size;
 }
 
-const RenderPass &Framebuffer::get_render_pass() const {
+const RenderPass& Framebuffer::get_render_pass() const {
 	return *_render_pass;
 }
 

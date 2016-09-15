@@ -32,7 +32,7 @@ class RecordedCmdBuffer {
 	private:
 		friend class CmdBufferRecorder;
 
-		RecordedCmdBuffer(const core::Rc<CmdBufferState> &cmd_buffer) : _state(cmd_buffer) {
+		RecordedCmdBuffer(const core::Rc<CmdBufferState>& cmd_buffer) : _state(cmd_buffer) {
 		}
 
 		core::Rc<CmdBufferState> _state;

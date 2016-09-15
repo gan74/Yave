@@ -37,8 +37,8 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 
 		~Framebuffer();
 
-		const math::Vec2ui &size() const;
-		const RenderPass &get_render_pass() const;
+		const math::Vec2ui& size() const;
+		const RenderPass& get_render_pass() const;
 
 
 		vk::Framebuffer get_vk_framebuffer() const;

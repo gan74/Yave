@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-CmdBufferRecorder::CmdBufferRecorder(const core::Rc<CmdBufferState> &cmd_buffer) : _state(cmd_buffer), _nested_passes(0) {
+CmdBufferRecorder::CmdBufferRecorder(const core::Rc<CmdBufferState>& cmd_buffer) : _state(cmd_buffer), _nested_passes(0) {
 	get_vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
 			.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 		);

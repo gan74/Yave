@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "yave.h"
 #include "PhysicalDevice.h"
 
+#include "CmdBufferPool.h"
+
 #include <yave/vk/destroy.h>
 
 namespace yave {
@@ -77,8 +79,18 @@ class Device : NonCopyable {
 		std::array<vk::Queue, QueueFamily::Max> _queues;
 
 		vk::Device _device;
-		vk::CommandPool _cmd_pool;
+		mutable CmdBufferPool _cmd_pool;
 };
+
+
+template<typename T>
+void DeviceLinked::destroy(T t) {
+	if(_device) {
+		_device->destroy(t);
+	}
+}
+
+
 
 }
 
