@@ -25,22 +25,17 @@ namespace concurrent {
 
 class SpinLock : NonCopyable {
 
+	static constexpr usize yield_threshold = 1;
 	public:
 		SpinLock();
-
-		SpinLock(SpinLock&& other);
-		SpinLock& operator=(SpinLock&& other);
-
 		~SpinLock();
 
 		void lock();
 		void unlock();
 		bool try_lock();
 
-		bool is_locked() const;
-
 	private:
-		volatile std::atomic_bool spin;
+		volatile std::atomic_flag _spin;
 };
 
 

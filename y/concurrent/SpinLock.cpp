@@ -15,40 +15,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "SpinLock.h"
+#include <thread>
 
 namespace y {
 namespace concurrent {
 
-SpinLock::SpinLock() : spin(false) {
-}
-
-SpinLock::SpinLock(SpinLock&& other) {
-	std::swap(other.spin, spin);
-}
-
-SpinLock& SpinLock::operator=(SpinLock&& other) {
-	std::swap(other.spin, spin);
-	return *this;
+SpinLock::SpinLock() : _spin(ATOMIC_FLAG_INIT) {
 }
 
 SpinLock::~SpinLock() {
 }
 
 void SpinLock::lock() {
-	while(spin.load(std::memory_order_acquire) || spin.exchange(true, std::memory_order_acquire)) {
+	for(usize failed = 0; !try_lock(); failed++) {
+		if(failed > yield_threshold) {
+			std::this_thread::yield();
+		}
 	}
+
 }
 
 bool SpinLock::try_lock() {
-	return !spin.load(std::memory_order_acquire) && !spin.exchange(true, std::memory_order_acquire);
+	return !_spin.test_and_set(std::memory_order_acquire);
+
 }
 
 void SpinLock::unlock() {
-	spin.store(false, std::memory_order_release);
-}
-
-bool SpinLock::is_locked() const {
-	return spin;
+	_spin.clear();
 }
 
 }
