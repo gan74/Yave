@@ -11,10 +11,10 @@ set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-
 
 set(EXTRA_OPTIMISATIONS "-ffast-math")
 
-if(CMAKE_BUILD_TYPE EQUAL "RELEASE")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
 	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -flto")
-endif(CMAKE_BUILD_TYPE EQUAL "RELEASE")
-
+	message("Release: LTO enabled")
+endif()
 
 add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
