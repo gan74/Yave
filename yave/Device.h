@@ -35,7 +35,7 @@ enum QueueFamily {
 class Device : NonCopyable {
 
 	public:
-		Device(Instance& instance, const LowLevelGraphics* llg);
+		Device(Instance& instance);
 		~Device();
 
 		const PhysicalDevice& get_physical_device() const;
@@ -44,10 +44,6 @@ class Device : NonCopyable {
 		vk::Device get_vk_device() const;
 		vk::Queue get_vk_queue(usize i) const;
 		i32 get_queue_family_index(QueueFamily i) const;
-
-
-		Y_TODO(remove hacky pointer)
-		const LowLevelGraphics* ll_remove_me;
 
 
 		template<typename T>

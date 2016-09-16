@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-Device::Device(Instance& instance, const LowLevelGraphics* llg) : ll_remove_me(llg), _instance(instance), _physical(instance) {
+Device::Device(Instance& instance) : _instance(instance), _physical(instance) {
 	_extentions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 	compute_queue_families();

@@ -15,8 +15,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "ImageBase.h"
-#include <yave/buffer/CpuVisibleMapping.h>
-#include <yave/LowLevelGraphics.h>
+
+#include <yave/buffer/StagingBufferMapping.h>
+#include <yave/command/CmdBufferRecorder.h>
+#include <yave/Device.h>
 
 namespace yave {
 

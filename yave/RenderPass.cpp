@@ -15,7 +15,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "RenderPass.h"
 
-#include "LowLevelGraphics.h"
+#include <yave/image/Image.h>
+
+#include "Device.h"
 
 namespace yave {
 

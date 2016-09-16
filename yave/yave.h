@@ -48,7 +48,7 @@ core::Vector<char> read_file(const core::String& file_name);
 
 
 
-class LowLevelGraphics;
+class YaveApp;
 class MaterialCompiler;
 class Device;
 

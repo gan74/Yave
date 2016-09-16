@@ -13,69 +13,42 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_LOWLEVELGRAPHICS_H
-#define YAVE_LOWLEVELGRAPHICS_H
+#ifndef YAVE_YAVEAPP_H
+#define YAVE_YAVEAPP_H
 
-#include "yave.h"
+#include <yave/yave.h>
 
-#include <y/core/Vector.h>
-#include <y/math/math.h>
-#include <array>
+#include <yave/Device.h>
 
-#include "Instance.h"
-#include "Device.h"
-
-#include "material/MaterialCompiler.h"
-#include "Framebuffer.h"
-#include "RenderPass.h"
+#include <yave/material/MaterialCompiler.h>
 #include <yave/command/CmdBufferRecorder.h>
-#include "mesh/Vertex.h"
-#include "image/Image.h"
-#include "mesh/StaticMeshInstance.h"
-#include "Swapchain.h"
+#include <yave/image/Image.h>
+#include <yave/mesh/StaticMeshInstance.h>
+#include <yave/Swapchain.h>
 
 namespace yave {
 
 class Window;
 
-struct MVP {
-	math::Matrix4<> model;
-	math::Matrix4<> view;
-	math::Matrix4<> proj;
-};
+class YaveApp : NonCopyable {
 
-class LowLevelGraphics : NonCopyable {
-
-	Y_TODO(PLEEZ KILL MEEEEEE)
-
+	struct MVP {
+		math::Matrix4<> model;
+		math::Matrix4<> view;
+		math::Matrix4<> proj;
+	};
 
 	public:
-		LowLevelGraphics(DebugParams params);
-		~LowLevelGraphics();
+		YaveApp(DebugParams params);
+		~YaveApp();
 
 		void init(Window* window);
 
 		void draw();
 		void update(math::Vec2 angles = math::Vec2(0));
 
-		vk::Device get_logical_device() const {
-			return device.get_vk_device();
-		}
-
-		vk::PhysicalDevice get_physical_device() const {
-			return device.get_physical_device().get_vk_physical_device();
-		}
-
-		vk::Queue get_graphic_queue() const {
-			return device.get_vk_queue(QueueFamily::Graphics);
-		}
-
-		vk::PhysicalDeviceMemoryProperties get_memory_properties() const {
-			return device.get_physical_device().get_vk_memory_properties();
-		}
 
 	private:
-		void create_descriptor_pool();
 		void create_graphic_pipeline();
 		void create_command_buffers();
 
@@ -85,7 +58,6 @@ class LowLevelGraphics : NonCopyable {
 
 		Instance instance;
 		Device device;
-
 
 		Swapchain* swapchain;
 
@@ -104,4 +76,4 @@ class LowLevelGraphics : NonCopyable {
 
 }
 
-#endif // YAVE_LOWLEVELGRAPHICS_H
+#endif // YAVE_YAVEAPP_H

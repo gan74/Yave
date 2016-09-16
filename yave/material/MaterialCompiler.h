@@ -28,7 +28,7 @@ namespace yave {
 
 class ShaderModule;
 
-class MaterialCompiler : NonCopyable {
+class MaterialCompiler : NonCopyable, public DeviceLinked {
 	public:
 		MaterialCompiler(DevicePtr dptr);
 
@@ -37,7 +37,6 @@ class MaterialCompiler : NonCopyable {
 	private:
 		ShaderModule create_shader_module(const SpirVData& data) const;
 
-		DevicePtr _device;
 		DescriptorSetBuilder _ds_builder;
 
 };

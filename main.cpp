@@ -1,11 +1,11 @@
-#include <yave/LowLevelGraphics.h>
+
+#include <yave/image/ImageData.h>
 #include <yave/Window.h>
 #include <y/math/Vec.h>
 #include <iostream>
 
-#include "yave/image/ImageData.h"
+#include "YaveApp.h"
 
-#include <fstream>
 
 using namespace yave;
 using namespace core;
@@ -42,16 +42,16 @@ int main(int, char **) {
 	Window win(math::vec(1024, 728), "Yave");
 	win.set_mouse_handler(new ArcballMouse());
 
-	LowLevelGraphics graphics(DebugParams::debug());
-	graphics.init(&win);
+	YaveApp app(DebugParams::debug());
+	app.init(&win);
 
 	win.show();
 
 
 	while(win.update()) {
 		auto mouse = reinterpret_cast<ArcballMouse *>(win.get_mouse_handler());
-		graphics.update(mouse->angle * 0.01);
-		graphics.draw();
+		app.update(mouse->angle * 0.01);
+		app.draw();
 
 	}
 

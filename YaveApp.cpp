@@ -13,8 +13,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#include "LowLevelGraphics.h"
-#include "Window.h"
+#include "YaveApp.h"
 
 #include <yave/image/ImageData.h>
 #include <yave/buffer/TypedBuffer.h>
@@ -24,11 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-
-LowLevelGraphics::LowLevelGraphics(DebugParams params) : instance(params), device(instance, this), command_pool(&device) {
+YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device) {
 }
 
-void LowLevelGraphics::init(Window* window) {
+void YaveApp::init(Window* window) {
 	material_compiler = new MaterialCompiler(&device);
 
 
@@ -41,7 +39,7 @@ void LowLevelGraphics::init(Window* window) {
 	create_command_buffers();
 }
 
-LowLevelGraphics::~LowLevelGraphics() {
+YaveApp::~YaveApp() {
 	mesh_texture = Texture();
 	static_mesh = StaticMeshInstance();
 	pipeline = GraphicPipeline();
@@ -54,7 +52,7 @@ LowLevelGraphics::~LowLevelGraphics() {
 }
 
 
-void LowLevelGraphics::create_graphic_pipeline() {
+void YaveApp::create_graphic_pipeline() {
 	uniform_buffer = core::rc(TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1));
 	pipeline = material_compiler->compile(Material()
 			.set_frag_data(SpirVData::from_file("frag.spv"))
@@ -69,7 +67,7 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 	return vk::Extent2D{v.x(), v.y()};
 }
 
-void LowLevelGraphics::create_command_buffers() {
+void YaveApp::create_command_buffers() {
 	for(usize i = 0; i != swapchain->buffer_count(); i++) {
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
@@ -80,7 +78,7 @@ void LowLevelGraphics::create_command_buffers() {
 	}
 }
 
-void LowLevelGraphics::draw() {
+void YaveApp::draw() {
 	auto vk_swap = swapchain->get_vk_swapchain();
 	auto image_acquired_semaphore = device.get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
 	auto render_finished_semaphore = device.get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
@@ -116,7 +114,7 @@ void LowLevelGraphics::draw() {
 	device.get_vk_device().destroySemaphore(render_finished_semaphore);
 }
 
-void LowLevelGraphics::update(math::Vec2 angles) {
+void YaveApp::update(math::Vec2 angles) {
 	auto mapping = uniform_buffer->map();
 	auto& mvp = *mapping.begin();
 
@@ -127,7 +125,7 @@ void LowLevelGraphics::update(math::Vec2 angles) {
 				math::rotation(angles.y(), math::Vec3(0, 1, 0));
 }
 
-void LowLevelGraphics::create_mesh() {
+void YaveApp::create_mesh() {
 	{
 		auto file = io::File::open("../tools/mesh/chalet.ym");
 		auto m_data = MeshData::from_file(file);

@@ -17,18 +17,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ShaderModule.h"
 
 #include <yave/mesh/Vertex.h>
-#include <yave/LowLevelGraphics.h>
+#include <yave/Device.h>
 
 namespace yave {
 
-MaterialCompiler::MaterialCompiler(DevicePtr dptr) : _device(dptr), _ds_builder(dptr) {
+MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr), _ds_builder(dptr) {
 }
 
 ShaderModule MaterialCompiler::create_shader_module(const SpirVData& data) const {
 	if(!data.size()) {
 		return ShaderModule();
 	}
-	return ShaderModule(_device, _device->get_vk_device().createShaderModule(vk::ShaderModuleCreateInfo()
+	return ShaderModule(get_device(), get_device()->get_vk_device().createShaderModule(vk::ShaderModuleCreateInfo()
 			.setCodeSize(data.size())
 			.setPCode(data.data())
 		));
@@ -159,12 +159,12 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 
 	auto d_set = _ds_builder.build(material);
 
-	auto pipeline_layout = _device->get_vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
+	auto pipeline_layout = get_device()->get_vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(1)
 			.setPSetLayouts(&d_set.layout)
 		);
 
-	auto pipeline = _device->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
+	auto pipeline = get_device()->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
 			.setStageCount(stage_create_infos.size())
 			.setPStages(stage_create_infos.begin())
 			.setPVertexInputState(&vertex_input)
@@ -180,7 +180,7 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setBasePipelineIndex(-1)
 		);
 
-	return GraphicPipeline(_device, pipeline, pipeline_layout, d_set);
+	return GraphicPipeline(get_device(), pipeline, pipeline_layout, d_set);
 }
 
 }

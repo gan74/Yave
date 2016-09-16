@@ -15,7 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "DescriptorSetBuilder.h"
 
-#include <yave/LowLevelGraphics.h>
+#include <yave/Device.h>
 
 namespace yave {
 
