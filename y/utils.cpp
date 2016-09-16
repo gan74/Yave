@@ -40,7 +40,7 @@ namespace detail {
 	}
 	#else
 	core::String demangle_type_name(const char* name) {
-		return str(name);
+		return core::str(name);
 	}
 	#endif
 }
