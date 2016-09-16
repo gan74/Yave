@@ -7,9 +7,9 @@ set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmi
 set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor -Wodr -Wzero-as-null-pointer-constant")
 set(EXTRA_OPTIMISATIONS "-ffast-math")
 
-if(CMAKE_BUILD_TYPE EQUAL "RELEASE")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
 	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -flto")
-endif(CMAKE_BUILD_TYPE EQUAL "RELEASE")
+endif()
 
 
 add_definitions("${EXTRA_WARNINGS}")
@@ -31,4 +31,6 @@ add_library(y STATIC ${SOURCE_FILES})
 add_executable(main ${SOURCE_FILES} "main.cpp")
 target_link_libraries(main y)
 
-target_compile_definitions(main PRIVATE -DY_AUTO_TEST)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	target_compile_definitions(main PRIVATE -DY_AUTO_TEST)
+endif()
