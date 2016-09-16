@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "material/MaterialCompiler.h"
 #include "Framebuffer.h"
 #include "RenderPass.h"
-#include "CmdBufferRecorder.h"
+#include <yave/command/CmdBufferRecorder.h>
 #include "mesh/Vertex.h"
 #include "image/Image.h"
 #include "mesh/StaticMeshInstance.h"
@@ -75,7 +75,6 @@ class LowLevelGraphics : NonCopyable {
 		}
 
 	private:
-		void create_command_pool();
 		void create_descriptor_pool();
 		void create_swapchain();
 		void create_graphic_pipeline();
@@ -96,8 +95,8 @@ class LowLevelGraphics : NonCopyable {
 
 		GraphicPipeline pipeline;
 
-		vk::CommandPool command_pool;
-		core::Vector<core::Rc<CmdBufferState>> command_buffers;
+		CmdBufferPool command_pool;
+		core::Vector<RecordedCmdBuffer> command_buffers;
 
 		Texture mesh_texture;
 		StaticMeshInstance static_mesh;

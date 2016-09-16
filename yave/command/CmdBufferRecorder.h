@@ -16,8 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_CMDBUFFERRECORDER_H
 #define YAVE_CMDBUFFERRECORDER_H
 
-#include "yave.h"
-#include "Framebuffer.h"
+#include <yave/yave.h>
+#include <yave/Framebuffer.h>
 
 #include "RecordedCmdBuffer.h"
 
@@ -27,19 +27,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-
 class CmdBufferRecorder {
 
 	Y_TODO(make CmdBufferRecorder NonCopyable)
 
 	public:
-		CmdBufferRecorder(const core::Rc<CmdBufferState>& cmd_buffer);
+		CmdBufferRecorder(CmdBuffer&& buffer);
+
+		CmdBufferRecorder(CmdBufferRecorder&& other);
+		CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
+
+		RecordedCmdBuffer end();
+		~CmdBufferRecorder();
 
 		vk::CommandBuffer get_vk_cmd_buffer() const;
 
-		RecordedCmdBuffer end();
-
-
+		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
+		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline);
+		CmdBufferRecorder& draw(const StaticMeshInstance& static_mesh);
 
 		template<MemoryFlags DstFlags, MemoryFlags SrcFlags>
 		CmdBufferRecorder& copy_buffer(BufferMemoryReference<DstFlags, BufferTransfer::TransferDst> dst, BufferMemoryReference<SrcFlags, BufferTransfer::TransferSrc> src) {
@@ -48,13 +53,10 @@ class CmdBufferRecorder {
 			return *this;
 		}
 
-		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
-		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline);
-		CmdBufferRecorder& draw(const StaticMeshInstance& static_mesh);
-
-
 	private:
-		core::Rc<CmdBufferState> _state;
+		void swap(CmdBufferRecorder& other);
+
+		CmdBuffer _cmd_buffer;
 		usize _nested_passes;
 };
 

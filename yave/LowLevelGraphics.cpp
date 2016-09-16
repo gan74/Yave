@@ -26,12 +26,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 
-LowLevelGraphics::LowLevelGraphics(DebugParams params) : instance(params), device(instance, this) {
+LowLevelGraphics::LowLevelGraphics(DebugParams params) : instance(params), device(instance, this), command_pool(&device) {
 }
 
 void LowLevelGraphics::init(Window* window) {
 	material_compiler = new MaterialCompiler(&device);
-	create_command_pool();
 
 	set_surface(window);
 
@@ -55,14 +54,6 @@ LowLevelGraphics::~LowLevelGraphics() {
 	command_buffers.clear();
 
 	instance.get_vk_instance().destroySurfaceKHR(surface);
-
-	device.get_vk_device().destroyCommandPool(command_pool);
-}
-
-void LowLevelGraphics::create_command_pool() {
-	command_pool = device.get_vk_device().createCommandPool(vk::CommandPoolCreateInfo()
-			.setQueueFamilyIndex(device.get_queue_family_index(QueueFamily::Graphics))
-		);
 }
 
 void LowLevelGraphics::set_surface(Window* window) {
@@ -100,23 +91,18 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 }
 
 void LowLevelGraphics::create_command_buffers() {
-
-
 	for(usize i = 0; i != swapchain->buffer_count(); i++) {
-		core::Rc<CmdBufferState> command_buffer(new CmdBufferState(&device, command_pool));
-		command_buffers << command_buffer;
-
 		/*auto begin_info = vk::CommandBufferBeginInfo()
 				.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 			;
 
 		command_buffer->get_vk_cmd_buffer().begin(&begin_info);*/
 
-		CmdBufferRecorder recorder(command_buffer);
+		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
 		recorder.bind_pipeline(pipeline);
 		recorder.draw(static_mesh);
-		recorder.end();
+		command_buffers << recorder.end();
 	}
 }
 
@@ -127,13 +113,14 @@ void LowLevelGraphics::draw() {
 
 	u32 image_index = device.get_vk_device().acquireNextImageKHR(vk_swap, u64(-1), image_acquired_semaphore, VK_NULL_HANDLE).value;
 
+	auto buffer = command_buffers[image_index].get_vk_cmd_buffer();
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto submit_info = vk::SubmitInfo()
 			.setWaitSemaphoreCount(1)
 			.setPWaitSemaphores(&image_acquired_semaphore)
 			.setPWaitDstStageMask(&pipe_stage_flags)
 			.setCommandBufferCount(1)
-			.setPCommandBuffers(&command_buffers[image_index]->get_vk_cmd_buffer())
+			.setPCommandBuffers(&buffer)
 			.setSignalSemaphoreCount(1)
 			.setPSignalSemaphores(&render_finished_semaphore);
 

@@ -18,14 +18,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-CmdBufferRecorder::CmdBufferRecorder(const core::Rc<CmdBufferState>& cmd_buffer) : _state(cmd_buffer), _nested_passes(0) {
+CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& buffer) : _cmd_buffer(std::move(buffer)), _nested_passes(0) {
 	get_vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
 			.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 		);
 }
 
+CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
+	swap(other);
+}
+
+CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
+	swap(other);
+	return *this;
+}
+
+void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
+	std::swap(_cmd_buffer, other._cmd_buffer);
+	std::swap(_nested_passes, other._nested_passes);
+
+}
+
 vk::CommandBuffer CmdBufferRecorder::get_vk_cmd_buffer() const {
-	return _state->get_vk_cmd_buffer();
+	return _cmd_buffer.get_vk_cmd_buffer();
 }
 
 RecordedCmdBuffer CmdBufferRecorder::end() {
@@ -33,7 +48,13 @@ RecordedCmdBuffer CmdBufferRecorder::end() {
 		get_vk_cmd_buffer().endRenderPass();
 	}
 	get_vk_cmd_buffer().end();
-	return RecordedCmdBuffer(_state);
+	return RecordedCmdBuffer(std::move(_cmd_buffer));
+}
+
+CmdBufferRecorder::~CmdBufferRecorder() {
+	if(_cmd_buffer.get_vk_cmd_buffer()) {
+		fatal("CmdBufferRecorder destroyed before end() was called");
+	}
 }
 
 

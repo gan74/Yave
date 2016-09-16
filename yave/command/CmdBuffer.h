@@ -13,34 +13,44 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_CMDBUFFERSTATE_H
-#define YAVE_CMDBUFFERSTATE_H
+#ifndef YAVE_CMDBUFFER_H
+#define YAVE_CMDBUFFER_H
 
-#include "yave.h"
-#include "DeviceLinked.h"
+#include <yave/yave.h>
+#include <yave/DeviceLinked.h>
 
 namespace yave {
 
-struct CmdBufferState : NonCopyable, public DeviceLinked {
+class CmdBufferPoolData;
+
+struct CmdBufferData {
+	vk::CommandBuffer cmd_buffer;
+	vk::Fence fence;
+};
+
+struct CmdBuffer : NonCopyable {
 
 	public:
-		CmdBufferState(DevicePtr dptr, vk::CommandPool pool);
-		~CmdBufferState();
+		// we need to have a complete definition of CmdBufferPoolData to make this = default
+		CmdBuffer();
+		CmdBuffer(const core::Rc<CmdBufferPoolData>& pool);
 
+		CmdBuffer(CmdBuffer&& other);
+		CmdBuffer& operator=(CmdBuffer&& other);
 
-		bool is_done() const;
-		void wait() const;
+		~CmdBuffer();
 
+		const vk::CommandBuffer get_vk_cmd_buffer() const;
+		vk::Fence get_vk_fence() const;
+		DevicePtr get_device() const;
+
+	protected:
+		void swap(CmdBuffer& other);
 		void submit(vk::Queue queue);
 
-		const vk::CommandBuffer& get_vk_cmd_buffer() const;
-		vk::Fence get_vk_fence() const;
-
 	private:
-		NotOwned<vk::CommandPool> _pool;
-		vk::CommandBuffer _cmd_buffer;
-		vk::Fence _fence;
-
+		core::Rc<CmdBufferPoolData> _pool;
+		NotOwned<CmdBufferData> _data;
 };
 
 }

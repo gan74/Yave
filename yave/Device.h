@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "yave.h"
 #include "PhysicalDevice.h"
 
-#include "CmdBufferPool.h"
+#include <yave/command/CmdBufferPool.h>
 
 #include <yave/vk/destroy.h>
 
@@ -62,7 +62,9 @@ class Device : NonCopyable {
 		}
 
 
-		core::Rc<CmdBufferState> create_disposable_command_buffer() const;
+		auto create_disposable_command_buffer() const {
+			return _cmd_pool.create_buffer();
+		}
 
 	private:
 		void compute_queue_families();

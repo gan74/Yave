@@ -13,32 +13,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_CMDBUFFERPOOL_H
-#define YAVE_CMDBUFFERPOOL_H
 
-#include "CmdBufferState.h"
+#include "CmdBufferPool.h"
+#include <yave/Device.h>
 
 namespace yave {
 
-class CmdBufferPool : NonCopyable, public DeviceLinked {
-
-	public:
-		CmdBufferPool() = default;
-		CmdBufferPool(DevicePtr dptr);
-		~CmdBufferPool();
-
-		CmdBufferPool(CmdBufferPool&& other);
-		CmdBufferPool &operator=(CmdBufferPool&& other);
-
-		core::Rc<CmdBufferState> get_buffer	();
-
-	private:
-		void swap(CmdBufferPool& other);
-
-		vk::CommandPool _pool;
-		core::Vector<core::Rc<CmdBufferState>> _cmd_buffers;
-};
-
+CmdBufferPool::CmdBufferPool(DevicePtr dptr) : _pool(new CmdBufferPoolData(dptr)) {
 }
 
-#endif // YAVE_CMDBUFFERPOOL_H
+CmdBuffer CmdBufferPool::create_buffer() {
+	return CmdBuffer(_pool);
+}
+
+
+usize CmdBufferPool::active_buffers() const {
+	return _pool.ref_count() - 1;
+}
+
+}

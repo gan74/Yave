@@ -15,7 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Device.h"
-#include "CmdBufferState.h"
+#include <yave/command/CmdBuffer.h>
 
 namespace yave {
 
@@ -91,8 +91,17 @@ void Device::create_device() {
 }
 
 Device::~Device() {
+	for(auto q : _queues) {
+		q.waitIdle();
+	}
+
+	if(_cmd_pool.active_buffers()) {
+		fatal("Buffer still active");
+	}
+
 	// we need to destroy the pool before the device
 	_cmd_pool = CmdBufferPool();
+
 	_device.destroy();
 }
 
@@ -119,11 +128,6 @@ bool Device::has_wsi_support(vk::SurfaceKHR surface) const {
 		}
 	}
 	return true;
-}
-
-core::Rc<CmdBufferState> Device::create_disposable_command_buffer() const {
-	//return core::Rc<CmdBufferState>(new CmdBufferState(this, _cmd_pool));
-	return _cmd_pool.get_buffer();
 }
 
 }
