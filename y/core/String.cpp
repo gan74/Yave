@@ -165,6 +165,16 @@ String::const_iterator String::find(const String& str) const {
 	return found ? found : end();
 }
 
+String String::sub_str(usize beg) const {
+	return beg < size() ? String(begin() + beg) : String();
+}
+
+String String::sub_str(usize beg, usize len) const {
+	usize si = size();
+	beg = std::min(beg, si);
+	return String(begin() + beg, std::min(len, si - beg));
+}
+
 String::operator const char*() const {
 	return data();
 }

@@ -120,6 +120,9 @@ class String {
 		iterator find(const String& str);
 		const_iterator find(const String& str) const;
 
+		String sub_str(usize beg) const;
+		String sub_str(usize beg, usize len) const;
+
 		operator const char*() const;
 		operator char*();
 
