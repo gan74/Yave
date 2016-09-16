@@ -27,8 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <y/utils/deref.h>
 #include <y/utils/startup.h>
-#include <y/utils/os.h>
 #include <y/utils/Chrono.h>
+#include <y/utils/log.h>
+#include <y/utils/os.h>
 
 namespace y {
 

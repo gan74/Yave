@@ -9,6 +9,7 @@ set(EXTRA_OPTIMISATIONS "-ffast-math")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
 	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -flto")
+	message("Release: LTO enabled")
 endif()
 
 

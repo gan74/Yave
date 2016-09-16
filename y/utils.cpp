@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 #include <y/core/String.h>
 
-#include <iostream>
-
 #ifdef __GNUG__
 #include <cstdlib>
 #include <memory>
@@ -49,14 +47,14 @@ namespace detail {
 
 
 Nothing fatal(const char* msg, const char* file, int line) {
-	std::cerr << msg;
+	core::String msg_str = msg;
 	if(file) {
-		std::cerr << " in file \"" << file << "\"";
+		msg_str += core::str() + " in file \"" + file + "\"";
 	}
 	if(line) {
-		std::cerr << " at line " << line;
+		msg_str += core::str() + " at line " + line;
 	}
-	std::cerr << std::endl;
+	log_msg(msg_str, LogType::Error);
 	exit(1);
 	return Nothing();
 }
