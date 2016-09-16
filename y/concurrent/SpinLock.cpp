@@ -20,7 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace concurrent {
 
-SpinLock::SpinLock() : _spin(ATOMIC_FLAG_INIT) {
+SpinLock::SpinLock() :
+	//_spin(ATOMIC_FLAG_INIT)
+	_spin(Unlocked)
+	{
 }
 
 SpinLock::~SpinLock() {
@@ -28,7 +31,7 @@ SpinLock::~SpinLock() {
 
 void SpinLock::lock() {
 	for(usize failed = 0; !try_lock(); failed++) {
-		if(failed > yield_threshold) {
+		if(failed >= yield_threshold) {
 			std::this_thread::yield();
 		}
 	}
@@ -36,12 +39,13 @@ void SpinLock::lock() {
 }
 
 bool SpinLock::try_lock() {
-	return !_spin.test_and_set(std::memory_order_acquire);
-
+	//return !_spin.test_and_set(std::memory_order_acquire);
+	return _spin.exchange(Locked, std::memory_order_acquire) == Unlocked;
 }
 
 void SpinLock::unlock() {
-	_spin.clear();
+	//_spin.clear();
+	_spin.store(Unlocked, std::memory_order_release);
 }
 
 }
