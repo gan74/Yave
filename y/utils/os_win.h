@@ -29,33 +29,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace windows {
 
-#define Y_WIN_DYN_FUNC(lib, func)																									\
-template<typename... Args>																											\
-bool func(Args... args) {																											\
+#define Y_WIN_DYN_FUNC(lib, func, func_ptr_type)																					\
+auto func ## _func() {																												\
 	static HMODULE module = nullptr;																								\
-	static BOOL (*func_ptr)(Args...) = nullptr;																						\
+	static func_ptr_type = nullptr;																									\
 	static bool is_init = false;																									\
 	if(!is_init) {																													\
 		is_init = true;																												\
-		if(!(module = LoadLibrary(TEXT(#lib)))) {																					\
-			return false;																											\
-		}																															\
-		if(!(func_ptr = reinterpret_cast<decltype(func_ptr)>(GetProcAddress(module, #func)))) {										\
-			return false;																											\
+		if((module = LoadLibrary(TEXT(#lib)))) {																					\
+			func_ptr = reinterpret_cast<decltype(func_ptr)>(GetProcAddress(module, #func));											\
 		}																															\
 	}																																\
-	if(!func_ptr) {																													\
-		return false;																												\
-	}																																\
-	return !!func_ptr(args...);																										\
+	return func_ptr;																												\
 }
 
 u64 filetime_to_ns(FILETIME time) {
 	return ((u64(time.dwHighDateTime) << 32) | u64(time.dwLowDateTime)) * 100;
 }
 
+
 #ifndef Y_NO_PSAPI
-Y_WIN_DYN_FUNC(psapi, GetProcessMemoryInfo)
+Y_WIN_DYN_FUNC(psapi, GetProcessMemoryInfo, BOOL WINAPI (*func_ptr)(_In_ HANDLE,_Out_ PPROCESS_MEMORY_COUNTERS,_In_ DWORD))
 #endif
 
 #undef Y_WIN_DYN_FUNC
