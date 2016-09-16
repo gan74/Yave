@@ -47,12 +47,12 @@ class Decoder {
 		bool decode(core::Vector<T>& vec) {
 			u64 len = 0;
 			Y_TRY(decode<Order>(len));
-			return fill_vec<Order>(vec, len, bool_type<std::is_fundamental<T>::value>());
+			return fill_vec<Order>(vec, len, std::is_fundamental<T>());
 		}
 
 		template<Byteorder Order, typename T, usize Size>
 		bool decode(std::array<T, Size>& arr) {
-			return decode_arr<Order>(arr, bool_type<std::is_fundamental<T>::value>());
+			return decode_arr<Order>(arr, std::is_fundamental<T>());
 		}
 
 		template<Byteorder Order, typename T>

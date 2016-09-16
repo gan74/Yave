@@ -198,7 +198,7 @@ inline String str(Args... args) {
 
 template<typename T>
 inline String str(const T& t) {
-	return detail::str(t, bool_type<std::is_convertible<T, String>::value>());
+	return detail::str(t, std::is_convertible<T, String>());
 }
 
 inline String str_from_owned(NotOwned<char*> owned) {

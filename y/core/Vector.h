@@ -140,8 +140,11 @@ class Vector : ResizePolicy {
 			}
 		}
 
-		void pop() {
-			(--_data_end)->~Data();
+		Data pop() {
+			--_data_end;
+			Data r = std::move(*_data_end);
+			_data_end->~Data();
+			return r;
 		}
 
 		usize size() const {
