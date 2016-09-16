@@ -19,17 +19,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-Sampler* DescriptorSetBuilder::default_sampler = nullptr;
 
-void DescriptorSet::destroy(DevicePtr device) {
-	if(device) {
-		auto vk = device->get_vk_device();
+void DescriptorSet::destroy(DevicePtr dptr) {
+	if(dptr) {
+		auto vk = dptr->get_vk_device();
 		vk.destroyDescriptorSetLayout(layout);
 		vk.destroyDescriptorPool(pool);
 	}
 }
 
-DescriptorSetBuilder::DescriptorSetBuilder(DevicePtr dptr) : _device(dptr) {
+DescriptorSetBuilder::DescriptorSetBuilder(DevicePtr dptr) : DeviceLinked(dptr), _default_sampler(dptr) {
 }
 
 vk::DescriptorPool DescriptorSetBuilder::create_pool(usize set_count) const {
@@ -44,7 +43,7 @@ vk::DescriptorPool DescriptorSetBuilder::create_pool(usize set_count) const {
 		;
 
 	vk::DescriptorPoolSize sizes[] = {ub_pool_size, tx_pool_size};
-	return _device->get_vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
+	return get_device()->get_vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
 			.setPoolSizeCount(2)
 			.setPPoolSizes(sizes)
 			.setMaxSets(set_count)
@@ -54,9 +53,6 @@ vk::DescriptorPool DescriptorSetBuilder::create_pool(usize set_count) const {
 DescriptorSet DescriptorSetBuilder::build(const Material& material) const {
 	if(!material.binding_count()) {
 		return {};
-	}
-	if(!default_sampler) {
-		default_sampler = new Sampler(_device);
 	}
 
 	usize set_count = material.binding_count();
@@ -76,12 +72,12 @@ DescriptorSet DescriptorSetBuilder::build(const Material& material) const {
 			return binding.descriptor_set_layout_binding();
 		});
 
-	auto layout = _device->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
+	auto layout = get_device()->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
 				.setBindingCount(bindings.size())
 				.setPBindings(bindings.begin())
 			);
 
-	auto set = _device->get_vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
+	auto set = get_device()->get_vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
 			.setDescriptorPool(pool)
 			.setDescriptorSetCount(1)
 			.setPSetLayouts(&layout)
@@ -91,11 +87,11 @@ DescriptorSet DescriptorSetBuilder::build(const Material& material) const {
 			return binding.get_descriptor_buffer_info();
 		}).collect<core::Vector>();
 
-	auto image_infos = mat_texture_bindings.map([](const TextureBinding& binding) {
+	auto image_infos = mat_texture_bindings.map([&](const TextureBinding& binding) {
 		return vk::DescriptorImageInfo()
 				.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 				.setImageView(binding.get_image_view().get_vk_image_view())
-				.setSampler(default_sampler->get_vk_sampler())
+				.setSampler(_default_sampler.get_vk_sampler())
 			;
 	}).collect<core::Vector>();
 
@@ -124,7 +120,7 @@ DescriptorSet DescriptorSetBuilder::build(const Material& material) const {
 			;
 	};
 
-	_device->get_vk_device().updateDescriptorSets(writes.size(), writes.begin(), 0, nullptr);
+	get_device()->get_vk_device().updateDescriptorSets(writes.size(), writes.begin(), 0, nullptr);
 
 	return DescriptorSet{
 			pool,

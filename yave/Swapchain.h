@@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
+class Window;
+
 class SwapchainImage : public Image<ImageUsageBits::SwapchainBit | ImageUsageBits::ColorBit> {
 	private:
 		friend class Swapchain;
@@ -47,7 +49,8 @@ class Swapchain : NonCopyable, public DeviceLinked {
 	};
 
 	public:
-		Swapchain(DevicePtr dptr, vk::SurfaceKHR surface);
+		Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface);
+		Swapchain(DevicePtr dptr, Window* window);
 		~Swapchain();
 
 		const Framebuffer& get_framebuffer(usize index) const;
@@ -66,6 +69,7 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		core::Vector<Buffer> _buffers;
 		RenderPass _render_pass;
 
+		Owned<vk::SurfaceKHR> _surface;
 		vk::SwapchainKHR _swapchain;
 
 };

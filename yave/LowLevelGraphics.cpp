@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <y/io/File.h>
 
-#include <iostream>
 
 namespace yave {
 
@@ -32,11 +31,11 @@ LowLevelGraphics::LowLevelGraphics(DebugParams params) : instance(params), devic
 void LowLevelGraphics::init(Window* window) {
 	material_compiler = new MaterialCompiler(&device);
 
-	set_surface(window);
+
+	swapchain = new Swapchain(&device, window);
 
 	create_mesh();
 
-	create_swapchain();
 	create_graphic_pipeline();
 
 	create_command_buffers();
@@ -52,26 +51,6 @@ LowLevelGraphics::~LowLevelGraphics() {
 	delete swapchain;
 
 	command_buffers.clear();
-
-	instance.get_vk_instance().destroySurfaceKHR(surface);
-}
-
-void LowLevelGraphics::set_surface(Window* window) {
-	#ifdef Y_OS_WIN
-		surface = instance.get_vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
-				.setHinstance(window->instance())
-				.setHwnd(window->handle())
-			);
-
-		if(!device.has_wsi_support(surface)) {
-			fatal("No WSI support");
-		}
-		std::cout << "Vulkan WSI supported !" << std::endl;
-	#endif
-}
-
-void LowLevelGraphics::create_swapchain() {
-	swapchain = new Swapchain(&device, surface);
 }
 
 
@@ -92,11 +71,6 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 
 void LowLevelGraphics::create_command_buffers() {
 	for(usize i = 0; i != swapchain->buffer_count(); i++) {
-		/*auto begin_info = vk::CommandBufferBeginInfo()
-				.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
-			;
-
-		command_buffer->get_vk_cmd_buffer().begin(&begin_info);*/
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
@@ -153,31 +127,17 @@ void LowLevelGraphics::update(math::Vec2 angles) {
 				math::rotation(angles.y(), math::Vec3(0, 1, 0));
 }
 
-
-/*DisposableCmdBuffer LowLevelGraphics::create_disposable_command_buffer() const {
-	auto cmd_buffer = device.get_vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
-			.setCommandBufferCount(1)
-			.setLevel(vk::CommandBufferLevel::ePrimary)
-			.setCommandPool(command_pool)
-		).back();
-
-	cmd_buffer.begin(vk::CommandBufferBeginInfo()
-		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-
-	return cmd_buffer;
-}*/
-
 void LowLevelGraphics::create_mesh() {
 	{
 		auto file = io::File::open("../tools/mesh/chalet.ym");
 		auto m_data = MeshData::from_file(file);
-		std::cout << m_data.triangles.size() << " triangles loaded" << std::endl;
+		log_msg(core::String() + m_data.triangles.size() + " triangles loaded");
 		static_mesh = StaticMeshInstance(&device, m_data);
 	}
 	{
 		auto file = io::File::open("../tools/image/chalet.jpg.rgba");
 		auto image = ImageData::from_file(file);
-		std::cout << image.size().x() *image.size().y() << " pixels loaded" << std::endl;
+		log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
 		mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image.size(), image.get_raw_data());
 	}
 }

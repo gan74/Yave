@@ -109,6 +109,10 @@ const PhysicalDevice& Device::get_physical_device() const {
 	return _physical;
 }
 
+const Instance &Device::get_instance() const {
+	return _instance;
+}
+
 vk::Device Device::get_vk_device() const {
 	return _device;
 }
@@ -117,17 +121,8 @@ vk::Queue Device::get_vk_queue(usize i) const {
 	return _queues[i];
 }
 
-i32 Device::get_queue_family_index(usize i) const {
+i32 Device::get_queue_family_index(QueueFamily i) const {
 	return _queue_familiy_indices[i];
-}
-
-bool Device::has_wsi_support(vk::SurfaceKHR surface) const {
-	for(auto index : _queue_familiy_indices) {
-		if(!_physical.get_vk_physical_device().getSurfaceSupportKHR(index, surface)) {
-			return false;
-		}
-	}
-	return true;
 }
 
 }

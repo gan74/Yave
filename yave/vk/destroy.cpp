@@ -99,5 +99,13 @@ void destroy(DevicePtr dptr, vk::Fence fence) {
 	}
 }
 
+
+
+void destroy(DevicePtr dptr, vk::SurfaceKHR surface) {
+	/*if(dptr)*/ {
+		dptr->get_instance().get_vk_instance().destroySurfaceKHR(surface);
+	}
+}
+
 }
 }

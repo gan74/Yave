@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "CmdBufferPoolData.h"
 #include <yave/Device.h>
 
-#include <iostream>
 
 namespace yave {
 
@@ -45,7 +44,7 @@ void wait(DevicePtr dptr, const CmdBufferData &data) {
 	Chrono c;
 	dptr->get_vk_device().waitForFences(data.fence, true, u64(-1));
 	if(c.elapsed().to_nanos()) {
-		std::cout << "waited " << c.elapsed().to_micros() << "us for command buffer!\n";
+		log_msg(core::String() + "waited " + c.elapsed().to_micros() + "us for command buffer!", LogType::Warning);
 	}
 }
 

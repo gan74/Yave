@@ -35,20 +35,16 @@ enum QueueFamily {
 class Device : NonCopyable {
 
 	public:
-
-
-	public:
 		Device(Instance& instance, const LowLevelGraphics* llg);
 		~Device();
 
 		const PhysicalDevice& get_physical_device() const;
+		const Instance &get_instance() const;
 
 		vk::Device get_vk_device() const;
-
 		vk::Queue get_vk_queue(usize i) const;
-		i32 get_queue_family_index(usize i) const;
+		i32 get_queue_family_index(QueueFamily i) const;
 
-		bool has_wsi_support(vk::SurfaceKHR surface) const;
 
 		Y_TODO(remove hacky pointer)
 		const LowLevelGraphics* ll_remove_me;

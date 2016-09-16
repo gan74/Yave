@@ -37,6 +37,10 @@ vk::Sampler create_sampler(DevicePtr dptr) {
 Sampler::Sampler(DevicePtr dptr) : DeviceLinked(dptr), _sampler(create_sampler(dptr)) {
 }
 
+Sampler::~Sampler() {
+	destroy(_sampler);
+}
+
 vk::Sampler Sampler::get_vk_sampler() const {
 	return _sampler;
 }

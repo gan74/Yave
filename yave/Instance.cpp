@@ -16,12 +16,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Instance.h"
 
-#include <iostream>
 
 namespace yave {
 
 VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT, u64, usize, i32, const char* layer, const char* msg, void*) {
-	(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT ? std::cerr : std::cout) << "Vk: @[" << layer << "]: " << msg << std::endl;
+	log_msg(core::String() + "Vk: @[" + layer + "]: " + msg, flags & VK_DEBUG_REPORT_ERROR_BIT_EXT ? LogType::Error : LogType::Info);
 	return false;
 }
 

@@ -16,7 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "PhysicalDevice.h"
 
-#include <iostream>
 
 namespace yave {
 
@@ -47,8 +46,8 @@ PhysicalDevice::PhysicalDevice(Instance& instance) :
 	auto properties = _device.getProperties();
 	const auto& v_ref = properties.apiVersion;
 	auto version = reinterpret_cast<const Version&>(v_ref);
-	std::cout << "Running Vulkan (" << version.major << "." << version.minor << "." << version.patch << ") " << (is_64_bits() ? 64 : 32) << " bits" <<
-				 " on " << properties.deviceName << " (" << (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? "discrete" : "integrated") << ")" << std::endl;
+	log_msg(core::String() + "Running Vulkan (" + version.major + "." + version.minor + "." + version.patch + ") " + (is_64_bits() ? 64 : 32) + " bits" +
+				 " on " + properties.deviceName + " (" + (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? "discrete" : "integrated") + ")");
 }
 
 PhysicalDevice::~PhysicalDevice() {

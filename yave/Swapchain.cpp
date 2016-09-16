@@ -15,8 +15,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "Swapchain.h"
+#include "Device.h"
+#include "Window.h"
 
-#include "LowLevelGraphics.h"
 
 namespace yave {
 
@@ -83,8 +84,26 @@ vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Format form
 		);
 }
 
+bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
+	auto index = dptr->get_queue_family_index(QueueFamily::Graphics);
+	return dptr->get_physical_device().get_vk_physical_device().getSurfaceSupportKHR(index, surface);
+}
 
+vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
+	#ifdef Y_OS_WIN
+		auto surface = dptr->get_instance().get_vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
+				.setHinstance(window->instance())
+				.setHwnd(window->handle())
+			);
 
+		if(!has_wsi_support(dptr, surface)) {
+			fatal("No WSI support");
+		}
+		log_msg("Vulkan WSI supported !");
+		return surface;
+	#endif
+	return VK_NULL_HANDLE;
+}
 
 
 
@@ -95,7 +114,10 @@ Swapchain::Buffer::Buffer(RenderPass& render_pass, SwapchainImage&& color_att, D
 		framebuffer(Framebuffer(depth.get_device(), render_pass, DepthAttachmentView(depth), ColorAttachmentView(color))) {
 }
 
-Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR surface) : DeviceLinked(dptr) {
+Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {
+}
+
+Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dptr), _surface(surface) {
 	auto capabilities = compute_capabilities(dptr, surface);
 	auto format = get_surface_format(dptr, surface);
 
@@ -145,7 +167,9 @@ Swapchain::~Swapchain() {
 		get_device()->destroy(buffer.color._view);
 	}
 	destroy(_swapchain);
+	destroy(_surface);
 }
+
 
 vk::SwapchainKHR Swapchain::get_vk_swapchain() const {
 	return _swapchain;

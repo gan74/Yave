@@ -35,6 +35,8 @@ void destroy(DevicePtr dptr, vk::SwapchainKHR swapchain);
 void destroy(DevicePtr dptr, vk::CommandPool pool);
 void destroy(DevicePtr dptr, vk::Fence fence);
 
+void destroy(DevicePtr dptr, vk::SurfaceKHR surface);
+
 }
 }
 

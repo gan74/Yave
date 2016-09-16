@@ -33,7 +33,7 @@ struct DescriptorSet {
 	void destroy(DevicePtr device);
 };
 
-class DescriptorSetBuilder {
+class DescriptorSetBuilder : public DeviceLinked {
 	public:
 		DescriptorSetBuilder(DevicePtr dptr);
 
@@ -42,9 +42,7 @@ class DescriptorSetBuilder {
 		DescriptorSet build(const Material& material) const;
 
 	private:
-		DevicePtr _device;
-
-		static Sampler* default_sampler;
+		Sampler _default_sampler;
 };
 }
 

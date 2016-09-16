@@ -76,13 +76,10 @@ class LowLevelGraphics : NonCopyable {
 
 	private:
 		void create_descriptor_pool();
-		void create_swapchain();
 		void create_graphic_pipeline();
 		void create_command_buffers();
 
 		void create_mesh();
-
-		void set_surface(Window* window);
 
 		MaterialCompiler* material_compiler;
 
@@ -90,7 +87,6 @@ class LowLevelGraphics : NonCopyable {
 		Device device;
 
 
-		vk::SurfaceKHR surface;
 		Swapchain* swapchain;
 
 		GraphicPipeline pipeline;
