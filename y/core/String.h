@@ -98,11 +98,11 @@ class String {
 
 		~String();
 
-		template<typename T>
-		static String from(const T& t);
-
 		// the pointer is not owned anymore, String take ownership;
 		static String from_owned(NotOwned<char*> owned);
+
+		template<typename T>
+		static String from(const T& t);
 
 		template<typename I, typename Enable = typename std::enable_if<std::is_convertible<typename Range<I>::Element, char>::value>::type>
 		static String from(const Range<I>& rng);
@@ -234,7 +234,7 @@ String String::from(const Range<I>& rng) {
 
 
 template<typename T>
-auto operator+(core::String l, const T &r) {
+auto operator+(core::String l, const T& r) {
 	return l += str(r);
 }
 
