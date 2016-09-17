@@ -45,6 +45,8 @@ Instance::Instance(DebugParams debug) : _debug_params(debug), _debug_callback(nu
 			.setPpEnabledLayerNames(_debug_params.get_instance_layers().begin())
 			.setPApplicationInfo(&app_info)
 		);
+
+	setup_debug();
 }
 
 void Instance::setup_debug() {
