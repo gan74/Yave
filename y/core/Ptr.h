@@ -191,12 +191,12 @@ class Rc : public Ptr<T> {
 
 template<typename T>
 inline auto ptr(T&& t) {
-	return Ptr<typename std::remove_reference<T>::type>(std::move(t));
+	return Ptr<typename std::remove_reference<T>::type>(std::forward<T>(t));
 }
 
 template<typename T>
 inline auto rc(T&& t) {
-	return Rc<typename std::remove_reference<T>::type>(std::move(t));
+	return Rc<typename std::remove_reference<T>::type>(std::forward<T>(t));
 }
 
 }
