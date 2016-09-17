@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& buffer) : _cmd_buffer(std::move(buffer)), _nested_passes(0) {
+	Y_TODO(optimise disposable buffers)
 	get_vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
 			.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 		);

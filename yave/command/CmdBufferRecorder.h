@@ -27,9 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-class CmdBufferRecorder {
-
-	Y_TODO(make CmdBufferRecorder NonCopyable)
+class CmdBufferRecorder : NonCopyable {
 
 	public:
 		CmdBufferRecorder(CmdBuffer&& buffer);
