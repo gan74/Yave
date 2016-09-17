@@ -26,6 +26,22 @@ auto create_func() {
 	};
 }
 
+void forward_func(int&& i) {
+	i++;
+}
+
+struct NonConstFunctorStruct {
+	int operator()(int i) {
+		return i - 1;
+	}
+};
+
+struct ForwardStruct {
+	int operator()(int&& i) {
+		return --i;
+	}
+};
+
 y_test_func("Function creation") {
 	int i = 0;
 	auto inc = function([&i]() { i++; });
@@ -50,6 +66,33 @@ y_test_func("Function creation") {
 	inc = create_func();
 	inc();
 	y_test_assert(i == -1);
+}
+
+y_test_func("Function method creation") {
+	{
+		NonConstFunctorStruct t;
+		auto func = function(t);
+		y_test_assert(func(4) == 3);
+	}
+	{
+		ForwardStruct t;
+		auto func = function(t);
+		y_test_assert(func(4) == 3);
+		int i = 7;
+		// should not work
+		//y_test_assert(func(i) == 6);
+		y_test_assert(func(std::move(i)) == 6 && i == 6);
+	}
+}
+
+y_test_func("Function argument forwarding") {
+	auto func = function(forward_func);
+	int i = 4;
+	// should not work
+	// func(i);
+	func(4);
+	func(std::move(i));
+	y_test_assert(i == 5);
 }
 
 y_test_func("Function void boxing") {

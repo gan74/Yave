@@ -24,6 +24,16 @@ namespace core {
 
 namespace detail {
 
+template<typename T>
+struct FuncPtr {
+	using type = T;
+};
+
+template<typename R, typename... Args>
+struct FuncPtr<R(Args...)> {
+	using type = R(*)(Args...);
+};
+
 template<typename Ret, typename... Args>
 struct FunctionBase : NonCopyable {
 	FunctionBase() {
@@ -32,8 +42,8 @@ struct FunctionBase : NonCopyable {
 	virtual ~FunctionBase() {
 	}
 
-	virtual Ret apply(Args...) = 0;
-	virtual Ret apply(Args...) const = 0;
+	virtual Ret apply(Args&&...) = 0;
+	virtual Ret apply(Args&&...) const = 0;
 };
 
 template<typename T, typename Ret, typename... Args>
@@ -42,17 +52,17 @@ struct Function : FunctionBase<Ret, Args...> {
 		Function(const T& t) : _func(t) {
 		}
 
-		virtual Ret apply(Args... args) override {
-			return _func(args...);
+		virtual Ret apply(Args&&... args) override {
+			return _func(std::forward<Args>(args)...);
 		}
 
-		virtual Ret apply(Args... args) const override {
-			return _func(args...);
+		virtual Ret apply(Args&&... args) const override {
+			return _func(std::forward<Args>(args)...);
 		}
 
 
 	private:
-		T _func;
+		typename FuncPtr<T>::type _func;
 };
 
 // for boxing non void functions in void functors
@@ -62,17 +72,17 @@ struct Function<T, void, Args...> : FunctionBase<void, Args...> {
 		Function(const T& t) : _func(t) {
 		}
 
-		virtual void apply(Args... args) override {
-			_func(args...);
+		virtual void apply(Args&&... args) override {
+			_func(std::forward<Args>(args)...);
 		}
 
-		virtual void apply(Args... args) const override {
-			_func(args...);
+		virtual void apply(Args&&... args) const override {
+			_func(std::forward<Args>(args)...);
 		}
 
 
 	private:
-		T _func;
+		typename FuncPtr<T>::type _func;
 };
 
 template<template<typename...> typename Container, typename Ret, typename... Args>
@@ -82,12 +92,12 @@ template<template<typename...> typename Container, typename Ret, typename... Arg
 class Functor<Container, Ret(Args...)> {
 	public:
 		template<typename T>
-		Functor(const T& func) : _function(new Function<T, Ret, Args...>(func)) {
+		Functor(T&& func) : _function(new Function<T, Ret, Args...>(std::forward<T>(func))) {
 		}
 
 
-		Functor& operator=(const Functor &) = default;
-		Functor(const Functor &) = default;
+		Functor& operator=(const Functor&) = default;
+		Functor(const Functor&) = default;
 
 
 		Functor(Functor&& other) : _function(nullptr) {
@@ -100,12 +110,12 @@ class Functor<Container, Ret(Args...)> {
 		}
 
 
-		Ret operator()(Args... args) {
-			return _function->apply(args...);
+		Ret operator()(Args&&... args) {
+			return _function->apply(std::forward<Args>(args)...);
 		}
 
-		Ret operator()(Args... args) const {
-			return _function->apply(args...);
+		Ret operator()(Args&&... args) const {
+			return _function->apply(std::forward<Args>(args)...);
 		}
 
 	private:
@@ -114,12 +124,40 @@ class Functor<Container, Ret(Args...)> {
 
 
 // http://stackoverflow.com/questions/7943525/is-it-possible-to-figure-out-the-parameter-type-and-return-type-of-a-lambda
-template <typename T>
+template<typename T>
 struct functor_t : functor_t<decltype(&T::operator())> {
+};
+
+template<typename Ret, typename... Args>
+struct functor_t<Ret(*)(Args...)> {
+
+	template<template<typename...> typename Container>
+	using type = Container<Ret(Args...)>;
+};
+
+template<typename Ret, typename... Args>
+struct functor_t<Ret(&)(Args...)> {
+
+	template<template<typename...> typename Container>
+	using type = Container<Ret(Args...)>;
+};
+
+template<typename Ret, typename... Args>
+struct functor_t<Ret(Args...)> {
+
+	template<template<typename...> typename Container>
+	using type = Container<Ret(Args...)>;
 };
 
 template<typename T, typename Ret, typename... Args>
 struct functor_t<Ret(T::*)(Args...) const> {
+
+	template<template<typename...> typename Container>
+	using type = Container<Ret(Args...)>;
+};
+
+template<typename T, typename Ret, typename... Args>
+struct functor_t<Ret(T::*)(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
@@ -140,13 +178,13 @@ using Functor = detail::Functor<Rc, Ret, Args...>;
 
 
 template<typename T>
-inline auto function(const T& func) {
-	return typename detail::functor_t<T>::template type<Function>(func);
+inline auto function(T&& func) {
+	return typename detail::functor_t<typename std::remove_reference<T>::type>::template type<Function>(std::forward<T>(func));
 }
 
 template<typename T>
-inline auto functor(const T& func) {
-	return typename detail::functor_t<T>::template type<Functor>(func);
+inline auto functor(T&& func) {
+	return typename detail::functor_t<typename std::remove_reference<T>::type>::template type<Functor>(std::forward<T>(func));
 }
 
 
