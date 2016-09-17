@@ -111,7 +111,7 @@ vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 Swapchain::Buffer::Buffer(RenderPass& render_pass, SwapchainImage&& color_att, DepthAttachment&& depth_att) :
 		color(std::move(color_att)),
 		depth(std::move(depth_att)),
-		framebuffer(Framebuffer(depth.get_device(), render_pass, DepthAttachmentView(depth), ColorAttachmentView(color))) {
+		framebuffer(render_pass, DepthAttachmentView(depth), ColorAttachmentView(color)) {
 }
 
 Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {

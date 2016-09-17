@@ -28,7 +28,8 @@ class BufferMemoryReference {
 		BufferMemoryReference(const GenericBuffer<Usage, Flags, Transfer>& buffer) : _base(&buffer) {
 		}
 
-		BufferMemoryReference() = default;
+		BufferMemoryReference() : _base(nullptr) {
+		}
 
 		const BufferBase& get_buffer() const {
 			return *_base;
