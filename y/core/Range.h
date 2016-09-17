@@ -86,14 +86,7 @@ class Range {
 		}
 
 		template<typename T>
-		void foreach(const T& t) const {
-			for(const auto& e : *this) {
-				t(e);
-			}
-		}
-
-		template<typename T>
-		void foreach(T& t) const {
+		void foreach(T&& t) const {
 			for(const auto& e : *this) {
 				t(e);
 			}
@@ -137,12 +130,7 @@ inline auto range(const Iter& b, const Iter& e) {
 }
 
 template<typename Coll>
-inline auto range(const Coll& c) {
-	return range(c.begin(), c.end());
-}
-
-template<typename Coll>
-inline auto range(Coll& c) {
+inline auto range(Coll&& c) {
 	return range(c.begin(), c.end());
 }
 
