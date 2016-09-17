@@ -70,15 +70,10 @@ class Vector : ResizePolicy {
 			swap(other);
 		}
 
-		Vector& operator=(const Vector& other) {
-			Vector v(other);
-			swap(v);
-			return *this;
-		}
-
-		Vector& operator=(Vector&& other) {
-			swap(other);
-			return *this;
+		template<typename T>
+		explicit Vector(T&& other) : Vector() {
+			set_min_capacity(other.size());
+			append(range(std::forward<T>(other)));
 		}
 
 		Vector(std::initializer_list<Elem> l) : Vector() {
@@ -95,16 +90,23 @@ class Vector : ResizePolicy {
 			}
 		}
 
-		template<typename T>
-		explicit Vector(const T& other) : Vector() {
+		Vector& operator=(Vector&& other) {
+			swap(other);
+			return *this;
+		}
+
+		Vector& operator=(const Vector& other) {
+			make_empty();
 			set_min_capacity(other.size());
 			append(range(other));
+			return *this;
 		}
 
 		template<typename T>
 		Vector& operator=(const T& other) {
-			Vector v(other);
-			swap(v);
+			make_empty();
+			set_min_capacity(other.size());
+			append(range(other));
 			return *this;
 		}
 
@@ -125,7 +127,6 @@ class Vector : ResizePolicy {
 			new(_data_end++) Data(elem);
 		}
 
-		Y_TODO(make generic ?)
 		void append(Element&& elem) {
 			if(_data_end == _alloc_end) {
 				expend();
@@ -310,17 +311,17 @@ class Vector : ResizePolicy {
 
 namespace detail {
 template<typename T>
-inline void append(Vector<T> &) {
+inline void append(Vector<T>&) {
 }
 
 template<typename T, typename U, typename... Args>
-inline void append(Vector<T>& vec, U u, Args... args) {
-	vec.append(u);
+inline void append(Vector<T>& vec, U&& u, Args&&... args) {
+	vec.append(std::forward<U>(u));
 	append(vec, std::forward<Args>(args)...);
 }
 
 template<typename T, typename U>
-inline void append(Vector<T>& vec, U u) {
+inline void append(Vector<T>& vec, U&& u) {
 	vec.append(std::forward<U>(u));
 }
 }
@@ -340,7 +341,7 @@ inline auto vector(Args... args) {
 }
 
 template<typename T, typename... Args>
-inline auto vector(T t, Args... args) {
+inline auto vector(T&& t, Args&&... args) {
 	return vector<typename std::common_type<T, Args...>::type>(std::forward<T>(t), std::forward<Args>(args)...);
 }
 
