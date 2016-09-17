@@ -125,6 +125,7 @@ class Vector : ResizePolicy {
 			new(_data_end++) Data(elem);
 		}
 
+		Y_TODO(make generic ?)
 		void append(Element&& elem) {
 			if(_data_end == _alloc_end) {
 				expend();
@@ -134,16 +135,16 @@ class Vector : ResizePolicy {
 
 		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type>
 		void append(const Range<I>& rng) {
-			//static_assert(std::is_same<typename Range<I>::Element, Element>::value, "Pushing invalid range into Vector");
 			for(const auto& i : rng) {
 				append(i);
 			}
 		}
 
-		Data pop() {
+		Element pop() {
 			--_data_end;
 			Data r = std::move(*_data_end);
 			_data_end->~Data();
+			shrink();
 			return r;
 		}
 
@@ -280,8 +281,8 @@ class Vector : ResizePolicy {
 		void shrink() {
 			usize current = size();
 			usize cap = capacity();
-			if(current < cap && this->shrink(current, cap)) {
-				unsafe_set_capacity(current, this->ideal_capacity(current));
+			if(current < cap && ResizePolicy::shrink(current, cap)) {
+				unsafe_set_capacity(current, ResizePolicy::ideal_capacity(current));
 			}
 		}
 
