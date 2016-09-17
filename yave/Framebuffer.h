@@ -24,13 +24,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-class Framebuffer : NonCopyable, public DeviceLinked {
-
-	Y_TODO(Framebuffer does not need DeviceLinked)
+class Framebuffer : NonCopyable {
 
 	public:
-		Framebuffer() = default;
-		Framebuffer(DevicePtr dptr, RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color);
+		Framebuffer();
+		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color);
 
 		Framebuffer(Framebuffer&& other);
 		Framebuffer& operator=(Framebuffer&& other);
@@ -40,8 +38,8 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 		const math::Vec2ui& size() const;
 		const RenderPass& get_render_pass() const;
 
-
 		vk::Framebuffer get_vk_framebuffer() const;
+		DevicePtr get_device() const;
 
 	private:
 		void swap(Framebuffer& other);

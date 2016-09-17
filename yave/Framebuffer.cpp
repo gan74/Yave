@@ -26,14 +26,16 @@ math::Vec2ui compute_size(const ImageBase& a, const ImageBase& b) {
 	return a.size();
 }
 
-Framebuffer::Framebuffer(DevicePtr dptr, RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color) :
-		DeviceLinked(dptr),
+Framebuffer::Framebuffer() : _render_pass(nullptr) {
+}
+
+Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color) :
 		_size(compute_size(depth.get_image(), color.get_image())),
 		_render_pass(&render_pass) {
 
 	auto views = {color.get_vk_image_view(), depth.get_vk_image_view()};
 
-	_framebuffer = dptr->get_vk_device().createFramebuffer(vk::FramebufferCreateInfo()
+	_framebuffer = get_device()->get_vk_device().createFramebuffer(vk::FramebufferCreateInfo()
 		.setRenderPass(render_pass.get_vk_render_pass())
 		.setAttachmentCount(views.size())
 		.setPAttachments(views.begin())
@@ -44,10 +46,12 @@ Framebuffer::Framebuffer(DevicePtr dptr, RenderPass& render_pass, DepthAttachmen
 }
 
 Framebuffer::~Framebuffer() {
-	destroy(_framebuffer);
+	if(_render_pass) {
+		get_device()->destroy(_framebuffer);
+	}
 }
 
-Framebuffer::Framebuffer(Framebuffer&& other) {
+Framebuffer::Framebuffer(Framebuffer&& other) : Framebuffer() {
 	swap(other);
 }
 
@@ -57,7 +61,6 @@ Framebuffer& Framebuffer::operator=(Framebuffer&& other) {
 }
 
 void Framebuffer::swap(Framebuffer& other) {
-	DeviceLinked::swap(other);
 	std::swap(_size, other._size);
 	std::swap(_render_pass, other._render_pass);
 	std::swap(_framebuffer, other._framebuffer);
@@ -73,6 +76,10 @@ const RenderPass& Framebuffer::get_render_pass() const {
 
 vk::Framebuffer Framebuffer::get_vk_framebuffer() const {
 	return _framebuffer;
+}
+
+DevicePtr Framebuffer::get_device() const {
+	return _render_pass->get_device();
 }
 
 }
