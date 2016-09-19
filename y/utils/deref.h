@@ -16,11 +16,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_UTILS_DEREF_H
 #define Y_UTILS_DEREF_H
 
-namespace y {
+#include "types.h"
 
-// short hand for std::declval
-template<typename T>
-T& make_one();
+namespace y {
 
 namespace detail {
 
@@ -31,7 +29,7 @@ struct DerefTag {
 };
 
 // This operator will be used if there is no 'real' operator
-DerefTag operator*(const DerefTag &);
+DerefTag operator*(const DerefTag& );
 
 // This is need in case of operator * return type is void
 //DerefTag operator,(DerefTag, int);
@@ -39,11 +37,11 @@ DerefTag operator*(const DerefTag &);
 std::false_type (&deref_helper(DerefTag));
 
 template<typename T>
-std::true_type deref_helper(const T &);
+std::true_type deref_helper(const T&);
 
 template<typename T, typename Enable = void>
 struct DerefTrait {
-	using type = decltype(deref_helper((**make_one<T*>()/*, 0*/)));
+	using type = decltype(deref_helper((**make_one<T*>())));
 	//using type = std::false_type;
 };
 
@@ -64,10 +62,7 @@ struct DerefTrait<T,
 }
 
 template<typename T>
-struct is_dereferenceable {
-	using type = typename detail::DerefTrait<T>::type;
-	static constexpr bool value = type::value;
-};
+using is_dereferenceable = typename detail::DerefTrait<T>::type;
 
 }
 

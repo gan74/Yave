@@ -57,6 +57,16 @@ enum Enum { _ = u32(-1) };
 using uenum = std::underlying_type<detail::Enum>::type;
 
 
+
+template<bool B>
+using bool_type = typename std::integral_constant<bool, B>;
+
+
+
+// short hand for std::declval
+template<typename T>
+T& make_one();
+
 }
 
 
