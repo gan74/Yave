@@ -31,6 +31,13 @@ class Reader : NonCopyable {
 
 		virtual usize read(void* data, usize bytes) = 0;
 		virtual usize read_all(core::Vector<u8>& data) = 0;
+
+		core::Vector<u8> read_all() {
+			core::Vector<u8> vec;
+			read_all(vec);
+			return vec;
+		}
+
 };
 
 }
