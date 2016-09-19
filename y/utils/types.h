@@ -39,8 +39,8 @@ using i16 = int16_t;
 using i32 = int32_t;
 using i64 = int64_t;
 
-using usize = std::make_unsigned<size_t>::type;
-using isize = std::make_signed<size_t>::type;
+using usize = std::make_unsigned<std::size_t>::type;
+using isize = std::make_signed<std::size_t>::type;
 
 
 template<typename T>

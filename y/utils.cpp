@@ -49,10 +49,10 @@ namespace detail {
 Nothing fatal(const char* msg, const char* file, int line) {
 	core::String msg_str = msg;
 	if(file) {
-		msg_str += core::str() + " in file \"" + file + "\"";
+		msg_str += " in file \""_s + file + "\"";
 	}
 	if(line) {
-		msg_str += core::str() + " at line " + line;
+		msg_str += " at line "_s + line;
 	}
 	log_msg(msg_str, LogType::Error);
 	exit(1);

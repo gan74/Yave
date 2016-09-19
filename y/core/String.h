@@ -245,10 +245,13 @@ auto operator+(core::String l, const T& r) {
 
 
 
+
 } // core
 
 
-
+inline core::String operator "" _s(const char* c_str, usize size) {
+	return core::String(c_str, size);
+}
 
 
 // because we do need string in here
