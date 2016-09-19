@@ -143,6 +143,7 @@ Material& Material::operator=(Material&& other) {
 void Material::swap(Material& other) {
 	DeviceLinked::swap(other);
 	std::swap(_data, other._data);
+	std::swap(_sampler, other._sampler);
 	std::swap(_pool, other._pool);
 	std::swap(_layout, other._layout);
 	std::swap(_set, other._set);

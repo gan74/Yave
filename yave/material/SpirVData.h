@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define YAVE_SPIRVDATA_H
 
 #include <yave/yave.h>
+#include <y/io/Ref.h>
 
 namespace yave {
 
@@ -25,7 +26,7 @@ class SpirVData {
 	public:
 		SpirVData() = default;
 
-		static SpirVData from_file(const core::String& file);
+		static SpirVData from_file(io::ReaderRef reader);
 
 		usize size() const;
 		const u32* data() const;

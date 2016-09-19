@@ -17,13 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-SpirVData SpirVData::from_file(const core::String& file) {
-	/*auto file_data = read_file(file);
-	u32* data = new u32[file_data.size() / sizeof(u32) + 1];
-	memcpy(data, file_data.begin(), file_data.size());
-	return SpirVData(file_data.size(), data);*/
-
-	return SpirVData(read_file(file));
+SpirVData SpirVData::from_file(io::ReaderRef reader) {
+	return SpirVData(reader->read_all());
 }
 
 SpirVData::SpirVData(core::Vector<u8>&& data) : _data(std::move(data)) {
