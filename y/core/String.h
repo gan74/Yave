@@ -128,7 +128,7 @@ class String {
 		operator char*();
 
 		// to prevent Strings converting to bool via operator char*
-		operator bool() = delete;
+		explicit operator bool() = delete;
 
 		void swap(String& str);
 
