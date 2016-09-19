@@ -31,7 +31,7 @@ class Range {
 		using Return = typename dereference<Iter>::type;
 		using Element = typename std::decay<Return>::type;
 
-		Range(const Iter& b, const Iter& e) : _beg(b), _en(e) {
+		Range(const Iter& b, const Iter& e) : _beg(b), _end(e) {
 		}
 
 		const Iter& begin() const {
@@ -39,7 +39,7 @@ class Range {
 		}
 
 		const Iter& end() const {
-			return _en;
+			return _end;
 		}
 
 		ReverseIterator<Iter> rbegin() const {
@@ -48,12 +48,12 @@ class Range {
 		}
 
 		ReverseIterator<Iter> rend() const {
-			Iter i(_en);
+			Iter i(_end);
 			return reverse_iterator(--i);
 		}
 
 		usize size() const {
-			return _en - _beg;
+			return _end - _beg;
 		}
 
 		Range<ReverseIterator<Iter>> reverse() const {
@@ -70,6 +70,10 @@ class Range {
 			return Range<FilterIterator<Iter, F>>(FilterIterator<Iter, F>(begin(), f), FilterIterator<Iter, F>(end(), f));
 		}
 
+		template<typename T>
+		auto find(const T& t) {
+			return find_dsp(t, is_comparable<Element, T>());
+		}
 
 		template<template<typename...> typename Coll>
 		auto collect() const {
@@ -103,8 +107,28 @@ class Range {
 		}
 
 	private:
+		template<typename T>
+		Iter find_dsp(const T& t, std::true_type) {
+			for(auto it = _beg; it != _end; ++it) {
+				if(*it == t) {
+					return it;
+				}
+			}
+			return _end;
+		}
+
+		template<typename F>
+		Iter find_dsp(const F& func, std::false_type) {
+			for(auto it = _beg; it != _end; ++it) {
+				if(func(*it)) {
+					return it;
+				}
+			}
+			return _end;
+		}
+
 		Iter _beg;
-		Iter _en;
+		Iter _end;
 };
 
 namespace detail {

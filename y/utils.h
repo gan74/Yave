@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <y/utils/types.h>
 
 #include <y/utils/deref.h>
+#include <y/utils/comparable.h>
 #include <y/utils/startup.h>
 #include <y/utils/Chrono.h>
 #include <y/utils/log.h>
@@ -33,11 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace y {
 
-
-
-
-template<bool B>
-using bool_type = typename std::integral_constant<bool, B>;
 
 
 
