@@ -123,8 +123,12 @@ class String {
 		String sub_str(usize beg) const;
 		String sub_str(usize beg, usize len) const;
 
+
 		operator const char*() const;
 		operator char*();
+
+		// to prevent Strings converting to bool via operator char*
+		operator bool() = delete;
 
 		void swap(String& str);
 
@@ -137,6 +141,7 @@ class String {
 		char operator[](usize i) const;
 
 		Vector<u32> to_unicode() const;
+
 
 
 		iterator begin() {
@@ -254,7 +259,7 @@ namespace detail {
 template<typename T>
 auto type_name() {
 	Y_TODO(disable this if no-rtti)
-	return detail::demangle_type_name(typeid(T).name());
+	return detail::demangle_type_name(typeid(T).name()) + (std::is_reference<T>::value ? "&" : "");
 }
 
 }
