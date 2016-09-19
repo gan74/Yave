@@ -34,6 +34,9 @@ void destroy(DevicePtr dptr, vk::Sampler sampler);
 void destroy(DevicePtr dptr, vk::SwapchainKHR swapchain);
 void destroy(DevicePtr dptr, vk::CommandPool pool);
 void destroy(DevicePtr dptr, vk::Fence fence);
+void destroy(DevicePtr dptr, vk::DescriptorPool pool);
+void destroy(DevicePtr dptr, vk::DescriptorSetLayout layout);
+
 
 void destroy(DevicePtr dptr, vk::SurfaceKHR surface);
 

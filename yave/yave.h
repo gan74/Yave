@@ -44,7 +44,7 @@ struct Version {
 
 
 
-core::Vector<char> read_file(const core::String& file_name);
+core::Vector<u8> read_file(const core::String& file_name);
 
 
 class Device;

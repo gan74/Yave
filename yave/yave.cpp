@@ -19,16 +19,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-core::Vector<char> read_file(const core::String& file_name) {
+core::Vector<u8> read_file(const core::String& file_name) {
 	std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 	if(!file.is_open()) {
 		fatal("Unable to open file");
 	}
 	usize len = file.tellg();
-	core::Vector<char> buffer(len, 0);
+	core::Vector<u8> buffer(len, 0);
 
 	file.seekg(0);
-	file.read(buffer.begin(), len);
+	file.read(reinterpret_cast<char *>(buffer.begin()), len);
 	file.close();
 
 	return buffer;

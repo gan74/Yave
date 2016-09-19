@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/yave.h>
 #include "Material.h"
 #include "GraphicPipeline.h"
-#include "DescriptorSetBuilder.h"
 
 #include <yave/RenderPass.h>
 #include <yave/Viewport.h>

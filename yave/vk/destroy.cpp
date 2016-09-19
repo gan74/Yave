@@ -99,6 +99,19 @@ void destroy(DevicePtr dptr, vk::Fence fence) {
 	}
 }
 
+void destroy(DevicePtr dptr, vk::DescriptorPool pool) {
+	/*if(dptr)*/ {
+		dptr->get_vk_device().destroyDescriptorPool(pool);
+	}
+}
+
+void destroy(DevicePtr dptr, vk::DescriptorSetLayout layout) {
+	/*if(dptr)*/ {
+		dptr->get_vk_device().destroyDescriptorSetLayout(layout);
+	}
+}
+
+
 
 
 void destroy(DevicePtr dptr, vk::SurfaceKHR surface) {

@@ -14,25 +14,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "GraphicPipeline.h"
+#include "Material.h"
 
 #include <yave/Device.h>
 
 namespace yave {
 
-GraphicPipeline::GraphicPipeline() {
+GraphicPipeline::GraphicPipeline() : _material(nullptr) {
 }
 
-GraphicPipeline::GraphicPipeline(DevicePtr dptr, vk::Pipeline pipeline, vk::PipelineLayout layout, const MaterialDescriptorSet& ds) :
-		DeviceLinked(dptr),
-		_descriptor_set(ds),
+GraphicPipeline::GraphicPipeline(const Material &mat, vk::Pipeline pipeline, vk::PipelineLayout layout) :
+		_material(&mat),
 		_pipeline(pipeline),
 		_layout(layout)  {
 }
 
 GraphicPipeline::~GraphicPipeline() {
-	_descriptor_set.destroy(get_device());
-	destroy(_pipeline);
-	destroy(_layout);
+	if(_material) {
+		_material->destroy(_pipeline);
+		_material->destroy(_layout);
+	}
 }
 
 GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) : GraphicPipeline() {
@@ -45,10 +46,9 @@ GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) {
 }
 
 void GraphicPipeline::swap(GraphicPipeline& other) {
-	DeviceLinked::swap(other);
+	std::swap(_material, other._material);
 	std::swap(_pipeline, other._pipeline);
 	std::swap(_layout, other._layout);
-	std::swap(_descriptor_set, other._descriptor_set);
 }
 
 vk::Pipeline GraphicPipeline::get_vk_pipeline() const {
@@ -59,9 +59,10 @@ vk::PipelineLayout GraphicPipeline::get_vk_pipeline_layout() const {
 	return _layout;
 }
 
-const MaterialDescriptorSet& GraphicPipeline::get_descriptor_set() const {
-	return _descriptor_set;
+const vk::DescriptorSet& GraphicPipeline::get_vk_descriptor_set() const {
+	return _material->get_vk_descriptor_set();
 }
+
 
 
 }

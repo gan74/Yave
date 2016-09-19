@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device), material(new Material(&device)) {
+YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device) {
 }
 
 void YaveApp::init(Window* window) {
@@ -39,8 +39,6 @@ void YaveApp::init(Window* window) {
 }
 
 YaveApp::~YaveApp() {
-	delete material;
-
 	mesh_texture = Texture();
 	static_mesh = StaticMeshInstance();
 
@@ -53,12 +51,12 @@ YaveApp::~YaveApp() {
 void YaveApp::create_graphic_pipeline() {
 	uniform_buffer = TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1);
 
-	(*material)
+	material = Material(&device, MaterialData()
 			.set_frag_data(SpirVData::from_file("frag.spv"))
 			.set_vert_data(SpirVData::from_file("vert.spv"))
 			.set_uniform_buffers(core::vector(UniformBinding(0, uniform_buffer)))
 			.set_textures(core::vector(TextureBinding(1, TextureView(mesh_texture))))
-		;
+		);
 }
 
 vk::Extent2D extent(const math::Vec2ui& v) {
@@ -70,7 +68,7 @@ void YaveApp::create_command_buffers() {
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
-		recorder.bind_pipeline(material->compile(swapchain->get_render_pass(), Viewport(swapchain->size())));
+		recorder.bind_pipeline(material.compile(swapchain->get_render_pass(), Viewport(swapchain->size())));
 		recorder.draw(static_mesh);
 		command_buffers << recorder.end();
 	}

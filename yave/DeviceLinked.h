@@ -37,17 +37,17 @@ class DeviceLinked {
 			return _device;
 		}
 
-	protected:
-		void swap(DeviceLinked& other) {
-			std::swap(_device, other._device);
-		}
-
 		template<typename T>
-		void destroy(T t); /* {
+		void destroy(T t) const; /* {
 			if(_device) {
 				_device->destroy(t);
 			}
 		}*/
+
+	protected:
+		void swap(DeviceLinked& other) {
+			std::swap(_device, other._device);
+		}
 
 	private:
 		NotOwned<DevicePtr> _device;

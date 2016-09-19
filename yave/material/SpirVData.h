@@ -20,26 +20,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-class SpirVData : NonCopyable {
+class SpirVData {
+
 	public:
-		SpirVData();
-		 ~SpirVData();
+		SpirVData() = default;
 
 		static SpirVData from_file(const core::String& file);
-
-		SpirVData(SpirVData&& other);
-		SpirVData& operator=(SpirVData&& other);
-
-		void swap(SpirVData& other);
 
 		usize size() const;
 		const u32* data() const;
 
 	private:
-		SpirVData(usize l, u32* owned_data);
+		SpirVData(core::Vector<u8>&& data);
 
-		usize _len;
-		u32* _data;
+		core::Vector<u8> _data;
 };
 
 }

@@ -19,13 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <yave/yave.h>
 #include <yave/Viewport.h>
-#include <yave/UniformBinding.h>
-#include <yave/TextureBinding.h>
+#include <yave/image/Sampler.h>
 
 #include <y/core/AssocVector.h>
 
 #include "GraphicPipeline.h"
-#include "SpirVData.h"
+#include "MaterialData.h"
 
 namespace yave {
 
@@ -35,43 +34,31 @@ class Material : NonCopyable, public DeviceLinked {
 
 	public:
 		Material() = default;
-		Material(DevicePtr dptr);
+		Material(DevicePtr dptr, const MaterialData& data);
 
-		Material& set_frag_data(SpirVData&& data);
-		Material& set_vert_data(SpirVData&& data);
-		Material& set_geom_data(SpirVData&& data);
+		Material(Material&& other);
+		Material& operator=(Material&& other);
 
-		Material& set_uniform_buffers(const core::Vector<UniformBinding>& binds);
-		Material& set_textures(const core::Vector<TextureBinding>& binds);
+		~Material();
 
-		const SpirVData& get_frag_data() const;
-		const SpirVData& get_vert_data() const;
-		const SpirVData& get_geom_data() const;
-
-		const auto& get_uniform_bindings() const {
-			return _ub_bindings;
-		}
-
-		const auto& get_texture_bindings() const {
-			return _tx_bindings;
-		}
-
-		usize binding_count() const {
-			return _ub_bindings.size() + _tx_bindings.size();
-		}
 
 		const GraphicPipeline& compile(const RenderPass& render_pass, const Viewport &viewport);
-		const MaterialDescriptorSet& get_descriptor_set() const;
+
+		const MaterialData& get_data() const;
+
+		const vk::DescriptorSet& get_vk_descriptor_set() const;
+		const vk::DescriptorSetLayout& get_vk_descriptor_set_layout() const;
 
 	private:
-		SpirVData _frag;
-		SpirVData _vert;
-		SpirVData _geom;
+		void swap(Material& other);
 
-		core::Vector<UniformBinding> _ub_bindings;
-		core::Vector<TextureBinding> _tx_bindings;
+		MaterialData _data;
+		Sampler _sampler;
 
-		mutable MaterialDescriptorSet _d_set;
+		vk::DescriptorPool _pool;
+		vk::DescriptorSetLayout _layout;
+		vk::DescriptorSet _set;
+
 		core::AssocVector<vk::RenderPass, GraphicPipeline> _compiled;
 };
 

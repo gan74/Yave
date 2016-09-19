@@ -20,14 +20,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/yave.h>
 #include <yave/DeviceLinked.h>
 
-#include "DescriptorSetBuilder.h"
 
 namespace yave {
 
-class GraphicPipeline : NonCopyable, public DeviceLinked {
+class Material;
+
+class GraphicPipeline : NonCopyable {
 	public:
 		GraphicPipeline();
-		GraphicPipeline(DevicePtr dptr, vk::Pipeline _pipeline, vk::PipelineLayout layout, const MaterialDescriptorSet& ds);
+		GraphicPipeline(const Material& mat, vk::Pipeline pipeline, vk::PipelineLayout layout);
 
 		~GraphicPipeline();
 
@@ -36,13 +37,13 @@ class GraphicPipeline : NonCopyable, public DeviceLinked {
 
 		vk::Pipeline get_vk_pipeline() const;
 		vk::PipelineLayout get_vk_pipeline_layout() const;
-
-		const MaterialDescriptorSet& get_descriptor_set() const;
+		const vk::DescriptorSet& get_vk_descriptor_set() const;
 
 	private:
 		void swap(GraphicPipeline& other);
 
-		MaterialDescriptorSet _descriptor_set;
+		NotOwned<const Material*> _material;
+
 		vk::Pipeline _pipeline;
 		vk::PipelineLayout _layout;
 };

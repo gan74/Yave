@@ -35,9 +35,9 @@ ShaderModule MaterialCompiler::create_shader_module(const SpirVData& data) const
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass, Viewport view) const {
-	auto geom_module = create_shader_module(material.get_geom_data());
-	auto vert_module = create_shader_module(material.get_vert_data());
-	auto frag_module = create_shader_module(material.get_frag_data());
+	auto geom_module = create_shader_module(material.get_data()._geom);
+	auto vert_module = create_shader_module(material.get_data()._vert);
+	auto frag_module = create_shader_module(material.get_data()._frag);
 
 	auto vert_stage_info = vk::PipelineShaderStageCreateInfo()
 			.setModule(vert_module.get_vk_shader_module())
@@ -157,11 +157,10 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setDepthCompareOp(vk::CompareOp::eLessOrEqual)
 		;
 
-	const auto &d_set = material.get_descriptor_set();
 
 	auto pipeline_layout = get_device()->get_vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(1)
-			.setPSetLayouts(&d_set.get_vk_layout())
+			.setPSetLayouts(&material.get_vk_descriptor_set_layout())
 		);
 
 	auto pipeline = get_device()->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
@@ -180,7 +179,7 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setBasePipelineIndex(-1)
 		);
 
-	return GraphicPipeline(get_device(), pipeline, pipeline_layout);
+	return GraphicPipeline(material, pipeline, pipeline_layout);
 }
 
 }

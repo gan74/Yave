@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <yave/Device.h>
 
-#include <yave/material/MaterialCompiler.h>
+#include <yave/material/Material.h>
 #include <yave/command/CmdBufferRecorder.h>
 #include <yave/image/Image.h>
 #include <yave/mesh/StaticMeshInstance.h>
@@ -62,7 +62,7 @@ class YaveApp : NonCopyable {
 		CmdBufferPool command_pool;
 		core::Vector<RecordedCmdBuffer> command_buffers;
 
-		Material* material;
+		Material material;
 
 		Texture mesh_texture;
 		StaticMeshInstance static_mesh;

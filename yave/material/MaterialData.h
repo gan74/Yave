@@ -13,38 +13,34 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_DESCRIPTORSETBUILDER_H
-#define YAVE_DESCRIPTORSETBUILDER_H
+#ifndef YAVE_MATERIAL_MATERIALDATA_H
+#define YAVE_MATERIAL_MATERIALDATA_H
 
 #include <yave/yave.h>
-
-#include <yave/image/Sampler.h>
 #include <yave/UniformBinding.h>
 #include <yave/TextureBinding.h>
 
-#include "MaterialDescriptorSet.h"
+#include "SpirVData.h"
 
 namespace yave {
 
-class Material;
+struct MaterialData {
 
-class DescriptorSetBuilder : public DeviceLinked {
-	public:
-		DescriptorSetBuilder() = default;
-		DescriptorSetBuilder(DevicePtr dptr);
+	SpirVData _frag;
+	SpirVData _vert;
+	SpirVData _geom;
 
-		DescriptorSetBuilder(DescriptorSetBuilder&& other);
-		DescriptorSetBuilder& operator=(DescriptorSetBuilder&& other);
+	core::Vector<UniformBinding> _ub_bindings;
+	core::Vector<TextureBinding> _tx_bindings;
 
-		vk::DescriptorPool create_pool(usize set_count) const;
+	MaterialData& set_frag_data(SpirVData&& data);
+	MaterialData& set_vert_data(SpirVData&& data);
+	MaterialData& set_geom_data(SpirVData&& data);
 
-		MaterialDescriptorSet build(const Material& material) const;
-
-	private:
-		void swap(DescriptorSetBuilder& other);
-
-		Sampler _default_sampler;
+	MaterialData& set_uniform_buffers(const core::Vector<UniformBinding>& binds);
+	MaterialData& set_textures(const core::Vector<TextureBinding>& binds);
 };
+
 }
 
-#endif // YAVE_DESCRIPTORSETBUILDER_H
+#endif // YAVE_MATERIAL_MATERIALDATA_H

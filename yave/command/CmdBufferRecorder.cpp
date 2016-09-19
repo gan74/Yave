@@ -79,7 +79,7 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 
 CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline) {
 	get_vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline());
-	get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, 1, &pipeline.get_descriptor_set().get_vk_descriptor_set(), 0, nullptr);
+	get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, 1, &pipeline.get_vk_descriptor_set(), 0, nullptr);
 
 	return *this;
 }

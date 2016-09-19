@@ -13,31 +13,34 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MATERIAL_MATERIALDESCRIPTORSET_H
-#define YAVE_MATERIAL_MATERIALDESCRIPTORSET_H
 
-#include <yave/yave.h>
+#include "MaterialData.h"
 
 namespace yave {
 
-struct MaterialDescriptorSet {
-	public:
-		MaterialDescriptorSet();
-		MaterialDescriptorSet(vk::DescriptorPool pool, vk::DescriptorSet set, vk::DescriptorSetLayout layout);
-
-		const vk::DescriptorSet& get_vk_descriptor_set() const;
-		const vk::DescriptorSetLayout& get_vk_layout() const;
-
-		void destroy(DevicePtr device);
-
-	private:
-		vk::DescriptorPool _pool;
-		vk::DescriptorSet _set;
-		vk::DescriptorSetLayout _layout;
-
-};
-
-
+MaterialData& MaterialData::set_frag_data(SpirVData&& data) {
+	_frag = std::move(data);
+	return *this;
 }
 
-#endif // YAVE_MATERIAL_MATERIALDESCRIPTORSET_H
+MaterialData& MaterialData::set_vert_data(SpirVData&& data) {
+	_vert = std::move(data);
+	return *this;
+}
+
+MaterialData& MaterialData::set_geom_data(SpirVData&& data) {
+	_geom = std::move(data);
+	return *this;
+}
+
+MaterialData& MaterialData::set_uniform_buffers(const core::Vector<UniformBinding>& binds) {
+	_ub_bindings = binds;
+	return *this;
+}
+
+MaterialData& MaterialData::set_textures(const core::Vector<TextureBinding>& binds) {
+	_tx_bindings = binds;
+	return *this;
+}
+
+}
