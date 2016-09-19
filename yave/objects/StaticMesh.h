@@ -30,9 +30,15 @@ class StaticMesh {
 	public:
 		StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material);
 
+		void draw(CmdBufferRecorder& recorder);
+
 	private:
+		//const RecordedCmdBuffer& get_cmd_buffer(const RenderPass& render_pass) const;
+
 		AssetPtr<StaticMeshInstance> _instance;
 		AssetPtr<Material> _material;
+
+		//core::AssocVector<vk::RenderPass, RecordedCmdBuffer> _cmd_buffers;
 
 };
 

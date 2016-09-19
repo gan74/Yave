@@ -31,32 +31,19 @@ void YaveApp::init(Window* window) {
 
 	swapchain = new Swapchain(&device, window);
 
-	create_mesh();
-
-	create_graphic_pipeline();
+	create_assets();
 
 	create_command_buffers();
 }
 
 YaveApp::~YaveApp() {
+	objects.clear();
+	material = nullptr;
 	mesh_texture = Texture();
-	static_mesh = StaticMeshInstance();
 
 	delete swapchain;
 
 	command_buffers.clear();
-}
-
-
-void YaveApp::create_graphic_pipeline() {
-	uniform_buffer = TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1);
-
-	material = Material(&device, MaterialData()
-			.set_frag_data(SpirVData::from_file(io::File::open("frag.spv")))
-			.set_vert_data(SpirVData::from_file(io::File::open("vert.spv")))
-			.set_uniform_buffers(core::vector(UniformBinding(0, uniform_buffer)))
-			.set_textures(core::vector(TextureBinding(1, TextureView(mesh_texture))))
-		);
 }
 
 vk::Extent2D extent(const math::Vec2ui& v) {
@@ -68,9 +55,13 @@ void YaveApp::create_command_buffers() {
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
-		recorder.bind_pipeline(material.compile(swapchain->get_render_pass(), Viewport(swapchain->size())));
+		/*recorder.bind_pipeline(material.compile(swapchain->get_render_pass(), Viewport(swapchain->size())));
 		recorder.draw(static_mesh);
-		recorder.draw(static_mesh2);
+		recorder.draw(static_mesh2);*/
+		recorder.set_viewport(Viewport(swapchain->size()));
+		for(auto& obj : objects) {
+			obj.draw(recorder);
+		}
 		command_buffers << recorder.end();
 	}
 }
@@ -125,24 +116,29 @@ void YaveApp::update(math::Vec2 angles) {
 				math::rotation(angles.y(), math::Vec3(0, 1, 0));
 }
 
-void YaveApp::create_mesh() {
+void YaveApp::create_assets() {
+	uniform_buffer = TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1);
 	{
-		auto file = io::File::open("../tools/mesh/chalet.ym");
-		auto m_data = MeshData::from_file(file);
-		log_msg(core::String() + m_data.triangles.size() + " triangles loaded");
-		static_mesh = StaticMeshInstance(&device, m_data);
+		{
+			auto file = io::File::open("../tools/image/chalet.jpg.rgba");
+			auto image = ImageData::from_file(file);
+			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
+			mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image.size(), image.get_raw_data());
+		}
+		material = asset_ptr(Material(&device, MaterialData()
+				.set_frag_data(SpirVData::from_file(io::File::open("frag.spv")))
+				.set_vert_data(SpirVData::from_file(io::File::open("vert.spv")))
+				.set_uniform_buffers(core::vector(UniformBinding(0, uniform_buffer)))
+				.set_textures(core::vector(TextureBinding(1, TextureView(mesh_texture))))
+			));
 	}
-	{
-		auto file = io::File::open("../tools/mesh/cube.ym");
-		auto m_data = MeshData::from_file(file);
+
+	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym", "../tools/mesh/cube.ym"};
+	for(auto name : meshes) {
+		auto m_data = MeshData::from_file(io::File::open(name));
 		log_msg(core::String() + m_data.triangles.size() + " triangles loaded");
-		static_mesh2 = StaticMeshInstance(&device, m_data);
-	}
-	{
-		auto file = io::File::open("../tools/image/chalet.jpg.rgba");
-		auto image = ImageData::from_file(file);
-		log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
-		mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image.size(), image.get_raw_data());
+		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, m_data));
+		objects << StaticMesh(mesh, material);
 	}
 }
 

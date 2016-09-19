@@ -108,8 +108,9 @@ Device::~Device() {
 		fatal("Buffer still active");
 	}
 
-	// we need to destroy the pool before the device
+	// we need to destroy the pools before the device
 	_disposable_cmd_pool = CmdBufferPool();
+	_cmd_pool = CmdBufferPool();
 
 	_device.destroy();
 }

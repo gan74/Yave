@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/buffer/BufferMemoryReference.h>
 #include <yave/mesh/StaticMeshInstance.h>
 #include <yave/material/GraphicPipeline.h>
+#include <yave/Viewport.h>
 
 namespace yave {
 
@@ -40,6 +41,10 @@ class CmdBufferRecorder : NonCopyable {
 
 		vk::CommandBuffer get_vk_cmd_buffer() const;
 
+		const RenderPass& get_current_pass() const;
+		const Viewport& get_viewport() const;
+
+		CmdBufferRecorder& set_viewport(const Viewport& view);
 		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
 		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline);
 		CmdBufferRecorder& draw(const StaticMeshInstance& static_mesh);
@@ -55,7 +60,8 @@ class CmdBufferRecorder : NonCopyable {
 		void swap(CmdBufferRecorder& other);
 
 		CmdBuffer _cmd_buffer;
-		usize _nested_passes;
+		NotOwned<const RenderPass*> _render_pass;
+		Viewport _viewport;
 };
 
 }

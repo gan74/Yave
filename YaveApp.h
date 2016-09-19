@@ -23,8 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/material/Material.h>
 #include <yave/commands/CmdBufferRecorder.h>
 #include <yave/image/Image.h>
-#include <yave/mesh/StaticMeshInstance.h>
 #include <yave/Swapchain.h>
+#include <yave/objects/StaticMesh.h>
 
 namespace yave {
 
@@ -49,10 +49,9 @@ class YaveApp : NonCopyable {
 
 
 	private:
-		void create_graphic_pipeline();
 		void create_command_buffers();
 
-		void create_mesh();
+		void create_assets();
 
 		Instance instance;
 		Device device;
@@ -62,11 +61,10 @@ class YaveApp : NonCopyable {
 		CmdBufferPool command_pool;
 		core::Vector<RecordedCmdBuffer> command_buffers;
 
-		Material material;
+		AssetPtr<Material> material;
 
 		Texture mesh_texture;
-		StaticMeshInstance static_mesh;
-		StaticMeshInstance static_mesh2;
+		core::Vector<StaticMesh> objects;
 		TypedBuffer<MVP, BufferUsage::UniformBuffer> uniform_buffer;
 
 

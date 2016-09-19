@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& buffer) : _cmd_buffer(std::move(buffer)), _nested_passes(0) {
+CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& buffer) : _cmd_buffer(std::move(buffer)), _render_pass(nullptr) {
 	Y_TODO(optimise disposable buffers)
 	get_vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
 			.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
@@ -36,7 +36,7 @@ CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
 
 void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
 	std::swap(_cmd_buffer, other._cmd_buffer);
-	std::swap(_nested_passes, other._nested_passes);
+	std::swap(_render_pass, other._render_pass);
 
 }
 
@@ -44,8 +44,17 @@ vk::CommandBuffer CmdBufferRecorder::get_vk_cmd_buffer() const {
 	return _cmd_buffer.get_vk_cmd_buffer();
 }
 
+
+const RenderPass& CmdBufferRecorder::get_current_pass() const {
+	return *_render_pass;
+}
+
+const Viewport& CmdBufferRecorder::get_viewport() const {
+	return _viewport;
+}
+
 RecordedCmdBuffer CmdBufferRecorder::end() {
-	for(; _nested_passes; _nested_passes--) {
+	if(_render_pass) {
 		get_vk_cmd_buffer().endRenderPass();
 	}
 	get_vk_cmd_buffer().end();
@@ -61,6 +70,11 @@ CmdBufferRecorder::~CmdBufferRecorder() {
 
 
 
+CmdBufferRecorder& CmdBufferRecorder::set_viewport(const Viewport& view) {
+	_viewport = view;
+
+	return *this;
+}
 
 CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
 	vk::ClearValue clear_values[] = {vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f}), vk::ClearDepthStencilValue(1.0f, 0)};
@@ -72,7 +86,7 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 			.setClearValueCount(2)
 		;
 	get_vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
-	_nested_passes++;
+	_render_pass = &framebuffer.get_render_pass();
 
 	return *this;
 }

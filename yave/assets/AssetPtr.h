@@ -24,6 +24,11 @@ namespace yave {
 template<typename T>
 using AssetPtr = core::Arc<T>;
 
+template<typename T>
+auto asset_ptr(T&& t) {
+	return core::arc(std::forward<T>(t));
+}
+
 }
 
 #endif // YAVE_ASSETS_ASSETPTR_H

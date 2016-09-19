@@ -27,7 +27,7 @@ struct Viewport {
 	math::Vec2 depth;
 
 
-	Viewport(const math::Vec2& size) : extent(size), depth(0.0f, 1.0f) {
+	Viewport(const math::Vec2& size = math::Vec2()) : extent(size), depth(0.0f, 1.0f) {
 	}
 };
 
