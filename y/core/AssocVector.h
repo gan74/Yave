@@ -20,14 +20,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace y {
 namespace core {
+template<typename Key, typename Value>
+struct MapEntry : public std::pair<Key, Value> {
+	using std::pair<Key, Value>::pair;
+
+	constexpr bool operator==(const Key& k) const {
+		return this->first == k;
+	}
+
+	constexpr bool operator==(const MapEntry& e) const {
+		return this->first == e;
+	}
+};
+
 
 template<typename Key, typename Value, typename ResizePolicy = DefaultVectorResizePolicy>
-class AssocVector : public Vector<std::pair<Key, Value>, ResizePolicy> {
-
-	using Entry = std::pair<Key, Value>;
-	using Base = Vector<Entry, ResizePolicy>;
+class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
 
 	public:
+		using Entry = MapEntry<Key, Value>;
 		using Vector<Entry, ResizePolicy>::Vector;
 
 		template<typename T>
@@ -37,14 +48,17 @@ class AssocVector : public Vector<std::pair<Key, Value>, ResizePolicy> {
 
 		Value& operator[](const Key& key) {
 			for(Entry& e : *this) {
-				if(e.first == key) {
+				if(e == key) {
 					return e.second;
 				}
 			}
 			insert(key, Value());
 			return this->last().second;
 		}
+
+	private:
 };
+
 
 }
 }

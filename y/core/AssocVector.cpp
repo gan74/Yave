@@ -64,5 +64,16 @@ y_test_func("AssocVector movable values") {
 	}
 }
 
+y_test_func("AssocVector find") {
+	AssocVector<usize, NonCopyableValue> av;
+	for(usize i = 0; i != 16; i++) {
+		av[i] = NonCopyableValue(i);
+	}
+	y_test_assert(range(av).find([](const auto& i) { return i.first == 7; })->second.value == 7);
+	y_test_assert(range(av).find([](const auto& i) { return i.first < 0; }) == av.end());
+	y_test_assert(range(av).find(-1) == av.end());
+	y_test_assert(range(av).find(13)->second.value == 13);
+}
+
 }
 }
