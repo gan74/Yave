@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_SHADERMODULE_H
-#define YAVE_SHADERMODULE_H
+#ifndef YAVE_MATERIAL_SHADERMODULE_H
+#define YAVE_MATERIAL_SHADERMODULE_H
 
 #include <yave/yave.h>
 #include <yave/DeviceLinked.h>
@@ -61,4 +61,4 @@ class ShaderModule : NonCopyable, public DeviceLinked {
 
 }
 
-#endif // YAVE_SHADERMODULE_H
+#endif // YAVE_MATERIAL_SHADERMODULE_H

@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "StagingBufferMapping.h"
 
-#include <yave/command/CmdBufferRecorder.h>
+#include <yave/commands/CmdBufferRecorder.h>
 #include <yave/Device.h>
 
 namespace yave {

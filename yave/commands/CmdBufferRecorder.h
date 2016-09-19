@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_CMDBUFFERRECORDER_H
-#define YAVE_CMDBUFFERRECORDER_H
+#ifndef YAVE_COMMANDS_CMDBUFFERRECORDER_H
+#define YAVE_COMMANDS_CMDBUFFERRECORDER_H
 
 #include <yave/yave.h>
 #include <yave/Framebuffer.h>
@@ -60,4 +60,4 @@ class CmdBufferRecorder : NonCopyable {
 
 }
 
-#endif // YAVE_CMDBUFFERRECORDER_H
+#endif // YAVE_COMMANDS_CMDBUFFERRECORDER_H

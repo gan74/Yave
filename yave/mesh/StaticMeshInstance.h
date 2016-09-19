@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_STATICMESHINSTANCE_H
-#define YAVE_STATICMESHINSTANCE_H
+#ifndef YAVE_MESH_STATICMESHINSTANCE_H
+#define YAVE_MESH_STATICMESHINSTANCE_H
 
 #include <yave/yave.h>
 
@@ -48,4 +48,4 @@ class StaticMeshInstance : NonCopyable {
 };
 }
 
-#endif // YAVE_STATICMESHINSTANCE_H
+#endif // YAVE_MESH_STATICMESHINSTANCE_H

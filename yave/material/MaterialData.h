@@ -43,4 +43,4 @@ struct MaterialData {
 
 }
 
-#endif // YAVE_MATERIAL_MATERIALDATA_H
+#endif // YAVE_MATERIAL_MATERIAL_MATERIALDATA_H

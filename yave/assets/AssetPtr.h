@@ -13,28 +13,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_CMDBUFFERPOOLDATA_H
-#define YAVE_CMDBUFFERPOOLDATA_H
+#ifndef YAVE_ASSETS_ASSETPTR_H
+#define YAVE_ASSETS_ASSETPTR_H
 
-#include "CmdBuffer.h"
+#include <yave/yave.h>
+#include <y/concurrent/Arc.h>
 
 namespace yave {
 
-class CmdBufferPoolData : NonCopyable, public DeviceLinked {
-	public:
-		CmdBufferPoolData(DevicePtr dptr);
-		~CmdBufferPoolData();
-
-		CmdBufferData alloc();
-		void release(CmdBufferData&& data);
-
-	private:
-		CmdBufferData reset(CmdBufferData data);
-
-		vk::CommandPool _pool;
-		core::Vector<CmdBufferData> _cmd_buffers;
-};
+template<typename T>
+using AssetPtr = core::Arc<T>;
 
 }
 
-#endif // YAVE_CMDBUFFERPOOLDATA_H
+#endif // YAVE_ASSETS_ASSETPTR_H

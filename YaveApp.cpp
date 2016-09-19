@@ -52,8 +52,8 @@ void YaveApp::create_graphic_pipeline() {
 	uniform_buffer = TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1);
 
 	material = Material(&device, MaterialData()
-			.set_frag_data(SpirVData::from_file("frag.spv"))
-			.set_vert_data(SpirVData::from_file("vert.spv"))
+			.set_frag_data(SpirVData::from_file(io::File::open("frag.spv")))
+			.set_vert_data(SpirVData::from_file(io::File::open("vert.spv")))
 			.set_uniform_buffers(core::vector(UniformBinding(0, uniform_buffer)))
 			.set_textures(core::vector(TextureBinding(1, TextureView(mesh_texture))))
 		);
@@ -70,6 +70,7 @@ void YaveApp::create_command_buffers() {
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
 		recorder.bind_pipeline(material.compile(swapchain->get_render_pass(), Viewport(swapchain->size())));
 		recorder.draw(static_mesh);
+		recorder.draw(static_mesh2);
 		command_buffers << recorder.end();
 	}
 }
@@ -130,6 +131,12 @@ void YaveApp::create_mesh() {
 		auto m_data = MeshData::from_file(file);
 		log_msg(core::String() + m_data.triangles.size() + " triangles loaded");
 		static_mesh = StaticMeshInstance(&device, m_data);
+	}
+	{
+		auto file = io::File::open("../tools/mesh/cube.ym");
+		auto m_data = MeshData::from_file(file);
+		log_msg(core::String() + m_data.triangles.size() + " triangles loaded");
+		static_mesh2 = StaticMeshInstance(&device, m_data);
 	}
 	{
 		auto file = io::File::open("../tools/image/chalet.jpg.rgba");

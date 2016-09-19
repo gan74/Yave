@@ -13,33 +13,28 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_RECORDEDCMDBUFFER_H
-#define YAVE_RECORDEDCMDBUFFER_H
+#ifndef YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
+#define YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
 
 #include "CmdBuffer.h"
 
 namespace yave {
 
-class CmdBufferRecorder;
-
-class RecordedCmdBuffer : public CmdBuffer {
-
+class CmdBufferPoolData : NonCopyable, public DeviceLinked {
 	public:
-		RecordedCmdBuffer() = default;
+		CmdBufferPoolData(DevicePtr dptr);
+		~CmdBufferPoolData();
 
-		void submit(vk::Queue queue) {
-			CmdBuffer::submit(queue);
-		}
+		CmdBufferData alloc();
+		void release(CmdBufferData&& data);
 
 	private:
-		friend class CmdBufferRecorder;
+		CmdBufferData reset(CmdBufferData data);
 
-		RecordedCmdBuffer(CmdBuffer &&other) {
-			swap(other);
-		}
-
+		vk::CommandPool _pool;
+		core::Vector<CmdBufferData> _cmd_buffers;
 };
 
 }
 
-#endif // YAVE_RECORDEDCMDBUFFER_H
+#endif // YAVE_COMMANDS_CMDBUFFERPOOLDATA_H

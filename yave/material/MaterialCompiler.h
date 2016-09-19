@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MATERIALCOMPILER_H
-#define YAVE_MATERIALCOMPILER_H
+#ifndef YAVE_MATERIAL_MATERIALCOMPILER_H
+#define YAVE_MATERIAL_MATERIALCOMPILER_H
 
 #include <yave/yave.h>
 #include "Material.h"
@@ -41,4 +41,4 @@ class MaterialCompiler : NonCopyable, public DeviceLinked {
 
 }
 
-#endif // YAVE_MATERIALCOMPILER_H
+#endif // YAVE_MATERIAL_MATERIALCOMPILER_H

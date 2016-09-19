@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_SPIRVDATA_H
-#define YAVE_SPIRVDATA_H
+#ifndef YAVE_MATERIAL_SPIRVDATA_H
+#define YAVE_MATERIAL_SPIRVDATA_H
 
 #include <yave/yave.h>
 #include <y/io/Ref.h>
@@ -39,4 +39,4 @@ class SpirVData {
 
 }
 
-#endif // YAVE_SPIRVDATA_H
+#endif // YAVE_MATERIAL_SPIRVDATA_H

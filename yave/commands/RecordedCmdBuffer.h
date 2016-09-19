@@ -13,24 +13,33 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MESH_VERTEX_H
-#define YAVE_MESH_VERTEX_H
+#ifndef YAVE_COMMANDS_RECORDEDCMDBUFFER_H
+#define YAVE_COMMANDS_RECORDEDCMDBUFFER_H
 
-#include <yave/yave.h>
-#include <y/math/Vec.h>
+#include "CmdBuffer.h"
 
 namespace yave {
 
-struct Vertex {
-	math::Vec3 position;
-	math::Vec3 normal;
-	math::Vec2 uv;
+class CmdBufferRecorder;
+
+class RecordedCmdBuffer : public CmdBuffer {
+
+	public:
+		RecordedCmdBuffer() = default;
+
+		void submit(vk::Queue queue) {
+			CmdBuffer::submit(queue);
+		}
+
+	private:
+		friend class CmdBufferRecorder;
+
+		RecordedCmdBuffer(CmdBuffer &&other) {
+			swap(other);
+		}
+
 };
 
-using IndexedTriangle = std::array<u32, 3>;
-
-static_assert(std::is_trivially_copyable<math::Vec4>::value, "Vec4 should be trivially copyable");
-static_assert(std::is_trivially_copyable<Vertex>::value, "Vertex should be trivially copyable");
 }
 
-#endif // YAVE_MESH_VERTEX_H
+#endif // YAVE_COMMANDS_RECORDEDCMDBUFFER_H

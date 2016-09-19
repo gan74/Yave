@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MESHDATA_H
-#define YAVE_MESHDATA_H
+#ifndef YAVE_MESH_MESHDATA_H
+#define YAVE_MESH_MESHDATA_H
 
 #include <yave/yave.h>
 #include <y/io/Ref.h>
@@ -33,4 +33,4 @@ struct MeshData {
 
 }
 
-#endif // YAVE_MESHDATA_H
+#endif // YAVE_MESH_MESHDATA_H

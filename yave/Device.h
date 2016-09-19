@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "yave.h"
 #include "PhysicalDevice.h"
 
-#include <yave/command/CmdBufferPool.h>
+#include <yave/commands/CmdBufferPool.h>
 
 #include <yave/vk/destroy.h>
 
@@ -53,8 +53,11 @@ class Device : NonCopyable {
 			}
 		}
 
-
 		auto create_disposable_command_buffer() const {
+			return _disposable_cmd_pool.create_buffer();
+		}
+
+		auto create_command_buffer() const {
 			return _cmd_pool.create_buffer();
 		}
 
@@ -68,6 +71,7 @@ class Device : NonCopyable {
 		vk::Device _device;
 
 		mutable CmdBufferPool _cmd_pool;
+		mutable CmdBufferPool _disposable_cmd_pool;
 };
 
 

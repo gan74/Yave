@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/Device.h>
 
 #include <yave/material/Material.h>
-#include <yave/command/CmdBufferRecorder.h>
+#include <yave/commands/CmdBufferRecorder.h>
 #include <yave/image/Image.h>
 #include <yave/mesh/StaticMeshInstance.h>
 #include <yave/Swapchain.h>
@@ -66,6 +66,7 @@ class YaveApp : NonCopyable {
 
 		Texture mesh_texture;
 		StaticMeshInstance static_mesh;
+		StaticMeshInstance static_mesh2;
 		TypedBuffer<MVP, BufferUsage::UniformBuffer> uniform_buffer;
 
 

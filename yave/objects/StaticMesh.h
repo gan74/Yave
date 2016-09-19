@@ -13,41 +13,29 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MATERIAL_GRAPHICPIPELINE_H
-#define YAVE_MATERIAL_GRAPHICPIPELINE_H
-
+#ifndef YAVE_OBJECTS_STATICMESH_H
+#define YAVE_OBJECTS_STATICMESH_H
 
 #include <yave/yave.h>
-#include <yave/DeviceLinked.h>
 
+#include <yave/assets/AssetPtr.h>
+#include <yave/material/Material.h>
+#include <yave/mesh/StaticMeshInstance.h>
+#include <yave/commands/RecordedCmdBuffer.h>
 
 namespace yave {
 
-class Material;
+class StaticMesh {
 
-class GraphicPipeline : NonCopyable {
 	public:
-		GraphicPipeline();
-		GraphicPipeline(const Material& mat, vk::Pipeline pipeline, vk::PipelineLayout layout);
-
-		~GraphicPipeline();
-
-		GraphicPipeline(GraphicPipeline&& other);
-		GraphicPipeline& operator=(GraphicPipeline&& other);
-
-		vk::Pipeline get_vk_pipeline() const;
-		vk::PipelineLayout get_vk_pipeline_layout() const;
-		const vk::DescriptorSet& get_vk_descriptor_set() const;
+		StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material);
 
 	private:
-		void swap(GraphicPipeline& other);
+		AssetPtr<StaticMeshInstance> _instance;
+		AssetPtr<Material> _material;
 
-		NotOwned<const Material*> _material;
-
-		vk::Pipeline _pipeline;
-		vk::PipelineLayout _layout;
 };
 
 }
 
-#endif // YAVE_MATERIAL_GRAPHICPIPELINE_H
+#endif // YAVE_OBJECTS_STATICMESH_H

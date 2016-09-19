@@ -13,24 +13,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MESH_VERTEX_H
-#define YAVE_MESH_VERTEX_H
 
-#include <yave/yave.h>
-#include <y/math/Vec.h>
+#include "StaticMesh.h"
+
+#include <yave/commands/CmdBufferRecorder.h>
+#include <yave/RenderPass.h>
+#include <yave/Device.h>
 
 namespace yave {
 
-struct Vertex {
-	math::Vec3 position;
-	math::Vec3 normal;
-	math::Vec2 uv;
-};
-
-using IndexedTriangle = std::array<u32, 3>;
-
-static_assert(std::is_trivially_copyable<math::Vec4>::value, "Vec4 should be trivially copyable");
-static_assert(std::is_trivially_copyable<Vertex>::value, "Vertex should be trivially copyable");
+StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material) :
+		_instance(instance),
+		_material(material) {
 }
 
-#endif // YAVE_MESH_VERTEX_H
+}
