@@ -155,16 +155,21 @@ y_test_func("Vector vector(...)") {
 
 y_test_func("Vector<Range<I>>") {
 	{
-		auto vec = vector(1, 2, 3, 4, 5, 6);
-		auto r = range(vec);
+		auto v = vector(1, 2, 3, 4, 5, 6);
+		auto r = range(v);
 
+		auto vec = v;
 		vec.append(r);
 		vec.append(r.reverse());
 		vec.append(r.map([](int i) { return i + 1; }));
 		vec.append(range(0, 10));
 
 		y_test_assert(vec.size() == 6 * 4 + 10);
-		y_test_assert(vec == vector({1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+		y_test_assert(vec == vector({1, 2, 3, 4, 5, 6,
+									 1, 2, 3, 4, 5, 6,
+									 6, 5, 4, 3, 2, 1,
+									 2, 3, 4, 5, 6, 7,
+									 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
 	}
 	{
 		Vector<Range<ValueIterator<int>>> vec;
