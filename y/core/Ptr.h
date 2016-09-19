@@ -31,6 +31,9 @@ class Ptr : NonCopyable {
 		explicit Ptr(T&& p) : Ptr(new T(std::move(p))) {
 		}
 
+		Ptr(nullptr_t p) : _ptr(p) {
+		}
+
 		Ptr(Ptr&& p) : _ptr(nullptr) {
 			swap(p);
 		}
