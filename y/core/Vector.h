@@ -360,7 +360,7 @@ static_assert(std::is_same<decltype(vector(1, 2.0, 3))::Element, double>::value,
 
 
 template<typename U, typename T>
-inline Vector<U>& operator<<(Vector<U>& vec, T t) {
+inline Vector<U>& operator<<(Vector<U>& vec, T&& t) {
 	vec.append(std::forward<T>(t));
 	return vec;
 }
