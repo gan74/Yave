@@ -25,11 +25,12 @@ namespace yave {
 class UniformBinding {
 
 	public:
-		UniformBinding(u32 binding, const BufferReference<BufferUsage::UniformBuffer>& buffer) : _buffer(buffer), _binding(binding) {
+		template<typename T, MemoryFlags Flags>
+		UniformBinding(u32 binding, const TypedBuffer<T, BufferUsage::UniformBuffer, Flags>& buffer) : _descriptor_info(buffer.descriptor_info()), _binding(binding) {
 		}
 
 		auto get_descriptor_buffer_info() const {
-			return _buffer.descriptor_info();
+			return _descriptor_info;
 		}
 
 		u32 get_binding() const {
@@ -46,7 +47,7 @@ class UniformBinding {
 		}
 
 	private:
-		BufferReference<BufferUsage::UniformBuffer> _buffer;
+		vk::DescriptorBufferInfo _descriptor_info;
 		u32 _binding;
 };
 

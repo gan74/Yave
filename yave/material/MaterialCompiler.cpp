@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr), _ds_builder(dptr) {
+MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 ShaderModule MaterialCompiler::create_shader_module(const SpirVData& data) const {
@@ -157,11 +157,11 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setDepthCompareOp(vk::CompareOp::eLessOrEqual)
 		;
 
-	auto d_set = _ds_builder.build(material);
+	const auto &d_set = material.get_descriptor_set();
 
 	auto pipeline_layout = get_device()->get_vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(1)
-			.setPSetLayouts(&d_set.layout)
+			.setPSetLayouts(&d_set.get_vk_layout())
 		);
 
 	auto pipeline = get_device()->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
@@ -180,7 +180,7 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setBasePipelineIndex(-1)
 		);
 
-	return GraphicPipeline(get_device(), pipeline, pipeline_layout, d_set);
+	return GraphicPipeline(get_device(), pipeline, pipeline_layout);
 }
 
 }

@@ -13,38 +13,37 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_DESCRIPTORSETBUILDER_H
-#define YAVE_DESCRIPTORSETBUILDER_H
-
-#include <yave/yave.h>
-
-#include <yave/image/Sampler.h>
-#include <yave/UniformBinding.h>
-#include <yave/TextureBinding.h>
 
 #include "MaterialDescriptorSet.h"
 
+#include <yave/Device.h>
+
 namespace yave {
 
-class Material;
-
-class DescriptorSetBuilder : public DeviceLinked {
-	public:
-		DescriptorSetBuilder() = default;
-		DescriptorSetBuilder(DevicePtr dptr);
-
-		DescriptorSetBuilder(DescriptorSetBuilder&& other);
-		DescriptorSetBuilder& operator=(DescriptorSetBuilder&& other);
-
-		vk::DescriptorPool create_pool(usize set_count) const;
-
-		MaterialDescriptorSet build(const Material& material) const;
-
-	private:
-		void swap(DescriptorSetBuilder& other);
-
-		Sampler _default_sampler;
-};
+MaterialDescriptorSet::MaterialDescriptorSet() : _pool(VK_NULL_HANDLE), _set(VK_NULL_HANDLE), _layout(VK_NULL_HANDLE) {
 }
 
-#endif // YAVE_DESCRIPTORSETBUILDER_H
+MaterialDescriptorSet::MaterialDescriptorSet(vk::DescriptorPool pool, vk::DescriptorSet set, vk::DescriptorSetLayout layout) :
+	_pool(pool),
+	_set(set),
+	_layout(layout) {
+}
+
+const vk::DescriptorSet& MaterialDescriptorSet::get_vk_descriptor_set() const {
+	return _set;
+}
+
+const vk::DescriptorSetLayout& MaterialDescriptorSet::get_vk_layout() const {
+	return _layout;
+}
+
+void MaterialDescriptorSet::destroy(DevicePtr dptr) {
+	if(dptr) {
+		auto vk = dptr->get_vk_device();
+		vk.destroyDescriptorSetLayout(_layout);
+		vk.destroyDescriptorPool(_pool);
+	}
+}
+
+
+}

@@ -23,19 +23,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
+#if 0
+
 template<BufferUsage Usage>
 class BufferReference {
 
+	Y_TODO(We never use the buffer !!)
+
 	public:
 		template<typename T, MemoryFlags Flags>
-		BufferReference(const core::Rc<TypedBuffer<T, Usage, Flags>>& buffer) :
-				_info(buffer->descriptor_info()),
-				_ref(reinterpret_cast<const decltype(_ref)&>(buffer)) {
+		BufferReference(const TypedBuffer<T, Usage, Flags>& buffer) :
+				_info(buffer.descriptor_info()),
+				_ref(&buffer) {
 		}
 
-		template<typename T, MemoryFlags Flags>
+		/*template<typename T, MemoryFlags Flags>
 		BufferReference(TypedBuffer<T, Usage, Flags>&& buffer) : BufferReference(core::rc(std::move(buffer))) {
-		}
+		}*/
 
 		BufferReference() {
 		}
@@ -46,10 +50,10 @@ class BufferReference {
 
 	private:
 		vk::DescriptorBufferInfo _info;
-		core::Rc<Buffer<Usage>> _ref;
+		NotOwned<const Buffer<Usage>*> _ref;
 };
 
-
+#endif
 
 }
 

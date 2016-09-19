@@ -22,17 +22,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-class Sampler : public DeviceLinked {
+class Sampler : NonCopyable, public DeviceLinked {
 
 	public:
 		Sampler() = default;
 		Sampler(DevicePtr dptr);
-		
+
+		Sampler(Sampler&& other);
+		Sampler& operator=(Sampler&& other);
+
 		~Sampler();
 
 		vk::Sampler get_vk_sampler() const;
 
 	private:
+		void swap(Sampler& other);
+
 		vk::Sampler _sampler;
 };
 

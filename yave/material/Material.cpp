@@ -14,10 +14,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "Material.h"
+#include "MaterialCompiler.h"
+
+#include <yave/Device.h>
 
 namespace yave {
 
-Material::Material() {
+Material::Material(DevicePtr dptr) : DeviceLinked(dptr) {
+}
+
+const GraphicPipeline& Material::compile(const RenderPass& render_pass, const Viewport& viewport) {
+	auto key = render_pass.get_vk_render_pass();
+	auto it = core::range(_compiled).find(key);
+	if(it == _compiled.end()) {
+		MaterialCompiler compiler(get_device());
+		_compiled.insert(key, compiler.compile(*this, render_pass, viewport));
+		return _compiled.last().second;
+	}
+	return it->second;
+}
+
+const MaterialDescriptorSet& Material::get_descriptor_set() const {
+	if(!_d_set.get_vk_descriptor_set()) {
+		_d_set = get_device()->get_deescriptor_set_builder().build(*this);
+	}
+	return _d_set;
 }
 
 const SpirVData& Material::get_frag_data() const {

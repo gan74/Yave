@@ -37,8 +37,23 @@ vk::Sampler create_sampler(DevicePtr dptr) {
 Sampler::Sampler(DevicePtr dptr) : DeviceLinked(dptr), _sampler(create_sampler(dptr)) {
 }
 
+
+Sampler::Sampler(Sampler&& other) {
+	swap(other);
+}
+
+Sampler& Sampler::operator=(Sampler&& other) {
+	swap(other);
+	return *this;
+}
+
 Sampler::~Sampler() {
 	destroy(_sampler);
+}
+
+void Sampler::swap(Sampler& other) {
+	DeviceLinked::swap(other);
+	std::swap(_sampler, other._sampler);
 }
 
 vk::Sampler Sampler::get_vk_sampler() const {

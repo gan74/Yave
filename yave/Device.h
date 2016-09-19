@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "PhysicalDevice.h"
 
 #include <yave/command/CmdBufferPool.h>
+#include <yave/material/DescriptorSetBuilder.h>
 
 #include <yave/vk/destroy.h>
 
@@ -39,7 +40,8 @@ class Device : NonCopyable {
 		~Device();
 
 		const PhysicalDevice& get_physical_device() const;
-		const Instance &get_instance() const;
+		const Instance& get_instance() const;
+		const DescriptorSetBuilder& get_deescriptor_set_builder() const;
 
 		vk::Device get_vk_device() const;
 		vk::Queue get_vk_queue(usize i) const;
@@ -59,21 +61,16 @@ class Device : NonCopyable {
 		}
 
 	private:
-		void compute_queue_families();
-		void create_device();
-
-		bool are_families_complete() const;
-
 		NotOwned<Instance&> _instance;
 		PhysicalDevice _physical;
-
-		core::Vector<const char*> _extentions;
 
 		std::array<i32, QueueFamily::Max> _queue_familiy_indices;
 		std::array<vk::Queue, QueueFamily::Max> _queues;
 
 		vk::Device _device;
+
 		mutable CmdBufferPool _cmd_pool;
+		DescriptorSetBuilder _ds_builder;
 };
 
 

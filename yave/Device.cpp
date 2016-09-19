@@ -19,15 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-Device::Device(Instance& instance) : _instance(instance), _physical(instance) {
-	_extentions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
-	compute_queue_families();
-	create_device();
-}
-
-bool Device::are_families_complete() const {
-	for(i32 index : _queue_familiy_indices) {
+bool are_families_complete(const std::array<i32, QueueFamily::Max>& families) {
+	for(i32 index : families) {
 		if(index < 0) {
 			return false;
 		}
@@ -35,12 +28,13 @@ bool Device::are_families_complete() const {
 	return true;
 }
 
-void Device::compute_queue_families() {
-	for(i32& index : _queue_familiy_indices) {
+std::array<i32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevice physical) {
+	std::array<i32, QueueFamily::Max> queue_families;
+	for(i32& index : queue_families) {
 		index = -1;
 	}
 
-	auto families = _physical.get_vk_physical_device().getQueueFamilyProperties();
+	auto families = physical.getQueueFamilyProperties();
 	for(i32 i = 0; i != i32(families.size()); i++) {
 		auto family = families[i];
 		if(family.queueCount <= 0) {
@@ -48,46 +42,61 @@ void Device::compute_queue_families() {
 		}
 
 		if(family.queueFlags & vk::QueueFlagBits::eGraphics) {
-			_queue_familiy_indices[QueueFamily::Graphics] = i;
+			queue_families[QueueFamily::Graphics] = i;
 		}
 
-		if(are_families_complete()) {
-			return;
+		if(are_families_complete(queue_families)) {
+			return queue_families;
 		}
 	}
-	if(!are_families_complete()) {
+	if(!are_families_complete(queue_families)) {
 		fatal("Unable to find queue family");
 	}
+	return queue_families;
 }
 
-void Device::create_device() {
+vk::Device create_device(
+		vk::PhysicalDevice physical,
+		const std::array<i32, QueueFamily::Max>& queue_families,
+		const core::Vector<const char*>& extentions,
+		const core::Vector<const char*>& layers) {
+
 	std::array<vk::DeviceQueueCreateInfo, QueueFamily::Max> queue_create_infos;
 
 	float priorities = 1.0f;
-	for(usize i = 0; i != _queues.size(); i++) {
+	for(usize i = 0; i != QueueFamily::Max; i++) {
 		queue_create_infos[i] = vk::DeviceQueueCreateInfo()
-				.setQueueFamilyIndex(_queue_familiy_indices[i])
+				.setQueueFamilyIndex(queue_families[i])
 				.setPQueuePriorities(&priorities)
 				.setQueueCount(1)
 			;
 	}
 
-	auto features = _physical.get_vk_physical_device().getFeatures();
-	_device = _physical.get_vk_physical_device().createDevice(vk::DeviceCreateInfo()
-			.setEnabledExtensionCount(_extentions.size())
-			.setPpEnabledExtensionNames(_extentions.begin())
-			.setEnabledLayerCount(_instance.get_debug_params().get_device_layers().size())
-			.setPpEnabledLayerNames(_instance.get_debug_params().get_device_layers().begin())
+
+	auto features = physical.getFeatures();
+	return physical.createDevice(vk::DeviceCreateInfo()
+			.setEnabledExtensionCount(extentions.size())
+			.setPpEnabledExtensionNames(extentions.begin())
+			.setEnabledLayerCount(layers.size())
+			.setPpEnabledLayerNames(layers.begin())
 			.setQueueCreateInfoCount(queue_create_infos.size())
 			.setPQueueCreateInfos(queue_create_infos.begin())
 			.setPEnabledFeatures(&features)
 		);
+}
+
+
+Device::Device(Instance& instance) :
+		_instance(instance),
+		_physical(instance),
+		_queue_familiy_indices(compute_queue_families(_physical.get_vk_physical_device())),
+		_device(create_device(_physical.get_vk_physical_device(), _queue_familiy_indices, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.get_debug_params().get_device_layers())),
+		_cmd_pool(this),
+		_ds_builder(this) {
 
 	for(usize i = 0; i != _queues.size(); i++) {
 		_queues[i] = _device.getQueue(_queue_familiy_indices[i], 0);
 	}
-
-	_cmd_pool = CmdBufferPool(this);
 }
 
 Device::~Device() {
@@ -101,6 +110,7 @@ Device::~Device() {
 
 	// we need to destroy the pool before the device
 	_cmd_pool = CmdBufferPool();
+	_ds_builder = DescriptorSetBuilder();
 
 	_device.destroy();
 }
@@ -111,6 +121,10 @@ const PhysicalDevice& Device::get_physical_device() const {
 
 const Instance &Device::get_instance() const {
 	return _instance;
+}
+
+const DescriptorSetBuilder& Device::get_deescriptor_set_builder() const {
+	return _ds_builder;
 }
 
 vk::Device Device::get_vk_device() const {

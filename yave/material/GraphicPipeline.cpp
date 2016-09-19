@@ -22,7 +22,7 @@ namespace yave {
 GraphicPipeline::GraphicPipeline() {
 }
 
-GraphicPipeline::GraphicPipeline(DevicePtr dptr, vk::Pipeline pipeline, vk::PipelineLayout layout, const DescriptorSet& ds) :
+GraphicPipeline::GraphicPipeline(DevicePtr dptr, vk::Pipeline pipeline, vk::PipelineLayout layout, const MaterialDescriptorSet& ds) :
 		DeviceLinked(dptr),
 		_descriptor_set(ds),
 		_pipeline(pipeline),
@@ -59,7 +59,7 @@ vk::PipelineLayout GraphicPipeline::get_vk_pipeline_layout() const {
 	return _layout;
 }
 
-const DescriptorSet& GraphicPipeline::get_descriptor_set() const {
+const MaterialDescriptorSet& GraphicPipeline::get_descriptor_set() const {
 	return _descriptor_set;
 }
 

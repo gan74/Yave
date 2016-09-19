@@ -14,21 +14,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "DescriptorSetBuilder.h"
+#include "Material.h"
 
 #include <yave/Device.h>
 
 namespace yave {
 
 
-void DescriptorSet::destroy(DevicePtr dptr) {
-	if(dptr) {
-		auto vk = dptr->get_vk_device();
-		vk.destroyDescriptorSetLayout(layout);
-		vk.destroyDescriptorPool(pool);
-	}
-}
 
 DescriptorSetBuilder::DescriptorSetBuilder(DevicePtr dptr) : DeviceLinked(dptr), _default_sampler(dptr) {
+}
+
+
+DescriptorSetBuilder::DescriptorSetBuilder(DescriptorSetBuilder&& other) {
+	swap(other);
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::operator=(DescriptorSetBuilder&& other) {
+	swap(other);
+	return *this;
+}
+
+void DescriptorSetBuilder::swap(DescriptorSetBuilder& other) {
+	DeviceLinked::swap(other);
+	std::swap(_default_sampler, other._default_sampler);
 }
 
 vk::DescriptorPool DescriptorSetBuilder::create_pool(usize set_count) const {
@@ -50,7 +59,7 @@ vk::DescriptorPool DescriptorSetBuilder::create_pool(usize set_count) const {
 		);
 }
 
-DescriptorSet DescriptorSetBuilder::build(const Material& material) const {
+MaterialDescriptorSet DescriptorSetBuilder::build(const Material& material) const {
 	if(!material.binding_count()) {
 		return {};
 	}
@@ -122,12 +131,12 @@ DescriptorSet DescriptorSetBuilder::build(const Material& material) const {
 
 	get_device()->get_vk_device().updateDescriptorSets(writes.size(), writes.begin(), 0, nullptr);
 
-	return DescriptorSet{
+	return MaterialDescriptorSet{
 			pool,
 			set,
-			layout,
+			layout/*,
 			material.get_uniform_bindings(),
-			material.get_texture_bindings()
+			material.get_texture_bindings()*/
 		};
 }
 

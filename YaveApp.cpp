@@ -23,11 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device) {
+YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device), material(new Material(&device)) {
 }
 
 void YaveApp::init(Window* window) {
-	material_compiler = new MaterialCompiler(&device);
 
 
 	swapchain = new Swapchain(&device, window);
@@ -40,12 +39,11 @@ void YaveApp::init(Window* window) {
 }
 
 YaveApp::~YaveApp() {
+	delete material;
+
 	mesh_texture = Texture();
 	static_mesh = StaticMeshInstance();
-	pipeline = GraphicPipeline();
-	uniform_buffer = nullptr;
 
-	delete material_compiler;
 	delete swapchain;
 
 	command_buffers.clear();
@@ -53,14 +51,14 @@ YaveApp::~YaveApp() {
 
 
 void YaveApp::create_graphic_pipeline() {
-	uniform_buffer = core::rc(TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1));
-	pipeline = material_compiler->compile(Material()
+	uniform_buffer = TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1);
+
+	(*material)
 			.set_frag_data(SpirVData::from_file("frag.spv"))
 			.set_vert_data(SpirVData::from_file("vert.spv"))
-			.set_geom_data(SpirVData::from_file("geom.spv"))
 			.set_uniform_buffers(core::vector(UniformBinding(0, uniform_buffer)))
 			.set_textures(core::vector(TextureBinding(1, TextureView(mesh_texture))))
-		, swapchain->get_render_pass(), Viewport(swapchain->size()));
+		;
 }
 
 vk::Extent2D extent(const math::Vec2ui& v) {
@@ -72,13 +70,14 @@ void YaveApp::create_command_buffers() {
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
-		recorder.bind_pipeline(pipeline);
+		recorder.bind_pipeline(material->compile(swapchain->get_render_pass(), Viewport(swapchain->size())));
 		recorder.draw(static_mesh);
 		command_buffers << recorder.end();
 	}
 }
 
-void YaveApp::draw() {
+Duration YaveApp::draw() {
+	Chrono ch;
 	auto vk_swap = swapchain->get_vk_swapchain();
 	auto image_acquired_semaphore = device.get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
 	auto render_finished_semaphore = device.get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
@@ -112,10 +111,12 @@ void YaveApp::draw() {
 
 	device.get_vk_device().destroySemaphore(image_acquired_semaphore);
 	device.get_vk_device().destroySemaphore(render_finished_semaphore);
+
+	return ch.elapsed();
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	auto mapping = uniform_buffer->map();
+	auto mapping = uniform_buffer.map();
 	auto& mvp = *mapping.begin();
 
 	auto ratio = swapchain->size().x() / float(swapchain->size().y());

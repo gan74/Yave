@@ -44,7 +44,7 @@ class YaveApp : NonCopyable {
 
 		void init(Window* window);
 
-		void draw();
+		Duration draw();
 		void update(math::Vec2 angles = math::Vec2(0));
 
 
@@ -54,21 +54,19 @@ class YaveApp : NonCopyable {
 
 		void create_mesh();
 
-		MaterialCompiler* material_compiler;
-
 		Instance instance;
 		Device device;
 
 		Swapchain* swapchain;
 
-		GraphicPipeline pipeline;
-
 		CmdBufferPool command_pool;
 		core::Vector<RecordedCmdBuffer> command_buffers;
 
+		Material* material;
+
 		Texture mesh_texture;
 		StaticMeshInstance static_mesh;
-		core::Rc<TypedBuffer<MVP, BufferUsage::UniformBuffer>> uniform_buffer;
+		TypedBuffer<MVP, BufferUsage::UniformBuffer> uniform_buffer;
 
 
 

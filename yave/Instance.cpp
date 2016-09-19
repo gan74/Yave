@@ -57,12 +57,13 @@ void Instance::setup_debug() {
 					.setPfnCallback(vulkan_debug)
 					.setFlags(
 						//vk::DebugReportFlagBitsEXT::eDebug |
+						//vk::DebugReportFlagBitsEXT::eInformation |
 						vk::DebugReportFlagBitsEXT::eError |
 						vk::DebugReportFlagBitsEXT::ePerformanceWarning |
 						vk::DebugReportFlagBitsEXT::eWarning
 					)
 				;
-			create_debug_callback(_instance,& create_info, nullptr,& _debug_callback);
+			create_debug_callback(_instance, &create_info, nullptr, &_debug_callback);
 		}
 	}
 }

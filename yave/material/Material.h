@@ -18,16 +18,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <yave/yave.h>
+#include <yave/Viewport.h>
 #include <yave/UniformBinding.h>
 #include <yave/TextureBinding.h>
 
+#include <y/core/AssocVector.h>
+
+#include "GraphicPipeline.h"
 #include "SpirVData.h"
 
 namespace yave {
 
-class Material : NonCopyable {
+class RenderPass;
+
+class Material : NonCopyable, public DeviceLinked {
+
 	public:
-		Material();
+		Material() = default;
+		Material(DevicePtr dptr);
 
 		Material& set_frag_data(SpirVData&& data);
 		Material& set_vert_data(SpirVData&& data);
@@ -52,6 +60,9 @@ class Material : NonCopyable {
 			return _ub_bindings.size() + _tx_bindings.size();
 		}
 
+		const GraphicPipeline& compile(const RenderPass& render_pass, const Viewport &viewport);
+		const MaterialDescriptorSet& get_descriptor_set() const;
+
 	private:
 		SpirVData _frag;
 		SpirVData _vert;
@@ -59,6 +70,9 @@ class Material : NonCopyable {
 
 		core::Vector<UniformBinding> _ub_bindings;
 		core::Vector<TextureBinding> _tx_bindings;
+
+		mutable MaterialDescriptorSet _d_set;
+		core::AssocVector<vk::RenderPass, GraphicPipeline> _compiled;
 };
 
 }

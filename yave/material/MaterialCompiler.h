@@ -37,8 +37,6 @@ class MaterialCompiler : NonCopyable, public DeviceLinked {
 	private:
 		ShaderModule create_shader_module(const SpirVData& data) const;
 
-		DescriptorSetBuilder _ds_builder;
-
 };
 
 

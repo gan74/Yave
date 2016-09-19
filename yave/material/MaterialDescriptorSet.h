@@ -13,45 +13,31 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_H
-#define YAVE_H
+#ifndef YAVE_MATERIAL_MATERIALDESCRIPTORSET_H
+#define YAVE_MATERIAL_MATERIALDESCRIPTORSET_H
 
-#include <y/utils.h>
-
-#include <y/math/Vec.h>
-#include <y/math/math.h>
-#include <y/math/Matrix.h>
-
-#include <y/core/Ptr.h>
-#include <y/core/Vector.h>
-#include <y/core/String.h>
-
-#ifdef Y_OS_WIN
-	#define VK_USE_PLATFORM_WIN32_KHR
-#endif
-
-#include <vulkan/vulkan.hpp>
+#include <yave/yave.h>
 
 namespace yave {
 
-using namespace y;
+struct MaterialDescriptorSet {
+	public:
+		MaterialDescriptorSet();
+		MaterialDescriptorSet(vk::DescriptorPool pool, vk::DescriptorSet set, vk::DescriptorSetLayout layout);
 
-struct Version {
-	u32 patch : 12;
-	u32 minor : 10;
-	u32 major : 10;
+		const vk::DescriptorSet& get_vk_descriptor_set() const;
+		const vk::DescriptorSetLayout& get_vk_layout() const;
+
+		void destroy(DevicePtr device);
+
+	private:
+		vk::DescriptorPool _pool;
+		vk::DescriptorSet _set;
+		vk::DescriptorSetLayout _layout;
+
 };
-
-
-
-core::Vector<char> read_file(const core::String& file_name);
-
-
-class Device;
-
-using DevicePtr = const Device*;
 
 
 }
 
-#endif // YAVE_H
+#endif // YAVE_MATERIAL_MATERIALDESCRIPTORSET_H
