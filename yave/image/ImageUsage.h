@@ -39,7 +39,7 @@ enum class ImageUsageBits {
 	DepthBit = vk::ImageUsageFlagBits::eDepthStencilAttachment,
 	ColorBit = vk::ImageUsageFlagBits::eColorAttachment,
 
-	SwapchainBit = detail::max(None, DepthBit, ColorBit) << 1
+	SwapchainBit = detail::max(None, DepthBit, ColorBit, TextureBit) << 1
 
 };
 

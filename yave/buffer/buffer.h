@@ -34,6 +34,7 @@ enum class BufferTransfer {
 };
 
 
+Y_TODO(ditch eHostCoherent for a raii flush)
 enum class MemoryFlags {
 	DeviceLocal = vk::MemoryPropertyFlagBits::eDeviceLocal,
 	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible) | uenum(vk::MemoryPropertyFlagBits::eHostCoherent)
