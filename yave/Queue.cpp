@@ -18,19 +18,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-QueueBase::QueueBase(DevicePtr dptr, vk::Queue queue) : DeviceLinked(dptr), _queue(queue) {
-}
-
-void QueueBase::swap(QueueBase& other) {
-	DeviceLinked::swap(other);
-	std::swap(_queue, other._queue);
-}
-
-vk::Queue QueueBase::get_vk_queue() const {
-	return _queue;
-}
-
-
-
 
 }

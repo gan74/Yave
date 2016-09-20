@@ -22,15 +22,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 
-vk::SurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, vk::SurfaceKHR surface) {
+static vk::SurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, vk::SurfaceKHR surface) {
 	return dptr->get_physical_device().get_vk_physical_device().getSurfaceCapabilitiesKHR(surface);
 }
 
-vk::SurfaceFormatKHR get_surface_format(DevicePtr dptr, vk::SurfaceKHR surface) {
+static vk::SurfaceFormatKHR get_surface_format(DevicePtr dptr, vk::SurfaceKHR surface) {
 	return dptr->get_physical_device().get_vk_physical_device().getSurfaceFormatsKHR(surface)[0];
 }
 
-vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surface) {
+static vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surface) {
 	auto present_modes = dptr->get_physical_device().get_vk_physical_device().getSurfacePresentModesKHR(surface);
 	for(auto mode : present_modes) {
 		if(mode == vk::PresentModeKHR::eMailbox) {
@@ -40,7 +40,7 @@ vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surface) {
 	return present_modes[0];
 }
 
-u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
+static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
 	u32 ideal = 2;
 	if(capabilities.maxImageCount < ideal) {
 		return capabilities.maxImageCount;
@@ -51,7 +51,7 @@ u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
 	return ideal;
 }
 
-void assert_depth_supported(DevicePtr dptr) {
+static void assert_depth_supported(DevicePtr dptr) {
 	auto depth_props = dptr->get_physical_device().get_vk_physical_device().getFormatProperties(vk::Format::eD32Sfloat);
 
 	if((depth_props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) != vk::FormatFeatureFlagBits::eDepthStencilAttachment) {
@@ -59,7 +59,7 @@ void assert_depth_supported(DevicePtr dptr) {
 	}
 }
 
-vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Format format) {
+static vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Format format) {
 	auto mapping = vk::ComponentMapping()
 			.setR(vk::ComponentSwizzle::eIdentity)
 			.setG(vk::ComponentSwizzle::eIdentity)
@@ -84,12 +84,12 @@ vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Format form
 		);
 }
 
-bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
+static bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
 	auto index = dptr->get_queue_family_index(QueueFamily::Graphics);
 	return dptr->get_physical_device().get_vk_physical_device().getSurfaceSupportKHR(index, surface);
 }
 
-vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
+static vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 	#ifdef Y_OS_WIN
 		auto surface = dptr->get_instance().get_vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
 				.setHinstance(window->instance())

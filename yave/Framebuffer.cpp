@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-math::Vec2ui compute_size(const ImageBase& a, const ImageBase& b) {
+static math::Vec2ui compute_size(const ImageBase& a, const ImageBase& b) {
 	if(a.size() != b.size()) {
 		fatal("Invalid attachment size");
 	}

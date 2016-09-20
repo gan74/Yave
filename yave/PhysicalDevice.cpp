@@ -19,14 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-bool is_device_ok(vk::PhysicalDevice device) {
+static bool is_device_ok(vk::PhysicalDevice device) {
 	auto features = device.getFeatures();
 	return  features.geometryShader&&
 			features.fullDrawIndexUint32&&
 			features.robustBufferAccess;
 }
 
-vk::PhysicalDevice choose_device(vk::Instance instance) {
+static vk::PhysicalDevice choose_device(vk::Instance instance) {
 	for(auto dev : instance.enumeratePhysicalDevices()) {
 		if(is_device_ok(dev)) {
 			return dev;

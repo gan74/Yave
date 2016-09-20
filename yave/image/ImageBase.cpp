@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-usize get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, vk::MemoryPropertyFlags flags) {
+static usize get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, vk::MemoryPropertyFlags flags) {
 	for(usize i = 0; i != properties.memoryTypeCount; i++) {
 		auto memory_type = properties.memoryTypes[i];
 		if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
@@ -32,22 +32,22 @@ usize get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 
 	return fatal("Unable to alloc device memory");
 }
 
-vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Image image) {
+static vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Image image) {
 	return dptr->get_vk_device().getImageMemoryRequirements(image);
 }
 
-void bind_image_memory(DevicePtr dptr, vk::Image image, vk::DeviceMemory memory) {
+static void bind_image_memory(DevicePtr dptr, vk::Image image, vk::DeviceMemory memory) {
 	dptr->get_vk_device().bindImageMemory(image, memory, 0);
 }
 
-vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs) {
+static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs) {
 	return dptr->get_vk_device().allocateMemory(vk::MemoryAllocateInfo()
 			.setAllocationSize(reqs.size)
 			.setMemoryTypeIndex(get_memory_type(dptr->get_physical_device().get_vk_memory_properties(), reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal))
 		);
 }
 
-vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, vk::ImageUsageFlags usage) {
+static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, vk::ImageUsageFlags usage) {
 	return dptr->get_vk_device().createImage(vk::ImageCreateInfo()
 			.setSharingMode(vk::SharingMode::eExclusive)
 			.setArrayLayers(1)
@@ -62,7 +62,7 @@ vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat for
 		);
 }
 
-vk::BufferImageCopy get_copy_region(const math::Vec2ui& size, ImageFormat format) {
+static vk::BufferImageCopy get_copy_region(const math::Vec2ui& size, ImageFormat format) {
 	return vk::BufferImageCopy()
 		.setImageExtent(vk::Extent3D(size.x(), size.y(), 1))
 		.setImageSubresource(vk::ImageSubresourceLayers()
@@ -73,7 +73,7 @@ vk::BufferImageCopy get_copy_region(const math::Vec2ui& size, ImageFormat format
 			);
 }
 
-auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
+static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
 	auto staging_buffer = StagingBufferMapping::StagingBuffer(dptr, byte_size);
 	auto mapping = CpuVisibleMapping(staging_buffer);
 	memcpy(mapping.data(), data, byte_size);

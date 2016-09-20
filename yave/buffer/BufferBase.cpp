@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-usize get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryFlags flags) {
+static usize get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryFlags flags) {
 	auto mem_flags = vk::MemoryPropertyFlagBits(flags);
 	for(usize i = 0; i != properties.memoryTypeCount; i++) {
 		auto memory_type = properties.memoryTypes[i];
@@ -31,23 +31,23 @@ usize get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 
 	return fatal("Unable to alloc device memory");
 }
 
-vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Buffer buffer) {
+static vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Buffer buffer) {
 	return dptr->get_vk_device().getBufferMemoryRequirements(buffer);
 }
 
 
-void bind_buffer_memory(DevicePtr dptr, vk::Buffer buffer, vk::DeviceMemory memory) {
+static void bind_buffer_memory(DevicePtr dptr, vk::Buffer buffer, vk::DeviceMemory memory) {
 	dptr->get_vk_device().bindBufferMemory(buffer, memory, 0);
 }
 
-vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs, MemoryFlags flags) {
+static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs, MemoryFlags flags) {
 	return dptr->get_vk_device().allocateMemory(vk::MemoryAllocateInfo()
 			.setAllocationSize(reqs.size)
 			.setMemoryTypeIndex(get_memory_type(dptr->get_physical_device().get_vk_memory_properties(), reqs.memoryTypeBits, flags))
 		);
 }
 
-vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsageFlags usage) {
+static vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsageFlags usage) {
 	return dptr->get_vk_device().createBuffer(vk::BufferCreateInfo()
 			.setSize(byte_size)
 			.setUsage(usage)
@@ -55,7 +55,7 @@ vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsageFlags u
 		);
 }
 
-std::tuple<vk::Buffer, vk::DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, vk::BufferUsageFlags usage, MemoryFlags flags) {
+static std::tuple<vk::Buffer, vk::DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, vk::BufferUsageFlags usage, MemoryFlags flags) {
 	auto buffer = create_buffer(dptr, buffer_size, usage);
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, buffer), flags);
 	bind_buffer_memory(dptr, buffer, memory);

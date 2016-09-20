@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const MaterialData& data) {
+static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const MaterialData& data) {
 	auto ub_pool_size = vk::DescriptorPoolSize()
 			.setDescriptorCount(1)
 			.setType(vk::DescriptorType::eUniformBuffer)
@@ -40,7 +40,7 @@ vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const MaterialData& da
 		);
 }
 
-vk::DescriptorSetLayout create_descriptor_layout(DevicePtr dptr, const MaterialData& data) {
+static vk::DescriptorSetLayout create_descriptor_layout(DevicePtr dptr, const MaterialData& data) {
 	auto bindings = core::Vector<vk::DescriptorSetLayoutBinding>();
 
 	bindings << core::range(data._ub_bindings).map([](const UniformBinding& binding) {
@@ -57,7 +57,7 @@ vk::DescriptorSetLayout create_descriptor_layout(DevicePtr dptr, const MaterialD
 			);
 }
 
-void update_texture_sets(DevicePtr dptr, vk::DescriptorSet set, const Sampler &sampler, const MaterialData& data) {
+static void update_texture_sets(DevicePtr dptr, vk::DescriptorSet set, const Sampler &sampler, const MaterialData& data) {
 	auto infos = core::range(data._tx_bindings).map([&](const TextureBinding& binding) {
 			return vk::DescriptorImageInfo()
 					.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
@@ -81,7 +81,7 @@ void update_texture_sets(DevicePtr dptr, vk::DescriptorSet set, const Sampler &s
 	dptr->get_vk_device().updateDescriptorSets(writes.size(), writes.begin(), 0, nullptr);
 }
 
-void update_buffer_sets(DevicePtr dptr, vk::DescriptorSet set, const MaterialData& data) {
+static void update_buffer_sets(DevicePtr dptr, vk::DescriptorSet set, const MaterialData& data) {
 	auto infos = core::range(data._ub_bindings).map([&](const UniformBinding& binding) {
 			return binding.get_descriptor_buffer_info();
 		}).collect<core::Vector>();
@@ -101,7 +101,7 @@ void update_buffer_sets(DevicePtr dptr, vk::DescriptorSet set, const MaterialDat
 	dptr->get_vk_device().updateDescriptorSets(writes.size(), writes.begin(), 0, nullptr);
 }
 
-vk::DescriptorSet create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout) {
+static vk::DescriptorSet create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout) {
 	return dptr->get_vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
 			.setDescriptorPool(pool)
 			.setDescriptorSetCount(1)

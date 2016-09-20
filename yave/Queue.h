@@ -21,21 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-class QueueBase : NonCopyable, public DeviceLinked {
-
-	public:
-		vk::Queue get_vk_queue() const;
-
-	protected:
-		QueueBase(DevicePtr dptr, vk::Queue queue);
-
-		void swap(QueueBase& other);
-
-	private:
-		// the device owns the queue
-		NotOwned<vk::Queue> _queue;
-};
-
 
 /*template<QueueFamily Family>
 class Queue : public QueueBase {

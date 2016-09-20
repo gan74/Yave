@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-vk::AttachmentDescription create_attachment(ImageFormat format, ImageUsage usage) {
+static vk::AttachmentDescription create_attachment(ImageFormat format, ImageUsage usage) {
 	return vk::AttachmentDescription()
 		.setFormat(format.get_vk_format())
 		.setSamples(vk::SampleCountFlagBits::e1)
@@ -33,14 +33,14 @@ vk::AttachmentDescription create_attachment(ImageFormat format, ImageUsage usage
 	;
 }
 
-vk::AttachmentReference create_attachment_reference(ImageUsage usage, u32 index) {
+static vk::AttachmentReference create_attachment_reference(ImageUsage usage, u32 index) {
 	return vk::AttachmentReference()
 		.setAttachment(index)
 		.setLayout(usage.get_vk_image_layout())
 	;
 }
 
-vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, const vk::AttachmentReference& colors) {
+static vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, const vk::AttachmentReference& colors) {
 	return vk::SubpassDescription()
 		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 		.setColorAttachmentCount(1)
@@ -49,7 +49,7 @@ vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, cons
 	;
 }
 
-vk::SubpassDependency create_bottom_of_pipe_dependency() {
+static vk::SubpassDependency create_bottom_of_pipe_dependency() {
 	return vk::SubpassDependency()
 		.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 		.setDstSubpass(0)
@@ -65,7 +65,7 @@ vk::SubpassDependency create_bottom_of_pipe_dependency() {
 	;
 }
 
-vk::RenderPass create_renderpass(DevicePtr dptr, ImageFormat depth_format, ImageFormat color_format) {
+static vk::RenderPass create_renderpass(DevicePtr dptr, ImageFormat depth_format, ImageFormat color_format) {
 	auto attachments = {create_attachment(color_format, ImageUsageBits::SwapchainBit), create_attachment(depth_format, ImageUsageBits::DepthBit)};
 
 	auto color_ref = create_attachment_reference(ImageUsageBits::ColorBit, 0);

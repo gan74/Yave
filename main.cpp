@@ -66,11 +66,10 @@ int main(int, char **) {
 	while(win.update()) {
 		auto mouse = reinterpret_cast<ArcballMouse *>(win.get_mouse_handler());
 		app.update(mouse->angle * 0.01);
-		auto gpu = app.draw();
+		app.draw();
 
 		auto us = round(ch.reset().to_micros());
 		std::cout << "\r";
-		std::cout << std::setw(25) << std::left << (str() + "gpu time = " + gpu.to_micros() + "us");
 		std::cout << std::setw(25) << std::left << (str() + "frame time = " + us + "us");
 		std::cout << std::setw(25) << std::left << (str() + "(avg = " + round(avg(us)) + "us)");
 

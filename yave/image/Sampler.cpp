@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-vk::Sampler create_sampler(DevicePtr dptr) {
+static vk::Sampler create_sampler(DevicePtr dptr) {
 	return dptr->get_vk_device().createSampler(vk::SamplerCreateInfo()
 			.setMagFilter(vk::Filter::eLinear)
 			.setMinFilter(vk::Filter::eLinear)

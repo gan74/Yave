@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-bool are_families_complete(const std::array<i32, QueueFamily::Max>& families) {
+static bool are_families_complete(const std::array<i32, QueueFamily::Max>& families) {
 	for(i32 index : families) {
 		if(index < 0) {
 			return false;
@@ -28,7 +28,7 @@ bool are_families_complete(const std::array<i32, QueueFamily::Max>& families) {
 	return true;
 }
 
-std::array<i32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevice physical) {
+static std::array<i32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevice physical) {
 	std::array<i32, QueueFamily::Max> queue_families;
 	for(i32& index : queue_families) {
 		index = -1;
@@ -55,7 +55,7 @@ std::array<i32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevice phys
 	return queue_families;
 }
 
-vk::Device create_device(
+static vk::Device create_device(
 		vk::PhysicalDevice physical,
 		const std::array<i32, QueueFamily::Max>& queue_families,
 		const core::Vector<const char*>& extentions,
