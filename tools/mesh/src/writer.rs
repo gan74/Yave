@@ -3,6 +3,10 @@ use std::io;
 
 use mesh::*;
 
+use bincode::*;
+use bincode::rustc_serialize::*;
+use rustc_serialize::*;
+
 
 pub trait Writer {
     fn extentions(&self) -> Vec<&'static str>;
