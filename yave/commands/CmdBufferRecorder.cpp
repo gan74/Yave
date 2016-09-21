@@ -102,7 +102,7 @@ CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& static_mesh
 	vk::DeviceSize offset = 0; // fohkin vk::ArrayProxy
 	get_vk_cmd_buffer().bindVertexBuffers(0, static_mesh.vertex_buffer.get_vk_buffer(), offset);
 	get_vk_cmd_buffer().bindIndexBuffer(static_mesh.triangle_buffer.get_vk_buffer(), offset, vk::IndexType::eUint32);
-	get_vk_cmd_buffer().drawIndexed(static_mesh.triangle_buffer._size() * 3, 1, 0, 0, 0);
+	get_vk_cmd_buffer().drawIndexed(static_mesh.triangle_buffer.size() * 3, 1, 0, 0, 0);
 
 	return *this;
 }

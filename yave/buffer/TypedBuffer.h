@@ -49,7 +49,7 @@ class TypedBuffer : public GenericBuffer<Usage, Flags> {
 			return *this;
 		}
 
-		usize _size() const {
+		usize size() const {
 			return this->byte_size() / sizeof(Elem);
 		}
 
@@ -61,7 +61,7 @@ class TypedBuffer : public GenericBuffer<Usage, Flags> {
 			return vk::DescriptorBufferInfo()
 					.setBuffer(this->get_vk_buffer())
 					.setOffset(0)
-					.setRange(_size())
+					.setRange(size())
 				;
 		}
 
