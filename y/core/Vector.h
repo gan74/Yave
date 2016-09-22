@@ -365,6 +365,18 @@ inline Vector<U>& operator<<(Vector<U>& vec, T&& t) {
 	return vec;
 }
 
+template<typename U, typename T>
+inline Vector<U>& operator+=(Vector<U>& vec, T&& t) {
+	vec.append(std::forward<T>(t));
+	return vec;
+}
+
+template<typename U, typename T>
+inline Vector<U> operator+(Vector<U> vec, T&& t) {
+	vec.append(std::forward<T>(t));
+	return vec;
+}
+
 }
 }
 
