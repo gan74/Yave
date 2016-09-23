@@ -246,6 +246,9 @@ char String::operator[](usize i) const {
 	return data()[i];
 }
 
+bool String::operator==(const String& str) const {
+	return !strcmp(data(), str.data());
+}
 
 usize utf8_len(char c) {
 	if(c & 0x80) {

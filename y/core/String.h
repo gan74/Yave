@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Vector.h"
 #include <sstream>
 
-
 namespace y {
 namespace core {
 
@@ -139,6 +138,9 @@ class String {
 
 		char& operator[](usize i);
 		char operator[](usize i) const;
+
+		bool operator==(const String& str) const;
+
 
 		Vector<u32> to_unicode() const;
 
