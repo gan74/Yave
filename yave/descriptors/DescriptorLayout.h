@@ -13,52 +13,34 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MATERIAL_SHADERMODULE_H
-#define YAVE_MATERIAL_SHADERMODULE_H
+#ifndef YAVE_DESCRIPTORS_DESCRIPTORLAYOUT_H
+#define YAVE_DESCRIPTORS_DESCRIPTORLAYOUT_H
 
 #include <yave/yave.h>
+#include <yave/shaders/ShaderResource.h>
 #include <yave/DeviceLinked.h>
-
-#include "SpirVData.h"
 
 namespace yave {
 
-class ShaderModule : NonCopyable, public DeviceLinked {
-
+class DescriptorLayout : NonCopyable, public DeviceLinked {
 	public:
-		ShaderModule() = default;
+		DescriptorLayout() = default;
+		DescriptorLayout(DevicePtr dptr, const core::Vector<ShaderStageResource>& resources);
 
-		ShaderModule(DevicePtr dptr, vk::ShaderModule mod) : DeviceLinked(dptr), _module(mod) {
-		}
+		~DescriptorLayout();
 
-		ShaderModule(ShaderModule&& other) : ShaderModule() {
-			swap(other);
-		}
+		DescriptorLayout(DescriptorLayout&& other);
+		DescriptorLayout& operator=(DescriptorLayout&& other);
 
-		ShaderModule& operator=(ShaderModule&& other) {
-			swap(other);
-			return *this;
-		}
-
-		vk::ShaderModule get_vk_shader_module() const {
-			return _module;
-		}
-
-		~ShaderModule() {
-			destroy(_module);
-		}
+		u32 set_index() const;
 
 	private:
-		void swap(ShaderModule& other) {
-			DeviceLinked::swap(other);
-			std::swap(_module, other._module);
-		}
+		void swap(DescriptorLayout& other);
 
-		vk::ShaderModule _module;
-
+		u32 _index;
+		vk::DescriptorSetLayout _layout;
 };
-
 
 }
 
-#endif // YAVE_MATERIAL_SHADERMODULE_H
+#endif // YAVE_DESCRIPTORS_DESCRIPTORLAYOUT_H

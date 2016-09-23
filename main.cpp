@@ -70,8 +70,8 @@ int main(int, char **) {
 
 		auto us = round(ch.reset().to_micros());
 		std::cout << "\r";
-		std::cout << std::setw(25) << std::left << (str() + "frame time = " + us + "us");
-		std::cout << std::setw(25) << std::left << (str() + "(avg = " + round(avg(us)) + "us)");
+		std::cout << std::setw(25) << std::left << ("frame time = "_s + us + "us");
+		std::cout << std::setw(25) << std::left << ("(avg = "_s + round(avg(us)) + "us)");
 
 	}
 	std::cout << std::endl;

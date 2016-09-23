@@ -55,9 +55,6 @@ void YaveApp::create_command_buffers() {
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
-		/*recorder.bind_pipeline(material.compile(swapchain->get_render_pass(), Viewport(swapchain->size())));
-		recorder.draw(static_mesh);
-		recorder.draw(static_mesh2);*/
 		recorder.set_viewport(Viewport(swapchain->size()));
 		for(auto& obj : objects) {
 			obj.draw(recorder);
@@ -133,7 +130,7 @@ void YaveApp::create_assets() {
 			));
 	}
 
-	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym", "../tools/mesh/cube.ym"};
+	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym"/*, "../tools/mesh/cube.ym"*/};
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name));
 		log_msg(core::String() + m_data.triangles.size() + " triangles loaded");

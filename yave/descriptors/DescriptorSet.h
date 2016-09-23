@@ -13,23 +13,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#include "SpirVData.h"
+#ifndef YAVE_DESCRIPTORS_DESCRIPTORSET_H
+#define YAVE_DESCRIPTORS_DESCRIPTORSET_H
+
+#include "DescriptorLayout.h"
 
 namespace yave {
 
-SpirVData SpirVData::from_file(io::ReaderRef reader) {
-	return SpirVData(reader->read_all());
-}
+class DescriptorSet : NonCopyable {
+	public:
 
-SpirVData::SpirVData(core::Vector<u8>&& data) : _data(std::move(data)) {
-}
-
-usize SpirVData::size() const {
-	return _data.size();
-}
-
-const u32* SpirVData::data() const {
-	return reinterpret_cast<const u32*>(_data.begin());
-}
+	private:
+		vk::DescriptorPool _pool;
+		vk::DescriptorSet _set;
+};
 
 }
+
+#endif // YAVE_DESCRIPTORS_DESCRIPTORSET_H

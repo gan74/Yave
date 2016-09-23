@@ -14,30 +14,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "MaterialCompiler.h"
-#include "ShaderModule.h"
 
+#include <yave/shaders/ShaderModule.h>
 #include <yave/mesh/Vertex.h>
 #include <yave/Device.h>
+
+#include <yave/shaders/ShaderProgram.h>
 
 namespace yave {
 
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
-ShaderModule MaterialCompiler::create_shader_module(const SpirVData& data) const {
-	if(!data.size()) {
-		return ShaderModule();
-	}
-	return ShaderModule(get_device(), get_device()->get_vk_device().createShaderModule(vk::ShaderModuleCreateInfo()
-			.setCodeSize(data.size())
-			.setPCode(data.data())
-		));
-}
-
 GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass, Viewport view) const {
-	auto geom_module = create_shader_module(material.get_data()._geom);
-	auto vert_module = create_shader_module(material.get_data()._vert);
-	auto frag_module = create_shader_module(material.get_data()._frag);
+	auto geom_module = ShaderModule(get_device(), material.get_data()._geom);
+	auto vert_module = ShaderModule(get_device(), material.get_data()._vert);
+	auto frag_module = ShaderModule(get_device(), material.get_data()._frag);
+
+	{
+		ShaderProgram(frag_module, vert_module, geom_module);
+	}
 
 	auto vert_stage_info = vk::PipelineShaderStageCreateInfo()
 			.setModule(vert_module.get_vk_shader_module())

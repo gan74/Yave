@@ -46,6 +46,7 @@ link_directories(../y/build)
 add_executable(yave ${SOURCE_FILES})
 target_link_libraries(yave y)
 target_link_libraries(yave vulkan-1)
+target_link_libraries(yave spirv-cross)
 
 if(WIN32)
 target_compile_definitions(yave PRIVATE -DWIN32)

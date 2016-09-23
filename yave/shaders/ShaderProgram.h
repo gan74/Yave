@@ -13,31 +13,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MATERIAL_MATERIALCOMPILER_H
-#define YAVE_MATERIAL_MATERIALCOMPILER_H
+#ifndef YAVE_SHADER_SHADERPROGRAM_H
+#define YAVE_SHADER_SHADERPROGRAM_H
 
-#include <yave/yave.h>
-#include "Material.h"
-#include "GraphicPipeline.h"
-
-#include <yave/RenderPass.h>
-#include <yave/Viewport.h>
+#include "ShaderModule.h"
+#include <yave/descriptors/DescriptorLayout.h>
 
 namespace yave {
 
-class ShaderModule;
-
-class MaterialCompiler : NonCopyable, public DeviceLinked {
+class ShaderProgram {
 	public:
-		MaterialCompiler(DevicePtr dptr);
-
-		GraphicPipeline compile(const Material& material, const RenderPass& render_pass, Viewport view) const;
+		ShaderProgram(const ShaderModule& frag, const ShaderModule& vert, const ShaderModule& geom = ShaderModule());
 
 	private:
-
+		core::Vector<ShaderStageResource> _resources;
+		core::Vector<DescriptorLayout> _layouts;
 };
-
 
 }
 
-#endif // YAVE_MATERIAL_MATERIALCOMPILER_H
+#endif // YAVE_SHADER_SHADERPROGRAM_H

@@ -13,34 +13,35 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MATERIAL_MATERIALDATA_H
-#define YAVE_MATERIAL_MATERIALDATA_H
+#ifndef YAVE_MATERIAL_SHADERRESOURCE_H
+#define YAVE_MATERIAL_SHADERRESOURCE_H
 
 #include <yave/yave.h>
-#include <yave/UniformBinding.h>
-#include <yave/TextureBinding.h>
-
-#include <yave/shaders/SpirVData.h>
 
 namespace yave {
 
-struct MaterialData {
+enum class ShaderResourceType {
+	UniformBuffer = vk::DescriptorType::eUniformBuffer,
+	Texture = vk::DescriptorType::eCombinedImageSampler
+};
 
-	SpirVData _frag;
-	SpirVData _vert;
-	SpirVData _geom;
+struct ShaderResource {
+	ShaderResourceType type;
+	core::String name;
 
-	core::Vector<UniformBinding> _ub_bindings;
-	core::Vector<TextureBinding> _tx_bindings;
+	u32 set;
+	u32 binding;
 
-	MaterialData& set_frag_data(SpirVData&& data);
-	MaterialData& set_vert_data(SpirVData&& data);
-	MaterialData& set_geom_data(SpirVData&& data);
+	bool operator==(const ShaderResource& other) const {
+		return type == other.type && name == other.name && set == other.set && binding == other.binding;
+	}
+};
 
-	MaterialData& set_uniform_buffers(const core::Vector<UniformBinding>& binds);
-	MaterialData& set_textures(const core::Vector<TextureBinding>& binds);
+struct ShaderStageResource {
+	ShaderResource resource;
+	vk::ShaderStageFlags stage;
 };
 
 }
 
-#endif // YAVE_MATERIAL_MATERIAL_MATERIALDATA_H
+#endif // YAVE_MATERIAL_SHADERRESOURCE_H
