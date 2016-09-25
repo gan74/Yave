@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
+Y_TODO(move all shader processing in ShaderProgram)
+
 class SpirVData {
 
 	public:
@@ -36,13 +38,13 @@ class SpirVData {
 		const u32* data() const;
 
 		const core::Vector<ShaderResource>& shader_resources() const;
-		vk::ShaderStageFlags shader_stage() const;
+		vk::ShaderStageFlagBits shader_stage() const;
 
 	private:
 		SpirVData(const core::Vector<u32>& data);
 
 		core::Vector<u32> _data;
-		vk::ShaderStageFlags _stage;
+		vk::ShaderStageFlagBits _stage;
 		core::Vector<ShaderResource> _resources;
 };
 

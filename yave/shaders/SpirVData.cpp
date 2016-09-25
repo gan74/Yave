@@ -56,7 +56,6 @@ SpirVData::SpirVData(const core::Vector<u32>& data) : _data(data), _stage(vk::Sh
 		build_resources(_resources, ShaderResourceType::UniformBuffer, glsl_resources.uniform_buffers, glsl);
 		build_resources(_resources, ShaderResourceType::Texture, glsl_resources.sampled_images, glsl);
 
-
 		switch(glsl.get_execution_model()) {
 			case spv::ExecutionModelVertex:
 				_stage = vk::ShaderStageFlagBits::eVertex;
@@ -78,7 +77,7 @@ const core::Vector<ShaderResource>& SpirVData::shader_resources() const {
 	return _resources;
 }
 
-vk::ShaderStageFlags SpirVData::shader_stage() const {
+vk::ShaderStageFlagBits SpirVData::shader_stage() const {
 	return _stage;
 }
 

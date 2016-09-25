@@ -27,35 +27,16 @@ MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass, Viewport view) const {
-	auto geom_module = ShaderModule(get_device(), material.get_data()._geom);
+	/*auto geom_module = ShaderModule(get_device(), material.get_data()._geom);
 	auto vert_module = ShaderModule(get_device(), material.get_data()._vert);
-	auto frag_module = ShaderModule(get_device(), material.get_data()._frag);
-
-	{
-		ShaderProgram(frag_module, vert_module, geom_module);
+	auto frag_module = ShaderModule(get_device(), material.get_data()._frag);*/
+	auto modules = core::vector(ShaderModule(get_device(), material.get_data()._vert), ShaderModule(get_device(), material.get_data()._frag));
+	if(!material.get_data()._geom.is_empty()) {
+		modules << ShaderModule(get_device(), material.get_data()._geom);
 	}
 
-	auto vert_stage_info = vk::PipelineShaderStageCreateInfo()
-			.setModule(vert_module.get_vk_shader_module())
-			.setStage(vk::ShaderStageFlagBits::eVertex)
-			.setPName("main")
-		;
-
-	auto frag_stage_info = vk::PipelineShaderStageCreateInfo()
-			.setModule(frag_module.get_vk_shader_module())
-			.setStage(vk::ShaderStageFlagBits::eFragment)
-			.setPName("main")
-		;
-
-	auto stage_create_infos = core::vector(vert_stage_info, frag_stage_info);
-
-	if(geom_module.get_vk_shader_module()) {
-		stage_create_infos << vk::PipelineShaderStageCreateInfo()
-				.setModule(geom_module.get_vk_shader_module())
-				.setStage(vk::ShaderStageFlagBits::eGeometry)
-				.setPName("main")
-			;
-	}
+	ShaderProgram program(std::move(modules));
+	auto pipeline_shader_stage = program.get_vk_pipeline_stage_info();
 
 	auto binding_description = vk::VertexInputBindingDescription()
 			.setBinding(0)
@@ -160,8 +141,8 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 		);
 
 	auto pipeline = get_device()->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
-			.setStageCount(stage_create_infos.size())
-			.setPStages(stage_create_infos.begin())
+			.setStageCount(pipeline_shader_stage.size())
+			.setPStages(pipeline_shader_stage.begin())
 			.setPVertexInputState(&vertex_input)
 			.setPInputAssemblyState(&input_assembly)
 			.setPViewportState(&viewport_state)

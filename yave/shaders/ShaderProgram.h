@@ -23,11 +23,15 @@ namespace yave {
 
 class ShaderProgram {
 	public:
-		ShaderProgram(const ShaderModule& frag, const ShaderModule& vert, const ShaderModule& geom = ShaderModule());
+		ShaderProgram(core::Vector<ShaderModule>&& modules);
+
+		core::Vector<vk::PipelineShaderStageCreateInfo> get_vk_pipeline_stage_info() const;
 
 	private:
 		core::Vector<ShaderStageResource> _resources;
 		core::Vector<DescriptorLayout> _layouts;
+
+		core::Vector<ShaderModule> _modules;
 };
 
 }

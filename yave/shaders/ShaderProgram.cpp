@@ -47,21 +47,35 @@ void print(const core::Vector<DescriptorLayout>& layouts) {
 	}
 }
 
-ShaderProgram::ShaderProgram(const ShaderModule& frag, const ShaderModule& vert, const ShaderModule& geom) {
-	add_resources(_resources, frag);
-	add_resources(_resources, vert);
-	add_resources(_resources, geom);
+ShaderProgram::ShaderProgram(core::Vector<ShaderModule>&& modules) : _modules(std::move(modules)) {
+	DevicePtr dptr = nullptr;
+	for(const auto& mod : _modules) {
+		dptr = mod.get_device();
+		add_resources(_resources, mod);
+	}
 
 	std::unordered_map<u32, core::Vector<ShaderStageResource>> sets;
 	for(const auto& r : _resources) {
 		sets[r.resource.set] << r;
 	}
 	for(const auto& set : sets) {
-		_layouts << DescriptorLayout(frag.get_device(), set.second);
+		_layouts << DescriptorLayout(dptr, set.second);
 	}
 
 
 	print(_layouts);
+}
+
+core::Vector<vk::PipelineShaderStageCreateInfo> ShaderProgram::get_vk_pipeline_stage_info() const {
+	core::Vector<vk::PipelineShaderStageCreateInfo> stage_create_infos;
+	for(const auto& mod : _modules) {
+		stage_create_infos << vk::PipelineShaderStageCreateInfo()
+				.setModule(mod.get_vk_shader_module())
+				.setStage(mod.shader_stage())
+				.setPName("main")
+			;
+	}
+	return stage_create_infos;
 }
 
 }

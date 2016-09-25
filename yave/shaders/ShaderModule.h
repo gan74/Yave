@@ -39,13 +39,13 @@ class ShaderModule : NonCopyable, public DeviceLinked {
 
 		vk::ShaderModule get_vk_shader_module() const;
 		const core::Vector<ShaderResource>& shader_resources() const;
-		vk::ShaderStageFlags shader_stage() const;
+		vk::ShaderStageFlagBits shader_stage() const;
 
 	private:
 		void swap(ShaderModule& other);
 
 		vk::ShaderModule _module;
-		vk::ShaderStageFlags _stage;
+		vk::ShaderStageFlagBits _stage;
 		core::Vector<ShaderResource> _resources;
 
 };

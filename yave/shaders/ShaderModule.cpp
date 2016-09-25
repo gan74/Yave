@@ -51,7 +51,7 @@ const core::Vector<ShaderResource>& ShaderModule::shader_resources() const {
 	return _resources;
 }
 
-vk::ShaderStageFlags ShaderModule::shader_stage() const {
+vk::ShaderStageFlagBits ShaderModule::shader_stage() const {
 	return _stage;
 }
 
@@ -64,6 +64,7 @@ void ShaderModule::swap(ShaderModule& other) {
 	DeviceLinked::swap(other);
 	std::swap(_module, other._module);
 	std::swap(_resources, other._resources);
+	std::swap(_stage, other._stage);
 }
 
 
