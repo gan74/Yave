@@ -72,7 +72,7 @@ class Vector : ResizePolicy {
 
 		template<typename T>
 		explicit Vector(T&& other) : Vector() {
-			set_min_capacity(other.size());
+			//set_min_capacity(other.size());
 			append(range(std::forward<T>(other)));
 		}
 
