@@ -72,7 +72,7 @@ class Vector : ResizePolicy {
 
 		template<typename T>
 		explicit Vector(T&& other) : Vector() {
-			//set_min_capacity(other.size());
+			set_min_capacity(other.size());
 			append(range(std::forward<T>(other)));
 		}
 
@@ -310,6 +310,7 @@ class Vector : ResizePolicy {
 
 
 namespace detail {
+
 template<typename T>
 inline void append(Vector<T>&) {
 }
@@ -324,6 +325,7 @@ template<typename T, typename U>
 inline void append(Vector<T>& vec, U&& u) {
 	vec.append(std::forward<U>(u));
 }
+
 }
 
 template<typename T>
@@ -334,23 +336,23 @@ inline auto vector_with_capacity(usize cap) {
 }
 
 template<typename T, typename... Args>
-inline auto vector(Args... args) {
+inline auto vector(Args&&... args) {
 	auto vec = vector_with_capacity<T>(sizeof...(args));
 	detail::append(vec, std::forward<Args>(args)...);
 	return vec;
 }
 
-template<typename T, typename... Args>
-inline auto vector(T&& t, Args&&... args) {
-	return vector<typename std::common_type<T, Args...>::type>(std::forward<T>(t), std::forward<Args>(args)...);
+template<typename... Args, typename Value = typename std::common_type<Args...>::type>
+inline Vector<Value> vector(Args&&... args) {
+	auto vec = vector_with_capacity<Value>(sizeof...(args));
+	detail::append(vec, std::forward<Args>(args)...);
+	return vec;
 }
 
 template<typename T>
 inline auto vector(std::initializer_list<T> lst) {
 	return Vector<T>(lst);
 }
-
-
 
 
 static_assert(std::is_same<decltype(vector(1, 2, 3))::Element, int>::value, "Invalid vector(...) return type");
