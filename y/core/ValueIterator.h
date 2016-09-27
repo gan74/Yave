@@ -67,6 +67,10 @@ class ValueIterator {
 			return& _value;
 		}
 
+		auto operator-(const ValueIterator& other) const {
+			return _reverse ? other._value - _value : _value - other._value;
+		}
+
 	private:
 		T _value;
 		bool _reverse;

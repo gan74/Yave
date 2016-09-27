@@ -72,6 +72,9 @@ class ReverseIterator {
 			return *_it;
 		}
 
+		auto operator-(const ReverseIterator& other) const {
+			return other._it - _it;
+		}
 
 	private:
 		Iter _it;

@@ -68,6 +68,9 @@ class FilterIterator {
 			return *_it;
 		}
 
+		auto operator-(const FilterIterator& other) const {
+			return _it - other._it;
+		}
 
 	private:
 		Iter _it;

@@ -68,6 +68,9 @@ class MapIterator {
 			return _map(*_it);
 		}
 
+		auto operator-(const MapIterator& other) const {
+			return _it - other._it;
+		}
 
 	private:
 		Iter _it;
