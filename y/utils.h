@@ -213,6 +213,12 @@ struct TryFailed {
 };
 }
 
+
+template<typename T, typename Hasher = std::hash<T>>
+static auto hash(const T& t, const Hasher& hasher = Hasher()) {
+	return hasher(t);
+}
+
 }
 
 #define Y_ASSERT_SANE(type) static_assert(y::is_sane<type>::value, "\"" #type "\" is ill-formed")

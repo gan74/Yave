@@ -16,13 +16,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Range.h"
 #include "Vector.h"
+#include "String.h"
 #include <y/test/test.h>
+#include <iostream>
 
 namespace y {
 namespace core {
 
 static_assert(std::is_same<typename decltype(range(vector(1, 2, 3)))::Element, int>::value, "Range::Element deduction error");
+static_assert(!is_iterable<int>::value, "is_iterable<int> should be false");
+static_assert(is_iterable<Vector<int>>::value, "is_iterable<Vector<int>> should be true");
 
+y_test_func("Range hashing") {
+	auto vec = range(0, 10).collect<Vector>();
+	y_test_assert(vec.size() == 10);
+	y_test_assert(hash(range(0, 10)) == hash(vec));
+}
 
 }
 }
