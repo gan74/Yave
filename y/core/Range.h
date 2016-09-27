@@ -158,7 +158,31 @@ inline auto range(Coll&& c) {
 	return range(c.begin(), c.end());
 }
 
+
+namespace detail {
+	// from boost
+	template<typename T>
+	inline void hash_combine(T& seed, T value) {
+		seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	}
 }
+
+}
+}
+
+namespace std {
+	template<typename I>
+	class hash<y::core::Range<I>> {
+		typedef y::core::Range<I> argument_type;
+		typedef std::size_t result_type;
+		result_type operator()(argument_type const& range) const {
+			result_type seed = 0;
+			for(const auto& i : range) {
+				y::core::detail::hash_combine(seed, std::hash<decltype(i)>(i));
+			}
+			return seed;
+		}
+	};
 }
 
 #endif // Y_CORE_RANGE_H

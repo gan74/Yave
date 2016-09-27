@@ -155,10 +155,9 @@ y_test_func("Vector vector(...)") {
 
 y_test_func("Vector<Range<I>>") {
 	{
-		auto v = vector(1, 2, 3, 4, 5, 6);
-		auto r = range(v);
+		auto r = range(1, 7);
 
-		auto vec = v;
+		auto vec = vector(1, 2, 3, 4, 5, 6);
 		vec.append(r);
 		vec.append(r.reverse());
 		vec.append(r.map([](int i) { return i + 1; }));
