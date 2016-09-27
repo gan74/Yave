@@ -23,6 +23,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 class DescriptorLayout : NonCopyable, public DeviceLinked {
+	struct Resource {
+		u32 binding;
+		ShaderResourceType type;
+		vk::ShaderStageFlags stage;
+
+		Resource(const ShaderStageResource& res) : binding(res.resource.binding), type(res.resource.type), stage(res.stage) {
+		}
+
+		bool operator==(const Resource& other) {
+			return &other == this || (
+					binding == other.binding &&
+					type == other.type &&
+					stage == other.stage
+				);
+		}
+
+		bool operator!=(const Resource& other) {
+			return !operator==(other);
+		}
+
+	};
+
 	public:
 		DescriptorLayout() = default;
 		DescriptorLayout(DevicePtr dptr, const core::Vector<ShaderStageResource>& resources);
@@ -34,11 +56,14 @@ class DescriptorLayout : NonCopyable, public DeviceLinked {
 
 		u32 set_index() const;
 
+		bool operator==(const DescriptorLayout& other) const;
+
 	private:
 		void swap(DescriptorLayout& other);
 
 		u32 _index;
 		vk::DescriptorSetLayout _layout;
+		core::Vector<Resource> _resources;
 };
 
 }

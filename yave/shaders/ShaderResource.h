@@ -40,7 +40,16 @@ struct ShaderResource {
 struct ShaderStageResource {
 	ShaderResource resource;
 	vk::ShaderStageFlags stage;
+
+	bool operator==(const ShaderStageResource& other) const {
+		return resource == other.resource && stage == other.stage;
+	}
+
+	bool operator!=(const ShaderStageResource& other) const {
+		return !operator==(other);
+	}
 };
+
 
 }
 

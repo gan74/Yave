@@ -13,27 +13,35 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_SHADER_SHADERPROGRAM_H
-#define YAVE_SHADER_SHADERPROGRAM_H
 
-#include "ShaderModule.h"
-#include <yave/descriptors/DescriptorLayout.h>
+#include "DescriptorLayoutPool.h"
 
 namespace yave {
 
-class ShaderProgram : NonCopyable {
-	public:
-		ShaderProgram(core::Vector<ShaderModule>&& modules);
-
-		core::Vector<vk::PipelineShaderStageCreateInfo> get_vk_pipeline_stage_info() const;
-
-	private:
-		core::Vector<ShaderStageResource> _resources;
-		core::Vector<NotOwned<const DescriptorLayout*>> _layouts;
-
-		core::Vector<ShaderModule> _modules;
-};
-
+DescriptorLayoutPool::DescriptorLayoutPool(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
-#endif // YAVE_SHADER_SHADERPROGRAM_H
+const DescriptorLayout& DescriptorLayoutPool::operator[](const core::Vector<ShaderStageResource>& res) {
+	auto& layout = _layouts[res];
+	if(!layout) {
+		layout = new DescriptorLayout(get_device(), res);
+	}
+	return *layout;
+}
+
+DescriptorLayoutPool::DescriptorLayoutPool(DescriptorLayoutPool&& other) {
+	swap(other);
+}
+
+DescriptorLayoutPool& DescriptorLayoutPool::operator=(DescriptorLayoutPool&& other) {
+	swap(other);
+	return *this;
+}
+
+void DescriptorLayoutPool::swap(DescriptorLayoutPool& other) {
+	DeviceLinked::swap(other);
+
+	std::swap(_layouts, other._layouts);
+}
+
+}

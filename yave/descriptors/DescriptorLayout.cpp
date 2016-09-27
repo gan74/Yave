@@ -54,7 +54,8 @@ static core::Vector<vk::DescriptorSetLayoutBinding> create_layout_bindings(const
 DescriptorLayout::DescriptorLayout(DevicePtr dptr, const core::Vector<ShaderStageResource>& resources) :
 		DeviceLinked(dptr),
 		_index(compute_index(resources)),
-		_layout(create_descriptor_layout(dptr, create_layout_bindings(resources))) {
+		_layout(create_descriptor_layout(dptr, create_layout_bindings(resources))),
+		_resources(core::range(resources).map([](const auto& r) { return Resource(r); })) {
 }
 
 DescriptorLayout::~DescriptorLayout() {
@@ -74,10 +75,18 @@ void DescriptorLayout::swap(DescriptorLayout& other) {
 	DeviceLinked::swap(other);
 	std::swap(_index, other._index);
 	std::swap(_layout, other._layout);
+	std::swap(_resources, other._resources);
 }
 
 u32 DescriptorLayout::set_index() const {
 	return _index;
+}
+
+bool DescriptorLayout::operator==(const DescriptorLayout& other) const {
+	return &other == this || (
+			other._index == _index &&
+			other._resources == _resources
+		);
 }
 
 }

@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "PhysicalDevice.h"
 
 #include <yave/commands/CmdBufferPool.h>
+#include <yave/descriptors/DescriptorLayoutPool.h>
 
 #include <yave/vk/destroy.h>
 
@@ -57,8 +58,9 @@ class Device : NonCopyable {
 			return _disposable_cmd_pool.create_buffer();
 		}
 
-		auto create_command_buffer() const {
-			return _cmd_pool.create_buffer();
+		template<typename T>
+		const auto& create_descriptor_layout(const T& t) const {
+			return _descriptor_layout_pool[t];
 		}
 
 	private:
@@ -70,8 +72,8 @@ class Device : NonCopyable {
 
 		vk::Device _device;
 
-		mutable CmdBufferPool _cmd_pool;
 		mutable CmdBufferPool _disposable_cmd_pool;
+		mutable DescriptorLayoutPool _descriptor_layout_pool;
 };
 
 

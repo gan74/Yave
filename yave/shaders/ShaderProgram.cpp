@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "ShaderProgram.h"
+#include <yave/Device.h>
 #include <unordered_map>
 
 #include <iostream>
@@ -40,10 +41,10 @@ void add_resources(core::Vector<SSR>& resources, const ShaderModule& mod) {
 	}
 }
 
-void print(const core::Vector<DescriptorLayout>& layouts) {
+void print(const core::Vector<const DescriptorLayout*>& layouts) {
 	for(const auto& lay : layouts) {
 		std::cout << "--------------------------------" << std::endl;
-		std::cout << "set = " << lay.set_index() << std::endl << std::endl;
+		std::cout << "set = " << lay->set_index() << std::endl << std::endl;
 	}
 }
 
@@ -59,7 +60,7 @@ ShaderProgram::ShaderProgram(core::Vector<ShaderModule>&& modules) : _modules(st
 		sets[r.resource.set] << r;
 	}
 	for(const auto& set : sets) {
-		_layouts << DescriptorLayout(dptr, set.second);
+		_layouts << &dptr->create_descriptor_layout(set.second);
 	}
 
 
