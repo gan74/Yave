@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/buffer/BufferMemoryReference.h>
 #include <yave/mesh/StaticMeshInstance.h>
 #include <yave/material/GraphicPipeline.h>
+#include <yave/descriptors/DescriptorSet.h>
 #include <yave/Viewport.h>
 
 namespace yave {
@@ -46,7 +47,7 @@ class CmdBufferRecorder : NonCopyable {
 
 		CmdBufferRecorder& set_viewport(const Viewport& view);
 		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
-		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline);
+		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& mvp);
 		CmdBufferRecorder& draw(const StaticMeshInstance& static_mesh);
 
 		template<MemoryFlags DstFlags, MemoryFlags SrcFlags>

@@ -32,7 +32,7 @@ class ShaderProgram : NonCopyable {
 
 	private:
 		core::AssocVector<vk::ShaderStageFlagBits, ShaderModule> _modules;
-		core::AssocVector<u32, vk::DescriptorSetLayout> _layouts;
+		core::Vector<vk::DescriptorSetLayout> _layouts;
 };
 
 }

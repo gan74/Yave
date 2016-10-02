@@ -134,10 +134,9 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setDepthCompareOp(vk::CompareOp::eLessOrEqual)
 		;
 
-
 	auto pipeline_layout = get_device()->get_vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(1)
-			.setPSetLayouts(&material.descriptor_set().get_vk_descriptor_set_layout())
+			.setSetLayoutCount(program.get_descriptor_layouts().size())
+			.setPSetLayouts(program.get_descriptor_layouts().begin())
 		);
 
 	auto pipeline = get_device()->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()

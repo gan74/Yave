@@ -70,6 +70,8 @@ class YaveApp : NonCopyable {
 		core::Vector<StaticMesh> objects;
 		TypedBuffer<MVP, BufferUsage::UniformBuffer> uniform_buffer;
 
+		DescriptorSet mvp_set;
+
 
 
 };

@@ -5,7 +5,7 @@ out gl_PerVertex {
 	vec4 gl_Position;
 };
 
-layout(binding = 0) uniform Matrices {
+layout(set = 0, binding = 0) uniform Matrices {
 	mat4 model;
 	mat4 view;
 	mat4 proj;

@@ -70,15 +70,8 @@ static auto create_bindings(const spirv_cross::CompilerGLSL& compiler, const std
 	return bindings;
 }
 
-static vk::DescriptorSetLayout create_layout(DevicePtr dptr, const core::Vector<vk::DescriptorSetLayoutBinding>& bindings) {
-	return dptr->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
-				.setBindingCount(bindings.size())
-				.setPBindings(bindings.begin())
-			);
-}
 
-
-
+Y_TODO(pool DescriptorSetLayouts !)
 
 ShaderProgram::ShaderProgram(DevicePtr dptr, const core::Vector<SpirVData>& modules) /*: _modules(modules), _layouts(compute_layouts(_modules))*/ {
 	auto layout_bindings = std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>();
@@ -90,12 +83,18 @@ ShaderProgram::ShaderProgram(DevicePtr dptr, const core::Vector<SpirVData>& modu
 		merge(layout_bindings, create_bindings(compiler, resources.uniform_buffers, vk::DescriptorType::eUniformBuffer));
 		merge(layout_bindings, create_bindings(compiler, resources.sampled_images, vk::DescriptorType::eCombinedImageSampler));
 	}
+	u32 max_set = 0;
+	core::range(layout_bindings).foreach([&](const auto& p) { max_set = std::max(max_set, p.first); });
+
+	_layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, VK_NULL_HANDLE);
 	for(const auto& binding : layout_bindings) {
 		_layouts[binding.first] = dptr->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
 				.setBindingCount(binding.second.size())
 				.setPBindings(binding.second.begin())
 			);
 	}
+
+	log_msg("shader descriptor layout count = "_s + _layouts.size());
 }
 
 core::Vector<vk::PipelineShaderStageCreateInfo> ShaderProgram::get_vk_pipeline_stage_info() const {
@@ -108,6 +107,10 @@ core::Vector<vk::PipelineShaderStageCreateInfo> ShaderProgram::get_vk_pipeline_s
 			;
 	}
 	return stage_create_infos;
+}
+
+const core::Vector<vk::DescriptorSetLayout>& ShaderProgram::get_descriptor_layouts() const {
+	return _layouts;
 }
 
 }

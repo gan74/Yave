@@ -44,6 +44,8 @@ YaveApp::~YaveApp() {
 	delete swapchain;
 
 	command_buffers.clear();
+
+	mvp_set = DescriptorSet();
 }
 
 vk::Extent2D extent(const math::Vec2ui& v) {
@@ -57,7 +59,7 @@ void YaveApp::create_command_buffers() {
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
 		recorder.set_viewport(Viewport(swapchain->size()));
 		for(auto& obj : objects) {
-			obj.draw(recorder);
+			obj.draw(recorder, mvp_set);
 		}
 		command_buffers << recorder.end();
 	}
@@ -125,9 +127,11 @@ void YaveApp::create_assets() {
 		material = asset_ptr(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("frag.spv")))
 				.set_vert_data(SpirVData::from_file(io::File::open("vert.spv")))
-				.set_bindings(core::vector(Binding(uniform_buffer), Binding(TextureView(mesh_texture))))
+				.set_bindings(core::vector(Binding(TextureView(mesh_texture))))
 			));
 	}
+
+	mvp_set = DescriptorSet(&device, {Binding(uniform_buffer)});
 
 	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym"/*, "../tools/mesh/cube.ym"*/};
 	for(auto name : meshes) {
