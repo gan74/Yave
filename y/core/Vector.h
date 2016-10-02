@@ -49,8 +49,6 @@ class Vector : ResizePolicy {
 
 	using Data = typename std::remove_const<Elem>::type;
 
-	static_assert(!std::is_polymorphic<Elem>::value, "Vector<T> should not contain polymorphic objects directly");
-
 	public:
 		using iterator = Elem*;
 		using const_iterator = Elem const*;
