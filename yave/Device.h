@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "yave.h"
 #include "PhysicalDevice.h"
 
+#include <yave/image/Sampler.h>
+
 #include <yave/commands/CmdBufferPool.h>
 #include <yave/descriptors/DescriptorLayoutPool.h>
 
@@ -44,6 +46,8 @@ class Device : NonCopyable {
 
 		vk::Device get_vk_device() const;
 		vk::Queue get_vk_queue(usize i) const;
+		vk::Sampler get_vk_sampler() const;
+
 		i32 get_queue_family_index(QueueFamily i) const;
 
 
@@ -72,6 +76,7 @@ class Device : NonCopyable {
 
 		vk::Device _device;
 
+		Sampler _sampler;
 		mutable CmdBufferPool _disposable_cmd_pool;
 		mutable DescriptorLayoutPool _descriptor_layout_pool;
 };

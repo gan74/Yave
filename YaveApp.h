@@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/Swapchain.h>
 #include <yave/objects/StaticMesh.h>
 
+#include <yave/descriptors/Binding.h>
+
 namespace yave {
 
 class Window;

@@ -91,6 +91,7 @@ Device::Device(Instance& instance) :
 		_physical(instance),
 		_queue_familiy_indices(compute_queue_families(_physical.get_vk_physical_device())),
 		_device(create_device(_physical.get_vk_physical_device(), _queue_familiy_indices, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.get_debug_params().get_device_layers())),
+		_sampler(this),
 		_disposable_cmd_pool(this),
 		_descriptor_layout_pool(this) {
 
@@ -107,6 +108,8 @@ Device::~Device() {
 	if(_disposable_cmd_pool.active_buffers()) {
 		fatal("Buffer still active");
 	}
+
+	_sampler = Sampler();
 
 	// we need to destroy the pools before the device
 	_disposable_cmd_pool = CmdBufferPool();
@@ -129,6 +132,10 @@ vk::Device Device::get_vk_device() const {
 
 vk::Queue Device::get_vk_queue(usize i) const {
 	return _queues[i];
+}
+
+vk::Sampler Device::get_vk_sampler() const {
+	return _sampler.get_vk_sampler();
 }
 
 i32 Device::get_queue_family_index(QueueFamily i) const {

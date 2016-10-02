@@ -16,15 +16,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_DESCRIPTORS_DESCRIPTORSET_H
 #define YAVE_DESCRIPTORS_DESCRIPTORSET_H
 
-#include "DescriptorLayout.h"
+#include "Binding.h"
 
 namespace yave {
 
-class DescriptorSet : NonCopyable {
+class DescriptorSet : NonCopyable, public DeviceLinked {
+
 	public:
+		DescriptorSet(DevicePtr dptr, std::initializer_list<Binding> bindings);
 
 	private:
 		vk::DescriptorPool _pool;
+		vk::DescriptorSetLayout _layout;
 		vk::DescriptorSet _set;
 };
 
