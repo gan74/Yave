@@ -137,7 +137,7 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 
 	auto pipeline_layout = get_device()->get_vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(1)
-			.setPSetLayouts(&material.get_vk_descriptor_set_layout())
+			.setPSetLayouts(&material.descriptor_set().get_vk_descriptor_set_layout())
 		);
 
 	auto pipeline = get_device()->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()

@@ -33,14 +33,10 @@ MaterialData& MaterialData::set_geom_data(SpirVData&& data) {
 	return *this;
 }
 
-MaterialData& MaterialData::set_uniform_buffers(const core::Vector<UniformBinding>& binds) {
-	_ub_bindings = binds;
+MaterialData& MaterialData::set_bindings(const core::Vector<Binding>& binds) {
+	_bindings = binds;
 	return *this;
 }
 
-MaterialData& MaterialData::set_textures(const core::Vector<TextureBinding>& binds) {
-	_tx_bindings = binds;
-	return *this;
-}
 
 }

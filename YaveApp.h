@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/objects/StaticMesh.h>
 
 #include <yave/descriptors/Binding.h>
+#include <yave/descriptors/DescriptorSet.h>
 
 namespace yave {
 

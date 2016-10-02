@@ -125,8 +125,7 @@ void YaveApp::create_assets() {
 		material = asset_ptr(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("frag.spv")))
 				.set_vert_data(SpirVData::from_file(io::File::open("vert.spv")))
-				.set_uniform_buffers(core::vector(UniformBinding(0, uniform_buffer)))
-				.set_textures(core::vector(TextureBinding(1, TextureView(mesh_texture))))
+				.set_bindings(core::vector(Binding(uniform_buffer), Binding(TextureView(mesh_texture))))
 			));
 	}
 

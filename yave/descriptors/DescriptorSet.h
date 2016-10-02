@@ -23,9 +23,19 @@ namespace yave {
 class DescriptorSet : NonCopyable, public DeviceLinked {
 
 	public:
+		DescriptorSet() = default;
 		DescriptorSet(DevicePtr dptr, std::initializer_list<Binding> bindings);
+		DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindings);
+
+		DescriptorSet(DescriptorSet&& other);
+		DescriptorSet& operator=(DescriptorSet&& other);
+
+		const vk::DescriptorSet& get_vk_descriptor_set() const;
+		const vk::DescriptorSetLayout& get_vk_descriptor_set_layout() const;
 
 	private:
+		void swap(DescriptorSet& other);
+
 		vk::DescriptorPool _pool;
 		vk::DescriptorSetLayout _layout;
 		vk::DescriptorSet _set;

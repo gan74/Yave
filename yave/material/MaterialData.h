@@ -17,8 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define YAVE_MATERIAL_MATERIALDATA_H
 
 #include <yave/yave.h>
-#include <yave/UniformBinding.h>
-#include <yave/TextureBinding.h>
+#include <yave/descriptors/Binding.h>
 
 #include <yave/shaders/SpirVData.h>
 
@@ -30,15 +29,13 @@ struct MaterialData {
 	SpirVData _vert;
 	SpirVData _geom;
 
-	core::Vector<UniformBinding> _ub_bindings;
-	core::Vector<TextureBinding> _tx_bindings;
+	core::Vector<Binding> _bindings;
 
 	MaterialData& set_frag_data(SpirVData&& data);
 	MaterialData& set_vert_data(SpirVData&& data);
 	MaterialData& set_geom_data(SpirVData&& data);
 
-	MaterialData& set_uniform_buffers(const core::Vector<UniformBinding>& binds);
-	MaterialData& set_textures(const core::Vector<TextureBinding>& binds);
+	MaterialData& set_bindings(const core::Vector<Binding>& binds);
 };
 
 }

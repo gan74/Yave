@@ -60,7 +60,7 @@ vk::PipelineLayout GraphicPipeline::get_vk_pipeline_layout() const {
 }
 
 const vk::DescriptorSet& GraphicPipeline::get_vk_descriptor_set() const {
-	return _material->get_vk_descriptor_set();
+	return _material->descriptor_set().get_vk_descriptor_set();
 }
 
 
