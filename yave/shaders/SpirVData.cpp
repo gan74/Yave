@@ -15,28 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "SpirVData.h"
 
-#include <spirv-cross/spirv.hpp>
-#include <spirv-cross/spirv_cross.hpp>
-#include <spirv-cross/spirv_glsl.hpp>
-
 namespace yave {
-
-void build_resources(
-		core::Vector<ShaderResource>& out,
-		ShaderResourceType type,
-		const std::vector<spirv_cross::Resource>& resources,
-		spirv_cross::Compiler& compiler) {
-
-	for(auto r : resources) {
-		auto id = r.id;
-		out << ShaderResource {
-				type,
-				core::str(r.name),
-				compiler.get_decoration(id, spv::DecorationDescriptorSet),
-				compiler.get_decoration(id, spv::DecorationBinding)
-			};
-	}
-}
 
 SpirVData SpirVData::from_file(io::ReaderRef reader) {
 	Y_TODO(optimise)
@@ -48,37 +27,7 @@ SpirVData SpirVData::from_file(io::ReaderRef reader) {
 
 
 
-SpirVData::SpirVData(const core::Vector<u32>& data) : _data(data), _stage(vk::ShaderStageFlagBits::eAll) {
-	if(!is_empty()) {
-		spirv_cross::CompilerGLSL glsl(std::vector<u32>(_data.begin(), _data.end()));
-		spirv_cross::ShaderResources glsl_resources = glsl.get_shader_resources();
-
-		build_resources(_resources, ShaderResourceType::UniformBuffer, glsl_resources.uniform_buffers, glsl);
-		build_resources(_resources, ShaderResourceType::Texture, glsl_resources.sampled_images, glsl);
-
-		switch(glsl.get_execution_model()) {
-			case spv::ExecutionModelVertex:
-				_stage = vk::ShaderStageFlagBits::eVertex;
-				break;
-			case spv::ExecutionModelFragment:
-				_stage = vk::ShaderStageFlagBits::eFragment;
-				break;
-			case spv::ExecutionModelGeometry:
-				_stage = vk::ShaderStageFlagBits::eGeometry;
-				break;
-			default:
-				_stage = vk::ShaderStageFlagBits::eAll;
-				log_msg("Unknown shader stage, setting to \"all\"", LogType::Warning);
-		}
-	}
-}
-
-const core::Vector<ShaderResource>& SpirVData::shader_resources() const {
-	return _resources;
-}
-
-vk::ShaderStageFlagBits SpirVData::shader_stage() const {
-	return _stage;
+SpirVData::SpirVData(const core::Vector<u32>& data) : _data(data) {
 }
 
 usize SpirVData::size() const {

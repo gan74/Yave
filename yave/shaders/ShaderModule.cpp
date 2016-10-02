@@ -31,7 +31,7 @@ vk::ShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data) {
 }
 
 
-ShaderModule::ShaderModule(DevicePtr dptr, const SpirVData& data) : DeviceLinked(dptr), _module(create_shader_module(dptr, data)), _stage(data.shader_stage()), _resources(data.shader_resources()) {
+ShaderModule::ShaderModule(DevicePtr dptr, const SpirVData& data) : DeviceLinked(dptr), _module(create_shader_module(dptr, data)) {
 }
 
 ShaderModule::ShaderModule(ShaderModule&& other) : ShaderModule() {
@@ -47,15 +47,6 @@ vk::ShaderModule ShaderModule::get_vk_shader_module() const {
 	return _module;
 }
 
-const core::Vector<ShaderResource>& ShaderModule::shader_resources() const {
-	return _resources;
-}
-
-vk::ShaderStageFlagBits ShaderModule::shader_stage() const {
-	return _stage;
-}
-
-
 ShaderModule::~ShaderModule() {
 	destroy(_module);
 }
@@ -63,8 +54,6 @@ ShaderModule::~ShaderModule() {
 void ShaderModule::swap(ShaderModule& other) {
 	DeviceLinked::swap(other);
 	std::swap(_module, other._module);
-	std::swap(_resources, other._resources);
-	std::swap(_stage, other._stage);
 }
 
 

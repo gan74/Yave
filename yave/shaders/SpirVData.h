@@ -19,11 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/yave.h>
 #include <y/io/Ref.h>
 
-#include "ShaderResource.h"
-
 namespace yave {
-
-Y_TODO(move all shader processing in ShaderProgram)
 
 class SpirVData {
 
@@ -37,15 +33,10 @@ class SpirVData {
 
 		const u32* data() const;
 
-		const core::Vector<ShaderResource>& shader_resources() const;
-		vk::ShaderStageFlagBits shader_stage() const;
-
 	private:
 		SpirVData(const core::Vector<u32>& data);
 
 		core::Vector<u32> _data;
-		vk::ShaderStageFlagBits _stage;
-		core::Vector<ShaderResource> _resources;
 };
 
 }

@@ -16,63 +16,94 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ShaderProgram.h"
 #include <yave/Device.h>
+
 #include <unordered_map>
 
-#include <iostream>
+#include <spirv-cross/spirv.hpp>
+#include <spirv-cross/spirv_cross.hpp>
+#include <spirv-cross/spirv_glsl.hpp>
 
 namespace yave {
 
-using SSR = ShaderStageResource;
-
-void add_resource(core::Vector<SSR>& resources, const ShaderResource& r, vk::ShaderStageFlags stage) {
-	auto it = core::range(resources).find([&](const SSR& res) {
-		return res.resource == r;
-	});
-	if(it == resources.end()) {
-		resources << SSR{r, stage};
-	} else {
-		it->stage |= stage;
-	}
+template<typename M>
+static void merge(M& into, const M& o) {
+	into.insert(o.begin(), o.end());
 }
 
-void add_resources(core::Vector<SSR>& resources, const ShaderModule& mod) {
-	for(const auto& r : mod.shader_resources()) {
-		add_resource(resources, r, mod.shader_stage());
+static auto module_type(const spirv_cross::CompilerGLSL& compiler) {
+	switch(compiler.get_execution_model()) {
+		case spv::ExecutionModelVertex:
+			return vk::ShaderStageFlagBits::eVertex;
+		case spv::ExecutionModelFragment:
+			return vk::ShaderStageFlagBits::eFragment;
+		case spv::ExecutionModelGeometry:
+			return vk::ShaderStageFlagBits::eGeometry;
+		default:
+			break;
 	}
+	log_msg("Unknown shader stage, setting to \"all\"", LogType::Warning);
+	return vk::ShaderStageFlagBits::eAll;
 }
 
-void print(const core::Vector<const DescriptorLayout*>& layouts) {
-	for(const auto& lay : layouts) {
-		std::cout << "--------------------------------" << std::endl;
-		std::cout << "set = " << lay->set_index() << std::endl << std::endl;
-	}
+/*struct Resources {
+	vk::DescriptorType type;
+	u32 set;
+	u32 binding;
+};*/
+
+
+static vk::DescriptorSetLayoutBinding create_binding(u32 index, vk::DescriptorType type) {
+	return vk::DescriptorSetLayoutBinding()
+			.setBinding(index)
+			.setDescriptorCount(1)
+			.setDescriptorType(type)
+			.setStageFlags(vk::ShaderStageFlagBits::eAll)
+		;
 }
 
-ShaderProgram::ShaderProgram(core::Vector<ShaderModule>&& modules) : _modules(std::move(modules)) {
-	DevicePtr dptr = nullptr;
-	for(const auto& mod : _modules) {
-		dptr = mod.get_device();
-		add_resources(_resources, mod);
+static auto create_bindings(const spirv_cross::CompilerGLSL& compiler, const std::vector<spirv_cross::Resource>& resources, vk::DescriptorType type) {
+	auto bindings = std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>();
+	for(auto r : resources) {
+		auto id = r.id;
+		bindings[compiler.get_decoration(id, spv::DecorationDescriptorSet)] << create_binding(compiler.get_decoration(id, spv::DecorationBinding), type);
 	}
+	return bindings;
+}
 
-	std::unordered_map<u32, core::Vector<ShaderStageResource>> sets;
-	for(const auto& r : _resources) {
-		sets[r.resource.set] << r;
+static vk::DescriptorSetLayout create_layout(DevicePtr dptr, const core::Vector<vk::DescriptorSetLayoutBinding>& bindings) {
+	return dptr->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
+				.setBindingCount(bindings.size())
+				.setPBindings(bindings.begin())
+			);
+}
+
+
+
+
+ShaderProgram::ShaderProgram(DevicePtr dptr, const core::Vector<SpirVData>& modules) /*: _modules(modules), _layouts(compute_layouts(_modules))*/ {
+	auto layout_bindings = std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>();
+	for(const auto& mod : modules) {
+		spirv_cross::CompilerGLSL compiler(std::vector<u32>(mod.data(), mod.data() + mod.size() / 4));
+		_modules[module_type(compiler)] = ShaderModule(dptr, mod);
+
+		auto resources = compiler.get_shader_resources();
+		merge(layout_bindings, create_bindings(compiler, resources.uniform_buffers, vk::DescriptorType::eUniformBuffer));
+		merge(layout_bindings, create_bindings(compiler, resources.sampled_images, vk::DescriptorType::eCombinedImageSampler));
 	}
-	for(const auto& set : sets) {
-		_layouts << &dptr->create_descriptor_layout(set.second);
+	for(const auto& binding : layout_bindings) {
+		_layouts[binding.first] = dptr->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
+				.setBindingCount(binding.second.size())
+				.setPBindings(binding.second.begin())
+			);
 	}
-
-
-	print(_layouts);
 }
 
 core::Vector<vk::PipelineShaderStageCreateInfo> ShaderProgram::get_vk_pipeline_stage_info() const {
 	core::Vector<vk::PipelineShaderStageCreateInfo> stage_create_infos;
 	for(const auto& mod : _modules) {
 		stage_create_infos << vk::PipelineShaderStageCreateInfo()
-				.setModule(mod.get_vk_shader_module())
-				.setStage(mod.shader_stage())
+				.setModule(mod.second.get_vk_shader_module())
+				.setStage(mod.first)
 				.setPName("main")
 			;
 	}

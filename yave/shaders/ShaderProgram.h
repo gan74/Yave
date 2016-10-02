@@ -17,21 +17,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define YAVE_SHADER_SHADERPROGRAM_H
 
 #include "ShaderModule.h"
-#include <yave/descriptors/DescriptorLayout.h>
+
+#include <y/core/AssocVector.h>
 
 namespace yave {
 
 class ShaderProgram : NonCopyable {
+
 	public:
-		ShaderProgram(core::Vector<ShaderModule>&& modules);
+		ShaderProgram(DevicePtr dptr, const core::Vector<SpirVData>& modules);
 
 		core::Vector<vk::PipelineShaderStageCreateInfo> get_vk_pipeline_stage_info() const;
+		const core::Vector<vk::DescriptorSetLayout>& get_descriptor_layouts() const;
 
 	private:
-		core::Vector<ShaderStageResource> _resources;
-		core::Vector<NotOwned<const DescriptorLayout*>> _layouts;
-
-		core::Vector<ShaderModule> _modules;
+		core::AssocVector<vk::ShaderStageFlagBits, ShaderModule> _modules;
+		core::AssocVector<u32, vk::DescriptorSetLayout> _layouts;
 };
 
 }

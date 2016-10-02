@@ -30,12 +30,12 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 	/*auto geom_module = ShaderModule(get_device(), material.get_data()._geom);
 	auto vert_module = ShaderModule(get_device(), material.get_data()._vert);
 	auto frag_module = ShaderModule(get_device(), material.get_data()._frag);*/
-	auto modules = core::vector(ShaderModule(get_device(), material.get_data()._vert), ShaderModule(get_device(), material.get_data()._frag));
+	auto modules = core::vector(material.get_data()._vert, material.get_data()._frag);
 	if(!material.get_data()._geom.is_empty()) {
-		modules << ShaderModule(get_device(), material.get_data()._geom);
+		modules << material.get_data()._geom;
 	}
 
-	ShaderProgram program(std::move(modules));
+	ShaderProgram program(material.get_device(), modules);
 	auto pipeline_shader_stage = program.get_vk_pipeline_stage_info();
 
 	auto binding_description = vk::VertexInputBindingDescription()

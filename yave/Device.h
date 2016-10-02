@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/image/Sampler.h>
 
 #include <yave/commands/CmdBufferPool.h>
-#include <yave/descriptors/DescriptorLayoutPool.h>
 
 #include <yave/vk/destroy.h>
 
@@ -62,11 +61,6 @@ class Device : NonCopyable {
 			return _disposable_cmd_pool.create_buffer();
 		}
 
-		template<typename T>
-		const auto& create_descriptor_layout(const T& t) const {
-			return _descriptor_layout_pool[t];
-		}
-
 	private:
 		NotOwned<Instance&> _instance;
 		PhysicalDevice _physical;
@@ -78,7 +72,6 @@ class Device : NonCopyable {
 
 		Sampler _sampler;
 		mutable CmdBufferPool _disposable_cmd_pool;
-		mutable DescriptorLayoutPool _descriptor_layout_pool;
 };
 
 
