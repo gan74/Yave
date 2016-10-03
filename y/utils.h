@@ -19,16 +19,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "defines.h"
 #include <new>
 #include <typeinfo>
-#include <chrono>
 #include <tuple>
 #include <array>
 
 #include <y/utils/types.h>
 
 #include <y/utils/deref.h>
+#include <y/utils/iterable.h>
 #include <y/utils/comparable.h>
 #include <y/utils/startup.h>
 #include <y/utils/Chrono.h>
+#include <y/utils/hash.h>
 #include <y/utils/log.h>
 #include <y/utils/os.h>
 
@@ -211,12 +212,6 @@ struct TryFailed {
 		return false;
 	}
 };
-}
-
-
-template<typename T, typename Hasher = std::hash<T>>
-static auto hash(const T& t, const Hasher& hasher = Hasher()) {
-	return hasher(t);
 }
 
 }

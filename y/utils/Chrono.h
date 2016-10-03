@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_UTILS_CHRONO_H
 
 #include "types.h"
+#include <chrono>
 
 namespace y {
 

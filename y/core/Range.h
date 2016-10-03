@@ -158,60 +158,7 @@ inline auto range(Coll&& c) {
 	return range(c.begin(), c.end());
 }
 
-
-namespace detail {
-// from boost
-template<typename T>
-inline void hash_combine(T& seed, T value) {
-	seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
-
-template<typename T>
-static auto has_begin(T*) -> bool_type<!std::is_void<decltype(make_one<T>().begin())>::value>;
-template<typename T>
-static auto has_begin(...) -> std::false_type;
-
-template<typename T>
-static auto has_end(T*) -> bool_type<!std::is_void<decltype(make_one<T>().end())>::value>;
-template<typename T>
-static auto has_end(...) -> std::false_type;
-
-}
-
-template<typename T>
-using is_iterable = bool_type<
-		decltype(detail::has_begin<T>(nullptr))::value &&
-		decltype(detail::has_end<T>(nullptr))::value
-	>;
-
-
-}
-}
-
-namespace std {
-	template<typename I>
-	struct hash<y::core::Range<I>> {
-		typedef y::core::Range<I> argument_type;
-		typedef std::size_t result_type;
-		result_type operator()(const argument_type& range) const {
-			result_type seed = 0;
-			for(const auto& i : range) {
-				y::core::detail::hash_combine(seed, y::hash(i));
-			}
-			return seed;
-		}
-	};
-
-	template<typename T>
-	struct hash {
-		typedef T argument_type;
-		typedef std::size_t result_type;
-		template<typename Enable = typename std::enable_if<y::core::is_iterable<T>::value, T>::type>
-		result_type operator()(const argument_type& collection) const {
-			auto range = y::core::range(collection);
-			return y::hash<decltype(range)>(range);
-		}
-	};
 }
 
 #endif // Y_CORE_RANGE_H
