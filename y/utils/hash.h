@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_UTILS_HASH_H
 
 #include "iterable.h"
-#include <cstring>
 
 namespace y {
 
@@ -29,15 +28,33 @@ inline void hash_combine(T& seed, T value) {
 	seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-}
-
-template<typename T, typename Hasher = std::hash<T>>
-static auto hash(const T& t, const Hasher& hasher = Hasher()) {
+template<typename T, typename Hasher>
+inline auto hash(const T& t, const Hasher& hasher, std::false_type) {
 	return hasher(t);
 }
 
+template<typename T, typename Hasher>
+inline auto hash(const T& collection, const Hasher& hasher, std::true_type) {
+	decltype(hasher(*collection.begin())) seed = 0;
+	for(const auto& i : collection) {
+		detail::hash_combine(seed, hash(i, hasher, std::false_type()));
+	}
+	return seed;
+}
+
+}
+
+template<typename T, typename Hasher = std::hash<
+    typename std::conditional<is_iterable<T>::value,
+        typename std::remove_cv<
+            typename std::remove_reference<decltype(*make_one<T>().begin())>::type
+        >::type, T>::type>>
+inline auto hash(const T& t, const Hasher& hasher = Hasher()) {
+	return detail::hash(t, hasher, is_iterable<T>());
+}
+
 template<typename Hasher = std::hash<u32>>
-static auto hash(const u32* t, usize size, const Hasher& hasher = Hasher()) {
+inline auto hash(const u32* t, usize size, const Hasher& hasher = Hasher()) {
 	decltype(hasher(make_one<u32>())) seed = 0;
 	for(usize i = 0; i != size; i++) {
 		detail::hash_combine(seed, hash(t[i], hasher));
@@ -47,7 +64,7 @@ static auto hash(const u32* t, usize size, const Hasher& hasher = Hasher()) {
 }
 
 
-namespace std {
+/*namespace std {
 	template<typename T>
 	struct hash {
 		typedef T argument_type;
@@ -61,6 +78,6 @@ namespace std {
 			return seed;
 		}
 	};
-}
+}*/
 
 #endif // Y_UTILS_HASH_H
