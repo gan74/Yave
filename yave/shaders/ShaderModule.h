@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "SpirVData.h"
 
-#include <spirv-cross/spirv.hpp>
+#include <spirv_cross/spirv.hpp>
 
 namespace yave {
 

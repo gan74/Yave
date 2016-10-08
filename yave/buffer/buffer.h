@@ -22,21 +22,21 @@ namespace yave {
 
 enum class BufferUsage {
 	None = 0,
-	VertexBuffer = vk::BufferUsageFlagBits::eVertexBuffer,
-	IndexBuffer = vk::BufferUsageFlagBits::eIndexBuffer,
-	UniformBuffer = vk::BufferUsageFlagBits::eUniformBuffer
+    VertexBuffer = int(vk::BufferUsageFlagBits::eVertexBuffer),
+    IndexBuffer = int(vk::BufferUsageFlagBits::eIndexBuffer),
+    UniformBuffer = int(vk::BufferUsageFlagBits::eUniformBuffer)
 };
 
 enum class BufferTransfer {
 	None = 0,
-	TransferSrc = vk::BufferUsageFlagBits::eTransferSrc,
-	TransferDst = vk::BufferUsageFlagBits::eTransferDst
+    TransferSrc = int(vk::BufferUsageFlagBits::eTransferSrc),
+    TransferDst = int(vk::BufferUsageFlagBits::eTransferDst)
 };
 
 
 Y_TODO(ditch eHostCoherent for a raii flush)
 enum class MemoryFlags {
-	DeviceLocal = vk::MemoryPropertyFlagBits::eDeviceLocal,
+    DeviceLocal = uenum(vk::MemoryPropertyFlagBits::eDeviceLocal),
 	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible) | uenum(vk::MemoryPropertyFlagBits::eHostCoherent)
 };
 

@@ -34,10 +34,10 @@ constexpr int max(Args... args) {
 
 
 enum class ImageUsageBits {
-	None = 0,
-	TextureBit = vk::ImageUsageFlagBits::eSampled,
-	DepthBit = vk::ImageUsageFlagBits::eDepthStencilAttachment,
-	ColorBit = vk::ImageUsageFlagBits::eColorAttachment,
+    None = 0,
+    TextureBit = int(vk::ImageUsageFlagBits::eSampled),
+    DepthBit = int(vk::ImageUsageFlagBits::eDepthStencilAttachment),
+    ColorBit = int(vk::ImageUsageFlagBits::eColorAttachment),
 
 	SwapchainBit = detail::max(None, DepthBit, ColorBit, TextureBit) << 1
 

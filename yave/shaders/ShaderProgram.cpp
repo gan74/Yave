@@ -19,9 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <unordered_map>
 
-#include <spirv-cross/spirv.hpp>
-#include <spirv-cross/spirv_cross.hpp>
-#include <spirv-cross/spirv_glsl.hpp>
+#include <spirv_cross/spirv.hpp>
+#include <spirv_cross/spirv_cross.hpp>
+#include <spirv_cross/spirv_glsl.hpp>
 
 namespace yave {
 
