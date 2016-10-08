@@ -24,7 +24,7 @@ use std::io;
 fn time<T, F: FnMut() -> T>(mut f: F, msg: String) -> T {
     let start = SystemTime::now();
     let r = f();
-    println!("{} done in {}ms", msg, to_millis(start.elapsed().unwrap()));
+    println!("{} in {}ms", msg, to_millis(start.elapsed().unwrap()));
     r
 }
 
@@ -100,7 +100,7 @@ fn try_export<'a, T: Iterator<Item = &'a str>>(info: &mut Info, cmds: T) {
     let cmds = cmds.collect::<Vec<_>>();
     match cmds.len() {
         1 => export(info, cmds[0]),
-        _ => println!("Wong number of arguments for \"export\"")
+        _ => println!("Wrong number of arguments for \"export\"")
     }
 }
 
@@ -124,7 +124,7 @@ fn quit(info: &Info) {
 fn scale<'a, T: Iterator<Item = &'a str>>(info: &mut Info, cmds: T) {
     let cmds = cmds.collect::<Vec<_>>();
     if cmds.len() != 3 {
-        println!("Wong number of arguments for \"scale\"")
+        println!("Wrong number of arguments for \"scale\"")
     }
     let sc = cmds.iter().map(|x| x.parse::<f32>().unwrap()).collect::<Vec<_>>();
     info.mesh.scale(Vec3(sc[0], sc[1], sc[2]));
