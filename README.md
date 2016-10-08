@@ -7,6 +7,7 @@ You need:
  * gcc 5
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
  * [Vulkan hpp](https://github.com/KhronosGroup/Vulkan-Hpp)
+ * [Spriv_cross](https://github.com/KhronosGroup/SPIRV-Cross)
  * [y](https://github.com/gan74/y)
 
 ## Status
