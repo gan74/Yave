@@ -87,15 +87,14 @@ DescriptorSet::DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindin
 	for(const auto& binding : bindings) {
 		layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
 	}
-	_layout = dptr->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
-			.setBindingCount(layout_bindings.size())
-			.setPBindings(layout_bindings.begin())
-		);
-
+	auto layout = dptr->create_descriptor_set_layout(layout_bindings);
 	_pool = create_descriptor_pool(dptr);
-	_set = create_descriptor_set(dptr, _pool, _layout);
+	_set = create_descriptor_set(dptr, _pool, layout);
 	update_sets(dptr, _set, layout_bindings, bindings);
+}
 
+DescriptorSet::~DescriptorSet() {
+	destroy(_pool);
 }
 
 DescriptorSet::DescriptorSet(DescriptorSet&& other) {
@@ -111,14 +110,14 @@ const vk::DescriptorSet& DescriptorSet::get_vk_descriptor_set() const {
 	return _set;
 }
 
-const vk::DescriptorSetLayout& DescriptorSet::get_vk_descriptor_set_layout() const {
+/*const vk::DescriptorSetLayout& DescriptorSet::get_vk_descriptor_set_layout() const {
 	return _layout;
-}
+}*/
 
 void DescriptorSet::swap(DescriptorSet& other) {
 	DeviceLinked::swap(other);
 	std::swap(_pool, other._pool);
-	std::swap(_layout, other._layout);
+	//std::swap(_layout, other._layout);
 	std::swap(_set, other._set);
 }
 

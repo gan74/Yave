@@ -92,7 +92,8 @@ Device::Device(Instance& instance) :
 		_queue_familiy_indices(compute_queue_families(_physical.get_vk_physical_device())),
 		_device(create_device(_physical.get_vk_physical_device(), _queue_familiy_indices, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.get_debug_params().get_device_layers())),
 		_sampler(this),
-		_disposable_cmd_pool(this) {
+		_disposable_cmd_pool(this),
+		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
 
 	for(usize i = 0; i != _queues.size(); i++) {
 		_queues[i] = _device.getQueue(_queue_familiy_indices[i], 0);
@@ -112,6 +113,7 @@ Device::~Device() {
 
 	// we need to destroy the pools before the device
 	_disposable_cmd_pool = CmdBufferPool();
+	delete _descriptor_layout_pool;
 
 	_device.destroy();
 }

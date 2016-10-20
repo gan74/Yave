@@ -19,7 +19,6 @@ layout(location = 0) out vec3 v_normal;
 layout(location = 1) out vec2 v_uv;
 
 void main() {
-
 	v_uv = in_uv;
 	//v_normal = mat3(matrices.model) * in_normal;
 	gl_Position = matrices.proj * matrices.view * matrices.model * vec4(in_position, 1.0);

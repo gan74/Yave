@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "yave.h"
 #include "PhysicalDevice.h"
+#include "DescriptorSetLayoutPool.h"
 
 #include <yave/image/Sampler.h>
 
@@ -61,17 +62,24 @@ class Device : NonCopyable {
 			return _disposable_cmd_pool.create_buffer();
 		}
 
+		template<typename T>
+		auto create_descriptor_set_layout(T&& t) const {
+			return _descriptor_layout_pool->create_descriptor_set_layout(std::forward<T>(t));
+		}
+
 	private:
 		NotOwned<Instance&> _instance;
 		PhysicalDevice _physical;
 
 		std::array<i32, QueueFamily::Max> _queue_familiy_indices;
+
 		std::array<vk::Queue, QueueFamily::Max> _queues;
 
 		vk::Device _device;
 
 		Sampler _sampler;
 		mutable CmdBufferPool _disposable_cmd_pool;
+		DescriptorSetLayoutPool* _descriptor_layout_pool;
 };
 
 

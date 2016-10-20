@@ -27,6 +27,8 @@ class DescriptorSet : NonCopyable, public DeviceLinked {
 		DescriptorSet(DevicePtr dptr, std::initializer_list<Binding> bindings);
 		DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindings);
 
+		~DescriptorSet();
+
 		DescriptorSet(DescriptorSet&& other);
 		DescriptorSet& operator=(DescriptorSet&& other);
 
@@ -37,7 +39,7 @@ class DescriptorSet : NonCopyable, public DeviceLinked {
 		void swap(DescriptorSet& other);
 
 		vk::DescriptorPool _pool;
-		vk::DescriptorSetLayout _layout;
+		//vk::DescriptorSetLayout _layout;
 		vk::DescriptorSet _set;
 };
 
