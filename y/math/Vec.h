@@ -85,7 +85,7 @@ class Vec
 			}
 		}
 
-		Vec(detail::identity_t &&) : Vec() {
+        Vec(detail::identity_t&&) : Vec() {
 		}
 
 		Vec() = default;

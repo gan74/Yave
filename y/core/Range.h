@@ -53,7 +53,7 @@ class Range {
 		}
 
 		usize size() const {
-			return _end - _beg;
+			return std::distance(_beg, _end);
 		}
 
 		Range<ReverseIterator<Iter>> reverse() const {

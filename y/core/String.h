@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace y {
 namespace core {
 
+// see: https://www.youtube.com/watch?v=kPR8h4-qZdk
 class String {
 	struct LongLenType
 	{

@@ -33,22 +33,11 @@ Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 
 /****************** OS DEFINES BELOW ******************/
 
-#ifdef __WIN32
+#if defined(WIN32) || defined(__WIN32) || defined(__WIN32__) || defined(_WINDOWS)
 #define Y_OS_WIN
-#endif
-
-#ifdef __WIN32__
 #define Y_OS_WIN
+#define WIN32_LEAN_AND_MEAN
 #endif
-
-#ifdef WIN32
-#define Y_OS_WIN
-#endif
-
-#ifdef _WINDOWS
-#define Y_OS_WIN
-#endif
-
 
 
 #endif // Y_DEFINES_H
