@@ -142,6 +142,7 @@ class String {
 
 		bool operator==(const String& str) const;
 		bool operator!=(const String& str) const;
+		bool operator<(const String& str) const;
 
 
 		Vector<u32> to_unicode() const;
@@ -178,8 +179,6 @@ class String {
 			LongData _l;
 			ShortData _s;
 		};
-
-		Allocator _allocator;
 
 		const String* const_this() {
 			return this;
