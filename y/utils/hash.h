@@ -61,6 +61,14 @@ inline auto hash(const u32* t, usize size, const Hasher& hasher = Hasher()) {
 	}
 	return seed;
 }
+
+template<typename T>
+struct hash_t {
+	auto operator()(const T& arg) const {
+		return hash(arg);
+	}
+};
+
 }
 
 
