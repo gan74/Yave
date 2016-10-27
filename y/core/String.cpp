@@ -254,6 +254,11 @@ bool String::operator!=(const String& str) const {
 	return !operator==(str);
 }
 
+bool String::operator<(const String& str) const {
+	return strcmp(data(), str.data()) < 0;
+}
+
+
 usize utf8_len(char c) {
 	if(c & 0x80) {
 		usize len = 0;

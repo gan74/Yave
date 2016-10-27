@@ -248,6 +248,11 @@ auto operator+(core::String l, const T& r) {
 	return l += str(r);
 }
 
+template<typename T>
+auto operator<<(core::String& l, const T& r) {
+	l += str(r);
+	return l;
+}
 
 
 
