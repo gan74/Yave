@@ -45,9 +45,9 @@ auto to_deg(T rad) {
 template<typename T>
 static constexpr T epsilon = std::numeric_limits<T>::epsilon();
 
-
 template<typename T>
 static constexpr T pi = T(3.1415926535897932384626433832795);
+
 
 // matrix funcs from https://github.com/g-truc/glm/blob/master/glm/gtc/matrix_transform.inl
 template<typename T>
@@ -78,11 +78,11 @@ auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up 
 		m[0][1] = u.x();
 		m[1][1] = u.y();
 		m[2][1] = u.z();
-		m[0][2] =-f.x();
-		m[1][2] =-f.y();
-		m[2][2] =-f.z();
-		m[3][0] =-s.dot(eye);
-		m[3][1] =-u.dot(eye);
+		m[0][2] = -f.x();
+		m[1][2] = -f.y();
+		m[2][2] = -f.z();
+		m[3][0] = -s.dot(eye);
+		m[3][1] = -u.dot(eye);
 		m[3][2] = f.dot(eye);
 
 		return m;

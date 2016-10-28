@@ -140,11 +140,11 @@ class Quaternion {
 		}
 
 		Quaternion operator*(T s) const {
-			return Quaternion(quat * s);
+			return Quaternion(_quat * s);
 		}
 
 		Quaternion operator/(T s) const {
-			return Quaternion<T>(quat / s);
+			return Quaternion<T>(_quat / s);
 		}
 
 

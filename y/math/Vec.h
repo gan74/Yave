@@ -25,7 +25,9 @@ namespace math {
 
 namespace detail {
 struct identity_t : NonCopyable {
-	identity_t() = default;
+	constexpr identity_t() {
+	}
+
 	identity_t(identity_t &&) {
 	}
 };
