@@ -277,4 +277,18 @@ auto type_name() {
 
 }
 
+
+namespace std {
+
+template<>
+struct hash<y::core::String> {
+	typedef y::core::String argument_type;
+	typedef std::size_t result_type;
+	result_type operator()(const argument_type& str) const {
+		return y::hash(str);
+	}
+};
+
+}
+
 #endif // Y_CORE_STRING_H
