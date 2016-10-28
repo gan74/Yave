@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define Y_MATH_MATH_H
 
 #include <y/utils.h>
+#include <limits>
 #include "Matrix.h"
 
 namespace y {
@@ -41,8 +42,12 @@ auto to_deg(T rad) {
 }
 
 
+template<typename T>
+static constexpr T epsilon = std::numeric_limits<T>::epsilon();
 
 
+template<typename T>
+static constexpr T pi = T(3.1415926535897932384626433832795);
 
 // matrix funcs from https://github.com/g-truc/glm/blob/master/glm/gtc/matrix_transform.inl
 template<typename T>
