@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <yave/descriptors/Binding.h>
 #include <yave/descriptors/DescriptorSet.h>
+#include <y/math/Quaternion.h>
 
 namespace yave {
 
@@ -36,7 +37,6 @@ class Window;
 class YaveApp : NonCopyable {
 
 	struct MVP {
-		math::Matrix4<> model;
 		math::Matrix4<> view;
 		math::Matrix4<> proj;
 	};

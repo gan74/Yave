@@ -23,20 +23,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/mesh/StaticMeshInstance.h>
 #include <yave/commands/RecordedCmdBuffer.h>
 
+#include "Transformable.h"
+
 namespace yave {
 
-class StaticMesh {
+class StaticMesh : public Transformable {
 
 	public:
 		StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material);
 
-		void draw(CmdBufferRecorder& recorder, const DescriptorSet& mvp);
+		void draw(CmdBufferRecorder& recorder, const DescriptorSet& vp);
+
+		void update_ubo();
 
 	private:
 		AssetPtr<StaticMeshInstance> _instance;
 		AssetPtr<Material> _material;
 
-
+		TypedBuffer<Transform, BufferUsage::UniformBuffer> _uniform_buffer;
+		DescriptorSet _descriptor_set;
 };
 
 }

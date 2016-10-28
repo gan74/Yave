@@ -89,10 +89,6 @@ ShaderProgram::ShaderProgram(DevicePtr dptr, const core::Vector<SpirVData>& modu
 	_layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, VK_NULL_HANDLE);
 	for(const auto& binding : layout_bindings) {
 		_layouts[binding.first] = dptr->create_descriptor_set_layout(binding.second);
-			/*dptr->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
-				.setBindingCount(binding.second.size())
-				.setPBindings(binding.second.begin())
-			);*/
 	}
 
 	log_msg("shader descriptor layout count = "_s + _layouts.size());

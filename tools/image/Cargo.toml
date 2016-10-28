@@ -5,5 +5,6 @@ authors = ["gan74 <gregoire.angerand@epfl.ch>"]
 
 [dependencies]
 image = "*"
+lz4 = "*"
 bincode = "*"
 rustc-serialize = "*"

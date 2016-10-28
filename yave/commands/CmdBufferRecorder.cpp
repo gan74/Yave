@@ -91,10 +91,11 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& mvp) {
+CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& m, const DescriptorSet& vp) {
 	get_vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline());
-	vk::DescriptorSet sets[] = {mvp.get_vk_descriptor_set(), pipeline.get_vk_descriptor_set()};
-	get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, 2, sets, 0, nullptr);
+
+	std::initializer_list<vk::DescriptorSet> sets = {m.get_vk_descriptor_set(), vp.get_vk_descriptor_set(), pipeline.get_vk_descriptor_set()};
+	get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, sets.size(), sets.begin(), 0, nullptr);
 
 	return *this;
 }

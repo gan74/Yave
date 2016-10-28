@@ -111,8 +111,12 @@ void YaveApp::update(math::Vec2 angles) {
 	auto ratio = swapchain->size().x() / float(swapchain->size().y());
 	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 2.5f);
 	mvp.view = math::look_at(math::Vec3(1.5, 0, 0), math::Vec3());
-	mvp.model = math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
+
+	/*const_cast<math::Matrix4<>&>*/(objects.first().transform()) =
+				math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
 				math::rotation(angles.y(), math::Vec3(0, 1, 0));
+
+	objects.first().update_ubo();
 }
 
 void YaveApp::create_assets() {

@@ -2,3 +2,4 @@
 *.lock
 *.jpg
 *.rgba
+*.jpg.rgba.lz4
