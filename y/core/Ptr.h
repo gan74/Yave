@@ -119,18 +119,25 @@ template<typename T, typename C = u32>
 class Rc : public Ptr<T> {
 	using Ptr<T>::_ptr;
 	public:
-		explicit Rc(NotOwned<T*>&& p = nullptr) : Ptr<T>(std::move(p)), _count(new C(1)) {
+		Rc() : Ptr<T>(nullptr), _count(nullptr) {
+		}
+
+		explicit Rc(NotOwned<T*>&& p) : Ptr<T>(std::move(p)), _count(new C(1)) {
 		}
 
 		explicit Rc(T&& p) : Rc(new T(std::move(p))) {
 		}
 
-		Rc(const Rc& p) : Ptr<T>(nullptr), _count(nullptr) {
+		Rc(const Rc& p) : Rc() {
 			ref(p);
 		}
 
-		Rc(Rc&& p) : Ptr<T>(nullptr), _count(nullptr) {
+		Rc(Rc&& p) : Rc() {
 			swap(p);
+		}
+
+		Rc(Ptr<T>&& p) : Rc(nullptr) {
+			Ptr<T>::swap(p);
 		}
 
 		~Rc() {

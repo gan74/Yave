@@ -35,7 +35,6 @@ Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 
 #if defined(WIN32) || defined(__WIN32) || defined(__WIN32__) || defined(_WINDOWS)
 #define Y_OS_WIN
-#define Y_OS_WIN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
