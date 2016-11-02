@@ -27,7 +27,8 @@ YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), comma
 }
 
 void YaveApp::init(Window* window) {
-
+	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMesh));
+	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
 
 	swapchain = new Swapchain(&device, window);
 
@@ -37,6 +38,7 @@ void YaveApp::init(Window* window) {
 }
 
 YaveApp::~YaveApp() {
+	//range(objects).foreach([](auto ptr) { delete ptr; });
 	objects.clear();
 	material = nullptr;
 	mesh_texture = Texture();
@@ -105,18 +107,9 @@ Duration YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	auto mapping = uniform_buffer.map();
-	auto& mvp = *mapping.begin();
-
-	auto ratio = swapchain->size().x() / float(swapchain->size().y());
-	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 2.5f);
-	mvp.view = math::look_at(math::Vec3(1.5, 0, 0), math::Vec3());
-
 	/*const_cast<math::Matrix4<>&>*/(objects.first().transform()) =
 				math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
 				math::rotation(angles.y(), math::Vec3(0, 1, 0));
-
-	objects.first().update_ubo();
 }
 
 void YaveApp::create_assets() {
@@ -144,6 +137,13 @@ void YaveApp::create_assets() {
 		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, m_data));
 		objects << StaticMesh(mesh, material);
 	}
+
+	auto mapping = uniform_buffer.map();
+	auto& mvp = *mapping.begin();
+
+	auto ratio = swapchain->size().x() / float(swapchain->size().y());
+	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 2.5f);
+	mvp.view = math::look_at(math::Vec3(1.5, 0, 0), math::Vec3());
 }
 
 

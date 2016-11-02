@@ -32,15 +32,17 @@ class StaticMesh : public Transformable {
 	public:
 		StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material);
 
-		void draw(CmdBufferRecorder& recorder, const DescriptorSet& vp);
+		StaticMesh(StaticMesh&& other);
+		StaticMesh& operator=(StaticMesh&& other) = delete;
 
-		void update_ubo();
+		void draw(CmdBufferRecorder& recorder, const DescriptorSet& vp);
 
 	private:
 		AssetPtr<StaticMeshInstance> _instance;
 		AssetPtr<Material> _material;
 
 		TypedBuffer<Transform, BufferUsage::UniformBuffer> _uniform_buffer;
+		TypedMapping<Transform, MemoryFlags::CpuVisible> _mapping;
 		DescriptorSet _descriptor_set;
 };
 

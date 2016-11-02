@@ -20,11 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-CpuVisibleMapping::CpuVisibleMapping() : _mapping(nullptr), _buffer(nullptr) {
+CpuVisibleMapping::CpuVisibleMapping() : DeviceLinked(), _memory(VK_NULL_HANDLE), _size(0), _mapping(nullptr) {
 }
 
-CpuVisibleMapping::CpuVisibleMapping(BufferBase* base) : _buffer(base) {
-	_mapping = base->get_device()->get_vk_device().mapMemory(base->get_vk_device_memory(), 0, base->byte_size());
+CpuVisibleMapping::CpuVisibleMapping(BufferBase* base) :
+		DeviceLinked(base->get_device()),
+		_memory(base->get_vk_device_memory()),
+		_size(base->byte_size()),
+		_mapping(get_device()->get_vk_device().mapMemory(_memory, 0, _size)) {
 }
 
 CpuVisibleMapping::CpuVisibleMapping(CpuVisibleMapping&& other) : CpuVisibleMapping() {
@@ -37,18 +40,19 @@ CpuVisibleMapping& CpuVisibleMapping::operator=(CpuVisibleMapping&& other) {
 }
 
 CpuVisibleMapping::~CpuVisibleMapping() {
-	if(_mapping && _buffer) {
-		_buffer->get_device()->get_vk_device().unmapMemory(_buffer->get_vk_device_memory());
+	if(get_device() && _mapping) {
+		get_device()->get_vk_device().unmapMemory(_memory);
 	}
 }
 
 usize CpuVisibleMapping::byte_size() const {
-	return _buffer ? _buffer->byte_size() : 0;
+	return _size;
 }
 
 void CpuVisibleMapping::swap(CpuVisibleMapping& other) {
 	std::swap(_mapping, other._mapping);
-	std::swap(_buffer, other._buffer);
+	std::swap(_memory, other._memory);
+	std::swap(_size, other._size);
 }
 
 void* CpuVisibleMapping::data() {

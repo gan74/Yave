@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-class CpuVisibleMapping : NonCopyable {
+class CpuVisibleMapping : NonCopyable, public DeviceLinked {
 
 	public:
 		template<BufferUsage Usage, BufferTransfer Transfer>
@@ -45,8 +45,10 @@ class CpuVisibleMapping : NonCopyable {
 	private:
 		CpuVisibleMapping(BufferBase* base);
 
+		NotOwned<vk::DeviceMemory> _memory;
+		usize _size;
 		void* _mapping;
-		NotOwned<BufferBase*> _buffer;
+		//NotOwned<BufferBase*> _buffer;
 };
 
 }
