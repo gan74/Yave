@@ -182,6 +182,17 @@ class Vec
 			return _vec[3];
 		}
 
+		auto sub(usize index) const {
+			Vec<N - 1, T> v;
+			for(usize i = 0; i != index; i++) {
+				v[i] = _vec[i];
+			}
+			for(usize i = index; i < N; i++) {
+				v[i] = _vec[i + 1];
+			}
+			return v;
+		}
+
 		bool is_zero() const {
 			for(usize i = 0; i != N; i++) {
 				if(_vec[i]) {
