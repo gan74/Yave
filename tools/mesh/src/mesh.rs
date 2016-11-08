@@ -1,15 +1,15 @@
 
 use vertex::*;
 
-use std::iter;
+//use std::iter;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<(u32, u32, u32)>
 }
 
-pub struct TriangleRef<'l> {
+/*pub struct TriangleRef<'l> {
     mesh: &'l Mesh,
     indices: [usize; 3]
 }
@@ -27,7 +27,7 @@ impl<'l> TriangleRef<'l> {
     fn vertex(&self, i: usize) -> &Vertex {
         &self.mesh.vertices[self.indices[i]]
     }
-}
+}*/
 
 impl Mesh {
     pub fn reverse_faces(&mut self) {
@@ -53,12 +53,12 @@ impl Mesh {
                 self.vertices[tri.indices[i]].normal += n;
             }
         }
-    }*/
+    }
 
     pub fn triangles<'a>(&'a self) -> Box<iter::Iterator<Item = TriangleRef> + 'a> {
         Box::new(self.indices.iter().map(move |t| TriangleRef {
             mesh: &self,
             indices: [t.0 as usize, t.1 as usize, t.2 as usize]
         }))
-    }
+    }*/
 }
