@@ -31,13 +31,13 @@ impl<'l> TriangleRef<'l> {
 
 impl Mesh {
     pub fn reverse_faces(&mut self) {
-        for mut tri in self.indices.iter_mut() {
+        for tri in self.indices.iter_mut() {
             *tri = (tri.2, tri.1, tri.0);
         }
     }
 
     pub fn scale(&mut self, scale: Vec3) {
-        for mut vert in self.vertices.iter_mut() {
+        for vert in self.vertices.iter_mut() {
             vert.position *= scale;
             vert.normal *= scale;
         }
