@@ -82,15 +82,17 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 DescriptorSet::DescriptorSet(DevicePtr dptr, std::initializer_list<Binding> bindings) : DescriptorSet(dptr, core::vector(bindings)) {
 }
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindings) : DeviceLinked(dptr) {
-	auto layout_bindings = core::Vector<vk::DescriptorSetLayoutBinding>();
-	for(const auto& binding : bindings) {
-		layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
+DescriptorSet::DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindings) : DeviceLinked(dptr), _pool(VK_NULL_HANDLE), _set(VK_NULL_HANDLE) {
+	if(!bindings.is_empty()) {
+		auto layout_bindings = core::Vector<vk::DescriptorSetLayoutBinding>();
+		for(const auto& binding : bindings) {
+			layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
+		}
+		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
+		_pool = create_descriptor_pool(dptr);
+		_set = create_descriptor_set(dptr, _pool, layout);
+		update_sets(dptr, _set, layout_bindings, bindings);
 	}
-	auto layout = dptr->create_descriptor_set_layout(layout_bindings);
-	_pool = create_descriptor_pool(dptr);
-	_set = create_descriptor_set(dptr, _pool, layout);
-	update_sets(dptr, _set, layout_bindings, bindings);
 }
 
 DescriptorSet::~DescriptorSet() {

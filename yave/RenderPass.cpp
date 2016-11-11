@@ -76,13 +76,14 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, ImageFormat depth_format
 	auto dependency = create_bottom_of_pipe_dependency();
 
 	return dptr->get_vk_device().createRenderPass(vk::RenderPassCreateInfo()
-		.setAttachmentCount(attachments.size())
-		.setPAttachments(attachments.begin())
-		.setSubpassCount(1)
-		.setPSubpasses(&subpass)
-		.setDependencyCount(1)
-		.setPDependencies(&dependency)
-	);
+			.setAttachmentCount(attachments.size())
+			.setPAttachments(attachments.begin())
+			.setSubpassCount(1)
+			.setPSubpasses(&subpass)
+			.setDependencyCount(1)
+			.setPDependencies(&dependency)
+		)
+	;
 }
 
 

@@ -63,6 +63,8 @@ class YaveApp : NonCopyable {
 
 		CmdBufferPool command_pool;
 		core::Vector<RecordedCmdBuffer> command_buffers;
+		RecordedCmdBuffer command_buffer;
+		Framebuffer framebuffer;
 
 		AssetPtr<Material> material;
 
@@ -71,6 +73,8 @@ class YaveApp : NonCopyable {
 		TypedBuffer<MVP, BufferUsage::UniformBuffer> uniform_buffer;
 
 		DescriptorSet mvp_set;
+
+		StaticMesh* sq;
 
 
 

@@ -38,10 +38,11 @@ void YaveApp::init(Window* window) {
 }
 
 YaveApp::~YaveApp() {
-	//range(objects).foreach([](auto ptr) { delete ptr; });
 	objects.clear();
 	material = nullptr;
 	mesh_texture = Texture();
+
+	delete sq;
 
 	delete swapchain;
 
@@ -60,9 +61,12 @@ void YaveApp::create_command_buffers() {
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
 		recorder.set_viewport(Viewport(swapchain->size()));
-		for(auto& obj : objects) {
+
+		/*for(auto& obj : objects) {
 			obj.draw(recorder, mvp_set);
-		}
+		}*/
+		sq->draw(recorder, mvp_set);
+
 		command_buffers << recorder.end();
 	}
 }
@@ -88,7 +92,7 @@ Duration YaveApp::draw() {
 
 	auto graphic_queue = device.get_vk_queue(QueueFamily::Graphics);
 
-	graphic_queue.submit(1,& submit_info, VK_NULL_HANDLE);
+	graphic_queue.submit(1, &submit_info, VK_NULL_HANDLE);
 
 	graphic_queue.presentKHR(vk::PresentInfoKHR()
 			.setSwapchainCount(1)
@@ -107,12 +111,22 @@ Duration YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	/*const_cast<math::Matrix4<>&>*/(objects.first().transform()) =
+	(objects.first().transform()) =
 				math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
 				math::rotation(angles.y(), math::Vec3(0, 1, 0));
+
+	/*auto rot = math::rotation(angles.x(), math::Vec3(0, 0, 1)) * math::rotation(angles.y(), math::Vec3(0, 1, 0));
+
+	auto mapping = uniform_buffer.map();
+	auto& mvp = *mapping.begin();
+
+	mvp.view = math::look_at(math::Vec3((rot * math::vec(5., 0., 0., 1.)).sub(3)), math::Vec3());*/
 }
 
 void YaveApp::create_assets() {
+	using Vec3 = math::Vec3;
+	using Vec2 = math::Vec2;
+
 	uniform_buffer = TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1);
 	{
 		{
@@ -122,28 +136,50 @@ void YaveApp::create_assets() {
 			mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image.size(), image.get_raw_data());
 		}
 		material = asset_ptr(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("frag.spv")))
-				.set_vert_data(SpirVData::from_file(io::File::open("vert.spv")))
+				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv")))
+				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv")))
+				.set_geom_data(SpirVData::from_file(io::File::open("wireframe.geom.spv")))
 				.set_bindings(core::vector(Binding(TextureView(mesh_texture))))
 			));
 	}
 
 	mvp_set = DescriptorSet(&device, {Binding(uniform_buffer)});
 
-	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym"/*, "../tools/mesh/cube.ym"*/};
+	core::Vector<const char*> meshes = {"../tools/mesh/rm.ym"/*, "../tools/mesh/cube.ym"*/};
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name));
-		log_msg(core::String() + m_data.triangles.size() + " triangles loaded");
+		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, m_data));
 		objects << StaticMesh(mesh, material);
+	}
+
+	{
+		auto sq_mat = asset_ptr(Material(&device, MaterialData()
+				.set_frag_data(SpirVData::from_file(io::File::open("sq.frag.spv")))
+				.set_vert_data(SpirVData::from_file(io::File::open("sq.vert.spv")))
+			));
+		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, MeshData{
+			{{Vec3(-1, -1, 0), Vec3(0, 0, 1), Vec2(0, 0)},
+			 {Vec3(-1, 1, 0), Vec3(0, 0, 1), Vec2(0, 1)},
+			 {Vec3(1, 1, 0), Vec3(0, 0, 1), Vec2(1, 1)},
+			 {Vec3(1, -1, 0), Vec3(0, 0, 1), Vec2(1, 0)}
+			},
+			{{{0, 2, 1}}, {{0, 3, 2}}}}));
+		sq = new StaticMesh(mesh, sq_mat);
+	}
+
+	int p = 0;
+	for(StaticMesh& m : objects) {
+		float x = p += 1;
+		m.set_position(Vec3(p % 2 ? x : -x, 0.f, 0.f));
 	}
 
 	auto mapping = uniform_buffer.map();
 	auto& mvp = *mapping.begin();
 
 	auto ratio = swapchain->size().x() / float(swapchain->size().y());
-	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 2.5f);
-	mvp.view = math::look_at(math::Vec3(1.5, 0, 0), math::Vec3());
+	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 10.f);
+	mvp.view = math::look_at(Vec3(3.5, 0, 0), Vec3());
 }
 
 

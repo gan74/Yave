@@ -32,8 +32,7 @@ fn time<T, F: FnMut() -> T>(mut f: F, msg: String) -> T {
 
 
 struct Info {
-    process: ProcessableMesh,
-    //mesh: Mesh,
+    mesh: Mesh,
     name: String,
     saved: bool
 }
@@ -41,7 +40,7 @@ struct Info {
 impl Info {
     fn mut_mesh(&mut self) -> &mut Mesh {
         self.saved = false;
-        &mut self.process.mesh
+        &mut self.mesh
     }
 }
 
@@ -75,7 +74,7 @@ fn export(info: &mut Info, file_name: &str) {
         if writer.is_supported(file_name) {
             match create_export_file(file_name) {
                 Some(mut file) => {
-                    time(|| writer.write(&info.process.mesh, &mut file).unwrap(), format!("{:?} exported", file_name));
+                    time(|| writer.write(&info.mesh, &mut file).unwrap(), format!("{:?} exported", file_name));
                     info.saved = true;
                 },
                 None => println!("Unable to export mesh")
@@ -91,8 +90,7 @@ fn load(file_name: &str) -> Info {
         if loader.is_supported(file_name) {
             let m = time(|| loader.load(&mut File::open(file_name).expect("Unable to open file")).unwrap(), format!("{:?} loaded", file_name));
             return Info {
-                process: ProcessableMesh::from_mesh(&m),
-                //mesh: m,
+                mesh: m,
                 name: file_name.to_string(),
                 saved: true
             }
@@ -114,8 +112,7 @@ fn print_info<'a, T: Iterator<Item = &'a str>>(info: &mut Info, mut cmds: T) {
         println!("Too many arguments for \"info\"");
     }
     println!("{}{}", info.name, if info.saved { "" } else { "*" });
-    println!("{} vertices, {} triangles", info.process.mesh.vertices.len(), info.process.mesh.indices.len());
-    info.process.print_info();
+    println!("{} vertices, {} triangles", info.mesh.vertices.len(), info.mesh.indices.len());
 }
 
 fn quit(info: &Info) {
@@ -133,8 +130,14 @@ fn scale<'a, T: Iterator<Item = &'a str>>(info: &mut Info, cmds: T) {
         println!("Wrong number of arguments for \"scale\"")
     }
     let sc = cmds.iter().map(|x| x.parse::<f32>().unwrap()).collect::<Vec<_>>();
-    info.process.mesh.scale(Vec3(sc[0], sc[1], sc[2]));
+    info.mesh.scale(Vec3(sc[0], sc[1], sc[2]));
     info.saved = false;
+}
+
+fn remesh(info: &mut Info) {
+    let mut p = ProcessableMesh::from_mesh(&info.mesh);
+    p.remesh();
+    info.mesh = p.to_mesh();
 }
 
 fn read_line() -> String {
@@ -162,7 +165,7 @@ fn process_one<'a, T: Iterator<Item = &'a str>>(info: &mut Info, mut cmds: T) {
             "reverse_faces" => info.mut_mesh().reverse_faces(),
             "scale" | "s" => scale(info, cmds),
             "quit" | "q" => quit(info),
-            "remesh" => info.process.vertex_move(),
+            "remesh" => remesh(info),
             _ => println!("Unknown command {:?}", cmd)
         }
     }

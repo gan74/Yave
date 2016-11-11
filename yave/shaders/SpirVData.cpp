@@ -28,6 +28,9 @@ SpirVData SpirVData::from_file(io::ReaderRef reader) {
 
 
 SpirVData::SpirVData(const core::Vector<u32>& data) : _data(data) {
+	if(data.is_empty()) {
+		fatal("Invalid SPIR-V data.");
+	}
 }
 
 usize SpirVData::size() const {

@@ -94,8 +94,21 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& m, const DescriptorSet& vp) {
 	get_vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline());
 
-	std::initializer_list<vk::DescriptorSet> sets = {m.get_vk_descriptor_set(), vp.get_vk_descriptor_set(), pipeline.get_vk_descriptor_set()};
-	get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, sets.size(), sets.begin(), 0, nullptr);
+	/*std::initializer_list<vk::DescriptorSet> sets = {m.get_vk_descriptor_set(), vp.get_vk_descriptor_set(), pipeline.get_vk_descriptor_set()};
+	get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, sets.size(), sets.begin(), 0, nullptr);*/
+	Y_TODO(descriptor set binding infecient)
+	if(m.get_vk_descriptor_set()) {
+		auto vk = m.get_vk_descriptor_set();
+		get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, 1, &vk, 0, nullptr);
+	}
+	if(vp.get_vk_descriptor_set()) {
+		auto vk = vp.get_vk_descriptor_set();
+		get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 1, 1, &vk, 0, nullptr);
+	}
+	if(pipeline.get_vk_descriptor_set()) {
+		auto vk = pipeline.get_vk_descriptor_set();
+		get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 2, 1, &vk, 0, nullptr);
+	}
 
 	return *this;
 }

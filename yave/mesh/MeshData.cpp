@@ -33,6 +33,7 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 	decoder.decode<io::Byteorder::BigEndian>(version);
 
 	if(magic != 0x79617665 || version != 1) {
+		log_msg("Unable to load mesh.", LogType::Error);
 		return mesh;
 	}
 

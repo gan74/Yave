@@ -49,6 +49,12 @@ impl Vec3 {
         self.2 /= len;
     }
 
+    pub fn normalized(&self) -> Vec3 {
+        let mut v = Vec3(self.0, self.1, self.2);
+        v.normalize();
+        v
+    }
+
     fn get(&self, i: usize) -> Option<&f32> {
         match i {
             0 => Some(&self.0),

@@ -29,7 +29,6 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_OPTIMISATIONS}")
 
 
 file(GLOB_RECURSE SOURCE_FILES
-		"main.cpp"
 		"YaveApp.cpp"
 		"YaveApp.h"
 
@@ -43,10 +42,16 @@ file(GLOB_RECURSE SOURCE_FILES
 
 
 link_directories(../y/build)
-add_executable(yave ${SOURCE_FILES})
+
+add_library(yave STATIC ${SOURCE_FILES})
+add_executable(main "main.cpp")
+
 target_link_libraries(yave y)
 target_link_libraries(yave vulkan-1)
 target_link_libraries(yave spirv-cross)
+
+target_link_libraries(main yave)
+
 
 if(WIN32)
 target_compile_definitions(yave PRIVATE -DWIN32)
