@@ -27,6 +27,6 @@ void main() {
 	vec4 wire_color = vec4(1, 0.5, 0.1, 1.0);
 	vec4 tex_color = texture(in_texture, v_uv);
 
-	out_color = mix(wire_color, tex_color, edge_factor());
-	//out_color = tex_color;
+	//out_color = mix(wire_color, tex_color, edge_factor());
+	out_color = tex_color;
 }

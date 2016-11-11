@@ -28,7 +28,10 @@ class Framebuffer : NonCopyable {
 
 	public:
 		Framebuffer();
-		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color);
+		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors);
+
+		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color) : Framebuffer(render_pass, depth, {color}) {
+		}
 
 		Framebuffer(Framebuffer&& other);
 		Framebuffer& operator=(Framebuffer&& other);

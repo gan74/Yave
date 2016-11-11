@@ -7,13 +7,13 @@ include_directories(../y)
 
 set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wnoexcept -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef")
 set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor -Wodr")
-set(PROFILE_FLAGS "-pg -fno-omit-frame-pointer -gdwarf-2")
+set(PROFILE_FLAGS "-pg -fno-omit-frame-pointer")
 # no -Wzero-as-null-pointer-constant because of VK_NULL_HANDLE
 
 set(EXTRA_OPTIMISATIONS "-ffast-math")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -flto")
+	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -flto -O3")
 	message("Release: LTO enabled")
 # else()
 # 	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} ${PROFILE_FLAGS}")

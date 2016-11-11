@@ -19,9 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-static math::Vec2ui compute_size(const ImageBase& a, const ImageBase& b) {
-	if(a.size() != b.size()) {
-		fatal("Invalid attachment size");
+static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<ColorAttachmentView> views) {
+	for(const auto& v : views) {
+		if(v.get_image().size() != a.size()) {
+			fatal("Invalid attachment size");
+		}
 	}
 	return a.size();
 }
@@ -29,11 +31,15 @@ static math::Vec2ui compute_size(const ImageBase& a, const ImageBase& b) {
 Framebuffer::Framebuffer() : _render_pass(nullptr) {
 }
 
-Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color) :
-		_size(compute_size(depth.get_image(), color.get_image())),
+Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors) :
+		_size(compute_size(depth.get_image(), colors)),
 		_render_pass(&render_pass) {
 
-	auto views = {color.get_vk_image_view(), depth.get_vk_image_view()};
+	core::Vector<vk::ImageView> views;
+	for(const auto& att_view : colors) {
+		views << att_view.get_vk_image_view();
+	}
+	views << depth.get_vk_image_view();
 
 	_framebuffer = get_device()->get_vk_device().createFramebuffer(vk::FramebufferCreateInfo()
 		.setRenderPass(render_pass.get_vk_render_pass())

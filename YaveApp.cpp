@@ -171,7 +171,7 @@ void YaveApp::create_assets() {
 
 	mvp_set = DescriptorSet(&device, {Binding(uniform_buffer)});
 
-	core::Vector<const char*> meshes = {"../tools/mesh/rm.ym"/*, "../tools/mesh/cube.ym"*/};
+	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym"/*, "../tools/mesh/cube.ym"*/};
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
@@ -181,7 +181,7 @@ void YaveApp::create_assets() {
 
 	{
 		auto sq_mat = asset_ptr(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("sq.frag.spv")))
+				.set_frag_data(SpirVData::from_file(io::File::open("ssao.frag.spv")))
 				.set_vert_data(SpirVData::from_file(io::File::open("sq.vert.spv")))
 				.set_bindings({Binding(TextureView(offscreen->color)), Binding(TextureView(offscreen->depth))})
 			));
@@ -206,7 +206,7 @@ void YaveApp::create_assets() {
 
 	auto ratio = swapchain->size().x() / float(swapchain->size().y());
 	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 10.f);
-	mvp.view = math::look_at(Vec3(3.5, 0, 0), Vec3());
+	mvp.view = math::look_at(Vec3(2.0, 0, 0), Vec3());
 }
 
 
