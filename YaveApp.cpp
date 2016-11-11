@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device) {
+YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device), offscreen(nullptr) {
 }
 
 void YaveApp::init(Window* window) {
@@ -31,6 +31,7 @@ void YaveApp::init(Window* window) {
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
 
 	swapchain = new Swapchain(&device, window);
+	offscreen = new Offscreen(&device, swapchain->size());
 
 	create_assets();
 
@@ -43,6 +44,7 @@ YaveApp::~YaveApp() {
 	mesh_texture = Texture();
 
 	delete sq;
+	delete offscreen;
 
 	delete swapchain;
 
@@ -56,15 +58,24 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 }
 
 void YaveApp::create_command_buffers() {
+	{
+		CmdBufferRecorder recorder(command_pool.create_buffer());
+		recorder.bind_framebuffer(offscreen->framebuffer);
+		recorder.set_viewport(Viewport(swapchain->size()));
+
+		for(auto& obj : objects) {
+			obj.draw(recorder, mvp_set);
+		}
+
+		offscreen_cmd = recorder.end();
+	}
+
 	for(usize i = 0; i != swapchain->buffer_count(); i++) {
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
 		recorder.set_viewport(Viewport(swapchain->size()));
 
-		/*for(auto& obj : objects) {
-			obj.draw(recorder, mvp_set);
-		}*/
 		sq->draw(recorder, mvp_set);
 
 		command_buffers << recorder.end();
@@ -73,40 +84,55 @@ void YaveApp::create_command_buffers() {
 
 Duration YaveApp::draw() {
 	Chrono ch;
+
 	auto vk_swap = swapchain->get_vk_swapchain();
 	auto image_acquired_semaphore = device.get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
 	auto render_finished_semaphore = device.get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
-
 	u32 image_index = device.get_vk_device().acquireNextImageKHR(vk_swap, u64(-1), image_acquired_semaphore, VK_NULL_HANDLE).value;
-
-	auto buffer = command_buffers[image_index].get_vk_cmd_buffer();
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
-	auto submit_info = vk::SubmitInfo()
-			.setWaitSemaphoreCount(1)
-			.setPWaitSemaphores(&image_acquired_semaphore)
-			.setPWaitDstStageMask(&pipe_stage_flags)
-			.setCommandBufferCount(1)
-			.setPCommandBuffers(&buffer)
-			.setSignalSemaphoreCount(1)
-			.setPSignalSemaphores(&render_finished_semaphore);
-
 	auto graphic_queue = device.get_vk_queue(QueueFamily::Graphics);
 
-	graphic_queue.submit(1, &submit_info, VK_NULL_HANDLE);
+	{
+		auto buffer = offscreen_cmd.get_vk_cmd_buffer();
+		auto submit_info = vk::SubmitInfo()
+				.setWaitSemaphoreCount(1)
+				.setPWaitSemaphores(&image_acquired_semaphore)
+				.setPWaitDstStageMask(&pipe_stage_flags)
+				.setCommandBufferCount(1)
+				.setPCommandBuffers(&buffer)
+				.setSignalSemaphoreCount(1)
+				.setPSignalSemaphores(&offscreen->sem);
 
-	graphic_queue.presentKHR(vk::PresentInfoKHR()
-			.setSwapchainCount(1)
-			.setPSwapchains(&vk_swap)
-			.setPImageIndices(&image_index)
-			.setWaitSemaphoreCount(1)
-			.setPWaitSemaphores(&render_finished_semaphore)
-		);
+		graphic_queue.submit(1, &submit_info, VK_NULL_HANDLE);
+	}
+	{
 
+		auto buffer = command_buffers[image_index].get_vk_cmd_buffer();
+		auto submit_info = vk::SubmitInfo()
+				.setWaitSemaphoreCount(1)
+				.setPWaitSemaphores(&offscreen->sem)
+				.setPWaitDstStageMask(&pipe_stage_flags)
+				.setCommandBufferCount(1)
+				.setPCommandBuffers(&buffer)
+				.setSignalSemaphoreCount(1)
+				.setPSignalSemaphores(&render_finished_semaphore);
+
+		graphic_queue.submit(1, &submit_info, VK_NULL_HANDLE);
+
+		graphic_queue.presentKHR(vk::PresentInfoKHR()
+				.setSwapchainCount(1)
+				.setPSwapchains(&vk_swap)
+				.setPImageIndices(&image_index)
+				.setWaitSemaphoreCount(1)
+				.setPWaitSemaphores(&render_finished_semaphore)
+			);
+
+
+	}
 	graphic_queue.waitIdle();
 
 	device.get_vk_device().destroySemaphore(image_acquired_semaphore);
 	device.get_vk_device().destroySemaphore(render_finished_semaphore);
-
 	return ch.elapsed();
 }
 
@@ -157,6 +183,7 @@ void YaveApp::create_assets() {
 		auto sq_mat = asset_ptr(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("sq.frag.spv")))
 				.set_vert_data(SpirVData::from_file(io::File::open("sq.vert.spv")))
+				.set_bindings({Binding(TextureView(offscreen->color))})
 			));
 		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, MeshData{
 			{{Vec3(-1, -1, 0), Vec3(0, 0, 1), Vec2(0, 0)},

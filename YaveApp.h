@@ -41,6 +41,27 @@ class YaveApp : NonCopyable {
 		math::Matrix4<> proj;
 	};
 
+	struct Offscreen : NonCopyable {
+		Offscreen(DevicePtr dptr, const math::Vec2ui& size) :
+				depth(dptr, vk::Format::eD32Sfloat, size),
+				color(dptr, vk::Format::eR8G8B8A8Unorm, size),
+				pass(dptr, depth.get_format(), color.get_format()),
+				framebuffer(pass, DepthAttachmentView(depth), ColorAttachmentView(color)) {
+
+			sem = dptr->get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
+		}
+
+		~Offscreen() {
+			pass.get_device()->get_vk_device().destroySemaphore(sem);
+		}
+
+		Image<ImageUsageBits::TextureBit | ImageUsageBits::DepthBit> depth;
+		Image<ImageUsageBits::TextureBit | ImageUsageBits::ColorBit> color;
+		RenderPass pass;
+		Framebuffer framebuffer;
+		vk::Semaphore sem;
+	};
+
 	public:
 		YaveApp(DebugParams params);
 		~YaveApp();
@@ -63,10 +84,12 @@ class YaveApp : NonCopyable {
 
 		CmdBufferPool command_pool;
 		core::Vector<RecordedCmdBuffer> command_buffers;
-		RecordedCmdBuffer command_buffer;
-		Framebuffer framebuffer;
+
+		RecordedCmdBuffer offscreen_cmd;
 
 		AssetPtr<Material> material;
+
+		Offscreen* offscreen;
 
 		Texture mesh_texture;
 		core::Vector<StaticMesh> objects;
