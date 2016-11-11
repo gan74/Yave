@@ -27,9 +27,6 @@ MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass, Viewport view) const {
-	/*auto geom_module = ShaderModule(get_device(), material.get_data()._geom);
-	auto vert_module = ShaderModule(get_device(), material.get_data()._vert);
-	auto frag_module = ShaderModule(get_device(), material.get_data()._frag);*/
 	auto modules = core::vector(material.get_data()._vert, material.get_data()._frag);
 	if(!material.get_data()._geom.is_empty()) {
 		modules << material.get_data()._geom;

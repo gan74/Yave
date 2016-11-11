@@ -42,6 +42,13 @@ vk::ImageLayout ImageUsage::get_vk_image_layout() const{
 }
 
 vk::AccessFlags ImageUsage::get_vk_access_flags() const {
+	/*
+	 *
+	 * This WILL cause some debug layers to complain because of additional bits sets.
+	 * This is NORMAL (but not intended) when creating texture images that are not used as textures.
+	 *
+	 */
+
 	auto flags = vk::AccessFlags();
 	flags = (_usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) ?
 		flags | vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite :

@@ -183,7 +183,7 @@ void YaveApp::create_assets() {
 		auto sq_mat = asset_ptr(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("sq.frag.spv")))
 				.set_vert_data(SpirVData::from_file(io::File::open("sq.vert.spv")))
-				.set_bindings({Binding(TextureView(offscreen->color))})
+				.set_bindings({Binding(TextureView(offscreen->color)), Binding(TextureView(offscreen->depth))})
 			));
 		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, MeshData{
 			{{Vec3(-1, -1, 0), Vec3(0, 0, 1), Vec2(0, 0)},

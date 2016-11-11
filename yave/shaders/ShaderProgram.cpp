@@ -45,12 +45,6 @@ static auto module_type(const spirv_cross::CompilerGLSL& compiler) {
 	return vk::ShaderStageFlagBits::eAll;
 }
 
-/*struct Resources {
-	vk::DescriptorType type;
-	u32 set;
-	u32 binding;
-};*/
-
 
 static vk::DescriptorSetLayoutBinding create_binding(u32 index, vk::DescriptorType type) {
 	return vk::DescriptorSetLayoutBinding()
