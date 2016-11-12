@@ -181,7 +181,7 @@ void YaveApp::create_assets() {
 
 	{
 		auto sq_mat = asset_ptr(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("ssao.frag.spv")))
+				.set_frag_data(SpirVData::from_file(io::File::open("light.frag.spv")))
 				.set_vert_data(SpirVData::from_file(io::File::open("sq.vert.spv")))
 				.set_bindings({Binding(TextureView(offscreen->color)), Binding(TextureView(offscreen->depth))})
 			));

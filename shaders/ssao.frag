@@ -1,4 +1,4 @@
- #version 450
+#version 450
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(location = 0) out vec4 out_color;
@@ -90,31 +90,6 @@ vec3 sample_dir[] = {
 	vec3(-0.3465451,-0.2654651,0.1289366)
 	};
 
-vec3 normal_from_depth(float depth, vec2 uv) {
-	vec2 x = vec2(epsilon, 0);
-	vec2 y = x.yx;
-	
-	float d_x = textureLod(in_depth, uv + x, 0).r;
-	float d_y = textureLod(in_depth, uv + y, 0).r;
-	
-	vec3 v_x = vec3(x, d_x - depth);
-	vec3 v_y = vec3(y, d_y - depth);
-	
-	return normalize(cross(v_x, v_y));
-}
-
-vec3 remap_normal(vec3 v) {
-	return v * 0.5 + vec3(0.5);
-}
-
-float rand(vec2 uv) {
-	return fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
-vec2 rand2(vec2 uv) {
-	return vec2(rand(uv), rand(vec2(cos(uv.y), uv.x)));
-}
-
 float saturate(float x) {
 	return min(1.0, max(0.0, x));
 }
@@ -148,8 +123,6 @@ float AO(vec2 uv, float range, uint samples) {
 }
 
 void main() {
-	//out_color = texture(in_color, v_uv).bgra;
-	//out_color = vec4(texture(in_depth, v_uv).r);
 	float ao = AO(v_uv, 0.01, 64);
 	
 	//out_color = texture(in_color, v_uv) * ao;
