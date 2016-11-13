@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef Y_UTILS_STARTUP_H
 #define Y_UTILS_STARTUP_H
 
+/*
 #define Y_ON_START_LINE_HELPER(prefix, LINE) _on_startup_ ## prefix ## _at_ ## LINE
 #define Y_ON_START_HELPER(prefix, LINE) Y_ON_START_LINE_HELPER(prefix, LINE)
 #define Y_START_FUNC Y_ON_START_HELPER(func, __LINE__)
@@ -34,6 +35,6 @@ namespace {																								\
 	Y_START_RUNNER Y_START_RUNNER::runner = Y_START_RUNNER();											\
 }																										\
 void Y_START_FUNC()
-
+*/
 
 #endif // Y_UTILS_STARTUP_H

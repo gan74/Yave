@@ -105,8 +105,8 @@ AppTimes get_times_ns() {
 
 #ifdef Y_OS_WIN
 
-y_on_startup() {
+/*y_on_startup() {
 	SetConsoleOutputCP(CP_UTF8);
-}
+}*/
 
 #endif
