@@ -45,7 +45,7 @@ auto to_deg(T rad) {
 template<typename T>
 static constexpr T epsilon = std::numeric_limits<T>::epsilon();
 
-template<typename T>
+template<typename T = double>
 static constexpr T pi = T(3.1415926535897932384626433832795);
 
 
