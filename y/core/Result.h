@@ -91,21 +91,21 @@ struct Err<void> : NonCopyable {
 }
 
 
-auto Ok() {
+inline auto Ok() {
 	return detail::Ok<void>();
 }
 
-auto Err() {
+inline auto Err() {
 	return detail::Err<void>();
 }
 
 template<typename T>
-auto Ok(T&& t) {
+inline auto Ok(T&& t) {
 	return detail::Ok<T>(std::forward<T>(t));
 }
 
 template<typename T>
-auto Err(T&& e) {
+inline auto Err(T&& e) {
 	return detail::Err<T>(std::forward<T>(e));
 }
 
