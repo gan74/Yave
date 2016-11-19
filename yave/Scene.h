@@ -13,36 +13,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_BUFFER_BUFFERMEMORYREFERENCE_H
-#define YAVE_BUFFER_BUFFERMEMORYREFERENCE_H
+#ifndef YAVE_SCENE_SCENE_H
+#define YAVE_SCENE_SCENE_H
 
-#include "GenericBuffer.h"
+#include <yave/yave.h>
 
 namespace yave {
 
-template<MemoryFlags Flags, BufferTransfer Transfer>
-class BufferMemoryReference {
+class Scene : NonCopyable {
 
 	public:
-		template<BufferUsage Usage>
-		BufferMemoryReference(const GenericBuffer<Usage, Flags, Transfer>& buffer) : _base(&buffer) {
+		Scene() {
 		}
-
-		BufferMemoryReference() : _base(nullptr) {
-		}
-
-		const BufferBase& get_buffer() const {
-			return *_base;
-		}
-
-		const BufferBase* operator->() const {
-			return _base;
-		}
-
-	private:
-		NotOwner<const BufferBase*> _base;
-
 };
 
+
 }
-#endif // YAVE_BUFFER_BUFFERMEMORYREFERENCE_H
+
+#endif // YAVE_SCENE_SCENE_H

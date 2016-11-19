@@ -127,7 +127,7 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 
 	assert_depth_supported(dptr);
 
-	_render_pass = RenderPass(dptr, _depth_format, _color_format);
+	_render_pass = RenderPass(dptr, _depth_format, {_color_format}, ImageUsageBits::SwapchainBit);
 
 	_swapchain = dptr->get_vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
 			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)

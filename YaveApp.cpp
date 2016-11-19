@@ -62,7 +62,6 @@ void YaveApp::create_command_buffers() {
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 		recorder.bind_framebuffer(offscreen->framebuffer);
 		recorder.set_viewport(Viewport(swapchain->size()));
-
 		for(auto& obj : objects) {
 			obj.draw(recorder, mvp_set);
 		}
@@ -139,7 +138,7 @@ Duration YaveApp::draw() {
 void YaveApp::update(math::Vec2 angles) {
 	(objects.first().transform()) =
 				math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
-				math::rotation(angles.y(), math::Vec3(0, 1, 0));
+				math::rotation(angles.y() + math::pi<float> * 0.5f, math::Vec3(0, 1, 0));
 
 	/*auto rot = math::rotation(angles.x(), math::Vec3(0, 0, 1)) * math::rotation(angles.y(), math::Vec3(0, 1, 0));
 
@@ -153,6 +152,14 @@ void YaveApp::create_assets() {
 	using Vec3 = math::Vec3;
 	using Vec2 = math::Vec2;
 
+	auto plan = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, MeshData{
+		{{Vec3(-1, -1, 0), Vec3(0, 0, 1), Vec2(0, 0)},
+		 {Vec3(-1, 1, 0), Vec3(0, 0, 1), Vec2(0, 1)},
+		 {Vec3(1, 1, 0), Vec3(0, 0, 1), Vec2(1, 1)},
+		 {Vec3(1, -1, 0), Vec3(0, 0, 1), Vec2(1, 0)}
+		},
+		{{{0, 2, 1}}, {{0, 3, 2}}}}));
+
 	uniform_buffer = TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1);
 	{
 		{
@@ -164,7 +171,7 @@ void YaveApp::create_assets() {
 		material = asset_ptr(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv")))
 				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv")))
-				.set_geom_data(SpirVData::from_file(io::File::open("wireframe.geom.spv")))
+				//.set_geom_data(SpirVData::from_file(io::File::open("wireframe.geom.spv")))
 				.set_bindings(core::vector(Binding(TextureView(mesh_texture))))
 			));
 	}
@@ -183,16 +190,9 @@ void YaveApp::create_assets() {
 		auto sq_mat = asset_ptr(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("light.frag.spv")))
 				.set_vert_data(SpirVData::from_file(io::File::open("sq.vert.spv")))
-				.set_bindings({Binding(TextureView(offscreen->color)), Binding(TextureView(offscreen->depth))})
+				.set_bindings({TextureView(offscreen->color), TextureView(offscreen->color2), TextureView(offscreen->depth)})
 			));
-		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, MeshData{
-			{{Vec3(-1, -1, 0), Vec3(0, 0, 1), Vec2(0, 0)},
-			 {Vec3(-1, 1, 0), Vec3(0, 0, 1), Vec2(0, 1)},
-			 {Vec3(1, 1, 0), Vec3(0, 0, 1), Vec2(1, 1)},
-			 {Vec3(1, -1, 0), Vec3(0, 0, 1), Vec2(1, 0)}
-			},
-			{{{0, 2, 1}}, {{0, 3, 2}}}}));
-		sq = new StaticMesh(mesh, sq_mat);
+		sq = new StaticMesh(plan, sq_mat);
 	}
 
 	int p = 0;

@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "RenderPass.h"
 #include "Device.h"
 
+#include <iostream>
+
 namespace yave {
 
 static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<ColorAttachmentView> views) {
@@ -28,18 +30,15 @@ static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<Color
 	return a.size();
 }
 
-Framebuffer::Framebuffer() : _render_pass(nullptr) {
+Framebuffer::Framebuffer() : _attachment_count(0), _render_pass(nullptr) {
 }
 
 Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors) :
 		_size(compute_size(depth.get_image(), colors)),
+		_attachment_count(colors.size()),
 		_render_pass(&render_pass) {
 
-	core::Vector<vk::ImageView> views;
-	for(const auto& att_view : colors) {
-		views << att_view.get_vk_image_view();
-	}
-	views << depth.get_vk_image_view();
+	auto views = core::range(colors).map([](const auto& v) { return v.get_vk_image_view(); }).collect<core::Vector>() + depth.get_vk_image_view();
 
 	_framebuffer = get_device()->get_vk_device().createFramebuffer(vk::FramebufferCreateInfo()
 		.setRenderPass(render_pass.get_vk_render_pass())
@@ -68,6 +67,7 @@ Framebuffer& Framebuffer::operator=(Framebuffer&& other) {
 
 void Framebuffer::swap(Framebuffer& other) {
 	std::swap(_size, other._size);
+	std::swap(_attachment_count, other._attachment_count);
 	std::swap(_render_pass, other._render_pass);
 	std::swap(_framebuffer, other._framebuffer);
 }

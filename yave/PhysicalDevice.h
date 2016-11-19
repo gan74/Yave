@@ -29,7 +29,7 @@ class PhysicalDevice : NonCopyable {
 		vk::PhysicalDeviceMemoryProperties get_vk_memory_properties() const;
 
 	private:
-		NotOwned<Instance&> _instance;
+		Instance& _instance;
 		vk::PhysicalDevice _device;
 		vk::PhysicalDeviceMemoryProperties _memory_properties;
 };

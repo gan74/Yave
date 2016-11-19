@@ -61,7 +61,7 @@ class CmdBufferRecorder : NonCopyable {
 		void swap(CmdBufferRecorder& other);
 
 		CmdBuffer _cmd_buffer;
-		NotOwned<const RenderPass*> _render_pass;
+		const RenderPass* _render_pass;
 		Viewport _viewport;
 };
 

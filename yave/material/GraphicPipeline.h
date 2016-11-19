@@ -42,7 +42,7 @@ class GraphicPipeline : NonCopyable {
 	private:
 		void swap(GraphicPipeline& other);
 
-		NotOwned<const Material*> _material;
+		const Material* _material;
 
 		vk::Pipeline _pipeline;
 		vk::PipelineLayout _layout;

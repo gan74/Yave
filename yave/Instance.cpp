@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT, u64, usize, i32, const char* layer, const char* msg, void*) {
-	log_msg(core::String() + "Vk: @[" + layer + "]: " + msg, flags & VK_DEBUG_REPORT_ERROR_BIT_EXT ? LogType::Error : LogType::Info);
+	log_msg(core::String() + "Vk: @[" + layer + "]: " + msg + "\n", flags & VK_DEBUG_REPORT_ERROR_BIT_EXT ? LogType::Error : LogType::Info);
 	return false;
 }
 

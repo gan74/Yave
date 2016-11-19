@@ -19,9 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Device.h"
 
+#include <iostream>
+
 namespace yave {
 
-static vk::AttachmentDescription create_attachment(ImageFormat format, ImageUsage usage) {
+static vk::AttachmentDescription create_attachment(ImageFormat format, vk::ImageLayout layout) {
 	return vk::AttachmentDescription()
 		.setFormat(format.get_vk_format())
 		.setSamples(vk::SampleCountFlagBits::e1)
@@ -29,7 +31,7 @@ static vk::AttachmentDescription create_attachment(ImageFormat format, ImageUsag
 		.setStoreOp(vk::AttachmentStoreOp::eStore)
 		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-		.setFinalLayout(usage.get_vk_image_layout())
+		.setFinalLayout(layout)
 	;
 }
 
@@ -40,17 +42,17 @@ static vk::AttachmentReference create_attachment_reference(ImageUsage usage, u32
 	;
 }
 
-static vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, const vk::AttachmentReference& colors) {
+static vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, const core::Vector<vk::AttachmentReference>& colors) {
 	return vk::SubpassDescription()
 		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-		.setColorAttachmentCount(1)
-		.setPColorAttachments(&colors)
+		.setColorAttachmentCount(colors.size())
+		.setPColorAttachments(colors.begin())
 		.setPDepthStencilAttachment(&depth)
 	;
 }
 
-static vk::SubpassDependency create_bottom_of_pipe_dependency() {
-	return vk::SubpassDependency()
+static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies() {
+	return {{vk::SubpassDependency()
 		.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 		.setDstSubpass(0)
 		.setSrcStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
@@ -61,33 +63,54 @@ static vk::SubpassDependency create_bottom_of_pipe_dependency() {
 			vk::AccessFlagBits::eColorAttachmentWrite |
 			vk::AccessFlagBits::eDepthStencilAttachmentRead |
 			vk::AccessFlagBits::eDepthStencilAttachmentWrite
-		)
-	;
+		),
+		vk::SubpassDependency()
+			.setSrcSubpass(0)
+			.setDstSubpass(VK_SUBPASS_EXTERNAL)
+			.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+			.setSrcAccessMask(
+					vk::AccessFlagBits::eColorAttachmentRead |
+					vk::AccessFlagBits::eColorAttachmentWrite |
+					vk::AccessFlagBits::eDepthStencilAttachmentRead |
+					vk::AccessFlagBits::eDepthStencilAttachmentWrite
+			)
+			.setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
+			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
+		}};
 }
 
-static vk::RenderPass create_renderpass(DevicePtr dptr, ImageFormat depth_format, ImageFormat color_format) {
-	auto attachments = {create_attachment(color_format, ImageUsageBits::SwapchainBit), create_attachment(depth_format, ImageUsageBits::DepthBit)};
 
-	auto color_ref = create_attachment_reference(ImageUsageBits::ColorBit, 0);
-	auto depth_ref = create_attachment_reference(ImageUsageBits::DepthBit, 1);
 
-	auto subpass = create_subpass(depth_ref, color_ref);
+static vk::RenderPass create_renderpass(DevicePtr dptr, ImageFormat depth_format, std::initializer_list<ImageFormat> color_formats, ImageUsage color_usage) {
+	auto attachments =
+			core::range(color_formats).map([=](const auto& format) { return create_attachment(format, color_usage.get_vk_image_layout()); }).collect<core::Vector>() +
+			create_attachment(depth_format, ImageUsage(ImageUsageBits::DepthBit).get_vk_image_layout());
 
-	auto dependency = create_bottom_of_pipe_dependency();
+	auto color_refs = core::range(usize(0), color_formats.size()).map([](auto i) { return create_attachment_reference(ImageUsageBits::ColorBit, i); }).collect<core::Vector>();
+	auto depth_ref = create_attachment_reference(ImageUsageBits::DepthBit, color_refs.size());
+
+	auto subpass = create_subpass(depth_ref, color_refs);
+
+	auto dependencies = create_bottom_of_pipe_dependencies();
 
 	return dptr->get_vk_device().createRenderPass(vk::RenderPassCreateInfo()
 			.setAttachmentCount(attachments.size())
 			.setPAttachments(attachments.begin())
 			.setSubpassCount(1)
 			.setPSubpasses(&subpass)
-			.setDependencyCount(1)
-			.setPDependencies(&dependency)
+			.setDependencyCount(dependencies.size())
+			.setPDependencies(dependencies.begin())
 		)
 	;
 }
 
 
-RenderPass::RenderPass(DevicePtr dptr, ImageFormat depth_format, ImageFormat color_format) : DeviceLinked(dptr), _render_pass(create_renderpass(dptr, depth_format, color_format)) {
+
+
+RenderPass::RenderPass(DevicePtr dptr, ImageFormat depth_format, std::initializer_list<ImageFormat> color_formats, ImageUsage color_usage) :
+		DeviceLinked(dptr),
+		_attachment_count(color_formats.size()),
+		_render_pass(create_renderpass(dptr, depth_format, color_formats, color_usage)) {
 }
 
 RenderPass::~RenderPass() {
@@ -105,6 +128,7 @@ RenderPass& RenderPass::operator=(RenderPass&& other) {
 
 void RenderPass::swap(RenderPass& other) {
 	DeviceLinked::swap(other);
+	std::swap(_attachment_count, other._attachment_count);
 	std::swap(_render_pass, other._render_pass);
 }
 

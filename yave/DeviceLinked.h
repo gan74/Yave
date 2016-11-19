@@ -50,7 +50,7 @@ class DeviceLinked {
 		}
 
 	private:
-		NotOwned<DevicePtr> _device;
+		DevicePtr _device;
 
 };
 

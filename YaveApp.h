@@ -45,8 +45,9 @@ class YaveApp : NonCopyable {
 		Offscreen(DevicePtr dptr, const math::Vec2ui& size) :
 				depth(dptr, vk::Format::eD32Sfloat, size),
 				color(dptr, vk::Format::eR8G8B8A8Unorm, size),
-				pass(dptr, depth.get_format(), color.get_format()),
-				framebuffer(pass, DepthAttachmentView(depth), ColorAttachmentView(color)) {
+				color2(dptr, vk::Format::eR8G8B8A8Unorm, size),
+				pass(dptr, depth.get_format(), {color.get_format(), color2.get_format()}),
+				framebuffer(pass, depth, {color, color2}) {
 
 			sem = dptr->get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
 		}
@@ -57,6 +58,7 @@ class YaveApp : NonCopyable {
 
 		Image<ImageUsageBits::TextureBit | ImageUsageBits::DepthBit> depth;
 		Image<ImageUsageBits::TextureBit | ImageUsageBits::ColorBit> color;
+		Image<ImageUsageBits::TextureBit | ImageUsageBits::ColorBit> color2;
 		RenderPass pass;
 		Framebuffer framebuffer;
 		vk::Semaphore sem;

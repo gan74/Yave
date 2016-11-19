@@ -44,11 +44,17 @@ class Framebuffer : NonCopyable {
 		vk::Framebuffer get_vk_framebuffer() const;
 		DevicePtr get_device() const;
 
+		usize attachment_count() const {
+			return _attachment_count;
+		}
+
 	private:
 		void swap(Framebuffer& other);
 
 		math::Vec2ui _size;
-		NotOwned<RenderPass*> _render_pass;
+		usize _attachment_count;
+
+		RenderPass* _render_pass;
 		vk::Framebuffer _framebuffer;
 };
 

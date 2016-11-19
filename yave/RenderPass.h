@@ -20,13 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <yave/DeviceLinked.h>
 #include <yave/image/ImageFormat.h>
+#include <yave/image/ImageUsage.h>
 
 namespace yave {
 
 class RenderPass : NonCopyable, public DeviceLinked {
 	public:
 		RenderPass() = default;
-		RenderPass(DevicePtr dptr, ImageFormat depth_format, ImageFormat color_format);
+		RenderPass(DevicePtr dptr, ImageFormat depth_format, std::initializer_list<ImageFormat> color_formats, ImageUsage color_usage = ImageUsageBits::ColorBit | ImageUsageBits::TextureBit);
 
 		RenderPass(RenderPass&& other);
 		RenderPass& operator=(RenderPass&& other);
@@ -35,9 +36,14 @@ class RenderPass : NonCopyable, public DeviceLinked {
 
 		vk::RenderPass get_vk_render_pass() const;
 
+		usize attachment_count() const {
+			return _attachment_count;
+		}
+
 	private:
 		void swap(RenderPass& other);
 
+		usize _attachment_count;
 		vk::RenderPass _render_pass;
 };
 

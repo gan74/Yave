@@ -63,6 +63,7 @@ int main(int, char **) {
 	win.show();
 
 	Chrono ch;
+	usize frames = 0;
 	while(win.update()) {
 		auto mouse = reinterpret_cast<ArcballMouse *>(win.get_mouse_handler());
 		app.update(mouse->angle * 0.01);
@@ -71,7 +72,7 @@ int main(int, char **) {
 		auto us = round(ch.reset().to_micros());
 		std::cout << "\r";
 		std::cout << std::setw(25) << std::left << ("frame time = "_s + us + "us");
-		std::cout << std::setw(25) << std::left << ("(avg = "_s + round(avg(us)) + "us)");
+		std::cout << std::setw(25) << std::left << ("(avg = "_s + round(avg(us)) + "us) f = " + (++frames));
 
 	}
 	std::cout << std::endl;

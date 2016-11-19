@@ -5,7 +5,8 @@ layout(location = 0) out vec4 out_color;
 
 layout(location = 0) in vec2 v_uv;
 layout(set = 2, binding = 0) uniform sampler2D in_color;
-layout(set = 2, binding = 1) uniform sampler2D in_depth;
+layout(set = 2, binding = 1) uniform sampler2D in_normal;
+layout(set = 2, binding = 2) uniform sampler2D in_depth;
 
 
 vec3 normal_from_depth(float depth, vec2 uv) {
@@ -24,13 +25,14 @@ float saturate(float x) {
 }
 
 void main() {
-	float depth = textureLod(in_depth, v_uv, 0).r;
-	vec3 normal = normal_from_depth(depth, v_uv);
+	/*float depth = textureLod(in_depth, v_uv, 0).r;
+	vec3 normal = normal_from_depth(depth, v_uv);*/
+
+	vec3 normal = texture(in_normal, v_uv).xyz * 2.0 - vec3(1.0);
 	
 	vec3 light_dir = normalize(vec3(1, 1, 1));
 	
-	float lambert = dot(normal, light_dir);
+	float lambert = saturate(dot(normal, light_dir)) * 0.75 + 0.25;
 	
-	//out_color = textureLod(in_color, v_uv, 0) * lambert;
-	out_color = vec4(lambert);
+	out_color = textureLod(in_color, v_uv, 0) * lambert;
 }

@@ -45,10 +45,11 @@ class CpuVisibleMapping : NonCopyable, public DeviceLinked {
 	private:
 		CpuVisibleMapping(BufferBase* base);
 
-		NotOwned<vk::DeviceMemory> _memory;
+		NotOwner<vk::DeviceMemory> _memory;
 		usize _size;
-		void* _mapping;
-		//NotOwned<BufferBase*> _buffer;
+
+		// Use unmap NOT delete
+		Owner<void*> _mapping;
 };
 
 }

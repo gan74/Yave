@@ -68,7 +68,7 @@ class Device : NonCopyable {
 		}
 
 	private:
-		NotOwned<Instance&> _instance;
+		Instance& _instance;
 		PhysicalDevice _physical;
 
 		std::array<i32, QueueFamily::Max> _queue_familiy_indices;

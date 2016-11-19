@@ -69,7 +69,7 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		core::Vector<Buffer> _buffers;
 		RenderPass _render_pass;
 
-		Owned<vk::SurfaceKHR> _surface;
+		Owner<vk::SurfaceKHR> _surface;
 		vk::SwapchainKHR _swapchain;
 
 };

@@ -5,7 +5,8 @@ layout(location = 0) out vec4 out_color;
 
 layout(location = 0) in vec2 v_uv;
 layout(set = 2, binding = 0) uniform sampler2D in_color;
-layout(set = 2, binding = 1) uniform sampler2D in_depth;
+layout(set = 2, binding = 1) uniform sampler2D in_color;
+layout(set = 2, binding = 2) uniform sampler2D in_depth;
 
 float depth_remap(float d) {
 	float start = 0.6;
@@ -13,6 +14,6 @@ float depth_remap(float d) {
 }
 
 void main() {
-	//out_color = texture(in_color, v_uv).bgra;
-	out_color = vec4(depth_remap(texture(in_depth, v_uv).r));
+	out_color = texture(in_color, v_uv);
+	//out_color = vec4(depth_remap(texture(in_depth, v_uv).r));
 }

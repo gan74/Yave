@@ -41,7 +41,7 @@ class StagingBufferMapping : public CpuVisibleMapping {
 
 	private:
 		DstBufferRef _dst_ref;
-		Owned<StagingBuffer> _src;
+		Owner<StagingBuffer> _src;
 };
 
 }

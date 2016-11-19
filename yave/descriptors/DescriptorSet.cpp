@@ -22,12 +22,12 @@ namespace yave {
 
 static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr) {
 	auto ub_pool_size = vk::DescriptorPoolSize()
-			.setDescriptorCount(1)
+			.setDescriptorCount(4)
 			.setType(vk::DescriptorType::eUniformBuffer)
 		;
 
 	auto tx_pool_size = vk::DescriptorPoolSize()
-			.setDescriptorCount(1)
+			.setDescriptorCount(4)
 			.setType(vk::DescriptorType::eCombinedImageSampler)
 		;
 

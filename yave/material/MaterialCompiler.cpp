@@ -117,11 +117,13 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eA)
 		;
 
+	auto att_blends = core::range(usize(0), render_pass.attachment_count()).map([=](usize) { return color_blend_attachment; }).collect<core::Vector>();
+
 	auto color_blending = vk::PipelineColorBlendStateCreateInfo()
 			.setLogicOpEnable(false)
 			.setLogicOp(vk::LogicOp::eCopy)
-			.setAttachmentCount(1)
-			.setPAttachments(&color_blend_attachment)
+			.setAttachmentCount(att_blends.size())
+			.setPAttachments(att_blends.begin())
 			.setBlendConstants({0.0f, 0.0f, 0.0f, 0.0f})
 		;
 

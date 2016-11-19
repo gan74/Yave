@@ -32,12 +32,13 @@ vk::ImageLayout ImageUsage::get_vk_image_layout() const{
 	if(_usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
 		return vk::ImageLayout::eDepthStencilAttachmentOptimal;
 	}
-	if(_usage & vk::ImageUsageFlagBits::eColorAttachment) {
-		return vk::ImageLayout::eColorAttachmentOptimal;
-	}
 	if(_usage & vk::ImageUsageFlagBits::eSampled) {
 		return vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
+	if(_usage & vk::ImageUsageFlagBits::eColorAttachment) {
+		return vk::ImageLayout::eColorAttachmentOptimal;
+	}
+
 	return vk::ImageLayout::eUndefined;
 }
 

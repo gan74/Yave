@@ -49,7 +49,7 @@ struct CmdBuffer : NonCopyable {
 
 	private:
 		core::Rc<CmdBufferPoolData> _pool;
-		NotOwned<CmdBufferData> _data;
+		NotOwner<CmdBufferData> _data;
 };
 
 }

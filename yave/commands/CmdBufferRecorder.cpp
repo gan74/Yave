@@ -77,13 +77,17 @@ CmdBufferRecorder& CmdBufferRecorder::set_viewport(const Viewport& view) {
 }
 
 CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
-	vk::ClearValue clear_values[] = {vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f}), vk::ClearDepthStencilValue(1.0f, 0)};
+	//vk::ClearValue clear_values[] = {vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f}), vk::ClearDepthStencilValue(1.0f, 0)};
+	auto clear_values =
+			core::range(usize(0), framebuffer.attachment_count()).map([](usize) { return vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f})); }).collect<core::Vector>() +
+			vk::ClearDepthStencilValue(1.0f, 0);
+
 	auto pass_info = vk::RenderPassBeginInfo()
 			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
 			.setRenderPass(framebuffer.get_render_pass().get_vk_render_pass())
 			.setFramebuffer(framebuffer.get_vk_framebuffer())
-			.setPClearValues(clear_values)
-			.setClearValueCount(2)
+			.setPClearValues(clear_values.begin())
+			.setClearValueCount(clear_values.size())
 		;
 	get_vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
 	_render_pass = &framebuffer.get_render_pass();
