@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <y/utils.h>
 
 namespace y {
+namespace core {
+
 namespace detail {
 
 template<typename T>
@@ -289,7 +291,7 @@ struct Result<T, void> : detail::Result<T, void> {
 	}
 };
 
-
+}
 }
 
 #endif // Y_CORE_RESULT_H

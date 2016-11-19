@@ -25,7 +25,7 @@ namespace core {
 template<typename T>
 class Ptr : NonCopyable {
 	public:
-		explicit Ptr(NotOwned<T*>&& p = nullptr) : _ptr(p) {
+		explicit Ptr(Owner<T*>&& p = nullptr) : _ptr(p) {
 		}
 
 		explicit Ptr(T&& p) : Ptr(new T(std::move(p))) {
@@ -47,7 +47,7 @@ class Ptr : NonCopyable {
 			return *this;
 		}
 
-		Ptr& operator=(NotOwned<T*>&& p) {
+		Ptr& operator=(Owner<T*>&& p) {
 			Ptr ptr(std::move(p));
 			swap(ptr);
 			return *this;
@@ -71,27 +71,27 @@ class Ptr : NonCopyable {
 			return *_ptr;
 		}
 
-		Owned<T const*> operator->() const {
+		T const* operator->() const {
 			return _ptr;
 		}
 
-		Owned<T*> operator->() {
+		T* operator->() {
 			return _ptr;
 		}
 
-		operator Owned<void*>() {
+		operator void*() {
 			return _ptr;
 		}
 
-		operator Owned<void const*>() const {
+		operator void const*() const {
 			return _ptr;
 		}
 
-		bool operator<(const Owned<T* const> t) const {
+		bool operator<(const T* const t) const {
 			return _ptr < t;
 		}
 
-		bool operator>(const Owned<T* const> t) const {
+		bool operator>(const T* const t) const {
 			return _ptr > t;
 		}
 
@@ -103,16 +103,16 @@ class Ptr : NonCopyable {
 			return !_ptr;
 		}
 
-		Owned<T*> as_ptr() {
+		T* as_ptr() {
 			return _ptr;
 		}
 
-		Owned<T const*> as_ptr() const {
+		T const* as_ptr() const {
 			return _ptr;
 		}
 
 	protected:
-		T* _ptr;
+		Owner<T*> _ptr;
 };
 
 template<typename T, typename C = u32>
@@ -122,11 +122,20 @@ class Rc : public Ptr<T> {
 		Rc() : Ptr<T>(nullptr), _count(nullptr) {
 		}
 
-		explicit Rc(NotOwned<T*>&& p) : Ptr<T>(std::move(p)), _count(new C(1)) {
+		explicit Rc(Owner<T*>&& p) : Ptr<T>(std::move(p)), _count(new C(1)) {
 		}
 
 		explicit Rc(T&& p) : Rc(new T(std::move(p))) {
 		}
+
+		/*explicit Rc(T&& p) {
+			struct S {
+				T t;
+				C c;
+			};
+			auto s = new S{std::forward<T>(p), new C(1)};
+			_ptr = &
+		}*/
 
 		Rc(const Rc& p) : Rc() {
 			ref(p);

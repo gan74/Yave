@@ -44,10 +44,10 @@ using isize = std::make_signed<std::size_t>::type;
 
 
 template<typename T>
-using Owned = T;
+using Owner = T;
 
 template<typename T>
-using NotOwned = T;
+using NotOwner = T;
 
 
 namespace detail {

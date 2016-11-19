@@ -215,6 +215,7 @@ struct X: A {
 
 #include <vector>
 #include <iostream>
+#include <memory>
 
 
 struct S {

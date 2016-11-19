@@ -300,7 +300,7 @@ class Vector : ResizePolicy {
 			_alloc_end = _data + new_cap;
 		}
 
-		Data* _data;
+		Owner<Data*> _data;
 		Data* _data_end;
 		Data* _alloc_end;
 };

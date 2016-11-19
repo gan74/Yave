@@ -43,7 +43,7 @@ class LockGuard : NonCopyable {
 	private:
 		LockGuard() = default;
 
-		NotOwned<Lock*> _lock;
+		Lock* _lock;
 
 };
 

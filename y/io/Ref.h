@@ -75,11 +75,11 @@ class Ref {
 			return *_ptr;
 		}
 
-		Owned<T*> operator->() {
+		T* operator->() {
 			return _ptr;
 		}
 
-		Owned<const T*> operator->() const {
+		const T* operator->() const {
 			return _ptr;
 		}
 
@@ -89,7 +89,7 @@ class Ref {
 			std::swap(_owned, other._owned);
 		}
 
-		// may be owned or not, depending on constructor (that's why we got _owned)
+		// may be owner or not, depending on constructor (that's why we got _owned)
 		T* _ptr;
 		bool _owned;
 

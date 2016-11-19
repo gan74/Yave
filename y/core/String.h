@@ -54,7 +54,7 @@ class String {
 
 	struct LongData
 	{
-		char* data;
+		Owner<char*> data;
 		usize capacity;
 		LongLenType length;
 
@@ -92,14 +92,14 @@ class String {
 		String(const String& str);
 		String(String&& str);
 
-		String(Owned<const char*> str); // NOT explicit
-		String(Owned<const char*> str, usize len);
-		String(Owned<const char*> beg, Owned<const char*> end);
+		String(const char* str); // NOT explicit
+		String(const char* str, usize len);
+		String(const char* beg, const char* end);
 
 		~String();
 
 		// the pointer is not owned anymore, String take ownership;
-		static String from_owned(NotOwned<char*> owned);
+		static String from_owned(Owner<char*> owned);
 
 		template<typename T>
 		static String from(const T& t);
@@ -114,8 +114,8 @@ class String {
 
 		void clear();
 
-		Owned<char*> data();
-		Owned<const char*> data() const;
+		char* data();
+		const char* data() const;
 
 		iterator find(const String& str);
 		const_iterator find(const String& str) const;
@@ -214,7 +214,7 @@ inline String str(const T& t) {
 	return detail::str(t, std::is_convertible<T, String>());
 }
 
-inline String str_from_owned(NotOwned<char*> owned) {
+inline String str_from_owned(Owner<char*> owned) {
 	return String::from_owned(owned);
 }
 
