@@ -39,7 +39,9 @@ void YaveApp::init(Window* window) {
 }
 
 YaveApp::~YaveApp() {
-	objects.clear();
+	delete scene_view;
+	delete scene;
+
 	material = nullptr;
 	mesh_texture = Texture();
 
@@ -49,8 +51,6 @@ YaveApp::~YaveApp() {
 	delete swapchain;
 
 	command_buffers.clear();
-
-	mvp_set = DescriptorSet();
 }
 
 vk::Extent2D extent(const math::Vec2ui& v) {
@@ -59,14 +59,8 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 
 void YaveApp::create_command_buffers() {
 	{
-		CmdBufferRecorder recorder(command_pool.create_buffer());
-		recorder.bind_framebuffer(offscreen->framebuffer);
-		recorder.set_viewport(Viewport(swapchain->size()));
-		for(auto& obj : objects) {
-			obj.draw(recorder, mvp_set);
-		}
 
-		offscreen_cmd = recorder.end();
+		offscreen_cmd = scene_view->command_buffer(offscreen->framebuffer);
 	}
 
 	for(usize i = 0; i != swapchain->buffer_count(); i++) {
@@ -75,7 +69,7 @@ void YaveApp::create_command_buffers() {
 		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
 		recorder.set_viewport(Viewport(swapchain->size()));
 
-		sq->draw(recorder, mvp_set);
+		sq->draw(recorder, dummy_ds);
 
 		command_buffers << recorder.end();
 	}
@@ -136,7 +130,7 @@ Duration YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	(objects.first().transform()) =
+	const_cast<StaticMesh&>(scene->static_meshes().first()).transform() =
 				math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
 				math::rotation(angles.y() + math::pi<float> * 0.5f, math::Vec3(0, 1, 0));
 
@@ -160,7 +154,6 @@ void YaveApp::create_assets() {
 		},
 		{{{0, 2, 1}}, {{0, 3, 2}}}}));
 
-	uniform_buffer = TypedBuffer<MVP, BufferUsage::UniformBuffer, MemoryFlags::CpuVisible>(&device, 1);
 	{
 		{
 			auto file = io::File::open("../tools/image/chalet.jpg.rgba");
@@ -176,15 +169,17 @@ void YaveApp::create_assets() {
 			));
 	}
 
-	mvp_set = DescriptorSet(&device, {Binding(uniform_buffer)});
 
 	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym"/*, "../tools/mesh/cube.ym"*/};
+	core::Vector<StaticMesh> objects;
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, m_data));
 		objects << StaticMesh(mesh, material);
 	}
+	scene = new Scene(std::move(objects));
+	scene_view = new SceneView(&device, *scene);
 
 	{
 		auto sq_mat = asset_ptr(Material(&device, MaterialData()
@@ -201,12 +196,7 @@ void YaveApp::create_assets() {
 		m.set_position(Vec3(p % 2 ? x : -x, 0.f, 0.f));
 	}
 
-	auto mapping = uniform_buffer.map();
-	auto& mvp = *mapping.begin();
-
-	auto ratio = swapchain->size().x() / float(swapchain->size().y());
-	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 10.f);
-	mvp.view = math::look_at(Vec3(2.0, 0, 0), Vec3());
+	dummy_ds = DescriptorSet(&device, {});
 }
 
 

@@ -48,7 +48,7 @@ class CmdBufferRecorder : NonCopyable {
 		CmdBufferRecorder& set_viewport(const Viewport& view);
 		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
 		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& mvp, const DescriptorSet& vp);
-		CmdBufferRecorder& draw(const StaticMeshInstance& static_mesh);
+		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
 
 		template<MemoryFlags DstFlags, MemoryFlags SrcFlags>
 		CmdBufferRecorder& copy_buffer(BufferMemoryReference<DstFlags, BufferTransfer::TransferDst> dst, BufferMemoryReference<SrcFlags, BufferTransfer::TransferSrc> src) {

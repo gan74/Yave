@@ -13,21 +13,40 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
+#ifndef YAVE_SCENE_SCENEVIEW_H
+#define YAVE_SCENE_SCENEVIEW_H
 
-#include <yave/yave.h>
+#include <yave/commands/RecordedCmdBuffer.h>
+#include <yave/commands/CmdBufferPool.h>
+
+#include <yave/Framebuffer.h>
+
+#include <yave/buffer/TypedBuffer.h>
+
+#include "Scene.h"
 
 namespace yave {
 
-class Scene : NonCopyable {
-
+class SceneView : NonCopyable {
 	public:
-		Scene() {
-		}
-};
+		struct Matrices {
+			math::Matrix4<> view;
+			math::Matrix4<> proj;
+		};
 
+		SceneView(DevicePtr dptr, const Scene& sce);
+
+		RecordedCmdBuffer command_buffer(const Framebuffer& fbo);
+
+	private:
+		const Scene& _scene;
+
+		CmdBufferPool _command_pool;
+
+		TypedBuffer<Matrices, BufferUsage::UniformBuffer> _matrix_buffer;
+		DescriptorSet _matrix_set;
+};
 
 }
 
-#endif // YAVE_SCENE_SCENE_H
+#endif // YAVE_SCENE_SCENEVIEW_H

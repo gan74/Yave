@@ -42,7 +42,7 @@ StaticMesh::StaticMesh(StaticMesh&& other) :
 	set_storage(_mapping.begin());
 }
 
-void StaticMesh::draw(CmdBufferRecorder& recorder, const DescriptorSet& vp) {
+void StaticMesh::draw(CmdBufferRecorder& recorder, const DescriptorSet& vp) const {
 	recorder.bind_pipeline(_material->compile(recorder.get_current_pass(), recorder.get_viewport()), _descriptor_set, vp);
 	recorder.draw(*_instance);
 }

@@ -35,11 +35,11 @@ class StaticMesh : public Transformable {
 		StaticMesh(StaticMesh&& other);
 		StaticMesh& operator=(StaticMesh&& other) = delete;
 
-		void draw(CmdBufferRecorder& recorder, const DescriptorSet& vp);
+		void draw(CmdBufferRecorder& recorder, const DescriptorSet& vp) const;
 
 	private:
 		AssetPtr<StaticMeshInstance> _instance;
-		AssetPtr<Material> _material;
+		mutable AssetPtr<Material> _material;
 
 		TypedBuffer<Transform, BufferUsage::UniformBuffer> _uniform_buffer;
 		TypedMapping<Transform, MemoryFlags::CpuVisible> _mapping;

@@ -28,6 +28,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <yave/descriptors/Binding.h>
 #include <yave/descriptors/DescriptorSet.h>
+#include <yave/scene/SceneView.h>
+
 #include <y/math/Quaternion.h>
 
 namespace yave {
@@ -94,12 +96,12 @@ class YaveApp : NonCopyable {
 		Offscreen* offscreen;
 
 		Texture mesh_texture;
-		core::Vector<StaticMesh> objects;
-		TypedBuffer<MVP, BufferUsage::UniformBuffer> uniform_buffer;
 
-		DescriptorSet mvp_set;
+		Scene* scene;
+		SceneView* scene_view;
 
 		StaticMesh* sq;
+		DescriptorSet dummy_ds;
 
 
 
