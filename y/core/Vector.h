@@ -132,8 +132,9 @@ class Vector : ResizePolicy {
 			new(_data_end++) Data(std::move(elem));
 		}
 
-		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type>
-		void append(const Range<I>& rng) {
+		template<typename I>
+		typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type 
+			append(const Range<I>& rng) {
 			for(const auto& i : rng) {
 				append(i);
 			}

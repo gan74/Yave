@@ -247,7 +247,7 @@ char String::operator[](usize i) const {
 }
 
 bool String::operator==(const String& str) const {
-	return !strcmp(data(), str.data());
+	return std::equal(begin(), end(), str.begin(), str.end());
 }
 
 bool String::operator!=(const String& str) const {
@@ -255,7 +255,8 @@ bool String::operator!=(const String& str) const {
 }
 
 bool String::operator<(const String& str) const {
-	return strcmp(data(), str.data()) < 0;
+	//return strcmp(data(), str.data()) < 0;
+	return std::lexicographical_compare(begin(), end(), str.begin(), str.end());
 }
 
 
