@@ -20,14 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr) {
+static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, usize ub, usize tx) {
 	auto ub_pool_size = vk::DescriptorPoolSize()
-			.setDescriptorCount(4)
+			.setDescriptorCount(ub)
 			.setType(vk::DescriptorType::eUniformBuffer)
 		;
 
 	auto tx_pool_size = vk::DescriptorPoolSize()
-			.setDescriptorCount(4)
+			.setDescriptorCount(tx)
 			.setType(vk::DescriptorType::eCombinedImageSampler)
 		;
 
@@ -85,11 +85,16 @@ DescriptorSet::DescriptorSet(DevicePtr dptr, std::initializer_list<Binding> bind
 DescriptorSet::DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindings) : DeviceLinked(dptr), _pool(VK_NULL_HANDLE), _set(VK_NULL_HANDLE) {
 	if(!bindings.is_empty()) {
 		auto layout_bindings = core::Vector<vk::DescriptorSetLayoutBinding>();
+
+		usize ub_bindings = 0;
+		usize tx_bindings = 0;
 		for(const auto& binding : bindings) {
 			layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
+			(binding.get_vk_descriptor_type() == vk::DescriptorType::eCombinedImageSampler ? tx_bindings : ub_bindings)++;
 		}
+
 		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
-		_pool = create_descriptor_pool(dptr);
+		_pool = create_descriptor_pool(dptr, ub_bindings, tx_bindings);
 		_set = create_descriptor_set(dptr, _pool, layout);
 		update_sets(dptr, _set, layout_bindings, bindings);
 	}
