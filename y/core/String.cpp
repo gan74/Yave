@@ -247,7 +247,7 @@ char String::operator[](usize i) const {
 }
 
 bool String::operator==(const String& str) const {
-	return std::equal(begin(), end(), str.begin(), str.end());
+	return size() == str.size() ? std::equal(begin(), end(), str.begin(), str.end()) : false;
 }
 
 bool String::operator!=(const String& str) const {

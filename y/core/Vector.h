@@ -238,16 +238,7 @@ class Vector : ResizePolicy {
 		}
 
 		bool operator==(const Vector& v) const {
-			usize s = size();
-			if(s == v.size()) {
-				for(usize i = 0; i != s; i++) {
-					if(_data[i] != v[i]) {
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
+			return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
 		}
 
 		bool operator!=(const Vector& v) const {
