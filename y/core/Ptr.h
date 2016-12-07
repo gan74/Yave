@@ -31,7 +31,7 @@ class Ptr : NonCopyable {
 		explicit Ptr(T&& p) : Ptr(new T(std::move(p))) {
 		}
 
-		Ptr(nullptr_t p) : _ptr(p) {
+		Ptr(std::nullptr_t p) : _ptr(p) {
 		}
 
 		Ptr(Ptr&& p) : _ptr(nullptr) {
@@ -53,7 +53,7 @@ class Ptr : NonCopyable {
 			return *this;
 		}
 
-		Ptr& operator=(nullptr_t p) {
+		Ptr& operator=(std::nullptr_t p) {
 			Ptr ptr(p);
 			swap(ptr);
 			return *this;
@@ -170,7 +170,7 @@ class Rc : public Ptr<T> {
 			return *this;
 		}
 
-		Rc& operator=(nullptr_t) {
+		Rc& operator=(std::nullptr_t) {
 			unref();
 			return *this;
 		}
