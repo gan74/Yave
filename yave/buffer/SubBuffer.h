@@ -13,44 +13,29 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_BUFFER_GENERICBUFFER_H
-#define YAVE_BUFFER_GENERICBUFFER_H
+#ifndef YAVE_BUFFER_SUBBUFFER_H
+#define YAVE_BUFFER_SUBBUFFER_H
 
-#include "buffer.h"
-
-#include "BufferBase.h"
+#include "SubBufferBase.h"
 
 namespace yave {
 
 template<BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value, BufferTransfer Transfer = PreferedBufferTransfer<Flags>::value>
-class GenericBuffer : public BufferBase {
+class SubBuffer : public SubBufferBase {
 
-	static_assert(Usage != BufferUsage::None || Transfer != BufferTransfer::None, "GenericBuffer should not have Usage == BufferUsage::None");
-
-	using Base = BufferBase;
+	using Base = SubBufferBase;
 
 	public:
-		GenericBuffer() = default;
+		SubBuffer() = default;
 
-		GenericBuffer(DevicePtr dptr, usize byte_size) : Base(dptr, byte_size, Usage, Flags, Transfer) {
+		SubBuffer(const GenericBuffer<Usage, Flags>& buffer, usize offset, usize len) : Base(buffer, offset, len) {
 		}
 
-		GenericBuffer(GenericBuffer&& other) : GenericBuffer() {
-			swap(other);
-		}
-
-		GenericBuffer& operator=(GenericBuffer&& other) {
-			swap(other);
-			return *this;
-		}
-
-	protected:
-		void swap(GenericBuffer& other) {
-			Base::swap(other);
+		SubBuffer(const GenericBuffer<Usage, Flags>& buffer, usize offset = 0) : Base(buffer, offset, buffer.byte_size()) {
 		}
 };
 
 
 }
 
-#endif // YAVE_BUFFER_GENERICBUFFER_H
+#endif // YAVE_BUFFER_SUBBUFFER_H

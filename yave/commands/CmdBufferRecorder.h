@@ -50,12 +50,12 @@ class CmdBufferRecorder : NonCopyable {
 		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& mvp, const DescriptorSet& vp);
 		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
 
-		template<MemoryFlags DstFlags, MemoryFlags SrcFlags>
+		/*template<MemoryFlags DstFlags, MemoryFlags SrcFlags>
 		CmdBufferRecorder& copy_buffer(BufferMemoryReference<DstFlags, BufferTransfer::TransferDst> dst, BufferMemoryReference<SrcFlags, BufferTransfer::TransferSrc> src) {
 			get_vk_cmd_buffer().copyBuffer(src->get_vk_buffer(), dst->get_vk_buffer(), dst->get_copy());
 
 			return *this;
-		}
+		}*/
 
 	private:
 		void swap(CmdBufferRecorder& other);

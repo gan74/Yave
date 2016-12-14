@@ -57,14 +57,6 @@ class TypedBuffer : public GenericBuffer<Usage, Flags> {
 			return TypedMapping<Element, Flags>(*this);
 		}
 
-		vk::DescriptorBufferInfo descriptor_info() const {
-			return vk::DescriptorBufferInfo()
-					.setBuffer(this->get_vk_buffer())
-					.setOffset(0)
-					.setRange(size())
-				;
-		}
-
 	private:
 		void swap(TypedBuffer& other) {
 			GenericBuffer<Usage, Flags>::swap(other);

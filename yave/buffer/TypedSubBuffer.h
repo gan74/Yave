@@ -13,37 +13,38 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_BUFFER_BUFFERMEMORYREFERENCE_H
-#define YAVE_BUFFER_BUFFERMEMORYREFERENCE_H
+#ifndef YAVE_BUFFER_TYPEDSUBBUFFER_H
+#define YAVE_BUFFER_TYPEDSUBBUFFER_H
 
-#include "GenericBuffer.h"
+#include "TypedBuffer.h"
 #include "SubBuffer.h"
 
 namespace yave {
-/*
-template<MemoryFlags Flags, BufferTransfer Transfer>
-class BufferMemoryReference {
+
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags>
+class TypedSubBuffer : public SubBuffer<Usage, Flags> {
+
+	using Base = SubBuffer<Usage, Flags>;
 
 	public:
-		template<BufferUsage Usage>
-		BufferMemoryReference(const SubBuffer<Usage, Flags, Transfer>& buffer) : _base(&buffer) {
+		using Element = Elem;
+
+		TypedSubBuffer(const TypedBuffer<Usage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(T), count * sizeof(T)) {
 		}
 
-		BufferMemoryReference() : _base(nullptr) {
+		usize size() const {
+			return this->byte_size() / sizeof(Elem);
 		}
 
-		const BufferBase& get_buffer() const {
-			return *_base;
+		usize offset() const {
+			return this->byte_offset() / sizeof(Elem);
 		}
 
-		const BufferBase* operator->() const {
-			return _base;
+		TypedMapping<Element, Flags> map() {
+			return TypedMapping<Element, Flags>(*this);
 		}
-
-	private:
-		NotOwner<const BufferBase*> _base;
-
-};*/
+};
 
 }
-#endif // YAVE_BUFFER_BUFFERMEMORYREFERENCE_H
+
+#endif // YAVE_BUFFER_TYPEDSUBBUFFER_H

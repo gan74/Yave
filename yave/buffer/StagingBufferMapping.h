@@ -24,14 +24,15 @@ namespace yave {
 class StagingBufferMapping : public CpuVisibleMapping {
 
 	public:
-		using DstBufferRef = BufferMemoryReference<MemoryFlags::DeviceLocal, BufferTransfer::TransferDst>;
 		using StagingBuffer = GenericBuffer<BufferUsage::None, MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>;
 
-		template<BufferUsage Usage>
-		StagingBufferMapping(GenericBuffer<Usage, MemoryFlags::DeviceLocal>& buffer) : StagingBufferMapping(DstBufferRef(buffer)) {
+		template<BufferUsage Usage, BufferTransfer Transfer>
+		StagingBufferMapping(GenericBuffer<Usage, MemoryFlags::DeviceLocal, Transfer>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
 		}
 
-		StagingBufferMapping(DstBufferRef dst);
+		template<BufferUsage Usage>
+		StagingBufferMapping(SubBuffer<Usage, MemoryFlags::DeviceLocal, BufferTransfer::TransferDst>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
+		}
 
 		StagingBufferMapping() = default;
 		~StagingBufferMapping();
@@ -40,7 +41,11 @@ class StagingBufferMapping : public CpuVisibleMapping {
 		void swap(StagingBufferMapping& other);
 
 	private:
-		DstBufferRef _dst_ref;
+		StagingBufferMapping(const SubBufferBase& dst);
+
+		vk::BufferCopy vk_copy() const;
+
+		SubBufferBase _dst;
 		Owner<StagingBuffer> _src;
 };
 

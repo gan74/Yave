@@ -20,14 +20,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-CpuVisibleMapping::CpuVisibleMapping() : DeviceLinked(), _memory(VK_NULL_HANDLE), _size(0), _mapping(nullptr) {
+CpuVisibleMapping::CpuVisibleMapping() : _mapping(nullptr) {
 }
 
-CpuVisibleMapping::CpuVisibleMapping(BufferBase* base) :
-		DeviceLinked(base->get_device()),
-		_memory(base->get_vk_device_memory()),
-		_size(base->byte_size()),
-		_mapping(get_device()->get_vk_device().mapMemory(_memory, 0, _size)) {
+CpuVisibleMapping::CpuVisibleMapping(const SubBufferBase& buff) :
+		_buffer(buff),
+		_mapping(_buffer.get_device()->get_vk_device().mapMemory(_buffer.get_vk_device_memory(), 0, _buffer.byte_size())) {
+#ifdef YAVE_DEBUG_BUFFERS
+	_buffer->_mapped++;
+#endif
 }
 
 CpuVisibleMapping::CpuVisibleMapping(CpuVisibleMapping&& other) : CpuVisibleMapping() {
@@ -40,19 +41,23 @@ CpuVisibleMapping& CpuVisibleMapping::operator=(CpuVisibleMapping&& other) {
 }
 
 CpuVisibleMapping::~CpuVisibleMapping() {
-	if(get_device() && _mapping) {
-		get_device()->get_vk_device().unmapMemory(_memory);
+#ifdef YAVE_DEBUG_BUFFERS
+	if(_buffer) {
+		_buffer->_mapped--;
+	}
+#endif
+	if(_buffer.get_device() && _mapping) {
+		_buffer.get_device()->get_vk_device().unmapMemory(_buffer.get_vk_device_memory());
 	}
 }
 
 usize CpuVisibleMapping::byte_size() const {
-	return _size;
+	return _buffer.byte_size();
 }
 
 void CpuVisibleMapping::swap(CpuVisibleMapping& other) {
 	std::swap(_mapping, other._mapping);
-	std::swap(_memory, other._memory);
-	std::swap(_size, other._size);
+	std::swap(_buffer, other._buffer);
 }
 
 void* CpuVisibleMapping::data() {

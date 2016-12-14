@@ -17,14 +17,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define YAVE_BUFFER_CPUVISIBLEMAPPING_H
 
 #include "BufferMemoryReference.h"
+#include "SubBuffer.h"
 
 namespace yave {
 
-class CpuVisibleMapping : NonCopyable, public DeviceLinked {
+class CpuVisibleMapping : NonCopyable {
 
 	public:
 		template<BufferUsage Usage, BufferTransfer Transfer>
-		CpuVisibleMapping(GenericBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(&buffer) {
+		CpuVisibleMapping(GenericBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
+		}
+
+		template<BufferUsage Usage>
+		CpuVisibleMapping(const SubBuffer<Usage, MemoryFlags::CpuVisible>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
 		}
 
 		CpuVisibleMapping();
@@ -43,13 +48,12 @@ class CpuVisibleMapping : NonCopyable, public DeviceLinked {
 		void swap(CpuVisibleMapping& other);
 
 	private:
-		CpuVisibleMapping(BufferBase* base);
+		CpuVisibleMapping(const SubBufferBase& buff);
 
-		NotOwner<vk::DeviceMemory> _memory;
-		usize _size;
+		SubBufferBase _buffer;
 
 		// Use unmap NOT delete
-		Owner<void*> _mapping;
+		void* _mapping;
 };
 
 }
