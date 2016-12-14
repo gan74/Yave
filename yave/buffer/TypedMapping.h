@@ -16,8 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_TYPEDMAPPING_H
 #define YAVE_BUFFER_TYPEDMAPPING_H
 
-#include "buffer.h"
-
+#include "buffers.h"
 #include "StagingBufferMapping.h"
 
 namespace yave {

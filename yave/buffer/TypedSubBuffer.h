@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-template<typename Elem, BufferUsage Usage, MemoryFlags Flags>
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value, BufferTransfer Transfer = PreferedBufferTransfer<Flags>::value>
 class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 
 	using Base = SubBuffer<Usage, Flags>;
@@ -30,6 +30,9 @@ class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 		using Element = Elem;
 
 		TypedSubBuffer(const TypedBuffer<Usage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(T), count * sizeof(T)) {
+		}
+
+		explicit TypedSubBuffer(const TypedBuffer<Usage, Flags>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(T)) {
 		}
 
 		usize size() const {

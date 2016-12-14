@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_BUFFERBASE_H
 #define YAVE_BUFFER_BUFFERBASE_H
 
-#include "buffer.h"
+#include "buffers.h"
 #include <yave/DeviceLinked.h>
 
 //#define YAVE_DEBUG_BUFFERS
@@ -44,11 +44,6 @@ class BufferBase : NonCopyable, public DeviceLinked {
 		usize _size;
 		vk::Buffer _buffer;
 		vk::DeviceMemory _memory;
-
-#ifdef YAVE_DEBUG_BUFFERS
-		friend class CpuVisibleMapping;
-		mutable usize _mapped;
-#endif
 };
 
 }

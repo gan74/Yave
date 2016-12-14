@@ -16,13 +16,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_SUBBUFFERBASE_H
 #define YAVE_BUFFER_SUBBUFFERBASE_H
 
-#include "GenericBuffer.h"
+#include "Buffer.h"
 
 namespace yave {
 
 class SubBufferBase : public DeviceLinked {
 
 	public:
+		SubBufferBase() = default;
+
+		explicit SubBufferBase(const BufferBase &base) : SubBufferBase(base, 0, base.byte_size()) {
+		}
+
+		SubBufferBase(const BufferBase& base, usize off, usize len) :
+				DeviceLinked(base.get_device()),
+				_size(len),
+				_offset(off),
+				_buffer(base.get_vk_buffer()),
+				_memory(base.get_vk_device_memory()) {
+		}
+
 		usize byte_size() const {
 			return _size;
 		}
@@ -45,20 +58,6 @@ class SubBufferBase : public DeviceLinked {
 					.setOffset(_offset)
 					.setRange(_size)
 				;
-		}
-
-		SubBufferBase(const BufferBase &base) : SubBufferBase(base, 0, base.byte_size()) {
-		}
-
-		SubBufferBase() = default;
-
-	protected:
-		SubBufferBase(const BufferBase& base, usize off, usize len) :
-				DeviceLinked(base.get_device()),
-				_size(len),
-				_offset(off),
-				_buffer(base.get_vk_buffer()),
-				_memory(base.get_vk_device_memory()) {
 		}
 
 	private:

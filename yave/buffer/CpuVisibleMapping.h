@@ -16,7 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_CPUVISIBLEMAPPING_H
 #define YAVE_BUFFER_CPUVISIBLEMAPPING_H
 
-#include "BufferMemoryReference.h"
 #include "SubBuffer.h"
 
 namespace yave {
@@ -25,11 +24,11 @@ class CpuVisibleMapping : NonCopyable {
 
 	public:
 		template<BufferUsage Usage, BufferTransfer Transfer>
-		CpuVisibleMapping(GenericBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
+		CpuVisibleMapping(const SubBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
 		}
 
-		template<BufferUsage Usage>
-		CpuVisibleMapping(const SubBuffer<Usage, MemoryFlags::CpuVisible>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
+		template<BufferUsage Usage, BufferTransfer Transfer>
+		CpuVisibleMapping(const Buffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
 		}
 
 		CpuVisibleMapping();

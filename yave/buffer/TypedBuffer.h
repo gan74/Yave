@@ -18,18 +18,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <yave/yave.h>
-
-#include "GenericBuffer.h"
 #include "TypedMapping.h"
 
 namespace yave {
 
-template<typename Elem, BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value>
-class TypedBuffer : public GenericBuffer<Usage, Flags> {
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value, BufferTransfer Transfer = PreferedBufferTransfer<Flags>::value>
+class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
+
+	using Base = Buffer<Usage, Flags, Transfer>;
+
 	public:
 		using Element = Elem;
 
-		TypedBuffer() : GenericBuffer<Usage, Flags>() {
+		TypedBuffer() : Base() {
 		}
 
 		TypedBuffer(DevicePtr dptr, const core::Vector<Elem>& data) : TypedBuffer(dptr, data.size()) {
@@ -37,7 +38,7 @@ class TypedBuffer : public GenericBuffer<Usage, Flags> {
 			memcpy(mapping.data(), data.begin(), this->byte_size());
 		}
 
-		TypedBuffer(DevicePtr dptr, usize elem_count) : GenericBuffer<Usage, Flags>(dptr, elem_count *sizeof(Elem)) {
+		TypedBuffer(DevicePtr dptr, usize elem_count) : Base(dptr, elem_count *sizeof(Elem)) {
 		}
 
 		TypedBuffer(TypedBuffer&& other) {
@@ -59,7 +60,7 @@ class TypedBuffer : public GenericBuffer<Usage, Flags> {
 
 	private:
 		void swap(TypedBuffer& other) {
-			GenericBuffer<Usage, Flags>::swap(other);
+			BufferBase::swap(other);
 		}
 };
 

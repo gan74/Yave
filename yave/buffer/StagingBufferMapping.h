@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_STAGINGBUFFERMAPPING_H
 #define YAVE_BUFFER_STAGINGBUFFERMAPPING_H
 
-#include "buffer.h"
+#include "buffers.h"
 #include "CpuVisibleMapping.h"
 
 namespace yave {
@@ -24,14 +24,14 @@ namespace yave {
 class StagingBufferMapping : public CpuVisibleMapping {
 
 	public:
-		using StagingBuffer = GenericBuffer<BufferUsage::None, MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>;
-
-		template<BufferUsage Usage, BufferTransfer Transfer>
-		StagingBufferMapping(GenericBuffer<Usage, MemoryFlags::DeviceLocal, Transfer>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
-		}
+		using StagingBuffer = Buffer<BufferUsage::None, MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>;
 
 		template<BufferUsage Usage>
 		StagingBufferMapping(SubBuffer<Usage, MemoryFlags::DeviceLocal, BufferTransfer::TransferDst>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
+		}
+
+		template<BufferUsage Usage>
+		StagingBufferMapping(Buffer<Usage, MemoryFlags::DeviceLocal, BufferTransfer::TransferDst>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
 		}
 
 		StagingBufferMapping() = default;
@@ -46,7 +46,7 @@ class StagingBufferMapping : public CpuVisibleMapping {
 		vk::BufferCopy vk_copy() const;
 
 		SubBufferBase _dst;
-		Owner<StagingBuffer> _src;
+		StagingBuffer _src;
 };
 
 }

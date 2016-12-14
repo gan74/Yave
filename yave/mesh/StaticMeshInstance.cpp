@@ -23,6 +23,11 @@ StaticMeshInstance::StaticMeshInstance(DevicePtr dptr, const MeshData& m) :
 		triangle_buffer(dptr, m.triangles),
 		vertex_buffer(dptr, m.vertices) {
 
+	indirect.vertexCount = vertex_buffer.size();
+	indirect.instanceCount = 1;
+
+	indirect.firstInstance = 0;
+	indirect.firstVertex = 0;
 }
 
 StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) : StaticMeshInstance() {
@@ -37,6 +42,7 @@ StaticMeshInstance& StaticMeshInstance::operator=(StaticMeshInstance&& other) {
 void StaticMeshInstance::swap(StaticMeshInstance& other) {
 	std::swap(triangle_buffer, other.triangle_buffer);
 	std::swap(vertex_buffer, other.vertex_buffer);
+	std::swap(indirect, other.indirect);
 }
 
 }

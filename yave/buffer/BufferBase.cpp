@@ -98,31 +98,17 @@ void BufferBase::swap(BufferBase& other) {
 	std::swap(_size, other._size);
 	std::swap(_buffer, other._buffer);
 	std::swap(_memory, other._memory);
-#ifdef YAVE_DEBUG_BUFFERS
-	if(_mapped) {
-		fatal("Buffer not unmaped before being moved");
-	}
-#endif
 }
 
 BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryFlags flags, BufferTransfer transfer) : DeviceLinked(dptr), _size(byte_size) {
 	auto tpl = alloc_buffer(dptr, byte_size, to_vk_flags(usage) | to_vk_flags(transfer), flags);
 	_buffer = std::get<0>(tpl);
 	_memory = std::get<1>(tpl);
-
-#ifdef YAVE_DEBUG_BUFFERS
-	_mapped = 0;
-#endif
 }
 
 BufferBase::~BufferBase() {
 	destroy(_memory);
 	destroy(_buffer);
-#ifdef YAVE_DEBUG_BUFFERS
-	if(_mapped) {
-		fatal("Buffer not unmaped before being destroyed");
-	}
-#endif
 }
 
 }

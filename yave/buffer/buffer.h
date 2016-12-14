@@ -16,57 +16,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_BUFFER_H
 #define YAVE_BUFFER_BUFFER_H
 
-#include <yave/yave.h>
+#include "buffers.h"
+#include "BufferBase.h"
 
 namespace yave {
 
-enum class BufferUsage {
-	None = 0,
-    VertexBuffer = int(vk::BufferUsageFlagBits::eVertexBuffer),
-    IndexBuffer = int(vk::BufferUsageFlagBits::eIndexBuffer),
-    UniformBuffer = int(vk::BufferUsageFlagBits::eUniformBuffer)
+template<BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value, BufferTransfer Transfer = PreferedBufferTransfer<Flags>::value>
+class Buffer : public BufferBase {
+
+	static_assert(Usage != BufferUsage::None || Transfer != BufferTransfer::None, "Buffers should not have Usage == BufferUsage::None");
+
+	public:
+		Buffer() = default;
+
+		Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Flags, Transfer) {
+		}
+
+		Buffer(Buffer&& other) : BufferBase() {
+			swap(other);
+		}
+
+		Buffer& operator=(Buffer&& other) {
+			swap(other);
+			return *this;
+		}
+
+	protected:
 };
-
-enum class BufferTransfer {
-	None = 0,
-    TransferSrc = int(vk::BufferUsageFlagBits::eTransferSrc),
-    TransferDst = int(vk::BufferUsageFlagBits::eTransferDst)
-};
-
-
-Y_TODO(ditch eHostCoherent for a raii flush)
-enum class MemoryFlags {
-    DeviceLocal = uenum(vk::MemoryPropertyFlagBits::eDeviceLocal),
-	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible) | uenum(vk::MemoryPropertyFlagBits::eHostCoherent)
-};
-
-template<MemoryFlags Flags>
-static constexpr bool is_cpu_visible_v = uenum(Flags) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
-
-bool is_cpu_visible(MemoryFlags flags);
-
-
-template<BufferUsage Usage>
-struct PreferedMemoryFlags {
-	static constexpr MemoryFlags value = MemoryFlags::DeviceLocal;
-};
-
-template<>
-struct PreferedMemoryFlags<BufferUsage::UniformBuffer> {
-	static constexpr MemoryFlags value = MemoryFlags::CpuVisible;
-};
-
-
-template<MemoryFlags Flags>
-struct PreferedBufferTransfer {
-	static constexpr BufferTransfer value = BufferTransfer::TransferDst;
-};
-
-template<>
-struct PreferedBufferTransfer<MemoryFlags::CpuVisible> {
-	static constexpr BufferTransfer value = BufferTransfer::None;
-};
-
 
 
 }

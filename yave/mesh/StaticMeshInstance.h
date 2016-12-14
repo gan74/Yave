@@ -42,6 +42,8 @@ class StaticMeshInstance : NonCopyable {
 		TriangleBuffer<> triangle_buffer;
 		VertexBuffer<> vertex_buffer;
 
+		vk::DrawIndirectCommand indirect;
+
 	private:
 		void swap(StaticMeshInstance& other);
 

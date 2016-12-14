@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "RecordedCmdBuffer.h"
 
-#include <yave/buffer/BufferMemoryReference.h>
 #include <yave/mesh/StaticMeshInstance.h>
 #include <yave/material/GraphicPipeline.h>
 #include <yave/descriptors/DescriptorSet.h>
@@ -49,13 +48,6 @@ class CmdBufferRecorder : NonCopyable {
 		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
 		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& mvp, const DescriptorSet& vp);
 		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
-
-		/*template<MemoryFlags DstFlags, MemoryFlags SrcFlags>
-		CmdBufferRecorder& copy_buffer(BufferMemoryReference<DstFlags, BufferTransfer::TransferDst> dst, BufferMemoryReference<SrcFlags, BufferTransfer::TransferSrc> src) {
-			get_vk_cmd_buffer().copyBuffer(src->get_vk_buffer(), dst->get_vk_buffer(), dst->get_copy());
-
-			return *this;
-		}*/
 
 	private:
 		void swap(CmdBufferRecorder& other);
