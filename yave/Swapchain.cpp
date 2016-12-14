@@ -89,18 +89,24 @@ static bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
 	return dptr->get_physical_device().get_vk_physical_device().getSurfaceSupportKHR(index, surface);
 }
 
+#ifdef Y_OS_WIN
+static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE instance, HWND handle) {
+	auto surface = dptr->get_instance().get_vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
+			.setHinstance(instance)
+			.setHwnd(handle)
+		);
+
+	if(!has_wsi_support(dptr, surface)) {
+		fatal("No WSI support");
+	}
+	log_msg("Vulkan WSI supported !");
+	return surface;
+}
+#endif
+
 static vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 	#ifdef Y_OS_WIN
-		auto surface = dptr->get_instance().get_vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
-				.setHinstance(window->instance())
-				.setHwnd(window->handle())
-			);
-
-		if(!has_wsi_support(dptr, surface)) {
-			fatal("No WSI support");
-		}
-		log_msg("Vulkan WSI supported !");
-		return surface;
+		return create_surface(dptr, window->instance(), window->handle());
 	#endif
 	return VK_NULL_HANDLE;
 }
@@ -113,6 +119,13 @@ Swapchain::Buffer::Buffer(RenderPass& render_pass, SwapchainImage&& color_att, D
 		depth(std::move(depth_att)),
 		framebuffer(render_pass, DepthAttachmentView(depth), ColorAttachmentView(color)) {
 }
+
+
+
+#ifdef Y_OS_WIN
+Swapchain::Swapchain(DevicePtr dptr, HINSTANCE instance, HWND handle) : Swapchain(dptr, create_surface(dptr, instance, handle)) {
+}
+#endif
 
 Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {
 }

@@ -49,6 +49,10 @@ class Swapchain : NonCopyable, public DeviceLinked {
 	};
 
 	public:
+#ifdef Y_OS_WIN
+		Swapchain(DevicePtr dptr, HINSTANCE instance, HWND handle);
+#endif
+
 		Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface);
 		Swapchain(DevicePtr dptr, Window* window);
 		~Swapchain();
