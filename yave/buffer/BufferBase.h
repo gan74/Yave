@@ -19,8 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "buffers.h"
 #include <yave/DeviceLinked.h>
 
-//#define YAVE_DEBUG_BUFFERS
-
 namespace yave {
 
 class BufferBase : NonCopyable, public DeviceLinked {
