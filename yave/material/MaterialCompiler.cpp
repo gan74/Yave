@@ -88,7 +88,7 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 	auto viewport_state = vk::PipelineViewportStateCreateInfo()
 			.setViewportCount(1)
 			.setPViewports(&viewport)
-			.setScissorCount(1)
+			.setScissorCount(0)
 		;
 
 	auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
