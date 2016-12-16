@@ -23,18 +23,18 @@ namespace yave {
 class SubBufferBase : public DeviceLinked {
 
 	public:
-		SubBufferBase() : DeviceLinked(), _size(0), _offset(0), _buffer(VK_NULL_HANDLE), _memory(VK_NULL_HANDLE) {
+		SubBufferBase() : DeviceLinked(), _size(0), _offset(0) {
 		}
 
 		explicit SubBufferBase(const BufferBase &base) : SubBufferBase(base, 0, base.byte_size()) {
 		}
 
 		SubBufferBase(const BufferBase& base, usize off, usize len) :
-				DeviceLinked(base.get_device()),
+				DeviceLinked(base.device()),
 				_size(len),
 				_offset(off),
-				_buffer(base.get_vk_buffer()),
-				_memory(base.get_vk_device_memory()) {
+				_buffer(base.vk_buffer()),
+				_memory(base.vk_device_memory()) {
 		}
 
 		usize byte_size() const {
@@ -45,11 +45,11 @@ class SubBufferBase : public DeviceLinked {
 			return _offset;
 		}
 
-		vk::Buffer get_vk_buffer() const {
+		vk::Buffer vk_buffer() const {
 			return _buffer;
 		}
 
-		vk::DeviceMemory get_vk_device_memory() const {
+		vk::DeviceMemory vk_device_memory() const {
 			return _memory;
 		}
 

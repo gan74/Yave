@@ -21,19 +21,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 vk::CommandPool create_pool(DevicePtr dptr) {
-	return dptr->get_vk_device().createCommandPool(vk::CommandPoolCreateInfo()
-			.setQueueFamilyIndex(dptr->get_queue_family_index(QueueFamily::Graphics))
+	return dptr->vk_device().createCommandPool(vk::CommandPoolCreateInfo()
+			.setQueueFamilyIndex(dptr->queue_family_index(QueueFamily::Graphics))
 			//.setFlags(vk::CommandPoolCreateFlagBits::eTransient)
 			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
 		);
 }
 
 CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool) {
-	auto buffer = dptr->get_vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
+	auto buffer = dptr->vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
 			.setCommandBufferCount(1)
 			.setCommandPool(pool)
 		).back();
-	auto fence = dptr->get_vk_device().createFence(vk::FenceCreateInfo()
+	auto fence = dptr->vk_device().createFence(vk::FenceCreateInfo()
 			.setFlags(vk::FenceCreateFlagBits::eSignaled)
 		);
 
@@ -42,7 +42,7 @@ CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool) {
 
 void wait(DevicePtr dptr, const CmdBufferData &data) {
 	Chrono c;
-	dptr->get_vk_device().waitForFences(data.fence, true, u64(-1));
+	dptr->vk_device().waitForFences(data.fence, true, u64(-1));
 	if(c.elapsed().to_nanos()) {
 		log_msg(core::String() + "waited " + c.elapsed().to_micros() + "us for command buffer!", LogType::Warning);
 	}
@@ -54,7 +54,7 @@ CmdBufferPoolData::CmdBufferPoolData(DevicePtr dptr) : DeviceLinked(dptr), _pool
 
 CmdBufferPoolData::~CmdBufferPoolData() {
 	for(auto buffer : _cmd_buffers) {
-		get_device()->get_vk_device().freeCommandBuffers(_pool, buffer.cmd_buffer);
+		device()->vk_device().freeCommandBuffers(_pool, buffer.cmd_buffer);
 		destroy(buffer.fence);
 	}
 	destroy(_pool);
@@ -68,14 +68,14 @@ void CmdBufferPoolData::release(CmdBufferData&& data) {
 }
 
 CmdBufferData CmdBufferPoolData::reset(CmdBufferData data) {
-	wait(get_device(), data);
+	wait(device(), data);
 	data.cmd_buffer.reset(vk::CommandBufferResetFlags());
 	return data;
 }
 
 CmdBufferData CmdBufferPoolData::alloc() {
 	if(_cmd_buffers.is_empty()) {
-		return alloc_data(get_device(), _pool);
+		return alloc_data(device(), _pool);
 	}
 	return reset(_cmd_buffers.pop());
 }

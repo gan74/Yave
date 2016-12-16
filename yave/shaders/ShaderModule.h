@@ -37,7 +37,7 @@ class ShaderModule : NonCopyable, public DeviceLinked {
 
 		~ShaderModule();
 
-		vk::ShaderModule get_vk_shader_module() const;
+		vk::ShaderModule vk_shader_module() const;
 
 	private:
 		void swap(ShaderModule& other);

@@ -27,11 +27,11 @@ class UniformBinding {
 		UniformBinding(u32 binding, const TypedBuffer<T, BufferUsage::UniformBuffer, Flags>& buffer) : _descriptor_info(buffer.descriptor_info()), _binding(binding) {
 		}
 
-		auto get_descriptor_buffer_info() const {
+		auto descriptor_buffer_info() const {
 			return _descriptor_info;
 		}
 
-		u32 get_binding() const {
+		u32 binding() const {
 			return _binding;
 		}
 

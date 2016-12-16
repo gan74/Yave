@@ -51,16 +51,16 @@ void GraphicPipeline::swap(GraphicPipeline& other) {
 	std::swap(_layout, other._layout);
 }
 
-vk::Pipeline GraphicPipeline::get_vk_pipeline() const {
+vk::Pipeline GraphicPipeline::vk_pipeline() const {
 	return _pipeline;
 }
 
-vk::PipelineLayout GraphicPipeline::get_vk_pipeline_layout() const {
+vk::PipelineLayout GraphicPipeline::vk_pipeline_layout() const {
 	return _layout;
 }
 
-const vk::DescriptorSet& GraphicPipeline::get_vk_descriptor_set() const {
-	return _material->descriptor_set().get_vk_descriptor_set();
+const vk::DescriptorSet& GraphicPipeline::vk_descriptor_set() const {
+	return _material->descriptor_set().vk_descriptor_set();
 }
 
 

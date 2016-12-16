@@ -33,26 +33,26 @@ static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties,
 }
 
 static vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Image image) {
-	return dptr->get_vk_device().getImageMemoryRequirements(image);
+	return dptr->vk_device().getImageMemoryRequirements(image);
 }
 
 static void bind_image_memory(DevicePtr dptr, vk::Image image, vk::DeviceMemory memory) {
-	dptr->get_vk_device().bindImageMemory(image, memory, 0);
+	dptr->vk_device().bindImageMemory(image, memory, 0);
 }
 
 static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs) {
-	return dptr->get_vk_device().allocateMemory(vk::MemoryAllocateInfo()
+	return dptr->vk_device().allocateMemory(vk::MemoryAllocateInfo()
 			.setAllocationSize(reqs.size)
-			.setMemoryTypeIndex(get_memory_type(dptr->get_physical_device().get_vk_memory_properties(), reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal))
+			.setMemoryTypeIndex(get_memory_type(dptr->physical_device().vk_memory_properties(), reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal))
 		);
 }
 
 static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, vk::ImageUsageFlags usage) {
-	return dptr->get_vk_device().createImage(vk::ImageCreateInfo()
+	return dptr->vk_device().createImage(vk::ImageCreateInfo()
 			.setSharingMode(vk::SharingMode::eExclusive)
 			.setArrayLayers(1)
 			.setExtent(vk::Extent3D(size.x(), size.y(), 1))
-			.setFormat(format.get_vk_format())
+			.setFormat(format.vk_format())
 			.setImageType(vk::ImageType::e2D)
 			.setTiling(vk::ImageTiling::eOptimal)
 			.setInitialLayout(vk::ImageLayout::eUndefined)
@@ -66,7 +66,7 @@ static vk::BufferImageCopy get_copy_region(const math::Vec2ui& size, ImageFormat
 	return vk::BufferImageCopy()
 		.setImageExtent(vk::Extent3D(size.x(), size.y(), 1))
 		.setImageSubresource(vk::ImageSubresourceLayers()
-				.setAspectMask(format.get_vk_aspect())
+				.setAspectMask(format.vk_aspect())
 				.setMipLevel(0)
 				.setBaseArrayLayer(0)
 				.setLayerCount(1)
@@ -99,7 +99,7 @@ void transition_image_layout(
 			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 			.setImage(image)
 			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.get_vk_aspect())
+					.setAspectMask(format.vk_aspect())
 					.setBaseArrayLayer(0)
 					.setBaseMipLevel(0)
 					.setLayerCount(1)
@@ -107,7 +107,7 @@ void transition_image_layout(
 				)
 		;
 
-	cmd_buffer.get_vk_cmd_buffer().pipelineBarrier(
+	cmd_buffer.vk_cmd_buffer().pipelineBarrier(
 			vk::PipelineStageFlagBits::eTopOfPipe,
 			vk::PipelineStageFlagBits::eTopOfPipe,
 			vk::DependencyFlagBits::eByRegion,
@@ -116,7 +116,7 @@ void transition_image_layout(
 
 
 void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, ImageFormat format, ImageUsage usage, const void* data) {
-	usize byte_size = size.x() *size.y() *format.get_bpp();
+	usize byte_size = size.x() *size.y() *format.bpp();
 
 	auto staging_buffer = get_staging_buffer(dptr, byte_size, data);
 	auto regions = get_copy_region(size, format);
@@ -127,24 +127,24 @@ void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, Imag
 			vk::ImageLayout::eUndefined, vk::AccessFlags(),
 			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite);
 
-	cmd_buffer.get_vk_cmd_buffer().copyBufferToImage(staging_buffer.get_vk_buffer(), image, vk::ImageLayout::eTransferDstOptimal, regions);
+	cmd_buffer.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image, vk::ImageLayout::eTransferDstOptimal, regions);
 
 	transition_image_layout(cmd_buffer, image, format,
 			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite,
-			usage.get_vk_image_layout(), usage.get_vk_access_flags());
+			usage.vk_image_layout(), usage.vk_access_flags());
 
-	auto graphic_queue = dptr->get_vk_queue(QueueFamily::Graphics);
+	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
 	cmd_buffer.end().submit(graphic_queue);
 	graphic_queue.waitIdle();
 }
 
 vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {
-	return dptr->get_vk_device().createImageView(vk::ImageViewCreateInfo()
+	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
 			.setImage(image)
 			.setViewType(vk::ImageViewType::e2D)
-			.setFormat(format.get_vk_format())
+			.setFormat(format.vk_format())
 			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.get_vk_aspect())
+					.setAspectMask(format.vk_aspect())
 					.setBaseArrayLayer(0)
 					.setBaseMipLevel(0)
 					.setLayerCount(1)
@@ -155,7 +155,7 @@ vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {
 
 
 std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, ImageUsage usage) {
-	auto image = create_image(dptr, size, format, usage.get_vk_image_usage());
+	auto image = create_image(dptr, size, format, usage.vk_image_usage());
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
 	bind_image_memory(dptr, image, memory);
 
@@ -177,14 +177,14 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 	_view = std::get<2>(tpl);
 
 	if(data) {
-		upload_data(get_device(), get_vk_image(), _size, get_format(), usage, data);
+		upload_data(device(), vk_image(), _size, format, usage, data);
 	} else {
 		auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
-		transition_image_layout(cmd_buffer, get_vk_image(), format,
+		transition_image_layout(cmd_buffer, vk_image(), format,
 				vk::ImageLayout::eUndefined, vk::AccessFlags(),
-				usage.get_vk_image_layout(), usage.get_vk_access_flags());
+				usage.vk_image_layout(), usage.vk_access_flags());
 
-		auto graphic_queue = dptr->get_vk_queue(QueueFamily::Graphics);
+		auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
 		cmd_buffer.end().submit(graphic_queue);
 		graphic_queue.waitIdle();
 	}
@@ -200,23 +200,23 @@ const math::Vec2ui& ImageBase::size() const {
 	return _size;
 }
 
-ImageFormat ImageBase::get_format() const {
+ImageFormat ImageBase::format() const {
 	return _format;
 }
 
-vk::ImageView ImageBase::get_vk_view() const {
+vk::ImageView ImageBase::vk_view() const {
 	return _view;
 }
 
 usize ImageBase::byte_size() const {
-	return _size.x() *_size.y() *_format.get_bpp();
+	return _size.x() *_size.y() *_format.bpp();
 }
 
-vk::Image ImageBase::get_vk_image() const {
+vk::Image ImageBase::vk_image() const {
 	return _image;
 }
 
-vk::DeviceMemory ImageBase::get_vk_device_memory() const {
+vk::DeviceMemory ImageBase::vk_device_memory() const {
 	return _memory;
 }
 

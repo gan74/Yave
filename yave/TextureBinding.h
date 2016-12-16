@@ -29,11 +29,11 @@ class TextureBinding {
 		TextureBinding(u32 binding, const TextureView& view) : _binding(binding), _view(view) {
 		}
 
-		u32 get_binding() const {
+		u32 binding() const {
 			return _binding;
 		}
 
-		const TextureView& get_image_view() const {
+		const TextureView& image_view() const {
 			return _view;
 		}
 

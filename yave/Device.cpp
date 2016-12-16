@@ -94,8 +94,8 @@ static vk::Device create_device(
 Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
-		_queue_familiy_indices(compute_queue_families(_physical.get_vk_physical_device())),
-		_device(create_device(_physical.get_vk_physical_device(), _queue_familiy_indices, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.get_debug_params().get_device_layers())),
+		_queue_familiy_indices(compute_queue_families(_physical.vk_physical_device())),
+		_device(create_device(_physical.vk_physical_device(), _queue_familiy_indices, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params().device_layers())),
 		_sampler(this),
 		_disposable_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
@@ -123,27 +123,27 @@ Device::~Device() {
 	_device.destroy();
 }
 
-const PhysicalDevice& Device::get_physical_device() const {
+const PhysicalDevice& Device::physical_device() const {
 	return _physical;
 }
 
-const Instance &Device::get_instance() const {
+const Instance &Device::instance() const {
 	return _instance;
 }
 
-vk::Device Device::get_vk_device() const {
+vk::Device Device::vk_device() const {
 	return _device;
 }
 
-vk::Queue Device::get_vk_queue(usize i) const {
+vk::Queue Device::vk_queue(usize i) const {
 	return _queues[i];
 }
 
-vk::Sampler Device::get_vk_sampler() const {
-	return _sampler.get_vk_sampler();
+vk::Sampler Device::vk_sampler() const {
+	return _sampler.vk_sampler();
 }
 
-u32 Device::get_queue_family_index(QueueFamily i) const {
+u32 Device::queue_family_index(QueueFamily i) const {
 	return u32(_queue_familiy_indices[i]);
 }
 

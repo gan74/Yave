@@ -65,7 +65,7 @@ int main(int, char **) {
 	Chrono ch;
 	usize frames = 0;
 	while(win.update()) {
-		auto mouse = reinterpret_cast<ArcballMouse *>(win.get_mouse_handler());
+		auto mouse = reinterpret_cast<ArcballMouse *>(win.mouse_handler());
 		app.update(mouse->angle * 0.01);
 		app.draw();
 

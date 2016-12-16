@@ -24,10 +24,10 @@ class ImageFormat {
 	public:
 		ImageFormat(vk::Format format = vk::Format::eUndefined);
 
-		vk::Format get_vk_format() const;
-		vk::ImageAspectFlags get_vk_aspect() const;
+		vk::Format vk_format() const;
+		vk::ImageAspectFlags vk_aspect() const;
 
-		usize get_bpp() const;
+		usize bpp() const;
 
 	private:
 		vk::Format _format;

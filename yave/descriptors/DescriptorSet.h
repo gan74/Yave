@@ -32,8 +32,8 @@ class DescriptorSet : NonCopyable, public DeviceLinked {
 		DescriptorSet(DescriptorSet&& other);
 		DescriptorSet& operator=(DescriptorSet&& other);
 
-		const vk::DescriptorSet& get_vk_descriptor_set() const;
-		const vk::DescriptorSetLayout& get_vk_descriptor_set_layout() const;
+		const vk::DescriptorSet& vk_descriptor_set() const;
+		const vk::DescriptorSetLayout& vk_descriptor_set_layout() const;
 
 	private:
 		void swap(DescriptorSet& other);

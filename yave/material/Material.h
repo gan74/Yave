@@ -43,7 +43,7 @@ class Material : NonCopyable, public DeviceLinked {
 
 		const GraphicPipeline& compile(const RenderPass& render_pass, const Viewport &viewport);
 
-		const MaterialData& get_data() const;
+		const MaterialData& data() const;
 		const DescriptorSet& descriptor_set() const;
 
 	private:

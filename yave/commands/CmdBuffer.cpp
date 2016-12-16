@@ -47,22 +47,22 @@ void CmdBuffer::swap(CmdBuffer& other) {
 }
 
 void CmdBuffer::submit(vk::Queue queue) {
-	get_device()->get_vk_device().resetFences(_data.fence);
+	device()->vk_device().resetFences(_data.fence);
 	queue.submit(vk::SubmitInfo()
 			.setCommandBufferCount(1)
 			.setPCommandBuffers(&_data.cmd_buffer), _data.fence
 		);
 }
 
-DevicePtr CmdBuffer::get_device() const {
-	return _pool->get_device();//_pool ? _pool->get_device() : nullptr;
+DevicePtr CmdBuffer::device() const {
+	return _pool->device();//_pool ? _pool->device() : nullptr;
 }
 
-const vk::CommandBuffer CmdBuffer::get_vk_cmd_buffer() const {
+const vk::CommandBuffer CmdBuffer::vk_cmd_buffer() const {
 	return _data.cmd_buffer;
 }
 
-vk::Fence CmdBuffer::get_vk_fence() const {
+vk::Fence CmdBuffer::vk_fence() const {
 	return _data.fence;
 }
 

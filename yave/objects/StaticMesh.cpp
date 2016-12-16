@@ -27,9 +27,9 @@ namespace yave {
 StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material) :
 		_instance(instance),
 		_material(material),
-		_uniform_buffer(_material->get_device(), 1),
+		_uniform_buffer(_material->device(), 1),
 		_mapping(_uniform_buffer),
-		_descriptor_set(_material->get_device(), {Binding(_uniform_buffer)}) {
+		_descriptor_set(_material->device(), {Binding(_uniform_buffer)}) {
 
 	set_storage(_mapping.begin());
 	transform() = math::identity();
@@ -45,7 +45,7 @@ StaticMesh::StaticMesh(StaticMesh&& other) :
 }
 
 void StaticMesh::draw(CmdBufferRecorder& recorder, const DescriptorSet& vp) const {
-	recorder.bind_pipeline(_material->compile(recorder.get_current_pass(), recorder.get_viewport()), _descriptor_set, vp);
+	recorder.bind_pipeline(_material->compile(recorder.current_pass(), recorder.viewport()), _descriptor_set, vp);
 	recorder.draw(*_instance);
 }
 

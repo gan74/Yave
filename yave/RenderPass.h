@@ -34,7 +34,7 @@ class RenderPass : NonCopyable, public DeviceLinked {
 
 		~RenderPass();
 
-		vk::RenderPass get_vk_render_pass() const;
+		vk::RenderPass vk_render_pass() const;
 
 		usize attachment_count() const {
 			return _attachment_count;

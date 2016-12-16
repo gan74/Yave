@@ -39,10 +39,10 @@ class CmdBufferRecorder : NonCopyable {
 		RecordedCmdBuffer end();
 		~CmdBufferRecorder();
 
-		vk::CommandBuffer get_vk_cmd_buffer() const;
+		vk::CommandBuffer vk_cmd_buffer() const;
 
-		const RenderPass& get_current_pass() const;
-		const Viewport& get_viewport() const;
+		const RenderPass& current_pass() const;
+		const Viewport& viewport() const;
 
 		CmdBufferRecorder& set_viewport(const Viewport& view);
 		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);

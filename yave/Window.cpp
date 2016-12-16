@@ -22,8 +22,8 @@ namespace yave {
 const char class_name[] = "Yave";
 
 void mouse_event(Window* window, UINT uMsg, POINTS pt) {
-	if(window->get_mouse_handler()) {
-		auto handler = window->get_mouse_handler();
+	if(window->mouse_handler()) {
+		auto handler = window->mouse_handler();
 		auto pos = math::vec(pt.x, window->size().y() - usize(pt.y));
 		switch(uMsg) {
 			case WM_LBUTTONDOWN:
@@ -151,7 +151,7 @@ void Window::set_mouse_handler(MouseEventHandler*&& handler) {
 	_mouse_handler = std::move(handler);
 }
 
-MouseEventHandler* Window::get_mouse_handler() const {
+MouseEventHandler* Window::mouse_handler() const {
 	return _mouse_handler.as_ptr();
 }
 

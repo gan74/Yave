@@ -41,14 +41,14 @@ class Device : NonCopyable {
 		Device(Instance& instance);
 		~Device();
 
-		const PhysicalDevice& get_physical_device() const;
-		const Instance& get_instance() const;
+		const PhysicalDevice& physical_device() const;
+		const Instance& instance() const;
 
-		vk::Device get_vk_device() const;
-		vk::Queue get_vk_queue(usize i) const;
-		vk::Sampler get_vk_sampler() const;
+		vk::Device vk_device() const;
+		vk::Queue vk_queue(usize i) const;
+		vk::Sampler vk_sampler() const;
 
-		u32 get_queue_family_index(QueueFamily i) const;
+		u32 queue_family_index(QueueFamily i) const;
 
 
 		template<typename T>

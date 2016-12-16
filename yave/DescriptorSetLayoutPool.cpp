@@ -32,7 +32,7 @@ DescriptorSetLayoutPool::~DescriptorSetLayoutPool() {
 vk::DescriptorSetLayout DescriptorSetLayoutPool::create_descriptor_set_layout(const LayoutKey& bindings) {
 	auto& layout = _layouts[bindings];
 	if(!layout) {
-		layout = get_device()->get_vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
+		layout = device()->vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
 				.setBindingCount(u32(bindings.size()))
 				.setPBindings(bindings.begin())
 			);

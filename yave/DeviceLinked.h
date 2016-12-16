@@ -33,7 +33,7 @@ class DeviceLinked {
 			}
 		}
 
-		DevicePtr get_device() const {
+		DevicePtr device() const {
 			return _device;
 		}
 

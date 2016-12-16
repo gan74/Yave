@@ -27,8 +27,8 @@ class ShaderProgram : NonCopyable {
 	public:
 		ShaderProgram(DevicePtr dptr, const core::Vector<SpirVData>& modules);
 
-		core::Vector<vk::PipelineShaderStageCreateInfo> get_vk_pipeline_stage_info() const;
-		const core::Vector<vk::DescriptorSetLayout>& get_descriptor_layouts() const;
+		core::Vector<vk::PipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
+		const core::Vector<vk::DescriptorSetLayout>& descriptor_layouts() const;
 
 	private:
 		core::AssocVector<vk::ShaderStageFlagBits, ShaderModule> _modules;

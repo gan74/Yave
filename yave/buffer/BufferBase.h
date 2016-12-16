@@ -25,8 +25,8 @@ class BufferBase : NonCopyable, public DeviceLinked {
 
 	public:
 		usize byte_size() const;
-		vk::Buffer get_vk_buffer() const;
-		vk::DeviceMemory get_vk_device_memory() const;
+		vk::Buffer vk_buffer() const;
+		vk::DeviceMemory vk_device_memory() const;
 
 		vk::DescriptorBufferInfo descriptor_info() const;
 

@@ -68,7 +68,7 @@ void YaveApp::create_command_buffers() {
 	for(usize i = 0; i != swapchain->buffer_count(); i++) {
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
-		recorder.bind_framebuffer(swapchain->get_framebuffer(i));
+		recorder.bind_framebuffer(swapchain->framebuffer(i));
 		recorder.set_viewport(Viewport(swapchain->size()));
 
 		sq->draw(recorder, dummy_ds);
@@ -80,15 +80,15 @@ void YaveApp::create_command_buffers() {
 Duration YaveApp::draw() {
 	Chrono ch;
 
-	auto vk_swap = swapchain->get_vk_swapchain();
-	auto image_acquired_semaphore = device.get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
-	auto render_finished_semaphore = device.get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
-	u32 image_index = device.get_vk_device().acquireNextImageKHR(vk_swap, u64(-1), image_acquired_semaphore, VK_NULL_HANDLE).value;
+	auto vk_swap = swapchain->vk_swapchain();
+	auto image_acquired_semaphore = device.vk_device().createSemaphore(vk::SemaphoreCreateInfo());
+	auto render_finished_semaphore = device.vk_device().createSemaphore(vk::SemaphoreCreateInfo());
+	u32 image_index = device.vk_device().acquireNextImageKHR(vk_swap, u64(-1), image_acquired_semaphore, VK_NULL_HANDLE).value;
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
-	auto graphic_queue = device.get_vk_queue(QueueFamily::Graphics);
+	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
 
 	{
-		auto buffer = offscreen_cmd.get_vk_cmd_buffer();
+		auto buffer = offscreen_cmd.vk_cmd_buffer();
 		auto submit_info = vk::SubmitInfo()
 				.setWaitSemaphoreCount(1)
 				.setPWaitSemaphores(&image_acquired_semaphore)
@@ -102,7 +102,7 @@ Duration YaveApp::draw() {
 	}
 	{
 
-		auto buffer = command_buffers[image_index].get_vk_cmd_buffer();
+		auto buffer = command_buffers[image_index].vk_cmd_buffer();
 		auto submit_info = vk::SubmitInfo()
 				.setWaitSemaphoreCount(1)
 				.setPWaitSemaphores(&offscreen->sem)
@@ -126,8 +126,8 @@ Duration YaveApp::draw() {
 	}
 	graphic_queue.waitIdle();
 
-	device.get_vk_device().destroySemaphore(image_acquired_semaphore);
-	device.get_vk_device().destroySemaphore(render_finished_semaphore);
+	device.vk_device().destroySemaphore(image_acquired_semaphore);
+	device.vk_device().destroySemaphore(render_finished_semaphore);
 	return ch.elapsed();
 }
 
@@ -171,7 +171,7 @@ void YaveApp::create_assets() {
 			auto file = io::File::open("../tools/image/chalet.jpg.rgba");
 			auto image = ImageData::from_file(file);
 			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
-			mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image.size(), image.get_raw_data());
+			mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image.size(), image.raw_data());
 		}
 		material = asset_ptr(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv")))

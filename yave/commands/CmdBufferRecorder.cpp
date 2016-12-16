@@ -20,7 +20,7 @@ namespace yave {
 
 CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& buffer) : _cmd_buffer(std::move(buffer)), _render_pass(nullptr) {
 	Y_TODO(optimise disposable buffers)
-	get_vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
+	vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
 			.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 		);
 }
@@ -40,29 +40,29 @@ void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
 
 }
 
-vk::CommandBuffer CmdBufferRecorder::get_vk_cmd_buffer() const {
-	return _cmd_buffer.get_vk_cmd_buffer();
+vk::CommandBuffer CmdBufferRecorder::vk_cmd_buffer() const {
+	return _cmd_buffer.vk_cmd_buffer();
 }
 
 
-const RenderPass& CmdBufferRecorder::get_current_pass() const {
+const RenderPass& CmdBufferRecorder::current_pass() const {
 	return *_render_pass;
 }
 
-const Viewport& CmdBufferRecorder::get_viewport() const {
+const Viewport& CmdBufferRecorder::viewport() const {
 	return _viewport;
 }
 
 RecordedCmdBuffer CmdBufferRecorder::end() {
 	if(_render_pass) {
-		get_vk_cmd_buffer().endRenderPass();
+		vk_cmd_buffer().endRenderPass();
 	}
-	get_vk_cmd_buffer().end();
+	vk_cmd_buffer().end();
 	return RecordedCmdBuffer(std::move(_cmd_buffer));
 }
 
 CmdBufferRecorder::~CmdBufferRecorder() {
-	if(_cmd_buffer.get_vk_cmd_buffer()) {
+	if(_cmd_buffer.vk_cmd_buffer()) {
 		fatal("CmdBufferRecorder destroyed before end() was called");
 	}
 }
@@ -84,34 +84,34 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 
 	auto pass_info = vk::RenderPassBeginInfo()
 			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
-			.setRenderPass(framebuffer.get_render_pass().get_vk_render_pass())
-			.setFramebuffer(framebuffer.get_vk_framebuffer())
+			.setRenderPass(framebuffer.render_pass().vk_render_pass())
+			.setFramebuffer(framebuffer.vk_framebuffer())
 			.setPClearValues(clear_values.begin())
 			.setClearValueCount(u32(clear_values.size()))
 		;
-	get_vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
-	_render_pass = &framebuffer.get_render_pass();
+	vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
+	_render_pass = &framebuffer.render_pass();
 
 	return *this;
 }
 
 CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& m, const DescriptorSet& vp) {
-	get_vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline());
+	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
-	/*std::initializer_list<vk::DescriptorSet> sets = {m.get_vk_descriptor_set(), vp.get_vk_descriptor_set(), pipeline.get_vk_descriptor_set()};
-	get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, sets.size(), sets.begin(), 0, nullptr);*/
+	/*std::initializer_list<vk::DescriptorSet> sets = {m.vk_descriptor_set(), vp.vk_descriptor_set(), pipeline.vk_descriptor_set()};
+	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, sets.size(), sets.begin(), 0, nullptr);*/
 	Y_TODO(descriptor set binding infecient)
-	if(m.get_vk_descriptor_set()) {
-		auto vk = m.get_vk_descriptor_set();
-		get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 0, 1, &vk, 0, nullptr);
+	if(m.vk_descriptor_set()) {
+		auto vk = m.vk_descriptor_set();
+		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, 1, &vk, 0, nullptr);
 	}
-	if(vp.get_vk_descriptor_set()) {
-		auto vk = vp.get_vk_descriptor_set();
-		get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 1, 1, &vk, 0, nullptr);
+	if(vp.vk_descriptor_set()) {
+		auto vk = vp.vk_descriptor_set();
+		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 1, 1, &vk, 0, nullptr);
 	}
-	if(pipeline.get_vk_descriptor_set()) {
-		auto vk = pipeline.get_vk_descriptor_set();
-		get_vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.get_vk_pipeline_layout(), 2, 1, &vk, 0, nullptr);
+	if(pipeline.vk_descriptor_set()) {
+		auto vk = pipeline.vk_descriptor_set();
+		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 2, 1, &vk, 0, nullptr);
 	}
 
 	return *this;
@@ -119,13 +119,13 @@ CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipel
 
 CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& mesh_instance) {
 	vk::DeviceSize offset = 0; // fohkin' vk::ArrayProxy
-	get_vk_cmd_buffer().bindVertexBuffers(0, mesh_instance.vertex_buffer.get_vk_buffer(), offset);
-	get_vk_cmd_buffer().bindIndexBuffer(mesh_instance.triangle_buffer.get_vk_buffer(), offset, vk::IndexType::eUint32);
+	vk_cmd_buffer().bindVertexBuffers(0, mesh_instance.vertex_buffer.vk_buffer(), offset);
+	vk_cmd_buffer().bindIndexBuffer(mesh_instance.triangle_buffer.vk_buffer(), offset, vk::IndexType::eUint32);
 
-	//get_vk_cmd_buffer().drawIndexed(mesh_instance.triangle_buffer.size() * 3, 1, 0, 0, 0);
+	//vk_cmd_buffer().drawIndexed(mesh_instance.triangle_buffer.size() * 3, 1, 0, 0, 0);
 
 	auto cmds = u32(mesh_instance.indirect_buffer.size());
-	get_vk_cmd_buffer().drawIndexedIndirect(mesh_instance.indirect_buffer.get_vk_buffer(), offset, cmds, cmds ? sizeof(vk::DrawIndexedIndirectCommand) : 0);
+	vk_cmd_buffer().drawIndexedIndirect(mesh_instance.indirect_buffer.vk_buffer(), offset, cmds, cmds ? sizeof(vk::DrawIndexedIndirectCommand) : 0);
 
 	return *this;
 }

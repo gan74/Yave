@@ -24,12 +24,12 @@ namespace yave {
 
 class ImageBase : NonCopyable, public DeviceLinked {
 	public:
-		vk::Image get_vk_image() const;
-		vk::DeviceMemory get_vk_device_memory() const;
-		vk::ImageView get_vk_view() const;
+		vk::Image vk_image() const;
+		vk::DeviceMemory vk_device_memory() const;
+		vk::ImageView vk_view() const;
 
 		const math::Vec2ui& size() const;
-		ImageFormat get_format() const;
+		ImageFormat format() const;
 
 		usize byte_size() const;
 
@@ -37,7 +37,7 @@ class ImageBase : NonCopyable, public DeviceLinked {
 
 	protected:
 		ImageBase() = default;
-		ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size, const void* data = nullptr);
+		ImageBase(DevicePtr dptr, ImageFormat fmt, ImageUsage usage, const math::Vec2ui& size, const void* data = nullptr);
 
 		void swap(ImageBase& other);
 

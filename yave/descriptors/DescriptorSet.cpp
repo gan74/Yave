@@ -32,7 +32,7 @@ static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, usize ub, usize
 		;
 
 	vk::DescriptorPoolSize sizes[] = {ub_pool_size, tx_pool_size};
-	return dptr->get_vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
+	return dptr->vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
 			.setPoolSizeCount(2)
 			.setPPoolSizes(sizes)
 			.setMaxSets(1)
@@ -40,7 +40,7 @@ static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, usize ub, usize
 }
 
 static vk::DescriptorSet create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout) {
-	return dptr->get_vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
+	return dptr->vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
 			.setDescriptorPool(pool)
 			.setDescriptorSetCount(1)
 			.setPSetLayouts(&layout)
@@ -55,10 +55,10 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 				.setDstBinding(u32(writes.size()))
 				.setDstArrayElement(0)
 				.setDescriptorCount(1)
-				.setDescriptorType(binding.get_vk_descriptor_type())
+				.setDescriptorType(binding.vk_descriptor_type())
 			;
 
-		switch(binding.get_vk_descriptor_type()) {
+		switch(binding.vk_descriptor_type()) {
 			case vk::DescriptorType::eCombinedImageSampler:
 				w.setPImageInfo(&binding.descriptor_info().image);
 				break;
@@ -73,7 +73,7 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 		}
 		writes << w;
 	}
-	dptr->get_vk_device().updateDescriptorSets(u32(writes.size()), writes.begin(), 0, nullptr);
+	dptr->vk_device().updateDescriptorSets(u32(writes.size()), writes.begin(), 0, nullptr);
 }
 
 
@@ -82,7 +82,7 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 DescriptorSet::DescriptorSet(DevicePtr dptr, std::initializer_list<Binding> bindings) : DescriptorSet(dptr, core::vector(bindings)) {
 }
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindings) : DeviceLinked(dptr), _pool(VK_NULL_HANDLE), _set(VK_NULL_HANDLE) {
+DescriptorSet::DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindings) : DeviceLinked(dptr) {
 	if(!bindings.is_empty()) {
 		auto layout_bindings = core::Vector<vk::DescriptorSetLayoutBinding>();
 
@@ -90,7 +90,7 @@ DescriptorSet::DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindin
 		usize tx_bindings = 0;
 		for(const auto& binding : bindings) {
 			layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
-			(binding.get_vk_descriptor_type() == vk::DescriptorType::eCombinedImageSampler ? tx_bindings : ub_bindings)++;
+			(binding.vk_descriptor_type() == vk::DescriptorType::eCombinedImageSampler ? tx_bindings : ub_bindings)++;
 		}
 
 		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
@@ -113,11 +113,11 @@ DescriptorSet& DescriptorSet::operator=(DescriptorSet&& other) {
 	return *this;
 }
 
-const vk::DescriptorSet& DescriptorSet::get_vk_descriptor_set() const {
+const vk::DescriptorSet& DescriptorSet::vk_descriptor_set() const {
 	return _set;
 }
 
-/*const vk::DescriptorSetLayout& DescriptorSet::get_vk_descriptor_set_layout() const {
+/*const vk::DescriptorSetLayout& DescriptorSet::vk_descriptor_set_layout() const {
 	return _layout;
 }*/
 

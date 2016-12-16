@@ -26,9 +26,9 @@ class Instance : NonCopyable {
 		Instance(DebugParams debug);
 		~Instance();
 
-		const DebugParams& get_debug_params() const;
+		const DebugParams& debug_params() const;
 
-		vk::Instance get_vk_instance() const;
+		vk::Instance vk_instance() const;
 
 	private:
 		void setup_debug();

@@ -88,11 +88,11 @@ ShaderProgram::ShaderProgram(DevicePtr dptr, const core::Vector<SpirVData>& modu
 	log_msg("shader descriptor layout count = "_s + _layouts.size());
 }
 
-core::Vector<vk::PipelineShaderStageCreateInfo> ShaderProgram::get_vk_pipeline_stage_info() const {
+core::Vector<vk::PipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
 	core::Vector<vk::PipelineShaderStageCreateInfo> stage_create_infos;
 	for(const auto& mod : _modules) {
 		stage_create_infos << vk::PipelineShaderStageCreateInfo()
-				.setModule(mod.second.get_vk_shader_module())
+				.setModule(mod.second.vk_shader_module())
 				.setStage(mod.first)
 				.setPName("main")
 			;
@@ -100,7 +100,7 @@ core::Vector<vk::PipelineShaderStageCreateInfo> ShaderProgram::get_vk_pipeline_s
 	return stage_create_infos;
 }
 
-const core::Vector<vk::DescriptorSetLayout>& ShaderProgram::get_descriptor_layouts() const {
+const core::Vector<vk::DescriptorSetLayout>& ShaderProgram::descriptor_layouts() const {
 	return _layouts;
 }
 

@@ -36,11 +36,11 @@ class DebugParams {
 			return _callbacks_enabled;
 		}
 
-		const core::Vector<const char*>& get_instance_layers() const {
+		const core::Vector<const char*>& instance_layers() const {
 			return _instance_layers;
 		}
 
-		const core::Vector<const char*>& get_device_layers() const {
+		const core::Vector<const char*>& device_layers() const {
 			return _device_layers;
 		}
 

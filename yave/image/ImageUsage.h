@@ -56,9 +56,9 @@ class ImageUsage {
 		ImageUsage(ImageUsageBits bits) : _usage(vk::ImageUsageFlagBits(bits)) {
 		}
 
-		vk::ImageUsageFlags get_vk_image_usage() const;
-		vk::ImageLayout get_vk_image_layout() const;
-		vk::AccessFlags get_vk_access_flags() const;
+		vk::ImageUsageFlags vk_image_usage() const;
+		vk::ImageLayout vk_image_layout() const;
+		vk::AccessFlags vk_access_flags() const;
 
 
 		operator ImageUsageBits() const {

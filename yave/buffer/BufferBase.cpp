@@ -32,23 +32,23 @@ static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties,
 }
 
 static vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Buffer buffer) {
-	return dptr->get_vk_device().getBufferMemoryRequirements(buffer);
+	return dptr->vk_device().getBufferMemoryRequirements(buffer);
 }
 
 
 static void bind_buffer_memory(DevicePtr dptr, vk::Buffer buffer, vk::DeviceMemory memory) {
-	dptr->get_vk_device().bindBufferMemory(buffer, memory, 0);
+	dptr->vk_device().bindBufferMemory(buffer, memory, 0);
 }
 
 static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs, MemoryFlags flags) {
-	return dptr->get_vk_device().allocateMemory(vk::MemoryAllocateInfo()
+	return dptr->vk_device().allocateMemory(vk::MemoryAllocateInfo()
 			.setAllocationSize(reqs.size)
-			.setMemoryTypeIndex(get_memory_type(dptr->get_physical_device().get_vk_memory_properties(), reqs.memoryTypeBits, flags))
+			.setMemoryTypeIndex(get_memory_type(dptr->physical_device().vk_memory_properties(), reqs.memoryTypeBits, flags))
 		);
 }
 
 static vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsageFlags usage) {
-	return dptr->get_vk_device().createBuffer(vk::BufferCreateInfo()
+	return dptr->vk_device().createBuffer(vk::BufferCreateInfo()
 			.setSize(byte_size)
 			.setUsage(usage)
 			.setSharingMode(vk::SharingMode::eExclusive)
@@ -77,11 +77,11 @@ usize BufferBase::byte_size() const {
 	return _size;
 }
 
-vk::Buffer BufferBase::get_vk_buffer() const {
+vk::Buffer BufferBase::vk_buffer() const {
 	return _buffer;
 }
 
-vk::DeviceMemory BufferBase::get_vk_device_memory() const {
+vk::DeviceMemory BufferBase::vk_device_memory() const {
 	return _memory;
 }
 
@@ -100,7 +100,7 @@ void BufferBase::swap(BufferBase& other) {
 	std::swap(_memory, other._memory);
 }
 
-BufferBase::BufferBase() : DeviceLinked(), _size(0), _buffer(VK_NULL_HANDLE), _memory(VK_NULL_HANDLE) {
+BufferBase::BufferBase() : DeviceLinked(), _size(0) {
 }
 
 BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryFlags flags, BufferTransfer transfer) : DeviceLinked(dptr), _size(byte_size) {

@@ -49,17 +49,17 @@ void Material::swap(Material& other) {
 }
 
 const GraphicPipeline& Material::compile(const RenderPass& render_pass, const Viewport& viewport) {
-	auto key = render_pass.get_vk_render_pass();
+	auto key = render_pass.vk_render_pass();
 	auto it = core::range(_compiled).find(key);
 	if(it == _compiled.end()) {
-		MaterialCompiler compiler(get_device());
+		MaterialCompiler compiler(device());
 		_compiled.insert(key, compiler.compile(*this, render_pass, viewport));
 		return _compiled.last().second;
 	}
 	return it->second;
 }
 
-const MaterialData& Material::get_data() const {
+const MaterialData& Material::data() const {
 	return _data;
 }
 

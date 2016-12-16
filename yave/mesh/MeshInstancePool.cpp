@@ -56,7 +56,7 @@ StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
 	memcpy(tris.map().begin(), data.triangles.begin(), data.triangles.size() * sizeof(IndexedTriangle));
 	memcpy(verts.map().begin(), data.vertices.begin(), data.vertices.size() * sizeof(Vertex));
 
-	return StaticMeshInstance{tris, verts, IndirectBuffer<>(get_device(), create_indirect_buffer(data, offset))};
+	return StaticMeshInstance{tris, verts, IndirectBuffer<>(device(), create_indirect_buffer(data, offset))};
 }
 
 }

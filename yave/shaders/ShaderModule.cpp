@@ -24,7 +24,7 @@ vk::ShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data) {
 	if(data.is_empty()) {
 		return VK_NULL_HANDLE;
 	}
-	return dptr->get_vk_device().createShaderModule(vk::ShaderModuleCreateInfo()
+	return dptr->vk_device().createShaderModule(vk::ShaderModuleCreateInfo()
 			.setCodeSize(data.size())
 			.setPCode(data.data())
 		);
@@ -43,7 +43,7 @@ ShaderModule& ShaderModule::operator=(ShaderModule&& other) {
 	return *this;
 }
 
-vk::ShaderModule ShaderModule::get_vk_shader_module() const {
+vk::ShaderModule ShaderModule::vk_shader_module() const {
 	return _module;
 }
 

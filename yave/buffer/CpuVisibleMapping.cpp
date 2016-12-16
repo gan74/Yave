@@ -25,7 +25,7 @@ CpuVisibleMapping::CpuVisibleMapping() : _mapping(nullptr) {
 
 CpuVisibleMapping::CpuVisibleMapping(const SubBufferBase& buff) :
 		_buffer(buff),
-		_mapping(_buffer.get_device()->get_vk_device().mapMemory(_buffer.get_vk_device_memory(), 0, _buffer.byte_size())) {
+		_mapping(_buffer.device()->vk_device().mapMemory(_buffer.vk_device_memory(), 0, _buffer.byte_size())) {
 }
 
 CpuVisibleMapping::CpuVisibleMapping(CpuVisibleMapping&& other) : CpuVisibleMapping() {
@@ -38,8 +38,8 @@ CpuVisibleMapping& CpuVisibleMapping::operator=(CpuVisibleMapping&& other) {
 }
 
 CpuVisibleMapping::~CpuVisibleMapping() {
-	if(_buffer.get_device() && _mapping) {
-		_buffer.get_device()->get_vk_device().unmapMemory(_buffer.get_vk_device_memory());
+	if(_buffer.device() && _mapping) {
+		_buffer.device()->vk_device().unmapMemory(_buffer.vk_device_memory());
 	}
 }
 

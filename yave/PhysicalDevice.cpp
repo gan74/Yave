@@ -40,7 +40,7 @@ static vk::PhysicalDevice choose_device(vk::Instance instance) {
 
 PhysicalDevice::PhysicalDevice(Instance& instance) :
 		_instance(instance),
-		_device(choose_device(instance.get_vk_instance())),
+		_device(choose_device(instance.vk_instance())),
 		_memory_properties(_device.getMemoryProperties()) {
 
 	auto properties = _device.getProperties();
@@ -53,11 +53,11 @@ PhysicalDevice::PhysicalDevice(Instance& instance) :
 PhysicalDevice::~PhysicalDevice() {
 }
 
-vk::PhysicalDevice PhysicalDevice::get_vk_physical_device() const {
+vk::PhysicalDevice PhysicalDevice::vk_physical_device() const {
 	return _device;
 }
 
-vk::PhysicalDeviceMemoryProperties PhysicalDevice::get_vk_memory_properties() const {
+vk::PhysicalDeviceMemoryProperties PhysicalDevice::vk_memory_properties() const {
 	return _memory_properties;
 }
 

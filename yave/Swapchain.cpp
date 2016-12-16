@@ -23,15 +23,15 @@ namespace yave {
 
 
 static vk::SurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, vk::SurfaceKHR surface) {
-	return dptr->get_physical_device().get_vk_physical_device().getSurfaceCapabilitiesKHR(surface);
+	return dptr->physical_device().vk_physical_device().getSurfaceCapabilitiesKHR(surface);
 }
 
 static vk::SurfaceFormatKHR get_surface_format(DevicePtr dptr, vk::SurfaceKHR surface) {
-	return dptr->get_physical_device().get_vk_physical_device().getSurfaceFormatsKHR(surface)[0];
+	return dptr->physical_device().vk_physical_device().getSurfaceFormatsKHR(surface)[0];
 }
 
 static vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surface) {
-	auto present_modes = dptr->get_physical_device().get_vk_physical_device().getSurfacePresentModesKHR(surface);
+	auto present_modes = dptr->physical_device().vk_physical_device().getSurfacePresentModesKHR(surface);
 	for(auto mode : present_modes) {
 		if(mode == vk::PresentModeKHR::eMailbox) {
 			return mode;
@@ -52,7 +52,7 @@ static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
 }
 
 static void assert_depth_supported(DevicePtr dptr) {
-	auto depth_props = dptr->get_physical_device().get_vk_physical_device().getFormatProperties(vk::Format::eD32Sfloat);
+	auto depth_props = dptr->physical_device().vk_physical_device().getFormatProperties(vk::Format::eD32Sfloat);
 
 	if((depth_props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) != vk::FormatFeatureFlagBits::eDepthStencilAttachment) {
 		fatal("32 bit depth not supported");
@@ -75,7 +75,7 @@ static vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Form
 			.setLevelCount(1)
 		;
 
-	return dptr->get_vk_device().createImageView(vk::ImageViewCreateInfo()
+	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
 			.setImage(image)
 			.setViewType(vk::ImageViewType::e2D)
 			.setFormat(format)
@@ -85,13 +85,13 @@ static vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Form
 }
 
 static bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
-	auto index = dptr->get_queue_family_index(QueueFamily::Graphics);
-	return dptr->get_physical_device().get_vk_physical_device().getSurfaceSupportKHR(index, surface);
+	auto index = dptr->queue_family_index(QueueFamily::Graphics);
+	return dptr->physical_device().vk_physical_device().getSurfaceSupportKHR(index, surface);
 }
 
 #ifdef Y_OS_WIN
 static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE instance, HWND handle) {
-	auto surface = dptr->get_instance().get_vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
+	auto surface = dptr->instance().vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
 			.setHinstance(instance)
 			.setHwnd(handle)
 		);
@@ -142,7 +142,7 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 
 	_render_pass = RenderPass(dptr, _depth_format, {_color_format}, ImageUsageBits::SwapchainBit);
 
-	_swapchain = dptr->get_vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
+	_swapchain = dptr->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
 			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
 			.setImageSharingMode(vk::SharingMode::eExclusive)
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
@@ -158,8 +158,8 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 		);
 
 
-	for(auto image : dptr->get_vk_device().getSwapchainImagesKHR(_swapchain)) {
-		auto view = create_image_view(dptr, image, _color_format.get_vk_format());
+	for(auto image : dptr->vk_device().getSwapchainImagesKHR(_swapchain)) {
+		auto view = create_image_view(dptr, image, _color_format.vk_format());
 
 		auto swapchain_image = SwapchainImage();
 		swapchain_image._size = _size;
@@ -177,22 +177,22 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 Swapchain::~Swapchain() {
 	// images don't delete their views, we have to do it manually
 	for(const Buffer& buffer : _buffers) {
-		get_device()->destroy(buffer.color._view);
+		device()->destroy(buffer.color._view);
 	}
 	destroy(_swapchain);
 	destroy(_surface);
 }
 
 
-vk::SwapchainKHR Swapchain::get_vk_swapchain() const {
+vk::SwapchainKHR Swapchain::vk_swapchain() const {
 	return _swapchain;
 }
 
-const Framebuffer& Swapchain::get_framebuffer(usize index) const {
+const Framebuffer& Swapchain::framebuffer(usize index) const {
 	return _buffers[index].framebuffer;
 }
 
-const RenderPass& Swapchain::get_render_pass() const {
+const RenderPass& Swapchain::render_pass() const {
 	return _render_pass;
 }
 

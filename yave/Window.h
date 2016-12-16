@@ -46,7 +46,7 @@ class Window {
 		math::Vec2ui size() const;
 
 		void set_mouse_handler(MouseEventHandler*&& handler);
-		MouseEventHandler* get_mouse_handler() const;
+		MouseEventHandler* mouse_handler() const;
 
 	private:
 		#ifdef Y_OS_WIN

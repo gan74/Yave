@@ -45,14 +45,14 @@ const math::Vec2ui& ImageData::size() const {
 	return _size;
 }
 
-const u8* ImageData::get_raw_pixel(const math::Vec2ui& pos) {
+const u8* ImageData::raw_pixel(const math::Vec2ui& pos) {
 	return _data +
 			((_size.x() *_bpp) *pos.x()) +
 			(_bpp *pos.y())
 		;
 }
 
-const u8* ImageData::get_raw_data() const {
+const u8* ImageData::raw_data() const {
 	return _data;
 }
 

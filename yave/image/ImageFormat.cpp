@@ -21,11 +21,11 @@ namespace yave {
 ImageFormat::ImageFormat(vk::Format format) : _format(format) {
 }
 
-vk::Format ImageFormat::get_vk_format() const {
+vk::Format ImageFormat::vk_format() const {
 	return _format;
 }
 
-usize ImageFormat::get_bpp() const {
+usize ImageFormat::bpp() const {
 	switch(_format) {
 		case vk::Format::eR8G8B8A8Unorm:
 			return 4;
@@ -37,7 +37,7 @@ usize ImageFormat::get_bpp() const {
 	}
 }
 
-vk::ImageAspectFlags ImageFormat::get_vk_aspect() const {
+vk::ImageAspectFlags ImageFormat::vk_aspect() const {
 	switch(_format) {
 		case vk::Format::eR8G8B8A8Unorm:
 			return vk::ImageAspectFlagBits::eColor;

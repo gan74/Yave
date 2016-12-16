@@ -39,9 +39,9 @@ struct CmdBuffer : NonCopyable {
 
 		~CmdBuffer();
 
-		const vk::CommandBuffer get_vk_cmd_buffer() const;
-		vk::Fence get_vk_fence() const;
-		DevicePtr get_device() const;
+		const vk::CommandBuffer vk_cmd_buffer() const;
+		vk::Fence vk_fence() const;
+		DevicePtr device() const;
 
 	protected:
 		void swap(CmdBuffer& other);

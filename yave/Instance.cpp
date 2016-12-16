@@ -41,8 +41,8 @@ Instance::Instance(DebugParams debug) : _debug_params(debug), _debug_callback(nu
 	_instance = vk::createInstance(vk::InstanceCreateInfo()
 			.setEnabledExtensionCount(u32(_instance_extentions.size()))
 			.setPpEnabledExtensionNames(_instance_extentions.begin())
-			.setEnabledLayerCount(u32(_debug_params.get_instance_layers().size()))
-			.setPpEnabledLayerNames(_debug_params.get_instance_layers().begin())
+			.setEnabledLayerCount(u32(_debug_params.instance_layers().size()))
+			.setPpEnabledLayerNames(_debug_params.instance_layers().begin())
 			.setPApplicationInfo(&app_info)
 		);
 
@@ -78,11 +78,11 @@ Instance::~Instance() {
 	_instance.destroy();
 }
 
-const DebugParams& Instance::get_debug_params() const {
+const DebugParams& Instance::debug_params() const {
 	return _debug_params;
 }
 
-vk::Instance Instance::get_vk_instance() const {
+vk::Instance Instance::vk_instance() const {
 	return _instance;
 }
 

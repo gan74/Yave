@@ -27,13 +27,13 @@ MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass, Viewport view) const {
-	auto modules = core::vector(material.get_data()._vert, material.get_data()._frag);
-	if(!material.get_data()._geom.is_empty()) {
-		modules << material.get_data()._geom;
+	auto modules = core::vector(material.data()._vert, material.data()._frag);
+	if(!material.data()._geom.is_empty()) {
+		modules << material.data()._geom;
 	}
 
-	ShaderProgram program(material.get_device(), modules);
-	auto pipeline_shader_stage = program.get_vk_pipeline_stage_info();
+	ShaderProgram program(material.device(), modules);
+	auto pipeline_shader_stage = program.vk_pipeline_stage_info();
 
 	auto binding_description = vk::VertexInputBindingDescription()
 			.setBinding(0)
@@ -133,12 +133,12 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setDepthCompareOp(vk::CompareOp::eLessOrEqual)
 		;
 
-	auto pipeline_layout = get_device()->get_vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(u32(program.get_descriptor_layouts().size()))
-			.setPSetLayouts(program.get_descriptor_layouts().begin())
+	auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
+			.setSetLayoutCount(u32(program.descriptor_layouts().size()))
+			.setPSetLayouts(program.descriptor_layouts().begin())
 		);
 
-	auto pipeline = get_device()->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
+	auto pipeline = device()->vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
 			.setStageCount(u32(pipeline_shader_stage.size()))
 			.setPStages(pipeline_shader_stage.begin())
 			.setPVertexInputState(&vertex_input)
@@ -149,7 +149,7 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setPColorBlendState(&color_blending)
 			.setPDepthStencilState(&depth_testing)
 			.setLayout(pipeline_layout)
-			.setRenderPass(render_pass.get_vk_render_pass())
+			.setRenderPass(render_pass.vk_render_pass())
 			.setSubpass(0)
 			.setBasePipelineIndex(-1)
 		);

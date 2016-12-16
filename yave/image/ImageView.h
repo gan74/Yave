@@ -27,14 +27,14 @@ class ImageView {
 
 	public:
 		template<ImageUsageBits ImgUsage, typename Enable = typename std::enable_if<(ImgUsage & Usage) == Usage>::type>
-		ImageView(const Image<ImgUsage>& img) : _image(&img), _view(img.get_vk_view()) {
+		ImageView(const Image<ImgUsage>& img) : _image(&img), _view(img.vk_view()) {
 		}
 
-		vk::ImageView get_vk_image_view() const {
+		vk::ImageView vk_image_view() const {
 			return _view;
 		}
 
-		const ImageBase& get_image() const {
+		const ImageBase& image() const {
 			return *_image;
 		}
 

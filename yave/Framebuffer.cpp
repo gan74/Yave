@@ -21,7 +21,7 @@ namespace yave {
 
 static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<ColorAttachmentView> views) {
 	for(const auto& v : views) {
-		if(v.get_image().size() != a.size()) {
+		if(v.image().size() != a.size()) {
 			fatal("Invalid attachment size");
 		}
 	}
@@ -32,14 +32,14 @@ Framebuffer::Framebuffer() : _attachment_count(0), _render_pass(nullptr) {
 }
 
 Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors) :
-		_size(compute_size(depth.get_image(), colors)),
+		_size(compute_size(depth.image(), colors)),
 		_attachment_count(colors.size()),
 		_render_pass(&render_pass) {
 
-	auto views = core::range(colors).map([](const auto& v) { return v.get_vk_image_view(); }).collect<core::Vector>() + depth.get_vk_image_view();
+	auto views = core::range(colors).map([](const auto& v) { return v.vk_image_view(); }).collect<core::Vector>() + depth.vk_image_view();
 
-	_framebuffer = get_device()->get_vk_device().createFramebuffer(vk::FramebufferCreateInfo()
-		.setRenderPass(render_pass.get_vk_render_pass())
+	_framebuffer = device()->vk_device().createFramebuffer(vk::FramebufferCreateInfo()
+		.setRenderPass(render_pass.vk_render_pass())
 		.setAttachmentCount(u32(views.size()))
 		.setPAttachments(views.begin())
 		.setWidth(_size.x())
@@ -50,7 +50,7 @@ Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std
 
 Framebuffer::~Framebuffer() {
 	if(_render_pass) {
-		get_device()->destroy(_framebuffer);
+		device()->destroy(_framebuffer);
 	}
 }
 
@@ -74,16 +74,16 @@ const math::Vec2ui& Framebuffer::size() const {
 	return _size;
 }
 
-const RenderPass& Framebuffer::get_render_pass() const {
+const RenderPass& Framebuffer::render_pass() const {
 	return *_render_pass;
 }
 
-vk::Framebuffer Framebuffer::get_vk_framebuffer() const {
+vk::Framebuffer Framebuffer::vk_framebuffer() const {
 	return _framebuffer;
 }
 
-DevicePtr Framebuffer::get_device() const {
-	return _render_pass->get_device();
+DevicePtr Framebuffer::device() const {
+	return _render_pass->device();
 }
 
 }

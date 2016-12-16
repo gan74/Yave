@@ -25,8 +25,8 @@ class PhysicalDevice : NonCopyable {
 		PhysicalDevice(Instance& instance);
 		~PhysicalDevice();
 
-		vk::PhysicalDevice get_vk_physical_device() const;
-		vk::PhysicalDeviceMemoryProperties get_vk_memory_properties() const;
+		vk::PhysicalDevice vk_physical_device() const;
+		vk::PhysicalDeviceMemoryProperties vk_memory_properties() const;
 
 	private:
 		Instance& _instance;

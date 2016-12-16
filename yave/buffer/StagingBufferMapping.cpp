@@ -29,7 +29,7 @@ static auto create_src_buffer(DevicePtr dptr, usize size) {
 StagingBufferMapping::StagingBufferMapping(const SubBufferBase& dst) :
 		CpuVisibleMapping(),
 		_dst(dst),
-		_src(create_src_buffer(dst.get_device(), dst.byte_size())) {
+		_src(create_src_buffer(dst.device(), dst.byte_size())) {
 
 	CpuVisibleMapping cpu_mapping(_src);
 	CpuVisibleMapping::swap(cpu_mapping);
@@ -53,14 +53,14 @@ StagingBufferMapping::~StagingBufferMapping() {
 	CpuVisibleMapping done;
 	CpuVisibleMapping::swap(done);
 
-	DevicePtr device = _dst.get_device();
-	auto transfer_queue = device->get_vk_queue(QueueFamily::Graphics);
+	DevicePtr device = _dst.device();
+	auto transfer_queue = device->vk_queue(QueueFamily::Graphics);
 
 
 
 	auto transfer_cmd_buffer = CmdBufferRecorder(device->create_disposable_command_buffer());
 	//transfer_cmd_buffer.copy_buffer(_dst_ref, BufferMemoryReference<MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>(_src));
-	transfer_cmd_buffer.get_vk_cmd_buffer().copyBuffer(_src.get_vk_buffer(), _dst.get_vk_buffer(), vk_copy());
+	transfer_cmd_buffer.vk_cmd_buffer().copyBuffer(_src.vk_buffer(), _dst.vk_buffer(), vk_copy());
 	transfer_cmd_buffer.end().submit(transfer_queue);
 
 	Y_TODO(buffer transfer stall)

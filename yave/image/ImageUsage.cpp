@@ -19,11 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 
-vk::ImageUsageFlags ImageUsage::get_vk_image_usage() const {
+vk::ImageUsageFlags ImageUsage::vk_image_usage() const {
 	return _usage;
 }
 
-vk::ImageLayout ImageUsage::get_vk_image_layout() const{
+vk::ImageLayout ImageUsage::vk_image_layout() const{
 	auto swapchain_bit = vk::ImageUsageFlagBits(ImageUsageBits::SwapchainBit);
 	if(_usage & swapchain_bit) {
 		return vk::ImageLayout::ePresentSrcKHR;
@@ -42,7 +42,7 @@ vk::ImageLayout ImageUsage::get_vk_image_layout() const{
 	return vk::ImageLayout::eUndefined;
 }
 
-vk::AccessFlags ImageUsage::get_vk_access_flags() const {
+vk::AccessFlags ImageUsage::vk_access_flags() const {
 	/*
 	 *
 	 * This WILL cause some debug layers to complain because of additional bits sets.

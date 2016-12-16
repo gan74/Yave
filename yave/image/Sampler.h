@@ -33,7 +33,7 @@ class Sampler : NonCopyable, public DeviceLinked {
 
 		~Sampler();
 
-		vk::Sampler get_vk_sampler() const;
+		vk::Sampler vk_sampler() const;
 
 	private:
 		void swap(Sampler& other);

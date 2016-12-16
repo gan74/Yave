@@ -49,14 +49,14 @@ class YaveApp : NonCopyable {
 				depth(dptr, vk::Format::eD32Sfloat, size),
 				color(dptr, vk::Format::eR8G8B8A8Unorm, size),
 				color2(dptr, vk::Format::eR8G8B8A8Unorm, size),
-				pass(dptr, depth.get_format(), {color.get_format(), color2.get_format()}),
+				pass(dptr, depth.format(), {color.format(), color2.format()}),
 				framebuffer(pass, depth, {color, color2}) {
 
-			sem = dptr->get_vk_device().createSemaphore(vk::SemaphoreCreateInfo());
+			sem = dptr->vk_device().createSemaphore(vk::SemaphoreCreateInfo());
 		}
 
 		~Offscreen() {
-			pass.get_device()->get_vk_device().destroySemaphore(sem);
+			pass.device()->vk_device().destroySemaphore(sem);
 		}
 
 		Image<ImageUsageBits::TextureBit | ImageUsageBits::DepthBit> depth;

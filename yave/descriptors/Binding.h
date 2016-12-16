@@ -42,8 +42,8 @@ class Binding {
 				 _type(vk::DescriptorType::eCombinedImageSampler),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-					.setImageView(view.get_vk_image_view())
-					.setSampler(view.get_image().get_device()->get_vk_sampler())) {
+					.setImageView(view.vk_image_view())
+					.setSampler(view.image().device()->vk_sampler())) {
 		}
 
 		template<typename T, MemoryFlags Flags>
@@ -65,7 +65,7 @@ class Binding {
 			return _info;
 		}
 
-		vk::DescriptorType get_vk_descriptor_type() const {
+		vk::DescriptorType vk_descriptor_type() const {
 			return _type;
 		}
 

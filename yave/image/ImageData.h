@@ -35,8 +35,8 @@ class ImageData : NonCopyable {
 		usize byte_size() const;
 		const math::Vec2ui& size() const;
 
-		const u8* get_raw_pixel(const math::Vec2ui& pos);
-		const u8* get_raw_data() const;
+		const u8* raw_pixel(const math::Vec2ui& pos);
+		const u8* raw_data() const;
 
 		static ImageData from_file(io::ReaderRef reader);
 
