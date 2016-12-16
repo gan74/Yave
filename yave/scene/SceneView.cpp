@@ -29,7 +29,7 @@ SceneView::SceneView(DevicePtr dptr, const Scene &sce) :
 	auto mapping = _matrix_buffer.map();
 	auto& mvp = *mapping.begin();
 
-	float ratio = 4.0 / 3.0;
+	float ratio = 4.0f / 3.0f;
 	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 10.f);
 	mvp.view = math::look_at(math::Vec3(2.0, 0, 0), math::Vec3());
 }

@@ -29,10 +29,10 @@ class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 	public:
 		using Element = Elem;
 
-		TypedSubBuffer(const TypedBuffer<Usage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(T), count * sizeof(T)) {
+		TypedSubBuffer(const TypedBuffer<Elem, Usage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(Elem), count * sizeof(Elem)) {
 		}
 
-		explicit TypedSubBuffer(const TypedBuffer<Usage, Flags>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(T)) {
+		explicit TypedSubBuffer(const TypedBuffer<Elem, Usage, Flags>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(Elem)) {
 		}
 
 		usize size() const {

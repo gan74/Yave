@@ -19,24 +19,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-static bool are_families_complete(const std::array<i32, QueueFamily::Max>& families) {
-	for(i32 index : families) {
-		if(index < 0) {
+static bool are_families_complete(const std::array<u32, QueueFamily::Max>& families) {
+	for(u32 index : families) {
+		if(index == u32(-1)) {
 			return false;
 		}
 	}
 	return true;
 }
 
-static std::array<i32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevice physical) {
-	std::array<i32, QueueFamily::Max> queue_families;
-	for(i32& index : queue_families) {
-		index = -1;
+static std::array<u32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevice physical) {
+	std::array<u32, QueueFamily::Max> queue_families;
+	for(u32& index : queue_families) {
+		index = u32(-1);
 	}
 
 	auto families = physical.getQueueFamilyProperties();
-	for(i32 i = 0; i != i32(families.size()); i++) {
-		auto family = families[i];
+	for(u32 i = 0; i != families.size(); i++) {
+		auto family = families[usize(i)];
 		if(family.queueCount <= 0) {
 			continue;
 		}
@@ -57,7 +57,7 @@ static std::array<i32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevi
 
 static vk::Device create_device(
 		vk::PhysicalDevice physical,
-		const std::array<i32, QueueFamily::Max>& queue_families,
+		const std::array<u32, QueueFamily::Max>& queue_families,
 		const core::Vector<const char*>& extentions,
 		const core::Vector<const char*>& layers) {
 
@@ -80,9 +80,9 @@ static vk::Device create_device(
 	}
 
 	return physical.createDevice(vk::DeviceCreateInfo()
-			.setEnabledExtensionCount(extentions.size())
+			.setEnabledExtensionCount(u32(extentions.size()))
 			.setPpEnabledExtensionNames(extentions.begin())
-			.setEnabledLayerCount(layers.size())
+			.setEnabledLayerCount(u32(layers.size()))
 			.setPpEnabledLayerNames(layers.begin())
 			.setQueueCreateInfoCount(queue_create_infos.size())
 			.setPQueueCreateInfos(queue_create_infos.begin())
@@ -143,8 +143,8 @@ vk::Sampler Device::get_vk_sampler() const {
 	return _sampler.get_vk_sampler();
 }
 
-i32 Device::get_queue_family_index(QueueFamily i) const {
-	return _queue_familiy_indices[i];
+u32 Device::get_queue_family_index(QueueFamily i) const {
+	return u32(_queue_familiy_indices[i]);
 }
 
 }

@@ -39,9 +39,9 @@ Instance::Instance(DebugParams debug) : _debug_params(debug), _debug_callback(nu
 		;
 
 	_instance = vk::createInstance(vk::InstanceCreateInfo()
-			.setEnabledExtensionCount(_instance_extentions.size())
+			.setEnabledExtensionCount(u32(_instance_extentions.size()))
 			.setPpEnabledExtensionNames(_instance_extentions.begin())
-			.setEnabledLayerCount(_debug_params.get_instance_layers().size())
+			.setEnabledLayerCount(u32(_debug_params.get_instance_layers().size()))
 			.setPpEnabledLayerNames(_debug_params.get_instance_layers().begin())
 			.setPApplicationInfo(&app_info)
 		);

@@ -22,7 +22,7 @@ using Cmd = vk::DrawIndexedIndirectCommand;
 static auto create_indirect_buffer(const MeshData& m, usize max = usize(-1)) {
 	core::Vector<Cmd> cmds;
 	for(usize i = 0, size = m.triangles.size(); i < size; i += max) {
-		cmds << Cmd(std::min(size - i, max) * 3, 1, i * 3);
+		cmds << Cmd(u32(std::min(size - i, max) * 3), 1, u32(i * 3));
 	}
 	return cmds;
 }

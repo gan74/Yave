@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "yave.h"
 
-#include <yave/buffer/BufferReference.h>
-
 namespace yave {
 
 class UniformBinding {

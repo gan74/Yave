@@ -85,16 +85,10 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setMaxDepth(view.depth.y())
 		;
 
-	auto scissor = vk::Rect2D()
-			.setExtent(vk::Extent2D(view.extent.x(), view.extent.y()))
-			.setOffset({0, 0})
-		;
-
 	auto viewport_state = vk::PipelineViewportStateCreateInfo()
 			.setViewportCount(1)
 			.setPViewports(&viewport)
 			.setScissorCount(1)
-			.setPScissors(&scissor)
 		;
 
 	auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
@@ -122,9 +116,9 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 	auto color_blending = vk::PipelineColorBlendStateCreateInfo()
 			.setLogicOpEnable(false)
 			.setLogicOp(vk::LogicOp::eCopy)
-			.setAttachmentCount(att_blends.size())
+			.setAttachmentCount(u32(att_blends.size()))
 			.setPAttachments(att_blends.begin())
-			.setBlendConstants({0.0f, 0.0f, 0.0f, 0.0f})
+			.setBlendConstants({{0.0f, 0.0f, 0.0f, 0.0f}})
 		;
 
 	auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
@@ -134,12 +128,12 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 		;
 
 	auto pipeline_layout = get_device()->get_vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(program.get_descriptor_layouts().size())
+			.setSetLayoutCount(u32(program.get_descriptor_layouts().size()))
 			.setPSetLayouts(program.get_descriptor_layouts().begin())
 		);
 
 	auto pipeline = get_device()->get_vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
-			.setStageCount(pipeline_shader_stage.size())
+			.setStageCount(u32(pipeline_shader_stage.size()))
 			.setPStages(pipeline_shader_stage.begin())
 			.setPVertexInputState(&vertex_input)
 			.setPInputAssemblyState(&input_assembly)

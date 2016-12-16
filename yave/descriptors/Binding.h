@@ -52,9 +52,9 @@ class Binding {
 				_info(buffer.descriptor_info()) {
 		}
 
-		auto descriptor_set_layout_binding(u32 index) const {
+		auto descriptor_set_layout_binding(usize index) const {
 			return vk::DescriptorSetLayoutBinding()
-					.setBinding(index)
+					.setBinding(u32(index))
 					.setDescriptorCount(1)
 					.setDescriptorType(_type)
 					.setStageFlags(vk::ShaderStageFlagBits::eAll)

@@ -22,8 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-static usize get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, vk::MemoryPropertyFlags flags) {
-	for(usize i = 0; i != properties.memoryTypeCount; i++) {
+static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, vk::MemoryPropertyFlags flags) {
+	for(u32 i = 0; i != properties.memoryTypeCount; i++) {
 		auto memory_type = properties.memoryTypes[i];
 		if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
 			return i;

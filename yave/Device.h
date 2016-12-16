@@ -48,7 +48,7 @@ class Device : NonCopyable {
 		vk::Queue get_vk_queue(usize i) const;
 		vk::Sampler get_vk_sampler() const;
 
-		i32 get_queue_family_index(QueueFamily i) const;
+		u32 get_queue_family_index(QueueFamily i) const;
 
 
 		template<typename T>
@@ -71,7 +71,7 @@ class Device : NonCopyable {
 		Instance& _instance;
 		PhysicalDevice _physical;
 
-		std::array<i32, QueueFamily::Max> _queue_familiy_indices;
+		std::array<u32, QueueFamily::Max> _queue_familiy_indices;
 
 		std::array<vk::Queue, QueueFamily::Max> _queues;
 

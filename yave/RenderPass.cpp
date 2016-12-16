@@ -33,9 +33,9 @@ static vk::AttachmentDescription create_attachment(ImageFormat format, vk::Image
 	;
 }
 
-static vk::AttachmentReference create_attachment_reference(ImageUsage usage, u32 index) {
+static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usize index) {
 	return vk::AttachmentReference()
-		.setAttachment(index)
+		.setAttachment(u32(index))
 		.setLayout(usage.get_vk_image_layout())
 	;
 }
@@ -43,7 +43,7 @@ static vk::AttachmentReference create_attachment_reference(ImageUsage usage, u32
 static vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, const core::Vector<vk::AttachmentReference>& colors) {
 	return vk::SubpassDescription()
 		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-		.setColorAttachmentCount(colors.size())
+		.setColorAttachmentCount(u32(colors.size()))
 		.setPColorAttachments(colors.begin())
 		.setPDepthStencilAttachment(&depth)
 	;
@@ -92,7 +92,7 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, ImageFormat depth_format
 	auto dependencies = create_bottom_of_pipe_dependencies();
 
 	return dptr->get_vk_device().createRenderPass(vk::RenderPassCreateInfo()
-			.setAttachmentCount(attachments.size())
+			.setAttachmentCount(u32(attachments.size()))
 			.setPAttachments(attachments.begin())
 			.setSubpassCount(1)
 			.setPSubpasses(&subpass)

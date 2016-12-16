@@ -43,10 +43,6 @@ struct Version {
 };
 
 
-
-core::Vector<u8> read_file(const core::String& file_name);
-
-
 class Device;
 
 using DevicePtr = const Device*;

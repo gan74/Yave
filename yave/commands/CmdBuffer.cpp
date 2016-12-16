@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 CmdBuffer::CmdBuffer() {
-
 }
 
 CmdBuffer::CmdBuffer(const core::Rc<CmdBufferPoolData>& pool) : _pool(pool), _data(_pool->alloc()) {

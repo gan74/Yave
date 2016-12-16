@@ -22,12 +22,12 @@ namespace yave {
 
 static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, usize ub, usize tx) {
 	auto ub_pool_size = vk::DescriptorPoolSize()
-			.setDescriptorCount(ub)
+			.setDescriptorCount(u32(ub))
 			.setType(vk::DescriptorType::eUniformBuffer)
 		;
 
 	auto tx_pool_size = vk::DescriptorPoolSize()
-			.setDescriptorCount(tx)
+			.setDescriptorCount(u32(tx))
 			.setType(vk::DescriptorType::eCombinedImageSampler)
 		;
 
@@ -52,7 +52,7 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 	for(const auto& binding : bindings) {
 		auto w = vk::WriteDescriptorSet()
 				.setDstSet(set)
-				.setDstBinding(writes.size())
+				.setDstBinding(u32(writes.size()))
 				.setDstArrayElement(0)
 				.setDescriptorCount(1)
 				.setDescriptorType(binding.get_vk_descriptor_type())
@@ -73,7 +73,7 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 		}
 		writes << w;
 	}
-	dptr->get_vk_device().updateDescriptorSets(writes.size(), writes.begin(), 0, nullptr);
+	dptr->get_vk_device().updateDescriptorSets(u32(writes.size()), writes.begin(), 0, nullptr);
 }
 
 

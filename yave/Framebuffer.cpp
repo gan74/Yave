@@ -40,7 +40,7 @@ Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std
 
 	_framebuffer = get_device()->get_vk_device().createFramebuffer(vk::FramebufferCreateInfo()
 		.setRenderPass(render_pass.get_vk_render_pass())
-		.setAttachmentCount(views.size())
+		.setAttachmentCount(u32(views.size()))
 		.setPAttachments(views.begin())
 		.setWidth(_size.x())
 		.setHeight(_size.y())
