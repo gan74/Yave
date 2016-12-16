@@ -85,10 +85,16 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setMaxDepth(view.depth.y())
 		;
 
+	auto scissor = vk::Rect2D()
+			.setExtent(vk::Extent2D(u32(view.extent.x()), u32(view.extent.y())))
+			.setOffset({0, 0})
+		;
+
 	auto viewport_state = vk::PipelineViewportStateCreateInfo()
 			.setViewportCount(1)
 			.setPViewports(&viewport)
-			.setScissorCount(0)
+			.setScissorCount(1)
+			.setPScissors(&scissor)
 		;
 
 	auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
