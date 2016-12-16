@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device), offscreen(nullptr) {
+YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device), mesh_pool(&device), offscreen(nullptr) {
 }
 
 void YaveApp::init(Window* window) {
@@ -158,7 +158,7 @@ void YaveApp::create_assets() {
 	using Vec3 = math::Vec3;
 	using Vec2 = math::Vec2;
 
-	auto plan = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, MeshData{
+	auto plan = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(MeshData{
 		{{Vec3(-1, -1, 0), Vec3(0, 0, 1), Vec2(0, 0)},
 		 {Vec3(-1, 1, 0), Vec3(0, 0, 1), Vec2(0, 1)},
 		 {Vec3(1, 1, 0), Vec3(0, 0, 1), Vec2(1, 1)},
@@ -187,7 +187,7 @@ void YaveApp::create_assets() {
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
-		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, m_data));
+		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
 		for(usize i = 0; i != 10; i++) {
 			{
 				auto m = StaticMesh(mesh, material);

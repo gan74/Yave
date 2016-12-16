@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/yave.h>
 
 #include <yave/buffer/TypedBuffer.h>
+#include <yave/buffer/TypedSubBuffer.h>
 
 #include "MeshData.h"
 
@@ -33,24 +34,26 @@ using VertexBuffer = TypedBuffer<Vertex, BufferUsage::VertexBuffer, Flags>;
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBuffer, Flags>;
 
-class StaticMeshInstance : NonCopyable {
 
-	public:
-		StaticMeshInstance() = default;
-		StaticMeshInstance(DevicePtr dptr, const MeshData& m);
 
-		StaticMeshInstance(StaticMeshInstance&& other);
-		StaticMeshInstance& operator=(StaticMeshInstance&& other);
+template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
+using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBuffer,Flags>;
 
-		TriangleBuffer<> triangle_buffer;
-		VertexBuffer<> vertex_buffer;
+template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
+using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::VertexBuffer, Flags>;
 
-		IndirectBuffer<> indirect_buffer;
+template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
+using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBuffer, Flags>;
 
-	private:
-		void swap(StaticMeshInstance& other);
 
+
+struct StaticMeshInstance {
+	TriangleSubBuffer<> triangle_buffer;
+	VertexSubBuffer<> vertex_buffer;
+
+	IndirectBuffer<> indirect_buffer;
 };
+
 }
 
 #endif // YAVE_MESH_STATICMESHINSTANCE_H

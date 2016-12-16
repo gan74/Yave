@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/image/Image.h>
 #include <yave/Swapchain.h>
 #include <yave/objects/StaticMesh.h>
+#include <yave/mesh/MeshInstancePool.h>
 
 #include <yave/descriptors/Binding.h>
 #include <yave/descriptors/DescriptorSet.h>
@@ -92,6 +93,8 @@ class YaveApp : NonCopyable {
 		RecordedCmdBuffer offscreen_cmd;
 
 		AssetPtr<Material> material;
+
+		MeshInstancePool mesh_pool;
 
 		Offscreen* offscreen;
 

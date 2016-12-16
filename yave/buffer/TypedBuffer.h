@@ -64,7 +64,6 @@ class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 		}
 };
 
-
 }
 
 #endif // YAVE_BUFFER_TYPEDBUFFER_H
