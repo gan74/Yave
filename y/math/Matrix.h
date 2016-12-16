@@ -88,12 +88,12 @@ class Matrix
 			}
 		}
 
-		Matrix(detail::identity_t &&) : Matrix(Matrix::identity()) {
+		Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
 		}
 
 		Matrix() = default;
-		Matrix(const Matrix &) = default;
-		Matrix& operator=(const Matrix &) = default;
+		Matrix(const Matrix&) = default;
+		Matrix& operator=(const Matrix&) = default;
 
 		Vec<M, T>& operator[](usize i) {
 			return _rows[i];

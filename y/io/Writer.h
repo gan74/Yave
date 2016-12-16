@@ -24,8 +24,7 @@ namespace io {
 
 class Writer : NonCopyable {
 	public:
-		virtual ~Writer() {
-		}
+		virtual ~Writer();
 
 		virtual usize write(const void* data, usize bytes) = 0;
 		virtual void flush() = 0;

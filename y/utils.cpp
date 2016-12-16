@@ -28,7 +28,7 @@ namespace y {
 namespace detail {
 	usize StaticCounter::value = 0;
 
-	#ifdef __GNUG__
+#ifdef __GNUG__
 	core::String demangle_type_name(const char* name) {
 	int status = 0;
 	char* d = abi::__cxa_demangle(name, nullptr, nullptr, &status);
@@ -38,11 +38,11 @@ namespace detail {
 
 	return core::str_from_owned(d);
 	}
-	#else
+#else
 	core::String demangle_type_name(const char* name) {
 		return core::str(name);
 	}
-	#endif
+#endif
 }
 
 
@@ -56,7 +56,6 @@ Nothing fatal(const char* msg, const char* file, int line) {
 	}
 	log_msg(msg_str, LogType::Error);
 	exit(1);
-	return Nothing();
 }
 
 }

@@ -217,6 +217,22 @@ struct X: A {
 #include <iostream>
 #include <memory>
 
+#if __has_include(<immintrin.h>)
+#include <immintrin.h>
+
+inline u32 rand32() {
+	u32 r = 0;
+	return _rdrand32_step(&r) ? r : 0;
+}
+
+#else
+
+u32 rand32() {
+	return 0;
+}
+
+#endif
+
 
 struct S {
 	int s[128];
@@ -226,18 +242,51 @@ struct S {
 	}
 };
 
-template<typename T>
-void test(T& e) {
-	e();
+int foo(int = 3) {
+	return 4;
 }
 
 using namespace y;
 
-int main() {
-	/*log(log::Error)("elelelelle").green("greeeeeeeen")("le");
-	log("aaaaaaaaaaaaaa").blue("bluuuue");
-	log("aaaaaaaaaaaaaa");*/
+struct Test {
+	Test() {
+		std::cout << "DEFUALT" << std::endl;
+	}
 
+	Test(Test&& t) : msg(std::exchange(t.msg, "()")) {
+		std::cout << "MOVE(" << msg << ")" << std::endl;
+	}
+
+	Test(const char* str) : msg(str) {
+		std::cout << "CTOR(" << msg << ")" << std::endl;
+	}
+
+	Test(const Test& t) : msg(t.msg) {
+		std::cout << "COPY (" << msg << ")" << std::endl;
+	}
+
+	Test& operator=(const Test& t) {
+		std::cout << "ASSIGN (" << t.msg << ")" << std::endl;
+		msg = t.msg;
+		return *this;
+	}
+
+	~Test() {
+		std::cout << "~" << msg << std::endl;
+	}
+
+	const char* msg;
+
+
+};
+
+
+
+int main() {
+	std::cout << foo() << std::endl;
+	float x = 4'0000'000;
+	std::cout << usize(x) << ", " << usize((x - 1) + 1) << std::endl;
+	std::cout << std::boolalpha << (x == x + 1)  << std::endl;
 }
 
 

@@ -44,7 +44,7 @@ class Quaternion {
 		Quaternion(Args&&... args) : Quaternion(Vec<4, T>(std::forward<Args>(args)...)) {
 		}
 
-		Quaternion(detail::identity_t i = identity()) : Quaternion(0, 0, 0, 1) {
+		Quaternion(detail::identity_t = identity()) : Quaternion(0, 0, 0, 1) {
 		}
 
 		template<typename U>

@@ -107,7 +107,7 @@ String::String(const char* str, usize len) {
 	}
 }
 
-String::String(const char* beg, const char* end) : String(beg, end - beg) {
+String::String(const char* beg, const char* end) : String(beg, usize(end - beg)) {
 }
 
 String::~String() {

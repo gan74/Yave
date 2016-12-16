@@ -25,7 +25,7 @@ namespace concurrent {
 
 class SpinLock : NonCopyable {
 
-	static constexpr usize yield_threshold = -1;
+	static constexpr usize yield_threshold = usize(-1);
 
 	using Type = bool;
 	static constexpr Type Locked = true;

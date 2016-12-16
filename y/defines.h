@@ -28,7 +28,7 @@ Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 
 
 #ifndef __PRETTY_FUNCTION__
-#define __FUNC__ __PRETTY_FUNCTION__
+#define __PRETTY_FUNCTION__ __FUNC__
 #endif
 
 /****************** OS DEFINES BELOW ******************/

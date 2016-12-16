@@ -33,6 +33,10 @@ class String {
 		LongLenType(usize l = 0) : _len(l), _is_long(1) {
 		}
 
+		usize operator=(usize l) {
+			return _len = l;
+		}
+
 		operator usize() const {
 			return _len;
 		}
@@ -44,7 +48,12 @@ class String {
 		u8 _is_long : 1;
 
 		Y_TODO(SSO implementation squeeze an extra byte at the cost of 0 initilisation. Bench needed)
-		ShortLenType(usize l = 0) : _len(MaxShortSize - l), _is_long(0) {
+		ShortLenType(usize l = 0) : _len(u8(MaxShortSize - l)), _is_long(0) {
+		}
+
+		usize operator=(usize l) {
+			_len = u8(MaxShortSize - l);
+			return l;
 		}
 
 		operator usize() const {

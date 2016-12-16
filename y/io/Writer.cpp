@@ -13,33 +13,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef Y_IO_READER_H
-#define Y_IO_READER_H
 
-#include <y/utils.h>
-#include <y/core/Vector.h>
+#include "Writer.h"
 
 namespace y {
 namespace io {
 
-class Reader : NonCopyable {
-	public:
-		virtual ~Reader();
-
-		virtual bool at_end() const = 0;
-
-		virtual usize read(void* data, usize bytes) = 0;
-		virtual usize read_all(core::Vector<u8>& data) = 0;
-
-		core::Vector<u8> read_all() {
-			core::Vector<u8> vec;
-			read_all(vec);
-			return vec;
-		}
-
-};
+Writer::~Writer() {
+}
 
 }
 }
-
-#endif // Y_IO_READER_H

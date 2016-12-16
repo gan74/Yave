@@ -59,7 +59,7 @@ usize File::size() const {
 	fpos_t pos = {};
 	fgetpos(_file, &pos);
 	fseek(_file, 0, SEEK_END);
-	usize len = ftell(_file);
+	auto len = usize(ftell(_file));
 	fsetpos(_file, &pos);
 	return len;
 }
@@ -70,9 +70,9 @@ usize File::remaining() const {
 	}
 	fpos_t pos = {};
 	fgetpos(_file, &pos);
-	usize offset = ftell(_file);
+	auto offset = usize(ftell(_file));
 	fseek(_file, 0, SEEK_END);
-	usize len = ftell(_file);
+	auto len = usize(ftell(_file));
 	fsetpos(_file, &pos);
 	return len - offset;
 }

@@ -77,7 +77,7 @@ class Chrono {
 		}
 
 		Duration elapsed() const {
-			auto nanos = std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - _time).count();
+			auto nanos = u64(std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - _time).count());
 			return Duration(nanos / 1000000000, nanos % 1000000000);
 		}
 

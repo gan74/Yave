@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace y {
 
-static constexpr std::array<const char*, 4> log_type_str = {"info", "warning", "error", "debug"};
+static constexpr std::array<const char*, 4> log_type_str = {{"info", "warning", "error", "debug"}};
 
 void log_msg(const char* msg, LogType type) {
 	static concurrent::Mutex lock;

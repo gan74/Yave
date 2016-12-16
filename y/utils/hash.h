@@ -44,11 +44,7 @@ inline auto hash(const T& collection, const Hasher& hasher, std::true_type) {
 
 }
 
-template<typename T, typename Hasher = std::hash<
-    typename std::conditional<is_iterable<T>::value,
-        typename std::remove_cv<
-            typename std::remove_reference<decltype(*make_one<T>().begin())>::type
-        >::type, T>::type>>
+template<typename T, typename Hasher = typename std::hash<typename std::conditional<is_iterable<T>::value, typename std::remove_cv<typename std::remove_reference<decltype(*make_one<T>().begin())>::type>::type, T>::type>>
 inline auto hash(const T& t, const Hasher& hasher = Hasher()) {
 	return detail::hash(t, hasher, is_iterable<T>());
 }
