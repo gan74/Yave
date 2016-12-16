@@ -30,6 +30,9 @@ using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBuffer,Fla
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using VertexBuffer = TypedBuffer<Vertex, BufferUsage::VertexBuffer, Flags>;
 
+template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
+using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBuffer, Flags>;
+
 class StaticMeshInstance : NonCopyable {
 
 	public:
@@ -42,7 +45,7 @@ class StaticMeshInstance : NonCopyable {
 		TriangleBuffer<> triangle_buffer;
 		VertexBuffer<> vertex_buffer;
 
-		vk::DrawIndirectCommand indirect;
+		IndirectBuffer<> indirect_buffer;
 
 	private:
 		void swap(StaticMeshInstance& other);

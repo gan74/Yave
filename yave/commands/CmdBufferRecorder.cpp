@@ -121,7 +121,11 @@ CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& mesh_instan
 	vk::DeviceSize offset = 0; // fohkin' vk::ArrayProxy
 	get_vk_cmd_buffer().bindVertexBuffers(0, mesh_instance.vertex_buffer.get_vk_buffer(), offset);
 	get_vk_cmd_buffer().bindIndexBuffer(mesh_instance.triangle_buffer.get_vk_buffer(), offset, vk::IndexType::eUint32);
-	get_vk_cmd_buffer().drawIndexed(mesh_instance.triangle_buffer.size() * 3, 1, 0, 0, 0);
+
+	//get_vk_cmd_buffer().drawIndexed(mesh_instance.triangle_buffer.size() * 3, 1, 0, 0, 0);
+
+	usize cmds = mesh_instance.indirect_buffer.size();
+	get_vk_cmd_buffer().drawIndexedIndirect(mesh_instance.indirect_buffer.get_vk_buffer(), offset, cmds, cmds ? sizeof(vk::DrawIndexedIndirectCommand) : 0);
 
 	return *this;
 }

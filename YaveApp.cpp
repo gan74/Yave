@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <y/io/File.h>
 
+#include <iostream>
+
 
 namespace yave {
 
@@ -130,9 +132,9 @@ Duration YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	const_cast<StaticMesh&>(scene->static_meshes().first()).transform() =
+	/*const_cast<StaticMesh&>(scene->static_meshes().first()).transform() =
 				math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
-				math::rotation(angles.y() + math::pi<float> * 0.5f, math::Vec3(0, 1, 0));
+				math::rotation(angles.y() + math::pi<float> * 0.5f, math::Vec3(0, 1, 0));*/
 
 	/*auto rot = math::rotation(angles.x(), math::Vec3(0, 0, 1)) * math::rotation(angles.y(), math::Vec3(0, 1, 0));
 
@@ -140,6 +142,16 @@ void YaveApp::update(math::Vec2 angles) {
 	auto& mvp = *mapping.begin();
 
 	mvp.view = math::look_at(math::Vec3((rot * math::vec(5., 0., 0., 1.)).sub(3)), math::Vec3());*/
+
+	auto cam_pos =
+			(math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
+			math::rotation(angles.y() + math::pi<float> * 0.5f, math::Vec3(0, 1, 0))) * math::Vec4(2.5, 0, 0, 1);
+
+	scene_view->set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
+
+	/*for(const auto& m : scene->static_meshes()) {
+		std::cout << m.position().x() << ", " << m.position().y() << ", " << m.position().z() << std::endl;
+	}*/
 }
 
 void YaveApp::create_assets() {
@@ -176,7 +188,14 @@ void YaveApp::create_assets() {
 		auto m_data = MeshData::from_file(io::File::open(name));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, m_data));
-		objects << StaticMesh(mesh, material);
+		for(usize i = 0; i != 10; i++) {
+			{
+				auto m = StaticMesh(mesh, material);
+				m.set_position(math::Vec3(float(i) - 5, 0, 0));
+
+				objects << std::move(m);
+			}
+		}
 	}
 	scene = new Scene(std::move(objects));
 	scene_view = new SceneView(&device, *scene);

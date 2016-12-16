@@ -60,7 +60,7 @@ class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 
 	private:
 		void swap(TypedBuffer& other) {
-			BufferBase::swap(other);
+			Base::swap(other);
 		}
 };
 

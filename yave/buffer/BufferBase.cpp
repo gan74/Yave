@@ -100,6 +100,9 @@ void BufferBase::swap(BufferBase& other) {
 	std::swap(_memory, other._memory);
 }
 
+BufferBase::BufferBase() : DeviceLinked(), _size(0), _buffer(VK_NULL_HANDLE), _memory(VK_NULL_HANDLE) {
+}
+
 BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryFlags flags, BufferTransfer transfer) : DeviceLinked(dptr), _size(byte_size) {
 	auto tpl = alloc_buffer(dptr, byte_size, to_vk_flags(usage) | to_vk_flags(transfer), flags);
 	_buffer = std::get<0>(tpl);

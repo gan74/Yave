@@ -30,7 +30,9 @@ StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const Asset
 		_uniform_buffer(_material->get_device(), 1),
 		_mapping(_uniform_buffer),
 		_descriptor_set(_material->get_device(), {Binding(_uniform_buffer)}) {
+
 	set_storage(_mapping.begin());
+	transform() = math::identity();
 }
 
 StaticMesh::StaticMesh(StaticMesh&& other) :

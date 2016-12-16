@@ -74,6 +74,11 @@ static vk::Device create_device(
 
 
 	auto features = physical.getFeatures();
+
+	if(!features.multiDrawIndirect) {
+		fatal("Multi-draw-indirect required.");
+	}
+
 	return physical.createDevice(vk::DeviceCreateInfo()
 			.setEnabledExtensionCount(extentions.size())
 			.setPpEnabledExtensionNames(extentions.begin())

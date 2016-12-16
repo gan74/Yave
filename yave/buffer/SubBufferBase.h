@@ -23,7 +23,8 @@ namespace yave {
 class SubBufferBase : public DeviceLinked {
 
 	public:
-		SubBufferBase() = default;
+		SubBufferBase() : DeviceLinked(), _size(0), _offset(0), _buffer(VK_NULL_HANDLE), _memory(VK_NULL_HANDLE) {
+		}
 
 		explicit SubBufferBase(const BufferBase &base) : SubBufferBase(base, 0, base.byte_size()) {
 		}

@@ -35,7 +35,7 @@ class BufferBase : NonCopyable, public DeviceLinked {
 	protected:
 		void swap(BufferBase& other);
 
-		BufferBase() = default;
+		BufferBase();
 		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryFlags flags, BufferTransfer transfer);
 
 	private:

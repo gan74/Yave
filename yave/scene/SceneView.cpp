@@ -46,4 +46,14 @@ RecordedCmdBuffer SceneView::command_buffer(const Framebuffer& fbo) {
 	return recorder.end();
 }
 
+
+void SceneView::set_view(const math::Matrix4<>& view) {
+	map().begin()->view = view;
+}
+
+void SceneView::set_proj(const math::Matrix4<>& proj) {
+	map().begin()->proj = proj;
+}
+
+
 }

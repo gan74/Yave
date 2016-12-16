@@ -38,7 +38,14 @@ class SceneView : NonCopyable {
 
 		RecordedCmdBuffer command_buffer(const Framebuffer& fbo);
 
+		void set_view(const math::Matrix4<>& view);
+		void set_proj(const math::Matrix4<>& proj);
+
 	private:
+		auto map() {
+			return _matrix_buffer.map();
+		}
+
 		const Scene& _scene;
 
 		CmdBufferPool _command_pool;

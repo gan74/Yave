@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "RenderPass.h"
 #include "Device.h"
 
-#include <iostream>
-
 namespace yave {
 
 static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<ColorAttachmentView> views) {

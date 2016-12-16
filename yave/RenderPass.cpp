@@ -19,8 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Device.h"
 
-#include <iostream>
-
 namespace yave {
 
 static vk::AttachmentDescription create_attachment(ImageFormat format, vk::ImageLayout layout) {

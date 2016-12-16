@@ -23,8 +23,9 @@ namespace yave {
 enum class BufferUsage {
 	None = 0,
     VertexBuffer = int(vk::BufferUsageFlagBits::eVertexBuffer),
-    IndexBuffer = int(vk::BufferUsageFlagBits::eIndexBuffer),
-    UniformBuffer = int(vk::BufferUsageFlagBits::eUniformBuffer)
+	IndexBuffer = int(vk::BufferUsageFlagBits::eIndexBuffer),
+	IndirectBuffer = int(vk::BufferUsageFlagBits::eIndirectBuffer),
+	UniformBuffer = int(vk::BufferUsageFlagBits::eUniformBuffer)
 };
 
 enum class BufferTransfer {

@@ -26,7 +26,7 @@ class Transformable : NonCopyable {
 	public:
 		using Transform = math::Matrix4<>;
 
-		Transformable() : _transform(&_storage), _storage(math::identity()) {
+		Transformable() : _transform(nullptr) /*_transform(&_storage), _storage(math::identity())*/ {
 		}
 
 		Transformable(Transformable&& other) : Transformable() {
@@ -58,27 +58,27 @@ class Transformable : NonCopyable {
 
 	protected:
 		void set_storage(Transform* s) {
-			if(!s) {
+			/*if(!s) {
 				s = &_storage;
 			}
-			*s = *_transform;
+			*s = *_transform;*/
 			_transform = s;
 		}
 
 		void swap(Transformable& other) {
-			std::swap(_storage, other._storage);
+			//std::swap(_storage, other._storage);
 			std::swap(_transform, other._transform);
-			if(_transform == &other._storage) {
+			/*if(_transform == &other._storage) {
 				_transform = &_storage;
 			}
 			if(other._transform == &_storage) {
 				other._transform = &other._storage;
-			}
+			}*/
 		}
 
 	private:
 		Transform* _transform;
-		Transform _storage;
+		//Transform _storage;
 };
 
 }

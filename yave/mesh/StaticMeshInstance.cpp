@@ -17,17 +17,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
+using Cmd = vk::DrawIndexedIndirectCommand;
+
+static auto create_indirect_buffer(const MeshData& m, usize max = usize(-1)) {
+	core::Vector<Cmd> cmds;
+	for(usize i = 0, size = m.triangles.size(); i < size; i += max) {
+		cmds << Cmd(std::min(size - i, max) * 3, 1, i * 3);
+	}
+	return cmds;
+}
+
 StaticMeshInstance::StaticMeshInstance(DevicePtr dptr, const MeshData& m) :
-		/*triangle_buffer(allocator.create_buffer<BufferUsage::IndexBuffer>(m.triangles)),
-		vertex_buffer(allocator.create_buffer<BufferUsage::VertexBuffer>(m.vertices))*/
 		triangle_buffer(dptr, m.triangles),
-		vertex_buffer(dptr, m.vertices) {
-
-	indirect.vertexCount = vertex_buffer.size();
-	indirect.instanceCount = 1;
-
-	indirect.firstInstance = 0;
-	indirect.firstVertex = 0;
+		vertex_buffer(dptr, m.vertices),
+		indirect_buffer(dptr, create_indirect_buffer(m)) {
 }
 
 StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) : StaticMeshInstance() {
@@ -42,7 +45,7 @@ StaticMeshInstance& StaticMeshInstance::operator=(StaticMeshInstance&& other) {
 void StaticMeshInstance::swap(StaticMeshInstance& other) {
 	std::swap(triangle_buffer, other.triangle_buffer);
 	std::swap(vertex_buffer, other.vertex_buffer);
-	std::swap(indirect, other.indirect);
+	std::swap(indirect_buffer, other.indirect_buffer);
 }
 
 }
