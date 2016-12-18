@@ -21,13 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace y {
 
-struct NonCopyable
-{
+struct NonCopyable {
 	constexpr NonCopyable() {}
 	NonCopyable(const NonCopyable &) = delete;
 	NonCopyable& operator=(const NonCopyable &) = delete;
-};
 
+	NonCopyable(NonCopyable&&) {}
+};
 
 using u8 = uint8_t;
 using u16 = uint16_t;
