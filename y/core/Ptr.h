@@ -122,20 +122,14 @@ class Rc : public Ptr<T> {
 		Rc() : Ptr<T>(nullptr), _count(nullptr) {
 		}
 
+		Rc(std::nullptr_t) : Rc() {
+		}
+
 		explicit Rc(Owner<T*>&& p) : Ptr<T>(std::move(p)), _count(new C(1)) {
 		}
 
 		explicit Rc(T&& p) : Rc(new T(std::move(p))) {
 		}
-
-		/*explicit Rc(T&& p) {
-			struct S {
-				T t;
-				C c;
-			};
-			auto s = new S{std::forward<T>(p), new C(1)};
-			_ptr = &
-		}*/
 
 		Rc(const Rc& p) : Rc() {
 			ref(p);
