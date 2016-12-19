@@ -33,9 +33,9 @@ class String {
 		LongLenType(usize l = 0) : _len(l), _is_long(1) {
 		}
 
-		usize operator=(usize l) {
+		/*usize operator=(usize l) {
 			return _len = l;
-		}
+		}*/
 
 		operator usize() const {
 			return _len;
@@ -51,10 +51,10 @@ class String {
 		ShortLenType(usize l = 0) : _len(u8(MaxShortSize - l)), _is_long(0) {
 		}
 
-		usize operator=(usize l) {
+		/*usize operator=(usize l) {
 			_len = u8(MaxShortSize - l);
 			return l;
-		}
+		}*/
 
 		operator usize() const {
 			return MaxShortSize - _len;
