@@ -68,10 +68,10 @@ class Vector : ResizePolicy {
 			swap(other);
 		}
 
-		template<typename T>
-		explicit Vector(T&& other) : Vector() {
-			set_min_capacity(other.size());
-			append(range(std::forward<T>(other)));
+		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type>
+		Vector(const Range<I>& rng) : Vector() {
+			set_min_capacity(rng.size());
+			append(rng);
 		}
 
 		Vector(std::initializer_list<Elem> l) : Vector() {

@@ -105,6 +105,9 @@ class String {
 		String(const char* str, usize len);
 		String(const char* beg, const char* end);
 
+		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, char>::value>::type>
+		String(const Range<I>& rng);
+
 		~String();
 
 		// the pointer is not owned anymore, String take ownership;
@@ -113,9 +116,6 @@ class String {
 		template<typename T>
 		static String from(const T& t);
 
-		template<typename I>
-		static typename std::enable_if<std::is_convertible<typename Range<I>::Element, char>::value, String>::type 
-			from(const Range<I>& rng);
 
 		usize size() const;
 		usize capacity() const;
@@ -243,14 +243,13 @@ String String::from(const T& t) {
 	return oss.str().c_str();
 }
 
-template<typename I>
-typename std::enable_if<std::is_convertible<typename Range<I>::Element, char>::value, String>::type 
-	String::from(const Range<I>& rng) {
-	std::ostringstream oss;
+template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, char>::value>::type>
+String::String(const Range<I>& rng) : String(0, rng.size()) {
+	char* it = begin();
 	for(const auto& e : rng) {
-		oss << e;
+		*(it++) = e;
 	}
-	return oss.str().c_str();
+	*it = 0;
 }
 
 
