@@ -28,8 +28,6 @@ static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<Color
 	return a.size();
 }
 
-Framebuffer::Framebuffer() : _attachment_count(0), _render_pass(nullptr) {
-}
 
 Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors) :
 		_size(compute_size(depth.image(), colors)),

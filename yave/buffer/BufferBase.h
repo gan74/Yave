@@ -35,11 +35,11 @@ class BufferBase : NonCopyable, public DeviceLinked {
 	protected:
 		void swap(BufferBase& other);
 
-		BufferBase();
+		BufferBase() = default;
 		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryFlags flags, BufferTransfer transfer);
 
 	private:
-		usize _size;
+		usize _size = 0;
 		vk::Buffer _buffer;
 		vk::DeviceMemory _memory;
 };

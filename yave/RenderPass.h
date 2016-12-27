@@ -43,7 +43,7 @@ class RenderPass : NonCopyable, public DeviceLinked {
 	private:
 		void swap(RenderPass& other);
 
-		usize _attachment_count;
+		usize _attachment_count = 0;
 		vk::RenderPass _render_pass;
 };
 

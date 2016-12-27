@@ -24,7 +24,7 @@ class UniformBinding {
 
 	public:
 		template<typename T, MemoryFlags Flags>
-		UniformBinding(u32 binding, const TypedBuffer<T, BufferUsage::UniformBuffer, Flags>& buffer) : _descriptor_info(buffer.descriptor_info()), _binding(binding) {
+		UniformBinding(u32 binding, const TypedBuffer<T, BufferUsage::UniformBuffer, Flags>& buffer) : _binding(binding), _descriptor_info(buffer.descriptor_info()) {
 		}
 
 		auto descriptor_buffer_info() const {
@@ -45,8 +45,8 @@ class UniformBinding {
 		}
 
 	private:
-		vk::DescriptorBufferInfo _descriptor_info;
 		u32 _binding;
+		vk::DescriptorBufferInfo _descriptor_info;
 };
 
 }

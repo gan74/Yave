@@ -25,8 +25,7 @@ namespace yave {
 template<ImageUsageBits Usage>
 class Image : public ImageBase {
 	public:
-		Image() {
-		}
+		Image() = default;
 
 		Image(DevicePtr dptr, ImageFormat format, const math::Vec2ui& image_size, const u8* data = nullptr) : ImageBase(dptr, ImageFormat(format), Usage, image_size, data) {
 		}

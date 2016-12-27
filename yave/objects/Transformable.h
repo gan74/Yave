@@ -26,8 +26,7 @@ class Transformable : NonCopyable {
 	public:
 		using Transform = math::Matrix4<>;
 
-		Transformable() : _transform(nullptr) /*_transform(&_storage), _storage(math::identity())*/ {
-		}
+		Transformable()  = default;
 
 		Transformable(Transformable&& other) : Transformable() {
 			swap(other);
@@ -77,7 +76,7 @@ class Transformable : NonCopyable {
 		}
 
 	private:
-		Transform* _transform;
+		Transform* _transform = nullptr;
 		//Transform _storage;
 };
 

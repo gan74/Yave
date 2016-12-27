@@ -61,7 +61,6 @@ int main(int, char **) {
 	app.init(&win);
 
 	win.show();
-
 	Chrono ch;
 	usize frames = 0;
 	while(win.update()) {

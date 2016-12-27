@@ -31,7 +31,7 @@ struct CmdBufferData {
 struct CmdBuffer : NonCopyable {
 
 	public:
-		CmdBuffer();
+		CmdBuffer() = default;
 		CmdBuffer(const core::Rc<CmdBufferPoolData>& pool);
 
 		CmdBuffer(CmdBuffer&& other);

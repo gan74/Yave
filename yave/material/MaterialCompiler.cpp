@@ -27,12 +27,13 @@ MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass, Viewport view) const {
-	auto modules = core::vector(material.data()._vert, material.data()._frag);
-	if(!material.data()._geom.is_empty()) {
-		modules << material.data()._geom;
-	}
+#warning move program creation
 
-	ShaderProgram program(material.device(), modules);
+	FragmentShader frag = FragmentShader(material.device(), material.data()._frag);
+	VertexShader vert = VertexShader(material.device(), material.data()._vert);
+	GeometryShader geom = material.data()._geom.is_empty() ? GeometryShader() : GeometryShader(material.device(), material.data()._geom);
+	ShaderProgram program(frag, vert, geom);
+
 	auto pipeline_shader_stage = program.vk_pipeline_stage_info();
 
 	auto binding_description = vk::VertexInputBindingDescription()

@@ -26,7 +26,7 @@ namespace yave {
 class ImageData : NonCopyable {
 
 	public:
-		ImageData();
+		ImageData() = default;
 		~ImageData();
 
 		ImageData(ImageData&& other);
@@ -44,8 +44,8 @@ class ImageData : NonCopyable {
 		void swap(ImageData& other);
 
 		math::Vec2ui _size;
-		usize _bpp;
-		u8* _data;
+		usize _bpp = 0;
+		u8* _data = nullptr;
 };
 
 }

@@ -27,7 +27,7 @@ namespace yave {
 class Framebuffer : NonCopyable {
 
 	public:
-		Framebuffer();
+		Framebuffer() = default;
 		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors);
 
 		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color) : Framebuffer(render_pass, depth, {color}) {
@@ -52,9 +52,9 @@ class Framebuffer : NonCopyable {
 		void swap(Framebuffer& other);
 
 		math::Vec2ui _size;
-		usize _attachment_count;
+		usize _attachment_count = 0;
 
-		RenderPass* _render_pass;
+		RenderPass* _render_pass = nullptr;
 		vk::Framebuffer _framebuffer;
 };
 

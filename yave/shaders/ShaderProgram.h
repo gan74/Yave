@@ -22,17 +22,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-class ShaderProgram : NonCopyable {
+class ShaderProgram : NonCopyable, public DeviceLinked {
 
 	public:
-		ShaderProgram(DevicePtr dptr, const core::Vector<SpirVData>& modules);
+		ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom);
 
 		core::Vector<vk::PipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
 		const core::Vector<vk::DescriptorSetLayout>& descriptor_layouts() const;
 
 	private:
-		core::AssocVector<vk::ShaderStageFlagBits, ShaderModule> _modules;
+		std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>> _bindings;
 		core::Vector<vk::DescriptorSetLayout> _layouts;
+		core::Vector<vk::PipelineShaderStageCreateInfo> _stages;
 };
 
 }

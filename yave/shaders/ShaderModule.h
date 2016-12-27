@@ -13,40 +13,43 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
-#ifndef YAVE_MATERIAL_SHADERMODULE_H
-#define YAVE_MATERIAL_SHADERMODULE_H
+#ifndef YAVE_SHADER_SHADERMODULE_H
+#define YAVE_SHADER_SHADERMODULE_H
 
-#include <yave/yave.h>
-#include <yave/DeviceLinked.h>
-
-#include "SpirVData.h"
-
-#include <spirv_cross/spirv.hpp>
+#include "ShaderModuleBase.h"
 
 namespace yave {
 
-class ShaderModule : NonCopyable, public DeviceLinked {
+template<ShaderType Type>
+class ShaderModule : public ShaderModuleBase {
+
+	static_assert(Type != ShaderType::None, "ShaderModule can not have None Type");
 
 	public:
 		ShaderModule() = default;
 
-		ShaderModule(DevicePtr dptr, const SpirVData& data);
+		ShaderModule(DevicePtr dptr, const SpirVData& data) : ShaderModuleBase(dptr, data) {
+			if(type() != ShaderType::None && type() != Type) {
+				fatal("Spirv data doesn't match ShaderModule Type.");
+			}
+		}
 
-		ShaderModule(ShaderModule&& other);
-		ShaderModule& operator=(ShaderModule&& other);
+		ShaderModule(ShaderModule&& other) : ShaderModule() {
+			swap(other);
+		}
 
-		~ShaderModule();
-
-		vk::ShaderModule vk_shader_module() const;
+		ShaderModule& operator=(ShaderModule&& other) {
+			swap(other);
+		}
 
 	private:
-		void swap(ShaderModule& other);
-
-		vk::ShaderModule _module;
 
 };
 
+using FragmentShader = ShaderModule<ShaderType::Fragment>;
+using VertexShader = ShaderModule<ShaderType::Vertex>;
+using GeometryShader = ShaderModule<ShaderType::Geomery>;
 
 }
 
-#endif // YAVE_MATERIAL_SHADERMODULE_H
+#endif // YAVE_SHADER_SHADERMODULE_H

@@ -21,8 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-ImageData::ImageData() : _size(0), _bpp(0), _data(nullptr) {
-}
 
 ImageData::~ImageData() {
 	delete[] _data;

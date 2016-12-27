@@ -27,7 +27,7 @@ class Material;
 
 class GraphicPipeline : NonCopyable {
 	public:
-		GraphicPipeline();
+		GraphicPipeline() = default;
 		GraphicPipeline(const Material& mat, vk::Pipeline pipeline, vk::PipelineLayout layout);
 
 		~GraphicPipeline();
@@ -42,7 +42,7 @@ class GraphicPipeline : NonCopyable {
 	private:
 		void swap(GraphicPipeline& other);
 
-		const Material* _material;
+		const Material* _material = nullptr;
 
 		vk::Pipeline _pipeline;
 		vk::PipelineLayout _layout;

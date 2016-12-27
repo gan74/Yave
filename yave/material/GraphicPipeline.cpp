@@ -20,9 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-GraphicPipeline::GraphicPipeline() : _material(nullptr) {
-}
-
 GraphicPipeline::GraphicPipeline(const Material &mat, vk::Pipeline pipeline, vk::PipelineLayout layout) :
 		_material(&mat),
 		_pipeline(pipeline),

@@ -33,6 +33,7 @@ class Binding {
 
 			DescriptorInfo(vk::DescriptorImageInfo i) : image(i) {
 			}
+
 			DescriptorInfo(vk::DescriptorBufferInfo b) : buffer(b) {
 			}
 		};
