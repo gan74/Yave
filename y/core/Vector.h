@@ -25,11 +25,15 @@ namespace core {
 
 struct DefaultVectorResizePolicy {
 	static constexpr usize threshold = 4096;
+	static constexpr usize minimum = 8;
 	static constexpr usize step = 2048;
 
 	usize ideal_capacity(usize size) const {
 		if(!size) {
 			return 0;
+		}
+		if(size < minimum) {
+			return minimum;
 		}
 		if(size < threshold) {
 			return 1 << (log2ui(size) + 1);
@@ -206,14 +210,6 @@ class Vector : ResizePolicy {
 
 		Element& last() {
 			return *(_data_end - 1);
-		}
-
-		Range<iterator> to_range() {
-			return core::range(*this);
-		}
-
-		Range<const_iterator> to_range() const {
-			return core::range(*this);
 		}
 
 		void set_capacity(usize cap) {
