@@ -76,6 +76,12 @@ static auto create_bindings(const spirv_cross::CompilerGLSL& compiler, const std
 	return bindings;
 }
 
+static void fail_not_empty(const std::vector<spirv_cross::Resource>& res) {
+	if(!res.empty()) {
+		fatal("Unsupported resource type");
+	}
+}
+
 ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : DeviceLinked(dptr), _module(create_shader_module(dptr, data)) {
 	spirv_cross::CompilerGLSL compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
 
@@ -83,7 +89,19 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 
 	auto resources = compiler.get_shader_resources();
 	merge(_bindings, create_bindings(compiler, resources.uniform_buffers, _type, vk::DescriptorType::eUniformBuffer));
+	merge(_bindings, create_bindings(compiler, resources.storage_buffers, _type, vk::DescriptorType::eStorageBuffer));
 	merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, vk::DescriptorType::eCombinedImageSampler));
+
+	// these are attribs & other stages stuff
+	/*fail_not_empty(resources.stage_inputs);
+	fail_not_empty(resources.stage_outputs);
+	fail_not_empty(resources.subpass_inputs);*/
+
+	fail_not_empty(resources.storage_images);
+	fail_not_empty(resources.atomic_counters);
+	fail_not_empty(resources.push_constant_buffers);
+	fail_not_empty(resources.separate_images);
+	fail_not_empty(resources.separate_samplers);
 }
 
 vk::ShaderModule ShaderModuleBase::vk_shader_module() const {
