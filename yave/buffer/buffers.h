@@ -25,7 +25,8 @@ enum class BufferUsage {
     VertexBuffer = int(vk::BufferUsageFlagBits::eVertexBuffer),
 	IndexBuffer = int(vk::BufferUsageFlagBits::eIndexBuffer),
 	IndirectBuffer = int(vk::BufferUsageFlagBits::eIndirectBuffer),
-	UniformBuffer = int(vk::BufferUsageFlagBits::eUniformBuffer)
+	UniformBuffer = int(vk::BufferUsageFlagBits::eUniformBuffer),
+	StorageBuffer = int(vk::BufferUsageFlagBits::eStorageBuffer)
 };
 
 enum class BufferTransfer {
@@ -56,6 +57,12 @@ template<>
 struct PreferedMemoryFlags<BufferUsage::UniformBuffer> {
 	static constexpr MemoryFlags value = MemoryFlags::CpuVisible;
 };
+
+template<>
+struct PreferedMemoryFlags<BufferUsage::StorageBuffer> {
+	static constexpr MemoryFlags value = MemoryFlags::CpuVisible;
+};
+
 
 
 template<MemoryFlags Flags>

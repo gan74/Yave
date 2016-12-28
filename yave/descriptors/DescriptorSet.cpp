@@ -18,23 +18,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <yave/Device.h>
 
+#include <unordered_map>
+
 namespace yave {
 
-static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, usize ub, usize tx) {
-	auto ub_pool_size = vk::DescriptorPoolSize()
-			.setDescriptorCount(u32(ub))
-			.setType(vk::DescriptorType::eUniformBuffer)
-		;
+static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const std::unordered_map<vk::DescriptorType, u32>& binding_counts) {
+	auto sizes = core::range(binding_counts).map([](const auto& count) {
+			return vk::DescriptorPoolSize()
+					.setType(count.first)
+					.setDescriptorCount(count.second)
+				;
+		}).collect<core::Vector>();
 
-	auto tx_pool_size = vk::DescriptorPoolSize()
-			.setDescriptorCount(u32(tx))
-			.setType(vk::DescriptorType::eCombinedImageSampler)
-		;
-
-	vk::DescriptorPoolSize sizes[] = {ub_pool_size, tx_pool_size};
 	return dptr->vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
-			.setPoolSizeCount(2)
-			.setPPoolSizes(sizes)
+			.setPoolSizeCount(sizes.size())
+			.setPPoolSizes(sizes.begin())
 			.setMaxSets(1)
 		);
 }
@@ -58,19 +56,14 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 				.setDescriptorType(binding.vk_descriptor_type())
 			;
 
-		switch(binding.vk_descriptor_type()) {
-			case vk::DescriptorType::eCombinedImageSampler:
-				w.setPImageInfo(&binding.descriptor_info().image);
-				break;
-
-			case vk::DescriptorType::eUniformBuffer:
-				w.setPBufferInfo(&binding.descriptor_info().buffer);
-				break;
-
-			default:
-				fatal("Unknown descriptor type");
-				break;
+		if(binding.is_buffer()) {
+			w.setPBufferInfo(&binding.descriptor_info().buffer);
+		} else if(binding.is_image()) {
+			w.setPImageInfo(&binding.descriptor_info().image);
+		} else {
+			fatal("Unknown descriptor type");
 		}
+
 		writes << w;
 	}
 	dptr->vk_device().updateDescriptorSets(u32(writes.size()), writes.begin(), 0, nullptr);
@@ -86,15 +79,14 @@ DescriptorSet::DescriptorSet(DevicePtr dptr, const core::Vector<Binding>& bindin
 	if(!bindings.is_empty()) {
 		auto layout_bindings = core::Vector<vk::DescriptorSetLayoutBinding>();
 
-		usize ub_bindings = 0;
-		usize tx_bindings = 0;
+		std::unordered_map<vk::DescriptorType, u32> binding_counts;
 		for(const auto& binding : bindings) {
 			layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
-			(binding.vk_descriptor_type() == vk::DescriptorType::eCombinedImageSampler ? tx_bindings : ub_bindings)++;
+			binding_counts[binding.vk_descriptor_type()]++;
 		}
 
 		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
-		_pool = create_descriptor_pool(dptr, ub_bindings, tx_bindings);
+		_pool = create_descriptor_pool(dptr, binding_counts);
 		_set = create_descriptor_set(dptr, _pool, layout);
 		update_sets(dptr, _set, layout_bindings, bindings);
 	}

@@ -53,6 +53,12 @@ class Binding {
 				_info(buffer.descriptor_info()) {
 		}
 
+		template<typename T, MemoryFlags Flags>
+		Binding(const TypedBuffer<T, BufferUsage::StorageBuffer, Flags>& buffer) :
+				_type(vk::DescriptorType::eStorageBuffer),
+				_info(buffer.descriptor_info()) {
+		}
+
 		auto descriptor_set_layout_binding(usize index) const {
 			return vk::DescriptorSetLayoutBinding()
 					.setBinding(u32(index))
@@ -68,6 +74,34 @@ class Binding {
 
 		vk::DescriptorType vk_descriptor_type() const {
 			return _type;
+		}
+
+		bool is_buffer() const {
+			switch(_type) {
+				case vk::DescriptorType::eUniformTexelBuffer:
+				case vk::DescriptorType::eStorageTexelBuffer:
+				case vk::DescriptorType::eUniformBuffer:
+				case vk::DescriptorType::eStorageBuffer:
+				case vk::DescriptorType::eUniformBufferDynamic:
+				case vk::DescriptorType::eStorageBufferDynamic:
+					return true;
+				default:
+					break;
+			};
+			return false;
+		}
+
+		bool is_image() const {
+			switch(_type) {
+				case vk::DescriptorType::eSampler:
+				case vk::DescriptorType::eCombinedImageSampler:
+				case vk::DescriptorType::eSampledImage:
+				case vk::DescriptorType::eStorageImage:
+					return true;
+				default:
+					break;
+			};
+			return false;
 		}
 
 	private:
