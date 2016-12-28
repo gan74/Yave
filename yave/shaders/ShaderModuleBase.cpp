@@ -58,12 +58,12 @@ static ShaderType module_type(const spirv_cross::CompilerGLSL& compiler) {
 	return fatal("Unknown shader execution model");
 }
 
-static vk::DescriptorSetLayoutBinding create_binding(u32 index, ShaderType shader_type, vk::DescriptorType type) {
+static vk::DescriptorSetLayoutBinding create_binding(u32 index, ShaderType, vk::DescriptorType type) {
 	return vk::DescriptorSetLayoutBinding()
 			.setBinding(index)
 			.setDescriptorCount(1)
 			.setDescriptorType(type)
-			.setStageFlags(vk::ShaderStageFlagBits(shader_type))
+			.setStageFlags(vk::ShaderStageFlagBits::eAll)
 		;
 }
 

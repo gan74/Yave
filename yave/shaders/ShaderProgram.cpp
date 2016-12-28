@@ -27,6 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 static void merge(std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>& into, const std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>& o) {
+	into.insert(o.begin(), o.end());
+#if 0
 	for(const auto& e : o) {
 		auto& v = into[e.first];
 		for(vk::DescriptorSetLayoutBinding binding : e.second) {
@@ -45,6 +47,7 @@ static void merge(std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBi
 			}*/
 		}
 	}
+#endif
 }
 
 static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& mod) {
