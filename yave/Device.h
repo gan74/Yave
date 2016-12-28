@@ -38,7 +38,7 @@ enum QueueFamily {
 class Device : NonCopyable {
 
 	public:
-		Device(Instance& instance);
+		explicit Device(Instance& instance);
 		~Device();
 
 		const PhysicalDevice& physical_device() const;

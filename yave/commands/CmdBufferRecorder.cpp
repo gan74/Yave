@@ -54,11 +54,17 @@ const Viewport& CmdBufferRecorder::viewport() const {
 }
 
 RecordedCmdBuffer CmdBufferRecorder::end() {
-	if(_render_pass) {
-		vk_cmd_buffer().endRenderPass();
-	}
+	end_render_pass();
 	vk_cmd_buffer().end();
 	return RecordedCmdBuffer(std::move(_cmd_buffer));
+}
+
+
+void CmdBufferRecorder::end_render_pass() {
+	if(_render_pass) {
+		vk_cmd_buffer().endRenderPass();
+		_render_pass = nullptr;
+	}
 }
 
 CmdBufferRecorder::~CmdBufferRecorder() {
@@ -127,6 +133,18 @@ CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& mesh_instan
 	auto cmds = u32(mesh_instance.indirect_buffer.size());
 	vk_cmd_buffer().drawIndexedIndirect(mesh_instance.indirect_buffer.vk_buffer(), offset, cmds, cmds ? sizeof(vk::DrawIndexedIndirectCommand) : 0);
 
+	return *this;
+}
+
+
+CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, const DescriptorSet& descriptor_set) {
+	end_render_pass();
+
+	auto ds = descriptor_set.vk_descriptor_set();
+
+	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
+	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, 1, &ds, 0, nullptr);
+	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
 	return *this;
 }
 

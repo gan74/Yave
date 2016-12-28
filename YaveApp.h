@@ -106,7 +106,10 @@ class YaveApp : NonCopyable {
 		StaticMesh* sq;
 		DescriptorSet dummy_ds;
 
-
+		ComputeShader* compute;
+		ComputeProgram* compute_prog;
+		TypedBuffer<int, BufferUsage::StorageBuffer> compute_buffer;
+		DescriptorSet compute_ds;
 
 };
 

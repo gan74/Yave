@@ -49,6 +49,7 @@ class ShaderModule : public ShaderModuleBase {
 using FragmentShader = ShaderModule<ShaderType::Fragment>;
 using VertexShader = ShaderModule<ShaderType::Vertex>;
 using GeometryShader = ShaderModule<ShaderType::Geomery>;
+using ComputeShader = ShaderModule<ShaderType::Compute>;
 
 }
 

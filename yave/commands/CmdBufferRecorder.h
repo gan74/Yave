@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <yave/mesh/StaticMeshInstance.h>
 #include <yave/material/GraphicPipeline.h>
+#include <yave/shaders/ComputeProgram.h>
 #include <yave/descriptors/DescriptorSet.h>
 #include <yave/Viewport.h>
 
@@ -46,11 +47,14 @@ class CmdBufferRecorder : NonCopyable {
 
 		CmdBufferRecorder& set_viewport(const Viewport& view);
 		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
-		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& mvp, const DescriptorSet& vp);
+		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& m, const DescriptorSet& vp);
 		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
+		CmdBufferRecorder& dispatch(const ComputeProgram& program, const math::Vec3ui& size, const DescriptorSet& descriptor_set);
 
 	private:
 		void swap(CmdBufferRecorder& other);
+
+		void end_render_pass();
 
 		CmdBuffer _cmd_buffer;
 		const RenderPass* _render_pass;

@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-ComputeProgram::ComputeProgram(const ShaderModule<ShaderType::Compute> &comp) : DeviceLinked(comp.device()) {
+ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.device()) {
 	const auto& bindings = comp.bindings();
 
 	u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
@@ -53,8 +53,26 @@ ComputeProgram::~ComputeProgram() {
 	destroy(_pipeline);
 }
 
+ComputeProgram::ComputeProgram(ComputeProgram&& other) : ComputeProgram() {
+	swap(other);
+}
+
+ComputeProgram& ComputeProgram::operator=(ComputeProgram&& other) {
+	swap(other);
+	return *this;
+}
+
+void ComputeProgram::swap(ComputeProgram& other) {
+	std::swap(_layout, other._layout);
+	std::swap(_pipeline, other._pipeline);
+}
+
 vk::Pipeline ComputeProgram::vk_pipeline() const {
 	return _pipeline;
+}
+
+vk::PipelineLayout ComputeProgram::vk_pipeline_layout() const {
+	return _layout;
 }
 
 }

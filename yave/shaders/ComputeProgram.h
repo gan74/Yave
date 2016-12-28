@@ -22,12 +22,20 @@ namespace yave {
 
 class ComputeProgram : NonCopyable, public DeviceLinked {
 	public:
-		ComputeProgram(const ShaderModule<ShaderType::Compute>& comp);
+		ComputeProgram() = default;
+
+		explicit ComputeProgram(const ComputeShader& comp);
 		~ComputeProgram();
 
+		ComputeProgram(ComputeProgram&& other);
+		ComputeProgram& operator=(ComputeProgram&& other);
+
 		vk::Pipeline vk_pipeline() const;
+		vk::PipelineLayout vk_pipeline_layout() const;
 
 	private:
+		void swap(ComputeProgram& other);
+
 		vk::PipelineLayout _layout;
 		vk::Pipeline _pipeline;
 };

@@ -41,8 +41,24 @@ void YaveApp::init(Window* window) {
 }
 
 YaveApp::~YaveApp() {
+	{
+		auto map = compute_buffer.map();
+		int w = 0;
+		for(int i : map) {
+			if(i != w++) {
+				fatal("Compute error");
+			}
+		}
+	}
+
+
 	delete scene_view;
 	delete scene;
+
+	compute_ds = DescriptorSet();
+	compute_buffer = decltype(compute_buffer)();
+	delete compute_prog;
+	delete compute;
 
 	material = nullptr;
 	mesh_texture = Texture();
@@ -68,6 +84,8 @@ void YaveApp::create_command_buffers() {
 	for(usize i = 0; i != swapchain->buffer_count(); i++) {
 
 		CmdBufferRecorder recorder(command_pool.create_buffer());
+		recorder.dispatch(*compute_prog, math::Vec3ui(compute_buffer.size(), 1, 1), compute_ds);
+
 		recorder.bind_framebuffer(swapchain->framebuffer(i));
 		recorder.set_viewport(Viewport(swapchain->size()));
 
@@ -214,6 +232,17 @@ void YaveApp::create_assets() {
 		float x = p += 1;
 		m.set_position(Vec3(p % 2 ? x : -x, 0.f, 0.f));
 	}
+
+	{
+		compute = new ComputeShader(&device, SpirVData::from_file(io::File::open("comp.comp.spv")));
+		compute_prog = new ComputeProgram(*compute);
+		compute_buffer = TypedBuffer<int, BufferUsage::StorageBuffer>(&device, 1000);
+		auto map = compute_buffer.map();
+		std::fill(map.begin(), map.end(), 0);
+
+		compute_ds = DescriptorSet(&device, {Binding(compute_buffer)});
+	}
+
 
 	dummy_ds = DescriptorSet(&device, {});
 }
