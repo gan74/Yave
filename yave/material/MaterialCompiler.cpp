@@ -36,40 +36,57 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 
 	auto pipeline_shader_stage = program.vk_pipeline_stage_info();
 
-	auto binding_description = vk::VertexInputBindingDescription()
+	core::Vector<vk::VertexInputBindingDescription>	attribute_bindings;
+	attribute_bindings << vk::VertexInputBindingDescription()
 			.setBinding(0)
 			.setStride(sizeof(Vertex))
 			.setInputRate(vk::VertexInputRate::eVertex)
 		;
 
-	auto pos_attrib_description = vk::VertexInputAttributeDescription()
+
+	attribute_bindings << vk::VertexInputBindingDescription()
+			.setBinding(1)
+			.setStride(sizeof(math::Matrix4<>))
+			.setInputRate(vk::VertexInputRate::eInstance)
+		;
+
+	core::Vector<vk::VertexInputAttributeDescription> attribute_descriptions;
+	attribute_descriptions <<  vk::VertexInputAttributeDescription()
 			.setBinding(0)
 			.setLocation(0)
 			.setFormat(vk::Format::eR32G32B32Sfloat)
 			.setOffset(offsetof(Vertex, position))
 		;
 
-	auto nor_attrib_description = vk::VertexInputAttributeDescription()
+	attribute_descriptions << vk::VertexInputAttributeDescription()
 			.setBinding(0)
 			.setLocation(1)
 			.setFormat(vk::Format::eR32G32B32Sfloat)
 			.setOffset(offsetof(Vertex, normal))
 		;
 
-	auto uv_attrib_description = vk::VertexInputAttributeDescription()
+	attribute_descriptions << vk::VertexInputAttributeDescription()
 			.setBinding(0)
 			.setLocation(2)
 			.setFormat(vk::Format::eR32G32Sfloat)
 			.setOffset(offsetof(Vertex, uv))
 		;
 
-	vk::VertexInputAttributeDescription attribs[] = {pos_attrib_description, nor_attrib_description, uv_attrib_description};
+	// matrices are an array of vec's
+	for(usize i = 0; i != 4; i++) {
+		attribute_descriptions << vk::VertexInputAttributeDescription()
+				.setBinding(1)
+				.setLocation(attribute_descriptions.size())
+				.setFormat(vk::Format::eR32G32B32A32Sfloat)
+				.setOffset(i * sizeof(math::Vec4))
+			;
+	}
 
 	auto vertex_input = vk::PipelineVertexInputStateCreateInfo()
-			.setVertexAttributeDescriptionCount(3)
-			.setPVertexAttributeDescriptions(attribs)
-			.setVertexBindingDescriptionCount(1)
-			.setPVertexBindingDescriptions(&binding_description)
+			.setVertexAttributeDescriptionCount(attribute_descriptions.size())
+			.setPVertexAttributeDescriptions(attribute_descriptions.begin())
+			.setVertexBindingDescriptionCount(attribute_bindings.size())
+			.setPVertexBindingDescriptions(attribute_bindings.begin())
 		;
 
 	auto input_assembly = vk::PipelineInputAssemblyStateCreateInfo()

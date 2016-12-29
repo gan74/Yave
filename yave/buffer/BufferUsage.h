@@ -22,7 +22,7 @@ namespace yave {
 
 enum class BufferUsage {
 	None = 0,
-    VertexBuffer = int(vk::BufferUsageFlagBits::eVertexBuffer),
+	AttributeBuffer = int(vk::BufferUsageFlagBits::eVertexBuffer),
 	IndexBuffer = int(vk::BufferUsageFlagBits::eIndexBuffer),
 	IndirectBuffer = int(vk::BufferUsageFlagBits::eIndirectBuffer),
 	UniformBuffer = int(vk::BufferUsageFlagBits::eUniformBuffer),

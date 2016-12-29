@@ -101,23 +101,17 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& m, const DescriptorSet& vp) {
+CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& vp) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
-	/*std::initializer_list<vk::DescriptorSet> sets = {m.vk_descriptor_set(), vp.vk_descriptor_set(), pipeline.vk_descriptor_set()};
-	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, sets.size(), sets.begin(), 0, nullptr);*/
 	Y_TODO(descriptor set binding infecient)
-	if(m.vk_descriptor_set()) {
-		auto vk = m.vk_descriptor_set();
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, 1, &vk, 0, nullptr);
-	}
 	if(vp.vk_descriptor_set()) {
 		auto vk = vp.vk_descriptor_set();
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 1, 1, &vk, 0, nullptr);
+		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, 1, &vk, 0, nullptr);
 	}
 	if(pipeline.vk_descriptor_set()) {
 		auto vk = pipeline.vk_descriptor_set();
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 2, 1, &vk, 0, nullptr);
+		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 1, 1, &vk, 0, nullptr);
 	}
 
 	return *this;
@@ -125,10 +119,9 @@ CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipel
 
 CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& mesh_instance) {
 	vk::DeviceSize offset = 0; // fohkin' vk::ArrayProxy
+
 	vk_cmd_buffer().bindVertexBuffers(0, mesh_instance.vertex_buffer.vk_buffer(), offset);
 	vk_cmd_buffer().bindIndexBuffer(mesh_instance.triangle_buffer.vk_buffer(), offset, vk::IndexType::eUint32);
-
-	//vk_cmd_buffer().drawIndexed(mesh_instance.triangle_buffer.size() * 3, 1, 0, 0, 0);
 
 	auto cmds = u32(mesh_instance.indirect_buffer.size());
 	vk_cmd_buffer().drawIndexedIndirect(mesh_instance.indirect_buffer.vk_buffer(), offset, cmds, cmds ? sizeof(vk::DrawIndexedIndirectCommand) : 0);

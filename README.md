@@ -16,10 +16,12 @@ You need:
 
 Currently a mess, should smooth out as i am learning Vulkan.
 
-Integrated features:
- * buffer creation and handling
- * image creation
- * swapchain creation
- * mesh creation
- * basic materials
- * basic texturing
+Implemented features:
+ * Buffers
+ * Images
+ * Descriptor sets
+ * Basic pipelines
+ * Compute shaders
+ * Swapchain
+ * Framebuffer
+ 

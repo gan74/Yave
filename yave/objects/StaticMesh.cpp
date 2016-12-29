@@ -27,9 +27,8 @@ namespace yave {
 StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material) :
 		_instance(instance),
 		_material(material),
-		_uniform_buffer(_material->device(), 1),
-		_mapping(_uniform_buffer),
-		_descriptor_set(_material->device(), {Binding(_uniform_buffer)}) {
+		_matrix_buffer(_material->device(), 1),
+		_mapping(_matrix_buffer) {
 
 	set_storage(_mapping.begin());
 	transform() = math::identity();
@@ -38,14 +37,14 @@ StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const Asset
 StaticMesh::StaticMesh(StaticMesh&& other) :
 		_instance(std::move(other._instance)),
 		_material(std::move(other._material)),
-		_uniform_buffer(std::move(other._uniform_buffer)),
-		_mapping(std::move(other._mapping)),
-		_descriptor_set(std::move(other._descriptor_set)) {
+		_matrix_buffer(std::move(other._matrix_buffer)),
+		_mapping(std::move(other._mapping)) {
 	set_storage(_mapping.begin());
 }
 
 void StaticMesh::draw(CmdBufferRecorder& recorder, const DescriptorSet& vp) const {
-	recorder.bind_pipeline(_material->compile(recorder.current_pass(), recorder.viewport()), _descriptor_set, vp);
+	recorder.bind_pipeline(_material->compile(recorder.current_pass(), recorder.viewport()), vp);
+	recorder.vk_cmd_buffer().bindVertexBuffers(1, _matrix_buffer.vk_buffer(), vk::DeviceSize(0));
 	recorder.draw(*_instance);
 }
 

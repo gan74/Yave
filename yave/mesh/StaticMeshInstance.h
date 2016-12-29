@@ -29,7 +29,7 @@ template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBuffer,Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using VertexBuffer = TypedBuffer<Vertex, BufferUsage::VertexBuffer, Flags>;
+using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBuffer, Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBuffer, Flags>;
@@ -40,7 +40,7 @@ template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBuffer,Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::VertexBuffer, Flags>;
+using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBuffer, Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBuffer, Flags>;

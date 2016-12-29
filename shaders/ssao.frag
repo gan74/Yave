@@ -4,8 +4,8 @@
 layout(location = 0) out vec4 out_color;
 
 layout(location = 0) in vec2 v_uv;
-layout(set = 2, binding = 0) uniform sampler2D in_color;
-layout(set = 2, binding = 1) uniform sampler2D in_depth;
+layout(set = 1, binding = 0) uniform sampler2D in_color;
+layout(set = 1, binding = 1) uniform sampler2D in_depth;
 
 const float epsilon = 0.001;
 

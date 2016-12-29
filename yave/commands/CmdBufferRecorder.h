@@ -47,7 +47,7 @@ class CmdBufferRecorder : NonCopyable {
 
 		CmdBufferRecorder& set_viewport(const Viewport& view);
 		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
-		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& m, const DescriptorSet& vp);
+		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& vp);
 		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
 		CmdBufferRecorder& dispatch(const ComputeProgram& program, const math::Vec3ui& size, const DescriptorSet& descriptor_set);
 

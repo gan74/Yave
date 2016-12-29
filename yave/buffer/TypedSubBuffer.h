@@ -50,12 +50,6 @@ class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 		}
 };
 
-
-template<typename Elem, BufferUsage Usage, MemoryFlags Flags>
-inline auto sub_buffer(const TypedBuffer<Elem, Usage, Flags>& buffer, usize offset = 0) {
-	return TypedSubBuffer<Elem, Usage, Flags>(buffer, offset);
-}
-
 }
 
 #endif // YAVE_BUFFER_TYPEDSUBBUFFER_H

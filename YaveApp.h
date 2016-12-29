@@ -108,7 +108,7 @@ class YaveApp : NonCopyable {
 
 		ComputeShader* compute;
 		ComputeProgram* compute_prog;
-		TypedBuffer<int, BufferUsage::StorageBuffer | BufferUsage::VertexBuffer> compute_buffer;
+		TypedBuffer<int, BufferUsage::StorageBuffer | BufferUsage::AttributeBuffer> compute_buffer;
 		DescriptorSet compute_ds;
 
 };

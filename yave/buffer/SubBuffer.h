@@ -30,7 +30,7 @@ class SubBuffer : public SubBufferBase {
 		}
 
 		template<BufferUsage BuffUsage>
-		explicit SubBuffer(const Buffer<BuffUsage, Flags, Transfer>& buffer, usize offset = 0) : SubBuffer(buffer, offset, buffer.byte_size()) {
+		explicit SubBuffer(const Buffer<BuffUsage, Flags, Transfer>& buffer, usize offset = 0) : SubBuffer(buffer, offset, buffer.byte_size() - offset) {
 		}
 };
 

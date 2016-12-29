@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 class SceneView : NonCopyable {
+
 	public:
 		struct Matrices {
 			math::Matrix4<> view;
@@ -40,6 +41,8 @@ class SceneView : NonCopyable {
 
 		void set_view(const math::Matrix4<>& view);
 		void set_proj(const math::Matrix4<>& proj);
+
+		const Scene& scene() const;
 
 	private:
 		auto map() {
