@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 
 namespace detail {
-
 template<typename... Args>
 constexpr int max(Args... args) {
 	int max = 0;
@@ -31,45 +30,30 @@ constexpr int max(Args... args) {
 }
 }
 
-
-
-enum class ImageUsageBits {
+enum class ImageUsage {
     None = 0,
-    TextureBit = int(vk::ImageUsageFlagBits::eSampled),
-    DepthBit = int(vk::ImageUsageFlagBits::eDepthStencilAttachment),
-    ColorBit = int(vk::ImageUsageFlagBits::eColorAttachment),
+	Texture = int(vk::ImageUsageFlagBits::eSampled),
+	Depth = int(vk::ImageUsageFlagBits::eDepthStencilAttachment),
+	Color = int(vk::ImageUsageFlagBits::eColorAttachment),
 
-	SwapchainBit = detail::max(None, DepthBit, ColorBit, TextureBit) << 1
+	Swapchain = detail::max(None, Depth, Color, Texture) << 1
 
 };
 
-constexpr ImageUsageBits operator|(ImageUsageBits l, ImageUsageBits r) { return ImageUsageBits(uenum(l) | uenum(r)); }
-constexpr ImageUsageBits operator&(ImageUsageBits l, ImageUsageBits r)  { return ImageUsageBits(uenum(l) & uenum(r)); }
+constexpr ImageUsage operator|(ImageUsage l, ImageUsage r) {
+	return ImageUsage(uenum(l) | uenum(r));
+}
 
-inline ImageUsageBits operator|(ImageUsageBits l, vk::ImageUsageFlags r) { return l | ImageUsageBits(uenum(r)); }
-//inline ImageUsageBits operator|(ImageUsageBits l, vk::ImageUsageFlagBits r) { return l | r; }
+inline ImageUsage operator|(ImageUsage l, vk::ImageUsageFlags r) {
+	return l | ImageUsage(uenum(r));
+}
 
+constexpr ImageUsage operator&(ImageUsage l, ImageUsage r)  {
+	return ImageUsage(uenum(l) & uenum(r));
+}
 
-
-class ImageUsage {
-	public:
-		ImageUsage(ImageUsageBits bits) : _usage(vk::ImageUsageFlagBits(bits)) {
-		}
-
-		vk::ImageUsageFlags vk_image_usage() const;
-		vk::ImageLayout vk_image_layout() const;
-		vk::AccessFlags vk_access_flags() const;
-
-
-		operator ImageUsageBits() const {
-			const auto& ref = _usage;
-			return reinterpret_cast<const ImageUsageBits&>(ref);
-		}
-
-	private:
-		vk::ImageUsageFlags _usage;
-};
-
+vk::ImageLayout vk_image_layout(ImageUsage usage);
+vk::AccessFlags vk_access_flags(ImageUsage usage);
 
 }
 

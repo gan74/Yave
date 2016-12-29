@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <yave/Device.h>
 
 #include <yave/image/ImageView.h>
-#include <yave/buffer/TypedBuffer.h>
+#include <yave/buffer/TypedSubBuffer.h>
 
 namespace yave {
 
@@ -48,15 +48,20 @@ class Binding {
 		}
 
 		template<typename T, MemoryFlags Flags>
-		Binding(const TypedBuffer<T, BufferUsage::UniformBuffer, Flags>& buffer) :
+		Binding(const TypedSubBuffer<T, BufferUsage::UniformBuffer, Flags>& buffer) :
 				_type(vk::DescriptorType::eUniformBuffer),
 				_info(buffer.descriptor_info()) {
 		}
 
 		template<typename T, MemoryFlags Flags>
-		Binding(const TypedBuffer<T, BufferUsage::StorageBuffer, Flags>& buffer) :
+		Binding(const TypedSubBuffer<T, BufferUsage::StorageBuffer, Flags>& buffer) :
 				_type(vk::DescriptorType::eStorageBuffer),
 				_info(buffer.descriptor_info()) {
+		}
+
+		template<typename T, BufferUsage Usage, MemoryFlags Flags>
+		Binding(const TypedBuffer<T, Usage, Flags>& buffer) :
+				Binding(TypedSubBuffer<T, (Usage & BufferUsage::StorageBuffer) == BufferUsage::StorageBuffer ? BufferUsage::StorageBuffer : BufferUsage::UniformBuffer, Flags>(buffer)) {
 		}
 
 		auto descriptor_set_layout_binding(usize index) const {

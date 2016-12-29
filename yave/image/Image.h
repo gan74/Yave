@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-template<ImageUsageBits Usage>
+template<ImageUsage Usage>
 class Image : public ImageBase {
 	public:
 		Image() = default;
@@ -41,9 +41,9 @@ class Image : public ImageBase {
 
 };
 
-using Texture = Image<ImageUsageBits::TextureBit>;
-using DepthAttachment = Image<ImageUsageBits::DepthBit>;
-using ColorAttachment = Image<ImageUsageBits::ColorBit>;
+using Texture = Image<ImageUsage::Texture>;
+using DepthAttachment = Image<ImageUsage::Depth>;
+using ColorAttachment = Image<ImageUsage::Color>;
 
 }
 

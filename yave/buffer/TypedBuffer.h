@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-template<typename Elem, BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value, BufferTransfer Transfer = PreferedBufferTransfer<Flags>::value>
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>(), BufferTransfer Transfer = prefered_transfer<Flags>()>
 class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 
 	using Base = Buffer<Usage, Flags, Transfer>;
@@ -54,7 +54,7 @@ class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 			return this->byte_size() / sizeof(Elem);
 		}
 
-		TypedMapping<Element, Flags> map() {
+		auto map() {
 			return TypedMapping<Element, Flags>(*this);
 		}
 

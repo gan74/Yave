@@ -16,13 +16,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_TYPEDMAPPING_H
 #define YAVE_BUFFER_TYPEDMAPPING_H
 
-#include "buffers.h"
+#include "BufferUsage.h"
 #include "StagingBufferMapping.h"
 
 namespace yave {
 
 template<MemoryFlags Flags>
-using MemoryMapping = typename std::conditional<is_cpu_visible_v<Flags>, CpuVisibleMapping, StagingBufferMapping>::type;
+using MemoryMapping = typename std::conditional<is_cpu_visible<Flags>(), CpuVisibleMapping, StagingBufferMapping>::type;
 
 template<typename Elem, MemoryFlags Flags>
 class TypedMapping : public MemoryMapping<Flags> {

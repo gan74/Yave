@@ -47,7 +47,7 @@ static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs
 		);
 }
 
-static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, vk::ImageUsageFlags usage) {
+static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, ImageUsage usage) {
 	return dptr->vk_device().createImage(vk::ImageCreateInfo()
 			.setSharingMode(vk::SharingMode::eExclusive)
 			.setArrayLayers(1)
@@ -57,7 +57,7 @@ static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, ImageFor
 			.setTiling(vk::ImageTiling::eOptimal)
 			.setInitialLayout(vk::ImageLayout::eUndefined)
 			.setMipLevels(1)
-			.setUsage(usage)
+			.setUsage(vk::ImageUsageFlagBits(usage))
 			.setSamples(vk::SampleCountFlagBits::e1)
 		);
 }
@@ -131,7 +131,7 @@ void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, Imag
 
 	transition_image_layout(cmd_buffer, image, format,
 			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite,
-			usage.vk_image_layout(), usage.vk_access_flags());
+			vk_image_layout(usage), vk_access_flags(usage));
 
 	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
 	cmd_buffer.end().submit(graphic_queue);
@@ -155,7 +155,7 @@ vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {
 
 
 std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, ImageUsage usage) {
-	auto image = create_image(dptr, size, format, usage.vk_image_usage());
+	auto image = create_image(dptr, size, format, usage);
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
 	bind_image_memory(dptr, image, memory);
 
@@ -171,7 +171,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 		_size(size),
 		_format(format) {
 
-	auto tpl = alloc_image(dptr, size, format, data ? ImageUsage(usage | vk::ImageUsageFlagBits::eTransferDst) : usage);
+	auto tpl = alloc_image(dptr, size, format, data ? usage | vk::ImageUsageFlagBits::eTransferDst : usage);
 	_image = std::get<0>(tpl);
 	_memory = std::get<1>(tpl);
 	_view = std::get<2>(tpl);
@@ -182,7 +182,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 		auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
 		transition_image_layout(cmd_buffer, vk_image(), format,
 				vk::ImageLayout::eUndefined, vk::AccessFlags(),
-				usage.vk_image_layout(), usage.vk_access_flags());
+				vk_image_layout(usage), vk_access_flags(usage));
 
 		auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
 		cmd_buffer.end().submit(graphic_queue);

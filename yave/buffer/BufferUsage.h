@@ -29,11 +29,31 @@ enum class BufferUsage {
 	StorageBuffer = int(vk::BufferUsageFlagBits::eStorageBuffer)
 };
 
+constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {
+	return BufferUsage(uenum(a) | uenum(b));
+}
+
+constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
+	return BufferUsage(uenum(a) & uenum(b));
+}
+
+
+
 enum class BufferTransfer {
 	None = 0,
     TransferSrc = int(vk::BufferUsageFlagBits::eTransferSrc),
     TransferDst = int(vk::BufferUsageFlagBits::eTransferDst)
 };
+
+constexpr BufferTransfer operator|(BufferTransfer a, BufferTransfer b) {
+	return BufferTransfer(uenum(a) | uenum(b));
+}
+
+constexpr BufferTransfer operator&(BufferTransfer a, BufferTransfer b) {
+	return BufferTransfer(uenum(a) & uenum(b));
+}
+
+
 
 
 Y_TODO(ditch eHostCoherent for a raii flush)
@@ -42,38 +62,30 @@ enum class MemoryFlags {
 	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible) | uenum(vk::MemoryPropertyFlagBits::eHostCoherent)
 };
 
-template<MemoryFlags Flags>
-static constexpr bool is_cpu_visible_v = uenum(Flags) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
 
-bool is_cpu_visible(MemoryFlags flags);
+
+
+template<MemoryFlags Flags>
+inline constexpr bool is_cpu_visible() {
+	return uenum(Flags) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
+}
+
+inline bool is_cpu_visible(MemoryFlags flags) {
+	return uenum(flags) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
+}
+
 
 
 template<BufferUsage Usage>
-struct PreferedMemoryFlags {
-	static constexpr MemoryFlags value = MemoryFlags::DeviceLocal;
-};
-
-template<>
-struct PreferedMemoryFlags<BufferUsage::UniformBuffer> {
-	static constexpr MemoryFlags value = MemoryFlags::CpuVisible;
-};
-
-template<>
-struct PreferedMemoryFlags<BufferUsage::StorageBuffer> {
-	static constexpr MemoryFlags value = MemoryFlags::CpuVisible;
-};
-
-
+inline constexpr MemoryFlags prefered_memory_flags() {
+	return ((Usage & (BufferUsage::UniformBuffer | BufferUsage::StorageBuffer)) != BufferUsage::None) ? MemoryFlags::CpuVisible : MemoryFlags::DeviceLocal;
+}
 
 template<MemoryFlags Flags>
-struct PreferedBufferTransfer {
-	static constexpr BufferTransfer value = BufferTransfer::TransferDst;
-};
+inline constexpr BufferTransfer prefered_transfer() {
+	return is_cpu_visible<Flags>() ? BufferTransfer::None : BufferTransfer::TransferDst;
+}
 
-template<>
-struct PreferedBufferTransfer<MemoryFlags::CpuVisible> {
-	static constexpr BufferTransfer value = BufferTransfer::None;
-};
 
 
 

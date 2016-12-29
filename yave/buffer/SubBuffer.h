@@ -21,14 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-template<BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value, BufferTransfer Transfer = PreferedBufferTransfer<Flags>::value>
+template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>(), BufferTransfer Transfer = prefered_transfer<Flags>()>
 class SubBuffer : public SubBufferBase {
 
 	public:
-		SubBuffer(const Buffer<Usage, Flags, Transfer>& buffer, usize offset, usize len) : SubBufferBase(buffer, offset, len) {
+		template<BufferUsage BuffUsage, typename Enable = typename std::enable_if<(BuffUsage & Usage) == Usage>::type>
+		SubBuffer(const Buffer<BuffUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBufferBase(buffer, offset, len) {
 		}
 
-		explicit SubBuffer(const Buffer<Usage, Flags, Transfer>& buffer, usize offset = 0) : SubBufferBase(buffer, offset) {
+		template<BufferUsage BuffUsage>
+		explicit SubBuffer(const Buffer<BuffUsage, Flags, Transfer>& buffer, usize offset = 0) : SubBuffer(buffer, offset, buffer.byte_size()) {
 		}
 };
 

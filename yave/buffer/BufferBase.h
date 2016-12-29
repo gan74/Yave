@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_BUFFERBASE_H
 #define YAVE_BUFFER_BUFFERBASE_H
 
-#include "buffers.h"
+#include "BufferUsage.h"
 #include <yave/DeviceLinked.h>
 
 namespace yave {

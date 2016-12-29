@@ -22,11 +22,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-template<ImageUsageBits Usage>
+template<ImageUsage Usage>
 class ImageView {
 
 	public:
-		template<ImageUsageBits ImgUsage, typename Enable = typename std::enable_if<(ImgUsage & Usage) == Usage>::type>
+		template<ImageUsage ImgUsage, typename Enable = typename std::enable_if<(ImgUsage & Usage) == Usage>::type>
 		ImageView(const Image<ImgUsage>& img) : _image(&img), _view(img.vk_view()) {
 		}
 
@@ -43,9 +43,9 @@ class ImageView {
 		vk::ImageView _view;
 };
 
-using TextureView = ImageView<ImageUsageBits::TextureBit>;
-using DepthAttachmentView = ImageView<ImageUsageBits::DepthBit>;
-using ColorAttachmentView = ImageView<ImageUsageBits::ColorBit>;
+using TextureView = ImageView<ImageUsage::Texture>;
+using DepthAttachmentView = ImageView<ImageUsage::Depth>;
+using ColorAttachmentView = ImageView<ImageUsage::Color>;
 
 }
 

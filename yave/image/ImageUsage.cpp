@@ -18,31 +18,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-
-vk::ImageUsageFlags ImageUsage::vk_image_usage() const {
-	return _usage;
-}
-
-vk::ImageLayout ImageUsage::vk_image_layout() const{
-	auto swapchain_bit = vk::ImageUsageFlagBits(ImageUsageBits::SwapchainBit);
-	if(_usage & swapchain_bit) {
+vk::ImageLayout vk_image_layout(ImageUsage usage) {
+	if((usage & ImageUsage::Swapchain) == ImageUsage::Swapchain) {
 		return vk::ImageLayout::ePresentSrcKHR;
 	}
 
-	if(_usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
+	if((usage & ImageUsage::Depth) == ImageUsage::Depth) {
 		return vk::ImageLayout::eDepthStencilAttachmentOptimal;
 	}
-	if(_usage & vk::ImageUsageFlagBits::eSampled) {
+	if((usage & ImageUsage::Texture) == ImageUsage::Texture) {
 		return vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
-	if(_usage & vk::ImageUsageFlagBits::eColorAttachment) {
+	if((usage & ImageUsage::Color) == ImageUsage::Color) {
 		return vk::ImageLayout::eColorAttachmentOptimal;
 	}
 
 	return vk::ImageLayout::eUndefined;
 }
 
-vk::AccessFlags ImageUsage::vk_access_flags() const {
+vk::AccessFlags vk_access_flags(ImageUsage usage) {
 	/*
 	 *
 	 * This WILL cause some debug layers to complain because of additional bits sets.
@@ -51,15 +45,15 @@ vk::AccessFlags ImageUsage::vk_access_flags() const {
 	 */
 
 	auto flags = vk::AccessFlags();
-	flags = (_usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) ?
+	flags = (usage & ImageUsage::Depth) == ImageUsage::Depth ?
 		flags | vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite :
 		flags;
 
-	flags = (_usage & vk::ImageUsageFlagBits::eColorAttachment) ?
+	flags = (usage & ImageUsage::Color) == ImageUsage::Color ?
 		flags | vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite :
 		flags;
 
-	flags = (_usage & vk::ImageUsageFlagBits::eSampled) ?
+	flags = (usage & ImageUsage::Texture) == ImageUsage::Texture ?
 		flags | vk::AccessFlagBits::eShaderRead :
 		flags;
 

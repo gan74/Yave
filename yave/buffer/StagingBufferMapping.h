@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_STAGINGBUFFERMAPPING_H
 #define YAVE_BUFFER_STAGINGBUFFERMAPPING_H
 
-#include "buffers.h"
+#include "BufferUsage.h"
 #include "CpuVisibleMapping.h"
 
 namespace yave {

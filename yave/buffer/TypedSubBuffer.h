@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace yave {
 
-template<typename Elem, BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value, BufferTransfer Transfer = PreferedBufferTransfer<Flags>::value>
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>()>
 class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 
 	using Base = SubBuffer<Usage, Flags>;
@@ -29,10 +29,12 @@ class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 	public:
 		using Element = Elem;
 
-		TypedSubBuffer(const TypedBuffer<Elem, Usage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(Elem), count * sizeof(Elem)) {
+		template<BufferUsage BuffUsage>
+		TypedSubBuffer(const TypedBuffer<Elem, BuffUsage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(Elem), count * sizeof(Elem)) {
 		}
 
-		explicit TypedSubBuffer(const TypedBuffer<Elem, Usage, Flags>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(Elem)) {
+		template<BufferUsage BuffUsage>
+		explicit TypedSubBuffer(const TypedBuffer<Elem, BuffUsage, Flags>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(Elem)) {
 		}
 
 		usize size() const {
@@ -47,6 +49,12 @@ class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 			return TypedMapping<Element, Flags>(*this);
 		}
 };
+
+
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags>
+inline auto sub_buffer(const TypedBuffer<Elem, Usage, Flags>& buffer, usize offset = 0) {
+	return TypedSubBuffer<Elem, Usage, Flags>(buffer, offset);
+}
 
 }
 

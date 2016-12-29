@@ -49,6 +49,7 @@ YaveApp::~YaveApp() {
 				fatal("Compute error");
 			}
 		}
+		log_msg("Compute = OK");
 	}
 
 
@@ -236,7 +237,7 @@ void YaveApp::create_assets() {
 	{
 		compute = new ComputeShader(&device, SpirVData::from_file(io::File::open("comp.comp.spv")));
 		compute_prog = new ComputeProgram(*compute);
-		compute_buffer = TypedBuffer<int, BufferUsage::StorageBuffer>(&device, 1000);
+		compute_buffer = decltype(compute_buffer)(&device, 1000);
 		auto map = compute_buffer.map();
 		std::fill(map.begin(), map.end(), 0);
 

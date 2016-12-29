@@ -59,9 +59,9 @@ class YaveApp : NonCopyable {
 			pass.device()->vk_device().destroySemaphore(sem);
 		}
 
-		Image<ImageUsageBits::TextureBit | ImageUsageBits::DepthBit> depth;
-		Image<ImageUsageBits::TextureBit | ImageUsageBits::ColorBit> color;
-		Image<ImageUsageBits::TextureBit | ImageUsageBits::ColorBit> color2;
+		Image<ImageUsage::Texture | ImageUsage::Depth> depth;
+		Image<ImageUsage::Texture | ImageUsage::Color> color;
+		Image<ImageUsage::Texture | ImageUsage::Color> color2;
 		RenderPass pass;
 		Framebuffer framebuffer;
 		vk::Semaphore sem;
@@ -108,7 +108,7 @@ class YaveApp : NonCopyable {
 
 		ComputeShader* compute;
 		ComputeProgram* compute_prog;
-		TypedBuffer<int, BufferUsage::StorageBuffer> compute_buffer;
+		TypedBuffer<int, BufferUsage::StorageBuffer | BufferUsage::VertexBuffer> compute_buffer;
 		DescriptorSet compute_ds;
 
 };

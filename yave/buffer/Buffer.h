@@ -16,12 +16,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_BUFFER_BUFFER_H
 #define YAVE_BUFFER_BUFFER_H
 
-#include "buffers.h"
+#include "BufferUsage.h"
 #include "BufferBase.h"
 
 namespace yave {
 
-template<BufferUsage Usage, MemoryFlags Flags = PreferedMemoryFlags<Usage>::value, BufferTransfer Transfer = PreferedBufferTransfer<Flags>::value>
+template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>(), BufferTransfer Transfer = prefered_transfer<Flags>()>
 class Buffer : public BufferBase {
 
 	static_assert(Usage != BufferUsage::None || Transfer != BufferTransfer::None, "Buffers should not have Usage == BufferUsage::None");

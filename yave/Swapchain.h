@@ -28,15 +28,15 @@ namespace yave {
 
 class Window;
 
-class SwapchainImage : public Image<ImageUsageBits::SwapchainBit | ImageUsageBits::ColorBit> {
+class SwapchainImage : public Image<ImageUsage::Swapchain | ImageUsage::Color> {
 	private:
 		friend class Swapchain;
 
-		SwapchainImage() : Image<ImageUsageBits::SwapchainBit | ImageUsageBits::ColorBit>() {
+		SwapchainImage() : Image<ImageUsage::Swapchain | ImageUsage::Color>() {
 		}
 };
 
-using SwapchainImageView = ImageView<ImageUsageBits::SwapchainBit | ImageUsageBits::ColorBit>;
+using SwapchainImageView = ImageView<ImageUsage::Swapchain | ImageUsage::Color>;
 
 class Swapchain : NonCopyable, public DeviceLinked {
 

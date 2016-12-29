@@ -27,7 +27,7 @@ namespace yave {
 class RenderPass : NonCopyable, public DeviceLinked {
 	public:
 		RenderPass() = default;
-		RenderPass(DevicePtr dptr, ImageFormat depth_format, std::initializer_list<ImageFormat> color_formats, ImageUsage color_usage = ImageUsageBits::ColorBit | ImageUsageBits::TextureBit);
+		RenderPass(DevicePtr dptr, ImageFormat depth_format, std::initializer_list<ImageFormat> color_formats, ImageUsage color_usage = ImageUsage::Color | ImageUsage::Texture);
 
 		RenderPass(RenderPass&& other);
 		RenderPass& operator=(RenderPass&& other);
