@@ -4,7 +4,7 @@ Yet another C++14 Vulkan engine.
 ## Building
 You need:
  * Cmake 3.6
- * gcc 5
+ * gcc 6
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
  * [Vulkan hpp](https://github.com/KhronosGroup/Vulkan-Hpp)
  * [Spriv_cross](https://github.com/KhronosGroup/SPIRV-Cross)
@@ -24,4 +24,7 @@ Implemented features:
  * Compute shaders
  * Swapchain
  * Framebuffer
+ 
+### Licence:
+MIT
  
