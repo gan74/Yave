@@ -25,15 +25,22 @@ namespace yave {
 class ShaderProgram : NonCopyable, public DeviceLinked {
 
 	public:
+		static constexpr u32 PerInstanceLocation = 8;
+
 		ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom);
 
 		core::Vector<vk::PipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
 		const core::Vector<vk::DescriptorSetLayout>& descriptor_layouts() const;
 
+		const auto& vertex_attributes() const {
+			return _vertex_attribs;
+		}
+
 	private:
 		std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>> _bindings;
 		core::Vector<vk::DescriptorSetLayout> _layouts;
 		core::Vector<vk::PipelineShaderStageCreateInfo> _stages;
+		core::Vector<ShaderModuleBase::Attribute> _vertex_attribs;
 };
 
 }

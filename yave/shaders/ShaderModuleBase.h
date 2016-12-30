@@ -36,6 +36,13 @@ enum class ShaderType {
 class ShaderModuleBase : NonCopyable, public DeviceLinked {
 
 	public:
+		struct Attribute {
+			u32 location;
+			u32 columns;
+			u32 vec_size;
+			u32 component_size;
+		};
+
 		ShaderModuleBase() = default;
 
 		ShaderModuleBase(DevicePtr dptr, const SpirVData& data);
@@ -43,6 +50,10 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 
 		const auto& bindings() const {
 			return _bindings;
+		}
+
+		const auto& attributes() const {
+			return _attribs;
 		}
 
 		ShaderType type() const {
@@ -58,6 +69,7 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 		vk::ShaderModule _module;
 		ShaderType _type = ShaderType::None;
 		std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>> _bindings;
+		core::Vector<Attribute> _attribs;
 
 };
 

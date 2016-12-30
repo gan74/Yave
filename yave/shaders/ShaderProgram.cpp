@@ -60,7 +60,10 @@ static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& s
 	}
 }
 
-ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) : DeviceLinked(common_device(frag, vert, geom)) {
+ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) : DeviceLinked(common_device(frag, vert, geom)), _vertex_attribs(vert.attributes()) {
+
+	std::sort(_vertex_attribs.begin(), _vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; });
+
 	merge(_bindings, frag.bindings());
 	merge(_bindings, vert.bindings());
 	merge(_bindings, geom.bindings());
