@@ -15,80 +15,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 #include "MaterialCompiler.h"
 
-#include <yave/shaders/ShaderModule.h>
+#include <yave/shaders/ShaderProgram.h>
 #include <yave/mesh/Vertex.h>
 #include <yave/Device.h>
 
-#include <yave/shaders/ShaderProgram.h>
-
-#include <numeric>
 
 namespace yave {
 
-static vk::Format vec_format(ShaderModuleBase::Attribute attr) {
-	switch(attr.vec_size) {
-		case 1:
-			return vk::Format::eR32Sfloat;
-		case 2:
-			return vk::Format::eR32G32Sfloat;
-		case 3:
-			return vk::Format::eR32G32B32Sfloat;
-		case 4:
-			return vk::Format::eR32G32B32A32Sfloat;
-
-		default:
-			break;
-	}
-	return fatal("Unsupported format");
-}
-
-static void create_attribs(u32 binding,
-						   vk::VertexInputRate rate,
-						   const core::Vector<ShaderModuleBase::Attribute>& attribs,
-						   core::Vector<vk::VertexInputBindingDescription>& bindings,
-						   core::Vector<vk::VertexInputAttributeDescription>& descriptions) {
-	if(!attribs.is_empty()) {
-		u32 offset = 0;
-		for(const auto& attr : attribs) {
-			auto format = vec_format(attr);
-			for(u32 i = 0; i != attr.columns; i++) {
-				descriptions << vk::VertexInputAttributeDescription()
-						.setBinding(binding)
-						.setLocation(attr.location + i)
-						.setFormat(format)
-						.setOffset(offset)
-					;
-				offset += attr.vec_size * attr.component_size;
-			}
-		}
-		bindings << vk::VertexInputBindingDescription()
-				.setBinding(binding)
-				.setStride(offset)
-				.setInputRate(rate)
-			;
-	}
-}
-
-static void create_attribs(const core::Vector<ShaderModuleBase::Attribute>& attribs,
-						   core::Vector<vk::VertexInputBindingDescription>& bindings,
-						   core::Vector<vk::VertexInputAttributeDescription>& descriptions) {
-
-	core::Vector<ShaderModuleBase::Attribute> v_attribs;
-	core::Vector<ShaderModuleBase::Attribute> i_attribs;
-
-	for(const auto& attr : attribs) {
-		(attr.location < ShaderProgram::PerInstanceLocation ? v_attribs : i_attribs) << attr;
-	}
-	create_attribs(0, vk::VertexInputRate::eVertex, v_attribs, bindings, descriptions);
-	create_attribs(1, vk::VertexInputRate::eInstance, i_attribs, bindings, descriptions);
-}
 
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass, Viewport view) const {
 #warning move program creation
-#warning attrib creation to program
 
 	FragmentShader frag = FragmentShader(material.device(), material.data()._frag);
 	VertexShader vert = VertexShader(material.device(), material.data()._vert);
@@ -97,10 +36,8 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 
 	auto pipeline_shader_stage = program.vk_pipeline_stage_info();
 
-	core::Vector<vk::VertexInputBindingDescription>	attribute_bindings;
-	core::Vector<vk::VertexInputAttributeDescription> attribute_descriptions;
-
-	create_attribs(program.vertex_attributes(), attribute_bindings, attribute_descriptions);
+	auto attribute_bindings = program.attribute_bindings();
+	auto attribute_descriptions = program.attributes_descriptions();
 
 	auto vertex_input = vk::PipelineVertexInputStateCreateInfo()
 			.setVertexAttributeDescriptionCount(attribute_descriptions.size())
