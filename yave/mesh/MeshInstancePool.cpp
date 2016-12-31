@@ -26,10 +26,10 @@ namespace yave {
 
 using Cmd = vk::DrawIndexedIndirectCommand;
 
-static auto create_indirect_buffer(const MeshData& m, usize offset, usize max = usize(-1)) {
+static auto create_indirect_buffer(const MeshData& m, usize vertex_offset, usize triabgle_offset, usize max = usize(-1)) {
 	core::Vector<Cmd> cmds;
 	for(usize i = 0, size = m.triangles.size(); i < size; i += max) {
-		cmds << Cmd(u32(std::min(size - i, max) * 3), 1, u32(i * 3), i32(offset));
+		cmds << Cmd(u32(std::min(size - i, max) * 3), 1, u32((i + triabgle_offset) * 3), i32(vertex_offset));
 	}
 	return cmds;
 }
@@ -51,7 +51,8 @@ StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
 		fatal("Unable to allocate vertex buffer");
 	}
 
-	usize offset = _vertex_end;
+	usize vertex_offset = _vertex_end;
+	usize triangle_offset = _triangle_end;
 
 	VertexSubBuffer<> verts(_vertex_buffer, _vertex_end, data.vertices.size());
 	_vertex_end += data.vertices.size();
@@ -59,10 +60,10 @@ StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
 	TriangleSubBuffer<> tris(_triangle_buffer, _triangle_end, data.triangles.size());
 	_triangle_end += data.triangles.size();
 
-	memcpy(tris.map().begin(), data.triangles.begin(), data.triangles.size() * sizeof(IndexedTriangle));
-	memcpy(verts.map().begin(), data.vertices.begin(), data.vertices.size() * sizeof(Vertex));
+	std::copy(data.triangles.begin(), data.triangles.end(), tris.map().begin());
+	std::copy(data.vertices.begin(), data.vertices.end(), verts.map().begin());
 
-	return StaticMeshInstance{tris, verts, IndirectBuffer<>(device(), create_indirect_buffer(data, offset))};
+	return StaticMeshInstance{tris, verts, IndirectBuffer<>(device(), create_indirect_buffer(data, vertex_offset, triangle_offset))};
 }
 
 }

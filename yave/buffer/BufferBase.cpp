@@ -62,6 +62,9 @@ static vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsage
 }
 
 static std::tuple<vk::Buffer, vk::DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, vk::BufferUsageFlags usage, MemoryFlags flags) {
+	if(!buffer_size) {
+		fatal("Can not allocate 0 sized buffer.");
+	}
 	auto buffer = create_buffer(dptr, buffer_size, usage);
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, buffer), flags);
 	bind_buffer_memory(dptr, buffer, memory);
