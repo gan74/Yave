@@ -32,17 +32,16 @@ SOFTWARE.
 namespace y {
 
 namespace detail {
-	usize StaticCounter::value = 0;
 
 #ifdef __GNUG__
 	core::String demangle_type_name(const char* name) {
-	int status = 0;
-	char* d = abi::__cxa_demangle(name, nullptr, nullptr, &status);
-	if(status) {
-		return core::str(name);
-	}
+		int status = 0;
+		char* d = abi::__cxa_demangle(name, nullptr, nullptr, &status);
+		if(status) {
+			return core::str(name);
+		}
 
-	return core::str_from_owned(d);
+		return core::str_from_owned(d);
 	}
 #else
 	core::String demangle_type_name(const char* name) {
@@ -61,7 +60,7 @@ Nothing fatal(const char* msg, const char* file, int line) {
 		msg_str += " at line "_s + line;
 	}
 	log_msg(msg_str, LogType::Error);
-	exit(1);
+	std::exit(1);
 }
 
 }

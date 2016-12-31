@@ -89,34 +89,6 @@ constexpr void unused(Args...) {}
 
 
 
-namespace detail {
-
-struct StaticCounter {
-	static usize value;
-};
-
-template<typename T>
-struct TypeUid : private detail::StaticCounter {
-	static usize value() {
-		static usize value = StaticCounter::value++;
-		return value;
-	}
-};
-
-}
-
-
-template<typename T>
-usize type_uid() {
-	return detail::TypeUid<T>::value();
-}
-
-template<typename T>
-usize type_uid(const T&) {
-	return detail::TypeUid<T>::value();
-}
-
-
 
 
 constexpr bool is_64_bits() {
