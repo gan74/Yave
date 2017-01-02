@@ -40,16 +40,10 @@ SceneView::SceneView(DevicePtr dptr, const Scene &sce) :
 	mvp.view = math::look_at(math::Vec3(2.0, 0, 0), math::Vec3());
 }
 
-RecordedCmdBuffer SceneView::command_buffer(const Framebuffer& fbo) {
-	auto recorder = CmdBufferRecorder(_command_pool.create_buffer());
-	recorder.bind_framebuffer(fbo);
-	recorder.set_viewport(Viewport(fbo.size()));
-
+void SceneView::draw(CmdBufferRecorder& recorder) const {
 	for(const auto& mesh : _scene.static_meshes()) {
 		mesh.draw(recorder, _matrix_set);
 	}
-
-	return recorder.end();
 }
 
 void SceneView::set_view(const math::Matrix4<>& view) {
@@ -64,5 +58,8 @@ const Scene& SceneView::scene() const {
 	return _scene;
 }
 
+DevicePtr SceneView::device() const {
+	return _matrix_buffer.device();
+}
 
 }

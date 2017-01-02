@@ -122,7 +122,7 @@ void transition_image_layout(
 
 
 void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, ImageFormat format, ImageUsage usage, const void* data) {
-	usize byte_size = size.x() *size.y() *format.bpp();
+	usize byte_size = size.x() *size.y() * format.bpp();
 
 	auto staging_buffer = get_staging_buffer(dptr, byte_size, data);
 	auto regions = get_copy_region(size, format);

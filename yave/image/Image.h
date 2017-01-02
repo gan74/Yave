@@ -50,6 +50,8 @@ class Image : public ImageBase {
 using Texture = Image<ImageUsage::Texture>;
 using DepthAttachment = Image<ImageUsage::Depth>;
 using ColorAttachment = Image<ImageUsage::Color>;
+using DepthTextureAttachment = Image<ImageUsage::Depth | ImageUsage::Texture>;
+using ColorTextureAttachment = Image<ImageUsage::Color | ImageUsage::Texture>;
 
 }
 

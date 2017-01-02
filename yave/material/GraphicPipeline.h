@@ -32,6 +32,7 @@ namespace yave {
 class Material;
 
 class GraphicPipeline : NonCopyable {
+
 	public:
 		GraphicPipeline() = default;
 		GraphicPipeline(const Material& mat, vk::Pipeline pipeline, vk::PipelineLayout layout);

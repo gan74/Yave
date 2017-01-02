@@ -32,6 +32,8 @@ template<ImageUsage Usage>
 class ImageView {
 
 	public:
+		ImageView() = default;
+
 		template<ImageUsage ImgUsage, typename Enable = typename std::enable_if<(ImgUsage & Usage) == Usage>::type>
 		ImageView(const Image<ImgUsage>& img) : _image(&img), _view(img.vk_view()) {
 		}
@@ -44,14 +46,20 @@ class ImageView {
 			return *_image;
 		}
 
+		const math::Vec2ui size() const {
+			return _image->size();
+		}
+
 	private:
-		const ImageBase* _image;
+		const ImageBase* _image = nullptr;
 		vk::ImageView _view;
 };
 
 using TextureView = ImageView<ImageUsage::Texture>;
 using DepthAttachmentView = ImageView<ImageUsage::Depth>;
 using ColorAttachmentView = ImageView<ImageUsage::Color>;
+using DepthTextureAttachmentView = ImageView<ImageUsage::Depth | ImageUsage::Texture>;
+using ColorTextureAttachmentView = ImageView<ImageUsage::Color | ImageUsage::Texture>;
 
 }
 

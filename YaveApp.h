@@ -37,7 +37,8 @@ SOFTWARE.
 #include <yave/descriptors/DescriptorSet.h>
 #include <yave/scene/SceneView.h>
 
-#include <y/math/Quaternion.h>
+#include <yave/renderers/DeferredRenderer.h>
+#include <yave/renderers/BlankRenderer.h>
 
 namespace yave {
 
@@ -96,27 +97,17 @@ class YaveApp : NonCopyable {
 		CmdBufferPool command_pool;
 		core::Vector<RecordedCmdBuffer> command_buffers;
 
-		RecordedCmdBuffer offscreen_cmd;
-
 		AssetPtr<Material> material;
 
 		MeshInstancePool mesh_pool;
-
-		Offscreen* offscreen;
 
 		Texture mesh_texture;
 
 		Scene* scene;
 		SceneView* scene_view;
 
-		StaticMesh* sq;
-		DescriptorSet dummy_ds;
-
-		ComputeShader* compute;
-		ComputeProgram* compute_prog;
-		TypedBuffer<int, BufferUsage::StorageBuffer | BufferUsage::AttributeBuffer> compute_buffer;
-		DescriptorSet compute_ds;
-
+		core::Vector<DeferredRenderer> renderers;
+		core::Vector<BlankRenderer> blank_renderers;
 };
 
 }

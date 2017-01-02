@@ -102,6 +102,7 @@ Device::Device(Instance& instance) :
 		_physical(instance),
 		_queue_familiy_indices(compute_queue_families(_physical.vk_physical_device())),
 		_device(create_device(_physical.vk_physical_device(), _queue_familiy_indices, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params().device_layers())),
+		//_dummy_set(this, {}),
 		_sampler(this),
 		_disposable_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {

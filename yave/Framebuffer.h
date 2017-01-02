@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Framebuffer : NonCopyable {
+class Framebuffer : NonCopyable, public DeviceLinked {
 
 	public:
 		Framebuffer() = default;
@@ -45,10 +45,12 @@ class Framebuffer : NonCopyable {
 		~Framebuffer();
 
 		const math::Vec2ui& size() const;
-		const RenderPass& render_pass() const;
 
 		vk::Framebuffer vk_framebuffer() const;
-		DevicePtr device() const;
+		vk::RenderPass vk_render_pass() const;
+
+		const DepthAttachmentView& depth_attachment() const;
+		const core::Vector<ColorAttachmentView>& color_attachments() const;
 
 		usize attachment_count() const {
 			return _attachment_count;
@@ -60,8 +62,11 @@ class Framebuffer : NonCopyable {
 		math::Vec2ui _size;
 		usize _attachment_count = 0;
 
-		RenderPass* _render_pass = nullptr;
+		vk::RenderPass _render_pass;
 		vk::Framebuffer _framebuffer;
+
+		DepthAttachmentView _depth;
+		core::Vector<ColorAttachmentView> _colors;
 };
 
 }

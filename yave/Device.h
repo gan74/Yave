@@ -27,8 +27,8 @@ SOFTWARE.
 #include "DescriptorSetLayoutPool.h"
 
 #include <yave/image/Sampler.h>
-
 #include <yave/commands/CmdBufferPool.h>
+//#include <yave/descriptors/DescriptorSet.h>
 
 #include <yave/vk/destroy.h>
 
@@ -56,7 +56,6 @@ class Device : NonCopyable {
 
 		u32 queue_family_index(QueueFamily i) const;
 
-
 		template<typename T>
 		void destroy(T t) const {
 			if(t != T(VK_NULL_HANDLE)) {
@@ -73,6 +72,10 @@ class Device : NonCopyable {
 			return _descriptor_layout_pool->create_descriptor_set_layout(std::forward<T>(t));
 		}
 
+		/*const DescriptorSet& dummy_descriptor_set() const {
+			return _dummy_set;
+		}*/
+
 	private:
 		Instance& _instance;
 		PhysicalDevice _physical;
@@ -83,7 +86,9 @@ class Device : NonCopyable {
 
 		vk::Device _device;
 
+		//DescriptorSet _dummy_set;
 		Sampler _sampler;
+
 		mutable CmdBufferPool _disposable_cmd_pool;
 		DescriptorSetLayoutPool* _descriptor_layout_pool;
 };

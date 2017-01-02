@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,38 +19,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_POINTLIGHT_H
-#define YAVE_OBJECTS_POINTLIGHT_H
+#ifndef YAVE_RENDERERS_DEFERREDRENDERER_H
+#define YAVE_RENDERERS_DEFERREDRENDERER_H
 
-#include <yave/buffer/TypedBuffer.h>
-#include <yave/descriptors/DescriptorSet.h>
+#include <yave/Framebuffer.h>
+#include <yave/shaders/ComputeProgram.h>
+#include <yave/scene/SceneView.h>
 
 namespace yave {
 
-class PointLight {
+class DeferredRenderer : NonCopyable, public DeviceLinked {
 
+	using OutputView = ColorAttachmentView;
 
 	public:
-		struct Data {
-			math::Vec3 position;
-			float radius;
-			math::Vec3 color;
-			float padding;
-		};
-
-		PointLight(DevicePtr dptr, const math::Vec3& pos, float radius) : _uniform_buffer(dptr, 1), _descriptor_set(dptr, {Binding(_uniform_buffer)}) {
-			auto map = _uniform_buffer.map();
-			map.begin()->position = pos;
-			map.begin()->radius = radius;
-			map.begin()->color = math::Vec3(1);
+		template<ImageUsage Usage>
+		DeferredRenderer(SceneView& scene, Image<Usage>& output) : DeferredRenderer(scene, OutputView(output)) {
 		}
 
-	private:
-		TypedBuffer<Data, BufferUsage::UniformBuffer> _uniform_buffer;
-		DescriptorSet _descriptor_set;
+		void draw(CmdBufferRecorder& recorder) const;
 
+	private:
+		DeferredRenderer(SceneView& scene, const OutputView& output);
+
+		SceneView& _scene;
+
+		RenderPass _render_pass;
+
+		DepthTextureAttachment _depth;
+		ColorTextureAttachment _diffuse;
+		ColorTextureAttachment _normal;
+
+		Framebuffer _gbuffer;
+		OutputView _output;
+
+		ComputeShader _shader;
+		ComputeProgram _program;
+		DescriptorSet _compute_set;
 };
 
 }
 
-#endif // YAVE_OBJECTS_POINTLIGHT_H
+
+#endif // YAVE_RENDERERS_DEFERREDRENDERER_H

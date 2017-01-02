@@ -46,13 +46,13 @@ using SwapchainImageView = ImageView<ImageUsage::Swapchain | ImageUsage::Color>;
 
 class Swapchain : NonCopyable, public DeviceLinked {
 
-	struct Buffer {
-		SwapchainImage color;
-		DepthAttachment depth;
-		Framebuffer framebuffer;
+		struct Buffer {
+			SwapchainImage color;
+			DepthAttachment depth;
+			Framebuffer framebuffer;
 
-		Buffer(RenderPass& render_pass, SwapchainImage&& color_att, DepthAttachment&& depth_att);
-	};
+			Buffer(RenderPass& render_pass, SwapchainImage&& color_att, DepthAttachment&& depth_att);
+		};
 
 	public:
 #ifdef Y_OS_WIN
@@ -70,6 +70,23 @@ class Swapchain : NonCopyable, public DeviceLinked {
 
 		const math::Vec2ui& size() const;
 		usize buffer_count() const;
+
+
+		auto framebuffers() const {
+			return core::range(_buffers).map([](const auto& b) -> const auto& { return b.framebuffer; });
+		}
+
+		auto framebuffers() {
+			return core::range(_buffers).map([](auto& b) -> auto& { return b.framebuffer; });
+		}
+
+		auto images() const {
+			return core::range(_buffers).map([](const auto& b) -> const auto& { return b.color; });
+		}
+
+		auto images() {
+			return core::range(_buffers).map([](auto& b) -> auto& { return b.color; });
+		}
 
 	private:
 		math::Vec2ui _size;

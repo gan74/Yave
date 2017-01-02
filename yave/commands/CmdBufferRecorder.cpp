@@ -79,32 +79,31 @@ CmdBufferRecorder::~CmdBufferRecorder() {
 	}
 }
 
-
-
-
 CmdBufferRecorder& CmdBufferRecorder::set_viewport(const Viewport& view) {
 	_viewport = view;
-
 	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
-	//vk::ClearValue clear_values[] = {vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f}), vk::ClearDepthStencilValue(1.0f, 0)};
+CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const RenderPass& render_pass, const Framebuffer& framebuffer) {
+	if(render_pass.vk_render_pass() != framebuffer.vk_render_pass()) {
+		fatal("Incompatible render passes.");
+	}
+
 	auto clear_values =
 			core::range(usize(0), framebuffer.attachment_count()).map([](usize) { return vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{{0.0f, 0.0f, 0.0f, 0.0f}})); }).collect<core::Vector>() +
 			vk::ClearDepthStencilValue(1.0f, 0);
 
 	auto pass_info = vk::RenderPassBeginInfo()
 			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
-			.setRenderPass(framebuffer.render_pass().vk_render_pass())
+			.setRenderPass(render_pass.vk_render_pass())
 			.setFramebuffer(framebuffer.vk_framebuffer())
 			.setPClearValues(clear_values.begin())
 			.setClearValueCount(u32(clear_values.size()))
 		;
 	vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
-	_render_pass = &framebuffer.render_pass();
+	_render_pass = &render_pass;
 
-	return *this;
+	return set_viewport(Viewport(framebuffer.size()));
 }
 
 CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& vp) {

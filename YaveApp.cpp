@@ -29,9 +29,11 @@ SOFTWARE.
 #include <iostream>
 
 
+void wat(int) {}
+
 namespace yave {
 
-YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device), mesh_pool(&device), offscreen(nullptr) {
+YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device), mesh_pool(&device) {
 }
 
 void YaveApp::init(Window* window) {
@@ -39,7 +41,6 @@ void YaveApp::init(Window* window) {
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
 
 	swapchain = new Swapchain(&device, window);
-	offscreen = new Offscreen(&device, swapchain->size());
 
 	create_assets();
 
@@ -47,31 +48,14 @@ void YaveApp::init(Window* window) {
 }
 
 YaveApp::~YaveApp() {
-	{
-		auto map = compute_buffer.map();
-		int w = 0;
-		for(int i : map) {
-			if(i != w++) {
-				fatal("Compute error");
-			}
-		}
-		log_msg("Compute = OK");
-	}
-
+	renderers.clear();
+	blank_renderers.clear();
 
 	delete scene_view;
 	delete scene;
 
-	compute_ds = DescriptorSet();
-	compute_buffer = decltype(compute_buffer)();
-	delete compute_prog;
-	delete compute;
-
 	material = nullptr;
 	mesh_texture = Texture();
-
-	delete sq;
-	delete offscreen;
 
 	delete swapchain;
 
@@ -83,20 +67,14 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 }
 
 void YaveApp::create_command_buffers() {
-	{
-
-		offscreen_cmd = scene_view->command_buffer(offscreen->framebuffer);
-	}
-
-	for(usize i = 0; i != swapchain->buffer_count(); i++) {
-
+	for(usize i = 0; i != renderers.size(); i++) {
 		CmdBufferRecorder recorder(command_pool.create_buffer());
-		recorder.dispatch(*compute_prog, math::Vec3ui(compute_buffer.size(), 1, 1), compute_ds);
 
-		recorder.bind_framebuffer(swapchain->framebuffer(i));
-		recorder.set_viewport(Viewport(swapchain->size()));
+		/*blank_renderers[i].draw(recorder);
+		renderers[i].draw(recorder);*/
 
-		sq->draw(recorder, dummy_ds);
+		recorder.bind_framebuffer(swapchain->render_pass(), swapchain->framebuffer(i));
+		scene_view->draw(recorder);
 
 		command_buffers << recorder.end();
 	}
@@ -112,25 +90,12 @@ Duration YaveApp::draw() {
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
 
-	{
-		auto buffer = offscreen_cmd.vk_cmd_buffer();
-		auto submit_info = vk::SubmitInfo()
-				.setWaitSemaphoreCount(1)
-				.setPWaitSemaphores(&image_acquired_semaphore)
-				.setPWaitDstStageMask(&pipe_stage_flags)
-				.setCommandBufferCount(1)
-				.setPCommandBuffers(&buffer)
-				.setSignalSemaphoreCount(1)
-				.setPSignalSemaphores(&offscreen->sem);
 
-		graphic_queue.submit(1, &submit_info, VK_NULL_HANDLE);
-	}
 	{
 
 		auto buffer = command_buffers[image_index].vk_cmd_buffer();
 		auto submit_info = vk::SubmitInfo()
-				.setWaitSemaphoreCount(1)
-				.setPWaitSemaphores(&offscreen->sem)
+				.setWaitSemaphoreCount(0)
 				.setPWaitDstStageMask(&pipe_stage_flags)
 				.setCommandBufferCount(1)
 				.setPCommandBuffers(&buffer)
@@ -180,17 +145,6 @@ void YaveApp::update(math::Vec2 angles) {
 }
 
 void YaveApp::create_assets() {
-	using Vec3 = math::Vec3;
-	using Vec2 = math::Vec2;
-
-	auto plan = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(MeshData{
-		{{Vec3(-1, -1, 0), Vec3(0, 0, 1), Vec2(0, 0)},
-		 {Vec3(-1, 1, 0), Vec3(0, 0, 1), Vec2(0, 1)},
-		 {Vec3(1, 1, 0), Vec3(0, 0, 1), Vec2(1, 1)},
-		 {Vec3(1, -1, 0), Vec3(0, 0, 1), Vec2(1, 0)}
-		},
-		{{{0, 2, 1}}, {{0, 3, 2}}}}));
-
 	{
 		{
 			auto file = io::File::open("../tools/image/chalet.jpg.rgba");
@@ -206,53 +160,31 @@ void YaveApp::create_assets() {
 	}
 
 
-	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym"/*, "../tools/mesh/cube.ym"*/};
+	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym", "../tools/mesh/sp.ym"};
 	core::Vector<StaticMesh> objects;
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
-		for(usize i = 0; i != 10; i++) {
-			{
-				auto m = StaticMesh(mesh, material);
-				m.set_position(math::Vec3(float(i) - 5, 0, 0));
+		/*for(usize i = 0; i != 10; i++)*/ {
+			auto m = StaticMesh(mesh, material);
+			m.set_position(math::Vec3(objects.size(), 0, 0));
 
-				objects << std::move(m);
-			}
+			objects << std::move(m);
 		}
 	}
 	scene = new Scene(std::move(objects));
 	scene_view = new SceneView(&device, *scene);
 
-	{
-		auto sq_mat = asset_ptr(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("light.frag.spv")))
-				.set_vert_data(SpirVData::from_file(io::File::open("sq.vert.spv")))
-				.set_bindings({TextureView(offscreen->color), TextureView(offscreen->color2), TextureView(offscreen->depth)})
-			));
-		sq = new StaticMesh(plan, sq_mat);
+	for(auto& i : swapchain->images()) {
+		renderers << DeferredRenderer(*scene_view, i);
+
 	}
 
-	int p = 0;
-	for(StaticMesh& m : objects) {
-		float x = p += 1;
-		m.set_position(Vec3(p % 2 ? x : -x, 0.f, 0.f));
+	for(auto& f : swapchain->framebuffers()) {
+		blank_renderers << BlankRenderer(swapchain->render_pass(), f);
 	}
-
-	{
-		compute = new ComputeShader(&device, SpirVData::from_file(io::File::open("comp.comp.spv")));
-		compute_prog = new ComputeProgram(*compute);
-		compute_buffer = decltype(compute_buffer)(&device, 1000);
-		auto map = compute_buffer.map();
-		std::fill(map.begin(), map.end(), 0);
-
-		compute_ds = DescriptorSet(&device, {Binding(compute_buffer)});
-	}
-
-
-	dummy_ds = DescriptorSet(&device, {});
 }
-
 
 
 }

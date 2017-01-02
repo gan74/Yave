@@ -43,12 +43,14 @@ class SceneView : NonCopyable {
 
 		SceneView(DevicePtr dptr, const Scene& sce);
 
-		RecordedCmdBuffer command_buffer(const Framebuffer& fbo);
+		void draw(CmdBufferRecorder& recorder) const;
 
 		void set_view(const math::Matrix4<>& view);
 		void set_proj(const math::Matrix4<>& proj);
 
 		const Scene& scene() const;
+
+		DevicePtr device() const;
 
 	private:
 		auto map() {

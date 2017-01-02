@@ -56,6 +56,10 @@ void Material::swap(Material& other) {
 
 const GraphicPipeline& Material::compile(const RenderPass& render_pass, const Viewport& viewport) {
 	auto key = render_pass.vk_render_pass();
+	if(!key) {
+		fatal("Unable to compile material: null renderpass.");
+	}
+
 	auto it = core::range(_compiled).find(key);
 	if(it == _compiled.end()) {
 		MaterialCompiler compiler(device());

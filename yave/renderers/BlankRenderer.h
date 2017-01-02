@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,41 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_QUEUE_H
-#define YAVE_QUEUE_H
+#ifndef YAVE_RENDERERS_BLANKRENDERER_H
+#define YAVE_RENDERERS_BLANKRENDERER_H
 
-#include "yave.h"
-#include "DeviceLinked.h"
+#include <yave/Framebuffer.h>
+#include <yave/commands/CmdBufferRecorder.h>
 
 namespace yave {
 
-
-/*template<QueueFamily Family>
-class Queue : public QueueBase {
-
+class BlankRenderer : NonCopyable {
 	public:
-		Queue() = default;
+		BlankRenderer(const RenderPass& render_pass, Framebuffer& framebuffer);
 
-		Queue(Queue&& other) {
-			QueueBase::swap(other);
-		}
-
-		Queue& operator=(Queue&& other) {
-			QueueBase::swap(other);
-			return *this;
-		}
+		void draw(CmdBufferRecorder& recorder) const;
 
 	private:
-		friend class Device;
-
-		Queue(DevicePtr dptr, vk::Queue queue) : QueueBase(dptr, queue) {
-		}
-
-};*/
-
+		const RenderPass& _render_pass;
+		Framebuffer& _framebuffer;
+};
 
 }
 
-
-
-#endif // YAVE_QUEUE_H
+#endif // YAVE_RENDERERS_BLANKRENDERER_H

@@ -55,7 +55,7 @@ static vk::SubpassDescription create_subpass(const vk::AttachmentReference& dept
 	;
 }
 
-static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies() {
+static std::array<vk::SubpassDependency, 1> create_bottom_of_pipe_dependencies() {
 	return {{vk::SubpassDependency()
 		.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 		.setDstSubpass(0)
@@ -67,7 +67,7 @@ static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies()
 			vk::AccessFlagBits::eColorAttachmentWrite |
 			vk::AccessFlagBits::eDepthStencilAttachmentRead |
 			vk::AccessFlagBits::eDepthStencilAttachmentWrite
-		),
+		)/*,
 		vk::SubpassDependency()
 			.setSrcSubpass(0)
 			.setDstSubpass(VK_SUBPASS_EXTERNAL)
@@ -79,7 +79,7 @@ static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies()
 					vk::AccessFlagBits::eDepthStencilAttachmentWrite
 			)
 			.setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
+			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)*/
 		}};
 }
 

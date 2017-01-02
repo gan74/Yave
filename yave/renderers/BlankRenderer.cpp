@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,9 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Queue.h"
+#include "BlankRenderer.h"
 
 namespace yave {
 
+BlankRenderer::BlankRenderer(const RenderPass& render_pass, Framebuffer &framebuffer)  :
+		_render_pass(render_pass),
+		_framebuffer(framebuffer) {
+}
+
+void BlankRenderer::draw(CmdBufferRecorder &recorder) const {
+	recorder.bind_framebuffer(_render_pass, _framebuffer);
+}
 
 }

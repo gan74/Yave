@@ -69,6 +69,7 @@ ComputeProgram& ComputeProgram::operator=(ComputeProgram&& other) {
 }
 
 void ComputeProgram::swap(ComputeProgram& other) {
+	DeviceLinked::swap(other);
 	std::swap(_layout, other._layout);
 	std::swap(_pipeline, other._pipeline);
 }
