@@ -48,13 +48,19 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 		_shader(create_shader(device())),
 		_program(_shader),
 		_compute_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_output)}) {
+
+	for(usize i = 0; i != 3; i++) {
+		if(_output.size()[i] % _shader.local_size()[i]) {
+			log_msg("Compute local size does not divide output buffer size.", LogType::Warning);
+		}
+	}
 }
 
 void DeferredRenderer::draw(CmdBufferRecorder& recorder) {
 	recorder.bind_framebuffer(_render_pass, _gbuffer);
 	_scene.draw(recorder);
 
-	recorder.dispatch(_program, math::Vec3ui(_output.size(), 1), _compute_set);
+	recorder.dispatch(_program, math::Vec3ui(_output.size() / _shader.local_size().sub(3), 1), _compute_set);
 }
 
 }

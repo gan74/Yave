@@ -135,6 +135,10 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	fail_not_empty(resources.push_constant_buffers);
 	fail_not_empty(resources.separate_images);
 	fail_not_empty(resources.separate_samplers);
+
+	for(usize i = 0; i != 3; i++) {
+		_local_size[i] = compiler.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, i);
+	}
 }
 
 vk::ShaderModule ShaderModuleBase::vk_shader_module() const {
@@ -148,6 +152,10 @@ ShaderModuleBase::~ShaderModuleBase() {
 void ShaderModuleBase::swap(ShaderModuleBase& other) {
 	DeviceLinked::swap(other);
 	std::swap(_module, other._module);
+	std::swap(_type, other._type);
+	std::swap(_bindings, other._bindings);
+	std::swap(_attribs, other._attribs);
+	std::swap(_local_size, other._local_size);
 }
 
 

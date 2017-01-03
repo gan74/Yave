@@ -66,6 +66,10 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 			return _type;
 		}
 
+		const math::Vec3ui& local_size() const {
+			return _local_size;
+		}
+
 		vk::ShaderModule vk_shader_module() const;
 
 	protected:
@@ -76,6 +80,7 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 		ShaderType _type = ShaderType::None;
 		std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>> _bindings;
 		core::Vector<Attribute> _attribs;
+		math::Vec3ui _local_size;
 
 };
 
