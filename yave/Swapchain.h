@@ -74,6 +74,14 @@ class Swapchain : NonCopyable, public DeviceLinked {
 
 		ImageFormat color_format() const;
 
+		const auto& image(usize i) const {
+			return _images[i];
+		}
+
+		auto& image(usize i) {
+			return _images[i];
+		}
+
 		const auto& images() const {
 			return _images;
 		}

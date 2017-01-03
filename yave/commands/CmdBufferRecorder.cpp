@@ -70,6 +70,9 @@ static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
 		case vk::ImageLayout::eTransferDstOptimal:
 			return vk::AccessFlagBits::eTransferWrite;
 
+		case vk::ImageLayout::ePresentSrcKHR:
+			return vk::AccessFlags();
+
 		default:
 			break;
 	}
@@ -204,6 +207,8 @@ CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, co
 }
 
 CmdBufferRecorder& CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
+	//log_msg("Image "_s + image.vk_image() + " transitioned from " + uenum(src) + " to " + uenum(dst));
+
 	auto barrier = create_barrier(
 			image.vk_image(),
 			image.format(),

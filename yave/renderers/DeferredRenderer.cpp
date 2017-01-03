@@ -39,18 +39,18 @@ static ComputeShader create_shader(DevicePtr dptr) {
 DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 		DeviceLinked(scene.device()),
 		_scene(scene),
+		_output(output),
 		_depth(device(), depth_format, output.size()),
 		_diffuse(device(), diffuse_format, output.size()),
 		_normal(device(), normal_format, output.size()),
 		_render_pass(device(), _depth, {_diffuse, _normal}),
 		_gbuffer(_render_pass, _depth, {_diffuse, _normal}),
-		_output(output),
 		_shader(create_shader(device())),
 		_program(_shader),
 		_compute_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_output)}) {
 }
 
-void DeferredRenderer::draw(CmdBufferRecorder& recorder) const {
+void DeferredRenderer::draw(CmdBufferRecorder& recorder) {
 	recorder.bind_framebuffer(_render_pass, _gbuffer);
 	_scene.draw(recorder);
 

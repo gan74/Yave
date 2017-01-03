@@ -43,8 +43,10 @@ enum class ImageUsage {
 	Color = uenum(vk::ImageUsageFlagBits::eColorAttachment),
 	Storage = uenum(vk::ImageUsageFlagBits::eStorage),
 
-	Attachment = Color | Depth,
-	Swapchain = detail::max(None, Depth, Color, Texture) << 1
+	Swapchain = detail::max(None, Depth, Color, Texture) << 1,
+
+	// Never use directly, this is for filtering usage during layout transitions
+	Attachment = Color | Depth
 
 };
 
@@ -80,6 +82,9 @@ constexpr bool is_shader_usage(ImageUsage usage) {
 	return shader_usage(usage) != ImageUsage::None;
 }
 
+constexpr bool is_swapchain_usage(ImageUsage usage) {
+	return (usage & ImageUsage::Swapchain) != ImageUsage::None;
+}
 
 //vk::ImageLayout vk_image_layout(ImageUsage usage);
 vk::ImageLayout vk_attachment_image_layout(ImageUsage usage);

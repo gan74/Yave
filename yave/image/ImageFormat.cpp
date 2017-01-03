@@ -33,6 +33,7 @@ vk::Format ImageFormat::vk_format() const {
 
 usize ImageFormat::bpp() const {
 	switch(_format) {
+		case vk::Format::eB8G8R8A8Unorm:
 		case vk::Format::eR8G8B8A8Unorm:
 			return 4;
 		case vk::Format::eD32Sfloat:
@@ -45,6 +46,7 @@ usize ImageFormat::bpp() const {
 
 vk::ImageAspectFlags ImageFormat::vk_aspect() const {
 	switch(_format) {
+		case vk::Format::eB8G8R8A8Unorm:
 		case vk::Format::eR8G8B8A8Unorm:
 			return vk::ImageAspectFlagBits::eColor;
 

@@ -159,6 +159,7 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 
 		swapchain_image._size = _size;
 		swapchain_image._format = _color_format;
+		swapchain_image._usage = SwapchainImageUsage;
 
 		// prevent the images to delete their handles: the swapchain already does that.
 		swapchain_image._image = image;

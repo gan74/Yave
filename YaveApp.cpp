@@ -73,8 +73,14 @@ void YaveApp::create_command_buffers() {
 	for(usize i = 0; i != swapchain->image_count(); i++) {
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 
-		recorder.bind_framebuffer(render_pass, framebuffers[i]);
-		scene_view->draw(recorder);
+		/*recorder.bind_framebuffer(render_pass, framebuffers[i]);
+		scene_view->draw(recorder);*/
+
+		recorder.transition_image(swapchain->image(i), vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+
+		renderers[i].draw(recorder);
+
+		recorder.transition_image(swapchain->image(i), vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
 		command_buffers << recorder.end();
 	}

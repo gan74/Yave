@@ -37,12 +37,13 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		DeferredRenderer(SceneView& scene, Image<Usage>& output) : DeferredRenderer(scene, OutputView(output)) {
 		}
 
-		void draw(CmdBufferRecorder& recorder) const;
+		void draw(CmdBufferRecorder& recorder);
 
 	private:
 		DeferredRenderer(SceneView& scene, const OutputView& output);
 
 		SceneView& _scene;
+		OutputView _output;
 
 		DepthTextureAttachment _depth;
 		ColorTextureAttachment _diffuse;
@@ -51,7 +52,6 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		RenderPass _render_pass;
 
 		Framebuffer _gbuffer;
-		OutputView _output;
 
 		ComputeShader _shader;
 		ComputeProgram _program;

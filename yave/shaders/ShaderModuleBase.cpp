@@ -31,7 +31,9 @@ namespace yave {
 
 template<typename M>
 static void merge(M& into, const M& o) {
-	into.insert(o.begin(), o.end());
+	for(const auto& p : o) {
+		into[p.first] << core::range(p.second);
+	}
 }
 
 static vk::ShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data) {
