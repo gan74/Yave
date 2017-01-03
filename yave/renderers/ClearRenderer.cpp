@@ -20,16 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "BlankRenderer.h"
+#include "ClearRenderer.h"
 
 namespace yave {
 
-BlankRenderer::BlankRenderer(const RenderPass& render_pass, Framebuffer &framebuffer)  :
+ClearRenderer::ClearRenderer(const RenderPass& render_pass, Framebuffer &framebuffer)  :
 		_render_pass(render_pass),
 		_framebuffer(framebuffer) {
 }
 
-void BlankRenderer::draw(CmdBufferRecorder &recorder) const {
+void ClearRenderer::draw(CmdBufferRecorder &recorder) const {
 	recorder.bind_framebuffer(_render_pass, _framebuffer);
 }
 

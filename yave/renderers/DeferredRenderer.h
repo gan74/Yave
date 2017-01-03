@@ -44,11 +44,11 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 
 		SceneView& _scene;
 
-		RenderPass _render_pass;
-
 		DepthTextureAttachment _depth;
 		ColorTextureAttachment _diffuse;
 		ColorTextureAttachment _normal;
+
+		RenderPass _render_pass;
 
 		Framebuffer _gbuffer;
 		OutputView _output;

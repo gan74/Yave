@@ -27,25 +27,6 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::AttachmentDescription create_attachment(ImageFormat format, vk::ImageLayout layout) {
-	return vk::AttachmentDescription()
-		.setFormat(format.vk_format())
-		.setSamples(vk::SampleCountFlagBits::e1)
-		.setLoadOp(vk::AttachmentLoadOp::eClear)
-		.setStoreOp(vk::AttachmentStoreOp::eStore)
-		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-		.setFinalLayout(layout)
-	;
-}
-
-static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usize index) {
-	return vk::AttachmentReference()
-		.setAttachment(u32(index))
-		.setLayout(vk_image_layout(usage))
-	;
-}
-
 static vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, const core::Vector<vk::AttachmentReference>& colors) {
 	return vk::SubpassDescription()
 		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
@@ -83,14 +64,32 @@ static std::array<vk::SubpassDependency, 1> create_bottom_of_pipe_dependencies()
 		}};
 }
 
+static vk::AttachmentDescription create_attachment(RenderPass::ImageData image) {
+	return vk::AttachmentDescription()
+		.setFormat(image.format.vk_format())
+		.setSamples(vk::SampleCountFlagBits::e1)
+		.setLoadOp(vk::AttachmentLoadOp::eClear)
+		.setStoreOp(vk::AttachmentStoreOp::eStore)
+		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+		.setFinalLayout(vk_attachment_layout(image.usage))
+	;
+}
+
+static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usize index) {
+	return vk::AttachmentReference()
+		.setAttachment(u32(index))
+		.setLayout(vk_image_layout(usage))
+	;
+}
 
 
-static vk::RenderPass create_renderpass(DevicePtr dptr, ImageFormat depth_format, std::initializer_list<ImageFormat> color_formats, ImageUsage color_usage) {
+static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, std::initializer_list<RenderPass::ImageData> colors) {
 	auto attachments =
-			core::range(color_formats).map([=](const auto& format) { return create_attachment(format, vk_image_layout(color_usage)); }).collect<core::Vector>() +
-			create_attachment(depth_format, vk_image_layout(ImageUsage::Depth));
+			core::range(colors).map([=](const auto& color) { return create_attachment(color); }).collect<core::Vector>() +
+			create_attachment(depth);
 
-	auto color_refs = core::range(usize(0), color_formats.size()).map([](auto i) { return create_attachment_reference(ImageUsage::Color, i); }).collect<core::Vector>();
+	auto color_refs = core::range(usize(0), colors.size()).map([](auto i) { return create_attachment_reference(ImageUsage::Color, i); }).collect<core::Vector>();
 	auto depth_ref = create_attachment_reference(ImageUsage::Depth, color_refs.size());
 
 	auto subpass = create_subpass(depth_ref, color_refs);
@@ -111,10 +110,10 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, ImageFormat depth_format
 
 
 
-RenderPass::RenderPass(DevicePtr dptr, ImageFormat depth_format, std::initializer_list<ImageFormat> color_formats, ImageUsage color_usage) :
+RenderPass::RenderPass(DevicePtr dptr, ImageData depth, std::initializer_list<ImageData> colors) :
 		DeviceLinked(dptr),
-		_attachment_count(color_formats.size()),
-		_render_pass(create_renderpass(dptr, depth_format, color_formats, color_usage)) {
+		_attachment_count(colors.size()),
+		_render_pass(create_renderpass(dptr, depth, colors)) {
 }
 
 RenderPass::~RenderPass() {

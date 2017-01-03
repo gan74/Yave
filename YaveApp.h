@@ -38,7 +38,7 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 
 #include <yave/renderers/DeferredRenderer.h>
-#include <yave/renderers/BlankRenderer.h>
+#include <yave/renderers/ClearRenderer.h>
 
 namespace yave {
 
@@ -46,33 +46,6 @@ class Window;
 
 class YaveApp : NonCopyable {
 
-	struct MVP {
-		math::Matrix4<> view;
-		math::Matrix4<> proj;
-	};
-
-	struct Offscreen : NonCopyable {
-		Offscreen(DevicePtr dptr, const math::Vec2ui& size) :
-				depth(dptr, vk::Format::eD32Sfloat, size),
-				color(dptr, vk::Format::eR8G8B8A8Unorm, size),
-				color2(dptr, vk::Format::eR8G8B8A8Unorm, size),
-				pass(dptr, depth.format(), {color.format(), color2.format()}),
-				framebuffer(pass, depth, {color, color2}) {
-
-			sem = dptr->vk_device().createSemaphore(vk::SemaphoreCreateInfo());
-		}
-
-		~Offscreen() {
-			pass.device()->vk_device().destroySemaphore(sem);
-		}
-
-		Image<ImageUsage::Texture | ImageUsage::Depth> depth;
-		Image<ImageUsage::Texture | ImageUsage::Color> color;
-		Image<ImageUsage::Texture | ImageUsage::Color> color2;
-		RenderPass pass;
-		Framebuffer framebuffer;
-		vk::Semaphore sem;
-	};
 
 	public:
 		YaveApp(DebugParams params);
@@ -107,7 +80,10 @@ class YaveApp : NonCopyable {
 		SceneView* scene_view;
 
 		core::Vector<DeferredRenderer> renderers;
-		core::Vector<BlankRenderer> blank_renderers;
+
+		RenderPass render_pass;
+		core::Vector<DepthAttachment> depths;
+		core::Vector<Framebuffer> framebuffers;
 };
 
 }

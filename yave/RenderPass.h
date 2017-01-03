@@ -25,15 +25,25 @@ SOFTWARE.
 #include "yave.h"
 
 #include <yave/DeviceLinked.h>
-#include <yave/image/ImageFormat.h>
-#include <yave/image/ImageUsage.h>
+#include <yave/image/Image.h>
 
 namespace yave {
 
 class RenderPass : NonCopyable, public DeviceLinked {
 	public:
+		struct ImageData {
+			const ImageFormat format;
+			const ImageUsage usage;
+
+			ImageData(ImageFormat fmt, ImageUsage us) : format(fmt), usage(us) {
+			}
+
+			ImageData(const ImageBase& image) : format(image.format()), usage(image.usage()) {
+			}
+		};
+
 		RenderPass() = default;
-		RenderPass(DevicePtr dptr, ImageFormat depth_format, std::initializer_list<ImageFormat> color_formats, ImageUsage color_usage = ImageUsage::Color | ImageUsage::Texture);
+		RenderPass(DevicePtr dptr, ImageData depth, std::initializer_list<ImageData> colors);
 
 		RenderPass(RenderPass&& other);
 		RenderPass& operator=(RenderPass&& other);

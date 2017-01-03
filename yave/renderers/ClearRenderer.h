@@ -19,17 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_BLANKRENDERER_H
-#define YAVE_RENDERERS_BLANKRENDERER_H
+#ifndef YAVE_RENDERERS_CLEARRENDERER_H
+#define YAVE_RENDERERS_CLEARRENDERER_H
 
 #include <yave/Framebuffer.h>
 #include <yave/commands/CmdBufferRecorder.h>
 
 namespace yave {
 
-class BlankRenderer : NonCopyable {
+class ClearRenderer : NonCopyable {
 	public:
-		BlankRenderer(const RenderPass& render_pass, Framebuffer& framebuffer);
+		ClearRenderer(const RenderPass& render_pass, Framebuffer& framebuffer);
 
 		void draw(CmdBufferRecorder& recorder) const;
 
@@ -40,4 +40,4 @@ class BlankRenderer : NonCopyable {
 
 }
 
-#endif // YAVE_RENDERERS_BLANKRENDERER_H
+#endif // YAVE_RENDERERS_CLEARRENDERER_H

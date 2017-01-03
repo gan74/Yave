@@ -79,6 +79,23 @@ static vk::BufferImageCopy get_copy_region(const math::Vec2ui& size, ImageFormat
 			);
 }
 
+static vk::AccessFlags vk_access_flags(ImageUsage usage) {
+	auto flags = vk::AccessFlags();
+	flags = (usage & ImageUsage::Depth) == ImageUsage::Depth ?
+		flags | vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite :
+		flags;
+
+	flags = (usage & ImageUsage::Color) == ImageUsage::Color ?
+		flags | vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite :
+		flags;
+
+	flags = (usage & ImageUsage::Texture) == ImageUsage::Texture ?
+		flags | vk::AccessFlagBits::eShaderRead :
+		flags;
+
+	return flags;
+}
+
 static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
 	auto staging_buffer = StagingBufferMapping::StagingBuffer(dptr, byte_size);
 	auto mapping = CpuVisibleMapping(staging_buffer);
@@ -87,7 +104,7 @@ static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data
 }
 
 template<typename CommandBuffer>
-void transition_image_layout(
+static void transition_image_layout(
 		CommandBuffer& cmd_buffer,
 		vk::Image image,
 		ImageFormat format,
@@ -120,8 +137,7 @@ void transition_image_layout(
 			nullptr, nullptr, barrier);
 }
 
-
-void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, ImageFormat format, ImageUsage usage, const void* data) {
+static void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, ImageFormat format, ImageUsage usage, const void* data) {
 	usize byte_size = size.x() *size.y() * format.bpp();
 
 	auto staging_buffer = get_staging_buffer(dptr, byte_size, data);
@@ -144,7 +160,7 @@ void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, Imag
 	graphic_queue.waitIdle();
 }
 
-vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {
+static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {
 	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
 			.setImage(image)
 			.setViewType(vk::ImageViewType::e2D)
@@ -159,8 +175,7 @@ vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {
 		);
 }
 
-
-std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, ImageUsage usage) {
+static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, ImageFormat format, ImageUsage usage) {
 	auto image = create_image(dptr, size, format, usage);
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
 	bind_image_memory(dptr, image, memory);
@@ -175,7 +190,8 @@ std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dpt
 ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size, const void* data) :
 		DeviceLinked(dptr),
 		_size(size),
-		_format(format) {
+		_format(format),
+		_usage(usage) {
 
 	auto tpl = alloc_image(dptr, size, format, data ? usage | vk::ImageUsageFlagBits::eTransferDst : usage);
 	_image = std::get<0>(tpl);
@@ -185,14 +201,17 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 	if(data) {
 		upload_data(device(), vk_image(), _size, format, usage, data);
 	} else {
-		auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
+		if(!is_attachment_usage(usage)) {
+			fatal("Texture images must be initilized.");
+		}
+		/*auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
 		transition_image_layout(cmd_buffer, vk_image(), format,
 				vk::ImageLayout::eUndefined, vk::AccessFlags(),
-				vk_image_layout(usage), vk_access_flags(usage));
+				vk_attachment_layout(usage), vk_access_flags(usage));
 
 		auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
 		cmd_buffer.end().submit(graphic_queue);
-		graphic_queue.waitIdle();
+		graphic_queue.waitIdle();*/
 	}
 }
 
@@ -208,6 +227,10 @@ const math::Vec2ui& ImageBase::size() const {
 
 ImageFormat ImageBase::format() const {
 	return _format;
+}
+
+ImageUsage ImageBase::usage() const {
+	return _usage;
 }
 
 vk::ImageView ImageBase::vk_view() const {
@@ -230,6 +253,7 @@ void ImageBase::swap(ImageBase& other) {
 	DeviceLinked::swap(other);
 	std::swap(_size, other._size);
 	std::swap(_format, other._format);
+	std::swap(_usage, other._usage);
 	std::swap(_image, other._image);
 	std::swap(_memory, other._memory);
 	std::swap(_view, other._view);

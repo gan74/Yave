@@ -33,7 +33,7 @@ static vk::SurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, vk::Surfa
 }
 
 static vk::SurfaceFormatKHR get_surface_format(DevicePtr dptr, vk::SurfaceKHR surface) {
-	return dptr->physical_device().vk_physical_device().getSurfaceFormatsKHR(surface)[0];
+	return dptr->physical_device().vk_physical_device().getSurfaceFormatsKHR(surface).front();
 }
 
 static vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surface) {
@@ -57,13 +57,13 @@ static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
 	return ideal;
 }
 
-static void assert_depth_supported(DevicePtr dptr) {
+/*static void assert_depth_supported(DevicePtr dptr) {
 	auto depth_props = dptr->physical_device().vk_physical_device().getFormatProperties(vk::Format::eD32Sfloat);
 
 	if((depth_props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) != vk::FormatFeatureFlagBits::eDepthStencilAttachment) {
 		fatal("32 bit depth not supported");
 	}
-}
+}*/
 
 static vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Format format) {
 	auto mapping = vk::ComponentMapping()
@@ -120,13 +120,6 @@ static vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 
 
 
-Swapchain::Buffer::Buffer(RenderPass& render_pass, SwapchainImage&& color_att, DepthAttachment&& depth_att) :
-		color(std::move(color_att)),
-		depth(std::move(depth_att)),
-		framebuffer(render_pass, DepthAttachmentView(depth), ColorAttachmentView(color)) {
-}
-
-
 
 #ifdef Y_OS_WIN
 Swapchain::Swapchain(DevicePtr dptr, HINSTANCE instance, HWND handle) : Swapchain(dptr, create_surface(dptr, instance, handle)) {
@@ -142,11 +135,6 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 
 	_size = math::vec(capabilities.currentExtent.width, capabilities.currentExtent.height);
 	_color_format = format.format;
-	_depth_format = vk::Format::eD32Sfloat;
-
-	assert_depth_supported(dptr);
-
-	_render_pass = RenderPass(dptr, _depth_format, {_color_format}, ImageUsage::Swapchain);
 
 	_swapchain = dptr->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
 			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
@@ -176,14 +164,14 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 		swapchain_image._memory = VK_NULL_HANDLE;
 		swapchain_image._view = view;
 
-		_buffers << Buffer(_render_pass, std::move(swapchain_image), DepthAttachment(dptr, _depth_format, _size));
+		_images << std::move(swapchain_image);
 	}
 }
 
 Swapchain::~Swapchain() {
 	// images don't delete their views, we have to do it manually
-	for(const Buffer& buffer : _buffers) {
-		device()->destroy(buffer.color._view);
+	for(const auto& i : _images) {
+		device()->destroy(i._view);
 	}
 	destroy(_swapchain);
 	destroy(_surface);
@@ -194,20 +182,16 @@ vk::SwapchainKHR Swapchain::vk_swapchain() const {
 	return _swapchain;
 }
 
-const Framebuffer& Swapchain::framebuffer(usize index) const {
-	return _buffers[index].framebuffer;
-}
-
-const RenderPass& Swapchain::render_pass() const {
-	return _render_pass;
-}
-
 const math::Vec2ui& Swapchain::size() const {
 	return _size;
 }
 
-usize Swapchain::buffer_count() const {
-	return _buffers.size();
+usize Swapchain::image_count() const {
+	return _images.size();
+}
+
+ImageFormat Swapchain::color_format() const {
+	return _color_format;
 }
 
 

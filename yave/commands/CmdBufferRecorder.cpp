@@ -89,6 +89,9 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const RenderPass& render_
 		fatal("Incompatible render passes.");
 	}
 
+	if(_render_pass) {
+		end_render_pass();
+	}
 	auto clear_values =
 			core::range(usize(0), framebuffer.attachment_count()).map([](usize) { return vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{{0.0f, 0.0f, 0.0f, 0.0f}})); }).collect<core::Vector>() +
 			vk::ClearDepthStencilValue(1.0f, 0);

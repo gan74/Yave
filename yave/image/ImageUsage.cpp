@@ -42,28 +42,9 @@ vk::ImageLayout vk_image_layout(ImageUsage usage) {
 	return vk::ImageLayout::eUndefined;
 }
 
-vk::AccessFlags vk_access_flags(ImageUsage usage) {
-	/*
-	 *
-	 * This WILL cause some debug layers to complain because of additional bits sets.
-	 * This is NORMAL (but not intended) when creating texture images that are not used as textures.
-	 *
-	 */
-
-	auto flags = vk::AccessFlags();
-	flags = (usage & ImageUsage::Depth) == ImageUsage::Depth ?
-		flags | vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite :
-		flags;
-
-	flags = (usage & ImageUsage::Color) == ImageUsage::Color ?
-		flags | vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite :
-		flags;
-
-	flags = (usage & ImageUsage::Texture) == ImageUsage::Texture ?
-		flags | vk::AccessFlagBits::eShaderRead :
-		flags;
-
-	return flags;
+vk::ImageLayout vk_attachment_layout(ImageUsage usage) {
+	auto u = usage & ~ImageUsage::Attachment;
+	return vk_image_layout(u == ImageUsage::None ? usage : u);
 }
 
 }

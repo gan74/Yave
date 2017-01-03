@@ -42,6 +42,7 @@ enum class ImageUsage {
 	Depth = int(vk::ImageUsageFlagBits::eDepthStencilAttachment),
 	Color = int(vk::ImageUsageFlagBits::eColorAttachment),
 
+	Attachment = Color | Depth,
 	Swapchain = detail::max(None, Depth, Color, Texture) << 1
 
 };
@@ -58,9 +59,21 @@ constexpr ImageUsage operator&(ImageUsage l, ImageUsage r)  {
 	return ImageUsage(uenum(l) & uenum(r));
 }
 
-vk::ImageLayout vk_image_layout(ImageUsage usage);
-vk::AccessFlags vk_access_flags(ImageUsage usage);
+constexpr ImageUsage operator~(ImageUsage l) {
+	return ImageUsage(~uenum(l));
+}
 
+constexpr bool is_attachment_usage(ImageUsage usage) {
+	return (usage & ImageUsage::Attachment) != ImageUsage::None;
+}
+
+constexpr bool is_texture_usage(ImageUsage usage) {
+	return (usage & ~ImageUsage::Attachment) != ImageUsage::None;
+}
+
+
+vk::ImageLayout vk_image_layout(ImageUsage usage);
+vk::ImageLayout vk_attachment_layout(ImageUsage usage);
 }
 
 #endif // YAVE_IMAGE_IMAGEUSAGE_H

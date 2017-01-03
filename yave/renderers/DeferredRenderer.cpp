@@ -31,12 +31,6 @@ static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
 
-static RenderPass create_render_pass(DevicePtr dptr) {
-	return RenderPass(dptr, depth_format, {
-			diffuse_format,
-			normal_format
-		});
-}
 
 static ComputeShader create_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv")));
@@ -45,10 +39,10 @@ static ComputeShader create_shader(DevicePtr dptr) {
 DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 		DeviceLinked(scene.device()),
 		_scene(scene),
-		_render_pass(create_render_pass(device())),
 		_depth(device(), depth_format, output.size()),
 		_diffuse(device(), diffuse_format, output.size()),
 		_normal(device(), normal_format, output.size()),
+		_render_pass(device(), _depth, {_diffuse, _normal}),
 		_gbuffer(_render_pass, _depth, {_diffuse, _normal}),
 		_output(output),
 		_shader(create_shader(device())),

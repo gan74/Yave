@@ -36,6 +36,7 @@ class ImageBase : NonCopyable, public DeviceLinked {
 
 		const math::Vec2ui& size() const;
 		ImageFormat format() const;
+		ImageUsage usage() const;
 
 		usize byte_size() const;
 
@@ -49,6 +50,8 @@ class ImageBase : NonCopyable, public DeviceLinked {
 
 		math::Vec2ui _size;
 		ImageFormat _format;
+		ImageUsage _usage;
+
 		vk::Image _image;
 		vk::DeviceMemory _memory;
 		vk::ImageView _view;

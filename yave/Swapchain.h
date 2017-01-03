@@ -46,14 +46,6 @@ using SwapchainImageView = ImageView<ImageUsage::Swapchain | ImageUsage::Color>;
 
 class Swapchain : NonCopyable, public DeviceLinked {
 
-		struct Buffer {
-			SwapchainImage color;
-			DepthAttachment depth;
-			Framebuffer framebuffer;
-
-			Buffer(RenderPass& render_pass, SwapchainImage&& color_att, DepthAttachment&& depth_att);
-		};
-
 	public:
 #ifdef Y_OS_WIN
 		Swapchain(DevicePtr dptr, HINSTANCE instance, HWND handle);
@@ -69,32 +61,24 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		vk::SwapchainKHR vk_swapchain() const;
 
 		const math::Vec2ui& size() const;
-		usize buffer_count() const;
+		usize image_count() const;
 
+		ImageFormat color_format() const;
 
-		auto framebuffers() const {
-			return core::range(_buffers).map([](const auto& b) -> const auto& { return b.framebuffer; });
-		}
-
-		auto framebuffers() {
-			return core::range(_buffers).map([](auto& b) -> auto& { return b.framebuffer; });
-		}
-
-		auto images() const {
-			return core::range(_buffers).map([](const auto& b) -> const auto& { return b.color; });
+		const auto& images() const {
+			return _images;
 		}
 
 		auto images() {
-			return core::range(_buffers).map([](auto& b) -> auto& { return b.color; });
+			return core::range(_images);
 		}
+
 
 	private:
 		math::Vec2ui _size;
-		ImageFormat _depth_format;
 		ImageFormat _color_format;
 
-		core::Vector<Buffer> _buffers;
-		RenderPass _render_pass;
+		core::Vector<SwapchainImage> _images;
 
 		Owner<vk::SurfaceKHR> _surface;
 		vk::SwapchainKHR _swapchain;

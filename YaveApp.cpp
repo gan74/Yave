@@ -49,7 +49,10 @@ void YaveApp::init(Window* window) {
 
 YaveApp::~YaveApp() {
 	renderers.clear();
-	blank_renderers.clear();
+	framebuffers.clear();
+	depths.clear();
+
+	render_pass = RenderPass();
 
 	delete scene_view;
 	delete scene;
@@ -67,13 +70,10 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 }
 
 void YaveApp::create_command_buffers() {
-	for(usize i = 0; i != renderers.size(); i++) {
+	for(usize i = 0; i != swapchain->image_count(); i++) {
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 
-		/*blank_renderers[i].draw(recorder);
-		renderers[i].draw(recorder);*/
-
-		recorder.bind_framebuffer(swapchain->render_pass(), swapchain->framebuffer(i));
+		recorder.bind_framebuffer(render_pass, framebuffers[i]);
 		scene_view->draw(recorder);
 
 		command_buffers << recorder.end();
@@ -178,11 +178,14 @@ void YaveApp::create_assets() {
 
 	for(auto& i : swapchain->images()) {
 		renderers << DeferredRenderer(*scene_view, i);
-
 	}
 
-	for(auto& f : swapchain->framebuffers()) {
-		blank_renderers << BlankRenderer(swapchain->render_pass(), f);
+	render_pass = RenderPass(&device, RenderPass::ImageData{vk::Format::eD32Sfloat, ImageUsage::Depth},
+							{RenderPass::ImageData{swapchain->color_format(), ImageUsage::Color | ImageUsage::Swapchain}});
+
+	for(const auto& i : swapchain->images()) {
+		depths << DepthAttachment(&device, vk::Format::eD32Sfloat, swapchain->size());
+		framebuffers << Framebuffer(render_pass, depths.last(), i);
 	}
 }
 
