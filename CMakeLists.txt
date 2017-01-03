@@ -38,6 +38,7 @@ file(GLOB_RECURSE SOURCE_FILES
 		"shaders/*.frag"
 		"shaders/*.vert"
 		"shaders/*.geom"
+		"shaders/*.comp"
 		)
 
 
