@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include <yave/Framebuffer.h>
+#include <yave/PipelineStage.h>
 
 #include "RecordedCmdBuffer.h"
 
@@ -33,7 +34,9 @@ SOFTWARE.
 #include <yave/descriptors/DescriptorSet.h>
 #include <yave/Viewport.h>
 
+
 namespace yave {
+
 
 class CmdBufferRecorder : NonCopyable {
 
@@ -51,34 +54,25 @@ class CmdBufferRecorder : NonCopyable {
 		const RenderPass& current_pass() const;
 		const Viewport& viewport() const;
 
+		CmdBufferRecorder& end_render_pass();
+
 		CmdBufferRecorder& set_viewport(const Viewport& view);
 		CmdBufferRecorder& bind_framebuffer(const RenderPass& render_pass, const Framebuffer& framebuffer);
 		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& vp);
 		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
 		CmdBufferRecorder& dispatch(const ComputeProgram& program, const math::Vec3ui& size, const DescriptorSet& descriptor_set);
 
+		CmdBufferRecorder& image_barriers(std::initializer_list<std::reference_wrapper<ImageBase>> images, PipelineStage src, PipelineStage dst);
+
 		// never use directly, needed for internal work and image loading
 		CmdBufferRecorder& transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
 
-		template<ImageUsage Usage>
-		CmdBufferRecorder& transition_to_attachment(Image<Usage>& image) {
-			static_assert(is_attachment_usage(Usage), "Image is not an attachment.");
-			return transition_image(image, vk_shader_image_layout(Usage), vk_attachment_image_layout(Usage));
-		}
 
-		template<ImageUsage Usage>
-		CmdBufferRecorder& transition_to_shader(Image<Usage>& image) {
-			static_assert(is_attachment_usage(Usage), "Image is not an attachment.");
-			return transition_image(image, vk_attachment_image_layout(Usage), vk_shader_image_layout(Usage));
-		}
 
 
 	private:
 		void swap(CmdBufferRecorder& other);
 
-
-
-		void end_render_pass();
 
 		CmdBuffer _cmd_buffer;
 		const RenderPass* _render_pass;

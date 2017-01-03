@@ -72,7 +72,7 @@ static vk::AttachmentDescription create_attachment(RenderPass::ImageData image) 
 		.setStoreOp(vk::AttachmentStoreOp::eStore)
 		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-		.setFinalLayout(vk_shader_image_layout(image.usage))
+		.setFinalLayout(vk_image_layout(image.usage))
 	;
 }
 

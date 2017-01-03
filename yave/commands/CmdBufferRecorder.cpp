@@ -122,12 +122,12 @@ RecordedCmdBuffer CmdBufferRecorder::end() {
 	return RecordedCmdBuffer(std::move(_cmd_buffer));
 }
 
-
-void CmdBufferRecorder::end_render_pass() {
+CmdBufferRecorder& CmdBufferRecorder::end_render_pass() {
 	if(_render_pass) {
 		vk_cmd_buffer().endRenderPass();
 		_render_pass = nullptr;
 	}
+	return *this;
 }
 
 CmdBufferRecorder::~CmdBufferRecorder() {
@@ -203,6 +203,37 @@ CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, co
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, 1, &ds, 0, nullptr);
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
+
+	return *this;
+}
+
+CmdBufferRecorder& CmdBufferRecorder::image_barriers(std::initializer_list<std::reference_wrapper<ImageBase>> images, PipelineStage src, PipelineStage dst) {
+	if(_render_pass) {
+		fatal("Image barrier inside renderpass.");
+	}
+
+	auto barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
+	for(ImageBase& image : images) {
+		auto shader_usage = vk_image_layout(image.usage());
+		auto shader_access_flags = vk_access_flags(shader_usage);
+
+		barriers << create_barrier(
+				image.vk_image(),
+				image.format(),
+				shader_usage, shader_access_flags,
+				shader_usage, shader_access_flags
+			);
+	}
+
+	vk_cmd_buffer().pipelineBarrier(
+			vk::PipelineStageFlagBits(src),
+			vk::PipelineStageFlagBits(dst),
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			barriers.size(), barriers.begin()
+		);
+
 	return *this;
 }
 
@@ -224,5 +255,6 @@ CmdBufferRecorder& CmdBufferRecorder::transition_image(ImageBase& image, vk::Ima
 		);
 	return *this;
 }
+
 
 }

@@ -48,7 +48,7 @@ class Binding {
 		Binding(const TextureView& view) :
 				 _type(vk::DescriptorType::eCombinedImageSampler),
 				 _info(vk::DescriptorImageInfo()
-					.setImageLayout(vk_shader_image_layout(ImageUsage::Texture))
+					.setImageLayout(vk_image_layout(ImageUsage::Texture))
 					.setImageView(view.vk_image_view())
 					.setSampler(view.image().device()->vk_sampler())) {
 		}
@@ -56,7 +56,7 @@ class Binding {
 		Binding(const StorageView& view) :
 				 _type(vk::DescriptorType::eStorageImage),
 				 _info(vk::DescriptorImageInfo()
-					.setImageLayout(vk_shader_image_layout(ImageUsage::Storage))
+					.setImageLayout(vk_image_layout(ImageUsage::Storage))
 					.setImageView(view.vk_image_view())
 					.setSampler(view.image().device()->vk_sampler())) {
 		}

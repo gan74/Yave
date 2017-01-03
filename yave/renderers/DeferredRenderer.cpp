@@ -59,7 +59,9 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 void DeferredRenderer::draw(CmdBufferRecorder& recorder) {
 	recorder.bind_framebuffer(_render_pass, _gbuffer);
 	_scene.draw(recorder);
+	recorder.end_render_pass();
 
+	recorder.image_barriers({_depth, _diffuse, _normal}, PipelineStage::AttachmentOutput, PipelineStage::Compute);
 	recorder.dispatch(_program, math::Vec3ui(_output.size() / _shader.local_size().sub(3), 1), _compute_set);
 }
 

@@ -66,20 +66,8 @@ constexpr ImageUsage operator~(ImageUsage l) {
 	return ImageUsage(~uenum(l));
 }
 
-constexpr ImageUsage attachment_usage(ImageUsage usage) {
-	return (usage & ImageUsage::Attachment);
-}
-
-constexpr ImageUsage shader_usage(ImageUsage usage) {
-	return (usage & ~ImageUsage::Attachment);
-}
-
 constexpr bool is_attachment_usage(ImageUsage usage) {
-	return attachment_usage(usage) != ImageUsage::None;
-}
-
-constexpr bool is_shader_usage(ImageUsage usage) {
-	return shader_usage(usage) != ImageUsage::None;
+	return (usage & ImageUsage::Attachment) != ImageUsage::None;
 }
 
 constexpr bool is_swapchain_usage(ImageUsage usage) {
@@ -88,7 +76,7 @@ constexpr bool is_swapchain_usage(ImageUsage usage) {
 
 //vk::ImageLayout vk_image_layout(ImageUsage usage);
 vk::ImageLayout vk_attachment_image_layout(ImageUsage usage);
-vk::ImageLayout vk_shader_image_layout(ImageUsage usage);
+vk::ImageLayout vk_image_layout(ImageUsage usage);
 
 }
 

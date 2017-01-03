@@ -98,7 +98,7 @@ static void upload_data(ImageBase& image, const void* data) {
 
 	cmd_buffer.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions);
 
-	cmd_buffer.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_shader_image_layout(image.usage()));
+	cmd_buffer.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
 
 	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
 	cmd_buffer.end().submit(graphic_queue);

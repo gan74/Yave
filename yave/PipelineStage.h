@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,39 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_PIPELINESTAGE_H
+#define YAVE_PIPELINESTAGE_H
 
-#include "ImageUsage.h"
+#include "yave.h"
 
 namespace yave {
 
-static vk::ImageLayout vk_layout(ImageUsage usage) {
-	if((usage & ImageUsage::Swapchain) != ImageUsage::None) {
-		return vk::ImageLayout::ePresentSrcKHR;
-	}
-	if((usage & ImageUsage::Texture) != ImageUsage::None) {
-		return vk::ImageLayout::eShaderReadOnlyOptimal;
-	}
-	if((usage & ImageUsage::Storage) != ImageUsage::None) {
-		return vk::ImageLayout::eShaderReadOnlyOptimal;
-	}
+enum class PipelineStage {
+	None = 0,
 
-	return fatal("Undefined image layout.");
+	Fragment = uenum(vk::PipelineStageFlagBits::eFragmentShader) | uenum(vk::PipelineStageFlagBits::eEarlyFragmentTests) | uenum(vk::PipelineStageFlagBits::eLateFragmentTests),
+	Compute = uenum(vk::PipelineStageFlagBits::eComputeShader),
+	AttachmentOutput = uenum(vk::PipelineStageFlagBits::eColorAttachmentOutput),
+
+	Shaders = Fragment | Compute
+};
+
+constexpr PipelineStage operator|(PipelineStage l, PipelineStage r) {
+	return PipelineStage(uenum(l) | uenum(r));
 }
 
-vk::ImageLayout vk_attachment_image_layout(ImageUsage usage) {
-	if((usage & ImageUsage::Depth) != ImageUsage::None) {
-		return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-	}
-	if((usage & ImageUsage::Color) != ImageUsage::None) {
-		return vk::ImageLayout::eColorAttachmentOptimal;
-	}
-
-	return fatal("Undefined image layout.");
+constexpr PipelineStage operator&(PipelineStage l, PipelineStage r)  {
+	return PipelineStage(uenum(l) & uenum(r));
 }
 
-vk::ImageLayout vk_image_layout(ImageUsage usage) {
-	auto su = (usage & ~ImageUsage::Attachment);
-	return su == ImageUsage::None ? vk_attachment_image_layout(usage) : vk_layout(su);
+constexpr PipelineStage operator~(PipelineStage l)  {
+	return PipelineStage(~uenum(l));
+}
+
+constexpr bool is_shader_stage(PipelineStage stage) {
+	return (stage & PipelineStage::Shaders) != PipelineStage::None;
 }
 
 }
+
+#endif // YAVE_PIPELINESTAGE_H
