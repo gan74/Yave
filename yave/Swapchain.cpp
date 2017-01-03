@@ -137,7 +137,7 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 	_color_format = format.format;
 
 	_swapchain = dptr->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
-			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+			.setImageUsage(vk::ImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::Swapchain))
 			.setImageSharingMode(vk::SharingMode::eExclusive)
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
 			.setImageArrayLayers(1)
