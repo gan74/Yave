@@ -57,8 +57,26 @@ class CmdBufferRecorder : NonCopyable {
 		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
 		CmdBufferRecorder& dispatch(const ComputeProgram& program, const math::Vec3ui& size, const DescriptorSet& descriptor_set);
 
+		// never use directly, needed for internal work and image loading
+		CmdBufferRecorder& transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
+
+		template<ImageUsage Usage>
+		CmdBufferRecorder& transition_to_attachment(Image<Usage>& image) {
+			static_assert(is_attachment_usage(Usage), "Image is not an attachment.");
+			return transition_image(image, vk_shader_image_layout(Usage), vk_attachment_image_layout(Usage));
+		}
+
+		template<ImageUsage Usage>
+		CmdBufferRecorder& transition_to_shader(Image<Usage>& image) {
+			static_assert(is_attachment_usage(Usage), "Image is not an attachment.");
+			return transition_image(image, vk_attachment_image_layout(Usage), vk_shader_image_layout(Usage));
+		}
+
+
 	private:
 		void swap(CmdBufferRecorder& other);
+
+
 
 		void end_render_pass();
 

@@ -72,14 +72,14 @@ static vk::AttachmentDescription create_attachment(RenderPass::ImageData image) 
 		.setStoreOp(vk::AttachmentStoreOp::eStore)
 		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-		.setFinalLayout(vk_attachment_layout(image.usage))
+		.setFinalLayout(vk_shader_image_layout(image.usage))
 	;
 }
 
 static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usize index) {
 	return vk::AttachmentReference()
 		.setAttachment(u32(index))
-		.setLayout(vk_image_layout(usage))
+		.setLayout(vk_attachment_image_layout(usage))
 	;
 }
 

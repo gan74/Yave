@@ -24,6 +24,60 @@ SOFTWARE.
 
 namespace yave {
 
+static auto create_barrier(
+		vk::Image image,
+		ImageFormat format,
+		vk::ImageLayout old_layout,
+		vk::AccessFlags src_access,
+		vk::ImageLayout new_layout,
+		vk::AccessFlags dst_access) {
+
+	return vk::ImageMemoryBarrier()
+			.setOldLayout(old_layout)
+			.setNewLayout(new_layout)
+			.setSrcAccessMask(src_access)
+			.setDstAccessMask(dst_access)
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setImage(image)
+			.setSubresourceRange(vk::ImageSubresourceRange()
+					.setAspectMask(format.vk_aspect())
+					.setBaseArrayLayer(0)
+					.setBaseMipLevel(0)
+					.setLayerCount(1)
+					.setLevelCount(1)
+				)
+		;
+}
+
+static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
+	switch(layout) {
+		case vk::ImageLayout::eUndefined:
+			return vk::AccessFlags();
+
+		case vk::ImageLayout::eColorAttachmentOptimal:
+			return vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
+
+		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+			return vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+
+		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+			return vk::AccessFlagBits::eDepthStencilAttachmentRead;
+
+		case vk::ImageLayout::eShaderReadOnlyOptimal:
+			return vk::AccessFlagBits::eShaderRead;
+
+		case vk::ImageLayout::eTransferDstOptimal:
+			return vk::AccessFlagBits::eTransferWrite;
+
+		default:
+			break;
+	}
+
+	return fatal("Unsupported layout transition.");
+}
+
+
 CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& buffer) : _cmd_buffer(std::move(buffer)), _render_pass(nullptr) {
 	Y_TODO(optimise disposable buffers)
 	vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
@@ -75,7 +129,7 @@ void CmdBufferRecorder::end_render_pass() {
 
 CmdBufferRecorder::~CmdBufferRecorder() {
 	if(_cmd_buffer.vk_cmd_buffer()) {
-		fatal("CmdBufferRecorder destroyed before end() was called");
+		fatal("CmdBufferRecorder destroyed before end() was called.");
 	}
 }
 
@@ -146,6 +200,23 @@ CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, co
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, 1, &ds, 0, nullptr);
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
+	return *this;
+}
+
+CmdBufferRecorder& CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
+	auto barrier = create_barrier(
+			image.vk_image(),
+			image.format(),
+			src, vk_access_flags(src),
+			dst, vk_access_flags(dst)
+		);
+
+	vk_cmd_buffer().pipelineBarrier(
+			vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::DependencyFlagBits::eByRegion,
+			nullptr, nullptr, barrier
+		);
 	return *this;
 }
 

@@ -28,7 +28,7 @@ namespace yave {
 static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<ColorAttachmentView> views) {
 	for(const auto& v : views) {
 		if(v.image().size() != a.size()) {
-			fatal("Invalid attachment size");
+			fatal("Invalid attachment size.");
 		}
 	}
 	return a.size();

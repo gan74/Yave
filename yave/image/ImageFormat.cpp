@@ -39,7 +39,7 @@ usize ImageFormat::bpp() const {
 			return 4;
 
 		default:
-			return fatal("Unsupported image format");
+			return fatal("Unsupported image format.");
 	}
 }
 
@@ -52,7 +52,7 @@ vk::ImageAspectFlags ImageFormat::vk_aspect() const {
 			return vk::ImageAspectFlagBits::eDepth;
 
 		default:
-			return fatal("Unsupported image format");
+			return fatal("Unsupported image format.");
 	}
 }
 

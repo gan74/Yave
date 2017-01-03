@@ -47,14 +47,13 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 		_output(output),
 		_shader(create_shader(device())),
 		_program(_shader),
-		_compute_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal)/*, Binding(_output)*/}) {
+		_compute_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_output)}) {
 }
 
 void DeferredRenderer::draw(CmdBufferRecorder& recorder) const {
 	recorder.bind_framebuffer(_render_pass, _gbuffer);
 	_scene.draw(recorder);
 
-#warning SYNCHRONIZATION ?
 	recorder.dispatch(_program, math::Vec3ui(_output.size(), 1), _compute_set);
 }
 

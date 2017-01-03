@@ -34,15 +34,17 @@ namespace yave {
 
 class Window;
 
-class SwapchainImage : public Image<ImageUsage::Swapchain | ImageUsage::Color> {
+static constexpr ImageUsage SwapchainImageUsage = ImageUsage::Swapchain | ImageUsage::Color | ImageUsage::Storage;
+
+class SwapchainImage : public Image<SwapchainImageUsage> {
 	private:
 		friend class Swapchain;
 
-		SwapchainImage() : Image<ImageUsage::Swapchain | ImageUsage::Color>() {
+		SwapchainImage() : Image<SwapchainImageUsage>() {
 		}
 };
 
-using SwapchainImageView = ImageView<ImageUsage::Swapchain | ImageUsage::Color>;
+using SwapchainImageView = ImageView<SwapchainImageUsage>;
 
 class Swapchain : NonCopyable, public DeviceLinked {
 

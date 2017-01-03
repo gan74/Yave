@@ -77,8 +77,8 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 	decoder.decode<io::Byteorder::BigEndian>(height);
 	decoder.decode<io::Byteorder::BigEndian>(data_size);
 
-	if(height *width *4 != data_size) {
-		fatal("Invalid file size");
+	if(height * width * 4 != data_size) {
+		fatal("Invalid file size.");
 	}
 
 	ImageData data;
@@ -87,7 +87,7 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 	data._data = new u8[data_size];
 
 	if(reader->read(data._data, data_size) != data_size) {
-		fatal("Invalid file size");
+		fatal("Invalid file size.");
 	}
 
 	return data;

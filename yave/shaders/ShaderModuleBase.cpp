@@ -60,7 +60,7 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
 		default:
 			break;
 	}
-	return fatal("Unknown shader execution model");
+	return fatal("Unknown shader execution model.");
 }
 
 static vk::DescriptorSetLayoutBinding create_binding(u32 index, ShaderType, vk::DescriptorType type) {
@@ -83,7 +83,7 @@ static auto create_bindings(const spirv_cross::Compiler& compiler, const std::ve
 
 static void fail_not_empty(const std::vector<spirv_cross::Resource>& res) {
 	if(!res.empty()) {
-		fatal("Unsupported resource type");
+		fatal("Unsupported resource type.");
 	}
 }
 
@@ -91,7 +91,7 @@ static u32 component_size(spirv_cross::SPIRType type) {
 	if(type.basetype == spirv_cross::SPIRType::Float) {
 		return sizeof(float);
 	}
-	return fatal("Unknown attribute type");
+	return fatal("Unsupported attribute type.");
 }
 
 static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources) {
@@ -104,7 +104,7 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vec
 
 		for(auto i : core::range(location, location + type.columns)) {
 			if(!locations.insert(i).second) {
-				fatal("Duplicate or overlapping attributes location");
+				fatal("Duplicate or overlapping attribute locations.");
 			}
 		}
 	}

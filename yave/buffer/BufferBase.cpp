@@ -34,7 +34,7 @@ static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties,
 			return i;
 		}
 	}
-	return fatal("Unable to alloc device memory");
+	return fatal("Unable to alloc device memory.");
 }
 
 static vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Buffer buffer) {

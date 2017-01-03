@@ -61,7 +61,7 @@ static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
 	auto depth_props = dptr->physical_device().vk_physical_device().getFormatProperties(vk::Format::eD32Sfloat);
 
 	if((depth_props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) != vk::FormatFeatureFlagBits::eDepthStencilAttachment) {
-		fatal("32 bit depth not supported");
+		fatal("32 bit depth not supported.");
 	}
 }*/
 
@@ -103,7 +103,7 @@ static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE instance, HWND ha
 		);
 
 	if(!has_wsi_support(dptr, surface)) {
-		fatal("No WSI support");
+		fatal("No WSI support.");
 	}
 	log_msg("Vulkan WSI supported !");
 	return surface;

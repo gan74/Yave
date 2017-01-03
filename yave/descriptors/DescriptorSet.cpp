@@ -67,7 +67,7 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 		} else if(binding.is_image()) {
 			w.setPImageInfo(&binding.descriptor_info().image);
 		} else {
-			fatal("Unknown descriptor type");
+			fatal("Unknown descriptor type.");
 		}
 
 		writes << w;

@@ -45,10 +45,10 @@ MeshInstancePool::MeshInstancePool(DevicePtr dptr, usize vertices, usize triangl
 
 StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
 	if(data.triangles.size() + _triangle_end > _triangle_buffer.size()) {
-		fatal("Unable to allocate triangle buffer");
+		fatal("Unable to allocate triangle buffer.");
 	}
 	if(data.vertices.size() + _vertex_end > _vertex_buffer.size()) {
-		fatal("Unable to allocate vertex buffer");
+		fatal("Unable to allocate vertex buffer.");
 	}
 
 	usize vertex_offset = _vertex_end;

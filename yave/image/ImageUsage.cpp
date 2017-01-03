@@ -24,27 +24,34 @@ SOFTWARE.
 
 namespace yave {
 
-vk::ImageLayout vk_image_layout(ImageUsage usage) {
-	if((usage & ImageUsage::Swapchain) == ImageUsage::Swapchain) {
+static vk::ImageLayout vk_shader_layout(ImageUsage usage) {
+	if((usage & ImageUsage::Swapchain) != ImageUsage::None) {
 		return vk::ImageLayout::ePresentSrcKHR;
 	}
-
-	if((usage & ImageUsage::Depth) == ImageUsage::Depth) {
-		return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-	}
-	if((usage & ImageUsage::Texture) == ImageUsage::Texture) {
+	if((usage & ImageUsage::Texture) != ImageUsage::None) {
 		return vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
-	if((usage & ImageUsage::Color) == ImageUsage::Color) {
+	if((usage & ImageUsage::Storage) != ImageUsage::None) {
+		return vk::ImageLayout::eShaderReadOnlyOptimal;
+	}
+
+	return fatal("Undefined image layout.");
+}
+
+vk::ImageLayout vk_attachment_image_layout(ImageUsage usage) {
+	if((usage & ImageUsage::Depth) != ImageUsage::None) {
+		return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+	}
+	if((usage & ImageUsage::Color) != ImageUsage::None) {
 		return vk::ImageLayout::eColorAttachmentOptimal;
 	}
 
-	return vk::ImageLayout::eUndefined;
+	return fatal("Undefined image layout.");
 }
 
-vk::ImageLayout vk_attachment_layout(ImageUsage usage) {
-	auto u = usage & ~ImageUsage::Attachment;
-	return vk_image_layout(u == ImageUsage::None ? usage : u);
+vk::ImageLayout vk_shader_image_layout(ImageUsage usage) {
+	auto su = shader_usage(usage);
+	return su == ImageUsage::None ? vk_attachment_image_layout(usage) : vk_shader_layout(su);
 }
 
 }

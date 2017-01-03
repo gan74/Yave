@@ -59,7 +59,7 @@ inline DevicePtr common_device(T&& t, U&& u, Args&&... args) {
 	DevicePtr l = t.device();
 	DevicePtr r = common_device(std::forward<U>(u), std::forward<Args>(args)...);
 	if(l && r && l != r) {
-		fatal("Objects have different devices");
+		fatal("Objects have different devices.");
 	}
 	return l ? l : r;
 }

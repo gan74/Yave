@@ -35,7 +35,7 @@ static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties,
 			return i;
 		}
 	}
-	return fatal("Unable to alloc device memory");
+	return fatal("Unable to alloc device memory.");
 }
 
 static vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Image image) {
@@ -79,23 +79,6 @@ static vk::BufferImageCopy get_copy_region(const math::Vec2ui& size, ImageFormat
 			);
 }
 
-static vk::AccessFlags vk_access_flags(ImageUsage usage) {
-	auto flags = vk::AccessFlags();
-	flags = (usage & ImageUsage::Depth) == ImageUsage::Depth ?
-		flags | vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite :
-		flags;
-
-	flags = (usage & ImageUsage::Color) == ImageUsage::Color ?
-		flags | vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite :
-		flags;
-
-	flags = (usage & ImageUsage::Texture) == ImageUsage::Texture ?
-		flags | vk::AccessFlagBits::eShaderRead :
-		flags;
-
-	return flags;
-}
-
 static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
 	auto staging_buffer = StagingBufferMapping::StagingBuffer(dptr, byte_size);
 	auto mapping = CpuVisibleMapping(staging_buffer);
@@ -103,57 +86,19 @@ static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data
 	return staging_buffer;
 }
 
-template<typename CommandBuffer>
-static void transition_image_layout(
-		CommandBuffer& cmd_buffer,
-		vk::Image image,
-		ImageFormat format,
-		vk::ImageLayout old_layout,
-		vk::AccessFlags src_access,
-		vk::ImageLayout new_layout,
-		vk::AccessFlags dst_access) {
+static void upload_data(ImageBase& image, const void* data) {
+	DevicePtr dptr = image.device();
 
-	auto barrier = vk::ImageMemoryBarrier()
-			.setOldLayout(old_layout)
-			.setNewLayout(new_layout)
-			.setSrcAccessMask(src_access)
-			.setDstAccessMask(dst_access)
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setImage(image)
-			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.vk_aspect())
-					.setBaseArrayLayer(0)
-					.setBaseMipLevel(0)
-					.setLayerCount(1)
-					.setLevelCount(1)
-				)
-		;
-
-	cmd_buffer.vk_cmd_buffer().pipelineBarrier(
-			vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::DependencyFlagBits::eByRegion,
-			nullptr, nullptr, barrier);
-}
-
-static void upload_data(DevicePtr dptr, vk::Image image, const math::Vec2ui& size, ImageFormat format, ImageUsage usage, const void* data) {
-	usize byte_size = size.x() *size.y() * format.bpp();
-
-	auto staging_buffer = get_staging_buffer(dptr, byte_size, data);
-	auto regions = get_copy_region(size, format);
+	auto staging_buffer = get_staging_buffer(dptr, image.byte_size(), data);
+	auto regions = get_copy_region(image.size(), image.format());
 
 	auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
 
-	transition_image_layout(cmd_buffer, image, format,
-			vk::ImageLayout::eUndefined, vk::AccessFlags(),
-			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite);
+	cmd_buffer.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
-	cmd_buffer.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image, vk::ImageLayout::eTransferDstOptimal, regions);
+	cmd_buffer.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions);
 
-	transition_image_layout(cmd_buffer, image, format,
-			vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite,
-			vk_image_layout(usage), vk_access_flags(usage));
+	cmd_buffer.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_shader_image_layout(image.usage()));
 
 	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
 	cmd_buffer.end().submit(graphic_queue);
@@ -199,19 +144,11 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 	_view = std::get<2>(tpl);
 
 	if(data) {
-		upload_data(device(), vk_image(), _size, format, usage, data);
+		upload_data(*this, data);
 	} else {
 		if(!is_attachment_usage(usage)) {
 			fatal("Texture images must be initilized.");
 		}
-		/*auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
-		transition_image_layout(cmd_buffer, vk_image(), format,
-				vk::ImageLayout::eUndefined, vk::AccessFlags(),
-				vk_attachment_layout(usage), vk_access_flags(usage));
-
-		auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
-		cmd_buffer.end().submit(graphic_queue);
-		graphic_queue.waitIdle();*/
 	}
 }
 

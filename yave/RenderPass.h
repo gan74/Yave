@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/DeviceLinked.h>
 #include <yave/image/Image.h>
+#include <yave/image/ImageView.h>
 
 namespace yave {
 
@@ -39,6 +40,10 @@ class RenderPass : NonCopyable, public DeviceLinked {
 			}
 
 			ImageData(const ImageBase& image) : format(image.format()), usage(image.usage()) {
+			}
+
+			template<ImageUsage Usage>
+			ImageData(const ImageView<Usage>& view) : ImageData(view.image()) {
 			}
 		};
 

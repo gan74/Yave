@@ -38,9 +38,10 @@ constexpr int max(Args... args) {
 
 enum class ImageUsage {
     None = 0,
-	Texture = int(vk::ImageUsageFlagBits::eSampled),
-	Depth = int(vk::ImageUsageFlagBits::eDepthStencilAttachment),
-	Color = int(vk::ImageUsageFlagBits::eColorAttachment),
+	Texture = uenum(vk::ImageUsageFlagBits::eSampled),
+	Depth = uenum(vk::ImageUsageFlagBits::eDepthStencilAttachment),
+	Color = uenum(vk::ImageUsageFlagBits::eColorAttachment),
+	Storage = uenum(vk::ImageUsageFlagBits::eStorage),
 
 	Attachment = Color | Depth,
 	Swapchain = detail::max(None, Depth, Color, Texture) << 1
@@ -63,17 +64,27 @@ constexpr ImageUsage operator~(ImageUsage l) {
 	return ImageUsage(~uenum(l));
 }
 
+constexpr ImageUsage attachment_usage(ImageUsage usage) {
+	return (usage & ImageUsage::Attachment);
+}
+
+constexpr ImageUsage shader_usage(ImageUsage usage) {
+	return (usage & ~ImageUsage::Attachment);
+}
+
 constexpr bool is_attachment_usage(ImageUsage usage) {
-	return (usage & ImageUsage::Attachment) != ImageUsage::None;
+	return attachment_usage(usage) != ImageUsage::None;
 }
 
-constexpr bool is_texture_usage(ImageUsage usage) {
-	return (usage & ~ImageUsage::Attachment) != ImageUsage::None;
+constexpr bool is_shader_usage(ImageUsage usage) {
+	return shader_usage(usage) != ImageUsage::None;
 }
 
 
-vk::ImageLayout vk_image_layout(ImageUsage usage);
-vk::ImageLayout vk_attachment_layout(ImageUsage usage);
+//vk::ImageLayout vk_image_layout(ImageUsage usage);
+vk::ImageLayout vk_attachment_image_layout(ImageUsage usage);
+vk::ImageLayout vk_shader_image_layout(ImageUsage usage);
+
 }
 
 #endif // YAVE_IMAGE_IMAGEUSAGE_H

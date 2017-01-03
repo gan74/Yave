@@ -56,6 +56,7 @@ class ImageView {
 };
 
 using TextureView = ImageView<ImageUsage::Texture>;
+using StorageView = ImageView<ImageUsage::Storage>;
 using DepthAttachmentView = ImageView<ImageUsage::Depth>;
 using ColorAttachmentView = ImageView<ImageUsage::Color>;
 using DepthTextureAttachmentView = ImageView<ImageUsage::Depth | ImageUsage::Texture>;

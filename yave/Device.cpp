@@ -56,7 +56,7 @@ static std::array<u32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevi
 		}
 	}
 	if(!are_families_complete(queue_families)) {
-		fatal("Unable to find queue family");
+		fatal("Unable to find queue family.");
 	}
 	return queue_families;
 }
@@ -118,7 +118,7 @@ Device::~Device() {
 	}
 
 	if(_disposable_cmd_pool.active_buffers()) {
-		fatal("Buffer still active");
+		fatal("Buffer still active.");
 	}
 
 	_sampler = Sampler();

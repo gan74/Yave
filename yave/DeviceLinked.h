@@ -35,7 +35,7 @@ class DeviceLinked {
 
 		DeviceLinked(DevicePtr dev) : _device(dev) {
 			if(!dev) {
-				fatal("Null device");
+				fatal("Null device.");
 			}
 		}
 

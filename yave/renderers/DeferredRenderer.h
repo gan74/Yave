@@ -30,7 +30,7 @@ namespace yave {
 
 class DeferredRenderer : NonCopyable, public DeviceLinked {
 
-	using OutputView = ColorAttachmentView;
+	using OutputView = StorageView;
 
 	public:
 		template<ImageUsage Usage>
