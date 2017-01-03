@@ -40,7 +40,14 @@ class SwapchainImage : public Image<SwapchainImageUsage> {
 	private:
 		friend class Swapchain;
 
-		SwapchainImage() : Image<SwapchainImageUsage>() {
+		struct DeviceSetter : DeviceLinked {
+			DeviceSetter(DevicePtr dptr) : DeviceLinked(dptr) {
+			}
+		};
+
+		SwapchainImage(DevicePtr dptr) : Image<SwapchainImageUsage>() {
+			DeviceSetter dev(dptr);
+			DeviceLinked::swap(dev);
 		}
 };
 

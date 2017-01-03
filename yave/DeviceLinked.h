@@ -28,17 +28,6 @@ namespace yave {
 
 class DeviceLinked {
 	public:
-		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
-		DeviceLinked() : _device(nullptr) {
-			// for putting breakpoints
-		}
-
-		DeviceLinked(DevicePtr dev) : _device(dev) {
-			if(!dev) {
-				fatal("Null device.");
-			}
-		}
-
 		DevicePtr device() const {
 			return _device;
 		}
@@ -51,6 +40,17 @@ class DeviceLinked {
 		}*/
 
 	protected:
+		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
+		DeviceLinked() : _device(nullptr) {
+			// for putting breakpoints
+		}
+
+		DeviceLinked(DevicePtr dev) : _device(dev) {
+			if(!dev) {
+				fatal("Null device.");
+			}
+		}
+
 		void swap(DeviceLinked& other) {
 			std::swap(_device, other._device);
 		}

@@ -155,7 +155,8 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 	for(auto image : dptr->vk_device().getSwapchainImagesKHR(_swapchain)) {
 		auto view = create_image_view(dptr, image, _color_format.vk_format());
 
-		auto swapchain_image = SwapchainImage();
+		auto swapchain_image = SwapchainImage(dptr);
+
 		swapchain_image._size = _size;
 		swapchain_image._format = _color_format;
 
@@ -169,9 +170,9 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 }
 
 Swapchain::~Swapchain() {
-	// images don't delete their views, we have to do it manually
-	for(const auto& i : _images) {
-		device()->destroy(i._view);
+	// prevent images to delete their vk::Image, this is already done by the swapchain
+	for(auto& i : _images) {
+		i._image = VK_NULL_HANDLE;
 	}
 	destroy(_swapchain);
 	destroy(_surface);
