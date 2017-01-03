@@ -80,10 +80,6 @@ class YaveApp : NonCopyable {
 		SceneView* scene_view;
 
 		core::Vector<DeferredRenderer> renderers;
-
-		RenderPass render_pass;
-		core::Vector<DepthAttachment> depths;
-		core::Vector<Framebuffer> framebuffers;
 };
 
 }
