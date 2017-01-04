@@ -27,6 +27,10 @@ SOFTWARE.
 
 namespace yave {
 
+static vk::ImageLayout vk_attachment_image_layout(ImageUsage usage) {
+	return vk_image_layout(usage & ImageUsage::Attachment);
+}
+
 static vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, const core::Vector<vk::AttachmentReference>& colors) {
 	return vk::SubpassDescription()
 		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
@@ -84,13 +88,13 @@ static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usi
 }
 
 
-static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, std::initializer_list<RenderPass::ImageData> colors) {
+static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, const core::Vector<RenderPass::ImageData>& colors) {
 	auto attachments =
 			core::range(colors).map([=](const auto& color) { return create_attachment(color); }).collect<core::Vector>() +
 			create_attachment(depth);
 
-	auto color_refs = core::range(usize(0), colors.size()).map([](auto i) { return create_attachment_reference(ImageUsage::Color, i); }).collect<core::Vector>();
-	auto depth_ref = create_attachment_reference(ImageUsage::Depth, color_refs.size());
+	auto color_refs = core::range(usize(0), colors.size()).map([](auto i) { return create_attachment_reference(ImageUsage::ColorBit, i); }).collect<core::Vector>();
+	auto depth_ref = create_attachment_reference(ImageUsage::DepthBit, color_refs.size());
 
 	auto subpass = create_subpass(depth_ref, color_refs);
 
@@ -110,7 +114,7 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData de
 
 
 
-RenderPass::RenderPass(DevicePtr dptr, ImageData depth, std::initializer_list<ImageData> colors) :
+RenderPass::RenderPass(DevicePtr dptr, ImageData depth, const core::Vector<ImageData>& colors) :
 		DeviceLinked(dptr),
 		_attachment_count(colors.size()),
 		_render_pass(create_renderpass(dptr, depth, colors)) {

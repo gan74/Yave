@@ -48,7 +48,7 @@ class Binding {
 		Binding(const TextureView& view) :
 				 _type(vk::DescriptorType::eCombinedImageSampler),
 				 _info(vk::DescriptorImageInfo()
-					.setImageLayout(vk_image_layout(ImageUsage::Texture))
+					.setImageLayout(vk_image_layout(ImageUsage::TextureBit))
 					.setImageView(view.vk_image_view())
 					.setSampler(view.image().device()->vk_sampler())) {
 		}
@@ -56,26 +56,26 @@ class Binding {
 		Binding(const StorageView& view) :
 				 _type(vk::DescriptorType::eStorageImage),
 				 _info(vk::DescriptorImageInfo()
-					.setImageLayout(vk_image_layout(ImageUsage::Storage))
+					.setImageLayout(vk_image_layout(ImageUsage::StorageBit))
 					.setImageView(view.vk_image_view())
 					.setSampler(view.image().device()->vk_sampler())) {
 		}
 
 		template<typename T, MemoryFlags Flags>
-		Binding(const TypedSubBuffer<T, BufferUsage::UniformBuffer, Flags>& buffer) :
+		Binding(const TypedSubBuffer<T, BufferUsage::UniformBit, Flags>& buffer) :
 				_type(vk::DescriptorType::eUniformBuffer),
 				_info(buffer.descriptor_info()) {
 		}
 
 		template<typename T, MemoryFlags Flags>
-		Binding(const TypedSubBuffer<T, BufferUsage::StorageBuffer, Flags>& buffer) :
+		Binding(const TypedSubBuffer<T, BufferUsage::StoragBit, Flags>& buffer) :
 				_type(vk::DescriptorType::eStorageBuffer),
 				_info(buffer.descriptor_info()) {
 		}
 
 		template<typename T, BufferUsage Usage, MemoryFlags Flags>
 		Binding(const TypedBuffer<T, Usage, Flags>& buffer) :
-				Binding(TypedSubBuffer<T, (Usage & BufferUsage::StorageBuffer) == BufferUsage::StorageBuffer ? BufferUsage::StorageBuffer : BufferUsage::UniformBuffer, Flags>(buffer)) {
+				Binding(TypedSubBuffer<T, (Usage & BufferUsage::StoragBit) == BufferUsage::StoragBit ? BufferUsage::StoragBit : BufferUsage::UniformBit, Flags>(buffer)) {
 		}
 
 		auto descriptor_set_layout_binding(usize index) const {

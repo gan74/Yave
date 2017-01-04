@@ -48,7 +48,7 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		};
 
 		RenderPass() = default;
-		RenderPass(DevicePtr dptr, ImageData depth, std::initializer_list<ImageData> colors);
+		RenderPass(DevicePtr dptr, ImageData depth, const core::Vector<ImageData>& colors);
 
 		RenderPass(RenderPass&& other);
 		RenderPass& operator=(RenderPass&& other);

@@ -29,11 +29,11 @@ namespace yave {
 enum class PipelineStage {
 	None = 0,
 
-	Fragment = uenum(vk::PipelineStageFlagBits::eFragmentShader) | uenum(vk::PipelineStageFlagBits::eEarlyFragmentTests) | uenum(vk::PipelineStageFlagBits::eLateFragmentTests),
-	Compute = uenum(vk::PipelineStageFlagBits::eComputeShader),
-	AttachmentOutput = uenum(vk::PipelineStageFlagBits::eColorAttachmentOutput),
+	FragmentBit = uenum(vk::PipelineStageFlagBits::eFragmentShader) | uenum(vk::PipelineStageFlagBits::eEarlyFragmentTests) | uenum(vk::PipelineStageFlagBits::eLateFragmentTests),
+	ComputeBit = uenum(vk::PipelineStageFlagBits::eComputeShader),
+	AttachmentOutBit = uenum(vk::PipelineStageFlagBits::eColorAttachmentOutput),
 
-	Shaders = Fragment | Compute
+	Shaders = FragmentBit | ComputeBit
 };
 
 constexpr PipelineStage operator|(PipelineStage l, PipelineStage r) {

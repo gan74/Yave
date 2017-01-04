@@ -34,19 +34,33 @@ static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<Color
 	return a.size();
 }
 
+static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView& depth, std::initializer_list<ColorAttachmentView> colors) {
+	return new RenderPass(dptr, depth, core::range(colors).map([](const auto& c) { return RenderPass::ImageData(c); }).collect<core::Vector>());
+}
+
+
 
 Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors) :
-		DeviceLinked(render_pass.device()),
+		Framebuffer(render_pass.device(), &render_pass, depth, colors) {
+}
+
+Framebuffer::Framebuffer(DevicePtr dptr, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors) :
+		Framebuffer(dptr, VK_NULL_HANDLE, depth, colors) {
+}
+
+Framebuffer::Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, std::initializer_list<ColorAttachmentView> colors) :
+		DeviceLinked(dptr),
+		_render_pass_storage(render_pass ? nullptr : create_render_pass(dptr, depth, colors)),
 		_size(compute_size(depth.image(), colors)),
 		_attachment_count(colors.size()),
-		_render_pass(render_pass.vk_render_pass()),
+		_render_pass(render_pass ? render_pass : _render_pass_storage.as_ptr()),
 		_depth(depth),
 		_colors(colors) {
 
-	auto views = core::range(colors).map([](const auto& v) { return v.vk_image_view(); }).collect<core::Vector>() + depth.vk_image_view();
+	auto views = core::range(_colors).map([](const auto& v) { return v.vk_image_view(); }).collect<core::Vector>() + _depth.vk_image_view();
 
 	_framebuffer = device()->vk_device().createFramebuffer(vk::FramebufferCreateInfo()
-		.setRenderPass(render_pass.vk_render_pass())
+		.setRenderPass(_render_pass->vk_render_pass())
 		.setAttachmentCount(u32(views.size()))
 		.setPAttachments(views.begin())
 		.setWidth(_size.x())
@@ -70,6 +84,7 @@ Framebuffer& Framebuffer::operator=(Framebuffer&& other) {
 
 void Framebuffer::swap(Framebuffer& other) {
 	DeviceLinked::swap(other);
+	std::swap(_render_pass_storage, other._render_pass_storage);
 	std::swap(_size, other._size);
 	std::swap(_attachment_count, other._attachment_count);
 	std::swap(_render_pass, other._render_pass);
@@ -84,8 +99,8 @@ vk::Framebuffer Framebuffer::vk_framebuffer() const {
 	return _framebuffer;
 }
 
-vk::RenderPass Framebuffer::vk_render_pass() const {
-	return _render_pass;
+const RenderPass& Framebuffer::render_pass() const {
+	return *_render_pass;
 }
 
 const DepthAttachmentView& Framebuffer::depth_attachment() const {

@@ -16,13 +16,24 @@ float saturate(float x) {
 	return min(1.0, max(0.0, x));
 }
 
+float noise(vec2 co) {
+	return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+}
+
+
+
 vec3 fetch_normal(sampler2D normal_tex, ivec2 coord) {
 	return texelFetch(normal_tex, coord, 0).xyz * 2.0 - vec3(1.0);
 }
 
+vec3 group_color() {
+	ivec2 coord = ivec2(gl_WorkGroupID.xy);
+	return vec3(noise(coord), noise(coord.yx), noise(-coord));
+}
+
 void main() {
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy);
+	//vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy);
 	
 	vec3 light_dir = normalize(vec3(1, 1, 1));
 	vec3 normal = fetch_normal(in_normal, coord);
@@ -30,6 +41,7 @@ void main() {
 	float lambert = saturate(dot(normal, light_dir));
 	
 	imageStore(out_color, coord, vec4(lambert));
+	//imageStore(out_color, coord, vec4(group_color(), 1));
 }
 
 

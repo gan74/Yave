@@ -25,33 +25,38 @@ SOFTWARE.
 namespace yave {
 
 static vk::ImageLayout vk_layout(ImageUsage usage) {
-	if((usage & ImageUsage::Swapchain) != ImageUsage::None) {
+	if((usage & ImageUsage::SwapchainBit) != ImageUsage::None) {
 		return vk::ImageLayout::ePresentSrcKHR;
 	}
-	if((usage & ImageUsage::Texture) != ImageUsage::None) {
+	if((usage & (ImageUsage::TextureBit | ImageUsage::StorageBit)) != ImageUsage::None) {
 		return vk::ImageLayout::eShaderReadOnlyOptimal;
-	}
-	if((usage & ImageUsage::Storage) != ImageUsage::None) {
-		return vk::ImageLayout::eShaderReadOnlyOptimal;
-	}
-
-	return fatal("Undefined image layout.");
-}
-
-vk::ImageLayout vk_attachment_image_layout(ImageUsage usage) {
-	if((usage & ImageUsage::Depth) != ImageUsage::None) {
-		return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-	}
-	if((usage & ImageUsage::Color) != ImageUsage::None) {
-		return vk::ImageLayout::eColorAttachmentOptimal;
 	}
 
 	return fatal("Undefined image layout.");
 }
 
 vk::ImageLayout vk_image_layout(ImageUsage usage) {
-	auto su = (usage & ~ImageUsage::Attachment);
-	return su == ImageUsage::None ? vk_attachment_image_layout(usage) : vk_layout(su);
+	switch(usage) {
+		case ImageUsage::ColorBit:
+			return vk::ImageLayout::eColorAttachmentOptimal;
+
+		case ImageUsage::DepthBit:
+			return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+		case ImageUsage::DepthTexture:
+			return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+
+		case ImageUsage::TextureBit:
+			return vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		case ImageUsage::SwapchainBit:
+			return vk::ImageLayout::ePresentSrcKHR;
+
+		default:
+			break;
+	}
+
+	return vk_layout(usage);
 }
 
 }

@@ -55,12 +55,12 @@ class ImageView {
 		vk::ImageView _view;
 };
 
-using TextureView = ImageView<ImageUsage::Texture>;
-using StorageView = ImageView<ImageUsage::Storage>;
-using DepthAttachmentView = ImageView<ImageUsage::Depth>;
-using ColorAttachmentView = ImageView<ImageUsage::Color>;
-using DepthTextureAttachmentView = ImageView<ImageUsage::Depth | ImageUsage::Texture>;
-using ColorTextureAttachmentView = ImageView<ImageUsage::Color | ImageUsage::Texture>;
+using TextureView = ImageView<ImageUsage::TextureBit>;
+using StorageView = ImageView<ImageUsage::StorageBit>;
+using DepthAttachmentView = ImageView<ImageUsage::DepthBit>;
+using ColorAttachmentView = ImageView<ImageUsage::ColorBit>;
+using DepthTextureAttachmentView = ImageView<ImageUsage::DepthBit | ImageUsage::TextureBit>;
+using ColorTextureAttachmentView = ImageView<ImageUsage::ColorBit | ImageUsage::TextureBit>;
 
 }
 

@@ -32,24 +32,24 @@ SOFTWARE.
 namespace yave {
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBuffer,Flags>;
+using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit,Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBuffer, Flags>;
+using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit, Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBuffer, Flags>;
+using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Flags>;
 
 
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBuffer,Flags>;
+using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit,Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBuffer, Flags>;
+using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit, Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBuffer, Flags>;
+using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Flags>;
 
 
 

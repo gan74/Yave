@@ -28,11 +28,11 @@ namespace yave {
 
 enum class BufferUsage {
 	None = 0,
-	AttributeBuffer = int(vk::BufferUsageFlagBits::eVertexBuffer),
-	IndexBuffer = int(vk::BufferUsageFlagBits::eIndexBuffer),
-	IndirectBuffer = int(vk::BufferUsageFlagBits::eIndirectBuffer),
-	UniformBuffer = int(vk::BufferUsageFlagBits::eUniformBuffer),
-	StorageBuffer = int(vk::BufferUsageFlagBits::eStorageBuffer)
+	AttributeBit = int(vk::BufferUsageFlagBits::eVertexBuffer),
+	IndexBit = int(vk::BufferUsageFlagBits::eIndexBuffer),
+	IndirectBit = int(vk::BufferUsageFlagBits::eIndirectBuffer),
+	UniformBit = int(vk::BufferUsageFlagBits::eUniformBuffer),
+	StoragBit = int(vk::BufferUsageFlagBits::eStorageBuffer)
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {
@@ -84,7 +84,7 @@ inline bool is_cpu_visible(MemoryFlags flags) {
 
 template<BufferUsage Usage>
 inline constexpr MemoryFlags prefered_memory_flags() {
-	return ((Usage & (BufferUsage::UniformBuffer | BufferUsage::StorageBuffer)) != BufferUsage::None) ? MemoryFlags::CpuVisible : MemoryFlags::DeviceLocal;
+	return ((Usage & (BufferUsage::UniformBit | BufferUsage::StoragBit)) != BufferUsage::None) ? MemoryFlags::CpuVisible : MemoryFlags::DeviceLocal;
 }
 
 template<MemoryFlags Flags>

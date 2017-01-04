@@ -38,15 +38,17 @@ constexpr int max(Args... args) {
 
 enum class ImageUsage {
     None = 0,
-	Texture = uenum(vk::ImageUsageFlagBits::eSampled),
-	Depth = uenum(vk::ImageUsageFlagBits::eDepthStencilAttachment),
-	Color = uenum(vk::ImageUsageFlagBits::eColorAttachment),
-	Storage = uenum(vk::ImageUsageFlagBits::eStorage),
 
-	Swapchain = detail::max(None, Depth, Color, Texture) << 1,
+	TextureBit = uenum(vk::ImageUsageFlagBits::eSampled),
+	DepthBit = uenum(vk::ImageUsageFlagBits::eDepthStencilAttachment),
+	ColorBit = uenum(vk::ImageUsageFlagBits::eColorAttachment),
+	StorageBit = uenum(vk::ImageUsageFlagBits::eStorage),
 
-	// Never use directly, this is for filtering usage during layout transitions
-	Attachment = Color | Depth
+	SwapchainBit = detail::max(None, DepthBit, ColorBit, TextureBit, StorageBit) << 1,
+
+	// Never use directly:
+	Attachment = ColorBit | DepthBit,
+	DepthTexture = TextureBit | DepthBit
 
 };
 
@@ -70,12 +72,6 @@ constexpr bool is_attachment_usage(ImageUsage usage) {
 	return (usage & ImageUsage::Attachment) != ImageUsage::None;
 }
 
-constexpr bool is_swapchain_usage(ImageUsage usage) {
-	return (usage & ImageUsage::Swapchain) != ImageUsage::None;
-}
-
-//vk::ImageLayout vk_image_layout(ImageUsage usage);
-vk::ImageLayout vk_attachment_image_layout(ImageUsage usage);
 vk::ImageLayout vk_image_layout(ImageUsage usage);
 
 }

@@ -141,11 +141,7 @@ CmdBufferRecorder& CmdBufferRecorder::set_viewport(const Viewport& view) {
 	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const RenderPass& render_pass, const Framebuffer& framebuffer) {
-	if(render_pass.vk_render_pass() != framebuffer.vk_render_pass()) {
-		fatal("Incompatible render passes.");
-	}
-
+CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
 	if(_render_pass) {
 		end_render_pass();
 	}
@@ -155,13 +151,13 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const RenderPass& render_
 
 	auto pass_info = vk::RenderPassBeginInfo()
 			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
-			.setRenderPass(render_pass.vk_render_pass())
+			.setRenderPass(framebuffer.render_pass().vk_render_pass())
 			.setFramebuffer(framebuffer.vk_framebuffer())
 			.setPClearValues(clear_values.begin())
 			.setClearValueCount(u32(clear_values.size()))
 		;
 	vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
-	_render_pass = &render_pass;
+	_render_pass = &framebuffer.render_pass();
 
 	return set_viewport(Viewport(framebuffer.size()));
 }
@@ -208,9 +204,7 @@ CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, co
 }
 
 CmdBufferRecorder& CmdBufferRecorder::image_barriers(std::initializer_list<std::reference_wrapper<ImageBase>> images, PipelineStage src, PipelineStage dst) {
-	if(_render_pass) {
-		fatal("Image barrier inside renderpass.");
-	}
+	end_render_pass();
 
 	auto barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
 	for(ImageBase& image : images) {

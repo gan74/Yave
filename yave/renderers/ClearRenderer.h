@@ -29,12 +29,11 @@ namespace yave {
 
 class ClearRenderer : NonCopyable {
 	public:
-		ClearRenderer(const RenderPass& render_pass, Framebuffer& framebuffer);
+		ClearRenderer(Framebuffer& framebuffer);
 
 		void draw(CmdBufferRecorder& recorder) const;
 
 	private:
-		const RenderPass& _render_pass;
 		Framebuffer& _framebuffer;
 };
 

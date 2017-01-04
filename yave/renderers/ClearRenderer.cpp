@@ -24,13 +24,12 @@ SOFTWARE.
 
 namespace yave {
 
-ClearRenderer::ClearRenderer(const RenderPass& render_pass, Framebuffer &framebuffer)  :
-		_render_pass(render_pass),
+ClearRenderer::ClearRenderer(Framebuffer &framebuffer)  :
 		_framebuffer(framebuffer) {
 }
 
 void ClearRenderer::draw(CmdBufferRecorder &recorder) const {
-	recorder.bind_framebuffer(_render_pass, _framebuffer);
+	recorder.bind_framebuffer(_framebuffer);
 }
 
 }

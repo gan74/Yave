@@ -47,7 +47,7 @@ class StaticMesh : public Transformable {
 		AssetPtr<StaticMeshInstance> _instance;
 		mutable AssetPtr<Material> _material;
 
-		TypedBuffer<Transform, BufferUsage::AttributeBuffer, MemoryFlags::CpuVisible> _matrix_buffer;
+		TypedBuffer<Transform, BufferUsage::AttributeBit, MemoryFlags::CpuVisible> _matrix_buffer;
 		TypedMapping<Transform, MemoryFlags::CpuVisible> _mapping;
 };
 

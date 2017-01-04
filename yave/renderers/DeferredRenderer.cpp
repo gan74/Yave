@@ -43,8 +43,7 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 		_depth(device(), depth_format, output.size()),
 		_diffuse(device(), diffuse_format, output.size()),
 		_normal(device(), normal_format, output.size()),
-		_render_pass(device(), _depth, {_diffuse, _normal}),
-		_gbuffer(_render_pass, _depth, {_diffuse, _normal}),
+		_gbuffer(device(), _depth, {_diffuse, _normal}),
 		_shader(create_shader(device())),
 		_program(_shader),
 		_compute_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_output)}) {
@@ -57,11 +56,10 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 }
 
 void DeferredRenderer::draw(CmdBufferRecorder& recorder) {
-	recorder.bind_framebuffer(_render_pass, _gbuffer);
+	recorder.bind_framebuffer(_gbuffer);
 	_scene.draw(recorder);
-	recorder.end_render_pass();
 
-	recorder.image_barriers({_depth, _diffuse, _normal}, PipelineStage::AttachmentOutput, PipelineStage::Compute);
+	recorder.image_barriers({_depth, _diffuse, _normal}, PipelineStage::AttachmentOutBit, PipelineStage::ComputeBit);
 	recorder.dispatch(_program, math::Vec3ui(_output.size() / _shader.local_size().sub(3), 1), _compute_set);
 }
 

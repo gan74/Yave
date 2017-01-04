@@ -34,10 +34,9 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 
 	public:
 		Framebuffer() = default;
-		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors);
 
-		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, ColorAttachmentView color) : Framebuffer(render_pass, depth, {color}) {
-		}
+		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors);
+		Framebuffer(DevicePtr dptr, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors);
 
 		Framebuffer(Framebuffer&& other);
 		Framebuffer& operator=(Framebuffer&& other);
@@ -47,22 +46,26 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 		const math::Vec2ui& size() const;
 
 		vk::Framebuffer vk_framebuffer() const;
-		vk::RenderPass vk_render_pass() const;
 
 		const DepthAttachmentView& depth_attachment() const;
 		const core::Vector<ColorAttachmentView>& color_attachments() const;
+		const RenderPass& render_pass() const;
 
 		usize attachment_count() const {
 			return _attachment_count;
 		}
 
 	private:
+		Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, std::initializer_list<ColorAttachmentView> colors);
+
 		void swap(Framebuffer& other);
+
+		core::Ptr<RenderPass> _render_pass_storage;
 
 		math::Vec2ui _size;
 		usize _attachment_count = 0;
 
-		vk::RenderPass _render_pass;
+		const RenderPass* _render_pass = nullptr;
 		vk::Framebuffer _framebuffer;
 
 		DepthAttachmentView _depth;

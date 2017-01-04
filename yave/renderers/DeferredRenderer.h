@@ -49,8 +49,6 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		ColorTextureAttachment _diffuse;
 		ColorTextureAttachment _normal;
 
-		RenderPass _render_pass;
-
 		Framebuffer _gbuffer;
 
 		ComputeShader _shader;
