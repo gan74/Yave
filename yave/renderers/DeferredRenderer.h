@@ -40,17 +40,16 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 			float padding1;
 		};
 
-		template<ImageUsage Usage>
-		DeferredRenderer(SceneView& scene, Image<Usage>& output) : DeferredRenderer(scene, OutputView(output)) {
-		}
+		DeferredRenderer(SceneView& scene, const math::Vec2ui& size);
 
-		void draw(CmdBufferRecorder& recorder);
+		void draw(CmdBufferRecorder& recorder, const OutputView& output);
 
 	private:
-		DeferredRenderer(SceneView& scene, const OutputView& output);
+
+		const DescriptorSet& create_descriptor_set(const OutputView& out);
 
 		SceneView& _scene;
-		OutputView _output;
+		math::Vec2ui _size;
 
 		DepthTextureAttachment _depth;
 		ColorTextureAttachment _diffuse;
@@ -62,7 +61,7 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 
 		ComputeShader _shader;
 		ComputeProgram _program;
-		DescriptorSet _compute_set;
+		std::unordered_map<VkImageView, DescriptorSet> _descriptor_sets;
 };
 
 }

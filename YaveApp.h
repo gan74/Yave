@@ -79,7 +79,7 @@ class YaveApp : NonCopyable {
 		Scene* scene;
 		SceneView* scene_view;
 
-		core::Vector<DeferredRenderer> renderers;
+		DeferredRenderer* renderer;
 };
 
 }

@@ -43,7 +43,7 @@ static auto create_lights(DevicePtr dptr, usize count) {
 	auto map = buffer.map();
 
 	std::mt19937 gen(3);
-	std::uniform_int_distribution<int> distr(0, 1);
+	std::uniform_real_distribution<float> distr(0, 1);
 	std::uniform_real_distribution<float> pos_distr(-1, 1);
 
 	core::Vector<DeferredRenderer::Light> lights;
@@ -63,32 +63,49 @@ static auto create_lights(DevicePtr dptr, usize count) {
 	return buffer;
 }
 
-DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
+DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 		DeviceLinked(scene.device()),
 		_scene(scene),
-		_output(output),
-		_depth(device(), depth_format, output.size()),
-		_diffuse(device(), diffuse_format, output.size()),
-		_normal(device(), normal_format, output.size()),
+		_size(size),
+		_depth(device(), depth_format, _size),
+		_diffuse(device(), diffuse_format, _size),
+		_normal(device(), normal_format, _size),
 		_gbuffer(device(), _depth, {_diffuse, _normal}),
 		_lights(create_lights(device(), 2)),
 		_shader(create_shader(device())),
-		_program(_shader),
-		_compute_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_output), Binding(_lights)}) {
+		_program(_shader) {
 
 	for(usize i = 0; i != 3; i++) {
-		if(_output.size()[i] % _shader.local_size()[i]) {
-			log_msg("Compute local size does not divide output buffer size.", LogType::Warning);
+		if(_size[i] % _shader.local_size()[i]) {
+			log_msg("Compute local size at index "_s + i + " does not divide output buffer size.", LogType::Warning);
 		}
 	}
 }
 
-void DeferredRenderer::draw(CmdBufferRecorder& recorder) {
+void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {
 	recorder.bind_framebuffer(_gbuffer);
 	_scene.draw(recorder);
 
 	recorder.image_barriers({_depth, _diffuse, _normal}, PipelineStage::AttachmentOutBit, PipelineStage::ComputeBit);
-	recorder.dispatch(_program, math::Vec3ui(_output.size() / _shader.local_size().sub(3), 1), _compute_set);
+	recorder.dispatch(_program, math::Vec3ui(_size / _shader.local_size().sub(3), 1), create_descriptor_set(out));
+}
+
+const DescriptorSet& DeferredRenderer::create_descriptor_set(const OutputView& out) {
+	if(out.size() != _size) {
+		fatal("Invalid output image size.");
+	}
+
+	auto it = _descriptor_sets.find(out.vk_image_view());
+	if(it == _descriptor_sets.end()) {
+		it = _descriptor_sets.insert(std::make_pair(out.vk_image_view(), DescriptorSet(device(), {
+				Binding(_depth),
+				Binding(_diffuse),
+				Binding(_normal),
+				Binding(out),
+				Binding(_lights)
+			}))).first;
+	}
+	return it->second;
 }
 
 }

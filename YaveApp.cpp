@@ -48,7 +48,7 @@ void YaveApp::init(Window* window) {
 }
 
 YaveApp::~YaveApp() {
-	renderers.clear();
+	delete renderer;
 
 	delete scene_view;
 	delete scene;
@@ -71,7 +71,7 @@ void YaveApp::create_command_buffers() {
 
 		recorder.transition_image(swapchain->image(i), vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 
-		renderers[i].draw(recorder);
+		renderer->draw(recorder, swapchain->image(i));
 
 		recorder.transition_image(swapchain->image(i), vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
@@ -175,9 +175,7 @@ void YaveApp::create_assets() {
 	scene = new Scene(std::move(objects));
 	scene_view = new SceneView(&device, *scene);
 
-	for(auto& i : swapchain->images()) {
-		renderers << DeferredRenderer(*scene_view, i);
-	}
+	renderer = new DeferredRenderer(*scene_view, swapchain->size());
 }
 
 

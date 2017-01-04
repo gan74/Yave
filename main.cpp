@@ -54,7 +54,7 @@ T avg(T t) {
 }
 
 int main(int, char **) {
-	Window win(math::vec(1024, 728), "Yave");
+	Window win(math::vec(1280, 768), "Yave");
 	win.set_mouse_handler(new ArcballMouse());
 
 	YaveApp app(DebugParams::debug());
