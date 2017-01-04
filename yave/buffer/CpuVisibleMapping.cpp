@@ -31,7 +31,7 @@ CpuVisibleMapping::CpuVisibleMapping() : _mapping(nullptr) {
 
 CpuVisibleMapping::CpuVisibleMapping(const SubBufferBase& buff) :
 		_buffer(buff),
-		_mapping(_buffer.device()->vk_device().mapMemory(_buffer.vk_device_memory(), 0, _buffer.byte_size())) {
+		_mapping(_buffer.device()->vk_device().mapMemory(_buffer.vk_device_memory(), _buffer.byte_offset(), _buffer.byte_size())) {
 }
 
 CpuVisibleMapping::CpuVisibleMapping(CpuVisibleMapping&& other) : CpuVisibleMapping() {
