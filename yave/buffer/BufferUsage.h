@@ -32,7 +32,7 @@ enum class BufferUsage {
 	IndexBit = int(vk::BufferUsageFlagBits::eIndexBuffer),
 	IndirectBit = int(vk::BufferUsageFlagBits::eIndirectBuffer),
 	UniformBit = int(vk::BufferUsageFlagBits::eUniformBuffer),
-	StoragBit = int(vk::BufferUsageFlagBits::eStorageBuffer)
+	StorageBit = int(vk::BufferUsageFlagBits::eStorageBuffer)
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {
@@ -84,7 +84,7 @@ inline bool is_cpu_visible(MemoryFlags flags) {
 
 template<BufferUsage Usage>
 inline constexpr MemoryFlags prefered_memory_flags() {
-	return ((Usage & (BufferUsage::UniformBit | BufferUsage::StoragBit)) != BufferUsage::None) ? MemoryFlags::CpuVisible : MemoryFlags::DeviceLocal;
+	return ((Usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryFlags::CpuVisible : MemoryFlags::DeviceLocal;
 }
 
 template<MemoryFlags Flags>

@@ -11,6 +11,16 @@ layout(set = 0, binding = 2) uniform sampler2D in_normal;
 
 layout(rgba8, set = 0, binding = 3) uniform writeonly image2D out_color;
 
+struct Light {
+	vec4 color;
+	vec4 direction;
+};
+
+layout(set = 0, binding = 4) buffer Buffer {
+	uvec4 counts;
+	Light lights[];
+} lights;
+
 
 float saturate(float x) {
 	return min(1.0, max(0.0, x));
@@ -35,12 +45,16 @@ void main() {
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	//vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy);
 	
-	vec3 light_dir = normalize(vec3(1, 1, 1));
 	vec3 normal = fetch_normal(in_normal, coord);
+	vec4 diffuse = texelFetch(in_color, coord, 0);
 	
-	float lambert = saturate(dot(normal, light_dir));
+	vec4 acc = vec4(0);
+	for(uint i = 0; i < lights.counts.x; i++) {
+		float lambert = saturate(dot(normal, lights.lights[i].direction.xyz));
+		acc += /*diffuse **/ lambert * lights.lights[i].color;
+	}
 	
-	imageStore(out_color, coord, vec4(lambert));
+	imageStore(out_color, coord, acc);
 	//imageStore(out_color, coord, vec4(group_color(), 1));
 }
 

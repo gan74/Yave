@@ -33,6 +33,13 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 	using OutputView = StorageView;
 
 	public:
+		struct Light {
+			math::Vec3 color;
+			float padding0;
+			math::Vec3 direction;
+			float padding1;
+		};
+
 		template<ImageUsage Usage>
 		DeferredRenderer(SceneView& scene, Image<Usage>& output) : DeferredRenderer(scene, OutputView(output)) {
 		}
@@ -50,6 +57,8 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		ColorTextureAttachment _normal;
 
 		Framebuffer _gbuffer;
+
+		TypedBuffer<u8, BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
 
 		ComputeShader _shader;
 		ComputeProgram _program;

@@ -68,14 +68,14 @@ class Binding {
 		}
 
 		template<typename T, MemoryFlags Flags>
-		Binding(const TypedSubBuffer<T, BufferUsage::StoragBit, Flags>& buffer) :
+		Binding(const TypedSubBuffer<T, BufferUsage::StorageBit, Flags>& buffer) :
 				_type(vk::DescriptorType::eStorageBuffer),
 				_info(buffer.descriptor_info()) {
 		}
 
 		template<typename T, BufferUsage Usage, MemoryFlags Flags>
 		Binding(const TypedBuffer<T, Usage, Flags>& buffer) :
-				Binding(TypedSubBuffer<T, (Usage & BufferUsage::StoragBit) == BufferUsage::StoragBit ? BufferUsage::StoragBit : BufferUsage::UniformBit, Flags>(buffer)) {
+				Binding(TypedSubBuffer<T, (Usage & BufferUsage::StorageBit) == BufferUsage::StorageBit ? BufferUsage::StorageBit : BufferUsage::UniformBit, Flags>(buffer)) {
 		}
 
 		auto descriptor_set_layout_binding(usize index) const {

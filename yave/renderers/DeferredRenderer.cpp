@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include <y/io/File.h>
 
+#include <random>
+
 namespace yave {
 
 static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
@@ -36,6 +38,31 @@ static ComputeShader create_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv")));
 }
 
+static auto create_lights(DevicePtr dptr, usize count) {
+	TypedBuffer<u8, BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(u32) + count * sizeof(DeferredRenderer::Light));
+	auto map = buffer.map();
+
+	std::mt19937 gen(3);
+	std::uniform_int_distribution<int> distr(0, 1);
+	std::uniform_real_distribution<float> pos_distr(-1, 1);
+
+	core::Vector<DeferredRenderer::Light> lights;
+	for(usize i = 0; i != count; i++) {
+		lights << DeferredRenderer::Light {
+				math::Vec3(distr(gen), distr(gen), distr(gen)), 1,
+				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)).normalized(), 0
+			};
+		log_msg("lights["_s + i + "].color     = (" + lights.last().color.x() + ", " + lights.last().color.y() + ", " + lights.last().color.z() + ")");
+		log_msg("lights["_s + i + "].direction = (" + lights.last().direction.x() + ", " + lights.last().direction.y() + ", " + lights.last().direction.z() + ")");
+	}
+
+	math::Vec<4, u32> count32(count);
+	memcpy(map.begin(), &count32, sizeof(count32));
+	memcpy(map.begin() + sizeof(count32), lights.begin(), sizeof(DeferredRenderer::Light) * count);
+
+	return buffer;
+}
+
 DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 		DeviceLinked(scene.device()),
 		_scene(scene),
@@ -44,9 +71,10 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const OutputView& output) :
 		_diffuse(device(), diffuse_format, output.size()),
 		_normal(device(), normal_format, output.size()),
 		_gbuffer(device(), _depth, {_diffuse, _normal}),
+		_lights(create_lights(device(), 2)),
 		_shader(create_shader(device())),
 		_program(_shader),
-		_compute_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_output)}) {
+		_compute_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_output), Binding(_lights)}) {
 
 	for(usize i = 0; i != 3; i++) {
 		if(_output.size()[i] % _shader.local_size()[i]) {
