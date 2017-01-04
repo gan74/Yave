@@ -39,8 +39,8 @@ static ComputeShader create_shader(DevicePtr dptr) {
 }
 
 static auto create_lights(DevicePtr dptr, usize count) {
-	TypedBuffer<u8, BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(u32) + count * sizeof(DeferredRenderer::Light));
-	auto map = buffer.map();
+	using Vec4u32 = math::Vec<4, u32>;
+	Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(Vec4u32) + count * sizeof(DeferredRenderer::Light));
 
 	std::mt19937 gen(3);
 	std::uniform_real_distribution<float> distr(0, 1);
@@ -52,13 +52,19 @@ static auto create_lights(DevicePtr dptr, usize count) {
 				math::Vec3(distr(gen), distr(gen), distr(gen)), 1,
 				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)).normalized(), 0
 			};
-		log_msg("lights["_s + i + "].color     = (" + lights.last().color.x() + ", " + lights.last().color.y() + ", " + lights.last().color.z() + ")");
-		log_msg("lights["_s + i + "].direction = (" + lights.last().direction.x() + ", " + lights.last().direction.y() + ", " + lights.last().direction.z() + ")");
+		//log_msg("lights["_s + i + "].color     = (" + lights.last().color.x() + ", " + lights.last().color.y() + ", " + lights.last().color.z() + ")");
+		//log_msg("lights["_s + i + "].direction = (" + lights.last().direction.x() + ", " + lights.last().direction.y() + ", " + lights.last().direction.z() + ")");
 	}
 
-	math::Vec<4, u32> count32(count);
-	memcpy(map.begin(), &count32, sizeof(count32));
-	memcpy(map.begin() + sizeof(count32), lights.begin(), sizeof(DeferredRenderer::Light) * count);
+	{
+		*TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryFlags::CpuVisible>(buffer, 0, 1).map().begin() = Vec4u32(count, 0, 0, 0);
+
+	}
+	{
+		TypedSubBuffer<DeferredRenderer::Light, BufferUsage::StorageBit, MemoryFlags::CpuVisible> light_buffer(buffer, sizeof(Vec4u32), count);
+		auto map = light_buffer.map();
+		std::copy(lights.begin(), lights.end(), map.begin());
+	}
 
 	return buffer;
 }

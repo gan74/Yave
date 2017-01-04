@@ -57,7 +57,7 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 
 		Framebuffer _gbuffer;
 
-		TypedBuffer<u8, BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
+		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
 
 		ComputeShader _shader;
 		ComputeProgram _program;

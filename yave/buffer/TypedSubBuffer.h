@@ -43,6 +43,11 @@ class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 		explicit TypedSubBuffer(const TypedBuffer<Elem, BuffUsage, Flags>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(Elem)) {
 		}
 
+		template<BufferUsage BuffUsage>
+		TypedSubBuffer(const Buffer<BuffUsage, Flags>& buffer, usize byte_offset, usize count) : Base(buffer, byte_offset, count * sizeof(Elem)) {
+		}
+
+
 		usize size() const {
 			return this->byte_size() / sizeof(Elem);
 		}
