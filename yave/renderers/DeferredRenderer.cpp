@@ -110,9 +110,8 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 }
 
 void DeferredRenderer::update() {
-	auto view = _scene.view_matrix().transposed();
-	auto inverse = (_scene.proj_matrix().transposed() * view).inverse();
-	_camera.map()[0] = Camera{inverse.transposed(), extract_position(view)};
+	auto inverse = (_scene.proj_matrix() * _scene.view_matrix()).inverse();
+	_camera.map()[0] = Camera{inverse.transposed(), extract_position(_scene.view_matrix())};
 }
 
 void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {

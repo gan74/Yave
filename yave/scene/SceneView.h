@@ -50,6 +50,7 @@ class SceneView : NonCopyable {
 
 		const math::Matrix4<>& view_matrix() const;
 		const math::Matrix4<>& proj_matrix() const;
+		math::Matrix4<> inverse_matrix() const;
 
 
 		const Scene& scene() const;
@@ -61,8 +62,9 @@ class SceneView : NonCopyable {
 
 		CmdBufferPool _command_pool;
 
+		Matrices _matrices;
 		TypedBuffer<Matrices, BufferUsage::UniformBit> _matrix_buffer;
-		decltype(_matrix_buffer.map()) _mapping;
+		TypedMapping<Matrices, MemoryFlags::CpuVisible> _mapping;
 
 		DescriptorSet _matrix_set;
 };
