@@ -32,6 +32,11 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 
 	using OutputView = StorageView;
 
+	struct Camera {
+		math::Matrix4<> inv_matrix;
+		math::Vec3 position;
+	};
+
 	public:
 		DeferredRenderer(SceneView& scene, const math::Vec2ui& size);
 
@@ -54,7 +59,7 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		ComputeProgram _program;
 
 		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
-		TypedBuffer<math::Matrix4<>, BufferUsage::UniformBit> _matrix;
+		TypedBuffer<Camera, BufferUsage::UniformBit> _camera;
 
 		DescriptorSet _input_set;
 		DescriptorSet _lights_set;

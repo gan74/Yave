@@ -41,7 +41,6 @@ struct Light {
 	float padding;
 };
 
-
 static ComputeShader create_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv")));
 }
@@ -80,6 +79,14 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
 	return buffer;
 }
 
+static math::Vec3 extract_position(const math::Matrix4<>& view_matrix) {
+	math::Vec3 pos;
+	for(usize i = 0; i != 3; i++) {
+		pos -= view_matrix[i].sub(3) * view_matrix[i].w();
+	}
+	return pos;
+}
+
 DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 		DeviceLinked(scene.device()),
 		_scene(scene),
@@ -91,8 +98,8 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 		_shader(create_shader(device())),
 		_program(_shader),
 		_lights(create_lights(device(), 0, 2)),
-		_matrix(device(), 1),
-		_input_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_matrix)}),
+		_camera(device(), 1),
+		_input_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera)}),
 		_lights_set(device(), {Binding(_lights)}) {
 
 	for(usize i = 0; i != 3; i++) {
@@ -103,8 +110,9 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 }
 
 void DeferredRenderer::update() {
-	auto inverse = (_scene.proj_matrix().transposed() * _scene.view_matrix().transposed()).inverse();
-	_matrix.map()[0] = inverse.transposed();
+	auto view = _scene.view_matrix().transposed();
+	auto inverse = (_scene.proj_matrix().transposed() * view).inverse();
+	_camera.map()[0] = Camera{inverse.transposed(), extract_position(view)};
 }
 
 void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {
