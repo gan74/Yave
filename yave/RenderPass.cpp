@@ -40,31 +40,33 @@ static vk::SubpassDescription create_subpass(const vk::AttachmentReference& dept
 	;
 }
 
-static std::array<vk::SubpassDependency, 1> create_bottom_of_pipe_dependencies() {
+static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies() {
 	return {{vk::SubpassDependency()
-		.setSrcSubpass(VK_SUBPASS_EXTERNAL)
-		.setDstSubpass(0)
-		.setSrcStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-		.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
-		.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-		.setDstAccessMask(
-			vk::AccessFlagBits::eColorAttachmentRead |
-			vk::AccessFlagBits::eColorAttachmentWrite |
-			vk::AccessFlagBits::eDepthStencilAttachmentRead |
-			vk::AccessFlagBits::eDepthStencilAttachmentWrite
-		)/*,
+			.setSrcSubpass(VK_SUBPASS_EXTERNAL)
+			.setDstSubpass(0)
+			.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+			.setSrcStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
+			.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
+			.setDstAccessMask(
+				vk::AccessFlagBits::eColorAttachmentRead |
+				vk::AccessFlagBits::eColorAttachmentWrite |
+				vk::AccessFlagBits::eDepthStencilAttachmentRead |
+				vk::AccessFlagBits::eDepthStencilAttachmentWrite
+		),
 		vk::SubpassDependency()
 			.setSrcSubpass(0)
 			.setDstSubpass(VK_SUBPASS_EXTERNAL)
+			.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
 			.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+			.setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
 			.setSrcAccessMask(
 					vk::AccessFlagBits::eColorAttachmentRead |
 					vk::AccessFlagBits::eColorAttachmentWrite |
 					vk::AccessFlagBits::eDepthStencilAttachmentRead |
 					vk::AccessFlagBits::eDepthStencilAttachmentWrite
-			)
-			.setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)*/
+				)
+			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
 		}};
 }
 
