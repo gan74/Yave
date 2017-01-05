@@ -63,10 +63,10 @@ auto perspective(T fovy, T aspect, T z_near, T z_far) {
 		Matrix4<T> m = identity();
 		m[0][0] = T(1) / (aspect * tan_half);
 		m[1][1] = T(1) / tan_half;
-		// m[1][1][1][1] *= -1; //----------------------------------------------------------------
-		m[2][3] = -T(1);
+		m[3][2] = -T(1);
 		m[2][2] = -(z_far + z_near) / (z_far - z_near);
-		m[3][2] = -(T(2) * z_far * z_near) / (z_far - z_near);
+		m[2][3] = -(T(2) * z_far * z_near) / (z_far - z_near);
+		//m[3][3] = 0; // ??????????????
 
 		return m;
 }
@@ -79,17 +79,17 @@ auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up 
 
 		Matrix4<T> m = identity();
 		m[0][0] = s.x();
-		m[1][0] = s.y();
-		m[2][0] = s.z();
-		m[0][1] = u.x();
+		m[0][1] = s.y();
+		m[0][2] = s.z();
+		m[1][0] = u.x();
 		m[1][1] = u.y();
-		m[2][1] = u.z();
-		m[0][2] = -f.x();
-		m[1][2] = -f.y();
+		m[1][2] = u.z();
+		m[2][0] = -f.x();
+		m[2][1] = -f.y();
 		m[2][2] = -f.z();
-		m[3][0] = -s.dot(eye);
-		m[3][1] = -u.dot(eye);
-		m[3][2] = f.dot(eye);
+		m[0][3] = -s.dot(eye);
+		m[1][3] = -u.dot(eye);
+		m[2][3] = f.dot(eye);
 
 		return m;
 }
