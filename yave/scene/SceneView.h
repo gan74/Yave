@@ -48,20 +48,20 @@ class SceneView : NonCopyable {
 		void set_view(const math::Matrix4<>& view);
 		void set_proj(const math::Matrix4<>& proj);
 
+		math::Matrix4<> inverse_matrix() const;
+
 		const Scene& scene() const;
 
 		DevicePtr device() const;
 
 	private:
-		auto map() {
-			return _matrix_buffer.map();
-		}
-
 		const Scene& _scene;
 
 		CmdBufferPool _command_pool;
 
 		TypedBuffer<Matrices, BufferUsage::UniformBit> _matrix_buffer;
+		decltype(_matrix_buffer.map()) _mapping;
+
 		DescriptorSet _matrix_set;
 };
 

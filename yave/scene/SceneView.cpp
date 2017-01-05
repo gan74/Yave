@@ -30,10 +30,10 @@ SceneView::SceneView(DevicePtr dptr, const Scene &sce) :
 		_scene(sce),
 		_command_pool(dptr),
 		_matrix_buffer(dptr, 1),
+		_mapping(_matrix_buffer.map()),
 		_matrix_set(dptr, {Binding(_matrix_buffer)}) {
 
-	auto mapping = _matrix_buffer.map();
-	auto& mvp = *mapping.begin();
+	auto& mvp = *_mapping.begin();
 
 	float ratio = 4.0f / 3.0f;
 	mvp.proj = math::perspective(math::to_rad(45), ratio, 0.001f, 10.f);
@@ -47,11 +47,15 @@ void SceneView::draw(CmdBufferRecorder& recorder) const {
 }
 
 void SceneView::set_view(const math::Matrix4<>& view) {
-	map().begin()->view = view;
+	_mapping.begin()->view = view;
 }
 
 void SceneView::set_proj(const math::Matrix4<>& proj) {
-	map().begin()->proj = proj;
+	_mapping.begin()->proj = proj;
+}
+
+math::Matrix4<> SceneView::inverse_matrix() const {
+	return (_mapping.begin()->view * _mapping.begin()->proj).inverse();
 }
 
 const Scene& SceneView::scene() const {

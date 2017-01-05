@@ -58,16 +58,14 @@ class CmdBufferRecorder : NonCopyable {
 
 		CmdBufferRecorder& set_viewport(const Viewport& view);
 		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
-		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& vp);
+		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
-		CmdBufferRecorder& dispatch(const ComputeProgram& program, const math::Vec3ui& size, const DescriptorSet& descriptor_set);
+		CmdBufferRecorder& dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
 		CmdBufferRecorder& image_barriers(std::initializer_list<std::reference_wrapper<ImageBase>> images, PipelineStage src, PipelineStage dst);
 
 		// never use directly, needed for internal work and image loading
 		CmdBufferRecorder& transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
-
-
 
 
 	private:

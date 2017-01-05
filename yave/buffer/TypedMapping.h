@@ -57,7 +57,7 @@ class TypedMapping : public MemoryMapping<Flags> {
 		}
 
 		iterator begin() {
-			return iterator(this->data());
+			return reinterpret_cast<iterator>(this->data());
 		}
 
 		iterator end() {
@@ -65,7 +65,7 @@ class TypedMapping : public MemoryMapping<Flags> {
 		}
 
 		const_iterator begin() const {
-			return iterator(this->data());
+			return reinterpret_cast<const_iterator>(this->data());
 		}
 
 		const_iterator end() const {

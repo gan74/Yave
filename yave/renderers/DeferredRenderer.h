@@ -46,7 +46,7 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 
 	private:
 
-		const DescriptorSet& create_descriptor_set(const OutputView& out);
+		const DescriptorSet& create_output_set(const OutputView& out);
 
 		SceneView& _scene;
 		math::Vec2ui _size;
@@ -61,7 +61,10 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 
 		ComputeShader _shader;
 		ComputeProgram _program;
-		std::unordered_map<VkImageView, DescriptorSet> _descriptor_sets;
+
+		DescriptorSet _input_set;
+		DescriptorSet _lights_set;
+		std::unordered_map<VkImageView, DescriptorSet> _output_sets;
 };
 
 }

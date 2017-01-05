@@ -162,18 +162,13 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 	return set_viewport(Viewport(framebuffer.size()));
 }
 
-CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, const DescriptorSet& vp) {
+CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
-	Y_TODO(descriptor set binding infecient)
-	if(vp.vk_descriptor_set()) {
-		auto vk = vp.vk_descriptor_set();
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, 1, &vk, 0, nullptr);
-	}
-	if(pipeline.vk_descriptor_set()) {
-		auto vk = pipeline.vk_descriptor_set();
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 1, 1, &vk, 0, nullptr);
-	}
+	auto ds = core::range(descriptor_sets).map([](const auto& ds) { return ds.get().vk_descriptor_set(); }).collect<core::Vector>() +
+			  pipeline.vk_descriptor_set();
+
+	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
 
 	return *this;
 }
@@ -191,13 +186,13 @@ CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& mesh_instan
 }
 
 
-CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, const DescriptorSet& descriptor_set) {
+CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	end_render_pass();
 
-	auto ds = descriptor_set.vk_descriptor_set();
+	auto ds = core::range(descriptor_sets).map([](const auto& ds) { return ds.get().vk_descriptor_set(); }).collect<core::Vector>();
 
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
-	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, 1, &ds, 0, nullptr);
+	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
 
 	return *this;

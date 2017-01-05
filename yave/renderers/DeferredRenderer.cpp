@@ -79,7 +79,9 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 		_gbuffer(device(), _depth, {_diffuse, _normal}),
 		_lights(create_lights(device(), 2)),
 		_shader(create_shader(device())),
-		_program(_shader) {
+		_program(_shader),
+		_input_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal)}),
+		_lights_set(device(), {Binding(_lights)}) {
 
 	for(usize i = 0; i != 3; i++) {
 		if(_size[i] % _shader.local_size()[i]) {
@@ -92,23 +94,21 @@ void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) 
 	recorder.bind_framebuffer(_gbuffer);
 	_scene.draw(recorder);
 
-	recorder.image_barriers({_depth, _diffuse, _normal}, PipelineStage::AttachmentOutBit, PipelineStage::ComputeBit);
-	recorder.dispatch(_program, math::Vec3ui(_size / _shader.local_size().sub(3), 1), create_descriptor_set(out));
+#warning barrier needed ?
+	//recorder.image_barriers({_depth, _diffuse, _normal}, PipelineStage::AttachmentOutBit, PipelineStage::ComputeBit);
+
+	recorder.dispatch(_program, math::Vec3ui(_size / _shader.local_size().sub(3), 1), {_input_set, _lights_set, create_output_set(out)});
 }
 
-const DescriptorSet& DeferredRenderer::create_descriptor_set(const OutputView& out) {
+const DescriptorSet& DeferredRenderer::create_output_set(const OutputView& out) {
 	if(out.size() != _size) {
 		fatal("Invalid output image size.");
 	}
 
-	auto it = _descriptor_sets.find(out.vk_image_view());
-	if(it == _descriptor_sets.end()) {
-		it = _descriptor_sets.insert(std::make_pair(out.vk_image_view(), DescriptorSet(device(), {
-				Binding(_depth),
-				Binding(_diffuse),
-				Binding(_normal),
-				Binding(out),
-				Binding(_lights)
+	auto it = _output_sets.find(out.vk_image_view());
+	if(it == _output_sets.end()) {
+		it = _output_sets.insert(std::make_pair(out.vk_image_view(), DescriptorSet(device(), {
+				Binding(out)
 			}))).first;
 	}
 	return it->second;

@@ -49,7 +49,7 @@ StaticMesh::StaticMesh(StaticMesh&& other) :
 }
 
 void StaticMesh::draw(CmdBufferRecorder& recorder, const DescriptorSet& vp) const {
-	recorder.bind_pipeline(_material->compile(recorder.current_pass(), recorder.viewport()), vp);
+	recorder.bind_pipeline(_material->compile(recorder.current_pass(), recorder.viewport()), {vp});
 	recorder.vk_cmd_buffer().bindVertexBuffers(1, _matrix_buffer.vk_buffer(), vk::DeviceSize(0));
 	recorder.draw(*_instance);
 }
