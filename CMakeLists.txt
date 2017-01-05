@@ -8,8 +8,8 @@ set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-
 set(EXTRA_OPTIMISATIONS "-ffast-math")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -flto -O3")
-	message("Release: LTO enabled")
+	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -O3")
+	message("Release build")
 endif()
 
 

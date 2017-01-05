@@ -193,7 +193,7 @@ class Vec
 			for(usize i = 0; i != index; i++) {
 				v[i] = _vec[i];
 			}
-			for(usize i = index; i < N; i++) {
+			for(usize i = index; i < N - 1; i++) {
 				v[i] = _vec[i + 1];
 			}
 			return v;
