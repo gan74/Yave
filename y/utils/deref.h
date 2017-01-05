@@ -45,7 +45,7 @@ std::false_type (&deref_helper(DerefTag));
 template<typename T>
 std::true_type deref_helper(const T&);
 
-template<typename T, typename Enable = void>
+template<typename T, typename = void>
 struct DerefTrait {
 	using type = decltype(deref_helper((**make_one<T*>())));
 	//using type = std::false_type;

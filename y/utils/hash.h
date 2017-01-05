@@ -79,7 +79,7 @@ struct hash_t {
 	struct hash {
 		typedef T argument_type;
 		typedef std::size_t result_type;
-		template<typename Enable = typename std::enable_if<y::is_iterable<T>::value, T>::type>
+		template<typename = typename std::enable_if<y::is_iterable<T>::value, T>::type>
 		result_type operator()(const argument_type& collection) const {
 			result_type seed = 0;
 			for(const auto& i : collection) {

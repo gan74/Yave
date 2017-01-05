@@ -111,7 +111,7 @@ class String {
 		String(const char* str, usize len);
 		String(const char* beg, const char* end);
 
-		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, char>::value>::type>
+		template<typename I, typename = typename std::enable_if<std::is_same<typename Range<I>::Element, char>::value>::type>
 		String(const Range<I>& rng);
 
 		~String();
@@ -120,8 +120,9 @@ class String {
 		static String from_owned(Owner<char*> owned);
 
 		template<typename T>
-		static String from(const T& t);
+		static String from(T&& t);
 
+		//auto parse() const;
 
 		usize size() const;
 		usize capacity() const;
@@ -243,13 +244,13 @@ inline String str_from(const T& t) {
 
 
 template<typename T>
-String String::from(const T& t) {
+String String::from(T&& t) {
 	std::ostringstream oss;
-	oss << t;
+	oss << std::forward<T>(t);
 	return oss.str().c_str();
 }
 
-template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, char>::value>::type>
+template<typename I, typename = typename std::enable_if<std::is_same<typename Range<I>::Element, char>::value>::type>
 String::String(const Range<I>& rng) : String(0, rng.size()) {
 	char* it = begin();
 	for(const auto& e : rng) {
@@ -257,6 +258,31 @@ String::String(const Range<I>& rng) : String(0, rng.size()) {
 	}
 	*it = 0;
 }
+
+/*namespace detail {
+class StringParser : NonCopyable {
+	friend class core::String;
+	StringParser(const String& str) : _str(str) {
+	}
+
+	const String& _str;
+
+	public:
+		template<typename T>
+		operator T() const && {
+			T t;
+			std::stringstream buff;
+			buff << _str;
+			buff >> t;
+			return t;
+		}
+};
+}
+
+inline auto String::parse() const {
+	return detail::StringParser(*this);
+}*/
+
 
 
 template<typename T>

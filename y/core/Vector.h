@@ -78,7 +78,7 @@ class Vector : ResizePolicy {
 			swap(other);
 		}
 
-		template<typename I, typename Enable = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type>
+		template<typename I, typename = typename std::enable_if<std::is_same<typename Range<I>::Element, Element>::value>::type>
 		Vector(const Range<I>& rng) : Vector() {
 			set_min_capacity(rng.size());
 			append(rng);
