@@ -12,7 +12,8 @@ You need:
 
 ## Status
 
-![Current status](http://puu.sh/r7QYj/99c73d78cf.jpg)
+![Current status](http://i.imgur.com/ycfpdZp.png)
+
 
 Currently a mess, should smooth out as i am learning Vulkan.
 
@@ -23,7 +24,9 @@ Implemented features:
  * Basic pipelines
  * Compute shaders
  * Swapchain
- * Framebuffer
+ * Framebuffers
+ * Basic deferred shader
+ * Basic scenes
  
 ### Licence:
 MIT
