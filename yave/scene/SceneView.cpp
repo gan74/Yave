@@ -54,8 +54,12 @@ void SceneView::set_proj(const math::Matrix4<>& proj) {
 	_mapping.begin()->proj = proj;
 }
 
-math::Matrix4<> SceneView::inverse_matrix() const {
-	return (_mapping.begin()->view * _mapping.begin()->proj).inverse();
+const math::Matrix4<>& SceneView::view_matrix() const {
+	return _mapping.begin()->view;
+}
+
+const math::Matrix4<>& SceneView::proj_matrix() const {
+	return _mapping.begin()->proj;
 }
 
 const Scene& SceneView::scene() const {

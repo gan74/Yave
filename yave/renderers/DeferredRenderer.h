@@ -33,15 +33,9 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 	using OutputView = StorageView;
 
 	public:
-		struct Light {
-			math::Vec3 color;
-			float padding0;
-			math::Vec3 direction;
-			float padding1;
-		};
-
 		DeferredRenderer(SceneView& scene, const math::Vec2ui& size);
 
+		void update();
 		void draw(CmdBufferRecorder& recorder, const OutputView& output);
 
 	private:
@@ -56,11 +50,11 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		ColorTextureAttachment _normal;
 
 		Framebuffer _gbuffer;
-
-		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
-
 		ComputeShader _shader;
 		ComputeProgram _program;
+
+		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
+		TypedBuffer<math::Matrix4<>, BufferUsage::UniformBit> _matrix;
 
 		DescriptorSet _input_set;
 		DescriptorSet _lights_set;

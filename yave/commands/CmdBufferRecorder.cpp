@@ -71,7 +71,7 @@ static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
 			return vk::AccessFlagBits::eTransferWrite;
 
 		case vk::ImageLayout::ePresentSrcKHR:
-			return vk::AccessFlags();
+			return vk::AccessFlagBits::eMemoryRead;
 
 		default:
 			break;

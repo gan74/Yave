@@ -34,7 +34,7 @@ class ImageView {
 	public:
 		ImageView() = default;
 
-		template<ImageUsage ImgUsage, typename Enable = typename std::enable_if<(ImgUsage & Usage) == Usage>::type>
+		template<ImageUsage ImgUsage, typename = typename std::enable_if<(ImgUsage & Usage) == Usage>::type>
 		ImageView(const Image<ImgUsage>& img) : _image(&img), _view(img.vk_view()) {
 		}
 

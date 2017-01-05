@@ -48,7 +48,9 @@ class SceneView : NonCopyable {
 		void set_view(const math::Matrix4<>& view);
 		void set_proj(const math::Matrix4<>& proj);
 
-		math::Matrix4<> inverse_matrix() const;
+		const math::Matrix4<>& view_matrix() const;
+		const math::Matrix4<>& proj_matrix() const;
+
 
 		const Scene& scene() const;
 

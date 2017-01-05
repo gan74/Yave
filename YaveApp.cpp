@@ -90,6 +90,7 @@ Duration YaveApp::draw() {
 	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
 
 
+	renderer->update();
 	{
 
 		auto buffer = command_buffers[image_index].vk_cmd_buffer();
@@ -121,26 +122,13 @@ Duration YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	/*const_cast<StaticMesh&>(scene->static_meshes().first()).transform() =
-				math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
-				math::rotation(angles.y() + math::pi<float> * 0.5f, math::Vec3(0, 1, 0));*/
-
-	/*auto rot = math::rotation(angles.x(), math::Vec3(0, 0, 1)) * math::rotation(angles.y(), math::Vec3(0, 1, 0));
-
-	auto mapping = uniform_buffer.map();
-	auto& mvp = *mapping.begin();
-
-	mvp.view = math::look_at(math::Vec3((rot * math::vec(5., 0., 0., 1.)).sub(3)), math::Vec3());*/
-
 	auto cam_pos =
 			(math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
-			math::rotation(angles.y() + math::pi<float> * 0.5f, math::Vec3(0, 1, 0))) * math::Vec4(2.5, 0, 0, 1);
+			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.5, 0, 0, 1);
+
+	//auto cam_pos = math::Vec4(0, 3, -3, 1);
 
 	scene_view->set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
-
-	/*for(const auto& m : scene->static_meshes()) {
-		std::cout << m.position().x() << ", " << m.position().y() << ", " << m.position().z() << std::endl;
-	}*/
 }
 
 void YaveApp::create_assets() {
@@ -159,7 +147,7 @@ void YaveApp::create_assets() {
 	}
 
 
-	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym", "../tools/mesh/sp.ym"};
+	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym"/*, "../tools/mesh/sp.ym"*/};
 	core::Vector<StaticMesh> objects;
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name));
@@ -167,7 +155,7 @@ void YaveApp::create_assets() {
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
 		/*for(usize i = 0; i != 10; i++)*/ {
 			auto m = StaticMesh(mesh, material);
-			m.set_position(math::Vec3(objects.size(), 0, 0));
+			m.set_position(math::Vec3(objects.size() * 3, 0, 0));
 
 			objects << std::move(m);
 		}
@@ -175,7 +163,10 @@ void YaveApp::create_assets() {
 	scene = new Scene(std::move(objects));
 	scene_view = new SceneView(&device, *scene);
 
+	update();
+
 	renderer = new DeferredRenderer(*scene_view, swapchain->size());
+
 }
 
 

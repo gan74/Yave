@@ -28,7 +28,10 @@ static vk::ImageLayout vk_layout(ImageUsage usage) {
 	if((usage & ImageUsage::SwapchainBit) != ImageUsage::None) {
 		return vk::ImageLayout::ePresentSrcKHR;
 	}
-	if((usage & (ImageUsage::TextureBit | ImageUsage::StorageBit)) != ImageUsage::None) {
+	if((usage & ImageUsage::StorageBit) != ImageUsage::None) {
+		return vk::ImageLayout::eGeneral;
+	}
+	if((usage & ImageUsage::TextureBit) != ImageUsage::None) {
 		return vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
 

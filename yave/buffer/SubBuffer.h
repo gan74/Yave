@@ -31,7 +31,7 @@ template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>(), 
 class SubBuffer : public SubBufferBase {
 
 	public:
-		template<BufferUsage BuffUsage, typename Enable = typename std::enable_if<(BuffUsage & Usage) == Usage>::type>
+		template<BufferUsage BuffUsage, typename = typename std::enable_if<(BuffUsage & Usage) == Usage>::type>
 		SubBuffer(const Buffer<BuffUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBufferBase(buffer, offset, len) {
 		}
 
