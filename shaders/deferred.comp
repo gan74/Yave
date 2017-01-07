@@ -15,18 +15,9 @@ layout(set = 0, binding = 3) uniform Camera {
 
 layout(rgba8, set = 2, binding = 0) uniform writeonly image2D out_color;
 
-
-struct Light {
-	vec3 position;
-	float radius;
-	vec3 color;
-	float padding;
-};
-
 layout(set = 1, binding = 0) readonly buffer InBuffer {
-	uint directional_count;
-	uint point_count;
-	uvec2 padding;
+	uint count;
+	uint padding[3];
 
 	Light lights[];
 } lights;
@@ -83,19 +74,18 @@ void main() {
 		vec3 view_dir = normalize(camera.position - world_pos);
 
 		uint i = 0;
-		for(; i < lights.directional_count; ++i) {
+		for(; i < lights.count; ++i) {
 			Light light = lights.lights[i];
 
-			acc += light.color * brdf(normal, light.position, view_dir);
-		}
-		for(; i < lights.point_count; ++i) {
-			Light light = lights.lights[i];
+			vec3 light_dir = light.position;
+			float att = 1.0;
 
-			vec3 light_dir = world_pos - light.position;
-			float distance = length(light_dir);
-			light_dir /= distance;
-
-			float att = attenuation(distance, light.radius);
+			if(light.type != DirectionalLight) {
+				light_dir = world_pos - light.position;
+				float distance = length(light_dir);
+				light_dir /= distance;
+				att = attenuation(distance, light.radius);
+			}
 
 			acc += light.color * att * brdf(normal, light_dir, view_dir);
 		}

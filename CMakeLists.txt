@@ -39,7 +39,8 @@ file(GLOB_RECURSE SOURCE_FILES
 		"shaders/*.vert"
 		"shaders/*.geom"
 		"shaders/*.comp"
-		)
+		"shaders/*.glsl"
+	)
 
 
 link_directories(../y/build)

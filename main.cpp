@@ -94,7 +94,6 @@ auto computeViewMatrix(math::Vec3 forward, math::Vec3 up, math::Vec3 side, math:
 			0, 0, 0, 1);
 }
 
-
 int main(int, char **) {
 	Window win(math::vec(1280, 768), "Yave");
 	win.set_mouse_handler(new ArcballMouse());
@@ -103,17 +102,18 @@ int main(int, char **) {
 	app.init(&win);
 
 	win.show();
-	Chrono ch;
-	usize frames = 0;
+	/*Chrono ch;
+	usize frames = 0;*/
+
 	while(win.update()) {
 		auto mouse = reinterpret_cast<ArcballMouse *>(win.mouse_handler());
 		app.update(mouse->angle * 0.01);
 		app.draw();
 
-		auto us = round(ch.reset().to_micros());
+		/*auto us = round(ch.reset().to_micros());
 		std::cout << "\r";
 		std::cout << std::setw(25) << std::left << ("frame time = "_s + us + "us");
-		std::cout << std::setw(25) << std::left << ("(avg = "_s + round(avg(us)) + "us) f = " + (++frames));
+		std::cout << std::setw(25) << std::left << ("(avg = "_s + round(avg(us)) + "us) f = " + (++frames));*/
 
 	}
 	std::cout << std::endl;

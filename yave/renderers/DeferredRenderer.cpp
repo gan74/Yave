@@ -33,21 +33,30 @@ static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
 
-
-struct Light {
-	math::Vec3 color;
-	float radius;
-	math::Vec3 positon;
-	float padding;
+enum class LightType {
+	Directional = 0,
+	Point = 1
 };
 
-static ComputeShader create_shader(DevicePtr dptr) {
+struct Light {
+	math::Vec3 positon;
+	float radius;
+	math::Vec3 color;
+	LightType type;
+};
+
+static ComputeShader create_lighting_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv")));
 }
 
-static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
+static ComputeShader create_culling_shader(DevicePtr dptr) {
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("cull_lights.comp.spv")));
+}
+
+static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count, usize& light_count) {
+	light_count = dir_count + pts_count;
 	using Vec4u32 = math::Vec<4, u32>;
-	Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(Vec4u32) + (dir_count + pts_count) * sizeof(Light));
+	Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(Vec4u32) + light_count * sizeof(Light));
 
 	std::mt19937 gen(3);
 	std::uniform_real_distribution<float> distr(0, 1);
@@ -56,19 +65,22 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
 	core::Vector<Light> lights;
 	for(usize i = 0; i != dir_count; i++) {
 		lights << Light {
-				math::Vec3(distr(gen), distr(gen), distr(gen)), 0,
-				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)).normalized(), 0
+				math::Vec3(0, 0, 1).normalized(), 0,
+				math::Vec3(1, 1, 1) * 0.5,
+				LightType::Directional
 			};
 	}
 	for(usize i = 0; i != pts_count; i++) {
 		lights << Light {
-				math::Vec3(distr(gen), distr(gen), distr(gen)), 4,
-				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)).normalized(), 0
+				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)).normalized(),
+				2,
+				math::Vec3(distr(gen), distr(gen), distr(gen)) * 0.5,
+				LightType::Point
 			};
 	}
 
 	{
-		TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryFlags::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(dir_count, dir_count + pts_count, 0, 0);
+		TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryFlags::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(light_count);
 	}
 	{
 		TypedSubBuffer<Light, BufferUsage::StorageBit, MemoryFlags::CpuVisible> light_buffer(buffer, sizeof(Vec4u32), lights.size());
@@ -95,15 +107,22 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 		_diffuse(device(), diffuse_format, _size),
 		_normal(device(), normal_format, _size),
 		_gbuffer(device(), _depth, {_diffuse, _normal}),
-		_shader(create_shader(device())),
-		_program(_shader),
-		_lights(create_lights(device(), 0, 2)),
+
+		_lighting_shader(create_lighting_shader(device())),
+		_lighting_program(_lighting_shader),
+		_culling_shader(create_culling_shader(device())),
+		_culling_program(_culling_shader),
+
+		_lights(create_lights(device(), 1, 1, _light_count)),
+		_culled_lights(device(), _lights.byte_size()),
+
 		_camera(device(), 1),
-		_input_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera)}),
+		_lighting_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera)}),
+		_culling_set(device(), {Binding(_culled_lights)}),
 		_lights_set(device(), {Binding(_lights)}) {
 
 	for(usize i = 0; i != 3; i++) {
-		if(_size[i] % _shader.local_size()[i]) {
+		if(_size[i] % _lighting_shader.local_size()[i]) {
 			log_msg("Compute local size at index "_s + i + " does not divide output buffer size.", LogType::Warning);
 		}
 	}
@@ -121,8 +140,32 @@ void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) 
 #warning barrier needed ?
 	//recorder.image_barriers({_depth, _diffuse, _normal}, PipelineStage::AttachmentOutBit, PipelineStage::ComputeBit);
 
+	usize groups = _light_count / _culling_shader.local_size().x();
+	if(groups *  _culling_shader.local_size().x() < _light_count) {
+		++groups;
+	}
+	recorder.dispatch(_culling_program, math::Vec3ui(groups, 1, 1), {_scene.matrix_descriptor_set(), _lights_set, _culling_set});
 
-	recorder.dispatch(_program, math::Vec3ui(_size / _shader.local_size().sub(3), 1), {_input_set, _lights_set, create_output_set(out)});
+	auto barrier = vk::BufferMemoryBarrier()
+			.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+			.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+			.setBuffer(_culled_lights.vk_buffer())
+			.setSize(_culled_lights.byte_size())
+			.setOffset(0)
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+		;
+
+	recorder.vk_cmd_buffer().pipelineBarrier(
+			vk::PipelineStageFlagBits(PipelineStage::ComputeBit),
+			vk::PipelineStageFlagBits(PipelineStage::ComputeBit),
+			vk::DependencyFlags(),
+			0, nullptr,
+			1, &barrier,
+			0, nullptr
+		);
+
+	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, _culling_set, create_output_set(out)});
 }
 
 const DescriptorSet& DeferredRenderer::create_output_set(const OutputView& out) {

@@ -1,0 +1,55 @@
+#version 450
+
+#include "yave.glsl"
+
+layout(local_size_x = 1, local_size_y = 1) in;
+
+
+layout(set = 0, binding = 0) uniform ViewProj {
+	mat4 view;
+	mat4 proj;
+} view_proj;
+
+
+layout(set = 1, binding = 0) readonly buffer InBuffer {
+	uint count;
+	uint padding[3];
+
+	Light lights[];
+} in_buffer;
+
+layout(set = 2, binding = 0) writeonly buffer OutBuffer {
+	uint count;
+	uint padding[3];
+
+	Light lights[];
+} out_buffer;
+
+
+
+bool is_inside(vec3 point) {
+	vec4 p = view_proj.proj * view_proj.view * vec4(point, 1.0);
+	vec2 sc = abs(p.xy / p.w);
+	return sc.x < 1 && sc.y < 1;
+}
+
+
+void main() {
+	uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	if(index == 0) {
+		atomicExchange(out_buffer.count, 0);
+	}
+
+	if(index < in_buffer.count) {
+		Light light = in_buffer.lights[index];
+		if(light.type == DirectionalLight || is_inside(light.position)) {
+			out_buffer.lights[atomicAdd(out_buffer.count, 1)] = in_buffer.lights[index];
+		}
+	}
+}
+
+
+
+
+
+

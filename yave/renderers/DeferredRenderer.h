@@ -55,13 +55,21 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		ColorTextureAttachment _normal;
 
 		Framebuffer _gbuffer;
-		ComputeShader _shader;
-		ComputeProgram _program;
 
+		ComputeShader _lighting_shader;
+		ComputeProgram _lighting_program;
+
+		ComputeShader _culling_shader;
+		ComputeProgram _culling_program;
+
+		usize _light_count = 0;
 		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
+		Buffer<BufferUsage::StorageBit, MemoryFlags::DeviceLocal> _culled_lights;
+
 		TypedBuffer<Camera, BufferUsage::UniformBit> _camera;
 
-		DescriptorSet _input_set;
+		DescriptorSet _lighting_set;
+		DescriptorSet _culling_set;
 		DescriptorSet _lights_set;
 		std::unordered_map<VkImageView, DescriptorSet> _output_sets;
 };

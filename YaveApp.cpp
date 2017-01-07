@@ -116,8 +116,6 @@ Duration YaveApp::draw() {
 	}
 	graphic_queue.waitIdle();
 
-	std::cout << renderer->visible_lights() << " visible lights" << std::endl;
-
 	device.vk_device().destroySemaphore(image_acquired_semaphore);
 	device.vk_device().destroySemaphore(render_finished_semaphore);
 	return ch.elapsed();
