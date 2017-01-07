@@ -116,17 +116,34 @@ Duration YaveApp::draw() {
 	}
 	graphic_queue.waitIdle();
 
+	std::cout << renderer->visible_lights() << " visible lights" << std::endl;
+
 	device.vk_device().destroySemaphore(image_acquired_semaphore);
 	device.vk_device().destroySemaphore(render_finished_semaphore);
 	return ch.elapsed();
 }
 
+auto look_at2(const math::Vec3& eye, const math::Vec3& center, const math::Vec3& up = math::Vec3(0, 0, 1)) {
+		math::Vec3 z((eye - center).normalized());
+		math::Vec3 x(up.cross(z).normalized());
+		math::Vec3 y(x.cross(z));
+
+		std::swap(x, y);
+
+		math::Matrix4<> m = math::identity();
+		m[0] = math::Vec4(y, -y.dot(eye));
+		m[1] = math::Vec4(x, -x.dot(eye));
+		m[2] = math::Vec4(z, -z.dot(eye));
+
+		return m;
+}
+
 void YaveApp::update(math::Vec2 angles) {
 	auto cam_pos =
 			(math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
-			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.5, 0, 0, 1);
+			math::rotation(angles.y(), math::Vec3(0, -1, 0))) * math::Vec4(2.5, 0, 0, 1);
 
-	//auto cam_pos = math::Vec4(0, 3, -3, 1);
+	//auto cam_pos = math::Vec4(3, 0, 3, 1);
 
 	scene_view->set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
 }
@@ -153,9 +170,9 @@ void YaveApp::create_assets() {
 		auto m_data = MeshData::from_file(io::File::open(name));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
-		/*for(usize i = 0; i != 10; i++)*/ {
+		for(usize i = 0; i != 1; i++) {
 			auto m = StaticMesh(mesh, material);
-			m.set_position(math::Vec3(objects.size() * 3, 0, 0));
+			m.set_position(math::Vec3(objects.size() * -3.0f, 0, 0));
 
 			objects << std::move(m);
 		}
@@ -168,6 +185,7 @@ void YaveApp::create_assets() {
 	renderer = new DeferredRenderer(*scene_view, swapchain->size());
 
 }
+
 
 
 }

@@ -83,7 +83,7 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			//.setCullMode(vk::CullModeFlagBits::eNone)
 			.setPolygonMode(vk::PolygonMode::eFill)
 			.setLineWidth(1.0f)
-			.setFrontFace(vk::FrontFace::eClockwise)
+			.setFrontFace(vk::FrontFace::eCounterClockwise)
 			.setDepthBiasEnable(false)
 			.setDepthClampEnable(false)
 		;
