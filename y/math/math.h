@@ -73,25 +73,14 @@ auto perspective(T fovy, T aspect, T z_near, T z_far) {
 
 template<typename T>
 auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up = Vec<3, T>(0, 0, 1)) {
-		Vec<3, T> f((center - eye).normalized());
-		Vec<3, T> s(f.cross(up).normalized());
-		Vec<3, T> u(s.cross(f));
+	Vec<3, T> z((eye - center).normalized());
+	Vec<3, T> y(up.cross(z).normalized());
+	Vec<3, T> x(y.cross(z));
 
-		Matrix4<T> m = identity();
-		m[0][0] = s.x();
-		m[0][1] = s.y();
-		m[0][2] = s.z();
-		m[1][0] = u.x();
-		m[1][1] = u.y();
-		m[1][2] = u.z();
-		m[2][0] = -f.x();
-		m[2][1] = -f.y();
-		m[2][2] = -f.z();
-		m[0][3] = -s.dot(eye);
-		m[1][3] = -u.dot(eye);
-		m[2][3] = f.dot(eye);
-
-		return m;
+	return Matrix4<>(y, -y.dot(eye),
+					 x, -x.dot(eye),
+					 z, -z.dot(eye),
+					 0, 0, 0, 1);
 }
 
 template<typename T>
