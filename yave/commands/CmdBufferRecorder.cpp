@@ -24,61 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-static auto create_barrier(
-		vk::Image image,
-		ImageFormat format,
-		vk::ImageLayout old_layout,
-		vk::AccessFlags src_access,
-		vk::ImageLayout new_layout,
-		vk::AccessFlags dst_access) {
 
-	return vk::ImageMemoryBarrier()
-			.setOldLayout(old_layout)
-			.setNewLayout(new_layout)
-			.setSrcAccessMask(src_access)
-			.setDstAccessMask(dst_access)
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setImage(image)
-			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.vk_aspect())
-					.setBaseArrayLayer(0)
-					.setBaseMipLevel(0)
-					.setLayerCount(1)
-					.setLevelCount(1)
-				)
-		;
-}
-
-static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
-	switch(layout) {
-		case vk::ImageLayout::eUndefined:
-			return vk::AccessFlags();
-
-		case vk::ImageLayout::eColorAttachmentOptimal:
-			return vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
-
-		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-			return vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-
-		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
-			return vk::AccessFlagBits::eDepthStencilAttachmentRead;
-
-		case vk::ImageLayout::eShaderReadOnlyOptimal:
-			return vk::AccessFlagBits::eShaderRead;
-
-		case vk::ImageLayout::eTransferDstOptimal:
-			return vk::AccessFlagBits::eTransferWrite;
-
-		case vk::ImageLayout::ePresentSrcKHR:
-			return vk::AccessFlagBits::eMemoryRead;
-
-		default:
-			break;
-	}
-
-	return fatal("Unsupported layout transition.");
-}
 
 
 CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& buffer) : _cmd_buffer(std::move(buffer)), _render_pass(nullptr) {
@@ -198,29 +144,19 @@ CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, co
 	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::image_barriers(std::initializer_list<std::reference_wrapper<ImageBase>> images, PipelineStage src, PipelineStage dst) {
+CmdBufferRecorder& CmdBufferRecorder::barriers(std::initializer_list<BufferBarrier> buffers, std::initializer_list<ImageBarrier> images, PipelineStage src, PipelineStage dst) {
 	end_render_pass();
 
-	auto barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
-	for(ImageBase& image : images) {
-		auto shader_usage = vk_image_layout(image.usage());
-		auto shader_access_flags = vk_access_flags(shader_usage);
-
-		barriers << create_barrier(
-				image.vk_image(),
-				image.format(),
-				shader_usage, shader_access_flags,
-				shader_usage, shader_access_flags
-			);
-	}
+	auto image_barriers = core::range(images).map([](const auto& b) { return b.vk_barrier(); }).collect<core::Vector>();
+	auto buffer_barriers = core::range(buffers).map([](const auto& b) { return b.vk_barrier(); }).collect<core::Vector>();
 
 	vk_cmd_buffer().pipelineBarrier(
 			vk::PipelineStageFlagBits(src),
 			vk::PipelineStageFlagBits(dst),
 			vk::DependencyFlagBits::eByRegion,
 			0, nullptr,
-			0, nullptr,
-			barriers.size(), barriers.begin()
+			buffer_barriers.size(), buffer_barriers.begin(),
+			image_barriers.size(), image_barriers.begin()
 		);
 
 	return *this;
@@ -229,11 +165,11 @@ CmdBufferRecorder& CmdBufferRecorder::image_barriers(std::initializer_list<std::
 CmdBufferRecorder& CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
 	//log_msg("Image "_s + image.vk_image() + " transitioned from " + uenum(src) + " to " + uenum(dst));
 
-	auto barrier = create_barrier(
+	auto barrier = create_image_barrier(
 			image.vk_image(),
 			image.format(),
-			src, vk_access_flags(src),
-			dst, vk_access_flags(dst)
+			src,
+			dst
 		);
 
 	vk_cmd_buffer().pipelineBarrier(

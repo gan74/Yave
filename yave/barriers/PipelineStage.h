@@ -19,10 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_PIPELINESTAGE_H
-#define YAVE_PIPELINESTAGE_H
+#ifndef YAVE_BARRIERS_PIPELINESTAGE_H
+#define YAVE_BARRIERS_PIPELINESTAGE_H
 
-#include "yave.h"
+#include <yave/yave.h>
 
 namespace yave {
 
@@ -54,4 +54,4 @@ constexpr bool is_shader_stage(PipelineStage stage) {
 
 }
 
-#endif // YAVE_PIPELINESTAGE_H
+#endif // YAVE_BARRIERS_PIPELINESTAGE_H

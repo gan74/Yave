@@ -138,7 +138,6 @@ void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) 
 	_scene.draw(recorder);
 
 #warning barrier needed ?
-	//recorder.image_barriers({_depth, _diffuse, _normal}, PipelineStage::AttachmentOutBit, PipelineStage::ComputeBit);
 
 	usize groups = _light_count / _culling_shader.local_size().x();
 	if(groups *  _culling_shader.local_size().x() < _light_count) {
@@ -146,25 +145,7 @@ void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) 
 	}
 	recorder.dispatch(_culling_program, math::Vec3ui(groups, 1, 1), {_scene.matrix_descriptor_set(), _lights_set, _culling_set});
 
-	auto barrier = vk::BufferMemoryBarrier()
-			.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-			.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
-			.setBuffer(_culled_lights.vk_buffer())
-			.setSize(_culled_lights.byte_size())
-			.setOffset(0)
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-		;
-
-	recorder.vk_cmd_buffer().pipelineBarrier(
-			vk::PipelineStageFlagBits(PipelineStage::ComputeBit),
-			vk::PipelineStageFlagBits(PipelineStage::ComputeBit),
-			vk::DependencyFlags(),
-			0, nullptr,
-			1, &barrier,
-			0, nullptr
-		);
-
+	recorder.barriers({_culled_lights}, {}, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
 	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, _culling_set, create_output_set(out)});
 }
 
