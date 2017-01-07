@@ -12,7 +12,7 @@ You need:
 
 ## Status
 
-![Current status](http://i.imgur.com/ycfpdZp.png)
+![Current status](http://i.imgur.com/x7Cuyeg.png)
 
 
 Currently a mess, should smooth out as i am learning Vulkan.
