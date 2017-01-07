@@ -1,13 +1,12 @@
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
+
+#include "yave.glsl"
 
 layout(location = 0) out vec4 out_color;
 
 layout(location = 0) in vec2 v_uv;
 layout(set = 1, binding = 0) uniform sampler2D in_color;
 layout(set = 1, binding = 1) uniform sampler2D in_depth;
-
-const float epsilon = 0.001;
 
 vec3 sample_dir[] = {
 	vec3(0.2196607,0.9032637,0.2254677),
@@ -90,13 +89,6 @@ vec3 sample_dir[] = {
 	vec3(-0.3465451,-0.2654651,0.1289366)
 	};
 
-float saturate(float x) {
-	return min(1.0, max(0.0, x));
-}
-
-float sqr(float x) {
-	return x * x;
-}
 
 float AO(vec2 uv, float range, uint samples) {
 	float depth = texture(in_depth, uv).r;
