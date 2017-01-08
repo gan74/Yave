@@ -33,7 +33,7 @@ static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
 
-enum class LightType {
+enum class LightType : u32 {
 	Directional = 0,
 	Point = 1
 };
@@ -129,8 +129,7 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 }
 
 void DeferredRenderer::update() {
-	auto inverse = (_scene.proj_matrix() * _scene.view_matrix()).inverse();
-	_camera.map()[0] = Camera{inverse.transposed(), extract_position(_scene.view_matrix())};
+	_camera.map()[0] = Camera{_scene.inverse_matrix(), extract_position(_scene.view_matrix())};
 }
 
 void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {

@@ -66,7 +66,6 @@ class SceneView : NonCopyable {
 
 		CmdBufferPool _command_pool;
 
-		Matrices _matrices;
 		TypedBuffer<Matrices, BufferUsage::UniformBit> _matrix_buffer;
 		TypedMapping<Matrices, MemoryFlags::CpuVisible> _mapping;
 

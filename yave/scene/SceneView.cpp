@@ -45,23 +45,23 @@ void SceneView::draw(CmdBufferRecorder& recorder) const {
 }
 
 void SceneView::set_view(const math::Matrix4<>& view) {
-	_mapping.begin()->view = (_matrices.view = view).transposed();
+	_mapping.begin()->view = view;
 }
 
 void SceneView::set_proj(const math::Matrix4<>& proj) {
-	_mapping.begin()->proj = (_matrices.proj = proj).transposed();
+	_mapping.begin()->proj = proj;
 }
 
 const math::Matrix4<>& SceneView::view_matrix() const {
-	return _matrices.view;
+	return _mapping.begin()->view;
 }
 
 const math::Matrix4<>& SceneView::proj_matrix() const {
-	return _matrices.proj;
+	return _mapping.begin()->proj;
 }
 
 math::Matrix4<> SceneView::inverse_matrix() const {
-	return (_matrices.proj * _matrices.view).inverse();
+	return (proj_matrix() * view_matrix()).inverse();
 }
 
 const Scene& SceneView::scene() const {

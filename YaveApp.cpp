@@ -137,11 +137,11 @@ auto look_at2(const math::Vec3& eye, const math::Vec3& center, const math::Vec3&
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	auto cam_pos =
-			(math::rotation(angles.x(), math::Vec3(0, 0, 1)) *
-			math::rotation(angles.y(), math::Vec3(0, -1, 0))) * math::Vec4(2.5, 0, 0, 1);
+	/*auto cam_pos =
+			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
+			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.5, 0, 0, 1);*/
 
-	//auto cam_pos = math::Vec4(3, 0, 3, 1);
+	auto cam_pos = math::Vec4(3, 0, 2, 1);
 
 	scene_view->set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
 }
