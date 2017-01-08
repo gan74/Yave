@@ -111,7 +111,7 @@ class String {
 		String(const char* str, usize len);
 		String(const char* beg, const char* end);
 
-		template<typename I, typename = typename std::enable_if<std::is_same<typename Range<I>::Element, char>::value>::type>
+		template<typename I, typename = std::enable_if_t<std::is_same<typename Range<I>::Element, char>::value>>
 		String(const Range<I>& rng);
 
 		~String();
@@ -250,7 +250,7 @@ String String::from(T&& t) {
 	return oss.str().c_str();
 }
 
-template<typename I, typename = typename std::enable_if<std::is_same<typename Range<I>::Element, char>::value>::type>
+template<typename I, typename = std::enable_if_t<std::is_same<typename Range<I>::Element, char>::value>>
 String::String(const Range<I>& rng) : String(0, rng.size()) {
 	char* it = begin();
 	for(const auto& e : rng) {

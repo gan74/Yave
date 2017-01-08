@@ -54,14 +54,14 @@ struct DerefTrait {
 // specialization for void pointers
 template<typename T>
 struct DerefTrait<T,
-	typename std::enable_if<std::is_void<typename std::remove_cv<typename std::remove_pointer<T>::type>::type>::value>::type> {
+	std::enable_if_t<std::is_void<typename std::remove_cv<typename std::remove_pointer<T>::type>::type>::value>> {
 	using type = std::false_type;
 };
 
 // specialization for arithmetic types
 template<typename T>
 struct DerefTrait<T,
-	typename std::enable_if<std::is_arithmetic<typename std::remove_cv<T>::type>::value>::type> {
+	std::enable_if_t<std::is_arithmetic<typename std::remove_cv<T>::type>::value>> {
 	using type = std::false_type;
 };
 

@@ -41,11 +41,11 @@ class Ref {
 		Ref(const Ref& ref) : _ptr(ref._ptr), _owned(false) {
 		}
 
-		template<typename Derived, typename = typename std::enable_if<std::is_base_of<T, Derived>::value>::type>
+		template<typename Derived, typename = std::enable_if_t<std::is_base_of<T, Derived>::value>>
 		Ref(Derived&& x) : _ptr(new Derived(std::move(x))), _owned(true) {
 		}
 
-		template<typename Derived, typename = typename std::enable_if<std::is_base_of<T, Derived>::value>::type>
+		template<typename Derived, typename = std::enable_if_t<std::is_base_of<T, Derived>::value>>
 		Ref(Derived& x) : _ptr(&x), _owned(false) {
 		}
 
