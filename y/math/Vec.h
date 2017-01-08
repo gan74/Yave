@@ -80,7 +80,7 @@ class Vec
 			build<0>(a, b, args...);
 		}
 
-		Vec(T t) {
+		explicit Vec(T t) {
 			for(usize i = 0; i != N; i++) {
 				_vec[i] = t;
 			}

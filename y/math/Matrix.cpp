@@ -58,6 +58,18 @@ y_test_func("Matrix determinant") {
 							4, 5, 6).determinant() == 48);
 }
 
+y_test_func("Matrix inverse") {
+	auto i = Matrix3<>(1, 2, 3,
+					   7, 8, 0,
+					   4, 5, 6).inverse();
+	auto e = Matrix3<>(-16, -1, 8,
+					   14, 2, -7,
+					   -1, -1, 2) * (1 / 9.0f);
+
+	y_test_assert(e == i);
+}
+
+
 y_test_func("Matrix asymetrical") {
 	Matrix<2, 3> mat(1, 2, 3,
 					 4, 5, 6);

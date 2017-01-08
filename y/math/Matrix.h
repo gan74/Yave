@@ -153,33 +153,6 @@ class Matrix {
 			return N == M;
 		}
 
-		Column operator*(const Row& v) const {
-			Column tr;
-			for(usize i = 0; i != M; i++) {
-				tr += column(i) * v[i];
-			}
-			return tr;
-		}
-
-		template<typename U, usize P>
-		auto operator*(const Matrix<M, P, U, Layout>& m) const {
-			Matrix<N, P, decltype(make_one<T>() * make_one<U>())> mat;
-			for(usize i = 0; i != N; i++) {
-				for(usize j = 0; j != P; j++) {
-					decltype(make_one<T>() * make_one<U>()) tmp(0);
-					for(usize k = 0; k != M; k++) {
-						tmp = tmp + row(i)[k] * m.row(k)[j];
-					}
-					if(is_row_major) {
-						mat._vecs[i][j] = tmp;
-					} else {
-						mat._vecs[j][i] = tmp;
-					}
-				}
-			}
-			return mat;
-		}
-
 		template<typename U>
 		auto operator+(const Matrix<N, M, U, Layout>& m) const {
 			Matrix<N, M, decltype(make_one<T>() * make_one<U>())> mat;
@@ -233,15 +206,16 @@ class Matrix {
 		}
 
 		Matrix inverse() const {
-			Matrix inv;
 			T d = determinant();
 			if(d == 0) {
 				return Matrix();
 			}
+			Matrix inv;
 			d = 1 / d;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != N; j++) {
-					inv._vecs[j][i] = sub(i, j).determinant() * d * (i % 2 == j % 2 ? 1 : -1);
+					auto s = sub(i, j).determinant() * d * (i % 2 == j % 2 ? 1 : -1);
+					(is_row_major ? inv._vecs[j][i] : inv._vecs[i][j]) = s;
 				}
 			}
 			return inv;
@@ -270,6 +244,45 @@ class Matrix {
 
 		iterator end() {
 			return (&_vecs[0][0]) + (M * N);
+		}
+
+		Column operator*(const Row& v) const {
+			Column tr;
+			for(usize i = 0; i != M; i++) {
+				tr += column(i) * v[i];
+			}
+			return tr;
+		}
+
+		template<typename U, usize P>
+		auto operator*(const Matrix<M, P, U, Layout>& m) const {
+			Matrix<N, P, decltype(make_one<T>() * make_one<U>())> mat;
+			for(usize i = 0; i != N; i++) {
+				for(usize j = 0; j != P; j++) {
+					decltype(make_one<T>() * make_one<U>()) tmp(0);
+					for(usize k = 0; k != M; k++) {
+						tmp = tmp + row(i)[k] * m.row(k)[j];
+					}
+					if(is_row_major) {
+						mat._vecs[i][j] = tmp;
+					} else {
+						mat._vecs[j][i] = tmp;
+					}
+				}
+			}
+			return mat;
+		}
+
+		template<typename U, usize P>
+		Matrix& operator*=(const Matrix<M, P, U, Layout>& m) {
+			return operator=(*this * m);
+		}
+
+		Matrix& operator*=(const T& t) {
+			for(auto& i : *this) {
+				i *= t;
+			}
+			return *this;
 		}
 
 	private:
@@ -357,6 +370,16 @@ using Matrix2 = Matrix<2, 2, T>;
 template<usize M, typename T, typename... Args>
 auto matrix(const Vec<M, T>& v, Args... args) {
 	return Matrix<sizeof...(args) + 1, M, T>(v, args...);
+}
+
+template<usize N, usize M, typename T, MatrixLayout L>
+auto operator*(Matrix<N, M, T, L> mat, const T& r) {
+	return mat *= r;
+}
+
+template<usize N, usize M, typename T, MatrixLayout L>
+auto operator*(const T& r, Matrix<N, M, T, L> mat) {
+	return mat *= r;
 }
 
 }

@@ -63,8 +63,7 @@ auto perspective(T fovy, T aspect, T z_near, T z_far) {
 	Matrix4<T> m(T(1) / (aspect * tan_half), 0, 0, 0,
 				 0, T(1) / tan_half, 0, 0,
 				 0, 0, -(z_far + z_near) / (z_far - z_near), -(T(2) * z_far * z_near) / (z_far - z_near),
-				 0, 0, -T(1), 0,
-				 0, 0, 0, T(1));
+				 0, 0, -T(1), 1);
 	return m;
 }
 
