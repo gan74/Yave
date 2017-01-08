@@ -162,7 +162,7 @@ class String {
 		bool operator<(const String& str) const;
 
 
-		Vector<u32> to_unicode() const;
+		//Vector<u32> to_unicode() const;
 
 
 
