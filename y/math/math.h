@@ -58,17 +58,14 @@ static constexpr T pi = T(3.1415926535897932384626433832795);
 // matrix funcs from https://github.com/g-truc/glm/blob/master/glm/gtc/matrix_transform.inl
 template<typename T>
 auto perspective(T fovy, T aspect, T z_near, T z_far) {
-		T const tan_half = tan(fovy / T(2));
+	const T tan_half = tan(fovy / T(2));
 
-		Matrix4<T> m = identity();
-		m[0][0] = T(1) / (aspect * tan_half);
-		m[1][1] = T(1) / tan_half;
-		m[3][2] = -T(1);
-		m[2][2] = -(z_far + z_near) / (z_far - z_near);
-		m[2][3] = -(T(2) * z_far * z_near) / (z_far - z_near);
-		//m[3][3] = 0; // ??????????????
-
-		return m;
+	Matrix4<T> m(T(1) / (aspect * tan_half), 0, 0, 0,
+				 0, T(1) / tan_half, 0, 0,
+				 0, 0, -(z_far + z_near) / (z_far - z_near), -(T(2) * z_far * z_near) / (z_far - z_near),
+				 0, 0, -T(1), 0,
+				 0, 0, 0, T(1));
+	return m;
 }
 
 template<typename T>
@@ -85,33 +82,24 @@ auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up 
 
 template<typename T>
 auto rotation(T angle, Vec<3, T> axis, const Matrix4<T>& base = identity()) {
-		T a = angle;
-		T c = cos(a);
-		T s = sin(a);
+	T a = angle;
+	T c = cos(a);
+	T s = sin(a);
 
-		axis.normalize();
-		Vec<3, T> tmp((T(1) - c) * axis);
+	axis.normalize();
+	Vec<3, T> tmp((T(1) - c) * axis);
 
-		Matrix4<T> m;
-		m[0][0] = c + tmp[0] * axis[0];
-		m[0][1] = tmp[0] * axis[1] + s * axis[2];
-		m[0][2] = tmp[0] * axis[2] - s * axis[1];
+	Matrix4<T> m(c + tmp[0] * axis[0], tmp[0] * axis[1] + s * axis[2], tmp[0] * axis[2] - s * axis[1], 0,
+				 tmp[1] * axis[0] - s * axis[2], c + tmp[1] * axis[1], tmp[1] * axis[2] + s * axis[0], 0,
+				 tmp[2] * axis[0] + s * axis[1], tmp[2] * axis[1] - s * axis[0], c + tmp[2] * axis[2], 0,
+				 0, 0, 0, 0);
 
-		m[1][0] = tmp[1] * axis[0] - s * axis[2];
-		m[1][1] = c + tmp[1] * axis[1];
-		m[1][2] = tmp[1] * axis[2] + s * axis[0];
+	Matrix4<T> r(base.row(0) * m[0][0] + base.row(1) * m[0][1] + base.row(2) * m[0][2],
+				 base.row(0) * m[1][0] + base.row(1) * m[1][1] + base.row(2) * m[1][2],
+				 base.row(0) * m[2][0] + base.row(1) * m[2][1] + base.row(2) * m[2][2],
+				 base.row(3));
 
-		m[2][0] = tmp[2] * axis[0] + s * axis[1];
-		m[2][1] = tmp[2] * axis[1] - s * axis[0];
-		m[2][2] = c + tmp[2] * axis[2];
-
-		Matrix4<T> r;
-		r[0] = base[0] * m[0][0] + base[1] * m[0][1] + base[2] * m[0][2];
-		r[1] = base[0] * m[1][0] + base[1] * m[1][1] + base[2] * m[1][2];
-		r[2] = base[0] * m[2][0] + base[1] * m[2][1] + base[2] * m[2][2];
-		r[3] = base[3];
-
-		return r;
+	return r;
 }
 
 }
