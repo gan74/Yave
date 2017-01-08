@@ -33,9 +33,9 @@ y_test_func("Matrix vec multiply") {
 				  4, 5, 6,
 				  7, 8, 9);
 
-	y_test_assert(mat * vec(10, 11, 12) == vec(68, 167, 266));
-	y_test_assert(mat.transposed() * vec(10, 11, 12) == vec(138, 171, 204));
-	y_test_assert(mat.transposed() * vec(10, 11, 12) == vec(138, 171, 204));
+	y_test_assert(mat * vec(10.0f, 11.0f, 12.0f) == vec(68, 167, 266));
+	y_test_assert(mat.transposed() * vec(10.0f, 11.0f, 12.0f) == vec(138, 171, 204));
+	y_test_assert(mat.transposed() * vec(10.0f, 11.0f, 12.0f) == vec(138, 171, 204));
 }
 
 y_test_func("Matrix multiply") {
@@ -62,10 +62,10 @@ y_test_func("Matrix asymetrical") {
 	Matrix<2, 3> mat(1, 2, 3,
 					 4, 5, 6);
 
-	y_test_assert(mat[0] == vec(1, 2, 3) && mat[1] == vec(4, 5, 6));
+	y_test_assert(mat.row(0) == vec(1.0f, 2.0f, 3.0f) && mat.row(1) == vec(4, 5, 6));
 	y_test_assert(mat.column(0) == vec(1, 4) && mat.column(1) == vec(2, 5) && mat.column(2) == vec(3, 6));
-	y_test_assert(mat * vec(7, 8, 9) == vec(50, 122));
-	y_test_assert(mat.transposed() * vec(7, 8) == vec(39, 54, 69));
+	y_test_assert(mat * vec(7.0f, 8.0f, 9.0f) == vec(50, 122));
+	y_test_assert(mat.transposed() * vec(7.0f, 8.0f) == vec(39, 54, 69));
 }
 
 y_test_func("Matrix asymetrical multiply") {

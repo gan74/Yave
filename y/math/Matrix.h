@@ -29,47 +29,74 @@ SOFTWARE.
 namespace y {
 namespace math {
 
-template<usize N, usize M, typename T>
+enum class MatrixLayout {
+	RowMajor,
+	ColumnMajor
+};
+
+template<usize N, usize M, typename T, MatrixLayout L = MatrixLayout::ColumnMajor>
 class Matrix;
 
 namespace detail {
-	template<typename T, usize N>
-	T determinant(const Matrix<N, N, T>& mat);
+	template<typename T, usize N, MatrixLayout L>
+	T determinant(const Matrix<N, N, T, L>& mat);
 
-	template<typename T>
-	T determinant(const Matrix<2, 2, T>& mat);
+	template<typename T, MatrixLayout L>
+	T determinant(const Matrix<2, 2, T, L>& mat);
 
-	template<typename T>
-	T determinant(const Matrix<1, 1, T>& mat);
+	template<typename T, MatrixLayout L>
+	T determinant(const Matrix<1, 1, T, L>& mat);
 }
 
 
-template<usize N, usize M, typename T = float> // N rows & M cols
-class Matrix
-{
-	template<usize P, typename... Args>
-	void build(T t, Args... args) {
-		set_at(P, t);
-		build<P + 1>(args...);
-	}
+template<usize N, usize M, typename T = float, MatrixLayout Layout> // N rows & M cols
+class Matrix {
 
-	template<usize P, usize Q, typename U, typename... Args>
-	void build(const Vec<Q, U>& t, Args... args) {
-		for(usize i = 0; i != Q; i++) {
-			set_at(P + i, T(t[i]));
+	public:
+		static constexpr bool is_row_major = Layout == MatrixLayout::RowMajor;
+		using is_row_major_t = bool_type<is_row_major>;
+
+		static constexpr usize VecSize = is_row_major ? M : N;
+		static constexpr usize VecCount = is_row_major ? N : M;
+
+		using Column = Vec<N, T>;
+		using Row = Vec<M, T>;
+
+	private:
+		template<usize P, typename... Args>
+		void build(T t, Args... args) {
+			set_at(P, t);
+			build<P + 1>(args...);
 		}
-		build<P + Q>(args...);
-	}
 
-	template<usize P>
-	void build() {
-		static_assert(P == N * M, "Wrong number of arguments");
-	}
+		template<usize P, usize Q, typename U, typename... Args>
+		void build(const Vec<Q, U>& t, Args... args) {
+			for(usize i = 0; i != Q; i++) {
+				set_at(P + i, T(t[i]));
+			}
+			build<P + Q>(args...);
+		}
 
-	template<typename U>
-	void set_at(usize i, U u) {
-		_rows[i / M][i % M] = u;
-	}
+		template<usize P>
+		void build() {
+			static_assert(P == N * M, "Wrong number of arguments");
+		}
+
+		template<typename U>
+		void set_at(usize i, U u) {
+			usize r = i / M;
+			usize c = i % M;
+			if(is_row_major) {
+				_vecs[r][c] = u;
+			} else {
+				_vecs[c][r] = u;
+			}
+		}
+
+		using Row_cr = std::conditional_t<is_row_major, const Row&, Row>;
+		using Row_r = std::conditional_t<is_row_major, Row&, Row>;
+		using Column_cr = std::conditional_t<is_row_major, Column, const Column&>;
+		using Column_r = std::conditional_t<is_row_major, Column, Column&>;
 
 	public:
 		using iterator = T*;
@@ -81,17 +108,10 @@ class Matrix
 		}
 
 
-		Matrix(const Vec<M, T> r[N]) {
-			for(usize i = 0; i != N; i++) {
-				_rows[i] = r[i];
-			}
-		}
 
 		template<typename X>
 		Matrix(const Matrix<N, M, X>& m) {
-			for(usize i = 0; i != N; i++) {
-				_rows[i] = m[i];
-			}
+			std::copy(m.begin(), m.end(), begin());
 		}
 
 		Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
@@ -101,21 +121,40 @@ class Matrix
 		Matrix(const Matrix&) = default;
 		Matrix& operator=(const Matrix&) = default;
 
-		Vec<M, T>& operator[](usize i) {
-			return _rows[i];
+
+		auto& operator[](usize i) {
+			return _vecs[i];
 		}
 
-		const Vec<M, T>& operator[](usize i) const {
-			return _rows[i];
+		const auto& operator[](usize i) const {
+			return _vecs[i];
 		}
+
+		template<typename RM = is_row_major_t, typename = std::enable_if_t<RM::value>>
+		Row_r row(usize i) {
+			return row(i, is_row_major_t());
+		}
+
+		Row_cr row(usize i) const {
+			return row(i, is_row_major_t());
+		}
+
+		template<typename RM = is_row_major_t, typename = std::enable_if_t<!RM::value>>
+		Column_r column(usize col) {
+			return column(col, is_row_major_t());
+		}
+
+		Column_cr column(usize col) const {
+			return column(col, is_row_major_t());
+		}
+
 
 		static constexpr bool is_square() {
 			return N == M;
 		}
 
-		template<typename U>
-		Vec<N, U> operator*(const Vec<M, U>& v) const {
-			Vec<N, U> tr;
+		Column operator*(const Row& v) const {
+			Column tr;
 			for(usize i = 0; i != M; i++) {
 				tr += column(i) * v[i];
 			}
@@ -123,53 +162,49 @@ class Matrix
 		}
 
 		template<typename U, usize P>
-		auto operator*(const Matrix<M, P, U>& m) const {
+		auto operator*(const Matrix<M, P, U, Layout>& m) const {
 			Matrix<N, P, decltype(make_one<T>() * make_one<U>())> mat;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != P; j++) {
 					decltype(make_one<T>() * make_one<U>()) tmp(0);
 					for(usize k = 0; k != M; k++) {
-						tmp = tmp + _rows[i][k] * m[k][j];
+						tmp = tmp + row(i)[k] * m.row(k)[j];
 					}
-					mat[i][j] = tmp;
+					if(is_row_major) {
+						mat._vecs[i][j] = tmp;
+					} else {
+						mat._vecs[j][i] = tmp;
+					}
 				}
 			}
 			return mat;
 		}
 
 		template<typename U>
-		auto operator+(const Matrix<N, M, U>& m) const {
+		auto operator+(const Matrix<N, M, U, Layout>& m) const {
 			Matrix<N, M, decltype(make_one<T>() * make_one<U>())> mat;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != M; j++) {
-					mat[i][j] = _rows[i][j] + m[i][j];
+					mat.vecs[i][j] = _vecs[i][j] + m._vecs[i][j];
 				}
 			}
 			return mat;
 		}
 
-		Vec<N, T> column(usize col) const {
-			Vec<N, T> c;
-			for(usize i = 0; i != N; i++) {
-				c[i] = _rows[i][col];
-			}
-			return c;
-		}
-
-		Matrix<M, N, T> transposed() const {
-			Matrix<M, N, T> tr;
-			for(usize i = 0; i != N; i++) {
-				for(usize j = 0; j != M; j++) {
-					tr[j][i] = (*this)[i][j];
+		Matrix<M, N, T, Layout> transposed() const {
+			Matrix<M, N, T, Layout> tr;
+			for(usize i = 0; i != VecCount; i++) {
+				for(usize j = 0; j != VecSize; j++) {
+					tr._vecs[j][i] = _vecs[i][j];
 				}
 			}
 			return tr;
 		}
 
 		bool operator==(const Matrix& m) const {
-			for(usize i = 0; i != N; i++) {
-				for(usize j = 0; j != M; j++) {
-					if((*this)[i][j] != m[i][j]) {
+			for(usize i = 0; i != VecCount; i++) {
+				for(usize j = 0; j != VecSize; j++) {
+					if(_vecs[i][j] != m._vecs[i][j]) {
 						return false;
 					}
 				}
@@ -177,13 +212,16 @@ class Matrix
 			return true;
 		}
 
-		Matrix<N - 1, M - 1, T> sub(usize r, usize c) const {
-			Matrix<N - 1, M - 1, T> mat;
-			for(usize i = 0; i != N - 1; i++) {
-				for(usize j = 0; j != M - 1; j++) {
+		Matrix<N - 1, M - 1, T, Layout> sub(usize r, usize c) const {
+			if(!is_row_major) {
+				std::swap(r, c);
+			}
+			Matrix<N - 1, M - 1, T,Layout> mat;
+			for(usize i = 0; i != VecCount - 1; i++) {
+				for(usize j = 0; j != VecSize - 1; j++) {
 					usize ir = i < r ? i : i + 1;
 					usize jr = j < c ? j : j + 1;
-					mat[i][j] = (*this)[ir][jr];
+					mat._vecs[i][j] = _vecs[ir][jr];
 				}
 			}
 			return mat;
@@ -202,8 +240,8 @@ class Matrix
 			}
 			d = 1 / d;
 			for(usize i = 0; i != N; i++) {
-				for(usize j = 0; j != M; j++) {
-					inv[j][i] = sub(i, j).determinant() * d * (i % 2 == j % 2 ? 1 : -1);
+				for(usize j = 0; j != N; j++) {
+					inv._vecs[j][i] = sub(i, j).determinant() * d * (i % 2 == j % 2 ? 1 : -1);
 				}
 			}
 			return inv;
@@ -213,38 +251,76 @@ class Matrix
 			chk_sq();
 			Matrix mat;
 			for(usize i = 0; i != N; i++) {
-				mat[i][i] = T(1);
+				mat._vecs[i][i] = T(1);
 			}
 			return mat;
 		}
 
 		const_iterator begin() const {
-			return &_rows[0][0];
+			return &_vecs[0][0];
 		}
 
 		const_iterator end() const {
-			return (&_rows[0][0]) + (M * N);
+			return (&_vecs[0][0]) + (M * N);
 		}
 
 		iterator begin() {
-			return& _rows[0][0];
+			return& _vecs[0][0];
 		}
 
 		iterator end() {
-			return (&_rows[0][0]) + (M * N);
+			return (&_vecs[0][0]) + (M * N);
 		}
 
 	private:
+		template<usize X, usize Y, typename U, MatrixLayout L>
+		friend class Matrix;
+
 		static constexpr void chk_sq() {
 			static_assert(is_square(), "The matrix must be square");
 		}
 
-		Vec<M, T> _rows[N] = {Vec<M, T>()};
+		Row_cr row(usize i, std::true_type) const {
+			return _vecs[i];
+		}
+
+		template<typename RM = is_row_major_t, typename = std::enable_if_t<RM::value>>
+		Row_r row(usize i, std::true_type) {
+			return _vecs[i];
+		}
+
+		Column column(usize col, std::true_type) const {
+			Column c;
+			for(usize i = 0; i != N; i++) {
+				c[i] = _vecs[i][col];
+			}
+			return c;
+		}
+
+		Row row(usize row, std::false_type) const {
+			Row r;
+			for(usize i = 0; i != M; i++) {
+				r[i] = _vecs[i][row];
+			}
+			return r;
+		}
+
+		Column_cr column(usize i, std::false_type) const {
+			return _vecs[i];
+		}
+
+		template<typename RM = is_row_major_t, typename = std::enable_if_t<!RM::value>>
+		Column_r column(usize i, std::false_type) {
+			return _vecs[i];
+		}
+
+
+		Vec<VecSize, T> _vecs[VecCount] = {};
 };
 
 namespace detail {
-	template<typename T, usize N>
-	T determinant(const Matrix<N, N, T>& mat) {
+	template<typename T, usize N, MatrixLayout L>
+	T determinant(const Matrix<N, N, T, L>& mat) {
 		struct {
 			int operator()(int index) const {
 				return 2 * (index % 2) - 1;
@@ -252,19 +328,19 @@ namespace detail {
 		} sgn;
 		T d(0);
 		for(usize i = 0; i != N; i++) {
-			d = d + sgn(i + 1) * mat[0][i] * mat.sub(0, i).determinant();
+			d = d + sgn(i + 1) * mat.row(0)[i] * mat.sub(0, i).determinant();
 		}
 		return d;
 	}
 
-	template<typename T>
-	T determinant(const Matrix<2, 2, T>& mat) {
+	template<typename T, MatrixLayout L>
+	T determinant(const Matrix<2, 2, T, L>& mat) {
 		return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 	}
 
 
-	template<typename T>
-	T determinant(const Matrix<1, 1, T>& mat) {
+	template<typename T, MatrixLayout L>
+	T determinant(const Matrix<1, 1, T, L>& mat) {
 		return mat[0][0];
 	}
 }
