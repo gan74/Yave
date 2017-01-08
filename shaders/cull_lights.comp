@@ -4,34 +4,25 @@
 
 layout(local_size_x = 1, local_size_y = 1) in;
 
-
-layout(set = 0, binding = 0) uniform ViewProj {
-	mat4 view;
-	mat4 proj;
-} view_proj;
-
-
-layout(set = 1, binding = 0) readonly buffer InBuffer {
+layout(set = 0, binding = 0) readonly buffer InBuffer {
 	uint count;
 	uint padding[3];
 
 	Light lights[];
 } in_buffer;
 
-layout(set = 2, binding = 0) writeonly buffer OutBuffer {
+layout(set = 0, binding = 1) writeonly buffer OutBuffer {
 	uint count;
 	uint padding[3];
 
 	Light lights[];
 } out_buffer;
 
+layout(set = 0, binding = 2) uniform FrustumBuffer {
+	Frustum frustum;
+} frustum;
 
 
-bool is_inside(vec3 point) {
-	vec4 p = view_proj.proj * view_proj.view * vec4(point, 1.0);
-	vec2 sc = abs(p.xy / p.w);
-	return sc.x < 1 && sc.y < 1;
-}
 
 
 void main() {
@@ -41,8 +32,9 @@ void main() {
 	}
 
 	if(index < in_buffer.count) {
+		Frustum frustum = frustum.frustum;
 		Light light = in_buffer.lights[index];
-		if(light.type == DirectionalLight || is_inside(light.position)) {
+		if(light.type == DirectionalLight || is_inside(frustum, light.position, light.radius)) {
 			out_buffer.lights[atomicAdd(out_buffer.count, 1)] = in_buffer.lights[index];
 		}
 	}

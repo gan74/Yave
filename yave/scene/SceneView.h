@@ -52,10 +52,6 @@ class SceneView : NonCopyable {
 		const math::Matrix4<>& proj_matrix() const;
 		math::Matrix4<> inverse_matrix() const;
 
-		const DescriptorSet& matrix_descriptor_set() const {
-			return _matrix_set;
-		}
-
 
 		const Scene& scene() const;
 

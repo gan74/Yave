@@ -37,6 +37,8 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		math::Vec3 position;
 	};
 
+	using Frustum = std::array<math::Vec4, 6>;
+
 	public:
 		DeferredRenderer(SceneView& scene, const math::Vec2ui& size);
 
@@ -66,11 +68,11 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
 		Buffer<BufferUsage::StorageBit, MemoryFlags::DeviceLocal> _culled_lights;
 
-		TypedBuffer<Camera, BufferUsage::UniformBit> _camera;
+		TypedBuffer<Camera, BufferUsage::UniformBit> _camera_buffer;
+		TypedBuffer<Frustum, BufferUsage::UniformBit> _frustum_buffer;
 
 		DescriptorSet _lighting_set;
 		DescriptorSet _culling_set;
-		DescriptorSet _lights_set;
 		std::unordered_map<VkImageView, DescriptorSet> _output_sets;
 };
 

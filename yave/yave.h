@@ -42,6 +42,8 @@ namespace yave {
 
 using namespace y;
 
+static_assert(math::Matrix4<>::is_column_major, "Yave requires column-major matrices");
+
 struct Version {
 	u32 patch : 12;
 	u32 minor : 10;

@@ -54,7 +54,7 @@ static ComputeShader create_culling_shader(DevicePtr dptr) {
 }
 
 static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count, usize& light_count) {
-	light_count = dir_count + pts_count;
+	light_count = dir_count + pts_count + 1;
 	using Vec4u32 = math::Vec<4, u32>;
 	Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(Vec4u32) + light_count * sizeof(Light));
 
@@ -72,12 +72,18 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count, usiz
 	}
 	for(usize i = 0; i != pts_count; i++) {
 		lights << Light {
-				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)).normalized(),
+				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)),
 				2,
-				math::Vec3(distr(gen), distr(gen), distr(gen)) * 0.5,
+				math::Vec3(distr(gen), distr(gen), distr(gen)),
 				LightType::Point
 			};
 	}
+	lights << Light {
+			  math::Vec3(0, 0, 100),
+			  0.1,
+			  math::Vec3(1, 0, 1),
+			  LightType::Point
+		  };
 
 	{
 		TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryFlags::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(light_count);
@@ -89,6 +95,21 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count, usiz
 	}
 
 	return buffer;
+}
+
+static std::array<math::Vec4, 6> extract_frustum(const math::Matrix4<>& viewproj) {
+	auto x = viewproj.row(0);
+	auto y = viewproj.row(1);
+	auto z = viewproj.row(2);
+	auto w = viewproj.row(3);
+	return {{
+			(w + x).normalized(),
+			(w - x).normalized(),
+			(w + y).normalized(),
+			(w - y).normalized(),
+			(w + z).normalized(),
+			(w - z).normalized()
+		}};
 }
 
 static math::Vec3 extract_position(const math::Matrix4<>& view_matrix) {
@@ -116,10 +137,10 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 		_lights(create_lights(device(), 1, 1, _light_count)),
 		_culled_lights(device(), _lights.byte_size()),
 
-		_camera(device(), 1),
-		_lighting_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera)}),
-		_culling_set(device(), {Binding(_culled_lights)}),
-		_lights_set(device(), {Binding(_lights)}) {
+		_camera_buffer(device(), 1),
+		_frustum_buffer(device(), 1),
+		_lighting_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera_buffer), Binding(_culled_lights)}),
+		_culling_set(device(), {Binding(_lights), Binding(_culled_lights), Binding(_frustum_buffer)}) {
 
 	for(usize i = 0; i != 3; i++) {
 		if(_size[i] % _lighting_shader.local_size()[i]) {
@@ -129,7 +150,8 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 }
 
 void DeferredRenderer::update() {
-	_camera.map()[0] = Camera{_scene.inverse_matrix(), extract_position(_scene.view_matrix())};
+	_camera_buffer.map()[0] = Camera{_scene.inverse_matrix(), extract_position(_scene.view_matrix())};
+	_frustum_buffer.map()[0] = extract_frustum(_scene.proj_matrix() * _scene.view_matrix());
 }
 
 void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {
@@ -142,10 +164,11 @@ void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) 
 	if(groups *  _culling_shader.local_size().x() < _light_count) {
 		++groups;
 	}
-	recorder.dispatch(_culling_program, math::Vec3ui(groups, 1, 1), {_scene.matrix_descriptor_set(), _lights_set, _culling_set});
+	recorder.dispatch(_culling_program, math::Vec3ui(groups, 1, 1), {_culling_set});
 
 	recorder.barriers({_culled_lights}, {}, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
-	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, _culling_set, create_output_set(out)});
+
+	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(out)});
 }
 
 const DescriptorSet& DeferredRenderer::create_output_set(const OutputView& out) {
