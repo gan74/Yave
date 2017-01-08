@@ -54,6 +54,7 @@ class Matrix {
 
 	public:
 		static constexpr bool is_row_major = Layout == MatrixLayout::RowMajor;
+		static constexpr bool is_column_major = !is_row_major;
 		using is_row_major_t = bool_type<is_row_major>;
 
 		static constexpr usize VecSize = is_row_major ? M : N;
