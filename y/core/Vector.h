@@ -103,7 +103,7 @@ class Vector : ResizePolicy {
 		Vector& operator=(const Vector& other) {
 			make_empty();
 			set_min_capacity(other.size());
-			push_back(range(other));
+			push_back(other.begin(), other.end());
 			return *this;
 		}
 
