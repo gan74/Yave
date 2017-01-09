@@ -46,11 +46,11 @@ struct Light {
 };
 
 static ComputeShader create_lighting_shader(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv")));
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
 static ComputeShader create_culling_shader(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("cull_lights.comp.spv")));
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("cull_lights.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
 static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count, usize& light_count) {
