@@ -23,10 +23,6 @@ SOFTWARE.
 #define Y_CORE_RANGE_H
 
 #include <y/utils.h>
-#include "ReverseIterator.h"
-#include "ValueIterator.h"
-#include "MapIterator.h"
-#include "FilterIterator.h"
 
 namespace y {
 namespace core {
@@ -34,8 +30,10 @@ namespace core {
 template<typename Iter>
 class Range {
 	public:
-		using Return = typename dereference<Iter>::type;
-		using Element = typename std::decay<Return>::type;
+		using value_type = typename std::iterator_traits<Iter>::value_type;
+
+		using iterator = Iter;
+		using const_iterator = const Iter;
 
 		Range(const Iter& b, const Iter& e) : _beg(b), _end(e) {
 		}
@@ -48,115 +46,18 @@ class Range {
 			return _end;
 		}
 
-		ReverseIterator<Iter> rbegin() const {
-			Iter i(_beg);
-			return reverse_iterator(--i);
-		}
-
-		ReverseIterator<Iter> rend() const {
-			Iter i(_end);
-			return reverse_iterator(--i);
-		}
-
 		usize size() const {
 			return std::distance(_beg, _end);
 		}
 
-		Range<ReverseIterator<Iter>> reverse() const {
-			return Range<ReverseIterator<Iter>>(rend(), rbegin());
-		}
-
-		template<typename F>
-		Range<MapIterator<Iter, F>> map(const F& f) const {
-			return Range<MapIterator<Iter, F>>(MapIterator<Iter, F>(begin(), f), MapIterator<Iter, F>(end(), f));
-		}
-
-		template<typename F>
-		Range<FilterIterator<Iter, F>> filter(const F& f) const {
-			return Range<FilterIterator<Iter, F>>(FilterIterator<Iter, F>(begin(), f), FilterIterator<Iter, F>(end(), f));
-		}
-
-		template<typename T>
-		auto find(const T& t) {
-			return find_dsp(t, is_comparable<Element, T>());
-		}
-
-		template<template<typename...> typename Coll>
-		auto collect() const {
-			Coll<Element> c;
-			collect(c);
-			return c;
-		}
-
-		template<typename Stream>
-		auto collect(Stream& str) const {
-			for(const auto& e : *this) {
-				str << e;
-			}
-		}
-
-		template<typename T>
-		void foreach(T&& t) const {
-			for(const auto& e : *this) {
-				t(e);
-			}
-		}
-
-		template<typename T>
-		bool contains(const T& t) const {
-			for(const auto& e : *this) {
-				if(e == t) {
-					return true;
-				}
-			}
-			return false;
-		}
-
 	private:
-		template<typename T>
-		Iter find_dsp(const T& t, std::true_type) {
-			for(auto it = _beg; it != _end; ++it) {
-				if(*it == t) {
-					return it;
-				}
-			}
-			return _end;
-		}
-
-		template<typename F>
-		Iter find_dsp(const F& func, std::false_type) {
-			for(auto it = _beg; it != _end; ++it) {
-				if(func(*it)) {
-					return it;
-				}
-			}
-			return _end;
-		}
-
 		Iter _beg;
 		Iter _end;
 };
 
-namespace detail {
-
-template<typename Iter>
-inline auto range(const Iter& b, const Iter& e, std::true_type) {
-	bool r = e < b;
-	using RI = ValueIterator<Iter>;
-	return Range<RI>(RI(b, r), RI(e, r));
-}
-
-template<typename Iter>
-inline auto range(const Iter& b, const Iter& e, std::false_type) {
-	return Range<Iter>(b, e);
-}
-
-}
-
-
 template<typename Iter>
 inline auto range(const Iter& b, const Iter& e) {
-	return detail::range(b, e, bool_type<!is_dereferenceable<Iter>::value>());
+	return Range<Iter>(b, e);
 }
 
 template<typename Coll>

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,72 +19,77 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_CORE_MAPITERATOR_H
-#define Y_CORE_MAPITERATOR_H
+#ifndef Y_CORE_ARRAYPROXY_H
+#define Y_CORE_ARRAYPROXY_H
 
 #include <y/utils.h>
+#include "Vector.h"
 
 namespace y {
 namespace core {
 
-template<typename Iter, typename Func>
-class MapIterator {
+template<typename T>
+class ArrayProxy : NonCopyable {
+
 	public:
-		using Element = typename std::result_of<Func(typename dereference<Iter>::type)>::type;
+		using value_type = T;
+		using iterator = T*;
+		using const_iterator = const T*;
 
-		MapIterator(const Iter& beg, const Func& f) : _it(beg), _map(f) {
+
+		ArrayProxy() = default;
+
+		ArrayProxy(std::nullptr_t) : ArrayProxy() {
 		}
 
-		MapIterator<Iter, Func>& operator++() {
-			++_it;
-			return *this;
+		ArrayProxy(const T* data, usize size) : _data(data), _size(size) {
 		}
 
-		MapIterator<Iter, Func>& operator--() {
-			--_it;
-			return *this;
+		template<usize N>
+		ArrayProxy(const std::array<T, N>& arr) : _data(arr.data()), _size(N) {
 		}
 
-		MapIterator<Iter, Func> operator++(int) {
-			MapIterator p(*this);
-			++_it;
-			return p;
+		ArrayProxy(const std::initializer_list<T>& l) : _data(l.begin()), _size(l.size()) {
 		}
 
-		MapIterator<Iter, Func> operator--(int) {
-			MapIterator p(*this);
-			--_it;
-			return p;
+		ArrayProxy(const Vector<T>& vec) : _data(vec.begin()), _size(vec.size()) {
 		}
 
-		bool operator!=(const MapIterator<Iter, Func>& i) const {
-			return _it != i._it/* || map != i.map*/;
+		usize size() const {
+			return _size;
 		}
 
-		bool operator!=(const Iter& i) const {
-			return _it != i;
+		/*iterator begin() {
+			return _data;
 		}
 
-		template<typename T>
-		bool operator==(const T& t) const {
-			return !operator!=(t);
+		iterator end() {
+			return _data + _size;
+		}*/
+
+		const_iterator begin() const {
+			return _data;
 		}
 
-		Element operator*() {
-			return _map(*_it);
+		const_iterator end() const {
+			return _data + _size;
 		}
 
-		auto operator-(const MapIterator& other) const {
-			return _it - other._it;
+		const_iterator cbegin() const {
+			return _data;
+		}
+
+		const_iterator cend() const {
+			return _data + _size;
 		}
 
 	private:
-		Iter _it;
-		Func _map;
+		const T* _data = nullptr;
+		usize _size = 0;
+
 };
 
-
 }
 }
 
-#endif // Y_CORE_MAPITERATOR_H
+#endif // Y_CORE_ARRAYPROXY_H

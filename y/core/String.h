@@ -31,6 +31,7 @@ namespace core {
 
 // see: https://www.youtube.com/watch?v=kPR8h4-qZdk
 class String {
+
 	struct LongLenType
 	{
 		usize _len : 8 * sizeof(usize) - 1;
@@ -38,10 +39,6 @@ class String {
 
 		LongLenType(usize l = 0) : _len(l), _is_long(1) {
 		}
-
-		/*usize operator=(usize l) {
-			return _len = l;
-		}*/
 
 		operator usize() const {
 			return _len;
@@ -56,11 +53,6 @@ class String {
 		Y_TODO(SSO implementation squeeze an extra byte at the cost of 0 initilisation. Bench needed)
 		ShortLenType(usize l = 0) : _len(u8(MaxShortSize - l)), _is_long(0) {
 		}
-
-		/*usize operator=(usize l) {
-			_len = u8(MaxShortSize - l);
-			return l;
-		}*/
 
 		operator usize() const {
 			return MaxShortSize - _len;
@@ -100,6 +92,7 @@ class String {
 	public:
 		static constexpr usize MaxShortSize = sizeof(ShortData::_data);
 
+		using value_type = char;
 		using iterator = char*;
 		using const_iterator = const char*;
 
@@ -111,8 +104,8 @@ class String {
 		String(const char* str, usize len);
 		String(const char* beg, const char* end);
 
-		template<typename I, typename = std::enable_if_t<std::is_same<typename Range<I>::Element, char>::value>>
-		String(const Range<I>& rng);
+		template<typename It>
+		String(const It& beg_it, const It& end_it);
 
 		~String();
 
@@ -121,8 +114,6 @@ class String {
 
 		template<typename T>
 		static String from(T&& t);
-
-		//auto parse() const;
 
 		usize size() const;
 		usize capacity() const;
@@ -139,7 +130,6 @@ class String {
 
 		String sub_str(usize beg) const;
 		String sub_str(usize beg, usize len) const;
-
 
 		operator const char*() const;
 		operator char*();
@@ -209,38 +199,27 @@ class String {
 
 
 
-namespace detail {
-template<typename T>
-inline String str(const T& t, std::false_type) {
-	return String::from(t);
-}
 
-template<typename T>
-inline String str(const T& t, std::true_type) {
-	return String(t);
-}
-}
 
-template<typename... Args>
-inline String str(Args... args) {
-	return String(args...);
-}
-
-template<typename T>
-inline String str(const T& t) {
-	return detail::str(t, std::is_convertible<T, String>());
-}
 
 inline String str_from_owned(Owner<char*> owned) {
 	return String::from_owned(owned);
 }
 
 template<typename T>
-inline String str_from(const T& t) {
+inline String str(const T& t) {
 	return String::from(t);
 }
 
+inline String str() {
+	return String();
+}
 
+
+template<typename It>
+String::String(const It& beg_it, const It& end_it) : String(nullptr, std::distance(beg_it, end_it)) {
+	std::copy(beg_it, end_it, begin());
+}
 
 
 template<typename T>
@@ -250,38 +229,6 @@ String String::from(T&& t) {
 	return oss.str().c_str();
 }
 
-template<typename I, typename = std::enable_if_t<std::is_same<typename Range<I>::Element, char>::value>>
-String::String(const Range<I>& rng) : String(0, rng.size()) {
-	char* it = begin();
-	for(const auto& e : rng) {
-		*(it++) = e;
-	}
-	*it = 0;
-}
-
-/*namespace detail {
-class StringParser : NonCopyable {
-	friend class core::String;
-	StringParser(const String& str) : _str(str) {
-	}
-
-	const String& _str;
-
-	public:
-		template<typename T>
-		operator T() const && {
-			T t;
-			std::stringstream buff;
-			buff << _str;
-			buff >> t;
-			return t;
-		}
-};
-}
-
-inline auto String::parse() const {
-	return detail::StringParser(*this);
-}*/
 
 
 
@@ -304,6 +251,8 @@ auto operator<<(core::String& l, const T& r) {
 inline core::String operator "" _s(const char* c_str, usize size) {
 	return core::String(c_str, size);
 }
+
+
 
 
 // because we do need string in here

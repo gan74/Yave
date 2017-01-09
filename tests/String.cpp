@@ -56,14 +56,14 @@ y_test_func("String copy") {
 	y_test_assert(s.size() == 0 && s.is_empty() && !s.is_long() && s.capacity() == String::MaxShortSize && s.data() && !*s.data());
 
 	{
-		auto short_str = str(get_long_c_str(), String::MaxShortSize);
+		auto short_str = String(get_long_c_str(), String::MaxShortSize);
 		y_test_assert(!short_str.is_long());
 		s = short_str;
 	}
 	y_test_assert(!s.is_long());
 
 	{
-		auto long_str = str(get_long_c_str(), String::MaxShortSize + 1);
+		auto long_str = String(get_long_c_str(), String::MaxShortSize + 1);
 		y_test_assert(long_str.is_long());
 		s = long_str;
 	}
@@ -73,10 +73,10 @@ y_test_func("String copy") {
 
 y_test_func("String add") {
 	const char* c_str = get_long_c_str();
-	auto a = str(c_str, 3);
+	auto a = String(c_str, 3);
 	y_test_assert(a.capacity() >= 6);
 
-	a += str(c_str + 3, 3);
+	a += String(c_str + 3, 3);
 
 	y_test_assert(a.size() == 6);
 	y_test_assert(!strncmp(a, c_str, a.size()));

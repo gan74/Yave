@@ -25,33 +25,20 @@ SOFTWARE.
 #include "defines.h"
 #include <new>
 #include <typeinfo>
+#include <iterator>
 #include <tuple>
 #include <array>
 
 #include <y/utils/types.h>
 
-#include <y/utils/deref.h>
 #include <y/utils/iterable.h>
 #include <y/utils/comparable.h>
-#include <y/utils/startup.h>
 #include <y/utils/Chrono.h>
 #include <y/utils/hash.h>
 #include <y/utils/log.h>
 #include <y/utils/os.h>
 
 namespace y {
-
-
-
-
-
-template<typename T>
-struct dereference {
-	using type = decltype(*make_one<T>());
-};
-
-
-
 
 struct Nothing {
 	template<typename... Args>
@@ -167,35 +154,7 @@ static_assert(std::is_same<Coerce<int, float, double>::type, double>::value, "Co
 static_assert(std::is_same<Coerce<int, float, int>::type, float>::value, "Coerce error");
 static_assert(std::is_same<Coerce<int, int>::type, int>::value, "Coerce error");
 
-
-
-
-template<typename T>
-struct is_sane {
-	static constexpr bool is_polymorphic = std::is_polymorphic<T>::value;
-	static constexpr bool is_copyable = std::is_copy_constructible<T>::value;
-
-	static constexpr bool value = (is_polymorphic && !is_copyable) || !is_polymorphic;
-	using type = bool_type<value>;
-};
-
-namespace detail {
-struct TryFailed {
-	template<typename T>
-	operator T() const {
-		return T();
-	}
-
-	operator bool() const {
-		return false;
-	}
-};
 }
 
-}
-
-#define Y_ASSERT_SANE(type) static_assert(y::is_sane<type>::value, "\"" #type "\" is ill-formed")
-
-#define Y_TRY(expr)	do { if(!(expr)) { return y::detail::TryFailed(); } } while(false)
 
 #endif

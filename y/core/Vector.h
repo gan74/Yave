@@ -23,8 +23,6 @@ SOFTWARE.
 #define Y_CORE_VECTOR
 
 #include <y/utils.h>
-#include "Range.h"
-#include <cstring>
 
 namespace y {
 namespace core {
@@ -60,17 +58,17 @@ class Vector : ResizePolicy {
 	using Data = typename std::remove_const<Elem>::type;
 
 	public:
+		using value_type = Elem;
+
 		using iterator = Elem*;
 		using const_iterator = Elem const*;
-		using Element = Elem;
 
-		Vector() : _data(nullptr), _data_end(nullptr), _alloc_end(nullptr) {
-		}
+		Vector() = default;
 
 		Vector(const Vector& other) : Vector() {
 			set_min_capacity(other.size());
-			for(const Elem& e : other) {
-				append(e);
+			for(const auto& e : other) {
+				push_back(e);
 			}
 		}
 
@@ -78,24 +76,23 @@ class Vector : ResizePolicy {
 			swap(other);
 		}
 
-		template<typename I, typename = std::enable_if_t<std::is_same<typename Range<I>::Element, Element>::value>>
-		Vector(const Range<I>& rng) : Vector() {
-			set_min_capacity(rng.size());
-			append(rng);
-		}
-
 		Vector(std::initializer_list<Elem> l) : Vector() {
 			set_min_capacity(l.size());
 			for(const auto& e : l) {
-				append(e);
+				push_back(e);
 			}
 		}
 
 		Vector(usize size, const Elem& elem) : Vector() {
 			set_min_capacity(size);
 			for(usize i = 0; i != size; i++) {
-				append(elem);
+				push_back(elem);
 			}
+		}
+
+		template<typename It>
+		Vector(const It& beg_it, const It& end_it) : Vector() {
+			push_back(beg_it, end_it);
 		}
 
 		Vector& operator=(Vector&& other) {
@@ -106,15 +103,7 @@ class Vector : ResizePolicy {
 		Vector& operator=(const Vector& other) {
 			make_empty();
 			set_min_capacity(other.size());
-			append(range(other));
-			return *this;
-		}
-
-		template<typename T>
-		Vector& operator=(const T& other) {
-			make_empty();
-			set_min_capacity(other.size());
-			append(range(other));
+			push_back(range(other));
 			return *this;
 		}
 
@@ -128,29 +117,26 @@ class Vector : ResizePolicy {
 			clear();
 		}
 
-		void append(const Element& elem) {
+		void push_back(const value_type& elem) {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
 			new(_data_end++) Data(elem);
 		}
 
-		void append(Element&& elem) {
+		void push_back(value_type&& elem) {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
 			new(_data_end++) Data(std::move(elem));
 		}
 
-		template<typename I>
-		std::enable_if_t<std::is_same<typename Range<I>::Element, Element>::value>
-			append(const Range<I>& rng) {
-			for(const auto& i : rng) {
-				append(i);
-			}
+		template<typename It>
+		void push_back(const It& beg_it, const It& end_it) {
+			std::copy(beg_it, end_it, std::back_inserter(*this));
 		}
 
-		Element pop() {
+		value_type pop() {
 			--_data_end;
 			Data r = std::move(*_data_end);
 			_data_end->~Data();
@@ -194,27 +180,27 @@ class Vector : ResizePolicy {
 			return _data_end;
 		}
 
-		const Element& operator[](usize i) const {
+		const value_type& operator[](usize i) const {
 			return _data[i];
 		}
 
-		Element& operator[](usize i) {
+		value_type& operator[](usize i) {
 			return _data[i];
 		}
 
-		const Element& first() const {
+		const value_type& first() const {
 			return *_data;
 		}
 
-		Element& first() {
+		value_type& first() {
 			return *_data;
 		}
 
-		const Element& last() const {
+		const value_type& last() const {
 			return *(_data_end - 1);
 		}
 
-		Element& last() {
+		value_type& last() {
 			return *(_data_end - 1);
 		}
 
@@ -294,50 +280,15 @@ class Vector : ResizePolicy {
 			_alloc_end = _data + new_cap;
 		}
 
-		Owner<Data*> _data;
-		Data* _data_end;
-		Data* _alloc_end;
+		Owner<Data*> _data = nullptr;
+		Data* _data_end = nullptr;
+		Data* _alloc_end = nullptr;
 };
-
-
-
-namespace detail {
-
-template<typename T>
-inline void append(Vector<T>&) {
-}
-
-template<typename T, typename U, typename... Args>
-inline void append(Vector<T>& vec, U&& u, Args&&... args) {
-	vec.append(std::forward<U>(u));
-	append(vec, std::forward<Args>(args)...);
-}
-
-template<typename T, typename U>
-inline void append(Vector<T>& vec, U&& u) {
-	vec.append(std::forward<U>(u));
-}
-
-}
 
 template<typename T>
 inline auto vector_with_capacity(usize cap) {
 	auto vec = Vector<T>();
 	vec.set_min_capacity(cap);
-	return vec;
-}
-
-template<typename T, typename... Args>
-inline auto vector(Args&&... args) {
-	auto vec = vector_with_capacity<T>(sizeof...(args));
-	detail::append(vec, std::forward<Args>(args)...);
-	return vec;
-}
-
-template<typename... Args, typename Value = typename std::common_type<Args...>::type>
-inline Vector<Value> vector(Args&&... args) {
-	auto vec = vector_with_capacity<Value>(sizeof...(args));
-	detail::append(vec, std::forward<Args>(args)...);
 	return vec;
 }
 
@@ -347,27 +298,23 @@ inline auto vector(std::initializer_list<T> lst) {
 }
 
 
-static_assert(std::is_same<decltype(vector(1, 2, 3))::Element, int>::value, "Invalid vector(...) return type");
-static_assert(std::is_same<decltype(vector(1, 2.0, 3))::Element, double>::value, "Invalid vector(...) return type");
-
-
 
 
 template<typename U, typename T>
 inline Vector<U>& operator<<(Vector<U>& vec, T&& t) {
-	vec.append(std::forward<T>(t));
+	vec.push_back(std::forward<T>(t));
 	return vec;
 }
 
 template<typename U, typename T>
 inline Vector<U>& operator+=(Vector<U>& vec, T&& t) {
-	vec.append(std::forward<T>(t));
+	vec.push_back(std::forward<T>(t));
 	return vec;
 }
 
 template<typename U, typename T>
 inline Vector<U> operator+(Vector<U> vec, T&& t) {
-	vec.append(std::forward<T>(t));
+	vec.push_back(std::forward<T>(t));
 	return vec;
 }
 

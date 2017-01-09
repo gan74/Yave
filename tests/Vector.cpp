@@ -78,18 +78,18 @@ y_test_func("Vector creation") {
 	y_test_assert(vec.capacity() == 0);
 }
 
-y_test_func("Vector append") {
+y_test_func("Vector push_back") {
 	Vector<int> vec;
 
 	vec.set_capacity(19);
 	y_test_assert(vec.capacity() >= 19);
 
-	vec.append(0);
-	vec.append(1);
+	vec.push_back(0);
+	vec.push_back(1);
 	y_test_assert(vec.size() == 2);
 
 	for(int i = 0; i != 18; i++) {
-		vec.append(i);
+		vec.push_back(i);
 	}
 
 	y_test_assert(vec.size() == 20);
@@ -102,7 +102,7 @@ y_test_func("Vector shrink") {
 	Vector<int> vec;
 
 	while(vec.size() != max) {
-		vec.append(0);
+		vec.push_back(0);
 	}
 
 	y_test_assert(vec.size() == max);
@@ -119,14 +119,14 @@ y_test_func("Vector clear") {
 	Vector<int> vec;
 
 	while(vec.size() != max) {
-		vec.append(0);
+		vec.push_back(0);
 	}
 	vec.clear();
 	y_test_assert(vec.size() == 0);
 	y_test_assert(vec.capacity() == 0);
 
 	while(vec.size() != max * 2) {
-		vec.append(0);
+		vec.push_back(0);
 	}
 	vec.clear();
 	y_test_assert(vec.size() == 0);
@@ -139,7 +139,7 @@ y_test_func("Vector iteration") {
 	Vector<int> vec;
 
 	for(int i = 0; i != max; i++) {
-		vec.append(i);
+		vec.push_back(i);
 	}
 
 	int counter = 0;
@@ -149,7 +149,7 @@ y_test_func("Vector iteration") {
 }
 
 y_test_func("Vector vector(...)") {
-	auto vec = vector(1, 2, 3, 4, 5, 6, 7, 8);
+	auto vec = vector({1, 2, 3, 4, 5, 6, 7, 8});
 	y_test_assert(vec.capacity() >= 8);
 	y_test_assert(vec.size() == 8);
 
@@ -159,59 +159,22 @@ y_test_func("Vector vector(...)") {
 	}
 }
 
-y_test_func("Vector<Range<I>>") {
-	{
-		auto r = range(1, 7);
-
-		auto vec = vector(1, 2, 3, 4, 5, 6);
-		vec.append(r);
-		vec.append(r.reverse());
-		vec.append(r.map([](int i) { return i + 1; }));
-		vec.append(range(0, 10));
-
-		y_test_assert(vec.size() == 6 * 4 + 10);
-		y_test_assert(vec == vector({1, 2, 3, 4, 5, 6,
-									 1, 2, 3, 4, 5, 6,
-									 6, 5, 4, 3, 2, 1,
-									 2, 3, 4, 5, 6, 7,
-									 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
-	}
-	{
-		Vector<Range<ValueIterator<int>>> vec;
-		vec.append(range(7, 11));
-
-		y_test_assert(vec.size() == 1);
-		y_test_assert(vec[0].collect<Vector>() == vector(7, 8, 9, 10));
-	}
-	{
-		std::vector<int> std_vec;
-		std_vec.push_back(1);
-		std_vec.push_back(2);
-		std_vec.push_back(3);
-
-		Vector<int> vec = vector(0);
-		vec.append(range(std_vec));
-
-		y_test_assert(vec.size() == 4);
-		y_test_assert(vec == vector(0, 1, 2, 3));
-	}
-}
-
 y_test_func("Vector dtors") {
 	usize counter = 0;
-	auto vec = vector(std::move(RaiiCounter(&counter)));
+	auto vec = Vector<RaiiCounter>();
+	vec.push_back(std::move(RaiiCounter(&counter)));
 
 	y_test_assert(counter == 0);
 
 	auto cap = vec.capacity();
 	do {
-		vec.append(RaiiCounter(&counter));
+		vec.push_back(RaiiCounter(&counter));
 	} while(cap == vec.capacity() || vec.capacity() < 32);
 
 	y_test_assert(counter == 0);
 
 	usize total = vec.size();
-	vec = vector<RaiiCounter>();
+	vec = Vector<RaiiCounter>();
 
 	y_test_assert(counter == total);
 }
