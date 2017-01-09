@@ -97,7 +97,7 @@ class Decoder {
 		template<Byteorder Order, typename T>
 		bool fill_vec(core::Vector<T>& vec, u64 len, std::true_type) {
 			vec = core::Vector<T>(len, T());
-			if(!_inner->read(vec.begin(), len * sizeof(T)) == len * sizeof(T)) {
+			if(_inner->read(vec.begin(), len * sizeof(T)) != len * sizeof(T)) {
 				return false;
 			}
 			for(auto& u : vec) {
@@ -122,7 +122,7 @@ class Decoder {
 
 		template<Byteorder Order, typename T, usize Size>
 		bool decode_arr(std::array<T, Size>& arr, std::true_type) {
-			if(!_inner->read(&arr, Size * sizeof(T)) == Size * sizeof(T)) {
+			if(_inner->read(&arr, Size * sizeof(T)) != Size * sizeof(T)) {
 				return false;
 			}
 			for(auto& u : arr) {
