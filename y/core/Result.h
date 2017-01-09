@@ -47,7 +47,8 @@ struct Ok : NonCopyable {
 		return _value;
 	}
 
-	T _value;
+	private:
+		T _value;
 };
 
 template<typename T>
@@ -68,7 +69,8 @@ struct Err : NonCopyable {
 		return _err;
 	}
 
-	T _err;
+	private:
+		T _err;
 };
 
 template<>
@@ -118,9 +120,8 @@ inline auto Err(T&& e) {
 }
 
 
-namespace detail {
 
-template<typename T, typename E>
+template<typename T, typename E = void>
 class Result : NonCopyable {
 
 	static constexpr bool is_void = std::is_void<T>::value;
@@ -131,6 +132,17 @@ class Result : NonCopyable {
 		eError,
 		eOk
 	};
+
+	template<typename F, typename U>
+	struct map_type {
+		using type = decltype(make_one<F>()(make_one<U>()));
+	};
+
+	template<typename F>
+	struct map_type<F, void> {
+		using type = decltype(make_one<F>()());
+	};
+
 
 	public:
 		template<typename U>
@@ -169,44 +181,62 @@ class Result : NonCopyable {
 			return _state == eOk;
 		}
 
-		auto unwrap() const {
+		auto&& unwrap() const {
 			return expected("Unwrap failed");
 		}
 
-		auto unwrap() {
+		auto&& unwrap() {
 			return expected("Unwrap failed");
 		}
 
-		auto error() const {
+		auto&& error() const {
 			if(is_ok()) {
 				fatal("Result is not an error");
 			}
 			return _error.get();
 		}
 
-		auto error() {
+		auto&& error() {
 			if(is_ok()) {
 				fatal("Result is not an error");
 			}
 			return _error.get();
 		}
 
-
-		auto expected(const char* err_msg) const {
+		auto&& expected(const char* err_msg) const {
 			if(is_error()) {
 				fatal(err_msg);
 			}
 			return _value.get();
 		}
 
-		auto expected(const char* err_msg) {
+		auto&& expected(const char* err_msg) {
 			if(is_error()) {
 				fatal(err_msg);
 			}
 			return _value.get();
 		}
 
+		auto unwrap_or(const T& f) const {
+			return is_ok() ? _value.get() : f;
+		}
 
+		template<typename F>
+		Result<typename map_type<F, T>::type, E> map(const F& f) const {
+			if(is_ok()) {
+				return Ok(f(_value.get()));
+			}
+			return Err(_error.get());
+		}
+
+
+		template<typename F>
+		Result<T, typename map_type<F, E>::type> map_err(const F& f) const {
+			if(is_ok()) {
+				return Ok(_value.get());
+			}
+			return Err(f(_error.get()));
+		}
 
 	protected:
 		State _state;
@@ -217,85 +247,7 @@ class Result : NonCopyable {
 		};
 };
 
-}
 
-
-
-
-template<typename T, typename E>
-struct Result : detail::Result<T, E> {
-
-	using detail::Result<T, E>::Result;
-
-	auto unwrap_or(const T& f) const {
-		return this->is_ok() ? this->_value.get() : f;
-	}
-
-	template<typename F>
-	Result<typename std::result_of<F(T)>::type, E> map(const F& f) const {
-		if(this->is_ok()) {
-			return Ok(f(this->_value.get()));
-		}
-		return Err(this->_error.get());
-	}
-
-	template<typename F>
-	Result<T, typename std::result_of<F(E)>::type> map_err(const F& f) const {
-		if(this->is_ok()) {
-			return Ok(this->_value.get());
-		}
-		return Err(f(this->_error.get()));
-	}
-};
-
-template<typename E>
-struct Result<void, E> : detail::Result<void, E> {
-
-	using detail::Result<void, E>::Result;
-
-	template<typename F>
-	Result<typename std::result_of<F()>::type, E> map(const F& f) const {
-		if(this->is_ok()) {
-			return Ok(f());
-		}
-		return Err(this->_error.get());
-	}
-
-	template<typename F>
-	Result<void, typename std::result_of<F(E)>::type> map_err(const F& f) const {
-		if(this->is_ok()) {
-			return Ok();
-		}
-		return Err(f(this->_error.get()));
-	}
-
-};
-
-template<typename T>
-struct Result<T, void> : detail::Result<T, void> {
-
-	using detail::Result<T, void>::Result;
-
-	auto unwrap_or(const T& f) const {
-		return this->is_ok() ? this->_value.get() : f;
-	}
-
-	template<typename F>
-	Result<typename std::result_of<F(T)>::type, void> map(const F& f) const {
-		if(this->is_ok()) {
-			return Ok(f(this->_value.get()));
-		}
-		return Err();
-	}
-
-	template<typename F>
-	Result<T, typename std::result_of<F()>::type> map_err(const F& f) const {
-		if(this->is_ok()) {
-			return Ok(this->_value.get());
-		}
-		return Err(f());
-	}
-};
 
 }
 }

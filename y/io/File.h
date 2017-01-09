@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_IO_FILE_H
 
 #include <y/core/String.h>
+#include <y/core/Result.h>
 
 #include "Reader.h"
 #include "Writer.h"
@@ -41,11 +42,13 @@ class File : public Reader, public Writer {
 		File(File&& other);
 		File& operator=(File&& other);
 
-		static File create(const core::String& name);
-		static File open(const core::String& name);
+		static core::Result<File> create(const core::String& name);
+		static core::Result<File> open(const core::String& name);
 
 		usize size() const;
 		usize remaining() const;
+
+		bool is_open() const;
 
 		virtual bool at_end() const override;
 

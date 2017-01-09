@@ -50,12 +50,20 @@ void File::swap(File& other) {
 	std::swap(_file, other._file);
 }
 
-File File::create(const core::String& name) {
-	return fopen(name.data(), "wb+");
+core::Result<File> File::create(const core::String& name) {
+	File f(fopen(name.data(), "wb+"));
+	if(f.is_open()) {
+		return core::Ok(std::move(f));
+	}
+	return core::Err();
 }
 
-File File::open(const core::String& name) {
-	return fopen(name.data(), "rb");
+core::Result<File, void> File::open(const core::String& name) {
+	File f(fopen(name.data(), "rb"));
+	if(f.is_open()) {
+		return core::Ok(std::move(f));
+	}
+	return core::Err();
 }
 
 usize File::size() const {
@@ -81,6 +89,10 @@ usize File::remaining() const {
 	auto len = usize(ftell(_file));
 	fsetpos(_file, &pos);
 	return len - offset;
+}
+
+bool File::is_open() const {
+	return !!_file;
 }
 
 bool File::at_end() const {
