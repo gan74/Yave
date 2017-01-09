@@ -35,7 +35,9 @@ static math::Vec2ui compute_size(const ImageBase& a, std::initializer_list<Color
 }
 
 static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView& depth, std::initializer_list<ColorAttachmentView> colors) {
-	return new RenderPass(dptr, depth, core::range(colors).map([](const auto& c) { return RenderPass::ImageData(c); }).collect<core::Vector>());
+	auto color_vec = core::vector_with_capacity<RenderPass::ImageData>(colors.size());
+	std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::ImageData(c); });
+	return new RenderPass(dptr, depth, color_vec);
 }
 
 
@@ -57,7 +59,9 @@ Framebuffer::Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const De
 		_depth(depth),
 		_colors(colors) {
 
-	auto views = core::range(_colors).map([](const auto& v) { return v.vk_image_view(); }).collect<core::Vector>() + _depth.vk_image_view();
+	auto views = core::vector_with_capacity<vk::ImageView>(_colors.size() + 1);
+	std::transform(_colors.begin(), _colors.end(), std::back_inserter(views), [](const auto& v) { return v.vk_image_view(); });
+	views << _depth.vk_image_view();
 
 	_framebuffer = device()->vk_device().createFramebuffer(vk::FramebufferCreateInfo()
 		.setRenderPass(_render_pass->vk_render_pass())

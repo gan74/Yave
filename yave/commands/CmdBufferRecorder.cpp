@@ -91,9 +91,11 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 	if(_render_pass) {
 		end_render_pass();
 	}
-	auto clear_values =
-			core::range(usize(0), framebuffer.attachment_count()).map([](usize) { return vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{{0.0f, 0.0f, 0.0f, 0.0f}})); }).collect<core::Vector>() +
-			vk::ClearDepthStencilValue(1.0f, 0);
+	auto clear_values = core::vector_with_capacity<vk::ClearValue>(framebuffer.attachment_count() + 1);
+	for(usize i = 0; i != framebuffer.attachment_count(); ++i) {
+		clear_values << vk::ClearColorValue(std::array<float, 4>{{0.0f, 0.0f, 0.0f, 0.0f}});
+	}
+	clear_values << vk::ClearDepthStencilValue(1.0f, 0);
 
 	auto pass_info = vk::RenderPassBeginInfo()
 			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
@@ -111,8 +113,9 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
-	auto ds = core::range(descriptor_sets).map([](const auto& ds) { return ds.get().vk_descriptor_set(); }).collect<core::Vector>() +
-			  pipeline.vk_descriptor_set();
+	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size() + 1);
+	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& ds) { return ds.get().vk_descriptor_set(); });
+	ds << pipeline.vk_descriptor_set();
 
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
 
@@ -135,7 +138,8 @@ CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& mesh_instan
 CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	end_render_pass();
 
-	auto ds = core::range(descriptor_sets).map([](const auto& ds) { return ds.get().vk_descriptor_set(); }).collect<core::Vector>();
+	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
+	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& ds) { return ds.get().vk_descriptor_set(); });
 
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
@@ -147,8 +151,11 @@ CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, co
 CmdBufferRecorder& CmdBufferRecorder::barriers(std::initializer_list<BufferBarrier> buffers, std::initializer_list<ImageBarrier> images, PipelineStage src, PipelineStage dst) {
 	end_render_pass();
 
-	auto image_barriers = core::range(images).map([](const auto& b) { return b.vk_barrier(); }).collect<core::Vector>();
-	auto buffer_barriers = core::range(buffers).map([](const auto& b) { return b.vk_barrier(); }).collect<core::Vector>();
+	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
+	std::transform(images.begin(), images.end(), std::back_inserter(image_barriers), [](const auto& b) { return b.vk_barrier(); });
+
+	auto buffer_barriers = core::vector_with_capacity<vk::BufferMemoryBarrier>(buffers.size());
+	std::transform(buffers.begin(), buffers.end(), std::back_inserter(buffer_barriers), [](const auto& b) { return b.vk_barrier(); });
 
 	vk_cmd_buffer().pipelineBarrier(
 			vk::PipelineStageFlagBits(src),

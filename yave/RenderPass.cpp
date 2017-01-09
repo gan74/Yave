@@ -91,11 +91,15 @@ static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usi
 
 
 static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, const core::Vector<RenderPass::ImageData>& colors) {
-	auto attachments =
-			core::range(colors).map([=](const auto& color) { return create_attachment(color); }).collect<core::Vector>() +
-			create_attachment(depth);
+	auto attachments = core::vector_with_capacity<vk::AttachmentDescription>(colors.size() + 1);
+	std::transform(colors.begin(), colors.end(), std::back_inserter(attachments), [=](const auto& color) { return create_attachment(color); });
+	attachments << create_attachment(depth);
 
-	auto color_refs = core::range(usize(0), colors.size()).map([](auto i) { return create_attachment_reference(ImageUsage::ColorBit, i); }).collect<core::Vector>();
+	auto color_refs = core::vector_with_capacity<vk::AttachmentReference>(colors.size());
+	for(usize i = 0; i != colors.size(); ++i) {
+		color_refs << create_attachment_reference(ImageUsage::ColorBit, i);
+	}
+
 	auto depth_ref = create_attachment_reference(ImageUsage::DepthBit, color_refs.size());
 
 	auto subpass = create_subpass(depth_ref, color_refs);

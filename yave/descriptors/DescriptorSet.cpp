@@ -29,12 +29,14 @@ SOFTWARE.
 namespace yave {
 
 static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const std::unordered_map<vk::DescriptorType, u32>& binding_counts) {
-	auto sizes = core::range(binding_counts).map([](const auto& count) {
+	auto sizes = core::vector_with_capacity<vk::DescriptorPoolSize>(binding_counts.size());
+	std::transform(binding_counts.begin(), binding_counts.end(), std::back_inserter(sizes), [](const auto& count) {
 			return vk::DescriptorPoolSize()
 					.setType(count.first)
 					.setDescriptorCount(count.second)
 				;
-		}).collect<core::Vector>();
+		});
+
 
 	return dptr->vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
 			.setPoolSizeCount(sizes.size())

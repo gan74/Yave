@@ -70,7 +70,7 @@ void CmdBufferPoolData::release(CmdBufferData&& data) {
 	/*std::cout << "buffer " << data.cmd_buffer << " released\n";
 	std::cout << "buffer pool size for" << _pool << " = " << _cmd_buffers.size() << "\n";*/
 
-	_cmd_buffers.append(std::move(data));
+	_cmd_buffers.push_back(std::move(data));
 }
 
 CmdBufferData CmdBufferPoolData::reset(CmdBufferData data) {

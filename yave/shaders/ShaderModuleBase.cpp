@@ -32,7 +32,7 @@ namespace yave {
 template<typename M>
 static void merge(M& into, const M& o) {
 	for(const auto& p : o) {
-		into[p.first] << core::range(p.second);
+		into[p.first].push_back(p.second.begin(), p.second.end());
 	}
 }
 
@@ -104,7 +104,7 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vec
 		auto type = compiler.get_type(r.type_id);
 		attribs << ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type)};
 
-		for(auto i : core::range(location, location + type.columns)) {
+		for(usize i = location; i != location + type.columns; ++i) {
 			if(!locations.insert(i).second) {
 				fatal("Duplicate or overlapping attribute locations.");
 			}

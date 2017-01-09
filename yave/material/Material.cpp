@@ -60,7 +60,7 @@ const GraphicPipeline& Material::compile(const RenderPass& render_pass, const Vi
 		fatal("Unable to compile material: null renderpass.");
 	}
 
-	auto it = core::range(_compiled).find(key);
+	auto it = std::find_if(_compiled.begin(), _compiled.end(), [=](const auto& c) { return c.first == key; });
 	if(it == _compiled.end()) {
 		MaterialCompiler compiler(device());
 		_compiled.insert(key, compiler.compile(*this, render_pass, viewport));

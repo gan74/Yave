@@ -98,7 +98,7 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eA)
 		;
 
-	auto att_blends = core::range(usize(0), render_pass.attachment_count()).map([=](usize) { return color_blend_attachment; }).collect<core::Vector>();
+	auto att_blends = core::Vector<vk::PipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
 
 	auto color_blending = vk::PipelineColorBlendStateCreateInfo()
 			.setLogicOpEnable(false)
