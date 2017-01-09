@@ -20,14 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Range.h"
-#include "Vector.h"
-#include "String.h"
+#include <y/core/Range.h>
+#include <y/core/Vector.h>
+#include <y/core/String.h>
 #include <y/test/test.h>
-#include <iostream>
 
-namespace y {
-namespace core {
+using namespace y;
+using namespace y::core;
 
 static_assert(std::is_same<typename decltype(range(vector(1, 2, 3)))::Element, int>::value, "Range::Element deduction error");
 static_assert(!is_iterable<int>::value, "is_iterable<int> should be false");
@@ -37,7 +36,4 @@ y_test_func("Range hashing") {
 	auto vec = range(0, 10).collect<Vector>();
 	y_test_assert(vec.size() == 10);
 	y_test_assert(hash(range(0, 10)) == hash(vec));
-}
-
-}
 }

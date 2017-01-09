@@ -19,11 +19,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "Ptr.h"
+#include <y/core/Ptr.h>
 #include <y/test/test.h>
 
-namespace y {
-namespace core {
+using namespace y;
+using namespace y::core;
 
 struct Raii : NonCopyable {
 	static bool ded;
@@ -110,6 +110,3 @@ y_test_func("Rc count") {
 }
 
 
-
-}
-}

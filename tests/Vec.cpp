@@ -20,14 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Vec.h"
+#include <y/math/Vec.h>
 #include <y/test/test.h>
-#include <iostream>
 
-namespace y {
-namespace math {
-
-static_assert(std::is_trivially_copyable<Vec4>::value, "Vec<T> should be trivially copyable");
+using namespace y;
+using namespace y::math;
 
 y_test_func("Vec creation") {
 	Vec<2> a(1, 2);
@@ -78,7 +75,4 @@ y_test_func("Vec operators") {
 	static_assert(std::is_same<decltype(vec(1, 2, 3) / 2), Vec<3, int>>::value, "Invalid Vec operator coercion");
 	static_assert(std::is_same<decltype(vec(1, 2, 3) * 0.5), Vec<3, double>>::value, "Invalid Vec operator coercion");
 	static_assert(std::is_same<decltype(vec(1, 2.0, 3) * 2), Vec<3, double>>::value, "Invalid Vec operator coercion");
-}
-
-}
 }

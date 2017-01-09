@@ -20,12 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "AssocVector.h"
-#include "String.h"
+#include <y/core/AssocVector.h>
+#include <y/core/String.h>
 #include <y/test/test.h>
 
-namespace y {
-namespace core {
+using namespace y;
+using namespace y::core;
 
 static_assert(std::is_same<usize, std::remove_reference<decltype(make_one<AssocVector<usize, usize>>()[usize(1)])>::type>::value, "AssocVector::operator[] returns the wrong type");
 
@@ -81,5 +81,3 @@ y_test_func("AssocVector find") {
 	y_test_assert(range(av).find(13)->second.value == 13);
 }
 
-}
-}

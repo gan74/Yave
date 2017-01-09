@@ -20,11 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Functor.h"
+#include <y/core/Functor.h>
 #include <y/test/test.h>
 
-namespace y {
-namespace core {
+using namespace y;
+using namespace y::core;
 
 auto create_func() {
 	return []() {
@@ -131,8 +131,4 @@ y_test_func("Functor creation") {
 	dec();
 	y_test_assert(!i);
 
-}
-
-
-}
 }

@@ -516,6 +516,9 @@ auto operator/(Vec<N, T> a, const Vec<N, T>& b) {
 	return a;
 }
 
+
+static_assert(std::is_trivially_copyable<Vec4>::value, "Vec<T> should be trivially copyable");
+
 }
 }
 

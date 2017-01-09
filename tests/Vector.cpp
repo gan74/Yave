@@ -19,12 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "Vector.h"
+#include <y/core/Vector.h>
 #include <y/test/test.h>
 #include <vector>
 
-namespace y {
-namespace core {
+using namespace y;
+using namespace y::core;
 
 struct Base {
 };
@@ -216,7 +216,3 @@ y_test_func("Vector dtors") {
 	y_test_assert(counter == total);
 }
 
-
-
-}
-}

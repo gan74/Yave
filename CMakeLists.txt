@@ -25,13 +25,18 @@ set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${EXTRA_OPTIMISATIO
 file(GLOB_RECURSE SOURCE_FILES
 		"y/*.h"
 		"y/*.cpp"
-		)
+	)
+
+file(GLOB_RECURSE TEST_FILES
+		"tests/*.cpp"
+	)
 
 add_library(y STATIC ${SOURCE_FILES})
 
-add_executable(main ${SOURCE_FILES} "main.cpp")
+add_executable(main "main.cpp")
 target_link_libraries(main y)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	target_compile_definitions(main PRIVATE -DY_AUTO_TEST)
-endif()
+add_executable(tests ${TEST_FILES} "main.cpp")
+target_compile_definitions(tests PRIVATE "-DY_BUILD_TESTS")
+target_link_libraries(tests y)
+

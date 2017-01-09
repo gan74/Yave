@@ -20,13 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Matrix.h"
+#include <y/math/Matrix.h>
 #include <y/test/test.h>
 
-namespace y {
-namespace math {
+using namespace y;
+using namespace y::math;
 
-static_assert(std::is_trivially_copyable<Matrix4<>>::value, "Matrix<T> should be trivially copyable");
 
 y_test_func("Matrix vec multiply") {
 	Matrix3<> mat(1, 2, 3,
@@ -100,7 +99,4 @@ y_test_func("Matrix sub") {
 
 	using M = Matrix<1, 2>;
 	y_test_assert(mat.sub(0, 2) == M(4, 5));
-}
-
-}
 }
