@@ -37,7 +37,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug(VkDebugReportFlagsEXT flags, VkDebug
 
 
 Instance::Instance(DebugParams debug) : _debug_params(debug), _debug_callback(nullptr) {
-	_instance_extentions	= {VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
+	_instance_extentions = {VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
 
 	#ifdef Y_OS_WIN
 		_instance_extentions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);

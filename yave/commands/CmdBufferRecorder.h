@@ -62,7 +62,7 @@ class CmdBufferRecorder : NonCopyable {
 		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
 		CmdBufferRecorder& dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
-		CmdBufferRecorder& barriers(std::initializer_list<BufferBarrier> buffers, std::initializer_list<ImageBarrier> images, PipelineStage src, PipelineStage dst);
+		CmdBufferRecorder& barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
 
 		// never use directly, needed for internal work and image loading
 		CmdBufferRecorder& transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);

@@ -32,6 +32,7 @@ SOFTWARE.
 #include <y/core/Range.h>
 #include <y/core/Vector.h>
 #include <y/core/String.h>
+#include <y/core/ArrayProxy.h>
 
 #ifdef Y_OS_WIN
 	#define VK_USE_PLATFORM_WIN32_KHR

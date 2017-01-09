@@ -53,13 +53,13 @@ class DebugParams {
 	private:
 		//friend class LowLevelGraphics;
 
-		DebugParams(std::initializer_list<const char*> instance, std::initializer_list<const char*> device, bool callbacks) :
-				_instance_layers(instance),
-				_device_layers(device),
+		DebugParams(const core::ArrayProxy<const char*>& instance, const core::ArrayProxy<const char*>& device, bool callbacks) :
+				_instance_layers(instance.begin(), instance.end()),
+				_device_layers(device.begin(), instance.end()),
 				_callbacks_enabled(callbacks) {
 		}
 
-		DebugParams(std::initializer_list<const char*> layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
+		DebugParams(const core::ArrayProxy<const char*>& layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
 		}
 
 		core::Vector<const char*> _instance_layers;

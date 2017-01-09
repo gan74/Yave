@@ -35,8 +35,8 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 	public:
 		Framebuffer() = default;
 
-		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors);
-		Framebuffer(DevicePtr dptr, DepthAttachmentView depth, std::initializer_list<ColorAttachmentView> colors);
+		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors);
+		Framebuffer(DevicePtr dptr, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors);
 
 		Framebuffer(Framebuffer&& other);
 		Framebuffer& operator=(Framebuffer&& other);
@@ -56,7 +56,7 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 		}
 
 	private:
-		Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, std::initializer_list<ColorAttachmentView> colors);
+		Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, const core::ArrayProxy<ColorAttachmentView>& colors);
 
 		void swap(Framebuffer& other);
 

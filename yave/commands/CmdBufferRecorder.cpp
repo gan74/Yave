@@ -148,7 +148,7 @@ CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, co
 	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::barriers(std::initializer_list<BufferBarrier> buffers, std::initializer_list<ImageBarrier> images, PipelineStage src, PipelineStage dst) {
+CmdBufferRecorder& CmdBufferRecorder::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
 	end_render_pass();
 
 	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
