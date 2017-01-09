@@ -71,11 +71,22 @@ y_test_func("DefaultVectorResizePolicy") {
 	}
 }
 
-
 y_test_func("Vector creation") {
 	Vector<int> vec;
 	y_test_assert(vec.size() == 0);
 	y_test_assert(vec.capacity() == 0);
+}
+
+y_test_func("Vector operator=") {
+	Vector<int> vec = {1, 2, 3, 4};
+	y_test_assert(vec == vector({1, 2, 3, 4}));
+
+	vec = {};
+	y_test_assert(vec.size() == 0);
+
+	vec = {1, 2, 3};
+	vec.push_back({4, 5});
+	y_test_assert(vec == vector({1, 2, 3, 4, 5}));
 }
 
 y_test_func("Vector push_back") {

@@ -31,6 +31,11 @@ static usize test_func(const ArrayProxy<int>& a) {
 	return a.size();
 }
 
+static usize test_func_nc(const ArrayProxy<NonCopyable>& a) {
+	return a.size();
+}
+
+
 y_test_func("ArrayProxy creation") {
 	y_test_assert(test_func({1, 2, 3}) == 3);
 
@@ -38,4 +43,13 @@ y_test_func("ArrayProxy creation") {
 	y_test_assert(test_func(vec) == 4);
 
 	y_test_assert(test_func(nullptr) == 0);
+	y_test_assert(test_func(17) == 1);
+}
+
+y_test_func("ArrayProxy of non-copyables") {
+	y_test_assert(test_func_nc(NonCopyable()) == 1);
+	y_test_assert(test_func_nc({NonCopyable(), NonCopyable()}) == 2);
+
+	/*NonCopyable nc;
+	y_test_assert(test_func_nc({nc, NonCopyable()}) == 2);*/
 }

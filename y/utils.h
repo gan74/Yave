@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_UTILS_H
 
 #include "defines.h"
+
 #include <new>
 #include <typeinfo>
 #include <iterator>

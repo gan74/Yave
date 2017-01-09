@@ -76,14 +76,14 @@ class Vector : ResizePolicy {
 			swap(other);
 		}
 
-		Vector(std::initializer_list<Elem> l) : Vector() {
+		Vector(const std::initializer_list<value_type>& l) : Vector() {
 			set_min_capacity(l.size());
 			for(const auto& e : l) {
 				push_back(e);
 			}
 		}
 
-		Vector(usize size, const Elem& elem) : Vector() {
+		Vector(usize size, const value_type& elem) : Vector() {
 			set_min_capacity(size);
 			for(usize i = 0; i != size; i++) {
 				push_back(elem);
@@ -106,6 +106,14 @@ class Vector : ResizePolicy {
 			push_back(other.begin(), other.end());
 			return *this;
 		}
+
+		Vector& operator=(const std::initializer_list<value_type>& other) {
+			make_empty();
+			set_min_capacity(other.size());
+			push_back(other.begin(), other.end());
+			return *this;
+		}
+
 
 		void swap(Vector& v) {
 			std::swap(_data, v._data);
@@ -135,6 +143,11 @@ class Vector : ResizePolicy {
 		void push_back(const It& beg_it, const It& end_it) {
 			std::copy(beg_it, end_it, std::back_inserter(*this));
 		}
+
+		void push_back(const std::initializer_list<value_type>& l) {
+			push_back(l.begin(), l.end());
+		}
+
 
 		value_type pop() {
 			--_data_end;

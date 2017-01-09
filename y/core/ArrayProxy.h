@@ -23,7 +23,6 @@ SOFTWARE.
 #define Y_CORE_ARRAYPROXY_H
 
 #include <y/utils.h>
-#include "Vector.h"
 
 namespace y {
 namespace core {
@@ -31,15 +30,23 @@ namespace core {
 template<typename T>
 class ArrayProxy : NonCopyable {
 
+	template<typename U>
+	using is_compat = std::is_same<U, const T*>;
+
+	template<typename C>
+	using begin_type = decltype(make_one<const C>().begin());
+
 	public:
 		using value_type = T;
-		using iterator = T*;
 		using const_iterator = const T*;
 
 
 		ArrayProxy() = default;
 
 		ArrayProxy(std::nullptr_t) : ArrayProxy() {
+		}
+
+		ArrayProxy(const T& t) : _data(&t), _size(1) {
 		}
 
 		ArrayProxy(const T* data, usize size) : _data(data), _size(size) {
@@ -52,20 +59,21 @@ class ArrayProxy : NonCopyable {
 		ArrayProxy(const std::initializer_list<T>& l) : _data(l.begin()), _size(l.size()) {
 		}
 
-		ArrayProxy(const Vector<T>& vec) : _data(vec.begin()), _size(vec.size()) {
+		template<typename C, typename = std::enable_if_t<is_compat<begin_type<C>>::value>>
+		ArrayProxy(const C& vec) : _data(vec.begin()), _size(vec.size()) {
 		}
 
 		usize size() const {
 			return _size;
 		}
 
-		/*iterator begin() {
-			return _data;
+		bool is_empty() const {
+			return !_size;
 		}
 
-		iterator end() {
-			return _data + _size;
-		}*/
+		const T* data() const {
+			return _data;
+		}
 
 		const_iterator begin() const {
 			return _data;
