@@ -72,10 +72,6 @@ class Device : NonCopyable {
 			return _descriptor_layout_pool->create_descriptor_set_layout(std::forward<T>(t));
 		}
 
-		/*const DescriptorSet& dummy_descriptor_set() const {
-			return _dummy_set;
-		}*/
-
 	private:
 		Instance& _instance;
 		PhysicalDevice _physical;
@@ -86,7 +82,6 @@ class Device : NonCopyable {
 
 		vk::Device _device;
 
-		//DescriptorSet _dummy_set;
 		Sampler _sampler;
 
 		mutable CmdBufferPool _disposable_cmd_pool;
