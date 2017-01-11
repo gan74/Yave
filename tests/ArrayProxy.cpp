@@ -21,11 +21,20 @@ SOFTWARE.
 **********************************/
 
 #include <y/core/ArrayProxy.h>
-#include <y/core/Vector.h>
+#include <y/core/SmallVector.h>
 #include <y/test/test.h>
+
+#include <y/core/String.h>
+
+#include <vector>
+#include <numeric>
 
 using namespace y;
 using namespace y::core;
+
+static usize test_func_c(const ArrayProxy<char>& a) {
+	return a.size();
+}
 
 static usize test_func(const ArrayProxy<int>& a) {
 	return a.size();
@@ -41,6 +50,18 @@ y_test_func("ArrayProxy creation") {
 
 	auto vec = vector({1, 2, 3, 4});
 	y_test_assert(test_func(vec) == 4);
+
+	y_test_assert(test_func(SmallVector<int>({1, 2, 3, 4})) == 4);
+
+	std::vector<int> std_vec(12);
+	std::iota(std_vec.begin(), std_vec.end(), 17);
+	y_test_assert(test_func(std_vec) == 12);
+
+	y_test_assert(test_func_c("12345") == 6);
+	y_test_assert(test_func_c("12345"_s) == 5);
+
+	const int arr[] = {1, 7, 9};
+	y_test_assert(test_func(arr) == 3);
 
 	y_test_assert(test_func(nullptr) == 0);
 	y_test_assert(test_func(17) == 1);

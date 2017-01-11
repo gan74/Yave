@@ -195,6 +195,14 @@ class Vector : ResizePolicy, Allocator {
 			return _data_end;
 		}
 
+		value_type* data() {
+			return _data;
+		}
+
+		const value_type* data() const {
+			return _data;
+		}
+
 		const value_type& operator[](usize i) const {
 			return _data[i];
 		}
