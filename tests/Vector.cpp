@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include <y/core/Vector.h>
+#include <y/core/SmallVector.h>
 #include <y/test/test.h>
 #include <vector>
 
@@ -55,10 +56,30 @@ struct RaiiCounter : NonCopyable {
 	usize* counter;
 };
 
+template<typename T>
+struct FakeAllocator {
+	using value_type = T;
+	using propagate_on_container_move_assignment = std::false_type;
+
+	template<typename... Args>
+	T* allocate(Args&&...) {
+		return fatal("SmallVector allocated");
+	}
+
+	template<typename... Args>
+	void deallocate(Args&&...) {
+		fatal("SmallVector deallocated");
+	}
+};
+
+
+template<typename T, usize Size = 8>
+using SmallVec = SmallVector<T, Size, DefaultVectorResizePolicy, FakeAllocator<T>>;
 
 static_assert(std::is_same<std::common_type<MoreDerived, Derived>::type, Derived>::value, "std::common_type failure");
 static_assert(std::is_polymorphic<Polymorphic>::value, "std::is_polymorphic failure");
 static_assert(!std::is_polymorphic<Polymorphic*>::value, "std::is_polymorphic failure");
+static_assert(sizeof(Vector<int>) == 3 * sizeof(int*), "sizeof(Vector) is not 3 * sizeof(void*)");
 
 y_test_func("DefaultVectorResizePolicy") {
 	DefaultVectorResizePolicy size;
@@ -190,3 +211,9 @@ y_test_func("Vector dtors") {
 	y_test_assert(counter == total);
 }
 
+
+y_test_func("SmallVector allocation") {
+	SmallVec<int, 4> vec = vector({1, 2, 3, 4});
+	y_test_assert(vec.capacity() == 4);
+	y_test_assert(vec == vector({1, 2, 3, 4}));
+}
