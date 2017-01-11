@@ -23,7 +23,7 @@ SOFTWARE.
 #define Y_IO_DECODER_H
 
 #include "Ref.h"
-#include "Byteorder.h"
+#include <y/core/Result.h>
 #include <y/core/Vector.h>
 #include <y/core/String.h>
 
@@ -32,7 +32,28 @@ namespace io {
 
 class Decoder {
 
-	Y_TODO(use exceptions for decoder)
+	/*class Decode : NonCopyable {
+		public:
+			Decode(Decode&&) = delete;
+
+			template<typename T>
+			operator T() const && {
+				return _dec.decode<T>().unwrap();
+			}
+
+		private:
+			friend class Decoder;
+
+			Decode(Decoder& d) : _dec(d) {
+			}
+
+			Decoder& _dec;
+	};*/
+
+	template<typename T>
+	using is_readable = bool_type<std::is_fundamental<T>::value ||
+								  std::is_pod<T>::value ||
+								  std::is_trivially_copyable<T>::value>;
 
 	public:
 		Decoder(const ReaderRef& r) : _inner(r) {
@@ -41,105 +62,43 @@ class Decoder {
 		Decoder(ReaderRef&& r) : _inner(std::move(r)) {
 		}
 
-		template<Byteorder Order, typename T>
-		bool decode(T& t) {
-			static_assert(Order == system_byteorder() || std::is_fundamental<T>::value, "Only fundamental types can be read from non system byteorder");
-			bool success = (sizeof(T) == _inner->read(&t, sizeof(T)));
-			set_byteorder<Order>(t);
-			return success;
-		}
-
-		template<Byteorder Order, typename T>
-		bool decode(core::Vector<T>& vec) {
-			u64 len = 0;
-			if(!decode<Order>(len)) {
-				return false;
-			}
-			return fill_vec<Order>(vec, len, std::is_fundamental<T>());
-		}
-
-		template<Byteorder Order, typename T, usize Size>
-		bool decode(std::array<T, Size>& arr) {
-			return decode_arr<Order>(arr, std::is_fundamental<T>());
-		}
-
-		template<Byteorder Order, typename T>
-		bool decode(core::String& str) {
-			u64 len = 0;
-			if(!decode<Order>(len)) {
-				return false;
-			}
-			char* str_data = new char[len + 1];
-			auto read = _inner->read(str_data, len);
-			str_data[read] = 0;
-			str = core::str_from_owned(str_data);
-			return read == len;
-		}
-
 		template<typename T>
-		bool decode(T& t) {
-			return decode<system_byteorder()>(t);
+		core::Result<T> decode() {
+			T t;
+			if(decode(t, is_readable<T>())) {
+				return core::Ok(std::move(t));
+			}
+			return core::Err();
 		}
 
-		template<typename T>
-		bool operator()(T& t) {
-			return decode<system_byteorder()>(t);
-		}
-
-		template<Byteorder Order, typename T>
-		bool operator()(T& t) {
-			return decode(t);
-		}
-
-
+		/*Decode decode() {
+			return Decode(*this);
+		}*/
 
 	private:
-		template<Byteorder Order, typename T>
-		bool fill_vec(core::Vector<T>& vec, u64 len, std::true_type) {
-			vec = core::Vector<T>(len, T());
-			if(_inner->read(vec.begin(), len * sizeof(T)) != len * sizeof(T)) {
+		template<typename T>
+		bool decode(T& t, std::true_type) {
+			return _inner->read(&t, sizeof(T)) == sizeof(T);
+		}
+
+		template<typename T, typename... Args>
+		bool decode(core::Vector<T, Args...>& t, std::false_type) {
+			auto c = decode<u32>();
+			if(c.is_error()) {
 				return false;
 			}
-			for(auto& u : vec) {
-				set_byteorder<Order>(u);
-			}
-			return true;
-		}
-
-		template<Byteorder Order, typename T>
-		bool fill_vec(core::Vector<T>& vec, u64 len, std::false_type) {
-			vec.make_empty();
-			vec.set_min_capacity(len);
-			for(; len; len--) {
-				T t;
-				if(!decode<Order>(t)) {
+			u32 cap = c.unwrap();
+			t.set_min_capacity(cap);
+			while(cap--) {
+				auto e = decode<T>();
+				if(e.is_error()) {
 					return false;
 				}
-				vec << t;
+				t.push_back(e.unwrap());
 			}
 			return true;
 		}
 
-		template<Byteorder Order, typename T, usize Size>
-		bool decode_arr(std::array<T, Size>& arr, std::true_type) {
-			if(_inner->read(&arr, Size * sizeof(T)) != Size * sizeof(T)) {
-				return false;
-			}
-			for(auto& u : arr) {
-				set_byteorder<Order>(u);
-			}
-			return true;
-		}
-
-		template<Byteorder Order, typename T, usize Size>
-		bool decode_arr(std::array<T, Size>& arr, std::false_type) {
-			for(auto& e : arr) {
-				if(!decode<Order>(e)) {
-					return false;
-				}
-			}
-			return true;
-		}
 
 		ReaderRef _inner;
 };

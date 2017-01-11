@@ -35,8 +35,7 @@ struct Ok : NonCopyable {
 	Ok(T&& t) : _value(std::forward<T>(t)) {
 	}
 
-	template<typename U>
-	Ok(Ok<U>&& o) : _value(std::move(o._value)) {
+	Ok(Ok&& o) : _value(std::move(o._value)) {
 	}
 
 	const T& get() const {
@@ -57,8 +56,7 @@ struct Err : NonCopyable {
 	Err(T&& t) : _err(std::forward<T>(t)) {
 	}
 
-	template<typename U>
-	Err(Err<U>&& e) : _err(std::move(e._err)) {
+	Err(Err&& e) : _err(std::move(e._err)) {
 	}
 
 	const T& get() const {
@@ -182,23 +180,23 @@ class Result : NonCopyable {
 		}
 
 		auto&& unwrap() const {
-			return expected("Unwrap failed");
+			return expected("Unwrap failed.");
 		}
 
 		auto&& unwrap() {
-			return expected("Unwrap failed");
+			return expected("Unwrap failed.");
 		}
 
 		auto&& error() const {
 			if(is_ok()) {
-				fatal("Result is not an error");
+				fatal("Result is not an error.");
 			}
 			return _error.get();
 		}
 
 		auto&& error() {
 			if(is_ok()) {
-				fatal("Result is not an error");
+				fatal("Result is not an error.");
 			}
 			return _error.get();
 		}
