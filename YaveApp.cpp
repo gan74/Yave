@@ -149,7 +149,7 @@ void YaveApp::update(math::Vec2 angles) {
 void YaveApp::create_assets() {
 	{
 		{
-			auto file = std::move(io::File::open("../tools/image/chalet.jpg.rgba").expected("Unable to load texture file."));
+			auto file = std::move(io::File::open("../tools/image_to_rgba/chalet.jpg.rgba").expected("Unable to load texture file."));
 			auto image = ImageData::from_file(file);
 			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
 			mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image.size(), image.raw_data());
@@ -162,7 +162,7 @@ void YaveApp::create_assets() {
 	}
 
 
-	core::Vector<const char*> meshes = {"../tools/mesh/chalet.ym"/*, "../tools/mesh/sp.ym"*/};
+	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
 	core::Vector<StaticMesh> objects;
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));

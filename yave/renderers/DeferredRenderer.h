@@ -46,6 +46,7 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		void draw(CmdBufferRecorder& recorder, const OutputView& output);
 
 	private:
+		void dispatch_culling(CmdBufferRecorder& recorder);
 
 		const DescriptorSet& create_output_set(const OutputView& out);
 

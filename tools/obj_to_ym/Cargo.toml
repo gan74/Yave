@@ -1,0 +1,6 @@
+[package]
+name = "obj_to_ym"
+version = "0.1.0"
+authors = ["Grégoire Angerand <gregoire.angerand@epfl.ch>"]
+
+[dependencies]

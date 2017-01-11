@@ -1,1 +1,8 @@
 /lz4/
+*/target/
+
+*.lock
+
+*.obj
+*.ym
+*.rgba

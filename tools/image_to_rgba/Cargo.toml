@@ -1,10 +1,7 @@
 [package]
-name = "image"
+name = "image_to_rgba"
 version = "0.1.0"
 authors = ["gan74 <gregoire.angerand@epfl.ch>"]
 
 [dependencies]
 image = "*"
-lz4 = "*"
-bincode = "*"
-rustc-serialize = "*"

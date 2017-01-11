@@ -70,7 +70,9 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 			return _local_size;
 		}
 
-		vk::ShaderModule vk_shader_module() const;
+		vk::ShaderModule vk_shader_module() const {
+			return _module;
+		}
 
 	protected:
 		void swap(ShaderModuleBase& other);

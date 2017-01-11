@@ -67,22 +67,18 @@ void ImageData::swap(ImageData& other) {
 }
 
 ImageData ImageData::from_file(io::ReaderRef reader) {
+	const char* err_msg = "Unable to read image.";
+
 	auto decoder = io::Decoder(reader);
 
-	u32 height = 0;
-	u32 width = 0;
-	u64 data_size = 0;
+	u32 height = decoder.decode<u32>().expected(err_msg);
+	u32 width = decoder.decode<u32>().expected(err_msg);
+	u32 bpp = 4;
 
-	decoder.decode<io::Byteorder::BigEndian>(width);
-	decoder.decode<io::Byteorder::BigEndian>(height);
-	decoder.decode<io::Byteorder::BigEndian>(data_size);
-
-	if(height * width * 4 != data_size) {
-		fatal("Invalid file size.");
-	}
+	u32 data_size = width * height * bpp;
 
 	ImageData data;
-	data._bpp = 4;
+	data._bpp = bpp;
 	data._size = math::vec(width, height);
 	data._data = new u8[data_size];
 

@@ -154,20 +154,21 @@ void DeferredRenderer::update() {
 	_frustum_buffer.map()[0] = extract_frustum(_scene.proj_matrix() * _scene.view_matrix());
 }
 
-void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {
-	recorder.bind_framebuffer(_gbuffer);
-	_scene.draw(recorder);
-
-#warning barrier needed ?
-
+void DeferredRenderer::dispatch_culling(CmdBufferRecorder& recorder) {
 	usize groups = _light_count / _culling_shader.local_size().x();
 	if(groups *  _culling_shader.local_size().x() < _light_count) {
 		++groups;
 	}
 	recorder.dispatch(_culling_program, math::Vec3ui(groups, 1, 1), {_culling_set});
+}
+
+void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {
+	dispatch_culling(recorder);
+
+	recorder.bind_framebuffer(_gbuffer);
+	_scene.draw(recorder);
 
 	recorder.barriers({_culled_lights}, {}, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
-
 	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(out)});
 }
 

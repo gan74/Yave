@@ -27,25 +27,21 @@ SOFTWARE.
 namespace yave {
 
 MeshData MeshData::from_file(io::ReaderRef reader) {
-	Y_TODO(this can be 10x faster)
+	const char* err_msg = "Unable to load mesh.";
 
 	auto decoder = io::Decoder(io::BuffReader(reader));
 
-	u32 magic = 0;
-	u64 version = 0;
+	u32 magic = decoder.decode<u32>().expected(err_msg);
+	u64 version = decoder.decode<u64>().expected(err_msg);
 	MeshData mesh;
 
-	decoder.decode<io::Byteorder::BigEndian>(magic);
-	decoder.decode<io::Byteorder::BigEndian>(version);
-
-	if(magic != 0x79617665 || version != 1) {
+	if(magic != 0x65766179 || version != 1) {
 		log_msg("Unable to load mesh.", LogType::Error);
 		return mesh;
 	}
 
-	using VertexAsArray = std::array<float, sizeof(Vertex) / sizeof(float)>;
-	decoder.decode<io::Byteorder::BigEndian>(reinterpret_cast<core::Vector<VertexAsArray>&>(mesh.vertices));
-	decoder.decode<io::Byteorder::BigEndian>(mesh.triangles);
+	mesh.vertices = decoder.decode<decltype(mesh.vertices)>().expected(err_msg);
+	mesh.triangles = decoder.decode<decltype(mesh.triangles)>().expected(err_msg);
 
 	return mesh;
 }

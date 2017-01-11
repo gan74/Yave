@@ -141,10 +141,6 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	}
 }
 
-vk::ShaderModule ShaderModuleBase::vk_shader_module() const {
-	return _module;
-}
-
 ShaderModuleBase::~ShaderModuleBase() {
 	destroy(_module);
 }
