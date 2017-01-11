@@ -52,10 +52,10 @@ struct DefaultVectorResizePolicy {
 };
 
 
-template<typename Elem, typename ResizePolicy = DefaultVectorResizePolicy>
-class Vector : ResizePolicy {
+template<typename Elem, typename ResizePolicy = DefaultVectorResizePolicy, typename Allocator = std::allocator<Elem>>
+class Vector : ResizePolicy, Allocator {
 
-	using Data = typename std::remove_const<Elem>::type;
+	using data_type = typename std::remove_const<Elem>::type;
 
 	public:
 		using value_type = Elem;
@@ -65,7 +65,8 @@ class Vector : ResizePolicy {
 
 		Vector() = default;
 
-		Vector(const Vector& other) : Vector() {
+		template<typename Rp, typename Alloc>
+		Vector(const Vector<Elem, Rp, Alloc>& other) : Vector() {
 			set_min_capacity(other.size());
 			for(const auto& e : other) {
 				push_back(e);
@@ -100,7 +101,8 @@ class Vector : ResizePolicy {
 			return *this;
 		}
 
-		Vector& operator=(const Vector& other) {
+		template<typename Rp, typename Alloc>
+		Vector& operator=(const Vector<Elem, Rp, Alloc>& other) {
 			make_empty();
 			set_min_capacity(other.size());
 			push_back(other.begin(), other.end());
@@ -129,14 +131,14 @@ class Vector : ResizePolicy {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
-			new(_data_end++) Data(elem);
+			new(_data_end++) data_type(elem);
 		}
 
 		void push_back(value_type&& elem) {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
-			new(_data_end++) Data(std::move(elem));
+			new(_data_end++) data_type(std::move(elem));
 		}
 
 		template<typename It>
@@ -151,7 +153,7 @@ class Vector : ResizePolicy {
 
 		value_type pop() {
 			--_data_end;
-			Data r = std::move(*_data_end);
+			data_type r = std::move(*_data_end);
 			_data_end->~Data();
 			shrink();
 			return r;
@@ -218,15 +220,15 @@ class Vector : ResizePolicy {
 		}
 
 		void set_capacity(usize cap) {
-			unsafe_set_capacity(size(), cap);
+			unsafe_set_capacity(cap);
 		}
 
 		void set_min_capacity(usize min_cap) {
-			unsafe_set_capacity(size(), this->ideal_capacity(min_cap));
+			unsafe_set_capacity(this->ideal_capacity(min_cap));
 		}
 
 		void clear() {
-			unsafe_set_capacity(0, 0);
+			unsafe_set_capacity(0);
 		}
 
 		void squeeze() {
@@ -238,64 +240,72 @@ class Vector : ResizePolicy {
 			_data_end = _data;
 		}
 
-		bool operator==(const Vector& v) const {
+		template<typename Rp, typename Alloc>
+		bool operator==(const Vector<Elem, Rp, Alloc>& v) const {
 			return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
 		}
 
-		bool operator!=(const Vector& v) const {
+		template<typename Rp, typename Alloc>
+		bool operator!=(const Vector<Elem, Rp, Alloc>& v) const {
 			return !operator==(v);
 		}
 
 
 	private:
-		void move_range(Data* dst, Data* src, usize n) {
-			if(std::is_pod<Data>::value) {
-				memmove(dst, src, sizeof(Data) * n);
+		void move_range(data_type* dst, data_type* src, usize n) {
+			if(std::is_pod<data_type>::value) {
+				memmove(dst, src, sizeof(data_type) * n);
 			} else {
 				for(; n; n--) {
-					new(dst++) Data(std::move(*(src++)));
+					new(dst++) data_type(std::move(*(src++)));
 				}
 			}
 		}
 
-		void clear(Data* beg, Data* en) {
-			if(!std::is_pod<Data>::value) {
+		void clear(data_type* beg, data_type* en) {
+			if(!std::is_pod<data_type>::value) {
 				while(en != beg) {
-					(--en)->~Data();
+					(--en)->~data_type();
 				}
 			}
 		}
 
 		void expend() {
-			unsafe_set_capacity(size(), this->ideal_capacity(size() + 1));
+			unsafe_set_capacity(this->ideal_capacity(size() + 1));
 		}
 
 		void shrink() {
 			usize current = size();
 			usize cap = capacity();
 			if(current < cap && ResizePolicy::shrink(current, cap)) {
-				unsafe_set_capacity(current, ResizePolicy::ideal_capacity(current));
+				unsafe_set_capacity(ResizePolicy::ideal_capacity(current));
 			}
 		}
 
 		// uses data_end !!
-		void unsafe_set_capacity(usize num_to_move, usize new_cap) {
-			num_to_move = num_to_move < new_cap ? num_to_move : new_cap;
+		void unsafe_set_capacity(usize new_cap) {
+			usize current_size = size();
+			usize num_to_move = std::min(new_cap, current_size);
 
-			Data* new_data = new_cap ? reinterpret_cast<Data*>(new u8[new_cap * sizeof(Data)]) : nullptr;
+			data_type* new_data = new_cap ? Allocator::allocate(new_cap, _data) : nullptr;
 
-			move_range(new_data, _data, num_to_move);
-			clear(_data, _data_end);
+			if(new_data != _data) {
+				move_range(new_data, _data, num_to_move);
+				clear(_data, _data_end);
 
-			delete[] reinterpret_cast<u8*>(_data);
+				if(_data) {
+					Allocator::deallocate(_data, capacity());
+				}
+			}
+
 			_data = new_data;
 			_data_end = _data + num_to_move;
 			_alloc_end = _data + new_cap;
 		}
 
-		Owner<Data*> _data = nullptr;
-		Data* _data_end = nullptr;
-		Data* _alloc_end = nullptr;
+		Owner<data_type*> _data = nullptr;
+		data_type* _data_end = nullptr;
+		data_type* _alloc_end = nullptr;
 };
 
 template<typename T>
