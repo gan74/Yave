@@ -99,7 +99,7 @@ void main() {
 			acc += light.color * att * brdf(normal, light_dir, view_dir);
 		}
 	}
-	acc = textureLod(in_normal, uv, 0).xyz;
+	//acc = textureLod(in_normal, uv, 0).xyz;
 	//acc = load_color(lights.count);
 	
 	imageStore(out_color, coord, /*diffuse **/ vec4(acc, 1.0));
