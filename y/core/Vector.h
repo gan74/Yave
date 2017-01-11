@@ -29,8 +29,8 @@ namespace core {
 
 struct DefaultVectorResizePolicy {
 	static constexpr usize threshold = 4096;
-	static constexpr usize minimum = 8;
-	static constexpr usize step = 2048;
+	static constexpr usize minimum = 16;
+	static constexpr usize step = 4096;
 
 	usize ideal_capacity(usize size) const {
 		if(!size) {

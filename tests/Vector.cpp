@@ -24,6 +24,8 @@ SOFTWARE.
 #include <y/test/test.h>
 #include <vector>
 
+//#include <iostream>
+
 using namespace y;
 using namespace y::core;
 
@@ -81,6 +83,18 @@ static_assert(std::is_polymorphic<Polymorphic>::value, "std::is_polymorphic fail
 static_assert(!std::is_polymorphic<Polymorphic*>::value, "std::is_polymorphic failure");
 static_assert(sizeof(Vector<int>) == 3 * sizeof(int*), "sizeof(Vector) is not 3 * sizeof(void*)");
 
+/*template<typename P = DefaultVectorResizePolicy>
+static void cout_vec_sizes(usize max, P p = P()) {
+	for(usize i = 0, last = 0; i != max; ++i) {
+		usize c = p.ideal_capacity(i);
+		if(c != last) {
+			std::cout << c << " ";
+			last = c;
+		}
+	}
+	std::cout << std::endl;
+}*/
+
 y_test_func("DefaultVectorResizePolicy") {
 	DefaultVectorResizePolicy size;
 
@@ -90,6 +104,7 @@ y_test_func("DefaultVectorResizePolicy") {
 	for(usize i = 0; i != size.threshold + 3 * size.step; i++) {
 		y_test_assert(size.ideal_capacity(i) >= i);
 	}
+	//cout_vec_sizes(1024 * 32);
 }
 
 y_test_func("Vector creation") {
