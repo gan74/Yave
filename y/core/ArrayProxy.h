@@ -60,7 +60,7 @@ class ArrayProxy : NonCopyable {
 		}
 
 		template<typename C, typename = std::enable_if_t<is_compat<begin_type<C>>::value>>
-		ArrayProxy(const C& vec) : _data(vec.begin()), _size(vec.size()) {
+		ArrayProxy(const C& vec) : _data(vec.begin()), _size(std::distance(vec.begin(), vec.end())) {
 		}
 
 		usize size() const {
@@ -92,7 +92,7 @@ class ArrayProxy : NonCopyable {
 		}
 
 	private:
-		const T* _data = nullptr;
+		NotOwner<const T*> _data = nullptr;
 		usize _size = 0;
 
 };

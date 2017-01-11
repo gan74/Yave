@@ -57,8 +57,8 @@ class Matrix {
 		static constexpr bool is_column_major = !is_row_major;
 		using is_row_major_t = bool_type<is_row_major>;
 
-		static constexpr usize VecSize = is_row_major ? M : N;
-		static constexpr usize VecCount = is_row_major ? N : M;
+		static constexpr usize vec_size = is_row_major ? M : N;
+		static constexpr usize vec_count = is_row_major ? N : M;
 
 		using Column = Vec<N, T>;
 		using Row = Vec<M, T>;
@@ -167,8 +167,8 @@ class Matrix {
 
 		Matrix<M, N, T, Layout> transposed() const {
 			Matrix<M, N, T, Layout> tr;
-			for(usize i = 0; i != VecCount; i++) {
-				for(usize j = 0; j != VecSize; j++) {
+			for(usize i = 0; i != vec_count; i++) {
+				for(usize j = 0; j != vec_size; j++) {
 					tr._vecs[j][i] = _vecs[i][j];
 				}
 			}
@@ -176,8 +176,8 @@ class Matrix {
 		}
 
 		bool operator==(const Matrix& m) const {
-			for(usize i = 0; i != VecCount; i++) {
-				for(usize j = 0; j != VecSize; j++) {
+			for(usize i = 0; i != vec_count; i++) {
+				for(usize j = 0; j != vec_size; j++) {
 					if(_vecs[i][j] != m._vecs[i][j]) {
 						return false;
 					}
@@ -191,8 +191,8 @@ class Matrix {
 				std::swap(r, c);
 			}
 			Matrix<N - 1, M - 1, T,Layout> mat;
-			for(usize i = 0; i != VecCount - 1; i++) {
-				for(usize j = 0; j != VecSize - 1; j++) {
+			for(usize i = 0; i != vec_count - 1; i++) {
+				for(usize j = 0; j != vec_size - 1; j++) {
 					usize ir = i < r ? i : i + 1;
 					usize jr = j < c ? j : j + 1;
 					mat._vecs[i][j] = _vecs[ir][jr];
@@ -329,7 +329,7 @@ class Matrix {
 		}
 
 
-		Vec<VecSize, T> _vecs[VecCount] = {};
+		Vec<vec_size, T> _vecs[vec_count] = {};
 };
 
 namespace detail {

@@ -37,10 +37,11 @@ class Quaternion {
 	static_assert(std::is_floating_point<T>::value, "Quaternion only support floating point types.");
 
 	public:
-
-		static constexpr usize YawIndex = 2;
-		static constexpr usize PitchIndex = 1;
-		static constexpr usize RollIndex = 0;
+		enum Euler {
+			YawIndex = 2,
+			PitchIndex = 1,
+			RollIndex = 0
+		};
 
 		template<typename U>
 		Quaternion(const Vec<4, U>& q) : _quat(q.normalized()) {
@@ -186,7 +187,7 @@ class Quaternion {
 		}
 
 		static Quaternion from_euler(const Vec<3, T>& euler) {
-			return fromEuler(euler[YawIndex], euler[PitchIndex], euler[RollIndex]);
+			return fromEuler(euler[yaw_index], euler[PitchIndex], euler[RollIndex]);
 		}
 
 		static Quaternion from_axis_angle(const Vec<3, T>& axis, T ang) {

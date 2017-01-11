@@ -44,8 +44,8 @@ template<typename Key, typename Value, typename ResizePolicy = DefaultVectorResi
 class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
 
 	public:
-		using Entry = MapEntry<Key, Value>;
-		using Vector<Entry, ResizePolicy>::Vector;
+		using value_type = MapEntry<Key, Value>;
+		using Vector<value_type, ResizePolicy>::Vector;
 
 		template<typename T>
 		void insert(const Key& key, T&& value) {
@@ -53,7 +53,7 @@ class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
 		}
 
 		Value& operator[](const Key& key) {
-			for(Entry& e : *this) {
+			for(value_type& e : *this) {
 				if(e == key) {
 					return e.second;
 				}

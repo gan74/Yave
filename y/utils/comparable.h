@@ -29,7 +29,7 @@ namespace y {
 namespace detail {
 
 template<typename T, typename To>
-struct is_comparable_SFINAE {
+struct is_comparable {
 
 	template<typename V>
 	static auto test(V*) -> std::is_same<decltype(make_one<V>().operator==(make_one<To>())), bool>;
@@ -43,7 +43,7 @@ struct is_comparable_SFINAE {
 }
 
 template<typename T, typename To>
-using is_comparable = bool_type<detail::is_comparable_SFINAE<T, To>::value>;
+using is_comparable = bool_type<detail::is_comparable<T, To>::value>;
 
 }
 

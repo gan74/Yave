@@ -55,15 +55,6 @@ inline auto hash(const T& t, const Hasher& hasher = Hasher()) {
 	return detail::hash(t, hasher, is_iterable<T>());
 }
 
-template<typename Hasher = std::hash<u32>>
-inline auto hash(const u32* t, usize size, const Hasher& hasher = Hasher()) {
-	decltype(hasher(make_one<u32>())) seed = 0;
-	for(usize i = 0; i != size; i++) {
-		detail::hash_combine(seed, hash(t[i], hasher));
-	}
-	return seed;
-}
-
 template<typename T>
 struct hash_t {
 	auto operator()(const T& arg) const {

@@ -106,7 +106,7 @@ String::String(const char* str) : String(str, strlen(str)) {
 }
 
 String::String(const char* str, usize len) {
-	if(len > MaxShortSize) {
+	if(len > max_short_size) {
 		new(&_l) LongData(str, len);
 	} else {
 		new(&_s) ShortData(str, len);
@@ -136,7 +136,7 @@ usize String::size() const {
 }
 
 usize String::capacity() const {
-	return is_long() ? _l.capacity : MaxShortSize;
+	return is_long() ? _l.capacity : max_short_size;
 }
 
 bool String::is_empty() const {

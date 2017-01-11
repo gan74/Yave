@@ -51,11 +51,11 @@ class String {
 		u8 _is_long : 1;
 
 		Y_TODO(SSO implementation squeeze an extra byte at the cost of 0 initilisation. Bench needed)
-		ShortLenType(usize l = 0) : _len(u8(MaxShortSize - l)), _is_long(0) {
+		ShortLenType(usize l = 0) : _len(u8(max_short_size - l)), _is_long(0) {
 		}
 
 		operator usize() const {
-			return MaxShortSize - _len;
+			return max_short_size - _len;
 		}
 	};
 
@@ -90,7 +90,7 @@ class String {
 	static_assert(sizeof(ShortData) == sizeof(LongData), "String::LongData should be the same length as String::ShortData");
 
 	public:
-		static constexpr usize MaxShortSize = sizeof(ShortData::_data);
+		static constexpr usize max_short_size = sizeof(ShortData::_data);
 
 		using value_type = char;
 		using iterator = char*;
