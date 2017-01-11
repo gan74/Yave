@@ -65,23 +65,15 @@ class Vector : ResizePolicy, Allocator {
 
 		Vector() = default;
 
-		template<typename Rp, typename Alloc>
-		Vector(const Vector<Elem, Rp, Alloc>& other) : Vector() {
-			set_min_capacity(other.size());
-			for(const auto& e : other) {
-				push_back(e);
-			}
+
+		Vector(const Vector& other) : Vector(other.begin(), other.end()) {
 		}
 
 		Vector(Vector&& other) : Vector() {
 			swap(other);
 		}
 
-		Vector(const std::initializer_list<value_type>& l) : Vector() {
-			set_min_capacity(l.size());
-			for(const auto& e : l) {
-				push_back(e);
-			}
+		Vector(const std::initializer_list<value_type>& l) : Vector(l.begin(), l.end()) {
 		}
 
 		Vector(usize size, const value_type& elem) : Vector() {
@@ -93,35 +85,49 @@ class Vector : ResizePolicy, Allocator {
 
 		template<typename It>
 		Vector(const It& beg_it, const It& end_it) : Vector() {
-			push_back(beg_it, end_it);
+			assign(beg_it, end_it);
 		}
+
+		template<typename Rp, typename Alloc>
+		Vector(const Vector<Elem, Rp, Alloc>& other) : Vector(other.begin(), other.end()) {
+		}
+
 
 		Vector& operator=(Vector&& other) {
 			swap(other);
 			return *this;
 		}
 
+		Vector& operator=(const Vector& other) {
+			assign(other.begin(), other.end());
+			return *this;
+		}
+
 		template<typename Rp, typename Alloc>
 		Vector& operator=(const Vector<Elem, Rp, Alloc>& other) {
-			make_empty();
-			set_min_capacity(other.size());
-			push_back(other.begin(), other.end());
+			assign(other.begin(), other.end());
 			return *this;
 		}
 
 		Vector& operator=(const std::initializer_list<value_type>& other) {
-			make_empty();
-			set_min_capacity(other.size());
-			push_back(other.begin(), other.end());
+			assign(other.begin(), other.end());
 			return *this;
 		}
 
+
+		template<typename It>
+		void assign(const It& beg_it, const It& end_it) {
+			make_empty();
+			set_min_capacity(std::distance(beg_it, end_it));
+			push_back(beg_it, end_it);
+		}
 
 		void swap(Vector& v) {
 			std::swap(_data, v._data);
 			std::swap(_data_end, v._data_end);
 			std::swap(_alloc_end, v._alloc_end);
 		}
+
 
 		~Vector() {
 			clear();
@@ -150,11 +156,10 @@ class Vector : ResizePolicy, Allocator {
 			push_back(l.begin(), l.end());
 		}
 
-
 		value_type pop() {
 			--_data_end;
 			data_type r = std::move(*_data_end);
-			_data_end->~Data();
+			_data_end->~data_type();
 			shrink();
 			return r;
 		}
