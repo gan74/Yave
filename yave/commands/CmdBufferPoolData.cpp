@@ -26,11 +26,11 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::CommandPool create_pool(DevicePtr dptr) {
+static vk::CommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
+	auto pref = usage == CmdBufferUsage::Disposable ? vk::CommandPoolCreateFlagBits::eTransient : vk::CommandPoolCreateFlagBits();
 	return dptr->vk_device().createCommandPool(vk::CommandPoolCreateInfo()
 			.setQueueFamilyIndex(dptr->queue_family_index(QueueFamily::Graphics))
-			//.setFlags(vk::CommandPoolCreateFlagBits::eTransient)
-			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer | pref)
 		);
 }
 
@@ -72,7 +72,7 @@ static bool try_reset(DevicePtr dptr, const CmdBufferData& data) {
 	return true;
 }
 
-CmdBufferPoolData::CmdBufferPoolData(DevicePtr dptr) : DeviceLinked(dptr), _pool(create_pool(dptr)) {
+CmdBufferPoolData::CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred) : DeviceLinked(dptr), _pool(create_pool(dptr, preferred)) {
 }
 
 CmdBufferPoolData::~CmdBufferPoolData() {

@@ -34,8 +34,6 @@ SOFTWARE.
 
 namespace yave {
 
-class CmdBufferState;
-
 enum QueueFamily {
 	Graphics,
 	Max

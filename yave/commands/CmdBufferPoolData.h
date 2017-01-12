@@ -22,13 +22,13 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
 #define YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
 
-#include "CmdBuffer.h"
+#include "CmdBufferBase.h"
 
 namespace yave {
 
 class CmdBufferPoolData : NonCopyable, public DeviceLinked {
 	public:
-		CmdBufferPoolData(DevicePtr dptr);
+		CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred);
 		~CmdBufferPoolData();
 
 		CmdBufferData alloc();

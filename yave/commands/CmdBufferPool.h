@@ -33,7 +33,7 @@ class CmdBufferPool {
 	public:
 		CmdBufferPool() = default;
 
-		CmdBufferPool(DevicePtr dptr) : _pool(new CmdBufferPoolData(dptr)) {
+		CmdBufferPool(DevicePtr dptr) : _pool(new CmdBufferPoolData(dptr, Usage)) {
 		}
 
 		CmdBuffer<Usage> create_buffer() {
