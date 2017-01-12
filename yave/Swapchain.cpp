@@ -23,6 +23,7 @@ SOFTWARE.
 #include "Swapchain.h"
 #include "Device.h"
 #include "Window.h"
+#include <yave/commands/CmdBufferRecorder.h>
 
 
 namespace yave {
@@ -168,6 +169,14 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 
 		_images << std::move(swapchain_image);
 	}
+
+	auto recorder = CmdBufferRecorder(dptr->create_disposable_command_buffer());
+	for(auto& i : _images) {
+		recorder.transition_image(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+	}
+	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
+	recorder.end().submit(graphic_queue);
+	graphic_queue.waitIdle();
 }
 
 Swapchain::~Swapchain() {
