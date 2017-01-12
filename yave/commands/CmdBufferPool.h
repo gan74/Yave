@@ -27,16 +27,22 @@ SOFTWARE.
 
 namespace yave {
 
-
+template<CmdBufferUsage Usage>
 class CmdBufferPool {
 
 	public:
 		CmdBufferPool() = default;
-		CmdBufferPool(DevicePtr dptr);
 
-		CmdBuffer create_buffer();
+		CmdBufferPool(DevicePtr dptr) : _pool(new CmdBufferPoolData(dptr)) {
+		}
 
-		usize active_buffers() const;
+		CmdBuffer<Usage> create_buffer() {
+			return CmdBuffer<Usage>(_pool);
+		}
+
+		usize active_buffers() const {
+			return _pool.ref_count() - 1;
+		}
 
 	private:
 		core::Rc<CmdBufferPoolData> _pool;

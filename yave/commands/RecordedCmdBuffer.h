@@ -26,24 +26,42 @@ SOFTWARE.
 
 namespace yave {
 
-class CmdBufferRecorder;
+struct AsyncSubmit {
+	void operator()(vk::Queue) const {
+	}
+};
 
-class RecordedCmdBuffer : public CmdBuffer {
+struct SyncSubmit {
+	void operator()(vk::Queue q) const {
+		q.waitIdle();
+	}
+};
+
+template<CmdBufferUsage Usage>
+class RecordedCmdBuffer : public CmdBufferBase {
 
 	public:
-		RecordedCmdBuffer() = default;
-
-		void submit(vk::Queue queue) {
-			CmdBuffer::submit(queue);
-		}
-
-	private:
-		friend class CmdBufferRecorder;
-
-		RecordedCmdBuffer(CmdBuffer &&other) {
+		RecordedCmdBuffer(RecordedCmdBuffer&& other) : CmdBufferBase() {
 			swap(other);
 		}
 
+		RecordedCmdBuffer& operator=(RecordedCmdBuffer&& other) {
+			swap(other);
+			return *this;
+		}
+
+		template<typename Policy>
+		void submit(vk::Queue queue, const Policy& policy = Policy()) {
+			CmdBufferBase::submit(queue);
+			policy(queue);
+		}
+
+	private:
+		friend class CmdBufferRecorder<Usage>;
+
+		RecordedCmdBuffer(CmdBufferBase&& other) {
+			swap(other);
+		}
 };
 
 }

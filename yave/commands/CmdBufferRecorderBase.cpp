@@ -24,70 +24,41 @@ SOFTWARE.
 
 namespace yave {
 
-
-
-
-CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& buffer) : _cmd_buffer(std::move(buffer)), _render_pass(nullptr) {
-	Y_TODO(optimise disposable buffers)
+CmdBufferRecorderBase::CmdBufferRecorderBase(vk::CommandBuffer buffer, CmdBufferUsage usage) : _cmd_buffer(buffer), _render_pass(nullptr){
 	vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
-			.setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
+			.setFlags(vk::CommandBufferUsageFlagBits(usage))
 		);
 }
 
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
-	swap(other);
-}
-
-CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
-	swap(other);
-	return *this;
-}
-
-void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
+void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
 	std::swap(_cmd_buffer, other._cmd_buffer);
 	std::swap(_render_pass, other._render_pass);
-
 }
 
-vk::CommandBuffer CmdBufferRecorder::vk_cmd_buffer() const {
-	return _cmd_buffer.vk_cmd_buffer();
+vk::CommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
+	return _cmd_buffer;
 }
 
-
-const RenderPass& CmdBufferRecorder::current_pass() const {
+const RenderPass& CmdBufferRecorderBase::current_pass() const {
 	return *_render_pass;
 }
 
-const Viewport& CmdBufferRecorder::viewport() const {
+const Viewport& CmdBufferRecorderBase::viewport() const {
 	return _viewport;
 }
 
-RecordedCmdBuffer CmdBufferRecorder::end() {
-	end_render_pass();
-	vk_cmd_buffer().end();
-	return RecordedCmdBuffer(std::move(_cmd_buffer));
-}
-
-CmdBufferRecorder& CmdBufferRecorder::end_render_pass() {
+void CmdBufferRecorderBase::end_render_pass() {
 	if(_render_pass) {
 		vk_cmd_buffer().endRenderPass();
 		_render_pass = nullptr;
 	}
-	return *this;
 }
 
-CmdBufferRecorder::~CmdBufferRecorder() {
-	if(_cmd_buffer.vk_cmd_buffer()) {
-		fatal("CmdBufferRecorder destroyed before end() was called.");
-	}
-}
-
-CmdBufferRecorder& CmdBufferRecorder::set_viewport(const Viewport& view) {
+void CmdBufferRecorderBase::set_viewport(const Viewport& view) {
 	_viewport = view;
-	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
+void CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer) {
 	if(_render_pass) {
 		end_render_pass();
 	}
@@ -107,10 +78,10 @@ CmdBufferRecorder& CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 	vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
 	_render_pass = &framebuffer.render_pass();
 
-	return set_viewport(Viewport(framebuffer.size()));
+	set_viewport(Viewport(framebuffer.size()));
 }
 
-CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size() + 1);
@@ -118,11 +89,9 @@ CmdBufferRecorder& CmdBufferRecorder::bind_pipeline(const GraphicPipeline& pipel
 	ds << pipeline.vk_descriptor_set();
 
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
-
-	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& mesh_instance) {
+void CmdBufferRecorderBase::draw(const StaticMeshInstance& mesh_instance) {
 	vk::DeviceSize offset = 0; // fohkin' vk::ArrayProxy
 
 	vk_cmd_buffer().bindVertexBuffers(0, mesh_instance.vertex_buffer.vk_buffer(), offset);
@@ -130,12 +99,10 @@ CmdBufferRecorder& CmdBufferRecorder::draw(const StaticMeshInstance& mesh_instan
 
 	auto cmds = u32(mesh_instance.indirect_buffer.size());
 	vk_cmd_buffer().drawIndexedIndirect(mesh_instance.indirect_buffer.vk_buffer(), offset, cmds, cmds ? sizeof(vk::DrawIndexedIndirectCommand) : 0);
-
-	return *this;
 }
 
 
-CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	end_render_pass();
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
@@ -144,11 +111,9 @@ CmdBufferRecorder& CmdBufferRecorder::dispatch(const ComputeProgram& program, co
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
-
-	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
+void CmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
 	end_render_pass();
 
 	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
@@ -165,13 +130,9 @@ CmdBufferRecorder& CmdBufferRecorder::barriers(const core::ArrayProxy<BufferBarr
 			buffer_barriers.size(), buffer_barriers.begin(),
 			image_barriers.size(), image_barriers.begin()
 		);
-
-	return *this;
 }
 
-CmdBufferRecorder& CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
-	//log_msg("Image "_s + image.vk_image() + " transitioned from " + uenum(src) + " to " + uenum(dst));
-
+void CmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
 	auto barrier = create_image_barrier(
 			image.vk_image(),
 			image.format(),
@@ -185,8 +146,6 @@ CmdBufferRecorder& CmdBufferRecorder::transition_image(ImageBase& image, vk::Ima
 			vk::DependencyFlagBits::eByRegion,
 			nullptr, nullptr, barrier
 		);
-	return *this;
 }
-
 
 }

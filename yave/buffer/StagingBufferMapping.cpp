@@ -64,13 +64,10 @@ StagingBufferMapping::~StagingBufferMapping() {
 
 
 
-	auto transfer_cmd_buffer = CmdBufferRecorder(device->create_disposable_command_buffer());
+	auto transfer_cmd_buffer = CmdBufferRecorder<CmdBufferUsage::Disposable>(device->create_disposable_command_buffer());
 	//transfer_cmd_buffer.copy_buffer(_dst_ref, BufferMemoryReference<MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>(_src));
 	transfer_cmd_buffer.vk_cmd_buffer().copyBuffer(_src.vk_buffer(), _dst.vk_buffer(), vk_copy());
-	transfer_cmd_buffer.end().submit(transfer_queue);
-
-	Y_TODO(buffer transfer stall)
-	transfer_queue.waitIdle();
+	transfer_cmd_buffer.end().submit<SyncSubmit>(transfer_queue);
 }
 
 

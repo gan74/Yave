@@ -112,7 +112,7 @@ void DeferredRenderer::update() {
 	_camera_buffer.map()[0] = _scene.camera();
 }
 
-void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {
+void DeferredRenderer::draw(CmdBufferRecorderBase& recorder, const OutputView& out) {
 	recorder.bind_framebuffer(_gbuffer);
 	_scene.draw(recorder);
 

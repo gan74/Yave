@@ -92,7 +92,7 @@ static void upload_data(ImageBase& image, const void* data) {
 	auto staging_buffer = get_staging_buffer(dptr, image.byte_size(), data);
 	auto regions = get_copy_region(image.size(), image.format());
 
-	auto cmd_buffer = CmdBufferRecorder(dptr->create_disposable_command_buffer());
+	auto cmd_buffer = CmdBufferRecorder<CmdBufferUsage::Disposable>(dptr->create_disposable_command_buffer());
 
 	cmd_buffer.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
@@ -101,8 +101,7 @@ static void upload_data(ImageBase& image, const void* data) {
 	cmd_buffer.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
 
 	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
-	cmd_buffer.end().submit(graphic_queue);
-	graphic_queue.waitIdle();
+	cmd_buffer.end().submit<SyncSubmit>(graphic_queue);
 }
 
 static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {

@@ -27,7 +27,7 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 #include <yave/material/Material.h>
 #include <yave/mesh/StaticMeshInstance.h>
-#include <yave/commands/RecordedCmdBuffer.h>
+#include <yave/commands/CmdBufferRecorder.h>
 
 #include "Transformable.h"
 
@@ -41,7 +41,7 @@ class StaticMesh : public Transformable {
 		StaticMesh(StaticMesh&& other);
 		StaticMesh& operator=(StaticMesh&& other) = delete;
 
-		void draw(CmdBufferRecorder& recorder, const DescriptorSet& vp) const;
+		void draw(CmdBufferRecorderBase& recorder, const DescriptorSet& vp) const;
 
 	private:
 		AssetPtr<StaticMeshInstance> _instance;

@@ -39,7 +39,7 @@ void SceneView::update() {
 	_mapping[0] = _camera.viewproj_matrix();
 }
 
-void SceneView::draw(CmdBufferRecorder& recorder) const {
+void SceneView::draw(CmdBufferRecorderBase& recorder) const {
 	for(const auto& mesh : _scene.static_meshes()) {
 		mesh.draw(recorder, _matrix_set);
 	}

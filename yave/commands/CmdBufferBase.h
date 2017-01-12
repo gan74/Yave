@@ -19,54 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_COMMANDS_CMDBUFFERBASE_H
+#define YAVE_COMMANDS_CMDBUFFERBASE_H
 
-#include "CmdBuffer.h"
-#include "CmdBufferPoolData.h"
-#include <yave/Device.h>
+#include <yave/yave.h>
+#include <yave/DeviceLinked.h>
 
 namespace yave {
 
-CmdBuffer::CmdBuffer(const core::Rc<CmdBufferPoolData>& pool) : _pool(pool), _data(_pool->alloc()) {
-}
+class CmdBufferPoolData;
 
-CmdBuffer::~CmdBuffer() {
-	if(_pool) {
-		_pool->release(std::move(_data));
-	}
-}
+struct CmdBufferData {
+	vk::CommandBuffer cmd_buffer;
+	vk::Fence fence;
+};
 
-CmdBuffer::CmdBuffer(CmdBuffer&& other) {
-	swap(other);
-}
+enum class CmdBufferUsage {
+	Normal = uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse),
+	Disposable = uenum(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)
+};
 
-CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) {
-	swap(other);
-	return *this;
-}
+template<CmdBufferUsage Usage>
+class CmdBufferRecorder;
 
-void CmdBuffer::swap(CmdBuffer& other) {
-	std::swap(_pool, other._pool);
-	std::swap(_data, other._data);
-}
+struct CmdBufferBase : NonCopyable {
 
-void CmdBuffer::submit(vk::Queue queue) {
-	device()->vk_device().resetFences(_data.fence);
-	queue.submit(vk::SubmitInfo()
-			.setCommandBufferCount(1)
-			.setPCommandBuffers(&_data.cmd_buffer), _data.fence
-		);
-}
+	public:
+		CmdBufferBase() = default;
+		CmdBufferBase(const core::Rc<CmdBufferPoolData>& pool);
 
-DevicePtr CmdBuffer::device() const {
-	return _pool->device();//_pool ? _pool->device() : nullptr;
-}
+		~CmdBufferBase();
 
-const vk::CommandBuffer CmdBuffer::vk_cmd_buffer() const {
-	return _data.cmd_buffer;
-}
+		const vk::CommandBuffer vk_cmd_buffer() const;
+		vk::Fence vk_fence() const;
+		DevicePtr device() const;
 
-vk::Fence CmdBuffer::vk_fence() const {
-	return _data.fence;
-}
+	protected:
+		void swap(CmdBufferBase& other);
+		void submit(vk::Queue queue);
+
+	private:
+		core::Rc<CmdBufferPoolData> _pool;
+		NotOwner<CmdBufferData> _data;
+};
 
 }
+
+#endif // YAVE_COMMANDS_CMDBUFFERBASE_H

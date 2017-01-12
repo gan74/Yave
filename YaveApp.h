@@ -67,8 +67,8 @@ class YaveApp : NonCopyable {
 
 		Swapchain* swapchain;
 
-		CmdBufferPool command_pool;
-		core::Vector<RecordedCmdBuffer> command_buffers;
+		CmdBufferPool<CmdBufferUsage::Normal> command_pool;
+		core::Vector<RecordedCmdBuffer<CmdBufferUsage::Normal>> command_buffers;
 
 		AssetPtr<Material> material;
 

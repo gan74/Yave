@@ -22,40 +22,29 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_CMDBUFFER_H
 #define YAVE_COMMANDS_CMDBUFFER_H
 
-#include <yave/yave.h>
-#include <yave/DeviceLinked.h>
+#include "CmdBufferBase.h"
 
 namespace yave {
 
-class CmdBufferPoolData;
-
-struct CmdBufferData {
-	vk::CommandBuffer cmd_buffer;
-	vk::Fence fence;
-};
-
-struct CmdBuffer : NonCopyable {
+template<CmdBufferUsage Usage>
+class CmdBuffer : public CmdBufferBase {
 
 	public:
+		using CmdBufferBase::CmdBufferBase;
+
 		CmdBuffer() = default;
-		CmdBuffer(const core::Rc<CmdBufferPoolData>& pool);
 
-		CmdBuffer(CmdBuffer&& other);
-		CmdBuffer& operator=(CmdBuffer&& other);
+		CmdBuffer(CmdBuffer&& other) : CmdBufferBase() {
+			swap(other);
+		}
 
-		~CmdBuffer();
-
-		const vk::CommandBuffer vk_cmd_buffer() const;
-		vk::Fence vk_fence() const;
-		DevicePtr device() const;
-
-	protected:
-		void swap(CmdBuffer& other);
-		void submit(vk::Queue queue);
+		CmdBuffer& operator=(CmdBuffer&& other) {
+			swap(other);
+			return *this;
+		}
 
 	private:
-		core::Rc<CmdBufferPoolData> _pool;
-		NotOwner<CmdBufferData> _data;
+		friend class CmdBufferRecorder<Usage>;
 };
 
 }

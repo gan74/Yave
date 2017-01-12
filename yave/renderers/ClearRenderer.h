@@ -31,7 +31,7 @@ class ClearRenderer : NonCopyable {
 	public:
 		ClearRenderer(Framebuffer& framebuffer);
 
-		void draw(CmdBufferRecorder& recorder) const;
+		void draw(CmdBufferRecorderBase& recorder) const;
 
 	private:
 		Framebuffer& _framebuffer;

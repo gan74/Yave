@@ -37,11 +37,9 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		DeferredRenderer(SceneView& scene, const math::Vec2ui& size);
 
 		void update();
-		void draw(CmdBufferRecorder& recorder, const OutputView& output);
+		void draw(CmdBufferRecorderBase& recorder, const OutputView& output);
 
 	private:
-		void dispatch_culling(CmdBufferRecorder& recorder);
-
 		const DescriptorSet& create_output_set(const OutputView& out);
 
 		SceneView& _scene;

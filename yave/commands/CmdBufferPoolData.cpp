@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-vk::CommandPool create_pool(DevicePtr dptr) {
+static vk::CommandPool create_pool(DevicePtr dptr) {
 	return dptr->vk_device().createCommandPool(vk::CommandPoolCreateInfo()
 			.setQueueFamilyIndex(dptr->queue_family_index(QueueFamily::Graphics))
 			//.setFlags(vk::CommandPoolCreateFlagBits::eTransient)
@@ -34,7 +34,7 @@ vk::CommandPool create_pool(DevicePtr dptr) {
 		);
 }
 
-CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool) {
+static CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool) {
 	auto buffer = dptr->vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
 			.setCommandBufferCount(1)
 			.setCommandPool(pool)
@@ -46,7 +46,7 @@ CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool) {
 	return CmdBufferData{buffer, fence};
 }
 
-void wait(DevicePtr dptr, const CmdBufferData &data) {
+static void wait(DevicePtr dptr, const CmdBufferData &data) {
 	Chrono c;
 	dptr->vk_device().waitForFences(data.fence, true, u64(-1));
 	if(c.elapsed().to_nanos()) {
@@ -54,6 +54,23 @@ void wait(DevicePtr dptr, const CmdBufferData &data) {
 	}
 }
 
+static void reset(const CmdBufferData &data) {
+	data.cmd_buffer.reset(vk::CommandBufferResetFlags());
+}
+
+static const CmdBufferData& force_reset(DevicePtr dptr, const CmdBufferData &data) {
+	wait(dptr, data);
+	reset(data);
+	return data;
+}
+
+static bool try_reset(DevicePtr dptr, const CmdBufferData& data) {
+	if(dptr->vk_device().waitForFences(data.fence, true, 0) != vk::Result::eSuccess) {
+		return false;
+	}
+	reset(data);
+	return true;
+}
 
 CmdBufferPoolData::CmdBufferPoolData(DevicePtr dptr) : DeviceLinked(dptr), _pool(create_pool(dptr)) {
 }
@@ -67,23 +84,20 @@ CmdBufferPoolData::~CmdBufferPoolData() {
 }
 
 void CmdBufferPoolData::release(CmdBufferData&& data) {
-	/*std::cout << "buffer " << data.cmd_buffer << " released\n";
-	std::cout << "buffer pool size for" << _pool << " = " << _cmd_buffers.size() << "\n";*/
-
 	_cmd_buffers.push_back(std::move(data));
-}
-
-CmdBufferData CmdBufferPoolData::reset(CmdBufferData data) {
-	wait(device(), data);
-	data.cmd_buffer.reset(vk::CommandBufferResetFlags());
-	return data;
 }
 
 CmdBufferData CmdBufferPoolData::alloc() {
 	if(_cmd_buffers.is_empty()) {
 		return alloc_data(device(), _pool);
 	}
-	return reset(_cmd_buffers.pop());
+	for(auto& buffer : _cmd_buffers) {
+		if(try_reset(device(), buffer)) {
+			std::swap(buffer, _cmd_buffers.last());
+			return _cmd_buffers.pop();
+		}
+	}
+	return force_reset(device(), _cmd_buffers.pop());
 }
 
 }

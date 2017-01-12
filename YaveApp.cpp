@@ -67,7 +67,7 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 
 void YaveApp::create_command_buffers() {
 	for(usize i = 0; i != swapchain->image_count(); i++) {
-		CmdBufferRecorder recorder(command_pool.create_buffer());
+		CmdBufferRecorder<CmdBufferUsage::Normal> recorder(command_pool.create_buffer());
 
 		renderer->draw(recorder, swapchain->image(i));
 

@@ -38,7 +38,7 @@ class SceneView : NonCopyable, public DeviceLinked {
 		SceneView(DevicePtr dptr, const Scene& sce, const Camera& cam);
 
 		void update();
-		void draw(CmdBufferRecorder& recorder) const;
+		void draw(CmdBufferRecorderBase& recorder) const;
 
 		const Scene& scene() const;
 		const Camera& camera() const;

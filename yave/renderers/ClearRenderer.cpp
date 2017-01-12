@@ -28,7 +28,7 @@ ClearRenderer::ClearRenderer(Framebuffer &framebuffer)  :
 		_framebuffer(framebuffer) {
 }
 
-void ClearRenderer::draw(CmdBufferRecorder &recorder) const {
+void ClearRenderer::draw(CmdBufferRecorderBase& recorder) const {
 	recorder.bind_framebuffer(_framebuffer);
 }
 

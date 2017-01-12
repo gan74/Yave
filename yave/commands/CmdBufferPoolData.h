@@ -35,8 +35,6 @@ class CmdBufferPoolData : NonCopyable, public DeviceLinked {
 		void release(CmdBufferData&& data);
 
 	private:
-		CmdBufferData reset(CmdBufferData data);
-
 		vk::CommandPool _pool;
 		core::Vector<CmdBufferData> _cmd_buffers;
 };

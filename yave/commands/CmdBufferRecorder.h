@@ -22,59 +22,47 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_CMDBUFFERRECORDER_H
 #define YAVE_COMMANDS_CMDBUFFERRECORDER_H
 
-#include <yave/yave.h>
-#include <yave/Framebuffer.h>
-#include <yave/barriers/Barrier.h>
-
+#include "CmdBufferRecorderBase.h"
 #include "RecordedCmdBuffer.h"
-
-#include <yave/mesh/StaticMeshInstance.h>
-#include <yave/material/GraphicPipeline.h>
-#include <yave/shaders/ComputeProgram.h>
-#include <yave/bindings/DescriptorSet.h>
-#include <yave/Viewport.h>
-
 
 namespace yave {
 
-
-class CmdBufferRecorder : NonCopyable {
+template<CmdBufferUsage Usage>
+class CmdBufferRecorder : public CmdBufferRecorderBase {
 
 	public:
-		CmdBufferRecorder(CmdBuffer&& buffer);
+		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : CmdBufferRecorderBase(buffer.vk_cmd_buffer(), Usage), _cmd_buffer(std::move(buffer)) {
+		}
 
-		CmdBufferRecorder(CmdBufferRecorder&& other);
-		CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
+		CmdBufferRecorder(CmdBufferRecorder&& other) : CmdBufferRecorderBase() {
+			swap(other);
+		}
 
-		RecordedCmdBuffer end();
-		~CmdBufferRecorder();
+		CmdBufferRecorder& operator=(CmdBufferRecorder&& other) {
+			swap(other);
+			return *this;
+		}
 
-		vk::CommandBuffer vk_cmd_buffer() const;
+		~CmdBufferRecorder() {
+			if(_cmd_buffer.vk_cmd_buffer()) {
+				fatal("CmdBufferRecorder destroyed before end() was called.");
+			}
+		}
 
-		const RenderPass& current_pass() const;
-		const Viewport& viewport() const;
-
-		CmdBufferRecorder& end_render_pass();
-
-		CmdBufferRecorder& set_viewport(const Viewport& view);
-		CmdBufferRecorder& bind_framebuffer(const Framebuffer& framebuffer);
-		CmdBufferRecorder& bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
-		CmdBufferRecorder& draw(const StaticMeshInstance& mesh_instance);
-		CmdBufferRecorder& dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
-
-		CmdBufferRecorder& barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
-
-		// never use directly, needed for internal work and image loading
-		CmdBufferRecorder& transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
-
+		 RecordedCmdBuffer<Usage> end() {
+			end_render_pass();
+			vk_cmd_buffer().end();
+			return std::move(_cmd_buffer);
+		}
 
 	private:
-		void swap(CmdBufferRecorder& other);
+		void swap(CmdBufferRecorder& other) {
+			CmdBufferRecorderBase::swap(other);
+			std::swap(_cmd_buffer, other._cmd_buffer);
+		}
 
+		CmdBuffer<Usage> _cmd_buffer;
 
-		CmdBuffer _cmd_buffer;
-		const RenderPass* _render_pass;
-		Viewport _viewport;
 };
 
 }

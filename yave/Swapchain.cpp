@@ -170,13 +170,12 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 		_images << std::move(swapchain_image);
 	}
 
-	auto recorder = CmdBufferRecorder(dptr->create_disposable_command_buffer());
+	auto recorder = CmdBufferRecorder<CmdBufferUsage::Disposable>(dptr->create_disposable_command_buffer());
 	for(auto& i : _images) {
 		recorder.transition_image(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 	}
 	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
-	recorder.end().submit(graphic_queue);
-	graphic_queue.waitIdle();
+	recorder.end().submit<SyncSubmit>(graphic_queue);
 }
 
 Swapchain::~Swapchain() {

@@ -20,21 +20,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "CmdBufferPool.h"
+#include "CmdBufferBase.h"
+#include "CmdBufferPoolData.h"
 #include <yave/Device.h>
 
 namespace yave {
 
-CmdBufferPool::CmdBufferPool(DevicePtr dptr) : _pool(new CmdBufferPoolData(dptr)) {
+CmdBufferBase::CmdBufferBase(const core::Rc<CmdBufferPoolData>& pool) : _pool(pool), _data(_pool->alloc()) {
 }
 
-CmdBuffer CmdBufferPool::create_buffer() {
-	return CmdBuffer(_pool);
+CmdBufferBase::~CmdBufferBase() {
+	if(_pool) {
+		_pool->release(std::move(_data));
+	}
 }
 
+void CmdBufferBase::swap(CmdBufferBase& other) {
+	std::swap(_pool, other._pool);
+	std::swap(_data, other._data);
+}
 
-usize CmdBufferPool::active_buffers() const {
-	return _pool.ref_count() - 1;
+void CmdBufferBase::submit(vk::Queue queue) {
+	device()->vk_device().resetFences(_data.fence);
+	queue.submit(vk::SubmitInfo()
+			.setCommandBufferCount(1)
+			.setPCommandBuffers(&_data.cmd_buffer), _data.fence
+		);
+}
+
+DevicePtr CmdBufferBase::device() const {
+	return _pool->device();
+}
+
+const vk::CommandBuffer CmdBufferBase::vk_cmd_buffer() const {
+	return _data.cmd_buffer;
+}
+
+vk::Fence CmdBufferBase::vk_fence() const {
+	return _data.fence;
 }
 
 }
