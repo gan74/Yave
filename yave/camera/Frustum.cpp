@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MATERIAL_MATERIALDATA_H
-#define YAVE_MATERIAL_MATERIALDATA_H
 
-#include <yave/yave.h>
-#include <yave/bindings/Binding.h>
-
-#include <yave/shaders/SpirVData.h>
+#include "Frustum.h"
 
 namespace yave {
 
-struct MaterialData {
-
-	SpirVData _frag;
-	SpirVData _vert;
-	SpirVData _geom;
-
-	core::Vector<Binding> _bindings;
-
-	MaterialData& set_frag_data(SpirVData&& data);
-	MaterialData& set_vert_data(SpirVData&& data);
-	MaterialData& set_geom_data(SpirVData&& data);
-
-	MaterialData& set_bindings(const core::Vector<Binding>& binds);
-};
-
+bool Frustum::is_inside(const math::Vec3& pos, float radius) const {
+	for(const auto& plane : *this) {
+		if(plane.dot(math::Vec4(pos, 1.0f)) + radius < 0.0f) {
+			return false;
+		}
+	}
+	return true;
 }
 
-#endif // YAVE_MATERIAL_MATERIAL_MATERIALDATA_H
+}

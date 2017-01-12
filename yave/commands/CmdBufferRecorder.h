@@ -31,7 +31,7 @@ SOFTWARE.
 #include <yave/mesh/StaticMeshInstance.h>
 #include <yave/material/GraphicPipeline.h>
 #include <yave/shaders/ComputeProgram.h>
-#include <yave/descriptors/DescriptorSet.h>
+#include <yave/bindings/DescriptorSet.h>
 #include <yave/Viewport.h>
 
 

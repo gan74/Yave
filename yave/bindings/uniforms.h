@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MATERIAL_MATERIALDATA_H
-#define YAVE_MATERIAL_MATERIALDATA_H
+#ifndef YAVE_BINDINGS_UNIFORMS_H
+#define YAVE_BINDINGS_UNIFORMS_H
 
 #include <yave/yave.h>
-#include <yave/bindings/Binding.h>
-
-#include <yave/shaders/SpirVData.h>
+#include <yave/camera/Frustum.h>
 
 namespace yave {
+namespace uniform {
 
-struct MaterialData {
+using ViewProj = math::Matrix4<>;
 
-	SpirVData _frag;
-	SpirVData _vert;
-	SpirVData _geom;
+struct Camera {
+	math::Matrix4<> inv_matrix;
+	math::Vec3 position;
+	u32 padding;
+};
 
-	core::Vector<Binding> _bindings;
+using Frustum = yave::Frustum;
 
-	MaterialData& set_frag_data(SpirVData&& data);
-	MaterialData& set_vert_data(SpirVData&& data);
-	MaterialData& set_geom_data(SpirVData&& data);
+enum class LightType : u32 {
+	Directional = 0,
+	Point = 1
+};
 
-	MaterialData& set_bindings(const core::Vector<Binding>& binds);
+struct Light {
+	math::Vec3 positon;
+	float radius;
+	math::Vec3 color;
+	LightType type;
 };
 
 }
+}
 
-#endif // YAVE_MATERIAL_MATERIAL_MATERIALDATA_H
+#endif // YAVE_BINDINGS_UNIFORMS_H

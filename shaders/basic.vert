@@ -5,8 +5,7 @@ out gl_PerVertex {
 };
 
 layout(set = 0, binding = 0) uniform ViewProj {
-	mat4 view;
-	mat4 proj;
+	mat4 matrix;
 } view_proj;
 
 layout(location = 0) in vec3 in_position;
@@ -20,5 +19,5 @@ layout(location = 1) out vec2 v_uv;
 void main() {
 	v_uv = in_uv;
 	v_normal = mat3(in_model) * in_normal;
-	gl_Position = view_proj.proj * view_proj.view * in_model * vec4(in_position, 1.0);
+	gl_Position = view_proj.matrix * in_model * vec4(in_position, 1.0);
 }

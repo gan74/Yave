@@ -26,16 +26,17 @@ SOFTWARE.
 
 namespace yave {
 
-SceneView::SceneView(DevicePtr dptr, const Scene &sce) :
+SceneView::SceneView(DevicePtr dptr, const Scene &sce, const Camera& cam) :
+		DeviceLinked(dptr),
 		_scene(sce),
-		_command_pool(dptr),
+		_camera(cam),
 		_matrix_buffer(dptr, 1),
 		_mapping(_matrix_buffer.map()),
 		_matrix_set(dptr, {Binding(_matrix_buffer)}) {
+}
 
-	float ratio = 4.0f / 3.0f;
-	set_proj(math::perspective(math::to_rad(45), ratio, 0.001f, 10.f));
-	set_view(math::look_at(math::Vec3(2.0, 0, 0), math::Vec3()));
+void SceneView::update() {
+	_mapping[0] = _camera.viewproj_matrix();
 }
 
 void SceneView::draw(CmdBufferRecorder& recorder) const {
@@ -44,32 +45,13 @@ void SceneView::draw(CmdBufferRecorder& recorder) const {
 	}
 }
 
-void SceneView::set_view(const math::Matrix4<>& view) {
-	_mapping.begin()->view = view;
-}
-
-void SceneView::set_proj(const math::Matrix4<>& proj) {
-	_mapping.begin()->proj = proj;
-}
-
-const math::Matrix4<>& SceneView::view_matrix() const {
-	return _mapping.begin()->view;
-}
-
-const math::Matrix4<>& SceneView::proj_matrix() const {
-	return _mapping.begin()->proj;
-}
-
-math::Matrix4<> SceneView::inverse_matrix() const {
-	return (proj_matrix() * view_matrix()).inverse();
-}
-
 const Scene& SceneView::scene() const {
 	return _scene;
 }
 
-DevicePtr SceneView::device() const {
-	return _matrix_buffer.device();
+const Camera& SceneView::camera() const {
+	return _camera;
 }
+
 
 }

@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/Viewport.h>
 
-#include <yave/descriptors/DescriptorSet.h>
+#include <yave/bindings/DescriptorSet.h>
 
 #include <y/core/AssocVector.h>
 

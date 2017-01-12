@@ -33,8 +33,8 @@ SOFTWARE.
 #include <yave/objects/StaticMesh.h>
 #include <yave/mesh/MeshInstancePool.h>
 
-#include <yave/descriptors/Binding.h>
-#include <yave/descriptors/DescriptorSet.h>
+#include <yave/bindings/Binding.h>
+#include <yave/bindings/DescriptorSet.h>
 #include <yave/scene/SceneView.h>
 
 #include <yave/renderers/DeferredRenderer.h>
@@ -78,6 +78,7 @@ class YaveApp : NonCopyable {
 
 		Scene* scene;
 		SceneView* scene_view;
+		Camera camera;
 
 		DeferredRenderer* renderer;
 };

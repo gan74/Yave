@@ -25,19 +25,13 @@ SOFTWARE.
 #include <yave/Framebuffer.h>
 #include <yave/shaders/ComputeProgram.h>
 #include <yave/scene/SceneView.h>
+#include <yave/bindings/uniforms.h>
 
 namespace yave {
 
 class DeferredRenderer : NonCopyable, public DeviceLinked {
 
 	using OutputView = StorageView;
-
-	struct Camera {
-		math::Matrix4<> inv_matrix;
-		math::Vec3 position;
-	};
-
-	using Frustum = std::array<math::Vec4, 6>;
 
 	public:
 		DeferredRenderer(SceneView& scene, const math::Vec2ui& size);
@@ -62,18 +56,11 @@ class DeferredRenderer : NonCopyable, public DeviceLinked {
 		ComputeShader _lighting_shader;
 		ComputeProgram _lighting_program;
 
-		ComputeShader _culling_shader;
-		ComputeProgram _culling_program;
-
-		usize _light_count = 0;
 		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
-		Buffer<BufferUsage::StorageBit, MemoryFlags::DeviceLocal> _culled_lights;
 
-		TypedBuffer<Camera, BufferUsage::UniformBit> _camera_buffer;
-		TypedBuffer<Frustum, BufferUsage::UniformBit> _frustum_buffer;
+		TypedBuffer<uniform::Camera, BufferUsage::UniformBit> _camera_buffer;
 
 		DescriptorSet _lighting_set;
-		DescriptorSet _culling_set;
 		std::unordered_map<VkImageView, DescriptorSet> _output_sets;
 };
 

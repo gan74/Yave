@@ -33,63 +33,47 @@ static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
 
-enum class LightType : u32 {
-	Directional = 0,
-	Point = 1
-};
-
-struct Light {
-	math::Vec3 positon;
-	float radius;
-	math::Vec3 color;
-	LightType type;
-};
-
 static ComputeShader create_lighting_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
-static ComputeShader create_culling_shader(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("cull_lights.comp.spv").expected("Unable to open SPIR-V file.")));
-}
-
-static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count, usize& light_count) {
-	light_count = dir_count + pts_count + 1;
+static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
+	usize light_count = dir_count + pts_count + 1;
 	using Vec4u32 = math::Vec<4, u32>;
-	Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(Vec4u32) + light_count * sizeof(Light));
+	Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(Vec4u32) + light_count * sizeof(uniform::Light));
 
 	std::mt19937 gen(3);
 	std::uniform_real_distribution<float> distr(0, 1);
 	std::uniform_real_distribution<float> pos_distr(-1, 1);
 
-	core::Vector<Light> lights;
+	core::Vector<uniform::Light> lights;
 	for(usize i = 0; i != dir_count; i++) {
-		lights << Light {
+		lights << uniform::Light {
 				math::Vec3(0, 0, 1).normalized(), 0,
 				math::Vec3(1, 1, 1) * 0.5,
-				LightType::Directional
+				uniform::LightType::Directional
 			};
 	}
 	for(usize i = 0; i != pts_count; i++) {
-		lights << Light {
+		lights << uniform::Light {
 				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)),
 				2,
 				math::Vec3(distr(gen), distr(gen), distr(gen)),
-				LightType::Point
+				uniform::LightType::Point
 			};
 	}
-	lights << Light {
+	lights << uniform::Light {
 			  math::Vec3(0, 0, 100),
 			  0.1,
 			  math::Vec3(1, 0, 1),
-			  LightType::Point
+			  uniform::LightType::Point
 		  };
 
 	{
 		TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryFlags::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(light_count);
 	}
 	{
-		TypedSubBuffer<Light, BufferUsage::StorageBit, MemoryFlags::CpuVisible> light_buffer(buffer, sizeof(Vec4u32), lights.size());
+		TypedSubBuffer<uniform::Light, BufferUsage::StorageBit, MemoryFlags::CpuVisible> light_buffer(buffer, sizeof(Vec4u32), lights.size());
 		auto map = light_buffer.map();
 		std::copy(lights.begin(), lights.end(), map.begin());
 	}
@@ -97,28 +81,7 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count, usiz
 	return buffer;
 }
 
-static std::array<math::Vec4, 6> extract_frustum(const math::Matrix4<>& viewproj) {
-	auto x = viewproj.row(0);
-	auto y = viewproj.row(1);
-	auto z = viewproj.row(2);
-	auto w = viewproj.row(3);
-	return {{
-			(w + x).normalized(),
-			(w - x).normalized(),
-			(w + y).normalized(),
-			(w - y).normalized(),
-			(w + z).normalized(),
-			(w - z).normalized()
-		}};
-}
 
-static math::Vec3 extract_position(const math::Matrix4<>& view_matrix) {
-	math::Vec3 pos;
-	for(usize i = 0; i != 3; i++) {
-		pos -= view_matrix[i].sub(3) * view_matrix[i].w();
-	}
-	return pos;
-}
 
 DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 		DeviceLinked(scene.device()),
@@ -131,16 +94,11 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 
 		_lighting_shader(create_lighting_shader(device())),
 		_lighting_program(_lighting_shader),
-		_culling_shader(create_culling_shader(device())),
-		_culling_program(_culling_shader),
 
-		_lights(create_lights(device(), 1, 1, _light_count)),
-		_culled_lights(device(), _lights.byte_size()),
+		_lights(create_lights(device(), 1, 1)),
 
 		_camera_buffer(device(), 1),
-		_frustum_buffer(device(), 1),
-		_lighting_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera_buffer), Binding(_culled_lights)}),
-		_culling_set(device(), {Binding(_lights), Binding(_culled_lights), Binding(_frustum_buffer)}) {
+		_lighting_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera_buffer), Binding(_lights)}) {
 
 	for(usize i = 0; i != 3; i++) {
 		if(_size[i] % _lighting_shader.local_size()[i]) {
@@ -150,25 +108,14 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 }
 
 void DeferredRenderer::update() {
-	_camera_buffer.map()[0] = Camera{_scene.inverse_matrix(), extract_position(_scene.view_matrix())};
-	_frustum_buffer.map()[0] = extract_frustum(_scene.proj_matrix() * _scene.view_matrix());
-}
-
-void DeferredRenderer::dispatch_culling(CmdBufferRecorder& recorder) {
-	usize groups = _light_count / _culling_shader.local_size().x();
-	if(groups *  _culling_shader.local_size().x() < _light_count) {
-		++groups;
-	}
-	recorder.dispatch(_culling_program, math::Vec3ui(groups, 1, 1), {_culling_set});
+	_scene.update();
+	_camera_buffer.map()[0] = _scene.camera();
 }
 
 void DeferredRenderer::draw(CmdBufferRecorder& recorder, const OutputView& out) {
-	dispatch_culling(recorder);
-
 	recorder.bind_framebuffer(_gbuffer);
 	_scene.draw(recorder);
 
-	recorder.barriers({_culled_lights}, {}, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
 	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(out)});
 }
 

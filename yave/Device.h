@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <yave/image/Sampler.h>
 #include <yave/commands/CmdBufferPool.h>
-//#include <yave/descriptors/DescriptorSet.h>
+//#include <yave/bindings/DescriptorSet.h>
 
 #include <yave/vk/destroy.h>
 

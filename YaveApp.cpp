@@ -69,11 +69,7 @@ void YaveApp::create_command_buffers() {
 	for(usize i = 0; i != swapchain->image_count(); i++) {
 		CmdBufferRecorder recorder(command_pool.create_buffer());
 
-		//recorder.transition_image(swapchain->image(i), vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
-
 		renderer->draw(recorder, swapchain->image(i));
-
-		//recorder.transition_image(swapchain->image(i), vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
 		command_buffers << recorder.end();
 	}
@@ -88,7 +84,6 @@ Duration YaveApp::draw() {
 	u32 image_index = device.vk_device().acquireNextImageKHR(vk_swap, u64(-1), image_acquired_semaphore, VK_NULL_HANDLE).value;
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
-
 
 	renderer->update();
 	{
@@ -121,29 +116,13 @@ Duration YaveApp::draw() {
 	return ch.elapsed();
 }
 
-auto look_at2(const math::Vec3& eye, const math::Vec3& center, const math::Vec3& up = math::Vec3(0, 0, 1)) {
-		math::Vec3 z((eye - center).normalized());
-		math::Vec3 x(up.cross(z).normalized());
-		math::Vec3 y(x.cross(z));
-
-		std::swap(x, y);
-
-		math::Matrix4<> m = math::identity();
-		m[0] = math::Vec4(y, -y.dot(eye));
-		m[1] = math::Vec4(x, -x.dot(eye));
-		m[2] = math::Vec4(z, -z.dot(eye));
-
-		return m;
-}
-
 void YaveApp::update(math::Vec2 angles) {
 	auto cam_pos =
 			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
 			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.5, 0, 0, 1);
 
-	//auto cam_pos = math::Vec4(3, 0, 2, 1);
 
-	scene_view->set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
+	camera.set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
 }
 
 void YaveApp::create_assets() {
@@ -176,7 +155,7 @@ void YaveApp::create_assets() {
 		}
 	}
 	scene = new Scene(std::move(objects));
-	scene_view = new SceneView(&device, *scene);
+	scene_view = new SceneView(&device, *scene, camera);
 
 	update();
 

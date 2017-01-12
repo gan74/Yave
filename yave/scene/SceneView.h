@@ -22,48 +22,34 @@ SOFTWARE.
 #ifndef YAVE_SCENE_SCENEVIEW_H
 #define YAVE_SCENE_SCENEVIEW_H
 
-#include <yave/commands/RecordedCmdBuffer.h>
-#include <yave/commands/CmdBufferPool.h>
-
-#include <yave/Framebuffer.h>
-
+#include <yave/commands/CmdBufferRecorder.h>
 #include <yave/buffer/TypedBuffer.h>
+#include <yave/bindings/uniforms.h>
+#include <yave/camera/Camera.h>
+#include <yave/Framebuffer.h>
 
 #include "Scene.h"
 
 namespace yave {
 
-class SceneView : NonCopyable {
+class SceneView : NonCopyable, public DeviceLinked {
 
 	public:
-		struct Matrices {
-			math::Matrix4<> view;
-			math::Matrix4<> proj;
-		};
+		SceneView(DevicePtr dptr, const Scene& sce, const Camera& cam);
 
-		SceneView(DevicePtr dptr, const Scene& sce);
-
+		void update();
 		void draw(CmdBufferRecorder& recorder) const;
 
-		void set_view(const math::Matrix4<>& view);
-		void set_proj(const math::Matrix4<>& proj);
-
-		const math::Matrix4<>& view_matrix() const;
-		const math::Matrix4<>& proj_matrix() const;
-		math::Matrix4<> inverse_matrix() const;
-
-
 		const Scene& scene() const;
-
-		DevicePtr device() const;
+		const Camera& camera() const;
 
 	private:
 		const Scene& _scene;
 
-		CmdBufferPool _command_pool;
+		const Camera& _camera;
 
-		TypedBuffer<Matrices, BufferUsage::UniformBit> _matrix_buffer;
-		TypedMapping<Matrices, MemoryFlags::CpuVisible> _mapping;
+		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _matrix_buffer;
+		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _mapping;
 
 		DescriptorSet _matrix_set;
 };
