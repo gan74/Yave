@@ -39,7 +39,7 @@ class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 		TypedBuffer() : Base() {
 		}
 
-		TypedBuffer(DevicePtr dptr, const core::Vector<Elem>& data) : TypedBuffer(dptr, data.size()) {
+		TypedBuffer(DevicePtr dptr, const core::ArrayProxy<Elem>& data) : TypedBuffer(dptr, data.size()) {
 			auto mapping = map();
 			memcpy(mapping.data(), data.begin(), this->byte_size());
 		}
