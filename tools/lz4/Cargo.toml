@@ -1,0 +1,7 @@
+[package]
+name = "lz4"
+version = "0.1.0"
+authors = ["Grégoire Angerand <gregoire.angerand@epfl.ch>"]
+
+[dependencies]
+lz4 = "*"
