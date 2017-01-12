@@ -29,8 +29,12 @@ namespace core {
 
 namespace detail {
 
+constexpr usize max(usize a, usize b) {
+	return a < b ? b : a;
+}
+
 template<typename T>
-static constexpr usize small_vector_default_size = (64 - sizeof(Vector<int>)) / sizeof(T);
+static constexpr usize small_vector_default_size = max(1, 64 - sizeof(Vector<int>) / sizeof(T));
 
 }
 
@@ -70,11 +74,14 @@ template<usize Size, typename ResizePolicy = DefaultVectorResizePolicy>
 class SmallVectorResizePolicy : ResizePolicy {
 	public:
 		usize ideal_capacity(usize size) const {
-			return size <= Size ? Size : ResizePolicy::ideal_capacity(size);
+			if(size <= Size) {
+				return Size;
+			}
+			return size <= 4 * Size ? 4 * Size : ResizePolicy::ideal_capacity(size);
 		}
 
 		bool shrink(usize size, usize capacity) const {
-			return capacity <= Size ? Size : ResizePolicy::shrink(size, capacity);
+			return capacity <= Size ? false : ResizePolicy::shrink(size, capacity);
 		}
 };
 

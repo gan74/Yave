@@ -29,6 +29,10 @@ SOFTWARE.
 using namespace y;
 using namespace y::core;
 
+struct Big {
+	u64 _big[256];
+};
+
 struct Base {
 };
 struct Derived : Base {
@@ -226,9 +230,13 @@ y_test_func("Vector dtors") {
 	y_test_assert(counter == total);
 }
 
-
 y_test_func("SmallVector allocation") {
 	SmallVec<int, 4> vec = vector({1, 2, 3, 4});
 	y_test_assert(vec.capacity() == 4);
 	y_test_assert(vec == vector({1, 2, 3, 4}));
+}
+
+y_test_func("SmallVector size") {
+	SmallVector<Big> vec({Big{}});
+	y_test_assert(vec.size() == 1);
 }
