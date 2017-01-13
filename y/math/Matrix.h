@@ -341,8 +341,9 @@ namespace detail {
 			}
 		} sgn;
 		T d(0);
+		auto row = mat.row(0);
 		for(usize i = 0; i != N; i++) {
-			d = d + sgn(i + 1) * mat.row(0)[i] * mat.sub(0, i).determinant();
+			d = d + sgn(i + 1) * row[i] * mat.sub(0, i).determinant();
 		}
 		return d;
 	}

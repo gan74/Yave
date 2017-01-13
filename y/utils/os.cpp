@@ -38,16 +38,6 @@ usize pid() {
 	#endif
 }
 
-usize core_count() {
-	#ifdef Y_OS_WIN
-	SYSTEM_INFO info;
-	GetSystemInfo(&info);
-	return info.dwNumberOfProcessors;
-	#else
-	return 0;
-	#endif
-}
-
 MemInfo phys_mem_info() {
 	#ifdef Y_OS_WIN
 	MEMORYSTATUSEX info;

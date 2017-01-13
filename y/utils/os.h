@@ -39,7 +39,6 @@ struct AppTimes {
 };
 
 usize pid();
-usize core_count();
 MemInfo phys_mem_info();
 usize mem_usage();
 u64 get_user_time_ns();
