@@ -93,9 +93,7 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 	data._size = math::vec(width, height);
 	data._data = new u8[data_size];
 
-	if(reader->read(data._data, data_size) != data_size) {
-		fatal("Invalid file size.");
-	}
+	reader->read(data._data, data_size).expected(err_msg);
 
 	return data;
 }

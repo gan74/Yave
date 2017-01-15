@@ -25,7 +25,8 @@ namespace yave {
 
 SpirVData SpirVData::from_file(io::ReaderRef reader) {
 	Y_TODO(optimise)
-	core::Vector<u8> content = reader->read_all();
+	core::Vector<u8> content;
+	reader->read_all(content);
 	core::Vector<u32> spriv32(content.size() / 4, 0);
 	memcpy(spriv32.begin(), content.begin(), content.size());
 	return SpirVData(spriv32);
