@@ -71,13 +71,24 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 
 	auto decoder = io::Decoder(reader);
 
+	u32 magic = decoder.decode<u32>().expected(err_msg);
+	u64 version = decoder.decode<u64>().expected(err_msg);
+
+	ImageData data;
+	if(magic != 0x65766179 || version != ((u64(1) << 63) | 1)) {
+		log_msg(err_msg, LogType::Error);
+		return data;
+	}
+
 	u32 height = decoder.decode<u32>().expected(err_msg);
 	u32 width = decoder.decode<u32>().expected(err_msg);
+	u32 mips = decoder.decode<u32>().expected(err_msg);
+	unused(mips);
+
 	u32 bpp = 4;
 
 	u32 data_size = width * height * bpp;
 
-	ImageData data;
 	data._bpp = bpp;
 	data._size = math::vec(width, height);
 	data._data = new u8[data_size];

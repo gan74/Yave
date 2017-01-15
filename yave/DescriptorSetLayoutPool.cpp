@@ -35,7 +35,7 @@ DescriptorSetLayoutPool::~DescriptorSetLayoutPool() {
 	}
 }
 
-vk::DescriptorSetLayout DescriptorSetLayoutPool::create_descriptor_set_layout(const LayoutKey& bindings) {
+vk::DescriptorSetLayout DescriptorSetLayoutPool::create_descriptor_set_layout(const Key& bindings) {
 	auto& layout = _layouts[bindings];
 	if(!layout) {
 		layout = device()->vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()

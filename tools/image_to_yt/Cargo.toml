@@ -1,5 +1,5 @@
 [package]
-name = "image_to_rgba"
+name = "image_to_yt"
 version = "0.1.0"
 authors = ["gan74 <gregoire.angerand@epfl.ch>"]
 

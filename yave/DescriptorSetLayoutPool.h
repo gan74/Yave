@@ -32,20 +32,20 @@ namespace yave {
 
 class DescriptorSetLayoutPool : NonCopyable, public DeviceLinked {
 
-	using LayoutKey = core::Vector<vk::DescriptorSetLayoutBinding>;
-
 	public:
+		using Key = core::Vector<vk::DescriptorSetLayoutBinding>;
+
 		DescriptorSetLayoutPool(DevicePtr dptr);
 		~DescriptorSetLayoutPool();
 
-		vk::DescriptorSetLayout create_descriptor_set_layout(const LayoutKey& bindings);
+		vk::DescriptorSetLayout create_descriptor_set_layout(const Key& bindings);
 
-		vk::DescriptorSetLayout operator()(const LayoutKey& bindings) {
+		vk::DescriptorSetLayout operator()(const Key& bindings) {
 			return create_descriptor_set_layout(bindings);
 		}
 
 	private:
-		core::AssocVector<LayoutKey, vk::DescriptorSetLayout> _layouts;
+		core::AssocVector<Key, vk::DescriptorSetLayout> _layouts;
 
 
 };

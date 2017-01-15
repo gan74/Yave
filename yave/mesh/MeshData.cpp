@@ -36,7 +36,7 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 	MeshData mesh;
 
 	if(magic != 0x65766179 || version != 1) {
-		log_msg("Unable to load mesh.", LogType::Error);
+		log_msg(err_msg, LogType::Error);
 		return mesh;
 	}
 

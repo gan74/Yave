@@ -100,8 +100,7 @@ static void upload_data(ImageBase& image, const void* data) {
 
 	cmd_buffer.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
 
-	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
-	cmd_buffer.end().submit<SyncSubmit>(graphic_queue);
+	cmd_buffer.end().submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 }
 
 static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {
