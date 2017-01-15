@@ -156,7 +156,6 @@ class Result : NonCopyable {
 			}
 		}
 
-
 		~Result() {
 			if(is_ok()) {
 				_value.~Ok_t();
@@ -211,8 +210,13 @@ class Result : NonCopyable {
 		}
 
 		template<typename U>
-		std::enable_if_t<!std::is_void<U>::value, U> unwrap_or(const U& f) const {
+		std::enable_if_t<!std::is_void<T>::value, const U&> unwrap_or(const U& f) const {
 			return is_ok() ? _value.get() : f;
+		}
+
+		template<typename U>
+		std::enable_if_t<!std::is_void<E>::value, const U&> error_or(const U& f) const {
+			return is_error() ? _error.get() : f;
 		}
 
 		template<typename F>

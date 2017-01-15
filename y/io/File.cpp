@@ -101,7 +101,7 @@ bool File::at_end() const {
 
 Reader::Result File::read(void* data, usize bytes) {
 	if(!_file) {
-		return core::Err(0);
+		return core::Err(usize(0));
 	}
 	return Reader::make_result(fread(data, 1, bytes, _file), bytes);
 }
@@ -114,7 +114,7 @@ void File::read_all(core::Vector<u8>& data) {
 
 Writer::Result File::write(const void* data, usize bytes) {
 	if(!_file) {
-		return core::Err(0);
+		return core::Err(usize(0));
 	}
 	return Writer::make_result(fwrite(data, 1, bytes, _file), bytes);
 }

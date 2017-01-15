@@ -72,26 +72,23 @@ Reader::Result BuffReader::read(void* data, usize bytes) {
 		if(remaining) {
 			u8* data8 = reinterpret_cast<u8*>(data);
 			if(remaining > _size) {
-				return in_buffer + _inner->read(data8 + in_buffer, remaining);
+				return in_buffer + _inner->read(data8 + in_buffer, remaining).error_or(remaining);
 			} else {
-				_used = _inner->read(_buffer, _size);
+				_used = _inner->read(_buffer, _size).error_or(_size);
 				_offset = 0;
-				return  in_buffer + (_used ? read(data8 + in_buffer, remaining) : 0);
+				return  in_buffer + (_used ? read(data8 + in_buffer, remaining).error_or(remaining) : 0);
 			}
 		}
 		return in_buffer;
 	}(), bytes);
 }
 
-usize BuffReader::read_all(core::Vector<u8>& data) {
-	usize l = _inner->read_all(data);
-	auto vec = core::Vector<u8>(_used, 0);
-	memcpy(vec.begin(), _buffer + _offset, _used);
+void BuffReader::read_all(core::Vector<u8>& data) {
+	_inner->read_all(data);
+	auto vec = core::Vector<u8>(_buffer + _offset, _buffer + _offset + _used);
 	vec.push_back(data.begin(), data.end());
 	data = std::move(vec);
-	l += _used;
 	_used = 0;
-	return l;
 }
 
 }
