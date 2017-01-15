@@ -24,27 +24,27 @@ SOFTWARE.
 
 #include <y/utils.h>
 #include <y/core/Vector.h>
+#include <y/core/Result.h>
 
 namespace y {
 namespace io {
 
 class Writer : NonCopyable {
 	public:
+		using Result = core::Result<void, usize>;
+
 		virtual ~Writer();
 
-		virtual usize write(const void* data, usize bytes) = 0;
+		virtual Result write(const void* data, usize bytes) = 0;
 		virtual void flush() = 0;
 
-		template<typename T>
-		usize write(const T* data, usize size) {
-			return write(reinterpret_cast<const void*>(data), size * sizeof(T)) / sizeof(T);
+	protected:
+		Result make_result(usize written, usize expected) const {
+			if(written == expected) {
+				return core::Ok();
+			}
+			return core::Err(written);
 		}
-
-		template<typename T>
-		usize write_vec(const core::Vector<T>& data) {
-			return write(data.begin(), data.size());
-		}
-
 };
 
 }

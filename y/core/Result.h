@@ -30,12 +30,12 @@ namespace core {
 namespace detail {
 
 template<typename T>
-struct Ok : NonCopyable {
+struct Ok {
 
-	Ok(T&& t) : _value(std::forward<T>(t)) {
+	Ok(T&& t) : _value(std::move(t)) {
 	}
 
-	Ok(Ok&& o) : _value(std::move(o._value)) {
+	Ok(const T& t) : _value(t) {
 	}
 
 	const T& get() const {
@@ -51,12 +51,12 @@ struct Ok : NonCopyable {
 };
 
 template<typename T>
-struct Err : NonCopyable {
+struct Err {
 
-	Err(T&& t) : _err(std::forward<T>(t)) {
+	Err(T&& t) : _err(std::move(t)) {
 	}
 
-	Err(Err&& e) : _err(std::move(e._err)) {
+	Err(const T& t) : _err(t) {
 	}
 
 	const T& get() const {
@@ -109,12 +109,12 @@ inline auto Err() {
 
 template<typename T>
 inline auto Ok(T&& t) {
-	return detail::Ok<T>(std::forward<T>(t));
+	return detail::Ok<std::remove_reference_t<T>>(std::forward<T>(t));
 }
 
 template<typename T>
 inline auto Err(T&& e) {
-	return detail::Err<T>(std::forward<T>(e));
+	return detail::Err<std::remove_reference_t<T>>(std::forward<T>(e));
 }
 
 
@@ -126,11 +126,6 @@ class Result : NonCopyable {
 	using Err_t = detail::Err<E>;
 	using Ok_t = detail::Ok<T>;
 
-	enum State {
-		eError,
-		eOk
-	};
-
 	template<typename F, typename U>
 	struct map_type {
 		using type = decltype(make_one<F>()(make_one<U>()));
@@ -141,19 +136,19 @@ class Result : NonCopyable {
 		using type = decltype(make_one<F>()());
 	};
 
+	using expected_t = decltype(make_one<Ok_t>().get());
+	using expected_const_t = decltype(make_one<const Ok_t>().get());
 
 	public:
-		template<typename U>
-		Result(detail::Ok<U>&& v) : _state(eOk) {
+		Result(Ok_t&& v) : _is_ok(true) {
 			new(&_value) Ok_t(std::move(v));
 		}
 
-		template<typename U>
-		Result(detail::Err<U>&& e) : _state(eError) {
+		Result(Err_t&& e) : _is_ok(false) {
 			new(&_error) Err_t(std::move(e));
 		}
 
-		Result(Result&& other) : _state(other._state) {
+		Result(Result&& other) : _is_ok(other._is_ok) {
 			if(is_ok()) {
 				new(&_value) Ok_t(std::move(other._value));
 			} else {
@@ -176,7 +171,7 @@ class Result : NonCopyable {
 		}
 
 		bool is_ok() const {
-			return _state == eOk;
+			return _is_ok;
 		}
 
 		auto&& unwrap() const {
@@ -201,21 +196,22 @@ class Result : NonCopyable {
 			return _error.get();
 		}
 
-		auto&& expected(const char* err_msg) const {
+		expected_const_t expected(const char* err_msg) const {
 			if(is_error()) {
 				fatal(err_msg);
 			}
 			return _value.get();
 		}
 
-		auto&& expected(const char* err_msg) {
+		expected_t expected(const char* err_msg) {
 			if(is_error()) {
 				fatal(err_msg);
 			}
 			return _value.get();
 		}
 
-		auto unwrap_or(const T& f) const {
+		template<typename U>
+		std::enable_if_t<!std::is_void<U>::value, U> unwrap_or(const U& f) const {
 			return is_ok() ? _value.get() : f;
 		}
 
@@ -237,12 +233,11 @@ class Result : NonCopyable {
 		}
 
 	protected:
-		State _state;
-
 		union {
 			Ok_t _value;
 			Err_t _error;
 		};
+		bool _is_ok;
 };
 
 

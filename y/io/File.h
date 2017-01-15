@@ -52,10 +52,10 @@ class File : public Reader, public Writer {
 
 		virtual bool at_end() const override;
 
-		virtual usize read(void* data, usize bytes) override;
-		virtual usize read_all(core::Vector<u8>& data) override;
+		virtual Reader::Result read(void* data, usize bytes) override;
+		virtual void read_all(core::Vector<u8>& data) override;
 
-		virtual usize write(const void* data, usize bytes) override;
+		virtual Writer::Result write(const void* data, usize bytes) override;
 		virtual void flush() override;
 
 	private:

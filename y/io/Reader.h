@@ -24,25 +24,29 @@ SOFTWARE.
 
 #include <y/utils.h>
 #include <y/core/Vector.h>
+#include <y/core/Result.h>
 
 namespace y {
 namespace io {
 
 class Reader : NonCopyable {
 	public:
+		using Result = core::Result<void, usize>;
+
 		virtual ~Reader();
 
 		virtual bool at_end() const = 0;
 
-		virtual usize read(void* data, usize bytes) = 0;
-		virtual usize read_all(core::Vector<u8>& data) = 0;
+		virtual Result read(void* data, usize bytes) = 0;
+		virtual void read_all(core::Vector<u8>& data) = 0;
 
-		core::Vector<u8> read_all() {
-			core::Vector<u8> vec;
-			read_all(vec);
-			return vec;
+	protected:
+		Result make_result(usize read, usize expected) const {
+			if(read == expected) {
+				return core::Ok();
+			}
+			return core::Err(read);
 		}
-
 };
 
 }

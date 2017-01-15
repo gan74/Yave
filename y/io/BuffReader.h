@@ -40,8 +40,8 @@ class BuffReader : public Reader {
 
 		virtual bool at_end() const override;
 
-		virtual usize read(void *data, usize bytes) override;
-		virtual usize read_all(core::Vector<u8>& data) override;
+		virtual Result read(void *data, usize bytes) override;
+		virtual void read_all(core::Vector<u8>& data) override;
 
 	private:
 		BuffReader(usize buff_size = 0);

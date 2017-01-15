@@ -24,7 +24,6 @@ SOFTWARE.
 namespace y {
 namespace io {
 
-
 BuffReader::BuffReader(usize buff_size) : _size(buff_size), _offset(0), _used(0), _buffer(buff_size ? new u8[buff_size] : nullptr) {
 }
 
@@ -61,25 +60,27 @@ bool BuffReader::at_end() const {
 	return _inner->at_end() && !_used;
 }
 
-usize BuffReader::read(void* data, usize bytes) {
-	usize in_buffer = std::min(bytes, _used);
+Reader::Result BuffReader::read(void* data, usize bytes) {
+	return make_result([=]() {
+		usize in_buffer = std::min(bytes, _used);
 
-	memcpy(data, _buffer + _offset, in_buffer);
-	_offset += in_buffer;
-	_used -= in_buffer;
+		memcpy(data, _buffer + _offset, in_buffer);
+		_offset += in_buffer;
+		_used -= in_buffer;
 
-	usize remaining = bytes - in_buffer;
-	if(remaining) {
-		u8* data8 = reinterpret_cast<u8*>(data);
-		if(remaining > _size) {
-			return in_buffer + _inner->read(data8 + in_buffer, remaining);
-		} else {
-			_used = _inner->read(_buffer, _size);
-			_offset = 0;
-			return  in_buffer + (_used ? read(data8 + in_buffer, remaining) : 0);
+		usize remaining = bytes - in_buffer;
+		if(remaining) {
+			u8* data8 = reinterpret_cast<u8*>(data);
+			if(remaining > _size) {
+				return in_buffer + _inner->read(data8 + in_buffer, remaining);
+			} else {
+				_used = _inner->read(_buffer, _size);
+				_offset = 0;
+				return  in_buffer + (_used ? read(data8 + in_buffer, remaining) : 0);
+			}
 		}
-	}
-	return in_buffer;
+		return in_buffer;
+	}(), bytes);
 }
 
 usize BuffReader::read_all(core::Vector<u8>& data) {

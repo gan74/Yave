@@ -78,7 +78,7 @@ class Decoder {
 	private:
 		template<typename T>
 		bool decode(T& t, std::true_type) {
-			return _inner->read(&t, sizeof(T)) == sizeof(T);
+			return _inner->read(&t, sizeof(T)).is_ok();
 		}
 
 		template<typename T, typename... Args>

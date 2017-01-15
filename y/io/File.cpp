@@ -99,24 +99,24 @@ bool File::at_end() const {
 	return _file ? feof(_file) : true;
 }
 
-usize File::read(void* data, usize bytes) {
+Reader::Result File::read(void* data, usize bytes) {
 	if(!_file) {
-		return 0;
+		return core::Err(0);
 	}
-	return fread(data, 1, bytes, _file);
+	return Reader::make_result(fread(data, 1, bytes, _file), bytes);
 }
 
-usize File::read_all(core::Vector<u8>& data) {
+void File::read_all(core::Vector<u8>& data) {
 	usize left = remaining();
 	data = core::Vector<u8>(left, 0);
-	return read(data.begin(), left);
+	read(data.begin(), left);
 }
 
-usize File::write(const void* data, usize bytes) {
+Writer::Result File::write(const void* data, usize bytes) {
 	if(!_file) {
-		return 0;
+		return core::Err(0);
 	}
-	return fwrite(data, 1, bytes, _file);
+	return Writer::make_result(fwrite(data, 1, bytes, _file), bytes);
 }
 
 void File::flush() {
