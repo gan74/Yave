@@ -104,14 +104,14 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 
 	cmd_buffer.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
-	cmd_buffer.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, 1, regions.data());
+	cmd_buffer.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
 
 	cmd_buffer.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
 
 	cmd_buffer.end().submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 }
 
-static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format) {
+static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize mips) {
 	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
 			.setImage(image)
 			.setViewType(vk::ImageViewType::e2D)
@@ -121,7 +121,7 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 					.setBaseArrayLayer(0)
 					.setBaseMipLevel(0)
 					.setLayerCount(1)
-					.setLevelCount(1)
+					.setLevelCount(mips)
 				)
 		);
 }
@@ -131,7 +131,7 @@ static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(Device
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
 	bind_image_memory(dptr, image, memory);
 
-	return std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView>(image, memory, create_view(dptr, image, format));
+	return std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView>(image, memory, create_view(dptr, image, format, mips));
 }
 
 

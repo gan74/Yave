@@ -35,7 +35,7 @@ static vk::Sampler create_sampler(DevicePtr dptr) {
 			.setAddressModeW(vk::SamplerAddressMode::eRepeat)
 			.setMipmapMode(vk::SamplerMipmapMode::eLinear)
 			.setMinLod(0.0f)
-			.setMaxLod(0.0f)
+			.setMaxLod(1000.0f)
 			.setCompareEnable(false)
 		);
 }
