@@ -131,7 +131,7 @@ void YaveApp::create_assets() {
 			auto file = std::move(io::File::open("../tools/image_to_yt/chalet.jpg.yt").expected("Unable to load texture file."));
 			auto image = ImageData::from_file(file);
 			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
-			mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image.size(), image.raw_data());
+			mesh_texture = Texture(&device, vk::Format::eR8G8B8A8Unorm, image);
 		}
 		material = asset_ptr(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file")))

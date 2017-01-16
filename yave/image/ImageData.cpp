@@ -27,7 +27,6 @@ SOFTWARE.
 
 namespace yave {
 
-
 ImageData::~ImageData() {
 	delete[] _data;
 }
@@ -45,6 +44,28 @@ usize ImageData::byte_size() const {
 	return _size.x() *_size.y() *_bpp;
 }
 
+usize ImageData::all_mip_bytes_size() const {
+	usize data_size = 0;
+	for(usize i = 0; i != _mips; ++i) {
+		auto size = mip_size(i);
+		data_size += size.x() * size.y() * _bpp;
+	}
+	return data_size;
+}
+
+usize ImageData::bpp() const {
+	return _bpp;
+}
+
+usize ImageData::mipmaps() const {
+	return _mips;
+}
+
+math::Vec2ui ImageData::mip_size(usize lvl) const {
+	usize factor = 1 << lvl;
+	return {std::max(usize(1), _size.x() / factor), std::max(usize(1), _size.y() / factor)};
+}
+
 const math::Vec2ui& ImageData::size() const {
 	return _size;
 }
@@ -56,12 +77,13 @@ const u8* ImageData::raw_pixel(const math::Vec2ui& pos) {
 		;
 }
 
-const u8* ImageData::raw_data() const {
+const u8* ImageData::data() const {
 	return _data;
 }
 
 void ImageData::swap(ImageData& other) {
 	std::swap(_size, other._size);
+	std::swap(_mips, other._mips);
 	std::swap(_bpp, other._bpp);
 	std::swap(_data, other._data);
 }
@@ -80,22 +102,19 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 		return data;
 	}
 
-	u32 height = decoder.decode<u32>().expected(err_msg);
-	u32 width = decoder.decode<u32>().expected(err_msg);
-	u32 mips = decoder.decode<u32>().expected(err_msg);
-	unused(mips);
+	data._size.x() = decoder.decode<u32>().expected(err_msg);
+	data._size.y() = decoder.decode<u32>().expected(err_msg);
+	data._mips = decoder.decode<u32>().expected(err_msg);
+	data._bpp = 4;
 
-	u32 bpp = 4;
+	usize data_size = data.all_mip_bytes_size();
 
-	u32 data_size = width * height * bpp;
-
-	data._bpp = bpp;
-	data._size = math::vec(width, height);
 	data._data = new u8[data_size];
 
 	reader->read(data._data, data_size).expected(err_msg);
 
 	return data;
 }
+
 
 }

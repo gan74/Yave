@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_IMAGE_IMAGEBASE_H
 
 #include "ImageUsage.h"
+#include "ImageData.h"
 
 #include <yave/DeviceLinked.h>
 
@@ -35,6 +36,8 @@ class ImageBase : NonCopyable, public DeviceLinked {
 		vk::ImageView vk_view() const;
 
 		const math::Vec2ui& size() const;
+		usize mipmaps() const;
+
 		ImageFormat format() const;
 		ImageUsage usage() const;
 
@@ -44,11 +47,13 @@ class ImageBase : NonCopyable, public DeviceLinked {
 
 	protected:
 		ImageBase() = default;
-		ImageBase(DevicePtr dptr, ImageFormat fmt, ImageUsage usage, const math::Vec2ui& size, const void* data = nullptr);
+		ImageBase(DevicePtr dptr, ImageFormat fmt, ImageUsage usage, const math::Vec2ui& size, const ImageData& data = ImageData());
 
 		void swap(ImageBase& other);
 
 		math::Vec2ui _size;
+		usize _mips = 1;
+
 		ImageFormat _format;
 		ImageUsage _usage;
 

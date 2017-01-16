@@ -37,7 +37,8 @@ class Image : public ImageBase {
 			static_assert(is_attachment_usage(Usage), "Texture images must be initilized.");
 		}
 
-		Image(DevicePtr dptr, ImageFormat format, const math::Vec2ui& image_size, const u8* data) : ImageBase(dptr, ImageFormat(format), Usage, image_size, data) {
+		Image(DevicePtr dptr, ImageFormat format, const ImageData& data) : ImageBase(dptr, ImageFormat(format), Usage, data.size(), data) {
+			static_assert(is_texture_usage(Usage), "Only texture images can be initilized.");
 		}
 
 		Image(Image&& other) {

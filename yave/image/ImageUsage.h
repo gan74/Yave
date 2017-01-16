@@ -72,6 +72,10 @@ constexpr bool is_attachment_usage(ImageUsage usage) {
 	return (usage & ImageUsage::Attachment) != ImageUsage::None;
 }
 
+constexpr bool is_texture_usage(ImageUsage usage) {
+	return (usage & ImageUsage::TextureBit) != ImageUsage::None;
+}
+
 vk::ImageLayout vk_image_layout(ImageUsage usage);
 
 }

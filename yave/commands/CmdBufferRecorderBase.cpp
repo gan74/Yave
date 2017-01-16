@@ -136,6 +136,7 @@ void CmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageLayout s
 	auto barrier = create_image_barrier(
 			image.vk_image(),
 			image.format(),
+			image.mipmaps(),
 			src,
 			dst
 		);
