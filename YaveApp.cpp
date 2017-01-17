@@ -75,8 +75,8 @@ void YaveApp::create_command_buffers() {
 	}
 }
 
-Duration YaveApp::draw() {
-	Chrono ch;
+core::Duration YaveApp::draw() {
+	core::Chrono ch;
 
 	auto vk_swap = swapchain->vk_swapchain();
 	auto image_acquired_semaphore = device.vk_device().createSemaphore(vk::SemaphoreCreateInfo());

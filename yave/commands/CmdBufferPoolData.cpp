@@ -23,6 +23,7 @@ SOFTWARE.
 #include "CmdBufferPoolData.h"
 #include <yave/Device.h>
 
+#include <y/core/Chrono.h>
 
 namespace yave {
 
@@ -47,7 +48,7 @@ static CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool) {
 }
 
 static void wait(DevicePtr dptr, const CmdBufferData &data) {
-	Chrono c;
+	core::Chrono c;
 	dptr->vk_device().waitForFences(data.fence, true, u64(-1));
 	if(c.elapsed().to_nanos()) {
 		log_msg(core::String() + "waited " + c.elapsed().to_micros() + "us for command buffer!", LogType::Warning);

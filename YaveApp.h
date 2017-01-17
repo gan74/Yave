@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_YAVEAPP_H
 
 #include <yave/yave.h>
+#include <y/core/Chrono.h>
 
 #include <yave/Device.h>
 
@@ -53,7 +54,7 @@ class YaveApp : NonCopyable {
 
 		void init(Window* window);
 
-		Duration draw();
+		core::Duration draw();
 		void update(math::Vec2 angles = math::Vec2(0));
 
 
