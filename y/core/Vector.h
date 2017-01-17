@@ -147,6 +147,13 @@ class Vector : ResizePolicy, Allocator {
 			new(_data_end++) data_type(std::move(elem));
 		}
 
+		value_type& push_back() {
+			if(_data_end == _alloc_end) {
+				expend();
+			}
+			return *(new(_data_end++) data_type());
+		}
+
 		template<typename It>
 		void push_back(const It& beg_it, const It& end_it) {
 			std::copy(beg_it, end_it, std::back_inserter(*this));
@@ -162,6 +169,13 @@ class Vector : ResizePolicy, Allocator {
 			_data_end->~data_type();
 			shrink();
 			return r;
+		}
+
+		void erase_unordered(iterator it) {
+			if(it != end() - 1) {
+				std::swap(*it, last());
+			}
+			pop();
 		}
 
 		usize size() const {
@@ -237,7 +251,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		void set_min_capacity(usize min_cap) {
-			unsafe_set_capacity(this->ideal_capacity(min_cap));
+			unsafe_set_capacity(ResizePolicy::ideal_capacity(min_cap));
 		}
 
 		void clear() {

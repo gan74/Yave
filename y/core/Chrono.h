@@ -21,13 +21,14 @@ SOFTWARE.
 **********************************/
 
 
-#ifndef Y_UTILS_CHRONO_H
-#define Y_UTILS_CHRONO_H
+#ifndef Y_CORE_CHRONO_H
+#define Y_CORE_CHRONO_H
 
 #include "types.h"
 #include <chrono>
 
 namespace y {
+namespace core {
 
 class Duration {
 	public:
@@ -93,5 +94,6 @@ class Chrono {
 
 
 }
+}
 
-#endif //Y_CHRONO_H
+#endif //Y_CORE_CHRONO_H

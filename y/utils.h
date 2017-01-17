@@ -34,7 +34,6 @@ SOFTWARE.
 
 #include <y/utils/iterable.h>
 #include <y/utils/comparable.h>
-#include <y/utils/Chrono.h>
 #include <y/utils/hash.h>
 #include <y/utils/log.h>
 #include <y/utils/os.h>
@@ -58,7 +57,7 @@ struct Nothing {
 
 	template<typename T>
 	operator T() const {
-		return fatal("y::detail::Nothing used");
+		return fatal("y::Nothing used");
 	}
 };
 
@@ -76,7 +75,15 @@ template<typename... Args>
 constexpr void unused(Args...) {}
 
 
-
+template<typename T>
+void do_not_destroy(T&& t) {
+	union U {
+		U() {}
+		~U() {}
+		T t;
+	} u;
+	new(&u.t) T(std::forward<T>(t));
+}
 
 
 constexpr bool is_64_bits() {

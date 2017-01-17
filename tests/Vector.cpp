@@ -142,9 +142,27 @@ y_test_func("Vector push_back") {
 	for(int i = 0; i != 18; i++) {
 		vec.push_back(i);
 	}
+	vec.push_back() = 18;
 
-	y_test_assert(vec.size() == 20);
-	y_test_assert(vec.capacity() >= 20);
+	y_test_assert(vec.size() == 21);
+	y_test_assert(vec.capacity() >= 21);
+}
+
+y_test_func("Vector erase_unordered") {
+	Vector<int> vec;
+
+	for(int i = 0; i != 10; i++) {
+		vec.push_back(i);
+	}
+	vec.erase_unordered(vec.begin());
+	y_test_assert(vec == vector({9, 1, 2, 3, 4, 5, 6, 7, 8}));
+
+	vec.erase_unordered(vec.begin() + 4);
+	y_test_assert(vec == vector({9, 1, 2, 3, 8, 5, 6, 7}));
+
+
+	vec.erase_unordered(vec.end() - 1);
+	y_test_assert(vec == vector({9, 1, 2, 3, 8, 5, 6}));
 }
 
 y_test_func("Vector shrink") {
