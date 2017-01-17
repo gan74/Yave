@@ -138,30 +138,6 @@ auto scope_exit(T t) {
 	return detail::ScopeExit<T>(t);
 }
 
-template<typename... Types>
-struct Coerce {
-};
-
-template<typename T>
-struct Coerce<T> {
-	using type = T;
-};
-
-template<typename T, typename U>
-struct Coerce<T, U> {
-	using type =  decltype(make_one<T>() + make_one<U>());
-};
-
-template<typename T, typename U, typename... Types>
-struct Coerce<T, U, Types...> {
-	using right = typename Coerce<U, Types...>::type;
-	using type = typename Coerce<T, right>::type;
-};
-
-static_assert(std::is_same<Coerce<int, float, double>::type, double>::value, "Coerce error");
-static_assert(std::is_same<Coerce<int, float, int>::type, float>::value, "Coerce error");
-static_assert(std::is_same<Coerce<int, int>::type, int>::value, "Coerce error");
-
 }
 
 

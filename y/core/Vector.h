@@ -28,9 +28,9 @@ namespace y {
 namespace core {
 
 struct DefaultVectorResizePolicy {
-	static constexpr usize threshold = 4096;
+	static constexpr usize threshold = 8 * 1024;
 	static constexpr usize minimum = 16;
-	static constexpr usize step = 4096;
+	static constexpr usize step = 8 * 1024;
 
 	usize ideal_capacity(usize size) const {
 		if(!size) {
@@ -40,7 +40,7 @@ struct DefaultVectorResizePolicy {
 			return minimum;
 		}
 		if(size < threshold) {
-			return 1 << (log2ui(size) + 1);
+			return 2 << (log2ui(size) + 1);
 		}
 		usize steps = (size - threshold) / step;
 		return threshold + (steps + 1) * step;
@@ -59,6 +59,7 @@ class Vector : ResizePolicy, Allocator {
 
 	public:
 		using value_type = Elem;
+		using size_type = usize;
 
 		using iterator = Elem*;
 		using const_iterator = Elem const*;
@@ -177,6 +178,15 @@ class Vector : ResizePolicy, Allocator {
 			}
 			pop();
 		}
+
+		/*iterator erase(iterator it) {
+			clear(it, it + 1);
+			move_range(it, it + 1, _data_end - (it + 1));
+			auto index = it - _data;
+			--_data_end;
+			shrink();
+			return _data + index;
+		}*/
 
 		usize size() const {
 			return _data_end - _data;

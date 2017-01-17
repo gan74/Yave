@@ -430,7 +430,7 @@ namespace detail {
 
 template<usize N, typename A, typename B>
 struct V {
-	using type = Vec<N, typename Coerce<A, B>::type>;
+	using type = Vec<N, typename std::common_type_t<A, B>>;
 };
 
 }

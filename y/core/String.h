@@ -93,6 +93,8 @@ class String {
 		static constexpr usize max_short_size = sizeof(ShortData::_data);
 
 		using value_type = char;
+		using size_type = usize;
+
 		using iterator = char*;
 		using const_iterator = const char*;
 

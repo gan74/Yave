@@ -32,7 +32,7 @@ template<typename T, typename To>
 struct is_comparable {
 
 	template<typename V>
-	static auto test(V*) -> std::is_same<decltype(make_one<V>().operator==(make_one<To>())), bool>;
+	static auto test(V*) -> std::is_same<decltype(std::declval<V>().operator==(std::declval<To>())), bool>;
 
 	template<typename V>
 	static std::false_type test(...);

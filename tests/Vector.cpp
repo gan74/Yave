@@ -24,7 +24,7 @@ SOFTWARE.
 #include <y/test/test.h>
 #include <vector>
 
-//#include <iostream>
+//#include <y/core/String.h>
 
 using namespace y;
 using namespace y::core;
@@ -148,6 +148,22 @@ y_test_func("Vector push_back") {
 	y_test_assert(vec.capacity() >= 21);
 }
 
+/*y_test_func("Vector erase") {
+	Vector<int> vec;
+
+	for(int i = 0; i != 10; i++) {
+		vec.push_back(i);
+	}
+	y_test_assert(*vec.erase(vec.begin()) == 1);
+	y_test_assert(vec == vector({1, 2, 3, 4, 5, 6, 7, 8, 9}));
+
+	y_test_assert(*vec.erase(vec.begin() + 3) == 5);
+	y_test_assert(vec == vector({1, 2, 3, 5, 6, 7, 8, 9}));
+
+	y_test_assert(vec.erase(vec.end() - 1) == vec.end());
+	y_test_assert(vec == vector({1, 2, 3, 5, 6, 7, 8}));
+}*/
+
 y_test_func("Vector erase_unordered") {
 	Vector<int> vec;
 
@@ -159,7 +175,6 @@ y_test_func("Vector erase_unordered") {
 
 	vec.erase_unordered(vec.begin() + 4);
 	y_test_assert(vec == vector({9, 1, 2, 3, 8, 5, 6, 7}));
-
 
 	vec.erase_unordered(vec.end() - 1);
 	y_test_assert(vec == vector({9, 1, 2, 3, 8, 5, 6}));

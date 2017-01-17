@@ -69,10 +69,6 @@ using bool_type = typename std::integral_constant<bool, B>;
 
 
 
-// short hand for std::declval
-template<typename T>
-T& make_one();
-
 }
 
 

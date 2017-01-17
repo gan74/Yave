@@ -24,7 +24,7 @@ SOFTWARE.
 #ifndef Y_CORE_CHRONO_H
 #define Y_CORE_CHRONO_H
 
-#include "types.h"
+#include <y/utils.h>
 #include <chrono>
 
 namespace y {

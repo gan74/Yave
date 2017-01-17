@@ -28,12 +28,12 @@ namespace y {
 namespace detail {
 
 template<typename T>
-static auto has_begin(T*) -> bool_type<!std::is_void<decltype(make_one<T>().begin())>::value>;
+static auto has_begin(T*) -> bool_type<!std::is_void<decltype(std::declval<T>().begin())>::value>;
 template<typename T>
 static auto has_begin(...) -> std::false_type;
 
 template<typename T>
-static auto has_end(T*) -> bool_type<!std::is_void<decltype(make_one<T>().end())>::value>;
+static auto has_end(T*) -> bool_type<!std::is_void<decltype(std::declval<T>().end())>::value>;
 template<typename T>
 static auto has_end(...) -> std::false_type;
 

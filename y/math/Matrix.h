@@ -156,7 +156,7 @@ class Matrix {
 
 		template<typename U>
 		auto operator+(const Matrix<N, M, U, Layout>& m) const {
-			Matrix<N, M, decltype(make_one<T>() * make_one<U>())> mat;
+			Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != M; j++) {
 					mat.vecs[i][j] = _vecs[i][j] + m._vecs[i][j];
@@ -257,10 +257,10 @@ class Matrix {
 
 		template<typename U, usize P>
 		auto operator*(const Matrix<M, P, U, Layout>& m) const {
-			Matrix<N, P, decltype(make_one<T>() * make_one<U>())> mat;
+			Matrix<N, P, decltype(std::declval<T>() * std::declval<U>())> mat;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != P; j++) {
-					decltype(make_one<T>() * make_one<U>()) tmp(0);
+					decltype(std::declval<T>() * std::declval<U>()) tmp(0);
 					for(usize k = 0; k != M; k++) {
 						tmp = tmp + row(i)[k] * m.row(k)[j];
 					}

@@ -34,7 +34,7 @@ class ArrayProxy : NonCopyable {
 	using is_compat = std::is_same<U, const T*>;
 
 	template<typename C>
-	using data_type = decltype(make_one<const C>().data());
+	using data_type = decltype(std::declval<const C>().data());
 
 	public:
 		using value_type = T;

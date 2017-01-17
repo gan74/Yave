@@ -128,16 +128,16 @@ class Result : NonCopyable {
 
 	template<typename F, typename U>
 	struct map_type {
-		using type = decltype(make_one<F>()(make_one<U>()));
+		using type = decltype(std::declval<F>()(std::declval<U>()));
 	};
 
 	template<typename F>
 	struct map_type<F, void> {
-		using type = decltype(make_one<F>()());
+		using type = decltype(std::declval<F>()());
 	};
 
-	using expected_t = decltype(make_one<Ok_t>().get());
-	using expected_const_t = decltype(make_one<const Ok_t>().get());
+	using expected_t = decltype(std::declval<Ok_t>().get());
+	using expected_const_t = decltype(std::declval<const Ok_t>().get());
 
 	public:
 		Result(Ok_t&& v) : _is_ok(true) {
