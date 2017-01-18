@@ -45,11 +45,11 @@ struct Raii : NonCopyable {
 bool Raii::ded = false;
 
 
-y_test_func("Ptr RAII") {
+y_test_func("Unique RAII") {
 	bool exists = false;
 
 	{
-		auto p = ptr(Raii(exists));
+		auto p = unique(Raii(exists));
 		y_test_assert(exists);
 		{
 			y_test_assert(exists);

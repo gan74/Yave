@@ -20,54 +20,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#ifndef Y_CORE_PTR_H
-#define Y_CORE_PTR_H
+#ifndef Y_CORE_RC_H
+#define Y_CORE_RC_H
 
 #include <y/utils.h>
 
 namespace y {
 namespace core {
 
+namespace detail {
+
 template<typename T>
 class Ptr : NonCopyable {
+
 	public:
-		explicit Ptr(Owner<T*>&& p = nullptr) : _ptr(p) {
-		}
-
-		explicit Ptr(T&& p) : Ptr(new T(std::move(p))) {
-		}
-
-		Ptr(std::nullptr_t p) : _ptr(p) {
-		}
-
-		Ptr(Ptr&& p) : _ptr(nullptr) {
-			swap(p);
-		}
-
-		~Ptr() {
-			delete _ptr;
-		}
-
-		Ptr& operator=(Ptr&& p) {
-			swap(p);
-			return *this;
-		}
-
-		Ptr& operator=(Owner<T*>&& p) {
-			Ptr ptr(std::move(p));
-			swap(ptr);
-			return *this;
-		}
-
-		Ptr& operator=(std::nullptr_t p) {
-			Ptr ptr(p);
-			swap(ptr);
-			return *this;
-		}
-
-		void swap(Ptr& p) {
-			std::swap(_ptr, p._ptr);
-		}
+		using pointer = std::remove_extent_t<T>*;
+		using const_pointer = const std::remove_extent_t<T>*;
 
 		const T& operator*() const {
 			return *_ptr;
@@ -77,11 +45,11 @@ class Ptr : NonCopyable {
 			return *_ptr;
 		}
 
-		T const* operator->() const {
+		const_pointer operator->() const {
 			return _ptr;
 		}
 
-		T* operator->() {
+		pointer operator->() {
 			return _ptr;
 		}
 
@@ -93,11 +61,11 @@ class Ptr : NonCopyable {
 			return _ptr;
 		}
 
-		bool operator<(const T* const t) const {
+		bool operator<(const_pointer t) const {
 			return _ptr < t;
 		}
 
-		bool operator>(const T* const t) const {
+		bool operator>(const_pointer t) const {
 			return _ptr > t;
 		}
 
@@ -109,29 +77,106 @@ class Ptr : NonCopyable {
 			return !_ptr;
 		}
 
-		T* as_ptr() {
+		pointer as_ptr() {
 			return _ptr;
 		}
 
-		T const* as_ptr() const {
+		const_pointer as_ptr() const {
 			return _ptr;
 		}
 
 	protected:
-		Owner<T*> _ptr;
+		Ptr() = default;
+
+		Ptr(Owner<pointer>&& p) : _ptr(p) {
+		}
+
+		Owner<pointer> _ptr = nullptr;
+
+		void destroy() {
+			destroy(std::is_array<T>());
+		}
+
+	private:
+		void destroy(std::false_type) {
+			delete _ptr;
+		}
+
+		void destroy(std::true_type) {
+			delete[] _ptr;
+		}
+};
+
+}
+
+template<typename T>
+class Unique : public detail::Ptr<T> {
+
+	using Base = detail::Ptr<T>;
+	using Base::_ptr;
+
+	public:
+		using pointer = typename Base::pointer;
+		using const_pointer = typename Base::const_pointer;
+
+		Unique() = default;
+
+		explicit Unique(Owner<pointer>&& p) : Base(std::move(p)) {
+		}
+
+		explicit Unique(T&& p) : Unique(new T(std::move(p))) {
+		}
+
+		Unique(std::nullptr_t p) : Base(p) {
+		}
+
+		Unique(Unique&& p) : Base() {
+			swap(p);
+		}
+
+		~Unique() {
+			Base::destroy();
+		}
+
+		Unique& operator=(Unique&& p) {
+			swap(p);
+			return *this;
+		}
+
+		Unique& operator=(Owner<pointer>&& p) {
+			Unique ptr(std::move(p));
+			swap(ptr);
+			return *this;
+		}
+
+		Unique& operator=(std::nullptr_t p) {
+			Unique ptr(p);
+			swap(ptr);
+			return *this;
+		}
+
+		void swap(Unique& p) {
+			std::swap(_ptr, p._ptr);
+		}
+
 };
 
 template<typename T, typename C = u32>
-class Rc : public Ptr<T> {
-	using Ptr<T>::_ptr;
+class Rc : public detail::Ptr<T> {
+
+	using Base = detail::Ptr<T>;
+	using Base::_ptr;
+
 	public:
-		Rc() : Ptr<T>(nullptr), _count(nullptr) {
-		}
+		using pointer = typename Base::pointer;
+		using const_pointer = typename Base::const_pointer;
+
+		Rc() = default;
 
 		Rc(std::nullptr_t) : Rc() {
 		}
 
-		explicit Rc(Owner<T*>&& p) : Ptr<T>(std::move(p)), _count(new C(1)) {
+		explicit Rc(Owner<pointer>&& p) : Base(std::move(p)), _count(new C(1)) {
 		}
 
 		explicit Rc(T&& p) : Rc(new T(std::move(p))) {
@@ -143,10 +188,6 @@ class Rc : public Ptr<T> {
 
 		Rc(Rc&& p) : Rc() {
 			swap(p);
-		}
-
-		Rc(Ptr<T>&& p) : Rc(nullptr) {
-			Ptr<T>::swap(p);
 		}
 
 		~Rc() {
@@ -185,7 +226,7 @@ class Rc : public Ptr<T> {
 		friend class Rc<typename std::remove_const<T>::type>;
 
 		// only called by other Rc's so we take ownedship as well
-		Rc(T* p, C* c) : Ptr<T>(p), _count(c) {
+		Rc(T* p, C* c) : Base(p), _count(c) {
 			++(*_count);
 		}
 
@@ -198,19 +239,19 @@ class Rc : public Ptr<T> {
 
 		void unref() {
 			if(_count && !--(*_count)) {
-				delete _ptr;
+				Base::destroy();
 				delete _count;
 			}
 			_ptr = nullptr;
 			_count = nullptr;
 		}
 
-		C* _count;
+		C* _count = nullptr;
 };
 
 template<typename T>
-inline auto ptr(T&& t) {
-	return Ptr<typename std::remove_reference<T>::type>(std::forward<T>(t));
+inline auto unique(T&& t) {
+	return Unique<typename std::remove_reference<T>::type>(std::forward<T>(t));
 }
 
 template<typename T>
@@ -222,5 +263,5 @@ inline auto rc(T&& t) {
 }
 
 
-#endif // Y_CORE_PTR_H
+#endif // Y_CORE_RC_H
 
