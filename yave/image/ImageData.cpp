@@ -27,10 +27,6 @@ SOFTWARE.
 
 namespace yave {
 
-ImageData::~ImageData() {
-	delete[] _data;
-}
-
 ImageData::ImageData(ImageData&& other) : ImageData() {
 	swap(other);
 }
@@ -70,15 +66,8 @@ const math::Vec2ui& ImageData::size() const {
 	return _size;
 }
 
-const u8* ImageData::raw_pixel(const math::Vec2ui& pos) {
-	return _data +
-			((_size.x() *_bpp) *pos.x()) +
-			(_bpp *pos.y())
-		;
-}
-
 const u8* ImageData::data() const {
-	return _data;
+	return _data.as_ptr();
 }
 
 void ImageData::swap(ImageData& other) {

@@ -60,7 +60,7 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 
 		void swap(Framebuffer& other);
 
-		core::Ptr<RenderPass> _render_pass_storage;
+		core::Unique<RenderPass> _render_pass_storage;
 
 		math::Vec2ui _size;
 		usize _attachment_count = 0;

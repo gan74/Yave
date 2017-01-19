@@ -64,7 +64,7 @@ class Window {
 		math::Vec2ui _size;
 		core::String _name;
 
-		mutable core::Ptr<MouseEventHandler> _mouse_handler;
+		mutable core::Unique<MouseEventHandler> _mouse_handler;
 };
 
 }

@@ -33,7 +33,6 @@ class ImageData : NonCopyable {
 
 	public:
 		ImageData() = default;
-		~ImageData();
 
 		ImageData(ImageData&& other);
 		ImageData& operator=(ImageData&& other);
@@ -47,7 +46,6 @@ class ImageData : NonCopyable {
 		usize mipmaps() const;
 		math::Vec2ui mip_size(usize lvl) const;
 
-		const u8* raw_pixel(const math::Vec2ui& pos);
 		const u8* data() const;
 
 		static ImageData from_file(io::ReaderRef reader);
@@ -58,7 +56,7 @@ class ImageData : NonCopyable {
 		math::Vec2ui _size;
 		usize _bpp = 0;
 		usize _mips = 1;
-		u8* _data = nullptr;
+		core::Unique<u8[]> _data;
 };
 
 }

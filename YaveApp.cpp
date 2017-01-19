@@ -121,6 +121,25 @@ void YaveApp::update(math::Vec2 angles) {
 			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
 			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.5, 0, 0, 1);
 
+	/*usize max = 100'000;
+	auto points = core::vector_with_capacity<math::Vec3>(max);
+	for(usize i = 0; i != max; ++i) {
+		float x = rand() / float(RAND_MAX);
+		float y = rand() / float(RAND_MAX);
+		float z = rand() / float(RAND_MAX);
+		points << (math::Vec3(x, y, z) - math::Vec3(0.5)) * 100000;
+	}
+
+	auto outs = core::vector_with_capacity<math::Vec3>(max / 2);
+	auto frustum = camera.frustum();
+
+	core::Chrono ch;
+	for(const auto& p : points) {
+		if(frustum.is_inside(p, 100.0f)) {
+			outs << p;
+		}
+	}
+	log_msg(core::str(outs.size()) + " visibles " + ch.elapsed().to_micros() + "us");*/
 
 	camera.set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
 }
