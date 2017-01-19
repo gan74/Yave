@@ -89,12 +89,17 @@ class Decoder {
 			}
 			u32 cap = c.unwrap();
 			t.set_min_capacity(cap);
-			while(cap--) {
-				auto e = decode<T>();
-				if(e.is_error()) {
-					return false;
+			if(is_readable<T>::value) {
+				std::fill_n(std::back_inserter(t), cap, T());
+				_inner->read(t.begin(), cap * sizeof(T));
+			} else {
+				while(cap--) {
+					auto e = decode<T>();
+					if(e.is_error()) {
+						return false;
+					}
+					t.push_back(e.unwrap());
 				}
-				t.push_back(e.unwrap());
 			}
 			return true;
 		}
