@@ -79,21 +79,33 @@ void ImageData::swap(ImageData& other) {
 
 ImageData ImageData::from_file(io::ReaderRef reader) {
 	const char* err_msg = "Unable to read image.";
+	struct Header {
+		u32 magic;
+		u32 type;
+		u32 version;
+
+		u32 width;
+		u32 height;
+		u32 mips;
+
+		bool is_valid() const {
+			return magic == 0x65766179 &&
+				   type == 2 &&
+				   version == 1;
+		}
+	};
+
 
 	auto decoder = io::Decoder(reader);
 
-	u32 magic = decoder.decode<u32>().expected(err_msg);
-	u64 version = decoder.decode<u64>().expected(err_msg);
-
-	ImageData data;
-	if(magic != 0x65766179 || version != ((u64(1) << 63) | 1)) {
-		log_msg(err_msg, LogType::Error);
-		return data;
+	Header header = decoder.decode<Header>().expected(err_msg);
+	if(!header.is_valid()) {
+		fatal(err_msg);
 	}
 
-	data._size.x() = decoder.decode<u32>().expected(err_msg);
-	data._size.y() = decoder.decode<u32>().expected(err_msg);
-	data._mips = decoder.decode<u32>().expected(err_msg);
+	ImageData data;
+	data._size = {header.width, header.height};
+	data._mips = header.mips;
 	data._bpp = 4;
 
 	usize data_size = data.all_mip_bytes_size();

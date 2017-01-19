@@ -26,14 +26,15 @@ fn main() {
 
 fn write_image<T: Write>(file: &mut T, image: &DynamicImage) -> Result<usize> {
 
-    let mut size = image.dimensions();
+    let mut size: (u32, u32) = image.dimensions();
     let mut data = image.flipv().to_rgba().to_vec();
     let mips = mip_levels(size) as u32;
 
-    let version: u64 = (1 << 63) | 1;
+    let image_type: u32 = 2;
+    let version: u32 = 1;
 
     let mut r = file.write(b"yave")
-        .and_then(|_| write_bin(file, &vec![version]))
+        .and_then(|_| write_bin(file, &vec![image_type, version]))
         .and_then(|_| write_bin(file, &vec![size]))
         .and_then(|_| write_bin(file, &vec![mips + 1]))
         .and_then(|_| write_bin(file, &data));

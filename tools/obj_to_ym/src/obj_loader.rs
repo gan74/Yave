@@ -62,7 +62,6 @@ pub fn load_obj(file: &mut BufRead) -> Result<Mesh, Error> {
 			uvs.push(parse_2::<f32>(&line[3..])?);
 		} else if line.starts_with("s ") {
 			smoothing = line[2..].parse::<usize>().unwrap_or(1) != 0;
-			println!("{:?}", smoothing);
 		}
 	}
 	

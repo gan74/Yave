@@ -24,22 +24,35 @@ SOFTWARE.
 #include <y/io/Decoder.h>
 #include <y/io/BuffReader.h>
 
+#include <y/core/Chrono.h>
+
 namespace yave {
 
 MeshData MeshData::from_file(io::ReaderRef reader) {
 	const char* err_msg = "Unable to load mesh.";
+	struct Header {
+		u32 magic;
+		u32 type;
+		u32 version;
+
+		bool is_valid() const {
+			return magic == 0x65766179 &&
+				   type == 1 &&
+				   version == 1;
+		}
+	};
+
+
+	core::DebugTimer _("MeshData::from_file()");
 
 	auto decoder = io::Decoder(io::BuffReader(reader));
 
-	u32 magic = decoder.decode<u32>().expected(err_msg);
-	u64 version = decoder.decode<u64>().expected(err_msg);
-	MeshData mesh;
-
-	if(magic != 0x65766179 || version != 1) {
-		log_msg(err_msg, LogType::Error);
-		return mesh;
+	Header header = decoder.decode<Header>().expected(err_msg);
+	if(!header.is_valid()) {
+		fatal(err_msg);
 	}
 
+	MeshData mesh;
 	mesh.vertices = decoder.decode<decltype(mesh.vertices)>().expected(err_msg);
 	mesh.triangles = decoder.decode<decltype(mesh.triangles)>().expected(err_msg);
 
