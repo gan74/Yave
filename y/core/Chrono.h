@@ -24,7 +24,7 @@ SOFTWARE.
 #ifndef Y_CORE_CHRONO_H
 #define Y_CORE_CHRONO_H
 
-#include <y/utils.h>
+#include "String.h"
 #include <chrono>
 
 namespace y {
@@ -90,6 +90,21 @@ class Chrono {
 
 	private:
 		std::chrono::time_point<std::chrono::high_resolution_clock> _time;
+};
+
+class DebugTimer : NonCopyable {
+
+	public:
+		DebugTimer(const char* msg) : _msg(msg) {
+		}
+
+		~DebugTimer() {
+			log_msg(_msg + ": " + _chrono.elapsed().to_millis() + "ms", LogType::Perf);
+		}
+
+	private:
+		String _msg;
+		Chrono _chrono;
 };
 
 

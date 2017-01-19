@@ -28,7 +28,8 @@ enum class LogType {
 	Info,
 	Warning,
 	Error,
-	Debug
+	Debug,
+	Perf
 };
 
 void log_msg(const char* msg, LogType type = LogType::Info);
