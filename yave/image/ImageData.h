@@ -27,6 +27,8 @@ SOFTWARE.
 #include <y/io/Ref.h>
 #include <y/math/Vec.h>
 
+#include "ImageFormat.h"
+
 namespace yave {
 
 class ImageData : NonCopyable {
@@ -42,7 +44,8 @@ class ImageData : NonCopyable {
 
 		const math::Vec2ui& size() const;
 
-		usize bpp() const;
+		const ImageFormat& format() const;
+
 		usize mipmaps() const;
 		math::Vec2ui mip_size(usize lvl) const;
 
@@ -54,8 +57,9 @@ class ImageData : NonCopyable {
 		void swap(ImageData& other);
 
 		math::Vec2ui _size;
-		usize _bpp = 0;
+		ImageFormat _format;
 		usize _mips = 1;
+
 		core::Unique<u8[]> _data;
 };
 

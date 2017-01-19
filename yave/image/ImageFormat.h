@@ -33,7 +33,7 @@ class ImageFormat {
 		vk::Format vk_format() const;
 		vk::ImageAspectFlags vk_aspect() const;
 
-		usize bpp() const;
+		usize bit_per_pixel() const;
 
 	private:
 		vk::Format _format;

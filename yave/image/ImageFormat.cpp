@@ -31,12 +31,16 @@ vk::Format ImageFormat::vk_format() const {
 	return _format;
 }
 
-usize ImageFormat::bpp() const {
+usize ImageFormat::bit_per_pixel() const {
 	switch(_format) {
 		case vk::Format::eB8G8R8A8Unorm:
 		case vk::Format::eR8G8B8A8Unorm:
-			return 4;
+			return 4 * 8;
+
 		case vk::Format::eD32Sfloat:
+			return 4 * 8;
+
+		case vk::Format::eBc1RgbaUnormBlock:
 			return 4;
 
 		default:
@@ -48,10 +52,11 @@ vk::ImageAspectFlags ImageFormat::vk_aspect() const {
 	switch(_format) {
 		case vk::Format::eB8G8R8A8Unorm:
 		case vk::Format::eR8G8B8A8Unorm:
+		case vk::Format::eBc1RgbaUnormBlock:
 			return vk::ImageAspectFlagBits::eColor;
 
 		case vk::Format::eD32Sfloat:
-			return vk::ImageAspectFlagBits::eDepth;
+			return vk::ImageAspectFlagBits::eDepth;	
 
 		default:
 			return fatal("Unsupported image format.");

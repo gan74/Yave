@@ -68,7 +68,7 @@ static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, usize mi
 		);
 }
 
-static auto get_copy_regions(ImageFormat format, const ImageData& data) {
+static auto get_copy_regions(const ImageData& data) {
 	auto regions = core::vector_with_capacity<vk::BufferImageCopy>(data.mipmaps());
 	usize data_size = 0;
 	for(usize i = 0; i != data.mipmaps(); ++i) {
@@ -77,12 +77,12 @@ static auto get_copy_regions(ImageFormat format, const ImageData& data) {
 			.setBufferOffset(data_size)
 			.setImageExtent(vk::Extent3D(size.x(), size.y(), 1))
 			.setImageSubresource(vk::ImageSubresourceLayers()
-					.setAspectMask(format.vk_aspect())
+					.setAspectMask(data.format().vk_aspect())
 					.setMipLevel(i)
 					.setBaseArrayLayer(0)
 					.setLayerCount(1)
 				);
-		data_size += size.x() * size.y() * data.bpp();
+		data_size += size.x() * size.y() * data.format().bit_per_pixel() / 8;
 	}
 	return regions;
 }
@@ -98,7 +98,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	DevicePtr dptr = image.device();
 
 	auto staging_buffer = get_staging_buffer(dptr, data.all_mip_bytes_size(), data.data());
-	auto regions = get_copy_regions(image.format(), data);
+	auto regions = get_copy_regions(data);
 
 	auto cmd_buffer = CmdBufferRecorder<CmdBufferUsage::Disposable>(dptr->create_disposable_command_buffer());
 
@@ -138,25 +138,35 @@ static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(Device
 
 
 
-ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size, const ImageData& data) :
+ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, const math::Vec2ui& size, const ImageData& data) :
 		DeviceLinked(dptr),
 		_size(size),
 		_mips(data.mipmaps()),
-		_format(format),
+		_format(data.format()),
 		_usage(usage) {
 
-	bool has_data = !!data.data();
-	auto tpl = alloc_image(dptr, size, _mips, format, has_data ? usage | vk::ImageUsageFlagBits::eTransferDst : usage);
+	auto tpl = alloc_image(dptr, size, _mips, _format, usage | vk::ImageUsageFlagBits::eTransferDst);
 	_image = std::get<0>(tpl);
 	_memory = std::get<1>(tpl);
 	_view = std::get<2>(tpl);
 
-	if(has_data) {
-		upload_data(*this, data);
-	} else {
-		if(!is_attachment_usage(usage)) {
-			fatal("Texture images must be initilized.");
-		}
+	upload_data(*this, data);
+}
+
+ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size) :
+		DeviceLinked(dptr),
+		_size(size),
+		_mips(1),
+		_format(format),
+		_usage(usage) {
+
+	auto tpl = alloc_image(dptr, size, _mips, _format, usage);
+	_image = std::get<0>(tpl);
+	_memory = std::get<1>(tpl);
+	_view = std::get<2>(tpl);
+
+	if(!is_attachment_usage(usage)) {
+		fatal("Texture images must be initilized.");
 	}
 }
 
@@ -187,7 +197,7 @@ vk::ImageView ImageBase::vk_view() const {
 }
 
 usize ImageBase::byte_size() const {
-	return _size.x() *_size.y() *_format.bpp();
+	return _size.x() *_size.y() *_format.bit_per_pixel();
 }
 
 vk::Image ImageBase::vk_image() const {

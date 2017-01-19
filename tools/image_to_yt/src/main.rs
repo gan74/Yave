@@ -9,8 +9,10 @@ use std::slice;
 use image::*;
 
 mod mipmaping;
+mod bc;
 
 use mipmaping::*;
+use bc::*;
 
 fn main() {
     let mut args = std::env::args();
@@ -27,16 +29,19 @@ fn main() {
 fn write_image<T: Write>(file: &mut T, image: &DynamicImage) -> Result<usize> {
 
     let mut size: (u32, u32) = image.dimensions();
-    let mut data = image.flipv().to_rgba().to_vec();
-    let mips = mip_levels(size) as u32;
+    /*let mut data = image.flipv().to_rgba().to_vec();
+    let mips = mip_levels(size) as u32;*/
+    let mut data = bc1(&image.flipv().to_rgba().to_vec(), size).unwrap();
+    let mips = 0u32;
 
     let image_type: u32 = 2;
     let version: u32 = 1;
+    let format_id: u32 = 133; // BC1 = 131, RGBA8 = 37
 
     let mut r = file.write(b"yave")
         .and_then(|_| write_bin(file, &vec![image_type, version]))
         .and_then(|_| write_bin(file, &vec![size]))
-        .and_then(|_| write_bin(file, &vec![mips + 1]))
+        .and_then(|_| write_bin(file, &vec![mips + 1, format_id]))
         .and_then(|_| write_bin(file, &data));
 
     for _ in 0..mips {

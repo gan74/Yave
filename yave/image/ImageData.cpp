@@ -37,20 +37,16 @@ ImageData& ImageData::operator=(ImageData&& other) {
 }
 
 usize ImageData::byte_size() const {
-	return _size.x() *_size.y() *_bpp;
+	return (_size.x() *_size.y() * _format.bit_per_pixel()) / 8;
 }
 
 usize ImageData::all_mip_bytes_size() const {
 	usize data_size = 0;
 	for(usize i = 0; i != _mips; ++i) {
 		auto size = mip_size(i);
-		data_size += size.x() * size.y() * _bpp;
+		data_size += (size.x() * size.y() * _format.bit_per_pixel()) / 8;
 	}
 	return data_size;
-}
-
-usize ImageData::bpp() const {
-	return _bpp;
 }
 
 usize ImageData::mipmaps() const {
@@ -66,6 +62,10 @@ const math::Vec2ui& ImageData::size() const {
 	return _size;
 }
 
+const ImageFormat& ImageData::format() const {
+	return _format;
+}
+
 const u8* ImageData::data() const {
 	return _data.as_ptr();
 }
@@ -73,7 +73,7 @@ const u8* ImageData::data() const {
 void ImageData::swap(ImageData& other) {
 	std::swap(_size, other._size);
 	std::swap(_mips, other._mips);
-	std::swap(_bpp, other._bpp);
+	std::swap(_format, other._format);
 	std::swap(_data, other._data);
 }
 
@@ -87,11 +87,13 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 		u32 width;
 		u32 height;
 		u32 mips;
+		u32 format;
 
 		bool is_valid() const {
 			return magic == 0x65766179 &&
 				   type == 2 &&
-				   version == 1;
+				   version == 1 &&
+				   format > 0;
 		}
 	};
 
@@ -106,7 +108,7 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 	ImageData data;
 	data._size = {header.width, header.height};
 	data._mips = header.mips;
-	data._bpp = 4;
+	data._format = ImageFormat(vk::Format(header.format));
 
 	usize data_size = data.all_mip_bytes_size();
 

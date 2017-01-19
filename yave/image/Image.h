@@ -33,11 +33,11 @@ class Image : public ImageBase {
 	public:
 		Image() = default;
 
-		Image(DevicePtr dptr, ImageFormat format, const math::Vec2ui& image_size) : ImageBase(dptr, ImageFormat(format), Usage, image_size) {
+		Image(DevicePtr dptr, ImageFormat format, const math::Vec2ui& image_size) : ImageBase(dptr, format, Usage, image_size) {
 			static_assert(is_attachment_usage(Usage), "Texture images must be initilized.");
 		}
 
-		Image(DevicePtr dptr, ImageFormat format, const ImageData& data) : ImageBase(dptr, ImageFormat(format), Usage, data.size(), data) {
+		Image(DevicePtr dptr, const ImageData& data) : ImageBase(dptr, Usage, data.size(), data) {
 			static_assert(is_texture_usage(Usage), "Only texture images can be initilized.");
 		}
 
