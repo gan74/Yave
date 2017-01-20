@@ -41,8 +41,6 @@ class ImageBase : NonCopyable, public DeviceLinked {
 		ImageFormat format() const;
 		ImageUsage usage() const;
 
-		usize byte_size() const;
-
 		~ImageBase();
 
 	protected:
