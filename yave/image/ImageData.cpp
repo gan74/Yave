@@ -97,7 +97,6 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 		}
 	};
 
-
 	auto decoder = io::Decoder(reader);
 
 	Header header = decoder.decode<Header>().expected(err_msg);

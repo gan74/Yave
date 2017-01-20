@@ -197,7 +197,7 @@ vk::ImageView ImageBase::vk_view() const {
 }
 
 usize ImageBase::byte_size() const {
-	return _size.x() *_size.y() *_format.bit_per_pixel();
+	return (_size.x() *_size.y() *_format.bit_per_pixel()) / 8;
 }
 
 vk::Image ImageBase::vk_image() const {

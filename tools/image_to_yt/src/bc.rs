@@ -13,15 +13,15 @@ fn bc1_encode(pix: [u8; 4]) -> u16 {
 
 fn bc1_interp(min: [u8; 4], max: [u8; 4], index: usize) -> [u8; 4] {
 	let coefs = match index {
-		0x0 => (4, 0),
-		0x1 => (3 ,1),
-		0x2 => (1, 3),
-		_ => (0, 4)
+		0x0 => (3, 0),
+		0x1 => (0, 3),
+		0x2 => (2 ,1),
+		_ => (1, 2)
 	};
 	let mut pix = [0u8; 4];
 	for i in 0..4 {
-		pix[i] = ((coefs.0 * min[i] as u16 + 
-				   coefs.0 * max[i] as u16) / 4) as u8
+		pix[i] = ((coefs.1 * (min[i] as u16) + 
+				   coefs.0 * (max[i] as u16)) / 3) as u8
 	}
 	pix
 }
@@ -30,7 +30,7 @@ fn dist(a: &[u8; 4], b: &[u8; 4]) -> u32 {
 	let mut sum = 0u32;
 	for i in 0..4 {
 		let x = if a[i] < b[i] { b[i] - a[i] } else { a[i] - b[i] } as u32;
-		sum += x * x;
+		sum += x;
 	}
 	sum
 }
@@ -41,28 +41,6 @@ pub fn bc1(image: &Vec<u8>, size: (u32, u32)) -> Option<Vec<u8>> {
 	}
 
     let mut out = Vec::new();
-    /*let mip1 = mipmap(image, size).unwrap();
-    let mip2 = mipmap(&mip1.0, mip1.1).unwrap();
-
-    for i in 0..((mip2.1).0 * (mip2.1).1) {
-    	let i = i as usize;
-    	let rgb = (mip2.0[i * 4] as u16, mip2.0[i * 4 + 1] as u16, mip2.0[i * 4 + 2] as u16);
-
-		let pixel: u16 = ((rgb.0 >> 3) << 11) |
-						 ((rgb.1 >> 2) << 5) |
-						 (rgb.2 >> 3);
-
-		out.push((pixel & 0xFF) as u8);
-		out.push((pixel >> 8) as u8);
-
-		out.push((pixel & 0xFF) as u8);
-		out.push((pixel >> 8) as u8);
-
-		out.push(0x22 as u8);
-		out.push(0x22 as u8);
-		out.push(0x22 as u8);
-		out.push(0x22 as u8);
-    }*/
 
     let size = (size.0 as usize, size.1 as usize);
 
@@ -98,8 +76,8 @@ pub fn bc1(image: &Vec<u8>, size: (u32, u32)) -> Option<Vec<u8>> {
    			for i in 0..4 {
    				interps[i] = bc1_interp(min, max, i);
    			}
-   			// if we want alpha swap min/max (or encode min first)
 
+   			// if we want alpha swap min/max (or encode min first)
 			let min = bc1_encode(min);
 			let max = bc1_encode(max);
 
@@ -113,7 +91,7 @@ pub fn bc1(image: &Vec<u8>, size: (u32, u32)) -> Option<Vec<u8>> {
 
 			for pix in pixels.into_iter() {
 				let best = (0..4).into_iter().min_by_key(|x| dist(&interps[*x], pix)).unwrap() as u32;
-				mask = (mask >> 2) | ((best & 0x03) << 30);
+				mask = (mask << 2) | (best & 0x03);
 			}
 
 			for _ in 0..4 {
