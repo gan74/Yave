@@ -12,7 +12,7 @@ set(PROFILE_FLAGS "-pg -fno-omit-frame-pointer")
 
 set(EXTRA_OPTIMISATIONS "-ffast-math")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
+if(CMAKE_BUILD_TYPE MATCHES "Release")
 	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -O3")
 	message("Release build")
 # else()
