@@ -34,29 +34,29 @@ inline void hash_combine(T& seed, T value) {
 	seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-template<typename T, typename Hasher>
-inline auto hash(const T& t, const Hasher& hasher, std::false_type) {
+template<typename T, typename Hasher = std::hash<T>>
+inline auto hash(const T& t, std::false_type, const Hasher& hasher = Hasher()) {
 	return hasher(t);
 }
 
-template<typename T, typename Hasher>
-inline auto hash(const T& collection, const Hasher& hasher, std::true_type) {
+template<typename T, typename Hasher = std::hash<typename T::value_type>>
+inline auto hash(const T& collection, std::true_type, const Hasher& hasher = Hasher()) {
 	decltype(hasher(*collection.begin())) seed = 0;
 	for(const auto& i : collection) {
-		detail::hash_combine(seed, hash(i, hasher, std::false_type()));
+		detail::hash_combine(seed, hash(i, std::false_type(), hasher));
 	}
 	return seed;
 }
 
 }
 
-template<typename T, typename Hasher = typename std::hash<typename std::conditional<is_iterable<T>::value, typename std::remove_cv<typename std::remove_reference<decltype(*std::declval<T>().begin())>::type>::type, T>::type>>
-inline auto hash(const T& t, const Hasher& hasher = Hasher()) {
-	return detail::hash(t, hasher, is_iterable<T>());
+template<typename T>
+inline auto hash(const T& t) {
+	return detail::hash(t, is_iterable<T>());
 }
 
-template<typename T>
-struct hash_t {
+struct hash_t {	
+	template<typename T>
 	auto operator()(const T& arg) const {
 		return hash(arg);
 	}
