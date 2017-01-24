@@ -2,6 +2,7 @@ extern crate image;
 
 use std::fs::{File};
 use std::path::{Path};
+use std::time::{SystemTime};
 use std::io::{BufWriter, Write, SeekFrom, Seek, Result, Error, ErrorKind};
 use std::mem;
 use std::slice;
@@ -27,7 +28,6 @@ fn main() {
 }
 
     
-
 fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, format: &ImageFormat) -> Result<usize> {
     let image_type: u32 = 2;
     let version: u32 = 1;
@@ -36,11 +36,12 @@ fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, f
     file.write(b"yave")
         .and_then(|_| write_bin(file, &vec![image_type, version, size.0, size.1, 0, format.id()]))?;
 
-
+    let timer = start();
     match format.encode(&image) {
         Ok(d) => write_bin(file, &d)?,
         Err(_) => return Err(Error::new(ErrorKind::Other, "Unable to encode image."))
     };
+    stop(timer);
 
     let mut mips = 1u32;
     while let Some(next) = image.mipmap() {
@@ -52,6 +53,7 @@ fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, f
             break;
         }
     }
+    println!("{} mipmaps exported", mips);
     file.seek(SeekFrom::Start(20))
         .and_then(|_| write_bin(file, &vec![mips]))
 }
@@ -67,4 +69,14 @@ fn write_bin<E, T: Write>(file: &mut T, v: &Vec<E>) -> Result<usize> {
         )
     };
     file.write(slice_u8)
+}
+
+fn start() -> SystemTime {
+    SystemTime::now()
+}
+
+fn stop(t: SystemTime) {
+    let d = t.elapsed().unwrap();
+    let msec = d.subsec_nanos() as u64 / 1000_000 + d.as_secs() * 1000;
+    println!("{}ms", msec);
 }
