@@ -5,36 +5,35 @@ fn is_blk(size: (usize, usize)) -> bool {
 	return size.0 % 4 == 0 && size.1 % 4 == 0;
 }
 
-fn bc1_encode(pix: [u8; 4]) -> u16 {
-	((pix[0] as u16 >> 3) << 11) |
-	((pix[1] as u16 >> 2) << 5) |
-	(pix[2] as u16 >> 3)
+fn bc1_encode(pix: [u16; 4]) -> u16 {
+	((pix[0] >> 3) << 11) |
+	((pix[1] >> 2) << 5) |
+	(pix[2] >> 3)
 }
 
-fn bc1_interp(min: [u8; 4], max: [u8; 4], index: usize) -> [u8; 4] {
+fn bc1_interp(min: [u16; 4], max: [u16; 4], index: usize) -> [u8; 4] {
 	let coefs = match index {
 		0x0 => (3, 0),
 		0x1 => (0, 3),
 		0x2 => (2 ,1),
 		_ => (1, 2)
 	};
-	let mut pix = [0u8; 4];
-	for i in 0..4 {
-		pix[i] = ((coefs.1 * (min[i] as u16) + 
-				   coefs.0 * (max[i] as u16)) / 3) as u8
-	}
-	pix
+	[(coefs.1 * min[0] + coefs.0 * max[0]) as u8,
+	 (coefs.1 * min[1] + coefs.0 * max[1]) as u8,
+	 (coefs.1 * min[2] + coefs.0 * max[2]) as u8,
+	 (coefs.1 * min[3] + coefs.0 * max[3]) as u8]
+}
+
+fn dist_one(a: i16, b: i16) -> u32 {
+	(a - b).abs() as u32
 }
 
 fn dist(a: &[u8; 4], b: &[u8; 4]) -> u32 {
-	let mut sum = 0u32;
-	for i in 0..4 {
-		let x = if a[i] < b[i] { b[i] - a[i] } else { a[i] - b[i] } as u32;
-		sum += x;
-	}
-	sum
+	dist_one(a[0] as i16, b[0] as i16) + 
+	dist_one(a[1] as i16, b[1] as i16) + 
+	dist_one(a[2] as i16, b[2] as i16) + 
+	dist_one(a[3] as i16, b[3] as i16)
 }
-
 
 pub fn bc1(image: &Vec<u8>, size: (usize, usize)) -> Result<Vec<u8>, ()> {
 	if !is_blk(size) {
@@ -63,12 +62,12 @@ pub fn bc1(image: &Vec<u8>, size: (usize, usize)) -> Result<Vec<u8>, ()> {
    				}
    			}
 
-   			let mut min = [255u8; 4];
-   			let mut max = [0u8; 4];
+   			let mut min = [255u16; 4];
+   			let mut max = [0u16; 4];
    			for p in pixels.into_iter() {
    				for i in 0..4 {
-   					min[i] = cmp::min(min[i], p[i]);
-   					max[i] = cmp::max(max[i], p[i]);
+   					min[i] = cmp::min(min[i], p[i] as u16);
+   					max[i] = cmp::max(max[i], p[i] as u16);
    				}
    			}
 
