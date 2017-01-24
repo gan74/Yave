@@ -2,64 +2,62 @@ extern crate image;
 
 use std::fs::{File};
 use std::path::{Path};
-use std::io::{BufWriter,Write, Result};
+use std::io::{BufWriter, Write, SeekFrom, Seek, Result, Error, ErrorKind};
 use std::mem;
 use std::slice;
 
-use image::*;
-
+mod image_data;
+mod image_format;
 mod mipmaping;
 mod bc;
 
-use mipmaping::*;
-use bc::*;
+use image_data::*;
+use image_format::{ImageFormat, Bc1Format};
 
 fn main() {
     let mut args = std::env::args();
     args.next();
 
     let file_name = args.next().expect("Expected a file as input.");
-    let image = image::open(&Path::new(&file_name)).expect("Unable to open image file.");
+    let image = ImageData::from_image(&image::open(&Path::new(&file_name)).expect("Unable to open image file."));
 
     let ref mut writer = BufWriter::new(File::create(file_name + ".yt").expect("Unable to create output file."));
 
-    write_image(writer, &image).expect("Unable to write to output file.");
+    write_image(writer, image, &Bc1Format::new()).expect("Unable to write to output file.");
 }
 
-fn write_image<T: Write>(file: &mut T, image: &DynamicImage) -> Result<usize> {
-    let use_bc1 = false;
+    
 
-    let mut size: (u32, u32) = image.dimensions();
-
-    let (mut data, mips, format_id) = 
-        if use_bc1 {
-            (bc1(&image.flipv().to_rgba().to_vec(), size).unwrap(), 
-             0u32,
-             133)
-        } else {
-            (image.flipv().to_rgba().to_vec(), 
-             mip_levels(size) as u32,
-             37)
-        };
-  
-
+fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, format: &ImageFormat) -> Result<usize> {
     let image_type: u32 = 2;
     let version: u32 = 1;
+    let size = (image.size.0 as u32, image.size.1 as u32);
 
-    let mut r = file.write(b"yave")
-        .and_then(|_| write_bin(file, &vec![image_type, version]))
-        .and_then(|_| write_bin(file, &vec![size]))
-        .and_then(|_| write_bin(file, &vec![mips + 1, format_id]))
-        .and_then(|_| write_bin(file, &data));
+    file.write(b"yave")
+        .and_then(|_| write_bin(file, &vec![image_type, version, size.0, size.1, 0, format.id()]))?;
 
-    for _ in 0..mips {
-        let (d, s) = mipmap(&data, size).expect("Unable to compute mipmap.");
-        data = d;
-        size = s;
-        r = r.and_then(|_| write_bin(file, &data));
+
+    match format.encode(&image) {
+        Ok(d) => write_bin(file, &d)?,
+        Err(_) => return Err(Error::new(ErrorKind::Other, "Unable to encode image."))
+    };
+
+    let mut mips = 1u32;
+    while let Some(next) = image.mipmap() {
+        if let Ok(enc) = format.encode(&next) {
+            mips += 1;
+            image = next;
+            write_bin(file, &enc)?;
+        } else {
+            break;
+        }
     }
-    r
+    file.seek(SeekFrom::Start(20))
+        .and_then(|_| write_bin(file, &vec![mips]))
 }
+
+
+
 
 fn write_bin<E, T: Write>(file: &mut T, v: &Vec<E>) -> Result<usize> {
     let slice_u8: &[u8] = unsafe {

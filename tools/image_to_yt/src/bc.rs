@@ -1,7 +1,7 @@
 
 use std::cmp;
 
-fn is_blk(size: (u32, u32)) -> bool {
+fn is_blk(size: (usize, usize)) -> bool {
 	return size.0 % 4 == 0 && size.1 % 4 == 0;
 }
 
@@ -35,14 +35,13 @@ fn dist(a: &[u8; 4], b: &[u8; 4]) -> u32 {
 	sum
 }
 
-pub fn bc1(image: &Vec<u8>, size: (u32, u32)) -> Option<Vec<u8>> {
+
+pub fn bc1(image: &Vec<u8>, size: (usize, usize)) -> Result<Vec<u8>, ()> {
 	if !is_blk(size) {
-		return None;
+		return Err(());
 	}
 
     let mut out = Vec::new();
-
-    let size = (size.0 as usize, size.1 as usize);
 
     let block_size = 4;
 
@@ -102,5 +101,5 @@ pub fn bc1(image: &Vec<u8>, size: (u32, u32)) -> Option<Vec<u8>> {
 		}
 	}
 
-	Some(out)
+	Ok(out)
 }
