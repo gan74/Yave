@@ -59,7 +59,8 @@ pub fn bc1(image: &Vec<u8>, size: (u32, u32)) -> Option<Vec<u8>> {
 
    					let pi = (x * size.0 + y) * 4; // in bytes
    					let pix = [image[pi], image[pi + 1], image[pi + 2], image[pi + 3]];
-   					pixels[px + py * 4] = pix;
+
+   					pixels[px * block_size + py] = pix;
    				}
    			}
 
@@ -89,7 +90,7 @@ pub fn bc1(image: &Vec<u8>, size: (u32, u32)) -> Option<Vec<u8>> {
 
 			let mut mask = 0u32;
 
-			for pix in pixels.into_iter() {
+			for pix in pixels.into_iter().rev() {
 				let best = (0..4).into_iter().min_by_key(|x| dist(&interps[*x], pix)).unwrap() as u32;
 				mask = (mask << 2) | (best & 0x03);
 			}
