@@ -52,7 +52,12 @@ class YaveApp : NonCopyable {
 		YaveApp(DebugParams params);
 		~YaveApp();
 
-		void init(Window* window);
+		template<typename... Args>
+		void init(Args... args) {
+			swapchain = new Swapchain(&device, std::forward<Args>(args)...);
+			create_assets();
+			create_command_buffers();
+		}
 
 		core::Duration draw();
 		void update(math::Vec2 angles = math::Vec2(0));

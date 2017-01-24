@@ -28,16 +28,11 @@ SOFTWARE.
 
 #include <yave/image/Sampler.h>
 #include <yave/commands/CmdBufferPool.h>
-//#include <yave/bindings/DescriptorSet.h>
+#include <yave/queues/QueueFamily.h>
 
 #include <yave/vk/destroy.h>
 
 namespace yave {
-
-enum QueueFamily {
-	Graphics,
-	Max
-};
 
 class Device : NonCopyable {
 
@@ -49,10 +44,10 @@ class Device : NonCopyable {
 		const Instance& instance() const;
 
 		vk::Device vk_device() const;
-		vk::Queue vk_queue(usize i) const;
+		vk::Queue vk_queue(vk::QueueFlags) const;
 		vk::Sampler vk_sampler() const;
 
-		u32 queue_family_index(QueueFamily i) const;
+		const QueueFamily& queue_family(vk::QueueFlags flags) const;
 
 		template<typename T>
 		void destroy(T t) const {
@@ -74,9 +69,9 @@ class Device : NonCopyable {
 		Instance& _instance;
 		PhysicalDevice _physical;
 
-		std::array<u32, QueueFamily::Max> _queue_familiy_indices;
+		core::Vector<QueueFamily> _queue_families;
 
-		std::array<vk::Queue, QueueFamily::Max> _queues;
+		core::Vector<vk::Queue> _queues;
 
 		vk::Device _device;
 

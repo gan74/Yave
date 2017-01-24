@@ -25,58 +25,32 @@ SOFTWARE.
 
 namespace yave {
 
-static bool are_families_complete(const std::array<u32, QueueFamily::Max>& families) {
-	for(u32 index : families) {
-		if(index == u32(-1)) {
-			return false;
-		}
-	}
-	return true;
-}
-
-static std::array<u32, QueueFamily::Max> compute_queue_families(vk::PhysicalDevice physical) {
-	std::array<u32, QueueFamily::Max> queue_families;
-	for(u32& index : queue_families) {
-		index = u32(-1);
-	}
+static core::Vector<QueueFamily> compute_queue_families(vk::PhysicalDevice physical) {
+	core::Vector<QueueFamily> queue_families;
 
 	auto families = physical.getQueueFamilyProperties();
 	for(u32 i = 0; i != families.size(); i++) {
-		auto family = families[usize(i)];
-		if(family.queueCount <= 0) {
-			continue;
-		}
-
-		if(family.queueFlags & vk::QueueFlagBits::eGraphics) {
-			queue_families[QueueFamily::Graphics] = i;
-		}
-
-		if(are_families_complete(queue_families)) {
-			return queue_families;
-		}
-	}
-	if(!are_families_complete(queue_families)) {
-		fatal("Unable to find queue family.");
+		queue_families << QueueFamily(i, families[i]);
 	}
 	return queue_families;
 }
 
 static vk::Device create_device(
 		vk::PhysicalDevice physical,
-		const std::array<u32, QueueFamily::Max>& queue_families,
+		const core::Vector<QueueFamily>& queue_families,
 		const core::Vector<const char*>& extentions,
 		const core::Vector<const char*>& layers) {
 
-	std::array<vk::DeviceQueueCreateInfo, QueueFamily::Max> queue_create_infos;
+	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
 
 	float priorities = 1.0f;
-	for(usize i = 0; i != QueueFamily::Max; i++) {
-		queue_create_infos[i] = vk::DeviceQueueCreateInfo()
-				.setQueueFamilyIndex(queue_families[i])
+	std::transform(queue_families.begin(), queue_families.end(), std::back_inserter(queue_create_infos), [&](const auto& q) {
+		return vk::DeviceQueueCreateInfo()
+				.setQueueFamilyIndex(q.index())
 				.setPQueuePriorities(&priorities)
-				.setQueueCount(1)
+				.setQueueCount(q.count())
 			;
-	}
+		});
 
 
 	auto features = physical.getFeatures();
@@ -100,14 +74,15 @@ static vk::Device create_device(
 Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
-		_queue_familiy_indices(compute_queue_families(_physical.vk_physical_device())),
-		_device(create_device(_physical.vk_physical_device(), _queue_familiy_indices, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params().device_layers())),
+		_queue_families(compute_queue_families(_physical.vk_physical_device())),
+		_device(create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params().device_layers())),
 		_sampler(this),
 		_disposable_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
 
-	for(usize i = 0; i != _queues.size(); i++) {
-		_queues[i] = _device.getQueue(_queue_familiy_indices[i], 0);
+	for(const auto& family : _queue_families) {
+		auto q = family.fetch_queues(this);
+		_queues.push_back(q.begin(), q.end());
 	}
 }
 
@@ -141,16 +116,22 @@ vk::Device Device::vk_device() const {
 	return _device;
 }
 
-vk::Queue Device::vk_queue(usize i) const {
-	return _queues[i];
+vk::Queue Device::vk_queue(vk::QueueFlags) const {
+#warning change Device::vk_queue
+	return _queues.first();
 }
 
 vk::Sampler Device::vk_sampler() const {
 	return _sampler.vk_sampler();
 }
 
-u32 Device::queue_family_index(QueueFamily i) const {
-	return u32(_queue_familiy_indices[i]);
+const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
+	for(const auto& q : _queue_families) {
+		if((q.flags() & flags) == flags) {
+			return q;
+		}
+	}
+	return fatal("Unable to find queue.");
 }
 
 }

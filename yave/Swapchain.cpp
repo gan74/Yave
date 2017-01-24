@@ -92,7 +92,7 @@ static vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Form
 }
 
 static bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
-	auto index = dptr->queue_family_index(QueueFamily::Graphics);
+	auto index = dptr->queue_family(QueueFamily::Graphics).index();
 	return dptr->physical_device().vk_physical_device().getSurfaceSupportKHR(index, surface);
 }
 

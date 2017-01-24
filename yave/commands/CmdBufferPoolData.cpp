@@ -30,7 +30,7 @@ namespace yave {
 static vk::CommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
 	auto pref = usage == CmdBufferUsage::Disposable ? vk::CommandPoolCreateFlagBits::eTransient : vk::CommandPoolCreateFlagBits();
 	return dptr->vk_device().createCommandPool(vk::CommandPoolCreateInfo()
-			.setQueueFamilyIndex(dptr->queue_family_index(QueueFamily::Graphics))
+			.setQueueFamilyIndex(dptr->queue_family(QueueFamily::Graphics).index())
 			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer | pref)
 		);
 }

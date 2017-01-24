@@ -34,17 +34,8 @@ void wat(int) {}
 namespace yave {
 
 YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), command_pool(&device), mesh_pool(&device) {
-}
-
-void YaveApp::init(Window* window) {
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMesh));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
-
-	swapchain = new Swapchain(&device, window);
-
-	create_assets();
-
-	create_command_buffers();
 }
 
 YaveApp::~YaveApp() {
