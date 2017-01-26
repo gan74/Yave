@@ -2,7 +2,7 @@ extern crate image;
 
 use std::fs::{File};
 use std::path::{Path};
-//use std::time::{SystemTime};
+use std::time::{SystemTime};
 use std::io::{BufWriter, Write, SeekFrom, Seek, Result, Error, ErrorKind};
 use std::mem;
 use std::env;
@@ -47,12 +47,12 @@ fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, f
     file.write(b"yave")
         .and_then(|_| write_bin(file, &vec![image_type, version, size.0, size.1, 0, format.id()]))?;
 
-    //let timer = start();
+    let timer = start();
     match format.encode(&image) {
         Ok(d) => write_bin(file, &d)?,
         Err(_) => return Err(Error::new(ErrorKind::Other, "Unable to encode image."))
     };
-    //stop(timer);
+    stop(timer);
 
     let mut mips = 1u32;
     while let Some(next) = image.mipmap() {
@@ -82,7 +82,7 @@ fn write_bin<E, T: Write>(file: &mut T, v: &Vec<E>) -> Result<usize> {
     file.write(slice_u8)
 }
 
-/*fn start() -> SystemTime {
+fn start() -> SystemTime {
     SystemTime::now()
 }
 
@@ -90,4 +90,4 @@ fn stop(t: SystemTime) {
     let d = t.elapsed().unwrap();
     let msec = d.subsec_nanos() as u64 / 1000_000 + d.as_secs() * 1000;
     println!("{}ms", msec);
-}*/
+}

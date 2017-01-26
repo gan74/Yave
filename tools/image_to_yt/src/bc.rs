@@ -2,16 +2,89 @@
 use std::cmp;
 
 type Rgba = [u8; 4];
+/*type Hsva = [u8; 4];
 
-fn is_blk(size: (usize, usize)) -> bool {
-	return size.0 % 4 == 0 && size.1 % 4 == 0;
+
+fn minf(a: f32, b: f32) -> f32 { if a < b { a } else { b } }
+fn maxf(a: f32, b: f32) -> f32 { if a > b { a } else { b } }
+fn fnorm(a: u8) -> f32 { a as f32 / 255.0 }
+fn bnorm(a: f32) -> u8 { (a * 255.0) as u8 }
+
+fn to_hsva(rgba: &Rgba) -> Hsva {
+	let (r, g, b) = (fnorm(rgba[0]), fnorm(rgba[1]), fnorm(rgba[2]));
+	let max = maxf(maxf(r , g), b);
+	let min = minf(minf(r , g), b);
+	let c = max - min;
+	let h = 
+		if c == 0.0 {
+			0.0
+		} else {
+			(if max == r {
+				(g - b) / c
+			} else if max == g {
+				(b - r) / c + 2.0
+			} else {
+				(r - g) / c + 4.0
+			}) / 6.0
+		};
+
+	let s = if max == 0.0 { 0.0 } else { c / max };
+	[bnorm(h), bnorm(s), bnorm(max), rgba[3]]
 }
 
-fn bc1_encode_endpoint(pix: &Rgba) -> u16 {
-	((pix[0] as u16 >> 3) << 11) |
-	((pix[1] as u16 >> 2) << 5) |
-	(pix[2] as u16 >> 3)
+fn to_rgba(hsva: &Hsva) -> Rgba {
+	let v = fnorm(hsva[2]);
+	let c = v * fnorm(hsva[3]);
+	let h = fnorm(hsva[0]) * 6.0;
+	let x = c * (1.0 - (h % 2.0 - 1.0).abs());
+	let rgb1 =
+		if h < 1.0 {
+			(c, x, 0.0)
+		} else if h < 2.0 {
+			(x, c, 0.0)
+		} else if h < 3.0 {
+			(0.0, c, x)
+		} else if h < 4.0 {
+			(0.0, x, c)
+		} else if h < 5.0 {
+			(x, 0.0, c)
+		} else {
+			(c, 0.0, x)
+		};
+	let m = v - c;
+	[bnorm(rgb1.0 + m),
+	bnorm(rgb1.1 + m),
+	bnorm(rgb1.2 + m),
+	hsva[3]]
+}*/
+
+
+
+
+fn bc1_dist(a: &Rgba, b: &Rgba) -> u32 {
+	fn bc1_dist_one(a: u8, b: u8) -> u32 {
+		let x = a as i32 - b as i32;
+		(x * x) as u32
+	}
+	bc1_dist_one(a[0], b[0]) + 
+	bc1_dist_one(a[1], b[1]) + 
+	bc1_dist_one(a[2], b[2]) + 
+	bc1_dist_one(a[3], b[3])
 }
+
+fn bc1_total_dist(table: &[Rgba; 4], pixels: &[Rgba; 16]) -> u32 {
+	let mut sum = 0u32;
+	for pix in pixels.into_iter().rev() {
+		sum += (0..4).into_iter().map(|x| bc1_dist(&table[x], pix)).min().unwrap();
+	}
+	sum
+}
+
+
+
+
+
+
 
 fn bc1_build_entry(min: &Rgba, max: &Rgba, index: usize) -> Rgba {
 	let coefs = match index {
@@ -26,6 +99,7 @@ fn bc1_build_entry(min: &Rgba, max: &Rgba, index: usize) -> Rgba {
 	 ((coefs.1 * min[3] as u16 + coefs.0 * max[3] as u16) / 3) as u8]
 }
 
+
 fn bc1_build_table(min: &Rgba, max: &Rgba) -> [Rgba; 4] {
 	let mut interps = [[0u8; 4]; 4];
 	for i in 0..4 {
@@ -34,50 +108,50 @@ fn bc1_build_table(min: &Rgba, max: &Rgba) -> [Rgba; 4] {
 	interps
 }
 
-fn bc1_build_endpoints(pixels: &[Rgba; 16]) -> (Rgba, Rgba) {
+fn bc1_minmax(pixels: &[Rgba; 16]) -> (Rgba, Rgba) {
 	let mut min = [u8::max_value(); 4];
 	let mut max = [0u8; 4];
-	//let mut avg = [0f32; 4];
 	for p in pixels.into_iter() {
 		for i in 0..4 {
 			min[i] = cmp::min(min[i], p[i]);
 			max[i] = cmp::max(max[i], p[i]);
-			//avg[i] += p[i] as f32;
 		}
 	}
 	(min, max)
-
-	/*let max_len = ((max[0] * max[0] + max[1] * max[1] + max[2] * max[2]) as f32).sqrt();
-	let min_len = ((min[0] * min[0] + min[1] * min[1] + min[2] * min[2]) as f32).sqrt();
-	let avg_len = (avg[0] * avg[0] + avg[1] * avg[1] + avg[2] * avg[2]).sqrt();
-	let max_len = avg_len / max_len;
-	let norm_max_avg = [(avg[0] / max_len) as u8, (avg[1] / max_len) as u8, (avg[2] / max_len) as u8, max[3]];
-	let min_len = avg_len / min_len;
-	let norm_min_avg = [(avg[0] / min_len) as u8, (avg[1] / min_len) as u8, (avg[2] / min_len) as u8, min[3]];
-
-	let min_point = *pixels.into_iter().min_by_key(|p| bc1_dist(&p, &min)).unwrap();
-	let max_point = *pixels.into_iter().min_by_key(|p| bc1_dist(&p, &max)).unwrap();
-
-	[(min, max), 
-	(norm_min_avg, norm_max_avg), 
-	(min, norm_max_avg), 
-	(norm_min_avg, max),
-
-	(min_point, max_point), 
-	(min, max_point), 
-	(min_point, max)]*/
 }
 
-fn bc1_dist_one(a: u8, b: u8) -> u32 {
-	let x = a as i32 - b as i32;
-	(x * x) as u32
+fn bc1_build_endpoints(pixels: &[Rgba; 16]) -> [(Rgba, Rgba); 1] {
+	let (min, max) = bc1_minmax(pixels);
+
+	let out = [(min, max)];
+
+	//println!("{:?}", to_rgba(&to_rgba(&[0, 0, 0, 255])));
+	/*for i in 1..out.len() {
+		let offset = 4 * i as u8;
+		for c in 0..3 {
+			if out[i].0[c] < 128 {
+				out[i].0[c] += offset;
+			}
+			if out[i].1[c] > 128 {
+				out[i].1[c] -= offset;
+			}
+		}
+	}*/
+
+	out
 }
 
-fn bc1_dist(a: &Rgba, b: &Rgba) -> u32 {
-	bc1_dist_one(a[0], b[0]) + 
-	bc1_dist_one(a[1], b[1]) + 
-	bc1_dist_one(a[2], b[2]) + 
-	bc1_dist_one(a[3], b[3])
+
+
+
+
+
+
+
+fn bc1_encode_endpoint(pix: &Rgba) -> u16 {
+	((pix[0] as u16 >> 3) << 11) |
+	((pix[1] as u16 >> 2) << 5) |
+	(pix[2] as u16 >> 3)
 }
 
 fn bc1_encode_pixel(table: &[Rgba; 4], pixels: &[Rgba; 16]) -> u32 {
@@ -89,20 +163,13 @@ fn bc1_encode_pixel(table: &[Rgba; 4], pixels: &[Rgba; 16]) -> u32 {
 	mask
 }
 
-fn bc1_total_dist(table: &[Rgba; 4], pixels: &[Rgba; 16]) -> u32 {
-	let mut sum = 0u32;
-	for pix in pixels.into_iter().rev() {
-		sum += (0..4).into_iter().map(|x| bc1_dist(&table[x], pix)).min().unwrap();
-	}
-	sum
-}
-
 fn bc1_encode_block(pixels: &[Rgba; 16]) -> (u64, u32) {
-	let (min, max) = bc1_build_endpoints(&pixels);
+	/*let (min, max) = bc1_build_endpoints(&pixels)[0];
+	let table = bc1_build_table(&min, &max);*/
 
-	//let (min, max) = *bc1_build_endpoints(pixels).into_iter().min_by_key(|p| bc1_total_dist(&bc1_build_table(&p.0, &p.1), pixels)).unwrap();
-
-	let table = bc1_build_table(&min, &max);
+	let ((min, max), table) = bc1_build_endpoints(pixels).into_iter()
+		.map(|pts| (*pts, bc1_build_table(&pts.0, &pts.1)))
+		.min_by_key(|tbl| bc1_total_dist(&tbl.1, pixels)).unwrap();
 
 	let dist = bc1_total_dist(&table, pixels);
 
@@ -114,8 +181,13 @@ fn bc1_encode_block(pixels: &[Rgba; 16]) -> (u64, u32) {
 	((encoded << 32) | (min << 16) | max, dist)
 }
 
+
+
+
+
+
 pub fn bc1(image: &Vec<u8>, size: (usize, usize), _: u8) -> Result<Vec<u8>, ()> {
-	if !is_blk(size) {
+	if !(size.0 % 4 == 0 && size.1 % 4 == 0) {
 		return Err(());
 	}
 
