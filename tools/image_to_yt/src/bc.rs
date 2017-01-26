@@ -125,16 +125,18 @@ fn bc1_minmax(pixels: &[Rgba; 16]) -> (Rgba, Rgba) {
 	(min, max)
 }
 
-fn bc1_extrapolate_endpoint(a: &Rgba, b: &Rgba) -> [u8; 4] {
-	let mut diff = *a;
+fn bc1_extrapolate_endpoints(e: &(Rgba, Rgba)) -> (Rgba, Rgba) {
+	let mut a = e.0;
+	let mut b = e.1;
 	for i in 0..3 {
-		let f = fnorm(diff[i]) - ((fnorm(a[i]) - fnorm(b[i])) * 1.5);
-		diff[i] = bnorm(f);
+		let f = (fnorm(e.0[i]) - fnorm(e.1[i])) * 1.5;
+		a[i] = bnorm(fnorm(e.0[i]) - f);
+		b[i] = bnorm(fnorm(e.1[i]) + f);
 	}
-	diff
+	(a, b)
 }
 
-fn bc1_sort_endpoints(e: (Rgba, Rgba)) -> (Rgba, Rgba) {
+fn bc1_sort_endpoints(e: &(Rgba, Rgba)) -> (Rgba, Rgba) {
 	if bc1_encode_endpoint(&e.0) > bc1_encode_endpoint(&e.1) {
 		(e.1, e.0)
 	} else {
@@ -142,15 +144,6 @@ fn bc1_sort_endpoints(e: (Rgba, Rgba)) -> (Rgba, Rgba) {
 	}
 }
 
-/*fn bc1_average(pixels: &[Rgba; 16]) -> Rgba {
-	let mut avg = [0u16; 4];
-	for i in 1..16 {
-		for c in 0..4 {
-			avg[c] += pixels[i][c] as u16;
-		}
-	}
-	[(avg[0] / 16) as u8, (avg[1] / 16) as u8, (avg[2] / 16) as u8, (avg[3] / 16) as u8]
-}*/
 
 fn bc1_build_endpoints(pixels: &[Rgba; 16], quality: u8) -> Vec<(Rgba, Rgba)> {
 	let (min, max) = bc1_minmax(pixels);
@@ -158,19 +151,13 @@ fn bc1_build_endpoints(pixels: &[Rgba; 16], quality: u8) -> Vec<(Rgba, Rgba)> {
 	let mut out = Vec::new();
 	out.push((min, max));
 
-
 	if quality > 0 && min != max {
-		for i in 0..16 {
-			for j in i..16 {
-				if i != j {
-					let a = pixels[i];
-					let b = pixels[j];
-					out.push(bc1_sort_endpoints((a, b)));
-					if quality > 1 {
-						let endpoints = (bc1_extrapolate_endpoint(&a, &b), bc1_extrapolate_endpoint(&b, &a));
-						out.push(bc1_sort_endpoints(endpoints));
-					}
-					
+		for i in 0..15 {
+			for j in (i + 1)..16 {
+				let px = (pixels[i], pixels[j]);
+				out.push(bc1_sort_endpoints(&px));
+				if quality > 1 {
+					out.push(bc1_sort_endpoints(&bc1_extrapolate_endpoints(&px)));
 				}
 			}
 		}
