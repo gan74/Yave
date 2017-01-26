@@ -2,13 +2,16 @@
 use std::cmp;
 
 type Rgba = [u8; 4];
-/*type Hsva = [u8; 4];
 
 
 fn minf(a: f32, b: f32) -> f32 { if a < b { a } else { b } }
 fn maxf(a: f32, b: f32) -> f32 { if a > b { a } else { b } }
+fn saturate(a: f32) -> f32 { maxf(minf(a, 1.0), 0.0) }
 fn fnorm(a: u8) -> f32 { a as f32 / 255.0 }
-fn bnorm(a: f32) -> u8 { (a * 255.0) as u8 }
+fn bnorm(a: f32) -> u8 { (saturate(a) * 255.0) as u8 }
+
+/*type Hsva = [u8; 4];
+
 
 fn to_hsva(rgba: &Rgba) -> Hsva {
 	let (r, g, b) = (fnorm(rgba[0]), fnorm(rgba[1]), fnorm(rgba[2]));
@@ -68,16 +71,18 @@ fn bc1_dist(a: &Rgba, b: &Rgba) -> u32 {
 	}
 	bc1_dist_one(a[0], b[0]) + 
 	bc1_dist_one(a[1], b[1]) + 
-	bc1_dist_one(a[2], b[2]) + 
-	bc1_dist_one(a[3], b[3])
+	bc1_dist_one(a[2], b[2])
 }
 
 fn bc1_total_dist(table: &[Rgba; 4], pixels: &[Rgba; 16]) -> u32 {
 	let mut sum = 0u32;
+	let mut max = 0u32;
 	for pix in pixels.into_iter().rev() {
-		sum += (0..4).into_iter().map(|x| bc1_dist(&table[x], pix)).min().unwrap();
+		let e = (0..4).into_iter().map(|x| bc1_dist(&table[x], pix)).min().unwrap();
+		sum += e;
+		max = cmp::max(max, e);
 	}
-	sum
+	sum + max * 16
 }
 
 
@@ -120,26 +125,47 @@ fn bc1_minmax(pixels: &[Rgba; 16]) -> (Rgba, Rgba) {
 	(min, max)
 }
 
-fn bc1_build_endpoints(pixels: &[Rgba; 16]) -> [(Rgba, Rgba); 1] {
-	let (min, max) = bc1_minmax(pixels);
+fn bc1_extrapolate_endpoint(a: &Rgba, b: &Rgba) -> [u8; 4] {
+	let mut diff = *a;
+	for i in 0..3 {
+		let f = fnorm(diff[i]) - ((fnorm(a[i]) - fnorm(b[i])) * 1.5);
+		diff[i] = bnorm(f);
+	}
+	diff
+}
 
-	let out = [(min, max)];
+fn bc1_sort_endpoints(e: (Rgba, Rgba)) -> (Rgba, Rgba) {
+	if bc1_encode_endpoint(&e.0) > bc1_encode_endpoint(&e.1) {
+		(e.1, e.0)
+	} else {
+		(e.0, e.1)
+	}
+}
 
-	//println!("{:?}", to_rgba(&to_rgba(&[0, 0, 0, 255])));
-	/*for i in 1..out.len() {
-		let offset = 4 * i as u8;
-		for c in 0..3 {
-			if out[i].0[c] < 128 {
-				out[i].0[c] += offset;
-			}
-			if out[i].1[c] > 128 {
-				out[i].1[c] -= offset;
+fn bc1_build_endpoints(pixels: &[Rgba; 16], quality: u8) -> Vec<(Rgba, Rgba)> {
+	let mut out = Vec::new();
+
+	out.push(bc1_minmax(pixels));
+
+	if quality > 0 {
+		for i in 0..16 {
+			for j in i..16 {
+				if i != j {
+					let a = pixels[i];
+					let b = pixels[j];
+					out.push(bc1_sort_endpoints((a, b)));
+					if quality > 1 {
+						let endpoints = (bc1_extrapolate_endpoint(&a, &b), bc1_extrapolate_endpoint(&b, &a));
+						out.push(bc1_sort_endpoints(endpoints));
+					}
+				}
 			}
 		}
-	}*/
-
+	}
+	
 	out
 }
+
 
 
 
@@ -163,11 +189,11 @@ fn bc1_encode_pixel(table: &[Rgba; 4], pixels: &[Rgba; 16]) -> u32 {
 	mask
 }
 
-fn bc1_encode_block(pixels: &[Rgba; 16]) -> (u64, u32) {
+fn bc1_encode_block(pixels: &[Rgba; 16], quality: u8) -> (u64, u32) {
 	/*let (min, max) = bc1_build_endpoints(&pixels)[0];
 	let table = bc1_build_table(&min, &max);*/
 
-	let ((min, max), table) = bc1_build_endpoints(pixels).into_iter()
+	let ((min, max), table) = bc1_build_endpoints(pixels, quality).iter()
 		.map(|pts| (*pts, bc1_build_table(&pts.0, &pts.1)))
 		.min_by_key(|tbl| bc1_total_dist(&tbl.1, pixels)).unwrap();
 
@@ -186,7 +212,8 @@ fn bc1_encode_block(pixels: &[Rgba; 16]) -> (u64, u32) {
 
 
 
-pub fn bc1(image: &Vec<u8>, size: (usize, usize), _: u8) -> Result<Vec<u8>, ()> {
+
+pub fn bc1(image: &Vec<u8>, size: (usize, usize), quality: u8) -> Result<Vec<u8>, ()> {
 	if !(size.0 % 4 == 0 && size.1 % 4 == 0) {
 		return Err(());
 	}
@@ -213,7 +240,7 @@ pub fn bc1(image: &Vec<u8>, size: (usize, usize), _: u8) -> Result<Vec<u8>, ()> 
    				}
    			}
 
-   			let (mut encoded, dist) = bc1_encode_block(&pixels);
+   			let (mut encoded, dist) = bc1_encode_block(&pixels, quality);
    			total_dist += dist;
 
    			for _ in 0..8 {
@@ -222,6 +249,6 @@ pub fn bc1(image: &Vec<u8>, size: (usize, usize), _: u8) -> Result<Vec<u8>, ()> 
    			}
 		}
 	}
-	println!("per-pixel dist = {:?}", total_dist / (size.0 * size.1) as u32);
+	//println!("per-pixel dist = {:?}", total_dist / (size.0 * size.1) as u32);
 	Ok(out)
 }

@@ -5,7 +5,7 @@ use image_data::*;
 
 pub trait ImageFormat {
 	fn id(&self) -> u32;
-	fn encode(&self, &ImageData) -> Result<Vec<u8>, ()>;
+	fn encode(&self, &ImageData, u8) -> Result<Vec<u8>, ()>;
 }
 
 
@@ -25,7 +25,7 @@ impl ImageFormat for Rgba8Format {
 		37
 	}
 
-	fn encode(&self, image: &ImageData) -> Result<Vec<u8>, ()> {
+	fn encode(&self, image: &ImageData, _: u8) -> Result<Vec<u8>, ()> {
 		Ok(image.data.clone())
 	}
 }
@@ -47,7 +47,7 @@ impl ImageFormat for Bc1Format {
 		133
 	}
 
-	fn encode(&self, image: &ImageData) -> Result<Vec<u8>, ()> {
-		bc1(&image.data, image.size, 0)
+	fn encode(&self, image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
+		bc1(&image.data, image.size, quality)
 	}
 }

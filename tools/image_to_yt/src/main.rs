@@ -18,28 +18,32 @@ use image_format::*;
 
 fn main() {
     let mut format: Box<ImageFormat> = Box::new(Rgba8Format::new());
+    let mut quality = 0u8;
+
     for arg in env::args().skip(1) {
-        if arg.starts_with("-") {
+        if arg.starts_with("--quality=") {
+            quality = arg[10..].parse::<u32>().expect("Invalid quality") as u8;
+        } else if arg.starts_with("-") {
             format = match arg.as_ref() {
-                "-bc1" => Box::new(Bc1Format::new()),
-                "-rgba" => Box::new(Rgba8Format::new()),
+                "--bc1" => Box::new(Bc1Format::new()),
+                "--rgba" => Box::new(Rgba8Format::new()),
                 _ => panic!("Unknown argument.")
             }
         } else {
-            process_file(arg, format.as_ref());
+            process_file(arg, format.as_ref(), quality);
         }
     }
 }
 
-fn process_file(file_name: String, format: &ImageFormat) {
+fn process_file(file_name: String, format: &ImageFormat, quality: u8) {
     print!("{}: ", &file_name);
 
     let image = ImageData::from_image(&image::open(&Path::new(&file_name)).expect("Unable to open image file."));
     let ref mut writer = BufWriter::new(File::create(file_name + ".yt").expect("Unable to create output file."));
-    write_image(writer, image, format).expect("Unable to write to output file.");
+    write_image(writer, image, format, quality).expect("Unable to write to output file.");
 }
 
-fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, format: &ImageFormat) -> Result<usize> {
+fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, format: &ImageFormat, quality: u8) -> Result<usize> {
     let image_type: u32 = 2;
     let version: u32 = 1;
     let size = (image.size.0 as u32, image.size.1 as u32);
@@ -48,7 +52,7 @@ fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, f
         .and_then(|_| write_bin(file, &vec![image_type, version, size.0, size.1, 0, format.id()]))?;
 
     let timer = start();
-    match format.encode(&image) {
+    match format.encode(&image, quality) {
         Ok(d) => write_bin(file, &d)?,
         Err(_) => return Err(Error::new(ErrorKind::Other, "Unable to encode image."))
     };
@@ -56,7 +60,7 @@ fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, f
 
     let mut mips = 1u32;
     while let Some(next) = image.mipmap() {
-        if let Ok(enc) = format.encode(&next) {
+        if let Ok(enc) = format.encode(&next, quality) {
             mips += 1;
             image = next;
             write_bin(file, &enc)?;
