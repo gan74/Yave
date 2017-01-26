@@ -223,19 +223,21 @@ pub fn bc1(image: &Vec<u8>, size: (usize, usize), quality: u8) -> Result<Vec<u8>
     let block_size = 4;
     let blk_count = (size.0 / block_size, size.1 / block_size);
 
-   	for x in 0..blk_count.0 {
-   		for y in 0..blk_count.1 {
+   	for by in 0..blk_count.1 {
+   		for bx in 0..blk_count.0 {
 
    			let mut pixels = [[0u8; 4]; 16]; // No compile time constants
-   			for px in 0..block_size {
-   				for py in 0..block_size {
-   					let x = x * block_size + px;
-   					let y = y * block_size + py;
+   			for py in 0..block_size {
+   				for px in 0..block_size {
+   					let x = bx * block_size + px;
+   					let y = by * block_size + py;
 
-   					let pi = (x * size.1 + y) * 4; // in bytes
+   					//println!("{:?} of {:?}", (x, y), size);
+
+   					let pi = (x + y * size.0) * 4; // in bytes
    					let pix = [image[pi], image[pi + 1], image[pi + 2], image[pi + 3]];
 
-   					pixels[px * block_size + py] = pix;
+   					pixels[px + py * block_size] = pix;
    				}
    			}
 
