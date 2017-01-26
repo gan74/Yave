@@ -75,7 +75,7 @@ fn bc1_total_dist(table: &[[u8; 4]; 4], pixels: &[[u8; 4]; 16]) -> u32 {
 
 fn iter_endpoint(mut to_iter: [i16; 4], other: &[i16; 4], pixels: &[[u8; 4]; 16], offsets: &[i16]) -> [i16; 4] {
 	let (mut best, mut index, mut offset) = (bc1_total_dist(&bc1_table(&to_iter, other), pixels), 0, 0);
-	for i in 0..4 {
+	for i in 0..3 {
 		for o in offsets.into_iter() {
 			let mut x = to_iter;
 			x[i] += *o;
@@ -98,8 +98,9 @@ pub fn bc1(image: &Vec<u8>, size: (usize, usize), quality: u8) -> Result<Vec<u8>
 		return Err(());
 	}
 
-    let mut out = Vec::new();
-    //let mut total_distance = 0u64;
+    let mut out = Vec::with_capacity(image.len() / 8);
+
+   	//let mut total_distance = 0u64;
 
     let block_size = 4;
     let blk_count = (size.0 / block_size, size.1 / block_size);
@@ -123,8 +124,8 @@ pub fn bc1(image: &Vec<u8>, size: (usize, usize), quality: u8) -> Result<Vec<u8>
    			let (mut min, mut max) = bc1_minmax(&pixels);
 
    			for _ in 0..quality {
-   				min = iter_endpoint(min, &max, &pixels, &[2, 4, 8, 16, 32]);
-   				max = iter_endpoint(max, &min, &pixels, &[-2, -4, -8, -16, -32]);
+   				min = iter_endpoint(min, &max, &pixels, &[2, 4, 8]);
+   				max = iter_endpoint(max, &min, &pixels, &[-2, -4, -8]);
    			}
 
    			let table = bc1_table(&min, &max);

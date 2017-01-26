@@ -2,9 +2,10 @@ extern crate image;
 
 use std::fs::{File};
 use std::path::{Path};
-use std::time::{SystemTime};
+//use std::time::{SystemTime};
 use std::io::{BufWriter, Write, SeekFrom, Seek, Result, Error, ErrorKind};
 use std::mem;
+use std::env;
 use std::slice;
 
 mod image_data;
@@ -13,21 +14,31 @@ mod mipmaping;
 mod bc;
 
 use image_data::*;
-use image_format::{ImageFormat, Bc1Format};
+use image_format::*;
 
 fn main() {
-    let mut args = std::env::args();
-    args.next();
-
-    let file_name = args.next().expect("Expected a file as input.");
-    let image = ImageData::from_image(&image::open(&Path::new(&file_name)).expect("Unable to open image file."));
-
-    let ref mut writer = BufWriter::new(File::create(file_name + ".yt").expect("Unable to create output file."));
-
-    write_image(writer, image, &Bc1Format::new()).expect("Unable to write to output file.");
+    let mut format: Box<ImageFormat> = Box::new(Rgba8Format::new());
+    for arg in env::args().skip(1) {
+        if arg.starts_with("-") {
+            format = match arg.as_ref() {
+                "-bc1" => Box::new(Bc1Format::new()),
+                "-rgba" => Box::new(Rgba8Format::new()),
+                _ => panic!("Unknown argument.")
+            }
+        } else {
+            process_file(arg, format.as_ref());
+        }
+    }
 }
 
-    
+fn process_file(file_name: String, format: &ImageFormat) {
+    print!("{}: ", &file_name);
+
+    let image = ImageData::from_image(&image::open(&Path::new(&file_name)).expect("Unable to open image file."));
+    let ref mut writer = BufWriter::new(File::create(file_name + ".yt").expect("Unable to create output file."));
+    write_image(writer, image, format).expect("Unable to write to output file.");
+}
+
 fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, format: &ImageFormat) -> Result<usize> {
     let image_type: u32 = 2;
     let version: u32 = 1;
@@ -36,12 +47,12 @@ fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, f
     file.write(b"yave")
         .and_then(|_| write_bin(file, &vec![image_type, version, size.0, size.1, 0, format.id()]))?;
 
-    let timer = start();
+    //let timer = start();
     match format.encode(&image) {
         Ok(d) => write_bin(file, &d)?,
         Err(_) => return Err(Error::new(ErrorKind::Other, "Unable to encode image."))
     };
-    stop(timer);
+    //stop(timer);
 
     let mut mips = 1u32;
     while let Some(next) = image.mipmap() {
@@ -53,7 +64,7 @@ fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, f
             break;
         }
     }
-    println!("{} mipmaps exported", mips);
+    println!("{} mipmaps exported.", mips);
     file.seek(SeekFrom::Start(20))
         .and_then(|_| write_bin(file, &vec![mips]))
 }
@@ -71,7 +82,7 @@ fn write_bin<E, T: Write>(file: &mut T, v: &Vec<E>) -> Result<usize> {
     file.write(slice_u8)
 }
 
-fn start() -> SystemTime {
+/*fn start() -> SystemTime {
     SystemTime::now()
 }
 
@@ -79,4 +90,4 @@ fn stop(t: SystemTime) {
     let d = t.elapsed().unwrap();
     let msec = d.subsec_nanos() as u64 / 1000_000 + d.as_secs() * 1000;
     println!("{}ms", msec);
-}
+}*/
