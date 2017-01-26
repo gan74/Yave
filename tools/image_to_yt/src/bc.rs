@@ -213,7 +213,7 @@ fn bc1_encode_block(pixels: &[Rgba; 16], quality: u8) -> (u64, u32) {
 
 
 pub fn bc1(image: &Vec<u8>, size: (usize, usize), quality: u8) -> Result<Vec<u8>, ()> {
-	if !(size.0 % 4 == 0 && size.1 % 4 == 0) {
+	if size.0 % 4 != 0 || size.1 % 4 != 0 || image.len() != size.0 * size.1 * 4 {
 		return Err(());
 	}
 
@@ -232,7 +232,7 @@ pub fn bc1(image: &Vec<u8>, size: (usize, usize), quality: u8) -> Result<Vec<u8>
    					let x = x * block_size + px;
    					let y = y * block_size + py;
 
-   					let pi = (x * size.0 + y) * 4; // in bytes
+   					let pi = (x * size.1 + y) * 4; // in bytes
    					let pix = [image[pi], image[pi + 1], image[pi + 2], image[pi + 3]];
 
    					pixels[px * block_size + py] = pix;
