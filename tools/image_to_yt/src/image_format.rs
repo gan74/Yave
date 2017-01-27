@@ -1,5 +1,5 @@
 
-use bc::*;
+use bc1;
 use image_data::*;
 
 
@@ -48,6 +48,6 @@ impl ImageFormat for Bc1Format {
 	}
 
 	fn encode(&self, image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
-		bc1(&image.data, image.size, quality)
+		bc1::encode(&image.data, image.size, quality)
 	}
 }

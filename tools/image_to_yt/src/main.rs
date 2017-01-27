@@ -11,7 +11,7 @@ use std::slice;
 mod image_data;
 mod image_format;
 mod mipmaping;
-mod bc;
+mod bc1;
 
 use image_data::*;
 use image_format::*;
