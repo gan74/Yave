@@ -99,7 +99,24 @@ impl<'a> Iterator for Blocks<'a> {
 		}
 		b
 	}
+	
+	fn count(self) -> usize {
+		let count = self.block_count();
+		let size = count.0 * count.1;
+		if self.index >= size {
+			0
+		} else {
+			size - self.index
+		}
+	}
+	
+	fn nth(&mut self, n: usize) -> Option<Block> {
+		self.index += n;
+		self.next()		
+	}
 }
+
+
 
 pub struct Pixels<'a> {
 	index: usize,

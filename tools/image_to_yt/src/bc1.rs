@@ -1,6 +1,8 @@
 
 use std::cmp;
+use std::mem;
 use image_data::*;
+use rayon::prelude::*;
 
 fn minf(a: f32, b: f32) -> f32 { if a < b { a } else { b } }
 fn maxf(a: f32, b: f32) -> f32 { if a > b { a } else { b } }
@@ -190,27 +192,19 @@ fn encode_block(pixels: &Block, quality: u8) -> (u64, u32) {
 	let max = encode_endpoint(&max) as u64;
 
 	let encoded = encode_pixels(&table, &pixels) as u64;
-
 	((encoded << 32) | (min << 16) | max, dist)
 }
 
-
-
-
-
-
-
-pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
+/*pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
 	if image.size.0 % 4 != 0 || image.size.1 % 4 != 0 {
 		return Err(());
 	}
-
-    let mut out = Vec::with_capacity(image.pixels().count() / 8);
-    let mut total_dist = 0u32;
-   	
+	let mut out = Vec::with_capacity(image.blocks().count() * 8);
+	
+	let mut total_dist = 0u64;
 	for blk in image.blocks() {
 		let (mut encoded, dist) = encode_block(&blk, quality);
-		total_dist += dist;
+		total_dist += dist as u64;
 
 		for _ in 0..8 {
 			out.push((encoded & 0xFF) as u8);
@@ -219,4 +213,30 @@ pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
 	}
 	//println!("per-pixel dist = {:?}", total_dist / image.pixels().count() as u32);
 	Ok(out)
+}*/
+
+pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
+	if image.size.0 % 4 != 0 || image.size.1 % 4 != 0 {
+		return Err(());
+	}
+	
+	let blocks = image.blocks().count();
+    let mut out = Vec::with_capacity(blocks);
+	for i in 0..blocks {
+		out.push(i as u64);
+	}
+	
+	let total_dist: u64 = out.as_mut_slice().par_iter_mut()
+		.map(|x| {
+			let index = *x as usize;
+			let encoded = encode_block(&image.blocks().nth(index).unwrap(), quality);
+			*x = encoded.0;
+			encoded.1 as u64
+		}).sum();
+	
+	unsafe {
+		let mut out: Vec<u8> = mem::transmute(out);
+		out.set_len(blocks * 8);
+		Ok(out)
+	}
 }

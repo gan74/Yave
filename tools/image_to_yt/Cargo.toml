@@ -5,3 +5,4 @@ authors = ["gan74 <gregoire.angerand@epfl.ch>"]
 
 [dependencies]
 image = "*"
+rayon = "*"

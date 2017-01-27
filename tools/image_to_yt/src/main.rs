@@ -1,4 +1,5 @@
 extern crate image;
+extern crate rayon;
 
 use std::fs::{File};
 use std::path::{Path};
@@ -40,7 +41,10 @@ fn process_file(file_name: String, format: &ImageFormat, quality: u8) {
 
     let image = ImageData::open(&Path::new(&file_name)).expect("Unable to open image file.");
     let ref mut writer = BufWriter::new(File::create(file_name + ".yt").expect("Unable to create output file."));
-    write_image(writer, image, format, quality).expect("Unable to write to output file.");
+    match write_image(writer, image, format, quality) {
+		Err(e) => panic!("{:?}", e),
+		Ok(_) => println!("Ok") 
+	};
 }
 
 fn write_image<W: Write + Seek>(file: &mut BufWriter<W>, mut image: ImageData, format: &ImageFormat, quality: u8) -> Result<usize> {
