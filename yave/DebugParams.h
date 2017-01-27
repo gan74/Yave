@@ -51,11 +51,9 @@ class DebugParams {
 		}
 
 	private:
-		//friend class LowLevelGraphics;
-
 		DebugParams(const core::ArrayProxy<const char*>& instance, const core::ArrayProxy<const char*>& device, bool callbacks) :
 				_instance_layers(instance.begin(), instance.end()),
-				_device_layers(device.begin(), instance.end()),
+				_device_layers(device.begin(), device.end()),
 				_callbacks_enabled(callbacks) {
 		}
 
