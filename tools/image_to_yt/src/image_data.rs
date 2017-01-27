@@ -6,10 +6,12 @@ use image::{GenericImage};
 use image;
 
 
-pub type Rgba = [u8; 4];
-pub type Block = [Rgba; 16];
+pub const BLOCK_SIZE: usize = 4;
+pub const BLOCK_PIXELS: usize = BLOCK_SIZE * BLOCK_SIZE;
 
-const BLOCK_SIZE: usize = 4;
+pub type Rgba = [u8; 4];
+pub type Block = [Rgba; BLOCK_PIXELS];
+
 
 pub struct ImageData {
 	pub size: (usize, usize),
@@ -62,16 +64,16 @@ impl<'a> Blocks<'a> {
 
 	fn xy(&self) -> (usize, usize) {
 		(self.index % (self.data.size.0 / BLOCK_SIZE),
-		self.index / (self.data.size.1 / BLOCK_SIZE))
+		self.index / (self.data.size.0 / BLOCK_SIZE))
 	}
 	
 	fn block(&self) -> Option<Block> {
-		let size = self.data.size.0 * self.data.size.0;
-		if self.index >= size / (BLOCK_SIZE * BLOCK_SIZE) {
+		let (x, y) = self.xy();
+		let count = self.block_count();
+		if x >= count.0 || y >= count.1 {
 			None 
 		} else {
-			let (x, y) = self.xy();
-			let mut pixels = [[0u8; 4]; 16]; // No compile time constants
+			let mut pixels = [[0u8; 4]; BLOCK_SIZE * BLOCK_SIZE]; // No compile time constants
    			for py in 0..BLOCK_SIZE {
    				for px in 0..BLOCK_SIZE {
    					let x = x * BLOCK_SIZE + px;

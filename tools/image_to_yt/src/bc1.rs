@@ -1,6 +1,6 @@
 
 use std::cmp;
-use image_data::{ImageData, Rgba, Block};
+use image_data::*;
 
 fn minf(a: f32, b: f32) -> f32 { if a < b { a } else { b } }
 fn maxf(a: f32, b: f32) -> f32 { if a > b { a } else { b } }
@@ -89,31 +89,70 @@ fn extrapolate_endpoints(ends: &(Rgba, Rgba)) -> (Rgba, Rgba) {
 	(a, b)
 }
 
-fn sort_quantize_endpoints(ends: &(Rgba, Rgba)) -> (Rgba, Rgba) {
-	if encode_endpoint(&ends.0) > encode_endpoint(&ends.1) {
-		quantize_endpoints(&(ends.1, ends.0))
+fn endpoints_sorted(ends: &(Rgba, Rgba)) -> bool {
+	encode_endpoint(&ends.0) < encode_endpoint(&ends.1)
+}
+
+fn sort_endpoints(ends: &(Rgba, Rgba)) -> (Rgba, Rgba) {
+	if endpoints_sorted(ends) {
+		*ends
 	} else {
-		quantize_endpoints(&(ends.0, ends.1))
+		(ends.1, ends.0)
 	}
 }
 
+fn sort_quantize_endpoints(ends: &(Rgba, Rgba)) -> (Rgba, Rgba) {
+	quantize_endpoints(&sort_endpoints(ends))
+}
+
 fn build_endpoints(pixels: &Block, quality: u8) -> Vec<(Rgba, Rgba)> {
-	let (min, max) = minmax(pixels);
+	let (min, max) = quantize_endpoints(&minmax(pixels));
 
 	let mut out = Vec::new();
-	out.push(quantize_endpoints(&(min, max)));
+	out.push((min, max));
 
 	if quality > 0 && min != max {
-		for i in 0..15 {
-			for j in (i + 1)..16 {
+		for i in 0..(BLOCK_PIXELS - 1) {
+			for j in (i + 1)..BLOCK_PIXELS {
+			
 				let px = (pixels[i], pixels[j]);
-				out.push(sort_quantize_endpoints(&px));
+				let qpx = sort_quantize_endpoints(&px);
+				out.push(qpx);
+				
 				if quality > 1 {
-					out.push(sort_quantize_endpoints(&extrapolate_endpoints(&px)));
+					let extrapolated = sort_quantize_endpoints(&extrapolate_endpoints(&px));
+					out.push(extrapolated);
+					
+					if quality > 2 {
+						let e = (extrapolated.0, max);
+						if endpoints_sorted(&e) {
+							out.push(e);
+						}
+						
+						let e = (min, extrapolated.1);
+						if endpoints_sorted(&e) {
+							out.push(e);
+						}
+						
+						if quality > 3 {
+							out.push(sort_endpoints(&(extrapolated.0, qpx.1)));
+							out.push(sort_endpoints(&(qpx.0, extrapolated.1)));
+						}
+					}
 				}
+				
 			}
 		}
 	}
+	
+	/*for endpoints in &out {
+		let q = sort_quantize_endpoints(endpoints);
+		if q != *endpoints {
+		println!("{:?} != {:?}", q, endpoints);
+			panic!("wtf!");
+		}
+	}*/
+	
 	out
 }
 
@@ -178,6 +217,6 @@ pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
 			encoded >>= 8;
    		}
 	}
-	println!("per-pixel dist = {:?}", total_dist / image.pixels().count() as u32);
+	//println!("per-pixel dist = {:?}", total_dist / image.pixels().count() as u32);
 	Ok(out)
 }
