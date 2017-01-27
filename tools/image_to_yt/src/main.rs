@@ -38,7 +38,7 @@ fn main() {
 fn process_file(file_name: String, format: &ImageFormat, quality: u8) {
     print!("{}: ", &file_name);
 
-    let image = ImageData::from_image(&image::open(&Path::new(&file_name)).expect("Unable to open image file."));
+    let image = ImageData::open(&Path::new(&file_name)).expect("Unable to open image file.");
     let ref mut writer = BufWriter::new(File::create(file_name + ".yt").expect("Unable to create output file."));
     write_image(writer, image, format, quality).expect("Unable to write to output file.");
 }
