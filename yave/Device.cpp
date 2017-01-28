@@ -25,6 +25,16 @@ SOFTWARE.
 
 namespace yave {
 
+static void check_features(const vk::PhysicalDeviceFeatures& features, const vk::PhysicalDeviceFeatures& required) {
+	auto feats = reinterpret_cast<const vk::Bool32*>(&features);
+	auto req = reinterpret_cast<const vk::Bool32*>(&required);
+	for(usize i = 0; i != sizeof(features) / sizeof(vk::Bool32); ++i) {
+		if(req[i] && !feats[i]) {
+			fatal("Required Vulkan feature not supported");
+		}
+	}
+}
+
 static core::Vector<QueueFamily> compute_queue_families(vk::PhysicalDevice physical) {
 	core::Vector<QueueFamily> queue_families;
 
@@ -39,7 +49,7 @@ static vk::Device create_device(
 		vk::PhysicalDevice physical,
 		const core::Vector<QueueFamily>& queue_families,
 		const core::Vector<const char*>& extentions,
-		const core::Vector<const char*>& layers) {
+		const DebugParams& debug) {
 
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
 
@@ -52,21 +62,25 @@ static vk::Device create_device(
 			;
 		});
 
+	auto required = vk::PhysicalDeviceFeatures();
+	required.multiDrawIndirect = true;
+	required.fullDrawIndexUint32 = true;
+	required.textureCompressionBC  = true;
 
-	auto features = physical.getFeatures();
-
-	if(!features.multiDrawIndirect) {
-		fatal("Multi-draw-indirect required.");
+	if(debug.is_debug_callback_enabled()) {
+		required.robustBufferAccess = true;
 	}
+
+	check_features(physical.getFeatures(), required);
 
 	return physical.createDevice(vk::DeviceCreateInfo()
 			.setEnabledExtensionCount(u32(extentions.size()))
 			.setPpEnabledExtensionNames(extentions.begin())
-			.setEnabledLayerCount(u32(layers.size()))
-			.setPpEnabledLayerNames(layers.begin())
+			.setEnabledLayerCount(u32(debug.device_layers().size()))
+			.setPpEnabledLayerNames(debug.device_layers().begin())
 			.setQueueCreateInfoCount(queue_create_infos.size())
 			.setPQueueCreateInfos(queue_create_infos.begin())
-			.setPEnabledFeatures(&features)
+			.setPEnabledFeatures(&required)
 		);
 }
 
@@ -75,7 +89,7 @@ Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
 		_queue_families(compute_queue_families(_physical.vk_physical_device())),
-		_device(create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params().device_layers())),
+		_device(create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())),
 		_sampler(this),
 		_disposable_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
