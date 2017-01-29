@@ -112,14 +112,15 @@ fn build_endpoints(pixels: &Block, quality: u8) -> Vec<(Rgba, Rgba)> {
 	
 	if quality == 255 {
 		for i in 0..3 {
-			for o in 0..(max[i] - min[i]) {
+			for o in (min[i] + 1)..max[i] {
 				let mut min = min;
-				min[i] += o;
+				min[i] = o;
 				
 				for i in 0..3 {
-					for o in 0..(max[i] - min[i]) {
+					for o in (min[i] + 1)..max[i] {
 						let mut max = max;
-						max[i] -= o;
+						max[i] = o;
+						
 						out.push((min, max));
 					}
 				}
