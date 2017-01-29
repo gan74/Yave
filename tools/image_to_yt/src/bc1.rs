@@ -40,16 +40,12 @@ fn block_dist(table: &[Rgba; 4], pixels: &Block) -> u32 {
 
 
 fn build_entry(ends: &(Rgba, Rgba), index: usize) -> Rgba {
-	let coefs = match index {
-		0x0 => (3, 0),
-		0x1 => (0, 3),
-		0x2 => (2 ,1),
-		_ => (1, 2)
-	};
-	[((coefs.1 * ends.0[0] as u16 + coefs.0 * ends.1[0] as u16) / 3) as u8,
-	 ((coefs.1 * ends.0[1] as u16 + coefs.0 * ends.1[1] as u16) / 3) as u8,
-	 ((coefs.1 * ends.0[2] as u16 + coefs.0 * ends.1[2] as u16) / 3) as u8,
-	 ((coefs.1 * ends.0[3] as u16 + coefs.0 * ends.1[3] as u16) / 3) as u8]
+	let b = if index < 2 { index * 3 } else { index - 1 } as u16;
+	let a = 3 - b;
+	[((b * ends.0[0] as u16 + a * ends.1[0] as u16) / 3) as u8,
+	 ((b * ends.0[1] as u16 + a * ends.1[1] as u16) / 3) as u8,
+	 ((b * ends.0[2] as u16 + a * ends.1[2] as u16) / 3) as u8,
+	 ((b * ends.0[3] as u16 + a * ends.1[3] as u16) / 3) as u8]
 }
 
 fn build_table(ends: &(Rgba, Rgba)) -> [Rgba; 4] {
