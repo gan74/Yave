@@ -1,6 +1,7 @@
 
 use std::cmp;
 use std::mem;
+use std::iter::*;
 use image_data::*;
 use rayon::prelude::*;
 
@@ -108,8 +109,23 @@ fn build_endpoints(pixels: &Block, quality: u8) -> Vec<(Rgba, Rgba)> {
 
 	let mut out = Vec::new();
 	out.push((min, max));
-
-	if quality > 0 && min != max {
+	
+	if quality == 255 {
+		for i in 0..3 {
+			for o in 0..(max[i] - min[i]) {
+				let mut min = min;
+				min[i] += o;
+				
+				for i in 0..3 {
+					for o in 0..(max[i] - min[i]) {
+						let mut max = max;
+						max[i] -= o;
+						out.push((min, max));
+					}
+				}
+			}
+		}
+	} if quality > 0 && min != max {
 		for i in 0..(BLOCK_PIXELS - 1) {
 			for j in (i + 1)..BLOCK_PIXELS {
 			
@@ -191,25 +207,8 @@ fn encode_block(pixels: &Block, quality: u8) -> (u64, u32) {
 	((encoded << 32) | (min << 16) | max, dist)
 }
 
-/*pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
-	if image.size.0 % 4 != 0 || image.size.1 % 4 != 0 {
-		return Err(());
-	}
-	let mut out = Vec::with_capacity(image.blocks().count() * 8);
-	
-	let mut total_dist = 0u64;
-	for blk in image.blocks() {
-		let (mut encoded, dist) = encode_block(&blk, quality);
-		total_dist += dist as u64;
 
-		for _ in 0..8 {
-			out.push((encoded & 0xFF) as u8);
-			encoded >>= 8;
-   		}
-	}
-	//println!("per-pixel dist = {:?}", total_dist / image.pixels().count() as u32);
-	Ok(out)
-}*/
+
 
 pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
 	if image.size.0 % BLOCK_SIZE != 0 || image.size.1 % BLOCK_SIZE != 0 {
@@ -217,19 +216,13 @@ pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
 	}
 	
 	let blocks = image.blocks().count();
+	
     let mut out = Vec::with_capacity(blocks);
-	for i in 0..blocks {
-		out.push(i as u64);
-	}
-	
-	let total_dist: u64 = out.as_mut_slice().par_iter_mut()
-		.map(|x| {
-			let index = *x as usize;
-			let encoded = encode_block(&image.blocks().nth(index).unwrap(), quality);
-			*x = encoded.0;
-			encoded.1 as u64
-		}).sum();
-	
+	(0..blocks).into_par_iter()
+		.map(|i| {
+			encode_block(&image.blocks().nth(i).unwrap(), quality).0
+		}).collect_into(&mut out);
+		
 	unsafe {
 		let mut out: Vec<u8> = mem::transmute(out);
 		out.set_len(blocks * 8);

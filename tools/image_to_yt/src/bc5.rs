@@ -42,26 +42,24 @@ fn build_table(ends: &(u8, u8)) -> [u8; 8] {
 	(mask << 16) | ((min as u64) << 8) | (max as u64)
  }
  
+ 
+ 
+ 
  pub fn encode(image: &ImageData) -> Result<Vec<u8>, ()> {
 	if image.size.0 % BLOCK_SIZE != 0 || image.size.1 % BLOCK_SIZE != 0 {
 		return Err(());
 	}
 	
 	let blocks = image.blocks().count();
-    let mut out = Vec::with_capacity(blocks);
-	for i in 0..(blocks) {
-		out.push((i as u64, 0u64));
-	}
 	
-	let _ = out.as_mut_slice().par_iter_mut()
-		.map(|x| {
-			let index = x.0 as usize;
-			let block = image.blocks().nth(index).unwrap();
+    let mut out = Vec::with_capacity(blocks);
+	(0..blocks).into_par_iter()
+		.map(|i| {
+			let block = image.blocks().nth(i).unwrap();
 			let r = encode_channel(&block, 0);
 			let g = encode_channel(&block, 1);
-			*x = (r, g);
-			1
-		}).sum();
+			(r, g)
+		}).collect_into(&mut out);
 	
 	unsafe {
 		let mut out: Vec<u8> = mem::transmute(out);
