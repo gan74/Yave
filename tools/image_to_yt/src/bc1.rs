@@ -33,7 +33,7 @@ fn pixel_dist_alpha(a: &Rgba, b: &Rgba) -> u32 {
 	}
 }
 
-fn block_dist<T: Fn(&Rgba, &Rgba) -> u32> (table: &[Rgba; 4], pixels: &Block, dist: T) -> u32 {
+fn block_dist<T: Fn(&Rgba, &Rgba) -> u32>(table: &[Rgba; 4], pixels: &Block, dist: T) -> u32 {
 	let mut sum = 0u32;
 	let mut max = 0u32;
 	for pix in pixels.into_iter().rev() {
@@ -92,7 +92,14 @@ fn minmax(pixels: &Block) -> (Rgb, Rgb) {
 
 fn quantize_endpoints(ends: &(Rgb, Rgb)) -> (Rgb, Rgb) {
 	fn quantize(end: &Rgb) -> Rgb {
-		[end[0] & 0xF8, end[1] & 0xFC, end[2] & 0xF8]
+		//[end[0] & 0xF8, end[1] & 0xFC, end[2] & 0xF8]
+		let bits = [3, 2, 3];
+		let mut e = *end;
+		for i in 0..3 {
+			let q = (e[i] >> bits[i]) << bits[i];
+			e[i] = q + ((e[i] >> (bits[i] - 1)) & 0x01);
+		}
+		e
 	}
 	(quantize(&ends.0), quantize(&ends.1))
 }
