@@ -216,7 +216,7 @@ fn encode_block(pixels: &Block, quality: u8) -> (u64, u32) {
 }*/
 
 pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
-	if image.size.0 % 4 != 0 || image.size.1 % 4 != 0 {
+	if image.size.0 % BLOCK_SIZE != 0 || image.size.1 % BLOCK_SIZE != 0 {
 		return Err(());
 	}
 	

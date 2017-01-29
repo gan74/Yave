@@ -13,6 +13,7 @@ mod image_data;
 mod image_format;
 mod mipmaping;
 mod bc1;
+mod bc5;
 
 use image_data::*;
 use image_format::*;
@@ -27,6 +28,7 @@ fn main() {
         } else if arg.starts_with("-") {
             format = match arg.as_ref() {
                 "--bc1" => Box::new(Bc1Format::new()),
+                "--bc5" => Box::new(Bc5Format::new()),
                 "--rgba" => Box::new(Rgba8Format::new()),
                 _ => panic!("Unknown argument.")
             }

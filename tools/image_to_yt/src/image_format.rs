@@ -1,6 +1,7 @@
 
-use bc1;
 use image_data::*;
+use bc1;
+use bc5;
 
 
 pub trait ImageFormat {
@@ -49,5 +50,25 @@ impl ImageFormat for Bc1Format {
 
 	fn encode(&self, image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
 		bc1::encode(image, quality)
+	}
+}
+
+
+pub struct Bc5Format {
+}
+
+impl Bc5Format {
+	pub fn new() -> Bc5Format {
+		Bc5Format{}
+	}
+}
+
+impl ImageFormat for Bc5Format {
+	fn id(&self) -> u32 {
+		141
+	}
+
+	fn encode(&self, image: &ImageData, _: u8) -> Result<Vec<u8>, ()> {
+		bc5::encode(image)
 	}
 }

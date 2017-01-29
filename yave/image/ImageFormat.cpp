@@ -40,6 +40,9 @@ usize ImageFormat::bit_per_pixel() const {
 		case vk::Format::eD32Sfloat:
 			return 4 * 8;
 
+		case vk::Format::eBc5UnormBlock:
+			return 8;
+
 		case vk::Format::eBc1RgbaUnormBlock:
 			return 4;
 
@@ -53,6 +56,7 @@ vk::ImageAspectFlags ImageFormat::vk_aspect() const {
 		case vk::Format::eB8G8R8A8Unorm:
 		case vk::Format::eR8G8B8A8Unorm:
 		case vk::Format::eBc1RgbaUnormBlock:
+		case vk::Format::eBc5UnormBlock:
 			return vk::ImageAspectFlagBits::eColor;
 
 		case vk::Format::eD32Sfloat:

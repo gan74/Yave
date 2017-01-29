@@ -110,7 +110,7 @@ core::Duration YaveApp::draw() {
 void YaveApp::update(math::Vec2 angles) {
 	auto cam_pos =
 			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
-			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.5, 0, 0, 1);
+			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(0, 4, 0, 1);
 
 	/*usize max = 100'000;
 	auto points = core::vector_with_capacity<math::Vec3>(max);
@@ -172,8 +172,6 @@ void YaveApp::create_assets() {
 	renderer = new DeferredRenderer(*scene_view, swapchain->size());
 
 }
-
-
 
 }
 
