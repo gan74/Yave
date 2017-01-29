@@ -137,52 +137,54 @@ fn build_endpoints(pixels: &Block, quality: u8) -> Vec<(Rgb, Rgb)> {
 	let mut out = Vec::new();
 	out.push((min, max));
 	
-	if quality == 255 {
-		for i in 0..3 {
-			for o in (min[i] + 1)..max[i] {
-				let mut min = min;
-				min[i] = o;
-				
-				for i in 0..3 {
-					for o in (min[i] + 1)..max[i] {
-						let mut max = max;
-						max[i] = o;
-						
-						out.push((min, max));
+	if quality > 0 && min != max {
+		if quality == 255 {
+			for i in 0..3 {
+				let mid = ((min[i] as u16 + max[i] as u16) / 2) as u8;
+				for o in (min[i] + 1)..mid {
+					let mut min = min;
+					min[i] = o;
+					
+					for i in 0..3 {
+						for o in mid..max[i] {
+							let mut max = max;
+							max[i] = o;
+							
+							out.push((min, max));
+						}
 					}
 				}
 			}
-		}
-	} if quality > 0 && min != max {
-		for i in 0..(BLOCK_PIXELS - 1) {
-			for j in (i + 1)..BLOCK_PIXELS {
-			
-				let px = (to_rgb(&pixels[i]), to_rgb(&pixels[j]));
-				let qpx = sort_quantize_endpoints(&px);
-				out.push(qpx);
+		} else {
+			for i in 0..(BLOCK_PIXELS - 1) {
+				for j in (i + 1)..BLOCK_PIXELS {
 				
-				if quality > 1 {
-					let extrapolated = sort_quantize_endpoints(&extrapolate_endpoints(&px));
-					out.push(extrapolated);
+					let px = (to_rgb(&pixels[i]), to_rgb(&pixels[j]));
+					let qpx = sort_quantize_endpoints(&px);
+					out.push(qpx);
 					
-					if quality > 2 {
-						let e = (extrapolated.0, max);
-						if endpoints_sorted(&e) {
-							out.push(e);
-						}
+					if quality > 1 {
+						let extrapolated = sort_quantize_endpoints(&extrapolate_endpoints(&px));
+						out.push(extrapolated);
 						
-						let e = (min, extrapolated.1);
-						if endpoints_sorted(&e) {
-							out.push(e);
-						}
-						
-						if quality > 3 {
-							out.push(sort_endpoints(&(extrapolated.0, qpx.1)));
-							out.push(sort_endpoints(&(qpx.0, extrapolated.1)));
+						if quality > 2 {
+							let e = (extrapolated.0, max);
+							if endpoints_sorted(&e) {
+								out.push(e);
+							}
+							
+							let e = (min, extrapolated.1);
+							if endpoints_sorted(&e) {
+								out.push(e);
+							}
+							
+							if quality > 3 {
+								out.push(sort_endpoints(&(extrapolated.0, qpx.1)));
+								out.push(sort_endpoints(&(qpx.0, extrapolated.1)));
+							}
 						}
 					}
 				}
-				
 			}
 		}
 	}
