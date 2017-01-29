@@ -10,6 +10,7 @@ pub const BLOCK_SIZE: usize = 4;
 pub const BLOCK_PIXELS: usize = BLOCK_SIZE * BLOCK_SIZE;
 
 pub type Rgba = [u8; 4];
+pub type Rgb = [u8; 3];
 pub type Block = [Rgba; BLOCK_PIXELS];
 
 
