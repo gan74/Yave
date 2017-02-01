@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_DEFINES_H
-#define Y_DEFINES_H
+#ifndef Y_UTILS_SORT_H
+#define Y_UTILS_SORT_H
+
+#if __has_include(<pdqsort.h>)
+#include <pdqsort.h>
+#define Y_USE_PDQSORT
+#else
+#include <algorithm>
+// you can find pdqsort at https://github.com/orlp/pdqsort
+#endif
+
 
 namespace y {
 
-struct Nothing;
-Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
+template<typename It, typename Compare>
+inline void sort(It begin, It end, Compare comp) {
+#ifdef Y_USE_PDQSORT
+	pdqsort(begin, end, comp);
+#else
+	std::sort(begin, end, comp);
+#endif
+}
+
+template<typename It>
+inline void sort(It begin, It end) {
+#ifdef Y_USE_PDQSORT
+	pdqsort(begin, end);
+#else
+	std::sort(begin, end);
+#endif
+}
 
 }
 
 
-#define Y_TODO(msg) /* msg */
-
-
-#ifndef __PRETTY_FUNCTION__
-#define __PRETTY_FUNCTION__ __func__
-#endif
-
-/****************** OS DEFINES BELOW ******************/
-
-#if defined(WIN32) || defined(__WIN32) || defined(__WIN32__) || defined(_WINDOWS)
-#define Y_OS_WIN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-
-#endif // Y_DEFINES_H
+#endif // Y_UTILS_SORT_H

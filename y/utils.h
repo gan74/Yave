@@ -34,6 +34,7 @@ SOFTWARE.
 
 #include <y/utils/iterable.h>
 #include <y/utils/comparable.h>
+#include <y/utils/sort.h>
 #include <y/utils/hash.h>
 #include <y/utils/log.h>
 #include <y/utils/os.h>
@@ -120,7 +121,7 @@ namespace detail {
 template<typename T>
 class ScopeExit {
 	public:
-		ScopeExit(T t) : ex(t) {
+		ScopeExit(T&& t) : ex(std::forward<T>(t)) {
 		}
 
 		~ScopeExit() {
@@ -134,8 +135,8 @@ class ScopeExit {
 }
 
 template<typename T>
-auto scope_exit(T t) {
-	return detail::ScopeExit<T>(t);
+auto scope_exit(T&& t) {
+	return detail::ScopeExit<T>(std::forward<T>(t));
 }
 
 }
