@@ -131,7 +131,7 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 	}
 	{
 		auto vertex_attribs = vert.attributes();
-		std::sort(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; });
+		sort(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; });
 		create_vertex_attribs(vertex_attribs, _vertex.bindings, _vertex.attribs);
 	}
 }
