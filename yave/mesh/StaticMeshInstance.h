@@ -53,11 +53,50 @@ using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferU
 
 
 
-struct StaticMeshInstance {
-	TriangleSubBuffer<> triangle_buffer;
-	VertexSubBuffer<> vertex_buffer;
+inline auto create_indirect_buffer_data(const MeshData& m, usize vertex_offset = 0, usize triangle_offset = 0, usize max = usize(-1)) {
+	using Cmd = vk::DrawIndexedIndirectCommand;
+	core::Vector<Cmd> cmds;
+	for(usize i = 0, size = m.triangles.size(); i < size; i += max) {
+		cmds << Cmd(u32(std::min(size - i, max) * 3), 1, u32((i + triangle_offset) * 3), i32(vertex_offset));
+	}
+	return cmds;
+}
 
-	IndirectBuffer<> indirect_buffer;
+struct StaticMeshInstance {
+
+	public:
+		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, const IndirectSubBuffer<>&& i) :
+				triangle_buffer(t),
+				vertex_buffer(v),
+				indirect_buffer(i) {
+		}
+
+		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, IndirectBuffer<>&& i) :
+				StaticMeshInstance(t, v, IndirectSubBuffer<>(i)) {
+			_keep_alive.indirect = std::move(i);
+		}
+
+		StaticMeshInstance(TriangleBuffer<>&& t, VertexBuffer<>&& v, IndirectBuffer<>&& i) :
+				StaticMeshInstance(TriangleSubBuffer<>(t), VertexSubBuffer<>(v), IndirectSubBuffer<>(i)) {
+			_keep_alive = { std::move(t), std::move(v), std::move(i) };
+		}
+
+		StaticMeshInstance(DevicePtr dptr, const MeshData& data) :
+			 StaticMeshInstance(TriangleBuffer<>(dptr, data.triangles), VertexBuffer<>(dptr, data.vertices), IndirectBuffer<>(dptr, create_indirect_buffer_data(data))) {
+
+		}
+
+		const TriangleSubBuffer<> triangle_buffer;
+		const VertexSubBuffer<> vertex_buffer;
+		const IndirectSubBuffer<> indirect_buffer;
+
+	private:
+		struct {
+			TriangleBuffer<> triangle;
+			VertexBuffer<> vertex;
+			IndirectBuffer<> indirect;
+		} _keep_alive;
+
 };
 
 }

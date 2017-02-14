@@ -26,14 +26,6 @@ namespace yave {
 
 using Cmd = vk::DrawIndexedIndirectCommand;
 
-static auto create_indirect_buffer(const MeshData& m, usize vertex_offset, usize triabgle_offset, usize max = usize(-1)) {
-	core::Vector<Cmd> cmds;
-	for(usize i = 0, size = m.triangles.size(); i < size; i += max) {
-		cmds << Cmd(u32(std::min(size - i, max) * 3), 1, u32((i + triabgle_offset) * 3), i32(vertex_offset));
-	}
-	return cmds;
-}
-
 MeshInstancePool::MeshInstancePool(DevicePtr dptr, usize vertices, usize triangles) :
 		DeviceLinked(dptr),
 		_vertex_buffer(dptr, vertices),
@@ -63,7 +55,7 @@ StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
 	std::copy(data.triangles.begin(), data.triangles.end(), tris.map().begin());
 	std::copy(data.vertices.begin(), data.vertices.end(), verts.map().begin());
 
-	return StaticMeshInstance{tris, verts, IndirectBuffer<>(device(), create_indirect_buffer(data, vertex_offset, triangle_offset))};
+	return StaticMeshInstance(tris, verts, IndirectBuffer<>(device(), create_indirect_buffer_data(data, vertex_offset, triangle_offset)));
 }
 
 }
