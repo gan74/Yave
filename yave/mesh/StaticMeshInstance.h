@@ -65,30 +65,39 @@ inline auto create_indirect_buffer_data(const MeshData& m, usize vertex_offset =
 struct StaticMeshInstance {
 
 	public:
-		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, const IndirectSubBuffer<>&& i) :
+		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, const IndirectSubBuffer<>&& i, float rad) :
 				triangle_buffer(t),
 				vertex_buffer(v),
-				indirect_buffer(i) {
+				indirect_buffer(i),
+				radius(rad) {
 		}
 
-		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, IndirectBuffer<>&& i) :
-				StaticMeshInstance(t, v, IndirectSubBuffer<>(i)) {
+		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, IndirectBuffer<>&& i, float rad) :
+				StaticMeshInstance(t, v, IndirectSubBuffer<>(i), rad) {
+
 			_keep_alive.indirect = std::move(i);
 		}
 
-		StaticMeshInstance(TriangleBuffer<>&& t, VertexBuffer<>&& v, IndirectBuffer<>&& i) :
-				StaticMeshInstance(TriangleSubBuffer<>(t), VertexSubBuffer<>(v), IndirectSubBuffer<>(i)) {
+		StaticMeshInstance(TriangleBuffer<>&& t, VertexBuffer<>&& v, IndirectBuffer<>&& i, float rad) :
+				StaticMeshInstance(TriangleSubBuffer<>(t), VertexSubBuffer<>(v), IndirectSubBuffer<>(i), rad) {
+
 			_keep_alive = { std::move(t), std::move(v), std::move(i) };
 		}
 
 		StaticMeshInstance(DevicePtr dptr, const MeshData& data) :
-			 StaticMeshInstance(TriangleBuffer<>(dptr, data.triangles), VertexBuffer<>(dptr, data.vertices), IndirectBuffer<>(dptr, create_indirect_buffer_data(data))) {
+				 StaticMeshInstance(TriangleBuffer<>(dptr, data.triangles),
+									VertexBuffer<>(dptr, data.vertices),
+									IndirectBuffer<>(dptr, create_indirect_buffer_data(data)),
+									data.radius) {
 
 		}
 
 		const TriangleSubBuffer<> triangle_buffer;
 		const VertexSubBuffer<> vertex_buffer;
 		const IndirectSubBuffer<> indirect_buffer;
+
+
+		const float radius = 0.0f;
 
 	private:
 		struct {

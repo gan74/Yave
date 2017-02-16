@@ -16,6 +16,16 @@ pub struct Mesh {
 	pub triangles: Vec<Triangle>
 }
 
+impl Mesh {
+	pub fn radius(&self) -> f32 {
+		let mut ra = 0.0;
+		for v in &self.vertices {
+			let d = dot(&v.position, &v.position);
+			ra = if d > ra { d } else { ra };
+		}
+		ra.sqrt()
+	}
+}
 
 #[derive(Debug)]
 pub struct Error {

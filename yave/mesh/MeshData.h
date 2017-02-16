@@ -32,6 +32,7 @@ namespace yave {
 struct MeshData {
 	core::Vector<Vertex> vertices;
 	core::Vector<IndexedTriangle> triangles;
+	float radius = 0.0f;
 
 	static MeshData from_file(io::ReaderRef reader);
 };

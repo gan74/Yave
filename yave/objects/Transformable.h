@@ -81,6 +81,9 @@ class Transformable : NonCopyable {
 			}*/
 		}
 
+
+		float radius = 0.0f;
+
 	private:
 		Transform* _transform = nullptr;
 		//Transform _storage;

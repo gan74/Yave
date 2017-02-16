@@ -110,7 +110,7 @@ core::Duration YaveApp::draw() {
 void YaveApp::update(math::Vec2 angles) {
 	auto cam_pos =
 			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
-			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(0, 4, 0, 1);
+			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.2, 0, 0, 1);
 
 	/*usize max = 100'000;
 	auto points = core::vector_with_capacity<math::Vec3>(max);
@@ -156,7 +156,7 @@ void YaveApp::create_assets() {
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
-		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
+		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(/*new StaticMeshInstance(&device,*/ m_data));
 		for(usize i = 0; i != 1; i++) {
 			auto m = StaticMesh(mesh, material);
 			m.set_position(math::Vec3(objects.size() * -3.0f, 0, 0));

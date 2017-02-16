@@ -25,11 +25,13 @@ fn process_file(file_name: String) {
 
 fn write_mesh<T: Write>(file: &mut T, mesh: &Mesh) -> Result<usize> {
     let mesh_type: u32 = 1;
-    let version: u32 = 1;
+    let version: u32 = 2;
 
     file.write(b"yave")
         .and_then(|_| write_bin(file, &vec![mesh_type, version]))
 
+        .and_then(|_| write_bin(file, &vec![mesh.radius()]))
+		
         .and_then(|_| write_bin(file, &vec![mesh.vertices.len() as u32]))
         .and_then(|_| write_bin(file, &mesh.vertices))
 

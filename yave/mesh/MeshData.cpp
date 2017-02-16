@@ -30,6 +30,7 @@ namespace yave {
 
 MeshData MeshData::from_file(io::ReaderRef reader) {
 	const char* err_msg = "Unable to load mesh.";
+
 	struct Header {
 		u32 magic;
 		u32 type;
@@ -38,7 +39,7 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 		bool is_valid() const {
 			return magic == 0x65766179 &&
 				   type == 1 &&
-				   version == 1;
+				   version == 2;
 		}
 	};
 
@@ -53,6 +54,7 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 	}
 
 	MeshData mesh;
+	mesh.radius = decoder.decode<decltype(mesh.radius)>().expected(err_msg);
 	mesh.vertices = decoder.decode<decltype(mesh.vertices)>().expected(err_msg);
 	mesh.triangles = decoder.decode<decltype(mesh.triangles)>().expected(err_msg);
 

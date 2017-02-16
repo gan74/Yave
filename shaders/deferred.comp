@@ -101,8 +101,8 @@ void main() {
 	}
 	//acc = load_color(lights.count);
 
-	imageStore(out_color, coord, diffuse);
-	//imageStore(out_color, coord, vec4(acc, 1.0));
+	//imageStore(out_color, coord, diffuse);
+	imageStore(out_color, coord, vec4(acc, 1.0));
 }
 
 

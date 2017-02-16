@@ -36,6 +36,12 @@ StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const Asset
 		_matrix_buffer(_material->device(), 1),
 		_mapping(_matrix_buffer) {
 
+	if(!instance) {
+		fatal("Null instance.");
+	}
+
+	radius = _instance->radius;
+
 	set_storage(_mapping.begin());
 	transform() = math::identity();
 }
