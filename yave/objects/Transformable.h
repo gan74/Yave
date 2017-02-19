@@ -61,6 +61,10 @@ class Transformable : NonCopyable {
 			return *_transform;
 		}
 
+		float radius() const {
+			return _radius;
+		}
+
 	protected:
 		void set_storage(Transform* s) {
 			/*if(!s) {
@@ -81,12 +85,17 @@ class Transformable : NonCopyable {
 			}*/
 		}
 
+		void set_radius(float r) {
+			_radius = r;
+		}
 
-		float radius = 0.0f;
 
 	private:
 		Transform* _transform = nullptr;
 		//Transform _storage;
+
+
+		float _radius = 0.0f;
 };
 
 }

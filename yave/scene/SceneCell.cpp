@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,44 +20,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "StaticMesh.h"
-
-#include <yave/commands/CmdBufferRecorder.h>
-#include <yave/material/Material.h>
-#include <yave/RenderPass.h>
-#include <yave/Device.h>
+#include "SceneCell.h"
 
 namespace yave {
 
-
-StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material) :
-		_instance(instance),
-		_material(material),
-		_matrix_buffer(_material->device(), 1),
-		_mapping(_matrix_buffer) {
-
-	if(!instance) {
-		fatal("Null instance.");
+template<typename T>
+static AABB compute_AABB(const core::Vector<T>& objs) {
+	if(objs.is_empty()) {
+		return AABB{};
 	}
 
-	set_radius(_instance->radius);
+	math::Vec3 min(std::numeric_limits<float>::max());
+	math::Vec3 max(std::numeric_limits<float>::min());
 
-	set_storage(_mapping.begin());
-	transform() = math::identity();
+	for(const auto& t : objs) {
+		const auto& pos = t.position();
+		auto r = t.radius();
+		for(usize i = 0; i != 3; ++i) {
+			min[i] = std::min(min[i], pos[i] - r);
+			max[i] = std::max(max[i], pos[i] + r);
+		}
+	}
+	return AABB{min, max};
 }
 
-StaticMesh::StaticMesh(StaticMesh&& other) :
-		_instance(std::move(other._instance)),
-		_material(std::move(other._material)),
-		_matrix_buffer(std::move(other._matrix_buffer)),
-		_mapping(std::move(other._mapping)) {
-	set_storage(_mapping.begin());
+
+SceneCell::SceneCell(core::Vector<StaticMesh>&& meshes) : _statics(std::move(meshes)), _aabb(compute_AABB(_statics)) {
 }
 
-void StaticMesh::draw(CmdBufferRecorderBase& recorder, const DescriptorSet& vp) const {
-	recorder.bind_pipeline(_material->compile(recorder.current_pass(), recorder.viewport()), {vp});
-	recorder.vk_cmd_buffer().bindVertexBuffers(1, _matrix_buffer.vk_buffer(), vk::DeviceSize(0));
-	recorder.draw(*_instance);
+const AABB& SceneCell::aabb() const {
+	return _aabb;
+}
+
+const core::Vector<StaticMesh>& SceneCell::static_meshes() const {
+	return _statics;
 }
 
 }

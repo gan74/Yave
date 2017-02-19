@@ -41,6 +41,8 @@ SOFTWARE.
 #include <yave/renderers/DeferredRenderer.h>
 #include <yave/renderers/ClearRenderer.h>
 
+#include <yave/pipeline/SceneRendererNode.h>
+
 namespace yave {
 
 class Window;

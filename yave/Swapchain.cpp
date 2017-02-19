@@ -187,6 +187,10 @@ Swapchain::~Swapchain() {
 	destroy(_surface);
 }
 
+FrameToken Swapchain::next_frame(vk::Semaphore image_acquired) {
+	u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, VK_NULL_HANDLE).value;
+	return FrameToken{++_frame_id, image_index, SwapchainImageView(_images[image_index])};
+}
 
 vk::SwapchainKHR Swapchain::vk_swapchain() const {
 	return _swapchain;

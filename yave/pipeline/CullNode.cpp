@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,26 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
 
-#include <yave/yave.h>
-#include <yave/objects/StaticMesh.h>
+#include "CullNode.h"
 
 namespace yave {
 
-class Scene : NonCopyable {
-
-	public:
-		Scene(core::Vector<StaticMesh>&& meshes);
-
-		const core::Vector<StaticMesh>& static_meshes() const;
-
-	private:
-		core::Vector<StaticMesh> _statics; // pointers ?
-};
-
-
+CullNode::CullNode(SceneView &view) : _view(view) {
 }
 
-#endif // YAVE_SCENE_SCENE_H
+void CullNode::process(const FrameToken&) {
+	_visibles.make_empty();
+	auto frustum = _view.camera().frustum();
+
+	for(const auto& m : _view.scene().static_meshes()) {
+		if(frustum.is_inside(m.position(), m.radius())) {
+			_visibles.push_back(&m);
+		}
+	}
+}
+
+
+const core::Vector<const StaticMesh*>& CullNode::visibles() const {
+	return _visibles;
+}
+
+}

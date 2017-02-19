@@ -19,17 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_SCENE_AABB_H
+#define YAVE_SCENE_AABB_H
 
-#include "ClearRenderer.h"
+#include <yave/yave.h>
 
 namespace yave {
 
-ClearRenderer::ClearRenderer(Framebuffer &framebuffer)  :
-		_framebuffer(framebuffer) {
+struct AABB {
+	const math::Vec3 min;
+	const math::Vec3 max;
+
+
+
+	math::Vec3 position() const {
+		return (min + max) * 0.5f;
+	}
+
+	float radius() const {
+		return (max - min).length() * 0.5f;
+	}
+};
+
 }
 
-void ClearRenderer::draw(CmdBufferRecorderBase& recorder) const {
-	recorder.bind_framebuffer(_framebuffer);
-}
-
-}
+#endif // YAVE_SCENE_AABB_H

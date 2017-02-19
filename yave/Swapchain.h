@@ -25,6 +25,7 @@ SOFTWARE.
 #include "yave.h"
 
 #include "Framebuffer.h"
+#include "FrameToken.h"
 
 #include <yave/image/ImageFormat.h>
 #include <yave/image/Image.h>
@@ -33,8 +34,6 @@ SOFTWARE.
 namespace yave {
 
 class Window;
-
-static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit | ImageUsage::StorageBit;
 
 class SwapchainImage : public Image<SwapchainImageUsage> {
 	private:
@@ -50,8 +49,6 @@ class SwapchainImage : public Image<SwapchainImageUsage> {
 			DeviceLinked::swap(dev);
 		}
 };
-
-using SwapchainImageView = ImageView<SwapchainImageUsage>;
 
 class Swapchain : NonCopyable, public DeviceLinked {
 
@@ -74,13 +71,13 @@ class Swapchain : NonCopyable, public DeviceLinked {
 
 		ImageFormat color_format() const;
 
-		const auto& image(usize i) const {
+		/*const auto& image(usize i) const {
 			return _images[i];
 		}
 
 		auto& image(usize i) {
 			return _images[i];
-		}
+		}*/
 
 		const auto& images() const {
 			return _images;
@@ -90,8 +87,11 @@ class Swapchain : NonCopyable, public DeviceLinked {
 			return core::range(_images);
 		}
 
+		FrameToken next_frame(vk::Semaphore image_acquired);
 
 	private:
+		u64 _frame_id = 0;
+
 		math::Vec2ui _size;
 		ImageFormat _color_format;
 
@@ -99,6 +99,7 @@ class Swapchain : NonCopyable, public DeviceLinked {
 
 		Owner<vk::SurfaceKHR> _surface;
 		vk::SwapchainKHR _swapchain;
+
 
 };
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,26 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
+#ifndef YAVE_PIPELINE_NODE_H
+#define YAVE_PIPELINE_NODE_H
 
 #include <yave/yave.h>
-#include <yave/objects/StaticMesh.h>
+#include <yave/FrameToken.h>
 
 namespace yave {
 
-class Scene : NonCopyable {
-
+class Node : NonCopyable {
 	public:
-		Scene(core::Vector<StaticMesh>&& meshes);
+		virtual ~Node() {
+		}
 
-		const core::Vector<StaticMesh>& static_meshes() const;
+		virtual void process(const FrameToken&) = 0;
 
-	private:
-		core::Vector<StaticMesh> _statics; // pointers ?
+		virtual core::ArrayProxy<Node*> dependencies() {
+			return {};
+		}
+
+
+
+
 };
-
 
 }
 
-#endif // YAVE_SCENE_SCENE_H
+#endif // YAVE_PIPELINE_NODE_H

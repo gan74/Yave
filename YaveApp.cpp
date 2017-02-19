@@ -57,10 +57,10 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 }
 
 void YaveApp::create_command_buffers() {
-	for(usize i = 0; i != swapchain->image_count(); i++) {
+	for(const auto& img : swapchain->images()) {
 		CmdBufferRecorder<CmdBufferUsage::Normal> recorder(command_pool.create_buffer());
 
-		renderer->draw(recorder, swapchain->image(i));
+		renderer->draw(recorder, img);
 
 		command_buffers << recorder.end();
 	}
@@ -72,14 +72,15 @@ core::Duration YaveApp::draw() {
 	auto vk_swap = swapchain->vk_swapchain();
 	auto image_acquired_semaphore = device.vk_device().createSemaphore(vk::SemaphoreCreateInfo());
 	auto render_finished_semaphore = device.vk_device().createSemaphore(vk::SemaphoreCreateInfo());
-	u32 image_index = device.vk_device().acquireNextImageKHR(vk_swap, u64(-1), image_acquired_semaphore, VK_NULL_HANDLE).value;
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
+
+	FrameToken frame = swapchain->next_frame(image_acquired_semaphore);
 
 	renderer->update();
 	{
 
-		auto buffer = command_buffers[image_index].vk_cmd_buffer();
+		auto buffer = command_buffers[frame.image_index].vk_cmd_buffer();
 		auto submit_info = vk::SubmitInfo()
 				.setWaitSemaphoreCount(0)
 				.setPWaitDstStageMask(&pipe_stage_flags)
@@ -93,7 +94,7 @@ core::Duration YaveApp::draw() {
 		graphic_queue.presentKHR(vk::PresentInfoKHR()
 				.setSwapchainCount(1)
 				.setPSwapchains(&vk_swap)
-				.setPImageIndices(&image_index)
+				.setPImageIndices(&frame.image_index)
 				.setWaitSemaphoreCount(1)
 				.setPWaitSemaphores(&render_finished_semaphore)
 			);

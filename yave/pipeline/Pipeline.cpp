@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,26 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
 
-#include <yave/yave.h>
-#include <yave/objects/StaticMesh.h>
+#include "Pipeline.h"
+
+#include <unordered_set>
 
 namespace yave {
 
-class Scene : NonCopyable {
-
-	public:
-		Scene(core::Vector<StaticMesh>&& meshes);
-
-		const core::Vector<StaticMesh>& static_meshes() const;
-
-	private:
-		core::Vector<StaticMesh> _statics; // pointers ?
-};
-
-
+static void find_nodes(Node* node, std::unordered_set<Node*>& nodes) {
+	for(Node* n : node->dependencies()) {
+		nodes.insert(n);
+	}
 }
 
-#endif // YAVE_SCENE_SCENE_H
+Pipeline::Pipeline(core::Unique<Node> root) : _root(std::move(root)) {
+}
+
+void Pipeline::process(const FrameToken& token) {
+	std::unordered_set<Node*> nodes;
+	find_nodes(_root.as_ptr(), nodes);
+
+	while(true) {
+		auto it = std::find_if(nodes.begin(), nodes.end(), [&nodes](Node* n) {
+			auto deps = n->dependencies();
+			return std::none_of(deps.begin(), deps.end(), [&nodes](Node* d) { return nodes.find(d) != nodes.end(); });
+		});
+
+		if(it == nodes.end()) {
+			fatal("Unable to find processable node in pipeline.");
+		}
+
+		nodes.erase(it);
+		(*it)->process(token);
+
+		if(nodes.empty()) {
+			return;
+		}
+	}
+}
+
+}

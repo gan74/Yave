@@ -19,24 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_CLEARRENDERER_H
-#define YAVE_RENDERERS_CLEARRENDERER_H
+#ifndef YAVE_PIPELINE_CULLNODE_H
+#define YAVE_PIPELINE_CULLNODE_H
 
-#include <yave/Framebuffer.h>
-#include <yave/commands/CmdBufferRecorder.h>
+#include "Node.h"
+#include <yave/scene/SceneView.h>
 
 namespace yave {
 
-class ClearRenderer : NonCopyable {
+class CullNode : public Node {
 	public:
-		ClearRenderer(Framebuffer& framebuffer);
+		CullNode(SceneView& view);
 
-		void draw(CmdBufferRecorderBase& recorder) const;
+		const core::Vector<const StaticMesh*>& visibles() const;
+
+		virtual void process(const FrameToken&) override;
 
 	private:
-		Framebuffer& _framebuffer;
+		SceneView& _view;
+
+		core::Vector<const StaticMesh*> _visibles;
 };
 
 }
 
-#endif // YAVE_RENDERERS_CLEARRENDERER_H
+#endif // YAVE_PIPELINE_CULLNODE_H
