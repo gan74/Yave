@@ -30,7 +30,7 @@ class Pipeline {
 	public:
 		Pipeline(core::Unique<Node> root);
 
-		void process(const FrameToken& token);
+		void process(FrameToken& token);
 
 	private:
 		core::Unique<Node> _root;

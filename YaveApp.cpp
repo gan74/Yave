@@ -39,7 +39,7 @@ YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), comma
 }
 
 YaveApp::~YaveApp() {
-	delete renderer;
+	delete pipeline;
 
 	delete scene_view;
 	delete scene;
@@ -57,13 +57,13 @@ vk::Extent2D extent(const math::Vec2ui& v) {
 }
 
 void YaveApp::create_command_buffers() {
-	for(const auto& img : swapchain->images()) {
+	/*for(const auto& img : swapchain->images()) {
 		CmdBufferRecorder<CmdBufferUsage::Normal> recorder(command_pool.create_buffer());
 
 		renderer->draw(recorder, img);
 
 		command_buffers << recorder.end();
-	}
+	}*/
 }
 
 core::Duration YaveApp::draw() {
@@ -75,12 +75,13 @@ core::Duration YaveApp::draw() {
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
 
-	FrameToken frame = swapchain->next_frame(image_acquired_semaphore);
+	FrameToken frame = std::move(swapchain->next_frame(image_acquired_semaphore));
 
-	renderer->update();
+	//renderer->update();
+	pipeline->process(frame);
 	{
 
-		auto buffer = command_buffers[frame.image_index].vk_cmd_buffer();
+		auto buffer = frame.cmd_buffer.end().vk_cmd_buffer();
 		auto submit_info = vk::SubmitInfo()
 				.setWaitSemaphoreCount(0)
 				.setPWaitDstStageMask(&pipe_stage_flags)
@@ -113,27 +114,7 @@ void YaveApp::update(math::Vec2 angles) {
 			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
 			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.2, 0, 0, 1);
 
-	/*usize max = 100'000;
-	auto points = core::vector_with_capacity<math::Vec3>(max);
-	for(usize i = 0; i != max; ++i) {
-		float x = rand() / float(RAND_MAX);
-		float y = rand() / float(RAND_MAX);
-		float z = rand() / float(RAND_MAX);
-		points << (math::Vec3(x, y, z) - math::Vec3(0.5)) * 100000;
-	}
-
-	auto outs = core::vector_with_capacity<math::Vec3>(max / 2);
-	auto frustum = camera.frustum();
-
-	core::Chrono ch;
-	for(const auto& p : points) {
-		if(frustum.is_inside(p, 100.0f)) {
-			outs << p;
-		}
-	}
-	log_msg(core::str(outs.size()) + " visibles " + ch.elapsed().to_micros() + "us");*/
-
-	camera.set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
+	scene_view->camera().set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
 }
 
 void YaveApp::create_assets() {
@@ -166,11 +147,12 @@ void YaveApp::create_assets() {
 		}
 	}
 	scene = new Scene(std::move(objects));
-	scene_view = new SceneView(&device, *scene, camera);
+	scene_view = new SceneView(*scene);
 
 	update();
 
-	renderer = new DeferredRenderer(*scene_view, swapchain->size());
+	pipeline = new Pipeline(core::Unique<Node>(new DeferredRenderer(&device, *scene_view, swapchain->size())));
+	//renderer = new DeferredRenderer(*scene_view, swapchain->size());
 
 }
 

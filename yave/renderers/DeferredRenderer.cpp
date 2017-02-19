@@ -83,9 +83,12 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
 
 
 
-DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
-		DeviceLinked(scene.device()),
-		_scene(scene),
+
+
+DeferredRenderer::DeferredRenderer(DevicePtr dptr, SceneView &view, const math::Vec2ui& size) :
+		DeviceLinked(dptr),
+		_scene_renderer(dptr, view),
+
 		_size(size),
 		_depth(device(), depth_format, _size),
 		_diffuse(device(), diffuse_format, _size),
@@ -100,6 +103,7 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 		_camera_buffer(device(), 1),
 		_lighting_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera_buffer), Binding(_lights)}) {
 
+
 	for(usize i = 0; i != 3; i++) {
 		if(_size[i] % _lighting_shader.local_size()[i]) {
 			log_msg("Compute local size at index "_s + i + " does not divide output buffer size.", LogType::Warning);
@@ -107,19 +111,10 @@ DeferredRenderer::DeferredRenderer(SceneView &scene, const math::Vec2ui& size) :
 	}
 }
 
-void DeferredRenderer::update() {
-	_scene.update();
-	_camera_buffer.map()[0] = _scene.camera();
-}
 
-void DeferredRenderer::draw(CmdBufferRecorderBase& recorder, const OutputView& out) {
-	recorder.bind_framebuffer(_gbuffer);
-	_scene.draw(recorder);
 
-	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(out)});
-}
 
-const DescriptorSet& DeferredRenderer::create_output_set(const OutputView& out) {
+const DescriptorSet& DeferredRenderer::create_output_set(const StorageView& out) {
 	if(out.size() != _size) {
 		fatal("Invalid output image size.");
 	}
@@ -131,6 +126,20 @@ const DescriptorSet& DeferredRenderer::create_output_set(const OutputView& out) 
 			}))).first;
 	}
 	return it->second;
+}
+
+void DeferredRenderer::process(FrameToken& token) {
+	_camera_buffer.map()[0] = _scene_renderer.scene_view().camera();
+
+	token.cmd_buffer.bind_framebuffer(_gbuffer);
+	_scene_renderer.process(token);
+
+	token.cmd_buffer.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(token.image_view)});
+}
+
+
+core::ArrayProxy<Node*> DeferredRenderer::dependencies() {
+	return _scene_renderer.dependencies();
 }
 
 }

@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_FRAMETOKEN_H
 
 #include <yave/image/ImageView.h>
+#include <yave/commands/CmdBufferRecorder.h>
 
 namespace yave {
 
@@ -35,6 +36,7 @@ struct FrameToken {
 	const u32 image_index;
 
 	const SwapchainImageView image_view;
+	CmdBufferRecorder<> cmd_buffer;
 };
 
 

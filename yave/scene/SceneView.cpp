@@ -26,16 +26,12 @@ SOFTWARE.
 
 namespace yave {
 
-SceneView::SceneView(DevicePtr dptr, const Scene &sce, const Camera& cam) :
-		DeviceLinked(dptr),
+SceneView::SceneView(const Scene &sce, const Camera& cam) :
 		_scene(sce),
-		_camera(cam),
-		_matrix_buffer(dptr, 1),
-		_mapping(_matrix_buffer.map()),
-		_matrix_set(dptr, {Binding(_matrix_buffer)}) {
+		_camera(cam) {
 }
 
-void SceneView::update() {
+/*void SceneView::update() {
 	_mapping[0] = _camera.viewproj_matrix();
 }
 
@@ -43,13 +39,17 @@ void SceneView::draw(CmdBufferRecorderBase& recorder) const {
 	for(const auto& mesh : _scene.static_meshes()) {
 		mesh.draw(recorder, _matrix_set);
 	}
-}
+}*/
 
 const Scene& SceneView::scene() const {
 	return _scene;
 }
 
 const Camera& SceneView::camera() const {
+	return _camera;
+}
+
+Camera& SceneView::camera() {
 	return _camera;
 }
 

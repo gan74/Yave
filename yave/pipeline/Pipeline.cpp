@@ -27,19 +27,20 @@ SOFTWARE.
 namespace yave {
 
 static void find_nodes(Node* node, std::unordered_set<Node*>& nodes) {
+	nodes.insert(node);
 	for(Node* n : node->dependencies()) {
-		nodes.insert(n);
+		find_nodes(n, nodes);
 	}
 }
 
 Pipeline::Pipeline(core::Unique<Node> root) : _root(std::move(root)) {
 }
 
-void Pipeline::process(const FrameToken& token) {
+void Pipeline::process(FrameToken& token) {
 	std::unordered_set<Node*> nodes;
 	find_nodes(_root.as_ptr(), nodes);
 
-	while(true) {
+	while(!nodes.empty()) {
 		auto it = std::find_if(nodes.begin(), nodes.end(), [&nodes](Node* n) {
 			auto deps = n->dependencies();
 			return std::none_of(deps.begin(), deps.end(), [&nodes](Node* d) { return nodes.find(d) != nodes.end(); });
@@ -49,12 +50,9 @@ void Pipeline::process(const FrameToken& token) {
 			fatal("Unable to find processable node in pipeline.");
 		}
 
-		nodes.erase(it);
 		(*it)->process(token);
 
-		if(nodes.empty()) {
-			return;
-		}
+		nodes.erase(it);
 	}
 }
 

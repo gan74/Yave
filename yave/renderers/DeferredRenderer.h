@@ -24,25 +24,34 @@ SOFTWARE.
 
 #include <yave/Framebuffer.h>
 #include <yave/shaders/ComputeProgram.h>
-#include <yave/scene/SceneView.h>
 #include <yave/bindings/uniforms.h>
+
+#include <yave/scene/SceneView.h>
+
+#include "SceneRenderer.h"
 
 namespace yave {
 
-class DeferredRenderer : NonCopyable, public DeviceLinked {
-
-	using OutputView = StorageView;
+class DeferredRenderer : public Node, public DeviceLinked {
 
 	public:
-		DeferredRenderer(SceneView& scene, const math::Vec2ui& size);
+		using OutputView = decltype(FrameToken::image_view);
+		DeferredRenderer(DevicePtr dptr, SceneView& view, const math::Vec2ui& size);
 
-		void update();
-		void draw(CmdBufferRecorderBase& recorder, const OutputView& output);
+		/*void update();
+		void draw(CmdBufferRecorderBase& recorder, const OutputView& output);*/
+
+		void draw(CmdBufferRecorderBase& recorder, const OutputView& out);
+
+		virtual void process(FrameToken& token) override;
+
+		virtual core::ArrayProxy<Node*> dependencies() override;
 
 	private:
-		const DescriptorSet& create_output_set(const OutputView& out);
+		const DescriptorSet& create_output_set(const StorageView& out);
 
-		SceneView& _scene;
+		SceneRenderer _scene_renderer;
+
 		math::Vec2ui _size;
 
 		DepthTextureAttachment _depth;

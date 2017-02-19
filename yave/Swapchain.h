@@ -100,6 +100,8 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		Owner<vk::SurfaceKHR> _surface;
 		vk::SwapchainKHR _swapchain;
 
+		CmdBufferPool<> _command_pool;
+
 
 };
 

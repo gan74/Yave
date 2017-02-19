@@ -32,26 +32,19 @@ SOFTWARE.
 
 namespace yave {
 
-class SceneView : NonCopyable, public DeviceLinked {
+class SceneView {
 
 	public:
-		SceneView(DevicePtr dptr, const Scene& sce, const Camera& cam);
-
-		void update();
-		void draw(CmdBufferRecorderBase& recorder) const;
+		SceneView(const Scene& sce, const Camera& cam = Camera());
 
 		const Scene& scene() const;
+
 		const Camera& camera() const;
+		Camera& camera();
 
 	private:
 		const Scene& _scene;
-
-		const Camera& _camera;
-
-		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _matrix_buffer;
-		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _mapping;
-
-		DescriptorSet _matrix_set;
+		Camera _camera;
 };
 
 }

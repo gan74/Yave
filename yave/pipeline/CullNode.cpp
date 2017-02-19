@@ -27,7 +27,11 @@ namespace yave {
 CullNode::CullNode(SceneView &view) : _view(view) {
 }
 
-void CullNode::process(const FrameToken&) {
+const SceneView& CullNode::scene_view() const {
+	return _view;
+}
+
+void CullNode::process(FrameToken&) {
 	_visibles.make_empty();
 	auto frustum = _view.camera().frustum();
 

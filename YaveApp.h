@@ -39,9 +39,7 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 
 #include <yave/renderers/DeferredRenderer.h>
-#include <yave/renderers/ClearRenderer.h>
-
-#include <yave/pipeline/SceneRendererNode.h>
+#include <yave/pipeline/Pipeline.h>
 
 namespace yave {
 
@@ -86,9 +84,8 @@ class YaveApp : NonCopyable {
 
 		Scene* scene;
 		SceneView* scene_view;
-		Camera camera;
 
-		DeferredRenderer* renderer;
+		Pipeline* pipeline;
 };
 
 }

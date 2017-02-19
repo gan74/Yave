@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,34 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMMANDS_CMDBUFFER_H
-#define YAVE_COMMANDS_CMDBUFFER_H
 
-#include "CmdBufferBase.h"
+#include "SceneRenderer.h"
+
 
 namespace yave {
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
-class CmdBuffer : public CmdBufferBase {
-
-	public:
-		using CmdBufferBase::CmdBufferBase;
-
-		CmdBuffer() = default;
-
-		CmdBuffer(CmdBuffer&& other) : CmdBufferBase() {
-			swap(other);
-		}
-
-		CmdBuffer& operator=(CmdBuffer&& other) {
-			swap(other);
-			return *this;
-		}
-
-	private:
-		friend class CmdBufferRecorder<Usage>;
-};
-
+SceneRenderer::SceneRenderer(DevicePtr dptr, SceneView& view) :
+		_cull(view),
+		_matrix_buffer(dptr, 1),
+		_mapping(_matrix_buffer.map()),
+		_matrix_set(dptr, {Binding(_matrix_buffer)}) {
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERSTATE_H
+const SceneView& SceneRenderer::scene_view() const {
+	return _cull.scene_view();
+}
+
+core::ArrayProxy<Node*> SceneRenderer::dependencies() {
+	return {&_cull};
+}
+
+void SceneRenderer::process(FrameToken& token) {
+	_mapping[0] = scene_view().camera().viewproj_matrix();
+
+	for(const auto& mesh : _cull.visibles()) {
+		mesh->draw(token.cmd_buffer, _matrix_set);
+	}
+}
+
+
+
+}

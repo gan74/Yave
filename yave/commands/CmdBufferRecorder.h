@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-template<CmdBufferUsage Usage>
+template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
 class CmdBufferRecorder : public CmdBufferRecorderBase {
 
 	public:

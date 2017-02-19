@@ -38,6 +38,10 @@ class ImageView {
 		ImageView(const Image<ImgUsage>& img) : _image(&img), _view(img.vk_view()) {
 		}
 
+		template<ImageUsage ImgUsage, typename = std::enable_if_t<(ImgUsage & Usage) == Usage>>
+		ImageView(const ImageView<ImgUsage>& img) : _image(img._image), _view(img._view) {
+		}
+
 		vk::ImageView vk_image_view() const {
 			return _view;
 		}
@@ -51,6 +55,9 @@ class ImageView {
 		}
 
 	private:
+		template<ImageUsage U>
+		friend class ImageView;
+
 		const ImageBase* _image = nullptr;
 		vk::ImageView _view;
 };

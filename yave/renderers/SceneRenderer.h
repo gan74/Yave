@@ -19,31 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_PIPELINE_SCENERENDERERNODE_H
-#define YAVE_PIPELINE_SCENERENDERERNODE_H
+#ifndef YAVE_RENDERERS_SCENERENDERERNODE_H
+#define YAVE_RENDERERS_SCENERENDERERNODE_H
 
-#include "CullNode.h"
+#include <yave/pipeline/CullNode.h>
 
 namespace yave {
 
-class SceneRendererNode : public Node {
+class SceneRenderer : public Node {
 	public:
-		SceneRendererNode(SceneView& view) : _cull(view) {
-		}
+		SceneRenderer(DevicePtr dptr, SceneView& view);
 
-		virtual core::ArrayProxy<Node*> dependencies() override {
-			return {&_cull};
-		}
+		const SceneView& scene_view() const;
 
 
-		virtual void process(const FrameToken&) override {
-		}
-
+		virtual core::ArrayProxy<Node*> dependencies() override;
+		virtual void process(FrameToken& token) override;
 
 	private:
 		CullNode _cull;
+
+		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _matrix_buffer;
+		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _mapping;
+
+		DescriptorSet _matrix_set;
 };
 
 }
 
-#endif // YAVE_PIPELINE_SCENERENDERERNODE_H
+#endif // YAVE_RENDERERS_SCENERENDERERNODE_H
