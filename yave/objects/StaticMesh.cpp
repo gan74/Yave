@@ -52,6 +52,7 @@ StaticMesh::StaticMesh(StaticMesh&& other) :
 		_matrix_buffer(std::move(other._matrix_buffer)),
 		_mapping(std::move(other._mapping)) {
 	set_storage(_mapping.begin());
+	Transformable::swap(other);
 }
 
 void StaticMesh::draw(CmdBufferRecorderBase& recorder, const DescriptorSet& vp) const {

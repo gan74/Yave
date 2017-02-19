@@ -75,8 +75,11 @@ class Transformable : NonCopyable {
 		}
 
 		void swap(Transformable& other) {
-			//std::swap(_storage, other._storage);
 			std::swap(_transform, other._transform);
+			std::swap(_radius, other._radius);
+
+			//std::swap(_storage, other._storage);
+
 			/*if(_transform == &other._storage) {
 				_transform = &_storage;
 			}

@@ -139,9 +139,9 @@ void YaveApp::create_assets() {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(/*new StaticMeshInstance(&device,*/ m_data));
-		for(usize i = 0; i != 1; i++) {
+		for(usize i = 0; i != 30; i++) {
 			auto m = StaticMesh(mesh, material);
-			m.set_position(math::Vec3(objects.size() * -3.0f, 0, 0));
+			m.set_position(math::Vec3(objects.size() * (objects.size() % 2 ? -3.0f : 3.0f), 0, 0));
 
 			objects << std::move(m);
 		}
