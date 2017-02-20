@@ -34,7 +34,7 @@ class SceneRenderer : public Node {
 
 
 		virtual core::ArrayProxy<Node*> dependencies() override;
-		virtual void process(FrameToken& token) override;
+		virtual void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		CullNode _cull;

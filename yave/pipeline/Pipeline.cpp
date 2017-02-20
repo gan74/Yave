@@ -36,7 +36,7 @@ static void find_nodes(Node* node, std::unordered_set<Node*>& nodes) {
 Pipeline::Pipeline(core::Unique<Node> root) : _root(std::move(root)) {
 }
 
-void Pipeline::process(FrameToken& token) {
+void Pipeline::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
 	std::unordered_set<Node*> nodes;
 	find_nodes(_root.as_ptr(), nodes);
 
@@ -50,7 +50,7 @@ void Pipeline::process(FrameToken& token) {
 			fatal("Unable to find processable node in pipeline.");
 		}
 
-		(*it)->process(token);
+		(*it)->process(token, recorder);
 
 		nodes.erase(it);
 	}

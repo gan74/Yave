@@ -34,9 +34,9 @@ using SwapchainImageView = ImageView<SwapchainImageUsage>;
 struct FrameToken {
 	const u64 id;
 	const u32 image_index;
+	const u32 image_count;
 
 	const SwapchainImageView image_view;
-	CmdBufferRecorder<> cmd_buffer;
 };
 
 

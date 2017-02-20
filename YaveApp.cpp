@@ -48,8 +48,6 @@ YaveApp::~YaveApp() {
 	mesh_texture = Texture();
 
 	delete swapchain;
-
-	command_buffers.clear();
 }
 
 vk::Extent2D extent(const math::Vec2ui& v) {
@@ -78,10 +76,11 @@ core::Duration YaveApp::draw() {
 	FrameToken frame = std::move(swapchain->next_frame(image_acquired_semaphore));
 
 	//renderer->update();
-	pipeline->process(frame);
+	auto cmd_buffer =  CmdBufferRecorder<>(command_pool.create_buffer());
+	pipeline->process(frame, cmd_buffer);
 	{
 
-		auto buffer = frame.cmd_buffer.end().vk_cmd_buffer();
+		auto buffer = cmd_buffer.end().vk_cmd_buffer();
 		auto submit_info = vk::SubmitInfo()
 				.setWaitSemaphoreCount(0)
 				.setPWaitDstStageMask(&pipe_stage_flags)
@@ -106,6 +105,11 @@ core::Duration YaveApp::draw() {
 
 	device.vk_device().destroySemaphore(image_acquired_semaphore);
 	device.vk_device().destroySemaphore(render_finished_semaphore);
+
+	if(command_pool.active_buffers() > 1) {
+		fatal("Unable to collect command buffers.");
+	}
+
 	return ch.elapsed();
 }
 
@@ -114,7 +118,7 @@ void YaveApp::update(math::Vec2 angles) {
 			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
 			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.2, 0, 0, 1);
 
-	scene_view->camera().set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
+	camera.set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
 }
 
 void YaveApp::create_assets() {
@@ -147,7 +151,7 @@ void YaveApp::create_assets() {
 		}
 	}
 	scene = new Scene(std::move(objects));
-	scene_view = new SceneView(*scene);
+	scene_view = new SceneView(*scene, camera);
 
 	update();
 

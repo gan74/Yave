@@ -31,7 +31,7 @@ const SceneView& CullNode::scene_view() const {
 	return _view;
 }
 
-void CullNode::process(FrameToken&) {
+void CullNode::process(const FrameToken&, CmdBufferRecorder<>&) {
 	_visibles.make_empty();
 	auto frustum = _view.camera().frustum();
 

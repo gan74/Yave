@@ -36,7 +36,7 @@ class CullNode : public Node {
 
 
 		const core::Vector<const StaticMesh*>& visibles() const;
-		virtual void process(FrameToken&) override;
+		virtual void process(const FrameToken&, CmdBufferRecorder<>&) override;
 
 	private:
 		SceneView& _view;

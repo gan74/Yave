@@ -32,7 +32,7 @@ class Node : NonCopyable {
 		virtual ~Node() {
 		}
 
-		virtual void process(FrameToken&) = 0;
+		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
 
 		virtual core::ArrayProxy<Node*> dependencies() {
 			return {};

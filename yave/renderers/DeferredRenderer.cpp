@@ -128,13 +128,13 @@ const DescriptorSet& DeferredRenderer::create_output_set(const StorageView& out)
 	return it->second;
 }
 
-void DeferredRenderer::process(FrameToken& token) {
+void DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
 	_camera_buffer.map()[0] = _scene_renderer.scene_view().camera();
 
-	token.cmd_buffer.bind_framebuffer(_gbuffer);
-	_scene_renderer.process(token);
+	recorder.bind_framebuffer(_gbuffer);
+	_scene_renderer.process(token, recorder);
 
-	token.cmd_buffer.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(token.image_view)});
+	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(token.image_view)});
 }
 
 

@@ -41,6 +41,7 @@ class ArcballMouse : public MouseEventHandler {
 };
 
 int main(int, char **) {
+
 	Window win(math::vec(1280, 768), "Yave");
 	win.set_mouse_handler(new ArcballMouse());
 

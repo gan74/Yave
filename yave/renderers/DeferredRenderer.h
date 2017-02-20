@@ -43,7 +43,7 @@ class DeferredRenderer : public Node, public DeviceLinked {
 
 		void draw(CmdBufferRecorderBase& recorder, const OutputView& out);
 
-		virtual void process(FrameToken& token) override;
+		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
 
 		virtual core::ArrayProxy<Node*> dependencies() override;
 

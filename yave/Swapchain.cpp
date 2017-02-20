@@ -130,7 +130,7 @@ Swapchain::Swapchain(DevicePtr dptr, HINSTANCE instance, HWND handle) : Swapchai
 Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {
 }
 
-Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dptr), _surface(surface), _command_pool(dptr) {
+Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dptr), _surface(surface) {
 	auto capabilities = compute_capabilities(dptr, surface);
 	auto format = get_surface_format(dptr, surface);
 
@@ -192,8 +192,8 @@ FrameToken Swapchain::next_frame(vk::Semaphore image_acquired) {
 	return std::move(FrameToken {
 			++_frame_id,
 			image_index,
+			u32(image_count()),
 			SwapchainImageView(_images[image_index]),
-			CmdBufferRecorder<>(_command_pool.create_buffer())
 		});
 }
 

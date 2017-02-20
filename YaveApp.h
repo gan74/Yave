@@ -73,8 +73,7 @@ class YaveApp : NonCopyable {
 
 		Swapchain* swapchain;
 
-		CmdBufferPool<CmdBufferUsage::Normal> command_pool;
-		core::Vector<RecordedCmdBuffer<CmdBufferUsage::Normal>> command_buffers;
+		CmdBufferPool<> command_pool;
 
 		AssetPtr<Material> material;
 
@@ -86,6 +85,7 @@ class YaveApp : NonCopyable {
 		SceneView* scene_view;
 
 		Pipeline* pipeline;
+		Camera camera;
 };
 
 }

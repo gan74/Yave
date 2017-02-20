@@ -40,11 +40,11 @@ core::ArrayProxy<Node*> SceneRenderer::dependencies() {
 	return {&_cull};
 }
 
-void SceneRenderer::process(FrameToken& token) {
+void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
 	_mapping[0] = scene_view().camera().viewproj_matrix();
 
 	for(const auto& mesh : _cull.visibles()) {
-		mesh->draw(token.cmd_buffer, _matrix_set);
+		mesh->draw(recorder, _matrix_set);
 	}
 }
 

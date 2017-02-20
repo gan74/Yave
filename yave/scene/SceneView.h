@@ -35,16 +35,15 @@ namespace yave {
 class SceneView {
 
 	public:
-		SceneView(const Scene& sce, const Camera& cam = Camera());
+		SceneView(Scene& sce, Camera& cam);
 
 		const Scene& scene() const;
 
 		const Camera& camera() const;
-		Camera& camera();
 
 	private:
-		const Scene& _scene;
-		Camera _camera;
+		Scene& _scene;
+		Camera& _camera;
 };
 
 }
