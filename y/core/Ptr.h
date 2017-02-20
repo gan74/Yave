@@ -121,10 +121,10 @@ class Unique : public detail::Ptr<T> {
 
 		Unique() = default;
 
-		explicit Unique(Owner<pointer>&& p) : Base(std::move(p)) {
+		Unique(Owner<pointer>&& p) : Base(std::move(p)) {
 		}
 
-		explicit Unique(T&& p) : Unique(new T(std::move(p))) {
+		Unique(T&& p) : Unique(new T(std::move(p))) {
 		}
 
 		Unique(std::nullptr_t p) : Base(p) {
