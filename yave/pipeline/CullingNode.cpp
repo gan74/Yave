@@ -19,31 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_PIPELINE_CULLNODE_H
-#define YAVE_PIPELINE_CULLNODE_H
 
-#include "Node.h"
-#include <yave/scene/SceneView.h>
+#include "CullingNode.h"
 
 namespace yave {
 
-class CullNode : public Node {
-	public:
-		CullNode(SceneView& view);
-
-
-		const SceneView& scene_view() const;
-
-
-		const core::Vector<const StaticMesh*>& visibles() const;
-		virtual void process(const FrameToken&, CmdBufferRecorder<>&) override;
-
-	private:
-		SceneView& _view;
-
-		core::Vector<const StaticMesh*> _visibles;
-};
-
+CullingNode::CullingNode(SceneView &view) : _view(view) {
 }
 
-#endif // YAVE_PIPELINE_CULLNODE_H
+const SceneView& CullingNode::scene_view() const {
+	return _view;
+}
+
+void CullingNode::process(const FrameToken&, CmdBufferRecorder<>&) {
+	_visibles.make_empty();
+	auto frustum = _view.camera().frustum();
+
+	for(const auto& m : _view.scene().static_meshes()) {
+		if(frustum.is_inside(m.position(), m.radius())) {
+			_visibles.push_back(&m);
+		}
+	}
+}
+
+
+const core::Vector<const StaticMesh*>& CullingNode::visibles() const {
+	return _visibles;
+}
+
+}

@@ -41,6 +41,11 @@ YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), comma
 YaveApp::~YaveApp() {
 	delete pipeline;
 
+
+	for(auto n : nodes) {
+		delete n;
+	}
+
 	delete scene_view;
 	delete scene;
 
@@ -145,7 +150,7 @@ void YaveApp::create_assets() {
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(/*new StaticMeshInstance(&device,*/ m_data));
 		for(usize i = 0; i != 30; i++) {
 			auto m = StaticMesh(mesh, material);
-			m.set_position(math::Vec3(objects.size() * (objects.size() % 2 ? -3.0f : 3.0f), 0, 0));
+			m.set_position(math::Vec3(objects.size() * (objects.size() % 2 ? -4.0f : 4.0f), 0, 0));
 
 			objects << std::move(m);
 		}
@@ -155,7 +160,15 @@ void YaveApp::create_assets() {
 
 	update();
 
-	pipeline = new Pipeline(core::Unique<Node>(new DeferredRenderer(&device, *scene_view, swapchain->size())));
+	{
+		auto scene = new SceneRenderer(&device, *scene_view);
+		auto gbuffer = new GBufferRenderer(&device, swapchain->size(), *scene);
+
+		pipeline = new Pipeline(new DeferredRenderer(*gbuffer));
+		nodes << (scene);
+		nodes << (gbuffer);
+	}
+
 	//renderer = new DeferredRenderer(*scene_view, swapchain->size());
 
 }

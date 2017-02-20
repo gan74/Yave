@@ -29,10 +29,6 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
-static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
-static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
-
 static ComputeShader create_lighting_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
 }
@@ -85,37 +81,42 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
 
 
 
-DeferredRenderer::DeferredRenderer(DevicePtr dptr, SceneView &view, const math::Vec2ui& size) :
-		DeviceLinked(dptr),
-		_scene_renderer(dptr, view),
+DeferredRenderer::DeferredRenderer(GBufferRenderer& gbuffer) :
+		Node(),
+		DeviceLinked(gbuffer.device()),
 
-		_size(size),
-		_depth(device(), depth_format, _size),
-		_diffuse(device(), diffuse_format, _size),
-		_normal(device(), normal_format, _size),
-		_gbuffer(device(), _depth, {_diffuse, _normal}),
+		_gbuffer(gbuffer),
 
 		_lighting_shader(create_lighting_shader(device())),
 		_lighting_program(_lighting_shader),
-
 		_lights(create_lights(device(), 1, 1)),
-
 		_camera_buffer(device(), 1),
-		_lighting_set(device(), {Binding(_depth), Binding(_diffuse), Binding(_normal), Binding(_camera_buffer), Binding(_lights)}) {
-
+		_lighting_set(device(), {Binding(_gbuffer.depth()), Binding(_gbuffer.diffuse()), Binding(_gbuffer.normal()), Binding(_camera_buffer), Binding(_lights)}) {
 
 	for(usize i = 0; i != 3; i++) {
-		if(_size[i] % _lighting_shader.local_size()[i]) {
+		if(size()[i] % _lighting_shader.local_size()[i]) {
 			log_msg("Compute local size at index "_s + i + " does not divide output buffer size.", LogType::Warning);
 		}
 	}
 }
 
+const math::Vec2ui& DeferredRenderer::size() const {
+	return _gbuffer.size();
+}
 
+core::ArrayProxy<Node*> DeferredRenderer::dependencies() {
+	return {&_gbuffer};
+}
+
+void DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
+	_camera_buffer.map()[0] = _gbuffer.scene_view().camera();
+
+	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(token.image_view)});
+}
 
 
 const DescriptorSet& DeferredRenderer::create_output_set(const StorageView& out) {
-	if(out.size() != _size) {
+	if(out.size() != size()) {
 		fatal("Invalid output image size.");
 	}
 
@@ -128,18 +129,5 @@ const DescriptorSet& DeferredRenderer::create_output_set(const StorageView& out)
 	return it->second;
 }
 
-void DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
-	_camera_buffer.map()[0] = _scene_renderer.scene_view().camera();
-
-	recorder.bind_framebuffer(_gbuffer);
-	_scene_renderer.process(token, recorder);
-
-	recorder.dispatch(_lighting_program, math::Vec3ui(_size / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(token.image_view)});
-}
-
-
-core::ArrayProxy<Node*> DeferredRenderer::dependencies() {
-	return _scene_renderer.dependencies();
-}
 
 }

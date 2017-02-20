@@ -19,33 +19,53 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_SCENERENDERERNODE_H
-#define YAVE_RENDERERS_SCENERENDERERNODE_H
 
-#include <yave/pipeline/CullingNode.h>
+#include "GBufferRenderer.h"
 
 namespace yave {
 
-class SceneRenderer : public Node {
+GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, Node& child, const SceneView& view) :
+		Node(),
+		DeviceLinked(dptr),
 
-	public:
-		SceneRenderer(DevicePtr dptr, SceneView& view);
+		_child(child),
+		_scene_view(view),
 
-		const SceneView& scene_view() const;
-
-
-		virtual core::ArrayProxy<Node*> dependencies() override;
-		virtual void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
-
-	private:
-		CullingNode _cull;
-
-		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _matrix_buffer;
-		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _mapping;
-
-		DescriptorSet _matrix_set;
-};
-
+		_size(size),
+		_depth(device(), depth_format, _size),
+		_diffuse(device(), diffuse_format, _size),
+		_normal(device(), normal_format, _size),
+		_gbuffer(device(), _depth, {_diffuse, _normal}) {
 }
 
-#endif // YAVE_RENDERERS_SCENERENDERERNODE_H
+const math::Vec2ui& GBufferRenderer::size() const {
+	return _size;
+}
+
+const SceneView& GBufferRenderer::scene_view() const {
+	return _scene_view;
+}
+
+const DepthTextureAttachment& GBufferRenderer::depth() const {
+	return _depth;
+}
+
+const ColorTextureAttachment& GBufferRenderer::diffuse() const {
+	return _diffuse;
+}
+
+const ColorTextureAttachment& GBufferRenderer::normal() const {
+	return _normal;
+}
+
+core::ArrayProxy<Node*> GBufferRenderer::dependencies() {
+	return _child.dependencies();
+}
+
+void GBufferRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
+	recorder.bind_framebuffer(_gbuffer);
+	_child.process(token, recorder);
+}
+
+
+}

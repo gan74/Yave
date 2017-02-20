@@ -39,6 +39,7 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 
 #include <yave/renderers/DeferredRenderer.h>
+#include <yave/renderers/SceneRenderer.h>
 #include <yave/pipeline/Pipeline.h>
 
 namespace yave {
@@ -78,14 +79,15 @@ class YaveApp : NonCopyable {
 		AssetPtr<Material> material;
 
 		MeshInstancePool mesh_pool;
-
 		Texture mesh_texture;
 
 		Scene* scene;
 		SceneView* scene_view;
 
-		Pipeline* pipeline;
 		Camera camera;
+
+		Pipeline* pipeline;
+		core::Vector<Node*> nodes;
 };
 
 }

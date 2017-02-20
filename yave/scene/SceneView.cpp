@@ -31,16 +31,6 @@ SceneView::SceneView(Scene& sce, Camera& cam) :
 		_camera(cam) {
 }
 
-/*void SceneView::update() {
-	_mapping[0] = _camera.viewproj_matrix();
-}
-
-void SceneView::draw(CmdBufferRecorderBase& recorder) const {
-	for(const auto& mesh : _scene.static_meshes()) {
-		mesh.draw(recorder, _matrix_set);
-	}
-}*/
-
 const Scene& SceneView::scene() const {
 	return _scene;
 }

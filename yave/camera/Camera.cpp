@@ -27,7 +27,7 @@ namespace yave {
 static math::Vec3 extract_position(const math::Matrix4<>& view) {
 	math::Vec3 pos;
 	for(usize i = 0; i != 3; i++) {
-		auto v = view.column(i);
+		auto v = view.row(i);
 		pos -= v.sub(3) * v.w();
 	}
 	return pos;

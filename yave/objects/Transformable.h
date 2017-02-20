@@ -27,21 +27,10 @@ SOFTWARE.
 
 namespace yave {
 
-class Transformable : NonCopyable {
+class Transformable {
 
 	public:
 		using Transform = math::Matrix4<>;
-
-		Transformable()  = default;
-
-		Transformable(Transformable&& other) : Transformable() {
-			swap(other);
-		}
-
-		Transformable& operator=(Transformable&& other) {
-			swap(other);
-			return *this;
-		}
 
 		math::Vec3 position() const {
 			return math::Vec3(transform()[3][0], transform()[3][1], transform()[3][2]);
@@ -67,25 +56,7 @@ class Transformable : NonCopyable {
 
 	protected:
 		void set_storage(Transform* s) {
-			/*if(!s) {
-				s = &_storage;
-			}
-			*s = *_transform;*/
 			_transform = s;
-		}
-
-		void swap(Transformable& other) {
-			std::swap(_transform, other._transform);
-			std::swap(_radius, other._radius);
-
-			//std::swap(_storage, other._storage);
-
-			/*if(_transform == &other._storage) {
-				_transform = &_storage;
-			}
-			if(other._transform == &_storage) {
-				other._transform = &other._storage;
-			}*/
 		}
 
 		void set_radius(float r) {
@@ -95,8 +66,6 @@ class Transformable : NonCopyable {
 
 	private:
 		Transform* _transform = nullptr;
-		//Transform _storage;
-
 
 		float _radius = 0.0f;
 };

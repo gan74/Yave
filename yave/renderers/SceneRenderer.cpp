@@ -26,6 +26,7 @@ SOFTWARE.
 namespace yave {
 
 SceneRenderer::SceneRenderer(DevicePtr dptr, SceneView& view) :
+		Node(),
 		_cull(view),
 		_matrix_buffer(dptr, 1),
 		_mapping(_matrix_buffer.map()),

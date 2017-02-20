@@ -38,7 +38,6 @@ class SceneView {
 		SceneView(Scene& sce, Camera& cam);
 
 		const Scene& scene() const;
-
 		const Camera& camera() const;
 
 	private:

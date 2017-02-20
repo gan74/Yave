@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <yave/scene/SceneView.h>
 
-#include "SceneRenderer.h"
+#include "GBufferRenderer.h"
 
 namespace yave {
 
@@ -36,29 +36,18 @@ class DeferredRenderer : public Node, public DeviceLinked {
 
 	public:
 		using OutputView = decltype(FrameToken::image_view);
-		DeferredRenderer(DevicePtr dptr, SceneView& view, const math::Vec2ui& size);
 
-		/*void update();
-		void draw(CmdBufferRecorderBase& recorder, const OutputView& output);*/
+		DeferredRenderer(GBufferRenderer& gbuffer);
 
-		void draw(CmdBufferRecorderBase& recorder, const OutputView& out);
-
-		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
+		const math::Vec2ui& size() const;
 
 		virtual core::ArrayProxy<Node*> dependencies() override;
+		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		const DescriptorSet& create_output_set(const StorageView& out);
 
-		SceneRenderer _scene_renderer;
-
-		math::Vec2ui _size;
-
-		DepthTextureAttachment _depth;
-		ColorTextureAttachment _diffuse;
-		ColorTextureAttachment _normal;
-
-		Framebuffer _gbuffer;
+		GBufferRenderer& _gbuffer;
 
 		ComputeShader _lighting_shader;
 		ComputeProgram _lighting_program;

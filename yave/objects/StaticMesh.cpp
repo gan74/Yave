@@ -47,12 +47,13 @@ StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const Asset
 }
 
 StaticMesh::StaticMesh(StaticMesh&& other) :
+		Transformable(other),
 		_instance(std::move(other._instance)),
 		_material(std::move(other._material)),
 		_matrix_buffer(std::move(other._matrix_buffer)),
 		_mapping(std::move(other._mapping)) {
+
 	set_storage(_mapping.begin());
-	Transformable::swap(other);
 }
 
 void StaticMesh::draw(CmdBufferRecorderBase& recorder, const DescriptorSet& vp) const {

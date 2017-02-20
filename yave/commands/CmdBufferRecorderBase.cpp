@@ -40,6 +40,9 @@ vk::CommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
 }
 
 const RenderPass& CmdBufferRecorderBase::current_pass() const {
+	if(!_render_pass) {
+		fatal("Null renderpass.");
+	}
 	return *_render_pass;
 }
 

@@ -19,33 +19,54 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_SCENERENDERERNODE_H
-#define YAVE_RENDERERS_SCENERENDERERNODE_H
+#ifndef YAVE_RENDERERS_GBUFFERRENDERER_H
+#define YAVE_RENDERERS_GBUFFERRENDERER_H
 
-#include <yave/pipeline/CullingNode.h>
+#include <yave/pipeline/Node.h>
+#include <yave/scene/SceneView.h>
 
 namespace yave {
 
-class SceneRenderer : public Node {
+class GBufferRenderer : public Node, public DeviceLinked {
 
 	public:
-		SceneRenderer(DevicePtr dptr, SceneView& view);
+		static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
+		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
+		static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
 
+		template<typename N>
+		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, N& node) :
+				GBufferRenderer(dptr, size, node, node.scene_view()) {
+		}
+
+		const math::Vec2ui& size() const;
 		const SceneView& scene_view() const;
 
 
+		const DepthTextureAttachment& depth() const;
+		const ColorTextureAttachment& diffuse() const;
+		const ColorTextureAttachment& normal() const;
+
+
 		virtual core::ArrayProxy<Node*> dependencies() override;
-		virtual void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
+		virtual void process(const FrameToken& token, CmdBufferRecorder<>&recorder) override;
 
-	private:
-		CullingNode _cull;
+	private:	
+		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, Node& child, const SceneView& view);
 
-		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _matrix_buffer;
-		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _mapping;
+		Node& _child;
+		const SceneView& _scene_view;
 
-		DescriptorSet _matrix_set;
+		math::Vec2ui _size;
+
+		DepthTextureAttachment _depth;
+		ColorTextureAttachment _diffuse;
+		ColorTextureAttachment _normal;
+
+		Framebuffer _gbuffer;
 };
+
 
 }
 
-#endif // YAVE_RENDERERS_SCENERENDERERNODE_H
+#endif // YAVE_RENDERERS_GBUFFERRENDERER_H
