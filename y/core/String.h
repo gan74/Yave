@@ -268,6 +268,11 @@ auto type_name() {
 	return detail::demangle_type_name(typeid(T).name()) + (std::is_reference<T>::value ? "&" : "");
 }
 
+template<typename T>
+auto type_name(T&& t) {
+	return detail::demangle_type_name(typeid(std::forward<T>(t)).name());
+}
+
 }
 
 
