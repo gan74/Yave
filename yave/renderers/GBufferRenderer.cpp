@@ -24,12 +24,11 @@ SOFTWARE.
 
 namespace yave {
 
-GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, Node& child, const SceneView& view) :
+GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const core::Rc<CullingNode> &node) :
 		Node(),
 		DeviceLinked(dptr),
 
-		_child(child),
-		_scene_view(view),
+		_scene(dptr, node),
 
 		_size(size),
 		_depth(device(), depth_format, _size),
@@ -43,7 +42,7 @@ const math::Vec2ui& GBufferRenderer::size() const {
 }
 
 const SceneView& GBufferRenderer::scene_view() const {
-	return _scene_view;
+	return _scene.scene_view();
 }
 
 const DepthTextureAttachment& GBufferRenderer::depth() const {
@@ -58,13 +57,14 @@ const ColorTextureAttachment& GBufferRenderer::normal() const {
 	return _normal;
 }
 
-core::ArrayProxy<Node*> GBufferRenderer::dependencies() {
-	return _child.dependencies();
+core::Vector<core::Rc<Node>> GBufferRenderer::dependencies() {
+	return _scene.dependencies();
 }
 
 void GBufferRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
 	recorder.bind_framebuffer(_gbuffer);
-	_child.process(token, recorder);
+
+	_scene.process(token, recorder);
 }
 
 

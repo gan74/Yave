@@ -40,6 +40,7 @@ void CullingNode::process(const FrameToken&, CmdBufferRecorder<>&) {
 			_visibles.push_back(&m);
 		}
 	}
+	//log_msg("vis = "_s + visibles().size());
 }
 
 

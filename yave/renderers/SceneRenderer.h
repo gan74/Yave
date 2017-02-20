@@ -26,19 +26,18 @@ SOFTWARE.
 
 namespace yave {
 
-class SceneRenderer : public Node {
+class SceneRenderer {
 
 	public:
-		SceneRenderer(DevicePtr dptr, SceneView& view);
+		SceneRenderer(DevicePtr dptr, const core::Rc<CullingNode>& cull);
 
 		const SceneView& scene_view() const;
 
-
-		virtual core::ArrayProxy<Node*> dependencies() override;
-		virtual void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
+		core::Vector<core::Rc<Node>> dependencies();
+		void process(const FrameToken&, CmdBufferRecorder<>& recorder);
 
 	private:
-		CullingNode _cull;
+		core::Rc<CullingNode> _cull;
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _matrix_buffer;
 		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _mapping;

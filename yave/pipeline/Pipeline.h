@@ -28,12 +28,12 @@ namespace yave {
 
 class Pipeline {
 	public:
-		Pipeline(core::Unique<Node> root);
+		Pipeline(core::Rc<Node> root);
 
 		void process(const FrameToken& token, CmdBufferRecorder<>& recorder);
 
 	private:
-		core::Unique<Node> _root;
+		core::Rc<Node> _root;
 };
 
 }

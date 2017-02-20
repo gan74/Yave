@@ -26,24 +26,26 @@ SOFTWARE.
 
 namespace yave {
 
-static void find_nodes(Node* node, std::unordered_set<Node*>& nodes) {
-	nodes.insert(node);
-	for(Node* n : node->dependencies()) {
+static void find_nodes(core::Rc<Node>& node, std::unordered_set<Node*>& nodes) {
+	nodes.insert(node.as_ptr());
+	for(auto& n : node->dependencies()) {
 		find_nodes(n, nodes);
 	}
 }
 
-Pipeline::Pipeline(core::Unique<Node> root) : _root(std::move(root)) {
+Pipeline::Pipeline(core::Rc<Node> root) : _root(std::move(root)) {
 }
 
 void Pipeline::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
 	std::unordered_set<Node*> nodes;
-	find_nodes(_root.as_ptr(), nodes);
+	find_nodes(_root, nodes);
 
 	while(!nodes.empty()) {
-		auto it = std::find_if(nodes.begin(), nodes.end(), [&nodes](Node* n) {
+		auto it = std::find_if(nodes.begin(), nodes.end(), [&nodes](auto& n) {
 			auto deps = n->dependencies();
-			return std::none_of(deps.begin(), deps.end(), [&nodes](Node* d) { return nodes.find(d) != nodes.end(); });
+			return std::none_of(deps.begin(), deps.end(), [&nodes](auto& d) {
+				return nodes.find(d.as_ptr()) != nodes.end();
+			});
 		});
 
 		if(it == nodes.end()) {

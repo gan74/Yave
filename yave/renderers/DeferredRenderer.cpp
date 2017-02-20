@@ -81,9 +81,9 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
 
 
 
-DeferredRenderer::DeferredRenderer(GBufferRenderer& gbuffer) :
+DeferredRenderer::DeferredRenderer(const core::Rc<GBufferRenderer>& gbuffer) :
 		Node(),
-		DeviceLinked(gbuffer.device()),
+		DeviceLinked(gbuffer->device()),
 
 		_gbuffer(gbuffer),
 
@@ -91,7 +91,7 @@ DeferredRenderer::DeferredRenderer(GBufferRenderer& gbuffer) :
 		_lighting_program(_lighting_shader),
 		_lights(create_lights(device(), 1, 1)),
 		_camera_buffer(device(), 1),
-		_lighting_set(device(), {Binding(_gbuffer.depth()), Binding(_gbuffer.diffuse()), Binding(_gbuffer.normal()), Binding(_camera_buffer), Binding(_lights)}) {
+		_lighting_set(device(), {Binding(_gbuffer->depth()), Binding(_gbuffer->diffuse()), Binding(_gbuffer->normal()), Binding(_camera_buffer), Binding(_lights)}) {
 
 	for(usize i = 0; i != 3; i++) {
 		if(size()[i] % _lighting_shader.local_size()[i]) {
@@ -101,15 +101,15 @@ DeferredRenderer::DeferredRenderer(GBufferRenderer& gbuffer) :
 }
 
 const math::Vec2ui& DeferredRenderer::size() const {
-	return _gbuffer.size();
+	return _gbuffer->size();
 }
 
-core::ArrayProxy<Node*> DeferredRenderer::dependencies() {
-	return {&_gbuffer};
+core::Vector<core::Rc<Node>> DeferredRenderer::dependencies() {
+	return {_gbuffer};
 }
 
 void DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
-	_camera_buffer.map()[0] = _gbuffer.scene_view().camera();
+	_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
 
 	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(token.image_view)});
 }

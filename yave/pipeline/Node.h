@@ -34,7 +34,7 @@ class Node : NonCopyable {
 
 		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
 
-		virtual core::ArrayProxy<Node*> dependencies() {
+		virtual core::Vector<core::Rc<Node>> dependencies() {
 			return {};
 		}
 

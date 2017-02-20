@@ -87,7 +87,6 @@ class YaveApp : NonCopyable {
 		Camera camera;
 
 		Pipeline* pipeline;
-		core::Vector<Node*> nodes;
 };
 
 }

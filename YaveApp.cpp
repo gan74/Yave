@@ -41,11 +41,6 @@ YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), comma
 YaveApp::~YaveApp() {
 	delete pipeline;
 
-
-	for(auto n : nodes) {
-		delete n;
-	}
-
 	delete scene_view;
 	delete scene;
 
@@ -161,12 +156,11 @@ void YaveApp::create_assets() {
 	update();
 
 	{
-		auto scene = new SceneRenderer(&device, *scene_view);
-		auto gbuffer = new GBufferRenderer(&device, swapchain->size(), *scene);
+		auto culling = core::Rc<CullingNode>(new CullingNode(*scene_view));
+		auto gbuffer = core::Rc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
+		auto deferred = core::Rc<DeferredRenderer>(new DeferredRenderer(gbuffer));
 
-		pipeline = new Pipeline(new DeferredRenderer(*gbuffer));
-		nodes << (scene);
-		nodes << (gbuffer);
+		pipeline = new Pipeline(deferred);
 	}
 
 	//renderer = new DeferredRenderer(*scene_view, swapchain->size());

@@ -28,12 +28,11 @@ SOFTWARE.
 namespace yave {
 
 class CullingNode : public Node {
+
 	public:
 		CullingNode(SceneView& view);
 
-
 		const SceneView& scene_view() const;
-
 
 		const core::Vector<const StaticMesh*>& visibles() const;
 		virtual void process(const FrameToken&, CmdBufferRecorder<>&) override;

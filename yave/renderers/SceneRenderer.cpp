@@ -25,26 +25,25 @@ SOFTWARE.
 
 namespace yave {
 
-SceneRenderer::SceneRenderer(DevicePtr dptr, SceneView& view) :
-		Node(),
-		_cull(view),
+SceneRenderer::SceneRenderer(DevicePtr dptr, const core::Rc<CullingNode>& cull):
+		_cull(cull),
 		_matrix_buffer(dptr, 1),
 		_mapping(_matrix_buffer.map()),
 		_matrix_set(dptr, {Binding(_matrix_buffer)}) {
 }
 
 const SceneView& SceneRenderer::scene_view() const {
-	return _cull.scene_view();
+	return _cull->scene_view();
 }
 
-core::ArrayProxy<Node*> SceneRenderer::dependencies() {
-	return {&_cull};
+core::Vector<core::Rc<Node>> SceneRenderer::dependencies() {
+	return {_cull};
 }
 
 void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
 	_mapping[0] = scene_view().camera().viewproj_matrix();
 
-	for(const auto& mesh : _cull.visibles()) {
+	for(const auto& mesh : _cull->visibles()) {
 		mesh->draw(recorder, _matrix_set);
 	}
 }

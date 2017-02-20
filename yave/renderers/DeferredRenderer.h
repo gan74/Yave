@@ -37,17 +37,17 @@ class DeferredRenderer : public Node, public DeviceLinked {
 	public:
 		using OutputView = decltype(FrameToken::image_view);
 
-		DeferredRenderer(GBufferRenderer& gbuffer);
+		DeferredRenderer(const core::Rc<GBufferRenderer>& gbuffer);
 
 		const math::Vec2ui& size() const;
 
-		virtual core::ArrayProxy<Node*> dependencies() override;
+		virtual core::Vector<core::Rc<Node>> dependencies() override;
 		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		const DescriptorSet& create_output_set(const StorageView& out);
 
-		GBufferRenderer& _gbuffer;
+		core::Rc<GBufferRenderer> _gbuffer;
 
 		ComputeShader _lighting_shader;
 		ComputeProgram _lighting_program;

@@ -22,8 +22,7 @@ SOFTWARE.
 #ifndef YAVE_RENDERERS_GBUFFERRENDERER_H
 #define YAVE_RENDERERS_GBUFFERRENDERER_H
 
-#include <yave/pipeline/Node.h>
-#include <yave/scene/SceneView.h>
+#include "SceneRenderer.h"
 
 namespace yave {
 
@@ -34,10 +33,7 @@ class GBufferRenderer : public Node, public DeviceLinked {
 		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 		static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
 
-		template<typename N>
-		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, N& node) :
-				GBufferRenderer(dptr, size, node, node.scene_view()) {
-		}
+		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, const core::Rc<CullingNode>& node);
 
 		const math::Vec2ui& size() const;
 		const SceneView& scene_view() const;
@@ -48,14 +44,11 @@ class GBufferRenderer : public Node, public DeviceLinked {
 		const ColorTextureAttachment& normal() const;
 
 
-		virtual core::ArrayProxy<Node*> dependencies() override;
+		virtual core::Vector<core::Rc<Node>> dependencies() override;
 		virtual void process(const FrameToken& token, CmdBufferRecorder<>&recorder) override;
 
-	private:	
-		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, Node& child, const SceneView& view);
-
-		Node& _child;
-		const SceneView& _scene_view;
+	private:
+		SceneRenderer _scene;
 
 		math::Vec2ui _size;
 
