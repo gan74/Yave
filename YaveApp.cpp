@@ -158,7 +158,7 @@ void YaveApp::create_assets() {
 	{
 		auto culling = core::Rc<CullingNode>(new CullingNode(*scene_view));
 		auto gbuffer = core::Rc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
-		auto deferred = core::Rc<DeferredRenderer>(new DeferredRenderer(gbuffer));
+		auto deferred = core::Rc<Node>(new DeferredRenderer(gbuffer));
 
 		pipeline = new Pipeline(deferred);
 	}
