@@ -182,8 +182,11 @@ class Rc : public detail::Ptr<T> {
 		explicit Rc(T&& p) : Rc(new T(std::move(p))) {
 		}
 
-		Rc(const Rc& p) : Rc() {
-			ref(p);
+		Rc(const Rc& p) : Rc(p._ptr, p._count) {
+		}
+
+		template<typename U, typename = std::enable_if_t<std::is_base_of<T, U>::value && std::is_polymorphic<T>::value>>
+		Rc(const Rc<U, C>& p) : Rc(p._ptr, p._count) {
 		}
 
 		Rc(Rc&& p) : Rc() {
@@ -222,11 +225,11 @@ class Rc : public detail::Ptr<T> {
 		}
 
 	private:
-		friend class Rc<const T>;
-		friend class Rc<typename std::remove_const<T>::type>;
+		template<typename U, typename D>
+		friend class Rc;
 
 		// only called by other Rc's so we take ownedship as well
-		Rc(T* p, C* c) : Base(p), _count(c) {
+		Rc(T* p, C* c) : Base(std::move(p)), _count(c) {
 			++(*_count);
 		}
 
