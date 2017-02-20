@@ -104,13 +104,18 @@ class Vector : ResizePolicy, Allocator {
 			return *this;
 		}
 
+		Vector& operator=(std::initializer_list<data_type>& l) {
+			assign(l.begin(), l.end());
+			return *this;
+		}
+
 		template<typename Rp, typename Alloc>
 		Vector& operator=(const Vector<Elem, Rp, Alloc>& other) {
 			assign(other.begin(), other.end());
 			return *this;
 		}
 
-		Vector& operator=(const std::initializer_list<value_type>& other) {
+		Vector& operator=(std::initializer_list<value_type> other) {
 			assign(other.begin(), other.end());
 			return *this;
 		}
