@@ -22,9 +22,20 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
 #define YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
 
-#include "CmdBufferBase.h"
+#include <yave/yave.h>
+#include <yave/DeviceLinked.h>
 
 namespace yave {
+
+struct CmdBufferData {
+	vk::CommandBuffer cmd_buffer;
+	vk::Fence fence;
+};
+
+enum class CmdBufferUsage {
+	Normal = uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse),
+	Disposable = uenum(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)
+};
 
 class CmdBufferPoolData : NonCopyable, public DeviceLinked {
 	public:
