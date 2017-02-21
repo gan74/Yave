@@ -81,16 +81,16 @@ class Vec
 		}
 
 		explicit Vec(T t) {
-			for(usize i = 0; i != N; i++) {
-				_vec[i] = t;
-			}
+			std::fill(begin(), end(), t);
 		}
 
 		template<typename X>
 		Vec(const Vec<N, X>& v) {
-			for(usize i = 0; i != N; i++) {
-				_vec[i] = v[i];
-			}
+			std::copy(v.begin(), v.end(), begin());
+		}
+
+		Vec(const std::array<T, N>& v) {
+			std::copy(v.begin(), v.end(), begin());
 		}
 
         Vec(detail::identity_t&&) : Vec() {

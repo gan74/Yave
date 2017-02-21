@@ -116,6 +116,10 @@ class Matrix {
 			std::copy(m.begin(), m.end(), begin());
 		}
 
+		Matrix(const std::array<T, N * M>& m) {
+			std::copy(m.begin(), m.end(), begin());
+		}
+
 		Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
 		}
 
