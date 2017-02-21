@@ -71,7 +71,7 @@ class Vec
 
 
 	public:
-		using Element = typename std::remove_const<T>::type;
+		using value_type = typename std::remove_const<T>::type;
 		using iterator = T*;
 		using const_iterator = const T*;
 
@@ -239,6 +239,23 @@ class Vec
 		const T& operator[](usize i) const {
 			return _vec[i];
 		}
+
+		constexpr usize size() const {
+			return N;
+		}
+
+		template<usize I>
+		const T& get() const {
+			static_assert(I < N, "Accessing out of bound member");
+			return _vec[I];
+		}
+
+		template<usize I>
+		void set(const T& t) {
+			static_assert(I < N, "Accessing out of bound member");
+			_vec[I] = t;
+		}
+
 
 		bool operator!=(const Vec<N, T>& o) const {
 			for(usize i = 0; i != N; i++) {

@@ -102,6 +102,7 @@ class Matrix {
 	public:
 		using iterator = T*;
 		using const_iterator = const T*;
+		using value_type = T;
 
 		template<typename U, typename... Args>
 		Matrix(U t, Args... args) {
@@ -245,6 +246,10 @@ class Matrix {
 
 		iterator end() {
 			return (&_vecs[0][0]) + (M * N);
+		}
+
+		constexpr usize size() const {
+			return N * M;
 		}
 
 		Column operator*(const Row& v) const {
