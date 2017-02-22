@@ -3,7 +3,7 @@
 #include <yave/window/Window.h>
 
 
-#include <yave/script/lua.h>
+#include <yave/script/LuaComponent.h>
 
 #include <y/math/Vec.h>
 
@@ -43,8 +43,27 @@ class ArcballMouse : public MouseEventHandler {
 		bool _dragging;
 };
 
+
 int main(int, char **) {
-	yave::lua::create_state().script("print('Lua started')");
+	auto state = yave::lua::create_state();
+
+	/*LuaComponent cmp(state, R"#(
+			return {total = 0, update =
+				function (self, dt)
+					self.total = self.total + dt
+					print(('dt: %.2f total: %.2f'):format(dt, self.total))
+				end}
+		 )#");
+
+
+	core::Chrono time;
+	while(true) {
+		cmp.update(time.reset());
+	}
+
+
+	return 0;*/
+
 
 	Window win(math::vec(1280, 768), "Yave");
 	win.set_mouse_handler(new ArcballMouse());
