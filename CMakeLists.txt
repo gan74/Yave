@@ -49,6 +49,7 @@ add_library(yave STATIC ${SOURCE_FILES})
 add_executable(main "main.cpp")
 
 target_link_libraries(yave y)
+target_link_libraries(yave lua)
 target_link_libraries(yave vulkan-1)
 target_link_libraries(yave spirv-cross)
 

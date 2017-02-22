@@ -1,13 +1,16 @@
 
 #include <yave/image/ImageData.h>
 #include <yave/window/Window.h>
+
+
+#include <yave/script/lua.h>
+
 #include <y/math/Vec.h>
 
 #include <iostream>
 #include <iomanip>
 
 #include "YaveApp.h"
-
 
 using namespace yave;
 using namespace core;
@@ -41,6 +44,7 @@ class ArcballMouse : public MouseEventHandler {
 };
 
 int main(int, char **) {
+	yave::lua::create_state().script("print('Lua started')");
 
 	Window win(math::vec(1280, 768), "Yave");
 	win.set_mouse_handler(new ArcballMouse());
