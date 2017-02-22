@@ -15,7 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
 
 #include "destroy.h"
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 namespace detail {

@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "DescriptorSet.h"
 
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 #include <unordered_map>
 

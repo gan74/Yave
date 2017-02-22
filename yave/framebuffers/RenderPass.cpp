@@ -23,7 +23,7 @@ SOFTWARE.
 
 #include <yave/image/Image.h>
 
-#include "Device.h"
+#include <yave/device/Device.h>
 
 namespace yave {
 

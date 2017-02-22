@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_PIPELINE_NODE_H
 
 #include <yave/yave.h>
-#include <yave/FrameToken.h>
+#include <yave/swapchain/FrameToken.h>
 
 namespace yave {
 

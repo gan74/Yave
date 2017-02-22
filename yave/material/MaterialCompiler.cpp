@@ -23,7 +23,7 @@ SOFTWARE.
 
 #include <yave/shaders/ShaderProgram.h>
 #include <yave/mesh/Vertex.h>
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 
 namespace yave {

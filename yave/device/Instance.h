@@ -19,24 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_VIEWPORT_H
-#define YAVE_VIEWPORT_H
+#ifndef YAVE_DEVICE_INSTANCE_H
+#define YAVE_DEVICE_INSTANCE_H
 
-#include "yave.h"
-#include <y/math/Vec.h>
+#include <yave/yave.h>
+#include "DebugParams.h"
 
 namespace yave {
 
-struct Viewport {
-	math::Vec2 extent;
-	math::Vec2 offset;
-	math::Vec2 depth;
+class Instance : NonCopyable {
+	public:
+		Instance(DebugParams debug);
+		~Instance();
 
+		const DebugParams& debug_params() const;
 
-	Viewport(const math::Vec2& size = math::Vec2()) : extent(size), depth(0.0f, 1.0f) {
-	}
+		vk::Instance vk_instance() const;
+
+	private:
+		void setup_debug();
+
+		core::Vector<const char*> _instance_extentions;
+
+		DebugParams _debug_params;
+		vk::Instance _instance;
+
+		VkDebugReportCallbackEXT _debug_callback;
 };
 
 }
 
-#endif // YAVE_VIEWPORT_H
+#endif // YAVE_DEVICE_INSTANCE_H

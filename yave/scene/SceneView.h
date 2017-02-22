@@ -26,7 +26,7 @@ SOFTWARE.
 #include <yave/buffer/TypedBuffer.h>
 #include <yave/bindings/uniforms.h>
 #include <yave/camera/Camera.h>
-#include <yave/Framebuffer.h>
+#include <yave/framebuffers/Framebuffer.h>
 
 #include "Scene.h"
 

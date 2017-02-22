@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "CpuVisibleMapping.h"
 
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,55 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERPASS_H
-#define YAVE_RENDERPASS_H
+#ifndef YAVE_SWAPCHAIN_FRAMETOKEN_H
+#define YAVE_SWAPCHAIN_FRAMETOKEN_H
 
-#include "yave.h"
-
-#include <yave/DeviceLinked.h>
-#include <yave/image/Image.h>
 #include <yave/image/ImageView.h>
+#include <yave/commands/CmdBufferRecorder.h>
 
 namespace yave {
 
-class RenderPass : NonCopyable, public DeviceLinked {
-	public:
-		struct ImageData {
-			const ImageFormat format;
-			const ImageUsage usage;
+static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit | ImageUsage::StorageBit;
 
-			ImageData(ImageFormat fmt, ImageUsage us) : format(fmt), usage(us) {
-			}
+using SwapchainImageView = ImageView<SwapchainImageUsage>;
 
-			ImageData(const ImageBase& image) : format(image.format()), usage(image.usage()) {
-			}
+struct FrameToken {
+	const u64 id;
+	const u32 image_index;
+	const u32 image_count;
 
-			template<ImageUsage Usage>
-			ImageData(const ImageView<Usage>& view) : ImageData(view.image()) {
-			}
-		};
-
-		RenderPass() = default;
-		RenderPass(DevicePtr dptr, ImageData depth, const core::Vector<ImageData>& colors);
-
-		RenderPass(RenderPass&& other);
-		RenderPass& operator=(RenderPass&& other);
-
-		~RenderPass();
-
-		vk::RenderPass vk_render_pass() const;
-
-		usize attachment_count() const {
-			return _attachment_count;
-		}
-
-	private:
-		void swap(RenderPass& other);
-
-		usize _attachment_count = 0;
-		vk::RenderPass _render_pass;
+	const SwapchainImageView image_view;
 };
+
+
 
 }
 
-#endif // YAVE_RENDERPASS_H
+#endif // YAVE_SWAPCHAIN_FRAMETOKEN_H

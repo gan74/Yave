@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferPoolData.h"
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 #include <y/core/Chrono.h>
 

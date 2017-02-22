@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/buffer/StagingBufferMapping.h>
 #include <yave/commands/CmdBufferRecorder.h>
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 

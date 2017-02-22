@@ -19,11 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_WINDOW_EVENTHANDLER_H
+#define YAVE_WINDOW_EVENTHANDLER_H
 
-#include "yave.h"
-#include <fstream>
+#include <yave/yave.h>
+#include <y/math/Vec.h>
 
 namespace yave {
 
+class MouseEventHandler {
+	public:
+		enum MouseButton {
+			LeftButton,
+			RightButton
+		};
+
+		virtual ~MouseEventHandler() {
+		}
+
+		virtual void mouse_moved(const math::Vec2i&)						{}
+		virtual void mouse_pressed(const math::Vec2i&, MouseButton)			{}
+		virtual void mouse_released(const math::Vec2i&, MouseButton)		{}
+};
+
 
 }
+
+#endif // YAVE_WINDOW_EVENTHANDLER_H

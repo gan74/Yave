@@ -24,7 +24,7 @@ SOFTWARE.
 
 
 #include <yave/yave.h>
-#include <yave/DeviceLinked.h>
+#include <yave/device/DeviceLinked.h>
 
 
 namespace yave {

@@ -19,52 +19,55 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEBUGPARAMS_H
-#define YAVE_DEBUGPARAMS_H
+#ifndef YAVE_FRAMEBUFFERS_RENDERPASS_H
+#define YAVE_FRAMEBUFFERS_RENDERPASS_H
 
-#include "yave.h"
-#include <y/core/Vector.h>
+#include <yave/yave.h>
+
+#include <yave/device/DeviceLinked.h>
+#include <yave/image/Image.h>
+#include <yave/image/ImageView.h>
 
 namespace yave {
 
-class DebugParams {
-
+class RenderPass : NonCopyable, public DeviceLinked {
 	public:
-		static DebugParams debug() {
-			return DebugParams({"VK_LAYER_LUNARG_standard_validation"}, true);
-		}
+		struct ImageData {
+			const ImageFormat format;
+			const ImageUsage usage;
 
-		static DebugParams none() {
-			return DebugParams({}, false);
-		}
+			ImageData(ImageFormat fmt, ImageUsage us) : format(fmt), usage(us) {
+			}
 
-		bool is_debug_callback_enabled() const {
-			return _callbacks_enabled;
-		}
+			ImageData(const ImageBase& image) : format(image.format()), usage(image.usage()) {
+			}
 
-		const core::Vector<const char*>& instance_layers() const {
-			return _instance_layers;
-		}
+			template<ImageUsage Usage>
+			ImageData(const ImageView<Usage>& view) : ImageData(view.image()) {
+			}
+		};
 
-		const core::Vector<const char*>& device_layers() const {
-			return _device_layers;
+		RenderPass() = default;
+		RenderPass(DevicePtr dptr, ImageData depth, const core::Vector<ImageData>& colors);
+
+		RenderPass(RenderPass&& other);
+		RenderPass& operator=(RenderPass&& other);
+
+		~RenderPass();
+
+		vk::RenderPass vk_render_pass() const;
+
+		usize attachment_count() const {
+			return _attachment_count;
 		}
 
 	private:
-		DebugParams(const core::ArrayProxy<const char*>& instance, const core::ArrayProxy<const char*>& device, bool callbacks) :
-				_instance_layers(instance.begin(), instance.end()),
-				_device_layers(device.begin(), device.end()),
-				_callbacks_enabled(callbacks) {
-		}
+		void swap(RenderPass& other);
 
-		DebugParams(const core::ArrayProxy<const char*>& layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
-		}
-
-		core::Vector<const char*> _instance_layers;
-		core::Vector<const char*> _device_layers;
-		bool _callbacks_enabled;
+		usize _attachment_count = 0;
+		vk::RenderPass _render_pass;
 };
 
 }
 
-#endif // YAVE_DEBUGPARAMS_H
+#endif // YAVE_FRAMEBUFFERS_RENDERPASS_H

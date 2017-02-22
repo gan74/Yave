@@ -21,8 +21,9 @@ SOFTWARE.
 **********************************/
 
 #include "Swapchain.h"
-#include "Device.h"
-#include "Window.h"
+
+#include <yave/device/Device.h>
+#include <yave/window/Window.h>
 #include <yave/commands/CmdBufferRecorder.h>
 
 

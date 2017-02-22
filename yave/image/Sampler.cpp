@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "Sampler.h"
 
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 

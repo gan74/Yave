@@ -19,33 +19,52 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_DEVICE_DEBUGPARAMS_H
+#define YAVE_DEVICE_DEBUGPARAMS_H
 
-#include "DescriptorSetLayoutPool.h"
-#include "Device.h"
-
+#include <yave/yave.h>
+#include <y/core/Vector.h>
 
 namespace yave {
 
-DescriptorSetLayoutPool::DescriptorSetLayoutPool(DevicePtr dptr) : DeviceLinked(dptr) {
+class DebugParams {
+
+	public:
+		static DebugParams debug() {
+			return DebugParams({"VK_LAYER_LUNARG_standard_validation"}, true);
+		}
+
+		static DebugParams none() {
+			return DebugParams({}, false);
+		}
+
+		bool is_debug_callback_enabled() const {
+			return _callbacks_enabled;
+		}
+
+		const core::Vector<const char*>& instance_layers() const {
+			return _instance_layers;
+		}
+
+		const core::Vector<const char*>& device_layers() const {
+			return _device_layers;
+		}
+
+	private:
+		DebugParams(const core::ArrayProxy<const char*>& instance, const core::ArrayProxy<const char*>& device, bool callbacks) :
+				_instance_layers(instance.begin(), instance.end()),
+				_device_layers(device.begin(), device.end()),
+				_callbacks_enabled(callbacks) {
+		}
+
+		DebugParams(const core::ArrayProxy<const char*>& layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
+		}
+
+		core::Vector<const char*> _instance_layers;
+		core::Vector<const char*> _device_layers;
+		bool _callbacks_enabled;
+};
+
 }
 
-DescriptorSetLayoutPool::~DescriptorSetLayoutPool() {
-	for(const auto& dsl : _layouts) {
-		destroy(dsl.second);
-	}
-}
-
-vk::DescriptorSetLayout DescriptorSetLayoutPool::create_descriptor_set_layout(const Key& bindings) {
-	auto& layout = _layouts[bindings];
-	if(!layout) {
-		layout = device()->vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
-				.setBindingCount(u32(bindings.size()))
-				.setPBindings(bindings.begin())
-			);
-	}
-	return layout;
-}
-
-
-
-}
+#endif // YAVE_DEVICE_DEBUGPARAMS_H

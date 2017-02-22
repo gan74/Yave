@@ -19,13 +19,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_H
-#define YAVE_DEVICE_H
+#ifndef YAVE_DEVICE_DEVICE_H
+#define YAVE_DEVICE_DEVICE_H
 
-#include "yave.h"
+#include <yave/yave.h>
 #include "PhysicalDevice.h"
-#include "DescriptorSetLayoutPool.h"
 
+#include <yave/bindings/DescriptorSetLayoutPool.h>
 #include <yave/image/Sampler.h>
 #include <yave/commands/CmdBufferPool.h>
 #include <yave/queues/QueueFamily.h>
@@ -94,4 +94,4 @@ void DeviceLinked::destroy(T t) const {
 }
 
 
-#endif // YAVE_DEVICE_H
+#endif // YAVE_DEVICE_DEVICE_H

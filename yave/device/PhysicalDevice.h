@@ -19,47 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICELINKED_H
-#define YAVE_DEVICELINKED_H
+#ifndef YAVE_DEVICE_PHYSICALDEVICE_H
+#define YAVE_DEVICE_PHYSICALDEVICE_H
 
-#include "yave.h"
+#include "Instance.h"
 
 namespace yave {
 
-class DeviceLinked {
+class PhysicalDevice : NonCopyable {
 	public:
-		DevicePtr device() const {
-			return _device;
-		}
+		PhysicalDevice(Instance& instance);
+		~PhysicalDevice();
 
-		template<typename T>
-		void destroy(T t) const; /* {
-			if(_device) {
-				_device->destroy(t);
-			}
-		}*/
-
-	protected:
-		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
-		DeviceLinked() : _device(nullptr) {
-			// for putting breakpoints
-		}
-
-		DeviceLinked(DevicePtr dev) : _device(dev) {
-			if(!dev) {
-				fatal("Null device.");
-			}
-		}
-
-		void swap(DeviceLinked& other) {
-			std::swap(_device, other._device);
-		}
+		vk::PhysicalDevice vk_physical_device() const;
+		vk::PhysicalDeviceMemoryProperties vk_memory_properties() const;
 
 	private:
-		DevicePtr _device;
-
+		Instance& _instance;
+		vk::PhysicalDevice _device;
+		vk::PhysicalDeviceMemoryProperties _memory_properties;
 };
 
 }
 
-#endif // YAVE_DEVICELINKED_H
+#endif // YAVE_DEVICE_PHYSICALDEVICE_H

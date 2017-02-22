@@ -1,6 +1,6 @@
 
 #include <yave/image/ImageData.h>
-#include <yave/Window.h>
+#include <yave/window/Window.h>
 #include <y/math/Vec.h>
 
 #include <iostream>

@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
 
 #include <yave/yave.h>
-#include <yave/DeviceLinked.h>
+#include <yave/device/DeviceLinked.h>
 
 namespace yave {
 

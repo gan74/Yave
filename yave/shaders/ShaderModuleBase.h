@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_SHADER_SHADERMODULEBASE_H
 
 #include <yave/yave.h>
-#include <yave/DeviceLinked.h>
+#include <yave/device/DeviceLinked.h>
 
 #include "SpirVData.h"
 

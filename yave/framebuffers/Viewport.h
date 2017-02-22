@@ -19,39 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DESCRIPTORSETLAYOUTPOOL_H
-#define YAVE_DESCRIPTORSETLAYOUTPOOL_H
+#ifndef YAVE_FRAMEBUFFERS_VIEWPORT_H
+#define YAVE_FRAMEBUFFERS_VIEWPORT_H
 
-#include "yave.h"
-#include "DeviceLinked.h"
-#include <y/core/AssocVector.h>
-#include <y/concurrent/Arc.h>
-
+#include <yave/yave.h>
+#include <y/math/Vec.h>
 
 namespace yave {
 
-class DescriptorSetLayoutPool : NonCopyable, public DeviceLinked {
-
-	public:
-		using Key = core::Vector<vk::DescriptorSetLayoutBinding>;
-
-		DescriptorSetLayoutPool(DevicePtr dptr);
-		~DescriptorSetLayoutPool();
-
-		vk::DescriptorSetLayout create_descriptor_set_layout(const Key& bindings);
-
-		vk::DescriptorSetLayout operator()(const Key& bindings) {
-			return create_descriptor_set_layout(bindings);
-		}
-
-	private:
-		core::AssocVector<Key, vk::DescriptorSetLayout> _layouts;
+struct Viewport {
+	math::Vec2 extent;
+	math::Vec2 offset;
+	math::Vec2 depth;
 
 
+	Viewport(const math::Vec2& size = math::Vec2()) : extent(size), depth(0.0f, 1.0f) {
+	}
 };
-
-
 
 }
 
-#endif // YAVE_DESCRIPTORSETLAYOUTPOOL_H
+#endif // YAVE_FRAMEBUFFERS_VIEWPORT_H

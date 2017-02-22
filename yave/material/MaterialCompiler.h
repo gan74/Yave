@@ -23,14 +23,13 @@ SOFTWARE.
 #define YAVE_MATERIAL_MATERIALCOMPILER_H
 
 #include <yave/yave.h>
+#include <yave/framebuffers/RenderPass.h>
+#include <yave/framebuffers/Viewport.h>
+
 #include "Material.h"
 #include "GraphicPipeline.h"
 
-#include <yave/RenderPass.h>
-#include <yave/Viewport.h>
-
 namespace yave {
-
 
 class MaterialCompiler : NonCopyable, public DeviceLinked {
 	public:

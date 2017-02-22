@@ -19,30 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_EVENTHANDLER_H
-#define YAVE_EVENTHANDLER_H
 
-#include "yave.h"
-#include <y/math/Vec.h>
+#include "DescriptorSetLayoutPool.h"
+
+#include <yave/device/Device.h>
+
 
 namespace yave {
 
-class MouseEventHandler {
-	public:
-		enum MouseButton {
-			LeftButton,
-			RightButton
-		};
+DescriptorSetLayoutPool::DescriptorSetLayoutPool(DevicePtr dptr) : DeviceLinked(dptr) {
+}
 
-		virtual ~MouseEventHandler() {
-		}
+DescriptorSetLayoutPool::~DescriptorSetLayoutPool() {
+	for(const auto& dsl : _layouts) {
+		destroy(dsl.second);
+	}
+}
 
-		virtual void mouse_moved(const math::Vec2i&)						{}
-		virtual void mouse_pressed(const math::Vec2i&, MouseButton)			{}
-		virtual void mouse_released(const math::Vec2i&, MouseButton)		{}
-};
+vk::DescriptorSetLayout DescriptorSetLayoutPool::create_descriptor_set_layout(const Key& bindings) {
+	auto& layout = _layouts[bindings];
+	if(!layout) {
+		layout = device()->vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
+				.setBindingCount(u32(bindings.size()))
+				.setPBindings(bindings.begin())
+			);
+	}
+	return layout;
+}
+
 
 
 }
-
-#endif // YAVE_EVENTHANDLER_H

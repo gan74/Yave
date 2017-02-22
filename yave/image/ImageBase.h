@@ -25,7 +25,7 @@ SOFTWARE.
 #include "ImageUsage.h"
 #include "ImageData.h"
 
-#include <yave/DeviceLinked.h>
+#include <yave/device/DeviceLinked.h>
 
 namespace yave {
 

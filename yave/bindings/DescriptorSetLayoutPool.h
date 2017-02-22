@@ -19,34 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_INSTANCE_H
-#define YAVE_INSTANCE_H
+#ifndef YAVE_DESCRIPTORSETLAYOUTPOOL_H
+#define YAVE_DESCRIPTORSETLAYOUTPOOL_H
 
-#include "yave.h"
-#include "DebugParams.h"
+#include <yave/yave.h>
+#include <yave/device/DeviceLinked.h>
+#include <y/core/AssocVector.h>
+#include <y/concurrent/Arc.h>
+
 
 namespace yave {
 
-class Instance : NonCopyable {
+class DescriptorSetLayoutPool : NonCopyable, public DeviceLinked {
+
 	public:
-		Instance(DebugParams debug);
-		~Instance();
+		using Key = core::Vector<vk::DescriptorSetLayoutBinding>;
 
-		const DebugParams& debug_params() const;
+		DescriptorSetLayoutPool(DevicePtr dptr);
+		~DescriptorSetLayoutPool();
 
-		vk::Instance vk_instance() const;
+		vk::DescriptorSetLayout create_descriptor_set_layout(const Key& bindings);
+
+		vk::DescriptorSetLayout operator()(const Key& bindings) {
+			return create_descriptor_set_layout(bindings);
+		}
 
 	private:
-		void setup_debug();
+		core::AssocVector<Key, vk::DescriptorSetLayout> _layouts;
 
-		core::Vector<const char*> _instance_extentions;
 
-		DebugParams _debug_params;
-		vk::Instance _instance;
-
-		VkDebugReportCallbackEXT _debug_callback;
 };
+
+
 
 }
 
-#endif // YAVE_INSTANCE_H
+#endif // YAVE_DESCRIPTORSETLAYOUTPOOL_H

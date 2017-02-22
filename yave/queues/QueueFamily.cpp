@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "QueueFamily.h"
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 
 namespace yave {

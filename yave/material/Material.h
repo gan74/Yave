@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_MATERIAL_MATERIAL_H
 
 #include <yave/yave.h>
-#include <yave/Viewport.h>
+#include <yave/framebuffers/Viewport.h>
 
 #include <yave/bindings/DescriptorSet.h>
 

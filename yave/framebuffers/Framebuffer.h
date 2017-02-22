@@ -19,10 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_FRAMEBUFFER_H
-#define YAVE_FRAMEBUFFER_H
+#ifndef YAVE_FRAMEBUFFERS_FRAMEBUFFER_H
+#define YAVE_FRAMEBUFFERS_FRAMEBUFFER_H
 
-#include "yave.h"
+#include <yave/yave.h>
 
 #include "RenderPass.h"
 
@@ -74,4 +74,4 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 
 }
 
-#endif // YAVE_FRAMEBUFFER_H
+#endif // YAVE_FRAMEBUFFERS_FRAMEBUFFER_H

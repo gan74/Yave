@@ -24,8 +24,8 @@ SOFTWARE.
 
 #include <yave/commands/CmdBufferRecorder.h>
 #include <yave/material/Material.h>
-#include <yave/RenderPass.h>
-#include <yave/Device.h>
+#include <yave/framebuffers/RenderPass.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 

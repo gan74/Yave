@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_BINDINGS_BINDING_H
 
 #include <yave/yave.h>
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 #include <yave/image/ImageView.h>
 #include <yave/buffer/TypedSubBuffer.h>

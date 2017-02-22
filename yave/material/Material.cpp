@@ -23,7 +23,7 @@ SOFTWARE.
 #include "MaterialCompiler.h"
 #include "MaterialData.h"
 
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 

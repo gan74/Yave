@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_RENDERERS_DEFERREDRENDERER_H
 #define YAVE_RENDERERS_DEFERREDRENDERER_H
 
-#include <yave/Framebuffer.h>
+#include <yave/framebuffers/Framebuffer.h>
 #include <yave/shaders/ComputeProgram.h>
 #include <yave/bindings/uniforms.h>
 

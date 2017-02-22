@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_COMMANDS_CMDBUFFERRECORDERBASE_H
 
 #include <yave/yave.h>
-#include <yave/Framebuffer.h>
+#include <yave/framebuffers/Framebuffer.h>
 #include <yave/barriers/Barrier.h>
 
 #include "CmdBuffer.h"
@@ -32,7 +32,7 @@ SOFTWARE.
 #include <yave/material/GraphicPipeline.h>
 #include <yave/shaders/ComputeProgram.h>
 #include <yave/bindings/DescriptorSet.h>
-#include <yave/Viewport.h>
+#include <yave/framebuffers/Viewport.h>
 
 
 namespace yave {

@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_BUFFER_BUFFERBASE_H
 
 #include "BufferUsage.h"
-#include <yave/DeviceLinked.h>
+#include <yave/device/DeviceLinked.h>
 
 namespace yave {
 

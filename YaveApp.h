@@ -25,12 +25,12 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <y/core/Chrono.h>
 
-#include <yave/Device.h>
+#include <yave/device/Device.h>
 
 #include <yave/material/Material.h>
 #include <yave/commands/CmdBufferRecorder.h>
 #include <yave/image/Image.h>
-#include <yave/Swapchain.h>
+#include <yave/swapchain/Swapchain.h>
 #include <yave/objects/StaticMesh.h>
 #include <yave/mesh/MeshInstancePool.h>
 
