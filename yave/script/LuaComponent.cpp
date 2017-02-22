@@ -25,19 +25,41 @@ SOFTWARE.
 
 namespace yave {
 
+static void err(const sol::error& e) {
+	log_msg("Lua error: "_s + e.what(), LogType::Error);
+}
+
+static void check(const sol::protected_function_result& res) {
+	if(!res.valid()) {
+		err(res);
+	}
+}
+
+template<typename T, typename... Args>
+static void run(T&& p, Args&&... args) {
+	if(p.valid()) {
+		check(
+			sol::protected_function(std::forward<T>(p))
+			(std::forward<Args>(args)...));
+	}
+}
+
+
 
 LuaComponent::LuaComponent(sol::state& state, const char* script) {
 	if(script) {
-		_component = state.script(script);
+		auto res = state.do_string(script);
+		_component = res.valid() ? res : (err(res), _component = state.create_table());
 	}
 }
+
 
 void LuaComponent::update(const core::Duration& d) {
 	update(d.to_secs());
 }
 
 void LuaComponent::update(float dt) {
-	_component["update"](_component, dt);
+	run(_component["update"], _component, dt);
 }
 
 
