@@ -164,7 +164,7 @@ class Matrix {
 			Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
 			for(usize i = 0; i != N; i++) {
 				for(usize j = 0; j != M; j++) {
-					mat.vecs[i][j] = _vecs[i][j] + m._vecs[i][j];
+					mat._vecs[i][j] = _vecs[i][j] + m._vecs[i][j];
 				}
 			}
 			return mat;

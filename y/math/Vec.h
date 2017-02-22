@@ -121,7 +121,6 @@ class Vec
 		}
 
 		Vec cross(const Vec& o) const {
-			static_assert(std::is_signed<T>::value, "Vec<T>::cross makes no sense for T unsigned");
 			Vec v;
 			for(usize i = 0; i != N; i++) {
 				v[i] = _vec[(i + 1) % N] * o._vec[(i + 2) % N] - _vec[(i + 2) % N] * o._vec[(i + 1) % N];
@@ -240,7 +239,7 @@ class Vec
 			return _vec[i];
 		}
 
-		constexpr usize size() const {
+		static constexpr usize size() {
 			return N;
 		}
 
