@@ -7,11 +7,7 @@ set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmi
 set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor -Wodr -Wzero-as-null-pointer-constant")
 set(EXTRA_OPTIMISATIONS "-ffast-math")
 
-if(CMAKE_BUILD_TYPE MATCHES "Release")
-	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -O3")
-	message("Release build")
-endif()
-
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
