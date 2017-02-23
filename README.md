@@ -10,6 +10,7 @@ You need:
  * [Spriv_cross](https://github.com/KhronosGroup/SPIRV-Cross)
  * [y](https://github.com/gan74/y)
  * [sol2](https://github.com/ThePhD/sol2)
+ * [LuaJit](https://github.com/LuaDist/luajit)
 
 ## Status
 
