@@ -9,6 +9,7 @@ You need:
  * [Vulkan hpp](https://github.com/KhronosGroup/Vulkan-Hpp)
  * [Spriv_cross](https://github.com/KhronosGroup/SPIRV-Cross)
  * [y](https://github.com/gan74/y)
+ * [sol2](https://github.com/ThePhD/sol2)
 
 ## Status
 
