@@ -48,8 +48,12 @@ static void run(T&& p, Args&&... args) {
 
 LuaComponent::LuaComponent(sol::state& state, const char* script) {
 	if(script) {
-		auto res = state.do_string(script);
-		_component = res.valid() ? res : (err(res), _component = state.create_table());
+		try {
+			_component = state.script(script);
+		} catch(sol::error& e) {
+			err(e);
+			_component = state.create_table();
+		}
 	}
 }
 

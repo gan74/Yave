@@ -46,16 +46,16 @@ class ArcballMouse : public MouseEventHandler {
 
 int main(int, char **) {
 	auto state = yave::lua::create_state();
-	state.script("print('Lua initialized')");
+	state.script("print('Lua initialized (jit version = ' .. jit.version .. ')')");
 
 	/*LuaComponent cmp(state, R"#(
 			return {total = 0, update =
 				function (self, dt)
 					self.total = self.total + dt
 					print(('dt: %.4f total: %.2f'):format(dt, self.total))
-					if self.total > 3 then
-						self.total = lol + 1
-					end
+					--[[ if self.total > 3 then
+						self.total = fail + 1
+					end ]]--
 				end}
 		 )#");
 
@@ -63,7 +63,6 @@ int main(int, char **) {
 	while(true) {
 		cmp.update(time.reset());
 	}
-
 
 	return 0;*/
 

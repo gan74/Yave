@@ -12,13 +12,7 @@ set(PROFILE_FLAGS "-pg -fno-omit-frame-pointer")
 
 set(EXTRA_OPTIMISATIONS "-ffast-math")
 
-if(CMAKE_BUILD_TYPE MATCHES "Release")
-	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} -O3")
-	message("Release build")
-# else()
-# 	set(EXTRA_OPTIMISATIONS "${EXTRA_OPTIMISATIONS} ${PROFILE_FLAGS}")
-# 	message("Debug: profiling enabled")
-endif()
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
@@ -49,7 +43,7 @@ add_library(yave STATIC ${SOURCE_FILES})
 add_executable(main "main.cpp")
 
 target_link_libraries(yave y)
-target_link_libraries(yave lua)
+target_link_libraries(yave luajit)
 target_link_libraries(yave vulkan-1)
 target_link_libraries(yave spirv-cross)
 
@@ -57,7 +51,7 @@ target_link_libraries(main yave)
 
 
 if(WIN32)
-target_compile_definitions(yave PRIVATE -DWIN32)
+	target_compile_definitions(yave PRIVATE -DWIN32)
 endif()
 
 
