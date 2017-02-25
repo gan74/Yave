@@ -113,12 +113,13 @@ void load_user_types(sol::state& state) {
 	load_vec<Vec2>(state, "Vec2");
 }
 
-
 sol::state create_state() {
 	sol::state state;
 	state.open_libraries();
 
 	load_user_types(state);
+
+	state.script("print('Lua initialized' .. (jit and ' (jit version = ' .. jit.version .. ')' or ''))");
 
 	return state;
 }

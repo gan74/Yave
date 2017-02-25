@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-CmdBufferBase::CmdBufferBase(const core::Rc<CmdBufferPoolData>& pool) : _pool(pool), _data(_pool->alloc()) {
+CmdBufferBase::CmdBufferBase(const core::Arc<CmdBufferPoolData>& pool) : _pool(pool), _data(_pool->alloc()) {
 }
 
 CmdBufferBase::~CmdBufferBase() {

@@ -45,7 +45,7 @@ class CmdBufferPool {
 		}
 
 	private:
-		core::Rc<CmdBufferPoolData> _pool;
+		core::Arc<CmdBufferPoolData> _pool;
 };
 
 }

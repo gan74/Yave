@@ -33,7 +33,7 @@ struct CmdBufferBase : NonCopyable {
 
 	public:
 		CmdBufferBase() = default;
-		CmdBufferBase(const core::Rc<CmdBufferPoolData>& pool);
+		CmdBufferBase(const core::Arc<CmdBufferPoolData>& pool);
 
 		~CmdBufferBase();
 
