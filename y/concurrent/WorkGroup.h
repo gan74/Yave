@@ -61,22 +61,24 @@ class WorkGroup : NonCopyable {
 						std::for_each(beg, end, f);
 					});
 			}
-
-			usize split = std::distance(beg, end) / conc;
-			std::lock_guard<LockType> _(_lock);
-			for(usize i = 0; i != conc - 1; ++i) {
-				auto next = beg;
-				std::advance(next, split);
-				_tasks.push([=, f = std::forward<F>(func)]() {
-						std::for_each(beg, next, f);
-					});
-				beg = next;
+			{
+				usize split = std::distance(beg, end) / conc;
+				std::lock_guard<LockType> _(_lock);
+				for(usize i = 0; i != conc - 1; ++i) {
+					auto next = beg;
+					std::advance(next, split);
+					_tasks.push([=, f = std::forward<F>(func)]() {
+							std::for_each(beg, next, f);
+						});
+					beg = next;
+				}
+				if(beg != end) {
+					_tasks.push([=, f = std::forward<F>(func)]() {
+							std::for_each(beg, end, f);
+						});
+				}
 			}
-			if(beg != end) {
-				_tasks.push([=, f = std::forward<F>(func)]() {
-						std::for_each(beg, end, f);
-					});
-			}
+			_notifier.notify_all();
 		}
 
 	private:
