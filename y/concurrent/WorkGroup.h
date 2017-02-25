@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef Y_CONCURRENT_WORKGROUP_H
 #define Y_CONCURRENT_WORKGROUP_H
 
-
 #include <y/core/Vector.h>
 #include <y/core/Functor.h>
 #include <y/core/Result.h>
@@ -30,6 +29,8 @@ SOFTWARE.
 #include <condition_variable>
 #include <thread>
 #include <mutex>
+#include <deque>
+
 #include <queue>
 
 namespace y {
@@ -56,24 +57,28 @@ class WorkGroup : NonCopyable {
 		template<typename It, typename F>
 		void schedule_range(It beg, It end, F&& func) {
 			usize conc = _threads.size();
+			usize min_range = 16;
+
 			if(conc < 2) {
 				return schedule([=, f = std::forward<F>(func)]() {
 						std::for_each(beg, end, f);
 					});
 			}
 			{
-				usize split = std::distance(beg, end) / conc;
+				usize size = std::distance(beg, end);
+				usize split = std::max(min_range, size / conc);
+
 				std::lock_guard<LockType> _(_lock);
-				for(usize i = 0; i != conc - 1; ++i) {
+				for(usize i = 0; i + split < size; i += split) {
 					auto next = beg;
 					std::advance(next, split);
-					_tasks.push([=, f = std::forward<F>(func)]() {
+					_tasks.push_back([=, f = std::forward<F>(func)]() {
 							std::for_each(beg, next, f);
 						});
 					beg = next;
 				}
 				if(beg != end) {
-					_tasks.push([=, f = std::forward<F>(func)]() {
+					_tasks.push_back([=, f = std::forward<F>(func)]() {
 							std::for_each(beg, end, f);
 						});
 				}
@@ -88,7 +93,7 @@ class WorkGroup : NonCopyable {
 
 		LockType _lock;
 		std::condition_variable _notifier;
-		std::queue<core::Function<void()>> _tasks;
+		std::deque<core::Function<void()>> _tasks;
 
 		core::Vector<std::thread> _threads;
 

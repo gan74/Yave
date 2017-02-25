@@ -41,7 +41,7 @@ WorkGroup::~WorkGroup() {
 void WorkGroup::schedule(core::Function<void()>&& t) {
 	{
 		std::lock_guard<LockType> _(_lock);
-		_tasks.push(std::move(t));
+		_tasks.push_back(std::move(t));
 	}
 	_notifier.notify_one();
 }
@@ -80,7 +80,7 @@ core::Result<core::Function<void()>> WorkGroup::take() {
 			_notifier.wait(lock);
 		} else {
 			core::Function<void()> task = std::move(_tasks.front());
-			_tasks.pop();
+			_tasks.pop_front();
 			return core::Ok(std::move(task));
 		}
 	}
@@ -93,13 +93,16 @@ core::Result<core::Function<void()>> WorkGroup::try_take() {
 		return core::Err();
 	}
 	core::Function<void()> task = std::move(_tasks.front());
-	_tasks.pop();
+	_tasks.pop_front();
 	return core::Ok(std::move(task));
 }
 
 void WorkGroup::stop() {
-	std::lock_guard<LockType> _(_lock);
-	_running = false;
+	{
+		std::lock_guard<LockType> _(_lock);
+		_running = false;
+	}
+	_notifier.notify_all();
 }
 
 }
