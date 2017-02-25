@@ -202,7 +202,7 @@ class Rc : public detail::Ptr<T> {
 			std::swap(_count, p._count);
 		}
 
-		C ref_count() const {
+		const C& ref_count() const {
 			return *_count;
 		}
 
