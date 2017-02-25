@@ -53,6 +53,32 @@ class WorkGroup : NonCopyable {
 		void operator()();
 
 
+		template<typename It, typename F>
+		void schedule_range(It beg, It end, F&& func) {
+			usize conc = _threads.size();
+			if(conc < 2) {
+				return schedule([=, f = std::forward<F>(func)]() {
+						std::for_each(beg, end, f);
+					});
+			}
+
+			usize split = std::distance(beg, end) / conc;
+			std::lock_guard<LockType> _(_lock);
+			for(usize i = 0; i != conc - 1; ++i) {
+				auto next = beg;
+				std::advance(next, split);
+				_tasks.push([=, f = std::forward<F>(func)]() {
+						std::for_each(beg, next, f);
+					});
+				beg = next;
+			}
+			if(beg != end) {
+				_tasks.push([=, f = std::forward<F>(func)]() {
+						std::for_each(beg, end, f);
+					});
+			}
+		}
+
 	private:
 		core::Result<core::Function<void()>> take();
 		core::Result<core::Function<void()>> try_take();
