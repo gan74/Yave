@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
 #define YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
 
+#include <y/concurrent/Arc.h>
+
 #include <yave/yave.h>
 #include <yave/device/DeviceLinked.h>
 

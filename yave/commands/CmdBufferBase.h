@@ -46,7 +46,7 @@ struct CmdBufferBase : NonCopyable {
 		void submit(vk::Queue queue);
 
 	private:
-		core::Rc<CmdBufferPoolData> _pool;
+		core::Arc<CmdBufferPoolData> _pool;
 		NotOwner<CmdBufferData> _data;
 };
 
