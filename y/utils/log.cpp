@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include "log.h"
 #include <y/utils.h>
-#include <y/concurrent/Mutex.h>
-#include <y/concurrent/LockGuard.h>
+
+#include <mutex>
 
 #include <iostream>
 
@@ -32,8 +32,9 @@ namespace y {
 static constexpr std::array<const char*, 5> log_type_str = {{"info", "warning", "error", "debug", "perf"}};
 
 void log_msg(const char* msg, LogType type) {
-	static concurrent::Mutex lock;
-	auto _ = concurrent::lock(lock);
+	static std::mutex lock;
+	std::lock_guard<decltype(lock)> _(lock);
+
 	(type == LogType::Error ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
 }
 
