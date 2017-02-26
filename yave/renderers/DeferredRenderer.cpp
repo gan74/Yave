@@ -33,8 +33,8 @@ static ComputeShader create_lighting_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
-static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
-	usize light_count = dir_count + pts_count + 1;
+static auto create_lights(DevicePtr dptr, usize pts_count) {
+	usize light_count = 1 + pts_count;
 	using Vec4u32 = math::Vec<4, u32>;
 	Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(Vec4u32) + light_count * sizeof(uniform::Light));
 
@@ -43,13 +43,21 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
 	std::uniform_real_distribution<float> pos_distr(-1, 1);
 
 	core::Vector<uniform::Light> lights;
-	for(usize i = 0; i != dir_count; i++) {
-		lights << uniform::Light {
-				math::Vec3(0, 0, 1).normalized(), 0,
-				math::Vec3(1, 1, 1) * 0.5,
-				uniform::LightType::Directional
-			};
-	}
+
+	// sun
+	lights << uniform::Light {
+			math::Vec3(0, 0.5, 1).normalized(), 0,
+			math::Vec3(1, 1, 1) * 0.7,
+			uniform::LightType::Directional
+		};
+
+	// fill
+	lights << uniform::Light {
+			-math::Vec3(0, 0.5, 1).normalized(), 0,
+			math::Vec3(1, 1, 1) * 0.2,
+			uniform::LightType::Directional
+		};
+
 	for(usize i = 0; i != pts_count; i++) {
 		lights << uniform::Light {
 				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)),
@@ -58,12 +66,7 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
 				uniform::LightType::Point
 			};
 	}
-	lights << uniform::Light {
-			  math::Vec3(0, 0, 100),
-			  0.1,
-			  math::Vec3(1, 0, 1),
-			  uniform::LightType::Point
-		  };
+
 
 	{
 		TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryFlags::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(light_count);
@@ -81,7 +84,7 @@ static auto create_lights(DevicePtr dptr, usize dir_count, usize pts_count) {
 
 
 
-DeferredRenderer::DeferredRenderer(const core::Rc<GBufferRenderer>& gbuffer) :
+DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 		Node(),
 		DeviceLinked(gbuffer->device()),
 
@@ -89,7 +92,7 @@ DeferredRenderer::DeferredRenderer(const core::Rc<GBufferRenderer>& gbuffer) :
 
 		_lighting_shader(create_lighting_shader(device())),
 		_lighting_program(_lighting_shader),
-		_lights(create_lights(device(), 1, 1)),
+		_lights(create_lights(device(), 1)),
 		_camera_buffer(device(), 1),
 		_lighting_set(device(), {Binding(_gbuffer->depth()), Binding(_gbuffer->diffuse()), Binding(_gbuffer->normal()), Binding(_camera_buffer), Binding(_lights)}) {
 
@@ -104,7 +107,7 @@ const math::Vec2ui& DeferredRenderer::size() const {
 	return _gbuffer->size();
 }
 
-core::Vector<core::Rc<Node>> DeferredRenderer::dependencies() {
+core::Vector<Node::NodePtr> DeferredRenderer::dependencies() {
 	return {_gbuffer};
 }
 

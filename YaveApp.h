@@ -60,7 +60,7 @@ class YaveApp : NonCopyable {
 			create_command_buffers();
 		}
 
-		core::Duration draw();
+		void draw();
 		void update(math::Vec2 angles = math::Vec2(0));
 
 
@@ -87,6 +87,8 @@ class YaveApp : NonCopyable {
 		Camera camera;
 
 		Pipeline* pipeline;
+
+		concurrent::WorkGroup worker;
 };
 
 }

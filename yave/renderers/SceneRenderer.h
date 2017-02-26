@@ -29,15 +29,15 @@ namespace yave {
 class SceneRenderer {
 
 	public:
-		SceneRenderer(DevicePtr dptr, const core::Rc<CullingNode>& cull);
+		SceneRenderer(DevicePtr dptr, const Node::Ptr<CullingNode>& cull);
 
 		const SceneView& scene_view() const;
 
-		core::Vector<core::Rc<Node>> dependencies();
+		core::Vector<Node::NodePtr> dependencies();
 		void process(const FrameToken&, CmdBufferRecorder<>& recorder);
 
 	private:
-		core::Rc<CullingNode> _cull;
+		Node::Ptr<CullingNode> _cull;
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _matrix_buffer;
 		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _mapping;

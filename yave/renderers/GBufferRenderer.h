@@ -33,7 +33,7 @@ class GBufferRenderer : public Node, public DeviceLinked {
 		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 		static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
 
-		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, const core::Rc<CullingNode>& node);
+		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node);
 
 		const math::Vec2ui& size() const;
 		const SceneView& scene_view() const;
@@ -44,8 +44,8 @@ class GBufferRenderer : public Node, public DeviceLinked {
 		const ColorTextureAttachment& normal() const;
 
 
-		virtual core::Vector<core::Rc<Node>> dependencies() override;
-		virtual void process(const FrameToken& token, CmdBufferRecorder<>&recorder) override;
+		virtual core::Vector<NodePtr> dependencies() override;
+		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		SceneRenderer _scene;

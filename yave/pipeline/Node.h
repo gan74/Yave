@@ -25,21 +25,28 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/swapchain/FrameToken.h>
 
+#include <y/concurrent/WorkGroup.h>
+#include <y/concurrent/Arc.h>
+
 namespace yave {
 
 class Node : NonCopyable {
+
 	public:
+		template<typename T>
+		using Ptr = core::Arc<T>;
+
+		using NodePtr = Ptr<Node>;
+
+
 		virtual ~Node() {
 		}
 
 		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
 
-		virtual core::Vector<core::Rc<Node>> dependencies() {
+		virtual core::Vector<NodePtr> dependencies() {
 			return {};
 		}
-
-
-
 
 };
 

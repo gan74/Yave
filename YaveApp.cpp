@@ -64,8 +64,7 @@ void YaveApp::create_command_buffers() {
 	}*/
 }
 
-core::Duration YaveApp::draw() {
-	core::Chrono ch;
+void YaveApp::draw() {
 
 	auto vk_swap = swapchain->vk_swapchain();
 	auto image_acquired_semaphore = device.vk_device().createSemaphore(vk::SemaphoreCreateInfo());
@@ -77,7 +76,11 @@ core::Duration YaveApp::draw() {
 
 	//renderer->update();
 	auto cmd_buffer =  CmdBufferRecorder<>(command_pool.create_buffer());
-	pipeline->process(frame, cmd_buffer);
+
+	//core::Chrono ch;
+	pipeline->process(worker, frame, cmd_buffer);
+	//log_msg("process: "_s + ch.elapsed().to_millis() + "ms", LogType::Perf);
+
 	{
 
 		auto buffer = cmd_buffer.end().vk_cmd_buffer();
@@ -110,15 +113,18 @@ core::Duration YaveApp::draw() {
 		fatal("Unable to collect command buffers.");
 	}
 
-	return ch.elapsed();
 }
 
 void YaveApp::update(math::Vec2 angles) {
+
+	float dist = 150;
+
 	auto cam_pos =
 			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
-			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(2.2, 0, 0, 1);
+			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(dist, 0, 0, 1);
 
 	camera.set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
+	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.01f,  dist * 2));
 }
 
 void YaveApp::create_assets() {
@@ -137,17 +143,29 @@ void YaveApp::create_assets() {
 	}
 
 
-	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/obj_to_ym/cube.obj.ym"};
 	core::Vector<StaticMesh> objects;
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(/*new StaticMeshInstance(&device,*/ m_data));
-		for(usize i = 0; i != 30; i++) {
+
+		/*for(usize i = 0; i != 30; i++) {
 			auto m = StaticMesh(mesh, material);
 			m.set_position(math::Vec3(objects.size() * (objects.size() % 2 ? -4.0f : 4.0f), 0, 0));
 
 			objects << std::move(m);
+		}*/
+
+		usize max = 15;
+		for(usize x = 0; x != max; x++) {
+			for(usize y = 0; y != max; y++) {
+				for(usize z = 0; z != max; z++) {
+					auto m = StaticMesh(mesh, material);
+					m.set_position((math::Vec3(x, y, z) - math::Vec3(max) * 0.5f) * 5.0f);
+					objects << std::move(m);
+				}
+			}
 		}
 	}
 	scene = new Scene(std::move(objects));
@@ -156,9 +174,9 @@ void YaveApp::create_assets() {
 	update();
 
 	{
-		auto culling = core::Rc<CullingNode>(new CullingNode(*scene_view));
-		auto gbuffer = core::Rc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
-		auto deferred = core::Rc<Node>(new DeferredRenderer(gbuffer));
+		auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
+		auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
+		auto deferred = core::Arc<Node>(new DeferredRenderer(gbuffer));
 
 		pipeline = new Pipeline(deferred);
 	}

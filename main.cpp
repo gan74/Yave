@@ -44,69 +44,7 @@ class ArcballMouse : public MouseEventHandler {
 };
 
 
-double random() {
-	return rand() / double(RAND_MAX);
-}
-
-void pi() {
-	usize inside = 0;
-	usize total = 0;
-	for(usize i = 0; i != 1000000; ++i) {
-		double x = random();
-		double y = random();
-		if(x * x + y * y < 1.0) {
-			inside++;
-		}
-		total++;
-	}
-	std::cout << (inside / double(total)) * 100 << "%\n";
-}
-
-
 int main(int, char **) {
-	auto state = yave::lua::create_state();
-
-	Chrono lua;
-	state.do_string(R"#(
-		inside = 0
-		total = 0
-		for i = 1, 1000000 do
-			x = math.random()
-			y = math.random()
-			if x * x + y * y < 1 then
-				inside = inside + 1
-			end
-			total = total + 1
-		end
-		print((inside / total) * 100 .. '%')
-	)#");
-	std::cout << "lua: " << lua.elapsed().to_millis() << "ms" << std::endl;
-
-	Chrono cpp;
-	pi();
-	std::cout << "c++: " << cpp.elapsed().to_millis() << "ms" << std::endl;
-
-	return 0;
-
-
-	/*LuaComponent cmp(state, R"#(
-			return {total = 0, update =
-				function (self, dt)
-					self.total = self.total + dt
-					print(('dt: %.4f total: %.2f'):format(dt, self.total))
-					--[[ if self.total > 3 then
-						self.total = fail + 1
-					end ]]--
-				end}
-		 )#");
-
-	core::Chrono time;
-	while(true) {
-		cmp.update(time.reset());
-	}
-
-	return 0;*/
-
 
 	Window win(math::vec(1280, 768), "Yave");
 	win.set_mouse_handler(new ArcballMouse());

@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-SceneRenderer::SceneRenderer(DevicePtr dptr, const core::Rc<CullingNode>& cull):
+SceneRenderer::SceneRenderer(DevicePtr dptr, const Node::Ptr<CullingNode>& cull):
 		_cull(cull),
 		_matrix_buffer(dptr, 1),
 		_mapping(_matrix_buffer.map()),
@@ -36,7 +36,7 @@ const SceneView& SceneRenderer::scene_view() const {
 	return _cull->scene_view();
 }
 
-core::Vector<core::Rc<Node>> SceneRenderer::dependencies() {
+core::Vector<Node::NodePtr> SceneRenderer::dependencies() {
 	return {_cull};
 }
 

@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const core::Rc<CullingNode> &node) :
+GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
 		Node(),
 		DeviceLinked(dptr),
 
@@ -57,7 +57,7 @@ const ColorTextureAttachment& GBufferRenderer::normal() const {
 	return _normal;
 }
 
-core::Vector<core::Rc<Node>> GBufferRenderer::dependencies() {
+core::Vector<Node::NodePtr> GBufferRenderer::dependencies() {
 	return _scene.dependencies();
 }
 

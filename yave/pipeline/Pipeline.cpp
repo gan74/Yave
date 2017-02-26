@@ -26,17 +26,17 @@ SOFTWARE.
 
 namespace yave {
 
-static void find_nodes(core::Rc<Node>& node, std::unordered_set<Node*>& nodes) {
+static void find_nodes(Node::NodePtr& node, std::unordered_set<Node*>& nodes) {
 	nodes.insert(node.as_ptr());
 	for(auto& n : node->dependencies()) {
 		find_nodes(n, nodes);
 	}
 }
 
-Pipeline::Pipeline(core::Rc<Node> root) : _root(std::move(root)) {
+Pipeline::Pipeline(Node::NodePtr root) : _root(std::move(root)) {
 }
 
-void Pipeline::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
+void Pipeline::process(concurrent::WorkGroup& worker, const FrameToken& token, CmdBufferRecorder<>& recorder) {
 	std::unordered_set<Node*> nodes;
 	find_nodes(_root, nodes);
 
