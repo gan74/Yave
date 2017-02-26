@@ -49,22 +49,22 @@ struct FunctionBase : NonCopyable {
 	}
 
 	virtual Ret apply(Args&&...) = 0;
-	virtual Ret apply(Args&&...) const = 0;
+	//virtual Ret apply(Args&&...) const = 0;
 };
 
 template<typename T, typename Ret, typename... Args>
 struct Function : FunctionBase<Ret, Args...> {
 	public:
-		Function(const T& t) : _func(t) {
+		Function(T&& t) : _func(std::forward<T>(t)) {
 		}
 
 		virtual Ret apply(Args&&... args) override {
 			return _func(std::forward<Args>(args)...);
 		}
 
-		virtual Ret apply(Args&&... args) const override {
+		/*virtual Ret apply(Args&&... args) const override {
 			return _func(std::forward<Args>(args)...);
-		}
+		}*/
 
 
 	private:
@@ -75,16 +75,16 @@ struct Function : FunctionBase<Ret, Args...> {
 template<typename T, typename... Args>
 struct Function<T, void, Args...> : FunctionBase<void, Args...> {
 	public:
-		Function(const T& t) : _func(t) {
+		Function(T&& t) : _func(std::forward<T>(t)) {
 		}
 
 		virtual void apply(Args&&... args) override {
 			_func(std::forward<Args>(args)...);
 		}
 
-		virtual void apply(Args&&... args) const override {
+		/*virtual void apply(Args&&... args) const override {
 			_func(std::forward<Args>(args)...);
-		}
+		}*/
 
 
 	private:
@@ -120,9 +120,9 @@ class Functor<Container, Ret(Args...)> {
 			return _function->apply(std::forward<Args>(args)...);
 		}
 
-		Ret operator()(Args&&... args) const {
+		/*Ret operator()(Args&&... args) const {
 			return _function->apply(std::forward<Args>(args)...);
-		}
+		}*/
 
 	private:
 		Container<FunctionBase<Ret, Args...>> _function;
