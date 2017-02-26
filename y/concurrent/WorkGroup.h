@@ -28,72 +28,97 @@ SOFTWARE.
 
 #include <condition_variable>
 #include <thread>
+#include <future>
 #include <mutex>
 #include <deque>
 
-#include <queue>
 
 namespace y {
 namespace concurrent {
 
+namespace detail {
+
+template<typename T, typename F, typename = std::enable_if_t<!std::is_void<T>::value>>
+inline void set_promise(std::promise<T>& p, F& f) {
+	try {
+		p.set_value(f());
+	} catch(...) {
+		p.set_exception(std::current_exception());
+	}
+}
+
+template<typename T, typename F, typename = std::enable_if_t<std::is_void<T>::value>>
+inline void set_promise(std::promise<void>& p, F& f) {
+	try {
+		f();
+		p.set_value();
+	} catch(...) {
+		p.set_exception(std::current_exception());
+	}
+}
+
+}
+
 class WorkGroup : NonCopyable {
 
 	using LockType = std::mutex;
+	using FuncType = core::Function<void()>;
 
 	public:
 		WorkGroup(usize threads = std::thread::hardware_concurrency());
 		~WorkGroup();
 
-		void schedule(core::Function<void()>&& t);
-
 		void subscribe();
-
 		bool process_one();
-		void process_all();
-
-		void operator()();
 
 
-		template<typename It, typename F>
-		void schedule_range(It beg, It end, F&& func) {
+
+		template<typename F>
+		auto schedule(F&& t) {
+			using Ret = decltype(t());
+			std::promise<Ret> promise;
+			std::future<Ret> future = promise.get_future();
+			{
+				std::lock_guard<LockType> _(_lock);
+				_tasks.emplace_back([p = std::move(promise), f = std::move(t)]() mutable { detail::set_promise<Ret>(p, f); });
+			}
+			_notifier.notify_one();
+			return std::move(future);
+		}
+
+		template<template<typename...> typename Container = core::Vector, typename It, typename F>
+		auto schedule_range(It beg, It end, F&& func) {
+			Container<std::future<void>> res;
 			usize conc = _threads.size();
 			usize min_range = 16;
-
 			if(conc < 2) {
-				return schedule([=, f = std::forward<F>(func)]() {
-						std::for_each(beg, end, f);
-					});
-			}
-			{
+				res << schedule([=, f = std::forward<F>(func)]() { std::for_each(beg, end, f); });
+			} else {
 				usize size = std::distance(beg, end);
 				usize split = std::max(min_range, size / conc);
 
-				std::lock_guard<LockType> _(_lock);
 				for(usize i = 0; i + split < size; i += split) {
 					auto next = beg;
 					std::advance(next, split);
-					_tasks.push_back([=, f = std::forward<F>(func)]() {
-							std::for_each(beg, next, f);
-						});
+					res << schedule([=, f = std::forward<F>(func)]() { std::for_each(beg, next, f); });
 					beg = next;
 				}
 				if(beg != end) {
-					_tasks.push_back([=, f = std::forward<F>(func)]() {
-							std::for_each(beg, end, f);
-						});
+					res << schedule([=, f = std::forward<F>(func)]() { std::for_each(beg, end, f); });
 				}
 			}
-			_notifier.notify_all();
+			return std::move(res);
 		}
 
 	private:
-		core::Result<core::Function<void()>> take();
-		core::Result<core::Function<void()>> try_take();
+		core::Result<FuncType> take();
+		core::Result<FuncType> try_take();
 		void stop();
 
 		LockType _lock;
 		std::condition_variable _notifier;
-		std::deque<core::Function<void()>> _tasks;
+
+		std::deque<FuncType> _tasks;
 
 		core::Vector<std::thread> _threads;
 

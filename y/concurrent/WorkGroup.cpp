@@ -38,30 +38,8 @@ WorkGroup::~WorkGroup() {
 	std::for_each(_threads.begin(), _threads.end(), [](auto& t) { t.join(); });
 }
 
-void WorkGroup::schedule(core::Function<void()>&& t) {
-	{
-		std::lock_guard<LockType> _(_lock);
-		_tasks.push_back(std::move(t));
-	}
-	_notifier.notify_one();
-}
-
-void WorkGroup::operator()() {
-	process_all();
-}
-
 void WorkGroup::subscribe() {
 	while(process_one());
-}
-
-void WorkGroup::process_all() {
-	while(true) {
-		auto work = try_take();
-		if(work.is_error()) {
-			break;
-		}
-		work.unwrap()();
-	}
 }
 
 bool WorkGroup::process_one() {
@@ -73,13 +51,13 @@ bool WorkGroup::process_one() {
 	return true;
 }
 
-core::Result<core::Function<void()>> WorkGroup::take() {
+core::Result<WorkGroup::FuncType> WorkGroup::take() {
 	std::unique_lock<LockType> lock(_lock);
 	while(_running || !_tasks.empty()) {
 		if(_tasks.empty()) {
 			_notifier.wait(lock);
 		} else {
-			core::Function<void()> task = std::move(_tasks.front());
+			auto task = std::move(_tasks.front());
 			_tasks.pop_front();
 			return core::Ok(std::move(task));
 		}
@@ -87,12 +65,12 @@ core::Result<core::Function<void()>> WorkGroup::take() {
 	return core::Err();
 }
 
-core::Result<core::Function<void()>> WorkGroup::try_take() {
-	std::unique_lock<LockType> lock(_lock);
+core::Result<WorkGroup::FuncType> WorkGroup::try_take() {
+	std::unique_lock<LockType> _(_lock);
 	if(_tasks.empty()) {
 		return core::Err();
 	}
-	core::Function<void()> task = std::move(_tasks.front());
+	FuncType task = std::move(_tasks.front());
 	_tasks.pop_front();
 	return core::Ok(std::move(task));
 }
