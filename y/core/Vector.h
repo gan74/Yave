@@ -47,7 +47,9 @@ struct DefaultVectorResizePolicy {
 	}
 
 	bool shrink(usize size, usize capacity) const {
-		return !size || (capacity - size) > 2 * step;
+		unused(size, capacity);
+		return false;
+		//return !size || (capacity - size) > 2 * step;
 	}
 };
 
