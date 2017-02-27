@@ -78,8 +78,16 @@ class Duration {
 			return std::tie(_secs, _subsec_ns) < std::tie(other._secs, other._subsec_ns);
 		}
 
+		bool operator<=(const Duration& other) const {
+			return std::tie(_secs, _subsec_ns) <= std::tie(other._secs, other._subsec_ns);
+		}
+
 		bool operator>(const Duration& other) const {
 			return std::tie(_secs, _subsec_ns) > std::tie(other._secs, other._subsec_ns);
+		}
+
+		bool operator>=(const Duration& other) const {
+			return std::tie(_secs, _subsec_ns) >= std::tie(other._secs, other._subsec_ns);
 		}
 
 	private:
@@ -123,7 +131,7 @@ class DebugTimer : NonCopyable {
 
 		~DebugTimer() {
 			auto time = _chrono.elapsed();
-			if(time > _minimum) {
+			if(time >= _minimum) {
 				log_msg(_msg + ": " + time.to_millis() + "ms", LogType::Perf);
 			}
 		}
