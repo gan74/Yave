@@ -101,7 +101,7 @@ void SceneRenderer::setup_instance(CmdBufferRecorder<>& recorder, const AssetPtr
 
 void SceneRenderer::submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Material>& mat, usize offset, usize size) {
 	if(size) {
-		recorder.bind_pipeline(mat->compile(recorder.current_pass(), recorder.viewport()), {_camera_set});
+		recorder.bind_pipeline(mat->compile(recorder.current_pass()), {_camera_set});
 
 		const usize cmd_size = sizeof(vk::DrawIndexedIndirectCommand);
 		recorder.vk_cmd_buffer().drawIndexedIndirect(_indirect_buffer.vk_buffer(), offset * cmd_size, size, cmd_size);

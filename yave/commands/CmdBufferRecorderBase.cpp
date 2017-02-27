@@ -46,10 +46,6 @@ const RenderPass& CmdBufferRecorderBase::current_pass() const {
 	return *_render_pass;
 }
 
-const Viewport& CmdBufferRecorderBase::viewport() const {
-	return _viewport;
-}
-
 void CmdBufferRecorderBase::end_render_pass() {
 	if(_render_pass) {
 		vk_cmd_buffer().endRenderPass();
@@ -58,7 +54,8 @@ void CmdBufferRecorderBase::end_render_pass() {
 }
 
 void CmdBufferRecorderBase::set_viewport(const Viewport& view) {
-	_viewport = view;
+	vk_cmd_buffer().setViewport(0, {vk::Viewport(view.offset.x(), view.offset.y(), view.extent.x(), view.extent.y(), view.depth.x(), view.depth.y())});
+	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(view.offset.x(), view.offset.y()), vk::Extent2D(view.extent.x(), view.extent.y()))});
 }
 
 void CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer) {
@@ -78,6 +75,7 @@ void CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer) {
 			.setPClearValues(clear_values.begin())
 			.setClearValueCount(u32(clear_values.size()))
 		;
+
 	vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
 	_render_pass = &framebuffer.render_pass();
 

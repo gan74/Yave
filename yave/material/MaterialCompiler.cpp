@@ -32,7 +32,7 @@ namespace yave {
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
-GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass, Viewport view) const {
+GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass) const {
 #warning move program creation
 
 	FragmentShader frag = FragmentShader(material.device(), material.data()._frag);
@@ -57,19 +57,8 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setPrimitiveRestartEnable(false)
 		;
 
-	auto viewport = vk::Viewport()
-			.setWidth(view.extent.x())
-			.setHeight(view.extent.y())
-			.setX(view.offset.x())
-			.setY(view.offset.y())
-			.setMinDepth(view.depth.x())
-			.setMaxDepth(view.depth.y())
-		;
-
-	auto scissor = vk::Rect2D()
-			.setExtent(vk::Extent2D(u32(view.extent.x()), u32(view.extent.y())))
-			.setOffset({0, 0})
-		;
+	auto viewport = vk::Viewport();
+	auto scissor = vk::Rect2D();
 
 	auto viewport_state = vk::PipelineViewportStateCreateInfo()
 			.setViewportCount(1)
@@ -119,13 +108,20 @@ GraphicPipeline MaterialCompiler::compile(const Material& material, const Render
 			.setPSetLayouts(program.descriptor_layouts().begin())
 		);
 
+	std::array<vk::DynamicState, 2> dynamics = {{vk::DynamicState::eViewport, vk::DynamicState::eScissor}};
+	auto dynamic_states = vk::PipelineDynamicStateCreateInfo()
+			.setDynamicStateCount(dynamics.size())
+			.setPDynamicStates(dynamics.begin())
+		;
+
 	auto pipeline = device()->vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
 			.setStageCount(u32(pipeline_shader_stage.size()))
 			.setPStages(pipeline_shader_stage.begin())
+			.setPDynamicState(&dynamic_states)
 			.setPVertexInputState(&vertex_input)
 			.setPInputAssemblyState(&input_assembly)
-			.setPViewportState(&viewport_state)
 			.setPRasterizationState(&rasterizer)
+			.setPViewportState(&viewport_state)
 			.setPMultisampleState(&multisampling)
 			.setPColorBlendState(&color_blending)
 			.setPDepthStencilState(&depth_testing)

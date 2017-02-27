@@ -64,6 +64,7 @@ static vk::Device create_device(
 
 	auto required = vk::PhysicalDeviceFeatures();
 	required.multiDrawIndirect = true;
+	required.drawIndirectFirstInstance = true;
 	required.fullDrawIndexUint32 = true;
 	required.textureCompressionBC  = true;
 

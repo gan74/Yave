@@ -47,7 +47,7 @@ class Material : NonCopyable, public DeviceLinked {
 
 		~Material();
 
-		const GraphicPipeline& compile(const RenderPass& render_pass, const Viewport &viewport);
+		const GraphicPipeline& compile(const RenderPass& render_pass);
 
 		const MaterialData& data() const;
 		const DescriptorSet& descriptor_set() const;

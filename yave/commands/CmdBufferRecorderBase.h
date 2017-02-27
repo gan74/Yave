@@ -43,7 +43,6 @@ class CmdBufferRecorderBase : NonCopyable {
 		vk::CommandBuffer vk_cmd_buffer() const;
 
 		const RenderPass& current_pass() const;
-		const Viewport& viewport() const;
 
 		void end_render_pass();
 
@@ -67,7 +66,6 @@ class CmdBufferRecorderBase : NonCopyable {
 	private:
 		vk::CommandBuffer _cmd_buffer;
 		const RenderPass* _render_pass = nullptr;
-		Viewport _viewport;
 };
 
 }

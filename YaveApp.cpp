@@ -135,7 +135,7 @@ void YaveApp::create_assets() {
 			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
 			mesh_texture = Texture(&device, image);
 		}
-		for(usize i = 0; i != 1024; ++i) {
+		for(usize i = 0; i != 128; ++i) {
 			materials << asset_ptr(Material(&device, MaterialData()
 					.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file")))
 					.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
@@ -159,7 +159,7 @@ void YaveApp::create_assets() {
 			objects << std::move(m);
 		}*/
 
-		usize max = 50;
+		usize max = 30;
 		for(usize x = 0; x != max; x++) {
 			for(usize y = 0; y != max; y++) {
 				for(usize z = 0; z != max; z++) {

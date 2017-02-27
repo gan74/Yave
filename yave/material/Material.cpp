@@ -54,7 +54,7 @@ void Material::swap(Material& other) {
 	std::swap(_compiled, other._compiled);
 }
 
-const GraphicPipeline& Material::compile(const RenderPass& render_pass, const Viewport& viewport) {
+const GraphicPipeline& Material::compile(const RenderPass& render_pass) {
 	auto key = render_pass.vk_render_pass();
 	if(!key) {
 		fatal("Unable to compile material: null renderpass.");
@@ -63,7 +63,7 @@ const GraphicPipeline& Material::compile(const RenderPass& render_pass, const Vi
 	auto it = std::find_if(_compiled.begin(), _compiled.end(), [=](const auto& c) { return c.first == key; });
 	if(it == _compiled.end()) {
 		MaterialCompiler compiler(device());
-		_compiled.insert(key, compiler.compile(*this, render_pass, viewport));
+		_compiled.insert(key, compiler.compile(*this, render_pass));
 		return _compiled.last().second;
 	}
 	return it->second;

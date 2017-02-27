@@ -24,9 +24,24 @@ SOFTWARE.
 
 #include <y/core/Chrono.h>
 
+#include <unordered_map>
 #include <unordered_set>
+#include <shared_mutex>
 
 namespace yave {
+
+enum ProcessingState {
+	ToDo,
+	Processing,
+	Done
+};
+
+static void find_nodes(Node::NodePtr& node, std::unordered_map<Node*, ProcessingState>& nodes) {
+	nodes.insert(std::make_pair(node.as_ptr(), ToDo));
+	for(auto& n : node->dependencies()) {
+		find_nodes(n, nodes);
+	}
+}
 
 static void find_nodes(Node::NodePtr& node, std::unordered_set<Node*>& nodes) {
 	nodes.insert(node.as_ptr());
@@ -39,6 +54,48 @@ Pipeline::Pipeline(Node::NodePtr root) : _root(std::move(root)) {
 }
 
 void Pipeline::process(concurrent::WorkGroup& worker, const FrameToken& token, CmdBufferRecorder<>& recorder) {
+	/*std::unordered_map<Node*, ProcessingState> nodes;
+	find_nodes(_root, nodes);
+
+	std::mutex lock;
+	std::condition_variable notify;
+
+	core::Vector<std::future<void>> futures;
+	for(usize i = 0; i != worker.concurrency(); ++i) {
+		futures << worker.schedule([&]() {
+			while(true) {
+				auto it = nodes.end();
+				{
+					std::unique_lock<decltype(lock)> lk(lock);
+					it = std::find_if(nodes.begin(), nodes.end(), [&](const auto& w) {
+							if(w.second != ToDo) {
+								return false;
+							}
+							auto deps = w.first->dependencies();
+							return std::all_of(deps.begin(), deps.end(), [&](auto& d) { return nodes[d.as_ptr()] == Done; });
+						});
+					if(it == nodes.end()) {
+						if(std::find_if(nodes.begin(), nodes.end(), [&](const auto& w) { return w.second == ToDo; }) == nodes.end()) {
+							return;
+						}
+						notify.wait(lk);
+						continue;
+					}
+					(*it).second = Processing;
+				}
+				(*it).first->process(token, recorder);
+				{
+					std::lock_guard<decltype(lock)> _(lock);
+					(*it).second = Done;
+				}
+				notify.notify_all();
+			}
+		});
+	}
+
+	std::for_each(futures.begin(), futures.end(), [](auto& f) { f.wait(); });*/
+
+
 	std::unordered_set<Node*> nodes;
 	find_nodes(_root, nodes);
 
