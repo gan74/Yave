@@ -41,8 +41,6 @@ class StaticMesh : public Transformable {
 		StaticMesh(StaticMesh&& other);
 		StaticMesh& operator=(StaticMesh&& other) = delete;
 
-		//void draw(CmdBufferRecorderBase& recorder, const DescriptorSet& vp) const;
-
 		const auto& instance() const {
 			return *_instance;
 		}
@@ -54,9 +52,6 @@ class StaticMesh : public Transformable {
 	private:
 		AssetPtr<StaticMeshInstance> _instance;
 		mutable AssetPtr<Material> _material;
-
-		/*TypedBuffer<Transform, BufferUsage::AttributeBit, MemoryFlags::CpuVisible> _matrix_buffer;
-		TypedMapping<Transform, MemoryFlags::CpuVisible> _mapping;*/
 };
 
 }

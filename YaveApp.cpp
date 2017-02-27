@@ -65,7 +65,7 @@ void YaveApp::create_command_buffers() {
 }
 
 void YaveApp::draw() {
-	core::DebugTimer f("frame", core::Duration::milliseconds(5));
+	core::DebugTimer f("frame", core::Duration::milliseconds(8));
 
 	auto vk_swap = swapchain->vk_swapchain();
 	auto image_acquired_semaphore = device.vk_device().createSemaphore(vk::SemaphoreCreateInfo());
@@ -117,7 +117,6 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-
 	float dist = 150;
 
 	auto cam_pos =
@@ -158,7 +157,7 @@ void YaveApp::create_assets() {
 			objects << std::move(m);
 		}*/
 
-		usize max = 20;
+		usize max = 10;
 		for(usize x = 0; x != max; x++) {
 			for(usize y = 0; y != max; y++) {
 				for(usize z = 0; z != max; z++) {
