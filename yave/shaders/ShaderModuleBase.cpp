@@ -93,6 +93,9 @@ static u32 component_size(spirv_cross::SPIRType type) {
 	if(type.basetype == spirv_cross::SPIRType::Float) {
 		return sizeof(float);
 	}
+	if(type.basetype == spirv_cross::SPIRType::Int) {
+		return sizeof(i32);
+	}
 	return fatal("Unsupported attribute type.");
 }
 
@@ -102,6 +105,7 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vec
 	for(auto r : resources) {
 		auto location = compiler.get_decoration(r.id, spv::DecorationLocation);
 		auto type = compiler.get_type(r.type_id);
+
 		attribs << ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type)};
 
 		for(usize i = location; i != location + type.columns; ++i) {
