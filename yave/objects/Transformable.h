@@ -32,6 +32,9 @@ class Transformable {
 	public:
 		using Transform = math::Matrix4<>;
 
+		Transformable() :  _storage(math::identity()) {
+		}
+
 		math::Vec3 position() const {
 			return math::Vec3(transform()[3][0], transform()[3][1], transform()[3][2]);
 		}
@@ -43,11 +46,13 @@ class Transformable {
 		}
 
 		const Transform& transform() const {
-			return *_transform;
+			//return *_transform;
+			return _storage;
 		}
 
 		Transform& transform() {
-			return *_transform;
+			//return *_transform;
+			return _storage;
 		}
 
 		float radius() const {
@@ -55,9 +60,9 @@ class Transformable {
 		}
 
 	protected:
-		void set_storage(Transform* s) {
+		/*void set_storage(Transform* s) {
 			_transform = s;
-		}
+		}*/
 
 		void set_radius(float r) {
 			_radius = r;
@@ -65,7 +70,8 @@ class Transformable {
 
 
 	private:
-		Transform* _transform = nullptr;
+		//Transform* _transform = nullptr;
+		Transform _storage;
 
 		float _radius = 0.0f;
 };

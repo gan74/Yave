@@ -94,7 +94,7 @@ void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
 }
 
-void CmdBufferRecorderBase::draw(const StaticMeshInstance& mesh_instance) {
+/*void CmdBufferRecorderBase::draw(const StaticMeshInstance& mesh_instance) {
 	vk::DeviceSize offset = 0; // fohkin' vk::ArrayProxy
 
 	vk_cmd_buffer().bindVertexBuffers(0, mesh_instance.vertex_buffer.vk_buffer(), offset);
@@ -102,7 +102,7 @@ void CmdBufferRecorderBase::draw(const StaticMeshInstance& mesh_instance) {
 
 	auto cmds = u32(mesh_instance.indirect_buffer.size());
 	vk_cmd_buffer().drawIndexedIndirect(mesh_instance.indirect_buffer.vk_buffer(), offset, cmds, cmds ? sizeof(vk::DrawIndexedIndirectCommand) : 0);
-}
+}*/
 
 
 void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {

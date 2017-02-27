@@ -39,10 +39,18 @@ class SceneRenderer {
 	private:
 		Node::Ptr<CullingNode> _cull;
 
-		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _matrix_buffer;
-		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _mapping;
+		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _camera_buffer;
+		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _camera_mapping;
+		DescriptorSet _camera_set;
 
-		DescriptorSet _matrix_set;
+
+		TypedBuffer<math::Matrix4<>, BufferUsage::AttributeBit, MemoryFlags::CpuVisible> _matrix_buffer;
+		TypedMapping<math::Matrix4<>, MemoryFlags::CpuVisible> _matrix_mapping;
+
+
+		TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, MemoryFlags::CpuVisible> _indirect_buffer;
+		TypedMapping<vk::DrawIndexedIndirectCommand, MemoryFlags::CpuVisible> _indirect_mapping;
+
 };
 
 }

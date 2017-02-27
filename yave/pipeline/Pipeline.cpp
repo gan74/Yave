@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "Pipeline.h"
 
+#include <y/core/Chrono.h>
+
 #include <unordered_set>
 
 namespace yave {
@@ -52,7 +54,10 @@ void Pipeline::process(concurrent::WorkGroup& worker, const FrameToken& token, C
 			fatal("Unable to find processable node in pipeline.");
 		}
 
-		(*it)->process(token, recorder);
+		{
+			core::DebugTimer _(type_name(**it), core::Duration::milliseconds(2));
+			(*it)->process(token, recorder);
+		}
 
 		nodes.erase(it);
 	}

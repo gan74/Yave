@@ -50,7 +50,7 @@ class CmdBufferRecorderBase : NonCopyable {
 		void set_viewport(const Viewport& view);
 		void bind_framebuffer(const Framebuffer& framebuffer);
 		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
-		void draw(const StaticMeshInstance& mesh_instance);
+		//void draw(const StaticMeshInstance& mesh_instance);
 		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
 		void barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst);

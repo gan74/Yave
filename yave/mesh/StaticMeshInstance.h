@@ -53,19 +53,27 @@ using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferU
 
 
 
-inline auto create_indirect_buffer_data(const MeshData& m, usize vertex_offset = 0, usize triangle_offset = 0, usize max = usize(-1)) {
+inline auto create_indirect_buffer_data(const MeshData& m, usize vertex_offset, usize triangle_offset) {
 	using Cmd = vk::DrawIndexedIndirectCommand;
-	core::Vector<Cmd> cmds;
+	/*core::Vector<Cmd> cmds;
 	for(usize i = 0, size = m.triangles.size(); i < size; i += max) {
 		cmds << Cmd(u32(std::min(size - i, max) * 3), 1, u32((i + triangle_offset) * 3), i32(vertex_offset));
 	}
-	return cmds;
+	return cmds;*/
+	return Cmd(m.triangles.size() * 3, 1, triangle_offset * 3, vertex_offset);
 }
 
 struct StaticMeshInstance {
 
 	public:
-		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, const IndirectSubBuffer<>&& i, float rad) :
+		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, const vk::DrawIndexedIndirectCommand& i, float r) :
+				triangle_buffer(t),
+				vertex_buffer(v),
+				indirect_data(i),
+				radius(r) {
+		}
+
+		/*StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, const IndirectSubBuffer<>&& i, float rad) :
 				triangle_buffer(t),
 				vertex_buffer(v),
 				indirect_buffer(i),
@@ -90,21 +98,22 @@ struct StaticMeshInstance {
 									IndirectBuffer<>(dptr, create_indirect_buffer_data(data)),
 									data.radius) {
 
-		}
+		}*/
 
 		const TriangleSubBuffer<> triangle_buffer;
 		const VertexSubBuffer<> vertex_buffer;
-		const IndirectSubBuffer<> indirect_buffer;
+		vk::DrawIndexedIndirectCommand indirect_data;
+		//const IndirectSubBuffer<> indirect_buffer;
 
 
 		const float radius = 0.0f;
 
 	private:
-		struct {
+		/*struct {
 			TriangleBuffer<> triangle;
 			VertexBuffer<> vertex;
 			IndirectBuffer<> indirect;
-		} _keep_alive;
+		} _keep_alive;*/
 
 };
 

@@ -65,6 +65,7 @@ void YaveApp::create_command_buffers() {
 }
 
 void YaveApp::draw() {
+	core::DebugTimer f("frame", core::Duration::milliseconds(5));
 
 	auto vk_swap = swapchain->vk_swapchain();
 	auto image_acquired_semaphore = device.vk_device().createSemaphore(vk::SemaphoreCreateInfo());
@@ -77,9 +78,10 @@ void YaveApp::draw() {
 	//renderer->update();
 	auto cmd_buffer =  CmdBufferRecorder<>(command_pool.create_buffer());
 
-	//core::Chrono ch;
-	pipeline->process(worker, frame, cmd_buffer);
-	//log_msg("process: "_s + ch.elapsed().to_millis() + "ms", LogType::Perf);
+	{
+		core::DebugTimer p("process", core::Duration::milliseconds(4));
+		pipeline->process(worker, frame, cmd_buffer);
+	}
 
 	{
 
@@ -112,7 +114,6 @@ void YaveApp::draw() {
 	if(command_pool.active_buffers() > 1) {
 		fatal("Unable to collect command buffers.");
 	}
-
 }
 
 void YaveApp::update(math::Vec2 angles) {
@@ -157,7 +158,7 @@ void YaveApp::create_assets() {
 			objects << std::move(m);
 		}*/
 
-		usize max = 15;
+		usize max = 20;
 		for(usize x = 0; x != max; x++) {
 			for(usize y = 0; y != max; y++) {
 				for(usize z = 0; z != max; z++) {
