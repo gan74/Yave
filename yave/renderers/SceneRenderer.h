@@ -37,7 +37,8 @@ class SceneRenderer {
 		void process(const FrameToken&, CmdBufferRecorder<>& recorder);
 
 	private:
-		void submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Material>& mat, const AssetPtr<StaticMeshInstance>& mesh, usize offset, usize size);
+		void setup_instance(CmdBufferRecorder<>& recorder, const AssetPtr<StaticMeshInstance>& instance);
+		void submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Material>& mat, usize offset, usize size);
 
 		Node::Ptr<CullingNode> _cull;
 
