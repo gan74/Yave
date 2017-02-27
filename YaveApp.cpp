@@ -44,7 +44,7 @@ YaveApp::~YaveApp() {
 	delete scene_view;
 	delete scene;
 
-	material = nullptr;
+	materials.clear();
 	mesh_texture = Texture();
 
 	delete swapchain;
@@ -135,11 +135,13 @@ void YaveApp::create_assets() {
 			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
 			mesh_texture = Texture(&device, image);
 		}
-		material = asset_ptr(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file")))
-				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
-				.set_bindings({Binding(TextureView(mesh_texture))})
-			));
+		for(usize i = 0; i != 1024; ++i) {
+			materials << asset_ptr(Material(&device, MaterialData()
+					.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file")))
+					.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
+					.set_bindings({Binding(TextureView(mesh_texture))})
+				));
+		}
 	}
 
 
@@ -157,11 +159,11 @@ void YaveApp::create_assets() {
 			objects << std::move(m);
 		}*/
 
-		usize max = 10;
+		usize max = 50;
 		for(usize x = 0; x != max; x++) {
 			for(usize y = 0; y != max; y++) {
 				for(usize z = 0; z != max; z++) {
-					auto m = StaticMesh(mesh, material);
+					auto m = StaticMesh(mesh, materials[rand() % materials.size()]);
 					m.set_position((math::Vec3(x, y, z) - math::Vec3(max) * 0.5f) * 5.0f);
 					objects << std::move(m);
 				}

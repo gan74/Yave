@@ -42,11 +42,11 @@ class StaticMesh : public Transformable {
 		StaticMesh& operator=(StaticMesh&& other) = delete;
 
 		const auto& instance() const {
-			return *_instance;
+			return _instance;
 		}
 
-		const auto& material() const {
-			return *_material;
+		auto& material() const {
+			return _material;
 		}
 
 	private:

@@ -37,6 +37,8 @@ class SceneRenderer {
 		void process(const FrameToken&, CmdBufferRecorder<>& recorder);
 
 	private:
+		void submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Material>& mat, const AssetPtr<StaticMeshInstance>& mesh, usize offset, usize size);
+
 		Node::Ptr<CullingNode> _cull;
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _camera_buffer;

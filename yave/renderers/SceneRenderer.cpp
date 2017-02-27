@@ -27,6 +27,11 @@ namespace yave {
 
 static constexpr usize batch_size = 128 * 1024;
 
+vk::DrawIndexedIndirectCommand prepare_command(vk::DrawIndexedIndirectCommand cmd, usize i) {
+	cmd.setFirstInstance(i);
+	return cmd;
+}
+
 SceneRenderer::SceneRenderer(DevicePtr dptr, const Node::Ptr<CullingNode>& cull):
 		_cull(cull),
 
@@ -55,35 +60,36 @@ void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
 	_camera_mapping[0] = scene_view().camera().viewproj_matrix();
 
 	usize i = 0;
-	for(const auto& mesh : _cull->visibles()) {
-		_matrix_mapping[i] = mesh->transform();
-		auto i_data = mesh->instance().indirect_data;
-		i_data.setFirstInstance(i);
-		_indirect_mapping[i++] = i_data;
-
-		if(i == batch_size) {
-			break;
+	usize submitted = 0;
+	AssetPtr<Material> material;
+	const auto& visibles = _cull->visibles();
+	for(usize count = std::min(batch_size, visibles.size()); i != count; ++i) {
+		const auto& mesh = visibles[i];
+		if(material != mesh->material()) {
+			submit_batches(recorder, material = mesh->material(), mesh->instance(), submitted, i - submitted);
+			submitted = i;
 		}
+		_matrix_mapping[i] = mesh->transform();
+		_indirect_mapping[i] = prepare_command(mesh->instance()->indirect_data, i);
 	}
-
-	if(!i) {
-		return;
+	if(!visibles.is_empty()) {
+		submit_batches(recorder, visibles[submitted]->material(), visibles[submitted]->instance(), submitted, i - submitted);
 	}
+}
 
-	recorder.bind_pipeline(const_cast<Material&>(_cull->visibles().first()->material()).compile(recorder.current_pass(), recorder.viewport()), {_camera_set});
+void SceneRenderer::submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Material>& mat, const AssetPtr<StaticMeshInstance>& mesh, usize offset, usize size) {
+	if(size) {
+		recorder.bind_pipeline(mat->compile(recorder.current_pass(), recorder.viewport()), {_camera_set});
 
-	vk::Buffer vertex_buffer = _cull->visibles().first()->instance().vertex_buffer.vk_buffer();
-	vk::Buffer index_buffer = _cull->visibles().first()->instance().triangle_buffer.vk_buffer();
+		vk::Buffer vertex_buffer = mesh->vertex_buffer.vk_buffer();
+		vk::Buffer index_buffer = mesh->triangle_buffer.vk_buffer();
 
-	recorder.vk_cmd_buffer().bindVertexBuffers(0, {vertex_buffer}, {0});
-	recorder.vk_cmd_buffer().bindVertexBuffers(1, {_matrix_buffer.vk_buffer()}, {0});
-	recorder.vk_cmd_buffer().bindIndexBuffer(index_buffer, 0, vk::IndexType::eUint32);
+		recorder.vk_cmd_buffer().bindVertexBuffers(0, {vertex_buffer, _matrix_buffer.vk_buffer()}, {0, 0});
+		recorder.vk_cmd_buffer().bindIndexBuffer(index_buffer, 0, vk::IndexType::eUint32);
 
-	recorder.vk_cmd_buffer().drawIndexedIndirect(_indirect_buffer.vk_buffer(), 0, i, sizeof(vk::DrawIndexedIndirectCommand));
-
-	/*for(const auto& mesh : _cull->visibles()) {
-		mesh->draw(recorder, _camera_set);
-	}*/
+		const usize cmd_size = sizeof(vk::DrawIndexedIndirectCommand);
+		recorder.vk_cmd_buffer().drawIndexedIndirect(_indirect_buffer.vk_buffer(), offset * cmd_size, size, cmd_size);
+	}
 }
 
 

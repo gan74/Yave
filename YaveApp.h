@@ -76,7 +76,7 @@ class YaveApp : NonCopyable {
 
 		CmdBufferPool<> command_pool;
 
-		AssetPtr<Material> material;
+		core::Vector<AssetPtr<Material>> materials;
 
 		MeshInstancePool mesh_pool;
 		Texture mesh_texture;

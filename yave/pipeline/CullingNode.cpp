@@ -22,7 +22,13 @@ SOFTWARE.
 
 #include "CullingNode.h"
 
+#include <y/core/Chrono.h>
+
+#include <unordered_map>
+
 namespace yave {
+
+static constexpr bool use_map = true;
 
 CullingNode::CullingNode(SceneView &view) : _view(view) {
 }
@@ -35,12 +41,30 @@ void CullingNode::process(const FrameToken&, CmdBufferRecorder<>&) {
 	_visibles.make_empty();
 	auto frustum = _view.camera().frustum();
 
-	for(const auto& m : _view.scene().static_meshes()) {
-		if(frustum.is_inside(m.position(), m.radius())) {
-			_visibles.push_back(&m);
+	if(use_map) {
+		std::unordered_map<Material*, decltype(_visibles)> per_mat;
+		for(const auto& m : _view.scene().static_meshes()) {
+			if(frustum.is_inside(m.position(), m.radius())) {
+				per_mat[m.material().as_ptr()].push_back(&m);
+			}
+		}
+		{
+			core::DebugTimer _("merge", core::Duration::milliseconds(1));
+			for(const auto& mat : per_mat) {
+				_visibles.push_back(mat.second.begin(), mat.second.end());
+			}
+		}
+	} else {
+		for(const auto& m : _view.scene().static_meshes()) {
+			if(frustum.is_inside(m.position(), m.radius())) {
+				_visibles.push_back(&m);
+			}
+		}
+		{
+			core::DebugTimer _("sort", core::Duration::milliseconds(1));
+			sort(_visibles.begin(), _visibles.end(), [](const auto& a, const auto& b) { return a->material() < b->material(); });
 		}
 	}
-	//log_msg("vis = "_s + visibles().size());
 }
 
 
