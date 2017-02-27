@@ -51,6 +51,10 @@ bool WorkGroup::process_one() {
 	return true;
 }
 
+usize WorkGroup::concurrency() const {
+	return _threads.size();
+}
+
 core::Result<WorkGroup::FuncType> WorkGroup::take() {
 	std::unique_lock<LockType> lock(_lock);
 	while(_running || !_tasks.empty()) {

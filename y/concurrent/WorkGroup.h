@@ -71,7 +71,7 @@ class WorkGroup : NonCopyable {
 		void subscribe();
 		bool process_one();
 
-
+		usize concurrency() const;
 
 		template<typename F>
 		auto schedule(F&& t) {
