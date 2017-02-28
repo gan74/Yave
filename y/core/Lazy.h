@@ -23,32 +23,59 @@ SOFTWARE.
 #define Y_CORE_LAZY_H
 
 #include <y/utils.h>
+#include "Functor.h"
+#include "Result.h"
 
 namespace y {
 namespace core {
 
 template<typename T>
 class Lazy : NonCopyable {
+	using Builder = Function<T()>;
 	public:
-		Lazy(T&& t) : _val(std::forward<T>(t)) {
+		Lazy(T&& t) : _data(Ok(std::forward<T>(t))) {
 		}
 
-		Lazy(Lazy&& l) : _val(std::move(l._val)) {
+		Lazy(Builder&& f) : _data(Err(std::forward<Builder>(f))) {
+		}
+
+		template<typename F>
+		Lazy(F&& f) : _data(Err(Builder(std::forward<F>(f)))) {
+		}
+
+		const T& get() const {
+			if(_data.is_error()) {
+				_data = Ok(_data.error()());
+			}
+			return _data.unwrap();
+		}
+
+		T& get() {
+			if(_data.is_error()) {
+				_data = Ok(_data.error()());
+			}
+			return _data.unwrap();
+		}
+
+		operator const T&() const {
+			return get();
+		}
+
+		operator T&() {
+			return get();
 		}
 
 		const T& operator()() const {
-			return _val;
+			return get();
+		}
+
+		T& operator()() {
+			return get();
 		}
 
 	private:
-		T _val;
+		 mutable Result<T, Builder> _data;
 };
-
-
-template<typename T>
-inline auto lazy(T&& t) {
-	return Lazy<T>(std::forward<T>(t));
-}
 
 }
 }
