@@ -22,8 +22,8 @@ SOFTWARE.
 #ifndef YAVE_PIPELINE_CULLINGNODE_H
 #define YAVE_PIPELINE_CULLINGNODE_H
 
-#include "Node.h"
 #include <yave/scene/SceneView.h>
+#include "pipeline.h"
 
 namespace yave {
 
@@ -35,7 +35,7 @@ class CullingNode : public Node {
 		const SceneView& scene_view() const;
 
 		const core::Vector<const StaticMesh*>& visibles() const;
-		virtual void process(const FrameToken&, CmdBufferRecorder<>&) override;
+		virtual void process(const FrameToken&) override;
 
 	private:
 		SceneView& _view;

@@ -22,19 +22,47 @@ SOFTWARE.
 #ifndef YAVE_PIPELINE_PIPELINE_H
 #define YAVE_PIPELINE_PIPELINE_H
 
-#include "Node.h"
+#include <yave/commands/RecordedCmdBuffer.h>
+#include <yave/swapchain/FrameToken.h>
 
 namespace yave {
 
-class Pipeline {
-	public:
-		Pipeline(Node::NodePtr root);
+struct Node : NonCopyable {
+	using Dependency = std::tuple<Node*>;
 
-		void process(const FrameToken& token, CmdBufferRecorder<>& recorder);
+	virtual void process(const FrameToken&) = 0;
+	virtual core::Vector<Dependency> dependencies() {
+		return {};
+	}
 
-	private:
-		Node::NodePtr _root;
+	virtual ~Node() {}
 };
+
+struct SubRenderer : NonCopyable {
+	using Dependency = std::tuple<Node*>;
+
+	virtual RecordedCmdBuffer<CmdBufferUsage::Secondary> process(const FrameToken&) = 0;
+	virtual core::Vector<Dependency> dependencies() {
+		return {};
+	}
+
+	virtual ~SubRenderer() {}
+};
+
+struct Renderer : NonCopyable {
+	using SecCmdBuffer = RecordedCmdBuffer<CmdBufferUsage::Secondary>;
+	using SubRendererResults = core::Vector<SecCmdBuffer>;
+	using Dependency = std::tuple<Node*, SubRenderer*, Renderer*>;
+
+	virtual void process(const FrameToken&, CmdBufferRecorder<>&, const SubRendererResults&) = 0;
+	virtual core::Vector<Dependency> dependencies() {
+		return {};
+	}
+
+	virtual ~Renderer() {}
+};
+
+void process_root(Renderer* root, const FrameToken& token, CmdBufferRecorder<>& recorder);
 
 }
 

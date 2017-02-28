@@ -26,9 +26,12 @@ SOFTWARE.
 
 namespace yave {
 
-class GBufferRenderer : public Node, public DeviceLinked {
+class GBufferRenderer : public Renderer, public DeviceLinked {
 
 	public:
+		template<typename T>
+		using Ptr = core::Rc<T>;
+
 		static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 		static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
@@ -44,8 +47,8 @@ class GBufferRenderer : public Node, public DeviceLinked {
 		const ColorTextureAttachment& normal() const;
 
 
-		virtual core::Vector<NodePtr> dependencies() override;
-		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
+		virtual core::Vector<Dependency> dependencies() override;
+		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder, const SubRendererResults&) override;
 
 	private:
 		SceneRenderer _scene;

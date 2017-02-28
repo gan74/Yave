@@ -32,17 +32,19 @@ SOFTWARE.
 
 namespace yave {
 
-class DeferredRenderer : public Node, public DeviceLinked {
+class DeferredRenderer : public Renderer, public DeviceLinked {
 
 	public:
+		template<typename T>
+		using Ptr = core::Rc<T>;
 		using OutputView = decltype(FrameToken::image_view);
 
 		DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
 
 		const math::Vec2ui& size() const;
 
-		virtual core::Vector<NodePtr> dependencies() override;
-		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
+		virtual core::Vector<Dependency> dependencies() override;
+		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder, const SubRendererResults&) override;
 
 	private:
 		const DescriptorSet& create_output_set(const StorageView& out);

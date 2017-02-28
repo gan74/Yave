@@ -22,45 +22,68 @@ SOFTWARE.
 
 #include "Pipeline.h"
 
-#include <y/core/Chrono.h>
-
-#include <unordered_set>
-
 namespace yave {
+using SecCmdBuffer = RecordedCmdBuffer<CmdBufferUsage::Secondary>;
+using SubRendererResults = core::Vector<SecCmdBuffer>;
+using Recorder = CmdBufferRecorder<>;
 
-static void find_nodes(Node::NodePtr& node, std::unordered_set<Node*>& nodes) {
-	nodes.insert(node.as_ptr());
-	for(auto& n : node->dependencies()) {
-		find_nodes(n, nodes);
+
+static void process_node(Node* node, const FrameToken& token, SubRendererResults& results, Recorder& recorder);
+static void process_node(SubRenderer* node, const FrameToken& token, SubRendererResults& results, Recorder& recorder);
+static void process_node(Renderer* node, const FrameToken& token, SubRendererResults& results, Recorder& recorder);
+
+
+template<usize N, typename... Args>
+struct DependencyProcessor {
+	template<typename... Fwd>
+	static void process(std::tuple<Args...>& deps, Fwd&&... fwd) {
+		auto d = std::get<N - 1>(deps);
+		if(d) {
+			process_node(d, std::forward<Fwd>(fwd)...);
+		}
+		DependencyProcessor<N - 1, Args...>::process(deps, std::forward<Fwd>(fwd)...);
+	}
+};
+
+template<typename... Args>
+struct DependencyProcessor<0, Args...> {
+	template<typename... Fwd>
+	static void process(std::tuple<Args...>&, Fwd&&...) {
+	}
+};
+
+template<typename... Args, typename... Fwd>
+void process_dependencies(core::Vector<std::tuple<Args...>> deps, Fwd&&... fwd) {
+	for(auto& d : deps) {
+		DependencyProcessor<sizeof...(Args), Args...>::process(d, std::forward<Fwd>(fwd)...);
 	}
 }
 
-Pipeline::Pipeline(Node::NodePtr root) : _root(std::move(root)) {
+
+
+void process_node(Node* node, const FrameToken& token, SubRendererResults& results, Recorder& recorder) {
+	process_dependencies(node->dependencies(), token, results, recorder);
+	node->process(token);
 }
 
-void Pipeline::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
-	std::unordered_set<Node*> nodes;
-	find_nodes(_root, nodes);
 
-	while(!nodes.empty()) {
-		auto it = std::find_if(nodes.begin(), nodes.end(), [&nodes](auto& n) {
-			auto deps = n->dependencies();
-			return std::none_of(deps.begin(), deps.end(), [&nodes](auto& d) {
-				return nodes.find(d.as_ptr()) != nodes.end();
-			});
-		});
+void process_node(SubRenderer* node, const FrameToken& token, SubRendererResults& results, Recorder& recorder) {
+	process_dependencies(node->dependencies(), token, results, recorder);
+	results << node->process(token);
+}
 
-		if(it == nodes.end()) {
-			fatal("Unable to find processable node in pipeline.");
-		}
 
-		{
-			core::DebugTimer _(type_name(**it), core::Duration::milliseconds(2));
-			(*it)->process(token, recorder);
-		}
+void process_node(Renderer* node, const FrameToken& token, SubRendererResults&, Recorder& recorder) {
+	SubRendererResults results;
+	process_dependencies(node->dependencies(), token, results, recorder);
+	node->process(token, recorder, results);
+}
 
-		nodes.erase(it);
-	}
+
+
+void process_root(Renderer* root, const FrameToken& token, Recorder& recorder) {
+	SubRendererResults _;
+	process_node(root, token, _, recorder);
 }
 
 }

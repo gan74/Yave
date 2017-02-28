@@ -25,7 +25,6 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_OPTIMISATIONS}")
 file(GLOB_RECURSE SOURCE_FILES
 		"YaveApp.cpp"
 		"YaveApp.h"
-		"nodes.h"
 
 		"yave/*.h"
 		"yave/*.cpp"

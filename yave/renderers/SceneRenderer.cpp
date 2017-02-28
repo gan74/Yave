@@ -32,7 +32,7 @@ vk::DrawIndexedIndirectCommand prepare_command(vk::DrawIndexedIndirectCommand cm
 	return cmd;
 }
 
-SceneRenderer::SceneRenderer(DevicePtr dptr, const Node::Ptr<CullingNode>& cull):
+SceneRenderer::SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull):
 		_cull(cull),
 
 		_camera_buffer(dptr, 1),
@@ -52,8 +52,8 @@ const SceneView& SceneRenderer::scene_view() const {
 	return _cull->scene_view();
 }
 
-core::Vector<Node::NodePtr> SceneRenderer::dependencies() {
-	return {_cull};
+core::Vector<Node*> SceneRenderer::dependencies() {
+	return {_cull.as_ptr()};
 }
 
 void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {

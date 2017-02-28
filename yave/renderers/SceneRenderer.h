@@ -29,18 +29,21 @@ namespace yave {
 class SceneRenderer {
 
 	public:
-		SceneRenderer(DevicePtr dptr, const Node::Ptr<CullingNode>& cull);
+		template<typename T>
+		using Ptr = core::Rc<T>;
+
+		SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull);
 
 		const SceneView& scene_view() const;
 
-		core::Vector<Node::NodePtr> dependencies();
+		core::Vector<Node*> dependencies();
 		void process(const FrameToken&, CmdBufferRecorder<>& recorder);
 
 	private:
 		void setup_instance(CmdBufferRecorder<>& recorder, const AssetPtr<StaticMeshInstance>& instance);
 		void submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Material>& mat, usize offset, usize size);
 
-		Node::Ptr<CullingNode> _cull;
+		Ptr<CullingNode> _cull;
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _camera_buffer;
 		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _camera_mapping;

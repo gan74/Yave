@@ -103,6 +103,10 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
 }
 
+void CmdBufferRecorderBase::execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary) {
+	vk_cmd_buffer().executeCommands({secondary.vk_cmd_buffer()});
+}
+
 void CmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
 	end_render_pass();
 
