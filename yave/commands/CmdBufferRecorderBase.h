@@ -59,12 +59,16 @@ class CmdBufferRecorderBase : NonCopyable {
 
 	protected:
 		CmdBufferRecorderBase() = default;
-		CmdBufferRecorderBase(vk::CommandBuffer buffer, CmdBufferUsage usage);
+		CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage);
 
 		void swap(CmdBufferRecorderBase& other);
 
+		CmdBufferBase& cmd_buffer() {
+			return _cmd_buffer;
+		}
+
 	private:
-		vk::CommandBuffer _cmd_buffer;
+		CmdBufferBase _cmd_buffer;
 		const RenderPass* _render_pass = nullptr;
 };
 

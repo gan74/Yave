@@ -27,11 +27,11 @@ SOFTWARE.
 
 namespace yave {
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
+template<CmdBufferUsage Usage>
 class CmdBufferRecorder : public CmdBufferRecorderBase {
 
 	public:
-		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : CmdBufferRecorderBase(buffer.vk_cmd_buffer(), Usage), _cmd_buffer(std::move(buffer)) {
+		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : CmdBufferRecorderBase(std::move(buffer), Usage) {
 		}
 
 		CmdBufferRecorder(CmdBufferRecorder&& other) : CmdBufferRecorderBase() {
@@ -44,7 +44,7 @@ class CmdBufferRecorder : public CmdBufferRecorderBase {
 		}
 
 		~CmdBufferRecorder() {
-			if(_cmd_buffer.vk_cmd_buffer()) {
+			if(vk_cmd_buffer()) {
 				fatal("CmdBufferRecorder destroyed before end() was called.");
 			}
 		}
@@ -52,16 +52,10 @@ class CmdBufferRecorder : public CmdBufferRecorderBase {
 		 RecordedCmdBuffer<Usage> end() {
 			end_render_pass();
 			vk_cmd_buffer().end();
-			return std::move(_cmd_buffer);
+			return std::move(cmd_buffer());
 		}
 
 	private:
-		void swap(CmdBufferRecorder& other) {
-			CmdBufferRecorderBase::swap(other);
-			std::swap(_cmd_buffer, other._cmd_buffer);
-		}
-
-		CmdBuffer<Usage> _cmd_buffer;
 
 };
 

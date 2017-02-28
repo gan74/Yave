@@ -32,9 +32,6 @@ class CmdBufferRecorder;
 struct CmdBufferBase : NonCopyable {
 
 	public:
-		CmdBufferBase() = default;
-		CmdBufferBase(const core::Arc<CmdBufferPoolData>& pool);
-
 		~CmdBufferBase();
 
 		const vk::CommandBuffer vk_cmd_buffer() const;
@@ -42,7 +39,15 @@ struct CmdBufferBase : NonCopyable {
 		DevicePtr device() const;
 
 	protected:
+		friend class CmdBufferRecorderBase;
+
+		CmdBufferBase() = default;
+		CmdBufferBase(CmdBufferBase&& other);
 		void swap(CmdBufferBase& other);
+
+	protected:
+		CmdBufferBase(const core::Arc<CmdBufferPoolData>& pool);
+
 		void submit(vk::Queue queue);
 
 	private:

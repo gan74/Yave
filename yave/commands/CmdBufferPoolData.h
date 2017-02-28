@@ -27,28 +27,29 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/device/DeviceLinked.h>
 
+#include "CmdBufferUsage.h"
+
 namespace yave {
-
-struct CmdBufferData {
-	vk::CommandBuffer cmd_buffer;
-	vk::Fence fence;
-};
-
-enum class CmdBufferUsage {
-	Normal = uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse),
-	Disposable = uenum(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)
-};
 
 class CmdBufferPoolData : NonCopyable, public DeviceLinked {
 	public:
-		CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred);
 		~CmdBufferPoolData();
 
-		CmdBufferData alloc();
+	private:
+		template<CmdBufferUsage>
+		friend class CmdBufferPool;
+		friend class CmdBufferBase;
+
+		CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred);
+
 		void release(CmdBufferData&& data);
+		CmdBufferData alloc();
+
+		void join_fences();
 
 	private:
 		vk::CommandPool _pool;
+		CmdBufferUsage _usage;
 		core::Vector<CmdBufferData> _cmd_buffers;
 };
 

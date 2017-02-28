@@ -26,16 +26,6 @@ SOFTWARE.
 
 namespace yave {
 
-namespace detail {
-template<typename... Args>
-constexpr int max(Args... args) {
-	int max = 0;
-	// https://www.youtube.com/watch?v=nhk8pF_SlTk
-	unused(std::initializer_list<int>{ (max = std::max(max, args))... });
-	return max;
-}
-}
-
 enum class ImageUsage {
     None = 0,
 

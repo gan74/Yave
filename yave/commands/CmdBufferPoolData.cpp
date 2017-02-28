@@ -27,18 +27,32 @@ SOFTWARE.
 
 namespace yave {
 
+/*static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
+	return vk::CommandBufferUsageFlagBits(uenum(u) & ~uenum(CmdBufferUsage::Secondary));
+}*/
+
+static vk::CommandBufferLevel cmd_level(CmdBufferUsage u) {
+	return u == CmdBufferUsage::Secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary;
+}
+
+static vk::CommandPoolCreateFlagBits cmd_create_flags(CmdBufferUsage u) {
+	return u == CmdBufferUsage::Disposable ? vk::CommandPoolCreateFlagBits::eTransient : vk::CommandPoolCreateFlagBits();
+}
+
+
+
 static vk::CommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
-	auto pref = usage == CmdBufferUsage::Disposable ? vk::CommandPoolCreateFlagBits::eTransient : vk::CommandPoolCreateFlagBits();
 	return dptr->vk_device().createCommandPool(vk::CommandPoolCreateInfo()
 			.setQueueFamilyIndex(dptr->queue_family(QueueFamily::Graphics).index())
-			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer | pref)
+			.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer | cmd_create_flags(usage))
 		);
 }
 
-static CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool) {
+static CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool, CmdBufferUsage usage) {
 	auto buffer = dptr->vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
 			.setCommandBufferCount(1)
 			.setCommandPool(pool)
+			.setLevel(cmd_level(usage))
 		).back();
 	auto fence = dptr->vk_device().createFence(vk::FenceCreateInfo()
 			.setFlags(vk::FenceCreateFlagBits::eSignaled)
@@ -73,21 +87,25 @@ static bool try_reset(DevicePtr dptr, const CmdBufferData& data) {
 	return true;
 }
 
-CmdBufferPoolData::CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred) : DeviceLinked(dptr), _pool(create_pool(dptr, preferred)) {
+
+CmdBufferPoolData::CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred) : DeviceLinked(dptr), _pool(create_pool(dptr, preferred)), _usage(preferred) {
 }
 
 CmdBufferPoolData::~CmdBufferPoolData() {
-	auto fences = core::vector_with_capacity<vk::Fence>(_cmd_buffers.size());
-	std::transform(_cmd_buffers.begin(), _cmd_buffers.end(), std::back_inserter(fences), [](auto& buffer) { return buffer.fence; });
-	if(device()->vk_device().waitForFences(fences.size(), fences.data(), true, u64(-1)) != vk::Result::eSuccess) {
-		fatal("Unable to join fences.");
-	}
-
+	join_fences();
 	for(auto buffer : _cmd_buffers) {
 		device()->vk_device().freeCommandBuffers(_pool, buffer.cmd_buffer);
 		destroy(buffer.fence);
 	}
 	destroy(_pool);
+}
+
+void CmdBufferPoolData::join_fences() {
+	auto fences = core::vector_with_capacity<vk::Fence>(_cmd_buffers.size());
+	std::transform(_cmd_buffers.begin(), _cmd_buffers.end(), std::back_inserter(fences), [](auto& buffer) { return buffer.fence; });
+	if(device()->vk_device().waitForFences(fences.size(), fences.data(), true, u64(-1)) != vk::Result::eSuccess) {
+		fatal("Unable to join fences.");
+	}
 }
 
 void CmdBufferPoolData::release(CmdBufferData&& data) {
@@ -96,7 +114,7 @@ void CmdBufferPoolData::release(CmdBufferData&& data) {
 
 CmdBufferData CmdBufferPoolData::alloc() {
 	if(_cmd_buffers.is_empty()) {
-		return alloc_data(device(), _pool);
+		return alloc_data(device(), _pool, _usage);
 	}
 	for(auto& buffer : _cmd_buffers) {
 		if(try_reset(device(), buffer)) {

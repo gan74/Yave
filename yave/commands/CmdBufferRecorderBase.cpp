@@ -24,19 +24,19 @@ SOFTWARE.
 
 namespace yave {
 
-CmdBufferRecorderBase::CmdBufferRecorderBase(vk::CommandBuffer buffer, CmdBufferUsage usage) : _cmd_buffer(buffer), _render_pass(nullptr){
+CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage) : _cmd_buffer(std::move(base)), _render_pass(nullptr){
 	vk_cmd_buffer().begin(vk::CommandBufferBeginInfo()
 			.setFlags(vk::CommandBufferUsageFlagBits(usage))
 		);
 }
 
 void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
-	std::swap(_cmd_buffer, other._cmd_buffer);
+	_cmd_buffer.swap(other._cmd_buffer);
 	std::swap(_render_pass, other._render_pass);
 }
 
 vk::CommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
-	return _cmd_buffer;
+	return _cmd_buffer.vk_cmd_buffer();
 }
 
 const RenderPass& CmdBufferRecorderBase::current_pass() const {

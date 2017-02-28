@@ -29,6 +29,10 @@ namespace yave {
 CmdBufferBase::CmdBufferBase(const core::Arc<CmdBufferPoolData>& pool) : _pool(pool), _data(_pool->alloc()) {
 }
 
+CmdBufferBase::CmdBufferBase(CmdBufferBase&& other) : CmdBufferBase() {
+	swap(other);
+}
+
 CmdBufferBase::~CmdBufferBase() {
 	if(_pool) {
 		_pool->release(std::move(_data));

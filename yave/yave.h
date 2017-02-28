@@ -58,6 +58,17 @@ class Device;
 using DevicePtr = const Device*;
 
 
+
+namespace detail {
+template<typename... Args>
+constexpr int max(Args... args) {
+	int max = 0;
+	// https://www.youtube.com/watch?v=nhk8pF_SlTk
+	unused(std::initializer_list<int>{ (max = std::max(max, args))... });
+	return max;
+}
+}
+
 template<typename T, typename U, typename... Args>
 inline DevicePtr common_device(T&& t, U&& u, Args&&... args) {
 	DevicePtr l = t.device();
