@@ -80,7 +80,7 @@ void YaveApp::draw() {
 
 	{
 		core::DebugTimer p("process", core::Duration::milliseconds(4));
-		pipeline->process(worker, frame, cmd_buffer);
+		pipeline->process(frame, cmd_buffer);
 	}
 
 	{

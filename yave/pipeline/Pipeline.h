@@ -30,7 +30,7 @@ class Pipeline {
 	public:
 		Pipeline(Node::NodePtr root);
 
-		void process(concurrent::WorkGroup& worker, const FrameToken& token, CmdBufferRecorder<>& recorder);
+		void process(const FrameToken& token, CmdBufferRecorder<>& recorder);
 
 	private:
 		Node::NodePtr _root;

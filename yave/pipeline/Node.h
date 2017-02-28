@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/swapchain/FrameToken.h>
 
-#include <y/concurrent/WorkGroup.h>
 #include <y/concurrent/Arc.h>
 
 namespace yave {

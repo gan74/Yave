@@ -87,8 +87,6 @@ class YaveApp : NonCopyable {
 		Camera camera;
 
 		Pipeline* pipeline;
-
-		concurrent::WorkGroup worker;
 };
 
 }
