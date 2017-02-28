@@ -77,6 +77,12 @@ CmdBufferPoolData::CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred) :
 }
 
 CmdBufferPoolData::~CmdBufferPoolData() {
+	auto fences = core::vector_with_capacity<vk::Fence>(_cmd_buffers.size());
+	std::transform(_cmd_buffers.begin(), _cmd_buffers.end(), std::back_inserter(fences), [](auto& buffer) { return buffer.fence; });
+	if(device()->vk_device().waitForFences(fences.size(), fences.data(), true, u64(-1)) != vk::Result::eSuccess) {
+		fatal("Unable to join fences.");
+	}
+
 	for(auto buffer : _cmd_buffers) {
 		device()->vk_device().freeCommandBuffers(_pool, buffer.cmd_buffer);
 		destroy(buffer.fence);
