@@ -148,22 +148,19 @@ class Result : NonCopyable {
 			new(&_error) Err_t(std::move(e));
 		}
 
-		Result(Result&& other) : _is_ok(other._is_ok) {
-			if(is_ok()) {
-				new(&_value) Ok_t(std::move(other._value));
-			} else {
-				new(&_error) Err_t(std::move(other._error));
-			}
+		Result(Result&& other) {
+			move(other);
 		}
 
 		~Result() {
-			if(is_ok()) {
-				_value.~Ok_t();
-			} else {
-				_error.~Err_t();
-			}
+			destroy();
 		}
 
+		Result& operator=(Result&& other) {
+			destroy();
+			move(other);
+			return *this;
+		}
 
 		bool is_error() const {
 			return !is_ok();
@@ -237,6 +234,22 @@ class Result : NonCopyable {
 		}
 
 	protected:
+		void destroy() {
+			if(is_ok()) {
+				_value.~Ok_t();
+			} else {
+				_error.~Err_t();
+			}
+		}
+
+		void move(Result& other) {
+			if((_is_ok = other.is_ok())) {
+				new(&_value) Ok_t(std::move(other._value));
+			} else {
+				new(&_error) Err_t(std::move(other._error));
+			}
+		}
+
 		union {
 			Ok_t _value;
 			Err_t _error;
