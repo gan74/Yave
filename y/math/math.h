@@ -58,32 +58,33 @@ static constexpr T pi = T(3.1415926535897932384626433832795);
 // matrix funcs from https://github.com/g-truc/glm/blob/master/glm/gtc/matrix_transform.inl
 template<typename T>
 auto perspective(T fovy, T aspect, T z_near, T z_far) {
-	const T tan_half = tan(fovy / T(2));
+	const T f = T(1) / tan(fovy / T(2));
 
-	Matrix4<T> m(T(1) / (aspect * tan_half), 0, 0, 0,
-				 0, T(1) / tan_half, 0, 0,
+	Matrix4<T> m(f / aspect, 0, 0, 0,
+				 0, f, 0, 0,
 				 0, 0, -(z_far + z_near) / (z_far - z_near), -(T(2) * z_far * z_near) / (z_far - z_near),
-				 0, 0, -T(1), 1);
+				 0, 0, -T(1), 0);
 	return m;
 }
 
 template<typename T>
 auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up = Vec<3, T>(0, 0, 1)) {
 	Vec<3, T> z((eye - center).normalized());
-	Vec<3, T> y(up.cross(z).normalized());
+	Vec<3, T> y(-up.cross(z).normalized());
 	Vec<3, T> x(y.cross(z));
 
-	return Matrix4<>(y, -y.dot(eye),
+	return Matrix4<T>(y, -y.dot(eye),
 					 x, -x.dot(eye),
 					 z, -z.dot(eye),
 					 0, 0, 0, 1);
+
 }
 
 template<typename T>
 auto rotation(T angle, Vec<3, T> axis, const Matrix4<T>& base = identity()) {
 	T a = angle;
-	T c = cos(a);
-	T s = sin(a);
+	T c = std::cos(a);
+	T s = std::sin(a);
 
 	axis.normalize();
 	Vec<3, T> tmp((T(1) - c) * axis);
