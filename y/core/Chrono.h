@@ -47,7 +47,7 @@ class Duration {
 			return div(ms, 1000.0);
 		}
 
-		Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
+		explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
 		}
 
 		u64 to_nanos() const {
