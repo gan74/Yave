@@ -50,7 +50,7 @@ struct NonCopyableValue : NonCopyable {
 
 y_test_func("AssocVector creation") {
 	AssocVector<usize, usize> av;
-	for(usize i = 0; i != 16; i++) {
+	for(usize i = 0; i != 16; ++i) {
 		y_test_assert(av[i] == 0);
 		av[i] = i + 1;
 	}
@@ -61,10 +61,10 @@ y_test_func("AssocVector creation") {
 
 y_test_func("AssocVector movable values") {
 	AssocVector<usize, NonCopyableValue> av;
-	for(usize i = 0; i != 16; i++) {
+	for(usize i = 0; i != 16; ++i) {
 		av[i] = NonCopyableValue(i);
 	}
-	for(usize i = 0; i != av.size(); i++) {
+	for(usize i = 0; i != av.size(); ++i) {
 		const auto& value = av[i];
 		y_test_assert(value.value == int(i));
 	}

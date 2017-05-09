@@ -105,7 +105,7 @@ y_test_func("DefaultVectorResizePolicy") {
 	y_test_assert(size.ideal_capacity(0) == 0);
 	//y_test_assert(size.shrink(0, 1));
 
-	for(usize i = 0; i != size.threshold + 3 * size.step; i++) {
+	for(usize i = 0; i != size.threshold + 3 * size.step; ++i) {
 		y_test_assert(size.ideal_capacity(i) >= i);
 	}
 	//cout_vec_sizes(1024 * 32);
@@ -139,7 +139,7 @@ y_test_func("Vector push_back") {
 	vec.push_back(1);
 	y_test_assert(vec.size() == 2);
 
-	for(int i = 0; i != 18; i++) {
+	for(int i = 0; i != 18; ++i) {
 		vec.push_back(i);
 	}
 	vec.push_back() = 18;
@@ -151,7 +151,7 @@ y_test_func("Vector push_back") {
 /*y_test_func("Vector erase") {
 	Vector<int> vec;
 
-	for(int i = 0; i != 10; i++) {
+	for(int i = 0; i != 10; ++i) {
 		vec.push_back(i);
 	}
 	y_test_assert(*vec.erase(vec.begin()) == 1);
@@ -167,7 +167,7 @@ y_test_func("Vector push_back") {
 y_test_func("Vector erase_unordered") {
 	Vector<int> vec;
 
-	for(int i = 0; i != 10; i++) {
+	for(int i = 0; i != 10; ++i) {
 		vec.push_back(i);
 	}
 	vec.erase_unordered(vec.begin());
@@ -222,7 +222,7 @@ y_test_func("Vector iteration") {
 
 	Vector<int> vec;
 
-	for(int i = 0; i != max; i++) {
+	for(int i = 0; i != max; ++i) {
 		vec.push_back(i);
 	}
 

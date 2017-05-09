@@ -72,7 +72,7 @@ class Matrix {
 
 		template<usize P, usize Q, typename U, typename... Args>
 		void build(const Vec<Q, U>& t, Args... args) {
-			for(usize i = 0; i != Q; i++) {
+			for(usize i = 0; i != Q; ++i) {
 				set_at(P + i, T(t[i]));
 			}
 			build<P + Q>(args...);
@@ -162,8 +162,8 @@ class Matrix {
 		template<typename U>
 		auto operator+(const Matrix<N, M, U, Layout>& m) const {
 			Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
-			for(usize i = 0; i != N; i++) {
-				for(usize j = 0; j != M; j++) {
+			for(usize i = 0; i != N; ++i) {
+				for(usize j = 0; j != M; ++j) {
 					mat._vecs[i][j] = _vecs[i][j] + m._vecs[i][j];
 				}
 			}
@@ -172,8 +172,8 @@ class Matrix {
 
 		Matrix<M, N, T, Layout> transposed() const {
 			Matrix<M, N, T, Layout> tr;
-			for(usize i = 0; i != vec_count; i++) {
-				for(usize j = 0; j != vec_size; j++) {
+			for(usize i = 0; i != vec_count; ++i) {
+				for(usize j = 0; j != vec_size; ++j) {
 					tr._vecs[j][i] = _vecs[i][j];
 				}
 			}
@@ -181,8 +181,8 @@ class Matrix {
 		}
 
 		bool operator==(const Matrix& m) const {
-			for(usize i = 0; i != vec_count; i++) {
-				for(usize j = 0; j != vec_size; j++) {
+			for(usize i = 0; i != vec_count; ++i) {
+				for(usize j = 0; j != vec_size; ++j) {
 					if(_vecs[i][j] != m._vecs[i][j]) {
 						return false;
 					}
@@ -196,8 +196,8 @@ class Matrix {
 				std::swap(r, c);
 			}
 			Matrix<N - 1, M - 1, T,Layout> mat;
-			for(usize i = 0; i != vec_count - 1; i++) {
-				for(usize j = 0; j != vec_size - 1; j++) {
+			for(usize i = 0; i != vec_count - 1; ++i) {
+				for(usize j = 0; j != vec_size - 1; ++j) {
 					usize ir = i < r ? i : i + 1;
 					usize jr = j < c ? j : j + 1;
 					mat._vecs[i][j] = _vecs[ir][jr];
@@ -218,8 +218,8 @@ class Matrix {
 			}
 			Matrix inv;
 			d = 1 / d;
-			for(usize i = 0; i != N; i++) {
-				for(usize j = 0; j != N; j++) {
+			for(usize i = 0; i != N; ++i) {
+				for(usize j = 0; j != N; ++j) {
 					auto s = sub(i, j).determinant() * d * (i % 2 == j % 2 ? 1 : -1);
 					(is_row_major ? inv._vecs[j][i] : inv._vecs[i][j]) = s;
 				}
@@ -230,7 +230,7 @@ class Matrix {
 		static constexpr Matrix identity() {
 			chk_sq();
 			Matrix mat;
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				mat._vecs[i][i] = T(1);
 			}
 			return mat;
@@ -258,7 +258,7 @@ class Matrix {
 
 		Column operator*(const Row& v) const {
 			Column tr;
-			for(usize i = 0; i != M; i++) {
+			for(usize i = 0; i != M; ++i) {
 				tr += column(i) * v[i];
 			}
 			return tr;
@@ -267,10 +267,10 @@ class Matrix {
 		template<typename U, usize P>
 		auto operator*(const Matrix<M, P, U, Layout>& m) const {
 			Matrix<N, P, decltype(std::declval<T>() * std::declval<U>())> mat;
-			for(usize i = 0; i != N; i++) {
-				for(usize j = 0; j != P; j++) {
+			for(usize i = 0; i != N; ++i) {
+				for(usize j = 0; j != P; ++j) {
 					decltype(std::declval<T>() * std::declval<U>()) tmp(0);
-					for(usize k = 0; k != M; k++) {
+					for(usize k = 0; k != M; ++k) {
 						tmp = tmp + row(i)[k] * m.row(k)[j];
 					}
 					if(is_row_major) {
@@ -314,7 +314,7 @@ class Matrix {
 
 		Column column(usize col, std::true_type) const {
 			Column c;
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				c[i] = _vecs[i][col];
 			}
 			return c;
@@ -322,7 +322,7 @@ class Matrix {
 
 		Row row(usize row, std::false_type) const {
 			Row r;
-			for(usize i = 0; i != M; i++) {
+			for(usize i = 0; i != M; ++i) {
 				r[i] = _vecs[i][row];
 			}
 			return r;
@@ -351,7 +351,7 @@ namespace detail {
 		} sgn;
 		T d(0);
 		auto row = mat.row(0);
-		for(usize i = 0; i != N; i++) {
+		for(usize i = 0; i != N; ++i) {
 			d = d + sgn(i + 1) * row[i] * mat.sub(0, i).determinant();
 		}
 		return d;

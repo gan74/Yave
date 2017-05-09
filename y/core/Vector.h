@@ -81,7 +81,7 @@ class Vector : ResizePolicy, Allocator {
 
 		Vector(usize size, const value_type& elem) : Vector() {
 			set_min_capacity(size);
-			for(usize i = 0; i != size; i++) {
+			for(usize i = 0; i != size; ++i) {
 				push_back(elem);
 			}
 		}

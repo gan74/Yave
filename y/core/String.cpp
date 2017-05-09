@@ -270,7 +270,7 @@ bool String::operator<(const String& str) const {
 	if(c & 0x80) {
 		usize len = 0;
 		for(; c & 0x80; c <<= 1) {
-			len++;
+			++len;
 		}
 		return len;
 	}
@@ -288,7 +288,7 @@ Vector<u32> String::to_unicode() const {
 			utf8 << u32(*dat++);
 		} else {
 			u32 buffer = *dat++ & (0xFF >> len);
-			for(usize l = 1; l < len; l++) {
+			for(usize l = 1; l < len; ++l) {
 				buffer = (buffer << 6) | (*dat++ & 0x3F);
 			}
 			utf8 << buffer;

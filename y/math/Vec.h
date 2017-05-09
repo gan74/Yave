@@ -54,7 +54,7 @@ class Vec
 
 	template<usize P, usize Q, typename U, typename... Args>
 	void build(const Vec<Q, U>& t, Args... args) {
-		for(usize i = 0; i != Q; i++) {
+		for(usize i = 0; i != Q; ++i) {
 			_vec[P + i] = t[i];
 		}
 		build<P + Q>(args...);
@@ -102,7 +102,7 @@ class Vec
 
 		T length2() const {
 			T sum = 0;
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				sum += _vec[i] * _vec[i];
 			}
 			return sum;
@@ -114,7 +114,7 @@ class Vec
 
 		T dot(const Vec& o) const {
 			T sum = 0;
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				sum += _vec[i] * o._vec[i];
 			}
 			return sum;
@@ -122,7 +122,7 @@ class Vec
 
 		Vec cross(const Vec& o) const {
 			Vec v;
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				v[i] = _vec[(i + 1) % N] * o._vec[(i + 2) % N] - _vec[(i + 2) % N] * o._vec[(i + 1) % N];
 			}
 			return v;
@@ -143,7 +143,7 @@ class Vec
 		Vec abs() const {
 			static_assert(std::is_signed<T>::value, "Vec<T>::abs makes no sense for T unsigned");
 			Vec v(*this);
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				v[i] = _vec[i] < 0 ? -_vec[i] : _vec[i];
 			}
 			return v;
@@ -189,17 +189,17 @@ class Vec
 
 		auto sub(usize index) const {
 			Vec<N - 1, T> v;
-			for(usize i = 0; i != index; i++) {
+			for(usize i = 0; i != index; ++i) {
 				v[i] = _vec[i];
 			}
-			for(usize i = index; i < N - 1; i++) {
+			for(usize i = index; i < N - 1; ++i) {
 				v[i] = _vec[i + 1];
 			}
 			return v;
 		}
 
 		bool is_zero() const {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				if(_vec[i]) {
 					return false;
 				}
@@ -257,7 +257,7 @@ class Vec
 
 
 		bool operator!=(const Vec<N, T>& o) const {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				if(o._vec[i] != _vec[i]) {
 					return true;
 				}
@@ -271,35 +271,35 @@ class Vec
 
 		Vec operator-() const {
 			Vec t;
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				t[i] = -_vec[i];
 			}
 			return t;
 		}
 
 		Vec& operator*=(const T& t) {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				_vec[i] *= t;
 			}
 			return *this;
 		}
 
 		Vec& operator/=(const T& t) {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				_vec[i] /= t;
 			}
 			return *this;
 		}
 
 		Vec& operator+=(const T& t) {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				_vec[i] += t;
 			}
 			return *this;
 		}
 
 		Vec& operator-=(const T& t) {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				_vec[i] -= t;
 			}
 			return *this;
@@ -308,28 +308,28 @@ class Vec
 
 
 		Vec& operator*=(const Vec& v) {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				_vec[i] *= v[i];
 			}
 			return *this;
 		}
 
 		Vec& operator/=(const Vec& v) {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				_vec[i] /= v[i];
 			}
 			return *this;
 		}
 
 		Vec& operator+=(const Vec& v) {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				_vec[i] += v[i];
 			}
 			return *this;
 		}
 
 		Vec& operator-=(const Vec& v) {
-			for(usize i = 0; i != N; i++) {
+			for(usize i = 0; i != N; ++i) {
 				_vec[i] -= v[i];
 			}
 			return *this;
