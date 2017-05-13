@@ -33,7 +33,7 @@ auto create_func() {
 }
 
 void forward_func(int&& i) {
-	i++;
+	++i;
 }
 
 struct NonConstFunctorStruct {
@@ -50,14 +50,14 @@ struct ForwardStruct {
 
 y_test_func("Function creation") {
 	int i = 0;
-	auto inc = function([&i]() { i++; });
+	auto inc = function([&i]() { ++i; });
 
 	y_test_assert(!i);
 	inc();
 	y_test_assert(i == 1);
 
 	{
-		inc = function([&i]() { i--; });
+		inc = function([&i]() { --i; });
 	}
 
 	inc();
@@ -103,14 +103,14 @@ y_test_func("Function argument forwarding") {
 
 y_test_func("Function void boxing") {
 	int i = 0;
-	auto inc = function([&i]() { return i++; });
+	auto inc = function([&i]() { return ++i; });
 	inc();
 	y_test_assert(i == 1);
 }
 
 y_test_func("Functor creation") {
 	int i = 0;
-	auto inc = functor([&i]() { i++; });
+	auto inc = functor([&i]() { ++i; });
 
 	inc();
 	y_test_assert(i == 1);
@@ -120,7 +120,7 @@ y_test_func("Functor creation") {
 	dec();
 	y_test_assert(i == 2);
 	{
-		auto d = functor([&i]() { i--; });
+		auto d = functor([&i]() { --i; });
 		dec = d;
 	}
 	dec();

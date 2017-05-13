@@ -235,7 +235,7 @@ class Rc : public detail::Ptr<T> {
 
 		void ref(const Rc& p) {
 			if((_count = p._count)) {
-				(*_count)++;
+				++(*_count);
 			}
 			_ptr = p._ptr;
 		}

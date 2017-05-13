@@ -27,12 +27,12 @@ using namespace y;
 
 struct DRaii : NonCopyable {
 	DRaii(usize& i) : _i(&i) {
-		(*_i)++;
+		++(*_i);
 	}
 
 	~DRaii() {
 		if(_i) {
-			(*_i)--;
+			--(*_i);
 		}
 	}
 

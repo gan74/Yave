@@ -39,7 +39,7 @@ void test_assert(const char* msg, void (*func)(TestResult &)) {
 
 
 	std::cout << msg << ":";
-	for(usize size = strlen(msg) + 1; size != 80 - 11; ++e) {
+	for(usize size = strlen(msg) + 1; size != 80 - 11; ++size) {
 		std::cout << " ";
 	}
 

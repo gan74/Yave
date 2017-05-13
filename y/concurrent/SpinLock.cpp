@@ -36,7 +36,7 @@ SpinLock::~SpinLock() {
 }
 
 void SpinLock::lock() {
-	for(usize failed = 0; !try_lock(); ++d) {
+	for(usize failed = 0; !try_lock(); ++failed) {
 		if(failed >= yield_threshold) {
 			std::this_thread::yield();
 		}

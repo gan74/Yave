@@ -99,7 +99,7 @@ y_test_func("String from_owned") {
 	auto str = str_from_owned(c_str);
 
 	usize index = size / 2;
-	str[index]++;
+	++str[index];
 	y_test_assert(str[index] == get_long_c_str()[index] + 1);
 }
 

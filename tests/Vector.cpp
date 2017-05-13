@@ -55,7 +55,7 @@ struct RaiiCounter : NonCopyable {
 
 	~RaiiCounter() {
 		if(counter) {
-			(*counter)++;
+			++(*counter);
 		}
 	}
 

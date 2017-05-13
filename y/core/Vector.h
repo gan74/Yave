@@ -300,7 +300,7 @@ class Vector : ResizePolicy, Allocator {
 			if(std::is_pod<data_type>::value) {
 				memmove(dst, src, sizeof(data_type) * n);
 			} else {
-				for(; n; n--) {
+				for(; n; --n) {
 					new(dst++) data_type(std::move(*(src++)));
 				}
 			}
