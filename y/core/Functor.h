@@ -49,7 +49,7 @@ struct FunctionBase : NonCopyable {
 	}
 
 	virtual Ret apply(Args&&...) = 0;
-	//virtual Ret apply(Args&&...) const = 0;
+
 };
 
 template<typename T, typename Ret, typename... Args>
@@ -61,11 +61,6 @@ struct Function : FunctionBase<Ret, Args...> {
 		virtual Ret apply(Args&&... args) override {
 			return _func(std::forward<Args>(args)...);
 		}
-
-		/*virtual Ret apply(Args&&... args) const override {
-			return _func(std::forward<Args>(args)...);
-		}*/
-
 
 	private:
 		typename FuncPtr<T>::type _func;
@@ -82,11 +77,6 @@ struct Function<T, void, Args...> : FunctionBase<void, Args...> {
 			_func(std::forward<Args>(args)...);
 		}
 
-		/*virtual void apply(Args&&... args) const override {
-			_func(std::forward<Args>(args)...);
-		}*/
-
-
 	private:
 		typename FuncPtr<T>::type _func;
 };
@@ -94,17 +84,25 @@ struct Function<T, void, Args...> : FunctionBase<void, Args...> {
 template<template<typename...> typename Container, typename Ret, typename... Args>
 class Functor {};
 
+template<typename T>
+struct is_functor {
+	static constexpr bool value = false;
+};
+
+template<template<typename...> typename Container, typename Ret, typename... Args>
+struct is_functor<Functor<Container, Ret(Args...)>> {
+	static constexpr bool value = true;
+};
+
 template<template<typename...> typename Container, typename Ret, typename... Args>
 class Functor<Container, Ret(Args...)> {
 	public:
-		template<typename T>
-		Functor(T&& func) : _function(new Function<T, Ret, Args...>(std::forward<T>(func))) {
-		}
-
-
 		Functor& operator=(const Functor&) = default;
 		Functor(const Functor&) = default;
 
+		template<typename T, typename = std::enable_if_t<!is_functor<std::remove_reference_t<T>>::value>>
+		Functor(T&& func) : _function(new Function<T, Ret, Args...>(std::forward<T>(func))) {
+		}
 
 		Functor(Functor&& other) : _function(nullptr) {
 			std::swap(_function, other._function);
@@ -115,14 +113,17 @@ class Functor<Container, Ret(Args...)> {
 			return *this;
 		}
 
+		bool operator==(const Functor& other) const {
+			return _function == other._function;
+		}
+
+		bool operator!=(const Functor& other) const {
+			return _function != other._function;
+		}
 
 		Ret operator()(Args&&... args) {
 			return _function->apply(std::forward<Args>(args)...);
 		}
-
-		/*Ret operator()(Args&&... args) const {
-			return _function->apply(std::forward<Args>(args)...);
-		}*/
 
 	private:
 		Container<FunctionBase<Ret, Args...>> _function;

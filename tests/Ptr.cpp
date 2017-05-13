@@ -87,6 +87,7 @@ y_test_func("Rc count") {
 			auto p2 = p;
 			y_test_assert(p.ref_count() == 2);
 			y_test_assert(p2.ref_count() == 2);
+			y_test_assert(p.as_ptr() == p2.as_ptr());
 			y_test_assert(exists);
 		}
 		y_test_assert(p.ref_count() == 1);
