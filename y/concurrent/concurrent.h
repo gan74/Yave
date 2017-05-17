@@ -3,12 +3,11 @@
 
 #include "Arc.h"
 #include <y/core/Functor.h>
+#include <y/core/Vector.h>
 
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-
-#include <y/core/String.h>
 
 namespace y {
 namespace concurrent {
@@ -73,6 +72,8 @@ void schedule_n(F&& func, u32 n) {
 	schedule_task(Arc<ParallelTask>(new Task(std::forward<F>(func), n)));
 }
 
+
+
 }
 
 void close_thread_pool();
@@ -83,9 +84,9 @@ usize concurency();
 
 
 template<typename It, typename Func>
-void parallel_block_for(It begin, It end, Func&& func) {
+void parallel_indexed_block_for(It begin, It end, Func&& func) {
 	using is_random_access = std::is_same<typename std::iterator_traits<It>::iterator_category, std::random_access_iterator_tag>;
-	static_assert(is_random_access::value, "parallel_block_for only works for random access iterators");
+	static_assert(is_random_access::value, "parallel_indexed_block_for only works for random access iterators");
 
 	usize size = end - begin;
 	usize chunk = std::max(usize(1), size / (concurency() * 2));
@@ -100,18 +101,46 @@ void parallel_block_for(It begin, It end, Func&& func) {
 	detail::schedule_n([=, &func](usize i) {
 		usize first = i * chunk;
 		usize last = std::min(size, first + chunk);
-		func(range(begin + first, begin + last));
+		func(i, range(begin + first, begin + last));
 	}, chunk_count);
+}
+
+
+
+template<typename It, typename Func>
+void parallel_block_for(It begin, It end, Func&& func) {
+	parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
+		func(range);
+	});
 }
 
 template<typename It, typename Func>
 void parallel_for(It begin, It end, Func&& func) {
-	return parallel_block_for(begin, end, [&](auto&& range) {
+	return parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
 		for(auto&& e : range) {
 			func(e);
 		}
 	});
 }
+
+template<template<typename...> typename C = core::Vector, typename It, typename Func>
+auto parallel_block_collect(It begin, It end, Func&& func) {
+	using T = decltype(func(std::declval<Range<It>>()));
+	std::mutex mutex;
+
+	C<T> col;
+
+	parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
+		auto e = func(range);
+
+		std::unique_lock<std::mutex> lock(mutex);
+		col.push_back(std::move(e));
+	});
+
+	return col;
+}
+
+
 
 
 }
