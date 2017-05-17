@@ -88,7 +88,7 @@ class Ptr : NonCopyable {
 	protected:
 		Ptr() = default;
 
-		Ptr(Owner<pointer>&& p) : _ptr(p) {
+		explicit Ptr(Owner<pointer>&& p) : _ptr(p) {
 		}
 
 		Owner<pointer> _ptr = nullptr;
@@ -236,7 +236,7 @@ class Rc : public detail::Ptr<T> {
 		}
 
 		void ref(const Rc& p) {
-			if(_count && (_count = p._count)) {
+			if(p._count && (_count = p._count)) {
 				++(*_count);
 			}
 			_ptr = p._ptr;
