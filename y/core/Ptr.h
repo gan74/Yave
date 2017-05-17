@@ -230,11 +230,13 @@ class Rc : public detail::Ptr<T> {
 
 		// only called by other Rc's so we take ownedship as well
 		Rc(T* p, C* c) : Base(std::move(p)), _count(c) {
-			++(*_count);
+			if(_count) {
+				++(*_count);
+			}
 		}
 
 		void ref(const Rc& p) {
-			if((_count = p._count)) {
+			if(_count && (_count = p._count)) {
 				++(*_count);
 			}
 			_ptr = p._ptr;
