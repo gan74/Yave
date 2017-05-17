@@ -12,16 +12,14 @@
 #include <condition_variable>
 #include <thread>
 
+#include <cmath>
+#include <vector>
+#include <list>
 
 using namespace y;
 using namespace y::core;
 
-struct Test {
-	void work() {
-		for(volatile int i = 0; i != 1000; ++i) {
-		}
-	}
-};
+
 
 
 int main() {
@@ -31,29 +29,51 @@ int main() {
 
 	concurrent::init_thread_pool();
 
-	core::Vector<int> v(100000u, 0);
+	core::Vector<int> v(10000000u, 0);
 	int index = 0;
 	for(auto& i : v) {
 		i = index++;
 	}
-	log_msg("main = " + core::str(std::this_thread::get_id()));
 
-	auto c = concurrent::parallel_block_collect(v.begin(), v.end(), [](auto&& r) {
-		log_msg("[" + str(*r.begin()) + ", " + str(*(r.end() - 1)) + "]");
-		usize s = 0;
-		for(auto i : r) {
-			s += i;
-		}
-		return s;
-	});
-
+	std::atomic<usize> par_sum(0);
 	usize sum = 0;
-	for(auto i : c) {
-		std::cout << i << std::endl;
-		sum += i;
+	{
+		DebugTimer timer("parallel for");
+		concurrent::parallel_for(v.begin(), v.end(), [&](auto&& i) {
+			par_sum += i;
+		});
 	}
-	std::cout << sum << std::endl;
+	{
+		DebugTimer timer("std::for_each");
+		std::for_each(v.begin(), v.end(), [&](auto&& i) {
+			sum += i;
+		});
+	}
+	std::cout << par_sum << "/" << sum << std::endl;
 
+	for(usize i = 0; i != 1000000; ++i) {
+		auto collect = concurrent::parallel_block_collect(0, 100, [](auto&& range) {
+			int sum = 0;
+			for(int i = range.begin(); i != range.end(); ++i) {
+				sum += i;
+			}
+			return sum;
+		});
+
+		int total = 0;
+		for(int i : collect) {
+			total += i;
+		}
+		if(total != 4950) {
+			fatal("Invalid result");
+		}
+		if(i % 250 == 0) {
+			std::cout << i / 10000.0f << "%" << std::endl;
+		}
+		//std::cout << i << std::endl;
+		//std::cout << total << " (" << collect.size() << " chunks)" << std::endl;
+	}
+	std::cout << "done." << std::endl;
 
 	concurrent::close_thread_pool();
 

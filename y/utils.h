@@ -33,12 +33,12 @@ SOFTWARE.
 
 #include <y/utils/iterable.h>
 #include <y/utils/comparable.h>
+#include <y/utils/collections.h>
 #include <y/utils/sort.h>
 #include <y/utils/hash.h>
 #include <y/utils/log.h>
 #include <y/utils/os.h>
 
-#include <y/utils/Range.h>
 
 namespace y {
 

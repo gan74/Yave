@@ -33,6 +33,7 @@ class ParallelTask : NonCopyable {
 		bool register_done() {
 			u32 p = ++_p;
 			if(p == _n) {
+				std::unique_lock<std::mutex> lock(_mutex);
 				_cond.notify_one();
 			}
 			return p >= _n;
@@ -79,17 +80,18 @@ void schedule_n(F&& func, u32 n) {
 void close_thread_pool();
 void init_thread_pool();
 usize concurency();
+usize probable_chunk_count();
 
 
 
 
 template<typename It, typename Func>
 void parallel_indexed_block_for(It begin, It end, Func&& func) {
-	using is_random_access = std::is_same<typename std::iterator_traits<It>::iterator_category, std::random_access_iterator_tag>;
-	static_assert(is_random_access::value, "parallel_indexed_block_for only works for random access iterators");
+	/*using is_random_access = std::is_same<typename std::iterator_traits<It>::iterator_category, std::random_access_iterator_tag>;
+	static_assert(is_random_access::value, "parallel_indexed_block_for only works for random access iterators");*/
 
 	usize size = end - begin;
-	usize chunk = std::max(usize(1), size / (concurency() * 2));
+	usize chunk = std::max(usize(1), size / (probable_chunk_count() - 1));
 
 	if(!size) {
 		return;
@@ -101,7 +103,8 @@ void parallel_indexed_block_for(It begin, It end, Func&& func) {
 	detail::schedule_n([=, &func](usize i) {
 		usize first = i * chunk;
 		usize last = std::min(size, first + chunk);
-		func(i, range(begin + first, begin + last));
+		using I = decltype(begin);
+		func(i, range(I(begin + first), I(begin + last)));
 	}, chunk_count);
 }
 
@@ -129,6 +132,7 @@ auto parallel_block_collect(It begin, It end, Func&& func) {
 	std::mutex mutex;
 
 	C<T> col;
+	try_reserve(col, probable_chunk_count());
 
 	parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
 		auto e = func(range);

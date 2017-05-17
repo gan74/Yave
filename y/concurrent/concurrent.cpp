@@ -23,8 +23,8 @@ void schedule_task(Arc<ParallelTask> task) {
 	{
 		std::unique_lock<std::mutex> lock(task_mutex);
 		scheduled_task = task;
+		task_condition.notify_all();
 	}
-	task_condition.notify_all();
 
 	if(task) {
 		task->run();
@@ -33,9 +33,6 @@ void schedule_task(Arc<ParallelTask> task) {
 }
 
 }
-
-
-
 
 
 
@@ -90,6 +87,11 @@ void init_thread_pool() {
 
 usize concurency() {
 	return concurency_level;
+}
+
+
+usize probable_chunk_count() {
+	return concurency_level * 2;
 }
 
 }
