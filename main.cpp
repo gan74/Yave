@@ -51,29 +51,29 @@ int main() {
 	}
 	std::cout << par_sum << "/" << sum << std::endl;
 
-	for(usize i = 0; i != 1000000; ++i) {
-		auto collect = concurrent::parallel_block_collect(0, 100, [](auto&& range) {
-			int sum = 0;
-			for(int i = range.begin(); i != range.end(); ++i) {
-				sum += i;
-			}
-			return sum;
-		});
+	{
 
-		int total = 0;
-		for(int i : collect) {
-			total += i;
+		DebugTimer timer("parallel_block_collect spam");
+		for(usize i = 0; i != 1000; ++i) {
+			auto collect = concurrent::parallel_block_collect(0, 100, [](auto&& range) {
+				int sum = 0;
+				for(int i = range.begin(); i != range.end(); ++i) {
+					sum += i;
+				}
+				return sum;
+			});
+
+			int total = 0;
+			for(int i : collect) {
+				total += i;
+			}
+			if(total != 4950) {
+				fatal("Invalid result");
+			}
+			//std::cout << i << std::endl;
+			//std::cout << total << " (" << collect.size() << " chunks)" << std::endl;
 		}
-		if(total != 4950) {
-			fatal("Invalid result");
-		}
-		if(i % 250 == 0) {
-			std::cout << i / 10000.0f << "%" << std::endl;
-		}
-		//std::cout << i << std::endl;
-		//std::cout << total << " (" << collect.size() << " chunks)" << std::endl;
 	}
-	std::cout << "done." << std::endl;
 
 	concurrent::close_thread_pool();
 

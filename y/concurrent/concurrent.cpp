@@ -69,8 +69,8 @@ void close_thread_pool() {
 		std::unique_lock<std::mutex> lock(task_mutex);
 		scheduled_task = nullptr;
 		run_workers = false;
+		task_condition.notify_all();
 	}
-	task_condition.notify_all();
 
 	join_thread_pool();
 }
