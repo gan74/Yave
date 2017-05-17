@@ -1,5 +1,5 @@
-#ifndef Y_UTILS_RANGE_H
-#define Y_UTILS_RANGE_H
+#ifndef Y_UTILS_COLLECTIONS_H
+#define Y_UTILS_COLLECTIONS_H
 
 #include <iterator>
 
@@ -47,6 +47,36 @@ auto range(const B& b, const E& e) {
 	return Range<B, E>(b, e);
 }
 
+
+
+
+
+
+namespace detail {
+template<typename T>
+struct has_reserve {
+	template<typename C> static auto test(void*) -> decltype(std::declval<C>().reserve(0), std::true_type{});
+	template<typename> static std::false_type test(...);
+
+	using type = decltype(test<T>(nullptr));
+};
+
+template<typename T>
+void try_reserve(T& t, usize size, std::true_type) {
+	t.reserve(size);
 }
 
-#endif // Y_UTILS_RANGE_H
+template<typename T>
+void try_reserve(T&, usize, std::false_type) {
+}
+}
+
+template<typename T>
+void try_reserve(T& t, usize size) {
+	detail::try_reserve(t, size, typename detail::has_reserve<T>::type());
+}
+
+
+}
+
+#endif // Y_UTILS_COLLECTIONS_H

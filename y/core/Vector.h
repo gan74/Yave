@@ -271,6 +271,12 @@ class Vector : ResizePolicy, Allocator {
 			unsafe_set_capacity(ResizePolicy::ideal_capacity(min_cap));
 		}
 
+		void reserve(usize cap) {
+			if(capacity() < cap) {
+				set_capacity(cap);
+			}
+		}
+
 		void clear() {
 			unsafe_set_capacity(0);
 		}
@@ -384,6 +390,8 @@ inline Vector<U> operator+(Vector<U> vec, T&& t) {
 	vec.push_back(std::forward<T>(t));
 	return vec;
 }
+
+
 
 }
 }
