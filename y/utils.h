@@ -26,7 +26,6 @@ SOFTWARE.
 
 #include <new>
 #include <typeinfo>
-#include <iterator>
 #include <tuple>
 #include <array>
 
@@ -38,6 +37,8 @@ SOFTWARE.
 #include <y/utils/hash.h>
 #include <y/utils/log.h>
 #include <y/utils/os.h>
+
+#include <y/utils/Range.h>
 
 namespace y {
 
