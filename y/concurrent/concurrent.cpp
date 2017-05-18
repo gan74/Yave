@@ -18,9 +18,7 @@ std::mutex scheduler_mutex;
 std::condition_variable scheduler_condition;
 Arc<detail::ParallelTask> scheduled_task;
 
-std::mutex init_mutex;
 usize concurency_level = 1;
-core::Vector<std::thread> workers;
 
 
 namespace detail {
@@ -68,23 +66,12 @@ static void work() {
 	}
 }
 
-void close_thread_pool() {
-	{
-		std::unique_lock<std::mutex> lock(scheduler_mutex);
-		run_workers = false;
-		scheduler_condition.notify_all();
-	}
-	workers.clear();
-	concurency_level = 1;
-	init_mutex.unlock();
-}
-
 void init_thread_pool() {
-	if(init_mutex.try_lock()) {
+	static SpinLock lock;
+	if(lock.try_lock()) {
 		concurency_level = std::max(4u, std::thread::hardware_concurrency());
 		for(usize i = 0; i != concurency_level - 1; ++i) {
-			workers.push_back(std::thread(work));
-			workers.last().detach();
+			(new std::thread(work))->detach();
 		}
 	}
 }

@@ -84,7 +84,6 @@ void schedule_n(F&& func, u32 n) {
 
 }
 
-void close_thread_pool();
 void init_thread_pool();
 usize concurency();
 usize probable_block_count();
