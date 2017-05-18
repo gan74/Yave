@@ -19,8 +19,10 @@
 using namespace y;
 using namespace y::core;
 
-
-
+void slow(usize m) {
+	for(volatile usize i = 0; i != m; ++i) {
+	}
+}
 
 int main() {
 #ifdef Y_BUILD_TESTS
@@ -29,53 +31,65 @@ int main() {
 
 	concurrent::init_thread_pool();
 
-	core::Vector<int> v(10000000u, 0);
+	core::Vector<int> v(5000u, 0);
 	int index = 0;
 	for(auto& i : v) {
 		i = index++;
 	}
 
-	std::atomic<usize> par_sum(0);
-	usize sum = 0;
-	{
-		DebugTimer timer("parallel for");
-		concurrent::parallel_for(v.begin(), v.end(), [&](auto&& i) {
-			par_sum += i;
-		});
-	}
-	{
-		DebugTimer timer("std::for_each");
-		std::for_each(v.begin(), v.end(), [&](auto&& i) {
-			sum += i;
-		});
-	}
-	std::cout << par_sum << "/" << sum << std::endl;
-
-	{
-
-		DebugTimer timer("parallel_block_collect spam");
-		for(usize i = 0; i != 1000; ++i) {
-			auto collect = concurrent::parallel_block_collect(0, 100, [](auto&& range) {
-				int sum = 0;
-				for(int i = range.begin(); i != range.end(); ++i) {
-					sum += i;
-				}
-				return sum;
+	/*{
+		Chrono timer;
+		usize loops = 0;
+		while(timer.elapsed().to_secs() < 10) {
+			concurrent::parallel_for_each(v.begin(), v.end(), [&](auto&& i) {
+				slow(i);
 			});
-
-			int total = 0;
-			for(int i : collect) {
-				total += i;
-			}
-			if(total != 4950) {
-				fatal("Invalid result");
-			}
-			//std::cout << i << std::endl;
-			//std::cout << total << " (" << collect.size() << " chunks)" << std::endl;
+			loops++;
 		}
+		std::cout << "parallel_for_each: " << loops << std::endl;
 	}
 
-	concurrent::close_thread_pool();
+	{
+		Chrono timer;
+		usize loops = 0;
+		while(timer.elapsed().to_secs() < 10) {
+			volatile usize sum = 0;
+			concurrent::parallel_block_for(0, 100, [&](auto&&) {
+				sum += 1;
+			});
+			loops++;
+		}
+		std::cout << "parallel_block_for spam: " << loops << std::endl;;
+	}
+
+	{
+		Chrono timer;
+		usize loops = 0;
+		while(timer.elapsed().to_secs() < 10) {
+			auto col = concurrent::parallel_collect(v.begin(), v.end(), [&](auto&& range) {
+				core::Vector<int> v;
+				for(auto i : range) {
+					v.push_back(i);
+				}
+				return v;
+			});
+			std::sort(col.begin(), col.end());
+			if(v != col) {
+				fatal("invalid result");
+			}
+			loops++;
+		}
+		std::cout << "parallel_collect: " << loops << std::endl;;
+	}*/
+
+	auto thread = new std::thread([]() {
+		concurrent::parallel_for(0, 1, [](auto&&) {
+			std::cout << "started..." << std::endl;
+			std::this_thread::sleep_for(std::chrono::seconds(10));
+			std::cout << "done!" << std::endl;
+		});
+	});
+	thread->detach();
 
 	return 0;
 }

@@ -22,7 +22,18 @@ class ParallelTask : NonCopyable {
 		virtual ~ParallelTask() {
 		}
 
-		virtual void run() = 0;
+		void run() {
+			while(process_one());
+		}
+
+		bool process_one() {
+			u32 i = _i++;
+			if(i >= _n) {
+				return false;
+			}
+			process(usize(i));
+			return !register_done();
+		}
 
 		void wait() {
 			std::unique_lock<std::mutex> lock(_mutex);
@@ -30,6 +41,9 @@ class ParallelTask : NonCopyable {
 		}
 
 	protected:
+		virtual void process(usize) = 0;
+
+	private:
 		bool register_done() {
 			u32 p = ++_p;
 			if(p == _n) {
@@ -43,7 +57,6 @@ class ParallelTask : NonCopyable {
 		std::atomic<u32> _p;
 		const u32 _n;
 
-	private:
 		std::mutex _mutex;
 		std::condition_variable _cond;
 };
@@ -57,14 +70,8 @@ void schedule_n(F&& func, u32 n) {
 		Task(F&& f, u32 n) : ParallelTask(n), _func(f) {
 		}
 
-		void run() override {
-			do {
-				u32 i = _i++;
-				if(i >= _n) {
-					return;
-				}
-				_func(usize(i));
-			} while(!register_done());
+		void process(usize i) override {
+			_func(i);
 		}
 
 		F _func;
@@ -80,18 +87,15 @@ void schedule_n(F&& func, u32 n) {
 void close_thread_pool();
 void init_thread_pool();
 usize concurency();
-usize probable_chunk_count();
+usize probable_block_count();
 
 
 
 
 template<typename It, typename Func>
 void parallel_indexed_block_for(It begin, It end, Func&& func) {
-	/*using is_random_access = std::is_same<typename std::iterator_traits<It>::iterator_category, std::random_access_iterator_tag>;
-	static_assert(is_random_access::value, "parallel_indexed_block_for only works for random access iterators");*/
-
 	usize size = end - begin;
-	usize chunk = std::max(usize(1), size / (probable_chunk_count() - 1));
+	usize chunk = std::max(usize(1), size / (probable_block_count() - 1));
 
 	if(!size) {
 		return;
@@ -118,7 +122,7 @@ void parallel_block_for(It begin, It end, Func&& func) {
 }
 
 template<typename It, typename Func>
-void parallel_for(It begin, It end, Func&& func) {
+void parallel_for_each(It begin, It end, Func&& func) {
 	return parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
 		for(auto&& e : range) {
 			func(e);
@@ -126,13 +130,24 @@ void parallel_for(It begin, It end, Func&& func) {
 	});
 }
 
+template<typename It, typename Func>
+void parallel_for(It begin, It end, Func&& func) {
+	return parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
+		for(auto i = range.begin(); i != range.end(); ++i) {
+			func(i);
+		}
+	});
+}
+
+
+
 template<template<typename...> typename C = core::Vector, typename It, typename Func>
 auto parallel_block_collect(It begin, It end, Func&& func) {
 	using T = decltype(func(std::declval<Range<It>>()));
 	std::mutex mutex;
 
 	C<T> col;
-	try_reserve(col, probable_chunk_count());
+	try_reserve(col, probable_block_count());
 
 	parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
 		auto e = func(range);
@@ -144,6 +159,24 @@ auto parallel_block_collect(It begin, It end, Func&& func) {
 	return col;
 }
 
+template<template<typename...> typename C = core::Vector, typename It, typename Func>
+auto parallel_collect(It begin, It end, Func&& func) {
+	auto cols = parallel_block_collect(begin, end, func);
+
+	usize size = 0;
+	for(const auto& c : cols) {
+		size += c.size();
+	}
+
+	C<std::remove_reference_t<decltype(*cols.first().begin())>> sum;
+	try_reserve(sum, size);
+
+	for(const auto& c : cols) {
+		std::copy(c.begin(), c.end(), std::back_inserter(sum));
+	}
+
+	return sum;
+}
 
 
 
