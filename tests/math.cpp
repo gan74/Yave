@@ -30,9 +30,9 @@ SOFTWARE.
 using namespace y;
 using namespace y::math;
 
-Vec3 X(1.0f, 0.0f, 0.0f);
-Vec3 Y(0.0f, 1.0f, 0.0f);
-Vec3 Z(0.0f, 0.0f, 1.0f);
+static Vec3 X(1.0f, 0.0f, 0.0f);
+static Vec3 Y(0.0f, 1.0f, 0.0f);
+static Vec3 Z(0.0f, 0.0f, 1.0f);
 
 template<usize N>
 static bool eq(const Vec<N>& a, const Vec<N>& b) {
