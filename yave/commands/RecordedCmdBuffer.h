@@ -41,6 +41,8 @@ template<CmdBufferUsage Usage>
 class RecordedCmdBuffer : public CmdBufferBase {
 
 	public:
+		RecordedCmdBuffer() = default;
+
 		RecordedCmdBuffer(RecordedCmdBuffer&& other) : CmdBufferBase() {
 			swap(other);
 		}

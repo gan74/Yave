@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-class DeferredRenderer : public Renderer, public DeviceLinked {
+class DeferredRenderer : public DeviceLinked, public Renderer {
 
 	public:
 		template<typename T>
@@ -43,8 +43,9 @@ class DeferredRenderer : public Renderer, public DeviceLinked {
 
 		const math::Vec2ui& size() const;
 
-		virtual core::Vector<Dependency> dependencies() override;
-		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder, const SubRendererResults&) override;
+	protected:
+		void compute_dependencies(DependencyGraphNode& self) override;
+		void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		const DescriptorSet& create_output_set(const StorageView& out);

@@ -19,51 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_PIPELINE_PIPELINE_H
-#define YAVE_PIPELINE_PIPELINE_H
 
-#include <yave/commands/RecordedCmdBuffer.h>
-#include <yave/swapchain/FrameToken.h>
+#include "pipeline.h"
 
 namespace yave {
-
-struct Node : NonCopyable {
-	using Dependency = std::tuple<Node*>;
-
-	virtual void process(const FrameToken&) = 0;
-	virtual core::Vector<Dependency> dependencies() {
-		return {};
-	}
-
-	virtual ~Node() {}
-};
-
-struct SubRenderer : NonCopyable {
-	using Dependency = std::tuple<Node*>;
-
-	virtual RecordedCmdBuffer<CmdBufferUsage::Secondary> process(const FrameToken&) = 0;
-	virtual core::Vector<Dependency> dependencies() {
-		return {};
-	}
-
-	virtual ~SubRenderer() {}
-};
-
-struct Renderer : NonCopyable {
-	using SecCmdBuffer = RecordedCmdBuffer<CmdBufferUsage::Secondary>;
-	using SubRendererResults = core::Vector<SecCmdBuffer>;
-	using Dependency = std::tuple<Node*, SubRenderer*, Renderer*>;
-
-	virtual void process(const FrameToken&, CmdBufferRecorder<>&, const SubRendererResults&) = 0;
-	virtual core::Vector<Dependency> dependencies() {
-		return {};
-	}
-
-	virtual ~Renderer() {}
-};
-
-void process_root(Renderer* root, const FrameToken& token, CmdBufferRecorder<>& recorder);
-
 }
-
-#endif // YAVE_PIPELINE_PIPELINE_H

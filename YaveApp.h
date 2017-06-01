@@ -86,7 +86,7 @@ class YaveApp : NonCopyable {
 		SceneView* scene_view;
 
 		Camera camera;
-		core::Rc<Renderer> renderer;
+		core::Rc<DeferredRenderer> renderer;
 };
 
 }

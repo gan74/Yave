@@ -106,11 +106,7 @@ const math::Vec2ui& DeferredRenderer::size() const {
 	return _gbuffer->size();
 }
 
-core::Vector<Renderer::Dependency> DeferredRenderer::dependencies() {
-	return {Dependency(nullptr, nullptr, _gbuffer.as_ptr())};
-}
-
-void DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder, const SubRendererResults&) {
+void DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
 	_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
 
 	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(token.image_view)});
@@ -131,5 +127,8 @@ const DescriptorSet& DeferredRenderer::create_output_set(const StorageView& out)
 	return it->second;
 }
 
+void DeferredRenderer::compute_dependencies(DependencyGraphNode& self) {
+	self.add_dependency(_gbuffer.as_ptr());
+}
 
 }

@@ -56,8 +56,16 @@ class Device : NonCopyable {
 			}
 		}
 
-		auto create_disposable_command_buffer() const {
+		auto create_disposable_cmd_buffer() const {
 			return _disposable_cmd_pool.create_buffer();
+		}
+
+		auto create_secondary_cmd_buffer() const {
+			return _secondary_cmd_pool.create_buffer();
+		}
+
+		auto create_cmd_buffer() const {
+			return _primary_cmd_pool.create_buffer();
 		}
 
 		template<typename T>
@@ -78,6 +86,9 @@ class Device : NonCopyable {
 		Sampler _sampler;
 
 		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
+		mutable CmdBufferPool<CmdBufferUsage::Secondary> _secondary_cmd_pool;
+		mutable CmdBufferPool<CmdBufferUsage::Normal> _primary_cmd_pool;
+
 		DescriptorSetLayoutPool* _descriptor_layout_pool;
 };
 

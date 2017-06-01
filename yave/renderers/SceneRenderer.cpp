@@ -32,17 +32,18 @@ vk::DrawIndexedIndirectCommand prepare_command(vk::DrawIndexedIndirectCommand cm
 	return cmd;
 }
 
-SceneRenderer::SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull):
+SceneRenderer::SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull) :
+		DeviceLinked(dptr),
 		_cull(cull),
 
-		_camera_buffer(dptr, 1),
+		_camera_buffer(device(), 1),
 		_camera_mapping(_camera_buffer.map()),
-		_camera_set(dptr, {Binding(_camera_buffer)}),
+		_camera_set(device(), {Binding(_camera_buffer)}),
 
-		_matrix_buffer(dptr, batch_size),
+		_matrix_buffer(device(), batch_size),
 		_matrix_mapping(_matrix_buffer.map()),
 
-		_indirect_buffer(dptr, batch_size),
+		_indirect_buffer(device(), batch_size),
 		_indirect_mapping(_indirect_buffer.map()) {
 
 	log_msg("Allocating "_s + (batch_size / 1024) * (sizeof(math::Matrix4<>) + sizeof(vk::DrawIndexedIndirectCommand)) + "KB of scene buffers");
@@ -52,17 +53,20 @@ const SceneView& SceneRenderer::scene_view() const {
 	return _cull->scene_view();
 }
 
-core::Vector<Node*> SceneRenderer::dependencies() {
-	return {_cull.as_ptr()};
+const RecordedCmdBuffer<CmdBufferUsage::Secondary>& SceneRenderer::cmd_buffer() const {
+	return _cmd_buffer;
 }
 
-void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
+void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&& recorder) {
 	_camera_mapping[0] = scene_view().camera().viewproj_matrix();
 
 	const auto& visibles = _cull->visibles();
+
 	if(visibles.is_empty()) {
+		_cmd_buffer = recorder.end();
 		return;
 	}
+
 	if(visibles.size() > batch_size) {
 		log_msg("Visible object count exceeds scene buffer size", LogType::Warning);
 	}
@@ -92,14 +96,16 @@ void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
 		_indirect_mapping[i] = prepare_command(mesh->instance()->indirect_data, i);
 	}
 	submit_batches(recorder, visibles[submitted]->material(), submitted, i - submitted);
+
+	_cmd_buffer = recorder.end();
 }
 
-void SceneRenderer::setup_instance(CmdBufferRecorder<>& recorder, const AssetPtr<StaticMeshInstance>& instance) {
+void SceneRenderer::setup_instance(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, const AssetPtr<StaticMeshInstance>& instance) {
 	recorder.vk_cmd_buffer().bindVertexBuffers(0, {instance->vertex_buffer.vk_buffer(), _matrix_buffer.vk_buffer()}, {0, 0});
 	recorder.vk_cmd_buffer().bindIndexBuffer(instance->triangle_buffer.vk_buffer(), 0, vk::IndexType::eUint32);
 }
 
-void SceneRenderer::submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Material>& mat, usize offset, usize size) {
+void SceneRenderer::submit_batches(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, AssetPtr<Material>& mat, usize offset, usize size) {
 	if(size) {
 		recorder.bind_pipeline(mat->compile(recorder.current_pass()), {_camera_set});
 
@@ -108,6 +114,8 @@ void SceneRenderer::submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Mater
 	}
 }
 
-
+void SceneRenderer::compute_dependencies(DependencyGraphNode& self) {
+	self.add_dependency(_cull.as_ptr());
+}
 
 }

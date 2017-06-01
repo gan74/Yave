@@ -100,15 +100,15 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	auto staging_buffer = get_staging_buffer(dptr, data.all_mip_bytes_size(), data.data());
 	auto regions = get_copy_regions(data);
 
-	auto cmd_buffer = CmdBufferRecorder<CmdBufferUsage::Disposable>(dptr->create_disposable_command_buffer());
+	auto recorder = CmdBufferRecorder<CmdBufferUsage::Disposable>(dptr->create_disposable_cmd_buffer());
 
-	cmd_buffer.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+	recorder.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
-	cmd_buffer.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
+	recorder.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
 
-	cmd_buffer.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
+	recorder.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
 
-	cmd_buffer.end().submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+	recorder.end().submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 }
 
 static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize mips) {

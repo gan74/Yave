@@ -35,7 +35,8 @@ struct CmdBufferData {
 };
 
 enum class CmdBufferUsage {
-	Normal = uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse),
+	//Normal = uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse), ???
+	Normal = uenum(vk::CommandBufferUsageFlagBits()),
 	Disposable = uenum(vk::CommandBufferUsageFlagBits::eOneTimeSubmit),
 	Secondary = uenum(detail::max(Normal, Disposable) << 1)
 };
@@ -43,7 +44,7 @@ enum class CmdBufferUsage {
 template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
 class CmdBufferPool;
 
-template<CmdBufferUsage Usage>
+template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
 class RecordedCmdBuffer;
 
 template<CmdBufferUsage Usage = CmdBufferUsage::Normal>

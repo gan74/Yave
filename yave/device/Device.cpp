@@ -93,6 +93,8 @@ Device::Device(Instance& instance) :
 		_device(create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())),
 		_sampler(this),
 		_disposable_cmd_pool(this),
+		_secondary_cmd_pool(this),
+		_primary_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
 
 	for(const auto& family : _queue_families) {
@@ -114,6 +116,9 @@ Device::~Device() {
 
 	// we need to destroy the pools before the device
 	_disposable_cmd_pool = CmdBufferPool<CmdBufferUsage::Disposable>();
+	_secondary_cmd_pool = CmdBufferPool<CmdBufferUsage::Secondary>();
+	_primary_cmd_pool = CmdBufferPool<CmdBufferUsage::Normal>();
+
 	delete _descriptor_layout_pool;
 
 	_device.destroy();

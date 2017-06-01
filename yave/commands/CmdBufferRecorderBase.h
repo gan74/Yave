@@ -47,10 +47,11 @@ class CmdBufferRecorderBase : NonCopyable {
 		void end_render_pass();
 
 		void set_viewport(const Viewport& view);
-		void bind_framebuffer(const Framebuffer& framebuffer);
 		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
-		void execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary);
+
+		void bind_framebuffer(const Framebuffer& framebuffer);
+		void execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer);
 
 		void barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
 
@@ -61,6 +62,7 @@ class CmdBufferRecorderBase : NonCopyable {
 	protected:
 		CmdBufferRecorderBase() = default;
 		CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage);
+		CmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer);
 
 		void swap(CmdBufferRecorderBase& other);
 
@@ -69,8 +71,11 @@ class CmdBufferRecorderBase : NonCopyable {
 		}
 
 	private:
+		void bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass);
+
 		CmdBufferBase _cmd_buffer;
 		const RenderPass* _render_pass = nullptr;
+		CmdBufferUsage _usage;
 };
 
 }

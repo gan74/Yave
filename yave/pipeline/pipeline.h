@@ -19,34 +19,52 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_PIPELINE_CULLINGNODE_H
-#define YAVE_PIPELINE_CULLINGNODE_H
+#ifndef YAVE_PIPELINE_PIPELINE_H
+#define YAVE_PIPELINE_PIPELINE_H
 
-#include <yave/scene/SceneView.h>
-#include "DependencyGraph.h"
+#include <yave/commands/RecordedCmdBuffer.h>
+#include <yave/swapchain/FrameToken.h>
 
 namespace yave {
 
-class CullingNode : public Node {
+namespace detail {
+struct NodeData;
+}
 
+class DependencyGraphNode;
+
+
+class NodeBase : NonCopyable {
 	public:
-		CullingNode(SceneView& view);
-
-		const SceneView& scene_view() const;
-
-		const core::Vector<const StaticMesh*>& visibles() const;
-
+		virtual ~NodeBase() {
+		}
 
 	protected:
-		void compute_dependencies(DependencyGraphNode&) override;
-		void process(const FrameToken&) override;
+		friend class DependencyGraphNode;
 
-	private:
-		SceneView& _view;
+		virtual void compute_dependencies(DependencyGraphNode&) = 0;
+};
 
-		core::Vector<const StaticMesh*> _visibles;
+class Node : public NodeBase {
+	protected:
+		friend class detail::NodeData;
+		virtual void process(const FrameToken&) = 0;
+};
+
+class SecondaryRenderer : public NodeBase {
+	protected:
+		friend class detail::NodeData;
+		virtual void process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&&) = 0;
+};
+
+class Renderer : public NodeBase {
+	protected:
+		friend class detail::NodeData;
+
+#warning Renderer does not need to store its own result while other nodes do
+		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
 };
 
 }
 
-#endif // YAVE_PIPELINE_CULLINGNODE_H
+#endif // YAVE_PIPELINE_PIPELINE_H

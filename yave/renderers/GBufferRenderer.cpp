@@ -56,18 +56,12 @@ const ColorTextureAttachment& GBufferRenderer::normal() const {
 	return _normal;
 }
 
-core::Vector<Renderer::Dependency> GBufferRenderer::dependencies() {
-	core::Vector<Dependency> deps;
-	auto scene_deps = _scene.dependencies();
-	std::transform(scene_deps.begin(), scene_deps.end(), std::back_inserter(deps), [](Node* d) { return Dependency(d, nullptr, nullptr); });
-	return deps;
+void GBufferRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
+	recorder.execute(_scene.cmd_buffer(), _gbuffer);
 }
 
-void GBufferRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder, const SubRendererResults&) {
-	recorder.bind_framebuffer(_gbuffer);
-
-	_scene.process(token, recorder);
+void GBufferRenderer::compute_dependencies(DependencyGraphNode& self) {
+	self.add_dependency(&_scene, _gbuffer);
 }
-
 
 }

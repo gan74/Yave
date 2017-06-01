@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class GBufferRenderer : public Renderer, public DeviceLinked {
+class GBufferRenderer : public DeviceLinked, public Renderer {
 
 	public:
 		template<typename T>
@@ -47,8 +47,9 @@ class GBufferRenderer : public Renderer, public DeviceLinked {
 		const ColorTextureAttachment& normal() const;
 
 
-		virtual core::Vector<Dependency> dependencies() override;
-		virtual void process(const FrameToken& token, CmdBufferRecorder<>& recorder, const SubRendererResults&) override;
+	protected:
+		void compute_dependencies(DependencyGraphNode& self) override;
+		void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		SceneRenderer _scene;

@@ -74,16 +74,16 @@ void YaveApp::draw() {
 	FrameToken frame = std::move(swapchain->next_frame(image_acquired_semaphore));
 
 	//renderer->update();
-	auto cmd_buffer =  CmdBufferRecorder<>(command_pool.create_buffer());
 
-	{
+	auto cmd_buffer = [&]() {
 		core::DebugTimer p("process", core::Duration::milliseconds(4));
-		process_root(renderer.as_ptr(), frame, cmd_buffer);
-	}
+		DependencyGraph graph(renderer.as_ptr());
+		return graph.build_command_buffer(&device, frame);
+	}();
 
 	{
 
-		auto buffer = cmd_buffer.end().vk_cmd_buffer();
+		auto buffer = cmd_buffer.vk_cmd_buffer();
 		auto submit_info = vk::SubmitInfo()
 				.setWaitSemaphoreCount(0)
 				.setPWaitDstStageMask(&pipe_stage_flags)
@@ -176,7 +176,7 @@ void YaveApp::create_assets() {
 	{
 		auto culling = core::Rc<CullingNode>(new CullingNode(*scene_view));
 		auto gbuffer = core::Rc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
-		renderer = core::Rc<Renderer>(new DeferredRenderer(gbuffer));
+		renderer = core::Rc<DeferredRenderer>(new DeferredRenderer(gbuffer));
 	}
 
 	//renderer = new DeferredRenderer(*scene_view, swapchain->size());

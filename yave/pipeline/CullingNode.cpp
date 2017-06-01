@@ -37,6 +37,10 @@ const SceneView& CullingNode::scene_view() const {
 	return _view;
 }
 
+const core::Vector<const StaticMesh*>& CullingNode::visibles() const {
+	return _visibles;
+}
+
 void CullingNode::process(const FrameToken&) {
 	_visibles.make_empty();
 	auto frustum = _view.camera().frustum();
@@ -67,9 +71,7 @@ void CullingNode::process(const FrameToken&) {
 	}
 }
 
-
-const core::Vector<const StaticMesh*>& CullingNode::visibles() const {
-	return _visibles;
+void CullingNode::compute_dependencies(DependencyGraphNode&) {
 }
 
 }

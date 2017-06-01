@@ -43,9 +43,8 @@ class ArcballMouse : public MouseEventHandler {
 		bool _dragging;
 };
 
-
 int main(int, char **) {
-
+	log_msg("starting...");
 	Window win(math::vec(1280, 768), "Yave");
 	win.set_mouse_handler(new ArcballMouse());
 

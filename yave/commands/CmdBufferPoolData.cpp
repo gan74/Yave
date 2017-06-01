@@ -27,10 +27,6 @@ SOFTWARE.
 
 namespace yave {
 
-/*static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
-	return vk::CommandBufferUsageFlagBits(uenum(u) & ~uenum(CmdBufferUsage::Secondary));
-}*/
-
 static vk::CommandBufferLevel cmd_level(CmdBufferUsage u) {
 	return u == CmdBufferUsage::Secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary;
 }
@@ -101,6 +97,10 @@ CmdBufferPoolData::~CmdBufferPoolData() {
 }
 
 void CmdBufferPoolData::join_fences() {
+	if(_cmd_buffers.is_empty()) {
+		return;
+	}
+
 	auto fences = core::vector_with_capacity<vk::Fence>(_cmd_buffers.size());
 	std::transform(_cmd_buffers.begin(), _cmd_buffers.end(), std::back_inserter(fences), [](auto& buffer) { return buffer.fence; });
 	if(device()->vk_device().waitForFences(fences.size(), fences.data(), true, u64(-1)) != vk::Result::eSuccess) {

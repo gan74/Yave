@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class SceneRenderer {
+class SceneRenderer : public DeviceLinked, public SecondaryRenderer {
 
 	public:
 		template<typename T>
@@ -36,12 +36,15 @@ class SceneRenderer {
 
 		const SceneView& scene_view() const;
 
-		core::Vector<Node*> dependencies();
-		void process(const FrameToken&, CmdBufferRecorder<>& recorder);
+		const RecordedCmdBuffer<CmdBufferUsage::Secondary>& cmd_buffer() const;
+
+	protected:
+		void compute_dependencies(DependencyGraphNode& self) override;
+		void process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&& recorder) override;
 
 	private:
-		void setup_instance(CmdBufferRecorder<>& recorder, const AssetPtr<StaticMeshInstance>& instance);
-		void submit_batches(CmdBufferRecorder<>& recorder, AssetPtr<Material>& mat, usize offset, usize size);
+		void setup_instance(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, const AssetPtr<StaticMeshInstance>& instance);
+		void submit_batches(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, AssetPtr<Material>& mat, usize offset, usize size);
 
 		Ptr<CullingNode> _cull;
 
@@ -49,13 +52,13 @@ class SceneRenderer {
 		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _camera_mapping;
 		DescriptorSet _camera_set;
 
-
 		TypedBuffer<math::Matrix4<>, BufferUsage::AttributeBit, MemoryFlags::CpuVisible> _matrix_buffer;
 		TypedMapping<math::Matrix4<>, MemoryFlags::CpuVisible> _matrix_mapping;
 
-
 		TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, MemoryFlags::CpuVisible> _indirect_buffer;
 		TypedMapping<vk::DrawIndexedIndirectCommand, MemoryFlags::CpuVisible> _indirect_mapping;
+
+		RecordedCmdBuffer<CmdBufferUsage::Secondary> _cmd_buffer;
 
 };
 
