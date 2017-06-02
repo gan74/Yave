@@ -3,8 +3,6 @@
 #include <yave/window/Window.h>
 
 
-#include <yave/script/LuaComponent.h>
-
 #include <y/math/Vec.h>
 
 #include <iostream>
