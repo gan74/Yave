@@ -39,7 +39,6 @@ enum class ImageUsage {
 	// Never use directly:
 	Attachment = ColorBit | DepthBit,
 	DepthTexture = TextureBit | DepthBit
-
 };
 
 constexpr ImageUsage operator|(ImageUsage l, ImageUsage r) {
@@ -60,6 +59,10 @@ constexpr ImageUsage operator~(ImageUsage l) {
 
 constexpr bool is_attachment_usage(ImageUsage usage) {
 	return (usage & ImageUsage::Attachment) != ImageUsage::None;
+}
+
+constexpr bool is_storage_usage(ImageUsage usage) {
+	return (usage & ImageUsage::StorageBit) != ImageUsage::None;
 }
 
 constexpr bool is_texture_usage(ImageUsage usage) {

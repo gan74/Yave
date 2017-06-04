@@ -71,7 +71,7 @@ void CullingNode::process(const FrameToken&) {
 	}
 }
 
-void CullingNode::compute_dependencies(DependencyGraphNode&) {
+void CullingNode::compute_dependencies(const FrameToken&, DependencyGraphNode&) {
 }
 
 }

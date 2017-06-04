@@ -33,7 +33,7 @@ vk::DrawIndexedIndirectCommand prepare_command(vk::DrawIndexedIndirectCommand cm
 }
 
 SceneRenderer::SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull) :
-		DeviceLinked(dptr),
+		SecondaryRenderer(dptr),
 		_cull(cull),
 
 		_camera_buffer(device(), 1),
@@ -68,7 +68,7 @@ void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage:
 	}
 
 	if(visibles.size() > batch_size) {
-		log_msg("Visible object count exceeds scene buffer size", LogType::Warning);
+		log_msg("Visible object count exceeds scene buffer size", Log::Warning);
 	}
 
 	usize i = 0;
@@ -114,8 +114,8 @@ void SceneRenderer::submit_batches(CmdBufferRecorder<CmdBufferUsage::Secondary>&
 	}
 }
 
-void SceneRenderer::compute_dependencies(DependencyGraphNode& self) {
-	self.add_dependency(_cull.as_ptr());
+void SceneRenderer::compute_dependencies(const FrameToken& token, DependencyGraphNode& self) {
+	self.add_dependency(token, _cull.as_ptr());
 }
 
 }

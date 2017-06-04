@@ -50,8 +50,16 @@ class ImageView {
 			return *_image;
 		}
 
-		const math::Vec2ui size() const {
+		const math::Vec2ui& size() const {
 			return _image->size();
+		}
+
+		bool operator==(const ImageView& other) const {
+			return _image == other._image && _view == other._view;
+		}
+
+		bool operator!=(const ImageView& other) const {
+			return !operator==(other);
 		}
 
 	private:

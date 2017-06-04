@@ -7,27 +7,34 @@ namespace yave {
 
 namespace detail {
 
-NodeData::NodeData(NotOwner<Node*> node) : _type(Type::Node), _node(node) {
+NodeData::NodeData(const FrameToken& token, NotOwner<Node*> node) : _type(Type::Node), _token(token), _node(node) {
 }
 
-NodeData::NodeData(NotOwner<SecondaryRenderer*> node, const Framebuffer& framebuffer) : _type(Type::Secondary), _node(node), _framebuffer(&framebuffer) {
+NodeData::NodeData(const FrameToken& token, NotOwner<SecondaryRenderer*> node, const Framebuffer& framebuffer) : _type(Type::Secondary), _token(token), _node(node), _framebuffer(&framebuffer) {
 }
 
-NodeData::NodeData(NotOwner<Renderer*> node) : _type(Type::Primary), _node(node) {
+NodeData::NodeData(const FrameToken& token, NotOwner<Renderer*> node) : _type(Type::Primary), _token(token), _node(node) {
 }
 
-void NodeData::process(DevicePtr dptr, const FrameToken& token, CmdBufferRecorder<>& recorder) {
+NodeData::NodeData(const FrameToken& token, NotOwner<EndOfPipeline*> node) : _type(Type::End), _token(token), _node(node) {
+}
+
+void NodeData::process(DevicePtr dptr, CmdBufferRecorder<>& recorder) {
 	switch(_type) {
 		case Type::Node:
-			dynamic_cast<Node*>(_node)->process(token);
+			dynamic_cast<Node*>(_node)->process(_token);
 		break;
 
 		case Type::Secondary:
-			dynamic_cast<SecondaryRenderer*>(_node)->process(token, CmdBufferRecorder<CmdBufferUsage::Secondary>(dptr->create_secondary_cmd_buffer(), *_framebuffer));
+			dynamic_cast<SecondaryRenderer*>(_node)->process(_token, CmdBufferRecorder<CmdBufferUsage::Secondary>(dptr->create_secondary_cmd_buffer(), *_framebuffer));
 		break;
 
 		case Type::Primary:
-			dynamic_cast<Renderer*>(_node)->process(token, recorder);
+			dynamic_cast<Renderer*>(_node)->process(_token, recorder);
+		break;
+
+		case Type::End:
+			dynamic_cast<EndOfPipeline*>(_node)->process(_token, recorder);
 		break;
 
 		default:
@@ -37,7 +44,7 @@ void NodeData::process(DevicePtr dptr, const FrameToken& token, CmdBufferRecorde
 
 
 bool NodeData::operator==(const NodeData& other) const {
-	return _node == other._node && _framebuffer == other._framebuffer;
+	return _node == other._node && _token == other._token && _framebuffer == other._framebuffer;
 }
 
 bool NodeData::operator!=(const NodeData& other) const {
@@ -53,21 +60,21 @@ usize NodeData::Hash::operator()(const NodeData& data) const {
 
 
 
-DependencyGraph::DependencyGraph(Renderer* renderer) : _renderer(renderer) {
-	DependencyGraphNode(renderer, *this);
+DependencyGraph::DependencyGraph(const FrameToken& token, EndOfPipeline* renderer) : _root(token, renderer) {
+	DependencyGraphNode(_root, *this);
 }
 
-RecordedCmdBuffer<> DependencyGraph::build_command_buffer(DevicePtr dptr, const FrameToken& token) {
+RecordedCmdBuffer<> DependencyGraph::build_command_buffer(DevicePtr dptr) {
 	using namespace detail;
 
 	CmdBufferRecorder<> recorder = dptr->create_cmd_buffer();
 
-	core::Vector<NodeData> ready = {NodeData(_renderer)};
+	core::Vector<NodeData> ready = {_root};
 	core::Vector<NodeData> done;
 	auto left = _dependencies;
 
 	while(done.size() != _dependencies.size()) {
-		std::for_each(ready.begin(), ready.end(), [&](auto& d) { d.process(dptr, token, recorder); });
+		std::for_each(ready.begin(), ready.end(), [&](auto& d) { d.process(dptr, recorder); });
 		std::copy(ready.begin(), ready.end(), std::back_inserter(done));
 		ready.clear();
 
@@ -84,14 +91,13 @@ RecordedCmdBuffer<> DependencyGraph::build_command_buffer(DevicePtr dptr, const 
 			left.erase(left.find(node));
 		}
 	}
-
 	return recorder.end();
 }
 
 
 
 DependencyGraphNode::DependencyGraphNode(const NodeData& node, DependencyGraph& graph) : _dependencies(graph._dependencies[node]), _graph(graph) {
-	node._node->compute_dependencies(*this);
+	node._node->compute_dependencies(node._token, *this);
 }
 
 void DependencyGraphNode::add_node_dependency(const NodeData& data) {

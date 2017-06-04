@@ -35,7 +35,27 @@ namespace yave {
 
 class Window;
 
+
+static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit | ImageUsage::StorageBit;
+
+using SwapchainImageView = ImageView<SwapchainImageUsage>;
+
 class SwapchainImage : public Image<SwapchainImageUsage> {
+	public:
+		SwapchainImage(SwapchainImage&& other) {
+			swap(other);
+		}
+
+		SwapchainImage& operator=(SwapchainImage&& other) {
+			swap(other);
+			return *this;
+		}
+
+		~SwapchainImage() {
+			// prevents images to delete their vk::Image, this is already done by the swapchain
+			_image = VK_NULL_HANDLE;
+		}
+
 	private:
 		friend class Swapchain;
 
@@ -70,14 +90,6 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		usize image_count() const;
 
 		ImageFormat color_format() const;
-
-		/*const auto& image(usize i) const {
-			return _images[i];
-		}
-
-		auto& image(usize i) {
-			return _images[i];
-		}*/
 
 		const auto& images() const {
 			return _images;

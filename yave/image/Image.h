@@ -34,7 +34,7 @@ class Image : public ImageBase {
 		Image() = default;
 
 		Image(DevicePtr dptr, ImageFormat format, const math::Vec2ui& image_size) : ImageBase(dptr, format, Usage, image_size) {
-			static_assert(is_attachment_usage(Usage), "Texture images must be initilized.");
+			static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized.");
 		}
 
 		Image(DevicePtr dptr, const ImageData& data) : ImageBase(dptr, Usage, data.size(), data) {
@@ -53,6 +53,7 @@ class Image : public ImageBase {
 };
 
 using Texture = Image<ImageUsage::TextureBit>;
+using StorageTexture = Image<ImageUsage::TextureBit | ImageUsage::StorageBit>;
 using DepthAttachment = Image<ImageUsage::DepthBit>;
 using ColorAttachment = Image<ImageUsage::ColorBit>;
 using DepthTextureAttachment = Image<ImageUsage::DepthBit | ImageUsage::TextureBit>;

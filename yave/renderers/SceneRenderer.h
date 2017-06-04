@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class SceneRenderer : public DeviceLinked, public SecondaryRenderer {
+class SceneRenderer : public SecondaryRenderer {
 
 	public:
 		template<typename T>
@@ -39,7 +39,7 @@ class SceneRenderer : public DeviceLinked, public SecondaryRenderer {
 		const RecordedCmdBuffer<CmdBufferUsage::Secondary>& cmd_buffer() const;
 
 	protected:
-		void compute_dependencies(DependencyGraphNode& self) override;
+		void compute_dependencies(const FrameToken& token, DependencyGraphNode& self) override;
 		void process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&& recorder) override;
 
 	private:

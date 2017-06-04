@@ -25,19 +25,12 @@ SOFTWARE.
 namespace yave {
 
 GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
-		DeviceLinked(dptr),
-
+		Renderer(dptr),
 		_scene(dptr, node),
-
-		_size(size),
-		_depth(device(), depth_format, _size),
-		_diffuse(device(), diffuse_format, _size),
-		_normal(device(), normal_format, _size),
-		_gbuffer(device(), _depth, {_diffuse, _normal}) {
-}
-
-const math::Vec2ui& GBufferRenderer::size() const {
-	return _size;
+		_depth(device(), depth_format, size),
+		_color(device(), diffuse_format, size),
+		_normal(device(), normal_format, size),
+		_gbuffer(device(), _depth, {_color, _normal}) {
 }
 
 const SceneView& GBufferRenderer::scene_view() const {
@@ -48,20 +41,24 @@ const DepthTextureAttachment& GBufferRenderer::depth() const {
 	return _depth;
 }
 
-const ColorTextureAttachment& GBufferRenderer::diffuse() const {
-	return _diffuse;
+const ColorTextureAttachment& GBufferRenderer::color() const {
+	return _color;
 }
 
 const ColorTextureAttachment& GBufferRenderer::normal() const {
 	return _normal;
 }
 
+TextureView GBufferRenderer::view() const {
+	return _color;
+}
+
 void GBufferRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
 	recorder.execute(_scene.cmd_buffer(), _gbuffer);
 }
 
-void GBufferRenderer::compute_dependencies(DependencyGraphNode& self) {
-	self.add_dependency(&_scene, _gbuffer);
+void GBufferRenderer::compute_dependencies(const FrameToken& token, DependencyGraphNode& self) {
+	self.add_dependency(token, &_scene, _gbuffer);
 }
 
 }

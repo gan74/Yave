@@ -85,50 +85,34 @@ static auto create_lights(DevicePtr dptr, usize pts_count) {
 
 
 DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
-		DeviceLinked(gbuffer->device()),
-
+		Renderer(gbuffer->device()),
 		_gbuffer(gbuffer),
-
 		_lighting_shader(create_lighting_shader(device())),
 		_lighting_program(_lighting_shader),
-		_lights(create_lights(device(), 1)),
+		_acc_buffer(device(), ImageFormat(vk::Format::eR8G8B8A8Unorm), _gbuffer->size()),
+		_lights_buffer(create_lights(device(), 1)),
 		_camera_buffer(device(), 1),
-		_lighting_set(device(), {Binding(_gbuffer->depth()), Binding(_gbuffer->diffuse()), Binding(_gbuffer->normal()), Binding(_camera_buffer), Binding(_lights)}) {
+		_descriptor_set(device(), {Binding(_gbuffer->depth()), Binding(_gbuffer->color()), Binding(_gbuffer->normal()), Binding(_camera_buffer), Binding(_lights_buffer), Binding(StorageView(_acc_buffer))}) {
 
 	for(usize i = 0; i != 3; i++) {
 		if(size()[i] % _lighting_shader.local_size()[i]) {
-			log_msg("Compute local size at index "_s + i + " does not divide output buffer size.", LogType::Warning);
+			log_msg("Compute local size at index "_s + i + " does not divide output buffer size.", Log::Warning);
 		}
 	}
 }
 
-const math::Vec2ui& DeferredRenderer::size() const {
-	return _gbuffer->size();
+TextureView DeferredRenderer::view() const {
+	return _acc_buffer;
 }
 
-void DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
+void DeferredRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
 	_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
 
-	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub(3), 1), {_lighting_set, create_output_set(token.image_view)});
+	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub(3), 1), {_descriptor_set});
 }
 
-
-const DescriptorSet& DeferredRenderer::create_output_set(const StorageView& out) {
-	if(out.size() != size()) {
-		fatal("Invalid output image size.");
-	}
-
-	auto it = _output_sets.find(out.vk_image_view());
-	if(it == _output_sets.end()) {
-		it = _output_sets.insert(std::make_pair(out.vk_image_view(), DescriptorSet(device(), {
-				Binding(out)
-			}))).first;
-	}
-	return it->second;
-}
-
-void DeferredRenderer::compute_dependencies(DependencyGraphNode& self) {
-	self.add_dependency(_gbuffer.as_ptr());
+void DeferredRenderer::compute_dependencies(const FrameToken& token, DependencyGraphNode& self) {
+	self.add_dependency(token, _gbuffer.as_ptr());
 }
 
 }

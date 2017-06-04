@@ -32,35 +32,32 @@ SOFTWARE.
 
 namespace yave {
 
-class DeferredRenderer : public DeviceLinked, public Renderer {
+class DeferredRenderer : public Renderer {
 
 	public:
 		template<typename T>
 		using Ptr = core::Rc<T>;
-		using OutputView = decltype(FrameToken::image_view);
 
 		DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
 
-		const math::Vec2ui& size() const;
+		TextureView view() const override;
 
 	protected:
-		void compute_dependencies(DependencyGraphNode& self) override;
-		void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
+		void compute_dependencies(const FrameToken& token, DependencyGraphNode& self) override;
+		void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
 
 	private:
-		const DescriptorSet& create_output_set(const StorageView& out);
-
 		Ptr<GBufferRenderer> _gbuffer;
 
 		ComputeShader _lighting_shader;
 		ComputeProgram _lighting_program;
 
-		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights;
+		StorageTexture _acc_buffer;
 
+		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights_buffer;
 		TypedBuffer<uniform::Camera, BufferUsage::UniformBit> _camera_buffer;
 
-		DescriptorSet _lighting_set;
-		std::unordered_map<VkImageView, DescriptorSet> _output_sets;
+		DescriptorSet _descriptor_set;
 };
 
 }

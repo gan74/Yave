@@ -26,10 +26,10 @@ SOFTWARE.
 namespace yave {
 
 VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT, u64, usize, i32, const char* layer, const char* msg, void*) {
-	auto type = LogType::Info;
+	auto type = Log::Info;
 	if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
 		// breakpoint here
-		type = LogType::Error;
+		type = Log::Error;
 	}
 	log_msg(core::String() + "Vk: @[" + layer + "]: " + msg + "\n",  type);
 	return false;

@@ -61,7 +61,7 @@ static void wait(DevicePtr dptr, const CmdBufferData &data) {
 	core::Chrono c;
 	dptr->vk_device().waitForFences(data.fence, true, u64(-1));
 	if(c.elapsed().to_nanos()) {
-		log_msg(core::String() + "waited " + c.elapsed().to_micros() + "us for command buffer!", LogType::Warning);
+		log_msg(core::String() + "waited " + c.elapsed().to_micros() + "us for command buffer!", Log::Warning);
 	}
 }
 

@@ -1,7 +1,7 @@
 #ifndef YAVE_PIPELINE_DEPENDENCYGRAPH_H
 #define YAVE_PIPELINE_DEPENDENCYGRAPH_H
 
-#include "pipeline.h"
+#include "nodes.h"
 
 namespace yave {
 
@@ -11,17 +11,21 @@ struct NodeData {
 	enum class Type {
 		Node,
 		Secondary,
-		Primary
+		Primary,
+		End
 	};
 
-	NodeData(NotOwner<Node*> node);
-	NodeData(NotOwner<SecondaryRenderer*> node, const Framebuffer& framebuffer);
-	NodeData(NotOwner<Renderer*> node);
+	NodeData(const FrameToken& token, NotOwner<Node*> node);
+	NodeData(const FrameToken& token, NotOwner<SecondaryRenderer*> node, const Framebuffer& framebuffer);
+	NodeData(const FrameToken& token, NotOwner<Renderer*> node);
+	NodeData(const FrameToken& token, NotOwner<EndOfPipeline*> node);
 
-	void process(DevicePtr dptr, const FrameToken& token, CmdBufferRecorder<>& recorder);
+	void process(DevicePtr dptr, CmdBufferRecorder<>& recorder);
 
 
 	Type _type;
+	FrameToken _token;
+
 	NodeBase* _node = nullptr;
 	const Framebuffer* _framebuffer = nullptr;
 
@@ -39,12 +43,12 @@ class DependencyGraph : NonCopyable {
 	using NodeData = detail::NodeData;
 
 	public:
-		DependencyGraph(Renderer* renderer);
+		DependencyGraph(const FrameToken& token, EndOfPipeline* renderer);
 
-		RecordedCmdBuffer<> build_command_buffer(DevicePtr dptr, const FrameToken& token);
+		RecordedCmdBuffer<> build_command_buffer(DevicePtr dptr);
 
 	public:
-		Renderer* _renderer;
+		NodeData _root;
 		std::unordered_map<NodeData, core::Vector<NodeData>, NodeData::Hash> _dependencies;
 };
 

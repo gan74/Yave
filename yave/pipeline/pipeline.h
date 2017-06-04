@@ -27,12 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-namespace detail {
-struct NodeData;
-}
-
 class DependencyGraphNode;
-
 
 class NodeBase : NonCopyable {
 	public:
@@ -42,27 +37,7 @@ class NodeBase : NonCopyable {
 	protected:
 		friend class DependencyGraphNode;
 
-		virtual void compute_dependencies(DependencyGraphNode&) = 0;
-};
-
-class Node : public NodeBase {
-	protected:
-		friend class detail::NodeData;
-		virtual void process(const FrameToken&) = 0;
-};
-
-class SecondaryRenderer : public NodeBase {
-	protected:
-		friend class detail::NodeData;
-		virtual void process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&&) = 0;
-};
-
-class Renderer : public NodeBase {
-	protected:
-		friend class detail::NodeData;
-
-#warning Renderer does not need to store its own result while other nodes do
-		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
+		virtual void compute_dependencies(const FrameToken&, DependencyGraphNode&) = 0;
 };
 
 }

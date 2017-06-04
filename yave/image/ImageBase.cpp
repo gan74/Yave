@@ -165,7 +165,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 	_memory = std::get<1>(tpl);
 	_view = std::get<2>(tpl);
 
-	if(!is_attachment_usage(usage)) {
+	if(!is_attachment_usage(usage) && !is_storage_usage(usage)) {
 		fatal("Texture images must be initilized.");
 	}
 }

@@ -27,16 +27,21 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit | ImageUsage::StorageBit;
-
-using SwapchainImageView = ImageView<SwapchainImageUsage>;
-
 struct FrameToken {
 	const u64 id;
 	const u32 image_index;
 	const u32 image_count;
 
-	const SwapchainImageView image_view;
+	const ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit> image_view;
+
+
+	bool operator==(const FrameToken& other) const {
+		return id == other.id && image_view == other.image_view && image_index == other.image_index && image_count == other.image_count;
+	}
+
+	bool operator!=(const FrameToken& other) const {
+		return !operator==(other);
+	}
 };
 
 

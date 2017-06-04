@@ -38,6 +38,7 @@ SOFTWARE.
 #include <yave/bindings/DescriptorSet.h>
 #include <yave/scene/SceneView.h>
 
+#include <yave/renderers/ColorCorrectionRenderer.h>
 #include <yave/renderers/DeferredRenderer.h>
 #include <yave/renderers/SceneRenderer.h>
 #include <yave/pipeline/pipeline.h>
@@ -77,16 +78,15 @@ class YaveApp : NonCopyable {
 
 		CmdBufferPool<> command_pool;
 
-		core::Vector<AssetPtr<Material>> materials;
-
-		MeshInstancePool mesh_pool;
+		AssetPtr<Material> material;
 		Texture mesh_texture;
+		MeshInstancePool mesh_pool;
 
 		Scene* scene;
 		SceneView* scene_view;
 
 		Camera camera;
-		core::Rc<DeferredRenderer> renderer;
+		core::Rc<EndOfPipeline> renderer;
 };
 
 }

@@ -38,7 +38,7 @@ class CullingNode : public Node {
 
 
 	protected:
-		void compute_dependencies(DependencyGraphNode&) override;
+		void compute_dependencies(const FrameToken&, DependencyGraphNode&) override;
 		void process(const FrameToken&) override;
 
 	private:

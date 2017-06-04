@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class GBufferRenderer : public DeviceLinked, public Renderer {
+class GBufferRenderer : public Renderer {
 
 	public:
 		template<typename T>
@@ -38,26 +38,23 @@ class GBufferRenderer : public DeviceLinked, public Renderer {
 
 		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node);
 
-		const math::Vec2ui& size() const;
 		const SceneView& scene_view() const;
 
-
 		const DepthTextureAttachment& depth() const;
-		const ColorTextureAttachment& diffuse() const;
+		const ColorTextureAttachment& color() const;
 		const ColorTextureAttachment& normal() const;
 
+		TextureView view() const override;
 
 	protected:
-		void compute_dependencies(DependencyGraphNode& self) override;
+		void compute_dependencies(const FrameToken& token, DependencyGraphNode& self) override;
 		void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		SceneRenderer _scene;
 
-		math::Vec2ui _size;
-
 		DepthTextureAttachment _depth;
-		ColorTextureAttachment _diffuse;
+		ColorTextureAttachment _color;
 		ColorTextureAttachment _normal;
 
 		Framebuffer _gbuffer;

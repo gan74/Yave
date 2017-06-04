@@ -180,10 +180,6 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 }
 
 Swapchain::~Swapchain() {
-	// prevent images to delete their vk::Image, this is already done by the swapchain
-	for(auto& i : _images) {
-		i._image = VK_NULL_HANDLE;
-	}
 	destroy(_swapchain);
 	destroy(_surface);
 }

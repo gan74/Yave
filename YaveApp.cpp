@@ -42,7 +42,7 @@ YaveApp::~YaveApp() {
 	delete scene_view;
 	delete scene;
 
-	materials.clear();
+	material = decltype(material)();
 	mesh_texture = Texture();
 
 	delete swapchain;
@@ -77,8 +77,8 @@ void YaveApp::draw() {
 
 	auto cmd_buffer = [&]() {
 		core::DebugTimer p("process", core::Duration::milliseconds(4));
-		DependencyGraph graph(renderer.as_ptr());
-		return graph.build_command_buffer(&device, frame);
+		DependencyGraph graph(frame, renderer.as_ptr());
+		return graph.build_command_buffer(&device);
 	}();
 
 	{
@@ -115,13 +115,13 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 150;
+	float dist = 3.5;
 
-	auto cam_pos =
-			(math::rotation(angles.x(), math::Vec3(0, 0, -1)) *
-			math::rotation(angles.y(), math::Vec3(0, 1, 0))) * math::Vec4(dist, 0, 0, 1);
+	auto cam_tr = math::rotation(angles.x(), math::Vec3(0, 0, -1)) * math::rotation(angles.y(), math::Vec3(0, 1, 0));
+	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
+	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
-	camera.set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3()));
+	camera.set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3(), cam_up.sub(3)));
 	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.01f,  dist * 2));
 }
 
@@ -133,41 +133,25 @@ void YaveApp::create_assets() {
 			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
 			mesh_texture = Texture(&device, image);
 		}
-		for(usize i = 0; i != 128; ++i) {
-			materials << asset_ptr(Material(&device, MaterialData()
-					.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file")))
-					.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
-					.set_bindings({Binding(TextureView(mesh_texture))})
-				));
-		}
+		material = asset_ptr(Material(&device, MaterialData()
+				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file")))
+				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
+				.set_bindings({Binding(TextureView(mesh_texture))})
+			));
 	}
 
 
-	core::Vector<const char*> meshes = {"../tools/obj_to_ym/cube.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
 	core::Vector<StaticMesh> objects;
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(/*new StaticMeshInstance(&device,*/ m_data));
 
-		/*for(usize i = 0; i != 30; i++) {
-			auto m = StaticMesh(mesh, material);
-			m.set_position(math::Vec3(objects.size() * (objects.size() % 2 ? -4.0f : 4.0f), 0, 0));
-
-			objects << std::move(m);
-		}*/
-
-		usize max = 30;
-		for(usize x = 0; x != max; x++) {
-			for(usize y = 0; y != max; y++) {
-				for(usize z = 0; z != max; z++) {
-					auto m = StaticMesh(mesh, materials[rand() % materials.size()]);
-					m.set_position((math::Vec3(x, y, z) - math::Vec3(max) * 0.5f) * 5.0f);
-					objects << std::move(m);
-				}
-			}
-		}
+		objects << StaticMesh(mesh, material);
 	}
+
+
 	scene = new Scene(std::move(objects));
 	scene_view = new SceneView(*scene, camera);
 
@@ -176,7 +160,8 @@ void YaveApp::create_assets() {
 	{
 		auto culling = core::Rc<CullingNode>(new CullingNode(*scene_view));
 		auto gbuffer = core::Rc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
-		renderer = core::Rc<DeferredRenderer>(new DeferredRenderer(gbuffer));
+		auto deferred = core::Rc<Renderer>(new DeferredRenderer(gbuffer));
+		renderer = core::Rc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
 	}
 
 	//renderer = new DeferredRenderer(*scene_view, swapchain->size());
