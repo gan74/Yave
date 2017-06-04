@@ -27,12 +27,6 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-/*struct CloseOnExit {
-	~CloseOnExit() {
-		close_thread_pool();
-	}
-} close_on_exit;*/
-
 static bool run_workers = true;
 
 static std::mutex scheduler_mutex;
@@ -43,6 +37,41 @@ static usize concurency_level = 1;
 
 
 namespace detail {
+
+ParallelTask::ParallelTask(u32 n) : _i(0), _p(0), _n(n) {
+}
+
+ParallelTask::~ParallelTask() {
+}
+
+void ParallelTask::run() {
+	while(process_one());
+}
+
+bool ParallelTask::process_one() {
+	u32 i = _i++;
+	if(i >= _n) {
+		return false;
+	}
+	process(usize(i));
+	return !register_done();
+}
+
+void ParallelTask::wait() {
+	std::unique_lock<std::mutex> lock(_mutex);
+	_cond.wait(lock, [&]() { return _p == _n; });
+}
+
+bool ParallelTask::register_done() {
+	u32 p = ++_p;
+	if(p == _n) {
+		std::unique_lock<std::mutex> lock(_mutex);
+		_cond.notify_one();
+	}
+	return p >= _n;
+}
+
+
 
 void schedule_task(Arc<ParallelTask> task) {
 	static SpinLock global_sched_lock;
@@ -56,8 +85,8 @@ void schedule_task(Arc<ParallelTask> task) {
 	{
 		std::unique_lock<std::mutex> lock(scheduler_mutex);
 		scheduled_task = task;
-		scheduler_condition.notify_all();
 	}
+	scheduler_condition.notify_all();
 
 	task->run();
 	task->wait();
@@ -76,14 +105,14 @@ static void work() {
 		std::unique_lock<std::mutex> lock(scheduler_mutex);
 		auto task = scheduled_task;
 
-		if(task && task.as_ptr() != last) {
-			lock.unlock();
-			task->run();
-			last = task.as_ptr();
-		} else {
-			task = nullptr;
+		while(!task || task.as_ptr() == last) {
 			scheduler_condition.wait(lock);
+			task = scheduled_task;
 		}
+
+		lock.unlock();
+		task->run();
+		last = task.as_ptr();
 	}
 }
 

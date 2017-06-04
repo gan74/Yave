@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace y {
 
-enum class LogType {
+enum class Log {
 	Info,
 	Warning,
 	Error,
@@ -32,7 +32,7 @@ enum class LogType {
 	Perf
 };
 
-void log_msg(const char* msg, LogType type = LogType::Info);
+void log_msg(const char* msg, Log type = Log::Info);
 
 }
 

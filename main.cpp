@@ -29,7 +29,7 @@ int main() {
 	return 0;
 #endif
 
-	core::Vector<int> v(5000u, 0);
+	core::Vector<int> v(10000u, 0);
 	int index = 0;
 	for(auto& i : v) {
 		i = index++;
@@ -56,6 +56,15 @@ int main() {
 		concurrent::parallel_for_each(v.begin(), v.end(), [&](auto&& i) {
 			slow(i);
 		});
+	}
+
+	{
+		std::atomic<usize> sum(0);
+		DebugTimer timer("parallel_for_each sum(n)");
+		concurrent::parallel_for_each(v.begin(), v.end(), [&](auto&& i) {
+			sum += i;
+		});
+		std::cout << sum << std::endl;
 	}
 
 

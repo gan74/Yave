@@ -30,11 +30,11 @@ namespace y {
 
 static constexpr std::array<const char*, 5> log_type_str = {{"info", "warning", "error", "debug", "perf"}};
 
-void log_msg(const char* msg, LogType type) {
+void log_msg(const char* msg, Log type) {
 	static std::mutex lock;
 	std::lock_guard<decltype(lock)> _(lock);
 
-	(type == LogType::Error ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
+	(type == Log::Error ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
 }
 
 }

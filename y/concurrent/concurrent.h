@@ -37,42 +37,20 @@ namespace detail {
 
 class ParallelTask : NonCopyable {
 	public:
-		ParallelTask(u32 n) : _i(0), _p(0), _n(n) {
-		}
+		ParallelTask(u32 n);
 
-		virtual ~ParallelTask() {
-		}
+		virtual ~ParallelTask();
 
-		void run() {
-			while(process_one());
-		}
+		void run();
+		bool process_one();
 
-		bool process_one() {
-			u32 i = _i++;
-			if(i >= _n) {
-				return false;
-			}
-			process(usize(i));
-			return !register_done();
-		}
-
-		void wait() {
-			std::unique_lock<std::mutex> lock(_mutex);
-			_cond.wait(lock, [&]() { return _p == _n; });
-		}
+		void wait();
 
 	protected:
 		virtual void process(usize) = 0;
 
 	private:
-		bool register_done() {
-			u32 p = ++_p;
-			if(p == _n) {
-				std::unique_lock<std::mutex> lock(_mutex);
-				_cond.notify_one();
-			}
-			return p >= _n;
-		}
+		bool register_done();
 
 		std::atomic<u32> _i;
 		std::atomic<u32> _p;
@@ -101,14 +79,12 @@ void schedule_n(F&& func, u32 n) {
 	schedule_task(Arc<ParallelTask>(new Task(std::forward<F>(func), n)));
 }
 
-
-
 }
+
 
 void init_thread_pool();
 usize concurency();
 usize probable_block_count();
-
 
 
 

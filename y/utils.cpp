@@ -59,7 +59,7 @@ Nothing fatal(const char* msg, const char* file, int line) {
 	if(line) {
 		msg_str += " at line "_s + line;
 	}
-	log_msg(msg_str, LogType::Error);
+	log_msg(msg_str, Log::Error);
 	std::exit(1);
 }
 
