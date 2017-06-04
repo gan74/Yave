@@ -1,7 +1,6 @@
 
 use std::path::{Path};
 
-use mipmaping::*;
 use image::{GenericImage};
 use image;
 
@@ -44,10 +43,6 @@ impl ImageData {
 			index: 0,
 			data: self
 		}
-	}
-
-	pub fn mipmap(&self) -> Option<ImageData> {
-		mipmap(&self.data, self.size).map(|m| ImageData{ size: m.1, data: m.0})
 	}
 }
 

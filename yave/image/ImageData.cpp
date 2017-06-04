@@ -92,7 +92,7 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 		bool is_valid() const {
 			return magic == 0x65766179 &&
 				   type == 2 &&
-				   version == 1 &&
+				   version == 2 &&
 				   format > 0;
 		}
 	};
