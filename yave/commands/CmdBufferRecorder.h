@@ -27,58 +27,62 @@ SOFTWARE.
 
 namespace yave {
 
-namespace detail {
-
 template<CmdBufferUsage Usage>
-class RecorderConstructor : public CmdBufferRecorderBase {
+class CmdBufferRecorder : public PrimaryCmdBufferRecorderBase {
 	public:
-		RecorderConstructor() = default;
-
-		RecorderConstructor(CmdBuffer<Usage>&& buffer) : CmdBufferRecorderBase(std::move(buffer), Usage) {
-		}
-};
-
-template<>
-class RecorderConstructor<CmdBufferUsage::Secondary> : public CmdBufferRecorderBase {
-	public:
-		RecorderConstructor() = default;
-
-		RecorderConstructor(CmdBuffer<CmdBufferUsage::Secondary>&& buffer, const Framebuffer& framebuffer) : CmdBufferRecorderBase(std::move(buffer), framebuffer) {
+		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : PrimaryCmdBufferRecorderBase(std::move(buffer), Usage) {
 		}
 
-};
-
-}
-
-template<CmdBufferUsage Usage>
-class CmdBufferRecorder : public detail::RecorderConstructor<Usage> {
-
-	public:
-		using detail::RecorderConstructor<Usage>::RecorderConstructor;
-
-		CmdBufferRecorder(CmdBufferRecorder&& other) : detail::RecorderConstructor<Usage>() {
-			this->swap(other);
+		CmdBufferRecorder(CmdBufferRecorder&& other) : PrimaryCmdBufferRecorderBase() {
+			swap(other);
 		}
 
 		CmdBufferRecorder& operator=(CmdBufferRecorder&& other) {
-			this->swap(other);
+			swap(other);
 			return *this;
 		}
 
 		~CmdBufferRecorder() {
-			if(this->vk_cmd_buffer()) {
-				fatal("CmdBufferRecorder destroyed before end() was called.");
+			if(vk_cmd_buffer()) {
+				fatal("CmdBufferRecorder<> destroyed before end() was called.");
 			}
 		}
 
 		 RecordedCmdBuffer<Usage> end() {
-			this->end_render_pass();
-			this->vk_cmd_buffer().end();
-			return std::move(this->cmd_buffer());
+			end_render_pass();
+			vk_cmd_buffer().end();
+			return std::move(_cmd_buffer);
+		}
+};
+
+
+
+template<>
+class CmdBufferRecorder<CmdBufferUsage::Secondary> : public SecondaryCmdBufferRecorderBase {
+	public:
+		CmdBufferRecorder(CmdBuffer<CmdBufferUsage::Secondary>&& buffer, const Framebuffer& framebuffer) :
+				SecondaryCmdBufferRecorderBase(std::move(buffer), framebuffer) {
 		}
 
-	private:
+		CmdBufferRecorder(CmdBufferRecorder&& other) : SecondaryCmdBufferRecorderBase() {
+			swap(other);
+		}
 
+		CmdBufferRecorder& operator=(CmdBufferRecorder&& other) {
+			swap(other);
+			return *this;
+		}
+
+		~CmdBufferRecorder() {
+			if(vk_cmd_buffer()) {
+				fatal("CmdBufferRecorder<> destroyed before end() was called.");
+			}
+		}
+
+		 RecordedCmdBuffer<CmdBufferUsage::Secondary> end() {
+			vk_cmd_buffer().end();
+			return std::move(_cmd_buffer);
+		}
 };
 
 }

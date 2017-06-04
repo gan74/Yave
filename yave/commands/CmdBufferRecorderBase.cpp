@@ -28,35 +28,12 @@ static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 	return vk::CommandBufferUsageFlagBits(uenum(u) & ~uenum(CmdBufferUsage::Secondary));
 }
 
-CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage) : _cmd_buffer(std::move(base)), _render_pass(nullptr), _usage(usage) {
-
-	auto info = vk::CommandBufferBeginInfo()
-			.setFlags(cmd_usage(usage))
-		;
-
-	vk_cmd_buffer().begin(info);
-}
-
-CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer) : _cmd_buffer(std::move(base)), _render_pass(&framebuffer.render_pass()), _usage(CmdBufferUsage::Secondary) {
-	auto inherit_info = vk::CommandBufferInheritanceInfo()
-			.setFramebuffer(framebuffer.vk_framebuffer())
-			.setRenderPass(framebuffer.render_pass().vk_render_pass())
-		;
-
-	auto info = vk::CommandBufferBeginInfo()
-			.setFlags(cmd_usage(CmdBufferUsage::Secondary) | vk::CommandBufferUsageFlagBits::eRenderPassContinue)
-			.setPInheritanceInfo(&inherit_info)
-		;
-
-	vk_cmd_buffer().begin(info);
-
-	set_viewport(Viewport(framebuffer.size()));
+CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base) : _cmd_buffer(std::move(base)) {
 }
 
 void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
 	_cmd_buffer.swap(other._cmd_buffer);
 	std::swap(_render_pass, other._render_pass);
-	std::swap(_usage, other._usage);
 }
 
 vk::CommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
@@ -70,18 +47,10 @@ const RenderPass& CmdBufferRecorderBase::current_pass() const {
 	return *_render_pass;
 }
 
-void CmdBufferRecorderBase::end_render_pass() {
-	if(_render_pass && _usage != CmdBufferUsage::Secondary) {
-		vk_cmd_buffer().endRenderPass();
-		_render_pass = nullptr;
-	}
-}
-
 void CmdBufferRecorderBase::set_viewport(const Viewport& view) {
 	vk_cmd_buffer().setViewport(0, {vk::Viewport(view.offset.x(), view.offset.y(), view.extent.x(), view.extent.y(), view.depth.x(), view.depth.y())});
 	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(view.offset.x(), view.offset.y()), vk::Extent2D(view.extent.x(), view.extent.y()))});
 }
-
 
 void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
@@ -93,7 +62,60 @@ void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
 }
 
-void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+
+
+
+
+
+SecondaryCmdBufferRecorderBase::SecondaryCmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer) :
+			CmdBufferRecorderBase(std::move(base)) {
+
+	_render_pass = &framebuffer.render_pass();
+
+	auto inherit_info = vk::CommandBufferInheritanceInfo()
+			.setFramebuffer(framebuffer.vk_framebuffer())
+			.setRenderPass(framebuffer.render_pass().vk_render_pass())
+		;
+
+	auto info = vk::CommandBufferBeginInfo()
+			.setFlags(cmd_usage(CmdBufferUsage::Secondary) | vk::CommandBufferUsageFlagBits::eRenderPassContinue)
+			.setPInheritanceInfo(&inherit_info)
+		;
+
+	vk_cmd_buffer().begin(info);
+	set_viewport(Viewport(framebuffer.size()));
+}
+
+
+
+
+
+
+PrimaryCmdBufferRecorderBase::PrimaryCmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage) :
+		CmdBufferRecorderBase(std::move(base)) {
+
+	auto info = vk::CommandBufferBeginInfo()
+			.setFlags(cmd_usage(usage))
+		;
+
+	vk_cmd_buffer().begin(info);
+}
+
+void PrimaryCmdBufferRecorderBase::end_render_pass() {
+	if(_render_pass) {
+		vk_cmd_buffer().endRenderPass();
+		_render_pass = nullptr;
+	}
+}
+
+void PrimaryCmdBufferRecorderBase::execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer) {
+	bind_framebuffer(framebuffer, vk::SubpassContents::eSecondaryCommandBuffers);
+	vk_cmd_buffer().executeCommands({secondary.vk_cmd_buffer()});
+	end_render_pass();
+}
+
+
+void PrimaryCmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	end_render_pass();
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
@@ -104,19 +126,7 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
 }
 
-
-void CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer) {
-	bind_framebuffer(framebuffer, vk::SubpassContents::eInline);
-	set_viewport(Viewport(framebuffer.size()));
-}
-
-void CmdBufferRecorderBase::execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer) {
-	bind_framebuffer(framebuffer, vk::SubpassContents::eSecondaryCommandBuffers);
-	vk_cmd_buffer().executeCommands({secondary.vk_cmd_buffer()});
-	end_render_pass();
-}
-
-void CmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
+void PrimaryCmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
 	end_render_pass();
 
 	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
@@ -135,7 +145,13 @@ void CmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buff
 		);
 }
 
-void CmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
+void PrimaryCmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer) {
+	bind_framebuffer(framebuffer, vk::SubpassContents::eInline);
+	set_viewport(Viewport(framebuffer.size()));
+}
+
+
+void PrimaryCmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
 	auto barrier = create_image_barrier(
 			image.vk_image(),
 			image.format(),
@@ -152,7 +168,7 @@ void CmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageLayout s
 		);
 }
 
-void CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass) {
+void PrimaryCmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass) {
 	if(_render_pass) {
 		end_render_pass();
 	}
@@ -173,6 +189,5 @@ void CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer, vk:
 	vk_cmd_buffer().beginRenderPass(pass_info, subpass);
 	_render_pass = &framebuffer.render_pass();
 }
-
 
 }

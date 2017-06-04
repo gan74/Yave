@@ -38,44 +38,55 @@ SOFTWARE.
 namespace yave {
 
 class CmdBufferRecorderBase : NonCopyable {
-
 	public:
 		vk::CommandBuffer vk_cmd_buffer() const;
 
 		const RenderPass& current_pass() const;
 
+		void set_viewport(const Viewport& view);
+
+		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
+
+	protected:
+		CmdBufferRecorderBase() = default;
+		CmdBufferRecorderBase(CmdBufferBase&& base);
+
+		void swap(CmdBufferRecorderBase& other);
+
+		CmdBufferBase _cmd_buffer;
+		const RenderPass* _render_pass = nullptr;
+};
+
+
+
+class SecondaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
+	protected:
+		SecondaryCmdBufferRecorderBase() = default;
+		SecondaryCmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer);
+};
+
+
+class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
+	public:
 		void end_render_pass();
 
-		void set_viewport(const Viewport& view);
-		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
-		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
-
 		void bind_framebuffer(const Framebuffer& framebuffer);
+
 		void execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer);
+
+		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
 		void barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
 
 		// never use directly, needed for internal work and image loading
 		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
 
-
 	protected:
-		CmdBufferRecorderBase() = default;
-		CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage);
-		CmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer);
-
-		void swap(CmdBufferRecorderBase& other);
-
-		CmdBufferBase& cmd_buffer() {
-			return _cmd_buffer;
-		}
+		PrimaryCmdBufferRecorderBase() = default;
+		PrimaryCmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage);
 
 	private:
 		void bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass);
-
-		CmdBufferBase _cmd_buffer;
-		const RenderPass* _render_pass = nullptr;
-		CmdBufferUsage _usage;
 };
 
 }
