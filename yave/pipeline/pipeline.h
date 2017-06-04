@@ -23,22 +23,75 @@ SOFTWARE.
 #define YAVE_PIPELINE_PIPELINE_H
 
 #include <yave/commands/RecordedCmdBuffer.h>
-#include <yave/swapchain/FrameToken.h>
+
+#include "nodes.h"
 
 namespace yave {
 
-class DependencyGraphNode;
+RecordedCmdBuffer<> build_pipeline_command_buffer(const FrameToken& token, EndOfPipeline* pipeline);
 
-class NodeBase : NonCopyable {
+class RenderingNodeProcessor {
+	enum class Type {
+		Node,
+		Secondary,
+		Primary,
+		End
+	};
+
 	public:
-		virtual ~NodeBase() {
+		RenderingNodeProcessor(const FrameToken& token, NotOwner<Node*> node);
+		RenderingNodeProcessor(const FrameToken& token, NotOwner<SecondaryRenderer*> node, const Framebuffer& framebuffer);
+		RenderingNodeProcessor(const FrameToken& token, NotOwner<Renderer*> node);
+		RenderingNodeProcessor(const FrameToken& token, NotOwner<EndOfPipeline*> node);
+
+		void operator()(DevicePtr dptr, CmdBufferRecorder<>& recorder) const;
+
+		NodeBase* node() const;
+		const FrameToken& token() const;
+
+		bool operator==(const RenderingNodeProcessor& other) const;
+		bool operator!=(const RenderingNodeProcessor& other) const;
+
+		struct Hash {
+			usize operator()(const RenderingNodeProcessor& data) const;
+		};
+
+	private:
+		Type _type;
+		FrameToken _token;
+
+		NodeBase* _node = nullptr;
+		const Framebuffer* _framebuffer = nullptr;
+};
+
+
+class RenderingNode : NonCopyable {
+	using Processor = RenderingNodeProcessor;
+	using DependencyGraph = std::unordered_map<Processor, core::Vector<Processor>, Processor::Hash>;
+
+	public:
+		template<typename... Args>
+		void add_dependency(Args&&... args) {
+			add_node_dependency(Processor(std::forward<Args>(args)...));
 		}
 
-	protected:
-		friend class DependencyGraphNode;
 
-		virtual void compute_dependencies(const FrameToken&, DependencyGraphNode&) = 0;
+	private:
+		friend RecordedCmdBuffer<> build_pipeline_command_buffer(const FrameToken& token, EndOfPipeline* pipeline);
+
+		RenderingNode(Processor& node, DependencyGraph& graph);
+
+	private:
+		void add_node_dependency(Processor&& node);
+
+		core::Vector<RenderingNodeProcessor>& _dependencies;
+		DependencyGraph& _graph;
 };
+
+
+
+
+
 
 }
 

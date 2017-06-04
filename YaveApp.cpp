@@ -71,14 +71,13 @@ void YaveApp::draw() {
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
 
-	FrameToken frame = std::move(swapchain->next_frame(image_acquired_semaphore));
+	FrameToken frame = swapchain->next_frame(image_acquired_semaphore);
 
 	//renderer->update();
 
 	auto cmd_buffer = [&]() {
 		core::DebugTimer p("process", core::Duration::milliseconds(4));
-		DependencyGraph graph(frame, renderer.as_ptr());
-		return graph.build_command_buffer(&device);
+		return build_pipeline_command_buffer(frame, renderer.as_ptr());
 	}();
 
 	{

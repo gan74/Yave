@@ -111,7 +111,7 @@ void DeferredRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder)
 	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub(3), 1), {_descriptor_set});
 }
 
-void DeferredRenderer::compute_dependencies(const FrameToken& token, DependencyGraphNode& self) {
+void DeferredRenderer::compute_dependencies(const FrameToken& token, RenderingNode& self) {
 	self.add_dependency(token, _gbuffer.as_ptr());
 }
 

@@ -22,5 +22,130 @@ SOFTWARE.
 
 #include "pipeline.h"
 
+#include <unordered_set>
+
 namespace yave {
+
+RenderingNodeProcessor::RenderingNodeProcessor(const FrameToken& token, NotOwner<Node*> node) :
+		_type(Type::Node),
+		_token(token),
+		_node(node) {
+}
+
+RenderingNodeProcessor::RenderingNodeProcessor(const FrameToken& token, NotOwner<SecondaryRenderer*> node, const Framebuffer& framebuffer) :
+		_type(Type::Secondary),
+		_token(token),
+		_node(node),
+		_framebuffer(&framebuffer) {
+}
+
+RenderingNodeProcessor::RenderingNodeProcessor(const FrameToken& token, NotOwner<Renderer*> node) :
+		_type(Type::Primary),
+		_token(token),
+		_node(node) {
+}
+
+RenderingNodeProcessor::RenderingNodeProcessor(const FrameToken& token, NotOwner<EndOfPipeline*> node) :
+		_type(Type::End),
+		_token(token),
+		_node(node) {
+}
+
+NodeBase* RenderingNodeProcessor::node() const {
+	return _node;
+}
+
+const FrameToken& RenderingNodeProcessor::token() const {
+	return _token;
+}
+
+bool RenderingNodeProcessor::operator==(const RenderingNodeProcessor& other) const {
+	return _node == other._node && _token == other._token && _framebuffer == other._framebuffer;
+}
+
+bool RenderingNodeProcessor::operator!=(const RenderingNodeProcessor& other) const {
+	return !operator==(other);
+}
+
+usize RenderingNodeProcessor::Hash::operator()(const RenderingNodeProcessor& data) const {
+	return hash<std::initializer_list<const void*>>({reinterpret_cast<const void*>(data._framebuffer), reinterpret_cast<const void*>(data._node)});
+}
+
+
+void RenderingNodeProcessor::operator()(DevicePtr dptr, CmdBufferRecorder<>& recorder) const {
+	switch(_type) {
+		case Type::Node:
+			dynamic_cast<Node*>(_node)->process(_token);
+		break;
+
+		case Type::Secondary:
+			dynamic_cast<SecondaryRenderer*>(_node)->process(_token, CmdBufferRecorder<CmdBufferUsage::Secondary>(dptr->create_secondary_cmd_buffer(), *_framebuffer));
+		break;
+
+		case Type::Primary:
+			dynamic_cast<Renderer*>(_node)->process(_token, recorder);
+		break;
+
+		case Type::End:
+			dynamic_cast<EndOfPipeline*>(_node)->process(_token, recorder);
+		break;
+
+		default:
+			fatal("Unknown dependency type.");
+	}
+}
+
+
+
+RenderingNode::RenderingNode(Processor& node, DependencyGraph& graph) : _dependencies(graph[node]), _graph(graph) {
+	node.node()->compute_dependencies(node.token(), *this);
+}
+
+void RenderingNode::add_node_dependency(Processor&& node) {
+	_dependencies.push_back(node);
+	if(_graph.find(node) == _graph.end()) {
+		RenderingNode(node, _graph);
+	}
+}
+
+
+
+
+RecordedCmdBuffer<> build_pipeline_command_buffer(const FrameToken& token, EndOfPipeline* pipeline) {
+	using Processor = RenderingNodeProcessor;
+	using DependencyGraph = std::unordered_map<Processor, core::Vector<Processor>, Processor::Hash>;
+
+
+	DependencyGraph graph;
+	Processor root(token, pipeline);
+
+	RenderingNode(root, graph);
+
+	DevicePtr dptr = pipeline->device();
+	CmdBufferRecorder<> recorder = dptr->create_cmd_buffer();
+
+	std::unordered_set<Processor, Processor::Hash> done;
+
+	while(done.find(root) == done.end()) {
+		bool dead_lock = true;
+		for(auto& node : graph) {
+			auto& dependencies = node.second;
+
+			if(std::all_of(dependencies.begin(), dependencies.end(), [&](const auto& node) { return done.find(node) != done.end(); })) {
+				node.first(dptr, recorder);
+				dead_lock = false;
+				done.insert(node.first);
+				graph.erase(graph.find(node.first));
+				break;
+			}
+		}
+		if(dead_lock) {
+			fatal("Invalid pipeline graph: unable to find any ready node.");
+		}
+	}
+
+	return recorder.end();
+}
+
+
 }

@@ -1,7 +1,5 @@
 #include "ColorCorrectionRenderer.h"
 
-#include <yave/pipeline/DependencyGraph.h>
-
 #include <y/io/File.h>
 
 namespace yave {
@@ -12,12 +10,13 @@ static ComputeShader create_correction_shader(DevicePtr dptr) {
 
 
 ColorCorrectionRenderer::ColorCorrectionRenderer(const Ptr<Renderer>& renderer) :
+		EndOfPipeline(renderer->device()),
 		_renderer(renderer),
-		_correction_shader(create_correction_shader(_renderer->device())),
+		_correction_shader(create_correction_shader(device())),
 		_correction_program(_correction_shader) {
 }
 
-void ColorCorrectionRenderer::compute_dependencies(const FrameToken& token, DependencyGraphNode& self) {
+void ColorCorrectionRenderer::compute_dependencies(const FrameToken& token, RenderingNode& self) {
 	self.add_dependency(token, _renderer.as_ptr());
 }
 

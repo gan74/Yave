@@ -57,7 +57,7 @@ void GBufferRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) 
 	recorder.execute(_scene.cmd_buffer(), _gbuffer);
 }
 
-void GBufferRenderer::compute_dependencies(const FrameToken& token, DependencyGraphNode& self) {
+void GBufferRenderer::compute_dependencies(const FrameToken& token, RenderingNode& self) {
 	self.add_dependency(token, &_scene, _gbuffer);
 }
 

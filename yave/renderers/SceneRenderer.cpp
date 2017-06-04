@@ -114,7 +114,7 @@ void SceneRenderer::submit_batches(CmdBufferRecorder<CmdBufferUsage::Secondary>&
 	}
 }
 
-void SceneRenderer::compute_dependencies(const FrameToken& token, DependencyGraphNode& self) {
+void SceneRenderer::compute_dependencies(const FrameToken& token, RenderingNode& self) {
 	self.add_dependency(token, _cull.as_ptr());
 }
 

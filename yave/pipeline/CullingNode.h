@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_PIPELINE_CULLINGNODE_H
 
 #include <yave/scene/SceneView.h>
-#include "DependencyGraph.h"
+#include "pipeline.h"
 
 namespace yave {
 
@@ -38,7 +38,7 @@ class CullingNode : public Node {
 
 
 	protected:
-		void compute_dependencies(const FrameToken&, DependencyGraphNode&) override;
+		void compute_dependencies(const FrameToken&, RenderingNode&) override;
 		void process(const FrameToken&) override;
 
 	private:
