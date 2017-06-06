@@ -35,15 +35,15 @@ inline void hash_combine(T& seed, T value) {
 }
 
 template<typename T, typename Hasher = std::hash<T>>
-inline auto hash(const T& t, std::false_type, const Hasher& hasher = Hasher()) {
+inline auto hash(const T& t, const Hasher& hasher = Hasher()) {
 	return hasher(t);
 }
 
 template<typename T, typename Hasher = std::hash<typename T::value_type>>
-inline auto hash(const T& collection, std::true_type, const Hasher& hasher = Hasher()) {
+inline auto hash_iterable(const T& collection, const Hasher& hasher = Hasher()) {
 	decltype(hasher(*collection.begin())) seed = 0;
 	for(const auto& i : collection) {
-		detail::hash_combine(seed, hash(i, std::false_type(), hasher));
+		detail::hash_combine(seed, hash(i, hasher));
 	}
 	return seed;
 }
@@ -52,7 +52,11 @@ inline auto hash(const T& collection, std::true_type, const Hasher& hasher = Has
 
 template<typename T>
 inline auto hash(const T& t) {
-	return detail::hash(t, is_iterable<T>());
+	if constexpr(is_iterable<T>::value) {
+		return detail::hash_iterable(t);
+	} else {
+		return detail::hash(t);
+	}
 }
 
 struct hash_t {	

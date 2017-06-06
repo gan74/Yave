@@ -82,21 +82,14 @@ struct has_reserve {
 	using type = decltype(test<T>(nullptr));
 };
 
-template<typename T>
-void try_reserve(T& t, usize size, std::true_type) {
-	t.reserve(size);
-}
-
-template<typename T>
-void try_reserve(T&, usize, std::false_type) {
-}
 }
 
 template<typename T>
 void try_reserve(T& t, usize size) {
-	detail::try_reserve(t, size, typename detail::has_reserve<T>::type());
+	if constexpr(detail::has_reserve<T>::type::value) {
+		t.reserve(size);
+	}
 }
-
 
 }
 

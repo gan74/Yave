@@ -89,7 +89,7 @@ class Decoder {
 			}
 			u32 cap = c.unwrap();
 			t.set_min_capacity(cap);
-			if(is_readable<T>::value) {
+			if constexpr(is_readable<T>::value) {
 				std::fill_n(std::back_inserter(t), cap, T());
 				_inner->read(t.begin(), cap * sizeof(T));
 			} else {

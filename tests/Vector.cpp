@@ -119,14 +119,14 @@ y_test_func("Vector creation") {
 
 y_test_func("Vector operator=") {
 	Vector<int> vec = {1, 2, 3, 4};
-	y_test_assert(vec == vector({1, 2, 3, 4}));
+	y_test_assert(vec == Vector({1, 2, 3, 4}));
 
 	vec = {};
 	y_test_assert(vec.size() == 0);
 
 	vec = {1, 2, 3};
 	vec.push_back({4, 5});
-	y_test_assert(vec == vector({1, 2, 3, 4, 5}));
+	y_test_assert(vec == Vector({1, 2, 3, 4, 5}));
 }
 
 y_test_func("Vector push_back") {
@@ -171,13 +171,13 @@ y_test_func("Vector erase_unordered") {
 		vec.push_back(i);
 	}
 	vec.erase_unordered(vec.begin());
-	y_test_assert(vec == vector({9, 1, 2, 3, 4, 5, 6, 7, 8}));
+	y_test_assert(vec == Vector({9, 1, 2, 3, 4, 5, 6, 7, 8}));
 
 	vec.erase_unordered(vec.begin() + 4);
-	y_test_assert(vec == vector({9, 1, 2, 3, 8, 5, 6, 7}));
+	y_test_assert(vec == Vector({9, 1, 2, 3, 8, 5, 6, 7}));
 
 	vec.erase_unordered(vec.end() - 1);
-	y_test_assert(vec == vector({9, 1, 2, 3, 8, 5, 6}));
+	y_test_assert(vec == Vector({9, 1, 2, 3, 8, 5, 6}));
 }
 
 y_test_func("Vector shrink") {
@@ -233,7 +233,7 @@ y_test_func("Vector iteration") {
 }
 
 y_test_func("Vector vector(...)") {
-	auto vec = vector({1, 2, 3, 4, 5, 6, 7, 8});
+	auto vec = Vector({1, 2, 3, 4, 5, 6, 7, 8});
 	y_test_assert(vec.capacity() >= 8);
 	y_test_assert(vec.size() == 8);
 
@@ -264,9 +264,9 @@ y_test_func("Vector dtors") {
 }
 
 y_test_func("SmallVector allocation") {
-	SmallVec<int, 4> vec = vector({1, 2, 3, 4});
+	SmallVec<int, 4> vec = Vector({1, 2, 3, 4});
 	y_test_assert(vec.capacity() == 4);
-	y_test_assert(vec == vector({1, 2, 3, 4}));
+	y_test_assert(vec == Vector({1, 2, 3, 4}));
 }
 
 y_test_func("SmallVector size") {

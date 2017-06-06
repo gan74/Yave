@@ -68,8 +68,7 @@ Reader::Result BuffReader::read(void* data, usize bytes) {
 		_offset += in_buffer;
 		_used -= in_buffer;
 
-		usize remaining = bytes - in_buffer;
-		if(remaining) {
+		if(usize remaining = bytes - in_buffer; remaining) {
 			u8* data8 = reinterpret_cast<u8*>(data);
 			if(remaining > _size) {
 				return in_buffer + _inner->read(data8 + in_buffer, remaining).error_or(remaining);

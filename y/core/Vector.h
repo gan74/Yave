@@ -303,7 +303,7 @@ class Vector : ResizePolicy, Allocator {
 
 	private:
 		void move_range(data_type* dst, data_type* src, usize n) {
-			if(std::is_pod<data_type>::value) {
+			if constexpr(std::is_pod<data_type>::value) {
 				memmove(dst, src, sizeof(data_type) * n);
 			} else {
 				for(; n; --n) {
@@ -363,11 +363,6 @@ inline auto vector_with_capacity(usize cap) {
 	auto vec = Vector<T>();
 	vec.set_min_capacity(cap);
 	return vec;
-}
-
-template<typename T>
-inline auto vector(std::initializer_list<T> lst) {
-	return Vector<T>(lst);
 }
 
 

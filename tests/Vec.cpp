@@ -58,21 +58,21 @@ y_test_func("Vec cross") {
 	y_test_assert(a.cross(b) == Vec<3>(0, 0, 1));
 }
 
-y_test_func("Vec vec(...)") {
-	auto v = vec(1, vec(2, 3), 4, vec(5));
+y_test_func("Vec Vec(...)") {
+	auto v = Vec(1, Vec(2, 3), 4, Vec(5));
 	y_test_assert(v.x() == 1 && v.y() == 2 && v.z() == 3 && v.w() == 4 && v[4] == 5);
 }
 
 y_test_func("Vec operators") {
-	y_test_assert(vec(1, 2, 3) + 1 == vec(2, 3, 4));
-	y_test_assert(vec(1, 2, 3) * 2 == vec(2, 4, 6));
-	y_test_assert(vec(1, 2, 3) - 1 == vec(0, 1, 2));
-	y_test_assert(vec(2, 4, 6) / 2 == vec(1, 2, 3));
+	y_test_assert(Vec(1, 2, 3) + 1 == Vec(2, 3, 4));
+	y_test_assert(Vec(1, 2, 3) * 2 == Vec(2, 4, 6));
+	y_test_assert(Vec(1, 2, 3) - 1 == Vec(0, 1, 2));
+	y_test_assert(Vec(2, 4, 6) / 2 == Vec(1, 2, 3));
 
-	y_test_assert(vec(1, 2, 3) / 2 == vec(0, 1, 1));
-	y_test_assert(vec(1, 2, 3) * 0.5 == vec(0.5, 1, 1.5));
+	y_test_assert(Vec(1, 2, 3) / 2 == Vec(0, 1, 1));
+	y_test_assert(Vec(1, 2, 3) * 0.5 == Vec(0.5, 1, 1.5));
 
-	static_assert(std::is_same<decltype(vec(1, 2, 3) / 2), Vec<3, int>>::value, "Invalid Vec operator coercion");
-	static_assert(std::is_same<decltype(vec(1, 2, 3) * 0.5), Vec<3, double>>::value, "Invalid Vec operator coercion");
-	static_assert(std::is_same<decltype(vec(1, 2.0, 3) * 2), Vec<3, double>>::value, "Invalid Vec operator coercion");
+	static_assert(std::is_same<decltype(Vec(1, 2, 3) / 2), Vec<3, int>>::value, "Invalid Vec operator coercion");
+	static_assert(std::is_same<decltype(Vec(1, 2, 3) * 0.5), Vec<3, double>>::value, "Invalid Vec operator coercion");
+	static_assert(std::is_same<decltype(Vec(1, 2.0, 3) * 2), Vec<3, double>>::value, "Invalid Vec operator coercion");
 }

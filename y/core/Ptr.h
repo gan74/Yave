@@ -93,16 +93,11 @@ class Ptr : NonCopyable {
 		Owner<pointer> _ptr = nullptr;
 
 		void destroy() {
-			destroy(std::is_array<T>());
-		}
-
-	private:
-		void destroy(std::false_type) {
-			delete _ptr;
-		}
-
-		void destroy(std::true_type) {
-			delete[] _ptr;
+			if constexpr(std::is_array<T>()) {
+				delete[] _ptr;
+			} else {
+				delete _ptr;
+			}
 		}
 };
 
@@ -252,16 +247,6 @@ class Rc : public detail::Ptr<T> {
 
 		C* _count = nullptr;
 };
-
-template<typename T>
-inline auto unique(T&& t) {
-	return Unique<typename std::remove_reference<T>::type>(std::forward<T>(t));
-}
-
-template<typename T>
-inline auto rc(T&& t) {
-	return Rc<typename std::remove_reference<T>::type>(std::forward<T>(t));
-}
 
 }
 }

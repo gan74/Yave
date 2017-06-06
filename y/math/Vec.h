@@ -92,12 +92,18 @@ class Vec
 			std::copy(v.begin(), v.end(), begin());
 		}
 
+		template<usize S>
+		Vec(const T(&v)[S]) {
+			static_assert(S == N || !S, "Wrong number of arguments");
+			std::copy(std::begin(v), std::end(v), begin());
+		}
+
         Vec(detail::identity_t&&) : Vec() {
 		}
 
 		Vec() = default;
-		Vec(const Vec &) = default;
-		Vec& operator=(const Vec &) = default;
+		Vec(const Vec&) = default;
+		Vec& operator=(const Vec&) = default;
 
 		T length2() const {
 			T sum = 0;
@@ -401,9 +407,6 @@ struct VecCoerce<T, U, Types...> {
 	using type = typename VecCoerce<left, right>::type;
 };
 
-
-
-
 template<typename... Types>
 struct VecLen {
 };
@@ -427,21 +430,17 @@ template<typename T, typename U, typename... Types>
 struct VecLen<T, U, Types...> {
 	static constexpr usize value = VecLen<T>::value + VecLen<U, Types...>::value;
 };
-
-
 }
 
 template<typename... Args>
-auto vec(Args... args) {
-	return Vec<detail::VecLen<Args...>::value, typename detail::VecCoerce<Args...>::type>(args...);
-}
+Vec(Args... args) -> Vec<detail::VecLen<Args...>::value, typename detail::VecCoerce<Args...>::type>;
 
 
-static_assert(std::is_same<decltype(vec(1, 2, 3)), Vec<3, int>>::value, "Invalid vec(...) return type");
-static_assert(std::is_same<decltype(vec(1, 2.0)), Vec<2, double>>::value, "Invalid vec(...) return type");
-static_assert(std::is_same<decltype(vec(1, 2.0f, 0)), Vec<3, float>>::value, "Invalid vec(...) return type");
-static_assert(std::is_same<decltype(vec(1, vec(2.0, 3))), Vec<3, double>>::value, "Invalid vec(...) return type");
-static_assert(std::is_same<decltype(vec(vec(1, 2))), Vec<2, int>>::value, "Invalid vec(...) return type");
+static_assert(std::is_same<decltype(Vec(1, 2, 3)), Vec<3, int>>::value, "Invalid vec(...) return type");
+static_assert(std::is_same<decltype(Vec(1, 2.0)), Vec<2, double>>::value, "Invalid vec(...) return type");
+static_assert(std::is_same<decltype(Vec(1, 2.0f, 0)), Vec<3, float>>::value, "Invalid vec(...) return type");
+static_assert(std::is_same<decltype(Vec(1, Vec(2.0, 3))), Vec<3, double>>::value, "Invalid vec(...) return type");
+static_assert(std::is_same<decltype(Vec(1, 2)), Vec<2, int>>::value, "Invalid vec(...) return type");
 
 
 

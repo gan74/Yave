@@ -38,6 +38,14 @@ class Range {
 		Range(const Iter& b, const Iter& e) : _beg(b), _end(e) {
 		}
 
+		template<typename Coll>
+		Range(const Coll& col) : Range(col.begin(), col.end()) {
+		}
+
+		template<typename Coll>
+		Range(Coll& col) : Range(col.begin(), col.end()) {
+		}
+
 		const Iter& begin() const {
 			return _beg;
 		}
@@ -55,15 +63,11 @@ class Range {
 		Iter _end;
 };
 
-template<typename Iter>
-inline auto range(const Iter& b, const Iter& e) {
-	return Range<Iter>(b, e);
-}
+template<typename Coll>
+Range(const Coll& col) -> Range<typename Coll::const_iterator>;
 
 template<typename Coll>
-inline auto range(Coll&& c) {
-	return range(c.begin(), c.end());
-}
+Range(Coll& col) -> Range<typename Coll::iterator>;
 
 }
 }

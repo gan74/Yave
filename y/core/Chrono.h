@@ -128,8 +128,7 @@ class DebugTimer : NonCopyable {
 		}
 
 		~DebugTimer() {
-			auto time = _chrono.elapsed();
-			if(time >= _minimum) {
+			if(auto time = _chrono.elapsed(); time >= _minimum) {
 				log_msg(_msg + ": " + time.to_millis() + "ms", Log::Perf);
 			}
 		}
