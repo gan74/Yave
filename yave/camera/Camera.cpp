@@ -51,7 +51,7 @@ static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj) {
 Camera::Camera() {
 	float ratio = 4.0f / 3.0f;
 	set_proj(math::perspective(math::to_rad(45), ratio, 0.001f, 10.f));
-	set_view(math::look_at(math::Vec3(2.0, 0, 0), math::Vec3()));
+	set_view(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3()));
 }
 
 void Camera::set_view(const math::Matrix4<>& view) {

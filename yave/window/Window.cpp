@@ -30,7 +30,7 @@ const char class_name[] = "Yave";
 void mouse_event(Window* window, UINT uMsg, POINTS pt) {
 	if(window->mouse_handler()) {
 		auto handler = window->mouse_handler();
-		auto pos = math::vec(pt.x, window->size().y() - usize(pt.y));
+		math::Vec2ui pos = {pt.x, window->size().y() - usize(pt.y)};
 		switch(uMsg) {
 			case WM_LBUTTONDOWN:
 			case WM_RBUTTONDOWN:

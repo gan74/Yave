@@ -60,9 +60,9 @@ static auto create_lights(DevicePtr dptr, usize pts_count) {
 
 	for(usize i = 0; i != pts_count; i++) {
 		lights << uniform::Light {
-				math::Vec3(pos_distr(gen), pos_distr(gen), pos_distr(gen)),
+				{pos_distr(gen), pos_distr(gen), pos_distr(gen)},
 				2,
-				math::Vec3(distr(gen), distr(gen), distr(gen)),
+				{distr(gen), distr(gen), distr(gen)},
 				uniform::LightType::Point
 			};
 	}

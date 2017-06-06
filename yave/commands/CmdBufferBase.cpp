@@ -48,8 +48,12 @@ void CmdBufferBase::submit(vk::Queue queue) {
 	device()->vk_device().resetFences(_data.fence);
 	queue.submit(vk::SubmitInfo()
 			.setCommandBufferCount(1)
-			.setPCommandBuffers(&_data.cmd_buffer), _data.fence
-		);
+			.setPCommandBuffers(&_data.cmd_buffer),
+		_data.fence);
+}
+
+void CmdBufferBase::wait() const {
+	device()->vk_device().waitForFences({_data.fence}, true, u64(-1));
 }
 
 DevicePtr CmdBufferBase::device() const {

@@ -28,7 +28,7 @@ SpirVData SpirVData::from_file(io::ReaderRef reader) {
 	core::Vector<u8> content;
 	reader->read_all(content);
 	core::Vector<u32> spriv32(content.size() / 4, 0);
-	memcpy(spriv32.begin(), content.begin(), content.size());
+	std::memcpy(spriv32.begin(), content.begin(), content.size());
 	return SpirVData(spriv32);
 }
 

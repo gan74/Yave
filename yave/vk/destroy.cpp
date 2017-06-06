@@ -111,6 +111,12 @@ void destroy(DevicePtr dptr, vk::DescriptorSetLayout layout) {
 	}
 }
 
+void destroy(DevicePtr dptr, vk::Semaphore semaphore) {
+	/*if(dptr)*/ {
+		dptr->vk_device().destroySemaphore(semaphore);
+	}
+}
+
 
 
 

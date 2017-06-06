@@ -31,6 +31,12 @@ static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base) : _cmd_buffer(std::move(base)) {
 }
 
+CmdBufferRecorderBase::~CmdBufferRecorderBase() {
+	if(vk_cmd_buffer()) {
+		fatal("CmdBufferRecorderBase<> destroyed before end() was called.");
+	}
+}
+
 void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
 	_cmd_buffer.swap(other._cmd_buffer);
 	std::swap(_render_pass, other._render_pass);
@@ -108,7 +114,13 @@ void PrimaryCmdBufferRecorderBase::end_render_pass() {
 	}
 }
 
-void PrimaryCmdBufferRecorderBase::execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer) {
+void PrimaryCmdBufferRecorderBase::execute(RecordedCmdBuffer<CmdBufferUsage::Secondary>&& secondary, const Framebuffer& framebuffer) {
+	if(secondary.vk_fence()) {
+#warning secondary command buffer not simultaneous
+		fatal("Secondary command buffers can only be executed by one primary command buffer at a time.");
+	}
+	secondary._data.fence = _cmd_buffer.vk_fence();
+
 	bind_framebuffer(framebuffer, vk::SubpassContents::eSecondaryCommandBuffers);
 	vk_cmd_buffer().executeCommands({secondary.vk_cmd_buffer()});
 	end_render_pass();

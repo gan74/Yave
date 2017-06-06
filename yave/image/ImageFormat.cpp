@@ -32,7 +32,6 @@ vk::Format ImageFormat::vk_format() const {
 }
 
 usize ImageFormat::bit_per_pixel() const {
-	using vk::Format;
 	switch(_format) {
 		case vk::Format::eBc1RgbUnormBlock:
 		case vk::Format::eBc1RgbSrgbBlock:

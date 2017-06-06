@@ -42,12 +42,6 @@ class CmdBufferRecorder : public PrimaryCmdBufferRecorderBase {
 			return *this;
 		}
 
-		~CmdBufferRecorder() {
-			if(vk_cmd_buffer()) {
-				fatal("CmdBufferRecorder<> destroyed before end() was called.");
-			}
-		}
-
 		 RecordedCmdBuffer<Usage> end() {
 			end_render_pass();
 			vk_cmd_buffer().end();
@@ -71,12 +65,6 @@ class CmdBufferRecorder<CmdBufferUsage::Secondary> : public SecondaryCmdBufferRe
 		CmdBufferRecorder& operator=(CmdBufferRecorder&& other) {
 			swap(other);
 			return *this;
-		}
-
-		~CmdBufferRecorder() {
-			if(vk_cmd_buffer()) {
-				fatal("CmdBufferRecorder<> destroyed before end() was called.");
-			}
 		}
 
 		 RecordedCmdBuffer<CmdBufferUsage::Secondary> end() {

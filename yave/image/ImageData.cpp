@@ -54,8 +54,8 @@ usize ImageData::mipmaps() const {
 }
 
 math::Vec2ui ImageData::mip_size(usize lvl) const {
-	usize factor = 1 << lvl;
-	return {std::max(usize(1), _size.x() / factor), std::max(usize(1), _size.y() / factor)};
+	u32 factor = 1 << lvl;
+	return {std::max(u32(1), _size.x() / factor), std::max(u32(1), _size.y() / factor)};
 }
 
 const math::Vec2ui& ImageData::size() const {

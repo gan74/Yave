@@ -115,8 +115,8 @@ Device::~Device() {
 	_sampler = Sampler();
 
 	// we need to destroy the pools before the device
-	_disposable_cmd_pool = CmdBufferPool<CmdBufferUsage::Disposable>();
 	_secondary_cmd_pool = CmdBufferPool<CmdBufferUsage::Secondary>();
+	_disposable_cmd_pool = CmdBufferPool<CmdBufferUsage::Disposable>();
 	_primary_cmd_pool = CmdBufferPool<CmdBufferUsage::Normal>();
 
 	delete _descriptor_layout_pool;

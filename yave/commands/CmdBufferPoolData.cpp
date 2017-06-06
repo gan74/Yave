@@ -50,14 +50,27 @@ static CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool, CmdBufferU
 			.setCommandPool(pool)
 			.setLevel(cmd_level(usage))
 		).back();
-	auto fence = dptr->vk_device().createFence(vk::FenceCreateInfo()
-			.setFlags(vk::FenceCreateFlagBits::eSignaled)
-		);
+
+	auto fence =
+		(usage == CmdBufferUsage::Secondary)
+			? vk::Fence()
+			: dptr->vk_device().createFence(vk::FenceCreateInfo()
+					.setFlags(vk::FenceCreateFlagBits::eSignaled)
+				);
 
 	return CmdBufferData{buffer, fence};
 }
 
-static void wait(DevicePtr dptr, const CmdBufferData &data) {
+
+
+static void reset(CmdBufferData& data, CmdBufferUsage usage) {
+	if(usage == CmdBufferUsage::Secondary) {
+		data.fence = vk::Fence();
+	}
+	data.cmd_buffer.reset(vk::CommandBufferResetFlags());
+}
+
+/*static void wait(DevicePtr dptr, const CmdBufferData &data) {
 	core::Chrono c;
 	dptr->vk_device().waitForFences(data.fence, true, u64(-1));
 	if(c.elapsed().to_nanos()) {
@@ -65,21 +78,17 @@ static void wait(DevicePtr dptr, const CmdBufferData &data) {
 	}
 }
 
-static void reset(const CmdBufferData &data) {
-	data.cmd_buffer.reset(vk::CommandBufferResetFlags());
-}
-
 static const CmdBufferData& force_reset(DevicePtr dptr, const CmdBufferData &data) {
 	wait(dptr, data);
 	reset(data);
 	return data;
-}
+}*/
 
-static bool try_reset(DevicePtr dptr, const CmdBufferData& data) {
+static bool try_reset(DevicePtr dptr, CmdBufferData& data, CmdBufferUsage usage) {
 	if(dptr->vk_device().waitForFences(data.fence, true, 0) != vk::Result::eSuccess) {
 		return false;
 	}
-	reset(data);
+	reset(data, usage);
 	return true;
 }
 
@@ -91,7 +100,9 @@ CmdBufferPoolData::~CmdBufferPoolData() {
 	join_fences();
 	for(auto buffer : _cmd_buffers) {
 		device()->vk_device().freeCommandBuffers(_pool, buffer.cmd_buffer);
-		destroy(buffer.fence);
+		if(_usage != CmdBufferUsage::Secondary) {
+			destroy(buffer.fence);
+		}
 	}
 	destroy(_pool);
 }
@@ -113,16 +124,13 @@ void CmdBufferPoolData::release(CmdBufferData&& data) {
 }
 
 CmdBufferData CmdBufferPoolData::alloc() {
-	if(_cmd_buffers.is_empty()) {
-		return alloc_data(device(), _pool, _usage);
-	}
 	for(auto& buffer : _cmd_buffers) {
-		if(try_reset(device(), buffer)) {
+		if(try_reset(device(), buffer, _usage)) {
 			std::swap(buffer, _cmd_buffers.last());
 			return _cmd_buffers.pop();
 		}
 	}
-	return force_reset(device(), _cmd_buffers.pop());
+	return alloc_data(device(), _pool, _usage);
 }
 
 }

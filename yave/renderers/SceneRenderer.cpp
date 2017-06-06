@@ -53,8 +53,9 @@ const SceneView& SceneRenderer::scene_view() const {
 	return _cull->scene_view();
 }
 
-const RecordedCmdBuffer<CmdBufferUsage::Secondary>& SceneRenderer::cmd_buffer() const {
-	return _cmd_buffer;
+RecordedCmdBuffer<CmdBufferUsage::Secondary>&& SceneRenderer::cmd_buffer() {
+#warning SceneRenderer::cmd_buffer moves _cmd_buffer out
+	return std::move(_cmd_buffer);
 }
 
 void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&& recorder) {

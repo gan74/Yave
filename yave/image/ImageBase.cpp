@@ -146,9 +146,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, const math::Vec2ui& size,
 		_usage(usage) {
 
 	auto tpl = alloc_image(dptr, size, _mips, _format, usage | vk::ImageUsageFlagBits::eTransferDst);
-	_image = std::get<0>(tpl);
-	_memory = std::get<1>(tpl);
-	_view = std::get<2>(tpl);
+	std::tie(_image, _memory, _view) = tpl;
 
 	upload_data(*this, data);
 }
@@ -161,9 +159,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 		_usage(usage) {
 
 	auto tpl = alloc_image(dptr, size, _mips, _format, usage);
-	_image = std::get<0>(tpl);
-	_memory = std::get<1>(tpl);
-	_view = std::get<2>(tpl);
+	std::tie(_image, _memory, _view) = tpl;
 
 	if(!is_attachment_usage(usage) && !is_storage_usage(usage)) {
 		fatal("Texture images must be initilized.");

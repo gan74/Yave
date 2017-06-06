@@ -42,6 +42,7 @@ void ColorCorrectionRenderer::compute_dependencies(const FrameToken& token, Rend
 }
 
 void ColorCorrectionRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
+#warning barrier ?
 	auto size = token.image_view.size();
 	recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().sub(3), 1), {create_output_set(token.image_view)});
 }
@@ -55,7 +56,7 @@ const DescriptorSet& ColorCorrectionRenderer::create_output_set(const StorageVie
 
 	auto it = _output_sets.find(out.vk_image_view());
 	if(it == _output_sets.end()) {
-		it = _output_sets.insert(std::make_pair(out.vk_image_view(), DescriptorSet(_renderer->device(), {
+		it = _output_sets.insert(std::pair(out.vk_image_view(), DescriptorSet(_renderer->device(), {
 				Binding(view),
 				Binding(out)
 			}))).first;

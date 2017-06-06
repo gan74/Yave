@@ -26,8 +26,8 @@ SOFTWARE.
 
 namespace yave {
 
-template<CmdBufferUsage Usage>
-class CmdBufferRecorder;
+class CmdBufferRecorderBase;
+class PrimaryCmdBufferRecorderBase;
 
 struct CmdBufferBase : NonCopyable {
 
@@ -38,11 +38,15 @@ struct CmdBufferBase : NonCopyable {
 		vk::Fence vk_fence() const;
 		DevicePtr device() const;
 
+		void wait() const;
+
 	protected:
 		friend class CmdBufferRecorderBase;
+		friend class PrimaryCmdBufferRecorderBase;
 
 		CmdBufferBase() = default;
 		CmdBufferBase(CmdBufferBase&& other);
+
 		void swap(CmdBufferBase& other);
 
 	protected:

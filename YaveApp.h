@@ -59,24 +59,19 @@ class YaveApp : NonCopyable {
 		void init(Args... args) {
 			swapchain = new Swapchain(&device, std::forward<Args>(args)...);
 			create_assets();
-			create_command_buffers();
 		}
 
 		void draw();
-		void update(math::Vec2 angles = math::Vec2(0));
+		void update(math::Vec2 angles = {});
 
 
 	private:
-		void create_command_buffers();
-
 		void create_assets();
 
 		Instance instance;
 		Device device;
 
 		Swapchain* swapchain;
-
-		CmdBufferPool<> command_pool;
 
 		AssetPtr<Material> material;
 		Texture mesh_texture;

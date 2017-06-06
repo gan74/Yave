@@ -96,10 +96,11 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		}
 
 		auto images() {
-			return core::range(_images);
+			return core::Range(_images);
 		}
 
-		FrameToken next_frame(vk::Semaphore image_acquired);
+		FrameToken next_frame();
+		void present(const FrameToken& token, vk::Queue queue);
 
 	private:
 		u64 _frame_id = 0;
@@ -108,6 +109,7 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		ImageFormat _color_format;
 
 		core::Vector<SwapchainImage> _images;
+		core::Vector<std::pair<vk::Semaphore, vk::Semaphore>> _semaphores;
 
 		Owner<vk::SurfaceKHR> _surface;
 		vk::SwapchainKHR _swapchain;

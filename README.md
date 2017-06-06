@@ -1,10 +1,10 @@
 # Yave
-Yet another C++14 Vulkan engine.
+Yet another C++17 Vulkan engine.
 
 ## Building
 You need:
  * Cmake 3.6
- * gcc 6
+ * gcc 7
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
  * [Vulkan hpp](https://github.com/KhronosGroup/Vulkan-Hpp)
  * [Spriv_cross](https://github.com/KhronosGroup/SPIRV-Cross)

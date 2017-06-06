@@ -135,7 +135,7 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 	auto capabilities = compute_capabilities(dptr, surface);
 	auto format = get_surface_format(dptr, surface);
 
-	_size = math::vec(capabilities.currentExtent.width, capabilities.currentExtent.height);
+	_size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
 	_color_format = format.format;
 
 	_swapchain = dptr->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
@@ -169,6 +169,8 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 		swapchain_image._view = view;
 
 		_images << std::move(swapchain_image);
+		_semaphores << std::pair(device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()),
+								 device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()));
 	}
 
 	auto recorder = CmdBufferRecorder<CmdBufferUsage::Disposable>(dptr->create_disposable_cmd_buffer());
@@ -180,18 +182,40 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 }
 
 Swapchain::~Swapchain() {
+	for(const auto& semaphores : _semaphores) {
+		destroy(semaphores.first);
+		destroy(semaphores.second);
+	}
+
 	destroy(_swapchain);
 	destroy(_surface);
 }
 
-FrameToken Swapchain::next_frame(vk::Semaphore image_acquired) {
+FrameToken Swapchain::next_frame() {
+	auto [image_acquired, render_finished] = _semaphores.pop();
 	u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, VK_NULL_HANDLE).value;
-	return std::move(FrameToken {
+
+	return FrameToken {
 			++_frame_id,
 			image_index,
 			u32(image_count()),
 			SwapchainImageView(_images[image_index]),
-		});
+			image_acquired,
+			render_finished,
+		};
+}
+
+void Swapchain::present(const FrameToken& token, vk::Queue queue) {
+	queue.presentKHR(vk::PresentInfoKHR()
+			.setSwapchainCount(1)
+			.setPSwapchains(&_swapchain)
+			.setPImageIndices(&token.image_index)
+			.setWaitSemaphoreCount(1)
+			.setPWaitSemaphores(&token.render_finished)
+		);
+
+	_semaphores << std::pair(token.image_aquired, token.render_finished);
+	std::rotate(_semaphores.begin(), _semaphores.end() - 1, _semaphores.end());
 }
 
 vk::SwapchainKHR Swapchain::vk_swapchain() const {

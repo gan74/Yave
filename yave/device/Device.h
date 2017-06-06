@@ -85,8 +85,8 @@ class Device : NonCopyable {
 
 		Sampler _sampler;
 
-		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
 		mutable CmdBufferPool<CmdBufferUsage::Secondary> _secondary_cmd_pool;
+		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
 		mutable CmdBufferPool<CmdBufferUsage::Normal> _primary_cmd_pool;
 
 		DescriptorSetLayoutPool* _descriptor_layout_pool;

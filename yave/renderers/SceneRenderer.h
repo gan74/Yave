@@ -36,7 +36,7 @@ class SceneRenderer : public SecondaryRenderer {
 
 		const SceneView& scene_view() const;
 
-		const RecordedCmdBuffer<CmdBufferUsage::Secondary>& cmd_buffer() const;
+		RecordedCmdBuffer<CmdBufferUsage::Secondary>&& cmd_buffer();
 
 	protected:
 		void compute_dependencies(const FrameToken& token, RenderingNode& self) override;

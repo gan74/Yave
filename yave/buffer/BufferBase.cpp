@@ -111,8 +111,7 @@ void BufferBase::swap(BufferBase& other) {
 
 BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryFlags flags, BufferTransfer transfer) : DeviceLinked(dptr), _size(byte_size) {
 	auto tpl = alloc_buffer(dptr, byte_size, to_vk_flags(usage) | to_vk_flags(transfer), flags);
-	_buffer = std::get<0>(tpl);
-	_memory = std::get<1>(tpl);
+	std::tie(_buffer, _memory) = tpl;
 }
 
 BufferBase::~BufferBase() {

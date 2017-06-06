@@ -77,7 +77,7 @@ class RenderingNode : NonCopyable {
 
 
 	private:
-		friend RecordedCmdBuffer<> build_pipeline_command_buffer(const FrameToken& token, EndOfPipeline* pipeline);
+		friend RecordedCmdBuffer<> build_pipeline_command_buffer(const FrameToken&, EndOfPipeline*);
 
 		RenderingNode(Processor& node, DependencyGraph& graph);
 

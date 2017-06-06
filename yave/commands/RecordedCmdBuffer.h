@@ -27,19 +27,18 @@ SOFTWARE.
 namespace yave {
 
 struct AsyncSubmit {
-	void operator()(vk::Queue) const {
+	void operator()(const CmdBufferBase&) const {
 	}
 };
 
 struct SyncSubmit {
-	void operator()(vk::Queue q) const {
-		q.waitIdle();
+	void operator()(const CmdBufferBase& b) const {
+		b.wait();
 	}
 };
 
 template<CmdBufferUsage Usage>
 class RecordedCmdBuffer : public CmdBufferBase {
-
 	public:
 		RecordedCmdBuffer() = default;
 
@@ -55,14 +54,13 @@ class RecordedCmdBuffer : public CmdBufferBase {
 		template<typename Policy>
 		void submit(vk::Queue queue, const Policy& policy = Policy()) {
 			CmdBufferBase::submit(queue);
-			policy(queue);
+			policy(*this);
 		}
 
 	private:
 		friend class CmdBufferRecorder<Usage>;
 
-		RecordedCmdBuffer(CmdBufferBase&& other) {
-			swap(other);
+		RecordedCmdBuffer(CmdBufferBase&& other) : CmdBufferBase(std::move(other)) {
 		}
 };
 

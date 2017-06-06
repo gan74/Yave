@@ -26,7 +26,7 @@ namespace yave {
 
 bool Frustum::is_inside(const math::Vec3& pos, float radius) const {
 	for(const auto& plane : *this) {
-		if(plane.dot(math::Vec4(pos, 1.0f)) + radius < 0.0f) {
+		if(plane.dot({pos, 1.0f}) + radius < 0.0f) {
 			return false;
 		}
 	}
