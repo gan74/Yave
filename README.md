@@ -9,15 +9,13 @@ You need:
  * [Vulkan hpp](https://github.com/KhronosGroup/Vulkan-Hpp)
  * [Spriv_cross](https://github.com/KhronosGroup/SPIRV-Cross)
  * [y](https://github.com/gan74/y)
- * [sol2](https://github.com/ThePhD/sol2)
- * [LuaJit](https://github.com/LuaDist/luajit)
 
 ## Status
 
 ![Current status](http://i.imgur.com/x7Cuyeg.png)
 
 
-Currently a mess, should smooth out as i am learning Vulkan.
+Currently a mess, should smooth out as I am learning Vulkan.
 
 Implemented features:
  * Buffers
