@@ -123,8 +123,8 @@ template<typename T, typename E = void>
 class Result : NonCopyable {
 
 	static constexpr bool is_void = std::is_void<T>::value;
-	using Err_t = detail::Err<E>;
-	using Ok_t = detail::Ok<T>;
+	using err_type = detail::Err<E>;
+	using ok_type = detail::Ok<T>;
 
 	template<typename F, typename U>
 	struct map_type {
@@ -136,16 +136,16 @@ class Result : NonCopyable {
 		using type = decltype(std::declval<F>()());
 	};
 
-	using expected_t = decltype(std::declval<Ok_t>().get());
-	using expected_const_t = decltype(std::declval<const Ok_t>().get());
+	using expected_type = decltype(std::declval<ok_type>().get());
+	using expected_const_type = decltype(std::declval<const ok_type>().get());
 
 	public:
-		Result(Ok_t&& v) : _is_ok(true) {
-			new(&_value) Ok_t(std::move(v));
+		Result(ok_type&& v) : _is_ok(true) {
+			new(&_value) ok_type(std::move(v));
 		}
 
-		Result(Err_t&& e) : _is_ok(false) {
-			new(&_error) Err_t(std::move(e));
+		Result(err_type&& e) : _is_ok(false) {
+			new(&_error) err_type(std::move(e));
 		}
 
 		Result(Result&& other) {
@@ -192,14 +192,14 @@ class Result : NonCopyable {
 			return _error.get();
 		}
 
-		expected_const_t expected(const char* err_msg) const {
+		expected_const_type expected(const char* err_msg) const {
 			if(is_error()) {
 				fatal(err_msg);
 			}
 			return _value.get();
 		}
 
-		expected_t expected(const char* err_msg) {
+		expected_type expected(const char* err_msg) {
 			if(is_error()) {
 				fatal(err_msg);
 			}
@@ -236,23 +236,23 @@ class Result : NonCopyable {
 	protected:
 		void destroy() {
 			if(is_ok()) {
-				_value.~Ok_t();
+				_value.~ok_type();
 			} else {
-				_error.~Err_t();
+				_error.~err_type();
 			}
 		}
 
 		void move(Result& other) {
 			if((_is_ok = other.is_ok())) {
-				new(&_value) Ok_t(std::move(other._value));
+				new(&_value) ok_type(std::move(other._value));
 			} else {
-				new(&_error) Err_t(std::move(other._error));
+				new(&_error) err_type(std::move(other._error));
 			}
 		}
 
 		union {
-			Ok_t _value;
-			Err_t _error;
+			ok_type _value;
+			err_type _error;
 		};
 		bool _is_ok;
 };

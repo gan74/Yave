@@ -264,7 +264,6 @@ namespace detail {
 
 template<typename T>
 auto type_name() {
-	Y_TODO(disable this if no-rtti)
 	return detail::demangle_type_name(typeid(T).name()) + (std::is_reference<T>::value ? "&" : "");
 }
 
@@ -275,18 +274,5 @@ auto type_name(T&& t) {
 
 }
 
-
-namespace std {
-
-template<>
-struct hash<y::core::String> {
-	typedef y::core::String argument_type;
-	typedef std::size_t result_type;
-	result_type operator()(const argument_type& str) const {
-		return y::hash(str);
-	}
-};
-
-}
 
 #endif // Y_CORE_STRING_H

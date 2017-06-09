@@ -132,39 +132,39 @@ class Functor<Container, Ret(Args...)> {
 
 // http://stackoverflow.com/questions/7943525/is-it-possible-to-figure-out-the-parameter-type-and-return-type-of-a-lambda
 template<typename T>
-struct functor_t : functor_t<decltype(&T::operator())> {
+struct functor_type : functor_type<decltype(&T::operator())> {
 };
 
 template<typename Ret, typename... Args>
-struct functor_t<Ret(*)(Args...)> {
+struct functor_type<Ret(*)(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
 };
 
 template<typename Ret, typename... Args>
-struct functor_t<Ret(&)(Args...)> {
+struct functor_type<Ret(&)(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
 };
 
 template<typename Ret, typename... Args>
-struct functor_t<Ret(Args...)> {
+struct functor_type<Ret(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
 };
 
 template<typename T, typename Ret, typename... Args>
-struct functor_t<Ret(T::*)(Args...) const> {
+struct functor_type<Ret(T::*)(Args...) const> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
 };
 
 template<typename T, typename Ret, typename... Args>
-struct functor_t<Ret(T::*)(Args...)> {
+struct functor_type<Ret(T::*)(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
@@ -186,12 +186,12 @@ using Functor = detail::Functor<Rc, Ret, Args...>;
 
 template<typename T>
 inline auto function(T&& func) {
-	return typename detail::functor_t<typename std::remove_reference<T>::type>::template type<Function>(std::forward<T>(func));
+	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Function>(std::forward<T>(func));
 }
 
 template<typename T>
 inline auto functor(T&& func) {
-	return typename detail::functor_t<typename std::remove_reference<T>::type>::template type<Functor>(std::forward<T>(func));
+	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Functor>(std::forward<T>(func));
 }
 
 

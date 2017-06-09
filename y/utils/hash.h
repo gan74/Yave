@@ -59,7 +59,7 @@ inline auto hash(const T& t) {
 	}
 }
 
-struct hash_t {	
+struct Hash {
 	template<typename T>
 	auto operator()(const T& arg) const {
 		return hash(arg);
