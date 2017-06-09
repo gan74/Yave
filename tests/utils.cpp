@@ -23,6 +23,8 @@ SOFTWARE.
 #include <y/utils.h>
 #include <y/test/test.h>
 
+#include <y/core/Vector.h>
+
 using namespace y;
 
 struct DRaii : NonCopyable {
@@ -51,4 +53,11 @@ y_test_func("utils do_not_destroy") {
 	}
 	y_test_assert(i == 1);
 }
+
+
+y_test_func("utils hash") {
+	y_test_assert(hash(1, 2, 3) != hash(1, 2, 5));
+	y_test_assert(hash<std::initializer_list<int>>({1, 2, 3}) == hash(core::Vector({1, 2, 3})));
+}
+
 

@@ -28,41 +28,54 @@ namespace y {
 
 namespace detail {
 
+template<typename T>
+inline auto hash(const T& t);
+
 // from boost
 template<typename T>
 inline void hash_combine(T& seed, T value) {
 	seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-template<typename T, typename Hasher = std::hash<T>>
-inline auto hash(const T& t, const Hasher& hasher = Hasher()) {
-	return hasher(t);
+template<typename T>
+inline auto hash_one(const T& t) {
+	return std::hash<T>()(t);
 }
 
-template<typename T, typename Hasher = std::hash<typename T::value_type>>
-inline auto hash_iterable(const T& collection, const Hasher& hasher = Hasher()) {
-	decltype(hasher(*collection.begin())) seed = 0;
+template<typename T>
+inline auto hash_iterable(const T& collection) {
+	using value_type = typename T::value_type;
+	decltype(std::hash<value_type>()(*collection.begin())) seed = 0;
 	for(const auto& i : collection) {
-		detail::hash_combine(seed, hash(i, hasher));
+		hash_combine(seed, hash(i));
 	}
 	return seed;
 }
 
-}
-
 template<typename T>
 inline auto hash(const T& t) {
-	if constexpr(is_iterable<T>::value) {
-		return detail::hash_iterable(t);
+	if constexpr(is_iterable<std::remove_reference_t<T>>::value) {
+		return hash_iterable(t);
 	} else {
-		return detail::hash(t);
+		return hash_one(t);
 	}
 }
 
+}
+
+template<typename T, typename... Args>
+inline auto hash(const T& t, const Args&... args) {
+	auto h = detail::hash(t);
+	if constexpr(sizeof...(args)) {
+		detail::hash_combine(h, hash(args...));
+	}
+	return h;
+}
+
 struct Hash {
-	template<typename T>
-	auto operator()(const T& arg) const {
-		return hash(arg);
+	template<typename... Args>
+	auto operator()(const Args&... args) const {
+		return hash(args...);
 	}
 };
 
