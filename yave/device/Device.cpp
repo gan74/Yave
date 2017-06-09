@@ -92,8 +92,8 @@ Device::Device(Instance& instance) :
 		_queue_families(compute_queue_families(_physical.vk_physical_device())),
 		_device(create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())),
 		_sampler(this),
-		_disposable_cmd_pool(this),
 		_secondary_cmd_pool(this),
+		_disposable_cmd_pool(this),
 		_primary_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
 
