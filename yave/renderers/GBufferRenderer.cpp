@@ -21,12 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include "GBufferRenderer.h"
-#include "pipeline.h"
 
 namespace yave {
 
 GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
-		Renderer(dptr),
+		BufferRenderer(dptr),
 		_scene(dptr, node),
 		_depth(device(), depth_format, size),
 		_color(device(), diffuse_format, size),
@@ -50,16 +49,16 @@ const ColorTextureAttachment& GBufferRenderer::normal() const {
 	return _normal;
 }
 
-TextureView GBufferRenderer::view() const {
+const math::Vec2ui& GBufferRenderer::size() const {
+	return _color.size();
+}
+
+TextureView GBufferRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
+	RecordedCmdBuffer<CmdBufferUsage::Secondary> cmd_buffer = _scene.process(token, _gbuffer);
+
+	recorder.execute(std::move(cmd_buffer), _gbuffer);
+
 	return _color;
-}
-
-void GBufferRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
-	recorder.execute(_scene.cmd_buffer(), _gbuffer);
-}
-
-void GBufferRenderer::build_frame_graph(const FrameToken& token, RenderingPipeline& self) {
-	self.add_dependency(token, &_scene, _gbuffer);
 }
 
 }

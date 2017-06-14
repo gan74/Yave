@@ -41,7 +41,6 @@ SOFTWARE.
 #include <yave/renderers/ColorCorrectionRenderer.h>
 #include <yave/renderers/DeferredRenderer.h>
 #include <yave/renderers/SceneRenderer.h>
-#include <yave/renderers/pipeline.h>
 
 
 namespace yave {

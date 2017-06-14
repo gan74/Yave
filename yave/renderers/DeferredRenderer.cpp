@@ -25,8 +25,6 @@ SOFTWARE.
 #include <yave/commands/CmdBufferRecorder.h>
 #include <y/io/File.h>
 
-#include "pipeline.h"
-
 #include <random>
 
 namespace yave {
@@ -87,7 +85,7 @@ static auto create_lights(DevicePtr dptr, usize pts_count) {
 
 
 DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
-		Renderer(gbuffer->device()),
+		BufferRenderer(gbuffer->device()),
 		_gbuffer(gbuffer),
 		_lighting_shader(create_lighting_shader(device())),
 		_lighting_program(_lighting_shader),
@@ -103,18 +101,24 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 	}
 }
 
-TextureView DeferredRenderer::view() const {
+const math::Vec2ui& DeferredRenderer::size() const {
+	return _acc_buffer.size();
+}
+
+ImageView<ImageUsage::StorageBit | ImageUsage::TextureBit> DeferredRenderer::view() const {
 	return _acc_buffer;
 }
 
-void DeferredRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) {
+TextureView DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
+	_gbuffer->process(token, recorder);
+
 	_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
 
 	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub(3), 1), {_descriptor_set});
+
+	return _acc_buffer;
 }
 
-void DeferredRenderer::build_frame_graph(const FrameToken& token, RenderingPipeline& self) {
-	self.add_dependency(token, _gbuffer.as_ptr());
-}
+
 
 }

@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class GBufferRenderer : public Renderer {
+class GBufferRenderer : public BufferRenderer {
 
 	public:
 		template<typename T>
@@ -44,11 +44,9 @@ class GBufferRenderer : public Renderer {
 		const ColorTextureAttachment& color() const;
 		const ColorTextureAttachment& normal() const;
 
-		TextureView view() const override;
+		const math::Vec2ui& size() const;
 
-	protected:
-		void build_frame_graph(const FrameToken& token, RenderingPipeline& self) override;
-		void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
+		TextureView process(const FrameToken&token, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		SceneRenderer _scene;

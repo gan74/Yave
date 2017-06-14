@@ -37,16 +37,13 @@ const SceneView& CullingNode::scene_view() const {
 	return _view;
 }
 
-const core::Vector<const StaticMesh*>& CullingNode::visibles() const {
-	return _visibles;
-}
+core::Vector<const StaticMesh*> CullingNode::process(const FrameToken&) {
+	auto visibles = core::vector_with_capacity<const StaticMesh*>(_view.scene().static_meshes().size() / 2);
 
-void CullingNode::process(const FrameToken&) {
-	_visibles.make_empty();
 	auto frustum = _view.camera().frustum();
 
 	if(use_map) {
-		std::unordered_map<Material*, decltype(_visibles)> per_mat;
+		std::unordered_map<Material*, decltype(visibles)> per_mat;
 		for(const auto& m : _view.scene().static_meshes()) {
 			if(frustum.is_inside(m.position(), m.radius())) {
 				per_mat[m.material().as_ptr()].push_back(&m);
@@ -55,23 +52,22 @@ void CullingNode::process(const FrameToken&) {
 		{
 			core::DebugTimer _("merge", core::Duration::milliseconds(1));
 			for(const auto& mat : per_mat) {
-				_visibles.push_back(mat.second.begin(), mat.second.end());
+				visibles.push_back(mat.second.begin(), mat.second.end());
 			}
 		}
 	} else {
 		for(const auto& m : _view.scene().static_meshes()) {
 			if(frustum.is_inside(m.position(), m.radius())) {
-				_visibles.push_back(&m);
+				visibles.push_back(&m);
 			}
 		}
 		{
 			core::DebugTimer _("sort", core::Duration::milliseconds(1));
-			sort(_visibles.begin(), _visibles.end(), [](const auto& a, const auto& b) { return a->material() < b->material(); });
+			sort(visibles.begin(), visibles.end(), [](const auto& a, const auto& b) { return a->material() < b->material(); });
 		}
 	}
-}
 
-void CullingNode::build_frame_graph(const FrameToken&, RenderingPipeline&) {
+	return visibles;
 }
 
 }

@@ -34,17 +34,10 @@ class CullingNode : public Node {
 
 		const SceneView& scene_view() const;
 
-		const core::Vector<const StaticMesh*>& visibles() const;
-
-
-	protected:
-		void build_frame_graph(const FrameToken&, RenderingPipeline&) override;
-		void process(const FrameToken&) override;
+		core::Vector<const StaticMesh*> process(const FrameToken&);
 
 	private:
 		SceneView& _view;
-
-		core::Vector<const StaticMesh*> _visibles;
 };
 
 }

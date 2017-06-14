@@ -30,61 +30,41 @@ namespace yave {
 class RenderingNodeProcessor;
 class RenderingPipeline;
 
-class NodeBase : NonCopyable {
+class Node : NonCopyable {
 	public:
-		virtual ~NodeBase() {
+		virtual ~Node() {
 		}
-
-	protected:
-		friend class RenderingPipeline;
-
-		virtual void build_frame_graph(const FrameToken&, RenderingPipeline&) = 0;
 };
 
-class Node : public NodeBase {
-	protected:
-		friend class RenderingNodeProcessor;
-
-		virtual void process(const FrameToken&) = 0;
-};
-
-
-class SecondaryRenderer : public DeviceLinked, public NodeBase {
+class SecondaryRenderer : public DeviceLinked, public Node {
 	public:
 		SecondaryRenderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-	protected:
-		friend class RenderingNodeProcessor;
-
-		virtual void process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&&) = 0;
+		virtual RecordedCmdBuffer<CmdBufferUsage::Secondary> process(const FrameToken&, const Framebuffer&) = 0;
 };
 
 
-class Renderer : public DeviceLinked, public NodeBase {
+class Renderer : public DeviceLinked, public Node {
 	public:
 		Renderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-		virtual TextureView view() const = 0;
-
-		math::Vec2ui size() const {
-			return view().size();
-		}
-
-	protected:
-		friend class RenderingNodeProcessor;
-
 		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
 };
 
-class EndOfPipeline : public DeviceLinked, public NodeBase {
+class BufferRenderer : public DeviceLinked, public Node {
+	public:
+		BufferRenderer(DevicePtr dptr) : DeviceLinked(dptr) {
+		}
+
+		virtual TextureView process(const FrameToken&, CmdBufferRecorder<>&) = 0;
+};
+
+class EndOfPipeline : public DeviceLinked, public Node {
 	public:
 		EndOfPipeline(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
-
-	protected:
-		friend class RenderingNodeProcessor;
 
 		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
 };

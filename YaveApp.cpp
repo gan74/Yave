@@ -23,7 +23,6 @@ SOFTWARE.
 
 #include <yave/image/ImageData.h>
 #include <yave/buffer/TypedBuffer.h>
-#include <yave/renderers/pipeline.h>
 
 #include <y/io/File.h>
 
@@ -56,7 +55,10 @@ void YaveApp::draw() {
 	core::DebugTimer f("frame", core::Duration::milliseconds(8));
 
 	FrameToken frame = swapchain->next_frame();
-	auto cmd_buffer = build_pipeline_command_buffer(frame, renderer.as_ptr());
+
+	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
+	renderer->process(frame, recorder);
+	auto cmd_buffer = recorder.end();
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
@@ -125,7 +127,7 @@ void YaveApp::create_assets() {
 	{
 		auto culling = core::Rc<CullingNode>(new CullingNode(*scene_view));
 		auto gbuffer = core::Rc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
-		auto deferred = core::Rc<Renderer>(new DeferredRenderer(gbuffer));
+		auto deferred = core::Rc<BufferRenderer>(new DeferredRenderer(gbuffer));
 		renderer = core::Rc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
 	}
 

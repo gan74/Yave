@@ -36,11 +36,7 @@ class SceneRenderer : public SecondaryRenderer {
 
 		const SceneView& scene_view() const;
 
-		RecordedCmdBuffer<CmdBufferUsage::Secondary>&& cmd_buffer();
-
-	protected:
-		void build_frame_graph(const FrameToken& token, RenderingPipeline& self) override;
-		void process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&& recorder) override;
+		RecordedCmdBuffer<CmdBufferUsage::Secondary> process(const FrameToken& token, const Framebuffer& framebuffer) override;
 
 	private:
 		void setup_instance(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, const AssetPtr<StaticMeshInstance>& instance);

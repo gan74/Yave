@@ -20,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "ColorCorrectionRenderer.h"
-#include "pipeline.h"
 
 #include <y/io/File.h>
 
@@ -31,34 +30,31 @@ static ComputeShader create_correction_shader(DevicePtr dptr) {
 }
 
 
-ColorCorrectionRenderer::ColorCorrectionRenderer(const Ptr<Renderer>& renderer) :
+ColorCorrectionRenderer::ColorCorrectionRenderer(const Ptr<BufferRenderer>& renderer) :
 		EndOfPipeline(renderer->device()),
 		_renderer(renderer),
 		_correction_shader(create_correction_shader(device())),
 		_correction_program(_correction_shader) {
 }
 
-void ColorCorrectionRenderer::build_frame_graph(const FrameToken& token, RenderingPipeline& self) {
-	self.add_dependency(token, _renderer.as_ptr());
-}
-
 void ColorCorrectionRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
+	auto view = _renderer->process(token, recorder);
+
 #warning barrier ?
+
 	auto size = token.image_view.size();
-	recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().sub(3), 1), {create_output_set(token.image_view)});
+	recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().sub(3), 1), {create_descriptor_set(token.image_view, view)});
 }
 
-const DescriptorSet& ColorCorrectionRenderer::create_output_set(const StorageView& out) {
-	TextureView view = _renderer->view();
-
-	if(out.size() != view.size()) {
+const DescriptorSet& ColorCorrectionRenderer::create_descriptor_set(const StorageView& out, const TextureView& in) {
+	if(out.size() != in.size()) {
 		fatal("Invalid output image size.");
 	}
 
 	auto it = _output_sets.find(out.vk_image_view());
 	if(it == _output_sets.end()) {
 		it = _output_sets.insert(std::pair(out.vk_image_view(), DescriptorSet(_renderer->device(), {
-				Binding(view),
+				Binding(in),
 				Binding(out)
 			}))).first;
 	}

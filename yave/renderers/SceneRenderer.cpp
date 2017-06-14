@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "SceneRenderer.h"
-#include "pipeline.h"
 
 namespace yave {
 
@@ -53,19 +52,15 @@ const SceneView& SceneRenderer::scene_view() const {
 	return _cull->scene_view();
 }
 
-RecordedCmdBuffer<CmdBufferUsage::Secondary>&& SceneRenderer::cmd_buffer() {
-#warning SceneRenderer::cmd_buffer moves _cmd_buffer out
-	return std::move(_cmd_buffer);
-}
+RecordedCmdBuffer<CmdBufferUsage::Secondary> SceneRenderer::process(const FrameToken& token, const Framebuffer& framebuffer) {
+	CmdBufferRecorder<CmdBufferUsage::Secondary> recorder(device()->create_secondary_cmd_buffer(), framebuffer);
 
-void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&& recorder) {
 	_camera_mapping[0] = scene_view().camera().viewproj_matrix();
 
-	const auto& visibles = _cull->visibles();
+	const auto& visibles = _cull->process(token);
 
 	if(visibles.is_empty()) {
-		_cmd_buffer = recorder.end();
-		return;
+		return recorder.end();
 	}
 
 	if(visibles.size() > batch_size) {
@@ -98,7 +93,7 @@ void SceneRenderer::process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage:
 	}
 	submit_batches(recorder, visibles[submitted]->material(), submitted, i - submitted);
 
-	_cmd_buffer = recorder.end();
+	return recorder.end();
 }
 
 void SceneRenderer::setup_instance(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, const AssetPtr<StaticMeshInstance>& instance) {
@@ -113,10 +108,6 @@ void SceneRenderer::submit_batches(CmdBufferRecorder<CmdBufferUsage::Secondary>&
 		const usize cmd_size = sizeof(vk::DrawIndexedIndirectCommand);
 		recorder.vk_cmd_buffer().drawIndexedIndirect(_indirect_buffer.vk_buffer(), offset * cmd_size, size, cmd_size);
 	}
-}
-
-void SceneRenderer::build_frame_graph(const FrameToken& token, RenderingPipeline& self) {
-	self.add_dependency(token, _cull.as_ptr());
 }
 
 }
