@@ -28,56 +28,38 @@ namespace y {
 
 namespace detail {
 
-template<typename T>
-inline auto hash(const T& t);
-
 // from boost
 template<typename T>
 inline void hash_combine(T& seed, T value) {
 	seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-template<typename T>
-inline auto hash_one(const T& t) {
-	return std::hash<T>()(t);
-}
-
-template<typename T>
-inline auto hash_iterable(const T& collection) {
-	using value_type = typename T::value_type;
-	decltype(std::hash<value_type>()(*collection.begin())) seed = 0;
-	for(const auto& i : collection) {
-		hash_combine(seed, hash(i));
-	}
-	return seed;
-}
-
-template<typename T>
-inline auto hash(const T& t) {
-	if constexpr(is_iterable<std::remove_reference_t<T>>::value) {
-		return hash_iterable(t);
-	} else {
-		return hash_one(t);
-	}
-}
-
 }
 
 template<typename T, typename... Args>
 inline auto hash(const T& t, const Args&... args) {
-	auto h = detail::hash(t);
+	auto h = std::hash<T>()(t);
 	if constexpr(sizeof...(args)) {
 		detail::hash_combine(h, hash(args...));
 	}
 	return h;
 }
 
-struct Hash {
-	template<typename... Args>
-	auto operator()(const Args&... args) const {
-		return hash(args...);
+template<typename B, typename E>
+inline auto hash_range(B begin, const E& end) {
+	decltype(hash(*begin)) h = 0;
+	for(; begin != end; ++begin) {
+		detail::hash_combine(h, hash(*begin));
 	}
-};
+	return h;
+}
+
+template<typename C>
+inline auto hash_range(const C& c) {
+	return hash_range(std::begin(c), std::end(c));
+}
+
+
 
 }
 

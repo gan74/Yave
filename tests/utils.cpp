@@ -55,9 +55,3 @@ y_test_func("utils do_not_destroy") {
 }
 
 
-y_test_func("utils hash") {
-	y_test_assert(hash(1, 2, 3) != hash(1, 2, 5));
-	y_test_assert(hash<std::initializer_list<int>>({1, 2, 3}) == hash(core::Vector({1, 2, 3})));
-}
-
-

@@ -47,9 +47,12 @@ class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
 		using value_type = MapEntry<Key, Value>;
 		using Vector<value_type, ResizePolicy>::Vector;
 
-		template<typename T>
-		void insert(const Key& key, T&& value) {
-			this->push_back(value_type(key, std::forward<T>(value)));
+		using iterator = typename Vector<value_type, ResizePolicy>::iterator;
+		using const_iterator = typename Vector<value_type, ResizePolicy>::const_iterator;
+
+		template<typename K, typename T>
+		void insert(K&& key, T&& value) {
+			this->push_back(value_type(std::forward<K>(key), std::forward<T>(value)));
 		}
 
 		Value& operator[](const Key& key) {
@@ -60,6 +63,14 @@ class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
 			}
 			insert(key, Value());
 			return this->last().second;
+		}
+
+		iterator find(const Key& key) {
+			return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k == key; });
+		}
+
+		const_iterator find(const Key& key) const {
+			return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k == key; });
 		}
 
 	private:
