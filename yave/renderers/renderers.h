@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_PIPELINE_NODES_H
-#define YAVE_PIPELINE_NODES_H
+#ifndef YAVE_RENDERERS_RENDERERS_H
+#define YAVE_RENDERERS_RENDERERS_H
 
 #include <yave/yave.h>
 #include <yave/swapchain/FrameToken.h>
@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 
 class RenderingNodeProcessor;
-class RenderingNode;
+class RenderingPipeline;
 
 class NodeBase : NonCopyable {
 	public:
@@ -36,12 +36,10 @@ class NodeBase : NonCopyable {
 		}
 
 	protected:
-		friend class RenderingNode;
+		friend class RenderingPipeline;
 
-		virtual void compute_dependencies(const FrameToken&, RenderingNode&) = 0;
+		virtual void build_frame_graph(const FrameToken&, RenderingPipeline&) = 0;
 };
-
-
 
 class Node : public NodeBase {
 	protected:
@@ -93,4 +91,4 @@ class EndOfPipeline : public DeviceLinked, public NodeBase {
 
 }
 
-#endif // YAVE_PIPELINE_NODES_H
+#endif // YAVE_RENDERERS_RENDERERS_H

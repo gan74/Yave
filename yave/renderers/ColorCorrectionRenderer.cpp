@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "ColorCorrectionRenderer.h"
+#include "pipeline.h"
 
 #include <y/io/File.h>
 
@@ -37,7 +38,7 @@ ColorCorrectionRenderer::ColorCorrectionRenderer(const Ptr<Renderer>& renderer) 
 		_correction_program(_correction_shader) {
 }
 
-void ColorCorrectionRenderer::compute_dependencies(const FrameToken& token, RenderingNode& self) {
+void ColorCorrectionRenderer::build_frame_graph(const FrameToken& token, RenderingPipeline& self) {
 	self.add_dependency(token, _renderer.as_ptr());
 }
 

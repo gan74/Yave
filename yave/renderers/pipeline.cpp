@@ -68,7 +68,7 @@ bool RenderingNodeProcessor::operator!=(const RenderingNodeProcessor& other) con
 }
 
 usize RenderingNodeProcessor::Hash::operator()(const RenderingNodeProcessor& data) const {
-	return hash<std::initializer_list<const void*>>({reinterpret_cast<const void*>(data._framebuffer), reinterpret_cast<const void*>(data._node)});
+	return hash_range<std::initializer_list<const void*>>({reinterpret_cast<const void*>(data._framebuffer), reinterpret_cast<const void*>(data._node)});
 }
 
 
@@ -97,14 +97,14 @@ void RenderingNodeProcessor::operator()(DevicePtr dptr, CmdBufferRecorder<>& rec
 
 
 
-RenderingNode::RenderingNode(Processor& node, DependencyGraph& graph) : _dependencies(graph[node]), _graph(graph) {
-	node.node()->compute_dependencies(node.token(), *this);
+RenderingPipeline::RenderingPipeline(Processor& node, DependencyGraph& graph) : _dependencies(graph[node]), _graph(graph) {
+	node.node()->build_frame_graph(node.token(), *this);
 }
 
-void RenderingNode::add_node_dependency(Processor&& node) {
+void RenderingPipeline::add_node_dependency(Processor&& node) {
 	_dependencies.push_back(node);
 	if(_graph.find(node) == _graph.end()) {
-		RenderingNode(node, _graph);
+		RenderingPipeline(node, _graph);
 	}
 }
 
@@ -119,7 +119,7 @@ RecordedCmdBuffer<> build_pipeline_command_buffer(const FrameToken& token, EndOf
 	DependencyGraph graph;
 	Processor root(token, pipeline);
 
-	RenderingNode(root, graph);
+	RenderingPipeline(root, graph);
 
 	DevicePtr dptr = pipeline->device();
 	CmdBufferRecorder<> recorder = dptr->create_cmd_buffer();

@@ -19,11 +19,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_PIPELINE_CULLINGNODE_H
-#define YAVE_PIPELINE_CULLINGNODE_H
+#ifndef YAVE_RENDERERS_CULLINGNODE_H
+#define YAVE_RENDERERS_CULLINGNODE_H
 
 #include <yave/scene/SceneView.h>
-#include "pipeline.h"
+#include "renderers.h"
 
 namespace yave {
 
@@ -38,7 +38,7 @@ class CullingNode : public Node {
 
 
 	protected:
-		void compute_dependencies(const FrameToken&, RenderingNode&) override;
+		void build_frame_graph(const FrameToken&, RenderingPipeline&) override;
 		void process(const FrameToken&) override;
 
 	private:
@@ -49,4 +49,4 @@ class CullingNode : public Node {
 
 }
 
-#endif // YAVE_PIPELINE_CULLINGNODE_H
+#endif // YAVE_RENDERERS_CULLINGNODE_H

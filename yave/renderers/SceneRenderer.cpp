@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "SceneRenderer.h"
-
+#include "pipeline.h"
 
 namespace yave {
 
@@ -115,7 +115,7 @@ void SceneRenderer::submit_batches(CmdBufferRecorder<CmdBufferUsage::Secondary>&
 	}
 }
 
-void SceneRenderer::compute_dependencies(const FrameToken& token, RenderingNode& self) {
+void SceneRenderer::build_frame_graph(const FrameToken& token, RenderingPipeline& self) {
 	self.add_dependency(token, _cull.as_ptr());
 }
 

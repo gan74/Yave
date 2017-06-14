@@ -71,7 +71,7 @@ void CullingNode::process(const FrameToken&) {
 	}
 }
 
-void CullingNode::compute_dependencies(const FrameToken&, RenderingNode&) {
+void CullingNode::build_frame_graph(const FrameToken&, RenderingPipeline&) {
 }
 
 }

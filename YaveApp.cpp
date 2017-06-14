@@ -23,13 +23,11 @@ SOFTWARE.
 
 #include <yave/image/ImageData.h>
 #include <yave/buffer/TypedBuffer.h>
+#include <yave/renderers/pipeline.h>
 
 #include <y/io/File.h>
 
 #include <iostream>
-
-
-void wat(int) {}
 
 namespace yave {
 

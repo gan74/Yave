@@ -26,8 +26,9 @@ SOFTWARE.
 #include <yave/shaders/ComputeProgram.h>
 #include <yave/bindings/uniforms.h>
 
-#include <yave/pipeline/pipeline.h>
 #include <yave/device/DeviceLinked.h>
+
+#include "renderers.h"
 
 namespace yave {
 
@@ -41,7 +42,7 @@ class ColorCorrectionRenderer : public EndOfPipeline {
 		ColorCorrectionRenderer(const Ptr<Renderer>& renderer);
 
 	protected:
-		void compute_dependencies(const FrameToken& token, RenderingNode& self) override;
+		void build_frame_graph(const FrameToken& token, RenderingPipeline& self) override;
 		void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
 
 	private:

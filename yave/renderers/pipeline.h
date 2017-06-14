@@ -19,12 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_PIPELINE_PIPELINE_H
-#define YAVE_PIPELINE_PIPELINE_H
+#ifndef YAVE_RENDERERS_PIPELINE_H
+#define YAVE_RENDERERS_PIPELINE_H
 
 #include <yave/commands/RecordedCmdBuffer.h>
 
-#include "nodes.h"
+#include "renderers.h"
 
 namespace yave {
 
@@ -65,7 +65,7 @@ class RenderingNodeProcessor {
 };
 
 
-class RenderingNode : NonCopyable {
+class RenderingPipeline : NonCopyable {
 	using Processor = RenderingNodeProcessor;
 	using DependencyGraph = std::unordered_map<Processor, core::Vector<Processor>, Processor::Hash>;
 
@@ -75,11 +75,10 @@ class RenderingNode : NonCopyable {
 			add_node_dependency(Processor(std::forward<Args>(args)...));
 		}
 
-
 	private:
 		friend RecordedCmdBuffer<> build_pipeline_command_buffer(const FrameToken&, EndOfPipeline*);
 
-		RenderingNode(Processor& node, DependencyGraph& graph);
+		RenderingPipeline(Processor& node, DependencyGraph& graph);
 
 	private:
 		void add_node_dependency(Processor&& node);
@@ -95,4 +94,4 @@ class RenderingNode : NonCopyable {
 
 }
 
-#endif // YAVE_PIPELINE_PIPELINE_H
+#endif // YAVE_RENDERERS_PIPELINE_H

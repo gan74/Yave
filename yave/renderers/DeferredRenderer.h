@@ -43,7 +43,7 @@ class DeferredRenderer : public Renderer {
 		TextureView view() const override;
 
 	protected:
-		void compute_dependencies(const FrameToken& token, RenderingNode& self) override;
+		void build_frame_graph(const FrameToken& token, RenderingPipeline& self) override;
 		void process(const FrameToken&, CmdBufferRecorder<>& recorder) override;
 
 	private:

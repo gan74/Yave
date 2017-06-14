@@ -19,10 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_SCENERENDERERNODE_H
-#define YAVE_RENDERERS_SCENERENDERERNODE_H
+#ifndef YAVE_RENDERERS_SCENERENDERER_H
+#define YAVE_RENDERERS_SCENERENDERER_H
 
-#include <yave/pipeline/CullingNode.h>
+#include "CullingNode.h"
 
 namespace yave {
 
@@ -39,7 +39,7 @@ class SceneRenderer : public SecondaryRenderer {
 		RecordedCmdBuffer<CmdBufferUsage::Secondary>&& cmd_buffer();
 
 	protected:
-		void compute_dependencies(const FrameToken& token, RenderingNode& self) override;
+		void build_frame_graph(const FrameToken& token, RenderingPipeline& self) override;
 		void process(const FrameToken&, CmdBufferRecorder<CmdBufferUsage::Secondary>&& recorder) override;
 
 	private:
@@ -64,4 +64,4 @@ class SceneRenderer : public SecondaryRenderer {
 
 }
 
-#endif // YAVE_RENDERERS_SCENERENDERERNODE_H
+#endif // YAVE_RENDERERS_SCENERENDERER_H

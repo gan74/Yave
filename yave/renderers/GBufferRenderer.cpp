@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "GBufferRenderer.h"
+#include "pipeline.h"
 
 namespace yave {
 
@@ -57,7 +58,7 @@ void GBufferRenderer::process(const FrameToken&, CmdBufferRecorder<>& recorder) 
 	recorder.execute(_scene.cmd_buffer(), _gbuffer);
 }
 
-void GBufferRenderer::compute_dependencies(const FrameToken& token, RenderingNode& self) {
+void GBufferRenderer::build_frame_graph(const FrameToken& token, RenderingPipeline& self) {
 	self.add_dependency(token, &_scene, _gbuffer);
 }
 
