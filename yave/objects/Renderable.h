@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,22 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_OBJECTS_RENDERABLE_H
+#define YAVE_OBJECTS_RENDERABLE_H
 
-#include "Scene.h"
+#include <yave/commands/CmdBufferRecorder.h>
+#include <yave/swapchain/FrameToken.h>
+
+#include "Transformable.h"
 
 namespace yave {
 
-Scene::Scene(core::Vector<Ptr<StaticMesh>>&& meshes, core::Vector<Ptr<Renderable> >&& renderables) :
-		_statics(std::move(meshes)),
-		_renderables(std::move(renderables)) {
-}
+class Renderable : public Transformable {
 
-const core::Vector<Scene::Ptr<StaticMesh>>& Scene::static_meshes() const {
-	return _statics;
-}
+	public:
+		virtual ~Renderable() {
+		}
 
-const core::Vector<Scene::Ptr<Renderable>>& Scene::renderables() const {
-	return _renderables;
-}
+		virtual void render(const FrameToken&, CmdBufferRecorderBase&) const = 0;
+};
 
 }
+
+
+#endif // YAVE_OBJECTS_RENDERABLE_H

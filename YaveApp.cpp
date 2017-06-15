@@ -109,7 +109,7 @@ void YaveApp::create_assets() {
 
 
 	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
-	core::Vector<StaticMesh> objects;
+	core::Vector<core::Unique<StaticMesh>> objects;
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");

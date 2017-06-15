@@ -30,13 +30,21 @@ namespace yave {
 class CullingNode : public Node {
 
 	public:
+		struct CullingResults {
+			core::Vector<const StaticMesh*> static_meshes;
+			core::Vector<const Renderable*> renderables;
+		};
+
 		CullingNode(SceneView& view);
 
 		const SceneView& scene_view() const;
 
-		core::Vector<const StaticMesh*> process(const FrameToken&);
+		CullingResults process(const FrameToken&);
 
 	private:
+		core::Vector<const Renderable*> process_renderables(const Frustum& frustum);
+		core::Vector<const StaticMesh*> process_static_meshes(const Frustum& frustum);
+
 		SceneView& _view;
 };
 

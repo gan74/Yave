@@ -28,6 +28,7 @@ namespace yave {
 
 class SceneRenderer : public SecondaryRenderer {
 
+		using Recorder = CmdBufferRecorder<CmdBufferUsage::Secondary>;
 	public:
 		template<typename T>
 		using Ptr = core::Rc<T>;
@@ -39,8 +40,11 @@ class SceneRenderer : public SecondaryRenderer {
 		RecordedCmdBuffer<CmdBufferUsage::Secondary> process(const FrameToken& token, const Framebuffer& framebuffer) override;
 
 	private:
-		void setup_instance(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, const AssetPtr<StaticMeshInstance>& instance);
-		void submit_batches(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, AssetPtr<Material>& mat, usize offset, usize size);
+		void render_renderables(Recorder& recorder, const FrameToken& token, const core::Vector<const Renderable*>& renderables);
+		void render_static_meshes(Recorder& recorder, const core::Vector<const StaticMesh*>& meshes);
+
+		void setup_instance(Recorder& recorder, const AssetPtr<StaticMeshInstance>& instance);
+		void submit_batches(Recorder& recorder, AssetPtr<Material>& mat, usize offset, usize size);
 
 		Ptr<CullingNode> _cull;
 

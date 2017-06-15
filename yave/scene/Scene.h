@@ -24,18 +24,24 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include <yave/objects/StaticMesh.h>
+#include <yave/objects/Renderable.h>
 
 namespace yave {
 
 class Scene : NonCopyable {
 
 	public:
-		Scene(core::Vector<StaticMesh>&& meshes);
+		template<typename T>
+		using Ptr = core::Unique<T>;
 
-		const core::Vector<StaticMesh>& static_meshes() const;
+		Scene(core::Vector<Ptr<StaticMesh>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {});
+
+		const core::Vector<Ptr<StaticMesh>>& static_meshes() const;
+		const core::Vector<Ptr<Renderable>>& renderables() const;
 
 	private:
-		core::Vector<StaticMesh> _statics; // pointers ?
+		core::Vector<Ptr<StaticMesh>> _statics;
+		core::Vector<Ptr<Renderable>> _renderables;
 };
 
 
