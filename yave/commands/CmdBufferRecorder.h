@@ -49,8 +49,6 @@ class CmdBufferRecorder : public PrimaryCmdBufferRecorderBase {
 		}
 };
 
-
-
 template<>
 class CmdBufferRecorder<CmdBufferUsage::Secondary> : public SecondaryCmdBufferRecorderBase {
 	public:

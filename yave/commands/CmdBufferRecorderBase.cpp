@@ -114,12 +114,8 @@ void PrimaryCmdBufferRecorderBase::end_render_pass() {
 	}
 }
 
-void PrimaryCmdBufferRecorderBase::execute(RecordedCmdBuffer<CmdBufferUsage::Secondary>&& secondary, const Framebuffer& framebuffer) {
-	if(secondary.vk_fence()) {
-#warning secondary command buffer not simultaneous
-		fatal("Secondary command buffers can only be executed by one primary command buffer at a time.");
-	}
-	secondary._data.fence = _cmd_buffer.vk_fence();
+void PrimaryCmdBufferRecorderBase::execute(RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer) {
+	secondary.add_dependency(_cmd_buffer);
 
 	bind_framebuffer(framebuffer, vk::SubpassContents::eSecondaryCommandBuffers);
 	vk_cmd_buffer().executeCommands({secondary.vk_cmd_buffer()});

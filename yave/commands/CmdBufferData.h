@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,43 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMMANDS_CMDBUFFERBASE_H
-#define YAVE_COMMANDS_CMDBUFFERBASE_H
+#ifndef YAVE_COMMANDS_CMDBUFFERDATA_H
+#define YAVE_COMMANDS_CMDBUFFERDATA_H
 
-#include "CmdBufferData.h"
+#include "CmdBufferUsage.h"
 
 namespace yave {
 
-class CmdBufferRecorderBase;
-class PrimaryCmdBufferRecorderBase;
+struct CmdBufferData : NonCopyable {
+	vk::CommandBuffer cmd_buffer;
+	vk::Fence fence;
 
-struct CmdBufferBase : NonCopyable {
-	public:
-		const vk::CommandBuffer vk_cmd_buffer() const;
-		vk::Fence vk_fence() const;
-		DevicePtr device() const;
+	CmdBufferPoolBase* pool = nullptr;
+	core::Vector<vk::Fence> dependencies;
 
-		void wait() const;
+	bool wait_for_fences(u64 timeout = u64(-1)) const;
 
-		CmdBufferBase(CmdBufferBase&& other);
-		~CmdBufferBase();
+	CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p);
 
-	protected:
-		friend class CmdBufferRecorderBase;
-		friend class PrimaryCmdBufferRecorderBase;
+	CmdBufferData() = default;
 
-		CmdBufferBase() = default;
-		CmdBufferBase(CmdBufferData&& data);
+	CmdBufferData(CmdBufferData&& other);
+	CmdBufferData& operator=(CmdBufferData&& other);
 
-		void swap(CmdBufferBase& other);
-
-		void submit(vk::Queue queue);
-		void add_dependency(const CmdBufferBase& cmd);
-
-	private:
-		CmdBufferData _data;
+	void swap(CmdBufferData& other);
 };
 
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERBASE_H
+#endif // YAVE_COMMANDS_CMDBUFFERDATA_H

@@ -74,7 +74,7 @@ class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
 
 		void bind_framebuffer(const Framebuffer& framebuffer);
 
-		void execute(RecordedCmdBuffer<CmdBufferUsage::Secondary>&& secondary, const Framebuffer& framebuffer);
+		void execute(RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer);
 
 		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,43 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMMANDS_CMDBUFFERBASE_H
-#define YAVE_COMMANDS_CMDBUFFERBASE_H
 
 #include "CmdBufferData.h"
+#include <yave/device/Device.h>
 
 namespace yave {
 
-class CmdBufferRecorderBase;
-class PrimaryCmdBufferRecorderBase;
-
-struct CmdBufferBase : NonCopyable {
-	public:
-		const vk::CommandBuffer vk_cmd_buffer() const;
-		vk::Fence vk_fence() const;
-		DevicePtr device() const;
-
-		void wait() const;
-
-		CmdBufferBase(CmdBufferBase&& other);
-		~CmdBufferBase();
-
-	protected:
-		friend class CmdBufferRecorderBase;
-		friend class PrimaryCmdBufferRecorderBase;
-
-		CmdBufferBase() = default;
-		CmdBufferBase(CmdBufferData&& data);
-
-		void swap(CmdBufferBase& other);
-
-		void submit(vk::Queue queue);
-		void add_dependency(const CmdBufferBase& cmd);
-
-	private:
-		CmdBufferData _data;
-};
-
+CmdBufferData::CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p) :
+		cmd_buffer(buf), fence(fen), pool(p) {
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERBASE_H
+CmdBufferData::CmdBufferData(CmdBufferData&& other) {
+	swap(other);
+}
+
+CmdBufferData& CmdBufferData::operator=(CmdBufferData&& other) {
+	swap(other);
+	return *this;
+}
+
+void CmdBufferData::swap(CmdBufferData& other) {
+	std::swap(cmd_buffer, other.cmd_buffer);
+	std::swap(fence, other.fence);
+	std::swap(dependencies, other.dependencies);
+	std::swap(pool, other.pool);
+}
+
+bool CmdBufferData::wait_for_fences(u64 timeout) const {
+	if(!pool) {
+		return true;
+	}
+
+	auto dptr = pool->device();
+	if(!dependencies.is_empty()) {
+		vk::ArrayProxy<const vk::Fence> fences(u32(dependencies.size()), dependencies.begin());
+		if(dptr->vk_device().waitForFences(fences, true, timeout) != vk::Result::eSuccess) {
+			return false;
+		}
+	}
+	if(fence) {
+		if(dptr->vk_device().waitForFences(fence, true, timeout) != vk::Result::eSuccess) {
+			return false;
+		}
+	}
+	return true;
+}
+
+}

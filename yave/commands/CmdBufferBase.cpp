@@ -21,26 +21,26 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferBase.h"
-#include "CmdBufferPoolData.h"
+
+#include <yave/commands/pool/CmdBufferPoolBase.h>
 #include <yave/device/Device.h>
 
 namespace yave {
 
-CmdBufferBase::CmdBufferBase(const core::Arc<CmdBufferPoolData>& pool) : _pool(pool), _data(_pool->alloc()) {
+CmdBufferBase::CmdBufferBase(CmdBufferData&& data) : _data(std::move(data)) {
 }
 
-CmdBufferBase::CmdBufferBase(CmdBufferBase&& other) : CmdBufferBase() {
+CmdBufferBase::CmdBufferBase(CmdBufferBase&& other) {
 	swap(other);
 }
 
 CmdBufferBase::~CmdBufferBase() {
-	if(_pool) {
-		_pool->release(std::move(_data));
+	if(_data.pool) {
+		_data.pool->release(std::move(_data));
 	}
 }
 
 void CmdBufferBase::swap(CmdBufferBase& other) {
-	std::swap(_pool, other._pool);
 	std::swap(_data, other._data);
 }
 
@@ -52,12 +52,20 @@ void CmdBufferBase::submit(vk::Queue queue) {
 		_data.fence);
 }
 
+void CmdBufferBase::add_dependency(const CmdBufferBase& cmd) {
+	if(cmd._data.fence) {
+		_data.dependencies.push_back(cmd._data.fence);
+	} else {
+		fatal("CmdBufferBase has no fence.");
+	}
+}
+
 void CmdBufferBase::wait() const {
-	device()->vk_device().waitForFences({_data.fence}, true, u64(-1));
+	_data.wait_for_fences();
 }
 
 DevicePtr CmdBufferBase::device() const {
-	return _pool->device();
+	return _data.pool ? _data.pool->device() : nullptr;
 }
 
 const vk::CommandBuffer CmdBufferBase::vk_cmd_buffer() const {
@@ -65,7 +73,7 @@ const vk::CommandBuffer CmdBufferBase::vk_cmd_buffer() const {
 }
 
 vk::Fence CmdBufferBase::vk_fence() const {
-	return _data.fence;
+	return  _data.fence;
 }
 
 }

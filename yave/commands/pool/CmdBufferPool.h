@@ -19,40 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
-#define YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
+#ifndef YAVE_COMMANDS_POOL_CMDBUFFERPOOL_H
+#define YAVE_COMMANDS_POOL_CMDBUFFERPOOL_H
 
-#include <y/concurrent/Arc.h>
-
-#include <yave/yave.h>
-#include <yave/device/DeviceLinked.h>
-
-#include "CmdBufferUsage.h"
+#include <yave/commands/CmdBuffer.h>
+#include "CmdBufferPoolBase.h"
 
 namespace yave {
 
-class CmdBufferPoolData : NonCopyable, public DeviceLinked {
+template<CmdBufferUsage Usage>
+class CmdBufferPool : public CmdBufferPoolBase {
+
 	public:
-		~CmdBufferPoolData();
+		CmdBufferPool() = default;
+
+		CmdBufferPool(DevicePtr dptr) : CmdBufferPoolBase(dptr, Usage) {
+		}
+
+		CmdBufferPool(CmdBufferPool&& other) {
+			swap(other);
+		}
+
+		CmdBufferPool& operator=(CmdBufferPool&& other) {
+			swap(other);
+			return *this;
+		}
+
+		CmdBuffer<Usage> create_buffer() {
+			return CmdBuffer<Usage>(alloc());
+		}
 
 	private:
-		template<CmdBufferUsage>
-		friend class CmdBufferPool;
-		friend class CmdBufferBase;
-
-		CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred);
-
-		void release(CmdBufferData&& data);
-		CmdBufferData alloc();
-
-		void join_fences();
-
-	private:
-		vk::CommandPool _pool;
-		CmdBufferUsage _usage;
-		core::Vector<CmdBufferData> _cmd_buffers;
 };
 
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERPOOLDATA_H
+#endif // YAVE_COMMANDS_CMDBUFFERPOOL_H

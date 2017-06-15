@@ -19,35 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMMANDS_CMDBUFFERPOOL_H
-#define YAVE_COMMANDS_CMDBUFFERPOOL_H
+#ifndef YAVE_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
+#define YAVE_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
 
-#include "CmdBuffer.h"
-#include "CmdBufferPoolData.h"
+#include <y/concurrent/Arc.h>
+
+#include <yave/yave.h>
+#include <yave/device/DeviceLinked.h>
+
+#include <yave/commands/CmdBufferUsage.h>
+#include <yave/commands/CmdBufferData.h>
 
 namespace yave {
 
-template<CmdBufferUsage Usage>
-class CmdBufferPool {
-
+class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
 	public:
-		CmdBufferPool() = default;
+		~CmdBufferPoolBase();
 
-		CmdBufferPool(DevicePtr dptr) : _pool(new CmdBufferPoolData(dptr, Usage)) {
-		}
+	protected:
+		friend class CmdBufferBase;
 
-		CmdBuffer<Usage> create_buffer() {
-			return CmdBuffer<Usage>(_pool);
-		}
+		CmdBufferPoolBase() = default;
+		CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);
 
-		usize active_buffers() const {
-			return _pool.ref_count() - 1;
-		}
+		void release(CmdBufferData&& data);
+		CmdBufferData alloc();
+
+		void join_fences();
+
+		void swap(CmdBufferPoolBase& other);
 
 	private:
-		core::Arc<CmdBufferPoolData> _pool;
+		CmdBufferData create_data();
+
+		vk::CommandPool _pool;
+		CmdBufferUsage _usage;
+		core::Vector<CmdBufferData> _cmd_buffers;
 };
 
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERPOOL_H
+#endif // YAVE_COMMANDS_POOL_CMDBUFFERPOOLBASE_H

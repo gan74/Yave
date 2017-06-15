@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "CmdBufferPoolData.h"
+#include "CmdBufferPoolBase.h"
 #include <yave/device/Device.h>
 
 #include <y/core/Chrono.h>
@@ -35,8 +35,6 @@ static vk::CommandPoolCreateFlagBits cmd_create_flags(CmdBufferUsage u) {
 	return u == CmdBufferUsage::Disposable ? vk::CommandPoolCreateFlagBits::eTransient : vk::CommandPoolCreateFlagBits();
 }
 
-
-
 static vk::CommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
 	return dptr->vk_device().createCommandPool(vk::CommandPoolCreateInfo()
 			.setQueueFamilyIndex(dptr->queue_family(QueueFamily::Graphics).index())
@@ -44,48 +42,14 @@ static vk::CommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
 		);
 }
 
-static CmdBufferData alloc_data(DevicePtr dptr, vk::CommandPool pool, CmdBufferUsage usage) {
-	auto buffer = dptr->vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
-			.setCommandBufferCount(1)
-			.setCommandPool(pool)
-			.setLevel(cmd_level(usage))
-		).back();
 
-	auto fence =
-		(usage == CmdBufferUsage::Secondary)
-			? vk::Fence()
-			: dptr->vk_device().createFence(vk::FenceCreateInfo()
-					.setFlags(vk::FenceCreateFlagBits::eSignaled)
-				);
-
-	return CmdBufferData{buffer, fence};
-}
-
-
-
-static void reset(CmdBufferData& data, CmdBufferUsage usage) {
-	if(usage == CmdBufferUsage::Secondary) {
-		data.fence = vk::Fence();
-	}
+static void reset(CmdBufferData& data, CmdBufferUsage) {
+	data.dependencies.clear();
 	data.cmd_buffer.reset(vk::CommandBufferResetFlags());
 }
 
-/*static void wait(DevicePtr dptr, const CmdBufferData &data) {
-	core::Chrono c;
-	dptr->vk_device().waitForFences(data.fence, true, u64(-1));
-	if(c.elapsed().to_nanos()) {
-		log_msg(core::String() + "waited " + c.elapsed().to_micros() + "us for command buffer!", Log::Warning);
-	}
-}
-
-static const CmdBufferData& force_reset(DevicePtr dptr, const CmdBufferData &data) {
-	wait(dptr, data);
-	reset(data);
-	return data;
-}*/
-
-static bool try_reset(DevicePtr dptr, CmdBufferData& data, CmdBufferUsage usage) {
-	if(dptr->vk_device().waitForFences(data.fence, true, 0) != vk::Result::eSuccess) {
+static bool try_reset(CmdBufferData& data, CmdBufferUsage usage) {
+	if(!data.wait_for_fences(0)) {
 		return false;
 	}
 	reset(data, usage);
@@ -93,44 +57,78 @@ static bool try_reset(DevicePtr dptr, CmdBufferData& data, CmdBufferUsage usage)
 }
 
 
-CmdBufferPoolData::CmdBufferPoolData(DevicePtr dptr, CmdBufferUsage preferred) : DeviceLinked(dptr), _pool(create_pool(dptr, preferred)), _usage(preferred) {
+CmdBufferPoolBase::CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred) :
+		DeviceLinked(dptr),
+		_pool(create_pool(dptr, preferred)),
+		_usage(preferred) {
 }
 
-CmdBufferPoolData::~CmdBufferPoolData() {
+CmdBufferPoolBase::~CmdBufferPoolBase() {
 	join_fences();
-	for(auto buffer : _cmd_buffers) {
+	for(auto& buffer : _cmd_buffers) {
 		device()->vk_device().freeCommandBuffers(_pool, buffer.cmd_buffer);
-		if(_usage != CmdBufferUsage::Secondary) {
-			destroy(buffer.fence);
-		}
+		destroy(buffer.fence);
 	}
 	destroy(_pool);
 }
 
-void CmdBufferPoolData::join_fences() {
+void CmdBufferPoolBase::swap(CmdBufferPoolBase& other) {
+	DeviceLinked::swap(other);
+	std::swap(_pool, other._pool);
+	std::swap(_usage, other._usage);
+	std::swap(_cmd_buffers, other._cmd_buffers);
+}
+
+void CmdBufferPoolBase::join_fences() {
 	if(_cmd_buffers.is_empty()) {
 		return;
 	}
 
 	auto fences = core::vector_with_capacity<vk::Fence>(_cmd_buffers.size());
-	std::transform(_cmd_buffers.begin(), _cmd_buffers.end(), std::back_inserter(fences), [](auto& buffer) { return buffer.fence; });
+	for(const auto&buffer : _cmd_buffers) {
+		if(buffer.fence) {
+			fences.push_back(buffer.fence);
+		}
+		fences.push_back(buffer.dependencies.begin(), buffer.dependencies.end());
+	}
+
 	if(device()->vk_device().waitForFences(fences.size(), fences.data(), true, u64(-1)) != vk::Result::eSuccess) {
 		fatal("Unable to join fences.");
 	}
 }
 
-void CmdBufferPoolData::release(CmdBufferData&& data) {
+void CmdBufferPoolBase::release(CmdBufferData&& data) {
+	if(data.pool != this) {
+		fatal("CmdBufferData was not returned to its original pool.");
+	}
 	_cmd_buffers.push_back(std::move(data));
 }
 
-CmdBufferData CmdBufferPoolData::alloc() {
+CmdBufferData CmdBufferPoolBase::alloc() {
 	for(auto& buffer : _cmd_buffers) {
-		if(try_reset(device(), buffer, _usage)) {
+		if(try_reset(buffer, _usage)) {
 			std::swap(buffer, _cmd_buffers.last());
 			return _cmd_buffers.pop();
 		}
 	}
-	return alloc_data(device(), _pool, _usage);
+	return create_data();
+}
+
+CmdBufferData CmdBufferPoolBase::create_data() {
+	auto buffer = device()->vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
+			.setCommandBufferCount(1)
+			.setCommandPool(_pool)
+			.setLevel(cmd_level(_usage))
+		).back();
+
+	auto fence =
+		(_usage == CmdBufferUsage::Secondary)
+			? vk::Fence()
+			: device()->vk_device().createFence(vk::FenceCreateInfo()
+					.setFlags(vk::FenceCreateFlagBits::eSignaled)
+				);
+
+	return CmdBufferData(buffer, fence, this);
 }
 
 }

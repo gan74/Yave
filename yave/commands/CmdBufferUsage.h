@@ -29,28 +29,25 @@ SOFTWARE.
 
 namespace yave {
 
-struct CmdBufferData {
-	vk::CommandBuffer cmd_buffer;
-	vk::Fence fence;
-};
-
 enum class CmdBufferUsage {
-	//Normal = uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse), ???
-	Normal = uenum(vk::CommandBufferUsageFlagBits()),
+	Primary = uenum(vk::CommandBufferUsageFlagBits()), // eSimultaneousUse ?
 	Disposable = uenum(vk::CommandBufferUsageFlagBits::eOneTimeSubmit),
-	Secondary = uenum(detail::max(Normal, Disposable) << 1)
+	Secondary = uenum((detail::max(Primary, Disposable) << 1)) | uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 };
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
+class CmdBufferBase;
+class CmdBufferPoolBase;
+
+template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
 class CmdBufferPool;
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
+template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
 class RecordedCmdBuffer;
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
+template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
 class CmdBuffer;
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Normal>
+template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
 class CmdBufferRecorder;
 
 }

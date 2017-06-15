@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <yave/bindings/DescriptorSetLayoutPool.h>
 #include <yave/image/Sampler.h>
-#include <yave/commands/CmdBufferPool.h>
+#include <yave/commands/pool/CmdBufferPool.h>
 #include <yave/queues/QueueFamily.h>
 
 #include <yave/vk/destroy.h>
@@ -51,7 +51,7 @@ class Device : NonCopyable {
 
 		template<typename T>
 		void destroy(T t) const {
-			if(t != T(VK_NULL_HANDLE)) {
+			if(t != T()) {
 				detail::destroy(this, t);
 			}
 		}
@@ -87,7 +87,7 @@ class Device : NonCopyable {
 
 		mutable CmdBufferPool<CmdBufferUsage::Secondary> _secondary_cmd_pool;
 		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
-		mutable CmdBufferPool<CmdBufferUsage::Normal> _primary_cmd_pool;
+		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
 
 		DescriptorSetLayoutPool* _descriptor_layout_pool;
 };

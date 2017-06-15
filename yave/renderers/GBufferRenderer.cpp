@@ -56,7 +56,7 @@ const math::Vec2ui& GBufferRenderer::size() const {
 TextureView GBufferRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
 	RecordedCmdBuffer<CmdBufferUsage::Secondary> cmd_buffer = _scene.process(token, _gbuffer);
 
-	recorder.execute(std::move(cmd_buffer), _gbuffer);
+	recorder.execute(cmd_buffer, _gbuffer);
 
 	return _color;
 }
