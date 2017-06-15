@@ -60,7 +60,7 @@ RecordedCmdBuffer<CmdBufferUsage::Secondary> SceneRenderer::process(const FrameT
 	const auto& visibles = _cull->process(token);
 
 	if(visibles.is_empty()) {
-		return recorder.end();
+		return std::move(recorder);
 	}
 
 	if(visibles.size() > batch_size) {
@@ -93,7 +93,7 @@ RecordedCmdBuffer<CmdBufferUsage::Secondary> SceneRenderer::process(const FrameT
 	}
 	submit_batches(recorder, visibles[submitted]->material(), submitted, i - submitted);
 
-	return recorder.end();
+	return std::move(recorder);
 }
 
 void SceneRenderer::setup_instance(CmdBufferRecorder<CmdBufferUsage::Secondary>& recorder, const AssetPtr<StaticMeshInstance>& instance) {

@@ -100,7 +100,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	auto staging_buffer = get_staging_buffer(dptr, data.all_mip_bytes_size(), data.data());
 	auto regions = get_copy_regions(data);
 
-	auto recorder = CmdBufferRecorder<CmdBufferUsage::Disposable>(dptr->create_disposable_cmd_buffer());
+	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
 
 	recorder.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
@@ -108,7 +108,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 
 	recorder.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
 
-	recorder.end().submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 }
 
 static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize mips) {

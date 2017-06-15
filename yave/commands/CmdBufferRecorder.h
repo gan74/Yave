@@ -42,11 +42,8 @@ class CmdBufferRecorder : public PrimaryCmdBufferRecorderBase {
 			return *this;
 		}
 
-		 RecordedCmdBuffer<Usage> end() {
-			end_render_pass();
-			vk_cmd_buffer().end();
-			return std::move(_cmd_buffer);
-		}
+	private:
+		friend class RecordedCmdBuffer<Usage>;
 };
 
 template<>
@@ -65,10 +62,8 @@ class CmdBufferRecorder<CmdBufferUsage::Secondary> : public SecondaryCmdBufferRe
 			return *this;
 		}
 
-		 RecordedCmdBuffer<CmdBufferUsage::Secondary> end() {
-			vk_cmd_buffer().end();
-			return std::move(_cmd_buffer);
-		}
+	private:
+		friend class RecordedCmdBuffer<CmdBufferUsage::Secondary>;
 };
 
 }

@@ -107,7 +107,7 @@ PrimaryCmdBufferRecorderBase::PrimaryCmdBufferRecorderBase(CmdBufferBase&& base,
 	vk_cmd_buffer().begin(info);
 }
 
-void PrimaryCmdBufferRecorderBase::end_render_pass() {
+void PrimaryCmdBufferRecorderBase::end_renderpass() {
 	if(_render_pass) {
 		vk_cmd_buffer().endRenderPass();
 		_render_pass = nullptr;
@@ -119,12 +119,12 @@ void PrimaryCmdBufferRecorderBase::execute(RecordedCmdBuffer<CmdBufferUsage::Sec
 
 	bind_framebuffer(framebuffer, vk::SubpassContents::eSecondaryCommandBuffers);
 	vk_cmd_buffer().executeCommands({secondary.vk_cmd_buffer()});
-	end_render_pass();
+	end_renderpass();
 }
 
 
 void PrimaryCmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
-	end_render_pass();
+	end_renderpass();
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
 	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& ds) { return ds.get().vk_descriptor_set(); });
@@ -135,7 +135,7 @@ void PrimaryCmdBufferRecorderBase::dispatch(const ComputeProgram& program, const
 }
 
 void PrimaryCmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
-	end_render_pass();
+	end_renderpass();
 
 	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
 	std::transform(images.begin(), images.end(), std::back_inserter(image_barriers), [](const auto& b) { return b.vk_barrier(); });
@@ -178,7 +178,7 @@ void PrimaryCmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageL
 
 void PrimaryCmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass) {
 	if(_render_pass) {
-		end_render_pass();
+		end_renderpass();
 	}
 	auto clear_values = core::vector_with_capacity<vk::ClearValue>(framebuffer.attachment_count() + 1);
 	for(usize i = 0; i != framebuffer.attachment_count(); ++i) {

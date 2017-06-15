@@ -70,7 +70,7 @@ class SecondaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
 
 class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
 	public:
-		void end_render_pass();
+		void end_renderpass();
 
 		void bind_framebuffer(const Framebuffer& framebuffer);
 

@@ -58,7 +58,7 @@ void YaveApp::draw() {
 
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
 	renderer->process(frame, recorder);
-	auto cmd_buffer = recorder.end();
+	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);

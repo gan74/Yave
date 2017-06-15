@@ -39,8 +39,20 @@ struct SyncSubmit {
 
 template<CmdBufferUsage Usage>
 class RecordedCmdBuffer : public CmdBufferBase {
+
+	CmdBufferBase end_recorder(CmdBufferRecorder<Usage>&& recorder) {
+		if constexpr(Usage != CmdBufferUsage::Secondary) {
+			recorder.end_renderpass();
+		}
+		recorder.vk_cmd_buffer().end();
+		return std::move(recorder._cmd_buffer);
+	}
+
 	public:
 		RecordedCmdBuffer() = default;
+
+		RecordedCmdBuffer(CmdBufferRecorder<Usage>&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
+		}
 
 		RecordedCmdBuffer(RecordedCmdBuffer&& other) : CmdBufferBase() {
 			swap(other);
