@@ -26,14 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
+class CmdBufferDataProxy;
+
 struct CmdBufferData : NonCopyable {
 	vk::CommandBuffer cmd_buffer;
 	vk::Fence fence;
 
+	core::Vector<core::Arc<CmdBufferDataProxy>> keep_alive;
 	CmdBufferPoolBase* pool = nullptr;
-	core::Vector<vk::Fence> dependencies;
 
-	bool wait_for_fences(u64 timeout = u64(-1)) const;
+
 
 	CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p);
 

@@ -19,30 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_COMMANDS_CMDBUFFERDATAPROXY_H
+#define YAVE_COMMANDS_CMDBUFFERDATAPROXY_H
 
 #include "CmdBufferData.h"
-#include <yave/device/Device.h>
+#include <yave/commands/pool/CmdBufferPoolBase.h>
 
 namespace yave {
 
-CmdBufferData::CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p) :
-		cmd_buffer(buf), fence(fen), pool(p) {
+struct CmdBufferDataProxy {
+	CmdBufferData data;
+
+	//CmdBufferDataProxy() = default;
+
+	CmdBufferDataProxy(CmdBufferDataProxy&& other) {
+		std::swap(data, other.data);
+	}
+
+	CmdBufferDataProxy(CmdBufferData&& d) : data(std::move(d)) {
+	}
+
+	~CmdBufferDataProxy() {
+		if(data.pool) {
+			data.pool->release(std::move(data));
+		}
+	}
+
+};
+
 }
 
-CmdBufferData::CmdBufferData(CmdBufferData&& other) {
-	swap(other);
-}
-
-CmdBufferData& CmdBufferData::operator=(CmdBufferData&& other) {
-	swap(other);
-	return *this;
-}
-
-void CmdBufferData::swap(CmdBufferData& other) {
-	std::swap(cmd_buffer, other.cmd_buffer);
-	std::swap(fence, other.fence);
-	std::swap(keep_alive, other.keep_alive);
-	std::swap(pool, other.pool);
-}
-
-}
+#endif // YAVE_COMMANDS_CMDBUFFERDATAPROXY_H

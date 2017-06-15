@@ -44,12 +44,12 @@ static vk::CommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
 
 
 static void reset(CmdBufferData& data, CmdBufferUsage) {
-	data.dependencies.clear();
+	data.keep_alive.clear();
 	data.cmd_buffer.reset(vk::CommandBufferResetFlags());
 }
 
-static bool try_reset(CmdBufferData& data, CmdBufferUsage usage) {
-	if(!data.wait_for_fences(0)) {
+static bool try_reset(DevicePtr dptr, CmdBufferData& data, CmdBufferUsage usage) {
+	if(data.fence && dptr->vk_device().waitForFences({data.fence}, true, 0) != vk::Result::eSuccess) {
 		return false;
 	}
 	reset(data, usage);
@@ -80,17 +80,12 @@ void CmdBufferPoolBase::swap(CmdBufferPoolBase& other) {
 }
 
 void CmdBufferPoolBase::join_fences() {
-	if(_cmd_buffers.is_empty()) {
+	if(_cmd_buffers.is_empty() || _usage == CmdBufferUsage::Secondary) {
 		return;
 	}
 
 	auto fences = core::vector_with_capacity<vk::Fence>(_cmd_buffers.size());
-	for(const auto&buffer : _cmd_buffers) {
-		if(buffer.fence) {
-			fences.push_back(buffer.fence);
-		}
-		fences.push_back(buffer.dependencies.begin(), buffer.dependencies.end());
-	}
+	std::transform(_cmd_buffers.begin(), _cmd_buffers.end(), std::back_inserter(fences), [](const auto& buffer) { return buffer.fence; });
 
 	if(device()->vk_device().waitForFences(fences.size(), fences.data(), true, u64(-1)) != vk::Result::eSuccess) {
 		fatal("Unable to join fences.");
@@ -104,14 +99,14 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
 	_cmd_buffers.push_back(std::move(data));
 }
 
-CmdBufferData CmdBufferPoolBase::alloc() {
+core::Arc<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
 	for(auto& buffer : _cmd_buffers) {
-		if(try_reset(buffer, _usage)) {
+		if(try_reset(device(), buffer, _usage)) {
 			std::swap(buffer, _cmd_buffers.last());
-			return _cmd_buffers.pop();
+			return core::Arc<CmdBufferDataProxy>(CmdBufferDataProxy(_cmd_buffers.pop()));
 		}
 	}
-	return create_data();
+	return core::Arc<CmdBufferDataProxy>(CmdBufferDataProxy(create_data()));
 }
 
 CmdBufferData CmdBufferPoolBase::create_data() {
@@ -128,6 +123,7 @@ CmdBufferData CmdBufferPoolBase::create_data() {
 					.setFlags(vk::FenceCreateFlagBits::eSignaled)
 				);
 
+	//log_msg("new command buffer created (" + core::str(uenum(_usage)) + ") " + _cmd_buffers.size() + " waiting");
 	return CmdBufferData(buffer, fence, this);
 }
 

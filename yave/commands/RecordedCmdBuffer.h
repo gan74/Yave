@@ -40,7 +40,7 @@ struct SyncSubmit {
 template<CmdBufferUsage Usage>
 class RecordedCmdBuffer : public CmdBufferBase {
 
-	CmdBufferBase end_recorder(CmdBufferRecorder<Usage>&& recorder) {
+	CmdBufferBase&& end_recorder(CmdBufferRecorder<Usage>&& recorder) {
 		if constexpr(Usage != CmdBufferUsage::Secondary) {
 			recorder.end_renderpass();
 		}

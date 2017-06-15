@@ -27,53 +27,43 @@ SOFTWARE.
 
 namespace yave {
 
-CmdBufferBase::CmdBufferBase(CmdBufferData&& data) : _data(std::move(data)) {
+CmdBufferBase::CmdBufferBase(core::Arc<CmdBufferDataProxy>&& data) : _proxy(std::move(data)) {
 }
 
 CmdBufferBase::CmdBufferBase(CmdBufferBase&& other) {
 	swap(other);
 }
 
-CmdBufferBase::~CmdBufferBase() {
-	if(_data.pool) {
-		_data.pool->release(std::move(_data));
-	}
-}
-
 void CmdBufferBase::swap(CmdBufferBase& other) {
-	std::swap(_data, other._data);
+	std::swap(_proxy, other._proxy);
 }
 
 void CmdBufferBase::submit(vk::Queue queue) {
-	device()->vk_device().resetFences(_data.fence);
+	device()->vk_device().resetFences(_proxy->data.fence);
 	queue.submit(vk::SubmitInfo()
 			.setCommandBufferCount(1)
-			.setPCommandBuffers(&_data.cmd_buffer),
-		_data.fence);
+			.setPCommandBuffers(&_proxy->data.cmd_buffer),
+		_proxy->data.fence);
 }
 
-void CmdBufferBase::add_dependency(const CmdBufferBase& cmd) {
-	if(cmd._data.fence) {
-		_data.dependencies.push_back(cmd._data.fence);
-	} else {
-		fatal("CmdBufferBase has no fence.");
-	}
+void CmdBufferBase::keep_alive(const CmdBufferBase& cmd) {
+	_proxy->data.keep_alive.push_back(cmd._proxy);
 }
 
 void CmdBufferBase::wait() const {
-	_data.wait_for_fences();
+	device()->vk_device().waitForFences({_proxy->data.fence}, true, u64(-1));
 }
 
 DevicePtr CmdBufferBase::device() const {
-	return _data.pool ? _data.pool->device() : nullptr;
+	return _proxy->data.pool ? _proxy->data.pool->device() : nullptr;
 }
 
-const vk::CommandBuffer CmdBufferBase::vk_cmd_buffer() const {
-	return _data.cmd_buffer;
+vk::CommandBuffer CmdBufferBase::vk_cmd_buffer() const {
+	return _proxy ? _proxy->data.cmd_buffer : vk::CommandBuffer();
 }
 
 vk::Fence CmdBufferBase::vk_fence() const {
-	return  _data.fence;
+	return  _proxy ? _proxy->data.fence : vk::Fence();
 }
 
 }

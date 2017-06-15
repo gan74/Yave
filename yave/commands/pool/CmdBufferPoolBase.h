@@ -32,18 +32,20 @@ SOFTWARE.
 
 namespace yave {
 
+class CmdBufferDataProxy;
+
 class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
 	public:
 		~CmdBufferPoolBase();
 
 	protected:
-		friend class CmdBufferBase;
+		friend class CmdBufferDataProxy;
 
 		CmdBufferPoolBase() = default;
 		CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);
 
 		void release(CmdBufferData&& data);
-		CmdBufferData alloc();
+		core::Arc<CmdBufferDataProxy> alloc();
 
 		void join_fences();
 
