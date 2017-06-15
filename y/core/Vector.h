@@ -155,11 +155,12 @@ class Vector : ResizePolicy, Allocator {
 			new(_data_end++) data_type(std::move(elem));
 		}
 
-		value_type& push_back() {
+		template<typename... Args>
+		value_type& emplace_back(Args&&... args) {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
-			return *(new(_data_end++) data_type());
+			return *(new(_data_end++) data_type(std::forward<Args>(args)...));
 		}
 
 		template<typename It>

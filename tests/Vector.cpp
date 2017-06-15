@@ -142,7 +142,7 @@ y_test_func("Vector push_back") {
 	for(int i = 0; i != 18; ++i) {
 		vec.push_back(i);
 	}
-	vec.push_back() = 18;
+	vec.emplace_back() = 18;
 
 	y_test_assert(vec.size() == 21);
 	y_test_assert(vec.capacity() >= 21);
