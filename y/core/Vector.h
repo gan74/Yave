@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_CORE_VECTOR
 
 #include <y/utils.h>
+#include <cstring>
 
 namespace y {
 namespace core {
@@ -165,6 +166,7 @@ class Vector : ResizePolicy, Allocator {
 
 		template<typename It>
 		void push_back(const It& beg_it, const It& end_it) {
+			set_min_capacity(size() + std::distance(beg_it, end_it));
 			std::copy(beg_it, end_it, std::back_inserter(*this));
 		}
 
@@ -305,7 +307,7 @@ class Vector : ResizePolicy, Allocator {
 	private:
 		void move_range(data_type* dst, data_type* src, usize n) {
 			if constexpr(std::is_pod<data_type>::value) {
-				memmove(dst, src, sizeof(data_type) * n);
+				std::copy_n(src, n, dst);
 			} else {
 				for(; n; --n) {
 					new(dst++) data_type(std::move(*(src++)));

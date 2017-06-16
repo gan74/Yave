@@ -192,20 +192,17 @@ class Vec
 			return _vec[3];
 		}
 
-		constexpr auto sub(usize index) const {
+		template<usize M>
+		auto to() const {
+			static_assert(M < N, "Accessing out of bound member");
 			Vec<N - 1, T> v;
-			for(usize i = 0; i != index; ++i) {
+			for(usize i = 0; i != M; ++i) {
 				v[i] = _vec[i];
 			}
-			for(usize i = index; i < N - 1; ++i) {
+			for(usize i = M; i < N - 1; ++i) {
 				v[i] = _vec[i + 1];
 			}
 			return v;
-		}
-
-		template<usize M>
-		auto to() const {
-			return sub(M);
 		}
 
 		bool is_zero() const {
