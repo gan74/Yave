@@ -88,7 +88,7 @@ void YaveApp::update(math::Vec2 angles) {
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
-	camera.set_view(math::look_at(cam_pos.sub(3) / cam_pos.w(), math::Vec3(), cam_up.sub(3)));
+	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
 	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.01f,  dist * 2));
 }
 

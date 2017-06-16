@@ -43,7 +43,7 @@ void ColorCorrectionRenderer::process(const FrameToken& token, CmdBufferRecorder
 #warning barrier ?
 
 	auto size = token.image_view.size();
-	recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().sub(3), 1), {create_descriptor_set(token.image_view, view)});
+	recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().to<2>(), 1), {create_descriptor_set(token.image_view, view)});
 }
 
 const DescriptorSet& ColorCorrectionRenderer::create_descriptor_set(const StorageView& out, const TextureView& in) {

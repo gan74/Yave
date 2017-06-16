@@ -114,7 +114,7 @@ TextureView DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder
 
 	_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
 
-	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub(3), 1), {_descriptor_set});
+	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().to<2>(), 1), {_descriptor_set});
 
 	return _acc_buffer;
 }
