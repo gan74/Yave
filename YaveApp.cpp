@@ -96,7 +96,6 @@ void YaveApp::create_assets() {
 	{
 		{
 			auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/chalet.jpg.yt").expected("Unable to load texture file."));
-			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
 			mesh_texture = Texture(&device, image);
 		}
 		material = AssetPtr<Material>(Material(&device, MaterialData()
@@ -112,7 +111,8 @@ void YaveApp::create_assets() {
 	core::Vector<core::Unique<Renderable>> renderables;
 
 	{
-		renderables << new HeightmapTerrain(mesh_pool, AssetPtr<Texture>());
+		auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/height.png.yt").expected("Unable to load texture file."));
+		renderables << new HeightmapTerrain(mesh_pool, AssetPtr<Texture>(Texture(&device, image)));
 	}
 
 	for(auto name : meshes) {
