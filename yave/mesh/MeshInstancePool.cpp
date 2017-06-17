@@ -26,6 +26,8 @@ namespace yave {
 
 using Cmd = vk::DrawIndexedIndirectCommand;
 
+#warning MeshInstancePool doesnt recycle anything
+
 MeshInstancePool::MeshInstancePool(DevicePtr dptr, usize vertices, usize triangles) :
 		DeviceLinked(dptr),
 		_vertex_buffer(dptr, vertices),
@@ -43,19 +45,21 @@ StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
 		fatal("Unable to allocate vertex buffer.");
 	}
 
-	usize vertex_offset = _vertex_end;
-	usize triangle_offset = _triangle_end;
-
-	VertexSubBuffer<> verts(_vertex_buffer, _vertex_end, data.vertices.size());
+	VertexSubBuffer verts(_vertex_buffer, _vertex_end, data.vertices.size());
 	_vertex_end += data.vertices.size();
 
-	TriangleSubBuffer<> tris(_triangle_buffer, _triangle_end, data.triangles.size());
+	TriangleSubBuffer tris(_triangle_buffer, _triangle_end, data.triangles.size());
 	_triangle_end += data.triangles.size();
 
-	std::copy(data.triangles.begin(), data.triangles.end(), tris.map().begin());
-	std::copy(data.vertices.begin(), data.vertices.end(), verts.map().begin());
+	{
+		auto triangle_mapping = tris.map();
+		auto vertex_mapping = verts.map();
+		std::copy(data.triangles.begin(), data.triangles.end(), triangle_mapping.begin());
+		std::copy(data.vertices.begin(), data.vertices.end(), vertex_mapping.begin());
+	}
 
-	return StaticMeshInstance(tris, verts, create_indirect_buffer_data(data, vertex_offset, triangle_offset), data.radius);
+	vk::DrawIndexedIndirectCommand cmd(data.triangles.size() * 3, 1);
+	return StaticMeshInstance(tris, verts, cmd, data.radius);
 }
 
 }

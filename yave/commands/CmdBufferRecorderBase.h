@@ -48,13 +48,13 @@ class CmdBufferRecorderBase : NonCopyable {
 
 		void set_viewport(const Viewport& view);
 
+		void bind_material(Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets = {});
 		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
+		void draw(const StaticMeshInstance& mesh);
 
-
-		template<MemoryFlags IndexFlags, MemoryFlags VertexFlags>
-		void bind_buffers(const SubBuffer<BufferUsage::IndexBit, IndexFlags>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit, VertexFlags>>& vertices) {
-			bind_buffer_bases(indices, vertices);
+		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& vertices) {
+			bind_buffer_bases(indices, reinterpret_cast<const core::ArrayProxy<SubBufferBase>&>(vertices));
 		}
 
 	protected:
@@ -64,6 +64,7 @@ class CmdBufferRecorderBase : NonCopyable {
 		void swap(CmdBufferRecorderBase& other);
 
 		void bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs);
+
 
 		CmdBufferBase _cmd_buffer;
 		const RenderPass* _render_pass = nullptr;

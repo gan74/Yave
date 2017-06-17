@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/image/Image.h>
 #include <yave/swapchain/Swapchain.h>
 #include <yave/objects/StaticMesh.h>
+#include <yave/objects/HeightmapTerrain.h>
 #include <yave/mesh/MeshInstancePool.h>
 
 #include <yave/bindings/Binding.h>

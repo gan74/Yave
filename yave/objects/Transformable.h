@@ -36,7 +36,7 @@ class Transformable {
 		}
 
 		math::Vec3 position() const {
-			return math::Vec3(transform()[3][0], transform()[3][1], transform()[3][2]);
+			return {transform()[3][0], transform()[3][1], transform()[3][2]};
 		}
 
 		void set_position(const math::Vec3& p) {

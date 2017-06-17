@@ -70,7 +70,7 @@ void SceneRenderer::render_renderables(Recorder& recorder, const FrameToken& tok
 	}
 
 	for(const Renderable* r : renderables) {
-		r->render(token, recorder);
+		r->render(token, recorder, {_camera_set});
 	}
 }
 
@@ -112,13 +112,14 @@ void SceneRenderer::render_static_meshes(Recorder& recorder, const core::Vector<
 }
 
 void SceneRenderer::setup_instance(Recorder& recorder, const AssetPtr<StaticMeshInstance>& instance) {
-	recorder.vk_cmd_buffer().bindVertexBuffers(0, {instance->vertex_buffer.vk_buffer(), _matrix_buffer.vk_buffer()}, {0, 0});
-	recorder.vk_cmd_buffer().bindIndexBuffer(instance->triangle_buffer.vk_buffer(), 0, vk::IndexType::eUint32);
+	recorder.bind_buffers(instance->triangle_buffer,
+						  {SubBuffer<BufferUsage::AttributeBit>(instance->vertex_buffer),
+						   SubBuffer<BufferUsage::AttributeBit>(_matrix_buffer)});
 }
 
 void SceneRenderer::submit_batches(Recorder& recorder, AssetPtr<Material>& mat, usize offset, usize size) {
 	if(size) {
-		recorder.bind_pipeline(mat->compile(recorder.current_pass()), {_camera_set});
+		recorder.bind_material(*mat, {_camera_set});
 
 		const usize cmd_size = sizeof(vk::DrawIndexedIndirectCommand);
 		recorder.vk_cmd_buffer().drawIndexedIndirect(_indirect_buffer.vk_buffer(), offset * cmd_size, size, cmd_size);

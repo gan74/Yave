@@ -50,7 +50,7 @@ core::Vector<const Renderable*> CullingNode::process_renderables(const Frustum& 
 
 	for(const auto& r : _view.scene().renderables()) {
 		if(frustum.is_inside(r->position(), r->radius())) {
-			visibles.push_back(r.as_ptr());
+			visibles << r.as_ptr();
 		}
 	}
 
@@ -65,7 +65,7 @@ core::Vector<const StaticMesh*> CullingNode::process_static_meshes(const Frustum
 		std::unordered_map<Material*, decltype(visibles)> per_mat;
 		for(const auto& m : _view.scene().static_meshes()) {
 			if(frustum.is_inside(m->position(), m->radius())) {
-				per_mat[m->material().as_ptr()].push_back(m.as_ptr());
+				per_mat[m->material().as_ptr()] << m.as_ptr();
 			}
 		}
 		{
@@ -77,7 +77,7 @@ core::Vector<const StaticMesh*> CullingNode::process_static_meshes(const Frustum
 	} else {
 		for(const auto& m : _view.scene().static_meshes()) {
 			if(frustum.is_inside(m->position(), m->radius())) {
-				visibles.push_back(m.as_ptr());
+				visibles << m.as_ptr();
 			}
 		}
 		{

@@ -27,12 +27,16 @@ SOFTWARE.
 
 namespace yave {
 
-template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>(), BufferTransfer Transfer = prefered_transfer<Flags>()>
+template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Flags)>
 class Buffer : public BufferBase {
 
 	static_assert(Usage != BufferUsage::None || Transfer != BufferTransfer::None, "Buffers should not have Usage == BufferUsage::None");
 
 	public:
+		static constexpr BufferUsage usage = Usage;
+		static constexpr MemoryFlags memory_flags = Flags;
+		static constexpr BufferTransfer buffer_transfer = Transfer;
+
 		Buffer() = default;
 
 		Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Flags, Transfer) {

@@ -46,15 +46,15 @@ static auto create_lights(DevicePtr dptr, usize pts_count) {
 
 	// sun
 	lights << uniform::Light {
-			math::Vec3(0, 0.5, 1).normalized(), 0,
-			math::Vec3(1, 1, 1) * 0.8,
+			math::Vec3{0, 0.5, 1}.normalized(), 0,
+			math::Vec3{1, 1, 1} * 0.8,
 			uniform::LightType::Directional
 		};
 
 	// fill
 	lights << uniform::Light {
-			-math::Vec3(0, 0.5, 1).normalized(), 0,
-			math::Vec3(1, 1, 1) * 0.25,
+			-math::Vec3{0, 0.5, 1}.normalized(), 0,
+			math::Vec3{1, 1, 1} * 0.25,
 			uniform::LightType::Directional
 		};
 

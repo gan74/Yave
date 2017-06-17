@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 
 template<MemoryFlags Flags>
-using MemoryMapping = typename std::conditional<is_cpu_visible<Flags>(), CpuVisibleMapping, StagingBufferMapping>::type;
+using MemoryMapping = std::conditional_t<is_cpu_visible(Flags), CpuVisibleMapping, StagingBufferMapping>;
 
 template<typename Elem, MemoryFlags Flags>
 class TypedMapping : public MemoryMapping<Flags> {
@@ -37,7 +37,7 @@ class TypedMapping : public MemoryMapping<Flags> {
 	public:
 		using iterator = Elem* ;
 		using const_iterator = Elem const* ;
-		using Element = Elem;
+		using value_type = Elem;
 
 		template<typename T>
 		TypedMapping(T& buffer) : Base(buffer) {
@@ -80,11 +80,11 @@ class TypedMapping : public MemoryMapping<Flags> {
 			return end();
 		}
 
-		Element& operator[](usize i) {
+		value_type& operator[](usize i) {
 			return begin()[i];
 		}
 
-		const Element& operator[](usize i) const{
+		const value_type& operator[](usize i) const{
 			return begin()[i];
 		}
 

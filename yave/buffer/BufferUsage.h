@@ -62,7 +62,7 @@ constexpr BufferTransfer operator&(BufferTransfer a, BufferTransfer b) {
 
 
 
-Y_TODO(ditch eHostCoherent for a raii flush)
+// Y_TODO(maybe ditch eHostCoherent for a raii flush)
 enum class MemoryFlags {
     DeviceLocal = uenum(vk::MemoryPropertyFlagBits::eDeviceLocal),
 	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible) | uenum(vk::MemoryPropertyFlagBits::eHostCoherent)
@@ -71,25 +71,18 @@ enum class MemoryFlags {
 
 
 
-template<MemoryFlags Flags>
-inline constexpr bool is_cpu_visible() {
-	return uenum(Flags) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
-}
-
-inline bool is_cpu_visible(MemoryFlags flags) {
+inline constexpr bool is_cpu_visible(MemoryFlags flags) {
 	return uenum(flags) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
 }
 
 
 
-template<BufferUsage Usage>
-inline constexpr MemoryFlags prefered_memory_flags() {
-	return ((Usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryFlags::CpuVisible : MemoryFlags::DeviceLocal;
+inline constexpr MemoryFlags prefered_memory_flags(BufferUsage usage) {
+	return ((usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryFlags::CpuVisible : MemoryFlags::DeviceLocal;
 }
 
-template<MemoryFlags Flags>
-inline constexpr BufferTransfer prefered_transfer() {
-	return is_cpu_visible<Flags>() ? BufferTransfer::None : BufferTransfer::TransferDst;
+inline constexpr BufferTransfer prefered_transfer(MemoryFlags flags) {
+	return is_cpu_visible(flags) ? BufferTransfer::None : BufferTransfer::TransferDst;
 }
 
 

@@ -32,6 +32,9 @@ SOFTWARE.
 namespace yave {
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
+using AttribBuffer = Buffer<BufferUsage::AttributeBit, Flags>;
+
+template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit,Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
@@ -41,27 +44,20 @@ template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Flags>;
 
 
-
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit, Flags>;
-
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit, Flags>;
-
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Flags>;
+using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
+using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>;
+using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit>;
+using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
 
 
 
-inline auto create_indirect_buffer_data(const MeshData& m, usize vertex_offset, usize triangle_offset) {
-	using Cmd = vk::DrawIndexedIndirectCommand;
-	return Cmd(m.triangles.size() * 3, 1, triangle_offset * 3, vertex_offset);
-}
+
+
 
 struct StaticMeshInstance {
 
 	public:
-		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, const vk::DrawIndexedIndirectCommand& i, float r) :
+		StaticMeshInstance(const TriangleSubBuffer& t, const VertexSubBuffer& v, const vk::DrawIndexedIndirectCommand& i, float r) :
 				triangle_buffer(t),
 				vertex_buffer(v),
 				indirect_data(i),
@@ -70,8 +66,8 @@ struct StaticMeshInstance {
 
 
 
-		const TriangleSubBuffer<> triangle_buffer;
-		const VertexSubBuffer<> vertex_buffer;
+		const TriangleSubBuffer triangle_buffer;
+		const VertexSubBuffer vertex_buffer;
 		vk::DrawIndexedIndirectCommand indirect_data;
 
 		const float radius = 0.0f;

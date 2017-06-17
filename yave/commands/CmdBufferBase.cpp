@@ -47,7 +47,7 @@ void CmdBufferBase::submit(vk::Queue queue) {
 }
 
 void CmdBufferBase::keep_alive(const CmdBufferBase& cmd) {
-	_proxy->data.keep_alive.push_back(cmd._proxy);
+	_proxy->data.keep_alive << cmd._proxy;
 }
 
 void CmdBufferBase::wait() const {

@@ -82,7 +82,7 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 3.5;
+	float dist = 3.5f;
 
 	auto cam_tr = math::rotation(angles.x(), {0, 0, -1}) * math::rotation(angles.y(), {0, 1, 0});
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
@@ -100,25 +100,30 @@ void YaveApp::create_assets() {
 			mesh_texture = Texture(&device, image);
 		}
 		material = AssetPtr<Material>(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file")))
+				.set_frag_data(SpirVData::from_file(io::File::open("textured.frag.spv").expected("Unable to load spirv file")))
 				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
 				.set_bindings({Binding(TextureView(mesh_texture))})
 			));
 	}
 
 
-	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym", "../tools/obj_to_ym/cube.obj.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
+	core::Vector<core::Unique<Renderable>> renderables;
+
+	{
+		renderables << new HeightmapTerrain(mesh_pool, AssetPtr<Texture>());
+	}
+
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
-		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(/*new StaticMeshInstance(&device,*/ m_data));
-
+		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
 		objects << StaticMesh(mesh, material);
 	}
 
 
-	scene = new Scene(std::move(objects));
+	scene = new Scene(std::move(objects), std::move(renderables));
 	scene_view = new SceneView(*scene, camera);
 
 	update();

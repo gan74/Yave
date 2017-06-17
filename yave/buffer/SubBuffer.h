@@ -27,16 +27,32 @@ SOFTWARE.
 
 namespace yave {
 
-template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>(), BufferTransfer Transfer = prefered_transfer<Flags>()>
-class SubBuffer : public SubBufferBase {
 
+template<BufferUsage Usage>
+class SubBuffer : public SubBufferBase {
 	public:
-		template<BufferUsage BuffUsage, typename = std::enable_if_t<(BuffUsage & Usage) == Usage>>
-		SubBuffer(const Buffer<BuffUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBufferBase(buffer, offset, len) {
+		static constexpr BufferUsage usage = Usage;
+
+		template<BufferUsage BufUsage, MemoryFlags Flags, BufferTransfer Transfer, typename = std::enable_if_t<(BufUsage & Usage) == Usage>>
+		SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBufferBase(buffer, offset, len) {
 		}
 
-		template<BufferUsage BuffUsage>
-		explicit SubBuffer(const Buffer<BuffUsage, Flags, Transfer>& buffer, usize offset = 0) : SubBuffer(buffer, offset, buffer.byte_size() - offset) {
+		template<BufferUsage BufUsage, MemoryFlags Flags, BufferTransfer Transfer>
+		explicit SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset = 0) : SubBuffer(buffer, offset, buffer.byte_size() - offset) {
+		}
+};
+
+
+// find another name
+template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Flags)>
+class SpecializedSubBuffer : public SubBuffer<Usage> {
+	public:
+		template<BufferUsage BufUsage, typename = std::enable_if_t<(BufUsage & Usage) == Usage>>
+		SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBuffer<Usage>(buffer, offset, len) {
+		}
+
+		template<BufferUsage BufUsage>
+		explicit SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset = 0) : SubBuffer<Usage>(buffer, offset) {
 		}
 };
 

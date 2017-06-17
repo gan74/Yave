@@ -61,21 +61,19 @@ class Binding {
 					.setSampler(view.image().device()->vk_sampler())) {
 		}
 
-		template<MemoryFlags Flags>
-		Binding(const SubBuffer<BufferUsage::UniformBit, Flags>& buffer) :
+		Binding(const SubBuffer<BufferUsage::UniformBit>& buffer) :
 				_type(vk::DescriptorType::eUniformBuffer),
 				_info(buffer.descriptor_info()) {
 		}
 
-		template<MemoryFlags Flags>
-		Binding(const SubBuffer<BufferUsage::StorageBit, Flags>& buffer) :
+		Binding(const SubBuffer<BufferUsage::StorageBit>& buffer) :
 				_type(vk::DescriptorType::eStorageBuffer),
 				_info(buffer.descriptor_info()) {
 		}
 
 		template<BufferUsage Usage, MemoryFlags Flags>
 		Binding(const Buffer<Usage, Flags>& buffer) :
-				Binding(SubBuffer<(Usage & BufferUsage::StorageBit) != BufferUsage::None ? BufferUsage::StorageBit : BufferUsage::UniformBit, Flags>(buffer)) {
+				Binding(SubBuffer<(Usage & BufferUsage::StorageBit) != BufferUsage::None ? BufferUsage::StorageBit : BufferUsage::UniformBit>(buffer)) {
 		}
 
 		auto descriptor_set_layout_binding(usize index) const {

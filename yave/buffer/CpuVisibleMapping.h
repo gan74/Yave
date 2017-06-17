@@ -30,7 +30,7 @@ class CpuVisibleMapping : NonCopyable {
 
 	public:
 		template<BufferUsage Usage, BufferTransfer Transfer>
-		CpuVisibleMapping(const SubBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
+		CpuVisibleMapping(const SpecializedSubBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
 		}
 
 		template<BufferUsage Usage, BufferTransfer Transfer>

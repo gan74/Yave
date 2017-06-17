@@ -28,20 +28,20 @@ SOFTWARE.
 
 namespace yave {
 
-template<typename Elem, BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>(), BufferTransfer Transfer = prefered_transfer<Flags>()>
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Flags)>
 class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 
 	using Base = Buffer<Usage, Flags, Transfer>;
 
 	public:
-		using Element = Elem;
+		using value_type = Elem;
 
 		TypedBuffer() : Base() {
 		}
 
 		TypedBuffer(DevicePtr dptr, const core::ArrayProxy<Elem>& data) : TypedBuffer(dptr, data.size()) {
 			auto mapping = map();
-			memcpy(mapping.data(), data.begin(), this->byte_size());
+			std::copy(data.begin(), data.end(), mapping.data());
 		}
 
 		TypedBuffer(DevicePtr dptr, usize elem_count) : Base(dptr, elem_count *sizeof(Elem)) {
@@ -61,12 +61,7 @@ class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 		}
 
 		auto map() {
-			return TypedMapping<Element, Flags>(*this);
-		}
-
-	private:
-		void swap(TypedBuffer& other) {
-			Base::swap(other);
+			return TypedMapping<value_type, Flags>(*this);
 		}
 };
 

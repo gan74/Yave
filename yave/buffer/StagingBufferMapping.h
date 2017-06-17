@@ -33,7 +33,7 @@ class StagingBufferMapping : public CpuVisibleMapping {
 		using StagingBuffer = Buffer<BufferUsage::None, MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>;
 
 		template<BufferUsage Usage>
-		StagingBufferMapping(SubBuffer<Usage, MemoryFlags::DeviceLocal, BufferTransfer::TransferDst>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
+		StagingBufferMapping(SpecializedSubBuffer<Usage, MemoryFlags::DeviceLocal, BufferTransfer::TransferDst>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
 		}
 
 		template<BufferUsage Usage>

@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferRecorder.h"
+#include <yave/material/Material.h>
 
 namespace yave {
 
@@ -58,14 +59,29 @@ void CmdBufferRecorderBase::set_viewport(const Viewport& view) {
 	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(view.offset.x(), view.offset.y()), vk::Extent2D(view.extent.x(), view.extent.y()))});
 }
 
+void CmdBufferRecorderBase::bind_material(Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+	bind_pipeline(material.compile(current_pass()), descriptor_sets);
+}
+
 void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size() + 1);
 	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& ds) { return ds.get().vk_descriptor_set(); });
-	ds << pipeline.vk_descriptor_set();
+	if(pipeline.vk_descriptor_set()) {
+		ds << pipeline.vk_descriptor_set();
+	}
 
-	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
+	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});
+}
+
+void CmdBufferRecorderBase::draw(const StaticMeshInstance& mesh) {
+	bind_buffers(mesh.triangle_buffer, {mesh.vertex_buffer});
+	vk_cmd_buffer().drawIndexed(mesh.indirect_data.indexCount,
+								mesh.indirect_data.instanceCount,
+								mesh.indirect_data.firstIndex,
+								mesh.indirect_data.vertexOffset,
+								mesh.indirect_data.firstInstance);
 }
 
 void CmdBufferRecorderBase::bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs) {

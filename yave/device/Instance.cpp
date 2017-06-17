@@ -40,7 +40,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug), _debug_callback(nu
 	_instance_extentions = {VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
 
 	#ifdef Y_OS_WIN
-		_instance_extentions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+		_instance_extentions << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 	#endif
 
 	auto app_info = vk::ApplicationInfo()

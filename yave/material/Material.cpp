@@ -31,7 +31,6 @@ Material::Material(DevicePtr dptr, const MaterialData &data) :
 		DeviceLinked(dptr),
 		_data(data),
 		_set(dptr, data._bindings) {
-
 }
 
 Material::~Material() {

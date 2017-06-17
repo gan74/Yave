@@ -27,28 +27,28 @@ SOFTWARE.
 
 namespace yave {
 
-template<typename Elem, BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags<Usage>()>
-class TypedSubBuffer : public SubBuffer<Usage, Flags> {
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags(Usage)>
+class TypedSubBuffer : public SpecializedSubBuffer<Usage, Flags> {
 
-	using Base = SubBuffer<Usage, Flags>;
+	using Base = SpecializedSubBuffer<Usage, Flags>;
 
 	public:
-		using Element = Elem;
+		using value_type = Elem;
 
-		template<BufferUsage BuffUsage>
-		TypedSubBuffer(const TypedBuffer<Elem, BuffUsage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(Elem), count * sizeof(Elem)) {
+		template<BufferUsage BufUsage>
+		TypedSubBuffer(const TypedBuffer<Elem, BufUsage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(Elem), count * sizeof(Elem)) {
 		}
 
-		template<BufferUsage BuffUsage>
-		explicit TypedSubBuffer(const TypedBuffer<Elem, BuffUsage, Flags>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(Elem)) {
+		template<BufferUsage BufUsage>
+		explicit TypedSubBuffer(const TypedBuffer<Elem, BufUsage, Flags>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(Elem)) {
 		}
 
-		template<BufferUsage BuffUsage>
-		TypedSubBuffer(const Buffer<BuffUsage, Flags>& buffer, usize byte_offset, usize count) : Base(buffer, byte_offset, count * sizeof(Elem)) {
+		template<BufferUsage BufUsage>
+		TypedSubBuffer(const Buffer<BufUsage, Flags>& buffer, usize byte_offset, usize count) : Base(buffer, byte_offset, count * sizeof(Elem)) {
 		}
 
-		template<BufferUsage BuffUsage>
-		explicit TypedSubBuffer(const Buffer<BuffUsage, Flags>& buffer, usize byte_offset = 0) : Base(buffer, byte_offset, buffer.byte_size()) {
+		template<BufferUsage BufUsage>
+		explicit TypedSubBuffer(const Buffer<BufUsage, Flags>& buffer, usize byte_offset = 0) : Base(buffer, byte_offset, buffer.byte_size()) {
 		}
 
 
@@ -60,8 +60,8 @@ class TypedSubBuffer : public SubBuffer<Usage, Flags> {
 			return this->byte_offset() / sizeof(Elem);
 		}
 
-		TypedMapping<Element, Flags> map() {
-			return TypedMapping<Element, Flags>(*this);
+		TypedMapping<value_type, Flags> map() {
+			return TypedMapping<value_type, Flags>(*this);
 		}
 };
 

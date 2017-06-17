@@ -32,10 +32,12 @@ namespace yave {
 class Renderable : public Transformable {
 
 	public:
+		using DescriptorList = std::initializer_list<std::reference_wrapper<const DescriptorSet>>;
+
 		virtual ~Renderable() {
 		}
 
-		virtual void render(const FrameToken&, CmdBufferRecorderBase&) const = 0;
+		virtual void render(const FrameToken&, CmdBufferRecorderBase&, DescriptorList) const = 0;
 };
 
 }

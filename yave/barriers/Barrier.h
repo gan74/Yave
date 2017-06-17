@@ -60,7 +60,7 @@ class BufferBarrier {
 		}
 
 		template<BufferUsage Usage>
-		BufferBarrier(const SubBuffer<Usage, MemoryFlags::DeviceLocal> buffer) :
+		BufferBarrier(const SpecializedSubBuffer<Usage, MemoryFlags::DeviceLocal> buffer) :
 				_buffer(buffer.vk_buffer()),
 				_size(buffer.byte_size()),
 				_offset(buffer.byte_offset()) {

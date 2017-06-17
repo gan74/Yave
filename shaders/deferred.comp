@@ -102,8 +102,13 @@ void main() {
 	}
 	//acc = load_color(lights.count);
 
+#define DEBUG
+
+#ifdef DEBUG
 	imageStore(out_color, coord, albedo);
-	//imageStore(out_color, coord, vec4(acc, 1.0));
+#else
+	imageStore(out_color, coord, vec4(acc, 1.0));
+#endif
 }
 
 
