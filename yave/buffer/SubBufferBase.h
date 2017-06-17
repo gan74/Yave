@@ -31,15 +31,15 @@ class SubBufferBase : public DeviceLinked {
 	public:
 		SubBufferBase() = default;
 
-		explicit SubBufferBase(const BufferBase &base) : SubBufferBase(base, 0, base.byte_size()) {
-		}
-
 		SubBufferBase(const BufferBase& base, usize off, usize len) :
 				DeviceLinked(base.device()),
 				_size(len),
 				_offset(off),
 				_buffer(base.vk_buffer()),
 				_memory(base.vk_device_memory()) {
+		}
+
+		explicit SubBufferBase(const BufferBase& base) : SubBufferBase(base, 0, base.byte_size()) {
 		}
 
 		usize byte_size() const {
@@ -69,9 +69,12 @@ class SubBufferBase : public DeviceLinked {
 	private:
 		usize _size = 0;
 		usize _offset = 0;
-		vk::Buffer _buffer;
-		vk::DeviceMemory _memory;
+		NotOwner<vk::Buffer> _buffer;
+		NotOwner<vk::DeviceMemory> _memory;
 };
+
+// in this case it's ok
+//static_assert(is_safe_base<SubBufferBase>::value);
 
 }
 

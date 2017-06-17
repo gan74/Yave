@@ -35,6 +35,7 @@ namespace yave {
 class CmdBufferDataProxy;
 
 class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
+
 	public:
 		~CmdBufferPoolBase();
 
@@ -58,6 +59,8 @@ class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
 		CmdBufferUsage _usage;
 		core::Vector<CmdBufferData> _cmd_buffers;
 };
+
+static_assert(is_safe_base<CmdBufferPoolBase>::value);
 
 }
 

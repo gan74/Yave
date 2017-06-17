@@ -49,9 +49,6 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 			u32 component_size;
 		};
 
-		ShaderModuleBase() = default;
-
-		ShaderModuleBase(DevicePtr dptr, const SpirVData& data);
 		~ShaderModuleBase();
 
 		const auto& bindings() const {
@@ -75,6 +72,10 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 		}
 
 	protected:
+		ShaderModuleBase() = default;
+
+		ShaderModuleBase(DevicePtr dptr, const SpirVData& data);
+
 		void swap(ShaderModuleBase& other);
 
 	private:
@@ -85,6 +86,8 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 		math::Vec3ui _local_size;
 
 };
+
+static_assert(is_safe_base<ShaderModuleBase>::value);
 
 }
 

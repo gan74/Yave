@@ -43,7 +43,7 @@ using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::
 
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit,Flags>;
+using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit, Flags>;
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit, Flags>;
@@ -55,11 +55,6 @@ using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferU
 
 inline auto create_indirect_buffer_data(const MeshData& m, usize vertex_offset, usize triangle_offset) {
 	using Cmd = vk::DrawIndexedIndirectCommand;
-	/*core::Vector<Cmd> cmds;
-	for(usize i = 0, size = m.triangles.size(); i < size; i += max) {
-		cmds << Cmd(u32(std::min(size - i, max) * 3), 1, u32((i + triangle_offset) * 3), i32(vertex_offset));
-	}
-	return cmds;*/
 	return Cmd(m.triangles.size() * 3, 1, triangle_offset * 3, vertex_offset);
 }
 
@@ -73,48 +68,15 @@ struct StaticMeshInstance {
 				radius(r) {
 		}
 
-		/*StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, const IndirectSubBuffer<>&& i, float rad) :
-				triangle_buffer(t),
-				vertex_buffer(v),
-				indirect_buffer(i),
-				radius(rad) {
-		}
 
-		StaticMeshInstance(const TriangleSubBuffer<>& t, const VertexSubBuffer<>& v, IndirectBuffer<>&& i, float rad) :
-				StaticMeshInstance(t, v, IndirectSubBuffer<>(i), rad) {
-
-			_keep_alive.indirect = std::move(i);
-		}
-
-		StaticMeshInstance(TriangleBuffer<>&& t, VertexBuffer<>&& v, IndirectBuffer<>&& i, float rad) :
-				StaticMeshInstance(TriangleSubBuffer<>(t), VertexSubBuffer<>(v), IndirectSubBuffer<>(i), rad) {
-
-			_keep_alive = { std::move(t), std::move(v), std::move(i) };
-		}
-
-		StaticMeshInstance(DevicePtr dptr, const MeshData& data) :
-				 StaticMeshInstance(TriangleBuffer<>(dptr, data.triangles),
-									VertexBuffer<>(dptr, data.vertices),
-									IndirectBuffer<>(dptr, create_indirect_buffer_data(data)),
-									data.radius) {
-
-		}*/
 
 		const TriangleSubBuffer<> triangle_buffer;
 		const VertexSubBuffer<> vertex_buffer;
 		vk::DrawIndexedIndirectCommand indirect_data;
-		//const IndirectSubBuffer<> indirect_buffer;
-
 
 		const float radius = 0.0f;
 
 	private:
-		/*struct {
-			TriangleBuffer<> triangle;
-			VertexBuffer<> vertex;
-			IndirectBuffer<> indirect;
-		} _keep_alive;*/
-
 };
 
 }

@@ -68,8 +68,18 @@ void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
 }
 
+void CmdBufferRecorderBase::bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs) {
+	u32 attrib_count = attribs.size();
 
+	auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);
+	auto buffers = core::vector_with_capacity<vk::Buffer>(attrib_count);
+	std::transform(attribs.begin(), attribs.end(), std::back_inserter(offsets), [](const auto& buffer) { return buffer.byte_offset(); });
+	std::transform(attribs.begin(), attribs.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
 
+	vk_cmd_buffer().bindVertexBuffers(u32(0), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
+
+	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
+}
 
 
 

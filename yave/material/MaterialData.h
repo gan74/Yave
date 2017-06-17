@@ -30,7 +30,6 @@ SOFTWARE.
 namespace yave {
 
 struct MaterialData {
-
 	SpirVData _frag;
 	SpirVData _vert;
 	SpirVData _geom;

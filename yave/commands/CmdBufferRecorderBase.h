@@ -38,6 +38,7 @@ SOFTWARE.
 namespace yave {
 
 class CmdBufferRecorderBase : NonCopyable {
+
 	public:
 		~CmdBufferRecorderBase();
 
@@ -49,11 +50,20 @@ class CmdBufferRecorderBase : NonCopyable {
 
 		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
+
+
+		template<MemoryFlags IndexFlags, MemoryFlags VertexFlags>
+		void bind_buffers(const SubBuffer<BufferUsage::IndexBit, IndexFlags>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit, VertexFlags>>& vertices) {
+			bind_buffer_bases(indices, vertices);
+		}
+
 	protected:
 		CmdBufferRecorderBase() = default;
 		CmdBufferRecorderBase(CmdBufferBase&& base);
 
 		void swap(CmdBufferRecorderBase& other);
+
+		void bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs);
 
 		CmdBufferBase _cmd_buffer;
 		const RenderPass* _render_pass = nullptr;
@@ -90,6 +100,8 @@ class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
 	private:
 		void bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass);
 };
+
+static_assert(is_safe_base<CmdBufferRecorderBase>::value);
 
 }
 

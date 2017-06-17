@@ -95,12 +95,11 @@ void YaveApp::update(math::Vec2 angles) {
 void YaveApp::create_assets() {
 	{
 		{
-			auto file = std::move(io::File::open("../tools/image_to_yt/chalet.jpg.yt").expected("Unable to load texture file."));
-			auto image = ImageData::from_file(file);
+			auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/chalet.jpg.yt").expected("Unable to load texture file."));
 			log_msg(core::String() + (image.size().x() * image.size().y()) + " pixels loaded");
 			mesh_texture = Texture(&device, image);
 		}
-		material = asset_ptr(Material(&device, MaterialData()
+		material = AssetPtr<Material>(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file")))
 				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
 				.set_bindings({Binding(TextureView(mesh_texture))})

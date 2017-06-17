@@ -50,6 +50,8 @@ class BufferBase : NonCopyable, public DeviceLinked {
 		vk::DeviceMemory _memory;
 };
 
+static_assert(is_safe_base<BufferBase>::value);
+
 }
 
 

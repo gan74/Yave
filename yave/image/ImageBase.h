@@ -62,6 +62,7 @@ class ImageBase : NonCopyable, public DeviceLinked {
 		vk::ImageView _view;
 };
 
+static_assert(is_safe_base<ImageBase>::value);
 
 }
 
