@@ -82,14 +82,14 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 3.5f;
+	float dist = 3.0f;
 
 	auto cam_tr = math::rotation(angles.x(), {0, 0, -1}) * math::rotation(angles.y(), {0, 1, 0});
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
-	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.01f,  dist * 2));
+	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.01f,  10000.0f));
 }
 
 void YaveApp::create_assets() {
@@ -106,7 +106,7 @@ void YaveApp::create_assets() {
 	}
 
 
-	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym", "../tools/obj_to_ym/cube.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 
@@ -115,12 +115,20 @@ void YaveApp::create_assets() {
 		renderables << new HeightmapTerrain(mesh_pool, AssetPtr<Texture>(Texture(&device, image)));
 	}
 
-	for(auto name : meshes) {
+	/*for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
-		objects << StaticMesh(mesh, material);
-	}
+
+		int size = 0;
+		for(int x = -size; x != size + 1; ++x) {
+			for(int y = -size; y != size + 1; ++y) {
+				auto obj = StaticMesh(mesh, material);
+				obj.set_position(math::Vec3{x, y, 0} * 5);
+				objects << std::move(obj);
+			}
+		}
+	}*/
 
 
 	scene = new Scene(std::move(objects), std::move(renderables));

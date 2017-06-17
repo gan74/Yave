@@ -21,7 +21,7 @@ layout(set = 0, binding = 4) readonly buffer InBuffer {
 } lights;
 
 
-layout(rgba8, set = 0, binding = 5) uniform writeonly image2D out_color;
+layout(rgba16f, set = 0, binding = 5) uniform writeonly image2D out_color;
 
 
 
@@ -102,7 +102,7 @@ void main() {
 	}
 	//acc = load_color(lights.count);
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 	imageStore(out_color, coord, albedo);

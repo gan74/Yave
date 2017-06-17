@@ -89,7 +89,7 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 		_gbuffer(gbuffer),
 		_lighting_shader(create_lighting_shader(device())),
 		_lighting_program(_lighting_shader),
-		_acc_buffer(device(), ImageFormat(vk::Format::eR8G8B8A8Unorm), _gbuffer->size()),
+		_acc_buffer(device(), ImageFormat(vk::Format::eR16G16B16A16Sfloat), _gbuffer->size()),
 		_lights_buffer(create_lights(device(), 1)),
 		_camera_buffer(device(), 1),
 		_descriptor_set(device(), {Binding(_gbuffer->depth()), Binding(_gbuffer->color()), Binding(_gbuffer->normal()), Binding(_camera_buffer), Binding(_lights_buffer), Binding(StorageView(_acc_buffer))}) {

@@ -26,15 +26,27 @@ SOFTWARE.
 
 namespace yave {
 
-static StaticMeshInstance create_mesh(MeshInstancePool& mesh_pool) {
+static StaticMeshInstance create_mesh(MeshInstancePool& mesh_pool, u32 resolution = 256) {
 	MeshData data;
 
-	math::Vec3 up{0.0f, 0.0f, 1.0f};
-	data.vertices = {{{-1.0f, -1.0f, 0.0f}, up, {0.0f, 0.0f}},
-					 {{-1.0f,  1.0f, 0.0f}, up, {0.0f, 1.0f}},
-					 {{ 1.0f,  1.0f, 0.0f}, up, {1.0f, 1.0f}},
-					 {{ 1.0f, -1.0f, 0.0f}, up, {1.0f, 0.0f}}};
-	data.triangles = {{2, 1, 0}, {2, 0, 3}};
+	math::Vec3 normal{0.0f, 0.0f, 1.0f};
+	float max = resolution - 1;
+	for(u32 x = 0; x != resolution; ++x) {
+		for(u32 y = 0; y != resolution; ++y) {
+			auto uv = math::Vec2{x, y} / max;
+			data.vertices << Vertex{{uv * 2.0f - 1.0f, 0.0f}, normal, uv};
+		}
+	}
+
+	for(u32 y = 0; y != resolution - 1; ++y) {
+		u32 y_size = y * resolution;
+		u32 y1_size = (y + 1) * resolution;
+		for(u32 x = 0; x != resolution - 1; ++x) {
+			data.triangles << IndexedTriangle{x + y_size, x + y1_size, (x + 1) + y_size};
+			data.triangles << IndexedTriangle{(x + 1) + y_size, x + y1_size, (x + 1) + y1_size};
+		}
+	}
+
 	data.radius = data.vertices.first().position.length();
 
 	return mesh_pool.create_static_mesh(data);
