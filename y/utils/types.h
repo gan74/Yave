@@ -32,7 +32,7 @@ struct NonCopyable {
 	NonCopyable(const NonCopyable &) = delete;
 	NonCopyable& operator=(const NonCopyable &) = delete;
 
-	NonCopyable(NonCopyable&&) {}
+	//NonCopyable(NonCopyable&&) {}
 };
 
 using u8 = uint8_t;

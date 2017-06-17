@@ -30,8 +30,6 @@ Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 }
 
 
-#define Y_TODO(msg) /* msg */
-
 
 #ifndef __PRETTY_FUNCTION__
 #define __PRETTY_FUNCTION__ __func__

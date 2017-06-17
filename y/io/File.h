@@ -33,8 +33,6 @@ namespace io {
 
 class File : public Reader, public Writer {
 
-	Y_TODO(use exceptions for file)
-
 	public:
 		File();
 		virtual ~File();
