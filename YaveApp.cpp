@@ -106,7 +106,7 @@ void YaveApp::create_assets() {
 	}
 
 
-	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym", "../tools/obj_to_ym/small_cube.obj.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 
@@ -119,7 +119,7 @@ void YaveApp::create_assets() {
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
-		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
+		auto mesh = AssetPtr<StaticMeshInstance>(std::move(mesh_pool.create_static_mesh(m_data).expected("Unable to allocate static mesh")));
 
 		int size = 0;
 		for(int x = -size; x != size + 1; ++x) {

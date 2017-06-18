@@ -49,7 +49,7 @@ static StaticMeshInstance create_mesh(MeshInstancePool& mesh_pool, u32 resolutio
 
 	data.radius = data.vertices.first().position.length();
 
-	return mesh_pool.create_static_mesh(data);
+	return std::move(mesh_pool.create_static_mesh(data).expected("Unable to allocate terrain geometry"));
 }
 
 static Material create_material(DevicePtr dptr, const AssetPtr<Texture>& heightmap) {

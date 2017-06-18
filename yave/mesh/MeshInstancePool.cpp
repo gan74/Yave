@@ -45,9 +45,9 @@ usize MeshInstancePool::free_triangles() const {
 	return std::accumulate(_triangles_blocks.begin(), _triangles_blocks.end(), 0, [](usize t, const FreeBlock& b) { return t + b.size; });
 }
 
-StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
-	auto vertex_block = alloc_block(_vertices_blocks, data.vertices.size());
-	auto triangle_block = alloc_block(_triangles_blocks, data.triangles.size());
+core::Result<StaticMeshInstance, MeshInstancePool::Error> MeshInstancePool::create_static_mesh(const MeshData& data) {
+	auto vertex_block = alloc_block(_vertices_blocks, data.vertices.size()).expected("Unable to allocate vertex sub-buffer.");
+	auto triangle_block = alloc_block(_triangles_blocks, data.triangles.size()).expected("Unable to allocate triangle sub-buffer.");
 
 	VertexSubBuffer verts(_vertex_buffer, vertex_block.offset, vertex_block.size);
 	TriangleSubBuffer tris(_triangle_buffer, triangle_block.offset, triangle_block.size);
@@ -60,24 +60,24 @@ StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
 	}
 
 	vk::DrawIndexedIndirectCommand cmd(data.triangles.size() * 3, 1);
-	return StaticMeshInstance(MeshInstanceData{tris, verts, cmd, data.radius}, this);
+	return core::Ok(StaticMeshInstance(MeshInstanceData{tris, verts, cmd, data.radius}, this));
 }
 
-MeshInstancePool::FreeBlock MeshInstancePool::alloc_block(core::Vector<FreeBlock>& blocks, usize size) {
+core::Result<MeshInstancePool::FreeBlock> MeshInstancePool::alloc_block(core::Vector<FreeBlock>& blocks, usize size) {
 	for(auto it = blocks.begin(); it != blocks.end(); ++it) {
 		if(it->size == size) {
 			FreeBlock alloc = *it;
 			blocks.erase_unordered(it);
-			return alloc;
+			return core::Ok(alloc);
 		} else if(it->size > size) {
 			FreeBlock alloc{it->offset, size};
 			it->offset += size;
 			it->size -= size;
-			return alloc;
+			return core::Ok(alloc);
 		}
 	}
 
-	return fatal("Unable to allocate sub-buffer.");
+	return core::Err();
 }
 
 void MeshInstancePool::free_block(core::Vector<FreeBlock>& blocks, FreeBlock block) {

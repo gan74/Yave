@@ -57,6 +57,10 @@ class CmdBufferRecorderBase : NonCopyable {
 			bind_buffer_bases(indices, reinterpret_cast<const core::ArrayProxy<SubBufferBase>&>(vertices));
 		}
 
+		void bind_buffers_no_offset(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& vertices) {
+			bind_buffer_bases_no_offset(indices, reinterpret_cast<const core::ArrayProxy<SubBufferBase>&>(vertices));
+		}
+
 	protected:
 		CmdBufferRecorderBase() = default;
 		CmdBufferRecorderBase(CmdBufferBase&& base);
@@ -64,6 +68,7 @@ class CmdBufferRecorderBase : NonCopyable {
 		void swap(CmdBufferRecorderBase& other);
 
 		void bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs);
+		void bind_buffer_bases_no_offset(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs);
 
 
 		CmdBufferBase _cmd_buffer;

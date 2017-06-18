@@ -26,7 +26,7 @@ namespace yave {
 
 static constexpr usize batch_size = 128 * 1024;
 
-vk::DrawIndexedIndirectCommand prepare_command(vk::DrawIndexedIndirectCommand cmd, usize i) {
+static vk::DrawIndexedIndirectCommand prepare_command(vk::DrawIndexedIndirectCommand cmd, usize i) {
 	cmd.setFirstInstance(i);
 	return cmd;
 }
@@ -106,15 +106,15 @@ void SceneRenderer::render_static_meshes(Recorder& recorder, const core::Vector<
 		}
 
 		_matrix_mapping[i] = mesh->transform();
-		_indirect_mapping[i] = prepare_command(mesh->instance()->indirect_data(), i);
+		_indirect_mapping[i] = prepare_command(mesh->instance()->indirect_data_no_offset(), i);
 	}
 	submit_batches(recorder, meshes[submitted]->material(), submitted, i - submitted);
 }
 
 void SceneRenderer::setup_instance(Recorder& recorder, const AssetPtr<StaticMeshInstance>& instance) {
-	recorder.bind_buffers(instance->triangle_buffer(),
-						  {SubBuffer<BufferUsage::AttributeBit>(instance->vertex_buffer()),
-						   SubBuffer<BufferUsage::AttributeBit>(_matrix_buffer)});
+	recorder.bind_buffers_no_offset(instance->triangle_buffer(),
+								   {SubBuffer<BufferUsage::AttributeBit>(instance->vertex_buffer()),
+									SubBuffer<BufferUsage::AttributeBit>(_matrix_buffer)});
 }
 
 void SceneRenderer::submit_batches(Recorder& recorder, AssetPtr<Material>& mat, usize offset, usize size) {

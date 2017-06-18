@@ -38,9 +38,14 @@ class MeshInstancePool : NonCopyable, public DeviceLinked {
 	};
 
 	public:
+		enum class Error {
+			TriangleBufferFull,
+			VertexBufferFull
+		};
+
 		MeshInstancePool(DevicePtr dptr, usize vertices = 1024 * 1024, usize triangles = 1024 * 1024);
 
-		StaticMeshInstance create_static_mesh(const MeshData& data);
+		core::Result<StaticMeshInstance, Error> create_static_mesh(const MeshData& data);
 
 		usize free_vertices() const;
 		usize free_triangles() const;
@@ -48,7 +53,7 @@ class MeshInstancePool : NonCopyable, public DeviceLinked {
 	private:
 		friend class StaticMeshInstance;
 
-		static FreeBlock alloc_block(core::Vector<FreeBlock>& blocks, usize size);
+		static core::Result<FreeBlock> alloc_block(core::Vector<FreeBlock>& blocks, usize size);
 		static void free_block(core::Vector<FreeBlock>& blocks, FreeBlock block);
 
 		void release(MeshInstanceData&& data);

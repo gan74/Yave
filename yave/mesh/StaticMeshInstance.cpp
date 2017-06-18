@@ -61,6 +61,14 @@ const vk::DrawIndexedIndirectCommand& StaticMeshInstance::indirect_data() const 
 	return _data.indirect_data;
 }
 
+vk::DrawIndexedIndirectCommand StaticMeshInstance::offset_indirect_data() const {
+	auto indirect = _data.indirect_data;
+	indirect.vertexOffset += _data.vertex_buffer.offset();
+	indirect.firstIndex += _data.triangle_buffer.offset() * 3;
+
+	return indirect;
+}
+
 float StaticMeshInstance::radius() const {
 	return _data.radius;
 }

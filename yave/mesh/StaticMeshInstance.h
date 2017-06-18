@@ -74,7 +74,11 @@ struct StaticMeshInstance : NonCopyable {
 
 		const TriangleSubBuffer& triangle_buffer() const;
 		const VertexSubBuffer& vertex_buffer() const;
+
 		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+
+		// indirect data with with buffer offsets baked in, used with CmdBufferRecorder::bind_buffer_no_offset
+		vk::DrawIndexedIndirectCommand offset_indirect_data() const;
 
 		float radius() const;
 
