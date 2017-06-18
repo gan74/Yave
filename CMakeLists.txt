@@ -23,12 +23,17 @@ file(GLOB_RECURSE TEST_FILES
 		"tests/*.cpp"
 	)
 
+
+option(BUILD_TESTS "Build tests" ON)
+
+
 add_library(y STATIC ${SOURCE_FILES})
 
 add_executable(main "main.cpp")
 target_link_libraries(main y)
 
-add_executable(tests ${TEST_FILES} "main.cpp")
-target_compile_definitions(tests PRIVATE "-DY_BUILD_TESTS")
-target_link_libraries(tests y)
-
+if(BUILD_TESTS)
+	add_executable(tests ${TEST_FILES} "main.cpp")
+	target_compile_definitions(tests PRIVATE "-DY_BUILD_TESTS")
+	target_link_libraries(tests y)
+endif()
