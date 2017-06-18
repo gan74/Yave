@@ -106,7 +106,7 @@ void SceneRenderer::render_static_meshes(Recorder& recorder, const core::Vector<
 		}
 
 		_matrix_mapping[i] = mesh->transform();
-		_indirect_mapping[i] = prepare_command(mesh->instance()->indirect_data_no_offset(), i);
+		_indirect_mapping[i] = prepare_command(mesh->instance()->offset_indirect_data(), i);
 	}
 	submit_batches(recorder, meshes[submitted]->material(), submitted, i - submitted);
 }
