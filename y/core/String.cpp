@@ -44,7 +44,7 @@ String::LongData::LongData(const char* str, usize len) : LongData(str, compute_c
 
 String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_long(cap)), capacity(cap), length(len) {
 	if(str) {
-		memcpy(data, str, len);
+		std::memcpy(data, str, len);
 	}
 	*(data + len) = 0;
 }
@@ -56,12 +56,12 @@ String::ShortData::ShortData() : _data{0}, _length(0) {
 }
 
 String::ShortData::ShortData(const ShortData& s) {
-	memcpy(this, &s, sizeof(ShortData));
+	std::memcpy(this, &s, sizeof(ShortData));
 }
 
 String::ShortData::ShortData(const char* str, usize len) : _length(len) {
 	if(str) {
-		memcpy(_data, str, len);
+		std::memcpy(_data, str, len);
 	}
 	*(_data + len) = 0;
 }
@@ -166,7 +166,7 @@ String::iterator String::find(const String& str) {
 }
 
 String::const_iterator String::find(const String& str) const {
-	const_iterator found = strstr(data(), str);
+	const_iterator found = std::strstr(data(), str);
 	return found ? found : end();
 }
 
@@ -190,9 +190,9 @@ String::operator char*() {
 
 void String::swap(String& str) {
 	u8 str_buffer[sizeof(ShortData)];
-	memcpy(str_buffer, &str._s, sizeof(ShortData));
-	memcpy(&str._s, &_s, sizeof(ShortData));
-	memcpy(&_s, str_buffer, sizeof(ShortData));
+	std::memcpy(str_buffer, &str._s, sizeof(ShortData));
+	std::memcpy(&str._s, &_s, sizeof(ShortData));
+	std::memcpy(&_s, str_buffer, sizeof(ShortData));
 }
 
 String& String::operator=(const String& str) {
@@ -223,7 +223,7 @@ String& String::operator+=(const String& str) {
 
 	if(capacity() >= total_size) {
 		// in place
-		memcpy(self_data + self_size, other_data, other_size);
+		std::memcpy(self_data + self_size, other_data, other_size);
 		if(is_long()) {
 			self_data[_l.length = total_size] = 0;
 		} else {
@@ -231,14 +231,14 @@ String& String::operator+=(const String& str) {
 		}
 	} else {
 		LongData new_dat(nullptr, total_size);
-		memcpy(new_dat.data, self_data, self_size);
-		memcpy(new_dat.data + self_size, other_data, other_size);
+		std::memcpy(new_dat.data, self_data, self_size);
+		std::memcpy(new_dat.data + self_size, other_data, other_size);
 		new_dat.data[total_size] = 0;
 
 		if(is_long()) {
 			free_long(_l);
 		}
-		memcpy(&_l, &new_dat, sizeof(LongData));
+		std::memcpy(&_l, &new_dat, sizeof(LongData));
 	}
 	return *this;
 }
