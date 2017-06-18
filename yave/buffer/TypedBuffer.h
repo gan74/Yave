@@ -36,7 +36,7 @@ class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 	public:
 		using value_type = Elem;
 
-		TypedBuffer() : Base() {
+		TypedBuffer() {
 		}
 
 		TypedBuffer(DevicePtr dptr, const core::ArrayProxy<Elem>& data) : TypedBuffer(dptr, data.size()) {

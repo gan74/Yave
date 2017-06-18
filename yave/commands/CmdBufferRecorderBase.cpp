@@ -76,12 +76,14 @@ void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::
 }
 
 void CmdBufferRecorderBase::draw(const StaticMeshInstance& mesh) {
-	bind_buffers(mesh.triangle_buffer, {mesh.vertex_buffer});
-	vk_cmd_buffer().drawIndexed(mesh.indirect_data.indexCount,
-								mesh.indirect_data.instanceCount,
-								mesh.indirect_data.firstIndex,
-								mesh.indirect_data.vertexOffset,
-								mesh.indirect_data.firstInstance);
+	bind_buffers(mesh.triangle_buffer(), {mesh.vertex_buffer()});
+
+	auto indirect = mesh.indirect_data();
+	vk_cmd_buffer().drawIndexed(indirect.indexCount,
+								indirect.instanceCount,
+								indirect.firstIndex,
+								indirect.vertexOffset,
+								indirect.firstInstance);
 }
 
 void CmdBufferRecorderBase::bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs) {

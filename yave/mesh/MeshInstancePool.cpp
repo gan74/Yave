@@ -22,34 +22,35 @@ SOFTWARE.
 
 #include "MeshInstancePool.h"
 
+#include <numeric>
+#include <functional>
+
 namespace yave {
-
-using Cmd = vk::DrawIndexedIndirectCommand;
-
-#warning MeshInstancePool doesnt recycle anything
 
 MeshInstancePool::MeshInstancePool(DevicePtr dptr, usize vertices, usize triangles) :
 		DeviceLinked(dptr),
 		_vertex_buffer(dptr, vertices),
+		_vertices_blocks{FreeBlock{0, _vertex_buffer.size()}},
 		_triangle_buffer(dptr, triangles),
-		_vertex_end(0),
-		_triangle_end(0) {
+		_triangles_blocks{FreeBlock{0, _triangle_buffer.size()}} {
+}
 
+
+
+usize MeshInstancePool::free_vertices() const {
+	return std::accumulate(_vertices_blocks.begin(), _vertices_blocks.end(), 0, [](usize t, const FreeBlock& b) { return t + b.size; });
+}
+
+usize MeshInstancePool::free_triangles() const {
+	return std::accumulate(_triangles_blocks.begin(), _triangles_blocks.end(), 0, [](usize t, const FreeBlock& b) { return t + b.size; });
 }
 
 StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
-	if(data.triangles.size() + _triangle_end > _triangle_buffer.size()) {
-		fatal("Unable to allocate triangle buffer.");
-	}
-	if(data.vertices.size() + _vertex_end > _vertex_buffer.size()) {
-		fatal("Unable to allocate vertex buffer.");
-	}
+	auto vertex_block = alloc_block(_vertices_blocks, data.vertices.size());
+	auto triangle_block = alloc_block(_triangles_blocks, data.triangles.size());
 
-	VertexSubBuffer verts(_vertex_buffer, _vertex_end, data.vertices.size());
-	_vertex_end += data.vertices.size();
-
-	TriangleSubBuffer tris(_triangle_buffer, _triangle_end, data.triangles.size());
-	_triangle_end += data.triangles.size();
+	VertexSubBuffer verts(_vertex_buffer, vertex_block.offset, vertex_block.size);
+	TriangleSubBuffer tris(_triangle_buffer, triangle_block.offset, triangle_block.size);
 
 	{
 		auto triangle_mapping = tris.map();
@@ -59,7 +60,50 @@ StaticMeshInstance MeshInstancePool::create_static_mesh(const MeshData& data) {
 	}
 
 	vk::DrawIndexedIndirectCommand cmd(data.triangles.size() * 3, 1);
-	return StaticMeshInstance(tris, verts, cmd, data.radius);
+	return StaticMeshInstance(MeshInstanceData{tris, verts, cmd, data.radius}, this);
+}
+
+MeshInstancePool::FreeBlock MeshInstancePool::alloc_block(core::Vector<FreeBlock>& blocks, usize size) {
+	for(auto it = blocks.begin(); it != blocks.end(); ++it) {
+		if(it->size == size) {
+			FreeBlock alloc = *it;
+			blocks.erase_unordered(it);
+			return alloc;
+		} else if(it->size > size) {
+			FreeBlock alloc{it->offset, size};
+			it->offset += size;
+			it->size -= size;
+			return alloc;
+		}
+	}
+
+	return fatal("Unable to allocate sub-buffer.");
+}
+
+void MeshInstancePool::free_block(core::Vector<FreeBlock>& blocks, FreeBlock block) {
+	usize end = block.offset + block.size;
+	for(auto& bl : blocks) {
+		if(bl.offset + bl.size == block.offset) {
+			bl.size += block.size;
+			return;
+		} else if(end == bl.offset) {
+			bl.size += block.size;
+			bl.offset = block.offset;
+			return;
+		}
+	}
+
+	blocks << block;
+}
+
+void MeshInstancePool::release(MeshInstanceData&& data) {
+	if(data.triangle_buffer.vk_buffer() != _triangle_buffer.vk_buffer() ||
+	   data.vertex_buffer.vk_buffer() != _vertex_buffer.vk_buffer()) {
+		fatal("MeshInstanceData was not returned to its original pool.");
+	}
+
+	free_block(_vertices_blocks, FreeBlock{data.vertex_buffer.offset(), data.vertex_buffer.size()});
+	free_block(_triangles_blocks, FreeBlock{data.triangle_buffer.offset(), data.triangle_buffer.size()});
 }
 
 }

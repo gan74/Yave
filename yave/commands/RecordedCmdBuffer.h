@@ -54,7 +54,7 @@ class RecordedCmdBuffer : public CmdBufferBase {
 		RecordedCmdBuffer(CmdBufferRecorder<Usage>&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
 		}
 
-		RecordedCmdBuffer(RecordedCmdBuffer&& other) : CmdBufferBase() {
+		RecordedCmdBuffer(RecordedCmdBuffer&& other) {
 			swap(other);
 		}
 

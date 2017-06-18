@@ -52,27 +52,41 @@ using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferU
 
 
 
+class MeshInstancePool;
 
+struct MeshInstanceData {
+	TriangleSubBuffer triangle_buffer;
+	VertexSubBuffer vertex_buffer;
+	vk::DrawIndexedIndirectCommand indirect_data;
 
-struct StaticMeshInstance {
+	float radius;
+};
+
+struct StaticMeshInstance : NonCopyable {
 
 	public:
-		StaticMeshInstance(const TriangleSubBuffer& t, const VertexSubBuffer& v, const vk::DrawIndexedIndirectCommand& i, float r) :
-				triangle_buffer(t),
-				vertex_buffer(v),
-				indirect_data(i),
-				radius(r) {
-		}
+		StaticMeshInstance() = default;
 
+		~StaticMeshInstance();
 
+		StaticMeshInstance(StaticMeshInstance&& other);
+		StaticMeshInstance& operator=(StaticMeshInstance&& other);
 
-		const TriangleSubBuffer triangle_buffer;
-		const VertexSubBuffer vertex_buffer;
-		vk::DrawIndexedIndirectCommand indirect_data;
+		const TriangleSubBuffer& triangle_buffer() const;
+		const VertexSubBuffer& vertex_buffer() const;
+		const vk::DrawIndexedIndirectCommand& indirect_data() const;
 
-		const float radius = 0.0f;
+		float radius() const;
 
 	private:
+		friend class MeshInstancePool;
+
+		StaticMeshInstance(MeshInstanceData&& data, MeshInstancePool* pool);
+
+		void swap(StaticMeshInstance& other);
+
+		MeshInstanceData _data;
+		MeshInstancePool* _pool = nullptr;
 };
 
 }

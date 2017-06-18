@@ -42,7 +42,7 @@ class Buffer : public BufferBase {
 		Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Flags, Transfer) {
 		}
 
-		Buffer(Buffer&& other) : BufferBase() {
+		Buffer(Buffer&& other) {
 			swap(other);
 		}
 

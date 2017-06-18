@@ -33,7 +33,7 @@ class CmdBufferRecorder : public PrimaryCmdBufferRecorderBase {
 		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : PrimaryCmdBufferRecorderBase(std::move(buffer), Usage) {
 		}
 
-		CmdBufferRecorder(CmdBufferRecorder&& other) : PrimaryCmdBufferRecorderBase() {
+		CmdBufferRecorder(CmdBufferRecorder&& other) {
 			swap(other);
 		}
 
@@ -53,7 +53,7 @@ class CmdBufferRecorder<CmdBufferUsage::Secondary> : public SecondaryCmdBufferRe
 				SecondaryCmdBufferRecorderBase(std::move(buffer), framebuffer) {
 		}
 
-		CmdBufferRecorder(CmdBufferRecorder&& other) : SecondaryCmdBufferRecorderBase() {
+		CmdBufferRecorder(CmdBufferRecorder&& other) {
 			swap(other);
 		}
 

@@ -38,7 +38,7 @@ StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const Asset
 		fatal("Null instance.");
 	}
 
-	set_radius(_instance->radius);
+	set_radius(_instance->radius());
 }
 
 StaticMesh::StaticMesh(StaticMesh&& other) :

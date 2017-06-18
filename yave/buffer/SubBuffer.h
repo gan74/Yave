@@ -33,6 +33,8 @@ class SubBuffer : public SubBufferBase {
 	public:
 		static constexpr BufferUsage usage = Usage;
 
+		SubBuffer() = default;
+
 		template<BufferUsage BufUsage, MemoryFlags Flags, BufferTransfer Transfer, typename = std::enable_if_t<(BufUsage & Usage) == Usage>>
 		SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBufferBase(buffer, offset, len) {
 		}
@@ -47,6 +49,8 @@ class SubBuffer : public SubBufferBase {
 template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Flags)>
 class SpecializedSubBuffer : public SubBuffer<Usage> {
 	public:
+		SpecializedSubBuffer() = default;
+
 		template<BufferUsage BufUsage, typename = std::enable_if_t<(BufUsage & Usage) == Usage>>
 		SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBuffer<Usage>(buffer, offset, len) {
 		}

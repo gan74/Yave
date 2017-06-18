@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-ImageData::ImageData(ImageData&& other) : ImageData() {
+ImageData::ImageData(ImageData&& other) {
 	swap(other);
 }
 

@@ -34,7 +34,7 @@ class CmdBuffer : public CmdBufferBase {
 
 		CmdBuffer() = default;
 
-		CmdBuffer(CmdBuffer&& other) : CmdBufferBase() {
+		CmdBuffer(CmdBuffer&& other) {
 			swap(other);
 		}
 

@@ -33,7 +33,6 @@ static auto create_src_buffer(DevicePtr dptr, usize size) {
 
 
 StagingBufferMapping::StagingBufferMapping(const SubBufferBase& dst) :
-		CpuVisibleMapping(),
 		_dst(dst),
 		_src(create_src_buffer(dst.device(), dst.byte_size())) {
 

@@ -80,7 +80,7 @@ void SceneRenderer::render_static_meshes(Recorder& recorder, const core::Vector<
 	}
 
 	if(meshes.size() > batch_size) {
-		log_msg("Visible object count exceeds scene buffer size", Log::Warning);
+		log_msg("Static meshes count exceeds scene buffer size", Log::Warning);
 	}
 
 	usize i = 0;
@@ -94,7 +94,7 @@ void SceneRenderer::render_static_meshes(Recorder& recorder, const core::Vector<
 		const auto& instance = mesh->instance();
 		const auto& material = mesh->material();
 
-		std::array<vk::Buffer, 2> buffers = {{instance->vertex_buffer.vk_buffer(), instance->triangle_buffer.vk_buffer()}};
+		std::array<vk::Buffer, 2> buffers = {{instance->vertex_buffer().vk_buffer(), instance->triangle_buffer().vk_buffer()}};
 		if(buffers != current_buffers) {
 			current_buffers = buffers;
 			setup_instance(recorder, instance);
@@ -106,14 +106,14 @@ void SceneRenderer::render_static_meshes(Recorder& recorder, const core::Vector<
 		}
 
 		_matrix_mapping[i] = mesh->transform();
-		_indirect_mapping[i] = prepare_command(mesh->instance()->indirect_data, i);
+		_indirect_mapping[i] = prepare_command(mesh->instance()->indirect_data(), i);
 	}
 	submit_batches(recorder, meshes[submitted]->material(), submitted, i - submitted);
 }
 
 void SceneRenderer::setup_instance(Recorder& recorder, const AssetPtr<StaticMeshInstance>& instance) {
-	recorder.bind_buffers(instance->triangle_buffer,
-						  {SubBuffer<BufferUsage::AttributeBit>(instance->vertex_buffer),
+	recorder.bind_buffers(instance->triangle_buffer(),
+						  {SubBuffer<BufferUsage::AttributeBit>(instance->vertex_buffer()),
 						   SubBuffer<BufferUsage::AttributeBit>(_matrix_buffer)});
 }
 

@@ -35,6 +35,8 @@ class TypedSubBuffer : public SpecializedSubBuffer<Usage, Flags> {
 	public:
 		using value_type = Elem;
 
+		TypedSubBuffer() = default;
+
 		template<BufferUsage BufUsage>
 		TypedSubBuffer(const TypedBuffer<Elem, BufUsage, Flags>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(Elem), count * sizeof(Elem)) {
 		}

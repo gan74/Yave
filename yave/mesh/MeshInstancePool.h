@@ -26,21 +26,39 @@ SOFTWARE.
 
 #include "StaticMeshInstance.h"
 
+#include <map>
+
 namespace yave {
 
 class MeshInstancePool : NonCopyable, public DeviceLinked {
+
+	struct FreeBlock {
+		usize offset;
+		usize size;
+	};
 
 	public:
 		MeshInstancePool(DevicePtr dptr, usize vertices = 1024 * 1024, usize triangles = 1024 * 1024);
 
 		StaticMeshInstance create_static_mesh(const MeshData& data);
 
-	private:
-		VertexBuffer<> _vertex_buffer;
-		TriangleBuffer<> _triangle_buffer;
+		usize free_vertices() const;
+		usize free_triangles() const;
 
-		usize _vertex_end;
-		usize _triangle_end;
+	private:
+		friend class StaticMeshInstance;
+
+		static FreeBlock alloc_block(core::Vector<FreeBlock>& blocks, usize size);
+		static void free_block(core::Vector<FreeBlock>& blocks, FreeBlock block);
+
+		void release(MeshInstanceData&& data);
+
+
+		VertexBuffer<> _vertex_buffer;
+		core::Vector<FreeBlock> _vertices_blocks;
+
+		TriangleBuffer<> _triangle_buffer;
+		core::Vector<FreeBlock> _triangles_blocks;
 };
 
 }

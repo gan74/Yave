@@ -115,7 +115,8 @@ void YaveApp::create_assets() {
 		renderables << new HeightmapTerrain(mesh_pool, AssetPtr<Texture>(Texture(&device, image)));
 	}
 
-	/*for(auto name : meshes) {
+
+	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(mesh_pool.create_static_mesh(m_data));
@@ -128,7 +129,7 @@ void YaveApp::create_assets() {
 				objects << std::move(obj);
 			}
 		}
-	}*/
+	}
 
 
 	scene = new Scene(std::move(objects), std::move(renderables));

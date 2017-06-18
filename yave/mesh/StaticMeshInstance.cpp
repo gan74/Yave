@@ -20,7 +20,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "StaticMeshInstance.h"
+#include "MeshInstancePool.h"
 
 namespace yave {
+
+StaticMeshInstance::StaticMeshInstance(MeshInstanceData&& data, MeshInstancePool* pool) :
+		_data(data),
+		_pool(pool) {
+}
+
+StaticMeshInstance::~StaticMeshInstance() {
+	if(_pool) {
+		_pool->release(std::move(_data));
+	}
+}
+
+StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) {
+	swap(other);
+}
+
+StaticMeshInstance& StaticMeshInstance::operator=(StaticMeshInstance&& other) {
+	swap(other);
+	return *this;
+}
+
+void StaticMeshInstance::swap(StaticMeshInstance& other) {
+	std::swap(_data, other._data);
+	std::swap(_pool, other._pool);
+}
+
+const TriangleSubBuffer& StaticMeshInstance::triangle_buffer() const {
+	return _data.triangle_buffer;
+}
+
+const VertexSubBuffer& StaticMeshInstance::vertex_buffer() const {
+	return _data.vertex_buffer;
+}
+
+const vk::DrawIndexedIndirectCommand& StaticMeshInstance::indirect_data() const {
+	return _data.indirect_data;
+}
+
+float StaticMeshInstance::radius() const {
+	return _data.radius;
+}
 
 }

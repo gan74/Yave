@@ -39,7 +39,7 @@ GraphicPipeline::~GraphicPipeline() {
 	}
 }
 
-GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) : GraphicPipeline() {
+GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) {
 	swap(other);
 }
 

@@ -40,7 +40,7 @@ class ShaderModule : public ShaderModuleBase {
 			}
 		}
 
-		ShaderModule(ShaderModule&& other) : ShaderModule() {
+		ShaderModule(ShaderModule&& other) {
 			swap(other);
 		}
 

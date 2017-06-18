@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-static StaticMeshInstance create_mesh(MeshInstancePool& mesh_pool, u32 resolution = 256) {
+static StaticMeshInstance create_mesh(MeshInstancePool& mesh_pool, u32 resolution = 32) {
 	MeshData data;
 
 	math::Vec3 normal{0.0f, 0.0f, 1.0f};

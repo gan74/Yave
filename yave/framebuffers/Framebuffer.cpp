@@ -77,7 +77,7 @@ Framebuffer::~Framebuffer() {
 	destroy(_framebuffer);
 }
 
-Framebuffer::Framebuffer(Framebuffer&& other) : Framebuffer() {
+Framebuffer::Framebuffer(Framebuffer&& other) {
 	swap(other);
 }
 

@@ -59,7 +59,7 @@ ComputeProgram::~ComputeProgram() {
 	destroy(_pipeline);
 }
 
-ComputeProgram::ComputeProgram(ComputeProgram&& other) : ComputeProgram() {
+ComputeProgram::ComputeProgram(ComputeProgram&& other) {
 	swap(other);
 }
 
