@@ -5,7 +5,6 @@ include_directories(${y_SOURCE_DIR})
 
 set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef")
 set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wuseless-cast -Wnon-virtual-dtor -Wodr -Wzero-as-null-pointer-constant")
-set(EXTRA_OPTIMISATIONS "-ffast-math")
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
@@ -13,9 +12,6 @@ add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
 add_definitions("${EXTRA_OPTIMISATIONS}")
 add_definitions("-std=c++17 -pedantic -Wall -Wextra")
-
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_OPTIMISATIONS}")
-set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${EXTRA_OPTIMISATIONS}")
 
 
 file(GLOB_RECURSE SOURCE_FILES
