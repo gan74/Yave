@@ -36,7 +36,7 @@ using Attribs = core::Vector<vk::VertexInputAttributeDescription>;
 using Bindings = core::Vector<vk::VertexInputBindingDescription>;
 
 template<typename T>
-static void merge(T& into, const T& o) {
+static void merge_bindings(T& into, const T& o) {
 	into.insert(o.begin(), o.end());
 }
 
@@ -114,9 +114,9 @@ static void create_vertex_attribs(const core::Vector<ShaderModuleBase::Attribute
 
 ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) : DeviceLinked(common_device(frag, vert, geom)) {
 	{
-		merge(_bindings, frag.bindings());
-		merge(_bindings, vert.bindings());
-		merge(_bindings, geom.bindings());
+		merge_bindings(_bindings, frag.bindings());
+		merge_bindings(_bindings, vert.bindings());
+		merge_bindings(_bindings, geom.bindings());
 
 		create_stage_info(_stages, frag);
 		create_stage_info(_stages, vert);
