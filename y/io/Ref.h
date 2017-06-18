@@ -33,8 +33,7 @@ template<typename T>
 class Ref {
 
 	public:
-		Ref() : _ptr(nullptr), _owned(false) {
-		}
+		Ref() = default;
 
 		Ref(const Ref& ref) : _ptr(ref._ptr), _owned(false) {
 		}
@@ -53,7 +52,7 @@ class Ref {
 			}
 		}
 
-		Ref(Ref&& other) : Ref() {
+		Ref(Ref&& other) {
 			swap(other);
 		}
 
@@ -94,8 +93,8 @@ class Ref {
 		}
 
 		// may be owner or not, depending on constructor (that's why we got _owned)
-		T* _ptr;
-		bool _owned;
+		T* _ptr = nullptr;
+		bool _owned = false;
 
 };
 

@@ -73,14 +73,14 @@ class Vector : ResizePolicy, Allocator {
 		Vector(const Vector& other) : Vector(other.begin(), other.end()) {
 		}
 
-		Vector(Vector&& other) : Vector() {
+		Vector(Vector&& other) {
 			swap(other);
 		}
 
 		Vector(const std::initializer_list<value_type>& l) : Vector(l.begin(), l.end()) {
 		}
 
-		Vector(usize size, const value_type& elem) : Vector() {
+		Vector(usize size, const value_type& elem) {
 			set_min_capacity(size);
 			for(usize i = 0; i != size; ++i) {
 				push_back(elem);
@@ -88,7 +88,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		template<typename It>
-		Vector(const It& beg_it, const It& end_it) : Vector() {
+		Vector(const It& beg_it, const It& end_it) {
 			assign(beg_it, end_it);
 		}
 

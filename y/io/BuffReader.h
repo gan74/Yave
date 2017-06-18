@@ -47,10 +47,10 @@ class BuffReader : public Reader {
 		BuffReader(usize buff_size = 0);
 		void swap(BuffReader& other);
 
-		usize _size;
-		usize _offset;
-		usize _used;
-		u8* _buffer;
+		usize _size = 0;
+		usize _offset = 0;
+		usize _used = 0;
+		u8* _buffer = nullptr;
 
 		ReaderRef _inner;
 };

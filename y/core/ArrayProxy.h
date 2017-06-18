@@ -43,7 +43,7 @@ class ArrayProxy : NonCopyable {
 
 		ArrayProxy() = default;
 
-		ArrayProxy(std::nullptr_t) : ArrayProxy() {
+		ArrayProxy(std::nullptr_t) {
 		}
 
 		ArrayProxy(const T& t) : _data(&t), _size(1) {

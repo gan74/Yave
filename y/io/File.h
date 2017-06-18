@@ -34,7 +34,8 @@ namespace io {
 class File : public Reader, public Writer {
 
 	public:
-		File();
+		File() = default;
+
 		virtual ~File();
 
 		File(File&& other);
@@ -60,7 +61,7 @@ class File : public Reader, public Writer {
 		File(FILE* f);
 		void swap(File& other);
 
-		FILE* _file;
+		FILE* _file = nullptr;
 };
 
 }

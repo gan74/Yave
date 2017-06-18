@@ -98,7 +98,7 @@ class Vec
 			std::copy(std::begin(v), std::end(v), begin());
 		}
 
-        Vec(detail::identity_t&&) : Vec() {
+        Vec(detail::identity_t&&) {
 		}
 
 		Vec() = default;

@@ -25,9 +25,6 @@ SOFTWARE.
 namespace y {
 namespace io {
 
-File::File() : _file(nullptr) {
-}
-
 File::File(FILE* f) : _file(f) {
 }
 
@@ -37,7 +34,7 @@ File::~File() {
 	}
 }
 
-File::File(File&& other) : File() {
+File::File(File&& other) {
 	swap(other);
 }
 

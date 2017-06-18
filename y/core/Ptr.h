@@ -123,7 +123,7 @@ class Unique : public detail::Ptr<T> {
 		Unique(std::nullptr_t p) : Base(p) {
 		}
 
-		Unique(Unique&& p) : Base() {
+		Unique(Unique&& p) {
 			swap(p);
 		}
 
@@ -166,7 +166,7 @@ class Rc : public detail::Ptr<T> {
 
 		Rc() = default;
 
-		Rc(std::nullptr_t) : Rc() {
+		Rc(std::nullptr_t) {
 		}
 
 		explicit Rc(Owner<pointer>&& p) : Base(std::move(p)), _count(new C(1)) {
@@ -182,7 +182,7 @@ class Rc : public detail::Ptr<T> {
 		Rc(const Rc<U, C>& p) : Rc(p._ptr, p._count) {
 		}*/
 
-		Rc(Rc&& p) : Rc() {
+		Rc(Rc&& p) {
 			swap(p);
 		}
 

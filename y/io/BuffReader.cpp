@@ -39,7 +39,7 @@ BuffReader::~BuffReader() {
 	delete[] _buffer;
 }
 
-BuffReader::BuffReader(BuffReader&& other) : BuffReader() {
+BuffReader::BuffReader(BuffReader&& other) {
 	swap(other);
 }
 
