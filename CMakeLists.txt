@@ -14,7 +14,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
-add_definitions("${EXTRA_OPTIMISATIONS}")
 add_definitions("-std=c++17 -pedantic -Wall -Wextra")
 
 
@@ -67,7 +66,7 @@ endfunction(enable_unity_build)
 
 
 option(USE_UNITY_BUILD "Use unity build" OFF)
-option(BUILD_LIB "Build library" OFF)
+option(BUILD_LIB "Build library" ON)
 
 
 if(USE_UNITY_BUILD)
