@@ -58,14 +58,14 @@ bool ParallelTask::process_one() {
 }
 
 void ParallelTask::wait() {
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock lock(_mutex);
 	_cond.wait(lock, [&]() { return _p == _n; });
 }
 
 bool ParallelTask::register_done() {
 	u32 p = ++_p;
 	if(p == _n) {
-		std::unique_lock<std::mutex> lock(_mutex);
+		std::unique_lock lock(_mutex);
 		_cond.notify_one();
 	}
 	return p >= _n;
@@ -83,7 +83,7 @@ void schedule_task(Arc<ParallelTask> task) {
 	}
 
 	{
-		std::unique_lock<std::mutex> lock(scheduler_mutex);
+		std::unique_lock lock(scheduler_mutex);
 		scheduled_task = task;
 	}
 	scheduler_condition.notify_all();
@@ -102,7 +102,7 @@ void schedule_task(Arc<ParallelTask> task) {
 static void work() {
 	void* last = nullptr;
 	while(run_workers) {
-		std::unique_lock<std::mutex> lock(scheduler_mutex);
+		std::unique_lock lock(scheduler_mutex);
 		auto task = scheduled_task;
 
 		while(!task || task.as_ptr() == last) {

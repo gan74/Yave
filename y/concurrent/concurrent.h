@@ -148,7 +148,7 @@ auto parallel_block_collect(It begin, It end, Func&& func) {
 	parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
 		auto e = func(range);
 
-		std::unique_lock<std::mutex> lock(mutex);
+		std::unique_lock lock(mutex);
 		col.push_back(std::move(e));
 	});
 
