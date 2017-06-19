@@ -10,7 +10,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
-add_definitions("${EXTRA_OPTIMISATIONS}")
 add_definitions("-std=c++17 -pedantic -Wall -Wextra")
 
 
