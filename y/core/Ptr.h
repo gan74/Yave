@@ -35,27 +35,15 @@ class Ptr : NonCopyable {
 		using pointer = std::remove_extent_t<T>*;
 		using const_pointer = const std::remove_extent_t<T>*;
 
-		const T& operator*() const {
+		T& operator*() const {
 			return *_ptr;
 		}
 
-		T& operator*() {
-			return *_ptr;
-		}
-
-		const_pointer operator->() const {
+		pointer operator->() const {
 			return _ptr;
 		}
 
-		pointer operator->() {
-			return _ptr;
-		}
-
-		operator void*() {
-			return _ptr;
-		}
-
-		operator void const*() const {
+		operator void*() const {
 			return _ptr;
 		}
 
@@ -75,11 +63,7 @@ class Ptr : NonCopyable {
 			return !_ptr;
 		}
 
-		pointer as_ptr() {
-			return _ptr;
-		}
-
-		const_pointer as_ptr() const {
+		pointer as_ptr() const {
 			return _ptr;
 		}
 
