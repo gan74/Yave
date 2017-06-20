@@ -21,20 +21,17 @@ SOFTWARE.
 **********************************/
 
 #include "GBufferRenderer.h"
+#include "RenderingPipeline.h"
 
 namespace yave {
 
 GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
 		BufferRenderer(dptr),
-		_scene(dptr, node),
+		_scene(new SceneRenderer(dptr, node)),
 		_depth(device(), depth_format, size),
 		_color(device(), diffuse_format, size),
 		_normal(device(), normal_format, size),
 		_gbuffer(device(), _depth, {_color, _normal}) {
-}
-
-const SceneView& GBufferRenderer::scene_view() const {
-	return _scene.scene_view();
 }
 
 const DepthTextureAttachment& GBufferRenderer::depth() const {
@@ -53,12 +50,13 @@ const math::Vec2ui& GBufferRenderer::size() const {
 	return _color.size();
 }
 
-TextureView GBufferRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
-	RecordedCmdBuffer cmd_buffer = _scene.process(token, _gbuffer);
+void GBufferRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
+	auto cmd_buffer = node.add_dependency(_scene, _gbuffer);
 
-	recorder.execute(cmd_buffer, _gbuffer);
-
-	return _color;
+	node.set_func([=, &recorder]() mutable -> result_type {
+			recorder.execute(cmd_buffer.get(), _gbuffer);
+			return _color;
+		});
 }
 
 }

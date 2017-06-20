@@ -14,5 +14,4 @@ void main() {
 
 	out_color = tex_color;
 	out_normal = vec4(v_normal * 0.5 + vec3(0.5), 1.0);
-
 }

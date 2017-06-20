@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "CullingNode.h"
+#include "RenderingPipeline.h"
 
 #include <y/core/Chrono.h>
 
@@ -28,42 +29,26 @@ SOFTWARE.
 
 namespace yave {
 
+template<typename T>
+static auto process_transformables(const core::Vector<Scene::Ptr<T>>& objects, const Frustum& frustum) {
+	auto visibles = core::vector_with_capacity<const T*>(objects.size() / 2);
 
-CullingNode::CullingNode(SceneView &view) : _view(view) {
-}
-
-const SceneView& CullingNode::scene_view() const {
-	return _view;
-}
-
-CullingNode::CullingResults CullingNode::process(const FrameToken&) {
-	Frustum frustum = _view.camera().frustum();
-
-	return CullingResults{
-			process_static_meshes(frustum),
-			process_renderables(frustum)
-		};
-}
-
-core::Vector<const Renderable*> CullingNode::process_renderables(const Frustum& frustum) {
-	auto visibles = core::vector_with_capacity<const Renderable*>(_view.scene().renderables().size() / 2);
-
-	for(const auto& r : _view.scene().renderables()) {
-		if(frustum.is_inside(r->position(), r->radius())) {
-			visibles << r.as_ptr();
+	for(const auto& o : objects) {
+		if(frustum.is_inside(o->position(), o->radius())) {
+			visibles << o.as_ptr();
 		}
 	}
 
 	return visibles;
 }
 
-core::Vector<const StaticMesh*> CullingNode::process_static_meshes(const Frustum& frustum) {
-	auto visibles = core::vector_with_capacity<const StaticMesh*>(_view.scene().static_meshes().size() / 2);
+static auto process_static_meshes(const core::Vector<Scene::Ptr<StaticMesh>>& meshes, const Frustum& frustum) {
+	auto visibles = core::vector_with_capacity<const StaticMesh*>(meshes.size() / 2);
 
 	constexpr bool use_map = true;
 	if constexpr(use_map) {
 		std::unordered_map<Material*, decltype(visibles)> per_mat;
-		for(const auto& m : _view.scene().static_meshes()) {
+		for(const auto& m : meshes) {
 			if(frustum.is_inside(m->position(), m->radius())) {
 				per_mat[m->material().as_ptr()] << m.as_ptr();
 			}
@@ -75,7 +60,7 @@ core::Vector<const StaticMesh*> CullingNode::process_static_meshes(const Frustum
 			}
 		}
 	} else {
-		for(const auto& m : _view.scene().static_meshes()) {
+		for(const auto& m : meshes) {
 			if(frustum.is_inside(m->position(), m->radius())) {
 				visibles << m.as_ptr();
 			}
@@ -87,6 +72,23 @@ core::Vector<const StaticMesh*> CullingNode::process_static_meshes(const Frustum
 	}
 
 	return visibles;
+}
+
+
+
+CullingNode::CullingNode(SceneView &view) : _view(view) {
+}
+
+void CullingNode::build_frame_graph(RenderingNode<result_type>& node) {
+	node.set_func([=]() {
+			Frustum frustum = _view.camera().frustum();
+
+			return CullingResults{
+					process_static_meshes(_view.scene().static_meshes(), frustum),
+					process_transformables(_view.scene().renderables(), frustum),
+					process_transformables(_view.scene().lights(), frustum)
+				};
+		});
 }
 
 }

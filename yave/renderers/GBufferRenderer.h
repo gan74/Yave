@@ -29,16 +29,14 @@ namespace yave {
 class GBufferRenderer : public BufferRenderer {
 
 	public:
-		template<typename T>
-		using Ptr = core::Rc<T>;
-
 		static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 		static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
 
-		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node);
 
-		const SceneView& scene_view() const;
+		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node);
+		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
+
 
 		const DepthTextureAttachment& depth() const;
 		const ColorTextureAttachment& color() const;
@@ -46,10 +44,17 @@ class GBufferRenderer : public BufferRenderer {
 
 		const math::Vec2ui& size() const;
 
-		TextureView process(const FrameToken&token, CmdBufferRecorder<>& recorder) override;
+
+		const SceneView& scene_view() const {
+			return _scene->scene_view();
+		}
+
+		const auto& scene_renderer() const {
+			return _scene;
+		}
 
 	private:
-		SceneRenderer _scene;
+		core::Arc<SceneRenderer> _scene;
 
 		DepthTextureAttachment _depth;
 		ColorTextureAttachment _color;

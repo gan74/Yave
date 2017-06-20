@@ -67,7 +67,8 @@ vec3 fetch_normal(sampler2D normal_tex, ivec2 coord) {
 	return texelFetch(normal_tex, coord, 0).xyz * 2.0 - vec3(1.0);
 }
 
-
+//#define DEBUG
+#define LIGHT_ONLY
 
 void main() {
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
@@ -75,7 +76,12 @@ void main() {
 	vec3 acc = vec3(0.0);
 	
 	float depth = texelFetch(in_depth, coord, 0).x;
+
+#ifndef LIGHT_ONLY
 	vec4 albedo = texelFetch(in_color, coord, 0);
+#else
+	vec4 albedo = vec4(1.0);
+#endif
 
 	if(depth < 1) {
 		vec3 normal = fetch_normal(in_normal, coord);
@@ -102,7 +108,6 @@ void main() {
 	}
 	//acc = load_color(lights.count);
 
-//#define DEBUG
 
 #ifdef DEBUG
 	imageStore(out_color, coord, albedo);

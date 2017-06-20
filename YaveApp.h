@@ -56,9 +56,11 @@ class YaveApp : NonCopyable {
 		~YaveApp();
 
 		template<typename... Args>
-		void init(Args... args) {
+		void set_swapchain(Args... args) {
+			device.vk_queue(QueueFamily::Graphics).waitIdle();
+			renderer = nullptr;
 			swapchain = new Swapchain(&device, std::forward<Args>(args)...);
-			create_assets();
+			create_renderers();
 		}
 
 		void draw();
@@ -67,11 +69,12 @@ class YaveApp : NonCopyable {
 
 	private:
 		void create_assets();
+		void create_renderers();
 
 		Instance instance;
 		Device device;
 
-		Swapchain* swapchain;
+		core::Unique<Swapchain> swapchain;
 
 		AssetPtr<Material> material;
 		Texture mesh_texture;
@@ -81,7 +84,7 @@ class YaveApp : NonCopyable {
 		SceneView* scene_view;
 
 		Camera camera;
-		core::Rc<EndOfPipeline> renderer;
+		core::Arc<EndOfPipeline> renderer;
 };
 
 }

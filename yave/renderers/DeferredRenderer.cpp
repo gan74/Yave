@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "DeferredRenderer.h"
+#include "RenderingPipeline.h"
 
 #include <yave/commands/CmdBufferRecorder.h>
 #include <y/io/File.h>
@@ -105,20 +106,15 @@ const math::Vec2ui& DeferredRenderer::size() const {
 	return _acc_buffer.size();
 }
 
-ImageView<ImageUsage::StorageBit | ImageUsage::TextureBit> DeferredRenderer::view() const {
-	return _acc_buffer;
+void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
+	node.add_dependency(_gbuffer, recorder);
+	auto culling = node.add_dependency(_gbuffer->scene_renderer()->culling_node());
+
+	node.set_func([=, &recorder]() -> result_type {
+			_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
+			recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().to<2>(), 1), {_descriptor_set});
+			return _acc_buffer;
+		});
 }
-
-TextureView DeferredRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
-	_gbuffer->process(token, recorder);
-
-	_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
-
-	recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().to<2>(), 1), {_descriptor_set});
-
-	return _acc_buffer;
-}
-
-
 
 }

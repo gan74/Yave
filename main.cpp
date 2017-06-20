@@ -47,7 +47,7 @@ int main(int, char **) {
 	win.set_mouse_handler(new ArcballMouse());
 
 	YaveApp app(DebugParams::debug());
-	app.init(&win);
+	app.set_swapchain(&win);
 
 	win.show();
 	while(win.update()) {

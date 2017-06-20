@@ -37,11 +37,11 @@ class ColorCorrectionRenderer : public EndOfPipeline {
 
 	public:
 		template<typename T>
-		using Ptr = core::Rc<T>;
+		using Ptr = core::Arc<T>;
 
 		ColorCorrectionRenderer(const Ptr<BufferRenderer>& renderer);
 
-		void process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
+		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
 	private:
 		const DescriptorSet& create_descriptor_set(const StorageView& out, const TextureView& in);

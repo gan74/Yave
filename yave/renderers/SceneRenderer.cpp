@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "SceneRenderer.h"
+#include "RenderingPipeline.h"
 
 namespace yave {
 
@@ -48,21 +49,22 @@ SceneRenderer::SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull) :
 	log_msg("Allocating "_s + (batch_size / 1024) * (sizeof(math::Matrix4<>) + sizeof(vk::DrawIndexedIndirectCommand)) + "KB of scene buffers");
 }
 
-const SceneView& SceneRenderer::scene_view() const {
-	return _cull->scene_view();
+void SceneRenderer::build_frame_graph(RenderingNode<result_type>& node, const Framebuffer& framebuffer) {
+	auto culling = node.add_dependency(_cull);
+
+	node.set_func([=, token = node.token(), &framebuffer]() {
+			CmdBufferRecorder<CmdBufferUsage::Secondary> recorder(device()->create_secondary_cmd_buffer(), framebuffer);
+
+			_camera_mapping[0] = scene_view().camera().viewproj_matrix();
+
+			const auto& results = culling.get();
+			render_static_meshes(recorder, results.static_meshes);
+			render_renderables(recorder, token, results.renderables);
+
+			return std::move(recorder);
+		});
 }
 
-RecordedCmdBuffer<CmdBufferUsage::Secondary> SceneRenderer::process(const FrameToken& token, const Framebuffer& framebuffer) {
-	CmdBufferRecorder<CmdBufferUsage::Secondary> recorder(device()->create_secondary_cmd_buffer(), framebuffer);
-
-	_camera_mapping[0] = scene_view().camera().viewproj_matrix();
-	auto results = _cull->process(token);
-
-	render_static_meshes(recorder, results.static_meshes);
-	render_renderables(recorder, token, results.renderables);
-
-	return std::move(recorder);
-}
 
 void SceneRenderer::render_renderables(Recorder& recorder, const FrameToken& token, const core::Vector<const Renderable*>& renderables) {
 	if(renderables.is_empty()) {

@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include <yave/camera/Frustum.h>
+#include <yave/objects/Light.h>
 
 namespace yave {
 namespace uniform {
@@ -38,10 +39,7 @@ struct Camera {
 
 using Frustum = yave::Frustum;
 
-enum class LightType : u32 {
-	Directional = 0,
-	Point = 1
-};
+using LightType = Light::Type;
 
 struct Light {
 	math::Vec3 positon;

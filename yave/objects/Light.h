@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,44 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
+#ifndef YAVE_OBJECTS_LIGHT_H
+#define YAVE_OBJECTS_LIGHT_H
 
-#include <yave/yave.h>
+#include "Transformable.h"
 
-#include <yave/objects/StaticMesh.h>
-#include <yave/objects/Renderable.h>
-#include <yave/objects/Light.h>
 
 namespace yave {
 
-class Scene : NonCopyable {
-
+class Light : public Transformable {
 	public:
-		template<typename T>
-		using Ptr = core::Unique<T>;
+		enum Type : u32 {
+			Directional = 0,
+			Point = 1
+		};
 
-		Scene(core::Vector<Ptr<StaticMesh>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
-
-		const auto& static_meshes() const {
-			return _statics;
-		}
-
-		const auto& renderables() const {
-			return _renderables;
-		}
-
-		const auto& lights() const {
-			return _lights;
+		Light(Type type) : _type(type) {
 		}
 
 	private:
-		core::Vector<Ptr<StaticMesh>> _statics;
-		core::Vector<Ptr<Renderable>> _renderables;
-		core::Vector<Ptr<Light>> _lights;
-};
+		Type _type;
 
+};
 
 }
 
-#endif // YAVE_SCENE_SCENE_H
+#endif // YAVE_OBJECTS_LIGHT_H

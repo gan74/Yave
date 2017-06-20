@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "ColorCorrectionRenderer.h"
+#include "RenderingPipeline.h"
 
 #include <y/io/File.h>
 
@@ -37,13 +38,15 @@ ColorCorrectionRenderer::ColorCorrectionRenderer(const Ptr<BufferRenderer>& rend
 		_correction_program(_correction_shader) {
 }
 
-void ColorCorrectionRenderer::process(const FrameToken& token, CmdBufferRecorder<>& recorder) {
-	auto view = _renderer->process(token, recorder);
 
+void ColorCorrectionRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
+	auto image = node.add_dependency(_renderer, recorder);
+
+	node.set_func([=, &recorder, token = node.token()]() {
+			auto size = token.image_view.size();
 #warning barrier ?
-
-	auto size = token.image_view.size();
-	recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().to<2>(), 1), {create_descriptor_set(token.image_view, view)});
+			recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().to<2>(), 1), {create_descriptor_set(token.image_view, image.get())});
+		});
 }
 
 const DescriptorSet& ColorCorrectionRenderer::create_descriptor_set(const StorageView& out, const TextureView& in) {

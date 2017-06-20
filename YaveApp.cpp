@@ -23,6 +23,7 @@ SOFTWARE.
 
 #include <yave/image/ImageData.h>
 #include <yave/buffer/TypedBuffer.h>
+#include <yave/renderers/RenderingPipeline.h>
 
 #include <y/io/File.h>
 
@@ -33,6 +34,8 @@ namespace yave {
 YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), mesh_pool(&device) {
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMesh));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
+
+	create_assets();
 }
 
 YaveApp::~YaveApp() {
@@ -44,7 +47,7 @@ YaveApp::~YaveApp() {
 	material = decltype(material)();
 	mesh_texture = Texture();
 
-	delete swapchain;
+	swapchain = nullptr;
 }
 
 vk::Extent2D extent(const math::Vec2ui& v) {
@@ -56,8 +59,15 @@ void YaveApp::draw() {
 
 	FrameToken frame = swapchain->next_frame();
 
+
+
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
-	renderer->process(frame, recorder);
+
+	{
+		RenderingPipeline pipeline(frame);
+		pipeline.dispatch(renderer, recorder);
+	}
+
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
@@ -105,16 +115,14 @@ void YaveApp::create_assets() {
 			));
 	}
 
-
-	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym", "../tools/obj_to_ym/small_cube.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 
-	{
+	/*{
 		auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/height.png.yt").expected("Unable to load texture file."));
 		renderables << new HeightmapTerrain(mesh_pool, AssetPtr<Texture>(Texture(&device, image)));
-	}
-
+	}*/
 
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
@@ -131,21 +139,19 @@ void YaveApp::create_assets() {
 		}
 	}
 
-
 	scene = new Scene(std::move(objects), std::move(renderables));
 	scene_view = new SceneView(*scene, camera);
 
 	update();
 
-	{
-		auto culling = core::Rc<CullingNode>(new CullingNode(*scene_view));
-		auto gbuffer = core::Rc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
-		auto deferred = core::Rc<BufferRenderer>(new DeferredRenderer(gbuffer));
-		renderer = core::Rc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
-	}
+}
 
-	//renderer = new DeferredRenderer(*scene_view, swapchain->size());
 
+void YaveApp::create_renderers() {
+	auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
+	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
+	auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
+	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
 }
 
 }

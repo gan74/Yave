@@ -34,16 +34,20 @@ namespace yave {
 
 class DeferredRenderer : public BufferRenderer {
 	public:
-		template<typename T>
-		using Ptr = core::Rc<T>;
-
 		DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
+		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
+
 
 		const math::Vec2ui& size() const;
 
-		ImageView<ImageUsage::StorageBit | ImageUsage::TextureBit> view() const;
 
-		TextureView process(const FrameToken& token, CmdBufferRecorder<>& recorder) override;
+		const SceneView& scene_view() const {
+			return _gbuffer->scene_view();
+		}
+
+		const auto& gbuffer_renderer() const {
+			return _gbuffer;
+		}
 
 	private:
 		Ptr<GBufferRenderer> _gbuffer;

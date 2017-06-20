@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,44 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
 
-#include <yave/yave.h>
-
-#include <yave/objects/StaticMesh.h>
-#include <yave/objects/Renderable.h>
-#include <yave/objects/Light.h>
+#include "RenderingPipeline.h"
 
 namespace yave {
 
-class Scene : NonCopyable {
+void RenderingPipeline::process_nodes() {
+	while(!_nodes.empty()) {
+		bool dead = true;
+		for(auto it = _nodes.begin(); it != _nodes.end(); ++it) {
+			auto& data = it->second;
+			if(std::all_of(data.dependencies.begin(), data.dependencies.end(), [&](const auto& d) { return _done.find(d) != _done.end(); })) {
+				auto map_node = _nodes.extract(it);
 
-	public:
-		template<typename T>
-		using Ptr = core::Unique<T>;
+				auto node = std::move(map_node.key());
+				auto data = std::move(map_node.mapped());
 
-		Scene(core::Vector<Ptr<StaticMesh>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
+				//log_msg("- " + type_name(*node));
+				data.process();
 
-		const auto& static_meshes() const {
-			return _statics;
+				_done.insert(std::make_pair(std::move(node), std::move(data)));
+
+				dead = false;
+				break;
+			}
 		}
-
-		const auto& renderables() const {
-			return _renderables;
+		if(dead) {
+			fatal("Unable to find a node to process.");
 		}
-
-		const auto& lights() const {
-			return _lights;
-		}
-
-	private:
-		core::Vector<Ptr<StaticMesh>> _statics;
-		core::Vector<Ptr<Renderable>> _renderables;
-		core::Vector<Ptr<Light>> _lights;
-};
-
-
+	}
+	//log_msg("");
 }
 
-#endif // YAVE_SCENE_SCENE_H
+}

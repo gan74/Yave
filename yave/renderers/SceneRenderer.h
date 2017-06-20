@@ -28,16 +28,20 @@ namespace yave {
 
 class SceneRenderer : public SecondaryRenderer {
 
-		using Recorder = CmdBufferRecorder<CmdBufferUsage::Secondary>;
+	using Recorder = CmdBufferRecorder<CmdBufferUsage::Secondary>;
+
 	public:
-		template<typename T>
-		using Ptr = core::Rc<T>;
-
 		SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull);
+		void build_frame_graph(RenderingNode<result_type>& node, const Framebuffer& framebuffer) override;
 
-		const SceneView& scene_view() const;
 
-		RecordedCmdBuffer<CmdBufferUsage::Secondary> process(const FrameToken& token, const Framebuffer& framebuffer) override;
+		const SceneView& scene_view() const {
+			return _cull->scene_view();
+		}
+
+		const auto& culling_node() const {
+			return _cull;
+		}
 
 	private:
 		void render_renderables(Recorder& recorder, const FrameToken& token, const core::Vector<const Renderable*>& renderables);

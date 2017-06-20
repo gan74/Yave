@@ -33,18 +33,21 @@ class CullingNode : public Node {
 		struct CullingResults {
 			core::Vector<const StaticMesh*> static_meshes;
 			core::Vector<const Renderable*> renderables;
+			core::Vector<const Light*> lights;
 		};
 
+		using result_type = CullingResults;
+
+
 		CullingNode(SceneView& view);
+		void build_frame_graph(RenderingNode<result_type>& node);
 
-		const SceneView& scene_view() const;
 
-		CullingResults process(const FrameToken&);
+		const SceneView& scene_view() const {
+			return _view;
+		}
 
 	private:
-		core::Vector<const Renderable*> process_renderables(const Frustum& frustum);
-		core::Vector<const StaticMesh*> process_static_meshes(const Frustum& frustum);
-
 		SceneView& _view;
 };
 

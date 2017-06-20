@@ -25,48 +25,49 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/swapchain/FrameToken.h>
 
+#include "RenderingPipeline.h"
+
 namespace yave {
-
-class RenderingNodeProcessor;
-class RenderingPipeline;
-
-class Node : NonCopyable {
-	public:
-		virtual ~Node() {
-		}
-};
 
 class SecondaryRenderer : public DeviceLinked, public Node {
 	public:
+		using result_type = RecordedCmdBuffer<CmdBufferUsage::Secondary>;
+
 		SecondaryRenderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-		virtual RecordedCmdBuffer<CmdBufferUsage::Secondary> process(const FrameToken&, const Framebuffer&) = 0;
+		virtual void build_frame_graph(RenderingNode<result_type>&, const Framebuffer&) = 0;
 };
 
 
 class Renderer : public DeviceLinked, public Node {
 	public:
+		using result_type = void;
+
 		Renderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
+		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
 };
 
 class BufferRenderer : public DeviceLinked, public Node {
 	public:
+		using result_type = TextureView;
+
 		BufferRenderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-		virtual TextureView process(const FrameToken&, CmdBufferRecorder<>&) = 0;
+		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
 };
 
 class EndOfPipeline : public DeviceLinked, public Node {
 	public:
+		using result_type = void;
+
 		EndOfPipeline(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-		virtual void process(const FrameToken&, CmdBufferRecorder<>&) = 0;
+		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
 };
 
 }
