@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "GBufferRenderer.h"
-#include "RenderingPipeline.h"
 
 namespace yave {
 

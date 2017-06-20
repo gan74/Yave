@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "DeferredRenderer.h"
-#include "RenderingPipeline.h"
 
 #include <yave/commands/CmdBufferRecorder.h>
 #include <y/io/File.h>

@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "CullingNode.h"
-#include "RenderingPipeline.h"
 
 #include <y/core/Chrono.h>
 

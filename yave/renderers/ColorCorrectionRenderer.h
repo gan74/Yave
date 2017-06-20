@@ -36,11 +36,7 @@ namespace yave {
 class ColorCorrectionRenderer : public EndOfPipeline {
 
 	public:
-		template<typename T>
-		using Ptr = core::Arc<T>;
-
 		ColorCorrectionRenderer(const Ptr<BufferRenderer>& renderer);
-
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
 	private:

@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "SceneRenderer.h"
-#include "RenderingPipeline.h"
 
 namespace yave {
 
