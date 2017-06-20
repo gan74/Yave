@@ -48,6 +48,15 @@ struct ForwardStruct {
 	}
 };
 
+static int function_trais_test(int a, double, core::Functor<void()>&) {
+	return a;
+}
+
+static_assert(std::is_same_v<function_traits<decltype(function_trais_test)>::return_type, int>);
+static_assert(std::is_same_v<function_traits<decltype(function_trais_test)>::arg_type<0>, int>);
+static_assert(std::is_same_v<function_traits<decltype(function_trais_test)>::arg_type<1>, double>);
+static_assert(std::is_same_v<function_traits<decltype(function_trais_test)>::arg_type<2>, core::Functor<void()>&>);
+
 y_test_func("Function creation") {
 	int i = 0;
 	auto inc = function([&i]() { ++i; });

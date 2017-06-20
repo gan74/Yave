@@ -59,22 +59,11 @@ struct Function : FunctionBase<Ret, Args...> {
 		}
 
 		virtual Ret apply(Args&&... args) override {
-			return _func(std::forward<Args>(args)...);
-		}
-
-	private:
-		typename FuncPtr<T>::type _func;
-};
-
-// for boxing non void functions in void functors
-template<typename T, typename... Args>
-struct Function<T, void, Args...> : FunctionBase<void, Args...> {
-	public:
-		Function(T&& t) : _func(std::forward<T>(t)) {
-		}
-
-		virtual void apply(Args&&... args) override {
-			_func(std::forward<Args>(args)...);
+			if constexpr(std::is_void_v<Ret>) {
+				_func(std::forward<Args>(args)...);
+			} else {
+				return _func(std::forward<Args>(args)...);
+			}
 		}
 
 	private:
@@ -129,6 +118,24 @@ class Functor<Container, Ret(Args...)> {
 		Container<FunctionBase<Ret, Args...>> _function;
 };
 
+template<typename T>
+struct function_traits {
+};
+
+template<typename Ret, typename... Args>
+struct function_traits<Ret(Args...)> {
+	using return_type = Ret;
+
+	static constexpr usize n_args = sizeof...(Args);
+
+	template<usize I>
+	struct args {
+		using type = typename std::tuple_element<I, std::tuple<Args...>>::type;
+	};
+
+	template<usize I>
+	using arg_type = typename args<I>::type;
+};
 
 // http://stackoverflow.com/questions/7943525/is-it-possible-to-figure-out-the-parameter-type-and-return-type-of-a-lambda
 template<typename T>
@@ -140,6 +147,7 @@ struct functor_type<Ret(*)(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
+	using traits = function_traits<Ret(Args...)>;
 };
 
 template<typename Ret, typename... Args>
@@ -147,6 +155,7 @@ struct functor_type<Ret(&)(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
+	using traits = function_traits<Ret(Args...)>;
 };
 
 template<typename Ret, typename... Args>
@@ -154,6 +163,7 @@ struct functor_type<Ret(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
+	using traits = function_traits<Ret(Args...)>;
 };
 
 template<typename T, typename Ret, typename... Args>
@@ -161,6 +171,7 @@ struct functor_type<Ret(T::*)(Args...) const> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
+	using traits = function_traits<Ret(Args...)>;
 };
 
 template<typename T, typename Ret, typename... Args>
@@ -168,6 +179,7 @@ struct functor_type<Ret(T::*)(Args...)> {
 
 	template<template<typename...> typename Container>
 	using type = Container<Ret(Args...)>;
+	using traits = function_traits<Ret(Args...)>;
 };
 
 }
@@ -195,6 +207,8 @@ inline auto functor(T&& func) {
 }
 
 
+template<typename T>
+using function_traits = typename detail::functor_type<T>::traits;
 
 }
 }
