@@ -82,6 +82,7 @@ class YaveApp : NonCopyable {
 
 		Scene* scene;
 		SceneView* scene_view;
+		core::Vector<Light*> scene_lights;
 
 		Camera camera;
 		core::Arc<EndOfPipeline> renderer;

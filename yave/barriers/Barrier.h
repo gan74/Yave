@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "PipelineStage.h"
 
-#include <yave/image/ImageBase.h>
+#include <yave/image/ImageView.h>
 #include <yave/buffer/Buffer.h>
 #include <yave/buffer/SubBuffer.h>
 
@@ -39,6 +39,10 @@ class ImageBarrier {
 				_usage(image.usage()),
 				_format(image.format()),
 				_mips(image.mipmaps()) {
+		}
+
+		template<ImageUsage Usage>
+		ImageBarrier(const ImageView<Usage>& image) : ImageBarrier(image.image()) {
 		}
 
 		vk::ImageMemoryBarrier vk_barrier() const;

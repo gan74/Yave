@@ -47,6 +47,9 @@ static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
 		case vk::ImageLayout::ePresentSrcKHR:
 			return vk::AccessFlagBits::eMemoryRead;
 
+		case vk::ImageLayout::eGeneral: // assume storage image
+			return vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite;
+
 		default:
 			break;
 	}

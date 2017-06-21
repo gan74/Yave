@@ -64,7 +64,7 @@ class Transformable {
 			return transform()[3].to<3>();
 		}
 
-		void set(const math::Vec3& forward, const math::Vec3& up) {
+		void set_basis(const math::Vec3& forward, const math::Vec3& up) {
 			auto right = forward.cross(up);
 			transform()[0].to<3>() = forward;
 			transform()[1].to<3>() = right;

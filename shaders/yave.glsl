@@ -52,17 +52,34 @@ float noise(vec2 co) {
 
 // -------------------------------- PROJECTION --------------------------------
 
-vec3 unproject(vec2 uv, float depth, mat4 inv_matrix) {
-	vec3 ndc = vec3(uv * 2.0 - vec2(1.0), depth);
+vec3 unproject_ndc(vec3 ndc, mat4 inv_matrix) {
 	vec4 p = inv_matrix * vec4(ndc, 1.0);
 	return p.xyz / p.w;
+}
+
+vec3 unproject(vec2 uv, float depth, mat4 inv_matrix) {
+	vec3 ndc = vec3(uv * 2.0 - vec2(1.0), depth);
+	return unproject_ndc(ndc, inv_matrix);
 }
 
 
 // -------------------------------- CULLING --------------------------------
 
 bool is_inside(Frustum frustum, vec3 pos, float radius) {
-	for(uint i = 0; i < 6; ++i) {
+	for(uint i = 0; i != 6; ++i) {
+		if(dot(vec4(pos, 1.0), frustum.planes[i]) + radius < 0.0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool is_inside(vec4 plane, vec3 pos, float radius) {
+	return dot(vec4(pos, 1.0), plane) + radius < 0.0;
+}
+
+bool is_inside_4(Frustum frustum, vec3 pos, float radius) {
+	for(uint i = 0; i != 4; ++i) {
 		if(dot(vec4(pos, 1.0), frustum.planes[i]) + radius < 0.0) {
 			return false;
 		}

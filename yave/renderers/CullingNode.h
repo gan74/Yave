@@ -33,6 +33,8 @@ class CullingNode : public Node {
 		struct CullingResults {
 			core::Vector<const StaticMesh*> static_meshes;
 			core::Vector<const Renderable*> renderables;
+
+			core::Vector<const Light*> directional_lights;
 			core::Vector<const Light*> lights;
 		};
 

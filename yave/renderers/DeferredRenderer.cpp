@@ -77,13 +77,16 @@ void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBu
 			_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
 
 			{
+				const auto& directionals = culling.get().directional_lights;
 				const auto& lights = culling.get().lights;
 				auto mapping = CpuVisibleMapping(_lights_buffer);
 				u8* data = reinterpret_cast<u8*>(mapping.data());
 
-				reinterpret_cast<Vec4u32*>(data)[0] = Vec4u32(lights.size());
+				reinterpret_cast<Vec4u32*>(data)[0] = Vec4u32(lights.size(), directionals.size(), 0, 0);
+
 				auto light_data = reinterpret_cast<uniform::Light*>(data + sizeof(Vec4u32));
 				std::transform(lights.begin(), lights.end(), light_data, [](const Light* l) { return uniform::Light(*l); });
+				std::transform(directionals.begin(), directionals.end(), light_data + lights.size(), [](const Light* l) { return uniform::Light(*l); });
 			}
 
 			recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub<2>(), 1), {_descriptor_set});

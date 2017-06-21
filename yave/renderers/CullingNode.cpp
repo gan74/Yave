@@ -41,6 +41,21 @@ static auto process_transformables(const core::Vector<Scene::Ptr<T>>& objects, c
 	return visibles;
 }
 
+static auto process_lights(const core::Vector<Scene::Ptr<Light>>& lights, const Frustum& frustum) {
+	auto directionals = core::vector_with_capacity<const Light*>(4);
+	auto visibles = core::vector_with_capacity<const Light*>(lights.size() / 2);
+
+	for(const auto& l : lights) {
+		if(l->type() == Light::Directional) {
+			directionals << l.as_ptr();
+		} else if(frustum.is_inside(l->position(), l->radius())) {
+			visibles << l.as_ptr();
+		}
+	}
+
+	return std::pair{directionals, visibles};
+}
+
 static auto process_static_meshes(const core::Vector<Scene::Ptr<StaticMesh>>& meshes, const Frustum& frustum) {
 	auto visibles = core::vector_with_capacity<const StaticMesh*>(meshes.size() / 2);
 
@@ -82,10 +97,12 @@ void CullingNode::build_frame_graph(RenderingNode<result_type>& node) {
 	node.set_func([=]() {
 			Frustum frustum = _view.camera().frustum();
 
+			auto [dirs, lights] = process_lights(_view.scene().lights(), frustum);
 			return CullingResults{
 					process_static_meshes(_view.scene().static_meshes(), frustum),
 					process_transformables(_view.scene().renderables(), frustum),
-					process_transformables(_view.scene().lights(), frustum)
+					std::move(dirs),
+					std::move(lights)
 				};
 		});
 }

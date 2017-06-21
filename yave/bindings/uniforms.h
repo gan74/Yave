@@ -57,6 +57,9 @@ struct Light {
 	LightType type;
 };
 
+static_assert(sizeof(Camera) % 16 == 0);
+static_assert(sizeof(Light) % 16 == 0);
+
 }
 }
 

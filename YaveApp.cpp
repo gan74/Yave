@@ -31,6 +31,8 @@ SOFTWARE.
 
 namespace yave {
 
+static core::Chrono time;
+
 YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), mesh_pool(&device) {
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMesh));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
@@ -50,15 +52,16 @@ YaveApp::~YaveApp() {
 	swapchain = nullptr;
 }
 
-vk::Extent2D extent(const math::Vec2ui& v) {
-	return vk::Extent2D{v.x(), v.y()};
-}
-
 void YaveApp::draw() {
 	core::DebugTimer f("frame", core::Duration::milliseconds(8));
 
 	FrameToken frame = swapchain->next_frame();
 
+	float secs = time.elapsed().to_secs();
+	math::Vec3 forward = math::Vec3{std::cos(secs), std::sin(secs), -2.0f}.normalized();
+	auto side = scene_lights[0]->up().cross(forward);
+	scene_lights[0]->set_basis(forward, side);
+	scene_lights[1]->position().z() = std::sin(secs);
 
 
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
@@ -141,12 +144,18 @@ void YaveApp::create_assets() {
 	}
 
 	{
-		Light light(Light::Directional);
-		light.set({0.0f, 0.0f, -1.0f}, {1.0f, 0.0f, 0.0f});
-		if(light.up().x() != 1.0f || light.forward().z() != -1.0f) {
-			fatal("Geometry error");
-		}
-		lights << new Light(light);
+		Light* light = new Light(Light::Directional);
+		light->set_basis({0.0f, 0.0f, -1.0f}, {1.0f, 0.0f, 0.0f});
+
+		// CHEATS, AAAAAAH
+		scene_lights << light;
+		lights << std::move(light);
+
+		light = new Light(Light::Point);
+		light->color() = {0.0f, 1.0f, 0.0f};
+
+		scene_lights << light;
+		lights << std::move(light);
 	}
 
 
