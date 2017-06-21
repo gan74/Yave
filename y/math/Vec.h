@@ -193,7 +193,19 @@ class Vec
 		}
 
 		template<usize M>
-		auto to() const {
+		const Vec<M, T>& to() const {
+			static_assert(M <= N, "Accessing out of bound member");
+			return reinterpret_cast<const Vec<M, T>&>(*this);
+		}
+
+		template<usize M>
+		Vec<M, T>& to() {
+			static_assert(M <= N, "Accessing out of bound member");
+			return reinterpret_cast<Vec<M, T>&>(*this);
+		}
+
+		template<usize M>
+		auto sub() const {
 			static_assert(M < N, "Accessing out of bound member");
 			Vec<N - 1, T> v;
 			for(usize i = 0; i != M; ++i) {
