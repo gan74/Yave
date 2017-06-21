@@ -37,9 +37,30 @@ class Light : public Transformable {
 		Light(Type type) : _type(type) {
 		}
 
+		Type type() const {
+			return _type;
+		}
+
+		math::Vec3& color() {
+			return _color;
+		}
+
+		const math::Vec3& color() const {
+			return _color;
+		}
+
+		float& radius() {
+			return _radius;
+		}
+
+		float radius() const {
+			return _radius;
+		}
+
 	private:
 		Type _type;
-
+		math::Vec3 _color = math::Vec3{1.0f};
+		float _radius = 1.0f;
 };
 
 }

@@ -44,7 +44,7 @@ void ColorCorrectionRenderer::build_frame_graph(RenderingNode<result_type>& node
 	node.set_func([=, &recorder, token = node.token()]() {
 			auto size = token.image_view.size();
 #warning barrier ?
-			recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().to<2>(), 1), {create_descriptor_set(token.image_view, image.get())});
+			recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().sub<2>(), 1), {create_descriptor_set(token.image_view, image.get())});
 		});
 }
 

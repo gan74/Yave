@@ -42,7 +42,16 @@ using Frustum = yave::Frustum;
 using LightType = Light::Type;
 
 struct Light {
-	math::Vec3 positon;
+	Light(const yave::Light& l) :
+			position(l.type() == LightType::Directional
+							   ? -l.forward()
+							   : l.position()),
+			radius(l.radius()),
+			color(l.color()),
+			type(l.type()) {
+	}
+
+	math::Vec3 position;
 	float radius;
 	math::Vec3 color;
 	LightType type;

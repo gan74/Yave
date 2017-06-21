@@ -98,7 +98,7 @@ void YaveApp::update(math::Vec2 angles) {
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
-	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
+	camera.set_view(math::look_at(cam_pos.sub<3>() / cam_pos.w(), math::Vec3(), cam_up.sub<3>()));
 	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.01f,  10000.0f));
 }
 
@@ -118,6 +118,7 @@ void YaveApp::create_assets() {
 	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
+	core::Vector<core::Unique<Light>> lights;
 
 	/*{
 		auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/height.png.yt").expected("Unable to load texture file."));
@@ -133,13 +134,23 @@ void YaveApp::create_assets() {
 		for(int x = -size; x != size + 1; ++x) {
 			for(int y = -size; y != size + 1; ++y) {
 				auto obj = StaticMesh(mesh, material);
-				obj.set_position(math::Vec3{x, y, 0} * 5);
+				obj.position() = math::Vec3{x, y, 0} * 5;
 				objects << std::move(obj);
 			}
 		}
 	}
 
-	scene = new Scene(std::move(objects), std::move(renderables));
+	{
+		Light light(Light::Directional);
+		light.set({0.0f, 0.0f, -1.0f}, {1.0f, 0.0f, 0.0f});
+		if(light.up().x() != 1.0f || light.forward().z() != -1.0f) {
+			fatal("Geometry error");
+		}
+		lights << new Light(light);
+	}
+
+
+	scene = new Scene(std::move(objects), std::move(renderables), std::move(lights));
 	scene_view = new SceneView(*scene, camera);
 
 	update();

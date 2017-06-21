@@ -148,13 +148,16 @@ class RenderingPipeline : NonCopyable {
 		};
 
 	public:
+		template<typename T>
+		using Ptr = Node::Ptr<T>;
+
 		template<typename Ret>
 		class RenderingNode : NonCopyable {
 			public:
 				using result_type = Ret;
 
 				template<typename T, typename... Args>
-				auto add_dependency(const core::Arc<T>& dep, Args&&... args) {
+				auto add_dependency(const Ptr<T>& dep, Args&&... args) {
 					_data.dependencies << dep.as_ptr();
 					return _pipe.build_frame_graph(dep, std::forward<Args>(args)...);
 				}
@@ -207,7 +210,7 @@ class RenderingPipeline : NonCopyable {
 
 
 		template<typename T, typename... Args>
-		auto dispatch(const core::Arc<T>& node, Args&&... args) {
+		auto dispatch(const Ptr<T>& node, Args&&... args) {
 			build_frame_graph(node, std::forward<Args>(args)...);
 			process_nodes();
 		}
@@ -229,7 +232,7 @@ class RenderingPipeline : NonCopyable {
 		};
 
 		template<typename T, typename... Args>
-		auto build_frame_graph(const core::Arc<T>& node, Args&&... args) {
+		auto build_frame_graph(const Ptr<T>& node, Args&&... args) {
 			using func_type = decltype(T::build_frame_graph);
 			using node_type = std::decay_t<typename core::function_traits<func_type>::template arg_type<0>>;
 			static_assert(rendering_node_traits<node_type>::is_rendering_node, "T::build_frame_graph does not take a RenderingNode as first argument");

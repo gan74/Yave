@@ -35,42 +35,54 @@ class Transformable {
 		Transformable() :  _storage(math::identity()) {
 		}
 
-		math::Vec3 position() const {
-			return {transform()[3][0], transform()[3][1], transform()[3][2]};
+		const math::Vec3& position() const {
+			return transform()[3].to<3>();
 		}
 
-		void set_position(const math::Vec3& p) {
-			transform()[3][0] = p.x();
-			transform()[3][1] = p.y();
-			transform()[3][2] = p.z();
+		const math::Vec3& forward() const {
+			return transform()[0].to<3>();
+		}
+
+		const math::Vec3& right() const {
+			return transform()[1].to<3>();
+		}
+
+		const math::Vec3& up() const {
+			return transform()[2].to<3>();
 		}
 
 		const Transform& transform() const {
-			//return *_transform;
 			return _storage;
 		}
 
+
 		Transform& transform() {
-			//return *_transform;
 			return _storage;
 		}
+
+		math::Vec3& position() {
+			return transform()[3].to<3>();
+		}
+
+		void set(const math::Vec3& forward, const math::Vec3& up) {
+			auto right = forward.cross(up);
+			transform()[0].to<3>() = forward;
+			transform()[1].to<3>() = right;
+			transform()[2].to<3>() = up;
+		}
+
 
 		float radius() const {
 			return _radius;
 		}
 
 	protected:
-		/*void set_storage(Transform* s) {
-			_transform = s;
-		}*/
-
 		void set_radius(float r) {
 			_radius = r;
 		}
 
 
 	private:
-		//Transform* _transform = nullptr;
 		Transform _storage;
 
 		float _radius = 0.0f;
