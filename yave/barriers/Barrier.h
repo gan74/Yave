@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-vk::ImageMemoryBarrier create_image_barrier(vk::Image image, ImageFormat format, usize mips, vk::ImageLayout old_layout, vk::ImageLayout new_layout);
+vk::ImageMemoryBarrier create_image_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, vk::ImageLayout old_layout, vk::ImageLayout new_layout);
 
 class ImageBarrier {
 	public:
@@ -38,6 +38,7 @@ class ImageBarrier {
 				_image(image.vk_image()),
 				_usage(image.usage()),
 				_format(image.format()),
+				_layers(image.layers()),
 				_mips(image.mipmaps()) {
 		}
 
@@ -51,6 +52,7 @@ class ImageBarrier {
 		vk::Image _image;
 		ImageUsage _usage;
 		ImageFormat _format;
+		usize _layers;
 		usize _mips;
 };
 

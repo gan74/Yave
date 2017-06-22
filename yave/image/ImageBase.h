@@ -38,6 +38,8 @@ class ImageBase : NonCopyable, public DeviceLinked {
 		const math::Vec2ui& size() const;
 		usize mipmaps() const;
 
+		usize layers() const;
+
 		ImageFormat format() const;
 		ImageUsage usage() const;
 
@@ -52,6 +54,7 @@ class ImageBase : NonCopyable, public DeviceLinked {
 		void swap(ImageBase& other);
 
 		math::Vec2ui _size;
+		usize _layers = 1;
 		usize _mips = 1;
 
 		ImageFormat _format;

@@ -202,6 +202,7 @@ void PrimaryCmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageL
 	auto barrier = create_image_barrier(
 			image.vk_image(),
 			image.format(),
+			image.layers(),
 			image.mipmaps(),
 			src,
 			dst

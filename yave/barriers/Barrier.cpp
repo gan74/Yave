@@ -60,6 +60,7 @@ static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
 vk::ImageMemoryBarrier create_image_barrier(
 		vk::Image image,
 		ImageFormat format,
+		usize layers,
 		usize mips,
 		vk::ImageLayout old_layout,
 		vk::ImageLayout new_layout) {
@@ -76,7 +77,7 @@ vk::ImageMemoryBarrier create_image_barrier(
 					.setAspectMask(format.vk_aspect())
 					.setBaseArrayLayer(0)
 					.setBaseMipLevel(0)
-					.setLayerCount(1)
+					.setLayerCount(layers)
 					.setLevelCount(mips)
 				)
 		;
@@ -84,7 +85,7 @@ vk::ImageMemoryBarrier create_image_barrier(
 
 vk::ImageMemoryBarrier ImageBarrier::vk_barrier() const {
 	auto layout = vk_image_layout(_usage);
-	return create_image_barrier(_image, _format, _mips, layout, layout);
+	return create_image_barrier(_image, _format, _layers, _mips, layout, layout);
 }
 
 vk::BufferMemoryBarrier BufferBarrier::vk_barrier() const {

@@ -39,17 +39,20 @@ class ImageData : NonCopyable {
 		ImageData(ImageData&& other);
 		ImageData& operator=(ImageData&& other);
 
-		usize byte_size() const;
-		usize all_mip_bytes_size() const;
+		usize byte_size(usize mip = 0) const;
+		usize layer_byte_size() const;
+		usize combined_byte_size() const;
 
 		const math::Vec2ui& size() const;
+		math::Vec2ui size(usize mip) const;
 
 		const ImageFormat& format() const;
 
+		usize layers() const;
 		usize mipmaps() const;
-		math::Vec2ui mip_size(usize lvl) const;
 
-		const u8* data() const;
+		usize data_offset(usize layer = 0, usize mip = 0) const;
+		const u8* data(usize layer = 0, usize mip = 0) const;
 
 		static ImageData from_file(io::ReaderRef reader);
 
@@ -58,6 +61,8 @@ class ImageData : NonCopyable {
 
 		math::Vec2ui _size;
 		ImageFormat _format;
+
+		usize _layers = 1;
 		usize _mips = 1;
 
 		core::Unique<u8[]> _data;

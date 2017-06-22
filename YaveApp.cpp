@@ -57,13 +57,6 @@ void YaveApp::draw() {
 
 	FrameToken frame = swapchain->next_frame();
 
-	float secs = time.elapsed().to_secs();
-	math::Vec3 forward = math::Vec3{std::cos(secs), std::sin(secs), -2.0f}.normalized();
-	auto side = scene_lights[0]->up().cross(forward);
-	scene_lights[0]->set_basis(forward, side);
-	scene_lights[1]->position().z() = std::sin(secs);
-
-
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
 
 	{
@@ -143,21 +136,6 @@ void YaveApp::create_assets() {
 		}
 	}
 
-	{
-		Light* light = new Light(Light::Directional);
-		light->set_basis({0.0f, 0.0f, -1.0f}, {1.0f, 0.0f, 0.0f});
-
-		// CHEATS, AAAAAAH
-		scene_lights << light;
-		lights << std::move(light);
-
-		light = new Light(Light::Point);
-		light->color() = {0.0f, 1.0f, 0.0f};
-
-		scene_lights << light;
-		lights << std::move(light);
-	}
-
 
 	scene = new Scene(std::move(objects), std::move(renderables), std::move(lights));
 	scene_view = new SceneView(*scene, camera);
@@ -169,9 +147,9 @@ void YaveApp::create_assets() {
 
 void YaveApp::create_renderers() {
 	auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
-	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
-	auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
-	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
+	auto gbuffer = core::Arc<BufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
+	//auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
+	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(gbuffer));
 }
 
 }

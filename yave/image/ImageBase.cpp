@@ -53,10 +53,10 @@ static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs
 		);
 }
 
-static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, usize mips, ImageFormat format, ImageUsage usage) {
+static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage) {
 	return dptr->vk_device().createImage(vk::ImageCreateInfo()
 			.setSharingMode(vk::SharingMode::eExclusive)
-			.setArrayLayers(1)
+			.setArrayLayers(layers)
 			.setExtent(vk::Extent3D(size.x(), size.y(), 1))
 			.setFormat(format.vk_format())
 			.setImageType(vk::ImageType::e2D)
@@ -69,21 +69,23 @@ static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, usize mi
 }
 
 static auto get_copy_regions(const ImageData& data) {
-	auto regions = core::vector_with_capacity<vk::BufferImageCopy>(data.mipmaps());
-	usize data_size = 0;
-	for(usize i = 0; i != data.mipmaps(); ++i) {
-		auto size = data.mip_size(i);
-		regions << vk::BufferImageCopy()
-			.setBufferOffset(data_size)
-			.setImageExtent(vk::Extent3D(size.x(), size.y(), 1))
-			.setImageSubresource(vk::ImageSubresourceLayers()
-					.setAspectMask(data.format().vk_aspect())
-					.setMipLevel(i)
-					.setBaseArrayLayer(0)
-					.setLayerCount(1)
-				);
-		data_size += size.x() * size.y() * data.format().bit_per_pixel() / 8;
+	auto regions = core::vector_with_capacity<vk::BufferImageCopy>(data.mipmaps() * data.layers());
+
+	for(usize l = 0; l != data.layers(); ++l) {
+		for(usize m = 0; m != data.mipmaps(); ++m) {
+			auto size = data.size(m);
+			regions << vk::BufferImageCopy()
+				.setBufferOffset(data.data_offset(l, m))
+				.setImageExtent(vk::Extent3D(size.x(), size.y(), 1))
+				.setImageSubresource(vk::ImageSubresourceLayers()
+						.setAspectMask(data.format().vk_aspect())
+						.setMipLevel(m)
+						.setBaseArrayLayer(l)
+						.setLayerCount(1)
+					);
+		}
 	}
+
 	return regions;
 }
 
@@ -97,7 +99,7 @@ static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data
 static void upload_data(ImageBase& image, const ImageData& data) {
 	DevicePtr dptr = image.device();
 
-	auto staging_buffer = get_staging_buffer(dptr, data.all_mip_bytes_size(), data.data());
+	auto staging_buffer = get_staging_buffer(dptr, data.combined_byte_size(), data.data());
 	auto regions = get_copy_regions(data);
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
@@ -111,7 +113,10 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 }
 
-static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize mips) {
+static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize layers, usize mips) {
+	if(layers != 1) {
+		fatal("Invalid layer count.");
+	}
 	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
 			.setImage(image)
 			.setViewType(vk::ImageViewType::e2D)
@@ -126,12 +131,12 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 		);
 }
 
-static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, usize mips, ImageFormat format, ImageUsage usage) {
-	auto image = create_image(dptr, size, mips, format, usage);
+static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage) {
+	auto image = create_image(dptr, size, layers, mips, format, usage);
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
 	bind_image_memory(dptr, image, memory);
 
-	return std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView>(image, memory, create_view(dptr, image, format, mips));
+	return std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView>(image, memory, create_view(dptr, image, format, layers, mips));
 }
 
 
@@ -141,11 +146,12 @@ static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(Device
 ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, const math::Vec2ui& size, const ImageData& data) :
 		DeviceLinked(dptr),
 		_size(size),
+		_layers(data.layers()),
 		_mips(data.mipmaps()),
 		_format(data.format()),
 		_usage(usage) {
 
-	auto tpl = alloc_image(dptr, size, _mips, _format, usage | vk::ImageUsageFlagBits::eTransferDst);
+	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage | vk::ImageUsageFlagBits::eTransferDst);
 	std::tie(_image, _memory, _view) = tpl;
 
 	upload_data(*this, data);
@@ -154,11 +160,10 @@ ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, const math::Vec2ui& size,
 ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size) :
 		DeviceLinked(dptr),
 		_size(size),
-		_mips(1),
 		_format(format),
 		_usage(usage) {
 
-	auto tpl = alloc_image(dptr, size, _mips, _format, usage);
+	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage);
 	std::tie(_image, _memory, _view) = tpl;
 
 	if(!is_attachment_usage(usage) && !is_storage_usage(usage)) {
@@ -178,6 +183,10 @@ const math::Vec2ui& ImageBase::size() const {
 
 usize ImageBase::mipmaps() const {
 	return _mips;
+}
+
+usize ImageBase::layers() const {
+	return _layers;
 }
 
 ImageFormat ImageBase::format() const {
@@ -203,6 +212,7 @@ vk::DeviceMemory ImageBase::vk_device_memory() const {
 void ImageBase::swap(ImageBase& other) {
 	DeviceLinked::swap(other);
 	std::swap(_size, other._size);
+	std::swap(_layers, other._layers);
 	std::swap(_mips, other._mips);
 	std::swap(_format, other._format);
 	std::swap(_usage, other._usage);
