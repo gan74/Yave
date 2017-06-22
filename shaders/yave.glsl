@@ -97,3 +97,21 @@ vec3 reinhard(vec3 hdr, float k) {
 vec3 reinhard(vec3 hdr) {
 	return reinhard(hdr, 1.0);
 }
+
+
+// -------------------------------- LIGHTING --------------------------------
+
+float attenuation(float distance, float radius) {
+	float x = min(distance, radius);
+	return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);
+}
+
+float brdf(vec3 normal, vec3 light_dir, vec3 view_dir) {
+	float lambert = saturate(dot(normal, light_dir));
+
+	vec3 half_vec = normalize(light_dir + view_dir);
+	float phong = pow(saturate(dot(normal, half_vec)), 32.0);
+
+	return lambert + phong;
+}
+

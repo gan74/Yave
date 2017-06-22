@@ -76,34 +76,12 @@ vec3 group_color() {
 }
 
 float load_color(uint light_count) {
-	if(light_count == 2) {
-		return 1.0;
-	} else if(light_count == 1) {
-		return 0.5f;
-	}
-	return 0.0f;
-	//return (light_count) / float(lights.count + lights.directional_count+ 1);
+	return (light_count) / float(lights.count + lights.directional_count+ 1);
 }
 
 
 
 
-
-
-
-float attenuation(float distance, float radius) {
-	float x = min(distance, radius);
-	return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);
-}
-
-float brdf(vec3 normal, vec3 light_dir, vec3 view_dir) {
-	float lambert = saturate(dot(normal, light_dir));
-
-	vec3 half_vec = normalize(light_dir + view_dir);
-	float phong = pow(saturate(dot(normal, half_vec)), 32.0);
-
-	return lambert + phong;
-}
 
 
 
