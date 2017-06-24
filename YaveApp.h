@@ -58,6 +58,9 @@ class YaveApp : NonCopyable {
 
 		template<typename... Args>
 		void set_swapchain(Args... args) {
+			if(swapchain) {
+				fatal("Use reset_swapchain.");
+			}
 			device.vk_queue(QueueFamily::Graphics).waitIdle();
 			renderer = nullptr;
 			swapchain = new Swapchain(&device, std::forward<Args>(args)...);

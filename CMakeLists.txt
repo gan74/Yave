@@ -11,7 +11,6 @@ set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-
 # no -Wzero-as-null-pointer-constant because of VK_NULL_HANDLE
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O1")
 
 add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
