@@ -41,6 +41,7 @@ SOFTWARE.
 
 #include <yave/renderers/ColorCorrectionRenderer.h>
 #include <yave/renderers/DeferredRenderer.h>
+#include <yave/renderers/DepthRenderer.h>
 #include <yave/renderers/SceneRenderer.h>
 
 
@@ -60,6 +61,13 @@ class YaveApp : NonCopyable {
 			device.vk_queue(QueueFamily::Graphics).waitIdle();
 			renderer = nullptr;
 			swapchain = new Swapchain(&device, std::forward<Args>(args)...);
+			create_renderers();
+		}
+
+		void reset_swapchain() {
+			device.vk_queue(QueueFamily::Graphics).waitIdle();
+			renderer = nullptr;
+			swapchain->reset();
 			create_renderers();
 		}
 

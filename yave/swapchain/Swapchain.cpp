@@ -132,32 +132,64 @@ Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_su
 }
 
 Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dptr), _surface(surface) {
-	auto capabilities = compute_capabilities(dptr, surface);
-	auto format = get_surface_format(dptr, surface);
+	build_swapchain();
+}
+
+void Swapchain::reset() {
+	destroy_images();
+
+	auto old = _swapchain;
+
+	build_swapchain();
+
+	destroy(old);
+}
+
+Swapchain::~Swapchain() {
+	destroy_images();
+
+	destroy(_swapchain);
+	destroy(_surface);
+}
+
+void Swapchain::destroy_images() {
+	for(const auto& semaphores : _semaphores) {
+		destroy(semaphores.first);
+		destroy(semaphores.second);
+	}
+
+	_images.clear();
+	_semaphores.clear();
+}
+
+void Swapchain::build_swapchain() {
+	auto capabilities = compute_capabilities(device(), _surface);
+	auto format = get_surface_format(device(), _surface);
 
 	_size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
 	_color_format = format.format;
 
-	_swapchain = dptr->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
+	_swapchain = device()->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
 			.setImageUsage(vk::ImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit))
 			.setImageSharingMode(vk::SharingMode::eExclusive)
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
 			.setImageArrayLayers(1)
 			.setClipped(true)
-			.setSurface(surface)
+			.setSurface(_surface)
 			.setPreTransform(capabilities.currentTransform)
 			.setImageFormat(format.format)
 			.setImageColorSpace(format.colorSpace)
 			.setImageExtent(capabilities.currentExtent)
 			.setMinImageCount(get_image_count(capabilities))
-			.setPresentMode(get_present_mode(dptr, surface))
+			.setPresentMode(get_present_mode(device(), _surface))
+			.setOldSwapchain(_swapchain)
 		);
 
 
-	for(auto image : dptr->vk_device().getSwapchainImagesKHR(_swapchain)) {
-		auto view = create_image_view(dptr, image, _color_format.vk_format());
+	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
+		auto view = create_image_view(device(), image, _color_format.vk_format());
 
-		auto swapchain_image = SwapchainImage(dptr);
+		auto swapchain_image = SwapchainImage(device());
 
 		swapchain_image._size = _size;
 		swapchain_image._format = _color_format;
@@ -173,22 +205,12 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 								 device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()));
 	}
 
-	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+	CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
 	for(auto& i : _images) {
 		recorder.transition_image(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 	}
-	auto graphic_queue = dptr->vk_queue(QueueFamily::Graphics);
+	auto graphic_queue = device()->vk_queue(QueueFamily::Graphics);
 	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(graphic_queue);
-}
-
-Swapchain::~Swapchain() {
-	for(const auto& semaphores : _semaphores) {
-		destroy(semaphores.first);
-		destroy(semaphores.second);
-	}
-
-	destroy(_swapchain);
-	destroy(_surface);
 }
 
 FrameToken Swapchain::next_frame() {

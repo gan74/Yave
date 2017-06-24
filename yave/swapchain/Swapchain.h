@@ -81,8 +81,7 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		Swapchain(DevicePtr dptr, Window* window);
 		~Swapchain();
 
-		const Framebuffer& framebuffer(usize index) const;
-		const RenderPass& render_pass() const;
+		void reset();
 
 		vk::SwapchainKHR vk_swapchain() const;
 
@@ -103,6 +102,10 @@ class Swapchain : NonCopyable, public DeviceLinked {
 		void present(const FrameToken& token, vk::Queue queue);
 
 	private:
+		void build_swapchain();
+
+		void destroy_images();
+
 		u64 _frame_id = 0;
 
 		math::Vec2ui _size;

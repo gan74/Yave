@@ -147,6 +147,7 @@ void YaveApp::create_assets() {
 void YaveApp::create_renderers() {
 	auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
 	auto gbuffer = core::Arc<BufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
+	//auto depth = core::Arc<BufferRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
 	//auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
 	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(gbuffer));
 }
