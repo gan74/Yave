@@ -73,8 +73,9 @@ vk::ImageLayout vk_image_layout(ImageUsage usage);
 
 
 enum class ImageType {
-	TwoD,
-	Layered
+	TwoD = uenum(vk::ImageViewType::e2D),
+	Layered = uenum(vk::ImageViewType::e2DArray),
+	Cube = uenum(vk::ImageViewType::eCube)
 };
 
 }

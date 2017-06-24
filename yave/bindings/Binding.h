@@ -61,6 +61,14 @@ class Binding {
 					.setSampler(view.image().device()->vk_sampler())) {
 		}
 
+		Binding(const CubemapView& view) :
+				 _type(vk::DescriptorType::eCombinedImageSampler),
+				 _info(vk::DescriptorImageInfo()
+					.setImageLayout(vk_image_layout(ImageUsage::TextureBit))
+					.setImageView(view.vk_image_view())
+					.setSampler(view.image().device()->vk_sampler())) {
+		}
+
 		Binding(const SubBuffer<BufferUsage::UniformBit>& buffer) :
 				_type(vk::DescriptorType::eUniformBuffer),
 				_info(buffer.descriptor_info()) {

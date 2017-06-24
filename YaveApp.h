@@ -78,6 +78,7 @@ class YaveApp : NonCopyable {
 
 		AssetPtr<Material> material;
 		Texture mesh_texture;
+		Cubemap cubemap;
 		MeshInstancePool mesh_pool;
 
 		Scene* scene;

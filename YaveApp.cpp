@@ -48,6 +48,7 @@ YaveApp::~YaveApp() {
 
 	material = decltype(material)();
 	mesh_texture = Texture();
+	cubemap = Cubemap();
 
 	swapchain = nullptr;
 }
@@ -88,7 +89,7 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 3.0f;
+	float dist = 5.0f;
 
 	auto cam_tr = math::rotation(angles.x(), {0, 0, -1}) * math::rotation(angles.y(), {0, 1, 0});
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
@@ -103,15 +104,18 @@ void YaveApp::create_assets() {
 		{
 			auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/chalet.jpg.yt").expected("Unable to load texture file."));
 			mesh_texture = Texture(&device, image);
+
+			auto cube = ImageData::from_file(io::File::open("../tools/image_to_yt/cubemap/sky.yt").expected("Unable to load texture file."));
+			cubemap = Cubemap(&device, cube);
 		}
 		material = AssetPtr<Material>(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("textured.frag.spv").expected("Unable to load spirv file")))
+				.set_frag_data(SpirVData::from_file(io::File::open("cubemap.frag.spv").expected("Unable to load spirv file")))
 				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
-				.set_bindings({Binding(TextureView(mesh_texture))})
+				.set_bindings({Binding(CubemapView(cubemap))})
 			));
 	}
 
-	core::Vector<const char*> meshes = {"../tools/obj_to_ym/chalet.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/obj_to_ym/sphere.obj.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 	core::Vector<core::Unique<Light>> lights;
@@ -126,14 +130,9 @@ void YaveApp::create_assets() {
 		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
 		auto mesh = AssetPtr<StaticMeshInstance>(std::move(mesh_pool.create_static_mesh(m_data).expected("Unable to allocate static mesh")));
 
-		int size = 0;
-		for(int x = -size; x != size + 1; ++x) {
-			for(int y = -size; y != size + 1; ++y) {
-				auto obj = StaticMesh(mesh, material);
-				obj.position() = math::Vec3{x, y, 0} * 5;
-				objects << std::move(obj);
-			}
-		}
+		auto obj = StaticMesh(mesh, material);
+		obj.position() = math::Vec3{0, 0, 0};
+		objects << std::move(obj);
 	}
 
 

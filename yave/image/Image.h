@@ -39,7 +39,7 @@ class Image : public ImageBase {
 			static_assert(Type == ImageType::TwoD, "Only 2D images can be created empty.");
 		}
 
-		Image(DevicePtr dptr, const ImageData& data) : ImageBase(dptr, Type, Usage, data.size(), data) {
+		Image(DevicePtr dptr, const ImageData& data) : ImageBase(dptr, Usage, Type, data.size(), data) {
 			static_assert(is_texture_usage(Usage), "Only texture images can be initilized.");
 		}
 
@@ -61,6 +61,7 @@ using ColorAttachment = Image<ImageUsage::ColorBit>;
 using DepthTextureAttachment = Image<ImageUsage::DepthBit | ImageUsage::TextureBit>;
 using ColorTextureAttachment = Image<ImageUsage::ColorBit | ImageUsage::TextureBit>;
 
+using Cubemap = Image<ImageUsage::TextureBit, ImageType::Cube>;
 }
 
 #endif // YAVE_IMAGE_IMAGE_H

@@ -79,6 +79,8 @@ using ColorAttachmentView = ImageView<ImageUsage::ColorBit>;
 using DepthTextureAttachmentView = ImageView<ImageUsage::DepthBit | ImageUsage::TextureBit>;
 using ColorTextureAttachmentView = ImageView<ImageUsage::ColorBit | ImageUsage::TextureBit>;
 
+using CubemapView = ImageView<ImageUsage::TextureBit, ImageType::Cube>;
+
 }
 
 #endif // YAVE_IMAGE_IMAGEVIEW_H

@@ -29,11 +29,6 @@ SOFTWARE.
 
 namespace yave {
 
-enum class ImageType {
-	TwoD,
-	Layered
-};
-
 class ImageBase : NonCopyable, public DeviceLinked {
 	public:
 		vk::Image vk_image() const;
@@ -54,7 +49,7 @@ class ImageBase : NonCopyable, public DeviceLinked {
 		ImageBase() = default;
 
 		ImageBase(DevicePtr dptr, ImageFormat fmt, ImageUsage usage, const math::Vec2ui& size);
-		ImageBase(DevicePtr dptr, ImageType type, ImageUsage usage, const math::Vec2ui& size, const ImageData& data);
+		ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const math::Vec2ui& size, const ImageData& data);
 
 		void swap(ImageBase& other);
 

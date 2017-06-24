@@ -53,9 +53,10 @@ static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs
 		);
 }
 
-static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage) {
+static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
 	return dptr->vk_device().createImage(vk::ImageCreateInfo()
 			.setSharingMode(vk::SharingMode::eExclusive)
+			.setFlags(type == ImageType::Cube ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlags())
 			.setArrayLayers(layers)
 			.setExtent(vk::Extent3D(size.x(), size.y(), 1))
 			.setFormat(format.vk_format())
@@ -113,42 +114,42 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 }
 
-static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize layers, usize mips) {
-	if(layers != 1) {
-		fatal("Invalid layer count.");
-	}
+static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize layers, usize mips, ImageType type) {
 	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
 			.setImage(image)
-			.setViewType(vk::ImageViewType::e2D)
+			.setViewType(vk::ImageViewType(type))
 			.setFormat(format.vk_format())
 			.setSubresourceRange(vk::ImageSubresourceRange()
 					.setAspectMask(format.vk_aspect())
 					.setBaseArrayLayer(0)
 					.setBaseMipLevel(0)
-					.setLayerCount(1)
+					.setLayerCount(layers)
 					.setLevelCount(mips)
 				)
 		);
+}
+
+static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+	auto image = create_image(dptr, size, layers, mips, format, usage, type);
+	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
+	bind_image_memory(dptr, image, memory);
+
+	return std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView>(image, memory, create_view(dptr, image, format, layers, mips, type));
 }
 
 static void check_layer_count(ImageType type, usize layers) {
 	if(type == ImageType::TwoD && layers > 1) {
 		fatal("Invalid layer count.");
 	}
-}
-
-static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage) {
-	auto image = create_image(dptr, size, layers, mips, format, usage);
-	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
-	bind_image_memory(dptr, image, memory);
-
-	return std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView>(image, memory, create_view(dptr, image, format, layers, mips));
+	if(type == ImageType::Cube && layers != 6) {
+		fatal("Invalid layer count.");
+	}
 }
 
 
 
 
-ImageBase::ImageBase(DevicePtr dptr, ImageType type, ImageUsage usage, const math::Vec2ui& size, const ImageData& data) :
+ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const math::Vec2ui& size, const ImageData& data) :
 		DeviceLinked(dptr),
 		_size(size),
 		_layers(data.layers()),
@@ -158,7 +159,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageType type, ImageUsage usage, const mat
 
 	check_layer_count(type, _layers);
 
-	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage | vk::ImageUsageFlagBits::eTransferDst);
+	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage | vk::ImageUsageFlagBits::eTransferDst, type);
 	std::tie(_image, _memory, _view) = tpl;
 
 	upload_data(*this, data);
@@ -170,7 +171,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 		_format(format),
 		_usage(usage) {
 
-	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage);
+	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage, ImageType::TwoD);
 	std::tie(_image, _memory, _view) = tpl;
 
 	if(!is_attachment_usage(usage) && !is_storage_usage(usage)) {
