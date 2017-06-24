@@ -102,7 +102,7 @@ void YaveApp::update(math::Vec2 angles) {
 void YaveApp::create_assets() {
 	{
 		{
-			auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/chalet.jpg.yt").expected("Unable to load texture file."));
+			auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/chalet.yt").expected("Unable to load texture file."));
 			mesh_texture = Texture(&device, image);
 
 			auto cube = ImageData::from_file(io::File::open("../tools/image_to_yt/cubemap/sky.yt").expected("Unable to load texture file."));
@@ -115,7 +115,7 @@ void YaveApp::create_assets() {
 			));
 	}
 
-	core::Vector<const char*> meshes = {"../tools/obj_to_ym/sphere.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/mesh_to_ym/sphere.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 	core::Vector<core::Unique<Light>> lights;

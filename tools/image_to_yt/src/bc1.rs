@@ -254,7 +254,7 @@ pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
 	
 	let blocks = image.blocks().count();
 	
-    let mut out = Vec::with_capacity(blocks);
+	let mut out = Vec::with_capacity(blocks);
 	(0..blocks).into_par_iter()
 		.map(|i| {
 			encode_block(&image.blocks().nth(i).unwrap(), quality)
