@@ -28,18 +28,20 @@ SOFTWARE.
 
 namespace yave {
 
-template<ImageUsage Usage>
+template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class ImageView {
 
 	public:
 		ImageView() = default;
 
-		template<ImageUsage ImgUsage, typename = std::enable_if_t<(ImgUsage & Usage) == Usage>>
-		ImageView(const Image<ImgUsage>& img) : _image(&img), _view(img.vk_view()) {
+		template<ImageUsage ImgUsage, typename = typename std::enable_if_t<(ImgUsage & Usage) == Usage>>
+		ImageView(const Image<ImgUsage, Type>& img) : _image(&img), _view(img.vk_view()) {
+			static_assert((ImgUsage & Usage) == Usage, "Invalid image usage.");
 		}
 
-		template<ImageUsage ImgUsage, typename = std::enable_if_t<(ImgUsage & Usage) == Usage>>
-		ImageView(const ImageView<ImgUsage>& img) : _image(img._image), _view(img._view) {
+		template<ImageUsage ImgUsage, typename = typename std::enable_if_t<(ImgUsage & Usage) == Usage>>
+		ImageView(const ImageView<ImgUsage, Type>& img) : _image(img._image), _view(img._view) {
+			static_assert((ImgUsage & Usage) == Usage, "Invalid image usage.");
 		}
 
 		vk::ImageView vk_image_view() const {
@@ -63,7 +65,7 @@ class ImageView {
 		}
 
 	private:
-		template<ImageUsage U>
+		template<ImageUsage U, ImageType T>
 		friend class ImageView;
 
 		const ImageBase* _image = nullptr;

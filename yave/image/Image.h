@@ -28,16 +28,18 @@ SOFTWARE.
 
 namespace yave {
 
-template<ImageUsage Usage>
+
+template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class Image : public ImageBase {
 	public:
 		Image() = default;
 
 		Image(DevicePtr dptr, ImageFormat format, const math::Vec2ui& image_size) : ImageBase(dptr, format, Usage, image_size) {
 			static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized.");
+			static_assert(Type == ImageType::TwoD, "Only 2D images can be created empty.");
 		}
 
-		Image(DevicePtr dptr, const ImageData& data) : ImageBase(dptr, Usage, data.size(), data) {
+		Image(DevicePtr dptr, const ImageData& data) : ImageBase(dptr, Type, Usage, data.size(), data) {
 			static_assert(is_texture_usage(Usage), "Only texture images can be initilized.");
 		}
 

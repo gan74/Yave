@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright () 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -131,6 +131,12 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 		);
 }
 
+static void check_layer_count(ImageType type, usize layers) {
+	if(type == ImageType::TwoD && layers > 1) {
+		fatal("Invalid layer count.");
+	}
+}
+
 static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage) {
 	auto image = create_image(dptr, size, layers, mips, format, usage);
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
@@ -142,14 +148,15 @@ static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(Device
 
 
 
-
-ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, const math::Vec2ui& size, const ImageData& data) :
+ImageBase::ImageBase(DevicePtr dptr, ImageType type, ImageUsage usage, const math::Vec2ui& size, const ImageData& data) :
 		DeviceLinked(dptr),
 		_size(size),
 		_layers(data.layers()),
 		_mips(data.mipmaps()),
 		_format(data.format()),
 		_usage(usage) {
+
+	check_layer_count(type, _layers);
 
 	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage | vk::ImageUsageFlagBits::eTransferDst);
 	std::tie(_image, _memory, _view) = tpl;
@@ -167,7 +174,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 	std::tie(_image, _memory, _view) = tpl;
 
 	if(!is_attachment_usage(usage) && !is_storage_usage(usage)) {
-		fatal("Texture images must be initilized.");
+		fatal("Texture images must be initialized.");
 	}
 }
 

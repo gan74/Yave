@@ -71,6 +71,12 @@ constexpr bool is_texture_usage(ImageUsage usage) {
 
 vk::ImageLayout vk_image_layout(ImageUsage usage);
 
+
+enum class ImageType {
+	TwoD,
+	Layered
+};
+
 }
 
 #endif // YAVE_IMAGE_IMAGEUSAGE_H
