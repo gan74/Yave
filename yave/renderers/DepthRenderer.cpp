@@ -20,42 +20,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "GBufferRenderer.h"
+#include "DepthRenderer.h"
 
 namespace yave {
 
-GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
+DepthRenderer::DepthRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node) :
 		BufferRenderer(dptr),
 		_scene(new SceneRenderer(dptr, node)),
 		_depth(device(), depth_format, size),
-		_color(device(), diffuse_format, size),
-		_normal(device(), normal_format, size),
-		_gbuffer(device(), _depth, {_color, _normal}) {
+		_framebuffer(device(), _depth, {}) {
+
 }
 
-const DepthTextureAttachment& GBufferRenderer::depth() const {
+void DepthRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
+	auto cmd_buffer = node.add_dependency(_scene, _framebuffer);
+
+	node.set_func([=, &recorder]() mutable {
+			recorder.execute(cmd_buffer.get(), _framebuffer);
+			return result_type(_depth);
+		});
+}
+
+const DepthTextureAttachment& DepthRenderer::depth() const {
 	return _depth;
 }
 
-const ColorTextureAttachment& GBufferRenderer::color() const {
-	return _color;
-}
-
-const ColorTextureAttachment& GBufferRenderer::normal() const {
-	return _normal;
-}
-
-const math::Vec2ui& GBufferRenderer::size() const {
-	return _color.size();
-}
-
-void GBufferRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
-	auto cmd_buffer = node.add_dependency(_scene, _gbuffer);
-
-	node.set_func([=, &recorder]() mutable {
-			recorder.execute(cmd_buffer.get(), _gbuffer);
-			return result_type(_color);
-		});
+const math::Vec2ui& DepthRenderer::size() const {
+	return _depth.size();
 }
 
 }

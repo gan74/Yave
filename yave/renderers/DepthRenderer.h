@@ -19,43 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_RENDERERS_DEPTHRENDERER_H
+#define YAVE_RENDERERS_DEPTHRENDERER_H
 
-#include "GBufferRenderer.h"
+#include "SceneRenderer.h"
 
 namespace yave {
 
-GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
-		BufferRenderer(dptr),
-		_scene(new SceneRenderer(dptr, node)),
-		_depth(device(), depth_format, size),
-		_color(device(), diffuse_format, size),
-		_normal(device(), normal_format, size),
-		_gbuffer(device(), _depth, {_color, _normal}) {
+class DepthRenderer : public BufferRenderer {
+
+	public:
+		static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
+
+
+		DepthRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node);
+		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
+
+		const DepthTextureAttachment& depth() const;
+
+		const math::Vec2ui& size() const;
+
+
+		const SceneView& scene_view() const {
+			return _scene->scene_view();
+		}
+
+		const auto& scene_renderer() const {
+			return _scene;
+		}
+
+	private:
+		core::Arc<SceneRenderer> _scene;
+
+		DepthTextureAttachment _depth;
+
+		Framebuffer _framebuffer;
+
+};
 }
 
-const DepthTextureAttachment& GBufferRenderer::depth() const {
-	return _depth;
-}
-
-const ColorTextureAttachment& GBufferRenderer::color() const {
-	return _color;
-}
-
-const ColorTextureAttachment& GBufferRenderer::normal() const {
-	return _normal;
-}
-
-const math::Vec2ui& GBufferRenderer::size() const {
-	return _color.size();
-}
-
-void GBufferRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
-	auto cmd_buffer = node.add_dependency(_scene, _gbuffer);
-
-	node.set_func([=, &recorder]() mutable {
-			recorder.execute(cmd_buffer.get(), _gbuffer);
-			return result_type(_color);
-		});
-}
-
-}
+#endif // YAVE_RENDERERS_DEPTHRENDERER_H
