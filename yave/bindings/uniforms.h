@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include <yave/camera/Frustum.h>
-#include <yave/objects/Light.h>
 
 namespace yave {
 namespace uniform {
@@ -39,22 +38,11 @@ struct Camera {
 
 using Frustum = yave::Frustum;
 
-using LightType = Light::Type;
-
 struct Light {
-	Light(const yave::Light& l) :
-			position(l.type() == LightType::Directional
-							   ? -l.forward()
-							   : l.position()),
-			radius(l.radius()),
-			color(l.color()),
-			type(l.type()) {
-	}
-
 	math::Vec3 position;
 	float radius;
 	math::Vec3 color;
-	LightType type;
+	u32 type;
 };
 
 static_assert(sizeof(Camera) % 16 == 0);

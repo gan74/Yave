@@ -19,39 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_LIGHT_H
-#define YAVE_OBJECTS_LIGHT_H
 
-#include <yave/bindings/uniforms.h>
-#include "Transformable.h"
+#include "Light.h"
 
 namespace yave {
 
-class Light : public Transformable {
-	public:
-		enum Type {
-			Directional = 0,
-			Point = 1
-		};
-
-		Light(Type type);
-
-		Type type() const;
-
-		math::Vec3& color();
-		const math::Vec3& color() const;
-
-		float& radius();
-		float radius() const;
-
-		operator uniform::Light() const;
-
-	private:
-		Type _type;
-		math::Vec3 _color = math::Vec3{1.0f};
-		float _radius = 1.0f;
-};
-
+Light::Light(Type type) : _type(type) {
 }
 
-#endif // YAVE_OBJECTS_LIGHT_H
+Light::Type Light::type() const {
+	return _type;
+}
+
+math::Vec3& Light::color() {
+	return _color;
+}
+
+const math::Vec3& Light::color() const {
+	return _color;
+}
+
+float& Light::radius() {
+	return _radius;
+}
+
+float Light::radius() const {
+	return _radius;
+}
+
+Light::operator uniform::Light() const {
+	return uniform::Light {
+			position(),
+			_radius,
+			_color,
+			u32(_type)
+		};
+}
+
+}
