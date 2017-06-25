@@ -27,15 +27,17 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-template<typename Iter>
+template<typename Iter, typename EndIter = Iter>
 class Range {
 	public:
+		using iterator_traits = std::iterator_traits<Iter>;
+
 		using value_type = typename std::iterator_traits<Iter>::value_type;
 
 		using iterator = Iter;
 		using const_iterator = const Iter;
 
-		Range(const Iter& b, const Iter& e) : _beg(b), _end(e) {
+		Range(const Iter& b, const EndIter& e) : _beg(b), _end(e) {
 		}
 
 		template<typename Coll>
@@ -50,7 +52,7 @@ class Range {
 			return _beg;
 		}
 
-		const Iter& end() const {
+		const EndIter& end() const {
 			return _end;
 		}
 
@@ -60,7 +62,7 @@ class Range {
 
 	private:
 		Iter _beg;
-		Iter _end;
+		EndIter _end;
 };
 
 template<typename Coll>
