@@ -1,3 +1,5 @@
+extern crate fbx_direct;
+
 use std::fs::{File};
 use std::io::{BufWriter, Write, Result};
 use std::path::{Path};
@@ -8,8 +10,10 @@ use std::slice;
 
 mod types;
 mod obj_loader;
+mod fbx_loader;
 
 use obj_loader::*;
+use fbx_loader::*;
 use types::{Mesh, Error};
 
 fn main() {
@@ -19,10 +23,11 @@ fn main() {
 }
 
 fn process_file(path: &Path) {
-
 	let mesh = 
 		if path.extension() == Some(OsStr::new("obj")) {
 			load_obj(path)
+		} else if path.extension() == Some(OsStr::new("fbx")) {
+			load_fbx(path)
 		} else {
 			Err(Error::from("Unsupported format."))
 		}.expect("Unable read mesh.");

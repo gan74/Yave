@@ -1,4 +1,6 @@
-/*use std::io::{BufRead};
+use std::path::{Path};
+use std::fs::{File};
+use std::io::{BufReader, BufRead};
 use std::borrow::{Cow};
 use std::mem;
 
@@ -8,12 +10,14 @@ use fbx_direct::common::{OwnedProperty};
 use types::*;
 
 
-pub fn load_fbx(file: &mut BufRead) -> Result<Mesh, Error> {
-	//dump_fbx(file);
+pub fn load_fbx(path: &Path) -> Result<Mesh, Error> {
+	//dump_fbx(path);
 	
+	/*let file = BufReader::new(File::open(path).expect("Unable to open file."));
+
 	let mut positions = Vec::new();
 	let mut normals = Vec::new();
-	let mut uvs = Vec::new();
+	//let mut uvs = Vec::new();
 	let mut triangles = Vec::new();
 
 	let parser = EventReader::new(file);
@@ -23,7 +27,7 @@ pub fn load_fbx(file: &mut BufRead) -> Result<Mesh, Error> {
 				match name.as_ref() {
 					"Vertices" => positions = parse_positions(properties.first().unwrap())?,
 					"PolygonVertexIndex" => triangles = parse_triangles(properties.first().unwrap())?,
-					"Normals" => println!("NORMALS"),
+					"Normals" => normals = parse_positions(properties.first().unwrap())?,
 					"UV" => println!("UVS"),
 					_ => ()
 				}
@@ -31,12 +35,12 @@ pub fn load_fbx(file: &mut BufRead) -> Result<Mesh, Error> {
 			Err(_) => return Err(Error::from("Unknown FBX error.")),
 			_ => ()
 		}
-	};
-
+	}
+	println!("Loaded FBX: {} vertices, {} normals, {} triangles", positions.len(), normals.len(), triangles.len());
 	Ok(Mesh {
-		vertices: vertices,
+		vertices: positions.iter().zip(normals.iter()).map(|p| Vertex { position: *p.0, normal: *p.1, uv: [0.0; 2] } ).collect(),
 		triangles: triangles
-	})
+	})*/
 	Err(Error::from("FBX not supported."))
 }
 
@@ -60,23 +64,39 @@ fn parse_positions(prop: &OwnedProperty) -> Result<Vec<Vec3>, Error> {
 
 fn parse_triangles(prop: &OwnedProperty) -> Result<Vec<Triangle>, Error> {
 	if let Some(tri_data) = prop.get_vec_i32() {
-		if tri_data.len() % 3 != 0 {
-			Err(Error::from("Invalid triangle data"))
-		} else {
-			let tri_vec = tri_data.to_vec();
-			unsafe {
-				let len = tri_vec.len() / 3;
-				let mut triangles = mem::transmute::<Vec<i32>, Vec<Triangle>>(tri_vec);
-				triangles.set_len(len);
-				Ok(triangles)
-			}
-		}
+		Ok(triangulate(tri_data.to_vec()))
 	} else {
 		Err(Error::from("No triangles data."))
 	}
 }
 
-pub fn dump_fbx(file: &mut BufRead) {
+fn triangulate(tris: Vec<i32>) -> Vec<Triangle> {
+	fn build_tris(tris: &[i32], triangles: &mut Vec<Triangle>) {
+		let len = tris.len();
+		let last = (tris[len - 1] ^ -1) as u32;
+		if len >= 3 {
+			for i in 0..len - 2 {
+				triangles.push([tris[i] as u32, tris[i + 1] as u32, last]);
+			}
+		} else {
+			println!("{:?}", tris.len());
+		}
+	};
+
+	let mut start = 0;
+	let mut triangles = Vec::new();
+	for tri in tris.iter().enumerate() {
+		if *tri.1 < 0 {
+			let end = tri.0 + 1;
+			build_tris(&tris[start..end], &mut triangles);
+			start = end;
+		}
+	}
+	triangles
+}
+
+pub fn dump_fbx(path: &Path) {
+	let file = BufReader::new(File::open(path).expect("Unable to open file."));
 	fn indent(size: usize) -> String {
 		const INDENT: &'static str = "	";
 		(0..size).map(|_| INDENT)
@@ -87,8 +107,10 @@ pub fn dump_fbx(file: &mut BufRead) {
 	let parser = EventReader::new(file);
 	for e in parser {
 		match e {
-			Ok(FbxEvent::StartNode { name, .. }) => {
-				println!("{}{:?}", indent(depth), name);
+			Ok(FbxEvent::StartNode { name, properties }) => {
+				let mut prop_str = format!("{:?}", properties);
+				prop_str.truncate(64);
+				println!("{}{}: {}", indent(depth), name, prop_str);
 				depth += 1;
 			},
 			Ok(FbxEvent::EndNode) => depth -= 1,
@@ -99,4 +121,4 @@ pub fn dump_fbx(file: &mut BufRead) {
 			}
 		}
 	};
-}*/
+}

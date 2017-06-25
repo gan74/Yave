@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["Grégoire Angerand <gregoire.angerand@epfl.ch>"]
 
 [dependencies]
-collada = "*"
+fbx_direct = "*"

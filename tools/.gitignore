@@ -3,6 +3,7 @@
 *.lock
 
 *.obj
+*.fbx
 *.ym
 *.rgba
 *.jpg
