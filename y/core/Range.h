@@ -66,10 +66,10 @@ class Range {
 };
 
 template<typename Coll>
-Range(const Coll& col) -> Range<typename Coll::const_iterator>;
+Range(const Coll&) -> Range<typename Coll::const_iterator>;
 
 template<typename Coll>
-Range(Coll& col) -> Range<typename Coll::iterator>;
+Range(Coll&) -> Range<typename Coll::iterator>;
 
 }
 }

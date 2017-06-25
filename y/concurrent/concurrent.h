@@ -25,6 +25,7 @@ SOFTWARE.
 #include "Arc.h"
 #include <y/core/Functor.h>
 #include <y/core/Vector.h>
+#include <y/core/Range.h>
 
 #include <thread>
 #include <mutex>
@@ -103,8 +104,7 @@ void parallel_indexed_block_for(It begin, It end, Func&& func) {
 	detail::schedule_n([=, &func](usize i) {
 		usize first = i * chunk;
 		usize last = std::min(size, first + chunk);
-		using I = decltype(begin);
-		func(i, range(I(begin + first), I(begin + last)));
+		func(i, core::Range(begin + first, begin + last));
 	}, chunk_count);
 }
 
@@ -139,7 +139,7 @@ void parallel_for(It begin, It end, Func&& func) {
 
 template<template<typename...> typename C = core::Vector, typename It, typename Func>
 auto parallel_block_collect(It begin, It end, Func&& func) {
-	using T = decltype(func(std::declval<Range<It>>()));
+	using T = decltype(func(std::declval<core::Range<It>>()));
 	std::mutex mutex;
 
 	C<T> col;
