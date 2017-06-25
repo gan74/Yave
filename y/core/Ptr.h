@@ -43,7 +43,7 @@ class Ptr : NonCopyable {
 			return _ptr;
 		}
 
-		operator void*() const {
+		operator std::conditional_t<std::is_const_v<T>, const void*, void*>() const {
 			return _ptr;
 		}
 
@@ -230,6 +230,13 @@ class Rc : public detail::Ptr<T> {
 
 		C* _count = nullptr;
 };
+
+
+template<typename T>
+Unique(T*&&) -> Unique<T>;
+
+template<typename T>
+Rc(T*&&) -> Rc<T>;
 
 }
 }
