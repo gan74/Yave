@@ -44,4 +44,19 @@ struct Vertex {
 using IndexedTriangle = std::array<u32, 3>;
 
 
+struct SkinPoint {
+	static constexpr usize size = 4;
+	math::Vec<size, u32> indexes;
+	math::Vec<size, float> weights;
+};
+
+
+struct Bone {
+	String name;
+	math::Vec3 x;
+	math::Vec3 y;
+	math::Vec3 z;
+	math::Vec3 position;
+};
+
 #endif // UTILS_H

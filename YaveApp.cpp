@@ -111,7 +111,7 @@ void YaveApp::create_assets() {
 		material = AssetPtr<Material>(Material(&device, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
 				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-				//.set_bindings({Binding(CubemapView(cubemap))})
+				//.set_bindings({Binding(TextureView(mesh_texture))})
 			));
 	}
 

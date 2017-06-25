@@ -18,11 +18,16 @@ add_definitions("-std=c++17 -pedantic -Wall -Wextra")
 file(GLOB_RECURSE SOURCE_FILES
 		"main.cpp"
 
+		"utils.h"
+
 		"Scene.h"
 		"Scene.cpp"
 
 		"Mesh.h"
 		"Mesh.cpp"
+
+		"Skeleton.h"
+		"Skeleton.cpp"
 	)
 
 # y lib, change this to wherever it it

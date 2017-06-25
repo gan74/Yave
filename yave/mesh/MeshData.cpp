@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "MeshData.h"
-#include <y/io/Decoder.h>
 #include <y/io/BuffReader.h>
 
 #include <y/core/Chrono.h>
@@ -36,27 +35,37 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 		u32 type;
 		u32 version;
 
+		float radius;
+
+		u32 bones;
+		u32 vertices;
+		u32 triangles;
+
 		bool is_valid() const {
 			return magic == 0x65766179 &&
 				   type == 1 &&
-				   version == 3;
+				   version == 4 &&
+				   bones == 0 &&
+				   vertices != 0 &&
+				   triangles != 0;
 		}
 	};
 
 
 	core::DebugTimer _("MeshData::from_file()");
 
-	auto decoder = io::Decoder(io::BuffReader(reader));
-
-	Header header = decoder.decode<Header>().expected(err_msg);
+	Header header = reader->read_one<Header>().expected(err_msg);
 	if(!header.is_valid()) {
 		fatal(err_msg);
 	}
 
 	MeshData mesh;
-	mesh.radius = decoder.decode<decltype(mesh.radius)>().expected(err_msg);
-	mesh.vertices = decoder.decode<decltype(mesh.vertices)>().expected(err_msg);
-	mesh.triangles = decoder.decode<decltype(mesh.triangles)>().expected(err_msg);
+	mesh.radius = header.radius;
+	mesh.vertices = core::Vector<Vertex>(header.vertices, Vertex{});
+	mesh.triangles = core::Vector<IndexedTriangle>(header.triangles, IndexedTriangle{});
+
+	reader->read(mesh.vertices.begin(), header.vertices * sizeof(Vertex)).expected(err_msg);
+	reader->read(mesh.triangles.begin(), header.triangles * sizeof(IndexedTriangle)).expected(err_msg);
 
 	return mesh;
 }

@@ -23,7 +23,6 @@ SOFTWARE.
 #include "ImageData.h"
 
 #include <y/io/BuffReader.h>
-#include <y/io/Decoder.h>
 
 namespace yave {
 
@@ -112,13 +111,15 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 			return magic == 0x65766179 &&
 				   type == 2 &&
 				   version == 3 &&
-				   format > 0;
+				   format > 0 &&
+				   width != 0 &&
+				   height != 0 &&
+				   layers != 0 &&
+				   mips != 0;
 		}
 	};
 
-	auto decoder = io::Decoder(reader);
-
-	Header header = decoder.decode<Header>().expected(err_msg);
+	Header header = reader->read_one<Header>().expected(err_msg);
 	if(!header.is_valid()) {
 		fatal(err_msg);
 	}

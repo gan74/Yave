@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESH_VERTEX_H
-#define YAVE_MESH_VERTEX_H
+#ifndef SKELETON_H
+#define SKELETON_H
 
-#include <yave/yave.h>
-#include <y/math/Vec.h>
+#include "Scene.h"
 
-namespace yave {
+#include <y/io/Ref.h>
 
-struct Vertex {
-	math::Vec3 position;
-	math::Vec3 normal;
-	math::Vec3 tangent;
-	math::Vec2 uv;
+struct Skeleton {
+	public:
+		static Result<Skeleton> from_assimp(aiMesh* mesh);
+
+		const Vector<Bone>& bones() const;
+
+	private:
+		Vector<SkinPoint> _skin;
+		Vector<Bone> _bones;
 };
 
-using IndexedTriangle = std::array<u32, 3>;
-
-static_assert(std::is_trivially_copyable_v<math::Vec4>, "Vec4 should be trivially copyable");
-static_assert(std::is_trivially_copyable_v<Vertex>, "Vertex should be trivially copyable");
-}
-
-#endif // YAVE_MESH_VERTEX_H
+#endif // SKELETON_H

@@ -22,6 +22,13 @@ SOFTWARE.
 
 #include "Mesh.h"
 
+#include <y/io/File.h>
+
+
+const String& Mesh::name() const {
+	return _name;
+}
+
 Result<Mesh> Mesh::from_assimp(aiMesh* mesh) {
 	if(mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE ||
 	  !mesh->HasNormals() ||
@@ -32,7 +39,7 @@ Result<Mesh> Mesh::from_assimp(aiMesh* mesh) {
 
 	float radius = 0.0f;
 
-	usize vertex_count = mesh->mNumVertices;;
+	usize vertex_count = mesh->mNumVertices;
 	auto vertices = vector_with_capacity<Vertex>(vertex_count);
 	for(usize i = 0; i != vertex_count; ++i) {
 		radius = std::max(radius, mesh->mVertices[i].Length());
@@ -50,7 +57,24 @@ Result<Mesh> Mesh::from_assimp(aiMesh* mesh) {
 		triangles << IndexedTriangle{mesh->mFaces[i].mIndices[0], mesh->mFaces[i].mIndices[1], mesh->mFaces[i].mIndices[2]};
 	}
 
-	return Ok(Mesh{std::move(vertices), std::move(triangles), radius});
+	std::optional<Skeleton> skeleton;
+	if(mesh->HasBones()) {
+		auto res = Skeleton::from_assimp(mesh);
+		if(res.is_error()) {
+			return Err();
+		}
+		skeleton = std::move(res.unwrap());
+		log_msg("Mesh has skeleton");
+	}
+
+	Mesh me;
+	me._vertices = std::move(vertices);
+	me._triangles = std::move(triangles);
+#warning no skeleton
+	//me._skeleton = std::move(skeleton);
+	me._radius = radius;
+	me._name = mesh->mName.C_Str();
+	return Ok(std::move(me));
 }
 
 template<typename T>
@@ -65,14 +89,18 @@ static io::Writer::Result write_vector(io::WriterRef writer, const Vector<T>& ve
 io::Writer::Result Mesh::write(io::WriterRef writer) const {
 	u32 magic = 0x65766179;
 	u32 type = 1;
-	u32 version = 3;
+	u32 version = 4;
 
 	writer->write_one(magic);
 	writer->write_one(type);
 	writer->write_one(version);
 
-	writer->write_one(radius);
+	writer->write_one(_radius);
 
-	write_vector(writer, vertices);
-	return write_vector(writer, triangles);
+	writer->write_one(u32(_skeleton ? _skeleton.value().bones().size() : 0));
+	writer->write_one(u32(_vertices.size()));
+	writer->write_one(u32(_triangles.size()));
+
+	writer->write(_vertices.begin(), _vertices.size() * sizeof(Vertex));
+	return writer->write(_triangles.begin(), _triangles.size() * sizeof(IndexedTriangle));
 }

@@ -23,20 +23,27 @@ SOFTWARE.
 #define MESH_H
 
 #include "Scene.h"
-#include "utils.h"
+#include "Skeleton.h"
 
-#include <y/io/File.h>
+#include <optional>
+
 #include <y/io/Ref.h>
 
 struct Mesh {
-	Vector<Vertex> vertices;
-	Vector<IndexedTriangle> triangles;
+	public:
+		static Result<Mesh> from_assimp(aiMesh* mesh);
+		io::Writer::Result write(io::WriterRef writer) const;
 
-	float radius = 0.0f;
+		const String& name() const;
 
-	static Result<Mesh> from_assimp(aiMesh* mesh);
+	private:
+		Vector<Vertex> _vertices;
+		Vector<IndexedTriangle> _triangles;
 
-	io::Writer::Result write(io::WriterRef writer) const;
+		std::optional<Skeleton> _skeleton;
+
+		float _radius = 0.0f;
+		String _name;
 };
 
 #endif // MESH_H
