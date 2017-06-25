@@ -17,6 +17,12 @@ add_definitions("-std=c++17 -pedantic -Wall -Wextra")
 
 file(GLOB_RECURSE SOURCE_FILES
 		"main.cpp"
+
+		"Scene.h"
+		"Scene.cpp"
+
+		"Mesh.h"
+		"Mesh.cpp"
 	)
 
 # y lib, change this to wherever it it
@@ -24,7 +30,7 @@ include_directories(../../../y)
 link_directories(../../../y/build)
 
 
-add_executable(mesh_to_ym "main.cpp" ${SOURCE_FILES})
+add_executable(mesh_to_ym ${SOURCE_FILES})
 
 if(WIN32)
 	target_compile_definitions(mesh_to_ym PRIVATE -DWIN32)

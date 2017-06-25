@@ -109,8 +109,8 @@ void YaveApp::create_assets() {
 			cubemap = Cubemap(&device, cube);
 		}
 		material = AssetPtr<Material>(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("cubemap.frag.spv").expected("Unable to load spirv file")))
-				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file")))
+				.set_frag_data(SpirVData::from_file(io::File::open("cubemap.frag.spv").expected("Unable to load spirv file.")))
+				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
 				.set_bindings({Binding(CubemapView(cubemap))})
 			));
 	}
@@ -128,7 +128,7 @@ void YaveApp::create_assets() {
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
 		log_msg(core::str(m_data.triangles.size()) + " triangles loaded (" + core::str(m_data.vertices.size()) + " vertices)");
-		auto mesh = AssetPtr<StaticMeshInstance>(std::move(mesh_pool.create_static_mesh(m_data).expected("Unable to allocate static mesh")));
+		auto mesh = AssetPtr<StaticMeshInstance>(std::move(mesh_pool.create_static_mesh(m_data).expected("Unable to allocate static mesh.")));
 
 		auto obj = StaticMesh(mesh, material);
 		obj.position() = math::Vec3{0, 0, 0};
