@@ -9,7 +9,9 @@ You need:
  * [Vulkan hpp](https://github.com/KhronosGroup/Vulkan-Hpp)
  * [Spriv_cross](https://github.com/KhronosGroup/SPIRV-Cross)
  * [y](https://github.com/gan74/y)
- * [Rust](https://www.rust-lang.org/en-US/) (optional, for compiling tools)
+ * For tools:
+   * [Rust](https://www.rust-lang.org/en-US/)
+   * [Assimp](http://assimp.sourceforge.net/)
 
 ## Status
 

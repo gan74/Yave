@@ -30,6 +30,7 @@ namespace yave {
 struct Vertex {
 	math::Vec3 position;
 	math::Vec3 normal;
+	math::Vec3 tangent;
 	math::Vec2 uv;
 };
 

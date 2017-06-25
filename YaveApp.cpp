@@ -89,7 +89,7 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 5.0f;
+	float dist = 3.0f;
 
 	auto cam_tr = math::rotation(angles.x(), {0, 0, -1}) * math::rotation(angles.y(), {0, 1, 0});
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
@@ -115,7 +115,7 @@ void YaveApp::create_assets() {
 			));
 	}
 
-	core::Vector<const char*> meshes = {"../tools/mesh_to_ym/sphere.ym"};
+	core::Vector<const char*> meshes = {"../tools/importer/chalet.obj.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 	core::Vector<core::Unique<Light>> lights;
@@ -127,7 +127,7 @@ void YaveApp::create_assets() {
 
 	for(auto name : meshes) {
 		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
-		log_msg(core::str() + m_data.triangles.size() + " triangles loaded");
+		log_msg(core::str(m_data.triangles.size()) + " triangles loaded (" + core::str(m_data.vertices.size()) + " vertices)");
 		auto mesh = AssetPtr<StaticMeshInstance>(std::move(mesh_pool.create_static_mesh(m_data).expected("Unable to allocate static mesh")));
 
 		auto obj = StaticMesh(mesh, material);

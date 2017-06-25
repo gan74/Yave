@@ -30,11 +30,12 @@ static StaticMeshInstance create_mesh(MeshInstancePool& mesh_pool, u32 resolutio
 	MeshData data;
 
 	math::Vec3 normal{0.0f, 0.0f, 1.0f};
+	math::Vec3 tangent{0.0f, 1.0f, 0.0f};
 	float max = resolution - 1;
 	for(u32 x = 0; x != resolution; ++x) {
 		for(u32 y = 0; y != resolution; ++y) {
 			auto uv = math::Vec2{x, y} / max;
-			data.vertices << Vertex{{uv * 2.0f - 1.0f, 0.0f}, normal, uv};
+			data.vertices << Vertex{{uv * 2.0f - 1.0f, 0.0f}, normal, tangent, uv};
 		}
 	}
 

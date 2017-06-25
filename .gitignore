@@ -1,4 +1,4 @@
-*.user
-*.spv
 /build/
 /old/
+*.user
+*.spv
