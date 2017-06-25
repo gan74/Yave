@@ -82,9 +82,9 @@ struct FakeAllocator {
 template<typename T, usize Size = 8>
 using SmallVec = SmallVector<T, Size, DefaultVectorResizePolicy, FakeAllocator<T>>;
 
-static_assert(std::is_same<std::common_type<MoreDerived, Derived>::type, Derived>::value, "std::common_type failure");
-static_assert(std::is_polymorphic<Polymorphic>::value, "std::is_polymorphic failure");
-static_assert(!std::is_polymorphic<Polymorphic*>::value, "std::is_polymorphic failure");
+static_assert(std::is_same_v<std::common_type<MoreDerived, Derived>::type, Derived>, "std::common_type failure");
+static_assert(std::is_polymorphic_v<Polymorphic>, "std::is_polymorphic failure");
+static_assert(!std::is_polymorphic_v<Polymorphic*>, "std::is_polymorphic failure");
 static_assert(sizeof(Vector<int>) == 3 * sizeof(int*), "sizeof(Vector) is not 3 * sizeof(void*)");
 
 /*template<typename P = DefaultVectorResizePolicy>

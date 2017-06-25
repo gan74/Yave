@@ -264,7 +264,7 @@ namespace detail {
 
 template<typename T>
 auto type_name() {
-	return detail::demangle_type_name(typeid(T).name()) + (std::is_reference<T>::value ? "&" : "");
+	return detail::demangle_type_name(typeid(T).name()) + (std::is_reference_v<T> ? "&" : "");
 }
 
 template<typename T>

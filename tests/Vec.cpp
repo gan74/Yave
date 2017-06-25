@@ -72,7 +72,7 @@ y_test_func("Vec operators") {
 	y_test_assert(Vec(1, 2, 3) / 2 == Vec(0, 1, 1));
 	y_test_assert(Vec(1, 2, 3) * 0.5 == Vec(0.5, 1, 1.5));
 
-	static_assert(std::is_same<decltype(Vec(1, 2, 3) / 2), Vec<3, int>>::value, "Invalid Vec operator coercion");
-	static_assert(std::is_same<decltype(Vec(1, 2, 3) * 0.5), Vec<3, double>>::value, "Invalid Vec operator coercion");
-	static_assert(std::is_same<decltype(Vec(1, 2.0, 3) * 2), Vec<3, double>>::value, "Invalid Vec operator coercion");
+	static_assert(std::is_same_v<decltype(Vec(1, 2, 3) / 2), Vec<3, int>>, "Invalid Vec operator coercion");
+	static_assert(std::is_same_v<decltype(Vec(1, 2, 3) * 0.5), Vec<3, double>>, "Invalid Vec operator coercion");
+	static_assert(std::is_same_v<decltype(Vec(1, 2.0, 3) * 2), Vec<3, double>>, "Invalid Vec operator coercion");
 }

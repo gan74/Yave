@@ -66,11 +66,11 @@ class Vec
 
 
 	static_assert(N != 0, "Invalid size for Vec");
-	static_assert(std::is_arithmetic<T>::value, "Invalid type <T> for Vec");
+	static_assert(std::is_arithmetic_v<T>, "Invalid type <T> for Vec");
 
 
 	public:
-		using value_type = typename std::remove_const<T>::type;
+		using value_type = typename std::remove_const_t<T>;
 		using iterator = T*;
 		using const_iterator = const T*;
 
@@ -146,7 +146,7 @@ class Vec
 		}
 
 		Vec abs() const {
-			static_assert(std::is_signed<T>::value, "Vec<T>::abs makes no sense for T unsigned");
+			static_assert(std::is_signed_v<T>, "Vec<T>::abs makes no sense for T unsigned");
 			Vec v(*this);
 			for(usize i = 0; i != N; ++i) {
 				v[i] = _vec[i] < 0 ? -_vec[i] : _vec[i];
@@ -443,11 +443,11 @@ template<typename... Args>
 Vec(Args... args) -> Vec<detail::VecLen<Args...>::value, typename detail::VecCoerce<Args...>::type>;
 
 
-static_assert(std::is_same<decltype(Vec(1, 2, 3)), Vec<3, int>>::value, "Invalid vec(...) return type");
-static_assert(std::is_same<decltype(Vec(1, 2.0)), Vec<2, double>>::value, "Invalid vec(...) return type");
-static_assert(std::is_same<decltype(Vec(1, 2.0f, 0)), Vec<3, float>>::value, "Invalid vec(...) return type");
-static_assert(std::is_same<decltype(Vec(1, Vec(2.0, 3))), Vec<3, double>>::value, "Invalid vec(...) return type");
-static_assert(std::is_same<decltype(Vec(1, 2)), Vec<2, int>>::value, "Invalid vec(...) return type");
+static_assert(std::is_same_v<decltype(Vec(1, 2, 3)), Vec<3, int>>, "Invalid vec(...) return type");
+static_assert(std::is_same_v<decltype(Vec(1, 2.0)), Vec<2, double>>, "Invalid vec(...) return type");
+static_assert(std::is_same_v<decltype(Vec(1, 2.0f, 0)), Vec<3, float>>, "Invalid vec(...) return type");
+static_assert(std::is_same_v<decltype(Vec(1, Vec(2.0, 3))), Vec<3, double>>, "Invalid vec(...) return type");
+static_assert(std::is_same_v<decltype(Vec(1, 2)), Vec<2, int>>, "Invalid vec(...) return type");
 
 
 
@@ -543,7 +543,7 @@ auto operator/(Vec<N, T> a, const Vec<N, T>& b) {
 }
 
 
-static_assert(std::is_trivially_copyable<Vec4>::value, "Vec<T> should be trivially copyable");
+static_assert(std::is_trivially_copyable_v<Vec4>, "Vec<T> should be trivially copyable");
 
 }
 }

@@ -162,7 +162,7 @@ class Rc : public detail::Ptr<T> {
 		Rc(const Rc& p) : Rc(p._ptr, p._count) {
 		}
 
-		/*template<typename U, typename = std::enable_if_t<std::is_base_of<T, U>::value && std::is_polymorphic<T>::value>>
+		/*template<typename U, typename = std::enable_if_t<std::is_base_of_v<T, U> && std::is_polymorphic_v<T>>>
 		Rc(const Rc<U, C>& p) : Rc(p._ptr, p._count) {
 		}*/
 

@@ -27,7 +27,7 @@ SOFTWARE.
 using namespace y;
 using namespace y::core;
 
-static_assert(std::is_same<usize, std::remove_reference<decltype(std::declval<AssocVector<usize, usize>>()[usize(1)])>::type>::value, "AssocVector::operator[] returns the wrong type");
+static_assert(std::is_same_v<usize, std::remove_reference<decltype(std::declval<AssocVector<usize, usize>>()[usize(1)])>::type>, "AssocVector::operator[] returns the wrong type");
 
 struct NonCopyableValue : NonCopyable {
 	NonCopyableValue() : value(-1) {

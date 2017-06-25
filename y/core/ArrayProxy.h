@@ -31,7 +31,7 @@ template<typename T>
 class ArrayProxy : NonCopyable {
 
 	template<typename U>
-	using is_compat = std::is_same<U, const T*>;
+	static constexpr bool is_compat = std::is_same_v<U, const T*>;
 
 	template<typename C>
 	using data_type = decltype(std::declval<const C>().data());
@@ -63,7 +63,7 @@ class ArrayProxy : NonCopyable {
 		ArrayProxy(const std::initializer_list<T>& l) : _data(l.begin()), _size(l.size()) {
 		}
 
-		template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>::value>>
+		template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
 		ArrayProxy(const C& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
 		}
 

@@ -82,9 +82,7 @@ class Vector : ResizePolicy, Allocator {
 
 		Vector(usize size, const value_type& elem) {
 			set_min_capacity(size);
-			for(usize i = 0; i != size; ++i) {
-				push_back(elem);
-			}
+			std::fill_n(std::back_inserter(*this), size, elem);
 		}
 
 		template<typename It>
@@ -306,7 +304,7 @@ class Vector : ResizePolicy, Allocator {
 
 	private:
 		void move_range(data_type* dst, data_type* src, usize n) {
-			if constexpr(std::is_pod<data_type>::value) {
+			if constexpr(std::is_pod_v<data_type>) {
 				std::copy_n(src, n, dst);
 			} else {
 				for(; n; --n) {
@@ -316,7 +314,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		void clear(data_type* beg, data_type* en) {
-			if(!std::is_pod<data_type>::value) {
+			if(!std::is_pod_v<data_type>) {
 				while(en != beg) {
 					(--en)->~data_type();
 				}

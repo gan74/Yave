@@ -341,7 +341,7 @@ auto operator*(const T& r, Matrix<N, M, T> mat) {
 }
 
 
-static_assert(std::is_trivially_copyable<Matrix4<>>::value, "Matrix<T> should be trivially copyable");
+static_assert(std::is_trivially_copyable_v<Matrix4<>>, "Matrix<T> should be trivially copyable");
 
 }
 }

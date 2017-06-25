@@ -32,7 +32,7 @@ namespace math {
 template<typename T>
 struct to_floating_point {
 	using same_size = typename std::conditional<(sizeof(T) > sizeof(float)), double, float>::type;
-	using type = typename std::conditional<std::is_floating_point<T>::value, T, same_size>::type;
+	using type = typename std::conditional<std::is_floating_point_v<T>, T, same_size>::type;
 };
 
 template<typename T>
@@ -43,7 +43,7 @@ auto to_rad(T deg) {
 
 template<typename T>
 auto to_deg(T rad) {
-	static_assert(std::is_floating_point<T>::value, "to_deg only takes floating points arguments");
+	static_assert(std::is_floating_point_v<T>, "to_deg only takes floating points arguments");
 	return rad * T(57.295779513082320876798154814105);
 }
 
