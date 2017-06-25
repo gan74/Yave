@@ -49,7 +49,7 @@ float Light::radius() const {
 
 Light::operator uniform::Light() const {
 	return uniform::Light {
-			position(),
+			_type == Directional ? forward() : position(),
 			_radius,
 			_color,
 			u32(_type)
