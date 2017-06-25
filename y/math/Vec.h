@@ -204,14 +204,12 @@ class Vec
 			return reinterpret_cast<Vec<M, T>&>(*this);
 		}
 
-		template<usize M>
-		auto sub() const {
-			static_assert(M < N, "Accessing out of bound member");
+		constexpr Vec<N - 1, T> sub(usize m) const {
 			Vec<N - 1, T> v;
-			for(usize i = 0; i != M; ++i) {
+			for(usize i = 0; i != m; ++i) {
 				v[i] = _vec[i];
 			}
-			for(usize i = M; i < N - 1; ++i) {
+			for(usize i = m; i < N - 1; ++i) {
 				v[i] = _vec[i + 1];
 			}
 			return v;
