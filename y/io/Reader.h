@@ -40,6 +40,19 @@ class Reader : NonCopyable {
 		virtual Result read(void* data, usize bytes) = 0;
 		virtual void read_all(core::Vector<u8>& data) = 0;
 
+
+		template<typename T>
+		Result read_one(T& t) {
+			static_assert(std::is_pod_v<T>, "read_one only works on POD");
+			return read(&t, sizeof(t));
+		}
+
+		template<typename T>
+		core::Result<T, Result::error_type> read_one() {
+			T t{};
+			return read_one(t).map([=]() { return t; });
+		}
+
 	protected:
 		Result make_result(usize read, usize expected) const {
 			if(read == expected) {

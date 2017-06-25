@@ -109,12 +109,12 @@ inline auto Err() {
 
 template<typename T>
 inline auto Ok(T&& t) {
-	return detail::Ok<std::remove_reference_t<T>>(std::forward<T>(t));
+	return detail::Ok<std::remove_const_t<std::remove_reference_t<T>>>(std::forward<T>(t));
 }
 
 template<typename T>
 inline auto Err(T&& e) {
-	return detail::Err<std::remove_reference_t<T>>(std::forward<T>(e));
+	return detail::Err<std::remove_const_t<std::remove_reference_t<T>>>(std::forward<T>(e));
 }
 
 
@@ -122,24 +122,29 @@ inline auto Err(T&& e) {
 template<typename T, typename E = void>
 class Result : NonCopyable {
 
-	static constexpr bool is_void = std::is_void<T>::value;
-	using err_type = detail::Err<E>;
-	using ok_type = detail::Ok<T>;
+	public:
+		using value_type = T;
+		using error_type = E;
 
-	template<typename F, typename U>
-	struct map_type {
-		using type = decltype(std::declval<F>()(std::declval<U>()));
-	};
+	private:
+		using ok_type = detail::Ok<value_type>;
+		using err_type = detail::Err<error_type>;
 
-	template<typename F>
-	struct map_type<F, void> {
-		using type = decltype(std::declval<F>()());
-	};
+		template<typename F, typename U>
+		struct map_type {
+			using type = decltype(std::declval<F>()(std::declval<U>()));
+		};
 
-	using expected_type = decltype(std::declval<ok_type>().get());
-	using expected_const_type = decltype(std::declval<const ok_type>().get());
+		template<typename F>
+		struct map_type<F, void> {
+			using type = decltype(std::declval<F>()());
+		};
+
+		using expected_type = decltype(std::declval<ok_type>().get());
+		using expected_const_type = decltype(std::declval<const ok_type>().get());
 
 	public:
+
 		Result(ok_type&& v) : _is_ok(true) {
 			new(&_value) ok_type(std::move(v));
 		}
@@ -207,30 +212,45 @@ class Result : NonCopyable {
 		}
 
 		template<typename U>
-		std::enable_if_t<!std::is_void<T>::value, const U&> unwrap_or(const U& f) const {
+		std::enable_if_t<!std::is_void_v<value_type>, const U&> unwrap_or(const U& f) const {
 			return is_ok() ? _value.get() : f;
 		}
 
 		template<typename U>
-		std::enable_if_t<!std::is_void<E>::value, const U&> error_or(const U& f) const {
+		std::enable_if_t<!std::is_void_v<error_type>, const U&> error_or(const U& f) const {
 			return is_error() ? _error.get() : f;
 		}
 
 		template<typename F>
-		Result<typename map_type<F, T>::type, E> map(const F& f) const {
+		Result<typename map_type<F, value_type>::type, error_type> map(const F& f) const {
 			if(is_ok()) {
-				return Ok(f(_value.get()));
+				if constexpr(std::is_void_v<value_type>) {
+					return Ok(f());
+				} else {
+					return Ok(f(_value.get()));
+				}
 			}
-			return Err(_error.get());
+			if constexpr(std::is_void_v<error_type>) {
+				return Err();
+			} else {
+				return Err(_error.get());
+			}
 		}
 
-
 		template<typename F>
-		Result<T, typename map_type<F, E>::type> map_err(const F& f) const {
+		Result<value_type, typename map_type<F, error_type>::type> map_err(const F& f) const {
 			if(is_ok()) {
-				return Ok(_value.get());
+				if constexpr(std::is_void_v<value_type>) {
+					return Ok();
+				} else {
+					return Ok(_value.get());
+				}
 			}
-			return Err(f(_error.get()));
+			if constexpr(std::is_void_v<error_type>) {
+				return Err(f());
+			} else {
+				return Err(f(_error.get()));
+			}
 		}
 
 	protected:
