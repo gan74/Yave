@@ -68,7 +68,7 @@ class Transformable {
 			auto right = forward.cross(up);
 			transform()[0].to<3>() = forward;
 			transform()[1].to<3>() = right;
-			transform()[2].to<3>() = up;
+			transform()[2].to<3>() = right.cross(forward);
 		}
 
 

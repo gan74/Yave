@@ -89,13 +89,13 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 3.0f;
+	float dist = 500.0f;
 
 	auto cam_tr = math::rotation(angles.x(), {0, 0, -1}) * math::rotation(angles.y(), {0, 1, 0});
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
-	camera.set_view(math::look_at(cam_pos.sub<3>() / cam_pos.w(), math::Vec3(), cam_up.sub<3>()));
+	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
 	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.01f,  10000.0f));
 }
 
@@ -109,16 +109,27 @@ void YaveApp::create_assets() {
 			cubemap = Cubemap(&device, cube);
 		}
 		material = AssetPtr<Material>(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("cubemap.frag.spv").expected("Unable to load spirv file.")))
+				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
 				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-				.set_bindings({Binding(CubemapView(cubemap))})
+				//.set_bindings({Binding(CubemapView(cubemap))})
 			));
 	}
 
-	core::Vector<const char*> meshes = {"../tools/importer/chalet.obj.ym"};
+	core::Vector<const char*> meshes = {"../tools/mesh_to_ym/SK_Mannequin.ym"};
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 	core::Vector<core::Unique<Light>> lights;
+
+	{
+		Light l(Light::Directional);
+		l.set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
+		l.color() = math::Vec3{1.0f};
+		lights << std::move(l);
+
+		l.set_basis(-math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
+		l.color() = math::Vec3{0.5f};
+		lights << std::move(l);
+	}
 
 	/*{
 		auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/height.png.yt").expected("Unable to load texture file."));
@@ -146,10 +157,10 @@ void YaveApp::create_assets() {
 
 void YaveApp::create_renderers() {
 	auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
-	auto gbuffer = core::Arc<BufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
+	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
 	//auto depth = core::Arc<BufferRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
-	//auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
-	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(gbuffer));
+	auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
+	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
 }
 
 }

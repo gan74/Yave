@@ -89,7 +89,7 @@ void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBu
 				std::transform(directionals.begin(), directionals.end(), light_data + lights.size(), [](const Light* l) { return uniform::Light(*l); });
 			}
 
-			recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().sub<2>(), 1), {_descriptor_set});
+			recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().to<2>(), 1), {_descriptor_set});
 			return _acc_buffer;
 		});
 }
