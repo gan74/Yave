@@ -35,6 +35,12 @@ class Writer : NonCopyable {
 
 		virtual ~Writer();
 
+		template<typename T>
+		Result write_one(T t) {
+			static_assert(std::is_pod_v<T>, "write_one only works on POD");
+			return write(&t, sizeof(t));
+		}
+
 		virtual Result write(const void* data, usize bytes) = 0;
 		virtual void flush() = 0;
 
