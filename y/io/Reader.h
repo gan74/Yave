@@ -43,7 +43,7 @@ class Reader : NonCopyable {
 
 		template<typename T>
 		Result read_one(T& t) {
-			static_assert(std::is_pod_v<T>, "read_one only works on POD");
+			static_assert(std::is_trivially_copyable_v<T>, "read_one only works on trivially copyable data");
 			return read(&t, sizeof(t));
 		}
 

@@ -41,7 +41,7 @@ class Writer : NonCopyable {
 
 		template<typename T>
 		Result write_one(T t) {
-			static_assert(std::is_pod_v<T>, "write_one only works on POD");
+			static_assert(std::is_trivially_copyable_v<T>, "write_one only works on trivially copyable data");
 			return write(&t, sizeof(t));
 		}
 
