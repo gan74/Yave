@@ -30,6 +30,7 @@ SOFTWARE.
 #include <y/core/Ptr.h>
 
 #include <y/math/math.h>
+#include <y/math/Transform.h>
 
 using namespace y;
 using namespace y::core;
@@ -54,7 +55,7 @@ struct SkinWeights {
 
 struct Bone {
 	String name;
-	math::Matrix4<> transform;
+	math::Transform<> transform;
 };
 
 #endif // UTILS_H
