@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-Scene::Scene(core::Vector<Ptr<StaticMesh>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables, core::Vector<Ptr<Light>>&& lights) :
+Scene::Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables, core::Vector<Ptr<Light>>&& lights) :
 		_statics(std::move(meshes)),
 		_renderables(std::move(renderables)),
 		_lights(std::move(lights)) {

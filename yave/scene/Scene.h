@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <yave/objects/StaticMesh.h>
+#include <yave/objects/StaticMeshInstance.h>
 #include <yave/objects/Renderable.h>
 #include <yave/objects/Light.h>
 
@@ -36,7 +36,7 @@ class Scene : NonCopyable {
 		template<typename T>
 		using Ptr = core::Unique<T>;
 
-		Scene(core::Vector<Ptr<StaticMesh>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
+		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
 
 		const auto& static_meshes() const {
 			return _statics;
@@ -51,7 +51,7 @@ class Scene : NonCopyable {
 		}
 
 	private:
-		core::Vector<Ptr<StaticMesh>> _statics;
+		core::Vector<Ptr<StaticMeshInstance>> _statics;
 		core::Vector<Ptr<Renderable>> _renderables;
 		core::Vector<Ptr<Light>> _lights;
 };

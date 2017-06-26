@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,55 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-
-#include "SkinnedMeshInstance.h"
+#include "StaticMesh.h"
 
 namespace yave {
 
-
-SkinnedMeshInstance::SkinnedMeshInstance(DevicePtr dptr, const MeshData& mesh_data) :
+StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
 		_triangle_buffer(dptr, mesh_data.triangles()),
-		_vertex_buffer(dptr, mesh_data.skinned_vertices()),
+		_vertex_buffer(dptr, mesh_data.vertices()),
 		_indirect_data(mesh_data.indirect_data()),
-		_skeleton(mesh_data.bones()),
 		_radius(mesh_data.radius()) {
 }
 
-SkinnedMeshInstance::SkinnedMeshInstance(SkinnedMeshInstance&& other) {
+StaticMesh::StaticMesh(StaticMesh&& other) {
 	swap(other);
 }
 
-SkinnedMeshInstance& SkinnedMeshInstance::operator=(SkinnedMeshInstance&& other) {
+StaticMesh& StaticMesh::operator=(StaticMesh&& other) {
 	swap(other);
 	return *this;
 }
 
-const TriangleBuffer<>& SkinnedMeshInstance::triangle_buffer() const {
-	return _triangle_buffer;
-}
-
-const SkinnedVertexBuffer<>& SkinnedMeshInstance::vertex_buffer() const {
-	return _vertex_buffer;
-}
-
-const vk::DrawIndexedIndirectCommand& SkinnedMeshInstance::indirect_data() const {
-	return _indirect_data;
-}
-
-const Skeleton& SkinnedMeshInstance::skeleton() const {
-	return _skeleton;
-}
-
-float SkinnedMeshInstance::radius() const {
-	return _radius;
-}
-
-void SkinnedMeshInstance::swap(SkinnedMeshInstance& other) {
+void StaticMesh::swap(StaticMesh& other) {
 	std::swap(_triangle_buffer, other._triangle_buffer);
 	std::swap(_vertex_buffer, other._vertex_buffer);
 	std::swap(_indirect_data, other._indirect_data);
-	std::swap(_skeleton, other._skeleton);
 	std::swap(_radius, other._radius);
+}
+
+const TriangleBuffer<>& StaticMesh::triangle_buffer() const {
+	return _triangle_buffer;
+}
+
+const VertexBuffer<>& StaticMesh::vertex_buffer() const {
+	return _vertex_buffer;
+}
+
+const vk::DrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
+	return _indirect_data;
+}
+
+float StaticMesh::radius() const {
+	return _radius;
 }
 
 }

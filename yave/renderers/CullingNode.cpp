@@ -56,8 +56,8 @@ static auto process_lights(const core::Vector<Scene::Ptr<Light>>& lights, const 
 	return std::pair{directionals, visibles};
 }
 
-static auto process_static_meshes(const core::Vector<Scene::Ptr<StaticMesh>>& meshes, const Frustum& frustum) {
-	auto visibles = core::vector_with_capacity<const StaticMesh*>(meshes.size() / 2);
+static auto process_static_meshes(const core::Vector<Scene::Ptr<StaticMeshInstance>>& meshes, const Frustum& frustum) {
+	auto visibles = core::vector_with_capacity<const StaticMeshInstance*>(meshes.size() / 2);
 
 	constexpr enum { UseMap, Sort, DontSort } batching = UseMap;
 

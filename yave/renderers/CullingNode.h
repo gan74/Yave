@@ -31,7 +31,7 @@ class CullingNode : public Node {
 
 	public:
 		struct CullingResults {
-			core::Vector<const StaticMesh*> static_meshes;
+			core::Vector<const StaticMeshInstance*> static_meshes;
 			core::Vector<const Renderable*> renderables;
 
 			core::Vector<const Light*> directional_lights;

@@ -19,40 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESH_STATICMESHINSTANCE_H
-#define YAVE_MESH_STATICMESHINSTANCE_H
+#ifndef YAVE_OBJECTS_STATICMESHINSTANCE_H
+#define YAVE_OBJECTS_STATICMESHINSTANCE_H
 
-#include "MeshData.h"
-#include <yave/buffer/buffers.h>
+#include <yave/assets/AssetPtr.h>
+#include <yave/material/Material.h>
+#include <yave/mesh/StaticMesh.h>
+
+#include "Renderable.h"
 
 namespace yave {
 
-class StaticMeshInstance : NonCopyable {
+class StaticMeshInstance : public Renderable {
 
 	public:
-		StaticMeshInstance() = default;
-
-		StaticMeshInstance(DevicePtr dptr, const MeshData& mesh_data);
+		StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
 
 		StaticMeshInstance(StaticMeshInstance&& other);
-		StaticMeshInstance& operator=(StaticMeshInstance&& other);
+		StaticMeshInstance& operator=(StaticMeshInstance&& other) = delete;
 
-		const TriangleBuffer<>& triangle_buffer() const;
-		const VertexBuffer<>& vertex_buffer() const;
-		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
 
-		float radius() const;
+
+		const auto& material() const {
+			return _material;
+		}
 
 	private:
-		void swap(StaticMeshInstance& other);
-
-		TriangleBuffer<> _triangle_buffer;
-		VertexBuffer<> _vertex_buffer;
-		vk::DrawIndexedIndirectCommand _indirect_data;
-
-		float _radius;
+		AssetPtr<StaticMesh> _mesh;
+		mutable AssetPtr<Material> _material;
 };
 
 }
 
-#endif // YAVE_MESH_STATICMESHINSTANCE_H
+#endif // YAVE_OBJECTS_STATICMESHINSTANCE_H

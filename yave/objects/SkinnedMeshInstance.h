@@ -19,30 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "SkinnedMesh.h"
+#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
 
-#include <yave/commands/CmdBufferRecorder.h>
+#include <yave/assets/AssetPtr.h>
+#include <yave/material/Material.h>
+#include <yave/mesh/SkinnedMesh.h>
+
+#include "Transformable.h"
+#include "Renderable.h"
 
 namespace yave {
 
+class SkinnedMeshInstance : public Renderable {
 
-SkinnedMesh::SkinnedMesh(const AssetPtr<SkinnedMeshInstance>& instance, const AssetPtr<Material>& material) :
-		_instance(instance),
-		_material(material) {
+	public:
+		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
 
-	set_radius(_instance->radius());
+		SkinnedMeshInstance(SkinnedMeshInstance&& other);
+		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+
+		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+
+	private:
+		AssetPtr<SkinnedMesh> _mesh;
+		mutable AssetPtr<Material> _material;
+};
 }
 
-SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) :
-		Renderable(other),
-		_instance(std::move(other._instance)),
-		_material(std::move(other._material)) {
-}
-
-void SkinnedMesh::render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const {
-	recorder.bind_material(*_material, {scene_data.descriptor_set});
-	recorder.bind_buffers(TriangleSubBuffer(_instance->triangle_buffer()), {VertexSubBuffer(_instance->vertex_buffer()), scene_data.instance_attribs});
-	recorder.draw(_instance->indirect_data());
-}
-
-}
+#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H

@@ -34,7 +34,7 @@ namespace yave {
 static core::Chrono time;
 
 YaveApp::YaveApp(DebugParams params) : instance(params), device(instance) {
-	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMesh));
+	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMeshInstance));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
 
 	create_assets();
@@ -99,7 +99,7 @@ void YaveApp::create_assets() {
 
 
 
-	core::Vector<core::Unique<StaticMesh>> objects;
+	core::Vector<core::Unique<StaticMeshInstance>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 	core::Vector<core::Unique<Light>> lights;
 
@@ -126,20 +126,20 @@ void YaveApp::create_assets() {
 
 		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/SK_Mannequin.ym").expected("Unable to open mesh file."));
 
-		auto skinned_instance = AssetPtr<SkinnedMeshInstance>(SkinnedMeshInstance(&device, mesh_data));
-		auto static_instance = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, mesh_data));
+		auto skinned_mesh = AssetPtr<SkinnedMesh>(SkinnedMesh(&device, mesh_data));
+		auto static_mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
 
 		{
-			auto skinned_mesh = new SkinnedMesh(skinned_instance, skinned_material);
-			skinned_mesh->position() = {100.0f, 0.0f, 0.0f};
+			auto skinned_instance = new SkinnedMeshInstance(skinned_mesh, skinned_material);
+			skinned_instance->position() = {100.0f, 0.0f, 0.0f};
 
-			renderables << skinned_mesh;
+			renderables << skinned_instance;
 		}
 		{
-			auto static_mesh = new StaticMesh(static_instance, static_material);
-			static_mesh->position() = {-100.0f, 0.0f, 0.0f};
+			auto static_instance = new StaticMeshInstance(static_mesh, static_material);
+			static_instance->position() = {-100.0f, 0.0f, 0.0f};
 
-			renderables << static_mesh;
+			renderables << static_instance;
 		}
 	}
 

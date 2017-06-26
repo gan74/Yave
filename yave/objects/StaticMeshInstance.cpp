@@ -19,47 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+
 #include "StaticMeshInstance.h"
+
+#include <yave/material/Material.h>
 
 namespace yave {
 
-StaticMeshInstance::StaticMeshInstance(DevicePtr dptr, const MeshData& mesh_data) :
-		_triangle_buffer(dptr, mesh_data.triangles()),
-		_vertex_buffer(dptr, mesh_data.vertices()),
-		_indirect_data(mesh_data.indirect_data()),
-		_radius(mesh_data.radius()) {
+StaticMeshInstance::StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
+		_mesh(instance),
+		_material(material) {
+
+	set_radius(_mesh->radius());
 }
 
-StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) {
-	swap(other);
+StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) :
+		Renderable(other),
+		_mesh(std::move(other._mesh)),
+		_material(std::move(other._material)) {
 }
 
-StaticMeshInstance& StaticMeshInstance::operator=(StaticMeshInstance&& other) {
-	swap(other);
-	return *this;
-}
-
-void StaticMeshInstance::swap(StaticMeshInstance& other) {
-	std::swap(_triangle_buffer, other._triangle_buffer);
-	std::swap(_vertex_buffer, other._vertex_buffer);
-	std::swap(_indirect_data, other._indirect_data);
-	std::swap(_radius, other._radius);
-}
-
-const TriangleBuffer<>& StaticMeshInstance::triangle_buffer() const {
-	return _triangle_buffer;
-}
-
-const VertexBuffer<>& StaticMeshInstance::vertex_buffer() const {
-	return _vertex_buffer;
-}
-
-const vk::DrawIndexedIndirectCommand& StaticMeshInstance::indirect_data() const {
-	return _indirect_data;
-}
-
-float StaticMeshInstance::radius() const {
-	return _radius;
+void StaticMeshInstance::render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const {
+	recorder.bind_material(*_material, {scene_data.descriptor_set});
+	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer()), scene_data.instance_attribs});
+	recorder.draw(_mesh->indirect_data());
 }
 
 }

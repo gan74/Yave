@@ -31,8 +31,8 @@ SOFTWARE.
 #include <yave/commands/CmdBufferRecorder.h>
 #include <yave/image/Image.h>
 #include <yave/swapchain/Swapchain.h>
-#include <yave/objects/StaticMesh.h>
-#include <yave/objects/SkinnedMesh.h>
+#include <yave/objects/StaticMeshInstance.h>
+#include <yave/objects/SkinnedMeshInstance.h>
 
 #include <yave/bindings/Binding.h>
 #include <yave/bindings/DescriptorSet.h>

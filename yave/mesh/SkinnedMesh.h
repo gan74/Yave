@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_MESH_SKINNEDMESH_H
+#define YAVE_MESH_SKINNEDMESH_H
 
-#include "StaticMesh.h"
-
-#include <yave/material/Material.h>
+#include "MeshData.h"
+#include "Skeleton.h"
+#include <yave/buffer/buffers.h>
 
 namespace yave {
 
+class SkinnedMesh : NonCopyable {
 
-StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material) :
-		_instance(instance),
-		_material(material) {
+	public:
+		SkinnedMesh() = default;
 
-	set_radius(_instance->radius());
+		SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);
+
+		SkinnedMesh(SkinnedMesh&& other);
+		SkinnedMesh& operator=(SkinnedMesh&& other);
+
+		const TriangleBuffer<>& triangle_buffer() const;
+		const SkinnedVertexBuffer<>& vertex_buffer() const;
+
+		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+		const Skeleton& skeleton() const;
+
+		float radius() const;
+
+	private:
+		TriangleBuffer<> _triangle_buffer;
+		SkinnedVertexBuffer<> _vertex_buffer;
+		vk::DrawIndexedIndirectCommand _indirect_data;
+
+		Skeleton _skeleton;
+
+		float _radius;
+
+
+		void swap(SkinnedMesh& other);
+
+};
+
 }
 
-StaticMesh::StaticMesh(StaticMesh&& other) :
-		Renderable(other),
-		_instance(std::move(other._instance)),
-		_material(std::move(other._material)) {
-}
-
-void StaticMesh::render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const {
-	recorder.bind_material(*_material, {scene_data.descriptor_set});
-	recorder.bind_buffers(TriangleSubBuffer(_instance->triangle_buffer()), {VertexSubBuffer(_instance->vertex_buffer()), scene_data.instance_attribs});
-	recorder.draw(_instance->indirect_data());
-}
-
-}
+#endif // YAVE_MESH_SKINNEDMESH_H

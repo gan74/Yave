@@ -22,21 +22,21 @@ SOFTWARE.
 #ifndef YAVE_SCENE_SCENECELL_H
 #define YAVE_SCENE_SCENECELL_H
 
-#include <yave/objects/StaticMesh.h>
+#include <yave/objects/StaticMeshInstance.h>
 #include "AABB.h"
 
 namespace yave {
 
 class SceneCell {
 	public:
-		SceneCell(core::Vector<StaticMesh>&& meshes);
+		SceneCell(core::Vector<StaticMeshInstance>&& meshes);
 
 		const AABB& aabb() const;
 
-		const core::Vector<StaticMesh>& static_meshes() const;
+		const core::Vector<StaticMeshInstance>& static_meshes() const;
 
 	private:
-		core::Vector<StaticMesh> _statics;
+		core::Vector<StaticMeshInstance> _statics;
 		AABB _aabb;
 };
 

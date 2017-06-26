@@ -19,47 +19,54 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESH_SKINNEDMESHINSTANCE_H
-#define YAVE_MESH_SKINNEDMESHINSTANCE_H
 
-#include "MeshData.h"
-#include "Skeleton.h"
-#include <yave/buffer/buffers.h>
+#include "SkinnedMesh.h"
 
 namespace yave {
 
-class SkinnedMeshInstance : NonCopyable {
-
-	public:
-		SkinnedMeshInstance() = default;
-
-		SkinnedMeshInstance(DevicePtr dptr, const MeshData& mesh_data);
-
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other);
-
-		const TriangleBuffer<>& triangle_buffer() const;
-		const SkinnedVertexBuffer<>& vertex_buffer() const;
-
-		const vk::DrawIndexedIndirectCommand& indirect_data() const;
-		const Skeleton& skeleton() const;
-
-		float radius() const;
-
-	private:
-		TriangleBuffer<> _triangle_buffer;
-		SkinnedVertexBuffer<> _vertex_buffer;
-		vk::DrawIndexedIndirectCommand _indirect_data;
-
-		Skeleton _skeleton;
-
-		float _radius;
-
-
-		void swap(SkinnedMeshInstance& other);
-
-};
-
+SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
+		_triangle_buffer(dptr, mesh_data.triangles()),
+		_vertex_buffer(dptr, mesh_data.skinned_vertices()),
+		_indirect_data(mesh_data.indirect_data()),
+		_skeleton(mesh_data.bones()),
+		_radius(mesh_data.radius()) {
 }
 
-#endif // YAVE_MESH_SKINNEDMESHINSTANCE_H
+SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) {
+	swap(other);
+}
+
+SkinnedMesh& SkinnedMesh::operator=(SkinnedMesh&& other) {
+	swap(other);
+	return *this;
+}
+
+const TriangleBuffer<>& SkinnedMesh::triangle_buffer() const {
+	return _triangle_buffer;
+}
+
+const SkinnedVertexBuffer<>& SkinnedMesh::vertex_buffer() const {
+	return _vertex_buffer;
+}
+
+const vk::DrawIndexedIndirectCommand& SkinnedMesh::indirect_data() const {
+	return _indirect_data;
+}
+
+const Skeleton& SkinnedMesh::skeleton() const {
+	return _skeleton;
+}
+
+float SkinnedMesh::radius() const {
+	return _radius;
+}
+
+void SkinnedMesh::swap(SkinnedMesh& other) {
+	std::swap(_triangle_buffer, other._triangle_buffer);
+	std::swap(_vertex_buffer, other._vertex_buffer);
+	std::swap(_indirect_data, other._indirect_data);
+	std::swap(_skeleton, other._skeleton);
+	std::swap(_radius, other._radius);
+}
+
+}

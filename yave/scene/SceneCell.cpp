@@ -45,14 +45,14 @@ static AABB compute_AABB(const core::Vector<T>& objs) {
 }
 
 
-SceneCell::SceneCell(core::Vector<StaticMesh>&& meshes) : _statics(std::move(meshes)), _aabb(compute_AABB(_statics)) {
+SceneCell::SceneCell(core::Vector<StaticMeshInstance>&& meshes) : _statics(std::move(meshes)), _aabb(compute_AABB(_statics)) {
 }
 
 const AABB& SceneCell::aabb() const {
 	return _aabb;
 }
 
-const core::Vector<StaticMesh>& SceneCell::static_meshes() const {
+const core::Vector<StaticMeshInstance>& SceneCell::static_meshes() const {
 	return _statics;
 }
 
