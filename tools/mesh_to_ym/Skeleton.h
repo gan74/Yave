@@ -31,9 +31,10 @@ struct Skeleton {
 		static Result<Skeleton> from_assimp(aiMesh* mesh);
 
 		const Vector<Bone>& bones() const;
+		const Vector<SkinWeights>& skin() const;
 
 	private:
-		Vector<SkinPoint> _skin;
+		Vector<SkinWeights> _skin;
 		Vector<Bone> _bones;
 };
 

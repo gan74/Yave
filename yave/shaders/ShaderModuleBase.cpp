@@ -89,15 +89,36 @@ static void fail_not_empty(const std::vector<spirv_cross::Resource>& res) {
 	}
 }
 
-static u32 component_size(spirv_cross::SPIRType type) {
-	if(type.basetype == spirv_cross::SPIRType::Float) {
-		return sizeof(float);
-	}
-	if(type.basetype == spirv_cross::SPIRType::Int) {
-		return sizeof(i32);
+static u32 component_size(spirv_cross::SPIRType::BaseType type) {
+	switch(type) {
+		case spirv_cross::SPIRType::Float:
+		case spirv_cross::SPIRType::Int:
+		case spirv_cross::SPIRType::UInt:
+			return 4;
+
+		default:
+			break;
 	}
 	return fatal("Unsupported attribute type.");
 }
+
+static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseType type) {
+	switch(type) {
+		case spirv_cross::SPIRType::Float:
+			return ShaderModuleBase::AttribType::Float;
+
+		case spirv_cross::SPIRType::Int:
+			return ShaderModuleBase::AttribType::Int;
+
+		case spirv_cross::SPIRType::UInt:
+			return ShaderModuleBase::AttribType::Uint;
+
+		default:
+			break;
+	}
+	return fatal("Unsupported attribute type.");
+}
+
 
 static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources) {
 	core::Vector<ShaderModuleBase::Attribute> attribs;
@@ -106,7 +127,7 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vec
 		auto location = compiler.get_decoration(r.id, spv::DecorationLocation);
 		auto type = compiler.get_type(r.type_id);
 
-		attribs << ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type)};
+		attribs << ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype)};
 
 		for(usize i = location; i != location + type.columns; ++i) {
 			if(!locations.insert(i).second) {

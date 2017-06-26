@@ -8,21 +8,21 @@ layout(set = 0, binding = 0) uniform ViewProj {
 	mat4 matrix;
 } view_proj;
 
-layout(set = 1, binding = 0) uniform sampler2D in_height;
-
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
 layout(location = 2) in vec3 in_tangent;
 layout(location = 3) in vec2 in_uv;
+
+/*layout(location = 4) in uvec4 in_skin_indexes;
+layout(location = 5) in vec4 in_skin_weights;*/
+
+layout(location = 8) in mat4 in_model;
 
 layout(location = 0) out vec3 v_normal;
 layout(location = 1) out vec2 v_uv;
 
 void main() {
 	v_uv = in_uv;
-	v_normal = in_normal;
-
-	float height = texture(in_height, in_uv).x;
-	// recompute normal
-	gl_Position = view_proj.matrix * vec4(in_position.xy, height, 1.0);
+	v_normal = mat3(in_model) * in_normal;
+	gl_Position = view_proj.matrix * in_model * vec4(in_position, 1.0);
 }

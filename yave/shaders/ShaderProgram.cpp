@@ -40,16 +40,19 @@ static void merge_bindings(T& into, const T& o) {
 	into.insert(o.begin(), o.end());
 }
 
-static vk::Format vec_format(ShaderModuleBase::Attribute attr) {
+static vk::Format vec_format(const ShaderModuleBase::Attribute& attr) {
+	static_assert(uenum(vk::Format::eR32G32B32A32Sfloat) == uenum(vk::Format::eR32G32B32A32Uint) + uenum(ShaderModuleBase::AttribType::Float));
+
+	usize type = usize(attr.type);
 	switch(attr.vec_size) {
 		case 1:
-			return vk::Format::eR32Sfloat;
+			return vk::Format(uenum(vk::Format::eR32Uint) + type);
 		case 2:
-			return vk::Format::eR32G32Sfloat;
+			return vk::Format(uenum(vk::Format::eR32G32Uint) + type);
 		case 3:
-			return vk::Format::eR32G32B32Sfloat;
+			return vk::Format(uenum(vk::Format::eR32G32B32Uint) + type);
 		case 4:
-			return vk::Format::eR32G32B32A32Sfloat;
+			return vk::Format(uenum(vk::Format::eR32G32B32A32Uint) + type);
 
 		default:
 			break;

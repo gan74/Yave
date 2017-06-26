@@ -34,6 +34,9 @@ namespace yave {
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using AttribBuffer = Buffer<BufferUsage::AttributeBit, Flags>;
 
+template<typename T, MemoryFlags Flags = MemoryFlags::DeviceLocal>
+using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Flags>;
+
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit,Flags>;
 
@@ -50,47 +53,36 @@ using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit>;
 using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
 
 
-
-
 class MeshInstancePool;
 
 struct MeshInstanceData {
-	TriangleSubBuffer triangle_buffer;
-	VertexSubBuffer vertex_buffer;
-	vk::DrawIndexedIndirectCommand indirect_data;
 
-	float radius;
 };
 
-struct StaticMeshInstance : NonCopyable {
+class StaticMeshInstance : NonCopyable {
 
 	public:
 		StaticMeshInstance() = default;
 
-		~StaticMeshInstance();
+		StaticMeshInstance(DevicePtr dptr, const MeshData& mesh_data);
 
 		StaticMeshInstance(StaticMeshInstance&& other);
 		StaticMeshInstance& operator=(StaticMeshInstance&& other);
 
-		const TriangleSubBuffer& triangle_buffer() const;
-		const VertexSubBuffer& vertex_buffer() const;
-
+		const TriangleBuffer<>& triangle_buffer() const;
+		const VertexBuffer<>& vertex_buffer() const;
 		const vk::DrawIndexedIndirectCommand& indirect_data() const;
-
-		// indirect data with with buffer offsets baked in, used with CmdBufferRecorder::bind_buffer_no_offset
-		vk::DrawIndexedIndirectCommand offset_indirect_data() const;
 
 		float radius() const;
 
 	private:
-		friend class MeshInstancePool;
-
-		StaticMeshInstance(MeshInstanceData&& data, MeshInstancePool* pool);
-
 		void swap(StaticMeshInstance& other);
 
-		MeshInstanceData _data;
-		MeshInstancePool* _pool = nullptr;
+		TriangleBuffer<> _triangle_buffer;
+		VertexBuffer<> _vertex_buffer;
+		vk::DrawIndexedIndirectCommand _indirect_data;
+
+		float _radius;
 };
 
 }

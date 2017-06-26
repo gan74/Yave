@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,37 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_STATICMESH_H
-#define YAVE_OBJECTS_STATICMESH_H
+#include "SkinnedMesh.h"
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/mesh/StaticMeshInstance.h>
-
-#include "Renderable.h"
+#include <yave/commands/CmdBufferRecorder.h>
 
 namespace yave {
 
-class StaticMesh : public Renderable {
 
-	public:
-		StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const AssetPtr<Material>& material);
+SkinnedMesh::SkinnedMesh(const AssetPtr<SkinnedMeshInstance>& instance, const AssetPtr<Material>& material) :
+		_instance(instance),
+		_material(material) {
 
-		StaticMesh(StaticMesh&& other);
-		StaticMesh& operator=(StaticMesh&& other) = delete;
+	if(!instance) {
+		fatal("Null instance.");
+	}
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
-
-
-		const auto& material() const {
-			return _material;
-		}
-
-	private:
-		AssetPtr<StaticMeshInstance> _instance;
-		mutable AssetPtr<Material> _material;
-};
-
+	set_radius(_instance->radius());
 }
 
-#endif // YAVE_OBJECTS_STATICMESH_H
+SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) :
+		Renderable(other),
+		_instance(std::move(other._instance)),
+		_material(std::move(other._material)) {
+}
+
+
+void SkinnedMesh::render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const {
+	recorder.bind_material(*_material, {scene_data.descriptor_set});
+	recorder.bind_buffers(TriangleSubBuffer(_instance->triangle_buffer()), {VertexSubBuffer(_instance->vertex_buffer()), scene_data.instance_attribs});
+
+	auto indirect = _instance->indirect_data();
+	recorder.vk_cmd_buffer().drawIndexed(indirect.indexCount,
+										 indirect.instanceCount,
+										 indirect.firstIndex,
+										 indirect.vertexOffset,
+										 indirect.firstInstance);
+}
+
+}

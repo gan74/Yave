@@ -33,7 +33,7 @@ namespace yave {
 
 static core::Chrono time;
 
-YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), mesh_pool(&device) {
+YaveApp::YaveApp(DebugParams params) : instance(params), device(instance) {
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMesh));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
 
@@ -45,10 +45,6 @@ YaveApp::~YaveApp() {
 
 	delete scene_view;
 	delete scene;
-
-	material = decltype(material)();
-	mesh_texture = Texture();
-	cubemap = Cubemap();
 
 	swapchain = nullptr;
 }
@@ -100,22 +96,9 @@ void YaveApp::update(math::Vec2 angles) {
 }
 
 void YaveApp::create_assets() {
-	{
-		{
-			auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/chalet.yt").expected("Unable to load texture file."));
-			mesh_texture = Texture(&device, image);
 
-			auto cube = ImageData::from_file(io::File::open("../tools/image_to_yt/cubemap/sky.yt").expected("Unable to load texture file."));
-			cubemap = Cubemap(&device, cube);
-		}
-		material = AssetPtr<Material>(Material(&device, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-				//.set_bindings({Binding(TextureView(mesh_texture))})
-			));
-	}
 
-	core::Vector<const char*> meshes = {"../tools/mesh_to_ym/SK_Mannequin.ym"};
+
 	core::Vector<core::Unique<StaticMesh>> objects;
 	core::Vector<core::Unique<Renderable>> renderables;
 	core::Vector<core::Unique<Light>> lights;
@@ -131,19 +114,33 @@ void YaveApp::create_assets() {
 		lights << std::move(l);
 	}
 
-	/*{
-		auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/height.png.yt").expected("Unable to load texture file."));
-		renderables << new HeightmapTerrain(mesh_pool, AssetPtr<Texture>(Texture(&device, image)));
-	}*/
+	{
+		auto skinned_material = AssetPtr<Material>(Material(&device, MaterialData()
+				 .set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+				 .set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
+			 ));
+		auto static_material = AssetPtr<Material>(Material(&device, MaterialData()
+				 .set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
+			 ));
 
-	for(auto name : meshes) {
-		auto m_data = MeshData::from_file(io::File::open(name).expected("Unable to load mesh file"));
-		log_msg(core::str(m_data.triangles.size()) + " triangles loaded (" + core::str(m_data.vertices.size()) + " vertices)");
-		auto mesh = AssetPtr<StaticMeshInstance>(std::move(mesh_pool.create_static_mesh(m_data).expected("Unable to allocate static mesh.")));
+		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/SK_Mannequin.ym").expected("Unable to open mesh file."));
 
-		auto obj = StaticMesh(mesh, material);
-		obj.position() = math::Vec3{0, 0, 0};
-		objects << std::move(obj);
+		auto skinned_instance = AssetPtr<SkinnedMeshInstance>(SkinnedMeshInstance(&device, mesh_data));
+		auto static_instance = AssetPtr<StaticMeshInstance>(StaticMeshInstance(&device, mesh_data));
+
+		{
+			auto skinned_mesh = new SkinnedMesh(skinned_instance, skinned_material);
+			skinned_mesh->position() = {100.0f, 0.0f, 0.0f};
+
+			renderables << skinned_mesh;
+		}
+		{
+			auto static_mesh = new StaticMesh(static_instance, static_material);
+			static_mesh->position() = {-100.0f, 0.0f, 0.0f};
+
+			renderables << static_mesh;
+		}
 	}
 
 

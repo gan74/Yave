@@ -44,26 +44,22 @@ class SceneRenderer : public SecondaryRenderer {
 		}
 
 	private:
-		void render_renderables(Recorder& recorder, const FrameToken& token, const core::Vector<const Renderable*>& renderables);
-		void render_static_meshes(Recorder& recorder, const core::Vector<const StaticMesh*>& meshes);
+		struct AttribData {
+			usize offset;
+			usize size;
+			math::Matrix4<>* begin;
+		};
 
-		void setup_instance(Recorder& recorder, const AssetPtr<StaticMeshInstance>& instance);
-		void submit_batches(Recorder& recorder, AssetPtr<Material>& mat, usize offset, usize size);
+		static usize max_size(usize size, AttribData& attrib_data);
+
+		void render_renderables(Recorder& recorder, const FrameToken& token, const core::Vector<const Renderable*>& renderables, AttribData& attrib_data);
 
 		Ptr<CullingNode> _cull;
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _camera_buffer;
-		TypedMapping<uniform::ViewProj, MemoryFlags::CpuVisible> _camera_mapping;
 		DescriptorSet _camera_set;
 
-		TypedBuffer<math::Matrix4<>, BufferUsage::AttributeBit, MemoryFlags::CpuVisible> _matrix_buffer;
-		TypedMapping<math::Matrix4<>, MemoryFlags::CpuVisible> _matrix_mapping;
-
-		TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, MemoryFlags::CpuVisible> _indirect_buffer;
-		TypedMapping<vk::DrawIndexedIndirectCommand, MemoryFlags::CpuVisible> _indirect_mapping;
-
-		RecordedCmdBuffer<CmdBufferUsage::Secondary> _cmd_buffer;
-
+		TypedBuffer<math::Matrix4<>, BufferUsage::AttributeBit, MemoryFlags::CpuVisible> _attrib_buffer;
 };
 
 }

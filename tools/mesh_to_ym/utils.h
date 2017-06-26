@@ -44,8 +44,9 @@ struct Vertex {
 using IndexedTriangle = std::array<u32, 3>;
 
 
-struct SkinPoint {
+struct SkinWeights {
 	static constexpr usize size = 4;
+
 	math::Vec<size, u32> indexes;
 	math::Vec<size, float> weights;
 };

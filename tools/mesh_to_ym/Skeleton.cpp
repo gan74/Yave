@@ -38,9 +38,9 @@ static void add_bone_refs(aiBone* bone, u32 index, Vector<Vector<BoneRef>>& refs
 	}
 }
 
-static SkinPoint compute_skin(Vector<BoneRef>& refs) {
+static SkinWeights compute_skin(Vector<BoneRef>& refs) {
 	std::sort(refs.begin(), refs.end());
-	SkinPoint skin;
+	SkinWeights skin;
 
 	usize max = std::min(refs.size(), skin.size);
 
@@ -61,6 +61,10 @@ static SkinPoint compute_skin(Vector<BoneRef>& refs) {
 
 const Vector<Bone>& Skeleton::bones() const {
 	return _bones;
+}
+
+const Vector<SkinWeights>& Skeleton::skin() const {
+	return _skin;
 }
 
 Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh) {
@@ -84,7 +88,7 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh) {
 			};
 	}
 
-	auto skin_points = vector_with_capacity<SkinPoint>(mesh->mNumVertices);
+	auto skin_points = vector_with_capacity<SkinWeights>(mesh->mNumVertices);
 	std::transform(bone_per_vertex.begin(), bone_per_vertex.end(), std::back_inserter(skin_points), [](auto& bones) { return compute_skin(bones); });
 
 

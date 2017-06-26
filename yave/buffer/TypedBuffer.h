@@ -41,18 +41,18 @@ class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 
 		TypedBuffer(DevicePtr dptr, const core::ArrayProxy<Elem>& data) : TypedBuffer(dptr, data.size()) {
 			auto mapping = map();
-			std::copy(data.begin(), data.end(), mapping.data());
+			std::copy(data.begin(), data.end(), mapping.begin());
 		}
 
 		TypedBuffer(DevicePtr dptr, usize elem_count) : Base(dptr, elem_count *sizeof(Elem)) {
 		}
 
 		TypedBuffer(TypedBuffer&& other) {
-			swap(other);
+			this->swap(other);
 		}
 
 		TypedBuffer& operator=(TypedBuffer&& other) {
-			swap(other);
+			this->swap(other);
 			return *this;
 		}
 

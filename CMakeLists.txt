@@ -65,7 +65,7 @@ function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
 endfunction(enable_unity_build)
 
 
-option(USE_UNITY_BUILD "Use unity build" OFF)
+option(USE_UNITY_BUILD "Use unity build" ON)
 option(BUILD_LIB "Build library" ON)
 
 
@@ -99,7 +99,4 @@ if(BUILD_LIB)
 	add_executable(main "main.cpp")
 	target_link_libraries(main yave)
 endif()
-
-
-
 

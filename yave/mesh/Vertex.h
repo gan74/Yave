@@ -36,6 +36,13 @@ struct Vertex {
 
 using IndexedTriangle = std::array<u32, 3>;
 
+struct SkinWeights {
+	static constexpr usize size = 4;
+
+	math::Vec<size, u32> indexes;
+	math::Vec<size, float> weights;
+};
+
 static_assert(std::is_trivially_copyable_v<math::Vec4>, "Vec4 should be trivially copyable");
 static_assert(std::is_trivially_copyable_v<Vertex>, "Vertex should be trivially copyable");
 }

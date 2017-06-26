@@ -64,14 +64,13 @@ Result<Mesh> Mesh::from_assimp(aiMesh* mesh) {
 			return Err();
 		}
 		skeleton = std::move(res.unwrap());
-		log_msg("Mesh has skeleton");
+		log_msg("Mesh has a skeleton");
 	}
 
 	Mesh me;
 	me._vertices = std::move(vertices);
 	me._triangles = std::move(triangles);
-#warning no skeleton
-	//me._skeleton = std::move(skeleton);
+	me._skeleton = std::move(skeleton);
 	me._radius = radius;
 	me._name = mesh->mName.C_Str();
 	return Ok(std::move(me));
@@ -102,5 +101,11 @@ io::Writer::Result Mesh::write(io::WriterRef writer) const {
 	writer->write_one(u32(_triangles.size()));
 
 	writer->write(_vertices.begin(), _vertices.size() * sizeof(Vertex));
-	return writer->write(_triangles.begin(), _triangles.size() * sizeof(IndexedTriangle));
+	writer->write(_triangles.begin(), _triangles.size() * sizeof(IndexedTriangle));
+
+	if(_skeleton) {
+		writer->write(_skeleton.value().skin().begin(), _vertices.size() * sizeof(SkinWeights));
+	}
+
+	return Ok();
 }

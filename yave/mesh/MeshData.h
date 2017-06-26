@@ -29,13 +29,23 @@ SOFTWARE.
 
 namespace yave {
 
+struct SkeletonData {
+	core::Vector<SkinWeights> skin;
+};
+
 struct MeshData {
+
+	float radius = 0.0f;
+
 	core::Vector<Vertex> vertices;
 	core::Vector<IndexedTriangle> triangles;
-	float radius = 0.0f;
+
+	core::Unique<SkeletonData> skeleton;
+
 
 	static MeshData from_file(io::ReaderRef reader);
 };
+
 
 
 }

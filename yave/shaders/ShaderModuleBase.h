@@ -42,11 +42,18 @@ enum class ShaderType {
 class ShaderModuleBase : NonCopyable, public DeviceLinked {
 
 	public:
+		enum class AttribType {
+			Uint = 0,
+			Int = 1,
+			Float = 2
+		};
+
 		struct Attribute {
 			u32 location;
 			u32 columns;
 			u32 vec_size;
 			u32 component_size;
+			AttribType type;
 		};
 
 		~ShaderModuleBase();

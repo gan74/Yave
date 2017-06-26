@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,53 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESH_MESHINSTANCEPOOL_H
-#define YAVE_MESH_MESHINSTANCEPOOL_H
-
-#include <yave/yave.h>
+#ifndef YAVE_MESH_SKINNEDMESHINSTANCE_H
+#define YAVE_MESH_SKINNEDMESHINSTANCE_H
 
 #include "StaticMeshInstance.h"
 
-#include <map>
-
 namespace yave {
 
-class MeshInstancePool : NonCopyable, public DeviceLinked {
-
-	struct FreeBlock {
-		usize offset;
-		usize size;
-	};
+class SkinnedMeshInstance : NonCopyable {
 
 	public:
-		enum class Error {
-			TriangleBufferFull,
-			VertexBufferFull
-		};
+		SkinnedMeshInstance() = default;
 
-		MeshInstancePool(DevicePtr dptr, usize vertices = 1024 * 1024, usize triangles = 1024 * 1024);
+		SkinnedMeshInstance(DevicePtr dptr, const MeshData& mesh_data);
 
-		core::Result<StaticMeshInstance, Error> create_static_mesh(const MeshData& data);
+		SkinnedMeshInstance(SkinnedMeshInstance&& other);
+		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other);
 
-		usize free_vertices() const;
-		usize free_triangles() const;
+		const TriangleBuffer<>& triangle_buffer() const;
+		const VertexBuffer<>& vertex_buffer() const;
+		const TypedAttribBuffer<SkinWeights>& skin_buffer() const;
+
+		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+
+		float radius() const;
 
 	private:
-		friend class StaticMeshInstance;
-
-		static core::Result<FreeBlock> alloc_block(core::Vector<FreeBlock>& blocks, usize size);
-		static void free_block(core::Vector<FreeBlock>& blocks, FreeBlock block);
-
-		void release(MeshInstanceData&& data);
-
-
-		VertexBuffer<> _vertex_buffer;
-		core::Vector<FreeBlock> _vertices_blocks;
-
 		TriangleBuffer<> _triangle_buffer;
-		core::Vector<FreeBlock> _triangles_blocks;
+		VertexBuffer<> _vertex_buffer;
+		TypedAttribBuffer<SkinWeights> _skin_buffer;
+		vk::DrawIndexedIndirectCommand _indirect_data;
+
+		float _radius;
+
+		void swap(SkinnedMeshInstance& other);
+
 };
 
 }
 
-#endif // YAVE_MESH_MESHINSTANCEPOOL_H
+#endif // YAVE_MESH_SKINNEDMESHINSTANCE_H

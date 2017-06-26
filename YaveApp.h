@@ -32,8 +32,7 @@ SOFTWARE.
 #include <yave/image/Image.h>
 #include <yave/swapchain/Swapchain.h>
 #include <yave/objects/StaticMesh.h>
-#include <yave/objects/HeightmapTerrain.h>
-#include <yave/mesh/MeshInstancePool.h>
+#include <yave/objects/SkinnedMesh.h>
 
 #include <yave/bindings/Binding.h>
 #include <yave/bindings/DescriptorSet.h>
@@ -86,11 +85,6 @@ class YaveApp : NonCopyable {
 		Device device;
 
 		core::Unique<Swapchain> swapchain;
-
-		AssetPtr<Material> material;
-		Texture mesh_texture;
-		Cubemap cubemap;
-		MeshInstancePool mesh_pool;
 
 		Scene* scene;
 		SceneView* scene_view;

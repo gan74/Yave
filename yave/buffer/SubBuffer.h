@@ -36,12 +36,12 @@ class SubBuffer : public SubBufferBase {
 		SubBuffer() = default;
 
 		template<BufferUsage BufUsage, MemoryFlags Flags, BufferTransfer Transfer, typename = typename std::enable_if_t<(BufUsage & Usage) == Usage>>
-		SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBufferBase(buffer, offset, len) {
+		SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize byte_off, usize byte_len) : SubBufferBase(buffer, byte_off, byte_len) {
 			static_assert((BufUsage & Usage) == Usage, "Invalid buffer usage.");
 		}
 
 		template<BufferUsage BufUsage, MemoryFlags Flags, BufferTransfer Transfer, typename = typename std::enable_if_t<(BufUsage & Usage) == Usage>>
-		explicit SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset = 0) : SubBuffer(buffer, offset, buffer.byte_size() - offset) {
+		explicit SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize byte_off = 0) : SubBuffer(buffer, byte_off, buffer.byte_size() - byte_off) {
 		}
 };
 
@@ -53,11 +53,11 @@ class SpecializedSubBuffer : public SubBuffer<Usage> {
 		SpecializedSubBuffer() = default;
 
 		template<BufferUsage BufUsage, typename = typename std::enable_if_t<(BufUsage & Usage) == Usage>>
-		SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset, usize len) : SubBuffer<Usage>(buffer, offset, len) {
+		SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize byte_off, usize byte_len) : SubBuffer<Usage>(buffer, byte_off, byte_len) {
 		}
 
 		template<BufferUsage BufUsage, typename = typename std::enable_if_t<(BufUsage & Usage) == Usage>>
-		explicit SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize offset = 0) : SubBuffer<Usage>(buffer, offset) {
+		explicit SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize byte_off = 0) : SubBuffer<Usage>(buffer, byte_off) {
 		}
 };
 

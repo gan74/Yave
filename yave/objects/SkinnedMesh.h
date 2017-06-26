@@ -19,31 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_HEIGHTMAPTERRAIN_H
-#define YAVE_OBJECTS_HEIGHTMAPTERRAIN_H
+#ifndef YAVE_OBJECTS_SKINNEDMESH_H
+#define YAVE_OBJECTS_SKINNEDMESH_H
 
 #include <yave/assets/AssetPtr.h>
-#include <yave/mesh/MeshInstancePool.h>
 #include <yave/material/Material.h>
+#include <yave/mesh/SkinnedMeshInstance.h>
 
+#include "Transformable.h"
 #include "Renderable.h"
 
 namespace yave {
 
-class HeightmapTerrain : public Renderable {
-	public:
-		HeightmapTerrain(MeshInstancePool& mesh_pool, const AssetPtr<Texture>& heightmap);
+class SkinnedMesh : public Renderable {
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, DescriptorList descriptor_sets) const override;
+	public:
+		SkinnedMesh(const AssetPtr<SkinnedMeshInstance>& instance, const AssetPtr<Material>& material);
+
+		SkinnedMesh(SkinnedMesh&& other);
+		SkinnedMesh& operator=(SkinnedMesh&& other) = delete;
+
+		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
 
 	private:
-		StaticMeshInstance _mesh;
-		mutable Material _material;
-
-		AssetPtr<Texture> _heightmap;
-
+		AssetPtr<SkinnedMeshInstance> _instance;
+		mutable AssetPtr<Material> _material;
 };
-
 }
 
-#endif // YAVE_OBJECTS_HEIGHTMAPTERRAIN_H
+#endif // YAVE_OBJECTS_SKINNEDMESH_H

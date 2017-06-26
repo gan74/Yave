@@ -75,17 +75,6 @@ void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});
 }
 
-void CmdBufferRecorderBase::draw(const StaticMeshInstance& mesh) {
-	bind_buffers(mesh.triangle_buffer(), {mesh.vertex_buffer()});
-
-	auto indirect = mesh.indirect_data();
-	vk_cmd_buffer().drawIndexed(indirect.indexCount,
-								indirect.instanceCount,
-								indirect.firstIndex,
-								indirect.vertexOffset,
-								indirect.firstInstance);
-}
-
 void CmdBufferRecorderBase::bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs) {
 	u32 attrib_count = attribs.size();
 
@@ -97,20 +86,6 @@ void CmdBufferRecorderBase::bind_buffer_bases(const SubBufferBase& indices, cons
 	vk_cmd_buffer().bindVertexBuffers(u32(0), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
 	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
 }
-
-void CmdBufferRecorderBase::bind_buffer_bases_no_offset(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs) {
-	u32 attrib_count = attribs.size();
-
-	auto buffers = core::vector_with_capacity<vk::Buffer>(attrib_count);
-	std::transform(attribs.begin(), attribs.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
-
-	core::Vector<vk::DeviceSize> offsets(attrib_count, 0);
-
-	vk_cmd_buffer().bindVertexBuffers(u32(0), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
-	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), 0, vk::IndexType::eUint32);
-}
-
-
 
 SecondaryCmdBufferRecorderBase::SecondaryCmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer) :
 			CmdBufferRecorderBase(std::move(base)) {

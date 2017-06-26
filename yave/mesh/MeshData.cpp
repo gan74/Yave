@@ -45,12 +45,10 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 			return magic == 0x65766179 &&
 				   type == 1 &&
 				   version == 4 &&
-				   bones == 0 &&
 				   vertices != 0 &&
 				   triangles != 0;
 		}
 	};
-
 
 	core::DebugTimer _("MeshData::from_file()");
 
@@ -66,6 +64,12 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 
 	reader->read(mesh.vertices.begin(), header.vertices * sizeof(Vertex)).expected(err_msg);
 	reader->read(mesh.triangles.begin(), header.triangles * sizeof(IndexedTriangle)).expected(err_msg);
+
+	if(header.bones) {
+		mesh.skeleton = new SkeletonData();
+		mesh.skeleton->skin = core::Vector<SkinWeights>(header.vertices, SkinWeights{});
+		reader->read(mesh.skeleton->skin.begin(), header.vertices * sizeof(SkinWeights)).expected(err_msg);
+	}
 
 	return mesh;
 }

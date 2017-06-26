@@ -22,10 +22,7 @@ SOFTWARE.
 
 #include "StaticMesh.h"
 
-#include <yave/commands/CmdBufferRecorder.h>
 #include <yave/material/Material.h>
-#include <yave/framebuffers/RenderPass.h>
-#include <yave/device/Device.h>
 
 namespace yave {
 
@@ -42,9 +39,21 @@ StaticMesh::StaticMesh(const AssetPtr<StaticMeshInstance>& instance, const Asset
 }
 
 StaticMesh::StaticMesh(StaticMesh&& other) :
-		Transformable(other),
+		Renderable(other),
 		_instance(std::move(other._instance)),
 		_material(std::move(other._material)) {
+}
+
+void StaticMesh::render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const {
+	recorder.bind_material(*_material, {scene_data.descriptor_set});
+	recorder.bind_buffers(TriangleSubBuffer(_instance->triangle_buffer()), {VertexSubBuffer(_instance->vertex_buffer()), scene_data.instance_attribs});
+
+	auto indirect = _instance->indirect_data();
+	recorder.vk_cmd_buffer().drawIndexed(indirect.indexCount,
+										 indirect.instanceCount,
+										 indirect.firstIndex,
+										 indirect.vertexOffset,
+										 indirect.firstInstance);
 }
 
 }

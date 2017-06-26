@@ -31,10 +31,10 @@ class SubBufferBase : public DeviceLinked {
 	public:
 		SubBufferBase() = default;
 
-		SubBufferBase(const BufferBase& base, usize off, usize len) :
+		SubBufferBase(const BufferBase& base, usize byte_off, usize byte_len) :
 				DeviceLinked(base.device()),
-				_size(len),
-				_offset(off),
+				_size(byte_len),
+				_offset(byte_off),
 				_buffer(base.vk_buffer()),
 				_memory(base.vk_device_memory()) {
 		}
