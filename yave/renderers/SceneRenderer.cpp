@@ -34,7 +34,7 @@ SceneRenderer::SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull) :
 		_camera_set(device(), {Binding(_camera_buffer)}),
 		_attrib_buffer(device(), batch_size) {
 
-	log_msg("Allocating "_s + (batch_size / 1024) * (sizeof(math::Matrix4<>) + sizeof(vk::DrawIndexedIndirectCommand)) + "KB of scene buffers");
+	log_msg("Allocating "_s + (batch_size / 1024) * (sizeof(math::Transform<>) + sizeof(vk::DrawIndexedIndirectCommand)) + "KB of scene buffers");
 }
 
 void SceneRenderer::build_frame_graph(RenderingNode<result_type>& node, const Framebuffer& framebuffer) {
@@ -84,7 +84,7 @@ void SceneRenderer::render_renderables(Recorder& recorder,
 
 	for(usize i = 0; i != size; ++i) {
 		usize offset = attrib_data.offset + i;
-		AttribSubBuffer attribs(_attrib_buffer, offset * sizeof(math::Matrix4<>), sizeof(math::Matrix4<>));
+		AttribSubBuffer attribs(_attrib_buffer, offset * sizeof(math::Transform<>), sizeof(math::Transform<>));
 		renderables[i]->render(token, recorder, Renderable::SceneData{_camera_set, attribs});
 	}
 

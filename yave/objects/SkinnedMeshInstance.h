@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 #include <yave/material/Material.h>
 #include <yave/mesh/SkinnedMesh.h>
+#include <yave/animation/SkeletonInstance.h>
 
 #include "Transformable.h"
 #include "Renderable.h"
@@ -43,6 +44,8 @@ class SkinnedMeshInstance : public Renderable {
 
 	private:
 		AssetPtr<SkinnedMesh> _mesh;
+
+		mutable SkeletonInstance _skeleton;
 		mutable AssetPtr<Material> _material;
 };
 }

@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 StaticMeshInstance::StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
-		_mesh(instance),
+		_mesh(mesh),
 		_material(material) {
 
 	set_radius(_mesh->radius());

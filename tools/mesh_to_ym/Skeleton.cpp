@@ -79,10 +79,10 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh) {
 		auto bone = mesh->mBones[i];
 		add_bone_refs(bone, bones.size(), bone_per_vertex);
 
-		static_assert(sizeof(bone->mOffsetMatrix) == sizeof(math::Matrix4<>), "aiMatrix4x4 should be 16 floats");
+		static_assert(sizeof(bone->mOffsetMatrix) == sizeof(math::Transform<>), "aiMatrix4x4 should be 16 floats");
 		bones << Bone {
 				str(bone->mName.C_Str()),
-				reinterpret_cast<const math::Matrix4<>&>(bone->mOffsetMatrix)
+				reinterpret_cast<const math::Transform<>&>(bone->mOffsetMatrix)
 			};
 	}
 

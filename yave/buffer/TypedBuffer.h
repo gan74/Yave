@@ -44,7 +44,7 @@ class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
 			std::copy(data.begin(), data.end(), mapping.begin());
 		}
 
-		TypedBuffer(DevicePtr dptr, usize elem_count) : Base(dptr, elem_count *sizeof(Elem)) {
+		TypedBuffer(DevicePtr dptr, usize elem_count) : Base(dptr, elem_count * sizeof(Elem)) {
 		}
 
 		TypedBuffer(TypedBuffer&& other) {

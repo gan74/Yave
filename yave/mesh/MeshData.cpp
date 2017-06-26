@@ -78,12 +78,12 @@ static core::Result<Bone> read_bone(io::ReaderRef reader) {
 		return core::Err();
 	}
 
-	auto transfrom_res = reader->read_one<math::Transform<>>();
-	if(transfrom_res.is_error()) {
+	auto transform_res = reader->read_one<math::Transform<>>();
+	if(transform_res.is_error()) {
 		return core::Err();
 	}
 
-	return core::Ok(Bone{std::move(name), transfrom_res.unwrap()});
+	return core::Ok(Bone{std::move(name), transform_res.unwrap()});
 }
 
 MeshData MeshData::from_file(io::ReaderRef reader) {

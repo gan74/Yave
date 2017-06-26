@@ -19,42 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESH_SKELETON_H
-#define YAVE_MESH_SKELETON_H
+#ifndef YAVE_ANIMATION_SKELETONINSTANCE_H
+#define YAVE_ANIMATION_SKELETONINSTANCE_H
 
-#include "Vertex.h"
-#include <y/math/Transform.h>
+#include <yave/mesh/Skeleton.h>
+#include <yave/buffer/buffers.h>
+#include <yave/bindings/DescriptorSet.h>
 
 namespace yave {
 
-struct Bone {
-	core::String name;
-	math::Transform<> transform;
-};
+class SkeletonInstance {
 
-class Skeleton {
 	public:
-		static constexpr usize max_bones = 256;
+		SkeletonInstance() = default;
 
-		Skeleton() = default;
+		SkeletonInstance(DevicePtr dptr, const Skeleton& skeleton);
 
-		Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
-			if(_bones.size() > max_bones) {
-				fatal("Bone count exceeds max_bones.");
-			}
-			for(const auto& bone : _bones) {
-				log_msg(bone.name);
-			}
-		}
+		SkeletonInstance(SkeletonInstance&& other);
+		SkeletonInstance& operator=(SkeletonInstance&& other);
 
-		const core::Vector<Bone>& bones() const {
-			return _bones;
+		void update();
+
+		const auto& descriptor_set() const {
+			return _descriptor_set;
 		}
 
 	private:
-		core::Vector<Bone> _bones;
+		void swap(SkeletonInstance& other);
+
+		const Skeleton* _skeleton = nullptr;
+
+		TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transforms;
+		DescriptorSet _descriptor_set;
+
 };
 
 }
 
-#endif // YAVE_MESH_SKELETON_H
+#endif // YAVEE_ANIMATION_SKELETONINSTANCE_H

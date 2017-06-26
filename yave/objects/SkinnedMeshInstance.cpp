@@ -28,6 +28,7 @@ namespace yave {
 
 SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material) :
 		_mesh(mesh),
+		_skeleton(_mesh->triangle_buffer().device(), mesh->skeleton()),
 		_material(material) {
 
 	set_radius(_mesh->radius());
@@ -36,11 +37,14 @@ SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, cons
 SkinnedMeshInstance::SkinnedMeshInstance(SkinnedMeshInstance&& other) :
 		Renderable(other),
 		_mesh(std::move(other._mesh)),
+		_skeleton(std::move(other._skeleton)),
 		_material(std::move(other._material)) {
 }
 
 void SkinnedMeshInstance::render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const {
-	recorder.bind_material(*_material, {scene_data.descriptor_set});
+	_skeleton.update();
+
+	recorder.bind_material(*_material, {scene_data.descriptor_set, _skeleton.descriptor_set()});
 	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer()), scene_data.instance_attribs});
 	recorder.draw(_mesh->indirect_data());
 }

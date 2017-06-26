@@ -4,6 +4,7 @@
 const float pi = 3.1415926535897932384626433832795;
 const float epsilon = 0.001;
 
+const uint max_bones = 256;
 
 const uint DirectionalLight = 0;
 const uint PointLight = 1;

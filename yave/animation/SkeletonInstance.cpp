@@ -19,42 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESH_SKELETON_H
-#define YAVE_MESH_SKELETON_H
 
-#include "Vertex.h"
-#include <y/math/Transform.h>
+#include "SkeletonInstance.h"
 
 namespace yave {
 
-struct Bone {
-	core::String name;
-	math::Transform<> transform;
-};
+SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton& skeleton) :
+		_skeleton(&skeleton),
+		_bone_transforms(dptr, Skeleton::max_bones),
+		_descriptor_set(dptr, {Binding(_bone_transforms)}) {
 
-class Skeleton {
-	public:
-		static constexpr usize max_bones = 256;
-
-		Skeleton() = default;
-
-		Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
-			if(_bones.size() > max_bones) {
-				fatal("Bone count exceeds max_bones.");
-			}
-			for(const auto& bone : _bones) {
-				log_msg(bone.name);
-			}
-		}
-
-		const core::Vector<Bone>& bones() const {
-			return _bones;
-		}
-
-	private:
-		core::Vector<Bone> _bones;
-};
-
+	auto map = _bone_transforms.map();
+	std::fill(map.begin(), map.end(), math::Transform<>());
 }
 
-#endif // YAVE_MESH_SKELETON_H
+SkeletonInstance::SkeletonInstance(SkeletonInstance&& other) {
+	swap(other);
+}
+
+SkeletonInstance& SkeletonInstance::operator=(SkeletonInstance&& other) {
+	swap(other);
+	return *this;
+}
+
+void SkeletonInstance::swap(SkeletonInstance& other) {
+	std::swap(_skeleton, other._skeleton);
+	std::swap(_bone_transforms, other._bone_transforms);
+}
+
+void SkeletonInstance::update() {
+	auto map = _bone_transforms.map();
+	map[rand() % map.size()].position() += {0.0f, 0.0f, 1.0f};
+}
+
+}

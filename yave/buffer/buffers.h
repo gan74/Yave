@@ -33,6 +33,15 @@ using AttribBuffer = Buffer<BufferUsage::AttributeBit, Flags>;
 template<typename T, MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Flags>;
 
+
+template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
+using UniformBuffer = Buffer<BufferUsage::UniformBit, Flags>;
+
+template<typename T, MemoryFlags Flags = MemoryFlags::DeviceLocal>
+using TypedUniformBuffer = TypedBuffer<T, BufferUsage::UniformBit, Flags>;
+
+
+
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit,Flags>;
 
@@ -44,6 +53,7 @@ using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit
 
 template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
 using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Flags>;
+
 
 
 using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
