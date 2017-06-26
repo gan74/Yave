@@ -43,8 +43,14 @@ struct SkinWeights {
 	math::Vec<size, float> weights;
 };
 
-static_assert(std::is_trivially_copyable_v<math::Vec4>, "Vec4 should be trivially copyable");
-static_assert(std::is_trivially_copyable_v<Vertex>, "Vertex should be trivially copyable");
+struct SkinnedVertex {
+	Vertex vertex;
+	SkinWeights weights;
+};
+
+static_assert(std::is_trivially_copyable_v<SkinnedVertex>, "SkinnedVertex should be trivially copyable");
+static_assert(std::is_trivially_copyable_v<IndexedTriangle>, "IndexedTriangle should be trivially copyable");
+
 }
 
 #endif // YAVE_MESH_VERTEX_H

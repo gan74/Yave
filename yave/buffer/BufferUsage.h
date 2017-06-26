@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BUFFER_BUFFERS_H
-#define YAVE_BUFFER_BUFFERS_H
+#ifndef YAVE_BUFFER_BUFFERUSAGE_H
+#define YAVE_BUFFER_BUFFERUSAGE_H
 
 #include <yave/yave.h>
 
@@ -90,4 +90,4 @@ inline constexpr BufferTransfer prefered_transfer(MemoryFlags flags) {
 
 }
 
-#endif // YAVE_BUFFER_BUFFERS_H
+#endif // YAVE_BUFFER_BUFFERUSAGE_H

@@ -27,6 +27,65 @@ SOFTWARE.
 
 namespace yave {
 
+float MeshData::radius() const {
+	return _radius;
+}
+
+const core::Vector<Vertex>& MeshData::vertices() const {
+	return _vertices;
+}
+
+const core::Vector<IndexedTriangle>& MeshData::triangles() const {
+	return _triangles;
+}
+
+vk::DrawIndexedIndirectCommand MeshData::indirect_data() const {
+	return vk::DrawIndexedIndirectCommand(_triangles.size() * 3, 1);
+}
+
+core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
+	if(!_skeleton) {
+		fatal("Mesh has no skeleton.");
+	}
+
+	auto verts = core::vector_with_capacity<SkinnedVertex>(_vertices.size());
+	for(usize i = 0; i != _vertices.size(); ++i) {
+		verts << SkinnedVertex{_vertices[i], _skeleton->skin[i]};
+	}
+	return verts;
+}
+
+const core::Vector<Bone>& MeshData::bones() const {
+	if(!_skeleton) {
+		fatal("Mesh has no skeleton.");
+	}
+	return _skeleton->bones;
+}
+
+
+
+static core::Result<Bone> read_bone(io::ReaderRef reader) {
+	auto len_res = reader->read_one<u32>();
+	if(len_res.is_error()) {
+		return core::Err();
+	}
+
+	core::String name(nullptr, len_res.unwrap());
+	auto name_res = reader->read(name.data(), name.size());
+	name[name.size()] = 0;
+
+	if(name_res.is_error()) {
+		return core::Err();
+	}
+
+	auto transfrom_res = reader->read_one<math::Transform<>>();
+	if(transfrom_res.is_error()) {
+		return core::Err();
+	}
+
+	return core::Ok(Bone{std::move(name), transfrom_res.unwrap()});
+}
+
 MeshData MeshData::from_file(io::ReaderRef reader) {
 	const char* err_msg = "Unable to load mesh.";
 
@@ -58,20 +117,26 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 	}
 
 	MeshData mesh;
-	mesh.radius = header.radius;
-	mesh.vertices = core::Vector<Vertex>(header.vertices, Vertex{});
-	mesh.triangles = core::Vector<IndexedTriangle>(header.triangles, IndexedTriangle{});
+	mesh._radius = header.radius;
+	mesh._vertices = core::Vector<Vertex>(header.vertices, Vertex{});
+	mesh._triangles = core::Vector<IndexedTriangle>(header.triangles, IndexedTriangle{});
 
-	reader->read(mesh.vertices.begin(), header.vertices * sizeof(Vertex)).expected(err_msg);
-	reader->read(mesh.triangles.begin(), header.triangles * sizeof(IndexedTriangle)).expected(err_msg);
+	reader->read(mesh._vertices.begin(), header.vertices * sizeof(Vertex)).expected(err_msg);
+	reader->read(mesh._triangles.begin(), header.triangles * sizeof(IndexedTriangle)).expected(err_msg);
 
 	if(header.bones) {
-		mesh.skeleton = new SkeletonData();
-		mesh.skeleton->skin = core::Vector<SkinWeights>(header.vertices, SkinWeights{});
-		reader->read(mesh.skeleton->skin.begin(), header.vertices * sizeof(SkinWeights)).expected(err_msg);
+		mesh._skeleton = new SkeletonData();
+		mesh._skeleton->skin = core::Vector<SkinWeights>(header.vertices, SkinWeights{});
+		reader->read(mesh._skeleton->skin.begin(), header.vertices * sizeof(SkinWeights)).expected(err_msg);
+
+		for(usize i = 0; i != header.bones; ++i) {
+			mesh._skeleton->bones << read_bone(reader).expected(err_msg);
+		}
 	}
 
 	return mesh;
 }
+
+
 
 }

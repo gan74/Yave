@@ -92,7 +92,7 @@ void YaveApp::update(math::Vec2 angles) {
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
-	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.01f,  10000.0f));
+	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.1f,  10000.0f));
 }
 
 void YaveApp::create_assets() {
@@ -105,18 +105,18 @@ void YaveApp::create_assets() {
 
 	{
 		Light l(Light::Directional);
-		l.set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
+		l.transform().set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{1.0f};
 		lights << std::move(l);
 
-		l.set_basis(-math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
+		l.transform().set_basis(-math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{0.5f};
 		lights << std::move(l);
 	}
 
 	{
 		auto skinned_material = AssetPtr<Material>(Material(&device, MaterialData()
-				 .set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+				 .set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
 				 .set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
 			 ));
 		auto static_material = AssetPtr<Material>(Material(&device, MaterialData()

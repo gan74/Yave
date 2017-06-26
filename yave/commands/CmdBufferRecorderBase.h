@@ -51,6 +51,8 @@ class CmdBufferRecorderBase : NonCopyable {
 		void bind_material(Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets = {});
 		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
+		void draw(const vk::DrawIndexedIndirectCommand& indirect);
+
 		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& vertices) {
 			bind_buffer_bases(indices, reinterpret_cast<const core::ArrayProxy<SubBufferBase>&>(vertices));
 		}

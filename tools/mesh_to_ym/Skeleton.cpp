@@ -27,7 +27,7 @@ struct BoneRef {
 	float weight;
 
 	bool operator<(const BoneRef& other) const {
-		return weight < other.weight;
+		return std::tie(weight, index) > std::tie(other.weight, other.index);
 	}
 };
 
@@ -79,12 +79,10 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh) {
 		auto bone = mesh->mBones[i];
 		add_bone_refs(bone, bones.size(), bone_per_vertex);
 
+		static_assert(sizeof(bone->mOffsetMatrix) == sizeof(math::Matrix4<>), "aiMatrix4x4 should be 16 floats");
 		bones << Bone {
 				str(bone->mName.C_Str()),
-				{bone->mOffsetMatrix[0][0], bone->mOffsetMatrix[0][1], bone->mOffsetMatrix[0][2]},
-				{bone->mOffsetMatrix[1][0], bone->mOffsetMatrix[1][1], bone->mOffsetMatrix[1][2]},
-				{bone->mOffsetMatrix[2][0], bone->mOffsetMatrix[2][1], bone->mOffsetMatrix[2][2]},
-				{bone->mOffsetMatrix[3][0], bone->mOffsetMatrix[3][1], bone->mOffsetMatrix[3][2]},
+				reinterpret_cast<const math::Matrix4<>&>(bone->mOffsetMatrix)
 			};
 	}
 

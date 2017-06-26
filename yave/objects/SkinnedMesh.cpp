@@ -30,10 +30,6 @@ SkinnedMesh::SkinnedMesh(const AssetPtr<SkinnedMeshInstance>& instance, const As
 		_instance(instance),
 		_material(material) {
 
-	if(!instance) {
-		fatal("Null instance.");
-	}
-
 	set_radius(_instance->radius());
 }
 
@@ -43,17 +39,10 @@ SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) :
 		_material(std::move(other._material)) {
 }
 
-
 void SkinnedMesh::render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const {
 	recorder.bind_material(*_material, {scene_data.descriptor_set});
 	recorder.bind_buffers(TriangleSubBuffer(_instance->triangle_buffer()), {VertexSubBuffer(_instance->vertex_buffer()), scene_data.instance_attribs});
-
-	auto indirect = _instance->indirect_data();
-	recorder.vk_cmd_buffer().drawIndexed(indirect.indexCount,
-										 indirect.instanceCount,
-										 indirect.firstIndex,
-										 indirect.vertexOffset,
-										 indirect.firstInstance);
+	recorder.draw(_instance->indirect_data());
 }
 
 }

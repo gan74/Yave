@@ -59,8 +59,9 @@ static auto process_lights(const core::Vector<Scene::Ptr<Light>>& lights, const 
 static auto process_static_meshes(const core::Vector<Scene::Ptr<StaticMesh>>& meshes, const Frustum& frustum) {
 	auto visibles = core::vector_with_capacity<const StaticMesh*>(meshes.size() / 2);
 
-	constexpr bool use_map = true;
-	if constexpr(use_map) {
+	constexpr enum { UseMap, Sort, DontSort } batching = UseMap;
+
+	if constexpr(batching == UseMap) {
 		std::unordered_map<Material*, decltype(visibles)> per_mat;
 		for(const auto& m : meshes) {
 			if(frustum.is_inside(m->position(), m->radius())) {
@@ -79,7 +80,7 @@ static auto process_static_meshes(const core::Vector<Scene::Ptr<StaticMesh>>& me
 				visibles << m.as_ptr();
 			}
 		}
-		{
+		if constexpr(batching == Sort) {
 			core::DebugTimer _("sort", core::Duration::milliseconds(1));
 			sort(visibles.begin(), visibles.end(), [](const auto& a, const auto& b) { return a->material() < b->material(); });
 		}

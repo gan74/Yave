@@ -54,10 +54,7 @@ struct SkinWeights {
 
 struct Bone {
 	String name;
-	math::Vec3 x;
-	math::Vec3 y;
-	math::Vec3 z;
-	math::Vec3 position;
+	math::Matrix4<> transform;
 };
 
 #endif // UTILS_H

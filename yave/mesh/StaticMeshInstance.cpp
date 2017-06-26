@@ -24,10 +24,10 @@ SOFTWARE.
 namespace yave {
 
 StaticMeshInstance::StaticMeshInstance(DevicePtr dptr, const MeshData& mesh_data) :
-		_triangle_buffer(dptr, mesh_data.triangles),
-		_vertex_buffer(dptr, mesh_data.vertices),
-		_indirect_data(mesh_data.triangles.size() * 3, 1) {
-
+		_triangle_buffer(dptr, mesh_data.triangles()),
+		_vertex_buffer(dptr, mesh_data.vertices()),
+		_indirect_data(mesh_data.indirect_data()),
+		_radius(mesh_data.radius()) {
 }
 
 StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) {

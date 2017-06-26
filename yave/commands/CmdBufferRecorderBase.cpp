@@ -75,6 +75,15 @@ void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::
 	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});
 }
 
+
+void CmdBufferRecorderBase::draw(const vk::DrawIndexedIndirectCommand& indirect) {
+	vk_cmd_buffer().drawIndexed(indirect.indexCount,
+								indirect.instanceCount,
+								indirect.firstIndex,
+								indirect.vertexOffset,
+								indirect.firstInstance);
+}
+
 void CmdBufferRecorderBase::bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs) {
 	u32 attrib_count = attribs.size();
 

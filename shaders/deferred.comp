@@ -75,8 +75,8 @@ vec3 group_color() {
 	return vec3(noise(coord), noise(coord.yx), noise(-coord));
 }
 
-float load_color(uint light_count) {
-	return (light_count) / float(lights.count + lights.directional_count+ 1);
+vec3 load_color(uint light_count) {
+	return spectrum(light_count / float(lights.count + lights.directional_count + 1));
 }
 
 
@@ -160,7 +160,7 @@ void main() {
 	}
 
 #ifdef DEBUG
-	imageStore(out_color, coord, vec4(load_color(light_count)));
+	imageStore(out_color, coord, vec4(load_color(light_count), 1.0));
 #else
 	imageStore(out_color, coord, vec4(acc, 1.0));
 #endif

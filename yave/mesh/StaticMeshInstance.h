@@ -22,42 +22,10 @@ SOFTWARE.
 #ifndef YAVE_MESH_STATICMESHINSTANCE_H
 #define YAVE_MESH_STATICMESHINSTANCE_H
 
-#include <yave/yave.h>
-
-#include <yave/buffer/TypedBuffer.h>
-#include <yave/buffer/TypedSubBuffer.h>
-
 #include "MeshData.h"
+#include <yave/buffer/buffers.h>
 
 namespace yave {
-
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using AttribBuffer = Buffer<BufferUsage::AttributeBit, Flags>;
-
-template<typename T, MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Flags>;
-
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit,Flags>;
-
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit, Flags>;
-
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Flags>;
-
-
-using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
-using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>;
-using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit>;
-using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
-
-
-class MeshInstancePool;
-
-struct MeshInstanceData {
-
-};
 
 class StaticMeshInstance : NonCopyable {
 

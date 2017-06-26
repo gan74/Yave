@@ -49,6 +49,17 @@ float noise(vec2 co) {
 	return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
 }
 
+vec3 spectrum(float x) {
+	float wl = x * 400.0 + 380.0 ;
+	if(wl > 645.0) return vec3(1.0, 0.0, 0.0);
+	if(wl > 580.0) return vec3(1.0, (645.0 - wl) / 65.0, 0.0);
+	if(wl > 510.0) return vec3((wl - 510.0) / 70.0, 1.0, 0.0);
+	if(wl > 490.0) return vec3(0.0, 1.0, (510.0 - wl) / 20.0);
+	if(wl > 440.0) return vec3(0.0, (wl - 440.0) / 40.0, 1.0);
+	if(wl > 380.0) return vec3((440 - wl) / 60.0, 0.0, 1.0);
+	return vec3(1.0);
+}
+
 
 // -------------------------------- PROJECTION --------------------------------
 

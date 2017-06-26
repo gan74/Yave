@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,61 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_TRANSFORMABLE_H
-#define YAVE_OBJECTS_TRANSFORMABLE_H
+#ifndef YAVE_MESH_SKELETON_H
+#define YAVE_MESH_SKELETON_H
 
-#include <yave/yave.h>
+#include "Vertex.h"
 #include <y/math/Transform.h>
 
 namespace yave {
 
-class Transformable {
+struct Bone {
+	core::String name;
+	math::Transform<> transform;
+};
 
+class Skeleton {
 	public:
-		auto& transform() {
-			return _transform;
+		Skeleton() = default;
+
+		Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
+			for(const auto& bone : _bones) {
+				log_msg(bone.name);
+			}
 		}
 
-		const auto& transform() const {
-			return _transform;
-		}
-
-
-		const auto& position() const {
-			return _transform.position();
-		}
-
-		auto& position() {
-			return _transform.position();
-		}
-
-		const auto& forward() const {
-			return _transform.forward();
-		}
-
-		const auto& right() const {
-			return _transform.right();
-		}
-
-		const auto& up() const {
-			return _transform.up();
-		}
-
-
-		float radius() const {
-			return _radius;
-		}
-
-	protected:
-		void set_radius(float r) {
-			_radius = r;
+		const core::Vector<Bone>& bones() const {
+			return _bones;
 		}
 
 	private:
-		math::Transform<> _transform;
-		float _radius = 0.0f;
+		core::Vector<Bone> _bones;
 };
 
 }
 
-#endif // YAVE_OBJECTS_TRANSFORMABLE_H
+#endif // YAVE_MESH_SKELETON_H

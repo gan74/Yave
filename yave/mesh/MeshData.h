@@ -25,25 +25,40 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <y/io/Ref.h>
 
-#include "Vertex.h"
+#include "Skeleton.h"
 
 namespace yave {
 
-struct SkeletonData {
-	core::Vector<SkinWeights> skin;
-};
+class MeshData {
 
-struct MeshData {
+	public:
+		static MeshData from_file(io::ReaderRef reader);
 
-	float radius = 0.0f;
+		float radius() const;
 
-	core::Vector<Vertex> vertices;
-	core::Vector<IndexedTriangle> triangles;
+		const core::Vector<Vertex>& vertices() const;
+		const core::Vector<IndexedTriangle>& triangles() const;
 
-	core::Unique<SkeletonData> skeleton;
+		vk::DrawIndexedIndirectCommand indirect_data() const;
+
+		core::Vector<SkinnedVertex> skinned_vertices() const;
+		const core::Vector<Bone>& bones() const;
+
+	private:
+		struct SkeletonData {
+			core::Vector<SkinWeights> skin;
+			core::Vector<Bone> bones;
+		};
+
+		float _radius = 0.0f;
+
+		core::Vector<Vertex> _vertices;
+		core::Vector<IndexedTriangle> _triangles;
+
+		core::Unique<SkeletonData> _skeleton;
 
 
-	static MeshData from_file(io::ReaderRef reader);
+
 };
 
 

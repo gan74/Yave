@@ -22,7 +22,9 @@ SOFTWARE.
 #ifndef YAVE_MESH_SKINNEDMESHINSTANCE_H
 #define YAVE_MESH_SKINNEDMESHINSTANCE_H
 
-#include "StaticMeshInstance.h"
+#include "MeshData.h"
+#include "Skeleton.h"
+#include <yave/buffer/buffers.h>
 
 namespace yave {
 
@@ -37,20 +39,22 @@ class SkinnedMeshInstance : NonCopyable {
 		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other);
 
 		const TriangleBuffer<>& triangle_buffer() const;
-		const VertexBuffer<>& vertex_buffer() const;
-		const TypedAttribBuffer<SkinWeights>& skin_buffer() const;
+		const SkinnedVertexBuffer<>& vertex_buffer() const;
 
 		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+		const Skeleton& skeleton() const;
 
 		float radius() const;
 
 	private:
 		TriangleBuffer<> _triangle_buffer;
-		VertexBuffer<> _vertex_buffer;
-		TypedAttribBuffer<SkinWeights> _skin_buffer;
+		SkinnedVertexBuffer<> _vertex_buffer;
 		vk::DrawIndexedIndirectCommand _indirect_data;
 
+		Skeleton _skeleton;
+
 		float _radius;
+
 
 		void swap(SkinnedMeshInstance& other);
 

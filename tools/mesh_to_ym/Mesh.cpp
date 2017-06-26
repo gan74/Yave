@@ -64,7 +64,7 @@ Result<Mesh> Mesh::from_assimp(aiMesh* mesh) {
 			return Err();
 		}
 		skeleton = std::move(res.unwrap());
-		log_msg("Mesh has a skeleton");
+		log_msg("Mesh has a skeleton: " + str(skeleton->bones().size()) + " bones");
 	}
 
 	Mesh me;
@@ -96,7 +96,7 @@ io::Writer::Result Mesh::write(io::WriterRef writer) const {
 
 	writer->write_one(_radius);
 
-	writer->write_one(u32(_skeleton ? _skeleton.value().bones().size() : 0));
+	writer->write_one(u32(_skeleton ? _skeleton->bones().size() : 0));
 	writer->write_one(u32(_vertices.size()));
 	writer->write_one(u32(_triangles.size()));
 
@@ -104,7 +104,13 @@ io::Writer::Result Mesh::write(io::WriterRef writer) const {
 	writer->write(_triangles.begin(), _triangles.size() * sizeof(IndexedTriangle));
 
 	if(_skeleton) {
-		writer->write(_skeleton.value().skin().begin(), _vertices.size() * sizeof(SkinWeights));
+		writer->write(_skeleton->skin().begin(), _vertices.size() * sizeof(SkinWeights));
+
+		for(const Bone& bone : _skeleton->bones()) {
+			writer->write_one(u32(bone.name.size()));
+			writer->write(bone.name.begin(), bone.name.size());
+			writer->write_one(bone.transform);
+		}
 	}
 
 	return Ok();
