@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,52 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_BUFFERS_TYPEDBUFFER_H
+#define YAVE_BUFFERS_TYPEDBUFFER_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
 
-#include "Transformable.h"
-#include "Renderable.h"
+#include <yave/yave.h>
+#include "TypedMapping.h"
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+template<typename Elem, BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Flags)>
+class TypedBuffer : public Buffer<Usage, Flags, Transfer> {
+
+	using Base = Buffer<Usage, Flags, Transfer>;
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		using value_type = Elem;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		TypedBuffer() {
+		}
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		TypedBuffer(DevicePtr dptr, const core::ArrayProxy<Elem>& data) : TypedBuffer(dptr, data.size()) {
+			auto mapping = map();
+			std::copy(data.begin(), data.end(), mapping.begin());
+		}
 
-	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		TypedBuffer(DevicePtr dptr, usize elem_count) : Base(dptr, elem_count * sizeof(Elem)) {
+		}
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		TypedBuffer(TypedBuffer&& other) {
+			this->swap(other);
+		}
+
+		TypedBuffer& operator=(TypedBuffer&& other) {
+			this->swap(other);
+			return *this;
+		}
+
+		usize size() const {
+			return this->byte_size() / sizeof(Elem);
+		}
+
+		auto map() {
+			return TypedMapping<value_type, Flags>(*this);
+		}
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_BUFFERS_TYPEDBUFFER_H

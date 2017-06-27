@@ -19,35 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include "SkeletonInstance.h"
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton& skeleton) :
+		_skeleton(&skeleton),
+		_bone_transforms(dptr, Skeleton::max_bones),
+		_descriptor_set(dptr, {Binding(_bone_transforms)}) {
 
-	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
-
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
-
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
-
-	private:
-		AssetPtr<SkinnedMesh> _mesh;
-
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
-};
+	auto map = _bone_transforms.map();
+	std::fill(map.begin(), map.end(), math::Transform<>());
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+SkeletonInstance::SkeletonInstance(SkeletonInstance&& other) {
+	swap(other);
+}
+
+SkeletonInstance& SkeletonInstance::operator=(SkeletonInstance&& other) {
+	swap(other);
+	return *this;
+}
+
+void SkeletonInstance::swap(SkeletonInstance& other) {
+	std::swap(_skeleton, other._skeleton);
+	std::swap(_bone_transforms, other._bone_transforms);
+}
+
+void SkeletonInstance::update() {
+	auto map = _bone_transforms.map();
+	map[rand() % map.size()].position() += {0.0f, 0.0f, rand() % 2 ? -1.0f : 1.0f};
+}
+
+}

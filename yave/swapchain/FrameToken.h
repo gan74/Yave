@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_SWAPCHAIN_FRAMETOKEN_H
 #define YAVE_SWAPCHAIN_FRAMETOKEN_H
 
-#include <yave/image/ImageView.h>
+#include <yave/images/ImageView.h>
 #include <yave/commands/CmdBufferRecorder.h>
 
 namespace yave {

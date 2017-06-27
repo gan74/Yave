@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_MESHS_VERTEX_H
+#define YAVE_MESHS_VERTEX_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include <yave/yave.h>
+#include <y/math/Vec.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
-
-	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
-
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
-
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
-
-	private:
-		AssetPtr<SkinnedMesh> _mesh;
-
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+struct Vertex {
+	math::Vec3 position;
+	math::Vec3 normal;
+	math::Vec3 tangent;
+	math::Vec2 uv;
 };
+
+using IndexedTriangle = std::array<u32, 3>;
+
+struct SkinWeights {
+	static constexpr usize size = 4;
+
+	math::Vec<size, u32> indexes;
+	math::Vec<size, float> weights;
+};
+
+struct SkinnedVertex {
+	Vertex vertex;
+	SkinWeights weights;
+};
+
+static_assert(std::is_trivially_copyable_v<SkinnedVertex>, "SkinnedVertex should be trivially copyable");
+static_assert(std::is_trivially_copyable_v<IndexedTriangle>, "IndexedTriangle should be trivially copyable");
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_MESHS_VERTEX_H

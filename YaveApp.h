@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <yave/material/Material.h>
 #include <yave/commands/CmdBufferRecorder.h>
-#include <yave/image/Image.h>
+#include <yave/images/Image.h>
 #include <yave/swapchain/Swapchain.h>
 #include <yave/objects/StaticMeshInstance.h>
 #include <yave/objects/SkinnedMeshInstance.h>

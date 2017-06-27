@@ -19,37 +19,63 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_STATICMESHINSTANCE_H
-#define YAVE_OBJECTS_STATICMESHINSTANCE_H
+#ifndef YAVE_BUFFERS_SUBBUFFERBASE_H
+#define YAVE_BUFFERS_SUBBUFFERBASE_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/StaticMesh.h>
-
-#include "Renderable.h"
+#include "Buffer.h"
 
 namespace yave {
 
-class StaticMeshInstance : public Renderable {
+class SubBufferBase : public DeviceLinked {
 
 	public:
-		StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
+		SubBufferBase() = default;
 
-		StaticMeshInstance(StaticMeshInstance&& other);
-		StaticMeshInstance& operator=(StaticMeshInstance&& other) = delete;
+		SubBufferBase(const BufferBase& base, usize byte_off, usize byte_len) :
+				DeviceLinked(base.device()),
+				_size(byte_len),
+				_offset(byte_off),
+				_buffer(base.vk_buffer()),
+				_memory(base.vk_device_memory()) {
+		}
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		explicit SubBufferBase(const BufferBase& base) : SubBufferBase(base, 0, base.byte_size()) {
+		}
 
+		usize byte_size() const {
+			return _size;
+		}
 
-		const auto& material() const {
-			return _material;
+		usize byte_offset() const {
+			return _offset;
+		}
+
+		vk::Buffer vk_buffer() const {
+			return _buffer;
+		}
+
+		vk::DeviceMemory vk_device_memory() const {
+			return _memory;
+		}
+
+		vk::DescriptorBufferInfo descriptor_info() const {
+			return vk::DescriptorBufferInfo()
+					.setBuffer(_buffer)
+					.setOffset(_offset)
+					.setRange(_size)
+				;
 		}
 
 	private:
-		AssetPtr<StaticMesh> _mesh;
-		mutable AssetPtr<Material> _material;
+		usize _size = 0;
+		usize _offset = 0;
+		NotOwner<vk::Buffer> _buffer;
+		NotOwner<vk::DeviceMemory> _memory;
 };
+
+// in this case it's ok
+//static_assert(is_safe_base<SubBufferBase>::value);
 
 }
 
-#endif // YAVE_OBJECTS_STATICMESHINSTANCE_H
+#endif // YAVE_BUFFERS_SUBBUFFERBASE_H

@@ -19,35 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_MESHS_SKINNEDMESH_H
+#define YAVE_MESHS_SKINNEDMESH_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include "MeshData.h"
+#include "Skeleton.h"
+#include <yave/buffers/buffers.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class SkinnedMesh : NonCopyable {
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		SkinnedMesh() = default;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		SkinnedMesh(SkinnedMesh&& other);
+		SkinnedMesh& operator=(SkinnedMesh&& other);
+
+		const TriangleBuffer<>& triangle_buffer() const;
+		const SkinnedVertexBuffer<>& vertex_buffer() const;
+
+		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+		const Skeleton& skeleton() const;
+
+		float radius() const;
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		TriangleBuffer<> _triangle_buffer;
+		SkinnedVertexBuffer<> _vertex_buffer;
+		vk::DrawIndexedIndirectCommand _indirect_data;
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		Skeleton _skeleton;
+
+		float _radius;
+
+
+		void swap(SkinnedMesh& other);
+
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_MESHS_SKINNEDMESH_H

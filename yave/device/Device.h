@@ -26,7 +26,7 @@ SOFTWARE.
 #include "PhysicalDevice.h"
 
 #include <yave/bindings/DescriptorSetLayoutPool.h>
-#include <yave/image/Sampler.h>
+#include <yave/images/Sampler.h>
 #include <yave/commands/pool/CmdBufferPool.h>
 #include <yave/queues/QueueFamily.h>
 

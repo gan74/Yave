@@ -24,11 +24,11 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <yave/framebuffers/Framebuffer.h>
+#include <yave/framebuffer/Framebuffer.h>
 #include "FrameToken.h"
 
-#include <yave/image/ImageFormat.h>
-#include <yave/image/Image.h>
+#include <yave/images/ImageFormat.h>
+#include <yave/images/Image.h>
 #include <yave/device/DeviceLinked.h>
 
 namespace yave {

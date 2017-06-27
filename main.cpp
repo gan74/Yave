@@ -1,5 +1,5 @@
 
-#include <yave/image/ImageData.h>
+#include <yave/images/ImageData.h>
 #include <yave/window/Window.h>
 
 

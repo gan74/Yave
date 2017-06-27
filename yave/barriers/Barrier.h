@@ -24,9 +24,9 @@ SOFTWARE.
 
 #include "PipelineStage.h"
 
-#include <yave/image/ImageView.h>
-#include <yave/buffer/Buffer.h>
-#include <yave/buffer/SubBuffer.h>
+#include <yave/images/ImageView.h>
+#include <yave/buffers/Buffer.h>
+#include <yave/buffers/SubBuffer.h>
 
 namespace yave {
 

@@ -23,7 +23,7 @@ SOFTWARE.
 #include "DeferredRenderer.h"
 
 #include <yave/commands/CmdBufferRecorder.h>
-#include <yave/buffer/CpuVisibleMapping.h>
+#include <yave/buffers/CpuVisibleMapping.h>
 
 #include <y/io/File.h>
 

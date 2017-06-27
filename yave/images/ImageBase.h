@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,54 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_IMAGES_IMAGEBASE_H
+#define YAVE_IMAGES_IMAGEBASE_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
+#include "ImageUsage.h"
+#include "ImageData.h"
 
-#include "Transformable.h"
-#include "Renderable.h"
+#include <yave/device/DeviceLinked.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
-
+class ImageBase : NonCopyable, public DeviceLinked {
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		vk::Image vk_image() const;
+		vk::DeviceMemory vk_device_memory() const;
+		vk::ImageView vk_view() const;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		const math::Vec2ui& size() const;
+		usize mipmaps() const;
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		usize layers() const;
 
-	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		ImageFormat format() const;
+		ImageUsage usage() const;
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		~ImageBase();
+
+	protected:
+		ImageBase() = default;
+
+		ImageBase(DevicePtr dptr, ImageFormat fmt, ImageUsage usage, const math::Vec2ui& size);
+		ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const math::Vec2ui& size, const ImageData& data);
+
+		void swap(ImageBase& other);
+
+		math::Vec2ui _size;
+		usize _layers = 1;
+		usize _mips = 1;
+
+		ImageFormat _format;
+		ImageUsage _usage;
+
+		vk::Image _image;
+		vk::DeviceMemory _memory;
+		vk::ImageView _view;
 };
+
+static_assert(is_safe_base<ImageBase>::value);
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_IMAGES_IMAGEBASE_H

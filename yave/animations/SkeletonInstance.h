@@ -19,35 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_ANIMATIONS_SKELETONINSTANCE_H
+#define YAVE_ANIMATIONS_SKELETONINSTANCE_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include <yave/meshs/Skeleton.h>
+#include <yave/buffers/buffers.h>
+#include <yave/bindings/DescriptorSet.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class SkeletonInstance {
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		SkeletonInstance() = default;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		SkeletonInstance(DevicePtr dptr, const Skeleton& skeleton);
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		SkeletonInstance(SkeletonInstance&& other);
+		SkeletonInstance& operator=(SkeletonInstance&& other);
+
+		void update();
+
+		const auto& descriptor_set() const {
+			return _descriptor_set;
+		}
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		void swap(SkeletonInstance& other);
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		const Skeleton* _skeleton = nullptr;
+
+		TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transforms;
+		DescriptorSet _descriptor_set;
+
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_ANIMATIONS_SKELETONINSTANCE_H

@@ -21,8 +21,8 @@ SOFTWARE.
 **********************************/
 #include "YaveApp.h"
 
-#include <yave/image/ImageData.h>
-#include <yave/buffer/TypedBuffer.h>
+#include <yave/images/ImageData.h>
+#include <yave/buffers/TypedBuffer.h>
 #include <yave/renderers/RenderingPipeline.h>
 
 #include <y/io/File.h>

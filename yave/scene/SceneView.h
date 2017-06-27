@@ -23,10 +23,10 @@ SOFTWARE.
 #define YAVE_SCENE_SCENEVIEW_H
 
 #include <yave/commands/CmdBufferRecorder.h>
-#include <yave/buffer/TypedBuffer.h>
+#include <yave/buffers/TypedBuffer.h>
 #include <yave/bindings/uniforms.h>
 #include <yave/camera/Camera.h>
-#include <yave/framebuffers/Framebuffer.h>
+#include <yave/framebuffer/Framebuffer.h>
 
 #include "Scene.h"
 

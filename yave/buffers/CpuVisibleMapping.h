@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,48 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_BUFFERS_CPUVISIBLEMAPPING_H
+#define YAVE_BUFFERS_CPUVISIBLEMAPPING_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include "SubBuffer.h"
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class CpuVisibleMapping : NonCopyable {
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		template<BufferUsage Usage, BufferTransfer Transfer>
+		CpuVisibleMapping(const SpecializedSubBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
+		}
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		template<BufferUsage Usage, BufferTransfer Transfer>
+		CpuVisibleMapping(const Buffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
+		}
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		CpuVisibleMapping();
+
+		CpuVisibleMapping(CpuVisibleMapping&& other);
+		CpuVisibleMapping& operator=(CpuVisibleMapping&& other);
+
+		~CpuVisibleMapping();
+
+		usize byte_size() const;
+
+		void* data();
+		const void* data() const;
+
+	protected:
+		void swap(CpuVisibleMapping& other);
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		CpuVisibleMapping(const SubBufferBase& buff);
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		SubBufferBase _buffer;
+
+		// Use unmap NOT delete
+		void* _mapping;
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_BUFFERS_CPUVISIBLEMAPPING_H

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_MESHS_STATICMESH_H
+#define YAVE_MESHS_STATICMESH_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include "MeshData.h"
+#include <yave/buffers/buffers.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class StaticMesh : NonCopyable {
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		StaticMesh() = default;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		StaticMesh(StaticMesh&& other);
+		StaticMesh& operator=(StaticMesh&& other);
+
+		const TriangleBuffer<>& triangle_buffer() const;
+		const VertexBuffer<>& vertex_buffer() const;
+		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+
+		float radius() const;
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		void swap(StaticMesh& other);
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		TriangleBuffer<> _triangle_buffer;
+		VertexBuffer<> _vertex_buffer;
+		vk::DrawIndexedIndirectCommand _indirect_data;
+
+		float _radius;
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_MESHS_STATICMESH_H

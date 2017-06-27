@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_FRAMEBUFFER_VIEWPORT_H
+#define YAVE_FRAMEBUFFER_VIEWPORT_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include <yave/yave.h>
+#include <y/math/Vec.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+struct Viewport {
+	math::Vec2 extent;
+	math::Vec2 offset;
+	math::Vec2 depth;
 
-	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
-
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
-
-	private:
-		AssetPtr<SkinnedMesh> _mesh;
-
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+	Viewport(const math::Vec2& size = math::Vec2()) : extent(size), depth(0.0f, 1.0f) {
+	}
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_FRAMEBUFFER_VIEWPORT_H

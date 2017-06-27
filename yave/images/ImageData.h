@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,55 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_IMAGES_IMAGEDATA_H
+#define YAVE_IMAGES_IMAGEDATA_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
+#include <yave/yave.h>
 
-#include "Transformable.h"
-#include "Renderable.h"
+#include <y/io/Ref.h>
+#include <y/math/Vec.h>
+
+#include "ImageFormat.h"
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class ImageData : NonCopyable {
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		ImageData() = default;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		ImageData(ImageData&& other);
+		ImageData& operator=(ImageData&& other);
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		usize byte_size(usize mip = 0) const;
+		usize layer_byte_size() const;
+		usize combined_byte_size() const;
+
+		const math::Vec2ui& size() const;
+		math::Vec2ui size(usize mip) const;
+
+		const ImageFormat& format() const;
+
+		usize layers() const;
+		usize mipmaps() const;
+
+		usize data_offset(usize layer = 0, usize mip = 0) const;
+		const u8* data(usize layer = 0, usize mip = 0) const;
+
+		static ImageData from_file(io::ReaderRef reader);
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		void swap(ImageData& other);
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		math::Vec2ui _size;
+		ImageFormat _format;
+
+		usize _layers = 1;
+		usize _mips = 1;
+
+		core::Unique<u8[]> _data;
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_IMAGES_IMAGEDATA_H

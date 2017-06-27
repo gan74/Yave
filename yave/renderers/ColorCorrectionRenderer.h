@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_RENDERERS_COLORCORRECTIONRENDERER_H
 #define YAVE_RENDERERS_COLORCORRECTIONRENDERER_H
 
-#include <yave/framebuffers/Framebuffer.h>
+#include <yave/framebuffer/Framebuffer.h>
 #include <yave/shaders/ComputeProgram.h>
 #include <yave/bindings/uniforms.h>
 

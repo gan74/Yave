@@ -19,35 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_MESHS_SKELETON_H
+#define YAVE_MESHS_SKELETON_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include "Vertex.h"
+#include <y/math/Transform.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+struct Bone {
+	core::String name;
+	math::Transform<> transform;
+};
 
+class Skeleton {
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		static constexpr usize max_bones = 256;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		Skeleton() = default;
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
+			if(_bones.size() > max_bones) {
+				fatal("Bone count exceeds max_bones.");
+			}
+			for(const auto& bone : _bones) {
+				log_msg(bone.name);
+			}
+		}
+
+		const core::Vector<Bone>& bones() const {
+			return _bones;
+		}
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
-
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		core::Vector<Bone> _bones;
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_MESHS_SKELETON_H

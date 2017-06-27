@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_MESHS_MESHDATA_H
+#define YAVE_MESHS_MESHDATA_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
+#include <yave/yave.h>
+#include <y/io/Ref.h>
 
-#include "Transformable.h"
-#include "Renderable.h"
+#include "Skeleton.h"
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class MeshData {
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		static MeshData from_file(io::ReaderRef reader);
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		float radius() const;
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		const core::Vector<Vertex>& vertices() const;
+		const core::Vector<IndexedTriangle>& triangles() const;
+
+		vk::DrawIndexedIndirectCommand indirect_data() const;
+
+		core::Vector<SkinnedVertex> skinned_vertices() const;
+		const core::Vector<Bone>& bones() const;
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		struct SkeletonData {
+			core::Vector<SkinWeights> skin;
+			core::Vector<Bone> bones;
+		};
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		float _radius = 0.0f;
+
+		core::Vector<Vertex> _vertices;
+		core::Vector<IndexedTriangle> _triangles;
+
+		core::Unique<SkeletonData> _skeleton;
+
+
+
 };
+
+
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_MESHS_MESHDATA_H

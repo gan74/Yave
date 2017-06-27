@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_BUFFERS_STAGINGBUFFERMAPPING_H
+#define YAVE_BUFFERS_STAGINGBUFFERMAPPING_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include "BufferUsage.h"
+#include "CpuVisibleMapping.h"
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class StagingBufferMapping : public CpuVisibleMapping {
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		using StagingBuffer = Buffer<BufferUsage::None, MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		template<BufferUsage Usage>
+		StagingBufferMapping(SpecializedSubBuffer<Usage, MemoryFlags::DeviceLocal, BufferTransfer::TransferDst>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
+		}
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		template<BufferUsage Usage>
+		StagingBufferMapping(Buffer<Usage, MemoryFlags::DeviceLocal, BufferTransfer::TransferDst>& buffer) : StagingBufferMapping(SubBufferBase(buffer)) {
+		}
+
+		StagingBufferMapping() = default;
+		~StagingBufferMapping();
+
+	protected:
+		void swap(StagingBufferMapping& other);
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		StagingBufferMapping(const SubBufferBase& dst);
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		vk::BufferCopy vk_copy() const;
+
+		SubBufferBase _dst;
+		StagingBuffer _src;
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_BUFFERS_STAGINGBUFFERMAPPING_H

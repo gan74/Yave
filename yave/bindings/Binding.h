@@ -25,8 +25,8 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/device/Device.h>
 
-#include <yave/image/ImageView.h>
-#include <yave/buffer/TypedSubBuffer.h>
+#include <yave/images/ImageView.h>
+#include <yave/buffers/TypedSubBuffer.h>
 
 namespace yave {
 

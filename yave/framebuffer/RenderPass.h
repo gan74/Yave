@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,55 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_FRAMEBUFFER_RENDERPASS_H
+#define YAVE_FRAMEBUFFER_RENDERPASS_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
+#include <yave/yave.h>
 
-#include "Transformable.h"
-#include "Renderable.h"
+#include <yave/device/DeviceLinked.h>
+#include <yave/images/Image.h>
+#include <yave/images/ImageView.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
-
+class RenderPass : NonCopyable, public DeviceLinked {
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		struct ImageData {
+			const ImageFormat format;
+			const ImageUsage usage;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+			ImageData(ImageFormat fmt, ImageUsage us) : format(fmt), usage(us) {
+			}
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+			ImageData(const ImageBase& image) : format(image.format()), usage(image.usage()) {
+			}
+
+			template<ImageUsage Usage>
+			ImageData(const ImageView<Usage>& view) : ImageData(view.image()) {
+			}
+		};
+
+		RenderPass() = default;
+		RenderPass(DevicePtr dptr, ImageData depth, const core::Vector<ImageData>& colors);
+
+		RenderPass(RenderPass&& other);
+		RenderPass& operator=(RenderPass&& other);
+
+		~RenderPass();
+
+		vk::RenderPass vk_render_pass() const;
+
+		usize attachment_count() const {
+			return _attachment_count;
+		}
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
+		void swap(RenderPass& other);
 
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		usize _attachment_count = 0;
+		vk::RenderPass _render_pass;
 };
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_FRAMEBUFFER_RENDERPASS_H

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_BUFFERS_BUFFERBASE_H
+#define YAVE_BUFFERS_BUFFERBASE_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
-#include <yave/meshs/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include "BufferUsage.h"
+#include <yave/device/DeviceLinked.h>
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class BufferBase : NonCopyable, public DeviceLinked {
 
 	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+		usize byte_size() const;
+		vk::Buffer vk_buffer() const;
+		vk::DeviceMemory vk_device_memory() const;
 
-		SkinnedMeshInstance(SkinnedMeshInstance&& other);
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
+		vk::DescriptorBufferInfo descriptor_info() const;
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		~BufferBase();
+
+	protected:
+		void swap(BufferBase& other);
+
+		BufferBase() = default;
+		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryFlags flags, BufferTransfer transfer);
 
 	private:
-		AssetPtr<SkinnedMesh> _mesh;
-
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
+		usize _size = 0;
+		vk::Buffer _buffer;
+		vk::DeviceMemory _memory;
 };
+
+static_assert(is_safe_base<BufferBase>::value);
+
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+
+#endif // YAVE_BUFFERS_BUFFERBASE_H

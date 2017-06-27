@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/commands/CmdBufferRecorder.h>
 #include <yave/swapchain/FrameToken.h>
-#include <yave/buffer/buffers.h>
+#include <yave/buffers/buffers.h>
 
 #include "Transformable.h"
 
