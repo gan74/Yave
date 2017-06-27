@@ -34,7 +34,7 @@ void log_msg(const char* msg, Log type) {
 	static std::mutex lock;
 	std::lock_guard<decltype(lock)> _(lock);
 
-	(type == Log::Error ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
+	(type == Log::Error || type == Log::Warning ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
 }
 
 }
