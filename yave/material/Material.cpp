@@ -62,7 +62,7 @@ const GraphicPipeline& Material::compile(const RenderPass& render_pass) {
 	auto it = std::find_if(_compiled.begin(), _compiled.end(), [=](const auto& c) { return c.first == key; });
 	if(it == _compiled.end()) {
 		MaterialCompiler compiler(device());
-		_compiled.insert(key, compiler.compile(*this, render_pass));
+		_compiled.insert(key, compiler.compile(this, render_pass));
 		return _compiled.last().second;
 	}
 	return it->second;

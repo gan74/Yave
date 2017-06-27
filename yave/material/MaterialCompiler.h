@@ -35,7 +35,7 @@ class MaterialCompiler : NonCopyable, public DeviceLinked {
 	public:
 		MaterialCompiler(DevicePtr dptr);
 
-		GraphicPipeline compile(const Material& material, const RenderPass& render_pass) const;
+		GraphicPipeline compile(const Material* material, const RenderPass& render_pass) const;
 
 	private:
 

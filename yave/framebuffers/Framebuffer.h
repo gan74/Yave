@@ -35,7 +35,7 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 	public:
 		Framebuffer() = default;
 
-		Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors);
+		Framebuffer(const RenderPass* render_pass, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors);
 		Framebuffer(DevicePtr dptr, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors);
 
 		Framebuffer(Framebuffer&& other);

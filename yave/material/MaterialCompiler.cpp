@@ -32,12 +32,15 @@ namespace yave {
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
-GraphicPipeline MaterialCompiler::compile(const Material& material, const RenderPass& render_pass) const {
+GraphicPipeline MaterialCompiler::compile(const Material* material, const RenderPass& render_pass) const {
 #warning move program creation
 
-	FragmentShader frag = FragmentShader(material.device(), material.data()._frag);
-	VertexShader vert = VertexShader(material.device(), material.data()._vert);
-	GeometryShader geom = material.data()._geom.is_empty() ? GeometryShader() : GeometryShader(material.device(), material.data()._geom);
+	DevicePtr dptr = material->device();
+	const auto& mat_data = material->data();
+
+	FragmentShader frag = FragmentShader(dptr, mat_data._frag);
+	VertexShader vert = VertexShader(dptr, mat_data._vert);
+	GeometryShader geom = mat_data._geom.is_empty() ? GeometryShader() : GeometryShader(dptr, mat_data._geom);
 	ShaderProgram program(frag, vert, geom);
 
 	auto pipeline_shader_stage = program.vk_pipeline_stage_info();

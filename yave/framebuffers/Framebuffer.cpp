@@ -42,12 +42,12 @@ static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView&
 
 
 
-Framebuffer::Framebuffer(RenderPass& render_pass, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors) :
-		Framebuffer(render_pass.device(), &render_pass, depth, colors) {
+Framebuffer::Framebuffer(const RenderPass* render_pass, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors) :
+		Framebuffer(render_pass->device(), render_pass, depth, colors) {
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors) :
-		Framebuffer(dptr, VK_NULL_HANDLE, depth, colors) {
+		Framebuffer(dptr, nullptr, depth, colors) {
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, const core::ArrayProxy<ColorAttachmentView>& colors) :

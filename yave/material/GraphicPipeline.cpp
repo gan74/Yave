@@ -26,8 +26,8 @@ SOFTWARE.
 
 namespace yave {
 
-GraphicPipeline::GraphicPipeline(const Material &mat, vk::Pipeline pipeline, vk::PipelineLayout layout) :
-		_material(&mat),
+GraphicPipeline::GraphicPipeline(const Material* mat, vk::Pipeline pipeline, vk::PipelineLayout layout) :
+		_material(mat),
 		_pipeline(pipeline),
 		_layout(layout)  {
 }
