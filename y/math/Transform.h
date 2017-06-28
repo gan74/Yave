@@ -35,6 +35,9 @@ struct Transform : Matrix4<T> {
 	Transform() : Matrix4<T>(identity()) {
 	}
 
+	Transform(const Matrix4<T>& m) : Matrix4<T>(m) {
+	}
+
 	using Matrix4<T>::Matrix4;
 	using Matrix4<T>::operator=;
 
