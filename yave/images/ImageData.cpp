@@ -96,6 +96,7 @@ void ImageData::swap(ImageData& other) {
 
 ImageData ImageData::from_file(io::ReaderRef reader) {
 	const char* err_msg = "Unable to read image.";
+
 	struct Header {
 		u32 magic;
 		u32 type;

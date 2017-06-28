@@ -19,31 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef MESH_H
-#define MESH_H
+#ifndef ANIMATION_H
+#define ANIMATION_H
 
-#include "Scene.h"
-#include "Skeleton.h"
+#include <Skeleton.h>
 
-#include <optional>
+struct BonePose {
+	math::Vec3 position;
+	math::Vec3 scaling = math::Vec3(1.0f);
+	math::Vec4 quaternion = math::Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+};
 
-#include <y/io/Ref.h>
-
-struct Mesh {
+class AnimationChannel {
 	public:
-		static Result<Mesh> from_assimp(aiMesh* mesh, const aiScene* scene);
+		struct Key {
+			float time;
+			BonePose pose;
+		};
+
+		static AnimationChannel from_assimp(aiNodeAnim* anim);
+		io::Writer::Result write(io::WriterRef writer) const;
+
+	private:
+		String _name;
+		Vector<Key> _keys;
+};
+
+class Animation {
+	public:
+		static Result<Animation> from_assimp(aiAnimation* anim);
 		io::Writer::Result write(io::WriterRef writer) const;
 
 		const String& name() const;
 
 	private:
-		Vector<Vertex> _vertices;
-		Vector<IndexedTriangle> _triangles;
-
-		std::optional<Skeleton> _skeleton;
-
-		float _radius = 0.0f;
 		String _name;
+		float _duration = 0.0f;
+
+		Vector<AnimationChannel> _channels;
 };
 
-#endif // MESH_H
+#endif // ANIMATION_H

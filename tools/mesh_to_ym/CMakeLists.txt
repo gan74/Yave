@@ -28,6 +28,9 @@ file(GLOB_RECURSE SOURCE_FILES
 
 		"Skeleton.h"
 		"Skeleton.cpp"
+
+		"Animation.h"
+		"Animation.cpp"
 	)
 
 # y lib, change this to wherever it it

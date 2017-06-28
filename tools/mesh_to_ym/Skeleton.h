@@ -28,7 +28,7 @@ SOFTWARE.
 
 struct Skeleton {
 	public:
-		static Result<Skeleton> from_assimp(aiMesh* mesh);
+		static Result<Skeleton> from_assimp(aiMesh* mesh, const aiScene* scene);
 
 		const Vector<Bone>& bones() const;
 		const Vector<SkinWeights>& skin() const;

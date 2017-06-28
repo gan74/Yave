@@ -19,31 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef MESH_H
-#define MESH_H
+#ifndef YAVE_ANIMATIONS_ANIMATIONCHANNEL_H
+#define YAVE_ANIMATIONS_ANIMATIONCHANNEL_H
 
-#include "Scene.h"
-#include "Skeleton.h"
+#include <yave/yave.h>
 
-#include <optional>
+namespace yave {
 
-#include <y/io/Ref.h>
-
-struct Mesh {
-	public:
-		static Result<Mesh> from_assimp(aiMesh* mesh, const aiScene* scene);
-		io::Writer::Result write(io::WriterRef writer) const;
-
-		const String& name() const;
-
-	private:
-		Vector<Vertex> _vertices;
-		Vector<IndexedTriangle> _triangles;
-
-		std::optional<Skeleton> _skeleton;
-
-		float _radius = 0.0f;
-		String _name;
+struct BoneKey {
+	float time;
+	math::Vec3 position;
+	math::Vec3 scaling;
+	math::Vec4 quaternion;
 };
 
-#endif // MESH_H
+struct AnimationChannel {
+	core::String name;
+	core::Vector<BoneKey> keys;
+};
+
+}
+
+#endif // YAVE_ANIMATIONS_ANIMATIONCHANNEL_H

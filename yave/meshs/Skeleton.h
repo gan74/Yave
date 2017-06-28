@@ -29,6 +29,7 @@ namespace yave {
 
 struct Bone {
 	core::String name;
+	u32 parent;
 	math::Transform<> transform;
 };
 
@@ -38,12 +39,16 @@ class Skeleton {
 
 		Skeleton() = default;
 
-		Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
+		Skeleton(const core::Vector<Bone>& bones) :
+				_bones(bones),
+				_root(std::find_if(_bones.begin(), _bones.end(), [](const auto& b) { return b.parent == u32(-1); })) {
+
+			if(!_root || _root == _bones.end()) {
+				fatal("Skeleton is not rooted.");
+			}
+
 			if(_bones.size() > max_bones) {
 				fatal("Bone count exceeds max_bones.");
-			}
-			for(const auto& bone : _bones) {
-				log_msg(bone.name);
 			}
 		}
 
@@ -53,6 +58,7 @@ class Skeleton {
 
 	private:
 		core::Vector<Bone> _bones;
+		Bone* _root = nullptr;
 };
 
 }

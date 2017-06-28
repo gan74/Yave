@@ -29,11 +29,12 @@ const String& Mesh::name() const {
 	return _name;
 }
 
-Result<Mesh> Mesh::from_assimp(aiMesh* mesh) {
-	if(mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE ||
-	  !mesh->HasNormals() ||
-	  !mesh->HasTangentsAndBitangents() ||
-	  !mesh->HasTextureCoords(0)) {
+Result<Mesh> Mesh::from_assimp(aiMesh* mesh, const aiScene* scene) {
+	if(!mesh ||
+	   mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE ||
+	   !mesh->HasNormals() ||
+	   !mesh->HasTangentsAndBitangents() ||
+	   !mesh->HasTextureCoords(0)) {
 		return Err();
 	}
 
@@ -59,7 +60,7 @@ Result<Mesh> Mesh::from_assimp(aiMesh* mesh) {
 
 	std::optional<Skeleton> skeleton;
 	if(mesh->HasBones()) {
-		auto res = Skeleton::from_assimp(mesh);
+		auto res = Skeleton::from_assimp(mesh, scene);
 		if(res.is_error()) {
 			return Err();
 		}
@@ -109,6 +110,7 @@ io::Writer::Result Mesh::write(io::WriterRef writer) const {
 		for(const Bone& bone : _skeleton->bones()) {
 			writer->write_one(u32(bone.name.size()));
 			writer->write(bone.name.begin(), bone.name.size());
+			writer->write_one(bone.parent);
 			writer->write_one(bone.transform);
 		}
 	}

@@ -28,7 +28,7 @@ namespace yave {
 
 SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material) :
 		_mesh(mesh),
-		_skeleton(_mesh->triangle_buffer().device(), mesh->skeleton()),
+		_skeleton(_mesh->triangle_buffer().device(), &mesh->skeleton()),
 		_material(material) {
 
 	set_radius(_mesh->radius());

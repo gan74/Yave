@@ -23,7 +23,6 @@ SOFTWARE.
 #include "Scene.h"
 
 Scene::Scene(Scene&& other) : _importer(std::move(other._importer)), _scene(other._scene) {
-
 }
 
 Result<Scene> Scene::from_file(const core::String& path) {
@@ -32,7 +31,10 @@ Result<Scene> Scene::from_file(const core::String& path) {
 	Unique importer = new Assimp::Importer();
 	auto scene = importer->ReadFile(path, import_flags);
 
-	if(scene && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
+	if(scene) {
+		if(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+			log_msg("Scene is incomplete!", Log::Warning);
+		}
 		Scene sce;
 		sce._importer = std::move(importer);
 		sce._scene = scene;

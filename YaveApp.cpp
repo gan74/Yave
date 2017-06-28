@@ -124,6 +124,8 @@ void YaveApp::create_assets() {
 				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
 			 ));
 
+		auto animation = AssetPtr<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/mannequin/ThirdPersonWalk.FBX.ya").expected("Unable to load animation file.")));
+
 		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/SK_Mannequin.ym").expected("Unable to open mesh file."));
 
 		auto skinned_mesh = AssetPtr<SkinnedMesh>(SkinnedMesh(&device, mesh_data));
@@ -131,6 +133,7 @@ void YaveApp::create_assets() {
 
 		{
 			auto skinned_instance = new SkinnedMeshInstance(skinned_mesh, skinned_material);
+			skinned_instance->animate(animation);
 			skinned_instance->position() = {100.0f, 0.0f, 0.0f};
 
 			renderables << skinned_instance;
@@ -141,6 +144,9 @@ void YaveApp::create_assets() {
 
 			renderables << static_instance;
 		}
+	}
+
+	{
 	}
 
 

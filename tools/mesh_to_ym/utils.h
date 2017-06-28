@@ -55,6 +55,7 @@ struct SkinWeights {
 
 struct Bone {
 	String name;
+	u32 parent;
 	math::Transform<> transform;
 };
 

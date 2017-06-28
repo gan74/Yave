@@ -74,7 +74,9 @@ static core::Result<Bone> read_bone(io::ReaderRef reader) {
 	auto name_res = reader->read(name.data(), name.size());
 	name[name.size()] = 0;
 
-	if(name_res.is_error()) {
+	auto parent_res = reader->read_one<u32>();
+
+	if(name_res.is_error() || parent_res.is_error()) {
 		return core::Err();
 	}
 
@@ -83,7 +85,7 @@ static core::Result<Bone> read_bone(io::ReaderRef reader) {
 		return core::Err();
 	}
 
-	return core::Ok(Bone{std::move(name), transform_res.unwrap()});
+	return core::Ok(Bone{std::move(name), parent_res.unwrap(), transform_res.unwrap()});
 }
 
 MeshData MeshData::from_file(io::ReaderRef reader) {

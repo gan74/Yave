@@ -22,9 +22,14 @@ SOFTWARE.
 #ifndef YAVE_ANIMATIONS_SKELETONINSTANCE_H
 #define YAVE_ANIMATIONS_SKELETONINSTANCE_H
 
+#include <y/core/Chrono.h>
+
 #include <yave/meshs/Skeleton.h>
+#include <yave/assets/AssetPtr.h>
 #include <yave/buffers/buffers.h>
 #include <yave/bindings/DescriptorSet.h>
+
+#include "Animation.h"
 
 namespace yave {
 
@@ -33,10 +38,12 @@ class SkeletonInstance {
 	public:
 		SkeletonInstance() = default;
 
-		SkeletonInstance(DevicePtr dptr, const Skeleton& skeleton);
+		SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton);
 
 		SkeletonInstance(SkeletonInstance&& other);
 		SkeletonInstance& operator=(SkeletonInstance&& other);
+
+		void animate(const AssetPtr<Animation>& anim);
 
 		void update();
 
@@ -48,9 +55,11 @@ class SkeletonInstance {
 		void swap(SkeletonInstance& other);
 
 		const Skeleton* _skeleton = nullptr;
-
 		TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transforms;
 		DescriptorSet _descriptor_set;
+
+		AssetPtr<Animation> _animation;
+		core::Chrono _anim_timer;
 
 };
 

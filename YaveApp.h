@@ -33,6 +33,7 @@ SOFTWARE.
 #include <yave/swapchain/Swapchain.h>
 #include <yave/objects/StaticMeshInstance.h>
 #include <yave/objects/SkinnedMeshInstance.h>
+#include <yave/animations/Animation.h>
 
 #include <yave/bindings/Binding.h>
 #include <yave/bindings/DescriptorSet.h>

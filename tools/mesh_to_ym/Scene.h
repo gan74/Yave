@@ -49,6 +49,14 @@ class Scene : NonCopyable {
 			return Range(_scene->mMeshes, _scene->mMeshes + _scene->mNumMeshes);
 		}
 
+		auto animations() const {
+			return Range(_scene->mAnimations, _scene->mAnimations + _scene->mNumAnimations);
+		}
+
+		const aiScene* scene() const {
+			return _scene;
+		}
+
 	private:
 		Scene() = default;
 

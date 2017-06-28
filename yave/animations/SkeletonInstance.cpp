@@ -24,13 +24,12 @@ SOFTWARE.
 
 namespace yave {
 
-SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton& skeleton) :
-		_skeleton(&skeleton),
+SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
+		_skeleton(skeleton),
 		_bone_transforms(dptr, Skeleton::max_bones),
 		_descriptor_set(dptr, {Binding(_bone_transforms)}) {
 
-	auto map = _bone_transforms.map();
-	std::fill(map.begin(), map.end(), math::Transform<>());
+	update();
 }
 
 SkeletonInstance::SkeletonInstance(SkeletonInstance&& other) {
@@ -47,9 +46,39 @@ void SkeletonInstance::swap(SkeletonInstance& other) {
 	std::swap(_bone_transforms, other._bone_transforms);
 }
 
+
+void SkeletonInstance::animate(const AssetPtr<Animation>& anim) {
+	_animation = anim;
+	_anim_timer.reset();
+}
+
 void SkeletonInstance::update() {
 	auto map = _bone_transforms.map();
-	map[rand() % map.size()].position() += {0.0f, 0.0f, rand() % 2 ? -1.0f : 1.0f};
+
+	if(!_animation) {
+		std::fill(map.begin(), map.end(), math::Transform<>());
+	} else {
+		float time = std::fmod(_anim_timer.elapsed().to_secs(), _animation->duration());
+		for(usize i = 0; i != _skeleton->bones().size(); ++i) {
+			const auto& bone = _skeleton->bones()[i];
+			const auto& channel = std::find_if(_animation->channels().begin(), _animation->channels().end(), [&](const auto& ch) { return ch.name == bone.name; });
+			log_msg(bone.name + " " + core::str(channel - _animation->channels().begin()));
+			if(channel != _animation->channels().end()) {
+				const auto& keys = channel->keys;
+				auto key = std::find_if(keys.begin(), keys.end(), [=](const auto&k) { return k.time > time; });
+				if(key == keys.begin()) {
+					key = keys.end();
+				}
+				--key;
+				math::Transform<> transform;
+				transform.position() = key->position - bone.transform.position();
+				map[i] = transform;
+			}
+		}
+	}
+
+	/*auto map = _bone_transforms.map();
+	map[rand() % map.size()].position() += {0.0f, 0.0f, rand() % 2 ? -1.0f : 1.0f};*/
 }
 
 }

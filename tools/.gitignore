@@ -6,6 +6,7 @@
 *.obj
 *.fbx
 *.ym
+*.ya
 *.rgba
 *.jpg
 *.tga

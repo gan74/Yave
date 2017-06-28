@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "Skeleton.h"
 
+#include <unordered_map>
+#include <optional>
+
 struct BoneRef {
 	u32 index;
 	float weight;
@@ -39,7 +42,7 @@ static void add_bone_refs(aiBone* bone, u32 index, Vector<Vector<BoneRef>>& refs
 }
 
 static SkinWeights compute_skin(Vector<BoneRef>& refs) {
-	std::sort(refs.begin(), refs.end());
+	sort(refs.begin(), refs.end());
 	SkinWeights skin;
 
 	usize max = std::min(refs.size(), skin.size);
@@ -58,7 +61,6 @@ static SkinWeights compute_skin(Vector<BoneRef>& refs) {
 }
 
 
-
 const Vector<Bone>& Skeleton::bones() const {
 	return _bones;
 }
@@ -67,27 +69,73 @@ const Vector<SkinWeights>& Skeleton::skin() const {
 	return _skin;
 }
 
-Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh) {
-	if(!mesh->mNumBones) {
+Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
+	static_assert(sizeof(aiMatrix4x4) == sizeof(math::Transform<>), "aiMatrix4x4 should be 16 floats");
+
+	if(!mesh || !mesh->mNumBones) {
 		return Err();
 	}
 
-	Vector<Vector<BoneRef>> bone_per_vertex(mesh->mNumVertices, Vector<BoneRef>());
-	auto bones = vector_with_capacity<Bone>(mesh->mNumBones);
 
+	std::unordered_map<std::string, std::pair<usize, aiBone*>> bone_map;
 	for(usize i = 0; i != mesh->mNumBones; ++i) {
-		auto bone = mesh->mBones[i];
-		add_bone_refs(bone, bones.size(), bone_per_vertex);
+		aiBone* bone = mesh->mBones[i];
+		bone_map[std::string(bone->mName.C_Str())] = std::pair(i, bone);
+	}
 
-		static_assert(sizeof(bone->mOffsetMatrix) == sizeof(math::Transform<>), "aiMatrix4x4 should be 16 floats");
+
+
+	const aiNode* root = nullptr;
+	auto bones = vector_with_capacity<Bone>(mesh->mNumBones);
+	for(usize i = 0; i != mesh->mNumBones; ++i) {
+		aiBone* bone = mesh->mBones[i];
+		const aiNode* node = scene->mRootNode->FindNode(bone->mName);
+
+		if(!node) {
+			log_msg("Node not found.", Log::Error);
+			return Err();
+		}
+
+		u32 parent_index = 0;
+		std::string parent_name(node->mParent->mName.C_Str());
+		auto parent = bone_map.find(parent_name);
+		if(parent == bone_map.end()) {
+			if(!root) {
+				log_msg("Skeleton root: \"" + str(parent_name) + "\"");
+				root = node->mParent;
+				parent_index = u32(-1);
+			} else {
+				return Err();
+			}
+		} else {
+			parent_index = u32(parent->second.first);
+		}
+
 		bones << Bone {
 				str(bone->mName.C_Str()),
+				parent_index,
 				reinterpret_cast<const math::Transform<>&>(bone->mOffsetMatrix)
 			};
 	}
+	if(!root) {
+		log_msg("Skeleton is not rooted.", Log::Error);
+		return Err();
+	}
+
+
+
+	Vector<Vector<BoneRef>> bone_per_vertex(mesh->mNumVertices, Vector<BoneRef>());
+	for(usize i = 0; i != mesh->mNumBones; ++i) {
+		aiBone* bone = mesh->mBones[i];
+		add_bone_refs(bone, i, bone_per_vertex);
+	}
+
+
+
 
 	auto skin_points = vector_with_capacity<SkinWeights>(mesh->mNumVertices);
 	std::transform(bone_per_vertex.begin(), bone_per_vertex.end(), std::back_inserter(skin_points), [](auto& bones) { return compute_skin(bones); });
+
 
 
 	Skeleton skeleton;

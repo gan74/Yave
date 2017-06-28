@@ -42,6 +42,10 @@ class SkinnedMeshInstance : public Renderable {
 
 		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
 
+		void animate(const AssetPtr<Animation>& anim) {
+			_skeleton.animate(anim);
+		}
+
 	private:
 		AssetPtr<SkinnedMesh> _mesh;
 
