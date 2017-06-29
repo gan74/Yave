@@ -251,6 +251,16 @@ char String::operator[](usize i) const {
 	return data()[i];
 }
 
+
+bool String::operator==(const char* str) const {
+	usize len = std::strlen(str);
+	return size() == len ? std::equal(begin(), end(), str, str + len) : false;
+}
+
+bool String::operator!=(const char* str) const {
+	return !operator==(str);
+}
+
 bool String::operator==(const String& str) const {
 	return size() == str.size() ? std::equal(begin(), end(), str.begin(), str.end()) : false;
 }

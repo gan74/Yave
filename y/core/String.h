@@ -149,6 +149,9 @@ class String {
 		char& operator[](usize i);
 		char operator[](usize i) const;
 
+		bool operator==(const char* str) const;
+		bool operator!=(const char* str) const;
+
 		bool operator==(const String& str) const;
 		bool operator!=(const String& str) const;
 		bool operator<(const String& str) const;
