@@ -16,7 +16,7 @@ You need:
 ## Status
 
 ![Current status](http://i.imgur.com/x7Cuyeg.png)
-
+![Skeleton](http://i.imgur.com/KrAHF3F.png)
 
 Currently a mess, should smooth out as I am learning Vulkan.
 
@@ -33,6 +33,9 @@ Implemented features:
  * Rendering pipeline
    * Basic tiled deferred shader
    * Basic scenes
+ * Meshes
+   * Static
+   * Skeletal
 
 
 ### Licence:
