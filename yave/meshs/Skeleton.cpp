@@ -19,37 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHS_SKELETON_H
-#define YAVE_MESHS_SKELETON_H
 
-#include "Vertex.h"
-#include <y/math/Transform.h>
+#include "Skeleton.h"
 
 namespace yave {
 
-struct Bone {
-	core::String name;
-	u32 parent;
-	math::Transform<> transform;
-
-	bool has_parent() const {
-		return parent != u32(-1);
+static void debug_bone(usize index, const core::Vector<Bone>& bones, usize tabs = 0) {
+	core::String indent;
+	for(usize i = 0; i != tabs; ++i) {
+		indent += "  ";
 	}
-};
 
-class Skeleton {
-	public:
-		static constexpr usize max_bones = 256;
+	log_msg(indent + bones[index].name + " (" + index + ")", Log::Debug);
 
-		Skeleton() = default;
-
-		Skeleton(const core::Vector<Bone>& bones);
-		const core::Vector<Bone>& bones() const;
-
-	private:
-		core::Vector<Bone> _bones;
-};
-
+	for(usize i = 0; i != bones.size(); ++i) {
+		if(bones[i].parent == index) {
+			debug_bone(i, bones, tabs + 1);
+		}
+	}
 }
 
-#endif // YAVE_MESHS_SKELETON_H
+Skeleton::Skeleton(const core::Vector<Bone>& bones) :
+		_bones(bones) {
+
+	if(_bones.size() > max_bones) {
+		fatal("Bone count exceeds max_bones.");
+	}
+
+	for(usize i = 0; i != _bones.size(); ++i) {
+		if(!_bones[i].has_parent()) {
+			debug_bone(i, _bones);
+		}
+	}
+}
+
+const core::Vector<Bone>& Skeleton::bones() const {
+	return _bones;
+}
+
+}

@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "Animation.h"
 
+#include <iostream>
+
 namespace yave {
 
 const core::Vector<AnimationChannel>& Animation::channels() const {
@@ -31,6 +33,26 @@ const core::Vector<AnimationChannel>& Animation::channels() const {
 float Animation::duration() const {
 	return _duration;
 }
+
+math::Transform<> Animation::bone_transfrom(const core::String& name, float time) const {
+	auto channel = std::find_if(_channels.begin(), _channels.end(), [&](const auto& ch) { return ch.name == name; });
+	if(channel == _channels.end()) {
+		log_msg("No animation channel found.");
+		return math::Transform<>();
+	}
+
+	const auto& keys = channel->keys;
+	auto key = std::find_if(keys.begin(), keys.end(), [=](const auto& key) { return key.time > time; });
+
+	if(key == keys.begin()) {
+		log_msg("No animation time found.");
+		return math::Transform<>();
+	}
+
+	return  math::Transform<>((key - 1)->position);
+}
+
+
 
 static core::Result<AnimationChannel> read_channel(io::ReaderRef reader) {
 	auto len_res = reader->read_one<u32>();
@@ -93,9 +115,10 @@ Animation Animation::from_file(io::ReaderRef reader) {
 
 	sort(anim._channels.begin(), anim._channels.end(), [](const auto& a, const auto& b) { return a.name < b.name; });
 
-	for(const auto& b : anim._channels.first().keys) {
-		log_msg(core::str(b.time));
-	}
+	/*for(const auto& ch : anim._channels) {
+		auto bone = ch.keys.first();
+		log_msg("a: " + ch.name + ": " + bone.position.x() + ", " + bone.position.y() + ", " + bone.position.z());
+	}*/
 
 	return anim;
 }

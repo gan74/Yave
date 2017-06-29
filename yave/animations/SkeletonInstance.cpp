@@ -29,7 +29,8 @@ SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
 		_bone_transforms(dptr, Skeleton::max_bones),
 		_descriptor_set(dptr, {Binding(_bone_transforms)}) {
 
-	update();
+	auto map = _bone_transforms.map();
+	std::transform(skeleton->bones().begin(), skeleton->bones().end(), map.begin(), [](const auto& bone) { return bone.transform; });
 }
 
 SkeletonInstance::SkeletonInstance(SkeletonInstance&& other) {
@@ -44,6 +45,9 @@ SkeletonInstance& SkeletonInstance::operator=(SkeletonInstance&& other) {
 void SkeletonInstance::swap(SkeletonInstance& other) {
 	std::swap(_skeleton, other._skeleton);
 	std::swap(_bone_transforms, other._bone_transforms);
+	std::swap(_descriptor_set, other._descriptor_set);
+	std::swap(_animation, other._animation);
+	std::swap(_anim_timer, other._anim_timer);
 }
 
 
@@ -53,32 +57,16 @@ void SkeletonInstance::animate(const AssetPtr<Animation>& anim) {
 }
 
 void SkeletonInstance::update() {
-	auto map = _bone_transforms.map();
-
 	if(!_animation) {
-		std::fill(map.begin(), map.end(), math::Transform<>());
-	} else {
-		float time = std::fmod(_anim_timer.elapsed().to_secs(), _animation->duration());
-		for(usize i = 0; i != _skeleton->bones().size(); ++i) {
-			const auto& bone = _skeleton->bones()[i];
-			const auto& channel = std::find_if(_animation->channels().begin(), _animation->channels().end(), [&](const auto& ch) { return ch.name == bone.name; });
-			log_msg(bone.name + " " + core::str(channel - _animation->channels().begin()));
-			if(channel != _animation->channels().end()) {
-				const auto& keys = channel->keys;
-				auto key = std::find_if(keys.begin(), keys.end(), [=](const auto&k) { return k.time > time; });
-				if(key == keys.begin()) {
-					key = keys.end();
-				}
-				--key;
-				math::Transform<> transform;
-				transform.position() = key->position - bone.transform.position();
-				map[i] = transform;
-			}
-		}
+		return;
 	}
 
-	/*auto map = _bone_transforms.map();
-	map[rand() % map.size()].position() += {0.0f, 0.0f, rand() % 2 ? -1.0f : 1.0f};*/
+	auto map = _bone_transforms.map();
+
+	float time = std::fmod(_anim_timer.elapsed().to_secs(), _animation->duration());
+	for(u32 i = 0; i != _skeleton->bones().size(); ++i) {
+		map[i] = math::Transform<>();
+	}
 }
 
 }

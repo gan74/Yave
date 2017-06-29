@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/images/Image.h>
 #include <yave/swapchain/Swapchain.h>
 #include <yave/objects/StaticMeshInstance.h>
+#include <yave/objects/SkeletonDebug.h>
 #include <yave/objects/SkinnedMeshInstance.h>
 #include <yave/animations/Animation.h>
 

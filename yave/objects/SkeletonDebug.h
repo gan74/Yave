@@ -19,37 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHS_SKELETON_H
-#define YAVE_MESHS_SKELETON_H
+#ifndef YAVE_OBJECTS_SKELETONDEBUG_H
+#define YAVE_OBJECTS_SKELETONDEBUG_H
 
-#include "Vertex.h"
-#include <y/math/Transform.h>
+#include <yave/assets/AssetPtr.h>
+#include <yave/meshs/SkinnedMesh.h>
+#include <yave/animations/SkeletonInstance.h>
+
+#include "Transformable.h"
+#include "Renderable.h"
 
 namespace yave {
 
-struct Bone {
-	core::String name;
-	u32 parent;
-	math::Transform<> transform;
+class SkeletonDebug : public Renderable {
 
-	bool has_parent() const {
-		return parent != u32(-1);
-	}
-};
-
-class Skeleton {
 	public:
-		static constexpr usize max_bones = 256;
+		SkeletonDebug(const AssetPtr<SkinnedMesh>& mesh) : SkeletonDebug(mesh->triangle_buffer().device(), mesh) {
+		}
 
-		Skeleton() = default;
+		SkeletonDebug(SkeletonDebug&& other);
+		SkeletonDebug& operator=(SkeletonDebug&& other) = delete;
 
-		Skeleton(const core::Vector<Bone>& bones);
-		const core::Vector<Bone>& bones() const;
+		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
 
 	private:
-		core::Vector<Bone> _bones;
+		SkeletonDebug(DevicePtr dptr, const AssetPtr<SkinnedMesh>& mesh);
+
+		AssetPtr<SkinnedMesh> _mesh;
+
+		TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transforms;
+		DescriptorSet _descriptor_set;
+
+		mutable AssetPtr<Material> _material;
+
 };
 
 }
 
-#endif // YAVE_MESHS_SKELETON_H
+#endif // YAVE_OBJECTS_SKELETONDEBUG_H

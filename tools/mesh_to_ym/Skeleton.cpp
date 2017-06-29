@@ -72,9 +72,13 @@ const Vector<SkinWeights>& Skeleton::skin() const {
 Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 	static_assert(sizeof(aiMatrix4x4) == sizeof(math::Transform<>), "aiMatrix4x4 should be 16 floats");
 
+
 	if(!mesh || !mesh->mNumBones) {
 		return Err();
 	}
+
+
+	log_msg("Mesh has a skeleton: " + str(mesh->mNumBones) + " bones");
 
 
 	std::unordered_map<std::string, std::pair<usize, aiBone*>> bone_map;
@@ -84,8 +88,12 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 	}
 
 
+	if(bone_map.size() != mesh->mNumBones) {
+		log_msg("Mesh has duplicated bone.", Log::Error);
+		return Err();
+	}
 
-	const aiNode* root = nullptr;
+
 	auto bones = vector_with_capacity<Bone>(mesh->mNumBones);
 	for(usize i = 0; i != mesh->mNumBones; ++i) {
 		aiBone* bone = mesh->mBones[i];
@@ -96,32 +104,17 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 			return Err();
 		}
 
-		u32 parent_index = 0;
-		std::string parent_name(node->mParent->mName.C_Str());
-		auto parent = bone_map.find(parent_name);
-		if(parent == bone_map.end()) {
-			if(!root) {
-				log_msg("Skeleton root: \"" + str(parent_name) + "\"");
-				root = node->mParent;
-				parent_index = u32(-1);
-			} else {
-				return Err();
-			}
-		} else {
+		u32 parent_index = u32(-1);
+		if(auto parent = bone_map.find(node->mParent->mName.C_Str()); parent != bone_map.end()) {
 			parent_index = u32(parent->second.first);
 		}
 
 		bones << Bone {
 				str(bone->mName.C_Str()),
 				parent_index,
-				reinterpret_cast<const math::Transform<>&>(bone->mOffsetMatrix)
+				reinterpret_cast<const math::Transform<>&>(node->mTransformation).transposed()
 			};
 	}
-	if(!root) {
-		log_msg("Skeleton is not rooted.", Log::Error);
-		return Err();
-	}
-
 
 
 	Vector<Vector<BoneRef>> bone_per_vertex(mesh->mNumVertices, Vector<BoneRef>());
@@ -131,11 +124,8 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 	}
 
 
-
-
 	auto skin_points = vector_with_capacity<SkinWeights>(mesh->mNumVertices);
 	std::transform(bone_per_vertex.begin(), bone_per_vertex.end(), std::back_inserter(skin_points), [](auto& bones) { return compute_skin(bones); });
-
 
 
 	Skeleton skeleton;

@@ -65,7 +65,6 @@ Result<Mesh> Mesh::from_assimp(aiMesh* mesh, const aiScene* scene) {
 			return Err();
 		}
 		skeleton = std::move(res.unwrap());
-		log_msg("Mesh has a skeleton: " + str(skeleton->bones().size()) + " bones");
 	}
 
 	Mesh me;

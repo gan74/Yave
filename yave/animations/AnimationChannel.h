@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_ANIMATIONS_ANIMATIONCHANNEL_H
 
 #include <yave/yave.h>
+#include <y/math/Transform.h>
 
 namespace yave {
 

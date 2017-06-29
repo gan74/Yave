@@ -31,9 +31,10 @@ class Animation {
 	public:
 		static Animation from_file(io::ReaderRef reader);
 
+		float duration() const;
 		const core::Vector<AnimationChannel>& channels() const;
 
-		float duration() const;
+		math::Transform<> bone_transfrom(const core::String& name, float time) const;
 
 	private:
 		float _duration;
