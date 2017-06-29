@@ -34,7 +34,7 @@ class Animation {
 		float duration() const;
 		const core::Vector<AnimationChannel>& channels() const;
 
-		math::Transform<> bone_transfrom(const core::String& name, float time) const;
+		math::Transform<> bone_transform(const core::String& name, float time) const;
 
 	private:
 		float _duration;

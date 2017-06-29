@@ -40,6 +40,10 @@ class SkeletonDebug : public Renderable {
 		SkeletonDebug(SkeletonDebug&& other);
 		SkeletonDebug& operator=(SkeletonDebug&& other) = delete;
 
+
+		void animate(const AssetPtr<Animation>& anim);
+
+
 		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
 
 	private:
@@ -47,10 +51,13 @@ class SkeletonDebug : public Renderable {
 
 		AssetPtr<SkinnedMesh> _mesh;
 
-		TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transforms;
+		mutable TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transforms;
 		DescriptorSet _descriptor_set;
 
 		mutable AssetPtr<Material> _material;
+
+		AssetPtr<Animation> _animation;
+		core::Chrono _anim_timer;
 
 };
 

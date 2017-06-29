@@ -87,7 +87,7 @@ void YaveApp::draw() {
 void YaveApp::update(math::Vec2 angles) {
 	float dist = 500.0f;
 
-	auto cam_tr = math::rotation(angles.x(), {0, 0, -1}) * math::rotation(angles.y(), {0, 1, 0});
+	auto cam_tr = math::rotation({0, 0, -1}, angles.x()) * math::rotation({0, 1, 0}, angles.y());
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
@@ -124,7 +124,7 @@ void YaveApp::create_assets() {
 				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
 			 ));
 
-		//auto animation = AssetPtr<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/mannequin/ThirdPersonWalk.FBX.ya").expected("Unable to load animation file.")));
+		auto animation = AssetPtr<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/mannequin/ThirdPersonWalk.FBX.ya").expected("Unable to load animation file.")));
 
 		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/SK_Mannequin.ym").expected("Unable to open mesh file."));
 
@@ -132,8 +132,8 @@ void YaveApp::create_assets() {
 		auto static_mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
 
 		{
-			auto skinned_instance = new SkeletonDebug(skinned_mesh);
-			//skinned_instance->animate(animation);
+			auto skinned_instance = new SkinnedMeshInstance(skinned_mesh, skinned_material);
+			skinned_instance->animate(animation);
 			skinned_instance->position() = {100.0f, 0.0f, 0.0f};
 
 			renderables << skinned_instance;

@@ -24,20 +24,20 @@ SOFTWARE.
 
 #include <Skeleton.h>
 
-struct BonePose {
+/*struct BonePose {
 	math::Vec3 position;
 	math::Vec3 scaling = math::Vec3(1.0f);
 	math::Vec4 quaternion = math::Vec4(0.0f, 0.0f, 0.0f, 1.0f);
-};
+};*/
 
 class AnimationChannel {
 	public:
 		struct Key {
 			float time;
-			BonePose pose;
+			math::Transform<> transform;
 		};
 
-		static AnimationChannel from_assimp(aiNodeAnim* anim);
+		static Result<AnimationChannel> from_assimp(aiNodeAnim* anim);
 		io::Writer::Result write(io::WriterRef writer) const;
 
 	private:
@@ -54,6 +54,8 @@ class Animation {
 
 	private:
 		String _name;
+		String _root_name;
+
 		float _duration = 0.0f;
 
 		Vector<AnimationChannel> _channels;

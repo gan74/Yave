@@ -21,8 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "Animation.h"
-
-#include <iostream>
+#include <y/math/Quaternion.h>
 
 namespace yave {
 
@@ -34,10 +33,10 @@ float Animation::duration() const {
 	return _duration;
 }
 
-math::Transform<> Animation::bone_transfrom(const core::String& name, float time) const {
+math::Transform<> Animation::bone_transform(const core::String& name, float time) const {
 	auto channel = std::find_if(_channels.begin(), _channels.end(), [&](const auto& ch) { return ch.name == name; });
 	if(channel == _channels.end()) {
-		log_msg("No animation channel found.");
+		log_msg("No animation channel found.", Log::Error);
 		return math::Transform<>();
 	}
 
@@ -45,11 +44,13 @@ math::Transform<> Animation::bone_transfrom(const core::String& name, float time
 	auto key = std::find_if(keys.begin(), keys.end(), [=](const auto& key) { return key.time > time; });
 
 	if(key == keys.begin()) {
-		log_msg("No animation time found.");
+		log_msg("No animation time found.", Log::Error);
 		return math::Transform<>();
 	}
 
-	return  math::Transform<>((key - 1)->position);
+	--key;
+	return key->transform;
+	//return math::Transform<>(key->quaternion, key->quaternion(key->position), key->scaling);
 }
 
 
@@ -96,7 +97,7 @@ Animation Animation::from_file(io::ReaderRef reader) {
 		bool is_valid() const {
 			return magic == 0x65766179 &&
 				   type == 3 &&
-				   version == 1 &&
+				   version == 2 &&
 				   channels > 0 &&
 				   duration > 0.0f;
 		}

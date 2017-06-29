@@ -30,7 +30,7 @@ SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
 		_descriptor_set(dptr, {Binding(_bone_transforms)}) {
 
 	auto map = _bone_transforms.map();
-	std::transform(skeleton->bones().begin(), skeleton->bones().end(), map.begin(), [](const auto& bone) { return bone.transform; });
+	std::fill(map.begin(), map.end(), math::Transform<>());
 }
 
 SkeletonInstance::SkeletonInstance(SkeletonInstance&& other) {
@@ -56,6 +56,22 @@ void SkeletonInstance::animate(const AssetPtr<Animation>& anim) {
 	_anim_timer.reset();
 }
 
+static math::Transform<> bone_transform(usize index, const core::Vector<Bone>& bones) {
+	const auto& bone = bones[index];
+	return bone.has_parent() ? math::Transform<>(bone_transform(bone.parent, bones) * bone.transform) : bone.transform;
+}
+
+static math::Transform<> bone_transform(usize index, const core::Vector<Bone>& bones, const AssetPtr<Animation>& anim, float time) {
+	const auto& bone = bones[index];
+
+	auto anim_tr = anim->bone_transform(bone.name, time);
+
+	if(bone.has_parent()) {
+		return bone_transform(bone.parent, bones, anim, time) * anim_tr;
+	}
+	return anim_tr;
+}
+
 void SkeletonInstance::update() {
 	if(!_animation) {
 		return;
@@ -65,7 +81,7 @@ void SkeletonInstance::update() {
 
 	float time = std::fmod(_anim_timer.elapsed().to_secs(), _animation->duration());
 	for(u32 i = 0; i != _skeleton->bones().size(); ++i) {
-		map[i] = math::Transform<>();
+		map[i] = bone_transform(i, _skeleton->bones(), _animation, time) * bone_transform(i, _skeleton->bones()).inverse();
 	}
 }
 

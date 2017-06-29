@@ -29,9 +29,7 @@ namespace yave {
 
 struct BoneKey {
 	float time;
-	math::Vec3 position;
-	math::Vec3 scaling;
-	math::Vec4 quaternion;
+	math::Transform<> transform;
 };
 
 struct AnimationChannel {

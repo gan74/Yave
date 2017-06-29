@@ -31,50 +31,83 @@ const String& Animation::name() const {
 	return _name;
 }
 
+/*static void debug_node(aiNode* node, usize tabs = 0) {
+	core::String indent;
+	for(usize i = 0; i != tabs; ++i) {
+		indent += "  ";
+	}
+
+	log_msg(indent + node->mName.C_Str(), Log::Debug);
+
+	if(node->mParent) {
+		debug_node(node->mParent, tabs + 1);
+	}
+}*/
+
+/*static aiNode* common_parent(aiNode* a, aiNode* b) {
+	for(; a; a = a->mParent) {
+		for(auto bn = b; bn; bn = bn->mParent) {
+			if(a == bn) {
+				return a;
+			}
+		}
+	}
+	return nullptr;
+}*/
 
 
-AnimationChannel AnimationChannel::from_assimp(aiNodeAnim* anim) {
-	std::unordered_map<float, BonePose> keys;
+
+Result<AnimationChannel> AnimationChannel::from_assimp(aiNodeAnim* anim) {
 
 	static_assert(sizeof(aiVector3D) == sizeof(math::Vec3), "aiVector3 should be 3 floats");
 	static_assert(sizeof(aiQuaternion) == sizeof(math::Vec4), "aiQuaterniont should be 4 floats");
 
+	struct Pose {
+		aiVector3D position = aiVector3D(0, 0, 0);
+		aiVector3D scaling = aiVector3D(1, 1, 1);
+		aiQuaternion quaternion = aiQuaternion(0, 0, 0);
+	};
+
+	std::unordered_map<float, Pose> keys;
 	for(usize i = 0; i != anim->mNumPositionKeys; ++i) {
 		aiVectorKey key = anim->mPositionKeys[i];
-		keys[key.mTime].position = reinterpret_cast<const math::Vec3&>(key.mValue);
+		keys[key.mTime].position = key.mValue;
 	}
-
 	for(usize i = 0; i != anim->mNumScalingKeys; ++i) {
 		aiVectorKey key = anim->mScalingKeys[i];
-		keys[key.mTime].scaling = reinterpret_cast<const math::Vec3&>(key.mValue);
+		keys[key.mTime].scaling = key.mValue;
 	}
-
 	for(usize i = 0; i != anim->mNumRotationKeys; ++i) {
 		aiQuatKey key = anim->mRotationKeys[i];
-		keys[key.mTime].quaternion = reinterpret_cast<const math::Vec4&>(key.mValue);
+		keys[key.mTime].quaternion = key.mValue;
 	}
+
+
 
 	if(anim->mNumPositionKeys != keys.size()) {
 		log_msg("Invalid positions.", Log::Error);
+		return Err();
 	}
-
 	if(anim->mNumRotationKeys != keys.size()) {
 		log_msg("Invalid rotations.", Log::Error);
+		return Err();
 	}
-
 	if(anim->mNumScalingKeys != keys.size()) {
 		log_msg("Invalid scales.", Log::Error);
+		return Err();
 	}
-
 	log_msg("channel for " + str(anim->mNodeName.C_Str()) + " has " +  str(keys.size()) + " keys");
 
 
 	AnimationChannel channel;
 	channel._name = anim->mNodeName.C_Str();
-	std::transform(keys.begin(), keys.end(), std::back_inserter(channel._keys), [](const auto& k) { return Key{k.first, k.second}; });
+	std::transform(keys.begin(), keys.end(), std::back_inserter(channel._keys), [](const auto& k) {
+			aiMatrix4x4 tr(k.second.scaling, k.second.quaternion, k.second.position);
+			return Key{k.first, reinterpret_cast<const math::Transform<>&>(tr).transposed()};
+		});
 	sort(channel._keys.begin(), channel._keys.end(), [](const auto& a, const auto& b) { return a.time < b.time; });
 
-	return channel;
+	return Ok(std::move(channel));
 }
 
 io::Writer::Result AnimationChannel::write(io::WriterRef writer) const {
@@ -95,10 +128,23 @@ Result<Animation> Animation::from_assimp(aiAnimation* anim) {
 	Animation an;
 	an._duration = anim->mDuration;
 
-	log_msg("duration: " + str(an._duration));
+	/*aiNode* root_node = scene->mRootNode->FindNode(anim->mChannels[0]->mNodeName);
+	for(usize i = 1; i != anim->mNumChannels; ++i) {
+		root_node = common_parent(scene->mRootNode->FindNode(anim->mChannels[i]->mNodeName), root_node);
+	}
+	if(!root_node) {
+		log_msg("Unable to root animation.", Log::Error);
+		return Err();
+	}
+	log_msg("Animation root: " + str(root_node->mName.C_Str()));*/
+
 
 	for(usize i = 0; i != anim->mNumChannels; ++i) {
-		an._channels << AnimationChannel::from_assimp(anim->mChannels[i]);
+		auto res = AnimationChannel::from_assimp(anim->mChannels[i]);
+		if(res.is_error()) {
+			return Err();
+		}
+		an._channels << res.unwrap();
 	}
 
 	return Ok(std::move(an));
@@ -107,7 +153,7 @@ Result<Animation> Animation::from_assimp(aiAnimation* anim) {
 io::Writer::Result Animation::write(io::WriterRef writer) const {
 	u32 magic = 0x65766179;
 	u32 type = 3;
-	u32 version = 1;
+	u32 version = 2;
 
 	writer->write_one(magic);
 	writer->write_one(type);
