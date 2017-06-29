@@ -70,7 +70,8 @@ static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& s
 	}
 }
 
-static void create_vertex_attribs(u32 binding,
+// returns the NEXT binding index
+static u32 create_vertex_attribs(u32 binding,
 								  vk::VertexInputRate rate,
 								  const core::Vector<ShaderModuleBase::Attribute>& vertex_attribs,
 								  Bindings& bindings,
@@ -95,7 +96,9 @@ static void create_vertex_attribs(u32 binding,
 				.setStride(offset)
 				.setInputRate(rate)
 			;
+		return binding + 1;
 	}
+	return binding;
 }
 
 // Takes a SORTED (by location) Attribute list
@@ -109,8 +112,9 @@ static void create_vertex_attribs(const core::Vector<ShaderModuleBase::Attribute
 	for(const auto& attr : vertex_attribs) {
 		(attr.location < ShaderProgram::PerInstanceLocation ? v_attribs : i_attribs) << attr;
 	}
-	create_vertex_attribs(0, vk::VertexInputRate::eVertex, v_attribs, bindings, attribs);
-	create_vertex_attribs(1, vk::VertexInputRate::eInstance, i_attribs, bindings, attribs);
+
+	u32 inst = create_vertex_attribs(0, vk::VertexInputRate::eVertex, v_attribs, bindings, attribs);
+	create_vertex_attribs(inst, vk::VertexInputRate::eInstance, i_attribs, bindings, attribs);
 }
 
 

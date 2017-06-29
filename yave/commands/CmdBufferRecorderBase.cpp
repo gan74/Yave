@@ -84,7 +84,15 @@ void CmdBufferRecorderBase::draw(const vk::DrawIndexedIndirectCommand& indirect)
 								indirect.firstInstance);
 }
 
-void CmdBufferRecorderBase::bind_buffer_bases(const SubBufferBase& indices, const core::ArrayProxy<SubBufferBase>& attribs) {
+void CmdBufferRecorderBase::draw(usize vertices) {
+	vk_cmd_buffer().draw(u32(vertices), 1, 0, 0);
+}
+
+void CmdBufferRecorderBase::bind_index_buffer(const SubBufferBase& indices) {
+	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
+}
+
+void CmdBufferRecorderBase::bind_attrib_buffers(const core::ArrayProxy<SubBufferBase>& attribs) {
 	u32 attrib_count = attribs.size();
 
 	auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);
@@ -93,8 +101,8 @@ void CmdBufferRecorderBase::bind_buffer_bases(const SubBufferBase& indices, cons
 	std::transform(attribs.begin(), attribs.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
 
 	vk_cmd_buffer().bindVertexBuffers(u32(0), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
-	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
 }
+
 
 SecondaryCmdBufferRecorderBase::SecondaryCmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer) :
 			CmdBufferRecorderBase(std::move(base)) {
