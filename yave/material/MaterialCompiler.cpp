@@ -56,7 +56,7 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 		;
 
 	auto input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
-			.setTopology(vk::PrimitiveTopology::eTriangleList)
+			.setTopology(vk::PrimitiveTopology(mat_data._primitive_type))
 			.setPrimitiveRestartEnable(false)
 		;
 

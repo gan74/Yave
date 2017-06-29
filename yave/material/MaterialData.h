@@ -29,10 +29,17 @@ SOFTWARE.
 
 namespace yave {
 
+enum class PrimitiveType {
+	Triangles = uenum(vk::PrimitiveTopology::eTriangleList),
+	Lines = uenum(vk::PrimitiveTopology::eLineList)
+};
+
 struct MaterialData {
 	SpirVData _frag;
 	SpirVData _vert;
 	SpirVData _geom;
+
+	PrimitiveType _primitive_type = PrimitiveType::Triangles;
 
 	core::Vector<Binding> _bindings;
 
@@ -41,6 +48,8 @@ struct MaterialData {
 	MaterialData& set_geom_data(SpirVData&& data);
 
 	MaterialData& set_bindings(const core::ArrayProxy<Binding>& binds);
+
+	MaterialData& set_primitive_type(PrimitiveType type);
 };
 
 }

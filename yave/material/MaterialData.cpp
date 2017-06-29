@@ -44,5 +44,10 @@ MaterialData& MaterialData::set_bindings(const core::ArrayProxy<Binding>& binds)
 	return *this;
 }
 
+MaterialData& MaterialData::set_primitive_type(PrimitiveType type) {
+	_primitive_type = type;
+	return *this;
+}
+
 
 }
