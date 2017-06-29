@@ -2,6 +2,8 @@
 */build/
 */old/
 
+*.blend
+*.blend1
 *.lock
 *.obj
 *.fbx
