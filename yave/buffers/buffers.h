@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_BUFFERS_BUFFERS_H
 
 #include "TypedSubBuffer.h"
-#include <yave/meshs/Vertex.h>
+#include <yave/meshes/Vertex.h>
 
 namespace yave {
 

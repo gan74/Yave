@@ -19,47 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHS_SKINNEDMESH_H
-#define YAVE_MESHS_SKINNEDMESH_H
+#ifndef YAVE_MESHES_SKELETON_H
+#define YAVE_MESHES_SKELETON_H
 
-#include "MeshData.h"
-#include "Skeleton.h"
-#include <yave/buffers/buffers.h>
+#include "Vertex.h"
+#include <y/math/Transform.h>
 
 namespace yave {
 
-class SkinnedMesh : NonCopyable {
+struct Bone {
+	core::String name;
+	u32 parent;
+	math::Transform<> transform;
 
+	bool has_parent() const {
+		return parent != u32(-1);
+	}
+};
+
+class Skeleton {
 	public:
-		SkinnedMesh() = default;
+		static constexpr usize max_bones = 256;
 
-		SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);
+		Skeleton() = default;
 
-		SkinnedMesh(SkinnedMesh&& other);
-		SkinnedMesh& operator=(SkinnedMesh&& other);
-
-		const TriangleBuffer<>& triangle_buffer() const;
-		const SkinnedVertexBuffer<>& vertex_buffer() const;
-
-		const vk::DrawIndexedIndirectCommand& indirect_data() const;
-		const Skeleton& skeleton() const;
-
-		float radius() const;
+		Skeleton(const core::Vector<Bone>& bones);
+		const core::Vector<Bone>& bones() const;
 
 	private:
-		TriangleBuffer<> _triangle_buffer;
-		SkinnedVertexBuffer<> _vertex_buffer;
-		vk::DrawIndexedIndirectCommand _indirect_data;
-
-		Skeleton _skeleton;
-
-		float _radius;
-
-
-		void swap(SkinnedMesh& other);
-
+		core::Vector<Bone> _bones;
 };
 
 }
 
-#endif // YAVE_MESHS_SKINNEDMESH_H
+#endif // YAVE_MESHES_SKELETON_H

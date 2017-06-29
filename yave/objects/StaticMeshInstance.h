@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_OBJECTS_STATICMESHINSTANCE_H
 
 #include <yave/assets/AssetPtr.h>
-#include <yave/meshs/StaticMesh.h>
+#include <yave/meshes/StaticMesh.h>
 
 #include "Renderable.h"
 

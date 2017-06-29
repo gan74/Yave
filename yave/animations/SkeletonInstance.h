@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <y/core/Chrono.h>
 
-#include <yave/meshs/Skeleton.h>
+#include <yave/meshes/Skeleton.h>
 #include <yave/assets/AssetPtr.h>
 #include <yave/buffers/buffers.h>
 #include <yave/bindings/DescriptorSet.h>

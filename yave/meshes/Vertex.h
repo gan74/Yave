@@ -19,50 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHS_MESHDATA_H
-#define YAVE_MESHS_MESHDATA_H
+#ifndef YAVE_MESHES_VERTEX_H
+#define YAVE_MESHES_VERTEX_H
 
 #include <yave/yave.h>
-#include <y/io/Ref.h>
-
-#include "Skeleton.h"
+#include <y/math/Vec.h>
 
 namespace yave {
 
-class MeshData {
-
-	public:
-		static MeshData from_file(io::ReaderRef reader);
-
-		float radius() const;
-
-		const core::Vector<Vertex>& vertices() const;
-		const core::Vector<IndexedTriangle>& triangles() const;
-
-		vk::DrawIndexedIndirectCommand indirect_data() const;
-
-		core::Vector<SkinnedVertex> skinned_vertices() const;
-		const core::Vector<Bone>& bones() const;
-
-	private:
-		struct SkeletonData {
-			core::Vector<SkinWeights> skin;
-			core::Vector<Bone> bones;
-		};
-
-		float _radius = 0.0f;
-
-		core::Vector<Vertex> _vertices;
-		core::Vector<IndexedTriangle> _triangles;
-
-		core::Unique<SkeletonData> _skeleton;
-
-
-
+struct Vertex {
+	math::Vec3 position;
+	math::Vec3 normal;
+	math::Vec3 tangent;
+	math::Vec2 uv;
 };
 
+using IndexedTriangle = std::array<u32, 3>;
 
+struct SkinWeights {
+	static constexpr usize size = 4;
+
+	math::Vec<size, u32> indexes;
+	math::Vec<size, float> weights;
+};
+
+struct SkinnedVertex {
+	Vertex vertex;
+	SkinWeights weights;
+};
+
+static_assert(std::is_trivially_copyable_v<SkinnedVertex>, "SkinnedVertex should be trivially copyable");
+static_assert(std::is_trivially_copyable_v<IndexedTriangle>, "IndexedTriangle should be trivially copyable");
 
 }
 
-#endif // YAVE_MESHS_MESHDATA_H
+#endif // YAVE_MESHES_VERTEX_H

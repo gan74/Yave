@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
 
 #include <yave/assets/AssetPtr.h>
-#include <yave/meshs/SkinnedMesh.h>
+#include <yave/meshes/SkinnedMesh.h>
 #include <yave/animations/SkeletonInstance.h>
 
 #include "Transformable.h"

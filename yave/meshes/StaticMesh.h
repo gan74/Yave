@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Gr�goire Angerand
+Copyright (c) 2016-2017 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,37 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHS_SKELETON_H
-#define YAVE_MESHS_SKELETON_H
+#ifndef YAVE_MESHES_STATICMESH_H
+#define YAVE_MESHES_STATICMESH_H
 
-#include "Vertex.h"
-#include <y/math/Transform.h>
+#include "MeshData.h"
+#include <yave/buffers/buffers.h>
 
 namespace yave {
 
-struct Bone {
-	core::String name;
-	u32 parent;
-	math::Transform<> transform;
+class StaticMesh : NonCopyable {
 
-	bool has_parent() const {
-		return parent != u32(-1);
-	}
-};
-
-class Skeleton {
 	public:
-		static constexpr usize max_bones = 256;
+		StaticMesh() = default;
 
-		Skeleton() = default;
+		StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
 
-		Skeleton(const core::Vector<Bone>& bones);
-		const core::Vector<Bone>& bones() const;
+		StaticMesh(StaticMesh&& other);
+		StaticMesh& operator=(StaticMesh&& other);
+
+		const TriangleBuffer<>& triangle_buffer() const;
+		const VertexBuffer<>& vertex_buffer() const;
+		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+
+		float radius() const;
 
 	private:
-		core::Vector<Bone> _bones;
+		void swap(StaticMesh& other);
+
+		TriangleBuffer<> _triangle_buffer;
+		VertexBuffer<> _vertex_buffer;
+		vk::DrawIndexedIndirectCommand _indirect_data;
+
+		float _radius;
 };
 
 }
 
-#endif // YAVE_MESHS_SKELETON_H
+#endif // YAVE_MESHES_STATICMESH_H
