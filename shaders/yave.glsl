@@ -5,9 +5,7 @@ const float pi = 3.1415926535897932384626433832795;
 const float epsilon = 0.001;
 
 const uint max_bones = 256;
-
-const uint DirectionalLight = 0;
-const uint PointLight = 1;
+const uint max_tile_lights = 128;
 
 
 // -------------------------------- TYPES --------------------------------
@@ -60,6 +58,14 @@ vec3 spectrum(float x) {
 	if(wl > 380.0) return vec3((440 - wl) / 60.0, 0.0, 1.0);
 	return vec3(1.0);
 }
+
+vec3 spectrum(uint x) {
+	x = (x % 6) + 1;
+	return vec3((x & 0x01) != 0 ? 1.0 : 0.0,
+				(x & 0x02) != 0 ? 1.0 : 0.0,
+				(x & 0x04) != 0 ? 1.0 : 0.0);
+}
+
 
 
 // -------------------------------- PROJECTION --------------------------------

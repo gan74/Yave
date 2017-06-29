@@ -94,9 +94,7 @@ vec3 fetch_normal(sampler2D normal_tex, ivec2 coord) {
 //#define DEBUG
 //#define LIGHT_ONLY
 
-#define MAX_LIGHTS 128
-
-shared uint tile_lights[MAX_LIGHTS];
+shared uint tile_lights[max_tile_lights];
 shared uint tile_light_count;
 
 void cull_lights() {
