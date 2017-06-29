@@ -81,7 +81,7 @@ auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up 
 }
 
 template<typename T>
-auto rotation(T angle, Vec<3, T> axis, const Matrix4<T>& base = identity()) {
+auto rotation(Vec<3, T> axis, T angle, const Matrix4<T>& base = identity()) {
 	T a = angle;
 	T c = std::cos(a);
 	T s = std::sin(a);

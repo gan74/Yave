@@ -30,16 +30,19 @@ namespace math {
 template<typename T = float>
 struct Transform : Matrix4<T> {
 
-	using Base =  Matrix4<T>;
-
 	Transform() : Matrix4<T>(identity()) {
 	}
 
 	Transform(const Matrix4<T>& m) : Matrix4<T>(m) {
 	}
 
+	Transform(const Vec<3, T>& pos) : Matrix4<T>(identity()) {
+		position() = pos;
+	}
+
 	using Matrix4<T>::Matrix4;
 	using Matrix4<T>::operator=;
+
 
 	const auto& forward() const {
 		return this->column(0).template to<3>();
@@ -68,6 +71,10 @@ struct Transform : Matrix4<T> {
 		this->column(0).template to<3>() = forward;
 		this->column(1).template to<3>() = right;
 		this->column(2).template to<3>() = right.cross(forward);
+	}
+
+	operator Matrix4<T>() const {
+		return *this;
 	}
 };
 

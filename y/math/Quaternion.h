@@ -48,7 +48,7 @@ class Quaternion {
 		}
 
 		template<typename... Args>
-		Quaternion(Args&&... args) : Quaternion(Vec<4, T>(std::forward<Args>(args)...)) {
+		Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
 		}
 
 		Quaternion(detail::identity_t = identity()) : Quaternion(0, 0, 0, 1) {
@@ -73,11 +73,11 @@ class Quaternion {
 		}
 
 		Vec<3, T> axis() const {
-			return Vec<3, T>(_quat.sub(3) / std::sqrt(T(1) - w() * w()));
+			return Vec<3, T>(_quat.template to<3>() / std::sqrt(T(1) - w() * w()));
 		}
 
 		Quaternion inverse() const {
-			return Quaternion(-_quat.sub(3), _quat.w());
+			return Quaternion(-_quat.template to<3>(), _quat.w());
 		}
 
 		explicit operator Vec<4, T>() const {
@@ -85,10 +85,10 @@ class Quaternion {
 		}
 
 		Vec<3, T> operator()(const Vec<3, T>& v) const {
-			Vec<3, T> u = _quat.sub(3);
-			return u * T(2) * u.dot(v)
-				  + v * (w() * w() - u.length2())
-				  + u.cross(v) * T(2) * w();
+			Vec<3, T> u = _quat.template to<3>();
+			return u * T(2) * u.dot(v) +
+				   v * (w() * w() - u.length2()) +
+				   u.cross(v) * T(2) * w();
 		}
 
 		T x() const {
@@ -118,41 +118,32 @@ class Quaternion {
 			if(s < epsilon<T>()) {
 				s = T(1);
 			}
-			return Vec<4, T>(_quat.sub(3) / s, std::acos(w()) * T(2));
+			return Vec<4, T>(_quat.template to<3>() / s, std::acos(w()) * T(2));
 		}
-
 
 
 		Quaternion operator-() const {
 			return inverse();
 		}
 
-		template<typename U>
-		Quaternion& operator*=(const U& s) const {
-			operator=(*this * s);
+		Quaternion& operator*=(const Quaternion& q) const {
+			_quat = {w() * q.x() + x() * q.w() + y() * q.z() - z() * q.y(),
+					 w() * q.y() + y() * q.w() + z() * q.x() - x() * q.z(),
+					 w() * q.z() + z() * q.w() + x() * q.y() - y() * q.x(),
+					 w() * q.w() - x() * q.x() - y() * q.y() - z() * q.z()};
+
 			return *this;
 		}
 
-		template<typename U>
-		Quaternion& operator/=(const U& s) const {
-			operator=(*this / s);
+		/*Quaternion& operator*=(T s) const {
+			_quat *= s;
 			return *this;
 		}
 
-		Quaternion operator*(const Quaternion& q) const {
-			return Quaternion(w() * q.x() + x() * q.w() + y() * q.z() - z() * q.y(),
-							  w() * q.y() + y() * q.w() + z() * q.x() - x() * q.z(),
-							  w() * q.z() + z() * q.w() + x() * q.y() - y() * q.x(),
-							  w() * q.w() - x() * q.x() - y() * q.y() - z() * q.z());
-		}
-
-		Quaternion operator*(T s) const {
-			return Quaternion(_quat * s);
-		}
-
-		Quaternion operator/(T s) const {
-			return Quaternion<T>(_quat / s);
-		}
+		Quaternion& operator/=(T s) const {
+			_quat /= s;
+			return *this;
+		}*/
 
 
 		static Quaternion look_at(Vec<3, T> f) {
@@ -166,6 +157,7 @@ class Quaternion {
 			}
 			return from_axis_angle(f.cross(axis), -std::acos(d));
 		}
+
 
 		static Quaternion from_euler(T yaw, T pitch, T roll) {
 			T cos_yaw = std::cos(pitch * T(0.5));
@@ -187,7 +179,7 @@ class Quaternion {
 		}
 
 		static Quaternion from_euler(const Vec<3, T>& euler) {
-			return fromEuler(euler[yaw_index], euler[PitchIndex], euler[RollIndex]);
+			return fromEuler(euler[YawIndex], euler[PitchIndex], euler[RollIndex]);
 		}
 
 		static Quaternion from_axis_angle(const Vec<3, T>& axis, T ang) {
@@ -206,6 +198,19 @@ class Quaternion {
 	private:
 		Vec<4, T> _quat;
 };
+
+
+template<typename T, typename R>
+auto operator*(const Quaternion<T>& v, const R& r) {
+	v *= r;
+	return v;
+}
+
+template<typename T, typename R>
+auto operator/(const Quaternion<T>& v, const R& r) {
+	v /= r;
+	return v;
+}
 
 }
 }

@@ -19,41 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-
-#include <y/utils.h>
-#include <y/test/test.h>
-
-
+#include <y/math/Quaternion.h>
 #include <y/math/math.h>
-
+#include <y/core/String.h>
+#include <y/test/test.h>
 
 using namespace y;
 using namespace y::math;
+using namespace y::math::experimental;
 
-static Vec3 X(1.0f, 0.0f, 0.0f);
-static Vec3 Y(0.0f, 1.0f, 0.0f);
-static Vec3 Z(0.0f, 0.0f, 1.0f);
+y_test_func("Quaternion from_euler yaw") {
+	auto z90 = Quaternion<>::from_euler(to_rad(90), 0, 0);
 
-template<usize N>
-static bool eq(const Vec<N>& a, const Vec<N>& b) {
-	return (a - b).length2() < 0.001f;
+	y_test_assert(z90({1.0f, 0.0f, 0.0f}).y() > 0.99f);
+	y_test_assert(z90({0.0f, 0.0f, 1.0f}).z() > 0.99f);
 }
 
-template<usize N>
-static bool not_n(const Vec<N>& a) {
-	return a.length2() > 0.001f;
-}
+y_test_func("Quaternion default") {
+	Quaternion<> quat;
 
-template<usize N>
-static bool eq_not_n(const Vec<N>& a, const Vec<N>& b) {
-	return not_n(a) && eq(a, b);
+	y_test_assert(quat({1.0f, 0.0f, 0.0f}).x() > 0.99f);
+	y_test_assert(quat({0.0f, 1.0f, 0.0f}).y() > 0.99f);
+	y_test_assert(quat({0.0f, 0.0f, 1.0f}).z() > 0.99f);
 }
 
 
-y_test_func("math basic rotation") {
-	auto rot = rotation(pi<float>, Z);
-	y_test_assert(eq_not_n(rot * Vec4(X, 0.0f), Vec4(-X, 0.0f)));
+y_test_func("Quaternion rotation") {
+	auto axis = Vec3{1.0f, 0.3f, 0.2f}.normalized();
+	float angle = 0.8f;
+
+	auto mat = rotation(axis, angle);
+	auto quat = Quaternion<>::from_axis_angle(axis, angle);
+
+	Vec3 t1{1.0f, -5.0f, 1.62f};
+	y_test_assert(((mat * Vec4(t1, 0.0f)).to<3>() - quat(t1)).length2() < 0.01f);
 }
-
-
-
