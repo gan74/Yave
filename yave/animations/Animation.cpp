@@ -34,22 +34,13 @@ float Animation::duration() const {
 }
 
 math::Transform<> Animation::bone_transform(const core::String& name, float time) const {
-	auto channel = std::find_if(_channels.begin(), _channels.end(), [&](const auto& ch) { return ch.name == name; });
+	auto channel = std::find_if(_channels.begin(), _channels.end(), [&](const auto& ch) { return ch.name() == name; });
 	if(channel == _channels.end()) {
 		log_msg("No animation channel found.", Log::Error);
 		return math::Transform<>();
 	}
 
-	const auto& keys = channel->keys;
-	auto key = std::find_if(keys.begin(), keys.end(), [=](const auto& key) { return key.time > time; });
-
-	if(key == keys.begin()) {
-		log_msg("No animation time found.", Log::Error);
-		return math::Transform<>();
-	}
-
-
-	return std::prev(key)->local_transform.to_transform();
+	return channel->bone_transform(time);
 }
 
 
@@ -73,13 +64,13 @@ static core::Result<AnimationChannel> read_channel(io::ReaderRef reader) {
 		return core::Err();
 	}
 
-	core::Vector<BoneKey> keys(key_len_res.unwrap(), BoneKey{});
-	auto key_res = reader->read(keys.begin(), keys.size() * sizeof(BoneKey));
+	core::Vector<AnimationChannel::BoneKey> keys(key_len_res.unwrap(), AnimationChannel::BoneKey{});
+	auto key_res = reader->read(keys.begin(), keys.size() * sizeof(AnimationChannel::BoneKey));
 	if(key_res.is_error()) {
 		return core::Err();
 	}
 
-	return core::Ok(AnimationChannel{std::move(name), std::move(keys)});
+	return core::Ok(AnimationChannel(name, keys));
 }
 
 Animation Animation::from_file(io::ReaderRef reader) {

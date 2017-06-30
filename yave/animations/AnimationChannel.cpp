@@ -19,50 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_BONE_H
-#define YAVE_MESHES_BONE_H
 
-#include <yave/yave.h>
-#include <y/math/Transform.h>
+#include "AnimationChannel.h"
+
 
 namespace yave {
 
-struct BoneTransform {
-	math::Vec3 position;
-	math::Vec3 scale = math::Vec3(1.0f);
-	math::Quaternion<> roration;
-
-	math::Transform<> to_transform() const {
-		return math::Transform<>(position, roration, scale);
+AnimationChannel::AnimationChannel(const core::String& name, const core::Vector<BoneKey>& keys) : _name(name), _keys(keys) {
+	if(_keys.is_empty()) {
+		fatal("Empty animation channel.");
 	}
-
-	math::Transform<> lerp(const BoneTransform& end, float factor) const {
-		float q = 1.0f - factor;
-		return math::Transform<>(position * q + end.position * factor,
-								 roration.lerp(end.roration, factor),
-								 scale * q + end.scale * factor);
-	}
-};
-
-static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should be triviallycopyable");
-
-struct Bone {
-	core::String name;
-	u32 parent;
-
-	BoneTransform local_transform;
-
-	bool has_parent() const {
-		return parent != u32(-1);
-	}
-
-	math::Transform<> transform() const {
-		return local_transform.to_transform();
-	}
-};
-
-
 }
 
+math::Transform<> AnimationChannel::bone_transform(float time) const {
+	auto key = std::find_if(_keys.begin(), _keys.end(), [=](const auto& key) { return key.time > time; });
 
-#endif // YAVE_MESHES_BONE_H
+	auto next = key == _keys.end() ? _keys.begin() : key;
+	key = key == _keys.begin() ? key : std::prev(key);
+
+	float delta = next->time - key->time;
+	delta = delta < 0.0f ? delta + _keys.last().time : delta;
+
+	float factor = (time - key->time) / delta;
+
+	return key->local_transform.lerp(next->local_transform, factor);
+}
+
+}

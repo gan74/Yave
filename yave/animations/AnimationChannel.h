@@ -26,14 +26,25 @@ SOFTWARE.
 
 namespace yave {
 
-struct BoneKey {
-	float time;
-	BoneTransform local_transform;
-};
 
-struct AnimationChannel {
-	core::String name;
-	core::Vector<BoneKey> keys;
+class AnimationChannel {
+	public:
+		struct BoneKey {
+			float time;
+			BoneTransform local_transform;
+		};
+
+		AnimationChannel(const core::String& name, const core::Vector<BoneKey>& keys);
+
+		math::Transform<> bone_transform(float time) const;
+
+		const core::String& name() const {
+			return _name;
+		}
+
+	private:
+		core::String _name;
+		core::Vector<BoneKey> _keys;
 };
 
 }
