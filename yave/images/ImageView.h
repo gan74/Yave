@@ -34,12 +34,12 @@ class ImageView {
 	public:
 		ImageView() = default;
 
-		template<ImageUsage ImgUsage, typename = typename std::enable_if_t<(ImgUsage & Usage) == Usage>>
+		template<ImageUsage ImgUsage, typename = std::enable_if_t<(ImgUsage & Usage) == Usage>>
 		ImageView(const Image<ImgUsage, Type>& img) : _image(&img), _view(img.vk_view()) {
 			static_assert((ImgUsage & Usage) == Usage, "Invalid image usage.");
 		}
 
-		template<ImageUsage ImgUsage, typename = typename std::enable_if_t<(ImgUsage & Usage) == Usage>>
+		template<ImageUsage ImgUsage, typename = std::enable_if_t<(ImgUsage & Usage) == Usage>>
 		ImageView(const ImageView<ImgUsage, Type>& img) : _image(img._image), _view(img._view) {
 			static_assert((ImgUsage & Usage) == Usage, "Invalid image usage.");
 		}
