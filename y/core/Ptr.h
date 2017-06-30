@@ -32,6 +32,7 @@ namespace detail {
 template<typename T>
 class Ptr : NonCopyable {
 	public:
+		using value_type = std::remove_reference_t<T>;
 		using pointer = std::remove_extent_t<T>*;
 		using const_pointer = const std::remove_extent_t<T>*;
 
