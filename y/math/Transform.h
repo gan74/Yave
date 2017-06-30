@@ -22,7 +22,9 @@ SOFTWARE.
 #ifndef Y_MATH_TRANSFORM_H
 #define Y_MATH_TRANSFORM_H
 
+
 #include "Matrix.h"
+#include "Quaternion.h"
 
 namespace y {
 namespace math {
@@ -38,6 +40,13 @@ struct Transform : Matrix4<T> {
 
 	Transform(const Vec<3, T>& pos) : Matrix4<T>(identity()) {
 		position() = pos;
+	}
+
+	Transform(const Vec<3, T>& pos, const Quaternion<T>& rotation, const Vec<3, T>& scale) {
+		this->column(0).template to<3>() = rotation({scale.x(), 0, 0});
+		this->column(1).template to<3>() = rotation({0, scale.y(), 0});
+		this->column(2).template to<3>() = rotation({0, 0, scale.z()});
+		this->column(3) = Vec<4, T>(pos, 1);
 	}
 
 	using Matrix4<T>::Matrix4;

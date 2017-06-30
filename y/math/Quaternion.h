@@ -29,7 +29,6 @@ SOFTWARE.
 
 namespace y {
 namespace math {
-namespace experimental {
 
 template<typename T = float>
 class Quaternion {
@@ -212,7 +211,6 @@ auto operator/(const Quaternion<T>& v, const R& r) {
 	return v;
 }
 
-}
 }
 }
 
