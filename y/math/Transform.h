@@ -87,7 +87,9 @@ struct Transform : Matrix4<T> {
 	}
 };
 
+
 static_assert(sizeof(Transform<>) == sizeof(Matrix4<>), "Transfrom<T> should have the same size as Matrix4<T>");
+static_assert(std::is_trivially_copyable_v<Transform<>>, "Transfrom<T> should be trivially copyable");
 
 }
 }

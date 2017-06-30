@@ -35,6 +35,19 @@ class Quaternion {
 
 	static_assert(std::is_floating_point_v<T>, "Quaternion only support floating point types.");
 
+	struct DontNormalize {};
+
+	template<usize I, typename... Args>
+	static constexpr bool has_no_normalize() {
+		if constexpr(I >= sizeof...(Args)) {
+			return false;
+		} else if constexpr(std::is_same_v<std::remove_reference_t<std::tuple_element_t<I, std::tuple<Args...>>>, DontNormalize>) {
+			return true;
+		} else {
+			return has_no_normalize<I + 1, Args...>();
+		}
+	}
+
 	public:
 		enum Euler {
 			YawIndex = 2,
@@ -42,29 +55,26 @@ class Quaternion {
 			RollIndex = 0
 		};
 
-		template<typename U>
-		Quaternion(const Vec<4, U>& q) : _quat(q.normalized()) {
+		Quaternion(const Quaternion&) = default;
+		Quaternion& operator=(const Quaternion&) = default;
+
+		Quaternion(const Vec<4, T>& q) : _quat(q.normalized()) {
 		}
 
-		template<typename... Args>
-		Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
+		Quaternion(const Vec<4, T>& q, DontNormalize) : _quat(q) {
 		}
 
 		Quaternion(detail::identity_t = identity()) : Quaternion(0, 0, 0, 1) {
 		}
 
-		template<typename U>
-		Quaternion& operator=(const Vec<4, U>& q) {
+		template<typename... Args, typename = std::enable_if_t<!has_no_normalize<0, Args...>()>>
+		explicit Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
+		}
+
+		Quaternion& operator=(const Vec<4, T>& q) {
 			_quat = q.normalized();
 			return *this;
 		}
-
-		template<typename U>
-		Quaternion& operator=(const Quaternion<U>& q) {
-			_quat = q._quat;
-			return *this;
-		}
-
 
 
 		T angle() const {
@@ -106,6 +116,26 @@ class Quaternion {
 			 return _quat.w();
 		}
 
+		Quaternion lerp(const Quaternion& end_quat, T factor) const {
+			Vec<4, T> end = end_quat._quat;
+			T consom = _quat.dot(end);
+
+			if(consom < T(0)) {
+				end = -end;
+				consom = - consom;
+			}
+
+			if(T(1) - consom > epsilon<T>) {
+				T omega = std::acos(consom);
+				T sin = std::sin(omega);
+				T p = std::sin((T(1) - factor) * omega) / sin;
+				T q = std::sin(factor * omega) / sin;
+
+				return Quaternion(Vec<4, T>(_quat * p + end * q), DontNormalize());
+			}
+			return Quaternion(Vec<4, T>(_quat * (T(1) - factor) + end * factor), DontNormalize());
+		}
+
 		Vec<3, T> to_euler() const {
 			return Vec<3, T>(std::atan2(T(2) * (w() * x() + y() * z()), T(1) - T(2) * (x() * x() + y() * y())),
 							 std::asin(T(2) * (w() * y() - z() * x())),
@@ -120,7 +150,6 @@ class Quaternion {
 			return Vec<4, T>(_quat.template to<3>() / s, std::acos(w()) * T(2));
 		}
 
-
 		Quaternion operator-() const {
 			return inverse();
 		}
@@ -134,17 +163,6 @@ class Quaternion {
 			return *this;
 		}
 
-		/*Quaternion& operator*=(T s) const {
-			_quat *= s;
-			return *this;
-		}
-
-		Quaternion& operator/=(T s) const {
-			_quat /= s;
-			return *this;
-		}*/
-
-
 		static Quaternion look_at(Vec<3, T> f) {
 			f.normalize();
 			Vec<3, T> axis(1, 0, 0);
@@ -156,7 +174,6 @@ class Quaternion {
 			}
 			return from_axis_angle(f.cross(axis), -std::acos(d));
 		}
-
 
 		static Quaternion from_euler(T yaw, T pitch, T roll) {
 			T cos_yaw = std::cos(pitch * T(0.5));
@@ -210,6 +227,9 @@ auto operator/(const Quaternion<T>& v, const R& r) {
 	v /= r;
 	return v;
 }
+
+
+static_assert(std::is_trivially_copyable_v<Quaternion<>>, "Quaternion<T> should be trivially copyable");
 
 }
 }
