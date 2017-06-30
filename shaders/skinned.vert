@@ -31,11 +31,10 @@ layout(location = 2) out vec3 bone_color;
 
 
 void main() {
-	vec4 indexes = in_skin_indexes / 64.0;
-	bone_color = spectrum(indexes.x) * in_skin_weights.x +
-				 spectrum(indexes.y) * in_skin_weights.y +
-				 spectrum(indexes.z) * in_skin_weights.z +
-				 spectrum(indexes.w) * in_skin_weights.w;
+	bone_color = spectrum(in_skin_indexes.x) * in_skin_weights.x +
+				 spectrum(in_skin_indexes.y) * in_skin_weights.y +
+				 spectrum(in_skin_indexes.z) * in_skin_weights.z +
+				 spectrum(in_skin_indexes.w) * in_skin_weights.w;
 
 
 	v_uv = in_uv;

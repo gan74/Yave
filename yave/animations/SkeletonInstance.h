@@ -54,8 +54,12 @@ class SkeletonInstance {
 	private:
 		void swap(SkeletonInstance& other);
 
+		void flush_data();
+
 		const Skeleton* _skeleton = nullptr;
-		TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transforms;
+		core::Unique<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
+
+		TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transform_buffer;
 		DescriptorSet _descriptor_set;
 
 		AssetPtr<Animation> _animation;

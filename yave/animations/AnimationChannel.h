@@ -22,14 +22,13 @@ SOFTWARE.
 #ifndef YAVE_ANIMATIONS_ANIMATIONCHANNEL_H
 #define YAVE_ANIMATIONS_ANIMATIONCHANNEL_H
 
-#include <yave/yave.h>
-#include <y/math/Transform.h>
+#include <yave/meshes/Bone.h>
 
 namespace yave {
 
 struct BoneKey {
 	float time;
-	math::Transform<> transform;
+	BoneTransform local_transform;
 };
 
 struct AnimationChannel {

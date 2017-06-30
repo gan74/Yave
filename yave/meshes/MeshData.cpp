@@ -80,7 +80,7 @@ static core::Result<Bone> read_bone(io::ReaderRef reader) {
 		return core::Err();
 	}
 
-	auto transform_res = reader->read_one<math::Transform<>>();
+	auto transform_res = reader->read_one<BoneTransform>();
 	if(transform_res.is_error()) {
 		return core::Err();
 	}
@@ -105,7 +105,7 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 		bool is_valid() const {
 			return magic == 0x65766179 &&
 				   type == 1 &&
-				   version == 4 &&
+				   version == 5 &&
 				   vertices != 0 &&
 				   triangles != 0;
 		}

@@ -23,19 +23,9 @@ SOFTWARE.
 #define YAVE_MESHES_SKELETON_H
 
 #include "Vertex.h"
-#include <y/math/Transform.h>
+#include "Bone.h"
 
 namespace yave {
-
-struct Bone {
-	core::String name;
-	u32 parent;
-	math::Transform<> transform;
-
-	bool has_parent() const {
-		return parent != u32(-1);
-	}
-};
 
 class Skeleton {
 	public:
@@ -44,10 +34,13 @@ class Skeleton {
 		Skeleton() = default;
 
 		Skeleton(const core::Vector<Bone>& bones);
+
 		const core::Vector<Bone>& bones() const;
+		const core::Vector<math::Transform<>>& inverse_absolute_transforms() const;
 
 	private:
 		core::Vector<Bone> _bones;
+		core::Vector<math::Transform<>> _inverses;
 };
 
 }

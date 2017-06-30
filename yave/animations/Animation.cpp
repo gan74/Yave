@@ -48,9 +48,8 @@ math::Transform<> Animation::bone_transform(const core::String& name, float time
 		return math::Transform<>();
 	}
 
-	--key;
-	return key->transform;
-	//return math::Transform<>(key->quaternion, key->quaternion(key->position), key->scaling);
+
+	return std::prev(key)->local_transform.to_transform();
 }
 
 
@@ -97,7 +96,7 @@ Animation Animation::from_file(io::ReaderRef reader) {
 		bool is_valid() const {
 			return magic == 0x65766179 &&
 				   type == 3 &&
-				   version == 2 &&
+				   version == 3 &&
 				   channels > 0 &&
 				   duration > 0.0f;
 		}
@@ -113,13 +112,6 @@ Animation Animation::from_file(io::ReaderRef reader) {
 	for(usize i = 0; i != header.channels; ++i) {
 		anim._channels << read_channel(reader).expected(err_msg);
 	}
-
-	sort(anim._channels.begin(), anim._channels.end(), [](const auto& a, const auto& b) { return a.name < b.name; });
-
-	/*for(const auto& ch : anim._channels) {
-		auto bone = ch.keys.first();
-		log_msg("a: " + ch.name + ": " + bone.position.x() + ", " + bone.position.y() + ", " + bone.position.z());
-	}*/
 
 	return anim;
 }

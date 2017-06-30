@@ -26,11 +26,11 @@ namespace yave {
 
 SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
 		_skeleton(skeleton),
-		_bone_transforms(dptr, Skeleton::max_bones),
-		_descriptor_set(dptr, {Binding(_bone_transforms)}) {
+		_bone_transforms(new std::array<math::Transform<>, Skeleton::max_bones>()),
+		_bone_transform_buffer(dptr, Skeleton::max_bones),
+		_descriptor_set(dptr, {Binding(_bone_transform_buffer)}) {
 
-	auto map = _bone_transforms.map();
-	std::fill(map.begin(), map.end(), math::Transform<>());
+	flush_data();
 }
 
 SkeletonInstance::SkeletonInstance(SkeletonInstance&& other) {
@@ -45,6 +45,7 @@ SkeletonInstance& SkeletonInstance::operator=(SkeletonInstance&& other) {
 void SkeletonInstance::swap(SkeletonInstance& other) {
 	std::swap(_skeleton, other._skeleton);
 	std::swap(_bone_transforms, other._bone_transforms);
+	std::swap(_bone_transform_buffer, other._bone_transform_buffer);
 	std::swap(_descriptor_set, other._descriptor_set);
 	std::swap(_animation, other._animation);
 	std::swap(_anim_timer, other._anim_timer);
@@ -56,33 +57,35 @@ void SkeletonInstance::animate(const AssetPtr<Animation>& anim) {
 	_anim_timer.reset();
 }
 
-static math::Transform<> bone_transform(usize index, const core::Vector<Bone>& bones) {
-	const auto& bone = bones[index];
-	return bone.has_parent() ? math::Transform<>(bone_transform(bone.parent, bones) * bone.transform) : bone.transform;
-}
-
-static math::Transform<> bone_transform(usize index, const core::Vector<Bone>& bones, const AssetPtr<Animation>& anim, float time) {
-	const auto& bone = bones[index];
-
-	auto anim_tr = anim->bone_transform(bone.name, time);
-
-	if(bone.has_parent()) {
-		return bone_transform(bone.parent, bones, anim, time) * anim_tr;
-	}
-	return anim_tr;
-}
-
 void SkeletonInstance::update() {
 	if(!_animation) {
 		return;
 	}
 
-	auto map = _bone_transforms.map();
-
 	float time = std::fmod(_anim_timer.elapsed().to_secs(), _animation->duration());
-	for(u32 i = 0; i != _skeleton->bones().size(); ++i) {
-		map[i] = bone_transform(i, _skeleton->bones(), _animation, time) * bone_transform(i, _skeleton->bones()).inverse();
+
+	const auto& anim = *_animation;
+	const auto& bones = _skeleton->bones();
+	const auto& invs = _skeleton->inverse_absolute_transforms();
+	auto& transforms = *_bone_transforms;
+
+
+	for(usize i = 0; i != bones.size(); ++i) {
+		const auto& bone = bones[i];
+		auto transform = anim.bone_transform(bone.name, time);
+		transforms[i] = (bone.has_parent() ? transforms[bone.parent] * transform : transform);
 	}
+	for(usize i = 0; i != bones.size(); ++i) {
+		transforms[i] *= invs[i];
+	}
+
+	flush_data();
+}
+
+
+void SkeletonInstance::flush_data() {
+	auto map = _bone_transform_buffer.map();
+	std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());
 }
 
 }

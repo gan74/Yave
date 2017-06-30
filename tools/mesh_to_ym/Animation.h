@@ -24,18 +24,14 @@ SOFTWARE.
 
 #include <Skeleton.h>
 
-/*struct BonePose {
-	math::Vec3 position;
-	math::Vec3 scaling = math::Vec3(1.0f);
-	math::Vec4 quaternion = math::Vec4(0.0f, 0.0f, 0.0f, 1.0f);
-};*/
-
 class AnimationChannel {
 	public:
 		struct Key {
 			float time;
-			math::Transform<> transform;
+			BoneTransform local_transform;
 		};
+
+		static_assert(sizeof(Key) == sizeof(BoneTransform) + sizeof(float));
 
 		static Result<AnimationChannel> from_assimp(aiNodeAnim* anim);
 		io::Writer::Result write(io::WriterRef writer) const;
@@ -47,7 +43,7 @@ class AnimationChannel {
 
 class Animation {
 	public:
-		static Result<Animation> from_assimp(aiAnimation* anim);
+		static Result<Animation> from_assimp(aiAnimation* anim, const aiScene*);
 		io::Writer::Result write(io::WriterRef writer) const;
 
 		const String& name() const;

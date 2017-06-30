@@ -48,6 +48,13 @@ float noise(vec2 co) {
 	return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
 }
 
+mat4 indentity() {
+	return mat4(1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				0, 0, 0, 1);
+}
+
 vec3 spectrum(float x) {
 	float wl = x * 400.0 + 380.0 ;
 	if(wl > 645.0) return vec3(1.0, 0.0, 0.0);

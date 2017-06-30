@@ -88,7 +88,7 @@ static io::Writer::Result write_vector(io::WriterRef writer, const Vector<T>& ve
 io::Writer::Result Mesh::write(io::WriterRef writer) const {
 	u32 magic = 0x65766179;
 	u32 type = 1;
-	u32 version = 4;
+	u32 version = 5;
 
 	writer->write_one(magic);
 	writer->write_one(type);
@@ -110,7 +110,7 @@ io::Writer::Result Mesh::write(io::WriterRef writer) const {
 			writer->write_one(u32(bone.name.size()));
 			writer->write(bone.name.begin(), bone.name.size());
 			writer->write_one(bone.parent);
-			writer->write_one(bone.transform);
+			writer->write_one(bone.pose);
 		}
 	}
 

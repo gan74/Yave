@@ -69,50 +69,78 @@ const Vector<SkinWeights>& Skeleton::skin() const {
 	return _skin;
 }
 
+
+static aiNode* common_parent(aiNode* a, aiNode* b) {
+	if(!a) {
+		return b;
+	}
+	for(; a; a = a->mParent) {
+		for(aiNode* bn = b; bn; bn = bn->mParent) {
+			if(a == bn) {
+				return a;
+			}
+		}
+	}
+	return nullptr;
+}
+
 Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
-	static_assert(sizeof(aiMatrix4x4) == sizeof(math::Transform<>), "aiMatrix4x4 should be 16 floats");
-
-
 	if(!mesh || !mesh->mNumBones) {
 		return Err();
 	}
 
 
-	log_msg("Mesh has a skeleton: " + str(mesh->mNumBones) + " bones");
+	Range mesh_bones(mesh->mBones, mesh->mBones + mesh->mNumBones);
 
 
-	std::unordered_map<std::string, std::pair<usize, aiBone*>> bone_map;
-	for(usize i = 0; i != mesh->mNumBones; ++i) {
-		aiBone* bone = mesh->mBones[i];
-		bone_map[std::string(bone->mName.C_Str())] = std::pair(i, bone);
+	Vector<aiNode*> bone_nodes;
+	bone_nodes << nullptr;
+	for(aiBone* bone : mesh_bones) {
+		aiNode* node = scene->mRootNode->FindNode(bone->mName);
+		bone_nodes[0] = common_parent(bone_nodes[0], node->mParent);
+		bone_nodes << node;
 	}
+	log_msg("Skeleton has " + str(bone_nodes.size()) + " bones.");
 
 
-	if(bone_map.size() != mesh->mNumBones) {
-		log_msg("Mesh has duplicated bone.", Log::Error);
+	std::unordered_map<std::string, std::pair<usize, aiNode*>> bone_map;
+	for(aiNode* node : bone_nodes) {
+		usize index = bone_map.size();
+		bone_map[node->mName.C_Str()] = {index, node};
+	}
+	if(bone_map.size() != bone_nodes.size()) {
+		log_msg("Bones are duplicated.", Log::Error);
 		return Err();
 	}
 
 
-	auto bones = vector_with_capacity<Bone>(mesh->mNumBones);
-	for(usize i = 0; i != mesh->mNumBones; ++i) {
-		aiBone* bone = mesh->mBones[i];
-		const aiNode* node = scene->mRootNode->FindNode(bone->mName);
 
-		if(!node) {
-			log_msg("Node not found.", Log::Error);
-			return Err();
-		}
+	Vector<Bone> bones;
+	for(usize index = 0; index != bone_nodes.size(); ++index) {
+		aiNode* node = bone_nodes[index];
 
 		u32 parent_index = u32(-1);
 		if(auto parent = bone_map.find(node->mParent->mName.C_Str()); parent != bone_map.end()) {
 			parent_index = u32(parent->second.first);
+			if(parent_index >= index) {
+				log_msg("Parent serialized after children.", Log::Error);
+				return Err();
+			}
 		}
 
+		aiVector3D position;
+		aiQuaternion rotation;
+		aiVector3D scale;
+		node->mTransformation.Decompose(scale, rotation, position);
+
 		bones << Bone {
-				str(bone->mName.C_Str()),
+				str(node->mName.C_Str()),
 				parent_index,
-				reinterpret_cast<const math::Transform<>&>(node->mTransformation).transposed()
+				BoneTransform {
+					{position.x, position.y, position.z},
+					{scale.x, scale.y, scale.z},
+					{rotation.x, rotation.y, rotation.z, rotation.w}
+				}
 			};
 	}
 
@@ -120,7 +148,8 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 	Vector<Vector<BoneRef>> bone_per_vertex(mesh->mNumVertices, Vector<BoneRef>());
 	for(usize i = 0; i != mesh->mNumBones; ++i) {
 		aiBone* bone = mesh->mBones[i];
-		add_bone_refs(bone, i, bone_per_vertex);
+		usize index = bone_map[std::string(bone->mName.C_Str())].first;
+		add_bone_refs(bone, index, bone_per_vertex);
 	}
 
 

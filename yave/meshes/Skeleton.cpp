@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-static void debug_bone(usize index, const core::Vector<Bone>& bones, usize tabs = 0) {
+/*static void debug_bone(usize index, const core::Vector<Bone>& bones, usize tabs = 0) {
 	core::String indent;
 	for(usize i = 0; i != tabs; ++i) {
 		indent += "  ";
@@ -37,7 +37,7 @@ static void debug_bone(usize index, const core::Vector<Bone>& bones, usize tabs 
 			debug_bone(i, bones, tabs + 1);
 		}
 	}
-}
+}*/
 
 Skeleton::Skeleton(const core::Vector<Bone>& bones) :
 		_bones(bones) {
@@ -47,14 +47,29 @@ Skeleton::Skeleton(const core::Vector<Bone>& bones) :
 	}
 
 	for(usize i = 0; i != _bones.size(); ++i) {
+		const auto& bone = _bones[i];
+		auto transform = bone.transform();
+		_inverses << (bone.has_parent() ? _inverses[bone.parent] * transform : transform);
+	}
+
+	for(auto& transform : _inverses) {
+		transform = transform.inverse();
+	}
+
+
+	/*for(usize i = 0; i != _bones.size(); ++i) {
 		if(!_bones[i].has_parent()) {
 			debug_bone(i, _bones);
 		}
-	}
+	}*/
 }
 
 const core::Vector<Bone>& Skeleton::bones() const {
 	return _bones;
+}
+
+const core::Vector<math::Transform<>>& Skeleton::inverse_absolute_transforms() const {
+	return _inverses;
 }
 
 }

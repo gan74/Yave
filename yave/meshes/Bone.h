@@ -19,48 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKELETONDEBUG_H
-#define YAVE_OBJECTS_SKELETONDEBUG_H
+#ifndef YAVE_MESHES_BONE_H
+#define YAVE_MESHES_BONE_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/meshes/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include <yave/yave.h>
+#include <y/math/Transform.h>
 
 namespace yave {
 
-class SkeletonDebug : public Renderable {
+struct BoneTransform {
+	math::Vec3 position;
+	math::Vec3 scale = math::Vec3(1.0f);
+	math::Quaternion<> roration;
 
-	public:
-		SkeletonDebug(const AssetPtr<SkinnedMesh>& mesh) : SkeletonDebug(mesh->triangle_buffer().device(), mesh) {
-		}
-
-		SkeletonDebug(SkeletonDebug&& other);
-		SkeletonDebug& operator=(SkeletonDebug&& other) = delete;
-
-
-		void animate(const AssetPtr<Animation>& anim);
-
-
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
-
-	private:
-		SkeletonDebug(DevicePtr dptr, const AssetPtr<SkinnedMesh>& mesh);
-
-		AssetPtr<SkinnedMesh> _mesh;
-
-		mutable TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transforms;
-		DescriptorSet _descriptor_set;
-
-		mutable AssetPtr<Material> _material;
-
-		AssetPtr<Animation> _animation;
-		core::Chrono _anim_timer;
-
+	math::Transform<> to_transform() const {
+		return math::Transform<>(position, roration, scale);
+	}
 };
+
+struct Bone {
+	core::String name;
+	u32 parent;
+
+	BoneTransform local_transform;
+
+	bool has_parent() const {
+		return parent != u32(-1);
+	}
+
+	math::Transform<> transform() const {
+		return local_transform.to_transform();
+	}
+};
+
 
 }
 
-#endif // YAVE_OBJECTS_SKELETONDEBUG_H
+
+#endif // YAVE_MESHES_BONE_H

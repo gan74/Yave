@@ -52,11 +52,20 @@ struct SkinWeights {
 	math::Vec<size, float> weights;
 };
 
+struct BoneTransform {
+	math::Vec3 position;
+	math::Vec3 scaling = math::Vec3(1.0f);
+	math::Quaternion<> quaternion;
+};
 
 struct Bone {
 	String name;
 	u32 parent;
-	math::Transform<> transform;
+	BoneTransform pose;
 };
+
+
+
+
 
 #endif // UTILS_H
