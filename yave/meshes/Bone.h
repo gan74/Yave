@@ -44,7 +44,7 @@ struct BoneTransform {
 	}
 };
 
-static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should be triviallycopyable");
+static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should be trivially copyable");
 
 struct Bone {
 	core::String name;

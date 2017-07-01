@@ -31,6 +31,8 @@ class AnimationChannel {
 			BoneTransform local_transform;
 		};
 
+		static_assert(std::is_trivially_copyable_v<Key>, "Key should be trivially copyable");
+
 		static_assert(sizeof(Key) == sizeof(BoneTransform) + sizeof(float));
 
 		static Result<AnimationChannel> from_assimp(aiNodeAnim* anim);
@@ -43,7 +45,7 @@ class AnimationChannel {
 
 class Animation {
 	public:
-		static Result<Animation> from_assimp(aiAnimation* anim, const aiScene*);
+		static Result<Animation> from_assimp(aiAnimation* anim);
 		io::Writer::Result write(io::WriterRef writer) const;
 
 		const String& name() const;

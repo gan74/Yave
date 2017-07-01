@@ -58,10 +58,12 @@ struct BoneTransform {
 	math::Quaternion<> quaternion;
 };
 
+static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should be trivially copyable");
+
 struct Bone {
 	String name;
 	u32 parent;
-	BoneTransform pose;
+	BoneTransform local_transform;
 };
 
 

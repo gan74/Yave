@@ -110,7 +110,7 @@ io::Writer::Result Mesh::write(io::WriterRef writer) const {
 			writer->write_one(u32(bone.name.size()));
 			writer->write(bone.name.begin(), bone.name.size());
 			writer->write_one(bone.parent);
-			writer->write_one(bone.pose);
+			writer->write_one(bone.local_transform);
 		}
 	}
 

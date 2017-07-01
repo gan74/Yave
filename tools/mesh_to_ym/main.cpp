@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 	}
 
 	for(aiAnimation* ai : scene.animations()) {
-		auto anim = Animation::from_assimp(ai, scene.scene()).expected("Unable to build anim.");
+		auto anim = Animation::from_assimp(ai).expected("Unable to build anim.");
 		auto file_name = (anim.name().is_empty() ? args[0] : anim.name()) + (index ? "_" + str(index) : "") + ".ya";
 		anim.write(io::File::create(file_name).expected("Unable to open output file."));
 		log_msg(file_name + " exported\n");

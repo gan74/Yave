@@ -35,17 +35,14 @@ Result<AnimationChannel> AnimationChannel::from_assimp(aiNodeAnim* anim) {
 	for(usize i = 0; i != anim->mNumPositionKeys; ++i) {
 		aiVectorKey key = anim->mPositionKeys[i];
 		keys[key.mTime].position = {key.mValue.x, key.mValue.y, key.mValue.z}; // WAT ?
-		log_msg(str(anim->mNodeName.C_Str()) + ".pos = {" + key.mValue.x + ", " + key.mValue.y  + ", " +  key.mValue.z + "}");
 	}
 	for(usize i = 0; i != anim->mNumScalingKeys; ++i) {
 		aiVectorKey key = anim->mScalingKeys[i];
 		keys[key.mTime].scaling = {key.mValue.x, key.mValue.y, key.mValue.z};
-		log_msg(str(anim->mNodeName.C_Str()) + ".sca = {" + key.mValue.x + ", " + key.mValue.y  + ", " +  key.mValue.z + "}");
 	}
 	for(usize i = 0; i != anim->mNumRotationKeys; ++i) {
 		aiQuatKey key = anim->mRotationKeys[i];
 		keys[key.mTime].quaternion = {key.mValue.x, key.mValue.y, key.mValue.z, key.mValue.w};
-		log_msg(str(anim->mNodeName.C_Str()) + ".rot = {" + key.mValue.x + ", " + key.mValue.y  + ", " +  key.mValue.z + ", " + key.mValue.w + "}");
 	}
 
 
@@ -83,7 +80,7 @@ io::Writer::Result AnimationChannel::write(io::WriterRef writer) const {
 	return Ok();
 }
 
-Result<Animation> Animation::from_assimp(aiAnimation* anim, const aiScene* scene) {
+Result<Animation> Animation::from_assimp(aiAnimation* anim) {
 	if(!anim || anim->mDuration <= 0.0f || !anim->mNumChannels) {
 		return Err();
 	}
