@@ -26,7 +26,6 @@ SOFTWARE.
 
 using namespace y;
 using namespace y::math;
-using namespace y::math::experimental;
 
 y_test_func("Quaternion from_euler yaw") {
 	auto z90 = Quaternion<>::from_euler(to_rad(90), 0, 0);

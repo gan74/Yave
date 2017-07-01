@@ -35,19 +35,6 @@ class Quaternion {
 
 	static_assert(std::is_floating_point_v<T>, "Quaternion only support floating point types.");
 
-	struct DontNormalize {};
-
-	template<usize I, typename... Args>
-	static constexpr bool has_no_normalize() {
-		if constexpr(I >= sizeof...(Args)) {
-			return false;
-		} else if constexpr(std::is_same_v<std::remove_reference_t<std::tuple_element_t<I, std::tuple<Args...>>>, DontNormalize>) {
-			return true;
-		} else {
-			return has_no_normalize<I + 1, Args...>();
-		}
-	}
-
 	public:
 		enum Euler {
 			YawIndex = 2,
@@ -55,24 +42,26 @@ class Quaternion {
 			RollIndex = 0
 		};
 
-		Quaternion(const Quaternion&) = default;
-		Quaternion& operator=(const Quaternion&) = default;
-
-		Quaternion(const Vec<4, T>& q) : _quat(q.normalized()) {
+		template<typename X>
+		Quaternion(const Vec<4, X>& q) : _quat(q.normalized()) {
 		}
 
-		Quaternion(const Vec<4, T>& q, DontNormalize) : _quat(q) {
+		template<typename... Args>
+		Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
 		}
 
 		Quaternion(detail::identity_t = identity()) : Quaternion(0, 0, 0, 1) {
 		}
 
-		template<typename... Args, typename = std::enable_if_t<!has_no_normalize<0, Args...>()>>
-		explicit Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
+		template<typename X>
+		Quaternion& operator=(const Vec<4, X>& q) {
+			_quat = q.normalized();
+			return *this;
 		}
 
-		Quaternion& operator=(const Vec<4, T>& q) {
-			_quat = q.normalized();
+		template<typename X>
+		Quaternion& operator=(const Quaternion<X>& q) {
+			_quat = q._quat;
 			return *this;
 		}
 
@@ -87,10 +76,6 @@ class Quaternion {
 
 		Quaternion inverse() const {
 			return Quaternion(-_quat.template to<3>(), _quat.w());
-		}
-
-		explicit operator Vec<4, T>() const {
-			return _quat;
 		}
 
 		Vec<3, T> operator()(const Vec<3, T>& v) const {
@@ -131,9 +116,9 @@ class Quaternion {
 				T p = std::sin((T(1) - factor) * omega) / sin;
 				T q = std::sin(factor * omega) / sin;
 
-				return Quaternion(Vec<4, T>(_quat * p + end * q), DontNormalize());
+				return _quat * p + end * q;
 			}
-			return Quaternion(Vec<4, T>(_quat * (T(1) - factor) + end * factor), DontNormalize());
+			return _quat * (T(1) - factor) + end * factor;
 		}
 
 		Vec<3, T> to_euler() const {
