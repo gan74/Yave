@@ -42,15 +42,18 @@ struct Transform : Matrix4<T> {
 		position() = pos;
 	}
 
-	Transform(const Vec<3, T>& pos, const Quaternion<T>& rotation, const Vec<3, T>& scale) {
+	Transform(const Vec<3, T>& pos, const Quaternion<T>& rotation, const Vec<3, T>& scale = {1, 1, 1}) {
 		this->column(0).template to<3>() = rotation({scale.x(), 0, 0});
 		this->column(1).template to<3>() = rotation({0, scale.y(), 0});
 		this->column(2).template to<3>() = rotation({0, 0, scale.z()});
 		this->column(3) = Vec<4, T>(pos, 1);
 	}
 
-	using Matrix4<T>::Matrix4;
-	using Matrix4<T>::operator=;
+	using Matrix4<T>::operator*;
+
+	operator Matrix4<T>() const {
+		return *this;
+	}
 
 
 	const auto& forward() const {
@@ -75,16 +78,25 @@ struct Transform : Matrix4<T> {
 	}
 
 
-	void set_basis(const math::Vec<3, T>& forward, const math::Vec<3, T>& up) {
-		auto right = forward.cross(up);
+	void set_basis(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
 		this->column(0).template to<3>() = forward;
 		this->column(1).template to<3>() = right;
-		this->column(2).template to<3>() = right.cross(forward);
+		this->column(2).template to<3>() = up;
 	}
 
-	operator Matrix4<T>() const {
-		return *this;
+	void set_basis(const Vec<3, T>& forward, const Vec<3, T>& up) {
+		set_basis(forward, forward.cross(up), up);
 	}
+
+
+	std::tuple<Vec<3, T>, Vec<3, T>, Quaternion<T>> decompose() const {
+		auto x = this->template to<3, 3>() * Vec<3, T>{1, 0, 0};
+		auto y = this->template to<3, 3>() * Vec<3, T>{0, 1, 0};
+		auto z = this->template to<3, 3>() * Vec<3, T>{0, 0, 1};
+		Vec<3, T> scale = {x.length(), y.length(), z.length()};
+		return {position(), scale, Quaternion<T>::from_base(x / scale.x(), y / scale.y(), z / scale.z())};
+	}
+
 };
 
 
