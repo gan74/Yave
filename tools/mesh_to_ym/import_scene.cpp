@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "import.h"
 
+
+namespace import {
+
 static constexpr auto import_flags =
 									 aiProcess_Triangulate |
 									 aiProcess_FindInvalidData |
@@ -59,6 +62,5 @@ SceneData import_scene(const core::String& path) {
 	return data;
 }
 
-
-
+}
 

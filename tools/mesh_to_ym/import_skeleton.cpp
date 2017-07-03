@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <unordered_map>
 
+namespace import {
+
 struct BoneRef {
 	u32 index;
 	float weight;
@@ -145,8 +147,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 	return SkeletonData{std::move(skin_points), std::move(bones)};
 }
 
-
-
+}
 
 
 

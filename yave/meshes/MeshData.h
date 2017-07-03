@@ -41,8 +41,11 @@ class MeshData {
 		const core::Vector<Vertex>& vertices() const;
 		const core::Vector<IndexedTriangle>& triangles() const;
 
-		core::Vector<SkinnedVertex> skinned_vertices() const;
+		const core::Vector<SkinWeights> skin() const;
 		const core::Vector<Bone>& bones() const;
+		core::Vector<SkinnedVertex> skinned_vertices() const;
+
+		bool has_skeleton() const;
 
 	private:
 		struct SkeletonData {

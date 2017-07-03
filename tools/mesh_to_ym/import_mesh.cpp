@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "import.h"
 
+namespace import {
+
 MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
 	const char* err_msg = "Unable to load mesh.";
 
@@ -58,6 +60,7 @@ MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
 	return MeshData::from_parts(std::move(vertices), std::move(triangles));
 }
 
+}
 
 
 

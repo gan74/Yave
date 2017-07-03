@@ -19,51 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef IMPORT_H
-#define IMPORT_H
+#ifndef TRANSFORMS_H
+#define TRANSFORMS_H
 
-#include <yave/meshes/MeshData.h>
-#include <yave/animations/Animation.h>
-#include <yave/animations/AnimationChannel.h>
-
-#include <y/core/Chrono.h>
-
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include "import.h"
 
 namespace import {
 
-using namespace y;
-using namespace y::core;
+MeshData transform(const MeshData& mesh, const math::Transform<>& tr);
 
-using yave::Vertex;
-using yave::Bone;
-using yave::BoneTransform;
-using yave::SkinWeights;
-using yave::MeshData;
-using yave::Vertex;
-using yave::IndexedTriangle;
-using yave::Animation;
-using yave::AnimationChannel;
-
-
-struct SkeletonData {
-	core::Vector<SkinWeights> skin;
-	core::Vector<Bone> bones;
-};
-
-struct SceneData {
-	core::Vector<MeshData> meshes;
-	core::Vector<Animation> animations;
-};
-
-SceneData import_scene(const core::String& path);
-
-Animation import_animation(aiAnimation* anim);
-SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
-MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
+Animation set_speed(const Animation& anim, float speed);
 
 }
 
-#endif // IMPORT_H
+#endif // TRANSFORMS_H

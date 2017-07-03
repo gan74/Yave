@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <map>
 
+namespace import {
+
 AnimationChannel import_channel(aiNodeAnim* anim) {
 	static constexpr usize None = 0x0;
 	static constexpr usize Position = 0x1;
@@ -101,4 +103,6 @@ Animation import_animation(aiAnimation* anim) {
 	}
 
 	return Animation(anim->mDuration, std::move(channels));
+}
+
 }

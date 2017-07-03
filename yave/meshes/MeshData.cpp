@@ -39,6 +39,20 @@ const core::Vector<IndexedTriangle>& MeshData::triangles() const {
 	return _triangles;
 }
 
+const core::Vector<SkinWeights> MeshData::skin() const {
+	if(!_skeleton) {
+		fatal("Mesh has no skeleton.");
+	}
+	return _skeleton->skin;
+}
+
+const core::Vector<Bone>& MeshData::bones() const {
+	if(!_skeleton) {
+		fatal("Mesh has no skeleton.");
+	}
+	return _skeleton->bones;
+}
+
 core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
 	if(!_skeleton) {
 		fatal("Mesh has no skeleton.");
@@ -51,13 +65,9 @@ core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
 	return verts;
 }
 
-const core::Vector<Bone>& MeshData::bones() const {
-	if(!_skeleton) {
-		fatal("Mesh has no skeleton.");
-	}
-	return _skeleton->bones;
+bool MeshData::has_skeleton() const {
+	return _skeleton;
 }
-
 
 MeshData MeshData::from_parts(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin, core::Vector<Bone>&& bones) {
 	if(bones.is_empty() != skin.is_empty()) {

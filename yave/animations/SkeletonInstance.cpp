@@ -62,7 +62,7 @@ void SkeletonInstance::update() {
 		return;
 	}
 
-	float time = std::fmod(_anim_timer.elapsed().to_secs() * 50.0f, _animation->duration());
+	float time = std::fmod(_anim_timer.elapsed().to_secs(), _animation->duration());
 
 	const auto& anim = *_animation;
 	const auto& bones = _skeleton->bones();

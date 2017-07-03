@@ -26,6 +26,9 @@ set(SOURCE_FILES
 		"import_animation.cpp"
 		"import_scene.cpp"
 
+		"transforms.h"
+		"transforms.cpp"
+
 		"../../yave/meshes/MeshData.h"
 		"../../yave/meshes/MeshData.cpp"
 
