@@ -21,8 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "MeshData.h"
-#include <y/io/BuffReader.h>
 
+#include <y/io/BuffReader.h>
 #include <y/core/Chrono.h>
 
 namespace yave {
@@ -37,10 +37,6 @@ const core::Vector<Vertex>& MeshData::vertices() const {
 
 const core::Vector<IndexedTriangle>& MeshData::triangles() const {
 	return _triangles;
-}
-
-vk::DrawIndexedIndirectCommand MeshData::indirect_data() const {
-	return vk::DrawIndexedIndirectCommand(_triangles.size() * 3, 1);
 }
 
 core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
@@ -63,30 +59,30 @@ const core::Vector<Bone>& MeshData::bones() const {
 }
 
 
-
-static core::Result<Bone> read_bone(io::ReaderRef reader) {
-	auto len_res = reader->read_one<u32>();
-	if(len_res.is_error()) {
-		return core::Err();
+MeshData MeshData::from_parts(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin, core::Vector<Bone>&& bones) {
+	if(bones.is_empty() != skin.is_empty()) {
+		fatal("Invalid skeleton.");
+	}
+	if((!skin.is_empty() && skin.size() != vertices.size())) {
+		fatal("Invalid skin data.");
 	}
 
-	core::String name(nullptr, len_res.unwrap());
-	auto name_res = reader->read(name.data(), name.size());
-	name[name.size()] = 0;
+	float radius = 0.0f;
+	std::for_each(vertices.begin(), vertices.end(), [&](const auto& v) { radius = std::max(radius, v.position.length2()); });
 
-	auto parent_res = reader->read_one<u32>();
+	MeshData mesh;
+	mesh._vertices = std::move(vertices);
+	mesh._triangles = std::move(triangles);
+	mesh._radius = std::sqrt(radius);
 
-	if(name_res.is_error() || parent_res.is_error()) {
-		return core::Err();
+	if(!skin.is_empty()) {
+		mesh._skeleton = new SkeletonData{std::move(skin), std::move(bones)};
 	}
 
-	auto transform_res = reader->read_one<BoneTransform>();
-	if(transform_res.is_error()) {
-		return core::Err();
-	}
-
-	return core::Ok(Bone{std::move(name), parent_res.unwrap(), transform_res.unwrap()});
+	return mesh;
 }
+
+
 
 MeshData MeshData::from_file(io::ReaderRef reader) {
 	const char* err_msg = "Unable to load mesh.";
@@ -132,11 +128,59 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 		reader->read(mesh._skeleton->skin.begin(), header.vertices * sizeof(SkinWeights)).expected(err_msg);
 
 		for(usize i = 0; i != header.bones; ++i) {
-			mesh._skeleton->bones << read_bone(reader).expected(err_msg);
+			u32 name_len = reader->read_one<u32>().expected(err_msg);
+			core::String name(nullptr, name_len);
+			reader->read(name.data(), name.size()).expected(err_msg);
+			name[name.size()] = 0;
+
+			u32 parent = reader->read_one<u32>().expected(err_msg);
+			BoneTransform transform = reader->read_one<BoneTransform>().expected(err_msg);
+
+			mesh._skeleton->bones << Bone{std::move(name), parent, transform};
 		}
 	}
 
 	return mesh;
+}
+
+void MeshData::to_file(io::WriterRef writer) const {
+	const char* err_msg = "Unable to write mesh.";
+
+	u32 magic = 0x65766179;
+	u32 type = 1;
+	u32 version = 5;
+
+	float radius = _radius;
+
+	u32 bones = _skeleton ? _skeleton->bones.size() : 0;
+	u32 vertices = _vertices.size();
+	u32 triangles = _triangles.size();
+
+	writer->write_one(magic).expected(err_msg);
+	writer->write_one(type).expected(err_msg);
+	writer->write_one(version).expected(err_msg);
+
+	writer->write_one(radius).expected(err_msg);
+
+	writer->write_one(bones).expected(err_msg);
+	writer->write_one(vertices).expected(err_msg);
+	writer->write_one(triangles).expected(err_msg);
+
+	writer->write(_vertices.begin(), _vertices.size() * sizeof(Vertex)).expected(err_msg);
+	writer->write(_triangles.begin(), _triangles.size() * sizeof(IndexedTriangle)).expected(err_msg);
+
+
+	if(_skeleton) {
+		writer->write(_skeleton->skin.begin(), _skeleton->skin.size() * sizeof(SkinWeights)).expected(err_msg);
+
+		for(const auto& bone : _skeleton->bones) {
+			writer->write_one(u32(bone.name.size())).expected(err_msg);
+			writer->write(bone.name.data(), bone.name.size()).expected(err_msg);
+
+			writer->write_one(bone.parent).expected(err_msg);
+			writer->write_one(bone.local_transform).expected(err_msg);
+		}
+	}
 }
 
 

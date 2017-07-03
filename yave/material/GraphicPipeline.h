@@ -22,10 +22,9 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_GRAPHICPIPELINE_H
 #define YAVE_MATERIAL_GRAPHICPIPELINE_H
 
+#include <yave/vk/vk.h>
 
-#include <yave/yave.h>
 #include <yave/device/DeviceLinked.h>
-
 
 namespace yave {
 

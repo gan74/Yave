@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_BARRIERS_PIPELINESTAGE_H
 #define YAVE_BARRIERS_PIPELINESTAGE_H
 
-#include <yave/yave.h>
+#include <yave/vk/vk.h>
 
 namespace yave {
 

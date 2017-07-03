@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef YAVE_SHADER_SHADERMODULEBASE_H
 #define YAVE_SHADER_SHADERMODULEBASE_H
 
-#include <yave/yave.h>
-#include <yave/device/DeviceLinked.h>
+#include <yave/vk/vk.h>
 
+#include <yave/device/DeviceLinked.h>
 #include "SpirVData.h"
 
 #include <unordered_map>

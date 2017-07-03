@@ -26,7 +26,6 @@ SOFTWARE.
 
 namespace yave {
 
-
 class AnimationChannel {
 	public:
 		struct BoneKey {
@@ -34,13 +33,14 @@ class AnimationChannel {
 			BoneTransform local_transform;
 		};
 
-		AnimationChannel(const core::String& name, const core::Vector<BoneKey>& keys);
+		AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys);
+
 
 		math::Transform<> bone_transform(float time) const;
 
-		const core::String& name() const {
-			return _name;
-		}
+
+		const core::String& name() const;
+		const core::Vector<BoneKey>& keys() const;
 
 	private:
 		core::String _name;

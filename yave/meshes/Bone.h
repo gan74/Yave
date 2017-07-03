@@ -23,23 +23,22 @@ SOFTWARE.
 #define YAVE_MESHES_BONE_H
 
 #include <yave/yave.h>
-#include <y/math/Transform.h>
 
 namespace yave {
 
 struct BoneTransform {
 	math::Vec3 position;
 	math::Vec3 scale = math::Vec3(1.0f);
-	math::Quaternion<> roration;
+	math::Quaternion<> rotation;
 
 	math::Transform<> to_transform() const {
-		return math::Transform<>(position, roration, scale);
+		return math::Transform<>(position, rotation, scale);
 	}
 
 	math::Transform<> lerp(const BoneTransform& end, float factor) const {
 		float q = 1.0f - factor;
 		return math::Transform<>(position * q + end.position * factor,
-								 roration.lerp(end.roration, factor),
+								 rotation.lerp(end.rotation, factor),
 								 scale * q + end.scale * factor);
 	}
 };

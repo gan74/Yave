@@ -19,28 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_AABB_H
-#define YAVE_SCENE_AABB_H
+#ifndef VK_VK_H
+#define VK_VK_H
 
 #include <yave/yave.h>
 
-namespace yave {
+#ifdef Y_OS_WIN
+	#define VK_USE_PLATFORM_WIN32_KHR
+#endif
 
-struct AABB {
-	const math::Vec3 min;
-	const math::Vec3 max;
+#include <vulkan/vulkan.hpp>
 
+#define YAVE_VK
 
-
-	math::Vec3 position() const {
-		return (min + max) * 0.5f;
-	}
-
-	float radius() const {
-		return (max - min).length() * 0.5f;
-	}
-};
-
-}
-
-#endif // YAVE_SCENE_AABB_H
+#endif // VK_VK_H

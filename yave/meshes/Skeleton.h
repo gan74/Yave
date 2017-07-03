@@ -36,10 +36,12 @@ class Skeleton {
 		Skeleton(const core::Vector<Bone>& bones);
 
 		const core::Vector<Bone>& bones() const;
+		const core::Vector<math::Transform<>>& bone_transforms() const;
 		const core::Vector<math::Transform<>>& inverse_absolute_transforms() const;
 
 	private:
 		core::Vector<Bone> _bones;
+		core::Vector<math::Transform<>> _transforms;
 		core::Vector<math::Transform<>> _inverses;
 };
 

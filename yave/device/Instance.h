@@ -22,7 +22,8 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_INSTANCE_H
 #define YAVE_DEVICE_INSTANCE_H
 
-#include <yave/yave.h>
+#include <yave/vk/vk.h>
+
 #include "DebugParams.h"
 
 namespace yave {

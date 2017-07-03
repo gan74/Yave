@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "Scene.h"
 
+#include <yave/material/Material.h>
+
 namespace yave {
 
 Scene::Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables, core::Vector<Ptr<Light>>&& lights) :

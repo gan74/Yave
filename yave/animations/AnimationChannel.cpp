@@ -22,10 +22,9 @@ SOFTWARE.
 
 #include "AnimationChannel.h"
 
-
 namespace yave {
 
-AnimationChannel::AnimationChannel(const core::String& name, const core::Vector<BoneKey>& keys) : _name(name), _keys(keys) {
+AnimationChannel::AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys) : _name(name), _keys(keys) {
 	if(_keys.is_empty()) {
 		fatal("Empty animation channel.");
 	}
@@ -43,6 +42,15 @@ math::Transform<> AnimationChannel::bone_transform(float time) const {
 	float factor = (time - key->time) / delta;
 
 	return key->local_transform.lerp(next->local_transform, factor);
+}
+
+
+const core::String& AnimationChannel::name() const {
+	return _name;
+}
+
+const core::Vector<AnimationChannel::BoneKey>& AnimationChannel::keys() const {
+	return _keys;
 }
 
 }

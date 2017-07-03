@@ -27,6 +27,7 @@ SOFTWARE.
 #include <y/math/Vec.h>
 #include <y/math/math.h>
 #include <y/math/Matrix.h>
+#include <y/math/Transform.h>
 
 #include <y/core/Ptr.h>
 #include <y/core/Range.h>
@@ -34,11 +35,6 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/core/ArrayProxy.h>
 
-#ifdef Y_OS_WIN
-	#define VK_USE_PLATFORM_WIN32_KHR
-#endif
-
-#include <vulkan/vulkan.hpp>
 
 namespace yave {
 
@@ -66,22 +62,6 @@ constexpr int max(Args... args) {
 	return max;
 }
 }
-
-template<typename T, typename U, typename... Args>
-inline DevicePtr common_device(T&& t, U&& u, Args&&... args) {
-	DevicePtr l = t.device();
-	DevicePtr r = common_device(std::forward<U>(u), std::forward<Args>(args)...);
-	if(l && r && l != r) {
-		fatal("Objects have different devices.");
-	}
-	return l ? l : r;
-}
-
-template<typename T>
-inline DevicePtr common_device(T&& t) {
-	return t.device();
-}
-
 
 
 template<typename T>

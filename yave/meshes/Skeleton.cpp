@@ -24,24 +24,22 @@ SOFTWARE.
 
 namespace yave {
 
-/*static void debug_bone(usize index, const core::Vector<Bone>& bones, usize tabs = 0) {
-	core::String indent;
-	for(usize i = 0; i != tabs; ++i) {
-		indent += "  ";
-	}
-
+template<usize unused = 0>
+static void debug_bone(usize index, const core::Vector<Bone>& bones, const core::String& indent = "") {
 	log_msg(indent + bones[index].name + " (" + index + ")", Log::Debug);
+	/*log_msg(indent + "{" + bones[index].local_transform.rotation.x() + ", " +
+						   bones[index].local_transform.rotation.y() + ", " +
+						   bones[index].local_transform.rotation.z() + ", " +
+						   bones[index].local_transform.rotation.w() + "}", Log::Debug);*/
 
 	for(usize i = 0; i != bones.size(); ++i) {
 		if(bones[i].parent == index) {
-			debug_bone(i, bones, tabs + 1);
+			debug_bone(i, bones, indent + "  ");
 		}
 	}
-}*/
+}
 
-Skeleton::Skeleton(const core::Vector<Bone>& bones) :
-		_bones(bones) {
-
+Skeleton::Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
 	if(_bones.size() > max_bones) {
 		fatal("Bone count exceeds max_bones.");
 	}
@@ -49,13 +47,13 @@ Skeleton::Skeleton(const core::Vector<Bone>& bones) :
 	for(usize i = 0; i != _bones.size(); ++i) {
 		const auto& bone = _bones[i];
 		auto transform = bone.transform();
+		_transforms << transform;
 		_inverses << (bone.has_parent() ? _inverses[bone.parent] * transform : transform);
 	}
 
 	for(auto& transform : _inverses) {
 		transform = transform.inverse();
 	}
-
 
 	/*for(usize i = 0; i != _bones.size(); ++i) {
 		if(!_bones[i].has_parent()) {
@@ -66,6 +64,10 @@ Skeleton::Skeleton(const core::Vector<Bone>& bones) :
 
 const core::Vector<Bone>& Skeleton::bones() const {
 	return _bones;
+}
+
+const core::Vector<math::Transform<>>& Skeleton::bone_transforms() const {
+	return _transforms;
 }
 
 const core::Vector<math::Transform<>>& Skeleton::inverse_absolute_transforms() const {

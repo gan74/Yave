@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_QUEUES_QUEUEFAMILY_H
 #define YAVE_QUEUES_QUEUEFAMILY_H
 
-#include <yave/yave.h>
+#include <yave/vk/vk.h>
 
 namespace yave {
 

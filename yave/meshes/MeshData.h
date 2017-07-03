@@ -32,14 +32,14 @@ namespace yave {
 class MeshData {
 
 	public:
+		static MeshData from_parts(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin = {}, core::Vector<Bone>&& bones = {});
 		static MeshData from_file(io::ReaderRef reader);
+		void to_file(io::WriterRef writer) const;
 
 		float radius() const;
 
 		const core::Vector<Vertex>& vertices() const;
 		const core::Vector<IndexedTriangle>& triangles() const;
-
-		vk::DrawIndexedIndirectCommand indirect_data() const;
 
 		core::Vector<SkinnedVertex> skinned_vertices() const;
 		const core::Vector<Bone>& bones() const;
@@ -60,8 +60,6 @@ class MeshData {
 
 
 };
-
-
 
 }
 

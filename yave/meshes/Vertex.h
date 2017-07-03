@@ -23,7 +23,6 @@ SOFTWARE.
 #define YAVE_MESHES_VERTEX_H
 
 #include <yave/yave.h>
-#include <y/math/Vec.h>
 
 namespace yave {
 

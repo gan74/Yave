@@ -22,7 +22,8 @@ SOFTWARE.
 #ifndef YAVE_DESCRIPTORSETLAYOUTPOOL_H
 #define YAVE_DESCRIPTORSETLAYOUTPOOL_H
 
-#include <yave/yave.h>
+#include <yave/vk/vk.h>
+
 #include <yave/device/DeviceLinked.h>
 #include <y/core/AssocVector.h>
 #include <y/concurrent/Arc.h>

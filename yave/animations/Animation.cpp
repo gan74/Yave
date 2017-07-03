@@ -21,9 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include "Animation.h"
-#include <y/math/Quaternion.h>
 
 namespace yave {
+
+Animation::Animation(float duration, core::Vector<AnimationChannel>&& channels) : _duration(duration), _channels(std::move(channels)) {
+}
 
 const core::Vector<AnimationChannel>& Animation::channels() const {
 	return _channels;
@@ -33,45 +35,16 @@ float Animation::duration() const {
 	return _duration;
 }
 
-math::Transform<> Animation::bone_transform(const core::String& name, float time) const {
+std::optional<math::Transform<>> Animation::bone_transform(const core::String& name, float time) const {
 	auto channel = std::find_if(_channels.begin(), _channels.end(), [&](const auto& ch) { return ch.name() == name; });
+
 	if(channel == _channels.end()) {
-		log_msg("No animation channel found.", Log::Error);
-		return math::Transform<>();
+		return std::optional<math::Transform<>>();
 	}
 
-	return channel->bone_transform(time);
+	return std::optional(channel->bone_transform(time));
 }
 
-
-
-static core::Result<AnimationChannel> read_channel(io::ReaderRef reader) {
-	auto len_res = reader->read_one<u32>();
-	if(len_res.is_error()) {
-		return core::Err();
-	}
-
-	core::String name(nullptr, len_res.unwrap());
-	auto name_res = reader->read(name.data(), name.size());
-	name[name.size()] = 0;
-
-	if(name_res.is_error()) {
-		return core::Err();
-	}
-
-	auto key_len_res = reader->read_one<u32>();
-	if(key_len_res.is_error()) {
-		return core::Err();
-	}
-
-	core::Vector<AnimationChannel::BoneKey> keys(key_len_res.unwrap(), AnimationChannel::BoneKey{});
-	auto key_res = reader->read(keys.begin(), keys.size() * sizeof(AnimationChannel::BoneKey));
-	if(key_res.is_error()) {
-		return core::Err();
-	}
-
-	return core::Ok(AnimationChannel(name, keys));
-}
 
 Animation Animation::from_file(io::ReaderRef reader) {
 	const char* err_msg = "Unable to read animation.";
@@ -98,13 +71,48 @@ Animation Animation::from_file(io::ReaderRef reader) {
 		fatal(err_msg);
 	}
 
-	Animation anim;
-	anim._duration = header.duration;
+	auto channels = core::vector_with_capacity<AnimationChannel>(header.channels);
 	for(usize i = 0; i != header.channels; ++i) {
-		anim._channels << read_channel(reader).expected(err_msg);
+		u32 name_len = reader->read_one<u32>().expected(err_msg);
+		core::String name(nullptr, name_len);
+		reader->read(name.data(), name.size()).expected(err_msg);
+		name[name.size()] = 0;
+
+		u32 key_count = reader->read_one<u32>().expected(err_msg);
+		core::Vector<AnimationChannel::BoneKey> keys(key_count, AnimationChannel::BoneKey{});
+		reader->read(keys.begin(), keys.size() * sizeof(AnimationChannel::BoneKey)).expected(err_msg);
+
+		channels << AnimationChannel(name, std::move(keys));
 	}
 
-	return anim;
+	return Animation(header.duration, std::move(channels));
+}
+
+void Animation::to_file(io::WriterRef writer) const {
+	const char* err_msg = "Unable to write animation.";
+
+	u32 magic = 0x65766179;
+	u32 type = 3;
+	u32 version = 3;
+
+	u32 channels = _channels.size();
+	float duration = _duration;
+
+	writer->write_one(magic).expected(err_msg);
+	writer->write_one(type).expected(err_msg);
+	writer->write_one(version).expected(err_msg);
+
+	writer->write_one(channels).expected(err_msg);
+	writer->write_one(duration).expected(err_msg);
+
+
+	for(const auto& ch : _channels) {
+		writer->write_one(u32(ch.name().size())).expected(err_msg);
+		writer->write(ch.name().begin(), ch.name().size()).expected(err_msg);
+
+		writer->write_one(u32(ch.keys().size())).expected(err_msg);
+		writer->write(ch.keys().begin(), ch.keys().size() * sizeof(AnimationChannel::BoneKey)).expected(err_msg);
+	}
 }
 
 }

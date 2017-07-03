@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_IMAGES_IMAGEFORMAT_H
 #define YAVE_IMAGES_IMAGEFORMAT_H
 
-#include <yave/yave.h>
+#include <yave/vk/vk.h>
 
 namespace yave {
 

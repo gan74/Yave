@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_BUFFERS_BUFFERUSAGE_H
 #define YAVE_BUFFERS_BUFFERUSAGE_H
 
-#include <yave/yave.h>
+#include <yave/vk/vk.h>
 
 namespace yave {
 

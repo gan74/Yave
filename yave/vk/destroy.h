@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef VK_DESTROY_H
 #define VK_DESTROY_H
 
-#include <yave/yave.h>
+#include "vk.h"
 
 namespace yave {
 namespace detail {

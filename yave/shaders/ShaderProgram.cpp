@@ -119,7 +119,7 @@ static void create_vertex_attribs(const core::Vector<ShaderModuleBase::Attribute
 
 
 
-ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) : DeviceLinked(common_device(frag, vert, geom)) {
+ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) : DeviceLinked(frag.device()) {
 	{
 		merge_bindings(_bindings, frag.bindings());
 		merge_bindings(_bindings, vert.bindings());

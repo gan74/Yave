@@ -25,16 +25,21 @@ SOFTWARE.
 #include "AnimationChannel.h"
 #include <y/io/Ref.h>
 
+#include <optional>
+
 namespace yave {
 
 class Animation {
 	public:
+		Animation(float duration, core::Vector<AnimationChannel>&& channels);
+
 		static Animation from_file(io::ReaderRef reader);
+		void to_file(io::WriterRef writer) const;
 
 		float duration() const;
 		const core::Vector<AnimationChannel>& channels() const;
 
-		math::Transform<> bone_transform(const core::String& name, float time) const;
+		std::optional<math::Transform<>> bone_transform(const core::String& name, float time) const;
 
 	private:
 		float _duration;

@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_CMDBUFFERUSAGE_H
 #define YAVE_COMMANDS_CMDBUFFERUSAGE_H
 
-#include <y/concurrent/Arc.h>
+#include <yave/vk/vk.h>
 
-#include <yave/yave.h>
+#include <y/concurrent/Arc.h>
 #include <yave/device/DeviceLinked.h>
 
 namespace yave {

@@ -62,21 +62,24 @@ void SkeletonInstance::update() {
 		return;
 	}
 
-	float time = std::fmod(_anim_timer.elapsed().to_secs(), _animation->duration());
+	float time = std::fmod(_anim_timer.elapsed().to_secs() * 50.0f, _animation->duration());
 
 	const auto& anim = *_animation;
 	const auto& bones = _skeleton->bones();
+	const auto& bone_transforms = _skeleton->bone_transforms();
 	const auto& invs = _skeleton->inverse_absolute_transforms();
-	auto& transforms = *_bone_transforms;
+
+	auto& out_transforms = *_bone_transforms;
 
 
 	for(usize i = 0; i != bones.size(); ++i) {
 		const auto& bone = bones[i];
-		auto transform = anim.bone_transform(bone.name, time);
-		transforms[i] = (bone.has_parent() ? transforms[bone.parent] * transform : transform);
+		auto bone_tr = anim.bone_transform(bone.name, time).value_or(bone_transforms[i]);
+
+		out_transforms[i] = (bone.has_parent() ? out_transforms[bone.parent] * bone_tr : bone_tr);
 	}
 	for(usize i = 0; i != bones.size(); ++i) {
-		transforms[i] *= invs[i];
+		out_transforms[i] *= invs[i];
 	}
 
 	flush_data();

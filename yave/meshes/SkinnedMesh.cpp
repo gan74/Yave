@@ -27,7 +27,7 @@ namespace yave {
 SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
 		_triangle_buffer(dptr, mesh_data.triangles()),
 		_vertex_buffer(dptr, mesh_data.skinned_vertices()),
-		_indirect_data(mesh_data.indirect_data()),
+		_indirect_data(mesh_data.triangles().size() * 3, 1),
 		_skeleton(mesh_data.bones()),
 		_radius(mesh_data.radius()) {
 }
