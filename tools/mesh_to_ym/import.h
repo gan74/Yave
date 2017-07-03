@@ -19,31 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef MESH_H
-#define MESH_H
+#ifndef IMPORT_H
+#define IMPORT_H
 
-#include "Scene.h"
-#include "Skeleton.h"
+#include <yave/meshes/MeshData.h>
+#include <yave/animations/Animation.h>
+#include <yave/animations/AnimationChannel.h>
 
-#include <optional>
+#include <y/core/Chrono.h>
 
-#include <y/io/Ref.h>
 
-struct Mesh {
-	public:
-		static Result<Mesh> from_assimp(aiMesh* mesh, const aiScene* scene);
-		io::Writer::Result write(io::WriterRef writer) const;
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
-		const String& name() const;
 
-	private:
-		Vector<Vertex> _vertices;
-		Vector<IndexedTriangle> _triangles;
 
-		std::optional<Skeleton> _skeleton;
+using namespace y;
+using namespace y::core;
 
-		float _radius = 0.0f;
-		String _name;
+using yave::Vertex;
+using yave::Bone;
+using yave::BoneTransform;
+using yave::SkinWeights;
+using yave::MeshData;
+using yave::Vertex;
+using yave::IndexedTriangle;
+using yave::Animation;
+using yave::AnimationChannel;
+
+
+struct SkeletonData {
+	core::Vector<SkinWeights> skin;
+	core::Vector<Bone> bones;
 };
 
-#endif // MESH_H
+struct SceneData {
+	core::Vector<MeshData> meshes;
+	core::Vector<Animation> animations;
+};
+
+SceneData import_scene(const core::String& path);
+
+Animation import_animation(aiAnimation* anim);
+SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
+MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
+
+
+#endif // IMPORT_H

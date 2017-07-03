@@ -20,10 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Skeleton.h"
+#include "import.h"
 
 #include <unordered_map>
-#include <optional>
 
 struct BoneRef {
 	u32 index;
@@ -33,6 +32,20 @@ struct BoneRef {
 		return std::tie(weight, index) > std::tie(other.weight, other.index);
 	}
 };
+
+static aiNode* common_parent(aiNode* a, aiNode* b) {
+	if(!a) {
+		return b;
+	}
+	for(; a; a = a->mParent) {
+		for(aiNode* bn = b; bn; bn = bn->mParent) {
+			if(a == bn) {
+				return a;
+			}
+		}
+	}
+	return nullptr;
+}
 
 static void add_bone_refs(aiBone* bone, u32 index, Vector<Vector<BoneRef>>& refs) {
 	for(usize i = 0; i != bone->mNumWeights; ++i) {
@@ -60,38 +73,12 @@ static SkinWeights compute_skin(Vector<BoneRef>& refs) {
 	return skin;
 }
 
-
-const Vector<Bone>& Skeleton::bones() const {
-	return _bones;
-}
-
-const Vector<SkinWeights>& Skeleton::skin() const {
-	return _skin;
-}
-
-
-static aiNode* common_parent(aiNode* a, aiNode* b) {
-	if(!a) {
-		return b;
-	}
-	for(; a; a = a->mParent) {
-		for(aiNode* bn = b; bn; bn = bn->mParent) {
-			if(a == bn) {
-				return a;
-			}
-		}
-	}
-	return nullptr;
-}
-
-Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
+SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 	if(!mesh || !mesh->mNumBones) {
-		return Err();
+		return fatal("Empty skeleton.");
 	}
-
 
 	Range mesh_bones(mesh->mBones, mesh->mBones + mesh->mNumBones);
-
 
 	Vector<aiNode*> bone_nodes;
 	bone_nodes << nullptr;
@@ -109,8 +96,7 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 		bone_map[node->mName.C_Str()] = {index, node};
 	}
 	if(bone_map.size() != bone_nodes.size()) {
-		log_msg("Bones are duplicated.", Log::Error);
-		return Err();
+		fatal("Bones are duplicated.");
 	}
 
 
@@ -123,8 +109,7 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 		if(auto parent = bone_map.find(node->mParent->mName.C_Str()); parent != bone_map.end()) {
 			parent_index = u32(parent->second.first);
 			if(parent_index >= index) {
-				log_msg("Parent serialized after children.", Log::Error);
-				return Err();
+				return fatal("Parent serialized after children.");
 			}
 		}
 
@@ -142,6 +127,7 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 					{rotation.x, rotation.y, rotation.z, rotation.w}
 				}
 			};
+
 	}
 
 
@@ -152,14 +138,15 @@ Result<Skeleton> Skeleton::from_assimp(aiMesh* mesh, const aiScene* scene) {
 		add_bone_refs(bone, index, bone_per_vertex);
 	}
 
-
 	auto skin_points = vector_with_capacity<SkinWeights>(mesh->mNumVertices);
 	std::transform(bone_per_vertex.begin(), bone_per_vertex.end(), std::back_inserter(skin_points), [](auto& bones) { return compute_skin(bones); });
 
 
-	Skeleton skeleton;
-	skeleton._bones = std::move(bones);
-	skeleton._skin = std::move(skin_points);
-	return Ok(std::move(skeleton));
+	return SkeletonData{std::move(skin_points), std::move(bones)};
 }
+
+
+
+
+
 

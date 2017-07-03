@@ -15,34 +15,32 @@ add_definitions("-std=c++17 -pedantic -Wall -Wextra")
 
 
 
-file(GLOB_RECURSE SOURCE_FILES
+include_directories(../../)
+
+set(SOURCE_FILES
 		"main.cpp"
 
-		"utils.h"
+		"import.h"
+		"import_mesh.cpp"
+		"import_skeleton.cpp"
+		"import_animation.cpp"
+		"import_scene.cpp"
 
-		"Scene.h"
-		"Scene.cpp"
+		"../../yave/meshes/MeshData.h"
+		"../../yave/meshes/MeshData.cpp"
 
-		"Mesh.h"
-		"Mesh.cpp"
+		"../../yave/animations/AnimationChannel.h"
+		"../../yave/animations/AnimationChannel.cpp"
 
-		"Skeleton.h"
-		"Skeleton.cpp"
-
-		"Animation.h"
-		"Animation.cpp"
+		"../../yave/animations/Animation.h"
+		"../../yave/animations/Animation.cpp"
 	)
 
 # y lib, change this to wherever it it
 include_directories(../../../y)
 link_directories(../../../y/build)
 
-
 add_executable(mesh_to_ym ${SOURCE_FILES})
-
-if(WIN32)
-	target_compile_definitions(mesh_to_ym PRIVATE -DWIN32)
-endif()
 
 target_link_libraries(mesh_to_ym y)
 target_link_libraries(mesh_to_ym assimp.dll)
