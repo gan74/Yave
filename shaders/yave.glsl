@@ -4,6 +4,8 @@
 const float pi = 3.1415926535897932384626433832795;
 const float epsilon = 0.001;
 
+const uint max_uint = uint(0xFFFFFFF);
+
 const uint max_bones = 256;
 const uint max_tile_lights = 128;
 
@@ -23,6 +25,14 @@ struct Frustum {
 
 
 // -------------------------------- UTILS --------------------------------
+
+uint float_to_uint(float f) {
+	return uint(max_uint * f);
+}
+
+float uint_to_float(uint i) {
+	return i / float(max_uint);
+}
 
 float saturate(float x) {
 	return min(1.0, max(0.0, x));
@@ -55,15 +65,17 @@ mat4 indentity() {
 				0, 0, 0, 1);
 }
 
+// -------------------------------- SPECTRUM --------------------------------
+
 vec3 spectrum(float x) {
 	float wl = x * 400.0 + 380.0 ;
-	if(wl > 645.0) return vec3(1.0, 0.0, 0.0);
-	if(wl > 580.0) return vec3(1.0, (645.0 - wl) / 65.0, 0.0);
-	if(wl > 510.0) return vec3((wl - 510.0) / 70.0, 1.0, 0.0);
-	if(wl > 490.0) return vec3(0.0, 1.0, (510.0 - wl) / 20.0);
-	if(wl > 440.0) return vec3(0.0, (wl - 440.0) / 40.0, 1.0);
-	if(wl > 380.0) return vec3((440 - wl) / 60.0, 0.0, 1.0);
-	return vec3(1.0);
+	if(wl >= 645.0) return vec3(1.0, 0.0, 0.0);
+	if(wl >= 580.0) return vec3(1.0, (645.0 - wl) / 65.0, 0.0);
+	if(wl >= 510.0) return vec3((wl - 510.0) / 70.0, 1.0, 0.0);
+	if(wl >= 490.0) return vec3(0.0, 1.0, (510.0 - wl) / 20.0);
+	if(wl >= 440.0) return vec3(0.0, (wl - 440.0) / 40.0, 1.0);
+	if(wl >= 380.0) return vec3((440 - wl) / 60.0, 0.0, 1.0);
+	return vec3(0.0);
 }
 
 vec3 spectrum(uint x) {
@@ -90,28 +102,18 @@ vec3 unproject(vec2 uv, float depth, mat4 inv_matrix) {
 
 // -------------------------------- CULLING --------------------------------
 
-bool is_inside(Frustum frustum, vec3 pos, float radius) {
-	for(uint i = 0; i != 6; ++i) {
-		if(dot(vec4(pos, 1.0), frustum.planes[i]) + radius < 0.0) {
-			return false;
-		}
-	}
-	return true;
-}
-
 bool is_inside(vec4 plane, vec3 pos, float radius) {
 	return dot(vec4(pos, 1.0), plane) + radius < 0.0;
 }
 
-bool is_inside_4(Frustum frustum, vec3 pos, float radius) {
-	for(uint i = 0; i != 4; ++i) {
-		if(dot(vec4(pos, 1.0), frustum.planes[i]) + radius < 0.0) {
+bool is_inside(Frustum frustum, vec3 pos, float radius) {
+	for(uint i = 0; i != 6; ++i) {
+		if(is_inside(frustum.planes[i], pos, radius)) {
 			return false;
 		}
 	}
 	return true;
 }
-
 
 // -------------------------------- HDR --------------------------------
 

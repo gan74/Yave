@@ -33,6 +33,10 @@ static math::Vec3 extract_position(const math::Matrix4<>& view) {
 	return pos;
 }
 
+static math::Vec3 extract_forward(const math::Matrix4<>& view) {
+	return -view.row(2).to<3>();
+}
+
 static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj) {
 	auto x = viewproj.row(0);
 	auto y = viewproj.row(1);
@@ -100,6 +104,8 @@ Camera::operator uniform::Camera() const {
 	return uniform::Camera {
 			inverse_matrix(),
 			position(),
+			0,
+			extract_forward(_view),
 			0
 		};
 }

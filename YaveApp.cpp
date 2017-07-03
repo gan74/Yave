@@ -113,6 +113,12 @@ void YaveApp::create_assets() {
 		l.color() = math::Vec3{0.5f};
 		lights << std::move(l);
 	}
+	{
+		Light l(Light::Point);
+		l.color() = math::Vec3{1.0f, 0.0f, 0.0f} * 100000.0f;
+		l.radius() = 100.0f;
+		lights << std::move(l);
+	}
 
 	{
 		auto skinned_material = AssetPtr<Material>(Material(&device, MaterialData()

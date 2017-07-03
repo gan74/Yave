@@ -33,7 +33,9 @@ using ViewProj = math::Matrix4<>;
 struct Camera {
 	math::Matrix4<> inv_matrix;
 	math::Vec3 position;
-	u32 padding;
+	u32 padding_0;
+	math::Vec3 forward;
+	u32 padding_1;
 };
 
 using Frustum = yave::Frustum;
