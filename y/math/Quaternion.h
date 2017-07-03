@@ -139,14 +139,14 @@ class Quaternion {
 			return inverse();
 		}
 
-		Quaternion& operator*=(const Quaternion& q) const {
+		Quaternion& operator*=(const Quaternion& q) {
 			_quat = {w() * q.x() + x() * q.w() + y() * q.z() - z() * q.y(),
 					 w() * q.y() + y() * q.w() + z() * q.x() - x() * q.z(),
 					 w() * q.z() + z() * q.w() + x() * q.y() - y() * q.x(),
 					 w() * q.w() - x() * q.x() - y() * q.y() - z() * q.z()};
-
 			return *this;
 		}
+
 
 		static Quaternion look_at(Vec<3, T> f) {
 			f.normalize();
@@ -173,9 +173,9 @@ class Quaternion {
 							  cos_roll * cos_pitch * cos_yaw + sin_roll * sin_pitch * sin_yaw);
 		}
 
-		static Quaternion from_base(const Vec<3, T>& forward, const Vec<3, T>& side, const Vec<3, T>& up) {
-			T w = std::sqrt(1 + forward.x() + side.y() + up.z()) * T(0.5);
-			Vec<3, T> q(side.z() - up.y(), up.x() - forward.z(), forward.y() - side.x());
+		static Quaternion from_base(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
+			T w = std::sqrt(1 + forward.x() + right.y() + up.z()) * T(0.5);
+			Vec<3, T> q(right.z() - up.y(), up.x() - forward.z(), forward.y() - right.x());
 			return Quaternion(q / (4 * w), w);
 		}
 
@@ -202,14 +202,8 @@ class Quaternion {
 
 
 template<typename T, typename R>
-auto operator*(const Quaternion<T>& v, const R& r) {
+auto operator*(Quaternion<T> v, const R& r) {
 	v *= r;
-	return v;
-}
-
-template<typename T, typename R>
-auto operator/(const Quaternion<T>& v, const R& r) {
-	v /= r;
 	return v;
 }
 
