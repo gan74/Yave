@@ -29,6 +29,8 @@ namespace yave {
 class CpuVisibleMapping : NonCopyable {
 
 	public:
+		CpuVisibleMapping() = default;
+
 		template<BufferUsage Usage, BufferTransfer Transfer>
 		CpuVisibleMapping(const SpecializedSubBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
 		}
@@ -37,17 +39,16 @@ class CpuVisibleMapping : NonCopyable {
 		CpuVisibleMapping(const Buffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
 		}
 
-		CpuVisibleMapping();
-
 		CpuVisibleMapping(CpuVisibleMapping&& other);
 		CpuVisibleMapping& operator=(CpuVisibleMapping&& other);
 
 		~CpuVisibleMapping();
 
-		usize byte_size() const;
+		void flush();
 
 		void* data();
 		const void* data() const;
+		usize byte_size() const;
 
 	protected:
 		void swap(CpuVisibleMapping& other);
@@ -56,9 +57,7 @@ class CpuVisibleMapping : NonCopyable {
 		CpuVisibleMapping(const SubBufferBase& buff);
 
 		SubBufferBase _buffer;
-
-		// Use unmap NOT delete
-		void* _mapping;
+		void* _mapping = nullptr;
 };
 
 }

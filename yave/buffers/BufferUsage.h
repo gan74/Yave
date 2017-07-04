@@ -65,7 +65,7 @@ constexpr BufferTransfer operator&(BufferTransfer a, BufferTransfer b) {
 // Y_TODO(maybe ditch eHostCoherent for a raii flush)
 enum class MemoryFlags {
     DeviceLocal = uenum(vk::MemoryPropertyFlagBits::eDeviceLocal),
-	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible) | uenum(vk::MemoryPropertyFlagBits::eHostCoherent)
+	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible)
 };
 
 

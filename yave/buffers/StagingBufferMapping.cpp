@@ -55,16 +55,17 @@ vk::BufferCopy StagingBufferMapping::vk_copy() const {
 }
 
 StagingBufferMapping::~StagingBufferMapping() {
-	CpuVisibleMapping done;
-	CpuVisibleMapping::swap(done);
+	{
+		CpuVisibleMapping done;
+		CpuVisibleMapping::swap(done);
+	}
 
 	DevicePtr device = _dst.device();
 	auto transfer_queue = device->vk_queue(QueueFamily::Graphics);
 
-	CmdBufferRecorder transfer_cmd_buffer(device->create_disposable_cmd_buffer());
-	//transfer_cmd_buffer.copy_buffer(_dst_ref, BufferMemoryReference<MemoryFlags::CpuVisible, BufferTransfer::TransferSrc>(_src));
-	transfer_cmd_buffer.vk_cmd_buffer().copyBuffer(_src.vk_buffer(), _dst.vk_buffer(), vk_copy());
-	RecordedCmdBuffer(std::move(transfer_cmd_buffer)).submit<SyncSubmit>(transfer_queue);
+	CmdBufferRecorder recorder(device->create_disposable_cmd_buffer());
+	recorder.vk_cmd_buffer().copyBuffer(_src.vk_buffer(), _dst.vk_buffer(), vk_copy());
+	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(transfer_queue);
 }
 
 
