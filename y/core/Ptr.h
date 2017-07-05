@@ -102,7 +102,7 @@ class Unique : public detail::Ptr<T> {
 		Unique(Owner<pointer>&& p) : Base(std::move(p)) {
 		}
 
-		Unique(T&& p) : Unique(new T(std::move(p))) {
+		Unique(std::remove_const_t<T>&& p) : Unique(new T(std::move(p))) {
 		}
 
 		Unique(std::nullptr_t p) : Base(p) {
@@ -133,6 +133,7 @@ class Unique : public detail::Ptr<T> {
 			return *this;
 		}
 
+	private:
 		void swap(Unique& p) {
 			std::swap(_ptr, p._ptr);
 		}
@@ -157,7 +158,7 @@ class Rc : public detail::Ptr<T> {
 		explicit Rc(Owner<pointer>&& p) : Base(std::move(p)), _count(new C(1)) {
 		}
 
-		explicit Rc(T&& p) : Rc(new T(std::move(p))) {
+		explicit Rc(std::remove_const_t<T>&& p) : Rc(new T(std::move(p))) {
 		}
 
 		Rc(const Rc& p) : Rc(p._ptr, p._count) {
