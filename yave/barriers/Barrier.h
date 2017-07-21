@@ -58,15 +58,14 @@ class ImageBarrier {
 
 class BufferBarrier {
 	public:
-		template<BufferUsage Usage>
-		BufferBarrier(const Buffer<Usage, MemoryFlags::DeviceLocal>& buffer) :
+		template<BufferUsage Usage, BufferTransfer Transfer>
+		BufferBarrier(const Buffer<Usage, MemoryType::DeviceLocal, Transfer>& buffer) :
 				_buffer(buffer.vk_buffer()),
 				_size(buffer.byte_size()),
 				_offset(0) {
 		}
 
-		template<BufferUsage Usage>
-		BufferBarrier(const SpecializedSubBuffer<Usage, MemoryFlags::DeviceLocal> buffer) :
+		BufferBarrier(const SubBuffer<BufferUsage::None, MemoryType::DeviceLocal> buffer) :
 				_buffer(buffer.vk_buffer()),
 				_size(buffer.byte_size()),
 				_offset(buffer.byte_offset()) {

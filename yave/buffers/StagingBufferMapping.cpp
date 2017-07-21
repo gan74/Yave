@@ -28,11 +28,11 @@ SOFTWARE.
 namespace yave {
 
 static auto create_src_buffer(DevicePtr dptr, usize size) {
-	return StagingBufferMapping::StagingBuffer(dptr, size);
+	return StagingBufferMapping::staging_buffer_type(dptr, size);
 }
 
 
-StagingBufferMapping::StagingBufferMapping(const SubBufferBase& dst) :
+StagingBufferMapping::StagingBufferMapping(const SubBuffer<BufferUsage::None, MemoryType::DontCare, BufferTransfer::TransferDst>& dst) :
 		_dst(dst),
 		_src(create_src_buffer(dst.device(), dst.byte_size())) {
 

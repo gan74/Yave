@@ -48,29 +48,21 @@ class CmdBufferRecorderBase : NonCopyable {
 
 		void set_viewport(const Viewport& view);
 
-		void bind_material(Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets = {});
+		void bind_material(const Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets = {});
 		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);
 		void draw(usize vertices);
 
-		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& vertices) {
-			bind_index_buffer(indices);
-			bind_attribs(vertices);
-		}
-
-		void bind_attribs(const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& vertices) {
-			bind_attrib_buffers(reinterpret_cast<const core::ArrayProxy<SubBufferBase>&>(vertices));
-		}
+		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& attribs);
+		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
+		void bind_attrib_buffers(const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 
 	protected:
 		CmdBufferRecorderBase() = default;
 		CmdBufferRecorderBase(CmdBufferBase&& base);
 
 		void swap(CmdBufferRecorderBase& other);
-
-		void bind_index_buffer(const SubBufferBase& indices);
-		void bind_attrib_buffers(const core::ArrayProxy<SubBufferBase>& attribs);
 
 
 		CmdBufferBase _cmd_buffer;

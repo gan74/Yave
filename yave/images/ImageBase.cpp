@@ -91,7 +91,7 @@ static auto get_copy_regions(const ImageData& data) {
 }
 
 static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
-	auto staging_buffer = StagingBufferMapping::StagingBuffer(dptr, byte_size);
+	auto staging_buffer = StagingBufferMapping::staging_buffer_type(dptr, byte_size);
 	auto mapping = CpuVisibleMapping(staging_buffer);
 	memcpy(mapping.data(), data, byte_size);
 	return staging_buffer;
@@ -106,9 +106,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
 
 	recorder.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-
 	recorder.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
-
 	recorder.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
 
 	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
@@ -134,7 +132,7 @@ static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(Device
 	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
 	bind_image_memory(dptr, image, memory);
 
-	return std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView>(image, memory, create_view(dptr, image, format, layers, mips, type));
+	return {image, memory, create_view(dptr, image, format, layers, mips, type)};
 }
 
 static void check_layer_count(ImageType type, usize layers) {
@@ -146,38 +144,26 @@ static void check_layer_count(ImageType type, usize layers) {
 	}
 }
 
-
-
-
-ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const math::Vec2ui& size, const ImageData& data) :
+ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size, ImageType type, usize layers, usize mips) :
 		DeviceLinked(dptr),
 		_size(size),
-		_layers(data.layers()),
-		_mips(data.mipmaps()),
-		_format(data.format()),
+		_layers(layers),
+		_mips(mips),
+		_format(format),
 		_usage(usage) {
 
 	check_layer_count(type, _layers);
 
-	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage | vk::ImageUsageFlagBits::eTransferDst, type);
-	std::tie(_image, _memory, _view) = tpl;
+	std::tie(_image, _memory, _view) = alloc_image(dptr, size, _layers, _mips, _format, _usage, type);
+}
+
+ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data) :
+		ImageBase(dptr, data.format(), usage | vk::ImageUsageFlagBits::eTransferDst, data.size(), type, data.layers(), data.mipmaps()) {
 
 	upload_data(*this, data);
 }
 
-ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size) :
-		DeviceLinked(dptr),
-		_size(size),
-		_format(format),
-		_usage(usage) {
 
-	auto tpl = alloc_image(dptr, size, _layers, _mips, _format, usage, ImageType::TwoD);
-	std::tie(_image, _memory, _view) = tpl;
-
-	if(!is_attachment_usage(usage) && !is_storage_usage(usage)) {
-		fatal("Texture images must be initialized.");
-	}
-}
 
 ImageBase::~ImageBase() {
 	destroy(_view);

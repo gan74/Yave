@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/bindings/DescriptorSet.h>
 
 #include <y/core/AssocVector.h>
+#include <y/concurrent/SpinLock.h>
 
 #include "GraphicPipeline.h"
 #include "MaterialData.h"
@@ -47,7 +48,7 @@ class Material : NonCopyable, public DeviceLinked {
 
 		~Material();
 
-		const GraphicPipeline& compile(const RenderPass& render_pass);
+		const GraphicPipeline& compile(const RenderPass& render_pass) const;
 
 		const MaterialData& data() const;
 		const DescriptorSet& descriptor_set() const;
@@ -59,7 +60,7 @@ class Material : NonCopyable, public DeviceLinked {
 
 		DescriptorSet _set;
 
-		core::AssocVector<vk::RenderPass, GraphicPipeline> _compiled;
+		mutable core::AssocVector<vk::RenderPass, GraphicPipeline> _compiled;
 };
 
 }

@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include <yave/device/Device.h>
 
+#include <mutex>
+
 namespace yave {
 
 Material::Material(DevicePtr dptr, const MaterialData &data) :
@@ -53,7 +55,8 @@ void Material::swap(Material& other) {
 	std::swap(_compiled, other._compiled);
 }
 
-const GraphicPipeline& Material::compile(const RenderPass& render_pass) {
+const GraphicPipeline& Material::compile(const RenderPass& render_pass) const {
+#warning material::compile not thread safe
 	auto key = render_pass.vk_render_pass();
 	if(!key) {
 		fatal("Unable to compile material: null renderpass.");

@@ -59,7 +59,7 @@ void CmdBufferRecorderBase::set_viewport(const Viewport& view) {
 	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(view.offset.x(), view.offset.y()), vk::Extent2D(view.extent.x(), view.extent.y()))});
 }
 
-void CmdBufferRecorderBase::bind_material(Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+void CmdBufferRecorderBase::bind_material(const Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
 	bind_pipeline(material.compile(current_pass()), descriptor_sets);
 }
 
@@ -88,11 +88,16 @@ void CmdBufferRecorderBase::draw(usize vertices) {
 	vk_cmd_buffer().draw(u32(vertices), 1, 0, 0);
 }
 
-void CmdBufferRecorderBase::bind_index_buffer(const SubBufferBase& indices) {
+void CmdBufferRecorderBase::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
+	bind_index_buffer(indices);
+	bind_attrib_buffers(attribs);
+}
+
+void CmdBufferRecorderBase::bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices) {
 	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
 }
 
-void CmdBufferRecorderBase::bind_attrib_buffers(const core::ArrayProxy<SubBufferBase>& attribs) {
+void CmdBufferRecorderBase::bind_attrib_buffers(const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
 	u32 attrib_count = attribs.size();
 
 	auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);

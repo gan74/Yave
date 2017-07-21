@@ -26,18 +26,9 @@ SOFTWARE.
 
 namespace yave {
 
-CpuVisibleMapping::CpuVisibleMapping(const SubBufferBase& buff) :
-		_buffer(buff),
+CpuVisibleMapping::CpuVisibleMapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer) :
+		_buffer(buffer),
 		_mapping(_buffer.device()->vk_device().mapMemory(_buffer.vk_device_memory(), _buffer.byte_offset(), _buffer.byte_size())) {
-}
-
-CpuVisibleMapping::CpuVisibleMapping(CpuVisibleMapping&& other) {
-	swap(other);
-}
-
-CpuVisibleMapping& CpuVisibleMapping::operator=(CpuVisibleMapping&& other) {
-	swap(other);
-	return *this;
 }
 
 CpuVisibleMapping::~CpuVisibleMapping() {

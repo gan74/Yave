@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryFlags flags) {
+static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType flags) {
 	auto mem_flags = vk::MemoryPropertyFlagBits(flags);
 	for(u32 i = 0; i != properties.memoryTypeCount; i++) {
 		auto memory_type = properties.memoryTypes[i];
@@ -46,7 +46,7 @@ static void bind_buffer_memory(DevicePtr dptr, vk::Buffer buffer, vk::DeviceMemo
 	dptr->vk_device().bindBufferMemory(buffer, memory, 0);
 }
 
-static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs, MemoryFlags flags) {
+static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs, MemoryType flags) {
 	return dptr->vk_device().allocateMemory(vk::MemoryAllocateInfo()
 			.setAllocationSize(reqs.size)
 			.setMemoryTypeIndex(get_memory_type(dptr->physical_device().vk_memory_properties(), reqs.memoryTypeBits, flags))
@@ -61,7 +61,7 @@ static vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsage
 		);
 }
 
-static std::tuple<vk::Buffer, vk::DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, vk::BufferUsageFlags usage, MemoryFlags flags) {
+static std::tuple<vk::Buffer, vk::DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, vk::BufferUsageFlags usage, MemoryType flags) {
 	if(!buffer_size) {
 		fatal("Can not allocate 0 sized buffer.");
 	}
@@ -109,7 +109,7 @@ void BufferBase::swap(BufferBase& other) {
 	std::swap(_memory, other._memory);
 }
 
-BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryFlags flags, BufferTransfer transfer) : DeviceLinked(dptr), _size(byte_size) {
+BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType flags, BufferTransfer transfer) : DeviceLinked(dptr), _size(byte_size) {
 	auto tpl = alloc_buffer(dptr, byte_size, to_vk_flags(usage) | to_vk_flags(transfer), flags);
 	std::tie(_buffer, _memory) = tpl;
 }

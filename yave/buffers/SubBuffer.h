@@ -27,39 +27,38 @@ SOFTWARE.
 
 namespace yave {
 
-
-template<BufferUsage Usage>
+template<BufferUsage Usage = BufferUsage::None, MemoryType Memory = MemoryType::DontCare, BufferTransfer Transfer = BufferTransfer::None>
 class SubBuffer : public SubBufferBase {
-	public:
-		static constexpr BufferUsage usage = Usage;
 
+	protected:
+		template<typename T>
+		static constexpr bool is_compatible(T a, T b) {
+			return (uenum(a) & uenum(b)) == uenum(b);
+		}
+
+		static constexpr bool is_compatible(BufferUsage U, MemoryType M, BufferTransfer T) {
+			return is_compatible(U, Usage) && is_compatible(M, Memory) && is_compatible(T, Transfer);
+		}
+
+	public:
 		SubBuffer() = default;
 
-		template<BufferUsage BufUsage, MemoryFlags Flags, BufferTransfer Transfer, typename = std::enable_if_t<(BufUsage & Usage) == Usage>>
-		SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize byte_off, usize byte_len) : SubBufferBase(buffer, byte_off, byte_len) {
-			static_assert((BufUsage & Usage) == Usage, "Invalid buffer usage.");
+		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		SubBuffer(const SubBuffer<U, M, T>& buffer) : SubBufferBase(buffer) {
 		}
 
-		template<BufferUsage BufUsage, MemoryFlags Flags, BufferTransfer Transfer, typename = std::enable_if_t<(BufUsage & Usage) == Usage>>
-		explicit SubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize byte_off = 0) : SubBuffer(buffer, byte_off, buffer.byte_size() - byte_off) {
-		}
-};
-
-
-// find another name
-template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Flags)>
-class SpecializedSubBuffer : public SubBuffer<Usage> {
-	public:
-		SpecializedSubBuffer() = default;
-
-		template<BufferUsage BufUsage, typename = std::enable_if_t<(BufUsage & Usage) == Usage>>
-		SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize byte_off, usize byte_len) : SubBuffer<Usage>(buffer, byte_off, byte_len) {
+		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off, usize byte_len) : SubBufferBase(buffer, byte_off, byte_len) {
 		}
 
-		template<BufferUsage BufUsage, typename = std::enable_if_t<(BufUsage & Usage) == Usage>>
-		explicit SpecializedSubBuffer(const Buffer<BufUsage, Flags, Transfer>& buffer, usize byte_off = 0) : SubBuffer<Usage>(buffer, byte_off) {
+		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		explicit SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off = 0) : SubBufferBase(buffer, byte_off, buffer.byte_size() - byte_off) {
 		}
 };
+
+
+template<BufferUsage U, MemoryType M, BufferTransfer T>
+SubBuffer(const Buffer<U, M, T>&) -> SubBuffer<U, M, T>;
 
 
 }

@@ -27,32 +27,43 @@ SOFTWARE.
 
 namespace yave {
 
-template<BufferUsage Usage, MemoryFlags Flags = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Flags)>
+template<BufferUsage Usage, MemoryType Memory = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Memory)>
 class Buffer : public BufferBase {
 
-	static_assert(Usage != BufferUsage::None || Transfer != BufferTransfer::None, "Buffers should not have Usage == BufferUsage::None");
+	protected:
+		template<typename T>
+		static constexpr bool is_compatible(T a, T b) {
+			return (uenum(a) & uenum(b)) == uenum(b);
+		}
+
+		static constexpr bool is_compatible(BufferUsage U, MemoryType M, BufferTransfer T) {
+			return is_compatible(U, Usage) && is_compatible(M, Memory) && is_compatible(T, Transfer);
+		}
 
 	public:
 		static constexpr BufferUsage usage = Usage;
-		static constexpr MemoryFlags memory_flags = Flags;
+		static constexpr MemoryType memory_type = Memory;
 		static constexpr BufferTransfer buffer_transfer = Transfer;
 
 		Buffer() = default;
 
-		Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Flags, Transfer) {
+		template<typename = void>
+		Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Memory, Transfer) {
+			static_assert(Usage != BufferUsage::None || Transfer != BufferTransfer::None, "Buffers should not have Usage == BufferUsage::None");
+			static_assert(Memory != MemoryType::DontCare, "Buffers should not have Memory == MemoryType::DontCare");
 		}
 
-		Buffer(Buffer&& other) {
+		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		Buffer(Buffer<U, M, T>&& other) {
 			swap(other);
 		}
 
-		Buffer& operator=(Buffer&& other) {
+		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		Buffer& operator=(Buffer<U, M, T>&& other) {
 			swap(other);
 			return *this;
 		}
 };
-
-
 }
 
 #endif // YAVE_BUFFERS_BUFFER_H

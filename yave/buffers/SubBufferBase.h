@@ -30,41 +30,16 @@ class SubBufferBase : public DeviceLinked {
 
 	public:
 		SubBufferBase() = default;
+		SubBufferBase(const BufferBase& base, usize byte_off, usize byte_len);
 
-		SubBufferBase(const BufferBase& base, usize byte_off, usize byte_len) :
-				DeviceLinked(base.device()),
-				_size(byte_len),
-				_offset(byte_off),
-				_buffer(base.vk_buffer()),
-				_memory(base.vk_device_memory()) {
-		}
+		explicit SubBufferBase(const BufferBase& base);
 
-		explicit SubBufferBase(const BufferBase& base) : SubBufferBase(base, 0, base.byte_size()) {
-		}
+		usize byte_size() const;
+		usize byte_offset() const;
+		vk::Buffer vk_buffer() const;
+		vk::DeviceMemory vk_device_memory() const;
 
-		usize byte_size() const {
-			return _size;
-		}
-
-		usize byte_offset() const {
-			return _offset;
-		}
-
-		vk::Buffer vk_buffer() const {
-			return _buffer;
-		}
-
-		vk::DeviceMemory vk_device_memory() const {
-			return _memory;
-		}
-
-		vk::DescriptorBufferInfo descriptor_info() const {
-			return vk::DescriptorBufferInfo()
-					.setBuffer(_buffer)
-					.setOffset(_offset)
-					.setRange(_size)
-				;
-		}
+		vk::DescriptorBufferInfo descriptor_info() const;
 
 	private:
 		usize _size = 0;

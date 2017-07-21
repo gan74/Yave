@@ -59,7 +59,7 @@ class SkeletonInstance {
 		const Skeleton* _skeleton = nullptr;
 		core::Unique<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
 
-		TypedUniformBuffer<math::Transform<>, MemoryFlags::CpuVisible> _bone_transform_buffer;
+		TypedUniformBuffer<math::Transform<>, MemoryType::CpuVisible> _bone_transform_buffer;
 		DescriptorSet _descriptor_set;
 
 		AssetPtr<Animation> _animation;

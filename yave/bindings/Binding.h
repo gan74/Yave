@@ -44,8 +44,32 @@ class Binding {
 			}
 		};
 
-
 		Binding(const TextureView& view) :
+			_type(vk::DescriptorType::eCombinedImageSampler),
+			_info(vk::DescriptorImageInfo()
+			   .setImageLayout(vk_image_layout(ImageUsage::TextureBit))
+			   .setImageView(view.vk_image_view())
+			   .setSampler(view.image().device()->vk_sampler())) {
+		}
+
+		Binding(const StorageView& view) :
+			_type(vk::DescriptorType::eStorageImage),
+			_info(vk::DescriptorImageInfo()
+			   .setImageLayout(vk_image_layout(ImageUsage::StorageBit))
+			   .setImageView(view.vk_image_view())
+			   .setSampler(view.image().device()->vk_sampler())) {
+		}
+
+		Binding(const CubemapView& view) :
+			_type(vk::DescriptorType::eCombinedImageSampler),
+			_info(vk::DescriptorImageInfo()
+			   .setImageLayout(vk_image_layout(ImageUsage::TextureBit))
+			   .setImageView(view.vk_image_view())
+			   .setSampler(view.image().device()->vk_sampler())) {
+		}
+
+		template<ImageType Type>
+		Binding(const ImageView<ImageUsage::TextureBit, Type>& view) :
 				 _type(vk::DescriptorType::eCombinedImageSampler),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(ImageUsage::TextureBit))
@@ -53,7 +77,8 @@ class Binding {
 					.setSampler(view.image().device()->vk_sampler())) {
 		}
 
-		Binding(const StorageView& view) :
+		template<ImageType Type>
+		Binding(const ImageView<ImageUsage::StorageBit, Type>& view) :
 				 _type(vk::DescriptorType::eStorageImage),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(ImageUsage::StorageBit))
@@ -61,13 +86,6 @@ class Binding {
 					.setSampler(view.image().device()->vk_sampler())) {
 		}
 
-		Binding(const CubemapView& view) :
-				 _type(vk::DescriptorType::eCombinedImageSampler),
-				 _info(vk::DescriptorImageInfo()
-					.setImageLayout(vk_image_layout(ImageUsage::TextureBit))
-					.setImageView(view.vk_image_view())
-					.setSampler(view.image().device()->vk_sampler())) {
-		}
 
 		Binding(const SubBuffer<BufferUsage::UniformBit>& buffer) :
 				_type(vk::DescriptorType::eUniformBuffer),
@@ -79,8 +97,8 @@ class Binding {
 				_info(buffer.descriptor_info()) {
 		}
 
-		template<BufferUsage Usage, MemoryFlags Flags>
-		Binding(const Buffer<Usage, Flags>& buffer) :
+		template<BufferUsage Usage, MemoryType Memory>
+		Binding(const Buffer<Usage, Memory>& buffer) :
 				Binding(SubBuffer<(Usage & BufferUsage::StorageBit) != BufferUsage::None ? BufferUsage::StorageBit : BufferUsage::UniformBit>(buffer)) {
 		}
 

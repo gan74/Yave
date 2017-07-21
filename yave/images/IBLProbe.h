@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,40 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BUFFERS_BUFFERBASE_H
-#define YAVE_BUFFERS_BUFFERBASE_H
+#ifndef YAVE_IMAGES_IBLPROBE_H
+#define YAVE_IMAGES_IBLPROBE_H
 
-#include "BufferUsage.h"
-#include <yave/device/DeviceLinked.h>
+#include "Image.h"
 
 namespace yave {
 
-class BufferBase : NonCopyable, public DeviceLinked {
+class IBLProbe : public Cubemap {
 
 	public:
-		usize byte_size() const;
-		vk::Buffer vk_buffer() const;
-		vk::DeviceMemory vk_device_memory() const;
+		static IBLProbe from_cubemap(const Cubemap& cube);
 
-		vk::DescriptorBufferInfo descriptor_info() const;
+		IBLProbe() = default;
 
-		~BufferBase();
+		IBLProbe(IBLProbe&& other);
+		IBLProbe& operator=(IBLProbe&& other);
 
-	protected:
-		void swap(BufferBase& other);
-
-		BufferBase() = default;
-		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType flags, BufferTransfer transfer);
 
 	private:
-		usize _size = 0;
-		vk::Buffer _buffer;
-		vk::DeviceMemory _memory;
-};
 
-static_assert(is_safe_base<BufferBase>::value);
+};
 
 }
 
-
-#endif // YAVE_BUFFERS_BUFFERBASE_H
+#endif // YAVE_IMAGES_IBLPROBE_H

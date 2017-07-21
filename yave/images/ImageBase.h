@@ -48,8 +48,9 @@ class ImageBase : NonCopyable, public DeviceLinked {
 	protected:
 		ImageBase() = default;
 
-		ImageBase(DevicePtr dptr, ImageFormat fmt, ImageUsage usage, const math::Vec2ui& size);
-		ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const math::Vec2ui& size, const ImageData& data);
+		ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1);
+		ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data);
+
 
 		void swap(ImageBase& other);
 

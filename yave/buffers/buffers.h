@@ -27,32 +27,32 @@ SOFTWARE.
 
 namespace yave {
 
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using AttribBuffer = Buffer<BufferUsage::AttributeBit, Flags>;
+template<MemoryType Memory = MemoryType::DeviceLocal>
+using AttribBuffer = Buffer<BufferUsage::AttributeBit, Memory>;
 
-template<typename T, MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Flags>;
-
-
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using UniformBuffer = Buffer<BufferUsage::UniformBit, Flags>;
-
-template<typename T, MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TypedUniformBuffer = TypedBuffer<T, BufferUsage::UniformBit, Flags>;
+template<typename T, MemoryType Memory = MemoryType::DeviceLocal>
+using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Memory>;
 
 
+template<MemoryType Memory = MemoryType::DeviceLocal>
+using UniformBuffer = Buffer<BufferUsage::UniformBit, Memory>;
 
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit,Flags>;
+template<typename T, MemoryType Memory = MemoryType::DeviceLocal>
+using TypedUniformBuffer = TypedBuffer<T, BufferUsage::UniformBit, Memory>;
 
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit, Flags>;
 
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit, Flags>;
 
-template<MemoryFlags Flags = MemoryFlags::DeviceLocal>
-using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Flags>;
+template<MemoryType Memory = MemoryType::DeviceLocal>
+using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit,Memory>;
+
+template<MemoryType Memory = MemoryType::DeviceLocal>
+using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit, Memory>;
+
+template<MemoryType Memory = MemoryType::DeviceLocal>
+using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit, Memory>;
+
+template<MemoryType Memory = MemoryType::DeviceLocal>
+using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Memory>;
 
 
 

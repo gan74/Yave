@@ -52,12 +52,14 @@ class DeferredRenderer : public BufferRenderer {
 	private:
 		Ptr<GBufferRenderer> _gbuffer;
 
+		Cubemap _envmap;
+
 		ComputeShader _lighting_shader;
 		ComputeProgram _lighting_program;
 
 		StorageTexture _acc_buffer;
 
-		Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> _lights_buffer;
+		Buffer<BufferUsage::StorageBit, MemoryType::CpuVisible> _lights_buffer;
 		TypedBuffer<uniform::Camera, BufferUsage::UniformBit> _camera_buffer;
 
 		DescriptorSet _descriptor_set;

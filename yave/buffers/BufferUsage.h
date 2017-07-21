@@ -62,8 +62,8 @@ constexpr BufferTransfer operator&(BufferTransfer a, BufferTransfer b) {
 
 
 
-// Y_TODO(maybe ditch eHostCoherent for a raii flush)
-enum class MemoryFlags {
+enum class MemoryType {
+	DontCare = 0,
     DeviceLocal = uenum(vk::MemoryPropertyFlagBits::eDeviceLocal),
 	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible)
 };
@@ -71,17 +71,17 @@ enum class MemoryFlags {
 
 
 
-inline constexpr bool is_cpu_visible(MemoryFlags flags) {
+inline constexpr bool is_cpu_visible(MemoryType flags) {
 	return uenum(flags) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
 }
 
 
 
-inline constexpr MemoryFlags prefered_memory_flags(BufferUsage usage) {
-	return ((usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryFlags::CpuVisible : MemoryFlags::DeviceLocal;
+inline constexpr MemoryType prefered_memory_flags(BufferUsage usage) {
+	return ((usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryType::CpuVisible : MemoryType::DeviceLocal;
 }
 
-inline constexpr BufferTransfer prefered_transfer(MemoryFlags flags) {
+inline constexpr BufferTransfer prefered_transfer(MemoryType flags) {
 	return is_cpu_visible(flags) ? BufferTransfer::None : BufferTransfer::TransferDst;
 }
 

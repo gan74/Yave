@@ -27,13 +27,14 @@ SOFTWARE.
 
 namespace yave {
 
-template<MemoryFlags Flags>
-using MemoryMapping = std::conditional_t<is_cpu_visible(Flags), CpuVisibleMapping, StagingBufferMapping>;
+template<MemoryType Memory>
+using MemoryMapping = std::conditional_t<is_cpu_visible(Memory), CpuVisibleMapping, StagingBufferMapping>;
 
-template<typename Elem, MemoryFlags Flags>
-class TypedMapping : public MemoryMapping<Flags> {
+template<typename Elem, MemoryType Memory>
+class TypedMapping : public MemoryMapping<Memory> {
 
-	using Base = MemoryMapping<Flags>;
+	using Base = MemoryMapping<Memory>;
+
 	public:
 		using iterator = Elem* ;
 		using const_iterator = Elem const* ;
@@ -89,9 +90,6 @@ class TypedMapping : public MemoryMapping<Flags> {
 		}
 
 	private:
-		void swap(TypedMapping& other) {
-			Base::swap(other);
-		}
 
 };
 

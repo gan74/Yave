@@ -27,9 +27,8 @@ SOFTWARE.
 
 namespace yave {
 
-#warning make const
 template<typename T>
-using AssetPtr = core::Arc<T>;
+using AssetPtr = core::Arc<const T>;
 
 }
 

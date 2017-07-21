@@ -30,17 +30,11 @@ class CpuVisibleMapping : NonCopyable {
 
 	public:
 		CpuVisibleMapping() = default;
+		CpuVisibleMapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer);
 
 		template<BufferUsage Usage, BufferTransfer Transfer>
-		CpuVisibleMapping(const SpecializedSubBuffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
+		CpuVisibleMapping(const Buffer<Usage, MemoryType::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBuffer(buffer)) {
 		}
-
-		template<BufferUsage Usage, BufferTransfer Transfer>
-		CpuVisibleMapping(const Buffer<Usage, MemoryFlags::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBufferBase(buffer)) {
-		}
-
-		CpuVisibleMapping(CpuVisibleMapping&& other);
-		CpuVisibleMapping& operator=(CpuVisibleMapping&& other);
 
 		~CpuVisibleMapping();
 
@@ -48,14 +42,13 @@ class CpuVisibleMapping : NonCopyable {
 
 		void* data();
 		const void* data() const;
+
 		usize byte_size() const;
 
 	protected:
 		void swap(CpuVisibleMapping& other);
 
 	private:
-		CpuVisibleMapping(const SubBufferBase& buff);
-
 		SubBufferBase _buffer;
 		void* _mapping = nullptr;
 };

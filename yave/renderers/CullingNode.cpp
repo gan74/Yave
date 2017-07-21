@@ -62,7 +62,7 @@ static auto process_static_meshes(const core::Vector<Scene::Ptr<StaticMeshInstan
 	constexpr enum { UseMap, Sort, DontSort } batching = UseMap;
 
 	if constexpr(batching == UseMap) {
-		std::unordered_map<Material*, decltype(visibles)> per_mat;
+		std::unordered_map<const Material*, decltype(visibles)> per_mat;
 		for(const auto& m : meshes) {
 			if(frustum.is_inside(m->position(), m->radius())) {
 				per_mat[m->material().as_ptr()] << m.as_ptr();

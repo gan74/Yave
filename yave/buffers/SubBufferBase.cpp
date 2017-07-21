@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,40 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BUFFERS_BUFFERBASE_H
-#define YAVE_BUFFERS_BUFFERBASE_H
 
-#include "BufferUsage.h"
-#include <yave/device/DeviceLinked.h>
+#include "SubBufferBase.h"
 
 namespace yave {
 
-class BufferBase : NonCopyable, public DeviceLinked {
-
-	public:
-		usize byte_size() const;
-		vk::Buffer vk_buffer() const;
-		vk::DeviceMemory vk_device_memory() const;
-
-		vk::DescriptorBufferInfo descriptor_info() const;
-
-		~BufferBase();
-
-	protected:
-		void swap(BufferBase& other);
-
-		BufferBase() = default;
-		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType flags, BufferTransfer transfer);
-
-	private:
-		usize _size = 0;
-		vk::Buffer _buffer;
-		vk::DeviceMemory _memory;
-};
-
-static_assert(is_safe_base<BufferBase>::value);
-
+SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_off, usize byte_len) :
+		DeviceLinked(base.device()),
+		_size(byte_len),
+		_offset(byte_off),
+		_buffer(base.vk_buffer()),
+		_memory(base.vk_device_memory()) {
 }
 
+SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, 0, base.byte_size()) {
+}
 
-#endif // YAVE_BUFFERS_BUFFERBASE_H
+usize SubBufferBase::byte_size() const {
+	return _size;
+}
+
+usize SubBufferBase::byte_offset() const {
+	return _offset;
+}
+
+vk::Buffer SubBufferBase::vk_buffer() const {
+	return _buffer;
+}
+
+vk::DeviceMemory SubBufferBase::vk_device_memory() const {
+	return _memory;
+}
+
+vk::DescriptorBufferInfo SubBufferBase::descriptor_info() const {
+	return vk::DescriptorBufferInfo()
+			.setBuffer(_buffer)
+			.setOffset(_offset)
+			.setRange(_size)
+		;
+}
+
+}

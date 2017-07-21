@@ -22,12 +22,12 @@ SOFTWARE.
 
 #include "DeferredRenderer.h"
 
+#include <yave/images/IBLProbe.h>
+
 #include <yave/commands/CmdBufferRecorder.h>
 #include <yave/buffers/CpuVisibleMapping.h>
 
 #include <y/io/File.h>
-
-#include <random>
 
 namespace yave {
 
@@ -38,12 +38,16 @@ static ComputeShader create_lighting_shader(DevicePtr dptr) {
 }
 
 static auto create_light_buffer(DevicePtr dptr, usize max_light_count = 1024) {
-	Buffer<BufferUsage::StorageBit, MemoryFlags::CpuVisible> buffer(dptr, sizeof(Vec4u32) + max_light_count * sizeof(uniform::Light));
-	TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryFlags::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(0);
+	Buffer<BufferUsage::StorageBit, MemoryType::CpuVisible> buffer(dptr, sizeof(Vec4u32) + max_light_count * sizeof(uniform::Light));
+	TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryType::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(0);
 
 	return buffer;
 }
 
+static auto load_envmap(DevicePtr dptr) {
+	return Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemap/sky.yt").expected("Unable to open cubemap")));
+	//return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemap/sky.yt").expected("Unable to open cubemap"))));
+}
 
 
 
@@ -51,12 +55,21 @@ static auto create_light_buffer(DevicePtr dptr, usize max_light_count = 1024) {
 DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 		BufferRenderer(gbuffer->device()),
 		_gbuffer(gbuffer),
+		_envmap(load_envmap(device())),
 		_lighting_shader(create_lighting_shader(device())),
 		_lighting_program(_lighting_shader),
 		_acc_buffer(device(), ImageFormat(vk::Format::eR16G16B16A16Sfloat), _gbuffer->size()),
 		_lights_buffer(create_light_buffer(device())),
 		_camera_buffer(device(), 1),
-		_descriptor_set(device(), {Binding(_gbuffer->depth()), Binding(_gbuffer->color()), Binding(_gbuffer->normal()), Binding(_camera_buffer), Binding(_lights_buffer), Binding(StorageView(_acc_buffer))}) {
+		_descriptor_set(device(), {
+				Binding(_gbuffer->depth()),
+				Binding(_gbuffer->color()),
+				Binding(_gbuffer->normal()),
+				Binding(_envmap),
+				Binding(_camera_buffer),
+				Binding(_lights_buffer),
+				Binding(StorageView(_acc_buffer))
+			}) {
 
 	for(usize i = 0; i != 3; i++) {
 		if(size()[i] % _lighting_shader.local_size()[i]) {
