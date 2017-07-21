@@ -3,6 +3,12 @@
 #include "yave.glsl"
 
 
+// -------------------------------- DEFINES --------------------------------
+
+//#define USE_IBL
+
+
+
 // -------------------------------- I/O --------------------------------
 
 layout(local_size_x = 16, local_size_y = 16) in;
@@ -11,7 +17,10 @@ layout(set = 0, binding = 0) uniform sampler2D in_depth;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
 layout(set = 0, binding = 2) uniform sampler2D in_normal;
 
-layout(set = 0, binding = 3) uniform Camera {
+layout(set = 0, binding = 3) uniform samplerCube in_envmap;
+
+
+layout(set = 0, binding = 4) uniform Camera {
 	mat4 inv_matrix;
 	vec3 position;
 	uint padding_0;
@@ -19,7 +28,7 @@ layout(set = 0, binding = 3) uniform Camera {
 	uint padding_1;
 } camera;
 
-layout(set = 0, binding = 4) readonly buffer InBuffer {
+layout(set = 0, binding = 5) readonly buffer Lights {
 	uint count;
 	uint directional_count;
 	uint padding[2];
@@ -28,7 +37,7 @@ layout(set = 0, binding = 4) readonly buffer InBuffer {
 } lights;
 
 
-layout(rgba16f, set = 0, binding = 5) uniform writeonly image2D out_color;
+layout(rgba16f, set = 0, binding = 6) uniform writeonly image2D out_color;
 
 
 // -------------------------------- SHARED --------------------------------
@@ -46,7 +55,7 @@ shared uint i_min_depth;
 vec3 load_color() {
 	float light_count = tile_light_count + lights.directional_count;
 	float max_lights = lights.count + lights.directional_count;
-	return vec3(light_count / max_lights);
+	return load_spectrum(light_count / max_lights);
 }
 
 vec3 group_color() {
@@ -101,7 +110,7 @@ Frustum build_group_frustum() {
 	vec3 tile_top_right = bot_left + x_step * (gl_WorkGroupID.x + 1) + y_step * (gl_WorkGroupID.y + 1);
 
 	vec3 cam_pos = camera.position;
-	vec3 cam_fwd = camera.forward;
+	vec3 cam_fwd = normalize(camera.forward);
 
 	float min_depth = uint_to_float(i_min_depth);
 	float max_depth = uint_to_float(i_max_depth);
@@ -114,8 +123,8 @@ Frustum build_group_frustum() {
 	frustum.planes[2] = plane(cam_pos, tile_top_right, tile_top_left);
 	frustum.planes[3] = plane(cam_pos, tile_bot_left, tile_bot_right);
 
-	frustum.planes[4] = vec4(cam_fwd, dot(far, cam_fwd));
-	frustum.planes[5] = vec4(cam_fwd, dot(near, cam_fwd));
+	frustum.planes[4] = vec4(cam_fwd, -dot(near + cam_pos, cam_fwd));
+	frustum.planes[5] = vec4(-cam_fwd, -dot(far + cam_pos, cam_fwd));
 
 	return frustum;
 }
@@ -150,9 +159,6 @@ void cull_lights(float depth) {
 
 // -------------------------------- MAIN --------------------------------
 
-//#define PROFILE
-//#define LIGHT_ONLY
-
 void main() {
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
@@ -163,13 +169,7 @@ void main() {
 
 	cull_lights(depth);
 
-
-#ifndef LIGHT_ONLY
-	vec4 albedo = texelFetch(in_color, coord, 0);
-#else
-	vec4 albedo = vec4(1.0);
-#endif
-
+	vec3 albedo = texelFetch(in_color, coord, 0).rgb;
 
 	if(depth < 1) {
 		vec3 normal = fetch_normal(in_normal, coord);
@@ -185,20 +185,21 @@ void main() {
 			light_dir /= distance;
 			float att = attenuation(distance, light.radius);
 
-			acc += light.color * att * albedo.xyz * brdf(normal, light_dir, view_dir);
+			acc += light.color * att * albedo * brdf(normal, light_dir, view_dir);
 		}
 
 		for(uint i = lights.count, end = lights.count + lights.directional_count; i != end; ++i) {
 			Light light = lights.lights[i];
-			acc += light.color * albedo.xyz * brdf(normal, light.position, view_dir);
+			acc += light.color * albedo * brdf(normal, light.position, view_dir);
 		}
+
+#ifdef USE_IBL
+		acc += albedo * reflection(in_envmap, normal, view_dir);
+#endif
 	}
 
-#ifdef PROFILE
-	imageStore(out_color, coord, vec4(load_color(), 1.0));
-#else
 	imageStore(out_color, coord, vec4(acc, 1.0));
-#endif
+	//imageStore(out_color, coord, vec4(load_color(), 1.0));
 }
 
 

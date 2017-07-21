@@ -68,15 +68,23 @@ mat4 indentity() {
 // -------------------------------- SPECTRUM --------------------------------
 
 vec3 spectrum(float x) {
-	float wl = x * 400.0 + 380.0 ;
-	if(wl >= 645.0) return vec3(1.0, 0.0, 0.0);
-	if(wl >= 580.0) return vec3(1.0, (645.0 - wl) / 65.0, 0.0);
-	if(wl >= 510.0) return vec3((wl - 510.0) / 70.0, 1.0, 0.0);
-	if(wl >= 490.0) return vec3(0.0, 1.0, (510.0 - wl) / 20.0);
-	if(wl >= 440.0) return vec3(0.0, (wl - 440.0) / 40.0, 1.0);
-	if(wl >= 380.0) return vec3((440 - wl) / 60.0, 0.0, 1.0);
-	return vec3(0.0);
+	x = x * 6.0;
+	if(x > 5.0) return vec3(1.0, 0.0, 6.0 - x);
+	if(x > 4.0) return vec3(x - 4.0, 0.0, 1.0);
+	if(x > 3.0) return vec3(0.0, 4.0 - x, 1.0);
+	if(x > 2.0) return vec3(0.0, 1.0, x - 2.0);
+	if(x > 1.0) return vec3(2.0 - x, 1.0, 0.0);
+	return vec3(1.0, x, 0.0);
 }
+
+vec3 load_spectrum(float x) {
+	x = (1.0 - x) * 4.0;
+	if(x > 3.0) return vec3(0.0, 4.0 - x, 1.0);
+	if(x > 2.0) return vec3(0.0, 1.0, x - 2.0);
+	if(x > 1.0) return vec3(2.0 - x, 1.0, 0.0);
+	return vec3(1.0, x, 0.0);
+}
+
 
 vec3 spectrum(uint x) {
 	x = (x % 6) + 1;
@@ -141,4 +149,10 @@ float brdf(vec3 normal, vec3 light_dir, vec3 view_dir) {
 
 	return lambert + phong;
 }
+
+vec3 reflection(samplerCube envmap, vec3 normal, vec3 view) {
+	vec3 r = reflect(view, normal);
+	return textureLod(envmap, r, 1).rgb;
+}
+
 
