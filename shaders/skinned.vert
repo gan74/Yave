@@ -37,13 +37,12 @@ void main() {
 				 spectrum(in_skin_indexes.w) * in_skin_weights.w;
 
 
+	mat4 bone_matrix = in_skin_weights.x * bones.transforms[in_skin_indexes.x] +
+					   in_skin_weights.y * bones.transforms[in_skin_indexes.y] +
+					   in_skin_weights.z * bones.transforms[in_skin_indexes.z] +
+					   in_skin_weights.w * bones.transforms[in_skin_indexes.w];
+
 	v_uv = in_uv;
-	v_normal = mat3(in_model) * in_normal;
-
-	vec4 a = in_skin_weights.x * (bones.transforms[in_skin_indexes.x] * vec4(in_position, 1.0));
-	vec4 b = in_skin_weights.y * (bones.transforms[in_skin_indexes.y] * vec4(in_position, 1.0));
-	vec4 c = in_skin_weights.z * (bones.transforms[in_skin_indexes.z] * vec4(in_position, 1.0));
-	vec4 d = in_skin_weights.w * (bones.transforms[in_skin_indexes.w] * vec4(in_position, 1.0));
-
-	gl_Position = view_proj.matrix * in_model * (a + b + c + d);
+	v_normal = mat3(in_model) * mat3(bone_matrix) * in_normal;
+	gl_Position = view_proj.matrix * in_model * bone_matrix * vec4(in_position, 1.0);
 }
