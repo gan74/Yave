@@ -58,7 +58,7 @@ struct Nothing {
 	}
 
 	template<typename T>
-	operator T&() const {
+	operator T() const {
 		return fatal("y::Nothing used");
 	}
 };
