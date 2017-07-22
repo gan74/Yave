@@ -203,11 +203,6 @@ class Rc : public detail::Ptr<T> {
 			return *this;
 		}
 
-		Rc& for_ever() {
-			++(*_count);
-			return *this;
-		}
-
 	private:
 		template<typename U, typename D>
 		friend class Rc;
