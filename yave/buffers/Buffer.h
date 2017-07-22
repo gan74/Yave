@@ -47,6 +47,8 @@ class Buffer : public BufferBase {
 
 		Buffer() = default;
 
+		// This is important: it prevent the ctor from being instanciated for Buffer specialisations that should not be created this way,
+		// thus preventing static_assert from going off.
 		template<typename = void>
 		Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Memory, Transfer) {
 			static_assert(Usage != BufferUsage::None || Transfer != BufferTransfer::None, "Buffers should not have Usage == BufferUsage::None");

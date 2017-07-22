@@ -129,7 +129,8 @@ void YaveApp::create_assets() {
 	}
 
 	{
-		auto texture = AssetPtr<Texture>(Texture(&device, ImageData::from_file(io::File::open("../tools/font_to_yf/font.yt").expected("Unable to load image file.")))).for_ever();
+		auto texture = AssetPtr<Texture>(Texture(&device, ImageData::from_file(io::File::open("../tools/font_to_yf/font.yt").expected("Unable to load image file."))));
+		do_not_destroy(texture);
 		auto text_material = AssetPtr<Material>(Material(&device, MaterialData()
 				 .set_frag_data(SpirVData::from_file(io::File::open("text.frag.spv").expected("Unable to load spirv file.")))
 				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
