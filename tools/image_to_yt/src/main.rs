@@ -63,12 +63,20 @@ fn main() {
 }
 
 
-fn write_images_to_file(path: &Path, images: Vec<ImageData>, format: &ImageFormat, quality: u8) -> Result<usize> {
+fn write_images_to_file(path: &Path, 
+						images: Vec<ImageData>, 
+						format: &ImageFormat, 
+						quality: u8) -> Result<usize> {
+
 	let ref mut writer = BufWriter::new(File::create(path.with_extension("yt")).expect("Unable to create output file."));
 	write_images(writer, images, format, quality)
 }
 
-fn write_images<W: Write + Seek>(file: &mut BufWriter<W>, images: Vec<ImageData>, format: &ImageFormat, quality: u8) -> Result<usize> {
+
+fn write_images<W: Write + Seek>(file: &mut BufWriter<W>, 
+								 images: Vec<ImageData>, 
+								 format: &ImageFormat, 
+								 quality: u8) -> Result<usize> {
 	let image_type: u32 = 2;
 	let version: u32 = 3;
 	let size = (images[0].size.0 as u32, images[0].size.1 as u32);
@@ -81,7 +89,7 @@ fn write_images<W: Write + Seek>(file: &mut BufWriter<W>, images: Vec<ImageData>
 	}
 
 	file.write(b"yave")
-		.and_then(|_| write_bin(file, &vec![image_type, version, size.0, size.1, layers, 0, format.id()]))?;
+		.and_then(|_| write_bin(file, &[image_type, version, size.0, size.1, layers, 0, format.id()]))?;
 
 	let mut mipmaps = 0;
 	for layer in images {
@@ -106,13 +114,13 @@ fn write_images<W: Write + Seek>(file: &mut BufWriter<W>, images: Vec<ImageData>
 	println!("{} mipmaps exported", mipmaps);
 	
 	file.seek(SeekFrom::Start(24))
-		.and_then(|_| write_bin(file, &vec![mipmaps]))
+		.and_then(|_| write_bin(file, &[mipmaps]))
 }
 
 
 
 
-fn write_bin<E, T: Write>(file: &mut T, v: &Vec<E>) -> Result<usize> {
+fn write_bin<E, T: Write>(file: &mut T, v: &[E]) -> Result<usize> {
 	let slice_u8: &[u8] = unsafe {
 		slice::from_raw_parts(
 			v.as_ptr() as *const u8, 

@@ -4,7 +4,7 @@ use image_data::*;
 
 
 fn is_sq_power_2(size: (usize, usize)) -> bool {
-	size.0 == size.1 && size.0.count_ones() == 1
+	size.0 == size.1 && size.0.is_power_of_two()
 }
 
 

@@ -1,0 +1,8 @@
+[package]
+name = "font_to_yf"
+version = "0.1.0"
+authors = ["gan74 <gregoire.angerand@epfl.ch>"]
+
+[dependencies]
+rusttype = "*"
+rayon = "*"
