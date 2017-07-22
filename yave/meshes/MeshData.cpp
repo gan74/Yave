@@ -109,8 +109,8 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 		u32 triangles;
 
 		bool is_valid() const {
-			return magic == 0x65766179 &&
-				   type == 1 &&
+			return magic == fs::magic_number &&
+				   type == fs::mesh_file_type &&
 				   version == 5 &&
 				   vertices != 0 &&
 				   triangles != 0;

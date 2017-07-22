@@ -31,17 +31,19 @@ namespace yave {
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class ImageView {
 
+	static constexpr bool is_compatible(ImageUsage u) {
+		return (uenum(Usage) & uenum(u)) == uenum(Usage);
+	}
+
 	public:
 		ImageView() = default;
 
-		template<ImageUsage ImgUsage, typename = std::enable_if_t<(ImgUsage & Usage) == Usage>>
-		ImageView(const Image<ImgUsage, Type>& img) : _image(&img), _view(img.vk_view()) {
-			static_assert((ImgUsage & Usage) == Usage, "Invalid image usage.");
+		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
+		ImageView(const Image<U, Type>& img) : _image(&img), _view(img.vk_view()) {
 		}
 
-		template<ImageUsage ImgUsage, typename = std::enable_if_t<(ImgUsage & Usage) == Usage>>
-		ImageView(const ImageView<ImgUsage, Type>& img) : _image(img._image), _view(img._view) {
-			static_assert((ImgUsage & Usage) == Usage, "Invalid image usage.");
+		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
+		ImageView(const ImageView<U, Type>& img) : _image(img._image), _view(img._view) {
 		}
 
 		vk::ImageView vk_image_view() const {

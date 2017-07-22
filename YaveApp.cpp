@@ -113,11 +113,35 @@ void YaveApp::create_assets() {
 		l.color() = math::Vec3{0.5f};
 		lights << std::move(l);
 	}
+	/*for(usize i = 1; i != 7; ++i){
+		Light l(Light::Point);
+		l.color() = math::Vec3{i & 0b0001 ? 1.0f : 0.0f, i & 0b0010 ? 1.0f : 0.0f, i & 0b0100 ? 1.0f : 0.0f} * 100000.0f;
+		l.position() = (math::Vec3{i & 0b0001 ? 1.0f : 0.0f, i & 0b0010 ? 1.0f : 0.0f, i & 0b0100 ? 1.0f : 0.0f} * 150.0f);
+		l.radius() = 150.0f;
+		lights << std::move(l);
+	}*/
 	{
 		Light l(Light::Point);
 		l.color() = math::Vec3{1.0f, 0.0f, 0.0f} * 100000.0f;
-		l.radius() = 100.0f;
+		l.position() = math::Vec3{-100.0f, 0.0f, 0.0f};
+		l.radius() = 150.0f;
 		lights << std::move(l);
+	}
+
+	{
+		auto texture = AssetPtr<Texture>(Texture(&device, ImageData::from_file(io::File::open("../tools/font_to_yf/font.yt").expected("Unable to load image file.")))).for_ever();
+		auto text_material = AssetPtr<Material>(Material(&device, MaterialData()
+				 .set_frag_data(SpirVData::from_file(io::File::open("text.frag.spv").expected("Unable to load spirv file.")))
+				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
+				 .set_bindings({Binding(TextureView(*texture))})
+			 ));
+
+		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to open mesh file."));
+		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
+
+		auto text_mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
+		auto instance = new StaticMeshInstance(text_mesh, text_material);
+		renderables << instance;
 	}
 
 	{
@@ -148,6 +172,12 @@ void YaveApp::create_assets() {
 		{
 			auto static_instance = new StaticMeshInstance(static_mesh, static_material);
 			static_instance->position() = {-100.0f, 0.0f, 0.0f};
+
+			renderables << static_instance;
+		}
+		{
+			auto static_instance = new StaticMeshInstance(static_mesh, static_material);
+			static_instance->position() = {-1000.0f, 0.0f, 0.0f};
 
 			renderables << static_instance;
 		}

@@ -30,6 +30,7 @@ SOFTWARE.
 namespace yave {
 
 class ImageBase : NonCopyable, public DeviceLinked {
+
 	public:
 		vk::Image vk_image() const;
 		vk::DeviceMemory vk_device_memory() const;

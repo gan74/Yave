@@ -40,29 +40,16 @@ namespace yave {
 
 using namespace y;
 
-struct Version {
-	u32 patch : 12;
-	u32 minor : 10;
-	u32 major : 10;
-};
 
+namespace fs {
+static constexpr u32 magic_number = 0x65766179;
+static constexpr u32 mesh_file_type = 1;
+static constexpr u32 image_file_type = 2;
+static constexpr u32 font_file_type = 3;
+}
 
 class Device;
-
 using DevicePtr = const Device*;
-
-
-
-namespace detail {
-template<typename... Args>
-constexpr int max(Args... args) {
-	int max = 0;
-	// https://www.youtube.com/watch?v=nhk8pF_SlTk
-	unused(std::initializer_list<int>{ (max = std::max(max, args))... });
-	return max;
-}
-}
-
 
 template<typename T>
 using is_safe_base = bool_type<!std::is_default_constructible_v<T> &&

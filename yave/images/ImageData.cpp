@@ -74,11 +74,9 @@ const ImageFormat& ImageData::format() const {
 
 usize ImageData::data_offset(usize layer, usize mip) const {
 	usize offset = layer ? layer_byte_size() * layer : 0;
-
 	for(usize i = 0; i != mip; ++i) {
 		offset += byte_size(i);
 	}
-
 	return offset;
 }
 
@@ -109,8 +107,8 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 		u32 format;
 
 		bool is_valid() const {
-			return magic == 0x65766179 &&
-				   type == 2 &&
+			return magic == fs::magic_number &&
+				   type == fs::image_file_type &&
 				   version == 3 &&
 				   format > 0 &&
 				   width != 0 &&

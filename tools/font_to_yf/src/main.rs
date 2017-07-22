@@ -3,17 +3,21 @@ extern crate rayon;
 
 use rusttype::{FontCollection, Scale, point};
 use std::fs::{File};
-use std::io::{Read, Write};
+use std::path::{Path};
+use std::io::{Read, Write, BufWriter, Result};
 
 use std::f32;
 use std::cmp;
+use std::mem;
+use std::slice;
 
 use rayon::prelude::*;
 
-const CHARACTERS: &'static str = "�abcdefghijklmnopqrstuvwxyz0123456789/*-+.,;:!? ";
+const CHARACTERS: &'static str = "�ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/*-+.,;:!? ";
 
 const RASTER_SIZE: usize = 1024;
 const SDF_SIZE: usize = 64;
+const EMPTY_ROW: &'static [u8] = &[0; SDF_SIZE];
 
 const INSIDE_THRESHOLD: u8 = 127;
 
@@ -27,11 +31,7 @@ fn compute_sdf(pixel_data: Vec<u8>) -> Vec<u8> {
 	let sdf_uv = |x| x as f32 / (SDF_SIZE - 1) as f32;
 	let sqr = |x| x * x;
 
-	let max_dist = {
-		let ker_size = (KER_HSIZE * 2 + 1) * RATIO;
-		let uv_size = pix_uv(ker_size);
-		(sqr(uv_size) + sqr(uv_size)).sqrt() * 0.5
-	};
+	let max_dist = (sqr(pix_uv((KER_HSIZE * 2 + 1) * RATIO)) * 2.0).sqrt() * 0.5;
 
 
 	for x  in 0..SDF_SIZE {
@@ -79,17 +79,6 @@ fn compute_sdf(pixel_data: Vec<u8>) -> Vec<u8> {
 		}
 	}
 
-	for mut s in &mut sdf_data {
-		let c = match *s {
-			0...50 => b' ',
-			50...90 => b'.',
-			90...127 => b'-',
-			127...191 => b'+',
-			_ => b'#'
-		};
-		*s = c;
-	}
-
 	sdf_data
 }
 
@@ -106,7 +95,7 @@ fn main() {
 	let glyphs = font.glyphs_for(CHARACTERS.chars()).collect::<Vec<_>>();
 	let offset = point(0.0, font.v_metrics(scale).ascent);
 
-	let mut sdf_images = Vec::with_capacity(glyphs.len());
+	let mut sdfs = Vec::with_capacity(glyphs.len());
 	glyphs.into_par_iter().map(|glyph| {
 			let g = glyph.scaled(scale).positioned(offset);
 			let mut pixel_data = vec![0u8; RASTER_SIZE * RASTER_SIZE];
@@ -123,18 +112,62 @@ fn main() {
 			}
 
 			compute_sdf(pixel_data)
-		}).collect_into(&mut sdf_images);
+		}).collect_into(&mut sdfs);
 
+	let mut file = BufWriter::new(File::create(Path::new("./font").with_extension("yt")).expect("Unable to create output file."));
+	write_images(&mut file, sdfs).unwrap();
+}
 
+fn write_images<W: Write>(file: &mut BufWriter<W>, sdfs: Vec<Vec<u8>>) -> Result<usize> {
+	let atlas_width = (sdfs.len() as f32).sqrt().ceil() as usize;
+	let atlas_height = sdfs.len() / atlas_width + if sdfs.len() % atlas_width == 0 { 0 } else { 1 };
 
-	let stdout = ::std::io::stdout();
-	let mut handle = stdout.lock(); 
-	for img in sdf_images {
-		assert_eq!(SDF_SIZE * SDF_SIZE, img.len());
-		for j in 0..SDF_SIZE {
-			handle.write(&img[(j * SDF_SIZE)..((j + 1) * SDF_SIZE)]).unwrap();
-			handle.write(b"\n").unwrap();
+	let image_type: u32 = 2;
+	let version: u32 = 3;
+	let size = ((SDF_SIZE * atlas_width) as u32, (SDF_SIZE * atlas_height) as u32);
+	let layers = 1u32;
+	let mipmaps = 1u32;
+	let format = 9u32; // R8
+
+	file.write(b"yave")?;
+	write_bin(file, &[image_type, version, size.0, size.1, layers, mipmaps, format])?;
+
+	for j in 0..atlas_height {
+		for i in 0..atlas_width {
+			let index = i + j * atlas_width;
+			if let Some(c) = CHARACTERS.chars().nth(index) {
+				print!("{}", c);
+			}
 		}
-		handle.write(b"\n").unwrap();
+		println!("");
 	}
+
+	for j in 0..atlas_height {
+		for row in 0..SDF_SIZE {
+			let row_offset = row * SDF_SIZE;
+			for i in 0..atlas_width {
+				let index = i + j * atlas_width;
+
+				let row_data = if index < sdfs.len() {
+						&sdfs[index][row_offset..(row_offset + SDF_SIZE)]
+					} else {
+						EMPTY_ROW
+					};
+
+				write_bin(file, row_data)?;
+			}
+		}
+	}
+
+	Ok(0)
+}
+
+fn write_bin<E, T: Write>(file: &mut T, v: &[E]) -> Result<usize> {
+	let slice_u8: &[u8] = unsafe {
+		slice::from_raw_parts(
+			v.as_ptr() as *const u8, 
+			v.len() * mem::size_of::<E>()
+		)
+	};
+	file.write(slice_u8)
 }

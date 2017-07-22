@@ -32,7 +32,7 @@ namespace yave {
 enum class CmdBufferUsage {
 	Primary = uenum(vk::CommandBufferUsageFlagBits()), // eSimultaneousUse ?
 	Disposable = uenum(vk::CommandBufferUsageFlagBits::eOneTimeSubmit),
-	Secondary = uenum((detail::max(Primary, Disposable) << 1)) | uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
+	Secondary = uenum((std::max(Primary, Disposable) << 1)) | uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 };
 
 class CmdBufferBase;

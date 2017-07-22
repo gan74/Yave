@@ -49,6 +49,12 @@ PhysicalDevice::PhysicalDevice(Instance& instance) :
 		_device(choose_device(instance.vk_instance())),
 		_memory_properties(_device.getMemoryProperties()) {
 
+	struct Version {
+		u32 patch : 12;
+		u32 minor : 10;
+		u32 major : 10;
+	};
+
 	auto properties = _device.getProperties();
 	const auto& v_ref = properties.apiVersion;
 	auto version = reinterpret_cast<const Version&>(v_ref);

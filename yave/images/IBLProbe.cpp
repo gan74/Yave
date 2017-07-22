@@ -55,9 +55,9 @@ IBLProbe& IBLProbe::operator=(IBLProbe&& other) {
 }
 
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
-	fatal("Not supported.");
+	return fatal("Not supported.");
 
-	struct EmptyProbe : Image<ImageUsage::TextureBit | ImageUsage::StorageBit, ImageType::Cube> {
+	/*struct EmptyProbe : Image<ImageUsage::TextureBit | ImageUsage::StorageBit, ImageType::Cube> {
 		EmptyProbe(DevicePtr dptr, const math::Vec2ui& size, usize mips) {
 			ProbeBase base(dptr, size, mips);
 			swap(base);
@@ -77,7 +77,7 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 
 	IBLProbe probe;
 	probe.swap(empty);
-	return probe;
+	return probe;*/
 }
 
 
