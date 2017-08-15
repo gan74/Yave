@@ -83,9 +83,9 @@ void do_not_destroy(T&& t) {
 	union U {
 		U() {}
 		~U() {}
-		T t;
+        std::remove_reference_t<T> t;
 	} u;
-	new(&u.t) T(std::forward<T>(t));
+    new(&u.t) std::remove_reference_t<T>(std::forward<T>(t));
 }
 
 

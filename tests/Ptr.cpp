@@ -49,7 +49,7 @@ y_test_func("Unique RAII") {
 	bool exists = false;
 
 	{
-		auto p = Unique(Raii(exists));
+        auto p = Unique<Raii>(Raii(exists));
 		y_test_assert(exists);
 		{
 			y_test_assert(exists);
@@ -63,7 +63,7 @@ y_test_func("Unique RAII") {
 y_test_func("Rc RAII") {
 	bool exists = false;
 	{
-		auto p = Rc(Raii(exists));
+        auto p = Rc<Raii>(Raii(exists));
 		y_test_assert(exists);
 		{
 			y_test_assert(exists);
@@ -71,7 +71,6 @@ y_test_func("Rc RAII") {
 		y_test_assert(exists);
 	}
 	y_test_assert(!exists);
-
 }
 
 
@@ -79,7 +78,7 @@ y_test_func("Rc count") {
 	bool exists = false;
 	bool exists2 = false;
 	{
-		auto p = Rc(Raii(exists));
+        auto p = Rc<Raii>(Raii(exists));
 		y_test_assert(p.ref_count() == 1);
 		y_test_assert(exists);
 
@@ -94,7 +93,7 @@ y_test_func("Rc count") {
 		y_test_assert(exists);
 
 		{
-			auto p2 = Rc(Raii(exists2));
+            auto p2 = Rc<Raii>(Raii(exists2));
 			y_test_assert(p.ref_count() == 1);
 			y_test_assert(p2.ref_count() == 1);
 			p = p2;
