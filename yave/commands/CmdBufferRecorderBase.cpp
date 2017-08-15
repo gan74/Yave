@@ -195,6 +195,24 @@ void PrimaryCmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuff
 }
 
 
+static vk::PipelineStageFlags pipeline_stage(vk::AccessFlags access) {
+	if((uenum(access) & ~uenum(vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite)) == 0) {
+		return vk::PipelineStageFlagBits::eTopOfPipe;
+	}
+	if(access & (vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite)) {
+		return vk::PipelineStageFlagBits::eTransfer;
+	}
+	if(access & (vk::AccessFlagBits::eShaderRead| vk::AccessFlagBits::eShaderWrite)) {
+		return vk::PipelineStageFlagBits::eVertexShader |
+			   vk::PipelineStageFlagBits::eFragmentShader |
+			   //vk::PipelineStageFlagBits::eTessellationControlShader |
+			   //vk::PipelineStageFlagBits::eTessellationEvaluationShader |
+			   vk::PipelineStageFlagBits::eComputeShader;
+	}
+
+	return fatal("Unknown access flags.");
+}
+
 void PrimaryCmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
 	auto barrier = create_image_barrier(
 			image.vk_image(),
@@ -206,8 +224,8 @@ void PrimaryCmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageL
 		);
 
 	vk_cmd_buffer().pipelineBarrier(
-			vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::PipelineStageFlagBits::eTopOfPipe,
+			pipeline_stage(barrier.srcAccessMask),
+			pipeline_stage(barrier.dstAccessMask),
 			vk::DependencyFlagBits::eByRegion,
 			nullptr, nullptr, barrier
 		);

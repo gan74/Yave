@@ -36,6 +36,7 @@ static vk::Sampler create_sampler(DevicePtr dptr) {
 			.setMipmapMode(vk::SamplerMipmapMode::eLinear)
 			.setMinLod(0.0f)
 			.setMaxLod(1000.0f)
+			.setMaxAnisotropy(1.0f)
 			.setCompareEnable(false)
 		);
 }
