@@ -20,33 +20,55 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "QueueFamily.h"
-#include <yave/device/Device.h>
-
+#include "Font.h"
 
 namespace yave {
 
-QueueFamily::QueueFamily(u32 index, const vk::QueueFamilyProperties& props) : _index(index), _queue_count(props.queueCount), _flags(props.queueFlags) {
+static MeshData create_quad_data() {
+	return MeshData::from_parts(core::Vector<Vertex>{{{0.0f, 0.0f, 0.0f}, {}, {}, {0.0f, 0.0f}},
+													 {{0.0f, 1.0f, 0.0f}, {}, {}, {0.0f, 1.0f}},
+													 {{1.0f, 1.0f, 0.0f}, {}, {}, {1.0f, 1.0f}},
+													 {{1.0f, 0.0f, 0.0f}, {}, {}, {1.0f, 0.0f}}},
+								core::Vector<IndexedTriangle>{{0, 1, 2}, {2, 3, 0}});
 }
 
-u32 QueueFamily::index() const {
-	return _index;
+
+Font::Font(DevicePtr dptr, const FontData& data) :
+		_font_atlas(dptr, data.atlas_data()),
+		_quad(dptr, create_quad_data()),
+		_chars(data._chars) {
 }
 
-u32 QueueFamily::count() const {
-	return _queue_count;
+Font::Font(Font&& other) {
+	swap(other);
 }
 
-vk::QueueFlags QueueFamily::flags() const {
-	return _flags;
+Font& Font::operator=(Font& other) {
+	swap(other);
+	return *this;
 }
 
-core::Vector<vk::Queue> QueueFamily::fetch_queues(DevicePtr dptr) const {
-	auto queues = core::vector_with_capacity<vk::Queue>(_queue_count);
-	for(u32 i = 0; i != _queue_count; ++i) {
-		queues << dptr->vk_device().getQueue(_index, i);
-	}
-	return queues;
+void Font::swap(Font& other) {
+	std::swap(_font_atlas, other._font_atlas);
+	std::swap(_quad, other._quad);
+	std::swap(_chars, other._chars);
+}
+
+DevicePtr Font::device() const {
+	return _font_atlas.device();
+}
+
+const Texture& Font::char_atlas() const {
+	return _font_atlas;
+}
+
+const StaticMesh& Font::quad_mesh() const {
+	return _quad;
+}
+
+Font::CharData Font::char_data(u32 c) const {
+	auto it = _chars.find(c);
+	return (it == _chars.end() ? _chars.begin() : it)->second;
 }
 
 }

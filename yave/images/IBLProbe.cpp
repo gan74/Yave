@@ -55,6 +55,7 @@ IBLProbe& IBLProbe::operator=(IBLProbe&& other) {
 }
 
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
+	unused(cube);
 	return fatal("Not supported.");
 
 	/*struct EmptyProbe : Image<ImageUsage::TextureBit | ImageUsage::StorageBit, ImageType::Cube> {

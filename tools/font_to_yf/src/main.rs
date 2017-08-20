@@ -1,7 +1,7 @@
 extern crate rusttype;
 extern crate rayon;
 
-use rusttype::{FontCollection, Scale, point};
+use rusttype::{FontCollection, Scale, point, Point, ScaledGlyph};
 use std::fs::{File};
 use std::path::{Path};
 use std::io::{Read, Write, BufWriter, Result};
@@ -82,22 +82,10 @@ fn compute_sdf(pixel_data: Vec<u8>) -> Vec<u8> {
 	sdf_data
 }
 
-
-fn main() {
-	let mut font_data = Vec::new();
-	File::open("consola.ttf").expect("Unable to open file.").read_to_end(&mut font_data).unwrap();
-
-	let font = FontCollection::from_bytes(font_data).into_font().unwrap();
-
-	let size = RASTER_SIZE as f32;
-	let scale = Scale { x: size, y: size };
-
-	let glyphs = font.glyphs_for(CHARACTERS.chars()).collect::<Vec<_>>();
-	let offset = point(0.0, font.v_metrics(scale).ascent);
-
+fn raster_font(glyphs: Vec<ScaledGlyph>, offset: Point<f32>) -> Vec<Vec<u8>> {
 	let mut sdfs = Vec::with_capacity(glyphs.len());
 	glyphs.into_par_iter().map(|glyph| {
-			let g = glyph.scaled(scale).positioned(offset);
+			let g = glyph/*.scaled(scale)*/.positioned(offset);
 			let mut pixel_data = vec![0u8; RASTER_SIZE * RASTER_SIZE];
 			if let Some(bb) = g.pixel_bounding_box() {
 				g.draw(|x, y, v| {
@@ -113,14 +101,66 @@ fn main() {
 
 			compute_sdf(pixel_data)
 		}).collect_into(&mut sdfs);
+	sdfs
+}
+
+fn main() {
+	let mut font_data = Vec::new();
+	File::open("consola.ttf").expect("Unable to open file.").read_to_end(&mut font_data).unwrap();
+
+	let font = FontCollection::from_bytes(font_data).into_font().unwrap();
+
+	let size = RASTER_SIZE as f32;
+	let scale = Scale { x: size, y: size };
+	let offset = point(0.0, font.v_metrics(scale).ascent);
+
+	let glyphs = font.glyphs_for(CHARACTERS.chars()).map(|g| g.scaled(scale)).collect::<Vec<_>>();
+
+	let sdfs = raster_font(glyphs.clone(), offset);
 
 	let mut file = BufWriter::new(File::create(Path::new("./font").with_extension("yt")).expect("Unable to create output file."));
 	write_images(&mut file, sdfs).unwrap();
+	write_font(&mut file, glyphs).unwrap();
+}
+
+fn atlas_size(char_count: usize) -> (usize, usize) {
+	let atlas_width = (char_count as f32).sqrt().ceil() as usize;
+	let atlas_height = char_count / atlas_width + if char_count % atlas_width == 0 { 0 } else { 1 };
+	(atlas_width, atlas_height)
+}
+
+
+fn write_font<W: Write>(file: &mut BufWriter<W>, glyphs: Vec<ScaledGlyph>) -> Result<usize> {
+	assert!(glyphs.len() == CHARACTERS.chars().count());
+
+	let version: u32 = 1;
+	let font_type: u32 = 4;
+	let char_count = glyphs.len() as u32;
+
+	file.write(b"yave")?;
+	write_bin(file, &[font_type, version, char_count])?;
+
+	let (atlas_width, atlas_height) = atlas_size(CHARACTERS.len());
+
+	for (i, c) in CHARACTERS.chars().enumerate() {
+		let ch = c as u32;
+
+		let u = (i % atlas_width) as f32 / atlas_width as f32;
+		let v = (i / atlas_width) as f32 / atlas_width as f32;
+		let w = glyphs[i].h_metrics().advance_width / RASTER_SIZE as f32;
+		let h = 1.0 / atlas_height as f32;
+
+		write_bin(file, &[ch])?;
+		write_bin(file, &[u, v, h, w])?;
+	}
+
+	Ok(0)
 }
 
 fn write_images<W: Write>(file: &mut BufWriter<W>, sdfs: Vec<Vec<u8>>) -> Result<usize> {
-	let atlas_width = (sdfs.len() as f32).sqrt().ceil() as usize;
-	let atlas_height = sdfs.len() / atlas_width + if sdfs.len() % atlas_width == 0 { 0 } else { 1 };
+	assert!(sdfs.len() == CHARACTERS.chars().count());
+
+	let (atlas_width, atlas_height) = atlas_size(sdfs.len());
 
 	let image_type: u32 = 2;
 	let version: u32 = 3;
@@ -171,3 +211,6 @@ fn write_bin<E, T: Write>(file: &mut T, v: &[E]) -> Result<usize> {
 	};
 	file.write(slice_u8)
 }
+
+
+

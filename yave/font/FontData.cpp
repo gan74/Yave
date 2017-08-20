@@ -20,33 +20,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "QueueFamily.h"
-#include <yave/device/Device.h>
-
+#include "FontData.h"
 
 namespace yave {
 
-QueueFamily::QueueFamily(u32 index, const vk::QueueFamilyProperties& props) : _index(index), _queue_count(props.queueCount), _flags(props.queueFlags) {
+FontData::FontData(FontData&& other) {
+	std::swap(_font_atlas, other._font_atlas);
+	std::swap(_chars, other._chars);
 }
 
-u32 QueueFamily::index() const {
-	return _index;
+const ImageData& FontData::atlas_data() const {
+	return _font_atlas;
 }
 
-u32 QueueFamily::count() const {
-	return _queue_count;
-}
+FontData FontData::from_file(io::ReaderRef reader) {
+	const char* err_msg = "Unable to read font.";
 
-vk::QueueFlags QueueFamily::flags() const {
-	return _flags;
-}
+	FontData font;
+	font._font_atlas = ImageData::from_file(reader);
 
-core::Vector<vk::Queue> QueueFamily::fetch_queues(DevicePtr dptr) const {
-	auto queues = core::vector_with_capacity<vk::Queue>(_queue_count);
-	for(u32 i = 0; i != _queue_count; ++i) {
-		queues << dptr->vk_device().getQueue(_index, i);
+	struct Header {
+		u32 magic;
+		u32 type;
+		u32 version;
+		u32 char_count;
+
+		bool is_valid() const {
+			return magic == fs::magic_number &&
+				   type == fs::font_file_type &&
+				   version == 1 &&
+				   char_count > 0;
+		}
+	};
+
+	Header header = reader->read_one<Header>().expected(err_msg);
+	if(!header.is_valid()) {
+		fatal(err_msg);
 	}
-	return queues;
+
+	core::Unique<Char[]> chars = new Char[header.char_count];
+	reader->read(chars, header.char_count * sizeof(Char)).expected(err_msg);
+
+	/*for(u32 i = 0; i != header.char_count; ++i) {
+		font._chars[chars[i].utf32] = chars[i];
+		log_msg(core::str(chars[i].utf32) + " " + chars[i].uv.x() + " " + chars[i].uv.y() + " " + chars[i].size.x() + " " + chars[i].size.y());
+	}*/
+
+	return font;
 }
 
 }

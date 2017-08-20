@@ -161,7 +161,7 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	fail_not_empty(resources.separate_images);
 	fail_not_empty(resources.separate_samplers);
 
-	for(usize i = 0; i != 3; i++) {
+	for(usize i = 0; i != 3; ++i) {
 		_local_size[i] = compiler.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, i);
 	}
 }

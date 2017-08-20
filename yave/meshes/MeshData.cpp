@@ -156,18 +156,16 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 void MeshData::to_file(io::WriterRef writer) const {
 	const char* err_msg = "Unable to write mesh.";
 
-	u32 magic = 0x65766179;
-	u32 type = 1;
-	u32 version = 5;
-
 	float radius = _radius;
 
 	u32 bones = _skeleton ? _skeleton->bones.size() : 0;
 	u32 vertices = _vertices.size();
 	u32 triangles = _triangles.size();
 
-	writer->write_one(magic).expected(err_msg);
-	writer->write_one(type).expected(err_msg);
+	writer->write_one(fs::magic_number).expected(err_msg);
+	writer->write_one(fs::mesh_file_type).expected(err_msg);
+	
+	u32 version = 5;
 	writer->write_one(version).expected(err_msg);
 
 	writer->write_one(radius).expected(err_msg);

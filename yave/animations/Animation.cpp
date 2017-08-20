@@ -58,8 +58,8 @@ Animation Animation::from_file(io::ReaderRef reader) {
 		float duration;
 
 		bool is_valid() const {
-			return magic == 0x65766179 &&
-				   type == 3 &&
+			return magic == fs::magic_number &&
+				   type == fs::animation_file_type &&
 				   version == 3 &&
 				   channels > 0 &&
 				   duration > 0.0f;
@@ -91,15 +91,13 @@ Animation Animation::from_file(io::ReaderRef reader) {
 void Animation::to_file(io::WriterRef writer) const {
 	const char* err_msg = "Unable to write animation.";
 
-	u32 magic = 0x65766179;
-	u32 type = 3;
-	u32 version = 3;
-
 	u32 channels = _channels.size();
 	float duration = _duration;
 
-	writer->write_one(magic).expected(err_msg);
-	writer->write_one(type).expected(err_msg);
+	writer->write_one(fs::magic_number).expected(err_msg);
+	writer->write_one(fs::animation_file_type).expected(err_msg);
+	
+	u32 version = 3;
 	writer->write_one(version).expected(err_msg);
 
 	writer->write_one(channels).expected(err_msg);

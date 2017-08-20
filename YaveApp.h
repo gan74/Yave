@@ -43,6 +43,7 @@ SOFTWARE.
 #include <yave/renderers/DeferredRenderer.h>
 #include <yave/renderers/DepthRenderer.h>
 #include <yave/renderers/SceneRenderer.h>
+#include <yave/objects/Text.h>
 
 
 namespace yave {

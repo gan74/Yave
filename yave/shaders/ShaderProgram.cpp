@@ -81,7 +81,7 @@ static u32 create_vertex_attribs(u32 binding,
 		u32 offset = 0;
 		for(const auto& attr : vertex_attribs) {
 			auto format = vec_format(attr);
-			for(u32 i = 0; i != attr.columns; i++) {
+			for(u32 i = 0; i != attr.columns; ++i) {
 				attribs << vk::VertexInputAttributeDescription()
 						.setBinding(binding)
 						.setLocation(attr.location + i)

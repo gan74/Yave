@@ -129,20 +129,13 @@ void YaveApp::create_assets() {
 	}
 
 	{
-		auto texture = AssetPtr<Texture>(Texture(&device, ImageData::from_file(io::File::open("../tools/font_to_yf/font.yt").expected("Unable to load image file."))));
-		do_not_destroy(texture);
+		auto font_data = FontData::from_file(io::File::open("../tools/font_to_yf/font.yt").expected("Unable to load font file."));
+		auto font = AssetPtr<Font>(Font(&device, font_data));
+
 		auto text_material = AssetPtr<Material>(Material(&device, MaterialData()
 				 .set_frag_data(SpirVData::from_file(io::File::open("text.frag.spv").expected("Unable to load spirv file.")))
 				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-				 .set_bindings({Binding(TextureView(*texture))})
 			 ));
-
-		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to open mesh file."));
-		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
-
-		auto text_mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
-		auto instance = new StaticMeshInstance(text_mesh, text_material);
-		renderables << instance;
 	}
 
 	{

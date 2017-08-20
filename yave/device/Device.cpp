@@ -39,7 +39,7 @@ static core::Vector<QueueFamily> compute_queue_families(vk::PhysicalDevice physi
 	core::Vector<QueueFamily> queue_families;
 
 	auto families = physical.getQueueFamilyProperties();
-	for(u32 i = 0; i != families.size(); i++) {
+	for(u32 i = 0; i != families.size(); ++i) {
 		queue_families << QueueFamily(i, families[i]);
 	}
 	return queue_families;

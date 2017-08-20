@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,44 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_H
-#define YAVE_H
+#ifndef YAVE_FONT_FONT_H
+#define YAVE_FONT_FONT_H
 
-#include <y/utils.h>
-
-#include <y/math/Vec.h>
-#include <y/math/math.h>
-#include <y/math/Matrix.h>
-#include <y/math/Transform.h>
-
-#include <y/core/Ptr.h>
-#include <y/core/Range.h>
-#include <y/core/Vector.h>
-#include <y/core/String.h>
-#include <y/core/ArrayProxy.h>
-
+#include "FontData.h"
+#include <yave/images/Image.h>
+#include <yave/meshes/StaticMesh.h>
 
 namespace yave {
 
-using namespace y;
+class Font : NonCopyable {
+	public:
+		struct CharData {
+			CharData(const FontData::Char& c) : uv(c.uv), size(c.size) {
+			}
+
+			math::Vec2 uv;
+			math::Vec2 size;
+		};
 
 
-namespace fs {
-static constexpr u32 magic_number = 0x65766179;
-static constexpr u32 mesh_file_type = 1;
-static constexpr u32 image_file_type = 2;
-static constexpr u32 animation_file_type = 3;
-static constexpr u32 font_file_type = 4;
+		Font() = default;
+		Font(DevicePtr dptr, const FontData& data);
+
+		Font(Font&& other);
+		Font& operator=(Font& other);
+
+
+		CharData char_data(u32 c) const;
+
+		const Texture& char_atlas() const;
+		const StaticMesh& quad_mesh() const;
+
+		DevicePtr device() const;
+
+	private:
+		void swap(Font& other);
+
+		Texture _font_atlas;
+		StaticMesh _quad;
+
+		std::unordered_map<u32, FontData::Char> _chars;
+
+
+};
+
 }
 
-class Device;
-using DevicePtr = const Device*;
-
-template<typename T>
-using is_safe_base = bool_type<!std::is_default_constructible_v<T> &&
-							   !std::is_copy_constructible_v<T> &&
-							   !std::is_copy_assignable_v<T> &&
-							   !std::is_move_constructible_v<T>>;
-}
-
-#endif // YAVE_H
+#endif // YAVE_FONT_FONT_H

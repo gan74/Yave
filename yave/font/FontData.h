@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,44 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_H
-#define YAVE_H
+#ifndef YAVE_FONT_FONTDATA_H
+#define YAVE_FONT_FONTDATA_H
 
-#include <y/utils.h>
+#include <yave/yave.h>
 
-#include <y/math/Vec.h>
-#include <y/math/math.h>
-#include <y/math/Matrix.h>
-#include <y/math/Transform.h>
-
-#include <y/core/Ptr.h>
-#include <y/core/Range.h>
-#include <y/core/Vector.h>
-#include <y/core/String.h>
-#include <y/core/ArrayProxy.h>
-
+#include <yave/images/ImageData.h>
 
 namespace yave {
 
-using namespace y;
+class Font;
 
+class FontData : NonCopyable {
 
-namespace fs {
-static constexpr u32 magic_number = 0x65766179;
-static constexpr u32 mesh_file_type = 1;
-static constexpr u32 image_file_type = 2;
-static constexpr u32 animation_file_type = 3;
-static constexpr u32 font_file_type = 4;
+	struct Char {
+		u32 utf32;
+		math::Vec2 uv;
+		math::Vec2 size;
+	};
+
+	public:
+		FontData() = default;
+		FontData(FontData&& other);
+
+		const ImageData& atlas_data() const;
+
+		static FontData from_file(io::ReaderRef reader);
+
+	private:
+		friend class Font;
+
+		ImageData _font_atlas;
+		std::unordered_map<u32, Char> _chars;
+};
+
 }
 
-class Device;
-using DevicePtr = const Device*;
-
-template<typename T>
-using is_safe_base = bool_type<!std::is_default_constructible_v<T> &&
-							   !std::is_copy_constructible_v<T> &&
-							   !std::is_copy_assignable_v<T> &&
-							   !std::is_move_constructible_v<T>>;
-}
-
-#endif // YAVE_H
+#endif // YAVE_FONT_FONTDATA_H

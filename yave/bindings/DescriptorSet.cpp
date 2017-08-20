@@ -87,7 +87,7 @@ DescriptorSet::DescriptorSet(DevicePtr dptr, const core::ArrayProxy<Binding>& bi
 		std::unordered_map<vk::DescriptorType, u32> binding_counts;
 		for(const auto& binding : bindings) {
 			layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
-			binding_counts[binding.vk_descriptor_type()]++;
+			++binding_counts[binding.vk_descriptor_type()];
 		}
 
 		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
