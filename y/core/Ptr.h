@@ -68,6 +68,12 @@ class Ptr : NonCopyable {
 			return _ptr;
 		}
 
+		template<typename = void>
+		auto& operator[](usize i) const {
+			static_assert(std::is_array_v<T>, "T is not an array");
+			return _ptr[i];
+		}
+
 	protected:
 		Ptr() = default;
 
@@ -77,7 +83,7 @@ class Ptr : NonCopyable {
 		Owner<pointer> _ptr = nullptr;
 
 		void destroy() {
-			if constexpr(std::is_array<T>()) {
+			if constexpr(std::is_array_v<T>) {
 				delete[] _ptr;
 			} else {
 				delete _ptr;
