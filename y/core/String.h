@@ -262,7 +262,7 @@ inline core::String operator "" _s(const char* c_str, usize size) {
 
 // because we do need string in here
 namespace detail {
-	core::String demangle_type_name(const char* name);
+core::String demangle_type_name(const char* name);
 }
 
 template<typename T>
@@ -277,5 +277,13 @@ auto type_name(T&& t) {
 
 }
 
+namespace std {
+template<>
+struct hash<y::core::String> {
+	auto operator()(const y::core::String& str) const {
+		return y::hash_range(str.begin(), str.end());
+	}
+};
+}
 
 #endif // Y_CORE_STRING_H

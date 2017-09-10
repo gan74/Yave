@@ -59,8 +59,6 @@ inline auto hash_range(const C& c) {
 	return hash_range(std::begin(c), std::end(c));
 }
 
-
-
 }
 
 
