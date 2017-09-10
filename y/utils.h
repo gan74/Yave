@@ -61,6 +61,11 @@ struct Nothing {
 	operator T() const {
 		return fatal("y::Nothing used");
 	}
+
+	template<typename T>
+	operator const T&() const {
+		return fatal("y::Nothing used");
+	}
 };
 
 
@@ -83,9 +88,9 @@ void do_not_destroy(T&& t) {
 	union U {
 		U() {}
 		~U() {}
-        std::remove_reference_t<T> t;
+		std::remove_reference_t<T> t;
 	} u;
-    new(&u.t) std::remove_reference_t<T>(std::forward<T>(t));
+	new(&u.t) std::remove_reference_t<T>(std::forward<T>(t));
 }
 
 
