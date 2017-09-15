@@ -161,10 +161,10 @@ class Rc : public detail::Ptr<T> {
 		Rc(std::nullptr_t) {
 		}
 
-		explicit Rc(Owner<pointer>&& p) : Base(std::move(p)), _count(new C(1)) {
+		Rc(Owner<pointer>&& p) : Base(std::move(p)), _count(new C(1)) {
 		}
 
-		explicit Rc(std::remove_const_t<T>&& p) : Rc(new T(std::move(p))) {
+		Rc(std::remove_const_t<T>&& p) : Rc(new T(std::move(p))) {
 		}
 
 		Rc(const Rc& p) : Rc(p._ptr, p._count) {

@@ -31,16 +31,10 @@ namespace concurrent {
 template<typename T>
 using Arc = core::Rc<T, std::atomic<u32>>;
 
-template<typename T>
-inline auto arc(T&& t) {
-	return Arc<typename std::remove_reference<T>::type>(std::move(t));
-}
-
 }
 
 namespace core {
 using concurrent::Arc;
-using concurrent::arc;
 }
 
 }
