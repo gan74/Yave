@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <yave/images/ImageData.h>
 
+#include <unordered_map>
+
 namespace yave {
 
 class Font;
