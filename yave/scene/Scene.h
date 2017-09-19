@@ -34,7 +34,7 @@ class Scene : NonCopyable {
 
 	public:
 		template<typename T>
-		using Ptr = core::Unique<T>;
+		using Ptr = core::Arc<T>;
 
 		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
 

@@ -96,9 +96,9 @@ void YaveApp::update(math::Vec2 angles) {
 }
 
 void YaveApp::create_assets() {
-	core::Vector<core::Unique<StaticMeshInstance>> objects;
-	core::Vector<core::Unique<Renderable>> renderables;
-	core::Vector<core::Unique<Light>> lights;
+	core::Vector<Scene::Ptr<StaticMeshInstance>> objects;
+	core::Vector<Scene::Ptr<Renderable>> renderables;
+	core::Vector<Scene::Ptr<Light>> lights;
 
 	{
 		Light l(Light::Directional);
