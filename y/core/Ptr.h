@@ -77,7 +77,8 @@ class Ptr : NonCopyable {
 	protected:
 		Ptr() = default;
 
-		explicit Ptr(Owner<pointer>&& p) : _ptr(p) {
+		template<typename Y>
+		explicit Ptr(Y*&& p) : _ptr(p) {
 		}
 
 		Owner<pointer> _ptr = nullptr;
@@ -105,16 +106,25 @@ class Unique : public detail::Ptr<T> {
 
 		Unique() = default;
 
-		Unique(Owner<pointer>&& p) : Base(std::move(p)) {
+		Unique(pointer&& p) : Base(std::move(p)) {
+		}
+
+		template<typename Y>
+		Unique(Y*&& p) : Base(std::move(p)) {
 		}
 
 		Unique(std::remove_const_t<T>&& p) : Unique(new T(std::move(p))) {
 		}
 
-		Unique(std::nullptr_t p) : Base(p) {
+		Unique(std::nullptr_t) {
 		}
 
 		Unique(Unique&& p) {
+			swap(p);
+		}
+
+		template<typename Y>
+		Unique(Unique<Y>&& p) {
 			swap(p);
 		}
 
@@ -127,7 +137,15 @@ class Unique : public detail::Ptr<T> {
 			return *this;
 		}
 
-		Unique& operator=(Owner<pointer>&& p) {
+
+		template<typename Y>
+		Unique& operator=(Unique<Y>&& p) {
+			swap(p);
+			return *this;
+		}
+
+		template<typename Y>
+		Unique& operator=(Y*&& p) {
 			Unique ptr(std::move(p));
 			swap(ptr);
 			return *this;
@@ -140,7 +158,8 @@ class Unique : public detail::Ptr<T> {
 		}
 
 	private:
-		void swap(Unique& p) {
+		template<typename Y>
+		void swap(Unique<Y>& p) {
 			std::swap(_ptr, p._ptr);
 		}
 
@@ -161,7 +180,11 @@ class Rc : public detail::Ptr<T> {
 		Rc(std::nullptr_t) {
 		}
 
-		Rc(Owner<pointer>&& p) : Base(std::move(p)), _count(new C(1)) {
+		Rc(pointer&& p) : Base(std::move(p)), _count(new C(1)) {
+		}
+
+		template<typename Y>
+		Rc(Y*&& p) : Base(std::move(p)), _count(new C(1)) {
 		}
 
 		Rc(std::remove_const_t<T>&& p) : Rc(new T(std::move(p))) {
@@ -170,11 +193,16 @@ class Rc : public detail::Ptr<T> {
 		Rc(const Rc& p) : Rc(p._ptr, p._count) {
 		}
 
-		/*template<typename U, typename = std::enable_if_t<std::is_base_of_v<T, U> && std::is_polymorphic_v<T>>>
-		Rc(const Rc<U, C>& p) : Rc(p._ptr, p._count) {
-		}*/
+		template<typename Y>
+		Rc(const Rc<Y, C>& p) : Rc(p._ptr, p._count) {
+		}
 
 		Rc(Rc&& p) {
+			swap(p);
+		}
+
+		template<typename Y>
+		Rc(Rc<Y, C>&& p) {
 			swap(p);
 		}
 
@@ -182,7 +210,8 @@ class Rc : public detail::Ptr<T> {
 			unref();
 		}
 
-		void swap(Rc& p) {
+		template<typename Y>
+		void swap(Rc<Y, C>& p) {
 			std::swap(_ptr, p._ptr);
 			std::swap(_count, p._count);
 		}
@@ -199,12 +228,32 @@ class Rc : public detail::Ptr<T> {
 			return *this;
 		}
 
+		Rc& operator=(Rc&& p) {
+			swap(p);
+			return *this;
+		}
+
 		Rc& operator=(std::nullptr_t) {
 			unref();
 			return *this;
 		}
 
-		Rc& operator=(Rc&& p) {
+		template<typename Y>
+		Rc& operator=(const Rc<Y, C>& p) {
+			if(p._count != _count) {
+				unref();
+				ref(p);
+			}
+			return *this;
+		}
+
+		template<typename Y>
+		Rc& operator=(Y*&& p) {
+			return operator=(Rc(p));
+		}
+
+		template<typename Y>
+		Rc& operator=(Rc<Y, C>&& p) {
 			swap(p);
 			return *this;
 		}
@@ -213,14 +262,15 @@ class Rc : public detail::Ptr<T> {
 		template<typename U, typename D>
 		friend class Rc;
 
-		// only called by other Rc's so we take ownedship as well
+		// only called by other Rc's so we take ownership as well
 		Rc(T* p, C* c) : Base(std::move(p)), _count(c) {
 			if(_count) {
 				++(*_count);
 			}
 		}
 
-		void ref(const Rc& p) {
+		template<typename Y>
+		void ref(const Rc<Y, C>& p) {
 			if(p._count && (_count = p._count)) {
 				++(*_count);
 			}
