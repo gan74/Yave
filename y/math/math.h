@@ -68,7 +68,7 @@ auto perspective(T fovy, T aspect, T z_near, T z_far) {
 }
 
 template<typename T>
-auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up = Vec<3, T>(0, 0, 1)) {
+auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up) {
 	Vec<3, T> z((eye - center).normalized());
 	Vec<3, T> y(up.cross(z).normalized());
 	Vec<3, T> x(y.cross(z));
