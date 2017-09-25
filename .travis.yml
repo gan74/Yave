@@ -10,6 +10,7 @@ addons:
       - g++-7
 
 script:
+ - CXX=g++-7
  - mkdir build
  - cd build
  - cmake ..
