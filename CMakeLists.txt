@@ -27,9 +27,11 @@ option(BUILD_TESTS "Build tests" ON)
 
 
 add_library(y STATIC ${SOURCE_FILES})
+target_link_libraries(y pthread)
 
 add_executable(main "main.cpp")
 target_link_libraries(main y)
+
 
 if(BUILD_TESTS)
 	enable_testing()
