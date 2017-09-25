@@ -50,6 +50,19 @@ class Scene : NonCopyable {
 			return _lights;
 		}
 
+		auto& static_meshes() {
+			return _statics;
+		}
+
+		auto& renderables() {
+			return _renderables;
+		}
+
+		auto& lights() {
+			return _lights;
+		}
+
+
 	private:
 		core::Vector<Ptr<StaticMeshInstance>> _statics;
 		core::Vector<Ptr<Renderable>> _renderables;

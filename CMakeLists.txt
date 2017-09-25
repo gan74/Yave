@@ -83,15 +83,10 @@ else()
 	add_executable(yave "main.cpp" ${SOURCE_FILES} ${SHADER_FILES})
 endif()
 
-
-# add the defines, link the libs
-if(WIN32)
-	target_compile_definitions(yave PRIVATE -DWIN32)
-endif()
-
 target_link_libraries(yave y)
 target_link_libraries(yave vulkan-1)
 target_link_libraries(yave spirv-cross)
+target_link_libraries(yave pthread)
 
 
 # if we are building the lib: create an exec that links it
