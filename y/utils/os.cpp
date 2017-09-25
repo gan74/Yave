@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 #include "os.h"
 #include "os_win.h"
+#include "os_linux.h"
 
 #include <y/utils.h>
 
