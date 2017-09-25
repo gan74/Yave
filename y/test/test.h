@@ -24,9 +24,6 @@ SOFTWARE.
 
 #include <y/utils.h>
 
-// Because of static initialization order <iostream> must be included here
-#include <iostream>
-
 namespace y {
 namespace test {
 namespace detail {

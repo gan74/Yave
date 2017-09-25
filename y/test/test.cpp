@@ -24,6 +24,8 @@ SOFTWARE.
 #include <y/utils.h>
 #include <cstring>
 
+#include <iostream>
+
 namespace y {
 namespace test {
 namespace detail {
@@ -35,6 +37,9 @@ const char* test_box_msg(const char* msg) {
 void test_assert(const char* msg, void (*func)(TestResult &)) {
 	const char* ok		= "  [ OK ]   ";
 	const char* failure = "[ FAILED ] ";
+
+	// Because of this function may be called during static initialization we must initialize cout
+	std::ios_base::Init init;
 
 
 	std::cout << msg << ":";
