@@ -77,7 +77,7 @@ void schedule_n(F&& func, u32 n) {
 		F _func;
 	};
 
-	schedule_task(Arc<ParallelTask>(new Task(std::forward<F>(func), n)));
+	schedule_task(new Task(std::forward<F>(func), n));
 }
 
 }

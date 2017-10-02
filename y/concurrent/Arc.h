@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef Y_CONCURRENT_ARC_H
 #define Y_CONCURRENT_ARC_H
 
-#include <y/core/Ptr.h>
+#include <y/core/Functor.h>
 #include <atomic>
 
 namespace y {
@@ -31,10 +31,14 @@ namespace concurrent {
 template<typename T>
 using Arc = core::Rc<T, std::atomic<u32>>;
 
+template<typename Ret, typename... Args>
+using AFunctor = core::detail::Functor<Arc, Ret, Args...>;
+
 }
 
 namespace core {
 using concurrent::Arc;
+using concurrent::AFunctor;
 }
 
 }

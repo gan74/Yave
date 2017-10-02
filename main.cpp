@@ -15,21 +15,26 @@
 #include <cmath>
 #include <vector>
 #include <list>
+#include <random>
 
 using namespace y;
 using namespace y::core;
 
 void slow(usize m) {
-	for(volatile usize i = 0; i != m; ++i) {
+	for(volatile usize j = 0; j != 100; ++j) {
+		for(volatile usize i = 0; i != m; ++i) {
+		}
 	}
 }
+
 
 int main() {
 #ifdef Y_BUILD_TESTS
 	return 0;
 #endif
 
-	core::Vector<int> v(10000u, 0);
+	usize iterations = 10000;
+	core::Vector<int> v(iterations, 0);
 	int index = 0;
 	for(auto& i : v) {
 		i = index++;
@@ -52,7 +57,7 @@ int main() {
 	concurrent::init_thread_pool();
 
 	{
-		DebugTimer timer("parallel_for_each(n)");
+		DebugTimer timer("parallel_for_each(" + str(concurrent::concurency()) + ")");
 		concurrent::parallel_for_each(v.begin(), v.end(), [&](auto&& i) {
 			slow(i);
 		});

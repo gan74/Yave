@@ -19,29 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_UTILS_COLLECTIONS_H
-#define Y_UTILS_COLLECTIONS_H
+#ifndef Y_UTILS_DETECT_H
+#define Y_UTILS_DETECT_H
 
-#include <iterator>
-#include "detect.h"
-
+// Should be replaced by std::is_detected, once it gets implemented
 namespace y {
 
 namespace detail {
+template<typename Default, typename AlwaysVoid, template<typename...> typename Op, typename... Args>
+struct detector {
+  using value_t = std::false_type;
+  using type = Default;
+};
 
-template<typename T>
-using has_size_t = decltype(std::declval<T&>().size());
-template<typename T>
-using has_reserve_t = decltype(std::declval<T&>().reserve(std::declval<usize>()));
+template<typename Default, template<typename...> typename Op, typename... Args>
+struct detector<Default, std::void_t<Op<Args...>>, Op, Args...> {
+  // Note that std::void_t is a C++17 feature
+  using value_t = std::true_type;
+  using type = Op<Args...>;
+};
+
+struct nonesuch {
+    nonesuch() = delete;
+    ~nonesuch() = delete;
+    nonesuch(nonesuch const&) = delete;
+    void operator=(nonesuch const&) = delete;
+};
+
+} // namespace detail
+
+template<template<typename...> typename Op, typename... Args>
+using is_detected = typename detail::detector<detail::nonesuch, void, Op, Args...>::value_t;
+
+template<template<typename...> typename Op, typename... Args>
+inline constexpr bool is_detected_v = is_detected<Op, Args...>::value;
+
 }
 
-template<typename T>
-void try_reserve(T& t, usize size) {
-	if constexpr(is_detected_v<detail::has_reserve_t, T>) {
-		t.reserve(size);
-	}
-}
 
-}
-
-#endif // Y_UTILS_COLLECTIONS_H
+#endif // Y_UTILS_DETECT_H

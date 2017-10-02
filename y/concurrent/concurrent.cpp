@@ -130,7 +130,6 @@ usize concurency() {
 	return concurency_level;
 }
 
-
 usize probable_block_count() {
 	return concurency_level * 2;
 }
