@@ -28,7 +28,6 @@ SOFTWARE.
 namespace y {
 
 namespace detail {
-
 template<typename T>
 using has_size_t = decltype(std::declval<T&>().size());
 template<typename T>

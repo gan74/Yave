@@ -32,7 +32,6 @@ SOFTWARE.
 #include <y/utils/types.h>
 
 #include <y/utils/iterable.h>
-#include <y/utils/comparable.h>
 #include <y/utils/collections.h>
 #include <y/utils/sort.h>
 #include <y/utils/hash.h>
