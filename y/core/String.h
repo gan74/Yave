@@ -141,6 +141,11 @@ class String {
 
 		void swap(String& str);
 
+
+		std::string_view view() const;
+		operator std::string_view() const;
+
+
 		String& operator=(const String& str);
 		String& operator=(String&& str);
 
@@ -155,9 +160,6 @@ class String {
 		bool operator==(const String& str) const;
 		bool operator!=(const String& str) const;
 		bool operator<(const String& str) const;
-
-
-		//Vector<u32> to_unicode() const;
 
 
 
@@ -279,9 +281,9 @@ auto type_name(T&& t) {
 
 namespace std {
 template<>
-struct hash<y::core::String> {
+struct hash<y::core::String> : private std::hash<std::string_view> {
 	auto operator()(const y::core::String& str) const {
-		return y::hash_range(str.begin(), str.end());
+		return std::hash<std::string_view>::operator()(str);
 	}
 };
 }

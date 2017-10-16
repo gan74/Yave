@@ -195,6 +195,15 @@ void String::swap(String& str) {
 	std::memcpy(&_s, str_buffer, sizeof(ShortData));
 }
 
+
+std::string_view String::view() const {
+	return std::string_view(data(), size());
+}
+
+String::operator std::string_view() const {
+	return view();
+}
+
 String& String::operator=(const String& str) {
 	if(&str != this) {
 		if(is_long()) {

@@ -62,20 +62,4 @@ inline auto hash_range(const C& c) {
 }
 
 
-/*namespace std {
-	template<typename T>
-	struct hash {
-		typedef T argument_type;
-		typedef std::size_t result_type;
-		template<typename = std::enable_if_t<y::is_iterable<T>::value, T>::type>
-		result_type operator()(const argument_type& collection) const {
-			result_type seed = 0;
-			for(const auto& i : collection) {
-				y::detail::hash_combine(seed, y::hash(i));
-			}
-			return seed;
-		}
-	};
-}*/
-
 #endif // Y_UTILS_HASH_H
