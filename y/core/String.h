@@ -23,7 +23,6 @@ SOFTWARE.
 #define Y_CORE_STRING_H
 
 #include <y/utils.h>
-#include "Vector.h"
 #include <sstream>
 
 namespace y {
@@ -101,6 +100,8 @@ class String {
 		String();
 		String(const String& str);
 		String(String&& str);
+		String(const std::string& str);
+		String(std::string_view str);
 
 		String(const char* str); // NOT explicit
 		String(const char* str, usize len);
@@ -111,11 +112,12 @@ class String {
 
 		~String();
 
-		// the pointer is not owned anymore, String take ownership;
+		// String take ownership
 		static String from_owned(Owner<char*> owned);
 
 		template<typename T>
 		static String from(T&& t);
+		static const String& from(const String& t);
 
 		usize size() const;
 		usize capacity() const;
@@ -146,10 +148,10 @@ class String {
 		operator std::string_view() const;
 
 
-		String& operator=(const String& str);
-		String& operator=(String&& str);
-
 		String& operator+=(const String& str);
+		String& operator+=(const char* str);
+		String& operator+=(const std::string& str);
+		String& operator+=(std::string_view str);
 
 		char& operator[](usize i);
 		char operator[](usize i) const;
@@ -162,6 +164,13 @@ class String {
 		bool operator<(const String& str) const;
 
 
+		template<typename T, typename std::enable_if_t<std::is_convertible_v<T, String>>>
+		String& operator=(T&& t) {
+			return operator=(String(std::forward<T>(t)));
+		}
+
+		String& operator=(const String& str);
+		String& operator=(String&& str);
 
 		iterator begin() {
 			return data();
@@ -198,6 +207,8 @@ class String {
 			return this;
 		}
 
+		String& append(const char* other_data, usize other_size);
+
 		static char* alloc_long(usize capacity);
 		static usize compute_capacity(usize len);
 		static void free_long(LongData& d);
@@ -214,8 +225,8 @@ inline String str_from_owned(Owner<char*> owned) {
 }
 
 template<typename T>
-inline String str(const T& t) {
-	return String::from(t);
+inline String str(T&& t) {
+	return String::from(std::forward<T>(t));
 }
 
 inline String str() {
@@ -231,25 +242,33 @@ String::String(const It& beg_it, const It& end_it) : String(nullptr, std::distan
 
 template<typename T>
 String String::from(T&& t) {
-	std::ostringstream oss;
-	oss << std::forward<T>(t);
-	return oss.str().c_str();
+	if constexpr (std::is_convertible_v<T, String>) {
+		return String(std::forward<T>(t));
+	} else {
+		std::ostringstream oss;
+		oss << std::forward<T>(t);
+		return oss.str();
+	}
+}
+
+inline const String& String::from(const String& t) {
+	return t;
 }
 
 
-
+namespace detail {
+template<typename T>
+using has_append_t = decltype(std::declval<String&>().operator+=(std::declval<const T&>()));
+}
 
 template<typename T>
-auto operator+(core::String l, const T& r) {
-	return l += str(r);
+core::String& operator+(core::String l, T&& r) {
+	if constexpr(is_detected_v<detail::has_append_t, T>) {
+		return l += std::forward<T>(r);
+	} else {
+		return l += str(std::forward<T>(r));
+	}
 }
-
-template<typename T>
-auto operator<<(core::String& l, const T& r) {
-	l += str(r);
-	return l;
-}
-
 
 
 } // core

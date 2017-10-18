@@ -101,7 +101,13 @@ String::String(String&& str) {
 	}
 }
 
-String::String(const char* str) : String(str, strlen(str)) {
+String::String(const std::string& str) : String(str.data(), str.size()) {
+}
+
+String::String(std::string_view str) : String(str.data(), str.size()) {
+}
+
+String::String(const char* str) : String(str, std::strlen(str)) {
 }
 
 String::String(const char* str, usize len) {
@@ -122,7 +128,7 @@ String::~String() {
 }
 
 String String::from_owned(Owner<char*> owned) {
-	usize len = strlen(owned);
+	usize len = std::strlen(owned);
 	String str;
 	str._l.length = len;
 	str._l.capacity = len;
@@ -224,11 +230,26 @@ String& String::operator=(String&& str) {
 }
 
 String& String::operator+=(const String& str) {
+	return append(str.data(), str.size());
+}
+
+String& String::operator+=(const char* str) {
+	return append(str, std::strlen(str));
+}
+
+String& String::operator+=(const std::string& str) {
+	return append(str.data(), str.size());
+}
+
+String& String::operator+=(std::string_view str) {
+	return append(str.data(), str.size());
+}
+
+
+String& String::append(const char* other_data, usize other_size) {
 	usize self_size = size();
-	usize other_size = str.size();
 	usize total_size = self_size + other_size;
 	char* self_data = data();
-	const char* other_data = str.data();
 
 	if(capacity() >= total_size) {
 		// in place
