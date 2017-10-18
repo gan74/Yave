@@ -25,25 +25,41 @@ SOFTWARE.
 namespace import {
 
 MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
-	const char* err_msg = "Unable to load mesh.";
-
-	if(!mesh ||
-	   mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE ||
-	   !mesh->HasNormals() ||
-	   !mesh->HasTangentsAndBitangents() ||
-	   !mesh->HasTextureCoords(0)) {
-		fatal(err_msg);
+	if(!mesh) {
+		fatal("Unable to load mesh.");
+	}
+	if(mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
+		fatal("Mesh is not triangulated.");
+	}
+	if(!mesh->HasNormals()) {
+		fatal("Mesh has no normals.");
 	}
 
 	usize vertex_count = mesh->mNumVertices;
 	auto vertices = vector_with_capacity<Vertex>(vertex_count);
+
 	for(usize i = 0; i != vertex_count; ++i) {
 		vertices << Vertex {
 				{mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z},
 				{mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z},
-				{mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z},
-				{mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y}
+				math::Vec3(), math::Vec2()
 			};
+	}
+
+	if(mesh->HasTangentsAndBitangents()) {
+		for(usize i = 0; i != vertex_count; ++i) {
+			vertices[i].tangent = {mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z};
+		}
+	} else {
+		log_msg("Mesh has no tangents", Log::Warning);
+	}
+
+	if(mesh->HasTextureCoords(0)) {
+		for(usize i = 0; i != vertex_count; ++i) {
+			vertices[i].uv = {mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
+		}
+	} else {
+		log_msg("Mesh has no UVs", Log::Warning);
 	}
 
 	usize triangle_count = mesh->mNumFaces;
