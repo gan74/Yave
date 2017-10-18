@@ -58,7 +58,7 @@ PhysicalDevice::PhysicalDevice(Instance& instance) :
 	auto properties = _device.getProperties();
 	const auto& v_ref = properties.apiVersion;
 	auto version = reinterpret_cast<const Version&>(v_ref);
-	log_msg(core::String() + "Running Vulkan (" + version.major + "." + version.minor + "." + version.patch + ") " + (is_64_bits() ? 64 : 32) + " bits" +
+	log_msg(core::String() + "Running Vulkan (" + u32(version.major) + "." + u32(version.minor) + "." + u32(version.patch) + ") " + (is_64_bits() ? 64 : 32) + " bits" +
 				 " on " + properties.deviceName + " (" + (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? "discrete" : "integrated") + ")");
 }
 
