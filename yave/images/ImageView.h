@@ -39,15 +39,19 @@ class ImageView {
 		ImageView() = default;
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-		ImageView(const Image<U, Type>& img) : _image(&img), _view(img.vk_view()) {
+		ImageView(const Image<U, Type>& img) : ImageView(&img, img.vk_view()) {
 		}
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-		ImageView(const ImageView<U, Type>& img) : _image(img._image), _view(img._view) {
+		ImageView(const ImageView<U, Type>& img) : ImageView(img._image, img._view) {
 		}
 
-		vk::ImageView vk_image_view() const {
+		vk::ImageView vk_view() const {
 			return _view;
+		}
+
+		DevicePtr device() const {
+			return _image->device();
 		}
 
 		const ImageBase& image() const {
@@ -64,6 +68,10 @@ class ImageView {
 
 		bool operator!=(const ImageView& other) const {
 			return !operator==(other);
+		}
+
+	protected:
+		ImageView(const ImageBase* image, vk::ImageView view) : _image(image), _view(view) {
 		}
 
 	private:

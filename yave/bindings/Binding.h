@@ -48,16 +48,16 @@ class Binding {
 			_type(vk::DescriptorType::eCombinedImageSampler),
 			_info(vk::DescriptorImageInfo()
 			   .setImageLayout(vk_image_layout(view.image().usage()))
-			   .setImageView(view.vk_image_view())
-			   .setSampler(view.image().device()->vk_sampler())) {
+			   .setImageView(view.vk_view())
+			   .setSampler(view.device()->vk_sampler())) {
 		}
 
 		Binding(const CubemapView& view) :
 			_type(vk::DescriptorType::eCombinedImageSampler),
 			_info(vk::DescriptorImageInfo()
 			   .setImageLayout(vk_image_layout(view.image().usage()))
-			   .setImageView(view.vk_image_view())
-			   .setSampler(view.image().device()->vk_sampler())) {
+			   .setImageView(view.vk_view())
+			   .setSampler(view.device()->vk_sampler())) {
 		}
 
 		template<ImageType Type>
@@ -66,7 +66,7 @@ class Binding {
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(view.image().usage()))
 					.setImageView(view.vk_image_view())
-					.setSampler(view.image().device()->vk_sampler())) {
+					.setSampler(view.device()->vk_sampler())) {
 		}
 
 
@@ -74,8 +74,8 @@ class Binding {
 			_type(vk::DescriptorType::eStorageImage),
 			_info(vk::DescriptorImageInfo()
 			   .setImageLayout(vk_image_layout(ImageUsage::StorageBit))
-			   .setImageView(view.vk_image_view())
-			   .setSampler(view.image().device()->vk_sampler())) {
+			   .setImageView(view.vk_view())
+			   .setSampler(view.device()->vk_sampler())) {
 		}
 
 		template<ImageType Type>
@@ -83,8 +83,8 @@ class Binding {
 				 _type(vk::DescriptorType::eStorageImage),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(ImageUsage::StorageBit))
-					.setImageView(view.vk_image_view())
-					.setSampler(view.image().device()->vk_sampler())) {
+					.setImageView(view.vk_view())
+					.setSampler(view.device()->vk_sampler())) {
 		}
 
 

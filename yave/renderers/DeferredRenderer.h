@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/framebuffer/Framebuffer.h>
 #include <yave/shaders/ComputeProgram.h>
 #include <yave/bindings/uniforms.h>
+#include <yave/images/IBLProbe.h>
 
 #include <yave/scene/SceneView.h>
 
@@ -37,9 +38,7 @@ class DeferredRenderer : public BufferRenderer {
 		DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
-
 		const math::Vec2ui& size() const;
-
 
 		const SceneView& scene_view() const {
 			return _gbuffer->scene_view();
@@ -52,7 +51,7 @@ class DeferredRenderer : public BufferRenderer {
 	private:
 		Ptr<GBufferRenderer> _gbuffer;
 
-		Cubemap _envmap;
+		IBLProbe _envmap;
 
 		ComputeShader _lighting_shader;
 		ComputeProgram _lighting_program;

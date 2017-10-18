@@ -60,8 +60,8 @@ Framebuffer::Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const De
 		_colors(colors.begin(), colors.end()) {
 
 	auto views = core::vector_with_capacity<vk::ImageView>(_colors.size() + 1);
-	std::transform(_colors.begin(), _colors.end(), std::back_inserter(views), [](const auto& v) { return v.vk_image_view(); });
-	views << _depth.vk_image_view();
+	std::transform(_colors.begin(), _colors.end(), std::back_inserter(views), [](const auto& v) { return v.vk_view(); });
+	views << _depth.vk_view();
 
 	_framebuffer = device()->vk_device().createFramebuffer(vk::FramebufferCreateInfo()
 		.setRenderPass(_render_pass->vk_render_pass())

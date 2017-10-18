@@ -53,9 +53,9 @@ const DescriptorSet& ColorCorrectionRenderer::create_descriptor_set(const Storag
 		fatal("Invalid output image size.");
 	}
 
-	auto it = _output_sets.find(out.vk_image_view());
+	auto it = _output_sets.find(out.vk_view());
 	if(it == _output_sets.end()) {
-		it = _output_sets.insert(std::pair(out.vk_image_view(), DescriptorSet(_renderer->device(), {
+		it = _output_sets.insert(std::pair(out.vk_view(), DescriptorSet(_renderer->device(), {
 				Binding(in),
 				Binding(out)
 			}))).first;
