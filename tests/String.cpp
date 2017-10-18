@@ -30,7 +30,7 @@ using namespace y;
 using namespace y::core;
 
 const char* get_long_c_str() {
-	return "this is supposed to be a long string. it's used to force the creation of heap allocated strings during test. to be long enouht it has to be at least String::MaxShortSize+1 bytes long (which usually eq 3 machine words: so 12 bytes on 32bits systems and 24 on 64bits)";
+	return "this is supposed to be a long string. it's used to force the creation of heap allocated strings during testing. To be long enouht it has to be at least String::MaxShortSize+1 bytes long (which usually eq 3 machine words: so 12 bytes on 32bits systems and 24 on 64bits)";
 }
 
 y_test_func("String short creation") {
@@ -68,8 +68,11 @@ y_test_func("String copy") {
 		s = long_str;
 	}
 	y_test_assert(s.is_long());
-}
 
+	s = get_long_c_str();
+	String s2 = s;
+	y_test_assert(s == s2);
+}
 
 y_test_func("String add") {
 	const char* c_str = get_long_c_str();
@@ -87,7 +90,9 @@ y_test_func("String add") {
 	y_test_assert(a.size() == strlen(c_str));
 	y_test_assert(!strcmp(a, c_str));
 
-	a += "?";
+	a = "a string";
+	a += "another string";
+	y_test_assert((a + 4) == "a stringanother string4");
 }
 
 y_test_func("String from_owned") {
@@ -121,6 +126,17 @@ y_test_func("String from") {
 		y_test_assert(!strcmp(s, "2.71828"));
 	}
 }
+
+y_test_func("String find") {
+	auto s = str(get_long_c_str());
+
+	auto found = s.find("strings");
+	auto end = s.find("flubudu");
+
+	y_test_assert(found != s.end());
+	y_test_assert(end == s.end());
+}
+
 
 y_test_func("String find") {
 	auto s = str(get_long_c_str());
