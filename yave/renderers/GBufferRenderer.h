@@ -31,7 +31,7 @@ class GBufferRenderer : public BufferRenderer {
 	public:
 		static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
-		static constexpr vk::Format normal_format = vk::Format::eR8G8B8A8Unorm;
+		static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
 
 
 		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node);

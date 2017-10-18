@@ -36,6 +36,8 @@ class ComputeProgram : NonCopyable, public DeviceLinked {
 		ComputeProgram(ComputeProgram&& other);
 		ComputeProgram& operator=(ComputeProgram&& other);
 
+		const math::Vec3ui& local_size() const;
+
 		vk::Pipeline vk_pipeline() const;
 		vk::PipelineLayout vk_pipeline_layout() const;
 
@@ -44,6 +46,7 @@ class ComputeProgram : NonCopyable, public DeviceLinked {
 
 		vk::PipelineLayout _layout;
 		vk::Pipeline _pipeline;
+		math::Vec3ui _local_size;
 };
 
 }

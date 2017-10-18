@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.device()) {
+ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.device()), _local_size(comp.local_size()) {
 	const auto& bindings = comp.bindings();
 
 	u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
@@ -72,6 +72,12 @@ void ComputeProgram::swap(ComputeProgram& other) {
 	DeviceLinked::swap(other);
 	std::swap(_layout, other._layout);
 	std::swap(_pipeline, other._pipeline);
+	std::swap(_local_size, other._local_size);
+}
+
+
+const math::Vec3ui& ComputeProgram::local_size() const {
+	return _local_size;
 }
 
 vk::Pipeline ComputeProgram::vk_pipeline() const {

@@ -149,13 +149,9 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, vk::DescriptorType::eCombinedImageSampler));
 	merge(_bindings, create_bindings(compiler, resources.storage_images, _type, vk::DescriptorType::eStorageImage));
 
-	// these are attribs & other stages stuff
-	/*fail_not_empty(resources.stage_inputs);
-	fail_not_empty(resources.stage_outputs);
-	fail_not_empty(resources.subpass_inputs);*/
-
 	_attribs = create_attribs(compiler, resources.stage_inputs);
 
+	// these are attribs & other stages stuff
 	fail_not_empty(resources.atomic_counters);
 	fail_not_empty(resources.push_constant_buffers);
 	fail_not_empty(resources.separate_images);

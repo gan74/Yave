@@ -56,8 +56,7 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 		BufferRenderer(gbuffer->device()),
 		_gbuffer(gbuffer),
 		_envmap(load_envmap(device())),
-		_lighting_shader(create_lighting_shader(device())),
-		_lighting_program(_lighting_shader),
+		_lighting_program(create_lighting_shader(device())),
 		_acc_buffer(device(), ImageFormat(vk::Format::eR16G16B16A16Sfloat), _gbuffer->size()),
 		_lights_buffer(create_light_buffer(device())),
 		_camera_buffer(device(), 1),
@@ -72,7 +71,7 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 			}) {
 
 	for(usize i = 0; i != 3; i++) {
-		if(size()[i] % _lighting_shader.local_size()[i]) {
+		if(size()[i] % _lighting_program.local_size()[i]) {
 			log_msg("Compute local size at index "_s + i + " does not divide output buffer size.", Log::Warning);
 		}
 	}
@@ -102,7 +101,7 @@ void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBu
 				std::transform(directionals.begin(), directionals.end(), light_data + lights.size(), [](const Light* l) { return uniform::Light(*l); });
 			}
 
-			recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_shader.local_size().to<2>(), 1), {_descriptor_set});
+			recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_program.local_size().to<2>(), 1), {_descriptor_set});
 			return _acc_buffer;
 		});
 }

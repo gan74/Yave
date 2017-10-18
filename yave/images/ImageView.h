@@ -90,6 +90,7 @@ using DepthTextureAttachmentView = ImageView<ImageUsage::DepthBit | ImageUsage::
 using ColorTextureAttachmentView = ImageView<ImageUsage::ColorBit | ImageUsage::TextureBit>;
 
 using CubemapView = ImageView<ImageUsage::TextureBit, ImageType::Cube>;
+using CubemapStorageView = ImageView<ImageUsage::StorageBit, ImageType::Cube>;
 
 }
 

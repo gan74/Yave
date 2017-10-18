@@ -53,7 +53,6 @@ class DeferredRenderer : public BufferRenderer {
 
 		IBLProbe _envmap;
 
-		ComputeShader _lighting_shader;
 		ComputeProgram _lighting_program;
 
 		StorageTexture _acc_buffer;
