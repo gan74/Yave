@@ -32,6 +32,10 @@ namespace yave {
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class Image : public ImageBase {
 
+	static constexpr bool is_compatible(ImageUsage u) {
+		return (uenum(Usage) & uenum(u)) == uenum(Usage);
+	}
+
 	public:
 		Image() = default;
 
@@ -44,11 +48,13 @@ class Image : public ImageBase {
 			static_assert(is_texture_usage(Usage), "Only texture images can be initilized.");
 		}
 
-		Image(Image&& other) {
+		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
+		Image(Image<U, Type>&& other) {
 			swap(other);
 		}
 
-		Image& operator=(Image&& other) {
+		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
+		Image& operator=(Image<U, Type>&& other) {
 			swap(other);
 			return *this;
 		}
