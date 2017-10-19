@@ -87,6 +87,10 @@ class Binding {
 					.setSampler(view.device()->vk_sampler())) {
 		}
 
+		template<ImageUsage Usage, ImageType Type>
+		Binding(const Image<Usage, Type>& image) : Binding(ImageView<Usage, Type>(image)) {
+		}
+
 
 		Binding(const SubBuffer<BufferUsage::UniformBit>& buffer) :
 				_type(vk::DescriptorType::eUniformBuffer),
