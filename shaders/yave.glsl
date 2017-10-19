@@ -141,12 +141,10 @@ float attenuation(float distance, float radius) {
 	return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);
 }
 
-vec3 reflection(samplerCube envmap, vec3 normal, vec3 view) {
+/*vec3 reflection(samplerCube envmap, vec3 normal, vec3 view) {
 	vec3 r = reflect(view, normal);
 	return textureLod(envmap, r, 0).rgb;
-}
-
-
+}*/
 
 float D_GGX(float NoH, float roughness) {
 	float a2 = sqr(sqr(roughness));
@@ -168,6 +166,14 @@ float G_GGX(float NoV, float NoL, float k) {
 	return ggx_v * ggx_l;
 }
 
+vec3 F_Schlick(float NoV, vec3 F0) {
+	return F0 + (vec3(1.0) - F0) * pow(1.0 - NoV, 5.0);
+}
+
+vec3 F_Schlick(float NoV, vec3 F0, float roughness) {
+	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - NoV, 5.0);
+}
+
 float brdf_cook_torrance(float NoH, float NoV, float NoL, float roughness) {
 	float D = D_GGX(NoH, roughness);
 
@@ -182,21 +188,15 @@ float brdf_cook_torrance(float NoH, float NoV, float NoL, float roughness) {
 float brdf_lambert() {
 	return 1.0 / pi;
 }
-
-
-vec3 F_Schlick(vec3 normal, vec3 v, vec3 F0) {
-	float NoV = max(0.0, dot(normal, v));
-	return F0 + (vec3(1.0) - F0) * pow(1.0 - NoV, 5.0);
-}
-
 vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
 	vec3 half_vec = normalize(light_dir + view_dir);
 	float NoH = max(0.0, dot(normal, half_vec));
 	float NoV = max(0.0, dot(normal, view_dir));
 	float NoL = max(0.0, dot(normal, light_dir));
+	float HoV = max(0.0, dot(half_vec, view_dir));
 
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
-	vec3 F = F_Schlick(half_vec, view_dir, F0);
+	vec3 F = F_Schlick(HoV, F0);
 
 	vec3 kS = F;
 	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
@@ -205,6 +205,23 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 	vec3 diffuse = kD * albedo * brdf_lambert();
 
 	return (diffuse + specular) * NoL;
+}
+
+
+// -------------------------------- IBL --------------------------------
+
+vec3 diffuse_irradiance(samplerCube envmap, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+	float NoV = max(0.0, dot(normal, view_dir));
+
+	vec3 F0 = mix(vec3(0.04), albedo, metallic);
+	vec3 F = F_Schlick(NoV, F0, roughness);
+
+	vec3 kS = F;
+	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+	vec3 irradiance = texture(envmap, normal).rgb;
+
+	return kD * irradiance * albedo;
 }
 
 

@@ -5,7 +5,7 @@
 
 // -------------------------------- DEFINES --------------------------------
 
-//#define USE_IBL
+#define USE_IBL
 
 
 
@@ -162,7 +162,6 @@ void main() {
 
 	float depth = texelFetch(in_depth, coord, 0).x;
 
-
 	cull_lights(depth);
 
 	vec3 albedo;
@@ -203,8 +202,8 @@ void main() {
 		}
 
 #ifdef USE_IBL
-		irradiance += reflection(in_envmap, normal, view_dir);
-		error here: do proper IBL
+		irradiance += diffuse_irradiance(in_envmap, normal, view_dir, roughness, metallic, albedo);
+		//irradiance = texture(in_envmap, normal).rgb;
 #endif
 	}
 

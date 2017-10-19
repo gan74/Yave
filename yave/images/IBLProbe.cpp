@@ -54,6 +54,9 @@ static usize assert_square(const math::Vec2ui& size) {
 	if(size.x() != size.y()) {
 		fatal("Cubemap is not square");
 	}
+	if(usize(1) << log2ui(size.x()) != size.x()) {
+		fatal("Cubemap size is not a power of 2");
+	}
 	return size.x();
 }
 
@@ -68,8 +71,8 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 	core::DebugTimer _("IBLProbe::from_cubemap()");
 
 	struct ProbeBase : ImageBase {
-		ProbeBase(DevicePtr dptr, usize size, usize mips) :
-			ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size}, ImageType::Cube, 6, mips) {
+		ProbeBase(DevicePtr dptr, usize size, usize conv_size) :
+			ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size}, ImageType::Cube, 6, mipmap_count(size, conv_size)) {
 		}
 	};
 
@@ -85,9 +88,8 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 	DevicePtr dptr = cube.device();
 	ComputeProgram conv_program(create_convolution_shader(dptr));
 
-	usize cube_size = assert_square(cube.size());
 	usize conv_size = assert_square(conv_program.local_size().to<2>());
-	ProbeBase probe(dptr, cube_size, mipmap_count(cube_size, conv_size));
+	ProbeBase probe(dptr, 1 << log2ui(assert_square(cube.size())), conv_size);
 
 	// we need to store the views and use sync compute so we don't delete them while they are still in use
 	auto mip_views = core::vector_with_capacity<ProbeBaseView>(probe.mipmaps());
@@ -102,8 +104,9 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 
 
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
-	for(const auto& dset : descriptor_sets) {
-		recorder.dispatch(conv_program, math::Vec3ui{probe.size() / conv_program.local_size().to<2>(), 1}, {dset});
+	for(usize i = 0; i != probe.mipmaps(); ++i) {
+		auto mip_size = probe.size() / (1 << i);
+		recorder.dispatch(conv_program, math::Vec3ui{mip_size / conv_program.local_size().to<2>(), 1}, {descriptor_sets[i]});
 	}
 	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 

@@ -18,14 +18,40 @@ vec3 cube_dir(vec2 texCoord, uint side) {
 				  return vec3(-1.0, -tex.y, tex.x); // back
 }
 
+vec3 up_dir(uint side) {
+	if(side == 4 || side == 5) return vec3(1.0, 0.0, 0.0);
+	return vec3(0.0, 0.0, 1.0);
+}
+
+vec3 diffuse_convolution(vec3 normal, vec3 up) {
+	vec3 acc = vec3(0.0);  //texture(in_envmap, local_dir);
+
+	vec3 right = normalize(cross(up, normal));
+	up = cross(normal, right);
+
+	float sample_delta = 0.025;
+	float samples = 0.0;
+	for(float phi = 0.0; phi < 2.0 * pi; phi += sample_delta) {
+		for(float theta = 0.0; theta < 0.5 * pi; theta += sample_delta) {
+			vec3 tangent_sample = vec3(sin(theta) * cos(phi),  sin(theta) * sin(phi), cos(theta));
+			vec3 sample_dir = tangent_sample.x * right + tangent_sample.y * up + tangent_sample.z * normal;
+
+			acc += texture(in_envmap, sample_dir).rgb * cos(theta) * sin(theta);
+			++samples;
+		}
+	}
+	return acc / samples * pi;
+}
+
 
 void main() {
 	vec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	uint mip = gl_GlobalInvocationID.z;
 	vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / vec2(imageSize(out_image).xy);
 
 	for(uint i = 0; i != 6; i++) {
-		//vec3 local_dir = cube_dir(uv, i);
-		imageStore(out_image, ivec3(coord, i), vec4(spectrum(mip), 1));
+		vec3 local_dir = normalize(cube_dir(uv, i));
+
+		vec3 diffuse = diffuse_convolution(local_dir, up_dir(i));
+		imageStore(out_image, ivec3(coord, i), vec4(diffuse, 0.0));
 	}
 }

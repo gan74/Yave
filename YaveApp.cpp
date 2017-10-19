@@ -101,10 +101,10 @@ void YaveApp::create_assets() {
 	core::Vector<Scene::Ptr<Light>> lights;
 
 	{
-		Light l(Light::Directional);
+		/*Light l(Light::Directional);
 		l.transform().set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{1.0f};
-		lights << std::move(l);
+		lights << std::move(l);*/
 
 		/*l.transform().set_basis(-math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{0.5f};
@@ -112,23 +112,38 @@ void YaveApp::create_assets() {
 	}
 
 	{
-		auto image_data = ImageData::from_file(io::File::open("../tools/image_to_yt/chalet.yt").expected("Unable to load image file."));
-		auto texture = AssetPtr<Texture>(Texture(&device, image_data));
-		do_not_destroy(texture);
+		auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/color.yt").expected("Unable to load image file."));
+		auto color = AssetPtr<Texture>(Texture(&device, color_data));
+		do_not_destroy(color);
+
+		auto roughness_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/roughness.yt").expected("Unable to load image file."));
+		auto roughness = AssetPtr<Texture>(Texture(&device, roughness_data));
+		do_not_destroy(roughness);
+
+		auto metallic_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/metallic.yt").expected("Unable to load image file."));
+		auto metallic = AssetPtr<Texture>(Texture(&device, metallic_data));
+		do_not_destroy(metallic);
 
 		auto material = AssetPtr<Material>(Material(&device, MaterialData()
 				 .set_frag_data(SpirVData::from_file(io::File::open("textured.frag.spv").expected("Unable to load spirv file.")))
 				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-				 .set_bindings({Binding(TextureView(*texture))})
+				 .set_bindings({Binding(TextureView(*color)), Binding(TextureView(*roughness)), Binding(TextureView(*metallic))})
 			 ));
 
-		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/sphere.obj.ym").expected("Unable to open mesh file."));
+		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/sphere_uv.obj.ym").expected("Unable to open mesh file."));
 		auto mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
 
 		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
-		auto instance = new StaticMeshInstance(mesh, material);
 
-		renderables << instance;
+		{
+			auto instance = new StaticMeshInstance(mesh, material);
+			renderables << instance;
+		}
+		{
+			auto instance = new StaticMeshInstance(mesh, material);
+			instance->position() = {0.0f, 5.0f, 0.0f};
+			renderables << instance;
+		}
 	}
 
 	scene = new Scene(std::move(objects), std::move(renderables), std::move(lights));
