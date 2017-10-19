@@ -106,7 +106,7 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 	for(usize i = 0; i != probe.mipmaps(); ++i) {
 		auto mip_size = probe.size() / (1 << i);
-		recorder.dispatch(conv_program, math::Vec3ui{mip_size / conv_program.local_size().to<2>(), 1}, {descriptor_sets[i]});
+		recorder.dispatch_size(conv_program, mip_size, {descriptor_sets[i]});
 	}
 	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 

@@ -88,6 +88,9 @@ class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
 
 		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
 
+		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
+		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
+
 		void barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
 
 		// never use directly, needed for internal work and image loading

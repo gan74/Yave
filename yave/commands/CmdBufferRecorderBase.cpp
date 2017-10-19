@@ -170,6 +170,19 @@ void PrimaryCmdBufferRecorderBase::dispatch(const ComputeProgram& program, const
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
 }
 
+
+void PrimaryCmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+	math::Vec3ui dispatch_size;
+	for(usize i = 0; i != 3; ++i) {
+		dispatch_size[i] = size[i] / program.local_size()[i] + !!(size[i] % program.local_size()[i]);
+	}
+	dispatch(program, dispatch_size, descriptor_sets);
+}
+
+void PrimaryCmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
+}
+
 void PrimaryCmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
 	end_renderpass();
 
