@@ -67,7 +67,8 @@ static vk::Device create_device(
 	required.multiDrawIndirect = true;
 	required.drawIndirectFirstInstance = true;
 	required.fullDrawIndexUint32 = true;
-	required.textureCompressionBC  = true;
+	required.textureCompressionBC = true;
+	required.shaderStorageImageExtendedFormats = true;
 
 	if(debug.is_debug_callback_enabled()) {
 		required.robustBufferAccess = true;

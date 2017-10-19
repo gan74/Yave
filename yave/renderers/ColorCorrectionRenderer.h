@@ -44,7 +44,6 @@ class ColorCorrectionRenderer : public EndOfPipeline {
 
 		Ptr<BufferRenderer> _renderer;
 
-		ComputeShader _correction_shader;
 		ComputeProgram _correction_program;
 
 		std::unordered_map<VkImageView, DescriptorSet> _output_sets;

@@ -172,7 +172,7 @@ class RenderingPipeline : NonCopyable {
 								func();
 								cd->promise.set_value();
 							} else {
-								cd->promise. set_value(func());
+								cd->promise.set_value(func());
 							}
 						};
 				}

@@ -114,15 +114,15 @@ void YaveApp::create_assets() {
 	{
 		auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/color.yt").expected("Unable to load image file."));
 		auto color = AssetPtr<Texture>(Texture(&device, color_data));
-		do_not_destroy(color);
+		destroy_later(color);
 
 		auto roughness_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/roughness.yt").expected("Unable to load image file."));
 		auto roughness = AssetPtr<Texture>(Texture(&device, roughness_data));
-		do_not_destroy(roughness);
+		destroy_later(roughness);
 
 		auto metallic_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/metallic.yt").expected("Unable to load image file."));
 		auto metallic = AssetPtr<Texture>(Texture(&device, metallic_data));
-		do_not_destroy(metallic);
+		destroy_later(metallic);
 
 		auto material = AssetPtr<Material>(Material(&device, MaterialData()
 				 .set_frag_data(SpirVData::from_file(io::File::open("textured.frag.spv").expected("Unable to load spirv file.")))

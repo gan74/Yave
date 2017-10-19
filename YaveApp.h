@@ -51,7 +51,21 @@ namespace yave {
 class Window;
 
 class YaveApp : NonCopyable {
+	struct DestroyLaterBase : NonCopyable {
+		virtual ~DestroyLaterBase() {
+		}
+	};
 
+	template<typename T>
+	struct DestroyLater : DestroyLaterBase {
+		DestroyLater(T&& t) : _obj(std::forward<T>(t)) {
+		}
+
+		~DestroyLater() {
+		}
+
+		std::remove_reference_t<T> _obj;
+	};
 
 	public:
 		YaveApp(DebugParams params);
@@ -86,6 +100,8 @@ class YaveApp : NonCopyable {
 		Instance instance;
 		Device device;
 
+		core::Vector<core::Unique<DestroyLaterBase>> destroy_laters;
+
 		core::Unique<Swapchain> swapchain;
 
 		Scene* scene;
@@ -93,6 +109,13 @@ class YaveApp : NonCopyable {
 
 		Camera camera;
 		core::Arc<EndOfPipeline> renderer;
+
+
+		template<typename T>
+		void destroy_later(T&& t) {
+			destroy_laters.emplace_back(new DestroyLater<T>(std::forward<T>(t)));
+		}
+
 };
 
 }

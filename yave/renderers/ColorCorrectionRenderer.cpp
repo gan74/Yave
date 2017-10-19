@@ -33,8 +33,7 @@ static ComputeShader create_correction_shader(DevicePtr dptr) {
 ColorCorrectionRenderer::ColorCorrectionRenderer(const Ptr<BufferRenderer>& renderer) :
 		EndOfPipeline(renderer->device()),
 		_renderer(renderer),
-		_correction_shader(create_correction_shader(device())),
-		_correction_program(_correction_shader) {
+		_correction_program(create_correction_shader(device())) {
 }
 
 
@@ -44,7 +43,7 @@ void ColorCorrectionRenderer::build_frame_graph(RenderingNode<result_type>& node
 	node.set_func([=, &recorder, token = node.token()]() {
 			auto size = token.image_view.size();
 			//recorder.barriers({}, {ImageBarrier(image.get())}, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
-			recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_shader.local_size().to<2>(), 1), {create_descriptor_set(token.image_view, image.get())});
+			recorder.dispatch(_correction_program, math::Vec3ui(size / _correction_program.local_size().to<2>(), 1), {create_descriptor_set(token.image_view, image.get())});
 		});
 }
 
