@@ -65,6 +65,17 @@ mat4 indentity() {
 				0, 0, 0, 1);
 }
 
+vec2 hammersley(uint i, uint N) {
+	uint bits = (i << 16u) | (i >> 16u);
+    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	float radical_inverse = float(bits) * 2.3283064365386963e-10;
+    return vec2(float(i) / float(N), radical_inverse);
+}
+
+
 // -------------------------------- SPECTRUM --------------------------------
 
 vec3 spectrum(float x) {
@@ -188,6 +199,7 @@ float brdf_cook_torrance(float NoH, float NoV, float NoL, float roughness) {
 float brdf_lambert() {
 	return 1.0 / pi;
 }
+
 vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
 	vec3 half_vec = normalize(light_dir + view_dir);
 	float NoH = max(0.0, dot(normal, half_vec));
@@ -209,6 +221,50 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 
 
 // -------------------------------- IBL --------------------------------
+
+vec3 importance_sample_GGX(vec2 Xi, vec3 normal, float roughness) {
+    float a = sqr(roughness);
+
+    float phi = 2.0 * pi * Xi.x;
+    float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y));
+    float sin_theta = sqrt(1.0 - sqr(cos_theta));
+
+    vec3 half_vec = vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+
+    vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, normal));
+    vec3 bitangent = cross(normal, tangent);
+
+    return normalize(tangent * half_vec.x + bitangent * half_vec.y + normal * half_vec.z);
+}
+
+vec2 integrate_brdf(float NoV, float roughness) {
+	vec3 V = vec3(sqrt(1.0 - NoV * NoV), 0.0, NoV);
+
+	vec2 integr = vec2(0.0);
+
+	vec3 N = vec3(0.0, 0.0, 1.0);
+	const uint SAMPLE_COUNT = 1024;
+	for(uint i = 0; i != SAMPLE_COUNT; ++i) {
+		vec2 Xi = hammersley(i, SAMPLE_COUNT);
+		vec3 H  = importance_sample_GGX(Xi, N, roughness);
+		vec3 L  = normalize(2.0 * dot(V, H) * H - V);
+
+		float NoL = max(0.0, L.z);
+		float NoH = max(0.0, H.z);
+		float VoH = max(0.0, dot(V, H));
+
+		if(NoL > 0.0) {
+			float k_ibl = sqr(roughness) * 0.5;
+			float G = G_GGX(NoV, NoL, k_ibl);
+			float G_Vis = (G * VoH) / (NoH * NoV);
+			float Fc = pow(1.0 - VoH, 5.0);
+
+			integr += vec2((1.0 - Fc) * G_Vis, Fc * G_Vis);
+		}
+	}
+	return integr / SAMPLE_COUNT;
+}
 
 vec3 diffuse_irradiance(samplerCube envmap, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
 	float NoV = max(0.0, dot(normal, view_dir));
