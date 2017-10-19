@@ -37,6 +37,22 @@ static ComputeShader create_lighting_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
+static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
+	core::DebugTimer _("DeferredRenderer::create_ibl_lut()");
+
+	ComputeProgram brdf_integrator(ComputeShader(dptr, SpirVData::from_file(io::File::open("brdf_integrator.comp.spv").expected("Unable to open SPIR-V file."))));
+
+	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
+
+	DescriptorSet dset(dptr, {Binding(StorageView(image))});
+
+	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
+	recorder.dispatch_size(brdf_integrator, image.size(), {dset});
+	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+
+	return image;
+}
+
 static auto create_light_buffer(DevicePtr dptr, usize max_light_count = 1024) {
 	Buffer<BufferUsage::StorageBit, MemoryType::CpuVisible> buffer(dptr, sizeof(Vec4u32) + max_light_count * sizeof(uniform::Light));
 	TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryType::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(0);
@@ -57,6 +73,7 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 		_gbuffer(gbuffer),
 		_envmap(load_envmap(device())),
 		_lighting_program(create_lighting_shader(device())),
+		_ibl_lut(create_ibl_lut(device())),
 		_acc_buffer(device(), ImageFormat(vk::Format::eR16G16B16A16Sfloat), _gbuffer->size()),
 		_lights_buffer(create_light_buffer(device())),
 		_camera_buffer(device(), 1),
@@ -65,6 +82,7 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 				Binding(_gbuffer->color()),
 				Binding(_gbuffer->normal()),
 				Binding(_envmap),
+				Binding(_ibl_lut),
 				Binding(_camera_buffer),
 				Binding(_lights_buffer),
 				Binding(StorageView(_acc_buffer))
@@ -101,7 +119,7 @@ void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBu
 				std::transform(directionals.begin(), directionals.end(), light_data + lights.size(), [](const Light* l) { return uniform::Light(*l); });
 			}
 
-			recorder.dispatch(_lighting_program, math::Vec3ui(size() / _lighting_program.local_size().to<2>(), 1), {_descriptor_set});
+			recorder.dispatch_size(_lighting_program, size(), {_descriptor_set});
 			return _acc_buffer;
 		});
 }

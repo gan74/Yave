@@ -18,9 +18,9 @@ layout(set = 0, binding = 1) uniform sampler2D in_color;
 layout(set = 0, binding = 2) uniform sampler2D in_normal;
 
 layout(set = 0, binding = 3) uniform samplerCube in_envmap;
+layout(set = 0, binding = 4) uniform sampler2D ibl_lut;
 
-
-layout(set = 0, binding = 4) uniform Camera {
+layout(set = 0, binding = 5) uniform Camera {
 	mat4 inv_matrix;
 	vec3 position;
 	uint padding_0;
@@ -28,7 +28,7 @@ layout(set = 0, binding = 4) uniform Camera {
 	uint padding_1;
 } camera;
 
-layout(set = 0, binding = 5) readonly buffer Lights {
+layout(set = 0, binding = 6) readonly buffer Lights {
 	uint count;
 	uint directional_count;
 	uint padding[2];
@@ -37,7 +37,7 @@ layout(set = 0, binding = 5) readonly buffer Lights {
 } lights;
 
 
-layout(rgba16f, set = 0, binding = 6) uniform writeonly image2D out_color;
+layout(rgba16f, set = 0, binding = 7) uniform writeonly image2D out_color;
 
 
 // -------------------------------- SHARED --------------------------------
@@ -158,7 +158,6 @@ void cull_lights(float depth) {
 void main() {
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
-	vec3 irradiance = vec3(0.0);
 
 	float depth = texelFetch(in_depth, coord, 0).x;
 
@@ -168,6 +167,7 @@ void main() {
 	vec3 normal;
 	float metallic;
 	float roughness;
+	vec3 irradiance = vec3(0.0);
 
 	unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
 

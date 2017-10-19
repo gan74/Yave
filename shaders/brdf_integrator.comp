@@ -4,12 +4,9 @@
 
 layout(local_size_x = 16, local_size_y = 16) in;
 
-layout(set = 0, binding = 0) uniform sampler2D unused;
-layout(rgba8, set = 0, binding = 1) uniform writeonly image2D out_image;
-
+layout(rg16, set = 0, binding = 0) uniform writeonly image2D out_image;
 
 void main() {
 	vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / vec2(imageSize(out_image).xy);
-
 	imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(integrate_brdf(uv.x, uv.y), 0.0, 0.0));
 }
