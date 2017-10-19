@@ -35,6 +35,8 @@ namespace yave {
 
 class DeferredRenderer : public BufferRenderer {
 	public:
+		static constexpr usize max_light_count = 1024;
+
 		DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
@@ -59,8 +61,7 @@ class DeferredRenderer : public BufferRenderer {
 
 		StorageTexture _acc_buffer;
 
-		Buffer<BufferUsage::StorageBit, MemoryType::CpuVisible> _lights_buffer;
-		TypedBuffer<uniform::Camera, BufferUsage::UniformBit> _camera_buffer;
+		TypedBuffer<uniform::Light, BufferUsage::StorageBit, MemoryType::CpuVisible> _lights_buffer;
 
 		DescriptorSet _descriptor_set;
 };

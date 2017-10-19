@@ -76,7 +76,7 @@ static vk::DescriptorSetLayoutBinding create_binding(u32 index, ShaderType, vk::
 
 static auto create_bindings(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources, ShaderType shader_type, vk::DescriptorType type) {
 	auto bindings = std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>();
-	for(auto r : resources) {
+	for(const auto& r : resources) {
 		auto id = r.id;
 		bindings[compiler.get_decoration(id, spv::DecorationDescriptorSet)] << create_binding(compiler.get_decoration(id, spv::DecorationBinding), shader_type, type);
 	}
@@ -119,13 +119,26 @@ static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseTy
 	return fatal("Unsupported attribute type.");
 }
 
+static auto create_push_constants(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources, ShaderType shader_type) {
+	if(resources.size() > 1) {
+		fatal("Too many push constants.");
+	}
+
+	core::Vector<vk::PushConstantRange> push_constants;
+	for(const auto& r : resources) {
+		const auto& type = compiler.get_type(r.type_id);
+		push_constants << vk::PushConstantRange(vk::ShaderStageFlagBits(shader_type), 0, compiler.get_declared_struct_size(type));
+	}
+	return push_constants;
+}
+
 
 static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources) {
 	core::Vector<ShaderModuleBase::Attribute> attribs;
 	std::unordered_set<u32> locations;
-	for(auto r : resources) {
+	for(const auto& r : resources) {
 		auto location = compiler.get_decoration(r.id, spv::DecorationLocation);
-		auto type = compiler.get_type(r.type_id);
+		const auto& type = compiler.get_type(r.type_id);
 
 		attribs << ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype)};
 
@@ -149,11 +162,12 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, vk::DescriptorType::eCombinedImageSampler));
 	merge(_bindings, create_bindings(compiler, resources.storage_images, _type, vk::DescriptorType::eStorageImage));
 
+	_push_constants = create_push_constants(compiler, resources.push_constant_buffers, _type);
+
 	_attribs = create_attribs(compiler, resources.stage_inputs);
 
 	// these are attribs & other stages stuff
 	fail_not_empty(resources.atomic_counters);
-	fail_not_empty(resources.push_constant_buffers);
 	fail_not_empty(resources.separate_images);
 	fail_not_empty(resources.separate_samplers);
 
@@ -171,6 +185,7 @@ void ShaderModuleBase::swap(ShaderModuleBase& other) {
 	std::swap(_module, other._module);
 	std::swap(_type, other._type);
 	std::swap(_bindings, other._bindings);
+	std::swap(_push_constants, other._push_constants);
 	std::swap(_attribs, other._attribs);
 	std::swap(_local_size, other._local_size);
 }

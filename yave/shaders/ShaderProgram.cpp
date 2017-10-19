@@ -40,6 +40,12 @@ static void merge_bindings(T& into, const T& o) {
 	into.insert(o.begin(), o.end());
 }
 
+template<typename T>
+static void merge_push_constants(T& into, const T& o) {
+	into.push_back(o.begin(), o.end());
+}
+
+
 static vk::Format vec_format(const ShaderModuleBase::Attribute& attr) {
 	static_assert(uenum(vk::Format::eR32G32B32A32Sfloat) == uenum(vk::Format::eR32G32B32A32Uint) + uenum(ShaderModuleBase::AttribType::Float));
 
@@ -128,6 +134,10 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 		create_stage_info(_stages, frag);
 		create_stage_info(_stages, vert);
 		create_stage_info(_stages, geom);
+
+		merge_push_constants(_push_constants, frag.push_constants());
+		merge_push_constants(_push_constants, vert.push_constants());
+		merge_push_constants(_push_constants, geom.push_constants());
 
 		u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 

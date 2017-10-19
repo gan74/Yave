@@ -109,6 +109,8 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 	auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(u32(program.descriptor_layouts().size()))
 			.setPSetLayouts(program.descriptor_layouts().begin())
+			.setPushConstantRangeCount(u32(program.push_constants().size()))
+			.setPPushConstantRanges(program.push_constants().begin())
 		);
 
 	std::array<vk::DynamicState, 2> dynamics = {{vk::DynamicState::eViewport, vk::DynamicState::eScissor}};

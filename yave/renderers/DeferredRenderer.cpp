@@ -27,11 +27,10 @@ SOFTWARE.
 #include <yave/commands/CmdBufferRecorder.h>
 #include <yave/buffers/CpuVisibleMapping.h>
 
+#include <y/core/Chrono.h>
 #include <y/io/File.h>
 
 namespace yave {
-
-using Vec4u32 = math::Vec<4, u32>;
 
 static ComputeShader create_lighting_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
@@ -53,20 +52,11 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 	return image;
 }
 
-static auto create_light_buffer(DevicePtr dptr, usize max_light_count = 1024) {
-	Buffer<BufferUsage::StorageBit, MemoryType::CpuVisible> buffer(dptr, sizeof(Vec4u32) + max_light_count * sizeof(uniform::Light));
-	TypedSubBuffer<Vec4u32, BufferUsage::StorageBit, MemoryType::CpuVisible>(buffer, 0, 1).map()[0] = Vec4u32(0);
-
-	return buffer;
-}
 
 static auto load_envmap(DevicePtr dptr) {
 	//return Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemap/sky.yt").expected("Unable to open cubemap")));
 	return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemap/sky.yt").expected("Unable to open cubemap"))));
 }
-
-
-
 
 DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 		BufferRenderer(gbuffer->device()),
@@ -75,15 +65,13 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 		_lighting_program(create_lighting_shader(device())),
 		_ibl_lut(create_ibl_lut(device())),
 		_acc_buffer(device(), ImageFormat(vk::Format::eR16G16B16A16Sfloat), _gbuffer->size()),
-		_lights_buffer(create_light_buffer(device())),
-		_camera_buffer(device(), 1),
+		_lights_buffer(device(), max_light_count),
 		_descriptor_set(device(), {
 				Binding(_gbuffer->depth()),
 				Binding(_gbuffer->color()),
 				Binding(_gbuffer->normal()),
 				Binding(_envmap),
 				Binding(_ibl_lut),
-				Binding(_camera_buffer),
 				Binding(_lights_buffer),
 				Binding(StorageView(_acc_buffer))
 			}) {
@@ -104,22 +92,23 @@ void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBu
 	auto culling = node.add_dependency(_gbuffer->scene_renderer()->culling_node());
 
 	node.set_func([=, &recorder]() -> result_type {
-			_camera_buffer.map()[0] = _gbuffer->scene_view().camera();
+			const auto& directionals = culling.get().directional_lights;
+			const auto& lights = culling.get().lights;
 
 			{
-				const auto& directionals = culling.get().directional_lights;
-				const auto& lights = culling.get().lights;
-				auto mapping = CpuVisibleMapping(_lights_buffer);
-				u8* data = reinterpret_cast<u8*>(mapping.data());
+				auto mapping = _lights_buffer.map();
 
-				reinterpret_cast<Vec4u32*>(data)[0] = Vec4u32(lights.size(), directionals.size(), 0, 0);
-
-				auto light_data = reinterpret_cast<uniform::Light*>(data + sizeof(Vec4u32));
-				std::transform(lights.begin(), lights.end(), light_data, [](const Light* l) { return uniform::Light(*l); });
-				std::transform(directionals.begin(), directionals.end(), light_data + lights.size(), [](const Light* l) { return uniform::Light(*l); });
+				std::transform(lights.begin(), lights.end(), mapping.begin(), [](const Light* l) { return uniform::Light(*l); });
+				std::transform(directionals.begin(), directionals.end(), mapping.begin() + lights.size(), [](const Light* l) { return uniform::Light(*l); });
 			}
 
-			recorder.dispatch_size(_lighting_program, size(), {_descriptor_set});
+			struct PushData {
+				uniform::Camera camera;
+				u32 point_count;
+				u32 directional_count;
+			};
+
+			recorder.dispatch_size(_lighting_program, size(), {_descriptor_set}, PushData{_gbuffer->scene_view().camera(), lights.size(), directionals.size()});
 			return _acc_buffer;
 		});
 }

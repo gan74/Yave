@@ -40,6 +40,8 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.de
 	_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(u32(layouts.size()))
 			.setPSetLayouts(layouts.begin())
+			.setPushConstantRangeCount(u32(comp.push_constants().size()))
+			.setPPushConstantRanges(comp.push_constants().begin())
 		);
 
 	auto stage = vk::PipelineShaderStageCreateInfo()

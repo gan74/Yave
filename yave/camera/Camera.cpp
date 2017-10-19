@@ -34,7 +34,7 @@ static math::Vec3 extract_position(const math::Matrix4<>& view) {
 }
 
 static math::Vec3 extract_forward(const math::Matrix4<>& view) {
-	return -view.row(2).to<3>();
+	return -view.row(2).to<3>().normalized();
 }
 
 static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj) {

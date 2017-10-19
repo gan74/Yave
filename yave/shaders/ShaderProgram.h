@@ -48,8 +48,13 @@ class ShaderProgram : NonCopyable, public DeviceLinked {
 			return _vertex.attribs;
 		}
 
+		const auto& push_constants() const {
+			return _push_constants;
+		}
+
 	private:
 		std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>> _bindings;
+		core::Vector<vk::PushConstantRange> _push_constants;
 		core::Vector<vk::DescriptorSetLayout> _layouts;
 		core::Vector<vk::PipelineShaderStageCreateInfo> _stages;
 

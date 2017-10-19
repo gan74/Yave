@@ -66,6 +66,10 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 			return _attribs;
 		}
 
+		const auto& push_constants() const {
+			return _push_constants;
+		}
+
 		ShaderType type() const {
 			return _type;
 		}
@@ -89,6 +93,7 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 		vk::ShaderModule _module;
 		ShaderType _type = ShaderType::None;
 		std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>> _bindings;
+		core::Vector<vk::PushConstantRange> _push_constants;
 		core::Vector<Attribute> _attribs;
 		math::Vec3ui _local_size;
 

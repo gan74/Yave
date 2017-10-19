@@ -101,14 +101,17 @@ void YaveApp::create_assets() {
 	core::Vector<Scene::Ptr<Light>> lights;
 
 	{
-		/*Light l(Light::Directional);
+		Light l(Light::Directional);
 		l.transform().set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{1.0f};
-		lights << std::move(l);*/
-
-		/*l.transform().set_basis(-math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
-		l.color() = math::Vec3{0.5f};
-		lights << std::move(l);*/
+		lights << std::move(l);
+	}
+	{
+		Light l(Light::Point);
+		l.position() = math::Vec3{0.0f, 2.5f, 0.0f};
+		l.color() = math::Vec3{5.0f, 0.0f, 0.0f};
+		l.radius() = 10.0f;
+		lights << std::move(l);
 	}
 
 	{

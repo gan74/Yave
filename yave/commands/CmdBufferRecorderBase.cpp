@@ -59,11 +59,11 @@ void CmdBufferRecorderBase::set_viewport(const Viewport& view) {
 	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(view.offset.x(), view.offset.y()), vk::Extent2D(view.extent.x(), view.extent.y()))});
 }
 
-void CmdBufferRecorderBase::bind_material(const Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+void CmdBufferRecorderBase::bind_material(const Material& material, DescriptorSetList descriptor_sets) {
 	bind_pipeline(material.compile(current_pass()), descriptor_sets);
 }
 
-void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+void CmdBufferRecorderBase::bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size() + 1);
@@ -159,28 +159,36 @@ void PrimaryCmdBufferRecorderBase::execute(const RecordedCmdBuffer<CmdBufferUsag
 }
 
 
-void PrimaryCmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+void PrimaryCmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
 	end_renderpass();
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
 	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& ds) { return ds.get().vk_descriptor_set(); });
 
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
-	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
+
+	if(ds.size()) {
+		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
+	}
+
+	if(push_constants.size()) {
+		vk_cmd_buffer().pushConstants(program.vk_pipeline_layout(), vk::ShaderStageFlagBits::eCompute, 0, push_constants.size(), push_constants.data());
+	}
+
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
 }
 
 
-void PrimaryCmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
+void PrimaryCmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
 	math::Vec3ui dispatch_size;
 	for(usize i = 0; i != 3; ++i) {
 		dispatch_size[i] = size[i] / program.local_size()[i] + !!(size[i] % program.local_size()[i]);
 	}
-	dispatch(program, dispatch_size, descriptor_sets);
+	dispatch(program, dispatch_size, descriptor_sets, push_constants);
 }
 
-void PrimaryCmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets) {
-	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
+void PrimaryCmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
+	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
 }
 
 void PrimaryCmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {

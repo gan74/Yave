@@ -52,17 +52,17 @@ static ComputeShader create_convolution_shader(DevicePtr dptr) {
 
 static usize assert_square(const math::Vec2ui& size) {
 	if(size.x() != size.y()) {
-		fatal("Cubemap is not square");
+		fatal("Cubemap is not square.");
 	}
 	if(usize(1) << log2ui(size.x()) != size.x()) {
-		fatal("Cubemap size is not a power of 2");
+		fatal("Cubemap size is not a power of 2.");
 	}
 	return size.x();
 }
 
 static usize mipmap_count(usize size, usize group_size) {
 	if(size % group_size) {
-		fatal("Group size does not divide image size");
+		fatal("Group size does not divide image size.");
 	}
 	return 1 + std::floor(std::log2(size / group_size));
 }

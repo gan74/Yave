@@ -37,9 +37,39 @@ SOFTWARE.
 
 namespace yave {
 
+class PushConstant : NonCopyable {
+	public:
+		PushConstant() = default;
+
+		template<typename T>
+		PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
+			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+		}
+
+		template<typename T>
+		PushConstant(const core::ArrayProxy<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+		}
+
+		const void* data() const {
+			return _data;
+		}
+
+		usize size() const {
+			return _size;
+		}
+
+	private:
+		const void* _data = nullptr;
+		usize _size = 0;
+};
+
+
 class CmdBufferRecorderBase : NonCopyable {
 
 	public:
+		using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSet>>;
+
 		~CmdBufferRecorderBase();
 
 		vk::CommandBuffer vk_cmd_buffer() const;
@@ -48,8 +78,8 @@ class CmdBufferRecorderBase : NonCopyable {
 
 		void set_viewport(const Viewport& view);
 
-		void bind_material(const Material& material, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets = {});
-		void bind_pipeline(const GraphicPipeline& pipeline, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
+		void bind_material(const Material& material, DescriptorSetList descriptor_sets = {});
+		void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
 
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);
 		void draw(usize vertices);
@@ -86,10 +116,10 @@ class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
 
 		void execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer);
 
-		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
+		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 
-		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
-		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, std::initializer_list<std::reference_wrapper<const DescriptorSet>> descriptor_sets);
+		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
+		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 
 		void barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
 
