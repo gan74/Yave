@@ -85,7 +85,7 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 3.0f;
+	float dist = 5.0f;
 
 	auto cam_tr = math::rotation({0, 0, -1}, angles.x()) * math::rotation({0, 1, 0}, angles.y());
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
@@ -106,9 +106,9 @@ void YaveApp::create_assets() {
 		l.color() = math::Vec3{1.0f};
 		lights << std::move(l);
 
-		l.transform().set_basis(-math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
+		/*l.transform().set_basis(-math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{0.5f};
-		lights << std::move(l);
+		lights << std::move(l);*/
 	}
 
 	{
@@ -122,7 +122,7 @@ void YaveApp::create_assets() {
 				 .set_bindings({Binding(TextureView(*texture))})
 			 ));
 
-		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/chalet.obj.ym").expected("Unable to open mesh file."));
+		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/sphere.obj.ym").expected("Unable to open mesh file."));
 		auto mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
 
 		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
@@ -130,56 +130,6 @@ void YaveApp::create_assets() {
 
 		renderables << instance;
 	}
-
-	/*{
-		auto font_data = FontData::from_file(io::File::open("../tools/font_to_yf/font.yt").expected("Unable to load font file."));
-		auto font = AssetPtr<Font>(Font(&device, font_data));
-
-		auto text_material = AssetPtr<Material>(Material(&device, MaterialData()
-				 .set_frag_data(SpirVData::from_file(io::File::open("text.frag.spv").expected("Unable to load spirv file.")))
-				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-			 ));
-	}*/
-
-	/*{
-		auto skinned_material = AssetPtr<Material>(Material(&device, MaterialData()
-				 .set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
-				 .set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
-			 ));
-		auto static_material = AssetPtr<Material>(Material(&device, MaterialData()
-				 .set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-			 ));
-
-		auto animation = AssetPtr<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to load animation file.")));
-
-		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/beta.fbx.ym").expected("Unable to open mesh file."));
-		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
-
-		auto skinned_mesh = AssetPtr<SkinnedMesh>(SkinnedMesh(&device, mesh_data));
-		auto static_mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
-
-		{
-			auto skinned_instance = new SkinnedMeshInstance(skinned_mesh, skinned_material);
-			skinned_instance->animate(animation);
-			skinned_instance->position() = {0.0f, 0.0f, 0.0f};
-
-			renderables << skinned_instance;
-		}
-		{
-			auto static_instance = new StaticMeshInstance(static_mesh, static_material);
-			static_instance->position() = {-100.0f, 0.0f, 0.0f};
-
-			renderables << static_instance;
-		}
-		{
-			auto static_instance = new StaticMeshInstance(static_mesh, static_material);
-			static_instance->position() = {-1000.0f, 0.0f, 0.0f};
-
-			renderables << static_instance;
-		}
-	}*/
-
 
 	scene = new Scene(std::move(objects), std::move(renderables), std::move(lights));
 	scene_view = new SceneView(*scene, camera);

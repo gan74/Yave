@@ -141,18 +141,89 @@ float attenuation(float distance, float radius) {
 	return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);
 }
 
-float brdf(vec3 normal, vec3 light_dir, vec3 view_dir) {
-	float lambert = saturate(dot(normal, light_dir));
-
-	vec3 half_vec = normalize(light_dir + view_dir);
-	float phong = pow(saturate(dot(normal, half_vec)), 32.0);
-
-	return lambert + phong;
-}
-
 vec3 reflection(samplerCube envmap, vec3 normal, vec3 view) {
 	vec3 r = reflect(view, normal);
-	return textureLod(envmap, r, 1).rgb;
+	return textureLod(envmap, r, 0).rgb;
 }
 
 
+
+float D_GGX(float NoH, float roughness) {
+	float a2 = sqr(sqr(roughness));
+	float denom = sqr(sqr(NoH) * (a2 - 1.0) + 1.0) * pi;
+	return a2 / denom;
+}
+
+float G_sub_GGX(float NoV, float k) {
+	float denom = NoV * (1.0 - k) + k;
+	return NoV / denom;
+}
+
+float G_GGX(float NoV, float NoL, float k) {
+	// k for direct lighting = sqr(roughness + 1.0) / 8.0;
+	// k for IBL             = sqr(roughness) / 2.0;
+
+	float ggx_v = G_sub_GGX(NoV, k);
+	float ggx_l = G_sub_GGX(NoL, k);
+	return ggx_v * ggx_l;
+}
+
+float brdf_cook_torrance(float NoH, float NoV, float NoL, float roughness) {
+	float D = D_GGX(NoH, roughness);
+
+	float k_direct = sqr(roughness + 1.0) / 8.0;
+	float G = G_GGX(NoV, NoL, k_direct);
+
+	float denom = 4.0 * NoL * NoV + epsilon;
+
+	return D * G / denom;
+}
+
+float brdf_lambert() {
+	return 1.0 / pi;
+}
+
+
+vec3 F_Schlick(vec3 normal, vec3 v, vec3 F0) {
+	float NoV = max(0.0, dot(normal, v));
+	return F0 + (vec3(1.0) - F0) * pow(1.0 - NoV, 5.0);
+}
+
+vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+	vec3 half_vec = normalize(light_dir + view_dir);
+	float NoH = max(0.0, dot(normal, half_vec));
+	float NoV = max(0.0, dot(normal, view_dir));
+	float NoL = max(0.0, dot(normal, light_dir));
+
+	vec3 F0 = mix(vec3(0.04), albedo, metallic);
+	vec3 F = F_Schlick(half_vec, view_dir, F0);
+
+	vec3 kS = F;
+	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+	vec3 specular = kS * brdf_cook_torrance(NoH, NoV, NoL, roughness);
+	vec3 diffuse = kD * albedo * brdf_lambert();
+
+	return (diffuse + specular) * NoL;
+}
+
+
+// -------------------------------- G-BUFFER --------------------------------
+
+vec4 pack_color(vec3 color, float metallic) {
+	return vec4(color, metallic);
+}
+
+vec4 pack_normal(vec3 normal, float roughness) {
+	return vec4(normal * 0.5 + vec3(0.5), roughness);
+}
+
+void unpack_color(vec4 buff, out vec3 color, out float metallic) {
+	color = buff.rgb;
+	metallic = buff.a;
+}
+
+void unpack_normal(vec4 buff, out vec3 normal, out float roughness) {
+	normal = normalize(buff.xyz * 2.0 - vec3(1.0));
+	roughness = buff.w;
+}
