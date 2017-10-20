@@ -53,11 +53,10 @@ class DeferredRenderer : public BufferRenderer {
 	private:
 		Ptr<GBufferRenderer> _gbuffer;
 
-		Cubemap _envmap;
+		IBLProbe _envmap;
+		Texture _brdf_lut;
 
 		ComputeProgram _lighting_program;
-
-		Texture _ibl_lut;
 
 		StorageTexture _acc_buffer;
 

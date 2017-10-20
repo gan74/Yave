@@ -60,23 +60,57 @@ static usize assert_square(const math::Vec2ui& size) {
 	return size.x();
 }
 
-static usize mipmap_count(usize size, usize group_size) {
-	if(size % group_size) {
-		fatal("Group size does not divide image size.");
+static usize mipmap_count(usize size, usize min_size) {
+	if(size % min_size) {
+		fatal("Minimum size does not divide image size.");
 	}
-	return 1 + std::floor(std::log2(size / group_size));
+	if(size <= min_size) {
+		fatal("IBL probe is too small.");
+	}
+	return 1 + std::floor(std::log2(size / min_size));
 }
+
+using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
+
+static void fill_probe(const core::ArrayProxy<ViewBase>& views, const Cubemap& cube) {
+	DevicePtr dptr = cube.device();
+	auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
+	std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
+			return DescriptorSet(dptr, {Binding(cube), Binding(view)});
+		});
+
+
+	ComputeProgram conv_program(create_convolution_shader(dptr));
+	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
+
+	float roughness = 0.0f;
+	float roughness_step = 1.0f / (views.size() - 1);
+
+	math::Vec2ui size = views[0].size();
+	for(usize i = 0; i != views.size(); ++i) {
+		recorder.dispatch_size(conv_program, size, {descriptor_sets[i]}, roughness);
+
+		roughness += roughness_step;
+		size /= 2;
+	}
+
+	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+}
+
+
+
+
 
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 	core::DebugTimer _("IBLProbe::from_cubemap()");
 
+	static constexpr usize diffuse_size = 32;
+
 	struct ProbeBase : ImageBase {
-		ProbeBase(DevicePtr dptr, usize size, usize conv_size) :
-			ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size}, ImageType::Cube, 6, mipmap_count(size, conv_size)) {
+		ProbeBase(DevicePtr dptr, usize size) :
+			ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size}, ImageType::Cube, 6, mipmap_count(size, diffuse_size)) {
 		}
 	};
-
-	using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
 
 	// ImageView implement size as _image->size() so it'll be wrong for this class and shoudl'nt be used
 	struct ProbeBaseView : ViewBase {
@@ -85,31 +119,21 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 		}
 	};
 
-	DevicePtr dptr = cube.device();
-	ComputeProgram conv_program(create_convolution_shader(dptr));
 
-	usize conv_size = assert_square(conv_program.local_size().to<2>());
-	ProbeBase probe(dptr, 1 << log2ui(assert_square(cube.size())), conv_size);
+	DevicePtr dptr = cube.device();
+	ProbeBase probe(dptr, 1 << log2ui(assert_square(cube.size())));
+
+	if(probe.mipmaps() == 1) {
+		fatal("IBL probe is too small.");
+	}
 
 	// we need to store the views and use sync compute so we don't delete them while they are still in use
-	auto mip_views = core::vector_with_capacity<ProbeBaseView>(probe.mipmaps());
+	auto mip_views = core::vector_with_capacity<ViewBase>(probe.mipmaps());
 	for(usize i = 0; i != probe.mipmaps(); ++i) {
 		mip_views << ProbeBaseView(probe, i);
 	}
 
-	auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(probe.mipmaps());
-	std::transform(mip_views.begin(), mip_views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
-			return DescriptorSet(dptr, {Binding(cube), Binding(view)});
-		});
-
-
-	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
-	for(usize i = 0; i != probe.mipmaps(); ++i) {
-		auto mip_size = probe.size() / (1 << i);
-		recorder.dispatch_size(conv_program, mip_size, {descriptor_sets[i]});
-	}
-	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
-
+	fill_probe(mip_views, cube);
 
 	for(const auto& v : mip_views) {
 		dptr->destroy(v.vk_view());

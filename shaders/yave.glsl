@@ -177,6 +177,10 @@ float G_GGX(float NoV, float NoL, float k) {
 	return ggx_v * ggx_l;
 }
 
+vec3 approx_F0(float metallic, vec3 albedo) {
+	return mix(vec3(0.04), albedo, metallic);
+}
+
 vec3 F_Schlick(float NoV, vec3 F0) {
 	return F0 + (vec3(1.0) - F0) * pow(1.0 - NoV, 5.0);
 }
@@ -207,8 +211,7 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 	float NoL = max(0.0, dot(normal, light_dir));
 	float HoV = max(0.0, dot(half_vec, view_dir));
 
-	vec3 F0 = mix(vec3(0.04), albedo, metallic);
-	vec3 F = F_Schlick(HoV, F0);
+	vec3 F = F_Schlick(HoV, approx_F0(metallic, albedo));
 
 	vec3 kS = F;
 	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
@@ -266,18 +269,21 @@ vec2 integrate_brdf(float NoV, float roughness) {
 	return integr / SAMPLE_COUNT;
 }
 
-vec3 diffuse_irradiance(samplerCube envmap, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+vec3 ibl_irradiance(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+	uint probe_mips = textureQueryLevels(probe);
 	float NoV = max(0.0, dot(normal, view_dir));
 
-	vec3 F0 = mix(vec3(0.04), albedo, metallic);
-	vec3 F = F_Schlick(NoV, F0, roughness);
-
-	vec3 kS = F;
+	vec3 kS = F_Schlick(NoV, approx_F0(metallic, albedo), roughness);
 	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-	vec3 irradiance = texture(envmap, normal).rgb;
+	vec3 irradiance = textureLod(probe, normal, probe_mips - 1).rgb;
+	vec3 diffuse = kD * irradiance * albedo;
 
-	return kD * irradiance * albedo;
+	vec3 reflected = reflect(-view_dir, normal);
+	vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy;
+	vec3 specular = (kS * brdf.x + brdf.y) * textureLod(probe, reflected, roughness * probe_mips).rgb;
+
+	return diffuse + specular;
 }
 
 

@@ -57,6 +57,7 @@ void YaveApp::draw() {
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
 
 	{
+		core::DebugTimer _("pipeline", core::Duration::milliseconds(6));
 		RenderingPipeline pipeline(frame);
 		pipeline.dispatch(renderer, recorder);
 	}
@@ -92,7 +93,7 @@ void YaveApp::update(math::Vec2 angles) {
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
-	camera.set_proj(math::perspective(math::to_rad(45), 4.0f / 3.0f, 0.1f,  10000.0f));
+	camera.set_proj(math::perspective(math::to_rad(90), 4.0f / 3.0f, 0.1f,  10000.0f));
 }
 
 void YaveApp::create_assets() {
@@ -100,7 +101,7 @@ void YaveApp::create_assets() {
 	core::Vector<Scene::Ptr<Renderable>> renderables;
 	core::Vector<Scene::Ptr<Light>> lights;
 
-	{
+	/*{
 		Light l(Light::Directional);
 		l.transform().set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{1.0f};
@@ -112,7 +113,7 @@ void YaveApp::create_assets() {
 		l.color() = math::Vec3{5.0f, 0.0f, 0.0f};
 		l.radius() = 10.0f;
 		lights << std::move(l);
-	}
+	}*/
 
 	{
 		auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/color.yt").expected("Unable to load image file."));
@@ -145,6 +146,11 @@ void YaveApp::create_assets() {
 		{
 			auto instance = new StaticMeshInstance(mesh, material);
 			instance->position() = {0.0f, 5.0f, 0.0f};
+			renderables << instance;
+		}
+		{
+			auto instance = new StaticMeshInstance(mesh, material);
+			instance->position() = {0.0f, 0.0f, 5.0f};
 			renderables << instance;
 		}
 	}

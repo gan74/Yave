@@ -7,8 +7,9 @@ layout(local_size_x = 16, local_size_y = 16) in;
 layout(set = 0, binding = 0) uniform samplerCube in_envmap;
 layout(rgba8, set = 0, binding = 1) uniform writeonly imageCube out_image;
 
-
-
+layout(push_constant) uniform PushConstants {
+	float roughness;
+} constants;
 
 vec3 cube_dir(vec2 texCoord, uint side) {
 	highp vec2 tex = texCoord * 2.0 - 1.0;
@@ -70,7 +71,12 @@ void main() {
 	for(uint i = 0; i != 6; i++) {
 		vec3 local_dir = normalize(cube_dir(uv, i));
 
-		vec3 diffuse = diffuse_convolution(local_dir);
-		imageStore(out_image, ivec3(coord, i), vec4(diffuse, 0.0));
+		vec3 conv = constants.roughness <= 0.0
+					? texture(in_envmap, local_dir).rgb
+					: constants.roughness >= 1.0
+						? diffuse_convolution(local_dir)
+						: specular_convolution(local_dir, constants.roughness);
+
+		imageStore(out_image, ivec3(coord, i), vec4(conv, 0.0));
 	}
 }
