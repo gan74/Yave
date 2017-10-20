@@ -47,7 +47,7 @@ struct MaterialData {
 	MaterialData& set_vert_data(SpirVData&& data);
 	MaterialData& set_geom_data(SpirVData&& data);
 
-	MaterialData& set_bindings(const core::ArrayProxy<Binding>& binds);
+	MaterialData& set_bindings(const core::ArrayView<Binding>& binds);
 
 	MaterialData& set_primitive_type(PrimitiveType type);
 };

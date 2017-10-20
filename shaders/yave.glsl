@@ -226,10 +226,10 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 // -------------------------------- IBL --------------------------------
 
 vec3 importance_sample_GGX(vec2 Xi, vec3 normal, float roughness) {
-    float a = sqr(roughness);
+	float a2 = sqr(sqr(roughness));
 
     float phi = 2.0 * pi * Xi.x;
-    float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y));
+    float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (a2 - 1.0) * Xi.y));
     float sin_theta = sqrt(1.0 - sqr(cos_theta));
 
     vec3 half_vec = vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);

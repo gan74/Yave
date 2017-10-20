@@ -30,7 +30,7 @@ class DescriptorSet : NonCopyable, public DeviceLinked {
 
 	public:
 		DescriptorSet() = default;
-		DescriptorSet(DevicePtr dptr, const core::ArrayProxy<Binding>& bindings);
+		DescriptorSet(DevicePtr dptr, const core::ArrayView<Binding>& bindings);
 
 		~DescriptorSet();
 

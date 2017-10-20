@@ -54,7 +54,7 @@ class PushConstant : NonCopyable {
 		}
 
 		template<typename T>
-		PushConstant(const core::ArrayProxy<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+		PushConstant(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
 			static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
 		}
@@ -92,9 +92,9 @@ class CmdBufferRecorderBase : NonCopyable {
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);
 		void draw(usize vertices);
 
-		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& attribs);
+		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
-		void bind_attrib_buffers(const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& attribs);
+		void bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 
 	protected:
 		CmdBufferRecorderBase() = default;
@@ -129,7 +129,7 @@ class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
 		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 
-		void barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
+		void barriers(const core::ArrayView<BufferBarrier>& buffers, const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
 
 		// never use directly, needed for internal work and image loading
 		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);

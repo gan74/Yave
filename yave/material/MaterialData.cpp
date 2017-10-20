@@ -39,7 +39,7 @@ MaterialData& MaterialData::set_geom_data(SpirVData&& data) {
 	return *this;
 }
 
-MaterialData& MaterialData::set_bindings(const core::ArrayProxy<Binding>& binds) {
+MaterialData& MaterialData::set_bindings(const core::ArrayView<Binding>& binds) {
 	_bindings.assign(binds.begin(), binds.end());
 	return *this;
 }

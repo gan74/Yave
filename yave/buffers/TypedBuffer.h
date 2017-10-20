@@ -38,7 +38,7 @@ class TypedBuffer : public Buffer<Usage, Memory, Transfer> {
 
 		TypedBuffer() = default;
 
-		TypedBuffer(DevicePtr dptr, const core::ArrayProxy<Elem>& data) : TypedBuffer(dptr, data.size()) {
+		TypedBuffer(DevicePtr dptr, const core::ArrayView<Elem>& data) : TypedBuffer(dptr, data.size()) {
 			auto mapping = map();
 			std::copy(data.begin(), data.end(), mapping.begin());
 		}

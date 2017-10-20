@@ -88,7 +88,7 @@ void CmdBufferRecorderBase::draw(usize vertices) {
 	vk_cmd_buffer().draw(u32(vertices), 1, 0, 0);
 }
 
-void CmdBufferRecorderBase::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
+void CmdBufferRecorderBase::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
 	bind_index_buffer(indices);
 	bind_attrib_buffers(attribs);
 }
@@ -97,7 +97,7 @@ void CmdBufferRecorderBase::bind_index_buffer(const SubBuffer<BufferUsage::Index
 	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
 }
 
-void CmdBufferRecorderBase::bind_attrib_buffers(const core::ArrayProxy<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
+void CmdBufferRecorderBase::bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
 	u32 attrib_count = attribs.size();
 
 	auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);
@@ -191,7 +191,7 @@ void PrimaryCmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, 
 	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
 }
 
-void PrimaryCmdBufferRecorderBase::barriers(const core::ArrayProxy<BufferBarrier>& buffers, const core::ArrayProxy<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
+void PrimaryCmdBufferRecorderBase::barriers(const core::ArrayView<BufferBarrier>& buffers, const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
 	end_renderpass();
 
 	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());

@@ -54,7 +54,7 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 
 
 static auto load_envmap(DevicePtr dptr) {
-	return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemap/sky.yt").expected("Unable to open cubemap"))));
+	return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/skybox/sky.yt").expected("Unable to open cubemap"))));
 }
 
 DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :

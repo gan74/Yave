@@ -53,7 +53,7 @@ static vk::DescriptorSet create_descriptor_set(DevicePtr dptr, vk::DescriptorPoo
 		).front();
 }
 
-static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vector<vk::DescriptorSetLayoutBinding>& /*layout_binding*/, const core::ArrayProxy<Binding>& bindings) {
+static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vector<vk::DescriptorSetLayoutBinding>& /*layout_binding*/, const core::ArrayView<Binding>& bindings) {
 	auto writes = core::Vector<vk::WriteDescriptorSet>();
 	for(const auto& binding : bindings) {
 		auto w = vk::WriteDescriptorSet()
@@ -80,7 +80,7 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 
 
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, const core::ArrayProxy<Binding>& bindings) : DeviceLinked(dptr) {
+DescriptorSet::DescriptorSet(DevicePtr dptr, const core::ArrayView<Binding>& bindings) : DeviceLinked(dptr) {
 	if(!bindings.is_empty()) {
 		auto layout_bindings = core::Vector<vk::DescriptorSetLayoutBinding>();
 

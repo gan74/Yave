@@ -33,7 +33,7 @@ SOFTWARE.
 #include <y/core/Range.h>
 #include <y/core/Vector.h>
 #include <y/core/String.h>
-#include <y/core/ArrayProxy.h>
+#include <y/core/ArrayView.h>
 
 
 namespace yave {

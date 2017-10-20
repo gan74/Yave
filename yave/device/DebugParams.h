@@ -51,13 +51,13 @@ class DebugParams {
 		}
 
 	private:
-		DebugParams(const core::ArrayProxy<const char*>& instance, const core::ArrayProxy<const char*>& device, bool callbacks) :
+		DebugParams(const core::ArrayView<const char*>& instance, const core::ArrayView<const char*>& device, bool callbacks) :
 				_instance_layers(instance.begin(), instance.end()),
 				_device_layers(device.begin(), device.end()),
 				_callbacks_enabled(callbacks) {
 		}
 
-		DebugParams(const core::ArrayProxy<const char*>& layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
+		DebugParams(const core::ArrayView<const char*>& layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
 		}
 
 		core::Vector<const char*> _instance_layers;

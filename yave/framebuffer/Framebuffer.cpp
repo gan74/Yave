@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-static math::Vec2ui compute_size(const ImageBase& a, const core::ArrayProxy<ColorAttachmentView>& views) {
+static math::Vec2ui compute_size(const ImageBase& a, const core::ArrayView<ColorAttachmentView>& views) {
 	for(const auto& v : views) {
 		if(v.image().size() != a.size()) {
 			fatal("Invalid attachment size.");
@@ -34,7 +34,7 @@ static math::Vec2ui compute_size(const ImageBase& a, const core::ArrayProxy<Colo
 	return a.size();
 }
 
-static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView& depth, const core::ArrayProxy<ColorAttachmentView>& colors) {
+static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors) {
 	auto color_vec = core::vector_with_capacity<RenderPass::ImageData>(colors.size());
 	std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::ImageData(c); });
 	return new RenderPass(dptr, depth, color_vec);
@@ -42,15 +42,15 @@ static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView&
 
 
 
-Framebuffer::Framebuffer(const RenderPass* render_pass, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors) :
+Framebuffer::Framebuffer(const RenderPass* render_pass, DepthAttachmentView depth, const core::ArrayView<ColorAttachmentView>& colors) :
 		Framebuffer(render_pass->device(), render_pass, depth, colors) {
 }
 
-Framebuffer::Framebuffer(DevicePtr dptr, DepthAttachmentView depth, const core::ArrayProxy<ColorAttachmentView>& colors) :
+Framebuffer::Framebuffer(DevicePtr dptr, DepthAttachmentView depth, const core::ArrayView<ColorAttachmentView>& colors) :
 		Framebuffer(dptr, nullptr, depth, colors) {
 }
 
-Framebuffer::Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, const core::ArrayProxy<ColorAttachmentView>& colors) :
+Framebuffer::Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors) :
 		DeviceLinked(dptr),
 		_render_pass_storage(render_pass ? nullptr : create_render_pass(dptr, depth, colors)),
 		_size(compute_size(depth.image(), colors)),

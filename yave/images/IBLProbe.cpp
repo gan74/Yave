@@ -72,7 +72,7 @@ static usize mipmap_count(usize size, usize min_size) {
 
 using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
 
-static void fill_probe(const core::ArrayProxy<ViewBase>& views, const Cubemap& cube) {
+static void fill_probe(const core::ArrayView<ViewBase>& views, const Cubemap& cube) {
 	DevicePtr dptr = cube.device();
 	auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
 	std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
