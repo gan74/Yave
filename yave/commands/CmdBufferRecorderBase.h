@@ -38,17 +38,25 @@ SOFTWARE.
 namespace yave {
 
 class PushConstant : NonCopyable {
+		template<typename... Args>
+		static std::true_type is_tuple(const std::tuple<Args...>&);
+
+		template<typename T>
+		static std::false_type is_tuple(const T&);
+
 	public:
 		PushConstant() = default;
 
 		template<typename T>
 		PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+			static_assert(!decltype(is_tuple(data))::value, "std::tuple is not standard layout");
 		}
 
 		template<typename T>
 		PushConstant(const core::ArrayProxy<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+			static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
 		}
 
 		const void* data() const {
