@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <y/core/ArrayProxy.h>
+#include <y/core/ArrayView.h>
 #include <y/core/SmallVector.h>
 #include <y/test/test.h>
 
@@ -32,20 +32,20 @@ SOFTWARE.
 using namespace y;
 using namespace y::core;
 
-static usize test_func_c(const ArrayProxy<char>& a) {
+static usize test_func_c(const ArrayView<char>& a) {
 	return a.size();
 }
 
-static usize test_func(const ArrayProxy<int>& a) {
+static usize test_func(const ArrayView<int>& a) {
 	return a.size();
 }
 
-static usize test_func_nc(const ArrayProxy<NonCopyable>& a) {
+static usize test_func_nc(const ArrayView<NonCopyable>& a) {
 	return a.size();
 }
 
 
-y_test_func("ArrayProxy creation") {
+y_test_func("ArrayView creation") {
 	y_test_assert(test_func({1, 2, 3}) == 3);
 
 	auto vec = Vector({1, 2, 3, 4});
@@ -67,7 +67,7 @@ y_test_func("ArrayProxy creation") {
 	y_test_assert(test_func(17) == 1);
 }
 
-y_test_func("ArrayProxy of non-copyables") {
+y_test_func("ArrayView of non-copyables") {
 	y_test_assert(test_func_nc(NonCopyable()) == 1);
 	y_test_assert(test_func_nc({NonCopyable(), NonCopyable()}) == 2);
 

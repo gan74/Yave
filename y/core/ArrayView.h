@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_CORE_ARRAYPROXY_H
-#define Y_CORE_ARRAYPROXY_H
+#ifndef Y_CORE_ARRAYVIEW_H
+#define Y_CORE_ARRAYVIEW_H
 
 #include <y/utils.h>
 
@@ -28,7 +28,7 @@ namespace y {
 namespace core {
 
 template<typename T>
-class ArrayProxy : NonCopyable {
+class ArrayView : NonCopyable {
 
 	template<typename U>
 	static constexpr bool is_compat = std::is_same_v<U, const T*>;
@@ -40,31 +40,30 @@ class ArrayProxy : NonCopyable {
 		using value_type = T;
 		using const_iterator = const T*;
 
+		ArrayView() = default;
 
-		ArrayProxy() = default;
-
-		ArrayProxy(std::nullptr_t) {
+		ArrayView(std::nullptr_t) {
 		}
 
-		ArrayProxy(const T& t) : _data(&t), _size(1) {
+		ArrayView(const T& t) : _data(&t), _size(1) {
 		}
 
-		ArrayProxy(const T* data, usize size) : _data(data), _size(size) {
-		}
-
-		template<usize N>
-		ArrayProxy(const T(&arr)[N]) : _data(arr), _size(N) {
+		ArrayView(const T* data, usize size) : _data(data), _size(size) {
 		}
 
 		template<usize N>
-		ArrayProxy(const std::array<T, N>& arr) : _data(arr.data()), _size(N) {
+		ArrayView(const T(&arr)[N]) : _data(arr), _size(N) {
 		}
 
-		ArrayProxy(const std::initializer_list<T>& l) : _data(l.begin()), _size(l.size()) {
+		template<usize N>
+		ArrayView(const std::array<T, N>& arr) : _data(arr.data()), _size(N) {
+		}
+
+		ArrayView(const std::initializer_list<T>& l) : _data(l.begin()), _size(l.size()) {
 		}
 
 		template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
-		ArrayProxy(const C& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
+		ArrayView(const C& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
 		}
 
 		usize size() const {
@@ -95,6 +94,10 @@ class ArrayProxy : NonCopyable {
 			return _data + _size;
 		}
 
+		const T& operator[](usize i) const {
+			return _data[i];
+		}
+
 	private:
 		NotOwner<const T*> _data = nullptr;
 		usize _size = 0;
@@ -104,4 +107,4 @@ class ArrayProxy : NonCopyable {
 }
 }
 
-#endif // Y_CORE_ARRAYPROXY_H
+#endif // Y_CORE_ARRAYVIEW_H
