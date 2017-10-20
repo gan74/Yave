@@ -213,6 +213,10 @@ void main() {
 	}
 
 	imageStore(out_color, coord, vec4(irradiance, 1.0));
+
+	//imageStore(out_color, coord, vec4(metallic));
+	//imageStore(out_color, coord, pack_normal(normal, 1.0));
+	//imageStore(out_color, coord, vec4(dot(normalize(normal), vec3(1.0))));
 	//imageStore(out_color, coord, vec4(load_color(), 1.0));
 }
 

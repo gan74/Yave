@@ -15,7 +15,7 @@ You need:
 
 ## Status
 
-![Current status](http://i.imgur.com/x7Cuyeg.png)
+![Current status](https://i.imgur.com/hK5KGwF.png)
 ![Skeleton](http://i.imgur.com/tYM66lR.png)
 
 Currently a mess, should smooth out as I am learning Vulkan.
@@ -23,15 +23,18 @@ Currently a mess, should smooth out as I am learning Vulkan.
 Implemented features:
  * Buffers
  * Images
-   * arrays
-   * cubemaps
+   * Arrays
+   * Cubemaps
+     * IBL probes
  * Descriptor sets
  * Basic pipelines
  * Compute shaders
  * Swapchain
  * Framebuffers
  * Rendering pipeline
-   * Basic tiled deferred shader
+   * Tiled deferred shader
+     * Physically based lighting
+     * IBL
    * Basic scenes
  * Meshes
    * Static
@@ -40,4 +43,3 @@ Implemented features:
 
 ### Licence:
 MIT
- 

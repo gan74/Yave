@@ -86,14 +86,14 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 5.0f;
+	float dist = 100.0f;
 
 	auto cam_tr = math::rotation({0, 0, -1}, angles.x()) * math::rotation({0, 1, 0}, angles.y());
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
-	camera.set_proj(math::perspective(math::to_rad(90), 4.0f / 3.0f, 0.1f,  10000.0f));
+	camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 0.1f,  10000.0f));
 }
 
 void YaveApp::create_assets() {
@@ -116,43 +116,49 @@ void YaveApp::create_assets() {
 	}*/
 
 	{
-		auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/color.yt").expected("Unable to load image file."));
+		auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/albedo.yt").expected("Unable to load image file."));
 		auto color = AssetPtr<Texture>(Texture(&device, color_data));
 		destroy_later(color);
 
-		auto roughness_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/roughness.yt").expected("Unable to load image file."));
+		auto roughness_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/roughness.yt").expected("Unable to load image file."));
 		auto roughness = AssetPtr<Texture>(Texture(&device, roughness_data));
 		destroy_later(roughness);
 
-		auto metallic_data = ImageData::from_file(io::File::open("../tools/image_to_yt/pbr/metallic.yt").expected("Unable to load image file."));
+		auto metallic_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/metallic.yt").expected("Unable to load image file."));
 		auto metallic = AssetPtr<Texture>(Texture(&device, metallic_data));
 		destroy_later(metallic);
+
+		auto normal_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/normal.yt").expected("Unable to load image file."));
+		auto normal = AssetPtr<Texture>(Texture(&device, normal_data));
+		destroy_later(normal);
 
 		auto material = AssetPtr<Material>(Material(&device, MaterialData()
 				 .set_frag_data(SpirVData::from_file(io::File::open("textured.frag.spv").expected("Unable to load spirv file.")))
 				 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-				 .set_bindings({Binding(TextureView(*color)), Binding(TextureView(*roughness)), Binding(TextureView(*metallic))})
+				 .set_bindings({Binding(*color), Binding(*roughness), Binding(*metallic), Binding(*normal)})
 			 ));
 
-		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/sphere_uv.obj.ym").expected("Unable to open mesh file."));
+		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/Cerberus.FBX.ym").expected("Unable to open mesh file."));
 		auto mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
 
 		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
 
 		{
 			auto instance = new StaticMeshInstance(mesh, material);
+			instance->transform().set_basis({-1, 0, 0}, {0, 0, -1}, {0, -1, 0});
+			instance->position() = {0, -40, 0};
+			renderables << instance;
+		}
+		/*{
+			auto instance = new StaticMeshInstance(mesh, material);
+			instance->position() = {0, 5, 0};
 			renderables << instance;
 		}
 		{
 			auto instance = new StaticMeshInstance(mesh, material);
-			instance->position() = {0.0f, 5.0f, 0.0f};
+			instance->position() = {0, 0, 5};
 			renderables << instance;
-		}
-		{
-			auto instance = new StaticMeshInstance(mesh, material);
-			instance->position() = {0.0f, 0.0f, 5.0f};
-			renderables << instance;
-		}
+		}*/
 	}
 
 	scene = new Scene(std::move(objects), std::move(renderables), std::move(lights));

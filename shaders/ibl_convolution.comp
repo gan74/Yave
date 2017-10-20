@@ -73,9 +73,10 @@ void main() {
 
 		vec3 conv = constants.roughness <= 0.0
 					? texture(in_envmap, local_dir).rgb
-					: constants.roughness >= 1.0
+					: specular_convolution(local_dir, constants.roughness);
+					/*: constants.roughness >= 1.0
 						? diffuse_convolution(local_dir)
-						: specular_convolution(local_dir, constants.roughness);
+						: specular_convolution(local_dir, constants.roughness);*/
 
 		imageStore(out_image, ivec3(coord, i), vec4(conv, 0.0));
 	}
