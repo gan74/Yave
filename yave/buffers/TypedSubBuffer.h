@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-template<typename Elem, BufferUsage Usage, MemoryType Memory = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Memory)>
+template<typename Elem, BufferUsage Usage, MemoryType Memory = MemoryType::DontCare, BufferTransfer Transfer = BufferTransfer::None>
 class TypedSubBuffer : public SubBuffer<Usage, Memory, Transfer> {
 
 	using Base = SubBuffer<Usage, Memory, Transfer>;

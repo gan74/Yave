@@ -55,8 +55,9 @@ template<MemoryType Memory = MemoryType::DeviceLocal>
 using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Memory>;
 
 
+template<typename T>
+using AttribSubBuffer = TypedSubBuffer<T, BufferUsage::AttributeBit>;
 
-using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
 using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>;
 using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit>;
 using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit>;

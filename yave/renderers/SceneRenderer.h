@@ -47,10 +47,8 @@ class SceneRenderer : public SecondaryRenderer {
 		struct AttribData {
 			usize offset;
 			usize size;
-			math::Matrix4<>* begin;
+			math::Matrix4<>* data;
 		};
-
-		static usize max_size(usize size, AttribData& attrib_data);
 
 		void render_renderables(Recorder& recorder, const FrameToken& token, const core::Vector<const Renderable*>& renderables, AttribData& attrib_data);
 

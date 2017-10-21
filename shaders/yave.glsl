@@ -135,6 +135,10 @@ vec3 unproject(vec2 uv, float depth, mat4 inv_matrix) {
 	return unproject_ndc(ndc, inv_matrix);
 }
 
+vec3 project(vec3 pos, mat4 proj_matrix) {
+	vec4 p = proj_matrix * vec4(pos, 1.0);
+	return (p.xyz / p.w) * 0.5 + vec3(0.5);
+}
 
 // -------------------------------- CULLING --------------------------------
 
@@ -324,3 +328,5 @@ void unpack_normal(vec4 buff, out vec3 normal, out float roughness) {
 	normal = normalize(buff.xyz * 2.0 - vec3(1.0));
 	roughness = buff.w;
 }
+
+

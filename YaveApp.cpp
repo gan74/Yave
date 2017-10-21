@@ -156,7 +156,6 @@ void YaveApp::create_assets() {
 		}
 		{
 			auto instance = new StaticMeshInstance(mesh, material);
-			instance->position() = {0, 0, 5};
 			renderables << instance;
 		}*/
 	}

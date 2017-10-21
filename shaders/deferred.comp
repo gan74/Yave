@@ -206,10 +206,10 @@ void main() {
 
 #ifdef USE_IBL
 		irradiance += ibl_irradiance(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
-#endif
 	} else {
 		vec3 forward = normalize(unproject(uv, 1.0, constants.camera.inv_matrix) - constants.camera.position);
 		irradiance = texture(in_envmap, forward).rgb;
+#endif
 	}
 
 	imageStore(out_color, coord, vec4(irradiance, 1.0));

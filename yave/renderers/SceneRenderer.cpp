@@ -62,8 +62,8 @@ void SceneRenderer::build_frame_graph(RenderingNode<result_type>& node, const Fr
 
 
 
-
-usize SceneRenderer::max_size(usize size, AttribData& attrib_data) {
+template<typename T>
+static usize max_size(usize size, const T& attrib_data) {
 	if(size > attrib_data.size) {
 		log_msg("Batch size exceeds scene buffer size", Log::Warning);
 		return attrib_data.size;
@@ -79,18 +79,18 @@ void SceneRenderer::render_renderables(Recorder& recorder,
 	usize size = max_size(renderables.size(), attrib_data);
 
 	for(usize i = 0; i != size; ++i) {
-		attrib_data.begin[i] = renderables[i]->transform();
+		attrib_data.data[i] = renderables[i]->transform();
 	}
 
 	for(usize i = 0; i != size; ++i) {
 		usize offset = attrib_data.offset + i;
-		AttribSubBuffer attribs(_attrib_buffer, offset * sizeof(math::Transform<>), sizeof(math::Transform<>));
+		AttribSubBuffer<math::Transform<>> attribs(_attrib_buffer, offset, 1);
 		renderables[i]->render(token, recorder, Renderable::SceneData{_camera_set, attribs});
 	}
 
 	attrib_data.offset += size;
 	attrib_data.size -= size;
-	attrib_data.begin += size;
+	attrib_data.data += size;
 }
 
 }
