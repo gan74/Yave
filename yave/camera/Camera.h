@@ -43,6 +43,7 @@ class Camera {
 		math::Matrix4<> inverse_matrix() const;
 
 		math::Vec3 position() const;
+		math::Vec3 forward() const;
 		Frustum frustum() const;
 
 		operator uniform::Camera() const;

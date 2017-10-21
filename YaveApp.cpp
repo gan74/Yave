@@ -94,9 +94,6 @@ void YaveApp::update(math::Vec2 angles) {
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
 	camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 0.1f,  10000.0f));
-
-	uniform::Camera cam = camera;
-	log_msg("camera forward = ("_s + cam.forward.x() + ", " + cam.forward.y() + ", " + cam.forward.z() + ")");
 }
 
 void YaveApp::create_assets() {

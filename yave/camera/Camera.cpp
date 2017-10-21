@@ -96,6 +96,10 @@ math::Vec3 Camera::position() const {
 	return extract_position(_view);
 }
 
+math::Vec3 Camera::forward() const {
+	return extract_forward(_view);
+}
+
 Frustum Camera::frustum() const {
 	return extract_frustum(viewproj_matrix());
 }
@@ -105,7 +109,7 @@ Camera::operator uniform::Camera() const {
 			inverse_matrix(),
 			position(),
 			0,
-			extract_forward(_view),
+			forward(),
 			0
 		};
 }
