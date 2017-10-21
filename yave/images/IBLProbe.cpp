@@ -64,11 +64,6 @@ static ComputeShader create_convolution_shader(DevicePtr dptr, const Texture&) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("equirec_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
-static usize probe_size(const math::Vec2ui& size) {
-	usize min = std::min(size.x(), size.y());
-	return usize(1) << log2ui(min);
-}
-
 static constexpr usize diffuse_size = 32;
 
 using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
@@ -135,12 +130,20 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
 }
 
 
+static usize probe_size(const Cubemap& cube) {
+	return usize(1) << log2ui(cube.size().x());
+}
 
+static usize probe_size(const Texture& tex) {
+	const auto& size = tex.size();
+	usize face = (size.x() * size.y()) / 6;
+	return usize(1) << usize(std::ceil(std::log2(std::sqrt(face))));
+}
 
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 	core::DebugTimer _("IBLProbe::from_cubemap()");
 
-	ProbeBase probe(cube.device(), probe_size(cube.size()));
+	ProbeBase probe(cube.device(), probe_size(cube));
 	compute_probe(probe, cube);
 	IBLProbe final;
 	final.swap(probe);
@@ -150,7 +153,7 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 IBLProbe IBLProbe::from_equirec(const Texture& equirec) {
 	core::DebugTimer _("IBLProbe::from_equirec()");
 
-	ProbeBase probe(equirec.device(), probe_size(equirec.size()));
+	ProbeBase probe(equirec.device(), probe_size(equirec));
 	compute_probe(probe, equirec);
 	IBLProbe final;
 	final.swap(probe);

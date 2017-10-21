@@ -54,9 +54,9 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 
 
 static auto load_envmap(DevicePtr dptr) {
-	return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemaps/sky0/sky.yt").expected("Unable to open cubemap"))));
+	//return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemaps/sky0/sky.yt").expected("Unable to open cubemap"))));
 	//return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/check/check.yt").expected("Unable to open cubemap"))));
-	//return IBLProbe::from_equirec(Texture(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/equirec.yt").expected("Unable to open equirec"))));
+	return IBLProbe::from_equirec(Texture(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/equirec.yt").expected("Unable to open equirec"))));
 	//return Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemaps/sky0/sky.yt").expected("Unable to open cubemap")));
 }
 

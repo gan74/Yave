@@ -75,8 +75,8 @@ vec2 hammersley(uint i, uint N) {
     return vec2(float(i) / float(N), radical_inverse);
 }
 
-vec2 sphere_map(vec3 v) {
-    return vec2(atan(v.z, v.x), asin(v.y)) * vec2(0.1591, 0.3183) + vec2(0.5);
+vec2 to_equirec(vec3 v) {
+    return vec2(atan(-v.y, v.x), asin(v.z)) * vec2(0.1591, 0.3183) + vec2(0.5);
 }
 
 vec3 cube_dir(vec2 texCoord, uint side) {

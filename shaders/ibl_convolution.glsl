@@ -33,7 +33,7 @@ vec3 diffuse_convolution(sampler2D envmap, vec3 normal) {
 			vec3 tangent_sample = vec3(sin(theta) * cos(phi),  sin(theta) * sin(phi), cos(theta));
 			vec3 sample_dir = tangent_sample.x * right + tangent_sample.y * up + tangent_sample.z * normal;
 
-			acc += texture(envmap, sphere_map(sample_dir)).rgb * cos(theta) * sin(theta);
+			acc += texture(envmap, to_equirec(sample_dir)).rgb * cos(theta) * sin(theta);
 			++samples;
 		}
 	}
@@ -73,7 +73,7 @@ vec3 specular_convolution(sampler2D envmap, vec3 N, float roughness) {
 		vec3 L  = normalize(2.0 * dot(V, H) * H - V);
 		float NoL = max(0.0, dot(N, L));
 		if(NoL > 0.0) {
-			acc += texture(envmap, sphere_map(L)).rgb * NoL;
+			acc += texture(envmap, to_equirec(L)).rgb * NoL;
 			total += NoL;
 		}
 	}

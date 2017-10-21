@@ -20,7 +20,7 @@ void main() {
 		vec3 local_dir = normalize(cube_dir(uv, i));
 
 		vec3 conv = constants.roughness <= 0.0
-					? texture(in_envmap, sphere_map(local_dir)).rgb
+					? texture(in_envmap, to_equirec(local_dir)).rgb
 					: constants.roughness >= 1.0
 						? diffuse_convolution(in_envmap, local_dir)
 						: specular_convolution(in_envmap, local_dir, constants.roughness);
