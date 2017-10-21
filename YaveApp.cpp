@@ -94,6 +94,9 @@ void YaveApp::update(math::Vec2 angles) {
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
 	camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 0.1f,  10000.0f));
+
+	uniform::Camera cam = camera;
+	log_msg("camera forward = ("_s + cam.forward.x() + ", " + cam.forward.y() + ", " + cam.forward.z() + ")");
 }
 
 void YaveApp::create_assets() {
@@ -101,13 +104,13 @@ void YaveApp::create_assets() {
 	core::Vector<Scene::Ptr<Renderable>> renderables;
 	core::Vector<Scene::Ptr<Light>> lights;
 
-	/*{
+	{
 		Light l(Light::Directional);
 		l.transform().set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{1.0f};
 		lights << std::move(l);
 	}
-	{
+	/*{
 		Light l(Light::Point);
 		l.position() = math::Vec3{0.0f, 2.5f, 0.0f};
 		l.color() = math::Vec3{5.0f, 0.0f, 0.0f};

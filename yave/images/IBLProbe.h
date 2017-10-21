@@ -30,6 +30,7 @@ class IBLProbe : public Cubemap {
 
 	public:
 		static IBLProbe from_cubemap(const Cubemap& cube);
+		static IBLProbe from_equirec(const Texture& equirec);
 
 		IBLProbe() = default;
 

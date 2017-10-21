@@ -209,7 +209,7 @@ void main() {
 #endif
 	} else {
 		vec3 forward = normalize(unproject(uv, 1.0, constants.camera.inv_matrix) - constants.camera.position);
-		irradiance = textureLod(in_envmap, forward, 0).rgb;
+		irradiance = texture(in_envmap, forward).rgb;
 	}
 
 	imageStore(out_color, coord, vec4(irradiance, 1.0));

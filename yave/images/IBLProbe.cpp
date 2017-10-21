@@ -46,20 +46,6 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 		);
 }
 
-static ComputeShader create_convolution_shader(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("ibl_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
-}
-
-static usize assert_square(const math::Vec2ui& size) {
-	if(size.x() != size.y()) {
-		fatal("Cubemap is not square.");
-	}
-	if(usize(1) << log2ui(size.x()) != size.x()) {
-		fatal("Cubemap size is not a power of 2.");
-	}
-	return size.x();
-}
-
 static usize mipmap_count(usize size, usize min_size) {
 	if(size % min_size) {
 		fatal("Minimum size does not divide image size.");
@@ -70,17 +56,47 @@ static usize mipmap_count(usize size, usize min_size) {
 	return 1 + std::floor(std::log2(size / min_size));
 }
 
+static ComputeShader create_convolution_shader(DevicePtr dptr, const Cubemap&) {
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("cubemap_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
+}
+
+static ComputeShader create_convolution_shader(DevicePtr dptr, const Texture&) {
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("equirec_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
+}
+
+static usize probe_size(const math::Vec2ui& size) {
+	usize min = std::min(size.x(), size.y());
+	return usize(1) << log2ui(min);
+}
+
+static constexpr usize diffuse_size = 32;
+
 using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
 
-static void fill_probe(const core::ArrayView<ViewBase>& views, const Cubemap& cube) {
-	DevicePtr dptr = cube.device();
+struct ProbeBase : ImageBase {
+	ProbeBase(DevicePtr dptr, usize size) :
+		ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size}, ImageType::Cube, 6, mipmap_count(size, diffuse_size)) {
+	}
+};
+
+// ImageView implement size as _image->size() so it'll be wrong for this class and shoudl'nt be used
+struct ProbeBaseView : ViewBase {
+	// does not destroy the view, need to be done manually
+	ProbeBaseView(ProbeBase& base, usize mip) : ViewBase(&base, create_view(base.device(), base.vk_image(), base.format(), mip)) {
+	}
+};
+
+template<ImageType T>
+static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<ImageUsage::TextureBit, T>& texture) {
+	DevicePtr dptr = texture.device();
+
 	auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
 	std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
-			return DescriptorSet(dptr, {Binding(cube), Binding(view)});
+			return DescriptorSet(dptr, {Binding(texture), Binding(view)});
 		});
 
 
-	ComputeProgram conv_program(create_convolution_shader(dptr));
+	ComputeProgram conv_program(create_convolution_shader(dptr, texture));
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 
 	float roughness = 0.0f;
@@ -94,34 +110,12 @@ static void fill_probe(const core::ArrayView<ViewBase>& views, const Cubemap& cu
 		size /= 2;
 	}
 
-	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+	RecordedCmdBuffer(std::move(recorder)).template submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
 }
 
-
-
-
-
-IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
-	core::DebugTimer _("IBLProbe::from_cubemap()");
-
-	static constexpr usize diffuse_size = 32;
-
-	struct ProbeBase : ImageBase {
-		ProbeBase(DevicePtr dptr, usize size) :
-			ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size}, ImageType::Cube, 6, mipmap_count(size, diffuse_size)) {
-		}
-	};
-
-	// ImageView implement size as _image->size() so it'll be wrong for this class and shoudl'nt be used
-	struct ProbeBaseView : ViewBase {
-		// does not destroy the view, need to be done manually
-		ProbeBaseView(ProbeBase& base, usize mip) : ViewBase(&base, create_view(base.device(), base.vk_image(), base.format(), mip)) {
-		}
-	};
-
-
-	DevicePtr dptr = cube.device();
-	ProbeBase probe(dptr, 1 << log2ui(assert_square(cube.size())));
+template<ImageType T>
+static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, T>& texture) {
+	DevicePtr dptr = texture.device();
 
 	if(probe.mipmaps() == 1) {
 		fatal("IBL probe is too small.");
@@ -133,21 +127,35 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 		mip_views << ProbeBaseView(probe, i);
 	}
 
-	fill_probe(mip_views, cube);
+	fill_probe(mip_views, texture);
 
 	for(const auto& v : mip_views) {
 		dptr->destroy(v.vk_view());
 	}
-
-	IBLProbe final;
-	final.swap(probe);
-	return final;
 }
 
 
 
 
+IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
+	core::DebugTimer _("IBLProbe::from_cubemap()");
 
+	ProbeBase probe(cube.device(), probe_size(cube.size()));
+	compute_probe(probe, cube);
+	IBLProbe final;
+	final.swap(probe);
+	return final;
+}
+
+IBLProbe IBLProbe::from_equirec(const Texture& equirec) {
+	core::DebugTimer _("IBLProbe::from_equirec()");
+
+	ProbeBase probe(equirec.device(), probe_size(equirec.size()));
+	compute_probe(probe, equirec);
+	IBLProbe final;
+	final.swap(probe);
+	return final;
+}
 
 IBLProbe::IBLProbe(IBLProbe&& other) {
 	swap(other);

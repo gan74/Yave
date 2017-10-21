@@ -69,6 +69,7 @@ using DepthTextureAttachment = Image<ImageUsage::DepthBit | ImageUsage::TextureB
 using ColorTextureAttachment = Image<ImageUsage::ColorBit | ImageUsage::TextureBit>;
 
 using Cubemap = Image<ImageUsage::TextureBit, ImageType::Cube>;
+
 }
 
 #endif // YAVE_IMAGES_IMAGE_H

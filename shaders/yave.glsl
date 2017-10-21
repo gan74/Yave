@@ -75,6 +75,23 @@ vec2 hammersley(uint i, uint N) {
     return vec2(float(i) / float(N), radical_inverse);
 }
 
+vec2 sphere_map(vec3 v) {
+    return vec2(atan(v.z, v.x), asin(v.y)) * vec2(0.1591, 0.3183) + vec2(0.5);
+}
+
+vec3 cube_dir(vec2 texCoord, uint side) {
+	vec2 tex = texCoord * 2.0 - 1.0;
+
+	if(side == 0) return vec3(1.0, -tex.y, -tex.x); // front
+	if(side == 1) return vec3(-1.0, -tex.y, tex.x); // back
+
+	if(side == 2) return vec3(tex.x, 1.0, tex.y); // right
+	if(side == 3) return vec3(tex.x, -1.0, -tex.y); // left
+
+	if(side == 4) return vec3(tex.x, -tex.y, 1.0); // top
+	if(side == 5) return vec3(-tex.x, -tex.y, -1.0); // bottom
+}
+
 
 // -------------------------------- SPECTRUM --------------------------------
 
@@ -133,6 +150,7 @@ bool is_inside(Frustum frustum, vec3 pos, float radius) {
 	}
 	return true;
 }
+
 
 // -------------------------------- HDR --------------------------------
 
