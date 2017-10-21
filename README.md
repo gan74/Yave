@@ -15,7 +15,7 @@ You need:
 
 ## Status
 
-![Current status](https://i.imgur.com/dXkL4lQ.png)
+![Current status](https://i.imgur.com/fLydq3W.png)
 ![Skeleton](http://i.imgur.com/tYM66lR.png)
 
 Currently a mess, should smooth out as I am learning Vulkan.
