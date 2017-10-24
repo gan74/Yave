@@ -119,7 +119,7 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 			.setPDynamicStates(dynamics.begin())
 		;
 
-	auto pipeline = device()->vk_device().createGraphicsPipeline(VK_NULL_HANDLE, vk::GraphicsPipelineCreateInfo()
+	auto pipeline = device()->vk_device().createGraphicsPipeline(vk::PipelineCache(), vk::GraphicsPipelineCreateInfo()
 			.setStageCount(u32(pipeline_shader_stage.size()))
 			.setPStages(pipeline_shader_stage.begin())
 			.setPDynamicState(&dynamic_states)

@@ -33,7 +33,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.de
 
 	u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
-	auto layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, VK_NULL_HANDLE);
+	auto layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
 	for(const auto& binding : bindings) {
 		layouts[binding.first] = device()->create_descriptor_set_layout(binding.second);
 	}
@@ -50,7 +50,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.de
 			.setPName("main")
 		;
 
-	_pipeline = device()->vk_device().createComputePipeline(VK_NULL_HANDLE, vk::ComputePipelineCreateInfo()
+	_pipeline = device()->vk_device().createComputePipeline(vk::PipelineCache(), vk::ComputePipelineCreateInfo()
 			.setLayout(_layout)
 			.setStage(stage)
 		);

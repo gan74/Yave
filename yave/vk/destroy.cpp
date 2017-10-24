@@ -38,12 +38,6 @@ void destroy(DevicePtr dptr, vk::ImageView image_view) {
 	}
 }
 
-void destroy(DevicePtr dptr, vk::DeviceMemory memory) {
-	/*if(dptr)*/ {
-		dptr->vk_device().freeMemory(memory);
-	}
-}
-
 void destroy(DevicePtr dptr, vk::RenderPass render_pass) {
 	/*if(dptr)*/ {
 		dptr->vk_device().destroyRenderPass(render_pass);

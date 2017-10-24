@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_BUFFERS_BUFFERUSAGE_H
 
 #include <yave/vk/vk.h>
+#include <yave/memory/MemoryType.h>
 
 namespace yave {
 
@@ -44,7 +45,6 @@ constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
 }
 
 
-
 enum class BufferTransfer {
 	None = 0,
     TransferSrc = int(vk::BufferUsageFlagBits::eTransferSrc),
@@ -60,33 +60,13 @@ constexpr BufferTransfer operator&(BufferTransfer a, BufferTransfer b) {
 }
 
 
-
-
-enum class MemoryType {
-	DontCare = 0,
-    DeviceLocal = uenum(vk::MemoryPropertyFlagBits::eDeviceLocal),
-	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible)
-};
-
-
-
-
-inline constexpr bool is_cpu_visible(MemoryType flags) {
-	return uenum(flags) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
-}
-
-
-
-inline constexpr MemoryType prefered_memory_flags(BufferUsage usage) {
+inline constexpr MemoryType prefered_memory_type(BufferUsage usage) {
 	return ((usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryType::CpuVisible : MemoryType::DeviceLocal;
 }
 
 inline constexpr BufferTransfer prefered_transfer(MemoryType flags) {
 	return is_cpu_visible(flags) ? BufferTransfer::None : BufferTransfer::TransferDst;
 }
-
-
-
 
 }
 

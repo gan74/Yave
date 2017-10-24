@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-template<BufferUsage Usage, MemoryType Memory = prefered_memory_flags(Usage), BufferTransfer Transfer = prefered_transfer(Memory)>
+template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage), BufferTransfer Transfer = prefered_transfer(Memory)>
 class Buffer : public BufferBase {
 
 	protected:

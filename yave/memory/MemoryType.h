@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_PHYSICALDEVICE_H
-#define YAVE_DEVICE_PHYSICALDEVICE_H
+#ifndef YAVE_MEMORY_MEMORYTYPE_H
+#define YAVE_MEMORY_MEMORYTYPE_H
 
-#include "Instance.h"
+#include <yave/yave.h>
+#include <yave/vk/vk.h>
 
 namespace yave {
 
-class PhysicalDevice : NonCopyable {
-	public:
-		PhysicalDevice(Instance& instance);
-		~PhysicalDevice();
-
-		vk::PhysicalDevice vk_physical_device() const;
-		const vk::PhysicalDeviceProperties& vk_properties() const;
-		const vk::PhysicalDeviceMemoryProperties& vk_memory_properties() const;
-
-	private:
-		Instance& _instance;
-		vk::PhysicalDevice _device;
-		vk::PhysicalDeviceProperties _properties;
-		vk::PhysicalDeviceMemoryProperties _memory_properties;
+enum class MemoryType {
+	DontCare = 0,
+    DeviceLocal = uenum(vk::MemoryPropertyFlagBits::eDeviceLocal),
+	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible)
 };
+
+inline constexpr bool is_cpu_visible(MemoryType type) {
+	return uenum(type) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
+}
 
 }
 
-#endif // YAVE_DEVICE_PHYSICALDEVICE_H
+#endif // YAVE_MEMORY_MEMORYTYPE_H

@@ -38,7 +38,7 @@ static void merge(M& into, const M& o) {
 
 static vk::ShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data) {
 	if(data.is_empty()) {
-		return VK_NULL_HANDLE;
+		return vk::ShaderModule();
 	}
 	return dptr->vk_device().createShaderModule(vk::ShaderModuleCreateInfo()
 			.setCodeSize(data.size())

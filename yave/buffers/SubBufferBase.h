@@ -22,11 +22,13 @@ SOFTWARE.
 #ifndef YAVE_BUFFERS_SUBBUFFERBASE_H
 #define YAVE_BUFFERS_SUBBUFFERBASE_H
 
+#include <yave/memory/DeviceMemoryView.h>
+
 #include "Buffer.h"
 
 namespace yave {
 
-class SubBufferBase : public DeviceLinked {
+class SubBufferBase {
 
 	public:
 		SubBufferBase() = default;
@@ -36,16 +38,21 @@ class SubBufferBase : public DeviceLinked {
 
 		usize byte_size() const;
 		usize byte_offset() const;
+
 		vk::Buffer vk_buffer() const;
-		vk::DeviceMemory vk_device_memory() const;
+
+		DeviceMemoryView device_memory() const;
 
 		vk::DescriptorBufferInfo descriptor_info() const;
+		vk::MappedMemoryRange memory_range() const;
+
+		DevicePtr device() const;
 
 	private:
 		usize _size = 0;
 		usize _offset = 0;
 		NotOwner<vk::Buffer> _buffer;
-		NotOwner<vk::DeviceMemory> _memory;
+		DeviceMemoryView _memory;
 };
 
 // in this case it's ok

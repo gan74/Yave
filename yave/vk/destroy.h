@@ -24,7 +24,6 @@ namespace detail {
 void destroy(DevicePtr dptr, vk::Buffer buffer);
 void destroy(DevicePtr dptr, vk::Image image);
 void destroy(DevicePtr dptr, vk::ImageView image_view);
-void destroy(DevicePtr dptr, vk::DeviceMemory memory);
 void destroy(DevicePtr dptr, vk::RenderPass render_pass);
 void destroy(DevicePtr dptr, vk::Framebuffer framebuffer);
 void destroy(DevicePtr dptr, vk::Pipeline pipeline);

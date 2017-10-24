@@ -24,15 +24,19 @@ SOFTWARE.
 
 #include "BufferUsage.h"
 #include <yave/device/DeviceLinked.h>
+#include <yave/memory/DeviceMemory.h>
 
 namespace yave {
 
-class BufferBase : NonCopyable, public DeviceLinked {
+class BufferBase : NonCopyable {
 
 	public:
+		DevicePtr device() const;
+
 		usize byte_size() const;
 		vk::Buffer vk_buffer() const;
-		vk::DeviceMemory vk_device_memory() const;
+
+		const DeviceMemory& device_memory() const;
 
 		vk::DescriptorBufferInfo descriptor_info() const;
 
@@ -42,12 +46,12 @@ class BufferBase : NonCopyable, public DeviceLinked {
 		void swap(BufferBase& other);
 
 		BufferBase() = default;
-		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType flags, BufferTransfer transfer);
+		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type, BufferTransfer transfer);
 
 	private:
 		usize _size = 0;
 		vk::Buffer _buffer;
-		vk::DeviceMemory _memory;
+		DeviceMemory _memory;
 };
 
 static_assert(is_safe_base<BufferBase>::value);

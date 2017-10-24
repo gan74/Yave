@@ -28,29 +28,8 @@ SOFTWARE.
 
 namespace yave {
 
-static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, vk::MemoryPropertyFlags flags) {
-	for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
-		auto memory_type = properties.memoryTypes[i];
-		if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
-			return i;
-		}
-	}
-	return fatal("Unable to alloc device memory.");
-}
-
-static vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Image image) {
-	return dptr->vk_device().getImageMemoryRequirements(image);
-}
-
-static void bind_image_memory(DevicePtr dptr, vk::Image image, vk::DeviceMemory memory) {
-	dptr->vk_device().bindImageMemory(image, memory, 0);
-}
-
-static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs) {
-	return dptr->vk_device().allocateMemory(vk::MemoryAllocateInfo()
-			.setAllocationSize(reqs.size)
-			.setMemoryTypeIndex(get_memory_type(dptr->physical_device().vk_memory_properties(), reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal))
-		);
+static void bind_image_memory(DevicePtr dptr, vk::Image image, const DeviceMemory& memory) {
+	dptr->vk_device().bindImageMemory(image, memory.vk_memory(), memory.vk_offset());
 }
 
 static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
@@ -127,12 +106,12 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 		);
 }
 
-static std::tuple<vk::Image, vk::DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
 	auto image = create_image(dptr, size, layers, mips, format, usage, type);
-	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, image));
+	auto memory = dptr->allocator().alloc(image);
 	bind_image_memory(dptr, image, memory);
 
-	return {image, memory, create_view(dptr, image, format, layers, mips, type)};
+	return {image, std::move(memory), create_view(dptr, image, format, layers, mips, type)};
 }
 
 static void check_layer_count(ImageType type, usize layers) {
@@ -144,8 +123,8 @@ static void check_layer_count(ImageType type, usize layers) {
 	}
 }
 
+
 ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size, ImageType type, usize layers, usize mips) :
-		DeviceLinked(dptr),
 		_size(size),
 		_layers(layers),
 		_mips(mips),
@@ -163,12 +142,13 @@ ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const Ima
 	upload_data(*this, data);
 }
 
-
-
 ImageBase::~ImageBase() {
-	destroy(_view);
-	destroy(_memory);
-	destroy(_image);
+	device()->destroy(_view);
+	device()->destroy(_image);
+}
+
+DevicePtr ImageBase::device() const {
+	return _memory.device();
 }
 
 const math::Vec2ui& ImageBase::size() const {
@@ -199,12 +179,11 @@ vk::Image ImageBase::vk_image() const {
 	return _image;
 }
 
-vk::DeviceMemory ImageBase::vk_device_memory() const {
+const DeviceMemory& ImageBase::device_memory() const {
 	return _memory;
 }
 
 void ImageBase::swap(ImageBase& other) {
-	DeviceLinked::swap(other);
 	std::swap(_size, other._size);
 	std::swap(_layers, other._layers);
 	std::swap(_mips, other._mips);

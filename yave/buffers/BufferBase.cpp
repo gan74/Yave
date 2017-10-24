@@ -26,31 +26,8 @@ SOFTWARE.
 
 namespace yave {
 
-static u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType flags) {
-	auto mem_flags = vk::MemoryPropertyFlagBits(flags);
-	for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
-		auto memory_type = properties.memoryTypes[i];
-		if(type_filter & (1 << i) && (memory_type.propertyFlags & mem_flags) == mem_flags) {
-			return i;
-		}
-	}
-	return fatal("Unable to alloc device memory.");
-}
-
-static vk::MemoryRequirements get_memory_reqs(DevicePtr dptr, vk::Buffer buffer) {
-	return dptr->vk_device().getBufferMemoryRequirements(buffer);
-}
-
-
-static void bind_buffer_memory(DevicePtr dptr, vk::Buffer buffer, vk::DeviceMemory memory) {
-	dptr->vk_device().bindBufferMemory(buffer, memory, 0);
-}
-
-static vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs, MemoryType flags) {
-	return dptr->vk_device().allocateMemory(vk::MemoryAllocateInfo()
-			.setAllocationSize(reqs.size)
-			.setMemoryTypeIndex(get_memory_type(dptr->physical_device().vk_memory_properties(), reqs.memoryTypeBits, flags))
-		);
+static void bind_buffer_memory(DevicePtr dptr, vk::Buffer buffer, const DeviceMemory& memory) {
+	dptr->vk_device().bindBufferMemory(buffer, memory.vk_memory(), memory.vk_offset());
 }
 
 static vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsageFlags usage) {
@@ -61,26 +38,30 @@ static vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsage
 		);
 }
 
-static std::tuple<vk::Buffer, vk::DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, vk::BufferUsageFlags usage, MemoryType flags) {
+static std::tuple<vk::Buffer, DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, vk::BufferUsageFlags usage, MemoryType type) {
 	if(!buffer_size) {
 		fatal("Can not allocate 0 sized buffer.");
 	}
 	auto buffer = create_buffer(dptr, buffer_size, usage);
-	auto memory = alloc_memory(dptr, get_memory_reqs(dptr, buffer), flags);
+	auto memory = dptr->allocator().alloc(buffer, type);
 	bind_buffer_memory(dptr, buffer, memory);
 
-	return std::tuple<vk::Buffer, vk::DeviceMemory>(buffer, memory);
-}
-
-template<typename T>
-vk::BufferUsageFlags to_vk_flags(T t) {
-	auto value = vk::BufferUsageFlagBits(t);
-	return value | value;
+	return {buffer, std::move(memory)};
 }
 
 
 
+BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type, BufferTransfer transfer) : _size(byte_size) {
+	std::tie(_buffer, _memory) = alloc_buffer(dptr, byte_size, vk::BufferUsageFlagBits(usage) | vk::BufferUsageFlagBits(transfer), type);
+}
 
+BufferBase::~BufferBase() {
+	device()->destroy(_buffer);
+}
+
+DevicePtr BufferBase::device() const {
+	return _memory.device();
+}
 
 usize BufferBase::byte_size() const {
 	return _size;
@@ -90,7 +71,7 @@ vk::Buffer BufferBase::vk_buffer() const {
 	return _buffer;
 }
 
-vk::DeviceMemory BufferBase::vk_device_memory() const {
+const DeviceMemory& BufferBase::device_memory() const {
 	return _memory;
 }
 
@@ -103,20 +84,9 @@ vk::DescriptorBufferInfo BufferBase::descriptor_info() const {
 }
 
 void BufferBase::swap(BufferBase& other) {
-	DeviceLinked::swap(other);
 	std::swap(_size, other._size);
 	std::swap(_buffer, other._buffer);
 	std::swap(_memory, other._memory);
-}
-
-BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType flags, BufferTransfer transfer) : DeviceLinked(dptr), _size(byte_size) {
-	auto tpl = alloc_buffer(dptr, byte_size, to_vk_flags(usage) | to_vk_flags(transfer), flags);
-	std::tie(_buffer, _memory) = tpl;
-}
-
-BufferBase::~BufferBase() {
-	destroy(_memory);
-	destroy(_buffer);
 }
 
 }

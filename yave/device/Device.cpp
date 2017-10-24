@@ -53,12 +53,14 @@ static vk::Device create_device(
 
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
 
-	float priorities = 1.0f;
+
+	auto prio_count = std::max_element(queue_families.begin(), queue_families.end(),
+			[](const auto& a, const auto& b) { return a.count() < b.count(); })->count();
+	core::Vector<float> priorities(prio_count, 1.0f);
 	std::transform(queue_families.begin(), queue_families.end(), std::back_inserter(queue_create_infos), [&](const auto& q) {
 		return vk::DeviceQueueCreateInfo()
 				.setQueueFamilyIndex(q.index())
-#warning priorities should be an array
-				.setPQueuePriorities(&priorities)
+				.setPQueuePriorities(priorities.begin())
 				.setQueueCount(q.count())
 			;
 		});
@@ -88,12 +90,17 @@ static vk::Device create_device(
 }
 
 
+Device::ScopedDevice::~ScopedDevice() {
+	device.destroy();
+}
+
 Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
 		_queue_families(compute_queue_families(_physical.vk_physical_device())),
-		_device(create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())),
+		_device{create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())},
 		_sampler(this),
+		_allocator(this),
 		_secondary_cmd_pool(this),
 		_disposable_cmd_pool(this),
 		_primary_cmd_pool(this),
@@ -118,8 +125,6 @@ Device::~Device() {
 	_secondary_cmd_pool = CmdBufferPool<CmdBufferUsage::Secondary>();
 
 	delete _descriptor_layout_pool;
-
-	_device.destroy();
 }
 
 const PhysicalDevice& Device::physical_device() const {
@@ -130,8 +135,25 @@ const Instance &Device::instance() const {
 	return _instance;
 }
 
+DeviceAllocator& Device::allocator() const {
+	return _allocator;
+}
+
+const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
+	for(const auto& q : _queue_families) {
+		if((q.flags() & flags) == flags) {
+			return q;
+		}
+	}
+	return fatal("Unable to find queue.");
+}
+
+const vk::PhysicalDeviceLimits& Device::vk_limits() const {
+	return _physical.vk_properties().limits;
+}
+
 vk::Device Device::vk_device() const {
-	return _device;
+	return _device.device;
 }
 
 vk::Queue Device::vk_queue(vk::QueueFlags) const {
@@ -143,13 +165,5 @@ vk::Sampler Device::vk_sampler() const {
 	return _sampler.vk_sampler();
 }
 
-const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
-	for(const auto& q : _queue_families) {
-		if((q.flags() & flags) == flags) {
-			return q;
-		}
-	}
-	return fatal("Unable to find queue.");
-}
 
 }

@@ -26,10 +26,7 @@ SOFTWARE.
 namespace yave {
 
 static bool is_device_ok(vk::PhysicalDevice device) {
-	auto features = device.getFeatures();
-	return  features.geometryShader&&
-			features.fullDrawIndexUint32&&
-			features.robustBufferAccess;
+	return device.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu;
 }
 
 static vk::PhysicalDevice choose_device(vk::Instance instance) {
@@ -47,6 +44,7 @@ static vk::PhysicalDevice choose_device(vk::Instance instance) {
 PhysicalDevice::PhysicalDevice(Instance& instance) :
 		_instance(instance),
 		_device(choose_device(instance.vk_instance())),
+		_properties(_device.getProperties()),
 		_memory_properties(_device.getMemoryProperties()) {
 
 	struct Version {
@@ -55,11 +53,10 @@ PhysicalDevice::PhysicalDevice(Instance& instance) :
 		u32 major : 10;
 	};
 
-	auto properties = _device.getProperties();
-	const auto& v_ref = properties.apiVersion;
+	const auto& v_ref = _properties.apiVersion;
 	auto version = reinterpret_cast<const Version&>(v_ref);
 	log_msg(core::String() + "Running Vulkan (" + u32(version.major) + "." + u32(version.minor) + "." + u32(version.patch) + ") " + (is_64_bits() ? 64 : 32) + " bits" +
-				 " on " + properties.deviceName + " (" + (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? "discrete" : "integrated") + ")");
+				 " on " + _properties.deviceName + " (" + (_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? "discrete" : "integrated") + ")");
 }
 
 PhysicalDevice::~PhysicalDevice() {
@@ -69,7 +66,11 @@ vk::PhysicalDevice PhysicalDevice::vk_physical_device() const {
 	return _device;
 }
 
-vk::PhysicalDeviceMemoryProperties PhysicalDevice::vk_memory_properties() const {
+const vk::PhysicalDeviceProperties& PhysicalDevice::vk_properties() const {
+	return _properties;
+}
+
+const vk::PhysicalDeviceMemoryProperties& PhysicalDevice::vk_memory_properties() const {
 	return _memory_properties;
 }
 

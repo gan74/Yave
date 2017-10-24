@@ -86,7 +86,7 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 100.0f;
+	float dist = 125.0f;
 
 	auto cam_tr = math::rotation({0, 0, -1}, angles.x()) * math::rotation({0, 1, 0}, angles.y());
 	auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
@@ -116,6 +116,21 @@ void YaveApp::create_assets() {
 	}*/
 
 	{
+
+
+		/*{
+			core::Vector<AssetPtr<Texture>> textures;
+
+			auto test_data = ImageData::from_file(io::File::open("../tools/image_to_yt/16.yt").expected("Unable to load image file."));
+			textures << AssetPtr<Texture>(Texture(&device, test_data));
+
+			auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/albedo.yt").expected("Unable to load image file."));
+			for(usize i = 0; i != 64; ++i) {
+				auto color = AssetPtr<Texture>(Texture(&device, color_data));
+				unused(color);
+			}
+		}*/
+
 		auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/albedo.yt").expected("Unable to load image file."));
 		auto color = AssetPtr<Texture>(Texture(&device, color_data));
 		destroy_later(color);
@@ -165,6 +180,7 @@ void YaveApp::create_assets() {
 
 	update();
 
+	device.allocator().dump_info();
 }
 
 

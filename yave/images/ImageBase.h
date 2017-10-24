@@ -26,15 +26,19 @@ SOFTWARE.
 #include "ImageData.h"
 
 #include <yave/device/DeviceLinked.h>
+#include <yave/memory/DeviceMemory.h>
 
 namespace yave {
 
-class ImageBase : NonCopyable, public DeviceLinked {
+class ImageBase : NonCopyable {
 
 	public:
+		DevicePtr device() const;
+
 		vk::Image vk_image() const;
-		vk::DeviceMemory vk_device_memory() const;
 		vk::ImageView vk_view() const;
+
+		const DeviceMemory& device_memory() const;
 
 		const math::Vec2ui& size() const;
 		usize mipmaps() const;
@@ -62,8 +66,9 @@ class ImageBase : NonCopyable, public DeviceLinked {
 		ImageFormat _format;
 		ImageUsage _usage;
 
+		DeviceMemory _memory;
+
 		vk::Image _image;
-		vk::DeviceMemory _memory;
 		vk::ImageView _view;
 };
 

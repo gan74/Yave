@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_PHYSICALDEVICE_H
-#define YAVE_DEVICE_PHYSICALDEVICE_H
+#ifndef YAVE_MEMORY_DEVICEMEMORY_H
+#define YAVE_MEMORY_DEVICEMEMORY_H
 
-#include "Instance.h"
+#include <yave/vk/vk.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 
-class PhysicalDevice : NonCopyable {
-	public:
-		PhysicalDevice(Instance& instance);
-		~PhysicalDevice();
+class DeviceMemoryHeap;
 
-		vk::PhysicalDevice vk_physical_device() const;
-		const vk::PhysicalDeviceProperties& vk_properties() const;
-		const vk::PhysicalDeviceMemoryProperties& vk_memory_properties() const;
+class DeviceMemory : NonCopyable, public DeviceLinked {
+	public:
+		DeviceMemory() = default;
+		~DeviceMemory();
+
+		DeviceMemory(DeviceMemory&& other);
+		DeviceMemory& operator=(DeviceMemory&& other);
+
+		DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size);
+
+		vk::DeviceMemory vk_memory() const;
+		usize vk_offset() const;
+
+		DeviceMemoryHeap* heap() const;
+
+	protected:
+		void swap(DeviceMemory& other);
 
 	private:
-		Instance& _instance;
-		vk::PhysicalDevice _device;
-		vk::PhysicalDeviceProperties _properties;
-		vk::PhysicalDeviceMemoryProperties _memory_properties;
+		friend class DeviceMemoryHeap;
+
+		DeviceMemory(DeviceMemoryHeap* heap, vk::DeviceMemory memory, usize offset, usize size);
+
+		NotOwner<DeviceMemoryHeap*> _heap = nullptr;
+		vk::DeviceMemory _memory;
+		usize _offset = 0;
+		usize _size = 0;
 };
 
 }
 
-#endif // YAVE_DEVICE_PHYSICALDEVICE_H
+#endif // YAVE_MEMORY_DEVICEMEMORY_H

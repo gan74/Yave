@@ -53,21 +53,13 @@ class SwapchainImage : public Image<SwapchainImageUsage> {
 
 		~SwapchainImage() {
 			// prevents images to delete their vk::Image, this is already done by the swapchain
-			_image = VK_NULL_HANDLE;
+			_image = vk::Image();
 		}
 
 	private:
 		friend class Swapchain;
 
-		struct DeviceSetter : DeviceLinked {
-			DeviceSetter(DevicePtr dptr) : DeviceLinked(dptr) {
-			}
-		};
-
-		SwapchainImage(DevicePtr dptr) : Image<SwapchainImageUsage>() {
-			DeviceSetter dev(dptr);
-			DeviceLinked::swap(dev);
-		}
+		SwapchainImage() = default;
 };
 
 class Swapchain : NonCopyable, public DeviceLinked {

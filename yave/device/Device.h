@@ -29,12 +29,18 @@ SOFTWARE.
 #include <yave/images/Sampler.h>
 #include <yave/commands/pool/CmdBufferPool.h>
 #include <yave/queues/QueueFamily.h>
+#include <yave/memory/DeviceAllocator.h>
 
 #include <yave/vk/destroy.h>
 
 namespace yave {
 
 class Device : NonCopyable {
+
+	struct ScopedDevice {
+		~ScopedDevice();
+		vk::Device device;
+	};
 
 	public:
 		explicit Device(Instance& instance);
@@ -43,18 +49,17 @@ class Device : NonCopyable {
 		const PhysicalDevice& physical_device() const;
 		const Instance& instance() const;
 
-		vk::Device vk_device() const;
-		vk::Queue vk_queue(vk::QueueFlags) const;
-		vk::Sampler vk_sampler() const;
+		DeviceAllocator& allocator() const;
 
 		const QueueFamily& queue_family(vk::QueueFlags flags) const;
 
-		template<typename T>
-		void destroy(T t) const {
-			if(t != T()) {
-				detail::destroy(this, t);
-			}
-		}
+
+		const vk::PhysicalDeviceLimits& vk_limits() const;
+
+		vk::Device vk_device() const;
+		vk::Sampler vk_sampler() const;
+		vk::Queue vk_queue(vk::QueueFlags) const;
+
 
 		auto create_disposable_cmd_buffer() const {
 			return _disposable_cmd_pool.create_buffer();
@@ -73,17 +78,27 @@ class Device : NonCopyable {
 			return _descriptor_layout_pool->create_descriptor_set_layout(std::forward<T>(t));
 		}
 
+
+		template<typename T>
+		void destroy(T t) const {
+			if(t != T()) {
+				detail::destroy(this, t);
+			}
+		}
+
 	private:
 		Instance& _instance;
 		PhysicalDevice _physical;
 
 		core::Vector<QueueFamily> _queue_families;
 
+		ScopedDevice _device;
+
 		core::Vector<vk::Queue> _queues;
 
-		vk::Device _device;
-
 		Sampler _sampler;
+
+		mutable DeviceAllocator _allocator;
 
 		mutable CmdBufferPool<CmdBufferUsage::Secondary> _secondary_cmd_pool;
 		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;

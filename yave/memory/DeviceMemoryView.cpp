@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_PHYSICALDEVICE_H
-#define YAVE_DEVICE_PHYSICALDEVICE_H
 
-#include "Instance.h"
+#include "DeviceMemoryView.h"
+#include "DeviceMemoryHeap.h"
 
 namespace yave {
 
-class PhysicalDevice : NonCopyable {
-	public:
-		PhysicalDevice(Instance& instance);
-		~PhysicalDevice();
-
-		vk::PhysicalDevice vk_physical_device() const;
-		const vk::PhysicalDeviceProperties& vk_properties() const;
-		const vk::PhysicalDeviceMemoryProperties& vk_memory_properties() const;
-
-	private:
-		Instance& _instance;
-		vk::PhysicalDevice _device;
-		vk::PhysicalDeviceProperties _properties;
-		vk::PhysicalDeviceMemoryProperties _memory_properties;
-};
-
+DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
+		DeviceLinked(mem.device()),
+		_heap(mem.heap()),
+		_memory(mem.vk_memory()),
+		_offset(mem.vk_offset()) {
 }
 
-#endif // YAVE_DEVICE_PHYSICALDEVICE_H
+vk::DeviceMemory DeviceMemoryView::vk_memory() const {
+	return _memory;
+}
+
+usize DeviceMemoryView::vk_offset() const {
+	return _offset;
+}
+
+void* DeviceMemoryView::map() {
+	return _heap ? _heap->map(_offset) : device()->vk_device().mapMemory(_memory, _offset, VK_WHOLE_SIZE);
+}
+
+void DeviceMemoryView::unmap() {
+	_heap ? _heap->unmap() : device()->vk_device().unmapMemory(_memory);
+}
+
+}

@@ -20,50 +20,56 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "SubBufferBase.h"
+#include "DeviceMemory.h"
+#include "DeviceMemoryHeap.h"
 
 namespace yave {
 
-SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_off, usize byte_len) :
-		_size(byte_len),
-		_offset(byte_off),
-		_buffer(base.vk_buffer()),
-		_memory(base.device_memory()) {
+DeviceMemory::DeviceMemory(DeviceMemoryHeap* heap, vk::DeviceMemory memory, usize offset, usize size) : DeviceMemory(heap->device(), memory, offset, size) {
+	_heap = heap;
 }
 
-SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, 0, base.byte_size()) {
+DeviceMemory::DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size) : DeviceLinked(dptr), _memory(memory), _offset(offset), _size(size) {
 }
 
-usize SubBufferBase::byte_size() const {
-	return _size;
+DeviceMemory::DeviceMemory(DeviceMemory&& other) {
+	swap(other);
 }
 
-usize SubBufferBase::byte_offset() const {
-	return _offset;
+DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) {
+	swap(other);
+	return *this;
 }
 
-vk::Buffer SubBufferBase::vk_buffer() const {
-	return _buffer;
+DeviceMemory::~DeviceMemory() {
+	if(_memory) {
+		if(_heap) {
+			_heap->free(_offset, _size);
+		} else {
+			device()->allocator().free(_memory);
+		}
+	}
 }
 
-DeviceMemoryView SubBufferBase::device_memory() const {
+vk::DeviceMemory DeviceMemory::vk_memory() const {
 	return _memory;
 }
 
-vk::DescriptorBufferInfo SubBufferBase::descriptor_info() const {
-	return vk::DescriptorBufferInfo()
-			.setBuffer(_buffer)
-			.setOffset(_offset)
-			.setRange(_size)
-		;
+usize DeviceMemory::vk_offset() const {
+	return _offset;
 }
 
-vk::MappedMemoryRange SubBufferBase::memory_range() const {
-	return vk::MappedMemoryRange(_memory.vk_memory(), _memory.vk_offset() + _offset, _size);
+DeviceMemoryHeap* DeviceMemory::heap() const {
+	return _heap;
 }
 
-DevicePtr SubBufferBase::device() const {
-	return _memory.device();
+void DeviceMemory::swap(DeviceMemory& other) {
+	DeviceLinked::swap(other);
+	std::swap(_heap, other._heap);
+	std::swap(_memory, other._memory);
+	std::swap(_offset, other._offset);
+	std::swap(_size, other._size);
 }
+
 
 }

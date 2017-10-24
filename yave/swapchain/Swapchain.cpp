@@ -116,7 +116,7 @@ static vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 	#ifdef Y_OS_WIN
 		return create_surface(dptr, window->instance(), window->handle());
 	#endif
-	return VK_NULL_HANDLE;
+	return vk::SurfaceKHR();
 }
 
 
@@ -189,7 +189,14 @@ void Swapchain::build_swapchain() {
 	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
 		auto view = create_image_view(device(), image, _color_format.vk_format());
 
-		auto swapchain_image = SwapchainImage(device());
+		struct SwapchainImageMemory : DeviceMemory {
+			SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk::DeviceMemory(), 0, 0) {
+			}
+		};
+
+		auto swapchain_image = SwapchainImage();
+
+		swapchain_image._memory = SwapchainImageMemory(device());
 
 		swapchain_image._size = _size;
 		swapchain_image._format = _color_format;
@@ -197,7 +204,6 @@ void Swapchain::build_swapchain() {
 
 		// prevent the images to delete their handles: the swapchain already does that.
 		swapchain_image._image = image;
-		swapchain_image._memory = VK_NULL_HANDLE;
 		swapchain_image._view = view;
 
 		_images << std::move(swapchain_image);
@@ -215,7 +221,7 @@ void Swapchain::build_swapchain() {
 
 FrameToken Swapchain::next_frame() {
 	auto [image_acquired, render_finished] = _semaphores.pop();
-	u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, VK_NULL_HANDLE).value;
+	u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, vk::Fence()).value;
 
 	return FrameToken {
 			++_frame_id,

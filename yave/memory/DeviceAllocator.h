@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_PHYSICALDEVICE_H
-#define YAVE_DEVICE_PHYSICALDEVICE_H
+#ifndef YAVE_MEMORY_DEVICEALLOCATOR_H
+#define YAVE_MEMORY_DEVICEALLOCATOR_H
 
-#include "Instance.h"
+#include "DeviceMemoryHeap.h"
+
+#include <unordered_map>
 
 namespace yave {
 
-class PhysicalDevice : NonCopyable {
-	public:
-		PhysicalDevice(Instance& instance);
-		~PhysicalDevice();
+class DeviceAllocator : NonCopyable, public DeviceLinked {
 
-		vk::PhysicalDevice vk_physical_device() const;
-		const vk::PhysicalDeviceProperties& vk_properties() const;
-		const vk::PhysicalDeviceMemoryProperties& vk_memory_properties() const;
+	using HeapType = std::pair<u32, MemoryType>;
+
+	static constexpr usize dedicated_threshold = DeviceMemoryHeap::heap_size / 2;
+
+	public:
+		DeviceAllocator() = default;
+		DeviceAllocator(DevicePtr dptr);
+
+		DeviceMemory alloc(vk::Image image);
+		DeviceMemory alloc(vk::Buffer buffer, MemoryType type);
+
+		void free(vk::DeviceMemory memory);
+
+		void dump_info() const;
 
 	private:
-		Instance& _instance;
-		vk::PhysicalDevice _device;
-		vk::PhysicalDeviceProperties _properties;
-		vk::PhysicalDeviceMemoryProperties _memory_properties;
+		void count_allocs();
+
+		DeviceMemory alloc(vk::MemoryRequirements reqs, MemoryType type);
+		DeviceMemory dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type);
+
+		std::unordered_map<HeapType, core::Vector<core::Unique<DeviceMemoryHeap>>> _heaps;
+
+		usize _heap_count = 0;
+		usize _dedicated = 0;
+		usize _max_allocs = 0;
 };
 
 }
 
-#endif // YAVE_DEVICE_PHYSICALDEVICE_H
+#endif // YAVE_MEMORY_DEVICEALLOCATOR_H
