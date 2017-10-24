@@ -45,7 +45,7 @@ void DeviceMemoryHeap::FreeBlock::merge(const FreeBlock& block) {
 
 
 DeviceMemoryHeap::DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type) :
-		DeviceLinked(dptr),
+		DeviceMemoryHeapBase(dptr),
 		_memory(alloc_memory(dptr, heap_size, type_bits, type)),
 		_blocks({FreeBlock{0, heap_size}}) {
 }
@@ -79,8 +79,8 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) 
 	return core::Err();
 }
 
-void DeviceMemoryHeap::free(usize offset, usize size) {
-	FreeBlock block{offset, size};
+void DeviceMemoryHeap::free(const DeviceMemory& memory) {
+	FreeBlock block{memory.vk_offset(), memory.vk_size()};
 	for(auto& b : _blocks) {
 		if(b.contiguous(block)) {
 			b.merge(block);
@@ -90,20 +90,16 @@ void DeviceMemoryHeap::free(usize offset, usize size) {
 	_blocks << block;
 }
 
-vk::DeviceMemory DeviceMemoryHeap::vk_memory() const {
-	return _memory;
-}
-
-void* DeviceMemoryHeap::map(usize offset) {
+void* DeviceMemoryHeap::map(const DeviceMemoryView& view) {
 	std::unique_lock lock(_lock);
 	if(!_mapped) {
 		_mapping = static_cast<u8*>(device()->vk_device().mapMemory(_memory, 0, heap_size));
 	}
 	++_mapped;
-	return static_cast<u8*>(_mapping + offset);
+	return static_cast<u8*>(_mapping + view.vk_offset());
 }
 
-void DeviceMemoryHeap::unmap() {
+void DeviceMemoryHeap::unmap(const DeviceMemoryView&) {
 	std::unique_lock lock(_lock);
 	if(!--_mapped) {
 		device()->vk_device().unmapMemory(_memory);
@@ -117,6 +113,10 @@ usize DeviceMemoryHeap::available() const {
 		tot += b.size;
 	}
 	return tot;
+}
+
+bool DeviceMemoryHeap::mapped() const {
+	return _mapped;
 }
 
 }

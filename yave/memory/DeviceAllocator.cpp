@@ -26,6 +26,7 @@ SOFTWARE.
 namespace yave {
 
 #warning DeviceAllocator is not thread safe
+#warning DeviceAllocator does not count allocs
 
 DeviceAllocator::DeviceAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
@@ -34,20 +35,11 @@ DeviceAllocator::DeviceAllocator(DevicePtr dptr) :
 	log_msg("Max device memory allocation count: "_s + _max_allocs);
 }
 
-
-void DeviceAllocator::count_allocs() {
-	usize allocs = _dedicated + _heap_count;
-	if(allocs == _max_allocs) {
-		fatal("Max allocation count reached.");
-	}
-	if(allocs > _max_allocs / 2) {
-		log_msg("Closing on max allocation count.", Log::Warning);
-	}
-}
-
 DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type) {
-	++_dedicated;
-	return DeviceMemory(device(), alloc_memory(device(), reqs, type), 0, reqs.size);
+	if(auto it = _dedicated_heaps.find(type); it != _dedicated_heaps.end()) {
+		return std::move(it->second->alloc(reqs).unwrap());
+	}
+	return std::move((_dedicated_heaps[type] = new DedicatedDeviceMemoryHeap(device(), type))->alloc(reqs).unwrap());
 }
 
 DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
@@ -66,20 +58,14 @@ DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type
 		}
 	}
 
-
 	auto heap = core::Unique(new DeviceMemoryHeap(device(), reqs.memoryTypeBits, type));
 	auto alloc = std::move(heap->alloc(reqs).unwrap());
 
-	++_heap_count;
 	heaps.push_back(std::move(heap));
 
 	return std::move(alloc);
 }
 
-void DeviceAllocator::free(vk::DeviceMemory memory) {
-	--_dedicated;
-	device()->vk_device().freeMemory(memory);
-}
 
 DeviceMemory DeviceAllocator::alloc(vk::Image image) {
 	return alloc(device()->vk_device().getImageMemoryRequirements(image), MemoryType::DeviceLocal);
@@ -93,9 +79,9 @@ DeviceMemory DeviceAllocator::alloc(vk::Buffer buffer, MemoryType type) {
 void DeviceAllocator::dump_info() const {
 	log_msg("Allocator:");
 	log_msg("  maximum allocations = "_s + _max_allocs);
-	log_msg("  dedicated allocations = "_s + _dedicated);
+	/*log_msg("  dedicated allocations = "_s + _dedicated);
 	log_msg("  heap count = "_s + _heap_count);
-	log_msg("  total allocations = "_s + (_dedicated + _heap_count));
+	log_msg("  total allocations = "_s + (_dedicated + _heap_count));*/
 	for(auto& heaps : _heaps) {
 		log_msg("  Memory type = "_s + usize(heaps.first.second) + "|" + heaps.first.first);
 		for(auto& h : heaps.second) {

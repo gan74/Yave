@@ -28,7 +28,7 @@ namespace yave {
 
 CpuVisibleMapping::CpuVisibleMapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer) :
 		_buffer(buffer),
-		_mapping(static_cast<u8*>(buffer.device_memory().map()) + buffer.byte_offset()) {
+		_mapping(static_cast<u8*>(_buffer.device_memory().map()) + buffer.byte_offset()) {
 }
 
 CpuVisibleMapping::~CpuVisibleMapping() {
@@ -40,6 +40,7 @@ CpuVisibleMapping::~CpuVisibleMapping() {
 void CpuVisibleMapping::flush() {
 	if(_buffer.device() && _mapping) {
 		_buffer.device()->vk_device().flushMappedMemoryRanges(_buffer.memory_range());
+		_buffer.device_memory().unmap();
 	}
 }
 

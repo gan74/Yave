@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/device/Device.h>
 #include <yave/window/Window.h>
 #include <yave/commands/CmdBufferRecorder.h>
+#include <yave/memory/DeviceMemoryHeapBase.h>
 
 
 namespace yave {
@@ -188,6 +189,14 @@ void Swapchain::build_swapchain() {
 
 	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
 		auto view = create_image_view(device(), image, _color_format.vk_format());
+
+		/*struct SwapchainImageMemoryHeap : DeviceMemoryHeapBase {
+			SwapchainImageMemoryHeap(DevicePtr dptr) : DeviceMemoryHeapBase(dptr) {}
+			core::Result<DeviceMemory> alloc(vk::MemoryRequirements) override { return fatal("SwapchainImageMemoryHeap can not alloc."); }
+			void free(const DeviceMemory&) override { return fatal("SwapchainImageMemoryHeap can not free."); }
+			void* map(usize) override { return fatal("SwapchainImageMemoryHeap can not map."); }
+			void unmap() override { fatal("SwapchainImageMemoryHeap can not unmap."); }
+		}*/
 
 		struct SwapchainImageMemory : DeviceMemory {
 			SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk::DeviceMemory(), 0, 0) {

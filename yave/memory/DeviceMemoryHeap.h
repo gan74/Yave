@@ -24,16 +24,12 @@ SOFTWARE.
 
 #include <y/concurrent/SpinLock.h>
 
-#include <yave/device/DeviceLinked.h>
-
-#include "DeviceMemory.h"
-#include "MemoryType.h"
+#include "DeviceMemoryHeapBase.h"
 
 namespace yave {
 
-
 // For DeviceAllocator, should not be used directly
-class DeviceMemoryHeap : NonCopyable, public DeviceLinked {
+class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 
 	struct FreeBlock {
 		usize offset;
@@ -48,22 +44,22 @@ class DeviceMemoryHeap : NonCopyable, public DeviceLinked {
 		static constexpr usize alignment = 256;
 		static constexpr usize block_size = alignment * alignment;
 
-		static constexpr usize heap_size = 1024 * 1024 * 256;
+		static constexpr usize heap_size = 1024 * 1024 * 16;
 
 		static_assert(heap_size % block_size == 0, "Heap size is not a multiple of block size");
 
+
 		DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type);
-		~DeviceMemoryHeap();
+		~DeviceMemoryHeap() override;
 
-		core::Result<DeviceMemory> alloc(vk::MemoryRequirements reqs);
-		void free(usize offset, usize size);
+		core::Result<DeviceMemory> alloc(vk::MemoryRequirements reqs) override;
+		void free(const DeviceMemory& memory) override;
 
-		vk::DeviceMemory vk_memory() const;
-
-		void* map(usize offset);
-		void unmap();
+		void* map(const DeviceMemoryView& view) override;
+		void unmap(const DeviceMemoryView&) override;
 
 		usize available() const;
+		bool mapped() const;
 
 	private:
 		void swap(DeviceMemoryHeap& other);

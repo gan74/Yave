@@ -21,15 +21,20 @@ SOFTWARE.
 **********************************/
 
 #include "DeviceMemory.h"
-#include "DeviceMemoryHeap.h"
+#include "DeviceMemoryHeapBase.h"
 
 namespace yave {
 
-DeviceMemory::DeviceMemory(DeviceMemoryHeap* heap, vk::DeviceMemory memory, usize offset, usize size) : DeviceMemory(heap->device(), memory, offset, size) {
+DeviceMemory::DeviceMemory(DeviceMemoryHeapBase* heap, vk::DeviceMemory memory, usize offset, usize size) :
+		DeviceMemory(heap->device(), memory, offset, size) {
 	_heap = heap;
 }
 
-DeviceMemory::DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size) : DeviceLinked(dptr), _memory(memory), _offset(offset), _size(size) {
+DeviceMemory::DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size) :
+		DeviceLinked(dptr),
+		_memory(memory),
+		_offset(offset),
+		_size(size) {
 }
 
 DeviceMemory::DeviceMemory(DeviceMemory&& other) {
@@ -42,12 +47,8 @@ DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) {
 }
 
 DeviceMemory::~DeviceMemory() {
-	if(_memory) {
-		if(_heap) {
-			_heap->free(_offset, _size);
-		} else {
-			device()->allocator().free(_memory);
-		}
+	if(_memory && _heap) {
+		_heap->free(*this);
 	}
 }
 
@@ -59,7 +60,11 @@ usize DeviceMemory::vk_offset() const {
 	return _offset;
 }
 
-DeviceMemoryHeap* DeviceMemory::heap() const {
+usize DeviceMemory::vk_size() const {
+	return _size;
+}
+
+DeviceMemoryHeapBase* DeviceMemory::heap() const {
 	return _heap;
 }
 

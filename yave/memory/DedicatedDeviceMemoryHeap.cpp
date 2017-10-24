@@ -20,32 +20,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DeviceMemoryView.h"
-#include "DeviceMemoryHeap.h"
+#include "DedicatedDeviceMemoryHeap.h"
+#include "alloc.h"
 
 namespace yave {
 
-DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
-		DeviceLinked(mem.device()),
-		_heap(mem.heap()),
-		_memory(mem.vk_memory()),
-		_offset(mem.vk_offset()) {
+#warning rename DedicatedDeviceMemoryHeap
+
+DedicatedDeviceMemoryHeap::DedicatedDeviceMemoryHeap(DevicePtr dptr, MemoryType type) : DeviceMemoryHeapBase(dptr), _type(type) {
 }
 
-vk::DeviceMemory DeviceMemoryView::vk_memory() const {
-	return _memory;
+DedicatedDeviceMemoryHeap::~DedicatedDeviceMemoryHeap() {
 }
 
-usize DeviceMemoryView::vk_offset() const {
-	return _offset;
+core::Result<DeviceMemory> DedicatedDeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) {
+	return core::Ok(DeviceMemory(this, alloc_memory(device(), reqs, _type), 0, reqs.size));
 }
 
-void* DeviceMemoryView::map() {
-	return _heap->map(*this);
+void DedicatedDeviceMemoryHeap::free(const DeviceMemory& memory) {
+	if(memory.vk_offset()) {
+		fatal("Tried to free memory using non zero offset.");
+	}
+	device()->vk_device().freeMemory(memory.vk_memory());
 }
 
-void DeviceMemoryView::unmap() {
-	_heap->unmap(*this);
+void* DedicatedDeviceMemoryHeap::map(const DeviceMemoryView& view) {
+	return device()->vk_device().mapMemory(view.vk_memory(), view.vk_offset(), VK_WHOLE_SIZE);
+}
+
+void DedicatedDeviceMemoryHeap::unmap(const DeviceMemoryView& view) {
+	device()->vk_device().unmapMemory(view.vk_memory());
 }
 
 }

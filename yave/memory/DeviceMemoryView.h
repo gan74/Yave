@@ -38,7 +38,7 @@ class DeviceMemoryView : public DeviceLinked {
 		void unmap();
 
 	private:
-		NotOwner<DeviceMemoryHeap*> _heap = nullptr;
+		NotOwner<DeviceMemoryHeapBase*> _heap = nullptr;
 		vk::DeviceMemory _memory;
 		usize _offset;
 };

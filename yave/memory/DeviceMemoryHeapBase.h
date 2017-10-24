@@ -19,33 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_MEMORY_DEVICEMEMORYHEAPBASE_H
+#define YAVE_MEMORY_DEVICEMEMORYHEAPBASE_H
 
+#include <yave/device/DeviceLinked.h>
+
+#include "DeviceMemory.h"
 #include "DeviceMemoryView.h"
-#include "DeviceMemoryHeap.h"
+#include "MemoryType.h"
 
 namespace yave {
 
-DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
-		DeviceLinked(mem.device()),
-		_heap(mem.heap()),
-		_memory(mem.vk_memory()),
-		_offset(mem.vk_offset()) {
-}
+class DeviceMemoryHeapBase : NonCopyable, public DeviceLinked {
+	public:
+		virtual ~DeviceMemoryHeapBase() {
+		}
 
-vk::DeviceMemory DeviceMemoryView::vk_memory() const {
-	return _memory;
-}
+		virtual core::Result<DeviceMemory> alloc(vk::MemoryRequirements reqs) = 0;
+		virtual void free(const DeviceMemory& memory) = 0;
 
-usize DeviceMemoryView::vk_offset() const {
-	return _offset;
-}
+		virtual void* map(const DeviceMemoryView& view) = 0;
+		virtual void unmap(const DeviceMemoryView& view) = 0;
 
-void* DeviceMemoryView::map() {
-	return _heap->map(*this);
-}
-
-void DeviceMemoryView::unmap() {
-	_heap->unmap(*this);
-}
+	protected:
+		DeviceMemoryHeapBase(DevicePtr dptr) : DeviceLinked(dptr) {
+		}
+};
 
 }
+
+#endif // YAVE_MEMORY_DEVICEMEMORYHEAPBASE_H

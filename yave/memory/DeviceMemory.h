@@ -27,32 +27,30 @@ SOFTWARE.
 
 namespace yave {
 
-class DeviceMemoryHeap;
+class DeviceMemoryHeapBase;
 
 class DeviceMemory : NonCopyable, public DeviceLinked {
+
 	public:
+		DeviceMemory(DeviceMemoryHeapBase* heap, vk::DeviceMemory memory, usize offset, usize size);
+		DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size);
 		DeviceMemory() = default;
 		~DeviceMemory();
 
 		DeviceMemory(DeviceMemory&& other);
 		DeviceMemory& operator=(DeviceMemory&& other);
 
-		DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size);
-
 		vk::DeviceMemory vk_memory() const;
 		usize vk_offset() const;
+		usize vk_size() const;
 
-		DeviceMemoryHeap* heap() const;
+		DeviceMemoryHeapBase* heap() const;
 
 	protected:
 		void swap(DeviceMemory& other);
 
 	private:
-		friend class DeviceMemoryHeap;
-
-		DeviceMemory(DeviceMemoryHeap* heap, vk::DeviceMemory memory, usize offset, usize size);
-
-		NotOwner<DeviceMemoryHeap*> _heap = nullptr;
+		NotOwner<DeviceMemoryHeapBase*> _heap = nullptr;
 		vk::DeviceMemory _memory;
 		usize _offset = 0;
 		usize _size = 0;
