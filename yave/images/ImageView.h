@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
-class ImageView {
+class ImageView : public DeviceLinked {
 
 	static constexpr bool is_compatible(ImageUsage u) {
 		return (uenum(Usage) & uenum(u)) == uenum(Usage);
@@ -39,31 +39,31 @@ class ImageView {
 		ImageView() = default;
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-		ImageView(const Image<U, Type>& img) : ImageView(&img, img.vk_view()) {
+		ImageView(const Image<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view()) {
 		}
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-		ImageView(const ImageView<U, Type>& img) : ImageView(img._image, img._view) {
+		ImageView(const ImageView<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view()) {
 		}
 
 		vk::ImageView vk_view() const {
 			return _view;
 		}
 
-		DevicePtr device() const {
-			return _image->device();
+		ImageUsage usage() const {
+			return _usage;
 		}
 
-		const ImageBase& image() const {
-			return *_image;
+		ImageFormat format() const {
+			return _format;
 		}
 
 		const math::Vec2ui& size() const {
-			return _image->size();
+			return _size;
 		}
 
 		bool operator==(const ImageView& other) const {
-			return _image == other._image && _view == other._view;
+			return _view == other._view;
 		}
 
 		bool operator!=(const ImageView& other) const {
@@ -71,14 +71,22 @@ class ImageView {
 		}
 
 	protected:
-		ImageView(const ImageBase* image, vk::ImageView view) : _image(image), _view(view) {
+		ImageView(DevicePtr dptr, const math::Vec2ui& size, ImageUsage usage, ImageFormat format, vk::ImageView view) :
+				DeviceLinked(dptr),
+				_size(size),
+				_usage(usage),
+				_format(format),
+				_view(view) {
 		}
+
 
 	private:
 		template<ImageUsage U, ImageType T>
 		friend class ImageView;
 
-		const ImageBase* _image = nullptr;
+		math::Vec2ui _size;
+		ImageUsage _usage;
+		ImageFormat _format;
 		vk::ImageView _view;
 };
 

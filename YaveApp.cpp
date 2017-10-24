@@ -36,6 +36,9 @@ static core::Chrono time;
 YaveApp::YaveApp(DebugParams params) : instance(params), device(instance) {
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMeshInstance));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
+	log_msg("sizeof(DeviceMemory) = "_s + sizeof(DeviceMemory));
+	log_msg("sizeof(Texture) = "_s + sizeof(Texture));
+	log_msg("sizeof(TextureView) = "_s + sizeof(TextureView));
 
 	create_assets();
 }

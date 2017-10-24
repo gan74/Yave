@@ -60,8 +60,8 @@ class ImageBase : NonCopyable {
 		void swap(ImageBase& other);
 
 		math::Vec2ui _size;
-		usize _layers = 1;
-		usize _mips = 1;
+		u32 _layers = 1;
+		u32 _mips = 1;
 
 		ImageFormat _format;
 		ImageUsage _usage;

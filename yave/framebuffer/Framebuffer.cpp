@@ -25,9 +25,9 @@ SOFTWARE.
 
 namespace yave {
 
-static math::Vec2ui compute_size(const ImageBase& a, const core::ArrayView<ColorAttachmentView>& views) {
+static math::Vec2ui compute_size(const DepthAttachmentView& a, const core::ArrayView<ColorAttachmentView>& views) {
 	for(const auto& v : views) {
-		if(v.image().size() != a.size()) {
+		if(v.size() != a.size()) {
 			fatal("Invalid attachment size.");
 		}
 	}
@@ -53,7 +53,7 @@ Framebuffer::Framebuffer(DevicePtr dptr, DepthAttachmentView depth, const core::
 Framebuffer::Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors) :
 		DeviceLinked(dptr),
 		_render_pass_storage(render_pass ? nullptr : create_render_pass(dptr, depth, colors)),
-		_size(compute_size(depth.image(), colors)),
+		_size(compute_size(depth, colors)),
 		_attachment_count(colors.size()),
 		_render_pass(render_pass ? render_pass : _render_pass_storage.as_ptr()),
 		_depth(depth),

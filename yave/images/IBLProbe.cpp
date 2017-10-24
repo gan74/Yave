@@ -74,10 +74,14 @@ struct ProbeBase : ImageBase {
 	}
 };
 
-// ImageView implement size as _image->size() so it'll be wrong for this class and shoudl'nt be used
 struct ProbeBaseView : ViewBase {
 	// does not destroy the view, need to be done manually
-	ProbeBaseView(ProbeBase& base, usize mip) : ViewBase(&base, create_view(base.device(), base.vk_image(), base.format(), mip)) {
+	ProbeBaseView(ProbeBase& base, usize mip) :
+			ViewBase(base.device(),
+					 base.size() / (1 << mip),
+					 base.usage(),
+					 base.format(),
+					 create_view(base.device(), base.vk_image(), base.format(), mip)) {
 	}
 };
 

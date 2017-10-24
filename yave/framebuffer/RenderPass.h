@@ -39,11 +39,11 @@ class RenderPass : NonCopyable, public DeviceLinked {
 			ImageData(ImageFormat fmt, ImageUsage us) : format(fmt), usage(us) {
 			}
 
-			ImageData(const ImageBase& image) : format(image.format()), usage(image.usage()) {
+			ImageData(const ImageBase& img) : format(img.format()), usage(img.usage()) {
 			}
 
 			template<ImageUsage Usage>
-			ImageData(const ImageView<Usage>& view) : ImageData(view.image()) {
+			ImageData(const ImageView<Usage>& img) : format(img.format()), usage(img.usage()) {
 			}
 		};
 
