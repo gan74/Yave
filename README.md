@@ -37,7 +37,7 @@ Implemented features:
    * Basic scenes
  * Meshes
    * Static
-   * ![Skeletal](http://i.imgur.com/tYM66lR.png)
+   * [Skeletal](http://i.imgur.com/tYM66lR.png)
 
 
 ### Licence:
