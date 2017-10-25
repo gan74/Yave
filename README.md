@@ -1,6 +1,10 @@
 # Yave
 Yet another C++17 Vulkan engine.
 
+## Status
+
+![Current status](https://i.imgur.com/fLydq3W.png)
+
 ## Building
 You need:
  * CMake
@@ -12,11 +16,6 @@ You need:
  * For tools:
    * [Rust](https://www.rust-lang.org/en-US/)
    * [Assimp](http://assimp.sourceforge.net/)
-
-## Status
-
-![Current status](https://i.imgur.com/fLydq3W.png)
-![Skeleton](http://i.imgur.com/tYM66lR.png)
 
 Currently a mess, should smooth out as I am learning Vulkan.
 
