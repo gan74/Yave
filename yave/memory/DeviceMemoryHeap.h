@@ -44,7 +44,7 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		static constexpr usize alignment = 256;
 		static constexpr usize block_size = alignment * alignment;
 
-		static constexpr usize heap_size = 1024 * 1024 * 16;
+		static constexpr usize heap_size = 1024 * 1024 * 128;
 
 		static_assert(heap_size % block_size == 0, "Heap size is not a multiple of block size");
 
@@ -68,10 +68,7 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 
 		vk::DeviceMemory _memory;
 		core::Vector<FreeBlock> _blocks;
-
-		concurrent::SpinLock _lock;
 		u8* _mapping = nullptr;
-		usize _mapped = 0;
 };
 
 }
