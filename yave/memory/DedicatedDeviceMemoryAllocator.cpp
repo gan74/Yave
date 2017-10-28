@@ -19,29 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MEMORY_DEDICATEDDEVICEMEMORYHEAP_H
-#define YAVE_MEMORY_DEDICATEDDEVICEMEMORYHEAP_H
 
-#include "DeviceMemoryHeapBase.h"
+#include "DedicatedDeviceMemoryAllocator.h"
+#include "alloc.h"
 
 namespace yave {
 
-class DedicatedDeviceMemoryHeap : public DeviceMemoryHeapBase {
-	public:
-		DedicatedDeviceMemoryHeap(DevicePtr dptr, MemoryType type);
-
-		~DedicatedDeviceMemoryHeap() override;
-
-		core::Result<DeviceMemory> alloc(vk::MemoryRequirements reqs) override;
-		void free(const DeviceMemory& memory) override;
-
-		void* map(const DeviceMemoryView& view) override;
-		void unmap(const DeviceMemoryView& view) override;
-
-	private:
-		MemoryType _type;
-};
-
+DedicatedDeviceMemoryAllocator::DedicatedDeviceMemoryAllocator(DevicePtr dptr, MemoryType type) : DeviceMemoryHeapBase(dptr), _type(type) {
 }
 
-#endif // YAVE_MEMORY_DEDICATEDDEVICEMEMORYHEAP_H
+DedicatedDeviceMemoryAllocator::~DedicatedDeviceMemoryAllocator() {
+}
+
+core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs) {
+	return core::Ok(DeviceMemory(this, alloc_memory(device(), reqs, _type), 0, reqs.size));
+}
+
+void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
+	if(memory.vk_offset()) {
+		fatal("Tried to free memory using non zero offset.");
+	}
+	device()->vk_device().freeMemory(memory.vk_memory());
+}
+
+void* DedicatedDeviceMemoryAllocator::map(const DeviceMemoryView& view) {
+	return device()->vk_device().mapMemory(view.vk_memory(), view.vk_offset(), VK_WHOLE_SIZE);
+}
+
+void DedicatedDeviceMemoryAllocator::unmap(const DeviceMemoryView& view) {
+	device()->vk_device().unmapMemory(view.vk_memory());
+}
+
+}

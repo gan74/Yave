@@ -39,7 +39,7 @@ DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, Memor
 	if(auto it = _dedicated_heaps.find(type); it != _dedicated_heaps.end()) {
 		return std::move(it->second->alloc(reqs).unwrap());
 	}
-	return std::move((_dedicated_heaps[type] = new DedicatedDeviceMemoryHeap(device(), type))->alloc(reqs).unwrap());
+	return std::move((_dedicated_heaps[type] = new DedicatedDeviceMemoryAllocator(device(), type))->alloc(reqs).unwrap());
 }
 
 DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {

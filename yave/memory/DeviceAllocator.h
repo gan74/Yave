@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_MEMORY_DEVICEALLOCATOR_H
 
 #include "DeviceMemoryHeap.h"
-#include "DedicatedDeviceMemoryHeap.h"
+#include "DedicatedDeviceMemoryAllocator.h"
 
 #include <unordered_map>
 
@@ -49,7 +49,7 @@ class DeviceAllocator : NonCopyable, public DeviceLinked {
 		DeviceMemory dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type);
 
 		std::unordered_map<HeapType, core::Vector<core::Unique<DeviceMemoryHeap>>> _heaps;
-		std::unordered_map<MemoryType, core::Unique<DedicatedDeviceMemoryHeap>> _dedicated_heaps;
+		std::unordered_map<MemoryType, core::Unique<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
 
 		usize _max_allocs = 0;
 };
