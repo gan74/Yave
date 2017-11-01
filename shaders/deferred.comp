@@ -2,7 +2,6 @@
 
 #include "yave.glsl"
 
-
 // -------------------------------- DEFINES --------------------------------
 
 #define USE_IBL
@@ -167,14 +166,14 @@ void main() {
 	cull_lights(depth);
 
 	vec3 albedo;
-	vec3 normal;
 	float metallic;
-	float roughness;
-	vec3 irradiance = vec3(0.0);
-
 	unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
 
-	if(depth < 1) {
+	vec3 irradiance = vec3(0.0);
+
+	if(depth < 1.0) {
+		vec3 normal;
+		float roughness;
 		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
 		vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
@@ -213,11 +212,6 @@ void main() {
 	}
 
 	imageStore(out_color, coord, vec4(irradiance, 1.0));
-
-	//imageStore(out_color, coord, vec4(metallic));
-	//imageStore(out_color, coord, pack_normal(normal, 1.0));
-	//imageStore(out_color, coord, vec4(dot(normalize(normal), vec3(1.0))));
-	//imageStore(out_color, coord, vec4(load_color(), 1.0));
 }
 
 
