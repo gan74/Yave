@@ -24,14 +24,15 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include "PhysicalDevice.h"
+#include "ThreadLocalDeviceData.h"
 
-#include <yave/bindings/DescriptorSetLayoutPool.h>
 #include <yave/images/Sampler.h>
-#include <yave/commands/pool/CmdBufferPool.h>
 #include <yave/queues/QueueFamily.h>
 #include <yave/memory/DeviceAllocator.h>
 
 #include <yave/vk/destroy.h>
+
+#include <thread>
 
 namespace yave {
 
@@ -53,30 +54,13 @@ class Device : NonCopyable {
 
 		const QueueFamily& queue_family(vk::QueueFlags flags) const;
 
+		ThreadDevicePtr thread_data() const;
 
 		const vk::PhysicalDeviceLimits& vk_limits() const;
 
 		vk::Device vk_device() const;
 		vk::Sampler vk_sampler() const;
 		vk::Queue vk_queue(vk::QueueFlags) const;
-
-
-		auto create_disposable_cmd_buffer() const {
-			return _disposable_cmd_pool.create_buffer();
-		}
-
-		auto create_secondary_cmd_buffer() const {
-			return _secondary_cmd_pool.create_buffer();
-		}
-
-		auto create_cmd_buffer() const {
-			return _primary_cmd_pool.create_buffer();
-		}
-
-		template<typename T>
-		auto create_descriptor_set_layout(T&& t) const {
-			return _descriptor_layout_pool->create_descriptor_set_layout(std::forward<T>(t));
-		}
 
 
 		template<typename T>
@@ -86,7 +70,25 @@ class Device : NonCopyable {
 			}
 		}
 
+		auto create_disposable_cmd_buffer() const {
+			return thread_data()->create_disposable_cmd_buffer();
+		}
+
+		auto create_secondary_cmd_buffer() const {
+			return thread_data()->create_secondary_cmd_buffer();
+		}
+
+		auto create_cmd_buffer() const {
+			return thread_data()->create_cmd_buffer();
+		}
+
+		template<typename T>
+		auto create_descriptor_set_layout(T&& t) const {
+			return _descriptor_layout_pool->create_descriptor_set_layout(std::forward<T>(t));
+		}
+
 	private:
+
 		Instance& _instance;
 		PhysicalDevice _physical;
 
@@ -100,11 +102,11 @@ class Device : NonCopyable {
 
 		mutable DeviceAllocator _allocator;
 
-		mutable CmdBufferPool<CmdBufferUsage::Secondary> _secondary_cmd_pool;
-		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
-		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
+		mutable concurrent::SpinLock _lock;
+		mutable std::unordered_map<std::thread::id, core::Unique<ThreadLocalDeviceData>> _thread_local_datas;
 
-		DescriptorSetLayoutPool* _descriptor_layout_pool;
+
+		core::Unique<DescriptorSetLayoutPool> _descriptor_layout_pool;
 };
 
 

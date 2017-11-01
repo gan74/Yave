@@ -28,9 +28,7 @@ namespace yave {
 
 class DeviceLinked {
 	public:
-		DevicePtr device() const {
-			return _device;
-		}
+		DevicePtr device() const;
 
 		template<typename T>
 		void destroy(T t) const; /* {
@@ -41,19 +39,13 @@ class DeviceLinked {
 
 	protected:
 		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
-		DeviceLinked() : _device(nullptr) {
-			// for putting breakpoints
-		}
+		DeviceLinked();
 
-		DeviceLinked(DevicePtr dev) : _device(dev) {
-			if(!dev) {
-				fatal("Null device.");
-			}
-		}
+		DeviceLinked(DevicePtr dev);
 
-		void swap(DeviceLinked& other) {
-			std::swap(_device, other._device);
-		}
+		DeviceLinked(ThreadDevicePtr dev);
+
+		void swap(DeviceLinked& other);
 
 	private:
 		DevicePtr _device;

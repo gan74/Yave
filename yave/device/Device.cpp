@@ -23,6 +23,8 @@ SOFTWARE.
 #include <yave/device/Device.h>
 #include <yave/commands/CmdBuffer.h>
 
+#include <mutex>
+
 namespace yave {
 
 static void check_features(const vk::PhysicalDeviceFeatures& features, const vk::PhysicalDeviceFeatures& required) {
@@ -101,9 +103,6 @@ Device::Device(Instance& instance) :
 		_device{create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())},
 		_sampler(this),
 		_allocator(this),
-		_secondary_cmd_pool(this),
-		_disposable_cmd_pool(this),
-		_primary_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
 
 	for(const auto& family : _queue_families) {
@@ -116,15 +115,6 @@ Device::~Device() {
 	for(auto q : _queues) {
 		q.waitIdle();
 	}
-
-	_sampler = Sampler();
-
-	// we need to destroy the pools before the device
-	_primary_cmd_pool = CmdBufferPool<CmdBufferUsage::Primary>();
-	_disposable_cmd_pool = CmdBufferPool<CmdBufferUsage::Disposable>();
-	_secondary_cmd_pool = CmdBufferPool<CmdBufferUsage::Secondary>();
-
-	delete _descriptor_layout_pool;
 }
 
 const PhysicalDevice& Device::physical_device() const {
@@ -146,6 +136,15 @@ const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
 		}
 	}
 	return fatal("Unable to find queue.");
+}
+
+ThreadDevicePtr Device::thread_data() const {
+	std::unique_lock lock(_lock);
+	auto thread_id = std::this_thread::get_id();
+	if(auto it = _thread_local_datas.find(thread_id); it != _thread_local_datas.end()) {
+		return it->second.as_ptr();
+	}
+	return (_thread_local_datas[thread_id] = new ThreadLocalDeviceData(this)).as_ptr();
 }
 
 const vk::PhysicalDeviceLimits& Device::vk_limits() const {
