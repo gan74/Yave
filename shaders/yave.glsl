@@ -137,7 +137,8 @@ vec3 unproject(vec2 uv, float depth, mat4 inv_matrix) {
 
 vec3 project(vec3 pos, mat4 proj_matrix) {
 	vec4 p = proj_matrix * vec4(pos, 1.0);
-	return (p.xyz / p.w) * 0.5 + vec3(0.5);
+	vec3 p3 = p.xyz / p.w;
+	return vec3(p3.xy * 0.5 + vec2(0.5), p3.z);
 }
 
 // -------------------------------- CULLING --------------------------------
