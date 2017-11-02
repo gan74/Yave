@@ -86,13 +86,14 @@ void schedule_n(F&& func, u32 n) {
 void init_thread_pool();
 usize concurency();
 usize probable_block_count();
+usize probable_block_count(usize size);
 
 
 
 template<typename It, typename Func>
 void parallel_indexed_block_for(It begin, It end, Func&& func) {
 	usize size = end - begin;
-	usize chunk = std::max(usize(1), size / (probable_block_count() - 1));
+	usize chunk = std::max(usize(1), size / (probable_block_count(size) - 1));
 
 	if(!size) {
 		return;
@@ -143,7 +144,7 @@ auto parallel_block_collect(It begin, It end, Func&& func) {
 	std::mutex mutex;
 
 	C<T> col;
-	try_reserve(col, probable_block_count());
+	try_reserve(col, probable_block_count(std::distance(begin, end)));
 
 	parallel_indexed_block_for(begin, end, [&](usize, auto&& range) {
 		auto e = func(range);

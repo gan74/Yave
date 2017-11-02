@@ -54,6 +54,16 @@ int main() {
 		});
 	}
 
+	/*{
+		DebugTimer timer("OpenMP");
+
+		usize end = v.size();
+		#pragma omp parallel for schedule(guided)
+		for(usize i = 0; i < end; ++i) {
+			slow(v[i]);
+		};
+	}*/
+
 	concurrent::init_thread_pool();
 
 	{
@@ -62,6 +72,8 @@ int main() {
 			slow(i);
 		});
 	}
+
+
 
 	{
 		std::atomic<usize> sum(0);

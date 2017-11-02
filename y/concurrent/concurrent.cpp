@@ -131,7 +131,12 @@ usize concurency() {
 }
 
 usize probable_block_count() {
-	return concurency_level * 2;
+	return concurency_level * 16;
+}
+
+usize probable_block_count(usize size) {
+	usize loglog = log2ui(log2ui(size));
+	return std::clamp(concurency_level * (loglog * loglog), usize(1), size);
 }
 
 }
