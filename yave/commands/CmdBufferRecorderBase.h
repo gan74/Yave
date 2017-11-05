@@ -31,13 +31,14 @@ SOFTWARE.
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/GraphicPipeline.h>
 #include <yave/shaders/ComputeProgram.h>
-#include <yave/bindings/DescriptorSet.h>
 #include <yave/framebuffer/Viewport.h>
 
 
 namespace yave {
 
-class CmdBufferRecorderBase : NonCopyable {
+class DescriptorSet;
+
+class CmdBufferRecorderBase : public CmdBufferBase {
 	protected:
 		class PushConstant : NonCopyable {
 				template<typename... Args>
@@ -79,8 +80,6 @@ class CmdBufferRecorderBase : NonCopyable {
 
 		~CmdBufferRecorderBase();
 
-		vk::CommandBuffer vk_cmd_buffer() const;
-
 		const RenderPass& current_pass() const;
 
 		void set_viewport(const Viewport& view);
@@ -97,20 +96,17 @@ class CmdBufferRecorderBase : NonCopyable {
 
 		template<typename T>
 		void keep_alive(T&& t) {
-			_cmd_buffer.keep_alive(std::forward<T>(t));
+			CmdBufferBase::keep_alive(std::forward<T>(t));
 		}
 
 	protected:
 		CmdBufferRecorderBase() = default;
-		CmdBufferRecorderBase(CmdBufferBase&& base);
+		CmdBufferRecorderBase(CmdBufferBase&& cmd_buffer);
 
 		void swap(CmdBufferRecorderBase& other);
 
-
-		CmdBufferBase _cmd_buffer;
 		const RenderPass* _render_pass = nullptr;
 };
-
 
 
 class SecondaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
@@ -145,6 +141,7 @@ class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
 	private:
 		void bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass);
 };
+
 
 static_assert(is_safe_base<CmdBufferRecorderBase>::value);
 

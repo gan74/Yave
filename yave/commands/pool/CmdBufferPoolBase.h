@@ -29,7 +29,7 @@ SOFTWARE.
 #include <yave/device/DeviceLinked.h>
 
 #include <yave/commands/CmdBufferUsage.h>
-#include <yave/commands/CmdBufferData.h>
+#include <yave/commands/data/CmdBufferData.h>
 
 namespace yave {
 

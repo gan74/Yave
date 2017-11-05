@@ -26,7 +26,32 @@ SOFTWARE.
 
 namespace yave {
 
-QueueFamily::QueueFamily(u32 index, const vk::QueueFamilyProperties& props) : _index(index), _queue_count(props.queueCount), _flags(props.queueFlags) {
+
+
+
+core::Result<QueueFamily> QueueFamily::create(const PhysicalDevice& dev, u32 index) {
+	auto families = dev.vk_physical_device().getQueueFamilyProperties();
+	if(families.size() >= index) {
+		return core::Err();
+	}
+	return core::Ok(QueueFamily(index, families[index]));
+}
+
+core::Vector<QueueFamily> QueueFamily::all(const PhysicalDevice& dev) {
+	core::Vector<QueueFamily> queue_families;
+
+	auto families = dev.vk_physical_device().getQueueFamilyProperties();
+	for(u32 i = 0; i != families.size(); ++i) {
+		queue_families << QueueFamily(i, families[i]);
+	}
+
+	return queue_families;
+}
+
+QueueFamily::QueueFamily(u32 index, const vk::QueueFamilyProperties& props) :
+		_index(index),
+		_queue_count(props.queueCount),
+		_flags(props.queueFlags) {
 }
 
 u32 QueueFamily::index() const {
@@ -41,10 +66,10 @@ vk::QueueFlags QueueFamily::flags() const {
 	return _flags;
 }
 
-core::Vector<vk::Queue> QueueFamily::fetch_queues(DevicePtr dptr) const {
-	auto queues = core::vector_with_capacity<vk::Queue>(_queue_count);
+core::Vector<Queue> QueueFamily::queues(DevicePtr dptr) const {
+	auto queues = core::vector_with_capacity<Queue>(_queue_count);
 	for(u32 i = 0; i != _queue_count; ++i) {
-		queues << dptr->vk_device().getQueue(_index, i);
+		queues << Queue(dptr->vk_device().getQueue(_index, i));
 	}
 	return queues;
 }

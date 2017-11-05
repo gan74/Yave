@@ -43,7 +43,7 @@ class Font : NonCopyable {
 		Font(DevicePtr dptr, const FontData& data);
 
 		Font(Font&& other);
-		Font& operator=(Font& other);
+		Font& operator=(Font&& other);
 
 
 		CharData char_data(u32 c) const;

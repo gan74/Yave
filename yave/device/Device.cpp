@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include <yave/device/Device.h>
-#include <yave/commands/CmdBuffer.h>
+#include <yave/commands/CmdBufferBase.h>
 
 #include <mutex>
 
@@ -37,16 +37,6 @@ static void check_features(const vk::PhysicalDeviceFeatures& features, const vk:
 	}
 }
 
-static core::Vector<QueueFamily> compute_queue_families(vk::PhysicalDevice physical) {
-	core::Vector<QueueFamily> queue_families;
-
-	auto families = physical.getQueueFamilyProperties();
-	for(u32 i = 0; i != families.size(); ++i) {
-		queue_families << QueueFamily(i, families[i]);
-	}
-	return queue_families;
-}
-
 static vk::Device create_device(
 		vk::PhysicalDevice physical,
 		const core::Vector<QueueFamily>& queue_families,
@@ -54,7 +44,6 @@ static vk::Device create_device(
 		const DebugParams& debug) {
 
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
-
 
 	auto prio_count = std::max_element(queue_families.begin(), queue_families.end(),
 			[](const auto& a, const auto& b) { return a.count() < b.count(); })->count();
@@ -99,7 +88,7 @@ Device::ScopedDevice::~ScopedDevice() {
 Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
-		_queue_families(compute_queue_families(_physical.vk_physical_device())),
+		_queue_families(QueueFamily::all(_physical)),
 		_device{create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())},
 		_sampler(this),
 		_allocator(this),
@@ -109,15 +98,13 @@ Device::Device(Instance& instance) :
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
 
 	for(const auto& family : _queue_families) {
-		auto q = family.fetch_queues(this);
-		_queues.push_back(q.begin(), q.end());
+		for(auto& queue : family.queues(this)) {
+			_queues.push_back(std::move(queue));
+		}
 	}
 }
 
 Device::~Device() {
-	for(auto q : _queues) {
-		q.waitIdle();
-	}
 }
 
 const PhysicalDevice& Device::physical_device() const {
@@ -141,6 +128,14 @@ const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
 	return fatal("Unable to find queue.");
 }
 
+const Queue& Device::queue(vk::QueueFlags) const {
+	return _queues.first();
+}
+
+Queue& Device::queue(vk::QueueFlags) {
+	return _queues.first();
+}
+
 ThreadDevicePtr Device::thread_data() const {
 	std::unique_lock lock(_lock);
 	auto thread_id = std::this_thread::get_id();
@@ -156,11 +151,6 @@ const vk::PhysicalDeviceLimits& Device::vk_limits() const {
 
 vk::Device Device::vk_device() const {
 	return _device.device;
-}
-
-vk::Queue Device::vk_queue(vk::QueueFlags) const {
-#warning change Device::vk_queue
-	return _queues.first();
 }
 
 vk::Sampler Device::vk_sampler() const {

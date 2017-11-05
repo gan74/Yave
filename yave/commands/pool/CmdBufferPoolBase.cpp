@@ -106,9 +106,7 @@ CmdBufferData CmdBufferPoolBase::create_data() {
 	auto fence =
 		(_usage == CmdBufferUsage::Secondary)
 			? vk::Fence()
-			: device()->vk_device().createFence(vk::FenceCreateInfo()
-					.setFlags(vk::FenceCreateFlagBits::eSignaled)
-				);
+			: device()->vk_device().createFence(vk::FenceCreateInfo());
 
 	_fences << fence;
 	//log_msg("new command buffer created (" + core::str(uenum(_usage)) + ") " + _cmd_buffers.size() + " waiting");

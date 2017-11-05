@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMMANDS_POOL_CMDBUFFERPOOL_H
-#define YAVE_COMMANDS_POOL_CMDBUFFERPOOL_H
 
-#include <yave/commands/CmdBufferRecorder.h>
-#include "CmdBufferPoolBase.h"
+#include <yave/device/Device.h>
+
+#include "Queue.h"
 
 namespace yave {
 
-template<CmdBufferUsage Usage>
-class CmdBufferPool : public CmdBufferPoolBase {
+Queue::Queue(vk::Queue queue) : _queue(queue) {
+}
 
-	public:
-		CmdBufferPool() = default;
+Queue::~Queue() {
+	if(_queue) {
+		wait();
+	}
+}
 
-		CmdBufferPool(DevicePtr dptr) : CmdBufferPoolBase(dptr, Usage) {
-		}
+Queue::Queue(Queue&& other) {
+	swap(other);
+}
 
-		CmdBuffer<Usage> create_buffer() {
-			return CmdBuffer<Usage>(alloc());
-		}
+Queue& Queue::operator=(Queue&& other) {
+	swap(other);
+	return *this;
+}
 
-	private:
-};
+void Queue::swap(Queue& other) {
+	std::swap(_queue, other._queue);
+}
+
+vk::Queue Queue::vk_queue() const {
+	return _queue;
+}
+
+void Queue::wait() {
+	_queue.waitIdle();
+}
+
+void Queue::submit_base(CmdBufferBase& base) const {
+	auto cmd = base.vk_cmd_buffer();
+	_queue.submit(vk::SubmitInfo()
+			.setCommandBufferCount(1)
+			.setPCommandBuffers(&cmd),
+		base.vk_fence());
+}
 
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERPOOL_H

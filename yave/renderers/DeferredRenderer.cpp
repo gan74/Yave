@@ -47,7 +47,7 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 	recorder.dispatch_size(brdf_integrator, image.size(), {dset});
-	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 
 	return image;
 }

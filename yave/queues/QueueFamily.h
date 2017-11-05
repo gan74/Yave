@@ -22,7 +22,9 @@ SOFTWARE.
 #ifndef YAVE_QUEUES_QUEUEFAMILY_H
 #define YAVE_QUEUES_QUEUEFAMILY_H
 
-#include <yave/vk/vk.h>
+#include <yave/device/PhysicalDevice.h>
+
+#include "Queue.h"
 
 namespace yave {
 
@@ -31,19 +33,23 @@ class QueueFamily {
 	public:
 		static constexpr auto Graphics = vk::QueueFlagBits::eGraphics;
 
-		QueueFamily(u32 index, const vk::QueueFamilyProperties& props);
+		static core::Result<QueueFamily> create(const PhysicalDevice& dev, u32 index);
+		static core::Vector<QueueFamily> all(const PhysicalDevice& dev);
 
 		u32 index() const;
 		u32 count() const;
 
 		vk::QueueFlags flags() const;
 
-		core::Vector<vk::Queue> fetch_queues(DevicePtr dptr) const;
+		core::Vector<Queue> queues(DevicePtr dptr) const;
 
 	private:
+		QueueFamily(u32 index, const vk::QueueFamilyProperties& props);
+
 		u32 _index;
 		u32 _queue_count;
 		vk::QueueFlags _flags;
+
 
 };
 

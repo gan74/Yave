@@ -21,7 +21,9 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferRecorder.h"
+
 #include <yave/material/Material.h>
+#include <yave/bindings/DescriptorSet.h>
 
 namespace yave {
 
@@ -29,7 +31,8 @@ static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 	return vk::CommandBufferUsageFlagBits(uenum(u) & ~uenum(CmdBufferUsage::Secondary));
 }
 
-CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base) : _cmd_buffer(std::move(base)) {
+CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& cmd_buffer) {
+	CmdBufferBase::swap(cmd_buffer);
 }
 
 CmdBufferRecorderBase::~CmdBufferRecorderBase() {
@@ -39,12 +42,8 @@ CmdBufferRecorderBase::~CmdBufferRecorderBase() {
 }
 
 void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
-	_cmd_buffer.swap(other._cmd_buffer);
+	CmdBufferBase::swap(other);
 	std::swap(_render_pass, other._render_pass);
-}
-
-vk::CommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
-	return _cmd_buffer.vk_cmd_buffer();
 }
 
 const RenderPass& CmdBufferRecorderBase::current_pass() const {
@@ -151,7 +150,7 @@ void PrimaryCmdBufferRecorderBase::end_renderpass() {
 }
 
 void PrimaryCmdBufferRecorderBase::execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer) {
-	_cmd_buffer.keep_alive(secondary._proxy);
+	keep_alive(secondary._proxy);
 
 	bind_framebuffer(framebuffer, vk::SubpassContents::eSecondaryCommandBuffers);
 	vk_cmd_buffer().executeCommands({secondary.vk_cmd_buffer()});

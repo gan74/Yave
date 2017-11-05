@@ -22,20 +22,9 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_RECORDEDCMDBUFFER_H
 #define YAVE_COMMANDS_RECORDEDCMDBUFFER_H
 
-#include "CmdBuffer.h"
+#include "CmdBufferRecorder.h"
 
 namespace yave {
-
-struct AsyncSubmit {
-	void operator()(const CmdBufferBase&) const {
-	}
-};
-
-struct SyncSubmit {
-	void operator()(const CmdBufferBase& b) const {
-		b.wait();
-	}
-};
 
 template<CmdBufferUsage Usage>
 class RecordedCmdBuffer : public CmdBufferBase {
@@ -45,7 +34,7 @@ class RecordedCmdBuffer : public CmdBufferBase {
 			recorder.end_renderpass();
 		}
 		recorder.vk_cmd_buffer().end();
-		return std::move(recorder._cmd_buffer);
+		return std::move(recorder);
 	}
 
 	public:
@@ -61,12 +50,6 @@ class RecordedCmdBuffer : public CmdBufferBase {
 		RecordedCmdBuffer& operator=(RecordedCmdBuffer&& other) {
 			swap(other);
 			return *this;
-		}
-
-		template<typename Policy>
-		void submit(vk::Queue queue, const Policy& policy = Policy()) {
-			CmdBufferBase::submit(queue);
-			policy(*this);
 		}
 
 	private:

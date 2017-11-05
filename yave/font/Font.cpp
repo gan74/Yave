@@ -43,7 +43,7 @@ Font::Font(Font&& other) {
 	swap(other);
 }
 
-Font& Font::operator=(Font& other) {
+Font& Font::operator=(Font&& other) {
 	swap(other);
 	return *this;
 }

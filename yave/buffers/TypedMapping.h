@@ -112,7 +112,7 @@ template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Tra
 TypedBuffer<Elem, Usage, Memory, Transfer>::TypedBuffer(DevicePtr dptr, const core::ArrayView<Elem>& data) : TypedBuffer(dptr, data.size()) {
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
 	std::copy(data.begin(), data.end(), TypedMapping(*this, recorder).begin());
-	RecordedCmdBuffer<CmdBufferUsage::Disposable>(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer<CmdBufferUsage::Disposable>(std::move(recorder)));
 }
 
 template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>

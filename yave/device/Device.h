@@ -57,6 +57,8 @@ class Device : NonCopyable {
 		CmdBuffer<CmdBufferUsage::Primary> create_cmd_buffer() const;
 
 		const QueueFamily& queue_family(vk::QueueFlags flags) const;
+		const Queue& queue(vk::QueueFlags) const;
+		Queue& queue(vk::QueueFlags);
 
 		ThreadDevicePtr thread_data() const;
 
@@ -64,7 +66,7 @@ class Device : NonCopyable {
 
 		vk::Device vk_device() const;
 		vk::Sampler vk_sampler() const;
-		vk::Queue vk_queue(vk::QueueFlags) const;
+
 
 		template<typename T>
 		auto create_descriptor_set_layout(T&& t) const {
@@ -87,7 +89,7 @@ class Device : NonCopyable {
 
 		ScopedDevice _device;
 
-		core::Vector<vk::Queue> _queues;
+		core::Vector<Queue> _queues;
 
 		Sampler _sampler;
 

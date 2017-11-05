@@ -23,7 +23,6 @@ SOFTWARE.
 #include "CmdBufferBase.h"
 
 #include <yave/commands/pool/CmdBufferPoolBase.h>
-#include <yave/device/Device.h>
 
 namespace yave {
 
@@ -38,16 +37,8 @@ void CmdBufferBase::swap(CmdBufferBase& other) {
 	std::swap(_proxy, other._proxy);
 }
 
-void CmdBufferBase::submit(vk::Queue queue) {
-	device()->vk_device().resetFences(_proxy->data().vk_fence());
-	queue.submit(vk::SubmitInfo()
-			.setCommandBufferCount(1)
-			.setPCommandBuffers(&_proxy->data().vk_cmd_buffer()),
-		_proxy->data().vk_fence());
-}
-
 void CmdBufferBase::wait() const {
-	device()->vk_device().waitForFences({_proxy->data().vk_fence()}, true, u64(-1));
+	device()->vk_device().waitForFences({vk_fence()}, true, u64(-1));
 }
 
 DevicePtr CmdBufferBase::device() const {

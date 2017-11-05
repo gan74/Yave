@@ -44,7 +44,7 @@ YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), threa
 }
 
 YaveApp::~YaveApp() {
-	device.vk_queue(QueueFamily::Graphics).waitIdle();
+	device.queue(QueueFamily::Graphics).wait();
 
 	delete scene_view;
 	delete scene;
@@ -69,10 +69,9 @@ void YaveApp::draw() {
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
-	auto graphic_queue = device.vk_queue(QueueFamily::Graphics);
+	auto graphic_queue = device.queue(QueueFamily::Graphics).vk_queue();
 	auto vk_buffer = cmd_buffer.vk_cmd_buffer();
 
-	cmd_buffer.wait();
 	device.vk_device().resetFences(cmd_buffer.vk_fence());
 	graphic_queue.submit(vk::SubmitInfo()
 			.setWaitSemaphoreCount(1)

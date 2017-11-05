@@ -224,8 +224,7 @@ void Swapchain::build_swapchain() {
 	for(auto& i : _images) {
 		recorder.transition_image(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 	}
-	auto graphic_queue = device()->vk_queue(QueueFamily::Graphics);
-	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(graphic_queue);
+	device()->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 FrameToken Swapchain::next_frame() {

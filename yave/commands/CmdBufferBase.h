@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_CMDBUFFERBASE_H
 #define YAVE_COMMANDS_CMDBUFFERBASE_H
 
-#include "CmdBufferData.h"
+#include <yave/commands/data/CmdBufferData.h>
 
 namespace yave {
 
@@ -31,30 +31,27 @@ class PrimaryCmdBufferRecorderBase;
 
 struct CmdBufferBase : NonCopyable {
 	public:
+		DevicePtr device() const;
+
 		vk::CommandBuffer vk_cmd_buffer() const;
 		vk::Fence vk_fence() const;
-		DevicePtr device() const;
 
 		void wait() const;
 
 	protected:
-		friend class CmdBufferRecorderBase;
 		friend class PrimaryCmdBufferRecorderBase;
 
 		CmdBufferBase() = default;
-		CmdBufferBase(core::Arc<CmdBufferDataProxy>&& data);
+		CmdBufferBase(core::Arc<CmdBufferDataProxy>&& proxy);
 		CmdBufferBase(CmdBufferBase&& other);
 
 		void swap(CmdBufferBase& other);
-
-		void submit(vk::Queue queue);
 
 		template<typename T>
 		void keep_alive(T&& t) {
 			_proxy->data().keep_alive(std::forward<T>(t));
 		}
 
-	private:
 		core::Arc<CmdBufferDataProxy> _proxy;
 };
 

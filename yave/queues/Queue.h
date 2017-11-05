@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMMANDS_POOL_CMDBUFFERPOOL_H
-#define YAVE_COMMANDS_POOL_CMDBUFFERPOOL_H
+#ifndef YAVE_QUEUES_QUEUE_H
+#define YAVE_QUEUES_QUEUE_H
 
-#include <yave/commands/CmdBufferRecorder.h>
-#include "CmdBufferPoolBase.h"
+#include <yave/vk/vk.h>
+
+#include "submit.h"
 
 namespace yave {
 
-template<CmdBufferUsage Usage>
-class CmdBufferPool : public CmdBufferPoolBase {
+class Queue : NonCopyable {
 
 	public:
-		CmdBufferPool() = default;
+		Queue(vk::Queue queue);
+		~Queue();
 
-		CmdBufferPool(DevicePtr dptr) : CmdBufferPoolBase(dptr, Usage) {
-		}
+		Queue(Queue&& other);
+		Queue& operator=(Queue&& other);
 
-		CmdBuffer<Usage> create_buffer() {
-			return CmdBuffer<Usage>(alloc());
+		vk::Queue vk_queue() const;
+
+		void wait();
+
+		template<typename Policy, CmdBufferUsage Usage>
+		auto submit(RecordedCmdBuffer<Usage>&& cmd, const Policy& policy = Policy()) const {
+			static_assert(Usage != CmdBufferUsage::Secondary, "Secondary CmdBuffers can not be directly submitted");
+			submit_base(cmd);
+			return policy(cmd);
 		}
 
 	private:
+		Queue() = default;
+
+		void swap(Queue& other);
+
+		void submit_base(CmdBufferBase& base) const;
+
+		vk::Queue _queue;
 };
 
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERPOOL_H
+#endif // YAVE_QUEUES_QUEUE_H

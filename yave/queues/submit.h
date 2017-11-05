@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2017 Grégoire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMMANDS_POOL_CMDBUFFERPOOL_H
-#define YAVE_COMMANDS_POOL_CMDBUFFERPOOL_H
+#ifndef YAVE_QUEUES_SUBMIT_H
+#define YAVE_QUEUES_SUBMIT_H
 
-#include <yave/commands/CmdBufferRecorder.h>
-#include "CmdBufferPoolBase.h"
+#include <yave/commands/RecordedCmdBuffer.h>
 
 namespace yave {
 
-template<CmdBufferUsage Usage>
-class CmdBufferPool : public CmdBufferPoolBase {
+struct AsyncSubmit {
+	template<CmdBufferUsage Usage>
+	void operator()(const RecordedCmdBuffer<Usage>&) const {
+	}
+};
 
-	public:
-		CmdBufferPool() = default;
-
-		CmdBufferPool(DevicePtr dptr) : CmdBufferPoolBase(dptr, Usage) {
-		}
-
-		CmdBuffer<Usage> create_buffer() {
-			return CmdBuffer<Usage>(alloc());
-		}
-
-	private:
+struct SyncSubmit {
+	template<CmdBufferUsage Usage>
+	void operator()(const RecordedCmdBuffer<Usage>& b) const {
+		b.wait();
+	}
 };
 
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERPOOL_H
+#endif // YAVE_QUEUES_SUBMIT_H

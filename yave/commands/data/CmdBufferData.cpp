@@ -40,7 +40,7 @@ CmdBufferData& CmdBufferData::operator=(CmdBufferData&& other) {
 
 CmdBufferData::~CmdBufferData() {
 	if(_pool) {
-		if(_fence && device()->vk_device().waitForFences({_fence}, true, 0) != vk::Result::eSuccess) {
+		if(_fence && device()->vk_device().getFenceStatus(_fence) != vk::Result::eSuccess) {
 			fatal("CmdBuffer is still in use.");
 		}
 		device()->vk_device().freeCommandBuffers(_pool->vk_pool(), _cmd_buffer);
@@ -73,11 +73,14 @@ void CmdBufferData::swap(CmdBufferData& other) {
 
 void CmdBufferData::reset() {
 	_keep_alive.clear();
+	if(_fence) {
+		device()->vk_device().resetFences({_fence});
+	}
 	_cmd_buffer.reset(vk::CommandBufferResetFlags());
 }
 
 bool CmdBufferData::try_reset() {
-	if(_fence && device()->vk_device().waitForFences({_fence}, true, 0) != vk::Result::eSuccess) {
+	if(_fence && device()->vk_device().getFenceStatus(_fence) != vk::Result::eSuccess) {
 		return false;
 	}
 	reset();
