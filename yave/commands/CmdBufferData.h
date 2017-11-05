@@ -28,24 +28,72 @@ namespace yave {
 
 class CmdBufferDataProxy;
 
-struct CmdBufferData : NonCopyable {
-	vk::CommandBuffer cmd_buffer;
-	vk::Fence fence;
+class CmdBufferData : NonCopyable {
+	struct KeepAlive : NonCopyable {
+		virtual ~KeepAlive() {}
+	};
 
-	core::Vector<core::Arc<CmdBufferDataProxy>> keep_alive;
-	CmdBufferPoolBase* pool = nullptr;
+	public:
+		CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p);
+
+		CmdBufferData() = default;
+
+		CmdBufferData(CmdBufferData&& other);
+		CmdBufferData& operator=(CmdBufferData&& other);
+
+		~CmdBufferData();
+
+		DevicePtr device() const;
+
+		CmdBufferPoolBase* pool() const;
+
+		const vk::CommandBuffer& vk_cmd_buffer() const;
+		const vk::Fence& vk_fence() const;
+
+		void reset();
+		bool try_reset();
+
+		template<typename T>
+		void keep_alive(T&& t) {
+			struct Box : KeepAlive {
+				Box(T&& t) : _t(std::forward<T>(t)) {}
+				~Box() override {}
+				std::remove_reference_t<T> _t;
+			};
+			_keep_alive.emplace_back(new Box(std::forward<T>(t)));
+		}
 
 
+	protected:
+		void swap(CmdBufferData& other);
 
-	CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p);
+	private:
+		vk::CommandBuffer _cmd_buffer;
+		vk::Fence _fence;
 
-	CmdBufferData() = default;
-
-	CmdBufferData(CmdBufferData&& other);
-	CmdBufferData& operator=(CmdBufferData&& other);
-
-	void swap(CmdBufferData& other);
+		core::Vector<core::Unique<KeepAlive>> _keep_alive;
+		CmdBufferPoolBase* _pool = nullptr;
 };
+
+
+class CmdBufferDataProxy {
+
+	public:
+		CmdBufferDataProxy() = default;
+		CmdBufferDataProxy(CmdBufferDataProxy&& other);
+		CmdBufferDataProxy& operator=(CmdBufferDataProxy&& other);
+
+		CmdBufferDataProxy(CmdBufferData&& d);
+
+		~CmdBufferDataProxy();
+
+		CmdBufferData& data();
+
+	private:
+		CmdBufferData _data;
+
+};
+
 
 }
 

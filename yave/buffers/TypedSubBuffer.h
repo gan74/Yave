@@ -60,10 +60,6 @@ class TypedSubBuffer : public SubBuffer<Usage, Memory, Transfer> {
 		usize offset() const {
 			return this->byte_offset() / sizeof(Elem);
 		}
-
-		TypedMapping<value_type, Memory> map() {
-			return TypedMapping<value_type, Memory>(*this);
-		}
 };
 
 }

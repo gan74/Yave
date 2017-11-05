@@ -151,7 +151,7 @@ void PrimaryCmdBufferRecorderBase::end_renderpass() {
 }
 
 void PrimaryCmdBufferRecorderBase::execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer) {
-	_cmd_buffer.keep_alive(secondary);
+	_cmd_buffer.keep_alive(secondary._proxy);
 
 	bind_framebuffer(framebuffer, vk::SubpassContents::eSecondaryCommandBuffers);
 	vk_cmd_buffer().executeCommands({secondary.vk_cmd_buffer()});

@@ -36,15 +36,6 @@ class CmdBufferPool : public CmdBufferPoolBase {
 		CmdBufferPool(DevicePtr dptr) : CmdBufferPoolBase(dptr, Usage) {
 		}
 
-		CmdBufferPool(CmdBufferPool&& other) {
-			swap(other);
-		}
-
-		CmdBufferPool& operator=(CmdBufferPool&& other) {
-			swap(other);
-			return *this;
-		}
-
 		CmdBuffer<Usage> create_buffer() {
 			return CmdBuffer<Usage>(alloc());
 		}

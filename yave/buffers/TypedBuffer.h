@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef YAVE_BUFFERS_TYPEDBUFFER_H
 #define YAVE_BUFFERS_TYPEDBUFFER_H
 
-
 #include <yave/yave.h>
-#include "TypedMapping.h"
+
+#include "Buffer.h"
 
 namespace yave {
 
@@ -38,10 +38,7 @@ class TypedBuffer : public Buffer<Usage, Memory, Transfer> {
 
 		TypedBuffer() = default;
 
-		TypedBuffer(DevicePtr dptr, const core::ArrayView<Elem>& data) : TypedBuffer(dptr, data.size()) {
-			auto mapping = map();
-			std::copy(data.begin(), data.end(), mapping.begin());
-		}
+		TypedBuffer(DevicePtr dptr, const core::ArrayView<Elem>& data); // See TypedMapping.h
 
 		TypedBuffer(DevicePtr dptr, usize elem_count) : Base(dptr, elem_count * sizeof(Elem)) {
 		}
@@ -57,10 +54,6 @@ class TypedBuffer : public Buffer<Usage, Memory, Transfer> {
 
 		usize size() const {
 			return this->byte_size() / sizeof(Elem);
-		}
-
-		auto map() {
-			return TypedMapping<value_type, Memory>(*this);
 		}
 };
 

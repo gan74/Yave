@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "SceneRenderer.h"
 
+#include <yave/buffers/TypedMapping.h>
+
 namespace yave {
 
 static constexpr usize batch_size = 128 * 1024;
@@ -43,11 +45,12 @@ void SceneRenderer::build_frame_graph(RenderingNode<result_type>& node, const Fr
 	node.set_func([=, token = node.token(), &framebuffer]() {
 			CmdBufferRecorder<CmdBufferUsage::Secondary> recorder(device()->create_secondary_cmd_buffer(), framebuffer);
 
-			_camera_buffer.map()[0] = scene_view().camera().viewproj_matrix();
 			const auto& results = culling.get();
 
+			auto camera_mapping = TypedMapping(_camera_buffer);
+			camera_mapping[0] = scene_view().camera().viewproj_matrix();
 
-			auto attrib_mapping = _attrib_buffer.map();
+			auto attrib_mapping = TypedMapping(_attrib_buffer);
 			AttribData attrib_data{0, attrib_mapping.size(), attrib_mapping.begin()};
 
 			render_renderables(recorder, token, results.renderables, attrib_data);

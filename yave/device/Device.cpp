@@ -103,6 +103,9 @@ Device::Device(Instance& instance) :
 		_device{create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())},
 		_sampler(this),
 		_allocator(this),
+		_secondary_cmd_pool(this),
+		_disposable_cmd_pool(this),
+		_primary_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
 
 	for(const auto& family : _queue_families) {
@@ -162,6 +165,18 @@ vk::Queue Device::vk_queue(vk::QueueFlags) const {
 
 vk::Sampler Device::vk_sampler() const {
 	return _sampler.vk_sampler();
+}
+
+CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() const {
+	return _disposable_cmd_pool.create_buffer();
+}
+
+CmdBuffer<CmdBufferUsage::Secondary> Device::create_secondary_cmd_buffer() const {
+	return _secondary_cmd_pool.create_buffer();
+}
+
+CmdBuffer<CmdBufferUsage::Primary> Device::create_cmd_buffer() const {
+	return _primary_cmd_pool.create_buffer();
 }
 
 

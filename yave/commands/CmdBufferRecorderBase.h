@@ -37,43 +37,42 @@ SOFTWARE.
 
 namespace yave {
 
-class PushConstant : NonCopyable {
-		template<typename... Args>
-		static std::true_type is_tuple(const std::tuple<Args...>&);
-
-		template<typename T>
-		static std::false_type is_tuple(const T&);
-
-	public:
-		PushConstant() = default;
-
-		template<typename T>
-		PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
-			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
-			static_assert(!decltype(is_tuple(data))::value, "std::tuple is not standard layout");
-		}
-
-		template<typename T>
-		PushConstant(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
-			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
-			static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
-		}
-
-		const void* data() const {
-			return _data;
-		}
-
-		usize size() const {
-			return _size;
-		}
-
-	private:
-		const void* _data = nullptr;
-		usize _size = 0;
-};
-
-
 class CmdBufferRecorderBase : NonCopyable {
+	protected:
+		class PushConstant : NonCopyable {
+				template<typename... Args>
+				static std::true_type is_tuple(const std::tuple<Args...>&);
+
+				template<typename T>
+				static std::false_type is_tuple(const T&);
+
+			public:
+				PushConstant() = default;
+
+				template<typename T>
+				PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
+					static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+					static_assert(!decltype(is_tuple(data))::value, "std::tuple is not standard layout");
+				}
+
+				template<typename T>
+				PushConstant(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+					static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+					static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
+				}
+
+				const void* data() const {
+					return _data;
+				}
+
+				usize size() const {
+					return _size;
+				}
+
+			private:
+				const void* _data = nullptr;
+				usize _size = 0;
+		};
 
 	public:
 		using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSet>>;
@@ -95,6 +94,11 @@ class CmdBufferRecorderBase : NonCopyable {
 		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
 		void bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
+
+		template<typename T>
+		void keep_alive(T&& t) {
+			_cmd_buffer.keep_alive(std::forward<T>(t));
+		}
 
 	protected:
 		CmdBufferRecorderBase() = default;

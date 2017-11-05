@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_BUFFERS_TYPEDMAPPING_H
 
 #include "BufferUsage.h"
+#include "TypedSubBuffer.h"
 #include "StagingBufferMapping.h"
 
 namespace yave {
@@ -40,8 +41,22 @@ class TypedMapping : public MemoryMapping<Memory> {
 		using const_iterator = Elem const* ;
 		using value_type = Elem;
 
-		template<typename T>
-		TypedMapping(T& buffer) : Base(buffer) {
+		template<BufferUsage Usage, BufferTransfer Transfer>
+		explicit TypedMapping(TypedBuffer<Elem, Usage, Memory, Transfer>& buffer) : Base(buffer) {
+			static_assert(!require_staging(Memory), "Buffer requires staging");
+		}
+
+		template<BufferUsage Usage, BufferTransfer Transfer>
+		explicit TypedMapping(TypedSubBuffer<Elem, Usage, Memory, Transfer>& buffer) : Base(buffer) {
+			static_assert(!require_staging(Memory), "SubBuffer requires staging");
+		}
+
+		template<BufferUsage Usage>
+		explicit TypedMapping(TypedBuffer<Elem, Usage, Memory, BufferTransfer::TransferDst>& buffer, CmdBufferRecorderBase& recorder) : Base(buffer, recorder) {
+		}
+
+		template<BufferUsage Usage>
+		explicit TypedMapping(TypedSubBuffer<Elem, Usage, Memory, BufferTransfer::TransferDst>& buffer, CmdBufferRecorderBase& recorder) : Base(buffer, recorder) {
 		}
 
 		TypedMapping(TypedMapping&& other) {
@@ -92,6 +107,22 @@ class TypedMapping : public MemoryMapping<Memory> {
 	private:
 
 };
+
+template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
+TypedBuffer<Elem, Usage, Memory, Transfer>::TypedBuffer(DevicePtr dptr, const core::ArrayView<Elem>& data) : TypedBuffer(dptr, data.size()) {
+	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+	std::copy(data.begin(), data.end(), TypedMapping(*this, recorder).begin());
+	RecordedCmdBuffer<CmdBufferUsage::Disposable>(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+}
+
+template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
+TypedMapping(TypedBuffer<Elem, Usage, Memory, Transfer>&) -> TypedMapping<Elem, Memory>;
+template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
+TypedMapping(TypedBuffer<Elem, Usage, Memory, Transfer>&, CmdBufferRecorderBase&) -> TypedMapping<Elem, Memory>;
+template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
+TypedMapping(TypedSubBuffer<Elem, Usage, Memory, Transfer>&) -> TypedMapping<Elem, Memory>;
+template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
+TypedMapping(TypedSubBuffer<Elem, Usage, Memory, Transfer>&, CmdBufferRecorderBase&) -> TypedMapping<Elem, Memory>;
 
 
 }

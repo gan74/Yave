@@ -66,6 +66,9 @@ class CmdBufferRecorder<CmdBufferUsage::Secondary> : public SecondaryCmdBufferRe
 		friend class RecordedCmdBuffer<CmdBufferUsage::Secondary>;
 };
 
+template<CmdBufferUsage Usage>
+CmdBufferRecorder(CmdBuffer<Usage>&&) -> CmdBufferRecorder<Usage>;
+
 }
 
 #endif // YAVE_COMMANDS_CMDBUFFERRECORDER_H

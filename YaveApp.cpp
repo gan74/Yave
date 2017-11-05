@@ -33,7 +33,7 @@ namespace yave {
 
 static core::Chrono time;
 
-YaveApp::YaveApp(DebugParams params) : instance(params), device(instance) {
+YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), thread_device(device.thread_data()) {
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMeshInstance));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
 	log_msg("sizeof(DeviceMemory) = "_s + sizeof(DeviceMemory));
@@ -50,6 +50,7 @@ YaveApp::~YaveApp() {
 	delete scene;
 
 	swapchain = nullptr;
+	renderer = nullptr;
 }
 
 void YaveApp::draw() {
@@ -183,7 +184,7 @@ void YaveApp::create_assets() {
 
 	update();
 
-	device.allocator().dump_info();
+	//device.allocator().dump_info();
 }
 
 

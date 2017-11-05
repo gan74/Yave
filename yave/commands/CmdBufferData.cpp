@@ -26,7 +26,7 @@ SOFTWARE.
 namespace yave {
 
 CmdBufferData::CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p) :
-		cmd_buffer(buf), fence(fen), pool(p) {
+		_cmd_buffer(buf), _fence(fen), _pool(p) {
 }
 
 CmdBufferData::CmdBufferData(CmdBufferData&& other) {
@@ -38,11 +38,72 @@ CmdBufferData& CmdBufferData::operator=(CmdBufferData&& other) {
 	return *this;
 }
 
+CmdBufferData::~CmdBufferData() {
+	if(_pool) {
+		if(_fence && device()->vk_device().waitForFences({_fence}, true, 0) != vk::Result::eSuccess) {
+			fatal("CmdBuffer is still in use.");
+		}
+		device()->vk_device().freeCommandBuffers(_pool->vk_pool(), _cmd_buffer);
+		device()->destroy(_fence);
+	}
+}
+
+DevicePtr CmdBufferData::device() const {
+	return _pool ? _pool->device() : nullptr;
+}
+
+CmdBufferPoolBase* CmdBufferData::pool() const {
+	return _pool;
+}
+
+const vk::CommandBuffer& CmdBufferData::vk_cmd_buffer() const {
+	return _cmd_buffer;
+}
+
+const vk::Fence& CmdBufferData::vk_fence() const {
+	return _fence;
+}
+
 void CmdBufferData::swap(CmdBufferData& other) {
-	std::swap(cmd_buffer, other.cmd_buffer);
-	std::swap(fence, other.fence);
-	std::swap(keep_alive, other.keep_alive);
-	std::swap(pool, other.pool);
+	std::swap(_cmd_buffer, other._cmd_buffer);
+	std::swap(_fence, other._fence);
+	std::swap(_keep_alive, other._keep_alive);
+	std::swap(_pool, other._pool);
+}
+
+void CmdBufferData::reset() {
+	_keep_alive.clear();
+	_cmd_buffer.reset(vk::CommandBufferResetFlags());
+}
+
+bool CmdBufferData::try_reset() {
+	if(_fence && device()->vk_device().waitForFences({_fence}, true, 0) != vk::Result::eSuccess) {
+		return false;
+	}
+	reset();
+	return true;
+}
+
+CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferDataProxy&& other) {
+	std::swap(_data, other._data);
+}
+
+CmdBufferDataProxy& CmdBufferDataProxy::operator=(CmdBufferDataProxy&& other) {
+	std::swap(_data, other._data);
+	return *this;
+}
+
+CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferData&& d) : _data(std::move(d)) {
+}
+
+CmdBufferDataProxy::~CmdBufferDataProxy() {
+	if(_data.pool()) {
+		_data.pool()->release(std::move(_data));
+	}
+}
+
+CmdBufferData& CmdBufferDataProxy::data() {
+	return _data;
 }
 
 }

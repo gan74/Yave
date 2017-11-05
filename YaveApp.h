@@ -99,6 +99,7 @@ class YaveApp : NonCopyable {
 
 		Instance instance;
 		Device device;
+		ThreadDevicePtr thread_device;
 
 		core::Vector<core::Unique<DestroyLaterBase>> destroy_laters;
 

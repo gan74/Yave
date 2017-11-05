@@ -37,6 +37,10 @@ inline constexpr bool is_cpu_visible(MemoryType type) {
 	return uenum(type) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
 }
 
+inline constexpr bool require_staging(MemoryType type) {
+	return !is_cpu_visible(type);
+}
+
 }
 
 #endif // YAVE_MEMORY_MEMORYTYPE_H

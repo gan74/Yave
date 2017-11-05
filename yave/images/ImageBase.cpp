@@ -143,8 +143,10 @@ ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const Ima
 }
 
 ImageBase::~ImageBase() {
-	device()->destroy(_view);
-	device()->destroy(_image);
+	if(device()) {
+		device()->destroy(_view);
+		device()->destroy(_image);
+	}
 }
 
 DevicePtr ImageBase::device() const {

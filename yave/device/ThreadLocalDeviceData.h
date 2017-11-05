@@ -36,32 +36,12 @@ class ThreadLocalDeviceData : NonCopyable, public DeviceLinked {
 
 		vk::Device vk_device() const;
 
-		auto create_disposable_cmd_buffer() const {
-			return _disposable_cmd_pool.create_buffer();
-		}
-
-		auto create_secondary_cmd_buffer() const {
-			return _secondary_cmd_pool.create_buffer();
-		}
-
-		auto create_cmd_buffer() const {
-			return _primary_cmd_pool.create_buffer();
-		}
-
-		/*template<typename T>
-		auto create_descriptor_set_layout(T&& t) const {
-			return _descriptor_layout_pool->create_descriptor_set_layout(std::forward<T>(t));
-		}*/
-
 	private:
 		friend class Device;
 
+		NotOwner<vk::Device> _device;
+
 		ThreadLocalDeviceData(DevicePtr dptr);
-
-		mutable CmdBufferPool<CmdBufferUsage::Secondary> _secondary_cmd_pool;
-		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
-		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
-
 };
 
 }

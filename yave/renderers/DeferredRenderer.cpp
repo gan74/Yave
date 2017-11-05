@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/images/IBLProbe.h>
 
 #include <yave/commands/CmdBufferRecorder.h>
-#include <yave/buffers/CpuVisibleMapping.h>
+#include <yave/buffers/TypedMapping.h>
 
 #include <y/core/Chrono.h>
 #include <y/io/File.h>
@@ -98,7 +98,7 @@ void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBu
 			const auto& lights = culling.get().lights;
 
 			{
-				auto mapping = _lights_buffer.map();
+				auto mapping = TypedMapping(_lights_buffer);
 
 				std::transform(lights.begin(), lights.end(), mapping.begin(), [](const Light* l) { return uniform::Light(*l); });
 				std::transform(directionals.begin(), directionals.end(), mapping.begin() + lights.size(), [](const Light* l) { return uniform::Light(*l); });

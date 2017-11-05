@@ -76,6 +76,9 @@ class RecordedCmdBuffer : public CmdBufferBase {
 		}
 };
 
+template<CmdBufferUsage Usage>
+RecordedCmdBuffer(CmdBufferRecorder<Usage>&&) -> RecordedCmdBuffer<Usage>;
+
 }
 
 #endif // YAVE_COMMANDS_RECORDEDCMDBUFFER_H

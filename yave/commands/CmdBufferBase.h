@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_CMDBUFFERBASE_H
 #define YAVE_COMMANDS_CMDBUFFERBASE_H
 
-#include "CmdBufferDataProxy.h"
+#include "CmdBufferData.h"
 
 namespace yave {
 
@@ -48,7 +48,11 @@ struct CmdBufferBase : NonCopyable {
 		void swap(CmdBufferBase& other);
 
 		void submit(vk::Queue queue);
-		void keep_alive(const CmdBufferBase& cmd);
+
+		template<typename T>
+		void keep_alive(T&& t) {
+			_proxy->data().keep_alive(std::forward<T>(t));
+		}
 
 	private:
 		core::Arc<CmdBufferDataProxy> _proxy;

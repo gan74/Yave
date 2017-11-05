@@ -29,11 +29,14 @@ Text::Text(const AssetPtr<Font>& font, const core::String& text) :
 		_text(text),
 		_buffer(_font->device(), _text.size()) {
 
-	auto map = _buffer.map();
+	auto dptr = _font->device();
+	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
+	auto map = TypedMapping(_buffer, recorder);
+	RecordedCmdBuffer(std::move(recorder)).submit<SyncSubmit>(dptr->vk_queue(QueueFamily::Graphics));
+
 	for(usize i = 0; i != _text.size(); ++i) {
 		map[i] = _font->char_data(_text[i]);
 	}
-
 }
 
 void Text::render(const FrameToken&, CmdBufferRecorderBase&, const SceneData&) const {

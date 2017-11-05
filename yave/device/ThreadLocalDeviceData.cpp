@@ -26,22 +26,15 @@ SOFTWARE.
 namespace yave {
 
 ThreadLocalDeviceData::ThreadLocalDeviceData(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_secondary_cmd_pool(device()),
-		_disposable_cmd_pool(device()),
-		_primary_cmd_pool(device())/*,
+		DeviceLinked(dptr)/*,
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(device()))*/ {
 }
 
 ThreadLocalDeviceData::~ThreadLocalDeviceData() {
-	_primary_cmd_pool = CmdBufferPool<CmdBufferUsage::Primary>();
-	_disposable_cmd_pool = CmdBufferPool<CmdBufferUsage::Disposable>();
-	_secondary_cmd_pool = CmdBufferPool<CmdBufferUsage::Secondary>();
 }
 
 vk::Device ThreadLocalDeviceData::vk_device() const {
-#warning cache VkDevice
-	return device()->vk_device();
+	return _device;
 }
 
 }

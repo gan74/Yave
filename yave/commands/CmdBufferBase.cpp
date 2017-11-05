@@ -39,31 +39,28 @@ void CmdBufferBase::swap(CmdBufferBase& other) {
 }
 
 void CmdBufferBase::submit(vk::Queue queue) {
-	device()->vk_device().resetFences(_proxy->data.fence);
+	device()->vk_device().resetFences(_proxy->data().vk_fence());
 	queue.submit(vk::SubmitInfo()
 			.setCommandBufferCount(1)
-			.setPCommandBuffers(&_proxy->data.cmd_buffer),
-		_proxy->data.fence);
-}
-
-void CmdBufferBase::keep_alive(const CmdBufferBase& cmd) {
-	_proxy->data.keep_alive << cmd._proxy;
+			.setPCommandBuffers(&_proxy->data().vk_cmd_buffer()),
+		_proxy->data().vk_fence());
 }
 
 void CmdBufferBase::wait() const {
-	device()->vk_device().waitForFences({_proxy->data.fence}, true, u64(-1));
+	device()->vk_device().waitForFences({_proxy->data().vk_fence()}, true, u64(-1));
 }
 
 DevicePtr CmdBufferBase::device() const {
-	return _proxy->data.pool ? _proxy->data.pool->device() : nullptr;
+	auto pool = _proxy->data().pool();
+	return pool ? pool->device() : nullptr;
 }
 
 vk::CommandBuffer CmdBufferBase::vk_cmd_buffer() const {
-	return _proxy ? _proxy->data.cmd_buffer : vk::CommandBuffer();
+	return _proxy ? _proxy->data().vk_cmd_buffer() : vk::CommandBuffer();
 }
 
 vk::Fence CmdBufferBase::vk_fence() const {
-	return  _proxy ? _proxy->data.fence : vk::Fence();
+	return  _proxy ? _proxy->data().vk_fence() : vk::Fence();
 }
 
 }

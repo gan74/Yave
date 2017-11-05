@@ -31,25 +31,34 @@ class DeviceLinked {
 		DevicePtr device() const;
 
 		template<typename T>
-		void destroy(T t) const; /* {
-			if(_device) {
-				_device->destroy(t);
-			}
-		}*/
+		void destroy(T t) const;
 
 	protected:
 		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
 		DeviceLinked();
-
 		DeviceLinked(DevicePtr dev);
-
 		DeviceLinked(ThreadDevicePtr dev);
-
 		void swap(DeviceLinked& other);
 
 	private:
 		DevicePtr _device;
+};
 
+class ThreadDeviceLinked {
+	public:
+		ThreadDevicePtr thread_device() const;
+		DevicePtr device() const;
+
+		template<typename T>
+		void destroy(T t) const;
+
+	protected:
+		ThreadDeviceLinked();
+		ThreadDeviceLinked(ThreadDevicePtr dev);
+		void swap(ThreadDeviceLinked& other);
+
+	private:
+		ThreadDevicePtr _device;
 };
 
 }

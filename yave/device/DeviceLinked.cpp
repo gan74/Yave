@@ -46,4 +46,30 @@ void DeviceLinked::swap(DeviceLinked& other) {
 	std::swap(_device, other._device);
 }
 
+
+
+
+ThreadDevicePtr ThreadDeviceLinked::thread_device() const {
+	return _device;
+}
+
+DevicePtr ThreadDeviceLinked::device() const {
+	return _device ? _device->device() : nullptr;
+}
+
+ThreadDeviceLinked::ThreadDeviceLinked() : _device(nullptr) {
+	// for putting breakpoints
+}
+
+ThreadDeviceLinked::ThreadDeviceLinked(ThreadDevicePtr dev) : _device(dev) {
+	if(!dev) {
+		fatal("Null device.");
+	}
+}
+
+void ThreadDeviceLinked::swap(ThreadDeviceLinked& other) {
+	std::swap(_device, other._device);
+}
+
+
 }

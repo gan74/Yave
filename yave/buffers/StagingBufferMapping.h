@@ -27,16 +27,18 @@ SOFTWARE.
 
 namespace yave {
 
+class CmdBufferRecorderBase;
+
 class StagingBufferMapping : public CpuVisibleMapping {
 
 	public:
 		using staging_buffer_type = Buffer<BufferUsage::None, MemoryType::CpuVisible, BufferTransfer::TransferSrc>;
 
 		StagingBufferMapping() = default;
-		StagingBufferMapping(const SubBuffer<BufferUsage::None, MemoryType::DontCare, BufferTransfer::TransferDst>& dst);
+		StagingBufferMapping(const SubBuffer<BufferUsage::None, MemoryType::DontCare, BufferTransfer::TransferDst>& dst, CmdBufferRecorderBase& recorder);
 
 		template<BufferUsage Usage, MemoryType Memory>
-		StagingBufferMapping(Buffer<Usage, Memory, BufferTransfer::TransferDst>& buffer) : StagingBufferMapping(SubBuffer(buffer)) {
+		StagingBufferMapping(Buffer<Usage, Memory, BufferTransfer::TransferDst>& buffer, CmdBufferRecorderBase& recorder) : StagingBufferMapping(SubBuffer(buffer), recorder) {
 		}
 
 		~StagingBufferMapping();
@@ -47,6 +49,7 @@ class StagingBufferMapping : public CpuVisibleMapping {
 	private:
 		vk::BufferCopy vk_copy() const;
 
+		CmdBufferRecorderBase* _cmd_buffer = nullptr;
 		SubBufferBase _dst;
 		staging_buffer_type _src;
 };

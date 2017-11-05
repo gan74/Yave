@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
 
 #include <y/concurrent/Arc.h>
+#include <y/concurrent/SpinLock.h>
 
 #include <yave/yave.h>
 #include <yave/device/DeviceLinked.h>
@@ -39,6 +40,8 @@ class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
 	public:
 		~CmdBufferPoolBase();
 
+		vk::CommandPool vk_pool() const;
+
 	protected:
 		friend class CmdBufferDataProxy;
 
@@ -48,16 +51,16 @@ class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
 		void release(CmdBufferData&& data);
 		core::Arc<CmdBufferDataProxy> alloc();
 
-		void join_fences();
-
-		void swap(CmdBufferPoolBase& other);
+		void join_all();
 
 	private:
 		CmdBufferData create_data();
 
+		concurrent::SpinLock _lock;
 		vk::CommandPool _pool;
 		CmdBufferUsage _usage;
 		core::Vector<CmdBufferData> _cmd_buffers;
+		core::Vector<vk::Fence> _fences;
 };
 
 static_assert(is_safe_base<CmdBufferPoolBase>::value);

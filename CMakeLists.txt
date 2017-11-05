@@ -4,8 +4,6 @@ project(yave)
 include_directories(${yave_SOURCE_DIR})
 
 
-
-
 set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef")
 set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wnon-virtual-dtor -Wodr")
 # no -Wzero-as-null-pointer-constant because of VK_NULL_HANDLE

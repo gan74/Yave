@@ -56,7 +56,9 @@ BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, Memor
 }
 
 BufferBase::~BufferBase() {
-	device()->destroy(_buffer);
+	if(device()) {
+		device()->destroy(_buffer);
+	}
 }
 
 DevicePtr BufferBase::device() const {
