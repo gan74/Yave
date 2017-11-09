@@ -45,6 +45,10 @@ class Duration {
 			return div(ms, 1000.0);
 		}
 
+		static Duration nanoseconds(u64 ns) {
+			return Duration(ns / 100000000, ns % 100000000);
+		}
+
 		explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
 		}
 
@@ -116,6 +120,12 @@ class Chrono {
 			auto nanos = u64(std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - _time).count());
 			return Duration(nanos / 1000000000, nanos % 1000000000);
 		}
+
+		static Duration program() {
+			static Chrono timer;
+			return timer.elapsed();
+		}
+
 
 	private:
 		std::chrono::time_point<std::chrono::high_resolution_clock> _time;

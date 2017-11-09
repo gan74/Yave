@@ -37,6 +37,10 @@ Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 #endif
 */
 
+#ifndef Y_PERF_LOG_DISABLED
+#define Y_PERF_LOG_ENABLED
+#endif
+
 /****************** OS DEFINES BELOW ******************/
 
 #if defined(WIN32) || defined(__WIN32) || defined(__WIN32__) || defined(_WINDOWS)
@@ -47,6 +51,7 @@ Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 #if defined(__linux__) || defined(__gnu_linux__)
 #define Y_OS_LINUX
 #endif
+
 
 
 #endif // Y_DEFINES_H
