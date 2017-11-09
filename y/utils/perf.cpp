@@ -28,6 +28,8 @@ SOFTWARE.
 #include <mutex>
 #include <cstdio>
 
+#include "os.h"
+
 namespace y {
 namespace perf {
 
@@ -90,14 +92,20 @@ static double micros() {
 }
 
 void enter(const char* cat, const char* func) {
-	char b[256];
+	char b[512];
 	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", func, cat, tid, micros());
+	if(len >= sizeof(b)) {
+		fatal("Too long.");
+	}
 	write(b, len);
 }
 
 void leave(const char* cat, const char* func) {
-	char b[256];
+	char b[512];
 	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", func, cat, tid, micros());
+	if(len >= sizeof(b)) {
+		fatal("Too long.");
+	}
 	write(b, len);
 }
 
@@ -105,6 +113,9 @@ static struct Flush : NonCopyable {
 	~Flush() {
 		char b[256];
 		usize len = std::snprintf(b, sizeof(b), R"({"name":"threadclosed","ph":"i","pid":0,"tid":%u,"ts":%f}]})", tid, micros());
+		if(len >= sizeof(b)) {
+			fatal("Too long.");
+		}
 		write(b, len);
 		write_buffer();
 	}
