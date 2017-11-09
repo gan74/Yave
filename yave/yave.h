@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_H
 
 #include <y/utils.h>
+#include <y/utils/perf.h>
 
 #include <y/math/Vec.h>
 #include <y/math/math.h>

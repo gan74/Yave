@@ -25,14 +25,16 @@ SOFTWARE.
 #include <yave/meshes/Vertex.h>
 #include <yave/device/Device.h>
 
+#include <y/core/Chrono.h>
 
 namespace yave {
-
 
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material* material, const RenderPass& render_pass) const {
+	Y_LOG_PERF("Material");
+	core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
 #warning move program creation
 
 	DevicePtr dptr = material->device();

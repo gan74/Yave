@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/framebuffer/Framebuffer.h>
 #include <yave/shaders/ComputeProgram.h>
+#include <yave/bindings/DescriptorSet.h>
 #include <yave/bindings/uniforms.h>
 
 #include <yave/device/DeviceLinked.h>
@@ -31,7 +32,6 @@ SOFTWARE.
 #include "renderers.h"
 
 namespace yave {
-
 
 class ColorCorrectionRenderer : public EndOfPipeline {
 

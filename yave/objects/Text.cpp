@@ -21,6 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "Text.h"
+#include <yave/device/Device.h>
+#include <yave/buffers/TypedMapping.h>
 
 namespace yave {
 

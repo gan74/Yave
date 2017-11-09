@@ -2,6 +2,7 @@
 #include <yave/images/ImageData.h>
 #include <yave/window/Window.h>
 
+#include <y/io/File.h>
 
 #include <y/math/Vec.h>
 
@@ -43,6 +44,9 @@ class ArcballMouse : public MouseEventHandler {
 
 int main(int, char **) {
 	log_msg("starting...");
+
+	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
+
 	Window win({1280, 768}, "Yave");
 	win.set_mouse_handler(new ArcballMouse());
 

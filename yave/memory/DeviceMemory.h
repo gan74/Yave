@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_MEMORY_DEVICEMEMORY_H
 
 #include <yave/vk/vk.h>
-#include <yave/device/Device.h>
+#include <yave/device/DeviceLinked.h>
 
 namespace yave {
 

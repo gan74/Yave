@@ -52,7 +52,6 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 	return image;
 }
 
-
 static auto load_envmap(DevicePtr dptr) {
 	//return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemaps/sky0/sky.yt").expected("Unable to open cubemap"))));
 	//return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/check/check.yt").expected("Unable to open cubemap"))));
@@ -60,8 +59,10 @@ static auto load_envmap(DevicePtr dptr) {
 	//return Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemaps/sky0/sky.yt").expected("Unable to open cubemap")));
 }
 
+
+
 DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
-		BufferRenderer(gbuffer->device()),
+		BufferRenderer(gbuffer),
 		_gbuffer(gbuffer),
 		_envmap(load_envmap(device())),
 		_brdf_lut(create_ibl_lut(device())),
@@ -70,8 +71,8 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 		_lights_buffer(device(), max_light_count),
 		_descriptor_set(device(), {
 				Binding(_gbuffer->depth()),
-				Binding(_gbuffer->color()),
-				Binding(_gbuffer->normal()),
+				Binding(_gbuffer->albedo_metallic()),
+				Binding(_gbuffer->normal_roughness()),
 				Binding(_envmap),
 				Binding(_brdf_lut),
 				Binding(_lights_buffer),
@@ -85,8 +86,12 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 	}
 }
 
-const math::Vec2ui& DeferredRenderer::size() const {
-	return _acc_buffer.size();
+const SceneView& DeferredRenderer::scene_view() const {
+	return _gbuffer->scene_view();
+}
+
+const Node::Ptr<GBufferRenderer>& DeferredRenderer::gbuffer_renderer() const {
+	return _gbuffer;
 }
 
 void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {

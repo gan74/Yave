@@ -25,7 +25,7 @@ SOFTWARE.
 namespace yave {
 
 GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
-		BufferRenderer(dptr),
+		BufferRenderer(dptr, size),
 		_scene(new SceneRenderer(dptr, node)),
 		_depth(device(), depth_format, size),
 		_color(device(), diffuse_format, size),
@@ -33,20 +33,16 @@ GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const
 		_gbuffer(device(), _depth, {_color, _normal}) {
 }
 
-const DepthTextureAttachment& GBufferRenderer::depth() const {
+DepthTextureAttachmentView GBufferRenderer::depth() const {
 	return _depth;
 }
 
-const ColorTextureAttachment& GBufferRenderer::color() const {
+ColorTextureAttachmentView GBufferRenderer::albedo_metallic() const {
 	return _color;
 }
 
-const ColorTextureAttachment& GBufferRenderer::normal() const {
+ColorTextureAttachmentView GBufferRenderer::normal_roughness() const {
 	return _normal;
-}
-
-const math::Vec2ui& GBufferRenderer::size() const {
-	return _color.size();
 }
 
 void GBufferRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {

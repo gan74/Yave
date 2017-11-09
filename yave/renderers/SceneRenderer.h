@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_RENDERERS_SCENERENDERER_H
 
 #include "CullingNode.h"
+#include <yave/bindings/DescriptorSet.h>
 
 namespace yave {
 

@@ -24,6 +24,7 @@ SOFTWARE.
 #include <yave/images/ImageData.h>
 #include <yave/buffers/TypedBuffer.h>
 #include <yave/renderers/RenderingPipeline.h>
+#include <yave/commands/TimeQuery.h>
 
 #include <y/io/File.h>
 
@@ -54,17 +55,20 @@ YaveApp::~YaveApp() {
 }
 
 void YaveApp::draw() {
-	core::DebugTimer f("frame", core::Duration::milliseconds(8));
+	Y_LOG_PERF("Rendering");
 
 	FrameToken frame = swapchain->next_frame();
 
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
+	/*TimeQuery timer(&device);
+	timer.start(recorder);*/
 
 	{
-		core::DebugTimer _("pipeline", core::Duration::milliseconds(6));
 		RenderingPipeline pipeline(frame);
 		pipeline.dispatch(renderer, recorder);
 	}
+
+	//timer.stop(recorder);
 
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 
@@ -72,7 +76,6 @@ void YaveApp::draw() {
 	auto graphic_queue = device.queue(QueueFamily::Graphics).vk_queue();
 	auto vk_buffer = cmd_buffer.vk_cmd_buffer();
 
-	device.vk_device().resetFences(cmd_buffer.vk_fence());
 	graphic_queue.submit(vk::SubmitInfo()
 			.setWaitSemaphoreCount(1)
 			.setPWaitSemaphores(&frame.image_aquired)
@@ -85,7 +88,7 @@ void YaveApp::draw() {
 
 	swapchain->present(frame, graphic_queue);
 
-	//graphic_queue.waitIdle();
+	//log_msg(""_s + timer.get().to_millis() + "ms");
 }
 
 void YaveApp::update(math::Vec2 angles) {
@@ -96,10 +99,12 @@ void YaveApp::update(math::Vec2 angles) {
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
-	camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 0.1f,  10000.0f));
+	camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 10.0f,  250.0f));
 }
 
 void YaveApp::create_assets() {
+	Y_LOG_PERF("Loading");
+
 	core::Vector<Scene::Ptr<StaticMeshInstance>> objects;
 	core::Vector<Scene::Ptr<Renderable>> renderables;
 	core::Vector<Scene::Ptr<Light>> lights;
@@ -189,8 +194,8 @@ void YaveApp::create_assets() {
 
 void YaveApp::create_renderers() {
 	auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
-	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
 	//auto depth = core::Arc<BufferRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
+	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
 	auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
 	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
 }

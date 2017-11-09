@@ -95,6 +95,7 @@ MeshData MeshData::from_parts(core::Vector<Vertex>&& vertices, core::Vector<Inde
 
 
 MeshData MeshData::from_file(io::ReaderRef reader) {
+	Y_LOG_PERF("Loading");
 	const char* err_msg = "Unable to load mesh.";
 
 	struct Header {
@@ -164,7 +165,7 @@ void MeshData::to_file(io::WriterRef writer) const {
 
 	writer->write_one(fs::magic_number).expected(err_msg);
 	writer->write_one(fs::mesh_file_type).expected(err_msg);
-	
+
 	u32 version = 5;
 	writer->write_one(version).expected(err_msg);
 

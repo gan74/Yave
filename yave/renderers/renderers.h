@@ -26,10 +26,11 @@ SOFTWARE.
 #include <yave/swapchain/FrameToken.h>
 
 #include "RenderingPipeline.h"
+#include "BufferRenderer.h"
 
 namespace yave {
 
-class SecondaryRenderer : public DeviceLinked, public Node {
+class SecondaryRenderer : public Node, public DeviceLinked {
 	public:
 		using result_type = RecordedCmdBuffer<CmdBufferUsage::Secondary>;
 
@@ -40,7 +41,7 @@ class SecondaryRenderer : public DeviceLinked, public Node {
 };
 
 
-class Renderer : public DeviceLinked, public Node {
+class Renderer : public Node, public DeviceLinked {
 	public:
 		using result_type = void;
 
@@ -50,17 +51,7 @@ class Renderer : public DeviceLinked, public Node {
 		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
 };
 
-class BufferRenderer : public DeviceLinked, public Node {
-	public:
-		using result_type = TextureView;
-
-		BufferRenderer(DevicePtr dptr) : DeviceLinked(dptr) {
-		}
-
-		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
-};
-
-class EndOfPipeline : public DeviceLinked, public Node {
+class EndOfPipeline : public Node,  public DeviceLinked {
 	public:
 		using result_type = void;
 

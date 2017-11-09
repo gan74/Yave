@@ -30,8 +30,6 @@ template<CmdBufferUsage Usage>
 class CmdBuffer : public CmdBufferBase {
 
 	public:
-		using CmdBufferBase::CmdBufferBase;
-
 		CmdBuffer() = default;
 
 		CmdBuffer(CmdBuffer&& other) {
@@ -45,6 +43,8 @@ class CmdBuffer : public CmdBufferBase {
 
 	private:
 		friend class CmdBufferPool<Usage>;
+
+		using CmdBufferBase::CmdBufferBase;
 };
 
 }

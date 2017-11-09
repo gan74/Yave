@@ -19,46 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_QUEUES_QUEUE_H
-#define YAVE_QUEUES_QUEUE_H
+#ifndef YAVE_RENDERERS_BUFFERRENDERER_H
+#define YAVE_RENDERERS_BUFFERRENDERER_H
 
-#include <yave/vk/vk.h>
-
-#include "submit.h"
+#include "BufferRendererType.h"
+#include "RenderingPipeline.h"
 
 namespace yave {
 
-class Queue : NonCopyable {
+class BufferRenderer : public Node, public DeviceLinked {
 
 	public:
-		Queue(vk::Queue queue);
-		~Queue();
+		using result_type = TextureView;
 
-		Queue(Queue&& other);
-		Queue& operator=(Queue&& other);
-
-		vk::Queue vk_queue() const;
-
-		void wait();
-
-		template<typename Policy, CmdBufferUsage Usage>
-		auto submit(RecordedCmdBuffer<Usage>&& cmd, const Policy& policy = Policy()) const {
-			Y_LOG_PERF("Queue");
-			static_assert(Usage != CmdBufferUsage::Secondary, "Secondary CmdBuffers can not be directly submitted");
-			submit_base(cmd);
-			return policy(cmd);
+		BufferRenderer(DevicePtr dptr, const math::Vec2& size) : DeviceLinked(dptr), _size(size) {
 		}
 
+		BufferRenderer(const Ptr<BufferRenderer>& renderer) : BufferRenderer(renderer->device(), renderer->size()) {
+		}
+
+		const math::Vec2ui& size() const {
+			return _size;
+		}
+
+		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
+
+		virtual DepthTextureAttachmentView depth() const { return fatal("No depth."); }
+		virtual ColorTextureAttachmentView albedo_metallic() const { return fatal("No albedo metallic."); }
+		virtual ColorTextureAttachmentView normal_roughness() const { return fatal("No normal roughness."); }
+		/*virtual ColorTextureAttachmentView depth_variance() const { return fatal("No depth variance."); }
+		virtual ColorTextureAttachmentView lighting() const { return fatal("No lighting."); }*/
+
 	private:
-		Queue() = default;
-
-		void swap(Queue& other);
-
-		void submit_base(CmdBufferBase& base) const;
-
-		vk::Queue _queue;
+		math::Vec2ui _size;
 };
+
 
 }
 
-#endif // YAVE_QUEUES_QUEUE_H
+
+
+#endif // BUFFERRENDERER_H

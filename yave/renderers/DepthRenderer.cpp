@@ -25,7 +25,7 @@ SOFTWARE.
 namespace yave {
 
 DepthRenderer::DepthRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node) :
-		BufferRenderer(dptr),
+		BufferRenderer(dptr, size),
 		_scene(new SceneRenderer(dptr, node)),
 		_depth(device(), depth_format, size),
 		_framebuffer(device(), _depth, {}) {
@@ -41,12 +41,8 @@ void DepthRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBuffe
 		});
 }
 
-const DepthTextureAttachment& DepthRenderer::depth() const {
+DepthTextureAttachmentView DepthRenderer::depth() const {
 	return _depth;
-}
-
-const math::Vec2ui& DepthRenderer::size() const {
-	return _depth.size();
 }
 
 }

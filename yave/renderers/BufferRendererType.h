@@ -19,46 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_QUEUES_QUEUE_H
-#define YAVE_QUEUES_QUEUE_H
+#ifndef YAVE_RENDERERS_BUFFERRENDERERTYPE_H
+#define YAVE_RENDERERS_BUFFERRENDERERTYPE_H
 
-#include <yave/vk/vk.h>
-
-#include "submit.h"
+#include <yave/yave.h>
 
 namespace yave {
 
-class Queue : NonCopyable {
+/*enum class BufferRendererType : u64 {
+	Depth = 0x01,
 
-	public:
-		Queue(vk::Queue queue);
-		~Queue();
+	AlbedoMetallic = 0x02,
+	NormalRoughness = 0x04,
 
-		Queue(Queue&& other);
-		Queue& operator=(Queue&& other);
+	Lighting = 0x08,
 
-		vk::Queue vk_queue() const;
-
-		void wait();
-
-		template<typename Policy, CmdBufferUsage Usage>
-		auto submit(RecordedCmdBuffer<Usage>&& cmd, const Policy& policy = Policy()) const {
-			Y_LOG_PERF("Queue");
-			static_assert(Usage != CmdBufferUsage::Secondary, "Secondary CmdBuffers can not be directly submitted");
-			submit_base(cmd);
-			return policy(cmd);
-		}
-
-	private:
-		Queue() = default;
-
-		void swap(Queue& other);
-
-		void submit_base(CmdBufferBase& base) const;
-
-		vk::Queue _queue;
+	DepthVariance = 0x10
 };
+
+constexpr BufferRendererType operator|(BufferRendererType a, BufferRendererType b) {
+	return BufferRendererType(uenum(a) | uenum(b));
+}
+
+constexpr BufferRendererType operator&(BufferRendererType a, BufferRendererType b) {
+	return BufferRendererType(uenum(a) & uenum(b));
+}*/
 
 }
 
-#endif // YAVE_QUEUES_QUEUE_H
+#endif // YAVE_RENDERERS_BUFFERRENDERERTYPE_H

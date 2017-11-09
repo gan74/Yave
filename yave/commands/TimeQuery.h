@@ -19,46 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_QUEUES_QUEUE_H
-#define YAVE_QUEUES_QUEUE_H
+#ifndef YAVE_COMMANDS_TIMEQUERY_H
+#define YAVE_COMMANDS_TIMEQUERY_H
 
-#include <yave/vk/vk.h>
+#include <y/core/Chrono.h>
 
-#include "submit.h"
+#include <yave/yave.h>
+#include "CmdBufferRecorderBase.h"
 
 namespace yave {
 
-class Queue : NonCopyable {
+class TimeQuery : NonCopyable, public DeviceLinked {
 
 	public:
-		Queue(vk::Queue queue);
-		~Queue();
+		TimeQuery(DevicePtr dptr);
+		~TimeQuery();
 
-		Queue(Queue&& other);
-		Queue& operator=(Queue&& other);
+		void start(CmdBufferRecorderBase& recorder);
+		void stop(CmdBufferRecorderBase& recorder);
 
-		vk::Queue vk_queue() const;
-
-		void wait();
-
-		template<typename Policy, CmdBufferUsage Usage>
-		auto submit(RecordedCmdBuffer<Usage>&& cmd, const Policy& policy = Policy()) const {
-			Y_LOG_PERF("Queue");
-			static_assert(Usage != CmdBufferUsage::Secondary, "Secondary CmdBuffers can not be directly submitted");
-			submit_base(cmd);
-			return policy(cmd);
-		}
+		core::Duration get();
 
 	private:
-		Queue() = default;
-
-		void swap(Queue& other);
-
-		void submit_base(CmdBufferBase& base) const;
-
-		vk::Queue _queue;
+		vk::QueryPool _pool;
 };
 
 }
 
-#endif // YAVE_QUEUES_QUEUE_H
+#endif // YAVE_COMMANDS_TIMEQUERY_H

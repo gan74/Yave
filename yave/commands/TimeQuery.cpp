@@ -19,46 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_QUEUES_QUEUE_H
-#define YAVE_QUEUES_QUEUE_H
 
-#include <yave/vk/vk.h>
+#include "TimeQuery.h"
 
-#include "submit.h"
+#include <yave/device/Device.h>
 
 namespace yave {
 
-class Queue : NonCopyable {
-
-	public:
-		Queue(vk::Queue queue);
-		~Queue();
-
-		Queue(Queue&& other);
-		Queue& operator=(Queue&& other);
-
-		vk::Queue vk_queue() const;
-
-		void wait();
-
-		template<typename Policy, CmdBufferUsage Usage>
-		auto submit(RecordedCmdBuffer<Usage>&& cmd, const Policy& policy = Policy()) const {
-			Y_LOG_PERF("Queue");
-			static_assert(Usage != CmdBufferUsage::Secondary, "Secondary CmdBuffers can not be directly submitted");
-			submit_base(cmd);
-			return policy(cmd);
-		}
-
-	private:
-		Queue() = default;
-
-		void swap(Queue& other);
-
-		void submit_base(CmdBufferBase& base) const;
-
-		vk::Queue _queue;
-};
-
+static vk::QueryPool create_pool(DevicePtr dptr) {
+	return dptr->vk_device().createQueryPool(vk::QueryPoolCreateInfo()
+			.setQueryCount(2)
+			.setQueryType(vk::QueryType::eTimestamp)
+		);
 }
 
-#endif // YAVE_QUEUES_QUEUE_H
+TimeQuery::TimeQuery(DevicePtr dptr)  : DeviceLinked(dptr), _pool(create_pool(dptr)) {
+}
+
+TimeQuery::~TimeQuery() {
+	destroy(_pool);
+}
+
+void TimeQuery::start(CmdBufferRecorderBase& recorder) {
+	recorder.vk_cmd_buffer().writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, _pool, 0);
+}
+
+void TimeQuery::stop(CmdBufferRecorderBase& recorder) {
+	recorder.vk_cmd_buffer().writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, _pool, 1);
+}
+
+core::Duration TimeQuery::get() {
+	std::array<u64, 2> results;
+	device()->vk_device().getQueryPoolResults<u64>(_pool, 0, 2, results, 0, vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
+	return core::Duration::nanoseconds(results[1] - results[0]);
+}
+
+}

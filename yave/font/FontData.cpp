@@ -34,6 +34,7 @@ const ImageData& FontData::atlas_data() const {
 }
 
 FontData FontData::from_file(io::ReaderRef reader) {
+	Y_LOG_PERF("Loading");
 	const char* err_msg = "Unable to read font.";
 
 	FontData font;

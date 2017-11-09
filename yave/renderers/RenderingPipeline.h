@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/swapchain/FrameToken.h>
 
 #include <y/core/Functor.h>
+#include <y/utils/perf.h>
 
 #include <typeindex>
 #include <future>

@@ -38,11 +38,9 @@ class GBufferRenderer : public BufferRenderer {
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
 
-		const DepthTextureAttachment& depth() const;
-		const ColorTextureAttachment& color() const;
-		const ColorTextureAttachment& normal() const;
-
-		const math::Vec2ui& size() const;
+		DepthTextureAttachmentView depth() const override;
+		ColorTextureAttachmentView albedo_metallic() const override;
+		ColorTextureAttachmentView normal_roughness() const override;
 
 
 		const SceneView& scene_view() const {

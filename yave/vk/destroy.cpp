@@ -111,6 +111,13 @@ void destroy(DevicePtr dptr, vk::Semaphore semaphore) {
 	}
 }
 
+void destroy(DevicePtr dptr, vk::QueryPool pool) {
+	/*if(dptr)*/ {
+		dptr->vk_device().destroyQueryPool(pool);
+	}
+}
+
+
 
 
 

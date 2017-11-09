@@ -26,6 +26,10 @@ SOFTWARE.
 #include "TypedSubBuffer.h"
 #include "StagingBufferMapping.h"
 
+#include <yave/device/Device.h>
+#include <yave/queues/QueueFamily.h>
+#include <yave/queues/Queue.h>
+
 namespace yave {
 
 template<MemoryType Memory>

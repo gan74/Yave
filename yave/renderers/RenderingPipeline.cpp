@@ -25,6 +25,7 @@ SOFTWARE.
 namespace yave {
 
 void RenderingPipeline::process_nodes() {
+	Y_LOG_PERF("Rendering");
 	while(!_nodes.empty()) {
 		bool dead = true;
 		for(auto it = _nodes.begin(); it != _nodes.end(); ++it) {
@@ -48,7 +49,6 @@ void RenderingPipeline::process_nodes() {
 			fatal("Unable to find a node to process.");
 		}
 	}
-	//log_msg("");
 }
 
 }

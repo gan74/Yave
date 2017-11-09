@@ -35,10 +35,7 @@ class DepthRenderer : public BufferRenderer {
 		DepthRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node);
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
-		const DepthTextureAttachment& depth() const;
-
-		const math::Vec2ui& size() const;
-
+		DepthTextureAttachmentView depth() const override;
 
 		const SceneView& scene_view() const {
 			return _scene->scene_view();

@@ -36,6 +36,7 @@ void destroy(DevicePtr dptr, vk::Fence fence);
 void destroy(DevicePtr dptr, vk::DescriptorPool pool);
 void destroy(DevicePtr dptr, vk::DescriptorSetLayout layout);
 void destroy(DevicePtr dptr, vk::Semaphore semaphore);
+void destroy(DevicePtr dptr, vk::QueryPool pool);
 
 
 void destroy(DevicePtr dptr, vk::SurfaceKHR surface);

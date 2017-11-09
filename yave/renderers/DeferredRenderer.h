@@ -40,15 +40,8 @@ class DeferredRenderer : public BufferRenderer {
 		DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
-		const math::Vec2ui& size() const;
-
-		const SceneView& scene_view() const {
-			return _gbuffer->scene_view();
-		}
-
-		const auto& gbuffer_renderer() const {
-			return _gbuffer;
-		}
+		const SceneView& scene_view() const;
+		const Ptr<GBufferRenderer>& gbuffer_renderer() const;
 
 	private:
 		Ptr<GBufferRenderer> _gbuffer;

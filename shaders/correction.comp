@@ -18,7 +18,6 @@ void main() {
 	vec4 inv_gamma = vec4(1.0 / gamma);
 
 	imageStore(out_color, coord, pow(color, inv_gamma));
-
 }
 
 

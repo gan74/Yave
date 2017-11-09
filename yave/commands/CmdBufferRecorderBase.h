@@ -28,7 +28,6 @@ SOFTWARE.
 
 #include "CmdBuffer.h"
 
-#include <yave/meshes/StaticMesh.h>
 #include <yave/material/GraphicPipeline.h>
 #include <yave/shaders/ComputeProgram.h>
 #include <yave/framebuffer/Viewport.h>

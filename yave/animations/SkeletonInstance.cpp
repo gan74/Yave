@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "SkeletonInstance.h"
+#include <yave/buffers/TypedMapping.h>
 
 namespace yave {
 
@@ -84,7 +85,6 @@ void SkeletonInstance::update() {
 
 	flush_data();
 }
-
 
 void SkeletonInstance::flush_data() {
 	auto map = TypedMapping(_bone_transform_buffer);
