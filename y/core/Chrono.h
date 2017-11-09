@@ -29,68 +29,26 @@ namespace y {
 namespace core {
 
 class Duration {
-	static Duration div(double s, double div) {
-		double nano_div = 1000000000 / div;
-		u64 secs = s / div;
-		s -= secs * div;
-		return Duration(secs, u32(s * nano_div));
-	}
 
 	public:
-		static Duration seconds(double s) {
-			return div(s, 1.0);
-		}
+		static Duration seconds(double s);
+		static Duration milliseconds(double ms);
+		static Duration nanoseconds(u64 ns);
 
-		static Duration milliseconds(double ms) {
-			return div(ms, 1000.0);
-		}
+		explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0);
 
-		static Duration nanoseconds(u64 ns) {
-			return Duration(ns / 100000000, ns % 100000000);
-		}
+		u64 to_nanos() const;
+		double to_micros() const;
+		double to_millis() const;
+		double to_secs() const;
 
-		explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
-		}
+		u64 seconds() const;
+		u32 subsec_nanos() const;
 
-		u64 to_nanos() const {
-			return _secs * 1000000000 + _subsec_ns;
-		}
-
-		double to_micros() const {
-			return _secs * 1000000 + _subsec_ns / 1000.0;
-		}
-
-		double to_millis() const {
-			return _secs * 1000 + _subsec_ns / 1000000.0;
-		}
-
-		double to_secs() const {
-			return _secs + _subsec_ns / 1000000000.0;
-		}
-
-		u64 seconds() const {
-			return _secs;
-		}
-
-		u32 subsec_nanos() const {
-			return _subsec_ns;
-		}
-
-		bool operator<(const Duration& other) const {
-			return std::tie(_secs, _subsec_ns) < std::tie(other._secs, other._subsec_ns);
-		}
-
-		bool operator<=(const Duration& other) const {
-			return std::tie(_secs, _subsec_ns) <= std::tie(other._secs, other._subsec_ns);
-		}
-
-		bool operator>(const Duration& other) const {
-			return std::tie(_secs, _subsec_ns) > std::tie(other._secs, other._subsec_ns);
-		}
-
-		bool operator>=(const Duration& other) const {
-			return std::tie(_secs, _subsec_ns) >= std::tie(other._secs, other._subsec_ns);
-		}
+		bool operator<(const Duration& other) const;
+		bool operator<=(const Duration& other) const;
+		bool operator>(const Duration& other) const;
+		bool operator>=(const Duration& other) const;
 
 	private:
 		u64 _secs;
@@ -99,33 +57,16 @@ class Duration {
 
 
 class Chrono {
-	using Nano = std::chrono::nanoseconds;
 
 	public:
-		Chrono() {
-			start();
-		}
+		Chrono();
 
-		void start() {
-			_time = std::chrono::high_resolution_clock::now();
-		}
+		void start();
+		Duration reset();
 
-		Duration reset() {
-			auto e = elapsed();
-			start();
-			return e;
-		}
+		Duration elapsed() const;
 
-		Duration elapsed() const {
-			auto nanos = u64(std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - _time).count());
-			return Duration(nanos / 1000000000, nanos % 1000000000);
-		}
-
-		static Duration program() {
-			static Chrono timer;
-			return timer.elapsed();
-		}
-
+		static Duration program();
 
 	private:
 		std::chrono::time_point<std::chrono::high_resolution_clock> _time;
@@ -134,14 +75,8 @@ class Chrono {
 class DebugTimer : NonCopyable {
 
 	public:
-		DebugTimer(const String& msg, const Duration& minimum = Duration()) : _msg(msg), _minimum(minimum) {
-		}
-
-		~DebugTimer() {
-			if(auto time = _chrono.elapsed(); time >= _minimum) {
-				log_msg(_msg + ": " + time.to_millis() + "ms", Log::Perf);
-			}
-		}
+		DebugTimer(const String& msg, const Duration& minimum = Duration());
+		~DebugTimer();
 
 	private:
 		String _msg;
