@@ -25,7 +25,7 @@ SOFTWARE.
 namespace yave {
 
 void RenderingPipeline::process_nodes() {
-	Y_LOG_PERF("Rendering");
+	Y_LOG_PERF("pipeline");
 	while(!_nodes.empty()) {
 		bool dead = true;
 		for(auto it = _nodes.begin(); it != _nodes.end(); ++it) {

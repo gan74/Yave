@@ -35,6 +35,7 @@ namespace yave {
 static core::Chrono time;
 
 YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), thread_device(device.thread_data()) {
+	{ Y_LOG_PERF(""); }
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMeshInstance));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
 	log_msg("sizeof(DeviceMemory) = "_s + sizeof(DeviceMemory));
@@ -55,7 +56,7 @@ YaveApp::~YaveApp() {
 }
 
 void YaveApp::draw() {
-	Y_LOG_PERF("Rendering");
+	Y_LOG_PERF("draw,rendering");
 
 	FrameToken frame = swapchain->next_frame();
 
@@ -103,7 +104,7 @@ void YaveApp::update(math::Vec2 angles) {
 }
 
 void YaveApp::create_assets() {
-	Y_LOG_PERF("Loading");
+	Y_LOG_PERF("asset,init,loading");
 
 	core::Vector<Scene::Ptr<StaticMeshInstance>> objects;
 	core::Vector<Scene::Ptr<Renderable>> renderables;
@@ -193,6 +194,7 @@ void YaveApp::create_assets() {
 
 
 void YaveApp::create_renderers() {
+	Y_LOG_PERF("init,loading");
 	auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
 	//auto depth = core::Arc<BufferRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
 	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));

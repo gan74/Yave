@@ -77,6 +77,7 @@ static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data
 }
 
 static void upload_data(ImageBase& image, const ImageData& data) {
+	Y_LOG_PERF("image,staging");
 	DevicePtr dptr = image.device();
 
 	auto staging_buffer = get_staging_buffer(dptr, data.combined_byte_size(), data.data());
@@ -130,6 +131,8 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 		_mips(mips),
 		_format(format),
 		_usage(usage) {
+
+	Y_LOG_PERF("image");
 
 	check_layer_count(type, _layers);
 

@@ -96,6 +96,7 @@ CullingNode::CullingNode(SceneView &view) : _view(view) {
 
 void CullingNode::build_frame_graph(RenderingNode<result_type>& node) {
 	node.set_func([=]() {
+			Y_LOG_PERF("culling");
 			Frustum frustum = _view.camera().frustum();
 
 			auto [dirs, lights] = process_lights(_view.scene().lights(), frustum);

@@ -95,7 +95,7 @@ MeshData MeshData::from_parts(core::Vector<Vertex>&& vertices, core::Vector<Inde
 
 
 MeshData MeshData::from_file(io::ReaderRef reader) {
-	Y_LOG_PERF("Loading");
+	Y_LOG_PERF("file,loading");
 	const char* err_msg = "Unable to load mesh.";
 
 	struct Header {

@@ -30,6 +30,8 @@ SOFTWARE.
 #include <yave/queues/QueueFamily.h>
 #include <yave/queues/Queue.h>
 
+#include <y/core/Chrono.h>
+
 namespace yave {
 
 template<MemoryType Memory>
@@ -57,10 +59,12 @@ class TypedMapping : public MemoryMapping<Memory> {
 
 		template<BufferUsage Usage>
 		explicit TypedMapping(TypedBuffer<Elem, Usage, Memory, BufferTransfer::TransferDst>& buffer, CmdBufferRecorderBase& recorder) : Base(buffer, recorder) {
+			static_assert(require_staging(Memory), "Buffer does not require staging");
 		}
 
 		template<BufferUsage Usage>
 		explicit TypedMapping(TypedSubBuffer<Elem, Usage, Memory, BufferTransfer::TransferDst>& buffer, CmdBufferRecorderBase& recorder) : Base(buffer, recorder) {
+			static_assert(require_staging(Memory), "SubBuffer does not require staging");
 		}
 
 		TypedMapping(TypedMapping&& other) {
@@ -114,9 +118,14 @@ class TypedMapping : public MemoryMapping<Memory> {
 
 template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
 TypedBuffer<Elem, Usage, Memory, Transfer>::TypedBuffer(DevicePtr dptr, const core::ArrayView<Elem>& data) : TypedBuffer(dptr, data.size()) {
-	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
-	std::copy(data.begin(), data.end(), TypedMapping(*this, recorder).begin());
-	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer<CmdBufferUsage::Disposable>(std::move(recorder)));
+	if constexpr(require_staging(Memory)) {
+		Y_LOG_PERF("buffer,staging");
+		CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+		std::copy(data.begin(), data.end(), TypedMapping(*this, recorder).begin());
+		dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer<CmdBufferUsage::Disposable>(std::move(recorder)));
+	} else {
+		std::copy(data.begin(), data.end(), TypedMapping(*this).begin());
+	}
 }
 
 template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>

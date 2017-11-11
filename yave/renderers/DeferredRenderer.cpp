@@ -37,6 +37,7 @@ static ComputeShader create_lighting_shader(DevicePtr dptr) {
 }
 
 static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
+	Y_LOG_PERF("deferred,IBL");
 	core::DebugTimer _("DeferredRenderer::create_ibl_lut()");
 
 	ComputeProgram brdf_integrator(ComputeShader(dptr, SpirVData::from_file(io::File::open("brdf_integrator.comp.spv").expected("Unable to open SPIR-V file."))));

@@ -93,7 +93,7 @@ void ImageData::swap(ImageData& other) {
 }
 
 ImageData ImageData::from_file(io::ReaderRef reader) {
-	Y_LOG_PERF("Loading");
+	Y_LOG_PERF("asset,loading");
 	const char* err_msg = "Unable to read image.";
 
 	struct Header {

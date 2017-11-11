@@ -43,6 +43,7 @@ void SceneRenderer::build_frame_graph(RenderingNode<result_type>& node, const Fr
 	auto culling = node.add_dependency(_cull);
 
 	node.set_func([=, token = node.token(), &framebuffer]() {
+			Y_LOG_PERF("scene,rendering");
 			CmdBufferRecorder<CmdBufferUsage::Secondary> recorder(device()->create_secondary_cmd_buffer(), framebuffer);
 
 			const auto& results = culling.get();

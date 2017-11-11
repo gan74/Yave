@@ -43,7 +43,6 @@ class Queue : NonCopyable {
 
 		template<typename Policy, CmdBufferUsage Usage>
 		auto submit(RecordedCmdBuffer<Usage>&& cmd, const Policy& policy = Policy()) const {
-			Y_LOG_PERF("Queue");
 			static_assert(Usage != CmdBufferUsage::Secondary, "Secondary CmdBuffers can not be directly submitted");
 			submit_base(cmd);
 			return policy(cmd);

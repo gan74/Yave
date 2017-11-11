@@ -35,6 +35,7 @@ struct AsyncSubmit {
 struct SyncSubmit {
 	template<CmdBufferUsage Usage>
 	void operator()(const RecordedCmdBuffer<Usage>& b) const {
+		Y_LOG_PERF("queue");
 		b.wait();
 	}
 };

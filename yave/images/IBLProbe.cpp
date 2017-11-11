@@ -114,6 +114,7 @@ static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<Image
 
 template<ImageType T>
 static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, T>& texture) {
+	Y_LOG_PERF("IBL,deferred");
 	DevicePtr dptr = texture.device();
 
 	if(probe.mipmaps() == 1) {
