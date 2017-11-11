@@ -54,6 +54,7 @@ static void write_buffer() {
 		}
 		output->write(buffer, buffer_offset);
 		buffer_offset = 0;
+		event("perf", "done_writing_buffer");
 	}
 }
 #endif
@@ -103,6 +104,15 @@ void enter(const char* cat, const char* func) {
 void leave(const char* cat, const char* func) {
 	char b[512];
 	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", func, cat, tid, micros());
+	if(len >= sizeof(b)) {
+		fatal("Too long.");
+	}
+	write(b, len);
+}
+
+void event(const char* cat, const char* name) {
+	char b[256];
+	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"i","pid":0,"tid":%u,"ts":%f},)", name, cat, tid, micros());
 	if(len >= sizeof(b)) {
 		fatal("Too long.");
 	}

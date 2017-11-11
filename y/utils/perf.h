@@ -41,6 +41,7 @@ void set_output(T&& t) {
 
 void enter(const char* cat, const char* func);
 void leave(const char* cat, const char* func);
+void event(const char* cat, const char* name);
 
 inline auto log_func(const char* cat, const char* func) {
 	class Logger : NonCopyable {
