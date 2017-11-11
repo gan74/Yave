@@ -55,14 +55,36 @@ template<typename T = double>
 static constexpr T pi = T(3.1415926535897932384626433832795);
 
 
+// http://dev.theomader.com/depth-precision/
 // matrix funcs from https://github.com/g-truc/glm/blob/master/glm/gtc/matrix_transform.inl
 template<typename T>
 auto perspective(T fovy, T aspect, T z_near, T z_far) {
 	const T f = T(1) / tan(fovy / T(2));
 
+	// reversed Z
+	auto span = z_near - z_far;
 	Matrix4<T> m(f / aspect, 0, 0, 0,
 				 0, f, 0, 0,
-				 0, 0, -(z_far + z_near) / (z_far - z_near), -(T(2) * z_far * z_near) / (z_far - z_near),
+				 0, 0, -T(1) - (z_far / span), -(z_far * z_near) / span,
+				 0, 0, -T(1), 0);
+
+	/*auto span = z_far - z_near;
+	Matrix4<T> m(f / aspect, 0, 0, 0,
+				 0, f, 0, 0,
+				 0, 0, -(z_far + z_near) /span, -(z_far * z_near) / span,
+				 0, 0, -T(1), 0);*/
+	return m;
+}
+
+// infinite version (no z far)
+template<typename T>
+auto perspective(T fovy, T aspect, T z_near) {
+	const T f = T(1) / tan(fovy / T(2));
+
+	// reversed Z
+	Matrix4<T> m(f / aspect, 0, 0, 0,
+				 0, f, 0, 0,
+				 0, 0, 0, z_near,
 				 0, 0, -T(1), 0);
 	return m;
 }
