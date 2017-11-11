@@ -171,7 +171,7 @@ void main() {
 
 	vec3 irradiance = vec3(0.0);
 
-	if(depth < 1.0) {
+	if(!is_OOB(depth)) {
 		vec3 normal;
 		float roughness;
 		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);

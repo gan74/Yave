@@ -33,7 +33,7 @@ MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material* material, const RenderPass& render_pass) const {
-	Y_LOG_PERF("Material");
+	Y_LOG_PERF("material");
 	core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
 #warning move program creation
 
@@ -105,7 +105,7 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 	auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
 			.setDepthTestEnable(true)
 			.setDepthWriteEnable(true)
-			.setDepthCompareOp(vk::CompareOp::eLessOrEqual)
+			.setDepthCompareOp(vk::CompareOp::eGreaterOrEqual) // reversed Z
 		;
 
 	auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()

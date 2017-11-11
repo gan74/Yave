@@ -43,7 +43,7 @@ float ssao(ivec2 coord) {
 
 	float depth = texelFetch(in_depth, coord, 0).x;
 
-	if(depth >= 1.0) {
+	if(is_OOB(depth)) {
 		return 0.0;
 	}
 

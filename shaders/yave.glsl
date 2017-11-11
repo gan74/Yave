@@ -26,6 +26,10 @@ struct Frustum {
 
 // -------------------------------- UTILS --------------------------------
 
+bool is_OOB(float z) {
+	return z <= 0.0; // reversed Z
+}
+
 uint float_to_uint(float f) {
 	return uint(max_uint * f);
 }

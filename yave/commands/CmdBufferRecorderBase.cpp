@@ -259,7 +259,7 @@ void PrimaryCmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuff
 	for(usize i = 0; i != framebuffer.attachment_count(); ++i) {
 		clear_values << vk::ClearColorValue(std::array<float, 4>{{0.0f, 0.0f, 0.0f, 0.0f}});
 	}
-	clear_values << vk::ClearDepthStencilValue(1.0f, 0);
+	clear_values << vk::ClearDepthStencilValue(0.0f, 0); // reversed Z
 
 	auto pass_info = vk::RenderPassBeginInfo()
 			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
