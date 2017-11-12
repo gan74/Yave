@@ -54,7 +54,7 @@ static void write_buffer() {
 		}
 		output->write(buffer, buffer_offset);
 		buffer_offset = 0;
-		event("perf", "done_writing_buffer");
+		event("perf", "done writing buffer");
 	}
 }
 #endif
@@ -92,9 +92,19 @@ static double micros() {
 	return core::Chrono::program().to_micros();
 }
 
+
+static constexpr usize print_buffer_len = 256;
+
+static int paren(const char* buff) {
+	if(const char* p = std::strchr(buff, '('); p) {
+		return p - buff;
+	}
+	return print_buffer_len;
+}
+
 void enter(const char* cat, const char* func) {
-	char b[512];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", func, cat, tid, micros());
+	char b[print_buffer_len];
+	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, tid, micros());
 	if(len >= sizeof(b)) {
 		fatal("Too long.");
 	}
@@ -102,8 +112,8 @@ void enter(const char* cat, const char* func) {
 }
 
 void leave(const char* cat, const char* func) {
-	char b[512];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", func, cat, tid, micros());
+	char b[print_buffer_len];
+	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, tid, micros());
 	if(len >= sizeof(b)) {
 		fatal("Too long.");
 	}
@@ -111,7 +121,7 @@ void leave(const char* cat, const char* func) {
 }
 
 void event(const char* cat, const char* name) {
-	char b[256];
+	char b[print_buffer_len];
 	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"i","pid":0,"tid":%u,"ts":%f},)", name, cat, tid, micros());
 	if(len >= sizeof(b)) {
 		fatal("Too long.");
@@ -121,8 +131,8 @@ void event(const char* cat, const char* name) {
 
 static struct Flush : NonCopyable {
 	~Flush() {
-		char b[256];
-		usize len = std::snprintf(b, sizeof(b), R"({"name":"threadclosed","ph":"i","pid":0,"tid":%u,"ts":%f}]})", tid, micros());
+		char b[print_buffer_len];
+		usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f}]})", tid, micros());
 		if(len >= sizeof(b)) {
 			fatal("Too long.");
 		}
