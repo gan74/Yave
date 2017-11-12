@@ -87,6 +87,11 @@ DeferredRenderer::DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
 	}
 }
 
+
+TextureView DeferredRenderer::lighting() const {
+	return _acc_buffer;
+}
+
 const SceneView& DeferredRenderer::scene_view() const {
 	return _gbuffer->scene_view();
 }

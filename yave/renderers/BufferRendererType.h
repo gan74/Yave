@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <yave/images/ImageView.h>
+
 namespace yave {
 
 /*enum class BufferRendererType : u64 {
@@ -43,6 +45,12 @@ constexpr BufferRendererType operator|(BufferRendererType a, BufferRendererType 
 
 constexpr BufferRendererType operator&(BufferRendererType a, BufferRendererType b) {
 	return BufferRendererType(uenum(a) & uenum(b));
+}*/
+
+/*#define YAVE_CREATE_RENDERER_BASE(name, member)		\
+struct name : NonCopyable {							\
+	virtual ~name() {}								\
+	virtual TextureView member() const = 0;			\
 }*/
 
 }

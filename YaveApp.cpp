@@ -69,8 +69,6 @@ void YaveApp::draw() {
 		pipeline.dispatch(renderer, recorder);
 	}
 
-	//timer.stop(recorder);
-
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
@@ -89,7 +87,7 @@ void YaveApp::draw() {
 
 	swapchain->present(frame, graphic_queue);
 
-	//log_msg(""_s + timer.get().to_millis() + "ms");
+	perf::event("rendering", "frame present");
 }
 
 void YaveApp::update(math::Vec2 angles) {
@@ -100,7 +98,7 @@ void YaveApp::update(math::Vec2 angles) {
 	auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
-	camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 10.0f,  250.0f));
+	camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 1.0f));
 }
 
 void YaveApp::create_assets() {

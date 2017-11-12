@@ -19,48 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_DEFERREDRENDERER_H
-#define YAVE_RENDERERS_DEFERREDRENDERER_H
 
-#include <yave/framebuffer/Framebuffer.h>
-#include <yave/shaders/ComputeProgram.h>
-#include <yave/bindings/uniforms.h>
-#include <yave/images/IBLProbe.h>
+#include "VarianceRenderer.h"
 
-#include <yave/scene/SceneView.h>
-
-#include "GBufferRenderer.h"
+#include <y/io/File.h>
 
 namespace yave {
 
-class DeferredRenderer : public BufferRenderer {
-	public:
-		static constexpr usize max_light_count = 1024;
+static ComputeShader create_variance_shader(DevicePtr dptr) {
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("variance.comp.spv").expected("Unable to open SPIR-V file.")));
+}
 
-		DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
-		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
-
-		TextureView lighting() const override;
-
-		const SceneView& scene_view() const;
-		const Ptr<GBufferRenderer>& gbuffer_renderer() const;
-
-	private:
-		Ptr<GBufferRenderer> _gbuffer;
-
-		IBLProbe _envmap;
-		Texture _brdf_lut;
-
-		ComputeProgram _lighting_program;
-
-		StorageTexture _acc_buffer;
-
-		TypedBuffer<uniform::Light, BufferUsage::StorageBit, MemoryType::CpuVisible> _lights_buffer;
-
-		DescriptorSet _descriptor_set;
-};
-
+VarianceRenderer::VarianceRenderer(const Ptr<BufferRenderer>& buffer) :
+		BufferRenderer(buffer),
+		_buffer(buffer),
+		_program(create_variance_shader(device())),
+		_variance(device(), ImageFormat(variance_format), size()),
+		_descriptor_set(device(), {Binding(buffer->depth())}) {
 }
 
 
-#endif // YAVE_RENDERERS_DEFERREDRENDERER_H
+TextureView VarianceRenderer::depth_variance() const {
+	return _variance;
+}
+
+void VarianceRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
+	node.add_dependency(_buffer, recorder);
+
+	node.set_func([=, &recorder]() -> result_type {
+			recorder.dispatch_size(_program, size(), {_descriptor_set});
+
+			return _variance;
+		});
+}
+
+}

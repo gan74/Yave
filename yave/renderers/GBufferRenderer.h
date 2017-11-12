@@ -38,9 +38,9 @@ class GBufferRenderer : public BufferRenderer {
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
 
-		DepthTextureAttachmentView depth() const override;
-		ColorTextureAttachmentView albedo_metallic() const override;
-		ColorTextureAttachmentView normal_roughness() const override;
+		TextureView depth() const override;
+		TextureView albedo_metallic() const override;
+		TextureView normal_roughness() const override;
 
 
 		const SceneView& scene_view() const {

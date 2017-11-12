@@ -19,48 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_DEFERREDRENDERER_H
-#define YAVE_RENDERERS_DEFERREDRENDERER_H
+#ifndef YAVE_RENDERERS_VARIANCERENDERER_H
+#define YAVE_RENDERERS_VARIANCERENDERER_H
 
-#include <yave/framebuffer/Framebuffer.h>
+#include "DepthRenderer.h"
+
 #include <yave/shaders/ComputeProgram.h>
-#include <yave/bindings/uniforms.h>
-#include <yave/images/IBLProbe.h>
-
-#include <yave/scene/SceneView.h>
-
-#include "GBufferRenderer.h"
 
 namespace yave {
 
-class DeferredRenderer : public BufferRenderer {
-	public:
-		static constexpr usize max_light_count = 1024;
+class VarianceRenderer : public BufferRenderer {
 
-		DeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
+	public:
+		static constexpr vk::Format variance_format = vk::Format::eR16G16Sfloat;
+
+		VarianceRenderer(const Ptr<BufferRenderer>& buffer);
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
-		TextureView lighting() const override;
-
-		const SceneView& scene_view() const;
-		const Ptr<GBufferRenderer>& gbuffer_renderer() const;
+		TextureView depth_variance() const override;
 
 	private:
-		Ptr<GBufferRenderer> _gbuffer;
+		core::Arc<BufferRenderer> _buffer;
 
-		IBLProbe _envmap;
-		Texture _brdf_lut;
+		ComputeProgram _program;
 
-		ComputeProgram _lighting_program;
-
-		StorageTexture _acc_buffer;
-
-		TypedBuffer<uniform::Light, BufferUsage::StorageBit, MemoryType::CpuVisible> _lights_buffer;
+		StorageTexture _variance;
 
 		DescriptorSet _descriptor_set;
-};
 
+};
 }
 
-
-#endif // YAVE_RENDERERS_DEFERREDRENDERER_H
+#endif // YAVE_RENDERERS_VARIANCERENDERER_H

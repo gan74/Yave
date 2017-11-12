@@ -41,7 +41,7 @@ void DepthRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBuffe
 		});
 }
 
-DepthTextureAttachmentView DepthRenderer::depth() const {
+TextureView DepthRenderer::depth() const {
 	return _depth;
 }
 

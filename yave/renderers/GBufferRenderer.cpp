@@ -33,15 +33,15 @@ GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const
 		_gbuffer(device(), _depth, {_color, _normal}) {
 }
 
-DepthTextureAttachmentView GBufferRenderer::depth() const {
+TextureView GBufferRenderer::depth() const {
 	return _depth;
 }
 
-ColorTextureAttachmentView GBufferRenderer::albedo_metallic() const {
+TextureView GBufferRenderer::albedo_metallic() const {
 	return _color;
 }
 
-ColorTextureAttachmentView GBufferRenderer::normal_roughness() const {
+TextureView GBufferRenderer::normal_roughness() const {
 	return _normal;
 }
 

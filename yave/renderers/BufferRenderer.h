@@ -44,11 +44,12 @@ class BufferRenderer : public Node, public DeviceLinked {
 
 		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
 
-		virtual DepthTextureAttachmentView depth() const { return fatal("No depth."); }
-		virtual ColorTextureAttachmentView albedo_metallic() const { return fatal("No albedo metallic."); }
-		virtual ColorTextureAttachmentView normal_roughness() const { return fatal("No normal roughness."); }
-		/*virtual ColorTextureAttachmentView depth_variance() const { return fatal("No depth variance."); }
-		virtual ColorTextureAttachmentView lighting() const { return fatal("No lighting."); }*/
+		// TODO duck.
+		virtual TextureView depth() const { return fatal("No depth."); }
+		virtual TextureView albedo_metallic() const { return fatal("No albedo metallic."); }
+		virtual TextureView normal_roughness() const { return fatal("No normal roughness."); }
+		virtual TextureView depth_variance() const { return fatal("No depth variance."); }
+		virtual TextureView lighting() const { return fatal("No lighting."); }
 
 	private:
 		math::Vec2ui _size;
