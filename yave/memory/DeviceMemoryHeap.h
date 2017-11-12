@@ -42,11 +42,10 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 
 	public:
 		static constexpr usize alignment = 256;
-		static constexpr usize block_size = alignment * alignment;
 
 		static constexpr usize heap_size = 1024 * 1024 * 128;
 
-		static_assert(heap_size % block_size == 0, "Heap size is not a multiple of block size");
+		static_assert(heap_size % alignment == 0, "Heap size is not a multiple of alignment");
 
 
 		DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type);
@@ -65,10 +64,14 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		void swap(DeviceMemoryHeap& other);
 
 		DeviceMemory create(usize offset, usize size);
+		void free(const FreeBlock& block);
+		void compact_block(FreeBlock block);
 
 		vk::DeviceMemory _memory;
 		core::Vector<FreeBlock> _blocks;
 		u8* _mapping = nullptr;
+
+		usize _allocs = 0;
 };
 
 }

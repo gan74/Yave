@@ -55,6 +55,12 @@ DeviceMemoryHeap::DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType typ
 }
 
 DeviceMemoryHeap::~DeviceMemoryHeap() {
+	if(_blocks.size() != 1) {
+		fatal("Not all memory has been free: heap fragmented.");
+	}
+	if(_blocks[0].offset || _blocks[0].size != heap_size) {
+		fatal("Not all memory has been freed.");
+	}
 	if(_mapping) {
 		device()->vk_device().unmapMemory(_memory);
 	}
@@ -67,33 +73,70 @@ DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {
 
 core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) {
 	usize size = reqs.size;
-	for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
-		usize offset = it->offset;
+	if(usize m = size % alignment; m) {
+		size += alignment - m;
+	}
 
-		if(offset % reqs.alignment) {
-			fatal("Failed to allign");
+
+	for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
+		usize full_size = it->size;
+
+		if(full_size < size) {
+			continue;
 		}
 
-		if(it->size == size) {
+		usize offset = it->offset;
+		usize align_loss = offset % reqs.alignment;
+		usize align_correction = align_loss ? reqs.alignment - align_loss : 0;
+
+		usize aligned_offset = offset + align_correction;
+		usize aligned_size = full_size - align_correction;
+
+		if(aligned_size == size) {
 			_blocks.erase_unordered(it);
-			return core::Ok(create(offset, size));
-		} else if(it->size > size) {
-			it->offset += size;
-			it->size -= size;
-			return core::Ok(create(offset, size));
+			if(align_correction) {
+				_blocks << FreeBlock{offset, align_correction};
+			}
+			return core::Ok(create(aligned_offset, size));
+		} else if(aligned_size > size) {
+			usize end = offset + full_size;
+			it->size = end - (it->offset = aligned_offset + size);
+			if(align_correction) {
+				_blocks << FreeBlock{offset, align_correction};
+			}
+			return core::Ok(create(aligned_offset, size));
 		}
 	}
+
 	return core::Err();
 }
 
 void DeviceMemoryHeap::free(const DeviceMemory& memory) {
-	FreeBlock block{memory.vk_offset(), memory.vk_size()};
-	for(auto& b : _blocks) {
-		if(b.contiguous(block)) {
-			b.merge(block);
-			return;
+	free(FreeBlock {memory.vk_offset(), memory.vk_size()});
+}
+
+void DeviceMemoryHeap::free(const FreeBlock& block) {
+	--_allocs;
+	compact_block(block);
+}
+
+void DeviceMemoryHeap::compact_block(FreeBlock block) {
+	Y_LOG_PERF("memory");
+	// sort ?
+	bool compacted = false;
+	do {
+		compacted = false;
+		for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
+			FreeBlock b = *it;
+			if(b.contiguous(block)) {
+				_blocks.erase_unordered(it);
+				b.merge(block);
+				block = b;
+				compacted = true;
+				break;
+			}
 		}
-	}
+	} while(compacted);
 	_blocks << block;
 }
 
