@@ -30,8 +30,6 @@ SOFTWARE.
 #include <yave/queues/QueueFamily.h>
 #include <yave/queues/Queue.h>
 
-#include <y/core/Chrono.h>
-
 namespace yave {
 
 template<MemoryType Memory>
