@@ -44,6 +44,8 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.de
 			.setPPushConstantRanges(comp.push_constants().begin())
 		);
 
+	auto spec_info = vk::SpecializationInfo();
+
 	auto stage = vk::PipelineShaderStageCreateInfo()
 			.setModule(comp.vk_shader_module())
 			.setStage(vk::ShaderStageFlagBits::eCompute)

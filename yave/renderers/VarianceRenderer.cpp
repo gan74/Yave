@@ -26,16 +26,23 @@ SOFTWARE.
 
 namespace yave {
 
-static ComputeShader create_variance_shader(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("variance.comp.spv").expected("Unable to open SPIR-V file.")));
+static ComputeShader create_variance_shader_h(DevicePtr dptr) {
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("variance_h.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
-VarianceRenderer::VarianceRenderer(const Ptr<BufferRenderer>& buffer) :
+static ComputeShader create_variance_shader_v(DevicePtr dptr) {
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("variance_v.comp.spv").expected("Unable to open SPIR-V file.")));
+}
+
+VarianceRenderer::VarianceRenderer(const Ptr<DepthRenderer>& buffer) :
 		BufferRenderer(buffer),
-		_buffer(buffer),
-		_program(create_variance_shader(device())),
+		_depth(buffer),
+		_h(create_variance_shader_h(device())),
+		_v(create_variance_shader_v(device())),
+		_variance_h(device(), ImageFormat(variance_format), size()),
 		_variance(device(), ImageFormat(variance_format), size()),
-		_descriptor_set(device(), {Binding(buffer->depth())}) {
+		_descriptor_h(device(), {Binding(buffer->depth()), Binding(StorageView(_variance_h))}),
+		_descriptor_v(device(), {Binding(TextureView(_variance_h)), StorageView(_variance)}) {
 }
 
 
@@ -44,10 +51,13 @@ TextureView VarianceRenderer::depth_variance() const {
 }
 
 void VarianceRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
-	node.add_dependency(_buffer, recorder);
+	node.add_dependency(_depth, recorder);
 
 	node.set_func([=, &recorder]() -> result_type {
-			recorder.dispatch_size(_program, size(), {_descriptor_set});
+		recorder.dispatch_size(_h, size(), {_descriptor_h});
+#warning VarianceRenderer barriers
+		recorder.barriers({}, {ImageBarrier(_variance_h)}, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
+		recorder.dispatch_size(_v, size(), {_descriptor_v});
 
 			return _variance;
 		});

@@ -26,9 +26,8 @@ SOFTWARE.
 
 namespace yave {
 
-SceneView::SceneView(Scene& sce, Camera& cam) :
-		_scene(sce),
-		_camera(cam) {
+SceneView::SceneView(Scene& sce) :
+		_scene(sce) {
 }
 
 const Scene& SceneView::scene() const {
@@ -36,6 +35,10 @@ const Scene& SceneView::scene() const {
 }
 
 const Camera& SceneView::camera() const {
+	return _camera;
+}
+
+Camera& SceneView::camera() {
 	return _camera;
 }
 

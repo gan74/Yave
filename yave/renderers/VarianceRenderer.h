@@ -33,19 +33,22 @@ class VarianceRenderer : public BufferRenderer {
 	public:
 		static constexpr vk::Format variance_format = vk::Format::eR16G16Sfloat;
 
-		VarianceRenderer(const Ptr<BufferRenderer>& buffer);
+		VarianceRenderer(const Ptr<DepthRenderer>& depth);
 		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
 
 		TextureView depth_variance() const override;
 
 	private:
-		core::Arc<BufferRenderer> _buffer;
+		core::Arc<DepthRenderer> _depth;
 
-		ComputeProgram _program;
+		ComputeProgram _h;
+		ComputeProgram _v;
 
+		StorageTexture _variance_h;
 		StorageTexture _variance;
 
-		DescriptorSet _descriptor_set;
+		DescriptorSet _descriptor_h;
+		DescriptorSet _descriptor_v;
 
 };
 }

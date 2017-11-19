@@ -42,6 +42,7 @@ SOFTWARE.
 #include <yave/renderers/ColorCorrectionRenderer.h>
 #include <yave/renderers/DeferredRenderer.h>
 #include <yave/renderers/DepthRenderer.h>
+#include <yave/renderers/VarianceRenderer.h>
 #include <yave/renderers/SceneRenderer.h>
 #include <yave/objects/Text.h>
 
@@ -107,8 +108,8 @@ class YaveApp : NonCopyable {
 
 		Scene* scene;
 		SceneView* scene_view;
+		SceneView* shadow_view;
 
-		Camera camera;
 		core::Arc<EndOfPipeline> renderer;
 
 

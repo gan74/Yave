@@ -1,0 +1,32 @@
+#version 450
+
+#include "yave.glsl"
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(set = 0, binding = 0) uniform sampler2D in_color;
+
+layout(rg16, set = 0, binding = 1) uniform writeonly image2D out_color;
+
+
+const int kernel_size = 9;
+const int total_size = 2 * kernel_size + 1;
+
+void main() {
+	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+
+	//float depth = texelFetch(in_color, coord, 0).x;
+
+
+	float depth_sum = 0.0;
+	float sqr_sum = 0.0;
+	for(int i = -kernel_size; i != kernel_size + 1; ++i) {
+		float depth = texelFetch(in_color, coord + ivec2(i, 0), 0).x;
+		depth_sum += depth;
+		sqr_sum += sqr(depth);
+	}
+
+	imageStore(out_color, coord, vec4(depth_sum / total_size, depth_sum / total_size, 0.0, 0.0));
+}
+
+

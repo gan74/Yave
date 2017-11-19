@@ -93,6 +93,8 @@ class CmdBufferRecorderBase : public CmdBufferBase {
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
 		void bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 
+		//void copy(const ImageBase& src, ImageBase& dst);
+
 		template<typename T>
 		void keep_alive(T&& t) {
 			CmdBufferBase::keep_alive(std::forward<T>(t));

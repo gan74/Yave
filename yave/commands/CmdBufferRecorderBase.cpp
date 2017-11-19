@@ -107,6 +107,18 @@ void CmdBufferRecorderBase::bind_attrib_buffers(const core::ArrayView<SubBuffer<
 	vk_cmd_buffer().bindVertexBuffers(u32(0), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
 }
 
+/*void CmdBufferRecorderBase::copy(const ImageBase& src, ImageBase& dst) {
+	vk_cmd_buffer().copyImage(src.vk_image(), vk_image_layout(src.usage()), dst.vk_image(), vk_image_layout(dst.usage()), vk::ImageCopy()
+			.setSrcSubresource(vk::ImageSubresourceLayers(src.format().vk_aspect()).setLayerCount(1))
+			.setDstSubresource(vk::ImageSubresourceLayers(dst.format().vk_aspect()).setLayerCount(1))
+			.setExtent(vk::Extent3D{
+					std::min(src.size().x(), dst.size().x()),
+					std::min(src.size().y(), dst.size().y()),
+					1
+				})
+		);
+}*/
+
 
 SecondaryCmdBufferRecorderBase::SecondaryCmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer) :
 			CmdBufferRecorderBase(std::move(base)) {

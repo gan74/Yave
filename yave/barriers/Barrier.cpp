@@ -75,8 +75,6 @@ vk::ImageMemoryBarrier create_image_barrier(
 			.setImage(image)
 			.setSubresourceRange(vk::ImageSubresourceRange()
 					.setAspectMask(format.vk_aspect())
-					.setBaseArrayLayer(0)
-					.setBaseMipLevel(0)
 					.setLayerCount(layers)
 					.setLevelCount(mips)
 				)

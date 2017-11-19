@@ -32,6 +32,8 @@ class BufferRenderer : public Node, public DeviceLinked {
 	public:
 		using result_type = TextureView;
 
+#warning BufferRenderer barriers
+
 		BufferRenderer(DevicePtr dptr, const math::Vec2& size) : DeviceLinked(dptr), _size(size) {
 		}
 

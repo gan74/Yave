@@ -27,16 +27,8 @@ layout(location = 8) in mat4 in_model;
 layout(location = 0) out vec3 v_normal;
 layout(location = 1) out vec2 v_uv;
 
-layout(location = 2) out vec3 bone_color;
-
 
 void main() {
-	bone_color = spectrum(in_skin_indexes.x) * in_skin_weights.x +
-				 spectrum(in_skin_indexes.y) * in_skin_weights.y +
-				 spectrum(in_skin_indexes.z) * in_skin_weights.z +
-				 spectrum(in_skin_indexes.w) * in_skin_weights.w;
-
-
 	mat4 bone_matrix = in_skin_weights.x * bones.transforms[in_skin_indexes.x] +
 					   in_skin_weights.y * bones.transforms[in_skin_indexes.y] +
 					   in_skin_weights.z * bones.transforms[in_skin_indexes.z] +
