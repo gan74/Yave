@@ -81,14 +81,13 @@ void SceneRenderer::render_renderables(Recorder& recorder,
 									   AttribData& attrib_data) {
 
 	usize size = max_size(renderables.size(), attrib_data);
-
 	for(usize i = 0; i != size; ++i) {
 		attrib_data.data[i] = renderables[i]->transform();
 	}
 
 	for(usize i = 0; i != size; ++i) {
 		usize offset = attrib_data.offset + i;
-		AttribSubBuffer<math::Transform<>> attribs(_attrib_buffer, offset, 1);
+		AttribSubBuffer<math::Transform<>> attribs(_attrib_buffer, offset * sizeof(math::Transform<>), 1);
 		renderables[i]->render(token, recorder, Renderable::SceneData{_camera_set, attribs});
 	}
 
