@@ -44,38 +44,13 @@ class Binding {
 			}
 		};
 
-		Binding(const TextureView& view) :
-			_type(vk::DescriptorType::eCombinedImageSampler),
-			_info(vk::DescriptorImageInfo()
-			   .setImageLayout(vk_image_layout(view.usage()))
-			   .setImageView(view.vk_view())
-			   .setSampler(view.device()->vk_sampler())) {
-		}
-
-		Binding(const CubemapView& view) :
-			_type(vk::DescriptorType::eCombinedImageSampler),
-			_info(vk::DescriptorImageInfo()
-			   .setImageLayout(vk_image_layout(view.usage()))
-			   .setImageView(view.vk_view())
-			   .setSampler(view.device()->vk_sampler())) {
-		}
-
 		template<ImageType Type>
 		Binding(const ImageView<ImageUsage::TextureBit, Type>& view) :
 				 _type(vk::DescriptorType::eCombinedImageSampler),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(view.usage()))
-					.setImageView(view.vk_image_view())
+					.setImageView(view.vk_view())
 					.setSampler(view.device()->vk_sampler())) {
-		}
-
-
-		Binding(const StorageView& view) :
-			_type(vk::DescriptorType::eStorageImage),
-			_info(vk::DescriptorImageInfo()
-			   .setImageLayout(vk_image_layout(ImageUsage::StorageBit))
-			   .setImageView(view.vk_view())
-			   .setSampler(view.device()->vk_sampler())) {
 		}
 
 		template<ImageType Type>
