@@ -4,6 +4,7 @@ Yet another C++17 Vulkan engine.
 ## Status
 
 ![Current status](https://i.imgur.com/fLydq3W.png)
+![Current status](https://im3.ezgif.com/tmp/ezgif-3-fd5d083cba.gif)
 
 ## Building
 You need:
@@ -33,11 +34,11 @@ Implemented features:
  * Rendering pipeline
    * Tiled deferred shader
      * Physically based lighting
-     * IBL
+     * [IBL](https://i.imgur.com/fLydq3W.png)
    * Basic scenes
  * Meshes
    * Static
-   * [Skeletal](http://i.imgur.com/tYM66lR.png)
+   * [Skeletal](https://im3.ezgif.com/tmp/ezgif-3-fd5d083cba.gif) 
 
 
 ### Licence:
