@@ -30,7 +30,7 @@ class ComputeProgram : NonCopyable, public DeviceLinked {
 	public:
 		ComputeProgram() = default;
 
-		explicit ComputeProgram(const ComputeShader& comp);
+		explicit ComputeProgram(const ComputeShader& comp, const SpecializationData& data = SpecializationData());
 		~ComputeProgram();
 
 		ComputeProgram(ComputeProgram&& other);

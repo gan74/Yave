@@ -171,6 +171,14 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	fail_not_empty(resources.separate_images);
 	fail_not_empty(resources.separate_samplers);
 
+	u32 spec_offset = 0;
+	for(const auto& cst : compiler.get_specialization_constants()) {
+		const auto& type = compiler.get_type(compiler.get_constant(cst.id).constant_type);
+		u32 size = type.width / 8;
+		_spec_constants << vk::SpecializationMapEntry(cst.constant_id, spec_offset, size);
+		spec_offset += size;
+	}
+
 	for(usize i = 0; i != 3; ++i) {
 		_local_size[i] = compiler.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, i);
 	}

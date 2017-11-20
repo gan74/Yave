@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.device()), _local_size(comp.local_size()) {
+ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationData& data) : DeviceLinked(comp.device()), _local_size(comp.local_size()) {
 	const auto& bindings = comp.bindings();
 
 	u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
@@ -44,12 +44,25 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : DeviceLinked(comp.de
 			.setPPushConstantRanges(comp.push_constants().begin())
 		);
 
-	auto spec_info = vk::SpecializationInfo();
+	if(data.size() && data.size() != comp.specialization_data_size()) {
+		//log_msg("data.size = "_s + data.size() + " expected = " + comp.specialization_data_size());
+		fatal("Incompatible specialization data.");
+	}
+
+	core::ArrayView entries = data.size() ? comp.specialization_entries() : core::ArrayView<vk::SpecializationMapEntry>();
+	auto spec_info = vk::SpecializationInfo()
+			.setMapEntryCount(entries.size())
+			.setPMapEntries(entries.data())
+			.setDataSize(data.size())
+			.setPData(data.data())
+
+		;
 
 	auto stage = vk::PipelineShaderStageCreateInfo()
 			.setModule(comp.vk_shader_module())
 			.setStage(vk::ShaderStageFlagBits::eCompute)
 			.setPName("main")
+			.setPSpecializationInfo(&spec_info)
 		;
 
 	_pipeline = device()->vk_device().createComputePipeline(vk::PipelineCache(), vk::ComputePipelineCreateInfo()

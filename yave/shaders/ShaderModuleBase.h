@@ -39,6 +39,39 @@ enum class ShaderType {
 	Compute = uenum(vk::ShaderStageFlagBits::eCompute)
 };
 
+class SpecializationData : NonCopyable {
+		template<typename... Args>
+		static std::true_type is_tuple(const std::tuple<Args...>&);
+
+		template<typename T>
+		static std::false_type is_tuple(const T&);
+
+	public:
+		SpecializationData() = default;
+
+		template<typename T>
+		SpecializationData(const T& data) : _data(&data), _size(sizeof(T)) {
+			static_assert(!decltype(is_tuple(data))::value, "std::tuple is not standard layout");
+		}
+
+		template<typename T>
+		SpecializationData(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+			static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
+		}
+
+		const void* data() const {
+			return _data;
+		}
+
+		usize size() const {
+			return _size;
+		}
+
+	private:
+		const void* _data = nullptr;
+		usize _size = 0;
+};
+
 class ShaderModuleBase : NonCopyable, public DeviceLinked {
 
 	public:
@@ -82,6 +115,14 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 			return _module;
 		}
 
+		usize specialization_data_size() const {
+			return _spec_constants.is_empty() ? 0 : (_spec_constants.last().offset + _spec_constants.last().size);
+		}
+
+		const auto& specialization_entries() const {
+			return _spec_constants;
+		}
+
 	protected:
 		ShaderModuleBase() = default;
 
@@ -93,6 +134,7 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 		vk::ShaderModule _module;
 		ShaderType _type = ShaderType::None;
 		std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>> _bindings;
+		core::Vector<vk::SpecializationMapEntry> _spec_constants;
 		core::Vector<vk::PushConstantRange> _push_constants;
 		core::Vector<Attribute> _attribs;
 		math::Vec3ui _local_size;
