@@ -59,7 +59,7 @@ float sqr(float x) {
 }
 
 float noise(vec2 co) {
-	return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+	return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 mat4 indentity() {
@@ -249,6 +249,14 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 	return (diffuse + specular) * NoL;
 }
 
+// -------------------------------- SHADOW --------------------------------
+
+float variance_shadow(vec2 moments, float depth) {
+	float variance = sqr(moments.x) - moments.y;
+	float diff = moments.x - depth;
+	float p = variance / (variance + sqr(diff));
+	return max(p, depth <= moments.x);
+}
 
 // -------------------------------- IBL --------------------------------
 
