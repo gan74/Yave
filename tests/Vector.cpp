@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 #include <y/core/Vector.h>
 #include <y/core/SmallVector.h>
+#include <y/core/Ptr.h>
 #include <y/test/test.h>
 #include <vector>
 
@@ -273,3 +274,51 @@ y_test_func("SmallVector size") {
 	SmallVector<Big> vec({Big{}});
 	y_test_assert(vec.size() == 1);
 }
+
+y_test_func("SmallVector copy") {
+	{
+		SmallVector<int, 8> vec = {1, 2, 3, 4};
+		SmallVector<int, 8> cpy = vec;
+		y_test_assert(cpy.size() == 4);
+		y_test_assert(cpy[0] == 1);
+		y_test_assert(cpy[1] == 2);
+		y_test_assert(cpy[2] == 3);
+		y_test_assert(cpy[3] == 4);
+	}
+	{
+		Rc<int> rc = new int(2);
+		y_test_assert(rc.ref_count() == 1);
+		SmallVector<Rc<int>, 8> vec;
+		vec.push_back(rc);
+		y_test_assert(rc.ref_count() == 2);
+		{
+			SmallVector<Rc<int>, 8> cpy = vec;
+			y_test_assert(rc.ref_count() == 3);
+		}
+		y_test_assert(rc.ref_count() == 2);
+	}
+}
+
+y_test_func("SmallVector move") {
+	{
+		SmallVector<int, 8> vec = {1, 2, 3, 4};
+		SmallVector<int, 8> cpy(std::move(vec));
+		y_test_assert(cpy.size() == 4);
+		y_test_assert(cpy[0] == 1);
+		y_test_assert(cpy[1] == 2);
+		y_test_assert(cpy[2] == 3);
+		y_test_assert(cpy[3] == 4);
+	}
+	{
+		Rc<int> rc = new int(7);
+		SmallVector<Rc<int>, 8> vec;
+		vec.push_back(rc);
+		y_test_assert(rc.ref_count() == 2);
+		{
+			y_test_assert(rc.ref_count() == 2);
+			SmallVector<Rc<int>, 8> cpy = std::move(vec);
+		}
+		y_test_assert(rc.ref_count() == 1);
+	}
+}
+

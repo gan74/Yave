@@ -49,7 +49,7 @@ class SmallVectorAllocator : Allocator {
 
 		value_type* allocate(usize size, const void* hint = nullptr) {
 			if(size <= Size) {
-				return _storage;
+				return _storage.data;
 			}
 			return Allocator::allocate(size, hint);
 		}
@@ -65,9 +65,12 @@ class SmallVectorAllocator : Allocator {
 		}
 
 	private:
-		union {
-			data_type _storage[Size];
-		};
+		union Storage {
+			Storage() {}
+			~Storage() {}
+
+			data_type data[Size];
+		} _storage;
 };
 
 template<usize Size, typename ResizePolicy = DefaultVectorResizePolicy>
