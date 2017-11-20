@@ -92,7 +92,7 @@ void YaveApp::draw() {
 }
 
 void YaveApp::update(math::Vec2 angles) {
-	float dist = 125.0f;
+	float dist = 200.0f;
 
 	shadow_view->camera().set_view(math::look_at(math::Vec3(0.0f, 0.0f, dist), math::Vec3(), math::Vec3(1.0f, 0.0f, 0.0f)));
 
@@ -121,7 +121,7 @@ void YaveApp::create_assets() {
 	}
 
 	{
-		/*{
+		{
 			auto material = AssetPtr<Material>(Material(&device, MaterialData()
 					 .set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
 					 .set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
@@ -140,8 +140,8 @@ void YaveApp::create_assets() {
 				instance->animate(animation);
 				renderables << instance;
 			}
-		}*/
-		{
+		}
+		/*{
 			auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/albedo.yt").expected("Unable to load image file."));
 			auto color = AssetPtr<Texture>(Texture(&device, color_data));
 			destroy_later(color);
@@ -175,16 +175,7 @@ void YaveApp::create_assets() {
 				instance->position() = {0, -40, 0};
 				renderables << instance;
 			}
-			/*{
-				auto instance = new StaticMeshInstance(mesh, material);
-				instance->position() = {0, 5, 0};
-				renderables << instance;
-			}
-			{
-				auto instance = new StaticMeshInstance(mesh, material);
-				renderables << instance;
-			}*/
-		}
+		}*/
 
 	}
 
@@ -208,10 +199,14 @@ void YaveApp::create_renderers() {
 		return core::Arc<BufferRenderer>(new VarianceRenderer(depth));
 	};
 
+	//create_shadow();
+
 	auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
-	//auto depth = core::Arc<DepthRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
 	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
 	auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
+
+	/*auto depth = core::Arc<DepthRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
+	auto variance = core::Arc<BufferRenderer>(new VarianceRenderer(depth, 100));*/
 
 	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
 }
