@@ -4,29 +4,44 @@
 
 layout(local_size_x = 16, local_size_y = 16) in;
 
-layout(set = 0, binding = 0) uniform sampler2D in_color;
+layout(set = 0, binding = 0) uniform sampler2D in_depth;
 
-layout(rg16, set = 0, binding = 1) uniform writeonly image2D out_color;
-
-
-const int kernel_size = 9;
-const int total_size = 2 * kernel_size + 1;
-
-void main() {
-	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-
-	//float depth = texelFetch(in_color, coord, 0).x;
+layout(rg16, set = 0, binding = 1) uniform writeonly image2D out_variance;
 
 
+layout(constant_id = 0) const int kernel_size = 9;
+
+vec2 vertical(ivec2 coord) {
+	vec2 var_sum = vec2(0.0);
+	for(int i = kernel_size; i != -kernel_size + 1; ++i) {
+		var_sum += texelFetch(in_depth, coord + ivec2(0, i), 0).xy;
+	}
+
+	const int total_size = 2 * -kernel_size + 1;
+	return var_sum / total_size;
+}
+
+vec2 horizontal(ivec2 coord) {
 	float depth_sum = 0.0;
 	float sqr_sum = 0.0;
 	for(int i = -kernel_size; i != kernel_size + 1; ++i) {
-		float depth = texelFetch(in_color, coord + ivec2(i, 0), 0).x;
+		float depth = texelFetch(in_depth, coord + ivec2(i, 0), 0).x;
 		depth_sum += depth;
 		sqr_sum += sqr(depth);
 	}
 
-	imageStore(out_color, coord, vec4(depth_sum / total_size, depth_sum / total_size, 0.0, 0.0));
+	const int total_size = 2 * kernel_size + 1;
+	return vec2(depth_sum, sqr_sum) / total_size;
 }
 
+void main() {
+	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 
+	vec2 variance;
+	if(kernel_size < 0) {
+		variance = vertical(coord);
+	} else {
+		variance = horizontal(coord);
+	}
+	imageStore(out_variance, coord, vec4(variance, 0.0, 0.0));
+}

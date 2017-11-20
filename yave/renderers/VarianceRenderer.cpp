@@ -26,19 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-static ComputeShader create_variance_shader_h(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("variance_h.comp.spv").expected("Unable to open SPIR-V file.")));
+static ComputeShader create_variance_shader(DevicePtr dptr) {
+	return ComputeShader(dptr, SpirVData::from_file(io::File::open("variance.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
-static ComputeShader create_variance_shader_v(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("variance_v.comp.spv").expected("Unable to open SPIR-V file.")));
-}
 
-VarianceRenderer::VarianceRenderer(const Ptr<DepthRenderer>& buffer) :
+VarianceRenderer::VarianceRenderer(const Ptr<DepthRenderer>& buffer, u32 half_kernel_size) :
 		BufferRenderer(buffer),
 		_depth(buffer),
-		_h(create_variance_shader_h(device())),
-		_v(create_variance_shader_v(device())),
+		_h(create_variance_shader(device()), half_kernel_size),
+		_v(create_variance_shader(device()), -i32(half_kernel_size)),
 		_variance_h(device(), ImageFormat(variance_format), size()),
 		_variance(device(), ImageFormat(variance_format), size()),
 		_descriptor_h(device(), {Binding(buffer->depth()), Binding(StorageView(_variance_h))}),
