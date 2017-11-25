@@ -4,7 +4,7 @@ Yet another C++17 Vulkan engine.
 ## Status
 
 ![Current status](https://i.imgur.com/fLydq3W.png)
-![Current status](https://im3.ezgif.com/tmp/ezgif-3-fd5d083cba.gif)
+![Current status](https://i.imgur.com/TaJzCya.gif)
 
 ## Building
 You need:
