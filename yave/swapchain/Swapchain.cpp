@@ -146,7 +146,8 @@ void Swapchain::reset() {
 	destroy(old);
 }
 
-Swapchain::~Swapchain() {
+
+	Swapchain::~Swapchain() {
 	destroy_images();
 
 	destroy(_swapchain);
@@ -167,6 +168,10 @@ void Swapchain::build_swapchain() {
 	auto capabilities = compute_capabilities(device(), _surface);
 	auto format = get_surface_format(device(), _surface);
 
+	if(uenum(capabilities.supportedUsageFlags) & uenum(SwapchainImageUsage) != uenum(SwapchainImageUsage)) {
+		fatal("Swapchain does not support required usage flags.");	
+	}
+	
 	_size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
 	_color_format = format.format;
 
