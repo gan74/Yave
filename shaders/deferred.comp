@@ -5,8 +5,9 @@
 // -------------------------------- DEFINES --------------------------------
 
 #define USE_IBL
+//#define HAS_SHADOW
 
-
+#define NO_DEPTH
 
 // -------------------------------- I/O --------------------------------
 
@@ -36,20 +37,28 @@ layout(push_constant) uniform PushConstants {
 
 	uint point_count;
 	uint directional_count;
+
+#ifdef HAS_SHADOW
+	mat4 shadow_matrix;
+#endif
 } constants;
 
 
 layout(rgba16f, set = 0, binding = 6) uniform writeonly image2D out_color;
 
+#ifdef HAS_SHADOW
+layout(set = 0, binding = 7) uniform sampler2D shadow_map;
+#endif
 
 // -------------------------------- SHARED --------------------------------
 
 shared uint tile_lights[max_tile_lights];
 shared uint tile_light_count;
 
+#ifndef NO_DEPTH
 shared uint i_max_depth;
 shared uint i_min_depth;
-
+#endif
 
 
 // -------------------------------- PROFILE --------------------------------
@@ -86,12 +95,14 @@ uvec2 dispatch_range(uint num) {
 
 // -------------------------------- CULLING --------------------------------
 
+#ifndef NO_DEPTH
 void build_depth_bounds(float depth) {
 	uint i_depth = float_to_uint(depth);
 	uint im_depth = i_depth >= max_uint - 1 ? 0 : i_depth;
 	atomicMax(i_max_depth, im_depth);
 	atomicMin(i_min_depth, i_depth);
 }
+#endif
 
 Frustum build_group_frustum() {
 
@@ -108,12 +119,14 @@ Frustum build_group_frustum() {
 	vec3 tile_top_right = bot_left + x_step * (gl_WorkGroupID.x + 1) + y_step * (gl_WorkGroupID.y + 1);
 
 	vec3 cam_pos = constants.camera.position;
-	vec3 cam_fwd = constants.camera.forward;
 
-	float min_depth = uint_to_float(i_min_depth);
-	float max_depth = uint_to_float(i_max_depth);
+#ifndef NO_DEPTH
+	vec3 cam_fwd = constants.camera.forward;
+	float min_depth = uint_to_float(i_min_depth) * 0.5 + 0.5; // ???
+	float max_depth = uint_to_float(i_max_depth) * 0.5 + 0.5; // ???
 	vec3 near = unproject_ndc(vec3(0.0, 0.0, min_depth), constants.camera.inv_matrix);
 	vec3 far = unproject_ndc(vec3(0.0, 0.0, max_depth), constants.camera.inv_matrix);
+#endif
 
 	Frustum frustum;
 	frustum.planes[0] = plane(cam_pos, tile_top_left, tile_bot_left);
@@ -121,35 +134,58 @@ Frustum build_group_frustum() {
 	frustum.planes[2] = plane(cam_pos, tile_top_right, tile_top_left);
 	frustum.planes[3] = plane(cam_pos, tile_bot_left, tile_bot_right);
 
+#ifndef NO_DEPTH
 	frustum.planes[4] = vec4(cam_fwd, -dot(near + cam_pos, cam_fwd));
 	frustum.planes[5] = vec4(-cam_fwd, -dot(far + cam_pos, cam_fwd));
+#endif
 
 	return frustum;
 }
 
+
 void cull_lights(float depth) {
+#ifndef NO_DEPTH
 	if(gl_LocalInvocationIndex == 0) {
 		tile_light_count = 0;
 		i_max_depth = 0;
 		i_min_depth = max_uint;
 	}
 
+	groupMemoryBarrier();
 	barrier();
+
 	{
 		build_depth_bounds(depth);
 	}
+#else
+	if(gl_LocalInvocationIndex == 0) {
+		tile_light_count = 0;
+	}
+#endif
+
+	groupMemoryBarrier();
 	barrier();
+
 	{
 		Frustum tile_frustum = build_group_frustum();
 		uvec2 range = dispatch_range(constants.point_count);
 
 		for(uint i = range.x; i != range.y; ++i) {
+#ifdef NO_DEPTH
+			if(is_inside_no_depth(tile_frustum, lights.lights[i].position, lights.lights[i].radius)) {
+#else
 			if(is_inside(tile_frustum, lights.lights[i].position, lights.lights[i].radius)) {
+#endif
 				uint light_index = atomicAdd(tile_light_count, 1);
+				if(light_index >= max_tile_lights) {
+					break;
+				}
 				tile_lights[light_index] = i;
 			}
 		}
 	}
+
+	groupMemoryBarrier();
 	barrier();
 }
 
@@ -180,7 +216,8 @@ void main() {
 		vec3 view_dir = normalize(constants.camera.position - world_pos);
 
 		// point lights
-		for(uint i = 0, end = tile_light_count; i != end; ++i) {
+		uint point_light_count = min(max_tile_lights, tile_light_count);
+		for(uint i = 0; i != point_light_count; ++i) {
 			Light light = lights.lights[tile_lights[i]];
 
 			// light_dir dot view_dir > 0
@@ -203,6 +240,14 @@ void main() {
 			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
 		}
 
+#ifdef HAS_SHADOW
+		{
+			vec3 shadow_pos = project(world_pos, constants.shadow_matrix);
+			vec2 moments = texture(shadow_map, shadow_pos.xy).xy;
+			irradiance = vec3(shadow_pos.xy / 100000, 0.0);//vec3(variance_shadow(moments, shadow_pos.z));
+		}
+#endif
+
 #ifdef USE_IBL
 		irradiance += ibl_irradiance(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
 	} else {
@@ -212,6 +257,9 @@ void main() {
 	}
 
 	imageStore(out_color, coord, vec4(irradiance, 1.0));
+	//imageStore(out_color, coord, vec4(load_color(), 1.0));
+	//imageStore(out_color, coord, vec4(tile_light_count / float(max_tile_lights)));
+	//imageStore(out_color, coord, vec4((tile_light_count % 7) / 7.0));
 }
 
 

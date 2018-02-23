@@ -7,7 +7,7 @@ const float epsilon = 0.001;
 const uint max_uint = uint(0xFFFFFFF);
 
 const uint max_bones = 256;
-const uint max_tile_lights = 128;
+const uint max_tile_lights = 256;
 
 
 // -------------------------------- TYPES --------------------------------
@@ -160,6 +160,15 @@ bool is_inside(Frustum frustum, vec3 pos, float radius) {
 	return true;
 }
 
+bool is_inside_no_depth(Frustum frustum, vec3 pos, float radius) {
+	for(uint i = 0; i != 4; ++i) {
+		if(is_inside(frustum.planes[i], pos, radius)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 
 // -------------------------------- HDR --------------------------------
 
@@ -255,7 +264,7 @@ float variance_shadow(vec2 moments, float depth) {
 	float variance = sqr(moments.x) - moments.y;
 	float diff = moments.x - depth;
 	float p = variance / (variance + sqr(diff));
-	return max(p, depth <= moments.x);
+	return max(p, depth <= moments.x ? 1.0 : 0.0);
 }
 
 // -------------------------------- IBL --------------------------------
