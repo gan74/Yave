@@ -62,6 +62,10 @@ static vk::Device create_device(
 	required.fullDrawIndexUint32 = true;
 	required.textureCompressionBC = true;
 	required.shaderStorageImageExtendedFormats = true;
+	required.shaderUniformBufferArrayDynamicIndexing = true;
+	required.shaderSampledImageArrayDynamicIndexing = true;
+	required.shaderStorageBufferArrayDynamicIndexing = true;
+	required.shaderStorageImageArrayDynamicIndexing = true;
 
 	if(debug.is_debug_callback_enabled()) {
 		required.robustBufferAccess = true;
