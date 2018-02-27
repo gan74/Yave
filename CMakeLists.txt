@@ -46,7 +46,7 @@ function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
 	set(files ${${SOURCE_VARIABLE_NAME}})
 
 	# Generate a unique filename for the unity build translation unit
-	set(unit_build_file ${CMAKE_CURRENT_BINARY_DIR}/ub_${UB_SUFFIX}.cpp)
+	set(unit_build_file ${CMAKE_CURRENT_BINARY_DIR}/blob_${UB_SUFFIX}.cpp)
 
 	# Exclude all translation units from compilation
 	set_source_files_properties(${files} PROPERTIES HEADER_FILE_ONLY true)
