@@ -168,15 +168,16 @@ void Swapchain::build_swapchain() {
 	auto capabilities = compute_capabilities(device(), _surface);
 	auto format = get_surface_format(device(), _surface);
 
-	if(uenum(capabilities.supportedUsageFlags) & uenum(SwapchainImageUsage) != uenum(SwapchainImageUsage)) {
-		fatal("Swapchain does not support required usage flags.");	
+	auto image_usage_flags = vk::ImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
+	if((capabilities.supportedUsageFlags & image_usage_flags) != image_usage_flags) {
+		fatal("Swapchain does not support required usage flags.");
 	}
-	
+
 	_size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
 	_color_format = format.format;
 
 	_swapchain = device()->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
-			.setImageUsage(vk::ImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit))
+			.setImageUsage(image_usage_flags)
 			.setImageSharingMode(vk::SharingMode::eExclusive)
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
 			.setImageArrayLayers(1)
