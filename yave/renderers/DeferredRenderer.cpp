@@ -121,6 +121,7 @@ void DeferredRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBu
 				u32 directional_count;
 			};
 
+			auto region = recorder.region("DeferredRenderer");
 			recorder.dispatch_size(_lighting_program, size(), {_descriptor_set}, PushData{_gbuffer->scene_view().camera(), u32(lights.size()), u32(directionals.size())});
 			return _acc_buffer;
 		});

@@ -22,9 +22,12 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_INSTANCE_H
 #define YAVE_DEVICE_INSTANCE_H
 
+
 #include <yave/vk/vk.h>
 
 #include "DebugParams.h"
+
+#include "extentions/DebugCallback.h"
 
 namespace yave {
 
@@ -38,14 +41,13 @@ class Instance : NonCopyable {
 		vk::Instance vk_instance() const;
 
 	private:
-		void setup_debug();
-
-		core::Vector<const char*> _instance_extentions;
+		struct {
+			core::Unique<DebugCallback> debug_callback;
+		} _extensions;
 
 		DebugParams _debug_params;
 		vk::Instance _instance;
 
-		VkDebugReportCallbackEXT _debug_callback;
 };
 
 }

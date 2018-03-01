@@ -20,39 +20,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "GBufferRenderer.h"
+#include "DebugMarker.h"
+
+#include <yave/device/Instance.h>
+#include <yave/vk/vk.h>
 
 namespace yave {
 
-GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
-		BufferRenderer(dptr, size),
-		_scene(new SceneRenderer(dptr, node)),
-		_depth(device(), depth_format, size),
-		_color(device(), diffuse_format, size),
-		_normal(device(), normal_format, size),
-		_gbuffer(device(), _depth, {_color, _normal}) {
+const char* DebugMarker::name() {
+	return VK_EXT_DEBUG_MARKER_EXTENSION_NAME;
 }
 
-TextureView GBufferRenderer::depth() const {
-	return _depth;
+DebugMarker::DebugMarker(vk::Device device) : _device(device) {
+	_set_object_name = reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT>(device.getProcAddr("vkDebugMarkerSetObjectNameEXT"));
+	_begin_region = reinterpret_cast<PFN_vkCmdDebugMarkerBeginEXT>(device.getProcAddr("vkCmdDebugMarkerBeginEXT"));
+	_end_region = reinterpret_cast<PFN_vkCmdDebugMarkerEndEXT>(device.getProcAddr("vkCmdDebugMarkerEndEXT"));
 }
 
-TextureView GBufferRenderer::albedo_metallic() const {
-	return _color;
+
+void DebugMarker::begin_region(vk::CommandBuffer buffer, const char* name, const math::Vec4& color) const {
+	VkDebugMarkerMarkerInfoEXT marker = vk::DebugMarkerMarkerInfoEXT()
+			.setPMarkerName(name)
+			.setColor({{color.x(), color.y(), color.z(), color.w()}})
+		;
+
+	_begin_region(buffer, &marker);
 }
 
-TextureView GBufferRenderer::normal_roughness() const {
-	return _normal;
-}
-
-void GBufferRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
-	auto cmd_buffer = node.add_dependency(_scene, _gbuffer);
-
-	node.set_func([=, &recorder]() mutable {
-			auto region = recorder.region("GBufferRenderer");
-			recorder.execute(cmd_buffer.get(), _gbuffer);
-			return result_type(_color);
-		});
+void DebugMarker::end_region(vk::CommandBuffer buffer) const {
+	_end_region(buffer);
 }
 
 }

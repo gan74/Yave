@@ -19,40 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_DEVICE_EXTENSIONS_DEBUGCALLBACK_H
+#define YAVE_DEVICE_EXTENSIONS_DEBUGCALLBACK_H
 
-#include "GBufferRenderer.h"
+#include <yave/vk/vk.h>
 
 namespace yave {
 
-GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
-		BufferRenderer(dptr, size),
-		_scene(new SceneRenderer(dptr, node)),
-		_depth(device(), depth_format, size),
-		_color(device(), diffuse_format, size),
-		_normal(device(), normal_format, size),
-		_gbuffer(device(), _depth, {_color, _normal}) {
-}
+class DebugCallback : NonCopyable {
+	public:
+		static const char* name();
 
-TextureView GBufferRenderer::depth() const {
-	return _depth;
-}
+		DebugCallback(vk::Instance instance);
+		~DebugCallback();
 
-TextureView GBufferRenderer::albedo_metallic() const {
-	return _color;
-}
+	private:
+		vk::Instance _instance;
+		VkDebugReportCallbackEXT _callback;
 
-TextureView GBufferRenderer::normal_roughness() const {
-	return _normal;
-}
-
-void GBufferRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
-	auto cmd_buffer = node.add_dependency(_scene, _gbuffer);
-
-	node.set_func([=, &recorder]() mutable {
-			auto region = recorder.region("GBufferRenderer");
-			recorder.execute(cmd_buffer.get(), _gbuffer);
-			return result_type(_color);
-		});
-}
+};
 
 }
+
+#endif // YAVE_DEVICE_EXTENSIONS_DEBUGCALLBACK_H

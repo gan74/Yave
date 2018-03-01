@@ -74,12 +74,29 @@ class CmdBufferRecorderBase : public CmdBufferBase {
 				usize _size = 0;
 		};
 
+	private:
+		struct CmdBufferRegion : public DeviceLinked, NonCopyable {
+			public:
+				CmdBufferRegion() = default;
+				CmdBufferRegion(CmdBufferRegion&& other);
+				CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, const char* name, const math::Vec4& color);
+
+				~CmdBufferRegion();
+
+				CmdBufferRegion& operator=(const CmdBufferRegion& other) = delete;
+
+			private:
+				vk::CommandBuffer _buffer;
+		};
+
 	public:
 		using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSet>>;
 
 		~CmdBufferRecorderBase();
 
 		const RenderPass& current_pass() const;
+
+		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
 
 		void set_viewport(const Viewport& view);
 

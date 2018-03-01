@@ -193,11 +193,11 @@ void YaveApp::create_assets() {
 void YaveApp::create_renderers() {
 	Y_LOG_PERF("init,loading");
 
-	auto create_shadow = [=]() {
+	/*auto create_shadow = [=]() {
 		auto culling = core::Arc<CullingNode>(new CullingNode(*shadow_view));
 		auto depth = core::Arc<DepthRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
 		return core::Arc<BufferRenderer>(new VarianceRenderer(depth));
-	};
+	};*/
 
 	//create_shadow();
 

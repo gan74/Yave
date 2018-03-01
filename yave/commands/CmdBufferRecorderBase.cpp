@@ -31,6 +31,30 @@ static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 	return vk::CommandBufferUsageFlagBits(uenum(u) & ~uenum(CmdBufferUsage::Secondary));
 }
 
+
+CmdBufferRecorderBase::CmdBufferRegion::~CmdBufferRegion() {
+	if(device() && device()->debug_marker()) {
+		device()->debug_marker()->end_region(_buffer);
+	}
+}
+
+CmdBufferRecorderBase::CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, const char* name, const math::Vec4& color) :
+		DeviceLinked(cmd_buffer.device()),
+		_buffer(cmd_buffer.vk_cmd_buffer()) {
+
+	if(auto marker = device()->debug_marker(); marker) {
+		marker->begin_region(_buffer, name, color);
+	}
+}
+
+CmdBufferRecorderBase::CmdBufferRegion::CmdBufferRegion(CmdBufferRegion&& other) {
+	DeviceLinked::swap(other);
+	std::swap(_buffer, other._buffer);
+}
+
+
+
+
 CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& cmd_buffer) {
 	CmdBufferBase::swap(cmd_buffer);
 }
@@ -51,6 +75,10 @@ const RenderPass& CmdBufferRecorderBase::current_pass() const {
 		fatal("Null renderpass.");
 	}
 	return *_render_pass;
+}
+
+CmdBufferRecorderBase::CmdBufferRegion CmdBufferRecorderBase::region(const char* name, const math::Vec4& color) {
+	return CmdBufferRegion(*this, name, color);
 }
 
 void CmdBufferRecorderBase::set_viewport(const Viewport& view) {

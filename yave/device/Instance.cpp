@@ -22,25 +22,14 @@ SOFTWARE.
 
 #include "Instance.h"
 
-
 namespace yave {
 
-VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT, u64, usize, i32, const char* layer, const char* msg, void*) {
-	auto type = Log::Info;
-	if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
-		// breakpoint here
-		type = Log::Error;
-	}
-	log_msg(core::String() + "Vk: @[" + layer + "]: " + msg + "\n",  type);
-	return false;
-}
-
-
-Instance::Instance(DebugParams debug) : _debug_params(debug), _debug_callback(nullptr) {
-	_instance_extentions = {VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME};
+Instance::Instance(DebugParams debug) : _debug_params(debug) {
+	auto extention_names = core::vector_with_capacity<const char*>(4);
+	extention_names = {VK_KHR_SURFACE_EXTENSION_NAME, DebugCallback::name()};
 
 	#ifdef Y_OS_WIN
-		_instance_extentions << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+		extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 	#endif
 
 	auto app_info = vk::ApplicationInfo()
@@ -50,42 +39,23 @@ Instance::Instance(DebugParams debug) : _debug_params(debug), _debug_callback(nu
 		;
 
 	_instance = vk::createInstance(vk::InstanceCreateInfo()
-			.setEnabledExtensionCount(u32(_instance_extentions.size()))
-			.setPpEnabledExtensionNames(_instance_extentions.begin())
+			.setEnabledExtensionCount(u32(extention_names.size()))
+			.setPpEnabledExtensionNames(extention_names.begin())
 			.setEnabledLayerCount(u32(_debug_params.instance_layers().size()))
 			.setPpEnabledLayerNames(_debug_params.instance_layers().begin())
 			.setPApplicationInfo(&app_info)
 		);
 
-	setup_debug();
-}
 
-void Instance::setup_debug() {
-	if(_debug_params.is_debug_callback_enabled()) {
-		auto create_debug_callback = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(_instance.getProcAddr("vkCreateDebugReportCallbackEXT"));
-		if(create_debug_callback) {
-			VkDebugReportCallbackCreateInfoEXT create_info = vk::DebugReportCallbackCreateInfoEXT()
-					.setPfnCallback(vulkan_debug)
-					.setFlags(
-						//vk::DebugReportFlagBitsEXT::eDebug |
-						//vk::DebugReportFlagBitsEXT::eInformation |
-						vk::DebugReportFlagBitsEXT::eError |
-						vk::DebugReportFlagBitsEXT::ePerformanceWarning |
-						vk::DebugReportFlagBitsEXT::eWarning
-					)
-				;
-			create_debug_callback(_instance, &create_info, nullptr, &_debug_callback);
-		}
+
+	if(_debug_params.debug_features_enabled()) {
+		_extensions.debug_callback = new DebugCallback(_instance);
 	}
 }
 
 Instance::~Instance() {
-	if(_debug_callback) {
-		auto destroy_debug_callback = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(_instance.getProcAddr("vkDestroyDebugReportCallbackEXT"));
-		if(destroy_debug_callback) {
-			destroy_debug_callback(_instance, _debug_callback, nullptr);
-		}
-	}
+	// destroy extensions to free everything before the instance gets destroyed
+	_extensions = {};
 	_instance.destroy();
 }
 

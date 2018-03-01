@@ -102,11 +102,14 @@ static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<Image
 	float roughness_step = 1.0f / (views.size() - 1);
 
 	math::Vec2ui size = views[0].size();
-	for(usize i = 0; i != views.size(); ++i) {
-		recorder.dispatch_size(conv_program, size, {descriptor_sets[i]}, roughness);
+	{
+		auto region = recorder.region("IBL probe generation");
+		for(usize i = 0; i != views.size(); ++i) {
+			recorder.dispatch_size(conv_program, size, {descriptor_sets[i]}, roughness);
 
-		roughness += roughness_step;
-		size /= 2;
+			roughness += roughness_step;
+			size /= 2;
+		}
 	}
 
 	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));

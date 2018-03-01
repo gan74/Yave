@@ -38,8 +38,8 @@ class DebugParams {
 			return DebugParams({}, false);
 		}
 
-		bool is_debug_callback_enabled() const {
-			return _callbacks_enabled;
+		bool debug_features_enabled() const {
+			return _debug_enabled;
 		}
 
 		const core::Vector<const char*>& instance_layers() const {
@@ -54,7 +54,7 @@ class DebugParams {
 		DebugParams(const core::ArrayView<const char*>& instance, const core::ArrayView<const char*>& device, bool callbacks) :
 				_instance_layers(instance.begin(), instance.end()),
 				_device_layers(device.begin(), device.end()),
-				_callbacks_enabled(callbacks) {
+				_debug_enabled(callbacks) {
 		}
 
 		DebugParams(const core::ArrayView<const char*>& layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
@@ -62,7 +62,7 @@ class DebugParams {
 
 		core::Vector<const char*> _instance_layers;
 		core::Vector<const char*> _device_layers;
-		bool _callbacks_enabled;
+		bool _debug_enabled;
 };
 
 }

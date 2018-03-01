@@ -19,40 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_DEVICE_EXTENSIONS_DEBUGMARKER_H
+#define YAVE_DEVICE_EXTENSIONS_DEBUGMARKER_H
 
-#include "GBufferRenderer.h"
+#include <yave/vk/vk.h>
 
 namespace yave {
 
-GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
-		BufferRenderer(dptr, size),
-		_scene(new SceneRenderer(dptr, node)),
-		_depth(device(), depth_format, size),
-		_color(device(), diffuse_format, size),
-		_normal(device(), normal_format, size),
-		_gbuffer(device(), _depth, {_color, _normal}) {
-}
+class DebugMarker : NonCopyable {
+	public:
+		static const char* name();
 
-TextureView GBufferRenderer::depth() const {
-	return _depth;
-}
+		DebugMarker(vk::Device device);
 
-TextureView GBufferRenderer::albedo_metallic() const {
-	return _color;
-}
+		void begin_region(vk::CommandBuffer buffer, const char* name, const math::Vec4& color = math::Vec4()) const;
+		void end_region(vk::CommandBuffer buffer) const;
 
-TextureView GBufferRenderer::normal_roughness() const {
-	return _normal;
-}
+	private:
+		vk::Device _device;
 
-void GBufferRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
-	auto cmd_buffer = node.add_dependency(_scene, _gbuffer);
+		PFN_vkDebugMarkerSetObjectNameEXT _set_object_name;
+		PFN_vkCmdDebugMarkerBeginEXT _begin_region;
+		PFN_vkCmdDebugMarkerEndEXT _end_region;
 
-	node.set_func([=, &recorder]() mutable {
-			auto region = recorder.region("GBufferRenderer");
-			recorder.execute(cmd_buffer.get(), _gbuffer);
-			return result_type(_color);
-		});
-}
+};
 
 }
+
+#endif // YAVE_DEVICE_EXTENSIONS_DEBUGMARKER_H

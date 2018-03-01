@@ -39,8 +39,8 @@ static void check_features(const vk::PhysicalDeviceFeatures& features, const vk:
 
 static vk::Device create_device(
 		vk::PhysicalDevice physical,
-		const core::Vector<QueueFamily>& queue_families,
-		const core::Vector<const char*>& extentions,
+		const core::ArrayView<QueueFamily>& queue_families,
+		const core::ArrayView<const char*>& extentions,
 		const DebugParams& debug) {
 
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
@@ -67,7 +67,7 @@ static vk::Device create_device(
 	required.shaderStorageBufferArrayDynamicIndexing = true;
 	required.shaderStorageImageArrayDynamicIndexing = true;
 
-	if(debug.is_debug_callback_enabled()) {
+	if(debug.debug_features_enabled()) {
 		required.robustBufferAccess = true;
 	}
 
@@ -93,19 +93,24 @@ Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
 		_queue_families(QueueFamily::all(_physical)),
-		_device{create_device(_physical.vk_physical_device(), _queue_families, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}, _instance.debug_params())},
+		_device{create_device(_physical.vk_physical_device(), _queue_families,
+			// https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers/issues/888
+			{VK_KHR_SWAPCHAIN_EXTENSION_NAME, DebugMarker::name()},
+			_instance.debug_params())},
 		_sampler(this),
 		_allocator(this),
 		_secondary_cmd_pool(this),
 		_disposable_cmd_pool(this),
 		_primary_cmd_pool(this),
-		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
+		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)),
+		_extensions{new DebugMarker(_device.device)} {
 
 	for(const auto& family : _queue_families) {
 		for(auto& queue : family.queues(this)) {
 			_queues.push_back(std::move(queue));
 		}
 	}
+
 }
 
 Device::~Device() {
@@ -172,6 +177,11 @@ CmdBuffer<CmdBufferUsage::Secondary> Device::create_secondary_cmd_buffer() const
 CmdBuffer<CmdBufferUsage::Primary> Device::create_cmd_buffer() const {
 	return _primary_cmd_pool.create_buffer();
 }
+
+const DebugMarker* Device::debug_marker() const {
+	return _extensions.debug_marker.as_ptr();
+}
+
 
 
 }

@@ -26,6 +26,8 @@ SOFTWARE.
 #include "PhysicalDevice.h"
 #include "ThreadLocalDeviceData.h"
 
+#include "extentions/DebugMarker.h"
+
 #include <yave/images/Sampler.h>
 #include <yave/queues/QueueFamily.h>
 #include <yave/memory/DeviceAllocator.h>
@@ -67,6 +69,8 @@ class Device : NonCopyable {
 		vk::Device vk_device() const;
 		vk::Sampler vk_sampler() const;
 
+		const DebugMarker* debug_marker() const;
+
 
 		template<typename T>
 		auto create_descriptor_set_layout(T&& t) const {
@@ -81,7 +85,6 @@ class Device : NonCopyable {
 		}
 
 	private:
-
 		Instance& _instance;
 		PhysicalDevice _physical;
 
@@ -103,6 +106,10 @@ class Device : NonCopyable {
 		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
 
 		core::Unique<DescriptorSetLayoutPool> _descriptor_layout_pool;
+
+		struct {
+			core::Unique<DebugMarker> debug_marker;
+		} _extensions;
 };
 
 
