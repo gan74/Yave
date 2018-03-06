@@ -299,6 +299,21 @@ Rc(T*&&) -> Rc<T>;
 }
 }
 
+namespace std {
+template<typename T>
+struct hash<y::core::Unique<T>> : hash<T*> {
+	auto operator()(const y::core::Unique<T>& p) const {
+		return hash<T*>::operator()(p.as_ptr());
+	}
+};
+template<typename T, typename C>
+struct hash<y::core::Rc<T, C>> : hash<T*> {
+	auto operator()(const y::core::Rc<T, C>& p) const {
+		return hash<T*>::operator()(p.as_ptr());
+	}
+};
+}
+
 
 #endif // Y_CORE_RC_H
 
