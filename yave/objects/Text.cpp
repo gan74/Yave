@@ -41,7 +41,7 @@ Text::Text(const AssetPtr<Font>& font, const core::String& text) :
 	}
 }
 
-void Text::render(const FrameToken&, CmdBufferRecorderBase&, const SceneData&) const {
+void Text::render(const FrameToken&, RenderPassRecorder&, const SceneData&) const {
 	fatal("text");
 }
 

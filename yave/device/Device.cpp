@@ -99,7 +99,6 @@ Device::Device(Instance& instance) :
 			_instance.debug_params())},
 		_sampler(this),
 		_allocator(this),
-		_secondary_cmd_pool(this),
 		_disposable_cmd_pool(this),
 		_primary_cmd_pool(this),
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)),
@@ -110,7 +109,6 @@ Device::Device(Instance& instance) :
 			_queues.push_back(std::move(queue));
 		}
 	}
-
 }
 
 Device::~Device() {
@@ -168,10 +166,6 @@ vk::Sampler Device::vk_sampler() const {
 
 CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() const {
 	return _disposable_cmd_pool.create_buffer();
-}
-
-CmdBuffer<CmdBufferUsage::Secondary> Device::create_secondary_cmd_buffer() const {
-	return _secondary_cmd_pool.create_buffer();
 }
 
 CmdBuffer<CmdBufferUsage::Primary> Device::create_cmd_buffer() const {

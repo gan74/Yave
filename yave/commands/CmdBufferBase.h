@@ -27,7 +27,6 @@ SOFTWARE.
 namespace yave {
 
 class CmdBufferRecorderBase;
-class PrimaryCmdBufferRecorderBase;
 
 struct CmdBufferBase : NonCopyable {
 	public:
@@ -39,8 +38,6 @@ struct CmdBufferBase : NonCopyable {
 		void wait() const;
 
 	protected:
-		friend class PrimaryCmdBufferRecorderBase;
-
 		CmdBufferBase() = default;
 		CmdBufferBase(core::Arc<CmdBufferDataProxy>&& proxy);
 		CmdBufferBase(CmdBufferBase&& other);
@@ -52,6 +49,7 @@ struct CmdBufferBase : NonCopyable {
 			_proxy->data().keep_alive(std::forward<T>(t));
 		}
 
+	private:
 		core::Arc<CmdBufferDataProxy> _proxy;
 };
 

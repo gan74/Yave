@@ -23,10 +23,11 @@ SOFTWARE.
 #include "GBufferRenderer.h"
 
 namespace yave {
+namespace experimental {
 
-GBufferRenderer::GBufferRenderer(DevicePtr dptr, const math::Vec2ui &size, const Ptr<CullingNode>& node) :
-		BufferRenderer(dptr, size),
-		_scene(new SceneRenderer(dptr, node)),
+GBufferRenderer::GBufferRenderer(const Ptr<SceneRenderer>& scene, const math::Vec2ui &size) :
+		Renderer(scene->device()),
+		_scene(scene),
 		_depth(device(), depth_format, size),
 		_color(device(), diffuse_format, size),
 		_normal(device(), normal_format, size),
@@ -45,14 +46,16 @@ TextureView GBufferRenderer::normal_roughness() const {
 	return _normal;
 }
 
-void GBufferRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
-	auto cmd_buffer = node.add_dependency(_scene, _gbuffer);
-
-	node.set_func([=, &recorder]() mutable {
-			auto region = recorder.region("GBufferRenderer");
-			recorder.execute(cmd_buffer.get(), _gbuffer);
-			return result_type(_color);
-		});
+void GBufferRenderer::build_frame_graph(FrameGraphNode& frame_graph) {
+	frame_graph.schedule(_scene);
 }
 
+void GBufferRenderer::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	auto region = recorder.region("GBufferRenderer::render");
+
+	auto pass = recorder.bind_framebuffer(_gbuffer);
+	_scene->render(pass, token);
+}
+
+}
 }

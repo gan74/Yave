@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,11 +29,14 @@ namespace yave {
 enum class PipelineStage {
 	None = 0,
 
+	TransferBit = uenum(vk::PipelineStageFlagBits::eTransfer),
+	HostBit = uenum(vk::PipelineStageFlagBits::eHost),
+	VertexBit = uenum(vk::PipelineStageFlagBits::eVertexInput) | uenum(vk::PipelineStageFlagBits::eVertexShader),
 	FragmentBit = uenum(vk::PipelineStageFlagBits::eFragmentShader) | uenum(vk::PipelineStageFlagBits::eEarlyFragmentTests) | uenum(vk::PipelineStageFlagBits::eLateFragmentTests),
 	ComputeBit = uenum(vk::PipelineStageFlagBits::eComputeShader),
 	AttachmentOutBit = uenum(vk::PipelineStageFlagBits::eColorAttachmentOutput),
 
-	Shaders = FragmentBit | ComputeBit
+	Shaders = VertexBit | FragmentBit | ComputeBit
 };
 
 constexpr PipelineStage operator|(PipelineStage l, PipelineStage r) {

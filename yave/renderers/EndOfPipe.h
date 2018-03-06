@@ -19,47 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_BUFFERRENDERER_H
-#define YAVE_RENDERERS_BUFFERRENDERER_H
+#ifndef YAVE_EXPERIMENTAL_RENDERERS_ENDOFPIPE_H
+#define YAVE_EXPERIMENTAL_RENDERERS_ENDOFPIPE_H
 
-#include "BufferRendererType.h"
-#include "RenderingPipeline.h"
+#include "renderers.h"
 
 namespace yave {
+namespace experimental {
 
-class BufferRenderer : public Node, public DeviceLinked {
-
+class EndOfPipe : public Renderer {
 	public:
-		using result_type = TextureView;
+		EndOfPipe(const Ptr<Renderer>& renderer);
 
-#warning BufferRenderer barriers
-
-		BufferRenderer(DevicePtr dptr, const math::Vec2& size) : DeviceLinked(dptr), _size(size) {
-		}
-
-		BufferRenderer(const Ptr<BufferRenderer>& renderer) : BufferRenderer(renderer->device(), renderer->size()) {
-		}
-
-		const math::Vec2ui& size() const {
-			return _size;
-		}
-
-		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
-
-		// TODO duck.
-		virtual TextureView depth() const { return fatal("No depth."); }
-		virtual TextureView albedo_metallic() const { return fatal("No albedo metallic."); }
-		virtual TextureView normal_roughness() const { return fatal("No normal roughness."); }
-		virtual TextureView depth_variance() const { return fatal("No depth variance."); }
-		virtual TextureView lighting() const { return fatal("No lighting."); }
+	protected:
+		void build_frame_graph(FrameGraphNode& frame_graph) override;
+		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 	private:
-		math::Vec2ui _size;
+		const DescriptorSet& create_descriptor_set(const StorageView& out, const TextureView& in);
+
+		Ptr<Renderer> _renderer;
+
+		ComputeProgram _correction_program;
+
+		std::unordered_map<VkImageView, DescriptorSet> _output_sets;
+
 };
 
-
+}
 }
 
-
-
-#endif // BUFFERRENDERER_H
+#endif // YAVE_EXPERIMENTAL_RENDERERS_ENDOFPIPE_H

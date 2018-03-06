@@ -19,48 +19,66 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_RENDERERS_H
-#define YAVE_RENDERERS_RENDERERS_H
-
-#include <yave/yave.h>
-#include <yave/swapchain/FrameToken.h>
+#ifndef YAVE_EXPERIMENTAL_RENDERERS_RENDERERS_H
+#define YAVE_EXPERIMENTAL_RENDERERS_RENDERERS_H
 
 #include "RenderingPipeline.h"
-#include "BufferRenderer.h"
 
 namespace yave {
+namespace experimental {
+
+class Node : NonCopyable {
+	public:
+		virtual ~Node() {
+		}
+
+	protected:
+		friend class RenderingPipeline;
+
+		virtual void build_frame_graph(FrameGraphNode& node) = 0;
+		virtual void prepare() {
+		}
+
+	private:
+};
 
 class SecondaryRenderer : public Node, public DeviceLinked {
 	public:
-		using result_type = RecordedCmdBuffer<CmdBufferUsage::Secondary>;
+		template<typename T>
+		using Ptr = core::Arc<T>;
 
 		SecondaryRenderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-		virtual void build_frame_graph(RenderingNode<result_type>&, const Framebuffer&) = 0;
-};
+		virtual void render(RenderPassRecorder& recorder, const FrameToken& token) = 0;
 
+	protected:
+		friend class RenderingPipeline;
+
+		virtual void pre_render(CmdBufferRecorder<>&, const FrameToken&) {
+		}
+
+
+};
 
 class Renderer : public Node, public DeviceLinked {
 	public:
-		using result_type = void;
+		template<typename T>
+		using Ptr = core::Arc<T>;
 
 		Renderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
-};
+	protected:
+		friend class RenderingPipeline;
 
-class EndOfPipeline : public Node,  public DeviceLinked {
-	public:
-		using result_type = void;
-
-		EndOfPipeline(DevicePtr dptr) : DeviceLinked(dptr) {
+		virtual void pre_render(CmdBufferRecorder<>&, const FrameToken&) {
 		}
 
-		virtual void build_frame_graph(RenderingNode<result_type>&, CmdBufferRecorder<>&) = 0;
+		virtual void render(CmdBufferRecorder<>& recorder, const FrameToken& token) = 0;
 };
 
 }
+}
 
-#endif // YAVE_RENDERERS_RENDERERS_H
+#endif // YAVE_EXPERIMENTAL_RENDERERS_RENDERERS_H

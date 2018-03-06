@@ -55,7 +55,6 @@ class Device : NonCopyable {
 		DeviceAllocator& allocator() const;
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
-		CmdBuffer<CmdBufferUsage::Secondary> create_secondary_cmd_buffer() const;
 		CmdBuffer<CmdBufferUsage::Primary> create_cmd_buffer() const;
 
 		const QueueFamily& queue_family(vk::QueueFlags flags) const;
@@ -101,7 +100,6 @@ class Device : NonCopyable {
 		mutable concurrent::SpinLock _lock;
 		mutable std::unordered_map<std::thread::id, core::Unique<ThreadLocalDeviceData>> _thread_local_datas;
 
-		mutable CmdBufferPool<CmdBufferUsage::Secondary> _secondary_cmd_pool;
 		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
 		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
 

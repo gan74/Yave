@@ -19,29 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_GBUFFERRENDERER_H
-#define YAVE_RENDERERS_GBUFFERRENDERER_H
+#ifndef YAVE_EXPERIMENTAL_RENDERERS_GBUFFERRENDERER_H
+#define YAVE_EXPERIMENTAL_RENDERERS_GBUFFERRENDERER_H
 
 #include "SceneRenderer.h"
 
 namespace yave {
+namespace experimental {
 
-class GBufferRenderer : public BufferRenderer {
+class GBufferRenderer : public Renderer {
 
 	public:
 		static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
 		static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
 
+		GBufferRenderer(const Ptr<SceneRenderer>& scene, const math::Vec2ui& size);
 
-		GBufferRenderer(DevicePtr dptr, const math::Vec2ui& size, const Ptr<CullingNode>& node);
-		void build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) override;
-
-
-		TextureView depth() const override;
-		TextureView albedo_metallic() const override;
-		TextureView normal_roughness() const override;
-
+		TextureView depth() const;
+		TextureView albedo_metallic() const;
+		TextureView normal_roughness() const;
 
 		const SceneView& scene_view() const {
 			return _scene->scene_view();
@@ -51,8 +48,12 @@ class GBufferRenderer : public BufferRenderer {
 			return _scene;
 		}
 
+	protected:
+		void build_frame_graph(FrameGraphNode& frame_graph) override;
+		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
+
 	private:
-		core::Arc<SceneRenderer> _scene;
+		Ptr<SceneRenderer> _scene;
 
 		DepthTextureAttachment _depth;
 		ColorTextureAttachment _color;
@@ -61,7 +62,7 @@ class GBufferRenderer : public BufferRenderer {
 		Framebuffer _gbuffer;
 };
 
-
+}
 }
 
-#endif // YAVE_RENDERERS_GBUFFERRENDERER_H
+#endif // YAVE_EXPERIMENTAL_RENDERERS_GBUFFERRENDERER_H

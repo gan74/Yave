@@ -25,76 +25,56 @@ SOFTWARE.
 #include <yave/buffers/TypedMapping.h>
 
 namespace yave {
+namespace experimental {
 
 static constexpr usize batch_size = 128 * 1024;
 
-SceneRenderer::SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull) :
+SceneRenderer::SceneRenderer(DevicePtr dptr, SceneView& view) :
 		SecondaryRenderer(dptr),
-		_cull(cull),
-
+		_view(view),
 		_camera_buffer(device(), 1),
-		_camera_set(device(), {Binding(_camera_buffer)}),
-		_attrib_buffer(device(), batch_size) {
+		_attrib_buffer(device(), batch_size),
+		_camera_set(device(), {Binding(_camera_buffer)}) {
 
 	log_msg("Allocating "_s + (batch_size / 1024) * (sizeof(math::Transform<>) + sizeof(vk::DrawIndexedIndirectCommand)) + "KB of scene buffers");
 }
 
-void SceneRenderer::build_frame_graph(RenderingNode<result_type>& node, const Framebuffer& framebuffer) {
-	auto culling = node.add_dependency(_cull);
-
-	node.set_func([=, token = node.token(), &framebuffer]() {
-			Y_LOG_PERF("scene,rendering");
-			CmdBufferRecorder<CmdBufferUsage::Secondary> recorder(device()->create_secondary_cmd_buffer(), framebuffer);
-			auto region = recorder.region("SceneRenderer");
-
-			const auto& results = culling.get();
-
-			auto camera_mapping = TypedMapping(_camera_buffer);
-			camera_mapping[0] = scene_view().camera().viewproj_matrix();
-
-			auto attrib_mapping = TypedMapping(_attrib_buffer);
-			AttribData attrib_data{0, attrib_mapping.size(), attrib_mapping.begin()};
-
-			render_renderables(recorder, token, results.renderables, attrib_data);
-
-			if(!results.static_meshes.is_empty()) {
-				fatal("Static meshes not supported");
-			}
-
-			return std::move(recorder);
-		});
+const SceneView& SceneRenderer::scene_view() const {
+	return _view;
 }
 
-
-
-template<typename T>
-static usize max_size(usize size, const T& attrib_data) {
-	if(size > attrib_data.size) {
-		log_msg("Batch size exceeds scene buffer size", Log::Warning);
-		return attrib_data.size;
-	}
-	return size;
+void SceneRenderer::build_frame_graph(FrameGraphNode&) {
 }
 
-void SceneRenderer::render_renderables(Recorder& recorder,
-									   const FrameToken& token,
-									   const core::Vector<const Renderable*>& renderables,
-									   AttribData& attrib_data) {
+void SceneRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken&) {
+	auto region = recorder.region("SceneRenderer::pre_render");
 
-	usize size = max_size(renderables.size(), attrib_data);
-	for(usize i = 0; i != size; ++i) {
-		attrib_data.data[i] = renderables[i]->transform();
+	{
+		auto camera_mapping = TypedMapping(_camera_buffer);
+		camera_mapping[0] = scene_view().camera().viewproj_matrix();
 	}
 
-	for(usize i = 0; i != size; ++i) {
-		usize offset = attrib_data.offset + i;
+	const auto& renderables = scene_view().scene().renderables();
+	{
+		auto attrib_mapping = TypedMapping(_attrib_buffer);
+		for(usize i = 0; i != renderables.size(); ++i) {
+			attrib_mapping[i] = renderables[i]->transform();
+		}
+	}
+	recorder.barriers(BufferBarrier(_attrib_buffer), PipelineStage::HostBit, PipelineStage::VertexBit);
+}
+
+void SceneRenderer::render(RenderPassRecorder& recorder, const FrameToken& token) {
+	auto region = recorder.region("SceneRenderer::render");
+
+	const auto& renderables = scene_view().scene().renderables();
+	for(usize i = 0; i != renderables.size(); ++i) {
+		usize offset = i;
 		AttribSubBuffer<math::Transform<>> attribs(_attrib_buffer, offset * sizeof(math::Transform<>), 1);
 		renderables[i]->render(token, recorder, Renderable::SceneData{_camera_set, attribs});
 	}
-
-	attrib_data.offset += size;
-	attrib_data.size -= size;
-	attrib_data.data += size;
 }
 
+
+}
 }

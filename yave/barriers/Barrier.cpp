@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,39 @@ static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
 	return fatal("Unsupported layout transition.");
 }
 
+static vk::AccessFlags vk_dst_access_flags(PipelineStage dst) {
+	if((dst & PipelineStage::Shaders) != PipelineStage::None) {
+		return vk::AccessFlagBits::eShaderRead;
+	}
+	switch(dst) {
+		case PipelineStage::TransferBit:
+			return vk::AccessFlagBits::eTransferRead;
+		case PipelineStage::HostBit:
+			return vk::AccessFlagBits::eHostRead;
+
+		default:
+			break;
+	}
+	return fatal("Unsuported pipeline stage.");
+}
+
+static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
+	if((src & PipelineStage::Shaders) != PipelineStage::None) {
+		return vk::AccessFlagBits::eShaderWrite;
+	}
+	switch(src) {
+		case PipelineStage::TransferBit:
+			return vk::AccessFlagBits::eTransferWrite;
+		case PipelineStage::HostBit:
+			return vk::AccessFlagBits::eHostWrite;
+
+		default:
+			break;
+	}
+	return fatal("Unsuported pipeline stage.");
+}
+
+
 vk::ImageMemoryBarrier create_image_barrier(
 		vk::Image image,
 		ImageFormat format,
@@ -81,15 +114,15 @@ vk::ImageMemoryBarrier create_image_barrier(
 		;
 }
 
-vk::ImageMemoryBarrier ImageBarrier::vk_barrier() const {
+vk::ImageMemoryBarrier ImageBarrier::vk_barrier(PipelineStage, PipelineStage) const {
 	auto layout = vk_image_layout(_usage);
 	return create_image_barrier(_image, _format, _layers, _mips, layout, layout);
 }
 
-vk::BufferMemoryBarrier BufferBarrier::vk_barrier() const {
+vk::BufferMemoryBarrier BufferBarrier::vk_barrier(PipelineStage src, PipelineStage dst) const {
 	return vk::BufferMemoryBarrier()
-			.setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-			.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+			.setSrcAccessMask(vk_src_access_flags(src))
+			.setDstAccessMask(vk_dst_access_flags(dst))
 			.setBuffer(_buffer)
 			.setSize(_size)
 			.setOffset(_offset)

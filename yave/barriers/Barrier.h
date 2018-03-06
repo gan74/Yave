@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2017 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ class ImageBarrier {
 		ImageBarrier(const ImageView<Usage>& image) : ImageBarrier(image.image()) {
 		}
 
-		vk::ImageMemoryBarrier vk_barrier() const;
+		vk::ImageMemoryBarrier vk_barrier(PipelineStage, PipelineStage) const;
 
 	private:
 		vk::Image _image;
@@ -58,20 +58,21 @@ class ImageBarrier {
 
 class BufferBarrier {
 	public:
-		template<BufferUsage Usage, BufferTransfer Transfer>
-		BufferBarrier(const Buffer<Usage, MemoryType::DeviceLocal, Transfer>& buffer) :
+		template<BufferUsage Usage, MemoryType Type, BufferTransfer Transfer>
+		BufferBarrier(const Buffer<Usage, Type, Transfer>& buffer) :
 				_buffer(buffer.vk_buffer()),
 				_size(buffer.byte_size()),
 				_offset(0) {
 		}
 
-		BufferBarrier(const SubBuffer<BufferUsage::None, MemoryType::DeviceLocal> buffer) :
+		template<BufferUsage Usage, MemoryType Type, BufferTransfer Transfer>
+		BufferBarrier(const SubBuffer<Usage, Type, Transfer> buffer) :
 				_buffer(buffer.vk_buffer()),
 				_size(buffer.byte_size()),
 				_offset(buffer.byte_offset()) {
 		}
 
-		vk::BufferMemoryBarrier vk_barrier() const;
+		vk::BufferMemoryBarrier vk_barrier(PipelineStage src, PipelineStage dst) const;
 
 	private:
 		vk::Buffer _buffer;

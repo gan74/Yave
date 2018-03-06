@@ -19,36 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "ColorCorrectionRenderer.h"
 
-#include <y/io/File.h>
+#include "EndOfPipe.h"
+#include "GBufferRenderer.h"
 
 namespace yave {
+namespace experimental {
 
-static ComputeShader create_correction_shader(DevicePtr dptr) {
+static ComputeShader create_end_of_pipe_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("correction.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
-
-ColorCorrectionRenderer::ColorCorrectionRenderer(const Ptr<BufferRenderer>& renderer) :
-		EndOfPipeline(renderer->device()),
+EndOfPipe::EndOfPipe(const Ptr<Renderer>& renderer) :
+		Renderer(renderer->device()),
 		_renderer(renderer),
-		_correction_program(create_correction_shader(device())) {
+		_correction_program(create_end_of_pipe_shader(device())) {
 }
 
-
-void ColorCorrectionRenderer::build_frame_graph(RenderingNode<result_type>& node, CmdBufferRecorder<>& recorder) {
-	auto image = node.add_dependency(_renderer, recorder);
-
-	node.set_func([=, &recorder, token = node.token()]() {
-			auto size = token.image_view.size();
-			//recorder.barriers({}, {ImageBarrier(image.get())}, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
-			auto region = recorder.region("ColorCorrectionRenderer");
-			recorder.dispatch_size(_correction_program, size, {create_descriptor_set(token.image_view, image.get())});
-		});
+void EndOfPipe::build_frame_graph(FrameGraphNode& frame_graph) {
+	frame_graph.schedule(_renderer);
 }
 
-const DescriptorSet& ColorCorrectionRenderer::create_descriptor_set(const StorageView& out, const TextureView& in) {
+void EndOfPipe::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	auto region = recorder.region("EndOfPipe::render");
+
+	auto size = token.image_view.size();
+#warning assuming GBufferRenderer !!!
+	auto image = dynamic_cast<GBufferRenderer*>(_renderer.as_ptr())->albedo_metallic();
+	recorder.dispatch_size(_correction_program, size, {create_descriptor_set(token.image_view, image)});
+}
+
+const DescriptorSet& EndOfPipe::create_descriptor_set(const StorageView& out, const TextureView& in) {
 	if(out.size() != in.size()) {
 		fatal("Invalid output image size.");
 	}
@@ -63,4 +64,5 @@ const DescriptorSet& ColorCorrectionRenderer::create_descriptor_set(const Storag
 	return it->second;
 }
 
+}
 }

@@ -19,48 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_SCENERENDERER_H
-#define YAVE_RENDERERS_SCENERENDERER_H
+#ifndef YAVE_EXPERIMENTAL_RENDERERS_SCENERENDERER_H
+#define YAVE_EXPERIMENTAL_RENDERERS_SCENERENDERER_H
 
-#include "CullingNode.h"
-#include <yave/bindings/DescriptorSet.h>
+#include "renderers.h"
+
+#include <yave/scene/SceneView.h>
 
 namespace yave {
+namespace experimental {
 
 class SceneRenderer : public SecondaryRenderer {
-
-	using Recorder = CmdBufferRecorder<CmdBufferUsage::Secondary>;
-
 	public:
-		SceneRenderer(DevicePtr dptr, const Ptr<CullingNode>& cull);
-		void build_frame_graph(RenderingNode<result_type>& node, const Framebuffer& framebuffer) override;
+		SceneRenderer(DevicePtr dptr, SceneView& view);
 
+		const SceneView& scene_view() const;
 
-		const SceneView& scene_view() const {
-			return _cull->scene_view();
-		}
+		void render(RenderPassRecorder& recorder, const FrameToken& token) override;
 
-		const auto& culling_node() const {
-			return _cull;
-		}
+	protected:
+		void build_frame_graph(FrameGraphNode&) override;
+
+		void pre_render(CmdBufferRecorder<>& recorder, const FrameToken&) override;
 
 	private:
-		struct AttribData {
-			usize offset;
-			usize size;
-			math::Matrix4<>* data;
-		};
-
-		void render_renderables(Recorder& recorder, const FrameToken& token, const core::Vector<const Renderable*>& renderables, AttribData& attrib_data);
-
-		Ptr<CullingNode> _cull;
+		const SceneView& _view;
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _camera_buffer;
-		DescriptorSet _camera_set;
 
 		TypedBuffer<math::Matrix4<>, BufferUsage::AttributeBit, MemoryType::CpuVisible> _attrib_buffer;
+
+		DescriptorSet _camera_set;
 };
 
 }
+}
 
-#endif // YAVE_RENDERERS_SCENERENDERER_H
+#endif // YAVE_EXPERIMENTAL_RENDERERS_RENDERERS_H

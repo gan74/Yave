@@ -66,8 +66,11 @@ void YaveApp::draw() {
 	timer.start(recorder);*/
 
 	{
-		RenderingPipeline pipeline(frame);
-		pipeline.dispatch(renderer, recorder);
+		/*RenderingPipeline pipeline(frame);
+		pipeline.dispatch(renderer, recorder);*/
+
+		experimental::RenderingPipeline pipeline(renderer);
+		pipeline.render(recorder, frame);
 	}
 
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
@@ -193,22 +196,11 @@ void YaveApp::create_assets() {
 void YaveApp::create_renderers() {
 	Y_LOG_PERF("init,loading");
 
-	/*auto create_shadow = [=]() {
-		auto culling = core::Arc<CullingNode>(new CullingNode(*shadow_view));
-		auto depth = core::Arc<DepthRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
-		return core::Arc<BufferRenderer>(new VarianceRenderer(depth));
-	};*/
-
-	//create_shadow();
-
-	auto culling = core::Arc<CullingNode>(new CullingNode(*scene_view));
-	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(&device, swapchain->size(), culling));
-	auto deferred = core::Arc<BufferRenderer>(new DeferredRenderer(gbuffer));
-
-	/*auto depth = core::Arc<DepthRenderer>(new DepthRenderer(&device, swapchain->size(), culling));
-	auto variance = core::Arc<BufferRenderer>(new VarianceRenderer(depth, 100));*/
-
-	renderer = core::Arc<EndOfPipeline>(new ColorCorrectionRenderer(deferred));
+	{
+		auto scene = core::Arc<experimental::SceneRenderer>(new experimental::SceneRenderer(&device, *scene_view));
+		auto gbuffer = core::Arc<experimental::Renderer>(new experimental::GBufferRenderer(scene, swapchain->size()));
+		renderer = new experimental::EndOfPipe(gbuffer);
+	}
 }
 
 }

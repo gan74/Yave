@@ -42,7 +42,7 @@ SkinnedMeshInstance::SkinnedMeshInstance(SkinnedMeshInstance&& other) :
 		_material(std::move(other._material)) {
 }
 
-void SkinnedMeshInstance::render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const {
+void SkinnedMeshInstance::render(const FrameToken&, RenderPassRecorder& recorder, const SceneData& scene_data) const {
 	_skeleton.update();
 
 	recorder.bind_material(*_material, {scene_data.descriptor_set, _skeleton.descriptor_set()});

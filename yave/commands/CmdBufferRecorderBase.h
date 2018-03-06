@@ -37,69 +37,69 @@ namespace yave {
 
 class DescriptorSet;
 
-class CmdBufferRecorderBase : public CmdBufferBase {
-	protected:
-		class PushConstant : NonCopyable {
-				template<typename... Args>
-				static std::true_type is_tuple(const std::tuple<Args...>&);
+class PushConstant : NonCopyable {
+		template<typename... Args>
+		static std::true_type is_tuple(const std::tuple<Args...>&);
 
-				template<typename T>
-				static std::false_type is_tuple(const T&);
+		template<typename T>
+		static std::false_type is_tuple(const T&);
 
-			public:
-				PushConstant() = default;
+	public:
+		constexpr PushConstant() = default;
 
-				template<typename T>
-				PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
-					static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
-					static_assert(!decltype(is_tuple(data))::value, "std::tuple is not standard layout");
-				}
+		template<typename T>
+		constexpr PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
+			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+			static_assert(!decltype(is_tuple(data))::value, "std::tuple is not standard layout");
+		}
 
-				template<typename T>
-				PushConstant(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
-					static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
-					static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
-				}
+		template<typename T>
+		constexpr PushConstant(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+			static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
+		}
 
-				const void* data() const {
-					return _data;
-				}
+		PushConstant(PushConstant&&) = delete;
+		PushConstant& operator=(PushConstant&&) = delete;
 
-				usize size() const {
-					return _size;
-				}
+		const void* data() const {
+			return _data;
+		}
 
-			private:
-				const void* _data = nullptr;
-				usize _size = 0;
-		};
+		usize size() const {
+			return _size;
+		}
 
 	private:
-		struct CmdBufferRegion : public DeviceLinked, NonCopyable {
-			public:
-				CmdBufferRegion() = default;
-				CmdBufferRegion(CmdBufferRegion&& other);
-				CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, const char* name, const math::Vec4& color);
+		const void* _data = nullptr;
+		usize _size = 0;
+};
 
-				~CmdBufferRegion();
+struct CmdBufferRegion : public DeviceLinked, NonCopyable {
+	public:
+		CmdBufferRegion() = default;
 
-				CmdBufferRegion& operator=(const CmdBufferRegion& other) = delete;
+		~CmdBufferRegion();
 
-			private:
-				vk::CommandBuffer _buffer;
-		};
+		CmdBufferRegion(CmdBufferRegion&&) = delete;
+		CmdBufferRegion& operator=(CmdBufferRegion&&) = delete;
 
+	private:
+		friend class CmdBufferRecorderBase;
+
+		CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, const char* name, const math::Vec4& color);
+
+		vk::CommandBuffer _buffer;
+};
+
+class RenderPassRecorder : NonCopyable {
 	public:
 		using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSet>>;
 
-		~CmdBufferRecorderBase();
+		~RenderPassRecorder();
 
-		const RenderPass& current_pass() const;
 
-		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
-
-		void set_viewport(const Viewport& view);
-
+		// specific
 		void bind_material(const Material& material, DescriptorSetList descriptor_sets = {});
 		void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
 
@@ -110,7 +110,41 @@ class CmdBufferRecorderBase : public CmdBufferBase {
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
 		void bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 
-		//void copy(const ImageBase& src, ImageBase& dst);
+
+		// proxies from _cmd_buffer
+		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
+		DevicePtr device() const;
+		vk::CommandBuffer vk_cmd_buffer() const;
+
+	private:
+		friend class CmdBufferRecorderBase;
+
+		RenderPassRecorder(CmdBufferRecorderBase& cmd_buffer);
+
+		CmdBufferRecorderBase& _cmd_buffer;
+};
+
+class CmdBufferRecorderBase : public CmdBufferBase {
+	public:
+		using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSet>>;
+
+		~CmdBufferRecorderBase();
+
+		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
+
+		RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
+
+		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
+
+		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
+		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
+
+		void barriers(const core::ArrayView<BufferBarrier>& buffers, const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
+		void barriers(const core::ArrayView<BufferBarrier>& buffers, PipelineStage src, PipelineStage dst);
+		void barriers(const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
+
+		// never use directly, needed for internal work and image loading
+		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
 
 		template<typename T>
 		void keep_alive(T&& t) {
@@ -119,47 +153,20 @@ class CmdBufferRecorderBase : public CmdBufferBase {
 
 	protected:
 		CmdBufferRecorderBase() = default;
-		CmdBufferRecorderBase(CmdBufferBase&& cmd_buffer);
+		CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage);
 
 		void swap(CmdBufferRecorderBase& other);
 
+	private:
+		friend class RenderPassRecorder;
+
+		void end_renderpass();
+		void check_no_renderpass() const;
+		void bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass);
+
+		// this could be in RenderPassRecorder, but putting it here makes erroring easier
 		const RenderPass* _render_pass = nullptr;
 };
-
-
-class SecondaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
-	protected:
-		SecondaryCmdBufferRecorderBase() = default;
-		SecondaryCmdBufferRecorderBase(CmdBufferBase&& base, const Framebuffer& framebuffer);
-};
-
-
-class PrimaryCmdBufferRecorderBase : public CmdBufferRecorderBase {
-	public:
-		void end_renderpass();
-
-		void bind_framebuffer(const Framebuffer& framebuffer);
-
-		void execute(const RecordedCmdBuffer<CmdBufferUsage::Secondary>& secondary, const Framebuffer& framebuffer);
-
-		void dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
-
-		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
-		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
-
-		void barriers(const core::ArrayView<BufferBarrier>& buffers, const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
-
-		// never use directly, needed for internal work and image loading
-		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
-
-	protected:
-		PrimaryCmdBufferRecorderBase() = default;
-		PrimaryCmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage);
-
-	private:
-		void bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass);
-};
-
 
 static_assert(is_safe_base<CmdBufferRecorderBase>::value);
 

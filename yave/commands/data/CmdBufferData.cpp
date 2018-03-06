@@ -56,11 +56,11 @@ CmdBufferPoolBase* CmdBufferData::pool() const {
 	return _pool;
 }
 
-const vk::CommandBuffer& CmdBufferData::vk_cmd_buffer() const {
+vk::CommandBuffer CmdBufferData::vk_cmd_buffer() const {
 	return _cmd_buffer;
 }
 
-const vk::Fence& CmdBufferData::vk_fence() const {
+vk::Fence CmdBufferData::vk_fence() const {
 	return _fence;
 }
 

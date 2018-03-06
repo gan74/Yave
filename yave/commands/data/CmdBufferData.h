@@ -47,8 +47,8 @@ class CmdBufferData : NonCopyable {
 
 		CmdBufferPoolBase* pool() const;
 
-		const vk::CommandBuffer& vk_cmd_buffer() const;
-		const vk::Fence& vk_fence() const;
+		vk::CommandBuffer vk_cmd_buffer() const;
+		vk::Fence vk_fence() const;
 
 		void reset();
 		bool try_reset();

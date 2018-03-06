@@ -41,7 +41,7 @@ class Renderable : public Transformable {
 		virtual ~Renderable() {
 		}
 
-		virtual void render(const FrameToken&, CmdBufferRecorderBase&, const SceneData&) const = 0;
+		virtual void render(const FrameToken&, RenderPassRecorder&, const SceneData&) const = 0;
 
 };
 

@@ -30,9 +30,11 @@ template<CmdBufferUsage Usage>
 class RecordedCmdBuffer : public CmdBufferBase {
 
 	CmdBufferBase&& end_recorder(CmdBufferRecorder<Usage>&& recorder) {
-		if constexpr(Usage != CmdBufferUsage::Secondary) {
+		/*if constexpr(Usage != CmdBufferUsage::Secondary) {
 			recorder.end_renderpass();
-		}
+		}*/
+		static_assert(Usage != CmdBufferUsage::Secondary, "Secondary command buffers are not supported");
+
 		recorder.vk_cmd_buffer().end();
 		return std::move(recorder);
 	}

@@ -28,9 +28,10 @@ SOFTWARE.
 namespace yave {
 
 template<CmdBufferUsage Usage>
-class CmdBufferRecorder : public PrimaryCmdBufferRecorderBase {
+class CmdBufferRecorder : public CmdBufferRecorderBase {
+
 	public:
-		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : PrimaryCmdBufferRecorderBase(std::move(buffer), Usage) {
+		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : CmdBufferRecorderBase(std::move(buffer), Usage) {
 		}
 
 		CmdBufferRecorder(CmdBufferRecorder&& other) {
@@ -43,27 +44,6 @@ class CmdBufferRecorder : public PrimaryCmdBufferRecorderBase {
 		}
 
 	private:
-		friend class RecordedCmdBuffer<Usage>;
-};
-
-template<>
-class CmdBufferRecorder<CmdBufferUsage::Secondary> : public SecondaryCmdBufferRecorderBase {
-	public:
-		CmdBufferRecorder(CmdBuffer<CmdBufferUsage::Secondary>&& buffer, const Framebuffer& framebuffer) :
-				SecondaryCmdBufferRecorderBase(std::move(buffer), framebuffer) {
-		}
-
-		CmdBufferRecorder(CmdBufferRecorder&& other) {
-			swap(other);
-		}
-
-		CmdBufferRecorder& operator=(CmdBufferRecorder&& other) {
-			swap(other);
-			return *this;
-		}
-
-	private:
-		friend class RecordedCmdBuffer<CmdBufferUsage::Secondary>;
 };
 
 template<CmdBufferUsage Usage>

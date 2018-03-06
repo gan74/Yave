@@ -37,7 +37,7 @@ class StaticMeshInstance : public Renderable {
 		StaticMeshInstance(StaticMeshInstance&& other);
 		StaticMeshInstance& operator=(StaticMeshInstance&& other) = delete;
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		void render(const FrameToken&, RenderPassRecorder& recorder, const SceneData& scene_data) const override;
 
 
 		const auto& material() const {

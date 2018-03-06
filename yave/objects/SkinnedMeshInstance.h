@@ -39,7 +39,7 @@ class SkinnedMeshInstance : public Renderable {
 		SkinnedMeshInstance(SkinnedMeshInstance&& other);
 		SkinnedMeshInstance& operator=(SkinnedMeshInstance&& other) = delete;
 
-		void render(const FrameToken&, CmdBufferRecorderBase& recorder, const SceneData& scene_data) const override;
+		void render(const FrameToken&, RenderPassRecorder& recorder, const SceneData& scene_data) const override;
 
 		void animate(const AssetPtr<Animation>& anim) {
 			_skeleton.animate(anim);

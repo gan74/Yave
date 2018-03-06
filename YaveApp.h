@@ -39,11 +39,8 @@ SOFTWARE.
 #include <yave/bindings/DescriptorSet.h>
 #include <yave/scene/SceneView.h>
 
-#include <yave/renderers/ColorCorrectionRenderer.h>
-#include <yave/renderers/DeferredRenderer.h>
-#include <yave/renderers/DepthRenderer.h>
-#include <yave/renderers/VarianceRenderer.h>
-#include <yave/renderers/SceneRenderer.h>
+#include <yave/renderers/GBufferRenderer.h>
+#include <yave/renderers/EndOfPipe.h>
 #include <yave/objects/Text.h>
 
 
@@ -110,7 +107,7 @@ class YaveApp : NonCopyable {
 		SceneView* scene_view;
 		SceneView* shadow_view;
 
-		core::Arc<EndOfPipeline> renderer;
+		core::Arc<experimental::Renderer> renderer;
 
 
 		template<typename T>

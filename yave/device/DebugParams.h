@@ -31,7 +31,7 @@ class DebugParams {
 
 	public:
 		static DebugParams debug() {
-			return DebugParams({"VK_LAYER_LUNARG_standard_validation"}, true);
+			return DebugParams({"VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_assistant_layer"}, true);
 		}
 
 		static DebugParams none() {
