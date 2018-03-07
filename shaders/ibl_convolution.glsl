@@ -7,7 +7,7 @@ vec3 diffuse_convolution(samplerCube envmap, vec3 normal) {
 	vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
 	vec3 right = normalize(cross(up, normal));
 	up = cross(normal, right);
-	float sample_delta = 0.025;
+	float sample_delta = 0.05;
 	float samples = 0.0;
 	for(float phi = 0.0; phi < 2.0 * pi; phi += sample_delta) {
 		for(float theta = 0.0; theta < 0.5 * pi; theta += sample_delta) {
@@ -26,7 +26,7 @@ vec3 diffuse_convolution(sampler2D envmap, vec3 normal) {
 	vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
 	vec3 right = normalize(cross(up, normal));
 	up = cross(normal, right);
-	float sample_delta = 0.025;
+	float sample_delta = 0.05;
 	float samples = 0.0;
 	for(float phi = 0.0; phi < 2.0 * pi; phi += sample_delta) {
 		for(float theta = 0.0; theta < 0.5 * pi; theta += sample_delta) {
