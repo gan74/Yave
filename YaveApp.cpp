@@ -107,6 +107,11 @@ void YaveApp::update(math::Vec2 angles) {
 
 	camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
 	camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 1.0f));
+
+	/*log_msg("forward = (" +
+			core::str(camera.forward().x()) + ", " +
+			core::str(camera.forward().y()) + ", " +
+			core::str(camera.forward().z()) + ")");*/
 }
 
 void YaveApp::create_assets() {
@@ -122,6 +127,22 @@ void YaveApp::create_assets() {
 		l.color() = math::Vec3{1.0f};
 		lights << std::move(l);
 	}
+
+	{
+		Light l(Light::Point);
+		l.color() = math::Vec3{10000.0f, 0.0f, 0.0f};
+		l.position().z() = 100.0f;
+		l.radius() = 100.0f;
+		lights << std::move(l);
+	}
+
+	/*{
+		Light l(Light::Point);
+		l.color() = math::Vec3{0.0f, 10000.0f, 0.0f};
+		l.position() = math::Vec3{500.0f, 0.0f, 0.0f};
+		l.radius() = 30.0f;
+		lights << std::move(l);
+	}*/
 
 	{
 		{
@@ -189,7 +210,7 @@ void YaveApp::create_assets() {
 
 	update();
 
-	//device.allocator().dump_info();
+	// device.allocator().dump_info();
 }
 
 
