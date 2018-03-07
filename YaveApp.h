@@ -39,6 +39,7 @@ SOFTWARE.
 #include <yave/bindings/DescriptorSet.h>
 #include <yave/scene/SceneView.h>
 
+#include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/EndOfPipe.h>
 #include <yave/objects/Text.h>

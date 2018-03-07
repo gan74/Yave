@@ -22,14 +22,17 @@ SOFTWARE.
 #ifndef YAVEL_RENDERERS_ENDOFPIPE_H
 #define YAVEL_RENDERERS_ENDOFPIPE_H
 
-#include "renderers.h"
+#include "TiledDeferredRenderer.h"
+
+#include <yave/shaders/ComputeProgram.h>
+#include <yave/bindings/DescriptorSet.h>
 
 namespace yave {
 namespace experimental {
 
 class EndOfPipe : public Renderer {
 	public:
-		EndOfPipe(const Ptr<Renderer>& renderer);
+		EndOfPipe(const Ptr<TiledDeferredRenderer>& renderer);
 
 	protected:
 		void build_frame_graph(FrameGraphNode& frame_graph) override;
@@ -38,7 +41,7 @@ class EndOfPipe : public Renderer {
 	private:
 		const DescriptorSet& create_descriptor_set(const StorageView& out, const TextureView& in);
 
-		Ptr<Renderer> _renderer;
+		Ptr<TiledDeferredRenderer> _renderer;
 
 		ComputeProgram _correction_program;
 

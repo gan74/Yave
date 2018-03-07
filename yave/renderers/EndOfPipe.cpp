@@ -30,7 +30,7 @@ static ComputeShader create_end_of_pipe_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("correction.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
-EndOfPipe::EndOfPipe(const Ptr<Renderer>& renderer) :
+EndOfPipe::EndOfPipe(const Ptr<TiledDeferredRenderer>& renderer) :
 		Renderer(renderer->device()),
 		_renderer(renderer),
 		_correction_program(create_end_of_pipe_shader(device())) {
@@ -44,8 +44,8 @@ void EndOfPipe::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	auto region = recorder.region("EndOfPipe::render");
 
 	auto size = token.image_view.size();
-#warning assuming GBufferRenderer !!!
-	auto image = dynamic_cast<GBufferRenderer*>(_renderer.as_ptr())->albedo_metallic();
+#warning assuming TiledDeferredRenderer !!!
+	auto image = dynamic_cast<TiledDeferredRenderer*>(_renderer.as_ptr())->lighting();
 	recorder.dispatch_size(_correction_program, size, {create_descriptor_set(token.image_view, image)});
 }
 

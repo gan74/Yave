@@ -197,9 +197,11 @@ void YaveApp::create_renderers() {
 	Y_LOG_PERF("init,loading");
 
 	{
-		auto scene = core::Arc<experimental::SceneRenderer>(new experimental::SceneRenderer(&device, *scene_view));
-		auto gbuffer = core::Arc<experimental::Renderer>(new experimental::GBufferRenderer(scene, swapchain->size()));
-		renderer = new experimental::EndOfPipe(gbuffer);
+		using namespace experimental;
+		auto scene = core::Arc<SceneRenderer>(new SceneRenderer(&device, *scene_view));
+		auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(scene, swapchain->size()));
+		auto deferred = core::Arc<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
+		renderer = new EndOfPipe(deferred);
 	}
 }
 

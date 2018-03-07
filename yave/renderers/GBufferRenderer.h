@@ -36,6 +36,8 @@ class GBufferRenderer : public Renderer {
 
 		GBufferRenderer(const Ptr<SceneRenderer>& scene, const math::Vec2ui& size);
 
+		const math::Vec2ui& size() const;
+
 		TextureView depth() const;
 		TextureView albedo_metallic() const;
 		TextureView normal_roughness() const;

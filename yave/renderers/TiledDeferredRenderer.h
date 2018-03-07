@@ -19,47 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVEL_RENDERERS_TILEDDEFERREDRENDERER_H
+#define YAVEL_RENDERERS_TILEDDEFERREDRENDERER_H
 
 #include "GBufferRenderer.h"
+
+#include <yave/images/IBLProbe.h>
+
+#include <yave/shaders/ComputeProgram.h>
+#include <yave/bindings/DescriptorSet.h>
 
 namespace yave {
 namespace experimental {
 
-GBufferRenderer::GBufferRenderer(const Ptr<SceneRenderer>& scene, const math::Vec2ui &size) :
-		Renderer(scene->device()),
-		_scene(scene),
-		_depth(device(), depth_format, size),
-		_color(device(), diffuse_format, size),
-		_normal(device(), normal_format, size),
-		_gbuffer(device(), _depth, {_color, _normal}) {
+class TiledDeferredRenderer : public Renderer {
+	public:
+		static constexpr usize max_light_count = 1024 * 16;
+
+		TiledDeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
+
+		const math::Vec2ui& size() const;
+
+		TextureView lighting() const;
+
+		const SceneView scene_view() const {
+			return _gbuffer->scene_view();
+		}
+
+	protected:
+		void build_frame_graph(FrameGraphNode& frame_graph) override;
+		void pre_render(CmdBufferRecorder<>& recorder, const FrameToken&) override;
+		void render(CmdBufferRecorder<>& recorder, const FrameToken&) override;
+
+	private:
+
+		Ptr<GBufferRenderer> _gbuffer;
+
+		ComputeProgram _lighting_program;
+
+		IBLProbe _envmap;
+		Texture _brdf_lut;
+		StorageTexture _acc_buffer;
+
+		TypedBuffer<uniform::Light, BufferUsage::StorageBit, MemoryType::CpuVisible> _lights_buffer;
+		u32 _directional_count;
+
+		DescriptorSet _descriptor_set;
+
+};
+
+}
 }
 
-const math::Vec2ui& GBufferRenderer::size() const {
-	return _depth.size();
-}
-
-TextureView GBufferRenderer::depth() const {
-	return _depth;
-}
-
-TextureView GBufferRenderer::albedo_metallic() const {
-	return _color;
-}
-
-TextureView GBufferRenderer::normal_roughness() const {
-	return _normal;
-}
-
-void GBufferRenderer::build_frame_graph(FrameGraphNode& frame_graph) {
-	frame_graph.schedule(_scene);
-}
-
-void GBufferRenderer::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	auto region = recorder.region("GBufferRenderer::render");
-
-	auto pass = recorder.bind_framebuffer(_gbuffer);
-	_scene->render(pass, token);
-}
-
-}
-}
+#endif // YAVEL_RENDERERS_TILEDDEFERREDRENDERER_H
