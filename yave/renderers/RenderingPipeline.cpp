@@ -64,9 +64,17 @@ void RenderingPipeline::render(CmdBufferRecorder<>& recorder, const FrameToken& 
 		node->prepare();
 	}
 
-	for(auto& node : ordered) {
-		if(auto renderer = dynamic_cast<SecondaryRenderer*>(node.as_ptr())) {
-			renderer->pre_render(recorder, token);
+	{
+		for(auto& node : ordered) {
+			if(auto renderer = dynamic_cast<SecondaryRenderer*>(node.as_ptr())) {
+				renderer->pre_render(recorder, token);
+			}
+		}
+
+		for(auto& node : ordered) {
+			if(auto renderer = dynamic_cast<Renderer*>(node.as_ptr())) {
+				renderer->pre_render(recorder, token);
+			}
 		}
 	}
 
