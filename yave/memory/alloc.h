@@ -27,9 +27,25 @@ SOFTWARE.
 
 #include "MemoryType.h"
 
+// THIS FILE SHOULD NOT BE INCLUDED OUTSIDE OF MEMORY'S CPPs !!!
+
 namespace yave {
 
 inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType type) {
+
+	// try with optional flags
+	vk::MemoryPropertyFlagBits optional_flags = optional_memory_flags(type);
+	if(optional_flags != vk::MemoryPropertyFlagBits()) {
+		vk::MemoryPropertyFlags flags = vk::MemoryPropertyFlagBits(type) | optional_flags;
+		for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
+			auto memory_type = properties.memoryTypes[i];
+			if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
+				return i;
+			}
+		}
+	}
+
+	// try without
 	vk::MemoryPropertyFlags flags = vk::MemoryPropertyFlagBits(type);
 	for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
 		auto memory_type = properties.memoryTypes[i];
@@ -37,6 +53,7 @@ inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties,
 			return i;
 		}
 	}
+
 	return fatal("Unable to allocate device memory.");
 }
 

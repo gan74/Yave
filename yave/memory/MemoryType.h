@@ -41,6 +41,11 @@ inline constexpr bool require_staging(MemoryType type) {
 	return !is_cpu_visible(type);
 }
 
+// allocator will TRY to add these
+inline constexpr vk::MemoryPropertyFlagBits optional_memory_flags(MemoryType type) {
+	return is_cpu_visible(type) ? vk::MemoryPropertyFlagBits::eHostCached : vk::MemoryPropertyFlagBits();
+}
+
 }
 
 #endif // YAVE_MEMORY_MEMORYTYPE_H

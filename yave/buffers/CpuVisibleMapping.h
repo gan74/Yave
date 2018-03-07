@@ -38,6 +38,7 @@ class CpuVisibleMapping : NonCopyable {
 
 		~CpuVisibleMapping();
 
+		// No need to barrier after flush
 		void flush();
 
 		void* data();

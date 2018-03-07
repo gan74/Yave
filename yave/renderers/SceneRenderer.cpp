@@ -61,7 +61,6 @@ void SceneRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken&)
 			attrib_mapping[i] = renderables[i]->transform();
 		}
 	}
-	recorder.barriers(BufferBarrier(_attrib_buffer), PipelineStage::HostBit, PipelineStage::VertexBit);
 }
 
 void SceneRenderer::render(RenderPassRecorder& recorder, const FrameToken& token) {

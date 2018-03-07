@@ -63,6 +63,7 @@ StagingBufferMapping::~StagingBufferMapping() {
 	}
 	_cmd_buffer->vk_cmd_buffer().copyBuffer(_src.vk_buffer(), _dst.vk_buffer(), vk_copy());
 	_cmd_buffer->keep_alive(std::move(_src));
+#warning barrier here ?
 }
 
 

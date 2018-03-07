@@ -43,7 +43,10 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 	DescriptorSet dset(dptr, {Binding(StorageView(image))});
 
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
-	recorder.dispatch_size(brdf_integrator, image.size(), {dset});
+	{
+		auto region = recorder.region("TiledDeferredRenderer::create_ibl_lut");
+		recorder.dispatch_size(brdf_integrator, image.size(), {dset});
+	}
 	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 
 	return image;
@@ -113,8 +116,6 @@ void TiledDeferredRenderer::pre_render(CmdBufferRecorder<>& recorder, const Fram
 		std::transform(directionals.begin(), directionals.end(), mapping.begin() + lights.size(), [](const Light* l) { return uniform::Light(*l); });
 		_directional_count = u32(directionals.size());
 	}
-
-	recorder.barriers({BufferBarrier(_lights_buffer)}, PipelineStage::HostBit, PipelineStage::ComputeBit);
 }
 
 
