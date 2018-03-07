@@ -23,6 +23,10 @@ struct Frustum {
 	vec4 planes[6];
 };
 
+struct Frustum4 {
+	vec4 planes[4];
+};
+
 
 // -------------------------------- UTILS --------------------------------
 
@@ -160,7 +164,7 @@ bool is_inside(Frustum frustum, vec3 pos, float radius) {
 	return true;
 }
 
-bool is_inside_no_depth(Frustum frustum, vec3 pos, float radius) {
+bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
 	for(uint i = 0; i != 4; ++i) {
 		if(is_inside(frustum.planes[i], pos, radius)) {
 			return false;

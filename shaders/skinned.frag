@@ -9,6 +9,6 @@ layout(location = 0) in vec3 v_normal;
 layout(location = 1) in vec2 v_uv;
 
 void main() {
-	out_color = pack_color(vec3(0.7, 0.7, 1.0), 0.5);
-	out_normal = pack_normal(v_normal, 0.5);
+	out_color = pack_color(vec3(0.7, 0.7, 1.0), 0.0);
+	out_normal = pack_normal(v_normal, 0.01);
 }
