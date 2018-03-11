@@ -9,7 +9,6 @@ set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-
 # no -Wzero-as-null-pointer-constant because of VK_NULL_HANDLE
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2")
 
 add_definitions("${EXTRA_WARNINGS}")
 add_definitions("${ULTIMATE_WARNINGS}")
@@ -66,7 +65,11 @@ endfunction(enable_unity_build)
 
 option(USE_UNITY_BUILD "Use unity build" ON)
 option(BUILD_LIB "Build library" ON)
+option(OPTIMIZE_DEBUG "Optimize debug builds" ON)
 
+if(OPTIMIZE_DEBUG)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2")
+endif()
 
 if(USE_UNITY_BUILD)
 	message("Unity build enabled")
