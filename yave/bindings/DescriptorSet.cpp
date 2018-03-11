@@ -37,7 +37,6 @@ static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const std::unor
 				;
 		});
 
-
 	return dptr->vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
 			.setPoolSizeCount(sizes.size())
 			.setPPoolSizes(sizes.begin())
@@ -54,7 +53,7 @@ static vk::DescriptorSet create_descriptor_set(DevicePtr dptr, vk::DescriptorPoo
 }
 
 static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vector<vk::DescriptorSetLayoutBinding>& /*layout_binding*/, const core::ArrayView<Binding>& bindings) {
-	auto writes = core::Vector<vk::WriteDescriptorSet>();
+	auto writes = core::vector_with_capacity<vk::WriteDescriptorSet>(bindings.size());
 	for(const auto& binding : bindings) {
 		auto w = vk::WriteDescriptorSet()
 				.setDstSet(set)
@@ -80,9 +79,9 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 
 
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, const core::ArrayView<Binding>& bindings) : DeviceLinked(dptr) {
+DescriptorSet::DescriptorSet(DevicePtr dptr, const core::ArrayView<Binding>& bindings) : DescriptorSetBase(dptr) {
 	if(!bindings.is_empty()) {
-		auto layout_bindings = core::Vector<vk::DescriptorSetLayoutBinding>();
+		auto layout_bindings = core::vector_with_capacity<vk::DescriptorSetLayoutBinding>(bindings.size());
 
 		std::unordered_map<vk::DescriptorType, u32> binding_counts;
 		for(const auto& binding : bindings) {
@@ -110,14 +109,9 @@ DescriptorSet& DescriptorSet::operator=(DescriptorSet&& other) {
 	return *this;
 }
 
-const vk::DescriptorSet& DescriptorSet::vk_descriptor_set() const {
-	return _set;
-}
-
 void DescriptorSet::swap(DescriptorSet& other) {
-	DeviceLinked::swap(other);
+	DescriptorSetBase::swap(other);
 	std::swap(_pool, other._pool);
-	std::swap(_set, other._set);
 }
 
 

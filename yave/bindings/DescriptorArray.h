@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BINDINGS_DESCRIPTORSET_H
-#define YAVE_BINDINGS_DESCRIPTORSET_H
+#ifndef YAVE_BINDINGS_DESCRIPTORARRAY_H
+#define YAVE_BINDINGS_DESCRIPTORARRAY_H
 
 #include "DescriptorSetBase.h"
 
 namespace yave {
 
-class DescriptorSet : public DescriptorSetBase {
+class DescriptorArray : public DescriptorSetBase {
 
 	public:
-		DescriptorSet() = default;
-		DescriptorSet(DevicePtr dptr, const core::ArrayView<Binding>& bindings);
+		DescriptorArray() = default;
+		DescriptorArray(DevicePtr dptr, vk::DescriptorType type);
 
-		~DescriptorSet();
+		~DescriptorArray();
 
-		DescriptorSet(DescriptorSet&& other);
-		DescriptorSet& operator=(DescriptorSet&& other);
+		DescriptorArray(DescriptorArray&& other);
+		DescriptorArray& operator=(DescriptorArray&& other);
 
 
 	protected:
-		void swap(DescriptorSet& other);
+		void swap(DescriptorArray& other);
 
+		vk::DescriptorType _type;
 		vk::DescriptorPool _pool;
 };
 
 }
 
-#endif // YAVE_BINDINGS_DESCRIPTORSET_H
+#endif // YAVE_BINDINGS_DESCRIPTORARRAY_H

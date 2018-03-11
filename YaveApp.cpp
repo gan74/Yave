@@ -92,6 +92,9 @@ void YaveApp::draw() {
 	swapchain->present(frame, graphic_queue);
 
 	perf::event("rendering", "frame present");
+
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void YaveApp::update(math::Vec2 angles) {
@@ -202,6 +205,8 @@ void YaveApp::create_assets() {
 		}*/
 
 	}
+
+	DescriptorArray test(&device, vk::DescriptorType::eCombinedImageSampler);
 
 	scene = new Scene(std::move(objects), std::move(renderables), std::move(lights));
 	scene_view = new SceneView(*scene);

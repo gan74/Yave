@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BINDINGS_DESCRIPTORSET_H
-#define YAVE_BINDINGS_DESCRIPTORSET_H
+#ifndef YAVE_BINDINGS_DESCRIPTORSETBASE_H
+#define YAVE_BINDINGS_DESCRIPTORSETBASE_H
 
-#include "DescriptorSetBase.h"
+
+#include "Binding.h"
 
 namespace yave {
 
-class DescriptorSet : public DescriptorSetBase {
+class DescriptorSetBase : public DeviceLinked, NonCopyable {
 
 	public:
-		DescriptorSet() = default;
-		DescriptorSet(DevicePtr dptr, const core::ArrayView<Binding>& bindings);
+		DescriptorSetBase() = default;
 
-		~DescriptorSet();
+		DescriptorSetBase(DescriptorSetBase&&) = delete;
+		DescriptorSetBase& operator=(DescriptorSetBase&&) = delete;
 
-		DescriptorSet(DescriptorSet&& other);
-		DescriptorSet& operator=(DescriptorSet&& other);
-
+		vk::DescriptorSet vk_descriptor_set() const {
+			return _set;
+		}
 
 	protected:
-		void swap(DescriptorSet& other);
+		DescriptorSetBase(DevicePtr dptr) : DeviceLinked(dptr) {
+		}
 
-		vk::DescriptorPool _pool;
+		void swap(DescriptorSetBase& other) {
+			DeviceLinked::swap(other);
+			std::swap(_set, other._set);
+		}
+
+		vk::DescriptorSet _set;
 };
+
+static_assert(is_safe_base<DescriptorSetBase>::value);
 
 }
 
-#endif // YAVE_BINDINGS_DESCRIPTORSET_H
+#endif // YAVE_BINDINGS_DESCRIPTORSETBASE_H

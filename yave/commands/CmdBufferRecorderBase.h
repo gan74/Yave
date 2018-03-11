@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/framebuffer/Framebuffer.h>
 #include <yave/barriers/Barrier.h>
-
 #include "CmdBuffer.h"
 
 #include <yave/material/GraphicPipeline.h>
@@ -35,7 +34,12 @@ SOFTWARE.
 
 namespace yave {
 
-class DescriptorSet;
+class DescriptorSetBase;
+
+namespace detail {
+using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSetBase>>;
+}
+
 
 class PushConstant : NonCopyable {
 		template<typename... Args>
@@ -94,10 +98,9 @@ struct CmdBufferRegion : public DeviceLinked, NonCopyable {
 
 class RenderPassRecorder : NonCopyable {
 	public:
-		using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSet>>;
+		using DescriptorSetList = detail::DescriptorSetList;
 
 		~RenderPassRecorder();
-
 
 		// specific
 		void bind_material(const Material& material, DescriptorSetList descriptor_sets = {});
@@ -126,7 +129,7 @@ class RenderPassRecorder : NonCopyable {
 
 class CmdBufferRecorderBase : public CmdBufferBase {
 	public:
-		using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSet>>;
+		using DescriptorSetList = detail::DescriptorSetList;
 
 		~CmdBufferRecorderBase();
 

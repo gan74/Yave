@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "renderers.h"
 
+#include <yave/bindings/DescriptorSet.h>
 #include <yave/scene/SceneView.h>
 
 namespace yave {

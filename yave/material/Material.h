@@ -51,7 +51,7 @@ class Material : NonCopyable, public DeviceLinked {
 		const GraphicPipeline& compile(const RenderPass& render_pass) const;
 
 		const MaterialData& data() const;
-		const DescriptorSet& descriptor_set() const;
+		const DescriptorSetBase& descriptor_set() const;
 
 	private:
 		void swap(Material& other);

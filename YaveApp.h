@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include <y/core/Chrono.h>
-
 #include <yave/device/Device.h>
 
 #include <yave/material/Material.h>
@@ -34,15 +33,14 @@ SOFTWARE.
 #include <yave/objects/StaticMeshInstance.h>
 #include <yave/objects/SkinnedMeshInstance.h>
 #include <yave/animations/Animation.h>
-
 #include <yave/bindings/Binding.h>
 #include <yave/bindings/DescriptorSet.h>
+#include <yave/bindings/DescriptorArray.h>
 #include <yave/scene/SceneView.h>
 
 #include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/EndOfPipe.h>
-#include <yave/objects/Text.h>
 
 
 namespace yave {

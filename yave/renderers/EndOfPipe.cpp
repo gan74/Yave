@@ -23,6 +23,8 @@ SOFTWARE.
 #include "EndOfPipe.h"
 #include "GBufferRenderer.h"
 
+#include <y/io/File.h>
+
 namespace yave {
 namespace experimental {
 

@@ -25,6 +25,9 @@ SOFTWARE.
 #include <yave/buffers/TypedMapping.h>
 #include <yave/barriers/Barrier.h>
 
+#include <y/io/File.h>
+#include <y/core/Chrono.h>
+
 namespace yave {
 namespace experimental {
 

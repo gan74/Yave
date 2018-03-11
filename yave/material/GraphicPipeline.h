@@ -43,7 +43,7 @@ class GraphicPipeline : NonCopyable {
 
 		vk::Pipeline vk_pipeline() const;
 		vk::PipelineLayout vk_pipeline_layout() const;
-		const vk::DescriptorSet& vk_descriptor_set() const;
+		vk::DescriptorSet vk_descriptor_set() const;
 
 	private:
 		void swap(GraphicPipeline& other);

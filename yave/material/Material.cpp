@@ -75,7 +75,7 @@ const MaterialData& Material::data() const {
 	return _data;
 }
 
-const DescriptorSet& Material::descriptor_set() const {
+const DescriptorSetBase& Material::descriptor_set() const {
 	return _set;
 }
 
