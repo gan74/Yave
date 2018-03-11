@@ -26,7 +26,12 @@ namespace yave {
 
 Instance::Instance(DebugParams debug) : _debug_params(debug) {
 	auto extention_names = core::vector_with_capacity<const char*>(4);
-	extention_names = {VK_KHR_SURFACE_EXTENSION_NAME, DebugCallback::name()};
+	extention_names = {VK_KHR_SURFACE_EXTENSION_NAME};
+
+	if(_debug_params.debug_features_enabled()) {
+		extention_names << DebugCallback::name();
+	}
+
 
 	#ifdef Y_OS_WIN
 		extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
@@ -45,8 +50,6 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 			.setPpEnabledLayerNames(_debug_params.instance_layers().begin())
 			.setPApplicationInfo(&app_info)
 		);
-
-
 
 	if(_debug_params.debug_features_enabled()) {
 		_extensions.debug_callback = new DebugCallback(_instance);

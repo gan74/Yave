@@ -37,10 +37,20 @@ static void check_features(const vk::PhysicalDeviceFeatures& features, const vk:
 	}
 }
 
+static core::Vector<const char*> extensions(const DebugParams& debug) {
+	auto exts = core::vector_with_capacity<const char*>(4);
+	exts << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+
+	if(debug.debug_features_enabled()) {
+		exts << DebugMarker::name();
+	}
+
+	return exts;
+}
+
 static vk::Device create_device(
 		vk::PhysicalDevice physical,
 		const core::ArrayView<QueueFamily>& queue_families,
-		const core::ArrayView<const char*>& extentions,
 		const DebugParams& debug) {
 
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
@@ -73,9 +83,11 @@ static vk::Device create_device(
 
 	check_features(physical.getFeatures(), required);
 
+	auto exts = extensions(debug);
+
 	return physical.createDevice(vk::DeviceCreateInfo()
-			.setEnabledExtensionCount(u32(extentions.size()))
-			.setPpEnabledExtensionNames(extentions.begin())
+			.setEnabledExtensionCount(u32(exts.size()))
+			.setPpEnabledExtensionNames(exts.begin())
 			.setEnabledLayerCount(u32(debug.device_layers().size()))
 			.setPpEnabledLayerNames(debug.device_layers().begin())
 			.setQueueCreateInfoCount(queue_create_infos.size())
@@ -93,16 +105,16 @@ Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
 		_queue_families(QueueFamily::all(_physical)),
-		_device{create_device(_physical.vk_physical_device(), _queue_families,
-			// https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers/issues/888
-			{VK_KHR_SWAPCHAIN_EXTENSION_NAME, DebugMarker::name()},
-			_instance.debug_params())},
+		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
 		_sampler(this),
 		_allocator(this),
 		_disposable_cmd_pool(this),
 		_primary_cmd_pool(this),
-		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)),
-		_extensions{new DebugMarker(_device.device)} {
+		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
+
+	if(_instance.debug_params().debug_features_enabled()) {
+		_extensions.debug_marker = new DebugMarker(_device.device);
+	}
 
 	for(const auto& family : _queue_families) {
 		for(auto& queue : family.queues(this)) {
