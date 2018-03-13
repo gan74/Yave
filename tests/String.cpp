@@ -98,7 +98,7 @@ y_test_func("String add") {
 y_test_func("String from_owned") {
 	usize size = 28;
 	char* c_str = new char[size + 1];
-	memcpy(c_str, get_long_c_str(), size);
+	std::memcpy(c_str, get_long_c_str(), size);
 	c_str[size] = 0;
 
 	auto str = str_from_owned(c_str);

@@ -64,7 +64,7 @@ Reader::Result BuffReader::read(void* data, usize bytes) {
 	return make_result([=]() {
 		usize in_buffer = std::min(bytes, _used);
 
-		memcpy(data, _buffer + _offset, in_buffer);
+		std::memcpy(data, _buffer + _offset, in_buffer);
 		_offset += in_buffer;
 		_used -= in_buffer;
 
