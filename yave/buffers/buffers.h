@@ -45,7 +45,7 @@ using TypedUniformBuffer = TypedBuffer<T, BufferUsage::UniformBit, Memory>;
 
 
 template<MemoryType Memory = MemoryType::DeviceLocal>
-using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit,Memory>;
+using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit, Memory>;
 
 template<MemoryType Memory = MemoryType::DeviceLocal>
 using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit, Memory>;
@@ -62,6 +62,7 @@ using AttribSubBuffer = TypedSubBuffer<T, BufferUsage::AttributeBit>;
 
 using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>;
 using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit>;
+using SkinnedVertexSubBuffer = TypedSubBuffer<SkinnedVertex, BufferUsage::AttributeBit>;
 using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
 
 }

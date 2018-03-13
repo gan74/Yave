@@ -72,7 +72,7 @@ static auto get_copy_regions(const ImageData& data) {
 static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
 	auto staging_buffer = StagingBufferMapping::staging_buffer_type(dptr, byte_size);
 	auto mapping = CpuVisibleMapping(staging_buffer);
-	memcpy(mapping.data(), data, byte_size);
+	std::memcpy(mapping.data(), data, byte_size);
 	return staging_buffer;
 }
 

@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVEL_RENDERERS_SCENERENDERER_H
-#define YAVEL_RENDERERS_SCENERENDERER_H
+#ifndef  YAVE_RENDERERS_SCENERENDERER_H
+#define  YAVE_RENDERERS_SCENERENDERER_H
 
 #include "renderers.h"
 
@@ -48,7 +48,7 @@ class SceneRenderer : public SecondaryRenderer {
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _camera_buffer;
 
-		TypedBuffer<math::Matrix4<>, BufferUsage::AttributeBit, MemoryType::CpuVisible> _attrib_buffer;
+		TypedBuffer<math::Transform<>, BufferUsage::AttributeBit, MemoryType::CpuVisible> _attrib_buffer;
 
 		DescriptorSet _camera_set;
 };
@@ -56,4 +56,4 @@ class SceneRenderer : public SecondaryRenderer {
 }
 }
 
-#endif // YAVEL_RENDERERS_RENDERERS_H
+#endif //  YAVE_RENDERERS_RENDERERS_H
