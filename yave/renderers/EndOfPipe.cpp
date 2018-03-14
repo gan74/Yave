@@ -66,5 +66,31 @@ const DescriptorSet& EndOfPipe::create_descriptor_set(const StorageView& out, co
 	return it->second;
 }
 
+
+
+ScreenEndOfPipe::ScreenEndOfPipe(const Ptr<SecondaryRenderer>& renderer) :
+		Renderer(renderer->device()),
+		_renderer(renderer) {
+}
+
+void ScreenEndOfPipe::build_frame_graph(FrameGraphNode& frame_graph) {
+	frame_graph.schedule(_renderer);
+}
+
+void ScreenEndOfPipe::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	auto region = recorder.region("ScreenEndOfPipe::render");
+
+	auto pass = recorder.bind_framebuffer(create_framebuffer(token.image_view));
+	_renderer->render(pass, token);
+}
+
+const Framebuffer& ScreenEndOfPipe::create_framebuffer(const ColorAttachmentView& out) {
+	auto it = _output_framebuffers.find(out.vk_view());
+	if(it == _output_framebuffers.end()) {
+		it = _output_framebuffers.insert(std::pair(out.vk_view(), Framebuffer(device(), {out}))).first;
+	}
+	return it->second;
+}
+
 }
 }

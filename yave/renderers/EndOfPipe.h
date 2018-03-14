@@ -49,6 +49,24 @@ class EndOfPipe : public Renderer {
 
 };
 
+class ScreenEndOfPipe : public Renderer {
+	public:
+		ScreenEndOfPipe(const Ptr<SecondaryRenderer>& renderer);
+
+	protected:
+		void build_frame_graph(FrameGraphNode& frame_graph) override;
+		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
+
+	private:
+		const Framebuffer& create_framebuffer(const ColorAttachmentView& out);
+
+		Ptr<SecondaryRenderer> _renderer;
+
+		std::unordered_map<VkImageView, Framebuffer> _output_framebuffers;
+
+};
+
+
 }
 }
 
