@@ -140,4 +140,16 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 }
 
 
+ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format) :
+		_size(size),
+		_format(format),
+		_layers(1),
+		_mips(1) {
+
+	usize data_size = _size.x() * size.y() * (_format.bit_per_pixel() / 8);
+	_data = new u8[data_size];
+	std::memcpy(_data.as_ptr(), data, data_size);
+}
+
+
 }
