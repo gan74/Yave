@@ -141,9 +141,11 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 
 		u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
-		_layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
-		for(const auto& binding : _bindings) {
-			_layouts[binding.first] = device()->create_descriptor_set_layout(binding.second);
+		if(!_bindings.empty()) {
+			_layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
+			for(const auto& binding : _bindings) {
+				_layouts[binding.first] = device()->create_descriptor_set_layout(binding.second);
+			}
 		}
 	}
 	{
