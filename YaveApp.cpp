@@ -36,6 +36,7 @@ static core::Chrono time;
 
 YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), thread_device(device.thread_data()) {
 	{ Y_LOG_PERF(""); }
+	log_msg("sizeof(core::Vector) = "_s + sizeof(core::Vector<int>));
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMeshInstance));
 	log_msg("sizeof(Matrix4) = "_s + sizeof(math::Matrix4<>));
 	log_msg("sizeof(DeviceMemory) = "_s + sizeof(DeviceMemory));
@@ -206,8 +207,6 @@ void YaveApp::create_assets() {
 
 	}
 
-	DescriptorArray test(&device, vk::DescriptorType::eCombinedImageSampler);
-
 	scene = new Scene(std::move(objects), std::move(renderables), std::move(lights));
 	scene_view = new SceneView(*scene);
 	shadow_view = new SceneView(*scene);
@@ -222,13 +221,12 @@ void YaveApp::create_assets() {
 void YaveApp::create_renderers() {
 	Y_LOG_PERF("init,loading");
 
-	{
-		using namespace experimental;
-		auto scene = core::Arc<SceneRenderer>(new SceneRenderer(&device, *scene_view));
-		auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(scene, swapchain->size()));
-		auto deferred = core::Arc<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
-		renderer = new EndOfPipe(deferred);
-	}
+	using namespace experimental;
+
+	auto scene = core::Arc<SceneRenderer>(new SceneRenderer(&device, *scene_view));
+	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(scene, swapchain->size()));
+	auto deferred = core::Arc<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
+	renderer = new EndOfPipe(deferred);
 }
 
 }
