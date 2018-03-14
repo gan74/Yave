@@ -70,7 +70,7 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, const 
 
 // -------------------------------------------------- RenderPassRecorder --------------------------------------------------
 
-RenderPassRecorder::RenderPassRecorder(CmdBufferRecorderBase& cmd_buffer) : _cmd_buffer(cmd_buffer) {
+RenderPassRecorder::RenderPassRecorder(CmdBufferRecorderBase& cmd_buffer, const Viewport& viewport) : _cmd_buffer(cmd_buffer), _viewport(viewport) {
 }
 
 RenderPassRecorder::~RenderPassRecorder() {
@@ -90,7 +90,9 @@ void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, Descript
 		ds << pipeline.vk_descriptor_set();
 	}
 
-	vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});
+	if(!ds.is_empty()) {
+		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});
+	}
 }
 
 
@@ -100,10 +102,6 @@ void RenderPassRecorder::draw(const vk::DrawIndexedIndirectCommand& indirect) {
 								indirect.firstIndex,
 								indirect.vertexOffset,
 								indirect.firstInstance);
-}
-
-void RenderPassRecorder::draw(usize vertices) {
-	vk_cmd_buffer().draw(u32(vertices), 1, 0, 0);
 }
 
 
@@ -125,6 +123,10 @@ void RenderPassRecorder::bind_attrib_buffers(const core::ArrayView<SubBuffer<Buf
 	std::transform(attribs.begin(), attribs.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
 
 	vk_cmd_buffer().bindVertexBuffers(u32(0), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
+}
+
+const Viewport& RenderPassRecorder::viewport() const {
+	return _viewport;
 }
 
 CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& color) {
@@ -193,11 +195,11 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
 
-	if(ds.size()) {
+	if(!ds.is_empty()) {
 		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
 	}
 
-	if(push_constants.size()) {
+	if(!push_constants.is_empty()) {
 		vk_cmd_buffer().pushConstants(program.vk_pipeline_layout(), vk::ShaderStageFlagBits::eCompute, 0, push_constants.size(), push_constants.data());
 	}
 
@@ -265,11 +267,11 @@ RenderPassRecorder CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& fr
 	_render_pass = &framebuffer.render_pass();
 
 	// set viewport
-	auto view = Viewport(framebuffer.size());
-	vk_cmd_buffer().setViewport(0, {vk::Viewport(view.offset.x(), view.offset.y(), view.extent.x(), view.extent.y(), view.depth.x(), view.depth.y())});
-	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(view.offset.x(), view.offset.y()), vk::Extent2D(view.extent.x(), view.extent.y()))});
+	auto size = framebuffer.size();
+	vk_cmd_buffer().setViewport(0, {vk::Viewport(0, 0, size.x(), size.y(), 0.0f, 1.0f)});
+	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(size.x(), size.y()))});
 
-	return RenderPassRecorder(*this);
+	return RenderPassRecorder(*this, Viewport(size));
 }
 
 void CmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {

@@ -74,6 +74,10 @@ class PushConstant : NonCopyable {
 			return _size;
 		}
 
+		bool is_empty() const {
+			return !_size;
+		}
+
 	private:
 		const void* _data = nullptr;
 		usize _size = 0;
@@ -107,12 +111,12 @@ class RenderPassRecorder : NonCopyable {
 		void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
 
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);
-		void draw(usize vertices);
 
 		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
 		void bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 
+		const Viewport& viewport() const;
 
 		// proxies from _cmd_buffer
 		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
@@ -122,9 +126,10 @@ class RenderPassRecorder : NonCopyable {
 	private:
 		friend class CmdBufferRecorderBase;
 
-		RenderPassRecorder(CmdBufferRecorderBase& cmd_buffer);
+		RenderPassRecorder(CmdBufferRecorderBase& cmd_buffer, const Viewport& viewport);
 
 		CmdBufferRecorderBase& _cmd_buffer;
+		Viewport _viewport;
 };
 
 class CmdBufferRecorderBase : public CmdBufferBase {
