@@ -33,8 +33,10 @@ namespace yave {
 class RenderPass : NonCopyable, public DeviceLinked {
 	public:
 		struct ImageData {
-			const ImageFormat format;
-			const ImageUsage usage;
+			const ImageFormat format = vk::Format::eUndefined;
+			const ImageUsage usage = ImageUsage::None;
+
+			ImageData() = default;
 
 			ImageData(ImageFormat fmt, ImageUsage us) : format(fmt), usage(us) {
 			}
@@ -48,7 +50,8 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		};
 
 		RenderPass() = default;
-		RenderPass(DevicePtr dptr, ImageData depth, const core::Vector<ImageData>& colors);
+		RenderPass(DevicePtr dptr, ImageData depth, const core::ArrayView<ImageData>& colors);
+		RenderPass(DevicePtr dptr, const core::ArrayView<ImageData>& colors);
 
 		RenderPass(RenderPass&& other);
 		RenderPass& operator=(RenderPass&& other);

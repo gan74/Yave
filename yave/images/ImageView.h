@@ -85,7 +85,7 @@ class ImageView : public DeviceLinked {
 		friend class ImageView;
 
 		math::Vec2ui _size;
-		ImageUsage _usage;
+		ImageUsage _usage = ImageUsage::None;
 		ImageFormat _format;
 		vk::ImageView _view;
 };

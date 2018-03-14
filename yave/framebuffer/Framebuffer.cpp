@@ -25,43 +25,50 @@ SOFTWARE.
 
 namespace yave {
 
-static math::Vec2ui compute_size(const DepthAttachmentView& a, const core::ArrayView<ColorAttachmentView>& views) {
+static math::Vec2ui compute_size(const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& views) {
+	math::Vec2ui ref;
+	if(depth.device()) {
+		ref = depth.size();
+	} else if(!views.is_empty()) {
+		ref = views[0].size();
+	}
+
 	for(const auto& v : views) {
-		if(v.size() != a.size()) {
+		if(v.size() != ref) {
 			fatal("Invalid attachment size.");
 		}
 	}
-	return a.size();
+	return ref;
 }
 
 static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors) {
 	auto color_vec = core::vector_with_capacity<RenderPass::ImageData>(colors.size());
 	std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::ImageData(c); });
-	return new RenderPass(dptr, depth, color_vec);
+	return depth.device()
+			? new RenderPass(dptr, depth, color_vec)
+			: new RenderPass(dptr, color_vec);
 }
 
 
 
-Framebuffer::Framebuffer(const RenderPass* render_pass, DepthAttachmentView depth, const core::ArrayView<ColorAttachmentView>& colors) :
-		Framebuffer(render_pass->device(), render_pass, depth, colors) {
+Framebuffer::Framebuffer(DevicePtr dptr, const core::ArrayView<ColorAttachmentView>& colors) :
+		Framebuffer(dptr, DepthAttachmentView(), colors) {
 }
 
-Framebuffer::Framebuffer(DevicePtr dptr, DepthAttachmentView depth, const core::ArrayView<ColorAttachmentView>& colors) :
-		Framebuffer(dptr, nullptr, depth, colors) {
-}
-
-Framebuffer::Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors) :
+Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors) :
 		DeviceLinked(dptr),
-		_render_pass_storage(render_pass ? nullptr : create_render_pass(dptr, depth, colors)),
 		_size(compute_size(depth, colors)),
 		_attachment_count(colors.size()),
-		_render_pass(render_pass ? render_pass : _render_pass_storage.as_ptr()),
+		_render_pass(create_render_pass(dptr, depth, colors)),
 		_depth(depth),
 		_colors(colors.begin(), colors.end()) {
 
 	auto views = core::vector_with_capacity<vk::ImageView>(_colors.size() + 1);
 	std::transform(_colors.begin(), _colors.end(), std::back_inserter(views), [](const auto& v) { return v.vk_view(); });
-	views << _depth.vk_view();
+
+	if(_depth.device()) {
+		views << _depth.vk_view();
+	}
 
 	_framebuffer = device()->vk_device().createFramebuffer(vk::FramebufferCreateInfo()
 		.setRenderPass(_render_pass->vk_render_pass())
@@ -88,7 +95,6 @@ Framebuffer& Framebuffer::operator=(Framebuffer&& other) {
 
 void Framebuffer::swap(Framebuffer& other) {
 	DeviceLinked::swap(other);
-	std::swap(_render_pass_storage, other._render_pass_storage);
 	std::swap(_size, other._size);
 	std::swap(_attachment_count, other._attachment_count);
 	std::swap(_render_pass, other._render_pass);

@@ -35,8 +35,8 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 	public:
 		Framebuffer() = default;
 
-		Framebuffer(const RenderPass* render_pass, DepthAttachmentView depth, const core::ArrayView<ColorAttachmentView>& colors);
-		Framebuffer(DevicePtr dptr, DepthAttachmentView depth, const core::ArrayView<ColorAttachmentView>& colors);
+		Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors);
+		Framebuffer(DevicePtr dptr, const core::ArrayView<ColorAttachmentView>& colors);
 
 		Framebuffer(Framebuffer&& other);
 		Framebuffer& operator=(Framebuffer&& other);
@@ -56,16 +56,12 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 		}
 
 	private:
-		Framebuffer(DevicePtr dptr, const RenderPass* render_pass, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors);
-
 		void swap(Framebuffer& other);
-
-		core::Unique<RenderPass> _render_pass_storage;
 
 		math::Vec2ui _size;
 		usize _attachment_count = 0;
 
-		const RenderPass* _render_pass = nullptr;
+		core::Unique<RenderPass> _render_pass;
 		vk::Framebuffer _framebuffer;
 
 		DepthAttachmentView _depth;

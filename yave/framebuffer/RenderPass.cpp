@@ -31,15 +31,6 @@ static vk::ImageLayout vk_attachment_image_layout(ImageUsage usage) {
 	return vk_image_layout(usage & ImageUsage::Attachment);
 }
 
-static vk::SubpassDescription create_subpass(const vk::AttachmentReference& depth, const core::Vector<vk::AttachmentReference>& colors) {
-	return vk::SubpassDescription()
-		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-		.setColorAttachmentCount(u32(colors.size()))
-		.setPColorAttachments(colors.begin())
-		.setPDepthStencilAttachment(&depth)
-	;
-}
-
 static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies() {
 	return {{vk::SubpassDependency()
 			.setSrcSubpass(VK_SUBPASS_EXTERNAL)
@@ -90,22 +81,29 @@ static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usi
 }
 
 
-static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, const core::Vector<RenderPass::ImageData>& colors) {
+static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, const core::ArrayView<RenderPass::ImageData>& colors) {
 	auto attachments = core::vector_with_capacity<vk::AttachmentDescription>(colors.size() + 1);
 	std::transform(colors.begin(), colors.end(), std::back_inserter(attachments), [=](const auto& color) { return create_attachment(color); });
-	attachments << create_attachment(depth);
 
 	auto color_refs = core::vector_with_capacity<vk::AttachmentReference>(colors.size());
 	for(usize i = 0; i != colors.size(); ++i) {
 		color_refs << create_attachment_reference(ImageUsage::ColorBit, i);
 	}
 
-	auto depth_ref = create_attachment_reference(ImageUsage::DepthBit, color_refs.size());
+	auto subpass = vk::SubpassDescription()
+			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+			.setColorAttachmentCount(u32(color_refs.size()))
+			.setPColorAttachments(color_refs.begin())
+		;
 
-	auto subpass = create_subpass(depth_ref, color_refs);
+	vk::AttachmentReference depth_ref;
+	if(depth.usage != ImageUsage::None) {
+		attachments << create_attachment(depth);
+		depth_ref = create_attachment_reference(ImageUsage::DepthBit, color_refs.size());
+		subpass.setPDepthStencilAttachment(&depth_ref);
+	}
 
 	auto dependencies = create_bottom_of_pipe_dependencies();
-
 	return dptr->vk_device().createRenderPass(vk::RenderPassCreateInfo()
 			.setAttachmentCount(u32(attachments.size()))
 			.setPAttachments(attachments.begin())
@@ -120,10 +118,14 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData de
 
 
 
-RenderPass::RenderPass(DevicePtr dptr, ImageData depth, const core::Vector<ImageData>& colors) :
+RenderPass::RenderPass(DevicePtr dptr, ImageData depth, const core::ArrayView<ImageData>& colors) :
 		DeviceLinked(dptr),
 		_attachment_count(colors.size()),
 		_render_pass(create_renderpass(dptr, depth, colors)) {
+}
+
+RenderPass::RenderPass(DevicePtr dptr, const core::ArrayView<ImageData>& colors) :
+		RenderPass(dptr, ImageData(), colors) {
 }
 
 RenderPass::~RenderPass() {
