@@ -49,5 +49,19 @@ MaterialData& MaterialData::set_primitive_type(PrimitiveType type) {
 	return *this;
 }
 
+MaterialData& MaterialData::set_depth_tested(bool tested) {
+	_depth_tested = tested;
+	return *this;
+}
+
+MaterialData& MaterialData::set_culled(bool culled) {
+	_cull = culled;
+	return *this;
+}
+
+MaterialData& MaterialData::set_blended(bool blended) {
+	_blend = blended;
+	return *this;
+}
 
 }

@@ -41,6 +41,10 @@ struct MaterialData {
 
 	PrimitiveType _primitive_type = PrimitiveType::Triangles;
 
+	bool _depth_tested = true;
+	bool _cull = true;
+	bool _blend = false;
+
 	core::Vector<Binding> _bindings;
 
 	MaterialData& set_frag_data(SpirVData&& data);
@@ -50,6 +54,10 @@ struct MaterialData {
 	MaterialData& set_bindings(const core::ArrayView<Binding>& binds);
 
 	MaterialData& set_primitive_type(PrimitiveType type);
+
+	MaterialData& set_depth_tested(bool tested);
+	MaterialData& set_culled(bool culled);
+	MaterialData& set_blended(bool blended);
 };
 
 }

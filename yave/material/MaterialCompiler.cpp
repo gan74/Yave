@@ -73,7 +73,7 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 		;
 
 	auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
-			.setCullMode(vk::CullModeFlagBits::eBack)
+			.setCullMode(mat_data._cull ? vk::CullModeFlagBits::eBack : vk::CullModeFlagBits::eNone)
 			//.setCullMode(vk::CullModeFlagBits::eNone)
 			.setPolygonMode(vk::PolygonMode::eFill)
 			.setLineWidth(1.0f)
@@ -88,7 +88,12 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 		;
 
 	auto color_blend_attachment = vk::PipelineColorBlendAttachmentState()
-			.setBlendEnable(false)
+			.setBlendEnable(mat_data._blend)
+			.setAlphaBlendOp(vk::BlendOp::eAdd)
+			.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+			.setDstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+			.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+			.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eA)
 		;
 
@@ -103,7 +108,7 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 		;
 
 	auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
-			.setDepthTestEnable(true)
+			.setDepthTestEnable(mat_data._depth_tested)
 			.setDepthWriteEnable(true)
 			.setDepthCompareOp(vk::CompareOp::eGreaterOrEqual) // reversed Z
 		;
