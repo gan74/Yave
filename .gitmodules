@@ -1,0 +1,3 @@
+[submodule "y"]
+	path = y
+	url = https://github.com/gan74/y
