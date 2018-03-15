@@ -1,4 +1,0 @@
-[submodule "y"]
-	branch = master
-	path = y
-	url = https://github.com/gan74/y
