@@ -1,17 +1,9 @@
 
-#include <yave/images/ImageData.h>
-#include <yave/window/Window.h>
+#include "App.h"
 
 #include <y/io/File.h>
 
-#include <y/math/Vec.h>
-
-#include <iostream>
-#include <iomanip>
-
-#include "YaveApp.h"
-
-using namespace yave;
+using namespace editor;
 using namespace core;
 
 class ArcballMouse : public MouseEventHandler {
@@ -47,10 +39,12 @@ int main(int, char **) {
 
 	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
 
+	ImGui::CreateContext();
+
 	Window win({1280, 768}, "Yave");
 	win.set_mouse_handler(new ArcballMouse());
 
-	YaveApp app(DebugParams::debug());
+	App app(DebugParams::debug());
 	app.set_swapchain(&win);
 
 	win.show();

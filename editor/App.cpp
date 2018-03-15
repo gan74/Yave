@@ -19,27 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "YaveApp.h"
+#include "App.h"
 
 #include <yave/images/ImageData.h>
 #include <yave/buffers/TypedBuffer.h>
 #include <yave/renderers/RenderingPipeline.h>
 #include <yave/commands/TimeQuery.h>
 
-#ifdef YAVE_IMGUI
-#include <external/imgui/ImGuiRenderer.h>
-#include <external/imgui/imgui/imgui.h>
-#endif
 
 #include <y/io/File.h>
 
-#include <iostream>
 
-namespace yave {
+namespace editor {
 
 static core::Chrono time;
 
-YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), thread_device(device.thread_data()) {
+App::App(DebugParams params) : instance(params), device(instance), thread_device(device.thread_data()) {
 	{ Y_LOG_PERF(""); }
 	log_msg("sizeof(core::Vector) = "_s + sizeof(core::Vector<int>));
 	log_msg("sizeof(StaticMesh) = "_s + sizeof(StaticMeshInstance));
@@ -51,7 +46,7 @@ YaveApp::YaveApp(DebugParams params) : instance(params), device(instance), threa
 	create_assets();
 }
 
-YaveApp::~YaveApp() {
+App::~App() {
 	device.queue(QueueFamily::Graphics).wait();
 
 	delete shadow_view;
@@ -62,12 +57,11 @@ YaveApp::~YaveApp() {
 	renderer = nullptr;
 }
 
-void YaveApp::draw() {
+void App::draw() {
 	Y_LOG_PERF("draw,rendering");
 
 	FrameToken frame = swapchain->next_frame();
 
-#ifdef YAVE_IMGUI
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize.x = swapchain->size().x();
@@ -82,8 +76,6 @@ void YaveApp::draw() {
 		ImGui::EndFrame();
 		ImGui::Render();
 	}
-#endif
-
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
 	/*TimeQuery timer(&device);
 	timer.start(recorder);*/
@@ -120,7 +112,7 @@ void YaveApp::draw() {
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
-void YaveApp::update(math::Vec2 angles) {
+void App::update(math::Vec2 angles) {
 	float dist = 200.0f;
 
 	shadow_view->camera().set_view(math::look_at(math::Vec3(0.0f, 0.0f, dist), math::Vec3(), math::Vec3(1.0f, 0.0f, 0.0f)));
@@ -140,7 +132,7 @@ void YaveApp::update(math::Vec2 angles) {
 			core::str(camera.forward().z()) + ")");*/
 }
 
-void YaveApp::create_assets() {
+void App::create_assets() {
 	Y_LOG_PERF("asset,init,loading");
 
 	core::Vector<Scene::Ptr<StaticMeshInstance>> objects;
@@ -240,20 +232,18 @@ void YaveApp::create_assets() {
 }
 
 
-void YaveApp::create_renderers() {
+void App::create_renderers() {
 	Y_LOG_PERF("init,loading");
 
 	using namespace experimental;
 
-#ifdef YAVE_IMGUI
 	auto gui = core::Arc<SecondaryRenderer>(new ImGuiRenderer(&device));
 	renderer = new ScreenEndOfPipe(gui);
-#else
+	/*
 	auto scene = core::Arc<SceneRenderer>(new SceneRenderer(&device, *scene_view));
 	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(scene, swapchain->size()));
 	auto deferred = core::Arc<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
-	renderer = new EndOfPipe(deferred);
-#endif
+	renderer = new EndOfPipe(deferred);*/
 }
 
 }

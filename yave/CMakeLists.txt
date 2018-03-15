@@ -28,5 +28,3 @@ target_link_libraries(yave vulkan-1)
 target_link_libraries(yave spirv-cross)
 target_link_libraries(yave pthread)
 
-add_executable(engine_main "main.cpp" "YaveApp.cpp" "YaveApp.h")
-target_link_libraries(engine_main yave)

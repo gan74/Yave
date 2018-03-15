@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_YAVEAPP_H
-#define YAVE_YAVEAPP_H
+#ifndef EDITOR_APP_H
+#define EDITOR_APP_H
 
 #include <yave/yave.h>
 #include <y/core/Chrono.h>
@@ -42,12 +42,15 @@ SOFTWARE.
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/EndOfPipe.h>
 
+#include <yave/window/Window.h>
+#include <renderers/ImGuiRenderer.h>
 
-namespace yave {
+#include <editor.h>
 
-class Window;
+namespace editor {
 
-class YaveApp : NonCopyable {
+
+class App : NonCopyable {
 	struct DestroyLaterBase : NonCopyable {
 		virtual ~DestroyLaterBase() {
 		}
@@ -65,8 +68,8 @@ class YaveApp : NonCopyable {
 	};
 
 	public:
-		YaveApp(DebugParams params);
-		~YaveApp();
+		App(DebugParams params);
+		~App();
 
 		template<typename... Args>
 		void set_swapchain(Args... args) {
@@ -108,7 +111,6 @@ class YaveApp : NonCopyable {
 
 		core::Arc<experimental::Renderer> renderer;
 
-
 		template<typename T>
 		void destroy_later(T&& t) {
 			destroy_laters.emplace_back(new DestroyLater<T>(std::forward<T>(t)));
@@ -118,4 +120,4 @@ class YaveApp : NonCopyable {
 
 }
 
-#endif // YAVE_YAVEAPP_H
+#endif // EDITOR_APP_H

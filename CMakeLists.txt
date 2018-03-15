@@ -37,6 +37,7 @@ add_definitions("-std=c++17 -pedantic -Wall -Wextra")
 
 
 option(BUILD_TOOLS "Build tools" ON)
+option(BUILD_EDITOR "Build editor" ON)
 
 # add projects
 add_subdirectory(y)
@@ -44,4 +45,8 @@ add_subdirectory(yave)
 
 if(BUILD_TOOLS)
 	add_subdirectory(tools)
+endif()
+
+if(BUILD_EDITOR)
+	add_subdirectory(editor)
 endif()
