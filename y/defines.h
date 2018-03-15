@@ -25,7 +25,7 @@ SOFTWARE.
 namespace y {
 
 struct Nothing;
-Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
+[[no_return]] Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 
 }
 
