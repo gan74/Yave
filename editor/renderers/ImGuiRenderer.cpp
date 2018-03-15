@@ -39,8 +39,60 @@ static ImageData load_font() {
 	io.Fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
 	io.Fonts->TexID = reinterpret_cast<void*>(1);
 	auto image = ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8G8B8A8Unorm));
-	io.MemFreeFn(font_data);
+	ImGui::MemFree(font_data);
 	return image;
+}
+
+static void setup_style() {
+	// based on https://gist.github.com/ongamex/4ee36fb23d6c527939d0f4ba72144d29
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowRounding = 0.0f;
+	style.FrameRounding = 0.0f;
+	style.ScrollbarRounding = 0.0f;
+
+	style.GrabRounding = 0.0f;
+	style.WindowRounding = 0.0f;
+	style.ScrollbarRounding = 0.0f; // 3.0f
+	style.FrameRounding = 0.0f; // 3.0f
+	style.WindowTitleAlign = ImVec2(0.5f,0.5f);
+
+	auto active_color = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+
+	style.Colors[ImGuiCol_Text]                  = ImVec4(0.73f, 0.73f, 0.73f, 1.00f);
+	style.Colors[ImGuiCol_TextDisabled]          = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+	style.Colors[ImGuiCol_WindowBg]              = ImVec4(0.26f, 0.26f, 0.26f, 0.95f);
+	style.Colors[ImGuiCol_PopupBg]               = ImVec4(0.26f, 0.26f, 0.26f, 1.00f);
+	style.Colors[ImGuiCol_Border]                = ImVec4(0.26f, 0.26f, 0.26f, 1.00f);
+	style.Colors[ImGuiCol_BorderShadow]          = ImVec4(0.26f, 0.26f, 0.26f, 1.00f);
+	style.Colors[ImGuiCol_FrameBg]               = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
+	style.Colors[ImGuiCol_FrameBgHovered]        = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
+	style.Colors[ImGuiCol_FrameBgActive]         = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
+	style.Colors[ImGuiCol_TitleBg]               = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_TitleBgCollapsed]      = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_TitleBgActive]         = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_MenuBarBg]             = ImVec4(0.26f, 0.26f, 0.26f, 1.00f);
+	style.Colors[ImGuiCol_ScrollbarBg]           = ImVec4(0.21f, 0.21f, 0.21f, 1.00f);
+	style.Colors[ImGuiCol_ScrollbarGrab]         = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_ScrollbarGrabHovered]  = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_ScrollbarGrabActive]   = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_CheckMark]             = ImVec4(0.78f, 0.78f, 0.78f, 1.00f);
+	style.Colors[ImGuiCol_SliderGrab]            = ImVec4(0.74f, 0.74f, 0.74f, 1.00f);
+	style.Colors[ImGuiCol_SliderGrabActive]      = ImVec4(0.74f, 0.74f, 0.74f, 1.00f);
+	style.Colors[ImGuiCol_Button]                = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_ButtonHovered]         = ImVec4(0.43f, 0.43f, 0.43f, 1.00f);
+	style.Colors[ImGuiCol_ButtonActive]          = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
+	style.Colors[ImGuiCol_Header]                = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_HeaderHovered]         = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_HeaderActive]          = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_ResizeGrip]            = ImVec4(0.36f, 0.36f, 0.36f, 1.00f);
+	style.Colors[ImGuiCol_ResizeGripHovered]     = active_color;
+	style.Colors[ImGuiCol_ResizeGripActive]      = active_color;
+	style.Colors[ImGuiCol_PlotLines]             = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
+	style.Colors[ImGuiCol_PlotLinesHovered]      = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+	style.Colors[ImGuiCol_PlotHistogram]         = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	style.Colors[ImGuiCol_PlotHistogramHovered]  = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+	style.Colors[ImGuiCol_TextSelectedBg]        = ImVec4(0.32f, 0.52f, 0.65f, 1.00f);
+	style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.20f, 0.20f, 0.20f, 0.50f);
 }
 
 ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
@@ -56,6 +108,8 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 			.set_culled(false)
 			.set_blended(true)
 		) {
+
+	setup_style();
 }
 
 ImGuiRenderer::~ImGuiRenderer() {
@@ -77,12 +131,19 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 	auto indexes = TypedMapping(_index_buffer);
 	auto vertices = TypedMapping(_vertex_buffer);
 
-	//float height = recorder.viewport().extent.y();
-
 	usize index_offset = 0;
 	usize vertex_offset = 0;
 	for(auto i = 0; i != draw_data->CmdListsCount; ++i) {
 		const ImDrawList* cmd_list = draw_data->CmdLists[i];
+
+		if(cmd_list->IdxBuffer.Size + index_offset >= _index_buffer.size()) {
+			fatal("Index buffer overflow.");
+		}
+
+		if(cmd_list->VtxBuffer.Size + vertex_offset >= _vertex_buffer.size()) {
+			fatal("Vertex buffer overflow.");
+		}
+
 		std::copy(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size, &indexes[index_offset]);
 		std::copy(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Data + cmd_list->VtxBuffer.Size, reinterpret_cast<ImDrawVert*>(&vertices[vertex_offset]));
 
@@ -94,10 +155,9 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 				fatal("User callback not supported.");
 			}
 
-
-			/*vk::Offset2D offset(cmd.ClipRect.x, height - cmd.ClipRect.w);
+			vk::Offset2D offset(cmd.ClipRect.x, cmd.ClipRect.y);
 			vk::Extent2D extent(cmd.ClipRect.z - cmd.ClipRect.x, cmd.ClipRect.w - cmd.ClipRect.y);
-			recorder.vk_cmd_buffer().setScissor(0, vk::Rect2D(offset, extent));*/
+			recorder.vk_cmd_buffer().setScissor(0, vk::Rect2D(offset, extent));
 
 			recorder.bind_material(_material);
 			recorder.draw(vk::DrawIndexedIndirectCommand()

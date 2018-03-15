@@ -60,22 +60,26 @@ App::~App() {
 void App::draw() {
 	Y_LOG_PERF("draw,rendering");
 
-	FrameToken frame = swapchain->next_frame();
-
 	{
+		Y_LOG_PERF("draw,rendering,gui");
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize.x = swapchain->size().x();
 		io.DisplaySize.y = swapchain->size().y();
 
 		ImGui::NewFrame();
-		ImGui::Text("Hello, world %d", 123);
-		if (ImGui::Button("Save"))
+		ImGui::ShowDemoWindow();
+		if (ImGui::Checkbox("Cap framerate", &cap_framerate))
 		{
 			// do stuff
 		}
 		ImGui::EndFrame();
 		ImGui::Render();
 	}
+
+
+
+
+	FrameToken frame = swapchain->next_frame();
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
 	/*TimeQuery timer(&device);
 	timer.start(recorder);*/
@@ -109,7 +113,9 @@ void App::draw() {
 	perf::event("rendering", "frame present");
 
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	if(cap_framerate) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
 }
 
 void App::update(math::Vec2 angles) {

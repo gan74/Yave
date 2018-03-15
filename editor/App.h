@@ -116,6 +116,9 @@ class App : NonCopyable {
 			destroy_laters.emplace_back(new DestroyLater<T>(std::forward<T>(t)));
 		}
 
+
+		bool cap_framerate = true;
+
 };
 
 }

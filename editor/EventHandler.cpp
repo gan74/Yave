@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,55 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_WINDOW_WINDOW_H
-#define YAVE_WINDOW_WINDOW_H
-
-#include <yave/yave.h>
 #include "EventHandler.h"
 
-#include <y/core/String.h>
-#include <y/core/Ptr.h>
+#include <imgui/imgui.h>
 
-#ifdef Y_OS_WIN
-#include <windows.h>
-#endif
+namespace editor {
 
-namespace yave {
-
-class Window {
-	public:
-		Window(const math::Vec2ui& _size, const core::String& _name);
-		~Window();
-
-		void close();
-		bool update();
-
-		void show();
-
-		#ifdef Y_OS_WIN
-			HINSTANCE instance() const { return _hInstance; }
-			HWND handle() const { return _hwnd; }
-		#endif
-
-		const math::Vec2ui& size() const;
-		math::Vec2ui position() const;
-
-		void set_event_handler(EventHandler*&& handler);
-		EventHandler* event_handler() const;
-
-	private:
-		#ifdef Y_OS_WIN
-			HINSTANCE _hInstance;
-			HWND _hwnd;
-			bool _run;
-		#endif
-
-		math::Vec2ui _size;
-		core::String _name;
-
-		mutable core::Unique<EventHandler> _event_handler;
-};
-
+EventHandler::EventHandler() {
 }
 
-#endif // YAVE_WINDOW_WINDOW_H
+EventHandler::~EventHandler() {
+}
+
+void EventHandler::mouse_moved(const math::Vec2i& pos) {
+	ImGuiIO& io = ImGui::GetIO();
+	io.MousePos = ImVec2(pos.x(), pos.y());
+}
+
+void EventHandler::mouse_pressed(const math::Vec2i& pos, MouseButton button) {
+	mouse_moved(pos);
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseDown[button != MouseButton::LeftButton] = true;
+}
+
+void EventHandler::mouse_released(const math::Vec2i& pos, MouseButton button) {
+	mouse_moved(pos);
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseDown[button != MouseButton::LeftButton] = false;
+}
+
+void EventHandler::char_input(u32 character) {
+	ImGuiIO& io = ImGui::GetIO();
+	u32 utf8[2] = {character, 0};
+	io.AddInputCharactersUTF8(reinterpret_cast<const char*>(utf8));
+}
+
+
+}

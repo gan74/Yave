@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,55 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_WINDOW_WINDOW_H
-#define YAVE_WINDOW_WINDOW_H
+#ifndef EDITOR_EVENTHANDLER_H
+#define EDITOR_EVENTHANDLER_H
 
-#include <yave/yave.h>
-#include "EventHandler.h"
+#include <editor.h>
 
-#include <y/core/String.h>
-#include <y/core/Ptr.h>
+#include <yave/window/EventHandler.h>
 
-#ifdef Y_OS_WIN
-#include <windows.h>
-#endif
+namespace editor {
 
-namespace yave {
-
-class Window {
+class EventHandler : public yave::EventHandler
+{
 	public:
-		Window(const math::Vec2ui& _size, const core::String& _name);
-		~Window();
+		EventHandler();
 
-		void close();
-		bool update();
+		virtual ~EventHandler();
 
-		void show();
+		void mouse_moved(const math::Vec2i& pos) override;
+		void mouse_pressed(const math::Vec2i& pos, MouseButton button) override;
+		void mouse_released(const math::Vec2i& pos, MouseButton button) override;
 
-		#ifdef Y_OS_WIN
-			HINSTANCE instance() const { return _hInstance; }
-			HWND handle() const { return _hwnd; }
-		#endif
-
-		const math::Vec2ui& size() const;
-		math::Vec2ui position() const;
-
-		void set_event_handler(EventHandler*&& handler);
-		EventHandler* event_handler() const;
+		void char_input(u32 character) override;
 
 	private:
-		#ifdef Y_OS_WIN
-			HINSTANCE _hInstance;
-			HWND _hwnd;
-			bool _run;
-		#endif
-
-		math::Vec2ui _size;
-		core::String _name;
-
-		mutable core::Unique<EventHandler> _event_handler;
 };
 
 }
 
-#endif // YAVE_WINDOW_WINDOW_H
+#endif // EDITOR_EVENTHANDLER_H

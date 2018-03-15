@@ -27,19 +27,23 @@ SOFTWARE.
 
 namespace yave {
 
-class MouseEventHandler {
+class EventHandler {
 	public:
 		enum MouseButton {
 			LeftButton,
 			RightButton
 		};
 
-		virtual ~MouseEventHandler() {
+		virtual ~EventHandler() {
 		}
 
 		virtual void mouse_moved(const math::Vec2i&)						{}
 		virtual void mouse_pressed(const math::Vec2i&, MouseButton)			{}
 		virtual void mouse_released(const math::Vec2i&, MouseButton)		{}
+
+		virtual void char_input(u32 character)								{ unused(character); }
+		virtual void key_pressed(u32 key_code)								{ unused(key_code); }
+		virtual void key_released(u32 key_code)								{ unused(key_code); }
 };
 
 
