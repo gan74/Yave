@@ -142,9 +142,7 @@ class Matrix {
 		auto operator+(const Matrix<N, M, U>& m) const {
 			Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
 			for(usize i = 0; i != N; ++i) {
-				for(usize j = 0; j != M; ++j) {
-					mat._vecs[i][j] = _vecs[i][j] + m._vecs[i][j];
-				}
+				mat._vecs[i] = _vecs[i] + m._vecs[i];
 			}
 			return mat;
 		}
@@ -161,10 +159,8 @@ class Matrix {
 
 		bool operator==(const Matrix& m) const {
 			for(usize i = 0; i != vec_count; ++i) {
-				for(usize j = 0; j != vec_size; ++j) {
-					if(_vecs[i][j] != m._vecs[i][j]) {
-						return false;
-					}
+				if(_vecs[i] != m._vecs[i]) {
+					return false;
 				}
 			}
 			return true;
@@ -257,7 +253,7 @@ class Matrix {
 				for(usize j = 0; j != P; ++j) {
 					decltype(std::declval<T>() * std::declval<U>()) tmp(0);
 					for(usize k = 0; k != M; ++k) {
-						tmp = tmp + row(i)[k] * m.row(k)[j];
+						tmp = tmp + _vecs[k][i] * m._vecs[j][k];
 					}
 					mat._vecs[j][i] = tmp;
 				}
