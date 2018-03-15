@@ -89,11 +89,12 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 
 	auto color_blend_attachment = vk::PipelineColorBlendAttachmentState()
 			.setBlendEnable(mat_data._blend)
+			.setColorBlendOp(vk::BlendOp::eAdd)
 			.setAlphaBlendOp(vk::BlendOp::eAdd)
 			.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
 			.setDstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
 			.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
-			.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+			.setSrcAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eA)
 		;
 

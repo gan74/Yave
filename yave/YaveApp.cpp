@@ -26,6 +26,11 @@ SOFTWARE.
 #include <yave/renderers/RenderingPipeline.h>
 #include <yave/commands/TimeQuery.h>
 
+#ifdef YAVE_IMGUI
+#include <external/imgui/ImGuiRenderer.h>
+#include <external/imgui/imgui/imgui.h>
+#endif
+
 #include <y/io/File.h>
 
 #include <iostream>
@@ -61,6 +66,23 @@ void YaveApp::draw() {
 	Y_LOG_PERF("draw,rendering");
 
 	FrameToken frame = swapchain->next_frame();
+
+#ifdef YAVE_IMGUI
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.DisplaySize.x = swapchain->size().x();
+		io.DisplaySize.y = swapchain->size().y();
+
+		ImGui::NewFrame();
+		ImGui::Text("Hello, world %d", 123);
+		if (ImGui::Button("Save"))
+		{
+			// do stuff
+		}
+		ImGui::EndFrame();
+		ImGui::Render();
+	}
+#endif
 
 	CmdBufferRecorder<> recorder(device.create_cmd_buffer());
 	/*TimeQuery timer(&device);
@@ -223,10 +245,15 @@ void YaveApp::create_renderers() {
 
 	using namespace experimental;
 
+#ifdef YAVE_IMGUI
+	auto gui = core::Arc<SecondaryRenderer>(new ImGuiRenderer(&device));
+	renderer = new ScreenEndOfPipe(gui);
+#else
 	auto scene = core::Arc<SceneRenderer>(new SceneRenderer(&device, *scene_view));
 	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(scene, swapchain->size()));
 	auto deferred = core::Arc<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
 	renderer = new EndOfPipe(deferred);
+#endif
 }
 
 }

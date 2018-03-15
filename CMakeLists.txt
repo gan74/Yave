@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
 project(yave)
 
-include_directories(${yave_SOURCE_DIR})
-
-
-
 function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
 	set(FILES ${${SOURCE_VARIABLE_NAME}})
 
@@ -29,10 +25,9 @@ endfunction(enable_unity_build)
 
 
 
-
+# set environement and flags
 set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef")
 set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wnon-virtual-dtor -Wodr")
-# no -Wzero-as-null-pointer-constant because of VK_NULL_HANDLE
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
 
@@ -41,70 +36,12 @@ add_definitions("${ULTIMATE_WARNINGS}")
 add_definitions("-std=c++17 -pedantic -Wall -Wextra")
 
 
-# main files
-file(GLOB_RECURSE SOURCE_FILES
-		"YaveApp.cpp"
-		"YaveApp.h"
+option(BUILD_TOOLS "Build tools" ON)
 
-		"yave/*.h"
-		"yave/*.cpp"
-	)
+# add projects
+add_subdirectory(y)
+add_subdirectory(yave)
 
-# Shader files, they are here so the IDE can find them
-file(GLOB_RECURSE SHADER_FILES
-		"shaders/*.frag"
-		"shaders/*.vert"
-		"shaders/*.geom"
-		"shaders/*.comp"
-		"shaders/*.glsl"
-	)
-
-# y lib, change this to wherever it it
-include_directories(../y)
-link_directories(../y/build)
-
-
-
-option(USE_UNITY_BUILD "Use unity build" ON)
-option(BUILD_LIB "Build library" OFF)
-option(OPTIMIZE_DEBUG "Optimize debug builds" ON)
-# option(USE_IMGUI "Use Imgui" ON)
-
-if(OPTIMIZE_DEBUG)
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2")
+if(BUILD_TOOLS)
+	add_subdirectory(tools)
 endif()
-
-# if(USE_IMGUI)
-# 	file(GLOB_RECURSE IMGUI_FILES "external/imgui/*.cpp" "external/imgui/*.h")
-# 	set(SOURCE_FILES ${SOURCE_FILES} ${IMGUI_FILES})
-# 	add_definitions(-DYAVE_IMGUI)
-# endif()
-
-if(USE_UNITY_BUILD)
-	message("Unity build enabled")
-	enable_unity_build(yave SOURCE_FILES)
-endif()
-
-# if we are not building libyave add main.cpp and build the exec
-if(BUILD_LIB)
-	message("Building libyave")
-	add_library(yave STATIC ${SOURCE_FILES} ${SHADER_FILES})
-else()
-	add_executable(yave "main.cpp" ${SOURCE_FILES} ${SHADER_FILES})
-endif()
-
-
-
-
-
-target_link_libraries(yave y)
-target_link_libraries(yave vulkan-1)
-target_link_libraries(yave spirv-cross)
-target_link_libraries(yave pthread)
-
-# if we are building the lib: create an exec that links it
-if(BUILD_LIB)
-	add_executable(main "main.cpp")
-	target_link_libraries(main yave)
-endif()
-
