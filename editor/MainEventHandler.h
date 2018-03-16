@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_EVENTHANDLER_H
-#define EDITOR_EVENTHANDLER_H
+#ifndef EDITOR_MAINEVENTHANDLER_H
+#define EDITOR_MAINEVENTHANDLER_H
 
 #include <editor.h>
 
@@ -28,12 +28,12 @@ SOFTWARE.
 
 namespace editor {
 
-class EventHandler : public yave::EventHandler
+class MainEventHandler : public yave::EventHandler
 {
 	public:
-		EventHandler();
+		MainEventHandler();
 
-		virtual ~EventHandler();
+		virtual ~MainEventHandler();
 
 		void mouse_moved(const math::Vec2i& pos) override;
 		void mouse_pressed(const math::Vec2i& pos, MouseButton button) override;
@@ -46,4 +46,4 @@ class EventHandler : public yave::EventHandler
 
 }
 
-#endif // EDITOR_EVENTHANDLER_H
+#endif // EDITOR_MAINEVENTHANDLER_H

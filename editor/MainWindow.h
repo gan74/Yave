@@ -19,40 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "EventHandler.h"
+#ifndef EDITOR_MAINWINDOW_H
+#define EDITOR_MAINWINDOW_H
 
-#include <imgui/imgui.h>
+#include <editor.h>
+
+#include <yave/window/Window.h>
+
+#include <yave/device/Instance.h>
+#include <yave/device/Device.h>
+#include <yave/swapchain/Swapchain.h>
+
+#include <yave/renderers/renderers.h>
 
 namespace editor {
 
-EventHandler::EventHandler() {
-}
+class MainWindow : private Window {
 
-EventHandler::~EventHandler() {
-}
+	public:
+		MainWindow(DebugParams params);
 
-void EventHandler::mouse_moved(const math::Vec2i& pos) {
-	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ImVec2(pos.x(), pos.y());
-}
+		void exec();
 
-void EventHandler::mouse_pressed(const math::Vec2i& pos, MouseButton button) {
-	mouse_moved(pos);
-	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[button != MouseButton::LeftButton] = true;
-}
+	private:
+		void draw_ui();
+		void render();
 
-void EventHandler::mouse_released(const math::Vec2i& pos, MouseButton button) {
-	mouse_moved(pos);
-	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[button != MouseButton::LeftButton] = false;
-}
+		void create_renderer();
+		void create_swapchain();
 
-void EventHandler::char_input(u32 character) {
-	ImGuiIO& io = ImGui::GetIO();
-	u32 utf8[2] = {character, 0};
-	io.AddInputCharactersUTF8(reinterpret_cast<const char*>(utf8));
-}
+		Instance _instance;
+		Device _device;
+		core::Unique<Swapchain> _swapchain;
+
+		Renderer::Ptr<Renderer> _renderer;
 
 
+};
+
 }
+
+#endif // EDITOR_MAINWINDOW_H

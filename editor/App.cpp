@@ -243,13 +243,13 @@ void App::create_renderers() {
 
 	using namespace experimental;
 
-	auto gui = core::Arc<SecondaryRenderer>(new ImGuiRenderer(&device));
-	renderer = new ScreenEndOfPipe(gui);
-	/*
+	/*auto gui = core::Arc<SecondaryRenderer>(new ImGuiRenderer(&device));
+	renderer = new ScreenEndOfPipe(gui);*/
+
 	auto scene = core::Arc<SceneRenderer>(new SceneRenderer(&device, *scene_view));
 	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(scene, swapchain->size()));
 	auto deferred = core::Arc<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
-	renderer = new EndOfPipe(deferred);*/
+	renderer = new EndOfPipe(deferred);
 }
 
 }
