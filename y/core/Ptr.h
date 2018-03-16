@@ -75,10 +75,14 @@ class Ptr : NonCopyable {
 		}
 
 	protected:
+		template<typename Y>
+		static constexpr bool can_downcast() {
+			return std::is_same_v<Y, T> || std::is_polymorphic_v<Y> || std::is_pointer_v<Y>;
+		}
+
 		Ptr() = default;
 
-		template<typename Y>
-		explicit Ptr(Y*&& p) : _ptr(p) {
+		Ptr(pointer&& p) : _ptr(p) {
 		}
 
 		Owner<pointer> _ptr = nullptr;
@@ -109,24 +113,14 @@ class Unique : public detail::Ptr<T> {
 		Unique(pointer&& p) : Base(std::move(p)) {
 		}
 
-		template<typename Y>
-		Unique(Y*&& p) : Base(std::move(p)) {
-		}
-
 		Unique(std::remove_const_t<T>&& p) : Unique(new T(std::move(p))) {
-		}
-
-		Unique(std::nullptr_t) {
-		}
-
-		Unique(Unique&& p) {
-			swap(p);
 		}
 
 		template<typename Y>
 		Unique(Unique<Y>&& p) {
 			swap(p);
 		}
+
 
 		~Unique() {
 			Base::destroy();
@@ -137,22 +131,8 @@ class Unique : public detail::Ptr<T> {
 			return *this;
 		}
 
-
-		template<typename Y>
-		Unique& operator=(Unique<Y>&& p) {
-			swap(p);
-			return *this;
-		}
-
-		template<typename Y>
-		Unique& operator=(Y*&& p) {
+		Unique& operator=(pointer&& p) {
 			Unique ptr(std::move(p));
-			swap(ptr);
-			return *this;
-		}
-
-		Unique& operator=(std::nullptr_t p) {
-			Unique ptr(p);
 			swap(ptr);
 			return *this;
 		}
@@ -160,6 +140,7 @@ class Unique : public detail::Ptr<T> {
 	private:
 		template<typename Y>
 		void swap(Unique<Y>& p) {
+			static_assert(Base::template can_downcast<Y>(), "Dangerous slicing");
 			std::swap(_ptr, p._ptr);
 		}
 
@@ -177,41 +158,29 @@ class Rc : public detail::Ptr<T> {
 
 		Rc() = default;
 
-		Rc(std::nullptr_t) {
-		}
-
-		Rc(pointer&& p) : Base(std::move(p)), _count(new C(1)) {
-		}
-
-		template<typename Y>
-		Rc(Y*&& p) : Base(std::move(p)), _count(new C(1)) {
-		}
-
-		Rc(std::remove_const_t<T>&& p) : Rc(new T(std::move(p))) {
+		Rc(pointer&& p) : Base(std::move(p)), _count(this->is_null() ? nullptr : new C(1)) {
 		}
 
 		Rc(const Rc& p) : Rc(p._ptr, p._count) {
-		}
-
-		template<typename Y>
-		Rc(const Rc<Y, C>& p) : Rc(p._ptr, p._count) {
 		}
 
 		Rc(Rc&& p) {
 			swap(p);
 		}
 
+		Rc(std::remove_const_t<T>&& t) : Rc(new T(std::move(t))) {
+		}
+
 		template<typename Y>
-		Rc(Rc<Y, C>&& p) {
-			swap(p);
+		Rc(const Rc<Y, C>& p) : Rc(p._ptr, p._count) {
+			static_assert(Base::template can_downcast<Y>(), "Dangerous slicing");
 		}
 
 		~Rc() {
 			unref();
 		}
 
-		template<typename Y>
-		void swap(Rc<Y, C>& p) {
+		void swap(Rc& p) {
 			std::swap(_ptr, p._ptr);
 			std::swap(_count, p._count);
 		}
@@ -233,58 +202,41 @@ class Rc : public detail::Ptr<T> {
 			return *this;
 		}
 
-		Rc& operator=(std::nullptr_t) {
-			unref();
-			return *this;
-		}
-
-		template<typename Y>
-		Rc& operator=(const Rc<Y, C>& p) {
-			if(p._count != _count) {
-				unref();
-				ref(p);
-			}
-			return *this;
-		}
-
 		template<typename Y>
 		Rc& operator=(Y*&& p) {
 			return operator=(Rc(p));
-		}
-
-		template<typename Y>
-		Rc& operator=(Rc<Y, C>&& p) {
-			swap(p);
-			return *this;
 		}
 
 	private:
 		template<typename U, typename D>
 		friend class Rc;
 
-		// only called by other Rc's so we take ownership as well
+		C& mut_ref_count() {
+			return *_count;
+		}
+
 		Rc(T* p, C* c) : Base(std::move(p)), _count(c) {
 			if(_count) {
-				++(*_count);
+				++mut_ref_count();
 			}
 		}
 
-		template<typename Y>
-		void ref(const Rc<Y, C>& p) {
+		void ref(const Rc& p) {
 			if(p._count && (_count = p._count)) {
-				++(*_count);
+				++mut_ref_count();
 			}
 			_ptr = p._ptr;
 		}
 
 		void unref() {
-			if(_count && !--(*_count)) {
+			if(_count && !--mut_ref_count()) {
 				Base::destroy();
 				delete _count;
 			}
 			_ptr = nullptr;
 			_count = nullptr;
 		}
+
 
 		C* _count = nullptr;
 };
