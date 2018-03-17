@@ -8,7 +8,7 @@ layout(location = 0) in vec2 v_uv;
 
 layout(location = 0) out vec4 out_color;
 
-const float gamma = 1.0;
+const float gamma = 2.0;
 
 void main() {
 	ivec2 coord = ivec2(gl_FragCoord.xy);
