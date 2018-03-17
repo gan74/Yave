@@ -24,7 +24,6 @@ SOFTWARE.
 #include <yave/objects/Light.h>
 
 #include <imgui/imgui.h>
-#include <imgui/ImGuizmo.h>
 
 namespace editor {
 
