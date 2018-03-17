@@ -369,20 +369,20 @@ inline auto vector_with_capacity(usize cap) {
 
 
 
-template<typename U, typename T>
-inline Vector<U>& operator<<(Vector<U>& vec, T&& t) {
+template<typename... Args, typename T>
+inline Vector<Args...>& operator<<(Vector<Args...>& vec, T&& t) {
 	vec.push_back(std::forward<T>(t));
 	return vec;
 }
 
-template<typename U, typename T>
-inline Vector<U>& operator+=(Vector<U>& vec, T&& t) {
+template<typename... Args, typename T>
+inline Vector<Args...>& operator+=(Vector<Args...>& vec, T&& t) {
 	vec.push_back(std::forward<T>(t));
 	return vec;
 }
 
-template<typename U, typename T>
-inline Vector<U> operator+(Vector<U> vec, T&& t) {
+template<typename... Args, typename T>
+inline Vector<Args...> operator+(Vector<Args...> vec, T&& t) {
 	vec.push_back(std::forward<T>(t));
 	return vec;
 }
