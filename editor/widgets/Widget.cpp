@@ -19,53 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MAINWINDOW_H
-#define EDITOR_MAINWINDOW_H
 
-#include <editor.h>
+#include "Widget.h"
 
-#include <yave/window/Window.h>
-
-#include <yave/device/Instance.h>
-#include <yave/device/Device.h>
-#include <yave/swapchain/Swapchain.h>
-
-#include <yave/renderers/renderers.h>
-#include <yave/scene/SceneView.h>
-
-#include <yave/material/Material.h>
-
-#include <widgets/Widget.h>
+#include <imgui/imgui.h>
 
 namespace editor {
 
-class MainWindow : private Window {
-
-	public:
-		MainWindow(DebugParams params);
-
-		void exec();
-
-	private:
-		void draw_ui();
-		void render();
-
-		void create_renderer();
-		void create_swapchain();
-
-		Instance _instance;
-		Device _device;
-
-		core::Unique<Swapchain> _swapchain;
-		Node::Ptr<EndOfPipe> _renderer;
-
-		core::Unique<Scene> _scene;
-		core::Unique<SceneView> _scene_view;
-
-		core::Vector<core::Unique<Widget>> _widgets;
-
-};
-
+Widget::Widget(const char* title) : _title(title) {
 }
 
-#endif // EDITOR_MAINWINDOW_H
+Widget::~Widget() {
+}
+
+void Widget::paint() {
+	if(!is_visible()) {
+		return;
+	}
+
+	ImGui::Begin(_title, &_visible);
+
+	paint_ui();
+
+	ImGui::End();
+}
+
+void Widget::show() {
+	_visible = true;
+}
+
+bool Widget::is_visible() const {
+	return _visible;
+}
+
+}

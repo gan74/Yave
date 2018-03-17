@@ -82,6 +82,12 @@ void RenderingPipeline::render(CmdBufferRecorder<>& recorder, const FrameToken& 
 			renderer->render(recorder, token);
 		}
 	}
+
+	for(auto& node : ordered) {
+		if(auto renderer = dynamic_cast<EndOfPipe*>(node.as_ptr())) {
+			renderer->render(recorder, token);
+		}
+	}
 }
 
 FrameGraphNode::FrameGraphNode(core::Vector<Ptr<Node>>& dependencies) : _dependencies(dependencies) {

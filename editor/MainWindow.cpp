@@ -30,6 +30,8 @@ SOFTWARE.
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/TiledDeferredRenderer.h>
 
+#include <widgets/PerformanceWidget.h>
+
 #include "scenes.h"
 
 namespace editor {
@@ -37,6 +39,8 @@ namespace editor {
 MainWindow::MainWindow(DebugParams params) : Window({1280, 768}, "Yave"), _instance(params), _device(_instance) {
 
 	ImGui::CreateContext();
+
+	_widgets << new PerformanceWidget();
 
 	create_swapchain();
 	create_renderer();
@@ -50,12 +54,12 @@ void MainWindow::create_renderer() {
 	_scene_view = std::move(ve);
 
 
-	auto scene		= Renderer::Ptr<SceneRenderer>(new SceneRenderer(&_device, *_scene_view));
-	auto gbuffer	= Renderer::Ptr<GBufferRenderer>(new GBufferRenderer(scene, _swapchain->size()));
-	auto deferred	= Renderer::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
-	auto tonemap	= Renderer::Ptr<ToneMapper>(new ToneMapper(deferred));
+	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(&_device, *_scene_view));
+	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, _swapchain->size()));
+	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
+	auto tonemap	= Node::Ptr<ToneMapper>(new ToneMapper(deferred));
 
-	auto gui		= Renderer::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
+	auto gui		= Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
 	_renderer = new SimpleEndOfPipe({tonemap, gui});
 }
 
@@ -77,7 +81,11 @@ void MainWindow::draw_ui() {
 
 
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
+
+	for(auto& w : _widgets) {
+		w->paint();
+	}
+
 	ImGui::EndFrame();
 	ImGui::Render();
 }

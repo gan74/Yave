@@ -108,7 +108,7 @@ class App : NonCopyable {
 		core::Unique<Scene> scene;
 		core::Unique<SceneView> scene_view;
 
-		core::Arc<Renderer> renderer;
+		core::Arc<EndOfPipe> renderer;
 
 		template<typename T>
 		void destroy_later(T&& t) {

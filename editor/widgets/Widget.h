@@ -19,53 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MAINWINDOW_H
-#define EDITOR_MAINWINDOW_H
+#ifndef EDITOR_WIDGETS_WIDGET_H
+#define EDITOR_WIDGETS_WIDGET_H
 
 #include <editor.h>
 
-#include <yave/window/Window.h>
-
-#include <yave/device/Instance.h>
-#include <yave/device/Device.h>
-#include <yave/swapchain/Swapchain.h>
-
-#include <yave/renderers/renderers.h>
-#include <yave/scene/SceneView.h>
-
-#include <yave/material/Material.h>
-
-#include <widgets/Widget.h>
+#include <yave/swapchain/FrameToken.h>
 
 namespace editor {
 
-class MainWindow : private Window {
-
+class Widget : NonCopyable {
 	public:
-		MainWindow(DebugParams params);
+		Widget(const char* title);
+		virtual ~Widget();
 
-		void exec();
+		void paint();
+		void show();
+
+		bool is_visible() const;
+
+	protected:
+		virtual void paint_ui() = 0;
+
 
 	private:
-		void draw_ui();
-		void render();
+		bool _visible = true;
 
-		void create_renderer();
-		void create_swapchain();
-
-		Instance _instance;
-		Device _device;
-
-		core::Unique<Swapchain> _swapchain;
-		Node::Ptr<EndOfPipe> _renderer;
-
-		core::Unique<Scene> _scene;
-		core::Unique<SceneView> _scene_view;
-
-		core::Vector<core::Unique<Widget>> _widgets;
-
+		const char* _title;
 };
 
 }
 
-#endif // EDITOR_MAINWINDOW_H
+#endif // EDITOR_WIDGETS_WIDGET_H

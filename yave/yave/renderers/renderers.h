@@ -28,6 +28,9 @@ namespace yave {
 
 class Node : NonCopyable {
 	public:
+		template<typename T>
+		using Ptr = core::Arc<T>;
+
 		virtual ~Node() {
 		}
 
@@ -43,9 +46,6 @@ class Node : NonCopyable {
 
 class SecondaryRenderer : public Node, public DeviceLinked {
 	public:
-		template<typename T>
-		using Ptr = core::Arc<T>;
-
 		SecondaryRenderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
@@ -62,11 +62,10 @@ class SecondaryRenderer : public Node, public DeviceLinked {
 
 class Renderer : public Node, public DeviceLinked {
 	public:
-		template<typename T>
-		using Ptr = core::Arc<T>;
-
 		Renderer(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
+
+		virtual TextureView output() const = 0;
 
 	protected:
 		friend class RenderingPipeline;
@@ -77,12 +76,15 @@ class Renderer : public Node, public DeviceLinked {
 		virtual void render(CmdBufferRecorder<>& recorder, const FrameToken& token) = 0;
 };
 
-class EndOfPipe : public Renderer {
+class EndOfPipe : public Node, public DeviceLinked {
 	public:
-		EndOfPipe(DevicePtr dptr) : Renderer(dptr) {
+		EndOfPipe(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
 	protected:
+		friend class RenderingPipeline;
+
+		virtual void render(CmdBufferRecorder<>& recorder, const FrameToken& token) = 0;
 };
 
 }

@@ -41,6 +41,10 @@ class GBufferRenderer : public Renderer {
 		TextureView albedo_metallic() const;
 		TextureView normal_roughness() const;
 
+		TextureView output() const override {
+			return albedo_metallic();
+		}
+
 		const SceneView& scene_view() const {
 			return _scene->scene_view();
 		}

@@ -41,6 +41,10 @@ class TiledDeferredRenderer : public Renderer {
 
 		TextureView lighting() const;
 
+		TextureView output() const override {
+			return lighting();
+		}
+
 		const SceneView scene_view() const {
 			return _gbuffer->scene_view();
 		}

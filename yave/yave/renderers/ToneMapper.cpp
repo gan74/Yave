@@ -27,22 +27,13 @@ SOFTWARE.
 
 namespace yave {
 
-static TextureView renderer_texture(const Renderer::Ptr<Renderer>& renderer) {
-#warning assuming TiledDeferredRenderer !!!
-	auto tiled = dynamic_cast<TiledDeferredRenderer*>(renderer.as_ptr());
-	if(!tiled) {
-		fatal("Unsupported renderer type.");
-	}
-	return tiled->lighting();
-}
-
 ToneMapper::ToneMapper(const Ptr<Renderer>& renderer) :
 		SecondaryRenderer(renderer->device()),
 		_renderer(renderer),
 		_material(device(), MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("tonemap.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
-			.set_bindings({Binding(renderer_texture(renderer))})
+			.set_bindings({Binding(renderer->output())})
 			.set_depth_tested(false)
 		) {
 }

@@ -19,53 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MAINWINDOW_H
-#define EDITOR_MAINWINDOW_H
+#ifndef EDITOR_WIDGETS_PERFORMANCEWIDGET_H
+#define EDITOR_WIDGETS_PERFORMANCEWIDGET_H
 
-#include <editor.h>
+#include "Widget.h"
 
-#include <yave/window/Window.h>
-
-#include <yave/device/Instance.h>
-#include <yave/device/Device.h>
-#include <yave/swapchain/Swapchain.h>
-
-#include <yave/renderers/renderers.h>
-#include <yave/scene/SceneView.h>
-
-#include <yave/material/Material.h>
-
-#include <widgets/Widget.h>
+#include<y/core/Chrono.h>
 
 namespace editor {
 
-class MainWindow : private Window {
-
+class PerformanceWidget : public Widget {
 	public:
-		MainWindow(DebugParams params);
+		PerformanceWidget();
 
-		void exec();
+		void paint();
+
+	protected:
+		void paint_ui() override;
 
 	private:
-		void draw_ui();
-		void render();
-
-		void create_renderer();
-		void create_swapchain();
-
-		Instance _instance;
-		Device _device;
-
-		core::Unique<Swapchain> _swapchain;
-		Node::Ptr<EndOfPipe> _renderer;
-
-		core::Unique<Scene> _scene;
-		core::Unique<SceneView> _scene_view;
-
-		core::Vector<core::Unique<Widget>> _widgets;
+		core::Chrono _timer;
 
 };
 
 }
 
-#endif // EDITOR_MAINWINDOW_H
+#endif // EDITOR_WIDGETS_PERFORMANCEWIDGET_H

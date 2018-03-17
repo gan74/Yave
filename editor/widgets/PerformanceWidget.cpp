@@ -19,53 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MAINWINDOW_H
-#define EDITOR_MAINWINDOW_H
 
-#include <editor.h>
+#include "PerformanceWidget.h"
 
-#include <yave/window/Window.h>
-
-#include <yave/device/Instance.h>
-#include <yave/device/Device.h>
-#include <yave/swapchain/Swapchain.h>
-
-#include <yave/renderers/renderers.h>
-#include <yave/scene/SceneView.h>
-
-#include <yave/material/Material.h>
-
-#include <widgets/Widget.h>
+#include <imgui/imgui.h>
 
 namespace editor {
 
-class MainWindow : private Window {
-
-	public:
-		MainWindow(DebugParams params);
-
-		void exec();
-
-	private:
-		void draw_ui();
-		void render();
-
-		void create_renderer();
-		void create_swapchain();
-
-		Instance _instance;
-		Device _device;
-
-		core::Unique<Swapchain> _swapchain;
-		Node::Ptr<EndOfPipe> _renderer;
-
-		core::Unique<Scene> _scene;
-		core::Unique<SceneView> _scene_view;
-
-		core::Vector<core::Unique<Widget>> _widgets;
-
-};
-
+PerformanceWidget::PerformanceWidget() : Widget("Performance") {
 }
 
-#endif // EDITOR_MAINWINDOW_H
+void PerformanceWidget::paint_ui() {
+	auto time = _timer.reset();
+
+	ImGui::Text("frame time: %.2fms", time.to_millis());
+}
+
+}
