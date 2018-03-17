@@ -73,13 +73,17 @@ void Gizmo::paint_ui() {
 
 	math::Vec2 viewport = ImGui::GetIO().DisplaySize;
 	auto center = to_screen_pos(view_proj, object.position()) * viewport;
-	auto x = to_screen_pos(view_proj, object.position() + math::Vec3(perspective, 0.0f, 0.0f)) * viewport;
-	auto y = to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, perspective, 0.0f)) * viewport;
-	auto z = to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, 0.0f, perspective)) * viewport;
 
-	ImGui::GetWindowDrawList()->AddLine(center, x, 0xFF0000FF, gizmo_width);
-	ImGui::GetWindowDrawList()->AddLine(center, y, 0xFF00FF00, gizmo_width);
-	ImGui::GetWindowDrawList()->AddLine(center, z, 0xFFFF0000, gizmo_width);
+	math::Vec2 axis[] = {
+			to_screen_pos(view_proj, object.position() + math::Vec3(perspective, 0.0f, 0.0f)) * viewport,
+			to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, perspective, 0.0f)) * viewport,
+			to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, 0.0f, perspective)) * viewport
+		};
+
+	for(usize i = 0; i != 3; ++i) {
+		u32 color = 0xFF000000 | (0xFF << (8 * i));
+		ImGui::GetWindowDrawList()->AddLine(center, axis[i], color, gizmo_width);
+	}
 	ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
 
 
@@ -87,17 +91,10 @@ void Gizmo::paint_ui() {
 	if(is_clicked()) {
 		math::Vec2 cursor = math::Vec2(ImGui::GetIO().MousePos) - center;
 		_dragging_mask = 0;
-
-		if(is_clicking(cursor, x - center)) {
-			_dragging_mask |= 0x01;
-		}
-
-		if(is_clicking(cursor, y - center)) {
-			_dragging_mask |= 0x02;
-		}
-
-		if(is_clicking(cursor, z - center)) {
-			_dragging_mask |= 0x04;
+		for(usize i = 0; i != 3; ++i) {
+			if(is_clicking(cursor, axis[i] - center)) {
+				_dragging_mask |= (1 << i);
+			}
 		}
 	} else if(!ImGui::IsMouseDown(0)) {
 		_dragging_mask = 0;
