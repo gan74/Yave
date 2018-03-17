@@ -55,12 +55,15 @@ struct Transform : Matrix4<T> {
 		return *this;
 	}
 
+	auto right() const {
+		return -this->column(1).template to<3>();
+	}
 
 	const auto& forward() const {
 		return this->column(0).template to<3>();
 	}
 
-	const auto& right() const {
+	const auto& left() const {
 		return this->column(1).template to<3>();
 	}
 
@@ -80,7 +83,7 @@ struct Transform : Matrix4<T> {
 
 	void set_basis(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
 		this->column(0).template to<3>() = forward;
-		this->column(1).template to<3>() = right;
+		this->column(1).template to<3>() = -right;
 		this->column(2).template to<3>() = up;
 	}
 
@@ -88,13 +91,12 @@ struct Transform : Matrix4<T> {
 		set_basis(forward, forward.cross(up), up);
 	}
 
-
-	std::tuple<Vec<3, T>, Vec<3, T>, Quaternion<T>> decompose() const {
-		auto x = this->template to<3, 3>() * Vec<3, T>{1, 0, 0};
-		auto y = this->template to<3, 3>() * Vec<3, T>{0, 1, 0};
-		auto z = this->template to<3, 3>() * Vec<3, T>{0, 0, 1};
+	std::tuple<Vec<3, T>,  Quaternion<T>, Vec<3, T>> decompose() const {
+		const auto& x = this->column(0).template to<3>();
+		const auto& y = this->column(1).template to<3>();
+		const auto& z = this->column(2).template to<3>();
 		Vec<3, T> scale = {x.length(), y.length(), z.length()};
-		return {position(), scale, Quaternion<T>::from_base(x / scale.x(), y / scale.y(), z / scale.z())};
+		return {position(), Quaternion<T>::from_base(x / scale.x(), y / scale.y(), z / scale.z()), scale};
 	}
 
 };

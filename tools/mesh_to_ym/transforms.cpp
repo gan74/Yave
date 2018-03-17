@@ -50,7 +50,7 @@ static Vertex transform(const Vertex& v, const math::Transform<>& tr) {
 }
 
 static BoneTransform transform(const BoneTransform& bone, const math::Transform<>& tr) {
-	auto [pos, scale, rot] = tr.decompose();
+	auto [pos, rot, scale] = tr.decompose();
 	return BoneTransform {
 			bone.position + pos,
 			bone.scale * scale,
