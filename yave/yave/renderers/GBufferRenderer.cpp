@@ -23,7 +23,6 @@ SOFTWARE.
 #include "GBufferRenderer.h"
 
 namespace yave {
-namespace experimental {
 
 GBufferRenderer::GBufferRenderer(const Ptr<SceneRenderer>& scene, const math::Vec2ui &size) :
 		Renderer(scene->device()),
@@ -61,5 +60,4 @@ void GBufferRenderer::render(CmdBufferRecorder<>& recorder, const FrameToken& to
 	_scene->render(pass, token);
 }
 
-}
 }

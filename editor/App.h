@@ -40,7 +40,7 @@ SOFTWARE.
 
 #include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/renderers/GBufferRenderer.h>
-#include <yave/renderers/EndOfPipe.h>
+#include <yave/renderers/SimpleEndOfPipe.h>
 
 #include <yave/window/Window.h>
 #include <renderers/ImGuiRenderer.h>
@@ -105,11 +105,10 @@ class App : NonCopyable {
 
 		core::Unique<Swapchain> swapchain;
 
-		Scene* scene;
-		SceneView* scene_view;
-		SceneView* shadow_view;
+		core::Unique<Scene> scene;
+		core::Unique<SceneView> scene_view;
 
-		core::Arc<experimental::Renderer> renderer;
+		core::Arc<Renderer> renderer;
 
 		template<typename T>
 		void destroy_later(T&& t) {

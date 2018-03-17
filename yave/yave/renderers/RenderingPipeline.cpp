@@ -24,7 +24,6 @@ SOFTWARE.
 #include "renderers.h"
 
 namespace yave {
-namespace experimental {
 
 RenderingPipeline::RenderingPipeline(const NodePtr &root) : _root(root) {
 }
@@ -92,6 +91,4 @@ void FrameGraphNode::schedule(const Ptr<Node>& node) {
 	_dependencies << node;
 }
 
-
-}
 }

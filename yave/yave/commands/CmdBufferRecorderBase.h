@@ -111,6 +111,7 @@ class RenderPassRecorder : NonCopyable {
 		void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
 
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);
+		void draw(const vk::DrawIndirectCommand& indirect);
 
 		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);

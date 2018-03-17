@@ -19,50 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef  YAVE_RENDERERS_GBUFFERRENDERER_H
-#define  YAVE_RENDERERS_GBUFFERRENDERER_H
 
-#include "SceneRenderer.h"
+#include "SimpleEndOfPipe.h"
 
 namespace yave {
 
-class GBufferRenderer : public Renderer {
-
-	public:
-		static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
-		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
-		static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
-
-		GBufferRenderer(const Ptr<SceneRenderer>& scene, const math::Vec2ui& size);
-
-		const math::Vec2ui& size() const;
-
-		TextureView depth() const;
-		TextureView albedo_metallic() const;
-		TextureView normal_roughness() const;
-
-		const SceneView& scene_view() const {
-			return _scene->scene_view();
-		}
-
-		const auto& scene_renderer() const {
-			return _scene;
-		}
-
-	protected:
-		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
-
-	private:
-		Ptr<SceneRenderer> _scene;
-
-		DepthTextureAttachment _depth;
-		ColorTextureAttachment _color;
-		ColorTextureAttachment _normal;
-
-		Framebuffer _gbuffer;
-};
-
+SimpleEndOfPipe::SimpleEndOfPipe(const core::ArrayView<Ptr<SecondaryRenderer>>& renderers) :
+		EndOfPipe(renderers[0]->device()),
+		_renderers(renderers.begin(), renderers.end()) {
 }
 
-#endif //  YAVE_RENDERERS_GBUFFERRENDERER_H
+void SimpleEndOfPipe::build_frame_graph(FrameGraphNode& frame_graph) {
+	for(const auto& renderer : _renderers) {
+		frame_graph.schedule(renderer);
+	}
+}
+
+void SimpleEndOfPipe::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	auto region = recorder.region("SimpleEndOfPipe::render");
+
+	auto pass = recorder.bind_framebuffer(create_framebuffer(token.image_view));
+
+	for(const auto& renderer : _renderers) {
+		renderer->render(pass, token);
+	}
+}
+
+const Framebuffer& SimpleEndOfPipe::create_framebuffer(const ColorAttachmentView& out) {
+	auto it = _output_framebuffers.find(out.vk_view());
+	if(it == _output_framebuffers.end()) {
+		it = _output_framebuffers.insert(std::pair(out.vk_view(), Framebuffer(device(), {out}))).first;
+	}
+	return it->second;
+}
+
+}

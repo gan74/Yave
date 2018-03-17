@@ -25,7 +25,6 @@ SOFTWARE.
 #include "RenderingPipeline.h"
 
 namespace yave {
-namespace experimental {
 
 class Node : NonCopyable {
 	public:
@@ -78,7 +77,14 @@ class Renderer : public Node, public DeviceLinked {
 		virtual void render(CmdBufferRecorder<>& recorder, const FrameToken& token) = 0;
 };
 
-}
+class EndOfPipe : public Renderer {
+	public:
+		EndOfPipe(DevicePtr dptr) : Renderer(dptr) {
+		}
+
+	protected:
+};
+
 }
 
 #endif //  YAVE_RENDERERS_RENDERERS_H

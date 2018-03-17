@@ -29,7 +29,6 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 
 namespace yave {
-namespace experimental {
 
 static ComputeShader create_lighting_shader(DevicePtr dptr) {
 	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
@@ -144,5 +143,4 @@ void TiledDeferredRenderer::render(CmdBufferRecorder<>& recorder, const FrameTok
 		);
 }
 
-}
 }

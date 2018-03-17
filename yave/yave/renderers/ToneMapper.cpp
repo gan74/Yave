@@ -19,54 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef  YAVE_RENDERERS_RENDERINGPIPELINE_H
-#define  YAVE_RENDERERS_RENDERINGPIPELINE_H
 
-#include <yave/commands/CmdBuffer.h>
-#include <yave/swapchain/FrameToken.h>
+#include "ToneMapper.h"
+#include "TiledDeferredRenderer.h"
 
-#include <y/concurrent/Arc.h>
-
-#include <unordered_map>
+#include <y/io/File.h>
 
 namespace yave {
 
-class Node;
-
-class RenderingPipeline : NonCopyable {
-	public:
-		template<typename T>
-		using Ptr = core::Arc<T>;
-
-	private:
-		using NodePtr = RenderingPipeline::Ptr<Node>;
-		using NodeDependencyMap = std::unordered_map<NodePtr, core::Vector<NodePtr>>;
-
-	public:
-		RenderingPipeline(const NodePtr& root);
-
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
-
-	private:
-
-		void add_node(NodeDependencyMap& dependencies, const NodePtr& node);
-
-		NodePtr _root;
-};
-
-class FrameGraphNode {
-	public:
-		template<typename T>
-		using Ptr = RenderingPipeline::Ptr<T>;
-
-		FrameGraphNode(core::Vector<Ptr<Node>>& dependencies); // hide somehow
-
-		void schedule(const Ptr<Node>& node); // change name ???
-
-	private:
-		core::Vector<Ptr<Node>>& _dependencies;
-};
-
+static TextureView renderer_texture(const Renderer::Ptr<Renderer>& renderer) {
+#warning assuming TiledDeferredRenderer !!!
+	auto tiled = dynamic_cast<TiledDeferredRenderer*>(renderer.as_ptr());
+	if(!tiled) {
+		fatal("Unsupported renderer type.");
+	}
+	return tiled->lighting();
 }
 
-#endif //  YAVE_RENDERERS_RENDERINGPIPELINE_H
+ToneMapper::ToneMapper(const Ptr<Renderer>& renderer) :
+		SecondaryRenderer(renderer->device()),
+		_renderer(renderer),
+		_material(device(), MaterialData()
+			.set_frag_data(SpirVData::from_file(io::File::open("tonemap.frag.spv").expected("Unable to load spirv file.")))
+			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
+			.set_bindings({Binding(renderer_texture(renderer))})
+			.set_depth_tested(false)
+		) {
+}
+
+void ToneMapper::build_frame_graph(FrameGraphNode& frame_graph) {
+	frame_graph.schedule(_renderer);
+}
+
+void ToneMapper::render(RenderPassRecorder& recorder, const FrameToken&) {
+	auto region = recorder.region("ToneMapper::render");
+
+	recorder.bind_material(_material);
+	recorder.draw(vk::DrawIndirectCommand(6, 1));
+}
+
+}

@@ -24,11 +24,10 @@ SOFTWARE.
 #include <yave/images/ImageData.h>
 #include <yave/buffers/TypedBuffer.h>
 #include <yave/renderers/RenderingPipeline.h>
+#include <yave/renderers/ToneMapper.h>
 #include <yave/commands/TimeQuery.h>
 
-
-#include <y/io/File.h>
-
+#include "scenes.h"
 
 namespace editor {
 
@@ -49,9 +48,8 @@ App::App(DebugParams params) : instance(params), device(instance), thread_device
 App::~App() {
 	device.queue(QueueFamily::Graphics).wait();
 
-	delete shadow_view;
-	delete scene_view;
-	delete scene;
+	scene_view = nullptr;
+	scene = nullptr;
 
 	swapchain = nullptr;
 	renderer = nullptr;
@@ -88,7 +86,7 @@ void App::draw() {
 		/*RenderingPipeline pipeline(frame);
 		pipeline.dispatch(renderer, recorder);*/
 
-		experimental::RenderingPipeline pipeline(renderer);
+		RenderingPipeline pipeline(renderer);
 		pipeline.render(recorder, frame);
 	}
 
@@ -121,8 +119,6 @@ void App::draw() {
 void App::update(math::Vec2 angles) {
 	float dist = 200.0f;
 
-	shadow_view->camera().set_view(math::look_at(math::Vec3(0.0f, 0.0f, dist), math::Vec3(), math::Vec3(1.0f, 0.0f, 0.0f)));
-
 	auto& camera = scene_view->camera();
 
 	auto cam_tr = math::rotation({0, 0, -1}, angles.x()) * math::rotation({0, 1, 0}, angles.y());
@@ -139,102 +135,11 @@ void App::update(math::Vec2 angles) {
 }
 
 void App::create_assets() {
-	Y_LOG_PERF("asset,init,loading");
-
-	core::Vector<Scene::Ptr<StaticMeshInstance>> objects;
-	core::Vector<Scene::Ptr<Renderable>> renderables;
-	core::Vector<Scene::Ptr<Light>> lights;
-
-	{
-		Light l(Light::Directional);
-		l.transform().set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
-		l.color() = math::Vec3{1.0f};
-		lights << std::move(l);
-	}
-
-	{
-		Light l(Light::Point);
-		l.color() = math::Vec3{10000.0f, 0.0f, 0.0f};
-		l.position().z() = 100.0f;
-		l.radius() = 100.0f;
-		lights << std::move(l);
-	}
-
-	/*{
-		Light l(Light::Point);
-		l.color() = math::Vec3{0.0f, 10000.0f, 0.0f};
-		l.position() = math::Vec3{500.0f, 0.0f, 0.0f};
-		l.radius() = 30.0f;
-		lights << std::move(l);
-	}*/
-
-	{
-		{
-			auto material = AssetPtr<Material>(Material(&device, MaterialData()
-					 .set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
-					 .set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
-				 ));
-
-			auto animation = AssetPtr<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to load animation file.")));
-
-			auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/beta.fbx.ym").expected("Unable to open mesh file."));
-			auto mesh = AssetPtr<SkinnedMesh>(SkinnedMesh(&device, mesh_data));
-
-			log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
-
-			{
-				auto instance = new SkinnedMeshInstance(mesh, material);
-				instance->position() = {0.0f, 100.0f, -instance->radius() * 0.5f};
-				instance->animate(animation);
-				renderables << instance;
-			}
-		}
-		/*{
-			auto color_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/albedo.yt").expected("Unable to load image file."));
-			auto color = AssetPtr<Texture>(Texture(&device, color_data));
-			destroy_later(color);
-
-			auto roughness_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/roughness.yt").expected("Unable to load image file."));
-			auto roughness = AssetPtr<Texture>(Texture(&device, roughness_data));
-			destroy_later(roughness);
-
-			auto metallic_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/metallic.yt").expected("Unable to load image file."));
-			auto metallic = AssetPtr<Texture>(Texture(&device, metallic_data));
-			destroy_later(metallic);
-
-			auto normal_data = ImageData::from_file(io::File::open("../tools/image_to_yt/Cerberus/normal.yt").expected("Unable to load image file."));
-			auto normal = AssetPtr<Texture>(Texture(&device, normal_data));
-			destroy_later(normal);
-
-			auto material = AssetPtr<Material>(Material(&device, MaterialData()
-					 .set_frag_data(SpirVData::from_file(io::File::open("textured.frag.spv").expected("Unable to load spirv file.")))
-					 .set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-					 .set_bindings({Binding(*color), Binding(*roughness), Binding(*metallic), Binding(*normal)})
-				 ));
-
-			auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/Cerberus.FBX.ym").expected("Unable to open mesh file."));
-			auto mesh = AssetPtr<StaticMesh>(StaticMesh(&device, mesh_data));
-
-			log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
-
-			{
-				auto instance = new StaticMeshInstance(mesh, material);
-				instance->transform().set_basis({-1, 0, 0}, {0, 0, -1}, {0, -1, 0});
-				instance->position() = {0, -40, 0};
-				renderables << instance;
-			}
-		}*/
-
-	}
-
-	scene = new Scene(std::move(objects), std::move(renderables), std::move(lights));
-	scene_view = new SceneView(*scene);
-	shadow_view = new SceneView(*scene);
-
+	auto [sce, ve] = create_scene(&device);
+	scene = std::move(sce);
+	scene_view = std::move(ve);
 
 	update();
-
-	// device.allocator().dump_info();
 }
 
 
@@ -249,7 +154,8 @@ void App::create_renderers() {
 	auto scene = core::Arc<SceneRenderer>(new SceneRenderer(&device, *scene_view));
 	auto gbuffer = core::Arc<GBufferRenderer>(new GBufferRenderer(scene, swapchain->size()));
 	auto deferred = core::Arc<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
-	renderer = new EndOfPipe(deferred);
+	auto tonemap = core::Arc<ToneMapper>(new ToneMapper(deferred));
+	renderer = new SimpleEndOfPipe({tonemap});
 }
 
 }

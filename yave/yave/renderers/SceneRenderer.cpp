@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/buffers/TypedMapping.h>
 
 namespace yave {
-namespace experimental {
 
 static constexpr usize batch_size = 128 * 1024;
 
@@ -73,6 +72,4 @@ void SceneRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 	}
 }
 
-
-}
 }

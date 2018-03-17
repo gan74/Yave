@@ -104,6 +104,13 @@ void RenderPassRecorder::draw(const vk::DrawIndexedIndirectCommand& indirect) {
 								indirect.firstInstance);
 }
 
+void RenderPassRecorder::draw(const vk::DrawIndirectCommand& indirect) {
+	vk_cmd_buffer().draw(indirect.vertexCount,
+						 indirect.instanceCount,
+						 indirect.firstVertex,
+						 indirect.firstInstance);
+}
+
 
 void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
 	bind_index_buffer(indices);

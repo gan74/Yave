@@ -25,7 +25,12 @@ SOFTWARE.
 
 #include <renderers/ImGuiRenderer.h>
 
-#include <yave/renderers/EndOfPipe.h>
+#include <yave/renderers/SimpleEndOfPipe.h>
+#include <yave/renderers/ToneMapper.h>
+#include <yave/renderers/GBufferRenderer.h>
+#include <yave/renderers/TiledDeferredRenderer.h>
+
+#include "scenes.h"
 
 namespace editor {
 
@@ -34,8 +39,24 @@ MainWindow::MainWindow(DebugParams params) : Window({1280, 768}, "Yave"), _insta
 	ImGui::CreateContext();
 
 	create_swapchain();
+	create_renderer();
 
 	set_event_handler(new MainEventHandler());
+}
+
+void MainWindow::create_renderer() {
+	auto [sce, ve] = create_scene(&_device);
+	_scene = std::move(sce);
+	_scene_view = std::move(ve);
+
+
+	auto scene		= Renderer::Ptr<SceneRenderer>(new SceneRenderer(&_device, *_scene_view));
+	auto gbuffer	= Renderer::Ptr<GBufferRenderer>(new GBufferRenderer(scene, _swapchain->size()));
+	auto deferred	= Renderer::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
+	auto tonemap	= Renderer::Ptr<ToneMapper>(new ToneMapper(deferred));
+
+	auto gui		= Renderer::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
+	_renderer = new SimpleEndOfPipe({tonemap, gui});
 }
 
 void MainWindow::exec() {
@@ -70,13 +91,6 @@ void MainWindow::create_swapchain() {
 	} else {
 		_swapchain = new Swapchain(&_device, this);
 	}
-
-	create_renderer();
-}
-
-void MainWindow::create_renderer() {
-	auto gui = Renderer::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
-	_renderer = new ScreenEndOfPipe(gui);
 }
 
 void MainWindow::render() {
@@ -84,7 +98,7 @@ void MainWindow::render() {
 
 	CmdBufferRecorder<> recorder(_device.create_cmd_buffer());
 	{
-		experimental::RenderingPipeline pipeline(_renderer);
+		RenderingPipeline pipeline(_renderer);
 		pipeline.render(recorder, frame);
 	}
 

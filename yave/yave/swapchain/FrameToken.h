@@ -32,7 +32,7 @@ struct FrameToken {
 	const u32 image_index;
 	const u32 image_count;
 
-	const ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit> image_view;
+	const ImageView<ImageUsage::ColorBit> image_view;
 	const vk::Semaphore image_aquired;
 	const vk::Semaphore render_finished;
 

@@ -28,7 +28,6 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 
 namespace yave {
-namespace experimental {
 
 class SceneRenderer : public SecondaryRenderer {
 	public:
@@ -53,7 +52,6 @@ class SceneRenderer : public SecondaryRenderer {
 		DescriptorSet _camera_set;
 };
 
-}
 }
 
 #endif //  YAVE_RENDERERS_RENDERERS_H

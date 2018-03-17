@@ -30,7 +30,6 @@ SOFTWARE.
 #include <yave/bindings/DescriptorSet.h>
 
 namespace yave {
-namespace experimental {
 
 class TiledDeferredRenderer : public Renderer {
 	public:
@@ -68,7 +67,6 @@ class TiledDeferredRenderer : public Renderer {
 
 };
 
-}
 }
 
 #endif //  YAVE_RENDERERS_TILEDDEFERREDRENDERER_H

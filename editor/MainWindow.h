@@ -31,6 +31,9 @@ SOFTWARE.
 #include <yave/swapchain/Swapchain.h>
 
 #include <yave/renderers/renderers.h>
+#include <yave/scene/SceneView.h>
+
+#include <yave/material/Material.h>
 
 namespace editor {
 
@@ -50,10 +53,12 @@ class MainWindow : private Window {
 
 		Instance _instance;
 		Device _device;
-		core::Unique<Swapchain> _swapchain;
 
+		core::Unique<Swapchain> _swapchain;
 		Renderer::Ptr<Renderer> _renderer;
 
+		core::Unique<Scene> _scene;
+		core::Unique<SceneView> _scene_view;
 
 };
 

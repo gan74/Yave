@@ -19,55 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef  YAVE_RENDERERS_ENDOFPIPE_H
-#define  YAVE_RENDERERS_ENDOFPIPE_H
+#ifndef YAVE_RENDERERS_TONEMAPPER_H
+#define YAVE_RENDERERS_TONEMAPPER_H
 
-#include "TiledDeferredRenderer.h"
+#include "renderers.h"
+#include "RenderingPipeline.h"
 
-#include <yave/shaders/ComputeProgram.h>
-#include <yave/bindings/DescriptorSet.h>
+#include <yave/material/Material.h>
 
 namespace yave {
-namespace experimental {
 
-class EndOfPipe : public Renderer {
+class ToneMapper : public SecondaryRenderer {
 	public:
-		EndOfPipe(const Ptr<TiledDeferredRenderer>& renderer);
+		ToneMapper(const Ptr<Renderer>& renderer);
 
 	protected:
 		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
+		void render(RenderPassRecorder &recorder, const FrameToken &) override;
 
 	private:
-		const DescriptorSet& create_descriptor_set(const StorageView& out, const TextureView& in);
+		Ptr<Renderer> _renderer;
 
-		Ptr<TiledDeferredRenderer> _renderer;
-
-		ComputeProgram _correction_program;
-
-		std::unordered_map<VkImageView, DescriptorSet> _output_sets;
-
+		Material _material;
 };
 
-class ScreenEndOfPipe : public Renderer {
-	public:
-		ScreenEndOfPipe(const Ptr<SecondaryRenderer>& renderer);
-
-	protected:
-		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
-
-	private:
-		const Framebuffer& create_framebuffer(const ColorAttachmentView& out);
-
-		Ptr<SecondaryRenderer> _renderer;
-
-		std::unordered_map<VkImageView, Framebuffer> _output_framebuffers;
-
-};
-
-
-}
 }
 
-#endif //  YAVE_RENDERERS_ENDOFPIPE_H
+#endif // YAVE_RENDERERS_TONEMAPPER_H

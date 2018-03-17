@@ -19,50 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef  YAVE_RENDERERS_GBUFFERRENDERER_H
-#define  YAVE_RENDERERS_GBUFFERRENDERER_H
+#ifndef EDITOR_SCENES_H
+#define EDITOR_SCENES_H
 
-#include "SceneRenderer.h"
+#include "editor.h"
 
-namespace yave {
+#include <yave/scene/Scene.h>
+#include <yave/scene/SceneView.h>
 
-class GBufferRenderer : public Renderer {
+#include <yave/material/Material.h>
 
-	public:
-		static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
-		static constexpr vk::Format diffuse_format = vk::Format::eR8G8B8A8Unorm;
-		static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
+namespace editor {
 
-		GBufferRenderer(const Ptr<SceneRenderer>& scene, const math::Vec2ui& size);
-
-		const math::Vec2ui& size() const;
-
-		TextureView depth() const;
-		TextureView albedo_metallic() const;
-		TextureView normal_roughness() const;
-
-		const SceneView& scene_view() const {
-			return _scene->scene_view();
-		}
-
-		const auto& scene_renderer() const {
-			return _scene;
-		}
-
-	protected:
-		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
-
-	private:
-		Ptr<SceneRenderer> _scene;
-
-		DepthTextureAttachment _depth;
-		ColorTextureAttachment _color;
-		ColorTextureAttachment _normal;
-
-		Framebuffer _gbuffer;
-};
+std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr dptr);
 
 }
 
-#endif //  YAVE_RENDERERS_GBUFFERRENDERER_H
+#endif // EDITOR_SCENES_H
