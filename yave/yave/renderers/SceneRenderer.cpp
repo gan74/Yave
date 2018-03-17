@@ -67,7 +67,7 @@ void SceneRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 
 	const auto& renderables = scene_view().scene().renderables();
 	for(usize i = 0; i != renderables.size(); ++i) {
-		AttribSubBuffer<math::Transform<>> attribs(_attrib_buffer, i * sizeof(math::Transform<>), 1);
+		AttribSubBuffer<math::Transform<>> attribs(_attrib_buffer, i, 1);
 		renderables[i]->render(token, recorder, Renderable::SceneData{_camera_set, attribs});
 	}
 }
