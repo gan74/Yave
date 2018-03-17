@@ -30,7 +30,12 @@ namespace editor {
 
 class Widget : NonCopyable {
 	public:
-		Widget(const char* title);
+		enum Flags {
+			NoFlags,
+			NoWindow
+		};
+
+		Widget(const char* title, Flags flags = NoFlags);
 		virtual ~Widget();
 
 		void paint();
@@ -38,14 +43,17 @@ class Widget : NonCopyable {
 
 		bool is_visible() const;
 
+		const char* title() const;
+
 	protected:
 		virtual void paint_ui() = 0;
 
 
 	private:
+		const char* _title;
+		Flags _flags;
 		bool _visible = true;
 
-		const char* _title;
 };
 
 }

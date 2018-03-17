@@ -46,6 +46,8 @@ class MainWindow : private Window {
 
 		void exec();
 
+		void set_scene(core::Unique<Scene>&& scene, core::Unique<SceneView>&& view);
+
 	private:
 		void draw_ui();
 		void render();
@@ -62,7 +64,10 @@ class MainWindow : private Window {
 		core::Unique<Scene> _scene;
 		core::Unique<SceneView> _scene_view;
 
+
+
 		core::Vector<core::Unique<Widget>> _widgets;
+
 
 };
 

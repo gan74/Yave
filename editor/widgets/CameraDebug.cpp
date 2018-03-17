@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2018 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,61 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-
-#include "Widget.h"
+#include "CameraDebug.h"
 
 #include <imgui/imgui.h>
 
 namespace editor {
 
-static ImU32 setup_flags(Widget::Flags f) {
-	if(f == Widget::NoWindow) {
-		ImGuiIO& io = ImGui::GetIO();
-		ImGui::SetNextWindowSize(io.DisplaySize);
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-		return ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus;
-	}
-	return false;
+CameraDebug::CameraDebug(NotOwner<SceneView*> view) : Widget("Camera debug") {
+	set_scene_view(view);
 }
 
-static void cleanup_flags(Widget::Flags f) {
-	if(f == Widget::NoWindow) {
-		ImGui::PopStyleColor();
-	}
+void CameraDebug::set_scene_view(NotOwner<SceneView*> view) {
+	_view = view;
 }
 
-Widget::Widget(const char* title, Flags flags) : _title(title), _flags(flags) {
-}
-
-Widget::~Widget() {
-}
-
-void Widget::paint() {
-	if(!is_visible()) {
+void CameraDebug::paint_ui() {
+	if(!_view) {
 		return;
 	}
+	const auto& camera = _view->camera();
+	auto pos = camera.position();
+	auto fwd = camera.forward();
 
-	auto imgui_flags = setup_flags(_flags);
-	{
-		ImGui::Begin(_title, &_visible, imgui_flags);
-
-		paint_ui();
-
-		ImGui::End();
-	}
-	cleanup_flags(_flags);
-}
-
-void Widget::show() {
-	_visible = true;
-}
-
-bool Widget::is_visible() const {
-	return _visible;
-}
-
-const char* Widget::title() const {
-	return _title;
+	ImGui::Text("position: %.1f, %.1f, %.1f", pos.x(), pos.y(), pos.z());
+	ImGui::Text("forward : %.1f, %.1f, %.1f", fwd.x(), fwd.y(), fwd.z());
 }
 
 }

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2018 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,61 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_ENTITYVIEW_H
+#define EDITOR_WIDGETS_ENTITYVIEW_H
 
 #include "Widget.h"
 
-#include <imgui/imgui.h>
+#include <yave/scene/Scene.h>
 
 namespace editor {
 
-static ImU32 setup_flags(Widget::Flags f) {
-	if(f == Widget::NoWindow) {
-		ImGuiIO& io = ImGui::GetIO();
-		ImGui::SetNextWindowSize(io.DisplaySize);
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-		return ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus;
-	}
-	return false;
-}
+class EntityView : public Widget {
+	public:
+		EntityView(NotOwner<Scene*> scene = nullptr);
 
-static void cleanup_flags(Widget::Flags f) {
-	if(f == Widget::NoWindow) {
-		ImGui::PopStyleColor();
-	}
-}
+		void set_scene(NotOwner<Scene*> scene);
 
-Widget::Widget(const char* title, Flags flags) : _title(title), _flags(flags) {
-}
+	private:
+		void paint_ui() override;
 
-Widget::~Widget() {
-}
+		void add_light();
 
-void Widget::paint() {
-	if(!is_visible()) {
-		return;
-	}
-
-	auto imgui_flags = setup_flags(_flags);
-	{
-		ImGui::Begin(_title, &_visible, imgui_flags);
-
-		paint_ui();
-
-		ImGui::End();
-	}
-	cleanup_flags(_flags);
-}
-
-void Widget::show() {
-	_visible = true;
-}
-
-bool Widget::is_visible() const {
-	return _visible;
-}
-
-const char* Widget::title() const {
-	return _title;
-}
+		NotOwner<Scene*> _scene;
+		NotOwner<Transformable*> _selected;
+};
 
 }
+
+#endif // EDITOR_WIDGETS_ENTITYVIEW_H

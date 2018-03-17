@@ -20,16 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "PerformanceWidget.h"
+#include "PerformanceMetrics.h"
 
 #include <imgui/imgui.h>
 
 namespace editor {
 
-PerformanceWidget::PerformanceWidget() : Widget("Performance") {
+PerformanceMetrics::PerformanceMetrics() : Widget("Performance") {
 }
 
-void PerformanceWidget::paint_ui() {
+void PerformanceMetrics::paint_ui() {
 	auto time = _timer.reset();
 
 	ImGui::Text("frame time: %.2fms", time.to_millis());

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2018 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,61 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_GIZMO_H
+#define EDITOR_GIZMO_H
 
 #include "Widget.h"
 
-#include <imgui/imgui.h>
+#include<yave/scene/SceneView.h>
 
 namespace editor {
 
-static ImU32 setup_flags(Widget::Flags f) {
-	if(f == Widget::NoWindow) {
-		ImGuiIO& io = ImGui::GetIO();
-		ImGui::SetNextWindowSize(io.DisplaySize);
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-		return ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus;
-	}
-	return false;
-}
+class Gizmo : public Widget {
+	public:
+		Gizmo(NotOwner<SceneView*> scene_view = nullptr);
 
-static void cleanup_flags(Widget::Flags f) {
-	if(f == Widget::NoWindow) {
-		ImGui::PopStyleColor();
-	}
-}
+		void set_scene_view(NotOwner<SceneView*> scene_view);
 
-Widget::Widget(const char* title, Flags flags) : _title(title), _flags(flags) {
-}
 
-Widget::~Widget() {
-}
+	private:
+		void paint_ui() override;
 
-void Widget::paint() {
-	if(!is_visible()) {
-		return;
-	}
+		NotOwner<SceneView*> _scene_view;
+		NotOwner<Transformable*> _transformable = nullptr;
 
-	auto imgui_flags = setup_flags(_flags);
-	{
-		ImGui::Begin(_title, &_visible, imgui_flags);
-
-		paint_ui();
-
-		ImGui::End();
-	}
-	cleanup_flags(_flags);
-}
-
-void Widget::show() {
-	_visible = true;
-}
-
-bool Widget::is_visible() const {
-	return _visible;
-}
-
-const char* Widget::title() const {
-	return _title;
-}
+		u32 _dragging_mask = 0;
+};
 
 }
+
+#endif // EDITOR_GIZMO_H

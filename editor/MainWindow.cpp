@@ -30,9 +30,14 @@ SOFTWARE.
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/TiledDeferredRenderer.h>
 
-#include <widgets/PerformanceWidget.h>
+#include <widgets/PerformanceMetrics.h>
+#include <widgets/EntityView.h>
+#include <widgets/CameraDebug.h>
+#include <widgets/Gizmo.h>
 
 #include "scenes.h"
+
+#include <y/core/SmallVector.h>
 
 namespace editor {
 
@@ -40,7 +45,15 @@ MainWindow::MainWindow(DebugParams params) : Window({1280, 768}, "Yave"), _insta
 
 	ImGui::CreateContext();
 
-	_widgets << new PerformanceWidget();
+	auto [scene, view] = create_scene(&_device);
+	set_scene(std::move(scene), std::move(view));
+
+
+	_widgets << new PerformanceMetrics();
+	_widgets << new EntityView(_scene.as_ptr());
+	_widgets << new CameraDebug(_scene_view.as_ptr());
+	_widgets << new Gizmo(_scene_view.as_ptr());
+
 
 	create_swapchain();
 	create_renderer();
@@ -48,19 +61,27 @@ MainWindow::MainWindow(DebugParams params) : Window({1280, 768}, "Yave"), _insta
 	set_event_handler(new MainEventHandler());
 }
 
+
+void MainWindow::set_scene(core::Unique<Scene>&& scene, core::Unique<SceneView>&& view) {
+	_scene = std::move(scene);
+	_scene_view = std::move(view);
+}
+
 void MainWindow::create_renderer() {
-	auto [sce, ve] = create_scene(&_device);
-	_scene = std::move(sce);
-	_scene_view = std::move(ve);
+	core::SmallVector<Node::Ptr<SecondaryRenderer>, 2> renderers;
 
+	if(_scene) {
+		auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(&_device, *_scene_view));
+		auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, _swapchain->size()));
+		auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
+		auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
-	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(&_device, *_scene_view));
-	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, _swapchain->size()));
-	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
-	auto tonemap	= Node::Ptr<ToneMapper>(new ToneMapper(deferred));
+		renderers << tonemap;
+	}
 
-	auto gui		= Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
-	_renderer = new SimpleEndOfPipe({tonemap, gui});
+	renderers << Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
+
+	_renderer = new SimpleEndOfPipe(renderers);
 }
 
 void MainWindow::exec() {
@@ -76,9 +97,7 @@ void MainWindow::exec() {
 
 void MainWindow::draw_ui() {
 	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize.x = size().x();
-	io.DisplaySize.y = size().y();
-
+	io.DisplaySize = ImVec2(size());
 
 	ImGui::NewFrame();
 
@@ -88,6 +107,24 @@ void MainWindow::draw_ui() {
 
 	ImGui::EndFrame();
 	ImGui::Render();
+
+
+	{
+		static core::Chrono timer;
+		{
+			math::Vec2 angles(1.5, 0.0f);
+
+			float dist = 200.0f;
+			auto& camera = _scene_view->camera();
+
+			auto cam_tr = math::rotation({0, 0, -1}, angles.x()) * math::rotation({0, 1, 0}, angles.y());
+			auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
+			auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
+
+			camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
+			camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 1.0f));
+		}
+	}
 }
 
 void MainWindow::create_swapchain() {

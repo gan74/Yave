@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_PERFORMANCEWIDGET_H
-#define EDITOR_WIDGETS_PERFORMANCEWIDGET_H
+#ifndef EDITOR_WIDGETS_PERFORMANCEMETRICS_H
+#define EDITOR_WIDGETS_PERFORMANCEMETRICS_H
 
 #include "Widget.h"
 
@@ -28,20 +28,19 @@ SOFTWARE.
 
 namespace editor {
 
-class PerformanceWidget : public Widget {
+class PerformanceMetrics : public Widget {
 	public:
-		PerformanceWidget();
+		PerformanceMetrics();
 
 		void paint();
 
-	protected:
+	private:
 		void paint_ui() override;
 
-	private:
 		core::Chrono _timer;
 
 };
 
 }
 
-#endif // EDITOR_WIDGETS_PERFORMANCEWIDGET_H
+#endif // EDITOR_WIDGETS_PERFORMANCEMETRICS_H

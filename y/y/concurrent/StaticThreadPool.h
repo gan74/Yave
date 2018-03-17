@@ -48,7 +48,7 @@ class StaticThreadPool : NonCopyable {
 
 			std::list<Func> queue;
 
-			bool run = true;
+			volatile bool run = true;
 		};
 
 	public:

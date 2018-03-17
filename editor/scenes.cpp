@@ -52,9 +52,9 @@ std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr d
 
 	{
 		auto material = AssetPtr<Material>(Material(dptr, MaterialData()
-				 .set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
-				 .set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
-			 ));
+				.set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
+				.set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
+			));
 
 		auto animation = AssetPtr<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to load animation file.")));
 
@@ -71,18 +71,49 @@ std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr d
 		}
 	}
 
+	{
+		auto material = AssetPtr<Material>(Material(dptr, MaterialData()
+				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
+				.set_culled(false)
+			));
+		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to open mesh file."));
+		auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
+
+		{
+			auto instance = new StaticMeshInstance(mesh, material);
+			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
+			renderables << instance;
+		}
+
+		{
+			auto instance = new StaticMeshInstance(mesh, material);
+			instance->transform() = math::Transform<>(math::Vec3(100.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
+			renderables << instance;
+		}
+
+		{
+			auto instance = new StaticMeshInstance(mesh, material);
+			instance->transform() = math::Transform<>(math::Vec3(0.0f, 100.0f, 0.0f), math::identity(), math::Vec3(0.1f));
+			renderables << instance;
+		}
+
+		{
+			auto instance = new StaticMeshInstance(mesh, material);
+			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 100.0f), math::identity(), math::Vec3(0.1f));
+			renderables << instance;
+		}
+	}
+
 	core::Unique scene = new Scene({}, std::move(renderables), std::move(lights));
 	core::Unique scene_view = new SceneView(*scene);
 
 	{
-		math::Vec2 angles;
-
 		float dist = 200.0f;
 		auto& camera = scene_view->camera();
 
-		auto cam_tr = math::rotation({0, 0, -1}, angles.x()) * math::rotation({0, 1, 0}, angles.y());
-		auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
-		auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
+		auto cam_pos = math::Vec4(dist, 0, 0, 1);
+		auto cam_up = math::Vec4(0, 0, 1, 0);
 
 		camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
 		camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 1.0f));
