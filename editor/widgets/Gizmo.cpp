@@ -22,7 +22,6 @@ SOFTWARE.
 #include "Gizmo.h"
 
 #include <imgui/imgui.h>
-#include <imgui/ImGuizmo.h>
 
 namespace editor {
 
