@@ -51,8 +51,8 @@ class Transformable {
 			return _transform.forward();
 		}
 
-		const auto& right() const {
-			return _transform.right();
+		const auto& left() const {
+			return _transform.left();
 		}
 
 		const auto& up() const {
