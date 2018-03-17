@@ -65,6 +65,13 @@ class Quaternion {
 			return *this;
 		}
 
+		bool operator==(const Quaternion& q) const {
+			return _quat == q._quat;
+		}
+
+		bool operator!=(const Quaternion& q) const {
+			return _quat != q._quat;
+		}
 
 		T angle() const {
 			return std::acos(w() * T(2));

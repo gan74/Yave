@@ -61,10 +61,10 @@ class Matrix {
 			build<P + 1>(args...);
 		}
 
-		template<usize P, usize Q, typename U, typename... Args>
-		void build(const Vec<Q, U>& t, Args... args) {
+		template<usize P, usize Q, typename... Args>
+		void build(const Vec<Q, T>& t, Args... args) {
 			for(usize i = 0; i != Q; ++i) {
-				set_at(P + i, T(t[i]));
+				set_at(P + i, t[i]);
 			}
 			build<P + Q>(args...);
 		}
@@ -86,12 +86,14 @@ class Matrix {
 		using const_iterator = const T*;
 		using value_type = T;
 
+		Matrix() = default;
+		Matrix(const Matrix&) = default;
+		Matrix& operator=(const Matrix&) = default;
+
 		template<typename U, typename... Args>
 		Matrix(U t, Args... args) {
 			build<0>(t, args...);
 		}
-
-
 
 		template<typename X>
 		Matrix(const Matrix<N, M, X>& m) {
@@ -104,11 +106,6 @@ class Matrix {
 
 		Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
 		}
-
-		Matrix() = default;
-		Matrix(const Matrix&) = default;
-		Matrix& operator=(const Matrix&) = default;
-
 
 		auto& operator[](usize i) {
 			return _vecs[i];
