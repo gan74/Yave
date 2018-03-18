@@ -29,31 +29,31 @@ SOFTWARE.
 
 namespace yave {
 
-template<MemoryType Memory = MemoryType::DeviceLocal>
+template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using AttribBuffer = Buffer<BufferUsage::AttributeBit, Memory>;
 
-template<typename T, MemoryType Memory = MemoryType::DeviceLocal>
+template<typename T, MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Memory>;
 
 
-template<MemoryType Memory = MemoryType::DeviceLocal>
+template<MemoryType Memory = prefered_memory_type(BufferUsage::UniformBit)>
 using UniformBuffer = Buffer<BufferUsage::UniformBit, Memory>;
 
-template<typename T, MemoryType Memory = MemoryType::DeviceLocal>
+template<typename T, MemoryType Memory = prefered_memory_type(BufferUsage::UniformBit)>
 using TypedUniformBuffer = TypedBuffer<T, BufferUsage::UniformBit, Memory>;
 
 
 
-template<MemoryType Memory = MemoryType::DeviceLocal>
+template<MemoryType Memory = prefered_memory_type(BufferUsage::IndexBit)>
 using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit, Memory>;
 
-template<MemoryType Memory = MemoryType::DeviceLocal>
+template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit, Memory>;
 
-template<MemoryType Memory = MemoryType::DeviceLocal>
+template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit, Memory>;
 
-template<MemoryType Memory = MemoryType::DeviceLocal>
+template<MemoryType Memory = prefered_memory_type(BufferUsage::IndirectBit)>
 using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Memory>;
 
 
