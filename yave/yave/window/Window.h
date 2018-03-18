@@ -36,8 +36,14 @@ namespace yave {
 
 class Window {
 	public:
-		Window(const math::Vec2ui& _size, const core::String& _name);
-		~Window();
+		enum Flags {
+			NoFlags = 0,
+			Resizable = 0x01
+		};
+
+
+		Window(const math::Vec2ui& size, const core::String& name, Flags flags = NoFlags);
+		virtual ~Window();
 
 		void close();
 		bool update();
@@ -55,8 +61,14 @@ class Window {
 		void set_event_handler(EventHandler*&& handler);
 		EventHandler* event_handler() const;
 
+	protected:
+		virtual void resized() {
+		}
+
 	private:
 		#ifdef Y_OS_WIN
+			static LRESULT CALLBACK windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+			static void mouse_event(Window* window, UINT uMsg, POINTS pt);
 			HINSTANCE _hInstance;
 			HWND _hwnd;
 			bool _run;

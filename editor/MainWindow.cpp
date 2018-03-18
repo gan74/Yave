@@ -41,7 +41,7 @@ SOFTWARE.
 
 namespace editor {
 
-MainWindow::MainWindow(DebugParams params) : Window({1280, 768}, "Yave"), _instance(params), _device(_instance) {
+MainWindow::MainWindow(DebugParams params) : Window({1280, 768}, "Yave", Window::Resizable), _instance(params), _device(_instance) {
 
 	ImGui::CreateContext();
 
@@ -54,13 +54,12 @@ MainWindow::MainWindow(DebugParams params) : Window({1280, 768}, "Yave"), _insta
 	_widgets << new CameraDebug(_scene_view.as_ptr());
 	_widgets << new Gizmo(_scene_view.as_ptr());
 
-
-	create_swapchain();
-	create_renderer();
-
 	set_event_handler(new MainEventHandler());
 }
 
+void MainWindow::resized() {
+	_renderer = nullptr;
+}
 
 void MainWindow::set_scene(core::Unique<Scene>&& scene, core::Unique<SceneView>&& view) {
 	_scene = std::move(scene);
@@ -88,6 +87,11 @@ void MainWindow::exec() {
 	show();
 
 	while(update()) {
+		if(!_renderer) {
+			create_swapchain();
+			create_renderer();
+		}
+
 		draw_ui();
 		render();
 	}
@@ -107,7 +111,6 @@ void MainWindow::draw_ui() {
 
 	ImGui::EndFrame();
 	ImGui::Render();
-
 
 	{
 		static core::Chrono timer;
@@ -146,6 +149,8 @@ void MainWindow::render() {
 		RenderingPipeline pipeline(_renderer);
 		pipeline.render(recorder, frame);
 	}
+	// so we don't have to wait when resizing
+	recorder.keep_alive(_renderer);
 
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 

@@ -49,6 +49,8 @@ class MainWindow : private Window {
 		void set_scene(core::Unique<Scene>&& scene, core::Unique<SceneView>&& view);
 
 	private:
+		void resized() override;
+
 		void draw_ui();
 		void render();
 

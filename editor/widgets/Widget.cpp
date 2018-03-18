@@ -30,8 +30,15 @@ static ImU32 setup_flags(Widget::Flags f) {
 	if(f == Widget::NoWindow) {
 		ImGuiIO& io = ImGui::GetIO();
 		ImGui::SetNextWindowSize(io.DisplaySize);
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-		return ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus;
+		return ImGuiWindowFlags_NoTitleBar |
+			   ImGuiWindowFlags_NoResize |
+			   ImGuiWindowFlags_NoScrollbar |
+			   ImGuiWindowFlags_NoInputs |
+			   ImGuiWindowFlags_NoSavedSettings |
+			   ImGuiWindowFlags_NoFocusOnAppearing |
+			   ImGuiWindowFlags_NoBringToFrontOnFocus;
 	}
 	return false;
 }

@@ -27,7 +27,7 @@ namespace yave {
 
 const char class_name[] = "Yave";
 
-void mouse_event(Window* window, UINT uMsg, POINTS pt) {
+void Window::mouse_event(Window* window, UINT uMsg, POINTS pt) {
 	if(window->event_handler()) {
 		auto handler = window->event_handler();
 		math::Vec2i pos = math::Vec2i(pt.x, pt.y);
@@ -52,7 +52,9 @@ void mouse_event(Window* window, UINT uMsg, POINTS pt) {
 	}
 }
 
-LRESULT CALLBACK windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+static usize size_count = 0;
+
+LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
 	auto& l_param = lParam;
 	switch(uMsg) {
@@ -61,9 +63,10 @@ LRESULT CALLBACK windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 			return 0;
 
 		case WM_SIZE:
-			// we get here if the window has changed size, we should rebuild most
-			// of our window resources before rendering to this window again.
-			// (no need for this because our window sizing by hand is disabled)
+				// we get here if the window has changed size, we should rebuild most
+				// of our window resources before rendering to this window again.
+				window->_size = math::Vec2ui(usize(LOWORD(lParam)), usize(HIWORD(lParam)));
+				window->resized();
 			break;
 
 		case WM_KEYDOWN:
@@ -105,7 +108,7 @@ LRESULT CALLBACK windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 
 
 
-Window::Window(const math::Vec2ui& win_size, const core::String& win_name) : _size(win_size), _name(win_name), _event_handler(nullptr) {
+Window::Window(const math::Vec2ui& size, const core::String& name, Flags flags) : _size(size), _name(name), _event_handler(nullptr) {
 #ifdef Y_OS_WIN
 	_run = true;
 	_hInstance = GetModuleHandle(nullptr);
@@ -121,13 +124,17 @@ Window::Window(const math::Vec2ui& win_size, const core::String& win_name) : _si
 	wc.hIconSm       = LoadIcon(nullptr, IDI_APPLICATION);
 	RegisterClassEx(&wc);
 
-
 	DWORD ex_style = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-	DWORD style	  = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-	RECT wr = {0, 0, LONG(win_size.x()), LONG(win_size.y())};
+	DWORD style	= WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+
+	if(flags & Resizable) {
+		style |= WS_SIZEBOX;
+	}
+
+	RECT wr = {0, 0, LONG(size.x()), LONG(size.y())};
 	AdjustWindowRectEx(&wr, style, FALSE, ex_style);
 
-	_hwnd = CreateWindowEx(0, class_name, win_name.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, nullptr, nullptr, _hInstance, nullptr);
+	_hwnd = CreateWindowEx(0, class_name, name.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, nullptr, nullptr, _hInstance, nullptr);
 	SetWindowLongPtr(_hwnd, GWLP_USERDATA, LONG_PTR(this));
 #endif
 }

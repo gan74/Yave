@@ -53,6 +53,7 @@ class ImGuiRenderer : public SecondaryRenderer {
 	private:
 		TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> _index_buffer;
 		TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> _vertex_buffer;
+		TypedUniformBuffer<math::Vec2> _uniform_buffer;
 
 		Texture _font;
 		Material _material;

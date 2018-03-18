@@ -39,7 +39,6 @@ static ImageData load_font() {
 	io.Fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
 	io.Fonts->TexID = reinterpret_cast<void*>(1);
 	auto image = ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8G8B8A8Unorm));
-	ImGui::MemFree(font_data);
 	return image;
 }
 
@@ -99,11 +98,12 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		SecondaryRenderer(dptr),
 		_index_buffer(device(), imgui_index_buffer_size),
 		_vertex_buffer(device(), imgui_vertex_buffer_size),
+		_uniform_buffer(device(), 1),
 		_font(device(), load_font()),
 		_material(device(), MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("imgui.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("imgui.vert.spv").expected("Unable to load spirv file.")))
-			.set_bindings({Binding(_font)})
+			.set_bindings({Binding(_font), Binding(_uniform_buffer)})
 			.set_depth_tested(false)
 			.set_culled(false)
 			.set_blended(true)
@@ -126,10 +126,17 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 	if(!draw_data) {
 		return;
 	}
+
+
 	recorder.bind_buffers(SubBuffer<BufferUsage::IndexBit>(_index_buffer), {AttribSubBuffer<Vertex>(_vertex_buffer)});
+	recorder.bind_material(_material);
 
 	auto indexes = TypedMapping(_index_buffer);
 	auto vertices = TypedMapping(_vertex_buffer);
+	auto uniform = TypedMapping(_uniform_buffer);
+
+	uniform[0] = math::Vec2(ImGui::GetIO().DisplaySize);
+
 
 	usize index_offset = 0;
 	usize vertex_offset = 0;
@@ -159,7 +166,6 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 			vk::Extent2D extent(cmd.ClipRect.z - cmd.ClipRect.x, cmd.ClipRect.w - cmd.ClipRect.y);
 			recorder.vk_cmd_buffer().setScissor(0, vk::Rect2D(offset, extent));
 
-			recorder.bind_material(_material);
 			recorder.draw(vk::DrawIndexedIndirectCommand()
 					.setFirstIndex(drawn_index_offset)
 					.setVertexOffset(vertex_offset)
