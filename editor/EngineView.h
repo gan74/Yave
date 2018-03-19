@@ -46,12 +46,10 @@ class EngineView : NonCopyable, public DeviceLinked {
 
 		void set_scene_view(NotOwner<SceneView*> scene_view);
 
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
-
-		void paint_ui();
+		void render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token);
 
 	private:
-		void set_render_size(math::Vec2ui size);
+		bool set_render_size(math::Vec2ui size);
 
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
@@ -59,6 +57,7 @@ class EngineView : NonCopyable, public DeviceLinked {
 		void create_renderer();
 
 		Node::Ptr<FramebufferRenderer> _renderer;
+
 		NotOwner<SceneView*> _scene_view;
 		math::Vec2ui _size;
 

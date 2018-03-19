@@ -52,9 +52,8 @@ class MainWindow : private Window {
 	private:
 		void resized() override;
 
-		void paint_ui();
-
 		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
+		void present(CmdBufferRecorder<>& recorder, const FrameToken& token);
 
 		void create_swapchain();
 

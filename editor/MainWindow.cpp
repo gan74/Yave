@@ -100,20 +100,19 @@ void MainWindow::exec() {
 		FrameToken frame = _swapchain->next_frame();
 		CmdBufferRecorder<> recorder(_device.create_cmd_buffer());
 
-		_engine_view.render(recorder, frame);
-		paint_ui();
 		render(recorder, frame);
+		present(recorder, frame);
 	}
 
 	_device.queue(QueueFamily::Graphics).wait();
 }
 
-void MainWindow::paint_ui() {
+void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = ImVec2(size());
 
+	// draw ui
 	ImGui::NewFrame();
-
 	{
 		ImU32 flags = ImGuiWindowFlags_NoTitleBar |
 					  ImGuiWindowFlags_NoResize |
@@ -130,7 +129,7 @@ void MainWindow::paint_ui() {
 		ImGui::BeginDockspace();
 
 		{
-			_engine_view.paint_ui();
+			_engine_view.render_ui(recorder, token);
 
 			ImGui::SetNextDock(ImGuiDockSlot_Left);
 			{
@@ -155,14 +154,16 @@ void MainWindow::paint_ui() {
 	}
 	ImGui::EndFrame();
 	ImGui::Render();
-}
 
-void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-
+	// render ui pipeline into cmd buffer
 	{
 		RenderingPipeline pipeline(_ui_renderer);
 		pipeline.render(recorder, token);
 	}
+
+}
+
+void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 
 
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));

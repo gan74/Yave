@@ -46,16 +46,19 @@ void EngineView::set_scene_view(NotOwner<SceneView*> scene_view) {
 }
 
 
-void EngineView::set_render_size(math::Vec2ui size) {
-	static constexpr u32 min_size(256);
+bool EngineView::set_render_size(math::Vec2ui size) {
+	static constexpr u32 size_step(256);
 	for(auto& i : size) {
-		i = std::max(i, min_size);
+		i = i + (size_step - (i % size_step));
 	}
 
 	if(size != _size) {
 		_size = size;
 		create_renderer();
+		return true;
 	}
+
+	return false;
 }
 
 void EngineView::create_renderer() {
@@ -81,35 +84,27 @@ void EngineView::create_renderer() {
 		);
 }
 
-void EngineView::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	if(!_renderer) {
-		return;
-	}
-
-	{
-		RenderingPipeline pipeline(_renderer);
-		pipeline.render(recorder, token);
-	}
-	// so we don't have to wait when resizing
-	recorder.keep_alive(_renderer);
-}
-
-void EngineView::paint_ui() {
+void EngineView::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	if(ImGui::BeginDock("Engine view")) {
-		bool render = _renderer;
 
-		math::Vec2 size = ImGui::GetWindowSize();
-		math::Vec2 pos = ImGui::GetWindowPos();
-		set_render_size(math::Vec2ui(size));
+		math::Vec2 win_size = ImGui::GetWindowSize();
+		math::Vec2 win_pos = ImGui::GetWindowPos();
+		set_render_size(math::Vec2ui(win_size));
 
-		if(render) {
-			auto map = TypedMapping(_uniform_buffer);
-			map[0] = ViewData{math::Vec2i(size), math::Vec2i(pos), math::Vec2i(_size)};
-
-			ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
-		} else {
-			ImGui::Text("Error, unable to setup renderer...");
+		// render engine
+		{
+			RenderingPipeline pipeline(_renderer);
+			pipeline.render(recorder, token);
+			// so we don't have to wait when resizing
+			recorder.keep_alive(_renderer);
 		}
+
+		// ui stuff
+		auto map = TypedMapping(_uniform_buffer);
+		map[0] = ViewData{math::Vec2i(win_size), math::Vec2i(win_pos), math::Vec2i(_size)};
+
+		ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
+
 	}
 
 	ImGui::EndDock();

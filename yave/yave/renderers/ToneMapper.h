@@ -35,7 +35,7 @@ class ToneMapper : public SecondaryRenderer {
 
 	protected:
 		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void render(RenderPassRecorder &recorder, const FrameToken &) override;
+		void render(RenderPassRecorder& recorder, const FrameToken&) override;
 
 	private:
 		Ptr<Renderer> _renderer;
