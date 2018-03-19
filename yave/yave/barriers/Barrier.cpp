@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
+static vk::AccessFlags vk_layout_access_flags(vk::ImageLayout layout) {
 	switch(layout) {
 		case vk::ImageLayout::eUndefined:
 			return vk::AccessFlags();
@@ -57,39 +57,6 @@ static vk::AccessFlags vk_access_flags(vk::ImageLayout layout) {
 	return fatal("Unsupported layout transition.");
 }
 
-static vk::AccessFlags vk_dst_access_flags(PipelineStage dst) {
-	if((dst & PipelineStage::Shaders) != PipelineStage::None) {
-		return vk::AccessFlagBits::eShaderRead;
-	}
-	switch(dst) {
-		case PipelineStage::TransferBit:
-			return vk::AccessFlagBits::eTransferRead;
-		case PipelineStage::HostBit:
-			return vk::AccessFlagBits::eHostRead;
-
-		default:
-			break;
-	}
-	return fatal("Unsuported pipeline stage.");
-}
-
-static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
-	if((src & PipelineStage::Shaders) != PipelineStage::None) {
-		return vk::AccessFlagBits::eShaderWrite;
-	}
-	switch(src) {
-		case PipelineStage::TransferBit:
-			return vk::AccessFlagBits::eTransferWrite;
-		case PipelineStage::HostBit:
-			return vk::AccessFlagBits::eHostWrite;
-
-		default:
-			break;
-	}
-	return fatal("Unsuported pipeline stage.");
-}
-
-
 vk::ImageMemoryBarrier create_image_barrier(
 		vk::Image image,
 		ImageFormat format,
@@ -101,8 +68,8 @@ vk::ImageMemoryBarrier create_image_barrier(
 	return vk::ImageMemoryBarrier()
 			.setOldLayout(old_layout)
 			.setNewLayout(new_layout)
-			.setSrcAccessMask(vk_access_flags(old_layout))
-			.setDstAccessMask(vk_access_flags(new_layout))
+			.setSrcAccessMask(vk_layout_access_flags(old_layout))
+			.setDstAccessMask(vk_layout_access_flags(new_layout))
 			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 			.setImage(image)
@@ -114,9 +81,60 @@ vk::ImageMemoryBarrier create_image_barrier(
 		;
 }
 
-vk::ImageMemoryBarrier ImageBarrier::vk_barrier(PipelineStage, PipelineStage) const {
+
+static vk::AccessFlags vk_dst_access_flags(PipelineStage dst) {
+	if((dst & PipelineStage::AllShadersBit) != PipelineStage::None) {
+		return vk::AccessFlagBits::eShaderRead;
+	}
+	switch(dst) {
+		case PipelineStage::TransferBit:
+			return vk::AccessFlagBits::eTransferRead;
+
+		case PipelineStage::HostBit:
+			return vk::AccessFlagBits::eHostRead;
+
+		default:
+			break;
+	}
+	return fatal("Unsuported pipeline stage.");
+}
+
+static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
+	if((src & PipelineStage::AllShadersBit) != PipelineStage::None) {
+		return vk::AccessFlagBits::eShaderWrite;
+	}
+	switch(src) {
+		case PipelineStage::TransferBit:
+			return vk::AccessFlagBits::eTransferWrite;
+
+		case PipelineStage::HostBit:
+			return vk::AccessFlagBits::eHostWrite;
+
+		case PipelineStage::ColorAttachmentOutBit:
+			return vk::AccessFlagBits::eColorAttachmentWrite;
+
+		default:
+			break;
+	}
+	return fatal("Unsuported pipeline stage.");
+}
+
+vk::ImageMemoryBarrier ImageBarrier::vk_barrier(PipelineStage src, PipelineStage dst) const {
 	auto layout = vk_image_layout(_usage);
-	return create_image_barrier(_image, _format, _layers, _mips, layout, layout);
+	return vk::ImageMemoryBarrier()
+			.setOldLayout(layout)
+			.setNewLayout(layout)
+			.setSrcAccessMask(vk_src_access_flags(src))
+			.setDstAccessMask(vk_dst_access_flags(dst))
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setImage(_image)
+			.setSubresourceRange(vk::ImageSubresourceRange()
+					.setAspectMask(_format.vk_aspect())
+					.setLayerCount(_layers)
+					.setLevelCount(_mips)
+				)
+		;
 }
 
 vk::BufferMemoryBarrier BufferBarrier::vk_barrier(PipelineStage src, PipelineStage dst) const {

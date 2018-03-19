@@ -42,7 +42,7 @@ class ImageBarrier {
 				_mips(image.mipmaps()) {
 		}
 
-		vk::ImageMemoryBarrier vk_barrier(PipelineStage, PipelineStage) const;
+		vk::ImageMemoryBarrier vk_barrier(PipelineStage src, PipelineStage dst) const;
 
 	private:
 		vk::Image _image;

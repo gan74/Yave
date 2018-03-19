@@ -34,9 +34,12 @@ enum class PipelineStage {
 	VertexBit = uenum(vk::PipelineStageFlagBits::eVertexInput) | uenum(vk::PipelineStageFlagBits::eVertexShader),
 	FragmentBit = uenum(vk::PipelineStageFlagBits::eFragmentShader) | uenum(vk::PipelineStageFlagBits::eEarlyFragmentTests) | uenum(vk::PipelineStageFlagBits::eLateFragmentTests),
 	ComputeBit = uenum(vk::PipelineStageFlagBits::eComputeShader),
-	AttachmentOutBit = uenum(vk::PipelineStageFlagBits::eColorAttachmentOutput),
+	ColorAttachmentOutBit = uenum(vk::PipelineStageFlagBits::eColorAttachmentOutput),
 
-	Shaders = VertexBit | FragmentBit | ComputeBit
+	AllShadersBit = VertexBit | FragmentBit | ComputeBit,
+
+	All = uenum(vk::PipelineStageFlagBits::eAllCommands)
+
 };
 
 constexpr PipelineStage operator|(PipelineStage l, PipelineStage r) {
@@ -52,7 +55,7 @@ constexpr PipelineStage operator~(PipelineStage l)  {
 }
 
 constexpr bool is_shader_stage(PipelineStage stage) {
-	return (stage & PipelineStage::Shaders) != PipelineStage::None;
+	return (stage & PipelineStage::AllShadersBit) != PipelineStage::None;
 }
 
 }
