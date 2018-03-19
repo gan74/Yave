@@ -52,8 +52,6 @@ void Window::mouse_event(Window* window, UINT uMsg, POINTS pt) {
 	}
 }
 
-static usize size_count = 0;
-
 LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
 	auto& l_param = lParam;

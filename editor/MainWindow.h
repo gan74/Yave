@@ -33,9 +33,9 @@ SOFTWARE.
 #include <yave/renderers/renderers.h>
 #include <yave/scene/SceneView.h>
 
-#include <yave/material/Material.h>
-
 #include <widgets/Widget.h>
+
+#include "EngineView.h"
 
 namespace editor {
 
@@ -43,6 +43,7 @@ class MainWindow : private Window {
 
 	public:
 		MainWindow(DebugParams params);
+		~MainWindow();
 
 		void exec();
 
@@ -51,22 +52,23 @@ class MainWindow : private Window {
 	private:
 		void resized() override;
 
-		void draw_ui();
-		void render();
+		void paint_ui();
 
-		void create_renderer();
+		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
+
 		void create_swapchain();
 
 		Instance _instance;
 		Device _device;
 
+		EngineView _engine_view;
+
 		core::Unique<Swapchain> _swapchain;
-		Node::Ptr<EndOfPipe> _renderer;
+
+		Node::Ptr<EndOfPipe> _ui_renderer;
 
 		core::Unique<Scene> _scene;
 		core::Unique<SceneView> _scene_view;
-
-
 
 		core::Vector<core::Unique<Widget>> _widgets;
 

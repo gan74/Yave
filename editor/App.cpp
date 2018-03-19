@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/renderers/ToneMapper.h>
 #include <yave/commands/TimeQuery.h>
 
+#include <imgui/imgui.h>
+
 #include "scenes.h"
 
 namespace editor {

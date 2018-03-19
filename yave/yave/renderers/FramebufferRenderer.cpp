@@ -19,46 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERERS_IMGUIRENDERER_H
-#define EDITOR_RENDERERS_IMGUIRENDERER_H
 
-#include <editor.h>
+#include "FramebufferRenderer.h"
 
-#include <yave/renderers/renderers.h>
+namespace yave {
 
-#include <yave/buffers/buffers.h>
-#include <yave/material/Material.h>
-
-namespace editor {
-
-class ImGuiRenderer : public SecondaryRenderer {
-
-	struct Vertex {
-		math::Vec2 pos;
-		math::Vec2 uv;
-		u32 col;
-	};
-
-	public:
-		ImGuiRenderer(DevicePtr dptr);
-
-		void render(RenderPassRecorder& recorder, const FrameToken&) override;
-
-	protected:
-		void build_frame_graph(FrameGraphNode&) override;
-
-		void setup_state(RenderPassRecorder& recorder);
-	private:
-
-		TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> _index_buffer;
-		TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> _vertex_buffer;
-		TypedUniformBuffer<math::Vec2> _uniform_buffer;
-
-		Texture _font;
-		Material _material;
-
-};
-
+FramebufferRenderer::FramebufferRenderer(const core::ArrayView<Ptr<SecondaryRenderer>>& renderers, const math::Vec2ui& size, ImageFormat color) :
+		Renderer(renderers[0]->device()),
+		_renderers(renderers.begin(), renderers.end()),
+		_color(device(), color, size),
+		_framebuffer(device(), {ColorAttachmentView(_color)}) {
 }
 
-#endif // EDITOR_RENDERERS_IMGUIRENDERER_H
+void FramebufferRenderer::build_frame_graph(FrameGraphNode& frame_graph) {
+	for(const auto& renderer : _renderers) {
+		frame_graph.schedule(renderer);
+	}
+}
+
+void FramebufferRenderer::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	auto region = recorder.region("FramebufferRenderer::render");
+
+	auto pass = recorder.bind_framebuffer(_framebuffer);
+
+	for(const auto& renderer : _renderers) {
+		renderer->render(pass, token);
+	}
+}
+}

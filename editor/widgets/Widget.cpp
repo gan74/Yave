@@ -26,27 +26,47 @@ SOFTWARE.
 
 namespace editor {
 
-static ImU32 setup_flags(Widget::Flags f) {
-	if(f == Widget::NoWindow) {
+static bool begin(const char* title, Widget::Flags flags, bool& visible) {
+	if(flags == Widget::NoWindow) {
 		ImGuiIO& io = ImGui::GetIO();
 		ImGui::SetNextWindowSize(io.DisplaySize);
 		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-		return ImGuiWindowFlags_NoTitleBar |
-			   ImGuiWindowFlags_NoResize |
-			   ImGuiWindowFlags_NoScrollbar |
-			   ImGuiWindowFlags_NoInputs |
-			   ImGuiWindowFlags_NoSavedSettings |
-			   ImGuiWindowFlags_NoFocusOnAppearing |
-			   ImGuiWindowFlags_NoBringToFrontOnFocus;
+		ImU32 f = ImGuiWindowFlags_NoTitleBar |
+				  ImGuiWindowFlags_NoResize |
+				  ImGuiWindowFlags_NoScrollbar |
+				  ImGuiWindowFlags_NoInputs |
+				  ImGuiWindowFlags_NoSavedSettings |
+				  ImGuiWindowFlags_NoFocusOnAppearing |
+				  ImGuiWindowFlags_NoBringToFrontOnFocus;
+		return ImGui::Begin(title, &visible, f);
 	}
-	return false;
+
+	if(flags == Widget::Dock) {
+		if(!ImGui::BeginDock(title, &visible, 0)) {
+			// ????
+			ImGui::EndDock();
+			return false;
+		}
+		return true;
+	}
+
+	return ImGui::Begin(title, &visible);
 }
 
-static void cleanup_flags(Widget::Flags f) {
-	if(f == Widget::NoWindow) {
+static void end(Widget::Flags flags) {
+	if(flags == Widget::NoWindow) {
+		ImGui::End();
 		ImGui::PopStyleColor();
+		return;
 	}
+
+	if(flags == Widget::Dock) {
+		ImGui::EndDock();
+		return;
+	}
+
+	ImGui::End();
 }
 
 Widget::Widget(const char* title, Flags flags) : _title(title), _flags(flags) {
@@ -60,15 +80,12 @@ void Widget::paint() {
 		return;
 	}
 
-	auto imgui_flags = setup_flags(_flags);
-	{
-		ImGui::Begin(_title, &_visible, imgui_flags);
+	if(begin(_title, _flags, _visible)) {
 
 		paint_ui();
 
-		ImGui::End();
+		end(_flags);
 	}
-	cleanup_flags(_flags);
 }
 
 void Widget::show() {

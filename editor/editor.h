@@ -26,15 +26,22 @@ SOFTWARE.
 
 
 namespace yave {
+
+class RenderPassRecorder;
+
 namespace experimental {
 	// forward declaring namespaces ...
 }
+
 }
 
 namespace editor {
 
 using namespace yave;
 using namespace yave::experimental;
+
+
+using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
 
 }
 

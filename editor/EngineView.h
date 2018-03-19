@@ -19,46 +19,53 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERERS_IMGUIRENDERER_H
-#define EDITOR_RENDERERS_IMGUIRENDERER_H
+#ifndef EDITOR_ENGINEVIEW_H
+#define EDITOR_ENGINEVIEW_H
 
 #include <editor.h>
 
-#include <yave/renderers/renderers.h>
+#include <yave/renderers/FramebufferRenderer.h>
+
+#include <yave/scene/SceneView.h>
 
 #include <yave/buffers/buffers.h>
 #include <yave/material/Material.h>
 
 namespace editor {
 
-class ImGuiRenderer : public SecondaryRenderer {
+class EngineView : NonCopyable, public DeviceLinked {
 
-	struct Vertex {
-		math::Vec2 pos;
-		math::Vec2 uv;
-		u32 col;
-	};
+		struct ViewData {
+			math::Vec2i view_size;
+			math::Vec2i view_offset;
+			math::Vec2i render_size;
+		};
 
 	public:
-		ImGuiRenderer(DevicePtr dptr);
+		EngineView(DevicePtr dptr);
 
-		void render(RenderPassRecorder& recorder, const FrameToken&) override;
+		void set_scene_view(NotOwner<SceneView*> scene_view);
 
-	protected:
-		void build_frame_graph(FrameGraphNode&) override;
+		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
 
-		void setup_state(RenderPassRecorder& recorder);
+		void paint_ui();
+
 	private:
+		void set_render_size(math::Vec2ui size);
 
-		TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> _index_buffer;
-		TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> _vertex_buffer;
-		TypedUniformBuffer<math::Vec2> _uniform_buffer;
+		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
-		Texture _font;
-		Material _material;
+		void render_ui(RenderPassRecorder& recorder);
+		void create_renderer();
 
+		Node::Ptr<FramebufferRenderer> _renderer;
+		NotOwner<SceneView*> _scene_view;
+		math::Vec2ui _size;
+
+		Material _ui_material;
+		TypedUniformBuffer<ViewData> _uniform_buffer;
 };
 
 }
 
-#endif // EDITOR_RENDERERS_IMGUIRENDERER_H
+#endif // EDITOR_ENGINEVIEW_H

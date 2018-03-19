@@ -19,46 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERERS_IMGUIRENDERER_H
-#define EDITOR_RENDERERS_IMGUIRENDERER_H
+#ifndef YAVE_RENDERER_FRAMEBUFFERRENDERER_H
+#define YAVE_RENDERER_FRAMEBUFFERRENDERER_H
 
-#include <editor.h>
+#include "renderers.h"
 
-#include <yave/renderers/renderers.h>
+namespace yave {
 
-#include <yave/buffers/buffers.h>
-#include <yave/material/Material.h>
-
-namespace editor {
-
-class ImGuiRenderer : public SecondaryRenderer {
-
-	struct Vertex {
-		math::Vec2 pos;
-		math::Vec2 uv;
-		u32 col;
-	};
-
+class FramebufferRenderer : public Renderer {
 	public:
-		ImGuiRenderer(DevicePtr dptr);
+		FramebufferRenderer(const core::ArrayView<Ptr<SecondaryRenderer>>& renderers, const math::Vec2ui& size, ImageFormat color = vk::Format::eR8G8B8A8Unorm);
 
-		void render(RenderPassRecorder& recorder, const FrameToken&) override;
+		TextureView output() const override {
+			return _color;
+		}
+
+		const ColorTextureAttachment& output_image() const {
+			return _color;
+		}
 
 	protected:
-		void build_frame_graph(FrameGraphNode&) override;
+		void build_frame_graph(FrameGraphNode& frame_graph) override;
+		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
-		void setup_state(RenderPassRecorder& recorder);
 	private:
+		const Framebuffer& create_framebuffer(const ColorAttachmentView& out);
 
-		TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> _index_buffer;
-		TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> _vertex_buffer;
-		TypedUniformBuffer<math::Vec2> _uniform_buffer;
+		core::Vector<Ptr<SecondaryRenderer>> _renderers;
 
-		Texture _font;
-		Material _material;
+		ColorTextureAttachment _color;
+		Framebuffer _framebuffer;
 
 };
 
 }
 
-#endif // EDITOR_RENDERERS_IMGUIRENDERER_H
+#endif // YAVE_RENDERER_FRAMEBUFFERRENDERER_H

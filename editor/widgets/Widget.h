@@ -32,7 +32,8 @@ class Widget : NonCopyable {
 	public:
 		enum Flags {
 			NoFlags,
-			NoWindow
+			NoWindow,
+			Dock
 		};
 
 		Widget(const char* title, Flags flags = NoFlags);

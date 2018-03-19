@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/renderers/ToneMapper.h>
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/TiledDeferredRenderer.h>
+#include <yave/renderers/FramebufferRenderer.h>
 
 #include <widgets/PerformanceMetrics.h>
 #include <widgets/EntityView.h>
@@ -39,100 +40,50 @@ SOFTWARE.
 
 #include <y/core/SmallVector.h>
 
+#include <imgui/imgui.h>
+
 namespace editor {
 
-MainWindow::MainWindow(DebugParams params) : Window({1280, 768}, "Yave", Window::Resizable), _instance(params), _device(_instance) {
+MainWindow::MainWindow(DebugParams params) :
+		Window({1280, 768}, "Yave", Window::Resizable),
+		_instance(params),
+		_device(_instance),
+		_engine_view(&_device) {
 
 	ImGui::CreateContext();
+
+	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
+	_ui_renderer = new SimpleEndOfPipe(gui);
 
 	auto [scene, view] = create_scene(&_device);
 	set_scene(std::move(scene), std::move(view));
 
-
 	_widgets << new PerformanceMetrics();
 	_widgets << new EntityView(_scene.as_ptr());
 	_widgets << new CameraDebug(_scene_view.as_ptr());
-	_widgets << new Gizmo(_scene_view.as_ptr());
+	//_widgets << new Gizmo(_scene_view.as_ptr());
 
 	set_event_handler(new MainEventHandler());
 }
 
+MainWindow::~MainWindow() {
+	ImGui::DestroyContext();
+}
+
 void MainWindow::resized() {
-	_renderer = nullptr;
+	create_swapchain();
 }
 
 void MainWindow::set_scene(core::Unique<Scene>&& scene, core::Unique<SceneView>&& view) {
 	_scene = std::move(scene);
 	_scene_view = std::move(view);
-}
 
-void MainWindow::create_renderer() {
-	core::SmallVector<Node::Ptr<SecondaryRenderer>, 2> renderers;
-
-	if(_scene) {
-		auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(&_device, *_scene_view));
-		auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, _swapchain->size()));
-		auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
-		auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
-
-		renderers << tonemap;
-	}
-
-	renderers << Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
-
-	_renderer = new SimpleEndOfPipe(renderers);
-}
-
-void MainWindow::exec() {
-	show();
-
-	while(update()) {
-		if(!_renderer) {
-			create_swapchain();
-			create_renderer();
-		}
-
-		draw_ui();
-		render();
-	}
-
-	_device.queue(QueueFamily::Graphics).wait();
-}
-
-void MainWindow::draw_ui() {
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2(size());
-
-	ImGui::NewFrame();
-
-	for(auto& w : _widgets) {
-		w->paint();
-	}
-
-	ImGui::EndFrame();
-	ImGui::Render();
-
-	{
-		static core::Chrono timer;
-		{
-			math::Vec2 angles(1.5, 0.0f);
-
-			float dist = 200.0f;
-			auto& camera = _scene_view->camera();
-
-			auto cam_tr = math::rotation({0, 0, -1}, angles.x()) * math::rotation({0, 1, 0}, angles.y());
-			auto cam_pos = cam_tr * math::Vec4(dist, 0, 0, 1);
-			auto cam_up = cam_tr * math::Vec4(0, 0, 1, 0);
-
-			camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
-			camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 1.0f));
-		}
-	}
+	_engine_view.set_scene_view(_scene_view.as_ptr());
 }
 
 void MainWindow::create_swapchain() {
-	_device.queue(QueueFamily::Graphics).wait();
-	_renderer = nullptr;
+	// needed because the swapchain imediatly destroys it images
+	_device.queue(vk::QueueFlagBits::eGraphics).wait();
 
 	if(_swapchain) {
 		_swapchain->reset();
@@ -141,16 +92,78 @@ void MainWindow::create_swapchain() {
 	}
 }
 
-void MainWindow::render() {
-	FrameToken frame = _swapchain->next_frame();
+void MainWindow::exec() {
+	show();
 
-	CmdBufferRecorder<> recorder(_device.create_cmd_buffer());
-	{
-		RenderingPipeline pipeline(_renderer);
-		pipeline.render(recorder, frame);
+	while(update()) {
+
+		FrameToken frame = _swapchain->next_frame();
+		CmdBufferRecorder<> recorder(_device.create_cmd_buffer());
+
+		_engine_view.render(recorder, frame);
+		paint_ui();
+		render(recorder, frame);
 	}
-	// so we don't have to wait when resizing
-	recorder.keep_alive(_renderer);
+
+	_device.queue(QueueFamily::Graphics).wait();
+}
+
+void MainWindow::paint_ui() {
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = ImVec2(size());
+
+	ImGui::NewFrame();
+
+	{
+		ImU32 flags = ImGuiWindowFlags_NoTitleBar |
+					  ImGuiWindowFlags_NoResize |
+					  ImGuiWindowFlags_NoScrollbar |
+					  ImGuiWindowFlags_NoInputs |
+					  ImGuiWindowFlags_NoSavedSettings |
+					  ImGuiWindowFlags_NoFocusOnAppearing |
+					  ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui::SetNextWindowSize(io.DisplaySize);
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+		ImGui::Begin("Main window", nullptr, flags);
+		ImGui::BeginDockspace();
+
+		{
+			_engine_view.paint_ui();
+
+			ImGui::SetNextDock(ImGuiDockSlot_Left);
+			{
+				for(auto& w : _widgets) {
+					w->paint();
+				}
+			}
+
+			ImGui::SetNextDock(ImGuiDockSlot_Bottom);
+			ImGui::BeginDock("test 1");
+			ImGui::EndDock();
+
+			ImGui::BeginDock("test 2");
+			ImGui::EndDock();
+
+			ImGui::BeginDock("test 3");
+			ImGui::EndDock();
+		}
+
+		ImGui::EndDockspace();
+		ImGui::End();
+	}
+	ImGui::EndFrame();
+	ImGui::Render();
+}
+
+void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+
+	{
+		RenderingPipeline pipeline(_ui_renderer);
+		pipeline.render(recorder, token);
+	}
+
 
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 
@@ -160,15 +173,15 @@ void MainWindow::render() {
 
 	graphic_queue.submit(vk::SubmitInfo()
 			.setWaitSemaphoreCount(1)
-			.setPWaitSemaphores(&frame.image_aquired)
+			.setPWaitSemaphores(&token.image_aquired)
 			.setPWaitDstStageMask(&pipe_stage_flags)
 			.setCommandBufferCount(1)
 			.setPCommandBuffers(&vk_buffer)
 			.setSignalSemaphoreCount(1)
-			.setPSignalSemaphores(&frame.render_finished),
+			.setPSignalSemaphores(&token.render_finished),
 		cmd_buffer.vk_fence());
 
-	_swapchain->present(frame, graphic_queue);
+	_swapchain->present(token, graphic_queue);
 }
 
 }

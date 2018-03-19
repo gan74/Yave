@@ -10,6 +10,7 @@ include_directories(${editor_SOURCE_DIR}/external)
 file(GLOB_RECURSE SOURCE_FILES
 		"*.h"
 		"*.cpp"
+		"*.inl"
 	)
 
 add_executable(editor ${SOURCE_FILES})

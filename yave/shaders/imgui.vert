@@ -12,10 +12,10 @@ layout(location = 1) out vec4 v_color;
 layout(set = 0, binding = 0) uniform sampler2D font_texture;
 layout(set = 0, binding = 1) uniform Data {
 	vec2 viewport_size;
-} contants;
+} constants;
 
 void main() {
-	vec2 viewport = contants.viewport_size;
+	vec2 viewport = constants.viewport_size;
 
 	mat4 proj = mat4(2.0 / viewport.x, 0.0, 0.0, 0.0,
 					 0.0, 2.0 / -viewport.y, 0.0, 0.0,

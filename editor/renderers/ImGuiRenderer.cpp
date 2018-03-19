@@ -22,8 +22,9 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
-
 #include <y/io/File.h>
+
+#include <imgui/imgui.h>
 
 
 namespace editor {
@@ -112,7 +113,10 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 	setup_style();
 }
 
-ImGuiRenderer::~ImGuiRenderer() {
+
+void ImGuiRenderer::setup_state(RenderPassRecorder& recorder) {
+	recorder.bind_buffers(SubBuffer<BufferUsage::IndexBit>(_index_buffer), {AttribSubBuffer<Vertex>(_vertex_buffer)});
+	recorder.bind_material(_material);
 }
 
 void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
@@ -127,9 +131,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 		return;
 	}
 
-
-	recorder.bind_buffers(SubBuffer<BufferUsage::IndexBit>(_index_buffer), {AttribSubBuffer<Vertex>(_vertex_buffer)});
-	recorder.bind_material(_material);
+	setup_state(recorder);
 
 	auto indexes = TypedMapping(_index_buffer);
 	auto vertices = TypedMapping(_vertex_buffer);
@@ -158,22 +160,23 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 		for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
 			const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
 
-			if(cmd.UserCallback) {
-				fatal("User callback not supported.");
-			}
-
 			vk::Offset2D offset(cmd.ClipRect.x, cmd.ClipRect.y);
 			vk::Extent2D extent(cmd.ClipRect.z - cmd.ClipRect.x, cmd.ClipRect.w - cmd.ClipRect.y);
 			recorder.vk_cmd_buffer().setScissor(0, vk::Rect2D(offset, extent));
 
-			recorder.draw(vk::DrawIndexedIndirectCommand()
-					.setFirstIndex(drawn_index_offset)
-					.setVertexOffset(vertex_offset)
-					.setIndexCount(cmd.ElemCount)
-					.setInstanceCount(1)
-				);
+			if(cmd.UserCallback) {
+				reinterpret_cast<UIDrawCallback>(cmd.UserCallback)(recorder, cmd.UserCallbackData);
+				setup_state(recorder);
+			} else {
+				recorder.draw(vk::DrawIndexedIndirectCommand()
+						.setFirstIndex(drawn_index_offset)
+						.setVertexOffset(vertex_offset)
+						.setIndexCount(cmd.ElemCount)
+						.setInstanceCount(1)
+					);
 
-			drawn_index_offset += cmd.ElemCount;
+				drawn_index_offset += cmd.ElemCount;
+			}
 		}
 
 		vertex_offset += cmd_list->VtxBuffer.Size;

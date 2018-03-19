@@ -42,7 +42,7 @@ static const char* light_type_name(Light::Type type) {
 }
 
 
-EntityView::EntityView(NotOwner<Scene*> scene) : Widget("Entities") {
+EntityView::EntityView(NotOwner<Scene*> scene) : Widget("Entities", Widget::Dock) {
 	set_scene(scene);
 }
 

@@ -27,8 +27,14 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::ImageLayout vk_attachment_image_layout(ImageUsage usage) {
+// image layout inside the render pass (like color attachment optimal)
+static vk::ImageLayout vk_initial_image_layout(ImageUsage usage) {
 	return vk_image_layout(usage & ImageUsage::Attachment);
+}
+
+// image layout outside the renderpass (like shader read optimal)
+static vk::ImageLayout vk_final_image_layout(ImageUsage usage) {
+	return vk_image_layout(usage);
 }
 
 static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies() {
@@ -69,14 +75,15 @@ static vk::AttachmentDescription create_attachment(RenderPass::ImageData image) 
 		.setStoreOp(vk::AttachmentStoreOp::eStore)
 		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-		.setFinalLayout(vk_image_layout(image.usage))
+		//.setInitialLayout(vk_initial_image_layout(image.usage))
+		.setFinalLayout(vk_final_image_layout(image.usage))
 	;
 }
 
 static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usize index) {
 	return vk::AttachmentReference()
 		.setAttachment(u32(index))
-		.setLayout(vk_attachment_image_layout(usage))
+		.setLayout(vk_initial_image_layout(usage))
 	;
 }
 
