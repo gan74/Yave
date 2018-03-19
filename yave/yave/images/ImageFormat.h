@@ -35,6 +35,8 @@ class ImageFormat {
 
 		usize bit_per_pixel() const;
 
+		bool is_valid() const;
+
 	private:
 		vk::Format _format;
 };
