@@ -42,10 +42,6 @@ class ImageBarrier {
 				_mips(image.mipmaps()) {
 		}
 
-		template<ImageUsage Usage>
-		ImageBarrier(const ImageView<Usage>& image) : ImageBarrier(image.image()) {
-		}
-
 		vk::ImageMemoryBarrier vk_barrier(PipelineStage, PipelineStage) const;
 
 	private:
