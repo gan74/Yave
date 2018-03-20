@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "CameraDebug.h"
+#ifndef EDITOR_UI_WIDGET_H
+#define EDITOR_UI_WIDGET_H
 
-#include <imgui/imgui.h>
+#include "UiElement.h"
 
 namespace editor {
 
-CameraDebug::CameraDebug(NotOwner<SceneView*> view) : Widget("Camera debug") {
-	set_scene_view(view);
-}
+class Widget : public UiElement {
 
-void CameraDebug::set_scene_view(NotOwner<SceneView*> view) {
-	_view = view;
-}
+	public:
+		Widget(const char* title);
 
-void CameraDebug::paint_ui() {
-	if(!_view) {
-		return;
-	}
-	const auto& camera = _view->camera();
-	auto pos = camera.position();
-	auto fwd = camera.forward();
+		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
-	ImGui::Text("position: %.1f, %.1f, %.1f", pos.x(), pos.y(), pos.z());
-	ImGui::Text("forward : %.1f, %.1f, %.1f", fwd.x(), fwd.y(), fwd.z());
-}
+	protected:
+		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
+
+};
 
 }
+
+#endif // EDITOR_UI_WIDGET_H

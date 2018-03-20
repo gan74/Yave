@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2018 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,20 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_GIZMO_H
+#define EDITOR_WIDGETS_GIZMO_H
 
-#include "PerformanceMetrics.h"
+#include <editor/ui/Gadget.h>
 
-#include <imgui/imgui.h>
+#include <yave/scene/SceneView.h>
 
 namespace editor {
 
-PerformanceMetrics::PerformanceMetrics() : Widget("Performance") {
+class Gizmo : public Gadget {
+	public:
+		Gizmo(SceneView* scene_view = nullptr);
+
+		void set_scene_view(SceneView* scene_view);
+		void set_transformable(Transformable* tr);
+
+	private:
+		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+
+		SceneView* _scene_view = nullptr;
+		Transformable* _transformable = nullptr;
+
+		u32 _dragging_mask = 0;
+};
+
 }
 
-void PerformanceMetrics::paint_ui() {
-	auto time = _timer.reset();
-
-	ImGui::Text("frame time: %.2fms", time.to_millis());
-}
-
-}
+#endif // EDITOR_WIDGETS_GIZMO_H

@@ -19,29 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGET_CAMERADEBUG_H
-#define EDITOR_WIDGET_CAMERADEBUG_H
+#ifndef EDITOR_VIEWS_ENTITYVIEW_H
+#define EDITOR_VIEWS_ENTITYVIEW_H
 
-#include "Widget.h"
+#include <editor/ui/Dock.h>
 
-#include <yave/scene/SceneView.h>
+#include <yave/scene/Scene.h>
 
 namespace editor {
 
-class CameraDebug : public Widget {
+class EntityView : public Dock {
 	public:
-		CameraDebug(NotOwner<SceneView*> view = nullptr);
+		EntityView(Scene* scene = nullptr);
 
-		void set_scene_view(NotOwner<SceneView*> view);
+		void set_scene(Scene* scene);
+
+		Transformable* selected() const {
+			return _selected;
+		}
 
 	private:
-		void paint_ui() override;
+		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
-		NotOwner<SceneView*> _view;
+		void add_light();
 
+		Scene* _scene = nullptr;
+		Transformable* _selected = nullptr;
 };
 
 }
 
-
-#endif // EDITOR_WIDGET_CAMERADEBUG_H
+#endif // EDITOR_VIEWS_ENTITYVIEW_H

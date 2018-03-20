@@ -19,28 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_PERFORMANCEMETRICS_H
-#define EDITOR_WIDGETS_PERFORMANCEMETRICS_H
+#ifndef EDITOR_UI_UIELEMENT_H
+#define EDITOR_UI_UIELEMENT_H
 
-#include "Widget.h"
+#include <editor/editor.h>
 
-#include<y/core/Chrono.h>
+#include <yave/commands/CmdBufferRecorder.h>
+#include <yave/swapchain/FrameToken.h>
 
 namespace editor {
 
-class PerformanceMetrics : public Widget {
+class UiElement : NonCopyable {
 	public:
-		PerformanceMetrics();
+		UiElement(const char* title) : _title(title) {
+		}
 
-		void paint();
 
-	private:
-		void paint_ui() override;
+		virtual ~UiElement() = default;
 
-		core::Chrono _timer;
+		virtual void paint(CmdBufferRecorder<>&, const FrameToken&) = 0;
+
+
+		bool is_visible() const {
+			return _visible;
+		}
+
+		const char* title() const {
+			return _title;
+		}
+
+	protected:
+		const char* _title;
+		bool _visible = true;
 
 };
 
 }
 
-#endif // EDITOR_WIDGETS_PERFORMANCEMETRICS_H
+#endif // EDITOR_UI_UIELEMENT_H

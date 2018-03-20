@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2018 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MAINEVENTHANDLER_H
-#define EDITOR_MAINEVENTHANDLER_H
+#include "CameraDebug.h"
 
-#include <editor.h>
-
-#include <yave/window/EventHandler.h>
+#include <imgui/imgui.h>
 
 namespace editor {
 
-class MainEventHandler : public yave::EventHandler
-{
-	public:
-		MainEventHandler();
-
-		virtual ~MainEventHandler();
-
-		void mouse_moved(const math::Vec2i& pos) override;
-		void mouse_pressed(const math::Vec2i& pos, MouseButton button) override;
-		void mouse_released(const math::Vec2i& pos, MouseButton button) override;
-
-		void char_input(u32 character) override;
-
-	private:
-};
-
+CameraDebug::CameraDebug(SceneView* view) : Widget("Camera debug") {
+	set_scene_view(view);
 }
 
-#endif // EDITOR_MAINEVENTHANDLER_H
+void CameraDebug::set_scene_view(SceneView* view) {
+	_view = view;
+}
+
+void CameraDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+	if(!_view) {
+		return;
+	}
+	const auto& camera = _view->camera();
+	auto pos = camera.position();
+	auto fwd = camera.forward();
+
+	ImGui::Text("position: %.1f, %.1f, %.1f", pos.x(), pos.y(), pos.z());
+	ImGui::Text("forward : %.1f, %.1f, %.1f", fwd.x(), fwd.y(), fwd.z());
+}
+
+}

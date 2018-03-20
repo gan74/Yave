@@ -20,84 +20,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Widget.h"
+#include "Gadget.h"
 
 #include <imgui/imgui.h>
 
 namespace editor {
 
-static bool begin(const char* title, Widget::Flags flags, bool& visible) {
-	if(flags == Widget::NoWindow) {
-		ImGuiIO& io = ImGui::GetIO();
-		ImGui::SetNextWindowSize(io.DisplaySize);
-		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-		ImU32 f = ImGuiWindowFlags_NoTitleBar |
+static bool begin(const char* title, bool& visible) {
+	ImGui::SetNextWindowSize(ImGui::GetWindowSize());
+	ImGui::SetNextWindowPos(ImGui::GetWindowPos());
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
+	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
 				  ImGuiWindowFlags_NoResize |
 				  ImGuiWindowFlags_NoScrollbar |
 				  ImGuiWindowFlags_NoInputs |
 				  ImGuiWindowFlags_NoSavedSettings |
 				  ImGuiWindowFlags_NoFocusOnAppearing |
-				  ImGuiWindowFlags_NoBringToFrontOnFocus;
-		return ImGui::Begin(title, &visible, f);
-	}
+				  //ImGuiWindowFlags_NoBringToFrontOnFocus |
+				  0;
 
-	if(flags == Widget::Dock) {
-		if(!ImGui::BeginDock(title, &visible, 0)) {
-			// ????
-			ImGui::EndDock();
-			return false;
-		}
-		return true;
-	}
-
-	return ImGui::Begin(title, &visible);
+	return ImGui::Begin(title, &visible, flags);
 }
 
-static void end(Widget::Flags flags) {
-	if(flags == Widget::NoWindow) {
-		ImGui::End();
-		ImGui::PopStyleColor();
-		return;
-	}
-
-	if(flags == Widget::Dock) {
-		ImGui::EndDock();
-		return;
-	}
-
+static void end() {
 	ImGui::End();
+	ImGui::PopStyleColor();
 }
 
-Widget::Widget(const char* title, Flags flags) : _title(title), _flags(flags) {
+Gadget::Gadget(const char* title) : UiElement(title) {
 }
 
-Widget::~Widget() {
-}
-
-void Widget::paint() {
+void Gadget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	if(!is_visible()) {
 		return;
 	}
 
-	if(begin(_title, _flags, _visible)) {
-
-		paint_ui();
-
-		end(_flags);
+	if(begin(_title, _visible)) {
+		paint_ui(recorder, token);
+		end();
 	}
-}
-
-void Widget::show() {
-	_visible = true;
-}
-
-bool Widget::is_visible() const {
-	return _visible;
-}
-
-const char* Widget::title() const {
-	return _title;
 }
 
 }

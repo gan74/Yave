@@ -19,61 +19,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MAINWINDOW_H
-#define EDITOR_MAINWINDOW_H
+#ifndef EDITOR_RENDERERS_IMGUIRENDERER_H
+#define EDITOR_RENDERERS_IMGUIRENDERER_H
 
-#include <editor.h>
-
-#include <yave/window/Window.h>
-
-#include <yave/device/Instance.h>
-#include <yave/device/Device.h>
-#include <yave/swapchain/Swapchain.h>
+#include <editor/editor.h>
 
 #include <yave/renderers/renderers.h>
-#include <yave/scene/SceneView.h>
 
-#include <widgets/Widget.h>
-
-#include "EngineView.h"
+#include <yave/buffers/buffers.h>
+#include <yave/material/Material.h>
 
 namespace editor {
 
-class MainWindow : private Window {
+class ImGuiRenderer : public SecondaryRenderer {
+
+	struct Vertex {
+		math::Vec2 pos;
+		math::Vec2 uv;
+		u32 col;
+	};
 
 	public:
-		MainWindow(DebugParams params);
-		~MainWindow();
+		ImGuiRenderer(DevicePtr dptr);
 
-		void exec();
+		void render(RenderPassRecorder& recorder, const FrameToken&) override;
 
-		void set_scene(core::Unique<Scene>&& scene, core::Unique<SceneView>&& view);
+	protected:
+		void build_frame_graph(FrameGraphNode&) override;
+
+		void setup_state(RenderPassRecorder& recorder);
 
 	private:
-		void resized() override;
+		TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> _index_buffer;
+		TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> _vertex_buffer;
+		TypedUniformBuffer<math::Vec2> _uniform_buffer;
 
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
-		void present(CmdBufferRecorder<>& recorder, const FrameToken& token);
-
-		void create_swapchain();
-
-		Instance _instance;
-		Device _device;
-
-		EngineView _engine_view;
-
-		core::Unique<Swapchain> _swapchain;
-
-		Node::Ptr<EndOfPipe> _ui_renderer;
-
-		core::Unique<Scene> _scene;
-		core::Unique<SceneView> _scene_view;
-
-		core::Vector<core::Unique<Widget>> _widgets;
-
+		Texture _font;
+		Material _material;
 
 };
 
 }
 
-#endif // EDITOR_MAINWINDOW_H
+#endif // EDITOR_RENDERERS_IMGUIRENDERER_H

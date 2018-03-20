@@ -32,19 +32,10 @@ SOFTWARE.
 namespace editor {
 
 EngineView::EngineView(DevicePtr dptr) :
+		Dock("Engine view"),
 		DeviceLinked(dptr),
 		_uniform_buffer(device(), 1) {
 }
-
-void EngineView::set_scene_view(NotOwner<SceneView*> scene_view) {
-	if(_scene_view == scene_view) {
-		return;
-	}
-
-	_scene_view = scene_view;
-	_renderer = nullptr;
-}
-
 
 bool EngineView::set_render_size(math::Vec2ui size) {
 	static constexpr u32 size_step(256);
@@ -84,32 +75,6 @@ void EngineView::create_renderer() {
 		);
 }
 
-void EngineView::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	if(ImGui::BeginDock("Engine view")) {
-
-		math::Vec2 win_size = ImGui::GetWindowSize();
-		math::Vec2 win_pos = ImGui::GetWindowPos();
-		set_render_size(math::Vec2ui(win_size));
-
-		// render engine
-		{
-			RenderingPipeline pipeline(_renderer);
-			pipeline.render(recorder, token);
-			// so we don't have to wait when resizing
-			recorder.keep_alive(_renderer);
-		}
-
-		// ui stuff
-		auto map = TypedMapping(_uniform_buffer);
-		map[0] = ViewData{math::Vec2i(win_size), math::Vec2i(win_pos), math::Vec2i(_size)};
-
-		ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
-
-	}
-
-	ImGui::EndDock();
-}
-
 void EngineView::draw_callback(RenderPassRecorder& recorder, void* user_data) {
 	reinterpret_cast<EngineView*>(user_data)->render_ui(recorder);
 }
@@ -125,6 +90,42 @@ void EngineView::render_ui(RenderPassRecorder& recorder) {
 	recorder.draw(vk::DrawIndirectCommand(6, 1));
 }
 
+void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	math::Vec2 win_size = ImGui::GetWindowSize();
+	math::Vec2 win_pos = ImGui::GetWindowPos();
+	set_render_size(math::Vec2ui(win_size));
 
+	// render engine
+	{
+		RenderingPipeline pipeline(_renderer);
+		pipeline.render(recorder, token);
+		// so we don't have to wait when resizing
+		recorder.keep_alive(_renderer);
+	}
+
+	// ui stuff
+	auto map = TypedMapping(_uniform_buffer);
+	map[0] = ViewData{math::Vec2i(win_size), math::Vec2i(win_pos), math::Vec2i(_size)};
+
+	ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
+
+	_gizmo.paint(recorder, token);
+}
+
+void EngineView::set_scene_view(SceneView* scene_view) {
+	if(_scene_view == scene_view) {
+		return;
+	}
+
+	_scene_view = scene_view;
+	_gizmo.set_scene_view(_scene_view);
+
+
+	_renderer = nullptr;
+}
+
+void EngineView::set_selected(Transformable* tr) {
+	_gizmo.set_transformable(tr);
+}
 
 }

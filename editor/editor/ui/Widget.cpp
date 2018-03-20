@@ -19,52 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_ENGINEVIEW_H
-#define EDITOR_ENGINEVIEW_H
 
-#include <editor.h>
+#include "Widget.h"
 
-#include <yave/renderers/FramebufferRenderer.h>
-
-#include <yave/scene/SceneView.h>
-
-#include <yave/buffers/buffers.h>
-#include <yave/material/Material.h>
+#include <imgui/imgui.h>
 
 namespace editor {
 
-class EngineView : NonCopyable, public DeviceLinked {
-
-		struct ViewData {
-			math::Vec2i view_size;
-			math::Vec2i view_offset;
-			math::Vec2i render_size;
-		};
-
-	public:
-		EngineView(DevicePtr dptr);
-
-		void set_scene_view(NotOwner<SceneView*> scene_view);
-
-		void render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token);
-
-	private:
-		bool set_render_size(math::Vec2ui size);
-
-		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
-
-		void render_ui(RenderPassRecorder& recorder);
-		void create_renderer();
-
-		Node::Ptr<FramebufferRenderer> _renderer;
-
-		NotOwner<SceneView*> _scene_view;
-		math::Vec2ui _size;
-
-		Material _ui_material;
-		TypedUniformBuffer<ViewData> _uniform_buffer;
-};
-
+Widget::Widget(const char* title) : UiElement(title) {
 }
 
-#endif // EDITOR_ENGINEVIEW_H
+void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	if(!is_visible()) {
+		return;
+	}
+
+	if(ImGui::Begin(_title, &_visible)) {
+		paint_ui(recorder, token);
+		ImGui::End();
+	}
+}
+
+}

@@ -42,11 +42,11 @@ static const char* light_type_name(Light::Type type) {
 }
 
 
-EntityView::EntityView(NotOwner<Scene*> scene) : Widget("Entities", Widget::Dock) {
+EntityView::EntityView(Scene* scene) : Dock("Entities") {
 	set_scene(scene);
 }
 
-void EntityView::set_scene(NotOwner<Scene*> scene) {
+void EntityView::set_scene(Scene* scene) {
 	_scene = scene;
 }
 
@@ -59,7 +59,7 @@ void EntityView::add_light() {
 	_scene->lights() << std::move(light);
 }
 
-void EntityView::paint_ui() {
+void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(!_scene) {
 		return;
 	}

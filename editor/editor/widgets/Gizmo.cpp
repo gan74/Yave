@@ -50,16 +50,20 @@ static math::Vec2 to_screen_pos(const math::Matrix4<>& view_proj, const math::Ve
 	return (h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f;
 }
 
-Gizmo::Gizmo(NotOwner<SceneView*> scene_view) : Widget("Gizmo", Widget::NoWindow) {
+Gizmo::Gizmo(SceneView* scene_view) : Gadget("Gizmo") {
 	set_scene_view(scene_view);
 }
 
-void Gizmo::set_scene_view(NotOwner<SceneView*> scene_view) {
+void Gizmo::set_scene_view(SceneView* scene_view) {
 	_scene_view = scene_view;
-	_transformable = _scene_view ? _scene_view->scene().lights()[1].as_ptr() : nullptr;
+	_transformable = nullptr;
 }
 
-void Gizmo::paint_ui() {
+void Gizmo::set_transformable(Transformable* tr) {
+	_transformable = tr;
+}
+
+void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(!_transformable) {
 		return;
 	}

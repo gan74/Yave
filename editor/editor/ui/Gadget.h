@@ -19,46 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERERS_IMGUIRENDERER_H
-#define EDITOR_RENDERERS_IMGUIRENDERER_H
+#ifndef EDITOR_UI_GADGET_H
+#define EDITOR_UI_GADGET_H
 
-#include <editor.h>
-
-#include <yave/renderers/renderers.h>
-
-#include <yave/buffers/buffers.h>
-#include <yave/material/Material.h>
+#include "UiElement.h"
 
 namespace editor {
 
-class ImGuiRenderer : public SecondaryRenderer {
-
-	struct Vertex {
-		math::Vec2 pos;
-		math::Vec2 uv;
-		u32 col;
-	};
+class Gadget : public UiElement {
 
 	public:
-		ImGuiRenderer(DevicePtr dptr);
+		Gadget(const char* title);
 
-		void render(RenderPassRecorder& recorder, const FrameToken&) override;
+		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 	protected:
-		void build_frame_graph(FrameGraphNode&) override;
-
-		void setup_state(RenderPassRecorder& recorder);
-	private:
-
-		TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> _index_buffer;
-		TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> _vertex_buffer;
-		TypedUniformBuffer<math::Vec2> _uniform_buffer;
-
-		Texture _font;
-		Material _material;
+		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
 
 };
 
 }
 
-#endif // EDITOR_RENDERERS_IMGUIRENDERER_H
+#endif // EDITOR_UI_GADGET_H

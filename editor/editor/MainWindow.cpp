@@ -21,9 +21,9 @@ SOFTWARE.
 **********************************/
 
 #include "MainWindow.h"
-#include "MainEventHandler.h"
+#include <editor/events/MainEventHandler.h>
 
-#include <renderers/ImGuiRenderer.h>
+#include <editor/renderers/ImGuiRenderer.h>
 
 #include <yave/renderers/SimpleEndOfPipe.h>
 #include <yave/renderers/ToneMapper.h>
@@ -31,10 +31,8 @@ SOFTWARE.
 #include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/renderers/FramebufferRenderer.h>
 
-#include <widgets/PerformanceMetrics.h>
-#include <widgets/EntityView.h>
-#include <widgets/CameraDebug.h>
-#include <widgets/Gizmo.h>
+#include <editor/views/EntityView.h>
+
 
 #include "scenes.h"
 
@@ -58,11 +56,6 @@ MainWindow::MainWindow(DebugParams params) :
 	auto [scene, view] = create_scene(&_device);
 	set_scene(std::move(scene), std::move(view));
 
-	_widgets << new PerformanceMetrics();
-	_widgets << new EntityView(_scene.as_ptr());
-	_widgets << new CameraDebug(_scene_view.as_ptr());
-	//_widgets << new Gizmo(_scene_view.as_ptr());
-
 	set_event_handler(new MainEventHandler());
 }
 
@@ -79,6 +72,7 @@ void MainWindow::set_scene(core::Unique<Scene>&& scene, core::Unique<SceneView>&
 	_scene_view = std::move(view);
 
 	_engine_view.set_scene_view(_scene_view.as_ptr());
+	_entity_view.set_scene(_scene.as_ptr());
 }
 
 void MainWindow::create_swapchain() {
@@ -107,53 +101,44 @@ void MainWindow::exec() {
 	_device.queue(QueueFamily::Graphics).wait();
 }
 
-void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2(size());
-
-	// draw ui
+void MainWindow::begin() {
 	ImGui::NewFrame();
-	{
-		ImU32 flags = ImGuiWindowFlags_NoTitleBar |
-					  ImGuiWindowFlags_NoResize |
-					  ImGuiWindowFlags_NoScrollbar |
-					  ImGuiWindowFlags_NoInputs |
-					  ImGuiWindowFlags_NoSavedSettings |
-					  ImGuiWindowFlags_NoFocusOnAppearing |
-					  ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-		ImGuiIO& io = ImGui::GetIO();
-		ImGui::SetNextWindowSize(io.DisplaySize);
-		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-		ImGui::Begin("Main window", nullptr, flags);
-		ImGui::BeginDockspace();
+	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
+				  ImGuiWindowFlags_NoResize |
+				  ImGuiWindowFlags_NoScrollbar |
+				  ImGuiWindowFlags_NoInputs |
+				  ImGuiWindowFlags_NoSavedSettings |
+				  ImGuiWindowFlags_NoFocusOnAppearing |
+				  ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-		{
-			_engine_view.render_ui(recorder, token);
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+	ImGui::Begin("Main window", nullptr, flags);
+	ImGui::BeginDockspace();
+}
 
-			ImGui::SetNextDock(ImGuiDockSlot_Left);
-			{
-				for(auto& w : _widgets) {
-					w->paint();
-				}
-			}
 
-			ImGui::SetNextDock(ImGuiDockSlot_Bottom);
-			ImGui::BeginDock("test 1");
-			ImGui::EndDock();
-
-			ImGui::BeginDock("test 2");
-			ImGui::EndDock();
-
-			ImGui::BeginDock("test 3");
-			ImGui::EndDock();
-		}
-
-		ImGui::EndDockspace();
-		ImGui::End();
-	}
+void MainWindow::end() {
+	ImGui::EndDockspace();
+	ImGui::End();
 	ImGui::EndFrame();
 	ImGui::Render();
+}
+
+void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = math::Vec2(_swapchain->size());
+
+	// draw ui
+	begin();
+	{
+		ImGui::SetNextDock(ImGuiDockSlot_Left);
+		_entity_view.paint(recorder, token);
+		_engine_view.set_selected(_entity_view.selected());
+		_engine_view.paint(recorder, token);
+	}
+	end();
 
 	// render ui pipeline into cmd buffer
 	{
@@ -164,8 +149,6 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 }
 
 void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-
-
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
