@@ -29,12 +29,12 @@ namespace editor {
 static bool begin(const char* title, bool& visible) {
 	ImGui::SetNextWindowSize(ImGui::GetWindowSize());
 	ImGui::SetNextWindowPos(ImGui::GetWindowPos());
+	ImGui::SetNextWindowFocus();
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
 	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
 				  ImGuiWindowFlags_NoResize |
 				  ImGuiWindowFlags_NoScrollbar |
-			  #warning somehow gadgets disapear on floating docks
-				  // ImGuiWindowFlags_NoInputs |
+				  ImGuiWindowFlags_NoInputs |
 				  ImGuiWindowFlags_NoSavedSettings |
 				  ImGuiWindowFlags_NoFocusOnAppearing |
 				  //ImGuiWindowFlags_NoBringToFrontOnFocus |

@@ -29,7 +29,8 @@ static constexpr float gizmo_width = 2.0f;
 static constexpr float gizmo_size = 0.1f;
 
 static bool is_clicked() {
-	return ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive() && ImGui::IsWindowHovered();
+#warning gizmo can be grabbed through other ui elements
+	return ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
 }
 
 static bool is_clicking(math::Vec2 cursor, const math::Vec2& vec) {

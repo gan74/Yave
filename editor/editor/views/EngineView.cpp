@@ -142,19 +142,33 @@ void EngineView::update_camera() {
 
 	auto size = render_size();
 	auto& camera = _scene_view->camera();
-
-	auto proj = math::perspective(math::to_rad(60.0f), float(size.x()) / float(size.y()), 1.0f);
-	camera.set_proj(proj);
-
 	math::Vec3 cam_pos = camera.position();
+	math::Vec3 cam_fwd = camera.forward();
+	math::Vec3 cam_lft = camera.left();
+
 
 	float cam_speed = 500.0f;
 	float dt = cam_speed / ImGui::GetIO().Framerate;
 
 	if(ImGui::IsKeyDown(int(Key::W))) {
-		//cam_pos += camera.forward() * dt;
-		unused(cam_pos, dt);
+		cam_pos += cam_fwd * dt;
 	}
+	if(ImGui::IsKeyDown(int(Key::S))) {
+		cam_pos -= cam_fwd * dt;
+	}
+	if(ImGui::IsKeyDown(int(Key::A))) {
+		cam_pos += cam_lft * dt;
+	}
+	if(ImGui::IsKeyDown(int(Key::D))) {
+		cam_pos -= cam_lft * dt;
+	}
+
+
+
+	auto proj = math::perspective(math::to_rad(60.0f), float(size.x()) / float(size.y()), 1.0f);
+	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+	camera.set_proj(proj);
+	camera.set_view(view);
 }
 
 void EngineView::set_selected(Transformable* tr) {
