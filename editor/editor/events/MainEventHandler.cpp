@@ -54,5 +54,14 @@ void MainEventHandler::char_input(u32 character) {
 	io.AddInputCharactersUTF8(reinterpret_cast<const char*>(utf8));
 }
 
+void MainEventHandler::key_pressed(Key key) {
+	ImGuiIO& io = ImGui::GetIO();
+	io.KeysDown[u32(key)] = true;
+}
+
+void MainEventHandler::key_released(Key key) {
+	ImGuiIO& io = ImGui::GetIO();
+	io.KeysDown[u32(key)] = false;
+}
 
 }

@@ -41,6 +41,9 @@ class MainEventHandler : public EventHandler
 
 		void char_input(u32 character) override;
 
+		void key_pressed(Key key) override;
+		void key_released(Key key) override;
+
 	private:
 };
 

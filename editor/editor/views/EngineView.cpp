@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/renderers/ToneMapper.h>
 
+#include <yave/window/EventHandler.h>
+
 #include <y/io/File.h>
 
 #include <imgui/imgui.h>
@@ -38,37 +40,52 @@ EngineView::EngineView(DevicePtr dptr) :
 }
 
 bool EngineView::set_render_size(math::Vec2ui size) {
-	static constexpr u32 size_step(256);
+	/*static constexpr u32 size_step(256);
 	for(auto& i : size) {
 		i = i + (size_step - (i % size_step));
+	}*/
+
+	if(!_scene_view) {
+		return false;
 	}
 
-	if(size != _size) {
-		_size = size;
-		create_renderer();
-		return true;
+	if(render_size() == size) {
+		return false;
 	}
 
-	return false;
+	create_renderer(size);
+	return true;
+
 }
 
-void EngineView::create_renderer() {
-	if(!_scene_view) {
-		_renderer = nullptr;
+void EngineView::set_scene(Scene* scene) {
+	if(_scene_view && &_scene_view->scene() == scene) {
 		return;
 	}
 
-	log_msg(core::str() + "creating with size = " + _size.x() + ", " + _size.y());
+	_scene_view = scene ? new SceneView(*scene) : nullptr;
+	_gizmo.set_scene_view(_scene_view.as_ptr());
+
+	_renderer = nullptr;
+}
+
+
+math::Vec2ui EngineView::render_size() const {
+	return _renderer ? _renderer->output().size() : math::Vec2ui();
+}
+
+void EngineView::create_renderer(const math::Vec2ui& size) {
+	log_msg(core::str() + "creating with size = " + size.x() + ", " + size.y());
 
 	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), *_scene_view));
-	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, _size));
+	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size));
 	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
-	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, _size));
+	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
 
 	_ui_material = Material(device(), MaterialData()
-			.set_frag_data(SpirVData::from_file(io::File::open("engine_view.frag.spv").expected("Unable to load spirv file.")))
+			.set_frag_data(SpirVData::from_file(io::File::open("copy.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
 			.set_bindings({Binding(_renderer->output()), Binding(_uniform_buffer)})
 			.set_depth_tested(false)
@@ -95,33 +112,49 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 	math::Vec2 win_pos = ImGui::GetWindowPos();
 	set_render_size(math::Vec2ui(win_size));
 
-	// render engine
-	{
-		RenderingPipeline pipeline(_renderer);
-		pipeline.render(recorder, token);
-		// so we don't have to wait when resizing
-		recorder.keep_alive(_renderer);
+	if(_renderer) {
+		// process inputs
+		update_camera();
+
+		// render engine
+		{
+			RenderingPipeline pipeline(_renderer);
+			pipeline.render(recorder, token);
+			// so we don't have to wait when resizing
+			recorder.keep_alive(_renderer);
+		}
+
+		// ui stuff
+		auto map = TypedMapping(_uniform_buffer);
+		map[0] = ViewData{math::Vec2i(win_size), math::Vec2i(win_pos), math::Vec2i(win_size)};
+
+		ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
 	}
 
-	// ui stuff
-	auto map = TypedMapping(_uniform_buffer);
-	map[0] = ViewData{math::Vec2i(win_size), math::Vec2i(win_pos), math::Vec2i(_size)};
-
-	ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
-
 	_gizmo.paint(recorder, token);
+
 }
 
-void EngineView::set_scene_view(SceneView* scene_view) {
-	if(_scene_view == scene_view) {
+void EngineView::update_camera() {
+	if(!_scene_view) {
 		return;
 	}
 
-	_scene_view = scene_view;
-	_gizmo.set_scene_view(_scene_view);
+	auto size = render_size();
+	auto& camera = _scene_view->camera();
 
+	auto proj = math::perspective(math::to_rad(60.0f), float(size.x()) / float(size.y()), 1.0f);
+	camera.set_proj(proj);
 
-	_renderer = nullptr;
+	math::Vec3 cam_pos = camera.position();
+
+	float cam_speed = 500.0f;
+	float dt = cam_speed / ImGui::GetIO().Framerate;
+
+	if(ImGui::IsKeyDown(int(Key::W))) {
+		//cam_pos += camera.forward() * dt;
+		unused(cam_pos, dt);
+	}
 }
 
 void EngineView::set_selected(Transformable* tr) {

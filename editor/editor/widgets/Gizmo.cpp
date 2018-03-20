@@ -29,7 +29,7 @@ static constexpr float gizmo_width = 2.0f;
 static constexpr float gizmo_size = 0.1f;
 
 static bool is_clicked() {
-	return ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
+	return ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive() && ImGui::IsWindowHovered();
 }
 
 static bool is_clicking(math::Vec2 cursor, const math::Vec2& vec) {
@@ -42,7 +42,7 @@ static bool is_clicking(math::Vec2 cursor, const math::Vec2& vec) {
 	}
 
 	float d_2 = std::fabs(cursor.length2() - (d * d));
-	return d_2 < (gizmo_width * gizmo_width);
+	return d_2 < (2.0f * gizmo_width * gizmo_width);
 }
 
 static math::Vec2 to_screen_pos(const math::Matrix4<>& view_proj, const math::Vec3& pos) {
@@ -74,13 +74,15 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	auto projected = (view_proj * math::Vec4(object.position(), 1.0f));
 	auto perspective = gizmo_size * projected.w();
 
-	math::Vec2 viewport = ImGui::GetIO().DisplaySize;
-	auto center = to_screen_pos(view_proj, object.position()) * viewport;
+	math::Vec2 viewport = ImGui::GetWindowSize();
+	math::Vec2 offset = ImGui::GetWindowPos();
+
+	auto center = to_screen_pos(view_proj, object.position()) * viewport + offset;
 
 	math::Vec2 axis[] = {
-			to_screen_pos(view_proj, object.position() + math::Vec3(perspective, 0.0f, 0.0f)) * viewport,
-			to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, perspective, 0.0f)) * viewport,
-			to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, 0.0f, perspective)) * viewport
+			to_screen_pos(view_proj, object.position() + math::Vec3(perspective, 0.0f, 0.0f)) * viewport + offset,
+			to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, perspective, 0.0f)) * viewport + offset,
+			to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, 0.0f, perspective)) * viewport + offset
 		};
 
 	for(usize i = 0; i != 3; ++i) {
@@ -110,9 +112,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		auto cam_pos = _scene_view->camera().position();
 		auto object = _transformable->transform();
 
-		math::Vec2 viewport = ImGui::GetIO().DisplaySize;
-
-		math::Vec2 ndc = (math::Vec2(ImGui::GetIO().MousePos) / viewport) * 2.0f - 1.0f;
+		math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 		math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
 		math::Vec3 world = h_world.to<3>() / h_world.w();
 

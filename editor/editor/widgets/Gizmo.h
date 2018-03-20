@@ -33,6 +33,7 @@ class Gizmo : public Gadget {
 		Gizmo(SceneView* scene_view = nullptr);
 
 		void set_scene_view(SceneView* scene_view);
+
 		void set_transformable(Transformable* tr);
 
 	private:

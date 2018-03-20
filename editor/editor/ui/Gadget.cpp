@@ -33,7 +33,8 @@ static bool begin(const char* title, bool& visible) {
 	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
 				  ImGuiWindowFlags_NoResize |
 				  ImGuiWindowFlags_NoScrollbar |
-				  ImGuiWindowFlags_NoInputs |
+			  #warning somehow gadgets disapear on floating docks
+				  // ImGuiWindowFlags_NoInputs |
 				  ImGuiWindowFlags_NoSavedSettings |
 				  ImGuiWindowFlags_NoFocusOnAppearing |
 				  //ImGuiWindowFlags_NoBringToFrontOnFocus |

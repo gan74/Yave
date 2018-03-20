@@ -46,23 +46,28 @@ class EngineView : public Dock, public DeviceLinked {
 	public:
 		EngineView(DevicePtr dptr);
 
-		void set_scene_view(SceneView* scene_view);
+		void set_scene(Scene* scene);
 		void set_selected(Transformable* tr);
 
 	private:
+		math::Vec2ui render_size() const;
+
 		void paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 		bool set_render_size(math::Vec2ui size);
 
+		void update_camera();
+
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
 		void render_ui(RenderPassRecorder& recorder);
-		void create_renderer();
+		void create_renderer(const math::Vec2ui& size);
+
+
 
 		Node::Ptr<FramebufferRenderer> _renderer;
 
-		SceneView* _scene_view;
-		math::Vec2ui _size;
+		core::Unique<SceneView> _scene_view;
 
 		Material _ui_material;
 		TypedUniformBuffer<ViewData> _uniform_buffer;

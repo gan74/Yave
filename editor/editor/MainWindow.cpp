@@ -53,8 +53,7 @@ MainWindow::MainWindow(DebugParams params) :
 	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
 	_ui_renderer = new SimpleEndOfPipe(gui);
 
-	auto [scene, view] = create_scene(&_device);
-	set_scene(std::move(scene), std::move(view));
+	set_scene(std::get<0>(create_scene(&_device)));
 
 	set_event_handler(new MainEventHandler());
 }
@@ -67,11 +66,10 @@ void MainWindow::resized() {
 	create_swapchain();
 }
 
-void MainWindow::set_scene(core::Unique<Scene>&& scene, core::Unique<SceneView>&& view) {
+void MainWindow::set_scene(core::Unique<Scene>&& scene) {
 	_scene = std::move(scene);
-	_scene_view = std::move(view);
 
-	_engine_view.set_scene_view(_scene_view.as_ptr());
+	_engine_view.set_scene(_scene.as_ptr());
 	_entity_view.set_scene(_scene.as_ptr());
 }
 
