@@ -27,12 +27,22 @@ SOFTWARE.
 
 namespace yave {
 
+enum class Key {
+	Unknown,
+
+	A = 'a', B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
+};
+
 class EventHandler {
 	public:
 		enum MouseButton {
 			LeftButton,
 			RightButton
 		};
+
+
+
+		static_assert(char(Key::Z) == 'z');
 
 		virtual ~EventHandler() {
 		}
@@ -42,8 +52,9 @@ class EventHandler {
 		virtual void mouse_released(const math::Vec2i&, MouseButton)		{}
 
 		virtual void char_input(u32 character)								{ unused(character); }
-		virtual void key_pressed(u32 key_code)								{ unused(key_code); }
-		virtual void key_released(u32 key_code)								{ unused(key_code); }
+
+		virtual void key_pressed(Key)										{}
+		virtual void key_released(Key)										{}
 };
 
 

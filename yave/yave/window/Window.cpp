@@ -52,6 +52,14 @@ void Window::mouse_event(Window* window, UINT uMsg, POINTS pt) {
 	}
 }
 
+static Key to_key(WPARAM param) {
+	char c = char(param);
+	if(std::isalpha(c)) {
+		return Key(std::tolower(c));
+	}
+	return Key::Unknown;
+}
+
 LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
 	auto& l_param = lParam;
@@ -76,9 +84,12 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 
 		case WM_KEYUP:
 			if(auto handler = window->event_handler(); handler) {
-				uMsg == WM_KEYDOWN
-					? handler->key_pressed(u32(wParam))
-					: handler->key_released(u32(wParam));
+				auto k = to_key(wParam);
+				if(k != Key::Unknown) {
+					uMsg == WM_KEYDOWN
+						? handler->key_pressed(k)
+						: handler->key_released(k);
+				}
 			}
 			break;
 
