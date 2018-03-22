@@ -27,13 +27,13 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-static bool run_workers = true;
+bool run_workers = true;
 
-static std::mutex scheduler_mutex;
-static std::condition_variable scheduler_condition;
-static Arc<detail::ParallelTask> scheduled_task;
+std::mutex scheduler_mutex;
+std::condition_variable scheduler_condition;
+Arc<detail::ParallelTask> scheduled_task;
 
-static usize concurency_level = 1;
+usize concurency_level = 1;
 
 
 namespace detail {
