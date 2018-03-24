@@ -36,6 +36,7 @@ namespace editor {
 EngineView::EngineView(DevicePtr dptr) :
 		Dock("Engine view"),
 		DeviceLinked(dptr),
+		_ibl_data(new IBLData(device())),
 		_uniform_buffer(device(), 1) {
 }
 
@@ -75,16 +76,14 @@ math::Vec2ui EngineView::render_size() const {
 }
 
 void EngineView::create_renderer(const math::Vec2ui& size) {
-	log_msg(core::str() + "creating with size = " + size.x() + ", " + size.y());
-
 	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), *_scene_view));
 	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size));
-	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer));
+	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, _ibl_data));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
 	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
 
-	_ui_material = Material(device(), MaterialData()
+	_ui_material = new Material(device(), MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("copy.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
 			.set_bindings({Binding(_renderer->output()), Binding(_uniform_buffer)})
@@ -103,7 +102,7 @@ void EngineView::render_ui(RenderPassRecorder& recorder) {
 
 	auto region = recorder.region("EngineView::render_ui");
 
-	recorder.bind_material(_ui_material);
+	recorder.bind_material(*_ui_material);
 	recorder.draw(vk::DrawIndirectCommand(6, 1));
 }
 
@@ -120,8 +119,10 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 		{
 			RenderingPipeline pipeline(_renderer);
 			pipeline.render(recorder, token);
+
 			// so we don't have to wait when resizing
 			recorder.keep_alive(_renderer);
+			recorder.keep_alive(_ui_material);
 		}
 
 		// ui stuff

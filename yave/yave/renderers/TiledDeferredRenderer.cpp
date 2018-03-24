@@ -36,7 +36,7 @@ static ComputeShader create_lighting_shader(DevicePtr dptr) {
 
 static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 	Y_LOG_PERF("deferred,IBL");
-	core::DebugTimer _("DeferredRenderer::create_ibl_lut()");
+	core::DebugTimer _("IBLData::create_ibl_lut()");
 
 	ComputeProgram brdf_integrator(ComputeShader(dptr, SpirVData::from_file(io::File::open("brdf_integrator.comp.spv").expected("Unable to open SPIR-V file."))));
 
@@ -46,7 +46,7 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 	{
-		auto region = recorder.region("TiledDeferredRenderer::create_ibl_lut");
+		auto region = recorder.region("IBLData::create_ibl_lut");
 		recorder.dispatch_size(brdf_integrator, image.size(), {dset});
 	}
 	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
@@ -55,27 +55,37 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 }
 
 static auto load_envmap(DevicePtr dptr) {
-	//return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemaps/sky0/sky.yt").expected("Unable to open cubemap"))));
-	//return IBLProbe::from_cubemap(Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/check/check.yt").expected("Unable to open cubemap"))));
 	return IBLProbe::from_equirec(Texture(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/equirec.yt").expected("Unable to open equirec"))));
-	//return Cubemap(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/cubemaps/sky0/sky.yt").expected("Unable to open cubemap")));
+}
+
+IBLData::IBLData(DevicePtr dptr) :
+		DeviceLinked(dptr),
+		_brdf_lut(create_ibl_lut(dptr)),
+		_envmap(load_envmap(dptr)) {
+}
+
+const IBLProbe& IBLData::envmap() const {
+	return _envmap;
+}
+
+TextureView IBLData::brdf_lut() const  {
+	return _brdf_lut;
 }
 
 
-TiledDeferredRenderer::TiledDeferredRenderer(const Ptr<GBufferRenderer>& gbuffer) :
+TiledDeferredRenderer::TiledDeferredRenderer(const Ptr<GBufferRenderer>& gbuffer, const Ptr<IBLData>& ibl_data) :
 		Renderer(gbuffer->device()),
 		_gbuffer(gbuffer),
 		_lighting_program(create_lighting_shader(device())),
-		_envmap(load_envmap(device())),
-		_brdf_lut(create_ibl_lut(device())),
+		_ibl_data(ibl_data),
 		_acc_buffer(device(), ImageFormat(vk::Format::eR16G16B16A16Sfloat), _gbuffer->size()),
 		_lights_buffer(device(), max_light_count),
 		_descriptor_set(device(), {
 				Binding(_gbuffer->depth()),
 				Binding(_gbuffer->albedo_metallic()),
 				Binding(_gbuffer->normal_roughness()),
-				Binding(_envmap),
-				Binding(_brdf_lut),
+				Binding(_ibl_data->envmap()),
+				Binding(_ibl_data->brdf_lut()),
 				Binding(_lights_buffer),
 				Binding(StorageView(_acc_buffer)),
 			}) {
@@ -92,6 +102,10 @@ const math::Vec2ui& TiledDeferredRenderer::size() const {
 }
 
 TextureView TiledDeferredRenderer::lighting() const {
+	return _acc_buffer;
+}
+
+TextureView TiledDeferredRenderer::output() const {
 	return _acc_buffer;
 }
 

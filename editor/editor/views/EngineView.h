@@ -29,6 +29,7 @@ SOFTWARE.
 #include <editor/widgets/Gizmo.h>
 
 #include <yave/renderers/FramebufferRenderer.h>
+#include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/scene/SceneView.h>
 #include <yave/buffers/buffers.h>
 #include <yave/material/Material.h>
@@ -64,12 +65,12 @@ class EngineView : public Dock, public DeviceLinked {
 		void create_renderer(const math::Vec2ui& size);
 
 
-
-		Node::Ptr<FramebufferRenderer> _renderer;
-
 		core::Unique<SceneView> _scene_view;
 
-		Material _ui_material;
+		Node::Ptr<IBLData> _ibl_data;
+		Node::Ptr<FramebufferRenderer> _renderer;
+
+		Node::Ptr<Material> _ui_material;
 		TypedUniformBuffer<ViewData> _uniform_buffer;
 
 		// subwidgets & stuff

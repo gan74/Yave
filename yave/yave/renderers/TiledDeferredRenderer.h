@@ -31,19 +31,28 @@ SOFTWARE.
 
 namespace yave {
 
+class IBLData : public DeviceLinked, NonCopyable {
+	public:
+		IBLData(DevicePtr dptr);
+
+		const IBLProbe& envmap() const;
+		TextureView brdf_lut() const;
+
+	private:
+		Texture _brdf_lut;
+		IBLProbe _envmap;
+};
+
 class TiledDeferredRenderer : public Renderer {
 	public:
 		static constexpr usize max_light_count = 1024 * 16;
 
-		TiledDeferredRenderer(const Ptr<GBufferRenderer>& gbuffer);
+		TiledDeferredRenderer(const Ptr<GBufferRenderer>& gbuffer, const Ptr<IBLData>& ibl_data);
 
 		const math::Vec2ui& size() const;
 
 		TextureView lighting() const;
-
-		TextureView output() const override {
-			return lighting();
-		}
+		TextureView output() const override;
 
 		const SceneView scene_view() const {
 			return _gbuffer->scene_view();
@@ -60,14 +69,13 @@ class TiledDeferredRenderer : public Renderer {
 
 		ComputeProgram _lighting_program;
 
-		IBLProbe _envmap;
-		Texture _brdf_lut;
+		Ptr<IBLData> _ibl_data;
+
 		StorageTexture _acc_buffer;
-
 		TypedBuffer<uniform::Light, BufferUsage::StorageBit, MemoryType::CpuVisible> _lights_buffer;
-		u32 _directional_count;
-
 		DescriptorSet _descriptor_set;
+
+		u32 _directional_count;
 
 };
 
