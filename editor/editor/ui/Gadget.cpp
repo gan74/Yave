@@ -26,28 +26,6 @@ SOFTWARE.
 
 namespace editor {
 
-static bool begin(const char* title, bool& visible) {
-	ImGui::SetNextWindowSize(ImGui::GetWindowSize());
-	ImGui::SetNextWindowPos(ImGui::GetWindowPos());
-	ImGui::SetNextWindowFocus();
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
-				  ImGuiWindowFlags_NoResize |
-				  ImGuiWindowFlags_NoScrollbar |
-				  ImGuiWindowFlags_NoInputs |
-				  ImGuiWindowFlags_NoSavedSettings |
-				  ImGuiWindowFlags_NoFocusOnAppearing |
-				  //ImGuiWindowFlags_NoBringToFrontOnFocus |
-				  0;
-
-	return ImGui::Begin(title, &visible, flags);
-}
-
-static void end() {
-	ImGui::End();
-	ImGui::PopStyleColor();
-}
-
 Gadget::Gadget(const char* title) : UiElement(title) {
 }
 
@@ -56,10 +34,26 @@ void Gadget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 		return;
 	}
 
-	if(begin(_title, _visible)) {
+	// this breaks everthing that relies on getting focus (like popups)
+	// ImGui::SetNextWindowFocus();
+
+	ImGui::SetNextWindowSize(ImGui::GetWindowSize());
+	ImGui::SetNextWindowPos(ImGui::GetWindowPos());
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
+	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
+				  ImGuiWindowFlags_NoResize |
+				  ImGuiWindowFlags_NoScrollbar |
+				  ImGuiWindowFlags_NoInputs |
+				  ImGuiWindowFlags_NoSavedSettings |
+				  ImGuiWindowFlags_NoFocusOnAppearing |
+				  ImGuiWindowFlags_NoBringToFrontOnFocus |
+				  0;
+
+	if(ImGui::BeginChild(_title, ImGui::GetWindowSize(), &_visible, flags)) {
 		paint_ui(recorder, token);
-		end();
+		ImGui::EndPopup();
 	}
+	ImGui::PopStyleColor();
 }
 
 }
