@@ -88,21 +88,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0x00FFFFFF | gizmo_alpha);
 
 
-
-	if(is_clicked()) {
-		math::Vec2 cursor = math::Vec2(ImGui::GetIO().MousePos) - center;
-		_dragging_mask = 0;
-		for(usize i = 0; i != 3; ++i) {
-			if(is_clicking(cursor, axis[i] - center)) {
-				_dragging_mask |= (1 << i);
-			}
-		}
-	} else if(!ImGui::IsMouseDown(0)) {
-		_dragging_mask = 0;
-	}
-
-
-	if(_dragging_mask) {
+	auto project_mouse = [=]{
 		auto inv_matrix = context()->scene_view()->camera().inverse_matrix();
 		auto cam_pos = context()->scene_view()->camera().position();
 		auto object = context()->selected()->transform();
@@ -114,8 +100,25 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		math::Vec3 ray = (world - cam_pos).normalized();
 		float dist = (object.position() - cam_pos).length();
 
-		math::Vec3 new_pos = cam_pos + ray * dist;
+		return cam_pos + ray * dist;
+	};
 
+	if(is_clicked()) {
+		math::Vec2 cursor = math::Vec2(ImGui::GetIO().MousePos) - center;
+		_dragging_mask = 0;
+		_dragging_offset = object.position() - project_mouse();
+		for(usize i = 0; i != 3; ++i) {
+			if(is_clicking(cursor, axis[i] - center)) {
+				_dragging_mask |= (1 << i);
+			}
+		}
+	} else if(!ImGui::IsMouseDown(0)) {
+		_dragging_mask = 0;
+	}
+
+
+	if(_dragging_mask) {
+		auto new_pos = project_mouse() + _dragging_offset;
 		for(usize i = 0; i != 3; ++i) {
 			if(_dragging_mask & (1 << i)) {
 				context()->selected()->position()[i] = new_pos[i];

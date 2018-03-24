@@ -35,6 +35,7 @@ class Gizmo : public Gadget, public ContextLinked {
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
+		math::Vec3 _dragging_offset;
 		u32 _dragging_mask = 0;
 };
 
