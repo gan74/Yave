@@ -1,4 +1,8 @@
 
-// based on Lumix's implementation: 
-// see: https://github.com/nem0/LumixEngine
+// based on https://github.com/Flix01/imgui
 #include "imgui_dock.h"
+
+namespace ImGui
+{
+	void InitDock();
+}

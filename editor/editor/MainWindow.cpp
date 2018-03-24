@@ -51,9 +51,9 @@ MainWindow::MainWindow(DebugParams params) :
 		_entity_view(&_context) {
 
 	ImGui::CreateContext();
+	ImGui::InitDock();
 	ImGui::GetIO().IniFilename = "editor.ini";
 	ImGui::GetIO().LogFilename = "editor_logs.txt";
-	ImGui::InitializeDockContext();
 
 
 	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
@@ -103,10 +103,23 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	io.DisplaySize = math::Vec2(_swapchain->size());
 
 	ImGui::NewFrame();
+	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
+					  ImGuiWindowFlags_NoResize |
+					  ImGuiWindowFlags_NoScrollbar |
+					  ImGuiWindowFlags_NoInputs |
+					  ImGuiWindowFlags_NoSavedSettings |
+					  ImGuiWindowFlags_NoFocusOnAppearing |
+					  ImGuiWindowFlags_NoBringToFrontOnFocus;
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+	ImGui::Begin("Main window", nullptr, flags);
+	ImGui::BeginDockspace();
 	{
 		_entity_view.paint(recorder, token);
 		_engine_view.paint(recorder, token);
 	}
+	ImGui::EndDockspace();
+	ImGui::End();
 	ImGui::EndFrame();
 	ImGui::Render();
 
