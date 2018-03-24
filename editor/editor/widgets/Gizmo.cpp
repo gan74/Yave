@@ -21,6 +21,8 @@ SOFTWARE.
 **********************************/
 #include "Gizmo.h"
 
+#include <editor/EditorContext.h>
+
 #include <imgui/imgui.h>
 
 namespace editor {
@@ -52,26 +54,18 @@ static math::Vec2 to_screen_pos(const math::Matrix4<>& view_proj, const math::Ve
 	return (h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f;
 }
 
-Gizmo::Gizmo(SceneView* scene_view) : Gadget("Gizmo") {
-	set_scene_view(scene_view);
-}
 
-void Gizmo::set_scene_view(SceneView* scene_view) {
-	_scene_view = scene_view;
-	_transformable = nullptr;
-}
 
-void Gizmo::set_transformable(Transformable* tr) {
-	_transformable = tr;
+Gizmo::Gizmo(ContextPtr cptr) : Gadget("Gizmo"), ContextLinked(cptr) {
 }
 
 void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(!_transformable) {
+	if(!context()->selected()) {
 		return;
 	}
 
-	math::Matrix4<> view_proj = _scene_view->camera().viewproj_matrix();
-	math::Transform<> object = _transformable->transform();
+	math::Matrix4<> view_proj = context()->scene_view()->camera().viewproj_matrix();
+	math::Transform<> object = context()->selected()->transform();
 
 	auto projected = (view_proj * math::Vec4(object.position(), 1.0f));
 	auto perspective = gizmo_size * projected.w();
@@ -108,11 +102,10 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	}
 
 
-
 	if(_dragging_mask) {
-		auto inv_matrix = _scene_view->camera().inverse_matrix();
-		auto cam_pos = _scene_view->camera().position();
-		auto object = _transformable->transform();
+		auto inv_matrix = context()->scene_view()->camera().inverse_matrix();
+		auto cam_pos = context()->scene_view()->camera().position();
+		auto object = context()->selected()->transform();
 
 		math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 		math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
@@ -125,7 +118,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 		for(usize i = 0; i != 3; ++i) {
 			if(_dragging_mask & (1 << i)) {
-				_transformable->position()[i] = new_pos[i];
+				context()->selected()->position()[i] = new_pos[i];
 			}
 		}
 	}

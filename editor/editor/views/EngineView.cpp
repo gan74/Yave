@@ -22,9 +22,9 @@ SOFTWARE.
 
 #include "EngineView.h"
 
-#include <yave/renderers/TiledDeferredRenderer.h>
-#include <yave/renderers/ToneMapper.h>
+#include <editor/EditorContext.h>
 
+#include <yave/renderers/ToneMapper.h>
 #include <yave/window/EventHandler.h>
 
 #include <y/io/File.h>
@@ -33,57 +33,27 @@ SOFTWARE.
 
 namespace editor {
 
-EngineView::EngineView(DevicePtr dptr) :
+EngineView::EngineView(ContextPtr cptr) :
 		Dock("Engine view"),
-		DeviceLinked(dptr),
-		_ibl_data(new IBLData(device())),
-		_uniform_buffer(device(), 1) {
+		ContextLinked(cptr),
+		_ibl_data(new IBLData(context()->device())),
+		_uniform_buffer(context()->device(), 1),
+		_gizmo(context()) {
 }
-
-bool EngineView::set_render_size(math::Vec2ui size) {
-	/*static constexpr u32 size_step(256);
-	for(auto& i : size) {
-		i = i + (size_step - (i % size_step));
-	}*/
-
-	if(!_scene_view) {
-		return false;
-	}
-
-	if(render_size() == size) {
-		return false;
-	}
-
-	create_renderer(size);
-	return true;
-
-}
-
-void EngineView::set_scene(Scene* scene) {
-	if(_scene_view && &_scene_view->scene() == scene) {
-		return;
-	}
-
-	_scene_view = scene ? new SceneView(*scene) : nullptr;
-	_gizmo.set_scene_view(_scene_view.as_ptr());
-
-	_renderer = nullptr;
-}
-
 
 math::Vec2ui EngineView::render_size() const {
 	return _renderer ? _renderer->output().size() : math::Vec2ui();
 }
 
 void EngineView::create_renderer(const math::Vec2ui& size) {
-	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), *_scene_view));
+	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(context()->device(), *context()->scene_view()));
 	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size));
 	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, _ibl_data));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
 	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
 
-	_ui_material = new Material(device(), MaterialData()
+	_ui_material = new Material(context()->device(), MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("copy.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
 			.set_bindings({Binding(_renderer->output()), Binding(_uniform_buffer)})
@@ -95,6 +65,7 @@ void EngineView::draw_callback(RenderPassRecorder& recorder, void* user_data) {
 	reinterpret_cast<EngineView*>(user_data)->render_ui(recorder);
 }
 
+// called via draw_callback ONLY
 void EngineView::render_ui(RenderPassRecorder& recorder) {
 	if(!_renderer) {
 		fatal("Internal error.");
@@ -109,7 +80,10 @@ void EngineView::render_ui(RenderPassRecorder& recorder) {
 void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	math::Vec2 win_size = ImGui::GetWindowSize();
 	math::Vec2 win_pos = ImGui::GetWindowPos();
-	set_render_size(math::Vec2ui(win_size));
+
+	if(!_renderer || win_size != render_size()) {
+		create_renderer(win_size);
+	}
 
 	if(_renderer) {
 		// process inputs
@@ -137,12 +111,8 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 }
 
 void EngineView::update_camera() {
-	if(!_scene_view) {
-		return;
-	}
-
 	auto size = render_size();
-	auto& camera = _scene_view->camera();
+	auto& camera = context()->scene_view()->camera();
 	math::Vec3 cam_pos = camera.position();
 	math::Vec3 cam_fwd = camera.forward();
 	math::Vec3 cam_lft = camera.left();
@@ -170,10 +140,6 @@ void EngineView::update_camera() {
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
 	camera.set_proj(proj);
 	camera.set_view(view);
-}
-
-void EngineView::set_selected(Transformable* tr) {
-	_gizmo.set_transformable(tr);
 }
 
 }

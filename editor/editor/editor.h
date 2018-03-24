@@ -43,6 +43,22 @@ using namespace yave::experimental;
 
 using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
 
+class EditorContext;
+using ContextPtr = EditorContext*;
+
+
+class ContextLinked {
+	public:
+		ContextLinked() = default;
+
+		ContextLinked(EditorContext* ctx) : _ctx(ctx) {}
+
+		ContextPtr context() const { return _ctx; }
+
+	private:
+		ContextPtr _ctx = nullptr;
+};
+
 }
 
 #endif // EDITOR_H

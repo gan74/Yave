@@ -28,19 +28,12 @@ SOFTWARE.
 
 namespace editor {
 
-class Gizmo : public Gadget {
+class Gizmo : public Gadget, public ContextLinked {
 	public:
-		Gizmo(SceneView* scene_view = nullptr);
-
-		void set_scene_view(SceneView* scene_view);
-
-		void set_transformable(Transformable* tr);
+		Gizmo(ContextPtr cptr);
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
-
-		SceneView* _scene_view = nullptr;
-		Transformable* _transformable = nullptr;
 
 		u32 _dragging_mask = 0;
 };

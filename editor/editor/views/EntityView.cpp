@@ -21,6 +21,8 @@ SOFTWARE.
 **********************************/
 #include "EntityView.h"
 
+#include <editor/EditorContext.h>
+
 #include <yave/objects/Light.h>
 
 #include <imgui/imgui.h>
@@ -42,27 +44,19 @@ static const char* light_type_name(Light::Type type) {
 }
 
 
-EntityView::EntityView(Scene* scene) : Dock("Entities") {
-	set_scene(scene);
-}
-
-void EntityView::set_scene(Scene* scene) {
-	_scene = scene;
+EntityView::EntityView(ContextPtr cptr) : Dock("Entities"), ContextLinked(cptr) {
 }
 
 void EntityView::add_light() {
 	Scene::Ptr<Light> light = new Light(Light::Point);
-	_selected = light.as_ptr();
+	context()->select(light.as_ptr());
 
 	light->radius() = 100.0f;
 	light->color() *= 10000.0;
-	_scene->lights() << std::move(light);
+	context()->scene()->lights() << std::move(light);
 }
 
 void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(!_scene) {
-		return;
-	}
 	char buffer[256];
 
 	if(ImGui::Button("+", math::Vec2(24))) {
@@ -78,21 +72,21 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	}
 
 	if(ImGui::TreeNode("Renderables")) {
-		for(const auto& r : _scene->renderables()) {
+		for(const auto& r : context()->scene()->renderables()) {
 			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.as_ptr()));
-			bool selected = r.as_ptr() == _selected;
+			bool selected = r.as_ptr() == context()->selected();
 			ImGui::Selectable(buffer, &selected);
-			_selected = selected ? r.as_ptr() : _selected;
+			context()->select(selected ? r.as_ptr() : context()->selected());
 		}
 		ImGui::TreePop();
 	}
 
 	if(ImGui::TreeNode("Lights")) {
-		for(const auto& l : _scene->lights()) {
+		for(const auto& l : context()->scene()->lights()) {
 			std::sprintf(buffer, "%s##%p", light_type_name(l->type()), static_cast<void*>(l.as_ptr()));
-			bool selected = l.as_ptr() == _selected;
+			bool selected = l.as_ptr() == context()->selected();
 			ImGui::Selectable(buffer, &selected);
-			_selected = selected ? l.as_ptr() : _selected;
+			context()->select(selected ? l.as_ptr() : context()->selected());
 		}
 		ImGui::TreePop();
 	}

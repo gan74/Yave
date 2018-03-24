@@ -46,7 +46,9 @@ MainWindow::MainWindow(DebugParams params) :
 		Window({1280, 768}, "Yave", Window::Resizable),
 		_instance(params),
 		_device(_instance),
-		_engine_view(&_device) {
+		_context(&_device),
+		_engine_view(&_context),
+		_entity_view(&_context) {
 
 	ImGui::CreateContext();
 	ImGui::LoadDockContext("editor_docks.ini");
@@ -57,8 +59,6 @@ MainWindow::MainWindow(DebugParams params) :
 	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
 	_ui_renderer = new SimpleEndOfPipe(gui);
 
-	set_scene(std::get<0>(create_scene(&_device)));
-
 	set_event_handler(new MainEventHandler());
 }
 
@@ -67,15 +67,10 @@ MainWindow::~MainWindow() {
 	ImGui::DestroyContext();
 }
 
+
+
 void MainWindow::resized() {
 	create_swapchain();
-}
-
-void MainWindow::set_scene(core::Unique<Scene>&& scene) {
-	_scene = std::move(scene);
-
-	_engine_view.set_scene(_scene.as_ptr());
-	_entity_view.set_scene(_scene.as_ptr());
 }
 
 void MainWindow::create_swapchain() {
@@ -104,63 +99,23 @@ void MainWindow::exec() {
 	_device.queue(QueueFamily::Graphics).wait();
 }
 
-void MainWindow::begin() {
-	ImGui::NewFrame();
-
-	/*ImU32 flags = ImGuiWindowFlags_NoTitleBar |
-				  ImGuiWindowFlags_NoResize |
-				  ImGuiWindowFlags_NoScrollbar |
-				  ImGuiWindowFlags_NoInputs |
-				  ImGuiWindowFlags_NoSavedSettings |
-				  ImGuiWindowFlags_NoFocusOnAppearing |
-				  ImGuiWindowFlags_NoBringToFrontOnFocus;
-
-	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::Begin("Main window", nullptr, flags);
-	ImGui::BeginDockspace();*/
-}
-
-
-void MainWindow::end() {
-	/*ImGui::EndDockspace();
-	ImGui::End();*/
-	ImGui::EndFrame();
-	ImGui::Render();
-}
-
 void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = math::Vec2(_swapchain->size());
 
-	// draw ui
-	begin();
+	ImGui::NewFrame();
 	{
 		_entity_view.paint(recorder, token);
-
-		_engine_view.set_selected(_entity_view.selected());
 		_engine_view.paint(recorder, token);
-
-		/*ImGui::BeginDock("test 1");
-		ImGui::EndDock();
-
-		ImGui::BeginDock("test 2");
-		ImGui::EndDock();
-
-		ImGui::Begin("test 3");
-		ImGui::End();
-
-		ImGui::BeginDock("test 4");
-		ImGui::EndDock();*/
 	}
-	end();
+	ImGui::EndFrame();
+	ImGui::Render();
 
 	// render ui pipeline into cmd buffer
 	{
 		RenderingPipeline pipeline(_ui_renderer);
 		pipeline.render(recorder, token);
 	}
-
 }
 
 void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token) {

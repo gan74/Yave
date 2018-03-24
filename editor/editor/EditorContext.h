@@ -19,55 +19,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_VIEWS_ENGINEVIEW_H
-#define EDITOR_VIEWS_ENGINEVIEW_H
+#ifndef EDITOR_EDITORCONTEXT_H
+#define EDITOR_EDITORCONTEXT_H
 
 #include <editor/editor.h>
 
-#include <editor/ui/Dock.h>
-
-#include <editor/widgets/Gizmo.h>
-
-#include <yave/renderers/FramebufferRenderer.h>
-#include <yave/renderers/TiledDeferredRenderer.h>
+#include <yave/device/DeviceLinked.h>
+#include <yave/objects/Transformable.h>
 #include <yave/scene/SceneView.h>
-#include <yave/buffers/buffers.h>
-#include <yave/material/Material.h>
 
 namespace editor {
 
-class EngineView : public Dock, public ContextLinked {
-	struct ViewData {
-		math::Vec2i view_size;
-		math::Vec2i view_offset;
-		math::Vec2i render_size;
-	};
-
+class EditorContext : public DeviceLinked, NonCopyable {
 	public:
-		EngineView(ContextPtr cptr);
+		EditorContext(DevicePtr dptr);
+
+
+		Transformable* select(Transformable* tr) {
+			return std::exchange(_selected, tr);
+		}
+
+		Scene* scene() const {
+			return _scene.as_ptr();
+		}
+
+		SceneView* scene_view() const {
+			return _scene_view.as_ptr();
+		}
+
+		Transformable* selected() const {
+			return _selected;
+		}
 
 	private:
-		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
+		core::Unique<Scene> _scene;
+		core::Unique<SceneView> _scene_view;
 
-		math::Vec2ui render_size() const;
-		SceneView* render_view() const;
+		NotOwner<Transformable*> _selected = nullptr;
 
-		void render_ui(RenderPassRecorder& recorder);
-		void create_renderer(const math::Vec2ui& size);
-
-		void paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
-		void update_camera();
-
-		Node::Ptr<IBLData> _ibl_data;
-		Node::Ptr<FramebufferRenderer> _renderer;
-
-		Node::Ptr<Material> _ui_material;
-		TypedUniformBuffer<ViewData> _uniform_buffer;
-
-		// subwidgets & stuff
-		Gizmo _gizmo;
 };
 
 }
 
-#endif // EDITOR_VIEWS_ENGINEVIEW_H
+#endif // EDITOR_EDITORCONTEXT_H

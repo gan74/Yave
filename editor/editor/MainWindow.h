@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/editor.h>
 #include <editor/ui/Widget.h>
 
+#include <editor/EditorContext.h>
 #include <editor/views/EngineView.h>
 #include <editor/views/EntityView.h>
 
@@ -46,8 +47,6 @@ class MainWindow : private Window {
 
 		void exec();
 
-		void set_scene(core::Unique<Scene>&& scene);
-
 	private:
 		void resized() override;
 
@@ -56,22 +55,17 @@ class MainWindow : private Window {
 
 		void create_swapchain();
 
-		static void begin();
-		static void end();
 
 		Instance _instance;
 		Device _device;
+
+		EditorContext _context;
 
 		EngineView _engine_view;
 		EntityView _entity_view;
 
 		core::Unique<Swapchain> _swapchain;
 		Node::Ptr<EndOfPipe> _ui_renderer;
-
-		core::Unique<Scene> _scene;
-		core::Unique<SceneView> _scene_view;
-
-
 };
 
 }
