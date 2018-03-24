@@ -204,7 +204,7 @@ class Rc : public detail::Ptr<T> {
 
 		template<typename Y>
 		Rc& operator=(Y*&& p) {
-			return operator=(Rc(p));
+			return operator=(Rc(std::move(p)));
 		}
 
 	private:
