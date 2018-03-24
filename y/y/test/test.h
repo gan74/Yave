@@ -66,16 +66,10 @@ void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
 
 #else
 
+#define y_test_assert(t) do { unused(t) } while(0)
+
 #define y_test_func(msg)																				\
-static void Y_TEST_FUNC(y::test::detail::TestResult &);													\
-namespace {																								\
-	class Y_TEST_RUNNER {																				\
-		Y_TEST_RUNNER() {																				\
-			unused(Y_TEST_FUNC);																		\
-		}																								\
-	};																									\
-}																										\
-void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
+static void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
 
 #endif
 

@@ -30,11 +30,13 @@ namespace y {
 namespace test {
 namespace detail {
 
+
 const char* test_box_msg(const char* msg) {
 	return msg ? msg : "unknown test function";
 }
 
 void test_assert(const char* msg, void (*func)(TestResult &)) {
+#ifdef Y_BUILD_TESTS
 	const char* ok		= "  [ OK ]   ";
 	const char* failure = "[ FAILED ] ";
 
@@ -57,8 +59,10 @@ void test_assert(const char* msg, void (*func)(TestResult &)) {
 		std::cout << failure << std::endl;
 		fatal("\ty_test_assert failed!", res.file, res.line);
 	}
+#else
+	unused(msg, func);
+#endif
 }
-
 
 }
 }
