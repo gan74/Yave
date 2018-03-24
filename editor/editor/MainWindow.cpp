@@ -51,9 +51,9 @@ MainWindow::MainWindow(DebugParams params) :
 		_entity_view(&_context) {
 
 	ImGui::CreateContext();
-	ImGui::LoadDockContext("editor_docks.ini");
 	ImGui::GetIO().IniFilename = "editor.ini";
 	ImGui::GetIO().LogFilename = "editor_logs.txt";
+	ImGui::InitializeDockContext();
 
 
 	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
@@ -63,7 +63,6 @@ MainWindow::MainWindow(DebugParams params) :
 }
 
 MainWindow::~MainWindow() {
-	ImGui::SaveDockContext("editor_docks.ini");
 	ImGui::DestroyContext();
 }
 
