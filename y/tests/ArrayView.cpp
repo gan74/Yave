@@ -32,15 +32,15 @@ SOFTWARE.
 using namespace y;
 using namespace y::core;
 
-static usize test_func_c(const ArrayView<char>& a) {
+static usize test_func_c(ArrayView<char> a) {
 	return a.size();
 }
 
-static usize test_func(const ArrayView<int>& a) {
+static usize test_func(ArrayView<int> a) {
 	return a.size();
 }
 
-static usize test_func_nc(const ArrayView<NonCopyable>& a) {
+static usize test_func_nc(ArrayView<NonCopyable> a) {
 	return a.size();
 }
 

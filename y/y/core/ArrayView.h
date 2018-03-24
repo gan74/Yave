@@ -31,7 +31,7 @@ template<typename T>
 class ArrayView : NonCopyable {
 
 	template<typename U>
-	static constexpr bool is_compat = std::is_same_v<U, const T*>;
+	static constexpr bool is_compat = std::is_constructible_v<const T*, U>;
 
 	template<typename C>
 	using data_type = decltype(std::declval<const C>().data());
@@ -59,7 +59,7 @@ class ArrayView : NonCopyable {
 		ArrayView(const std::array<T, N>& arr) : _data(arr.data()), _size(N) {
 		}
 
-		ArrayView(const std::initializer_list<T>& l) : _data(l.begin()), _size(l.size()) {
+		ArrayView(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
 		}
 
 		template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>

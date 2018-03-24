@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef Y_CORE_VECTOR
 #define Y_CORE_VECTOR
 
-#include <y/utils.h>
+#include "ArrayView.h"
 #include <cstring>
 
 namespace y {
@@ -73,13 +73,6 @@ class Vector : ResizePolicy, Allocator {
 		Vector(const Vector& other) : Vector(other.begin(), other.end()) {
 		}
 
-		Vector(Vector&& other) {
-			swap(other);
-		}
-
-		Vector(const std::initializer_list<value_type>& l) : Vector(l.begin(), l.end()) {
-		}
-
 		Vector(usize size, const value_type& elem) {
 			set_min_capacity(size);
 			std::fill_n(std::back_inserter(*this), size, elem);
@@ -90,10 +83,16 @@ class Vector : ResizePolicy, Allocator {
 			assign(beg_it, end_it);
 		}
 
-		template<typename Rp, typename Alloc>
-		Vector(const Vector<Elem, Rp, Alloc>& other) : Vector(other.begin(), other.end()) {
+		Vector(Vector&& other) {
+			swap(other);
 		}
 
+		Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
+		}
+
+		template<typename... Args>
+		Vector(const Vector<Elem, Args...>& other) : Vector(other.begin(), other.end()) {
+		}
 
 		Vector& operator=(Vector&& other) {
 			swap(other);
@@ -105,20 +104,34 @@ class Vector : ResizePolicy, Allocator {
 			return *this;
 		}
 
-		Vector& operator=(std::initializer_list<data_type>& l) {
+		Vector& operator=(std::initializer_list<value_type> l) {
 			assign(l.begin(), l.end());
 			return *this;
 		}
 
-		template<typename Rp, typename Alloc>
-		Vector& operator=(const Vector<Elem, Rp, Alloc>& other) {
-			assign(other.begin(), other.end());
+		template<typename... Args>
+		Vector& operator=(const Vector<Elem, Args...>& l) {
+			assign(l.begin(), l.end());
 			return *this;
 		}
 
-		Vector& operator=(std::initializer_list<value_type> other) {
-			assign(other.begin(), other.end());
-			return *this;
+
+		bool operator==(ArrayView<value_type> v) const {
+			return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
+		}
+
+		bool operator!=(ArrayView<value_type> v) const {
+			return !operator==(v);
+		}
+
+		template<typename... Args>
+		bool operator==(const Vector<Elem, Args...>& v) const {
+			return operator==(ArrayView<value_type>(v));
+		}
+
+		template<typename... Args>
+		bool operator!=(const Vector<Elem, Args...>& v) const {
+			return operator!=(ArrayView<value_type>(v));
 		}
 
 
@@ -134,7 +147,6 @@ class Vector : ResizePolicy, Allocator {
 			std::swap(_data_end, v._data_end);
 			std::swap(_alloc_end, v._alloc_end);
 		}
-
 
 		~Vector() {
 			clear();
@@ -291,17 +303,6 @@ class Vector : ResizePolicy, Allocator {
 			_data_end = _data;
 		}
 
-		template<typename Rp, typename Alloc>
-		bool operator==(const Vector<Elem, Rp, Alloc>& v) const {
-			return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
-		}
-
-		template<typename Rp, typename Alloc>
-		bool operator!=(const Vector<Elem, Rp, Alloc>& v) const {
-			return !operator==(v);
-		}
-
-
 	private:
 		void move_range(data_type* dst, data_type* src, usize n) {
 			if constexpr(std::is_pod_v<data_type>) {
@@ -386,8 +387,6 @@ inline Vector<Args...> operator+(Vector<Args...> vec, T&& t) {
 	vec.push_back(std::forward<T>(t));
 	return vec;
 }
-
-
 
 }
 }
