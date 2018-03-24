@@ -49,6 +49,10 @@ MainWindow::MainWindow(DebugParams params) :
 		_engine_view(&_device) {
 
 	ImGui::CreateContext();
+	ImGui::LoadDockContext("editor_docks.ini");
+	ImGui::GetIO().IniFilename = "editor.ini";
+	ImGui::GetIO().LogFilename = "editor_logs.txt";
+
 
 	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
 	_ui_renderer = new SimpleEndOfPipe(gui);
@@ -59,6 +63,7 @@ MainWindow::MainWindow(DebugParams params) :
 }
 
 MainWindow::~MainWindow() {
+	ImGui::SaveDockContext("editor_docks.ini");
 	ImGui::DestroyContext();
 }
 
@@ -102,7 +107,7 @@ void MainWindow::exec() {
 void MainWindow::begin() {
 	ImGui::NewFrame();
 
-	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
+	/*ImU32 flags = ImGuiWindowFlags_NoTitleBar |
 				  ImGuiWindowFlags_NoResize |
 				  ImGuiWindowFlags_NoScrollbar |
 				  ImGuiWindowFlags_NoInputs |
@@ -113,13 +118,13 @@ void MainWindow::begin() {
 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	ImGui::Begin("Main window", nullptr, flags);
-	ImGui::BeginDockspace();
+	ImGui::BeginDockspace();*/
 }
 
 
 void MainWindow::end() {
-	ImGui::EndDockspace();
-	ImGui::End();
+	/*ImGui::EndDockspace();
+	ImGui::End();*/
 	ImGui::EndFrame();
 	ImGui::Render();
 }
@@ -131,10 +136,22 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	// draw ui
 	begin();
 	{
-		ImGui::SetNextDock(ImGuiDockSlot_Left);
 		_entity_view.paint(recorder, token);
+
 		_engine_view.set_selected(_entity_view.selected());
 		_engine_view.paint(recorder, token);
+
+		/*ImGui::BeginDock("test 1");
+		ImGui::EndDock();
+
+		ImGui::BeginDock("test 2");
+		ImGui::EndDock();
+
+		ImGui::Begin("test 3");
+		ImGui::End();
+
+		ImGui::BeginDock("test 4");
+		ImGui::EndDock();*/
 	}
 	end();
 

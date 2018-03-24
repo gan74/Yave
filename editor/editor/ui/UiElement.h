@@ -48,6 +48,10 @@ class UiElement : NonCopyable {
 			return _title;
 		}
 
+		void show() {
+			_visible = true;
+		}
+
 	protected:
 		const char* _title;
 		bool _visible = true;

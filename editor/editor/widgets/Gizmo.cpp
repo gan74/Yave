@@ -27,6 +27,7 @@ namespace editor {
 
 static constexpr float gizmo_width = 2.0f;
 static constexpr float gizmo_size = 0.1f;
+static constexpr u32 gizmo_alpha = 0xC0000000;
 
 static bool is_clicked() {
 #warning gizmo can be grabbed through other ui elements
@@ -87,10 +88,10 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		};
 
 	for(usize i = 0; i != 3; ++i) {
-		u32 color = 0xFF000000 | (0xFF << (8 * i));
+		u32 color = gizmo_alpha | (0xFF << (8 * i));
 		ImGui::GetWindowDrawList()->AddLine(center, axis[i], color, gizmo_width);
 	}
-	ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
+	ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0x00FFFFFF | gizmo_alpha);
 
 
 
