@@ -34,9 +34,6 @@ class CameraDebug : public Widget, public ContextLinked {
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
-
-		SceneView* _view;
-
 };
 
 }
