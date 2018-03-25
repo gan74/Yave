@@ -46,13 +46,13 @@ EditorContext::~EditorContext() {
 
 void EditorContext::save_settings() {
 	if(auto r = io::File::create("./editor_settings.dat"); r.is_ok()) {
-		r.unwrap().write_one(key_settings);
+		r.unwrap().write_one(camera_settings);
 	}
 }
 
 void EditorContext::load_settings() {
 	if(auto r = io::File::open("./editor_settings.dat"); r.is_ok()) {
-		r.unwrap().read_one(key_settings);
+		r.unwrap().read_one(camera_settings);
 	}
 }
 

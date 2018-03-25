@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace editor {
 
-PerformanceMetrics::PerformanceMetrics() : Widget("Performance") {
+PerformanceMetrics::PerformanceMetrics() : Widget("Performance", ImGuiWindowFlags_AlwaysAutoResize) {
 }
 
 void PerformanceMetrics::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {

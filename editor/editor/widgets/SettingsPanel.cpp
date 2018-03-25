@@ -31,12 +31,15 @@ namespace editor {
 static void keybox(const char* name, Key& key) {
 	char k[2] = {char(key), 0};
 
+	ImGui::PushItemWidth(24);
 	ImGuiTextEditCallback callback = [](ImGuiTextEditCallbackData* data) { data->CursorPos = 0; return 0; };
 	ImGui::InputText(name, k, sizeof(k), ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_AlwaysInsertMode | ImGuiInputTextFlags_CallbackAlways, callback);
 
 	if(std::isalpha(k[0])) {
 		key = Key(k[0]);
 	}
+
+	ImGui::PopItemWidth();
 }
 
 SettingsPanel::SettingsPanel(ContextPtr cptr) : Dock("Settings"), ContextLinked(cptr) {
@@ -46,10 +49,14 @@ void SettingsPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	int flags = ImGuiTreeNodeFlags_DefaultOpen;
 
 	if(ImGui::CollapsingHeader("Camera", flags)) {
-		keybox("Forward", context()->key_settings.move_forward);
-		keybox("Backward", context()->key_settings.move_backward);
-		keybox("Left", context()->key_settings.move_left);
-		keybox("Right", context()->key_settings.move_right);
+		keybox("Forward", context()->camera_settings.move_forward);
+		keybox("Backward", context()->camera_settings.move_backward);
+		keybox("Left", context()->camera_settings.move_left);
+		keybox("Right", context()->camera_settings.move_right);
+
+		ImGui::Separator();
+
+		ImGui::SliderFloat("Sensitivity", &context()->camera_settings.camera_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
 	}
 }
 

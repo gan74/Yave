@@ -97,8 +97,10 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 
 			case WM_LBUTTONDOWN:
 			case WM_RBUTTONDOWN:
+			case WM_MBUTTONDOWN:
 			case WM_LBUTTONUP:
 			case WM_RBUTTONUP:
+			case WM_MBUTTONUP:
 			case WM_MOUSEMOVE:
 			case WM_MOUSEWHEEL:
 				if(auto handler = window->event_handler(); handler) {
@@ -106,13 +108,27 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 					math::Vec2i pos = math::Vec2i(pt.x, pt.y);
 					switch(uMsg) {
 						case WM_LBUTTONDOWN:
+							handler->mouse_pressed(pos, EventHandler::LeftButton);
+							return 0;
+
 						case WM_RBUTTONDOWN:
-							handler->mouse_pressed(pos, uMsg == WM_LBUTTONDOWN ? EventHandler::LeftButton : EventHandler::RightButton);
+							handler->mouse_pressed(pos, EventHandler::RightButton);
+							return 0;
+
+						case WM_MBUTTONDOWN:
+							handler->mouse_pressed(pos, EventHandler::MiddleButton);
 							return 0;
 
 						case WM_LBUTTONUP:
+							handler->mouse_released(pos, EventHandler::LeftButton);
+							return 0;
+
 						case WM_RBUTTONUP:
-							handler->mouse_released(pos, uMsg == WM_LBUTTONUP ? EventHandler::LeftButton : EventHandler::RightButton);
+							handler->mouse_released(pos, EventHandler::RightButton);
+							return 0;
+
+						case WM_MBUTTONUP:
+							handler->mouse_released(pos, EventHandler::MiddleButton);
 							return 0;
 
 						case WM_MOUSEMOVE:

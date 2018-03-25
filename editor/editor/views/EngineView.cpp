@@ -34,7 +34,7 @@ SOFTWARE.
 namespace editor {
 
 EngineView::EngineView(ContextPtr cptr) :
-		Dock("Engine view"),
+		Dock("Engine view", ImGuiWindowFlags_NoScrollbar),
 		ContextLinked(cptr),
 		_ibl_data(new IBLData(device())),
 		_uniform_buffer(device(), 1),
@@ -125,22 +125,44 @@ void EngineView::update_camera() {
 	float cam_speed = 500.0f;
 	float dt = cam_speed / ImGui::GetIO().Framerate;
 
-	if(ImGui::IsKeyDown(int(context()->key_settings.move_forward))) {
+	if(ImGui::IsKeyDown(int(context()->camera_settings.move_forward))) {
 		cam_pos += cam_fwd * dt;
 	}
-	if(ImGui::IsKeyDown(int(context()->key_settings.move_backward))) {
+	if(ImGui::IsKeyDown(int(context()->camera_settings.move_backward))) {
 		cam_pos -= cam_fwd * dt;
 	}
-	if(ImGui::IsKeyDown(int(context()->key_settings.move_left))) {
+	if(ImGui::IsKeyDown(int(context()->camera_settings.move_left))) {
 		cam_pos += cam_lft * dt;
 	}
-	if(ImGui::IsKeyDown(int(context()->key_settings.move_right))) {
+	if(ImGui::IsKeyDown(int(context()->camera_settings.move_right))) {
 		cam_pos -= cam_lft * dt;
 	}
 
+	float fov = math::to_rad(60.0f);
+
+	if(ImGui::IsMouseDown(1)) {
+		auto rotation = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft));
+		auto euler = rotation.to_euler();
+		auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
+		delta *= context()->camera_settings.camera_sensitivity;
+
+		euler[math::Quaternion<>::YawIndex] -= delta.x();
+		euler[math::Quaternion<>::PitchIndex] += delta.y();
+
+		rotation = math::Quaternion<>::from_euler(euler);
+
+		cam_fwd = rotation({1.0f, 0.0f, 0.0f});
+		cam_lft = rotation({0.0f, 1.0f, 0.0f});
+	}
 
 
-	auto proj = math::perspective(math::to_rad(60.0f), float(size.x()) / float(size.y()), 1.0f);
+	if(ImGui::IsMouseDown(2)) {
+		auto delta = ImGui::GetIO().MouseDelta;
+		cam_pos -= (delta.y * cam_fwd.cross(cam_lft) + delta.x * cam_lft);
+	}
+
+
+	auto proj = math::perspective(fov, float(size.x()) / float(size.y()), 1.0f);
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
 	camera.set_proj(proj);
 	camera.set_view(view);

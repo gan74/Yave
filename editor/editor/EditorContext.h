@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_EDITORCONTEXT_H
 #define EDITOR_EDITORCONTEXT_H
 
-#include <editor/settings/KeySettings.h>
+#include <editor/settings/settings.h>
 
 #include <yave/device/DeviceLinked.h>
 #include <yave/objects/Transformable.h>
@@ -42,7 +42,7 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		void load_settings();
 
 
-		KeySettings key_settings;
+		CameraSettings camera_settings;
 
 		NotOwner<Transformable*> selected = nullptr;
 

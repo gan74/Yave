@@ -51,8 +51,8 @@ void Gadget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 
 	if(ImGui::BeginChild(_title, ImGui::GetWindowSize(), &_visible, flags)) {
 		paint_ui(recorder, token);
-		ImGui::EndPopup();
 	}
+	ImGui::EndChild();
 	ImGui::PopStyleColor();
 }
 

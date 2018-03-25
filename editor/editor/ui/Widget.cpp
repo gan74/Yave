@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace editor {
 
-Widget::Widget(const char* title) : UiElement(title) {
+Widget::Widget(const char* title, u32 flags) : UiElement(title), _flags(flags) {
 }
 
 void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
@@ -34,10 +34,10 @@ void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 		return;
 	}
 
-	if(ImGui::Begin(_title, &_visible)) {
+	if(ImGui::Begin(_title, &_visible, _flags)) {
 		paint_ui(recorder, token);
-		ImGui::End();
 	}
+	ImGui::End();
 }
 
 }

@@ -19,23 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_SETTINGS_KEYSETTINGS_H
-#define EDITOR_SETTINGS_KEYSETTINGS_H
+#ifndef EDITOR_SETTINGS_SETTINGS_H
+#define EDITOR_SETTINGS_SETTINGS_H
 
 #include <editor/editor.h>
 #include <yave/window/EventHandler.h>
 
 namespace editor {
 
-struct KeySettings {
+struct CameraSettings {
 	Key move_forward = Key::W;
 	Key move_backward = Key::S;
 	Key move_right = Key::D;
 	Key move_left = Key::A;
+	float camera_sensitivity = 4.0f;
 };
 
-static_assert(std::is_standard_layout_v<KeySettings> && std::is_trivially_copyable_v<KeySettings>);
+static_assert(std::is_standard_layout_v<CameraSettings> && std::is_trivially_copyable_v<CameraSettings>);
 
 }
 
-#endif // EDITOR_SETTINGS_KEYSETTINGS_H
+#endif // EDITOR_SETTINGS_SETTINGS_H

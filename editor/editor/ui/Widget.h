@@ -29,12 +29,15 @@ namespace editor {
 class Widget : public UiElement {
 
 	public:
-		Widget(const char* title);
+		Widget(const char* title, u32 flags = 0);
 
 		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 	protected:
 		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
+
+	private:
+		u32 _flags;
 
 };
 
