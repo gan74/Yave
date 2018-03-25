@@ -45,7 +45,7 @@ SceneData import_scene(const core::String& path) {
 	auto scene = importer.ReadFile(path, import_flags);
 
 	if(!scene) {
-		fatal("Unable to load scene.");
+		y_fatal("Unable to load scene.");
 	}
 
 	if(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {

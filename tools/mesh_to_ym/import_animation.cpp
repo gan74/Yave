@@ -61,7 +61,7 @@ AnimationChannel import_channel(aiNodeAnim* anim) {
 	}
 
 	if(infos.empty()) {
-		fatal("Empty channel.");
+		y_fatal("Empty channel.");
 	}
 
 
@@ -94,7 +94,7 @@ AnimationChannel import_channel(aiNodeAnim* anim) {
 
 Animation import_animation(aiAnimation* anim) {
 	if(!anim || anim->mDuration <= 0.0f || !anim->mNumChannels) {
-		return fatal("Empty animation.");
+		return y_fatal("Empty animation.");
 	}
 
 	auto channels = vector_with_capacity<AnimationChannel>(anim->mNumChannels);

@@ -41,21 +41,21 @@ const core::Vector<IndexedTriangle>& MeshData::triangles() const {
 
 const core::Vector<SkinWeights> MeshData::skin() const {
 	if(!_skeleton) {
-		fatal("Mesh has no skeleton.");
+		y_fatal("Mesh has no skeleton.");
 	}
 	return _skeleton->skin;
 }
 
 const core::Vector<Bone>& MeshData::bones() const {
 	if(!_skeleton) {
-		fatal("Mesh has no skeleton.");
+		y_fatal("Mesh has no skeleton.");
 	}
 	return _skeleton->bones;
 }
 
 core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
 	if(!_skeleton) {
-		fatal("Mesh has no skeleton.");
+		y_fatal("Mesh has no skeleton.");
 	}
 
 	auto verts = core::vector_with_capacity<SkinnedVertex>(_vertices.size());
@@ -71,10 +71,10 @@ bool MeshData::has_skeleton() const {
 
 MeshData MeshData::from_parts(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin, core::Vector<Bone>&& bones) {
 	if(bones.is_empty() != skin.is_empty()) {
-		fatal("Invalid skeleton.");
+		y_fatal("Invalid skeleton.");
 	}
 	if((!skin.is_empty() && skin.size() != vertices.size())) {
-		fatal("Invalid skin data.");
+		y_fatal("Invalid skin data.");
 	}
 
 	float radius = 0.0f;
@@ -122,7 +122,7 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 
 	Header header = reader->read_one<Header>().expected(err_msg);
 	if(!header.is_valid()) {
-		fatal(err_msg);
+		y_fatal(err_msg);
 	}
 
 	MeshData mesh;

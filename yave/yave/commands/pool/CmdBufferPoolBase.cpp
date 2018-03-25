@@ -53,7 +53,7 @@ CmdBufferPoolBase::CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred) :
 CmdBufferPoolBase::~CmdBufferPoolBase() {
 	if(device()) {
 		if(_fences.size() != _cmd_buffers.size()) {
-			fatal("CmdBuffers are still in use.");
+			y_fatal("CmdBuffers are still in use.");
 		}
  		join_all();
 		_cmd_buffers.clear();
@@ -71,13 +71,13 @@ void CmdBufferPoolBase::join_all() {
 	}
 
 	if(device()->vk_device().waitForFences(_fences.size(), _fences.data(), true, u64(-1)) != vk::Result::eSuccess) {
-		fatal("Unable to join fences.");
+		y_fatal("Unable to join fences.");
 	}
 }
 
 void CmdBufferPoolBase::release(CmdBufferData&& data) {
 	if(data.pool() != this) {
-		fatal("CmdBufferData was not returned to its original pool.");
+		y_fatal("CmdBufferData was not returned to its original pool.");
 	}
 	std::unique_lock lock(_lock);
 	_cmd_buffers.push_back(std::move(data));

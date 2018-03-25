@@ -35,7 +35,7 @@ static vk::PhysicalDevice choose_device(vk::Instance instance) {
 			return dev;
 		}
 	}
-	return fatal("Unable to find a compatible device.");
+	return y_fatal("Unable to find a compatible device.");
 }
 
 

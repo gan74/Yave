@@ -35,7 +35,7 @@ static math::Vec2ui compute_size(const DepthAttachmentView& depth, const core::A
 
 	for(const auto& v : views) {
 		if(v.size() != ref) {
-			fatal("Invalid attachment size.");
+			y_fatal("Invalid attachment size.");
 		}
 	}
 	return ref;

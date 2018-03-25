@@ -106,7 +106,7 @@ void enter(const char* cat, const char* func) {
 	char b[print_buffer_len];
 	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, tid, micros());
 	if(len >= sizeof(b)) {
-		fatal("Too long.");
+		y_fatal("Too long.");
 	}
 	write(b, len);
 }
@@ -115,7 +115,7 @@ void leave(const char* cat, const char* func) {
 	char b[print_buffer_len];
 	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, tid, micros());
 	if(len >= sizeof(b)) {
-		fatal("Too long.");
+		y_fatal("Too long.");
 	}
 	write(b, len);
 }
@@ -124,7 +124,7 @@ void event(const char* cat, const char* name) {
 	char b[print_buffer_len];
 	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"i","pid":0,"tid":%u,"ts":%f},)", name, cat, tid, micros());
 	if(len >= sizeof(b)) {
-		fatal("Too long.");
+		y_fatal("Too long.");
 	}
 	write(b, len);
 }
@@ -134,7 +134,7 @@ static struct Flush : NonCopyable {
 		char b[print_buffer_len];
 		usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f}]})", tid, micros());
 		if(len >= sizeof(b)) {
-			fatal("Too long.");
+			y_fatal("Too long.");
 		}
 		write(b, len);
 		write_buffer();

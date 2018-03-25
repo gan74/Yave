@@ -70,12 +70,12 @@ struct FakeAllocator {
 
 	template<typename... Args>
 	T* allocate(Args&&...) {
-		return fatal("SmallVector allocated");
+		return y_fatal("SmallVector allocated");
 	}
 
 	template<typename... Args>
 	void deallocate(Args&&...) {
-		fatal("SmallVector deallocated");
+		y_fatal("SmallVector deallocated");
 	}
 };
 

@@ -5,7 +5,7 @@
 using namespace import;
 
 static int show_help() {
-	return fatal("No help.");
+	return y_fatal("No help.");
 }
 
 static Vector<String> build_args(int argc, char** argv) {

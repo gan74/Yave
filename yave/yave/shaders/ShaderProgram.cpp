@@ -63,7 +63,7 @@ static vk::Format vec_format(const ShaderModuleBase::Attribute& attr) {
 		default:
 			break;
 	}
-	return fatal("Unsupported vec format.");
+	return y_fatal("Unsupported vec format.");
 }
 
 static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& mod) {

@@ -26,13 +26,13 @@ namespace import {
 
 MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
 	if(!mesh) {
-		fatal("Unable to load mesh.");
+		y_fatal("Unable to load mesh.");
 	}
 	if(mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
-		fatal("Mesh is not triangulated.");
+		y_fatal("Mesh is not triangulated.");
 	}
 	if(!mesh->HasNormals()) {
-		fatal("Mesh has no normals.");
+		y_fatal("Mesh has no normals.");
 	}
 
 	usize vertex_count = mesh->mNumVertices;

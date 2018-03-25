@@ -35,7 +35,7 @@ static vk::ImageLayout vk_layout(ImageUsage usage) {
 		return vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
 
-	return fatal("Undefined image layout.");
+	return y_fatal("Undefined image layout.");
 }
 
 vk::ImageLayout vk_image_layout(ImageUsage usage) {

@@ -40,7 +40,7 @@ static const char* light_type_name(Light::Type type) {
 		default:
 		break;
 	}
-	return fatal("Unsupported light type.");
+	return y_fatal("Unsupported light type.");
 }
 
 

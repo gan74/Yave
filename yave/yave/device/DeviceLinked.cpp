@@ -35,7 +35,7 @@ DeviceLinked::DeviceLinked() : _device(nullptr) {
 
 DeviceLinked::DeviceLinked(DevicePtr dev) : _device(dev) {
 	if(!dev) {
-		fatal("Null device.");
+		y_fatal("Null device.");
 	}
 }
 
@@ -63,7 +63,7 @@ ThreadDeviceLinked::ThreadDeviceLinked() : _device(nullptr) {
 
 ThreadDeviceLinked::ThreadDeviceLinked(ThreadDevicePtr dev) : _device(dev) {
 	if(!dev) {
-		fatal("Null device.");
+		y_fatal("Null device.");
 	}
 }
 

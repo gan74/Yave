@@ -32,7 +32,7 @@ static void check_features(const vk::PhysicalDeviceFeatures& features, const vk:
 	auto req = reinterpret_cast<const vk::Bool32*>(&required);
 	for(usize i = 0; i != sizeof(features) / sizeof(vk::Bool32); ++i) {
 		if(req[i] && !feats[i]) {
-			fatal("Required Vulkan feature not supported");
+			y_fatal("Required Vulkan feature not supported");
 		}
 	}
 }
@@ -144,7 +144,7 @@ const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
 			return q;
 		}
 	}
-	return fatal("Unable to find queue.");
+	return y_fatal("Unable to find queue.");
 }
 
 const Queue& Device::queue(vk::QueueFlags) const {

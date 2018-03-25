@@ -121,7 +121,7 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 
 	Header header = reader->read_one<Header>().expected(err_msg);
 	if(!header.is_valid()) {
-		fatal(err_msg);
+		y_fatal(err_msg);
 	}
 
 	ImageData data;

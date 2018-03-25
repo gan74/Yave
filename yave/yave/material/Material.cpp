@@ -59,7 +59,7 @@ const GraphicPipeline& Material::compile(const RenderPass& render_pass) const {
 #warning material::compile not thread safe
 	auto key = render_pass.vk_render_pass();
 	if(!key) {
-		fatal("Unable to compile material: null renderpass.");
+		y_fatal("Unable to compile material: null renderpass.");
 	}
 
 	auto it = std::find_if(_compiled.begin(), _compiled.end(), [=](const auto& c) { return c.first == key; });

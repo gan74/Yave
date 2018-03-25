@@ -185,28 +185,28 @@ class Result : NonCopyable {
 
 		auto&& error() const {
 			if(is_ok()) {
-				fatal("Result is not an error.");
+				y_fatal("Result is not an error.");
 			}
 			return _error.get();
 		}
 
 		auto&& error() {
 			if(is_ok()) {
-				fatal("Result is not an error.");
+				y_fatal("Result is not an error.");
 			}
 			return _error.get();
 		}
 
 		expected_const_type expected(const char* err_msg) const {
 			if(is_error()) {
-				fatal(err_msg);
+				y_fatal(err_msg);
 			}
 			return _value.get();
 		}
 
 		expected_type expected(const char* err_msg) {
 			if(is_error()) {
-				fatal(err_msg);
+				y_fatal(err_msg);
 			}
 			return _value.get();
 		}

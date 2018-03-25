@@ -120,10 +120,10 @@ static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr 
 
 static void check_layer_count(ImageType type, usize layers) {
 	if(type == ImageType::TwoD && layers > 1) {
-		fatal("Invalid layer count.");
+		y_fatal("Invalid layer count.");
 	}
 	if(type == ImageType::Cube && layers != 6) {
-		fatal("Invalid layer count.");
+		y_fatal("Invalid layer count.");
 	}
 }
 

@@ -54,7 +54,7 @@ inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties,
 		}
 	}
 
-	return fatal("Unable to allocate device memory.");
+	return y_fatal("Unable to allocate device memory.");
 }
 
 

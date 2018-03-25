@@ -41,7 +41,7 @@ static void debug_bone(usize index, const core::Vector<Bone>& bones, const core:
 
 Skeleton::Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
 	if(_bones.size() > max_bones) {
-		fatal("Bone count exceeds max_bones.");
+		y_fatal("Bone count exceeds max_bones.");
 	}
 
 	for(usize i = 0; i != _bones.size(); ++i) {

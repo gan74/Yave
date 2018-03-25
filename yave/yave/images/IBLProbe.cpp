@@ -48,10 +48,10 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 
 static usize mipmap_count(usize size, usize min_size) {
 	if(size % min_size) {
-		fatal("Minimum size does not divide image size.");
+		y_fatal("Minimum size does not divide image size.");
 	}
 	if(size <= min_size) {
-		fatal("IBL probe is too small.");
+		y_fatal("IBL probe is too small.");
 	}
 	return 1 + std::floor(std::log2(size / min_size));
 }
@@ -121,7 +121,7 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
 	DevicePtr dptr = texture.device();
 
 	if(probe.mipmaps() == 1) {
-		fatal("IBL probe is too small.");
+		y_fatal("IBL probe is too small.");
 	}
 
 	// we need to store the views and use sync compute so we don't delete them while they are still in use

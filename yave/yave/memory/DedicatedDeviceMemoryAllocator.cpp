@@ -37,7 +37,7 @@ core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(vk::MemoryRequi
 
 void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
 	if(memory.vk_offset()) {
-		fatal("Tried to free memory using non zero offset.");
+		y_fatal("Tried to free memory using non zero offset.");
 	}
 	device()->vk_device().freeMemory(memory.vk_memory());
 }

@@ -46,7 +46,7 @@ static vk::PipelineStageFlags pipeline_stage(vk::AccessFlags access) {
 			   vk::PipelineStageFlagBits::eComputeShader;
 	}
 
-	return fatal("Unknown access flags.");
+	return y_fatal("Unknown access flags.");
 }
 
 
@@ -164,16 +164,16 @@ CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsag
 
 CmdBufferRecorderBase::~CmdBufferRecorderBase() {
 	if(_render_pass) {
-		fatal("CmdBufferRecorderBase destroyed before one of its RenderPassRecorder.");
+		y_fatal("CmdBufferRecorderBase destroyed before one of its RenderPassRecorder.");
 	}
 	if(vk_cmd_buffer()) {
-		fatal("CmdBufferRecorderBase destroyed before end() was called.");
+		y_fatal("CmdBufferRecorderBase destroyed before end() was called.");
 	}
 }
 
 void CmdBufferRecorderBase::end_renderpass() {
 	if(!_render_pass) {
-		fatal("CmdBufferRecorderBase has no render pass");
+		y_fatal("CmdBufferRecorderBase has no render pass");
 	}
 	vk_cmd_buffer().endRenderPass();
 	_render_pass = nullptr;
@@ -181,7 +181,7 @@ void CmdBufferRecorderBase::end_renderpass() {
 
 void CmdBufferRecorderBase::check_no_renderpass() const {
 	if(_render_pass) {
-		fatal("This command can not be used while this command buffer has a RenderPassRecorder.");
+		y_fatal("This command can not be used while this command buffer has a RenderPassRecorder.");
 	}
 }
 

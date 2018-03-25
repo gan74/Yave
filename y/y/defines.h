@@ -29,6 +29,9 @@ struct Nothing;
 
 }
 
+// keep the namespacing ?
+#define y_fatal(msg) fatal((msg), __FILE__, __LINE__)
+
 
 /*
 // For some reasons this destroys sol2 (freeze at runtime)

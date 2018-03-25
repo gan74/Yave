@@ -205,7 +205,7 @@ usize ImageFormat::bit_per_pixel() const {
 			return 256;
 
 		default:
-			return fatal("Unsupported image format.");
+			return y_fatal("Unsupported image format.");
 	}
 }
 

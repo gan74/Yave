@@ -75,7 +75,7 @@ static u32 max_elements(DevicePtr dptr, vk::DescriptorType type) {
 		default:
 		break;
 	};
-	return fatal("Invalid binding type.");
+	return y_fatal("Invalid binding type.");
 }
 
 

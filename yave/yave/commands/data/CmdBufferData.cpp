@@ -41,7 +41,7 @@ CmdBufferData& CmdBufferData::operator=(CmdBufferData&& other) {
 CmdBufferData::~CmdBufferData() {
 	if(_pool) {
 		if(_fence && device()->vk_device().getFenceStatus(_fence) != vk::Result::eSuccess) {
-			fatal("CmdBuffer is still in use.");
+			y_fatal("CmdBuffer is still in use.");
 		}
 		device()->vk_device().freeCommandBuffers(_pool->vk_pool(), _cmd_buffer);
 		device()->destroy(_fence);

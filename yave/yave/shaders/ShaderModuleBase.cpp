@@ -62,7 +62,7 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
 		default:
 			break;
 	}
-	return fatal("Unknown shader execution model.");
+	return y_fatal("Unknown shader execution model.");
 }
 
 static vk::DescriptorSetLayoutBinding create_binding(u32 index, ShaderType, vk::DescriptorType type) {
@@ -85,7 +85,7 @@ static auto create_bindings(const spirv_cross::Compiler& compiler, const std::ve
 
 static void fail_not_empty(const std::vector<spirv_cross::Resource>& res) {
 	if(!res.empty()) {
-		fatal("Unsupported resource type.");
+		y_fatal("Unsupported resource type.");
 	}
 }
 
@@ -99,7 +99,7 @@ static u32 component_size(spirv_cross::SPIRType::BaseType type) {
 		default:
 			break;
 	}
-	return fatal("Unsupported attribute type.");
+	return y_fatal("Unsupported attribute type.");
 }
 
 static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseType type) {
@@ -116,12 +116,12 @@ static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseTy
 		default:
 			break;
 	}
-	return fatal("Unsupported attribute type.");
+	return y_fatal("Unsupported attribute type.");
 }
 
 static auto create_push_constants(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources, ShaderType shader_type) {
 	if(resources.size() > 1) {
-		fatal("Too many push constants.");
+		y_fatal("Too many push constants.");
 	}
 
 	core::Vector<vk::PushConstantRange> push_constants;
@@ -144,7 +144,7 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vec
 
 		for(usize i = location; i != location + type.columns; ++i) {
 			if(!locations.insert(i).second) {
-				fatal("Duplicate or overlapping attribute locations.");
+				y_fatal("Duplicate or overlapping attribute locations.");
 			}
 		}
 	}

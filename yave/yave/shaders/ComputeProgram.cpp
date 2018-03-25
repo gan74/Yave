@@ -46,7 +46,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
 	if(data.size() && data.size() != comp.specialization_data_size()) {
 		//log_msg("data.size = "_s + data.size() + " expected = " + comp.specialization_data_size());
-		fatal("Incompatible specialization data.");
+		y_fatal("Incompatible specialization data.");
 	}
 
 	core::ArrayView entries = data.size() ? comp.specialization_entries() : core::ArrayView<vk::SpecializationMapEntry>();

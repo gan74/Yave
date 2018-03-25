@@ -77,7 +77,7 @@ static SkinWeights compute_skin(Vector<BoneRef>& refs) {
 
 SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 	if(!mesh || !mesh->mNumBones) {
-		return fatal("Empty skeleton.");
+		return y_fatal("Empty skeleton.");
 	}
 
 	Range mesh_bones(mesh->mBones, mesh->mBones + mesh->mNumBones);
@@ -98,7 +98,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 		bone_map[node->mName.C_Str()] = {index, node};
 	}
 	if(bone_map.size() != bone_nodes.size()) {
-		fatal("Bones are duplicated.");
+		y_fatal("Bones are duplicated.");
 	}
 
 
@@ -111,7 +111,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 		if(auto parent = bone_map.find(node->mParent->mName.C_Str()); parent != bone_map.end()) {
 			parent_index = u32(parent->second.first);
 			if(parent_index >= index) {
-				return fatal("Parent serialized after children.");
+				return y_fatal("Parent serialized after children.");
 			}
 		}
 

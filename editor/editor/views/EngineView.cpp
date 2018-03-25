@@ -68,7 +68,7 @@ void EngineView::draw_callback(RenderPassRecorder& recorder, void* user_data) {
 // called via draw_callback ONLY
 void EngineView::render_ui(RenderPassRecorder& recorder) {
 	if(!_renderer) {
-		fatal("Internal error.");
+		y_fatal("Internal error.");
 	}
 
 	auto region = recorder.region("EngineView::render_ui");

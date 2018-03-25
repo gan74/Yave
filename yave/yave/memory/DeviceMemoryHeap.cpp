@@ -38,7 +38,7 @@ bool DeviceMemoryHeap::FreeBlock::contiguous(const FreeBlock& blck) const {
 
 void DeviceMemoryHeap::FreeBlock::merge(const FreeBlock& block) {
 	if(!contiguous(block)) {
-		fatal("Memory blocks are not contiguous.");
+		y_fatal("Memory blocks are not contiguous.");
 	}
 	std::tie(offset, size) = std::tuple{std::min(offset, block.offset), size + block.size};
 }
@@ -56,10 +56,10 @@ DeviceMemoryHeap::DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType typ
 
 DeviceMemoryHeap::~DeviceMemoryHeap() {
 	if(_blocks.size() != 1) {
-		fatal("Not all memory has been free: heap fragmented.");
+		y_fatal("Not all memory has been free: heap fragmented.");
 	}
 	if(_blocks[0].offset || _blocks[0].size != heap_size) {
-		fatal("Not all memory has been freed.");
+		y_fatal("Not all memory has been freed.");
 	}
 	if(_mapping) {
 		device()->vk_device().unmapMemory(_memory);

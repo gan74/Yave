@@ -157,11 +157,11 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 		const ImDrawList* cmd_list = draw_data->CmdLists[i];
 
 		if(cmd_list->IdxBuffer.Size + index_offset >= _index_buffer.size()) {
-			fatal("Index buffer overflow.");
+			y_fatal("Index buffer overflow.");
 		}
 
 		if(cmd_list->VtxBuffer.Size + vertex_offset >= _vertex_buffer.size()) {
-			fatal("Vertex buffer overflow.");
+			y_fatal("Vertex buffer overflow.");
 		}
 
 		std::copy(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size, &indexes[index_offset]);

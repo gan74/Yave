@@ -36,7 +36,7 @@ class ShaderModule : public ShaderModuleBase {
 
 		ShaderModule(DevicePtr dptr, const SpirVData& data) : ShaderModuleBase(dptr, data) {
 			if(type() != ShaderType::None && type() != Type) {
-				fatal("Spirv data doesn't match ShaderModule Type.");
+				y_fatal("Spirv data doesn't match ShaderModule Type.");
 			}
 		}
 

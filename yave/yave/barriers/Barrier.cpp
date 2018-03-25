@@ -54,7 +54,7 @@ static vk::AccessFlags vk_layout_access_flags(vk::ImageLayout layout) {
 			break;
 	}
 
-	return fatal("Unsupported layout transition.");
+	return y_fatal("Unsupported layout transition.");
 }
 
 vk::ImageMemoryBarrier create_image_barrier(
@@ -96,7 +96,7 @@ static vk::AccessFlags vk_dst_access_flags(PipelineStage dst) {
 		default:
 			break;
 	}
-	return fatal("Unsuported pipeline stage.");
+	return y_fatal("Unsuported pipeline stage.");
 }
 
 static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
@@ -116,7 +116,7 @@ static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
 		default:
 			break;
 	}
-	return fatal("Unsuported pipeline stage.");
+	return y_fatal("Unsuported pipeline stage.");
 }
 
 vk::ImageMemoryBarrier ImageBarrier::vk_barrier(PipelineStage src, PipelineStage dst) const {

@@ -58,12 +58,12 @@ struct Nothing {
 
 	template<typename T>
 	operator T() const {
-		return fatal("y::Nothing used");
+		return y_fatal("y::Nothing used");
 	}
 
 	template<typename T>
 	operator const T&() const {
-		return fatal("y::Nothing used");
+		return y_fatal("y::Nothing used");
 	}
 };
 

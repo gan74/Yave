@@ -64,7 +64,7 @@ static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
 	auto depth_props = dptr->physical_device().vk_physical_device().getFormatProperties(vk::Format::eD32Sfloat);
 
 	if((depth_props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) != vk::FormatFeatureFlagBits::eDepthStencilAttachment) {
-		fatal("32 bit depth not supported.");
+		y_fatal("32 bit depth not supported.");
 	}
 }*/
 
@@ -106,7 +106,7 @@ static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE instance, HWND ha
 		);
 
 	if(!has_wsi_support(dptr, surface)) {
-		fatal("No WSI support.");
+		y_fatal("No WSI support.");
 	}
 	log_msg("Vulkan WSI supported !");
 	return surface;
@@ -170,7 +170,7 @@ void Swapchain::build_swapchain() {
 
 	auto image_usage_flags = vk::ImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
 	if((capabilities.supportedUsageFlags & image_usage_flags) != image_usage_flags) {
-		fatal("Swapchain does not support required usage flags.");
+		y_fatal("Swapchain does not support required usage flags.");
 	}
 
 	_size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
@@ -198,10 +198,10 @@ void Swapchain::build_swapchain() {
 
 		/*struct SwapchainImageMemoryHeap : DeviceMemoryHeapBase {
 			SwapchainImageMemoryHeap(DevicePtr dptr) : DeviceMemoryHeapBase(dptr) {}
-			core::Result<DeviceMemory> alloc(vk::MemoryRequirements) override { return fatal("SwapchainImageMemoryHeap can not alloc."); }
-			void free(const DeviceMemory&) override { return fatal("SwapchainImageMemoryHeap can not free."); }
-			void* map(usize) override { return fatal("SwapchainImageMemoryHeap can not map."); }
-			void unmap() override { fatal("SwapchainImageMemoryHeap can not unmap."); }
+			core::Result<DeviceMemory> alloc(vk::MemoryRequirements) override { return y_fatal("SwapchainImageMemoryHeap can not alloc."); }
+			void free(const DeviceMemory&) override { return y_fatal("SwapchainImageMemoryHeap can not free."); }
+			void* map(usize) override { return y_fatal("SwapchainImageMemoryHeap can not map."); }
+			void unmap() override { y_fatal("SwapchainImageMemoryHeap can not unmap."); }
 		}*/
 
 		struct SwapchainImageMemory : DeviceMemory {
