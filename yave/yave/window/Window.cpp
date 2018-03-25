@@ -50,6 +50,9 @@ static Key to_key(WPARAM param) {
 		case VK_INSERT: return Key::Insert;
 		case VK_DELETE: return Key::Delete;
 		case VK_SPACE:	return Key::Space;
+
+		default:
+			break;
 	}
 	return Key::Unknown;
 }
