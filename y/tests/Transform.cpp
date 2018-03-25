@@ -45,3 +45,23 @@ y_test_func("Transform decompose basic") {
 	y_test_assert(s == scale);
 }
 
+y_test_func("Transform decompose") {
+	int step = 7;
+	for(int p = -180; p < 180; p += step) {
+		for(int y = -180; y < 180; y += step) {
+			for(int r = -180; r < 180; r += step) {
+				auto quat = Quaternion<>::from_euler(to_rad(p), to_rad(y), to_rad(r));
+				Vec3 pos(y, r, p);
+				Vec3 scale(1.0f + pos.length() * 0.1f);
+				Transform<> tr(pos, quat, scale);
+
+				auto [p, q, s] = tr.decompose();
+
+				Vec3 v(0.5f, 0.75f, 1.0f);
+				y_test_assert((p - pos).length() < 0.001f);
+				y_test_assert((q(v) - quat(v)).length() < 0.001f);
+				y_test_assert((s - scale).length() < 0.001f);
+			}
+		}
+	}
+}

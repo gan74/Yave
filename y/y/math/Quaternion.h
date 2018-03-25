@@ -66,30 +66,50 @@ class Quaternion {
 		}
 
 		bool operator==(const Quaternion& q) const {
-			return _quat == q._quat;
+			return _quat == q._quat || -_quat == q._quat;
 		}
 
 		bool operator!=(const Quaternion& q) const {
-			return _quat != q._quat;
+			return !operator==(q);
 		}
 
 		T angle() const {
-			return std::acos(w() * T(2));
+			return std::acos(w() * T(2.0));
 		}
 
 		Vec<3, T> axis() const {
-			return Vec<3, T>(_quat.template to<3>() / std::sqrt(T(1) - w() * w()));
+			return Vec<3, T>(_quat.template to<3>() / std::sqrt(T(1.0) - w() * w()));
 		}
 
 		Quaternion inverse() const {
 			return Quaternion(-_quat.template to<3>(), _quat.w());
 		}
 
+		Quaternion flip() const {
+			return Quaternion(-_quat);
+		}
+
 		Vec<3, T> operator()(const Vec<3, T>& v) const {
 			Vec<3, T> u = _quat.template to<3>();
-			return u * T(2) * u.dot(v) +
+			return u * T(2.0) * u.dot(v) +
 				   v * (w() * w() - u.length2()) +
-				   u.cross(v) * T(2) * w();
+				   u.cross(v) * T(2.0) * w();
+		}
+
+		Vec<4, T> to_axis_angle() const {
+			return Vec<4, T>(axis(), angle());
+		}
+
+		Quaternion operator-() const {
+			return inverse();
+		}
+
+		Quaternion& operator*=(const Quaternion& q) {
+			_quat = {w() * q.x() + x() * q.w() + y() * q.z() - z() * q.y(),
+					 w() * q.y() + y() * q.w() + z() * q.x() - x() * q.z(),
+					 w() * q.z() + z() * q.w() + x() * q.y() - y() * q.x(),
+					 w() * q.w() - x() * q.x() - y() * q.y() - z() * q.z()};
+			return *this;
 		}
 
 		T x() const {
@@ -108,50 +128,53 @@ class Quaternion {
 			 return _quat.w();
 		}
 
+
 		Quaternion lerp(const Quaternion& end_quat, T factor) const {
 			Vec<4, T> end = end_quat._quat;
 			T consom = _quat.dot(end);
 
-			if(consom < T(0)) {
+			if(consom < T(0.0)) {
 				end = -end;
 				consom = - consom;
 			}
 
-			if(T(1) - consom > epsilon<T>) {
+			if(T(1.0) - consom > epsilon<T>) {
 				T omega = std::acos(consom);
 				T sin = std::sin(omega);
-				T p = std::sin((T(1) - factor) * omega) / sin;
+				T p = std::sin((T(1.0) - factor) * omega) / sin;
 				T q = std::sin(factor * omega) / sin;
 
 				return _quat * p + end * q;
 			}
-			return _quat * (T(1) - factor) + end * factor;
+			return _quat * (T(1.0) - factor) + end * factor;
+		}
+
+
+		T pitch() const {
+			T a = T(-2.0) * (x() * z() - w() * y());
+			return asin(std::clamp(a, T(-1.0), T(1.0)));
+		}
+
+		T yaw() const {
+			return std::atan2(T(2.0) * (x() * y() + w() * z()), w() * w() + x() * x() - y() * y() - z() * z());
+		}
+
+		T roll() const {
+			//return T(atan(T(2.0) * (y * z + w * x), w * w - x * x - y * y + z * z));
+			T a = T(2.0) * (y() * z() + w() * x());
+			T b = w() * w() - x() * x() - y() * y() + z() * z();
+			if(b == 0 && a == 0) {
+				return T(2.0) * std::atan2(x(), w());
+			}
+			return std::atan2(a, b);
 		}
 
 		Vec<3, T> to_euler() const {
-			return Vec<3, T>(std::atan2(T(2) * (w() * x() + y() * z()), T(1) - T(2) * (x() * x() + y() * y())),
-							 std::asin(T(2) * (w() * y() - z() * x())),
-							 std::atan2(T(2) * (w() * z() + x() * y()), T(1) - T(2) * (y() * y() + z() * z())));
-		}
-
-		Vec<4, T> to_axis_angle() const {
-			T s = std::sqrt(T(w) - w() * w());
-			if(s < epsilon<T>()) {
-				s = T(1);
-			}
-			return Vec<4, T>(_quat.template to<3>() / s, std::acos(w()) * T(2));
-		}
-
-		Quaternion operator-() const {
-			return inverse();
-		}
-
-		Quaternion& operator*=(const Quaternion& q) {
-			_quat = {w() * q.x() + x() * q.w() + y() * q.z() - z() * q.y(),
-					 w() * q.y() + y() * q.w() + z() * q.x() - x() * q.z(),
-					 w() * q.z() + z() * q.w() + x() * q.y() - y() * q.x(),
-					 w() * q.w() - x() * q.x() - y() * q.y() - z() * q.z()};
-			return *this;
+			Vec<3, T> v;
+			v[PitchIndex] = pitch();
+			v[YawIndex] = yaw();
+			v[RollIndex] = roll();
+			return v;
 		}
 
 
@@ -167,27 +190,55 @@ class Quaternion {
 			return from_axis_angle(f.cross(axis), -std::acos(d));
 		}
 
-		static Quaternion from_euler(T yaw, T pitch, T roll) {
-			T cos_yaw = std::cos(pitch * T(0.5));
-			T sin_yaw = std::sin(pitch * T(0.5));
-			T cos_pitch = std::cos(roll * T(0.5));
-			T sin_pitch = std::sin(roll * T(0.5));
-			T cos_roll = std::cos(yaw * T(0.5));
-			T sin_roll = std::sin(yaw * T(0.5));
-			return Quaternion(cos_roll * sin_pitch * cos_yaw + sin_roll * cos_pitch * sin_yaw,
-							  cos_roll * cos_pitch * sin_yaw - sin_roll * sin_pitch * cos_yaw,
-							  sin_roll * cos_pitch * cos_yaw - cos_roll * sin_pitch * sin_yaw,
-							  cos_roll * cos_pitch * cos_yaw + sin_roll * sin_pitch * sin_yaw);
+		static Quaternion from_euler(T pitch, T yaw, T roll) {
+			// from https://github.com/g-truc/glm/blob/master/glm/gtc/quaternion.inl#L173
+
+			// swizzle of doom
+			Vec<3, T> c(std::cos(roll * T(0.5)), std::cos(pitch * T(0.5)), std::cos(yaw * T(0.5)));
+			Vec<3, T> s(std::sin(roll * T(0.5)), std::sin(pitch * T(0.5)), std::sin(yaw * T(0.5)));
+			Vec<4, T> q;
+			q.x() = s.x() * c.y() * c.z() - c.x() * s.y() * s.z();
+			q.y() = c.x() * s.y() * c.z() + s.x() * c.y() * s.z();
+			q.z() = c.x() * c.y() * s.z() - s.x() * s.y() * c.z();
+			q.w() = c.x() * c.y() * c.z() + s.x() * s.y() * s.z();
+			return q;
 		}
 
-		static Quaternion from_base(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
-			T w = std::sqrt(1 + forward.x() + right.y() + up.z()) * T(0.5);
-			Vec<3, T> q(right.z() - up.y(), up.x() - forward.z(), forward.y() - right.x());
-			return Quaternion(q / (4 * w), w);
+		static Quaternion from_base(const Vec<3, T>& forward, const Vec<3, T>& left, const Vec<3, T>& up) {
+			// from https://github.com/g-truc/glm/blob/master/glm/gtc/quaternion.inl#L650
+			T wxyz[4] = {
+					forward.x() + left.y() + up.z(),
+					forward.x() - left.y() - up.z(),
+					left.y() - forward.x() - up.z(),
+					up.z() - forward.x() - left.y()
+				};
+			T max = wxyz[0];
+			usize max_index = 0;
+			for(usize i = 1; i != 4; ++i) {
+				if(max < wxyz[i]) {
+					max = wxyz[i];
+					max_index = i;
+				}
+			}
+			T s = std::sqrt(max + T(1.0)) * T(0.5);
+			T m = T(0.25) / s;
+			switch(max_index) {
+				case 0: // w
+					return Quaternion((left[2] - up[1]) * m, (up[0] - forward[2]) * m, (forward[1] - left[0]) * m, s);
+				case 1: // x
+					return Quaternion(s, (forward[1] + left[0]) * m, (up[0] + forward[2]) * m, (left[2] - up[1]) * m);
+				case 2: // y
+					return Quaternion((forward[1] + left[0]) * m, s, (left[2] + up[1]) * m, (up[0] - forward[2]) * m);
+				default: // z
+					return Quaternion((up[0] + forward[2]) * m, (left[2] + up[1]) * m, s, (forward[1] - left[0]) * m);
+			}
+			return Quaternion();
 		}
+
+
 
 		static Quaternion from_euler(const Vec<3, T>& euler) {
-			return fromEuler(euler[YawIndex], euler[PitchIndex], euler[RollIndex]);
+			return from_euler(euler[PitchIndex], euler[YawIndex], euler[RollIndex]);
 		}
 
 		static Quaternion from_axis_angle(const Vec<3, T>& axis, T ang) {
@@ -200,7 +251,7 @@ class Quaternion {
 		}
 
 		static Quaternion from_axis_angle(const Vec<4, T>& v) {
-			return from_axis_angle(v.sub(3), v.w());
+			return from_axis_angle(v.template to<3>(), v.w());
 		}
 
 	private:
