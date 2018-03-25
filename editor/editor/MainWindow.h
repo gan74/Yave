@@ -26,9 +26,6 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <editor/EditorContext.h>
-#include <editor/views/EngineView.h>
-#include <editor/views/EntityView.h>
-#include <editor/widgets/SettingsPanel.h>
 
 #include <yave/window/Window.h>
 #include <yave/device/Instance.h>

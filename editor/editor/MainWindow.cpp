@@ -21,8 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "MainWindow.h"
-#include <editor/events/MainEventHandler.h>
 
+#include <editor/events/MainEventHandler.h>
 #include <editor/renderers/ImGuiRenderer.h>
 
 #include <yave/renderers/SimpleEndOfPipe.h>
@@ -30,13 +30,13 @@ SOFTWARE.
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/renderers/FramebufferRenderer.h>
+#include <y/core/SmallVector.h>
 
 #include <editor/views/EntityView.h>
-
-
-#include "scenes.h"
-
-#include <y/core/SmallVector.h>
+#include <editor/views/EngineView.h>
+#include <editor/widgets/SettingsPanel.h>
+#include <editor/widgets/CameraDebug.h>
+#include <editor/widgets/PerformanceMetrics.h>
 
 #include <imgui/imgui.h>
 
@@ -124,7 +124,12 @@ static void show_element(ContextPtr cptr, core::Vector<core::Unique<UiElement>>&
 			return;
 		}
 	}
-	elems << new T(cptr);
+	if constexpr(std::is_constructible_v<T, ContextPtr>) {
+		elems << new T(cptr);
+	} else {
+		unused(cptr);
+		elems << new T();
+	}
 }
 
 void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
@@ -132,6 +137,7 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 				  ImGuiWindowFlags_NoResize |
 				  ImGuiWindowFlags_NoScrollbar |
 				  ImGuiWindowFlags_NoSavedSettings |
+				  ImGuiWindowFlags_NoBringToFrontOnFocus |
 				  ImGuiWindowFlags_MenuBar;
 
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
@@ -148,6 +154,14 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 				if(ImGui::MenuItem("Engine view"))	show_element<EngineView>(context(), _elements);
 				if(ImGui::MenuItem("Entities"))		show_element<EntityView>(context(),_elements);
 				if(ImGui::MenuItem("Settings"))		show_element<SettingsPanel>(context(), _elements);
+
+
+				if(ImGui::BeginMenu("Debug")) {
+					if(ImGui::MenuItem("Camera debug")) show_element<CameraDebug>(context(), _elements);
+					if(ImGui::MenuItem("Performances")) show_element<PerformanceMetrics>(context(), _elements);
+					ImGui::EndMenu();
+				}
+
 				ImGui::EndMenu();
 			}
 			ImGui::EndMenuBar();
@@ -162,8 +176,6 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 			for(auto& e : _elements) {
 				e->paint(recorder, token);
 			}
-
-			//ImGui::ShowDemoWindow();
 		}
 		ImGui::EndDockspace();
 	}
