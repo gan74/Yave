@@ -27,88 +27,108 @@ namespace yave {
 
 const char class_name[] = "Yave";
 
-void Window::mouse_event(Window* window, UINT uMsg, POINTS pt) {
-	if(window->event_handler()) {
-		auto handler = window->event_handler();
-		math::Vec2i pos = math::Vec2i(pt.x, pt.y);
-		switch(uMsg) {
-			case WM_LBUTTONDOWN:
-			case WM_RBUTTONDOWN:
-				handler->mouse_pressed(pos, uMsg == WM_LBUTTONDOWN ? EventHandler::LeftButton : EventHandler::RightButton);
-				break;
-
-			case WM_LBUTTONUP:
-			case WM_RBUTTONUP:
-				handler->mouse_released(pos, uMsg == WM_LBUTTONUP ? EventHandler::LeftButton : EventHandler::RightButton);
-				break;
-
-			case WM_MOUSEMOVE:
-				handler->mouse_moved(pos);
-				break;
-
-			default:
-				break;
-		}
-	}
-}
 
 static Key to_key(WPARAM param) {
 	char c = char(param);
 	if(std::isalpha(c)) {
-		return Key(std::tolower(c));
+		return Key(std::toupper(c));
+	}
+	switch(param) {
+		case VK_TAB:	return Key::Tab;
+		case VK_CLEAR:	return Key::Clear;
+		case VK_BACK:	return Key::Backspace;
+		case VK_RETURN: return Key::Enter;
+		case VK_ESCAPE: return Key::Escape;
+		case VK_PRIOR:	return Key::PageUp;
+		case VK_NEXT:	return Key::PageDown;
+		case VK_END:	return Key::End;
+		case VK_HOME:	return Key::Home;
+		case VK_LEFT:	return Key::Left;
+		case VK_RIGHT:	return Key::Right;
+		case VK_UP:		return Key::Up;
+		case VK_DOWN:	return Key::Down;
+		case VK_INSERT: return Key::Insert;
+		case VK_DELETE: return Key::Delete;
+		case VK_SPACE:	return Key::Space;
 	}
 	return Key::Unknown;
 }
 
 LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
-	auto& l_param = lParam;
-	switch(uMsg) {
-		case WM_CLOSE:
-			window->close();
-			return 0;
-
-		case WM_SIZE:
-				// we get here if the window has changed size, we should rebuild most
-				// of our window resources before rendering to this window again.
-				window->_size = math::Vec2ui(usize(LOWORD(lParam)), usize(HIWORD(lParam)));
-				window->resized();
-			break;
-
-		case WM_KEYDOWN:
-			if(wParam == VK_ESCAPE) {
+	if(window) {
+		auto& l_param = lParam;
+		switch(uMsg) {
+			case WM_CLOSE:
 				window->close();
 				return 0;
-			}
-			[[fallthrough]];
 
-		case WM_KEYUP:
-			if(auto handler = window->event_handler(); handler) {
-				auto k = to_key(wParam);
-				if(k != Key::Unknown) {
-					uMsg == WM_KEYDOWN
-						? handler->key_pressed(k)
-						: handler->key_released(k);
+			case WM_SIZE:
+				window->_size = math::Vec2ui(usize(LOWORD(lParam)), usize(HIWORD(lParam)));
+				window->resized();
+				return 0;
+
+			case WM_KEYDOWN:
+			case WM_KEYUP:
+				if(auto handler = window->event_handler(); handler) {
+					auto k = to_key(wParam);
+					if(k != Key::Unknown) {
+						uMsg == WM_KEYDOWN
+							? handler->key_pressed(k)
+							: handler->key_released(k);
+						return 0;
+					}
+				} else if(uMsg == WM_KEYDOWN && wParam == VK_ESCAPE) {
+					// escape close the window by default
+					window->close();
+					return 0;
 				}
-			}
-			break;
+				break;
 
-		case WM_CHAR:
-			if(auto handler = window->event_handler(); handler) {
-				handler->char_input(u32(wParam));
-			}
-			break;
+			case WM_CHAR:
+				if(auto handler = window->event_handler(); handler) {
+					handler->char_input(u32(wParam));
+					return 0;
+				}
+				break;
 
-		case WM_LBUTTONDOWN:
-		case WM_RBUTTONDOWN:
-		case WM_LBUTTONUP:
-		case WM_RBUTTONUP:
-		case WM_MOUSEMOVE:
-			mouse_event(window, uMsg, reinterpret_cast<const POINTS&>(l_param));
-			break;
+			case WM_LBUTTONDOWN:
+			case WM_RBUTTONDOWN:
+			case WM_LBUTTONUP:
+			case WM_RBUTTONUP:
+			case WM_MOUSEMOVE:
+			case WM_MOUSEWHEEL:
+				if(auto handler = window->event_handler(); handler) {
+					auto pt = reinterpret_cast<const POINTS&>(l_param);
+					math::Vec2i pos = math::Vec2i(pt.x, pt.y);
+					switch(uMsg) {
+						case WM_LBUTTONDOWN:
+						case WM_RBUTTONDOWN:
+							handler->mouse_pressed(pos, uMsg == WM_LBUTTONDOWN ? EventHandler::LeftButton : EventHandler::RightButton);
+							return 0;
 
-		default:
-			break;
+						case WM_LBUTTONUP:
+						case WM_RBUTTONUP:
+							handler->mouse_released(pos, uMsg == WM_LBUTTONUP ? EventHandler::LeftButton : EventHandler::RightButton);
+							return 0;
+
+						case WM_MOUSEMOVE:
+							handler->mouse_moved(pos);
+							return 0;
+
+						case WM_MOUSEWHEEL:
+							handler->mouse_wheel(int(i16(HIWORD(wParam)) / WHEEL_DELTA));
+							return 0;
+
+						default:
+							break;
+					}
+				}
+				break;
+
+			default:
+				break;
+		}
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
@@ -137,7 +157,7 @@ Window::Window(const math::Vec2ui& size, const core::String& name, Flags flags) 
 	DWORD style	= WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
 	if(flags & Resizable) {
-		style |= WS_SIZEBOX;
+		style |= WS_SIZEBOX | WS_MAXIMIZEBOX;
 	}
 
 	RECT wr = {0, 0, LONG(size.x()), LONG(size.y())};

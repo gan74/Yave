@@ -25,43 +25,59 @@ SOFTWARE.
 
 namespace editor {
 
+static void set_key_bindings() {
+	ImGuiIO& io = ImGui::GetIO();
+	io.KeyMap[ImGuiKey_Tab]			= int(Key::Tab);
+	io.KeyMap[ImGuiKey_LeftArrow]	= int(Key::Left);
+	io.KeyMap[ImGuiKey_RightArrow]	= int(Key::Right);
+	io.KeyMap[ImGuiKey_UpArrow]		= int(Key::Up);
+	io.KeyMap[ImGuiKey_DownArrow]	= int(Key::Down);
+	io.KeyMap[ImGuiKey_PageUp]		= int(Key::PageUp);
+	io.KeyMap[ImGuiKey_PageDown]	= int(Key::PageDown);
+	io.KeyMap[ImGuiKey_Home]		= int(Key::Home);
+	io.KeyMap[ImGuiKey_End]			= int(Key::End);
+	io.KeyMap[ImGuiKey_Delete]		= int(Key::Delete);
+	io.KeyMap[ImGuiKey_Backspace]	= int(Key::Backspace);
+	io.KeyMap[ImGuiKey_Enter]		= int(Key::Enter);
+	io.KeyMap[ImGuiKey_Escape]		= int(Key::Escape);
+}
+
+
 MainEventHandler::MainEventHandler() {
+	set_key_bindings();
 }
 
 MainEventHandler::~MainEventHandler() {
 }
 
 void MainEventHandler::mouse_moved(const math::Vec2i& pos) {
-	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ImVec2(pos.x(), pos.y());
+	ImGui::GetIO().MousePos = ImVec2(pos.x(), pos.y());
 }
 
 void MainEventHandler::mouse_pressed(const math::Vec2i& pos, MouseButton button) {
 	mouse_moved(pos);
-	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[button != MouseButton::LeftButton] = true;
+	ImGui::GetIO().MouseDown[usize(button)] = true;
 }
 
 void MainEventHandler::mouse_released(const math::Vec2i& pos, MouseButton button) {
 	mouse_moved(pos);
-	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[button != MouseButton::LeftButton] = false;
+	ImGui::GetIO().MouseDown[usize(button)] = false;
+}
+
+void MainEventHandler::mouse_wheel(int delta) {
+	ImGui::GetIO().MouseWheel += delta;
 }
 
 void MainEventHandler::char_input(u32 character) {
-	ImGuiIO& io = ImGui::GetIO();
-	u32 utf8[2] = {character, 0};
-	io.AddInputCharactersUTF8(reinterpret_cast<const char*>(utf8));
+	ImGui::GetIO().AddInputCharacter(ImWchar(character));
 }
 
 void MainEventHandler::key_pressed(Key key) {
-	ImGuiIO& io = ImGui::GetIO();
-	io.KeysDown[u32(key)] = true;
+	ImGui::GetIO().KeysDown[u32(key)] = true;
 }
 
 void MainEventHandler::key_released(Key key) {
-	ImGuiIO& io = ImGui::GetIO();
-	io.KeysDown[u32(key)] = false;
+	ImGui::GetIO().KeysDown[u32(key)] = false;
 }
 
 }

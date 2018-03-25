@@ -117,6 +117,19 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	{
 		_entity_view.paint(recorder, token);
 		_engine_view.paint(recorder, token);
+
+		ImGui::BeginDock("Asset browser");
+		ImGui::EndDock();
+
+		ImGui::ShowDemoWindow();
+
+		ImGui::BeginDock("Properties");
+		ImGui::Button("button");
+		static float value = 0.0f;
+		ImGui::SliderFloat("slider", &value, -1.0f, 1.0f);
+		static bool checked = true;
+		ImGui::Checkbox("checkbox", &checked);
+		ImGui::EndDock();
 	}
 	ImGui::EndDockspace();
 	ImGui::End();

@@ -39,10 +39,13 @@ class MainEventHandler : public EventHandler
 		void mouse_pressed(const math::Vec2i& pos, MouseButton button) override;
 		void mouse_released(const math::Vec2i& pos, MouseButton button) override;
 
+		void mouse_wheel(int delta) override;
+
 		void char_input(u32 character) override;
 
 		void key_pressed(Key key) override;
 		void key_released(Key key) override;
+
 
 	private:
 };
