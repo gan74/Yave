@@ -19,49 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_H
-#define EDITOR_H
+#ifndef EDITOR_WIDGETS_SETTINGSPANEL_H
+#define EDITOR_WIDGETS_SETTINGSPANEL_H
 
-#include <yave/yave.h>
-
-
-namespace yave {
-
-class RenderPassRecorder;
-
-namespace experimental {
-	// forward declaring namespaces ...
-}
-
-}
+#include <editor/ui/Dock.h>
 
 namespace editor {
 
-using namespace yave;
-using namespace yave::experimental;
-
-
-using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
-
-class EditorContext;
-using ContextPtr = EditorContext*;
-
-
-class ContextLinked {
+class SettingsPanel : public Dock, public ContextLinked {
 	public:
-		ContextLinked() = default;
-
-		ContextLinked(EditorContext* ctx) : _ctx(ctx) {}
-
-		ContextPtr context() const { return _ctx; }
-
-		// see EditorContext.cpp
-		DevicePtr device() const;
+		SettingsPanel(ContextPtr cptr);
 
 	private:
-		ContextPtr _ctx = nullptr;
+		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 };
 
 }
 
-#endif // EDITOR_H
+#endif // EDITOR_WIDGETS_SETTINGSPANEL_H

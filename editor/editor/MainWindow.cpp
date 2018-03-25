@@ -42,21 +42,19 @@ SOFTWARE.
 
 namespace editor {
 
-MainWindow::MainWindow(DebugParams params) :
+MainWindow::MainWindow(ContextPtr cptr) :
 		Window({1280, 768}, "Yave", Window::Resizable),
-		_instance(params),
-		_device(_instance),
-		_context(&_device),
-		_engine_view(&_context),
-		_entity_view(&_context) {
+		ContextLinked(cptr) {
 
 	ImGui::CreateContext();
 	ImGui::InitDock();
 	ImGui::GetIO().IniFilename = "editor.ini";
 	ImGui::GetIO().LogFilename = "editor_logs.txt";
 
+	_elements << new EngineView(context());
+	_elements << new EntityView(context());
 
-	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(&_device));
+	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(device()));
 	_ui_renderer = new SimpleEndOfPipe(gui);
 
 	set_event_handler(new MainEventHandler());
@@ -67,19 +65,18 @@ MainWindow::~MainWindow() {
 }
 
 
-
 void MainWindow::resized() {
 	create_swapchain();
 }
 
 void MainWindow::create_swapchain() {
 	// needed because the swapchain imediatly destroys it images
-	_device.queue(vk::QueueFlagBits::eGraphics).wait();
+	device()->queue(vk::QueueFlagBits::eGraphics).wait();
 
 	if(_swapchain) {
 		_swapchain->reset();
 	} else {
-		_swapchain = new Swapchain(&_device, this);
+		_swapchain = new Swapchain(device(), this);
 	}
 }
 
@@ -89,65 +86,20 @@ void MainWindow::exec() {
 	while(update()) {
 
 		FrameToken frame = _swapchain->next_frame();
-		CmdBufferRecorder<> recorder(_device.create_cmd_buffer());
+		CmdBufferRecorder<> recorder(device()->create_cmd_buffer());
 
 		render(recorder, frame);
 		present(recorder, frame);
 	}
 
-	_device.queue(QueueFamily::Graphics).wait();
-}
-
-void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = math::Vec2(_swapchain->size());
-
-	ImGui::NewFrame();
-	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
-					  ImGuiWindowFlags_NoResize |
-					  ImGuiWindowFlags_NoScrollbar |
-					  ImGuiWindowFlags_NoInputs |
-					  ImGuiWindowFlags_NoSavedSettings |
-					  ImGuiWindowFlags_NoFocusOnAppearing |
-					  ImGuiWindowFlags_NoBringToFrontOnFocus;
-	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::Begin("Main window", nullptr, flags);
-	ImGui::BeginDockspace();
-	{
-		_entity_view.paint(recorder, token);
-		_engine_view.paint(recorder, token);
-
-		ImGui::BeginDock("Asset browser");
-		ImGui::EndDock();
-
-		ImGui::ShowDemoWindow();
-
-		ImGui::BeginDock("Properties");
-		ImGui::Button("button");
-		static float value = 0.0f;
-		ImGui::SliderFloat("slider", &value, -1.0f, 1.0f);
-		static bool checked = true;
-		ImGui::Checkbox("checkbox", &checked);
-		ImGui::EndDock();
-	}
-	ImGui::EndDockspace();
-	ImGui::End();
-	ImGui::EndFrame();
-	ImGui::Render();
-
-	// render ui pipeline into cmd buffer
-	{
-		RenderingPipeline pipeline(_ui_renderer);
-		pipeline.render(recorder, token);
-	}
+	device()->queue(QueueFamily::Graphics).wait();
 }
 
 void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
-	auto graphic_queue = _device.queue(QueueFamily::Graphics).vk_queue();
+	auto graphic_queue = device()->queue(QueueFamily::Graphics).vk_queue();
 	auto vk_buffer = cmd_buffer.vk_cmd_buffer();
 
 	graphic_queue.submit(vk::SubmitInfo()
@@ -162,5 +114,73 @@ void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token)
 
 	_swapchain->present(token, graphic_queue);
 }
+
+
+template<typename T>
+static void show_element(ContextPtr cptr, core::Vector<core::Unique<UiElement>>& elems) {
+	for(auto& e : elems) {
+		if(auto t = dynamic_cast<T*>(e.as_ptr())) {
+			t->show();
+			return;
+		}
+	}
+	elems << new T(cptr);
+}
+
+void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
+				  ImGuiWindowFlags_NoResize |
+				  ImGuiWindowFlags_NoScrollbar |
+				  ImGuiWindowFlags_NoSavedSettings |
+				  ImGuiWindowFlags_MenuBar;
+
+	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
+
+	ImGui::NewFrame();
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+	ImGui::Begin("Main window", nullptr, flags);
+
+	// menu
+	{
+		if(ImGui::BeginMenuBar()) {
+			if(ImGui::BeginMenu("View")) {
+				if(ImGui::MenuItem("Engine view"))	show_element<EngineView>(context(), _elements);
+				if(ImGui::MenuItem("Entities"))		show_element<EntityView>(context(),_elements);
+				if(ImGui::MenuItem("Settings"))		show_element<SettingsPanel>(context(), _elements);
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+		}
+	}
+
+
+	// main UI
+	{
+		ImGui::BeginDockspace();
+		{
+			for(auto& e : _elements) {
+				e->paint(recorder, token);
+			}
+
+			//ImGui::ShowDemoWindow();
+		}
+		ImGui::EndDockspace();
+	}
+
+
+	ImGui::End();
+	ImGui::EndFrame();
+	ImGui::Render();
+
+
+
+	// render ui pipeline into cmd buffer
+	{
+		RenderingPipeline pipeline(_ui_renderer);
+		pipeline.render(recorder, token);
+	}
+}
+
 
 }

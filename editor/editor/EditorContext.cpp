@@ -24,12 +24,44 @@ SOFTWARE.
 
 #include "scenes.h"
 
+#include <y/io/File.h>
+
 namespace editor {
+
+DevicePtr ContextLinked::device() const {
+	return _ctx ? _ctx->device() : nullptr;
+}
 
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_scene(create_scene(device()).first),
 		_scene_view(new SceneView(*_scene)) {
+
+	load_settings();
+}
+
+EditorContext::~EditorContext() {
+	save_settings();
+}
+
+void EditorContext::save_settings() {
+	if(auto r = io::File::create("./editor_settings.dat"); r.is_ok()) {
+		r.unwrap().write_one(key_settings);
+	}
+}
+
+void EditorContext::load_settings() {
+	if(auto r = io::File::open("./editor_settings.dat"); r.is_ok()) {
+		r.unwrap().read_one(key_settings);
+	}
+}
+
+Scene* EditorContext::scene() const {
+	return _scene.as_ptr();
+}
+
+SceneView* EditorContext::scene_view() const {
+	return _scene_view.as_ptr();
 }
 
 }

@@ -26,9 +26,6 @@ SOFTWARE.
 
 namespace yave {
 
-
-
-
 core::Result<QueueFamily> QueueFamily::create(const PhysicalDevice& dev, u32 index) {
 	auto families = dev.vk_physical_device().getQueueFamilyProperties();
 	if(families.size() >= index) {

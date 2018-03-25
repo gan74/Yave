@@ -36,8 +36,8 @@ namespace editor {
 EngineView::EngineView(ContextPtr cptr) :
 		Dock("Engine view"),
 		ContextLinked(cptr),
-		_ibl_data(new IBLData(context()->device())),
-		_uniform_buffer(context()->device(), 1),
+		_ibl_data(new IBLData(device())),
+		_uniform_buffer(device(), 1),
 		_gizmo(context()) {
 }
 
@@ -46,14 +46,14 @@ math::Vec2ui EngineView::render_size() const {
 }
 
 void EngineView::create_renderer(const math::Vec2ui& size) {
-	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(context()->device(), *context()->scene_view()));
+	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), *context()->scene_view()));
 	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size));
 	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, _ibl_data));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
 	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
 
-	_ui_material = new Material(context()->device(), MaterialData()
+	_ui_material = new Material(device(), MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("copy.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
 			.set_bindings({Binding(_renderer->output()), Binding(_uniform_buffer)})
@@ -111,6 +111,10 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 }
 
 void EngineView::update_camera() {
+	if(!ImGui::IsWindowFocused()) {
+		return;
+	}
+
 	auto size = render_size();
 	auto& camera = context()->scene_view()->camera();
 	math::Vec3 cam_pos = camera.position();
@@ -121,16 +125,16 @@ void EngineView::update_camera() {
 	float cam_speed = 500.0f;
 	float dt = cam_speed / ImGui::GetIO().Framerate;
 
-	if(ImGui::IsKeyDown(int(Key::W))) {
+	if(ImGui::IsKeyDown(int(context()->key_settings.move_forward))) {
 		cam_pos += cam_fwd * dt;
 	}
-	if(ImGui::IsKeyDown(int(Key::S))) {
+	if(ImGui::IsKeyDown(int(context()->key_settings.move_backward))) {
 		cam_pos -= cam_fwd * dt;
 	}
-	if(ImGui::IsKeyDown(int(Key::A))) {
+	if(ImGui::IsKeyDown(int(context()->key_settings.move_left))) {
 		cam_pos += cam_lft * dt;
 	}
-	if(ImGui::IsKeyDown(int(Key::D))) {
+	if(ImGui::IsKeyDown(int(context()->key_settings.move_right))) {
 		cam_pos -= cam_lft * dt;
 	}
 

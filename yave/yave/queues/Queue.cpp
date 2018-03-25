@@ -52,7 +52,7 @@ vk::Queue Queue::vk_queue() const {
 	return _queue;
 }
 
-void Queue::wait() {
+void Queue::wait() const {
 	_queue.waitIdle();
 }
 

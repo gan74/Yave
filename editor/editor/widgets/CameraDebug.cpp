@@ -21,23 +21,17 @@ SOFTWARE.
 **********************************/
 #include "CameraDebug.h"
 
+#include <editor/EditorContext.h>
+
 #include <imgui/imgui.h>
 
 namespace editor {
 
-CameraDebug::CameraDebug(SceneView* view) : Widget("Camera debug") {
-	set_scene_view(view);
-}
-
-void CameraDebug::set_scene_view(SceneView* view) {
-	_view = view;
+CameraDebug::CameraDebug(ContextPtr cptr) : Widget("Camera debug"), ContextLinked(cptr) {
 }
 
 void CameraDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(!_view) {
-		return;
-	}
-	const auto& camera = _view->camera();
+	const auto& camera = context()->scene_view()->camera();
 	auto pos = camera.position();
 	auto fwd = camera.forward();
 

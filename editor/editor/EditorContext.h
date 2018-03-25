@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_EDITORCONTEXT_H
 #define EDITOR_EDITORCONTEXT_H
 
-#include <editor/editor.h>
+#include <editor/settings/KeySettings.h>
 
 #include <yave/device/DeviceLinked.h>
 #include <yave/objects/Transformable.h>
@@ -33,29 +33,23 @@ namespace editor {
 class EditorContext : public DeviceLinked, NonCopyable {
 	public:
 		EditorContext(DevicePtr dptr);
+		~EditorContext();
+
+		Scene* scene() const;
+		SceneView* scene_view() const;
+
+		void save_settings();
+		void load_settings();
 
 
-		Transformable* select(Transformable* tr) {
-			return std::exchange(_selected, tr);
-		}
+		KeySettings key_settings;
 
-		Scene* scene() const {
-			return _scene.as_ptr();
-		}
-
-		SceneView* scene_view() const {
-			return _scene_view.as_ptr();
-		}
-
-		Transformable* selected() const {
-			return _selected;
-		}
+		NotOwner<Transformable*> selected = nullptr;
 
 	private:
 		core::Unique<Scene> _scene;
 		core::Unique<SceneView> _scene_view;
 
-		NotOwner<Transformable*> _selected = nullptr;
 
 };
 

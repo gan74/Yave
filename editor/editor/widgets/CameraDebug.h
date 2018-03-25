@@ -28,11 +28,9 @@ SOFTWARE.
 
 namespace editor {
 
-class CameraDebug : public Widget {
+class CameraDebug : public Widget, public ContextLinked {
 	public:
-		CameraDebug(SceneView* view = nullptr);
-
-		void set_scene_view(SceneView* view);
+		CameraDebug(ContextPtr cptr);
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;

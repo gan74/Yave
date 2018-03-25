@@ -19,49 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_H
-#define EDITOR_H
 
-#include <yave/yave.h>
+#include "SettingsPanel.h"
 
+#include <editor/EditorContext.h>
 
-namespace yave {
-
-class RenderPassRecorder;
-
-namespace experimental {
-	// forward declaring namespaces ...
-}
-
-}
+#include <imgui/imgui.h>
 
 namespace editor {
 
-using namespace yave;
-using namespace yave::experimental;
+static void keybox(const char* name, Key& key) {
+	char k[2] = {char(key), 0};
 
+	ImGuiTextEditCallback callback = [](ImGuiTextEditCallbackData* data) { data->CursorPos = 0; return 0; };
+	ImGui::InputText(name, k, sizeof(k), ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_AlwaysInsertMode | ImGuiInputTextFlags_CallbackAlways, callback);
 
-using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
-
-class EditorContext;
-using ContextPtr = EditorContext*;
-
-
-class ContextLinked {
-	public:
-		ContextLinked() = default;
-
-		ContextLinked(EditorContext* ctx) : _ctx(ctx) {}
-
-		ContextPtr context() const { return _ctx; }
-
-		// see EditorContext.cpp
-		DevicePtr device() const;
-
-	private:
-		ContextPtr _ctx = nullptr;
-};
-
+	if(std::isalpha(k[0])) {
+		key = Key(k[0]);
+	}
 }
 
-#endif // EDITOR_H
+SettingsPanel::SettingsPanel(ContextPtr cptr) : Dock("Settings"), ContextLinked(cptr) {
+}
+
+void SettingsPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+	int flags = ImGuiTreeNodeFlags_DefaultOpen;
+
+	if(ImGui::CollapsingHeader("Camera", flags)) {
+		keybox("Forward", context()->key_settings.move_forward);
+		keybox("Backward", context()->key_settings.move_backward);
+		keybox("Left", context()->key_settings.move_left);
+		keybox("Right", context()->key_settings.move_right);
+	}
+}
+
+}

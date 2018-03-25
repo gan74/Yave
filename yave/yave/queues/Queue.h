@@ -39,7 +39,7 @@ class Queue : NonCopyable {
 
 		vk::Queue vk_queue() const;
 
-		void wait();
+		void wait() const;
 
 		template<typename Policy, CmdBufferUsage Usage>
 		auto submit(RecordedCmdBuffer<Usage>&& cmd, const Policy& policy = Policy()) const {

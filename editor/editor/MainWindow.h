@@ -28,6 +28,7 @@ SOFTWARE.
 #include <editor/EditorContext.h>
 #include <editor/views/EngineView.h>
 #include <editor/views/EntityView.h>
+#include <editor/widgets/SettingsPanel.h>
 
 #include <yave/window/Window.h>
 #include <yave/device/Instance.h>
@@ -36,13 +37,12 @@ SOFTWARE.
 #include <yave/renderers/renderers.h>
 #include <yave/scene/SceneView.h>
 
-
 namespace editor {
 
-class MainWindow : private Window {
+class MainWindow : private Window, public ContextLinked {
 
 	public:
-		MainWindow(DebugParams params);
+		MainWindow(ContextPtr cptr);
 		~MainWindow();
 
 		void exec();
@@ -55,14 +55,7 @@ class MainWindow : private Window {
 
 		void create_swapchain();
 
-
-		Instance _instance;
-		Device _device;
-
-		EditorContext _context;
-
-		EngineView _engine_view;
-		EntityView _entity_view;
+		core::Vector<core::Unique<UiElement>> _elements;
 
 		core::Unique<Swapchain> _swapchain;
 		Node::Ptr<EndOfPipe> _ui_renderer;

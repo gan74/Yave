@@ -60,12 +60,12 @@ Gizmo::Gizmo(ContextPtr cptr) : Gadget("Gizmo"), ContextLinked(cptr) {
 }
 
 void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(!context()->selected()) {
+	if(!context()->selected) {
 		return;
 	}
 
 	math::Matrix4<> view_proj = context()->scene_view()->camera().viewproj_matrix();
-	math::Transform<> object = context()->selected()->transform();
+	math::Transform<> object = context()->selected->transform();
 
 	auto projected = (view_proj * math::Vec4(object.position(), 1.0f));
 	auto perspective = gizmo_size * projected.w();
@@ -91,7 +91,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	auto project_mouse = [=]{
 		auto inv_matrix = context()->scene_view()->camera().inverse_matrix();
 		auto cam_pos = context()->scene_view()->camera().position();
-		auto object = context()->selected()->transform();
+		auto object = context()->selected->transform();
 
 		math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 		math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
@@ -121,7 +121,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		auto new_pos = project_mouse() + _dragging_offset;
 		for(usize i = 0; i != 3; ++i) {
 			if(_dragging_mask & (1 << i)) {
-				context()->selected()->position()[i] = new_pos[i];
+				context()->selected->position()[i] = new_pos[i];
 			}
 		}
 	}

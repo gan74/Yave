@@ -19,49 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_H
-#define EDITOR_H
+#ifndef EDITOR_SETTINGS_KEYSETTINGS_H
+#define EDITOR_SETTINGS_KEYSETTINGS_H
 
-#include <yave/yave.h>
-
-
-namespace yave {
-
-class RenderPassRecorder;
-
-namespace experimental {
-	// forward declaring namespaces ...
-}
-
-}
+#include <editor/editor.h>
+#include <yave/window/EventHandler.h>
 
 namespace editor {
 
-using namespace yave;
-using namespace yave::experimental;
-
-
-using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
-
-class EditorContext;
-using ContextPtr = EditorContext*;
-
-
-class ContextLinked {
-	public:
-		ContextLinked() = default;
-
-		ContextLinked(EditorContext* ctx) : _ctx(ctx) {}
-
-		ContextPtr context() const { return _ctx; }
-
-		// see EditorContext.cpp
-		DevicePtr device() const;
-
-	private:
-		ContextPtr _ctx = nullptr;
+struct KeySettings {
+	Key move_forward = Key::W;
+	Key move_backward = Key::S;
+	Key move_right = Key::D;
+	Key move_left = Key::A;
 };
+
+static_assert(std::is_standard_layout_v<KeySettings> && std::is_trivially_copyable_v<KeySettings>);
 
 }
 
-#endif // EDITOR_H
+#endif // EDITOR_SETTINGS_KEYSETTINGS_H
