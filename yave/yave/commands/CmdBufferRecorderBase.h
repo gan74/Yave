@@ -37,16 +37,11 @@ namespace yave {
 class DescriptorSetBase;
 
 namespace detail {
-using DescriptorSetList = std::initializer_list<std::reference_wrapper<const DescriptorSetBase>>;
+using DescriptorSetList = core::ArrayView<std::reference_wrapper<const DescriptorSetBase>>;
 }
 
 
 class PushConstant : NonCopyable {
-		template<typename... Args>
-		static std::true_type is_tuple(const std::tuple<Args...>&);
-
-		template<typename T>
-		static std::false_type is_tuple(const T&);
 
 	public:
 		constexpr PushConstant() = default;
@@ -54,13 +49,14 @@ class PushConstant : NonCopyable {
 		template<typename T>
 		constexpr PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
-			static_assert(!decltype(is_tuple(data))::value, "std::tuple is not standard layout");
+			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
+			static_assert(!std::is_standard_layout_v<std::tuple<int, char>>, "std::tuple is not standard layout");
 		}
 
 		template<typename T>
 		constexpr PushConstant(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
-			static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
+			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
 		}
 
 		PushConstant(PushConstant&&) = delete;

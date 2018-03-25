@@ -69,7 +69,6 @@ class Vector : ResizePolicy, Allocator {
 
 		Vector() = default;
 
-
 		Vector(const Vector& other) : Vector(other.begin(), other.end()) {
 		}
 
@@ -88,6 +87,9 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
+		}
+
+		explicit Vector(ArrayView<value_type> other) : Vector(other.begin(), other.end()) {
 		}
 
 		template<typename... Args>
@@ -109,12 +111,16 @@ class Vector : ResizePolicy, Allocator {
 			return *this;
 		}
 
+		Vector& operator=(ArrayView<value_type> l) {
+			assign(l.begin(), l.end());
+			return *this;
+		}
+
 		template<typename... Args>
 		Vector& operator=(const Vector<Elem, Args...>& l) {
 			assign(l.begin(), l.end());
 			return *this;
 		}
-
 
 		bool operator==(ArrayView<value_type> v) const {
 			return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
@@ -178,10 +184,6 @@ class Vector : ResizePolicy, Allocator {
 		void push_back(const It& beg_it, const It& end_it) {
 			set_min_capacity(size() + std::distance(beg_it, end_it));
 			std::copy(beg_it, end_it, std::back_inserter(*this));
-		}
-
-		void push_back(const std::initializer_list<value_type>& l) {
-			push_back(l.begin(), l.end());
 		}
 
 		value_type pop() {
@@ -304,8 +306,10 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 	private:
+		static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
+
 		void move_range(data_type* dst, data_type* src, usize n) {
-			if constexpr(std::is_pod_v<data_type>) {
+			if constexpr(is_data_trivial) {
 				std::copy_n(src, n, dst);
 			} else {
 				for(; n; --n) {
@@ -315,7 +319,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		void clear(data_type* beg, data_type* en) {
-			if(!std::is_pod_v<data_type>) {
+			if(!is_data_trivial) {
 				while(en != beg) {
 					(--en)->~data_type();
 				}

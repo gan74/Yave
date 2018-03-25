@@ -28,7 +28,7 @@ namespace y {
 namespace core {
 
 template<typename T>
-class ArrayView : NonCopyable {
+class ArrayView {
 
 	template<typename U>
 	static constexpr bool is_compat = std::is_constructible_v<const T*, U>;
@@ -41,6 +41,8 @@ class ArrayView : NonCopyable {
 		using const_iterator = const T*;
 
 		ArrayView() = default;
+
+		ArrayView(const ArrayView&) = default;
 
 		ArrayView(std::nullptr_t) {
 		}
@@ -65,6 +67,8 @@ class ArrayView : NonCopyable {
 		template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
 		ArrayView(const C& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
 		}
+
+		ArrayView& operator=(const ArrayView&) = delete;
 
 		usize size() const {
 			return _size;
