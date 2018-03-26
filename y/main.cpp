@@ -51,7 +51,7 @@ int main() {
 
 	concurrent::init_thread_pool();
 	{
-		DebugTimer timer("parallel_for_each(" + str(concurrent::concurency()) + ")");
+		//DebugTimer timer("parallel_for_each(" + str(concurrent::concurency()) + ")");
 		concurrent::parallel_for_each(v.begin(), v.end(), [&](auto&&) {
 			slow();
 		});
@@ -59,7 +59,7 @@ int main() {
 
 	StaticThreadPool pool;
 	{
-		DebugTimer timer("pool for_each(" + str(concurrent::concurency()) + ")");
+		//DebugTimer timer("pool for_each(" + str(concurrent::concurency()) + ")");
 		pool.parallel_for_each(v.begin(), v.end(), [&](auto&&) {
 			slow();
 		});
