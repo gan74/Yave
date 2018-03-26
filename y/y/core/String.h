@@ -103,21 +103,22 @@ class String {
 		String(const std::string& str);
 		String(std::string_view str);
 
-		String(const char* str); // NOT explicit
+		String(const char* str);
 		String(const char* str, usize len);
 		String(const char* beg, const char* end);
 
+
 		template<typename It>
-		String(const It& beg_it, const It& end_it);
+		String(It beg_it, It end_it) : String(nullptr, std::distance(beg_it, end_it)) {
+			std::copy(beg_it, end_it, begin());
+		}
 
 		~String();
 
 		// String take ownership
 		static String from_owned(Owner<char*> owned);
 
-		template<typename T>
-		static String from(T&& t);
-		static const String& from(const String& t);
+		void set_min_capacity(usize cap);
 
 		usize size() const;
 		usize capacity() const;
@@ -129,8 +130,8 @@ class String {
 		char* data();
 		const char* data() const;
 
-		iterator find(const String& str);
-		const_iterator find(const String& str) const;
+		iterator find(const char* str);
+		const_iterator find(const char* str) const;
 
 		String sub_str(usize beg) const;
 		String sub_str(usize beg, usize len) const;
@@ -164,7 +165,7 @@ class String {
 		bool operator<(const String& str) const;
 
 
-		template<typename T, typename std::enable_if_t<std::is_convertible_v<T, String>>>
+		template<typename T>
 		String& operator=(T&& t) {
 			return operator=(String(std::forward<T>(t)));
 		}
@@ -220,28 +221,12 @@ class String {
 
 
 
-inline String str_from_owned(Owner<char*> owned) {
-	return String::from_owned(owned);
-}
-
-template<typename T>
-inline String str(T&& t) {
-	return String::from(std::forward<T>(t));
-}
-
-inline String str() {
-	return String();
-}
 
 
-template<typename It>
-String::String(const It& beg_it, const It& end_it) : String(nullptr, std::distance(beg_it, end_it)) {
-	std::copy(beg_it, end_it, begin());
-}
 
 
 template<typename T>
-String String::from(T&& t) {
+String str(T&& t) {
 	if constexpr (std::is_convertible_v<T, String>) {
 		return String(std::forward<T>(t));
 	} else {
@@ -249,10 +234,6 @@ String String::from(T&& t) {
 		oss << std::forward<T>(t);
 		return oss.str();
 	}
-}
-
-inline const String& String::from(const String& t) {
-	return t;
 }
 
 

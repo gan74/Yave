@@ -43,6 +43,9 @@ String::LongData::LongData(const char* str, usize len) : LongData(str, compute_c
 }
 
 String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_long(cap)), capacity(cap), length(len) {
+	if(cap <= len) {
+		y_fatal("Invalid string capacity.");
+	}
 	if(str) {
 		std::memcpy(data, str, len);
 	}
@@ -69,11 +72,11 @@ String::ShortData::ShortData(const char* str, usize len) : _length(len) {
 // --------------------------------------------------- ALLOC ---------------------------------------------------
 
 char* String::alloc_long(usize capacity) {
-	return new char[capacity + 1];
+	return new char[capacity];
 }
 
 usize String::compute_capacity(usize len) {
-	return DefaultVectorResizePolicy().ideal_capacity(len);
+	return DefaultVectorResizePolicy().ideal_capacity(len + 1);
 }
 
 void String::free_long(LongData& d) {
@@ -136,6 +139,19 @@ String String::from_owned(Owner<char*> owned) {
 	return str;
 }
 
+
+void String::set_min_capacity(usize cap) {
+	if(cap > capacity() && cap > max_short_size) {
+		usize self_size = size();
+
+		LongData new_dat(data(), compute_capacity(cap), self_size);
+		if(is_long()) {
+			free_long(_l);
+		}
+		std::memcpy(&_l, &new_dat, sizeof(LongData));
+	}
+}
+
 usize String::size() const {
 	return is_long() ? _l.length : _s._length;
 }
@@ -167,11 +183,11 @@ const char* String::data() const {
 	return is_long() ? _l.data : _s._data;
 }
 
-String::iterator String::find(const String& str) {
+String::iterator String::find(const char* str) {
 	return const_cast<iterator>(const_this()->find(str));
 }
 
-String::const_iterator String::find(const String& str) const {
+String::const_iterator String::find(const char* str) const {
 	const_iterator found = std::strstr(data(), str);
 	return found ? found : end();
 }
@@ -249,10 +265,10 @@ String& String::operator+=(std::string_view str) {
 String& String::append(const char* other_data, usize other_size) {
 	usize self_size = size();
 	usize total_size = self_size + other_size;
-	char* self_data = data();
 
 	if(capacity() >= total_size) {
 		// in place
+		char* self_data = data();
 		std::memcpy(self_data + self_size, other_data, other_size);
 		if(is_long()) {
 			self_data[_l.length = total_size] = 0;
@@ -260,15 +276,11 @@ String& String::append(const char* other_data, usize other_size) {
 			self_data[_s._length = total_size] = 0;
 		}
 	} else {
-		LongData new_dat(nullptr, total_size);
-		std::memcpy(new_dat.data, self_data, self_size);
-		std::memcpy(new_dat.data + self_size, other_data, other_size);
-		new_dat.data[total_size] = 0;
-
-		if(is_long()) {
-			free_long(_l);
-		}
-		std::memcpy(&_l, &new_dat, sizeof(LongData));
+		set_min_capacity(total_size);
+		char* self_data = data();
+		std::memcpy(self_data + self_size, other_data, other_size);
+		self_data[total_size] = 0;
+		_l.length = total_size;
 	}
 	return *this;
 }

@@ -38,21 +38,21 @@ namespace detail {
 		int status = 0;
 		char* d = abi::__cxa_demangle(name, nullptr, nullptr, &status);
 		if(status) {
-			return core::str(name);
+			return core::String(name);
 		}
 
-		return core::str_from_owned(d);
+		return core::String::from_owned(d);
 	}
 #else
 	core::String demangle_type_name(const char* name) {
-		return core::str(name);
+		return core::String(name);
 	}
 #endif
 }
 
 
 Nothing fatal(const char* msg, const char* file, int line) {
-	core::String msg_str = msg;
+	core::String msg_str(msg);
 	if(file) {
 		msg_str += " in file \""_s + file + "\"";
 	}
@@ -60,7 +60,7 @@ Nothing fatal(const char* msg, const char* file, int line) {
 		msg_str += " at line "_s + line;
 	}
 	log_msg(msg_str, Log::Error);
-	std::exit(1);
+	std::abort();
 }
 
 }

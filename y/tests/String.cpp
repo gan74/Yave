@@ -52,7 +52,7 @@ y_test_func("String long creation") {
 }
 
 y_test_func("String copy") {
-	auto s = str();
+	auto s = String();
 	y_test_assert(s.size() == 0 && s.is_empty() && !s.is_long() && s.capacity() == String::max_short_size && s.data() && !*s.data());
 
 	{
@@ -101,7 +101,7 @@ y_test_func("String from_owned") {
 	std::memcpy(c_str, get_long_c_str(), size);
 	c_str[size] = 0;
 
-	auto str = str_from_owned(c_str);
+	auto str = String::from_owned(c_str);
 
 	usize index = size / 2;
 	++str[index];
