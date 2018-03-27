@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.6)
 project(yave)
 
+
 include_directories(${yave_SOURCE_DIR})
 include_directories(${y_SOURCE_DIR})
+
+include_directories(${Vulkan_INCLUDE_DIRS})
+
+
 
 # main files
 file(GLOB_RECURSE SOURCE_FILES
@@ -19,12 +24,11 @@ file(GLOB_RECURSE SHADER_FILES
 		"shaders/*.glsl"
 	)
 
-# y lib, change this to wherever it it
-
+	
+	
 add_library(yave STATIC ${SOURCE_FILES} ${SHADER_FILES})
 
 target_link_libraries(yave y)
-target_link_libraries(yave vulkan-1)
+target_link_libraries(yave ${Vulkan_LIBRARY})
 target_link_libraries(yave spirv-cross)
-target_link_libraries(yave pthread)
 

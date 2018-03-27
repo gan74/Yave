@@ -23,18 +23,7 @@ function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
 	set(${SOURCE_VARIABLE_NAME} ${${SOURCE_VARIABLE_NAME}} ${UNIT_BUILD_FILE} PARENT_SCOPE)
 endfunction(enable_unity_build)
 
-
-
-# set environement and flags
-set(ULTIMATE_WARNINGS "-Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef")
-set(EXTRA_WARNINGS "-Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wnon-virtual-dtor -Wodr")
-
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-
-add_definitions("${EXTRA_WARNINGS}")
-add_definitions("${ULTIMATE_WARNINGS}")
-add_definitions("-std=c++17 -pedantic -Wall -Wextra")
-
+find_package(vulkan REQUIRED)
 
 option(BUILD_YAVE "Build yave" ON)
 option(BUILD_TOOLS "Build tools" ON)
@@ -42,10 +31,7 @@ option(BUILD_EDITOR "Build editor" ON)
 
 # add projects
 add_subdirectory(y)
-
-if(BUILD_YAVE)
-	add_subdirectory(yave)
-endif()
+add_subdirectory(yave)
 
 if(BUILD_TOOLS)
 	add_subdirectory(tools)
