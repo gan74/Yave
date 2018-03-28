@@ -55,9 +55,9 @@ struct Transform : Matrix4<T> {
 		return *this;
 	}
 
-	auto right() const {
+	/*auto right() const {
 		return -this->column(1).template to<3>();
-	}
+	}*/
 
 	const auto& forward() const {
 		return this->column(0).template to<3>();
@@ -81,9 +81,9 @@ struct Transform : Matrix4<T> {
 	}
 
 
-	void set_basis(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
+	void set_basis(const Vec<3, T>& forward, const Vec<3, T>& left, const Vec<3, T>& up) {
 		this->column(0).template to<3>() = forward;
-		this->column(1).template to<3>() = -right;
+		this->column(1).template to<3>() = left;
 		this->column(2).template to<3>() = up;
 	}
 
