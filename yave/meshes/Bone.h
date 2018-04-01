@@ -38,7 +38,7 @@ struct BoneTransform {
 	math::Transform<> lerp(const BoneTransform& end, float factor) const {
 		float q = 1.0f - factor;
 		return math::Transform<>(position * q + end.position * factor,
-								 rotation.lerp(end.rotation, factor),
+								 rotation.slerp(end.rotation, factor),
 								 scale * q + end.scale * factor);
 	}
 };

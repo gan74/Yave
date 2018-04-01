@@ -128,18 +128,17 @@ class Quaternion {
 			 return _quat.w();
 		}
 
-
-		Quaternion lerp(const Quaternion& end_quat, T factor) const {
+		Quaternion slerp(const Quaternion& end_quat, T factor) const {
 			Vec<4, T> end = end_quat._quat;
-			T consom = _quat.dot(end);
+			T dot = _quat.dot(end);
 
-			if(consom < T(0.0)) {
+			if(dot < T(0.0)) {
 				end = -end;
-				consom = - consom;
+				dot = -dot;
 			}
 
-			if(T(1.0) - consom > epsilon<T>) {
-				T omega = std::acos(consom);
+			if(T(1.0) - dot > epsilon<T>) {
+				T omega = std::acos(dot);
 				T sin = std::sin(omega);
 				T p = std::sin((T(1.0) - factor) * omega) / sin;
 				T q = std::sin(factor * omega) / sin;
@@ -149,6 +148,17 @@ class Quaternion {
 			return _quat * (T(1.0) - factor) + end * factor;
 		}
 
+		Quaternion lerp(const Quaternion& end_quat, T factor) const {
+			Vec<4, T> end = end_quat._quat;
+			T dot = _quat.dot(end);
+
+			if(dot < T(0.0)) {
+				end = -end;
+				dot = -dot;
+			}
+
+			return _quat * (T(1.0) - factor) + end * factor;
+		}
 
 		T pitch() const {
 			T a = T(-2.0) * (x() * z() - w() * y());
