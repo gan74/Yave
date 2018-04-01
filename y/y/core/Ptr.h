@@ -121,6 +121,15 @@ class Unique : public detail::Ptr<T> {
 			swap(p);
 		}
 
+		template<typename... Args, typename U = T, typename = std::enable_if_t<!std::is_array_v<U>>>
+		static Unique make(Args&&... args) {
+			return Unique(new T(std::forward<Args>(args)...));
+		}
+
+		template<typename... Args, typename U = T, typename = std::enable_if_t<std::is_array_v<U>>>
+		static Unique make(usize n) {
+			return Unique(new std::remove_extent_t<T>[n]);
+		}
 
 		~Unique() {
 			Base::destroy();
@@ -141,7 +150,10 @@ class Unique : public detail::Ptr<T> {
 		template<typename Y>
 		void swap(Unique<Y>& p) {
 			static_assert(Base::template can_downcast<Y>(), "Dangerous slicing");
-			std::swap(_ptr, p._ptr);
+
+			if constexpr(Base::template can_downcast<Y>()) {
+				std::swap(_ptr, p._ptr); // here to avoid generating a million error if the assert triggers
+			}
 		}
 
 };
@@ -174,6 +186,16 @@ class Rc : public detail::Ptr<T> {
 		template<typename Y>
 		Rc(const Rc<Y, C>& p) : Rc(p._ptr, p._count) {
 			static_assert(Base::template can_downcast<Y>(), "Dangerous slicing");
+		}
+
+		template<typename... Args, typename U = T, typename = std::enable_if_t<!std::is_array_v<U>>>
+		static Rc make(Args&&... args) {
+			return Rc(new T(std::forward<Args>(args)...));
+		}
+
+		template<typename... Args, typename U = T, typename = std::enable_if_t<std::is_array_v<U>>>
+		static Rc make(usize n) {
+			return Rc(new std::remove_extent<T>[n]);
 		}
 
 		~Rc() {
@@ -247,6 +269,23 @@ Unique(T*&&) -> Unique<T>;
 
 template<typename T>
 Rc(T*&&) -> Rc<T>;
+
+
+template<typename T>
+Unique(T&&) -> Unique<T>;
+
+template<typename T>
+Rc(T&&) -> Rc<T>;
+
+template<typename T, typename... Args>
+auto make_unique(Args&&... args) {
+	return Unique<T>::make(std::forward<Args>(args)...);
+}
+
+template<typename T, typename... Args>
+auto make_rc(Args&&... args) {
+	return Rc<T>::make(std::forward<Args>(args)...);
+}
 
 }
 }
