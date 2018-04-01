@@ -38,11 +38,11 @@ class TypedSubBuffer : public SubBuffer<Usage, Memory, Transfer> {
 		TypedSubBuffer() = default;
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<Base::is_compatible(U, M, T)>>
-		TypedSubBuffer(const TypedBuffer<Elem, U, M, T>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(Elem), count * sizeof(Elem)) {
+		explicit TypedSubBuffer(const TypedBuffer<Elem, U, M, T>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(Elem)) {
 		}
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<Base::is_compatible(U, M, T)>>
-		explicit TypedSubBuffer(const TypedBuffer<Elem, U, M, T>& buffer, usize offset = 0) : Base(buffer, offset * sizeof(Elem)) {
+		TypedSubBuffer(const TypedBuffer<Elem, U, M, T>& buffer, usize offset, usize count) : Base(buffer, offset * sizeof(Elem), count * sizeof(Elem)) {
 		}
 
 		usize size() const {

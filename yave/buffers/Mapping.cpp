@@ -20,51 +20,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "StagingBufferMapping.h"
+#include "Mapping.h"
 
-#include <yave/commands/CmdBufferRecorder.h>
 #include <yave/device/Device.h>
 
 namespace yave {
 
-static auto create_src_buffer(DevicePtr dptr, usize size) {
-	return StagingBufferMapping::staging_buffer_type(dptr, size);
+Mapping::Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer) :
+		_buffer(buffer),
+		_mapping(static_cast<u8*>(_buffer.device_memory().map()) + buffer.byte_offset()) {
 }
 
-
-StagingBufferMapping::StagingBufferMapping(const SubBuffer<BufferUsage::None, MemoryType::DontCare, BufferTransfer::TransferDst>& dst, CmdBufferRecorderBase& recorder) :
-		_cmd_buffer(&recorder),
-		_dst(dst),
-		_src(create_src_buffer(dst.device(), dst.byte_size())) {
-
-	CpuVisibleMapping cpu_mapping(_src);
-	CpuVisibleMapping::swap(cpu_mapping);
-}
-
-void StagingBufferMapping::swap(StagingBufferMapping& other) {
-	CpuVisibleMapping::swap(other);
-	std::swap(_dst, other._dst);
-	std::swap(_src, other._src);
-	std::swap(_cmd_buffer, other._cmd_buffer);
-}
-
-vk::BufferCopy StagingBufferMapping::vk_copy() const {
-	return vk::BufferCopy()
-			.setDstOffset(_dst.byte_offset())
-			.setSrcOffset(0)
-			.setSize(_dst.byte_size());
-		;
-}
-
-StagingBufferMapping::~StagingBufferMapping() {
-	{
-		CpuVisibleMapping done;
-		CpuVisibleMapping::swap(done);
+Mapping::~Mapping() {
+	if(_buffer.device() && _mapping) {
+		flush();
 	}
-	_cmd_buffer->vk_cmd_buffer().copyBuffer(_src.vk_buffer(), _dst.vk_buffer(), vk_copy());
-	_cmd_buffer->keep_alive(std::move(_src));
-#warning barrier here ?
 }
 
+void Mapping::flush() {
+	if(_buffer.device() && _mapping) {
+		_buffer.device()->vk_device().flushMappedMemoryRanges(_buffer.memory_range());
+		_buffer.device_memory().unmap();
+	}
+}
+
+usize Mapping::byte_size() const {
+	return _buffer.byte_size();
+}
+
+void Mapping::swap(Mapping& other) {
+	std::swap(_mapping, other._mapping);
+	std::swap(_buffer, other._buffer);
+}
+
+void* Mapping::data() {
+	return _mapping;
+}
+
+const void* Mapping::data() const {
+	return _mapping;
+}
 
 }

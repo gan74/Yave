@@ -19,24 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BUFFERS_CPUVISIBLEMAPPING_H
-#define YAVE_BUFFERS_CPUVISIBLEMAPPING_H
+#ifndef YAVE_BUFFERS_MAPPING_H
+#define YAVE_BUFFERS_MAPPING_H
 
 #include "SubBuffer.h"
 
 namespace yave {
 
-class CpuVisibleMapping : NonCopyable {
+class Mapping : NonCopyable {
 
 	public:
-		CpuVisibleMapping() = default;
-		CpuVisibleMapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer);
+		Mapping() = default;
+
+		Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer);
 
 		template<BufferUsage Usage, BufferTransfer Transfer>
-		CpuVisibleMapping(const Buffer<Usage, MemoryType::CpuVisible, Transfer>& buffer) : CpuVisibleMapping(SubBuffer(buffer)) {
+		Mapping(const Buffer<Usage, MemoryType::CpuVisible, Transfer>& buffer) : Mapping(SubBuffer(buffer)) {
 		}
 
-		~CpuVisibleMapping();
+		~Mapping();
 
 		// No need to barrier after flush
 		void flush();
@@ -47,7 +48,7 @@ class CpuVisibleMapping : NonCopyable {
 		usize byte_size() const;
 
 	protected:
-		void swap(CpuVisibleMapping& other);
+		void swap(Mapping& other);
 
 	private:
 		SubBufferBase _buffer;
@@ -56,4 +57,4 @@ class CpuVisibleMapping : NonCopyable {
 
 }
 
-#endif // YAVE_BUFFERS_CPUVISIBLEMAPPING_H
+#endif // YAVE_BUFFERS_MAPPING_H

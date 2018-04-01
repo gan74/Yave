@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef YAVE_BUFFERS_TYPEDMAPPING_H
 #define YAVE_BUFFERS_TYPEDMAPPING_H
 
-#include "BufferUsage.h"
+#include "buffers.h"
+#include "Mapping.h"
 #include "TypedSubBuffer.h"
-#include "StagingBufferMapping.h"
 
 #include <yave/device/Device.h>
 #include <yave/queues/QueueFamily.h>
@@ -32,13 +32,8 @@ SOFTWARE.
 
 namespace yave {
 
-template<MemoryType Memory>
-using MemoryMapping = std::conditional_t<is_cpu_visible(Memory), CpuVisibleMapping, StagingBufferMapping>;
-
-template<typename Elem, MemoryType Memory>
-class TypedMapping : public MemoryMapping<Memory> {
-
-	using Base = MemoryMapping<Memory>;
+template<typename Elem>
+class TypedMapping : public Mapping {
 
 	public:
 		using iterator = Elem* ;
@@ -46,23 +41,11 @@ class TypedMapping : public MemoryMapping<Memory> {
 		using value_type = Elem;
 
 		template<BufferUsage Usage, BufferTransfer Transfer>
-		explicit TypedMapping(TypedBuffer<Elem, Usage, Memory, Transfer>& buffer) : Base(buffer) {
-			static_assert(!require_staging(Memory), "Buffer requires staging");
+		explicit TypedMapping(TypedBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>& buffer) : Mapping(buffer) {
 		}
 
 		template<BufferUsage Usage, BufferTransfer Transfer>
-		explicit TypedMapping(TypedSubBuffer<Elem, Usage, Memory, Transfer>& buffer) : Base(buffer) {
-			static_assert(!require_staging(Memory), "SubBuffer requires staging");
-		}
-
-		template<BufferUsage Usage>
-		explicit TypedMapping(TypedBuffer<Elem, Usage, Memory, BufferTransfer::TransferDst>& buffer, CmdBufferRecorderBase& recorder) : Base(buffer, recorder) {
-			static_assert(require_staging(Memory), "Buffer does not require staging");
-		}
-
-		template<BufferUsage Usage>
-		explicit TypedMapping(TypedSubBuffer<Elem, Usage, Memory, BufferTransfer::TransferDst>& buffer, CmdBufferRecorderBase& recorder) : Base(buffer, recorder) {
-			static_assert(require_staging(Memory), "SubBuffer does not require staging");
+		explicit TypedMapping(TypedSubBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>& buffer) : Mapping(buffer) {
 		}
 
 		TypedMapping(TypedMapping&& other) {
@@ -118,23 +101,14 @@ template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Tra
 TypedBuffer<Elem, Usage, Memory, Transfer>::TypedBuffer(DevicePtr dptr, const core::ArrayView<Elem>& data) : TypedBuffer(dptr, data.size()) {
 	if constexpr(require_staging(Memory)) {
 		Y_LOG_PERF("buffer,staging");
+		TypedStagingBuffer<Elem> staging(dptr, data);
 		CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
-		std::copy(data.begin(), data.end(), TypedMapping(*this, recorder).begin());
+		recorder.copy(staging, *this);
 		dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer<CmdBufferUsage::Disposable>(std::move(recorder)));
 	} else {
 		std::copy(data.begin(), data.end(), TypedMapping(*this).begin());
 	}
 }
-
-template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
-TypedMapping(TypedBuffer<Elem, Usage, Memory, Transfer>&) -> TypedMapping<Elem, Memory>;
-template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
-TypedMapping(TypedBuffer<Elem, Usage, Memory, Transfer>&, CmdBufferRecorderBase&) -> TypedMapping<Elem, Memory>;
-template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
-TypedMapping(TypedSubBuffer<Elem, Usage, Memory, Transfer>&) -> TypedMapping<Elem, Memory>;
-template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
-TypedMapping(TypedSubBuffer<Elem, Usage, Memory, Transfer>&, CmdBufferRecorderBase&) -> TypedMapping<Elem, Memory>;
-
 
 }
 

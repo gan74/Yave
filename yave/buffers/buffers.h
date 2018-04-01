@@ -25,9 +25,14 @@ SOFTWARE.
 #include <yave/meshes/Vertex.h>
 
 #include "TypedSubBuffer.h"
-#include "TypedMapping.h"
 
 namespace yave {
+
+using StagingBuffer = Buffer<BufferUsage::None, MemoryType::CpuVisible, BufferTransfer::TransferSrc>;
+
+template<typename T>
+using TypedStagingBuffer = TypedBuffer<T, BufferUsage::None, MemoryType::CpuVisible, BufferTransfer::TransferSrc>;
+
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using AttribBuffer = Buffer<BufferUsage::AttributeBit, Memory>;

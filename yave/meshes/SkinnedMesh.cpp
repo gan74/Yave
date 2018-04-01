@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "SkinnedMesh.h"
 
+#include <yave/buffers/TypedMapping.h>
+
 namespace yave {
 
 SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :

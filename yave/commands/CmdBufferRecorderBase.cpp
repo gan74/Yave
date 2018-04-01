@@ -253,6 +253,14 @@ void CmdBufferRecorderBase::barriers(const core::ArrayView<ImageBarrier>& images
 	barriers({}, images, src, dst);
 }
 
+
+void CmdBufferRecorderBase::copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<BufferTransfer::TransferDst>& dst) {
+	if(src.byte_size() != dst.byte_size()) {
+		y_fatal("Buffer size do not match.");
+	}
+	vk_cmd_buffer().copyBuffer(src.vk_buffer(), dst.vk_buffer(), vk::BufferCopy(src.byte_offset(), dst.byte_offset(), src.byte_size()));
+}
+
 RenderPassRecorder CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer) {
 	check_no_renderpass();
 

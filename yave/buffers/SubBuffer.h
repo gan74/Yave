@@ -43,19 +43,16 @@ class SubBuffer : public SubBufferBase {
 	public:
 		SubBuffer() = default;
 
-		SubBuffer(const SubBuffer<Usage, Memory, Transfer>& buffer) : SubBufferBase(buffer) {
-		}
-
 		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
 		SubBuffer(const SubBuffer<U, M, T>& buffer) : SubBufferBase(buffer) {
 		}
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
-		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off, usize byte_len) : SubBufferBase(buffer, byte_off, byte_len) {
+		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off = 0) : SubBufferBase(buffer, byte_off, buffer.byte_size() - byte_off) {
 		}
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
-		explicit SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off = 0) : SubBufferBase(buffer, byte_off, buffer.byte_size() - byte_off) {
+		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off, usize byte_len) : SubBufferBase(buffer, byte_off, byte_len) {
 		}
 };
 

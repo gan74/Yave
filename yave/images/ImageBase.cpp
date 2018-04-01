@@ -22,7 +22,8 @@ SOFTWARE.
 
 #include "ImageBase.h"
 
-#include <yave/buffers/StagingBufferMapping.h>
+#include <yave/buffers/buffers.h>
+#include <yave/buffers/Mapping.h>
 #include <yave/commands/CmdBufferRecorder.h>
 #include <yave/device/Device.h>
 
@@ -70,9 +71,8 @@ static auto get_copy_regions(const ImageData& data) {
 }
 
 static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
-	auto staging_buffer = StagingBufferMapping::staging_buffer_type(dptr, byte_size);
-	auto mapping = CpuVisibleMapping(staging_buffer);
-	std::memcpy(mapping.data(), data, byte_size);
+	auto staging_buffer = StagingBuffer(dptr, byte_size);
+	std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
 	return staging_buffer;
 }
 

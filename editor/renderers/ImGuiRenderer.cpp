@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
+#include <yave/buffers/TypedMapping.h>
+
 #include <y/io/File.h>
 
 #include <imgui/imgui.h>
@@ -43,7 +45,7 @@ static ImageData load_font() {
 	return image;
 }
 
-/*static void setup_style() {
+static void setup_style() {
 	// based on https://gist.github.com/ongamex/4ee36fb23d6c527939d0f4ba72144d29
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.WindowRounding = 0.0f;
@@ -104,14 +106,14 @@ static ImageData load_font() {
 	style.Colors[ImGuiCol_ResizeGrip]            = button_color;
 	style.Colors[ImGuiCol_ResizeGripHovered]     = hovered_color;
 	style.Colors[ImGuiCol_ResizeGripActive]      = hovered_color;
-}*/
+}
 
-static void setup_style() {
+/*static void setup_style() {
 	// from https://github.com/volcoma/EtherealEngine/blob/e7ee49c403948cccb91f31e1022cee09235f5d96/editor/editor_runtime/interface/gui_system.cpp#L482
-	math::Vec3 col_main_hsv(0.0f, 0.0f, 80.0f / 255.0f);
-	math::Vec3 col_area_hsv(0.0f, 0.0f, 50.0f / 255.0f);
-	math::Vec3 col_back_hsv(0.0f, 0.0f, 35.0f / 255.0f);
-	math::Vec3 col_text_hsv(0.0f, 0.0f, 1.0f);
+	auto col_main_hsv = math::Vec3(0.0f, 200.0f, 170.0f) / 255.0f;
+	auto col_area_hsv = math::Vec3(0.0f, 0.0f, 80.0f) / 255.0f;
+	auto col_back_hsv = math::Vec3(0.0f, 0.0f, 35.0f)  / 255.0f;
+	auto col_text_hsv = math::Vec3(0.0f, 0.0f, 1.0f);
 
 	ImVec4 col_text = ImColor::HSV(col_text_hsv.x(), col_text_hsv.y(), col_text_hsv.z());
 	ImVec4 col_main = ImColor::HSV(col_main_hsv.x(), col_main_hsv.y(), col_main_hsv.z());
@@ -158,7 +160,7 @@ static void setup_style() {
 	style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(col_main.x, col_main.y, col_main.z, 1.00f);
 	style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(col_main.x, col_main.y, col_main.z, 0.43f);
 	style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.10f, 0.10f, 0.10f, 0.55f);
-}
+}*/
 
 ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		SecondaryRenderer(dptr),
