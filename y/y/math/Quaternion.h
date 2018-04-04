@@ -42,26 +42,30 @@ class Quaternion {
 			RollIndex = 0
 		};
 
+		Quaternion(detail::identity_t = identity()) : _quat(0, 0, 0, 1) {
+		}
+
 		template<typename X>
 		Quaternion(const Vec<4, X>& q) : _quat(q.normalized()) {
+		}
+
+		template<typename X>
+		Quaternion(const Quaternion<X>& q) : _quat(q._quat) {
 		}
 
 		template<typename... Args>
 		Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
 		}
 
-		Quaternion(detail::identity_t = identity()) : Quaternion(0, 0, 0, 1) {
+		template<typename X>
+		Quaternion& operator=(const Quaternion<X>& q) {
+			_quat = q._quat;
+			return *this;
 		}
 
 		template<typename X>
 		Quaternion& operator=(const Vec<4, X>& q) {
 			_quat = q.normalized();
-			return *this;
-		}
-
-		template<typename X>
-		Quaternion& operator=(const Quaternion<X>& q) {
-			_quat = q._quat;
 			return *this;
 		}
 

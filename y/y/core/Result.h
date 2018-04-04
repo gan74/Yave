@@ -140,8 +140,11 @@ class Result : NonCopyable {
 			using type = decltype(std::declval<F>()());
 		};
 
-		using expected_type = decltype(std::declval<ok_type>().get());
-		using expected_const_type = decltype(std::declval<const ok_type>().get());
+		using ret_value_type = decltype(std::declval<ok_type>().get());
+		using ret_value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_rvalue_reference_t<ret_value_type>>;
+
+		using ret_error_type = decltype(std::declval<err_type>().get());
+		using ret_error_type_ref = std::conditional_t<std::is_void_v<ret_error_type>, void, std::add_rvalue_reference_t<ret_error_type>>;
 
 	public:
 
@@ -175,36 +178,36 @@ class Result : NonCopyable {
 			return _is_ok;
 		}
 
-		auto&& unwrap() const {
+		ret_value_type_ref unwrap() const {
 			return expected("Unwrap failed.");
 		}
 
-		auto&& unwrap() {
+		ret_value_type_ref unwrap() {
 			return expected("Unwrap failed.");
 		}
 
-		auto&& error() const {
+		ret_error_type_ref error() const {
 			if(is_ok()) {
 				y_fatal("Result is not an error.");
 			}
 			return _error.get();
 		}
 
-		auto&& error() {
+		ret_error_type_ref error() {
 			if(is_ok()) {
 				y_fatal("Result is not an error.");
 			}
 			return _error.get();
 		}
 
-		expected_const_type expected(const char* err_msg) const {
+		ret_value_type_ref expected(const char* err_msg) const {
 			if(is_error()) {
 				y_fatal(err_msg);
 			}
 			return _value.get();
 		}
 
-		expected_type expected(const char* err_msg) {
+		ret_value_type_ref expected(const char* err_msg) {
 			if(is_error()) {
 				y_fatal(err_msg);
 			}

@@ -43,9 +43,6 @@ String::LongData::LongData(const char* str, usize len) : LongData(str, compute_c
 }
 
 String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_long(cap)), capacity(cap), length(len) {
-	if(cap <= len) {
-		y_fatal("Invalid string capacity.");
-	}
 	if(str) {
 		std::memcpy(data, str, len);
 	}
