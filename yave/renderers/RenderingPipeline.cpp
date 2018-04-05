@@ -63,6 +63,7 @@ void RenderingPipeline::render(CmdBufferRecorder<>& recorder, const FrameToken& 
 		node->prepare();
 	}
 
+#warning cleanup dynamic_casts
 	{
 		for(auto& node : ordered) {
 			if(auto renderer = dynamic_cast<SecondaryRenderer*>(node.as_ptr())) {

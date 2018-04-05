@@ -59,8 +59,8 @@ FontData FontData::from_file(io::ReaderRef reader) {
 		y_fatal(err_msg);
 	}
 
-	core::Unique<Char[]> chars = new Char[header.char_count];
-	reader->read(chars, header.char_count * sizeof(Char)).expected(err_msg);
+	std::unique_ptr<Char[]> chars = std::make_unique<Char[]>(header.char_count);
+	reader->read(chars.get(), header.char_count * sizeof(Char)).expected(err_msg);
 
 	/*for(u32 i = 0; i != header.char_count; ++i) {
 		font._chars[chars[i].utf32] = chars[i];

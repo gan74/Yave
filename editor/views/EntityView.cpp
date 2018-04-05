@@ -48,8 +48,8 @@ EntityView::EntityView(ContextPtr cptr) : Dock("Entities"), ContextLinked(cptr) 
 }
 
 void EntityView::add_light() {
-	Scene::Ptr<Light> light = new Light(Light::Point);
-	context()->selected = light.as_ptr();
+	Scene::Ptr<Light> light = std::make_unique<Light>(Light::Point);
+	context()->selected = light.get();
 
 	light->radius() = 100.0f;
 	light->color() *= 10000.0;
@@ -73,20 +73,20 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 	if(ImGui::TreeNode("Renderables")) {
 		for(const auto& r : context()->scene()->renderables()) {
-			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.as_ptr()));
-			bool selected = r.as_ptr() == context()->selected;
+			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
+			bool selected = r.get() == context()->selected;
 			ImGui::Selectable(buffer, &selected);
-			context()->selected = selected ? r.as_ptr() : context()->selected;
+			context()->selected = selected ? r.get() : context()->selected;
 		}
 		ImGui::TreePop();
 	}
 
 	if(ImGui::TreeNode("Lights")) {
 		for(const auto& l : context()->scene()->lights()) {
-			std::sprintf(buffer, "%s##%p", light_type_name(l->type()), static_cast<void*>(l.as_ptr()));
-			bool selected = l.as_ptr() == context()->selected;
+			std::sprintf(buffer, "%s##%p", light_type_name(l->type()), static_cast<void*>(l.get()));
+			bool selected = l.get() == context()->selected;
 			ImGui::Selectable(buffer, &selected);
-			context()->selected = selected ? l.as_ptr() : context()->selected;
+			context()->selected = selected ? l.get() : context()->selected;
 		}
 		ImGui::TreePop();
 	}

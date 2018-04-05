@@ -29,9 +29,11 @@ SOFTWARE.
 
 #include <yave/material/Material.h>
 
+#include <yave/assets/AssetLoader.h>
+
 namespace editor {
 
-std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr dptr);
+std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader);
 
 }
 

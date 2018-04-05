@@ -77,7 +77,7 @@ class Window {
 		math::Vec2ui _size;
 		core::String _name;
 
-		mutable core::Unique<EventHandler> _event_handler;
+		mutable std::unique_ptr<EventHandler> _event_handler;
 };
 
 }

@@ -31,7 +31,10 @@ SOFTWARE.
 
 namespace editor {
 
-std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr dptr) {
+std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader) {
+
+	DevicePtr dptr = tex_loader.device();
+
 	core::Vector<Scene::Ptr<Renderable>> renderables;
 	core::Vector<Scene::Ptr<Light>> lights;
 
@@ -39,7 +42,7 @@ std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr d
 		Light l(Light::Directional);
 		l.transform().set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{1.0f};
-		lights << std::move(l);
+		lights << std::make_unique<Light>(std::move(l));
 	}
 
 	{
@@ -47,7 +50,7 @@ std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr d
 		l.color() = math::Vec3{10000.0f, 0.0f, 0.0f};
 		l.position().z() = 100.0f;
 		l.radius() = 100.0f;
-		lights << std::move(l);
+		lights << std::make_unique<Light>(std::move(l));
 	}
 
 	{
@@ -64,10 +67,10 @@ std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr d
 		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
 
 		{
-			auto instance = new SkinnedMeshInstance(mesh, material);
+			auto instance = std::make_unique<SkinnedMeshInstance>(mesh, material);
 			instance->position() = {0.0f, 100.0f, -instance->radius() * 0.5f};
 			instance->animate(animation);
-			renderables << instance;
+			renderables << std::move(instance);
 		}
 	}
 
@@ -75,39 +78,41 @@ std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr d
 		auto material = AssetPtr<Material>(Material(dptr, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
 				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-				.set_culled(false)
 			));
-		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to open mesh file."));
-		auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
+		//auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to open mesh file."));
+		//auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
+		auto mesh = mesh_loader.from_file("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to load mesh");
 
 		{
-			auto instance = new StaticMeshInstance(mesh, material);
+			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			renderables << instance;
+			renderables << std::move(instance);
 		}
 
 		{
-			auto instance = new StaticMeshInstance(mesh, material);
+			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 			instance->transform() = math::Transform<>(math::Vec3(100.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			renderables << instance;
+			renderables << std::move(instance);
 		}
 
 		{
-			auto instance = new StaticMeshInstance(mesh, material);
+			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 			instance->transform() = math::Transform<>(math::Vec3(0.0f, 100.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			renderables << instance;
+			renderables << std::move(instance);
 		}
 
 		{
-			auto instance = new StaticMeshInstance(mesh, material);
+			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 100.0f), math::identity(), math::Vec3(0.1f));
-			renderables << instance;
+			renderables << std::move(instance);
 		}
 	}
 
-	core::Unique scene = new Scene({}, std::move(renderables), std::move(lights));
-	core::Unique scene_view = new SceneView(*scene);
+	auto scene = std::make_unique<Scene>(core::Vector<Scene::Ptr<StaticMeshInstance>>(), std::move(renderables), std::move(lights));
 
+	return scene;
+
+	/*std::unique_ptr scene_view = new SceneView(*scene);
 	{
 		float dist = 200.0f;
 		auto& camera = scene_view->camera();
@@ -118,8 +123,7 @@ std::pair<core::Unique<Scene>, core::Unique<SceneView>> create_scene(DevicePtr d
 		camera.set_view(math::look_at(cam_pos.to<3>() / cam_pos.w(), math::Vec3(), cam_up.to<3>()));
 		camera.set_proj(math::perspective(math::to_rad(60.0f), 4.0f / 3.0f, 1.0f));
 	}
-
-	return std::make_pair(std::move(scene), std::move(scene_view));
+	return std::make_pair(std::move(scene), std::move(scene_view));*/
 }
 
 }

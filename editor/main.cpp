@@ -8,6 +8,7 @@ using namespace editor;
 int main(int, char **) {
 	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
 
+	//AssetLoader<core::String> loader;
 
 	Instance instance(DebugParams::debug());
 	Device device(instance);

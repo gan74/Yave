@@ -113,7 +113,7 @@ Device::Device(Instance& instance) :
 		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
 
 	if(_instance.debug_params().debug_features_enabled()) {
-		_extensions.debug_marker = new DebugMarker(_device.device);
+		_extensions.debug_marker = std::make_unique<DebugMarker>(_device.device);
 	}
 
 	for(const auto& family : _queue_families) {
@@ -159,9 +159,9 @@ ThreadDevicePtr Device::thread_data() const {
 	std::unique_lock lock(_lock);
 	auto thread_id = std::this_thread::get_id();
 	if(auto it = _thread_local_datas.find(thread_id); it != _thread_local_datas.end()) {
-		return it->second.as_ptr();
+		return it->second.get();
 	}
-	return (_thread_local_datas[thread_id] = new ThreadLocalDeviceData(this)).as_ptr();
+	return (_thread_local_datas[thread_id] = std::unique_ptr<ThreadLocalDeviceData>(new ThreadLocalDeviceData(this))).get();
 }
 
 const vk::PhysicalDeviceLimits& Device::vk_limits() const {
@@ -185,7 +185,7 @@ CmdBuffer<CmdBufferUsage::Primary> Device::create_cmd_buffer() const {
 }
 
 const DebugMarker* Device::debug_marker() const {
-	return _extensions.debug_marker.as_ptr();
+	return _extensions.debug_marker.get();
 }
 
 

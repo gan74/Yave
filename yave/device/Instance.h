@@ -42,7 +42,7 @@ class Instance : NonCopyable {
 
 	private:
 		struct {
-			core::Unique<DebugCallback> debug_callback;
+			std::unique_ptr<DebugCallback> debug_callback;
 		} _extensions;
 
 		DebugParams _debug_params;

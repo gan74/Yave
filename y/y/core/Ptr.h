@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <y/utils.h>
 
+#include <memory>
+
 namespace y {
 namespace core {
 
@@ -98,65 +100,6 @@ class Ptr : NonCopyable {
 
 }
 
-template<typename T>
-class Unique : public detail::Ptr<T> {
-
-	using Base = detail::Ptr<T>;
-	using Base::_ptr;
-
-	public:
-		using pointer = typename Base::pointer;
-		using const_pointer = typename Base::const_pointer;
-
-		Unique() = default;
-
-		Unique(pointer&& p) : Base(std::move(p)) {
-		}
-
-		Unique(std::remove_const_t<T>&& p) : Unique(new T(std::move(p))) {
-		}
-
-		template<typename Y>
-		Unique(Unique<Y>&& p) {
-			swap(p);
-		}
-
-		template<typename... Args, typename U = T, typename = std::enable_if_t<!std::is_array_v<U>>>
-		static Unique make(Args&&... args) {
-			return Unique(new T(std::forward<Args>(args)...));
-		}
-
-		template<typename... Args, typename U = T, typename = std::enable_if_t<std::is_array_v<U>>>
-		static Unique make(usize n) {
-			return Unique(new std::remove_extent_t<T>[n]);
-		}
-
-		~Unique() {
-			Base::destroy();
-		}
-
-		Unique& operator=(Unique&& p) {
-			swap(p);
-			return *this;
-		}
-
-		Unique& operator=(pointer&& p) {
-			Unique ptr(std::move(p));
-			swap(ptr);
-			return *this;
-		}
-
-	private:
-		template<typename Y>
-		void swap(Unique<Y>& p) {
-			static_assert(Base::template can_downcast<Y>(), "Dangerous slicing");
-
-			if constexpr(Base::template can_downcast<Y>()) {
-				std::swap(_ptr, p._ptr); // here to avoid generating a million error if the assert triggers
-			}
-		}
-
-};
 
 template<typename T, typename C = u32>
 class Rc : public detail::Ptr<T> {
@@ -265,38 +208,19 @@ class Rc : public detail::Ptr<T> {
 
 
 template<typename T>
-Unique(T*&&) -> Unique<T>;
-
-template<typename T>
 Rc(T*&&) -> Rc<T>;
-
-
-template<typename T>
-Unique(T&&) -> Unique<T>;
 
 template<typename T>
 Rc(T&&) -> Rc<T>;
 
 template<typename T, typename... Args>
-auto make_unique(Args&&... args) {
-	return Unique<T>::make(std::forward<Args>(args)...);
-}
-
-template<typename T, typename... Args>
 auto make_rc(Args&&... args) {
 	return Rc<T>::make(std::forward<Args>(args)...);
 }
-
 }
 }
 
 namespace std {
-template<typename T>
-struct hash<y::core::Unique<T>> : hash<T*> {
-	auto operator()(const y::core::Unique<T>& p) const {
-		return hash<T*>::operator()(p.as_ptr());
-	}
-};
 template<typename T, typename C>
 struct hash<y::core::Rc<T, C>> : hash<T*> {
 	auto operator()(const y::core::Rc<T, C>& p) const {

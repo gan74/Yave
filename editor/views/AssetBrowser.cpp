@@ -19,57 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
+#include "AssetBrowser.h"
 
-#include <yave/yave.h>
+#include <editor/EditorContext.h>
+#include <yave/meshes/StaticMesh.h>
 
-#include <yave/objects/StaticMeshInstance.h>
-#include <yave/objects/Renderable.h>
-#include <yave/objects/Light.h>
+#include <imgui/imgui.h>
 
-namespace yave {
+namespace editor {
 
-class Scene : NonCopyable {
+AssetBrowser::AssetBrowser(ContextPtr cptr) : Dock("Asset browser"), ContextLinked(cptr) {
+}
 
-	public:
-		template<typename T>
-		using Ptr = std::unique_ptr<T>;
-
-		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes = {}, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
-
-		const auto& static_meshes() const {
-			return _statics;
-		}
-
-		const auto& renderables() const {
-			return _renderables;
-		}
-
-		const auto& lights() const {
-			return _lights;
-		}
-
-		auto& static_meshes() {
-			return _statics;
-		}
-
-		auto& renderables() {
-			return _renderables;
-		}
-
-		auto& lights() {
-			return _lights;
-		}
-
-
-	private:
-		core::Vector<Ptr<StaticMeshInstance>> _statics;
-		core::Vector<Ptr<Renderable>> _renderables;
-		core::Vector<Ptr<Light>> _lights;
-};
+void AssetBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+	u32 count = std::distance(context()->mesh_loader.begin(), context()->mesh_loader.end());
+	ImGui::Text("%u meshes", count);
+	for(const auto& a : context()->mesh_loader) {
+		ImGui::Text(a.first.data());
+	}
+}
 
 
 }
-
-#endif // YAVE_SCENE_SCENE_H

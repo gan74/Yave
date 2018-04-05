@@ -32,11 +32,11 @@ namespace perf {
 
 // For use with chrome://tracing
 
-void set_output_ptr(core::Unique<io::Writer>&& out);
+void set_output_ptr(std::unique_ptr<io::Writer>&& out);
 
 template<typename T>
 void set_output(T&& t) {
-	set_output_ptr(core::Unique<io::Writer>(new T(std::forward<T>(t))));
+	set_output_ptr(std::make_unique<T>(std::forward<T>(t)));
 }
 
 void enter(const char* cat, const char* func);

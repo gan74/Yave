@@ -19,57 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
+#ifndef EDITOR_VIEWS_ASSETBROWSER_H
+#define EDITOR_VIEWS_ASSETBROWSER_H
 
-#include <yave/yave.h>
+#include <editor/ui/Dock.h>
 
-#include <yave/objects/StaticMeshInstance.h>
-#include <yave/objects/Renderable.h>
-#include <yave/objects/Light.h>
+namespace editor {
 
-namespace yave {
-
-class Scene : NonCopyable {
-
+class AssetBrowser : public Dock, public ContextLinked {
 	public:
-		template<typename T>
-		using Ptr = std::unique_ptr<T>;
-
-		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes = {}, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
-
-		const auto& static_meshes() const {
-			return _statics;
-		}
-
-		const auto& renderables() const {
-			return _renderables;
-		}
-
-		const auto& lights() const {
-			return _lights;
-		}
-
-		auto& static_meshes() {
-			return _statics;
-		}
-
-		auto& renderables() {
-			return _renderables;
-		}
-
-		auto& lights() {
-			return _lights;
-		}
-
+		AssetBrowser(ContextPtr cptr);
 
 	private:
-		core::Vector<Ptr<StaticMeshInstance>> _statics;
-		core::Vector<Ptr<Renderable>> _renderables;
-		core::Vector<Ptr<Light>> _lights;
-};
+		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
+};
 
 }
 
-#endif // YAVE_SCENE_SCENE_H
+#endif // EDITOR_VIEWS_ASSETBROWSER_H

@@ -35,31 +35,31 @@ namespace perf {
 
 #ifdef Y_PERF_LOG_ENABLED
 static constexpr usize buffer_size = 16 * 1024;
-thread_local static core::Unique<char[]> buffer;
+thread_local static std::unique_ptr<char[]> buffer;
 thread_local static usize buffer_offset = 0;
 thread_local static u32 tid = 0;
 static std::mutex mutex;
 static bool initialized = false;
-static core::Unique<io::Writer> output;
+static std::unique_ptr<io::Writer> output;
 
 static void write(const char* str, usize len);
 
 static void write_buffer() {
 	std::unique_lock lock(mutex);
-	if(output.as_ptr() && buffer) {
+	if(output && buffer) {
 		if(!initialized) {
 			initialized = true;
 			const char beg[] = R"({"traceEvents":[)";
 			output->write(beg, sizeof(beg) - 1);
 		}
-		output->write(buffer, buffer_offset);
+		output->write(buffer.get(), buffer_offset);
 		buffer_offset = 0;
 		event("perf", "done writing buffer");
 	}
 }
 #endif
 
-void set_output_ptr(core::Unique<io::Writer>&& out) {
+void set_output_ptr(std::unique_ptr<io::Writer>&& out) {
 	unused(out);
 #ifdef Y_PERF_LOG_ENABLED
 	std::unique_lock lock(mutex);
@@ -70,8 +70,8 @@ void set_output_ptr(core::Unique<io::Writer>&& out) {
 
 #ifdef Y_PERF_LOG_ENABLED
 static void init_thread() {
-	if(!buffer) {
-		buffer = new char[buffer_size];
+	if(!buffer.get()) {
+		buffer = std::make_unique<char[]>(buffer_size);
 		std::stringstream ss;
 		ss << std::this_thread::get_id();
 		tid = std::stoul(ss.str());
@@ -84,7 +84,7 @@ static void write(const char* str, usize len) {
 	if(len >= remaining) {
 		write_buffer();
 	}
-	std::memcpy(buffer.as_ptr() + buffer_offset, str, len);
+	std::memcpy(buffer.get() + buffer_offset, str, len);
 	buffer_offset += len;
 }
 

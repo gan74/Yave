@@ -73,7 +73,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 
 			case WM_KEYDOWN:
 			case WM_KEYUP:
-				if(auto handler = window->event_handler(); handler) {
+				if(auto handler = window->event_handler()) {
 					auto k = to_key(wParam);
 					if(k != Key::Unknown) {
 						uMsg == WM_KEYDOWN
@@ -89,7 +89,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 				break;
 
 			case WM_CHAR:
-				if(auto handler = window->event_handler(); handler) {
+				if(auto handler = window->event_handler()) {
 					handler->char_input(u32(wParam));
 					return 0;
 				}
@@ -103,7 +103,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 			case WM_MBUTTONUP:
 			case WM_MOUSEMOVE:
 			case WM_MOUSEWHEEL:
-				if(auto handler = window->event_handler(); handler) {
+				if(auto handler = window->event_handler()) {
 					auto pt = reinterpret_cast<const POINTS&>(l_param);
 					math::Vec2i pos = math::Vec2i(pt.x, pt.y);
 					switch(uMsg) {
@@ -231,11 +231,11 @@ math::Vec2ui Window::position() const {
 }
 
 void Window::set_event_handler(EventHandler*&& handler) {
-	_event_handler = std::move(handler);
+	_event_handler = std::unique_ptr<EventHandler>(std::move(handler));
 }
 
 EventHandler* Window::event_handler() const {
-	return _event_handler.as_ptr();
+	return _event_handler.get();
 }
 
 }

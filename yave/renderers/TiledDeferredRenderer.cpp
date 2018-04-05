@@ -120,7 +120,7 @@ void TiledDeferredRenderer::pre_render(CmdBufferRecorder<>& recorder, const Fram
 	auto lights = core::vector_with_capacity<const Light*>(scene_view().scene().lights().size());
 
 	for(const auto& l : scene_view().scene().lights()) {
-		(l->type() == Light::Directional ? directionals : lights) << l.as_ptr();
+		(l->type() == Light::Directional ? directionals : lights) << l.get();
 	}
 
 	// fill light buffer

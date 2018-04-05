@@ -61,7 +61,7 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 		math::Vec2ui _size;
 		usize _attachment_count = 0;
 
-		core::Unique<RenderPass> _render_pass;
+		std::unique_ptr<RenderPass> _render_pass;
 		vk::Framebuffer _framebuffer;
 
 		DepthAttachmentView _depth;

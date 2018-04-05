@@ -98,15 +98,15 @@ class Device : NonCopyable {
 		mutable DeviceAllocator _allocator;
 
 		mutable concurrent::SpinLock _lock;
-		mutable std::unordered_map<std::thread::id, core::Unique<ThreadLocalDeviceData>> _thread_local_datas;
+		mutable std::unordered_map<std::thread::id, std::unique_ptr<ThreadLocalDeviceData>> _thread_local_datas;
 
 		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
 		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
 
-		core::Unique<DescriptorSetLayoutPool> _descriptor_layout_pool;
+		std::unique_ptr<DescriptorSetLayoutPool> _descriptor_layout_pool;
 
 		struct {
-			core::Unique<DebugMarker> debug_marker;
+			std::unique_ptr<DebugMarker> debug_marker;
 		} _extensions;
 };
 

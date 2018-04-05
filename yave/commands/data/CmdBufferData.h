@@ -71,7 +71,7 @@ class CmdBufferData : NonCopyable {
 		vk::CommandBuffer _cmd_buffer;
 		vk::Fence _fence;
 
-		core::Vector<core::Unique<KeepAlive>> _keep_alive;
+		core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
 		CmdBufferPoolBase* _pool = nullptr;
 };
 

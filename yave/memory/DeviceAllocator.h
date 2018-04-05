@@ -48,8 +48,8 @@ class DeviceAllocator : NonCopyable, public DeviceLinked {
 		DeviceMemory alloc(vk::MemoryRequirements reqs, MemoryType type);
 		DeviceMemory dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type);
 
-		std::unordered_map<HeapType, core::Vector<core::Unique<DeviceMemoryHeap>>> _heaps;
-		std::unordered_map<MemoryType, core::Unique<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
+		std::unordered_map<HeapType, core::Vector<std::unique_ptr<DeviceMemoryHeap>>> _heaps;
+		std::unordered_map<MemoryType, std::unique_ptr<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
 
 		usize _max_allocs = 0;
 };

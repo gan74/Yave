@@ -58,7 +58,7 @@ class MeshData {
 		core::Vector<Vertex> _vertices;
 		core::Vector<IndexedTriangle> _triangles;
 
-		core::Unique<SkeletonData> _skeleton;
+		std::unique_ptr<SkeletonData> _skeleton;
 
 
 

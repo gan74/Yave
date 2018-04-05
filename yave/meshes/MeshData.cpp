@@ -66,7 +66,7 @@ core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
 }
 
 bool MeshData::has_skeleton() const {
-	return _skeleton;
+	return bool(_skeleton);
 }
 
 MeshData MeshData::from_parts(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin, core::Vector<Bone>&& bones) {
@@ -86,7 +86,7 @@ MeshData MeshData::from_parts(core::Vector<Vertex>&& vertices, core::Vector<Inde
 	mesh._radius = std::sqrt(radius);
 
 	if(!skin.is_empty()) {
-		mesh._skeleton = new SkeletonData{std::move(skin), std::move(bones)};
+		mesh._skeleton = std::make_unique<SkeletonData>(SkeletonData{std::move(skin), std::move(bones)});
 	}
 
 	return mesh;
@@ -134,7 +134,7 @@ MeshData MeshData::from_file(io::ReaderRef reader) {
 	reader->read(mesh._triangles.begin(), header.triangles * sizeof(IndexedTriangle)).expected(err_msg);
 
 	if(header.bones) {
-		mesh._skeleton = new SkeletonData();
+		mesh._skeleton = std::make_unique<SkeletonData>();
 		mesh._skeleton->skin = core::Vector<SkinWeights>(header.vertices, SkinWeights{});
 		reader->read(mesh._skeleton->skin.begin(), header.vertices * sizeof(SkinWeights)).expected(err_msg);
 

@@ -81,7 +81,7 @@ usize ImageData::data_offset(usize layer, usize mip) const {
 }
 
 const u8* ImageData::data(usize layer, usize mip) const {
-	return _data.as_ptr() + data_offset(layer, mip);
+	return _data.get() + data_offset(layer, mip);
 }
 
 void ImageData::swap(ImageData& other) {
@@ -132,9 +132,9 @@ ImageData ImageData::from_file(io::ReaderRef reader) {
 
 	usize data_size = data.combined_byte_size();
 
-	data._data = new u8[data_size];
+	data._data = std::make_unique<u8[]>(data_size);
 
-	reader->read(data._data, data_size).expected(err_msg);
+	reader->read(data._data.get(), data_size).expected(err_msg);
 
 	return data;
 }
@@ -147,8 +147,8 @@ ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat forma
 		_mips(1) {
 
 	usize data_size = _size.x() * size.y() * (_format.bit_per_pixel() / 8);
-	_data = new u8[data_size];
-	std::memcpy(_data.as_ptr(), data, data_size);
+	_data = std::make_unique<u8[]>(data_size);
+	std::memcpy(_data.get(), data, data_size);
 }
 
 

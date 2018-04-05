@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/settings/settings.h>
 
+#include <yave/assets/AssetLoader.h>
+
 #include <yave/device/DeviceLinked.h>
 #include <yave/objects/Transformable.h>
 #include <yave/scene/SceneView.h>
@@ -38,17 +40,23 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		Scene* scene() const;
 		SceneView* scene_view() const;
 
+		void save_scene();
+		void load_scene();
+
 		void save_settings();
 		void load_settings();
-
 
 		CameraSettings camera_settings;
 
 		NotOwner<Transformable*> selected = nullptr;
 
+
+		AssetLoader<Texture> texture_loader;
+		AssetLoader<StaticMesh> mesh_loader;
+
 	private:
-		core::Unique<Scene> _scene;
-		core::Unique<SceneView> _scene_view;
+		std::unique_ptr<Scene> _scene;
+		std::unique_ptr<SceneView> _scene_view;
 
 
 };

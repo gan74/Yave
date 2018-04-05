@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,57 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENE_H
-#define YAVE_SCENE_SCENE_H
+#ifndef YAVE_SERIALIZE_SERIALIZE_H
+#define YAVE_SERIALIZE_SERIALIZE_H
 
 #include <yave/yave.h>
+#include <yave/assets/AssetLoader.h>
+#include <yave/scene/Scene.h>
 
-#include <yave/objects/StaticMeshInstance.h>
-#include <yave/objects/Renderable.h>
-#include <yave/objects/Light.h>
+#include <y/io/Ref.h>
 
 namespace yave {
 
-class Scene : NonCopyable {
-
-	public:
-		template<typename T>
-		using Ptr = std::unique_ptr<T>;
-
-		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes = {}, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
-
-		const auto& static_meshes() const {
-			return _statics;
-		}
-
-		const auto& renderables() const {
-			return _renderables;
-		}
-
-		const auto& lights() const {
-			return _lights;
-		}
-
-		auto& static_meshes() {
-			return _statics;
-		}
-
-		auto& renderables() {
-			return _renderables;
-		}
-
-		auto& lights() {
-			return _lights;
-		}
+void serialize(io::WriterRef writer, const core::String& str);
+void serialize(io::WriterRef writer, const Scene& scene, const AssetLoader<StaticMesh>& mesh_loader);
 
 
-	private:
-		core::Vector<Ptr<StaticMeshInstance>> _statics;
-		core::Vector<Ptr<Renderable>> _renderables;
-		core::Vector<Ptr<Light>> _lights;
-};
+
+void deserialize(io::ReaderRef reader, core::String& str);
+void deserialize(io::ReaderRef reader, Scene& scene, AssetLoader<StaticMesh>& mesh_loader);
 
 
 }
 
-#endif // YAVE_SCENE_SCENE_H
+#endif // YAVE_SERIALIZE_SERIALIZE_H

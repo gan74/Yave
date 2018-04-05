@@ -34,6 +34,7 @@ SOFTWARE.
 
 #include <editor/views/EntityView.h>
 #include <editor/views/EngineView.h>
+#include <editor/views/AssetBrowser.h>
 #include <editor/widgets/SettingsPanel.h>
 #include <editor/widgets/CameraDebug.h>
 #include <editor/widgets/PerformanceMetrics.h>
@@ -51,8 +52,8 @@ MainWindow::MainWindow(ContextPtr cptr) :
 	ImGui::GetIO().IniFilename = "editor.ini";
 	ImGui::GetIO().LogFilename = "editor_logs.txt";
 
-	_elements << new EngineView(context());
-	_elements << new EntityView(context());
+	_elements << std::make_unique<EngineView>(context());
+	_elements << std::make_unique<EntityView>(context());
 
 	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(device()));
 	_ui_renderer = new SimpleEndOfPipe(gui);
@@ -76,7 +77,7 @@ void MainWindow::create_swapchain() {
 	if(_swapchain) {
 		_swapchain->reset();
 	} else {
-		_swapchain = new Swapchain(device(), this);
+		_swapchain = std::make_unique<Swapchain>(device(), static_cast<Window*>(this));
 	}
 }
 
@@ -117,18 +118,18 @@ void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token)
 
 
 template<typename T>
-static void show_element(ContextPtr cptr, core::Vector<core::Unique<UiElement>>& elems) {
+static void show_element(ContextPtr cptr, core::Vector<std::unique_ptr<UiElement>>& elems) {
 	for(auto& e : elems) {
-		if(auto t = dynamic_cast<T*>(e.as_ptr())) {
+		if(auto t = dynamic_cast<T*>(e.get())) {
 			t->show();
 			return;
 		}
 	}
 	if constexpr(std::is_constructible_v<T, ContextPtr>) {
-		elems << new T(cptr);
+		elems << std::make_unique<T>(cptr);
 	} else {
 		unused(cptr);
-		elems << new T();
+		elems << std::make_unique<T>();
 	}
 }
 
@@ -151,9 +152,10 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	{
 		if(ImGui::BeginMenuBar()) {
 			if(ImGui::BeginMenu("View")) {
-				if(ImGui::MenuItem("Engine view"))	show_element<EngineView>(context(), _elements);
-				if(ImGui::MenuItem("Entities"))		show_element<EntityView>(context(),_elements);
-				if(ImGui::MenuItem("Settings"))		show_element<SettingsPanel>(context(), _elements);
+				if(ImGui::MenuItem("Engine view"))		show_element<EngineView>(context(), _elements);
+				if(ImGui::MenuItem("Entities"))			show_element<EntityView>(context(), _elements);
+				if(ImGui::MenuItem("Asset browser"))	show_element<AssetBrowser>(context(), _elements);
+				if(ImGui::MenuItem("Settings"))			show_element<SettingsPanel>(context(), _elements);
 
 
 				if(ImGui::BeginMenu("Debug")) {

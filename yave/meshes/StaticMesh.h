@@ -31,6 +31,8 @@ namespace yave {
 class StaticMesh : NonCopyable {
 
 	public:
+		using load_from = MeshData;
+
 		StaticMesh() = default;
 
 		StaticMesh(DevicePtr dptr, const MeshData& mesh_data);

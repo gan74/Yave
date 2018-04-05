@@ -52,9 +52,9 @@ class MainWindow : private Window, public ContextLinked {
 
 		void create_swapchain();
 
-		core::Vector<core::Unique<UiElement>> _elements;
+		core::Vector<std::unique_ptr<UiElement>> _elements;
 
-		core::Unique<Swapchain> _swapchain;
+		std::unique_ptr<Swapchain> _swapchain;
 		Node::Ptr<EndOfPipe> _ui_renderer;
 };
 

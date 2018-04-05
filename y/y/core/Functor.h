@@ -188,7 +188,7 @@ struct functor_type<Ret(T::*)(Args...)> {
 
 
 template<typename Ret, typename... Args>
-using Function = detail::Functor<Unique, Ret, Args...>;
+using Function = detail::Functor<std::unique_ptr, Ret, Args...>;
 
 template<typename Ret, typename... Args>
 using Functor = detail::Functor<Rc, Ret, Args...>;

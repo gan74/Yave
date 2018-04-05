@@ -37,6 +37,8 @@ class Image : public ImageBase {
 	}
 
 	public:
+		using load_from = ImageData;
+
 		Image() = default;
 
 		Image(DevicePtr dptr, ImageFormat format, const math::Vec2ui& image_size) : ImageBase(dptr, format, Usage, image_size) {

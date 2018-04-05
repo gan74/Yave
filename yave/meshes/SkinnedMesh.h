@@ -31,6 +31,8 @@ namespace yave {
 class SkinnedMesh : NonCopyable {
 
 	public:
+		using load_from = MeshData;
+
 		SkinnedMesh() = default;
 
 		SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);

@@ -67,7 +67,7 @@ class ImageData : NonCopyable {
 		usize _layers = 1;
 		usize _mips = 1;
 
-		core::Unique<u8[]> _data;
+		std::unique_ptr<u8[]> _data;
 };
 
 }

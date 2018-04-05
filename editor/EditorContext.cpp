@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "scenes.h"
 
+#include <yave/serialize/serialize.h>
+
 #include <y/io/File.h>
 
 namespace editor {
@@ -34,14 +36,30 @@ DevicePtr ContextLinked::device() const {
 
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
-		_scene(create_scene(device()).first),
+		texture_loader(dptr),
+		mesh_loader(dptr),
+		_scene(create_scene(texture_loader, mesh_loader)),
 		_scene_view(new SceneView(*_scene)) {
 
+	//load_scene();
 	load_settings();
 }
 
 EditorContext::~EditorContext() {
+	//save_scene();
 	save_settings();
+}
+
+void EditorContext::save_scene() {
+	if(auto r = io::File::create("./scene.ys"); r.is_ok()) {
+		serialize(r.unwrap(), *_scene, mesh_loader);
+	}
+}
+
+void EditorContext::load_scene() {
+	if(auto r = io::File::open("./scene.ys"); r.is_ok()) {
+		deserialize(r.unwrap(), *_scene, mesh_loader);
+	}
 }
 
 void EditorContext::save_settings() {
@@ -57,11 +75,11 @@ void EditorContext::load_settings() {
 }
 
 Scene* EditorContext::scene() const {
-	return _scene.as_ptr();
+	return _scene.get();
 }
 
 SceneView* EditorContext::scene_view() const {
-	return _scene_view.as_ptr();
+	return _scene_view.get();
 }
 
 }

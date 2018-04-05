@@ -111,7 +111,7 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 }
 
 void EngineView::update_camera() {
-	if(!ImGui::IsWindowFocused()) {
+	if(!ImGui::IsWindowHovered()) {
 		return;
 	}
 

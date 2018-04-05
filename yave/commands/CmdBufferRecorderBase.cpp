@@ -62,7 +62,7 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, const 
 		DeviceLinked(cmd_buffer.device()),
 		_buffer(cmd_buffer.vk_cmd_buffer()) {
 
-	if(auto marker = device()->debug_marker(); marker) {
+	if(auto marker = device()->debug_marker()) {
 		marker->begin_region(_buffer, name, color);
 	}
 }

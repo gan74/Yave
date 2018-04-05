@@ -52,7 +52,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 		);
 
 	if(_debug_params.debug_features_enabled()) {
-		_extensions.debug_callback = new DebugCallback(_instance);
+		_extensions.debug_callback = std::make_unique<DebugCallback>(_instance);
 	}
 }
 

@@ -39,6 +39,9 @@ class StaticMeshInstance : public Renderable {
 
 		void render(const FrameToken&, RenderPassRecorder& recorder, const SceneData& scene_data) const override;
 
+		const auto& mesh() const {
+			return _mesh;
+		}
 
 		const auto& material() const {
 			return _material;
