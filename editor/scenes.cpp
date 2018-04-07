@@ -54,15 +54,15 @@ std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoade
 	}
 
 	{
-		auto material = AssetPtr<Material>(Material(dptr, MaterialData()
+		auto material = make_asset<Material>(dptr, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
 				.set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
-			));
+			);
 
-		auto animation = AssetPtr<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to load animation file.")));
+		auto animation = make_asset<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to load animation file.")));
 
 		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/beta.fbx.ym").expected("Unable to open mesh file."));
-		auto mesh = AssetPtr<SkinnedMesh>(SkinnedMesh(dptr, mesh_data));
+		auto mesh = make_asset<SkinnedMesh>(dptr, mesh_data);
 
 		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
 
@@ -75,10 +75,10 @@ std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoade
 	}
 
 	{
-		auto material = AssetPtr<Material>(Material(dptr, MaterialData()
+		auto material = make_asset<Material>(dptr, MaterialData()
 				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
 				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-			));
+			);
 		//auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to open mesh file."));
 		//auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
 		auto mesh = mesh_loader.from_file("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to load mesh");

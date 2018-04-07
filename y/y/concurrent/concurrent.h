@@ -22,11 +22,11 @@ SOFTWARE.
 #ifndef Y_CONCURRENT_CONCURRENT_H
 #define Y_CONCURRENT_CONCURRENT_H
 
-#include "Arc.h"
 #include <y/core/Functor.h>
 #include <y/core/Vector.h>
 #include <y/core/Range.h>
 
+#include <atomic>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -62,7 +62,7 @@ class ParallelTask : NonCopyable {
 };
 
 
-void schedule_task(Arc<ParallelTask> task);
+void schedule_task(std::shared_ptr<ParallelTask> task);
 
 template<typename F>
 void schedule_n(F&& func, u32 n) {

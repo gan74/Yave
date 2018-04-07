@@ -58,7 +58,7 @@ class AssetLoader : public DeviceLinked {
 			if(it == _loaded.end()) {
 				if(auto file = io::File::open(filename); file.is_ok()) {
 					load_from data = load_from::from_file(file.unwrap());
-					it = _loaded.insert({filename, AssetPtr<T>::make(device(), std::move(data))}).first;
+					it = _loaded.insert({filename, make_asset<T>(device(), std::move(data))}).first;
 				} else {
 					return core::Err();
 				}

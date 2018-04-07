@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-CmdBufferBase::CmdBufferBase(core::Arc<CmdBufferDataProxy>&& data) : _proxy(std::move(data)) {
+CmdBufferBase::CmdBufferBase(std::shared_ptr<CmdBufferDataProxy>&& data) : _proxy(std::move(data)) {
 }
 
 CmdBufferBase::CmdBufferBase(CmdBufferBase&& other) {

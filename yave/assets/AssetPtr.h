@@ -23,12 +23,17 @@ SOFTWARE.
 #define YAVE_ASSETS_ASSETPTR_H
 
 #include <yave/yave.h>
-#include <y/concurrent/Arc.h>
+#include <memory>
 
 namespace yave {
 
 template<typename T>
-using AssetPtr = core::Arc<const T>;
+using AssetPtr = std::shared_ptr<const T>;
+
+template<typename T, typename... Args>
+AssetPtr<T> make_asset(Args&&... args) {
+	return std::make_shared<const T>(std::forward<Args>(args)...);
+}
 
 }
 

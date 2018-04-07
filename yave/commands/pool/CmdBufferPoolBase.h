@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef YAVE_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
 #define YAVE_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
 
-#include <y/concurrent/Arc.h>
 #include <y/concurrent/SpinLock.h>
 
 #include <yave/yave.h>
@@ -49,7 +48,7 @@ class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
 		CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);
 
 		void release(CmdBufferData&& data);
-		core::Arc<CmdBufferDataProxy> alloc();
+		std::shared_ptr<CmdBufferDataProxy> alloc();
 
 		void join_all();
 

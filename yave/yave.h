@@ -30,7 +30,6 @@ SOFTWARE.
 #include <y/math/Matrix.h>
 #include <y/math/Transform.h>
 
-#include <y/core/Ptr.h>
 #include <y/core/Range.h>
 #include <y/core/Vector.h>
 #include <y/core/String.h>

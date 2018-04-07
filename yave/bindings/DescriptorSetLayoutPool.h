@@ -26,8 +26,6 @@ SOFTWARE.
 
 #include <yave/device/DeviceLinked.h>
 #include <y/core/AssocVector.h>
-#include <y/concurrent/Arc.h>
-
 
 namespace yave {
 

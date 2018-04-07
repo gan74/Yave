@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <yave/vk/vk.h>
 
-#include <y/concurrent/Arc.h>
 #include <yave/device/DeviceLinked.h>
 
 namespace yave {

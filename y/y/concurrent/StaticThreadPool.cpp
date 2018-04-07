@@ -60,7 +60,7 @@ void StaticThreadPool::process_until_empty() {
 	}
 }
 
-void StaticThreadPool::worker(Arc<SharedData> data) {
+void StaticThreadPool::worker(std::shared_ptr<SharedData> data) {
 	while(data->run) {
 		std::unique_lock guard(data->lock);
 		data->condition.wait(guard, [&] { return !data->queue.empty(); });

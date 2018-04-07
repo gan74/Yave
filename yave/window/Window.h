@@ -26,7 +26,6 @@ SOFTWARE.
 #include "EventHandler.h"
 
 #include <y/core/String.h>
-#include <y/core/Ptr.h>
 
 #ifdef Y_OS_WIN
 #include <windows.h>

@@ -31,7 +31,7 @@ bool run_workers = true;
 
 std::mutex scheduler_mutex;
 std::condition_variable scheduler_condition;
-Arc<detail::ParallelTask> scheduled_task;
+std::shared_ptr<detail::ParallelTask> scheduled_task;
 
 usize concurency_level = 1;
 
@@ -73,7 +73,7 @@ bool ParallelTask::register_done() {
 
 
 
-void schedule_task(Arc<ParallelTask> task) {
+void schedule_task(std::shared_ptr<ParallelTask> task) {
 	static SpinLock global_sched_lock;
 
 	while(!global_sched_lock.try_lock()) {
@@ -105,14 +105,14 @@ static void work() {
 		std::unique_lock lock(scheduler_mutex);
 		auto task = scheduled_task;
 
-		while(!task || task.as_ptr() == last) {
+		while(!task || task.get() == last) {
 			scheduler_condition.wait(lock);
 			task = scheduled_task;
 		}
 
 		lock.unlock();
 		task->run();
-		last = task.as_ptr();
+		last = task.get();
 	}
 }
 

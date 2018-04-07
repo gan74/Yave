@@ -55,8 +55,8 @@ MainWindow::MainWindow(ContextPtr cptr) :
 	_elements << std::make_unique<EngineView>(context());
 	_elements << std::make_unique<EntityView>(context());
 
-	auto gui = Node::Ptr<SecondaryRenderer>(new ImGuiRenderer(device()));
-	_ui_renderer = new SimpleEndOfPipe(gui);
+	Node::Ptr<SecondaryRenderer> gui(new ImGuiRenderer(device()));
+	_ui_renderer = std::make_shared<SimpleEndOfPipe>(gui);
 
 	set_event_handler(new MainEventHandler());
 }

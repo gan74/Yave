@@ -23,7 +23,7 @@ SOFTWARE.
 #define Y_CORE_FUNCTION_H
 
 #include <y/utils.h>
-#include "Ptr.h"
+#include <memory>
 
 namespace y {
 namespace core {
@@ -191,7 +191,7 @@ template<typename Ret, typename... Args>
 using Function = detail::Functor<std::unique_ptr, Ret, Args...>;
 
 template<typename Ret, typename... Args>
-using Functor = detail::Functor<Rc, Ret, Args...>;
+using Functor = detail::Functor<std::shared_ptr, Ret, Args...>;
 
 
 

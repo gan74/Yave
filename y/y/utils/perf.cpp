@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "perf.h"
-#include <y/core/Ptr.h>
 #include <y/core/Chrono.h>
 
 #include <thread>

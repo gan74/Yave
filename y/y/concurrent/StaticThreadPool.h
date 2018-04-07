@@ -27,8 +27,6 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/Range.h>
 
-#include "Arc.h"
-
 #include <thread>
 #include <list>
 #include <mutex>
@@ -87,9 +85,9 @@ class StaticThreadPool : NonCopyable {
 		}
 
 	private:
-		static void worker(Arc<SharedData> data);
+		static void worker(std::shared_ptr<SharedData> data);
 
-		Arc<SharedData> _shared_data;
+		std::shared_ptr<SharedData> _shared_data;
 		usize _thread_count;
 };
 

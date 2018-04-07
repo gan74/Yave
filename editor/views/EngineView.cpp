@@ -53,7 +53,7 @@ void EngineView::create_renderer(const math::Vec2ui& size) {
 
 	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
 
-	_ui_material = new Material(device(), MaterialData()
+	_ui_material = make_asset<Material>(device(), MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("copy.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
 			.set_bindings({Binding(_renderer->output()), Binding(_uniform_buffer)})

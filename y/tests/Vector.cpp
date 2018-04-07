@@ -21,9 +21,9 @@ SOFTWARE.
 **********************************/
 #include <y/core/Vector.h>
 #include <y/core/SmallVector.h>
-#include <y/core/Ptr.h>
 #include <y/test/test.h>
 #include <vector>
+#include <memory>
 
 //#include <y/core/String.h>
 
@@ -286,16 +286,16 @@ y_test_func("SmallVector copy") {
 		y_test_assert(cpy[3] == 4);
 	}
 	{
-		Rc<int> rc = new int(2);
-		y_test_assert(rc.ref_count() == 1);
-		SmallVector<Rc<int>, 8> vec;
+		std::shared_ptr<int> rc(new int(2));
+		y_test_assert(rc.use_count() == 1);
+		SmallVector<std::shared_ptr<int>, 8> vec;
 		vec.push_back(rc);
-		y_test_assert(rc.ref_count() == 2);
+		y_test_assert(rc.use_count() == 2);
 		{
-			SmallVector<Rc<int>, 8> cpy = vec;
-			y_test_assert(rc.ref_count() == 3);
+			SmallVector<std::shared_ptr<int>, 8> cpy = vec;
+			y_test_assert(rc.use_count() == 3);
 		}
-		y_test_assert(rc.ref_count() == 2);
+		y_test_assert(rc.use_count() == 2);
 	}
 }
 
@@ -310,15 +310,15 @@ y_test_func("SmallVector move") {
 		y_test_assert(cpy[3] == 4);
 	}
 	{
-		Rc<int> rc = new int(7);
-		SmallVector<Rc<int>, 8> vec;
+		std::shared_ptr<int> rc(new int(7));
+		SmallVector<std::shared_ptr<int>, 8> vec;
 		vec.push_back(rc);
-		y_test_assert(rc.ref_count() == 2);
+		y_test_assert(rc.use_count() == 2);
 		{
-			y_test_assert(rc.ref_count() == 2);
-			SmallVector<Rc<int>, 8> cpy = std::move(vec);
+			y_test_assert(rc.use_count() == 2);
+			SmallVector<std::shared_ptr<int>, 8> cpy = std::move(vec);
 		}
-		y_test_assert(rc.ref_count() == 1);
+		y_test_assert(rc.use_count() == 1);
 	}
 }
 

@@ -22,10 +22,9 @@ SOFTWARE.
 #ifndef Y_UTILS_PERF_H
 #define Y_UTILS_PERF_H
 
-#include <y/core/Ptr.h>
 #include <y/io/Writer.h>
-
 #include <y/defines.h>
+#include <memory>
 
 namespace y {
 namespace perf {

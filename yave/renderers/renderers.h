@@ -29,7 +29,7 @@ namespace yave {
 class Node : NonCopyable {
 	public:
 		template<typename T>
-		using Ptr = core::Arc<T>;
+		using Ptr = std::shared_ptr<T>;
 
 		virtual ~Node() {
 		}

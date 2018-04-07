@@ -25,8 +25,6 @@ SOFTWARE.
 #include <yave/commands/CmdBuffer.h>
 #include <yave/swapchain/FrameToken.h>
 
-#include <y/concurrent/Arc.h>
-
 #include <unordered_map>
 
 namespace yave {
@@ -36,7 +34,7 @@ class Node;
 class RenderingPipeline : NonCopyable {
 	public:
 		template<typename T>
-		using Ptr = core::Arc<T>;
+		using Ptr = std::shared_ptr<T>;
 
 	private:
 		using NodePtr = RenderingPipeline::Ptr<Node>;

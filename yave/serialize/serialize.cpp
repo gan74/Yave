@@ -37,7 +37,7 @@ static std::unordered_map<const T*, u32> serialize(io::WriterRef writer, const A
 	writer->write_one(u32(loader.size()));
 	for(const auto& asset : loader) {
 		u32 id = u32(ids.size());
-		ids[asset.second.as_ptr()] = id;
+		ids[asset.second.get()] = id;
 
 		serialize(writer, asset.first);
 	}
@@ -68,7 +68,7 @@ void serialize(io::WriterRef writer, const Scene& scene, const AssetLoader<Stati
 
 	writer->write_one(u32(scene.static_meshes().size()));
 	for(const auto& mesh : scene.static_meshes()) {
-		auto mesh_id = mesh_ids[mesh->mesh().as_ptr()];
+		auto mesh_id = mesh_ids[mesh->mesh().get()];
 		writer->write_one(mesh_id);
 		writer->write_one(mesh->transform());
 	}
@@ -95,10 +95,10 @@ void deserialize(io::ReaderRef reader, Scene& scene, AssetLoader<StaticMesh>& me
 
 	DevicePtr dptr = mesh_loader.device();
 
-	auto material = AssetPtr<Material>(Material(dptr, MaterialData()
+	auto material = std::make_shared<Material>(dptr, MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-		));
+		);
 
 	u32 mesh_count = reader->read_one<u32>().unwrap();
 	for(u32 i = 0; i != mesh_count; ++i) {
