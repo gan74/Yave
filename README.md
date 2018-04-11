@@ -1,7 +1,15 @@
 # Yave
 Yet another C++17 Vulkan engine.
 
+
+
+
 ## Status
+
+Currently a mess, should smooth out as I am learning Vulkan.
+
+The project is in its very early stages.
+For now I am focussing on creating a decent Vulkan wrapper/interface and a small scene editor before moving to the real engine work.
 
 ![Current status](https://i.imgur.com/fLydq3W.png)
 ![Current status](https://i.imgur.com/TaJzCya.gif)
@@ -27,9 +35,6 @@ You need:
    * [Assimp](http://assimp.sourceforge.net/)
 
 
-
-
-Currently a mess, should smooth out as I am learning Vulkan.
 
 Implemented features:
  * Buffers
