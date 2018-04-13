@@ -120,6 +120,7 @@ void EngineView::update_camera() {
 	math::Vec3 cam_pos = camera.position();
 	math::Vec3 cam_fwd = camera.forward();
 	math::Vec3 cam_lft = camera.left();
+	cam_lft = math::Vec3(cam_lft.x(), cam_lft.y(), 0.0f).normalized();
 
 
 	float cam_speed = 500.0f;
@@ -141,16 +142,23 @@ void EngineView::update_camera() {
 	float fov = math::to_rad(60.0f);
 
 	if(ImGui::IsMouseDown(1)) {
-		auto rotation = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft));
-		auto euler = rotation.to_euler();
 		auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
 		delta *= context()->camera_settings.camera_sensitivity;
 
-		euler[math::Quaternion<>::YawIndex] -= delta.x();
-		euler[math::Quaternion<>::PitchIndex] += delta.y();
+		{
+			auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+			cam_fwd = pitch(cam_fwd);
+		}
+		{
+			auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
+			cam_fwd = yaw(cam_fwd);
+			cam_lft = yaw(cam_lft);
+		}
 
-		rotation = math::Quaternion<>::from_euler(euler);
-
+		auto euler = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft)).to_euler();
+		bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
+		euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
+		auto rotation = math::Quaternion<>::from_euler(euler);
 		cam_fwd = rotation({1.0f, 0.0f, 0.0f});
 		cam_lft = rotation({0.0f, 1.0f, 0.0f});
 	}
