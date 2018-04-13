@@ -38,15 +38,16 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		texture_loader(dptr),
 		mesh_loader(dptr),
-		_scene(create_scene(texture_loader, mesh_loader)),
-		_scene_view(new SceneView(*_scene)) {
+		//_scene(create_scene(texture_loader, mesh_loader)),
+		_scene(std::make_unique<Scene>()),
+		_scene_view(std::make_unique<SceneView>(*_scene)) {
 
-	//load_scene();
+	load_scene();
 	load_settings();
 }
 
 EditorContext::~EditorContext() {
-	//save_scene();
+	save_scene();
 	save_settings();
 }
 

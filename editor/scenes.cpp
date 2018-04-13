@@ -34,15 +34,13 @@ namespace editor {
 std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader) {
 
 	DevicePtr dptr = tex_loader.device();
-
-	core::Vector<Scene::Ptr<Renderable>> renderables;
-	core::Vector<Scene::Ptr<Light>> lights;
+	auto scene = std::make_unique<Scene>();
 
 	{
 		Light l(Light::Directional);
 		l.transform().set_basis(math::Vec3{1.0f, 1.0f, 3.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 		l.color() = math::Vec3{1.0f};
-		lights << std::make_unique<Light>(std::move(l));
+		scene->lights() << std::make_unique<Light>(std::move(l));
 	}
 
 	{
@@ -50,7 +48,7 @@ std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoade
 		l.color() = math::Vec3{10000.0f, 0.0f, 0.0f};
 		l.position().z() = 100.0f;
 		l.radius() = 100.0f;
-		lights << std::make_unique<Light>(std::move(l));
+		scene->lights() << std::make_unique<Light>(std::move(l));
 	}
 
 	{
@@ -70,7 +68,7 @@ std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoade
 			auto instance = std::make_unique<SkinnedMeshInstance>(mesh, material);
 			instance->position() = {0.0f, 100.0f, -instance->radius() * 0.5f};
 			//instance->animate(animation);
-			renderables << std::move(instance);
+			scene->renderables() << std::move(instance);
 		}
 	}
 
@@ -86,29 +84,28 @@ std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoade
 		{
 			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			renderables << std::move(instance);
+			scene->static_meshes() << std::move(instance);
 		}
 
 		{
 			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 			instance->transform() = math::Transform<>(math::Vec3(100.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			renderables << std::move(instance);
+			scene->static_meshes() << std::move(instance);
 		}
 
 		{
 			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 			instance->transform() = math::Transform<>(math::Vec3(0.0f, 100.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			renderables << std::move(instance);
+			scene->static_meshes() << std::move(instance);
 		}
 
 		{
 			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 100.0f), math::identity(), math::Vec3(0.1f));
-			renderables << std::move(instance);
+			scene->static_meshes() << std::move(instance);
 		}
 	}
 
-	auto scene = std::make_unique<Scene>(core::Vector<Scene::Ptr<StaticMeshInstance>>(), std::move(renderables), std::move(lights));
 
 	return scene;
 

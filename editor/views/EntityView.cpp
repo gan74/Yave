@@ -81,6 +81,16 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		ImGui::TreePop();
 	}
 
+	if(ImGui::TreeNode("Meshes")) {
+		for(const auto& r : context()->scene()->static_meshes()) {
+			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
+			bool selected = r.get() == context()->selected;
+			ImGui::Selectable(buffer, &selected);
+			context()->selected = selected ? r.get() : context()->selected;
+		}
+		ImGui::TreePop();
+	}
+
 	if(ImGui::TreeNode("Lights")) {
 		for(const auto& l : context()->scene()->lights()) {
 			std::sprintf(buffer, "%s##%p", light_type_name(l->type()), static_cast<void*>(l.get()));

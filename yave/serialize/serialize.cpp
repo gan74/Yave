@@ -76,6 +76,11 @@ void serialize(io::WriterRef writer, const Scene& scene, const AssetLoader<Stati
 	for(const auto& renderable : scene.renderables()) {
 		log_msg("Can not serialize renderable of type \"" + type_name(*renderable) + "\"", Log::Warning);
 	}
+
+	writer->write_one(u32(scene.lights().size()));
+	for(const auto& light : scene.lights()) {
+		writer->write_one(*light);
+	}
 }
 
 
@@ -105,9 +110,17 @@ void deserialize(io::ReaderRef reader, Scene& scene, AssetLoader<StaticMesh>& me
 		u32 mesh_id = reader->read_one<u32>().unwrap();
 		auto mesh = mesh_loader.from_file(mesh_names[mesh_id]).unwrap();
 
-		auto inst = new StaticMeshInstance(mesh, material);
+		auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
 		reader->read_one(inst->transform()).unwrap();
 		scene.static_meshes().emplace_back(std::move(inst));
+	}
+
+	u32 light_count = reader->read_one<u32>().unwrap();
+	for(u32 i = 0; i != light_count; ++i) {
+		// load as point, then read on top. Maybe change this ?
+		auto light = std::make_unique<Light>(Light::Point);
+		reader->read_one(*light).unwrap();
+		scene.lights().emplace_back(std::move(light));
 	}
 }
 
