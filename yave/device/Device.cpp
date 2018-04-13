@@ -158,10 +158,11 @@ Queue& Device::queue(vk::QueueFlags) {
 ThreadDevicePtr Device::thread_data() const {
 	std::unique_lock lock(_lock);
 	auto thread_id = std::this_thread::get_id();
-	if(auto it = _thread_local_datas.find(thread_id); it != _thread_local_datas.end()) {
-		return it->second.get();
+	auto& tl_data = _thread_local_datas[thread_id];
+	if(!tl_data) {
+		tl_data = std::unique_ptr<ThreadLocalDeviceData>(new ThreadLocalDeviceData(this));
 	}
-	return (_thread_local_datas[thread_id] = std::unique_ptr<ThreadLocalDeviceData>(new ThreadLocalDeviceData(this))).get();
+	return tl_data.get();
 }
 
 const vk::PhysicalDeviceLimits& Device::vk_limits() const {

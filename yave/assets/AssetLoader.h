@@ -54,17 +54,17 @@ class AssetLoader : public DeviceLinked {
 		}
 
 		core::Result<AssetPtr<T>> from_file(const core::String& filename) {
-			auto it = _loaded.find(filename);
-			if(it == _loaded.end()) {
+			auto& asset = _loaded[filename];
+			if(!asset) {
 				if(auto file = io::File::open(filename); file.is_ok()) {
 					load_from data = load_from::from_file(file.unwrap());
-					it = _loaded.insert({filename, make_asset<T>(device(), std::move(data))}).first;
+					asset = make_asset<T>(device(), std::move(data));
 				} else {
 					return core::Err();
 				}
 
 			}
-			return core::Ok(it->second);
+			return core::Ok(asset);
 		}
 
 

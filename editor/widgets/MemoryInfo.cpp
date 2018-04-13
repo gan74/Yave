@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2018 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,38 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#include "MemoryInfo.h"
 
-#include "SimpleEndOfPipe.h"
+#include <editor/EditorContext.h>
+#include <yave/device/Device.h>
 
-namespace yave {
+#include <imgui/imgui.h>
 
-SimpleEndOfPipe::SimpleEndOfPipe(const core::ArrayView<Ptr<SecondaryRenderer>>& renderers) :
-		EndOfPipe(renderers[0]->device()),
-		_renderers(renderers.begin(), renderers.end()) {
+namespace editor {
+
+MemoryInfo::MemoryInfo(ContextPtr cptr) : Widget("Memory info", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
 }
 
-void SimpleEndOfPipe::build_frame_graph(FrameGraphNode& frame_graph) {
-	for(const auto& renderer : _renderers) {
-		frame_graph.schedule(renderer);
-	}
-}
-
-void SimpleEndOfPipe::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	auto region = recorder.region("SimpleEndOfPipe::render");
-
-	auto pass = recorder.bind_framebuffer(create_framebuffer(token.image_view));
-
-	for(const auto& renderer : _renderers) {
-		renderer->render(pass, token);
-	}
-}
-
-const Framebuffer& SimpleEndOfPipe::create_framebuffer(const ColorAttachmentView& out) {
-	auto& fb = _output_framebuffers[out.vk_view()];
-	if(!fb.device()) {
-		fb = Framebuffer(device(), {out});
-	}
-	return fb;
+void MemoryInfo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+	core::String dump = context()->device()->allocator().dump_info().data();
+	ImGui::TextUnformatted(dump.begin(), dump.end());
 }
 
 }

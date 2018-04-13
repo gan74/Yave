@@ -42,7 +42,7 @@ class DeviceAllocator : NonCopyable, public DeviceLinked {
 		DeviceMemory alloc(vk::Image image);
 		DeviceMemory alloc(vk::Buffer buffer, MemoryType type);
 
-		void dump_info() const;
+		core::String dump_info() const;
 
 	private:
 		DeviceMemory alloc(vk::MemoryRequirements reqs, MemoryType type);

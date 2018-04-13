@@ -328,7 +328,7 @@ vec3 ibl_irradiance(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 vie
 	vec3 diffuse = kD * irradiance * albedo;
 
 	vec3 reflected = reflect(-view_dir, normal);
-	vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy;
+	vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy; // TODO: make it so we don't wrap (which breaks roughness close to 0 or 1)
 	vec3 specular = (kS * brdf.x + brdf.y) * textureLod(probe, reflected, roughness * probe_mips).rgb;
 
 	return diffuse + specular;

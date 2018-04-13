@@ -37,6 +37,7 @@ SOFTWARE.
 #include <editor/views/AssetBrowser.h>
 #include <editor/widgets/SettingsPanel.h>
 #include <editor/widgets/CameraDebug.h>
+#include <editor/widgets/MemoryInfo.h>
 #include <editor/widgets/PerformanceMetrics.h>
 
 #include <imgui/imgui.h>
@@ -54,6 +55,7 @@ MainWindow::MainWindow(ContextPtr cptr) :
 
 	_elements << std::make_unique<EngineView>(context());
 	_elements << std::make_unique<EntityView>(context());
+	_elements << std::make_unique<AssetBrowser>(context());
 
 	Node::Ptr<SecondaryRenderer> gui(new ImGuiRenderer(device()));
 	_ui_renderer = std::make_shared<SimpleEndOfPipe>(gui);
@@ -161,6 +163,7 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) show_element<CameraDebug>(context(), _elements);
 					if(ImGui::MenuItem("Performances")) show_element<PerformanceMetrics>(context(), _elements);
+					if(ImGui::MenuItem("Memory info")) show_element<MemoryInfo>(context(), _elements);
 					ImGui::EndMenu();
 				}
 

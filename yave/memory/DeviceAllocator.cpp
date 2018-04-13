@@ -37,10 +37,11 @@ DeviceAllocator::DeviceAllocator(DevicePtr dptr) :
 
 DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type) {
 	Y_LOG_PERF("memory");
-	if(auto it = _dedicated_heaps.find(type); it != _dedicated_heaps.end()) {
-		return std::move(it->second->alloc(reqs).unwrap());
+	auto& heap = _dedicated_heaps[type];
+	if(!heap) {
+		heap = std::make_unique<DedicatedDeviceMemoryAllocator>(device(), type);
 	}
-	return std::move((_dedicated_heaps[type] = std::make_unique<DedicatedDeviceMemoryAllocator>(device(), type))->alloc(reqs).unwrap());
+	return std::move(heap->alloc(reqs).unwrap());
 }
 
 DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
@@ -78,20 +79,18 @@ DeviceMemory DeviceAllocator::alloc(vk::Buffer buffer, MemoryType type) {
 }
 
 
-void DeviceAllocator::dump_info() const {
-	log_msg("Allocator:");
-	log_msg("  maximum allocations = "_s + _max_allocs);
-	/*log_msg("  dedicated allocations = "_s + _dedicated);
-	log_msg("  heap count = "_s + _heap_count);
-	log_msg("  total allocations = "_s + (_dedicated + _heap_count));*/
+core::String DeviceAllocator::dump_info() const {
+	core::String str = "Allocator:\n";
+	str += "  maximum allocations = "_s + _max_allocs + "\n";
 	for(auto& heaps : _heaps) {
-		log_msg("  Memory type = "_s + usize(heaps.first.second) + "|" + heaps.first.first);
+		str += "  Memory type = "_s + usize(heaps.first.second) + "|" + heaps.first.first + "\n";
 		for(auto& h : heaps.second) {
-			log_msg("    heap:");
-			log_msg("      total: "_s + (h->heap_size / 1024) + " KB");
-			log_msg("      free : "_s + (h->available() / 1024) + " KB");
+			str += "    heap:\n";
+			str += "      total: "_s + (h->heap_size / 1024) + " KB\n";
+			str += "      free : "_s + (h->available() / 1024) + " KB\n";
 		}
 	}
+	return str;
 }
 
 }
