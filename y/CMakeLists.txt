@@ -5,8 +5,8 @@ include_directories(${y_SOURCE_DIR})
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
 
-set(ULTIMATE_WARNINGS -Wdisabled-optimization -Wlogical-op -Wwrite-strings -Wmissing-include-dirs -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef)
-set(EXTRA_WARNINGS -Woverloaded-virtual -Wcast-qual -Wcast-align -Wunreachable-code -Wold-style-cast -Wnon-virtual-dtor -Wodr)
+set(ULTIMATE_WARNINGS -Wdisabled-optimization -Wlogical-op -Wredundant-decls -Wsign-promo -Wswitch-default -Wundef)
+set(EXTRA_WARNINGS -Woverloaded-virtual -Wcast-qual -Wold-style-cast -Wnon-virtual-dtor -Wodr)
 
 set(Y_COMPITE_OPTIONS -std=c++17 -pedantic -Wall -Wextra ${EXTRA_WARNINGS} ${ULTIMATE_WARNINGS})
 
