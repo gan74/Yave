@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_GIZMO_H
-#define EDITOR_WIDGETS_GIZMO_H
+#ifndef EDITOR_WIDGETS_SCENEDEBUG_H
+#define EDITOR_WIDGETS_SCENEDEBUG_H
 
-#include <editor/ui/Gadget.h>
+#include <editor/ui/Widget.h>
 
 #include <yave/scene/SceneView.h>
 
 namespace editor {
 
-class Gizmo : public Gadget, public ContextLinked {
+class SceneDebug : public Widget, public ContextLinked {
 	public:
-		Gizmo(ContextPtr cptr);
-
-		bool is_dragging() const {
-			return _dragging_mask;
-		}
+		SceneDebug(ContextPtr cptr);
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
-
-		math::Vec3 _dragging_offset;
-		u32 _dragging_mask = 0;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_GIZMO_H
+#endif // EDITOR_WIDGETS_SCENEDEBUG_H

@@ -60,6 +60,7 @@ class Transformable {
 		}
 
 
+		// this is the unscaled radius !!!
 		float radius() const {
 			return _radius;
 		}

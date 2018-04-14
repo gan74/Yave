@@ -64,6 +64,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		return;
 	}
 
+	math::Vec3 cam_fwd = context()->scene_view()->camera().forward();
 	math::Matrix4<> view_proj = context()->scene_view()->camera().viewproj_matrix();
 	math::Transform<> object = context()->selected->transform();
 
@@ -75,15 +76,22 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 	auto center = to_screen_pos(view_proj, object.position()) * viewport + offset;
 
+	math::Vec3 basis[] = {{perspective, 0.0f, 0.0f}, {0.0f, perspective, 0.0f}, {0.0f, 0.0f, perspective}};
 	math::Vec2 axis[] = {
-			to_screen_pos(view_proj, object.position() + math::Vec3(perspective, 0.0f, 0.0f)) * viewport + offset,
-			to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, perspective, 0.0f)) * viewport + offset,
-			to_screen_pos(view_proj, object.position() + math::Vec3(0.0f, 0.0f, perspective)) * viewport + offset
+			to_screen_pos(view_proj, object.position() + basis[0]) * viewport + offset,
+			to_screen_pos(view_proj, object.position() + basis[1]) * viewport + offset,
+			to_screen_pos(view_proj, object.position() + basis[2]) * viewport + offset
 		};
 
+	usize sorted[] = {0, 1, 2};
+	sort(std::begin(sorted), std::end(sorted), [&](usize a, usize b) {
+		return basis[a].dot(cam_fwd) > basis[b].dot(cam_fwd);
+	});
+
 	for(usize i = 0; i != 3; ++i) {
-		u32 color = gizmo_alpha | (0xFF << (8 * i));
-		ImGui::GetWindowDrawList()->AddLine(center, axis[i], color, gizmo_width);
+		usize sorted_index = sorted[i];
+		u32 color = gizmo_alpha | (0xFF << (8 * sorted_index));
+		ImGui::GetWindowDrawList()->AddLine(center, axis[sorted_index], color, gizmo_width);
 	}
 	ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0x00FFFFFF | gizmo_alpha);
 

@@ -57,6 +57,7 @@ class EngineView : public Dock, public ContextLinked {
 
 		void paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 		void update_camera();
+		void update_selection();
 
 		Node::Ptr<IBLData> _ibl_data;
 		Node::Ptr<FramebufferRenderer> _renderer;

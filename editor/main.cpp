@@ -5,12 +5,17 @@
 
 using namespace editor;
 
-int main(int, char **) {
+int main(int argc, char** argv) {
 	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
 
-	//AssetLoader<core::String> loader;
+	bool debug = true;
+	for(core::String arg : core::ArrayView<const char*>(argv, argc)) {
+		if(arg == "--nodebug") {
+			debug = false;
+		}
+	}
 
-	Instance instance(DebugParams::debug());
+	Instance instance(debug ? DebugParams::debug() : DebugParams::none());
 	Device device(instance);
 
 	EditorContext ctx(&device);

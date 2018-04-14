@@ -31,10 +31,9 @@ SOFTWARE.
 
 namespace editor {
 
-std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader) {
+void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader) {
 
 	DevicePtr dptr = tex_loader.device();
-	auto scene = std::make_unique<Scene>();
 
 	{
 		Light l(Light::Directional);
@@ -105,9 +104,6 @@ std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoade
 			scene->static_meshes() << std::move(instance);
 		}
 	}
-
-
-	return scene;
 
 	/*std::unique_ptr scene_view = new SceneView(*scene);
 	{

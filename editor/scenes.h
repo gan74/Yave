@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace editor {
 
-std::unique_ptr<Scene> create_scene(AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader);
+void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader);
 
 }
 

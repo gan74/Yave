@@ -38,7 +38,6 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		texture_loader(dptr),
 		mesh_loader(dptr),
-		//_scene(create_scene(texture_loader, mesh_loader)),
 		_scene(std::make_unique<Scene>()),
 		_scene_view(std::make_unique<SceneView>(*_scene)) {
 
@@ -60,6 +59,8 @@ void EditorContext::save_scene() {
 void EditorContext::load_scene() {
 	if(auto r = io::File::open("./scene.ys"); r.is_ok()) {
 		deserialize(r.unwrap(), *_scene, mesh_loader);
+	} else {
+		fill_scene(scene(), texture_loader, mesh_loader);
 	}
 }
 

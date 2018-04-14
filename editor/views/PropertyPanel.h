@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_GIZMO_H
-#define EDITOR_WIDGETS_GIZMO_H
+#ifndef EDITOR_VIEWS_PROPERTYPANEL_H
+#define EDITOR_VIEWS_PROPERTYPANEL_H
 
-#include <editor/ui/Gadget.h>
-
-#include <yave/scene/SceneView.h>
+#include <editor/ui/Dock.h>
 
 namespace editor {
 
-class Gizmo : public Gadget, public ContextLinked {
+class PropertyPanel : public Dock, public ContextLinked {
 	public:
-		Gizmo(ContextPtr cptr);
-
-		bool is_dragging() const {
-			return _dragging_mask;
-		}
+		PropertyPanel(ContextPtr cptr);
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
-		math::Vec3 _dragging_offset;
-		u32 _dragging_mask = 0;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_GIZMO_H
+#endif // EDITOR_VIEWS_PROPERTYPANEL_H

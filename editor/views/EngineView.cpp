@@ -24,9 +24,11 @@ SOFTWARE.
 
 #include <editor/EditorContext.h>
 
+#include <yave/scene/SceneView.h>
 #include <yave/renderers/ToneMapper.h>
 #include <yave/window/EventHandler.h>
 
+#include <y/math/Volume.h>
 #include <y/io/File.h>
 
 #include <imgui/imgui.h>
@@ -104,10 +106,48 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 		map[0] = ViewData{math::Vec2i(win_size), math::Vec2i(win_pos), math::Vec2i(win_size)};
 
 		ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
+
+
+		_gizmo.paint(recorder, token);
+		if(!_gizmo.is_dragging()) {
+			update_selection();
+		}
 	}
 
-	_gizmo.paint(recorder, token);
 
+}
+
+
+void EngineView::update_selection() {
+	if(!ImGui::IsWindowHovered() || !ImGui::IsMouseClicked(0)) {
+		return;
+	}
+
+	math::Vec2 viewport = ImGui::GetWindowSize();
+	math::Vec2 offset = ImGui::GetWindowPos();
+
+	auto inv_matrix = context()->scene_view()->camera().inverse_matrix();
+	auto cam_pos = context()->scene_view()->camera().position();
+
+	math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
+	math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
+	math::Vec3 world = h_world.to<3>() / h_world.w();
+
+	math::Ray<> ray(cam_pos, world - cam_pos);
+
+	float distance = std::numeric_limits<float>::max();
+	for(const auto& tr : context()->scene()->static_meshes()) {
+		auto [pos, rot, sc] = tr->transform().decompose();
+		unused(rot);
+
+		float scale = std::max({sc.x(), sc.y(), sc.z()});
+		float dist = (pos - cam_pos).length();
+
+		if(ray.is_inside(pos, tr->radius() * scale) && dist < distance) {
+			context()->selected = tr.get();
+			distance = dist;
+		}
+	}
 }
 
 void EngineView::update_camera() {
@@ -120,7 +160,6 @@ void EngineView::update_camera() {
 	math::Vec3 cam_pos = camera.position();
 	math::Vec3 cam_fwd = camera.forward();
 	math::Vec3 cam_lft = camera.left();
-	cam_lft = math::Vec3(cam_lft.x(), cam_lft.y(), 0.0f).normalized();
 
 
 	float cam_speed = 500.0f;

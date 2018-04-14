@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_GIZMO_H
-#define EDITOR_WIDGETS_GIZMO_H
 
-#include <editor/ui/Gadget.h>
+#include "PropertyPanel.h"
 
-#include <yave/scene/SceneView.h>
+#include <editor/EditorContext.h>
+
+#include <imgui/imgui.h>
 
 namespace editor {
 
-class Gizmo : public Gadget, public ContextLinked {
-	public:
-		Gizmo(ContextPtr cptr);
+PropertyPanel::PropertyPanel(ContextPtr cptr) : Dock("Properties"), ContextLinked(cptr) {
+}
 
-		bool is_dragging() const {
-			return _dragging_mask;
-		}
 
-	private:
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+	if(!context()->selected) {
+		return;
+	}
 
-		math::Vec3 _dragging_offset;
-		u32 _dragging_mask = 0;
-};
+
+	Transformable* sel = context()->selected;
+	auto [pos, rot, scale] = sel->transform().decompose();
+	math::Vec3 euler = rot.to_euler();
+
+	ImGui::InputFloat3("Position", pos.begin());
+
+	ImGui::InputFloat3("Rotation", euler.begin());
+
+	sel->transform() = math::Transform<>(pos, math::Quaternion<>::from_euler(euler), scale);
+
+	//ImGui::Text("Position: %f, %f, %f", sel->position().x(), sel->position().y(), sel->position().z());
 
 }
 
-#endif // EDITOR_WIDGETS_GIZMO_H
+}

@@ -35,10 +35,12 @@ SOFTWARE.
 #include <editor/views/EntityView.h>
 #include <editor/views/EngineView.h>
 #include <editor/views/AssetBrowser.h>
+#include <editor/views/PropertyPanel.h>
 #include <editor/widgets/SettingsPanel.h>
 #include <editor/widgets/CameraDebug.h>
 #include <editor/widgets/MemoryInfo.h>
 #include <editor/widgets/PerformanceMetrics.h>
+#include <editor/widgets/SceneDebug.h>
 
 #include <imgui/imgui.h>
 
@@ -55,7 +57,7 @@ MainWindow::MainWindow(ContextPtr cptr) :
 
 	_elements << std::make_unique<EngineView>(context());
 	_elements << std::make_unique<EntityView>(context());
-	_elements << std::make_unique<AssetBrowser>(context());
+	_elements << std::make_unique<PropertyPanel>(context());
 
 	Node::Ptr<SecondaryRenderer> gui(new ImGuiRenderer(device()));
 	_ui_renderer = std::make_shared<SimpleEndOfPipe>(gui);
@@ -88,11 +90,13 @@ void MainWindow::exec() {
 
 	while(update()) {
 
-		FrameToken frame = _swapchain->next_frame();
-		CmdBufferRecorder<> recorder(device()->create_cmd_buffer());
+		if(_swapchain->size().x() && _swapchain->size().y()) {
+			FrameToken frame = _swapchain->next_frame();
+			CmdBufferRecorder<> recorder(device()->create_cmd_buffer());
 
-		render(recorder, frame);
-		present(recorder, frame);
+			render(recorder, frame);
+			present(recorder, frame);
+		}
 	}
 
 	device()->queue(QueueFamily::Graphics).wait();
@@ -143,12 +147,15 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 				  ImGuiWindowFlags_NoBringToFrontOnFocus |
 				  ImGuiWindowFlags_MenuBar;
 
+
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
 
 	ImGui::NewFrame();
 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	ImGui::Begin("Main window", nullptr, flags);
+
+		ImGui::ShowDemoWindow();
 
 	// menu
 	{
@@ -157,15 +164,21 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 				if(ImGui::MenuItem("Engine view"))		show_element<EngineView>(context(), _elements);
 				if(ImGui::MenuItem("Entities"))			show_element<EntityView>(context(), _elements);
 				if(ImGui::MenuItem("Asset browser"))	show_element<AssetBrowser>(context(), _elements);
+				if(ImGui::MenuItem("Properties"))		show_element<PropertyPanel>(context(), _elements);
 				if(ImGui::MenuItem("Settings"))			show_element<SettingsPanel>(context(), _elements);
 
 
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) show_element<CameraDebug>(context(), _elements);
+					if(ImGui::MenuItem("Scene debug")) show_element<SceneDebug>(context(), _elements);
+					ImGui::EndMenu();
+				}
+				if(ImGui::BeginMenu("Statistics")) {
 					if(ImGui::MenuItem("Performances")) show_element<PerformanceMetrics>(context(), _elements);
 					if(ImGui::MenuItem("Memory info")) show_element<MemoryInfo>(context(), _elements);
 					ImGui::EndMenu();
 				}
+
 
 				ImGui::EndMenu();
 			}

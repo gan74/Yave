@@ -91,7 +91,6 @@ void deserialize(io::ReaderRef reader, core::String& str) {
 	str = core::String(nullptr, size);
 	reader->read(str.data(), size).unwrap();
 	str[str.size()] = 0;
-	log_msg("des \"" + str + "\" " + str.size() + " " + size);
 }
 
 void deserialize(io::ReaderRef reader, Scene& scene, AssetLoader<StaticMesh>& mesh_loader) {
@@ -100,7 +99,7 @@ void deserialize(io::ReaderRef reader, Scene& scene, AssetLoader<StaticMesh>& me
 
 	DevicePtr dptr = mesh_loader.device();
 
-	auto material = std::make_shared<Material>(dptr, MaterialData()
+	auto material = make_asset<Material>(dptr, MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
 		);
