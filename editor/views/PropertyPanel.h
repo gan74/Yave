@@ -32,7 +32,6 @@ class PropertyPanel : public Dock, public ContextLinked {
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
-
 };
 
 }

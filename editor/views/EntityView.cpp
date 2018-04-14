@@ -49,7 +49,7 @@ EntityView::EntityView(ContextPtr cptr) : Dock("Entities"), ContextLinked(cptr) 
 
 void EntityView::add_light() {
 	Scene::Ptr<Light> light = std::make_unique<Light>(Light::Point);
-	context()->selected = light.get();
+	context()->set_selected(light.get());
 
 	light->radius() = 100.0f;
 	light->color() *= 10000.0;
@@ -74,9 +74,11 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(ImGui::TreeNode("Renderables")) {
 		for(const auto& r : context()->scene()->renderables()) {
 			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
-			bool selected = r.get() == context()->selected;
+			bool selected = r.get() == context()->selected();
 			ImGui::Selectable(buffer, &selected);
-			context()->selected = selected ? r.get() : context()->selected;
+			if(selected) {
+				context()->set_selected(r.get());
+			}
 		}
 		ImGui::TreePop();
 	}
@@ -84,9 +86,11 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(ImGui::TreeNode("Meshes")) {
 		for(const auto& r : context()->scene()->static_meshes()) {
 			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
-			bool selected = r.get() == context()->selected;
+			bool selected = r.get() == context()->selected();
 			ImGui::Selectable(buffer, &selected);
-			context()->selected = selected ? r.get() : context()->selected;
+			if(selected) {
+				context()->set_selected(r.get());
+			}
 		}
 		ImGui::TreePop();
 	}
@@ -94,9 +98,11 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(ImGui::TreeNode("Lights")) {
 		for(const auto& l : context()->scene()->lights()) {
 			std::sprintf(buffer, "%s##%p", light_type_name(l->type()), static_cast<void*>(l.get()));
-			bool selected = l.get() == context()->selected;
+			bool selected = l.get() == context()->selected();
 			ImGui::Selectable(buffer, &selected);
-			context()->selected = selected ? l.get() : context()->selected;
+			if(selected) {
+				context()->set_selected(l.get());
+			}
 		}
 		ImGui::TreePop();
 	}

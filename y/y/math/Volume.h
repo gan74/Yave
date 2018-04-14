@@ -33,7 +33,7 @@ class Volume : NonCopyable
 	public:
 		virtual ~Volume() = default;
 
-		virtual bool is_inside(const Vec<3, T> &, T) const = 0;
+		virtual bool intersects(const Vec<3, T> &, T) const = 0;
 };
 
 template<typename T = float>
@@ -42,10 +42,10 @@ class Ray final : public Volume<T> {
 		Ray(const Vec<3, T>& start, const Vec<3, T>& direction) : _start(start), _direction(direction.normalized()) {
 		}
 
-		bool is_inside(const Vec<3, T>& v, T r) const override {
+		bool intersects(const Vec<3, T>& v, T r) const override {
 			Vec<3, T> p(v - _start);
 			T dot = _direction.dot(p);
-			return p.length2() - dot * dot < (r * r);
+			return dot > T(0) && p.length2() - dot * dot < (r * r);
 		}
 
 		T distance(const Vec<3, T>& v) const {
@@ -80,7 +80,7 @@ class Sphere final : public Volume<T> {
 		Sphere(T radius) : _radius(radius) {
 		}
 
-		bool is_inside(const Vec<3, T>& v, T rad) const override {
+		bool intersects(const Vec<3, T>& v, T rad) const override {
 			return (_position - v).length2() < ((_radius + rad) * (_radius + rad));
 		}
 

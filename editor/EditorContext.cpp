@@ -84,4 +84,27 @@ SceneView* EditorContext::scene_view() const {
 	return _scene_view.get();
 }
 
+void EditorContext::set_selected(Light* sel) {
+	_selected = sel;
+	_selected_light = sel;
+}
+
+void EditorContext::set_selected(Transformable* sel) {
+	_selected = sel;
+	_selected_light = nullptr;
+}
+
+void EditorContext::set_selected(std::nullptr_t) {
+	_selected = nullptr;
+	_selected_light = nullptr;
+}
+
+Transformable* EditorContext::selected() const {
+	return _selected;
+}
+
+Light* EditorContext::selected_light() const {
+	return _selected_light;
+}
+
 }

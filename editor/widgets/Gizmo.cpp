@@ -27,8 +27,8 @@ SOFTWARE.
 
 namespace editor {
 
-static constexpr float gizmo_width = 2.0f;
-static constexpr float gizmo_size = 0.1f;
+static constexpr float gizmo_width = 3.0f;
+static constexpr float gizmo_size = 0.15f;
 static constexpr u32 gizmo_alpha = 0xC0000000;
 
 static bool is_clicked() {
@@ -60,27 +60,32 @@ Gizmo::Gizmo(ContextPtr cptr) : Gadget("Gizmo"), ContextLinked(cptr) {
 }
 
 void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(!context()->selected) {
+	if(!context()->selected()) {
 		return;
 	}
 
 	math::Vec3 cam_fwd = context()->scene_view()->camera().forward();
+	math::Vec3 cam_pos = context()->scene_view()->camera().position();
 	math::Matrix4<> view_proj = context()->scene_view()->camera().viewproj_matrix();
-	math::Transform<> object = context()->selected->transform();
+	math::Vec3 obj_pos = context()->selected()->transform().position();
 
-	auto projected = (view_proj * math::Vec4(object.position(), 1.0f));
+	if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
+		return;
+	}
+
+	auto projected = (view_proj * math::Vec4(obj_pos, 1.0f));
 	auto perspective = gizmo_size * projected.w();
 
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
 
-	auto center = to_screen_pos(view_proj, object.position()) * viewport + offset;
+	auto center = to_screen_pos(view_proj, obj_pos) * viewport + offset;
 
 	math::Vec3 basis[] = {{perspective, 0.0f, 0.0f}, {0.0f, perspective, 0.0f}, {0.0f, 0.0f, perspective}};
 	math::Vec2 axis[] = {
-			to_screen_pos(view_proj, object.position() + basis[0]) * viewport + offset,
-			to_screen_pos(view_proj, object.position() + basis[1]) * viewport + offset,
-			to_screen_pos(view_proj, object.position() + basis[2]) * viewport + offset
+			to_screen_pos(view_proj, obj_pos + basis[0]) * viewport + offset,
+			to_screen_pos(view_proj, obj_pos + basis[1]) * viewport + offset,
+			to_screen_pos(view_proj, obj_pos + basis[2]) * viewport + offset
 		};
 
 	usize sorted[] = {0, 1, 2};
@@ -98,15 +103,13 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 	auto project_mouse = [=]{
 		auto inv_matrix = context()->scene_view()->camera().inverse_matrix();
-		auto cam_pos = context()->scene_view()->camera().position();
-		auto object = context()->selected->transform();
 
 		math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 		math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
 		math::Vec3 world = h_world.to<3>() / h_world.w();
 
 		math::Vec3 ray = (world - cam_pos).normalized();
-		float dist = (object.position() - cam_pos).length();
+		float dist = (obj_pos - cam_pos).length();
 
 		return cam_pos + ray * dist;
 	};
@@ -114,7 +117,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(is_clicked()) {
 		math::Vec2 cursor = math::Vec2(ImGui::GetIO().MousePos) - center;
 		_dragging_mask = 0;
-		_dragging_offset = object.position() - project_mouse();
+		_dragging_offset = obj_pos - project_mouse();
 		for(usize i = 0; i != 3; ++i) {
 			if(is_clicking(cursor, axis[i] - center)) {
 				_dragging_mask |= (1 << i);
@@ -129,7 +132,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		auto new_pos = project_mouse() + _dragging_offset;
 		for(usize i = 0; i != 3; ++i) {
 			if(_dragging_mask & (1 << i)) {
-				context()->selected->position()[i] = new_pos[i];
+				context()->selected()->position()[i] = new_pos[i];
 			}
 		}
 	}

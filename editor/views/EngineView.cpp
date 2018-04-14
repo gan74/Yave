@@ -143,10 +143,13 @@ void EngineView::update_selection() {
 		float scale = std::max({sc.x(), sc.y(), sc.z()});
 		float dist = (pos - cam_pos).length();
 
-		if(ray.is_inside(pos, tr->radius() * scale) && dist < distance) {
-			context()->selected = tr.get();
+		if(ray.intersects(pos, tr->radius() * scale) && dist < distance) {
+			context()->set_selected(tr.get());
 			distance = dist;
 		}
+	}
+	if(distance == std::numeric_limits<float>::max()) {
+		context()->set_selected(nullptr);
 	}
 }
 

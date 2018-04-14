@@ -41,6 +41,9 @@ class Light : public Transformable {
 		math::Vec3& color();
 		const math::Vec3& color() const;
 
+		float& intensity();
+		float intensity() const;
+
 		float& radius();
 		float radius() const;
 
@@ -49,6 +52,7 @@ class Light : public Transformable {
 	private:
 		Type _type;
 		math::Vec3 _color = math::Vec3{1.0f};
+		float _intensity = 1.0f;
 		float _radius = 1.0f;
 };
 

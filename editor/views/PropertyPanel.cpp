@@ -33,20 +33,83 @@ PropertyPanel::PropertyPanel(ContextPtr cptr) : Dock("Properties"), ContextLinke
 
 
 void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(!context()->selected) {
+	if(!context()->selected()) {
 		return;
 	}
 
 
-	Transformable* sel = context()->selected;
+	Transformable* sel = context()->selected();
 	auto [pos, rot, scale] = sel->transform().decompose();
-	math::Vec3 euler = rot.to_euler();
 
-	ImGui::InputFloat3("Position", pos.begin());
+	if(ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
+		float step = 1.0f;
+		float big_step = 15.0f;
 
-	ImGui::InputFloat3("Rotation", euler.begin());
+		ImGui::BeginGroup();
+		ImGui::InputFloat("X", &pos.x(), step, big_step, 3);
+		ImGui::InputFloat("Y", &pos.y(), step, big_step, 3);
+		ImGui::InputFloat("Z", &pos.z(), step, big_step, 3);
+		ImGui::EndGroup();
 
-	sel->transform() = math::Transform<>(pos, math::Quaternion<>::from_euler(euler), scale);
+	}
+
+	if(ImGui::CollapsingHeader("Rotation", ImGuiTreeNodeFlags_DefaultOpen)) {
+		math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
+		for(auto& a : euler) {
+			// remove -0.0
+			if(a == 0.0f) {
+				a = 0.0f;
+			}
+			if(a == -180.0f) {
+				a = 180.0f;
+			}
+		}
+
+		bool angle_changed = false;
+		float step = 1.0f;
+		float big_step = 15.0f;
+
+		ImGui::BeginGroup();
+		angle_changed |= ImGui::InputFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], step, big_step, 3);
+		angle_changed |= ImGui::InputFloat("Yaw", &euler[math::Quaternion<>::YawIndex], step, big_step, 3);
+		angle_changed |= ImGui::InputFloat("Roll", &euler[math::Quaternion<>::RollIndex], step, big_step, 3);
+		ImGui::EndGroup();
+
+		// avoid recomputing angle (not always stable in euler space)
+		if(angle_changed) {
+			rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
+		}
+	}
+
+	if(Light* light = context()->selected_light()) {
+		int flags = /*ImGuiColorEditFlags_NoSidePreview |
+					ImGuiColorEditFlags_NoSmallPreview |*/
+					ImGuiColorEditFlags_NoAlpha |
+					ImGuiColorEditFlags_Float |
+					ImGuiColorEditFlags_RGB;
+
+		if(ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
+			math::Vec4 color(light->color(), 1.0f);
+			if(ImGui::ColorButton("Color", color, flags/*, ImVec2(40, 40)*/)) {
+				ImGui::OpenPopup("Color");
+			}
+			ImGui::SameLine();
+			ImGui::Text("Light color");
+		}
+
+		if(ImGui::BeginPopup("Color")) {
+			ImGui::ColorPicker3("##lightpicker", light->color().begin(), flags);
+			ImGui::EndPopup();
+		}
+
+		float step = 1.0f;
+		float big_step = 10.0f;
+		ImGui::InputFloat("Intensity", &light->intensity(), step, big_step, 3);
+
+
+	}
+
+	sel->transform() = math::Transform<>(pos, rot, scale);
 
 	//ImGui::Text("Position: %f, %f, %f", sel->position().x(), sel->position().y(), sel->position().z());
 

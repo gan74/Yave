@@ -39,6 +39,14 @@ const math::Vec3& Light::color() const {
 	return _color;
 }
 
+float& Light::intensity() {
+	return _intensity;
+}
+
+float Light::intensity() const {
+	return _intensity;
+}
+
 float& Light::radius() {
 	return _radius;
 }
@@ -51,7 +59,7 @@ Light::operator uniform::Light() const {
 	return uniform::Light {
 			_type == Directional ? forward() : position(),
 			_radius,
-			_color,
+			_color * _intensity,
 			u32(_type)
 		};
 }

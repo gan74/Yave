@@ -33,6 +33,7 @@ SOFTWARE.
 namespace editor {
 
 class EditorContext : public DeviceLinked, NonCopyable {
+
 	public:
 		EditorContext(DevicePtr dptr);
 		~EditorContext();
@@ -48,8 +49,12 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 		CameraSettings camera_settings;
 
-		NotOwner<Transformable*> selected = nullptr;
+		void set_selected(Light* sel);
+		void set_selected(Transformable* sel);
+		void set_selected(std::nullptr_t);
 
+		Transformable* selected() const;
+		Light* selected_light() const;
 
 		AssetLoader<Texture> texture_loader;
 		AssetLoader<StaticMesh> mesh_loader;
@@ -57,6 +62,9 @@ class EditorContext : public DeviceLinked, NonCopyable {
 	private:
 		std::unique_ptr<Scene> _scene;
 		std::unique_ptr<SceneView> _scene_view;
+
+		NotOwner<Transformable*> _selected = nullptr;
+		NotOwner<Light*> _selected_light = nullptr;
 
 
 };

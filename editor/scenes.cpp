@@ -44,7 +44,8 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 
 	{
 		Light l(Light::Point);
-		l.color() = math::Vec3{10000.0f, 0.0f, 0.0f};
+		l.color() = math::Vec3{1.0f, 0.0f, 0.0f};
+		l.intensity() = 10000.0f;
 		l.position().z() = 100.0f;
 		l.radius() = 100.0f;
 		scene->lights() << std::make_unique<Light>(std::move(l));

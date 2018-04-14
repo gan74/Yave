@@ -45,6 +45,8 @@ class Quaternion {
 		Quaternion(detail::identity_t = identity()) : _quat(0, 0, 0, 1) {
 		}
 
+		Quaternion(const Quaternion& q) = default;
+
 		template<typename X>
 		Quaternion(const Vec<4, X>& q) : _quat(q.normalized()) {
 		}
@@ -53,8 +55,8 @@ class Quaternion {
 		Quaternion(const Quaternion<X>& q) : _quat(q._quat) {
 		}
 
-		template<typename... Args>
-		Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
+		template<typename... Args, typename = std::enable_if_t<std::is_constructible_v<Vec<4, T>, Args...>>>
+		/*explicit*/ Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
 		}
 
 		template<typename X>
