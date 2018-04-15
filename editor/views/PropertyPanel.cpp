@@ -102,9 +102,8 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 			ImGui::EndPopup();
 		}
 
-		float step = 1.0f;
-		float big_step = 10.0f;
-		ImGui::InputFloat("Intensity", &light->intensity(), step, big_step, 3);
+		ImGui::InputFloat("Intensity", &light->intensity(), 1.0f, 10.0f, 3);
+		ImGui::InputFloat("Radius", &light->radius(), 1.0f, 10.0f, 3);
 
 
 	}
