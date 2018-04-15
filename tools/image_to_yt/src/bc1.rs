@@ -258,7 +258,7 @@ pub fn encode(image: &ImageData, quality: u8) -> Result<Vec<u8>, ()> {
 	(0..blocks).into_par_iter()
 		.map(|i| {
 			encode_block(&image.blocks().nth(i).unwrap(), quality)
-		}).collect_into(&mut out);
+		}).collect_into_vec(&mut out);
 		
 	unsafe {
 		let mut out: Vec<u8> = mem::transmute(out);

@@ -12,7 +12,7 @@ fn is_sq_power_2(size: (usize, usize)) -> bool {
 pub fn apply_gamma(image: &ImageData, gamma: f32) -> Option<ImageData> {
 	let mut out = Vec::with_capacity(image.data.len());
 
-	image.data.par_iter().map(|p| ((*p as f32 / 255.0).powf(gamma) * 255.0) as u8).collect_into(&mut out);
+	image.data.par_iter().map(|p| ((*p as f32 / 255.0).powf(gamma) * 255.0) as u8).collect_into_vec(&mut out);
 
 	Some(ImageData {
 		size: image.size,

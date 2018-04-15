@@ -59,7 +59,7 @@ fn build_table(ends: &(u8, u8)) -> [u8; 8] {
 			let r = encode_channel(&block, 0);
 			let g = encode_channel(&block, 1);
 			(r, g)
-		}).collect_into(&mut out);
+		}).collect_into_vec(&mut out);
 	
 	unsafe {
 		let mut out: Vec<u8> = mem::transmute(out);
