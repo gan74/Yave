@@ -39,10 +39,8 @@ static ImageData load_font() {
 	u8* font_data = nullptr;
 	int width = 0;
 	int height = 0;
-	io.Fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
-	io.Fonts->TexID = reinterpret_cast<void*>(1);
-	auto image = ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8G8B8A8Unorm));
-	return image;
+	io.Fonts->GetTexDataAsAlpha8(&font_data, &width, &height);
+	return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8Unorm));
 }
 
 static void setup_style() {
@@ -168,22 +166,36 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		_vertex_buffer(device(), imgui_vertex_buffer_size),
 		_uniform_buffer(device(), 1),
 		_font(device(), load_font()),
+		_font_view(_font),
 		_material(device(), MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("imgui.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("imgui.vert.spv").expected("Unable to load spirv file.")))
-			.set_bindings({Binding(_font), Binding(_uniform_buffer)})
+			.set_bindings({Binding(_uniform_buffer)})
 			.set_depth_tested(false)
 			.set_culled(false)
 			.set_blended(true)
 		) {
 
+	ImGui::GetIO().Fonts->TexID = &_font_view;
 	setup_style();
 }
 
+const DescriptorSet& ImGuiRenderer::create_descriptor_set(void* data) {
+	TextureView* tex = reinterpret_cast<TextureView*>(data);
+	auto& ds = _descriptor_sets[tex];
+	if(!ds.device()) {
+		ds = DescriptorSet(device(), {Binding(*tex)});
+	}
+	return ds;
+}
 
-void ImGuiRenderer::setup_state(RenderPassRecorder& recorder) {
+void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, void* tex) {
 	recorder.bind_buffers(SubBuffer<BufferUsage::IndexBit>(_index_buffer), {AttribSubBuffer<Vertex>(_vertex_buffer)});
-	recorder.bind_material(_material);
+	if(tex) {
+		recorder.bind_material(_material, {create_descriptor_set(tex)});
+	} else {
+		recorder.bind_material(_material);
+	}
 }
 
 void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
@@ -198,17 +210,15 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 		return;
 	}
 
-	setup_state(recorder);
-
 	auto indexes = TypedMapping(_index_buffer);
 	auto vertices = TypedMapping(_vertex_buffer);
 	auto uniform = TypedMapping(_uniform_buffer);
 
 	uniform[0] = math::Vec2(ImGui::GetIO().DisplaySize);
 
-
 	usize index_offset = 0;
 	usize vertex_offset = 0;
+	void* current_tex = nullptr;
 	for(auto i = 0; i != draw_data->CmdListsCount; ++i) {
 		const ImDrawList* cmd_list = draw_data->CmdLists[i];
 
@@ -233,10 +243,13 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 
 			if(cmd.UserCallback) {
 				reinterpret_cast<UIDrawCallback>(cmd.UserCallback)(recorder, cmd.UserCallbackData);
-				setup_state(recorder);
+				current_tex = nullptr;
 			}
 
 			if(cmd.ElemCount) {
+				if(current_tex != cmd.TextureId) {
+					setup_state(recorder, current_tex = cmd.TextureId);
+				}
 				recorder.draw(vk::DrawIndexedIndirectCommand()
 						.setFirstIndex(drawn_index_offset)
 						.setVertexOffset(vertex_offset)

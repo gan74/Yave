@@ -72,7 +72,7 @@ void SceneRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 
 	u32 attrib_index = 0;
 
-#warning lean unnecessary buffer binding
+#warning clean unnecessary buffer binding
 	recorder.bind_attrib_buffers({_attrib_buffer, _attrib_buffer});
 
 	// renderables

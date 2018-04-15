@@ -96,6 +96,9 @@ static u32 component_size(spirv_cross::SPIRType::BaseType type) {
 		case spirv_cross::SPIRType::UInt:
 			return 4;
 
+		case spirv_cross::SPIRType::Char:
+			return 1;
+
 		default:
 			break;
 	}
@@ -112,6 +115,9 @@ static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseTy
 
 		case spirv_cross::SPIRType::UInt:
 			return ShaderModuleBase::AttribType::Uint;
+
+		case spirv_cross::SPIRType::Char:
+			return ShaderModuleBase::AttribType::Char;
 
 		default:
 			break;

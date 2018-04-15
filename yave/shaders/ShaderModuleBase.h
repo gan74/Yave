@@ -78,7 +78,8 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 		enum class AttribType {
 			Uint = 0,
 			Int = 1,
-			Float = 2
+			Float = 2,
+			Char = 3
 		};
 
 		struct Attribute {
