@@ -54,12 +54,14 @@ void SceneRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken&)
 	}
 
 	auto attrib_mapping = TypedMapping(_attrib_buffer);
-	usize attrib_index = 0;
+	u32 attrib_index = 0;
 
+	// renderables
 	for(const auto& r : scene_view().scene().renderables()) {
 		attrib_mapping[attrib_index++] = r->transform();
 	}
 
+	// static meshes
 	for(const auto& r : scene_view().scene().static_meshes()) {
 		attrib_mapping[attrib_index++] = r->transform();
 	}
@@ -68,21 +70,22 @@ void SceneRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken&)
 void SceneRenderer::render(RenderPassRecorder& recorder, const FrameToken& token) {
 	auto region = recorder.region("SceneRenderer::render");
 
-	usize attrib_index = 0;
+	u32 attrib_index = 0;
+
+#warning lean unnecessary buffer binding
+	recorder.bind_attrib_buffers({_attrib_buffer, _attrib_buffer});
 
 	// renderables
 	{
 		for(const auto& r : scene_view().scene().renderables()) {
-			AttribSubBuffer<math::Transform<>> attribs(_attrib_buffer, attrib_index++, 1);
-			r->render(token, recorder, Renderable::SceneData{_camera_set, attribs});
+			r->render(token, recorder, Renderable::SceneData{_camera_set, attrib_index++});
 		}
 	}
 
 	// static meshes
 	{
 		for(const auto& r : scene_view().scene().static_meshes()) {
-			AttribSubBuffer<math::Transform<>> attribs(_attrib_buffer, attrib_index++, 1);
-			r->render(token, recorder, Renderable::SceneData{_camera_set, attribs});
+			r->render(token, recorder, Renderable::SceneData{_camera_set, attrib_index++});
 		}
 	}
 }

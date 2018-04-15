@@ -35,7 +35,7 @@ class Renderable : public Transformable {
 	public:
 		struct SceneData {
 			const DescriptorSetBase& descriptor_set;
-			AttribSubBuffer<math::Transform<>> instance_attribs;
+			u32 instance_index;
 		};
 
 		virtual ~Renderable() {

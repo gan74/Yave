@@ -41,8 +41,11 @@ StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) :
 
 void StaticMeshInstance::render(const FrameToken&, RenderPassRecorder& recorder, const SceneData& scene_data) const {
 	recorder.bind_material(*_material, {scene_data.descriptor_set});
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer()), scene_data.instance_attribs});
-	recorder.draw(_mesh->indirect_data());
+	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer())});
+
+	auto indirect = _mesh->indirect_data();
+	indirect.setFirstInstance(scene_data.instance_index);
+	recorder.draw(indirect);
 }
 
 }

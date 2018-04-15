@@ -13,6 +13,7 @@ For now I am focussing on creating a decent Vulkan wrapper/interface and a small
 
 ![Current status](https://i.imgur.com/fLydq3W.png)
 ![Current status](https://i.imgur.com/TaJzCya.gif)
+![Current status](https://i.imgur.com/LY5muVA.png)
 
 ## Project structure
 

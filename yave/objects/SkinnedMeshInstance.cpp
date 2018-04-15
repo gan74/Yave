@@ -46,8 +46,11 @@ void SkinnedMeshInstance::render(const FrameToken&, RenderPassRecorder& recorder
 	_skeleton.update();
 
 	recorder.bind_material(*_material, {scene_data.descriptor_set, _skeleton.descriptor_set()});
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {SkinnedVertexSubBuffer(_mesh->vertex_buffer()), scene_data.instance_attribs});
-	recorder.draw(_mesh->indirect_data());
+	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {SkinnedVertexSubBuffer(_mesh->vertex_buffer())});
+
+	auto indirect = _mesh->indirect_data();
+	indirect.setFirstInstance(scene_data.instance_index);
+	recorder.draw(indirect);
 }
 
 }

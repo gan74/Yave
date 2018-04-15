@@ -67,7 +67,7 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 		{
 			auto instance = std::make_unique<SkinnedMeshInstance>(mesh, material);
 			instance->position() = {0.0f, 100.0f, -instance->radius() * 0.5f};
-			//instance->animate(animation);
+			instance->animate(animation);
 			scene->renderables() << std::move(instance);
 		}
 	}
