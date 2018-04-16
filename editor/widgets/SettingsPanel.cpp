@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "SettingsPanel.h"
 
-#include <editor/EditorContext.h>
+#include <editor/context/EditorContext.h>
 
 #include <imgui/imgui.h>
 

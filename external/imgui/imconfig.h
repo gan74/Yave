@@ -67,11 +67,3 @@
 
 //---- Use 32-bit vertex indices (instead of default 16-bit) to allow meshes with more than 64K vertices. Render function needs to support it.
 #define ImDrawIdx y::u32
-
-//---- Tip: You can add extra functions within the ImGui:: namespace, here or in your own headers files.
-/*
-namespace ImGui
-{
-    void MyFunction(const char* name, const MyMatrix44& v);
-}
-*/

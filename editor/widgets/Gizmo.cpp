@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 #include "Gizmo.h"
 
-#include <editor/EditorContext.h>
+#include <editor/context/EditorContext.h>
 
 #include <imgui/imgui.h>
 
@@ -35,6 +35,7 @@ static constexpr u32 gizmo_alpha = 0xB0000000;
 // stuff for the 2 axes selection
 static constexpr float gizmo_size_mul_2 = 0.25f;
 static constexpr u32 gizmo_alpha_2 = 0x60000000;
+
 
 static bool is_clicked() {
 	return ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
@@ -53,11 +54,6 @@ static bool is_clicking(math::Vec2 cursor, const math::Vec2& vec) {
 	return d_2 < (gizmo_hover_width * gizmo_hover_width);
 }
 
-static math::Vec2 to_screen_pos(const math::Matrix4<>& view_proj, const math::Vec3& pos) {
-	auto h_pos = view_proj * math::Vec4(pos, 1.0f);
-	return (h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f;
-}
-
 static math::Vec3 intersect(const math::Vec3& normal, const math::Vec3& center, const math::Vec3& start, const math::Vec3& end) {
 	math::Vec3 direction = (end - start).normalized();
 	float denom = normal.dot(direction);
@@ -72,8 +68,6 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(!context()->selected()) {
 		return;
 	}
-
-
 
 	math::Vec3 cam_fwd = context()->scene_view()->camera().forward();
 	math::Vec3 cam_pos = context()->scene_view()->camera().position();
@@ -98,7 +92,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	float dist = (obj_pos - cam_pos).length();
 	math::Vec3 projected_mouse = cam_pos + ray * dist;
 
-	auto center = to_screen_pos(view_proj, obj_pos) * viewport + offset;
+	auto center = context()->to_window_pos(obj_pos);
 
 	struct Axis {
 		math::Vec2 vec;
@@ -109,9 +103,9 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 	math::Vec3 basis[] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
 	Axis axes[] = {
-			{to_screen_pos(view_proj, obj_pos + basis[0] * perspective) * viewport + offset, 0},
-			{to_screen_pos(view_proj, obj_pos + basis[1] * perspective) * viewport + offset, 1},
-			{to_screen_pos(view_proj, obj_pos + basis[2] * perspective) * viewport + offset, 2}
+			{context()->to_window_pos(obj_pos + basis[0] * perspective), 0},
+			{context()->to_window_pos(obj_pos + basis[1] * perspective), 1},
+			{context()->to_window_pos(obj_pos + basis[2] * perspective), 2}
 		};
 
 	// depth sort axes front to back
@@ -120,8 +114,8 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	});
 
 	// compute hover
-	u32 hover_mask = 0;
-	{
+	u32 hover_mask = _dragging_mask;
+	if(!hover_mask) {
 		for(usize i = 0; i != 3; ++i) {
 			usize index = axes[i].index;
 			math::Vec3 proj = intersect(basis[index], obj_pos, cam_pos, projected_mouse) - obj_pos;

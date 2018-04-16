@@ -31,26 +31,16 @@ namespace editor {
 
 class UiElement : NonCopyable {
 	public:
-		UiElement(const char* title) : _title(title) {
-		}
-
-
+		UiElement(const char* title);
 		virtual ~UiElement() = default;
 
 		virtual void paint(CmdBufferRecorder<>&, const FrameToken&) = 0;
 
 
-		bool is_visible() const {
-			return _visible;
-		}
+		bool is_visible() const;
+		void show();
 
-		const char* title() const {
-			return _title;
-		}
-
-		void show() {
-			_visible = true;
-		}
+		const char* title() const;
 
 	protected:
 		const char* _title;

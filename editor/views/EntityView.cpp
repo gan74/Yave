@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 #include "EntityView.h"
 
-#include <editor/EditorContext.h>
+#include <editor/context/EditorContext.h>
 
 #include <yave/objects/Light.h>
 

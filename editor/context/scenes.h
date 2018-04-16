@@ -19,56 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_EDITORCONTEXT_H
-#define EDITOR_EDITORCONTEXT_H
+#ifndef EDITOR_CONTEXT_SCENES_H
+#define EDITOR_CONTEXT_SCENES_H
 
-#include <editor/settings/settings.h>
+#include <editor/editor.h>
+
+#include <yave/scene/Scene.h>
+#include <yave/scene/SceneView.h>
+
+#include <yave/material/Material.h>
 
 #include <yave/assets/AssetLoader.h>
 
-#include <yave/device/DeviceLinked.h>
-#include <yave/objects/Transformable.h>
-#include <yave/scene/SceneView.h>
-
 namespace editor {
 
-class EditorContext : public DeviceLinked, NonCopyable {
-
-	public:
-		EditorContext(DevicePtr dptr);
-		~EditorContext();
-
-		Scene* scene() const;
-		SceneView* scene_view() const;
-
-		void save_scene();
-		void load_scene();
-
-		void save_settings();
-		void load_settings();
-
-		CameraSettings camera_settings;
-
-		void set_selected(Light* sel);
-		void set_selected(Transformable* sel);
-		void set_selected(std::nullptr_t);
-
-		Transformable* selected() const;
-		Light* selected_light() const;
-
-		AssetLoader<Texture> texture_loader;
-		AssetLoader<StaticMesh> mesh_loader;
-
-	private:
-		std::unique_ptr<Scene> _scene;
-		std::unique_ptr<SceneView> _scene_view;
-
-		NotOwner<Transformable*> _selected = nullptr;
-		NotOwner<Light*> _selected_light = nullptr;
-
-
-};
+void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader);
 
 }
 
-#endif // EDITOR_EDITORCONTEXT_H
+#endif // EDITOR_CONTEXT_SCENES_H

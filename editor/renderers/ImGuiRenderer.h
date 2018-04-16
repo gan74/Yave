@@ -47,10 +47,10 @@ class ImGuiRenderer : public SecondaryRenderer {
 	protected:
 		void build_frame_graph(FrameGraphNode&) override;
 
-		void setup_state(RenderPassRecorder& recorder, void* data);
+		void setup_state(RenderPassRecorder& recorder, const void* data);
 
 	private:
-		const DescriptorSet& create_descriptor_set(void* tex);
+		const DescriptorSet& create_descriptor_set(const void* tex);
 
 		TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> _index_buffer;
 		TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> _vertex_buffer;
@@ -60,7 +60,7 @@ class ImGuiRenderer : public SecondaryRenderer {
 		TextureView _font_view;
 		Material _material;
 
-		std::unordered_map<TextureView*, DescriptorSet> _descriptor_sets;
+		std::unordered_map<const TextureView*, DescriptorSet> _descriptor_sets;
 
 };
 

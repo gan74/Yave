@@ -11,5 +11,5 @@ layout(set = 1, binding = 0) uniform Data {
 } constants;
 
 void main() {
-	out_color = v_color * texture(font_texture, v_uv).r;
+	out_color = v_color * texture(font_texture, v_uv);
 }

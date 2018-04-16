@@ -19,45 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MAINWINDOW_H
-#define EDITOR_MAINWINDOW_H
 
-#include <editor/editor.h>
-#include <editor/ui/Widget.h>
+#include "UiElement.h"
 
 #include <editor/context/EditorContext.h>
 
-#include <yave/window/Window.h>
-#include <yave/device/Instance.h>
-#include <yave/device/Device.h>
-#include <yave/swapchain/Swapchain.h>
-#include <yave/renderers/renderers.h>
-#include <yave/scene/SceneView.h>
-
 namespace editor {
 
-class MainWindow : private Window, public ContextLinked {
-
-	public:
-		MainWindow(ContextPtr cptr);
-		~MainWindow();
-
-		void exec();
-
-	private:
-		void resized() override;
-
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
-		void present(CmdBufferRecorder<>& recorder, const FrameToken& token);
-
-		void create_swapchain();
-
-		core::Vector<std::unique_ptr<UiElement>> _elements;
-
-		std::unique_ptr<Swapchain> _swapchain;
-		Node::Ptr<EndOfPipe> _ui_renderer;
-};
-
+UiElement::UiElement(const char* title) : _title(title) {
 }
 
-#endif // EDITOR_MAINWINDOW_H
+bool UiElement::is_visible() const {
+	return _visible;
+}
+
+const char* UiElement::title() const {
+	return _title;
+}
+
+void UiElement::show() {
+	_visible = true;
+}
+
+}

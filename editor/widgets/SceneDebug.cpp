@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "SceneDebug.h"
 
-#include <editor/EditorContext.h>
+#include <editor/context/EditorContext.h>
 
 #include <yave/material/Material.h>
 #include <yave/objects/StaticMeshInstance.h>

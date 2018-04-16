@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 #include "MemoryInfo.h"
 
-#include <editor/EditorContext.h>
+#include <editor/context/EditorContext.h>
 #include <yave/device/Device.h>
 
 #include <imgui/imgui.h>

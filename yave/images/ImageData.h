@@ -56,7 +56,7 @@ class ImageData : NonCopyable {
 
 		static ImageData from_file(io::ReaderRef reader);
 
-		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format);
+		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
 
 	private:
 		void swap(ImageData& other);

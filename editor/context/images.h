@@ -19,22 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_SCENES_H
-#define EDITOR_SCENES_H
+#ifndef EDITOR_CONTEXT_IMAGES_H
+#define EDITOR_CONTEXT_IMAGES_H
 
-#include "editor.h"
+#include <editor/editor.h>
 
-#include <yave/scene/Scene.h>
-#include <yave/scene/SceneView.h>
-
-#include <yave/material/Material.h>
-
-#include <yave/assets/AssetLoader.h>
+#include <yave/images/ImageData.h>
 
 namespace editor {
+namespace images {
 
-void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader);
+ImageData light();
 
 }
+}
 
-#endif // EDITOR_SCENES_H
+#endif // EDITOR_CONTEXT_IMAGES_H

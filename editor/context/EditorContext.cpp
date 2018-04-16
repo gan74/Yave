@@ -23,10 +23,13 @@ SOFTWARE.
 #include "EditorContext.h"
 
 #include "scenes.h"
+#include "images.h"
 
 #include <yave/serialize/serialize.h>
 
 #include <y/io/File.h>
+
+#include <imgui/imgui.h>
 
 namespace editor {
 
@@ -41,6 +44,11 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		_scene(std::make_unique<Scene>()),
 		_scene_view(std::make_unique<SceneView>(*_scene)) {
 
+
+	_icon_textures << Texture(device(), images::light());
+
+	_icons = Icons{_icon_textures[0]};
+
 	load_scene();
 	load_settings();
 }
@@ -49,6 +57,7 @@ EditorContext::~EditorContext() {
 	save_scene();
 	save_settings();
 }
+
 
 void EditorContext::save_scene() {
 	if(auto r = io::File::create("./scene.ys"); r.is_ok()) {
@@ -106,5 +115,21 @@ Transformable* EditorContext::selected() const {
 Light* EditorContext::selected_light() const {
 	return _selected_light;
 }
+
+EditorContext::Icons* EditorContext::icons() const {
+	return &_icons;
+}
+
+math::Vec2 EditorContext::to_screen_pos(const math::Vec3& world) {
+	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
+	return (h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f;
+}
+
+math::Vec2 EditorContext::to_window_pos(const math::Vec3& world) {
+	math::Vec2 viewport = ImGui::GetWindowSize();
+	math::Vec2 offset = ImGui::GetWindowPos();
+	return to_screen_pos(world) * viewport + offset;
+}
+
 
 }

@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 #include "AssetBrowser.h"
 
-#include <editor/EditorContext.h>
+#include <editor/context/EditorContext.h>
 #include <yave/meshes/StaticMesh.h>
 
 #include <imgui/imgui.h>

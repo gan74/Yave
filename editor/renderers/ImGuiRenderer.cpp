@@ -39,8 +39,8 @@ static ImageData load_font() {
 	u8* font_data = nullptr;
 	int width = 0;
 	int height = 0;
-	io.Fonts->GetTexDataAsAlpha8(&font_data, &width, &height);
-	return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8Unorm));
+	io.Fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
+	return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8G8B8A8Unorm));
 }
 
 static void setup_style() {
@@ -180,8 +180,8 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 	setup_style();
 }
 
-const DescriptorSet& ImGuiRenderer::create_descriptor_set(void* data) {
-	TextureView* tex = reinterpret_cast<TextureView*>(data);
+const DescriptorSet& ImGuiRenderer::create_descriptor_set(const void* data) {
+	auto tex = reinterpret_cast<const TextureView*>(data);
 	auto& ds = _descriptor_sets[tex];
 	if(!ds.device()) {
 		ds = DescriptorSet(device(), {Binding(*tex)});
@@ -189,7 +189,7 @@ const DescriptorSet& ImGuiRenderer::create_descriptor_set(void* data) {
 	return ds;
 }
 
-void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, void* tex) {
+void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const void* tex) {
 	recorder.bind_buffers(SubBuffer<BufferUsage::IndexBit>(_index_buffer), {AttribSubBuffer<Vertex>(_vertex_buffer)});
 	if(tex) {
 		recorder.bind_material(_material, {create_descriptor_set(tex)});
@@ -218,7 +218,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 
 	usize index_offset = 0;
 	usize vertex_offset = 0;
-	void* current_tex = nullptr;
+	const void* current_tex = nullptr;
 	for(auto i = 0; i != draw_data->CmdListsCount; ++i) {
 		const ImDrawList* cmd_list = draw_data->CmdLists[i];
 

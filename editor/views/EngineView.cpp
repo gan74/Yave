@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "EngineView.h"
 
-#include <editor/EditorContext.h>
+#include <editor/context/EditorContext.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/renderers/ToneMapper.h>
@@ -107,6 +107,17 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 
 		ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
 
+
+		for(const auto& light : context()->scene()->lights()) {
+			float s = 25.0f;
+			auto screen = context()->to_window_pos(light->position());
+			ImGui::GetWindowDrawList()->AddImageQuad(&context()->icons()->light,
+					screen + math::Vec2(-s, s),
+					screen + math::Vec2(s, s),
+					screen + math::Vec2(s, -s),
+					screen + math::Vec2(-s, -s)
+				);
+		}
 
 		_gizmo.paint(recorder, token);
 		if(!_gizmo.is_dragging()) {
