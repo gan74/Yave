@@ -212,6 +212,7 @@ bool Window::update() {
 
 void Window::show() {
 #ifdef Y_OS_WIN
+	_run = true;
 	ShowWindow(_hwnd, SW_SHOW);
 	SetForegroundWindow(_hwnd);
 	SetFocus(_hwnd);

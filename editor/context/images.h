@@ -30,6 +30,7 @@ namespace editor {
 namespace images {
 
 ImageData light();
+ImageData save();
 
 }
 }

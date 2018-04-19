@@ -109,7 +109,7 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 
 
 		for(const auto& light : context()->scene()->lights()) {
-			float s = 25.0f;
+			float s = 18.0f;
 			auto screen = context()->to_window_pos(light->position());
 			ImGui::GetWindowDrawList()->AddImageQuad(&context()->icons()->light,
 					screen + math::Vec2(-s, s),
@@ -127,7 +127,6 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 
 
 }
-
 
 void EngineView::update_selection() {
 	if(!ImGui::IsWindowHovered() || !ImGui::IsMouseClicked(0)) {

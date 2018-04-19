@@ -46,18 +46,23 @@ EditorContext::EditorContext(DevicePtr dptr) :
 
 
 	_icon_textures << Texture(device(), images::light());
+	_icon_textures << Texture(device(), images::save());
 
-	_icons = Icons{_icon_textures[0]};
+	_icons = Icons{_icon_textures[0], _icon_textures[1]};
 
 	load_scene();
 	load_settings();
 }
 
 EditorContext::~EditorContext() {
-	save_scene();
+	//save_scene();
 	save_settings();
 }
 
+void EditorContext::clear_scene() {
+	set_selected(nullptr);
+	_scene->clear();
+}
 
 void EditorContext::save_scene() {
 	if(auto r = io::File::create("./scene.ys"); r.is_ok()) {
@@ -66,6 +71,7 @@ void EditorContext::save_scene() {
 }
 
 void EditorContext::load_scene() {
+	clear_scene();
 	if(auto r = io::File::open("./scene.ys"); r.is_ok()) {
 		deserialize(r.unwrap(), *_scene, mesh_loader);
 	} else {

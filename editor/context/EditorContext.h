@@ -37,6 +37,7 @@ class EditorContext : public DeviceLinked, NonCopyable {
 	public:
 		struct Icons {
 			TextureView light;
+			TextureView save;
 		};
 
 		EditorContext(DevicePtr dptr);
@@ -47,11 +48,10 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 		void save_scene();
 		void load_scene();
+		void clear_scene();
 
 		void save_settings();
 		void load_settings();
-
-		CameraSettings camera_settings;
 
 		void set_selected(Light* sel);
 		void set_selected(Transformable* sel);
@@ -65,6 +65,7 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 		Icons* icons() const;
 
+		CameraSettings camera_settings;
 
 		AssetLoader<Texture> texture_loader;
 		AssetLoader<StaticMesh> mesh_loader;

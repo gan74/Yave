@@ -62,6 +62,11 @@ class Scene : NonCopyable {
 			return _lights;
 		}
 
+		void clear() {
+			_statics.clear();
+			_renderables.clear();
+			_lights.clear();
+		}
 
 	private:
 		core::Vector<Ptr<StaticMeshInstance>> _statics;

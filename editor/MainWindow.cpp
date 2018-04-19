@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/events/MainEventHandler.h>
 #include <editor/renderers/ImGuiRenderer.h>
+#include <editor/context/EditorContext.h>
 
 #include <yave/renderers/SimpleEndOfPipe.h>
 #include <yave/renderers/ToneMapper.h>
@@ -45,6 +46,14 @@ SOFTWARE.
 #include <imgui/imgui.h>
 
 namespace editor {
+
+bool confirm(const char* message) {
+#ifdef Y_OS_WIN
+	return MessageBox(GetActiveWindow(), message, "Confirm", MB_OKCANCEL) != IDCANCEL;
+#else
+	return true;
+#endif
+}
 
 MainWindow::MainWindow(ContextPtr cptr) :
 		Window({1280, 768}, "Yave", Window::Resizable),
@@ -86,18 +95,18 @@ void MainWindow::create_swapchain() {
 }
 
 void MainWindow::exec() {
-	show();
+	do {
+		show();
+		while(update()) {
+			if(_swapchain->size().x() && _swapchain->size().y()) {
+				FrameToken frame = _swapchain->next_frame();
+				CmdBufferRecorder<> recorder(device()->create_cmd_buffer());
 
-	while(update()) {
-
-		if(_swapchain->size().x() && _swapchain->size().y()) {
-			FrameToken frame = _swapchain->next_frame();
-			CmdBufferRecorder<> recorder(device()->create_cmd_buffer());
-
-			render(recorder, frame);
-			present(recorder, frame);
+				render(recorder, frame);
+				present(recorder, frame);
+			}
 		}
-	}
+	} while(!confirm("Quit ?"));
 
 	device()->queue(QueueFamily::Graphics).wait();
 }
@@ -151,11 +160,13 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
 
 	ImGui::NewFrame();
-	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	ImGui::SetNextWindowSize(math::Vec2(ImGui::GetIO().DisplaySize));
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	ImGui::Begin("Main window", nullptr, flags);
 
-		ImGui::ShowDemoWindow();
+
+	// demo
+	ImGui::ShowDemoWindow();
 
 	// menu
 	{
@@ -186,6 +197,19 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 		}
 	}
 
+	// toolbar
+	{
+		float toolbar_size = 24.0f;
+		ImVec2 button_size(toolbar_size, toolbar_size);
+
+		if(ImGui::ImageButton(&context()->icons()->save, button_size)) {
+			context()->save_scene();
+		}
+		ImGui::SameLine();
+		if(ImGui::Button("reload")) {
+			context()->load_scene();
+		}
+	}
 
 	// main UI
 	{
@@ -204,13 +228,16 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	ImGui::Render();
 
 
-
 	// render ui pipeline into cmd buffer
 	{
 		RenderingPipeline pipeline(_ui_renderer);
 		pipeline.render(recorder, token);
 	}
-}
 
+
+	if(ImGui::IsKeyDown(int(Key::P))) {
+		y_fatal("Crash!");
+	}
+}
 
 }
