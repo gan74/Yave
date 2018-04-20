@@ -89,11 +89,17 @@ usize File::remaining() const {
 }
 
 bool File::is_open() const {
-	return !!_file;
+	return _file;
 }
 
 bool File::at_end() const {
 	return _file ? feof(_file) : true;
+}
+
+void File::seek(usize byte){
+	if(_file) {
+		fseek(_file, byte, SEEK_SET);
+	}
 }
 
 Reader::Result File::read(void* data, usize bytes) {

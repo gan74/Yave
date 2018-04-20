@@ -26,9 +26,13 @@ SOFTWARE.
 
 #include <yave/assets/AssetLoader.h>
 
+#include <y/core/Functor.h>
+
 #include <yave/device/DeviceLinked.h>
 #include <yave/objects/Transformable.h>
 #include <yave/scene/SceneView.h>
+
+#include "SceneHook.h"
 
 namespace editor {
 
@@ -38,6 +42,7 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		struct Icons {
 			TextureView light;
 			TextureView save;
+			TextureView load;
 		};
 
 		EditorContext(DevicePtr dptr);
@@ -46,8 +51,9 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		Scene* scene() const;
 		SceneView* scene_view() const;
 
-		void save_scene();
-		void load_scene();
+		void save_scene(const char* filename);
+		// these must be deferred !!!
+		void load_scene(const char* filename);
 		void clear_scene();
 
 		void save_settings();
@@ -59,6 +65,9 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 		Transformable* selected() const;
 		Light* selected_light() const;
+
+		void defer(core::Function<void()>&& func);
+		void flush_deferred();
 
 		math::Vec2 to_screen_pos(const math::Vec3& world);
 		math::Vec2 to_window_pos(const math::Vec3& world);
@@ -74,11 +83,22 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		std::unique_ptr<Scene> _scene;
 		std::unique_ptr<SceneView> _scene_view;
 
+
+		NotOwner<SceneHook*> _scene_hook = nullptr;
+
+
 		NotOwner<Transformable*> _selected = nullptr;
 		NotOwner<Light*> _selected_light = nullptr;
 
+
+		bool _is_flushing_deferred = true; // debug
+		core::Vector<core::Function<void()>> _deferred;
+
+
 		core::Vector<Texture> _icon_textures;
 		mutable Icons _icons;
+
+
 
 
 };

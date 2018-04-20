@@ -19,41 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_VIEWS_FILEBROWSER_H
+#define EDITOR_VIEWS_FILEBROWSER_H
 
-#include "Gadget.h"
+#include <editor/ui/Frame.h>
 
-#include <imgui/imgui.h>
+#include <y/core/Functor.h>
 
 namespace editor {
 
-Gadget::Gadget(const char* title) : UiElement(title) {
-}
+class FileBrowser : public Frame {
+	public:
+		FileBrowser();
 
-void Gadget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	if(!is_visible()) {
-		return;
-	}
+		template<typename F>
+		void set_callback(F&& func) {
+			_callback = std::forward<F>(func);
+		}
 
-	// this breaks everthing that relies on getting focus (like popups)
-	// ImGui::SetNextWindowFocus();
+	private:
+		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
-	ImGui::SetNextWindowSize(ImGui::GetWindowSize());
-	ImGui::SetNextWindowPos(ImGui::GetWindowPos());
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
-				  ImGuiWindowFlags_NoResize |
-				  ImGuiWindowFlags_NoScrollbar |
-				  ImGuiWindowFlags_NoInputs |
-				  ImGuiWindowFlags_NoSavedSettings |
-				  ImGuiWindowFlags_NoFocusOnAppearing |
-				  ImGuiWindowFlags_NoBringToFrontOnFocus |
-				  0;
+		core::Function<void(core::String)> _callback;
 
-	if(ImGui::BeginChild(_title, ImGui::GetWindowSize(), &_visible, flags)) {
-		paint_ui(recorder, token);
-	}
-	ImGui::EndChild();
-	ImGui::PopStyleColor();
-}
+};
 
 }
+
+#endif // EDITOR_VIEWS_FILEBROWSER_H

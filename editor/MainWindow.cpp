@@ -35,6 +35,7 @@ SOFTWARE.
 
 #include <editor/views/EntityView.h>
 #include <editor/views/EngineView.h>
+#include <editor/views/FileBrowser.h>
 #include <editor/views/AssetBrowser.h>
 #include <editor/views/PropertyPanel.h>
 #include <editor/widgets/SettingsPanel.h>
@@ -55,6 +56,32 @@ bool confirm(const char* message) {
 #endif
 }
 
+template<typename T>
+static T* find_element(const core::Vector<std::unique_ptr<UiElement>>& elems) {
+	for(auto& e : elems) {
+		if(auto t = dynamic_cast<T*>(e.get())) {
+			return t;
+		}
+	}
+	return nullptr;
+}
+
+template<typename T>
+static T* show_element(ContextPtr cptr, core::Vector<std::unique_ptr<UiElement>>& elems) {
+	if(auto t = find_element<T>(elems)) {
+		t->show();
+		return t;
+	}
+	if constexpr(std::is_constructible_v<T, ContextPtr>) {
+		elems << std::make_unique<T>(cptr);
+	} else {
+		unused(cptr);
+		elems << std::make_unique<T>();
+	}
+	return dynamic_cast<T*>(elems.last().get());
+}
+
+
 MainWindow::MainWindow(ContextPtr cptr) :
 		Window({1280, 768}, "Yave", Window::Resizable),
 		ContextLinked(cptr) {
@@ -64,20 +91,22 @@ MainWindow::MainWindow(ContextPtr cptr) :
 	ImGui::GetIO().IniFilename = "editor.ini";
 	ImGui::GetIO().LogFilename = "editor_logs.txt";
 
-	_elements << std::make_unique<EngineView>(context());
-	_elements << std::make_unique<EntityView>(context());
-	_elements << std::make_unique<PropertyPanel>(context());
-
 	Node::Ptr<SecondaryRenderer> gui(new ImGuiRenderer(device()));
 	_ui_renderer = std::make_shared<SimpleEndOfPipe>(gui);
 
 	set_event_handler(new MainEventHandler());
+
+	{
+		_elements << std::make_unique<EngineView>(context());
+		_elements << std::make_unique<EntityView>(context());
+		_elements << std::make_unique<PropertyPanel>(context());
+	}
+
 }
 
 MainWindow::~MainWindow() {
 	ImGui::DestroyContext();
 }
-
 
 void MainWindow::resized() {
 	create_swapchain();
@@ -129,23 +158,8 @@ void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token)
 		cmd_buffer.vk_fence());
 
 	_swapchain->present(token, graphic_queue);
-}
 
-
-template<typename T>
-static void show_element(ContextPtr cptr, core::Vector<std::unique_ptr<UiElement>>& elems) {
-	for(auto& e : elems) {
-		if(auto t = dynamic_cast<T*>(e.get())) {
-			t->show();
-			return;
-		}
-	}
-	if constexpr(std::is_constructible_v<T, ContextPtr>) {
-		elems << std::make_unique<T>(cptr);
-	} else {
-		unused(cptr);
-		elems << std::make_unique<T>();
-	}
+	context()->flush_deferred();
 }
 
 void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
@@ -160,11 +174,30 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
 
 	ImGui::NewFrame();
-	ImGui::SetNextWindowSize(math::Vec2(ImGui::GetIO().DisplaySize));
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	ImGui::Begin("Main window", nullptr, flags);
 
+	render_ui(recorder, token);
 
+	ImGui::End();
+	ImGui::EndFrame();
+	ImGui::Render();
+
+
+	// render ui pipeline into cmd buffer
+	{
+		RenderingPipeline pipeline(_ui_renderer);
+		pipeline.render(recorder, token);
+	}
+
+
+	if(ImGui::IsKeyDown(int(Key::P))) {
+		y_fatal("Crash!");
+	}
+}
+
+void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	// demo
 	ImGui::ShowDemoWindow();
 
@@ -181,12 +214,12 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) show_element<CameraDebug>(context(), _elements);
-					if(ImGui::MenuItem("Scene debug")) show_element<SceneDebug>(context(), _elements);
+					if(ImGui::MenuItem("Scene debug"))	show_element<SceneDebug>(context(), _elements);
 					ImGui::EndMenu();
 				}
 				if(ImGui::BeginMenu("Statistics")) {
 					if(ImGui::MenuItem("Performances")) show_element<PerformanceMetrics>(context(), _elements);
-					if(ImGui::MenuItem("Memory info")) show_element<MemoryInfo>(context(), _elements);
+					if(ImGui::MenuItem("Memory info"))	show_element<MemoryInfo>(context(), _elements);
 					ImGui::EndMenu();
 				}
 
@@ -197,46 +230,40 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 		}
 	}
 
+	/*if(auto file = find_element<FileBrowser>(_elements); file && file->is_visible()) {
+		file->paint(recorder, token);
+		return;
+	}*/
+
 	// toolbar
 	{
-		float toolbar_size = 24.0f;
+		float toolbar_size = 18.0f;
 		ImVec2 button_size(toolbar_size, toolbar_size);
 
+
 		if(ImGui::ImageButton(&context()->icons()->save, button_size)) {
-			context()->save_scene();
+			//context()->save_scene(filename);
+			show_element<FileBrowser>(context(), _elements)->set_callback(
+					[=](core::String filename) { context()->save_scene(filename); }
+				);
+
 		}
 		ImGui::SameLine();
-		if(ImGui::Button("reload")) {
-			context()->load_scene();
+		if(ImGui::ImageButton(&context()->icons()->load, button_size)) {
+			//context()->load_scene(filename);
+			show_element<FileBrowser>(context(), _elements)->set_callback(
+					[=](core::String filename) { context()->defer([=] { context()->load_scene(filename); }); }
+				);
 		}
 	}
 
 	// main UI
 	{
 		ImGui::BeginDockspace();
-		{
-			for(auto& e : _elements) {
-				e->paint(recorder, token);
-			}
+		for(auto& e : _elements) {
+			e->paint(recorder, token);
 		}
 		ImGui::EndDockspace();
-	}
-
-
-	ImGui::End();
-	ImGui::EndFrame();
-	ImGui::Render();
-
-
-	// render ui pipeline into cmd buffer
-	{
-		RenderingPipeline pipeline(_ui_renderer);
-		pipeline.render(recorder, token);
-	}
-
-
-	if(ImGui::IsKeyDown(int(Key::P))) {
-		y_fatal("Crash!");
 	}
 }
 

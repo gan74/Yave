@@ -31,6 +31,7 @@ namespace images {
 
 ImageData light();
 ImageData save();
+ImageData load();
 
 }
 }

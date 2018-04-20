@@ -19,25 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_UI_GADGET_H
-#define EDITOR_UI_GADGET_H
+#ifndef EDITOR_UI_FRAME_H
+#define EDITOR_UI_FRAME_H
 
 #include "UiElement.h"
 
 namespace editor {
 
-class Gadget : public UiElement {
+class Frame : public UiElement {
 
 	public:
-		Gadget(const char* title);
+		Frame(const char* title, u32 flags = 0);
 
 		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 	protected:
 		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
 
+		u32 _flags;
+		bool _fill_background = true;
 };
 
 }
 
-#endif // EDITOR_UI_GADGET_H
+#endif // EDITOR_UI_FRAME_H

@@ -50,6 +50,8 @@ class MainWindow : private Window, public ContextLinked {
 		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
 		void present(CmdBufferRecorder<>& recorder, const FrameToken& token);
 
+		void render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token);
+
 		void create_swapchain();
 
 		core::Vector<std::unique_ptr<UiElement>> _elements;

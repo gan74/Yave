@@ -112,10 +112,10 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 			float s = 18.0f;
 			auto screen = context()->to_window_pos(light->position());
 			ImGui::GetWindowDrawList()->AddImageQuad(&context()->icons()->light,
-					screen + math::Vec2(-s, s),
-					screen + math::Vec2(s, s),
 					screen + math::Vec2(s, -s),
-					screen + math::Vec2(-s, -s)
+					screen + math::Vec2(-s, -s),
+					screen + math::Vec2(-s, s),
+					screen + math::Vec2(s, s)
 				);
 		}
 

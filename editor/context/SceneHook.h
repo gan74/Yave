@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,52 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_IO_FILE_H
-#define Y_IO_FILE_H
+#ifndef EDITOR_CONTEXT_SCENEHOOK_H
+#define EDITOR_CONTEXT_SCENEHOOK_H
 
-#include <y/core/String.h>
-#include <y/core/Result.h>
+#include <editor/editor.h>
 
-#include "Reader.h"
-#include "Writer.h"
+#include <yave/objects/Renderable.h>
+#include <yave/scene/Scene.h>
 
-namespace y {
-namespace io {
+namespace editor {
 
-class File final : public Reader, public Writer {
-
+class SceneHook : public Renderable, public ContextLinked {
 	public:
-		File() = default;
-		~File();
+		SceneHook(ContextPtr cptr);
+		~SceneHook();
 
-		File(File&& other);
-		File& operator=(File&& other);
-
-		static core::Result<File> create(const core::String& name);
-		static core::Result<File> open(const core::String& name);
-
-		usize size() const;
-		usize remaining() const;
-
-		bool is_open() const;
-		bool at_end() const override;
-
-		void seek(usize byte);
-
-		Reader::Result read(void* data, usize bytes) override;
-		void read_all(core::Vector<u8>& data) override;
-
-		Writer::Result write(const void* data, usize bytes) override;
-		void flush() override;
-
-	private:
-		File(FILE* f);
-		void swap(File& other);
-
-		FILE* _file = nullptr;
+		void render(const FrameToken&, RenderPassRecorder&, const SceneData&) const override;
 };
 
 }
-}
 
-#endif // Y_IO_FILE_H
+#endif // EDITOR_CONTEXT_SCENEHOOK_H

@@ -57,4 +57,14 @@ struct Nothing;
 
 
 
+
+
+#if defined(Y_OS_WIN) && defined(NDEBUG)
+#define y_breakpoint do { if(IsDebuggerPresent()) { DebugBreak(); } } while(false)
+#else
+#define y_breakpoint do {} while(false)
+#endif
+
+
+
 #endif // Y_DEFINES_H

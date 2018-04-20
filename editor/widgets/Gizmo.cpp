@@ -61,7 +61,13 @@ static math::Vec3 intersect(const math::Vec3& normal, const math::Vec3& center, 
 	return start + direction * t;
 }
 
-Gizmo::Gizmo(ContextPtr cptr) : Gadget("Gizmo"), ContextLinked(cptr) {
+const ImU32 flags =
+		ImGuiWindowFlags_NoInputs |
+		ImGuiWindowFlags_NoFocusOnAppearing |
+		ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+Gizmo::Gizmo(ContextPtr cptr) : Frame("Gizmo", flags), ContextLinked(cptr) {
+	_fill_background = false;
 }
 
 void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {

@@ -47,35 +47,56 @@ EditorContext::EditorContext(DevicePtr dptr) :
 
 	_icon_textures << Texture(device(), images::light());
 	_icon_textures << Texture(device(), images::save());
+	_icon_textures << Texture(device(), images::load());
 
-	_icons = Icons{_icon_textures[0], _icon_textures[1]};
+	_icons = Icons{_icon_textures[0], _icon_textures[1], _icon_textures[2]};
 
-	load_scene();
 	load_settings();
+
+	clear_scene();
+	fill_scene(scene(), texture_loader, mesh_loader);
+
+	_is_flushing_deferred = false;
 }
 
 EditorContext::~EditorContext() {
-	//save_scene();
 	save_settings();
 }
 
 void EditorContext::clear_scene() {
-	set_selected(nullptr);
-	_scene->clear();
-}
+	if(!_is_flushing_deferred) {
+		y_fatal("clear_scene() should only be called in via defer.");
+	}
 
-void EditorContext::save_scene() {
-	if(auto r = io::File::create("./scene.ys"); r.is_ok()) {
-		serialize(r.unwrap(), *_scene, mesh_loader);
+	device()->queue(QueueFamily::Graphics).wait();
+	{
+		set_selected(nullptr);
+		_scene->renderables().clear();
+		_scene->static_meshes().clear();
+		_scene->lights().clear();
+	}
+
+	{
+		auto hook = std::make_unique<SceneHook>(this);
+		_scene_hook = hook.get();
+		_scene->renderables().emplace_back(std::move(hook));
 	}
 }
 
-void EditorContext::load_scene() {
+void EditorContext::save_scene(const char* filename) {
+	if(auto r = io::File::create(filename); r.is_ok()) {
+		serialize(r.unwrap(), *_scene, mesh_loader);
+	} else {
+		log_msg("Unable to save scene.", Log::Error);
+	}
+}
+
+void EditorContext::load_scene(const char* filename) {
 	clear_scene();
-	if(auto r = io::File::open("./scene.ys"); r.is_ok()) {
+	if(auto r = io::File::open(filename); r.is_ok()) {
 		deserialize(r.unwrap(), *_scene, mesh_loader);
 	} else {
-		fill_scene(scene(), texture_loader, mesh_loader);
+		log_msg("Unable to load scene.", Log::Error);
 	}
 }
 
@@ -121,6 +142,20 @@ Transformable* EditorContext::selected() const {
 Light* EditorContext::selected_light() const {
 	return _selected_light;
 }
+
+void EditorContext::defer(core::Function<void()>&& func) {
+	_deferred.emplace_back(std::move(func));
+}
+
+void EditorContext::flush_deferred() {
+	_is_flushing_deferred = true;
+	for(auto& f : _deferred) {
+		f();
+	}
+	_is_flushing_deferred = false;
+	_deferred.clear();
+}
+
 
 EditorContext::Icons* EditorContext::icons() const {
 	return &_icons;

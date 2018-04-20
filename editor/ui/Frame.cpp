@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,52 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_IO_FILE_H
-#define Y_IO_FILE_H
 
-#include <y/core/String.h>
-#include <y/core/Result.h>
+#include "Frame.h"
 
-#include "Reader.h"
-#include "Writer.h"
+#include <imgui/imgui.h>
 
-namespace y {
-namespace io {
+namespace editor {
 
-class File final : public Reader, public Writer {
-
-	public:
-		File() = default;
-		~File();
-
-		File(File&& other);
-		File& operator=(File&& other);
-
-		static core::Result<File> create(const core::String& name);
-		static core::Result<File> open(const core::String& name);
-
-		usize size() const;
-		usize remaining() const;
-
-		bool is_open() const;
-		bool at_end() const override;
-
-		void seek(usize byte);
-
-		Reader::Result read(void* data, usize bytes) override;
-		void read_all(core::Vector<u8>& data) override;
-
-		Writer::Result write(const void* data, usize bytes) override;
-		void flush() override;
-
-	private:
-		File(FILE* f);
-		void swap(File& other);
-
-		FILE* _file = nullptr;
-};
-
-}
+Frame::Frame(const char* title, u32 flags) : UiElement(title), _flags(flags) {
 }
 
-#endif // Y_IO_FILE_H
+void Frame::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	if(!is_visible()) {
+		return;
+	}
+
+	// this breaks everthing that relies on getting focus (like popups)
+	// ImGui::SetNextWindowFocus();
+
+	ImGui::SetNextWindowSize(ImGui::GetWindowSize());
+	ImGui::SetNextWindowPos(ImGui::GetWindowPos());
+	ImU32 flags = ImGuiWindowFlags_NoScrollbar;
+
+
+	if(_fill_background) {
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+	}
+
+	if(ImGui::BeginChild(_title, ImGui::GetWindowSize(), true, flags | _flags)) {
+		paint_ui(recorder, token);
+	}
+	ImGui::EndChild();
+
+	if(_fill_background) {
+		ImGui::PopStyleColor();
+	}
+
+}
+
+}

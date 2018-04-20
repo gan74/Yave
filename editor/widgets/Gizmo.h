@@ -22,13 +22,13 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_GIZMO_H
 #define EDITOR_WIDGETS_GIZMO_H
 
-#include <editor/ui/Gadget.h>
+#include <editor/ui/Frame.h>
 
 #include <yave/scene/SceneView.h>
 
 namespace editor {
 
-class Gizmo : public Gadget, public ContextLinked {
+class Gizmo : public Frame, public ContextLinked {
 	public:
 		Gizmo(ContextPtr cptr);
 
