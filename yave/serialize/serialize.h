@@ -34,9 +34,7 @@ void serialize(io::WriterRef writer, const core::String& str);
 void serialize(io::WriterRef writer, const Scene& scene, const AssetLoader<StaticMesh>& mesh_loader);
 
 
-
-void deserialize(io::ReaderRef reader, core::String& str);
-void deserialize(io::ReaderRef reader, Scene& scene, AssetLoader<StaticMesh>& mesh_loader);
+core::Result<Scene> deserialize(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader);
 
 
 }

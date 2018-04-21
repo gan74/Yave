@@ -91,51 +91,29 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		}
 	}
 
-	int count = 0;
-	stdfs::path dir = stdfs::is_directory(_current) ? _current : _current.parent_path();
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDarkening]);
+	ImGui::BeginChild("###fileentries");
+	{
+		int count = 0;
+		stdfs::path dir = stdfs::is_directory(_current) ? _current : _current.parent_path();
 
-	if(ImGui::Selectable("..", _selection == count++)) {
-		set_path(_current.parent_path());
-	}
+		if(ImGui::Selectable("..", _selection == count++)) {
+			set_path(_current.parent_path());
+		}
 
-	for(auto& e : stdfs::directory_iterator(dir)) {
+		for(auto& e : stdfs::directory_iterator(dir)) {
 
-		stdfs::path sub = e.path();
-		auto name = sub.filename().string();
+			stdfs::path sub = e.path();
+			auto name = sub.filename().string();
 
-		if(ImGui::Selectable(name.c_str(), _selection == count++)) {
-			set_path(sub);
-			break;
+			if(ImGui::Selectable(name.c_str(), _selection == count++)) {
+				set_path(sub);
+				break;
+			}
 		}
 	}
-
-
-	/*if(ImGui::Button("..")) {
-		_current = _current.parent_path();
-	}
-
-	for(auto& e : stdfs::directory_iterator(_current)) {
-
-		stdfs::path sub = e.path();
-		auto name = sub.filename().string();
-
-		if(stdfs::is_regular_file(sub)) {
-			if(sub.filename().extension() == ".ys") {
-				if(ImGui::Button(name.c_str())) {
-					_callback(name);
-					_visible = false;
-				}
-			}
-			ImGui::Text(name.c_str());
-		} else if(stdfs::is_directory(sub)) {
-			if(ImGui::Button(name.c_str())) {
-				_current = sub;
-			}
-		} else {
-			ImGui::Text(name.c_str());
-		}
-	}*/
-
+	ImGui::EndChild();
+	ImGui::PopStyleColor();
 }
 
 }

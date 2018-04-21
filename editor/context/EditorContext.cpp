@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <y/io/File.h>
 
+
 #include <imgui/imgui.h>
 
 namespace editor {
@@ -52,35 +53,24 @@ EditorContext::EditorContext(DevicePtr dptr) :
 	_icons = Icons{_icon_textures[0], _icon_textures[1], _icon_textures[2]};
 
 	load_settings();
-
-	clear_scene();
-	fill_scene(scene(), texture_loader, mesh_loader);
-
-	_is_flushing_deferred = false;
+	load_scene("./scene.ys");
 }
 
 EditorContext::~EditorContext() {
 	save_settings();
 }
 
-void EditorContext::clear_scene() {
-	if(!_is_flushing_deferred) {
-		y_fatal("clear_scene() should only be called in via defer.");
-	}
-
-	device()->queue(QueueFamily::Graphics).wait();
-	{
+void EditorContext::set_scene_deferred(Scene&& scene) {
+	defer([=, sce{std::move(scene)}]() mutable {
 		set_selected(nullptr);
-		_scene->renderables().clear();
-		_scene->static_meshes().clear();
-		_scene->lights().clear();
-	}
+		*_scene = std::move(sce);
 
-	{
-		auto hook = std::make_unique<SceneHook>(this);
-		_scene_hook = hook.get();
-		_scene->renderables().emplace_back(std::move(hook));
-	}
+		{
+			auto hook = std::make_unique<SceneHook>(this);
+			_scene_hook = hook.get();
+			_scene->renderables().emplace_back(std::move(hook));
+		}
+	});
 }
 
 void EditorContext::save_scene(const char* filename) {
@@ -92,11 +82,14 @@ void EditorContext::save_scene(const char* filename) {
 }
 
 void EditorContext::load_scene(const char* filename) {
-	clear_scene();
 	if(auto r = io::File::open(filename); r.is_ok()) {
-		deserialize(r.unwrap(), *_scene, mesh_loader);
+		if(auto s = deserialize(r.unwrap(), mesh_loader); s.is_ok()) {
+			set_scene_deferred(std::move(s.unwrap()));
+		} else {
+			log_msg("Unable to load scene.", Log::Error);
+		}
 	} else {
-		log_msg("Unable to load scene.", Log::Error);
+		log_msg("Unable to open scene file.", Log::Error);
 	}
 }
 
@@ -118,6 +111,12 @@ Scene* EditorContext::scene() const {
 
 SceneView* EditorContext::scene_view() const {
 	return _scene_view.get();
+}
+
+bool EditorContext::is_scene_empty() const {
+	return _scene->renderables().size() <= 1 && // hook
+		   _scene->static_meshes().is_empty() &&
+		   _scene->lights().is_empty();
 }
 
 void EditorContext::set_selected(Light* sel) {
@@ -144,16 +143,24 @@ Light* EditorContext::selected_light() const {
 }
 
 void EditorContext::defer(core::Function<void()>&& func) {
+	std::unique_lock _(_deferred_lock);
+	if(_is_flushing_deferred) {
+		y_fatal("Defer called from already deferred function.");
+	}
 	_deferred.emplace_back(std::move(func));
 }
 
 void EditorContext::flush_deferred() {
-	_is_flushing_deferred = true;
-	for(auto& f : _deferred) {
-		f();
+	std::unique_lock _(_deferred_lock);
+	if(!_deferred.is_empty()) {
+		device()->queue(QueueFamily::Graphics).wait();
+		_is_flushing_deferred = true;
+		for(auto& f : _deferred) {
+			f();
+		}
+		_deferred.clear();
+		_is_flushing_deferred = false;
 	}
-	_is_flushing_deferred = false;
-	_deferred.clear();
 }
 
 

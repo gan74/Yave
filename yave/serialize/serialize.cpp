@@ -29,6 +29,8 @@ SOFTWARE.
 
 namespace yave {
 
+#define y_unwrap(type, var, expr) type var; if(auto _unwrap_ = (expr); _unwrap_.is_ok()) { var = _unwrap_.unwrap(); } else { return core::Err(); }
+#define y_try(expr) if(auto _unwrap_ = (expr); !_unwrap_.is_ok()) { return core::Err(); }
 
 template<typename T>
 static std::unordered_map<const T*, u32> serialize(io::WriterRef writer, const AssetLoader<T>& loader) {
@@ -45,15 +47,27 @@ static std::unordered_map<const T*, u32> serialize(io::WriterRef writer, const A
 	return ids;
 }
 
-static void deserialize(io::ReaderRef reader, core::Vector<core::String>& names) {
-	u32 size = reader->read_one<u32>().unwrap();
+static core::Result<void> deserialize(io::ReaderRef reader, core::String& str) {
+	y_unwrap(u32, size, reader->read_one<u32>());
+	str = core::String(nullptr, size);
+	y_try(reader->read(str.data(), size));
+	str[str.size()] = 0;
+
+	return core::Ok();
+}
+
+static core::Result<void> deserialize(io::ReaderRef reader, core::Vector<core::String>& names) {
+	y_unwrap(u32, size, reader->read_one<u32>());
 	names.set_min_capacity(size);
 
 	for(u32 i = 0; i != size; ++i) {
 		names.emplace_back();
-		deserialize(reader, names.last());
+		y_try(deserialize(reader, names.last()));
 	}
+	return core::Ok();
 }
+
+
 
 // --------------------------------------------------------  serialize  --------------------------------------------------------
 
@@ -86,41 +100,41 @@ void serialize(io::WriterRef writer, const Scene& scene, const AssetLoader<Stati
 
 // -------------------------------------------------------- deserialize --------------------------------------------------------
 
-void deserialize(io::ReaderRef reader, core::String& str) {
-	u32 size = reader->read_one<u32>().unwrap();
-	str = core::String(nullptr, size);
-	reader->read(str.data(), size).unwrap();
-	str[str.size()] = 0;
-}
 
-void deserialize(io::ReaderRef reader, Scene& scene, AssetLoader<StaticMesh>& mesh_loader) {
-	core::Vector<core::String> mesh_names;
-	deserialize(reader, mesh_names);
-
+core::Result<Scene> deserialize(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader) {
 	DevicePtr dptr = mesh_loader.device();
+
+	core::Vector<core::String> mesh_names;
+	y_try(deserialize(reader, mesh_names));
 
 	auto material = make_asset<Material>(dptr, MaterialData()
 			.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
 		);
 
-	u32 mesh_count = reader->read_one<u32>().unwrap();
+	Scene scene;
+	y_unwrap(u32, mesh_count, reader->read_one<u32>());
 	for(u32 i = 0; i != mesh_count; ++i) {
 		u32 mesh_id = reader->read_one<u32>().unwrap();
 		auto mesh = mesh_loader.from_file(mesh_names[mesh_id]).unwrap();
 
 		auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
-		reader->read_one(inst->transform()).unwrap();
+		y_try(reader->read_one(inst->transform()));
 		scene.static_meshes().emplace_back(std::move(inst));
 	}
 
-	u32 light_count = reader->read_one<u32>().unwrap();
+	y_unwrap(u32, light_count, reader->read_one<u32>());
 	for(u32 i = 0; i != light_count; ++i) {
 		// load as point, then read on top. Maybe change this ?
 		auto light = std::make_unique<Light>(Light::Point);
-		reader->read_one(*light).unwrap();
+		y_try(reader->read_one(*light));
 		scene.lights().emplace_back(std::move(light));
 	}
+
+	return core::Ok(std::move(scene));
 }
+
+#undef y_unwrap
+#undef y_try
 
 }

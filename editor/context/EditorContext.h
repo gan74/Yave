@@ -32,6 +32,8 @@ SOFTWARE.
 #include <yave/objects/Transformable.h>
 #include <yave/scene/SceneView.h>
 
+#include <mutex>
+
 #include "SceneHook.h"
 
 namespace editor {
@@ -51,10 +53,10 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		Scene* scene() const;
 		SceneView* scene_view() const;
 
+		bool is_scene_empty() const;
+
 		void save_scene(const char* filename);
-		// these must be deferred !!!
 		void load_scene(const char* filename);
-		void clear_scene();
 
 		void save_settings();
 		void load_settings();
@@ -80,6 +82,8 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		AssetLoader<StaticMesh> mesh_loader;
 
 	private:
+		void set_scene_deferred(Scene&& scene);
+
 		std::unique_ptr<Scene> _scene;
 		std::unique_ptr<SceneView> _scene_view;
 
@@ -90,9 +94,9 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		NotOwner<Transformable*> _selected = nullptr;
 		NotOwner<Light*> _selected_light = nullptr;
 
-
-		bool _is_flushing_deferred = true; // debug
+		std::mutex _deferred_lock;
 		core::Vector<core::Function<void()>> _deferred;
+		bool _is_flushing_deferred = false;
 
 
 		core::Vector<Texture> _icon_textures;

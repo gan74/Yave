@@ -36,7 +36,18 @@ class Scene : NonCopyable {
 		template<typename T>
 		using Ptr = std::unique_ptr<T>;
 
-		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes = {}, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
+		Scene() = default;
+		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
+
+		Scene(Scene&& other) {
+			swap(other);
+		}
+
+		Scene& operator=(Scene&& other) {
+			swap(other);
+			return *this;
+		}
+
 
 		const auto& static_meshes() const {
 			return _statics;
@@ -63,6 +74,12 @@ class Scene : NonCopyable {
 		}
 
 	private:
+		void swap(Scene& other) {
+			_statics.swap(other._statics);
+			_renderables.swap(other._renderables);
+			_lights.swap(other._lights);
+		}
+
 		core::Vector<Ptr<StaticMeshInstance>> _statics;
 		core::Vector<Ptr<Renderable>> _renderables;
 		core::Vector<Ptr<Light>> _lights;

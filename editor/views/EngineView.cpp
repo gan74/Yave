@@ -83,6 +83,11 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 	math::Vec2 win_size = ImGui::GetWindowSize();
 	math::Vec2 win_pos = ImGui::GetWindowPos();
 
+	if(context()->is_scene_empty()) {
+		ImGui::Text("Empty scene");
+		return;
+	}
+
 	if(!_renderer || win_size != render_size()) {
 		create_renderer(win_size);
 	}
