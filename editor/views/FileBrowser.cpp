@@ -29,28 +29,88 @@ namespace stdfs = std::experimental::filesystem;
 
 namespace editor {
 
+template<usize N>
+static void to_buffer(std::array<char, N>& buffer, const stdfs::path& p) {
+	auto n = p.string();
+	std::copy_n(n.begin(), std::min(buffer.size() - 1, n.size()), buffer.begin());
+	buffer[n.size()] = 0;
+}
+
 FileBrowser::FileBrowser() :
 		Frame("File browser"),
-		_current(stdfs::current_path()),
+		_name_buffer({0}),
 		_callback(Nothing()) {
 
-	_input_path.set_min_capacity(512);
-	_input_path = _current.string();
+	set_path(stdfs::current_path());
+}
+
+void FileBrowser::done() {
+	input_path();
+	_callback(_current.string());
+	_visible = false;
+}
+
+void FileBrowser::cancel() {
+	_visible = false;
+}
+
+void FileBrowser::set_path(const std::experimental::filesystem::path& path) {
+	_current = path;
+	if(stdfs::is_directory(_current)) {
+		to_buffer(_path_buffer, _current);
+	} else {
+		to_buffer(_path_buffer, _current.parent_path());
+		to_buffer(_name_buffer, _current.filename());
+	}
+}
+
+void FileBrowser::input_path() {
+	stdfs::path path(_path_buffer.begin());
+	path /= stdfs::path(_name_buffer.begin());
+	set_path(path);
 }
 
 void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(ImGui::InputText("Path", _input_path, _input_path.capacity(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-		if(stdfs::exists(_input_path.data())) {
-			_current = stdfs::path(_input_path.data());
+	{
+		if(ImGui::InputText("###path", _path_buffer.begin(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			input_path();
+		}
+		ImGui::SameLine();
+		if(ImGui::Button("Ok")) {
+			done();
 		}
 	}
-	ImGui::SameLine();
-	if(ImGui::Button("Cancel")) {
-		_visible = false;
+
+	{
+		if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			input_path();
+		}
+		ImGui::SameLine();
+		if(ImGui::Button("Cancel")) {
+			cancel();
+		}
+	}
+
+	int count = 0;
+	stdfs::path dir = stdfs::is_directory(_current) ? _current : _current.parent_path();
+
+	if(ImGui::Selectable("..", _selection == count++)) {
+		set_path(_current.parent_path());
+	}
+
+	for(auto& e : stdfs::directory_iterator(dir)) {
+
+		stdfs::path sub = e.path();
+		auto name = sub.filename().string();
+
+		if(ImGui::Selectable(name.c_str(), _selection == count++)) {
+			set_path(sub);
+			break;
+		}
 	}
 
 
-	if(ImGui::Button("..")) {
+	/*if(ImGui::Button("..")) {
 		_current = _current.parent_path();
 	}
 
@@ -74,7 +134,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		} else {
 			ImGui::Text(name.c_str());
 		}
-	}
+	}*/
 
 }
 

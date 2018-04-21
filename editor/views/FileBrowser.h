@@ -41,10 +41,20 @@ class FileBrowser : public Frame {
 		}
 
 	private:
+		void done();
+		void cancel();
+
+		void set_path(const std::experimental::filesystem::path& path);
+		void input_path();
+
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
 		std::experimental::filesystem::path _current;
-		core::String _input_path;
+
+		std::array<char, 256> _path_buffer;
+		std::array<char, 256> _name_buffer;
+
+		int _selection = -1;
 
 		core::Function<void(core::String)> _callback;
 

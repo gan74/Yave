@@ -192,9 +192,9 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	}
 
 
-	if(ImGui::IsKeyDown(int(Key::P))) {
+	/*if(ImGui::IsKeyDown(int(Key::P))) {
 		y_fatal("Crash!");
-	}
+	}*/
 }
 
 void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
