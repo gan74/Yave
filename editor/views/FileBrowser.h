@@ -26,6 +26,9 @@ SOFTWARE.
 
 #include <y/core/Functor.h>
 
+
+#include <experimental/filesystem>
+
 namespace editor {
 
 class FileBrowser : public Frame {
@@ -39,6 +42,9 @@ class FileBrowser : public Frame {
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+
+		std::experimental::filesystem::path _current;
+		core::String _input_path;
 
 		core::Function<void(core::String)> _callback;
 

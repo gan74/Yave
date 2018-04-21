@@ -165,6 +165,7 @@ void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token)
 void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
 				  ImGuiWindowFlags_NoResize |
+				  ImGuiWindowFlags_NoMove |
 				  ImGuiWindowFlags_NoScrollbar |
 				  ImGuiWindowFlags_NoSavedSettings |
 				  ImGuiWindowFlags_NoBringToFrontOnFocus |
@@ -175,7 +176,6 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 
 	ImGui::NewFrame();
 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	ImGui::Begin("Main window", nullptr, flags);
 
 	render_ui(recorder, token);
@@ -230,16 +230,12 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		}
 	}
 
-	/*if(auto file = find_element<FileBrowser>(_elements); file && file->is_visible()) {
-		file->paint(recorder, token);
-		return;
-	}*/
-
 	// toolbar
 	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
+
 		float toolbar_size = 18.0f;
 		ImVec2 button_size(toolbar_size, toolbar_size);
-
 
 		if(ImGui::ImageButton(&context()->icons()->save, button_size)) {
 			//context()->save_scene(filename);
@@ -248,13 +244,14 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 				);
 
 		}
-		ImGui::SameLine();
+		ImGui::SameLine(0.0f, 0.1f);
 		if(ImGui::ImageButton(&context()->icons()->load, button_size)) {
 			//context()->load_scene(filename);
 			show_element<FileBrowser>(context(), _elements)->set_callback(
 					[=](core::String filename) { context()->defer([=] { context()->load_scene(filename); }); }
 				);
 		}
+		ImGui::PopStyleVar();
 	}
 
 	// main UI

@@ -24,19 +24,58 @@ SOFTWARE.
 
 #include <imgui/imgui.h>
 
+
+namespace stdfs = std::experimental::filesystem;
+
 namespace editor {
 
-FileBrowser::FileBrowser() : Frame("File browser"), _callback(Nothing()) {
+FileBrowser::FileBrowser() :
+		Frame("File browser"),
+		_current(stdfs::current_path()),
+		_callback(Nothing()) {
+
+	_input_path.set_min_capacity(512);
+	_input_path = _current.string();
 }
 
 void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(ImGui::Button("scene.ys")) {
-		_callback("./scene.ys");
+	if(ImGui::InputText("Path", _input_path, _input_path.capacity(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+		if(stdfs::exists(_input_path.data())) {
+			_current = stdfs::path(_input_path.data());
+		}
+	}
+	ImGui::SameLine();
+	if(ImGui::Button("Cancel")) {
 		_visible = false;
 	}
-	if(ImGui::CollapsingHeader("header")) {
 
+
+	if(ImGui::Button("..")) {
+		_current = _current.parent_path();
 	}
+
+	for(auto& e : stdfs::directory_iterator(_current)) {
+
+		stdfs::path sub = e.path();
+		auto name = sub.filename().string();
+
+		if(stdfs::is_regular_file(sub)) {
+			if(sub.filename().extension() == ".ys") {
+				if(ImGui::Button(name.c_str())) {
+					_callback(name);
+					_visible = false;
+				}
+			}
+			ImGui::Text(name.c_str());
+		} else if(stdfs::is_directory(sub)) {
+			if(ImGui::Button(name.c_str())) {
+				_current = sub;
+			}
+		} else {
+			ImGui::Text(name.c_str());
+		}
+	}
+
 }
 
 }

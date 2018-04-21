@@ -57,6 +57,9 @@ static void setup_style() {
 	style.FrameRounding = 0.0f; // 3.0f
 	style.WindowTitleAlign = ImVec2(0.5f,0.5f);
 
+	//style.WindowPadding = ImVec2(0.5f,0.5f);
+	//style.ColumnsMinSpacing = 0.0f;
+
 	//auto active_color = math::Vec4(0.26f, 0.59f, 0.98f, 1.00f);
 	auto hovered_color = math::Vec4(0.43f, 0.43f, 0.43f, 1.00f);
 	auto button_color = math::Vec4(0.36f, 0.36f, 0.36f, 1.00f);

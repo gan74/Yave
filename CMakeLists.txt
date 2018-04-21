@@ -75,6 +75,8 @@ target_link_libraries(yave y spirv-cross-core)
 if(BUILD_EDITOR)
 	add_executable(editor ${EDITOR_FILES})
 	target_link_libraries(editor yave)
+	# for std::filesystem
+	target_link_libraries(editor stdc++fs)
 endif()
 
 
