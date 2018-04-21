@@ -225,13 +225,22 @@ String::operator std::string_view() const {
 
 String& String::operator=(const String& str) {
 	if(&str != this) {
-		if(is_long()) {
-			free_long(_l);
-		}
-		if(str.is_long()) {
-			new(&_l) LongData(str._l);
+		if(capacity() > str.size()) {
+			std::copy(str.begin(), str.end() + 1, data());
+			if(is_long()) {
+				_l.length = str.size();
+			} else {
+				_s._length = str.size();
+			}
 		} else {
-			new(&_s) ShortData(str._s);
+			if(is_long()) {
+				free_long(_l);
+			}
+			if(str.is_long()) {
+				new(&_l) LongData(str._l);
+			} else {
+				new(&_s) ShortData(str._s);
+			}
 		}
 	}
 	return *this;

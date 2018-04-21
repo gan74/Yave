@@ -48,17 +48,17 @@ void File::swap(File& other) {
 }
 
 core::Result<File> File::create(const core::String& name) {
-	File f(fopen(name.data(), "wb+"));
-	if(f.is_open()) {
-		return core::Ok(std::move(f));
+	FILE* file = fopen(name.data(), "wb+");
+	if(file) {
+		return core::Ok<File>(file);
 	}
 	return core::Err();
 }
 
 core::Result<File, void> File::open(const core::String& name) {
-	File f(fopen(name.data(), "rb"));
-	if(f.is_open()) {
-		return core::Ok(std::move(f));
+	FILE* file = fopen(name.data(), "rb");
+	if(file) {
+		return core::Ok<File>(file);
 	}
 	return core::Err();
 }
