@@ -75,15 +75,17 @@ void EditorContext::set_scene_deferred(Scene&& scene) {
 
 void EditorContext::save_scene(const char* filename) {
 	if(auto r = io::File::create(filename); r.is_ok()) {
-		serialize(r.unwrap(), *_scene, mesh_loader);
+		if(_scene->to_file(r.unwrap(), mesh_loader).is_error()) {
+			log_msg("Unable to save scene.", Log::Error);
+		}
 	} else {
-		log_msg("Unable to save scene.", Log::Error);
+		log_msg("Unable to create scene file.", Log::Error);
 	}
 }
 
 void EditorContext::load_scene(const char* filename) {
 	if(auto r = io::File::open(filename); r.is_ok()) {
-		if(auto s = deserialize(r.unwrap(), mesh_loader); s.is_ok()) {
+		if(auto s = Scene::from_file(r.unwrap(), mesh_loader); s.is_ok()) {
 			set_scene_deferred(std::move(s.unwrap()));
 		} else {
 			log_msg("Unable to load scene.", Log::Error);

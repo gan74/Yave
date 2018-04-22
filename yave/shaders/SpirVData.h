@@ -32,6 +32,7 @@ class SpirVData {
 	public:
 		SpirVData() = default;
 
+		// serialize.cpp
 		static SpirVData from_file(io::ReaderRef reader);
 
 		usize size() const;

@@ -22,8 +22,6 @@ SOFTWARE.
 
 #include "ImageData.h"
 
-#include <y/io/BuffReader.h>
-
 namespace yave {
 
 ImageData::ImageData(ImageData&& other) {
@@ -91,54 +89,6 @@ void ImageData::swap(ImageData& other) {
 	std::swap(_format, other._format);
 	std::swap(_data, other._data);
 }
-
-ImageData ImageData::from_file(io::ReaderRef reader) {
-	Y_LOG_PERF("asset,loading");
-	const char* err_msg = "Unable to read image.";
-
-	struct Header {
-		u32 magic;
-		u32 type;
-		u32 version;
-
-		u32 width;
-		u32 height;
-		u32 layers;
-		u32 mips;
-		u32 format;
-
-		bool is_valid() const {
-			return magic == fs::magic_number &&
-				   type == fs::image_file_type &&
-				   version == 3 &&
-				   format > 0 &&
-				   width != 0 &&
-				   height != 0 &&
-				   layers != 0 &&
-				   mips != 0;
-		}
-	};
-
-	Header header = reader->read_one<Header>().expected(err_msg);
-	if(!header.is_valid()) {
-		y_fatal(err_msg);
-	}
-
-	ImageData data;
-	data._size = {header.width, header.height};
-	data._layers = header.layers;
-	data._mips = header.mips;
-	data._format = ImageFormat(vk::Format(header.format));
-
-	usize data_size = data.combined_byte_size();
-
-	data._data = std::make_unique<u8[]>(data_size);
-
-	reader->read(data._data.get(), data_size).expected(err_msg);
-
-	return data;
-}
-
 
 ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips) :
 		_size(size),

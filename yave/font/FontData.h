@@ -46,7 +46,8 @@ class FontData : NonCopyable {
 
 		const ImageData& atlas_data() const;
 
-		static FontData from_file(io::ReaderRef reader);
+		// serialize.cpp
+		static core::Result<FontData> from_file(io::ReaderRef reader);
 
 	private:
 		friend class Font;

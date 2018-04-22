@@ -54,17 +54,18 @@ class AssetLoader : public DeviceLinked {
 		}
 
 		core::Result<AssetPtr<T>> from_file(const core::String& filename) {
+			Y_LOG_PERF("asset,loading");
 			auto& asset = _loaded[filename];
-			if(!asset) {
-				if(auto file = io::File::open(filename); file.is_ok()) {
-					load_from data = load_from::from_file(file.unwrap());
-					asset = make_asset<T>(device(), std::move(data));
-				} else {
-					return core::Err();
-				}
-
+			if(asset) {
+				return core::Ok(asset);
 			}
-			return core::Ok(asset);
+			if(auto file = io::File::open(filename); file.is_ok()) {
+				core::Result<load_from> data = load_from::from_file(file.unwrap());
+				if(data.is_ok()) {
+					return core::Ok(asset = make_asset<T>(device(), std::move(data.unwrap())));
+				}
+			}
+			return core::Err();
 		}
 
 

@@ -23,19 +23,19 @@ SOFTWARE.
 #define YAVE_SERIALIZE_SERIALIZE_H
 
 #include <yave/yave.h>
-#include <yave/assets/AssetLoader.h>
-#include <yave/scene/Scene.h>
 
 #include <y/io/Ref.h>
 
 namespace yave {
 
-void serialize(io::WriterRef writer, const core::String& str);
-void serialize(io::WriterRef writer, const Scene& scene, const AssetLoader<StaticMesh>& mesh_loader);
-
-
-core::Result<Scene> deserialize(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader);
-
+namespace fs {
+static constexpr u32 magic_number = 0x65766179;
+static constexpr u32 mesh_file_type = 1;
+static constexpr u32 image_file_type = 2;
+static constexpr u32 animation_file_type = 3;
+static constexpr u32 font_file_type = 4;
+static constexpr u32 scene_file_type = 5;
+}
 
 }
 

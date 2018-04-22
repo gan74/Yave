@@ -40,15 +40,6 @@ namespace yave {
 
 using namespace y;
 
-
-namespace fs {
-static constexpr u32 magic_number = 0x65766179;
-static constexpr u32 mesh_file_type = 1;
-static constexpr u32 image_file_type = 2;
-static constexpr u32 animation_file_type = 3;
-static constexpr u32 font_file_type = 4;
-}
-
 class Device;
 using DevicePtr = const Device*;
 

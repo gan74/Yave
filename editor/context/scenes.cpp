@@ -57,9 +57,9 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 				.set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
 			);
 
-		auto animation = make_asset<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to load animation file.")));
+		auto animation = make_asset<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to open animation file.")).expected("Unable to read animation file."));
 
-		auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/beta.fbx.ym").expected("Unable to open mesh file."));
+		auto mesh_data = std::move(MeshData::from_file(io::File::open("../tools/mesh_to_ym/beta.fbx.ym").expected("Unable to open mesh file.")).expected("Unable to read mesh file."));
 		auto mesh = make_asset<SkinnedMesh>(dptr, mesh_data);
 
 		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");

@@ -32,4 +32,19 @@ Scene::Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Re
 		_lights(std::move(lights)) {
 }
 
+Scene::Scene(Scene&& other) {
+	swap(other);
+}
+
+Scene& Scene::operator=(Scene&& other) {
+	swap(other);
+	return *this;
+}
+
+void Scene::swap(Scene& other) {
+	_statics.swap(other._statics);
+	_renderables.swap(other._renderables);
+	_lights.swap(other._lights);
+}
+
 }

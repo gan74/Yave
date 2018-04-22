@@ -55,7 +55,8 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 }
 
 static auto load_envmap(DevicePtr dptr) {
-	return IBLProbe::from_equirec(Texture(dptr, ImageData::from_file(io::File::open("../tools/image_to_yt/equirec.yt").expected("Unable to open equirec"))));
+	auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/equirec.yt").expected("Unable to open equirec."));
+	return IBLProbe::from_equirec(Texture(dptr, image.expected("Unable to load equirec.")));
 }
 
 IBLData::IBLData(DevicePtr dptr) :

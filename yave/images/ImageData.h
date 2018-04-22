@@ -54,7 +54,8 @@ class ImageData : NonCopyable {
 		usize data_offset(usize layer = 0, usize mip = 0) const;
 		const u8* data(usize layer = 0, usize mip = 0) const;
 
-		static ImageData from_file(io::ReaderRef reader);
+		// serialize.cpp
+		static core::Result<ImageData> from_file(io::ReaderRef reader);
 
 		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
 

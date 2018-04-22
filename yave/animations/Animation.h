@@ -33,8 +33,9 @@ class Animation {
 	public:
 		Animation(float duration, core::Vector<AnimationChannel>&& channels);
 
-		static Animation from_file(io::ReaderRef reader);
-		void to_file(io::WriterRef writer) const;
+		// serialize.cpp
+		static core::Result<Animation> from_file(io::ReaderRef reader);
+		core::Result<void> to_file(io::WriterRef writer) const;
 
 		float duration() const;
 		const core::Vector<AnimationChannel>& channels() const;

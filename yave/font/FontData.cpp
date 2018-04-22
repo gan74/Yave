@@ -33,41 +33,4 @@ const ImageData& FontData::atlas_data() const {
 	return _font_atlas;
 }
 
-FontData FontData::from_file(io::ReaderRef reader) {
-	Y_LOG_PERF("Loading");
-	const char* err_msg = "Unable to read font.";
-
-	FontData font;
-	font._font_atlas = ImageData::from_file(reader);
-
-	struct Header {
-		u32 magic;
-		u32 type;
-		u32 version;
-		u32 char_count;
-
-		bool is_valid() const {
-			return magic == fs::magic_number &&
-				   type == fs::font_file_type &&
-				   version == 1 &&
-				   char_count > 0;
-		}
-	};
-
-	Header header = reader->read_one<Header>().expected(err_msg);
-	if(!header.is_valid()) {
-		y_fatal(err_msg);
-	}
-
-	std::unique_ptr<Char[]> chars = std::make_unique<Char[]>(header.char_count);
-	reader->read(chars.get(), header.char_count * sizeof(Char)).expected(err_msg);
-
-	/*for(u32 i = 0; i != header.char_count; ++i) {
-		font._chars[chars[i].utf32] = chars[i];
-		log_msg(core::str(chars[i].utf32) + " " + chars[i].uv.x() + " " + chars[i].uv.y() + " " + chars[i].size.x() + " " + chars[i].size.y());
-	}*/
-
-	return font;
-}
-
 }

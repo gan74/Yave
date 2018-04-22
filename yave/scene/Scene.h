@@ -28,6 +28,10 @@ SOFTWARE.
 #include <yave/objects/Renderable.h>
 #include <yave/objects/Light.h>
 
+#include <yave/assets/AssetLoader.h>
+
+#include <y/io/Ref.h>
+
 namespace yave {
 
 class Scene : NonCopyable {
@@ -39,14 +43,12 @@ class Scene : NonCopyable {
 		Scene() = default;
 		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
 
-		Scene(Scene&& other) {
-			swap(other);
-		}
+		Scene(Scene&& other);
+		Scene& operator=(Scene&& other);
 
-		Scene& operator=(Scene&& other) {
-			swap(other);
-			return *this;
-		}
+		// serialize.cpp
+		static core::Result<Scene> from_file(io::ReaderRef reader,  AssetLoader<StaticMesh>& mesh_loader);
+		core::Result<void> to_file(io::WriterRef writer, const AssetLoader<StaticMesh>& mesh_loader) const;
 
 
 		const auto& static_meshes() const {
@@ -74,11 +76,7 @@ class Scene : NonCopyable {
 		}
 
 	private:
-		void swap(Scene& other) {
-			_statics.swap(other._statics);
-			_renderables.swap(other._renderables);
-			_lights.swap(other._lights);
-		}
+		void swap(Scene& other);
 
 		core::Vector<Ptr<StaticMeshInstance>> _statics;
 		core::Vector<Ptr<Renderable>> _renderables;
