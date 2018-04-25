@@ -318,8 +318,6 @@ core::Result<MeshData> MeshData::from_file(io::ReaderRef reader) {
 // -------------------------------------------------------- shaders --------------------------------------------------------
 
 SpirVData SpirVData::from_file(io::ReaderRef reader) {
-	core::DebugTimer _("SpirVData::from_file()");
-	// Y_TODO(optimise)
 	core::Vector<u8> content;
 	reader->read_all(content);
 	core::Vector<u32> spriv32(content.size() / 4, 0);
@@ -373,6 +371,7 @@ core::Result<void> Scene::to_file(io::WriterRef writer, const AssetLoader<Static
 
 core::Result<Scene> Scene::from_file(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader) {
 	core::DebugTimer _("Scene::from_file()");
+
 	struct Header {
 		u32 magic;
 		u32 type;

@@ -27,7 +27,7 @@ SOFTWARE.
 namespace editor {
 namespace images {
 
-static u32 to_rgba(char c) {
+static u32 to_rgba_dark(char c) {
 	switch(c) {
 		case '#':
 			return 0xFF000000;
@@ -37,7 +37,20 @@ static u32 to_rgba(char c) {
 		default:
 			break;
 	}
-	return 0x00;
+	return 0x00000000;
+}
+
+static u32 to_rgba_light(char c) {
+	switch(c) {
+		case '#':
+			return 0xFFFFFFFF;
+		case '.':
+			return 0xFF000000;
+
+		default:
+			break;
+	}
+	return 0x00000000;
 }
 
 static u32 avg(u32 x, u32 y, u32 z, u32 w) {
@@ -73,7 +86,8 @@ static u32 compute_mips(u32* data, usize size) {
 	return compute_mips(mip, half) + 1;
 }
 
-static ImageData to_image(const char* ascii, const math::Vec2ui& size) {
+template<typename Func>
+static ImageData to_image(const char* ascii, const math::Vec2ui& size, Func&& to_rgba) {
 	usize total = size.x() * size.y();
 	auto rgba = std::make_unique<u32[]>(total + total / 2);
 
@@ -159,7 +173,7 @@ ImageData light() {
 		"                               ######                           ";
 
 	static_assert(sizeof(ascii) == 64 * 64 + 1);
-	return to_image(ascii, math::Vec2ui(64));
+	return to_image(ascii, math::Vec2ui(64), to_rgba_dark);
 }
 
 ImageData save() {
@@ -230,7 +244,7 @@ ImageData save() {
 		"                                                                ";
 
 	static_assert(sizeof(ascii) == 64 * 64 + 1);
-	return to_image(ascii, math::Vec2ui(64));
+	return to_image(ascii, math::Vec2ui(64), to_rgba_light);
 }
 
 ImageData load() {
@@ -301,7 +315,7 @@ ImageData load() {
 			"                                                                ";
 
 	static_assert(sizeof(ascii) == 64 * 64 + 1);
-	return to_image(ascii, math::Vec2ui(64));
+	return to_image(ascii, math::Vec2ui(64), to_rgba_light);
 }
 
 

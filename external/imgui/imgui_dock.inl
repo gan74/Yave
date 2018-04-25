@@ -726,6 +726,9 @@ struct DockContext
 
 		void drawTabbarListButton(Dock& dock)
 		{
+			// disabled
+			return;
+
 			if (!dock.next_tab) return;
 
 			ImDrawList* draw_list = GetWindowDrawList();
@@ -1210,6 +1213,7 @@ restart:
 			char tmp[256];
 			strcpy(tmp, label);
 			strcat(tmp, "_docked"); // to avoid https://github.com/ocornut/imgui/issues/713
+			//PushStyleColor(ImGuiCol_ChildBg, GetStyle().Colors[ImGuiCol_FrameBgActive]);
 			bool ret = BeginChild(tmp, size, true, flags);
 			PopStyleColor(2);
 
@@ -1219,6 +1223,14 @@ restart:
 				ImGuiWindow* window = GetCurrentWindow();
 				window->BeginOrderWithinParent = 100000;
 			}
+
+			/*if (ret)
+			{
+				ImU32 color = GetColorU32(ImGuiCol_FrameBgActive);
+				ImVec2 pos = GetWindowPos();
+				ImVec2 size = GetWindowSize();
+				GetWindowDrawList()->AddRectFilled(pos, ImVec2(size.x + pos.x, size.y + pos.y), color);
+			}*/
 
 			return ret;
 		}

@@ -43,7 +43,8 @@ static ImageData load_font() {
 	return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8G8B8A8Unorm));
 }
 
-static void setup_style() {
+template<typename = void>
+static void setup_old_style() {
 	// based on https://gist.github.com/ongamex/4ee36fb23d6c527939d0f4ba72144d29
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.WindowRounding = 0.0f;
@@ -163,6 +164,71 @@ static void setup_style() {
 	style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.10f, 0.10f, 0.10f, 0.55f);
 }*/
 
+template<typename = void>
+static void setup_style() {
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	style.Alpha = 1.0f;
+
+	style.GrabRounding = 0.0f;
+	style.WindowRounding = 0.0f;
+	style.ScrollbarRounding = 0.0f;
+	style.FrameRounding = 0.0f;
+
+	style.WindowTitleAlign = ImVec2(0.5f,0.5f);
+
+	style.WindowBorderSize = 0.0f;
+	//style.ChildBorderSize = 16.0f;
+
+	auto dark_bg	= math::Vec4( 45,  45,  45, 255) / 255;
+	auto bg			= math::Vec4( 65,  65,  65, 255) / 255;
+	auto text		= math::Vec4(255, 255, 255, 255) / 255;
+
+	auto debug		= math::Vec4(255, 0, 0, 255) / 255;
+	unused(debug);
+
+	/*for(int i = 0; i != ImGuiCol_COUNT; ++i) {
+		style.Colors[i] = debug;
+	}*/
+
+	style.Colors[ImGuiCol_Text]                 = text;
+	style.Colors[ImGuiCol_TextDisabled]         = text;
+	style.Colors[ImGuiCol_WindowBg]             = dark_bg;
+
+	style.Colors[ImGuiCol_FrameBg]              = dark_bg;
+	style.Colors[ImGuiCol_FrameBgHovered]       = (dark_bg + bg) * 0.5f;
+	style.Colors[ImGuiCol_FrameBgActive]        = bg;
+
+	//style.Colors[ImGuiCol_Button]				= dark_bg;
+	//style.Colors[ImGuiCol_ButtonActive]	        = dark_bg;
+	//style.Colors[ImGuiCol_ButtonHovered]        = dark_bg;
+
+	style.Colors[ImGuiCol_TitleBg]				= bg;
+	style.Colors[ImGuiCol_TitleBgActive]		= bg;
+	style.Colors[ImGuiCol_TitleBgCollapsed]		= bg;
+
+	style.Colors[ImGuiCol_MenuBarBg]			= bg;
+
+	style.Colors[ImGuiCol_ChildBg]              = ImVec4(); // tansparent
+
+	style.Colors[ImGuiCol_Border]				= ImVec4();
+	style.Colors[ImGuiCol_BorderShadow]			= ImVec4();
+
+
+	//style.Colors[ImGuiCol_PopupBg]            = bg;
+	//style.Colors[ImGuiCol_Border]             = bg;
+	//style.Colors[ImGuiCol_BorderShadow]       = bg;
+	//style.Colors[ImGuiCol_MenuBarBg]          = bg;
+	//style.Colors[ImGuiCol_Header]             = bg;
+	//style.Colors[ImGuiCol_HeaderHovered]      = bg;
+	//style.Colors[ImGuiCol_HeaderActive]       = bg;
+	//style.Colors[ImGuiCol_TextSelectedBg]     = bg;
+
+	//style.Colors[ImGuiCol_TitleBg]            = bg;
+	//style.Colors[ImGuiCol_TitleBgCollapsed]   = bg;
+	//style.Colors[ImGuiCol_TitleBgActive]      = bg;
+}
+
 ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		SecondaryRenderer(dptr),
 		_index_buffer(device(), imgui_index_buffer_size),
@@ -180,12 +246,12 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		) {
 
 	ImGui::GetIO().Fonts->TexID = &_font_view;
-	setup_style();
+	setup_old_style();
 }
 
 const DescriptorSet& ImGuiRenderer::create_descriptor_set(const void* data) {
 	auto tex = reinterpret_cast<const TextureView*>(data);
-	auto& ds = _descriptor_sets[tex];
+	auto& ds = _descriptor_sets[tex->vk_view()];
 	if(!ds.device()) {
 		ds = DescriptorSet(device(), {Binding(*tex)});
 	}

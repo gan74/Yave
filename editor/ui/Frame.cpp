@@ -42,18 +42,17 @@ void Frame::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	ImU32 flags = ImGuiWindowFlags_NoScrollbar;
 
 
-	if(_fill_background) {
-		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
-	}
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, _fill_background
+			? ImGui::GetStyle().Colors[ImGuiCol_WindowBg]
+			: ImVec4(0.0f, 0.0f, 0.0f, 0.0f)
+		);
 
 	if(ImGui::BeginChild(_title, ImGui::GetWindowSize(), true, flags | _flags)) {
 		paint_ui(recorder, token);
 	}
 	ImGui::EndChild();
 
-	if(_fill_background) {
-		ImGui::PopStyleColor();
-	}
+	ImGui::PopStyleColor();
 
 }
 

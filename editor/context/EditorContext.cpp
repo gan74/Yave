@@ -74,6 +74,7 @@ void EditorContext::set_scene_deferred(Scene&& scene) {
 }
 
 void EditorContext::save_scene(const char* filename) {
+	Y_LOG_PERF("editor,save");
 	if(auto r = io::File::create(filename); r.is_ok()) {
 		if(_scene->to_file(r.unwrap(), mesh_loader).is_error()) {
 			log_msg("Unable to save scene.", Log::Error);
@@ -84,6 +85,7 @@ void EditorContext::save_scene(const char* filename) {
 }
 
 void EditorContext::load_scene(const char* filename) {
+	Y_LOG_PERF("editor,loading");
 	if(auto r = io::File::open(filename); r.is_ok()) {
 		if(auto s = Scene::from_file(r.unwrap(), mesh_loader); s.is_ok()) {
 			set_scene_deferred(std::move(s.unwrap()));
@@ -155,6 +157,7 @@ void EditorContext::defer(core::Function<void()>&& func) {
 void EditorContext::flush_deferred() {
 	std::unique_lock _(_deferred_lock);
 	if(!_deferred.is_empty()) {
+		Y_LOG_PERF("editor");
 		device()->queue(QueueFamily::Graphics).wait();
 		_is_flushing_deferred = true;
 		for(auto& f : _deferred) {

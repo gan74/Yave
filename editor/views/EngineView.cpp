@@ -39,7 +39,6 @@ EngineView::EngineView(ContextPtr cptr) :
 		Dock("Engine view", ImGuiWindowFlags_NoScrollbar),
 		ContextLinked(cptr),
 		_ibl_data(new IBLData(device())),
-		_uniform_buffer(device(), 1),
 		_gizmo(context()) {
 }
 
@@ -54,42 +53,20 @@ void EngineView::create_renderer(const math::Vec2ui& size) {
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
 	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
-
-	_ui_material = make_asset<Material>(device(), MaterialData()
-			.set_frag_data(SpirVData::from_file(io::File::open("copy.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
-			.set_bindings({Binding(_renderer->output()), Binding(_uniform_buffer)})
-			.set_depth_tested(false)
-		);
-}
-
-void EngineView::draw_callback(RenderPassRecorder& recorder, void* user_data) {
-	reinterpret_cast<EngineView*>(user_data)->render_ui(recorder);
-}
-
-// called via draw_callback ONLY
-void EngineView::render_ui(RenderPassRecorder& recorder) {
-	if(!_renderer) {
-		y_fatal("Internal error.");
-	}
-
-	auto region = recorder.region("EngineView::render_ui");
-
-	recorder.bind_material(*_ui_material);
-	recorder.draw(vk::DrawIndirectCommand(6, 1));
+	_view			= std::make_shared<TextureView>(_renderer->output());
 }
 
 void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	math::Vec2 win_size = ImGui::GetWindowSize();
-	math::Vec2 win_pos = ImGui::GetWindowPos();
+	math::Vec2 viewport = ImGui::GetWindowSize();
 
 	if(context()->is_scene_empty()) {
 		ImGui::Text("Empty scene");
 		return;
 	}
 
-	if(!_renderer || win_size != render_size()) {
-		create_renderer(win_size);
+	if(!_renderer || viewport != render_size()) {
+		create_renderer(viewport);
+		return;
 	}
 
 	if(_renderer) {
@@ -100,18 +77,14 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 		{
 			RenderingPipeline pipeline(_renderer);
 			pipeline.render(recorder, token);
-
+#warning barrier
 			// so we don't have to wait when resizing
-			recorder.keep_alive(_renderer);
-			recorder.keep_alive(_ui_material);
+			recorder.keep_alive(std::make_pair(_renderer, _view));
 		}
 
-		// ui stuff
-		auto map = TypedMapping(_uniform_buffer);
-		map[0] = ViewData{math::Vec2i(win_size), math::Vec2i(win_pos), math::Vec2i(win_size)};
 
-		ImGui::GetWindowDrawList()->AddCallback(reinterpret_cast<ImDrawCallback>(&draw_callback), this);
-
+		math::Vec2 offset = ImGui::GetWindowPos();
+		ImGui::GetWindowDrawList()->AddImage(_view.get(), offset, offset + viewport);
 
 		for(const auto& light : context()->scene()->lights()) {
 			float s = 18.0f;

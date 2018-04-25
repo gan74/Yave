@@ -60,7 +60,7 @@ class ImGuiRenderer : public SecondaryRenderer {
 		TextureView _font_view;
 		Material _material;
 
-		std::unordered_map<const TextureView*, DescriptorSet> _descriptor_sets;
+		std::unordered_map<VkImageView, DescriptorSet> _descriptor_sets;
 
 };
 

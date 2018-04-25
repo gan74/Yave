@@ -61,9 +61,7 @@ class EngineView : public Dock, public ContextLinked {
 
 		Node::Ptr<IBLData> _ibl_data;
 		Node::Ptr<FramebufferRenderer> _renderer;
-
-		AssetPtr<Material> _ui_material;
-		TypedUniformBuffer<ViewData> _uniform_buffer;
+		Node::Ptr<TextureView> _view;
 
 		// subwidgets & stuff
 		Gizmo _gizmo;

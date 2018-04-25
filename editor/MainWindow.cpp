@@ -185,6 +185,8 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	ImGui::Render();
 
 
+
+
 	// render ui pipeline into cmd buffer
 	{
 		RenderingPipeline pipeline(_ui_renderer);
@@ -232,9 +234,9 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 
 	// toolbar
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
+		//ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
 
-		float toolbar_size = 18.0f;
+		float toolbar_size = 24.0f;
 		ImVec2 button_size(toolbar_size, toolbar_size);
 
 		if(ImGui::ImageButton(&context()->icons()->save, button_size)) {
@@ -249,7 +251,8 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 					[=](core::String filename) { context()->load_scene(filename); }
 				);
 		}
-		ImGui::PopStyleVar();
+
+		//ImGui::PopStyleVar();
 	}
 
 	// main UI
