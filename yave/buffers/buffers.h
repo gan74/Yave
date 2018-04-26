@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/meshes/Vertex.h>
 
-#include "TypedSubBuffer.h"
+#include "TypedWrapper.h"
 
 namespace yave {
 

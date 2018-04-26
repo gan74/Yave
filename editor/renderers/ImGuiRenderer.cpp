@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
-#include <yave/buffers/TypedMapping.h>
+#include <yave/buffers/TypedWrapper.h>
 
 #include <y/io/File.h>
 

@@ -26,6 +26,8 @@ SOFTWARE.
 
 namespace yave {
 
+class CmdBufferRecorderBase;
+
 class Mapping : NonCopyable {
 
 	public:
@@ -36,6 +38,8 @@ class Mapping : NonCopyable {
 		template<BufferUsage Usage, BufferTransfer Transfer>
 		Mapping(const Buffer<Usage, MemoryType::CpuVisible, Transfer>& buffer) : Mapping(SubBuffer(buffer)) {
 		}
+
+		static void stage(const SubBuffer<BufferUsage::None, MemoryType::DeviceLocal, BufferTransfer::TransferDst>& dst, CmdBufferRecorderBase& recorder, const void* data);
 
 		~Mapping();
 

@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "MeshData.h"
 #include <yave/buffers/buffers.h>
-#include <yave/buffers/TypedMapping.h>
+#include <yave/buffers/TypedWrapper.h>
 
 namespace yave {
 

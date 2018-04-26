@@ -47,6 +47,7 @@ class Buffer : public BufferBase {
 
 		Buffer() = default;
 
+
 		// This is important: it prevent the ctor from being instanciated for Buffer specialisations that should not be created this way,
 		// thus preventing static_assert from going off.
 		template<typename = void>
@@ -55,13 +56,15 @@ class Buffer : public BufferBase {
 			static_assert(Memory != MemoryType::DontCare, "Buffers should not have Memory == MemoryType::DontCare");
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
 		Buffer(Buffer<U, M, T>&& other) {
+			static_assert(is_compatible(U, M, T));
 			swap(other);
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
 		Buffer& operator=(Buffer<U, M, T>&& other) {
+			static_assert(is_compatible(U, M, T));
 			swap(other);
 			return *this;
 		}

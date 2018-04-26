@@ -22,16 +22,24 @@ SOFTWARE.
 
 #include "SkinnedMesh.h"
 
-#include <yave/buffers/TypedMapping.h>
+#include <yave/buffers/TypedWrapper.h>
+#include <yave/commands/CmdBufferRecorder.h>
+#include <yave/commands/RecordedCmdBuffer.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 
 SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
-		_triangle_buffer(dptr, mesh_data.triangles()),
-		_vertex_buffer(dptr, mesh_data.skinned_vertices()),
+		_triangle_buffer(dptr, mesh_data.triangles().size()),
+		_vertex_buffer(dptr, mesh_data.skinned_vertices().size()),
 		_indirect_data(mesh_data.triangles().size() * 3, 1),
 		_skeleton(mesh_data.bones()),
 		_radius(mesh_data.radius()) {
+
+	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
+	Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
+	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) {

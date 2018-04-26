@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,23 +19,81 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BUFFERS_TYPEDMAPPING_H
-#define YAVE_BUFFERS_TYPEDMAPPING_H
+#ifndef YAVE_BUFFERS_TYPEDWRAPPER_H
+#define YAVE_BUFFERS_TYPEDWRAPPER_H
 
-#include "buffers.h"
 #include "Mapping.h"
-#include "TypedSubBuffer.h"
-
-#include <yave/device/Device.h>
-#include <yave/queues/QueueFamily.h>
-#include <yave/queues/Queue.h>
+#include "Buffer.h"
+#include "SubBuffer.h"
 
 namespace yave {
+namespace detail {
+
+template<typename T>
+struct is_buffer {
+	static constexpr bool value = false;
+};
+
+template<auto... Args>
+struct is_buffer<Buffer<Args...>> {
+	static constexpr bool value = true;
+};
+
+template<typename T>
+struct is_sub_buffer {
+	static constexpr bool value = false;
+};
+
+template<auto... Args>
+struct is_sub_buffer<SubBuffer<Args...>> {
+	static constexpr bool value = true;
+};
+
+}
+
+template<typename Elem, typename Buff>
+class TypedWrapper : public Buff {
+
+	static constexpr bool is_sub = detail::is_sub_buffer<Buff>::value;
+	static constexpr bool is_buf = detail::is_buffer<Buff>::value;
+	static_assert(is_buf || is_sub);
+
+	public:
+		using Buff::Buff;
+
+		using value_type = Elem;
+
+		TypedWrapper() = default;
+
+		TypedWrapper(DevicePtr dptr, usize elem_count) : Buff(dptr, elem_count * sizeof(Elem)) {
+		}
+
+		usize size() const {
+			return this->byte_size() / sizeof(Elem);
+		}
+
+		usize offset() const {
+			if constexpr(is_sub) {
+				return this->byte_offset() / sizeof(Elem);
+			} else {
+				return 0;
+			}
+		}
+};
+
+template<typename Elem, BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage), BufferTransfer Transfer = prefered_transfer(Memory)>
+using TypedBuffer = TypedWrapper<Elem, Buffer<Usage, Memory, Transfer>>;
+
+template<typename Elem, BufferUsage Usage = BufferUsage::None, MemoryType Memory = MemoryType::DontCare, BufferTransfer Transfer = BufferTransfer::None>
+using TypedSubBuffer = TypedWrapper<Elem, SubBuffer<Usage, Memory, Transfer>>;
+
 
 template<typename Elem>
 class TypedMapping : public Mapping {
 
 	public:
+		//using Mapping::Mapping;
+
 		using iterator = Elem* ;
 		using const_iterator = Elem const* ;
 		using value_type = Elem;
@@ -46,15 +104,6 @@ class TypedMapping : public Mapping {
 
 		template<BufferUsage Usage, BufferTransfer Transfer>
 		explicit TypedMapping(TypedSubBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>& buffer) : Mapping(buffer) {
-		}
-
-		TypedMapping(TypedMapping&& other) {
-			swap(other);
-		}
-
-		TypedMapping& operator=(TypedMapping&& other) {
-			swap(other);
-			return *this;
 		}
 
 		usize size() const {
@@ -93,23 +142,14 @@ class TypedMapping : public Mapping {
 			return begin()[i];
 		}
 
-	private:
-
 };
 
-template<typename Elem, BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
-TypedBuffer<Elem, Usage, Memory, Transfer>::TypedBuffer(DevicePtr dptr, const core::ArrayView<Elem>& data) : TypedBuffer(dptr, data.size()) {
-	if constexpr(require_staging(Memory)) {
-		Y_LOG_PERF("buffer,staging");
-		TypedStagingBuffer<Elem> staging(dptr, data);
-		CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
-		recorder.copy(staging, *this);
-		dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer<CmdBufferUsage::Disposable>(std::move(recorder)));
-	} else {
-		std::copy(data.begin(), data.end(), TypedMapping(*this).begin());
-	}
-}
+template<typename Elem, BufferUsage Usage, BufferTransfer Transfer>
+TypedMapping(TypedBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>&) -> TypedMapping<Elem>;
+
+template<typename Elem, BufferUsage Usage, BufferTransfer Transfer>
+TypedMapping(TypedSubBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>&) -> TypedMapping<Elem>;
 
 }
 
-#endif // YAVE_BUFFERS_TYPEDMAPPING_H
+#endif // YAVE_BUFFERS_TYPEDWRAPPER_H

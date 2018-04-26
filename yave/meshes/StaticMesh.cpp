@@ -21,13 +21,23 @@ SOFTWARE.
 **********************************/
 #include "StaticMesh.h"
 
+#include <yave/buffers/TypedWrapper.h>
+#include <yave/commands/CmdBufferRecorder.h>
+#include <yave/commands/RecordedCmdBuffer.h>
+#include <yave/device/Device.h>
+
 namespace yave {
 
 StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
-		_triangle_buffer(dptr, mesh_data.triangles()),
-		_vertex_buffer(dptr, mesh_data.vertices()),
+		_triangle_buffer(dptr, mesh_data.triangles().size()),
+		_vertex_buffer(dptr, mesh_data.vertices().size()),
 		_indirect_data(mesh_data.triangles().size() * 3, 1),
 		_radius(mesh_data.radius()) {
+
+	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
+	Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
+	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 StaticMesh::StaticMesh(StaticMesh&& other) {

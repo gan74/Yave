@@ -21,8 +21,10 @@ SOFTWARE.
 **********************************/
 
 #include "Mapping.h"
+#include "buffers.h"
 
 #include <yave/device/Device.h>
+#include <yave/commands/CmdBufferRecorderBase.h>
 
 namespace yave {
 
@@ -59,6 +61,15 @@ void* Mapping::data() {
 
 const void* Mapping::data() const {
 	return _mapping;
+}
+
+void Mapping::stage(const SubBuffer<BufferUsage::None, MemoryType::DeviceLocal, BufferTransfer::TransferDst>& dst, CmdBufferRecorderBase& recorder, const void* data) {
+	StagingBuffer buffer(dst.device(), dst.byte_size());
+	Mapping map(buffer);
+	std::memcpy(map.data(), data, dst.byte_size());
+	recorder.copy(buffer, dst);
+
+	recorder.keep_alive(std::move(buffer));
 }
 
 }

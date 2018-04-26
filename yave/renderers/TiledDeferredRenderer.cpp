@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "TiledDeferredRenderer.h"
 
-#include <yave/buffers/TypedMapping.h>
+#include <yave/buffers/TypedWrapper.h>
 #include <yave/barriers/Barrier.h>
 
 #include <y/io/File.h>

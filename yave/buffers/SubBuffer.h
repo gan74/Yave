@@ -43,17 +43,28 @@ class SubBuffer : public SubBufferBase {
 	public:
 		SubBuffer() = default;
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
 		SubBuffer(const SubBuffer<U, M, T>& buffer) : SubBufferBase(buffer) {
+			static_assert(is_compatible(U, M, T));
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
+		SubBuffer(const Buffer<U, M, T>& buffer) : SubBufferBase(buffer, 0, buffer.byte_size()) {
+			static_assert(is_compatible(U, M, T));
+		}
+
+		// these are dangerous with typedwrapper as it's never clear what is in byte and what isn't.
+		// todo find some way to make this better
+
+		/*template<BufferUsage U, MemoryType M, BufferTransfer T>
 		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off = 0) : SubBufferBase(buffer, byte_off, buffer.byte_size() - byte_off) {
+			static_assert(is_compatible(U, M, T));
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T, typename = std::enable_if_t<is_compatible(U, M, T)>>
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
 		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off, usize byte_len) : SubBufferBase(buffer, byte_off, byte_len) {
-		}
+			static_assert(is_compatible(U, M, T));
+		}*/
 };
 
 
