@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/bindings/DescriptorSet.h>
 #include <yave/scene/SceneView.h>
+#include <yave/buffers/MultiBufferWrapper.h>
 
 namespace yave {
 

@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Light : public Transformable {
+class Light final : public Transformable {
 	public:
 		enum Type {
 			Directional = 0,

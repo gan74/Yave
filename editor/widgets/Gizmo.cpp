@@ -180,6 +180,15 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
 	}
 
+	/*math::Vec3 plan_normal(1.0f);
+	for(usize i = 0; i != 3; ++i) {
+		u32 mask = 1 << i;
+		if(_dragging_mask & mask) {
+			plan_normal[i] = 0.0f;
+		}
+	}
+	projected_mouse = intersect(plan_normal, obj_pos, cam_pos, world);*/
+
 	// click
 	{
 		if(is_clicked()) {

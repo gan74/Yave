@@ -33,6 +33,7 @@ SOFTWARE.
 
 namespace editor {
 
+void add_skinned_mesh(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>&);
 void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader);
 
 }

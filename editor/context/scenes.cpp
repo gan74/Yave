@@ -31,6 +31,29 @@ SOFTWARE.
 
 namespace editor {
 
+void add_skinned_mesh(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>&) {
+	DevicePtr dptr = tex_loader.device();
+
+	auto material = make_asset<Material>(dptr, MaterialData()
+			.set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
+			.set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
+		);
+
+	auto animation = make_asset<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to open animation file.")).expected("Unable to read animation file."));
+
+	auto mesh_data = std::move(MeshData::from_file(io::File::open("../tools/mesh_to_ym/beta.fbx.ym").expected("Unable to open mesh file.")).expected("Unable to read mesh file."));
+	auto mesh = make_asset<SkinnedMesh>(dptr, mesh_data);
+
+	log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
+
+	{
+		auto instance = std::make_unique<SkinnedMeshInstance>(mesh, material);
+		instance->position() = {0.0f, 100.0f, -instance->radius() * 0.5f};
+		instance->animate(animation);
+		scene->renderables() << std::move(instance);
+	}
+}
+
 void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader) {
 
 	DevicePtr dptr = tex_loader.device();
@@ -51,26 +74,7 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 		scene->lights() << std::make_unique<Light>(std::move(l));
 	}
 
-	{
-		auto material = make_asset<Material>(dptr, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
-				.set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
-			);
-
-		auto animation = make_asset<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to open animation file.")).expected("Unable to read animation file."));
-
-		auto mesh_data = std::move(MeshData::from_file(io::File::open("../tools/mesh_to_ym/beta.fbx.ym").expected("Unable to open mesh file.")).expected("Unable to read mesh file."));
-		auto mesh = make_asset<SkinnedMesh>(dptr, mesh_data);
-
-		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
-
-		{
-			auto instance = std::make_unique<SkinnedMeshInstance>(mesh, material);
-			instance->position() = {0.0f, 100.0f, -instance->radius() * 0.5f};
-			instance->animate(animation);
-			scene->renderables() << std::move(instance);
-		}
-	}
+	add_skinned_mesh(scene, tex_loader, mesh_loader);
 
 	{
 		auto material = make_asset<Material>(dptr, MaterialData()

@@ -41,6 +41,10 @@ class SubBuffer : public SubBufferBase {
 		}
 
 	public:
+		static constexpr BufferUsage usage = Usage;
+		static constexpr MemoryType memory_type = Memory;
+		static constexpr BufferTransfer buffer_transfer = Transfer;
+
 		SubBuffer() = default;
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T>

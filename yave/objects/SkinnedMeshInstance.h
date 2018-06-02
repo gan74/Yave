@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace yave {
 
-class SkinnedMeshInstance : public Renderable {
+class SkinnedMeshInstance final : public Renderable {
 
 	public:
 		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);

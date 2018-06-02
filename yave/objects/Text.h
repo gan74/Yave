@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Text : public Renderable, NonCopyable {
+class Text final : public Renderable, NonCopyable {
 
 	public:
 		Text(const AssetPtr<Font>& font, const core::String& text);

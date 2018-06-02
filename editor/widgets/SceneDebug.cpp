@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "SceneDebug.h"
 
+#include <editor/context/scenes.h>
+
 #include <editor/context/EditorContext.h>
 
 #include <yave/material/Material.h>
@@ -63,6 +65,10 @@ void SceneDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 				}
 			}
 		}
+	}
+
+	if(ImGui::Button("Add skinned mesh")) {
+		add_skinned_mesh(context()->scene(), context()->texture_loader, context()->mesh_loader);
 	}
 
 	ImGui::Text("Static meshes: %u", unsigned(context()->scene()->static_meshes().size()));

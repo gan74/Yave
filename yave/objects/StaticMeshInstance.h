@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-class StaticMeshInstance : public Renderable {
+class StaticMeshInstance final : public Renderable {
 
 	public:
 		StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
