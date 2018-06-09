@@ -67,7 +67,6 @@ const ImU32 flags =
 		ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 Gizmo::Gizmo(ContextPtr cptr) : Frame("Gizmo", flags), ContextLinked(cptr) {
-	_fill_background = false;
 }
 
 void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {

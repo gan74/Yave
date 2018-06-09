@@ -37,7 +37,6 @@ class Frame : public UiElement {
 		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
 
 		u32 _flags;
-		bool _fill_background = true;
 };
 
 }

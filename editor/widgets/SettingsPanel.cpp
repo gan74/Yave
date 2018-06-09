@@ -42,7 +42,7 @@ static void keybox(const char* name, Key& key) {
 	ImGui::PopItemWidth();
 }
 
-SettingsPanel::SettingsPanel(ContextPtr cptr) : Dock("Settings"), ContextLinked(cptr) {
+SettingsPanel::SettingsPanel(ContextPtr cptr) : Widget("Settings"), ContextLinked(cptr) {
 }
 
 void SettingsPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {

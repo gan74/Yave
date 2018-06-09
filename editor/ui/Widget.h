@@ -33,12 +33,22 @@ class Widget : public UiElement {
 
 		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
+		const math::Vec2& position() const;
+		const math::Vec2& size() const;
+
 	protected:
 		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
 
-	private:
-		u32 _flags;
+		void set_alpha(float alpha);
+		void set_closable(bool closable);
 
+	private:
+		math::Vec2 _position;
+		math::Vec2 _size;
+
+		u32 _flags;
+		float _alpha = 0.9f;
+		bool _closable = true;
 };
 
 }

@@ -22,11 +22,11 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_SETTINGSPANEL_H
 #define EDITOR_WIDGETS_SETTINGSPANEL_H
 
-#include <editor/ui/Dock.h>
+#include <editor/ui/Widget.h>
 
 namespace editor {
 
-class SettingsPanel : public Dock, public ContextLinked {
+class SettingsPanel : public Widget, public ContextLinked {
 	public:
 		SettingsPanel(ContextPtr cptr);
 

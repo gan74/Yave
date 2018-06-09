@@ -36,8 +36,7 @@ class UiElement : NonCopyable {
 
 		virtual void paint(CmdBufferRecorder<>&, const FrameToken&) = 0;
 
-
-		bool is_visible() const;
+		virtual bool is_visible() const;
 		void show();
 
 		const char* title() const;

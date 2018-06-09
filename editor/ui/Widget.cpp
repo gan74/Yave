@@ -29,15 +29,43 @@ namespace editor {
 Widget::Widget(const char* title, u32 flags) : UiElement(title), _flags(flags) {
 }
 
+const math::Vec2& Widget::position() const {
+	return _position;
+}
+
+const math::Vec2& Widget::size() const {
+	return _size;
+}
+
+void Widget::set_alpha(float alpha) {
+	_alpha = alpha;
+}
+
+void Widget::set_closable(bool closable) {
+	_closable = closable;
+}
+
 void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	if(!is_visible()) {
 		return;
 	}
 
-	if(ImGui::Begin(_title, &_visible, _flags)) {
+	if(_alpha >= 0.0f) {
+		auto color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+		color.w = _alpha;
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
+	}
+
+	if(ImGui::Begin(_title, _closable ? &_visible : nullptr, _flags)) {
+		_position = ImGui::GetWindowPos();
+		_size = ImGui::GetWindowSize();
 		paint_ui(recorder, token);
 	}
 	ImGui::End();
+
+	if(_alpha >= 0.0f) {
+		ImGui::PopStyleColor(1);
+	}
 }
 
 }

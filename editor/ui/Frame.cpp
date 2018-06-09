@@ -37,22 +37,10 @@ void Frame::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	// this breaks everthing that relies on getting focus (like popups)
 	// ImGui::SetNextWindowFocus();
 
-	ImGui::SetNextWindowSize(ImGui::GetWindowSize());
-	ImGui::SetNextWindowPos(ImGui::GetWindowPos());
-	ImU32 flags = ImGuiWindowFlags_NoScrollbar;
-
-
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, _fill_background
-			? ImGui::GetStyle().Colors[ImGuiCol_WindowBg]
-			: ImVec4(0.0f, 0.0f, 0.0f, 0.0f)
-		);
-
-	if(ImGui::BeginChild(_title, ImGui::GetWindowSize(), true, flags | _flags)) {
+	if(ImGui::BeginChild(_title, ImVec2(0, 0), false, _flags)) {
 		paint_ui(recorder, token);
 	}
 	ImGui::EndChild();
-
-	ImGui::PopStyleColor();
 
 }
 

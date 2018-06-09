@@ -37,7 +37,7 @@ static void to_buffer(std::array<char, N>& buffer, const stdfs::path& p) {
 }
 
 FileBrowser::FileBrowser() :
-		Frame("File browser"),
+		Widget("File browser"),
 		_name_buffer({0}),
 		_callback(Nothing()) {
 

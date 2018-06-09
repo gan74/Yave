@@ -26,6 +26,7 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <editor/context/EditorContext.h>
+#include <editor/EngineView.h>
 
 #include <yave/window/Window.h>
 #include <yave/device/Instance.h>
@@ -33,6 +34,7 @@ SOFTWARE.
 #include <yave/swapchain/Swapchain.h>
 #include <yave/renderers/renderers.h>
 #include <yave/scene/SceneView.h>
+
 
 namespace editor {
 
@@ -54,6 +56,7 @@ class MainWindow : private Window, public ContextLinked {
 
 		void create_swapchain();
 
+		std::unique_ptr<EngineView> _engine_view;
 		core::Vector<std::unique_ptr<UiElement>> _elements;
 
 		std::unique_ptr<Swapchain> _swapchain;

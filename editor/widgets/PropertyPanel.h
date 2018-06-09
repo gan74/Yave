@@ -19,28 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_UI_DOCK_H
-#define EDITOR_UI_DOCK_H
+#ifndef EDITOR_VIEWS_PROPERTYPANEL_H
+#define EDITOR_VIEWS_PROPERTYPANEL_H
 
-#include "UiElement.h"
+#include <editor/ui/Widget.h>
 
 namespace editor {
 
-class Dock : public UiElement {
-
+class PropertyPanel : public Widget, public ContextLinked {
 	public:
-		Dock(const char* title, u32 flags = 0);
+		PropertyPanel(ContextPtr cptr);
 
+
+		bool is_visible() const override;
 		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
-	protected:
-		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
-
 	private:
-		u32 _flags;
-
+		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 };
 
 }
 
-#endif // EDITOR_UI_DOCK_H
+#endif // EDITOR_VIEWS_PROPERTYPANEL_H

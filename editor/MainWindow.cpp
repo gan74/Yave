@@ -33,16 +33,16 @@ SOFTWARE.
 #include <yave/renderers/FramebufferRenderer.h>
 #include <y/core/SmallVector.h>
 
-#include <editor/views/EntityView.h>
-#include <editor/views/EngineView.h>
-#include <editor/views/FileBrowser.h>
-#include <editor/views/AssetBrowser.h>
-#include <editor/views/PropertyPanel.h>
+#include <editor/widgets/EntityView.h>
+#include <editor/widgets/FileBrowser.h>
+#include <editor/widgets/PropertyPanel.h>
 #include <editor/widgets/SettingsPanel.h>
 #include <editor/widgets/CameraDebug.h>
 #include <editor/widgets/MemoryInfo.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/SceneDebug.h>
+
+#include <editor/EngineView.h>
 
 #include <imgui/imgui.h>
 
@@ -87,7 +87,6 @@ MainWindow::MainWindow(ContextPtr cptr) :
 		ContextLinked(cptr) {
 
 	ImGui::CreateContext();
-	ImGui::InitDock();
 	ImGui::GetIO().IniFilename = "editor.ini";
 	ImGui::GetIO().LogFilename = "editor_logs.txt";
 
@@ -96,12 +95,11 @@ MainWindow::MainWindow(ContextPtr cptr) :
 
 	set_event_handler(new MainEventHandler());
 
+	_engine_view = std::make_unique<EngineView>(context());
+
 	{
-		_elements << std::make_unique<EngineView>(context());
-		_elements << std::make_unique<EntityView>(context());
 		_elements << std::make_unique<PropertyPanel>(context());
 	}
-
 }
 
 MainWindow::~MainWindow() {
@@ -185,34 +183,23 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	ImGui::Render();
 
 
-
-
 	// render ui pipeline into cmd buffer
 	{
 		RenderingPipeline pipeline(_ui_renderer);
 		pipeline.render(recorder, token);
 	}
-
-
-	/*if(ImGui::IsKeyDown(int(Key::P))) {
-		y_fatal("Crash!");
-	}*/
 }
 
 void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	// demo
 	ImGui::ShowDemoWindow();
 
+
 	// menu
 	{
 		if(ImGui::BeginMenuBar()) {
 			if(ImGui::BeginMenu("View")) {
-				if(ImGui::MenuItem("Engine view"))		show_element<EngineView>(context(), _elements);
-				if(ImGui::MenuItem("Entities"))			show_element<EntityView>(context(), _elements);
-				if(ImGui::MenuItem("Asset browser"))	show_element<AssetBrowser>(context(), _elements);
-				if(ImGui::MenuItem("Properties"))		show_element<PropertyPanel>(context(), _elements);
-				if(ImGui::MenuItem("Settings"))			show_element<SettingsPanel>(context(), _elements);
-
+				if(ImGui::MenuItem("Entity view"))		show_element<EntityView>(context(), _elements);
 
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) show_element<CameraDebug>(context(), _elements);
@@ -225,6 +212,9 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 					ImGui::EndMenu();
 				}
 
+				ImGui::Separator();
+
+				if(ImGui::MenuItem("Settings"))			show_element<SettingsPanel>(context(), _elements);
 
 				ImGui::EndMenu();
 			}
@@ -232,10 +222,9 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		}
 	}
 
+
 	// toolbar
 	{
-		//ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-
 		float toolbar_size = 24.0f;
 		ImVec2 button_size(toolbar_size, toolbar_size);
 
@@ -251,18 +240,26 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 					[=](core::String filename) { context()->load_scene(filename); }
 				);
 		}
-
-		//ImGui::PopStyleVar();
 	}
 
-	// main UI
+
+	// engine view and overlay
 	{
-		ImGui::BeginDockspace();
-		for(auto& e : _elements) {
-			e->paint(recorder, token);
+		ImGui::BeginChild("Engine view");
+
+		_engine_view->paint(recorder, token);
+
+		// main UI
+		{
+			for(auto& e : _elements) {
+				e->paint(recorder, token);
+			}
+
 		}
-		ImGui::EndDockspace();
+
+		ImGui::EndChild();
 	}
+
 }
 
 }

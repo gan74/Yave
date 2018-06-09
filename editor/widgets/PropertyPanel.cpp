@@ -28,15 +28,34 @@ SOFTWARE.
 
 namespace editor {
 
-PropertyPanel::PropertyPanel(ContextPtr cptr) : Dock("Properties"), ContextLinked(cptr) {
+PropertyPanel::PropertyPanel(ContextPtr cptr) : Widget("Properties"), ContextLinked(cptr) {
+	set_closable(false);
 }
 
+bool PropertyPanel::is_visible() const {
+	return UiElement::is_visible() && context()->selected();
+}
+
+void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	Widget::paint(recorder, token);
+
+	if(Transformable* selected = context()->selected()) {
+		auto end_pos = context()->to_window_pos(selected->position());
+		auto start_pos = position() + math::Vec2(0.0f, 12.0f);
+
+		u32 color = ImGui::GetColorU32(ImGuiCol_Text) | 0xFF000000;
+
+		// ImGui::GetWindowDrawList()->AddLine(start_pos, end_pos, color);
+
+		auto point = math::Vec2(std::copysign(64.0f, end_pos.x() - start_pos.x()), 0.0f);
+		ImGui::GetWindowDrawList()->AddBezierCurve(start_pos, start_pos + point, end_pos - point, end_pos, color, 2.0f);
+	}
+}
 
 void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(!context()->selected()) {
 		return;
 	}
-
 
 	Transformable* sel = context()->selected();
 	auto [pos, rot, scale] = sel->transform().decompose();
@@ -50,7 +69,6 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		ImGui::InputFloat("Y", &pos.y(), step, big_step, 3);
 		ImGui::InputFloat("Z", &pos.z(), step, big_step, 3);
 		ImGui::EndGroup();
-
 	}
 
 	if(ImGui::CollapsingHeader("Rotation", ImGuiTreeNodeFlags_DefaultOpen)) {

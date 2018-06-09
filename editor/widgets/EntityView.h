@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2018 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_VIEWS_ENTITYVIEW_H
+#define EDITOR_VIEWS_ENTITYVIEW_H
 
-#include "Dock.h"
+#include <editor/ui/Widget.h>
 
-#include <imgui/imgui.h>
+#include <yave/scene/Scene.h>
 
 namespace editor {
 
-Dock::Dock(const char* title, u32 flags) : UiElement(title), _flags(flags) {
-}
+class EntityView : public Widget, public ContextLinked {
+	public:
+		EntityView(ContextPtr cptr);
 
-void Dock::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	if(!is_visible()) {
-		return;
-	}
+	private:
+		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
-	if(ImGui::BeginDock(_title, &_visible, _flags)) {
-		paint_ui(recorder, token);
-	}
-	ImGui::EndDock();
-}
+		void add_light();
+};
 
 }
+
+#endif // EDITOR_VIEWS_ENTITYVIEW_H

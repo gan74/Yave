@@ -36,7 +36,6 @@ SOFTWARE.
 namespace editor {
 
 EngineView::EngineView(ContextPtr cptr) :
-		Dock("Engine view", ImGuiWindowFlags_NoScrollbar),
 		ContextLinked(cptr),
 		_ibl_data(new IBLData(device())),
 		_gizmo(context()) {
@@ -56,7 +55,7 @@ void EngineView::create_renderer(const math::Vec2ui& size) {
 	_view			= std::make_shared<TextureView>(_renderer->output());
 }
 
-void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void EngineView::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 
 	if(context()->is_scene_empty()) {
@@ -142,9 +141,7 @@ void EngineView::update_selection() {
 }
 
 void EngineView::update_camera() {
-	if(!ImGui::IsWindowHovered()) {
-		return;
-	}
+	// TODO check keyboard focus
 
 	auto size = render_size();
 	auto& camera = context()->scene_view()->camera();

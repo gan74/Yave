@@ -51,12 +51,13 @@ static void setup_old_style() {
 	style.FrameRounding = 0.0f;
 	style.ScrollbarRounding = 0.0f;
 
-	style.Alpha = 1.0f;
+	//style.Alpha = 1.0f;
 	style.GrabRounding = 0.0f;
 	style.WindowRounding = 0.0f;
 	style.ScrollbarRounding = 0.0f; // 3.0f
 	style.FrameRounding = 0.0f; // 3.0f
 	style.WindowTitleAlign = ImVec2(0.5f,0.5f);
+	style.WindowBorderSize = 0.0f;
 
 	//style.WindowPadding = ImVec2(0.5f,0.5f);
 	//style.ColumnsMinSpacing = 0.0f;

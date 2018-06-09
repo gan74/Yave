@@ -44,7 +44,7 @@ static const char* light_type_name(Light::Type type) {
 }
 
 
-EntityView::EntityView(ContextPtr cptr) : Dock("Entities"), ContextLinked(cptr) {
+EntityView::EntityView(ContextPtr cptr) : Widget("Entities"), ContextLinked(cptr) {
 }
 
 void EntityView::add_light() {

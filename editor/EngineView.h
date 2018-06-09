@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <editor/ui/Dock.h>
+#include <editor/ui/Frame.h>
 
 #include <editor/widgets/Gizmo.h>
 
@@ -36,7 +36,7 @@ SOFTWARE.
 
 namespace editor {
 
-class EngineView : public Dock, public ContextLinked {
+class EngineView : public ContextLinked {
 	struct ViewData {
 		math::Vec2i view_size;
 		math::Vec2i view_offset;
@@ -45,6 +45,8 @@ class EngineView : public Dock, public ContextLinked {
 
 	public:
 		EngineView(ContextPtr cptr);
+
+		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token);
 
 	private:
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
@@ -55,7 +57,6 @@ class EngineView : public Dock, public ContextLinked {
 		void render_ui(RenderPassRecorder& recorder);
 		void create_renderer(const math::Vec2ui& size);
 
-		void paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 		void update_camera();
 		void update_selection();
 
