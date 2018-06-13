@@ -81,13 +81,22 @@ DeviceMemory DeviceAllocator::alloc(vk::Buffer buffer, MemoryType type) {
 
 core::String DeviceAllocator::dump_info() const {
 	core::String str = "Allocator:\n";
-	str += "  maximum allocations = "_s + _max_allocs + "\n";
+	str += "  maximum allocations: "_s + _max_allocs + "\n";
 	for(auto& heaps : _heaps) {
-		str += "  Memory type = "_s + usize(heaps.first.second) + "|" + heaps.first.first + "\n";
+		//str += "  Memory type = "_s + usize(heaps.first.second) + "|" + heaps.first.first + "\n";
+		str += "  Memory type: "_s + (is_cpu_visible(heaps.first.second) ? "CPU" : "Device") + " (" + heaps.first.first + ")\n";
 		for(auto& h : heaps.second) {
+			auto available = h->available();
+
+			core::String bar = "                ";
+			float ratio = (available / float(h->heap_size));
+			std::fill_n(bar.begin(), usize(std::round((1.0f - ratio) * bar.size())), '#');
+
 			str += "    heap:\n";
+			str += "      |" + bar + "|\n";
 			str += "      total: "_s + (h->heap_size / 1024) + " KB\n";
-			str += "      free : "_s + (h->available() / 1024) + " KB\n";
+			str += "      free : "_s + (available / 1024) + " KB\n";
+			str += "      used : "_s + ((h->heap_size - available) / 1024) + " KB\n";
 		}
 	}
 	return str;

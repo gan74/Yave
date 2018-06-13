@@ -65,11 +65,11 @@ void EditorContext::set_scene_deferred(Scene&& scene) {
 		set_selected(nullptr);
 		*_scene = std::move(sce);
 
-		{
+		/*{
 			auto hook = std::make_unique<SceneHook>(this);
 			_scene_hook = hook.get();
 			_scene->renderables().emplace_back(std::move(hook));
-		}
+		}*/
 	});
 }
 
@@ -173,15 +173,23 @@ EditorContext::Icons* EditorContext::icons() const {
 	return &_icons;
 }
 
-math::Vec2 EditorContext::to_screen_pos(const math::Vec3& world) {
+math::Vec3 EditorContext::to_screen_pos(const math::Vec3& world) {
 	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
-	return (h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f;
+
+	return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
 }
 
 math::Vec2 EditorContext::to_window_pos(const math::Vec3& world) {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
-	return to_screen_pos(world) * viewport + offset;
+
+	auto screen = to_screen_pos(world);
+
+	if(screen.z() < 0.0f) {
+		(std::fabs(screen.x()) > std::fabs(screen.y()) ? screen.x() : screen.y()) /= 0.0f; // infs
+	}
+
+	return screen.to<2>() * viewport + offset;
 }
 
 

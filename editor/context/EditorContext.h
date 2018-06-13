@@ -71,7 +71,7 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		void defer(core::Function<void()>&& func);
 		void flush_deferred();
 
-		math::Vec2 to_screen_pos(const math::Vec3& world);
+		math::Vec3 to_screen_pos(const math::Vec3& world);
 		math::Vec2 to_window_pos(const math::Vec3& world);
 
 		Icons* icons() const;
@@ -88,7 +88,7 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		std::unique_ptr<SceneView> _scene_view;
 
 
-		NotOwner<SceneHook*> _scene_hook = nullptr;
+		//NotOwner<SceneHook*> _scene_hook = nullptr;
 
 
 		NotOwner<Transformable*> _selected = nullptr;

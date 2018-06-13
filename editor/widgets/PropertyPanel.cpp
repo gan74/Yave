@@ -47,7 +47,7 @@ void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token
 
 		// ImGui::GetWindowDrawList()->AddLine(start_pos, end_pos, color);
 
-		auto point = math::Vec2(std::copysign(64.0f, end_pos.x() - start_pos.x()), 0.0f);
+		auto point = math::Vec2(std::copysign(128.0f, end_pos.x() - start_pos.x()), 0.0f);
 		ImGui::GetWindowDrawList()->AddBezierCurve(start_pos, start_pos + point, end_pos - point, end_pos, color, 2.0f);
 	}
 }
@@ -100,8 +100,8 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	}
 
 	if(Light* light = context()->selected_light()) {
-		int flags = /*ImGuiColorEditFlags_NoSidePreview |
-					ImGuiColorEditFlags_NoSmallPreview |*/
+		int flags = ImGuiColorEditFlags_NoSidePreview |
+					// ImGuiColorEditFlags_NoSmallPreview |
 					ImGuiColorEditFlags_NoAlpha |
 					ImGuiColorEditFlags_Float |
 					ImGuiColorEditFlags_RGB;
@@ -117,6 +117,12 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 		if(ImGui::BeginPopup("Color")) {
 			ImGui::ColorPicker3("##lightpicker", light->color().begin(), flags);
+
+			ImGui::SameLine();
+			ImGui::BeginGroup();
+			ImGui::Text("tmp");
+			ImGui::EndGroup();
+
 			ImGui::EndPopup();
 		}
 

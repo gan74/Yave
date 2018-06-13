@@ -232,9 +232,10 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 			show_element<FileBrowser>(context(), _elements)->set_callback(
 					[=](core::String filename) { context()->save_scene(filename); }
 				);
-
 		}
+
 		ImGui::SameLine(0.0f, 0.1f);
+
 		if(ImGui::ImageButton(&context()->icons()->load, button_size)) {
 			show_element<FileBrowser>(context(), _elements)->set_callback(
 					[=](core::String filename) { context()->load_scene(filename); }
@@ -242,6 +243,7 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		}
 	}
 
+	//ImGui::NextColumn();
 
 	// engine view and overlay
 	{
