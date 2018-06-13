@@ -45,6 +45,8 @@ class SubBuffer : public SubBufferBase {
 		static constexpr MemoryType memory_type = Memory;
 		static constexpr BufferTransfer buffer_transfer = Transfer;
 
+		using sub_buffer_type = SubBuffer<Usage, memory_type, buffer_transfer>;
+
 		SubBuffer() = default;
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T>
@@ -60,15 +62,15 @@ class SubBuffer : public SubBufferBase {
 		// these are dangerous with typedwrapper as it's never clear what is in byte and what isn't.
 		// todo find some way to make this better
 
-		/*template<BufferUsage U, MemoryType M, BufferTransfer T>
-		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off = 0) : SubBufferBase(buffer, byte_off, buffer.byte_size() - byte_off) {
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
+		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off) : SubBufferBase(buffer, byte_off, buffer.byte_size() - byte_off) {
 			static_assert(is_compatible(U, M, T));
 		}
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T>
 		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off, usize byte_len) : SubBufferBase(buffer, byte_off, byte_len) {
 			static_assert(is_compatible(U, M, T));
-		}*/
+		}
 };
 
 

@@ -61,6 +61,8 @@ class TypedWrapper : public Buff {
 	public:
 		using Buff::Buff;
 
+		using sub_buffer_type = TypedWrapper<Elem, typename Buff::sub_buffer_type>;
+
 		using value_type = Elem;
 
 		TypedWrapper() = default;

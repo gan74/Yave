@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENEVIEW_H
-#define YAVE_SCENE_SCENEVIEW_H
+#ifndef YAVE_BUFFERS_MULTIBUFFERWRAPPER_H
+#define YAVE_BUFFERS_MULTIBUFFERWRAPPER_H
 
-#include <yave/camera/Camera.h>
-
-#include "Scene.h"
+#include <yave/swapchain/FrameToken.h>
 
 namespace yave {
 
-class SceneView {
+template<typename Buffer>
+class MutliBufferWrapper {
+
+	using subbuffer_t = SubBuffer<Buffer::usage, Buffer::memory_type, Buffer::buffer_transfer>;
 
 	public:
-		SceneView(Scene& sce);
+		MutliBufferWrapper(usize size) : _size(size) {
+		}
 
-		const Scene& scene() const;
-
-		const Camera& camera() const;
-		Camera& camera();
+		auto operator[](const FrameToken& token) {
+			lazy_init(token);
+			return typename Buffer::sub_buffer_type(_buffer, _buffer.byte_size() / 3, _size);
+		}
 
 	private:
-		Scene& _scene;
-		Camera _camera;
+		void lazy_init(const FrameToken& token) {
+			if(is_initialized()) {
+				return;
+			}
+			DevicePtr dptr = token.image_view.device();
+			_buffer = Buffer(dptr, _size * token.image_count);
+		}
+
+		bool is_initialized() const {
+			return _buffer.device();
+		}
+
+		Buffer _buffer;
+		usize _size = 0;
 };
+
 
 }
 
-#endif // YAVE_SCENE_SCENEVIEW_H
+#endif // YAVE_BUFFERS_MULTIBUFFERWRAPPER_H

@@ -27,6 +27,9 @@ SOFTWARE.
 
 namespace yave {
 
+template<BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
+class SubBuffer;
+
 template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage), BufferTransfer Transfer = prefered_transfer(Memory)>
 class Buffer : public BufferBase {
 
@@ -44,6 +47,8 @@ class Buffer : public BufferBase {
 		static constexpr BufferUsage usage = Usage;
 		static constexpr MemoryType memory_type = Memory;
 		static constexpr BufferTransfer buffer_transfer = Transfer;
+
+		using sub_buffer_type = SubBuffer<Usage, memory_type, buffer_transfer>;
 
 		Buffer() = default;
 

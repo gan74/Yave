@@ -32,7 +32,7 @@ SceneRenderer::SceneRenderer(DevicePtr dptr, SceneView& view) :
 		SecondaryRenderer(dptr),
 		_view(view),
 		_camera_buffer(device(), 1),
-		_attrib_buffer(device(), batch_size),
+		_attrib_buffer(batch_size),
 		_camera_set(device(), {Binding(_camera_buffer)}) {
 
 	log_msg("Allocating "_s + (batch_size / 1024) * (sizeof(math::Transform<>) + sizeof(vk::DrawIndexedIndirectCommand)) + "KB of scene buffers");
@@ -45,7 +45,7 @@ const SceneView& SceneRenderer::scene_view() const {
 void SceneRenderer::build_frame_graph(FrameGraphNode&) {
 }
 
-void SceneRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken&) {
+void SceneRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	auto region = recorder.region("SceneRenderer::pre_render");
 
 	{
@@ -53,7 +53,12 @@ void SceneRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken&)
 		camera_mapping[0] = scene_view().camera().viewproj_matrix();
 	}
 
-	auto attrib_mapping = TypedMapping(_attrib_buffer);
+	auto _attrib_subbuffer = _attrib_buffer[token];
+	if(_attrib_subbuffer.size() < scene_view().scene().renderables().size() + scene_view().scene().static_meshes().size()) {
+		y_fatal("SceneRenderer::_attrib_buffer overflow");
+	}
+
+	auto attrib_mapping = TypedMapping(_attrib_subbuffer);
 	u32 attrib_index = 0;
 
 	// renderables
@@ -73,7 +78,8 @@ void SceneRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 	u32 attrib_index = 0;
 
 #warning clean unnecessary buffer binding
-	recorder.bind_attrib_buffers({_attrib_buffer, _attrib_buffer});
+	auto _attrib_subbuffer = _attrib_buffer[token];
+	recorder.bind_attrib_buffers({_attrib_subbuffer, _attrib_subbuffer});
 
 	// renderables
 	{

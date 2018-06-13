@@ -41,14 +41,14 @@ class SceneRenderer : public SecondaryRenderer {
 	protected:
 		void build_frame_graph(FrameGraphNode&) override;
 
-		void pre_render(CmdBufferRecorder<>& recorder, const FrameToken&) override;
+		void pre_render(CmdBufferRecorder<>& recorder, const FrameToken&token) override;
 
 	private:
 		const SceneView& _view;
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _camera_buffer;
 
-		TypedBuffer<math::Transform<>, BufferUsage::AttributeBit, MemoryType::CpuVisible> _attrib_buffer;
+		MutliBufferWrapper<TypedBuffer<math::Transform<>, BufferUsage::AttributeBit, MemoryType::CpuVisible>> _attrib_buffer;
 
 		DescriptorSet _camera_set;
 };
