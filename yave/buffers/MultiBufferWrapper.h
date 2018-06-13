@@ -27,17 +27,17 @@ SOFTWARE.
 namespace yave {
 
 template<typename Buffer>
-class MutliBufferWrapper {
+class MultiBufferWrapper {
 
 	using subbuffer_t = SubBuffer<Buffer::usage, Buffer::memory_type, Buffer::buffer_transfer>;
 
 	public:
-		MutliBufferWrapper(usize size) : _size(size) {
+		MultiBufferWrapper(usize size) : _size(size) {
 		}
 
 		auto operator[](const FrameToken& token) {
 			lazy_init(token);
-			return typename Buffer::sub_buffer_type(_buffer, _buffer.byte_size() / 3, _size);
+			return typename Buffer::sub_buffer_type(_buffer, _size * token.image_index, _size);
 		}
 
 	private:

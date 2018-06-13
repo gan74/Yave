@@ -232,8 +232,8 @@ static void setup_style() {
 
 ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		SecondaryRenderer(dptr),
-		_index_buffer(device(), imgui_index_buffer_size),
-		_vertex_buffer(device(), imgui_vertex_buffer_size),
+		_index_buffer(imgui_index_buffer_size),
+		_vertex_buffer(imgui_vertex_buffer_size),
 		_uniform_buffer(device(), 1),
 		_font(device(), load_font()),
 		_font_view(_font),
@@ -259,8 +259,8 @@ const DescriptorSet& ImGuiRenderer::create_descriptor_set(const void* data) {
 	return ds;
 }
 
-void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const void* tex) {
-	recorder.bind_buffers(SubBuffer<BufferUsage::IndexBit>(_index_buffer), {AttribSubBuffer<Vertex>(_vertex_buffer)});
+void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* tex) {
+	recorder.bind_buffers(_index_buffer[token], {_vertex_buffer[token]});
 	if(tex) {
 		recorder.bind_material(_material, {create_descriptor_set(tex)});
 	} else {
@@ -268,7 +268,7 @@ void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const void* tex) {
 	}
 }
 
-void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
+void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&token) {
 	static_assert(sizeof(ImDrawVert) == sizeof(Vertex), "ImDrawVert is not of expected size");
 	static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
 
@@ -280,8 +280,10 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 		return;
 	}
 
-	auto indexes = TypedMapping(_index_buffer);
-	auto vertices = TypedMapping(_vertex_buffer);
+	auto index_subbuffer = _index_buffer[token];
+	auto vertex_subbuffer = _vertex_buffer[token];
+	auto indexes = TypedMapping(index_subbuffer);
+	auto vertices = TypedMapping(vertex_subbuffer);
 	auto uniform = TypedMapping(_uniform_buffer);
 
 	uniform[0] = math::Vec2(ImGui::GetIO().DisplaySize);
@@ -292,11 +294,11 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 	for(auto i = 0; i != draw_data->CmdListsCount; ++i) {
 		const ImDrawList* cmd_list = draw_data->CmdLists[i];
 
-		if(cmd_list->IdxBuffer.Size + index_offset >= _index_buffer.size()) {
+		if(cmd_list->IdxBuffer.Size + index_offset >= index_subbuffer.size()) {
 			y_fatal("Index buffer overflow.");
 		}
 
-		if(cmd_list->VtxBuffer.Size + vertex_offset >= _vertex_buffer.size()) {
+		if(cmd_list->VtxBuffer.Size + vertex_offset >= vertex_subbuffer.size()) {
 			y_fatal("Vertex buffer overflow.");
 		}
 
@@ -318,7 +320,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 
 			if(cmd.ElemCount) {
 				if(current_tex != cmd.TextureId) {
-					setup_state(recorder, current_tex = cmd.TextureId);
+					setup_state(recorder, token, current_tex = cmd.TextureId);
 				}
 				recorder.draw(vk::DrawIndexedIndirectCommand()
 						.setFirstIndex(drawn_index_offset)

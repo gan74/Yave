@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/renderers/renderers.h>
 
 #include <yave/buffers/buffers.h>
+#include <yave/buffers/MultiBufferWrapper.h>
 #include <yave/material/Material.h>
 
 namespace editor {
@@ -42,18 +43,18 @@ class ImGuiRenderer : public SecondaryRenderer {
 	public:
 		ImGuiRenderer(DevicePtr dptr);
 
-		void render(RenderPassRecorder& recorder, const FrameToken&) override;
+		void render(RenderPassRecorder& recorder, const FrameToken& token) override;
 
 	protected:
 		void build_frame_graph(FrameGraphNode&) override;
 
-		void setup_state(RenderPassRecorder& recorder, const void* data);
+		void setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* data);
 
 	private:
 		const DescriptorSet& create_descriptor_set(const void* tex);
 
-		TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> _index_buffer;
-		TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> _vertex_buffer;
+		MultiBufferWrapper<TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible>> _index_buffer;
+		MultiBufferWrapper<TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible>> _vertex_buffer;
 		TypedUniformBuffer<math::Vec2> _uniform_buffer;
 
 		Texture _font;

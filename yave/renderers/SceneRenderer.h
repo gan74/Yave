@@ -48,7 +48,7 @@ class SceneRenderer : public SecondaryRenderer {
 
 		TypedBuffer<uniform::ViewProj, BufferUsage::UniformBit> _camera_buffer;
 
-		MutliBufferWrapper<TypedBuffer<math::Transform<>, BufferUsage::AttributeBit, MemoryType::CpuVisible>> _attrib_buffer;
+		MultiBufferWrapper<TypedBuffer<math::Transform<>, BufferUsage::AttributeBit, MemoryType::CpuVisible>> _attrib_buffer;
 
 		DescriptorSet _camera_set;
 };

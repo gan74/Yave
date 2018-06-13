@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "SceneRenderer.h"
 
-#include <yave/buffers/TypedWrapper.h>
 
 namespace yave {
 
