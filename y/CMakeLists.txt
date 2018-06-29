@@ -28,6 +28,14 @@ add_library(y STATIC ${SOURCE_FILES})
 target_link_libraries(y pthread)
 target_compile_options(y PUBLIC ${Y_COMPITE_OPTIONS})
 
+if(${CMAKE_BUILD_TYPE} EQUAL RelWithDebInfo)
+	target_compile_options(y PUBLIC "-DY_DEBUG")
+endif()
+
+if(${CMAKE_BUILD_TYPE} EQUAL Release)
+	target_compile_options(y PUBLIC "-DY_NO_DEBUG")
+endif()
+
 
 if(BUILD_TESTS)
 	#enable_testing()

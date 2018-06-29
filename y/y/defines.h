@@ -29,16 +29,23 @@ struct Nothing;
 
 }
 
+#ifndef NDEBUG
+#define Y_DEBUG
+#endif
+
+#if defined(Y_NO_DEBUG) && defined(Y_DEBUG)
+#undef Y_DEBUG
+#endif
+
 // keep the namespacing ?
 #define y_fatal(msg) fatal((msg), __FILE__, __LINE__)
 
-
-/*
-// For some reasons this destroys sol2 (freeze at runtime)
-#ifndef __PRETTY_FUNCTION__
-#define __PRETTY_FUNCTION__ __func__
+#ifdef Y_DEBUG
+#define y_debug_assert(cond) do { if(!(cond)) { y_fatal("Assert failed: " #cond); } } while(false)
+#else
+#define y_debug_assert(cond) do { (void)(cond); } while(false)
 #endif
-*/
+
 
 #ifndef Y_PERF_LOG_DISABLED
 #define Y_PERF_LOG_ENABLED
@@ -59,7 +66,7 @@ struct Nothing;
 
 
 
-#if defined(Y_OS_WIN) && defined(NDEBUG)
+#if defined(Y_OS_WIN) && defined(Y_DEBUG)
 #define y_breakpoint do { if(IsDebuggerPresent()) { DebugBreak(); } } while(false)
 #else
 #define y_breakpoint do {} while(false)
