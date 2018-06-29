@@ -128,7 +128,7 @@ void event(const char* cat, const char* name) {
 	write(b, len);
 }
 
-static struct Flush : NonCopyable {
+thread_local static struct Flush : NonCopyable {
 	~Flush() {
 		char b[print_buffer_len];
 		usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f}]})", tid, micros());
