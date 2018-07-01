@@ -204,6 +204,9 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) show_element<CameraDebug>(context(), _elements);
 					if(ImGui::MenuItem("Scene debug"))	show_element<SceneDebug>(context(), _elements);
+
+					y_debug_assert(!ImGui::MenuItem("Debug assert"));
+
 					ImGui::EndMenu();
 				}
 				if(ImGui::BeginMenu("Statistics")) {
