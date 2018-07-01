@@ -34,7 +34,7 @@ namespace perf {
 
 #ifdef Y_PERF_LOG_ENABLED
 static constexpr usize buffer_size = 16 * 1024;
-thread_local static std::unique_ptr<char[]> buffer;
+thread_local static char* buffer = nullptr; // can't use unique_ptr here
 thread_local static usize buffer_offset = 0;
 thread_local static u32 tid = 0;
 static std::mutex mutex;
@@ -51,7 +51,7 @@ static void write_buffer() {
 			const char beg[] = R"({"traceEvents":[)";
 			output->write(beg, sizeof(beg) - 1);
 		}
-		output->write(buffer.get(), buffer_offset);
+		output->write(buffer, buffer_offset);
 		buffer_offset = 0;
 		event("perf", "done writing buffer");
 	}
@@ -69,8 +69,8 @@ void set_output_ptr(std::unique_ptr<io::Writer>&& out) {
 
 #ifdef Y_PERF_LOG_ENABLED
 static void init_thread() {
-	if(!buffer.get()) {
-		buffer = std::make_unique<char[]>(buffer_size);
+	if(!buffer) {
+		buffer = new char[buffer_size];
 		std::stringstream ss;
 		ss << std::this_thread::get_id();
 		tid = std::stoul(ss.str());
@@ -83,7 +83,7 @@ static void write(const char* str, usize len) {
 	if(len >= remaining) {
 		write_buffer();
 	}
-	std::memcpy(buffer.get() + buffer_offset, str, len);
+	std::memcpy(buffer + buffer_offset, str, len);
 	buffer_offset += len;
 }
 
@@ -128,8 +128,8 @@ void event(const char* cat, const char* name) {
 	write(b, len);
 }
 
-thread_local static struct Flush : NonCopyable {
-	~Flush() {
+thread_local static struct Close : NonCopyable {
+	~Close() {
 		char b[print_buffer_len];
 		usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f}]})", tid, micros());
 		if(len >= sizeof(b)) {
@@ -137,8 +137,9 @@ thread_local static struct Flush : NonCopyable {
 		}
 		write(b, len);
 		write_buffer();
+		delete[] buffer;
 	}
-} flush;
+} close;
 #endif
 
 }
