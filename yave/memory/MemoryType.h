@@ -29,21 +29,17 @@ namespace yave {
 
 enum class MemoryType {
 	DontCare = 0,
-    DeviceLocal = uenum(vk::MemoryPropertyFlagBits::eDeviceLocal),
-	CpuVisible = uenum(vk::MemoryPropertyFlagBits::eHostVisible)
+	DeviceLocal = 1,
+	CpuVisible = 2,
+	Staging = 3
 };
 
 inline constexpr bool is_cpu_visible(MemoryType type) {
-	return uenum(type) & uenum(vk::MemoryPropertyFlagBits::eHostVisible);
+	return type == MemoryType::CpuVisible || type == MemoryType::Staging;
 }
 
 inline constexpr bool require_staging(MemoryType type) {
 	return !is_cpu_visible(type);
-}
-
-// allocator will TRY to add these
-inline constexpr vk::MemoryPropertyFlagBits optional_memory_flags(MemoryType type) {
-	return is_cpu_visible(type) ? vk::MemoryPropertyFlagBits::eHostCached : vk::MemoryPropertyFlagBits();
 }
 
 }

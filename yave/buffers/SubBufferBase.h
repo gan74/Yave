@@ -32,7 +32,7 @@ class SubBufferBase {
 
 	public:
 		SubBufferBase() = default;
-		SubBufferBase(const BufferBase& base, usize byte_off, usize byte_len);
+		SubBufferBase(const BufferBase& base, usize byte_len, usize byte_off);
 
 		explicit SubBufferBase(const BufferBase& base);
 
@@ -47,6 +47,9 @@ class SubBufferBase {
 		vk::MappedMemoryRange memory_range() const;
 
 		DevicePtr device() const;
+
+	protected:
+		static usize alignment_for_usage(DevicePtr dptr, BufferUsage usage);
 
 	private:
 		usize _size = 0;

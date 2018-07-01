@@ -32,13 +32,16 @@ class SubBuffer : public SubBufferBase {
 
 	protected:
 		template<typename T>
-		static constexpr bool is_compatible(T a, T b) {
+		static constexpr bool has(T a, T b) {
 			return (uenum(a) & uenum(b)) == uenum(b);
 		}
 
 		static constexpr bool is_compatible(BufferUsage U, MemoryType M, BufferTransfer T) {
-			return is_compatible(U, Usage) && is_compatible(M, Memory) && is_compatible(T, Transfer);
+			return has(U, Usage) && has(M, Memory) && has(T, Transfer);
 		}
+
+		static_assert(!has(BufferUsage::UniformBit, BufferUsage::UniformBit | BufferUsage::IndirectBit));
+		static_assert(has(BufferUsage::UniformBit | BufferUsage::IndirectBit, BufferUsage::UniformBit));
 
 	public:
 		static constexpr BufferUsage usage = Usage;
@@ -46,6 +49,16 @@ class SubBuffer : public SubBufferBase {
 		static constexpr BufferTransfer buffer_transfer = Transfer;
 
 		using sub_buffer_type = SubBuffer<Usage, memory_type, buffer_transfer>;
+		using base_buffer_type = Buffer<Usage, memory_type, buffer_transfer>;
+
+
+		static usize alignment(DevicePtr dptr) {
+			return alignment_for_usage(dptr, Usage);
+		}
+
+		static usize total_byte_size(usize size) {
+			return size;
+		}
 
 		SubBuffer() = default;
 
@@ -55,7 +68,7 @@ class SubBuffer : public SubBufferBase {
 		}
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		SubBuffer(const Buffer<U, M, T>& buffer) : SubBufferBase(buffer, 0, buffer.byte_size()) {
+		SubBuffer(const Buffer<U, M, T>& buffer) : SubBufferBase(buffer, buffer.byte_size(), 0) {
 			static_assert(is_compatible(U, M, T));
 		}
 
@@ -63,13 +76,15 @@ class SubBuffer : public SubBufferBase {
 		// todo find some way to make this better
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off) : SubBufferBase(buffer, byte_off, buffer.byte_size() - byte_off) {
+		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off) : SubBufferBase(buffer, buffer.byte_size() - byte_off, byte_off) {
 			static_assert(is_compatible(U, M, T));
+			y_debug_assert(byte_offset() % alignment(device()) == 0);
 		}
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off, usize byte_len) : SubBufferBase(buffer, byte_off, byte_len) {
+		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_len, usize byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
 			static_assert(is_compatible(U, M, T));
+			y_debug_assert(byte_offset() % alignment(device()) == 0);
 		}
 };
 

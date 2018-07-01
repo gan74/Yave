@@ -52,11 +52,13 @@ class Image : public ImageBase {
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
 		Image(Image<U, Type>&& other) {
+			static_assert(is_compatible(U));
 			swap(other);
 		}
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
 		Image& operator=(Image<U, Type>&& other) {
+			static_assert(is_compatible(U));
 			swap(other);
 			return *this;
 		}

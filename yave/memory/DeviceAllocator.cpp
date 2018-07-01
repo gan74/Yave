@@ -49,6 +49,7 @@ DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type
 	if(reqs.size >= dedicated_threshold) {
 		return dedicated_alloc(reqs, type);
 	}
+
 	if(reqs.alignment % DeviceMemoryHeap::alignment && DeviceMemoryHeap::alignment % reqs.alignment) {
 		log_msg("Failed to align memory: defaulting to dedicated allocation.", Log::Warning);
 		return dedicated_alloc(reqs, type);

@@ -31,6 +31,8 @@ namespace yave {
 Mapping::Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer) :
 		_buffer(buffer),
 		_mapping(static_cast<u8*>(_buffer.device_memory().map()) + buffer.byte_offset()) {
+
+	y_debug_assert(_mapping);
 }
 
 Mapping::~Mapping() {

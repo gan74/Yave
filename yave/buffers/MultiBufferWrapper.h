@@ -29,7 +29,8 @@ namespace yave {
 template<typename Buffer>
 class MultiBufferWrapper {
 
-	using subbuffer_t = SubBuffer<Buffer::usage, Buffer::memory_type, Buffer::buffer_transfer>;
+	using subbuffer_t = typename Buffer::sub_buffer_type;
+	using buffer_t = typename Buffer::base_buffer_type;
 
 	public:
 		MultiBufferWrapper(usize size) : _size(size) {
@@ -37,24 +38,33 @@ class MultiBufferWrapper {
 
 		auto operator[](const FrameToken& token) {
 			lazy_init(token);
-			return typename Buffer::sub_buffer_type(_buffer, _size * token.image_index, _size);
+			return subbuffer_t(_buffer,  _size, _size * token.image_index);
 		}
 
 	private:
+		static usize align_size(usize total_byte_size, usize alignent) {
+			return (total_byte_size + alignent - 1) & ~(alignent - 1);
+		}
+
 		void lazy_init(const FrameToken& token) {
 			if(is_initialized()) {
 				return;
 			}
 			DevicePtr dptr = token.image_view.device();
-			_buffer = Buffer(dptr, _size * token.image_count);
+
+			usize byte_size = Buffer::total_byte_size(_size);
+			_aligned_size = align_size(byte_size, subbuffer_t::alignment(dptr));
+
+			_buffer = buffer_t(dptr, _aligned_size * token.image_count);
 		}
 
 		bool is_initialized() const {
 			return _buffer.device();
 		}
 
-		Buffer _buffer;
+		buffer_t _buffer;
 		usize _size = 0;
+		usize _aligned_size = 0;
 };
 
 

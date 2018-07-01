@@ -62,21 +62,33 @@ class TypedWrapper : public Buff {
 		using Buff::Buff;
 
 		using sub_buffer_type = TypedWrapper<Elem, typename Buff::sub_buffer_type>;
+		using base_buffer_type = Buffer<Buff::usage, Buff::memory_type, Buff::buffer_transfer>;
 
 		using value_type = Elem;
+
+
+		static usize total_byte_size(usize size) {
+			return size * sizeof(value_type);
+		}
+
 
 		TypedWrapper() = default;
 
 		TypedWrapper(DevicePtr dptr, usize elem_count) : Buff(dptr, elem_count * sizeof(Elem)) {
 		}
 
+		// offset in BYTES!
+		TypedWrapper(DevicePtr dptr, usize elem_count, usize byte_offset) : Buff(dptr, elem_count * sizeof(Elem), byte_offset) {
+			static_assert(is_sub, "Offsets are only valid for sub buffers");
+		}
+
 		usize size() const {
-			return this->byte_size() / sizeof(Elem);
+			return this->byte_size() / sizeof(value_type);
 		}
 
 		usize offset() const {
 			if constexpr(is_sub) {
-				return this->byte_offset() / sizeof(Elem);
+				return this->byte_offset() / sizeof(value_type);
 			} else {
 				return 0;
 			}

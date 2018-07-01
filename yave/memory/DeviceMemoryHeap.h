@@ -57,7 +57,7 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		void* map(const DeviceMemoryView& view) override;
 		void unmap(const DeviceMemoryView&) override;
 
-		usize available() const;
+		usize available() const; // slow!
 		bool mapped() const;
 
 	private:
@@ -71,7 +71,6 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		core::Vector<FreeBlock> _blocks;
 		u8* _mapping = nullptr;
 
-		usize _allocs = 0;
 };
 
 }

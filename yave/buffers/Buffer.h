@@ -35,12 +35,12 @@ class Buffer : public BufferBase {
 
 	protected:
 		template<typename T>
-		static constexpr bool is_compatible(T a, T b) {
+		static constexpr bool has(T a, T b) {
 			return (uenum(a) & uenum(b)) == uenum(b);
 		}
 
 		static constexpr bool is_compatible(BufferUsage U, MemoryType M, BufferTransfer T) {
-			return is_compatible(U, Usage) && is_compatible(M, Memory) && is_compatible(T, Transfer);
+			return has(U, Usage) && has(M, Memory) && has(T, Transfer);
 		}
 
 	public:
@@ -49,6 +49,13 @@ class Buffer : public BufferBase {
 		static constexpr BufferTransfer buffer_transfer = Transfer;
 
 		using sub_buffer_type = SubBuffer<Usage, memory_type, buffer_transfer>;
+		using base_buffer_type = Buffer<Usage, memory_type, buffer_transfer>;
+
+
+		static usize total_byte_size(usize size) {
+			return size;
+		}
+
 
 		Buffer() = default;
 

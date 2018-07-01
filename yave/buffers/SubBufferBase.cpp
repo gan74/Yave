@@ -22,16 +22,26 @@ SOFTWARE.
 
 #include "SubBufferBase.h"
 
+#include <yave/device/Device.h>
+
 namespace yave {
 
-SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_off, usize byte_len) :
+SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_len, usize byte_off) :
 		_size(byte_len),
 		_offset(byte_off),
 		_buffer(base.vk_buffer()),
 		_memory(base.device_memory()) {
+
+	y_debug_assert(base.byte_size() >= _size + _offset);
 }
 
 SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, 0, base.byte_size()) {
+}
+
+usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
+	return (usage & BufferUsage::UniformBit) != BufferUsage::None
+		? dptr->vk_limits().minUniformBufferOffsetAlignment
+		: 1;
 }
 
 usize SubBufferBase::byte_size() const {

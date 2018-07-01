@@ -31,26 +31,47 @@ SOFTWARE.
 
 namespace yave {
 
-inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType type) {
+static const vk::MemoryPropertyFlags dont_care_flags[] = {
+	vk::MemoryPropertyFlags()
+};
 
-	// try with optional flags
-	vk::MemoryPropertyFlagBits optional_flags = optional_memory_flags(type);
-	if(optional_flags != vk::MemoryPropertyFlagBits()) {
-		vk::MemoryPropertyFlags flags = vk::MemoryPropertyFlagBits(type) | optional_flags;
+static const vk::MemoryPropertyFlags device_local_flags[] = {
+	vk::MemoryPropertyFlagBits::eDeviceLocal,
+	vk::MemoryPropertyFlags()
+};
+
+static const vk::MemoryPropertyFlags cpu_visible_flags[] = {
+	vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
+	vk::MemoryPropertyFlagBits::eHostVisible,
+	vk::MemoryPropertyFlags()
+};
+
+static const vk::MemoryPropertyFlags staging_flags[] = {
+	vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eDeviceLocal,
+	vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal,
+	vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
+	vk::MemoryPropertyFlagBits::eHostVisible,
+	vk::MemoryPropertyFlags()
+};
+
+
+
+static const vk::MemoryPropertyFlags* memory_type_flags[] = {
+	dont_care_flags,    // DontCare
+	device_local_flags, // DeviceLocal
+	cpu_visible_flags,  // CpuVisible
+	cpu_visible_flags   // Staging
+};
+
+
+inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType type) {
+	for(const vk::MemoryPropertyFlags* type_flags = memory_type_flags[uenum(type)]; *type_flags; ++type_flags) {
+		vk::MemoryPropertyFlags flags = *type_flags;
 		for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
 			auto memory_type = properties.memoryTypes[i];
 			if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
 				return i;
 			}
-		}
-	}
-
-	// try without
-	vk::MemoryPropertyFlags flags = vk::MemoryPropertyFlagBits(type);
-	for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
-		auto memory_type = properties.memoryTypes[i];
-		if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
-			return i;
 		}
 	}
 

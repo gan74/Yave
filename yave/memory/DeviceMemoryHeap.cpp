@@ -28,6 +28,10 @@ SOFTWARE.
 
 namespace yave {
 
+static usize align_size(usize total_byte_size, usize alignent) {
+	return (total_byte_size + alignent - 1) & ~(alignent - 1);
+}
+
 usize DeviceMemoryHeap::FreeBlock::end_offset() const {
 	return offset + size;
 }
@@ -37,9 +41,7 @@ bool DeviceMemoryHeap::FreeBlock::contiguous(const FreeBlock& blck) const {
 }
 
 void DeviceMemoryHeap::FreeBlock::merge(const FreeBlock& block) {
-	if(!contiguous(block)) {
-		y_fatal("Memory blocks are not contiguous.");
-	}
+	y_debug_assert(contiguous(block));
 	std::tie(offset, size) = std::tuple{std::min(offset, block.offset), size + block.size};
 }
 
@@ -72,11 +74,7 @@ DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {
 }
 
 core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) {
-	usize size = reqs.size;
-	if(usize m = size % alignment; m) {
-		size += alignment - m;
-	}
-
+	usize size = align_size(reqs.size, alignment);
 
 	for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
 		usize full_size = it->size;
@@ -86,11 +84,14 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) 
 		}
 
 		usize offset = it->offset;
-		usize align_loss = offset % reqs.alignment;
-		usize align_correction = align_loss ? reqs.alignment - align_loss : 0;
 
-		usize aligned_offset = offset + align_correction;
+		usize aligned_offset = align_size(offset, reqs.alignment);
+		usize align_correction = aligned_offset - offset;
 		usize aligned_size = full_size - align_correction;
+
+		y_debug_assert(aligned_size % alignment == 0);
+		y_debug_assert(aligned_offset % alignment == 0);
+		y_debug_assert(aligned_offset % reqs.alignment == 0);
 
 		if(aligned_size == size) {
 			_blocks.erase_unordered(it);
@@ -112,11 +113,12 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) 
 }
 
 void DeviceMemoryHeap::free(const DeviceMemory& memory) {
+	y_debug_assert(memory.vk_memory() == _memory);
 	free(FreeBlock {memory.vk_offset(), memory.vk_size()});
 }
 
 void DeviceMemoryHeap::free(const FreeBlock& block) {
-	--_allocs;
+	y_debug_assert(block.end_offset() <= heap_size);
 	compact_block(block);
 }
 

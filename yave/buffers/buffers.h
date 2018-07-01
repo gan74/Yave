@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-using StagingBuffer = Buffer<BufferUsage::None, MemoryType::CpuVisible, BufferTransfer::TransferSrc>;
+using StagingBuffer = Buffer<BufferUsage::None, MemoryType::Staging, BufferTransfer::TransferSrc>;
 
 template<typename T>
 using TypedStagingBuffer = TypedBuffer<T, BufferUsage::None, MemoryType::CpuVisible, BufferTransfer::TransferSrc>;
