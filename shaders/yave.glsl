@@ -184,6 +184,16 @@ vec3 reinhard(vec3 hdr) {
 	return reinhard(hdr, 1.0);
 }
 
+vec3 uncharted2(vec3 hdr) {
+	float A = 0.15;
+	float B = 0.50;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.02;
+	float F = 0.30;
+	return ((hdr * (A * hdr + C * B) + D * E) / (hdr * (A * hdr + B) + D * F)) - E / F;
+}
+
 
 // -------------------------------- LIGHTING --------------------------------
 
