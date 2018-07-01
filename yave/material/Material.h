@@ -40,6 +40,8 @@ class RenderPass;
 class Material : NonCopyable, public DeviceLinked {
 
 	public:
+		static constexpr usize max_compiled_pipelines = 4;
+
 		Material() = default;
 		Material(DevicePtr dptr, const MaterialData& data);
 

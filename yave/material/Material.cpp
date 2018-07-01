@@ -64,6 +64,12 @@ const GraphicPipeline& Material::compile(const RenderPass& render_pass) const {
 
 	auto it = std::find_if(_compiled.begin(), _compiled.end(), [=](const auto& c) { return c.first == key; });
 	if(it == _compiled.end()) {
+		if(_compiled.size() == max_compiled_pipelines) {
+			log_msg("Discarding graphic pipeline", Log::Warning);
+			std::move(_compiled.begin() + 1, _compiled.end(), _compiled.begin());
+			_compiled.pop();
+		}
+
 		MaterialCompiler compiler(device());
 		_compiled.insert(key, compiler.compile(this, render_pass));
 		return _compiled.last().second;
