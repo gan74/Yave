@@ -59,10 +59,12 @@ class TypedWrapper : public Buff {
 	static_assert(is_buf || is_sub);
 
 	public:
-		using Buff::Buff;
+		using Buff::usage;
+		using Buff::memory_type;
+		using Buff::buffer_transfer;
 
 		using sub_buffer_type = TypedWrapper<Elem, typename Buff::sub_buffer_type>;
-		using base_buffer_type = Buffer<Buff::usage, Buff::memory_type, Buff::buffer_transfer>;
+		using base_buffer_type = Buffer<usage, memory_type, buffer_transfer>;
 
 		using value_type = Elem;
 
@@ -74,13 +76,21 @@ class TypedWrapper : public Buff {
 
 		TypedWrapper() = default;
 
-		TypedWrapper(DevicePtr dptr, usize elem_count) : Buff(dptr, elem_count * sizeof(Elem)) {
+		TypedWrapper(DevicePtr dptr, usize elem_count) : Buff(dptr, elem_count * sizeof(value_type)) {
 		}
 
-		// offset in BYTES!
-		TypedWrapper(DevicePtr dptr, usize elem_count, usize byte_offset) : Buff(dptr, elem_count * sizeof(Elem), byte_offset) {
-			static_assert(is_sub, "Offsets are only valid for sub buffers");
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
+		TypedWrapper(const Buffer<U, M, T>& buffer) : Buff(buffer) {
 		}
+
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
+		TypedWrapper(const SubBuffer<U, M, T>& buffer) : Buff(buffer) {
+		}
+
+		template<BufferUsage U, MemoryType M, BufferTransfer T>
+		TypedWrapper(const Buffer<U, M, T>& buffer, usize size, usize byte_offset) : Buff(buffer, size * sizeof(value_type), byte_offset) {
+		}
+
 
 		usize size() const {
 			return this->byte_size() / sizeof(value_type);

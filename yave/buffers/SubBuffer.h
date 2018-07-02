@@ -72,14 +72,8 @@ class SubBuffer : public SubBufferBase {
 			static_assert(is_compatible(U, M, T));
 		}
 
-		// these are dangerous with typedwrapper as it's never clear what is in byte and what isn't.
+		// this is dangerous with typedwrapper as it's never clear what is in byte and what isn't.
 		// todo find some way to make this better
-
-		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_off) : SubBufferBase(buffer, buffer.byte_size() - byte_off, byte_off) {
-			static_assert(is_compatible(U, M, T));
-			y_debug_assert(byte_offset() % alignment(device()) == 0);
-		}
 
 		template<BufferUsage U, MemoryType M, BufferTransfer T>
 		SubBuffer(const Buffer<U, M, T>& buffer, usize byte_len, usize byte_off) : SubBufferBase(buffer, byte_len, byte_off) {

@@ -31,7 +31,7 @@ namespace yave {
 using StagingBuffer = Buffer<BufferUsage::None, MemoryType::Staging, BufferTransfer::TransferSrc>;
 
 template<typename T>
-using TypedStagingBuffer = TypedBuffer<T, BufferUsage::None, MemoryType::CpuVisible, BufferTransfer::TransferSrc>;
+using TypedStagingBuffer = TypedBuffer<T, StagingBuffer::usage, StagingBuffer::memory_type, StagingBuffer::buffer_transfer>;
 
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>

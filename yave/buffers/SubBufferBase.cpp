@@ -39,9 +39,14 @@ SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, 0, ba
 }
 
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
-	return (usage & BufferUsage::UniformBit) != BufferUsage::None
-		? dptr->vk_limits().minUniformBufferOffsetAlignment
-		: 1;
+	usize align = 1;
+	if ((usage & BufferUsage::UniformBit) != BufferUsage::None) {
+		align = std::max(dptr->vk_limits().minUniformBufferOffsetAlignment, align);
+	}
+	if ((usage & BufferUsage::StorageBit) != BufferUsage::None) {
+		align = std::max(dptr->vk_limits().minStorageBufferOffsetAlignment, align);
+	}
+	return align;
 }
 
 usize SubBufferBase::byte_size() const {

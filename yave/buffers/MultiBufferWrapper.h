@@ -38,7 +38,7 @@ class MultiBufferWrapper {
 
 		auto operator[](const FrameToken& token) {
 			lazy_init(token);
-			return subbuffer_t(_buffer,  _size, _size * token.image_index);
+			return subbuffer_t(_buffer, _size, _aligned_byte_size * token.image_index);
 		}
 
 	private:
@@ -53,9 +53,9 @@ class MultiBufferWrapper {
 			DevicePtr dptr = token.image_view.device();
 
 			usize byte_size = Buffer::total_byte_size(_size);
-			_aligned_size = align_size(byte_size, subbuffer_t::alignment(dptr));
+			_aligned_byte_size = align_size(byte_size, subbuffer_t::alignment(dptr));
 
-			_buffer = buffer_t(dptr, _aligned_size * token.image_count);
+			_buffer = buffer_t(dptr, _aligned_byte_size * token.image_count);
 		}
 
 		bool is_initialized() const {
@@ -64,7 +64,7 @@ class MultiBufferWrapper {
 
 		buffer_t _buffer;
 		usize _size = 0;
-		usize _aligned_size = 0;
+		usize _aligned_byte_size = 0;
 };
 
 
