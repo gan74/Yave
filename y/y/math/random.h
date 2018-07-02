@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,48 +19,61 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef Y_MATH_RANDOM_H
+#define Y_MATH_RANDOM_H
 
-#include "utils.h"
-#include <y/core/String.h>
-
-#ifdef __GNUG__
-#include <cstdlib>
-#include <memory>
-#include <cxxabi.h>
-#endif
+#include <y/utils.h>
 
 namespace y {
+namespace math {
 
-namespace detail {
-
-#ifdef __GNUG__
-	core::String demangle_type_name(const char* name) {
-		int status = 0;
-		char* d = abi::__cxa_demangle(name, nullptr, nullptr, &status);
-		if(status) {
-			return core::String(name);
+#if 0
+class FastRandom {
+	public:
+		FastRandom(u64 seed = 0xdeadbeef) {
 		}
 
-		return core::String::from_owned(d);
-	}
-#else
-	core::String demangle_type_name(const char* name) {
-		return core::String(name);
-	}
+		u32 operator()() {
+			return (_seed += _seed * _seed | 5) >> 32;
+		}
+
+	private:
+		u64 _seed;
+};
 #endif
-}
 
 
-Nothing fatal(const char* msg, const char* file, int line) {
-	core::String msg_str(msg);
-	if(file) {
-		msg_str += " in file \""_s + file + "\"";
-	}
-	if(line) {
-		msg_str += " at line "_s + line;
-	}
-	log_msg(msg_str, Log::Error);
-	std::abort();
-}
+#if 1
+class FastRandom {
+	public:
+		FastRandom(u32 seed = 0xdeadbeef) : _a(0xf1ea5eed), _b(seed), _c(seed), _d(seed) {
+			for(usize i = 0; i != 20; ++i) {
+				(*this)();
+			}
+		}
+
+		u32 operator()() {
+			u32 e = _a - rot(_b, 27);
+			_a = _b ^ rot(_c, 17);
+			_b = _c + _d;
+			_c = _d + e;
+			_d = e + _a;
+			return _d;
+		}
+
+	private:
+		static u32 rot(u32 x, u32 k) {
+			return (((x) << (k)) | ((x) >> (32 - (k))));
+		}
+
+		u32 _a;
+		u32 _b;
+		u32 _c;
+		u32 _d;
+};
+#endif
 
 }
+}
+
+#endif // Y_MATH_RANDOM_H

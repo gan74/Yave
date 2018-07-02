@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,47 +20,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "utils.h"
-#include <y/core/String.h>
+#include <y/test/test.h>
+#include <y/math/random.h>
 
-#ifdef __GNUG__
-#include <cstdlib>
-#include <memory>
-#include <cxxabi.h>
-#endif
+#include <unordered_set>
 
-namespace y {
+using namespace y;
 
-namespace detail {
-
-#ifdef __GNUG__
-	core::String demangle_type_name(const char* name) {
-		int status = 0;
-		char* d = abi::__cxa_demangle(name, nullptr, nullptr, &status);
-		if(status) {
-			return core::String(name);
-		}
-
-		return core::String::from_owned(d);
+y_test_func("FastRandom") {
+	std::unordered_set<u32> output;
+	usize max = 50000;
+	math::FastRandom rnd;
+	for(usize i = 0; i != max; ++i) {
+		output.insert(rnd());
 	}
-#else
-	core::String demangle_type_name(const char* name) {
-		return core::String(name);
-	}
-#endif
+	y_test_assert(output.size() == max);
 }
 
-
-Nothing fatal(const char* msg, const char* file, int line) {
-	core::String msg_str(msg);
-	if(file) {
-		msg_str += " in file \""_s + file + "\"";
-	}
-	if(line) {
-		msg_str += " at line "_s + line;
-	}
-	log_msg(msg_str, Log::Error);
-	std::abort();
-}
-
+y_test_func("FastRandom zero seed") {
+	math::FastRandom rnd(0);
+	y_test_assert(rnd() != 0);
 }
