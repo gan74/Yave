@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,45 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_IO_BUFFREADER_H
-#define Y_IO_BUFFREADER_H
+#ifndef Y_IO_BUFFWRITER_H
+#define Y_IO_BUFFWRITER_H
 
 #include "Ref.h"
 
 namespace y {
 namespace io {
 
-class BuffReader final : public Reader {
+class BuffWriter final : public Writer {
 
 	public:
 		static constexpr usize default_buffer_size = 4 * 1024;
 
-		BuffReader(ReaderRef&& r, usize buff_size = default_buffer_size);
-		BuffReader(const ReaderRef& r, usize buff_size = default_buffer_size);
+		BuffWriter(WriterRef&& w, usize buff_size = default_buffer_size);
+		BuffWriter(const WriterRef& w, usize buff_size = default_buffer_size);
 
-		~BuffReader() override;
+		~BuffWriter() override;
 
-		BuffReader(BuffReader&& other);
-		BuffReader& operator=(BuffReader&& other);
+		BuffWriter(BuffWriter&& other);
+		BuffWriter& operator=(BuffWriter&& other);
 
-		bool at_end() const override;
-
-		Result read(void *data, usize bytes) override;
-		void read_all(core::Vector<u8>& data) override;
+		Result write(const void* data, usize bytes) override;
+		void flush() override;
 
 	private:
-		BuffReader(usize buff_size);
+		BuffWriter(usize buff_size = 0);
 
-		void swap(BuffReader& other);
+		usize flush_r();
+
+		void swap(BuffWriter& other);
 
 		usize _size = 0;
-		usize _offset = 0;
 		usize _used = 0;
 		u8* _buffer = nullptr;
 
-		ReaderRef _inner;
+		WriterRef _inner;
 };
 
 }
 }
-#endif // Y_IO_BUFFREADER_H
+
+#endif // Y_IO_BUFFWRITER_H

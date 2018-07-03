@@ -24,7 +24,7 @@ SOFTWARE.
 namespace y {
 namespace io {
 
-BuffReader::BuffReader(usize buff_size) : _size(buff_size), _offset(0), _used(0), _buffer(buff_size ? new u8[buff_size] : nullptr) {
+BuffReader::BuffReader(usize buff_size) : _size(buff_size), _buffer(buff_size ? new u8[buff_size] : nullptr) {
 }
 
 BuffReader::BuffReader(ReaderRef&& r, usize buff_size) : BuffReader(buff_size) {

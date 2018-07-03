@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_IO_REF_H
 
 #include <y/utils.h>
+#include <memory>
 #include "Reader.h"
 #include "Writer.h"
 
@@ -35,21 +36,17 @@ class Ref {
 	public:
 		Ref() = default;
 
-		Ref(const Ref& ref) : _ptr(ref._ptr), _owned(false) {
+		Ref(const Ref& ref) : _ref(ref._ref) {
 		}
 
 		template<typename Derived, typename = std::enable_if_t<std::is_base_of_v<T, Derived>>>
-		Ref(Derived&& x) : _ptr(new Derived(std::move(x))), _owned(true) {
+		Ref(Derived&& x) : _storage(std::make_unique<Derived>(std::forward(x))), _ref(_storage.get()) {
+			static_assert(std::is_base_of_v<T, Derived>);
 		}
 
 		template<typename Derived, typename = std::enable_if_t<std::is_base_of_v<T, Derived>>>
-		Ref(Derived& x) : _ptr(&x), _owned(false) {
-		}
-
-		~Ref() {
-			if(_owned) {
-				delete _ptr;
-			}
+		Ref(Derived& x) : _ref(&x) {
+			static_assert(std::is_base_of_v<T, Derived>);
 		}
 
 		Ref(Ref&& other) {
@@ -62,39 +59,35 @@ class Ref {
 		}
 
 		Ref& operator=(const Ref& other) {
-			if(_owned) {
-				delete _ptr;
-			}
-			_ptr = other._ptr;
-			_owned = false;
+			_storage = nullptr;
+			_ref = other._ref;
 			return *this;
 		}
 
 		operator T&() {
-			return *_ptr;
+			return *_ref;
 		}
 
 		operator const T&() const {
-			return *_ptr;
+			return *_ref;
 		}
 
 		T* operator->() {
-			return _ptr;
+			return _ref;
 		}
 
 		const T* operator->() const {
-			return _ptr;
+			return _ref;
 		}
 
 	private:
 		void swap(Ref& other) {
-			std::swap(_ptr, other._ptr);
-			std::swap(_owned, other._owned);
+			std::swap(_ref, other._ref);
+			std::swap(_storage, other._storage);
 		}
 
-		// may be owner or not, depending on constructor (that's why we got _owned)
-		T* _ptr = nullptr;
-		bool _owned = false;
+		std::unique_ptr<T> _storage;
+		T* _ref = nullptr;
 
 };
 
