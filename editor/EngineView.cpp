@@ -58,10 +58,10 @@ void EngineView::create_renderer(const math::Vec2ui& size) {
 void EngineView::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 
-	if(context()->is_scene_empty()) {
+	/*if(context()->is_scene_empty()) {
 		ImGui::Text("Empty scene");
 		return;
-	}
+	}*/
 
 	if(!_renderer || viewport != render_size()) {
 		create_renderer(viewport);

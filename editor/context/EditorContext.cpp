@@ -64,12 +64,6 @@ void EditorContext::set_scene_deferred(Scene&& scene) {
 	defer([=, sce{std::move(scene)}]() mutable {
 		set_selected(nullptr);
 		*_scene = std::move(sce);
-
-		/*{
-			auto hook = std::make_unique<SceneHook>(this);
-			_scene_hook = hook.get();
-			_scene->renderables().emplace_back(std::move(hook));
-		}*/
 	});
 }
 
@@ -118,7 +112,7 @@ SceneView* EditorContext::scene_view() const {
 }
 
 bool EditorContext::is_scene_empty() const {
-	return _scene->renderables().size() <= 1 && // hook
+	return _scene->renderables().is_empty() &&
 		   _scene->static_meshes().is_empty() &&
 		   _scene->lights().is_empty();
 }
