@@ -27,12 +27,77 @@ SOFTWARE.
 
 namespace yave {
 
+using AssetId = i64;
+
 template<typename T>
-using AssetPtr = std::shared_ptr<const T>;
+class AssetPtr;
+
+template<typename T, typename... Args>
+AssetPtr<T> make_asset(Args&&... args);
+
+template<typename T, typename... Args>
+AssetPtr<T> make_asset_with_id(Args&&... args, AssetId id);
+
+template<typename T>
+class AssetPtr {
+	struct Pair : NonCopyable {
+		const T asset;
+		AssetId id;
+
+		template<typename... Args>
+		Pair(AssetId i, Args&&... args) : asset(std::forward<Args>(args)...), id(i) {
+		}
+	};
+
+	public:
+		static constexpr AssetId invalid_id = std::numeric_limits<AssetId>::lowest();
+
+		AssetPtr() = default;
+
+		const T* get() const noexcept {
+			return &_ptr->asset;
+		}
+
+		const T& operator*() const noexcept {
+			return _ptr->asset;
+		}
+
+		const T* operator->() const noexcept {
+			return &_ptr->asset;
+		}
+
+		explicit operator bool() const noexcept {
+			return bool(_ptr);
+		}
+
+		AssetId id() const noexcept {
+			return _ptr ? _ptr->id : invalid_id;
+		}
+
+	private:
+		template<typename U, typename... Args>
+		friend AssetPtr<U> make_asset(Args&&... args);
+
+		template<typename U, typename... Args>
+		friend AssetPtr<U> make_asset_with_id(Args&&... args, AssetId id);
+
+
+		template<typename... Args>
+		explicit AssetPtr(AssetId id, Args&&... args) : _ptr(std::make_shared<Pair>(id, std::forward<Args>(args)...)) {
+		}
+
+	private:
+		std::shared_ptr<Pair> _ptr;
+};
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args) {
-	return std::make_shared<const T>(std::forward<Args>(args)...);
+	return AssetPtr<T>(AssetPtr<T>::invalid_id, std::forward<Args>(args)...);
+}
+
+template<typename T, typename... Args>
+AssetPtr<T> make_asset_with_id(Args&&... args, AssetId id) {
+	return AssetPtr<T>(id, std::forward<Args>(args)...);
 }
 
 }
