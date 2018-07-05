@@ -46,7 +46,13 @@ file(GLOB_RECURSE YAVE_FILES
 		"yave/*.h"
 		"yave/*.cpp"
 	)
-	
+
+# ECS files
+file(GLOB_RECURSE ECS_FILES
+		"ecs/*.h"
+		"ecs/*.cpp"
+	)
+
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
 		"editor/*.h"
@@ -69,14 +75,14 @@ enable_unity_build(yave YAVE_FILES)
 add_library(yave ${YAVE_FILES} ${SHADER_FILES})
 
 target_link_libraries(yave ${Vulkan_LIBRARY})
-target_link_libraries(yave y spirv-cross-core)
+target_link_libraries(yave y spirv-cross-core stdc++fs)
 
+#add_executable(ecs "ecs/main.cpp" ${ECS_FILES})
+#target_link_libraries(ecs y)
 
 if(BUILD_EDITOR)
 	add_executable(editor ${EDITOR_FILES})
 	target_link_libraries(editor yave)
-	# for std::filesystem
-	target_link_libraries(editor stdc++fs)
 endif()
 
 
