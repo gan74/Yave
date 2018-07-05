@@ -48,7 +48,7 @@ class Scene : NonCopyable {
 
 		// serialize.cpp
 		static core::Result<Scene> from_file(io::ReaderRef reader,  AssetLoader<StaticMesh>& mesh_loader);
-		core::Result<void> to_file(io::WriterRef writer, const AssetLoader<StaticMesh>& mesh_loader) const;
+		core::Result<void> to_file(io::WriterRef writer) const;
 
 
 		const auto& static_meshes() const {

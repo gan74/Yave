@@ -29,6 +29,10 @@ namespace yave {
 
 using AssetId = i64;
 
+namespace assets {
+static constexpr AssetId invalid_id = std::numeric_limits<AssetId>::lowest();
+}
+
 template<typename T>
 class AssetPtr;
 
@@ -36,7 +40,8 @@ template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args);
 
 template<typename T, typename... Args>
-AssetPtr<T> make_asset_with_id(Args&&... args, AssetId id);
+AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
+
 
 template<typename T>
 class AssetPtr {
@@ -50,8 +55,6 @@ class AssetPtr {
 	};
 
 	public:
-		static constexpr AssetId invalid_id = std::numeric_limits<AssetId>::lowest();
-
 		AssetPtr() = default;
 
 		const T* get() const noexcept {
@@ -71,7 +74,7 @@ class AssetPtr {
 		}
 
 		AssetId id() const noexcept {
-			return _ptr ? _ptr->id : invalid_id;
+			return _ptr ? _ptr->id : assets::invalid_id;
 		}
 
 	private:
@@ -79,7 +82,7 @@ class AssetPtr {
 		friend AssetPtr<U> make_asset(Args&&... args);
 
 		template<typename U, typename... Args>
-		friend AssetPtr<U> make_asset_with_id(Args&&... args, AssetId id);
+		friend AssetPtr<U> make_asset_with_id(AssetId id, Args&&... args);
 
 
 		template<typename... Args>
@@ -92,11 +95,11 @@ class AssetPtr {
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args) {
-	return AssetPtr<T>(AssetPtr<T>::invalid_id, std::forward<Args>(args)...);
+	return AssetPtr<T>(assets::invalid_id, std::forward<Args>(args)...);
 }
 
 template<typename T, typename... Args>
-AssetPtr<T> make_asset_with_id(Args&&... args, AssetId id) {
+AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args) {
 	return AssetPtr<T>(id, std::forward<Args>(args)...);
 }
 

@@ -83,7 +83,8 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 			);
 		//auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to open mesh file."));
 		//auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
-		auto mesh = mesh_loader.from_file("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to load mesh");
+
+		AssetPtr<StaticMesh> mesh = mesh_loader.load_or_import("cube.ym", "../tools/mesh_to_ym/cube.obj.ym",  AssetStore::Reference).unwrap();
 
 		{
 			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);

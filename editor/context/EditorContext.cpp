@@ -25,10 +25,11 @@ SOFTWARE.
 #include "scenes.h"
 #include "images.h"
 
+
+#include <yave/assets/FolderAssetStore.h>
 #include <yave/serialize/serialize.h>
 
 #include <y/io/File.h>
-
 
 #include <imgui/imgui.h>
 
@@ -40,8 +41,9 @@ DevicePtr ContextLinked::device() const {
 
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
-		texture_loader(dptr),
-		mesh_loader(dptr),
+		asset_store(new FolderAssetStore()),
+		texture_loader(dptr, asset_store),
+		mesh_loader(dptr, asset_store),
 		_scene(std::make_unique<Scene>()),
 		_scene_view(std::make_unique<SceneView>(*_scene)) {
 
@@ -67,10 +69,10 @@ void EditorContext::set_scene_deferred(Scene&& scene) {
 	});
 }
 
-void EditorContext::save_scene(const char* filename) {
+void EditorContext::save_scene(std::string_view filename) {
 	Y_LOG_PERF("editor,save");
 	if(auto r = io::File::create(filename); r.is_ok()) {
-		if(_scene->to_file(r.unwrap(), mesh_loader).is_error()) {
+		if(_scene->to_file(r.unwrap()).is_error()) {
 			log_msg("Unable to save scene.", Log::Error);
 		}
 	} else {
@@ -78,7 +80,7 @@ void EditorContext::save_scene(const char* filename) {
 	}
 }
 
-void EditorContext::load_scene(const char* filename) {
+void EditorContext::load_scene(std::string_view filename) {
 	Y_LOG_PERF("editor,loading");
 	if(auto r = io::File::open(filename); r.is_ok()) {
 		if(auto s = Scene::from_file(r.unwrap(), mesh_loader); s.is_ok()) {

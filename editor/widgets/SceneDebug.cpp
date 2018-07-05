@@ -23,11 +23,12 @@ SOFTWARE.
 #include "SceneDebug.h"
 
 #include <editor/context/scenes.h>
-
 #include <editor/context/EditorContext.h>
 
 #include <yave/material/Material.h>
 #include <yave/objects/StaticMeshInstance.h>
+
+#include <y/io/File.h>
 
 #include <imgui/imgui.h>
 
@@ -41,7 +42,7 @@ static AssetPtr<Material> create_material(ContextPtr cptr) {
 }
 
 static AssetPtr<StaticMesh> create_mesh(ContextPtr cptr) {
-	return cptr->mesh_loader.from_file("../tools/mesh_to_ym/cube.obj.ym").unwrap();
+	return cptr->mesh_loader.load_or_import("cube.ym", "../tools/mesh_to_ym/cube.obj.ym", AssetStore::Intern).unwrap();
 }
 
 SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {

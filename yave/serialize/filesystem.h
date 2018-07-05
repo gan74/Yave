@@ -19,48 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_VIEWS_FILEBROWSER_H
-#define EDITOR_VIEWS_FILEBROWSER_H
+#ifndef YAVE_SERIALIZE_FILESYSTEM_H
+#define YAVE_SERIALIZE_FILESYSTEM_H
 
-#include <editor/ui/Frame.h>
-#include <editor/ui/Widget.h>
+#ifndef YAVE_NO_STDFS
+#if __has_include(<filesystem>)
+#define YAVE_STDFS_NAMESPACE std::filesystem
+#include <filesystem>
+#else
+#define YAVE_STDFS_NAMESPACE std::experimental::filesystem
+#include <experimental/filesystem>
+#endif
 
-#include <yave/serialize/filesystem.h>
 
-#include <y/core/Functor.h>
+// fs::copy and fs::copy_file will mess up binary files by replacing '\n' by "\r\n" on windows.
+#define YAVE_STDFS_BAD_COPY
 
-namespace editor {
+namespace yave {
 
-class FileBrowser : public Widget {
-	public:
-		FileBrowser();
-
-		template<typename F>
-		void set_callback(F&& func) {
-			_callback = std::forward<F>(func);
-		}
-
-	private:
-		void done();
-		void cancel();
-
-		void set_path(const fs::path& path);
-		void input_path();
-
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
-
-		fs::path _current;
-
-		static constexpr usize buffer_size = 512;
-		std::array<char, buffer_size> _path_buffer;
-		std::array<char, buffer_size> _name_buffer;
-
-		int _selection = -1;
-
-		core::Function<void(core::String)> _callback;
-
-};
+namespace fs {
+using namespace YAVE_STDFS_NAMESPACE;
+}
 
 }
 
-#endif // EDITOR_VIEWS_FILEBROWSER_H
+#endif // YAVE_NO_STDFS
+
+#endif // YAVE_SERIALIZE_FILESYSTEM_H

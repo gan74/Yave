@@ -24,9 +24,8 @@ SOFTWARE.
 
 #include <yave/device/DeviceLinked.h>
 #include <y/core/String.h>
-#include <y/io/File.h>
-
 #include "AssetPtr.h"
+#include "AssetStore.h"
 
 #include <unordered_map>
 
@@ -50,39 +49,55 @@ class AssetLoader : public DeviceLinked {
 	using load_from = typename traits::load_from;
 
 	public:
-		AssetLoader(DevicePtr dptr) : DeviceLinked(dptr) {
+		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
 		}
 
-		core::Result<AssetPtr<T>> from_file(const core::String& filename) {
+		AssetStore& store() {
+			return *_store;
+		}
+
+
+		core::Result<AssetPtr<T>> load(AssetId id) {
 			Y_LOG_PERF("asset,loading");
-			auto& asset = _loaded[filename];
+			if(id == assets::invalid_id) {
+				return core::Err();
+			}
+
+			auto& asset = _loaded[id];
 			if(asset) {
 				return core::Ok(asset);
 			}
-			if(auto file = io::File::open(filename); file.is_ok()) {
+			if(auto file = _store->data(id); file.is_ok()) {
 				core::Result<load_from> data = load_from::from_file(file.unwrap());
 				if(data.is_ok()) {
-					return core::Ok(asset = make_asset<T>(device(), std::move(data.unwrap())));
+					return core::Ok(asset = make_asset_with_id<T>(id, device(), std::move(data.unwrap())));
 				}
 			}
 			return core::Err();
 		}
 
-
-		usize size() const {
-			return _loaded.size();
+		core::Result<AssetPtr<T>> load(std::string_view name) {
+			if(auto r = _store->id(name); r.is_ok()) {
+				return load(r.unwrap());
+			}
+			return core::Err();
 		}
 
-		auto begin() const {
-			return _loaded.begin();
+		core::Result<AssetPtr<T>> load_or_import(std::string_view name, std::string_view import_from, AssetStore::ImportType import_type) {
+			if(auto r = _store->id(name); r.is_ok()) {
+				return load(r.unwrap());
+			}
+			if(auto r = _store->import_as(import_from, name, import_type); r.is_ok()) {
+				return load(r.unwrap());
+			}
+			return core::Err();
 		}
 
-		auto end() const {
-			return _loaded.end();
-		}
 
 	private:
-		std::unordered_map<core::String, AssetPtr<T>> _loaded;
+		std::unordered_map<AssetId, AssetPtr<T>> _loaded;
+
+		std::shared_ptr<AssetStore> _store;
 };
 
 }

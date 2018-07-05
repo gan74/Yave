@@ -19,48 +19,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_VIEWS_FILEBROWSER_H
-#define EDITOR_VIEWS_FILEBROWSER_H
+#ifndef YAVE_ASSETS_FOLDERASSETSTORE_H
+#define YAVE_ASSETS_FOLDERASSETSTORE_H
 
-#include <editor/ui/Frame.h>
-#include <editor/ui/Widget.h>
 
 #include <yave/serialize/filesystem.h>
 
-#include <y/core/Functor.h>
+#include "AssetStore.h"
 
-namespace editor {
+#include <unordered_map>
+#include <mutex>
 
-class FileBrowser : public Widget {
+#ifndef YAVE_NO_STDFS
+
+namespace yave {
+
+class FolderAssetStore final : public AssetStore {
+
+	struct Entry {
+		core::String name;
+		AssetId id;
+	};
+
 	public:
-		FileBrowser();
+		FolderAssetStore(std::string_view path = "./store");
+		~FolderAssetStore();
 
-		template<typename F>
-		void set_callback(F&& func) {
-			_callback = std::forward<F>(func);
-		}
+		core::Result<AssetId> import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) override;
+		core::Result<AssetId> id(std::string_view name) override;
+
+		core::Result<io::ReaderRef> data(AssetId id) override;
 
 	private:
-		void done();
-		void cancel();
+		void write_index();
+		void read_index();
 
-		void set_path(const fs::path& path);
-		void input_path();
+		fs::path file_path(std::string_view name) const;
 
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		bool try_import(std::string_view src, std::string_view dst, ImportType import_type);
 
-		fs::path _current;
+		std::mutex _lock;
+		fs::path _path;
+		core::String _index_file_path;
 
-		static constexpr usize buffer_size = 512;
-		std::array<char, buffer_size> _path_buffer;
-		std::array<char, buffer_size> _name_buffer;
 
-		int _selection = -1;
-
-		core::Function<void(core::String)> _callback;
-
+		// TODO optimize ?
+		std::unordered_map<AssetId, Entry*> _from_id;
+		std::unordered_map<core::String, std::unique_ptr<Entry>> _from_name;
 };
 
 }
 
-#endif // EDITOR_VIEWS_FILEBROWSER_H
+#endif // YAVE_NO_STDFS
+
+#endif // YAVE_ASSETS_FOLDERASSETSTORE_H

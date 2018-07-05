@@ -19,48 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_VIEWS_FILEBROWSER_H
-#define EDITOR_VIEWS_FILEBROWSER_H
+#ifndef YAVE_ASSETS_ASSETSTORE_H
+#define YAVE_ASSETS_ASSETSTORE_H
 
-#include <editor/ui/Frame.h>
-#include <editor/ui/Widget.h>
+#include <y/core/String.h>
+#include "AssetPtr.h"
 
-#include <yave/serialize/filesystem.h>
+#include <y/io/Ref.h>
 
-#include <y/core/Functor.h>
+namespace yave {
 
-namespace editor {
+class AssetStore : NonCopyable {
 
-class FileBrowser : public Widget {
 	public:
-		FileBrowser();
+		enum ImportType {
+			Intern,
+			Reference
+		};
 
-		template<typename F>
-		void set_callback(F&& func) {
-			_callback = std::forward<F>(func);
+		AssetStore() {
 		}
 
-	private:
-		void done();
-		void cancel();
+		virtual ~AssetStore() {
+		}
 
-		void set_path(const fs::path& path);
-		void input_path();
 
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		virtual core::Result<void> remove(AssetId id) {
+			unused(id);
+			return core::Err();
+		}
 
-		fs::path _current;
+		virtual core::Result<AssetId> import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) = 0;
+		virtual core::Result<AssetId> id(std::string_view name) = 0;
 
-		static constexpr usize buffer_size = 512;
-		std::array<char, buffer_size> _path_buffer;
-		std::array<char, buffer_size> _name_buffer;
+		virtual core::Result<io::ReaderRef> data(AssetId id) = 0;
 
-		int _selection = -1;
-
-		core::Function<void(core::String)> _callback;
+		/*virtual core::Result<io::ReaderRef> data(std::string_view name) {
+			if(auto r = id(name); r.is_ok()) {
+				return data(id.unwrap());
+			}
+			return core::Err();
+		}*/
 
 };
 
 }
 
-#endif // EDITOR_VIEWS_FILEBROWSER_H
+#endif // YAVE_ASSETS_ASSETSTORE_H

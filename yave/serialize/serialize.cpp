@@ -23,6 +23,7 @@ SOFTWARE.
 #include "serialize.h"
 
 #include <yave/scene/Scene.h>
+#include <yave/shaders/SpirVData.h>
 #include <yave/images/ImageData.h>
 #include <yave/font/FontData.h>
 #include <yave/meshes/MeshData.h>
@@ -81,8 +82,7 @@ core::Result<void> Animation::to_file(io::WriterRef writer) const {
 
 
 	for(const auto& ch : _channels) {
-		y_try(writer->write_one(u32(ch.name().size())));
-		y_try(writer->write(ch.name().begin(), ch.name().size()));
+		y_try(serialize(writer, ch.name()));
 
 		y_try(writer->write_one(u32(ch.keys().size())));
 		y_try(writer->write(ch.keys().begin(), ch.keys().size() * sizeof(AnimationChannel::BoneKey)));
@@ -295,6 +295,10 @@ core::Result<MeshData> MeshData::from_file(io::ReaderRef reader) {
 	y_try(reader->read(mesh._vertices.begin(), header.vertices * sizeof(Vertex)));
 	y_try(reader->read(mesh._triangles.begin(), header.triangles * sizeof(IndexedTriangle)));
 
+	for(auto tri : mesh._triangles) {
+		log_msg("tri: "_s + tri[0] + " " + tri[1] + " " + tri[2]);
+	}
+
 	if(header.bones) {
 		mesh._skeleton = std::make_unique<SkeletonData>();
 		mesh._skeleton->skin = core::Vector<SkinWeights>(header.vertices, SkinWeights{});
@@ -329,33 +333,22 @@ SpirVData SpirVData::from_file(io::ReaderRef reader) {
 
 // -------------------------------------------------------- scene --------------------------------------------------------
 
-core::Result<void> Scene::to_file(io::WriterRef writer, const AssetLoader<StaticMesh>& mesh_loader) const {
+core::Result<void> Scene::to_file(io::WriterRef writer) const {
 	y_try(writer->write_one(fs::magic_number));
 	y_try(writer->write_one(fs::scene_file_type));
-
-	std::unordered_map<const StaticMesh*, u32> mesh_ids;
-	for(const auto& asset : mesh_loader) {
-		mesh_ids[asset.second.get()] = u32(mesh_ids.size());
-	}
-
-	u32 version = 1;
+	u32 version = 2;
 	y_try(writer->write_one(version));
 
-	y_try(writer->write_one(u32(mesh_ids.size())));
 	y_try(writer->write_one(u32(_statics.size())));
 	y_try(writer->write_one(u32(_lights.size())));
 
-	for(const auto& n : mesh_loader) {
-		y_try(serialize(writer, n.first));
-	}
-
 	for(const auto& mesh : _statics) {
-		if(auto it = mesh_ids.find(mesh->mesh().get()); it != mesh_ids.end()) {
-			y_try(writer->write_one(it->second));
-			y_try(writer->write_one(mesh->transform()));
-		} else {
-			return core::Err();
+		AssetId id = mesh->mesh().id();
+		if(id == assets::invalid_id) {
+			log_msg("Exporting asset with invalid id.", Log::Warning);
 		}
+		y_try(writer->write_one(id));
+		y_try(writer->write_one(mesh->transform()));
 	}
 
 	for(const auto& light : _lights) {
@@ -377,27 +370,19 @@ core::Result<Scene> Scene::from_file(io::ReaderRef reader, AssetLoader<StaticMes
 		u32 type;
 		u32 version;
 
-		u32 assets;
 		u32 statics;
 		u32 lights;
 
 		bool is_valid() const {
 			return magic == fs::magic_number &&
 				   type == fs::scene_file_type &&
-				   version == 1;
+				   version == 2;
 		}
 	};
 
 	y_unwrap(header, reader->read_one<Header>());
 	if(!header.is_valid()) {
 		return core::Err();
-	}
-
-	core::Vector<core::String> mesh_names;
-	for(u32 i = 0; i != header.assets; ++i) {
-		core::String name;
-		y_try(deserialize(reader, name));
-		mesh_names << name;
 	}
 
 	DevicePtr dptr = mesh_loader.device();
@@ -412,8 +397,13 @@ core::Result<Scene> Scene::from_file(io::ReaderRef reader, AssetLoader<StaticMes
 
 	{
 		for(u32 i = 0; i != header.statics; ++i) {
-			y_unwrap(mesh_id, reader->read_one<u32>());
-			y_unwrap(mesh, mesh_loader.from_file(mesh_names[mesh_id]));
+			y_unwrap(id, reader->read_one<AssetId>());
+			y_unwrap(mesh, mesh_loader.load(id));
+
+			if(id == assets::invalid_id) {
+				log_msg("Skipping asset with invalid id.", Log::Warning);
+				continue;
+			}
 
 			auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
 			y_try(reader->read_one(inst->transform()));

@@ -55,8 +55,8 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 		bool is_scene_empty() const;
 
-		void save_scene(const char* filename);
-		void load_scene(const char* filename);
+		void save_scene(std::string_view filename);
+		void load_scene(std::string_view filename);
 
 		void save_settings();
 		void load_settings();
@@ -78,6 +78,8 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 		CameraSettings camera_settings;
 
+		std::shared_ptr<AssetStore> asset_store;
+
 		AssetLoader<Texture> texture_loader;
 		AssetLoader<StaticMesh> mesh_loader;
 
@@ -89,7 +91,6 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 
 		//NotOwner<SceneHook*> _scene_hook = nullptr;
-
 
 		NotOwner<Transformable*> _selected = nullptr;
 		NotOwner<Light*> _selected_light = nullptr;
