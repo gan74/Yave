@@ -30,7 +30,7 @@ namespace y {
 
 static constexpr std::array<const char*, 5> log_type_str = {{"info", "warning", "error", "debug", "perf"}};
 
-void log_msg(const char* msg, Log type) {
+void log_msg(std::string_view msg, Log type) {
 	static std::mutex lock;
 	std::lock_guard<decltype(lock)> _(lock);
 

@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef Y_UTILS_LOG_H
 #define Y_UTILS_LOG_H
 
+#include <string_view>
+
 namespace y {
 
 enum class Log {
@@ -32,7 +34,7 @@ enum class Log {
 	Perf
 };
 
-void log_msg(const char* msg, Log type = Log::Info);
+void log_msg(std::string_view msg, Log type = Log::Info);
 
 }
 
