@@ -65,9 +65,30 @@ core::Result<File, void> File::open(std::string_view name) {
 bool File::exists(std::string_view name) {
 	std::FILE* file = std::fopen(name.data(), "rb");
 	if(file) {
-		fclose(file);
+		std::fclose(file);
 	}
 	return file;
+}
+
+bool File::copy(std::string_view src, std::string_view dst) {
+	FILE* src_file = std::fopen(src.data(), "rb");
+	if(!src_file) {
+		return false;
+	}
+	auto src_close = scope_exit([=] { std::fclose(src_file); });
+
+	FILE* dst_file = std::fopen(dst.data(), "wb+");
+	if(!dst_file) {
+		return false;
+	}
+	auto dst_close = scope_exit([=] { std::fclose(dst_file); });
+
+	char buffer[1024];
+	do {
+		auto read = std::fread(buffer, 1, sizeof(buffer), src_file);
+		std::fwrite(buffer, 1, read, dst_file);
+	} while(!std::feof(src_file));
+	return true;
 }
 
 usize File::size() const {

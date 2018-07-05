@@ -43,6 +43,7 @@ class File final : public Reader, public Writer {
 		static core::Result<File> create(std::string_view name);
 		static core::Result<File> open(std::string_view name);
 		static bool exists(std::string_view name);
+		static bool copy(std::string_view src, std::string_view dst);
 
 		usize size() const;
 		usize remaining() const;
