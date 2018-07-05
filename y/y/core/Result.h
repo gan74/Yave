@@ -225,7 +225,7 @@ class Result : NonCopyable {
 		}
 
 		template<typename F>
-		Result<typename map_type<F, value_type>::type, error_type> map(const F& f) const {
+		Result<typename map_type<F, value_type>::type, error_type> map(F&& f) const {
 			if(is_ok()) {
 				if constexpr(std::is_void_v<value_type>) {
 					return Ok(f());
@@ -241,7 +241,7 @@ class Result : NonCopyable {
 		}
 
 		template<typename F>
-		Result<value_type, typename map_type<F, error_type>::type> map_err(const F& f) const {
+		Result<value_type, typename map_type<F, error_type>::type> map_err(F&& f) const {
 			if(is_ok()) {
 				if constexpr(std::is_void_v<value_type>) {
 					return Ok();

@@ -148,6 +148,7 @@ class String {
 		std::string_view view() const;
 		operator std::string_view() const;
 
+		void push_back(char c);
 
 		String& operator+=(const String& str);
 		String& operator+=(const char* str);

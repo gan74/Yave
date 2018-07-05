@@ -246,6 +246,10 @@ String& String::operator=(const String& str) {
 	return *this;
 }
 
+void String::push_back(char c) {
+	append(&c, 1);
+}
+
 String& String::operator=(String&& str) {
 	swap(str);
 	return *this;

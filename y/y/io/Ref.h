@@ -40,7 +40,7 @@ class Ref {
 		}
 
 		template<typename Derived, typename = std::enable_if_t<std::is_base_of_v<T, Derived>>>
-		Ref(Derived&& x) : _storage(std::make_unique<Derived>(std::forward(x))), _ref(_storage.get()) {
+		Ref(Derived&& x) : _storage(std::make_unique<Derived>(std::forward<Derived>(x))), _ref(_storage.get()) {
 			static_assert(std::is_base_of_v<T, Derived>);
 		}
 

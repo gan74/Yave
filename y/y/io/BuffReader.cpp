@@ -57,7 +57,7 @@ void BuffReader::swap(BuffReader& other) {
 }
 
 bool BuffReader::at_end() const {
-	return _inner->at_end() && !_used;
+	return !_used && _inner->at_end();
 }
 
 Reader::Result BuffReader::read(void* data, usize bytes) {
