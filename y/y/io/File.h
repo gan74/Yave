@@ -35,13 +35,14 @@ class File final : public Reader, public Writer {
 
 	public:
 		File() = default;
-		~File();
+		~File() override;
 
 		File(File&& other);
 		File& operator=(File&& other);
 
-		static core::Result<File> create(const core::String& name);
-		static core::Result<File> open(const core::String& name);
+		static core::Result<File> create(std::string_view name);
+		static core::Result<File> open(std::string_view name);
+		static bool exists(std::string_view name);
 
 		usize size() const;
 		usize remaining() const;
@@ -58,10 +59,10 @@ class File final : public Reader, public Writer {
 		void flush() override;
 
 	private:
-		File(FILE* f);
+		File(std::FILE* f);
 		void swap(File& other);
 
-		FILE* _file = nullptr;
+		std::FILE* _file = nullptr;
 };
 
 }
