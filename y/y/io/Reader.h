@@ -24,42 +24,40 @@ SOFTWARE.
 
 #include <y/utils.h>
 #include <y/core/Vector.h>
-#include <y/core/Result.h>
 
 namespace y {
 namespace io {
 
 class Reader : NonCopyable {
 	public:
-		using Result = core::Result<void, usize>;
-
 		virtual ~Reader();
 
 		virtual bool at_end() const = 0;
 
-		virtual Result read(void* data, usize bytes) = 0;
+		virtual void read(void* data, usize bytes) = 0;
 		virtual void read_all(core::Vector<u8>& data) = 0;
 
 
 		template<typename T>
-		Result read_one(T& t) {
+		void read_one(T& t) {
 			static_assert(std::is_trivially_copyable_v<T>, "read_one only works on trivially copyable data");
-			return read(&t, sizeof(t));
+			read(&t, sizeof(t));
 		}
 
 		template<typename T>
-		core::Result<T, Result::error_type> read_one() {
-			T t{};
-			return read_one(t).map([=]() { return t; });
+		void read_array(usize size, T* t) {
+			static_assert(std::is_trivially_copyable_v<T>, "read_array only works on trivially copyable data");
+			read(t, size * sizeof(T));
+		}
+
+		template<typename T>
+		T read_one() {
+			T t;
+			read_one(t);
+			return t;
 		}
 
 	protected:
-		Result make_result(usize read, usize expected) const {
-			if(read == expected) {
-				return core::Ok();
-			}
-			return core::Err(read);
-		}
 };
 
 }

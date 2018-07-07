@@ -172,6 +172,16 @@ void String::clear() {
 	new(&_s) ShortData();
 }
 
+void String::make_empty() {
+	if(is_long()) {
+		_l.length = 0;
+		_l.data[0] = 0;
+	} else {
+		_s._length = 0;
+		_s._data[0] = 0;
+	}
+}
+
 char* String::data() {
 	return is_long() ? _l.data : _s._data;
 }

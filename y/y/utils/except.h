@@ -19,28 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_UTILS_COLLECTIONS_H
-#define Y_UTILS_COLLECTIONS_H
+#ifndef Y_UTILS_EXCEPT_H
+#define Y_UTILS_EXCEPT_H
 
-#include <iterator>
-#include "detect.h"
+#define y_throw(msg) throw std::runtime_error(msg)
 
 namespace y {
-
-namespace detail {
-template<typename T>
-using has_size_t = decltype(std::declval<T&>().size());
-template<typename T>
-using has_reserve_t = decltype(std::declval<T&>().reserve(std::declval<usize>()));
 }
 
-template<typename T>
-void try_reserve(T& t, usize size) {
-	if constexpr(is_detected_v<detail::has_reserve_t, T>) {
-		t.reserve(size);
-	}
-}
-
-}
-
-#endif // Y_UTILS_COLLECTIONS_H
+#endif // Y_UTILS_EXCEPT_H

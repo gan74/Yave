@@ -53,10 +53,10 @@ class File final : public Reader, public Writer {
 
 		void seek(usize byte);
 
-		Reader::Result read(void* data, usize bytes) override;
+		void read(void* data, usize bytes) override;
 		void read_all(core::Vector<u8>& data) override;
 
-		Writer::Result write(const void* data, usize bytes) override;
+		void write(const void* data, usize bytes) override;
 		void flush() override;
 
 	private:

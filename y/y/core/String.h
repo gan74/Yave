@@ -126,6 +126,7 @@ class String {
 		bool is_long() const;
 
 		void clear();
+		void make_empty();
 
 		char* data();
 		const char* data() const;

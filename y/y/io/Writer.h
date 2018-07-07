@@ -24,33 +24,28 @@ SOFTWARE.
 
 #include <y/utils.h>
 #include <y/core/Vector.h>
-#include <y/core/Result.h>
 
 namespace y {
 namespace io {
 
 class Writer : NonCopyable {
 	public:
-		using Result = core::Result<void, usize>;
-
 		virtual ~Writer();
 
-		virtual Result write(const void* data, usize bytes) = 0;
+		virtual void write(const void* data, usize bytes) = 0;
 		virtual void flush() = 0;
 
 
 		template<typename T>
-		Result write_one(T t) {
+		void write_one(const T& t) {
 			static_assert(std::is_trivially_copyable_v<T>, "write_one only works on trivially copyable data");
-			return write(&t, sizeof(t));
+			write(&t, sizeof(t));
 		}
 
-	protected:
-		Result make_result(usize written, usize expected) const {
-			if(written == expected) {
-				return core::Ok();
-			}
-			return core::Err(written);
+		template<typename T>
+		void write_array(usize size, const T* t) {
+			static_assert(std::is_trivially_copyable_v<T>, "write_array only works on trivially copyable data");
+			write_array(t, size * sizeof(T));
 		}
 };
 

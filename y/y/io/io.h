@@ -27,6 +27,11 @@ SOFTWARE.
 namespace y {
 namespace io {
 
+enum class ErrorType {
+	NoError = 0,
+	EndOfStream,
+	Unknown
+};
 
 }
 }

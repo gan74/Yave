@@ -25,6 +25,11 @@ SOFTWARE.
 namespace y {
 namespace io {
 
+static void error() {
+	y_throw("Unable to write.");
+}
+
+
 BuffWriter::BuffWriter(usize buff_size) : _size(buff_size), _buffer(buff_size ? new u8[buff_size] : nullptr) {
 }
 
@@ -56,9 +61,9 @@ void BuffWriter::swap(BuffWriter& other) {
 	std::swap(_buffer, other._buffer);
 }
 
-BuffWriter::Result BuffWriter::write(const void* data, usize bytes) {
+void BuffWriter::write(const void* data, usize bytes) {
 	if(!bytes) {
-		return core::Ok();
+		return;
 	}
 
 	usize previous = _used;
@@ -67,9 +72,10 @@ BuffWriter::Result BuffWriter::write(const void* data, usize bytes) {
 	if(bytes >= free + _size) {
 		usize flushed = flush_r();
 		if(flushed == previous) {
-			return _inner->write(data, bytes);
+			_inner->write(data, bytes);
+			return;
 		}
-		return core::Err(usize(0));
+		error();
 	}
 
 	usize first = std::min(bytes, free);
@@ -79,26 +85,19 @@ BuffWriter::Result BuffWriter::write(const void* data, usize bytes) {
 		usize flushed = flush_r();
 		if(flushed == _size) {
 			std::memcpy(_buffer, reinterpret_cast<const u8*>(data) + first, _used = (bytes - first));
-			return core::Ok();
+			return;
 		} else if(flushed < previous) {
-			return core::Err(usize(0));
+			error();
 		}
-		return core::Err(flushed - previous);
+		error();
 	}
-	return core::Ok();
 }
 
 usize BuffWriter::flush_r() {
 	if(_used) {
-		auto r = _inner->write(_buffer, _used);
-		if(r.is_ok()) {
-			usize writen = _used;
-			_used = 0;
-			return writen;
-		}
-		usize writen = r.error();
-		_used -= writen;
-		std::memcpy(_buffer, _buffer + writen, _used);
+		_inner->write(_buffer, _used);
+		usize writen = _used;
+		_used = 0;
 		return writen;
 	}
 	return 0;

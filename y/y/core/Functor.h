@@ -118,25 +118,6 @@ class Functor<Container, Ret(Args...)> {
 		Container<FunctionBase<Ret, Args...>> _function;
 };
 
-template<typename T>
-struct function_traits {
-};
-
-template<typename Ret, typename... Args>
-struct function_traits<Ret(Args...)> {
-	using return_type = Ret;
-
-	static constexpr usize n_args = sizeof...(Args);
-
-	template<usize I>
-	struct args {
-		using type = typename std::tuple_element<I, std::tuple<Args...>>::type;
-	};
-
-	template<usize I>
-	using arg_type = typename args<I>::type;
-};
-
 // http://stackoverflow.com/questions/7943525/is-it-possible-to-figure-out-the-parameter-type-and-return-type-of-a-lambda
 template<typename T>
 struct functor_type : functor_type<decltype(&T::operator())> {
@@ -205,10 +186,6 @@ template<typename T>
 inline auto functor(T&& func) {
 	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Functor>(std::forward<T>(func));
 }
-
-
-template<typename T>
-using function_traits = typename detail::functor_type<T>::traits;
 
 }
 }

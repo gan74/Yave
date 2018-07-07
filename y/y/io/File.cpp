@@ -24,6 +24,22 @@ SOFTWARE.
 namespace y {
 namespace io {
 
+static void file_not_opened() {
+	y_throw("File not opened.");
+}
+
+static void check_len(usize len, usize expected) {
+	if(len != expected) {
+		y_throw("End of file reached.");
+	}
+}
+
+static void check_c_err(int errcode) {
+	if(errcode) {
+		y_throw("Unknown error.");
+	}
+}
+
 File::File(std::FILE* f) : _file(f) {
 }
 
@@ -84,10 +100,13 @@ bool File::copy(std::string_view src, std::string_view dst) {
 	auto dst_close = scope_exit([=] { std::fclose(dst_file); });
 
 	char buffer[1024];
+	usize read_size = 0;
 	do {
-		auto read = std::fread(buffer, 1, sizeof(buffer), src_file);
-		std::fwrite(buffer, 1, read, dst_file);
-	} while(!std::feof(src_file));
+		read_size = std::fread(buffer, 1, sizeof(buffer), src_file);
+		if(std::fwrite(buffer, 1, read_size, dst_file) != read_size) {
+			return false;
+		}
+	} while(read_size);
 	return true;
 }
 
@@ -96,10 +115,10 @@ usize File::size() const {
 		return 0;
 	}
 	std::fpos_t pos = {};
-	std::fgetpos(_file, &pos);
-	std::fseek(_file, 0, SEEK_END);
+	check_c_err(std::fgetpos(_file, &pos));
+	check_c_err(std::fseek(_file, 0, SEEK_END));
 	auto len = usize(std::ftell(_file));
-	std::fsetpos(_file, &pos);
+	check_c_err(std::fsetpos(_file, &pos));
 	return len;
 }
 
@@ -108,11 +127,11 @@ usize File::remaining() const {
 		return 0;
 	}
 	std::fpos_t pos = {};
-	std::fgetpos(_file, &pos);
+	check_c_err(std::fgetpos(_file, &pos));
 	auto offset = usize(std::ftell(_file));
-	std::fseek(_file, 0, SEEK_END);
+	check_c_err(std::fseek(_file, 0, SEEK_END));
 	auto len = usize(std::ftell(_file));
-	std::fsetpos(_file, &pos);
+	check_c_err(std::fsetpos(_file, &pos));
 	return len - offset;
 }
 
@@ -126,15 +145,15 @@ bool File::at_end() const {
 
 void File::seek(usize byte){
 	if(_file) {
-		std::fseek(_file, byte, SEEK_SET);
+		check_c_err(std::fseek(_file, byte, SEEK_SET));
 	}
 }
 
-Reader::Result File::read(void* data, usize bytes) {
+void File::read(void* data, usize bytes) {
 	if(!_file) {
-		return core::Err(usize(0));
+		file_not_opened();
 	}
-	return Reader::make_result(std::fread(data, 1, bytes, _file), bytes);
+	check_len(std::fread(data, 1, bytes, _file), bytes);
 }
 
 void File::read_all(core::Vector<u8>& data) {
@@ -143,16 +162,16 @@ void File::read_all(core::Vector<u8>& data) {
 	read(data.begin(), left);
 }
 
-Writer::Result File::write(const void* data, usize bytes) {
+void File::write(const void* data, usize bytes) {
 	if(!_file) {
-		return core::Err(usize(0));
+		file_not_opened();
 	}
-	return Writer::make_result(std::fwrite(data, 1, bytes, _file), bytes);
+	check_len(std::fwrite(data, 1, bytes, _file), bytes);
 }
 
 void File::flush() {
 	if(_file) {
-		std::fflush(_file);
+		check_c_err(std::fflush(_file));
 	}
 }
 

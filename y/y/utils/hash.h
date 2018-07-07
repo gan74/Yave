@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef Y_UTILS_HASH_H
 #define Y_UTILS_HASH_H
 
-#include "iterable.h"
+#include "types.h"
 
 namespace y {
 

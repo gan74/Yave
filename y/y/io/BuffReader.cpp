@@ -60,34 +60,31 @@ bool BuffReader::at_end() const {
 	return !_used && _inner->at_end();
 }
 
-Reader::Result BuffReader::read(void* data, usize bytes) {
-	return make_result([=]() {
-		usize in_buffer = std::min(bytes, _used);
+void BuffReader::read(void* data, usize bytes) {
+	usize in_buffer = std::min(bytes, _used);
 
-		std::memcpy(data, _buffer + _offset, in_buffer);
-		_offset += in_buffer;
-		_used -= in_buffer;
+	std::memcpy(data, _buffer + _offset, in_buffer);
+	_offset += in_buffer;
+	_used -= in_buffer;
 
-		if(usize remaining = bytes - in_buffer; remaining) {
-			u8* data8 = reinterpret_cast<u8*>(data);
-			if(remaining > _size) {
-				return in_buffer + _inner->read(data8 + in_buffer, remaining).error_or(remaining);
-			} else {
-				_used = _inner->read(_buffer, _size).error_or(_size);
-				_offset = 0;
-				return  in_buffer + (_used ? read(data8 + in_buffer, remaining).error_or(remaining) : 0);
-			}
+	if(usize remaining = bytes - in_buffer; remaining) {
+		u8* data8 = reinterpret_cast<u8*>(data);
+		if(remaining > _size) {
+			_inner->read(data8 + in_buffer, remaining);
+		} else {
+			_inner->read(_buffer, _size);
+			_used = _size;
+			_offset = 0;
+			read(data8 + in_buffer, remaining);
 		}
-		return in_buffer;
-	}(), bytes);
+	}
 }
 
 void BuffReader::read_all(core::Vector<u8>& data) {
-	_inner->read_all(data);
 	auto vec = core::Vector<u8>(_buffer + _offset, _buffer + _offset + _used);
 	vec.push_back(data.begin(), data.end());
-	data = std::move(vec);
 	_used = 0;
+	_inner->read_all(vec);
 }
 
 }

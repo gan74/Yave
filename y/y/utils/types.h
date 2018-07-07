@@ -25,6 +25,8 @@ SOFTWARE.
 #include <cstdint>
 #include <utility>
 
+#include "detect.h"
+
 namespace y {
 
 struct NonCopyable {
@@ -70,6 +72,117 @@ template<bool B>
 using bool_type = typename std::integral_constant<bool, B>;
 
 
+
+// type traits
+
+/*namespace detail {
+template<typename R, typename... Args>
+std::true_type is_function_pointer_test_inner(R (*)(Args...));
+std::false_type is_function_pointer_test_inner(...);
+
+template<typename T, typename P = decltype(&T::operator+)>
+auto is_function_pointer_test(P) -> decltype(is_function_pointer_test_inner(+std::declval<T>()));
+template<typename T>
+auto is_function_pointer_test(...) -> decltype(is_function_pointer_test_inner(std::declval<T>()));
+
+
+template<typename T>
+static auto has_unary_plus(T*) -> bool_type<!std::is_void_v<decltype(std::declval<T>().operator+())>>;
+template<typename T>
+static auto has_unary_plus(...) -> std::false_type;
+}
+
+template<typename T>
+using is_function_pointer = decltype(detail::is_function_pointer_test<T>(nullptr));
+template<typename T>
+static constexpr bool is_function_pointer_v = is_function_pointer<T>::value;
+
+namespace {
+	static const auto lambda = [] { return 0; };
+	static_assert(is_function_pointer<decltype(lambda)>::value);
+	static_assert(!is_function_pointer<int>::value);
+	static_assert(!is_function_pointer<void*>::value);
+	static_assert(is_function_pointer<void (*)(int)>::value);
+}*/
+
+/*template<typename T>
+struct function_t : function_t<decltype(&T::operator())> {};
+
+template<typename R, typename... Args>
+struct function_t<R (*)(Args...)> {
+	using return_type = R;
+	using argument_tuple = std::tuple<Args...>;
+};*/
+
+template<typename T>
+struct function_traits : function_traits<decltype(&T::operator())> {};
+
+template<typename Ret, typename... Args>
+struct function_traits<Ret(*)(Args...)> : function_traits<Ret(Args...)> {};
+
+template<typename Ret, typename... Args>
+struct function_traits<Ret(&)(Args...)> : function_traits<Ret(Args...)> {};
+
+template<typename T, typename Ret, typename... Args>
+struct function_traits<Ret(T::*)(Args...)> : function_traits<Ret(Args...)> {};
+
+template<typename T, typename Ret, typename... Args>
+struct function_traits<Ret(T::*)(Args...) const> : function_traits<Ret(Args...)> {};
+
+/*template<typename Ret, typename... Args>
+struct function_traits<Ret(Args...) const> : function_traits<Ret(Args...)> {};*/
+
+template<typename Ret, typename... Args>
+struct function_traits<Ret(Args...)> {
+	using return_type = Ret;
+
+	static constexpr usize n_args = sizeof...(Args);
+
+	using argument_pack = std::tuple<std::remove_const_t<std::remove_reference_t<Args>>...>;
+
+	template<usize I>
+	struct args {
+		using type = typename std::tuple_element<I, std::tuple<Args...>>::type;
+	};
+
+	template<usize I>
+	using arg_type = typename args<I>::type;
+
+};
+
+
+
+namespace detail {
+template<typename T>
+static auto has_begin(T*) -> bool_type<!std::is_void_v<decltype(std::declval<T>().begin())>>;
+template<typename T>
+static auto has_begin(...) -> std::false_type;
+
+template<typename T>
+static auto has_end(T*) -> bool_type<!std::is_void_v<decltype(std::declval<T>().end())>>;
+template<typename T>
+static auto has_end(...) -> std::false_type;
+}
+
+template<typename T>
+using is_iterable = bool_type<
+		decltype(detail::has_begin<T>(nullptr))::value &&
+		decltype(detail::has_end<T>(nullptr))::value
+	>;
+
+namespace detail {
+template<typename T>
+using has_size_t = decltype(std::declval<T&>().size());
+template<typename T>
+using has_reserve_t = decltype(std::declval<T&>().reserve(std::declval<usize>()));
+}
+
+template<typename T>
+void try_reserve(T& t, usize size) {
+	if constexpr(is_detected_v<detail::has_reserve_t, T>) {
+		t.reserve(size);
+	}
+}
 
 }
 

@@ -40,7 +40,7 @@ class BuffWriter final : public Writer {
 		BuffWriter(BuffWriter&& other);
 		BuffWriter& operator=(BuffWriter&& other);
 
-		Result write(const void* data, usize bytes) override;
+		void write(const void* data, usize bytes) override;
 		void flush() override;
 
 	private:
