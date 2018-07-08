@@ -53,7 +53,7 @@ class File final : public Reader, public Writer {
 
 		void seek(usize byte);
 
-		void read(void* data, usize bytes) override;
+		usize read(void* data, usize bytes) override;
 		void read_all(core::Vector<u8>& data) override;
 
 		void write(const void* data, usize bytes) override;

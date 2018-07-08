@@ -34,20 +34,20 @@ class Reader : NonCopyable {
 
 		virtual bool at_end() const = 0;
 
-		virtual void read(void* data, usize bytes) = 0;
+		virtual usize read(void* data, usize bytes) = 0;
 		virtual void read_all(core::Vector<u8>& data) = 0;
 
 
 		template<typename T>
 		void read_one(T& t) {
 			static_assert(std::is_trivially_copyable_v<T>, "read_one only works on trivially copyable data");
-			read(&t, sizeof(t));
+			check_len(read(&t, sizeof(T)), sizeof(T));
 		}
 
 		template<typename T>
 		void read_array(usize size, T* t) {
 			static_assert(std::is_trivially_copyable_v<T>, "read_array only works on trivially copyable data");
-			read(t, size * sizeof(T));
+			check_len(read(t, size * sizeof(T)), size * sizeof(T));
 		}
 
 		template<typename T>
@@ -58,6 +58,11 @@ class Reader : NonCopyable {
 		}
 
 	protected:
+		static void check_len(usize len, usize expected) {
+			if(len != expected) {
+				y_throw("End of file reached.");
+			}
+		}
 };
 
 }

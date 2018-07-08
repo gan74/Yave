@@ -28,12 +28,6 @@ static void file_not_opened() {
 	y_throw("File not opened.");
 }
 
-static void check_len(usize len, usize expected) {
-	if(len != expected) {
-		y_throw("End of file reached.");
-	}
-}
-
 static void check_c_err(int errcode) {
 	if(errcode) {
 		y_throw("Unknown error.");
@@ -149,17 +143,17 @@ void File::seek(usize byte){
 	}
 }
 
-void File::read(void* data, usize bytes) {
+usize File::read(void* data, usize bytes) {
 	if(!_file) {
 		file_not_opened();
 	}
-	check_len(std::fread(data, 1, bytes, _file), bytes);
+	return std::fread(data, 1, bytes, _file);
 }
 
 void File::read_all(core::Vector<u8>& data) {
 	usize left = remaining();
 	data = core::Vector<u8>(left, 0);
-	read(data.begin(), left);
+	check_len(read(data.begin(), left), left);
 }
 
 void File::write(const void* data, usize bytes) {

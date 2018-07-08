@@ -42,7 +42,7 @@ class BuffReader final : public Reader {
 
 		bool at_end() const override;
 
-		void read(void *data, usize bytes) override;
+		usize read(void *data, usize bytes) override;
 		void read_all(core::Vector<u8>& data) override;
 
 	private:

@@ -95,6 +95,7 @@ void FolderAssetStore::read_index() {
 		}
 	} catch(std::exception& e) {
 		log_msg("Exception while reading index file: "_s + e.what(), Log::Error);
+		log_msg(""_s + _from_id.size() + " assets imported"_s , Log::Error);
 	}
 
 	y_debug_assert(_from_id.size() == _from_name.size());
@@ -108,7 +109,7 @@ void FolderAssetStore::write_index() {
 		auto index = io::BuffWriter(std::move(io::File::create(_index_file_path).unwrap()));
 		for(const auto& row : _from_id) {
 			const Entry& entry = *row.second;
-			serde::serialize(index, entry);
+			entry.serialize(index);
 		}
 	} catch(std::exception& e) {
 		log_msg("Exception while writing index file: "_s + e.what(), Log::Error);
@@ -140,7 +141,6 @@ void FolderAssetStore::try_import(std::string_view src, std::string_view dst, Im
 AssetId FolderAssetStore::import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) {
 	// remove/optimize
 	auto flush_index = scope_exit([this] { write_index(); });
-
 	std::unique_lock lock(_lock);
 
 	auto& entry = _from_name[dst_name];
@@ -159,9 +159,7 @@ AssetId FolderAssetStore::import_as(std::string_view src_name, std::string_view 
 	entry = std::make_unique<Entry>(Entry{dst_name, id});
 	_from_id[id] = entry.get();
 	_from_name[dst_name] = std::move(entry);
-
 	y_debug_assert(_from_id.size() == _from_name.size());
-
 	return id;
 }
 
@@ -169,6 +167,7 @@ AssetId FolderAssetStore::import_as(std::string_view src_name, std::string_view 
 AssetId FolderAssetStore::id(std::string_view name) {
 	std::unique_lock lock(_lock);
 
+	y_debug_assert(_from_id.size() == _from_name.size());
 	if(auto it = _from_name.find(name); it != _from_name.end()) {
 		return it->second->id;
 	}
@@ -177,6 +176,8 @@ AssetId FolderAssetStore::id(std::string_view name) {
 
 io::ReaderRef FolderAssetStore::data(AssetId id) {
 	std::unique_lock lock(_lock);
+
+	y_debug_assert(_from_id.size() == _from_name.size());
 	if(auto it = _from_id.find(id); it != _from_id.end()) {
 		fs::path filename = file_path(it->second->name);
 		if(auto r = io::File::open(filename.string()); r.is_ok()){

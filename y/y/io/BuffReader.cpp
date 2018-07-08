@@ -60,7 +60,7 @@ bool BuffReader::at_end() const {
 	return !_used && _inner->at_end();
 }
 
-void BuffReader::read(void* data, usize bytes) {
+usize BuffReader::read(void* data, usize bytes) {
 	usize in_buffer = std::min(bytes, _used);
 
 	std::memcpy(data, _buffer + _offset, in_buffer);
@@ -70,14 +70,14 @@ void BuffReader::read(void* data, usize bytes) {
 	if(usize remaining = bytes - in_buffer; remaining) {
 		u8* data8 = reinterpret_cast<u8*>(data);
 		if(remaining > _size) {
-			_inner->read(data8 + in_buffer, remaining);
+			return in_buffer + _inner->read(data8 + in_buffer, remaining);
 		} else {
-			_inner->read(_buffer, _size);
-			_used = _size;
+			_used = _inner->read(_buffer, _size);
 			_offset = 0;
-			read(data8 + in_buffer, remaining);
+			return in_buffer + read(data8 + in_buffer, remaining);
 		}
 	}
+	return in_buffer;
 }
 
 void BuffReader::read_all(core::Vector<u8>& data) {
