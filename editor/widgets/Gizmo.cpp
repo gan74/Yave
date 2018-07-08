@@ -70,14 +70,14 @@ Gizmo::Gizmo(ContextPtr cptr) : Frame("Gizmo", flags), ContextLinked(cptr) {
 }
 
 void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(!context()->selected()) {
+	if(!context()->selection().selected()) {
 		return;
 	}
 
-	math::Vec3 cam_fwd = context()->scene_view()->camera().forward();
-	math::Vec3 cam_pos = context()->scene_view()->camera().position();
-	math::Matrix4<> view_proj = context()->scene_view()->camera().viewproj_matrix();
-	math::Vec3 obj_pos = context()->selected()->transform().position();
+	math::Vec3 cam_fwd = context()->scene().view().camera().forward();
+	math::Vec3 cam_pos = context()->scene().view().camera().position();
+	math::Matrix4<> view_proj = context()->scene().view().camera().viewproj_matrix();
+	math::Vec3 obj_pos = context()->selection().selected()->transform().position();
 
 	if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
 		return;
@@ -89,7 +89,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
 
-	auto inv_matrix = context()->scene_view()->camera().inverse_matrix();
+	auto inv_matrix = context()->scene().view().camera().inverse_matrix();
 	math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 	math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
 	math::Vec3 world = h_world.to<3>() / h_world.w();
@@ -97,7 +97,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	float dist = (obj_pos - cam_pos).length();
 	math::Vec3 projected_mouse = cam_pos + ray * dist;
 
-	auto center = context()->to_window_pos(obj_pos);
+	auto center = context()->scene().to_window_pos(obj_pos);
 
 	struct Axis {
 		math::Vec2 vec;
@@ -108,9 +108,9 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 	math::Vec3 basis[] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
 	Axis axes[] = {
-			{context()->to_window_pos(obj_pos + basis[0] * perspective), 0},
-			{context()->to_window_pos(obj_pos + basis[1] * perspective), 1},
-			{context()->to_window_pos(obj_pos + basis[2] * perspective), 2}
+			{context()->scene().to_window_pos(obj_pos + basis[0] * perspective), 0},
+			{context()->scene().to_window_pos(obj_pos + basis[1] * perspective), 1},
+			{context()->scene().to_window_pos(obj_pos + basis[2] * perspective), 2}
 		};
 
 	// depth sort axes front to back
@@ -203,7 +203,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		auto new_pos = projected_mouse + _dragging_offset;
 		for(usize i = 0; i != 3; ++i) {
 			if(_dragging_mask & (1 << i)) {
-				context()->selected()->position()[i] = new_pos[i];
+				context()->selection().selected()->position()[i] = new_pos[i];
 			}
 		}
 	}

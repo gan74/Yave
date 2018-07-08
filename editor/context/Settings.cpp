@@ -19,21 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_CONTEXT_IMAGES_H
-#define EDITOR_CONTEXT_IMAGES_H
 
-#include <editor/editor.h>
-
-#include <yave/images/ImageData.h>
+#include "Settings.h"
 
 namespace editor {
-namespace images {
 
-ImageData light();
-ImageData save();
-ImageData load();
+Settings::Settings() {
 
 }
+
+Settings::~Settings() {
+
 }
 
-#endif // EDITOR_CONTEXT_IMAGES_H
+CameraSettings& Settings::camera() {
+	return _camera;
+}
+
+}

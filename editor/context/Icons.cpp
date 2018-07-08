@@ -20,11 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "images.h"
+#include "Icons.h"
 
 #include <y/core/Chrono.h>
 
 namespace editor {
+
+
 namespace images {
 
 static u32 to_rgba_dark(char c) {

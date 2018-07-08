@@ -42,7 +42,7 @@ static AssetPtr<Material> create_material(ContextPtr cptr) {
 }
 
 static AssetPtr<StaticMesh> create_mesh(ContextPtr cptr) {
-	return cptr->mesh_loader.load_or_import("cube.ym", "../meshes/cube.obj.ym", AssetStore::Intern);
+	return cptr->loader().static_mesh().load_or_import("cube.ym", "../meshes/cube.obj.ym", AssetStore::Intern);
 }
 
 SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
@@ -50,7 +50,7 @@ SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags
 
 void SceneDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(ImGui::Button("Spawn cubes")) {
-		auto cam_pos = context()->scene_view()->camera().position();
+		auto cam_pos = context()->scene().view().camera().position();
 
 		try {
 			auto material = create_material(context());
@@ -63,7 +63,7 @@ void SceneDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 					for(i32 z = -size; z != size; ++z) {
 						auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
 						inst->position() = cam_pos + math::Vec3(x, y, z) * mul;
-						context()->scene()->static_meshes().emplace_back(std::move(inst));
+						context()->scene().scene().static_meshes().emplace_back(std::move(inst));
 					}
 				}
 			}
@@ -74,12 +74,12 @@ void SceneDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	}
 
 	if(ImGui::Button("Add skinned mesh")) {
-		add_skinned_mesh(context()->scene(), context()->texture_loader, context()->mesh_loader);
+		add_skinned_mesh(&context()->scene().scene(), context()->loader().texture(), context()->loader().static_mesh());
 	}
 
-	ImGui::Text("Static meshes: %u", unsigned(context()->scene()->static_meshes().size()));
-	ImGui::Text("Renderables:   %u", unsigned(context()->scene()->renderables().size()));
-	ImGui::Text("Lights:        %u", unsigned(context()->scene()->lights().size()));
+	ImGui::Text("Static meshes: %u", unsigned(context()->scene().scene().static_meshes().size()));
+	ImGui::Text("Renderables:   %u", unsigned(context()->scene().scene().renderables().size()));
+	ImGui::Text("Lights:        %u", unsigned(context()->scene().scene().lights().size()));
 }
 
 }

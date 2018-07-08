@@ -19,48 +19,48 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_CONTEXT_LOADER_H
+#define EDITOR_CONTEXT_LOADER_H
 
-#include "EditorContext.h"
+#include <editor/editor.h>
+#include <yave/assets/AssetLoader.h>
+#include <yave/assets/FolderAssetStore.h>
 
-#include <yave/device/Device.h>
+#include <yave/images/Image.h>
+#include <yave/meshes/StaticMesh.h>
+
 
 namespace editor {
 
-DevicePtr ContextLinked::device() const {
-	return _ctx ? _ctx->device() : nullptr;
-}
-
-EditorContext::EditorContext(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_scene(this),
-		_loader(device()),
-		_icons(device()) {
-}
-
-EditorContext::~EditorContext() {
-}
-
-void EditorContext::defer(core::Function<void()>&& func) {
-	std::unique_lock _(_deferred_lock);
-	if(_is_flushing_deferred) {
-		y_fatal("Defer called from already deferred function.");
-	}
-	_deferred.emplace_back(std::move(func));
-}
-
-void EditorContext::flush_deferred() {
-	std::unique_lock _(_deferred_lock);
-	if(!_deferred.is_empty()) {
-		Y_LOG_PERF("editor");
-		device()->queue(QueueFamily::Graphics).wait();
-		_is_flushing_deferred = true;
-		for(auto& f : _deferred) {
-			f();
+class Loader : public DeviceLinked {
+	public:
+		Loader(DevicePtr dptr) :
+			DeviceLinked(dptr),
+			_store(new FolderAssetStore()),
+			_textures(dptr, _store),
+			_meshes(dptr, _store) {
 		}
-		_deferred.clear();
-		_is_flushing_deferred = false;
-	}
-}
+
+		AssetStore& asset_store() {
+			return *_store;
+		}
+
+		AssetLoader<Texture>& texture() {
+			return _textures;
+		}
+
+		AssetLoader<StaticMesh>& static_mesh() {
+			return _meshes;
+		}
 
 
+	private:
+		std::shared_ptr<AssetStore> _store;
+
+		AssetLoader<Texture> _textures;
+		AssetLoader<StaticMesh> _meshes;
+};
+
 }
+
+#endif // EDITOR_CONTEXT_LOADER_H

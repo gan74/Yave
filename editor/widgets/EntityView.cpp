@@ -49,11 +49,11 @@ EntityView::EntityView(ContextPtr cptr) : Widget("Entities"), ContextLinked(cptr
 
 void EntityView::add_light() {
 	Scene::Ptr<Light> light = std::make_unique<Light>(Light::Point);
-	context()->set_selected(light.get());
+	context()->selection().set_selected(light.get());
 
 	light->radius() = 100.0f;
 	light->color() *= 10000.0;
-	context()->scene()->lights() << std::move(light);
+	context()->scene().scene().lights() << std::move(light);
 }
 
 void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
@@ -72,36 +72,36 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	}
 
 	if(ImGui::TreeNode("Renderables")) {
-		for(const auto& r : context()->scene()->renderables()) {
+		for(const auto& r : context()->scene().scene().renderables()) {
 			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
-			bool selected = r.get() == context()->selected();
+			bool selected = r.get() == context()->selection().selected();
 			ImGui::Selectable(buffer, &selected);
 			if(selected) {
-				context()->set_selected(r.get());
+				context()->selection().set_selected(r.get());
 			}
 		}
 		ImGui::TreePop();
 	}
 
 	if(ImGui::TreeNode("Meshes")) {
-		for(const auto& r : context()->scene()->static_meshes()) {
+		for(const auto& r : context()->scene().scene().static_meshes()) {
 			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
-			bool selected = r.get() == context()->selected();
+			bool selected = r.get() == context()->selection().selected();
 			ImGui::Selectable(buffer, &selected);
 			if(selected) {
-				context()->set_selected(r.get());
+				context()->selection().set_selected(r.get());
 			}
 		}
 		ImGui::TreePop();
 	}
 
 	if(ImGui::TreeNode("Lights")) {
-		for(const auto& l : context()->scene()->lights()) {
+		for(const auto& l : context()->scene().scene().lights()) {
 			std::sprintf(buffer, "%s##%p", light_type_name(l->type()), static_cast<void*>(l.get()));
-			bool selected = l.get() == context()->selected();
+			bool selected = l.get() == context()->selection().selected();
 			ImGui::Selectable(buffer, &selected);
 			if(selected) {
-				context()->set_selected(l.get());
+				context()->selection().set_selected(l.get());
 			}
 		}
 		ImGui::TreePop();

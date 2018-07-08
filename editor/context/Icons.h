@@ -19,48 +19,59 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_CONTEXT_IMAGES_H
+#define EDITOR_CONTEXT_IMAGES_H
 
-#include "EditorContext.h"
+#include <editor/editor.h>
 
-#include <yave/device/Device.h>
+#include <yave/images/ImageData.h>
+#include <yave/images/Image.h>
+#include <yave/images/ImageView.h>
 
 namespace editor {
-
-DevicePtr ContextLinked::device() const {
-	return _ctx ? _ctx->device() : nullptr;
+namespace images {
+ImageData light();
+ImageData save();
+ImageData load();
 }
 
-EditorContext::EditorContext(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_scene(this),
-		_loader(device()),
-		_icons(device()) {
-}
+class Icons : public DeviceLinked {
+	public:
+		Icons(DevicePtr dptr) : DeviceLinked(dptr) {
+			_light = Texture(device(), images::light());
+			_light_view = _light;
 
-EditorContext::~EditorContext() {
-}
+			_save = Texture(device(), images::save());
+			_save_view = _save;
 
-void EditorContext::defer(core::Function<void()>&& func) {
-	std::unique_lock _(_deferred_lock);
-	if(_is_flushing_deferred) {
-		y_fatal("Defer called from already deferred function.");
-	}
-	_deferred.emplace_back(std::move(func));
-}
-
-void EditorContext::flush_deferred() {
-	std::unique_lock _(_deferred_lock);
-	if(!_deferred.is_empty()) {
-		Y_LOG_PERF("editor");
-		device()->queue(QueueFamily::Graphics).wait();
-		_is_flushing_deferred = true;
-		for(auto& f : _deferred) {
-			f();
+			_load = Texture(device(), images::load());
+			_load_view = _load;
 		}
-		_deferred.clear();
-		_is_flushing_deferred = false;
-	}
+
+		TextureView& light() {
+			return _light_view;
+		}
+
+		TextureView& save() {
+			return _save_view;
+		}
+
+		TextureView& load() {
+			return _load_view;
+		}
+
+	private:
+
+		Texture _light;
+		TextureView _light_view;
+
+		Texture _save;
+		TextureView _save_view;
+
+		Texture _load;
+		TextureView _load_view;
+};
+
 }
 
-
-}
+#endif // EDITOR_CONTEXT_IMAGES_H

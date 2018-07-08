@@ -231,21 +231,21 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		float toolbar_size = 24.0f;
 		ImVec2 button_size(toolbar_size, toolbar_size);
 
-		if(ImGui::ImageButton(&context()->icons()->save, button_size)) {
+		if(ImGui::ImageButton(&context()->icons().save(), button_size)) {
 			auto browser = show_element<FileBrowser>(context(), _elements);
 			browser->set_filesystem(context()->filesystem());
 			browser->set_callback(
-					[=](core::String filename) { context()->save_scene(filename); }
+					[=](core::String filename) { context()->scene().save(filename); }
 				);
 		}
 
 		ImGui::SameLine(0.0f, 0.1f);
 
-		if(ImGui::ImageButton(&context()->icons()->load, button_size)) {
+		if(ImGui::ImageButton(&context()->icons().load(), button_size)) {
 			auto browser = show_element<FileBrowser>(context(), _elements);
 			browser->set_filesystem(context()->filesystem());
 			browser->set_callback(
-					[=](core::String filename) { context()->load_scene(filename); }
+					[=](core::String filename) { context()->scene().load(filename); }
 				);
 		}
 	}

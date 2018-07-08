@@ -22,16 +22,17 @@ SOFTWARE.
 #ifndef EDITOR_CONTEXT_EDITORCONTEXT_H
 #define EDITOR_CONTEXT_EDITORCONTEXT_H
 
-#include <editor/settings/settings.h>
-
-#include <yave/assets/AssetLoader.h>
+#include <editor/editor.h>
 
 #include <y/core/Functor.h>
-
-#include <yave/utils/FileSystemModel.h>
 #include <yave/device/DeviceLinked.h>
-#include <yave/objects/Transformable.h>
-#include <yave/scene/SceneView.h>
+#include <yave/utils/FileSystemModel.h>
+
+#include "Settings.h"
+#include "SceneData.h"
+#include "Icons.h"
+#include "Loader.h"
+#include "Selection.h"
 
 #include <mutex>
 
@@ -40,75 +41,50 @@ namespace editor {
 class EditorContext : public DeviceLinked, NonCopyable {
 
 	public:
-		struct Icons {
-			TextureView light;
-			TextureView save;
-			TextureView load;
-		};
-
 		EditorContext(DevicePtr dptr);
 		~EditorContext();
 
 
-		FileSystemModelBase* filesystem();
-
-		Scene* scene() const;
-		SceneView* scene_view() const;
-
-		bool is_scene_empty() const;
-
-		void save_scene(std::string_view filename);
-		void load_scene(std::string_view filename);
-
-		void save_settings();
-		void load_settings();
-
-		void set_selected(Light* sel);
-		void set_selected(Transformable* sel);
-		void set_selected(std::nullptr_t);
-
-		Transformable* selected() const;
-		Light* selected_light() const;
-
 		void defer(core::Function<void()>&& func);
 		void flush_deferred();
 
-		math::Vec3 to_screen_pos(const math::Vec3& world);
-		math::Vec2 to_window_pos(const math::Vec3& world);
 
-		Icons* icons() const;
+		FileSystemModelBase* filesystem() {
+			return &_filesystem;
+		}
 
-		CameraSettings camera_settings;
+		Settings& settings() {
+			return _setting;
+		}
 
-		std::shared_ptr<AssetStore> asset_store;
+		SceneData& scene() {
+			return _scene;
+		}
 
-		AssetLoader<Texture> texture_loader;
-		AssetLoader<StaticMesh> mesh_loader;
+		Selection& selection() {
+			return _selection;
+		}
+
+		Loader& loader() {
+			return _loader;
+		}
+
+		Icons& icons() {
+			return _icons;
+		}
 
 	private:
-		void set_scene_deferred(Scene&& scene);
-
-		std::unique_ptr<Scene> _scene;
-		std::unique_ptr<SceneView> _scene_view;
-
-
-		//NotOwner<SceneHook*> _scene_hook = nullptr;
-
 		FileSystemModel _filesystem;
-
-		NotOwner<Transformable*> _selected = nullptr;
-		NotOwner<Light*> _selected_light = nullptr;
 
 		std::mutex _deferred_lock;
 		core::Vector<core::Function<void()>> _deferred;
 		bool _is_flushing_deferred = false;
 
-
-		core::Vector<Texture> _icon_textures;
-		mutable Icons _icons;
-
-
-
+		Settings _setting;
+		SceneData _scene;
+		Selection _selection;
+		Loader _loader;
+		Icons _icons;
 
 };
 

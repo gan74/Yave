@@ -46,7 +46,7 @@ math::Vec2ui EngineView::render_size() const {
 }
 
 void EngineView::create_renderer(const math::Vec2ui& size) {
-	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), *context()->scene_view()));
+	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), context()->scene().view()));
 	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size));
 	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, _ibl_data));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
@@ -85,10 +85,10 @@ void EngineView::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 		math::Vec2 offset = ImGui::GetWindowPos();
 		ImGui::GetWindowDrawList()->AddImage(_view.get(), offset, offset + viewport);
 
-		for(const auto& light : context()->scene()->lights()) {
+		for(const auto& light : context()->scene().scene().lights()) {
 			float s = 18.0f;
-			auto screen = context()->to_window_pos(light->position());
-			ImGui::GetWindowDrawList()->AddImageQuad(&context()->icons()->light,
+			auto screen = context()->scene().to_window_pos(light->position());
+			ImGui::GetWindowDrawList()->AddImageQuad(&context()->icons().light(),
 					screen + math::Vec2(s, -s),
 					screen + math::Vec2(-s, -s),
 					screen + math::Vec2(-s, s),
@@ -113,8 +113,8 @@ void EngineView::update_selection() {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
 
-	auto inv_matrix = context()->scene_view()->camera().inverse_matrix();
-	auto cam_pos = context()->scene_view()->camera().position();
+	auto inv_matrix = context()->scene().view().camera().inverse_matrix();
+	auto cam_pos = context()->scene().view().camera().position();
 
 	math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 	math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
@@ -123,7 +123,7 @@ void EngineView::update_selection() {
 	math::Ray<> ray(cam_pos, world - cam_pos);
 
 	float distance = std::numeric_limits<float>::max();
-	for(const auto& tr : context()->scene()->static_meshes()) {
+	for(const auto& tr : context()->scene().scene().static_meshes()) {
 		auto [pos, rot, sc] = tr->transform().decompose();
 		unused(rot);
 
@@ -131,12 +131,12 @@ void EngineView::update_selection() {
 		float dist = (pos - cam_pos).length();
 
 		if(ray.intersects(pos, tr->radius() * scale) && dist < distance) {
-			context()->set_selected(tr.get());
+			context()->selection().set_selected(tr.get());
 			distance = dist;
 		}
 	}
 	if(distance == std::numeric_limits<float>::max()) {
-		context()->set_selected(nullptr);
+		context()->selection().set_selected(nullptr);
 	}
 }
 
@@ -144,7 +144,7 @@ void EngineView::update_camera() {
 	// TODO check keyboard focus
 
 	auto size = render_size();
-	auto& camera = context()->scene_view()->camera();
+	auto& camera = context()->scene().view().camera();
 	math::Vec3 cam_pos = camera.position();
 	math::Vec3 cam_fwd = camera.forward();
 	math::Vec3 cam_lft = camera.left();
@@ -153,16 +153,16 @@ void EngineView::update_camera() {
 	float cam_speed = 500.0f;
 	float dt = cam_speed / ImGui::GetIO().Framerate;
 
-	if(ImGui::IsKeyDown(int(context()->camera_settings.move_forward))) {
+	if(ImGui::IsKeyDown(int(context()->settings().camera().move_forward))) {
 		cam_pos += cam_fwd * dt;
 	}
-	if(ImGui::IsKeyDown(int(context()->camera_settings.move_backward))) {
+	if(ImGui::IsKeyDown(int(context()->settings().camera().move_backward))) {
 		cam_pos -= cam_fwd * dt;
 	}
-	if(ImGui::IsKeyDown(int(context()->camera_settings.move_left))) {
+	if(ImGui::IsKeyDown(int(context()->settings().camera().move_left))) {
 		cam_pos += cam_lft * dt;
 	}
-	if(ImGui::IsKeyDown(int(context()->camera_settings.move_right))) {
+	if(ImGui::IsKeyDown(int(context()->settings().camera().move_right))) {
 		cam_pos -= cam_lft * dt;
 	}
 
@@ -170,7 +170,7 @@ void EngineView::update_camera() {
 
 	if(ImGui::IsMouseDown(1)) {
 		auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
-		delta *= context()->camera_settings.camera_sensitivity;
+		delta *= context()->settings().camera().sensitivity;
 
 		{
 			auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());

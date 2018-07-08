@@ -19,48 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_CONTEXT_SETTINGS_H
+#define EDITOR_CONTEXT_SETTINGS_H
 
-#include "EditorContext.h"
+#include <editor/editor.h>
+#include <yave/window/EventHandler.h>
 
-#include <yave/device/Device.h>
+#include <y/serde/serde.h>
+
 
 namespace editor {
 
-DevicePtr ContextLinked::device() const {
-	return _ctx ? _ctx->device() : nullptr;
-}
+struct CameraSettings {
+	Key move_forward = Key::W;
+	Key move_backward = Key::S;
+	Key move_right = Key::D;
+	Key move_left = Key::A;
+	float sensitivity = 4.0f;
+};
 
-EditorContext::EditorContext(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_scene(this),
-		_loader(device()),
-		_icons(device()) {
-}
-
-EditorContext::~EditorContext() {
-}
-
-void EditorContext::defer(core::Function<void()>&& func) {
-	std::unique_lock _(_deferred_lock);
-	if(_is_flushing_deferred) {
-		y_fatal("Defer called from already deferred function.");
-	}
-	_deferred.emplace_back(std::move(func));
-}
-
-void EditorContext::flush_deferred() {
-	std::unique_lock _(_deferred_lock);
-	if(!_deferred.is_empty()) {
-		Y_LOG_PERF("editor");
-		device()->queue(QueueFamily::Graphics).wait();
-		_is_flushing_deferred = true;
-		for(auto& f : _deferred) {
-			f();
-		}
-		_deferred.clear();
-		_is_flushing_deferred = false;
-	}
-}
+static_assert(std::is_standard_layout_v<CameraSettings> && std::is_trivially_copyable_v<CameraSettings>);
 
 
+class Settings {
+	public:
+		Settings();
+		~Settings();
+
+		CameraSettings& camera();
+
+		y_serde(_camera)
+
+	private:
+		CameraSettings _camera;
+};
+
 }
+
+#endif // EDITOR_CONTEXT_SETTINGS_H

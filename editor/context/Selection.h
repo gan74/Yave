@@ -19,24 +19,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_SETTINGS_SETTINGS_H
-#define EDITOR_SETTINGS_SETTINGS_H
+#ifndef EDITOR_CONTEXT_SELECTION_H
+#define EDITOR_CONTEXT_SELECTION_H
 
 #include <editor/editor.h>
-#include <yave/window/EventHandler.h>
+#include <yave/objects/Light.h>
+#include <yave/objects/Transformable.h>
+
 
 namespace editor {
 
-struct CameraSettings {
-	Key move_forward = Key::W;
-	Key move_backward = Key::S;
-	Key move_right = Key::D;
-	Key move_left = Key::A;
-	float camera_sensitivity = 4.0f;
-};
+class Selection {
+	public:
+		void set_selected(Light* sel) {
+			_transformable = sel;
+			_light = sel;
+		}
 
-static_assert(std::is_standard_layout_v<CameraSettings> && std::is_trivially_copyable_v<CameraSettings>);
+		void set_selected(Transformable* sel) {
+			_transformable = sel;
+			_light = nullptr;
+		}
+
+		void set_selected(std::nullptr_t) {
+			_transformable = nullptr;
+			_light = nullptr;
+		}
+
+		Transformable* selected() const {
+			return _transformable;
+		}
+
+		Light* light() const {
+			return _light;
+		}
+
+	private:
+		NotOwner<Transformable*> _transformable = nullptr;
+		NotOwner<Light*> _light = nullptr;
+};
 
 }
 
-#endif // EDITOR_SETTINGS_SETTINGS_H
+#endif // EDITOR_CONTEXT_SELECTION_H

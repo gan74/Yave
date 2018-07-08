@@ -19,48 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_CONTEXT_SCENEDATA_H
+#define EDITOR_CONTEXT_SCENEDATA_H
 
-#include "EditorContext.h"
+#include <editor/editor.h>
 
-#include <yave/device/Device.h>
+#include <yave/scene/Scene.h>
+#include <yave/scene/SceneView.h>
 
 namespace editor {
 
-DevicePtr ContextLinked::device() const {
-	return _ctx ? _ctx->device() : nullptr;
-}
+class SceneData : public ContextLinked, NonCopyable {
 
-EditorContext::EditorContext(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_scene(this),
-		_loader(device()),
-		_icons(device()) {
-}
+	public:
+		SceneData(ContextPtr ctx);
 
-EditorContext::~EditorContext() {
-}
+		Scene& scene();
+		SceneView& view();
 
-void EditorContext::defer(core::Function<void()>&& func) {
-	std::unique_lock _(_deferred_lock);
-	if(_is_flushing_deferred) {
-		y_fatal("Defer called from already deferred function.");
-	}
-	_deferred.emplace_back(std::move(func));
-}
+		math::Vec3 to_screen_pos(const math::Vec3& world);
+		math::Vec2 to_window_pos(const math::Vec3& world);
 
-void EditorContext::flush_deferred() {
-	std::unique_lock _(_deferred_lock);
-	if(!_deferred.is_empty()) {
-		Y_LOG_PERF("editor");
-		device()->queue(QueueFamily::Graphics).wait();
-		_is_flushing_deferred = true;
-		for(auto& f : _deferred) {
-			f();
-		}
-		_deferred.clear();
-		_is_flushing_deferred = false;
-	}
-}
+		bool is_scene_empty() const;
 
+		void save(std::string_view filename);
+		void load(std::string_view filename);
+
+		void flush();
+
+	private:
+		Scene _scene;
+		SceneView _scene_view;
+};
 
 }
+
+#endif // EDITOR_CONTEXT_SCENEDATA_H

@@ -49,14 +49,14 @@ void SettingsPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	int flags = ImGuiTreeNodeFlags_DefaultOpen;
 
 	if(ImGui::CollapsingHeader("Camera", flags)) {
-		keybox("Forward", context()->camera_settings.move_forward);
-		keybox("Backward", context()->camera_settings.move_backward);
-		keybox("Left", context()->camera_settings.move_left);
-		keybox("Right", context()->camera_settings.move_right);
+		keybox("Forward", context()->settings().camera().move_forward);
+		keybox("Backward", context()->settings().camera().move_backward);
+		keybox("Left", context()->settings().camera().move_left);
+		keybox("Right", context()->settings().camera().move_right);
 
 		ImGui::Separator();
 
-		ImGui::SliderFloat("Sensitivity", &context()->camera_settings.camera_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+		ImGui::SliderFloat("Sensitivity", &context()->settings().camera().sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
 	}
 }
 

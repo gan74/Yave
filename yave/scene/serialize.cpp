@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-void Scene::serialized(io::WriterRef writer) const {
+void Scene::serialize(io::WriterRef writer) const {
 	writer->write_one(fs::magic_number);
 	writer->write_one(fs::scene_file_type);
 	u32 version = 2;

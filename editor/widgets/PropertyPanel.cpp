@@ -33,14 +33,14 @@ PropertyPanel::PropertyPanel(ContextPtr cptr) : Widget("Properties"), ContextLin
 }
 
 bool PropertyPanel::is_visible() const {
-	return UiElement::is_visible() && context()->selected();
+	return UiElement::is_visible() && context()->selection().selected();
 }
 
 void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	Widget::paint(recorder, token);
 
-	if(Transformable* selected = context()->selected()) {
-		auto end_pos = context()->to_window_pos(selected->position());
+	if(Transformable* selected = context()->selection().selected()) {
+		auto end_pos = context()->scene().to_window_pos(selected->position());
 		auto start_pos = position() + math::Vec2(0.0f, 12.0f);
 
 		u32 color = ImGui::GetColorU32(ImGuiCol_Text) | 0xFF000000;
@@ -53,11 +53,11 @@ void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token
 }
 
 void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
-	if(!context()->selected()) {
+	if(!context()->selection().selected()) {
 		return;
 	}
 
-	Transformable* sel = context()->selected();
+	Transformable* sel = context()->selection().selected();
 	auto [pos, rot, scale] = sel->transform().decompose();
 
 	if(ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -99,7 +99,7 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		}
 	}
 
-	if(Light* light = context()->selected_light()) {
+	if(Light* light = context()->selection().light()) {
 		int flags = ImGuiColorEditFlags_NoSidePreview |
 					// ImGuiColorEditFlags_NoSmallPreview |
 					ImGuiColorEditFlags_NoAlpha |
