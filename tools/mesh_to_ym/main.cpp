@@ -33,14 +33,14 @@ int main(int argc, char** argv) {
 	usize index = 0;
 	for(const auto& mesh : scene.meshes) {
 		auto file_name = args[0] + (index ? "_" + str(index) : "") + ".ym";
-		transform(mesh, tr).to_file(io::File::create(file_name).expected("Unable to open output file."));
+		transform(mesh, tr).serialize(io::File::create(file_name).expected("Unable to open output file."));
 		log_msg(file_name + " exported\n");
 		++index;
 	}
 
 	for(const auto& anim : scene.animations) {
 		auto file_name = args[0] + (index ? "_" + str(index) : "") + ".ya";
-		set_speed(anim, 60).to_file(io::File::create(file_name).expected("Unable to open output file."));
+		set_speed(anim, 60).serialize(io::File::create(file_name).expected("Unable to open output file."));
 		log_msg(file_name + " exported\n");
 		++index;
 	}

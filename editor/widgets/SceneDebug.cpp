@@ -36,13 +36,13 @@ namespace editor {
 
 static AssetPtr<Material> create_material(ContextPtr cptr) {
 	return make_asset<Material>(cptr->device(), MaterialData()
-			.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
+			.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+			.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
 		);
 }
 
 static AssetPtr<StaticMesh> create_mesh(ContextPtr cptr) {
-	return cptr->mesh_loader.load_or_import("cube.ym", "../tools/mesh_to_ym/cube.obj.ym", AssetStore::Intern).unwrap();
+	return cptr->mesh_loader.load_or_import("cube.ym", "../meshes/cube.obj.ym", AssetStore::Intern);
 }
 
 SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
@@ -52,20 +52,25 @@ void SceneDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(ImGui::Button("Spawn cubes")) {
 		auto cam_pos = context()->scene_view()->camera().position();
 
-		auto material = create_material(context());
-		auto mesh = create_mesh(context());
-		float mul = mesh->radius() * 5.0f;
+		try {
+			auto material = create_material(context());
+			auto mesh = create_mesh(context());
+			float mul = mesh->radius() * 5.0f;
 
-		i32 size = 10;
-		for(i32 x = -size; x != size; ++x) {
-			for(i32 y = -size; y != size; ++y) {
-				for(i32 z = -size; z != size; ++z) {
-					auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
-					inst->position() = cam_pos + math::Vec3(x, y, z) * mul;
-					context()->scene()->static_meshes().emplace_back(std::move(inst));
+			i32 size = 10;
+			for(i32 x = -size; x != size; ++x) {
+				for(i32 y = -size; y != size; ++y) {
+					for(i32 z = -size; z != size; ++z) {
+						auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
+						inst->position() = cam_pos + math::Vec3(x, y, z) * mul;
+						context()->scene()->static_meshes().emplace_back(std::move(inst));
+					}
 				}
 			}
+		} catch(std::exception& e) {
+			log_msg("Unable to add cubes: "_s + e.what(), Log::Error);
 		}
+
 	}
 
 	if(ImGui::Button("Add skinned mesh")) {

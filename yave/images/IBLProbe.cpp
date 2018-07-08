@@ -57,11 +57,11 @@ static usize mipmap_count(usize size, usize min_size) {
 }
 
 static ComputeShader create_convolution_shader(DevicePtr dptr, const Cubemap&) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("cubemap_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
+	return ComputeShader(dptr, SpirVData::deserialized(io::File::open("cubemap_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
 static ComputeShader create_convolution_shader(DevicePtr dptr, const Texture&) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("equirec_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
+	return ComputeShader(dptr, SpirVData::deserialized(io::File::open("equirec_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
 static constexpr usize diffuse_size = 32;

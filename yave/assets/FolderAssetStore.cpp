@@ -27,6 +27,8 @@ SOFTWARE.
 #include <y/io/BuffWriter.h>
 #include <y/io/BuffReader.h>
 
+#include <atomic>
+
 #ifndef YAVE_NO_STDFS
 
 namespace yave {
@@ -80,24 +82,19 @@ fs::path FolderAssetStore::file_path(std::string_view name) const {
 void FolderAssetStore::read_index() {
 	std::unique_lock lock(_lock);
 
-	if(auto r = io::File::open(_index_file_path); r.is_ok()) {
-		auto file = io::BuffReader(std::move(r.unwrap()));
-		_from_id.clear();
-		_from_name.clear();
-		while(!file.at_end()) {
-			auto entry = std::make_unique<Entry>();
-			entry->id = file.read_one<AssetId>().unwrap();
-			while(true) {
-				char c = file.read_one<char>().unwrap();
-				if(!c) {
-					break;
-				}
-				entry->name.push_back(c);
+	try {
+		if(auto r = io::File::open(_index_file_path); r.is_ok()) {
+			auto file = io::BuffReader(std::move(r.unwrap()));
+			_from_id.clear();
+			_from_name.clear();
+			while(!file.at_end()) {
+				auto entry = std::make_unique<Entry>(serde::deserialized<Entry>(file));
+				_from_id[entry->id] = entry.get();
+				_from_name[entry->name] = std::move(entry);
 			}
-
-			_from_id[entry->id] = entry.get();
-			_from_name[entry->name]= std::move(entry);
 		}
+	} catch(std::exception& e) {
+		log_msg("Exception while reading index file: "_s + e.what(), Log::Error);
 	}
 
 	y_debug_assert(_from_id.size() == _from_name.size());
@@ -106,80 +103,87 @@ void FolderAssetStore::read_index() {
 void FolderAssetStore::write_index() {
 	std::unique_lock lock(_lock);
 
-	y_debug_assert(_from_id.size() == _from_name.size());
-	auto index = io::BuffWriter(std::move(io::File::create(_index_file_path).unwrap()));
-	for(const auto& row : _from_id) {
-		const Entry& entry = *row.second;
-		index.write_one(entry.id).unwrap();
-		index.write(entry.name.data(), entry.name.size() + 1).unwrap();
+	try {
+		y_debug_assert(_from_id.size() == _from_name.size());
+		auto index = io::BuffWriter(std::move(io::File::create(_index_file_path).unwrap()));
+		for(const auto& row : _from_id) {
+			const Entry& entry = *row.second;
+			serde::serialize(index, entry);
+		}
+	} catch(std::exception& e) {
+		log_msg("Exception while writing index file: "_s + e.what(), Log::Error);
 	}
 }
 
-bool FolderAssetStore::try_import(std::string_view src, std::string_view dst, ImportType import_type) {
+void FolderAssetStore::try_import(std::string_view src, std::string_view dst, ImportType import_type) {
 	auto dst_file = file_path(dst);
 	{
 		auto dst_dir = dst_file.parent_path();
 		if(!fs::exists(dst_dir) && !fs::create_directory(dst_dir)) {
-			return false;
+			y_throw("Unable to create import directory.");
 		}
 	}
 
-	std::error_code err;
 #ifdef YAVE_STDFS_BAD_COPY
 	if(import_type == ImportType::Intern) {
 		if(!io::File::copy(src, dst_file.string())) {
-			return false;
+			y_throw("Unable to copy file.");
 		}
 	} else
 #endif
 	{
-		fs::copy_file(src, dst_file, copy_options(import_type), err);
+		fs::copy_file(src, dst_file, copy_options(import_type));
 	}
-
-	if(err) {
-		log_msg(err.message().c_str(), Log::Error);
-	}
-	return !err;
 }
 
 
-core::Result<AssetId> FolderAssetStore::import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) {
+AssetId FolderAssetStore::import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) {
 	// remove/optimize
-	auto flush_index = scope_exit([=] { write_index(); });
+	auto flush_index = scope_exit([this] { write_index(); });
 
 	std::unique_lock lock(_lock);
 
 	auto& entry = _from_name[dst_name];
-	if(entry || !try_import(src_name, dst_name, import_type)) {
-		return core::Err();
+	if(entry) {
+		y_throw("Asset already in store.");
+	}
+
+	try {
+		try_import(src_name, dst_name, import_type);
+	} catch(...) {
+		_from_name.erase(_from_name.find(dst_name));
+		throw;
 	}
 
 	AssetId id = next_id();
 	entry = std::make_unique<Entry>(Entry{dst_name, id});
 	_from_id[id] = entry.get();
+	_from_name[dst_name] = std::move(entry);
 
-	return core::Ok(id);
+	y_debug_assert(_from_id.size() == _from_name.size());
+
+	return id;
 }
 
 
-core::Result<AssetId> FolderAssetStore::id(std::string_view name) {
+AssetId FolderAssetStore::id(std::string_view name) {
 	std::unique_lock lock(_lock);
 
 	if(auto it = _from_name.find(name); it != _from_name.end()) {
-		return core::Ok(it->second->id);
+		return it->second->id;
 	}
-	return core::Err();
+	y_throw("No asset with this name.");
 }
 
-core::Result<io::ReaderRef> FolderAssetStore::data(AssetId id) {
+io::ReaderRef FolderAssetStore::data(AssetId id) {
 	std::unique_lock lock(_lock);
 	if(auto it = _from_id.find(id); it != _from_id.end()) {
 		fs::path filename = file_path(it->second->name);
 		if(auto r = io::File::open(filename.string()); r.is_ok()){
-			return core::Ok(io::ReaderRef(std::move(r.unwrap())));
+			return io::ReaderRef(std::move(r.unwrap()));
 		}
 	}
-	return core::Err();
+	y_throw("No asset with this id.");
 }
 
 }

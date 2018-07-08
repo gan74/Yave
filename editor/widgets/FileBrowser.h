@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/ui/Frame.h>
 #include <editor/ui/Widget.h>
 
-#include <yave/serialize/filesystem.h>
+#include <yave/utils/filesystem.h>
 
 #include <y/core/Functor.h>
 

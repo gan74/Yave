@@ -2,7 +2,6 @@
 #include "MainWindow.h"
 
 #include <y/io/File.h>
-#include <yave/serialize/filesystem.h>
 
 using namespace editor;
 

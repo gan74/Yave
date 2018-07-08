@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/meshes/Bone.h>
 
+#include <yave/utils/serde.h>
+
 namespace yave {
 
 class AnimationChannel {
@@ -33,8 +35,10 @@ class AnimationChannel {
 			BoneTransform local_transform;
 		};
 
-		AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys);
+		y_serialize(_name, _keys)
+		y_deserialize_func([](const core::String& name, core::Vector<BoneKey>&& keys) { return AnimationChannel(name, std::move(keys)); })
 
+		AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys);
 
 		math::Transform<> bone_transform(float time) const;
 

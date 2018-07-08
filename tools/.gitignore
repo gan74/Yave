@@ -1,6 +1,7 @@
 */target/
 */build/
 */old/
+build/
 
 *.blend
 *.blend1

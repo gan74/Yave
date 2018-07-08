@@ -23,9 +23,9 @@ SOFTWARE.
 #define YAVE_ASSETS_ASSETSTORE_H
 
 #include <y/core/String.h>
-#include "AssetPtr.h"
-
 #include <y/io/Ref.h>
+
+#include "AssetPtr.h"
 
 namespace yave {
 
@@ -44,23 +44,15 @@ class AssetStore : NonCopyable {
 		}
 
 
-		virtual core::Result<void> remove(AssetId id) {
+		virtual void remove(AssetId id) {
 			unused(id);
-			return core::Err();
+			y_throw("Unsuported operation.");
 		}
 
-		virtual core::Result<AssetId> import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) = 0;
-		virtual core::Result<AssetId> id(std::string_view name) = 0;
+		virtual AssetId import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) = 0;
+		virtual AssetId id(std::string_view name) = 0;
 
-		virtual core::Result<io::ReaderRef> data(AssetId id) = 0;
-
-		/*virtual core::Result<io::ReaderRef> data(std::string_view name) {
-			if(auto r = id(name); r.is_ok()) {
-				return data(id.unwrap());
-			}
-			return core::Err();
-		}*/
-
+		virtual io::ReaderRef data(AssetId id) = 0;
 };
 
 }

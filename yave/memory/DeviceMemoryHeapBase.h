@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/device/DeviceLinked.h>
 
+#include <y/core/Result.h>
+
 #include "DeviceMemory.h"
 #include "DeviceMemoryView.h"
 #include "MemoryType.h"

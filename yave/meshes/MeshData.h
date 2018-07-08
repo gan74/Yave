@@ -22,8 +22,7 @@ SOFTWARE.
 #ifndef YAVE_MESHES_MESHDATA_H
 #define YAVE_MESHES_MESHDATA_H
 
-#include <yave/yave.h>
-#include <y/io/Ref.h>
+#include <yave/utils/serde.h>
 
 #include "Skeleton.h"
 
@@ -33,10 +32,6 @@ class MeshData {
 
 	public:
 		static MeshData from_parts(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin = {}, core::Vector<Bone>&& bones = {});
-
-		// serialize.cpp
-		static core::Result<MeshData> from_file(io::ReaderRef reader);
-		core::Result<void> to_file(io::WriterRef writer) const;
 
 		float radius() const;
 
@@ -49,10 +44,21 @@ class MeshData {
 
 		bool has_skeleton() const;
 
+
+
+		y_serialize(fs::magic_number, fs::mesh_file_type, u32(6),
+			_radius, _vertices, _triangles, _skeleton ? u32(1) : u32(0), y_serde_cond(_skeleton, *_skeleton))
+
+		y_deserialize(fs::magic_number, fs::mesh_file_type, u32(6),
+			_radius, _vertices, _triangles,
+			y_serde_call([this](u32 s) { if(s) { _skeleton = std::make_unique<SkeletonData>(); } }), y_serde_cond(_skeleton, *_skeleton))
+
 	private:
 		struct SkeletonData {
 			core::Vector<SkinWeights> skin;
 			core::Vector<Bone> bones;
+
+			y_serde(skin, bones)
 		};
 
 		float _radius = 0.0f;

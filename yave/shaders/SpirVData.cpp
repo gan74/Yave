@@ -23,10 +23,25 @@ SOFTWARE.
 
 namespace yave {
 
+
+SpirVData::SpirVData(const core::Vector<u8>& data) {
+	if(data.size() % 4) {
+		y_throw("Invalid SPIR-V data.");
+	}
+	_data = core::Vector<u32>(data.size() / 4, 0);
+	std::memcpy(_data.begin(), data.begin(), data.size());
+}
+
 SpirVData::SpirVData(const core::Vector<u32>& data) : _data(data) {
 	if(data.is_empty()) {
-		y_fatal("Invalid SPIR-V data.");
+		y_throw("Invalid SPIR-V data.");
 	}
+}
+
+SpirVData SpirVData::deserialized(io::ReaderRef reader) {
+	core::Vector<u8> data;
+	reader->read_all(data);
+	return SpirVData(data);
 }
 
 usize SpirVData::size() const {

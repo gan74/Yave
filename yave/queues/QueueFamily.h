@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_QUEUES_QUEUEFAMILY_H
 
 #include <yave/device/PhysicalDevice.h>
+#include <y/core/Result.h>
 
 #include "Queue.h"
 

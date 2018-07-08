@@ -31,8 +31,8 @@ ToneMapper::ToneMapper(const Ptr<Renderer>& renderer) :
 		SecondaryRenderer(renderer->device()),
 		_renderer(renderer),
 		_material(device(), MaterialData()
-			.set_frag_data(SpirVData::from_file(io::File::open("tonemap.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::from_file(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
+			.set_frag_data(SpirVData::deserialized(io::File::open("tonemap.frag.spv").expected("Unable to load spirv file.")))
+			.set_vert_data(SpirVData::deserialized(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
 			.set_bindings({Binding(renderer->output())})
 			.set_depth_tested(false)
 		) {

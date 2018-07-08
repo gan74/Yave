@@ -22,9 +22,8 @@ SOFTWARE.
 #ifndef YAVE_IMAGES_IMAGEDATA_H
 #define YAVE_IMAGES_IMAGEDATA_H
 
-#include <yave/yave.h>
+#include <yave/utils/serde.h>
 
-#include <y/io/Ref.h>
 #include <y/math/Vec.h>
 
 #include "ImageFormat.h"
@@ -54,10 +53,14 @@ class ImageData : NonCopyable {
 		usize data_offset(usize layer = 0, usize mip = 0) const;
 		const u8* data(usize layer = 0, usize mip = 0) const;
 
-		// serialize.cpp
-		static core::Result<ImageData> from_file(io::ReaderRef reader);
-
 		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
+
+
+		y_deserialize(fs::magic_number, fs::image_file_type, u32(3),
+					_size, _layers, _mips, _format,
+					y_serde_call([this] { _data = std::make_unique<u8[]>(combined_byte_size()); }),
+					y_serde_fixed_array(combined_byte_size(), _data.get()))
+
 
 	private:
 		void swap(ImageData& other);
@@ -65,8 +68,8 @@ class ImageData : NonCopyable {
 		math::Vec2ui _size;
 		ImageFormat _format;
 
-		usize _layers = 1;
-		usize _mips = 1;
+		u32 _layers = 1;
+		u32 _mips = 1;
 
 		std::unique_ptr<u8[]> _data;
 };

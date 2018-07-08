@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/device/DeviceLinked.h>
 #include <y/core/String.h>
+#include <y/serde/serde.h>
+
 #include "AssetPtr.h"
 #include "AssetStore.h"
 
@@ -57,40 +59,34 @@ class AssetLoader : public DeviceLinked {
 		}
 
 
-		core::Result<AssetPtr<T>> load(AssetId id) {
+		AssetPtr<T> load(AssetId id) {
 			Y_LOG_PERF("asset,loading");
+
 			if(id == assets::invalid_id) {
-				return core::Err();
+				y_throw("Invalid id.");
 			}
 
-			auto& asset = _loaded[id];
-			if(asset) {
-				return core::Ok(asset);
+			auto& asset_ptr = _loaded[id];
+			if(asset_ptr) {
+				return asset_ptr;
 			}
-			if(auto file = _store->data(id); file.is_ok()) {
-				core::Result<load_from> data = load_from::from_file(file.unwrap());
-				if(data.is_ok()) {
-					return core::Ok(asset = make_asset_with_id<T>(id, device(), std::move(data.unwrap())));
-				}
-			}
-			return core::Err();
+
+			auto asset = serde::deserialized<load_from>( _store->data(id));
+			return asset_ptr = make_asset_with_id<T>(id, device(), std::move(asset));
 		}
 
-		core::Result<AssetPtr<T>> load(std::string_view name) {
-			if(auto r = _store->id(name); r.is_ok()) {
-				return load(r.unwrap());
-			}
-			return core::Err();
+		AssetPtr<T> load(std::string_view name) noexcept {
+			return load(_store->id(name));
 		}
 
-		core::Result<AssetPtr<T>> load_or_import(std::string_view name, std::string_view import_from, AssetStore::ImportType import_type) {
-			if(auto r = _store->id(name); r.is_ok()) {
-				return load(r.unwrap());
+		AssetPtr<T> load_or_import(std::string_view name, std::string_view import_from, AssetStore::ImportType import_type) {
+			AssetId id = assets::invalid_id;
+			try {
+				id = _store->id(name);
+			} catch(...) {
+				id = _store->import_as(import_from, name, import_type);
 			}
-			if(auto r = _store->import_as(import_from, name, import_type); r.is_ok()) {
-				return load(r.unwrap());
-			}
-			return core::Err();
+			return load(id);
 		}
 
 

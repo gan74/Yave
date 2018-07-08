@@ -26,6 +26,7 @@ endfunction(enable_unity_build)
 
 find_package(vulkan REQUIRED)
 
+option(BUILD_YAVE "Build yave" ON)
 option(BUILD_TOOLS "Build tools" ON)
 option(BUILD_EDITOR "Build editor" ON)
 
@@ -71,14 +72,19 @@ file(GLOB_RECURSE SHADER_FILES
 		"shaders/*.glsl"
 	)
 
-enable_unity_build(yave YAVE_FILES)
-add_library(yave ${YAVE_FILES} ${SHADER_FILES})
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+	enable_unity_build(yave YAVE_FILES)
+endif()
 
-target_link_libraries(yave ${Vulkan_LIBRARY})
-target_link_libraries(yave y spirv-cross-core stdc++fs)
+if(BUILD_YAVE)
+	add_library(yave ${YAVE_FILES} ${SHADER_FILES})
 
-#add_executable(ecs "ecs/main.cpp" ${ECS_FILES})
-#target_link_libraries(ecs y)
+	target_link_libraries(yave ${Vulkan_LIBRARY})
+	target_link_libraries(yave y spirv-cross-core stdc++fs)
+
+	#add_executable(ecs "ecs/main.cpp" ${ECS_FILES})
+	#target_link_libraries(ecs y)
+endif()
 
 if(BUILD_EDITOR)
 	add_executable(editor ${EDITOR_FILES})

@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_ANIMATIONS_ANIMATION_H
 
 #include "AnimationChannel.h"
-#include <y/io/Ref.h>
+
 
 #include <optional>
 
@@ -31,11 +31,11 @@ namespace yave {
 
 class Animation {
 	public:
+		Animation() = default;
+
 		Animation(float duration, core::Vector<AnimationChannel>&& channels);
 
-		// serialize.cpp
-		static core::Result<Animation> from_file(io::ReaderRef reader);
-		core::Result<void> to_file(io::WriterRef writer) const;
+		y_serde(fs::magic_number, fs::animation_file_type,u32(4), _duration, _channels)
 
 		float duration() const;
 		const core::Vector<AnimationChannel>& channels() const;
@@ -43,7 +43,7 @@ class Animation {
 		std::optional<math::Transform<>> bone_transform(const core::String& name, float time) const;
 
 	private:
-		float _duration;
+		float _duration = 0.0f;
 		core::Vector<AnimationChannel> _channels;
 
 };

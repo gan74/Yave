@@ -31,14 +31,14 @@ SOFTWARE.
 namespace yave {
 
 static ComputeShader create_lighting_shader(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::from_file(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
+	return ComputeShader(dptr, SpirVData::deserialized(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
 static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 	Y_LOG_PERF("deferred,IBL");
 	core::DebugTimer _("IBLData::create_ibl_lut()");
 
-	ComputeProgram brdf_integrator(ComputeShader(dptr, SpirVData::from_file(io::File::open("brdf_integrator.comp.spv").expected("Unable to open SPIR-V file."))));
+	ComputeProgram brdf_integrator(ComputeShader(dptr, SpirVData::deserialized (io::File::open("brdf_integrator.comp.spv").expected("Unable to open SPIR-V file."))));
 
 	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
 
@@ -55,8 +55,8 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 }
 
 static auto load_envmap(DevicePtr dptr) {
-	auto image = ImageData::from_file(io::File::open("../tools/image_to_yt/equirec.yt").expected("Unable to open equirec."));
-	return IBLProbe::from_equirec(Texture(dptr, image.expected("Unable to load equirec.")));
+	auto image = ImageData::deserialized(io::File::open("../tools/image_to_yt/equirec.yt").expected("Unable to open equirec."));
+	return IBLProbe::from_equirec(Texture(dptr, image));
 }
 
 IBLData::IBLData(DevicePtr dptr) :

@@ -25,9 +25,7 @@ SOFTWARE.
 #include "scenes.h"
 #include "images.h"
 
-
 #include <yave/assets/FolderAssetStore.h>
-#include <yave/serialize/serialize.h>
 
 #include <y/io/File.h>
 
@@ -72,8 +70,10 @@ void EditorContext::set_scene_deferred(Scene&& scene) {
 void EditorContext::save_scene(std::string_view filename) {
 	Y_LOG_PERF("editor,save");
 	if(auto r = io::File::create(filename); r.is_ok()) {
-		if(_scene->to_file(r.unwrap()).is_error()) {
-			log_msg("Unable to save scene.", Log::Error);
+		try {
+			_scene->serialized(r.unwrap());
+		} catch(std::exception& e) {
+			log_msg("Unable to save scene: "_s + e.what(), Log::Error);
 		}
 	} else {
 		log_msg("Unable to create scene file.", Log::Error);
@@ -83,10 +83,10 @@ void EditorContext::save_scene(std::string_view filename) {
 void EditorContext::load_scene(std::string_view filename) {
 	Y_LOG_PERF("editor,loading");
 	if(auto r = io::File::open(filename); r.is_ok()) {
-		if(auto s = Scene::from_file(r.unwrap(), mesh_loader); s.is_ok()) {
-			set_scene_deferred(std::move(s.unwrap()));
-		} else {
-			log_msg("Unable to load scene.", Log::Error);
+		try {
+			set_scene_deferred(Scene::deserialized(r.unwrap(), mesh_loader));
+		} catch(std::exception& e) {
+			log_msg("Unable to load scene: "_s + e.what(), Log::Error);
 		}
 	} else {
 		log_msg("Unable to open scene file.", Log::Error);

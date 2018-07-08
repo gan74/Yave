@@ -23,7 +23,8 @@ SOFTWARE.
 #define YAVE_ASSETS_FOLDERASSETSTORE_H
 
 
-#include <yave/serialize/filesystem.h>
+#include <yave/utils/filesystem.h>
+#include <y/serde/serde.h>
 
 #include "AssetStore.h"
 
@@ -39,16 +40,18 @@ class FolderAssetStore final : public AssetStore {
 	struct Entry {
 		core::String name;
 		AssetId id;
+
+		y_serde(id, name)
 	};
 
 	public:
 		FolderAssetStore(std::string_view path = "./store");
 		~FolderAssetStore();
 
-		core::Result<AssetId> import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) override;
-		core::Result<AssetId> id(std::string_view name) override;
+		AssetId import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) override;
+		AssetId id(std::string_view name) override;
 
-		core::Result<io::ReaderRef> data(AssetId id) override;
+		io::ReaderRef data(AssetId id) override;
 
 	private:
 		void write_index();
@@ -56,7 +59,7 @@ class FolderAssetStore final : public AssetStore {
 
 		fs::path file_path(std::string_view name) const;
 
-		bool try_import(std::string_view src, std::string_view dst, ImportType import_type);
+		void try_import(std::string_view src, std::string_view dst, ImportType import_type);
 
 		std::mutex _lock;
 		fs::path _path;

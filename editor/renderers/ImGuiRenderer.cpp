@@ -238,8 +238,8 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		_font(device(), load_font()),
 		_font_view(_font),
 		_material(device(), MaterialData()
-			.set_frag_data(SpirVData::from_file(io::File::open("imgui.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::from_file(io::File::open("imgui.vert.spv").expected("Unable to load spirv file.")))
+			.set_frag_data(SpirVData::deserialized(io::File::open("imgui.frag.spv").expected("Unable to load spirv file.")))
+			.set_vert_data(SpirVData::deserialized(io::File::open("imgui.vert.spv").expected("Unable to load spirv file.")))
 			.set_bindings({Binding(_uniform_buffer)})
 			.set_depth_tested(false)
 			.set_culled(false)

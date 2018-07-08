@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_SHADERS_SPIRVDATA_H
 
 #include <yave/yave.h>
-#include <y/io/Ref.h>
+#include <y/serde/serde.h>
 
 namespace yave {
 
@@ -32,16 +32,16 @@ class SpirVData {
 	public:
 		SpirVData() = default;
 
-		// serialize.cpp
-		static SpirVData from_file(io::ReaderRef reader);
-
 		usize size() const;
 		bool is_empty() const;
 
 		const u32* data() const;
 
+		static SpirVData deserialized(io::ReaderRef reader);
+
 	private:
-		SpirVData(const core::Vector<u32>& data);
+	   SpirVData(const core::Vector<u32>& data);
+	   SpirVData(const core::Vector<u8>& data);
 
 		core::Vector<u32> _data;
 };

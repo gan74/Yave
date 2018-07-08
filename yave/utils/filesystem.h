@@ -19,24 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SERIALIZE_SERIALIZE_H
-#define YAVE_SERIALIZE_SERIALIZE_H
+#ifndef YAVE_UTILS_FILESYSTEM_H
+#define YAVE_UTILS_FILESYSTEM_H
 
-#include <yave/yave.h>
+#ifndef YAVE_NO_STDFS
+#if __has_include(<filesystem>)
+#define YAVE_STDFS_NAMESPACE std::filesystem
+#include <filesystem>
+#else
+#define YAVE_STDFS_NAMESPACE std::experimental::filesystem
+#include <experimental/filesystem>
+#endif
+#endif // YAVE_NO_STDFS
 
-#include <y/io/Ref.h>
+// fs::copy and fs::copy_file will mess up binary files by replacing '\n' by "\r\n" on windows.
+#define YAVE_STDFS_BAD_COPY
 
 namespace yave {
 
+#ifndef YAVE_NO_STDFS
 namespace fs {
-static constexpr u32 magic_number = 0x65766179;
-static constexpr u32 mesh_file_type = 1;
-static constexpr u32 image_file_type = 2;
-static constexpr u32 animation_file_type = 3;
-static constexpr u32 font_file_type = 4;
-static constexpr u32 scene_file_type = 5;
+using namespace YAVE_STDFS_NAMESPACE;
 }
+#endif
 
 }
 
-#endif // YAVE_SERIALIZE_SERIALIZE_H
+#endif // YAVE_UTILS_FILESYSTEM_H

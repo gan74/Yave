@@ -35,22 +35,30 @@ void add_skinned_mesh(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoade
 	DevicePtr dptr = tex_loader.device();
 
 	auto material = make_asset<Material>(dptr, MaterialData()
-			.set_frag_data(SpirVData::from_file(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::from_file(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
+			.set_frag_data(SpirVData::deserialized(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
+			.set_vert_data(SpirVData::deserialized(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
 		);
 
-	auto animation = make_asset<Animation>(Animation::from_file(io::File::open("../tools/mesh_to_ym/walk.fbx.ya").expected("Unable to open animation file.")).expected("Unable to read animation file."));
 
-	auto mesh_data = std::move(MeshData::from_file(io::File::open("../tools/mesh_to_ym/beta.fbx.ym").expected("Unable to open mesh file.")).expected("Unable to read mesh file."));
-	auto mesh = make_asset<SkinnedMesh>(dptr, mesh_data);
+	try {
+		auto mesh_data = MeshData::deserialized(io::File::open("../meshes/beta.fbx.ym").expected("Unable to open mesh file."));
+		auto mesh = make_asset<SkinnedMesh>(dptr, mesh_data);
 
-	log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
+		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
 
-	{
-		auto instance = std::make_unique<SkinnedMeshInstance>(mesh, material);
-		instance->position() = {0.0f, 100.0f, -instance->radius() * 0.5f};
-		instance->animate(animation);
-		scene->renderables() << std::move(instance);
+		{
+			auto instance = std::make_unique<SkinnedMeshInstance>(mesh, material);
+			instance->position() = {0.0f, 100.0f, -instance->radius() * 0.5f};
+			try {
+				auto animation = make_asset<Animation>(Animation::deserialized(io::File::open("../meshes/walk.fbx.ya").expected("Unable to open animation file.")));
+				instance->animate(animation);
+			} catch(std::exception& e) {
+				log_msg(e.what(), Log::Error);
+			}
+			scene->renderables() << std::move(instance);
+		}
+	} catch(std::exception& e) {
+		log_msg("Exception while loading: "_s + e.what(), Log::Error);
 	}
 }
 
@@ -78,37 +86,42 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 
 	{
 		auto material = make_asset<Material>(dptr, MaterialData()
-				.set_frag_data(SpirVData::from_file(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-				.set_vert_data(SpirVData::from_file(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
+				.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+				.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
 			);
-		//auto mesh_data = MeshData::from_file(io::File::open("../tools/mesh_to_ym/cube.obj.ym").expected("Unable to open mesh file."));
+		//auto mesh_data = MeshData::from_file(io::File::open("../meshes/cube.obj.ym").expected("Unable to open mesh file."));
 		//auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
 
-		AssetPtr<StaticMesh> mesh = mesh_loader.load_or_import("cube.ym", "../tools/mesh_to_ym/cube.obj.ym",  AssetStore::Reference).unwrap();
+		try {
+			AssetPtr<StaticMesh> mesh = mesh_loader.load_or_import("cube.ym", "../meshes/cube.obj.ym",  AssetStore::Reference);
 
-		{
-			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
-			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			scene->static_meshes() << std::move(instance);
+			{
+				auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
+				instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
+				scene->static_meshes() << std::move(instance);
+			}
+
+			{
+				auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
+				instance->transform() = math::Transform<>(math::Vec3(100.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
+				scene->static_meshes() << std::move(instance);
+			}
+
+			{
+				auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
+				instance->transform() = math::Transform<>(math::Vec3(0.0f, 100.0f, 0.0f), math::identity(), math::Vec3(0.1f));
+				scene->static_meshes() << std::move(instance);
+			}
+
+			{
+				auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
+				instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 100.0f), math::identity(), math::Vec3(0.1f));
+				scene->static_meshes() << std::move(instance);
+			}
+		} catch(std::exception& e) {
+			log_msg("Exception while loading: "_s + e.what(), Log::Error);
 		}
 
-		{
-			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
-			instance->transform() = math::Transform<>(math::Vec3(100.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			scene->static_meshes() << std::move(instance);
-		}
-
-		{
-			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
-			instance->transform() = math::Transform<>(math::Vec3(0.0f, 100.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			scene->static_meshes() << std::move(instance);
-		}
-
-		{
-			auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
-			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 100.0f), math::identity(), math::Vec3(0.1f));
-			scene->static_meshes() << std::move(instance);
-		}
 	}
 
 	/*std::unique_ptr scene_view = new SceneView(*scene);
