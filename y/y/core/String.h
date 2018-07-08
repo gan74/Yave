@@ -155,6 +155,7 @@ class String {
 		String& operator+=(const char* str);
 		String& operator+=(const std::string& str);
 		String& operator+=(std::string_view str);
+		// char deliberately excluded (causes problem when cat-ing numbers);
 
 		char& operator[](usize i);
 		char operator[](usize i) const;

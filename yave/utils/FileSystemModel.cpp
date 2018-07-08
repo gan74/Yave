@@ -19,31 +19,59 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_UTILS_FILESYSTEM_H
-#define YAVE_UTILS_FILESYSTEM_H
 
-#ifndef YAVE_NO_STDFS
-#if __has_include(<filesystem>)
-#define YAVE_STDFS_NAMESPACE std::filesystem
-#include <filesystem>
-#else
-#define YAVE_STDFS_NAMESPACE std::experimental::filesystem
-#include <experimental/filesystem>
-#endif
-#endif // YAVE_NO_STDFS
+#include "FileSystemModel.h"
 
-// fs::copy and fs::copy_file will mess up binary files by replacing '\n' by "\r\n" on windows.
-#define YAVE_STDFS_BAD_COPY
+#include "filesystem.h"
 
 namespace yave {
 
 #ifndef YAVE_NO_STDFS
-namespace fs {
-using namespace YAVE_STDFS_NAMESPACE;
+
+core::String FileSystemModel::current_path() const {
+	return fs::current_path().string();
 }
+
+core::String FileSystemModel::parent_path(std::string_view path) const {
+	return fs::path(path).parent_path().string();
+}
+
+core::String FileSystemModel::filename(std::string_view path) const {
+	return fs::path(path).filename().string();
+}
+
+bool FileSystemModel::exists(std::string_view path) const {
+	return fs::exists(path);
+}
+
+bool FileSystemModel::is_directory(std::string_view path) const {
+	return fs::is_directory(path);
+}
+
+core::String FileSystemModel::join(std::string_view path, std::string_view name) const {
+	if(!path.size()) {
+		return name;
+	}
+	char last = path.back();
+	core::String result;
+	result.set_min_capacity(path.size() + name.size() + 1);
+	result += path;
+	if(last != '/' && last != '\\') {
+		result.push_back('/');
+	}
+	result += name;
+	return result;
+}
+
+void FileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
+	for(auto& p : fs::directory_iterator(path)) {
+		fs::path path = p.path().filename();
+		auto str = path.string();
+		func(str);
+	}
+}
+
 #endif
 
 
 }
-
-#endif // YAVE_UTILS_FILESYSTEM_H

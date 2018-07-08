@@ -28,13 +28,12 @@ SOFTWARE.
 
 #include <y/core/Functor.h>
 
+#include <yave/utils/FileSystemModel.h>
 #include <yave/device/DeviceLinked.h>
 #include <yave/objects/Transformable.h>
 #include <yave/scene/SceneView.h>
 
 #include <mutex>
-
-#include "SceneHook.h"
 
 namespace editor {
 
@@ -49,6 +48,9 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 		EditorContext(DevicePtr dptr);
 		~EditorContext();
+
+
+		FileSystemModelBase* filesystem();
 
 		Scene* scene() const;
 		SceneView* scene_view() const;
@@ -91,6 +93,8 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 
 		//NotOwner<SceneHook*> _scene_hook = nullptr;
+
+		FileSystemModel _filesystem;
 
 		NotOwner<Transformable*> _selected = nullptr;
 		NotOwner<Light*> _selected_light = nullptr;

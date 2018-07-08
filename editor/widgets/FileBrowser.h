@@ -25,8 +25,9 @@ SOFTWARE.
 #include <editor/ui/Frame.h>
 #include <editor/ui/Widget.h>
 
-#include <yave/utils/filesystem.h>
+#include <yave/utils/FileSystemModel.h>
 
+#include <y/core/AssocVector.h>
 #include <y/core/Functor.h>
 
 namespace editor {
@@ -40,22 +41,28 @@ class FileBrowser : public Widget {
 			_callback = std::forward<F>(func);
 		}
 
+		void set_filesystem(NotOwner<FileSystemModelBase*> model);
+		void set_path(std::string_view path);
+
 	private:
+		static constexpr usize buffer_capacity = 1024;
+
 		void done();
 		void cancel();
 
-		void set_path(const fs::path& path);
-		void input_path();
+		core::String full_path() const;
+		std::string_view path() const;
 
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
-		fs::path _current;
+		FileSystemModelBase* _model = nullptr;
 
-		static constexpr usize buffer_size = 512;
-		std::array<char, buffer_size> _path_buffer;
-		std::array<char, buffer_size> _name_buffer;
+		core::Vector<core::String> _entries;
 
-		int _selection = -1;
+		std::array<char, buffer_capacity> _path_buffer;
+		std::array<char, buffer_capacity> _name_buffer;
+
+		usize _selection = -1;
 
 		core::Function<void(core::String)> _callback;
 

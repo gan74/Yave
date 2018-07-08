@@ -34,11 +34,11 @@ SOFTWARE.
 namespace y {
 
 template<typename It, typename Compare>
-inline void sort(It begin, It end, Compare comp) {
+inline void sort(It begin, It end, Compare&& comp) {
 #ifdef Y_USE_PDQSORT
-	pdqsort(begin, end, comp);
+	pdqsort(begin, end, std::forward<Compare>(comp));
 #else
-	std::sort(begin, end, comp);
+	std::sort(begin, end, std::forward<Compare>(comp));
 #endif
 }
 

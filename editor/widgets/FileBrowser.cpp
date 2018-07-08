@@ -25,15 +25,13 @@ SOFTWARE.
 #include <imgui/imgui.h>
 
 
-namespace stdfs = std::experimental::filesystem;
-
 namespace editor {
 
 template<usize N>
-static void to_buffer(std::array<char, N>& buffer, const stdfs::path& p) {
-	auto n = p.string();
-	std::copy_n(n.begin(), std::min(buffer.size() - 1, n.size()), buffer.begin());
-	buffer[n.size()] = 0;
+static void to_buffer(std::array<char, N>& buffer, std::string_view str) {
+	usize len = std::min(buffer.size() - 1, str.size());
+	std::copy_n(str.begin(), len, buffer.begin());
+	buffer[len] = 0;
 }
 
 FileBrowser::FileBrowser() :
@@ -41,12 +39,12 @@ FileBrowser::FileBrowser() :
 		_name_buffer({0}),
 		_callback(Nothing()) {
 
-	set_path(stdfs::current_path());
+	to_buffer(_path_buffer, "");
+	to_buffer(_name_buffer, "");
 }
 
 void FileBrowser::done() {
-	input_path();
-	_callback(_current.string());
+	_callback(full_path());
 	_visible = false;
 }
 
@@ -54,26 +52,41 @@ void FileBrowser::cancel() {
 	_visible = false;
 }
 
-void FileBrowser::set_path(const std::experimental::filesystem::path& path) {
-	_current = path;
-	if(stdfs::is_directory(_current)) {
-		to_buffer(_path_buffer, _current);
+void FileBrowser::set_filesystem(NotOwner<FileSystemModelBase*> model) {
+	_model = model;
+	set_path(_model->current_path());
+}
+
+void FileBrowser::set_path(std::string_view path) {
+	_entries.clear();
+	if(!_model->exists(path)) {
+		return;
+	}
+
+	_model->for_each(path, [this](const auto& name) {
+		_entries.push_back(name);
+	});
+	if(_model->is_directory(path)) {
+		to_buffer(_path_buffer, path);
 	} else {
-		to_buffer(_path_buffer, _current.parent_path());
-		to_buffer(_name_buffer, _current.filename());
+		to_buffer(_path_buffer, _model->parent_path(path));
+		to_buffer(_name_buffer, _model->filename(path));
 	}
 }
 
-void FileBrowser::input_path() {
-	stdfs::path path(_path_buffer.begin());
-	path /= stdfs::path(_name_buffer.begin());
-	set_path(path);
+core::String FileBrowser::full_path() const {
+	std::string_view name(_name_buffer.begin(), std::strlen(_name_buffer.begin()));
+	return _model->join(path(), name);
+}
+
+std::string_view FileBrowser::path() const {
+	return std::string_view(_path_buffer.begin(), std::strlen(_path_buffer.begin()));
 }
 
 void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	{
 		if(ImGui::InputText("###path", _path_buffer.begin(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-			input_path();
+			set_path(full_path());
 		}
 		ImGui::SameLine();
 		if(ImGui::Button("Ok")) {
@@ -83,7 +96,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 	{
 		if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-			input_path();
+			set_path(full_path());
 		}
 		ImGui::SameLine();
 		if(ImGui::Button("Cancel")) {
@@ -94,20 +107,14 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDarkening]);
 	ImGui::BeginChild("###fileentries");
 	{
-		int count = 0;
-		stdfs::path dir = stdfs::is_directory(_current) ? _current : _current.parent_path();
-
-		if(ImGui::Selectable("..", _selection == count++)) {
-			set_path(_current.parent_path());
+		if(ImGui::Selectable("..", _selection == 0)) {
+			set_path(_model->parent_path(path()));
 		}
 
-		for(auto& e : stdfs::directory_iterator(dir)) {
-
-			stdfs::path sub = e.path();
-			auto name = sub.filename().string();
-
-			if(ImGui::Selectable(name.c_str(), _selection == count++)) {
-				set_path(sub);
+		for(usize i = 0; i != _entries.size(); ++i) {
+			const auto& name = _entries[i];
+			if(ImGui::Selectable(name.data(), _selection == i)) {
+				set_path(_model->join(path(), name));
 				break;
 			}
 		}

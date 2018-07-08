@@ -29,6 +29,7 @@ SOFTWARE.
 #include "AssetStore.h"
 
 #include <unordered_map>
+#include <map>
 #include <mutex>
 
 #ifndef YAVE_NO_STDFS
@@ -68,7 +69,7 @@ class FolderAssetStore final : public AssetStore {
 
 		// TODO optimize ?
 		std::unordered_map<AssetId, Entry*> _from_id;
-		std::unordered_map<core::String, std::unique_ptr<Entry>> _from_name;
+		std::map<core::String, std::unique_ptr<Entry>> _from_name;
 };
 
 }

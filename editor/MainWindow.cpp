@@ -232,7 +232,9 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		ImVec2 button_size(toolbar_size, toolbar_size);
 
 		if(ImGui::ImageButton(&context()->icons()->save, button_size)) {
-			show_element<FileBrowser>(context(), _elements)->set_callback(
+			auto browser = show_element<FileBrowser>(context(), _elements);
+			browser->set_filesystem(context()->filesystem());
+			browser->set_callback(
 					[=](core::String filename) { context()->save_scene(filename); }
 				);
 		}
@@ -240,7 +242,9 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		ImGui::SameLine(0.0f, 0.1f);
 
 		if(ImGui::ImageButton(&context()->icons()->load, button_size)) {
-			show_element<FileBrowser>(context(), _elements)->set_callback(
+			auto browser = show_element<FileBrowser>(context(), _elements);
+			browser->set_filesystem(context()->filesystem());
+			browser->set_callback(
 					[=](core::String filename) { context()->load_scene(filename); }
 				);
 		}

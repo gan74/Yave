@@ -60,6 +60,10 @@ EditorContext::~EditorContext() {
 	save_settings();
 }
 
+FileSystemModelBase* EditorContext::filesystem() {
+	return &_filesystem;
+}
+
 void EditorContext::set_scene_deferred(Scene&& scene) {
 	defer([=, sce{std::move(scene)}]() mutable {
 		set_selected(nullptr);
