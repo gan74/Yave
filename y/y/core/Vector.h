@@ -207,14 +207,10 @@ class Vector : ResizePolicy, Allocator {
 			pop();
 		}
 
-		/*iterator erase(iterator it) {
-			clear(it, it + 1);
-			move_range(it, it + 1, _data_end - (it + 1));
-			auto index = it - _data;
-			--_data_end;
-			shrink();
-			return _data + index;
-		}*/
+		void erase(iterator it) {
+			std::move(it + 1, end(), it);
+			pop();
+		}
 
 		usize size() const {
 			return _data_end - _data;
