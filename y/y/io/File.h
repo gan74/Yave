@@ -40,10 +40,10 @@ class File final : public Reader, public Writer {
 		File(File&& other);
 		File& operator=(File&& other);
 
-		static core::Result<File> create(std::string_view name);
-		static core::Result<File> open(std::string_view name);
-		static bool exists(std::string_view name);
-		static bool copy(std::string_view src, std::string_view dst);
+		static core::Result<File> create(const core::String&  name);
+		static core::Result<File> open(const core::String&  name);
+		static bool exists(const core::String& name);
+		static bool copy(const core::String& src, const core::String& dst);
 
 		usize size() const;
 		usize remaining() const;

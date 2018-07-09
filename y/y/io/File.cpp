@@ -56,38 +56,38 @@ void File::swap(File& other) {
 	std::swap(_file, other._file);
 }
 
-core::Result<File> File::create(std::string_view name) {
-	FILE* file = std::fopen(name.data(), "wb+");
+core::Result<File> File::create(const core::String& name) {
+	FILE* file = std::fopen(name.begin(), "wb+");
 	if(file) {
 		return core::Ok<File>(file);
 	}
 	return core::Err();
 }
 
-core::Result<File, void> File::open(std::string_view name) {
-	std::FILE* file = std::fopen(name.data(), "rb");
+core::Result<File, void> File::open(const core::String& name) {
+	std::FILE* file = std::fopen(name.begin(), "rb");
 	if(file) {
 		return core::Ok<File>(file);
 	}
 	return core::Err();
 }
 
-bool File::exists(std::string_view name) {
-	std::FILE* file = std::fopen(name.data(), "rb");
+bool File::exists(const core::String& name) {
+	std::FILE* file = std::fopen(name.begin(), "rb");
 	if(file) {
 		std::fclose(file);
 	}
 	return file;
 }
 
-bool File::copy(std::string_view src, std::string_view dst) {
-	FILE* src_file = std::fopen(src.data(), "rb");
+bool File::copy(const core::String& src, const core::String& dst) {
+	FILE* src_file = std::fopen(src.begin(), "rb");
 	if(!src_file) {
 		return false;
 	}
 	auto src_close = scope_exit([=] { std::fclose(src_file); });
 
-	FILE* dst_file = std::fopen(dst.data(), "wb+");
+	FILE* dst_file = std::fopen(dst.begin(), "wb+");
 	if(!dst_file) {
 		return false;
 	}
