@@ -55,7 +55,7 @@ CmdBufferPoolBase::~CmdBufferPoolBase() {
 		if(_fences.size() != _cmd_buffers.size()) {
 			y_fatal("CmdBuffers are still in use.");
 		}
- 		join_all();
+		join_all();
 		_cmd_buffers.clear();
 		destroy(_pool);
 	}
@@ -86,10 +86,11 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
 std::shared_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
 	{
 		std::unique_lock lock(_lock);
-		for(auto& buffer : _cmd_buffers) {
-			if(buffer.try_reset()) {
-				std::swap(buffer, _cmd_buffers.last());
-				return std::make_shared<CmdBufferDataProxy>(_cmd_buffers.pop());
+		for(auto it = _cmd_buffers.begin(); it != _cmd_buffers.end(); ++it) {
+			if(it->try_reset()) {
+				auto ptr = std::make_shared<CmdBufferDataProxy>(std::move(*it));
+				_cmd_buffers.erase(it);
+				return ptr;
 			}
 		}
 	}
