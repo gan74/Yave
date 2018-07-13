@@ -49,7 +49,7 @@ void deserialize(io::ReaderRef reader, T& t);
 template<typename T>
 T deserialized(io::ReaderRef reader);
 template<typename T>
-void deserialize_array(io::ReaderRef reader, usize size, T* arr);
+void deserialize_array(io::ReaderRef reader, T* arr, usize size);
 
 
 template<typename T>
@@ -89,7 +89,7 @@ struct Deserializer<core::Vector<T>> {
 		u64 size = deserialized<u64>(reader);
 		if constexpr(std::is_default_constructible_v<T>) {
 			vec = core::Vector(size, T());
-			deserialize_array(reader, size, vec.data());
+			deserialize_array(reader, vec.data(), size);
 		} else {
 			vec.clear();
 			vec.set_min_capacity(size);
@@ -110,7 +110,7 @@ struct Deserializer<core::String> {
 	static void deserialize(io::ReaderRef reader, core::String& str) {
 		u64 size = deserialized<u64>(reader);
 		str = core::String(nullptr, size);
-		deserialize_array(reader, size, str.data());
+		deserialize_array(reader, str.data(), size);
 		y_debug_assert(str[size] == 0);
 	}
 };
@@ -135,13 +135,13 @@ T deserialized(io::ReaderRef reader) {
 }
 
 template<typename T>
-void deserialize_array(io::ReaderRef reader, usize size, T* arr) {
+void deserialize_array(io::ReaderRef reader, T* arr, usize size) {
 	if constexpr(is_deserializable<T>::value) {
 		for(usize i = 0; i != size; ++i) {
 			arr[i].deserialize(reader);
 		}
 	} else {
-		reader->read_array(size, arr);
+		reader->read_array(arr, size);
 	}
 }
 

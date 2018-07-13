@@ -78,7 +78,7 @@ SOFTWARE.
 #define y_serde_fixed_array(size, array)										\
 	y_serde_call([&] {															\
 		y::serde::detail::process_fixed_array(									\
-			 (size), (array), _y_serde_driver									\
+			 _y_serde_driver, (array), (size)									\
 		);																		\
 	})
 
@@ -99,13 +99,13 @@ struct Callable : NonCopyable {
 };
 
 template<typename T>
-void process_fixed_array(usize size, T* arr, io::ReaderRef reader) {
-	deserialize_array(reader, size, arr);
+void process_fixed_array(io::ReaderRef reader, T* arr, usize size) {
+	deserialize_array(reader, arr, size);
 }
 
 template<typename T>
-void process_fixed_array(usize size, const T* arr, io::WriterRef writer) {
-	serialize_array(writer, size, arr);
+void process_fixed_array(io::WriterRef writer, const T* arr, usize size) {
+	serialize_array(writer, arr, size);
 }
 
 

@@ -48,7 +48,7 @@ using is_serializable = bool_type<
 template<typename T>
 void serialize(io::WriterRef writer, const T& t);
 template<typename T>
-void serialize_array(io::WriterRef writer, usize size, T* arr);
+void serialize_array(io::WriterRef writer, T* arr, usize size);
 
 
 
@@ -122,13 +122,13 @@ void serialize(io::WriterRef writer, const T& t) {
 }
 
 template<typename T>
-void serialize_array(io::WriterRef writer, usize size, T* arr) {
+void serialize_array(io::WriterRef writer, T* arr, usize size) {
 	if constexpr(is_serializable<T>::value) {
 		for(usize i = 0; i != size; ++i) {
 			arr[i].serialize(writer);
 		}
 	} else {
-		writer->write_array(size, arr);
+		writer->write_array(arr, size);
 	}
 }
 

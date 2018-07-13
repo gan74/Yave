@@ -79,6 +79,14 @@ class Quaternion {
 			return !operator==(q);
 		}
 
+		auto& as_vec() {
+			return _quat;
+		}
+
+		const auto& as_vec() const {
+			return _quat;
+		}
+
 		T angle() const {
 			return std::acos(w() * T(2.0));
 		}

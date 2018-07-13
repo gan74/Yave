@@ -39,12 +39,14 @@ class Writer : NonCopyable {
 		template<typename T>
 		void write_one(const T& t) {
 			static_assert(std::is_trivially_copyable_v<T>, "write_one only works on trivially copyable data");
+			//static_assert(std::is_arithmetic_v<T> || std::has_unique_object_representations<T>::value, "write_one only works on packed types");
 			write(&t, sizeof(t));
 		}
 
 		template<typename T>
-		void write_array(usize size, const T* t) {
+		void write_array(const T* t, usize size) {
 			static_assert(std::is_trivially_copyable_v<T>, "write_array only works on trivially copyable data");
+			//static_assert(std::is_arithmetic_v<T> || std::has_unique_object_representations<T>::value, "write_array only works on packed types");
 			write_array(t, size * sizeof(T));
 		}
 };

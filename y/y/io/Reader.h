@@ -41,12 +41,14 @@ class Reader : NonCopyable {
 		template<typename T>
 		void read_one(T& t) {
 			static_assert(std::is_trivially_copyable_v<T>, "read_one only works on trivially copyable data");
+			//static_assert(std::is_arithmetic_v<T> || std::has_unique_object_representations<T>::value, "read_one only works on packed types");
 			check_len(read(&t, sizeof(T)), sizeof(T));
 		}
 
 		template<typename T>
-		void read_array(usize size, T* t) {
+		void read_array(T* t, usize size) {
 			static_assert(std::is_trivially_copyable_v<T>, "read_array only works on trivially copyable data");
+			//static_assert(std::is_arithmetic_v<T> || std::has_unique_object_representations<T>::value, "read_array only works on packed types");
 			check_len(read(t, size * sizeof(T)), size * sizeof(T));
 		}
 
