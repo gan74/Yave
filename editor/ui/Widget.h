@@ -29,17 +29,19 @@ namespace editor {
 class Widget : public UiElement {
 
 	public:
-		Widget(const char* title, u32 flags = 0);
+		Widget(std::string_view title, u32 flags = 0);
 
 		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 		const math::Vec2& position() const;
 		const math::Vec2& size() const;
 
+		void set_has_parent(bool has);
+
 	protected:
 		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
 
-		void set_alpha(float alpha);
+
 		void set_closable(bool closable);
 
 	private:
@@ -47,8 +49,8 @@ class Widget : public UiElement {
 		math::Vec2 _size;
 
 		u32 _flags;
-		float _alpha = 0.9f;
 		bool _closable = true;
+		bool _has_parent = false;
 };
 
 }

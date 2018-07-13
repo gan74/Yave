@@ -34,7 +34,8 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_scene(this),
 		_loader(device()),
-		_icons(device()) {
+		_icons(device()),
+		_ui(this) {
 }
 
 EditorContext::~EditorContext() {

@@ -33,6 +33,7 @@ SOFTWARE.
 #include "Icons.h"
 #include "Loader.h"
 #include "Selection.h"
+#include "Ui.h"
 
 #include <mutex>
 
@@ -49,8 +50,8 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		void flush_deferred();
 
 
-		FileSystemModelBase* filesystem() {
-			return &_filesystem;
+		const FileSystemModel* filesystem() const {
+			return _filesystem.get() ? _filesystem.get() : FileSystemModel::local_filesystem();
 		}
 
 		Settings& settings() {
@@ -73,8 +74,12 @@ class EditorContext : public DeviceLinked, NonCopyable {
 			return _icons;
 		}
 
+		Ui& ui() {
+			return _ui;
+		}
+
 	private:
-		FileSystemModel _filesystem;
+		std::unique_ptr<FileSystemModel> _filesystem;
 
 		std::mutex _deferred_lock;
 		core::Vector<core::Function<void()>> _deferred;
@@ -85,6 +90,7 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		Selection _selection;
 		Loader _loader;
 		Icons _icons;
+		Ui _ui;
 
 };
 

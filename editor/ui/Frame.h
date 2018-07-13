@@ -29,7 +29,7 @@ namespace editor {
 class Frame : public UiElement {
 
 	public:
-		Frame(const char* title, u32 flags = 0);
+		Frame(std::string_view title, u32 flags = 0);
 
 		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 

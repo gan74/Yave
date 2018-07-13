@@ -26,20 +26,23 @@ SOFTWARE.
 
 namespace editor {
 
-Widget::Widget(const char* title, u32 flags) : UiElement(title), _flags(flags) {
+Widget::Widget(std::string_view title, u32 flags) : UiElement(title), _flags(flags) {
 }
 
 const math::Vec2& Widget::position() const {
+	y_debug_assert(!_has_parent);
 	return _position;
 }
 
 const math::Vec2& Widget::size() const {
+	y_debug_assert(!_has_parent);
 	return _size;
 }
 
-void Widget::set_alpha(float alpha) {
-	_alpha = alpha;
+void Widget::set_has_parent(bool has) {
+	_has_parent = has;
 }
+
 
 void Widget::set_closable(bool closable) {
 	_closable = closable;
@@ -50,21 +53,18 @@ void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 		return;
 	}
 
-	if(_alpha >= 0.0f) {
-		auto color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
-		color.w = _alpha;
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
-	}
-
-	if(ImGui::Begin(_title, _closable ? &_visible : nullptr, _flags)) {
-		_position = ImGui::GetWindowPos();
-		_size = ImGui::GetWindowSize();
-		paint_ui(recorder, token);
-	}
-	ImGui::End();
-
-	if(_alpha >= 0.0f) {
-		ImGui::PopStyleColor(1);
+	if(_has_parent) {
+		if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
+			paint_ui(recorder, token);
+		}
+		ImGui::EndChild();
+	} else {
+		if(ImGui::Begin(_title_with_id.begin(), _closable ? &_visible : nullptr, _flags)) {
+			_position = ImGui::GetWindowPos();
+			_size = ImGui::GetWindowSize();
+			paint_ui(recorder, token);
+		}
+		ImGui::End();
 	}
 }
 

@@ -27,42 +27,32 @@ SOFTWARE.
 
 namespace yave {
 
-class FileSystemModelBase : NonCopyable {
+class FileSystemModel : NonCopyable {
 	public:
 		using for_each_f = core::Function<void(std::string_view)>;
 
-		virtual ~FileSystemModelBase() {
+		static const FileSystemModel* local_filesystem();
+
+		virtual ~FileSystemModel() {
 		}
 
 
-		virtual core::String current_path() const = 0;
-		virtual core::String parent_path(std::string_view path) const = 0;
-		virtual core::String filename(std::string_view path) const = 0;
+		virtual core::String current_path() const noexcept = 0;
+		virtual core::String parent_path(std::string_view path) const noexcept = 0;
+		virtual core::String filename(std::string_view path) const noexcept = 0;
 
 		virtual bool exists(std::string_view path) const = 0;
 		virtual bool is_directory(std::string_view path) const = 0;
 
-		virtual core::String join(std::string_view path, std::string_view name) const = 0;
+		virtual core::String join(std::string_view path, std::string_view name) const noexcept = 0;
 
-		virtual void for_each(std::string_view path, const for_each_f& func) const = 0;
+		virtual void for_each(std::string_view path, const for_each_f& func) const noexcept = 0;
 };
 
 
 #ifndef YAVE_NO_STDFS
 
-class FileSystemModel : public FileSystemModelBase {
-	public:
-		core::String current_path() const override;
-		core::String parent_path(std::string_view path) const override;
-		core::String filename(std::string_view path) const override;
 
-		bool exists(std::string_view path) const override;
-		bool is_directory(std::string_view path) const override;
-
-		core::String join(std::string_view path, std::string_view name) const override;
-
-		void for_each(std::string_view path, const for_each_f& func) const override;
-};
 
 #endif
 

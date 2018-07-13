@@ -34,14 +34,14 @@ namespace editor {
 
 class FileBrowser : public Widget {
 	public:
-		FileBrowser();
+		FileBrowser(NotOwner<FileSystemModel*> model = nullptr);
 
 		template<typename F>
 		void set_callback(F&& func) {
 			_callback = std::forward<F>(func);
 		}
 
-		void set_filesystem(NotOwner<FileSystemModelBase*> model);
+		void set_filesystem(NotOwner<FileSystemModel*> model);
 		void set_path(std::string_view path);
 
 	private:
@@ -55,7 +55,7 @@ class FileBrowser : public Widget {
 
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
-		FileSystemModelBase* _model = nullptr;
+		const FileSystemModel* _model = nullptr;
 
 		core::Vector<core::String> _entries;
 

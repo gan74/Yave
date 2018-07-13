@@ -31,7 +31,7 @@ namespace editor {
 
 class UiElement : NonCopyable {
 	public:
-		UiElement(const char* title);
+		UiElement(std::string_view title);
 		virtual ~UiElement() = default;
 
 		virtual void paint(CmdBufferRecorder<>&, const FrameToken&) = 0;
@@ -39,10 +39,12 @@ class UiElement : NonCopyable {
 		virtual bool is_visible() const;
 		void show();
 
-		const char* title() const;
+		std::string_view title() const;
 
 	protected:
-		const char* _title;
+		u64 _id;
+		core::String _title_with_id;
+		std::string_view _title;
 		bool _visible = true;
 
 };

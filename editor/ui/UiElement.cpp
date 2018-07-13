@@ -26,14 +26,22 @@ SOFTWARE.
 
 namespace editor {
 
-UiElement::UiElement(const char* title) : _title(title) {
+static u64 next_id() {
+	static u64 id = 1;
+	return id++;
+}
+
+UiElement::UiElement(std::string_view title) :
+		_id(next_id()),
+		_title_with_id(title + "###"_s + _id),
+		_title(_title_with_id.begin(), title.size()) {
 }
 
 bool UiElement::is_visible() const {
 	return _visible;
 }
 
-const char* UiElement::title() const {
+std::string_view UiElement::title() const {
 	return _title;
 }
 

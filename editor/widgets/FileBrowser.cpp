@@ -34,13 +34,15 @@ static void to_buffer(std::array<char, N>& buffer, std::string_view str) {
 	buffer[len] = 0;
 }
 
-FileBrowser::FileBrowser() :
+FileBrowser::FileBrowser(NotOwner<FileSystemModel*> model) :
 		Widget("File browser"),
 		_name_buffer({0}),
 		_callback(Nothing()) {
 
 	to_buffer(_path_buffer, "");
 	to_buffer(_name_buffer, "");
+
+	set_filesystem(model);
 }
 
 void FileBrowser::done() {
@@ -52,8 +54,8 @@ void FileBrowser::cancel() {
 	_visible = false;
 }
 
-void FileBrowser::set_filesystem(NotOwner<FileSystemModelBase*> model) {
-	_model = model;
+void FileBrowser::set_filesystem(NotOwner<FileSystemModel*> model) {
+	_model = model ? model : FileSystemModel::local_filesystem();
 	set_path(_model->current_path());
 }
 

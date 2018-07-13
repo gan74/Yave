@@ -48,40 +48,6 @@ SOFTWARE.
 
 namespace editor {
 
-bool confirm(const char* message) {
-#ifdef Y_OS_WIN
-	return MessageBox(GetActiveWindow(), message, "Confirm", MB_OKCANCEL) != IDCANCEL;
-#else
-	return true;
-#endif
-}
-
-template<typename T>
-static T* find_element(const core::Vector<std::unique_ptr<UiElement>>& elems) {
-	for(auto& e : elems) {
-		if(auto t = dynamic_cast<T*>(e.get())) {
-			return t;
-		}
-	}
-	return nullptr;
-}
-
-template<typename T>
-static T* show_element(ContextPtr cptr, core::Vector<std::unique_ptr<UiElement>>& elems) {
-	if(auto t = find_element<T>(elems)) {
-		t->show();
-		return t;
-	}
-	if constexpr(std::is_constructible_v<T, ContextPtr>) {
-		elems << std::make_unique<T>(cptr);
-	} else {
-		unused(cptr);
-		elems << std::make_unique<T>();
-	}
-	return dynamic_cast<T*>(elems.last().get());
-}
-
-
 MainWindow::MainWindow(ContextPtr cptr) :
 		Window({1280, 768}, "Yave", Window::Resizable),
 		ContextLinked(cptr) {
@@ -96,10 +62,6 @@ MainWindow::MainWindow(ContextPtr cptr) :
 	set_event_handler(new MainEventHandler());
 
 	_engine_view = std::make_unique<EngineView>(context());
-
-	{
-		_elements << std::make_unique<PropertyPanel>(context());
-	}
 }
 
 MainWindow::~MainWindow() {
@@ -133,7 +95,7 @@ void MainWindow::exec() {
 				present(recorder, frame);
 			}
 		}
-	} while(!confirm("Quit ?"));
+	} while(!context()->ui().confirm("Quit ?"));
 
 	device()->queue(QueueFamily::Graphics).wait();
 }
@@ -198,26 +160,32 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 	// menu
 	{
 		if(ImGui::BeginMenuBar()) {
+			if(ImGui::BeginMenu("File")) {
+				if(ImGui::MenuItem("Import")) context()->ui().show<AssetImporter>();
+				ImGui::EndMenu();
+			}
+
+
 			if(ImGui::BeginMenu("View")) {
-				if(ImGui::MenuItem("Entity view"))		show_element<EntityView>(context(), _elements);
+				if(ImGui::MenuItem("Entity view")) context()->ui().show<EntityView>();
 
 				if(ImGui::BeginMenu("Debug")) {
-					if(ImGui::MenuItem("Camera debug")) show_element<CameraDebug>(context(), _elements);
-					if(ImGui::MenuItem("Scene debug"))	show_element<SceneDebug>(context(), _elements);
+					if(ImGui::MenuItem("Camera debug")) context()->ui().show<CameraDebug>();
+					if(ImGui::MenuItem("Scene debug")) context()->ui().show<SceneDebug>();
 
 					y_debug_assert(!ImGui::MenuItem("Debug assert"));
 
 					ImGui::EndMenu();
 				}
 				if(ImGui::BeginMenu("Statistics")) {
-					if(ImGui::MenuItem("Performances")) show_element<PerformanceMetrics>(context(), _elements);
-					if(ImGui::MenuItem("Memory info"))	show_element<MemoryInfo>(context(), _elements);
+					if(ImGui::MenuItem("Performances")) context()->ui().show<PerformanceMetrics>();
+					if(ImGui::MenuItem("Memory info")) context()->ui().show<MemoryInfo>();
 					ImGui::EndMenu();
 				}
 
 				ImGui::Separator();
 
-				if(ImGui::MenuItem("Settings"))			show_element<SettingsPanel>(context(), _elements);
+				if(ImGui::MenuItem("Settings")) context()->ui().show<SettingsPanel>();
 
 				ImGui::EndMenu();
 			}
@@ -232,8 +200,7 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		ImVec2 button_size(toolbar_size, toolbar_size);
 
 		if(ImGui::ImageButton(&context()->icons().save(), button_size)) {
-			auto browser = show_element<FileBrowser>(context(), _elements);
-			browser->set_filesystem(context()->filesystem());
+			auto browser = context()->ui().show<FileBrowser>();
 			browser->set_callback(
 					[=](core::String filename) { context()->scene().save(filename); }
 				);
@@ -242,12 +209,15 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		ImGui::SameLine(0.0f, 0.1f);
 
 		if(ImGui::ImageButton(&context()->icons().load(), button_size)) {
-			auto browser = show_element<FileBrowser>(context(), _elements);
-			browser->set_filesystem(context()->filesystem());
+			auto browser = context()->ui().show<FileBrowser>();
 			browser->set_callback(
 					[=](core::String filename) { context()->scene().load(filename); }
 				);
 		}
+	}
+
+	if(context()->selection().selected()) {
+		context()->ui().show<PropertyPanel>();
 	}
 
 	//ImGui::NextColumn();
@@ -260,7 +230,7 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 
 		// main UI
 		{
-			for(auto& e : _elements) {
+			for(auto& e : context()->ui().widgets()) {
 				e->paint(recorder, token);
 			}
 

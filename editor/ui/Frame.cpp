@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace editor {
 
-Frame::Frame(const char* title, u32 flags) : UiElement(title), _flags(flags) {
+Frame::Frame(std::string_view title, u32 flags) : UiElement(title), _flags(flags) {
 }
 
 void Frame::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
@@ -37,7 +37,7 @@ void Frame::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	// this breaks everthing that relies on getting focus (like popups)
 	// ImGui::SetNextWindowFocus();
 
-	if(ImGui::BeginChild(_title, ImVec2(0, 0), false, _flags)) {
+	if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
 		paint_ui(recorder, token);
 	}
 	ImGui::EndChild();

@@ -28,50 +28,66 @@ namespace yave {
 
 #ifndef YAVE_NO_STDFS
 
-core::String FileSystemModel::current_path() const {
-	return fs::current_path().string();
-}
+class LocalFileSystemModel : public FileSystemModel {
+	public:
+		core::String current_path() const noexcept override {
+			return fs::current_path().string();
+		}
 
-core::String FileSystemModel::parent_path(std::string_view path) const {
-	return fs::path(path).parent_path().string();
-}
+		core::String parent_path(std::string_view path) const noexcept override {
+			return fs::path(path).parent_path().string();
+		}
 
-core::String FileSystemModel::filename(std::string_view path) const {
-	return fs::path(path).filename().string();
-}
+		core::String filename(std::string_view path) const noexcept override {
+			return fs::path(path).filename().string();
+		}
 
-bool FileSystemModel::exists(std::string_view path) const {
-	return fs::exists(path);
-}
+		bool exists(std::string_view path) const noexcept override {
+			return fs::exists(path);
+		}
 
-bool FileSystemModel::is_directory(std::string_view path) const {
-	return fs::is_directory(path);
-}
+		bool is_directory(std::string_view path) const noexcept override {
+			return fs::is_directory(path);
+		}
 
-core::String FileSystemModel::join(std::string_view path, std::string_view name) const {
-	if(!path.size()) {
-		return name;
-	}
-	char last = path.back();
-	core::String result;
-	result.set_min_capacity(path.size() + name.size() + 1);
-	result += path;
-	if(last != '/' && last != '\\') {
-		result.push_back('/');
-	}
-	result += name;
-	return result;
-}
+		core::String join(std::string_view path, std::string_view name) const noexcept override {
+			if(!path.size()) {
+				return name;
+			}
+			char last = path.back();
+			core::String result;
+			result.set_min_capacity(path.size() + name.size() + 1);
+			result += path;
+			if(last != '/' && last != '\\') {
+				result.push_back('/');
+			}
+			result += name;
+			return result;
+		}
 
-void FileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
-	for(auto& p : fs::directory_iterator(path)) {
-		fs::path path = p.path().filename();
-		auto str = path.string();
-		func(str);
-	}
-}
+		void for_each(std::string_view path, const for_each_f& func) const noexcept override {
+			try {
+				for(auto& p : fs::directory_iterator(path)) {
+					fs::path path = p.path().filename();
+					auto str = path.string();
+					func(str);
+				}
+			} catch(...) {
+			}
+		}
+};
+
 
 #endif
+
+const FileSystemModel* FileSystemModel::local_filesystem() {
+#ifdef YAVE_NO_STDFS
+	return y_fatal("FileSystemModel::local_filesystem() is not supported");
+#else
+	static LocalFileSystemModel filesystem;
+	return &filesystem;
+#endif
+}
 
 
 }
