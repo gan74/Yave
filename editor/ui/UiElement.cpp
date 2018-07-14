@@ -33,7 +33,7 @@ static u64 next_id() {
 
 UiElement::UiElement(std::string_view title) :
 		_id(next_id()),
-		_title_with_id(title + "###"_s + _id),
+		_title_with_id(title/* + "###"_s + _id*/),
 		_title(_title_with_id.begin(), title.size()) {
 }
 

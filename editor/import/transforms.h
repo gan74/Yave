@@ -19,35 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_ASSETIMPORTER_H
-#define EDITOR_WIDGETS_ASSETIMPORTER_H
+#ifndef EDITOR_IMPORT_TRANSFORMS_H
+#define EDITOR_IMPORT_TRANSFORMS_H
 
-#include "FileBrowser.h"
-
-#include <editor/import/scene.h>
-
-#include <future>
+#include "scene.h"
 
 namespace editor {
+namespace import {
 
-class AssetImporter final : public Widget, public ContextLinked {
-	public:
-		AssetImporter(ContextPtr ctx);
+MeshData transform(const MeshData& mesh, const math::Transform<>& tr);
 
-	private:
-		void paint_ui(CmdBufferRecorder<>&recoder, const FrameToken&token) override;
-
-		void import_async(const core::String& filename);
-
-		bool done_loading() const;
-		bool is_loading() const;
-
-		FileBrowser _browser;
-
-		std::unique_ptr<import::SceneData> _imported;
-		std::future<import::SceneData> _import_future;
-};
+Animation set_speed(const Animation& anim, float speed);
 
 }
+}
 
-#endif // EDITOR_WIDGETS_ASSETIMPORTER_H
+#endif // EDITOR_IMPORT_TRANSFORMS_H

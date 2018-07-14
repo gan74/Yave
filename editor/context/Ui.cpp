@@ -48,6 +48,18 @@ void Ui::ok(const char* title, const char* message) {
 #endif
 }
 
+void Ui::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	for(auto& e : _widgets) {
+		e->paint(recorder, token);
+	}
 
+	for(usize i = 0; i < _widgets.size();) {
+		if(!_widgets[i]->is_visible()) {
+			_widgets.erase_unordered(_widgets.begin() + i);
+		} else {
+			++i;
+		}
+	}
+}
 
 }

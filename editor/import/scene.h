@@ -19,35 +19,49 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_ASSETIMPORTER_H
-#define EDITOR_WIDGETS_ASSETIMPORTER_H
+#ifndef EDITOR_IMPORT_SCENE_H
+#define EDITOR_IMPORT_SCENE_H
 
-#include "FileBrowser.h"
+#include <editor/editor.h>
 
-#include <editor/import/scene.h>
+#include <yave/meshes/MeshData.h>
+#include <yave/animations/Animation.h>
+#include <yave/animations/AnimationChannel.h>
 
-#include <future>
+#include <y/core/Chrono.h>
+#include <y/math/math.h>
+
+/*
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+*/
+
+class aiAnimation;
+class aiMesh;
+class aiScene;
 
 namespace editor {
+namespace import {
 
-class AssetImporter final : public Widget, public ContextLinked {
-	public:
-		AssetImporter(ContextPtr ctx);
-
-	private:
-		void paint_ui(CmdBufferRecorder<>&recoder, const FrameToken&token) override;
-
-		void import_async(const core::String& filename);
-
-		bool done_loading() const;
-		bool is_loading() const;
-
-		FileBrowser _browser;
-
-		std::unique_ptr<import::SceneData> _imported;
-		std::future<import::SceneData> _import_future;
+struct SkeletonData {
+	core::Vector<SkinWeights> skin;
+	core::Vector<Bone> bones;
 };
 
+struct SceneData {
+	core::Vector<Named<MeshData>> meshes;
+	core::Vector<Named<Animation>> animations;
+};
+
+SceneData import_scene(const core::String& path);
+
+Animation import_animation(aiAnimation* anim);
+MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
+
+SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
+
+}
 }
 
-#endif // EDITOR_WIDGETS_ASSETIMPORTER_H
+#endif // EDITOR_IMPORT_SCENE_H

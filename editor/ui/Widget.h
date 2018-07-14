@@ -41,7 +41,6 @@ class Widget : public UiElement {
 	protected:
 		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
 
-
 		void set_closable(bool closable);
 
 	private:

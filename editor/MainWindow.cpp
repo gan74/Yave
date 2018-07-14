@@ -229,12 +229,7 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 		_engine_view->paint(recorder, token);
 
 		// main UI
-		{
-			for(auto& e : context()->ui().widgets()) {
-				e->paint(recorder, token);
-			}
-
-		}
+		context()->ui().paint(recorder, token);
 
 		ImGui::EndChild();
 	}

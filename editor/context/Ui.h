@@ -42,6 +42,8 @@ class Ui : public ContextLinked, NonCopyable {
 		bool confirm(const char* message);
 		void ok(const char* title, const char* message);
 
+		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token);
+
 
 		template<typename T>
 		T* show() {

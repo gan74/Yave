@@ -47,7 +47,7 @@ class FileBrowser : public Widget {
 	private:
 		static constexpr usize buffer_capacity = 1024;
 
-		void done();
+		void done(const core::String& filename);
 		void cancel();
 
 		core::String full_path() const;
@@ -64,8 +64,9 @@ class FileBrowser : public Widget {
 
 		usize _selection = -1;
 
-		core::Function<void(core::String)> _callback;
+		core::Function<void(const core::String&)> _callback;
 
+		//bool _close_on_selection = true;
 };
 
 }

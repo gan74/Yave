@@ -26,13 +26,10 @@ SOFTWARE.
 
 
 namespace yave {
-
 class RenderPassRecorder;
-
 namespace experimental {
 	// forward declaring namespaces ...
 }
-
 }
 
 namespace editor {
@@ -40,12 +37,10 @@ namespace editor {
 using namespace yave;
 using namespace yave::experimental;
 
-
 using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
 
 class EditorContext;
 using ContextPtr = EditorContext*;
-
 
 class ContextLinked {
 	public:
@@ -61,6 +56,43 @@ class ContextLinked {
 	private:
 		ContextPtr _ctx = nullptr;
 };
+
+template<typename T>
+class Named {
+	public:
+		Named(std::string_view name, T&& obj) : _name(name), _obj(std::move(obj)) {
+		}
+
+		Named(T&& obj) : Named("unamed", std::move(obj)) {
+		}
+
+		const core::String& name() const {
+			return _name;
+		}
+
+		const T& obj() const {
+			return _obj;
+		}
+
+		T& obj() {
+			return _obj;
+		}
+
+		operator T&() {
+			return _obj;
+		}
+
+		operator const T&() const {
+			return _obj;
+		}
+
+	private:
+		core::String _name;
+		T _obj;
+};
+
+template<typename T>
+Named(std::string_view, T&&) -> Named<T>;
 
 }
 

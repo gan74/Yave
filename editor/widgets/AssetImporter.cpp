@@ -24,20 +24,58 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
+#include <imgui/imgui.h>
+
 namespace editor {
 
 AssetImporter::AssetImporter(ContextPtr ctx) : Widget("Asset importer"), ContextLinked(ctx) {
 	_browser.set_has_parent(true);
-	_browser.set_callback([this](const auto& filename) { import(filename); });
+	_browser.set_callback([this](const auto& filename) { import_async(filename); });
 }
 
 void AssetImporter::paint_ui(CmdBufferRecorder<>& recoder, const FrameToken& token)  {
 	_browser.paint(recoder, token);
+
+
+	if(_imported) {
+		ImGui::BeginChild("###imported");
+		for(const auto& mesh : _imported->meshes) {
+			ImGui::Selectable(mesh.name().begin());
+		}
+		ImGui::EndChild();
+	} else{
+		if(is_loading()) {
+			if(done_loading()) {
+				try {
+					_imported = std::make_unique<import::SceneData>(_import_future.get());
+				} catch(std::exception& e) {
+					context()->ui().ok("Unable to import", "Unable to import scene: "_s + e.what());
+					_browser.show();
+				}
+			} else {
+				ImGui::Text("Loading...");
+			}
+		}
+	}
+
 }
 
+bool AssetImporter::is_loading() const {
+	return _import_future.valid();
+}
 
-void AssetImporter::import(const core::String& filename) {
-	context()->ui().ok(filename, filename);
+bool AssetImporter::done_loading() const {
+	return _import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}
+
+void AssetImporter::import_async(const core::String& filename) {
+	_import_future = std::async(std::launch::async, [=] {
+		//try {
+			return import::import_scene(filename);
+		/*} catch(...) {
+			pr.set_exception(std::current_exception());
+		}*/
+	});
 }
 
 }

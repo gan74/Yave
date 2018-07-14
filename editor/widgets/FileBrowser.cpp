@@ -45,8 +45,8 @@ FileBrowser::FileBrowser(NotOwner<FileSystemModel*> model) :
 	set_filesystem(model);
 }
 
-void FileBrowser::done() {
-	_callback(full_path());
+void FileBrowser::done(const core::String& filename) {
+	_callback(filename);
 	_visible = false;
 }
 
@@ -71,8 +71,8 @@ void FileBrowser::set_path(std::string_view path) {
 	if(_model->is_directory(path)) {
 		to_buffer(_path_buffer, path);
 	} else {
-		to_buffer(_path_buffer, _model->parent_path(path));
-		to_buffer(_name_buffer, _model->filename(path));
+		done(path);
+		set_path(_model->parent_path(path));
 	}
 }
 
@@ -92,7 +92,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		}
 		ImGui::SameLine();
 		if(ImGui::Button("Ok")) {
-			done();
+			done(full_path());
 		}
 	}
 
