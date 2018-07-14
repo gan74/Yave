@@ -27,6 +27,10 @@ SOFTWARE.
 
 #include <imgui/imgui.h>
 
+// remove:
+#include <yave/material/Material.h>
+#include <y/io/File.h>
+
 namespace editor {
 
 static const char* light_type_name(Light::Type type) {
@@ -43,6 +47,16 @@ static const char* light_type_name(Light::Type type) {
 	return y_fatal("Unsupported light type.");
 }
 
+static AssetPtr<Material> default_material(DevicePtr dptr) {
+	static AssetPtr<Material> material;
+	if(!material) {
+		material = make_asset<Material>(dptr, MaterialData()
+				.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+				.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
+			);
+	}
+	return material;
+}
 
 EntityView::EntityView(ContextPtr cptr) : Widget("Entities"), ContextLinked(cptr) {
 }
@@ -67,7 +81,17 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		if(ImGui::MenuItem("Add light")) {
 			add_light();
 		}
-		ImGui::MenuItem("Add renderable");
+		if(ImGui::MenuItem("Add renderable")) {
+			try {
+				AssetPtr<StaticMesh> mesh = context()->loader().static_mesh().load("cube.ym");
+				auto instance = std::make_unique<StaticMeshInstance>(mesh, default_material(context()->device()));
+				instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
+				context()->scene().scene().static_meshes() << std::move(instance);
+
+			} catch(std::exception& e) {
+				log_msg("Error while adding renderable: "_s + e.what());
+			}
+		}
 		ImGui::EndPopup();
 	}
 

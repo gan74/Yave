@@ -22,14 +22,25 @@ SOFTWARE.
 
 #include "Settings.h"
 
+#include <y/io/File.h>
+
 namespace editor {
 
 Settings::Settings() {
-
+	if(auto file = io::File::create("settings.dat"); file.is_ok()) {
+		try {
+			deserialize(file.unwrap());
+		} catch(...) {
+		}
+	}
 }
 
 Settings::~Settings() {
-
+	try {
+		auto file = std::move(io::File::create("settings.dat").expected("Unable to create settings file"));
+		serialize(file);
+	} catch(...) {
+	}
 }
 
 CameraSettings& Settings::camera() {

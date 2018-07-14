@@ -29,6 +29,7 @@ SOFTWARE.
 namespace editor {
 
 SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), _scene_view(_scene) {
+	load("scene.ys");
 }
 
 Scene& SceneData::scene() {

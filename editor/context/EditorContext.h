@@ -86,9 +86,9 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		bool _is_flushing_deferred = false;
 
 		Settings _setting;
+		Loader _loader;
 		SceneData _scene;
 		Selection _selection;
-		Loader _loader;
 		Icons _icons;
 		Ui _ui;
 

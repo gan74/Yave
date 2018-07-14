@@ -32,8 +32,8 @@ DevicePtr ContextLinked::device() const {
 
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
-		_scene(this),
 		_loader(device()),
+		_scene(this),
 		_icons(device()),
 		_ui(this) {
 }
