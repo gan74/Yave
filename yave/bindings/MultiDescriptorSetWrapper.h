@@ -19,55 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BINDINGS_DESCRIPTORARRAY_H
-#define YAVE_BINDINGS_DESCRIPTORARRAY_H
+#ifndef YAVE_BINDINGS_MULTIDESCRIPTORSETWRAPPER_H
+#define YAVE_BINDINGS_MULTIDESCRIPTORSETWRAPPER_H
 
-#include "DescriptorSetBase.h"
+#include "DescriptorSet.h"
+
+#include <yave/swapchain/FrameToken.h>
 
 namespace yave {
 
-class DescriptorArray : public DescriptorSetBase {
-
+template<typename T = DescriptorSet>
+class MultiDescriptorSetWrapper {
 	public:
-		DescriptorArray() = default;
-		DescriptorArray(DevicePtr dptr, vk::DescriptorType type, usize max_size = -1);
-
-		~DescriptorArray();
-
-		DescriptorArray(DescriptorArray&& other);
-		DescriptorArray& operator=(DescriptorArray&& other);
-
-		usize capacity() const;
-
-		void set(usize index, const Binding& binding);
-
-
-		auto operator[](usize i) {
-			class Ref {
-				public:
-					void operator=(const Binding& b) {
-						_array.set(_index, b);
-					}
-
-					Ref(DescriptorArray& a, usize i) : _array(a), _index(i) {
-					}
-
-				private:
-					DescriptorArray& _array;
-					usize _index;
-			};
-
-			return Ref(*this, i);
+		MultiDescriptorSetWrapper(const core::ArrayView<Binding>& bindings) : _bindings(bindings) {
 		}
 
-	protected:
-		void swap(DescriptorArray& other);
+		T& operator[](const FrameToken& token) {
+			lazy_init(token);
+			return _sets[token.image_index];
+		}
 
-		vk::DescriptorType _type;
-		vk::DescriptorPool _pool;
-		usize _max_elements;
+	private:
+		void lazy_init(const FrameToken& token) {
+			if(is_initialized()) {
+				return;
+			}
+			DevicePtr dptr = token.image_view.device();
+			_sets = std::make_unique<DescriptorSet[]>(token.image_count);
+			for(usize i = 0; i != token.image_count; ++i) {
+				_sets[i] = T(dptr, _bindings);
+			}
+			_bindings.clear();
+		}
+
+		bool is_initialized() const {
+			return _sets.get();
+		}
+
+		std::unique_ptr<T[]> _sets;
+		core::Vector<Binding> _bindings;
 };
 
 }
 
-#endif // YAVE_BINDINGS_DESCRIPTORARRAY_H
+#endif // YAVE_BINDINGS_MULTIDESCRIPTORSETWRAPPER_H

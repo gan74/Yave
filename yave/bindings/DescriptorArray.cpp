@@ -79,10 +79,14 @@ static u32 max_elements(DevicePtr dptr, vk::DescriptorType type) {
 }
 
 
-DescriptorArray::DescriptorArray(DevicePtr dptr, vk::DescriptorType type) : DescriptorSetBase(dptr), _type(type) {
+DescriptorArray::DescriptorArray(DevicePtr dptr, vk::DescriptorType type, usize max_size) :
+		DescriptorSetBase(dptr),
+		_type(type),
+		_max_elements(std::min(max_size, usize(max_elements(device(), _type)))) {
+
 	vk::DescriptorSetLayoutBinding binding = vk::DescriptorSetLayoutBinding()
 				.setBinding(0)
-				.setDescriptorCount(max_elements(device(), _type))
+				.setDescriptorCount(_max_elements)
 				.setDescriptorType(_type)
 			;
 
@@ -108,6 +112,36 @@ void DescriptorArray::swap(DescriptorArray& other) {
 	DescriptorSetBase::swap(other);
 	std::swap(_type, other._type);
 	std::swap(_pool, other._pool);
+	std::swap(_max_elements, other._max_elements);
+}
+
+usize DescriptorArray::capacity() const {
+	return _max_elements;
+}
+
+
+void DescriptorArray::set(usize index, const Binding& binding) {
+	if(binding.vk_descriptor_type() != _type) {
+		y_fatal("Incompatible binding type.");
+	}
+
+	auto w = vk::WriteDescriptorSet()
+			.setDstSet(vk_descriptor_set())
+			.setDstBinding(u32(index))
+			.setDstArrayElement(0)
+			.setDescriptorCount(1)
+			.setDescriptorType(_type)
+		;
+
+	if(binding.is_buffer()) {
+		w.setPBufferInfo(&binding.descriptor_info().buffer);
+	} else if(binding.is_image()) {
+		w.setPImageInfo(&binding.descriptor_info().image);
+	} else {
+		y_fatal("Unknown descriptor type.");
+	}
+
+	device()->vk_device().updateDescriptorSets(1, &w, 0, nullptr);
 }
 
 }
