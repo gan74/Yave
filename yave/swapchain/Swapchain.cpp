@@ -134,34 +134,32 @@ Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_su
 
 Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dptr), _surface(surface) {
 	build_swapchain();
+	build_semaphores();
+	y_debug_assert(_images.size() == _semaphores.size());
 }
 
 void Swapchain::reset() {
-	destroy_images();
+	_images.clear();
 
 	auto old = _swapchain;
 
 	build_swapchain();
 
 	destroy(old);
+
+	y_debug_assert(_images.size() == _semaphores.size());
 }
 
+Swapchain::~Swapchain() {
+	_images.clear();
 
-	Swapchain::~Swapchain() {
-	destroy_images();
-
-	destroy(_swapchain);
-	destroy(_surface);
-}
-
-void Swapchain::destroy_images() {
 	for(const auto& semaphores : _semaphores) {
 		destroy(semaphores.first);
 		destroy(semaphores.second);
 	}
 
-	_images.clear();
-	_semaphores.clear();
+	destroy(_swapchain);
+	destroy(_surface);
 }
 
 void Swapchain::build_swapchain() {
@@ -196,14 +194,6 @@ void Swapchain::build_swapchain() {
 	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
 		auto view = create_image_view(device(), image, _color_format.vk_format());
 
-		/*struct SwapchainImageMemoryHeap : DeviceMemoryHeapBase {
-			SwapchainImageMemoryHeap(DevicePtr dptr) : DeviceMemoryHeapBase(dptr) {}
-			core::Result<DeviceMemory> alloc(vk::MemoryRequirements) override { return y_fatal("SwapchainImageMemoryHeap can not alloc."); }
-			void free(const DeviceMemory&) override { return y_fatal("SwapchainImageMemoryHeap can not free."); }
-			void* map(usize) override { return y_fatal("SwapchainImageMemoryHeap can not map."); }
-			void unmap() override { y_fatal("SwapchainImageMemoryHeap can not unmap."); }
-		}*/
-
 		struct SwapchainImageMemory : DeviceMemory {
 			SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk::DeviceMemory(), 0, 0) {
 			}
@@ -222,8 +212,6 @@ void Swapchain::build_swapchain() {
 		swapchain_image._view = view;
 
 		_images << std::move(swapchain_image);
-		_semaphores << std::pair(device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()),
-								 device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()));
 	}
 
 	CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
@@ -233,7 +221,17 @@ void Swapchain::build_swapchain() {
 	device()->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
+void Swapchain::build_semaphores() {
+	for(usize i = 0; i != _images.size(); ++i) {
+		_semaphores << std::pair(device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()),
+								 device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()));
+	}
+}
+
+
 FrameToken Swapchain::next_frame() {
+	y_debug_assert(_semaphores.size());
+
 	auto [image_acquired, render_finished] = _semaphores.pop();
 	u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, vk::Fence()).value;
 
@@ -248,6 +246,9 @@ FrameToken Swapchain::next_frame() {
 }
 
 void Swapchain::present(const FrameToken& token, vk::Queue queue) {
+	_semaphores << std::pair(token.image_aquired, token.render_finished);
+	std::rotate(_semaphores.begin(), _semaphores.end() - 1, _semaphores.end());
+
 	queue.presentKHR(vk::PresentInfoKHR()
 			.setSwapchainCount(1)
 			.setPSwapchains(&_swapchain)
@@ -255,9 +256,6 @@ void Swapchain::present(const FrameToken& token, vk::Queue queue) {
 			.setWaitSemaphoreCount(1)
 			.setPWaitSemaphores(&token.render_finished)
 		);
-
-	_semaphores << std::pair(token.image_aquired, token.render_finished);
-	std::rotate(_semaphores.begin(), _semaphores.end() - 1, _semaphores.end());
 }
 
 vk::SwapchainKHR Swapchain::vk_swapchain() const {

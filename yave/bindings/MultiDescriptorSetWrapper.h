@@ -27,8 +27,13 @@ SOFTWARE.
 #include <yave/swapchain/FrameToken.h>
 
 namespace yave {
+/*
+ *
+ * WARNING: modifying one descriptor set will not modify the others.
+ *
+ */
 
-template<typename T = DescriptorSet>
+/*template<typename T = DescriptorSet>
 class MultiDescriptorSetWrapper {
 	public:
 		MultiDescriptorSetWrapper(const core::ArrayView<Binding>& bindings) : _bindings(bindings) {
@@ -58,7 +63,7 @@ class MultiDescriptorSetWrapper {
 
 		std::unique_ptr<T[]> _sets;
 		core::Vector<Binding> _bindings;
-};
+};*/
 
 }
 

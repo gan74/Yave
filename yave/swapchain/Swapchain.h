@@ -95,8 +95,7 @@ class Swapchain : NonCopyable, public DeviceLinked {
 
 	private:
 		void build_swapchain();
-
-		void destroy_images();
+		void build_semaphores();
 
 		u64 _frame_id = 0;
 

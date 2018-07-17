@@ -84,14 +84,12 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
 }
 
 std::shared_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
-	{
-		std::unique_lock lock(_lock);
-		for(auto it = _cmd_buffers.begin(); it != _cmd_buffers.end(); ++it) {
-			if(it->try_reset()) {
-				auto ptr = std::make_shared<CmdBufferDataProxy>(std::move(*it));
-				_cmd_buffers.erase(it);
-				return ptr;
-			}
+	std::unique_lock lock(_lock);
+	for(auto it = _cmd_buffers.begin(); it != _cmd_buffers.end(); ++it) {
+		if(it->try_reset()) {
+			auto ptr = std::make_shared<CmdBufferDataProxy>(std::move(*it));
+			_cmd_buffers.erase(it);
+			return ptr;
 		}
 	}
 	return std::make_shared<CmdBufferDataProxy>(create_data());
