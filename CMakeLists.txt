@@ -27,7 +27,6 @@ endfunction(enable_unity_build)
 find_package(vulkan REQUIRED)
 
 option(BUILD_YAVE "Build yave" ON)
-option(BUILD_TOOLS "Build tools" ON)
 option(BUILD_EDITOR "Build editor" ON)
 
 # add y subtree
@@ -41,6 +40,8 @@ include_directories(${yave_SOURCE_DIR})
 include_directories(${Vulkan_INCLUDE_DIRS})
 include_directories(external)
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_CXX_STANDARD 17)
 
 # Yave's core file
 file(GLOB_RECURSE YAVE_FILES
@@ -56,11 +57,10 @@ file(GLOB_RECURSE ECS_FILES
 
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
-		"editor/*.h"
 		"editor/*.cpp"
-		"external/imgui*.h"
-		"external/imgui*.cpp"
-		"external/imgui*.inl"
+		"editor/*.h"
+		"external/imgui/*.cpp"
+		"external/imgui/*.h"
 	)
 
 # Shader files, they are here so the IDE can find them
@@ -88,13 +88,13 @@ endif()
 
 if(BUILD_EDITOR)
 	add_executable(editor ${EDITOR_FILES})
+
+	target_link_libraries(editor assimp.dll)
 	target_link_libraries(editor yave)
+	target_link_libraries(editor y)
 endif()
 
 
-if(BUILD_TOOLS)
-	add_subdirectory(tools)
-endif()
 
 
 
