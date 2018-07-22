@@ -81,27 +81,27 @@ bool File::exists(const core::String& name) {
 }
 
 bool File::copy(const core::String& src, const core::String& dst) {
-	FILE* src_file = std::fopen(src.begin(), "rb");
-	if(!src_file) {
-		return false;
+	if(auto r = create(src); r.is_ok()) {
+		return copy(r.unwrap(), dst);
 	}
-	auto src_close = scope_exit([=] { std::fclose(src_file); });
+	return false;
+}
 
-	FILE* dst_file = std::fopen(dst.begin(), "wb+");
-	if(!dst_file) {
-		return false;
-	}
-	auto dst_close = scope_exit([=] { std::fclose(dst_file); });
-
-	char buffer[1024];
-	usize read_size = 0;
-	do {
-		read_size = std::fread(buffer, 1, sizeof(buffer), src_file);
-		if(std::fwrite(buffer, 1, read_size, dst_file) != read_size) {
-			return false;
+bool File::copy(io::ReaderRef src, const core::String& dst) {
+	if(auto r = create(dst); r.is_ok()) {
+		File dst_file = std::move(r.unwrap());
+		try {
+			char buffer[1024];
+			usize read_size = 0;
+			do {
+				read_size = src->read(buffer, sizeof(buffer));
+				dst_file.write(buffer, read_size);
+			} while(read_size);
+			return true;
+		} catch(...) {
 		}
-	} while(read_size);
-	return true;
+	}
+	return false;
 }
 
 usize File::size() const {
@@ -137,7 +137,7 @@ bool File::at_end() const {
 	return _file ? (std::feof(_file) || !remaining()) : true;
 }
 
-void File::seek(usize byte){
+void File::seek(usize byte) {
 	if(_file) {
 		check_c_err(std::fseek(_file, byte, SEEK_SET));
 	}

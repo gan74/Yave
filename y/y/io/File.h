@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include "Reader.h"
 #include "Writer.h"
+#include "Ref.h"
 
 namespace y {
 namespace io {
@@ -44,6 +45,7 @@ class File final : public Reader, public Writer {
 		static core::Result<File> open(const core::String&  name);
 		static bool exists(const core::String& name);
 		static bool copy(const core::String& src, const core::String& dst);
+		static bool copy(io::ReaderRef src, const core::String& dst);
 
 		usize size() const;
 		usize remaining() const;
