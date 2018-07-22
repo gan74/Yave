@@ -19,37 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_UI_UIELEMENT_H
-#define EDITOR_UI_UIELEMENT_H
+#ifndef EDITOR_WIDGETS_RESOURCEBROWSER_H
+#define EDITOR_WIDGETS_RESOURCEBROWSER_H
 
-#include <editor/editor.h>
-
-#include <yave/commands/CmdBufferRecorder.h>
-#include <yave/swapchain/FrameToken.h>
+#include "AssetImporter.h"
 
 namespace editor {
 
-class UiElement : NonCopyable {
+class ResourceBrowser : public Widget, public ContextLinked {
+	struct DirNode {
+		core::String name;
+		core::String path;
+
+		core::Vector<core::String> files;
+		core::Vector<DirNode> children;
+
+		DirNode* parent;
+
+		DirNode(std::string_view n, std::string_view p, DirNode* par = nullptr) : name(n), path(p), parent(par) {
+		}
+	};
+
 	public:
-		UiElement(std::string_view title);
-		virtual ~UiElement() = default;
-
-		virtual void paint(CmdBufferRecorder<>&, const FrameToken&) = 0;
-
-		virtual bool is_visible() const;
-		void show();
-		void close();
-
-		std::string_view title() const;
+		ResourceBrowser(ContextPtr ctx);
 
 	protected:
-		u64 _id;
-		core::String _title_with_id;
-		std::string_view _title;
-		bool _visible = true;
+		void paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
+	private:
+		const FileSystemModel* filesystem() const;
+		void set_current(DirNode* current);
+
+
+		DirNode _root;
+		NotOwner<DirNode*> _current = nullptr;
 };
 
 }
 
-#endif // EDITOR_UI_UIELEMENT_H
+#endif // EDITOR_WIDGETS_RESOURCEBROWSER_H

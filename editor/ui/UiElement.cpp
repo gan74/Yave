@@ -49,4 +49,8 @@ void UiElement::show() {
 	_visible = true;
 }
 
+void UiElement::close() {
+	_visible = false;
+}
+
 }

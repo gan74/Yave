@@ -61,6 +61,9 @@ MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
 
 SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
 
+
+core::String supported_extensions();
+
 }
 }
 

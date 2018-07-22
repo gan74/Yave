@@ -31,13 +31,15 @@ SOFTWARE.
 namespace editor {
 
 class AssetImporter final : public Widget, public ContextLinked {
+
 	public:
 		AssetImporter(ContextPtr ctx);
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&recoder, const FrameToken&token) override;
+		void paint_ui(CmdBufferRecorder<>&recorder, const FrameToken&token) override;
 
 		void import_async(const core::String& filename);
+		void save_imports(const core::String& dirname);
 
 		bool done_loading() const;
 		bool is_loading() const;

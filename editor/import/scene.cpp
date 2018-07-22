@@ -66,6 +66,13 @@ SceneData import_scene(const core::String& path) {
 	return data;
 }
 
+core::String supported_extensions() {
+	std::string extensions;
+	Assimp::Importer importer;
+	importer.GetExtensionList(extensions);
+	return extensions;
+}
+
 }
 }
 

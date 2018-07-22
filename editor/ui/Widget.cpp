@@ -43,7 +43,6 @@ void Widget::set_has_parent(bool has) {
 	_has_parent = has;
 }
 
-
 void Widget::set_closable(bool closable) {
 	_closable = closable;
 }

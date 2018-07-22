@@ -42,7 +42,7 @@ static AssetPtr<Material> create_material(ContextPtr cptr) {
 }
 
 static AssetPtr<StaticMesh> create_mesh(ContextPtr cptr) {
-	return cptr->loader().static_mesh().load_or_import("cube.ym", "../meshes/cube.obj.ym", AssetStore::Intern);
+	return cptr->loader().static_mesh().import("cube.ym", "../meshes/cube.obj.ym");
 }
 
 SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {

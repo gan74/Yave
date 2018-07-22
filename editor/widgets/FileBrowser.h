@@ -33,19 +33,41 @@ SOFTWARE.
 namespace editor {
 
 class FileBrowser : public Widget {
+	enum class EntryType {
+		Directory,
+		Supported,
+		Unsupported
+	};
+
 	public:
-		FileBrowser(NotOwner<FileSystemModel*> model = nullptr);
+		enum Flags {
+			None = 0,
+			NoCancelButton = 0x01,
+			SelectDirectory = 0x02
+		};
+
+
+		FileBrowser(const FileSystemModel* filesystem = nullptr, Flags flags = Flags::None);
+
 
 		template<typename F>
-		void set_callback(F&& func) {
-			_callback = std::forward<F>(func);
+		void set_selected_callback(F&& func) {
+			_callbacks.selected = std::forward<F>(func);
 		}
 
-		void set_filesystem(NotOwner<FileSystemModel*> model);
+		template<typename F>
+		void set_canceled_callback(F&& func) {
+			_callbacks.canceled = std::forward<F>(func);
+		}
+
+		void set_filesystem(const FileSystemModel* model);
 		void set_path(std::string_view path);
+		void set_extension_filter(std::string_view exts);
+
+		void set_flags(Flags flags);
 
 	private:
-		static constexpr usize buffer_capacity = 1024;
+		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
 
 		void done(const core::String& filename);
 		void cancel();
@@ -53,20 +75,27 @@ class FileBrowser : public Widget {
 		core::String full_path() const;
 		std::string_view path() const;
 
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		const FileSystemModel* _filesystem = nullptr;
 
-		const FileSystemModel* _model = nullptr;
+		core::Vector<core::String> _extensions;
+		core::Vector<std::pair<core::String, EntryType>> _entries;
 
-		core::Vector<core::String> _entries;
-
+		static constexpr usize buffer_capacity = 1024;
 		std::array<char, buffer_capacity> _path_buffer;
 		std::array<char, buffer_capacity> _name_buffer;
 
-		usize _selection = -1;
+		core::String _last_path;
 
-		core::Function<void(const core::String&)> _callback;
+		usize _selection = usize(-1);
 
-		//bool _close_on_selection = true;
+		Flags _flags;
+
+		struct {
+			core::Function<bool(const core::String&)> selected = [](const auto&) { return false; };
+			core::Function<bool()> canceled = [] { return true; };
+		} _callbacks;
+
+		bool _has_parent = false;
 };
 
 }

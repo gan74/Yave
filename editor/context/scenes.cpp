@@ -93,7 +93,7 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 		//auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
 
 		try {
-			AssetPtr<StaticMesh> mesh = mesh_loader.load_or_import("cube.ym", "../meshes/cube.obj.ym",  AssetStore::Reference);
+			AssetPtr<StaticMesh> mesh = mesh_loader.import("cube.ym", "../meshes/cube.obj.ym");
 
 			{
 				auto instance = std::make_unique<StaticMeshInstance>(mesh, material);

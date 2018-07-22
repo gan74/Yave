@@ -41,6 +41,7 @@ SOFTWARE.
 #include <editor/widgets/MemoryInfo.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/SceneDebug.h>
+#include <editor/widgets/ResourceBrowser.h>
 
 #include <editor/EngineView.h>
 
@@ -168,6 +169,7 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 
 			if(ImGui::BeginMenu("View")) {
 				if(ImGui::MenuItem("Entity view")) context()->ui().show<EntityView>();
+				if(ImGui::MenuItem("Resource browser")) context()->ui().show<ResourceBrowser>();
 
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) context()->ui().show<CameraDebug>();
@@ -201,8 +203,8 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 
 		if(ImGui::ImageButton(&context()->icons().save(), button_size)) {
 			auto browser = context()->ui().show<FileBrowser>();
-			browser->set_callback(
-					[=](core::String filename) { context()->scene().save(filename); }
+			browser->set_selected_callback(
+					[=](const auto& filename) { context()->scene().save(filename); return true; }
 				);
 		}
 
@@ -210,8 +212,8 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 
 		if(ImGui::ImageButton(&context()->icons().load(), button_size)) {
 			auto browser = context()->ui().show<FileBrowser>();
-			browser->set_callback(
-					[=](core::String filename) { context()->scene().load(filename); }
+			browser->set_selected_callback(
+					[=](const auto& filename) { context()->scene().load(filename); return true; }
 				);
 		}
 	}

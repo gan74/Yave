@@ -34,51 +34,79 @@ static void to_buffer(std::array<char, N>& buffer, std::string_view str) {
 	buffer[len] = 0;
 }
 
-FileBrowser::FileBrowser(NotOwner<FileSystemModel*> model) :
+FileBrowser::FileBrowser(const FileSystemModel* filesystem, Flags flags) :
 		Widget("File browser"),
 		_name_buffer({0}),
-		_callback(Nothing()) {
+		_flags(flags) {
 
 	to_buffer(_path_buffer, "");
 	to_buffer(_name_buffer, "");
 
-	set_filesystem(model);
+	set_filesystem(filesystem);
 }
 
-void FileBrowser::done(const core::String& filename) {
-	_callback(filename);
-	_visible = false;
-}
 
-void FileBrowser::cancel() {
-	_visible = false;
-}
-
-void FileBrowser::set_filesystem(NotOwner<FileSystemModel*> model) {
-	_model = model ? model : FileSystemModel::local_filesystem();
-	set_path(_model->current_path());
+void FileBrowser::set_filesystem(const FileSystemModel* model) {
+	_filesystem = model ? model : FileSystemModel::local_filesystem();
+	set_path(_filesystem->current_path());
 }
 
 void FileBrowser::set_path(std::string_view path) {
-	_entries.clear();
-	if(!_model->exists(path)) {
+	if(!_filesystem->exists(path)) {
+		set_path(_last_path);
 		return;
 	}
 
-	_model->for_each(path, [this](const auto& name) {
-		_entries.push_back(name);
-	});
-	if(_model->is_directory(path)) {
+	_entries.clear();
+
+	if(_filesystem->is_directory(path)) {
+		_filesystem->for_each(path, [this, path](const auto& name) {
+				EntryType type = EntryType::Directory;
+				if(!_filesystem->is_directory(_filesystem->join(path, name))) {
+					auto ext = _filesystem->extention(name);
+					type = std::binary_search(_extensions.begin(), _extensions.end(), ext)
+						? EntryType::Supported : EntryType::Unsupported;
+				}
+				_entries.push_back(std::make_pair(name, type));
+			});
+		y::sort(_entries.begin(), _entries.end(), [](const auto& a, const auto& b) { return a.second < b.second; });
+
 		to_buffer(_path_buffer, path);
+		_last_path = path;
+		_has_parent = _filesystem->exists(_filesystem->parent_path(path));
 	} else {
 		done(path);
-		set_path(_model->parent_path(path));
+		set_path(_filesystem->parent_path(path));
 	}
+}
+
+void FileBrowser::set_extension_filter(std::string_view exts) {
+	_extensions = core::Vector<core::String>(1, core::String());
+	for(char c : exts) {
+		if(c == ';') {
+			_extensions.emplace_back();
+		} else if(c != '*') {
+			_extensions.last().push_back(c);
+		}
+	}
+	sort(_extensions.begin(), _extensions.end());
+}
+
+void FileBrowser::set_flags(Flags flags) {
+	_flags = flags;
+}
+
+void FileBrowser::done(const core::String& filename) {
+	_visible = !_callbacks.selected(filename);
+}
+
+void FileBrowser::cancel() {
+	_visible = !_callbacks.canceled();
 }
 
 core::String FileBrowser::full_path() const {
 	std::string_view name(_name_buffer.begin(), std::strlen(_name_buffer.begin()));
-	return _model->join(path(), name);
+	return _filesystem->join(path(), name);
 }
 
 std::string_view FileBrowser::path() const {
@@ -96,10 +124,13 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		}
 	}
 
-	{
+	if(!(_flags & SelectDirectory)) {
 		if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			set_path(full_path());
 		}
+	}
+
+	if(!(_flags & NoCancelButton)) {
 		ImGui::SameLine();
 		if(ImGui::Button("Cancel")) {
 			cancel();
@@ -109,14 +140,14 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDarkening]);
 	ImGui::BeginChild("###fileentries");
 	{
-		if(ImGui::Selectable("..", _selection == 0)) {
-			set_path(_model->parent_path(path()));
+		if(_has_parent && ImGui::Selectable("..", _selection == 0)) {
+			set_path(_filesystem->parent_path(path()));
 		}
 
 		for(usize i = 0; i != _entries.size(); ++i) {
-			const auto& name = _entries[i];
+			const auto& name = _entries[i].first;
 			if(ImGui::Selectable(name.data(), _selection == i)) {
-				set_path(_model->join(path(), name));
+				set_path(_filesystem->join(path(), name));
 				break;
 			}
 		}
