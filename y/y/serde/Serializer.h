@@ -85,9 +85,7 @@ template<typename T>
 struct Serializer<core::ArrayView<T>> {
 	static void serialize(io::WriterRef writer, core::ArrayView<T> arr) {
 		Serializer<u64>::serialize(writer, u64(arr.size()));
-		for(const T& t : arr) {
-			Serializer<T>::serialize(writer, t);
-		}
+		serialize_array(writer, arr.begin(), arr.size());
 	}
 };
 
