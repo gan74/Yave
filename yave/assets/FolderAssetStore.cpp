@@ -33,41 +33,28 @@ SOFTWARE.
 
 namespace yave {
 
-static AssetId next_id() {
-	static std::atomic<AssetId> id = assets::invalid_id;
-	return ++id;
+FolderAssetStore::FolderFileSystemModel::FolderFileSystemModel(std::string_view root) : _root(root) {
 }
 
-static fs::path clean(fs::path path) {
-	fs::path cl;
-	for(auto& p : fs::absolute(path)) {
-		if(p == ".") {
-		} else if(p == "..") {
-			cl = cl.remove_filename();
-		} else {
-			cl /= p;
-		}
-	}
-	return cl;
+const core::String& FolderAssetStore::FolderFileSystemModel::root_path() const {
+	return _root;
 }
 
-static fs::copy_options copy_options(AssetStore::ImportType type) {
-	switch(type) {
-		case AssetStore::Intern:
-			return fs::copy_options::none;
-		case AssetStore::Reference:
-			return fs::copy_options::create_hard_links;
-		default:
-			break;
-	}
-	return y_fatal("Unsupported import type.");
+core::String FolderAssetStore::FolderFileSystemModel::current_path() const noexcept {
+	return _root;
+}
+
+bool FolderAssetStore::FolderFileSystemModel::exists(std::string_view path) const noexcept {
+	return LocalFileSystemModel::exists(path) && is_parent(_root, path);
 }
 
 
+FolderAssetStore::FolderAssetStore(std::string_view path) :
+		_filesystem(path),
+		_index_file_path(_filesystem.join(_filesystem.root_path(), ".index")) {
 
-FolderAssetStore::FolderAssetStore(std::string_view path) : _path(path), _index_file_path(clean(file_path(".index")).string()) {
 	log_msg("Store index file: " + _index_file_path);
-	fs::create_directory(_path);
+	_filesystem.create_directory(path);
 	read_index();
 }
 
@@ -75,8 +62,8 @@ FolderAssetStore::~FolderAssetStore() {
 	write_index();
 }
 
-fs::path FolderAssetStore::file_path(std::string_view name) const {
-	return (fs::path(_path) /= name);
+const FileSystemModel* FolderAssetStore::filesystem() const {
+	return &_filesystem;
 }
 
 void FolderAssetStore::read_index() {
@@ -87,6 +74,7 @@ void FolderAssetStore::read_index() {
 			auto file = io::BuffReader(std::move(r.unwrap()));
 			_from_id.clear();
 			_from_name.clear();
+			file.read_one(_next_id);
 			while(!file.at_end()) {
 				auto entry = std::make_unique<Entry>(serde::deserialized<Entry>(file));
 				_from_id[entry->id] = entry.get();
@@ -101,44 +89,25 @@ void FolderAssetStore::read_index() {
 	y_debug_assert(_from_id.size() == _from_name.size());
 }
 
-void FolderAssetStore::write_index() {
+void FolderAssetStore::write_index() const {
 	std::unique_lock lock(_lock);
 
 	try {
 		y_debug_assert(_from_id.size() == _from_name.size());
-		auto index = io::BuffWriter(std::move(io::File::create(_index_file_path).unwrap()));
-		for(const auto& row : _from_id) {
-			const Entry& entry = *row.second;
-			entry.serialize(index);
+		if(auto r = io::File::create(_index_file_path); r.is_ok()) {
+			auto file = io::BuffWriter(std::move(r.unwrap()));
+			file.write_one(_next_id);
+			for(const auto& row : _from_id) {
+				const Entry& entry = *row.second;
+				entry.serialize(file);
+			}
 		}
 	} catch(std::exception& e) {
 		log_msg("Exception while writing index file: "_s + e.what(), Log::Error);
 	}
 }
 
-void FolderAssetStore::try_import(std::string_view src, std::string_view dst, ImportType import_type) {
-	auto dst_file = file_path(dst);
-	{
-		auto dst_dir = dst_file.parent_path();
-		if(!fs::exists(dst_dir) && !fs::create_directory(dst_dir)) {
-			y_throw("Unable to create import directory.");
-		}
-	}
-
-#ifdef YAVE_STDFS_BAD_COPY
-	if(import_type == ImportType::Intern) {
-		if(!io::File::copy(src, dst_file.string())) {
-			y_throw("Unable to copy file.");
-		}
-	} else
-#endif
-	{
-		fs::copy_file(src, dst_file, copy_options(import_type));
-	}
-}
-
-
-AssetId FolderAssetStore::import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) {
+AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) {
 	// remove/optimize
 	auto flush_index = scope_exit([this] { write_index(); });
 	std::unique_lock lock(_lock);
@@ -148,23 +117,31 @@ AssetId FolderAssetStore::import_as(std::string_view src_name, std::string_view 
 		y_throw("Asset already in store.");
 	}
 
-	try {
-		try_import(src_name, dst_name, import_type);
-	} catch(...) {
-		_from_name.erase(_from_name.find(dst_name));
-		throw;
+	auto dst_file = _filesystem.is_parent(_filesystem.root_path(), dst_name)
+		? core::String(dst_name)
+		: _filesystem.join(_filesystem.root_path(), dst_name);
+	{
+		auto dst_dir = _filesystem.parent_path(dst_file);
+		if(!_filesystem.exists(dst_dir) && !_filesystem.create_directory(dst_dir)) {
+			y_throw("Unable to create import directory.");
+		}
 	}
 
-	AssetId id = next_id();
+	if(!io::File::copy(data, dst_file)) {
+		_from_name.erase(_from_name.find(dst_name));
+		y_throw("Unable to import file as \""_s + dst_name + "\"");
+	}
+
+	AssetId id = ++_next_id;
 	entry = std::make_unique<Entry>(Entry{dst_name, id});
 	_from_id[id] = entry.get();
-	_from_name[dst_name] = std::move(entry);
+
 	y_debug_assert(_from_id.size() == _from_name.size());
 	return id;
 }
 
 
-AssetId FolderAssetStore::id(std::string_view name) {
+AssetId FolderAssetStore::id(std::string_view name) const {
 	std::unique_lock lock(_lock);
 
 	y_debug_assert(_from_id.size() == _from_name.size());
@@ -174,13 +151,13 @@ AssetId FolderAssetStore::id(std::string_view name) {
 	y_throw("No asset with this name.");
 }
 
-io::ReaderRef FolderAssetStore::data(AssetId id) {
+io::ReaderRef FolderAssetStore::data(AssetId id) const {
 	std::unique_lock lock(_lock);
 
 	y_debug_assert(_from_id.size() == _from_name.size());
 	if(auto it = _from_id.find(id); it != _from_id.end()) {
-		fs::path filename = file_path(it->second->name);
-		if(auto r = io::File::open(filename.string()); r.is_ok()){
+		auto filename = _filesystem.join(_filesystem.root_path(), it->second->name);
+		if(auto r = io::File::open(filename); r.is_ok()){
 			return io::ReaderRef(std::move(r.unwrap()));
 		}
 	}

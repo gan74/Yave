@@ -25,6 +25,8 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/io/Ref.h>
 
+#include <yave/utils/FileSystemModel.h>
+
 #include "AssetPtr.h"
 
 namespace yave {
@@ -32,27 +34,23 @@ namespace yave {
 class AssetStore : NonCopyable {
 
 	public:
-		enum ImportType {
+		/*enum ImportType {
 			Intern,
 			Reference
-		};
+		};*/
 
-		AssetStore() {
-		}
-
-		virtual ~AssetStore() {
-		}
+		AssetStore();
+		virtual ~AssetStore();
 
 
-		virtual void remove(AssetId id) {
-			unused(id);
-			y_throw("Unsuported operation.");
-		}
+		virtual void remove(AssetId id);
 
-		virtual AssetId import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) = 0;
-		virtual AssetId id(std::string_view name) = 0;
+		virtual const FileSystemModel* filesystem() const;
 
-		virtual io::ReaderRef data(AssetId id) = 0;
+		virtual AssetId import(io::ReaderRef data, std::string_view dst_name) = 0;
+
+		virtual AssetId id(std::string_view name) const = 0;
+		virtual io::ReaderRef data(AssetId id) const = 0;
 };
 
 }

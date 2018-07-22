@@ -19,35 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_UTILS_FILESYSTEM_H
-#define YAVE_UTILS_FILESYSTEM_H
 
-#include <y/defines.h>
+#include "AssetLoader.h"
 
-#ifndef YAVE_NO_STDFS
-#if __has_include(<filesystem>)
-#define YAVE_STDFS_NAMESPACE std::filesystem
-#include <filesystem>
-#else
-#define YAVE_STDFS_NAMESPACE std::experimental::filesystem
-#include <experimental/filesystem>
-#endif
-#endif // YAVE_NO_STDFS
-
-// fs::copy and fs::copy_file will mess up binary files by replacing '\n' by "\r\n" on windows.
-#ifdef Y_OS_WIN
-#define YAVE_STDFS_BAD_COPY
-#endif
+#include <y/io/File.h>
 
 namespace yave {
 
-namespace fs {
-#ifndef YAVE_NO_STDFS
-using namespace YAVE_STDFS_NAMESPACE;
-#endif
+AssetLoaderBase::AssetLoaderBase(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
 }
 
-
+AssetStore& AssetLoaderBase::store() {
+	return *_store;
 }
 
-#endif // YAVE_UTILS_FILESYSTEM_H
+AssetId AssetLoaderBase::load_or_import(std::string_view name, std::string_view import_from) noexcept {
+	try {
+		return _store->id(name);
+	} catch(...) {
+		if(auto r = io::File::open(import_from); r.is_ok()) {
+			return _store->import(r.unwrap(), name);
+		}
+	}
+	return assets::invalid_id;
+}
+
+}

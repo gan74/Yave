@@ -26,68 +26,93 @@ SOFTWARE.
 
 namespace yave {
 
-#ifndef YAVE_NO_STDFS
 
-class LocalFileSystemModel : public FileSystemModel {
-	public:
-		core::String current_path() const noexcept override {
-			return fs::current_path().string();
+core::String FileSystemModel::extention(std::string_view path) const noexcept {
+	for(usize i = path.size(); i != 0; --i) {
+		if(path[i - 1] == '.') {
+			return core::String(&path[i - 1], path.size() - i + 1);
 		}
+	}
+	return "";
+}
 
-		core::String parent_path(std::string_view path) const noexcept override {
-			return fs::path(path).parent_path().string();
-		}
-
-		core::String filename(std::string_view path) const noexcept override {
-			return fs::path(path).filename().string();
-		}
-
-		bool exists(std::string_view path) const noexcept override {
-			return fs::exists(path);
-		}
-
-		bool is_directory(std::string_view path) const noexcept override {
-			return fs::is_directory(path);
-		}
-
-		core::String join(std::string_view path, std::string_view name) const noexcept override {
-			if(!path.size()) {
-				return name;
-			}
-			char last = path.back();
-			core::String result;
-			result.set_min_capacity(path.size() + name.size() + 1);
-			result += path;
-			if(last != '/' && last != '\\') {
-				result.push_back('/');
-			}
-			result += name;
-			return result;
-		}
-
-		void for_each(std::string_view path, const for_each_f& func) const noexcept override {
-			try {
-				for(auto& p : fs::directory_iterator(path)) {
-					fs::path path = p.path().filename();
-					auto str = path.string();
-					func(str);
-				}
-			} catch(...) {
-			}
-		}
-};
-
-
-#endif
+bool FileSystemModel::is_parent(std::string_view parent, std::string_view path) const noexcept {
+	auto par = absolute(parent);
+	auto f = absolute(path);
+	return /*par.size() > f.size() &&*/ f.starts_with(par);
+}
 
 const FileSystemModel* FileSystemModel::local_filesystem() {
-#ifdef YAVE_NO_STDFS
-	return y_fatal("FileSystemModel::local_filesystem() is not supported");
-#else
+#ifndef YAVE_NO_STDFS
 	static LocalFileSystemModel filesystem;
 	return &filesystem;
+#else
+	return y_fatal("FileSystemModel::local_filesystem() is not supported");
 #endif
 }
 
+
+#ifndef YAVE_NO_STDFS
+
+core::String LocalFileSystemModel::current_path() const noexcept {
+	return fs::current_path().string();
+}
+
+core::String LocalFileSystemModel::parent_path(std::string_view path) const noexcept {
+	return fs::path(path).parent_path().string();
+}
+
+core::String LocalFileSystemModel::filename(std::string_view path) const noexcept {
+	return fs::path(path).filename().string();
+}
+
+bool LocalFileSystemModel::exists(std::string_view path) const noexcept {
+	return fs::exists(path);
+}
+
+bool LocalFileSystemModel::is_directory(std::string_view path) const noexcept {
+	return fs::is_directory(path);
+}
+
+core::String LocalFileSystemModel::join(std::string_view path, std::string_view name) const noexcept {
+	if(!path.size()) {
+		return name;
+	}
+	char last = path.back();
+	core::String result;
+	result.set_min_capacity(path.size() + name.size() + 1);
+	result += path;
+	if(last != '/' && last != '\\') {
+		result.push_back('/');
+	}
+	result += name;
+	return result;
+}
+
+core::String LocalFileSystemModel::absolute(std::string_view path) const noexcept {
+	return fs::absolute(path).string();
+}
+
+void LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const noexcept {
+	try {
+		for(auto& p : fs::directory_iterator(path)) {
+			fs::path path = p.path().filename();
+			auto str = path.string();
+			func(str);
+		}
+	} catch(...) {
+	}
+}
+
+bool LocalFileSystemModel::create_directory(std::string_view path) const noexcept {
+	try {
+		fs::create_directory(fs::path(path));
+	} catch(...) {
+		return false;
+	}
+	return true;
+}
+
+#endif
 
 }

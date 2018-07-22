@@ -1,3 +1,4 @@
+
 /*******************************
 Copyright (c) 2016-2018 Gr�goire Angerand
 
@@ -22,8 +23,6 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_FOLDERASSETSTORE_H
 #define YAVE_ASSETS_FOLDERASSETSTORE_H
 
-
-#include <yave/utils/filesystem.h>
 #include <y/serde/serde.h>
 
 #include "AssetStore.h"
@@ -31,6 +30,7 @@ SOFTWARE.
 #include <unordered_map>
 #include <map>
 #include <mutex>
+
 
 #ifndef YAVE_NO_STDFS
 
@@ -45,31 +45,44 @@ class FolderAssetStore final : public AssetStore {
 		y_serde(id, name)
 	};
 
+	// same as LocalFileSystemModel except rooted in a folder
+	class FolderFileSystemModel final : public LocalFileSystemModel {
+		public:
+			FolderFileSystemModel(std::string_view root);
+			const core::String& root_path() const;
+
+			core::String current_path() const noexcept override;
+			bool exists(std::string_view path) const noexcept override;
+
+		private:
+			core::String _root;
+	};
+
 	public:
 		FolderAssetStore(std::string_view path = "./store");
-		~FolderAssetStore();
+		~FolderAssetStore() override;
 
-		AssetId import_as(std::string_view src_name, std::string_view dst_name, ImportType import_type) override;
-		AssetId id(std::string_view name) override;
+		const FileSystemModel* filesystem() const override;
 
-		io::ReaderRef data(AssetId id) override;
+		AssetId import(io::ReaderRef data, std::string_view dst_name) override;
+
+		AssetId id(std::string_view name) const override;
+		io::ReaderRef data(AssetId id) const override;
 
 	private:
-		void write_index();
+		void write_index() const;
 		void read_index();
 
-		fs::path file_path(std::string_view name) const;
-
-		void try_import(std::string_view src, std::string_view dst, ImportType import_type);
-
-		std::mutex _lock;
-		fs::path _path;
+		FolderFileSystemModel _filesystem;
 		core::String _index_file_path;
 
+		mutable std::mutex _lock;
 
 		// TODO optimize ?
 		std::unordered_map<AssetId, Entry*> _from_id;
 		std::map<core::String, std::unique_ptr<Entry>> _from_name;
+
+		AssetId _next_id = assets::invalid_id;
 };
 
 }

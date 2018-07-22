@@ -19,35 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_UTILS_FILESYSTEM_H
-#define YAVE_UTILS_FILESYSTEM_H
 
-#include <y/defines.h>
-
-#ifndef YAVE_NO_STDFS
-#if __has_include(<filesystem>)
-#define YAVE_STDFS_NAMESPACE std::filesystem
-#include <filesystem>
-#else
-#define YAVE_STDFS_NAMESPACE std::experimental::filesystem
-#include <experimental/filesystem>
-#endif
-#endif // YAVE_NO_STDFS
-
-// fs::copy and fs::copy_file will mess up binary files by replacing '\n' by "\r\n" on windows.
-#ifdef Y_OS_WIN
-#define YAVE_STDFS_BAD_COPY
-#endif
+#include "AssetStore.h"
 
 namespace yave {
 
-namespace fs {
-#ifndef YAVE_NO_STDFS
-using namespace YAVE_STDFS_NAMESPACE;
-#endif
+AssetStore::AssetStore() {
 }
 
-
+AssetStore::~AssetStore() {
 }
 
-#endif // YAVE_UTILS_FILESYSTEM_H
+void AssetStore::remove(AssetId id) {
+	unused(id);
+	y_throw("Unsuported operation.");
+}
+
+const FileSystemModel* AssetStore::filesystem() const {
+	return nullptr;
+}
+
+}

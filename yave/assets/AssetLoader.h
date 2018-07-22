@@ -44,20 +44,28 @@ struct AssetTraits {
 	using load_from = typename T::load_from;
 };
 
+class AssetLoaderBase : public DeviceLinked, NonCopyable {
+	public:
+		AssetLoaderBase(DevicePtr dptr, const std::shared_ptr<AssetStore>& store);
+
+		AssetStore& store();
+
+	protected:
+		AssetId load_or_import(std::string_view name, std::string_view import_from) noexcept;
+
+	private:
+		std::shared_ptr<AssetStore> _store;
+};
+
 template<typename T>
-class AssetLoader : public DeviceLinked {
+class AssetLoader : public AssetLoaderBase {
 
 	using traits = AssetTraits<T>;
 	using load_from = typename traits::load_from;
 
 	public:
-		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
+		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : AssetLoaderBase(dptr, store) {
 		}
-
-		AssetStore& store() {
-			return *_store;
-		}
-
 
 		AssetPtr<T> load(AssetId id) {
 			Y_LOG_PERF("asset,loading");
@@ -71,29 +79,22 @@ class AssetLoader : public DeviceLinked {
 				return asset_ptr;
 			}
 
-			auto asset = serde::deserialized<load_from>( _store->data(id));
+			auto asset = serde::deserialized<load_from>(store().data(id));
 			return asset_ptr = make_asset_with_id<T>(id, device(), std::move(asset));
 		}
 
 		AssetPtr<T> load(std::string_view name) noexcept {
-			return load(_store->id(name));
+			return load(store().id(name));
 		}
 
-		AssetPtr<T> load_or_import(std::string_view name, std::string_view import_from, AssetStore::ImportType import_type) {
-			AssetId id = assets::invalid_id;
-			try {
-				id = _store->id(name);
-			} catch(...) {
-				id = _store->import_as(import_from, name, import_type);
-			}
-			return load(id);
+		AssetPtr<T> import(std::string_view name, std::string_view import_from) {
+			return load(load_or_import(name, import_from));
 		}
 
 
 	private:
 		std::unordered_map<AssetId, AssetPtr<T>> _loaded;
 
-		std::shared_ptr<AssetStore> _store;
 };
 
 }
