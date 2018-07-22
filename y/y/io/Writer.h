@@ -47,7 +47,7 @@ class Writer : NonCopyable {
 		void write_array(const T* t, usize size) {
 			static_assert(std::is_trivially_copyable_v<T>, "write_array only works on trivially copyable data");
 			//static_assert(std::is_arithmetic_v<T> || std::has_unique_object_representations<T>::value, "write_array only works on packed types");
-			write_array(t, size * sizeof(T));
+			write(t, size * sizeof(T));
 		}
 };
 
