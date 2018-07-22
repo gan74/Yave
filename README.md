@@ -15,6 +15,8 @@ For now I am focussing on creating a decent Vulkan wrapper/interface and a small
 ![Current status](https://i.imgur.com/TaJzCya.gif)
 ![Current status](https://i.imgur.com/LY5muVA.png)
 
+The editor is currently unusable but I am working on it.
+
 ## Project structure
 
  * y: Core library with a bunch of utility functions and classes
