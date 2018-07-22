@@ -199,14 +199,18 @@ String::const_iterator String::find(const char* str) const {
 	return found ? found : end();
 }
 
-String String::sub_str(usize beg) const {
-	return beg < size() ? String(begin() + beg) : String();
+std::string_view String::sub_str(usize beg) const {
+	return beg < size() ? std::string_view(begin() + beg, size() - beg) : std::string_view();
 }
 
-String String::sub_str(usize beg, usize len) const {
+std::string_view String::sub_str(usize beg, usize len) const {
 	usize si = size();
 	beg = std::min(beg, si);
-	return String(begin() + beg, std::min(len, si - beg));
+	return std::string_view(begin() + beg, std::min(len, si - beg));
+}
+
+bool String::starts_with(std::string_view str) const {
+	return str.size() <= size() && std::string_view(begin(), str.size()) == str;
 }
 
 String::operator const char*() const {

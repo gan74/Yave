@@ -134,8 +134,10 @@ class String {
 		iterator find(const char* str);
 		const_iterator find(const char* str) const;
 
-		String sub_str(usize beg) const;
-		String sub_str(usize beg, usize len) const;
+		std::string_view sub_str(usize beg) const;
+		std::string_view sub_str(usize beg, usize len) const;
+
+		bool starts_with(std::string_view str) const;
 
 		operator const char*() const;
 		operator char*();
