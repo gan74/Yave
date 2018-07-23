@@ -161,12 +161,6 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 	// menu
 	{
 		if(ImGui::BeginMenuBar()) {
-			if(ImGui::BeginMenu("File")) {
-				if(ImGui::MenuItem("Import")) context()->ui().show<AssetImporter>();
-				ImGui::EndMenu();
-			}
-
-
 			if(ImGui::BeginMenu("View")) {
 				if(ImGui::MenuItem("Entity view")) context()->ui().show<EntityView>();
 				if(ImGui::MenuItem("Resource browser")) context()->ui().show<ResourceBrowser>();

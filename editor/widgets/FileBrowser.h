@@ -40,31 +40,21 @@ class FileBrowser : public Widget {
 	};
 
 	public:
-		enum Flags {
-			None = 0,
-			NoCancelButton = 0x01,
-			SelectDirectory = 0x02
-		};
-
-
-		FileBrowser(const FileSystemModel* filesystem = nullptr, Flags flags = Flags::None);
-
+		FileBrowser(const FileSystemModel* filesystem = nullptr);
 
 		template<typename F>
 		void set_selected_callback(F&& func) {
-			_callbacks.selected = std::forward<F>(func);
+			_callbacks.selected = std::move(func);
 		}
 
 		template<typename F>
 		void set_canceled_callback(F&& func) {
-			_callbacks.canceled = std::forward<F>(func);
+			_callbacks.canceled = std::move(func);
 		}
 
 		void set_filesystem(const FileSystemModel* model);
 		void set_path(std::string_view path);
 		void set_extension_filter(std::string_view exts);
-
-		void set_flags(Flags flags);
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
@@ -86,16 +76,10 @@ class FileBrowser : public Widget {
 
 		core::String _last_path;
 
-		usize _selection = usize(-1);
-
-		Flags _flags;
-
 		struct {
 			core::Function<bool(const core::String&)> selected = [](const auto&) { return false; };
 			core::Function<bool()> canceled = [] { return true; };
 		} _callbacks;
-
-		bool _has_parent = false;
 };
 
 }

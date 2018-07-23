@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "AssetImporter.h"
+#include "MeshImporter.h"
 
 #include <editor/context/EditorContext.h>
 
@@ -30,37 +30,27 @@ SOFTWARE.
 
 namespace editor {
 
-static core::String clean_name(std::string_view name) {
-	core::String str;
-	str.set_min_capacity(name.size());
-	for(char c : name) {
-		str.push_back(std::isalnum(c) || c == '.' || c == '_' ? c : '_');
-	}
-	return str;
-}
-
-AssetImporter::AssetImporter(ContextPtr ctx) : Widget("Asset importer"), ContextLinked(ctx) {
+MeshImporter::MeshImporter(ContextPtr ctx) : Widget("Mesh importer"), ContextLinked(ctx) {
 	_browser.set_has_parent(true);
 	_browser.set_extension_filter(import::supported_extensions());
 	_browser.set_selected_callback([this](const auto& filename) { import_async(filename); return true; });
 	_browser.set_canceled_callback([this] { close(); return true; });
 }
 
-void AssetImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token)  {
+void MeshImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token)  {
 	_browser.paint(recorder, token);
 
 	if(is_loading()) {
 		if(done_loading()) {
 			try {
-				_imported = std::make_unique<import::SceneData>(_import_future.get());
-				_browser.set_filesystem(context()->loader().asset_store().filesystem());
-				_browser.set_flags(FileBrowser::SelectDirectory);
-				_browser.set_selected_callback([this](const auto& dirname) { save_imports(dirname); return true; });
-				_browser.show();
+				auto imported = _import_future.get();
+				_callback(core::ArrayView<Named<MeshData>>(imported.meshes),
+						  core::ArrayView<Named<Animation>>(imported.animations));
 			} catch(std::exception& e) {
 				context()->ui().ok("Unable to import", "Unable to import scene: "_s + e.what());
 				_browser.show();
 			}
+			close();
 		} else {
 			ImGui::Text("Loading...");
 		}
@@ -68,28 +58,24 @@ void AssetImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& to
 
 }
 
-bool AssetImporter::is_loading() const {
+bool MeshImporter::is_loading() const {
 	return _import_future.valid();
 }
 
-bool AssetImporter::done_loading() const {
+bool MeshImporter::done_loading() const {
 	return _import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
-void AssetImporter::import_async(const core::String& filename) {
+void MeshImporter::import_async(const core::String& filename) {
 	_import_future = std::async(std::launch::async, [=] {
-		//try {
-			return import::import_scene(filename);
-		/*} catch(...) {
-			pr.set_exception(std::current_exception());
-		}*/
+		return import::import_scene(filename);
 	});
 }
 
-void AssetImporter::save_imports(const core::String& dirname) {
+/*void MeshImporter::save_imports(const core::String& dirname) {
 	auto& store = context()->loader().asset_store();
 	{
-		core::DebugTimer _("AssetImporter::save_imports meshes");
+		core::DebugTimer _("MeshImporter::save_imports meshes");
 		for(const auto& mesh : _imported->meshes) {
 			io::Buffer buffer;
 			try {
@@ -102,7 +88,7 @@ void AssetImporter::save_imports(const core::String& dirname) {
 	}
 
 	{
-		core::DebugTimer _("AssetImporter::save_imports animations");
+		core::DebugTimer _("MeshImporter::save_imports animations");
 		for(const auto& anim : _imported->animations) {
 			io::Buffer buffer;
 			try {
@@ -116,5 +102,5 @@ void AssetImporter::save_imports(const core::String& dirname) {
 
 	close();
 }
-
+*/
 }

@@ -23,10 +23,22 @@ SOFTWARE.
 #include "ResourceBrowser.h"
 
 #include <editor/context/EditorContext.h>
+#include <y/io/Buffer.h>
 
 #include <imgui/imgui.h>
 
 namespace editor {
+
+static core::String clean_name(std::string_view name) {
+	core::String str;
+	str.set_min_capacity(name.size());
+	for(char c : name) {
+		str.push_back(std::isalnum(c) || c == '.' || c == '_' ? c : '_');
+	}
+	return str;
+}
+
+
 
 ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
 		Widget("Resource browser"),
@@ -36,7 +48,6 @@ ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
 	set_current(&_root);
 }
 
-
 void ResourceBrowser::set_current(DirNode* current) {
 	if(!current) {
 		set_current(&_root);
@@ -44,35 +55,78 @@ void ResourceBrowser::set_current(DirNode* current) {
 	}
 
 	_current = current;
+	update_node(_current);
+}
 
-	_current->children.clear();
-	_current->files.clear();
+void ResourceBrowser::update_node(DirNode* node) {
+	node->children.clear();
+	node->files.clear();
 
 	const auto* fs = filesystem();
-	auto current_dir = fs->join(_current->path, _current->name);
-	log_msg(_current->path + " " + _current->name + " = " + current_dir);
-	fs->for_each(current_dir, [&](const auto& name) {
-			auto full_name = fs->join(current_dir, name);
+	auto dir = fs->join(node->path, node->name);
+	fs->for_each(dir, [&](const auto& name) {
+			auto full_name = fs->join(dir, name);
 			if(fs->is_directory(full_name)) {
-				_current->children << DirNode(name, current_dir, _current);
+				node->children << DirNode(name, dir, node);
 			} else {
-				_current->files << name;
+				node->files << name;
 			}
 		});
+
+	node->up_to_date = true;
+	_update_chrono.reset();
+}
+
+void ResourceBrowser::draw_node(DirNode* node) {
+	if(ImGui::TreeNode(node->name.data())) {
+		if(!node->up_to_date) {
+			update_node(node);
+		}
+		for(auto& n : node->children) {
+			draw_node(&n);
+		}
+		ImGui::TreePop();
+	}
 }
 
 void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	unused(recorder, token);
 
+	if(_update_chrono.elapsed().seconds() > update_secs) {
+		_update_chrono.reset();
+		update_node(_current);
+	}
+
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDarkening]);
-	ImGui::BeginChild("###resources");
+
 	{
+		float width = std::min(ImGui::GetWindowContentRegionWidth() * 0.5f, 200.0f);
+		ImGui::BeginChild("###resourcestree", ImVec2(width, 0), false);
+		for(auto& n : _root.children) {
+			draw_node(&n);
+		}
+		ImGui::EndChild();
+	}
+
+	ImGui::SameLine();
+
+	{
+		ImGui::BeginChild("###resources");
+
 		if(ImGui::IsMouseReleased(1)) {
 			ImGui::OpenPopup("###resourcescontext");
 		}
 
 		if(ImGui::BeginPopupContextItem("###resourcescontext")) {
-			ImGui::Selectable("Import");
+			if(ImGui::Selectable("Import mesh")) {
+				MeshImporter* importer = context()->ui().add<MeshImporter>();
+				importer->set_callback(
+					[this, path = filesystem()->join(_current->path, _current->name)](auto meshes, auto anims) {
+						save_meshes(path, meshes);
+						save_anims(path, anims);
+						update_node(_current);
+					});
+			}
 
 			ImGui::EndPopup();
 		}
@@ -92,10 +146,29 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 			if(ImGui::Selectable(name.data())) {
 			}
 		}
+		ImGui::EndChild();
 	}
-	ImGui::EndChild();
-	ImGui::PopStyleColor();
 
+	ImGui::PopStyleColor();
+}
+
+
+void ResourceBrowser::save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const {
+	for(const auto& mesh : meshes) {
+		core::String name = filesystem()->join(path, clean_name(mesh.name()));
+		io::Buffer data;
+		mesh.obj().serialize(data);
+		context()->loader().asset_store().import(data, name);
+	}
+}
+
+void ResourceBrowser::save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const {
+	for(const auto& anim : anims) {
+		core::String name = filesystem()->join(path, clean_name(anim.name()));
+		io::Buffer data;
+		anim.obj().serialize(data);
+		context()->loader().asset_store().import(data, name);
+	}
 }
 
 const FileSystemModel* ResourceBrowser::filesystem() const {

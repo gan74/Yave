@@ -34,10 +34,9 @@ static void to_buffer(std::array<char, N>& buffer, std::string_view str) {
 	buffer[len] = 0;
 }
 
-FileBrowser::FileBrowser(const FileSystemModel* filesystem, Flags flags) :
+FileBrowser::FileBrowser(const FileSystemModel* filesystem) :
 		Widget("File browser"),
-		_name_buffer({0}),
-		_flags(flags) {
+		_name_buffer({0}) {
 
 	to_buffer(_path_buffer, "");
 	to_buffer(_name_buffer, "");
@@ -73,7 +72,6 @@ void FileBrowser::set_path(std::string_view path) {
 
 		to_buffer(_path_buffer, path);
 		_last_path = path;
-		_has_parent = _filesystem->exists(_filesystem->parent_path(path));
 	} else {
 		done(path);
 		set_path(_filesystem->parent_path(path));
@@ -90,10 +88,6 @@ void FileBrowser::set_extension_filter(std::string_view exts) {
 		}
 	}
 	sort(_extensions.begin(), _extensions.end());
-}
-
-void FileBrowser::set_flags(Flags flags) {
-	_flags = flags;
 }
 
 void FileBrowser::done(const core::String& filename) {
@@ -124,29 +118,25 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		}
 	}
 
-	if(!(_flags & SelectDirectory)) {
-		if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-			set_path(full_path());
-		}
+	if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+		set_path(full_path());
 	}
 
-	if(!(_flags & NoCancelButton)) {
-		ImGui::SameLine();
-		if(ImGui::Button("Cancel")) {
-			cancel();
-		}
+	ImGui::SameLine();
+	if(ImGui::Button("Cancel")) {
+		cancel();
 	}
 
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDarkening]);
 	ImGui::BeginChild("###fileentries");
 	{
-		if(_has_parent && ImGui::Selectable("..", _selection == 0)) {
+		if(ImGui::Selectable("..")) {
 			set_path(_filesystem->parent_path(path()));
 		}
 
 		for(usize i = 0; i != _entries.size(); ++i) {
 			const auto& name = _entries[i].first;
-			if(ImGui::Selectable(name.data(), _selection == i)) {
+			if(ImGui::Selectable(name.data())) {
 				set_path(_filesystem->join(path(), name));
 				break;
 			}

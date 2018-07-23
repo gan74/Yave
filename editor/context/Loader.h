@@ -36,7 +36,7 @@ class Loader : public DeviceLinked {
 	public:
 		Loader(DevicePtr dptr) :
 			DeviceLinked(dptr),
-			_store(new FolderAssetStore()),
+			_store(std::make_shared<FolderAssetStore>()),
 			_textures(dptr, _store),
 			_meshes(dptr, _store) {
 		}

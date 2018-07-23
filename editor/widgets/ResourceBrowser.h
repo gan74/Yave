@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_RESOURCEBROWSER_H
 #define EDITOR_WIDGETS_RESOURCEBROWSER_H
 
-#include "AssetImporter.h"
+#include "MeshImporter.h"
 
 namespace editor {
 
@@ -36,6 +36,8 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 		DirNode* parent;
 
+		bool up_to_date = false;
+
 		DirNode(std::string_view n, std::string_view p, DirNode* par = nullptr) : name(n), path(p), parent(par) {
 		}
 	};
@@ -47,12 +49,21 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		void paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 	private:
-		const FileSystemModel* filesystem() const;
-		void set_current(DirNode* current);
+		void save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const;
+		void save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const;
 
+		const FileSystemModel* filesystem() const;
+
+		void set_current(DirNode* current);
+		void update_node(DirNode* node);
+		void draw_node(DirNode* node);
+
+		static constexpr float update_secs = 5.0f;
+		core::Chrono _update_chrono;
 
 		DirNode _root;
 		NotOwner<DirNode*> _current = nullptr;
+
 };
 
 }

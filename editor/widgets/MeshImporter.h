@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_ASSETIMPORTER_H
-#define EDITOR_WIDGETS_ASSETIMPORTER_H
+#ifndef EDITOR_WIDGETS_MESHIMPORTER_H
+#define EDITOR_WIDGETS_MESHIMPORTER_H
 
 #include "FileBrowser.h"
 
@@ -30,26 +30,30 @@ SOFTWARE.
 
 namespace editor {
 
-class AssetImporter final : public Widget, public ContextLinked {
+class MeshImporter final : public Widget, public ContextLinked {
 
 	public:
-		AssetImporter(ContextPtr ctx);
+		MeshImporter(ContextPtr ctx);
+
+		template<typename F>
+		void set_callback(F&& func) {
+			_callback = std::forward<F>(func);
+		}
 
 	private:
 		void paint_ui(CmdBufferRecorder<>&recorder, const FrameToken&token) override;
 
 		void import_async(const core::String& filename);
-		void save_imports(const core::String& dirname);
 
 		bool done_loading() const;
 		bool is_loading() const;
 
 		FileBrowser _browser;
 
-		std::unique_ptr<import::SceneData> _imported;
 		std::future<import::SceneData> _import_future;
+		core::Function<void(core::ArrayView<Named<MeshData>>, core::ArrayView<Named<Animation>>)> _callback = [](auto, auto) {};
 };
 
 }
 
-#endif // EDITOR_WIDGETS_ASSETIMPORTER_H
+#endif // EDITOR_WIDGETS_MESHIMPORTER_H

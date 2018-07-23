@@ -29,7 +29,7 @@ SOFTWARE.
 #include <editor/widgets/MemoryInfo.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/FileBrowser.h>
-#include <editor/widgets/AssetImporter.h>
+#include <editor/widgets/MeshImporter.h>
 
 namespace editor {
 
