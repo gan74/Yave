@@ -30,16 +30,6 @@ namespace core {
 
 namespace detail {
 
-template<typename T>
-struct FuncPtr {
-	using type = T;
-};
-
-template<typename R, typename... Args>
-struct FuncPtr<R(Args...)> {
-	using type = R(*)(Args...);
-};
-
 template<typename Ret, typename... Args>
 struct FunctionBase : NonCopyable {
 	FunctionBase() {
@@ -58,7 +48,7 @@ struct Function : FunctionBase<Ret, Args...> {
 		Function(T&& t) : _func(std::forward<T>(t)) {
 		}
 
-		virtual Ret apply(Args&&... args) override {
+		Ret apply(Args&&... args) override {
 			if constexpr(std::is_void_v<Ret>) {
 				_func(std::forward<Args>(args)...);
 			} else {
@@ -67,7 +57,7 @@ struct Function : FunctionBase<Ret, Args...> {
 		}
 
 	private:
-		typename FuncPtr<T>::type _func;
+		T _func;
 };
 
 template<template<typename...> typename Container, typename Ret, typename... Args>
@@ -86,19 +76,24 @@ struct is_functor<Functor<Container, Ret(Args...)>> {
 template<template<typename...> typename Container, typename Ret, typename... Args>
 class Functor<Container, Ret(Args...)> {
 	public:
-		Functor& operator=(const Functor&) = default;
-		Functor(const Functor&) = default;
-
 		template<typename T, typename = std::enable_if_t<!is_functor<std::remove_reference_t<T>>::value>>
-		Functor(T&& func) : _function(new Function<T, Ret, Args...>(std::forward<T>(func))) {
+		Functor(T func) : _function(std::make_unique<Function<T, Ret, Args...>>(std::move(func))) {
 		}
 
 		Functor(Functor&& other) : _function(nullptr) {
 			std::swap(_function, other._function);
 		}
 
+		Functor(const Functor& other) : _function(other._function) {
+		}
+
 		Functor& operator=(Functor&& other) {
 			std::swap(_function, other._function);
+			return *this;
+		}
+
+		Functor& operator=(const Functor& other) {
+			_function = other._function;
 			return *this;
 		}
 
