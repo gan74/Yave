@@ -30,6 +30,9 @@ SOFTWARE.
 namespace editor {
 
 static core::String clean_name(std::string_view name) {
+	if(name.empty()) {
+		return "unnamed";
+	}
 	core::String str;
 	str.set_min_capacity(name.size());
 	for(char c : name) {
@@ -74,16 +77,18 @@ void ResourceBrowser::update_node(DirNode* node) {
 		});
 
 	node->up_to_date = true;
-	_update_chrono.reset();
 }
 
-void ResourceBrowser::draw_node(DirNode* node) {
-	if(ImGui::TreeNode(node->name.data())) {
+static constexpr ImGuiTreeNodeFlags default_node_flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+
+void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
+	ImGuiTreeNodeFlags flags = default_node_flags/* | (node->children.is_empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/;
+	if(ImGui::TreeNodeEx(name.data(), flags)) {
 		if(!node->up_to_date) {
 			update_node(node);
 		}
 		for(auto& n : node->children) {
-			draw_node(&n);
+			draw_node(&n, n.name);
 		}
 		ImGui::TreePop();
 	}
@@ -102,9 +107,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 	{
 		float width = std::min(ImGui::GetWindowContentRegionWidth() * 0.5f, 200.0f);
 		ImGui::BeginChild("###resourcestree", ImVec2(width, 0), false);
-		for(auto& n : _root.children) {
-			draw_node(&n);
-		}
+		draw_node(&_root, "store");
 		ImGui::EndChild();
 	}
 
@@ -113,7 +116,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 	{
 		ImGui::BeginChild("###resources");
 
-		if(ImGui::IsMouseReleased(1)) {
+		if(ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1)) {
 			ImGui::OpenPopup("###resourcescontext");
 		}
 
@@ -144,6 +147,12 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 
 		for(const auto& name : curr->files) {
 			if(ImGui::Selectable(name.data())) {
+				try {
+					auto full_name = filesystem()->join(_current->path, name);
+					context()->scene().add(full_name);
+				} catch(std::exception& e) {
+					log_msg("Unable to add object to scene: "_s + e.what(), Log::Error);
+				}
 			}
 		}
 		ImGui::EndChild();
@@ -154,20 +163,30 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 
 
 void ResourceBrowser::save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const {
-	for(const auto& mesh : meshes) {
-		core::String name = filesystem()->join(path, clean_name(mesh.name()));
-		io::Buffer data;
-		mesh.obj().serialize(data);
-		context()->loader().asset_store().import(data, name);
+	try {
+		for(const auto& mesh : meshes) {
+			core::String name = filesystem()->join(path, clean_name(mesh.name()) + ".ym");
+			log_msg("Saving mesh as \"" + name + "\"");
+			io::Buffer data;
+			mesh.obj().serialize(data);
+			context()->loader().asset_store().import(data, name);
+		}
+	} catch(std::exception& e) {
+		log_msg("Unable save mesh: "_s + e.what(), Log::Error);
 	}
 }
 
 void ResourceBrowser::save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const {
-	for(const auto& anim : anims) {
-		core::String name = filesystem()->join(path, clean_name(anim.name()));
-		io::Buffer data;
-		anim.obj().serialize(data);
-		context()->loader().asset_store().import(data, name);
+	try {
+		for(const auto& anim : anims) {
+			core::String name = filesystem()->join(path, clean_name(anim.name()) + ".ya");
+			log_msg("Saving animation as \"" + name + "\"");
+			io::Buffer data;
+			anim.obj().serialize(data);
+			context()->loader().asset_store().import(data, name);
+		}
+	} catch(std::exception& e) {
+		log_msg("Unable to save animation: "_s + e.what(), Log::Error);
 	}
 }
 

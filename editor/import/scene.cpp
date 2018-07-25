@@ -22,12 +22,15 @@ SOFTWARE.
 
 #include "scene.h"
 
+#ifndef EDITOR_NO_ASSIMP
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
 namespace editor {
 namespace import {
+
 
 static constexpr auto import_flags =
 									 aiProcess_Triangulate |
@@ -62,7 +65,6 @@ SceneData import_scene(const core::String& path) {
 	SceneData data;
 	std::transform(meshes.begin(), meshes.end(), std::back_inserter(data.meshes), [=](aiMesh* mesh) { return Named(mesh->mName.C_Str(), import_mesh(mesh, scene)); });
 	std::transform(animations.begin(), animations.end(), std::back_inserter(data.animations), [=](aiAnimation* anim) { return Named(anim->mName.C_Str(), import_animation(anim)); });
-
 	return data;
 }
 
@@ -75,4 +77,25 @@ core::String supported_extensions() {
 
 }
 }
+
+
+#else
+
+namespace editor {
+namespace import {
+
+SceneData import_scene(const core::String& path) {
+	unused(path);
+	SceneData data;
+	return data;
+}
+
+core::String supported_extensions() {
+	return "";
+}
+
+}
+}
+
+#endif
 

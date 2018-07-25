@@ -56,7 +56,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 		void set_current(DirNode* current);
 		void update_node(DirNode* node);
-		void draw_node(DirNode* node);
+		void draw_node(DirNode* node, const core::String& name);
 
 		static constexpr float update_secs = 5.0f;
 		core::Chrono _update_chrono;

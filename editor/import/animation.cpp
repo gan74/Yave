@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <map>
 
+#ifndef EDITOR_NO_ASSIMP
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -112,3 +114,5 @@ Animation import_animation(aiAnimation* anim) {
 
 }
 }
+
+#endif

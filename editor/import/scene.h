@@ -31,15 +31,11 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/math/math.h>
 
-/*
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-*/
-
+#ifndef EDITOR_NO_ASSIMP
 class aiAnimation;
 class aiMesh;
 class aiScene;
+#endif
 
 namespace editor {
 namespace import {
@@ -56,13 +52,13 @@ struct SceneData {
 
 SceneData import_scene(const core::String& path);
 
+core::String supported_extensions();
+
+#ifndef EDITOR_NO_ASSIMP
 Animation import_animation(aiAnimation* anim);
 MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
-
 SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
-
-
-core::String supported_extensions();
+#endif
 
 }
 }

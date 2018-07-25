@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "scene.h"
 
+
+#ifndef EDITOR_NO_ASSIMP
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -84,7 +87,7 @@ MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
 }
 }
 
-
+#endif
 
 
 

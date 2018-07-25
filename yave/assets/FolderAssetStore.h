@@ -53,6 +53,13 @@ class FolderAssetStore final : public AssetStore {
 
 			core::String current_path() const noexcept override;
 			bool exists(std::string_view path) const noexcept override;
+			bool is_directory(std::string_view path) const noexcept override;
+
+			core::String absolute(std::string_view path) const noexcept override;
+
+			void for_each(std::string_view path, const for_each_f& func) const noexcept override;
+
+			bool create_directory(std::string_view path) const noexcept override;
 
 		private:
 			core::String _root;

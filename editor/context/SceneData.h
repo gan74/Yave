@@ -45,11 +45,18 @@ class SceneData : public ContextLinked, NonCopyable {
 		void save(std::string_view filename);
 		void load(std::string_view filename);
 
+		StaticMeshInstance* add(AssetId id);
+		StaticMeshInstance* add(std::string_view name);
+
 		void flush();
 
 	private:
 		Scene _scene;
 		SceneView _scene_view;
+
+		AssetPtr<Material> _default_material;
+
+		core::Vector<std::unique_ptr<StaticMeshInstance>> _to_add;
 };
 
 }

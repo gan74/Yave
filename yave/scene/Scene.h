@@ -46,7 +46,7 @@ class Scene : NonCopyable {
 		Scene(Scene&& other);
 		Scene& operator=(Scene&& other);
 
-		static Scene deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader);
+		static Scene deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader, const AssetPtr<Material>& default_material);
 		void serialize(io::WriterRef writer) const;
 
 

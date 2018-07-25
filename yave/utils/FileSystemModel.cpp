@@ -59,7 +59,8 @@ core::String LocalFileSystemModel::current_path() const noexcept {
 }
 
 core::String LocalFileSystemModel::parent_path(std::string_view path) const noexcept {
-	return fs::path(path).parent_path().string();
+	//return fs::path(path).parent_path().string();
+	return LocalFileSystemModel::join(path, "..");
 }
 
 core::String LocalFileSystemModel::filename(std::string_view path) const noexcept {

@@ -41,12 +41,29 @@ const core::String& FolderAssetStore::FolderFileSystemModel::root_path() const {
 }
 
 core::String FolderAssetStore::FolderFileSystemModel::current_path() const noexcept {
-	return _root;
+	return "";
 }
 
 bool FolderAssetStore::FolderFileSystemModel::exists(std::string_view path) const noexcept {
-	return LocalFileSystemModel::exists(path) && is_parent(_root, path);
+	return LocalFileSystemModel::exists(join(_root, path));
 }
+
+bool FolderAssetStore::FolderFileSystemModel::is_directory(std::string_view path) const noexcept {
+	return LocalFileSystemModel::is_directory(join(_root, path));
+}
+
+core::String FolderAssetStore::FolderFileSystemModel::absolute(std::string_view path) const noexcept {
+	return path;
+}
+
+void FolderAssetStore::FolderFileSystemModel::for_each(std::string_view path, const for_each_f& func) const noexcept {
+	LocalFileSystemModel::for_each(join(_root, path), func);
+}
+
+bool FolderAssetStore::FolderFileSystemModel::create_directory(std::string_view path) const noexcept {
+	return LocalFileSystemModel::create_directory(join(_root, path));
+}
+
 
 
 FolderAssetStore::FolderAssetStore(std::string_view path) :
@@ -54,7 +71,7 @@ FolderAssetStore::FolderAssetStore(std::string_view path) :
 		_index_file_path(_filesystem.join(_filesystem.root_path(), ".index")) {
 
 	log_msg("Store index file: " + _index_file_path);
-	_filesystem.create_directory(path);
+	_filesystem.create_directory(".");
 	read_index();
 }
 
@@ -108,8 +125,6 @@ void FolderAssetStore::write_index() const {
 }
 
 AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) {
-	// remove/optimize
-	auto flush_index = scope_exit([this] { write_index(); });
 	std::unique_lock lock(_lock);
 
 	auto& entry = _from_name[dst_name];
@@ -117,16 +132,17 @@ AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) 
 		y_throw("Asset already in store.");
 	}
 
-	auto dst_file = _filesystem.is_parent(_filesystem.root_path(), dst_name)
-		? core::String(dst_name)
-		: _filesystem.join(_filesystem.root_path(), dst_name);
 	{
-		auto dst_dir = _filesystem.parent_path(dst_file);
+		auto dst_dir = _filesystem.parent_path(dst_name);
 		if(!_filesystem.exists(dst_dir) && !_filesystem.create_directory(dst_dir)) {
 			y_throw("Unable to create import directory.");
 		}
 	}
 
+	// remove/optimize
+	auto flush_index = scope_exit([this] { write_index(); });
+
+	auto dst_file = _filesystem.join(_filesystem.root_path(), dst_name);
 	if(!io::File::copy(data, dst_file)) {
 		_from_name.erase(_from_name.find(dst_name));
 		y_throw("Unable to import file as \""_s + dst_name + "\"");
@@ -159,6 +175,8 @@ io::ReaderRef FolderAssetStore::data(AssetId id) const {
 		auto filename = _filesystem.join(_filesystem.root_path(), it->second->name);
 		if(auto r = io::File::open(filename); r.is_ok()){
 			return io::ReaderRef(std::move(r.unwrap()));
+		} else {
+			y_throw("Unable to locate asset data.");
 		}
 	}
 	y_throw("No asset with this id.");

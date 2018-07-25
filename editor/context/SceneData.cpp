@@ -23,12 +23,20 @@ SOFTWARE.
 #include "SceneData.h"
 #include "EditorContext.h"
 
+#include <yave/material/Material.h>
+
 #include <y/io/File.h>
+
 #include <imgui/imgui.h>
 
 namespace editor {
 
 SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), _scene_view(_scene) {
+	_default_material = make_asset<Material>(device(), MaterialData()
+			.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+			.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
+		);
+
 	load("scene.ys");
 }
 
@@ -82,7 +90,7 @@ void SceneData::load(std::string_view filename) {
 	Y_LOG_PERF("editor,loading");
 	if(auto r = io::File::open(filename); r.is_ok()) {
 		try {
-			auto sce = Scene::deserialized(r.unwrap(), context()->loader().static_mesh());
+			auto sce = Scene::deserialized(r.unwrap(), context()->loader().static_mesh(), _default_material);
 			_scene = std::move(sce);
 		} catch(std::exception& e) {
 			log_msg("Unable to load scene: "_s + e.what(), Log::Error);
@@ -92,7 +100,24 @@ void SceneData::load(std::string_view filename) {
 	}
 }
 
+
+StaticMeshInstance* SceneData::add(AssetId id) {
+	AssetPtr<StaticMesh> mesh = context()->loader().static_mesh().load(id);
+	auto inst = std::make_unique<StaticMeshInstance>(mesh, _default_material);
+	StaticMeshInstance* inst_ptr = inst.get();
+	inst->position() = _scene_view.camera().position() + _scene_view.camera().forward() * 2.0f * inst->radius();
+	_to_add << std::move(inst);
+	return inst_ptr;
+}
+
+
+StaticMeshInstance* SceneData::add(std::string_view name) {
+	return add(context()->loader().asset_store().id(name));
+}
+
 void SceneData::flush() {
+	_scene.static_meshes().emplace_back(_to_add.begin(), _to_add.end());
+	_to_add.clear();
 }
 
 

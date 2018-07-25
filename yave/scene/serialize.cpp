@@ -58,7 +58,7 @@ void Scene::serialize(io::WriterRef writer) const {
 
 }
 
-Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader) {
+Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader, const AssetPtr<Material>& default_material) {
 	core::DebugTimer _("Scene::from_file()");
 
 	struct Header {
@@ -78,14 +78,8 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 
 	auto header = reader->read_one<Header>();
 	if(!header.is_valid()) {
-		y_throw("Invalid header");
+		y_throw("Invalid header.");
 	}
-
-	DevicePtr dptr = mesh_loader.device();
-	auto material = make_asset<Material>(dptr, MaterialData()
-			.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-		);
 
 	Scene scene;
 	scene.static_meshes().set_min_capacity(header.statics);
@@ -103,7 +97,7 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 
 			try {
 				auto mesh = mesh_loader.load(id);
-				auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
+				auto inst = std::make_unique<StaticMeshInstance>(mesh, default_material);
 				inst->transform() = transform;
 				scene.static_meshes().emplace_back(std::move(inst));
 			} catch(std::exception& e) {

@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <unordered_map>
 
+#ifndef EDITOR_NO_ASSIMP
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -154,6 +156,8 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 
 }
 }
+
+#endif
 
 
 

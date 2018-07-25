@@ -61,6 +61,7 @@ void EditorContext::flush_deferred() {
 		_deferred.clear();
 		_is_flushing_deferred = false;
 	}
+	_scene.flush();
 }
 
 
