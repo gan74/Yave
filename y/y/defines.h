@@ -43,7 +43,7 @@ struct Nothing;
 #ifdef Y_DEBUG
 #define y_debug_assert(cond) do { if(!(cond)) { y_fatal("Assert failed: " #cond); } } while(false)
 #else
-#define y_debug_assert(cond) do { (void)(cond); } while(false)
+#define y_debug_assert(cond) do { /*(void)(cond);*/ } while(false)
 #endif
 
 
