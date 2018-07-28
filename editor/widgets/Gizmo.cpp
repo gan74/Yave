@@ -121,7 +121,8 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	// compute hover
 	u32 hover_mask = _dragging_mask;
 	if(!hover_mask) {
-		for(usize i = 0; i != 3; ++i) {
+		for(usize k = 0; k != 3; ++k) {
+			usize i = 2 - k;
 			usize index = axes[i].index;
 			math::Vec3 proj = intersect(basis[index], obj_pos, cam_pos, projected_mouse) - obj_pos;
 			float da = proj.dot(basis[(index + 1) % 3]);
@@ -146,9 +147,6 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		}
 	}
 
-	// reverse to render back to front
-	std::reverse(std::begin(axes), std::end(axes));
-
 	// draw
 	{
 		// quads
@@ -171,7 +169,8 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		}
 
 		// axes
-		for(usize i = 0; i != 3; ++i) {
+		for(usize k = 0; k != 3; ++k) {
+			usize i = 2 - k;
 			bool hovered = hover_mask & axes[i].mask();
 			u32 color = hovered ? hover_color : axes[i].color();
 			ImGui::GetWindowDrawList()->AddLine(center, axes[i].vec, gizmo_alpha | color, gizmo_width);
