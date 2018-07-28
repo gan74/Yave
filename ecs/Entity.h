@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,59 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_CORE_RANGE_H
-#define Y_CORE_RANGE_H
+#ifndef YAVE_ECS_ENTITY_H
+#define YAVE_ECS_ENTITY_H
 
-#include <y/utils.h>
+#include "ecs.h"
 
-namespace y {
-namespace core {
+#include <typeindex>
+#include <unordered_map>
 
-template<typename Iter, typename EndIter = Iter>
-class Range {
+namespace yave {
+namespace ecs {
+
+class Entity final {
 	public:
-		using iterator_traits = std::iterator_traits<Iter>;
+		Entity() = default;
 
-		using value_type = typename std::iterator_traits<Iter>::value_type;
-
-		using iterator = Iter;
-		using const_iterator = const Iter;
-
-		Range(Iter b, EndIter e) : _beg(b), _end(e) {
-		}
-
-		template<typename Coll>
-		Range(const Coll& col) : Range(col.begin(), col.end()) {
-		}
-
-		template<typename Coll>
-		Range(Coll& col) : Range(col.begin(), col.end()) {
-		}
-
-		Iter begin() const {
-			return _beg;
-		}
-
-		EndIter end() const {
-			return _end;
-		}
-
-		usize size() const {
-			return std::distance(_beg, _end);
+		const auto& components() const {
+			return _components;
 		}
 
 	private:
-		Iter _beg;
-		EndIter _end;
+		friend EntityWorld;
+
+
+		std::unordered_map<std::type_index, ComponentId> _components;
 };
 
-template<typename Coll>
-Range(const Coll&) -> Range<typename Coll::const_iterator>;
-
-template<typename Coll>
-Range(Coll&) -> Range<typename Coll::iterator>;
-
 }
 }
 
-#endif // Y_CORE_RANGE_H
+#endif // YAVE_ECS_ENTITY_H

@@ -82,8 +82,9 @@ if(BUILD_YAVE)
 	target_link_libraries(yave ${Vulkan_LIBRARY})
 	target_link_libraries(yave y spirv-cross-core stdc++fs)
 
-	#add_executable(ecs "ecs/main.cpp" ${ECS_FILES})
-	#target_link_libraries(ecs y)
+	enable_unity_build(ecs ECS_FILES)
+	add_executable(ecs "ecs/main.cpp" ${ECS_FILES})
+	target_link_libraries(ecs y)
 endif()
 
 if(BUILD_EDITOR)

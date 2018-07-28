@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,59 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_CORE_RANGE_H
-#define Y_CORE_RANGE_H
 
-#include <y/utils.h>
+#include "ComponentContainer.h"
 
-namespace y {
-namespace core {
+namespace yave {
+namespace ecs {
 
-template<typename Iter, typename EndIter = Iter>
-class Range {
-	public:
-		using iterator_traits = std::iterator_traits<Iter>;
+ComponentContainerBase::ComponentContainerBase(std::type_index type) : _type(type) {
+}
 
-		using value_type = typename std::iterator_traits<Iter>::value_type;
+ComponentContainerBase::~ComponentContainerBase() {
+}
 
-		using iterator = Iter;
-		using const_iterator = const Iter;
+void ComponentContainerBase::remove_component(ComponentId id) {
+	_deletions << id;
+}
 
-		Range(Iter b, EndIter e) : _beg(b), _end(e) {
-		}
+EntityId ComponentContainerBase::parent(ComponentId id) const {
+	u32 index = id.index();
+	return index < _parents.size() ? _parents[index] : EntityId();
+}
 
-		template<typename Coll>
-		Range(const Coll& col) : Range(col.begin(), col.end()) {
-		}
-
-		template<typename Coll>
-		Range(Coll& col) : Range(col.begin(), col.end()) {
-		}
-
-		Iter begin() const {
-			return _beg;
-		}
-
-		EndIter end() const {
-			return _end;
-		}
-
-		usize size() const {
-			return std::distance(_beg, _end);
-		}
-
-	private:
-		Iter _beg;
-		EndIter _end;
-};
-
-template<typename Coll>
-Range(const Coll&) -> Range<typename Coll::const_iterator>;
-
-template<typename Coll>
-Range(Coll&) -> Range<typename Coll::iterator>;
+const std::type_index& ComponentContainerBase::type() const {
+	return _type;
+}
 
 }
 }
-
-#endif // Y_CORE_RANGE_H

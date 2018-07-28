@@ -19,17 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef TRANSFORMS_H
-#define TRANSFORMS_H
+#ifndef YAVE_ECS_ECS_H
+#define YAVE_ECS_ECS_H
 
-#include "import.h"
+#include "FreeList.h"
 
-namespace import {
+namespace yave {
+namespace ecs {
 
-MeshData transform(const MeshData& mesh, const math::Transform<>& tr);
+class Entity;
+class EntityWorld;
 
-Animation set_speed(const Animation& anim, float speed);
+
+struct EntityTag {};
+using EntityId = FreeListId<EntityTag>;
+
+struct ComponentTag {};
+using ComponentId = FreeListId<ComponentTag>;
+
 
 }
+}
 
-#endif // TRANSFORMS_H
+#endif // YAVE_ECS_ECS_H
