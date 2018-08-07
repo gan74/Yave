@@ -23,8 +23,8 @@ SOFTWARE.
 #define YAVE_MESHES_STATICMESH_H
 
 #include "MeshData.h"
-#include <yave/buffers/buffers.h>
-#include <yave/buffers/TypedWrapper.h>
+#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/buffers/TypedWrapper.h>
 
 namespace yave {
 

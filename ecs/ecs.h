@@ -30,13 +30,17 @@ namespace ecs {
 class Entity;
 class EntityWorld;
 
+static constexpr usize max_entity_component_types = 64;
+
+struct TypeIndex {
+	usize index;
+};
 
 struct EntityTag {};
 using EntityId = FreeListId<EntityTag>;
 
 struct ComponentTag {};
 using ComponentId = FreeListId<ComponentTag>;
-
 
 }
 }

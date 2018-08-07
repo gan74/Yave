@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "scene.h"
 
-
 #ifndef EDITOR_NO_ASSIMP
 
 #include <assimp/Importer.hpp>

@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/renderers/ToneMapper.h>
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/TiledDeferredRenderer.h>
-#include <yave/renderers/FramebufferRenderer.h>
+#include <yave/renderers/framebufferRenderer.h>
 #include <y/core/SmallVector.h>
 
 #include <editor/widgets/EntityView.h>
@@ -38,7 +38,7 @@ SOFTWARE.
 #include <editor/widgets/PropertyPanel.h>
 #include <editor/widgets/SettingsPanel.h>
 #include <editor/widgets/CameraDebug.h>
-#include <editor/widgets/MemoryInfo.h>
+#include <editor/widgets/memoryInfo.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/SceneDebug.h>
 #include <editor/widgets/ResourceBrowser.h>

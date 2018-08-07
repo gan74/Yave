@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "Text.h"
 #include <yave/device/Device.h>
-#include <yave/buffers/TypedWrapper.h>
+#include <yave/graphics/buffers/TypedWrapper.h>
 
 namespace yave {
 

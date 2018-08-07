@@ -1,7 +1,0 @@
-[package]
-name = "font_to_yf"
-version = "0.1.0"
-
-[dependencies]
-rusttype = "*"
-rayon = "*"

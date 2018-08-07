@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_H
-#define EDITOR_H
+#ifndef EDITOR_EDITOR_H
+#define EDITOR_EDITOR_H
 
 #include <yave/yave.h>
 
@@ -96,4 +96,4 @@ Named(std::string_view, T&&) -> Named<T>;
 
 }
 
-#endif // EDITOR_H
+#endif // EDITOR_EDITOR_H

@@ -25,6 +25,10 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+EntityWorld::EntityWorld() {
+	_component_type_indexes.reserve(max_entity_component_types);
+}
+
 const Entity* EntityWorld::entity(EntityId id) const {
 	return _entities.get(id);
 }
@@ -45,10 +49,12 @@ ComponentId EntityWorld::add_component(ComponentContainerBase* container, Entity
 	Entity* ent = entity(id);
 	y_debug_assert(ent);
 
-	auto& comp = ent->_components[container->type()];
-	if(!comp.is_valid()) {
-		comp = container->create_component();
+	TypeIndex type = index_for_type(container->type());
+	if(ent->has_component(type)) {
+		return ent->component_id(type);
 	}
+	ComponentId comp = container->create_component();
+	ent->add_component(type, comp);
 	return comp;
 }
 
@@ -56,24 +62,35 @@ void EntityWorld::remove_component(ComponentContainerBase* container, ComponentI
 	Entity* ent = entity(container->parent(id));
 	y_debug_assert(ent);
 
-	usize removed = ent->_components.erase(container->type());
-	unused(removed);
-	y_debug_assert(removed);
+	TypeIndex type = index_for_type(container->type());
+	ent->remove_component(type);
+}
+
+TypeIndex EntityWorld::index_for_type(std::type_index type) {
+	if(auto it = _component_type_indexes.find(type); it != _component_type_indexes.end()) {
+		return it->second;
+	}
+	usize index = _component_containers.size();
+	_component_type_indexes[type] = TypeIndex{index};
+	_component_containers.emplace_back();
+	return TypeIndex{index};
 }
 
 void EntityWorld::flush() {
 	for(EntityId id : _deletions) {
 		if(const Entity* ent = entity(id)) {
-			for(const auto& component : ent->components()) {
-				auto& container = _component_containers[component.first];
-				container->remove_component(component.second);
+			for(usize i = 0; i != max_entity_component_types; ++i) {
+				ComponentId id = ent->component_id(TypeIndex{i});
+				if(id.is_valid()) {
+					_component_containers[i]->remove_component(id);
+				}
 			}
 		}
 		_entities.remove(id);
 	}
 
 	for(auto& container : _component_containers) {
-		container.second->flush();
+		container->flush();
 	}
 }
 

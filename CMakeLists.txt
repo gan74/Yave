@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.11)
 project(yave)
 
 function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
@@ -26,8 +26,8 @@ endfunction(enable_unity_build)
 
 find_package(vulkan REQUIRED)
 
-option(BUILD_YAVE "Build yave" ON)
-option(BUILD_EDITOR "Build editor" ON)
+option(YAVE_BUILD_YAVE "Build yave" ON)
+option(YAVE_BUILD_EDITOR "Build editor" ON)
 
 # add y subtree
 add_subdirectory(y)
@@ -72,12 +72,15 @@ file(GLOB_RECURSE SHADER_FILES
 		"shaders/*.glsl"
 	)
 
+
+
 if(CMAKE_BUILD_TYPE STREQUAL Release)
 	enable_unity_build(yave YAVE_FILES)
 endif()
 
-if(BUILD_YAVE)
-	add_library(yave ${YAVE_FILES} ${SHADER_FILES})
+
+if(YAVE_BUILD_YAVE)
+	add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES})
 
 	target_link_libraries(yave ${Vulkan_LIBRARY})
 	target_link_libraries(yave y spirv-cross-core stdc++fs)
@@ -87,12 +90,20 @@ if(BUILD_YAVE)
 	target_link_libraries(ecs y)
 endif()
 
-if(BUILD_EDITOR)
+if(YAVE_BUILD_EDITOR)
 	add_executable(editor ${EDITOR_FILES})
 
-	target_link_libraries(editor assimp.dll)
 	target_link_libraries(editor yave)
 	target_link_libraries(editor y)
+
+	find_package(assimp)
+	if(assimp_FOUND)
+		target_link_libraries(editor "${ASSIMP_LIBRARY_DIRS}/libassimp.dll.a")
+		include_directories(SYSTEM ${ASSIMP_INCLUDE_DIRS}) # SYSTEM to kill random warnings
+	else()
+		message("Assimp not found")
+		add_definitions(-DEDITOR_NO_ASSIMP)
+	endif()
 endif()
 
 

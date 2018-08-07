@@ -23,9 +23,9 @@ SOFTWARE.
 #define YAVE_MATERIAL_MATERIAL_H
 
 #include <yave/yave.h>
-#include <yave/framebuffer/Viewport.h>
+#include <yave/graphics/framebuffer/Viewport.h>
 
-#include <yave/bindings/DescriptorSet.h>
+#include <yave/graphics/bindings/DescriptorSet.h>
 
 #include <y/core/AssocVector.h>
 #include <y/concurrent/SpinLock.h>

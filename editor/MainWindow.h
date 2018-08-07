@@ -31,7 +31,7 @@ SOFTWARE.
 #include <yave/window/Window.h>
 #include <yave/device/Instance.h>
 #include <yave/device/Device.h>
-#include <yave/swapchain/Swapchain.h>
+#include <yave/graphics/swapchain/swapchain.h>
 #include <yave/renderers/renderers.h>
 #include <yave/scene/SceneView.h>
 

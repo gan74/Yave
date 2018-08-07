@@ -23,9 +23,9 @@ SOFTWARE.
 #define YAVE_MATERIAL_MATERIALDATA_H
 
 #include <yave/yave.h>
-#include <yave/bindings/Binding.h>
+#include <yave/graphics/bindings/Binding.h>
 
-#include <yave/shaders/SpirVData.h>
+#include <yave/graphics/shaders/SpirVData.h>
 
 namespace yave {
 
@@ -62,4 +62,4 @@ struct MaterialData {
 
 }
 
-#endif // YAVE_MATERIAL_MATERIAL_MATERIALDATA_H
+#endif // YAVE_MATERIAL_YAVE_MATERIAL_MATERIALDATA_H

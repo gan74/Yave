@@ -25,5 +25,38 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+
+
+usize Entity::component_index(TypeIndex type) const {
+	auto t = _component_type_bits << (_component_type_bits.size() - type.index);
+	return t.count();
+}
+
+bool Entity::has_component(TypeIndex type) const {
+	return _component_type_bits[type.index];
+}
+
+ComponentId Entity::component_id(TypeIndex type) const {
+	if(has_component(type)) {
+		return _components[component_index(type)];
+	}
+	return ComponentId();
+}
+
+void Entity::add_component(TypeIndex type, ComponentId id) {
+	y_debug_assert(!_component_type_bits[type.index]);
+	usize index = component_index(type);
+	_component_type_bits[type.index] = true;
+	_components.push_back(id);
+	std::rotate(_components.begin() + index, _components.end() - 1, _components.end());
+	y_debug_assert(_components[index] == id);
+}
+
+void Entity::remove_component(TypeIndex type) {
+	usize index = component_index(type);
+	_component_type_bits[index] = false;
+	_components.erase(_components.begin() + index);
+}
+
 }
 }

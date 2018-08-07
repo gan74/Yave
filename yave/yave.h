@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_H
-#define YAVE_H
+#ifndef YAVE_YAVE_H
+#define YAVE_YAVE_H
 
 #include <y/utils.h>
 #include <y/utils/perf.h>
@@ -54,8 +54,6 @@ using is_safe_base = bool_type</*!std::is_default_constructible_v<T> &&*/
 							   !std::is_move_constructible_v<T>>;
 
 
-
-
 }
 
-#endif // YAVE_H
+#endif // YAVE_YAVE_H

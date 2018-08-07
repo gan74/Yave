@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_OBJECTS_TEXT_H
 
 #include <yave/assets/AssetPtr.h>
-#include <yave/buffers/buffers.h>
+#include <yave/graphics/buffers/buffers.h>
 #include <yave/font/Font.h>
 
 #include "Renderable.h"

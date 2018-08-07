@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "SkinnedMeshInstance.h"
 
-#include <yave/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/material/Material.h>
 
 namespace yave {

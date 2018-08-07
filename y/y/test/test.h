@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_TEST_H
-#define Y_TEST_H
+#ifndef Y_TEST_TEST_H
+#define Y_TEST_TEST_H
 
 #include <y/utils.h>
 
@@ -44,9 +44,9 @@ void test_assert(const char* msg, void (*func)(TestResult &));
 #ifdef Y_BUILD_TESTS
 
 #define Y_TEST_LINE_HELPER(prefix, LINE) _test_ ## prefix ## _at_ ## LINE
-#define Y_TEST_HELPER(prefix, LINE) Y_TEST_LINE_HELPER(prefix, LINE)
-#define Y_TEST_FUNC Y_TEST_HELPER(func, __LINE__)
-#define Y_TEST_RUNNER Y_TEST_HELPER(runner, __LINE__)
+#define Y_TEST_TEST_HELPER(prefix, LINE) Y_TEST_LINE_HELPER(prefix, LINE)
+#define Y_TEST_FUNC Y_TEST_TEST_HELPER(func, __LINE__)
+#define Y_TEST_RUNNER Y_TEST_TEST_HELPER(runner, __LINE__)
 #define Y_TEST_FAILED y::test::detail::TestResult { false, __FILE__, __LINE__ }
 
 #define y_test_assert(t) do { if(!(t)) { _test_result = Y_TEST_FAILED; return; } } while(0)
@@ -73,4 +73,4 @@ static void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
 
 #endif
 
-#endif // Y_TEST_H
+#endif // Y_TEST_TEST_H

@@ -23,7 +23,7 @@ SOFTWARE.
 #include "DebugMarker.h"
 
 #include <yave/device/Instance.h>
-#include <yave/vk/vk.h>
+#include <yave/graphics/vk/vk.h>
 
 namespace yave {
 

@@ -22,8 +22,8 @@ SOFTWARE.
 #ifndef  YAVE_RENDERERS_RENDERINGPIPELINE_H
 #define  YAVE_RENDERERS_RENDERINGPIPELINE_H
 
-#include <yave/commands/CmdBuffer.h>
-#include <yave/swapchain/FrameToken.h>
+#include <yave/graphics/commands/CmdBuffer.h>
+#include <yave/graphics/swapchain/FrameToken.h>
 
 #include <unordered_map>
 

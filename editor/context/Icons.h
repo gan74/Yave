@@ -19,14 +19,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_CONTEXT_IMAGES_H
-#define EDITOR_CONTEXT_IMAGES_H
+#ifndef EDITOR_CONTEXT_ICONS_H
+#define EDITOR_CONTEXT_ICONS_H
 
 #include <editor/editor.h>
 
-#include <yave/images/ImageData.h>
-#include <yave/images/Image.h>
-#include <yave/images/ImageView.h>
+#include <yave/graphics/images/ImageData.h>
+#include <yave/graphics/images/Image.h>
+#include <yave/graphics/images/ImageView.h>
 
 namespace editor {
 namespace images {
@@ -74,4 +74,4 @@ class Icons : public DeviceLinked {
 
 }
 
-#endif // EDITOR_CONTEXT_IMAGES_H
+#endif // EDITOR_CONTEXT_ICONS_H

@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_CORE_FUNCTION_H
-#define Y_CORE_FUNCTION_H
+#ifndef Y_CORE_FUNCTOR_H
+#define Y_CORE_FUNCTOR_H
 
 #include <y/utils.h>
 #include <memory>
@@ -185,4 +185,4 @@ inline auto functor(T&& func) {
 }
 }
 
-#endif // Y_CORE_FUNCTION_H
+#endif // Y_CORE_FUNCTOR_H

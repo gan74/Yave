@@ -29,6 +29,24 @@ SOFTWARE.
 using namespace yave;
 using namespace ecs;
 
+template<usize N>
+static usize popcnt_(std::bitset<N> t, usize bit) {
+	t <<= N - bit;
+	return t.count();
+}
+
+void test_bitset() {
+	std::bitset<32> set;
+	set[1] = true;
+	set[4] = true;
+	set[7] = true;
+	set[12] = true;
+	set[25] = true;
+	y_debug_assert(popcnt_(set, 1) == 0);
+	y_debug_assert(popcnt_(set, 12) == 3);
+	y_debug_assert(popcnt_(set, 13) == 4);
+}
+
 int main(int, char**) {
 	log_msg("Hello world");
 
@@ -61,6 +79,7 @@ int main(int, char**) {
 		y_debug_assert(i == 7);
 	}
 
+	test_bitset();
 
 	unused(ent, cmp);
 

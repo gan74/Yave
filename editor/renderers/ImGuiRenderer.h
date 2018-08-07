@@ -26,8 +26,8 @@ SOFTWARE.
 
 #include <yave/renderers/renderers.h>
 
-#include <yave/buffers/buffers.h>
-#include <yave/buffers/MultiBufferWrapper.h>
+#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/buffers/MultiBufferWrapper.h>
 #include <yave/material/Material.h>
 
 namespace editor {

@@ -5,6 +5,7 @@
 
 using namespace editor;
 
+
 int main(int argc, char** argv) {
 	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
 

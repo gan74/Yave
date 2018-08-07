@@ -26,7 +26,7 @@ SOFTWARE.
 #include <editor/widgets/CameraDebug.h>
 #include <editor/widgets/SceneDebug.h>
 #include <editor/widgets/SettingsPanel.h>
-#include <editor/widgets/MemoryInfo.h>
+#include <editor/widgets/memoryInfo.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/FileBrowser.h>
 #include <editor/widgets/MeshImporter.h>

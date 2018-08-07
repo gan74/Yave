@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <yave/images/ImageData.h>
+#include <yave/graphics/images/ImageData.h>
 
 #include <unordered_map>
 

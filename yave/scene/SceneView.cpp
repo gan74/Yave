@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "SceneView.h"
 
-#include <yave/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {
 

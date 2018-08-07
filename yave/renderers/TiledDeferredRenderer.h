@@ -24,10 +24,10 @@ SOFTWARE.
 
 #include "GBufferRenderer.h"
 
-#include <yave/images/IBLProbe.h>
+#include <yave/graphics/images/IBLProbe.h>
 
-#include <yave/shaders/ComputeProgram.h>
-#include <yave/bindings/DescriptorSet.h>
+#include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/graphics/bindings/DescriptorSet.h>
 
 namespace yave {
 

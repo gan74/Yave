@@ -28,11 +28,11 @@ SOFTWARE.
 
 #include "extentions/DebugMarker.h"
 
-#include <yave/images/Sampler.h>
-#include <yave/queues/QueueFamily.h>
-#include <yave/memory/DeviceAllocator.h>
+#include <yave/graphics/images/Sampler.h>
+#include <yave/graphics/queues/QueueFamily.h>
+#include <yave/graphics/memory/DeviceAllocator.h>
 
-#include <yave/vk/destroy.h>
+#include <yave/graphics/vk/destroy.h>
 
 #include <thread>
 

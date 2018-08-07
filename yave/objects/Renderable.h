@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef YAVE_OBJECTS_RENDERABLE_H
 #define YAVE_OBJECTS_RENDERABLE_H
 
-#include <yave/commands/CmdBufferRecorder.h>
-#include <yave/swapchain/FrameToken.h>
-#include <yave/buffers/buffers.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/swapchain/FrameToken.h>
+#include <yave/graphics/buffers/buffers.h>
 
 #include "Transformable.h"
 

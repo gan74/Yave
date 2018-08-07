@@ -21,9 +21,9 @@ SOFTWARE.
 **********************************/
 #include "StaticMesh.h"
 
-#include <yave/buffers/TypedWrapper.h>
-#include <yave/commands/CmdBufferRecorder.h>
-#include <yave/commands/RecordedCmdBuffer.h>
+#include <yave/graphics/buffers/TypedWrapper.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/RecordedCmdBuffer.h>
 #include <yave/device/Device.h>
 
 namespace yave {

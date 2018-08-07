@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_VIEWS_ENGINEVIEW_H
-#define EDITOR_VIEWS_ENGINEVIEW_H
+#ifndef EDITOR_ENGINEVIEW_H
+#define EDITOR_ENGINEVIEW_H
 
 #include <editor/editor.h>
 
@@ -28,10 +28,10 @@ SOFTWARE.
 
 #include <editor/widgets/Gizmo.h>
 
-#include <yave/renderers/FramebufferRenderer.h>
+#include <yave/renderers/framebufferRenderer.h>
 #include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/scene/SceneView.h>
-#include <yave/buffers/buffers.h>
+#include <yave/graphics/buffers/buffers.h>
 #include <yave/material/Material.h>
 
 namespace editor {
@@ -70,4 +70,4 @@ class EngineView : public ContextLinked {
 
 }
 
-#endif // EDITOR_VIEWS_ENGINEVIEW_H
+#endif // EDITOR_ENGINEVIEW_H

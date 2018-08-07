@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_DEVICE_INSTANCE_H
 
 
-#include <yave/vk/vk.h>
+#include <yave/graphics/vk/vk.h>
 
 #include "DebugParams.h"
 

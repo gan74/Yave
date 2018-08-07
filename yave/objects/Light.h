@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_OBJECTS_LIGHT_H
 #define YAVE_OBJECTS_LIGHT_H
 
-#include <yave/bindings/uniforms.h>
+#include <yave/graphics/bindings/uniforms.h>
 #include "Transformable.h"
 
 namespace yave {

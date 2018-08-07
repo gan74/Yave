@@ -44,9 +44,20 @@ class Node : NonCopyable {
 	private:
 };
 
-class SecondaryRenderer : public Node, public DeviceLinked {
+
+class RendererBase : public Node, public DeviceLinked {
 	public:
-		SecondaryRenderer(DevicePtr dptr) : DeviceLinked(dptr) {
+		RendererBase(DevicePtr dptr) :
+				DeviceLinked(dptr) {
+		}
+
+	private:
+		friend class RenderingPipeline;
+};
+
+class SecondaryRenderer : public RendererBase {
+	public:
+		SecondaryRenderer(DevicePtr dptr) : RendererBase(dptr) {
 		}
 
 		virtual void render(RenderPassRecorder& recorder, const FrameToken& token) = 0;
@@ -60,9 +71,9 @@ class SecondaryRenderer : public Node, public DeviceLinked {
 
 };
 
-class Renderer : public Node, public DeviceLinked {
+class Renderer : public RendererBase {
 	public:
-		Renderer(DevicePtr dptr) : DeviceLinked(dptr) {
+		Renderer(DevicePtr dptr) : RendererBase(dptr) {
 		}
 
 		virtual TextureView output() const = 0;
@@ -76,9 +87,9 @@ class Renderer : public Node, public DeviceLinked {
 		virtual void render(CmdBufferRecorder<>& recorder, const FrameToken& token) = 0;
 };
 
-class EndOfPipe : public Node, public DeviceLinked {
+class EndOfPipe : public RendererBase {
 	public:
-		EndOfPipe(DevicePtr dptr) : DeviceLinked(dptr) {
+		EndOfPipe(DevicePtr dptr) : RendererBase(dptr) {
 		}
 
 	protected:

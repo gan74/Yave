@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include "TiledDeferredRenderer.h"
 
-#include <yave/buffers/TypedWrapper.h>
-#include <yave/barriers/Barrier.h>
+#include <yave/graphics/buffers/TypedWrapper.h>
+#include <yave/graphics/barriers/Barrier.h>
 
 #include <y/io/File.h>
 #include <y/core/Chrono.h>

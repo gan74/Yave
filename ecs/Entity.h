@@ -25,7 +25,7 @@ SOFTWARE.
 #include "ecs.h"
 
 #include <typeindex>
-#include <unordered_map>
+#include <bitset>
 
 namespace yave {
 namespace ecs {
@@ -41,8 +41,16 @@ class Entity final {
 	private:
 		friend EntityWorld;
 
+		usize component_index(TypeIndex type) const;
 
-		std::unordered_map<std::type_index, ComponentId> _components;
+		bool has_component(TypeIndex type) const;
+		ComponentId component_id(TypeIndex type) const;
+		void add_component(TypeIndex type, ComponentId id);
+		void remove_component(TypeIndex type);
+
+
+		std::bitset<max_entity_component_types> _component_type_bits;
+		core::Vector<ComponentId> _components;
 };
 
 }

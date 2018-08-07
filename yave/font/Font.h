@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_FONT_FONT_H
 
 #include "FontData.h"
-#include <yave/images/Image.h>
+#include <yave/graphics/images/Image.h>
 #include <yave/meshes/StaticMesh.h>
 
 namespace yave {

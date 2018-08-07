@@ -33,6 +33,8 @@ namespace ecs {
 class EntityWorld {
 
 	public:
+		EntityWorld();
+
 		const Entity* entity(EntityId id) const;
 		Entity* entity(EntityId id);
 
@@ -80,7 +82,8 @@ class EntityWorld {
 	private:
 		template<typename T>
 		ComponentContainerBase* component_container() {
-			auto& container = _component_containers[typeid(T)];
+			//auto& container = _component_containers[typeid(T)];
+			auto& container = _component_containers[index_for_type(typeid(T)).index];
 			if(!container) {
 				container = std::make_unique<ComponentContainer<T>>();
 			}
@@ -92,6 +95,7 @@ class EntityWorld {
 			return dynamic_cast<ComponentContainer<T>*>(component_container<T>());
 		}
 
+		TypeIndex index_for_type(std::type_index type);
 
 		ComponentId add_component(ComponentContainerBase* container, EntityId id);
 		void remove_component(ComponentContainerBase* container, ComponentId id);
@@ -100,7 +104,8 @@ class EntityWorld {
 		FreeList<Entity, EntityTag> _entities;
 		core::Vector<EntityId> _deletions;
 
-		std::unordered_map<std::type_index, std::unique_ptr<ComponentContainerBase>> _component_containers;
+		core::Vector<std::unique_ptr<ComponentContainerBase>> _component_containers;
+		std::unordered_map<std::type_index, TypeIndex> _component_type_indexes;
 };
 
 }

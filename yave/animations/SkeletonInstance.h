@@ -26,8 +26,8 @@ SOFTWARE.
 
 #include <yave/meshes/Skeleton.h>
 #include <yave/assets/AssetPtr.h>
-#include <yave/buffers/buffers.h>
-#include <yave/bindings/DescriptorSet.h>
+#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/bindings/DescriptorSet.h>
 
 #include "Animation.h"
 

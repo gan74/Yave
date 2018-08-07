@@ -26,7 +26,7 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <yave/assets/FolderAssetStore.h>
 
-#include <yave/images/Image.h>
+#include <yave/graphics/images/Image.h>
 #include <yave/meshes/StaticMesh.h>
 
 

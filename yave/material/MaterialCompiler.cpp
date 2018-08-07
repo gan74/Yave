@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 #include "MaterialCompiler.h"
 
-#include <yave/shaders/ShaderProgram.h>
+#include <yave/graphics/shaders/ShaderProgram.h>
 #include <yave/meshes/Vertex.h>
 #include <yave/device/Device.h>
 

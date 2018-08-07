@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include <yave/device/Device.h>
-#include <yave/commands/CmdBufferBase.h>
+#include <yave/graphics/commands/CmdBufferBase.h>
 
 #include <mutex>
 

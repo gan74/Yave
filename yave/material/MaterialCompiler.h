@@ -23,8 +23,8 @@ SOFTWARE.
 #define YAVE_MATERIAL_MATERIALCOMPILER_H
 
 #include <yave/yave.h>
-#include <yave/framebuffer/RenderPass.h>
-#include <yave/framebuffer/Viewport.h>
+#include <yave/graphics/framebuffer/RenderPass.h>
+#include <yave/graphics/framebuffer/Viewport.h>
 
 #include "Material.h"
 #include "GraphicPipeline.h"

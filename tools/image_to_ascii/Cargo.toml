@@ -1,6 +1,0 @@
-[package]
-name = "image_to_ascii"
-version = "0.1.0"
-
-[dependencies]
-image = "*"

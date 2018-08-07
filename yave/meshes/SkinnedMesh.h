@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "MeshData.h"
 #include "Skeleton.h"
-#include <yave/buffers/buffers.h>
+#include <yave/graphics/buffers/buffers.h>
 
 namespace yave {
 
