@@ -36,6 +36,8 @@ class ImageView : public DeviceLinked {
 	}
 
 	public:
+		using size_type = typename Image<Usage, Type>::size_type;
+
 		ImageView() = default;
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
@@ -60,7 +62,7 @@ class ImageView : public DeviceLinked {
 			return _format;
 		}
 
-		const math::Vec2ui& size() const {
+		const size_type& size() const {
 			return _size;
 		}
 
@@ -73,7 +75,7 @@ class ImageView : public DeviceLinked {
 		}
 
 	protected:
-		ImageView(DevicePtr dptr, const math::Vec2ui& size, ImageUsage usage, ImageFormat format, vk::ImageView view) :
+		ImageView(DevicePtr dptr, const size_type& size, ImageUsage usage, ImageFormat format, vk::ImageView view) :
 				DeviceLinked(dptr),
 				_size(size),
 				_usage(usage),
@@ -86,7 +88,7 @@ class ImageView : public DeviceLinked {
 		template<ImageUsage U, ImageType T>
 		friend class ImageView;
 
-		math::Vec2ui _size;
+		size_type _size;
 		ImageUsage _usage = ImageUsage::None;
 		ImageFormat _format;
 		vk::ImageView _view;

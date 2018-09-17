@@ -203,7 +203,7 @@ void Swapchain::build_swapchain() {
 
 		swapchain_image._memory = SwapchainImageMemory(device());
 
-		swapchain_image._size = _size;
+		swapchain_image._size = math::Vec3ui(_size, 1);
 		swapchain_image._format = _color_format;
 		swapchain_image._usage = SwapchainImageUsage;
 

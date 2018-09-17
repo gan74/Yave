@@ -36,12 +36,22 @@ class Image : public ImageBase {
 		return (uenum(Usage) & uenum(u)) == uenum(Usage);
 	}
 
+	static constexpr bool is_3d = Type == ImageType::ThreeD;
+
+	template<typename T>
+	math::Vec3ui to_3d_size(const T& size) {
+		math::Vec3ui s(1);
+		s.to<T::size()>() = size;
+		return s;
+	}
+
 	public:
 		using load_from = ImageData;
+		using size_type = std::conditional_t<is_3d, math::Vec3ui, math::Vec2ui>;
 
 		Image() = default;
 
-		Image(DevicePtr dptr, ImageFormat format, const math::Vec2ui& image_size) : ImageBase(dptr, format, Usage, image_size) {
+		Image(DevicePtr dptr, ImageFormat format, const size_type& image_size) : ImageBase(dptr, format, Usage, to_3d_size(image_size)) {
 			static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized.");
 			static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty.");
 		}
@@ -61,6 +71,10 @@ class Image : public ImageBase {
 			static_assert(is_compatible(U));
 			swap(other);
 			return *this;
+		}
+
+		const size_type& size() const {
+			return image_size().to<size_type::size()>();
 		}
 
 };

@@ -33,7 +33,7 @@ static void bind_image_memory(DevicePtr dptr, vk::Image image, const DeviceMemor
 	dptr->vk_device().bindImageMemory(image, memory.vk_memory(), memory.vk_offset());
 }
 
-static vk::Image create_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static vk::Image create_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
 	return dptr->vk_device().createImage(vk::ImageCreateInfo()
 			.setSharingMode(vk::SharingMode::eExclusive)
 			.setFlags(type == ImageType::Cube ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlags())
@@ -57,7 +57,7 @@ static auto get_copy_regions(const ImageData& data) {
 			auto size = data.size(m);
 			regions << vk::BufferImageCopy()
 				.setBufferOffset(data.data_offset(l, m))
-				.setImageExtent(vk::Extent3D(size.x(), size.y(), 1))
+				.setImageExtent(vk::Extent3D(size.x(), size.y(), size.z()))
 				.setImageSubresource(vk::ImageSubresourceLayers()
 						.setAspectMask(data.format().vk_aspect())
 						.setMipLevel(m)
@@ -110,7 +110,7 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 		);
 }
 
-static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec2ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
 	auto image = create_image(dptr, size, layers, mips, format, usage, type);
 	auto memory = dptr->allocator().alloc(image);
 	bind_image_memory(dptr, image, memory);
@@ -118,17 +118,23 @@ static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr 
 	return {image, std::move(memory), create_view(dptr, image, format, layers, mips, type)};
 }
 
-static void check_layer_count(ImageType type, usize layers) {
+static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {
 	if(type == ImageType::TwoD && layers > 1) {
 		y_fatal("Invalid layer count.");
 	}
 	if(type == ImageType::Cube && layers != 6) {
 		y_fatal("Invalid layer count.");
 	}
+	if(size.z() == 0) {
+		y_fatal("Invalid size.");
+	}
+	if(size.z() != 1 && type != ImageType::ThreeD) {
+		y_fatal("Invalid size.");
+	}
 }
 
 
-ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size, ImageType type, usize layers, usize mips) :
+ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips) :
 		_size(size),
 		_layers(layers),
 		_mips(mips),
@@ -137,7 +143,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 
 	Y_LOG_PERF("image");
 
-	check_layer_count(type, _layers);
+	check_layer_count(type, size, _layers);
 
 	std::tie(_image, _memory, _view) = alloc_image(dptr, size, _layers, _mips, _format, _usage, type);
 }
@@ -159,7 +165,7 @@ DevicePtr ImageBase::device() const {
 	return _memory.device();
 }
 
-const math::Vec2ui& ImageBase::size() const {
+const math::Vec3ui& ImageBase::image_size() const {
 	return _size;
 }
 

@@ -42,8 +42,8 @@ class ImageData : NonCopyable {
 		usize layer_byte_size() const;
 		usize combined_byte_size() const;
 
-		const math::Vec2ui& size() const;
-		math::Vec2ui size(usize mip) const;
+		const math::Vec3ui& size() const;
+		math::Vec3ui size(usize mip) const;
 
 		const ImageFormat& format() const;
 
@@ -57,7 +57,8 @@ class ImageData : NonCopyable {
 
 
 		y_deserialize(fs::magic_number, fs::image_file_type, u32(3),
-					_size, _layers, _mips, _format,
+					y_serde_call([this](const math::Vec2ui& size) { _size = math::Vec3ui(size, 1); }),
+					_layers, _mips, _format,
 					y_serde_call([this] { _data = std::make_unique<u8[]>(combined_byte_size()); }),
 					y_serde_fixed_array(combined_byte_size(), _data.get()))
 
@@ -65,7 +66,7 @@ class ImageData : NonCopyable {
 	private:
 		void swap(ImageData& other);
 
-		math::Vec2ui _size;
+		math::Vec3ui _size;
 		ImageFormat _format;
 
 		u32 _layers = 1;

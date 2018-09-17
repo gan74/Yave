@@ -29,6 +29,9 @@ namespace yave {
 enum class PipelineStage {
 	None = 0,
 
+	BeginOfPipe = uenum(vk::PipelineStageFlagBits::eBottomOfPipe),
+	EndOfPipe = uenum(vk::PipelineStageFlagBits::eTopOfPipe),
+
 	TransferBit = uenum(vk::PipelineStageFlagBits::eTransfer),
 	HostBit = uenum(vk::PipelineStageFlagBits::eHost),
 	VertexBit = uenum(vk::PipelineStageFlagBits::eVertexInput) | uenum(vk::PipelineStageFlagBits::eVertexShader),

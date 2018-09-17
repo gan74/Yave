@@ -40,7 +40,7 @@ class ImageBase : NonCopyable {
 
 		const DeviceMemory& device_memory() const;
 
-		const math::Vec2ui& size() const;
+		const math::Vec3ui& image_size() const;
 		usize mipmaps() const;
 
 		usize layers() const;
@@ -53,13 +53,13 @@ class ImageBase : NonCopyable {
 	protected:
 		ImageBase() = default;
 
-		ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec2ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1);
+		ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1);
 		ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data);
 
 
 		void swap(ImageBase& other);
 
-		math::Vec2ui _size;
+		math::Vec3ui _size;
 		u32 _layers = 1;
 		u32 _mips = 1;
 

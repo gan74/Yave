@@ -58,12 +58,12 @@ usize ImageData::mipmaps() const {
 	return _mips;
 }
 
-const math::Vec2ui& ImageData::size() const {
+const math::Vec3ui& ImageData::size() const {
 	return _size;
 }
 
-math::Vec2ui ImageData::size(usize mip) const {
-	return {std::max(u32(1), _size.x() >> mip), std::max(u32(1), _size.y() >> mip)};
+math::Vec3ui ImageData::size(usize mip) const {
+	return {std::max(u32(1), _size.x() >> mip), std::max(u32(1), _size.y() >> mip), std::max(u32(1), _size.z() >> mip)};
 }
 
 const ImageFormat& ImageData::format() const {
@@ -91,7 +91,7 @@ void ImageData::swap(ImageData& other) {
 }
 
 ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips) :
-		_size(size),
+		_size(size, 1),
 		_format(format),
 		_layers(1),
 		_mips(mips) {

@@ -70,7 +70,7 @@ using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageT
 
 struct ProbeBase : ImageBase {
 	ProbeBase(DevicePtr dptr, usize size) :
-		ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size}, ImageType::Cube, 6, mipmap_count(size, diffuse_size)) {
+		ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size, 1}, ImageType::Cube, 6, mipmap_count(size, diffuse_size)) {
 	}
 };
 
@@ -78,7 +78,7 @@ struct ProbeBaseView : ViewBase {
 	// does not destroy the view, need to be done manually
 	ProbeBaseView(ProbeBase& base, usize mip) :
 			ViewBase(base.device(),
-					 base.size() / (1 << mip),
+					 base.image_size().to<2>() / (1 << mip),
 					 base.usage(),
 					 base.format(),
 					 create_view(base.device(), base.vk_image(), base.format(), mip)) {

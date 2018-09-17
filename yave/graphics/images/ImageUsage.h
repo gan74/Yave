@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 enum class ImageUsage {
-    None = 0,
+	None = 0,
 
 	TextureBit = uenum(vk::ImageUsageFlagBits::eSampled),
 	DepthBit = uenum(vk::ImageUsageFlagBits::eDepthStencilAttachment),
@@ -75,7 +75,8 @@ vk::ImageLayout vk_image_layout(ImageUsage usage);
 enum class ImageType {
 	TwoD = uenum(vk::ImageViewType::e2D),
 	Layered = uenum(vk::ImageViewType::e2DArray),
-	Cube = uenum(vk::ImageViewType::eCube)
+	Cube = uenum(vk::ImageViewType::eCube),
+	ThreeD = uenum(vk::ImageViewType::e3D),
 };
 
 }
