@@ -101,5 +101,4 @@ ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat forma
 	std::memcpy(_data.get(), data, data_size);
 }
 
-
 }

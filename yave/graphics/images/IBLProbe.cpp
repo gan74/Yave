@@ -46,14 +46,16 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 		);
 }
 
-static usize mipmap_count(usize size, usize min_size) {
-	if(size % min_size) {
+static constexpr usize min_face_size = 32;
+
+static usize mipmap_count(usize size) {
+	if(size % min_face_size) {
 		y_fatal("Minimum size does not divide image size.");
 	}
-	if(size <= min_size) {
+	if(size <= min_face_size) {
 		y_fatal("IBL probe is too small.");
 	}
-	return 1 + std::floor(std::log2(size / min_size));
+	return 1 + std::floor(std::log2(size / min_face_size));
 }
 
 static ComputeShader create_convolution_shader(DevicePtr dptr, const Cubemap&) {
@@ -64,13 +66,12 @@ static ComputeShader create_convolution_shader(DevicePtr dptr, const Texture&) {
 	return ComputeShader(dptr, SpirVData::deserialized(io::File::open("equirec_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
 }
 
-static constexpr usize diffuse_size = 32;
 
 using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
 
 struct ProbeBase : ImageBase {
-	ProbeBase(DevicePtr dptr, usize size) :
-		ImageBase(dptr, vk::Format::eR8G8B8A8Unorm, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size, 1}, ImageType::Cube, 6, mipmap_count(size, diffuse_size)) {
+	ProbeBase(DevicePtr dptr, usize size, ImageFormat format = vk::Format::eR8G8B8A8Unorm) :
+		ImageBase(dptr, format, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size, 1}, ImageType::Cube, 6, mipmap_count(size)) {
 	}
 };
 
@@ -139,19 +140,19 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
 
 
 static usize probe_size(const Cubemap& cube) {
-	return usize(1) << log2ui(cube.size().x());
+	return std::max(min_face_size * 2, usize(1) << log2ui(cube.size().x()));
 }
 
 static usize probe_size(const Texture& tex) {
 	const auto& size = tex.size();
 	usize face = (size.x() * size.y()) / 6;
-	return usize(1) << usize(std::ceil(std::log2(std::sqrt(face))));
+	return std::max(min_face_size * 2, usize(1) << usize(std::ceil(std::log2(std::sqrt(face)))));
 }
 
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 	core::DebugTimer _("IBLProbe::from_cubemap()");
 
-	ProbeBase probe(cube.device(), probe_size(cube));
+	ProbeBase probe(cube.device(), probe_size(cube), cube.format());
 	compute_probe(probe, cube);
 	IBLProbe final;
 	final.swap(probe);
@@ -161,7 +162,7 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 IBLProbe IBLProbe::from_equirec(const Texture& equirec) {
 	core::DebugTimer _("IBLProbe::from_equirec()");
 
-	ProbeBase probe(equirec.device(), probe_size(equirec));
+	ProbeBase probe(equirec.device(), probe_size(equirec), equirec.format());
 	compute_probe(probe, equirec);
 	IBLProbe final;
 	final.swap(probe);

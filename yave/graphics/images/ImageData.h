@@ -55,7 +55,6 @@ class ImageData : NonCopyable {
 
 		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
 
-
 		y_deserialize(fs::magic_number, fs::image_file_type, u32(3),
 					y_serde_call([this](const math::Vec2ui& size) { _size = math::Vec3ui(size, 1); }),
 					_layers, _mips, _format,

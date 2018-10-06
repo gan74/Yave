@@ -55,7 +55,13 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 }
 
 static auto load_envmap(DevicePtr dptr) {
-	auto image = ImageData::deserialized(io::File::open("equirec.yt").expected("Unable to open equirec."));
+	ImageData image;
+	if(auto r = io::File::open("equirec.yt"); r.is_ok()) {
+		image = ImageData::deserialized(r.unwrap());
+	} else {
+		math::Vec4ui data(0xFFFFFFFF);
+		image = ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(data.data()), vk::Format::eR8G8B8A8Unorm);
+	}
 	return IBLProbe::from_equirec(Texture(dptr, image));
 }
 

@@ -132,7 +132,7 @@ class Result : NonCopyable {
 
 		template<typename F, typename U>
 		struct map_type {
-			using type = decltype(std::declval<F>()(std::declval<U>()));
+			using type = decltype(std::declval<F>()(std::declval<U&>()));
 		};
 
 		template<typename F>
@@ -141,13 +141,14 @@ class Result : NonCopyable {
 		};
 
 		using ret_value_type = decltype(std::declval<ok_type>().get());
-		using ret_value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_rvalue_reference_t<ret_value_type>>;
+		using value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_rvalue_reference_t<ret_value_type>>;
+		using const_value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_const_t<value_type_ref>>;
 
 		using ret_error_type = decltype(std::declval<err_type>().get());
-		using ret_error_type_ref = std::conditional_t<std::is_void_v<ret_error_type>, void, std::add_rvalue_reference_t<ret_error_type>>;
+		using error_type_ref = std::conditional_t<std::is_void_v<ret_error_type>, void, std::add_rvalue_reference_t<ret_error_type>>;
+		using const_error_type_ref =  std::conditional_t<std::is_void_v<error_type_ref>, void, std::add_const_t<error_type_ref>>;
 
 	public:
-
 		Result(ok_type&& v) : _is_ok(true) {
 			new(&_value) ok_type(std::move(v));
 		}
@@ -178,36 +179,36 @@ class Result : NonCopyable {
 			return _is_ok;
 		}
 
-		ret_value_type_ref unwrap() const {
+		const_value_type_ref unwrap() const {
 			return expected("Unwrap failed.");
 		}
 
-		ret_value_type_ref unwrap() {
+		value_type_ref unwrap() {
 			return expected("Unwrap failed.");
 		}
 
-		ret_error_type_ref error() const {
+		const_error_type_ref error() const {
 			if(is_ok()) {
 				y_fatal("Result is not an error.");
 			}
 			return _error.get();
 		}
 
-		ret_error_type_ref error() {
+		error_type_ref error() {
 			if(is_ok()) {
 				y_fatal("Result is not an error.");
 			}
 			return _error.get();
 		}
 
-		ret_value_type_ref expected(const char* err_msg) const {
+		const_value_type_ref expected(const char* err_msg) const {
 			if(is_error()) {
 				y_fatal(err_msg);
 			}
 			return _value.get();
 		}
 
-		ret_value_type_ref expected(const char* err_msg) {
+		value_type_ref expected(const char* err_msg) {
 			if(is_error()) {
 				y_fatal(err_msg);
 			}
@@ -215,17 +216,27 @@ class Result : NonCopyable {
 		}
 
 		template<typename U>
-		std::enable_if_t<!std::is_void_v<value_type>, const U&> unwrap_or(const U& f) const {
+		const_value_type_ref unwrap_or(const U& f) const {
 			return is_ok() ? _value.get() : f;
 		}
 
 		template<typename U>
-		std::enable_if_t<!std::is_void_v<error_type>, const U&> error_or(const U& f) const {
+		const_error_type_ref error_or(const U& f) const {
+			return is_error() ? _error.get() : f;
+		}
+
+		template<typename U>
+		value_type_ref unwrap_or(U&& f) {
+			return is_ok() ? _value.get() : f;
+		}
+
+		template<typename U>
+		error_type_ref error_or(U&& f) {
 			return is_error() ? _error.get() : f;
 		}
 
 		template<typename F>
-		Result<typename map_type<F, value_type>::type, error_type> map(F&& f) const {
+		Result<typename map_type<F, value_type>::type, error_type> map(F&& f) {
 			if(is_ok()) {
 				if constexpr(std::is_void_v<value_type>) {
 					return Ok(f());
@@ -241,7 +252,7 @@ class Result : NonCopyable {
 		}
 
 		template<typename F>
-		Result<value_type, typename map_type<F, error_type>::type> map_err(F&& f) const {
+		Result<value_type, typename map_type<F, error_type>::type> map_err(F&& f) {
 			if(is_ok()) {
 				if constexpr(std::is_void_v<value_type>) {
 					return Ok();
