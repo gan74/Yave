@@ -98,7 +98,7 @@ class Vec
 			std::copy(std::begin(v), std::end(v), begin());
 		}
 
-        Vec(detail::identity_t&&) {
+		Vec(detail::identity_t&&) {
 		}
 
 		Vec() = default;
@@ -246,6 +246,14 @@ class Vec
 
 		iterator end() {
 			return _vec + N;
+		}
+
+		T* data() {
+			return _vec;
+		}
+
+		const T* data() const {
+			return _vec;
 		}
 
 		T& operator[](usize i) {
