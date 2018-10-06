@@ -24,12 +24,19 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <typeindex>
+
 namespace yave {
 
 class RenderGraphBuilder;
+class RenderGraphResources;
 
 class RenderGraphResourceBase {
 	public:
+		enum class UsageFlags {
+
+		};
+
 		RenderGraphResourceBase() = default;
 
 		u32 id() const {
@@ -40,8 +47,25 @@ class RenderGraphResourceBase {
 			return _id != invalid_id;
 		}
 
+		bool is_initialized() const {
+			return _last_op != Undefined;
+		}
+
+		u32 last_pass_index() const {
+			return _pass_index;
+		}
+
+		bool is_read() const {
+			return _last_op == Read;
+		}
+
+		bool operator==(const RenderGraphResourceBase& other) const {
+			return _id == other._id && _version == other._version;
+		}
+
 	protected:
 		friend class RenderGraphBuilder;
+		friend class RenderGraphResources;
 
 		static constexpr u32 invalid_id = u32(-1);
 

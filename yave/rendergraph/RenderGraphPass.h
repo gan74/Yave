@@ -46,6 +46,19 @@ class RenderGraphPassBase : NonCopyable {
 			return _index;
 		}
 
+		bool writes_resource(const RenderGraphResourceBase& res) const {
+			for(const auto& r : _resources) {
+				if(r == res) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		const core::Vector<RenderGraphResourceBase>& used_resources() const {
+			return _resources;
+		}
+
 	protected:
 		RenderGraphPassBase(u32 index) : _index(index) {
 		}

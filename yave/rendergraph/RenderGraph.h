@@ -26,11 +26,13 @@ SOFTWARE.
 #include "RenderGraphPass.h"
 #include "RenderGraphBuilder.h"
 
+#include <set>
+
 namespace yave {
 
 class RenderGraph : NonCopyable {
 	public:
-		RenderGraph(DevicePtr dptr) : _builder(dptr) {
+		RenderGraph(DevicePtr dptr) : _resources(dptr) {
 		}
 
 		template<typename T>
@@ -40,19 +42,46 @@ class RenderGraph : NonCopyable {
 			u32 pass_index = u32(_passes.size());
 			auto pass = std::make_unique<RenderGraphPass<T>>(pass_index, std::move(setup), std::move(render));
 			RenderGraphPass<T>* ptr = pass.get();
-			_builder.setup(ptr);
+			RenderGraphBuilder::build(ptr, _resources);
 			_passes << std::move(pass);
 			return ptr->_data;
 		}
 
-		void render(CmdBufferRecorderBase& recorder) {
-			for(const auto& pass : _passes) {
-				pass->render(recorder, _builder._resources);
+		auto compile_sequential(const RenderGraphResourceBase& output) const {
+			std::set<const RenderGraphPassBase*> passes;
+			for(const auto& p : _passes) {
+				if(p->writes_resource(output)) {
+					fill_dependencies(passes, p.get());
+				}
+			}
+			return passes;
+
+			/*auto v = core::vector_with_capacity<const RenderGraphPassBase*>(passes.size());
+			std::copy(passes.begin(), passes.end(), std::back_inserter(v));
+			return v;*/
+		}
+
+		void render(CmdBufferRecorderBase& recorder, const RenderGraphResourceBase& output) {
+			for(const auto& pass : compile_sequential(output)) {
+				pass->render(recorder, _resources);
 			}
 		}
 
 	private:
-		RenderGraphBuilder _builder;
+		template<template<typename...> typename Set>
+		void fill_dependencies(Set<const RenderGraphPassBase*>& passes, const RenderGraphPassBase* pass) const {
+			if(passes.find(pass) == passes.end()) {
+				passes.insert(pass);
+				for(const auto& r : pass->used_resources()) {
+					if(r.is_read()) {
+						fill_dependencies(passes, _passes[r.last_pass_index()].get());
+					}
+				}
+			}
+		}
+
+
+		RenderGraphResources _resources;
 		core::Vector<std::unique_ptr<RenderGraphPassBase>> _passes;
 };
 

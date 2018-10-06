@@ -47,7 +47,10 @@ class RenderGraphResources : public DeviceLinked, NonCopyable {
 		}
 
 		T resource;
+
 	};
+
+	using ResourceConstructor = core::Function<std::unique_ptr<ResourceContainerBase>(DevicePtr)>;
 
 	public:
 		RenderGraphResources(DevicePtr dptr) : DeviceLinked(dptr) {
@@ -55,6 +58,10 @@ class RenderGraphResources : public DeviceLinked, NonCopyable {
 
 		template<typename T>
 		T& get(const RenderGraphResource<T>& res) {
+			while(_resources.size() <= res.id()) {
+				_resources.emplace_back();
+			}
+			init(res);
 			ResourceContainerBase* resource = _resources[res.id()].get();
 			if(resource->type != typeid(T)) {
 				fatal("Invalid resource type.");
@@ -63,75 +70,82 @@ class RenderGraphResources : public DeviceLinked, NonCopyable {
 		}
 
 		template<typename T, typename... Args>
-		T& create(const RenderGraphResource<T>& res, Args&&... args) {
-			while(_resources.size() < res.id()) {
-				_resources.emplace_back();
-			}
-			auto res_ptr = std::make_unique<ResourceContainer<T>>(std::forward<Args>(args)...);
-			T& resource = res_ptr.resource;
-			_resources[res.id()] = std::move(res_ptr);
-			return resource;
+		RenderGraphResource<T> create(Args&&... args) {
+			RenderGraphResource<T> res;
+			res._id = _resources_ctors.size();
+			_resources_ctors.emplace_back([tpl = std::make_tuple(std::forward<Args>(args)...)](DevicePtr) mutable {
+					return std::apply(std::make_unique<ResourceContainer<T>>, std::move(tpl));
+				});
+			return res;
 		}
 
-
-		u32 next_id() {
-			return _next_id++;
+		usize resource_count() const {
+			return _resources_ctors.size();
 		}
 
 	private:
+		template<typename T>
+		void init(const RenderGraphResource<T>& res) {
+			auto& r = _resources[res.id()];
+			if(!r) {
+				r = *_resources_ctors[res.id()](device());
+			}
+		}
+
 		core::Vector<std::unique_ptr<ResourceContainerBase>> _resources;
-		u32 _next_id = 0;
+		core::Vector<ResourceConstructor> _resources_ctors;
 };
 
 class RenderGraphBuilder : NonCopyable {
 	public:
-		RenderGraphBuilder(DevicePtr dptr) : _resources(dptr) {
+		static void build(RenderGraphPassBase* pass, RenderGraphResources& res) {
+			RenderGraphBuilder builder(pass, res);
+			pass->setup(builder);
 		}
 
-		template<typename T>
-		RenderGraphResource<T> create() {
-			RenderGraphResource<T> res;
-			res._id = _resources.next_id();
+		template<typename T, typename... Args>
+		RenderGraphResource<T> create(Args&&... args) {
+			RenderGraphResource<T> res = _resources.create<T>(std::forward<Args>(args)...);
 			res._pass_index = _pass->index();
 			_pass->_resources << res;
 			return res;
 		}
 
-		template<typename T>
-		void create(RenderGraphResource<T>& res) {
-			res = create<T>();
+		template<typename T, typename... Args>
+		void create(RenderGraphResource<T>& res, Args&&... args) {
+			res = create<T>(std::forward<Args>(args)...);
 		}
 
 		template<typename T>
-		RenderGraphResource<T> read(RenderGraphResource<T> res, PipelineStage stage = PipelineStage::EndOfPipe) {
+		void read(RenderGraphResource<T>& res, PipelineStage stage = PipelineStage::EndOfPipe) {
 			check_res(res);
-			//++res._version;
+			if(!res.is_initialized()) {
+				fatal("Uninitialized resource read.");
+			}
 			res._pass_index = _pass->index();
 			res._last_op = RenderGraphResource<T>::Read;
 			res._last_op_stage = stage;
 			_pass->_resources << res;
-			return res;
 		}
 
 		template<typename T>
-		RenderGraphResource<T> render_to(RenderGraphResource<T> res, PipelineStage stage = PipelineStage::ColorAttachmentOutBit) {
+		void render_to(RenderGraphResource<T>& res, PipelineStage stage = PipelineStage::ColorAttachmentOutBit) {
 			check_res(res);
 			++res._version;
 			res._pass_index = _pass->index();
 			res._last_op = RenderGraphResource<T>::Write;
 			res._last_op_stage = stage;
 			_pass->_resources << res;
-			return res;
 		}
 
 		template<typename T>
-		RenderGraphResource<T> write(RenderGraphResource<T> res, PipelineStage stage = PipelineStage::BeginOfPipe) {
+		void write(RenderGraphResource<T>& res, PipelineStage stage = PipelineStage::BeginOfPipe) {
 			return render_to(res, stage);
 		}
 
-
 	private:
-		friend class RenderGraph;
+		RenderGraphBuilder(RenderGraphPassBase* pass, RenderGraphResources& res) : _pass(pass), _resources(res) {
+		}
 
 		template<typename T>
 		void check_res(const RenderGraphResource<T>& res) {
@@ -140,14 +154,8 @@ class RenderGraphBuilder : NonCopyable {
 			}
 		}
 
-		void setup(RenderGraphPassBase* pass) {
-			_pass = pass;
-			_pass->setup(*this);
-			_pass = nullptr;
-		}
-
 		RenderGraphPassBase* _pass = nullptr;
-		RenderGraphResources _resources;
+		RenderGraphResources& _resources;
 };
 
 }
