@@ -83,7 +83,7 @@ class FolderAssetStore final : public AssetStore {
 		FolderFileSystemModel _filesystem;
 		core::String _index_file_path;
 
-		mutable std::mutex _lock;
+		mutable std::recursive_mutex _lock;
 
 		// TODO optimize ?
 		std::unordered_map<AssetId, Entry*> _from_id;
