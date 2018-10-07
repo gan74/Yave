@@ -24,6 +24,20 @@ SOFTWARE.
 
 #include <y/utils.h>
 
+#define y_try(result)																			\
+	do {																						\
+		if(auto&& _y_try_result = (result); _y_try_result.is_error()) { 						\
+			return std::move(_y_try_result.err_object());										\
+		}																						\
+	} while(false)
+
+#define y_try_discard(result)																	\
+	do {																						\
+		if(result.is_error()) {																	\
+			return y::core::Err();																\
+		}																						\
+	} while(false)
+
 namespace y {
 namespace core {
 
@@ -140,13 +154,13 @@ class Result : NonCopyable {
 			using type = decltype(std::declval<F>()());
 		};
 
-		using ret_value_type = decltype(std::declval<ok_type>().get());
-		using value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_rvalue_reference_t<ret_value_type>>;
-		using const_value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_const_t<value_type_ref>>;
+		using ret_value_type = std::remove_reference_t<decltype(std::declval<ok_type>().get())>;
+		using value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_lvalue_reference_t<ret_value_type>>;
+		using const_value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_lvalue_reference_t<const ret_value_type>>;
 
-		using ret_error_type = decltype(std::declval<err_type>().get());
-		using error_type_ref = std::conditional_t<std::is_void_v<ret_error_type>, void, std::add_rvalue_reference_t<ret_error_type>>;
-		using const_error_type_ref =  std::conditional_t<std::is_void_v<error_type_ref>, void, std::add_const_t<error_type_ref>>;
+		using ret_error_type = std::remove_reference_t<decltype(std::declval<err_type>().get())>;
+		using error_type_ref = std::conditional_t<std::is_void_v<ret_error_type>, void, std::add_lvalue_reference_t<ret_error_type>>;
+		using const_error_type_ref =  std::conditional_t<std::is_void_v<error_type_ref>, void, std::add_lvalue_reference_t<const ret_error_type>>;
 
 	public:
 		Result(ok_type&& v) : _is_ok(true) {
@@ -179,12 +193,40 @@ class Result : NonCopyable {
 			return _is_ok;
 		}
 
+		auto&& ok_object() {
+			if(is_error()) {
+				y_fatal("Result is an error.");
+			}
+			return _value;
+		}
+
+		auto&& err_object() {
+			if(is_ok()) {
+				y_fatal("Result is not an error.");
+			}
+			return _error;
+		}
+
 		const_value_type_ref unwrap() const {
 			return expected("Unwrap failed.");
 		}
 
 		value_type_ref unwrap() {
 			return expected("Unwrap failed.");
+		}
+
+		const_value_type_ref or_throw(const char* err_msg = "Unwrap failed.") const {
+			if(is_error()) {
+				y_throw(err_msg);
+			}
+			return _value.get();
+		}
+
+		value_type_ref or_throw(const char* err_msg = "Unwrap failed.") {
+			if(is_error()) {
+				y_throw(err_msg);
+			}
+			return _value.get();
 		}
 
 		const_error_type_ref error() const {
@@ -226,12 +268,12 @@ class Result : NonCopyable {
 		}
 
 		template<typename U>
-		value_type_ref unwrap_or(U&& f) {
+		auto unwrap_or(U&& f) {
 			return is_ok() ? _value.get() : f;
 		}
 
 		template<typename U>
-		error_type_ref error_or(U&& f) {
+		auto error_or(U&& f) {
 			return is_error() ? _error.get() : f;
 		}
 
