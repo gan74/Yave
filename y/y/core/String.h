@@ -75,8 +75,8 @@ class String {
 
 	struct ShortData
 	{
-		char _data[sizeof(LongData) - 1];
-		ShortLenType _length;
+		char data[sizeof(LongData) - 1];
+		ShortLenType length;
 
 		ShortData();
 		ShortData(const ShortData& _s);
@@ -89,7 +89,7 @@ class String {
 	static_assert(sizeof(ShortData) == sizeof(LongData), "String::LongData should be the same length as String::ShortData");
 
 	public:
-		static constexpr usize max_short_size = sizeof(ShortData::_data);
+		static constexpr usize max_short_size = sizeof(ShortData::data);
 
 		using value_type = char;
 		using size_type = usize;
@@ -127,6 +127,8 @@ class String {
 
 		void clear();
 		void make_empty();
+		void shrink(usize new_size);
+		void grow(usize new_size, char c);
 
 		char* data();
 		const char* data() const;

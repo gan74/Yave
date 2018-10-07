@@ -170,6 +170,9 @@ using is_iterable = bool_type<
 		decltype(detail::has_end<T>(nullptr))::value
 	>;
 
+template<typename T>
+static constexpr bool is_iterable_v = is_iterable<T>::value;
+
 namespace detail {
 template<typename T>
 using has_size_t = decltype(std::declval<T&>().size());

@@ -52,18 +52,18 @@ String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_l
 
 // --------------------------------------------------- SHORT ---------------------------------------------------
 
-String::ShortData::ShortData() : _data{0}, _length(0) {
+String::ShortData::ShortData() : data{0}, length(0) {
 }
 
 String::ShortData::ShortData(const ShortData& s) {
 	std::memcpy(this, &s, sizeof(ShortData));
 }
 
-String::ShortData::ShortData(const char* str, usize len) : _length(len) {
+String::ShortData::ShortData(const char* str, usize len) : length(len) {
 	if(str) {
-		std::memcpy(_data, str, len);
+		std::memcpy(data, str, len);
 	}
-	*(_data + len) = 0;
+	*(data + len) = 0;
 }
 
 // --------------------------------------------------- ALLOC ---------------------------------------------------
@@ -136,7 +136,6 @@ String String::from_owned(Owner<char*> owned) {
 	return str;
 }
 
-
 void String::set_min_capacity(usize cap) {
 	if(cap > capacity() && cap > max_short_size) {
 		usize self_size = size();
@@ -150,7 +149,7 @@ void String::set_min_capacity(usize cap) {
 }
 
 usize String::size() const {
-	return is_long() ? _l.length : _s._length;
+	return is_long() ? _l.length : _s.length;
 }
 
 usize String::capacity() const {
@@ -177,17 +176,45 @@ void String::make_empty() {
 		_l.length = 0;
 		_l.data[0] = 0;
 	} else {
-		_s._length = 0;
-		_s._data[0] = 0;
+		_s.length = 0;
+		_s.data[0] = 0;
 	}
 }
 
+void String::shrink(usize new_size) {
+	new_size = std::min(capacity() - 1, new_size);
+	if(is_long()) {
+		_l.length = new_size;
+	} else {
+		_s.length = new_size;
+	}
+	data()[new_size] = 0;
+}
+
+void String::grow(usize new_size, char c) {
+	usize s = size();
+	if(s >= new_size) {
+		return;
+	}
+
+	set_min_capacity(new_size);
+	if(is_long()) {
+		_l.length = new_size;
+	} else {
+		_s.length = new_size;
+	}
+	char* d = data();
+	std::memset(d + s, c, new_size - s);
+	d[new_size] = 0;
+}
+
+
 char* String::data() {
-	return is_long() ? _l.data : _s._data;
+	return is_long() ? _l.data : _s.data;
 }
 
 const char* String::data() const {
-	return is_long() ? _l.data : _s._data;
+	return is_long() ? _l.data : _s.data;
 }
 
 String::iterator String::find(const char* str) {
@@ -244,7 +271,7 @@ String& String::operator=(const String& str) {
 			if(is_long()) {
 				_l.length = str.size();
 			} else {
-				_s._length = str.size();
+				_s.length = str.size();
 			}
 		} else {
 			if(is_long()) {
@@ -297,7 +324,7 @@ String& String::append(const char* other_data, usize other_size) {
 		if(is_long()) {
 			self_data[_l.length = total_size] = 0;
 		} else {
-			self_data[_s._length = total_size] = 0;
+			self_data[_s.length = total_size] = 0;
 		}
 	} else {
 		set_min_capacity(total_size);
