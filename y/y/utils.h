@@ -31,6 +31,7 @@ SOFTWARE.
 
 #include <y/utils/types.h>
 
+#include <y/utils/format.h>
 #include <y/utils/except.h>
 #include <y/utils/sort.h>
 #include <y/utils/hash.h>

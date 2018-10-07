@@ -32,7 +32,7 @@ DeviceAllocator::DeviceAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_max_allocs(dptr->vk_limits().maxMemoryAllocationCount) {
 
-	log_msg("Max device memory allocation count: "_s + _max_allocs);
+	log_msg(fmt("Max device memory allocation count: %", _max_allocs));
 }
 
 DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type) {
@@ -82,10 +82,10 @@ DeviceMemory DeviceAllocator::alloc(vk::Buffer buffer, MemoryType type) {
 
 core::String DeviceAllocator::dump_info() const {
 	core::String str = "Allocator:\n";
-	str += "  maximum allocations: "_s + _max_allocs + "\n";
+	str += fmt("  maximum allocations: %\n", _max_allocs);
 	for(auto& heaps : _heaps) {
 		//str += "  Memory type = "_s + usize(heaps.first.second) + "|" + heaps.first.first + "\n";
-		str += "  Memory type: "_s + (is_cpu_visible(heaps.first.second) ? "CPU" : "Device") + " (" + heaps.first.first + ")\n";
+		str += fmt("  Memory type: % (%)\n", is_cpu_visible(heaps.first.second) ? "CPU" : "Device", heaps.first.first);
 		for(auto& h : heaps.second) {
 			auto available = h->available();
 
@@ -94,10 +94,10 @@ core::String DeviceAllocator::dump_info() const {
 			std::fill_n(bar.begin(), usize(std::round((1.0f - ratio) * bar.size())), '#');
 
 			str += "    heap:\n";
-			str += "      |" + bar + "|\n";
-			str += "      total: "_s + (h->heap_size / 1024) + " KB\n";
-			str += "      free : "_s + (available / 1024) + " KB\n";
-			str += "      used : "_s + ((h->heap_size - available) / 1024) + " KB\n";
+			str += fmt("      |%|\n", bar);
+			str += fmt("      total: % KB\n", h->heap_size / 1024);
+			str += fmt("      free : % KB\n", available / 1024);
+			str += fmt("      used : % KB\n", (h->heap_size - available) / 1024);
 		}
 	}
 	return str;

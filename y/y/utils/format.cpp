@@ -20,12 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include"format.h"
+#include "format.h"
 
-#include "String.h"
+#include <y/core/String.h>
 
 namespace y {
-namespace core {
 namespace detail {
 
 static constexpr usize fmt_total_buffer_size = (fmt_max_size + 1) * 4;
@@ -41,7 +40,7 @@ FmtBuffer::FmtBuffer() {
 	_buffer_size = std::min(usize(fmt_buffer + fmt_total_buffer_size - _start), fmt_max_size);
 }
 
-FmtBuffer::FmtBuffer(String& str) {
+FmtBuffer::FmtBuffer(core::String& str) {
 	_dynamic = &str;
 	usize cap = str.capacity();
 	usize size = str.size();
@@ -51,14 +50,15 @@ FmtBuffer::FmtBuffer(String& str) {
 }
 
 
-const char* FmtBuffer::done() && {
+std::string_view FmtBuffer::done() && {
 	*_buffer = 0;
 	if(_dynamic) {
 		_dynamic->shrink(_buffer - _dynamic->begin());
 	} else {
 		fmt_buffer_end = _buffer + 1;
+		y_debug_assert(fmt_buffer[fmt_total_buffer_size] == 0);
 	}
-	return _start;
+	return std::string_view(_start, _buffer - _start);
 }
 
 
@@ -83,6 +83,7 @@ bool FmtBuffer::try_expand() {
 		return true;
 	}
 
+
 	const char* end = fmt_buffer + fmt_total_buffer_size;
 	if(_start == fmt_buffer || usize(end - _start) >= fmt_max_size) {
 		return false;
@@ -102,12 +103,13 @@ void FmtBuffer::advance(usize r) {
 	usize l = std::min(_buffer_size, r);
 	_buffer += l;
 	_buffer_size -= l;
+	y_debug_assert(_dynamic || _buffer <= fmt_buffer + fmt_total_buffer_size);
 }
 
 #define y_buff_fmt_(str, t)															\
 	do {																			\
-		auto _fmt_l = std::snprintf(_buffer, _buffer_size, str, t);					\
-		if(_fmt_l < 0 || _buffer_size <= usize(_fmt_l)) {							\
+		auto _fmt_l = std::snprintf(_buffer, _buffer_size + 1, str, t);				\
+		if(_fmt_l < 0 || _buffer_size < usize(_fmt_l)) {							\
 			if(!try_expand()) {														\
 				advance(_fmt_l < 0 ? 0 : _fmt_l);									\
 				break;																\
@@ -119,8 +121,12 @@ void FmtBuffer::advance(usize r) {
 	} while(true)
 
 void FmtBuffer::copy(const char* str, usize len) {
+	if(!len) {
+		return;
+	}
+
 	do {
-		if(_buffer_size <= len) {
+		if(_buffer_size < len) {
 			if(!try_expand()) {
 				std::memcpy(_buffer, str, _buffer_size);
 				advance(_buffer_size);
@@ -138,7 +144,11 @@ void FmtBuffer::fmt_one(const char* str) {
 	copy(str, std::strlen(str));
 }
 
-void FmtBuffer::fmt_one(const String& str) {
+void FmtBuffer::fmt_one(const core::String& str) {
+	copy(str.data(), str.size());
+}
+
+void FmtBuffer::fmt_one(std::string_view str) {
 	copy(str.data(), str.size());
 }
 
@@ -182,5 +192,4 @@ void FmtBuffer::fmt_one(double i) {
 
 }
 
-}
 }

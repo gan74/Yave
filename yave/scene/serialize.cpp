@@ -101,7 +101,7 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 				inst->transform() = transform;
 				scene.static_meshes().emplace_back(std::move(inst));
 			} catch(std::exception& e) {
-				log_msg("Unable to load asset: "_s + e.what() + " Skipping.", Log::Warning);
+				log_msg(fmt("Unable to load asset: %, Skipping.", e.what()), Log::Warning);
 				continue;
 			}
 		}

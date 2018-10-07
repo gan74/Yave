@@ -54,10 +54,10 @@ namespace detail {
 Nothing fatal(const char* msg, const char* file, int line) {
 	core::String msg_str(msg);
 	if(file) {
-		msg_str += " in file \""_s + file + "\"";
+		msg_str += fmt(" in file \"%\"", file);
 	}
 	if(line) {
-		msg_str += " at line "_s + line;
+		msg_str += fmt(" at line %", line);
 	}
 	log_msg(msg_str, Log::Error);
 	std::abort();

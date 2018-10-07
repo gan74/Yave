@@ -99,8 +99,8 @@ void FolderAssetStore::read_index() {
 			}
 		}
 	} catch(std::exception& e) {
-		log_msg("Exception while reading index file: "_s + e.what(), Log::Error);
-		log_msg(""_s + _from_id.size() + " assets imported"_s , Log::Error);
+		log_msg(fmt("Exception while reading index file: %", e.what()), Log::Error);
+		log_msg(fmt("% assets imported", _from_id.size()), Log::Error);
 	}
 
 	y_debug_assert(_from_id.size() == _from_name.size());
@@ -120,7 +120,7 @@ void FolderAssetStore::write_index() const {
 			}
 		}
 	} catch(std::exception& e) {
-		log_msg("Exception while writing index file: "_s + e.what(), Log::Error);
+		log_msg(fmt("Exception while writing index file: %", e.what()), Log::Error);
 	}
 }
 
@@ -145,13 +145,12 @@ AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) 
 	auto dst_file = _filesystem.join(_filesystem.root_path(), dst_name);
 	if(!io::File::copy(data, dst_file)) {
 		_from_name.erase(_from_name.find(dst_name));
-		y_throw("Unable to import file as \""_s + dst_name + "\"");
+		y_throw(fmt("Unable to import file as \"%\"", dst_name).data());
 	}
 
 	AssetId id = ++_next_id;
 	entry = std::make_unique<Entry>(Entry{dst_name, id});
 	_from_id[id] = entry.get();
-
 	y_debug_assert(_from_id.size() == _from_name.size());
 	return id;
 }

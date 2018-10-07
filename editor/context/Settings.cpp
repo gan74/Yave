@@ -27,26 +27,18 @@ SOFTWARE.
 namespace editor {
 
 Settings::Settings() {
-	if(auto file = io::File::open("settings.dat"); file.is_ok()) {
-		try {
-			deserialize(file.unwrap());
-		} catch(std::exception& e) {
-			log_msg("Unable to load settings: "_s + e.what(), Log::Error);
-		}
-	} else {
-		log_msg("Unable to open settings file.", Log::Error);
+	try {
+		deserialize(io::File::open("settings.dat").or_throw("Unable to open settings file."));
+	} catch(std::exception& e) {
+		log_msg(fmt("Unable to load settings: %", e.what()), Log::Error);
 	}
 }
 
 Settings::~Settings() {
-	if(auto file = io::File::create("settings.dat"); file.is_ok()) {
-		try {
-			serialize(file.unwrap());
-		} catch(std::exception& e) {
-			log_msg("Unable to save settings: "_s + e.what(), Log::Error);
-		}
-	} else {
-		log_msg("Unable to create settings file.", Log::Error);
+	try {
+		serialize(io::File::create("settings.dat").or_throw("Unable to create settings file."));
+	} catch(std::exception& e) {
+		log_msg(fmt("Unable to save settings: %", e.what()), Log::Error);
 	}
 }
 

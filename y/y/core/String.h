@@ -23,7 +23,6 @@ SOFTWARE.
 #define Y_CORE_STRING_H
 
 #include <y/utils.h>
-#include <sstream>
 
 namespace y {
 namespace core {
@@ -227,35 +226,19 @@ class String {
 
 
 
-
-
-
-
-
-template<typename T>
-String str(T&& t) {
-	if constexpr (std::is_convertible_v<T, String>) {
-		return String(std::forward<T>(t));
-	} else {
-		std::ostringstream oss;
-		oss << std::forward<T>(t);
-		return oss.str();
-	}
-}
-
-
 namespace detail {
 template<typename T>
 using has_append_t = decltype(std::declval<String&>().operator+=(std::declval<const T&>()));
 }
 
 template<typename T>
-core::String& operator+(core::String l, T&& r) {
+core::String operator+(core::String l, T&& r) {
 	if constexpr(is_detected_v<detail::has_append_t, T>) {
-		return l += std::forward<T>(r);
+		l += std::forward<T>(r);
 	} else {
-		return l += str(std::forward<T>(r));
+		fmt_into(l, "%", std::forward<T>(r));
 	}
+	return l;
 }
 
 

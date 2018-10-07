@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef Y_UTILS_LOG_H
 #define Y_UTILS_LOG_H
 
-#include <string_view>
+#include <y/utils.h>
 
 namespace y {
 
@@ -33,6 +33,7 @@ enum class Log {
 	Debug,
 	Perf
 };
+
 
 void log_msg(std::string_view msg, Log type = Log::Info);
 

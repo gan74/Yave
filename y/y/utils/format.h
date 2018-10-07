@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_CORE_FORMAT_H
-#define Y_CORE_FORMAT_H
+#ifndef Y_FORMAT_H
+#define Y_FORMAT_H
 
 #include <y/utils.h>
 
@@ -32,19 +32,19 @@ namespace core {
 class String;
 }
 
-namespace core {
 namespace detail {
 
 class FmtBuffer {
 	public:
 		FmtBuffer();
-		FmtBuffer(String& str);
+		FmtBuffer(core::String& str);
 
 		void copy(const char* str, usize len);
 
 		void fmt_one(const char* str);
 		void fmt_one(const void* p);
-		void fmt_one(const String& str);
+		void fmt_one(const core::String& str);
+		void fmt_one(std::string_view str);
 		void fmt_one(char i);
 		void fmt_one(int i);
 		void fmt_one(long int i);
@@ -71,7 +71,7 @@ class FmtBuffer {
 			fmt_one(']');
 		}
 
-		const char* done() &&;
+		std::string_view done() &&;
 
 	private:
 		bool try_expand();
@@ -111,7 +111,7 @@ void fmt_rec(FmtBuffer& buffer, const char* fmt, T&& t, Args&&... args) {
 static constexpr usize fmt_max_size = 1023;
 
 template<typename... Args>
-const char* fmt(const char* fmt, Args&&... args) {
+std::string_view fmt(const char* fmt, Args&&... args) {
 	if constexpr(sizeof...(args)) {
 		detail::FmtBuffer buffer;
 		detail::fmt_rec(buffer, fmt, std::forward<Args>(args)...);
@@ -122,7 +122,7 @@ const char* fmt(const char* fmt, Args&&... args) {
 }
 
 template<typename... Args>
-const char* fmt_into(String& out, const char* fmt, Args&&... args) {
+std::string_view fmt_into(core::String& out, const char* fmt, Args&&... args) {
 	detail::FmtBuffer buffer(out);
 	if constexpr(sizeof...(args)) {
 		detail::fmt_rec(buffer, fmt, std::forward<Args>(args)...);
@@ -133,6 +133,5 @@ const char* fmt_into(String& out, const char* fmt, Args&&... args) {
 }
 
 }
-}
 
-#endif // Y_CORE_FORMAT_H
+#endif // Y_FORMAT_H

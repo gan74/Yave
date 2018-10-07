@@ -34,7 +34,7 @@ SceneRenderer::SceneRenderer(DevicePtr dptr, SceneView& view) :
 		_attrib_buffer(batch_size),
 		_camera_set(device(), {Binding(_camera_buffer)}) {
 
-	log_msg("Allocating "_s + (batch_size / 1024) * (sizeof(math::Transform<>) + sizeof(vk::DrawIndexedIndirectCommand)) + "KB of scene buffers");
+	log_msg(fmt("Allocating % KB of scene buffers", (batch_size / 1024) * (sizeof(math::Transform<>) + sizeof(vk::DrawIndexedIndirectCommand))));
 }
 
 const SceneView& SceneRenderer::scene_view() const {

@@ -27,6 +27,8 @@ SOFTWARE.
 #include <mutex>
 #include <cstdio>
 
+#include <sstream>
+
 #include "os.h"
 
 namespace y {

@@ -56,9 +56,10 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 
 static auto load_envmap(DevicePtr dptr) {
 	ImageData image;
-	if(auto r = io::File::open("equirec.yt"); r.is_ok()) {
-		image = ImageData::deserialized(r.unwrap());
-	} else {
+	try {
+		image = ImageData::deserialized(io::File::open("equirec.yt").or_throw("Unable to open envmap texture."));
+	} catch(std::exception& e) {
+		log_msg(e.what(), Log::Error);
 		math::Vec4ui data(0xFFFFFFFF);
 		image = ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(data.data()), vk::Format::eR8G8B8A8Unorm);
 	}
@@ -99,7 +100,7 @@ TiledDeferredRenderer::TiledDeferredRenderer(const Ptr<GBufferRenderer>& gbuffer
 
 	for(usize i = 0; i != 3; i++) {
 		if(size()[i] % _lighting_program.local_size()[i]) {
-			log_msg("Compute local size at index "_s + i + " does not divide output buffer size.", Log::Warning);
+			log_msg(fmt("Compute local size at index % does not divide output buffer size.", i), Log::Warning);
 		}
 	}
 }

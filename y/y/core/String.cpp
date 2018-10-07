@@ -182,13 +182,15 @@ void String::make_empty() {
 }
 
 void String::shrink(usize new_size) {
-	new_size = std::min(capacity() - 1, new_size);
-	if(is_long()) {
-		_l.length = new_size;
-	} else {
-		_s.length = new_size;
+	if(new_size < size()) {
+		if(is_long()) {
+			_l.length = new_size;
+		} else {
+			_s.length = new_size;
+		}
+		data()[new_size] = 0;
 	}
-	data()[new_size] = 0;
+
 }
 
 void String::grow(usize new_size, char c) {

@@ -47,7 +47,7 @@ void MeshImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& tok
 				_callback(core::ArrayView<Named<MeshData>>(imported.meshes),
 						  core::ArrayView<Named<Animation>>(imported.animations));
 			} catch(std::exception& e) {
-				context()->ui().ok("Unable to import", "Unable to import scene: "_s + e.what());
+				context()->ui().ok("Unable to import", fmt("Unable to import scene: %" , e.what()).data());
 				_browser.show();
 			}
 			close();
@@ -82,7 +82,7 @@ void MeshImporter::import_async(const core::String& filename) {
 				mesh.obj().serialize(buffer);
 				store.import(buffer, store.filesystem()->join(dirname, clean_name(mesh.name())));
 			} catch(std::exception& e) {
-				log_msg("Unable to import mesh: "_s + e.what(), Log::Error);
+				log_msg(fmt("Unable to import mesh: %", e.what()), Log::Error);
 			}
 		}
 	}
@@ -95,7 +95,7 @@ void MeshImporter::import_async(const core::String& filename) {
 				anim.obj().serialize(buffer);
 				store.import(buffer, store.filesystem()->join(dirname, clean_name(anim.name())));
 			} catch(std::exception& e) {
-				log_msg("Unable to import animation: "_s + e.what(), Log::Error);
+				log_msg(fmt("Unable to import animation: %", e.what()), Log::Error);
 			}
 		}
 	}

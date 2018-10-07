@@ -89,7 +89,7 @@ void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 				context()->scene().scene().static_meshes() << std::move(instance);
 
 			} catch(std::exception& e) {
-				log_msg("Error while adding renderable: "_s + e.what());
+				log_msg(fmt("Error while adding renderable: %", e.what()));
 			}
 		}
 		ImGui::EndPopup();

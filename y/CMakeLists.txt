@@ -35,8 +35,8 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 endif()
 
 
-option(BUILD_TESTS "Build tests" ON)
-if(BUILD_TESTS)
+option(Y_BUILD_TESTS "Build tests" ON)
+if(Y_BUILD_TESTS)
 	#enable_testing()
 	add_executable(tests ${TEST_FILES} "tests.cpp")
 	target_compile_definitions(tests PRIVATE "-DY_BUILD_TESTS")

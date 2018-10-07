@@ -68,7 +68,7 @@ void SceneDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 				}
 			}
 		} catch(std::exception& e) {
-			log_msg("Unable to add cubes: "_s + e.what(), Log::Error);
+			log_msg(fmt("Unable to add cubes: %", e.what()), Log::Error);
 		}
 
 	}

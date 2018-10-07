@@ -151,7 +151,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 					auto full_name = filesystem()->join(_current->path, name);
 					context()->scene().add(full_name);
 				} catch(std::exception& e) {
-					log_msg("Unable to add object to scene: "_s + e.what(), Log::Error);
+					log_msg(fmt("Unable to add object to scene: %", e.what()), Log::Error);
 				}
 			}
 		}
@@ -166,13 +166,13 @@ void ResourceBrowser::save_meshes(const core::String& path, core::ArrayView<Name
 	try {
 		for(const auto& mesh : meshes) {
 			core::String name = filesystem()->join(path, clean_name(mesh.name()) + ".ym");
-			log_msg("Saving mesh as \"" + name + "\"");
+			log_msg(fmt("Saving mesh as \"%\"", name));
 			io::Buffer data;
 			mesh.obj().serialize(data);
 			context()->loader().asset_store().import(data, name);
 		}
 	} catch(std::exception& e) {
-		log_msg("Unable save mesh: "_s + e.what(), Log::Error);
+		log_msg(fmt("Unable save mesh: %", e.what()), Log::Error);
 	}
 }
 
@@ -180,13 +180,13 @@ void ResourceBrowser::save_anims(const core::String& path, core::ArrayView<Named
 	try {
 		for(const auto& anim : anims) {
 			core::String name = filesystem()->join(path, clean_name(anim.name()) + ".ya");
-			log_msg("Saving animation as \"" + name + "\"");
+			log_msg(fmt("Saving animation as \"%\"", name));
 			io::Buffer data;
 			anim.obj().serialize(data);
 			context()->loader().asset_store().import(data, name);
 		}
 	} catch(std::exception& e) {
-		log_msg("Unable to save animation: "_s + e.what(), Log::Error);
+		log_msg(fmt("Unable to save animation: %", e.what()), Log::Error);
 	}
 }
 

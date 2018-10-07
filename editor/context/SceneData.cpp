@@ -75,28 +75,20 @@ math::Vec2 SceneData::to_window_pos(const math::Vec3& world) {
 
 void SceneData::save(std::string_view filename) {
 	Y_LOG_PERF("editor,save");
-	if(auto r = io::File::create(filename); r.is_ok()) {
-		try {
-			_scene.serialize(r.unwrap());
-		} catch(std::exception& e) {
-			log_msg("Unable to save scene: "_s + e.what(), Log::Error);
-		}
-	} else {
-		log_msg("Unable to create scene file.", Log::Error);
+	try {
+		_scene.serialize(io::File::create(filename).or_throw("Unable to create scene file."));
+	} catch(std::exception& e) {
+		log_msg(fmt("Unable to save scene: %", e.what()), Log::Error);
 	}
 }
 
 void SceneData::load(std::string_view filename) {
 	Y_LOG_PERF("editor,loading");
-	if(auto r = io::File::open(filename); r.is_ok()) {
-		try {
-			auto sce = Scene::deserialized(r.unwrap(), context()->loader().static_mesh(), _default_material);
-			_scene = std::move(sce);
-		} catch(std::exception& e) {
-			log_msg("Unable to load scene: "_s + e.what(), Log::Error);
-		}
-	} else {
-		log_msg("Unable to open scene file.", Log::Error);
+	try {
+		auto sce = Scene::deserialized(io::File::open(filename).or_throw("Unable to open scene file."), context()->loader().static_mesh(), _default_material);
+		_scene = std::move(sce);
+	} catch(std::exception& e) {
+		log_msg(fmt("Unable to load scene: %", e.what()), Log::Error);
 	}
 }
 

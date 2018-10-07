@@ -96,7 +96,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 		bone_nodes[0] = common_parent(bone_nodes[0], node->mParent);
 		bone_nodes << node;
 	}
-	log_msg("Skeleton has " + core::str(bone_nodes.size()) + " bones.");
+	log_msg(fmt("Skeleton has % bones.", bone_nodes.size()));
 
 
 	std::unordered_map<std::string, std::pair<usize, aiNode*>> bone_map;

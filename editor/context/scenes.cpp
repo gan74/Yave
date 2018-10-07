@@ -44,7 +44,7 @@ void add_skinned_mesh(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoade
 		auto mesh_data = MeshData::deserialized(io::File::open("../meshes/beta.fbx.ym").expected("Unable to open mesh file."));
 		auto mesh = make_asset<SkinnedMesh>(dptr, mesh_data);
 
-		log_msg(core::str(mesh_data.triangles().size()) + " triangles loaded");
+		log_msg(fmt("% triangles loaded", mesh_data.triangles().size()));
 
 		{
 			auto instance = std::make_unique<SkinnedMeshInstance>(mesh, material);
@@ -58,7 +58,7 @@ void add_skinned_mesh(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoade
 			scene->renderables() << std::move(instance);
 		}
 	} catch(std::exception& e) {
-		log_msg("Exception while loading: "_s + e.what(), Log::Error);
+		log_msg(fmt("Exception while loading: %", e.what()), Log::Error);
 	}
 }
 
@@ -119,7 +119,7 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 				scene->static_meshes() << std::move(instance);
 			}
 		} catch(std::exception& e) {
-			log_msg("Exception while loading: "_s + e.what(), Log::Error);
+			log_msg(fmt("Exception while loading: %", e.what()), Log::Error);
 		}
 
 	}
