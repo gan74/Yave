@@ -38,6 +38,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/os.h>
 
+#define y_defer(expr) auto y_create_name_with_prefix(defer) = y::detail::ScopeExit([&]() { expr; })
 
 namespace y {
 
@@ -139,12 +140,6 @@ class ScopeExit {
 };
 
 }
-
-template<typename T>
-auto scope_exit(T&& t) {
-	return detail::ScopeExit<T>(std::forward<T>(t));
-}
-
 }
 
 

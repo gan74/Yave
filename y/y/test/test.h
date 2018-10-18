@@ -43,16 +43,14 @@ void test_assert(const char* msg, void (*func)(TestResult &));
 
 #ifdef Y_BUILD_TESTS
 
-#define Y_TEST_LINE_HELPER(prefix, LINE) _test_ ## prefix ## _at_ ## LINE
-#define Y_TEST_TEST_HELPER(prefix, LINE) Y_TEST_LINE_HELPER(prefix, LINE)
-#define Y_TEST_FUNC Y_TEST_TEST_HELPER(func, __LINE__)
-#define Y_TEST_RUNNER Y_TEST_TEST_HELPER(runner, __LINE__)
+#define Y_TEST_FUNC y_create_name_with_prefix(func)
+#define Y_TEST_RUNNER y_create_name_with_prefix(runner)
 #define Y_TEST_FAILED y::test::detail::TestResult { false, __FILE__, __LINE__ }
 
 #define y_test_assert(t) do { if(!(t)) { _test_result = Y_TEST_FAILED; return; } } while(0)
 
 #define y_test_func(msg)																				\
-static void Y_TEST_FUNC(y::test::detail::TestResult &);													\
+static void Y_TEST_FUNC(y::test::detail::TestResult&);													\
 namespace {																								\
 	class Y_TEST_RUNNER {																				\
 		Y_TEST_RUNNER() {																				\

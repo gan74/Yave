@@ -140,7 +140,7 @@ AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) 
 	}
 
 	// remove/optimize
-	auto flush_index = scope_exit([this] { write_index(); });
+	y_defer(write_index());
 
 	auto dst_file = _filesystem.join(_filesystem.root_path(), dst_name);
 	if(!io::File::copy(data, dst_file)) {

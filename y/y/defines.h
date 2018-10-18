@@ -72,6 +72,12 @@ struct Nothing;
 #define y_breakpoint do {} while(false)
 #endif
 
+/****************** UTILS DEFINE ******************/
 
+#define Y_CREATE_NAME_LINE_HELPER(prefix, LINE) _generated_ ## prefix ## _at_ ## LINE
+#define Y_CREATE_NAME_HELPER(prefix, LINE) Y_CREATE_NAME_LINE_HELPER(prefix, LINE)
+
+#define y_create_name_with_prefix(prefix) Y_CREATE_NAME_HELPER(prefix, __LINE__)
+#define y_create_name y_create_name_with_prefix("", __LINE__)
 
 #endif // Y_DEFINES_H
