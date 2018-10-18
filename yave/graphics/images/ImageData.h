@@ -61,6 +61,9 @@ class ImageData : NonCopyable {
 					y_serde_call([this] { _data = std::make_unique<u8[]>(combined_byte_size()); }),
 					y_serde_fixed_array(combined_byte_size(), _data.get()))
 
+		y_serialize(fs::magic_number, fs::image_file_type, u32(3),
+					_size.to<2>(), _layers, _mips, _format, combined_byte_size(),
+					y_serde_fixed_array(combined_byte_size(), _data.get()))
 
 	private:
 		void swap(ImageData& other);

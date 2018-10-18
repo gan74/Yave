@@ -19,48 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_IMPORT_SCENE_H
-#define EDITOR_IMPORT_SCENE_H
 
-#include <editor/editor.h>
+#include "image.h"
 
-#include <yave/meshes/MeshData.h>
-#include <yave/animations/Animation.h>
-#include <yave/animations/AnimationChannel.h>
-
-#include <y/core/Chrono.h>
-#include <y/math/math.h>
-
-#ifndef EDITOR_NO_ASSIMP
-class aiAnimation;
-class aiMesh;
-class aiScene;
-#endif
+extern "C" {
+#define STB_IMAGE_IMPLEMENTATION
+#include <external/stb/stb_image.h>
+}
 
 namespace editor {
 namespace import {
 
-struct SkeletonData {
-	core::Vector<SkinWeights> skin;
-	core::Vector<Bone> bones;
-};
+ImageData import_image(const core::String& path) {
+	int width, height, bpp;
+	// stbi_set_flip_vertically_on_load(true);
+	u8* rgb = stbi_load(path.data(), &width, &height, &bpp, 4);
+	y_defer(stbi_image_free(rgb););
 
-struct SceneData {
-	core::Vector<Named<MeshData>> meshes;
-	core::Vector<Named<Animation>> animations;
-};
+	if(!rgb) {
+		y_throw("Unable to load image.");
+	}
 
-SceneData import_scene(const core::String& path);
+	if(bpp != 3 && bpp != 4) {
+		y_throw("Unable to load image.");
+	}
 
-core::String supported_scene_extensions();
+	return ImageData(math::Vec2ui(width, height), rgb, ImageFormat(bpp == 3 ? vk::Format::eR8G8B8Unorm : vk::Format::eR8G8B8A8Unorm));
+}
 
-#ifndef EDITOR_NO_ASSIMP
-Animation import_animation(aiAnimation* anim);
-MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
-SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
-#endif
+core::String supported_image_extensions() {
+	return "*.jpg;*.jpeg;*.png;*.bmp;*.psd;*.tga;*.gif;*.hdr;*.pic;*.ppm;*.pgm";
+}
 
 }
 }
-
-#endif // EDITOR_IMPORT_SCENE_H

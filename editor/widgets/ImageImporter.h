@@ -19,48 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_IMPORT_SCENE_H
-#define EDITOR_IMPORT_SCENE_H
+#ifndef EDITOR_WIDGETS_IMAGEIMPORTER_H
+#define EDITOR_WIDGETS_IMAGEIMPORTER_H
 
-#include <editor/editor.h>
+#include "FileBrowser.h"
 
-#include <yave/meshes/MeshData.h>
-#include <yave/animations/Animation.h>
-#include <yave/animations/AnimationChannel.h>
-
-#include <y/core/Chrono.h>
-#include <y/math/math.h>
-
-#ifndef EDITOR_NO_ASSIMP
-class aiAnimation;
-class aiMesh;
-class aiScene;
-#endif
+#include <future>
 
 namespace editor {
-namespace import {
 
-struct SkeletonData {
-	core::Vector<SkinWeights> skin;
-	core::Vector<Bone> bones;
+class ImageImporter final : public Widget, public ContextLinked {
+
+	public:
+		ImageImporter(ContextPtr ctx);
+
+		template<typename F>
+		void set_callback(F&& func) {
+			_callback = std::forward<F>(func);
+		}
+
+	private:
+		void paint_ui(CmdBufferRecorder<>&recorder, const FrameToken&token) override;
+
+		void import_async(const core::String& filename);
+
+		bool done_loading() const;
+		bool is_loading() const;
+
+		FileBrowser _browser;
+
+		std::future<ImageData> _import_future;
+		core::Function<void(core::ArrayView<Named<ImageData>>)> _callback = [](auto) {};
 };
 
-struct SceneData {
-	core::Vector<Named<MeshData>> meshes;
-	core::Vector<Named<Animation>> animations;
-};
-
-SceneData import_scene(const core::String& path);
-
-core::String supported_scene_extensions();
-
-#ifndef EDITOR_NO_ASSIMP
-Animation import_animation(aiAnimation* anim);
-MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
-SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
-#endif
-
-}
 }
 
-#endif // EDITOR_IMPORT_SCENE_H
+#endif // EDITOR_WIDGETS_IMAGEIMPORTER_H

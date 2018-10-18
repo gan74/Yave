@@ -130,6 +130,14 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 						update_node(_current);
 					});
 			}
+			if(ImGui::Selectable("Import image")) {
+				ImageImporter* importer = context()->ui().add<ImageImporter>();
+				importer->set_callback(
+					[this, path = filesystem()->join(_current->path, _current->name)](auto images) {
+						save_images(path, images);
+						update_node(_current);
+					});
+			}
 
 			ImGui::EndPopup();
 		}
@@ -161,33 +169,31 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 	ImGui::PopStyleColor();
 }
 
-
-void ResourceBrowser::save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const {
+template<typename T>
+void ResourceBrowser::save_assets(const core::String& path, core::ArrayView<Named<T>> assets, const char* ext ,const char* asset_name_type) const {
 	try {
-		for(const auto& mesh : meshes) {
-			core::String name = filesystem()->join(path, clean_name(mesh.name()) + ".ym");
-			log_msg(fmt("Saving mesh as \"%\"", name));
+		for(const auto& a : assets) {
+			core::String name = filesystem()->join(path, fmt("%.%", clean_name(a.name()), ext));
+			log_msg(fmt("Saving % as \"%\"", asset_name_type, name));
 			io::Buffer data;
-			mesh.obj().serialize(data);
+			a.obj().serialize(data);
 			context()->loader().asset_store().import(data, name);
 		}
 	} catch(std::exception& e) {
-		log_msg(fmt("Unable save mesh: %", e.what()), Log::Error);
+		log_msg(fmt("Unable save %: %", asset_name_type, e.what()), Log::Error);
 	}
 }
 
+void ResourceBrowser::save_images(const core::String& path, core::ArrayView<Named<ImageData>> images) const {
+	save_assets(path, images, "yt", "image");
+}
+
+void ResourceBrowser::save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const {
+	save_assets(path, meshes, "ym", "mesh");
+}
+
 void ResourceBrowser::save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const {
-	try {
-		for(const auto& anim : anims) {
-			core::String name = filesystem()->join(path, clean_name(anim.name()) + ".ya");
-			log_msg(fmt("Saving animation as \"%\"", name));
-			io::Buffer data;
-			anim.obj().serialize(data);
-			context()->loader().asset_store().import(data, name);
-		}
-	} catch(std::exception& e) {
-		log_msg(fmt("Unable to save animation: %", e.what()), Log::Error);
-	}
+	save_assets(path, anims, "ya", "animation");
 }
 
 const FileSystemModel* ResourceBrowser::filesystem() const {

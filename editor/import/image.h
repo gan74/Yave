@@ -19,48 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_IMPORT_SCENE_H
-#define EDITOR_IMPORT_SCENE_H
+#ifndef EDITOR_IMPORT_IMAGE_H
+#define EDITOR_IMPORT_IMAGE_H
 
 #include <editor/editor.h>
 
-#include <yave/meshes/MeshData.h>
-#include <yave/animations/Animation.h>
-#include <yave/animations/AnimationChannel.h>
-
-#include <y/core/Chrono.h>
-#include <y/math/math.h>
-
-#ifndef EDITOR_NO_ASSIMP
-class aiAnimation;
-class aiMesh;
-class aiScene;
-#endif
+#include <yave/graphics/images/ImageData.h>
 
 namespace editor {
 namespace import {
 
-struct SkeletonData {
-	core::Vector<SkinWeights> skin;
-	core::Vector<Bone> bones;
-};
+ImageData import_image(const core::String& path);
 
-struct SceneData {
-	core::Vector<Named<MeshData>> meshes;
-	core::Vector<Named<Animation>> animations;
-};
-
-SceneData import_scene(const core::String& path);
-
-core::String supported_scene_extensions();
-
-#ifndef EDITOR_NO_ASSIMP
-Animation import_animation(aiAnimation* anim);
-MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
-SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
-#endif
+core::String supported_image_extensions();
 
 }
 }
 
-#endif // EDITOR_IMPORT_SCENE_H
+#endif // EDITOR_IMPORT_IMAGE_H

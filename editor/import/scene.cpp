@@ -68,7 +68,7 @@ SceneData import_scene(const core::String& path) {
 	return data;
 }
 
-core::String supported_extensions() {
+core::String supported_scene_extensions() {
 	std::string extensions;
 	Assimp::Importer importer;
 	importer.GetExtensionList(extensions);
@@ -86,11 +86,12 @@ namespace import {
 
 SceneData import_scene(const core::String& path) {
 	unused(path);
+	y_throw("Scene loading not supported.");
 	SceneData data;
 	return data;
 }
 
-core::String supported_extensions() {
+core::String supported_scene_extensions() {
 	return "";
 }
 

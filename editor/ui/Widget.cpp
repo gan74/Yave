@@ -47,6 +47,11 @@ void Widget::set_closable(bool closable) {
 	_closable = closable;
 }
 
+void Widget::update_attribs() {
+	_position = ImGui::GetWindowPos();
+	_size = ImGui::GetWindowSize();
+}
+
 void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	if(!is_visible()) {
 		return;
@@ -58,9 +63,9 @@ void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 		}
 		ImGui::EndChild();
 	} else {
-		if(ImGui::Begin(_title_with_id.begin(), _closable ? &_visible : nullptr, _flags)) {
-			_position = ImGui::GetWindowPos();
-			_size = ImGui::GetWindowSize();
+		bool b = ImGui::Begin(_title_with_id.begin(), _closable ? &_visible : nullptr, _flags);
+		update_attribs();
+		if(b) {
 			paint_ui(recorder, token);
 		}
 		ImGui::End();

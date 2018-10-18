@@ -20,9 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "MeshImporter.h"
+#include "ImageImporter.h"
 
 #include <editor/context/EditorContext.h>
+#include <editor/import/image.h>
 
 #include <y/io/Buffer.h>
 
@@ -30,21 +31,21 @@ SOFTWARE.
 
 namespace editor {
 
-MeshImporter::MeshImporter(ContextPtr ctx) : Widget("Mesh importer"), ContextLinked(ctx) {
+ImageImporter::ImageImporter(ContextPtr ctx) : Widget("Mesh importer"), ContextLinked(ctx) {
 	_browser.set_has_parent(true);
-	_browser.set_extension_filter(import::supported_scene_extensions());
+	_browser.set_extension_filter(import::supported_image_extensions());
 	_browser.set_selected_callback([this](const auto& filename) { import_async(filename); return true; });
 	_browser.set_canceled_callback([this] { close(); return true; });
 }
 
-void MeshImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token)  {
+void ImageImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token)  {
 	_browser.paint(recorder, token);
 
 	if(is_loading()) {
 		if(done_loading()) {
 			try {
-				auto imported = _import_future.get();
-				_callback(imported.meshes, imported.animations);
+				Named<ImageData> named("unamed image", std::move(_import_future.get()));
+				_callback(core::ArrayView(named));
 			} catch(std::exception& e) {
 				context()->ui().ok("Unable to import", fmt("Unable to import scene: %" , e.what()).data());
 				_browser.show();
@@ -57,49 +58,18 @@ void MeshImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& tok
 
 }
 
-bool MeshImporter::is_loading() const {
+bool ImageImporter::is_loading() const {
 	return _import_future.valid();
 }
 
-bool MeshImporter::done_loading() const {
+bool ImageImporter::done_loading() const {
 	return _import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
-void MeshImporter::import_async(const core::String& filename) {
+void ImageImporter::import_async(const core::String& filename) {
 	_import_future = std::async(std::launch::async, [=] {
-		return import::import_scene(filename);
+		return import::import_image(filename);
 	});
 }
 
-/*void MeshImporter::save_imports(const core::String& dirname) {
-	auto& store = context()->loader().asset_store();
-	{
-		core::DebugTimer _("MeshImporter::save_imports meshes");
-		for(const auto& mesh : _imported->meshes) {
-			io::Buffer buffer;
-			try {
-				mesh.obj().serialize(buffer);
-				store.import(buffer, store.filesystem()->join(dirname, clean_name(mesh.name())));
-			} catch(std::exception& e) {
-				log_msg(fmt("Unable to import mesh: %", e.what()), Log::Error);
-			}
-		}
-	}
-
-	{
-		core::DebugTimer _("MeshImporter::save_imports animations");
-		for(const auto& anim : _imported->animations) {
-			io::Buffer buffer;
-			try {
-				anim.obj().serialize(buffer);
-				store.import(buffer, store.filesystem()->join(dirname, clean_name(anim.name())));
-			} catch(std::exception& e) {
-				log_msg(fmt("Unable to import animation: %", e.what()), Log::Error);
-			}
-		}
-	}
-
-	close();
-}
-*/
 }
