@@ -43,7 +43,7 @@ void MeshImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& tok
 	if(is_loading()) {
 		if(done_loading()) {
 			try {
-				auto imported = _import_future.get();
+				const auto& imported = _import_future.get();
 				_callback(imported.meshes, imported.animations);
 			} catch(std::exception& e) {
 				context()->ui().ok("Unable to import", fmt("Unable to import scene: %" , e.what()).data());

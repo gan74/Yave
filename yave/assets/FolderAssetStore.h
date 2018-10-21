@@ -89,7 +89,7 @@ class FolderAssetStore final : public AssetStore {
 		std::unordered_map<AssetId, Entry*> _from_id;
 		std::map<core::String, std::unique_ptr<Entry>> _from_name;
 
-		AssetId _next_id = assets::invalid_id;
+		AssetIdFactory _id_factory;
 };
 
 }

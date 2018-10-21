@@ -40,7 +40,7 @@ void Scene::serialize(io::WriterRef writer) const {
 
 	for(const auto& mesh : _statics) {
 		AssetId id = mesh->mesh().id();
-		if(id == assets::invalid_id) {
+		if(id == AssetId::invalid_id()) {
 			log_msg("Asset with invalid id, skipping.", Log::Warning);
 			continue;
 		}
@@ -90,7 +90,7 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 			auto id = reader->read_one<AssetId>();
 			auto transform = reader->read_one<math::Transform<>>();
 
-			if(id == assets::invalid_id) {
+			if(id == AssetId::invalid_id()) {
 				log_msg("Skipping asset with invalid id.", Log::Warning);
 				continue;
 			}

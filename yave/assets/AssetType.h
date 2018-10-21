@@ -19,34 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ANIMATIONS_ANIMATION_H
-#define YAVE_ANIMATIONS_ANIMATION_H
+#ifndef YAVE_ASSETS_ASSETTYPE_H
+#define YAVE_ASSETS_ASSETTYPE_H
 
-#include "AnimationChannel.h"
-
-#include <optional>
+#include <yave/yave.h>
 
 namespace yave {
 
-class Animation {
-	public:
-		Animation() = default;
-
-		Animation(float duration, core::Vector<AnimationChannel>&& channels);
-
-		y_serde(fs::magic_number, fs::animation_file_type,u32(4), _duration, _channels)
-
-		float duration() const;
-		const core::Vector<AnimationChannel>& channels() const;
-
-		std::optional<math::Transform<>> bone_transform(const core::String& name, float time) const;
-
-	private:
-		float _duration = 0.0f;
-		core::Vector<AnimationChannel> _channels;
-
-};
+/*enum class AssetType : u8 {
+	Mesh = 1,
+	Image = 2,
+	Animation = 3,
+	Font = 4,
+	Scene = 5,
+	Unknown = 0xFF
+};*/
 
 }
 
-#endif // YAVE_ANIMATIONS_ANIMATIONDATA_H
+#endif // YAVE_ASSETS_ASSETTYPE_H

@@ -87,16 +87,14 @@ void FolderAssetStore::read_index() {
 	std::unique_lock lock(_lock);
 
 	try {
-		if(auto r = io::File::open(_index_file_path); r.is_ok()) {
-			auto file = io::BuffReader(std::move(r.unwrap()));
-			_from_id.clear();
-			_from_name.clear();
-			file.read_one(_next_id);
-			while(!file.at_end()) {
-				auto entry = std::make_unique<Entry>(serde::deserialized<Entry>(file));
-				_from_id[entry->id] = entry.get();
-				_from_name[entry->name] = std::move(entry);
-			}
+		auto file = io::BuffReader(std::move(io::File::open(_index_file_path).or_throw("Unable to open file.")));
+		_from_id.clear();
+		_from_name.clear();
+		_id_factory.deserialize(file);
+		while(!file.at_end()) {
+			auto entry = std::make_unique<Entry>(serde::deserialized<Entry>(file));
+			_from_id[entry->id] = entry.get();
+			_from_name[entry->name] = std::move(entry);
 		}
 	} catch(std::exception& e) {
 		log_msg(fmt("Exception while reading index file: %", e.what()), Log::Error);
@@ -113,7 +111,7 @@ void FolderAssetStore::write_index() const {
 		y_debug_assert(_from_id.size() == _from_name.size());
 		if(auto r = io::File::create(_index_file_path); r.is_ok()) {
 			auto file = io::BuffWriter(std::move(r.unwrap()));
-			file.write_one(_next_id);
+			_id_factory.serialize(file);
 			for(const auto& row : _from_id) {
 				const Entry& entry = *row.second;
 				entry.serialize(file);
@@ -145,10 +143,10 @@ AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) 
 	auto dst_file = _filesystem.join(_filesystem.root_path(), dst_name);
 	if(!io::File::copy(data, dst_file)) {
 		_from_name.erase(_from_name.find(dst_name));
-		y_throw(fmt("Unable to import file as \"%\"", dst_name).data());
+		y_throw(fmt("Unable to import file as \"%\".", dst_name).data());
 	}
 
-	AssetId id = ++_next_id;
+	AssetId id = _id_factory.create_id();
 	entry = std::make_unique<Entry>(Entry{dst_name, id});
 	_from_id[id] = entry.get();
 	y_debug_assert(_from_id.size() == _from_name.size());
@@ -172,11 +170,7 @@ io::ReaderRef FolderAssetStore::data(AssetId id) const {
 	y_debug_assert(_from_id.size() == _from_name.size());
 	if(auto it = _from_id.find(id); it != _from_id.end()) {
 		auto filename = _filesystem.join(_filesystem.root_path(), it->second->name);
-		if(auto r = io::File::open(filename); r.is_ok()){
-			return io::ReaderRef(std::move(r.unwrap()));
-		} else {
-			y_throw("Unable to locate asset data.");
-		}
+		return io::ReaderRef(std::move(io::File::open(filename).or_throw("Unable to locate asset data.")));
 	}
 	y_throw("No asset with this id.");
 }

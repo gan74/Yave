@@ -22,16 +22,10 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_ASSETPTR_H
 #define YAVE_ASSETS_ASSETPTR_H
 
-#include <yave/yave.h>
+#include "AssetId.h"
 #include <memory>
 
 namespace yave {
-
-using AssetId = i64;
-
-namespace assets {
-static constexpr AssetId invalid_id = std::numeric_limits<AssetId>::lowest();
-}
 
 template<typename T>
 class AssetPtr;
@@ -57,24 +51,24 @@ class AssetPtr {
 	public:
 		AssetPtr() = default;
 
-		const T* get() const noexcept {
+		const T* get() const {
 			return &_ptr->asset;
 		}
 
-		const T& operator*() const noexcept {
+		const T& operator*() const {
 			return _ptr->asset;
 		}
 
-		const T* operator->() const noexcept {
+		const T* operator->() const {
 			return &_ptr->asset;
 		}
 
-		explicit operator bool() const noexcept {
+		explicit operator bool() const {
 			return bool(_ptr);
 		}
 
-		AssetId id() const noexcept {
-			return _ptr ? _ptr->id : assets::invalid_id;
+		AssetId id() const {
+			return _ptr ? _ptr->id : AssetId::invalid_id();
 		}
 
 	private:
@@ -95,7 +89,7 @@ class AssetPtr {
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args) {
-	return AssetPtr<T>(assets::invalid_id, std::forward<Args>(args)...);
+	return AssetPtr<T>(AssetId::invalid_id(), std::forward<Args>(args)...);
 }
 
 template<typename T, typename... Args>

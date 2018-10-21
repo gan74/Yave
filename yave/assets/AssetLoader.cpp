@@ -33,7 +33,7 @@ AssetStore& AssetLoaderBase::store() {
 	return *_store;
 }
 
-AssetId AssetLoaderBase::load_or_import(std::string_view name, std::string_view import_from) noexcept {
+AssetId AssetLoaderBase::load_or_import(std::string_view name, std::string_view import_from) {
 	try {
 		return _store->id(name);
 	} catch(...) {
@@ -41,7 +41,7 @@ AssetId AssetLoaderBase::load_or_import(std::string_view name, std::string_view 
 			return _store->import(r.unwrap(), name);
 		}
 	}
-	return assets::invalid_id;
+	return AssetId::invalid_id();
 }
 
 }

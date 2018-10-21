@@ -44,8 +44,8 @@ void ImageImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& to
 	if(is_loading()) {
 		if(done_loading()) {
 			try {
-				Named<ImageData> named("unamed image", std::move(_import_future.get()));
-				_callback(core::ArrayView(named));
+				const auto& imported = _import_future.get();
+				_callback(imported);
 			} catch(std::exception& e) {
 				context()->ui().ok("Unable to import", fmt("Unable to import scene: %" , e.what()).data());
 				_browser.show();
@@ -68,7 +68,7 @@ bool ImageImporter::done_loading() const {
 
 void ImageImporter::import_async(const core::String& filename) {
 	_import_future = std::async(std::launch::async, [=] {
-		return import::import_image(filename);
+		return import::import_images(filename);
 	});
 }
 

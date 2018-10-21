@@ -29,7 +29,7 @@ SOFTWARE.
 namespace editor {
 namespace import {
 
-ImageData import_image(const core::String& path);
+core::Vector<Named<ImageData>> import_images(const core::String& path);
 
 core::String supported_image_extensions();
 

@@ -33,17 +33,6 @@ SOFTWARE.
 
 namespace yave {
 
-template<typename T>
-struct AssetTraits {
-	template<typename U>
-	using has_load_from_t = typename U::load_from;
-
-	static_assert(is_detected_v<has_load_from_t, T>, "Asset type should have ::load_from");
-
-	// todo: try to deduce using TMP ?
-	using load_from = typename T::load_from;
-};
-
 class AssetLoaderBase : public DeviceLinked, NonCopyable {
 	public:
 		AssetLoaderBase(DevicePtr dptr, const std::shared_ptr<AssetStore>& store);
@@ -51,7 +40,7 @@ class AssetLoaderBase : public DeviceLinked, NonCopyable {
 		AssetStore& store();
 
 	protected:
-		AssetId load_or_import(std::string_view name, std::string_view import_from) noexcept;
+		AssetId load_or_import(std::string_view name, std::string_view import_from);
 
 	private:
 		std::shared_ptr<AssetStore> _store;
@@ -70,7 +59,7 @@ class AssetLoader : public AssetLoaderBase {
 		AssetPtr<T> load(AssetId id) {
 			Y_LOG_PERF("asset,loading");
 
-			if(id == assets::invalid_id) {
+			if(id == AssetId::invalid_id()) {
 				y_throw("Invalid id.");
 			}
 
@@ -83,7 +72,7 @@ class AssetLoader : public AssetLoaderBase {
 			return asset_ptr = make_asset_with_id<T>(id, device(), std::move(asset));
 		}
 
-		AssetPtr<T> load(std::string_view name) noexcept {
+		AssetPtr<T> load(std::string_view name) {
 			return load(store().id(name));
 		}
 

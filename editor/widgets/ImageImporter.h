@@ -48,7 +48,7 @@ class ImageImporter final : public Widget, public ContextLinked {
 
 		FileBrowser _browser;
 
-		std::future<ImageData> _import_future;
+		std::future<core::Vector<Named<ImageData>>> _import_future;
 		core::Function<void(core::ArrayView<Named<ImageData>>)> _callback = [](auto) {};
 };
 

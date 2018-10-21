@@ -76,7 +76,6 @@ class Image : public ImageBase {
 		const size_type& size() const {
 			return image_size().to<size_type::size()>();
 		}
-
 };
 
 using Texture = Image<ImageUsage::TextureBit>;

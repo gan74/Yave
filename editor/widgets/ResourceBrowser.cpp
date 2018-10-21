@@ -41,6 +41,20 @@ static core::String clean_name(std::string_view name) {
 	return str;
 }
 
+static TextureView& type_texture(ContextPtr ctx, u32 type) {
+	switch(type) {
+		case fs::image_file_type:
+			return ctx->icons().texture();
+
+		case fs::mesh_file_type:
+			return ctx->icons().cube();
+
+		default:
+		break;
+	}
+	return ctx->icons().question_mark();
+}
+
 
 
 ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
@@ -61,6 +75,20 @@ void ResourceBrowser::set_current(DirNode* current) {
 	update_node(_current);
 }
 
+u32 ResourceBrowser::file_type(const core::String& path) const {
+	try {
+		const AssetStore& store = context()->loader().asset_store();
+		auto reader = store.data(store.id(path));
+		u32 magic = reader->read_one<u32>();
+		if(magic == fs::magic_number) {
+			return reader->read_one<u32>();
+		}
+	} catch(std::exception&) {
+	}
+
+	return u32(-1);
+}
+
 void ResourceBrowser::update_node(DirNode* node) {
 	node->children.clear();
 	node->files.clear();
@@ -72,16 +100,15 @@ void ResourceBrowser::update_node(DirNode* node) {
 			if(fs->is_directory(full_name)) {
 				node->children << DirNode(name, dir, node);
 			} else {
-				node->files << name;
+				node->files << std::make_pair(name, file_type(full_name));
 			}
 		});
 
 	node->up_to_date = true;
 }
 
-static constexpr ImGuiTreeNodeFlags default_node_flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-
 void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
+	static constexpr ImGuiTreeNodeFlags default_node_flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 	ImGuiTreeNodeFlags flags = default_node_flags/* | (node->children.is_empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/;
 	if(ImGui::TreeNodeEx(name.data(), flags)) {
 		if(!node->up_to_date) {
@@ -153,7 +180,10 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 			}
 		}
 
-		for(const auto& name : curr->files) {
+		for(const auto& file : curr->files) {
+			const auto& name = file.first;
+			ImGui::Image(&type_texture(context(), file.second), math::Vec2(14.0f));
+			ImGui::SameLine();
 			if(ImGui::Selectable(name.data())) {
 				try {
 					auto full_name = filesystem()->join(_current->path, name);
@@ -170,10 +200,10 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 }
 
 template<typename T>
-void ResourceBrowser::save_assets(const core::String& path, core::ArrayView<Named<T>> assets, const char* ext ,const char* asset_name_type) const {
+void ResourceBrowser::save_assets(const core::String& path, core::ArrayView<Named<T>> assets, const char* asset_name_type) const {
 	try {
 		for(const auto& a : assets) {
-			core::String name = filesystem()->join(path, fmt("%.%", clean_name(a.name()), ext));
+			core::String name = filesystem()->join(path, clean_name(a.name()));
 			log_msg(fmt("Saving % as \"%\"", asset_name_type, name));
 			io::Buffer data;
 			a.obj().serialize(data);
@@ -185,15 +215,15 @@ void ResourceBrowser::save_assets(const core::String& path, core::ArrayView<Name
 }
 
 void ResourceBrowser::save_images(const core::String& path, core::ArrayView<Named<ImageData>> images) const {
-	save_assets(path, images, "yt", "image");
+	save_assets(path, images, "image");
 }
 
 void ResourceBrowser::save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const {
-	save_assets(path, meshes, "ym", "mesh");
+	save_assets(path, meshes, "mesh");
 }
 
 void ResourceBrowser::save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const {
-	save_assets(path, anims, "ya", "animation");
+	save_assets(path, anims, "animation");
 }
 
 const FileSystemModel* ResourceBrowser::filesystem() const {

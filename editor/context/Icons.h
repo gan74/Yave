@@ -33,6 +33,9 @@ namespace images {
 ImageData light();
 ImageData save();
 ImageData load();
+ImageData texture();
+ImageData question_mark();
+ImageData cube();
 }
 
 class Icons : public DeviceLinked {
@@ -46,6 +49,15 @@ class Icons : public DeviceLinked {
 
 			_load = Texture(device(), images::load());
 			_load_view = _load;
+
+			_texture = Texture(device(), images::texture());
+			_texture_view = _texture;
+
+			_cube = Texture(device(), images::cube());
+			_cube_view = _cube;
+
+			_question = Texture(device(), images::question_mark());
+			_question_view = _question;
 		}
 
 		TextureView& light() {
@@ -60,8 +72,19 @@ class Icons : public DeviceLinked {
 			return _load_view;
 		}
 
-	private:
+		TextureView& texture() {
+			return _texture_view;
+		}
 
+		TextureView& cube() {
+			return _cube_view;
+		}
+
+		TextureView& question_mark() {
+			return _question_view;
+		}
+
+	private:
 		Texture _light;
 		TextureView _light_view;
 
@@ -70,6 +93,15 @@ class Icons : public DeviceLinked {
 
 		Texture _load;
 		TextureView _load_view;
+
+		Texture _texture;
+		TextureView _texture_view;
+
+		Texture _cube;
+		TextureView _cube_view;
+
+		Texture _question;
+		TextureView _question_view;
 };
 
 }

@@ -32,7 +32,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		core::String name;
 		core::String path;
 
-		core::Vector<core::String> files;
+		core::Vector<std::pair<core::String, u32>> files;
 		core::Vector<DirNode> children;
 
 		DirNode* parent;
@@ -51,18 +51,19 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 	private:
 		template<typename T>
-		void save_assets(const core::String& path, core::ArrayView<Named<T>> assets, const char* ext ,const char* asset_name_type) const;
+		void save_assets(const core::String& path, core::ArrayView<Named<T>> assets, const char* asset_name_type) const;
 
 		void save_images(const core::String& path, core::ArrayView<Named<ImageData>> images) const;
 		void save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const;
 		void save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const;
-
 
 		const FileSystemModel* filesystem() const;
 
 		void set_current(DirNode* current);
 		void update_node(DirNode* node);
 		void draw_node(DirNode* node, const core::String& name);
+
+		u32 file_type(const core::String& path) const;
 
 		static constexpr float update_secs = 5.0f;
 		core::Chrono _update_chrono;

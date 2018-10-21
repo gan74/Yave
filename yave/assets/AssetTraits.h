@@ -19,34 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ANIMATIONS_ANIMATION_H
-#define YAVE_ANIMATIONS_ANIMATION_H
+#ifndef YAVE_ASSETS_ASSETTRAITS_H
+#define YAVE_ASSETS_ASSETTRAITS_H
 
-#include "AnimationChannel.h"
-
-#include <optional>
+#include "AssetType.h"
 
 namespace yave {
 
-class Animation {
-	public:
-		Animation() = default;
-
-		Animation(float duration, core::Vector<AnimationChannel>&& channels);
-
-		y_serde(fs::magic_number, fs::animation_file_type,u32(4), _duration, _channels)
-
-		float duration() const;
-		const core::Vector<AnimationChannel>& channels() const;
-
-		std::optional<math::Transform<>> bone_transform(const core::String& name, float time) const;
-
+template<typename T>
+struct AssetTraits {
 	private:
-		float _duration = 0.0f;
-		core::Vector<AnimationChannel> _channels;
+		template<typename U>
+		using has_load_from_t = typename U::load_from;
+		static_assert(is_detected_v<has_load_from_t, T>, "Asset type should have ::load_from");
 
+		/*template<typename U>
+		using has_type_t = decltype(U::asset_type);
+		static_assert(is_detected_v<has_type_t, T>, "Asset type should have ::asset_type");*/
+
+	public:
+		// todo: try to deduce using TMP ?
+
+		using load_from = typename T::load_from;
+
+		//static constexpr AssetType asset_type = T::asset_type;
 };
 
 }
 
-#endif // YAVE_ANIMATIONS_ANIMATIONDATA_H
+#endif // YAVE_ASSETS_ASSETTRAITS_H
