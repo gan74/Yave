@@ -38,7 +38,7 @@ struct Nothing;
 #endif
 
 // keep the namespacing ?
-#define y_fatal(msg) fatal((msg), __FILE__, __LINE__)
+#define y_fatal(msg) y::fatal((msg), __FILE__, __LINE__)
 
 #ifdef Y_DEBUG
 #define y_debug_assert(cond) do { if(!(cond)) { y_fatal("Assert failed: " #cond); } } while(false)
