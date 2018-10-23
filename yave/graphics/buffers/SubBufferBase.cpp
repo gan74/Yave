@@ -74,7 +74,7 @@ vk::DescriptorBufferInfo SubBufferBase::descriptor_info() const {
 }
 
 vk::MappedMemoryRange SubBufferBase::memory_range() const {
-	return vk::MappedMemoryRange(_memory.vk_memory(), _memory.vk_offset() + _offset, _size);
+	return _memory.vk_mapped_range(_size, _offset);
 }
 
 DevicePtr SubBufferBase::device() const {

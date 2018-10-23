@@ -40,7 +40,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug(VkDebugReportFlagsEXT flags, VkDebug
 		y_breakpoint;
 		type = Log::Error;
 	}
-	log_msg(core::String() + "Vk: @[" + layer + "]: " + msg + "\n",  type);
+	log_msg(fmt("Vk: @[%]: %\n", layer, msg),  type);
 	return false;
 }
 

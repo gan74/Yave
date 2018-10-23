@@ -31,6 +31,7 @@ class DeviceMemoryView : public DeviceLinked {
 		DeviceMemoryView() = default;
 		DeviceMemoryView(const DeviceMemory& mem);
 
+		vk::MappedMemoryRange vk_mapped_range(usize size, usize offset = 0) const;
 		vk::DeviceMemory vk_memory() const;
 		usize vk_offset() const;
 

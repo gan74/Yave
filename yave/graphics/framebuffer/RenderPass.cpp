@@ -37,7 +37,7 @@ static vk::ImageLayout vk_final_image_layout(ImageUsage usage) {
 	return vk_image_layout(usage);
 }
 
-static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies() {
+static std::array<vk::SubpassDependency, 2> create_dependencies() {
 	return {{vk::SubpassDependency()
 			.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 			.setDstSubpass(0)
@@ -47,9 +47,9 @@ static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies()
 			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
 			.setDstAccessMask(
 				vk::AccessFlagBits::eColorAttachmentRead |
-				vk::AccessFlagBits::eColorAttachmentWrite |
+				vk::AccessFlagBits::eColorAttachmentWrite/* |
 				vk::AccessFlagBits::eDepthStencilAttachmentRead |
-				vk::AccessFlagBits::eDepthStencilAttachmentWrite
+				vk::AccessFlagBits::eDepthStencilAttachmentWrite*/
 		),
 		vk::SubpassDependency()
 			.setSrcSubpass(0)
@@ -59,13 +59,40 @@ static std::array<vk::SubpassDependency, 2> create_bottom_of_pipe_dependencies()
 			.setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
 			.setSrcAccessMask(
 					vk::AccessFlagBits::eColorAttachmentRead |
-					vk::AccessFlagBits::eColorAttachmentWrite |
+					vk::AccessFlagBits::eColorAttachmentWrite/* |
+					vk::AccessFlagBits::eDepthStencilAttachmentRead |
+					vk::AccessFlagBits::eDepthStencilAttachmentWrite*/
+				)
+			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
+		}};
+}
+
+static std::array<vk::SubpassDependency, 2> create_z_pass_dependencies() {
+	return {{vk::SubpassDependency()
+			.setSrcSubpass(VK_SUBPASS_EXTERNAL)
+			.setDstSubpass(0)
+			.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+			.setSrcStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
+			.setDstStageMask(vk::PipelineStageFlagBits::eLateFragmentTests)
+			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
+			.setDstAccessMask(
+				vk::AccessFlagBits::eDepthStencilAttachmentRead |
+				vk::AccessFlagBits::eDepthStencilAttachmentWrite
+		),
+		vk::SubpassDependency()
+			.setSrcSubpass(0)
+			.setDstSubpass(VK_SUBPASS_EXTERNAL)
+			.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+			.setSrcStageMask(vk::PipelineStageFlagBits::eLateFragmentTests)
+			.setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
+			.setSrcAccessMask(
 					vk::AccessFlagBits::eDepthStencilAttachmentRead |
 					vk::AccessFlagBits::eDepthStencilAttachmentWrite
 				)
 			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
 		}};
 }
+
 
 static vk::AttachmentDescription create_attachment(RenderPass::ImageData image) {
 	return vk::AttachmentDescription()
@@ -110,7 +137,7 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData de
 		subpass.setPDepthStencilAttachment(&depth_ref);
 	}
 
-	auto dependencies = create_bottom_of_pipe_dependencies();
+	auto dependencies = colors.is_empty() ? create_z_pass_dependencies() : create_dependencies();
 	return dptr->vk_device().createRenderPass(vk::RenderPassCreateInfo()
 			.setAttachmentCount(u32(attachments.size()))
 			.setPAttachments(attachments.begin())
