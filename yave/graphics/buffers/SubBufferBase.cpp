@@ -46,7 +46,7 @@ usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
 	if ((usage & BufferUsage::StorageBit) != BufferUsage::None) {
 		align = std::max(dptr->vk_limits().minStorageBufferOffsetAlignment, align);
 	}
-	return align;
+	return std::max(align, dptr->vk_limits().nonCoherentAtomSize);
 }
 
 usize SubBufferBase::byte_size() const {

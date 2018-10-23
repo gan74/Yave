@@ -32,17 +32,22 @@ static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 }
 
 static vk::PipelineStageFlags pipeline_stage(vk::AccessFlags access) {
-	if((uenum(access) & ~uenum(vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite)) == 0) {
-		return vk::PipelineStageFlagBits::eTopOfPipe;
+	if(access == vk::AccessFlags() || access == vk::AccessFlagBits::eMemoryRead) {
+		return vk::PipelineStageFlagBits::eHost;
+	}
+	if(access & (vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentRead)) {
+		return vk::PipelineStageFlagBits::eEarlyFragmentTests |
+			   vk::PipelineStageFlagBits::eLateFragmentTests;
+	}
+	if(access & (vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentRead)) {
+		return vk::PipelineStageFlagBits::eColorAttachmentOutput;
 	}
 	if(access & (vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite)) {
 		return vk::PipelineStageFlagBits::eTransfer;
 	}
-	if(access & (vk::AccessFlagBits::eShaderRead| vk::AccessFlagBits::eShaderWrite)) {
+	if(access & (vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite)) {
 		return vk::PipelineStageFlagBits::eVertexShader |
 			   vk::PipelineStageFlagBits::eFragmentShader |
-			   //vk::PipelineStageFlagBits::eTessellationControlShader |
-			   //vk::PipelineStageFlagBits::eTessellationEvaluationShader |
 			   vk::PipelineStageFlagBits::eComputeShader;
 	}
 

@@ -76,25 +76,6 @@ static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data
 	return staging_buffer;
 }
 
-static void upload_data(ImageBase& image, const ImageData& data) {
-	Y_LOG_PERF("image,staging");
-	DevicePtr dptr = image.device();
-
-	auto staging_buffer = get_staging_buffer(dptr, data.combined_byte_size(), data.data());
-	auto regions = get_copy_regions(data);
-
-	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
-
-	{
-		auto region = recorder.region("Image upload");
-		recorder.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-		recorder.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
-		recorder.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
-	}
-
-	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
-}
-
 static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize layers, usize mips, ImageType type) {
 	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
 			.setImage(image)
@@ -116,6 +97,34 @@ static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr 
 	bind_image_memory(dptr, image, memory);
 
 	return {image, std::move(memory), create_view(dptr, image, format, layers, mips, type)};
+}
+
+static void upload_data(ImageBase& image, const ImageData& data) {
+	Y_LOG_PERF("image,staging");
+	DevicePtr dptr = image.device();
+
+	auto staging_buffer = get_staging_buffer(dptr, data.combined_byte_size(), data.data());
+	auto regions = get_copy_regions(data);
+
+	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+
+	{
+		auto region = recorder.region("Image upload");
+		recorder.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+		recorder.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
+		recorder.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
+	}
+
+	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+}
+
+static void transition_image(ImageBase& image) {
+	Y_LOG_PERF("image");
+	DevicePtr dptr = image.device();
+
+	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+	recorder.transition_image(image, vk::ImageLayout::eUndefined, vk_image_layout(image.usage()));
+	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {
@@ -141,15 +150,23 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 		_format(format),
 		_usage(usage) {
 
-	Y_LOG_PERF("image");
+	check_layer_count(type, _size, _layers);
 
-	check_layer_count(type, size, _layers);
+	std::tie(_image, _memory, _view) = alloc_image(dptr, _size, _layers, _mips, _format, _usage, type);
 
-	std::tie(_image, _memory, _view) = alloc_image(dptr, size, _layers, _mips, _format, _usage, type);
+	transition_image(*this);
 }
 
 ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data) :
-		ImageBase(dptr, data.format(), usage | vk::ImageUsageFlagBits::eTransferDst, data.size(), type, data.layers(), data.mipmaps()) {
+		_size(data.size()),
+		_layers(data.layers()),
+		_mips(data.mipmaps()),
+		_format(data.format()),
+		_usage(usage | vk::ImageUsageFlagBits::eTransferDst) {
+
+	check_layer_count(type, _size, _layers);
+
+	std::tie(_image, _memory, _view) = alloc_image(dptr, _size, _layers, _mips, _format, _usage, type);
 
 	upload_data(*this, data);
 }
