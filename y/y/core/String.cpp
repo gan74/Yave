@@ -69,11 +69,13 @@ String::ShortData::ShortData(const char* str, usize len) : length(len) {
 // --------------------------------------------------- ALLOC ---------------------------------------------------
 
 char* String::alloc_long(usize capacity) {
-	return new char[capacity];
+	return new char[capacity + 1];
 }
 
 usize String::compute_capacity(usize len) {
-	return DefaultVectorResizePolicy().ideal_capacity(len + 1);
+	usize cap = DefaultVectorResizePolicy().ideal_capacity(len + 1) - 1;
+	y_debug_assert(cap >= len + 1);
+	return cap;
 }
 
 void String::free_long(LongData& d) {
