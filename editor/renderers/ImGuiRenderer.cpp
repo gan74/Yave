@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/graphics/buffers/TypedWrapper.h>
 
 #include <y/io/File.h>
+#include <y/core/Chrono.h>
 
 #include <imgui/imgui.h>
 
@@ -34,6 +35,8 @@ static constexpr usize imgui_index_buffer_size = 64 * 1024;
 static constexpr usize imgui_vertex_buffer_size = 64 * 1024;
 
 static ImageData load_font() {
+	core::DebugTimer _("load_font");
+
 	// https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
 	ImGuiIO& io = ImGui::GetIO();
 

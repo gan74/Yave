@@ -34,9 +34,9 @@ PropertyPanel::PropertyPanel(ContextPtr cptr) :
 	set_closable(false);
 }
 
-bool PropertyPanel::is_visible() const {
+/*bool PropertyPanel::is_visible() const {
 	return UiElement::is_visible() && context()->selection().selected();
-}
+}*/
 
 void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	Widget::paint(recorder, token);

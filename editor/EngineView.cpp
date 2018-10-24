@@ -60,12 +60,12 @@ void EngineView::create_renderer() {
 	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, _ibl_data));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
-	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size()));
+	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, content_size()));
 	_view			= std::make_shared<TextureView>(_renderer->output());
 }
 
 void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	if(!_renderer || size() != renderer_size()) {
+	if(!_renderer || content_size() != renderer_size()) {
 		create_renderer();
 		return;
 	}
@@ -79,7 +79,9 @@ void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token
 		// so we don't have to wait when resizing
 		recorder.keep_alive(std::make_pair(_renderer, _view));
 
-		ImGui::GetWindowDrawList()->AddImage(_view.get(), position(), position() + size());
+		ImGui::GetWindowDrawList()->AddImage(_view.get(),
+			position() + math::Vec2(ImGui::GetWindowContentRegionMin()),
+			position() + math::Vec2(ImGui::GetWindowContentRegionMax()));
 
 		_gizmo.paint(recorder, token);
 		if(!_gizmo.is_dragging()) {

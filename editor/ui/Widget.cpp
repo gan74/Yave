@@ -50,6 +50,10 @@ void Widget::set_closable(bool closable) {
 	_closable = closable;
 }
 
+math::Vec2 Widget::content_size() const {
+	return math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin());
+}
+
 void Widget::update_attribs() {
 	_position = ImGui::GetWindowPos();
 	_size = ImGui::GetWindowSize();

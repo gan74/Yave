@@ -31,7 +31,7 @@ class PropertyPanel : public Widget, public ContextLinked {
 		PropertyPanel(ContextPtr cptr);
 
 
-		bool is_visible() const override;
+		//bool is_visible() const override;
 		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 	private:
