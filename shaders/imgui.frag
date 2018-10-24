@@ -10,6 +10,9 @@ layout(set = 1, binding = 0) uniform Data {
 	vec2 viewport_size;
 } constants;
 
+//const float gamma = 2.2f;
+
 void main() {
-	out_color = v_color * texture(font_texture, v_uv);
+	vec4 color = v_color * texture(font_texture, v_uv);
+	out_color = color;
 }

@@ -32,7 +32,7 @@ static void keybox(const char* name, Key& key) {
 	char k[2] = {char(key), 0};
 
 	ImGui::PushItemWidth(24);
-	ImGuiTextEditCallback callback = [](ImGuiTextEditCallbackData* data) { data->CursorPos = 0; return 0; };
+	ImGuiInputTextCallback callback = [](ImGuiInputTextCallbackData* data) { data->CursorPos = 0; return 0; };
 	ImGui::InputText(name, k, sizeof(k), ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_AlwaysInsertMode | ImGuiInputTextFlags_CallbackAlways, callback);
 
 	if(std::isalpha(k[0])) {

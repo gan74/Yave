@@ -88,6 +88,7 @@ void FileBrowser::set_extension_filter(std::string_view exts) {
 		}
 	}
 	sort(_extensions.begin(), _extensions.end());
+	set_path(_path_buffer.begin());
 }
 
 void FileBrowser::done(const core::String& filename) {
@@ -106,6 +107,7 @@ core::String FileBrowser::full_path() const {
 std::string_view FileBrowser::path() const {
 	return std::string_view(_path_buffer.begin(), std::strlen(_path_buffer.begin()));
 }
+
 
 void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	{
@@ -127,23 +129,23 @@ void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		cancel();
 	}
 
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDarkening]);
 	ImGui::BeginChild("###fileentries");
 	{
-		if(ImGui::Selectable("..")) {
+		if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
 			set_path(_filesystem->parent_path(path()));
 		}
 
+		const char* icons[] = {ICON_FA_FOLDER, ICON_FA_FILE_ALT, ICON_FA_QUESTION};
+
 		for(usize i = 0; i != _entries.size(); ++i) {
 			const auto& name = _entries[i].first;
-			if(ImGui::Selectable(name.data())) {
+			if(ImGui::Selectable(fmt("% %", icons[usize(_entries[i].second)], name).data())) {
 				set_path(_filesystem->join(path(), name));
 				break;
 			}
 		}
 	}
 	ImGui::EndChild();
-	ImGui::PopStyleColor();
 }
 
 }

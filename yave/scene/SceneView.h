@@ -29,9 +29,8 @@ SOFTWARE.
 namespace yave {
 
 class SceneView {
-
 	public:
-		SceneView(Scene& sce);
+		SceneView(Scene& sce, Camera cam = Camera());
 
 		const Scene& scene() const;
 
@@ -39,7 +38,9 @@ class SceneView {
 		Camera& camera();
 
 	private:
-		Scene& _scene;
+		void swap();
+
+		Scene* _scene = nullptr;
 		Camera _camera;
 };
 

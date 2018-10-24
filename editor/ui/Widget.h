@@ -49,9 +49,12 @@ class Widget : public UiElement {
 		math::Vec2 _position;
 		math::Vec2 _size;
 
+		math::Vec2 _min_size;
+
 		u32 _flags;
 		bool _closable = true;
 		bool _has_parent = false;
+		bool _docked = false;
 };
 
 }

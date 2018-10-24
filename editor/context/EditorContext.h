@@ -30,7 +30,6 @@ SOFTWARE.
 
 #include "Settings.h"
 #include "SceneData.h"
-#include "Icons.h"
 #include "Loader.h"
 #include "Selection.h"
 #include "Ui.h"
@@ -70,10 +69,6 @@ class EditorContext : public DeviceLinked, NonCopyable {
 			return _loader;
 		}
 
-		Icons& icons() {
-			return _icons;
-		}
-
 		Ui& ui() {
 			return _ui;
 		}
@@ -89,7 +84,6 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		Loader _loader;
 		SceneData _scene;
 		Selection _selection;
-		Icons _icons;
 		Ui _ui;
 
 };

@@ -29,7 +29,7 @@ namespace detail {
 
 static constexpr usize fmt_total_buffer_size = (fmt_max_size + 1) * 4;
 static thread_local char* fmt_buffer = nullptr;
-static thread_local char* fmt_buffer_end = 0;
+static thread_local char* fmt_buffer_end = nullptr;
 
 FmtBuffer::FmtBuffer() {
 	if(!fmt_buffer) {
@@ -38,6 +38,10 @@ FmtBuffer::FmtBuffer() {
 	}
 	_start = _buffer = fmt_buffer_end;
 	_buffer_size = std::min(usize(fmt_buffer + fmt_total_buffer_size - _start), fmt_max_size);
+
+	y_debug_assert(_start >= fmt_buffer);
+	y_debug_assert(_start <= fmt_buffer + fmt_total_buffer_size);
+	y_debug_assert(_start + _buffer_size <= fmt_buffer + fmt_total_buffer_size);
 }
 
 FmtBuffer::FmtBuffer(core::String& str) {
@@ -49,14 +53,14 @@ FmtBuffer::FmtBuffer(core::String& str) {
 	_start = _buffer = str.data() + size;
 }
 
-
 std::string_view FmtBuffer::done() && {
+	y_debug_assert(!fmt_buffer || fmt_buffer[fmt_total_buffer_size] == 0);
 	*_buffer = 0;
 	if(_dynamic) {
 		_dynamic->shrink(_buffer - _dynamic->begin());
 	} else {
-		fmt_buffer_end = _buffer + 1;
-		y_debug_assert(fmt_buffer[fmt_total_buffer_size] == 0);
+		y_debug_assert(_buffer <= fmt_buffer + fmt_total_buffer_size);
+		fmt_buffer_end = (_buffer == fmt_buffer + fmt_total_buffer_size) ? fmt_buffer : _buffer + 1;
 	}
 	return std::string_view(_start, _buffer - _start);
 }
@@ -96,6 +100,9 @@ bool FmtBuffer::try_expand() {
 	_buffer += size;
 	_buffer_size = fmt_max_size - size;
 
+	y_debug_assert(_buffer <= fmt_buffer + fmt_total_buffer_size);
+	y_debug_assert(_buffer + _buffer_size <= fmt_buffer + fmt_total_buffer_size);
+
 	return true;
 }
 
@@ -104,6 +111,7 @@ void FmtBuffer::advance(usize r) {
 	_buffer += l;
 	_buffer_size -= l;
 	y_debug_assert(_dynamic || _buffer <= fmt_buffer + fmt_total_buffer_size);
+	y_debug_assert(_dynamic || _buffer + _buffer_size <= fmt_buffer + fmt_total_buffer_size);
 }
 
 #define y_buff_fmt_(str, t)															\

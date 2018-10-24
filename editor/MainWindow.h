@@ -56,8 +56,6 @@ class MainWindow : private Window, public ContextLinked {
 
 		void create_swapchain();
 
-		std::unique_ptr<EngineView> _engine_view;
-
 		std::unique_ptr<Swapchain> _swapchain;
 		Node::Ptr<EndOfPipe> _ui_renderer;
 };

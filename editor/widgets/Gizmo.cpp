@@ -74,9 +74,9 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		return;
 	}
 
-	math::Vec3 cam_fwd = context()->scene().view().camera().forward();
-	math::Vec3 cam_pos = context()->scene().view().camera().position();
-	math::Matrix4<> view_proj = context()->scene().view().camera().viewproj_matrix();
+	math::Vec3 cam_fwd = context()->scene().scene_view().camera().forward();
+	math::Vec3 cam_pos = context()->scene().scene_view().camera().position();
+	math::Matrix4<> view_proj = context()->scene().scene_view().camera().viewproj_matrix();
 	math::Vec3 obj_pos = context()->selection().selected()->transform().position();
 
 	if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
@@ -89,7 +89,7 @@ void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
 
-	auto inv_matrix = context()->scene().view().camera().inverse_matrix();
+	auto inv_matrix = context()->scene().scene_view().camera().inverse_matrix();
 	math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 	math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
 	math::Vec3 world = h_world.to<3>() / h_world.w();

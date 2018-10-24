@@ -36,73 +36,134 @@ SOFTWARE.
 namespace editor {
 
 EngineView::EngineView(ContextPtr cptr) :
+		Widget(ICON_FA_DESKTOP " Engine View"),
 		ContextLinked(cptr),
+		_scene_view(context()->scene().scene()),
 		_ibl_data(new IBLData(device())),
 		_gizmo(context()) {
 }
 
-math::Vec2ui EngineView::render_size() const {
+EngineView::~EngineView() {
+	context()->scene().reset_scene_view(&_scene_view);
+}
+
+math::Vec2ui EngineView::renderer_size() const {
 	return _renderer ? _renderer->output().size() : math::Vec2ui();
 }
 
-void EngineView::create_renderer(const math::Vec2ui& size) {
-	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), context()->scene().view()));
-	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size));
+void EngineView::create_renderer() {
+	_scene_view		= SceneView(context()->scene().scene(), _scene_view.camera());
+
+
+	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), _scene_view));
+	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size()));
 	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, _ibl_data));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
-	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
+	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size()));
 	_view			= std::make_shared<TextureView>(_renderer->output());
 }
 
-void EngineView::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	math::Vec2 viewport = ImGui::GetWindowSize();
-
-	/*if(context()->is_scene_empty()) {
-		ImGui::Text("Empty scene");
-		return;
-	}*/
-
-	if(!_renderer || viewport != render_size()) {
-		create_renderer(viewport);
+void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+	if(!_renderer || size() != renderer_size()) {
+		create_renderer();
 		return;
 	}
 
 	if(_renderer) {
-		// process inputs
-		update_camera();
+		update();
 
-		// render engine
-		{
-			RenderingPipeline pipeline(_renderer);
-			pipeline.render(recorder, token);
+		RenderingPipeline pipeline(_renderer);
+		pipeline.render(recorder, token);
 #warning barrier
-			// so we don't have to wait when resizing
-			recorder.keep_alive(std::make_pair(_renderer, _view));
-		}
+		// so we don't have to wait when resizing
+		recorder.keep_alive(std::make_pair(_renderer, _view));
 
-
-		math::Vec2 offset = ImGui::GetWindowPos();
-		ImGui::GetWindowDrawList()->AddImage(_view.get(), offset, offset + viewport);
-
-		for(const auto& light : context()->scene().scene().lights()) {
-			float s = 18.0f;
-			auto screen = context()->scene().to_window_pos(light->position());
-			ImGui::GetWindowDrawList()->AddImageQuad(&context()->icons().light(),
-					screen + math::Vec2(s, -s),
-					screen + math::Vec2(-s, -s),
-					screen + math::Vec2(-s, s),
-					screen + math::Vec2(s, s)
-				);
-		}
+		ImGui::GetWindowDrawList()->AddImage(_view.get(), position(), position() + size());
 
 		_gizmo.paint(recorder, token);
 		if(!_gizmo.is_dragging()) {
 			update_selection();
 		}
 	}
+}
+
+void EngineView::update() {
+	if(ImGui::IsWindowHovered()) {
+		if(ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2)) {
+			ImGui::SetWindowFocus();
+		}
+	}
+
+	if(ImGui::IsWindowFocused()) {
+		context()->scene().set_scene_view(&_scene_view);
+	}
+
+	// process inputs
+	update_camera();
+}
+
+void EngineView::update_camera() {
+	auto size = renderer_size();
+	auto& camera = _scene_view.camera();
+
+	math::Vec3 cam_pos = camera.position();
+	math::Vec3 cam_fwd = camera.forward();
+	math::Vec3 cam_lft = camera.left();
+
+	if(ImGui::IsWindowFocused()) {
+
+		float cam_speed = 500.0f;
+		float dt = cam_speed / ImGui::GetIO().Framerate;
+
+		if(ImGui::IsKeyDown(int(context()->settings().camera().move_forward))) {
+			cam_pos += cam_fwd * dt;
+		}
+		if(ImGui::IsKeyDown(int(context()->settings().camera().move_backward))) {
+			cam_pos -= cam_fwd * dt;
+		}
+		if(ImGui::IsKeyDown(int(context()->settings().camera().move_left))) {
+			cam_pos += cam_lft * dt;
+		}
+		if(ImGui::IsKeyDown(int(context()->settings().camera().move_right))) {
+			cam_pos -= cam_lft * dt;
+		}
 
 
+		if(ImGui::IsMouseDown(1)) {
+			auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
+			delta *= context()->settings().camera().sensitivity;
+
+			{
+				auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+				cam_fwd = pitch(cam_fwd);
+			}
+			{
+				auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
+				cam_fwd = yaw(cam_fwd);
+				cam_lft = yaw(cam_lft);
+			}
+
+			auto euler = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft)).to_euler();
+			bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
+			euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
+			auto rotation = math::Quaternion<>::from_euler(euler);
+			cam_fwd = rotation({1.0f, 0.0f, 0.0f});
+			cam_lft = rotation({0.0f, 1.0f, 0.0f});
+		}
+
+
+		if(ImGui::IsMouseDown(2)) {
+			auto delta = ImGui::GetIO().MouseDelta;
+			cam_pos -= (delta.y * cam_fwd.cross(cam_lft) + delta.x * cam_lft);
+		}
+	}
+
+	float fov = math::to_rad(60.0f);
+	auto proj = math::perspective(fov, float(size.x()) / float(size.y()), 1.0f);
+	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+	camera.set_proj(proj);
+	camera.set_view(view);
 }
 
 void EngineView::update_selection() {
@@ -113,8 +174,8 @@ void EngineView::update_selection() {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
 
-	auto inv_matrix = context()->scene().view().camera().inverse_matrix();
-	auto cam_pos = context()->scene().view().camera().position();
+	auto inv_matrix = _scene_view.camera().inverse_matrix();
+	auto cam_pos = _scene_view.camera().position();
 
 	math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 	math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
@@ -135,72 +196,10 @@ void EngineView::update_selection() {
 			distance = dist;
 		}
 	}
+
 	if(distance == std::numeric_limits<float>::max()) {
 		context()->selection().set_selected(nullptr);
 	}
-}
-
-void EngineView::update_camera() {
-	// TODO check keyboard focus
-
-	auto size = render_size();
-	auto& camera = context()->scene().view().camera();
-	math::Vec3 cam_pos = camera.position();
-	math::Vec3 cam_fwd = camera.forward();
-	math::Vec3 cam_lft = camera.left();
-
-
-	float cam_speed = 500.0f;
-	float dt = cam_speed / ImGui::GetIO().Framerate;
-
-	if(ImGui::IsKeyDown(int(context()->settings().camera().move_forward))) {
-		cam_pos += cam_fwd * dt;
-	}
-	if(ImGui::IsKeyDown(int(context()->settings().camera().move_backward))) {
-		cam_pos -= cam_fwd * dt;
-	}
-	if(ImGui::IsKeyDown(int(context()->settings().camera().move_left))) {
-		cam_pos += cam_lft * dt;
-	}
-	if(ImGui::IsKeyDown(int(context()->settings().camera().move_right))) {
-		cam_pos -= cam_lft * dt;
-	}
-
-	float fov = math::to_rad(60.0f);
-
-	if(ImGui::IsMouseDown(1)) {
-		auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
-		delta *= context()->settings().camera().sensitivity;
-
-		{
-			auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
-			cam_fwd = pitch(cam_fwd);
-		}
-		{
-			auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
-			cam_fwd = yaw(cam_fwd);
-			cam_lft = yaw(cam_lft);
-		}
-
-		auto euler = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft)).to_euler();
-		bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
-		euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
-		auto rotation = math::Quaternion<>::from_euler(euler);
-		cam_fwd = rotation({1.0f, 0.0f, 0.0f});
-		cam_lft = rotation({0.0f, 1.0f, 0.0f});
-	}
-
-
-	if(ImGui::IsMouseDown(2)) {
-		auto delta = ImGui::GetIO().MouseDelta;
-		cam_pos -= (delta.y * cam_fwd.cross(cam_lft) + delta.x * cam_lft);
-	}
-
-
-	auto proj = math::perspective(fov, float(size.x()) / float(size.y()), 1.0f);
-	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
-	camera.set_proj(proj);
-	camera.set_view(view);
 }
 
 }

@@ -10,6 +10,7 @@
 #pragma once
 
 #include <y/math/Vec.h>
+#include "IconsFontAwesome5.h"
 
 #ifdef  __GNUC__
 #pragma GCC diagnostic push
@@ -19,7 +20,8 @@
 #endif
 
 //---- Define assertion handler. Defaults to calling assert().
-//#define IM_ASSERT(_EXPR)  MyAssert(_EXPR)
+//#define IM_ASSERT(_EXPR) do { if(!(_EXPR)) { y_fatal("IM_ASSERT failed: " #_EXPR); } } while(false)
+
 
 //---- Define attributes of all API symbols declarations, e.g. for DLL under Windows.
 //#define IMGUI_API __declspec( dllexport )

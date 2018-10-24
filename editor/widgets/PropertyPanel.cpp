@@ -28,7 +28,9 @@ SOFTWARE.
 
 namespace editor {
 
-PropertyPanel::PropertyPanel(ContextPtr cptr) : Widget("Properties"), ContextLinked(cptr) {
+PropertyPanel::PropertyPanel(ContextPtr cptr) :
+		Widget(ICON_FA_WRENCH " Properties"),
+		ContextLinked(cptr) {
 	set_closable(false);
 }
 
@@ -39,7 +41,7 @@ bool PropertyPanel::is_visible() const {
 void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	Widget::paint(recorder, token);
 
-	if(Transformable* selected = context()->selection().selected()) {
+	/*if(Transformable* selected = context()->selection().selected()) {
 		auto end_pos = context()->scene().to_window_pos(selected->position());
 		auto start_pos = position() + math::Vec2(0.0f, 12.0f);
 
@@ -49,7 +51,7 @@ void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token
 
 		auto point = math::Vec2(std::copysign(128.0f, end_pos.x() - start_pos.x()), 0.0f);
 		ImGui::GetWindowDrawList()->AddBezierCurve(start_pos, start_pos + point, end_pos - point, end_pos, color, 2.0f);
-	}
+	}*/
 }
 
 void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
@@ -65,9 +67,9 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		float big_step = 15.0f;
 
 		ImGui::BeginGroup();
-		ImGui::InputFloat("X", &pos.x(), step, big_step, 3);
-		ImGui::InputFloat("Y", &pos.y(), step, big_step, 3);
-		ImGui::InputFloat("Z", &pos.z(), step, big_step, 3);
+		ImGui::InputFloat("X", &pos.x(), step, big_step);
+		ImGui::InputFloat("Y", &pos.y(), step, big_step);
+		ImGui::InputFloat("Z", &pos.z(), step, big_step);
 		ImGui::EndGroup();
 	}
 
@@ -88,9 +90,9 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 		float big_step = 15.0f;
 
 		ImGui::BeginGroup();
-		angle_changed |= ImGui::InputFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], step, big_step, 3);
-		angle_changed |= ImGui::InputFloat("Yaw", &euler[math::Quaternion<>::YawIndex], step, big_step, 3);
-		angle_changed |= ImGui::InputFloat("Roll", &euler[math::Quaternion<>::RollIndex], step, big_step, 3);
+		angle_changed |= ImGui::InputFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], step, big_step);
+		angle_changed |= ImGui::InputFloat("Yaw", &euler[math::Quaternion<>::YawIndex], step, big_step);
+		angle_changed |= ImGui::InputFloat("Roll", &euler[math::Quaternion<>::RollIndex], step, big_step);
 		ImGui::EndGroup();
 
 		// avoid recomputing angle (not always stable in euler space)
@@ -126,8 +128,8 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 			ImGui::EndPopup();
 		}
 
-		ImGui::InputFloat("Intensity", &light->intensity(), 1.0f, 10.0f, 3);
-		ImGui::InputFloat("Radius", &light->radius(), 1.0f, 10.0f, 3);
+		ImGui::InputFloat("Intensity", &light->intensity(), 1.0f, 10.0f);
+		ImGui::InputFloat("Radius", &light->radius(), 1.0f, 10.0f);
 
 
 	}

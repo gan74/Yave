@@ -50,7 +50,7 @@ SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags
 
 void SceneDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 	if(ImGui::Button("Spawn cubes")) {
-		auto cam_pos = context()->scene().view().camera().position();
+		auto cam_pos = context()->scene().scene_view().camera().position();
 
 		try {
 			auto material = create_material(context());

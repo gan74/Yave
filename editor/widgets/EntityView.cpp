@@ -58,7 +58,9 @@ static AssetPtr<Material> default_material(DevicePtr dptr) {
 	return material;
 }
 
-EntityView::EntityView(ContextPtr cptr) : Widget("Entities"), ContextLinked(cptr) {
+EntityView::EntityView(ContextPtr cptr) :
+		Widget(ICON_FA_OBJECT_GROUP " Entities"),
+		ContextLinked(cptr) {
 }
 
 void EntityView::add_light() {
@@ -66,7 +68,7 @@ void EntityView::add_light() {
 	context()->selection().set_selected(light.get());
 
 	light->radius() = 100.0f;
-	light->color() *= 10000.0;
+	light->intensity() = 10000.0;
 	context()->scene().scene().lights() << std::move(light);
 }
 

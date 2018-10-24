@@ -26,7 +26,10 @@ SOFTWARE.
 
 namespace editor {
 
-Widget::Widget(std::string_view title, u32 flags) : UiElement(title), _flags(flags) {
+Widget::Widget(std::string_view title, u32 flags) :
+		UiElement(title),
+		_min_size(100),
+		_flags(flags) {
 }
 
 const math::Vec2& Widget::position() const {
@@ -50,6 +53,15 @@ void Widget::set_closable(bool closable) {
 void Widget::update_attribs() {
 	_position = ImGui::GetWindowPos();
 	_size = ImGui::GetWindowSize();
+	_docked = ImGui::IsWindowDocked();
+}
+
+static void fix_undocked_bg() {
+	ImVec4* colors = ImGui::GetStyle().Colors;
+	math::Vec4 window_bg = colors[ImGuiCol_WindowBg];
+	math::Vec4 child_col = colors[ImGuiCol_ChildBg];
+	math::Vec4 final(math::lerp(window_bg.to<3>(), child_col.to<3>(), child_col.w()), window_bg.w());
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, final);
 }
 
 void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
@@ -63,7 +75,17 @@ void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 		}
 		ImGui::EndChild();
 	} else {
+		ImGui::SetNextWindowSize(ImVec2(480, 480), ImGuiCond_FirstUseEver);
+
+		// change windows bg to match docked (ie: inside frame) look
+		if(!_docked) {
+			fix_undocked_bg();
+		}
 		bool b = ImGui::Begin(_title_with_id.begin(), _closable ? &_visible : nullptr, _flags);
+		if(!_docked) {
+			ImGui::PopStyleColor();
+		}
+
 		update_attribs();
 		if(b) {
 			paint_ui(recorder, token);

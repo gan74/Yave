@@ -37,6 +37,7 @@ void Frame::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
 	// this breaks everthing that relies on getting focus (like popups)
 	// ImGui::SetNextWindowFocus();
 
+	ImGui::SetNextWindowBgAlpha(0.0f);
 	if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
 		paint_ui(recorder, token);
 	}

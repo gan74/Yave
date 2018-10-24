@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <editor/ui/Frame.h>
+#include <editor/ui/Widget.h>
 
 #include <editor/widgets/Gizmo.h>
 
@@ -36,29 +36,27 @@ SOFTWARE.
 
 namespace editor {
 
-class EngineView : public ContextLinked {
-	struct ViewData {
-		math::Vec2i view_size;
-		math::Vec2i view_offset;
-		math::Vec2i render_size;
-	};
+class EngineView : public Widget, public ContextLinked {
 
 	public:
 		EngineView(ContextPtr cptr);
+		~EngineView();
 
-		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token);
+	private:
+		void paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
 
 	private:
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
-		math::Vec2ui render_size() const;
-		SceneView* render_view() const;
+		math::Vec2ui renderer_size() const;
 
-		void render_ui(RenderPassRecorder& recorder);
-		void create_renderer(const math::Vec2ui& size);
+		void create_renderer();
 
+		void update();
 		void update_camera();
 		void update_selection();
+
+		SceneView _scene_view;
 
 		Node::Ptr<IBLData> _ibl_data;
 		Node::Ptr<FramebufferRenderer> _renderer;
@@ -67,6 +65,8 @@ class EngineView : public ContextLinked {
 		// subwidgets & stuff
 		Gizmo _gizmo;
 };
+
+static_assert(!std::is_move_assignable_v<EngineView>);
 
 }
 

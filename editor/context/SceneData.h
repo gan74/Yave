@@ -34,8 +34,12 @@ class SceneData : public ContextLinked, NonCopyable {
 	public:
 		SceneData(ContextPtr ctx);
 
+		void set_scene_view(SceneView* scene);
+		void reset_scene_view(SceneView* scene);
+
 		Scene& scene();
-		SceneView& view();
+		SceneView& scene_view();
+		SceneView& default_scene_view();
 
 		math::Vec3 to_screen_pos(const math::Vec3& world);
 		math::Vec2 to_window_pos(const math::Vec3& world);
@@ -52,12 +56,15 @@ class SceneData : public ContextLinked, NonCopyable {
 
 	private:
 		Scene _scene;
-		SceneView _scene_view;
+		SceneView _default_scene_view;
+		SceneView* _scene_view = nullptr;
 
 		AssetPtr<Material> _default_material;
 
 		core::Vector<std::unique_ptr<StaticMeshInstance>> _to_add;
 };
+
+static_assert(!std::is_move_assignable_v<SceneData>);
 
 }
 

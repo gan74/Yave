@@ -219,5 +219,30 @@ y_test_func("fmt twice") {
 	y_test_assert(!std::strcmp(f2, "fmt_twice pls %"));
 }
 
+y_test_func("fmt smalls") {
+	for(usize j = 0; j != 97; ++j) {
+		for(usize i = 0; i != 1037; ++i) {
+			char c = i % 26 + 'a';
+			switch(i % 3) {
+				case 0:
+					fmt("0");
+				break;
+
+				case 1:
+					fmt("1%", c);
+				break;
+
+				case 2:
+					fmt("% %", c, char(std::toupper(c)));
+				break;
+
+			}
+		}
+	}
+	y_test_assert(true);
+}
+
+
+
 
 

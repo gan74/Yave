@@ -56,13 +56,16 @@ MainWindow::MainWindow(ContextPtr cptr) :
 	ImGui::CreateContext();
 	ImGui::GetIO().IniFilename = "editor.ini";
 	ImGui::GetIO().LogFilename = "editor_logs.txt";
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	ImGui::GetIO().ConfigDockingWithShift = false;
+	ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
 
 	Node::Ptr<SecondaryRenderer> gui(new ImGuiRenderer(device()));
 	_ui_renderer = std::make_shared<SimpleEndOfPipe>(gui);
 
 	set_event_handler(new MainEventHandler());
 
-	_engine_view = std::make_unique<EngineView>(context());
+	context()->ui().show<EngineView>();
 }
 
 MainWindow::~MainWindow() {
@@ -124,20 +127,32 @@ void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token)
 }
 
 void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	ImU32 flags = ImGuiWindowFlags_NoTitleBar |
-				  ImGuiWindowFlags_NoResize |
-				  ImGuiWindowFlags_NoMove |
-				  ImGuiWindowFlags_NoScrollbar |
-				  ImGuiWindowFlags_NoSavedSettings |
-				  ImGuiWindowFlags_NoBringToFrontOnFocus |
-				  ImGuiWindowFlags_MenuBar;
-
-
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
 
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking |
+							 ImGuiWindowFlags_NoTitleBar |
+							 ImGuiWindowFlags_NoCollapse |
+							 ImGuiWindowFlags_NoResize |
+							 ImGuiWindowFlags_NoMove |
+							 ImGuiWindowFlags_NoBringToFrontOnFocus |
+							 ImGuiWindowFlags_NoNavFocus;
+
+
 	ImGui::NewFrame();
-	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-	ImGui::Begin("Main window", nullptr, flags);
+
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->Pos);
+	ImGui::SetNextWindowSize(viewport->Size);
+	ImGui::SetNextWindowViewport(viewport->ID);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("Main Window", nullptr, ImGuiWindowFlags_MenuBar | flags);
+
+	ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+
+	ImGui::PopStyleVar(3);
 
 	render_ui(recorder, token);
 
@@ -154,14 +169,32 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 }
 
 void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	// demo
-	ImGui::ShowDemoWindow();
-
-
 	// menu
 	{
 		if(ImGui::BeginMenuBar()) {
+			if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
+
+				if(ImGui::MenuItem(ICON_FA_SAVE " Save")) {
+					FileBrowser* browser = context()->ui().show<FileBrowser>();
+					browser->set_extension_filter("*.ys");
+					browser->set_selected_callback(
+							[ctx = context()](const auto& filename) { ctx->scene().save(filename); return true; }
+						);
+				}
+
+				if(ImGui::MenuItem(ICON_FA_FOLDER " Load")) {
+					FileBrowser* browser = context()->ui().show<FileBrowser>();
+					browser->set_extension_filter("*.ys");
+					browser->set_selected_callback(
+							[ctx = context()](const auto& filename) { ctx->scene().load(filename); return true; }
+						);
+				}
+
+				ImGui::EndMenu();
+			}
+
 			if(ImGui::BeginMenu("View")) {
+				if(ImGui::MenuItem("Engine view")) context()->ui().show<EngineView>();
 				if(ImGui::MenuItem("Entity view")) context()->ui().show<EntityView>();
 				if(ImGui::MenuItem("Resource browser")) context()->ui().show<ResourceBrowser>();
 
@@ -190,45 +223,14 @@ void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& toke
 	}
 
 
-	// toolbar
-	{
-		float toolbar_size = 24.0f;
-		ImVec2 button_size(toolbar_size, toolbar_size);
-
-		if(ImGui::ImageButton(&context()->icons().save(), button_size)) {
-			auto browser = context()->ui().show<FileBrowser>();
-			browser->set_selected_callback(
-					[=](const auto& filename) { context()->scene().save(filename); return true; }
-				);
-		}
-
-		ImGui::SameLine(0.0f, 0.1f);
-
-		if(ImGui::ImageButton(&context()->icons().load(), button_size)) {
-			auto browser = context()->ui().show<FileBrowser>();
-			browser->set_selected_callback(
-					[=](const auto& filename) { context()->scene().load(filename); return true; }
-				);
-		}
-	}
-
 	if(context()->selection().selected()) {
 		context()->ui().show<PropertyPanel>();
 	}
 
-	//ImGui::NextColumn();
+	context()->ui().paint(recorder, token);
 
-	// engine view and overlay
-	{
-		ImGui::BeginChild("Engine view");
-
-		_engine_view->paint(recorder, token);
-
-		// main UI
-		context()->ui().paint(recorder, token);
-
-		ImGui::EndChild();
-	}
+	// demo
+	ImGui::ShowDemoWindow();
 
 }
 

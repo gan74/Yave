@@ -31,7 +31,11 @@ SOFTWARE.
 
 namespace editor {
 
-SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), _scene_view(_scene) {
+SceneData::SceneData(ContextPtr ctx) :
+		ContextLinked(ctx),
+		_default_scene_view(_scene),
+		_scene_view(&_default_scene_view) {
+
 	_default_material = make_asset<Material>(device(), MaterialData()
 			.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
 			.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
@@ -40,12 +44,31 @@ SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), _scene_view(_scene) {
 	load("scene.ys");
 }
 
+
+void SceneData::set_scene_view(SceneView* scene) {
+	if(!scene) {
+		_scene_view = &_default_scene_view;
+	} else {
+		_scene_view = scene;
+	}
+}
+
+void SceneData::reset_scene_view(SceneView* scene) {
+	if(_scene_view == scene) {
+		set_scene_view(nullptr);
+	}
+}
+
 Scene& SceneData::scene() {
 	return _scene;
 }
 
-SceneView& SceneData::view() {
-	return _scene_view;
+SceneView& SceneData::scene_view() {
+	return *_scene_view;
+}
+
+SceneView& SceneData::default_scene_view() {
+	return _default_scene_view;
 }
 
 bool SceneData::is_scene_empty() const {
@@ -55,7 +78,7 @@ bool SceneData::is_scene_empty() const {
 }
 
 math::Vec3 SceneData::to_screen_pos(const math::Vec3& world) {
-	auto h_pos = _scene_view.camera().viewproj_matrix() * math::Vec4(world, 1.0f);
+	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
 
 	return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
 }
@@ -92,12 +115,11 @@ void SceneData::load(std::string_view filename) {
 	}
 }
 
-
 StaticMeshInstance* SceneData::add(AssetId id) {
 	AssetPtr<StaticMesh> mesh = context()->loader().static_mesh().load(id);
 	auto inst = std::make_unique<StaticMeshInstance>(mesh, _default_material);
 	StaticMeshInstance* inst_ptr = inst.get();
-	inst->position() = _scene_view.camera().position() + _scene_view.camera().forward() * 2.0f * inst->radius();
+	inst->position() = _scene_view->camera().position() + _scene_view->camera().forward() * 2.0f * inst->radius();
 	_to_add << std::move(inst);
 	return inst_ptr;
 }

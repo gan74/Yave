@@ -120,7 +120,7 @@ DebugTimer::DebugTimer(const String& msg, const Duration& minimum) : _msg(msg), 
 
 DebugTimer::~DebugTimer() {
 	if(auto time = _chrono.elapsed(); time >= _minimum) {
-		log_msg(_msg + ": " + time.to_millis() + "ms", Log::Perf);
+		log_msg(fmt("%: %ms", _msg, time.to_millis()), Log::Perf);
 	}
 }
 

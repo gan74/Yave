@@ -41,24 +41,22 @@ static core::String clean_name(std::string_view name) {
 	return str;
 }
 
-static TextureView& type_texture(ContextPtr ctx, u32 type) {
+static auto icon(u32 type) {
 	switch(type) {
 		case fs::image_file_type:
-			return ctx->icons().texture();
+			return ICON_FA_IMAGE;
 
 		case fs::mesh_file_type:
-			return ctx->icons().cube();
+			return ICON_FA_CUBE;
 
 		default:
 		break;
 	}
-	return ctx->icons().question_mark();
+	return "";
 }
 
-
-
 ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
-		Widget("Resource browser"),
+		Widget(ICON_FA_OBJECT_GROUP " Resource browser"),
 		ContextLinked(ctx),
 		_root("", filesystem()->current_path()) {
 
@@ -129,8 +127,6 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 		update_node(_current);
 	}
 
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_ModalWindowDarkening]);
-
 	{
 		float width = std::min(ImGui::GetWindowContentRegionWidth() * 0.5f, 200.0f);
 		ImGui::BeginChild("###resourcestree", ImVec2(width, 0), false);
@@ -175,16 +171,14 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 
 		auto curr = _current;
 		for(DirNode& n : curr->children) {
-			if(ImGui::Selectable(n.name.data())) {
+			if(ImGui::Selectable(fmt("%", n.name).data())) {
 				set_current(&n);
 			}
 		}
 
 		for(const auto& file : curr->files) {
 			const auto& name = file.first;
-			ImGui::Image(&type_texture(context(), file.second), math::Vec2(14.0f));
-			ImGui::SameLine();
-			if(ImGui::Selectable(name.data())) {
+			if(ImGui::Selectable(fmt("% %", icon(file.second), name).data())) {
 				try {
 					auto full_name = filesystem()->join(_current->path, name);
 					context()->scene().add(full_name);
@@ -195,8 +189,6 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& 
 		}
 		ImGui::EndChild();
 	}
-
-	ImGui::PopStyleColor();
 }
 
 template<typename T>
