@@ -38,7 +38,7 @@ ImageImporter::ImageImporter(ContextPtr ctx) : Widget("Mesh importer"), ContextL
 	_browser.set_canceled_callback([this] { close(); return true; });
 }
 
-void ImageImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token)  {
+void ImageImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)  {
 	_browser.paint(recorder, token);
 
 	if(is_loading()) {

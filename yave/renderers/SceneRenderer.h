@@ -41,7 +41,7 @@ class SceneRenderer : public SecondaryRenderer {
 	protected:
 		void build_frame_graph(FrameGraphNode&) override;
 
-		void pre_render(CmdBufferRecorder<>& recorder, const FrameToken&token) override;
+		void pre_render(CmdBufferRecorder& recorder, const FrameToken&token) override;
 
 	private:
 		const SceneView& _view;

@@ -119,7 +119,7 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 	}
 }
 
-void ResourceBrowser::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	unused(recorder, token);
 
 	if(_update_chrono.elapsed().seconds() > update_secs) {

@@ -72,7 +72,7 @@ void EntityView::add_light() {
 	context()->scene().scene().lights() << std::move(light);
 }
 
-void EntityView::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	char buffer[256];
 
 	if(ImGui::Button("+", math::Vec2(24))) {

@@ -31,10 +31,10 @@ class Frame : public UiElement {
 	public:
 		Frame(std::string_view title, u32 flags = 0);
 
-		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
+		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
 	protected:
-		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
+		virtual void paint_ui(CmdBufferRecorder&, const FrameToken&) = 0;
 
 		u32 _flags;
 };

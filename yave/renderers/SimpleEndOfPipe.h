@@ -32,7 +32,7 @@ class SimpleEndOfPipe : public EndOfPipe {
 
 	protected:
 		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
+		void render(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
 	private:
 		const Framebuffer& create_framebuffer(const ColorAttachmentView& out);

@@ -29,7 +29,7 @@ namespace editor {
 PerformanceMetrics::PerformanceMetrics() : Widget("Performance", ImGuiWindowFlags_AlwaysAutoResize) {
 }
 
-void PerformanceMetrics::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void PerformanceMetrics::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	auto time = _timer.reset();
 
 	ImGui::Text("frame time: %.2fms", time.to_millis());

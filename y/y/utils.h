@@ -38,7 +38,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/os.h>
 
-#define y_defer(expr) auto y_create_name_with_prefix(defer) = y::detail::ScopeExit([&]() { expr; })
+#define y_defer(expr) auto y_create_name_with_prefix(defer) = y::ScopeExit([&]() { expr; })
 
 namespace y {
 
@@ -123,7 +123,6 @@ static_assert(is_little_endian() || is_big_endian(), "Unable to determine endian
 
 
 
-namespace detail {
 
 template<typename T>
 class ScopeExit {
@@ -139,7 +138,6 @@ class ScopeExit {
 		T ex;
 };
 
-}
 }
 
 

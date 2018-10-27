@@ -69,7 +69,7 @@ const ImU32 flags =
 Gizmo::Gizmo(ContextPtr cptr) : Frame("Gizmo", flags), ContextLinked(cptr) {
 }
 
-void Gizmo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(!context()->selection().selected()) {
 		return;
 	}

@@ -30,8 +30,6 @@ namespace yave {
 template<CmdBufferUsage Usage>
 class CmdBufferPool : public CmdBufferPoolBase {
 
-	static_assert(Usage != CmdBufferUsage::Secondary, "Secondary command buffers are not supported");
-
 	public:
 		CmdBufferPool() = default;
 

@@ -27,14 +27,12 @@ SOFTWARE.
 namespace yave {
 
 struct AsyncSubmit {
-	template<CmdBufferUsage Usage>
-	void operator()(const RecordedCmdBuffer<Usage>&) const {
+	void operator()(const RecordedCmdBuffer&) const {
 	}
 };
 
 struct SyncSubmit {
-	template<CmdBufferUsage Usage>
-	void operator()(const RecordedCmdBuffer<Usage>& b) const {
+	void operator()(const RecordedCmdBuffer& b) const {
 		Y_LOG_PERF("queue");
 		b.wait();
 	}

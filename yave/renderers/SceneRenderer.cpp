@@ -44,7 +44,7 @@ const SceneView& SceneRenderer::scene_view() const {
 void SceneRenderer::build_frame_graph(FrameGraphNode&) {
 }
 
-void SceneRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void SceneRenderer::pre_render(CmdBufferRecorder& recorder, const FrameToken& token) {
 	auto region = recorder.region("SceneRenderer::pre_render");
 
 	{

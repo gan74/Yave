@@ -65,7 +65,7 @@ class SecondaryRenderer : public RendererBase {
 	protected:
 		friend class RenderingPipeline;
 
-		virtual void pre_render(CmdBufferRecorder<>&, const FrameToken&) {
+		virtual void pre_render(CmdBufferRecorder&, const FrameToken&) {
 		}
 
 
@@ -81,10 +81,10 @@ class Renderer : public RendererBase {
 	protected:
 		friend class RenderingPipeline;
 
-		virtual void pre_render(CmdBufferRecorder<>&, const FrameToken&) {
+		virtual void pre_render(CmdBufferRecorder&, const FrameToken&) {
 		}
 
-		virtual void render(CmdBufferRecorder<>& recorder, const FrameToken& token) = 0;
+		virtual void render(CmdBufferRecorder& recorder, const FrameToken& token) = 0;
 };
 
 class EndOfPipe : public RendererBase {
@@ -95,7 +95,7 @@ class EndOfPipe : public RendererBase {
 	protected:
 		friend class RenderingPipeline;
 
-		virtual void render(CmdBufferRecorder<>& recorder, const FrameToken& token) = 0;
+		virtual void render(CmdBufferRecorder& recorder, const FrameToken& token) = 0;
 };
 
 }

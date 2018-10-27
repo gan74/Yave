@@ -53,7 +53,7 @@ void GBufferRenderer::build_frame_graph(FrameGraphNode& frame_graph) {
 	frame_graph.schedule(_scene);
 }
 
-void GBufferRenderer::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void GBufferRenderer::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 	auto region = recorder.region("GBufferRenderer::render");
 
 	auto pass = recorder.bind_framebuffer(_gbuffer);

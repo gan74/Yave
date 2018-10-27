@@ -93,7 +93,7 @@ void MainWindow::exec() {
 		while(update()) {
 			if(_swapchain->size().x() && _swapchain->size().y()) {
 				FrameToken frame = _swapchain->next_frame();
-				CmdBufferRecorder<> recorder(device()->create_cmd_buffer());
+				CmdBufferRecorder recorder(device()->create_cmd_buffer());
 
 				render(recorder, frame);
 				present(recorder, frame);
@@ -104,8 +104,8 @@ void MainWindow::exec() {
 	device()->queue(QueueFamily::Graphics).wait();
 }
 
-void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token) {
-	RecordedCmdBuffer<> cmd_buffer(std::move(recorder));
+void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
+	RecordedCmdBuffer cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 	auto graphic_queue = device()->queue(QueueFamily::Graphics).vk_queue();
@@ -126,7 +126,7 @@ void MainWindow::present(CmdBufferRecorder<>& recorder, const FrameToken& token)
 	context()->flush_deferred();
 }
 
-void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void MainWindow::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking |
@@ -168,7 +168,7 @@ void MainWindow::render(CmdBufferRecorder<>& recorder, const FrameToken& token) 
 	}
 }
 
-void MainWindow::render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	// menu
 	{
 		if(ImGui::BeginMenuBar()) {

@@ -32,10 +32,10 @@ class PropertyPanel : public Widget, public ContextLinked {
 
 
 		//bool is_visible() const override;
-		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
+		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 };
 
 }

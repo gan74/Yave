@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 
 static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
-	return vk::CommandBufferUsageFlagBits(uenum(u) & ~uenum(CmdBufferUsage::Secondary));
+	return vk::CommandBufferUsageFlagBits(uenum(u) /*& ~uenum(CmdBufferUsage::Secondary)*/);
 }
 
 static vk::PipelineStageFlags pipeline_stage(vk::AccessFlags access) {
@@ -63,7 +63,7 @@ CmdBufferRegion::~CmdBufferRegion() {
 	}
 }
 
-CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, const char* name, const math::Vec4& color) :
+CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color) :
 		DeviceLinked(cmd_buffer.device()),
 		_buffer(cmd_buffer.vk_cmd_buffer()) {
 
@@ -75,7 +75,7 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, const 
 
 // -------------------------------------------------- RenderPassRecorder --------------------------------------------------
 
-RenderPassRecorder::RenderPassRecorder(CmdBufferRecorderBase& cmd_buffer, const Viewport& viewport) : _cmd_buffer(cmd_buffer), _viewport(viewport) {
+RenderPassRecorder::RenderPassRecorder(CmdBufferRecorder& cmd_buffer, const Viewport& viewport) : _cmd_buffer(cmd_buffer), _viewport(viewport) {
 }
 
 RenderPassRecorder::~RenderPassRecorder() {
@@ -153,9 +153,18 @@ vk::CommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
 }
 
 
-// -------------------------------------------------- CmdBufferRecorderBase --------------------------------------------------
+// -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 
-CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsage usage) {
+CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
+	swap(other);
+}
+
+CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
+	swap(other);
+	return *this;
+}
+
+CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage) {
 	CmdBufferBase::swap(base);
 
 	auto info = vk::CommandBufferBeginInfo()
@@ -166,39 +175,39 @@ CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferBase&& base, CmdBufferUsag
 }
 
 
-CmdBufferRecorderBase::~CmdBufferRecorderBase() {
+CmdBufferRecorder::~CmdBufferRecorder() {
 	if(_render_pass) {
-		y_fatal("CmdBufferRecorderBase destroyed before one of its RenderPassRecorder.");
+		y_fatal("CmdBufferRecorder destroyed before one of its RenderPassRecorder.");
 	}
 	if(vk_cmd_buffer()) {
-		y_fatal("CmdBufferRecorderBase destroyed before end() was called.");
+		y_fatal("CmdBufferRecorder destroyed before end() was called.");
 	}
 }
 
-void CmdBufferRecorderBase::end_renderpass() {
+void CmdBufferRecorder::end_renderpass() {
 	if(!_render_pass) {
-		y_fatal("CmdBufferRecorderBase has no render pass");
+		y_fatal("CmdBufferRecorder has no render pass");
 	}
 	vk_cmd_buffer().endRenderPass();
 	_render_pass = nullptr;
 }
 
-void CmdBufferRecorderBase::check_no_renderpass() const {
+void CmdBufferRecorder::check_no_renderpass() const {
 	if(_render_pass) {
 		y_fatal("This command can not be used while this command buffer has a RenderPassRecorder.");
 	}
 }
 
-void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
+void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
 	CmdBufferBase::swap(other);
 	std::swap(_render_pass, other._render_pass);
 }
 
-CmdBufferRegion CmdBufferRecorderBase::region(const char* name, const math::Vec4& color) {
+CmdBufferRegion CmdBufferRecorder::region(const char* name, const math::Vec4& color) {
 	return CmdBufferRegion(*this, name, color);
 }
 
-void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
+void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
 	check_no_renderpass();
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
@@ -218,7 +227,7 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 }
 
 
-void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
+void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
 	math::Vec3ui dispatch_size;
 	for(usize i = 0; i != 3; ++i) {
 		dispatch_size[i] = size[i] / program.local_size()[i] + !!(size[i] % program.local_size()[i]);
@@ -226,11 +235,11 @@ void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const m
 	dispatch(program, dispatch_size, descriptor_sets, push_constants);
 }
 
-void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
+void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
 	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
 }
 
-void CmdBufferRecorderBase::barriers(const core::ArrayView<BufferBarrier>& buffers, const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
+void CmdBufferRecorder::barriers(const core::ArrayView<BufferBarrier>& buffers, const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
 	check_no_renderpass();
 
 	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
@@ -249,23 +258,40 @@ void CmdBufferRecorderBase::barriers(const core::ArrayView<BufferBarrier>& buffe
 		);
 }
 
-void CmdBufferRecorderBase::barriers(const core::ArrayView<BufferBarrier>& buffers, PipelineStage src, PipelineStage dst) {
+void CmdBufferRecorder::barriers(const core::ArrayView<BufferBarrier>& buffers, PipelineStage src, PipelineStage dst) {
 	barriers(buffers, {}, src, dst);
 }
 
-void CmdBufferRecorderBase::barriers(const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
+void CmdBufferRecorder::barriers(const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
 	barriers({}, images, src, dst);
 }
 
 
-void CmdBufferRecorderBase::copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<BufferTransfer::TransferDst>& dst) {
+void CmdBufferRecorder::copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<yave::BufferTransfer::TransferDst>& dst) {
 	if(src.byte_size() != dst.byte_size()) {
 		y_fatal("Buffer size do not match.");
 	}
 	vk_cmd_buffer().copyBuffer(src.vk_buffer(), dst.vk_buffer(), vk::BufferCopy(src.byte_offset(), dst.byte_offset(), src.byte_size()));
 }
 
-RenderPassRecorder CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& framebuffer) {
+void CmdBufferRecorder::blit(const ImageBase& src, ImageBase& dst) {
+	vk::ImageBlit blit = vk::ImageBlit()
+			.setSrcSubresource(
+				vk::ImageSubresourceLayers()
+					.setAspectMask(src.format().vk_aspect())
+					.setLayerCount(1)
+				)
+			.setDstSubresource(
+				 vk::ImageSubresourceLayers()
+					 .setAspectMask(dst.format().vk_aspect())
+					 .setLayerCount(1)
+				)
+		;
+
+	vk_cmd_buffer().blitImage(src.vk_image(), vk_image_layout(src.usage()), dst.vk_image(), vk_image_layout(dst.usage()), blit, vk::Filter::eLinear);
+}
+
+RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
 	check_no_renderpass();
 
 	auto clear_values = core::vector_with_capacity<vk::ClearValue>(framebuffer.attachment_count() + 1);
@@ -293,7 +319,7 @@ RenderPassRecorder CmdBufferRecorderBase::bind_framebuffer(const Framebuffer& fr
 	return RenderPassRecorder(*this, Viewport(size));
 }
 
-void CmdBufferRecorderBase::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
+void CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
 	check_no_renderpass();
 
 	auto barrier = create_image_barrier(

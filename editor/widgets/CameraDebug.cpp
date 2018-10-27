@@ -30,7 +30,7 @@ namespace editor {
 CameraDebug::CameraDebug(ContextPtr cptr) : Widget("Camera debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
 }
 
-void CameraDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void CameraDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	const auto& camera = context()->scene().scene_view().camera();
 	auto pos = camera.position();
 	auto fwd = camera.forward();

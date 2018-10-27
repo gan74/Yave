@@ -35,7 +35,7 @@ void SimpleEndOfPipe::build_frame_graph(FrameGraphNode& frame_graph) {
 	}
 }
 
-void SimpleEndOfPipe::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void SimpleEndOfPipe::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 	auto region = recorder.region("SimpleEndOfPipe::render");
 
 	auto pass = recorder.bind_framebuffer(create_framebuffer(token.image_view));

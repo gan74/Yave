@@ -38,7 +38,7 @@ PropertyPanel::PropertyPanel(ContextPtr cptr) :
 	return UiElement::is_visible() && context()->selection().selected();
 }*/
 
-void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void PropertyPanel::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	Widget::paint(recorder, token);
 
 	/*if(Transformable* selected = context()->selection().selected()) {
@@ -54,7 +54,7 @@ void PropertyPanel::paint(CmdBufferRecorder<>& recorder, const FrameToken& token
 	}*/
 }
 
-void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(!context()->selection().selected()) {
 		return;
 	}
@@ -122,7 +122,7 @@ void PropertyPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
 
 			ImGui::SameLine();
 			ImGui::BeginGroup();
-			ImGui::Text("tmp");
+			ImGui::Text("temperature slider should be here");
 			ImGui::EndGroup();
 
 			ImGui::EndPopup();

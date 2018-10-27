@@ -37,7 +37,7 @@ void FramebufferRenderer::build_frame_graph(FrameGraphNode& frame_graph) {
 	}
 }
 
-void FramebufferRenderer::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void FramebufferRenderer::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 	auto region = recorder.region("FramebufferRenderer::render");
 
 	auto pass = recorder.bind_framebuffer(_framebuffer);

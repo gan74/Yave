@@ -33,7 +33,7 @@ class CameraDebug : public Widget, public ContextLinked {
 		CameraDebug(ContextPtr cptr);
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 };
 
 }

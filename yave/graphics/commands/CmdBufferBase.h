@@ -26,8 +26,6 @@ SOFTWARE.
 
 namespace yave {
 
-class CmdBufferRecorderBase;
-
 struct CmdBufferBase : NonCopyable {
 	public:
 		DevicePtr device() const;

@@ -31,7 +31,7 @@ namespace yave {
 #warning command buffers might need to be synchronized at the pool level
 
 static vk::CommandBufferLevel cmd_level(CmdBufferUsage u) {
-	return u == CmdBufferUsage::Secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary;
+	return /*u == CmdBufferUsage::Secondary ? vk::CommandBufferLevel::eSecondary :*/ vk::CommandBufferLevel::ePrimary;
 }
 
 static vk::CommandPoolCreateFlagBits cmd_create_flags(CmdBufferUsage u) {
@@ -67,7 +67,7 @@ vk::CommandPool CmdBufferPoolBase::vk_pool() const {
 }
 
 void CmdBufferPoolBase::join_all() {
-	if(_fences.is_empty() || _usage == CmdBufferUsage::Secondary) {
+	if(_fences.is_empty()/* || _usage == CmdBufferUsage::Secondary*/) {
 		return;
 	}
 
@@ -103,10 +103,7 @@ CmdBufferData CmdBufferPoolBase::create_data() {
 			.setLevel(cmd_level(_usage))
 		).back();
 
-	auto fence =
-		(_usage == CmdBufferUsage::Secondary)
-			? vk::Fence()
-			: device()->vk_device().createFence(vk::FenceCreateInfo());
+	auto fence = device()->vk_device().createFence(vk::FenceCreateInfo());
 
 	_fences << fence;
 	//log_msg("new command buffer created (" + core::str(uenum(_usage)) + ") " + _cmd_buffers.size() + " waiting");

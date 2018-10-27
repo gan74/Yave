@@ -31,7 +31,7 @@ namespace yave {
 enum class CmdBufferUsage {
 	Primary = uenum(vk::CommandBufferUsageFlagBits()), // eSimultaneousUse ?
 	Disposable = uenum(vk::CommandBufferUsageFlagBits::eOneTimeSubmit),
-	Secondary = uenum((std::max(Primary, Disposable) << 1)) | uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
+	//Secondary = uenum((std::max(Primary, Disposable) << 1)) | uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 };
 
 class CmdBufferBase;
@@ -41,12 +41,9 @@ template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
 class CmdBufferPool;
 
 template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
-class RecordedCmdBuffer;
-
-template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
 class CmdBuffer;
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
+class RecordedCmdBuffer;
 class CmdBufferRecorder;
 
 }

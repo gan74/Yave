@@ -33,7 +33,7 @@ class PerformanceMetrics : public Widget {
 		PerformanceMetrics();
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
 		core::Chrono _timer;
 

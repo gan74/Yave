@@ -31,7 +31,7 @@ namespace editor {
 MemoryInfo::MemoryInfo(ContextPtr cptr) : Widget("Memory info", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
 }
 
-void MemoryInfo::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	core::String dump = context()->device()->allocator().dump_info().data();
 	ImGui::TextUnformatted(dump.begin(), dump.end());
 }

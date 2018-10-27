@@ -31,7 +31,7 @@ class SettingsPanel : public Widget, public ContextLinked {
 		SettingsPanel(ContextPtr cptr);
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 };
 
 }

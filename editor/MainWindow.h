@@ -49,10 +49,10 @@ class MainWindow : private Window, public ContextLinked {
 	private:
 		void resized() override;
 
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
-		void present(CmdBufferRecorder<>& recorder, const FrameToken& token);
+		void render(CmdBufferRecorder& recorder, const FrameToken& token);
+		void present(CmdBufferRecorder& recorder, const FrameToken& token);
 
-		void render_ui(CmdBufferRecorder<>& recorder, const FrameToken& token);
+		void render_ui(CmdBufferRecorder& recorder, const FrameToken& token);
 
 		void create_swapchain();
 

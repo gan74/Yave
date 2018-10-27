@@ -61,7 +61,7 @@ class RenderGraph : NonCopyable {
 			return v;*/
 		}
 
-		void render(CmdBufferRecorderBase& recorder, const RenderGraphResourceBase& output) {
+		void render(CmdBufferRecorder& recorder, const RenderGraphResourceBase& output) {
 			for(const auto& pass : compile_sequential(output)) {
 				pass->render(recorder, _resources);
 			}

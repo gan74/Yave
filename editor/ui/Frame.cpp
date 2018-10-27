@@ -29,7 +29,7 @@ namespace editor {
 Frame::Frame(std::string_view title, u32 flags) : UiElement(title), _flags(flags) {
 }
 
-void Frame::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void Frame::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	if(!is_visible()) {
 		return;
 	}

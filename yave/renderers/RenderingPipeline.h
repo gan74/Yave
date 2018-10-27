@@ -43,7 +43,7 @@ class RenderingPipeline : NonCopyable {
 	public:
 		RenderingPipeline(const NodePtr& root);
 
-		void render(CmdBufferRecorder<>& recorder, const FrameToken& token);
+		void render(CmdBufferRecorder& recorder, const FrameToken& token);
 
 	private:
 

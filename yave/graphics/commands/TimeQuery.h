@@ -25,7 +25,7 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 
 #include <yave/yave.h>
-#include "CmdBufferRecorderBase.h"
+#include "CmdBufferRecorder.h"
 
 namespace yave {
 
@@ -35,8 +35,8 @@ class TimeQuery : NonCopyable, public DeviceLinked {
 		TimeQuery(DevicePtr dptr);
 		~TimeQuery();
 
-		void start(CmdBufferRecorderBase& recorder);
-		void stop(CmdBufferRecorderBase& recorder);
+		void start(CmdBufferRecorder& recorder);
+		void stop(CmdBufferRecorder& recorder);
 
 		core::Duration get();
 

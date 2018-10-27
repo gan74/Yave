@@ -40,7 +40,7 @@ class RenderGraphPassBase : NonCopyable {
 		virtual ~RenderGraphPassBase() = default;
 
 		virtual void setup(RenderGraphBuilder& builder) = 0;
-		virtual void render(CmdBufferRecorderBase& recorder, const RenderGraphResources& resources) const = 0;
+		virtual void render(CmdBufferRecorder& recorder, const RenderGraphResources& resources) const = 0;
 
 		u32 index() const {
 			return _index;
@@ -76,7 +76,7 @@ template<typename T>
 class RenderGraphPass final : public RenderGraphPassBase {
 	public:
 		using setup_func = core::Function<void(RenderGraphBuilder&, T&)>;
-		using render_func = core::Function<void(CmdBufferRecorderBase& recorder, const T& , const RenderGraphResources&)>;
+		using render_func = core::Function<void(CmdBufferRecorder& recorder, const T& , const RenderGraphResources&)>;
 
 		RenderGraphPass(u32 index, setup_func&& setup, render_func&& render) : RenderGraphPassBase(index), _render(std::move(render)), _setup(std::move(setup)) {
 		}
@@ -85,7 +85,7 @@ class RenderGraphPass final : public RenderGraphPassBase {
 			_setup(builder, _data);
 		}
 
-		void render(CmdBufferRecorderBase& recorder, const RenderGraphResources& resources) const override {
+		void render(CmdBufferRecorder& recorder, const RenderGraphResources& resources) const override {
 			_render(recorder, _data, resources);
 		}
 

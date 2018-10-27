@@ -34,7 +34,7 @@ class UiElement : NonCopyable {
 		UiElement(std::string_view title);
 		virtual ~UiElement() = default;
 
-		virtual void paint(CmdBufferRecorder<>&, const FrameToken&) = 0;
+		virtual void paint(CmdBufferRecorder&, const FrameToken&) = 0;
 
 		virtual bool is_visible() const;
 		void show();

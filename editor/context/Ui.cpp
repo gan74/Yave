@@ -48,7 +48,7 @@ void Ui::ok(const char* title, const char* message) {
 #endif
 }
 
-void Ui::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	for(auto& e : _widgets) {
 		e->paint(recorder, token);
 	}

@@ -33,7 +33,7 @@ class MemoryInfo : public Widget, public ContextLinked {
 		MemoryInfo(ContextPtr cptr);
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 };
 
 }

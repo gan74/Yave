@@ -68,7 +68,7 @@ static void fix_undocked_bg() {
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, final);
 }
 
-void Widget::paint(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	if(!is_visible()) {
 		return;
 	}

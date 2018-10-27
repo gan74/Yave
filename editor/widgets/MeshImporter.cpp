@@ -37,7 +37,7 @@ MeshImporter::MeshImporter(ContextPtr ctx) : Widget("Mesh importer"), ContextLin
 	_browser.set_canceled_callback([this] { close(); return true; });
 }
 
-void MeshImporter::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token)  {
+void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)  {
 	_browser.paint(recorder, token);
 
 	if(is_loading()) {

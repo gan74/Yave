@@ -40,11 +40,11 @@ TimeQuery::~TimeQuery() {
 	destroy(_pool);
 }
 
-void TimeQuery::start(CmdBufferRecorderBase& recorder) {
+void TimeQuery::start(CmdBufferRecorder& recorder) {
 	recorder.vk_cmd_buffer().writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, _pool, 0);
 }
 
-void TimeQuery::stop(CmdBufferRecorderBase& recorder) {
+void TimeQuery::stop(CmdBufferRecorder& recorder) {
 	recorder.vk_cmd_buffer().writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, _pool, 1);
 }
 

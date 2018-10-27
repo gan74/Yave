@@ -31,7 +31,7 @@ class Widget : public UiElement {
 	public:
 		Widget(std::string_view title, u32 flags = 0);
 
-		void paint(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
+		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
 		const math::Vec2& position() const;
 		const math::Vec2& size() const;
@@ -39,7 +39,7 @@ class Widget : public UiElement {
 		void set_has_parent(bool has);
 
 	protected:
-		virtual void paint_ui(CmdBufferRecorder<>&, const FrameToken&) = 0;
+		virtual void paint_ui(CmdBufferRecorder&, const FrameToken&) = 0;
 
 		void set_closable(bool closable);
 

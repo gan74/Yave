@@ -57,7 +57,7 @@ class FileBrowser : public Widget {
 		void set_extension_filter(std::string_view exts);
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
 		void done(const core::String& filename);
 		void cancel();

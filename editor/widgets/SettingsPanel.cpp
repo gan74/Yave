@@ -45,7 +45,7 @@ static void keybox(const char* name, Key& key) {
 SettingsPanel::SettingsPanel(ContextPtr cptr) : Widget("Settings"), ContextLinked(cptr) {
 }
 
-void SettingsPanel::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	int flags = ImGuiTreeNodeFlags_DefaultOpen;
 
 	if(ImGui::CollapsingHeader("Camera", flags)) {

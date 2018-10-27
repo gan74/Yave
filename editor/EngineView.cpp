@@ -64,7 +64,7 @@ void EngineView::create_renderer() {
 	_view			= std::make_shared<TextureView>(_renderer->output());
 }
 
-void EngineView::paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	if(!_renderer || content_size() != renderer_size()) {
 		create_renderer();
 		return;

@@ -29,7 +29,7 @@ int test_graph() {
 				builder.write(pass.storage);
 				builder.create(a_output);
 			},
-			[](CmdBufferRecorderBase& recorder, const Pass& pass, const RenderGraphResources& res) {
+			[](CmdBufferRecorder& recorder, const Pass& pass, const RenderGraphResources& res) {
 				unused(recorder, pass, res);
 				log_msg("A");
 			});
@@ -40,7 +40,7 @@ int test_graph() {
 				b_output = builder.create<Texture>();
 				builder.write(b_output);
 			},
-			[](CmdBufferRecorderBase& recorder, const Pass& pass, const RenderGraphResources& res) {
+			[](CmdBufferRecorder& recorder, const Pass& pass, const RenderGraphResources& res) {
 				unused(recorder, pass, res);
 				log_msg("B");
 			});

@@ -41,7 +41,7 @@ class MeshImporter final : public Widget, public ContextLinked {
 		}
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&recorder, const FrameToken&token) override;
+		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
 
 		void import_async(const core::String& filename);
 

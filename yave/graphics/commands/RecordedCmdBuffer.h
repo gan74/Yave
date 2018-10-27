@@ -26,15 +26,9 @@ SOFTWARE.
 
 namespace yave {
 
-template<CmdBufferUsage Usage>
 class RecordedCmdBuffer : public CmdBufferBase {
 
-	CmdBufferBase&& end_recorder(CmdBufferRecorder<Usage>&& recorder) {
-		/*if constexpr(Usage != CmdBufferUsage::Secondary) {
-			recorder.end_renderpass();
-		}*/
-		static_assert(Usage != CmdBufferUsage::Secondary, "Secondary command buffers are not supported");
-
+	CmdBufferBase&& end_recorder(CmdBufferRecorder&& recorder) {
 		recorder.vk_cmd_buffer().end();
 		return std::move(recorder);
 	}
@@ -42,7 +36,7 @@ class RecordedCmdBuffer : public CmdBufferBase {
 	public:
 		RecordedCmdBuffer() = default;
 
-		RecordedCmdBuffer(CmdBufferRecorder<Usage>&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
+		RecordedCmdBuffer(CmdBufferRecorder&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
 		}
 
 		RecordedCmdBuffer(RecordedCmdBuffer&& other) {
@@ -55,14 +49,11 @@ class RecordedCmdBuffer : public CmdBufferBase {
 		}
 
 	private:
-		friend class CmdBufferRecorder<Usage>;
+		friend class CmdBufferRecorder;
 
 		RecordedCmdBuffer(CmdBufferBase&& other) : CmdBufferBase(std::move(other)) {
 		}
 };
-
-template<CmdBufferUsage Usage>
-RecordedCmdBuffer(CmdBufferRecorder<Usage>&&) -> RecordedCmdBuffer<Usage>;
 
 }
 

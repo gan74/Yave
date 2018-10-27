@@ -60,8 +60,8 @@ class TiledDeferredRenderer : public Renderer {
 
 	protected:
 		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void pre_render(CmdBufferRecorder<>& recorder, const FrameToken&) override;
-		void render(CmdBufferRecorder<>& recorder, const FrameToken&) override;
+		void pre_render(CmdBufferRecorder& recorder, const FrameToken&) override;
+		void render(CmdBufferRecorder& recorder, const FrameToken&) override;
 
 	private:
 

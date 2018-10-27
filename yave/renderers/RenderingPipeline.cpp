@@ -39,7 +39,7 @@ void RenderingPipeline::add_node(NodeDependencyMap& dependencies, const NodePtr&
 	}
 }
 
-void RenderingPipeline::render(CmdBufferRecorder<>& recorder, const FrameToken& token) {
+void RenderingPipeline::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 	NodeDependencyMap dependencies;
 	add_node(dependencies, _root);
 

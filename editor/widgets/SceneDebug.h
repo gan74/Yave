@@ -33,7 +33,7 @@ class SceneDebug : public Widget, public ContextLinked {
 		SceneDebug(ContextPtr cptr);
 
 	private:
-		void paint_ui(CmdBufferRecorder<>&, const FrameToken&) override;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 };
 
 }

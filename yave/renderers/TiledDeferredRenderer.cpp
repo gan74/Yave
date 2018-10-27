@@ -121,7 +121,7 @@ void TiledDeferredRenderer::build_frame_graph(FrameGraphNode& frame_graph) {
 	frame_graph.schedule(_gbuffer);
 }
 
-void TiledDeferredRenderer::pre_render(CmdBufferRecorder<>& recorder, const FrameToken&) {
+void TiledDeferredRenderer::pre_render(CmdBufferRecorder& recorder, const FrameToken&) {
 	auto region = recorder.region("TiledDeferredRenderer::pre_render");
 
 	auto directionals = core::vector_with_capacity<const Light*>(4);
@@ -143,7 +143,7 @@ void TiledDeferredRenderer::pre_render(CmdBufferRecorder<>& recorder, const Fram
 }
 
 
-void TiledDeferredRenderer::render(CmdBufferRecorder<>& recorder, const FrameToken&) {
+void TiledDeferredRenderer::render(CmdBufferRecorder& recorder, const FrameToken&) {
 	auto region = recorder.region("TiledDeferredRenderer::render");
 
 	struct PushData {

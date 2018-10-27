@@ -47,7 +47,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		ResourceBrowser(ContextPtr ctx);
 
 	protected:
-		void paint_ui(CmdBufferRecorder<>& recorder, const FrameToken& token) override;
+		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
 	private:
 		template<typename T>

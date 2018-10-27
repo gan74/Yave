@@ -48,7 +48,7 @@ static AssetPtr<StaticMesh> create_mesh(ContextPtr cptr) {
 SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
 }
 
-void SceneDebug::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::Button("Spawn cubes")) {
 		auto cam_pos = context()->scene().scene_view().camera().position();
 

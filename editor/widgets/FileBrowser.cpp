@@ -109,7 +109,7 @@ std::string_view FileBrowser::path() const {
 }
 
 
-void FileBrowser::paint_ui(CmdBufferRecorder<>&, const FrameToken&) {
+void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	{
 		if(ImGui::InputText("###path", _path_buffer.begin(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			set_path(full_path());
