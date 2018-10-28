@@ -13,7 +13,7 @@ For now I am focussing on creating a decent Vulkan wrapper/interface and a small
 
 ![Current status](https://i.imgur.com/fLydq3W.png)
 ![Current status](https://i.imgur.com/TaJzCya.gif)
-![Current status](https://i.imgur.com/LY5muVA.png)
+![Current status](https://i.imgur.com/40ucikH.png)
 
 The editor is currently unusable but I am working on it.
 
@@ -34,7 +34,6 @@ You need:
  * A C++17 compiler (GCC 7.1)
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
  * For tools:
-   * [Rust](https://www.rust-lang.org/en-US/)
    * [Assimp](http://assimp.sourceforge.net/)
 
 

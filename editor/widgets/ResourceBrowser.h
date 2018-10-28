@@ -67,9 +67,13 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 		static constexpr float update_secs = 5.0f;
 		core::Chrono _update_chrono;
+		bool _force_refresh = false;
 
 		DirNode _root;
 		NotOwner<DirNode*> _current = nullptr;
+
+		core::String _hovered_asset;
+
 
 };
 

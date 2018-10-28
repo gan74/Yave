@@ -35,6 +35,11 @@ void AssetStore::remove(AssetId id) {
 	y_throw("Unsuported operation.");
 }
 
+void AssetStore::rename(AssetId id, std::string_view new_name) {
+	unused(id, new_name);
+	y_throw("Unsuported operation.");
+}
+
 const FileSystemModel* AssetStore::filesystem() const {
 	return nullptr;
 }

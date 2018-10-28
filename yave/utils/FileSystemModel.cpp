@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 
-core::String FileSystemModel::extention(std::string_view path) const noexcept {
+core::String FileSystemModel::extention(std::string_view path) const {
 	for(usize i = path.size(); i != 0; --i) {
 		if(path[i - 1] == '.') {
 			return core::String(&path[i - 1], path.size() - i + 1);
@@ -36,7 +36,7 @@ core::String FileSystemModel::extention(std::string_view path) const noexcept {
 	return "";
 }
 
-bool FileSystemModel::is_parent(std::string_view parent, std::string_view path) const noexcept {
+bool FileSystemModel::is_parent(std::string_view parent, std::string_view path) const {
 	auto par = absolute(parent);
 	auto f = absolute(path);
 	return /*par.size() > f.size() &&*/ f.starts_with(par);
@@ -54,28 +54,28 @@ const FileSystemModel* FileSystemModel::local_filesystem() {
 
 #ifndef YAVE_NO_STDFS
 
-core::String LocalFileSystemModel::current_path() const noexcept {
+core::String LocalFileSystemModel::current_path() const {
 	return fs::current_path().string();
 }
 
-core::String LocalFileSystemModel::parent_path(std::string_view path) const noexcept {
+core::String LocalFileSystemModel::parent_path(std::string_view path) const {
 	//return fs::path(path).parent_path().string();
 	return LocalFileSystemModel::join(path, "..");
 }
 
-core::String LocalFileSystemModel::filename(std::string_view path) const noexcept {
+core::String LocalFileSystemModel::filename(std::string_view path) const {
 	return fs::path(path).filename().string();
 }
 
-bool LocalFileSystemModel::exists(std::string_view path) const noexcept {
+bool LocalFileSystemModel::exists(std::string_view path) const {
 	return fs::exists(path);
 }
 
-bool LocalFileSystemModel::is_directory(std::string_view path) const noexcept {
+bool LocalFileSystemModel::is_directory(std::string_view path) const {
 	return fs::is_directory(path);
 }
 
-core::String LocalFileSystemModel::join(std::string_view path, std::string_view name) const noexcept {
+core::String LocalFileSystemModel::join(std::string_view path, std::string_view name) const {
 	if(!path.size()) {
 		return name;
 	}
@@ -90,11 +90,11 @@ core::String LocalFileSystemModel::join(std::string_view path, std::string_view 
 	return result;
 }
 
-core::String LocalFileSystemModel::absolute(std::string_view path) const noexcept {
+core::String LocalFileSystemModel::absolute(std::string_view path) const {
 	return fs::absolute(path).string();
 }
 
-void LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const noexcept {
+void LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
 	try {
 		for(auto& p : fs::directory_iterator(path)) {
 			fs::path path = p.path().filename();
@@ -105,10 +105,20 @@ void LocalFileSystemModel::for_each(std::string_view path, const for_each_f& fun
 	}
 }
 
-bool LocalFileSystemModel::create_directory(std::string_view path) const noexcept {
+bool LocalFileSystemModel::create_directory(std::string_view path) const {
 	try {
 		fs::create_directory(fs::path(path));
 	} catch(...) {
+		return false;
+	}
+	return true;
+}
+
+bool __attribute__((optimize("O0"))) LocalFileSystemModel::remove(std::string_view path) const {
+	try {
+		fs::remove(fs::path(path));
+	} catch(std::exception& e) {
+		log_msg(e.what());
 		return false;
 	}
 	return true;

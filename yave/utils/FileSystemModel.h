@@ -37,22 +37,23 @@ class FileSystemModel : NonCopyable {
 		}
 
 
-		virtual core::String current_path() const noexcept = 0;
-		virtual core::String parent_path(std::string_view path) const noexcept = 0;
-		virtual core::String filename(std::string_view path) const noexcept = 0;
+		virtual core::String current_path() const = 0;
+		virtual core::String parent_path(std::string_view path) const = 0;
+		virtual core::String filename(std::string_view path) const = 0;
 
-		virtual bool exists(std::string_view path) const noexcept = 0;
-		virtual bool is_directory(std::string_view path) const noexcept = 0;
-		virtual bool is_parent(std::string_view parent, std::string_view path) const noexcept;
+		virtual bool exists(std::string_view path) const = 0;
+		virtual bool is_directory(std::string_view path) const = 0;
+		virtual bool is_parent(std::string_view parent, std::string_view path) const;
 
-		virtual core::String extention(std::string_view path) const noexcept;
+		virtual core::String extention(std::string_view path) const;
 
-		virtual core::String join(std::string_view path, std::string_view name) const noexcept = 0;
-		virtual core::String absolute(std::string_view path) const noexcept = 0;
+		virtual core::String join(std::string_view path, std::string_view name) const = 0;
+		virtual core::String absolute(std::string_view path) const = 0;
 
-		virtual void for_each(std::string_view path, const for_each_f& func) const noexcept = 0;
+		virtual void for_each(std::string_view path, const for_each_f& func) const = 0;
 
-		virtual bool create_directory(std::string_view path) const noexcept = 0;
+		virtual bool create_directory(std::string_view path) const = 0;
+		virtual bool remove(std::string_view path) const = 0;
 };
 
 
@@ -60,15 +61,16 @@ class FileSystemModel : NonCopyable {
 
 class LocalFileSystemModel : public FileSystemModel {
 	public:
-		core::String current_path() const noexcept override;
-		core::String parent_path(std::string_view path) const noexcept override;
-		core::String filename(std::string_view path) const noexcept override;
-		bool exists(std::string_view path) const noexcept override;
-		bool is_directory(std::string_view path) const noexcept override;
-		core::String join(std::string_view path, std::string_view name) const noexcept override;
-		core::String absolute(std::string_view path) const noexcept override;
-		void for_each(std::string_view path, const for_each_f& func) const noexcept override;
-		bool create_directory(std::string_view path) const noexcept override;
+		core::String current_path() const override;
+		core::String parent_path(std::string_view path) const override;
+		core::String filename(std::string_view path) const override;
+		bool exists(std::string_view path) const override;
+		bool is_directory(std::string_view path) const override;
+		core::String join(std::string_view path, std::string_view name) const override;
+		core::String absolute(std::string_view path) const override;
+		void for_each(std::string_view path, const for_each_f& func) const override;
+		bool create_directory(std::string_view path) const override;
+		bool remove(std::string_view path) const override;
 };
 
 #endif

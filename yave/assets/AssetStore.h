@@ -34,16 +34,12 @@ namespace yave {
 class AssetStore : NonCopyable {
 
 	public:
-		/*enum ImportType {
-			Intern,
-			Reference
-		};*/
-
 		AssetStore();
 		virtual ~AssetStore();
 
 
 		virtual void remove(AssetId id);
+		virtual void rename(AssetId id, std::string_view new_name);
 
 		virtual const FileSystemModel* filesystem() const;
 

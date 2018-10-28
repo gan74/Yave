@@ -33,6 +33,7 @@ SOFTWARE.
 #include "Loader.h"
 #include "Selection.h"
 #include "Ui.h"
+#include "ThumbmailCache.h"
 
 #include <mutex>
 
@@ -73,6 +74,10 @@ class EditorContext : public DeviceLinked, NonCopyable {
 			return _ui;
 		}
 
+		ThumbmailCache& thumbmail_cache() {
+			return _thumb_cache;
+		}
+
 	private:
 		std::unique_ptr<FileSystemModel> _filesystem;
 
@@ -85,6 +90,7 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		SceneData _scene;
 		Selection _selection;
 		Ui _ui;
+		ThumbmailCache _thumb_cache;
 
 };
 

@@ -103,6 +103,7 @@ void ResourceBrowser::update_node(DirNode* node) {
 		});
 
 	node->up_to_date = true;
+	_force_refresh = false;
 }
 
 void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
@@ -122,7 +123,7 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	unused(recorder, token);
 
-	if(_update_chrono.elapsed().seconds() > update_secs) {
+	if(_force_refresh || _update_chrono.elapsed().seconds() > update_secs) {
 		_update_chrono.reset();
 		update_node(_current);
 	}
@@ -136,34 +137,9 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 
 	ImGui::SameLine();
 
+
 	{
 		ImGui::BeginChild("###resources");
-
-		if(ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1)) {
-			ImGui::OpenPopup("###resourcescontext");
-		}
-
-		if(ImGui::BeginPopupContextItem("###resourcescontext")) {
-			if(ImGui::Selectable("Import mesh")) {
-				MeshImporter* importer = context()->ui().add<MeshImporter>();
-				importer->set_callback(
-					[this, path = filesystem()->join(_current->path, _current->name)](auto meshes, auto anims) {
-						save_meshes(path, meshes);
-						save_anims(path, anims);
-						update_node(_current);
-					});
-			}
-			if(ImGui::Selectable("Import image")) {
-				ImageImporter* importer = context()->ui().add<ImageImporter>();
-				importer->set_callback(
-					[this, path = filesystem()->join(_current->path, _current->name)](auto images) {
-						save_images(path, images);
-						update_node(_current);
-					});
-			}
-
-			ImGui::EndPopup();
-		}
 
 		if(_current->parent && ImGui::Selectable("..")) {
 			set_current(_current->parent);
@@ -176,6 +152,9 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 			}
 		}
 
+		bool context_menu = ImGui::IsPopupOpen("###resourcescontext");
+		bool item_hovered = false;
+
 		for(const auto& file : curr->files) {
 			const auto& name = file.first;
 			if(ImGui::Selectable(fmt("% %", icon(file.second), name).data())) {
@@ -186,7 +165,60 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 					log_msg(fmt("Unable to add object to scene: %", e.what()), Log::Error);
 				}
 			}
+
+			if(!context_menu && ImGui::IsItemHovered()) {
+				_hovered_asset = filesystem()->join(_current->path, name);
+				item_hovered = true;
+			}
 		}
+
+		if(!item_hovered && !context_menu) {
+			_hovered_asset = "";
+		}
+
+
+		if(ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1)) {
+			ImGui::OpenPopup("###resourcescontext");
+		}
+
+		if(ImGui::BeginPopup("###resourcescontext")) {
+			if(_hovered_asset.is_empty()) {
+				if(ImGui::Selectable("Import mesh")) {
+					MeshImporter* importer = context()->ui().add<MeshImporter>();
+					importer->set_callback(
+						[this, path = filesystem()->join(_current->path, _current->name)](auto meshes, auto anims) {
+							save_meshes(path, meshes);
+							save_anims(path, anims);
+							update_node(_current);
+						});
+				}
+				if(ImGui::Selectable("Import image")) {
+					ImageImporter* importer = context()->ui().add<ImageImporter>();
+					importer->set_callback(
+						[this, path = filesystem()->join(_current->path, _current->name)](auto images) {
+							save_images(path, images);
+							update_node(_current);
+						});
+				}
+			} else {
+				if(ImGui::Selectable("Rename")) {
+
+					_force_refresh = true;
+				}
+				if(ImGui::Selectable("Delete")) {
+					try {
+						auto id = context()->loader().asset_store().id(_hovered_asset);
+						context()->loader().asset_store().remove(id);
+						_force_refresh = true;
+					} catch(std::exception& e) {
+						log_msg(fmt("Unable to add delete asset: %", e.what()), Log::Error);
+					}
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+
 		ImGui::EndChild();
 	}
 }

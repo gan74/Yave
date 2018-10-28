@@ -31,8 +31,12 @@ PerformanceMetrics::PerformanceMetrics() : Widget("Performance", ImGuiWindowFlag
 
 void PerformanceMetrics::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	auto time = _timer.reset();
-
 	ImGui::Text("frame time: %.2fms", time.to_millis());
+
+	_history_ms.push_back(time.to_millis());
+
+	ImGui::PlotLines("Timing", _history_ms.begin(), _history_ms.size());
+
 }
 
 }

@@ -45,21 +45,22 @@ class FolderAssetStore final : public AssetStore {
 		y_serde(id, name)
 	};
 
-	// same as LocalFileSystemModel except rooted in a folder
+	// same as LocalFileSystemModel but rooted in a folder
 	class FolderFileSystemModel final : public LocalFileSystemModel {
 		public:
 			FolderFileSystemModel(std::string_view root);
 			const core::String& root_path() const;
 
-			core::String current_path() const noexcept override;
-			bool exists(std::string_view path) const noexcept override;
-			bool is_directory(std::string_view path) const noexcept override;
+			core::String current_path() const override;
+			bool exists(std::string_view path) const override;
+			bool is_directory(std::string_view path) const override;
 
-			core::String absolute(std::string_view path) const noexcept override;
+			core::String absolute(std::string_view path) const override;
 
-			void for_each(std::string_view path, const for_each_f& func) const noexcept override;
+			void for_each(std::string_view path, const for_each_f& func) const override;
 
-			bool create_directory(std::string_view path) const noexcept override;
+			bool create_directory(std::string_view path) const override;
+			bool remove(std::string_view path) const override;
 
 		private:
 			core::String _root;
@@ -72,6 +73,8 @@ class FolderAssetStore final : public AssetStore {
 		const FileSystemModel* filesystem() const override;
 
 		AssetId import(io::ReaderRef data, std::string_view dst_name) override;
+
+		void remove(AssetId id) override;
 
 		AssetId id(std::string_view name) const override;
 		io::ReaderRef data(AssetId id) const override;

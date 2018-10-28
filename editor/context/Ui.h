@@ -44,7 +44,6 @@ class Ui : public ContextLinked, NonCopyable {
 
 		void paint(CmdBufferRecorder& recorder, const FrameToken& token);
 
-
 		template<typename T>
 		T* show() {
 			for(auto&& e : _widgets) {
@@ -68,6 +67,7 @@ class Ui : public ContextLinked, NonCopyable {
 
 	private:
 		core::Vector<std::unique_ptr<Widget>> _widgets;
+
 };
 
 }

@@ -76,6 +76,7 @@ int main(int, char**) {
 	y_debug_assert(*world.component<int>(cmp) == 7);
 
 	for(int i : world.components<int>()) {
+		unused(i);
 		y_debug_assert(i == 7);
 	}
 

@@ -40,31 +40,33 @@ const core::String& FolderAssetStore::FolderFileSystemModel::root_path() const {
 	return _root;
 }
 
-core::String FolderAssetStore::FolderFileSystemModel::current_path() const noexcept {
+core::String FolderAssetStore::FolderFileSystemModel::current_path() const  {
 	return "";
 }
 
-bool FolderAssetStore::FolderFileSystemModel::exists(std::string_view path) const noexcept {
+bool FolderAssetStore::FolderFileSystemModel::exists(std::string_view path) const  {
 	return LocalFileSystemModel::exists(join(_root, path));
 }
 
-bool FolderAssetStore::FolderFileSystemModel::is_directory(std::string_view path) const noexcept {
+bool FolderAssetStore::FolderFileSystemModel::is_directory(std::string_view path) const  {
 	return LocalFileSystemModel::is_directory(join(_root, path));
 }
 
-core::String FolderAssetStore::FolderFileSystemModel::absolute(std::string_view path) const noexcept {
+core::String FolderAssetStore::FolderFileSystemModel::absolute(std::string_view path) const  {
 	return path;
 }
 
-void FolderAssetStore::FolderFileSystemModel::for_each(std::string_view path, const for_each_f& func) const noexcept {
+void FolderAssetStore::FolderFileSystemModel::for_each(std::string_view path, const for_each_f& func) const  {
 	LocalFileSystemModel::for_each(join(_root, path), func);
 }
 
-bool FolderAssetStore::FolderFileSystemModel::create_directory(std::string_view path) const noexcept {
+bool FolderAssetStore::FolderFileSystemModel::create_directory(std::string_view path) const  {
 	return LocalFileSystemModel::create_directory(join(_root, path));
 }
 
-
+bool FolderAssetStore::FolderFileSystemModel::remove(std::string_view path) const  {
+	return LocalFileSystemModel::remove(join(_root, path));
+}
 
 FolderAssetStore::FolderAssetStore(std::string_view path) :
 		_filesystem(path),
@@ -153,6 +155,26 @@ AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) 
 	return id;
 }
 
+
+void FolderAssetStore::remove(AssetId id) {
+	std::unique_lock lock(_lock);
+
+	auto it = _from_id.find(id);
+	if(it == _from_id.end()) {
+		y_throw("Asset does not exists.");
+	}
+
+	const auto& name = it->second->name;
+	if(!filesystem()->remove(name)) {
+		y_throw("Unable to delete from disk.");
+	}
+
+	_from_name.erase(_from_name.find(name));
+	_from_id.erase(it);
+
+	y_debug_assert(_from_id.size() == _from_name.size());
+	write_index();
+}
 
 AssetId FolderAssetStore::id(std::string_view name) const {
 	std::unique_lock lock(_lock);

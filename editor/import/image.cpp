@@ -25,8 +25,17 @@ SOFTWARE.
 #include <yave/utils/FileSystemModel.h>
 
 extern "C" {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <external/stb/stb_image.h>
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 }
 
 namespace editor {

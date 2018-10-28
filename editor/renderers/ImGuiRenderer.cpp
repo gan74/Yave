@@ -159,7 +159,8 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&token)
 			recorder.vk_cmd_buffer().setScissor(0, vk::Rect2D(offset, extent));
 
 			if(cmd.UserCallback) {
-				reinterpret_cast<UIDrawCallback>(cmd.UserCallback)(recorder, cmd.UserCallbackData);
+				void* ptr = reinterpret_cast<void*>(cmd.UserCallback);
+				reinterpret_cast<UIDrawCallback>(ptr)(recorder, cmd.UserCallbackData);
 				current_tex = nullptr;
 			}
 

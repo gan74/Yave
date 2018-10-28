@@ -19,50 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_UTILS_THUMBMAILCACHE_H
+#define EDITOR_UTILS_THUMBMAILCACHE_H
 
-#include "EditorContext.h"
+#include <editor/editor.h>
+#include <y/core/Result.h>
 
-#include <yave/device/Device.h>
+#include <yave/renderers/FramebufferRenderer.h>
+#include <yave/scene/SceneView.h>
+
+#include <functional>
 
 namespace editor {
 
-DevicePtr ContextLinked::device() const {
-	return _ctx ? _ctx->device() : nullptr;
-}
+class ThumbmailCache : public ContextLinked, NonCopyable {
 
-EditorContext::EditorContext(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_loader(device()),
-		_scene(this),
-		_ui(this),
-		_thumb_cache(this) {
-}
+		struct Thumbmail {
+			Thumbmail(DevicePtr dptr, usize size);
 
-EditorContext::~EditorContext() {
-}
+			ColorTextureAttachment image;
+			TextureView view;
+		};
 
-void EditorContext::defer(core::Function<void()>&& func) {
-	std::unique_lock _(_deferred_lock);
-	if(_is_flushing_deferred) {
-		y_fatal("Defer called from already deferred function.");
-	}
-	_deferred.emplace_back(std::move(func));
-}
+	public:
+		using ThumbmailView = std::reference_wrapper<const TextureView>;
 
-void EditorContext::flush_deferred() {
-	std::unique_lock _(_deferred_lock);
-	if(!_deferred.is_empty()) {
-		Y_LOG_PERF("editor");
-		device()->queue(QueueFamily::Graphics).wait();
-		_is_flushing_deferred = true;
-		for(auto& f : _deferred) {
-			f();
-		}
-		_deferred.clear();
-		_is_flushing_deferred = false;
-	}
-	_scene.flush();
-}
+		ThumbmailCache(ContextPtr ctx, usize size = 64);
 
+		math::Vec2ui thumbmail_size() const;
+
+		TextureView* get_thumbmail(const AssetPtr<StaticMesh>& mesh);
+
+	private:
+		void create_renderer();
+		void render_thumbmail(const AssetPtr<StaticMesh>& mesh);
+
+		usize _size;
+
+		Scene _scene;
+		SceneView _scene_view;
+		Node::Ptr<FramebufferRenderer> _renderer;
+
+		std::unordered_map<AssetId, std::unique_ptr<Thumbmail>> _thumbmails;
+};
 
 }
+
+#endif // EDITOR_UTILS_THUMBMAILCACHE_H
