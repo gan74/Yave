@@ -146,7 +146,7 @@ void String::set_min_capacity(usize cap) {
 		if(is_long()) {
 			free_long(_l);
 		}
-		std::memcpy(&_l, &new_dat, sizeof(LongData));
+		_l = std::move(new_dat);
 	}
 }
 
@@ -253,10 +253,7 @@ String::operator char*() {
 }
 
 void String::swap(String& str) {
-	u8 str_buffer[sizeof(ShortData)];
-	std::memcpy(str_buffer, &str._s, sizeof(ShortData));
-	std::memcpy(&str._s, &_s, sizeof(ShortData));
-	std::memcpy(&_s, str_buffer, sizeof(ShortData));
+	std::swap(_l, str._l);
 }
 
 

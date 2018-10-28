@@ -118,7 +118,7 @@ constexpr bool is_big_endian() {
 	return detail::endianness == 0x01;
 }
 
-static_assert(is_little_endian() || is_big_endian(), "Unable to determine endianness");
+static_assert(is_little_endian() || is_big_endian(), "Endianness unknown");
 
 
 
@@ -127,15 +127,18 @@ static_assert(is_little_endian() || is_big_endian(), "Unable to determine endian
 template<typename T>
 class ScopeExit {
 	public:
-		ScopeExit(T&& t) : ex(std::forward<T>(t)) {
+		ScopeExit(T&& t) : _ex(std::forward<T>(t)) {
+		}
+
+		ScopeExit(ScopeExit&& other) : _ex(std::move(other._ex)) {
 		}
 
 		~ScopeExit() {
-			ex();
+			_ex();
 		}
 
 	private:
-		T ex;
+		T _ex;
 };
 
 }

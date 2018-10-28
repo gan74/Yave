@@ -43,7 +43,8 @@ auto func ## _func() {																												\
 	if(!is_init) {																													\
 		is_init = true;																												\
 		if((module = LoadLibrary(TEXT(#lib)))) {																					\
-			func_ptr = reinterpret_cast<decltype(func_ptr)>(GetProcAddress(module, #func));											\
+			void* ptr = reinterpret_cast<void*>(GetProcAddress(module, #func));														\
+			func_ptr = reinterpret_cast<decltype(func_ptr)>(ptr);																	\
 		}																															\
 	}																																\
 	return func_ptr;																												\

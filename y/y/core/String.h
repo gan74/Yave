@@ -70,6 +70,7 @@ class String {
 		LongData(const char* str, usize len);
 
 		LongData& operator=(const LongData &) = delete;
+		LongData& operator=(LongData&& other) = default;
 	};
 
 	struct ShortData
@@ -82,6 +83,7 @@ class String {
 		ShortData(const char* str, usize len);
 
 		ShortData& operator=(const ShortData &) = delete;
+		ShortData& operator=(ShortData&& other) = default;
 
 	};
 

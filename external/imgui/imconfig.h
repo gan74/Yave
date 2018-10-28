@@ -12,11 +12,16 @@
 #include <y/math/Vec.h>
 #include "IconsFontAwesome5.h"
 
-#ifdef  __GNUC__
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wsign-promo"
 #pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
 //---- Define assertion handler. Defaults to calling assert().
@@ -69,3 +74,5 @@
 
 //---- Use 32-bit vertex indices (instead of default 16-bit) to allow meshes with more than 64K vertices. Render function needs to support it.
 #define ImDrawIdx y::u32
+
+//#define ImTextureID const void*

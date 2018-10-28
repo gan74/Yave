@@ -28,7 +28,19 @@ SOFTWARE.
 	#define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
 #include <vulkan/vulkan.hpp>
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
 
 #define YAVE_VK
 

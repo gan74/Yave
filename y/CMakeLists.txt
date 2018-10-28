@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 project(y)
 
-set(EXTRA_WARNINGS -Woverloaded-virtual -Wnon-virtual-dtor -Wodr -Wdisabled-optimization -Wlogical-op -Wredundant-decls -Wsign-promo -Wundef)
+set(EXTRA_WARNINGS -Woverloaded-virtual -Wnon-virtual-dtor -Wodr -Wdisabled-optimization -Wlogical-op -Wredundant-decls -Wsign-promo -Wundef -Wzero-as-null-pointer-constant)
 set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${EXTRA_WARNINGS})
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")

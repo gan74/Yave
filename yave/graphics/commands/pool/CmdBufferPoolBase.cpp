@@ -31,6 +31,7 @@ namespace yave {
 #warning command buffers might need to be synchronized at the pool level
 
 static vk::CommandBufferLevel cmd_level(CmdBufferUsage u) {
+	unused(u);
 	return /*u == CmdBufferUsage::Secondary ? vk::CommandBufferLevel::eSecondary :*/ vk::CommandBufferLevel::ePrimary;
 }
 
