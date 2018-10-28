@@ -156,15 +156,15 @@ y_test_func("fmt empty") {
 }
 
 y_test_func("fmt simple") {
-	const char* f = fmt("blah %% blah blah % blah", 57).data();
+	const char* f = fmt("blah blah blah % blah", 57).data();
 
-	y_test_assert(!std::strcmp("blah % blah blah 57 blah", f));
+	y_test_assert(!std::strcmp("blah blah blah 57 blah", f));
 }
 
 y_test_func("fmt at end") {
-	const char* f = fmt("some string%%%", 42).data();
+	const char* f = fmt("some string%", 42).data();
 
-	y_test_assert(!std::strcmp("some string%42", f));
+	y_test_assert(!std::strcmp("some string42", f));
 }
 
 y_test_func("fmt multi") {
@@ -212,11 +212,16 @@ y_test_func("fmt_into simple") {
 }
 
 y_test_func("fmt twice") {
-	const char* f1 = fmt("% %", 7, 'a').data();
+	const char* f1 = fmt("%%", 7, 'a').data();
 	const char* f2 = fmt("fmt_twice % %", "pls").data();
 
-	y_test_assert(!std::strcmp(f1, "7 a"));
+	y_test_assert(!std::strcmp(f1, "7a"));
 	y_test_assert(!std::strcmp(f2, "fmt_twice pls %"));
+}
+
+y_test_func("fmt empty") {
+	const char* f = fmt("% %", 19, "").data();
+	y_test_assert(!std::strcmp(f, "19 "));
 }
 
 y_test_func("fmt smalls") {

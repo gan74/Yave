@@ -37,16 +37,18 @@ class AssetStore : NonCopyable {
 		AssetStore();
 		virtual ~AssetStore();
 
-
-		virtual void remove(AssetId id);
-		virtual void rename(AssetId id, std::string_view new_name);
-
 		virtual const FileSystemModel* filesystem() const;
 
 		virtual AssetId import(io::ReaderRef data, std::string_view dst_name) = 0;
 
 		virtual AssetId id(std::string_view name) const = 0;
 		virtual io::ReaderRef data(AssetId id) const = 0;
+
+		virtual void remove(AssetId id);
+		virtual void rename(AssetId id, std::string_view new_name);
+
+		virtual void remove(std::string_view name);
+		virtual void rename(std::string_view from, std::string_view to);
 };
 
 }

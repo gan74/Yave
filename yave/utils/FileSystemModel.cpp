@@ -114,9 +114,19 @@ bool LocalFileSystemModel::create_directory(std::string_view path) const {
 	return true;
 }
 
-bool __attribute__((optimize("O0"))) LocalFileSystemModel::remove(std::string_view path) const {
+bool LocalFileSystemModel::remove(std::string_view path) const {
 	try {
-		fs::remove(fs::path(path));
+		fs::remove_all(fs::path(path));
+	} catch(std::exception& e) {
+		log_msg(e.what());
+		return false;
+	}
+	return true;
+}
+
+bool LocalFileSystemModel::rename(std::string_view from, std::string_view to) const {
+	try {
+		fs::rename(fs::path(from), fs::path(to));
 	} catch(std::exception& e) {
 		log_msg(e.what());
 		return false;

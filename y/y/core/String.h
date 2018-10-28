@@ -234,13 +234,19 @@ using has_append_t = decltype(std::declval<String&>().operator+=(std::declval<co
 }
 
 template<typename T>
-core::String operator+(core::String l, T&& r) {
+inline core::String operator+(core::String l, T&& r) {
 	if constexpr(is_detected_v<detail::has_append_t, T>) {
 		l += std::forward<T>(r);
 	} else {
 		fmt_into(l, "%", std::forward<T>(r));
 	}
 	return l;
+}
+
+inline core::String operator+(std::string_view l, const core::String& r) {
+	core::String s;
+	fmt_into(s, "%""%", l, r);
+	return s;
 }
 
 

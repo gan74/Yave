@@ -50,8 +50,20 @@ static auto icon(u32 type) {
 			return ICON_FA_CUBE;
 
 		default:
-		break;
+			return ICON_FA_QUESTION;
 	}
+	return "";
+}
+
+std::string_view ResourceBrowser::DirNode::name_at(usize index) const {
+	if(index < children.size()) {
+		return children[index].name;
+	}
+	index -= children.size();
+	if(index < files.size()) {
+		return files[index].first;
+	}
+	y_fatal("Node does not exists.");
 	return "";
 }
 
@@ -92,11 +104,10 @@ void ResourceBrowser::update_node(DirNode* node) {
 	node->files.clear();
 
 	const auto* fs = filesystem();
-	auto dir = fs->join(node->path, node->name);
-	fs->for_each(dir, [&](const auto& name) {
-			auto full_name = fs->join(dir, name);
+	fs->for_each(node->path, [&](const auto& name) {
+			auto full_name = fs->join(node->path, name);
 			if(fs->is_directory(full_name)) {
-				node->children << DirNode(name, dir, node);
+				node->children << DirNode(name, full_name, node);
 			} else {
 				node->files << std::make_pair(name, file_type(full_name));
 			}
@@ -141,19 +152,24 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 	{
 		ImGui::BeginChild("###resources");
 
-		if(_current->parent && ImGui::Selectable("..")) {
+		if(_current->parent && ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
 			set_current(_current->parent);
 		}
 
+		usize index = 0;
+		usize hovered = usize(-1);
+
 		auto curr = _current;
 		for(DirNode& n : curr->children) {
-			if(ImGui::Selectable(fmt("%", n.name).data())) {
+			if(ImGui::Selectable(fmt(ICON_FA_FOLDER " %", n.name).data())) {
 				set_current(&n);
 			}
+
+			hovered = ImGui::IsItemHovered() ? index : hovered;
+			++index;
 		}
 
 		bool context_menu = ImGui::IsPopupOpen("###resourcescontext");
-		bool item_hovered = false;
 
 		for(const auto& file : curr->files) {
 			const auto& name = file.first;
@@ -166,14 +182,12 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 				}
 			}
 
-			if(!context_menu && ImGui::IsItemHovered()) {
-				_hovered_asset = filesystem()->join(_current->path, name);
-				item_hovered = true;
-			}
+			hovered = ImGui::IsItemHovered() ? index : hovered;
+			++index;
 		}
 
-		if(!item_hovered && !context_menu) {
-			_hovered_asset = "";
+		if(!context_menu) {
+			_hovered_index = hovered;
 		}
 
 
@@ -182,37 +196,51 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 		}
 
 		if(ImGui::BeginPopup("###resourcescontext")) {
-			if(_hovered_asset.is_empty()) {
-				if(ImGui::Selectable("Import mesh")) {
-					MeshImporter* importer = context()->ui().add<MeshImporter>();
-					importer->set_callback(
-						[this, path = filesystem()->join(_current->path, _current->name)](auto meshes, auto anims) {
-							save_meshes(path, meshes);
-							save_anims(path, anims);
-							update_node(_current);
-						});
-				}
-				if(ImGui::Selectable("Import image")) {
-					ImageImporter* importer = context()->ui().add<ImageImporter>();
-					importer->set_callback(
-						[this, path = filesystem()->join(_current->path, _current->name)](auto images) {
-							save_images(path, images);
-							update_node(_current);
-						});
-				}
-			} else {
-				if(ImGui::Selectable("Rename")) {
+			if(ImGui::Selectable("New folder")) {
+				filesystem()->create_directory(filesystem()->join(_current->path, "new folder"));
+				_force_refresh = true;
+			}
 
+			if(_hovered_index < index) {
+				ImGui::Separator();
+				if(ImGui::Selectable("Rename")) {
+					//context()->loader().asset_store().rename(_current->name_at(_hovered_index), "floop");
 					_force_refresh = true;
 				}
 				if(ImGui::Selectable("Delete")) {
 					try {
-						auto id = context()->loader().asset_store().id(_hovered_asset);
-						context()->loader().asset_store().remove(id);
-						_force_refresh = true;
+						auto name = filesystem()->join(_current->path, _current->name_at(_hovered_index));
+						context()->loader().asset_store().remove(name);
 					} catch(std::exception& e) {
 						log_msg(fmt("Unable to add delete asset: %", e.what()), Log::Error);
 					}
+					_force_refresh = true;
+				}
+			}
+
+			ImGui::Separator();
+			if(ImGui::Selectable("Import mesh")) {
+				MeshImporter* importer = context()->ui().add<MeshImporter>();
+				importer->set_callback(
+					[this, path = _current->path](auto meshes, auto anims) {
+						save_meshes(path, meshes);
+						save_anims(path, anims);
+						update_node(_current);
+					});
+			}
+			if(ImGui::Selectable("Import image")) {
+				ImageImporter* importer = context()->ui().add<ImageImporter>();
+				importer->set_callback(
+					[this, path = _current->path](auto images) {
+						save_images(path, images);
+						update_node(_current);
+					});
+			}
+
+			if(FolderAssetStore* store = dynamic_cast<FolderAssetStore*>(&context()->loader().asset_store())) {
+				ImGui::Separator();
+				if(ImGui::Selectable("Clean index")) {
+					store->clean_index();
 				}
 			}
 

@@ -92,16 +92,11 @@ void fmt_rec(FmtBuffer& buffer, const char* fmt, T&& t, Args&&... args) {
 	} else {
 		buffer.copy(fmt, c - fmt);
 		++c;
-		if(*c == '%') {
-			buffer.fmt_one('%');
-			fmt_rec(buffer, c + 1, std::forward<T>(t), std::forward<Args>(args)...);
+		buffer.fmt_one(std::forward<T>(t));
+		if constexpr(sizeof...(args)) {
+			fmt_rec(buffer, c, std::forward<Args>(args)...);
 		} else {
-			buffer.fmt_one(std::forward<T>(t));
-			if constexpr(sizeof...(args)) {
-				fmt_rec(buffer, c, std::forward<Args>(args)...);
-			} else {
-				buffer.fmt_one(c);
-			}
+			buffer.fmt_one(c);
 		}
 	}
 }

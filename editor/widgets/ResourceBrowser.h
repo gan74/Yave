@@ -39,8 +39,13 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 		bool up_to_date = false;
 
-		DirNode(std::string_view n, std::string_view p, DirNode* par = nullptr) : name(n), path(p), parent(par) {
+		DirNode(std::string_view n, std::string_view p, DirNode* par = nullptr) :
+				name(n),
+				path(p),
+				parent(par) {
 		}
+
+		std::string_view name_at(usize index) const;
 	};
 
 	public:
@@ -72,7 +77,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		DirNode _root;
 		NotOwner<DirNode*> _current = nullptr;
 
-		core::String _hovered_asset;
+		usize _hovered_index = usize(-1);
 
 
 };

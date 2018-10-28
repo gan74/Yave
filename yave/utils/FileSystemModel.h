@@ -54,6 +54,7 @@ class FileSystemModel : NonCopyable {
 
 		virtual bool create_directory(std::string_view path) const = 0;
 		virtual bool remove(std::string_view path) const = 0;
+		virtual bool rename(std::string_view old_path, std::string_view new_path) const = 0;
 };
 
 
@@ -71,6 +72,7 @@ class LocalFileSystemModel : public FileSystemModel {
 		void for_each(std::string_view path, const for_each_f& func) const override;
 		bool create_directory(std::string_view path) const override;
 		bool remove(std::string_view path) const override;
+		bool rename(std::string_view from, std::string_view to) const override;
 };
 
 #endif

@@ -68,6 +68,11 @@ bool FolderAssetStore::FolderFileSystemModel::remove(std::string_view path) cons
 	return LocalFileSystemModel::remove(join(_root, path));
 }
 
+bool FolderAssetStore::FolderFileSystemModel::rename(std::string_view from, std::string_view to) const  {
+	return LocalFileSystemModel::rename(join(_root, from), join(_root, to));
+}
+
+
 FolderAssetStore::FolderAssetStore(std::string_view path) :
 		_filesystem(path),
 		_index_file_path(_filesystem.join(_filesystem.root_path(), ".index")) {
@@ -155,27 +160,6 @@ AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) 
 	return id;
 }
 
-
-void FolderAssetStore::remove(AssetId id) {
-	std::unique_lock lock(_lock);
-
-	auto it = _from_id.find(id);
-	if(it == _from_id.end()) {
-		y_throw("Asset does not exists.");
-	}
-
-	const auto& name = it->second->name;
-	if(!filesystem()->remove(name)) {
-		y_throw("Unable to delete from disk.");
-	}
-
-	_from_name.erase(_from_name.find(name));
-	_from_id.erase(it);
-
-	y_debug_assert(_from_id.size() == _from_name.size());
-	write_index();
-}
-
 AssetId FolderAssetStore::id(std::string_view name) const {
 	std::unique_lock lock(_lock);
 
@@ -195,6 +179,134 @@ io::ReaderRef FolderAssetStore::data(AssetId id) const {
 		return io::ReaderRef(std::move(io::File::open(filename).or_throw("Unable to locate asset data.")));
 	}
 	y_throw("No asset with this id.");
+}
+
+
+void FolderAssetStore::remove(AssetId id) {
+	std::unique_lock lock(_lock);
+
+	auto it = _from_id.find(id);
+	if(it == _from_id.end()) {
+		y_throw("Asset does not exists.");
+	}
+
+	const auto& name = it->second->name;
+	if(!filesystem()->remove(name)) {
+		y_throw("Unable to delete asset from disk.");
+	}
+
+	_from_name.erase(_from_name.find(name));
+	_from_id.erase(it);
+
+	y_debug_assert(_from_id.size() == _from_name.size());
+	write_index();
+}
+
+void FolderAssetStore::rename(AssetId id, std::string_view new_name) {
+	std::unique_lock lock(_lock);
+
+	auto it = _from_id.find(id);
+	if(it == _from_id.end()) {
+		y_throw("Asset does not exists.");
+	}
+
+	if(_from_name.find(new_name) != _from_name.end()) {
+		y_throw("Asset already exists.");
+	}
+
+	const auto& old_name = it->second->name;
+	if(!filesystem()->rename(old_name, new_name)) {
+		y_throw("Unable to rename asset on disk.");
+	}
+
+	auto entry_it = _from_name.find(old_name);
+	auto entry = std::move(entry_it->second);
+	_from_name.erase(entry_it);
+	_from_name[new_name] = std::move(entry);
+
+	y_debug_assert(_from_id.size() == _from_name.size());
+	write_index();
+}
+
+void FolderAssetStore::remove(std::string_view name) {
+	{
+		std::unique_lock lock(_lock);
+		if(filesystem()->is_directory(name)) {
+			if(!filesystem()->remove(name)) {
+				y_throw("Unable to delete.");
+			}
+
+			core::Vector<decltype(_from_name)::iterator> to_remove;
+			for(auto it = _from_name.begin(); it != _from_name.end(); ++it) {
+				if(it->first.starts_with(name)) {
+					to_remove << it;
+				}
+			}
+
+			for(const auto& it : to_remove) {
+				_from_id.erase(it->second->id);
+				_from_name.erase(it);
+			}
+
+			y_debug_assert(_from_id.size() == _from_name.size());
+			write_index();
+
+			return;
+		}
+	}
+	remove(id(name));
+}
+
+void FolderAssetStore::rename(std::string_view from, std::string_view to) {
+	if(to.empty()) {
+		y_throw("Invalid name.");
+	}
+
+	{
+		std::unique_lock lock(_lock);
+		if(filesystem()->is_directory(from)) {
+			if(!filesystem()->rename(from, to)) {
+				y_throw("Unable to rename.");
+			}
+
+			decltype(_from_name) from_name;
+			from_name.reserve(_from_name.size());
+			for(auto& asset : _from_name) {
+				core::String& name = asset.second->name;
+				if(name.starts_with(from)) {
+					name = fmt("%%", to, name.sub_str(from.size()));
+				}
+				from_name.emplace(std::make_pair(name, std::move(asset.second)));
+			}
+			std::swap(_from_name, from_name);
+			y_debug_assert(_from_id.size() == _from_name.size());
+			write_index();
+
+			return;
+		}
+	}
+	rename(id(from), to);
+}
+
+void FolderAssetStore::clean_index() {
+	std::unique_lock lock(_lock);
+
+	core::Vector<decltype(_from_name)::iterator> to_remove;
+	for(auto it = _from_name.begin(); it != _from_name.end(); ++it) {
+		if(!filesystem()->exists(it->first)) {
+			to_remove << it;
+		}
+	}
+
+	for(const auto& it : to_remove) {
+		log_msg(fmt("\"%\" erased.", it->first));
+		_from_id.erase(it->second->id);
+		_from_name.erase(it);
+	}
+
+	y_debug_assert(_from_id.size() == _from_name.size());
+	write_index();
+	log_msg("Index cleaned.");
 }
 
 }

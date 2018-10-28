@@ -54,13 +54,11 @@ class FolderAssetStore final : public AssetStore {
 			core::String current_path() const override;
 			bool exists(std::string_view path) const override;
 			bool is_directory(std::string_view path) const override;
-
 			core::String absolute(std::string_view path) const override;
-
 			void for_each(std::string_view path, const for_each_f& func) const override;
-
 			bool create_directory(std::string_view path) const override;
 			bool remove(std::string_view path) const override;
+			bool rename(std::string_view from, std::string_view to) const override;
 
 		private:
 			core::String _root;
@@ -74,10 +72,15 @@ class FolderAssetStore final : public AssetStore {
 
 		AssetId import(io::ReaderRef data, std::string_view dst_name) override;
 
-		void remove(AssetId id) override;
-
 		AssetId id(std::string_view name) const override;
 		io::ReaderRef data(AssetId id) const override;
+
+		void remove(AssetId id) override;
+		void rename(AssetId id, std::string_view new_name) override;
+		void remove(std::string_view name) override;
+		void rename(std::string_view from, std::string_view to) override;
+
+		void clean_index();
 
 	private:
 		void write_index() const;
@@ -90,7 +93,7 @@ class FolderAssetStore final : public AssetStore {
 
 		// TODO optimize ?
 		std::unordered_map<AssetId, Entry*> _from_id;
-		std::map<core::String, std::unique_ptr<Entry>> _from_name;
+		std::unordered_map<core::String, std::unique_ptr<Entry>> _from_name;
 
 		AssetIdFactory _id_factory;
 };

@@ -44,4 +44,12 @@ const FileSystemModel* AssetStore::filesystem() const {
 	return nullptr;
 }
 
+void AssetStore::remove(std::string_view name) {
+	remove(id(name));
+}
+
+void AssetStore::rename(std::string_view from, std::string_view to) {
+	rename(id(from), to);
+}
+
 }
