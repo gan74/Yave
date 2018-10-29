@@ -52,15 +52,20 @@ math::Vec2ui EngineView::renderer_size() const {
 }
 
 void EngineView::create_renderer() {
+	const u32 min_size = 64;
+	math::Vec2ui size = content_size();
+	if(size.x() < min_size || size.y() < min_size) {
+		return;
+	}
+
 	_scene_view		= SceneView(context()->scene().scene(), _scene_view.camera());
 
-
 	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), _scene_view));
-	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size()));
+	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size));
 	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, _ibl_data));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 
-	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, content_size()));
+	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
 	_view			= std::make_shared<TextureView>(_renderer->output());
 }
 

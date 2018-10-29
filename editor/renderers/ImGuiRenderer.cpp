@@ -41,11 +41,13 @@ static ImageData load_font() {
 	ImGuiIO& io = ImGui::GetIO();
 
 	io.Fonts->AddFontDefault();
-	{
+	if(io::File::exists("fonts/fa-solid-900.ttf")) {
 		ImFontConfig config;
 		config.MergeMode = true;
 		const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
 		io.Fonts->AddFontFromFileTTF("fonts/fa-solid-900.ttf", 13.0f, &config, icon_ranges);
+	} else {
+		log_msg("fonts/fa-solid-900.ttf not found.", Log::Error);
 	}
 
 	u8* font_data = nullptr;

@@ -120,7 +120,7 @@ void ResourceBrowser::update_node(DirNode* node) {
 void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 	static constexpr ImGuiTreeNodeFlags default_node_flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 	ImGuiTreeNodeFlags flags = default_node_flags/* | (node->children.is_empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/;
-	if(ImGui::TreeNodeEx(name.data(), flags)) {
+	if(ImGui::TreeNodeEx(fmt(ICON_FA_FOLDER " %", name).data(), flags)) {
 		if(!node->up_to_date) {
 			update_node(node);
 		}

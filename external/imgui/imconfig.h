@@ -25,7 +25,7 @@
 #endif
 
 //---- Define assertion handler. Defaults to calling assert().
-//#define IM_ASSERT(_EXPR) do { if(!(_EXPR)) { y_fatal("IM_ASSERT failed: " #_EXPR); } } while(false)
+#define IM_ASSERT(_EXPR) do { if(!(_EXPR)) { y_fatal("IM_ASSERT failed: " #_EXPR); } } while(false)
 
 
 //---- Define attributes of all API symbols declarations, e.g. for DLL under Windows.
