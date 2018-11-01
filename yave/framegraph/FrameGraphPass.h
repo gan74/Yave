@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERGRAPH_RENDERGRAPHPASS_H
-#define YAVE_RENDERGRAPH_RENDERGRAPHPASS_H
+#ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHPASS_H
+#define YAVE_FRAMEGRAPH_FRAMEGRAPHPASS_H
 
 #include <y/core/Functor.h>
 
@@ -28,69 +28,65 @@ SOFTWARE.
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include "RenderGraphResource.h"
+#include "FrameGraphResource.h"
 
 namespace yave {
 
-class RenderGraphResources;
+class FrameGraphResources;
 
-class RenderGraphPassBase : NonCopyable {
+class FrameGraphPassBase : NonCopyable {
 	public:
 
-		virtual ~RenderGraphPassBase() = default;
+		virtual ~FrameGraphPassBase() = default;
 
-		virtual void setup(RenderGraphBuilder& builder) = 0;
-		virtual void render(CmdBufferRecorder& recorder, const RenderGraphResources& resources) const = 0;
 
-		u32 index() const {
-			return _index;
+		virtual void setup(FrameGraphBuilder& builder) = 0;
+		virtual void render(CmdBufferRecorder& recorder, const FrameGraphResources& resources) const = 0;
+
+		bool uses_resource(const FrameGraphResourceBase& res) const {
+			return std::find(_resources.begin(), _resources.end(), res) != _resources.end();
 		}
 
-		bool writes_resource(const RenderGraphResourceBase& res) const {
-			for(const auto& r : _resources) {
-				if(r == res) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		const core::Vector<RenderGraphResourceBase>& used_resources() const {
+		const core::Vector<FrameGraphResourceBase>& used_resources() const {
 			return _resources;
 		}
 
+		const core::String& name() const {
+			return _name;
+		}
+
 	protected:
-		RenderGraphPassBase(u32 index) : _index(index) {
+		FrameGraphPassBase(std::string_view name) : _name(name) {
 		}
 
 	private:
-		friend class RenderGraph;
-		friend class RenderGraphBuilder;
+		friend class FrameGraph;
+		friend class FrameGraphBuilder;
 
-		u32 _index = u32(-1);
+		core::String _name;
 
-		core::Vector<RenderGraphResourceBase> _resources;
+		core::Vector<FrameGraphResourceBase> _resources;
 };
 
 template<typename T>
-class RenderGraphPass final : public RenderGraphPassBase {
+class FrameGraphPass final : public FrameGraphPassBase {
 	public:
-		using setup_func = core::Function<void(RenderGraphBuilder&, T&)>;
-		using render_func = core::Function<void(CmdBufferRecorder& recorder, const T& , const RenderGraphResources&)>;
+		using setup_func = core::Function<void(FrameGraphBuilder&, T&)>;
+		using render_func = core::Function<void(CmdBufferRecorder& recorder, const T& , const FrameGraphResources&)>;
 
-		RenderGraphPass(u32 index, setup_func&& setup, render_func&& render) : RenderGraphPassBase(index), _render(std::move(render)), _setup(std::move(setup)) {
+		FrameGraphPass(std::string_view name, setup_func&& setup, render_func&& render) : FrameGraphPassBase(name), _render(std::move(render)), _setup(std::move(setup)) {
 		}
 
-		void setup(RenderGraphBuilder& builder) override {
+		void setup(FrameGraphBuilder& builder) override {
 			_setup(builder, _data);
 		}
 
-		void render(CmdBufferRecorder& recorder, const RenderGraphResources& resources) const override {
+		void render(CmdBufferRecorder& recorder, const FrameGraphResources& resources) const override {
 			_render(recorder, _data, resources);
 		}
 
 	private:
-		friend class RenderGraph;
+		friend class FrameGraph;
 
 		render_func _render;
 		setup_func _setup;
@@ -100,4 +96,4 @@ class RenderGraphPass final : public RenderGraphPassBase {
 
 }
 
-#endif // YAVE_RENDERGRAPH_RENDERGRAPHPASS_H
+#endif // YAVE_FRAMEGRAPH_FRAMEGRAPHPASS_H

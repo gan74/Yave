@@ -3,7 +3,7 @@
 
 #include <y/io/File.h>
 
-#include <yave/rendergraph/RenderGraph.h>
+#include <yave/framegraph/FrameGraph.h>
 
 using namespace editor;
 
@@ -13,36 +13,37 @@ int test_graph() {
 	Device device(instance);
 
 	{
-		RenderGraph graph(&device);
+		FrameGraph graph(&device);
 
-		RenderGraphResource<Texture> b_output;
-		RenderGraphResource<Texture> a_output;
+		FrameGraphResource<Texture> b_output;
+		FrameGraphResource<Texture> a_output;
 		struct Pass {
-				RenderGraphResource<StorageTexture> storage;
-				RenderGraphResource<Texture> texture;
+			FrameGraphResource<StorageTexture> storage;
+			FrameGraphResource<Texture> texture;
 		};
 
-		graph.add_callback_pass<Pass>(
-			[&](RenderGraphBuilder& builder, Pass& pass) {
+		auto a_pass = graph.add_callback_pass<Pass>("A pass",
+			[&](FrameGraphBuilder& builder, Pass& pass) {
 				unused(builder, pass);
 				builder.create(pass.storage);
 				builder.write(pass.storage);
 				builder.create(a_output);
 			},
-			[](CmdBufferRecorder& recorder, const Pass& pass, const RenderGraphResources& res) {
+			[](CmdBufferRecorder& recorder, const Pass& pass, const FrameGraphResources& res) {
 				unused(recorder, pass, res);
-				log_msg("A");
 			});
 
-		graph.add_callback_pass<Pass>(
-			[&](RenderGraphBuilder& builder, Pass& pass) {
+		graph.add_callback_pass<Pass>("B pass",
+			[&](FrameGraphBuilder& builder, Pass& pass) {
 				unused(builder, pass);
-				b_output = builder.create<Texture>();
+				pass.texture = builder.create<Texture>();
+				builder.read(a_pass.storage);
 				builder.write(b_output);
 			},
-			[](CmdBufferRecorder& recorder, const Pass& pass, const RenderGraphResources& res) {
+			[&](CmdBufferRecorder& recorder, const Pass& pass, const FrameGraphResources& res) {
 				unused(recorder, pass, res);
-				log_msg("B");
+				res.get<StorageTexture>(a_pass.storage);
+				res.get<Texture>(pass.texture);
 			});
 
 		{
@@ -60,7 +61,7 @@ int main(int argc, char** argv) {
 	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
 
 
-	/*log_msg("Testing render graph");
+	/*log_msg("Testing frame graph");
 
 	return test_graph();*/
 

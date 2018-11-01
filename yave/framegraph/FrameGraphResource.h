@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERGRAPH_RENDERGRAPHRECOURCE_H
-#define YAVE_RENDERGRAPH_RENDERGRAPHRECOURCE_H
+#ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCE_H
+#define YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCE_H
 
 #include <yave/yave.h>
 
@@ -28,19 +28,16 @@ SOFTWARE.
 
 namespace yave {
 
-class RenderGraphBuilder;
-class RenderGraphResources;
+class FrameGraphPassBase;
+class FrameGraphBuilder;
+class FrameGraphResources;
 
-class RenderGraphResourceBase {
+class FrameGraphResourceBase {
 	public:
-		enum class UsageFlags {
-
-		};
-
-		RenderGraphResourceBase() = default;
+		FrameGraphResourceBase() = default;
 
 		u32 id() const {
-			return _id;
+			return u32(_id);
 		}
 
 		bool is_valid() const {
@@ -48,46 +45,41 @@ class RenderGraphResourceBase {
 		}
 
 		bool is_initialized() const {
-			return _last_op != Undefined;
+			return _last_pass_to_write;
 		}
 
-		u32 last_pass_index() const {
-			return _pass_index;
+		const FrameGraphPassBase* last_pass_to_read() const {
+			return _last_pass_to_read;
 		}
 
-		bool is_read() const {
-			return _last_op == Read;
+		const FrameGraphPassBase* last_pass_to_write() const {
+			return  _last_pass_to_write;
 		}
 
-		bool operator==(const RenderGraphResourceBase& other) const {
-			return _id == other._id && _version == other._version;
+		bool operator==(const FrameGraphResourceBase& other) const {
+			return _id == other._id;
 		}
 
 	protected:
-		friend class RenderGraphBuilder;
-		friend class RenderGraphResources;
+		friend class FrameGraphBuilder;
+		friend class FrameGraphResources;
 
 		static constexpr u32 invalid_id = u32(-1);
 
 		u32 _id = invalid_id;
-		u32 _version = 0;
-		u32 _pass_index = u32(-1);
+		const FrameGraphPassBase* _last_pass_to_read = nullptr;
+		const FrameGraphPassBase* _last_pass_to_write = nullptr;
 
-		enum {
-			Undefined,
-			Read,
-			Write
-		} _last_op = Undefined;
-
-		PipelineStage _last_op_stage = PipelineStage::None;
+		PipelineStage _read_stage = PipelineStage::None;
+		PipelineStage _write_stage = PipelineStage::None;
 };
 
 template<typename T>
-class RenderGraphResource : public RenderGraphResourceBase {
+class FrameGraphResource : public FrameGraphResourceBase {
 	public:
-		RenderGraphResource() = default;
+		FrameGraphResource() = default;
 };
 
 }
 
-#endif // YAVE_RENDERGRAPH_RENDERGRAPHRECOURCE_H
+#endif // YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCE_H
