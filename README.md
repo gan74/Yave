@@ -61,3 +61,29 @@ Implemented features:
 
 ### Licence:
 MIT
+
+
+
+## To Do
+
+### Framegraph
+- [ ] Barriers
+- [ ] Reuse resources over frame
+
+### Engine
+- [ ] Culling
+- [ ] Batching system
+- [ ] Streaming
+- [ ] Material system
+- [ ] Shadows
+- [ ] GI
+- [ ] Sky
+- [ ] Spot lights
+
+### Editor
+- [ ] Save open widgets
+- [ ] Open several views
+- [ ] Rotation & scale 
+
+
+
