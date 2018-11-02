@@ -83,14 +83,14 @@ void SceneRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 	// renderables
 	{
 		for(const auto& r : scene_view().scene().renderables()) {
-			r->render(token, recorder, Renderable::SceneData{_camera_set, attrib_index++});
+			r->render(recorder, Renderable::SceneData{_camera_set, attrib_index++});
 		}
 	}
 
 	// static meshes
 	{
 		for(const auto& r : scene_view().scene().static_meshes()) {
-			r->render(token, recorder, Renderable::SceneData{_camera_set, attrib_index++});
+			r->render(recorder, Renderable::SceneData{_camera_set, attrib_index++});
 		}
 	}
 }

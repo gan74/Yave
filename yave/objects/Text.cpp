@@ -43,7 +43,7 @@ Text::Text(const AssetPtr<Font>& font, const core::String& text) :
 	y_fatal("text");
 }
 
-void Text::render(const FrameToken&, RenderPassRecorder&, const SceneData&) const {
+void Text::render(RenderPassRecorder&, const SceneData&) const {
 	y_fatal("text");
 }
 

@@ -30,6 +30,7 @@ namespace yave {
 
 class SceneView {
 	public:
+		SceneView() = default;
 		SceneView(Scene& sce, Camera cam = Camera());
 
 		const Scene& scene() const;

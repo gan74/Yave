@@ -39,7 +39,7 @@ StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) :
 		_material(std::move(other._material)) {
 }
 
-void StaticMeshInstance::render(const FrameToken&, RenderPassRecorder& recorder, const SceneData& scene_data) const {
+void StaticMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
 	recorder.bind_material(*_material, {scene_data.descriptor_set});
 	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer())});
 

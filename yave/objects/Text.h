@@ -35,7 +35,7 @@ class Text final : public Renderable, NonCopyable {
 	public:
 		Text(const AssetPtr<Font>& font, const core::String& text);
 
-		void render(const FrameToken&, RenderPassRecorder&, const SceneData&) const override;
+		void render(RenderPassRecorder&, const SceneData&) const override;
 
 
 	private:

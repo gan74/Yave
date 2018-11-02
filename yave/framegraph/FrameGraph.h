@@ -32,32 +32,33 @@ namespace yave {
 
 class FrameGraph : NonCopyable {
 	public:
-		FrameGraph(DevicePtr dptr) : _resources(dptr) {
+		FrameGraph(DevicePtr dptr) : _data(std::make_shared<Data>(dptr)) {
 		}
 
 		template<typename T>
 		T& add_callback_pass(std::string_view pass_name,
-							 typename FrameGraphPass<T>::setup_func&& setup,
-							 typename FrameGraphPass<T>::render_func&& render) {
+							 typename CallBackFrameGraphPass<T>::setup_func&& setup,
+							 typename CallBackFrameGraphPass<T>::render_func&& render) {
 
-			auto pass = std::make_unique<FrameGraphPass<T>>(pass_name, std::move(setup), std::move(render));
-			FrameGraphPass<T>* ptr = pass.get();
-			FrameGraphBuilder::build(ptr, _resources);
-			_passes << std::move(pass);
+			auto pass = std::make_unique<CallBackFrameGraphPass<T>>(pass_name, std::move(setup), std::move(render));
+			CallBackFrameGraphPass<T>* ptr = pass.get();
+			FrameGraphBuilder::build(ptr, _data->resources);
+			 _data->passes << std::move(pass);
 			return ptr->_data;
 		}
 
-		void render(CmdBufferRecorder& recorder, const FrameGraphResourceBase& output) {
+		void render(CmdBufferRecorder& recorder, const FrameGraphResourceBase& output) && {
 			for(const auto& pass : compile_sequential(output)) {
 				auto region = recorder.region(pass->name());
-				pass->render(recorder, _resources);
+				pass->render(recorder,  _data->resources);
 			}
+			recorder.keep_alive(_data);
 		}
 
 	private:
 		core::Vector<const FrameGraphPassBase*> compile_sequential(const FrameGraphResourceBase& output) const {
 			core::Vector<const FrameGraphPassBase*> passes;
-			for(const auto& p : _passes) {
+			for(const auto& p : _data->passes) {
 				if(p->uses_resource(output)) {
 					fill_dependencies(passes, p.get());
 				}
@@ -79,9 +80,15 @@ class FrameGraph : NonCopyable {
 			}
 		}
 
+		struct Data {
+			Data(DevicePtr dptr) : resources(dptr) {
+			}
 
-		FrameGraphResources _resources;
-		core::Vector<std::unique_ptr<FrameGraphPassBase>> _passes;
+			FrameGraphResources resources;
+			core::Vector<std::unique_ptr<FrameGraphPassBase>> passes;
+		};
+
+		std::shared_ptr<Data> _data;
 };
 
 }

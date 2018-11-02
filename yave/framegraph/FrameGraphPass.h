@@ -69,12 +69,12 @@ class FrameGraphPassBase : NonCopyable {
 };
 
 template<typename T>
-class FrameGraphPass final : public FrameGraphPassBase {
+class CallBackFrameGraphPass final : public FrameGraphPassBase {
 	public:
 		using setup_func = core::Function<void(FrameGraphBuilder&, T&)>;
 		using render_func = core::Function<void(CmdBufferRecorder& recorder, const T& , const FrameGraphResources&)>;
 
-		FrameGraphPass(std::string_view name, setup_func&& setup, render_func&& render) : FrameGraphPassBase(name), _render(std::move(render)), _setup(std::move(setup)) {
+		CallBackFrameGraphPass(std::string_view name, setup_func&& setup, render_func&& render) : FrameGraphPassBase(name), _render(std::move(render)), _setup(std::move(setup)) {
 		}
 
 		void setup(FrameGraphBuilder& builder) override {

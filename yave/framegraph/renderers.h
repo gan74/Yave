@@ -19,38 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_FRAMEGRAPH_RENDERERS_H
+#define YAVE_FRAMEGRAPH_RENDERERS_H
 
-#include "SkinnedMeshInstance.h"
+#include <yave/scene/SceneView.h>
+#include <yave/graphics/bindings/DescriptorSet.h>
 
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/material/Material.h>
+#include "FrameGraph.h"
 
 namespace yave {
 
-SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material) :
-		_mesh(mesh),
-		_skeleton(_mesh->triangle_buffer().device(), &mesh->skeleton()),
-		_material(material) {
+class SceneRender {
+	public:
+		static constexpr usize max_batch_count = 128 * 1024;
 
-	set_radius(_mesh->radius());
+		static SceneRender create(FrameGraphBuilder& builder, const SceneView& view);
+
+		void render(RenderPassRecorder& recorder, const FrameGraphResources& resources) const;
+
+	private:
+		template<typename T>
+		using AttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, MemoryType::CpuVisible>;
+
+		SceneView _scene_view;
+
+		DescriptorSet _camera_set;
+
+		FrameGraphResource<TypedUniformBuffer<uniform::ViewProj>> _camera_buffer;
+		FrameGraphResource<AttribBuffer<math::Transform<>>> _transform_buffer;
+};
+
+
+struct GBufferPass {
+	SceneRender scene;
+
+	FrameGraphResource<DepthTextureAttachment> depth;
+	FrameGraphResource<ColorTextureAttachment> color;
+	FrameGraphResource<ColorTextureAttachment> normal;
+
+	Framebuffer gbuffer;
+};
+
+GBufferPass& render_gbuffer(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
+
+
 }
 
-SkinnedMeshInstance::SkinnedMeshInstance(SkinnedMeshInstance&& other) :
-		Renderable(other),
-		_mesh(std::move(other._mesh)),
-		_skeleton(std::move(other._skeleton)),
-		_material(std::move(other._material)) {
-}
-
-void SkinnedMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	_skeleton.update();
-
-	recorder.bind_material(*_material, {scene_data.descriptor_set, _skeleton.descriptor_set()});
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {SkinnedVertexSubBuffer(_mesh->vertex_buffer())});
-
-	auto indirect = _mesh->indirect_data();
-	indirect.setFirstInstance(scene_data.instance_index);
-	recorder.draw(indirect);
-}
-
-}
+#endif // YAVE_FRAMEGRAPH_RENDERERS_H

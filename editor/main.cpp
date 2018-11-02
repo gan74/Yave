@@ -3,7 +3,7 @@
 
 #include <y/io/File.h>
 
-#include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/renderers.h>
 
 using namespace editor;
 
@@ -11,44 +11,16 @@ using namespace editor;
 int test_graph() {
 	Instance instance(DebugParams::debug());
 	Device device(instance);
+	Scene scene;
 
 	{
 		FrameGraph graph(&device);
 
-		FrameGraphResource<Texture> b_output;
-		FrameGraphResource<Texture> a_output;
-		struct Pass {
-			FrameGraphResource<StorageTexture> storage;
-			FrameGraphResource<Texture> texture;
-		};
-
-		auto a_pass = graph.add_callback_pass<Pass>("A pass",
-			[&](FrameGraphBuilder& builder, Pass& pass) {
-				unused(builder, pass);
-				builder.create(pass.storage);
-				builder.write(pass.storage);
-				builder.create(a_output);
-			},
-			[](CmdBufferRecorder& recorder, const Pass& pass, const FrameGraphResources& res) {
-				unused(recorder, pass, res);
-			});
-
-		graph.add_callback_pass<Pass>("B pass",
-			[&](FrameGraphBuilder& builder, Pass& pass) {
-				unused(builder, pass);
-				pass.texture = builder.create<Texture>();
-				builder.read(a_pass.storage);
-				builder.write(b_output);
-			},
-			[&](CmdBufferRecorder& recorder, const Pass& pass, const FrameGraphResources& res) {
-				unused(recorder, pass, res);
-				res.get<StorageTexture>(a_pass.storage);
-				res.get<Texture>(pass.texture);
-			});
+		auto& gbuffer = render_gbuffer(graph, SceneView(scene), math::Vec2ui(512));
 
 		{
 			CmdBufferRecorder rec(device.create_disposable_cmd_buffer());
-			graph.render(rec, b_output);
+			std::move(graph).render(rec, gbuffer.color);
 			RecordedCmdBuffer cmd(std::move(rec));
 			device.queue(vk::QueueFlagBits::eGraphics).submit<SyncSubmit>(std::move(cmd));
 		}

@@ -32,10 +32,10 @@ namespace yave {
 class FrameGraphResources : public DeviceLinked, NonCopyable {
 
 	struct ResourceContainerBase : NonCopyable {
-		virtual ~ResourceContainerBase() = default;
-
 		ResourceContainerBase(std::type_index t) : type(t) {
 		}
+
+		virtual ~ResourceContainerBase() = default;
 
 		const std::type_index type;
 	};
@@ -44,14 +44,12 @@ class FrameGraphResources : public DeviceLinked, NonCopyable {
 	struct ResourceContainer : ResourceContainerBase {
 		template<typename... Args>
 		ResourceContainer(Args&&... args) : ResourceContainerBase(typeid(T)), resource(std::forward<Args>(args)...) {
-			//log_msg(type_name<T>());
 		}
 
 		T resource;
-
 	};
 
-	using ResourceConstructor = core::Function<std::unique_ptr<ResourceContainerBase>(DevicePtr)>;
+	using ResourceConstructor = core::Function<std::unique_ptr<ResourceContainerBase>()>;
 
 	public:
 		FrameGraphResources(DevicePtr dptr) : DeviceLinked(dptr) {
@@ -74,11 +72,13 @@ class FrameGraphResources : public DeviceLinked, NonCopyable {
 		}
 
 		template<typename T, typename... Args>
-		FrameGraphResource<T> create(Args&&... args) {
+		FrameGraphResource<T> add_resource(Args&&... args) {
 			FrameGraphResource<T> res;
 			res._id = _resources_ctors.size();
-			_resources_ctors.emplace_back([tpl = std::make_tuple(std::forward<Args>(args)...)](DevicePtr) mutable {
-					return std::apply(std::make_unique<ResourceContainer<T>>, std::move(tpl));
+
+			_resources_ctors.emplace_back([tpl = std::make_tuple(std::forward<Args>(args)...)]() mutable {
+					// extra layer of lambda to force the types of the arguments (overwise make_unique won't resolve properly)
+					return std::apply([](Args&&... a) { return std::make_unique<ResourceContainer<T>>(std::forward<Args>(a)...); }, std::move(tpl));
 				});
 			return res;
 		}
@@ -92,7 +92,7 @@ class FrameGraphResources : public DeviceLinked, NonCopyable {
 		void init(const FrameGraphResource<T>& res) const {
 			auto& r = _resources[res.id()];
 			if(!r) {
-				r = _resources_ctors[res.id()](device());
+				r = _resources_ctors[res.id()]();
 			}
 		}
 
@@ -107,12 +107,18 @@ class FrameGraphBuilder : NonCopyable {
 			pass->setup(builder);
 		}
 
+		DevicePtr device() const {
+			return _resources.device();
+		}
+
+		const FrameGraphResources& resources() const {
+			return _resources;
+		}
+
+
 		template<typename T, typename... Args>
 		FrameGraphResource<T> create(Args&&... args) {
-			FrameGraphResource<T> res = _resources.create<T>(std::forward<Args>(args)...);
-			_pass->_resources << res;
-			res._last_pass_to_write = _pass;
-			return res;
+			return _resources.add_resource<T>(std::forward<Args>(args)...);
 		}
 
 		template<typename T, typename... Args>
