@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef Y_FORMAT_H
 #define Y_FORMAT_H
 
-#include <y/utils.h>
-
+#include "types.h"
 #include <cstring>
+#include <string_view>
 
 namespace y {
 

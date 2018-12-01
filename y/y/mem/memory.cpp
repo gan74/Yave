@@ -20,42 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DeviceMemoryView.h"
-#include "DeviceMemoryHeap.h"
+#include "memory.h"
 
-#include <yave/device/Device.h>
+namespace y {
+namespace memory {
 
-namespace yave {
-
-DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
-		DeviceLinked(mem.device()),
-		_heap(mem.heap()),
-		_memory(mem.vk_memory()),
-		_offset(mem.vk_offset()) {
 }
-
-vk::MappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset) const {
-	usize atom_size = device()->vk_limits().nonCoherentAtomSize;
-
-	usize aligned_offset = memory::align_down_to(_offset + offset, atom_size);
-	usize end = _offset + size;
-	return vk::MappedMemoryRange(_memory, aligned_offset,  memory::align_up_to(end - aligned_offset, atom_size));
-}
-
-vk::DeviceMemory DeviceMemoryView::vk_memory() const {
-	return _memory;
-}
-
-usize DeviceMemoryView::vk_offset() const {
-	return _offset;
-}
-
-void* DeviceMemoryView::map() {
-	return _heap->map(*this);
-}
-
-void DeviceMemoryView::unmap() {
-	_heap->unmap(*this);
-}
-
 }

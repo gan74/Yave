@@ -24,16 +24,9 @@ SOFTWARE.
 
 #include "DeviceMemory.h"
 
+#include <y/mem/memory.h>
+
 namespace yave {
-
-constexpr usize align_up_to(usize value, usize alignment) {
-	return (value + alignment - 1) & ~(alignment - 1);
-}
-
-constexpr usize align_down_to(usize value, usize alignment) {
-	usize diff = value % alignment;
-	return value - diff;
-}
 
 class DeviceMemoryView : public DeviceLinked {
 	public:

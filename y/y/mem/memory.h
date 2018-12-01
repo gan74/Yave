@@ -19,43 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef Y_MEM_MEMORY_H
+#define Y_MEM_MEMORY_H
 
-#include "DeviceMemoryView.h"
-#include "DeviceMemoryHeap.h"
+#include <y/utils.h>
+#include <cstddef>
 
-#include <yave/device/Device.h>
+namespace y {
+namespace memory {
 
-namespace yave {
-
-DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
-		DeviceLinked(mem.device()),
-		_heap(mem.heap()),
-		_memory(mem.vk_memory()),
-		_offset(mem.vk_offset()) {
+constexpr usize align_up_to(usize value, usize alignment) {
+	if(usize diff = value % alignment) {
+		return value + alignment - diff;
+	}
+	return value;
+	//return (value + alignment - 1) & ~(alignment - 1);
 }
 
-vk::MappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset) const {
-	usize atom_size = device()->vk_limits().nonCoherentAtomSize;
-
-	usize aligned_offset = memory::align_down_to(_offset + offset, atom_size);
-	usize end = _offset + size;
-	return vk::MappedMemoryRange(_memory, aligned_offset,  memory::align_up_to(end - aligned_offset, atom_size));
+constexpr usize align_down_to(usize value, usize alignment) {
+	usize diff = value % alignment;
+	return value - diff;
 }
 
-vk::DeviceMemory DeviceMemoryView::vk_memory() const {
-	return _memory;
-}
+namespace alloc {
 
-usize DeviceMemoryView::vk_offset() const {
-	return _offset;
-}
+constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
 
-void* DeviceMemoryView::map() {
-	return _heap->map(*this);
-}
-
-void DeviceMemoryView::unmap() {
-	_heap->unmap(*this);
+constexpr usize align_up(usize size) {
+	return align_up_to(size, max_alignment);
 }
 
 }
+
+
+
+}
+}
+
+#endif // Y_MEM_MEMORY_H
