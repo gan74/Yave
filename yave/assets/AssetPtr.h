@@ -44,7 +44,7 @@ class AssetPtr {
 		AssetId id;
 
 		template<typename... Args>
-		Pair(AssetId i, Args&&... args) : asset(std::forward<Args>(args)...), id(i) {
+		Pair(AssetId i, Args&&... args) : asset(y_fwd(args)...), id(i) {
 		}
 	};
 
@@ -80,7 +80,7 @@ class AssetPtr {
 
 
 		template<typename... Args>
-		explicit AssetPtr(AssetId id, Args&&... args) : _ptr(std::make_shared<Pair>(id, std::forward<Args>(args)...)) {
+		explicit AssetPtr(AssetId id, Args&&... args) : _ptr(std::make_shared<Pair>(id, y_fwd(args)...)) {
 		}
 
 	private:
@@ -89,12 +89,12 @@ class AssetPtr {
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args) {
-	return AssetPtr<T>(AssetId::invalid_id(), std::forward<Args>(args)...);
+	return AssetPtr<T>(AssetId::invalid_id(), y_fwd(args)...);
 }
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args) {
-	return AssetPtr<T>(id, std::forward<Args>(args)...);
+	return AssetPtr<T>(id, y_fwd(args)...);
 }
 
 }

@@ -43,7 +43,7 @@ class FrameGraphResources : public DeviceLinked, NonCopyable {
 	template<typename T>
 	struct ResourceContainer : ResourceContainerBase {
 		template<typename... Args>
-		ResourceContainer(Args&&... args) : ResourceContainerBase(typeid(T)), resource(std::forward<Args>(args)...) {
+		ResourceContainer(Args&&... args) : ResourceContainerBase(typeid(T)), resource(y_fwd(args)...) {
 		}
 
 		T resource;
@@ -76,9 +76,9 @@ class FrameGraphResources : public DeviceLinked, NonCopyable {
 			FrameGraphResource<T> res;
 			res._id = _resources_ctors.size();
 
-			_resources_ctors.emplace_back([tpl = std::make_tuple(std::forward<Args>(args)...)]() mutable {
+			_resources_ctors.emplace_back([tpl = std::make_tuple(y_fwd(args)...)]() mutable {
 					// extra layer of lambda to force the types of the arguments (overwise make_unique won't resolve properly)
-					return std::apply([](Args&&... a) { return std::make_unique<ResourceContainer<T>>(std::forward<Args>(a)...); }, std::move(tpl));
+					return std::apply([](Args&&... a) { return std::make_unique<ResourceContainer<T>>(y_fwd(a)...); }, std::move(tpl));
 				});
 			return res;
 		}
@@ -118,12 +118,12 @@ class FrameGraphBuilder : NonCopyable {
 
 		template<typename T, typename... Args>
 		FrameGraphResource<T> create(Args&&... args) {
-			return _resources.add_resource<T>(std::forward<Args>(args)...);
+			return _resources.add_resource<T>(y_fwd(args)...);
 		}
 
 		template<typename T, typename... Args>
 		void create(FrameGraphResource<T>& res, Args&&... args) {
-			res = create<T>(std::forward<Args>(args)...);
+			res = create<T>(y_fwd(args)...);
 		}
 
 

@@ -44,7 +44,7 @@ struct CmdBufferBase : NonCopyable {
 
 		template<typename T>
 		void keep_alive(T&& t) {
-			_proxy->data().keep_alive(std::forward<T>(t));
+			_proxy->data().keep_alive(y_fwd(t));
 		}
 
 	private:

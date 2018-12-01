@@ -56,11 +56,11 @@ class CmdBufferData : NonCopyable {
 		template<typename T>
 		void keep_alive(T&& t) {
 			struct Box : KeepAlive {
-				Box(T&& t) : _t(std::forward<T>(t)) {}
+				Box(T&& t) : _t(y_fwd(t)) {}
 				~Box() override {}
 				std::remove_reference_t<T> _t;
 			};
-			_keep_alive.emplace_back(new Box(std::forward<T>(t)));
+			_keep_alive.emplace_back(new Box(y_fwd(t)));
 		}
 
 

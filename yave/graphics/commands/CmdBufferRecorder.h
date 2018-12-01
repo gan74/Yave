@@ -167,7 +167,7 @@ class CmdBufferRecorder : public CmdBufferBase {
 
 		template<typename T>
 		void keep_alive(T&& t) {
-			CmdBufferBase::keep_alive(std::forward<T>(t));
+			CmdBufferBase::keep_alive(y_fwd(t));
 		}
 
 	protected:

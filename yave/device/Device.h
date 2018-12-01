@@ -73,7 +73,7 @@ class Device : NonCopyable {
 
 		template<typename T>
 		auto create_descriptor_set_layout(T&& t) const {
-			return _descriptor_layout_pool->create_descriptor_set_layout(std::forward<T>(t));
+			return _descriptor_layout_pool->create_descriptor_set_layout(y_fwd(t));
 		}
 
 		template<typename T>
