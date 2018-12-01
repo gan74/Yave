@@ -28,6 +28,8 @@ SOFTWARE.
 namespace y {
 namespace memory {
 
+constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
+
 constexpr usize align_up_to(usize value, usize alignment) {
 	if(usize diff = value % alignment) {
 		return value + alignment - diff;
@@ -41,17 +43,57 @@ constexpr usize align_down_to(usize value, usize alignment) {
 	return value - diff;
 }
 
-namespace alloc {
-
-constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
-
-constexpr usize align_up(usize size) {
+constexpr usize align_up_to_max(usize size) {
 	return align_up_to(size, max_alignment);
 }
 
-}
+class PolymorphicAllocatorBase : NonCopyable{
+	public:
+		virtual ~PolymorphicAllocatorBase() {
+		}
+
+		[[nodiscard]] virtual void* allocate(usize size) noexcept = 0;
+		virtual void deallocate(void* ptr, usize size) noexcept = 0;
+};
+
+class PolymorphicAllocatorContainer : NonCopyable {
+	public:
+		// does NOT take ownership
+		PolymorphicAllocatorContainer(NotOwner<PolymorphicAllocatorBase*> allocator) : _inner(allocator) {
+		}
+
+		PolymorphicAllocatorContainer(PolymorphicAllocatorContainer&& other) : _inner(other._inner) {
+		}
+
+		[[nodiscard]] void* allocate(usize size) noexcept {
+			return _inner->allocate(size);
+		}
+
+		void deallocate(void* ptr, usize size) noexcept {
+			return _inner->deallocate(ptr, size);
+		}
+
+	private:
+		NotOwner<PolymorphicAllocatorBase*> _inner;
+};
+
+template<typename Allocator>
+class PolymorphicAllocator : public PolymorphicAllocatorBase, Allocator {
+	public:
+		using Allocator::Allocator;
+
+		[[nodiscard]] void* allocate(usize size) noexcept override {
+			return Allocator::allocate(size);
+		}
+
+		void deallocate(void* ptr, usize size) noexcept override {
+			Allocator::deallocate(ptr, size);
+		}
+};
 
 
+PolymorphicAllocatorBase& global_allocator();
+PolymorphicAllocatorBase& thread_local_allocator();
 
 }
 }

@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_MEM_ALLOCATORS_H
 
 #include "memory.h"
+#include <mutex>
 
 namespace y {
 namespace memory {
@@ -34,15 +35,18 @@ static auto has_aligned_size(T*) -> bool_type<!std::is_void_v<decltype(T::aligne
 template<typename T>
 static auto has_aligned_size(...) -> std::false_type;
 
-template<typename Allocator>
-struct DerivedAllocator : private Allocator {
-	[[nodiscard]] void* allocate(usize size) noexcept {
-		return Allocator::allocate(size);
+
+template<typename T>
+struct MatchCtor : T {
+	MatchCtor() = default;
+
+	template<typename U, typename = std::enable_if_t<std::is_default_constructible_v<T>>>
+	MatchCtor(U&&) {
 	}
 
-	void deallocate(void* ptr, usize size) noexcept {
-		Allocator::deallocate(ptr, size);
+	MatchCtor(T&& t) : T(y_fwd(t)) {
 	}
+
 };
 
 struct VariableSizeAllocator {
@@ -62,8 +66,9 @@ static constexpr bool is_fixed_size_allocator_v = fixed_allocator_size_v<T> != 0
 
 
 
+// -------------------------- obvious ones --------------------------
 
-class NullAllocator {
+class NullAllocator : NonCopyable {
 	public:
 		[[nodiscard]] void* allocate(usize) noexcept {
 			return nullptr;
@@ -74,10 +79,10 @@ class NullAllocator {
 		}
 };
 
-class Mallocator {
+class Mallocator : NonCopyable {
 	public:
 		[[nodiscard]] void* allocate(usize size) noexcept {
-			return std::malloc(alloc::align_up(size));
+			return std::malloc(align_up_to_max(size));
 		}
 
 		void deallocate(void* ptr, usize size) noexcept {
@@ -86,43 +91,76 @@ class Mallocator {
 		}
 };
 
+// -------------------------- compound allocators --------------------------
 
-template<usize Size, typename Allocator, typename Fallback = NullAllocator>
-class FixedSizeAllocator : private Allocator, private Fallback {
+template<typename Allocator>
+class ThreadSafeAllocator : NonCopyable {
 	public:
-		static constexpr usize aligned_size = alloc::align_up(Size);
-
-		FixedSizeAllocator() {
+		ThreadSafeAllocator() = default;
+		ThreadSafeAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
 		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
-			if(alloc::align_up(size) == aligned_size) {
-				return Allocator::allocate(size);
-			}
-			return Fallback::allocate(size);
+			std::unique_lock lock(_lock);
+			return _allocator.allocate(size);
 		}
 
 		void deallocate(void* ptr, usize size) noexcept {
-			if(alloc::align_up(size) == aligned_size) {
-				Allocator::deallocate(ptr, size);
-			} else {
-				Fallback::deallocate(ptr, size);
-			}
+			std::unique_lock lock(_lock);
+			_allocator.deallocate(ptr, size);
 		}
+
+	private:
+		Allocator _allocator;
+		std::mutex _lock;
 };
 
-template<usize BlockSize, typename Allocator>
-class StackBlockAllocator : private Allocator {
+template<usize Size, typename Allocator, typename Fallback = NullAllocator>
+class FixedSizeAllocator : NonCopyable {
 	public:
-		StackBlockAllocator() : _block(reinterpret_cast<u8*>(Allocator::allocate(BlockSize))) {
+		static constexpr usize aligned_size = align_up_to_max(Size);
+
+		FixedSizeAllocator() = default;
+		FixedSizeAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}
 
-		~StackBlockAllocator() {
-			Allocator::deallocate(_block, BlockSize);
+		FixedSizeAllocator(Allocator&& a, Fallback&& f) : _allocator(std::move(a)), _fallback(std::move(f)) {
 		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
-			size = alloc::align_up(size);
+			if(align_up_to_max(size) <= aligned_size) {
+				return _allocator.allocate(size);
+			}
+			return _fallback.allocate(size);
+		}
+
+		void deallocate(void* ptr, usize size) noexcept {
+			if(align_up_to_max(size) <= aligned_size) {
+				_allocator.deallocate(ptr, size);
+			} else {
+				_fallback.deallocate(ptr, size);
+			}
+		}
+
+	private:
+		Allocator _allocator;
+		Fallback _fallback;
+};
+
+template<usize BlockSize, typename Allocator>
+class StackBlockAllocator : NonCopyable {
+	public:
+		StackBlockAllocator() = default;
+		StackBlockAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+		}
+
+
+		~StackBlockAllocator() {
+			_allocator.deallocate(_block, BlockSize);
+		}
+
+		[[nodiscard]] void* allocate(usize size) noexcept {
+			size = align_up_to_max(size);
 			if(size + _allocated > BlockSize) {
 				return nullptr;
 			}
@@ -133,7 +171,7 @@ class StackBlockAllocator : private Allocator {
 		}
 
 		void deallocate(void* ptr, usize size) noexcept {
-			size = alloc::align_up(size);
+			size = align_up_to_max(size);
 			_allocated -= size;
 			if(_block + _allocated != ptr) {
 				y_fatal("Invalid deallocation.");
@@ -141,61 +179,66 @@ class StackBlockAllocator : private Allocator {
 		}
 
 	private:
-		u8* _block = nullptr;
+		Allocator _allocator;
+		u8* _block = reinterpret_cast<u8*>(_allocator.allocate(BlockSize));
 		usize _allocated = 0;
 };
 
 template<usize Size, typename Allocator, typename Fallback = NullAllocator>
-class FixedSizeFreeListAllocator : private Allocator, private Fallback {
+class FixedSizeFreeListAllocator : NonCopyable {
 	struct Node {
 		Node* next = nullptr;
 	};
 
 	public:
-		static constexpr usize aligned_size = alloc::align_up(std::min(sizeof(Node), Size));
+		static constexpr usize aligned_size = align_up_to_max(std::min(sizeof(Node), Size));
 
-		FixedSizeFreeListAllocator() {
+		FixedSizeFreeListAllocator() = default;
+		FixedSizeFreeListAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+		}
+
+		FixedSizeFreeListAllocator(Allocator&& a, Fallback&& f) : _allocator(y_fwd(a)), _fallback(y_fwd(f)) {
 		}
 
 		~FixedSizeFreeListAllocator() {
 			while(_head) {
 				Node* next = _head->next;
-				Allocator::deallocate(_head, aligned_size);
+				_allocator.deallocate(_head, aligned_size);
 				_head = next;
 			}
 		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
-			if(alloc::align_up(size) != aligned_size) {
-				return Fallback::allocate(size);
+			if(align_up_to_max(size) > aligned_size) {
+				return _fallback.allocate(size);
 			}
 			if(_head) {
 				void* ptr = _head;
 				_head = _head->next;
 				return ptr;
 			}
-			return Allocator::allocate(size);
+			return _allocator.allocate(size);
 		}
 
 		void deallocate(void* ptr, usize size) noexcept {
-			if(alloc::align_up(size) == aligned_size) {
+			if(align_up_to_max(size) <= aligned_size) {
 				Node* node = reinterpret_cast<Node*>(ptr);
 				node->next = _head;
 				_head = node;
 			} else {
-				Fallback::deallocate(ptr, size);
+				_fallback.deallocate(ptr, size);
 			}
 		}
 
 
 	private:
+		Allocator _allocator;
+		Fallback _fallback;
 		Node* _head = nullptr;
 };
 
 template<typename Fallback, typename... Allocators>
-class BucketizerAllocator : private Allocators..., private detail::DerivedAllocator<Fallback> {
-
-	using FallbackAllocator = detail::DerivedAllocator<Fallback>;
+class BucketizerAllocator : NonCopyable {
 
 	template<typename A, typename B>
 	struct AllocatorsComparator {
@@ -210,11 +253,11 @@ class BucketizerAllocator : private Allocators..., private detail::DerivedAlloca
 		if constexpr(N < std::tuple_size_v<sorted_allocators>) {					\
 			using Alloc = std::tuple_element_t<N, sorted_allocators>;				\
 			if(size <= fixed_allocator_size_v<Alloc>) {								\
-				return func<Alloc>(size, std::forward<Args>(args)...);				\
+				return func(std::get<N>(_allocators), size, y_fwd(args)...);		\
 			}																		\
-			return name<N + 1>(size, std::forward<Args>(args)...);					\
+			return name<N + 1>(size, y_fwd(args)...);								\
 		} else {																	\
-			return func<FallbackAllocator>(size, std::forward<Args>(args)...);		\
+			return func(_fallback, size, y_fwd(args)...);							\
 		}																			\
 	}
 
@@ -224,16 +267,22 @@ class BucketizerAllocator : private Allocators..., private detail::DerivedAlloca
 #undef MAKE_DISPATCHER
 
 	template<typename A>
-	void* allocate_one(usize size) {
-		return A::allocate(size);
+	void* allocate_one(A& alloc, usize size) {
+		return alloc.allocate(size);
 	}
 
 	template<typename A>
-	void deallocate_one(usize size, void* ptr) {
-		A::deallocate(ptr, size);
+	void deallocate_one(A& alloc, usize size, void* ptr) {
+		alloc.deallocate(ptr, size);
 	}
 
 	public:
+		BucketizerAllocator() = default;
+
+		/*template<typename... Args>
+		BucketizerAllocator(Args&&... args) : detail::MatchCtor<Allocators>(y_fwd(args)...)... {
+		}*/
+
 		[[nodiscard]] void* allocate(usize size) noexcept {
 			return this->dispatch_allocate(size);
 		}
@@ -241,19 +290,26 @@ class BucketizerAllocator : private Allocators..., private detail::DerivedAlloca
 		void deallocate(void* ptr, usize size) noexcept {
 			this->dispatch_deallocate(size, ptr);
 		}
+
+	private:
+		sorted_allocators _allocators;
+		Fallback _fallback;
 };
 
-
 template<typename Allocator>
-class ElectricFenceAllocator : private Allocator {
+class ElectricFenceAllocator : NonCopyable {
 	public:
 		static constexpr usize aligned_size = fixed_allocator_size_v<Allocator>;
 
-		static constexpr usize fence_size = alloc::align_up(1024);
+		static constexpr usize fence_size = align_up_to_max(1024);
 		static constexpr u8 fence = 0xFE;
 
+		ElectricFenceAllocator() = default;
+		ElectricFenceAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+		}
+
 		[[nodiscard]] void* allocate(usize size) noexcept {
-			u8* f_begin = static_cast<u8*>(Allocator::allocate(2 * fence_size + size));
+			u8* f_begin = static_cast<u8*>(_allocator.allocate(2 * fence_size + size));
 			if(f_begin) {
 				u8* f_end = f_begin + fence_size;
 				u8* s_begin = f_end + size;
@@ -277,14 +333,21 @@ class ElectricFenceAllocator : private Allocator {
 					y_fatal("Fence altered: buffer overflow detected (alloc size: %).", size);
 				}
 			}
-			Allocator::deallocate(f_begin, 2 * fence_size + size);
+			_allocator.deallocate(f_begin, 2 * fence_size + size);
 		}
+
+	private:
+		Allocator _allocator;
 };
 
 template<typename Allocator>
-class LeakDetectorAllocator : private Allocator {
+class LeakDetectorAllocator : NonCopyable {
 	public:
 		static constexpr usize aligned_size = fixed_allocator_size_v<Allocator>;
+
+		LeakDetectorAllocator() = default;
+		LeakDetectorAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+		}
 
 		~LeakDetectorAllocator() {
 			if(_alive) {
@@ -294,7 +357,7 @@ class LeakDetectorAllocator : private Allocator {
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
 			_alive += size;
-			return Allocator::allocate(size);
+			return _allocator.allocate(size);
 		}
 
 		void deallocate(void* ptr, usize size) noexcept {
@@ -302,10 +365,11 @@ class LeakDetectorAllocator : private Allocator {
 				y_fatal("More memory was freed than has been allocated (currently allocated: % bytes, trying to free % bytes).", _alive, size);
 			}
 			_alive -= size;
-			Allocator::deallocate(ptr, size);
+			_allocator.deallocate(ptr, size);
 		}
 
 	private:
+		Allocator _allocator;
 		usize _alive = 0;
 };
 

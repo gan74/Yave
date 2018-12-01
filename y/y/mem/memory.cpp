@@ -22,8 +22,24 @@ SOFTWARE.
 
 #include "memory.h"
 
+#include "allocators.h"
+
 namespace y {
 namespace memory {
+
+using GlobalAllocator = ThreadSafeAllocator<LeakDetectorAllocator<Mallocator>>;
+
+
+PolymorphicAllocatorBase& global_allocator() {
+	static PolymorphicAllocator<GlobalAllocator> allocator;
+	return allocator;
+}
+
+PolymorphicAllocatorBase& thread_local_allocator() {
+	static thread_local PolymorphicAllocator<PolymorphicAllocatorContainer> allocator(&global_allocator());
+
+	return allocator;
+}
 
 }
 }
