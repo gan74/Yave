@@ -35,7 +35,7 @@ void set_output_ptr(std::unique_ptr<io::Writer>&& out);
 
 template<typename T>
 void set_output(T&& t) {
-	set_output_ptr(std::make_unique<T>(std::forward<T>(t)));
+	set_output_ptr(std::make_unique<T>(y_fwd(t)));
 }
 
 void enter(const char* cat, const char* func);

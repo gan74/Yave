@@ -177,7 +177,7 @@ class Vector : ResizePolicy, Allocator {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
-			return *(new(_data_end++) data_type(std::forward<Args>(args)...));
+			return *(new(_data_end++) data_type(y_fwd(args)...));
 		}
 
 		template<typename It>
@@ -378,19 +378,19 @@ inline auto vector_with_capacity(usize cap) {
 
 template<typename... Args, typename T>
 inline Vector<Args...>& operator<<(Vector<Args...>& vec, T&& t) {
-	vec.push_back(std::forward<T>(t));
+	vec.push_back(y_fwd(t));
 	return vec;
 }
 
 template<typename... Args, typename T>
 inline Vector<Args...>& operator+=(Vector<Args...>& vec, T&& t) {
-	vec.push_back(std::forward<T>(t));
+	vec.push_back(y_fwd(t));
 	return vec;
 }
 
 template<typename... Args, typename T>
 inline Vector<Args...> operator+(Vector<Args...> vec, T&& t) {
-	vec.push_back(std::forward<T>(t));
+	vec.push_back(y_fwd(t));
 	return vec;
 }
 

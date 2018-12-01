@@ -93,7 +93,7 @@ namespace serde {
 namespace detail {
 template<typename T>
 struct Callable : NonCopyable {
-	Callable(T&& t) : call(std::forward<T>(t)) {
+	Callable(T&& t) : call(y_fwd(t)) {
 	}
 	T call;
 };
@@ -136,11 +136,11 @@ void serialize_all(io::WriterRef writer, T&& t, Args&&... args) {
 			serialize(writer, t.call());
 		}
 	} else {
-		serialize(writer, std::forward<T>(t));
+		serialize(writer, y_fwd(t));
 	}
 
 	if constexpr(sizeof...(args)) {
-		serialize_all(writer, std::forward<Args>(args)...);
+		serialize_all(writer, y_fwd(args)...);
 	}
 }
 
@@ -164,11 +164,11 @@ void deserialize_all(io::ReaderRef reader, T&& t, Args&&... args) {
 				y_throw("Deserialisation error: invalid constant.");
 			}
 		} else {
-			deserialize(reader, std::forward<T>(t));
+			deserialize(reader, y_fwd(t));
 		}
 	}
 	if constexpr(sizeof...(args)) {
-		deserialize_all(reader, std::forward<Args>(args)...);
+		deserialize_all(reader, y_fwd(args)...);
 	}
 }
 

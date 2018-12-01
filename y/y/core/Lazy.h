@@ -33,14 +33,14 @@ template<typename T>
 class Lazy : NonCopyable {
 	using Builder = Function<T()>;
 	public:
-		Lazy(T&& t) : _data(Ok(std::forward<T>(t))) {
+		Lazy(T&& t) : _data(Ok(y_fwd(t))) {
 		}
 
-		Lazy(Builder&& f) : _data(Err(std::forward<Builder>(f))) {
+		Lazy(Builder&& f) : _data(Err(y_fwd(f))) {
 		}
 
 		template<typename F>
-		Lazy(F&& f) : _data(Err(Builder(std::forward<F>(f)))) {
+		Lazy(F&& f) : _data(Err(Builder(y_fwd(f)))) {
 		}
 
 		const T& get() const {

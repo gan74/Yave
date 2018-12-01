@@ -175,7 +175,7 @@ class String {
 
 		template<typename T>
 		String& operator=(T&& t) {
-			return operator=(String(std::forward<T>(t)));
+			return operator=(String(y_fwd(t)));
 		}
 
 		String& operator=(const String& str);
@@ -236,9 +236,9 @@ using has_append_t = decltype(std::declval<String&>().operator+=(std::declval<co
 template<typename T>
 inline core::String operator+(core::String l, T&& r) {
 	if constexpr(is_detected_v<detail::has_append_t, T>) {
-		l += std::forward<T>(r);
+		l += y_fwd(r);
 	} else {
-		fmt_into(l, "%", std::forward<T>(r));
+		fmt_into(l, "%", y_fwd(r));
 	}
 	return l;
 }
@@ -272,7 +272,7 @@ auto type_name() {
 
 template<typename T>
 auto type_name(T&& t) {
-	return detail::demangle_type_name(typeid(std::forward<T>(t)).name());
+	return detail::demangle_type_name(typeid(y_fwd(t)).name());
 }
 
 }

@@ -46,6 +46,7 @@ struct Nothing;
 #define y_debug_assert(cond) do { /*(void)(cond);*/ } while(false)
 #endif
 
+#define y_fwd(var) std::forward<decltype(var)>(var)
 
 #ifndef Y_PERF_LOG_DISABLED
 #define Y_PERF_LOG_ENABLED

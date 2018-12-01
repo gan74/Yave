@@ -39,9 +39,9 @@ namespace y {
 template<typename It, typename Compare>
 inline void sort(It begin, It end, Compare&& comp) {
 #ifdef Y_USE_PDQSORT
-	pdqsort(begin, end, std::forward<Compare>(comp));
+	pdqsort(begin, end, y_fwd(comp));
 #else
-	std::sort(begin, end, std::forward<Compare>(comp));
+	std::sort(begin, end, y_fwd(comp));
 #endif
 }
 

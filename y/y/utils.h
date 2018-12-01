@@ -90,7 +90,7 @@ void do_not_destroy(T&& t) {
 		~U() {}
 		std::remove_reference_t<T> t;
 	} u;
-	new(&u.t) std::remove_reference_t<T>(std::forward<T>(t));
+	new(&u.t) std::remove_reference_t<T>(y_fwd(t));
 }
 
 
@@ -127,7 +127,7 @@ static_assert(is_little_endian() || is_big_endian(), "Endianness unknown");
 template<typename T>
 class ScopeExit {
 	public:
-		ScopeExit(T&& t) : _ex(std::forward<T>(t)) {
+		ScopeExit(T&& t) : _ex(y_fwd(t)) {
 		}
 
 		ScopeExit(ScopeExit&& other) : _ex(std::move(other._ex)) {

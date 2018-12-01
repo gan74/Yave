@@ -45,14 +45,14 @@ struct FunctionBase : NonCopyable {
 template<typename T, typename Ret, typename... Args>
 struct Function : FunctionBase<Ret, Args...> {
 	public:
-		Function(T&& t) : _func(std::forward<T>(t)) {
+		Function(T&& t) : _func(y_fwd(t)) {
 		}
 
 		Ret apply(Args&&... args) override {
 			if constexpr(std::is_void_v<Ret>) {
-				_func(std::forward<Args>(args)...);
+				_func(y_fwd(args)...);
 			} else {
-				return _func(std::forward<Args>(args)...);
+				return _func(y_fwd(args)...);
 			}
 		}
 
@@ -106,7 +106,7 @@ class Functor<Container, Ret(Args...)> {
 		}
 
 		Ret operator()(Args&&... args) const {
-			return _function->apply(std::forward<Args>(args)...);
+			return _function->apply(y_fwd(args)...);
 		}
 
 	private:
@@ -174,12 +174,12 @@ using Functor = detail::Functor<std::shared_ptr, Ret, Args...>;
 
 template<typename T>
 inline auto function(T&& func) {
-	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Function>(std::forward<T>(func));
+	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Function>(y_fwd(func));
 }
 
 template<typename T>
 inline auto functor(T&& func) {
-	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Functor>(std::forward<T>(func));
+	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Functor>(y_fwd(func));
 }
 
 }

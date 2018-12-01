@@ -123,12 +123,12 @@ inline auto Err() {
 
 template<typename T>
 inline auto Ok(T&& t) {
-	return detail::Ok<std::remove_const_t<std::remove_reference_t<T>>>(std::forward<T>(t));
+	return detail::Ok<std::remove_const_t<std::remove_reference_t<T>>>(y_fwd(t));
 }
 
 template<typename T>
 inline auto Err(T&& e) {
-	return detail::Err<std::remove_const_t<std::remove_reference_t<T>>>(std::forward<T>(e));
+	return detail::Err<std::remove_const_t<std::remove_reference_t<T>>>(y_fwd(e));
 }
 
 

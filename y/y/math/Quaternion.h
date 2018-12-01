@@ -56,7 +56,7 @@ class Quaternion {
 		}
 
 		template<typename... Args, typename = std::enable_if_t<std::is_constructible_v<Vec<4, T>, Args...>>>
-		/*explicit*/ Quaternion(Args&&... args) : _quat(Vec<4, T>(std::forward<Args>(args)...).normalized()) {
+		/*explicit*/ Quaternion(Args&&... args) : _quat(Vec<4, T>(y_fwd(args)...).normalized()) {
 		}
 
 		template<typename X>

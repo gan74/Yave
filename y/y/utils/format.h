@@ -22,6 +22,7 @@ SOFTWARE.
 #ifndef Y_FORMAT_H
 #define Y_FORMAT_H
 
+#include <y/defines.h>
 #include "types.h"
 #include <cstring>
 #include <string_view>
@@ -92,9 +93,9 @@ void fmt_rec(FmtBuffer& buffer, const char* fmt, T&& t, Args&&... args) {
 	} else {
 		buffer.copy(fmt, c - fmt);
 		++c;
-		buffer.fmt_one(std::forward<T>(t));
+		buffer.fmt_one(y_fwd(t));
 		if constexpr(sizeof...(args)) {
-			fmt_rec(buffer, c, std::forward<Args>(args)...);
+			fmt_rec(buffer, c, y_fwd(args)...);
 		} else {
 			buffer.fmt_one(c);
 		}
@@ -109,7 +110,7 @@ template<typename... Args>
 std::string_view fmt(const char* fmt, Args&&... args) {
 	if constexpr(sizeof...(args)) {
 		detail::FmtBuffer buffer;
-		detail::fmt_rec(buffer, fmt, std::forward<Args>(args)...);
+		detail::fmt_rec(buffer, fmt, y_fwd(args)...);
 		return std::move(buffer).done();
 	}
 
@@ -120,7 +121,7 @@ template<typename... Args>
 std::string_view fmt_into(core::String& out, const char* fmt, Args&&... args) {
 	detail::FmtBuffer buffer(out);
 	if constexpr(sizeof...(args)) {
-		detail::fmt_rec(buffer, fmt, std::forward<Args>(args)...);
+		detail::fmt_rec(buffer, fmt, y_fwd(args)...);
 	} else {
 		buffer.fmt_one(fmt);
 	}

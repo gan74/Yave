@@ -52,7 +52,7 @@ class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
 
 		template<typename K, typename T>
 		void insert(K&& key, T&& value) {
-			this->push_back(value_type(std::forward<K>(key), std::forward<T>(value)));
+			this->push_back(value_type(y_fwd(key), y_fwd(value)));
 		}
 
 		Value& operator[](const Key& key) {
