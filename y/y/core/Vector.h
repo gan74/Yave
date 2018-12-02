@@ -345,7 +345,7 @@ class Vector : ResizePolicy, Allocator {
 			usize current_size = size();
 			usize num_to_move = std::min(new_cap, current_size);
 
-			data_type* new_data = new_cap ? Allocator::allocate(new_cap, _data) : nullptr;
+			data_type* new_data = new_cap ? Allocator::allocate(new_cap) : nullptr;
 
 			if(new_data != _data) {
 				move_range(new_data, _data, num_to_move);

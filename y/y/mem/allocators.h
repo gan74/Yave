@@ -35,20 +35,6 @@ static auto has_aligned_size(T*) -> bool_type<!std::is_void_v<decltype(T::aligne
 template<typename T>
 static auto has_aligned_size(...) -> std::false_type;
 
-
-template<typename T>
-struct MatchCtor : T {
-	MatchCtor() = default;
-
-	template<typename U, typename = std::enable_if_t<std::is_default_constructible_v<T>>>
-	MatchCtor(U&&) {
-	}
-
-	MatchCtor(T&& t) : T(y_fwd(t)) {
-	}
-
-};
-
 struct VariableSizeAllocator {
 	static constexpr usize aligned_size = 0;
 };
@@ -91,13 +77,66 @@ class Mallocator : NonCopyable {
 		}
 };
 
+// -------------------------- polymorphic allocators --------------------------
+
+class PolymorphicAllocatorBase : NonCopyable {
+	public:
+		virtual ~PolymorphicAllocatorBase() {
+		}
+
+		[[nodiscard]] virtual void* allocate(usize size) noexcept = 0;
+		virtual void deallocate(void* ptr, usize size) noexcept = 0;
+};
+
+class PolymorphicAllocatorContainer : NonCopyable {
+	public:
+		// does NOT take ownership
+		PolymorphicAllocatorContainer(NotOwner<PolymorphicAllocatorBase*> allocator) : _inner(allocator) {
+		}
+
+		PolymorphicAllocatorContainer(PolymorphicAllocatorContainer&& other) : _inner(other._inner) {
+		}
+
+		[[nodiscard]] void* allocate(usize size) noexcept {
+			return _inner->allocate(size);
+		}
+
+		void deallocate(void* ptr, usize size) noexcept {
+			return _inner->deallocate(ptr, size);
+		}
+
+	private:
+		NotOwner<PolymorphicAllocatorBase*> _inner;
+};
+
+template<typename Allocator>
+class PolymorphicAllocator : public PolymorphicAllocatorBase {
+	public:
+		PolymorphicAllocator() = default;
+		PolymorphicAllocator(Allocator&& a) : _allocator(std::move(a)) {
+		}
+
+		[[nodiscard]] void* allocate(usize size) noexcept override {
+			return _allocator.allocate(size);
+		}
+
+		void deallocate(void* ptr, usize size) noexcept override {
+			_allocator.deallocate(ptr, size);
+		}
+
+	private:
+		Allocator _allocator;
+};
+
 // -------------------------- compound allocators --------------------------
 
 template<typename Allocator>
 class ThreadSafeAllocator : NonCopyable {
 	public:
 		ThreadSafeAllocator() = default;
-		ThreadSafeAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+		ThreadSafeAllocator(ThreadSafeAllocator&&) = default;
+
+		ThreadSafeAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
@@ -121,6 +160,8 @@ class FixedSizeAllocator : NonCopyable {
 		static constexpr usize aligned_size = align_up_to_max(Size);
 
 		FixedSizeAllocator() = default;
+		FixedSizeAllocator(FixedSizeAllocator&&) = default;
+
 		FixedSizeAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}
 
@@ -151,12 +192,21 @@ template<usize BlockSize, typename Allocator>
 class StackBlockAllocator : NonCopyable {
 	public:
 		StackBlockAllocator() = default;
-		StackBlockAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+
+		StackBlockAllocator(StackBlockAllocator&& other) {
+			std::swap(_allocator, other._allocator);
+			std::swap(_block, other._block);
+			std::swap(_allocated, other._allocated);
+		}
+
+		StackBlockAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}
 
 
 		~StackBlockAllocator() {
-			_allocator.deallocate(_block, BlockSize);
+			if(_block) {
+				_allocator.deallocate(_block, BlockSize);
+			}
 		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
@@ -194,10 +244,17 @@ class FixedSizeFreeListAllocator : NonCopyable {
 		static constexpr usize aligned_size = align_up_to_max(std::min(sizeof(Node), Size));
 
 		FixedSizeFreeListAllocator() = default;
-		FixedSizeFreeListAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+
+		FixedSizeFreeListAllocator(FixedSizeFreeListAllocator&& other) {
+			std::swap(_allocator, other._allocator);
+			std::swap(_fallback, other._fallback);
+			std::swap(_head, other._head);
 		}
 
-		FixedSizeFreeListAllocator(Allocator&& a, Fallback&& f) : _allocator(y_fwd(a)), _fallback(y_fwd(f)) {
+		FixedSizeFreeListAllocator(Allocator&& a) : _allocator(std::move(a)) {
+		}
+
+		FixedSizeFreeListAllocator(Allocator&& a, Fallback&& f) : _allocator(std::move(a)), _fallback(std::move(f)) {
 		}
 
 		~FixedSizeFreeListAllocator() {
@@ -237,65 +294,6 @@ class FixedSizeFreeListAllocator : NonCopyable {
 		Node* _head = nullptr;
 };
 
-template<typename Fallback, typename... Allocators>
-class BucketizerAllocator : NonCopyable {
-
-	template<typename A, typename B>
-	struct AllocatorsComparator {
-		static constexpr bool value = fixed_allocator_size_v<A> > fixed_allocator_size_v<B>;
-	};
-
-	using sorted_allocators = sorted_tuple_t<std::tuple<Allocators...>, AllocatorsComparator>;
-
-#define MAKE_DISPATCHER(name, func)													\
-	template<usize N = 0, typename... Args>											\
-	auto name(usize size, Args&&... args) {											\
-		if constexpr(N < std::tuple_size_v<sorted_allocators>) {					\
-			using Alloc = std::tuple_element_t<N, sorted_allocators>;				\
-			if(size <= fixed_allocator_size_v<Alloc>) {								\
-				return func(std::get<N>(_allocators), size, y_fwd(args)...);		\
-			}																		\
-			return name<N + 1>(size, y_fwd(args)...);								\
-		} else {																	\
-			return func(_fallback, size, y_fwd(args)...);							\
-		}																			\
-	}
-
-	MAKE_DISPATCHER(dispatch_allocate, allocate_one)
-	MAKE_DISPATCHER(dispatch_deallocate, deallocate_one)
-
-#undef MAKE_DISPATCHER
-
-	template<typename A>
-	void* allocate_one(A& alloc, usize size) {
-		return alloc.allocate(size);
-	}
-
-	template<typename A>
-	void deallocate_one(A& alloc, usize size, void* ptr) {
-		alloc.deallocate(ptr, size);
-	}
-
-	public:
-		BucketizerAllocator() = default;
-
-		/*template<typename... Args>
-		BucketizerAllocator(Args&&... args) : detail::MatchCtor<Allocators>(y_fwd(args)...)... {
-		}*/
-
-		[[nodiscard]] void* allocate(usize size) noexcept {
-			return this->dispatch_allocate(size);
-		}
-
-		void deallocate(void* ptr, usize size) noexcept {
-			this->dispatch_deallocate(size, ptr);
-		}
-
-	private:
-		sorted_allocators _allocators;
-		Fallback _fallback;
-};
-
 template<typename Allocator>
 class ElectricFenceAllocator : NonCopyable {
 	public:
@@ -305,7 +303,9 @@ class ElectricFenceAllocator : NonCopyable {
 		static constexpr u8 fence = 0xFE;
 
 		ElectricFenceAllocator() = default;
-		ElectricFenceAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+		ElectricFenceAllocator(ElectricFenceAllocator&&) = default;
+
+		ElectricFenceAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
@@ -346,7 +346,13 @@ class LeakDetectorAllocator : NonCopyable {
 		static constexpr usize aligned_size = fixed_allocator_size_v<Allocator>;
 
 		LeakDetectorAllocator() = default;
-		LeakDetectorAllocator(Allocator&& a) : _allocator(y_fwd(a)) {
+
+		LeakDetectorAllocator(LeakDetectorAllocator&& other) {
+			std::swap(_allocator, other._allocator);
+			std::swap(_alive, other._alive);
+		}
+
+		LeakDetectorAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}
 
 		~LeakDetectorAllocator() {
@@ -372,6 +378,8 @@ class LeakDetectorAllocator : NonCopyable {
 		Allocator _allocator;
 		usize _alive = 0;
 };
+
+
 
 }
 }

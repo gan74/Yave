@@ -34,10 +34,22 @@ struct NonCopyable {
 	NonCopyable(const NonCopyable &) = delete;
 	NonCopyable& operator=(const NonCopyable &) = delete;
 
-	//NonCopyable(NonCopyable&&) {}
+	NonCopyable(NonCopyable&&) = default;
+};
+
+struct NonMovable {
+	constexpr NonMovable() {}
+	NonMovable(const NonMovable &) = delete;
+	NonMovable& operator=(const NonMovable &) = delete;
+
+	NonMovable(NonMovable&&) = delete;
 };
 
 static_assert(!std::is_move_assignable_v<NonCopyable>);
+static_assert(std::is_move_constructible_v<NonCopyable>);
+
+static_assert(!std::is_move_assignable_v<NonMovable>);
+static_assert(!std::is_move_constructible_v<NonMovable>);
 
 using u8 = uint8_t;
 using u16 = uint16_t;
