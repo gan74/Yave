@@ -27,6 +27,10 @@ namespace yave {
 ImageFormat::ImageFormat(vk::Format format) : _format(format) {
 }
 
+bool ImageFormat::operator==(const ImageFormat& other) const {
+	return _format == other._format;
+}
+
 bool ImageFormat::is_valid() const {
 	return _format != vk::Format::eUndefined;
 }

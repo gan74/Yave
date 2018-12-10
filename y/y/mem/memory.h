@@ -47,10 +47,8 @@ constexpr usize align_up_to_max(usize size) {
 	return align_up_to(size, max_alignment);
 }
 
-class PolymorphicAllocatorBase;
 
-PolymorphicAllocatorBase* global_allocator();
-PolymorphicAllocatorBase* thread_local_allocator();
+// -------------------------- standard allocators --------------------------
 
 class GlobalAllocator : NonCopyable {
 	public:
@@ -65,8 +63,6 @@ class ThreadLocalAllocator : NonCopyable {
 };
 
 // -------------------------- std adapters allocators --------------------------
-
-
 
 template<typename T, typename Allocator = GlobalAllocator>
 class StdAllocatorAdapter : NonCopyable {
@@ -93,6 +89,10 @@ class StdAllocatorAdapter : NonCopyable {
 };
 
 
+class PolymorphicAllocatorBase;
+
+PolymorphicAllocatorBase* global_allocator();
+PolymorphicAllocatorBase* thread_local_allocator();
 
 
 }

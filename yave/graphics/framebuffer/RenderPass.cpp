@@ -22,7 +22,6 @@ SOFTWARE.
 #include "RenderPass.h"
 
 #include <yave/graphics/images/Image.h>
-
 #include <yave/device/Device.h>
 
 namespace yave {
@@ -149,13 +148,29 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData de
 	;
 }
 
+RenderPass::Layout::Layout(ImageData depth, const core::ArrayView<ImageData>& colors) : _depth(depth.format) {
+	_colors.reserve(colors.size());
+	std::transform(colors.begin(), colors.end(), std::back_inserter(_colors), [](const auto& e) { return e.format; });
+}
 
+u64 RenderPass::Layout::hash() const {
+	u64 h = u64(_depth.vk_format());
+	for(const auto& c : _colors) {
+		hash_combine(h, u64(c.vk_format()));
+	}
+	return h;
+}
+
+bool RenderPass::Layout::operator==(const Layout& other) const {
+	return _depth == other._depth && _colors == other._colors;
+}
 
 
 RenderPass::RenderPass(DevicePtr dptr, ImageData depth, const core::ArrayView<ImageData>& colors) :
 		DeviceLinked(dptr),
 		_attachment_count(colors.size()),
-		_render_pass(create_renderpass(dptr, depth, colors)) {
+		_render_pass(create_renderpass(dptr, depth, colors)),
+		_layout(depth, colors) {
 }
 
 RenderPass::RenderPass(DevicePtr dptr, const core::ArrayView<ImageData>& colors) :
@@ -179,10 +194,19 @@ void RenderPass::swap(RenderPass& other) {
 	DeviceLinked::swap(other);
 	std::swap(_attachment_count, other._attachment_count);
 	std::swap(_render_pass, other._render_pass);
+	std::swap(_layout, other._layout);
 }
 
 vk::RenderPass RenderPass::vk_render_pass() const {
 	return _render_pass;
+}
+
+const RenderPass::Layout& RenderPass::layout() const {
+	return _layout;
+}
+
+usize RenderPass::attachment_count() const {
+	return _attachment_count;
 }
 
 

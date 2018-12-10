@@ -40,7 +40,7 @@ class RenderPass;
 class Material : NonCopyable, public DeviceLinked {
 
 	public:
-		static constexpr usize max_compiled_pipelines = 4;
+		static constexpr usize max_compiled_pipelines = 8;
 
 		Material() = default;
 		Material(DevicePtr dptr, const MaterialData& data);
@@ -62,7 +62,7 @@ class Material : NonCopyable, public DeviceLinked {
 
 		DescriptorSet _set;
 
-		mutable core::AssocVector<vk::RenderPass, GraphicPipeline> _compiled;
+		mutable core::AssocVector<RenderPass::Layout, GraphicPipeline> _compiled;
 };
 
 }

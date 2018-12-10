@@ -31,7 +31,6 @@ SOFTWARE.
 #include <yave/renderers/GBufferRenderer.h>
 #include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/renderers/framebufferRenderer.h>
-#include <y/core/SmallVector.h>
 
 #include <editor/widgets/EntityView.h>
 #include <editor/widgets/FileBrowser.h>

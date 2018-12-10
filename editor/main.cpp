@@ -29,9 +29,45 @@ int test_graph() {
 	return 4;
 }
 
+void test_mat_data() {
+	struct Tester : NonCopyable {
+		usize& i;
+
+		Tester(usize& p) : i(p) {
+		}
+
+		~Tester() {
+			++i;
+		}
+	};
+
+	usize i = 0;
+	{
+		MaterialData data;
+
+		{
+			auto test = std::make_shared<Tester>(i);
+		}
+		if(i != 1) {
+			y_fatal("Tester not deleted.");
+		}
+
+		{
+			auto test = std::make_shared<Tester>(i);
+			data.keep_alive(test);
+		}
+		if(i != 1) {
+			y_fatal("Tester deleted.");
+		}
+	}
+	if(i != 2) {
+		y_fatal("Tester not deleted.");
+	}
+	log_msg("Test = OK");
+}
+
 int main(int argc, char** argv) {
 	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
-
 
 	/*log_msg("Testing frame graph");
 

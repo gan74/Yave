@@ -57,12 +57,12 @@ void Material::swap(Material& other) {
 
 const GraphicPipeline& Material::compile(const RenderPass& render_pass) const {
 #warning material::compile not thread safe
-	auto key = render_pass.vk_render_pass();
-	if(!key) {
+	if(!render_pass.vk_render_pass()) {
 		y_fatal("Unable to compile material: null renderpass.");
 	}
 
-	auto it = std::find_if(_compiled.begin(), _compiled.end(), [=](const auto& c) { return c.first == key; });
+	const auto& key = render_pass.layout();
+	auto it = _compiled.find(key);
 	if(it == _compiled.end()) {
 		if(_compiled.size() == max_compiled_pipelines) {
 			log_msg("Discarding graphic pipeline", Log::Warning);

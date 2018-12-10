@@ -37,6 +37,8 @@ class ImageFormat {
 
 		bool is_valid() const;
 
+		bool operator==(const ImageFormat& other) const;
+
 	private:
 		vk::Format _format;
 };

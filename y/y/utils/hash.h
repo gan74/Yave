@@ -26,21 +26,18 @@ SOFTWARE.
 
 namespace y {
 
-namespace detail {
-
 // from boost
 template<typename T>
 inline void hash_combine(T& seed, T value) {
 	seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-}
 
 template<typename T, typename... Args>
 inline auto hash(const T& t, const Args&... args) {
 	auto h = std::hash<T>()(t);
 	if constexpr(sizeof...(args)) {
-		detail::hash_combine(h, hash(args...));
+		hash_combine(h, hash(args...));
 	}
 	return h;
 }
@@ -49,7 +46,7 @@ template<typename B, typename E>
 inline auto hash_range(B begin, const E& end) {
 	decltype(hash(*begin)) h = 0;
 	for(; begin != end; ++begin) {
-		detail::hash_combine(h, hash(*begin));
+		hash_combine(h, hash(*begin));
 	}
 	return h;
 }
@@ -66,7 +63,7 @@ template<typename A, typename B>
 struct hash<std::pair<A, B>> : hash<A>, hash<B> {
 	auto operator()(const std::pair<A, B>& p) const {
 		auto a = hash<A>::operator()(p.first);
-		y::detail::hash_combine(a, hash<B>::operator()(p.second));
+		y::hash_combine(a, hash<B>::operator()(p.second));
 		return a;
 	}
 };

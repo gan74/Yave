@@ -44,6 +44,11 @@ MaterialData& MaterialData::set_bindings(const core::ArrayView<Binding>& binds) 
 	return *this;
 }
 
+MaterialData& MaterialData::keep_alive(const GenericAssetPtr& asset) {
+	_keep_alive.emplace_back(asset);
+	return *this;
+}
+
 MaterialData& MaterialData::set_primitive_type(PrimitiveType type) {
 	_primitive_type = type;
 	return *this;

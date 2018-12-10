@@ -66,9 +66,17 @@ MIT
 
 ## To Do
 
+
+### Y
+- [ ] Finish allocators
+- [ ] Rewrite SmallVector (with new allocators)
+- [ ] Rename ArrayView to Span and MutableSpan
+- [ ] DenseMap ?
+- [ ] Log callbacks
+
 ### Framegraph
 - [ ] Barriers
-- [ ] Reuse resources over frame
+- [ ] Reuse resources over frames
 
 ### Engine
 - [ ] Culling
@@ -84,6 +92,9 @@ MIT
 - [ ] Save open widgets
 - [ ] Open several views
 - [ ] Rotation & scale 
+- [ ] Create materials 
+- [ ] Edit object mesh/materials 
+- [ ] Tool entities 
 
 
 

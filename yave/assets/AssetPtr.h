@@ -78,6 +78,7 @@ class AssetPtr {
 		template<typename U, typename... Args>
 		friend AssetPtr<U> make_asset_with_id(AssetId id, Args&&... args);
 
+		friend class GenericAssetPtr;
 
 		template<typename... Args>
 		explicit AssetPtr(AssetId id, Args&&... args) : _ptr(std::make_shared<Pair>(id, y_fwd(args)...)) {
@@ -96,6 +97,24 @@ template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args) {
 	return AssetPtr<T>(id, y_fwd(args)...);
 }
+
+
+class GenericAssetPtr {
+
+	public:
+		GenericAssetPtr() = default;
+
+		template<typename T>
+		GenericAssetPtr(const AssetPtr<T>& ptr) : _id(ptr._ptr, &ptr._ptr->id) {
+		}
+
+		AssetId id() const {
+			return _id ? *_id : AssetId::invalid_id();
+		}
+
+	private:
+		std::shared_ptr<AssetId> _id;
+};
 
 }
 

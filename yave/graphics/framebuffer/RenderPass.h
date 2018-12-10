@@ -25,10 +25,13 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <yave/device/DeviceLinked.h>
+#include <yave/device/DeviceLinked.h>
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
 namespace yave {
+
+
 
 class RenderPass : NonCopyable, public DeviceLinked {
 	public:
@@ -49,6 +52,20 @@ class RenderPass : NonCopyable, public DeviceLinked {
 			}
 		};
 
+		class Layout {
+			public:
+				Layout() = default;
+				Layout(ImageData depth, const core::ArrayView<ImageData>& colors);
+
+				u64 hash() const;
+
+				bool operator==(const Layout& other) const;
+
+			private:
+				ImageFormat _depth;
+				core::SmallVector<ImageFormat, 7> _colors;
+		};
+
 		RenderPass() = default;
 		RenderPass(DevicePtr dptr, ImageData depth, const core::ArrayView<ImageData>& colors);
 		RenderPass(DevicePtr dptr, const core::ArrayView<ImageData>& colors);
@@ -58,17 +75,18 @@ class RenderPass : NonCopyable, public DeviceLinked {
 
 		~RenderPass();
 
-		vk::RenderPass vk_render_pass() const;
+		const Layout& layout() const;
+		usize attachment_count() const;
 
-		usize attachment_count() const {
-			return _attachment_count;
-		}
+		vk::RenderPass vk_render_pass() const;
 
 	private:
 		void swap(RenderPass& other);
 
 		usize _attachment_count = 0;
 		vk::RenderPass _render_pass;
+
+		Layout _layout;
 };
 
 }

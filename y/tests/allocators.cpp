@@ -26,7 +26,7 @@ SOFTWARE.
 using namespace y;
 using namespace memory;
 
-y_test_func("StackBlockAllocator basic") {
+/*y_test_func("StackBlockAllocator basic") {
 	static constexpr usize size = align_up_to_max(1024);
 	StackBlockAllocator<size, Mallocator> allocator;
 	y_test_assert(allocator.allocate(size + 1) == nullptr);
@@ -69,4 +69,4 @@ y_test_func("FixedSizeFreeListAllocator basic") {
 
 	allocator.deallocate(p3, size - 1);
 	allocator.deallocate(p2, min_size);
-}
+}*/

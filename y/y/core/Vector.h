@@ -102,6 +102,10 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		Vector& operator=(const Vector& other) {
+			if constexpr(std::allocator_traits<Allocator>::propagate_on_container_copy_assignment::value) {
+				clear();
+				Allocator::operator=(other);
+			}
 			assign(other.begin(), other.end());
 			return *this;
 		}
@@ -149,6 +153,9 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		void swap(Vector& v) {
+			if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
+				std::swap<Allocator>(*this, v);
+			}
 			std::swap(_data, v._data);
 			std::swap(_data_end, v._data_end);
 			std::swap(_alloc_end, v._alloc_end);
@@ -393,6 +400,9 @@ inline Vector<Args...> operator+(Vector<Args...> vec, T&& t) {
 	vec.push_back(y_fwd(t));
 	return vec;
 }
+
+template<typename T, usize = 0, typename... Args>
+using SmallVector = Vector<T, Args...>; // for now...
 
 }
 }

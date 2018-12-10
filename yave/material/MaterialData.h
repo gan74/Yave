@@ -23,8 +23,10 @@ SOFTWARE.
 #define YAVE_MATERIAL_MATERIALDATA_H
 
 #include <yave/yave.h>
-#include <yave/graphics/bindings/Binding.h>
 
+#include <yave/assets/AssetPtr.h>
+
+#include <yave/graphics/bindings/Binding.h>
 #include <yave/graphics/shaders/SpirVData.h>
 
 namespace yave {
@@ -46,12 +48,14 @@ struct MaterialData {
 	bool _blend = false;
 
 	core::Vector<Binding> _bindings;
+	core::Vector<GenericAssetPtr> _keep_alive;
 
 	MaterialData& set_frag_data(SpirVData&& data);
 	MaterialData& set_vert_data(SpirVData&& data);
 	MaterialData& set_geom_data(SpirVData&& data);
 
 	MaterialData& set_bindings(const core::ArrayView<Binding>& binds);
+	MaterialData& keep_alive(const GenericAssetPtr& asset);
 
 	MaterialData& set_primitive_type(PrimitiveType type);
 

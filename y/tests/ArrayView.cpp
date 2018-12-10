@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include <y/core/ArrayView.h>
-#include <y/core/SmallVector.h>
+#include <y/core/Vector.h>
 #include <y/test/test.h>
 
 #include <y/core/String.h>
