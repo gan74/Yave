@@ -2,7 +2,7 @@
 Yet another C++17 Vulkan engine.
 
 ## Disclaimer
-This is a pet/learning project, it's not meant to be a serious engine and should not be used for anything serious.
+This is a pet/learning project, it's not meant to be a serious engine and should not be used for anything beside playing with vulkan.
 
 
 
