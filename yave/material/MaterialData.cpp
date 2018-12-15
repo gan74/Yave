@@ -44,6 +44,11 @@ MaterialData& MaterialData::set_bindings(const core::ArrayView<Binding>& binds) 
 	return *this;
 }
 
+MaterialData& MaterialData::add_binding(const Binding& bind) {
+	_bindings.push_back(bind);
+	return *this;
+}
+
 MaterialData& MaterialData::keep_alive(const GenericAssetPtr& asset) {
 	_keep_alive.emplace_back(asset);
 	return *this;

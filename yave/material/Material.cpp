@@ -29,30 +29,13 @@ SOFTWARE.
 
 namespace yave {
 
-Material::Material(DevicePtr dptr, const MaterialData &data) :
+Material::Material(DevicePtr dptr, MaterialData data) :
 		DeviceLinked(dptr),
-		_data(data),
-		_set(dptr, data._bindings) {
+		_data(std::move(data)),
+		_set(dptr, _data._bindings) {
 }
 
-Material::~Material() {
-	_compiled.clear();
-}
-
-Material::Material(Material&& other) {
-	swap(other);
-}
-
-Material& Material::operator=(Material&& other) {
-	swap(other);
-	return *this;
-}
-
-void Material::swap(Material& other) {
-	DeviceLinked::swap(other);
-	std::swap(_data, other._data);
-	std::swap(_set, other._set);
-	std::swap(_compiled, other._compiled);
+Material::Material(DevicePtr dptr, const BasicMaterialData& data) : Material(dptr, data.create_material_data()) {
 }
 
 const GraphicPipeline& Material::compile(const RenderPass& render_pass) const {

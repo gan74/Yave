@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include "GraphicPipeline.h"
 #include "MaterialData.h"
+#include "BasicMaterialData.h"
 
 namespace yave {
 
@@ -43,12 +44,11 @@ class Material : NonCopyable, public DeviceLinked {
 		static constexpr usize max_compiled_pipelines = 8;
 
 		Material() = default;
-		Material(DevicePtr dptr, const MaterialData& data);
+		Material(Material&& other) = default;
+		Material& operator=(Material&& other) = default;
 
-		Material(Material&& other);
-		Material& operator=(Material&& other);
-
-		~Material();
+		Material(DevicePtr dptr, MaterialData data);
+		Material(DevicePtr dptr, const BasicMaterialData& data);
 
 		const GraphicPipeline& compile(const RenderPass& render_pass) const;
 
@@ -56,7 +56,7 @@ class Material : NonCopyable, public DeviceLinked {
 		const DescriptorSetBase& descriptor_set() const;
 
 	private:
-		void swap(Material& other);
+		//void swap(Material& other);
 
 		MaterialData _data;
 

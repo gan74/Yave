@@ -36,34 +36,37 @@ enum class PrimitiveType {
 	Lines = uenum(vk::PrimitiveTopology::eLineList)
 };
 
-struct MaterialData {
-	SpirVData _frag;
-	SpirVData _vert;
-	SpirVData _geom;
+class MaterialData {
+	public:
+		MaterialData& set_frag_data(SpirVData&& data);
+		MaterialData& set_vert_data(SpirVData&& data);
+		MaterialData& set_geom_data(SpirVData&& data);
 
-	PrimitiveType _primitive_type = PrimitiveType::Triangles;
+		MaterialData& set_bindings(const core::ArrayView<Binding>& binds);
+		MaterialData& add_binding(const Binding& bind);
 
-	bool _depth_tested = true;
-	bool _cull = true;
-	bool _blend = false;
+		MaterialData& keep_alive(const GenericAssetPtr& asset);
 
-	core::Vector<Binding> _bindings;
-	core::Vector<GenericAssetPtr> _keep_alive;
+		MaterialData& set_primitive_type(PrimitiveType type);
 
-	MaterialData& set_frag_data(SpirVData&& data);
-	MaterialData& set_vert_data(SpirVData&& data);
-	MaterialData& set_geom_data(SpirVData&& data);
+		MaterialData& set_depth_tested(bool tested);
+		MaterialData& set_culled(bool culled);
+		MaterialData& set_blended(bool blended);
 
-	MaterialData& set_bindings(const core::ArrayView<Binding>& binds);
-	MaterialData& keep_alive(const GenericAssetPtr& asset);
+		core::Vector<Binding> _bindings;
+		core::Vector<GenericAssetPtr> _keep_alive;
 
-	MaterialData& set_primitive_type(PrimitiveType type);
+		SpirVData _frag;
+		SpirVData _vert;
+		SpirVData _geom;
 
-	MaterialData& set_depth_tested(bool tested);
-	MaterialData& set_culled(bool culled);
-	MaterialData& set_blended(bool blended);
+		PrimitiveType _primitive_type = PrimitiveType::Triangles;
+
+		bool _depth_tested = true;
+		bool _cull = true;
+		bool _blend = false;
 };
 
 }
 
-#endif // YAVE_MATERIAL_YAVE_MATERIAL_MATERIALDATA_H
+#endif // YAVE_MATERIAL_MATERIALDATA_H

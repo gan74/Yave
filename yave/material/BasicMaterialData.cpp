@@ -19,24 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_UTILS_SERDE_H
-#define YAVE_UTILS_SERDE_H
 
-#include <yave/yave.h>
-#include <y/serde/serde.h>
+#include "BasicMaterialData.h"
+
+#include <y/io/File.h>
 
 namespace yave {
 
-namespace fs {
-static constexpr u32 magic_number = 0x65766179;
-static constexpr u32 mesh_file_type = 1;
-static constexpr u32 image_file_type = 2;
-static constexpr u32 animation_file_type = 3;
-static constexpr u32 font_file_type = 4;
-static constexpr u32 scene_file_type = 5;
-static constexpr u32 material_file_type = 6;
+struct BasicMaterialHeader {
+	y_serde(fs::magic_number, fs::material_file_type, u32(1))
+};
+
+BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader) {
+	BasicMaterialHeader().deserialize(reader);
+	BasicMaterialData data;
+	for(auto& tex : data._textures) {
+		tex = texture_loader.load(serde::deserialized<AssetId>(reader));
+	}
+	return data;
 }
 
+void BasicMaterialData::serialize(io::WriterRef writer) const {
+	BasicMaterialHeader().serialize(writer);
+	for(const auto& tex : _textures) {
+		serde::serialize(writer, tex.id());
+	}
 }
 
-#endif // YAVE_UTILS_SERDE_H
+MaterialData BasicMaterialData::create_material_data() const {
+	auto data = MaterialData()
+		.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
+		.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")));
+
+	for(usize i = 0; i != texture_count; ++i) {
+		data.keep_alive(_textures[i]);
+		data.add_binding(Binding(*_textures[i]));
+	}
+
+	return data;
+}
+
+
+}

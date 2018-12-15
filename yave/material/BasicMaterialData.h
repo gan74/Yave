@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Gr�goire Angerand
+Copyright (c) 2016-2018 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,24 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_UTILS_SERDE_H
-#define YAVE_UTILS_SERDE_H
+#ifndef YAVE_MATERIAL_BASICMATERIALDATA_H
+#define YAVE_MATERIAL_BASICMATERIALDATA_H
 
-#include <yave/yave.h>
-#include <y/serde/serde.h>
+#include "MaterialData.h"
+
+#include <yave/assets/AssetPtr.h>
+#include <yave/assets/AssetLoader.h>
 
 namespace yave {
 
-namespace fs {
-static constexpr u32 magic_number = 0x65766179;
-static constexpr u32 mesh_file_type = 1;
-static constexpr u32 image_file_type = 2;
-static constexpr u32 animation_file_type = 3;
-static constexpr u32 font_file_type = 4;
-static constexpr u32 scene_file_type = 5;
-static constexpr u32 material_file_type = 6;
-}
+class BasicMaterialData {
+	public:
+		static constexpr usize texture_count = 4;
+
+		static BasicMaterialData deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader);
+		void serialize(io::WriterRef writer) const;
+
+		MaterialData create_material_data() const;
+
+	private:
+		std::array<AssetPtr<Texture>, texture_count> _textures;
+};
 
 }
 
-#endif // YAVE_UTILS_SERDE_H
+#endif // YAVE_MATERIAL_BASICMATERIALDATA_H
