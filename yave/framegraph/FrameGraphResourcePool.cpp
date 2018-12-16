@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_BINDINGS_DESCRIPTORSET_H
-#define YAVE_GRAPHICS_BINDINGS_DESCRIPTORSET_H
 
-#include "DescriptorSetBase.h"
+#include "FrameGraphResourcePool.h"
 
 namespace yave {
 
-class DescriptorSet : public DescriptorSetBase {
-
-	public:
-		DescriptorSet() = default;
-		DescriptorSet(DevicePtr dptr, core::ArrayView<Binding> bindings);
-
-		~DescriptorSet();
-
-		DescriptorSet(DescriptorSet&& other);
-		DescriptorSet& operator=(DescriptorSet&& other);
-
-
-	protected:
-		void swap(DescriptorSet& other);
-
-		vk::DescriptorPool _pool;
-};
-
+FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
-#endif // YAVE_GRAPHICS_BINDINGS_DESCRIPTORSET_H
+usize FrameGraphResourcePool::resource_count() const {
+	return _resources_ctors.size();
+}
+
+}

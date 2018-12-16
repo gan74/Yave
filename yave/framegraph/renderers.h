@@ -33,9 +33,9 @@ class SceneRender {
 	public:
 		static constexpr usize max_batch_count = 128 * 1024;
 
-		static SceneRender create(FrameGraphBuilder& builder, const SceneView& view);
+		static SceneRender create(FrameGraphPassBuilder& builder, const SceneView& view);
 
-		void render(RenderPassRecorder& recorder, const FrameGraphResources& resources) const;
+		void render(RenderPassRecorder& recorder, const FrameGraphResourcePool* resources) const;
 
 	private:
 		template<typename T>
@@ -43,10 +43,11 @@ class SceneRender {
 
 		SceneView _scene_view;
 
-		DescriptorSet _camera_set;
+		//DescriptorSet _camera_set;
 
 		FrameGraphResource<TypedUniformBuffer<uniform::ViewProj>> _camera_buffer;
 		FrameGraphResource<AttribBuffer<math::Transform<>>> _transform_buffer;
+		FrameGraphResource<DescriptorSet> _camera_set;
 };
 
 
@@ -57,7 +58,7 @@ struct GBufferPass {
 	FrameGraphResource<ColorTextureAttachment> color;
 	FrameGraphResource<ColorTextureAttachment> normal;
 
-	Framebuffer gbuffer;
+	FrameGraphResource<Framebuffer> gbuffer;
 };
 
 GBufferPass& render_gbuffer(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);

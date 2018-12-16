@@ -22,17 +22,13 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 
-#include "FrameGraphResource.h"
-#include "FrameGraphPass.h"
 #include "FrameGraphBuilder.h"
-
-#include <set>
 
 namespace yave {
 
 class FrameGraph : NonCopyable {
 	public:
-		FrameGraph(DevicePtr dptr) : _data(std::make_shared<Data>(dptr)) {
+		FrameGraph(FrameGraphResourcePool* resources) : _data(std::make_shared<FrameGraphData>(resources)) {
 		}
 
 		template<typename T>
@@ -42,12 +38,12 @@ class FrameGraph : NonCopyable {
 
 			auto pass = std::make_unique<CallBackFrameGraphPass<T>>(pass_name, std::move(setup), std::move(render));
 			CallBackFrameGraphPass<T>* ptr = pass.get();
-			FrameGraphBuilder::build(ptr, _data->resources);
+			FrameGraphPassBuilder::build(ptr, _data->resources);
 			 _data->passes << std::move(pass);
 			return ptr->_data;
 		}
 
-		void render(CmdBufferRecorder& recorder, const FrameGraphResourceBase& output) && {
+		void render(CmdBufferRecorder& recorder, const FrameGraphResourceBase& output) {
 			for(const auto& pass : compile_sequential(output)) {
 				auto region = recorder.region(pass->name());
 				pass->render(recorder,  _data->resources);
@@ -80,15 +76,7 @@ class FrameGraph : NonCopyable {
 			}
 		}
 
-		struct Data {
-			Data(DevicePtr dptr) : resources(dptr) {
-			}
-
-			FrameGraphResources resources;
-			core::Vector<std::unique_ptr<FrameGraphPassBase>> passes;
-		};
-
-		std::shared_ptr<Data> _data;
+		std::shared_ptr<FrameGraphData> _data;
 };
 
 }

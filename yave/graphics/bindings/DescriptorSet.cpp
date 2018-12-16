@@ -79,7 +79,7 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vecto
 
 
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, const core::ArrayView<Binding>& bindings) : DescriptorSetBase(dptr) {
+DescriptorSet::DescriptorSet(DevicePtr dptr, core::ArrayView<Binding> bindings) : DescriptorSetBase(dptr) {
 	if(!bindings.is_empty()) {
 		auto layout_bindings = core::vector_with_capacity<vk::DescriptorSetLayoutBinding>(bindings.size());
 

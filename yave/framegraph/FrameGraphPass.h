@@ -32,16 +32,15 @@ SOFTWARE.
 
 namespace yave {
 
-class FrameGraphResources;
+class FrameGraphResourcePool;
 
 class FrameGraphPassBase : NonCopyable {
 	public:
 
 		virtual ~FrameGraphPassBase() = default;
 
-
-		virtual void setup(FrameGraphBuilder& builder) = 0;
-		virtual void render(CmdBufferRecorder& recorder, const FrameGraphResources& resources) const = 0;
+		virtual void setup(FrameGraphPassBuilder& builder) = 0;
+		virtual void render(CmdBufferRecorder& recorder, const FrameGraphResourcePool* resources) const = 0;
 
 		bool uses_resource(const FrameGraphResourceBase& res) const {
 			return std::find(_resources.begin(), _resources.end(), res) != _resources.end();
@@ -61,7 +60,7 @@ class FrameGraphPassBase : NonCopyable {
 
 	private:
 		friend class FrameGraph;
-		friend class FrameGraphBuilder;
+		friend class FrameGraphPassBuilder;
 
 		core::String _name;
 
@@ -71,22 +70,23 @@ class FrameGraphPassBase : NonCopyable {
 template<typename T>
 class CallBackFrameGraphPass final : public FrameGraphPassBase {
 	public:
-		using setup_func = core::Function<void(FrameGraphBuilder&, T&)>;
-		using render_func = core::Function<void(CmdBufferRecorder& recorder, const T& , const FrameGraphResources&)>;
+		using setup_func = core::Function<void(FrameGraphPassBuilder&, T&)>;
+		using render_func = core::Function<void(CmdBufferRecorder& recorder, const T&, const FrameGraphResourcePool*)>;
 
 		CallBackFrameGraphPass(std::string_view name, setup_func&& setup, render_func&& render) : FrameGraphPassBase(name), _render(std::move(render)), _setup(std::move(setup)) {
 		}
 
-		void setup(FrameGraphBuilder& builder) override {
+		void setup(FrameGraphPassBuilder& builder) override {
 			_setup(builder, _data);
 		}
 
-		void render(CmdBufferRecorder& recorder, const FrameGraphResources& resources) const override {
+		void render(CmdBufferRecorder& recorder, const FrameGraphResourcePool* resources) const override {
 			_render(recorder, _data, resources);
 		}
 
 	private:
 		friend class FrameGraph;
+		//friend class FrameGraphBuilder;
 
 		render_func _render;
 		setup_func _setup;

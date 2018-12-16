@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/renderers/ToneMapper.h>
 #include <yave/window/EventHandler.h>
 
+#include <yave/framegraph/renderers.h>
+
 #include <y/math/Volume.h>
 #include <y/io/File.h>
 
@@ -77,6 +79,20 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 
 	if(_renderer) {
 		update();
+
+		/*{
+			FrameGraphResourcePool resources(device());
+			FrameGraph graph(&resources);
+
+			auto& gbuffer = render_gbuffer(graph, _scene_view, math::Vec2ui(512));
+
+			{
+				CmdBufferRecorder rec(device()->create_disposable_cmd_buffer());
+				graph.render(rec, gbuffer.color);
+				RecordedCmdBuffer cmd(std::move(rec));
+				device()->queue(vk::QueueFlagBits::eGraphics).submit<SyncSubmit>(std::move(cmd));
+			}
+		}*/
 
 		RenderingPipeline pipeline(_renderer);
 		pipeline.render(recorder, token);

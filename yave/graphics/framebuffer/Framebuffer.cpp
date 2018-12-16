@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-static math::Vec2ui compute_size(const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& views) {
+static math::Vec2ui compute_size(const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> views) {
 	math::Vec2ui ref;
 	if(depth.device()) {
 		ref = depth.size();
@@ -41,7 +41,7 @@ static math::Vec2ui compute_size(const DepthAttachmentView& depth, const core::A
 	return ref;
 }
 
-static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors) {
+static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> colors) {
 	auto color_vec = core::vector_with_capacity<RenderPass::ImageData>(colors.size());
 	std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::ImageData(c); });
 	return depth.device()
@@ -51,11 +51,11 @@ static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView&
 
 
 
-Framebuffer::Framebuffer(DevicePtr dptr, const core::ArrayView<ColorAttachmentView>& colors) :
+Framebuffer::Framebuffer(DevicePtr dptr, core::ArrayView<ColorAttachmentView> colors) :
 		Framebuffer(dptr, DepthAttachmentView(), colors) {
 }
 
-Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, const core::ArrayView<ColorAttachmentView>& colors) :
+Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> colors) :
 		DeviceLinked(dptr),
 		_size(compute_size(depth, colors)),
 		_attachment_count(colors.size()),

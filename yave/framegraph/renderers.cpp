@@ -24,21 +24,22 @@ SOFTWARE.
 
 namespace yave {
 
-SceneRender SceneRender::create(FrameGraphBuilder& builder, const SceneView& view) {
+SceneRender SceneRender::create(FrameGraphPassBuilder& builder, const SceneView& view) {
 	SceneRender render;
 
-	builder.create(render._camera_buffer, builder.device(), usize(1));
-	builder.create(render._transform_buffer, builder.device(), max_batch_count);
+	builder.declare(render._camera_buffer, builder.device(), usize(1));
+	builder.declare(render._transform_buffer, builder.device(), max_batch_count);
+	builder.declare_descriptor_set(render._camera_set, render._camera_buffer);
 
 	render._scene_view = view;
-	render._camera_set = DescriptorSet(builder.device(), {Binding(builder.resources().get(render._camera_buffer))});
 
 	return render;
 }
 
-void SceneRender::render(RenderPassRecorder& recorder, const FrameGraphResources& resources) const {
-	auto& camera_buffer = resources.get(_camera_buffer);
-	auto& transform_buffer = resources.get(_transform_buffer);
+void SceneRender::render(RenderPassRecorder& recorder, const FrameGraphResourcePool* resources) const {
+	auto& camera_buffer = resources->get(_camera_buffer);
+	auto& transform_buffer = resources->get(_transform_buffer);
+	auto& descriptor_set = resources->get(_camera_set);
 
 	// fill render data
 	{
@@ -76,14 +77,14 @@ void SceneRender::render(RenderPassRecorder& recorder, const FrameGraphResources
 		// renderables
 		{
 			for(const auto& r : _scene_view.scene().renderables()) {
-				r->render(recorder, Renderable::SceneData{_camera_set, attrib_index++});
+				r->render(recorder, Renderable::SceneData{descriptor_set, attrib_index++});
 			}
 		}
 
 		// static meshes
 		{
 			for(const auto& r : _scene_view.scene().static_meshes()) {
-				r->render(recorder, Renderable::SceneData{_camera_set, attrib_index++});
+				r->render(recorder, Renderable::SceneData{descriptor_set, attrib_index++});
 			}
 		}
 	}
@@ -95,22 +96,22 @@ GBufferPass& render_gbuffer(FrameGraph& framegraph, const SceneView& view, const
 	static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
 
 	return framegraph.add_callback_pass<GBufferPass>("G-buffer pass",
-		[&](FrameGraphBuilder& builder, GBufferPass& pass) {
-			builder.create(pass.depth, builder.device(), depth_format, size);
-			builder.create(pass.color, builder.device(), color_format, size);
-			builder.create(pass.normal, builder.device(), normal_format, size);
+		[=](FrameGraphPassBuilder& builder, GBufferPass& pass) {
+			builder.declare(pass.depth, builder.device(), depth_format, size);
+			builder.declare(pass.color, builder.device(), color_format, size);
+			builder.declare(pass.normal, builder.device(), normal_format, size);
+			builder.declare_framebuffer(pass.gbuffer, pass.depth,pass.color, pass.normal);
+
+			pass.scene = SceneRender::create(builder, view);
 
 			builder.render_to(pass.depth);
 			builder.render_to(pass.color);
 			builder.render_to(pass.normal);
 
-			auto&& res = builder.resources();
-			pass.gbuffer = Framebuffer(builder.device(), res.get(pass.depth), {res.get(pass.color), res.get(pass.normal)});
-			pass.scene = SceneRender::create(builder, view);
 		},
 
-		[](CmdBufferRecorder& recorder, const GBufferPass& pass, const FrameGraphResources& resources) {
-			auto render_pass = recorder.bind_framebuffer(pass.gbuffer);
+		[](CmdBufferRecorder& recorder, const GBufferPass& pass, const FrameGraphResourcePool* resources) {
+			auto render_pass = recorder.bind_framebuffer(resources->get(pass.gbuffer));
 			pass.scene.render(render_pass, resources);
 		}
 	);

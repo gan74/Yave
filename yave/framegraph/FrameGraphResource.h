@@ -23,14 +23,15 @@ SOFTWARE.
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCE_H
 
 #include <yave/yave.h>
+#include <yave/graphics/barriers/PipelineStage.h>
 
 #include <typeindex>
 
 namespace yave {
 
 class FrameGraphPassBase;
-class FrameGraphBuilder;
-class FrameGraphResources;
+class FrameGraphPassBuilder;
+class FrameGraphResourcePool;
 
 class FrameGraphResourceBase {
 	public:
@@ -61,8 +62,8 @@ class FrameGraphResourceBase {
 		}
 
 	protected:
-		friend class FrameGraphBuilder;
-		friend class FrameGraphResources;
+		friend class FrameGraphPassBuilder;
+		friend class FrameGraphResourcePool;
 
 		static constexpr u32 invalid_id = u32(-1);
 
@@ -79,6 +80,9 @@ class FrameGraphResource : public FrameGraphResourceBase {
 	public:
 		FrameGraphResource() = default;
 };
+
+template<typename T>
+struct is_framegraph_resource : std::is_base_of<FrameGraphResourceBase, T> {};
 
 }
 

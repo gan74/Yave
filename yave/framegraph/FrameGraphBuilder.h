@@ -24,147 +24,49 @@ SOFTWARE.
 
 #include <typeindex>
 
-#include "FrameGraphResource.h"
+#include "FrameGraphPassBuilder.h"
 #include "FrameGraphPass.h"
 
 namespace yave {
 
-class FrameGraphResources : public DeviceLinked, NonCopyable {
+class FrameGraph;
+//class FrameGraphBuilder;
 
-	struct ResourceContainerBase : NonCopyable {
-		ResourceContainerBase(std::type_index t) : type(t) {
-		}
-
-		virtual ~ResourceContainerBase() = default;
-
-		const std::type_index type;
-	};
-
-	template<typename T>
-	struct ResourceContainer : ResourceContainerBase {
-		template<typename... Args>
-		ResourceContainer(Args&&... args) : ResourceContainerBase(typeid(T)), resource(y_fwd(args)...) {
-		}
-
-		T resource;
-	};
-
-	using ResourceConstructor = core::Function<std::unique_ptr<ResourceContainerBase>()>;
-
+class FrameGraphData : NonCopyable {
 	public:
-		FrameGraphResources(DevicePtr dptr) : DeviceLinked(dptr) {
-		}
-
-		template<typename T>
-		T& get(const FrameGraphResource<T>& res) const {
-			if(!res.is_valid()) {
-				y_fatal("Invalid resource.");
-			}
-			while(_resources.size() <= res.id()) {
-				_resources.emplace_back();
-			}
-			init(res);
-			ResourceContainerBase* resource = _resources[res.id()].get();
-			if(resource->type != typeid(T)) {
-				y_fatal("Invalid resource type.");
-			}
-			return dynamic_cast<ResourceContainer<T>*>(resource)->resource;
-		}
-
-		template<typename T, typename... Args>
-		FrameGraphResource<T> add_resource(Args&&... args) {
-			FrameGraphResource<T> res;
-			res._id = _resources_ctors.size();
-
-			_resources_ctors.emplace_back([tpl = std::make_tuple(y_fwd(args)...)]() mutable {
-					// extra layer of lambda to force the types of the arguments (overwise make_unique won't resolve properly)
-					return std::apply([](Args&&... a) { return std::make_unique<ResourceContainer<T>>(y_fwd(a)...); }, std::move(tpl));
-				});
-			return res;
-		}
-
-		usize resource_count() const {
-			return _resources_ctors.size();
+		FrameGraphData(FrameGraphResourcePool* res) : resources(res) {
 		}
 
 	private:
-		template<typename T>
-		void init(const FrameGraphResource<T>& res) const {
-			auto& r = _resources[res.id()];
-			if(!r) {
-				r = _resources_ctors[res.id()]();
-			}
-		}
+		friend class FrameGraph;
+		//friend class FrameGraphBuilder;
 
-		mutable core::Vector<std::unique_ptr<ResourceContainerBase>> _resources;
-		core::Vector<ResourceConstructor> _resources_ctors;
+		FrameGraphResourcePool* resources = nullptr;
+		core::Vector<std::unique_ptr<FrameGraphPassBase>> passes;
 };
 
-class FrameGraphBuilder : NonCopyable {
+/*class FrameGraphBuilder : NonCopyable {
 	public:
-		static void build(FrameGraphPassBase* pass, FrameGraphResources& res) {
-			FrameGraphBuilder builder(pass, res);
-			pass->setup(builder);
-		}
-
-		DevicePtr device() const {
-			return _resources.device();
-		}
-
-		const FrameGraphResources& resources() const {
-			return _resources;
-		}
-
-
-		template<typename T, typename... Args>
-		FrameGraphResource<T> create(Args&&... args) {
-			return _resources.add_resource<T>(y_fwd(args)...);
-		}
-
-		template<typename T, typename... Args>
-		void create(FrameGraphResource<T>& res, Args&&... args) {
-			res = create<T>(y_fwd(args)...);
-		}
-
-
-
-		template<typename T>
-		void read(FrameGraphResource<T>& res, PipelineStage stage = PipelineStage::EndOfPipe) {
-			check_res(res);
-			if(!res.is_initialized()) {
-				y_fatal(fmt("Pass \"%\" reads an uninitialized resource.", _pass->name()).data());
-			}
-			_pass->_resources << res;
-			res._last_pass_to_read = _pass;
-			res._read_stage = stage;
+		FrameGraphBuilder(FrameGraphResourcePool* resources) : _data(std::make_shared<FrameGraphData>(resources)) {
 		}
 
 		template<typename T>
-		void render_to(FrameGraphResource<T>& res, PipelineStage stage = PipelineStage::ColorAttachmentOutBit) {
-			_pass->_resources << res;
-			res._last_pass_to_write = _pass;
-			res._write_stage = stage;
-		}
+		T& add_callback_pass(std::string_view pass_name,
+							 typename CallBackFrameGraphPass<T>::setup_func&& setup,
+							 typename CallBackFrameGraphPass<T>::render_func&& render) {
 
-		template<typename T>
-		void write(FrameGraphResource<T>& res, PipelineStage stage = PipelineStage::BeginOfPipe) {
-			return render_to(res, stage);
+			auto pass = std::make_unique<CallBackFrameGraphPass<T>>(pass_name, std::move(setup), std::move(render));
+			CallBackFrameGraphPass<T>* ptr = pass.get();
+			FrameGraphPassBuilder::build(ptr, _data->resources);
+			 _data->passes << std::move(pass);
+			return ptr->_data;
 		}
 
 	private:
-		FrameGraphBuilder(FrameGraphPassBase* pass, FrameGraphResources& res) : _pass(pass), _resources(res) {
-		}
+		friend class FrameGraph;
 
-		template<typename T>
-		void check_res(const FrameGraphResource<T>& res) {
-			if(!res.is_valid()) {
-				y_fatal(fmt("Pass \"%\" use an invalid resource.", _pass->name()).data());
-			}
-		}
-
-		FrameGraphPassBase* _pass = nullptr;
-		FrameGraphResources& _resources;
-};
+		std::shared_ptr<FrameGraphData> _data;
+};*/
 
 }
 

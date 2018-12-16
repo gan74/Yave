@@ -38,7 +38,7 @@ struct FunctionBase : NonCopyable {
 	virtual ~FunctionBase() {
 	}
 
-	virtual Ret apply(Args&&...) = 0;
+	virtual Ret apply(Args...) = 0;
 
 };
 
@@ -48,7 +48,7 @@ struct Function : FunctionBase<Ret, Args...> {
 		Function(T&& t) : _func(y_fwd(t)) {
 		}
 
-		Ret apply(Args&&... args) override {
+		Ret apply(Args... args) override {
 			if constexpr(std::is_void_v<Ret>) {
 				_func(y_fwd(args)...);
 			} else {
@@ -105,7 +105,7 @@ class Functor<Container, Ret(Args...)> {
 			return _function != other._function;
 		}
 
-		Ret operator()(Args&&... args) const {
+		Ret operator()(Args... args) const {
 			return _function->apply(y_fwd(args)...);
 		}
 
