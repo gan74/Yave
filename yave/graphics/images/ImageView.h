@@ -31,9 +31,10 @@ namespace yave {
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class ImageView : public DeviceLinked {
 
-	static constexpr bool is_compatible(ImageUsage u) {
-		return (uenum(Usage) & uenum(u)) == uenum(Usage);
-	}
+	protected:
+		static constexpr bool is_compatible(ImageUsage u) {
+			return (uenum(Usage) & uenum(u)) == uenum(Usage);
+		}
 
 	public:
 		using size_type = typename Image<Usage, Type>::size_type;

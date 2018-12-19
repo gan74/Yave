@@ -24,11 +24,41 @@ SOFTWARE.
 
 namespace yave {
 
+static void check_res(FrameGraphResourceBase res) {
+	if(!res.is_valid()) {
+		y_fatal("Invalid resource.");
+	}
+}
+
 FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
-usize FrameGraphResourcePool::resource_count() const {
-	return _resources_ctors.size();
+void FrameGraphResourcePool::create_image(FrameGraphImage res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+	check_res(res);
+	auto& image = _images[res];
+	if(image.device()) {
+		y_fatal("Image already exists.");
+	}
+	image = TransientImage<>(device(), format, usage, size);
+}
+
+void FrameGraphResourcePool::create_buffer(FrameGraphBuffer res, usize byte_size, BufferUsage usage) {
+	check_res(res);
+	auto& buffer = _buffers[res];
+	if(buffer.device()) {
+		y_fatal("Buffer already exists.");
+	}
+	buffer = TransientBuffer(device(), byte_size, usage);
+}
+
+ImageBarrier FrameGraphResourcePool::barrier(FrameGraphImage res) const {
+	check_res(res);
+	return _images.find(res)->second;
+}
+
+BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBuffer res) const {
+	check_res(res);
+	return _buffers.find(res)->second;
 }
 
 }

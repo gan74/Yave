@@ -68,7 +68,7 @@ struct Nothing {
 	}
 };
 
-
+struct Empty {};
 
 
 constexpr usize log2ui(usize n) {

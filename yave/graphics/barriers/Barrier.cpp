@@ -150,4 +150,24 @@ vk::BufferMemoryBarrier BufferBarrier::vk_barrier(PipelineStage src, PipelineSta
 		;
 }
 
+/*GenericBarrier::GenericBarrier(const ImageBarrier& barrier) : _type(Type::Image), _image(barrier) {
+}
+
+GenericBarrier::GenericBarrier(const BufferBarrier& barrier) : _type(Type::Buffer), _buffer(barrier) {
+}
+
+core::Result<ImageBarrier, BufferBarrier> GenericBarrier::image_barrier() const {
+	if(_type == Type::Image) {
+		return core::Ok(_image);
+	}
+	return core::Err(_buffer);
+}
+
+core::Result<BufferBarrier, ImageBarrier> GenericBarrier::buffer_barrier() const {
+	if(_type == Type::Buffer) {
+		return core::Ok(_buffer);
+	}
+	return core::Err(_image);
+}*/
+
 }

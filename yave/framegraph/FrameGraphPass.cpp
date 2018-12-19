@@ -19,40 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHPASSBUILDER_H
-#define YAVE_FRAMEGRAPH_FRAMEGRAPHPASSBUILDER_H
 
-#include "FrameGraphResource.h"
 #include "FrameGraphPass.h"
+#include "FrameGraph.h"
 
 namespace yave {
 
-class FrameGraphPassBuilder {
-	public:
-		void add_input(FrameGraphImage res, PipelineStage stage = PipelineStage::EndOfPipe);
-		void add_depth_output(FrameGraphImage res, PipelineStage stage = PipelineStage::FragmentBit);
-		void add_color_output(FrameGraphImage res, PipelineStage stage = PipelineStage::FragmentBit);
-		void add_storage_output(FrameGraphImage res, PipelineStage stage = PipelineStage::ComputeBit);
-
-
-		void add_uniform_input(FrameGraphBuffer res, PipelineStage stage = PipelineStage::AllShadersBit);
-
-
-		void set_render_func(FrameGraphPass::render_func&& func);
-
-	private:
-		friend class FrameGraph;
-
-		FrameGraphPassBuilder(FrameGraphPass* pass);
-
-		void add_to_pass(FrameGraphImage res, ImageUsage usage, PipelineStage stage);
-		void add_to_pass(FrameGraphBuffer res, BufferUsage usage, PipelineStage stage);
-
-		FrameGraphPass* _pass = nullptr;
-};
-
+FrameGraphPass::FrameGraphPass(std::string_view name, FrameGraph* parent) : _name(name), _parent(parent) {
 }
 
-#endif // YAVE_FRAMEGRAPH_FRAMEGRAPHBUILDER_H
+const core::String& FrameGraphPass::name() const {
+	return _name;
+}
+
+const FrameGraphResourcePool* FrameGraphPass::resources() const {
+	return _parent->resources();
+}
+
+const Framebuffer& FrameGraphPass::framebuffer() const {
+	if(!_framebuffer.device()) {
+		y_fatal("Pass has no framebuffer.");
+	}
+	return _framebuffer;
+}
+
+void FrameGraphPass::render(CmdBufferRecorder& recorder) const {
+	_render(recorder, this);
+}
 
 
+
+}

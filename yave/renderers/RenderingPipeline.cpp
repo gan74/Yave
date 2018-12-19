@@ -44,7 +44,7 @@ void RenderingPipeline::render(CmdBufferRecorder& recorder, const FrameToken& to
 	add_node(dependencies, _root);
 
 	auto ordered = core::vector_with_capacity<NodePtr>(dependencies.size());
-	while(true) {
+	for(;;) {
 		auto it = std::find_if(dependencies.begin(), dependencies.end(), [](const auto& deps) { return deps.second.is_empty(); });
 		if(it == dependencies.end()) {
 			break;

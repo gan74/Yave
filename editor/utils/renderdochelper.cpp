@@ -22,6 +22,10 @@ SOFTWARE.
 
 #include <y/utils.h>
 
+#ifdef Y_OS_WIN
+#include <windows.h>
+#endif
+
 #include "renderdochelper.h"
 
 #if __has_include("renderdoc_app.h")
@@ -39,15 +43,17 @@ namespace renderdoc {
 
 #ifdef RENDERDOC_SUPPORTED
 
-RENDERDOC_API_1_1_2 *renderdoc_api = nullptr;
+namespace detail {
+static RENDERDOC_API_1_1_2 *renderdoc_api = nullptr;
 
-void init_renderdoc() {
+static void init_renderdoc() {
 #ifdef Y_OS_WIN
 	if(renderdoc_api) {
 		return;
 	}
 	if(HMODULE module = GetModuleHandleA("renderdoc.dll")) {
-		pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(module, "RENDERDOC_GetAPI"));
+		void* addr = reinterpret_cast<void*>(GetProcAddress(module, "RENDERDOC_GetAPI"));
+		pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(addr);
 		int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, reinterpret_cast<void**>(&renderdoc_api));
 		if(ret != 1) {
 			log_msg("Unable to load RenderDoc API", Log::Warning);
@@ -56,11 +62,6 @@ void init_renderdoc() {
 #else
 #warning RenderDoc helper not supported: unsupported OS
 #endif
-}
-
-bool is_supported() {
-	init_renderdoc();
-	return renderdoc_api;
 }
 
 void start_capture() {
@@ -75,17 +76,25 @@ void end_capture() {
 		renderdoc_api->EndFrameCapture(nullptr, nullptr);
 	}
 }
+}
+
+bool is_supported() {
+	detail::init_renderdoc();
+	return detail::renderdoc_api;
+}
 
 #else
 
-bool is_supported() {
-	return false;
-}
-
+namespace detail {
 void start_capture() {
 }
 
 void end_capture() {
+}
+}
+
+bool is_supported() {
+	return false;
 }
 
 #endif

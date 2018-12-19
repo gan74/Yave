@@ -22,13 +22,23 @@ SOFTWARE.
 #ifndef EDITOR_UTILS_RENDERDOCHELPER_H
 #define EDITOR_UTILS_RENDERDOCHELPER_H
 
+#include <editor/editor.h>
+
 namespace editor {
 namespace renderdoc {
 
-bool is_supported();
-
+namespace detail {
 void start_capture();
 void end_capture();
+}
+
+
+bool is_supported();
+
+inline auto start_capture() {
+	detail::start_capture();
+	return ScopeExit([] { detail::end_capture(); });
+}
 
 }
 }

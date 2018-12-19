@@ -22,61 +22,57 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 
-#include "FrameGraphBuilder.h"
+#include "FrameGraphResourcePool.h"
+#include "FrameGraphPassBuilder.h"
+
+#include <yave/graphics/barriers/Barrier.h>
 
 namespace yave {
 
 class FrameGraph : NonCopyable {
+
+	struct ImageCreateInfo {
+		math::Vec2ui size;
+		ImageFormat format;
+		ImageUsage usage = ImageUsage::None;
+	};
+
+	struct BufferCreateInfo {
+		usize byte_size;
+		BufferUsage usage = BufferUsage::None;
+	};
+
 	public:
-		FrameGraph(FrameGraphResourcePool* resources) : _data(std::make_shared<FrameGraphData>(resources)) {
-		}
+		FrameGraph(const std::shared_ptr<FrameGraphResourcePool>& pool);
 
-		template<typename T>
-		T& add_callback_pass(std::string_view pass_name,
-							 typename CallBackFrameGraphPass<T>::setup_func&& setup,
-							 typename CallBackFrameGraphPass<T>::render_func&& render) {
+		DevicePtr device() const;
+		const FrameGraphResourcePool* resources() const;
 
-			auto pass = std::make_unique<CallBackFrameGraphPass<T>>(pass_name, std::move(setup), std::move(render));
-			CallBackFrameGraphPass<T>* ptr = pass.get();
-			FrameGraphPassBuilder::build(ptr, _data->resources);
-			 _data->passes << std::move(pass);
-			return ptr->_data;
-		}
 
-		void render(CmdBufferRecorder& recorder, const FrameGraphResourceBase& output) {
-			for(const auto& pass : compile_sequential(output)) {
-				auto region = recorder.region(pass->name());
-				pass->render(recorder,  _data->resources);
-			}
-			recorder.keep_alive(_data);
-		}
+		void render(CmdBufferRecorder& recorder) &&;
+
+
+		FrameGraphPassBuilder add_pass(std::string_view name);
+
+		FrameGraphImage declare_image(ImageFormat format, const math::Vec2ui& size);
+		FrameGraphBuffer declare_buffer(usize byte_size);
+
+
+		void add_usage(FrameGraphImage res, ImageUsage usage);
+		void add_usage(FrameGraphBuffer res, BufferUsage usage);
 
 	private:
-		core::Vector<const FrameGraphPassBase*> compile_sequential(const FrameGraphResourceBase& output) const {
-			core::Vector<const FrameGraphPassBase*> passes;
-			for(const auto& p : _data->passes) {
-				if(p->uses_resource(output)) {
-					fill_dependencies(passes, p.get());
-				}
-			}
+		friend class FrameGraphPassBuilder;
 
-			std::reverse(passes.begin(), passes.end());
-			return passes;
-		}
+		std::shared_ptr<FrameGraphResourcePool> _pool;
 
-		void fill_dependencies(core::Vector<const FrameGraphPassBase*>& passes, const FrameGraphPassBase* pass) const {
-			if(std::find(passes.begin(), passes.end(), pass) == passes.end()) {
-				passes.push_back(pass);
-				for(const auto& r : pass->used_resources()) {
-					const FrameGraphPassBase* write = r.last_pass_to_write();
-					if(write) {
-						fill_dependencies(passes, write);
-					}
-				}
-			}
-		}
+		core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
 
-		std::shared_ptr<FrameGraphData> _data;
+		std::unordered_map<FrameGraphImage, ImageCreateInfo> _images;
+		std::unordered_map<FrameGraphBuffer, BufferCreateInfo> _buffers;
+
+		u32 next_id = 0;
+
 };
 
 }

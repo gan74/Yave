@@ -33,7 +33,7 @@ class SceneRender {
 	public:
 		static constexpr usize max_batch_count = 128 * 1024;
 
-		static SceneRender create(FrameGraphPassBuilder& builder, const SceneView& view);
+		static SceneRender create(FrameGraph& framegraph, const SceneView& view);
 
 		void render(RenderPassRecorder& recorder, const FrameGraphResourcePool* resources) const;
 
@@ -54,14 +54,14 @@ class SceneRender {
 struct GBufferPass {
 	SceneRender scene;
 
-	FrameGraphResource<DepthTextureAttachment> depth;
-	FrameGraphResource<ColorTextureAttachment> color;
-	FrameGraphResource<ColorTextureAttachment> normal;
+	FrameGraphImage depth;
+	FrameGraphImage color;
+	FrameGraphImage normal;
 
 	FrameGraphResource<Framebuffer> gbuffer;
 };
 
-GBufferPass& render_gbuffer(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
+GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
 
 
 }

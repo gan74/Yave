@@ -28,7 +28,6 @@ SOFTWARE.
 
 namespace yave {
 
-
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class Image : public ImageBase {
 

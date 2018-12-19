@@ -47,8 +47,8 @@ constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
 
 enum class BufferTransfer {
 	None = 0,
-    TransferSrc = int(vk::BufferUsageFlagBits::eTransferSrc),
-    TransferDst = int(vk::BufferUsageFlagBits::eTransferDst)
+	TransferSrc = int(vk::BufferUsageFlagBits::eTransferSrc),
+	TransferDst = int(vk::BufferUsageFlagBits::eTransferDst)
 };
 
 constexpr BufferTransfer operator|(BufferTransfer a, BufferTransfer b) {
@@ -66,6 +66,10 @@ inline constexpr MemoryType prefered_memory_type(BufferUsage usage) {
 
 inline constexpr BufferTransfer prefered_transfer(MemoryType flags) {
 	return is_cpu_visible(flags) ? BufferTransfer::None : BufferTransfer::TransferDst;
+}
+
+inline constexpr BufferTransfer prefered_transfer(BufferUsage usage) {
+	return prefered_transfer(prefered_memory_type(usage));
 }
 
 }

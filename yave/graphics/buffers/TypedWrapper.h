@@ -52,7 +52,7 @@ struct is_sub_buffer<SubBuffer<Args...>> {
 }
 
 template<typename Elem, typename Buff>
-class TypedWrapper : public Buff {
+class TypedWrapper final : public Buff {
 
 	static constexpr bool is_sub = detail::is_sub_buffer<Buff>::value;
 	static constexpr bool is_buf = detail::is_buffer<Buff>::value;

@@ -32,66 +32,48 @@ SOFTWARE.
 
 namespace yave {
 
-class FrameGraphResourcePool;
-
-class FrameGraphPassBase : NonCopyable {
+class FrameGraphPass : NonCopyable {
 	public:
+		struct ResourceUsageInfo {
+			PipelineStage stage = PipelineStage::None;
+		};
 
-		virtual ~FrameGraphPassBase() = default;
+		using render_func = core::Function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
-		virtual void setup(FrameGraphPassBuilder& builder) = 0;
-		virtual void render(CmdBufferRecorder& recorder, const FrameGraphResourcePool* resources) const = 0;
+		FrameGraphPass(std::string_view name, FrameGraph* parent);
 
-		bool uses_resource(const FrameGraphResourceBase& res) const {
-			return std::find(_resources.begin(), _resources.end(), res) != _resources.end();
+		const core::String& name() const;
+		const FrameGraphResourcePool* resources() const;
+		const Framebuffer& framebuffer() const;
+
+		void render(CmdBufferRecorder& recorder) const;
+
+
+		const auto& all_images() const {
+			return _images;
 		}
 
-		const core::Vector<FrameGraphResourceBase>& used_resources() const {
-			return _resources;
+		const auto& all_buffers() const {
+			return _buffers;
 		}
 
-		const core::String& name() const {
-			return _name;
-		}
-
-	protected:
-		FrameGraphPassBase(std::string_view name) : _name(name) {
-		}
 
 	private:
 		friend class FrameGraph;
 		friend class FrameGraphPassBuilder;
 
+		render_func _render = [](CmdBufferRecorder&, const FrameGraphPass*) {};
 		core::String _name;
 
-		core::Vector<FrameGraphResourceBase> _resources;
-};
+		FrameGraph* _parent = nullptr;
 
-template<typename T>
-class CallBackFrameGraphPass final : public FrameGraphPassBase {
-	public:
-		using setup_func = core::Function<void(FrameGraphPassBuilder&, T&)>;
-		using render_func = core::Function<void(CmdBufferRecorder& recorder, const T&, const FrameGraphResourcePool*)>;
+		std::unordered_map<FrameGraphImage, ResourceUsageInfo> _images;
+		std::unordered_map<FrameGraphBuffer, ResourceUsageInfo> _buffers;
 
-		CallBackFrameGraphPass(std::string_view name, setup_func&& setup, render_func&& render) : FrameGraphPassBase(name), _render(std::move(render)), _setup(std::move(setup)) {
-		}
+		FrameGraphImage _depth;
+		core::Vector<FrameGraphImage> _colors;
 
-		void setup(FrameGraphPassBuilder& builder) override {
-			_setup(builder, _data);
-		}
-
-		void render(CmdBufferRecorder& recorder, const FrameGraphResourcePool* resources) const override {
-			_render(recorder, _data, resources);
-		}
-
-	private:
-		friend class FrameGraph;
-		//friend class FrameGraphBuilder;
-
-		render_func _render;
-		setup_func _setup;
-
-		T _data;
+		Framebuffer _framebuffer;
 };
 
 }

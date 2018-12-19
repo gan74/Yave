@@ -19,40 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHPASSBUILDER_H
-#define YAVE_FRAMEGRAPH_FRAMEGRAPHPASSBUILDER_H
+#ifndef YAVE_FRAMEGRAPH_TRANSIENTBUFFER_H
+#define YAVE_FRAMEGRAPH_TRANSIENTBUFFER_H
 
-#include "FrameGraphResource.h"
-#include "FrameGraphPass.h"
+#include <yave/graphics/buffers/Buffer.h>
+#include <yave/graphics/buffers/TypedWrapper.h>
 
 namespace yave {
 
-class FrameGraphPassBuilder {
+class TransientBuffer : public BufferBase {
+
 	public:
-		void add_input(FrameGraphImage res, PipelineStage stage = PipelineStage::EndOfPipe);
-		void add_depth_output(FrameGraphImage res, PipelineStage stage = PipelineStage::FragmentBit);
-		void add_color_output(FrameGraphImage res, PipelineStage stage = PipelineStage::FragmentBit);
-		void add_storage_output(FrameGraphImage res, PipelineStage stage = PipelineStage::ComputeBit);
+		TransientBuffer() = default;
 
+		TransientBuffer(DevicePtr dptr, usize byte_size, BufferUsage usage) :
+				BufferBase(dptr, byte_size, usage, prefered_memory_type(usage), prefered_transfer(usage)) {
+		}
 
-		void add_uniform_input(FrameGraphBuffer res, PipelineStage stage = PipelineStage::AllShadersBit);
+		TransientBuffer(TransientBuffer&& other) {
+			swap(other);
+		}
 
-
-		void set_render_func(FrameGraphPass::render_func&& func);
-
-	private:
-		friend class FrameGraph;
-
-		FrameGraphPassBuilder(FrameGraphPass* pass);
-
-		void add_to_pass(FrameGraphImage res, ImageUsage usage, PipelineStage stage);
-		void add_to_pass(FrameGraphBuffer res, BufferUsage usage, PipelineStage stage);
-
-		FrameGraphPass* _pass = nullptr;
+		TransientBuffer& operator=(TransientBuffer&& other) {
+			swap(other);
+			return *this;
+		}
 };
+
+template<typename T>
+using TypedTransientBuffer = TypedWrapper<T, TransientBuffer>;
 
 }
 
-#endif // YAVE_FRAMEGRAPH_FRAMEGRAPHBUILDER_H
-
-
+#endif // YAVE_FRAMEGRAPH_TRANSIENTBUFFER_H

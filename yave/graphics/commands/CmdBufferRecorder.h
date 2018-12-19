@@ -155,9 +155,9 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 
-		void barriers(const core::ArrayView<BufferBarrier>& buffers, const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
-		void barriers(const core::ArrayView<BufferBarrier>& buffers, PipelineStage src, PipelineStage dst);
-		void barriers(const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst);
+		void barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images, PipelineStage src /*= PipelineStage::EndOfPipe*/, PipelineStage dst /*= PipelineStage::BeginOfPipe*/);
+		void barriers(core::ArrayView<BufferBarrier> buffers, PipelineStage src, PipelineStage dst);
+		void barriers(core::ArrayView<ImageBarrier> images, PipelineStage src, PipelineStage dst);
 
 		void copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<BufferTransfer::TransferDst>& dst);
 		void blit(const ImageBase& src,  ImageBase& dst);

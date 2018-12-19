@@ -25,11 +25,15 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/graphics/barriers/PipelineStage.h>
 
+#include "TransientImage.h"
+#include "TransientBuffer.h"
+
 #include <typeindex>
 
 namespace yave {
 
-class FrameGraphPassBase;
+class FrameGraph;
+class FrameGraphPass;
 class FrameGraphPassBuilder;
 class FrameGraphResourcePool;
 
@@ -41,49 +45,46 @@ class FrameGraphResourceBase {
 			return u32(_id);
 		}
 
-		bool is_valid() const {
-			return _id != invalid_id;
-		}
-
-		bool is_initialized() const {
-			return _last_pass_to_write;
-		}
-
-		const FrameGraphPassBase* last_pass_to_read() const {
-			return _last_pass_to_read;
-		}
-
-		const FrameGraphPassBase* last_pass_to_write() const {
-			return  _last_pass_to_write;
-		}
-
 		bool operator==(const FrameGraphResourceBase& other) const {
 			return _id == other._id;
 		}
 
+		bool is_valid() const {
+			return _id != invalid_id;
+		}
+
 	protected:
-		friend class FrameGraphPassBuilder;
-		friend class FrameGraphResourcePool;
+		friend class FrameGraph;
 
 		static constexpr u32 invalid_id = u32(-1);
 
 		u32 _id = invalid_id;
-		const FrameGraphPassBase* _last_pass_to_read = nullptr;
-		const FrameGraphPassBase* _last_pass_to_write = nullptr;
-
-		PipelineStage _read_stage = PipelineStage::None;
-		PipelineStage _write_stage = PipelineStage::None;
 };
 
 template<typename T>
 class FrameGraphResource : public FrameGraphResourceBase {
 	public:
+		using resource_type = T;
+
 		FrameGraphResource() = default;
 };
 
-template<typename T>
-struct is_framegraph_resource : std::is_base_of<FrameGraphResourceBase, T> {};
+using FrameGraphImage = FrameGraphResource<TransientImage<>>;
+using FrameGraphBuffer = FrameGraphResource<TransientBuffer>;
 
+}
+
+namespace std {
+template<>
+struct hash<yave::FrameGraphResourceBase> : hash<y::u32>{
+	auto operator()(yave::FrameGraphResourceBase r) const {
+		return hash<y::u32>::operator()(r.id());
+	}
+};
+
+template<typename T>
+struct hash<yave::FrameGraphResource<T>> : hash<yave::FrameGraphResourceBase> {
+};
 }
 
 #endif // YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCE_H

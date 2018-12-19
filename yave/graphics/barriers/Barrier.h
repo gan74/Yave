@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/buffers/SubBuffer.h>
 
+#include <y/core/Result.h>
+
 namespace yave {
 
 vk::ImageMemoryBarrier create_image_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, vk::ImageLayout old_layout, vk::ImageLayout new_layout);
@@ -54,15 +56,13 @@ class ImageBarrier {
 
 class BufferBarrier {
 	public:
-		template<BufferUsage Usage, MemoryType Type, BufferTransfer Transfer>
-		BufferBarrier(const Buffer<Usage, Type, Transfer>& buffer) :
+		BufferBarrier(const BufferBase& buffer) :
 				_buffer(buffer.vk_buffer()),
 				_size(buffer.byte_size()),
 				_offset(0) {
 		}
 
-		template<BufferUsage Usage, MemoryType Type, BufferTransfer Transfer>
-		BufferBarrier(const SubBuffer<Usage, Type, Transfer> buffer) :
+		BufferBarrier(const SubBufferBase& buffer) :
 				_buffer(buffer.vk_buffer()),
 				_size(buffer.byte_size()),
 				_offset(buffer.byte_offset()) {
@@ -75,6 +75,42 @@ class BufferBarrier {
 		usize _size;
 		usize _offset;
 };
+
+
+/*class GenericBarrier {
+
+	template<typename T>
+	auto create_barrier(const T& t) {
+		if constexpr(std::is_constructible<ImageBarrier, T>::value) {
+			return ImageBarrier(t);
+		} else {
+			return BufferBarrier(t);
+		}
+	}
+
+	public:
+		enum class Type {
+			Image,
+			Buffer
+		};
+
+		GenericBarrier(const ImageBarrier& barrier);
+		GenericBarrier(const BufferBarrier& barrier);
+
+		template<typename T>
+		GenericBarrier(const T& t) : GenericBarrier(create_barrier(t)) {
+		}
+
+		core::Result<ImageBarrier, BufferBarrier> image_barrier() const;
+		core::Result<BufferBarrier, ImageBarrier> buffer_barrier() const;
+
+	private:
+		Type _type;
+		union {
+			ImageBarrier _image;
+			BufferBarrier _buffer;
+		};
+};*/
 
 }
 

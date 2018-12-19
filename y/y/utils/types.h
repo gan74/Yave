@@ -84,7 +84,6 @@ template<bool B>
 using bool_type = typename std::integral_constant<bool, B>;
 
 
-
 // type traits
 
 /*namespace detail {

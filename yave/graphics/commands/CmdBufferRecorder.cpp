@@ -239,8 +239,12 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
 	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
 }
 
-void CmdBufferRecorder::barriers(const core::ArrayView<BufferBarrier>& buffers, const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
+void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images, PipelineStage src, PipelineStage dst) {
 	check_no_renderpass();
+
+	if(buffers.is_empty() && images.is_empty()) {
+		return;
+	}
 
 	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
 	std::transform(images.begin(), images.end(), std::back_inserter(image_barriers), [=](const auto& b) { return b.vk_barrier(src, dst); });
@@ -258,11 +262,11 @@ void CmdBufferRecorder::barriers(const core::ArrayView<BufferBarrier>& buffers, 
 		);
 }
 
-void CmdBufferRecorder::barriers(const core::ArrayView<BufferBarrier>& buffers, PipelineStage src, PipelineStage dst) {
+void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, PipelineStage src, PipelineStage dst) {
 	barriers(buffers, {}, src, dst);
 }
 
-void CmdBufferRecorder::barriers(const core::ArrayView<ImageBarrier>& images, PipelineStage src, PipelineStage dst) {
+void CmdBufferRecorder::barriers(core::ArrayView<ImageBarrier> images, PipelineStage src, PipelineStage dst) {
 	barriers({}, images, src, dst);
 }
 
