@@ -33,12 +33,13 @@ class BufferBase : NonCopyable {
 	public:
 		DevicePtr device() const;
 
+		BufferUsage usage() const;
 		usize byte_size() const;
-		vk::Buffer vk_buffer() const;
-
 		const DeviceMemory& device_memory() const;
 
 		vk::DescriptorBufferInfo descriptor_info() const;
+
+		vk::Buffer vk_buffer() const;
 
 		~BufferBase();
 
@@ -51,6 +52,7 @@ class BufferBase : NonCopyable {
 	private:
 		usize _size = 0;
 		vk::Buffer _buffer;
+		BufferUsage _usage = BufferUsage::None;
 		DeviceMemory _memory;
 };
 

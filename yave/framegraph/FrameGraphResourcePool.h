@@ -50,12 +50,29 @@ class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 		void create_image(FrameGraphImage res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		void create_buffer(FrameGraphBuffer res, usize byte_size, BufferUsage usage);
 
+
+
+		void release(FrameGraphImage res);
+		void release(FrameGraphBuffer res);
+
 		ImageBarrier barrier(FrameGraphImage res) const;
 		BufferBarrier barrier(FrameGraphBuffer res) const;
 
+		usize allocated_resources() const {
+			return _images.size() + _buffers.size() + _released_images.size() + _released_buffers.size();
+		}
+
 	private:
+		bool create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+		bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage);
+
+
 		std::unordered_map<FrameGraphImage, TransientImage<>> _images;
 		std::unordered_map<FrameGraphBuffer, TransientBuffer> _buffers;
+
+
+		core::Vector<TransientImage<>> _released_images;
+		core::Vector<TransientBuffer> _released_buffers;
 };
 
 }

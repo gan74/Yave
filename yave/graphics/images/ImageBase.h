@@ -64,7 +64,7 @@ class ImageBase : NonCopyable {
 		u32 _mips = 1;
 
 		ImageFormat _format;
-		ImageUsage _usage;
+		ImageUsage _usage = ImageUsage::None;
 
 		DeviceMemory _memory;
 

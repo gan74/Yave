@@ -82,7 +82,30 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 		pass->render(recorder);
 	}
 
+	release_resources(recorder);
 	recorder.keep_alive(std::pair{std::move(_pool), std::move(_passes)});
+
+}
+
+void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
+	struct BufferRelease {
+		FrameGraphBuffer res;
+		FrameGraphResourcePool* pool = nullptr;
+
+		~BufferRelease() {
+			if(pool) {
+				pool->release(res);
+			}
+		}
+	};
+
+	auto buffers = core::vector_with_capacity<BufferRelease>(_buffers.size());
+	std::transform(_buffers.begin(), _buffers.end(), std::back_inserter(buffers), [=](const auto& buff) { return BufferRelease{buff.first, _pool.get()}; });
+	recorder.keep_alive(std::move(buffers));
+
+	for(auto&& i : _images) {
+		_pool->release(i.first);
+	}
 }
 
 FrameGraphImage FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {

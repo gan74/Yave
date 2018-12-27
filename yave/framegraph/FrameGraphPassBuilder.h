@@ -37,7 +37,6 @@ class FrameGraphPassBuilder {
 
 		void add_uniform_input(FrameGraphBuffer res, PipelineStage stage = PipelineStage::AllShadersBit);
 
-
 		void set_render_func(FrameGraphPass::render_func&& func);
 
 	private:
