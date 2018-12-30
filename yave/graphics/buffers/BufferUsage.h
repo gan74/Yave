@@ -68,10 +68,6 @@ inline constexpr BufferTransfer prefered_transfer(MemoryType flags) {
 	return is_cpu_visible(flags) ? BufferTransfer::None : BufferTransfer::TransferDst;
 }
 
-inline constexpr BufferTransfer prefered_transfer(BufferUsage usage) {
-	return prefered_transfer(prefered_memory_type(usage));
-}
-
 }
 
 #endif // YAVE_GRAPHICS_BUFFERS_BUFFERUSAGE_H

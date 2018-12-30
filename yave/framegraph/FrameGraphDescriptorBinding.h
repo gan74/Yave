@@ -19,39 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_FRAMEGRAPH_RENDERERS_H
-#define YAVE_FRAMEGRAPH_RENDERERS_H
+#ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHDESCRIPTORBINDING_H
+#define YAVE_FRAMEGRAPH_FRAMEGRAPHDESCRIPTORBINDING_H
 
-#include <yave/scene/SceneView.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include "FrameGraphResource.h"
 
-#include "FrameGraph.h"
+#include <yave/graphics/bindings/Binding.h>
 
 namespace yave {
 
-struct SceneRenderSubPass {
-	const SceneView* scene_view;
+class FrameGraphDescriptorBinding {
+	enum class BindingType {
+		None,
+		ImageResource,
+		BufferResource,
+		External
+	};
 
-	FrameGraphTypedBuffer<math::Matrix4<>> camera;
-	FrameGraphTypedBuffer<math::Transform<>> transforms;
+	public:
+		FrameGraphDescriptorBinding() = default;
+
+		FrameGraphDescriptorBinding(const Binding& bind);
+		FrameGraphDescriptorBinding(FrameGraphImage img);
+		FrameGraphDescriptorBinding(FrameGraphBuffer buf);
+
+		Binding create_binding(FrameGraphResourcePool* pool) const;
+
+	private:
+
+		BindingType _type = BindingType::None;
+		union {
+			FrameGraphImage _image;
+			FrameGraphBuffer _buffer;
+			Binding _external;
+		};
 };
-
-SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view);
-void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpass, const FrameGraphPass* pass);
-
-
-
-struct GBufferPass {
-	SceneRenderSubPass scene_pass;
-
-	FrameGraphImage depth;
-	FrameGraphImage color;
-	FrameGraphImage normal;
-};
-
-GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size);
-
 
 }
 
-#endif // YAVE_FRAMEGRAPH_RENDERERS_H
+#endif // YAVE_FRAMEGRAPH_FRAMEGRAPHDESCRIPTORBINDING_H

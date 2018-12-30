@@ -27,35 +27,12 @@ SOFTWARE.
 #include "SubBuffer.h"
 
 namespace yave {
-namespace detail {
-
-template<typename T>
-struct is_buffer {
-	static constexpr bool value = false;
-};
-
-template<auto... Args>
-struct is_buffer<Buffer<Args...>> {
-	static constexpr bool value = true;
-};
-
-template<typename T>
-struct is_sub_buffer {
-	static constexpr bool value = false;
-};
-
-template<auto... Args>
-struct is_sub_buffer<SubBuffer<Args...>> {
-	static constexpr bool value = true;
-};
-
-}
 
 template<typename Elem, typename Buff>
 class TypedWrapper final : public Buff {
 
-	static constexpr bool is_sub = detail::is_sub_buffer<Buff>::value;
-	static constexpr bool is_buf = detail::is_buffer<Buff>::value;
+	static constexpr bool is_sub = std::is_base_of_v<SubBufferBase, Buff>;
+	static constexpr bool is_buf = std::is_base_of_v<BufferBase, Buff>;
 	static_assert(is_buf || is_sub);
 
 	public:
@@ -122,12 +99,9 @@ class TypedMapping : public Mapping {
 		using const_iterator = Elem const* ;
 		using value_type = Elem;
 
-		template<BufferUsage Usage, BufferTransfer Transfer>
-		explicit TypedMapping(TypedBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>& buffer) : Mapping(buffer) {
-		}
-
-		template<BufferUsage Usage, BufferTransfer Transfer>
-		explicit TypedMapping(TypedSubBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>& buffer) : Mapping(buffer) {
+		template<typename Buff>
+		explicit TypedMapping(TypedWrapper<Elem, Buff>& buffer) : Mapping(buffer) {
+			static_assert(Buff::memory_type == MemoryType::CpuVisible);
 		}
 
 		usize size() const {

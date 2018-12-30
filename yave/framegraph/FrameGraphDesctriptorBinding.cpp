@@ -19,39 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_FRAMEGRAPH_RENDERERS_H
-#define YAVE_FRAMEGRAPH_RENDERERS_H
 
-#include <yave/scene/SceneView.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
-
-#include "FrameGraph.h"
+#include "FrameGraphDescriptorBinding.h"
+#include "FrameGraphResourcePool.h"
 
 namespace yave {
 
-struct SceneRenderSubPass {
-	const SceneView* scene_view;
-
-	FrameGraphTypedBuffer<math::Matrix4<>> camera;
-	FrameGraphTypedBuffer<math::Transform<>> transforms;
-};
-
-SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view);
-void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpass, const FrameGraphPass* pass);
-
-
-
-struct GBufferPass {
-	SceneRenderSubPass scene_pass;
-
-	FrameGraphImage depth;
-	FrameGraphImage color;
-	FrameGraphImage normal;
-};
-
-GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size);
-
-
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Binding& bind) : _type(BindingType::External), _external(bind) {
 }
 
-#endif // YAVE_FRAMEGRAPH_RENDERERS_H
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImage img) : _type(BindingType::ImageResource), _image(img) {
+}
+
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBuffer buf) : _type(BindingType::BufferResource), _buffer(buf) {
+}
+
+Binding FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool) const {
+	switch(_type) {
+		case BindingType::External:
+			return _external;
+		case BindingType::ImageResource:
+			return pool->get_image<ImageUsage::TextureBit>(_image);
+		case BindingType::BufferResource:
+			return pool->get_buffer<BufferUsage::UniformBit>(_buffer);
+
+		default:
+		break;
+	}
+	return y_fatal("Invalid descriptor.");
+}
+
+}

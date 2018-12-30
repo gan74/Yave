@@ -47,14 +47,25 @@ static void build_barriers(const C& resources, B& barriers, std::unordered_map<F
 	}
 }
 
+template<typename U>
+static bool is_none(U u) {
+	return u == U::None;
+}
+
 void FrameGraph::render(CmdBufferRecorder& recorder) && {
 #warning no pass culling
 
 	for(auto&& [res, info] : _images) {
+		if(is_none(info.usage)) {
+			y_fatal("Unused frame graph image resource.");
+		}
 		_pool->create_image(res, info.format, info.size, info.usage);
 	}
 	for(auto&& [res, info] : _buffers) {
-		_pool->create_buffer(res, info.byte_size, info.usage);
+		if(is_none(info.usage)) {
+			y_fatal("Unused frame graph buffer resource.");
+		}
+		_pool->create_buffer(res, info.byte_size, info.usage, info.memory_type);
 	}
 
 
@@ -64,19 +75,13 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 	for(const auto& pass : _passes) {
 		auto region = recorder.region(pass->name());
 
-		if(pass->_depth.is_valid() || pass->_colors.size()) {
-			DepthAttachmentView depth = _pool->get_image<ImageUsage::DepthBit>(pass->_depth);
-			auto colors = core::vector_with_capacity<ColorAttachmentView>(pass->_colors.size());
-			for(auto&& color : pass->_colors) {
-				_pool->get_image<ImageUsage::ColorBit>(color);
-			}
-			pass->_framebuffer = Framebuffer(device(), depth, colors);
-		}
+		pass->init_framebuffer(_pool.get());
+		pass->init_descriptor_sets(_pool.get());
 
 		buffer_barriers.make_empty();
 		image_barriers.make_empty();
-		build_barriers(pass->all_buffers(), buffer_barriers, to_barrier, _pool.get());
-		build_barriers(pass->all_images(), image_barriers, to_barrier, _pool.get());
+		build_barriers(pass->_buffers, buffer_barriers, to_barrier, _pool.get());
+		build_barriers(pass->_images, image_barriers, to_barrier, _pool.get());
 
 		recorder.barriers(buffer_barriers, image_barriers, PipelineStage::EndOfPipe, PipelineStage::BeginOfPipe);
 		pass->render(recorder);
@@ -88,9 +93,17 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 }
 
 void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
-	struct BufferRelease {
+	struct BufferRelease : NonCopyable {
 		FrameGraphBuffer res;
 		FrameGraphResourcePool* pool = nullptr;
+
+		BufferRelease(FrameGraphBuffer r, FrameGraphResourcePool* p) : res(r), pool(p) {
+		}
+
+		BufferRelease(BufferRelease&& other) {
+			std::swap(other.res, res);
+			std::swap(other.pool, pool);
+		}
 
 		~BufferRelease() {
 			if(pool) {
@@ -99,9 +112,10 @@ void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
 		}
 	};
 
+
 	auto buffers = core::vector_with_capacity<BufferRelease>(_buffers.size());
-	std::transform(_buffers.begin(), _buffers.end(), std::back_inserter(buffers), [=](const auto& buff) { return BufferRelease{buff.first, _pool.get()}; });
-	recorder.keep_alive(std::move(buffers));
+	std::transform(_buffers.begin(), _buffers.end(), std::back_inserter(buffers), [=](const auto& buff) { return BufferRelease(buff.first, _pool.get()) ; });
+	recorder.keep_alive(std::pair{_pool, std::move(buffers)});
 
 	for(auto&& i : _images) {
 		_pool->release(i.first);
@@ -110,7 +124,7 @@ void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
 
 FrameGraphImage FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
 	FrameGraphImage res;
-	res._id = next_id++;
+	res._id = _pool->create_resource_id();
 	auto& r = _images[res];
 	r.size = size;
 	r.format = format;
@@ -119,7 +133,7 @@ FrameGraphImage FrameGraph::declare_image(ImageFormat format, const math::Vec2ui
 
 FrameGraphBuffer FrameGraph::declare_buffer(usize byte_size) {
 	FrameGraphBuffer res;
-	res._id = next_id++;
+	res._id = _pool->create_resource_id();
 	auto& r = _buffers[res];
 	r.byte_size = byte_size;
 	return res;
@@ -152,6 +166,10 @@ void FrameGraph::add_usage(FrameGraphBuffer res, BufferUsage usage) {
 	info.usage = info.usage | usage;
 }
 
+void FrameGraph::set_cpu_visible(FrameGraphBuffer res) {
+	auto& info = check_exists(_buffers, res);
+	info.memory_type = MemoryType::CpuVisible;
+}
 
 
 }

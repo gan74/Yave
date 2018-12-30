@@ -17,15 +17,21 @@ int test_graph() {
 		auto cap = renderdoc::start_capture();
 
 		auto resources = std::make_shared<FrameGraphResourcePool>(&device);
-		FrameGraph graph(resources);
+		SceneView scene_view(scene);
 
-		auto gbuffer = render_gbuffer(graph, SceneView(scene), math::Vec2ui(512));
+		for(usize i = 0; i != 5; ++i) {
+			FrameGraph graph(resources);
 
-		{
-			CmdBufferRecorder rec(device.create_disposable_cmd_buffer());
-			std::move(graph).render(rec);
-			RecordedCmdBuffer cmd(std::move(rec));
-			device.queue(vk::QueueFlagBits::eGraphics).submit<SyncSubmit>(std::move(cmd));
+			auto gbuffer = render_gbuffer(graph, &scene_view, math::Vec2ui(512));
+
+			{
+				CmdBufferRecorder rec(device.create_disposable_cmd_buffer());
+				std::move(graph).render(rec);
+				RecordedCmdBuffer cmd(std::move(rec));
+				device.queue(vk::QueueFlagBits::eGraphics).submit<SyncSubmit>(std::move(cmd));
+			}
+
+			log_msg(fmt("allocated resource count = %", resources->allocated_resources()));
 		}
 	}
 

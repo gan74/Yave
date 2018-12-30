@@ -61,11 +61,24 @@ void FrameGraphPassBuilder::add_storage_output(FrameGraphImage res, PipelineStag
 	add_to_pass(res, ImageUsage::StorageBit, stage);
 }
 
-
-void FrameGraphPassBuilder::add_uniform_input(FrameGraphBuffer res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_uniform_input(FrameGraphBuffer res, usize ds_index, PipelineStage stage) {
 	add_to_pass(res, BufferUsage::UniformBit, stage);
+
+	auto& bindings = _pass->_bindings;
+	while(bindings.size() <= ds_index) {
+		bindings.emplace_back();
+	}
+	bindings[ds_index].emplace_back(res);
 }
 
+void FrameGraphPassBuilder::add_attrib_input(FrameGraphBuffer res, PipelineStage stage) {
+	add_to_pass(res, BufferUsage::AttributeBit, stage);
+}
+
+
+void FrameGraphPassBuilder::add_host_write(FrameGraphBuffer res) {
+	set_cpu_visible(res);
+}
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphImage res, ImageUsage usage, PipelineStage stage) {
 	check_res(res);
@@ -79,6 +92,10 @@ void FrameGraphPassBuilder::add_to_pass(FrameGraphBuffer res, BufferUsage usage,
 	auto& info = _pass->_buffers[res];
 	info.stage = stage & stage;
 	_pass->_parent->add_usage(res, usage);
+}
+
+void FrameGraphPassBuilder::set_cpu_visible(FrameGraphBuffer res) {
+	_pass->_parent->set_cpu_visible(res);
 }
 
 }

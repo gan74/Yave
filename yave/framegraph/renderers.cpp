@@ -24,44 +24,49 @@ SOFTWARE.
 
 namespace yave {
 
-SceneRender SceneRender::create(FrameGraph& framegraph, const SceneView& view) {
-	SceneRender render;
+static constexpr usize max_batch_size = 128 * 1024;
 
-	//render._camera_buffer = framegraph.declare<decltype(render._camera_buffer)::resource_type>(framegraph.device(), usize(1));
-	//render._transform_buffer = framegraph.declare<decltype(render._transform_buffer)::resource_type>(framegraph.device(), max_batch_count);
-	//framegraph.declare_descriptor_set(render._camera_set, render._camera_buffer);
+SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view) {
+	SceneRenderSubPass pass;
+	pass.camera = framegraph.declare_typed_buffer<uniform::Camera>();
+	pass.transforms = framegraph.declare_typed_buffer<math::Transform<>>(max_batch_size);
+	pass.scene_view = view;
 
-	render._scene_view = view;
+	builder.add_uniform_input(pass.camera);
+	builder.add_attrib_input(pass.transforms);
+	builder.add_host_write(pass.transforms);
 
-	return render;
+	return pass;
 }
 
-void SceneRender::render(RenderPassRecorder& recorder, const FrameGraphResourcePool* resources) const {
-	/*auto& camera_buffer = resources->get(_camera_buffer);
-	auto& transform_buffer = resources->get(_transform_buffer);
-	auto& descriptor_set = resources->get(_camera_set);
+
+void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpass, const FrameGraphPass* pass) {
+	auto transform_buffer = pass->resources()->get_buffer<BufferUsage::AttributeBit, MemoryType::CpuVisible>(subpass.transforms);
+	auto camera_buffer = pass->resources()->get_buffer<BufferUsage::UniformBit>(subpass.camera);
+	auto& descriptor_set = pass->descriptor_sets()[0];
+
 
 	// fill render data
 	{
 		{
 			auto camera_mapping = TypedMapping(camera_buffer);
-			camera_mapping[0] = _scene_view.camera().viewproj_matrix();
+			camera_mapping[0] = subpass.scene_view->camera().viewproj_matrix();
 		}
 
-		if(transform_buffer.size() < _scene_view.scene().renderables().size() +_scene_view.scene().static_meshes().size()) {
-			y_fatal("SceneRender::_attrib_buffer overflow");
+		if(transform_buffer.size() < subpass.scene_view->scene().renderables().size() + subpass.scene_view->scene().static_meshes().size()) {
+			y_fatal("Transform buffer overflow.");
 		}
 
 		auto transform_mapping = TypedMapping(transform_buffer);
 		u32 attrib_index = 0;
 		{
 			// renderables
-			for(const auto& r : _scene_view.scene().renderables()) {
+			for(const auto& r : subpass.scene_view->scene().renderables()) {
 				transform_mapping[attrib_index++] = r->transform();
 			}
 
 			// static meshes
-			for(const auto& r : _scene_view.scene().static_meshes()) {
+			for(const auto& r : subpass.scene_view->scene().static_meshes()) {
 				transform_mapping[attrib_index++] = r->transform();
 			}
 		}
@@ -76,37 +81,39 @@ void SceneRender::render(RenderPassRecorder& recorder, const FrameGraphResourceP
 
 		// renderables
 		{
-			for(const auto& r : _scene_view.scene().renderables()) {
+			for(const auto& r : subpass.scene_view->scene().renderables()) {
 				r->render(recorder, Renderable::SceneData{descriptor_set, attrib_index++});
 			}
 		}
 
 		// static meshes
 		{
-			for(const auto& r : _scene_view.scene().static_meshes()) {
+			for(const auto& r : subpass.scene_view->scene().static_meshes()) {
 				r->render(recorder, Renderable::SceneData{descriptor_set, attrib_index++});
 			}
 		}
-	}*/
+	}
 }
 
-GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
+GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size) {
 	static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 	static constexpr vk::Format color_format = vk::Format::eR8G8B8A8Unorm;
 	static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
+
+	FrameGraphPassBuilder builder = framegraph.add_pass("G-buffer pass");
 
 	GBufferPass pass;
 	pass.depth = framegraph.declare_image(depth_format, size);
 	pass.color = framegraph.declare_image(color_format, size);
 	pass.normal = framegraph.declare_image(normal_format, size);
+	pass.scene_pass = create_scene_render(framegraph, builder, view);
 
-	FrameGraphPassBuilder builder = framegraph.add_pass("G-buffer pass");
 	builder.add_depth_output(pass.depth);
 	builder.add_color_output(pass.color);
 	builder.add_color_output(pass.normal);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			pass.scene.render(render_pass, self->resources());
+			render_scene(render_pass, pass.scene_pass, self);
 		});
 
 	return pass;

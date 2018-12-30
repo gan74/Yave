@@ -34,7 +34,8 @@ enum class PipelineStage {
 
 	TransferBit = uenum(vk::PipelineStageFlagBits::eTransfer),
 	HostBit = uenum(vk::PipelineStageFlagBits::eHost),
-	VertexBit = uenum(vk::PipelineStageFlagBits::eVertexInput) | uenum(vk::PipelineStageFlagBits::eVertexShader),
+	VertexInputBit = uenum(vk::PipelineStageFlagBits::eVertexInput),
+	VertexBit = uenum(vk::PipelineStageFlagBits::eVertexShader),
 	FragmentBit = uenum(vk::PipelineStageFlagBits::eFragmentShader) | uenum(vk::PipelineStageFlagBits::eEarlyFragmentTests) | uenum(vk::PipelineStageFlagBits::eLateFragmentTests),
 	ComputeBit = uenum(vk::PipelineStageFlagBits::eComputeShader),
 	ColorAttachmentOutBit = uenum(vk::PipelineStageFlagBits::eColorAttachmentOutput),

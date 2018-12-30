@@ -30,12 +30,15 @@ namespace yave {
 class FrameGraphPassBuilder {
 	public:
 		void add_input(FrameGraphImage res, PipelineStage stage = PipelineStage::EndOfPipe);
+
 		void add_depth_output(FrameGraphImage res, PipelineStage stage = PipelineStage::FragmentBit);
 		void add_color_output(FrameGraphImage res, PipelineStage stage = PipelineStage::FragmentBit);
 		void add_storage_output(FrameGraphImage res, PipelineStage stage = PipelineStage::ComputeBit);
 
+		void add_uniform_input(FrameGraphBuffer res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+		void add_attrib_input(FrameGraphBuffer res, PipelineStage stage = PipelineStage::VertexInputBit);
 
-		void add_uniform_input(FrameGraphBuffer res, PipelineStage stage = PipelineStage::AllShadersBit);
+		void add_host_write(FrameGraphBuffer res);
 
 		void set_render_func(FrameGraphPass::render_func&& func);
 
@@ -46,6 +49,7 @@ class FrameGraphPassBuilder {
 
 		void add_to_pass(FrameGraphImage res, ImageUsage usage, PipelineStage stage);
 		void add_to_pass(FrameGraphBuffer res, BufferUsage usage, PipelineStage stage);
+		void set_cpu_visible(FrameGraphBuffer res);
 
 		FrameGraphPass* _pass = nullptr;
 };

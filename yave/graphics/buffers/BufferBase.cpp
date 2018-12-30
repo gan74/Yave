@@ -32,6 +32,11 @@ static void bind_buffer_memory(DevicePtr dptr, vk::Buffer buffer, const DeviceMe
 
 static vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsageFlags usage) {
 	y_debug_assert(byte_size);
+	if(usage & vk::BufferUsageFlagBits::eUniformBuffer) {
+		if(byte_size > dptr->vk_limits().maxUniformBufferRange) {
+			y_fatal("Uniform buffer size exceeds maxUniformBufferRange (%).", dptr->vk_limits().maxUniformBufferRange);
+		}
+	}
 	return dptr->vk_device().createBuffer(vk::BufferCreateInfo()
 			.setSize(byte_size)
 			.setUsage(usage)

@@ -29,11 +29,16 @@ namespace yave {
 
 class TransientBuffer : public BufferBase {
 
+	static constexpr MemoryType memory_type(MemoryType memory, BufferUsage usage) {
+		return memory == MemoryType::DontCare ? prefered_memory_type(usage) : memory;
+	}
+
 	public:
 		TransientBuffer() = default;
 
-		TransientBuffer(DevicePtr dptr, usize byte_size, BufferUsage usage) :
-				BufferBase(dptr, byte_size, usage, prefered_memory_type(usage), prefered_transfer(usage)) {
+		TransientBuffer(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type = MemoryType::DontCare) :
+				BufferBase(dptr, byte_size, usage, memory_type(type, usage), prefered_transfer(type)) {
+			_memory_type = type;
 		}
 
 		TransientBuffer(TransientBuffer&& other) {
@@ -44,10 +49,42 @@ class TransientBuffer : public BufferBase {
 			swap(other);
 			return *this;
 		}
+
+		MemoryType memory_type() const {
+			return _memory_type;
+		}
+
+	protected:
+		void swap(TransientBuffer& other) {
+			BufferBase::swap(other);
+			std::swap(_memory_type, other._memory_type);
+		}
+
+	private:
+		MemoryType _memory_type = MemoryType::DeviceLocal;
 };
 
-template<typename T>
+
+template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage)>
+class TransientSubBuffer : public SubBuffer<Usage, Memory> {
+	public:
+		TransientSubBuffer(const TransientBuffer& buffer) : SubBuffer<Usage, Memory>(buffer) {
+			y_debug_assert(this->byte_size() == buffer.byte_size() && this->byte_offset() == 0);
+
+			if(!this->has(buffer.usage(), Usage)) {
+				y_fatal("Invalid subbuffer usage.");
+			}
+			if(!this->has(buffer.memory_type(), Memory)) {
+				y_fatal("Invalid subbuffer memory type.");
+			}
+		}
+};
+
+/*template<typename T>
 using TypedTransientBuffer = TypedWrapper<T, TransientBuffer>;
+
+template<typename T, BufferUsage Usage>
+using TypedTransientSubBuffer = TypedWrapper<T, TransientSubBuffer<Usage>>;*/
 
 }
 

@@ -43,10 +43,31 @@ const Framebuffer& FrameGraphPass::framebuffer() const {
 	return _framebuffer;
 }
 
+core::ArrayView<DescriptorSet> FrameGraphPass::descriptor_sets() const {
+	return _descriptor_sets;
+}
+
 void FrameGraphPass::render(CmdBufferRecorder& recorder) const {
 	_render(recorder, this);
 }
 
+void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
+	if(_depth.is_valid() || _colors.size()) {
+		DepthAttachmentView depth = pool->get_image<ImageUsage::DepthBit>(_depth);
+		auto colors = core::vector_with_capacity<ColorAttachmentView>(_colors.size());
+		for(auto&& color : _colors) {
+			pool->get_image<ImageUsage::ColorBit>(color);
+		}
+		_framebuffer = Framebuffer(pool->device(), depth, colors);
+	}
+}
 
+void FrameGraphPass::init_descriptor_sets(FrameGraphResourcePool* pool) {
+	for(const auto& set : _bindings) {
+		auto bindings = core::vector_with_capacity<Binding>(set.size());
+		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [=](const FrameGraphDescriptorBinding& b) { return b.create_binding(pool); });
+		_descriptor_sets << DescriptorSet(pool->device(), bindings);
+	}
+}
 
 }

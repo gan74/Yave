@@ -72,7 +72,16 @@ class FrameGraphResource : public FrameGraphResourceBase {
 using FrameGraphImage = FrameGraphResource<TransientImage<>>;
 using FrameGraphBuffer = FrameGraphResource<TransientBuffer>;
 
+template<typename T>
+struct FrameGraphTypedBuffer : FrameGraphBuffer {
+	using FrameGraphBuffer::FrameGraphBuffer;
+
+	FrameGraphTypedBuffer(const FrameGraphBuffer& other) : FrameGraphBuffer(other) {
+	}
+};
+
 }
+
 
 namespace std {
 template<>

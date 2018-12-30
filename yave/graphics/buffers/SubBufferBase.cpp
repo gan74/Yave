@@ -35,7 +35,7 @@ SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_len, usize byte_
 	y_debug_assert(base.byte_size() >= _size + _offset);
 }
 
-SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, 0, base.byte_size()) {
+SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, base.byte_size(), 0) {
 }
 
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {

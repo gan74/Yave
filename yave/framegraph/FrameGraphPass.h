@@ -24,11 +24,14 @@ SOFTWARE.
 
 #include <y/core/Functor.h>
 
+#include <yave/graphics/bindings/DescriptorSet.h>
+
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include "FrameGraphResource.h"
+#include "FrameGraphDescriptorBinding.h"
 
 namespace yave {
 
@@ -44,23 +47,18 @@ class FrameGraphPass : NonCopyable {
 
 		const core::String& name() const;
 		const FrameGraphResourcePool* resources() const;
+
 		const Framebuffer& framebuffer() const;
+		core::ArrayView<DescriptorSet> descriptor_sets() const;
 
 		void render(CmdBufferRecorder& recorder) const;
-
-
-		const auto& all_images() const {
-			return _images;
-		}
-
-		const auto& all_buffers() const {
-			return _buffers;
-		}
-
 
 	private:
 		friend class FrameGraph;
 		friend class FrameGraphPassBuilder;
+
+		void init_framebuffer(FrameGraphResourcePool* pool);
+		void init_descriptor_sets(FrameGraphResourcePool* pool);
 
 		render_func _render = [](CmdBufferRecorder&, const FrameGraphPass*) {};
 		core::String _name;
@@ -69,6 +67,9 @@ class FrameGraphPass : NonCopyable {
 
 		std::unordered_map<FrameGraphImage, ResourceUsageInfo> _images;
 		std::unordered_map<FrameGraphBuffer, ResourceUsageInfo> _buffers;
+
+		core::Vector<core::Vector<FrameGraphDescriptorBinding>> _bindings;
+		core::Vector<DescriptorSet> _descriptor_sets;
 
 		FrameGraphImage _depth;
 		core::Vector<FrameGraphImage> _colors;

@@ -43,6 +43,10 @@ class SubBuffer : public SubBufferBase {
 		static_assert(!has(BufferUsage::UniformBit, BufferUsage::UniformBit | BufferUsage::IndirectBit));
 		static_assert(has(BufferUsage::UniformBit | BufferUsage::IndirectBit, BufferUsage::UniformBit));
 
+
+		explicit SubBuffer(const BufferBase& buffer) : SubBufferBase(buffer) {
+		}
+
 	public:
 		static constexpr BufferUsage usage = Usage;
 		static constexpr MemoryType memory_type = Memory;

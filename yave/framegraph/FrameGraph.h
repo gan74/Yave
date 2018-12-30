@@ -40,6 +40,7 @@ class FrameGraph : NonCopyable {
 	struct BufferCreateInfo {
 		usize byte_size;
 		BufferUsage usage = BufferUsage::None;
+		MemoryType memory_type = MemoryType::DontCare;
 	};
 
 	public:
@@ -57,9 +58,15 @@ class FrameGraph : NonCopyable {
 		FrameGraphImage declare_image(ImageFormat format, const math::Vec2ui& size);
 		FrameGraphBuffer declare_buffer(usize byte_size);
 
+		template<typename T>
+		FrameGraphTypedBuffer<T> declare_typed_buffer(usize size = 1) {
+			return declare_buffer(sizeof(T) * size);
+		}
+
 
 		void add_usage(FrameGraphImage res, ImageUsage usage);
 		void add_usage(FrameGraphBuffer res, BufferUsage usage);
+		void set_cpu_visible(FrameGraphBuffer res);
 
 	private:
 		friend class FrameGraphPassBuilder;
@@ -72,8 +79,6 @@ class FrameGraph : NonCopyable {
 
 		std::unordered_map<FrameGraphImage, ImageCreateInfo> _images;
 		std::unordered_map<FrameGraphBuffer, BufferCreateInfo> _buffers;
-
-		u32 next_id = 0;
 
 };
 
