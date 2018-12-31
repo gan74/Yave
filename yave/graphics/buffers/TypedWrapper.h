@@ -100,7 +100,7 @@ class TypedMapping : public Mapping {
 		using value_type = Elem;
 
 		template<typename Buff>
-		explicit TypedMapping(TypedWrapper<Elem, Buff>& buffer) : Mapping(buffer) {
+		explicit TypedMapping(const TypedWrapper<Elem, Buff>& buffer) : Mapping(buffer) {
 			static_assert(Buff::memory_type == MemoryType::CpuVisible);
 		}
 

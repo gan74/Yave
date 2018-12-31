@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCE_H
-#define YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCE_H
+#ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCEID_H
+#define YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCEID_H
 
 #include <yave/yave.h>
 #include <yave/graphics/barriers/PipelineStage.h>
@@ -37,15 +37,15 @@ class FrameGraphPass;
 class FrameGraphPassBuilder;
 class FrameGraphResourcePool;
 
-class FrameGraphResourceBase {
+class FrameGraphResourceId {
 	public:
-		FrameGraphResourceBase() = default;
+		FrameGraphResourceId() = default;
 
 		u32 id() const {
 			return u32(_id);
 		}
 
-		bool operator==(const FrameGraphResourceBase& other) const {
+		bool operator==(const FrameGraphResourceId& other) const {
 			return _id == other._id;
 		}
 
@@ -61,22 +61,19 @@ class FrameGraphResourceBase {
 		u32 _id = invalid_id;
 };
 
-template<typename T>
-class FrameGraphResource : public FrameGraphResourceBase {
-	public:
-		using resource_type = T;
-
-		FrameGraphResource() = default;
+struct FrameGraphImageId : FrameGraphResourceId {
+	FrameGraphImageId() = default;
 };
 
-using FrameGraphImage = FrameGraphResource<TransientImage<>>;
-using FrameGraphBuffer = FrameGraphResource<TransientBuffer>;
+struct FrameGraphBufferId : FrameGraphResourceId {
+	FrameGraphBufferId() = default;
+};
 
 template<typename T>
-struct FrameGraphTypedBuffer : FrameGraphBuffer {
-	using FrameGraphBuffer::FrameGraphBuffer;
+struct FrameGraphTypedBufferId : FrameGraphBufferId {
+	using FrameGraphBufferId::FrameGraphBufferId;
 
-	FrameGraphTypedBuffer(const FrameGraphBuffer& other) : FrameGraphBuffer(other) {
+	FrameGraphTypedBufferId(const FrameGraphBufferId& other) : FrameGraphBufferId(other) {
 	}
 };
 
@@ -85,15 +82,12 @@ struct FrameGraphTypedBuffer : FrameGraphBuffer {
 
 namespace std {
 template<>
-struct hash<yave::FrameGraphResourceBase> : hash<y::u32>{
-	auto operator()(yave::FrameGraphResourceBase r) const {
+struct hash<yave::FrameGraphResourceId> : hash<y::u32>{
+	auto operator()(yave::FrameGraphResourceId r) const {
 		return hash<y::u32>::operator()(r.id());
 	}
 };
 
-template<typename T>
-struct hash<yave::FrameGraphResource<T>> : hash<yave::FrameGraphResourceBase> {
-};
 }
 
-#endif // YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCE_H
+#endif // YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCEID_H

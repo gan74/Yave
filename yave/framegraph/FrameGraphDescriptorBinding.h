@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHDESCRIPTORBINDING_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHDESCRIPTORBINDING_H
 
-#include "FrameGraphResource.h"
+#include "FrameGraphResourceToken.h"
 
 #include <yave/graphics/bindings/Binding.h>
 
@@ -40,8 +40,8 @@ class FrameGraphDescriptorBinding {
 		FrameGraphDescriptorBinding() = default;
 
 		FrameGraphDescriptorBinding(const Binding& bind);
-		FrameGraphDescriptorBinding(FrameGraphImage img);
-		FrameGraphDescriptorBinding(FrameGraphBuffer buf);
+		FrameGraphDescriptorBinding(FrameGraphImageId img);
+		FrameGraphDescriptorBinding(FrameGraphBufferId buf);
 
 		Binding create_binding(FrameGraphResourcePool* pool) const;
 
@@ -49,8 +49,8 @@ class FrameGraphDescriptorBinding {
 
 		BindingType _type = BindingType::None;
 		union {
-			FrameGraphImage _image;
-			FrameGraphBuffer _buffer;
+			FrameGraphImageId _image;
+			FrameGraphBufferId _buffer;
 			Binding _external;
 		};
 };

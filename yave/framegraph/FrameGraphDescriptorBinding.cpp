@@ -28,10 +28,10 @@ namespace yave {
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Binding& bind) : _type(BindingType::External), _external(bind) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImage img) : _type(BindingType::ImageResource), _image(img) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImageId img) : _type(BindingType::ImageResource), _image(img) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBuffer buf) : _type(BindingType::BufferResource), _buffer(buf) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId buf) : _type(BindingType::BufferResource), _buffer(buf) {
 }
 
 Binding FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool) const {

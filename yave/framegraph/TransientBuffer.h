@@ -65,7 +65,7 @@ class TransientBuffer : public BufferBase {
 };
 
 
-template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage)>
+template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare>
 class TransientSubBuffer : public SubBuffer<Usage, Memory> {
 	public:
 		TransientSubBuffer(const TransientBuffer& buffer) : SubBuffer<Usage, Memory>(buffer) {
@@ -74,17 +74,11 @@ class TransientSubBuffer : public SubBuffer<Usage, Memory> {
 			if(!this->has(buffer.usage(), Usage)) {
 				y_fatal("Invalid subbuffer usage.");
 			}
-			if(!this->has(buffer.memory_type(), Memory)) {
+			if(!is_memory_type_compatible(buffer.memory_type(), Memory)) {
 				y_fatal("Invalid subbuffer memory type.");
 			}
 		}
 };
-
-/*template<typename T>
-using TypedTransientBuffer = TypedWrapper<T, TransientBuffer>;
-
-template<typename T, BufferUsage Usage>
-using TypedTransientSubBuffer = TypedWrapper<T, TransientSubBuffer<Usage>>;*/
 
 }
 

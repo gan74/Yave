@@ -37,7 +37,7 @@ class SubBuffer : public SubBufferBase {
 		}
 
 		static constexpr bool is_compatible(BufferUsage U, MemoryType M, BufferTransfer T) {
-			return has(U, Usage) && has(M, Memory) && has(T, Transfer);
+			return has(U, Usage) && is_memory_type_compatible(M, Memory) && has(T, Transfer);
 		}
 
 		static_assert(!has(BufferUsage::UniformBit, BufferUsage::UniformBit | BufferUsage::IndirectBit));

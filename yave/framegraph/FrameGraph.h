@@ -55,18 +55,18 @@ class FrameGraph : NonCopyable {
 
 		FrameGraphPassBuilder add_pass(std::string_view name);
 
-		FrameGraphImage declare_image(ImageFormat format, const math::Vec2ui& size);
-		FrameGraphBuffer declare_buffer(usize byte_size);
+		FrameGraphImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+		FrameGraphBufferId declare_buffer(usize byte_size);
 
 		template<typename T>
-		FrameGraphTypedBuffer<T> declare_typed_buffer(usize size = 1) {
+		FrameGraphTypedBufferId<T> declare_typed_buffer(usize size = 1) {
 			return declare_buffer(sizeof(T) * size);
 		}
 
 
-		void add_usage(FrameGraphImage res, ImageUsage usage);
-		void add_usage(FrameGraphBuffer res, BufferUsage usage);
-		void set_cpu_visible(FrameGraphBuffer res);
+		void add_usage(FrameGraphImageId res, ImageUsage usage);
+		void add_usage(FrameGraphBufferId res, BufferUsage usage);
+		void set_cpu_visible(FrameGraphBufferId res);
 
 	private:
 		friend class FrameGraphPassBuilder;
@@ -77,8 +77,9 @@ class FrameGraph : NonCopyable {
 
 		core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
 
-		std::unordered_map<FrameGraphImage, ImageCreateInfo> _images;
-		std::unordered_map<FrameGraphBuffer, BufferCreateInfo> _buffers;
+		using hash_t = std::hash<FrameGraphResourceId>;
+		std::unordered_map<FrameGraphImageId, ImageCreateInfo, hash_t> _images;
+		std::unordered_map<FrameGraphBufferId, BufferCreateInfo, hash_t> _buffers;
 
 };
 

@@ -36,7 +36,7 @@ const FrameGraphResourcePool* FrameGraph::resources() const {
 }
 
 template<typename C, typename B>
-static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceBase, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
+static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
 	for(auto&& [res, info] : resources) {
 		if(auto it = to_barrier.find(res); it != to_barrier.end()) {
 			barriers.emplace_back(pool->barrier(res));
@@ -69,7 +69,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 	}
 
 
-	std::unordered_map<FrameGraphResourceBase, PipelineStage> to_barrier;
+	std::unordered_map<FrameGraphResourceId, PipelineStage> to_barrier;
 	core::Vector<BufferBarrier> buffer_barriers;
 	core::Vector<ImageBarrier> image_barriers;
 	for(const auto& pass : _passes) {
@@ -94,10 +94,10 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 
 void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
 	struct BufferRelease : NonCopyable {
-		FrameGraphBuffer res;
+		FrameGraphBufferId res;
 		FrameGraphResourcePool* pool = nullptr;
 
-		BufferRelease(FrameGraphBuffer r, FrameGraphResourcePool* p) : res(r), pool(p) {
+		BufferRelease(FrameGraphBufferId r, FrameGraphResourcePool* p) : res(r), pool(p) {
 		}
 
 		BufferRelease(BufferRelease&& other) {
@@ -122,8 +122,8 @@ void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
 	}
 }
 
-FrameGraphImage FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
-	FrameGraphImage res;
+FrameGraphImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
+	FrameGraphImageId res;
 	res._id = _pool->create_resource_id();
 	auto& r = _images[res];
 	r.size = size;
@@ -131,8 +131,8 @@ FrameGraphImage FrameGraph::declare_image(ImageFormat format, const math::Vec2ui
 	return res;
 }
 
-FrameGraphBuffer FrameGraph::declare_buffer(usize byte_size) {
-	FrameGraphBuffer res;
+FrameGraphBufferId FrameGraph::declare_buffer(usize byte_size) {
+	FrameGraphBufferId res;
 	res._id = _pool->create_resource_id();
 	auto& r = _buffers[res];
 	r.byte_size = byte_size;
@@ -156,17 +156,17 @@ static auto& check_exists(C& c, T t) {
 	return it->second;
 }
 
-void FrameGraph::add_usage(FrameGraphImage res, ImageUsage usage) {
+void FrameGraph::add_usage(FrameGraphImageId res, ImageUsage usage) {
 	auto& info = check_exists(_images, res);
 	info.usage = info.usage | usage;
 }
 
-void FrameGraph::add_usage(FrameGraphBuffer res, BufferUsage usage) {
+void FrameGraph::add_usage(FrameGraphBufferId res, BufferUsage usage) {
 	auto& info = check_exists(_buffers, res);
 	info.usage = info.usage | usage;
 }
 
-void FrameGraph::set_cpu_visible(FrameGraphBuffer res) {
+void FrameGraph::set_cpu_visible(FrameGraphBufferId res) {
 	auto& info = check_exists(_buffers, res);
 	info.memory_type = MemoryType::CpuVisible;
 }

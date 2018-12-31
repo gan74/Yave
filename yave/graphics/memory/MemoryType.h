@@ -23,7 +23,6 @@ SOFTWARE.
 #define YAVE_GRAPHICS_MEMORY_MEMORYTYPE_H
 
 #include <yave/yave.h>
-#include <yave/graphics/vk/vk.h>
 
 namespace yave {
 
@@ -40,6 +39,10 @@ inline constexpr bool is_cpu_visible(MemoryType type) {
 
 inline constexpr bool require_staging(MemoryType type) {
 	return !is_cpu_visible(type);
+}
+
+inline constexpr bool is_memory_type_compatible(MemoryType from, MemoryType to) {
+	return to == MemoryType::DontCare || from == to || (is_cpu_visible(from) && is_cpu_visible(to));
 }
 
 }

@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-static void check_res(FrameGraphResourceBase res) {
+static void check_res(FrameGraphResourceId res) {
 	if(!res.is_valid()) {
 		y_fatal("Invalid resource.");
 	}
@@ -40,11 +40,11 @@ void FrameGraphPassBuilder::set_render_func(FrameGraphPass::render_func&& func) 
 
 
 
-void FrameGraphPassBuilder::add_input(FrameGraphImage res, PipelineStage stage) {
-	add_to_pass(res, ImageUsage::None, stage);
+void FrameGraphPassBuilder::add_texture_input(FrameGraphImageId res, PipelineStage stage) {
+	add_to_pass(res, ImageUsage::TextureBit, stage);
 }
 
-void FrameGraphPassBuilder::add_depth_output(FrameGraphImage res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_depth_output(FrameGraphImageId res, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::DepthBit, stage);
 	if(_pass->_depth.is_valid()) {
 		y_fatal("Pass already has a depth output.");
@@ -52,16 +52,16 @@ void FrameGraphPassBuilder::add_depth_output(FrameGraphImage res, PipelineStage 
 	_pass->_depth = res;
 }
 
-void FrameGraphPassBuilder::add_color_output(FrameGraphImage res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_color_output(FrameGraphImageId res, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::ColorBit, stage);
 	_pass->_colors << res;
 }
 
-void FrameGraphPassBuilder::add_storage_output(FrameGraphImage res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_storage_output(FrameGraphImageId res, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::StorageBit, stage);
 }
 
-void FrameGraphPassBuilder::add_uniform_input(FrameGraphBuffer res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilder::add_uniform_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
 	add_to_pass(res, BufferUsage::UniformBit, stage);
 
 	auto& bindings = _pass->_bindings;
@@ -71,30 +71,25 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphBuffer res, usize ds_ind
 	bindings[ds_index].emplace_back(res);
 }
 
-void FrameGraphPassBuilder::add_attrib_input(FrameGraphBuffer res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_attrib_input(FrameGraphBufferId res, PipelineStage stage) {
 	add_to_pass(res, BufferUsage::AttributeBit, stage);
 }
 
-
-void FrameGraphPassBuilder::add_host_write(FrameGraphBuffer res) {
-	set_cpu_visible(res);
-}
-
-void FrameGraphPassBuilder::add_to_pass(FrameGraphImage res, ImageUsage usage, PipelineStage stage) {
+void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage, PipelineStage stage) {
 	check_res(res);
 	auto& info = _pass->_images[res];
 	info.stage = stage & stage;
 	_pass->_parent->add_usage(res, usage);
 }
 
-void FrameGraphPassBuilder::add_to_pass(FrameGraphBuffer res, BufferUsage usage, PipelineStage stage) {
+void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usage, PipelineStage stage) {
 	check_res(res);
 	auto& info = _pass->_buffers[res];
 	info.stage = stage & stage;
 	_pass->_parent->add_usage(res, usage);
 }
 
-void FrameGraphPassBuilder::set_cpu_visible(FrameGraphBuffer res) {
+void FrameGraphPassBuilder::set_cpu_visible(FrameGraphBufferId res) {
 	_pass->_parent->set_cpu_visible(res);
 }
 

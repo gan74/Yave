@@ -32,8 +32,9 @@ namespace yave {
 struct SceneRenderSubPass {
 	const SceneView* scene_view;
 
-	FrameGraphTypedBuffer<math::Matrix4<>> camera;
-	FrameGraphTypedBuffer<math::Transform<>> transforms;
+	FrameGraphTypedBufferId<math::Matrix4<>> camera_buffer;
+	FrameGraphTypedBufferId<math::Transform<>> transform_buffer;
+
 };
 
 SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view);
@@ -44,9 +45,9 @@ void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpas
 struct GBufferPass {
 	SceneRenderSubPass scene_pass;
 
-	FrameGraphImage depth;
-	FrameGraphImage color;
-	FrameGraphImage normal;
+	FrameGraphImageId depth;
+	FrameGraphImageId color;
+	FrameGraphImageId normal;
 };
 
 GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size);

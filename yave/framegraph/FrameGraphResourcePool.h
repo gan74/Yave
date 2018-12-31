@@ -22,18 +22,16 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHRESOURCEPOOL_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHRESOURCEPOOL_H
 
-#include <typeindex>
+
+#include <yave/graphics/buffers/Mapping.h>
 
 #include <yave/graphics/bindings/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 
-#include "FrameGraphResource.h"
+#include "FrameGraphResourceToken.h"
 #include "FrameGraphPass.h"
 
-#include <variant>
-
 namespace yave {
-
 
 class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 	public:
@@ -41,40 +39,63 @@ class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 		~FrameGraphResourcePool();
 
 		template<ImageUsage Usage>
-		ImageView<Usage> get_image(FrameGraphImage res) const {
+		ImageView<Usage> get_image(FrameGraphImageId res) const {
 			if(!res.is_valid()) {
 				y_fatal("Invalid image resource.");
 			}
 			return TransientImageView<Usage>(_images.find(res)->second);
 		}
 
-		template<BufferUsage Usage>
-		SubBuffer<Usage> get_buffer(FrameGraphBuffer res) const {
+		template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare>
+		SubBuffer<Usage, Memory> get_buffer(FrameGraphBufferId res) const {
 			if(!res.is_valid()) {
 				y_fatal("Invalid buffer resource.");
 			}
-			return TransientSubBuffer<Usage>(_buffers.find(res)->second);
+			return TransientSubBuffer<Usage, Memory>(_buffers.find(res)->second);
 		}
 
-		template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage), typename T>
-		auto get_buffer(FrameGraphTypedBuffer<T> res) const {
-			using BuffType = TransientSubBuffer<Usage, Memory>;
-			using RetType = TypedSubBuffer<T, BuffType::usage, BuffType::memory_type>;
+		template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare, typename T>
+		TypedSubBuffer<T, Usage, Memory> get_buffer(FrameGraphTypedBufferId<T> res) const {
 			if(!res.is_valid()) {
 				y_fatal("Invalid buffer resource.");
 			}
-			return RetType(BuffType(_buffers.find(res)->second));
+			return TransientSubBuffer<Usage, Memory>(_buffers.find(res)->second);
 		}
 
+		template<typename T>
+		TypedMapping<T> get_mapped_buffer(FrameGraphTypedBufferId<T> res) const {
+			return TypedMapping<T>(get_buffer<BufferUsage::None, MemoryType::CpuVisible>(res));
+		}
 
-		void create_image(FrameGraphImage res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
-		void create_buffer(FrameGraphBuffer res, usize byte_size, BufferUsage usage, MemoryType memory);
+		/*template<BufferUsage Usage>
+		SubBuffer<Usage> get_buffer(FrameGraphBufferToken<Usage> token) const {
+			if(!token.is_valid()) {
+				y_fatal("Invalid buffer resource token.");
+			}
+			return TransientSubBuffer<Usage>(_buffers.find(token.resource())->second);
+		}
 
-		void release(FrameGraphImage res);
-		void release(FrameGraphBuffer res);
+		template<typename T>
+		TypedSubBuffer<T, BufferUsage::None, MemoryType::CpuVisible> get_buffer(FrameGraphBufferCpuToken<T> token) const {
+			if(!token.is_valid()) {
+				y_fatal("Invalid buffer resource token.");
+			}
+			return TransientSubBuffer<BufferUsage::None, MemoryType::CpuVisible>(_buffers.find(token.resource())->second);
+		}
 
-		ImageBarrier barrier(FrameGraphImage res) const;
-		BufferBarrier barrier(FrameGraphBuffer res) const;
+		template<typename T>
+		auto get_mapped_buffer(FrameGraphBufferCpuToken<T> token) const {
+			return TypedMapping<T>(get_buffer(token));
+		}*/
+
+		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+		void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
+
+		void release(FrameGraphImageId res);
+		void release(FrameGraphBufferId res);
+
+		ImageBarrier barrier(FrameGraphImageId res) const;
+		BufferBarrier barrier(FrameGraphBufferId res) const;
 
 		usize allocated_resources() const;
 
@@ -84,9 +105,9 @@ class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 		bool create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory);
 
-
-		std::unordered_map<FrameGraphImage, TransientImage<>> _images;
-		std::unordered_map<FrameGraphBuffer, TransientBuffer> _buffers;
+		using hash_t = std::hash<FrameGraphResourceId>;
+		std::unordered_map<FrameGraphImageId, TransientImage<>, hash_t> _images;
+		std::unordered_map<FrameGraphBufferId, TransientBuffer, hash_t> _buffers;
 
 		core::Vector<TransientImage<>> _released_images;
 		core::Vector<TransientBuffer> _released_buffers;

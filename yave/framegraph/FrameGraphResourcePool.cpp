@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-static void check_res(FrameGraphResourceBase res) {
+static void check_res(FrameGraphResourceId res) {
 	if(!res.is_valid()) {
 		y_fatal("Invalid resource.");
 	}
@@ -46,7 +46,7 @@ FrameGraphResourcePool::~FrameGraphResourcePool() {
 	}
 }
 
-void FrameGraphResourcePool::create_image(FrameGraphImage res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+void FrameGraphResourcePool::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
 	check_res(res);
 	check_usage(usage);
 
@@ -73,7 +73,7 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
 }
 
 
-void FrameGraphResourcePool::create_buffer(FrameGraphBuffer res, usize byte_size, BufferUsage usage, MemoryType memory) {
+void FrameGraphResourcePool::create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory) {
 	check_res(res);
 	check_usage(usage);
 
@@ -106,7 +106,7 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 }
 
 
-void FrameGraphResourcePool::release(FrameGraphImage res) {
+void FrameGraphResourcePool::release(FrameGraphImageId res) {
 	check_res(res);
 	if(auto it = _images.find(res); it != _images.end()) {
 		_released_images << std::move(it->second);
@@ -116,7 +116,7 @@ void FrameGraphResourcePool::release(FrameGraphImage res) {
 	}
 }
 
-void FrameGraphResourcePool::release(FrameGraphBuffer res) {
+void FrameGraphResourcePool::release(FrameGraphBufferId res) {
 	check_res(res);
 	if(auto it = _buffers.find(res); it != _buffers.end()) {
 		_released_buffers << std::move(it->second);
@@ -126,12 +126,12 @@ void FrameGraphResourcePool::release(FrameGraphBuffer res) {
 	}
 }
 
-ImageBarrier FrameGraphResourcePool::barrier(FrameGraphImage res) const {
+ImageBarrier FrameGraphResourcePool::barrier(FrameGraphImageId res) const {
 	check_res(res);
 	return _images.find(res)->second;
 }
 
-BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBuffer res) const {
+BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBufferId res) const {
 	check_res(res);
 	return _buffers.find(res)->second;
 }

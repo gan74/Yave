@@ -28,36 +28,35 @@ static constexpr usize max_batch_size = 128 * 1024;
 
 SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view) {
 	SceneRenderSubPass pass;
-	pass.camera = framegraph.declare_typed_buffer<uniform::Camera>();
-	pass.transforms = framegraph.declare_typed_buffer<math::Transform<>>(max_batch_size);
+	pass.camera_buffer = framegraph.declare_typed_buffer<math::Matrix4<>>();
+	pass.transform_buffer = framegraph.declare_typed_buffer<math::Transform<>>(max_batch_size);
 	pass.scene_view = view;
 
-	builder.add_uniform_input(pass.camera);
-	builder.add_attrib_input(pass.transforms);
-	builder.add_host_write(pass.transforms);
+	builder.add_uniform_input(pass.camera_buffer);
+	builder.add_attrib_input(pass.transform_buffer);
+	builder.map_update(pass.camera_buffer);
+	builder.map_update(pass.transform_buffer);
 
 	return pass;
 }
 
 
 void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpass, const FrameGraphPass* pass) {
-	auto transform_buffer = pass->resources()->get_buffer<BufferUsage::AttributeBit, MemoryType::CpuVisible>(subpass.transforms);
-	auto camera_buffer = pass->resources()->get_buffer<BufferUsage::UniformBit>(subpass.camera);
 	auto& descriptor_set = pass->descriptor_sets()[0];
 
 
 	// fill render data
 	{
-		{
-			auto camera_mapping = TypedMapping(camera_buffer);
-			camera_mapping[0] = subpass.scene_view->camera().viewproj_matrix();
-		}
+		auto camera_mapping = pass->resources()->get_mapped_buffer(subpass.camera_buffer);
+		camera_mapping[0] = subpass.scene_view->camera().viewproj_matrix();
+	}
 
-		if(transform_buffer.size() < subpass.scene_view->scene().renderables().size() + subpass.scene_view->scene().static_meshes().size()) {
+	{
+		auto transform_mapping = pass->resources()->get_mapped_buffer(subpass.transform_buffer);
+		if(transform_mapping.size() < subpass.scene_view->scene().renderables().size() + subpass.scene_view->scene().static_meshes().size()) {
 			y_fatal("Transform buffer overflow.");
 		}
 
-		auto transform_mapping = TypedMapping(transform_buffer);
 		u32 attrib_index = 0;
 		{
 			// renderables
@@ -77,6 +76,7 @@ void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpas
 		u32 attrib_index = 0;
 
 #warning clean unnecessary buffer binding
+		auto transform_buffer = pass->resources()->get_buffer<BufferUsage::AttributeBit>(subpass.transform_buffer);
 		recorder.bind_attrib_buffers({transform_buffer, transform_buffer});
 
 		// renderables

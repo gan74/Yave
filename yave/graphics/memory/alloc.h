@@ -60,7 +60,7 @@ static const vk::MemoryPropertyFlags* memory_type_flags[] = {
 	dont_care_flags,    // DontCare
 	device_local_flags, // DeviceLocal
 	cpu_visible_flags,  // CpuVisible
-	cpu_visible_flags   // Staging
+	staging_flags		// Staging
 };
 
 

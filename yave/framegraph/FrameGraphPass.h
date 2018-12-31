@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include "FrameGraphResource.h"
+#include "FrameGraphResourceId.h"
 #include "FrameGraphDescriptorBinding.h"
 
 namespace yave {
@@ -65,14 +65,15 @@ class FrameGraphPass : NonCopyable {
 
 		FrameGraph* _parent = nullptr;
 
-		std::unordered_map<FrameGraphImage, ResourceUsageInfo> _images;
-		std::unordered_map<FrameGraphBuffer, ResourceUsageInfo> _buffers;
+		using hash_t = std::hash<FrameGraphResourceId>;
+		std::unordered_map<FrameGraphImageId, ResourceUsageInfo, hash_t> _images;
+		std::unordered_map<FrameGraphBufferId, ResourceUsageInfo, hash_t> _buffers;
 
 		core::Vector<core::Vector<FrameGraphDescriptorBinding>> _bindings;
 		core::Vector<DescriptorSet> _descriptor_sets;
 
-		FrameGraphImage _depth;
-		core::Vector<FrameGraphImage> _colors;
+		FrameGraphImageId _depth;
+		core::Vector<FrameGraphImageId> _colors;
 
 		Framebuffer _framebuffer;
 };
