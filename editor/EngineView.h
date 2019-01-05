@@ -28,13 +28,11 @@ SOFTWARE.
 
 #include <editor/widgets/Gizmo.h>
 
-#include <yave/renderers/framebufferRenderer.h>
-#include <yave/renderers/TiledDeferredRenderer.h>
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/material/Material.h>
 
-#include <yave/framegraph/FrameGraphResourcePool.h>
+#include <yave/renderer/LightingPass.h>
 
 namespace editor {
 

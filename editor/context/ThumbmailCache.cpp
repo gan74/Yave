@@ -22,10 +22,6 @@ SOFTWARE.
 
 #include "ThumbmailCache.h"
 
-#include <yave/renderers/TiledDeferredRenderer.h>
-#include <yave/renderers/FramebufferRenderer.h>
-#include <yave/renderers/ToneMapper.h>
-
 namespace editor {
 
 
@@ -47,12 +43,14 @@ math::Vec2ui ThumbmailCache::thumbmail_size() const {
 }
 
 void ThumbmailCache::create_renderer() {
+#if 0
 	auto ibl		= Node::Ptr<IBLData>(new IBLData(device()));
 	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), _scene_view));
 	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, thumbmail_size()));
 	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, ibl));
 	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
 	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, thumbmail_size()));
+#endif
 }
 
 TextureView* ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
@@ -67,7 +65,7 @@ TextureView* ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 }
 
 void ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
-
+#if 0
 	auto thumb = std::make_unique<Thumbmail>(device(), _size);
 
 	CmdBufferRecorder rec = (device()->create_disposable_cmd_buffer());
@@ -80,6 +78,7 @@ void ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 
 	device()->queue(vk::QueueFlagBits::eGraphics).submit<SyncSubmit>(std::move(rec));
 	_thumbmails[mesh.id()] = std::move(thumb);
+#endif
 }
 
 

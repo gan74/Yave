@@ -25,7 +25,6 @@ SOFTWARE.
 #include <editor/editor.h>
 #include <y/core/Result.h>
 
-#include <yave/renderers/FramebufferRenderer.h>
 #include <yave/scene/SceneView.h>
 
 #include <functional>
@@ -58,7 +57,6 @@ class ThumbmailCache : public ContextLinked, NonCopyable {
 
 		Scene _scene;
 		SceneView _scene_view;
-		Node::Ptr<FramebufferRenderer> _renderer;
 
 		std::unordered_map<AssetId, std::unique_ptr<Thumbmail>> _thumbmails;
 };

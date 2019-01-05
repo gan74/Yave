@@ -19,38 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_RENDERER_TONEMAPPINGPASS_H
+#define YAVE_RENDERER_TONEMAPPINGPASS_H
 
-#include "SimpleEndOfPipe.h"
+#include "LightingPass.h"
 
 namespace yave {
 
-SimpleEndOfPipe::SimpleEndOfPipe(const core::ArrayView<Ptr<SecondaryRenderer>>& renderers) :
-		EndOfPipe(renderers[0]->device()),
-		_renderers(renderers.begin(), renderers.end()) {
-}
+struct ToneMappingPass {
+	FrameGraphImageId tone_mapped;
+};
 
-void SimpleEndOfPipe::build_frame_graph(FrameGraphNode& frame_graph) {
-	for(const auto& renderer : _renderers) {
-		frame_graph.schedule(renderer);
-	}
-}
-
-void SimpleEndOfPipe::render(CmdBufferRecorder& recorder, const FrameToken& token) {
-	auto region = recorder.region("SimpleEndOfPipe::render");
-
-	auto pass = recorder.bind_framebuffer(create_framebuffer(token.image_view));
-
-	for(const auto& renderer : _renderers) {
-		renderer->render(pass, token);
-	}
-}
-
-const Framebuffer& SimpleEndOfPipe::create_framebuffer(const ColorAttachmentView& out) {
-	auto& fb = _output_framebuffers[out.vk_view()];
-	if(!fb.device()) {
-		fb = Framebuffer(device(), {out});
-	}
-	return fb;
-}
+ToneMappingPass render_tone_mapping(FrameGraph& framegraph, const LightingPass& lighting);
 
 }
+
+#endif // YAVE_RENDERER_TONEMAPPINGPASS_H

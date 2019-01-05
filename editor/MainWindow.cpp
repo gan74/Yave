@@ -26,12 +26,6 @@ SOFTWARE.
 #include <editor/renderers/ImGuiRenderer.h>
 #include <editor/context/EditorContext.h>
 
-#include <yave/renderers/SimpleEndOfPipe.h>
-#include <yave/renderers/ToneMapper.h>
-#include <yave/renderers/GBufferRenderer.h>
-#include <yave/renderers/TiledDeferredRenderer.h>
-#include <yave/renderers/framebufferRenderer.h>
-
 #include <editor/widgets/EntityView.h>
 #include <editor/widgets/FileBrowser.h>
 #include <editor/widgets/PropertyPanel.h>
@@ -59,8 +53,7 @@ MainWindow::MainWindow(ContextPtr cptr) :
 	ImGui::GetIO().ConfigDockingWithShift = false;
 	ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
 
-	Node::Ptr<SecondaryRenderer> gui(new ImGuiRenderer(device()));
-	_ui_renderer = std::make_shared<SimpleEndOfPipe>(gui);
+	_ui_renderer = std::make_shared<ImGuiRenderer>(device());
 
 	set_event_handler(new MainEventHandler());
 
@@ -76,13 +69,19 @@ void MainWindow::resized() {
 }
 
 void MainWindow::create_swapchain() {
-	// needed because the swapchain imediatly destroys it images
+	// needed because the swapchain immediatly destroys it images
 	device()->queue(vk::QueueFlagBits::eGraphics).wait();
 
 	if(_swapchain) {
 		_swapchain->reset();
 	} else {
 		_swapchain = std::make_unique<Swapchain>(device(), static_cast<Window*>(this));
+	}
+
+	_framebuffers = std::make_unique<Framebuffer[]>(_swapchain->image_count());
+	for(usize i = 0; i != _swapchain->image_count(); ++i) {
+		ColorAttachmentView color(_swapchain->images()[i]);
+		_framebuffers[i] = Framebuffer(device(), {color});
 	}
 }
 
@@ -162,8 +161,8 @@ void MainWindow::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 
 	// render ui pipeline into cmd buffer
 	{
-		RenderingPipeline pipeline(_ui_renderer);
-		pipeline.render(recorder, token);
+		auto render_pass = recorder.bind_framebuffer(_framebuffers[token.image_index]);
+		_ui_renderer->render(render_pass, token);
 	}
 }
 

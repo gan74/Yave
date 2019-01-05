@@ -19,56 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef  YAVE_RENDERERS_TILEDDEFERREDRENDERER_H
-#define  YAVE_RENDERERS_TILEDDEFERREDRENDERER_H
-
-#include "GBufferRenderer.h"
+#ifndef YAVE_RENDERER_LIGHTINGPASS_H
+#define YAVE_RENDERER_LIGHTINGPASS_H
 
 #include <yave/graphics/images/IBLProbe.h>
 
-#include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
-
-#include <yave/framegraph/renderers.h>
+#include "GBufferPass.h"
 
 namespace yave {
 
-class TiledDeferredRenderer : public Renderer {
+class IBLData : public DeviceLinked, NonCopyable {
 	public:
-		static constexpr usize max_light_count = 1024 * 16;
+		IBLData(DevicePtr dptr);
 
-		TiledDeferredRenderer(const Ptr<GBufferRenderer>& gbuffer, const Ptr<IBLData>& ibl_data);
-
-		const math::Vec2ui& size() const;
-
-		TextureView lighting() const;
-		TextureView output() const override;
-
-		const SceneView scene_view() const {
-			return _gbuffer->scene_view();
-		}
-
-	protected:
-		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void pre_render(CmdBufferRecorder& recorder, const FrameToken&) override;
-		void render(CmdBufferRecorder& recorder, const FrameToken&) override;
+		const IBLProbe& envmap() const;
+		TextureView brdf_lut() const;
 
 	private:
-
-		Ptr<GBufferRenderer> _gbuffer;
-
-		ComputeProgram _lighting_program;
-
-		Ptr<IBLData> _ibl_data;
-
-		StorageTexture _acc_buffer;
-		TypedBuffer<uniform::Light, BufferUsage::StorageBit, MemoryType::CpuVisible> _lights_buffer;
-		DescriptorSet _descriptor_set;
-
-		u32 _directional_count;
-
+		Texture _brdf_lut;
+		IBLProbe _envmap;
 };
+
+
+struct LightingPass {
+	FrameGraphImageId lit;
+};
+
+LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data);
 
 }
 
-#endif //  YAVE_RENDERERS_TILEDDEFERREDRENDERER_H
+#endif // YAVE_RENDERER_LIGHTINGPASS_H

@@ -19,30 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_SIMPLEENDOFPIPE_H
-#define YAVE_RENDERERS_SIMPLEENDOFPIPE_H
+#ifndef YAVE_RENDERER_GBUFFERPASS_H
+#define YAVE_RENDERER_GBUFFERPASS_H
 
-#include "renderers.h"
+#include "SceneRenderSubPass.h"
 
 namespace yave {
 
-class SimpleEndOfPipe : public EndOfPipe {
-	public:
-		SimpleEndOfPipe(const core::ArrayView<Ptr<SecondaryRenderer>>& renderers);
+struct GBufferPass {
+	SceneRenderSubPass scene_pass;
 
-	protected:
-		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void render(CmdBufferRecorder& recorder, const FrameToken& token) override;
-
-	private:
-		const Framebuffer& create_framebuffer(const ColorAttachmentView& out);
-
-		core::Vector<Ptr<SecondaryRenderer>> _renderers;
-
-		std::unordered_map<VkImageView, Framebuffer> _output_framebuffers;
-
+	FrameGraphImageId depth;
+	FrameGraphImageId color;
+	FrameGraphImageId normal;
 };
 
+GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size);
 }
 
-#endif // YAVE_RENDERERS_SIMPLEENDOFPIPE_H
+
+#endif // YAVE_RENDERER_GBUFFERPASS_H

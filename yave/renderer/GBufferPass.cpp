@@ -19,39 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERERS_FRAMEBUFFERRENDERER_H
-#define YAVE_RENDERERS_FRAMEBUFFERRENDERER_H
 
-#include "renderers.h"
+#include "GBufferPass.h"
 
 namespace yave {
 
-class FramebufferRenderer : public Renderer {
-	public:
-		FramebufferRenderer(const core::ArrayView<Ptr<SecondaryRenderer>>& renderers, const math::Vec2ui& size, ImageFormat color = vk::Format::eR8G8B8A8Unorm);
+GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size) {
+	static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
+	static constexpr vk::Format color_format = vk::Format::eR8G8B8A8Unorm;
+	static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
 
-		TextureView output() const override {
-			return _color;
-		}
+	auto depth = framegraph.declare_image(depth_format, size);
+	auto color = framegraph.declare_image(color_format, size);
+	auto normal = framegraph.declare_image(normal_format, size);
 
-		const ColorTextureAttachment& output_image() const {
-			return _color;
-		}
+	FrameGraphPassBuilder builder = framegraph.add_pass("G-buffer pass");
 
-	protected:
-		void build_frame_graph(FrameGraphNode& frame_graph) override;
-		void render(CmdBufferRecorder& recorder, const FrameToken& token) override;
+	GBufferPass pass;
+	pass.depth = depth;
+	pass.color = color;
+	pass.normal = normal;
+	pass.scene_pass = create_scene_render(framegraph, builder, view);
 
-	private:
-		const Framebuffer& create_framebuffer(const ColorAttachmentView& out);
+	builder.add_depth_output(depth);
+	builder.add_color_output(color);
+	builder.add_color_output(normal);
+	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+			render_scene(render_pass, pass.scene_pass, self);
+		});
 
-		core::Vector<Ptr<SecondaryRenderer>> _renderers;
-
-		ColorTextureAttachment _color;
-		Framebuffer _framebuffer;
-
-};
-
+	return pass;
 }
 
-#endif // YAVE_RENDERERS_FRAMEBUFFERRENDERER_H
+}

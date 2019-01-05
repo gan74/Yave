@@ -28,11 +28,12 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/EngineView.h>
 
+#include <editor/renderers/ImGuiRenderer.h>
+
 #include <yave/window/Window.h>
 #include <yave/device/Instance.h>
 #include <yave/device/Device.h>
 #include <yave/graphics/swapchain/swapchain.h>
-#include <yave/renderers/renderers.h>
 #include <yave/scene/SceneView.h>
 
 
@@ -57,7 +58,8 @@ class MainWindow : private Window, public ContextLinked {
 		void create_swapchain();
 
 		std::unique_ptr<Swapchain> _swapchain;
-		Node::Ptr<EndOfPipe> _ui_renderer;
+		std::unique_ptr<Framebuffer[]> _framebuffers;
+		std::shared_ptr<ImGuiRenderer> _ui_renderer;
 };
 
 }

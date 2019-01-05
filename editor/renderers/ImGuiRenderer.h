@@ -24,15 +24,13 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/renderers/renderers.h>
-
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/buffers/MultiBufferWrapper.h>
 #include <yave/material/Material.h>
 
 namespace editor {
 
-class ImGuiRenderer : public SecondaryRenderer {
+class ImGuiRenderer : public DeviceLinked, NonCopyable {
 
 	struct Vertex {
 		math::Vec2 pos;
@@ -43,11 +41,9 @@ class ImGuiRenderer : public SecondaryRenderer {
 	public:
 		ImGuiRenderer(DevicePtr dptr);
 
-		void render(RenderPassRecorder& recorder, const FrameToken& token) override;
+		void render(RenderPassRecorder& recorder, const FrameToken& token);
 
 	protected:
-		void build_frame_graph(FrameGraphNode&) override;
-
 		void setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* data);
 
 	private:

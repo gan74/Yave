@@ -112,6 +112,10 @@ void FrameGraphPassBuilder::add_attrib_input(FrameGraphBufferId res, PipelineSta
 	add_to_pass(res, BufferUsage::AttributeBit, stage);
 }
 
+void FrameGraphPassBuilder::add_index_input(FrameGraphBufferId res, PipelineStage stage) {
+	add_to_pass(res, BufferUsage::IndexBit, stage);
+}
+
 
 // --------------------------------- stuff ---------------------------------
 

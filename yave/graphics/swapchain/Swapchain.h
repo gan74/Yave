@@ -53,6 +53,7 @@ class SwapchainImage : public Image<SwapchainImageUsage> {
 
 		~SwapchainImage() {
 			// prevents images to delete their vk::Image, this is already done by the swapchain
+#warning swapping a swapchain image with a normal image will break
 			_image = vk::Image();
 		}
 
@@ -84,10 +85,6 @@ class Swapchain : NonCopyable, public DeviceLinked {
 
 		const auto& images() const {
 			return _images;
-		}
-
-		auto images() {
-			return core::Range(_images);
 		}
 
 		FrameToken next_frame();

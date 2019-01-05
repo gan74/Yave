@@ -19,52 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef  YAVE_RENDERERS_RENDERINGPIPELINE_H
-#define  YAVE_RENDERERS_RENDERINGPIPELINE_H
+#ifndef YAVE_RENDERER_SCENERENDERSUBPASS_H
+#define YAVE_RENDERER_SCENERENDERSUBPASS_H
 
-#include <yave/graphics/commands/CmdBuffer.h>
-#include <yave/graphics/swapchain/FrameToken.h>
-
-#include <unordered_map>
+#include <yave/scene/SceneView.h>
+#include <yave/framegraph/FrameGraph.h>
 
 namespace yave {
 
-class Node;
+struct SceneRenderSubPass {
+	const SceneView* scene_view;
 
-class RenderingPipeline : NonCopyable {
-	public:
-		template<typename T>
-		using Ptr = std::shared_ptr<T>;
+	FrameGraphMutableTypedBufferId<math::Matrix4<>> camera_buffer;
+	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
 
-	private:
-		using NodePtr = RenderingPipeline::Ptr<Node>;
-		using NodeDependencyMap = std::unordered_map<NodePtr, core::Vector<NodePtr>>;
-
-	public:
-		RenderingPipeline(const NodePtr& root);
-
-		void render(CmdBufferRecorder& recorder, const FrameToken& token);
-
-	private:
-
-		void add_node(NodeDependencyMap& dependencies, const NodePtr& node);
-
-		NodePtr _root;
 };
 
-class FrameGraphNode {
-	public:
-		template<typename T>
-		using Ptr = RenderingPipeline::Ptr<T>;
-
-		FrameGraphNode(core::Vector<Ptr<Node>>& dependencies); // hide somehow
-
-		void schedule(const Ptr<Node>& node); // change name ???
-
-	private:
-		core::Vector<Ptr<Node>>& _dependencies;
-};
+SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view);
+void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpass, const FrameGraphPass* pass);
 
 }
 
-#endif //  YAVE_RENDERERS_RENDERINGPIPELINE_H
+#endif // YAVE_RENDERER_SCENERENDERSUBPASS_H

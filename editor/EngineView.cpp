@@ -25,10 +25,9 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <yave/scene/SceneView.h>
-#include <yave/renderers/ToneMapper.h>
 #include <yave/window/EventHandler.h>
 
-#include <yave/framegraph/renderers.h>
+#include <yave/renderer/ToneMappingPass.h>
 
 #include <y/math/Volume.h>
 #include <y/io/File.h>

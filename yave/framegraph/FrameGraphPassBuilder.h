@@ -45,6 +45,7 @@ class FrameGraphPassBuilder {
 		void add_uniform_input(CubemapView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
 		void add_attrib_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
+		void add_index_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
 
 		template<typename T>
 		void map_update(FrameGraphMutableTypedBufferId<T> res) {
