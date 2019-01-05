@@ -103,14 +103,18 @@ GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const 
 	FrameGraphPassBuilder builder = framegraph.add_pass("G-buffer pass");
 
 	GBufferPass pass;
-	pass.depth = framegraph.declare_image(depth_format, size);
-	pass.color = framegraph.declare_image(color_format, size);
-	pass.normal = framegraph.declare_image(normal_format, size);
+	auto depth = framegraph.declare_image(depth_format, size);
+	auto color = framegraph.declare_image(color_format, size);
+	auto normal = framegraph.declare_image(normal_format, size);
+
+	pass.depth = depth;
+	pass.color = color;
+	pass.normal = normal;
 	pass.scene_pass = create_scene_render(framegraph, builder, view);
 
-	builder.add_depth_output(pass.depth);
-	builder.add_color_output(pass.color);
-	builder.add_color_output(pass.normal);
+	builder.add_depth_output(depth);
+	builder.add_color_output(color);
+	builder.add_color_output(normal);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 			render_scene(render_pass, pass.scene_pass, self);

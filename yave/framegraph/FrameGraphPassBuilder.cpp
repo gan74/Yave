@@ -44,7 +44,7 @@ void FrameGraphPassBuilder::add_texture_input(FrameGraphImageId res, PipelineSta
 	add_to_pass(res, ImageUsage::TextureBit, stage);
 }
 
-void FrameGraphPassBuilder::add_depth_output(FrameGraphImageId res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_depth_output(FrameGraphMutableImageId res, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::DepthBit, stage);
 	if(_pass->_depth.is_valid()) {
 		y_fatal("Pass already has a depth output.");
@@ -52,12 +52,12 @@ void FrameGraphPassBuilder::add_depth_output(FrameGraphImageId res, PipelineStag
 	_pass->_depth = res;
 }
 
-void FrameGraphPassBuilder::add_color_output(FrameGraphImageId res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::ColorBit, stage);
 	_pass->_colors << res;
 }
 
-void FrameGraphPassBuilder::add_storage_output(FrameGraphImageId res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_storage_output(FrameGraphMutableImageId res, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::StorageBit, stage);
 }
 
@@ -89,7 +89,7 @@ void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usag
 	_pass->_parent->add_usage(res, usage);
 }
 
-void FrameGraphPassBuilder::set_cpu_visible(FrameGraphBufferId res) {
+void FrameGraphPassBuilder::set_cpu_visible(FrameGraphMutableBufferId res) {
 	_pass->_parent->set_cpu_visible(res);
 }
 

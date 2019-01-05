@@ -37,9 +37,87 @@ class FrameGraphPass;
 class FrameGraphPassBuilder;
 class FrameGraphResourcePool;
 
+
+/*template<bool Mutable = false>
+class FrameGraphResourceIdBase {
+	public:
+		FrameGraphResourceIdBase() = default;
+
+		template<typename = std::enable_if_t<!Mutable>>
+		FrameGraphResourceIdBase(FrameGraphResourceIdBase<true> res) : _id(res.id()) {
+		}
+
+		u32 id() const {
+			return u32(_id);
+		}
+
+		template<bool M>
+		bool operator==(const FrameGraphResourceIdBase<M>& other) const {
+			return _id == other._id;
+		}
+
+		bool is_valid() const {
+			return _id != invalid_id;
+		}
+
+	protected:
+		friend class FrameGraph;
+
+		static constexpr u32 invalid_id = u32(-1);
+
+		u32 _id = invalid_id;
+};
+
+template<bool Mutable = false>
+struct FrameGraphImageIdBase : FrameGraphResourceIdBase<Mutable> {
+	FrameGraphImageIdBase() = default;
+
+	template<typename = std::enable_if_t<!Mutable>>
+	FrameGraphImageIdBase(FrameGraphImageIdBase<true> res) : FrameGraphResourceIdBase<Mutable>(res) {
+	}
+};
+
+template<bool Mutable = false>
+struct FrameGraphBufferIdBase : FrameGraphResourceIdBase<Mutable> {
+	FrameGraphBufferIdBase() = default;
+
+	template<typename = std::enable_if_t<!Mutable>>
+	FrameGraphBufferIdBase(FrameGraphBufferIdBase<true> res) : FrameGraphResourceIdBase<Mutable>(res) {
+	}
+};
+
+template<typename T, bool Mutable = false>
+struct FrameGraphTypedBufferIdBase : FrameGraphBufferIdBase<Mutable> {
+	FrameGraphTypedBufferIdBase() = default;
+
+	FrameGraphTypedBufferIdBase(FrameGraphBufferIdBase<Mutable> res) : FrameGraphBufferIdBase<Mutable>(res) {
+	}
+
+	template<typename = std::enable_if_t<Mutable>>
+	operator FrameGraphTypedBufferIdBase<T, false>() const {
+		return *this;
+	}
+};
+
+
+using FrameGraphResourceId = FrameGraphResourceIdBase<>;
+using FrameGraphImageId = FrameGraphImageIdBase<>;
+using FrameGraphBufferId = FrameGraphBufferIdBase<>;
+
+template<typename T>
+using FrameGraphTypedBufferId = FrameGraphTypedBufferIdBase<T>;
+
+using FrameGraphMutableResourceId = FrameGraphResourceIdBase<true>;
+using FrameGraphMutableImageId = FrameGraphImageIdBase<true>;
+using FrameGraphMutableBufferId = FrameGraphBufferIdBase<true>;
+
+template<typename T>
+using FrameGraphMutableTypedBufferId = FrameGraphTypedBufferIdBase<T, true>;*/
+
+
 class FrameGraphResourceId {
 	public:
-		FrameGraphResourceId() = default;
+		constexpr FrameGraphResourceId() = default;
 
 		u32 id() const {
 			return u32(_id);
@@ -59,25 +137,86 @@ class FrameGraphResourceId {
 		static constexpr u32 invalid_id = u32(-1);
 
 		u32 _id = invalid_id;
+
+
+		template<typename T>
+		constexpr T convert() const {
+			static_assert(std::is_base_of_v<FrameGraphResourceId, T>);
+			T t;
+			t._id = _id;
+			return t;
+		}
 };
 
+struct FrameGraphMutableResourceId : FrameGraphResourceId {
+};
+
+// ---------------------------- images ----------------------------
 struct FrameGraphImageId : FrameGraphResourceId {
-	FrameGraphImageId() = default;
 };
 
-struct FrameGraphBufferId : FrameGraphResourceId {
-	FrameGraphBufferId() = default;
-};
-
-template<typename T>
-struct FrameGraphTypedBufferId : FrameGraphBufferId {
-	using FrameGraphBufferId::FrameGraphBufferId;
-
-	FrameGraphTypedBufferId(const FrameGraphBufferId& other) : FrameGraphBufferId(other) {
+struct FrameGraphMutableImageId : FrameGraphMutableResourceId {
+	constexpr operator FrameGraphImageId() const {
+		return convert<FrameGraphImageId>();
 	}
 };
 
+
+
+
+// ---------------------------- buffers ----------------------------
+struct FrameGraphBufferId : FrameGraphResourceId {
+};
+
+struct FrameGraphMutableBufferId : FrameGraphMutableResourceId {
+	constexpr operator FrameGraphBufferId() const {
+		return convert<FrameGraphBufferId>();
+	}
+};
+
+
+
+// ---------------------------- typed buffers ----------------------------
+template<typename T>
+struct FrameGraphTypedBufferId : FrameGraphResourceId {
+	operator FrameGraphBufferId() const {
+		return convert<FrameGraphBufferId>();
+	}
+};
+
+template<typename T>
+struct FrameGraphMutableTypedBufferId : FrameGraphMutableResourceId {
+	constexpr operator FrameGraphMutableBufferId() const {
+		return convert<FrameGraphMutableBufferId>();
+	}
+
+	constexpr operator FrameGraphBufferId() const {
+		return convert<FrameGraphBufferId>();
+	}
+
+	constexpr operator FrameGraphTypedBufferId<T>() const {
+		return convert<FrameGraphTypedBufferId<T>>();
+	}
+
+	static constexpr FrameGraphMutableTypedBufferId<T> from_untyped(FrameGraphMutableBufferId res) {
+		FrameGraphMutableTypedBufferId t;
+		static_cast<FrameGraphResourceId&>(t) = res;
+		return t;
+	}
+};
+
+/*namespace {
+struct Helper {
+	template<typename T, int I>
+	static std::true_type test(FrameGraphTypedBufferId<T>);
+	template<int I>
+	static std::false_type test(FrameGraphBufferId);
+};
+static_assert(decltype(Helper::test<2>(std::declval<FrameGraphMutableTypedBufferId<int>>()))::value);
+}*/
+
 }
+
 
 
 namespace std {

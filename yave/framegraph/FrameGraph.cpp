@@ -122,8 +122,8 @@ void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
 	}
 }
 
-FrameGraphImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
-	FrameGraphImageId res;
+FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
+	FrameGraphMutableImageId res;
 	res._id = _pool->create_resource_id();
 	auto& r = _images[res];
 	r.size = size;
@@ -131,8 +131,8 @@ FrameGraphImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2
 	return res;
 }
 
-FrameGraphBufferId FrameGraph::declare_buffer(usize byte_size) {
-	FrameGraphBufferId res;
+FrameGraphMutableBufferId FrameGraph::declare_buffer(usize byte_size) {
+	FrameGraphMutableBufferId res;
 	res._id = _pool->create_resource_id();
 	auto& r = _buffers[res];
 	r.byte_size = byte_size;
@@ -166,7 +166,7 @@ void FrameGraph::add_usage(FrameGraphBufferId res, BufferUsage usage) {
 	info.usage = info.usage | usage;
 }
 
-void FrameGraph::set_cpu_visible(FrameGraphBufferId res) {
+void FrameGraph::set_cpu_visible(FrameGraphMutableBufferId res) {
 	auto& info = check_exists(_buffers, res);
 	info.memory_type = MemoryType::CpuVisible;
 }

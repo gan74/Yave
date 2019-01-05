@@ -46,47 +46,20 @@ class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 			return TransientImageView<Usage>(_images.find(res)->second);
 		}
 
-		template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare>
-		SubBuffer<Usage, Memory> get_buffer(FrameGraphBufferId res) const {
-			if(!res.is_valid()) {
-				y_fatal("Invalid buffer resource.");
-			}
-			return TransientSubBuffer<Usage, Memory>(_buffers.find(res)->second);
+		template<BufferUsage Usage>
+		SubBuffer<Usage> get_buffer(FrameGraphBufferId res) const {
+			return get_buffer_internal<Usage>(res);
 		}
 
-		template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare, typename T>
-		TypedSubBuffer<T, Usage, Memory> get_buffer(FrameGraphTypedBufferId<T> res) const {
-			if(!res.is_valid()) {
-				y_fatal("Invalid buffer resource.");
-			}
-			return TransientSubBuffer<Usage, Memory>(_buffers.find(res)->second);
+		template<BufferUsage Usage, typename T>
+		TypedSubBuffer<T, Usage> get_buffer(FrameGraphTypedBufferId<T> res) const {
+			return get_buffer_internal<Usage>(res);
 		}
 
 		template<typename T>
-		TypedMapping<T> get_mapped_buffer(FrameGraphTypedBufferId<T> res) const {
-			return TypedMapping<T>(get_buffer<BufferUsage::None, MemoryType::CpuVisible>(res));
+		TypedMapping<T> get_mapped_buffer(FrameGraphMutableTypedBufferId<T> res) const {
+			return TypedMapping<T>(get_buffer_internal<BufferUsage::None, MemoryType::CpuVisible, T>(res));
 		}
-
-		/*template<BufferUsage Usage>
-		SubBuffer<Usage> get_buffer(FrameGraphBufferToken<Usage> token) const {
-			if(!token.is_valid()) {
-				y_fatal("Invalid buffer resource token.");
-			}
-			return TransientSubBuffer<Usage>(_buffers.find(token.resource())->second);
-		}
-
-		template<typename T>
-		TypedSubBuffer<T, BufferUsage::None, MemoryType::CpuVisible> get_buffer(FrameGraphBufferCpuToken<T> token) const {
-			if(!token.is_valid()) {
-				y_fatal("Invalid buffer resource token.");
-			}
-			return TransientSubBuffer<BufferUsage::None, MemoryType::CpuVisible>(_buffers.find(token.resource())->second);
-		}
-
-		template<typename T>
-		auto get_mapped_buffer(FrameGraphBufferCpuToken<T> token) const {
-			return TypedMapping<T>(get_buffer(token));
-		}*/
 
 		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
@@ -102,6 +75,23 @@ class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 		u32 create_resource_id();
 
 	private:
+		template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare, typename T>
+		TypedSubBuffer<T, Usage, Memory> get_buffer_internal(FrameGraphTypedBufferId<T> res) const {
+			if(!res.is_valid()) {
+				y_fatal("Invalid buffer resource.");
+			}
+			return TransientSubBuffer<Usage, Memory>(_buffers.find(res)->second);
+		}
+
+		template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare>
+		SubBuffer<Usage, Memory> get_buffer_internal(FrameGraphBufferId res) const {
+			if(!res.is_valid()) {
+				y_fatal("Invalid buffer resource.");
+			}
+			return TransientSubBuffer<Usage, Memory>(_buffers.find(res)->second);
+		}
+
+
 		bool create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory);
 

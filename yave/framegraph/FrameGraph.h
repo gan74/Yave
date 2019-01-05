@@ -55,18 +55,18 @@ class FrameGraph : NonCopyable {
 
 		FrameGraphPassBuilder add_pass(std::string_view name);
 
-		FrameGraphImageId declare_image(ImageFormat format, const math::Vec2ui& size);
-		FrameGraphBufferId declare_buffer(usize byte_size);
+		FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+		FrameGraphMutableBufferId declare_buffer(usize byte_size);
 
 		template<typename T>
-		FrameGraphTypedBufferId<T> declare_typed_buffer(usize size = 1) {
-			return declare_buffer(sizeof(T) * size);
+		FrameGraphMutableTypedBufferId<T> declare_typed_buffer(usize size = 1) {
+			return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * size));
 		}
 
 
 		void add_usage(FrameGraphImageId res, ImageUsage usage);
 		void add_usage(FrameGraphBufferId res, BufferUsage usage);
-		void set_cpu_visible(FrameGraphBufferId res);
+		void set_cpu_visible(FrameGraphMutableBufferId res);
 
 	private:
 		friend class FrameGraphPassBuilder;

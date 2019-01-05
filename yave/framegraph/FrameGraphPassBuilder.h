@@ -31,15 +31,15 @@ class FrameGraphPassBuilder {
 	public:
 		void add_texture_input(FrameGraphImageId res, PipelineStage stage = PipelineStage::EndOfPipe);
 
-		void add_depth_output(FrameGraphImageId res, PipelineStage stage = PipelineStage::FragmentBit);
-		void add_color_output(FrameGraphImageId res, PipelineStage stage = PipelineStage::FragmentBit);
-		void add_storage_output(FrameGraphImageId res, PipelineStage stage = PipelineStage::ComputeBit);
+		void add_depth_output(FrameGraphMutableImageId res, PipelineStage stage = PipelineStage::FragmentBit);
+		void add_color_output(FrameGraphMutableImageId res, PipelineStage stage = PipelineStage::FragmentBit);
+		void add_storage_output(FrameGraphMutableImageId res, PipelineStage stage = PipelineStage::ComputeBit);
 
 		void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_attrib_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
 
 		template<typename T>
-		void map_update(FrameGraphTypedBufferId<T> res) {
+		void map_update(FrameGraphMutableTypedBufferId<T> res) {
 			set_cpu_visible(res);
 		}
 
@@ -52,7 +52,7 @@ class FrameGraphPassBuilder {
 
 		void add_to_pass(FrameGraphImageId res, ImageUsage usage, PipelineStage stage);
 		void add_to_pass(FrameGraphBufferId res, BufferUsage usage, PipelineStage stage);
-		void set_cpu_visible(FrameGraphBufferId res);
+		void set_cpu_visible(FrameGraphMutableBufferId res);
 
 		FrameGraphPass* _pass = nullptr;
 };

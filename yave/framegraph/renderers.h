@@ -32,8 +32,8 @@ namespace yave {
 struct SceneRenderSubPass {
 	const SceneView* scene_view;
 
-	FrameGraphTypedBufferId<math::Matrix4<>> camera_buffer;
-	FrameGraphTypedBufferId<math::Transform<>> transform_buffer;
+	FrameGraphMutableTypedBufferId<math::Matrix4<>> camera_buffer;
+	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
 
 };
 
