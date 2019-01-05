@@ -40,6 +40,7 @@ namespace editor {
 EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View"),
 		ContextLinked(cptr),
+		_ibl_data(std::make_shared<IBLData>(device())),
 		_resources(std::make_shared<FrameGraphResourcePool>(device())),
 		_scene_view(context()->scene().scene()),
 		_gizmo(context()) {
@@ -58,9 +59,10 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 	if(_resources) {
 		FrameGraph graph(_resources);
 		auto gbuffer = render_gbuffer(graph, &_scene_view, content_size());
-		auto lighting = render_lighting(graph, gbuffer);
+		auto lighting = render_lighting(graph, gbuffer, _ibl_data);
+		auto tone_mapping = render_tone_mapping(graph, lighting);
 
-		FrameGraphImageId output_image = lighting.lighting;
+		FrameGraphImageId output_image = tone_mapping.tone_mapped;
 		{
 			FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 			builder.add_texture_input(output_image, PipelineStage::FragmentBit);
@@ -72,6 +74,7 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 		}
 
 		std::move(graph).render(recorder);
+		recorder.keep_alive(std::pair(_ibl_data, _resources));
 	}
 
 	// ImGui

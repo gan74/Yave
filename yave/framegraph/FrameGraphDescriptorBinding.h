@@ -36,21 +36,26 @@ class FrameGraphDescriptorBinding {
 		StorageImage,
 
 		InputBuffer,
+		StorageBuffer,
 
 		External
 	};
 
 	public:
-		FrameGraphDescriptorBinding() = default;
-
 		FrameGraphDescriptorBinding(const Binding& bind);
-		FrameGraphDescriptorBinding(FrameGraphImageId img);
-		FrameGraphDescriptorBinding(FrameGraphMutableImageId img);
-		FrameGraphDescriptorBinding(FrameGraphBufferId buf);
+
+		static FrameGraphDescriptorBinding create_storage_binding(FrameGraphBufferId res);
+		static FrameGraphDescriptorBinding create_storage_binding(FrameGraphImageId res);
+
+		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphBufferId res);
+		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphImageId res);
 
 		Binding create_binding(FrameGraphResourcePool* pool) const;
 
 	private:
+		FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type);
+		FrameGraphDescriptorBinding(FrameGraphImageId res, BindingType type);
+
 		BindingType _type = BindingType::None;
 		union {
 			FrameGraphImageId _image;

@@ -28,13 +28,28 @@ namespace yave {
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Binding& bind) : _type(BindingType::External), _external(bind) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImageId img) : _type(BindingType::InputImage), _image(img) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type) :
+		_type(type), _buffer(res) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphMutableImageId img) : _type(BindingType::StorageImage), _image(img) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImageId res, BindingType type) :
+		_type(type), _image(res) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId buf) : _type(BindingType::InputBuffer), _buffer(buf) {
+FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphBufferId res) {
+	return FrameGraphDescriptorBinding(res, BindingType::StorageBuffer);
+}
+
+FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphImageId res) {
+	return FrameGraphDescriptorBinding(res, BindingType::StorageImage);
+}
+
+FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphBufferId res) {
+	return FrameGraphDescriptorBinding(res, BindingType::InputBuffer);
+}
+
+FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphImageId res) {
+	return FrameGraphDescriptorBinding(res, BindingType::InputImage);
 }
 
 Binding FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool) const {
@@ -47,6 +62,8 @@ Binding FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool
 			return pool->get_image<ImageUsage::StorageBit>(_image);
 		case BindingType::InputBuffer:
 			return pool->get_buffer<BufferUsage::UniformBit>(_buffer);
+		case BindingType::StorageBuffer:
+			return pool->get_buffer<BufferUsage::StorageBit>(_buffer);
 
 		default:
 		break;

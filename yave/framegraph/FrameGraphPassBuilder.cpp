@@ -40,6 +40,8 @@ void FrameGraphPassBuilder::set_render_func(FrameGraphPass::render_func&& func) 
 
 
 
+// --------------------------------- Framebuffer ---------------------------------
+
 void FrameGraphPassBuilder::add_texture_input(FrameGraphImageId res, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::TextureBit, stage);
 }
@@ -57,24 +59,61 @@ void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res, Pipel
 	_pass->_colors << res;
 }
 
+
+// --------------------------------- Storage output ---------------------------------
+
 void FrameGraphPassBuilder::add_storage_output(FrameGraphMutableImageId res, usize ds_index, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::StorageBit, stage);
-	add_uniform(res, ds_index);
+	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
+
+void FrameGraphPassBuilder::add_storage_output(FrameGraphMutableBufferId res, usize ds_index, PipelineStage stage) {
+	add_to_pass(res, BufferUsage::StorageBit, stage);
+	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+}
+
+
+// --------------------------------- Storage intput ---------------------------------
+
+void FrameGraphPassBuilder::add_storage_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
+	add_to_pass(res, BufferUsage::StorageBit, stage);
+	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+}
+
+
+// --------------------------------- Uniform input ---------------------------------
 
 void FrameGraphPassBuilder::add_uniform_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
 	add_to_pass(res, BufferUsage::UniformBit, stage);
-	add_uniform(res, ds_index);
+	add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
 }
 
 void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::TextureBit, stage);
-	add_uniform(res, ds_index);
+	add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
 }
+
+
+// --------------------------------- External ---------------------------------
+
+#warning external resources are not sync
+void FrameGraphPassBuilder::add_uniform_input(TextureView tex, usize ds_index, PipelineStage) {
+	add_uniform(Binding(tex), ds_index);
+}
+
+void FrameGraphPassBuilder::add_uniform_input(CubemapView tex, usize ds_index, PipelineStage) {
+	add_uniform(Binding(tex), ds_index);
+}
+
+
+// --------------------------------- Attribs ---------------------------------
 
 void FrameGraphPassBuilder::add_attrib_input(FrameGraphBufferId res, PipelineStage stage) {
 	add_to_pass(res, BufferUsage::AttributeBit, stage);
 }
+
+
+// --------------------------------- stuff ---------------------------------
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage, PipelineStage stage) {
 	check_res(res);

@@ -12,6 +12,10 @@ layout(set = 0, binding = 2) uniform sampler2D in_normal;
 
 layout(rgba16f, set = 0, binding = 3) uniform writeonly image2D out_color;
 
+layout(set = 0, binding = 4) readonly buffer Lights {
+	Light lights[];
+} lights;
+
 struct CameraData {
 	mat4 inv_matrix;
 	vec3 position;
@@ -22,6 +26,8 @@ struct CameraData {
 
 layout(push_constant) uniform PushConstants {
 	CameraData camera;
+	uint point_count;
+	uint directional_count;
 } constants;
 
 
@@ -48,8 +54,29 @@ void main() {
 		vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
 		vec3 view_dir = normalize(constants.camera.position - world_pos);
 
-		vec3 radiance = vec3(1);
-		irradiance += radiance * L0(normal, normalize(vec3(1, 1, 2)), view_dir, roughness, metallic, albedo);
+		// point lights
+		for(uint i = 0; i != constants.point_count; ++i) {
+			Light light = lights.lights[i];
+
+			// light_dir dot view_dir > 0
+			vec3 light_dir = light.position - world_pos;
+			float distance = length(light_dir);
+			light_dir /= distance;
+			float att = attenuation(distance, light.radius);
+
+			vec3 radiance = light.color * att;
+			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+		}
+
+		// directional lights
+		for(uint i = constants.point_count, end = constants.point_count + constants.directional_count; i != end; ++i) {
+			Light light = lights.lights[i];
+
+			vec3 light_dir = light.position; // assume normalized
+
+			vec3 radiance = light.color;
+			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+		}
 	}
 
 	imageStore(out_color, coord, vec4(irradiance, 1.0));

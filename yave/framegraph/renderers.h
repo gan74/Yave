@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/bindings/DescriptorSet.h>
 
+#include <yave/graphics/images/IBLProbe.h>
+
 #include "FrameGraph.h"
 
 namespace yave {
@@ -54,11 +56,32 @@ GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const 
 
 
 
-struct LightingPass {
-	FrameGraphImageId lighting;
+class IBLData : public DeviceLinked, NonCopyable {
+	public:
+		IBLData(DevicePtr dptr);
+
+		const IBLProbe& envmap() const;
+		TextureView brdf_lut() const;
+
+	private:
+		Texture _brdf_lut;
+		IBLProbe _envmap;
 };
 
-LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer);
+
+struct LightingPass {
+	FrameGraphImageId lit;
+};
+
+LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data);
+
+
+
+struct ToneMappingPass {
+	FrameGraphImageId tone_mapped;
+};
+
+ToneMappingPass render_tone_mapping(FrameGraph& framegraph, const LightingPass& lighting);
 
 
 }

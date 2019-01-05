@@ -29,19 +29,9 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/bindings/DescriptorSet.h>
 
+#include <yave/framegraph/renderers.h>
+
 namespace yave {
-
-class IBLData : public DeviceLinked, NonCopyable {
-	public:
-		IBLData(DevicePtr dptr);
-
-		const IBLProbe& envmap() const;
-		TextureView brdf_lut() const;
-
-	private:
-		Texture _brdf_lut;
-		IBLProbe _envmap;
-};
 
 class TiledDeferredRenderer : public Renderer {
 	public:

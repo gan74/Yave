@@ -33,11 +33,16 @@ class FrameGraphPassBuilder {
 
 		void add_depth_output(FrameGraphMutableImageId res, PipelineStage stage = PipelineStage::FragmentBit);
 		void add_color_output(FrameGraphMutableImageId res, PipelineStage stage = PipelineStage::FragmentBit);
+
 		void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
+		void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
 
-
+		void add_storage_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+
+		void add_uniform_input(TextureView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+		void add_uniform_input(CubemapView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
 		void add_attrib_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
 

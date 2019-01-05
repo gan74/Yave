@@ -31,10 +31,8 @@ struct CameraData {
 
 layout(push_constant) uniform PushConstants {
 	CameraData camera;
-
 	uint point_count;
 	uint directional_count;
-
 } constants;
 
 
