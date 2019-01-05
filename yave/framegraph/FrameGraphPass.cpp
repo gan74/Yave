@@ -56,7 +56,7 @@ void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
 		DepthAttachmentView depth = pool->get_image<ImageUsage::DepthBit>(_depth);
 		auto colors = core::vector_with_capacity<ColorAttachmentView>(_colors.size());
 		for(auto&& color : _colors) {
-			pool->get_image<ImageUsage::ColorBit>(color);
+			colors << pool->get_image<ImageUsage::ColorBit>(color);
 		}
 		_framebuffer = Framebuffer(pool->device(), depth, colors);
 	}

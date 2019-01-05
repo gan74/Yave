@@ -41,8 +41,8 @@ int test_graph() {
 int main(int argc, char** argv) {
 	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
 
-	test_graph();
-	return 0;
+	/*test_graph();
+	return 0;*/
 
 	bool debug = true;
 	for(std::string_view arg : core::ArrayView<const char*>(argv, argc)) {

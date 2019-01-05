@@ -60,6 +60,8 @@ void EngineView::create_renderer() {
 		return;
 	}
 
+	_resources = std::make_shared<FrameGraphResourcePool>(device());
+
 	_scene_view		= SceneView(context()->scene().scene(), _scene_view.camera());
 
 	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), _scene_view));
@@ -80,19 +82,18 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 	if(_renderer) {
 		update();
 
-		/*{
-			FrameGraphResourcePool resources(device());
-			FrameGraph graph(&resources);
+		if(_resources) {
+			FrameGraph graph(_resources);
 
-			auto& gbuffer = render_gbuffer(graph, _scene_view, math::Vec2ui(512));
+			auto gbuffer = render_gbuffer(graph, &_scene_view, renderer_size());
 
 			{
 				CmdBufferRecorder rec(device()->create_disposable_cmd_buffer());
-				graph.render(rec, gbuffer.color);
+				std::move(graph).render(rec);
 				RecordedCmdBuffer cmd(std::move(rec));
-				device()->queue(vk::QueueFlagBits::eGraphics).submit<SyncSubmit>(std::move(cmd));
+				device()->queue(vk::QueueFlagBits::eGraphics).submit<AsyncSubmit>(std::move(cmd));
 			}
-		}*/
+		}
 
 		RenderingPipeline pipeline(_renderer);
 		pipeline.render(recorder, token);

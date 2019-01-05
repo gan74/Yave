@@ -171,5 +171,10 @@ void FrameGraph::set_cpu_visible(FrameGraphMutableBufferId res) {
 	info.memory_type = MemoryType::CpuVisible;
 }
 
+math::Vec2ui FrameGraph::image_size(FrameGraphImageId res) const {
+	const auto& info = check_exists(_images, res);
+	return info.size;
+}
+
 
 }

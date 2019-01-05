@@ -34,6 +34,8 @@ SOFTWARE.
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/material/Material.h>
 
+#include <yave/framegraph/FrameGraphResourcePool.h>
+
 namespace editor {
 
 class EngineView : public Widget, public ContextLinked {
@@ -64,6 +66,9 @@ class EngineView : public Widget, public ContextLinked {
 
 		// subwidgets & stuff
 		Gizmo _gizmo;
+
+
+		std::shared_ptr<FrameGraphResourcePool> _resources;
 };
 
 static_assert(!std::is_move_assignable_v<EngineView>);
