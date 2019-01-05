@@ -53,6 +53,14 @@ struct GBufferPass {
 GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size);
 
 
+
+struct LightingPass {
+	FrameGraphImageId lighting;
+};
+
+LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer);
+
+
 }
 
 #endif // YAVE_FRAMEGRAPH_RENDERERS_H

@@ -40,70 +40,48 @@ namespace editor {
 EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View"),
 		ContextLinked(cptr),
+		_resources(std::make_shared<FrameGraphResourcePool>(device())),
 		_scene_view(context()->scene().scene()),
-		_ibl_data(new IBLData(device())),
 		_gizmo(context()) {
+	;
 }
 
 EngineView::~EngineView() {
 	context()->scene().reset_scene_view(&_scene_view);
 }
 
-math::Vec2ui EngineView::renderer_size() const {
-	return _renderer ? _renderer->output().size() : math::Vec2ui();
-}
-
-void EngineView::create_renderer() {
-	const u32 min_size = 64;
-	math::Vec2ui size = content_size();
-	if(size.x() < min_size || size.y() < min_size) {
-		return;
-	}
-
-	_resources = std::make_shared<FrameGraphResourcePool>(device());
-
-	_scene_view		= SceneView(context()->scene().scene(), _scene_view.camera());
-
-	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), _scene_view));
-	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, size));
-	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, _ibl_data));
-	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
-
-	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, size));
-	_view			= std::make_shared<TextureView>(_renderer->output());
-}
-
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
-	if(!_renderer || content_size() != renderer_size()) {
-		create_renderer();
-		return;
-	}
+	update();
 
-	if(_renderer) {
-		update();
+	TextureView* output = nullptr;
 
-		if(_resources) {
-			FrameGraph graph(_resources);
+	if(_resources) {
+		FrameGraph graph(_resources);
+		auto gbuffer = render_gbuffer(graph, &_scene_view, content_size());
+		auto lighting = render_lighting(graph, gbuffer);
 
-			auto gbuffer = render_gbuffer(graph, &_scene_view, renderer_size());
-
-			{
-				CmdBufferRecorder rec(device()->create_disposable_cmd_buffer());
-				std::move(graph).render(rec);
-				RecordedCmdBuffer cmd(std::move(rec));
-				device()->queue(vk::QueueFlagBits::eGraphics).submit<AsyncSubmit>(std::move(cmd));
-			}
+		FrameGraphImageId output_image = lighting.lighting;
+		{
+			FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
+			builder.add_texture_input(output_image, PipelineStage::FragmentBit);
+			builder.set_render_func([&output, output_image](CmdBufferRecorder& rec, const FrameGraphPass* pass) {
+					auto out = std::make_unique<TextureView>(pass->resources()->get_image<ImageUsage::TextureBit>(output_image));
+					output = out.get();
+					rec.keep_alive(std::move(out));
+				});
 		}
 
-		RenderingPipeline pipeline(_renderer);
-		pipeline.render(recorder, token);
-#warning barrier
-		// so we don't have to wait when resizing
-		recorder.keep_alive(std::make_pair(_renderer, _view));
+		std::move(graph).render(recorder);
+	}
 
-		ImGui::GetWindowDrawList()->AddImage(_view.get(),
-			position() + math::Vec2(ImGui::GetWindowContentRegionMin()),
-			position() + math::Vec2(ImGui::GetWindowContentRegionMax()));
+	// ImGui
+	{
+		if(output) {
+			ImGui::GetWindowDrawList()->AddImage(output,
+				position() + math::Vec2(ImGui::GetWindowContentRegionMin()),
+				position() + math::Vec2(ImGui::GetWindowContentRegionMax()));
+
+		}
 
 		_gizmo.paint(recorder, token);
 		if(!_gizmo.is_dragging()) {
@@ -127,8 +105,11 @@ void EngineView::update() {
 	update_camera();
 }
 
+
+
+
 void EngineView::update_camera() {
-	auto size = renderer_size();
+	auto size = content_size();
 	auto& camera = _scene_view.camera();
 
 	math::Vec3 cam_pos = camera.position();

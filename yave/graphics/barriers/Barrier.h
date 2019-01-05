@@ -36,44 +36,47 @@ vk::ImageMemoryBarrier create_image_barrier(vk::Image image, ImageFormat format,
 
 class ImageBarrier {
 	public:
-		ImageBarrier(const ImageBase& image) :
-				_image(image.vk_image()),
-				_usage(image.usage()),
-				_format(image.format()),
-				_layers(image.layers()),
-				_mips(image.mipmaps()) {
+		ImageBarrier(const ImageBase& image, PipelineStage src, PipelineStage dst);
+
+		vk::ImageMemoryBarrier vk_barrier() const {
+			return _barrier;
 		}
 
-		vk::ImageMemoryBarrier vk_barrier(PipelineStage src, PipelineStage dst) const;
+		PipelineStage dst_stage() const {
+			return _dst;
+		}
+
+		PipelineStage src_stage() const {
+			return _src;
+		}
 
 	private:
-		vk::Image _image;
-		ImageUsage _usage;
-		ImageFormat _format;
-		usize _layers;
-		usize _mips;
+		vk::ImageMemoryBarrier _barrier;
+		PipelineStage _src;
+		PipelineStage _dst;
 };
 
 class BufferBarrier {
 	public:
-		BufferBarrier(const BufferBase& buffer) :
-				_buffer(buffer.vk_buffer()),
-				_size(buffer.byte_size()),
-				_offset(0) {
+		BufferBarrier(const BufferBase& buffer, PipelineStage src, PipelineStage dst);
+		BufferBarrier(const SubBufferBase& buffer, PipelineStage src, PipelineStage dst);
+
+		vk::BufferMemoryBarrier vk_barrier() const {
+			return _barrier;
 		}
 
-		BufferBarrier(const SubBufferBase& buffer) :
-				_buffer(buffer.vk_buffer()),
-				_size(buffer.byte_size()),
-				_offset(buffer.byte_offset()) {
+		PipelineStage dst_stage() const {
+			return _dst;
 		}
 
-		vk::BufferMemoryBarrier vk_barrier(PipelineStage src, PipelineStage dst) const;
+		PipelineStage src_stage() const {
+			return _src;
+		}
 
 	private:
-		vk::Buffer _buffer;
-		usize _size;
-		usize _offset;
+		vk::BufferMemoryBarrier _barrier;
+		PipelineStage _src;
+		PipelineStage _dst;
 };
 
 

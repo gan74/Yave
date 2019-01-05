@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "renderers.h"
 
+#include <y/io/File.h>
+
 namespace yave {
 
 static constexpr usize max_batch_size = 128 * 1024;
@@ -95,6 +97,7 @@ void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpas
 	}
 }
 
+
 GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size) {
 	static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 	static constexpr vk::Format color_format = vk::Format::eR8G8B8A8Unorm;
@@ -118,6 +121,41 @@ GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const 
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 			render_scene(render_pass, pass.scene_pass, self);
+		});
+
+	return pass;
+}
+
+
+
+static const ComputeProgram& create_lighting_shader(DevicePtr dptr) {
+	static std::unique_ptr<ComputeProgram> prog;
+	if(!prog) {
+		prog = std::make_unique<ComputeProgram>(ComputeShader(dptr, SpirVData::deserialized(io::File::open("framegraphlight.comp.spv").expected("Unable to open SPIR-V file."))));
+	}
+	return *prog;
+}
+
+LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer) {
+	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
+
+	math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+	uniform::Camera camera_data = gbuffer.scene_pass.scene_view->camera();
+
+	FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
+
+	LightingPass pass;
+	auto lighting = framegraph.declare_image(lighting_format, size);
+
+	pass.lighting = lighting;
+
+	builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
+	builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
+	builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
+	builder.add_storage_output(lighting);
+	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			const auto& program = create_lighting_shader(recorder.device());
+			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, camera_data);
 		});
 
 	return pass;

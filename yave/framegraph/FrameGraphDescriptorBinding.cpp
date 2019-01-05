@@ -28,19 +28,24 @@ namespace yave {
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Binding& bind) : _type(BindingType::External), _external(bind) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImageId img) : _type(BindingType::ImageResource), _image(img) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImageId img) : _type(BindingType::InputImage), _image(img) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId buf) : _type(BindingType::BufferResource), _buffer(buf) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphMutableImageId img) : _type(BindingType::StorageImage), _image(img) {
+}
+
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId buf) : _type(BindingType::InputBuffer), _buffer(buf) {
 }
 
 Binding FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool) const {
 	switch(_type) {
 		case BindingType::External:
 			return _external;
-		case BindingType::ImageResource:
+		case BindingType::InputImage:
 			return pool->get_image<ImageUsage::TextureBit>(_image);
-		case BindingType::BufferResource:
+		case BindingType::StorageImage:
+			return pool->get_image<ImageUsage::StorageBit>(_image);
+		case BindingType::InputBuffer:
 			return pool->get_buffer<BufferUsage::UniformBit>(_buffer);
 
 		default:

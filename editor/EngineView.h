@@ -50,25 +50,16 @@ class EngineView : public Widget, public ContextLinked {
 	private:
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
-		math::Vec2ui renderer_size() const;
-
-		void create_renderer();
-
 		void update();
 		void update_camera();
 		void update_selection();
 
-		SceneView _scene_view;
+		std::shared_ptr<FrameGraphResourcePool> _resources;
 
-		Node::Ptr<IBLData> _ibl_data;
-		Node::Ptr<FramebufferRenderer> _renderer;
-		Node::Ptr<TextureView> _view;
+		SceneView _scene_view;
 
 		// subwidgets & stuff
 		Gizmo _gizmo;
-
-
-		std::shared_ptr<FrameGraphResourcePool> _resources;
 };
 
 static_assert(!std::is_move_assignable_v<EngineView>);

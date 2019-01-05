@@ -37,10 +37,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug(VkDebugReportFlagsEXT flags, VkDebug
 		type = Log::Warning;
 	}
 	if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
-		y_breakpoint;
 		type = Log::Error;
 	}
+
 	log_msg(fmt("Vk: @[%]: %\n", layer, msg),  type);
+
+	if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+		y_breakpoint;
+	}
 	return false;
 }
 

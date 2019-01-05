@@ -31,8 +31,12 @@ namespace yave {
 class FrameGraphDescriptorBinding {
 	enum class BindingType {
 		None,
-		ImageResource,
-		BufferResource,
+
+		InputImage,
+		StorageImage,
+
+		InputBuffer,
+
 		External
 	};
 
@@ -41,12 +45,12 @@ class FrameGraphDescriptorBinding {
 
 		FrameGraphDescriptorBinding(const Binding& bind);
 		FrameGraphDescriptorBinding(FrameGraphImageId img);
+		FrameGraphDescriptorBinding(FrameGraphMutableImageId img);
 		FrameGraphDescriptorBinding(FrameGraphBufferId buf);
 
 		Binding create_binding(FrameGraphResourcePool* pool) const;
 
 	private:
-
 		BindingType _type = BindingType::None;
 		union {
 			FrameGraphImageId _image;

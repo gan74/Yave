@@ -57,18 +57,19 @@ void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res, Pipel
 	_pass->_colors << res;
 }
 
-void FrameGraphPassBuilder::add_storage_output(FrameGraphMutableImageId res, PipelineStage stage) {
+void FrameGraphPassBuilder::add_storage_output(FrameGraphMutableImageId res, usize ds_index, PipelineStage stage) {
 	add_to_pass(res, ImageUsage::StorageBit, stage);
+	add_uniform(res, ds_index);
 }
 
 void FrameGraphPassBuilder::add_uniform_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
 	add_to_pass(res, BufferUsage::UniformBit, stage);
+	add_uniform(res, ds_index);
+}
 
-	auto& bindings = _pass->_bindings;
-	while(bindings.size() <= ds_index) {
-		bindings.emplace_back();
-	}
-	bindings[ds_index].emplace_back(res);
+void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
+	add_to_pass(res, ImageUsage::TextureBit, stage);
+	add_uniform(res, ds_index);
 }
 
 void FrameGraphPassBuilder::add_attrib_input(FrameGraphBufferId res, PipelineStage stage) {
@@ -87,6 +88,14 @@ void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usag
 	auto& info = _pass->_buffers[res];
 	info.stage = stage & stage;
 	_pass->_parent->add_usage(res, usage);
+}
+
+void FrameGraphPassBuilder::add_uniform(FrameGraphDescriptorBinding binding, usize ds_index) {
+	auto& bindings = _pass->_bindings;
+	while(bindings.size() <= ds_index) {
+		bindings.emplace_back();
+	}
+	bindings[ds_index].push_back(binding);
 }
 
 void FrameGraphPassBuilder::set_cpu_visible(FrameGraphMutableBufferId res) {

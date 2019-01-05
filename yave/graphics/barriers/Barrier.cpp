@@ -120,8 +120,8 @@ static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
 	return y_fatal("Unsuported pipeline stage.");
 }
 
-vk::ImageMemoryBarrier ImageBarrier::vk_barrier(PipelineStage src, PipelineStage dst) const {
-	auto layout = vk_image_layout(_usage);
+static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, ImageUsage usage, PipelineStage src, PipelineStage dst) {
+	auto layout = vk_image_layout(usage);
 	return vk::ImageMemoryBarrier()
 			.setOldLayout(layout)
 			.setNewLayout(layout)
@@ -129,45 +129,45 @@ vk::ImageMemoryBarrier ImageBarrier::vk_barrier(PipelineStage src, PipelineStage
 			.setDstAccessMask(vk_dst_access_flags(dst))
 			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setImage(_image)
+			.setImage(image)
 			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(_format.vk_aspect())
-					.setLayerCount(_layers)
-					.setLevelCount(_mips)
+					.setAspectMask(format.vk_aspect())
+					.setLayerCount(layers)
+					.setLevelCount(mips)
 				)
 		;
 }
 
-vk::BufferMemoryBarrier BufferBarrier::vk_barrier(PipelineStage src, PipelineStage dst) const {
+static vk::BufferMemoryBarrier create_barrier(vk::Buffer buffer, usize size, usize offset, PipelineStage src, PipelineStage dst) {
 	return vk::BufferMemoryBarrier()
 			.setSrcAccessMask(vk_src_access_flags(src))
 			.setDstAccessMask(vk_dst_access_flags(dst))
-			.setBuffer(_buffer)
-			.setSize(_size)
-			.setOffset(_offset)
+			.setBuffer(buffer)
+			.setSize(size)
+			.setOffset(offset)
 			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 		;
 }
 
-/*GenericBarrier::GenericBarrier(const ImageBarrier& barrier) : _type(Type::Image), _image(barrier) {
+
+ImageBarrier::ImageBarrier(const ImageBase& image, PipelineStage src, PipelineStage dst) :
+		_barrier(create_barrier(image.vk_image(), image.format(), image.layers(), image.mipmaps(), image.usage(), src, dst)),
+		_src(src), _dst(dst) {
 }
 
-GenericBarrier::GenericBarrier(const BufferBarrier& barrier) : _type(Type::Buffer), _buffer(barrier) {
+
+BufferBarrier::BufferBarrier(const BufferBase& buffer, PipelineStage src, PipelineStage dst) :
+		_barrier(create_barrier(buffer.vk_buffer(), buffer.byte_size(), 0, src, dst)),
+		_src(src), _dst(dst) {
 }
 
-core::Result<ImageBarrier, BufferBarrier> GenericBarrier::image_barrier() const {
-	if(_type == Type::Image) {
-		return core::Ok(_image);
-	}
-	return core::Err(_buffer);
+BufferBarrier::BufferBarrier(const SubBufferBase& buffer, PipelineStage src, PipelineStage dst) :
+		_barrier(create_barrier(buffer.vk_buffer(), buffer.byte_size(), buffer.byte_offset(), src, dst)),
+		_src(src), _dst(dst) {
 }
 
-core::Result<BufferBarrier, ImageBarrier> GenericBarrier::buffer_barrier() const {
-	if(_type == Type::Buffer) {
-		return core::Ok(_buffer);
-	}
-	return core::Err(_image);
-}*/
+
+
 
 }

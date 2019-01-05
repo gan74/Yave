@@ -155,12 +155,13 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 
-		void barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images, PipelineStage src /*= PipelineStage::EndOfPipe*/, PipelineStage dst /*= PipelineStage::BeginOfPipe*/);
-		void barriers(core::ArrayView<BufferBarrier> buffers, PipelineStage src, PipelineStage dst);
-		void barriers(core::ArrayView<ImageBarrier> images, PipelineStage src, PipelineStage dst);
+		void barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images);
+		void barriers(core::ArrayView<BufferBarrier> buffers);
+		void barriers(core::ArrayView<ImageBarrier> images);
 
 		void copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<BufferTransfer::TransferDst>& dst);
-		void blit(const ImageBase& src,  ImageBase& dst);
+		//void copy(const ImageBase& src, const ImageBase& dst);
+		void blit(const ImageBase& src,  const ImageBase& dst);
 
 		// never use directly, needed for internal work and image loading
 		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);

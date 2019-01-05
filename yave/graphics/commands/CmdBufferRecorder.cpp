@@ -239,7 +239,7 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
 	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images, PipelineStage src, PipelineStage dst) {
+void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images) {
 	check_no_renderpass();
 
 	if(buffers.is_empty() && images.is_empty()) {
@@ -247,14 +247,27 @@ void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::A
 	}
 
 	auto image_barriers = core::vector_with_capacity<vk::ImageMemoryBarrier>(images.size());
-	std::transform(images.begin(), images.end(), std::back_inserter(image_barriers), [=](const auto& b) { return b.vk_barrier(src, dst); });
+	std::transform(images.begin(), images.end(), std::back_inserter(image_barriers), [](const auto& b) { return b.vk_barrier(); });
 
 	auto buffer_barriers = core::vector_with_capacity<vk::BufferMemoryBarrier>(buffers.size());
-	std::transform(buffers.begin(), buffers.end(), std::back_inserter(buffer_barriers), [=](const auto& b) { return b.vk_barrier(src, dst); });
+	std::transform(buffers.begin(), buffers.end(), std::back_inserter(buffer_barriers), [](const auto& b) { return b.vk_barrier(); });
+
+	PipelineStage src_mask = PipelineStage::None;
+	PipelineStage dst_mask = PipelineStage::None;
+
+	for(const auto& b : buffers) {
+		src_mask = src_mask | b.src_stage();
+		dst_mask = dst_mask | b.dst_stage();
+	}
+
+	for(const auto& b : images) {
+		src_mask = src_mask | b.src_stage();
+		dst_mask = dst_mask | b.dst_stage();
+	}
 
 	vk_cmd_buffer().pipelineBarrier(
-			vk::PipelineStageFlagBits(src),
-			vk::PipelineStageFlagBits(dst),
+			vk::PipelineStageFlagBits(src_mask),
+			vk::PipelineStageFlagBits(dst_mask),
 			vk::DependencyFlagBits::eByRegion,
 			0, nullptr,
 			buffer_barriers.size(), buffer_barriers.begin(),
@@ -262,14 +275,13 @@ void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::A
 		);
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, PipelineStage src, PipelineStage dst) {
-	barriers(buffers, {}, src, dst);
+void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers) {
+	barriers(buffers, {});
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<ImageBarrier> images, PipelineStage src, PipelineStage dst) {
-	barriers({}, images, src, dst);
+void CmdBufferRecorder::barriers(core::ArrayView<ImageBarrier> images) {
+	barriers({}, images);
 }
-
 
 void CmdBufferRecorder::copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<yave::BufferTransfer::TransferDst>& dst) {
 	if(src.byte_size() != dst.byte_size()) {
@@ -278,7 +290,32 @@ void CmdBufferRecorder::copy(const CopyBuffer<BufferTransfer::TransferSrc>& src,
 	vk_cmd_buffer().copyBuffer(src.vk_buffer(), dst.vk_buffer(), vk::BufferCopy(src.byte_offset(), dst.byte_offset(), src.byte_size()));
 }
 
-void CmdBufferRecorder::blit(const ImageBase& src, ImageBase& dst) {
+/*void CmdBufferRecorder::copy(const ImageBase& src, const ImageBase& dst) {
+	if(src.image_size() != dst.image_size()) {
+		y_fatal("Image size do not match.");
+	}
+	if(src.layers() != dst.layers()) {
+		y_fatal("Image layer count do not match.");
+	}
+
+	auto src_resource = vk::ImageSubresourceLayers()
+		.setAspectMask(src.format().vk_aspect())
+		.setMipLevel(0)
+		.setBaseArrayLayer(0)
+		.setLayerCount(src.layers());
+	auto dst_resource = vk::ImageSubresourceLayers()
+		.setAspectMask(dst.format().vk_aspect())
+		.setMipLevel(0)
+		.setBaseArrayLayer(0)
+		.setLayerCount(dst.layers());
+
+	auto extent = vk::Extent3D(src.image_size().x(), src.image_size().y(), src.image_size().z());
+
+	vk_cmd_buffer().copyImage(src.vk_image(), vk_image_layout(src.usage()),
+							  dst.vk_image(), vk_image_layout(dst.usage()), vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
+}*/
+
+void CmdBufferRecorder::blit(const ImageBase& src, const ImageBase& dst) {
 	vk::ImageBlit blit = vk::ImageBlit()
 			.setSrcSubresource(
 				vk::ImageSubresourceLayers()

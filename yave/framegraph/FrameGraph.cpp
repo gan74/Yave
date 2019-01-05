@@ -39,7 +39,7 @@ template<typename C, typename B>
 static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
 	for(auto&& [res, info] : resources) {
 		if(auto it = to_barrier.find(res); it != to_barrier.end()) {
-			barriers.emplace_back(pool->barrier(res));
+			barriers.emplace_back(pool->barrier(res, it->second, info.stage));
 			it->second = info.stage;
 		} else {
 			to_barrier[res] = info.stage;
@@ -83,9 +83,11 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 		build_barriers(pass->_buffers, buffer_barriers, to_barrier, _pool.get());
 		build_barriers(pass->_images, image_barriers, to_barrier, _pool.get());
 
-		recorder.barriers(buffer_barriers, image_barriers, PipelineStage::EndOfPipe, PipelineStage::BeginOfPipe);
+		recorder.barriers(buffer_barriers, image_barriers);
 		pass->render(recorder);
 	}
+
+#warning barrier resources at end
 
 	release_resources(recorder);
 	recorder.keep_alive(std::pair{std::move(_pool), std::move(_passes)});

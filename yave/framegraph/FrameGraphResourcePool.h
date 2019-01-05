@@ -40,25 +40,25 @@ class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 
 		template<ImageUsage Usage>
 		ImageView<Usage> get_image(FrameGraphImageId res) const {
-			if(!res.is_valid()) {
-				y_fatal("Invalid image resource.");
-			}
-			return TransientImageView<Usage>(_images.find(res)->second);
+			return TransientImageView<Usage>(find(res));
 		}
 
 		template<BufferUsage Usage>
 		SubBuffer<Usage> get_buffer(FrameGraphBufferId res) const {
-			return get_buffer_internal<Usage>(res);
+			return TransientSubBuffer<Usage>(find(res));
 		}
 
 		template<BufferUsage Usage, typename T>
 		TypedSubBuffer<T, Usage> get_buffer(FrameGraphTypedBufferId<T> res) const {
-			return get_buffer_internal<Usage>(res);
+			return TypedSubBuffer<T, Usage>(TransientSubBuffer<Usage>(find(res)));
 		}
 
 		template<typename T>
 		TypedMapping<T> get_mapped_buffer(FrameGraphMutableTypedBufferId<T> res) const {
-			return TypedMapping<T>(get_buffer_internal<BufferUsage::None, MemoryType::CpuVisible, T>(res));
+			constexpr BufferUsage usage = BufferUsage::None;
+			constexpr MemoryType memory = MemoryType::CpuVisible;
+			TypedSubBuffer<T, usage, memory> subbuffer(TransientSubBuffer<usage, memory>(find(res)));
+			return TypedMapping<T>(subbuffer);
 		}
 
 		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
@@ -67,29 +67,16 @@ class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 		void release(FrameGraphImageId res);
 		void release(FrameGraphBufferId res);
 
-		ImageBarrier barrier(FrameGraphImageId res) const;
-		BufferBarrier barrier(FrameGraphBufferId res) const;
+		ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;
+		BufferBarrier barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const;
 
 		usize allocated_resources() const;
 
 		u32 create_resource_id();
 
 	private:
-		template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare, typename T>
-		TypedSubBuffer<T, Usage, Memory> get_buffer_internal(FrameGraphTypedBufferId<T> res) const {
-			if(!res.is_valid()) {
-				y_fatal("Invalid buffer resource.");
-			}
-			return TransientSubBuffer<Usage, Memory>(_buffers.find(res)->second);
-		}
-
-		template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare>
-		SubBuffer<Usage, Memory> get_buffer_internal(FrameGraphBufferId res) const {
-			if(!res.is_valid()) {
-				y_fatal("Invalid buffer resource.");
-			}
-			return TransientSubBuffer<Usage, Memory>(_buffers.find(res)->second);
-		}
+		const TransientImage<>& find(FrameGraphImageId res) const;
+		const TransientBuffer& find(FrameGraphBufferId res) const;
 
 
 		bool create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);

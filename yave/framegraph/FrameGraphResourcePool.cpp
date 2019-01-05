@@ -126,14 +126,14 @@ void FrameGraphResourcePool::release(FrameGraphBufferId res) {
 	}
 }
 
-ImageBarrier FrameGraphResourcePool::barrier(FrameGraphImageId res) const {
+ImageBarrier FrameGraphResourcePool::barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const {
 	check_res(res);
-	return _images.find(res)->second;
+	return ImageBarrier(_images.find(res)->second, src, dst);
 }
 
-BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBufferId res) const {
+BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const {
 	check_res(res);
-	return _buffers.find(res)->second;
+	return BufferBarrier(_buffers.find(res)->second, src, dst);
 }
 
 usize FrameGraphResourcePool::allocated_resources() const {
@@ -142,6 +142,28 @@ usize FrameGraphResourcePool::allocated_resources() const {
 
 u32 FrameGraphResourcePool::create_resource_id() {
 	return _next_id++;
+}
+
+
+const TransientImage<>& FrameGraphResourcePool::find(FrameGraphImageId res) const {
+	if(!res.is_valid()) {
+		y_fatal("Invalid image resource.");
+	}
+	if(auto it = _images.find(res); it != _images.end()) {
+		return it->second;
+	}
+
+	return y_fatal("Image resource doesn't exist.");
+}
+
+const TransientBuffer& FrameGraphResourcePool::find(FrameGraphBufferId res) const {
+	if(!res.is_valid()) {
+		y_fatal("Invalid buffer resource.");
+	}
+	if(auto it = _buffers.find(res); it != _buffers.end()) {
+		return it->second;
+	}
+	return y_fatal("Buffer resource doesn't exist.");
 }
 
 }
