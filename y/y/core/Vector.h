@@ -102,11 +102,13 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		Vector& operator=(const Vector& other) {
-			if constexpr(std::allocator_traits<Allocator>::propagate_on_container_copy_assignment::value) {
-				clear();
-				Allocator::operator=(other);
+			if(&other != this) {
+				if constexpr(std::allocator_traits<Allocator>::propagate_on_container_copy_assignment::value) {
+					clear();
+					Allocator::operator=(other);
+				}
+				assign(other.begin(), other.end());
 			}
-			assign(other.begin(), other.end());
 			return *this;
 		}
 
@@ -116,13 +118,23 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		Vector& operator=(ArrayView<value_type> l) {
-			assign(l.begin(), l.end());
+			if(contains_it(l.begin())) {
+				Vector other(l);
+				swap(other);
+			} else {
+				assign(l.begin(), l.end());
+			}
 			return *this;
 		}
 
 		template<typename... Args>
 		Vector& operator=(const Vector<Elem, Args...>& l) {
-			assign(l.begin(), l.end());
+			if(contains_it(l.begin())) {
+				Vector other(l);
+				swap(other);
+			} else {
+				assign(l.begin(), l.end());
+			}
 			return *this;
 		}
 
@@ -316,6 +328,10 @@ class Vector : ResizePolicy, Allocator {
 
 	private:
 		static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
+
+		bool contains_it(const_iterator it) const {
+			return it >= _data && it < _data_end;
+		}
 
 		void move_range(data_type* dst, data_type* src, usize n) {
 			if constexpr(is_data_trivial) {
