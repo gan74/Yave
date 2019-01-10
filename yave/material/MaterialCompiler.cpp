@@ -30,7 +30,7 @@ SOFTWARE.
 namespace yave {
 
 static core::ArrayView<vk::PipelineShaderStageCreateInfo> depth_only_stages(core::ArrayView<vk::PipelineShaderStageCreateInfo> stages) {
-	auto is_vertex_stage = [](const vk::PipelineShaderStageCreateInfo& s) { return s.stage == vk::ShaderStageFlagBits::eVertex; }
+	auto is_vertex_stage = [](const vk::PipelineShaderStageCreateInfo& s) { return s.stage == vk::ShaderStageFlagBits::eVertex; };
 	y_debug_assert(std::count_if(stages.begin(), stages.end(), is_vertex_stage) == 1);
 	return *std::find_if(stages.begin(), stages.end(), is_vertex_stage);
 }
