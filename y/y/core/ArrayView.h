@@ -68,8 +68,6 @@ class ArrayView {
 		ArrayView(const C& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
 		}
 
-		ArrayView& operator=(const ArrayView&) = delete;
-
 		usize size() const {
 			return _size;
 		}
