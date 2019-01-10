@@ -53,7 +53,6 @@ class EngineView : public Widget, public ContextLinked {
 		void update_selection();
 
 		std::shared_ptr<IBLData> _ibl_data;
-		std::shared_ptr<FrameGraphResourcePool> _resources;
 
 		SceneView _scene_view;
 

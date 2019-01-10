@@ -70,7 +70,7 @@ void MainWindow::resized() {
 
 void MainWindow::create_swapchain() {
 	// needed because the swapchain immediatly destroys it images
-	device()->queue(vk::QueueFlagBits::eGraphics).wait();
+	device()->graphic_queue().wait();
 
 	if(_swapchain) {
 		_swapchain->reset();
@@ -99,14 +99,14 @@ void MainWindow::exec() {
 		}
 	} while(!context()->ui().confirm("Quit ?"));
 
-	device()->queue(QueueFamily::Graphics).wait();
+	device()->graphic_queue().wait();
 }
 
 void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 	RecordedCmdBuffer cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
-	auto graphic_queue = device()->queue(QueueFamily::Graphics).vk_queue();
+	auto graphic_queue = device()->graphic_queue().vk_queue();
 	auto vk_buffer = cmd_buffer.vk_cmd_buffer();
 
 	graphic_queue.submit(vk::SubmitInfo()

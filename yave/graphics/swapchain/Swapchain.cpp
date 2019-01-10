@@ -218,7 +218,7 @@ void Swapchain::build_swapchain() {
 	for(auto& i : _images) {
 		recorder.transition_image(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 	}
-	device()->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	device()->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 void Swapchain::build_semaphores() {

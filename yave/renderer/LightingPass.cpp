@@ -42,7 +42,7 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 		auto region = recorder.region("IBLData::create_ibl_lut");
 		recorder.dispatch_size(brdf_integrator, image.size(), {dset});
 	}
-	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 
 	return image;
 }

@@ -80,6 +80,11 @@ void FrameGraphPassBuilder::add_storage_input(FrameGraphBufferId res, usize ds_i
 	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
+void FrameGraphPassBuilder::add_storage_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
+	add_to_pass(res, ImageUsage::StorageBit, stage);
+	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+}
+
 
 // --------------------------------- Uniform input ---------------------------------
 
@@ -118,6 +123,10 @@ void FrameGraphPassBuilder::add_index_input(FrameGraphBufferId res, PipelineStag
 
 
 // --------------------------------- stuff ---------------------------------
+
+void FrameGraphPassBuilder::add_descriptor_binding(Binding bind, usize ds_index) {
+	add_uniform(bind, ds_index);
+}
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage, PipelineStage stage) {
 	check_res(res);

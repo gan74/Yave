@@ -38,7 +38,7 @@ static vk::Image create_image(DevicePtr dptr, const math::Vec3ui& size, usize la
 			.setSharingMode(vk::SharingMode::eExclusive)
 			.setFlags(type == ImageType::Cube ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlags())
 			.setArrayLayers(layers)
-			.setExtent(vk::Extent3D(size.x(), size.y(), 1))
+			.setExtent(vk::Extent3D(size.x(), size.y(), size.z()))
 			.setFormat(format.vk_format())
 			.setImageType(vk::ImageType::e2D)
 			.setTiling(vk::ImageTiling::eOptimal)
@@ -115,7 +115,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 		recorder.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
 	}
 
-	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 static void transition_image(ImageBase& image) {
@@ -124,7 +124,7 @@ static void transition_image(ImageBase& image) {
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
 	recorder.transition_image(image, vk::ImageLayout::eUndefined, vk_image_layout(image.usage()));
-	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {

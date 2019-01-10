@@ -40,7 +40,6 @@ EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View"),
 		ContextLinked(cptr),
 		_ibl_data(std::make_shared<IBLData>(device())),
-		_resources(std::make_shared<FrameGraphResourcePool>(device())),
 		_scene_view(context()->scene().scene()),
 		_gizmo(context()) {
 	;
@@ -55,8 +54,8 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 
 	TextureView* output = nullptr;
 
-	if(_resources) {
-		FrameGraph graph(_resources);
+	{
+		FrameGraph graph(context()->resource_pool());
 		auto gbuffer = render_gbuffer(graph, &_scene_view, content_size());
 		auto lighting = render_lighting(graph, gbuffer, _ibl_data);
 		auto tone_mapping = render_tone_mapping(graph, lighting);
@@ -73,7 +72,7 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 		}
 
 		std::move(graph).render(recorder);
-		recorder.keep_alive(std::pair(_ibl_data, _resources));
+		recorder.keep_alive(_ibl_data);
 	}
 
 	// ImGui
@@ -177,6 +176,7 @@ void EngineView::update_selection() {
 	if(!ImGui::IsWindowHovered() || !ImGui::IsMouseClicked(0)) {
 		return;
 	}
+
 
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();

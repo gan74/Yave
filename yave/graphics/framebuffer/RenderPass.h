@@ -58,6 +58,7 @@ class RenderPass : NonCopyable, public DeviceLinked {
 				Layout(ImageData depth, core::ArrayView<ImageData> colors);
 
 				u64 hash() const;
+				bool is_depth_only() const;
 
 				bool operator==(const Layout& other) const;
 
@@ -74,6 +75,8 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		RenderPass& operator=(RenderPass&& other);
 
 		~RenderPass();
+
+		bool is_depth_only() const;
 
 		const Layout& layout() const;
 		usize attachment_count() const;

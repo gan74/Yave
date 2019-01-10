@@ -28,12 +28,15 @@ SOFTWARE.
 #include <yave/device/DeviceLinked.h>
 #include <yave/utils/FileSystemModel.h>
 
+#include <yave/framegraph/FrameGraphResourcePool.h>
+
 #include "Settings.h"
 #include "SceneData.h"
 #include "Loader.h"
 #include "Selection.h"
 #include "Ui.h"
 #include "ThumbmailCache.h"
+#include "PickingManager.h"
 
 #include <mutex>
 
@@ -52,6 +55,10 @@ class EditorContext : public DeviceLinked, NonCopyable {
 
 		const FileSystemModel* filesystem() const {
 			return _filesystem.get() ? _filesystem.get() : FileSystemModel::local_filesystem();
+		}
+
+		const std::shared_ptr<FrameGraphResourcePool>& resource_pool() const {
+			return _resource_pool;
 		}
 
 		Settings& settings() {
@@ -78,6 +85,10 @@ class EditorContext : public DeviceLinked, NonCopyable {
 			return _thumb_cache;
 		}
 
+		PickingManager& picking_manager() {
+			return _picking_manager;
+		}
+
 	private:
 		std::unique_ptr<FileSystemModel> _filesystem;
 
@@ -85,12 +96,15 @@ class EditorContext : public DeviceLinked, NonCopyable {
 		core::Vector<core::Function<void()>> _deferred;
 		bool _is_flushing_deferred = false;
 
+		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+
 		Settings _setting;
 		Loader _loader;
 		SceneData _scene;
 		Selection _selection;
 		Ui _ui;
 		ThumbmailCache _thumb_cache;
+		PickingManager _picking_manager;
 
 };
 

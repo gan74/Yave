@@ -19,52 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_CONTEXT_PICKINGMANAGER_H
+#define EDITOR_CONTEXT_PICKINGMANAGER_H
 
-#include "EditorContext.h"
-
-#include <yave/device/Device.h>
+#include <editor/editor.h>
+#include <yave/framegraph/FrameGraph.h>
 
 namespace editor {
 
-DevicePtr ContextLinked::device() const {
-	return _ctx ? _ctx->device() : nullptr;
-}
+class PickingManager : public ContextLinked {
+	using ReadBackBuffer = TypedBuffer<float, BufferUsage::StorageBit, MemoryType::CpuVisible>;
+	public:
+		PickingManager(ContextPtr ctx);
 
-EditorContext::EditorContext(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
-		_loader(device()),
-		_scene(this),
-		_ui(this),
-		_thumb_cache(this),
-		_picking_manager(this) {
-}
+		math::Vec3 pick_sync(const math::Vec2& uv);
 
-EditorContext::~EditorContext() {
-}
+	private:
+		ComputeProgram _program;
+		ReadBackBuffer _buffer;
+		DepthTextureAttachment _depth;
+		DescriptorSet _descriptor_set;
+		Framebuffer _framebuffer;
 
-void EditorContext::defer(core::Function<void()>&& func) {
-	std::unique_lock _(_deferred_lock);
-	if(_is_flushing_deferred) {
-		y_fatal("Defer called from already deferred function.");
-	}
-	_deferred.emplace_back(std::move(func));
-}
-
-void EditorContext::flush_deferred() {
-	std::unique_lock _(_deferred_lock);
-	if(!_deferred.is_empty()) {
-		Y_LOG_PERF("editor");
-		device()->graphic_queue().wait();
-		_is_flushing_deferred = true;
-		for(auto& f : _deferred) {
-			f();
-		}
-		_deferred.clear();
-		_is_flushing_deferred = false;
-	}
-	_scene.flush();
-}
-
+};
 
 }
+
+#endif // EDITOR_CONTEXT_PICKINGMANAGER_H

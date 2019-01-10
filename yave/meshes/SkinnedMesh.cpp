@@ -39,7 +39,7 @@ SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
 	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
 	Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
-	dptr->queue(QueueFamily::Graphics).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) {

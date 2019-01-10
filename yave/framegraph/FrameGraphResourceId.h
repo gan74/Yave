@@ -205,16 +205,6 @@ struct FrameGraphMutableTypedBufferId : FrameGraphMutableResourceId {
 	}
 };
 
-/*namespace {
-struct Helper {
-	template<typename T, int I>
-	static std::true_type test(FrameGraphTypedBufferId<T>);
-	template<int I>
-	static std::false_type test(FrameGraphBufferId);
-};
-static_assert(decltype(Helper::test<2>(std::declval<FrameGraphMutableTypedBufferId<int>>()))::value);
-}*/
-
 }
 
 

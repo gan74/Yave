@@ -38,6 +38,7 @@ class FrameGraphPassBuilder {
 		void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
 
 		void add_storage_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+		void add_storage_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
@@ -53,6 +54,8 @@ class FrameGraphPassBuilder {
 		}
 
 		void set_render_func(FrameGraphPass::render_func&& func);
+
+		void add_descriptor_binding(Binding bind, usize ds_index = 0);
 
 	private:
 		friend class FrameGraph;

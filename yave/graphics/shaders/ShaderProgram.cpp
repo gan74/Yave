@@ -155,11 +155,11 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 	}
 }
 
-core::Vector<vk::PipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
+core::ArrayView<vk::PipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
 	return _stages;
 }
 
-const core::Vector<vk::DescriptorSetLayout>& ShaderProgram::descriptor_layouts() const {
+core::ArrayView<vk::DescriptorSetLayout> ShaderProgram::descriptor_layouts() const {
 	return _layouts;
 }
 

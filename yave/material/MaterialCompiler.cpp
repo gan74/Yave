@@ -29,6 +29,12 @@ SOFTWARE.
 
 namespace yave {
 
+static core::ArrayView<vk::PipelineShaderStageCreateInfo> depth_only_stages(core::ArrayView<vk::PipelineShaderStageCreateInfo> stages) {
+	auto is_vertex_stage = [](const vk::PipelineShaderStageCreateInfo& s) { return s.stage == vk::ShaderStageFlagBits::eVertex; }
+	y_debug_assert(std::count_if(stages.begin(), stages.end(), is_vertex_stage) == 1);
+	return *std::find_if(stages.begin(), stages.end(), is_vertex_stage);
+}
+
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
@@ -46,6 +52,9 @@ GraphicPipeline MaterialCompiler::compile(const Material* material, const Render
 	ShaderProgram program(frag, vert, geom);
 
 	auto pipeline_shader_stage = program.vk_pipeline_stage_info();
+	if(render_pass.is_depth_only()) {
+		pipeline_shader_stage = depth_only_stages(pipeline_shader_stage);
+	}
 
 	auto attribute_bindings = program.attribute_bindings();
 	auto attribute_descriptions = program.attributes_descriptions();

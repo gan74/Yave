@@ -35,20 +35,20 @@ class ShaderProgram : NonCopyable, public DeviceLinked {
 
 		ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom);
 
-		core::Vector<vk::PipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
-		const core::Vector<vk::DescriptorSetLayout>& descriptor_layouts() const;
+		core::ArrayView<vk::PipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
+		core::ArrayView<vk::DescriptorSetLayout> descriptor_layouts() const;
 
 		// should ALWAYS be sorted by location
 
-		const auto& attribute_bindings() const {
+		core::ArrayView<vk::VertexInputBindingDescription> attribute_bindings() const {
 			return _vertex.bindings;
 		}
 
-		const auto& attributes_descriptions() const {
+		core::ArrayView<vk::VertexInputAttributeDescription> attributes_descriptions() const {
 			return _vertex.attribs;
 		}
 
-		const auto& push_constants() const {
+		core::ArrayView<vk::PushConstantRange> push_constants() const {
 			return _push_constants;
 		}
 

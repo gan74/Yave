@@ -161,6 +161,10 @@ u64 RenderPass::Layout::hash() const {
 	return h;
 }
 
+bool RenderPass::Layout::is_depth_only() const {
+	return _colors.is_empty();
+}
+
 bool RenderPass::Layout::operator==(const Layout& other) const {
 	return _depth == other._depth && _colors == other._colors;
 }
@@ -199,6 +203,10 @@ void RenderPass::swap(RenderPass& other) {
 
 vk::RenderPass RenderPass::vk_render_pass() const {
 	return _render_pass;
+}
+
+bool RenderPass::is_depth_only() const {
+	return layout().is_depth_only();
 }
 
 const RenderPass::Layout& RenderPass::layout() const {

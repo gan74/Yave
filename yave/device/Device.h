@@ -58,8 +58,9 @@ class Device : NonCopyable {
 		CmdBuffer<CmdBufferUsage::Primary> create_cmd_buffer() const;
 
 		const QueueFamily& queue_family(vk::QueueFlags flags) const;
-		const Queue& queue(vk::QueueFlags) const;
-		Queue& queue(vk::QueueFlags);
+		const Queue& graphic_queue() const;
+		Queue& graphic_queue();
+
 
 		ThreadDevicePtr thread_data() const;
 

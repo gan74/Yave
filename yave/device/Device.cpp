@@ -147,11 +147,11 @@ const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
 	return y_fatal("Unable to find queue.");
 }
 
-const Queue& Device::queue(vk::QueueFlags) const {
+const Queue& Device::graphic_queue() const {
 	return _queues.first();
 }
 
-Queue& Device::queue(vk::QueueFlags) {
+Queue& Device::graphic_queue() {
 	return _queues.first();
 }
 

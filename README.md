@@ -77,8 +77,8 @@ MIT
 - [ ] Log callbacks
 
 ### Framegraph
-- [ ] Barriers
-- [ ] Reuse resources over frames
+- [X] Barriers
+- [X] Reuse resources over frames
 
 ### Engine
 - [ ] Culling
