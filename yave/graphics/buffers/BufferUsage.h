@@ -29,11 +29,11 @@ namespace yave {
 
 enum class BufferUsage {
 	None = 0,
-	AttributeBit = int(vk::BufferUsageFlagBits::eVertexBuffer),
-	IndexBit = int(vk::BufferUsageFlagBits::eIndexBuffer),
-	IndirectBit = int(vk::BufferUsageFlagBits::eIndirectBuffer),
-	UniformBit = int(vk::BufferUsageFlagBits::eUniformBuffer),
-	StorageBit = int(vk::BufferUsageFlagBits::eStorageBuffer)
+	AttributeBit = uenum(vk::BufferUsageFlagBits::eVertexBuffer),
+	IndexBit = uenum(vk::BufferUsageFlagBits::eIndexBuffer),
+	IndirectBit = uenum(vk::BufferUsageFlagBits::eIndirectBuffer),
+	UniformBit = uenum(vk::BufferUsageFlagBits::eUniformBuffer),
+	StorageBit = uenum(vk::BufferUsageFlagBits::eStorageBuffer)
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {
@@ -47,8 +47,8 @@ constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
 
 enum class BufferTransfer {
 	None = 0,
-	TransferSrc = int(vk::BufferUsageFlagBits::eTransferSrc),
-	TransferDst = int(vk::BufferUsageFlagBits::eTransferDst)
+	TransferSrc = uenum(vk::BufferUsageFlagBits::eTransferSrc),
+	TransferDst = uenum(vk::BufferUsageFlagBits::eTransferDst)
 };
 
 constexpr BufferTransfer operator|(BufferTransfer a, BufferTransfer b) {

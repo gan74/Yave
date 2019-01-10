@@ -50,7 +50,6 @@ class PushConstant : NonCopyable {
 		constexpr PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
 			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
-			static_assert(!std::is_standard_layout_v<std::tuple<int, char>>, "std::tuple is not standard layout");
 		}
 
 		template<typename T>
@@ -160,7 +159,6 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void barriers(core::ArrayView<ImageBarrier> images);
 
 		void copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<BufferTransfer::TransferDst>& dst);
-		//void copy(const ImageBase& src, const ImageBase& dst);
 		void blit(const ImageBase& src,  const ImageBase& dst);
 
 		// never use directly, needed for internal work and image loading
