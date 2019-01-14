@@ -30,12 +30,17 @@ namespace editor {
 class PickingManager : public ContextLinked {
 	using ReadBackBuffer = TypedBuffer<float, BufferUsage::StorageBit, MemoryType::CpuVisible>;
 	public:
+		struct PickingData {
+			math::Vec3 world_pos;
+			float depth;
+			math::Vec2 uv;
+		};
+
 		PickingManager(ContextPtr ctx);
 
-		math::Vec3 pick_sync(const math::Vec2& uv);
+		PickingData pick_sync(const math::Vec2& uv);
 
 	private:
-		ComputeProgram _program;
 		ReadBackBuffer _buffer;
 		DepthTextureAttachment _depth;
 		DescriptorSet _descriptor_set;

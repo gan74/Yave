@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace editor {
 
-class SceneData : public ContextLinked, NonCopyable {
+class SceneData : public ContextLinked, NonMovable {
 
 	public:
 		SceneData(ContextPtr ctx);
@@ -58,8 +58,6 @@ class SceneData : public ContextLinked, NonCopyable {
 		Scene _scene;
 		SceneView _default_scene_view;
 		SceneView* _scene_view = nullptr;
-
-		AssetPtr<Material> _default_material;
 
 		core::Vector<std::unique_ptr<StaticMeshInstance>> _to_add;
 };

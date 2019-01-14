@@ -36,6 +36,7 @@ namespace editor {
 class Ui : public ContextLinked, NonCopyable {
 	public:
 		Ui(ContextPtr ctx);
+		~Ui();
 
 		core::ArrayView<std::unique_ptr<Widget>> widgets() const;
 

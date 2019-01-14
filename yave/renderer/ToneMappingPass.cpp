@@ -27,18 +27,6 @@ SOFTWARE.
 
 namespace yave {
 
-static const Material& create_tone_mapping_material(DevicePtr dptr) {
-	static std::unique_ptr<Material> mat;
-	if(!mat) {
-		mat = std::make_unique<Material>(dptr, MaterialData()
-			.set_frag_data(SpirVData::deserialized(io::File::open("tonemap.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::deserialized(io::File::open("screen.vert.spv").expected("Unable to load spirv file.")))
-			.set_depth_tested(false)
-		);
-	}
-	return *mat;
-}
-
 ToneMappingPass render_tone_mapping(FrameGraph& framegraph, const LightingPass& lighting) {
 	static constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
 	math::Vec2ui size = framegraph.image_size(lighting.lit);
@@ -53,7 +41,8 @@ ToneMappingPass render_tone_mapping(FrameGraph& framegraph, const LightingPass& 
 	builder.add_uniform_input(lighting.lit, 0, PipelineStage::ComputeBit);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			render_pass.bind_material(create_tone_mapping_material(recorder.device()), {self->descriptor_sets()[0]});
+			const auto& material = *recorder.device()->default_resources()[DefaultResources::TonemappingMaterial];
+			render_pass.bind_material(material, {self->descriptor_sets()[0]});
 			render_pass.draw(vk::DrawIndirectCommand(6, 1));
 		});
 

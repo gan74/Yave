@@ -22,14 +22,13 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
-#include <yave/graphics/buffers/TypedWrapper.h>
-
-#include <y/io/File.h>
-#include <y/core/Chrono.h>
-
 #include <imgui/imgui.h>
 
+#include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/framegraph/FrameGraph.h>
+
+#include <y/core/Chrono.h>
+#include <y/io/File.h>
 
 namespace editor {
 
@@ -87,8 +86,8 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		_font(device(), load_font()),
 		_font_view(_font),
 		_material(device(), MaterialData()
-			.set_frag_data(SpirVData::deserialized(io::File::open("imgui.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::deserialized(io::File::open("imgui.vert.spv").expected("Unable to load spirv file.")))
+			.set_frag_data(device()->default_resources()[DefaultResources::ImguiFrag])
+			.set_vert_data(device()->default_resources()[DefaultResources::ImguiVert])
 			.set_bindings({Binding(_uniform_buffer)})
 			.set_depth_tested(false)
 			.set_culled(false)
@@ -194,8 +193,8 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 	static std::unique_ptr<Material> mat;
 	if(!mat) {
 		mat = std::make_unique<Material>(dptr, MaterialData()
-				.set_frag_data(SpirVData::deserialized(io::File::open("imgui.frag.spv").expected("Unable to load spirv file.")))
-				.set_vert_data(SpirVData::deserialized(io::File::open("imgui.vert.spv").expected("Unable to load spirv file.")))
+				.set_frag_data(device()->default_resources()[DefaultResources::ImguiFrag])
+				.set_vert_data(device()->default_resources()[DefaultResources::ImguiVert])
 				.set_depth_tested(false)
 				.set_culled(false)
 				.set_blended(true)

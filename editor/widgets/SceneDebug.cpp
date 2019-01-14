@@ -34,13 +34,6 @@ SOFTWARE.
 
 namespace editor {
 
-static AssetPtr<Material> create_material(ContextPtr cptr) {
-	return make_asset<Material>(cptr->device(), MaterialData()
-			.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-		);
-}
-
 static AssetPtr<StaticMesh> create_mesh(ContextPtr cptr) {
 	return cptr->loader().static_mesh().import("cube.ym", "../meshes/cube.obj.ym");
 }
@@ -53,7 +46,7 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		auto cam_pos = context()->scene().scene_view().camera().position();
 
 		try {
-			auto material = create_material(context());
+			const auto& material = context()->device()->default_resources()[DefaultResources::BasicMaterial];
 			auto mesh = create_mesh(context());
 			float mul = mesh->radius() * 5.0f;
 

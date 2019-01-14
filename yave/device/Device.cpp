@@ -121,6 +121,8 @@ Device::Device(Instance& instance) :
 			_queues.push_back(std::move(queue));
 		}
 	}
+
+	_default_resources = DefaultResources(this);
 }
 
 Device::~Device() {
@@ -155,14 +157,35 @@ Queue& Device::graphic_queue() {
 	return _queues.first();
 }
 
+static usize generate_thread_id() {
+	static concurrent::SpinLock lock;
+	static usize id = 0;
+	std::unique_lock _(lock);
+	return ++id;
+}
+
 ThreadDevicePtr Device::thread_data() const {
-	std::unique_lock lock(_lock);
-	auto thread_id = std::this_thread::get_id();
-	auto& tl_data = _thread_local_datas[thread_id];
-	if(!tl_data) {
-		tl_data = std::unique_ptr<ThreadLocalDeviceData>(new ThreadLocalDeviceData(this));
+	static thread_local usize thread_id = generate_thread_id();
+	static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
+
+	auto& cache = thread_cache;
+	if(cache.first != this) {
+		std::unique_lock _(_lock);
+		while(_thread_local_datas.size() <= thread_id) {
+			_thread_local_datas.emplace_back();
+		}
+		auto& data = _thread_local_datas[thread_id];
+		if(!data) {
+			data = std::make_unique<ThreadLocalDeviceData>(this);
+		}
+		cache = {this, data.get()};
+		return data.get();
 	}
-	return tl_data.get();
+	return cache.second;
+}
+
+const DefaultResources& Device::default_resources() const {
+	return _default_resources;
 }
 
 const vk::PhysicalDeviceLimits& Device::vk_limits() const {

@@ -34,11 +34,7 @@ namespace editor {
 void add_skinned_mesh(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>&) {
 	DevicePtr dptr = tex_loader.device();
 
-	auto material = make_asset<Material>(dptr, MaterialData()
-			.set_frag_data(SpirVData::deserialized(io::File::open("skinned.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::deserialized(io::File::open("skinned.vert.spv").expected("Unable to load spirv file.")))
-		);
-
+	auto material = dptr->default_resources()[DefaultResources::BasicSkinnedMaterial];
 
 	try {
 		auto mesh_data = MeshData::deserialized(io::File::open("../meshes/beta.fbx.ym").expected("Unable to open mesh file."));
@@ -85,10 +81,7 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 	add_skinned_mesh(scene, tex_loader, mesh_loader);
 
 	{
-		auto material = make_asset<Material>(dptr, MaterialData()
-				.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-				.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-			);
+		auto material = dptr->default_resources()[DefaultResources::BasicMaterial];
 		//auto mesh_data = MeshData::from_file(io::File::open("../meshes/cube.obj.ym").expected("Unable to open mesh file."));
 		//auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
 

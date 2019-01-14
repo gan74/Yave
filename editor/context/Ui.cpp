@@ -22,9 +22,21 @@ SOFTWARE.
 
 #include "Ui.h"
 
+#include <imgui/imgui.h>
+
 namespace editor {
 
 Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
+	ImGui::CreateContext();
+	ImGui::GetIO().IniFilename = "editor.ini";
+	ImGui::GetIO().LogFilename = "editor_logs.txt";
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	ImGui::GetIO().ConfigDockingWithShift = false;
+	ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
+}
+
+Ui::~Ui() {
+	ImGui::DestroyContext();
 }
 
 core::ArrayView<std::unique_ptr<Widget>> Ui::widgets() const {

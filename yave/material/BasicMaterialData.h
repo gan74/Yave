@@ -29,9 +29,11 @@ SOFTWARE.
 
 namespace yave {
 
-class BasicMaterialData {
+class BasicMaterialData : public DeviceLinked {
 	public:
 		static constexpr usize texture_count = 4;
+
+		BasicMaterialData() = default;
 
 		static BasicMaterialData deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader);
 		void serialize(io::WriterRef writer) const;
@@ -39,6 +41,8 @@ class BasicMaterialData {
 		MaterialData create_material_data() const;
 
 	private:
+		BasicMaterialData(DevicePtr dptr);
+
 		std::array<AssetPtr<Texture>, texture_count> _textures;
 };
 

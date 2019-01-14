@@ -157,6 +157,12 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vec
 	return attribs;
 }
 
+
+ShaderType ShaderModuleBase::shader_type(const SpirVData& data) {
+	spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
+	return module_type(compiler);
+}
+
 ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : DeviceLinked(dptr), _module(create_shader_module(dptr, data)) {
 	spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
 

@@ -30,6 +30,9 @@ struct BasicMaterialHeader {
 	y_serde(fs::magic_number, fs::material_file_type, u32(1))
 };
 
+BasicMaterialData::BasicMaterialData(DevicePtr dptr) : DeviceLinked(dptr) {
+}
+
 BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader) {
 	BasicMaterialHeader().deserialize(reader);
 	BasicMaterialData data;
@@ -48,8 +51,8 @@ void BasicMaterialData::serialize(io::WriterRef writer) const {
 
 MaterialData BasicMaterialData::create_material_data() const {
 	auto data = MaterialData()
-		.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-		.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")));
+				.set_frag_data(device()->default_resources()[DefaultResources::BasicFrag])
+				.set_vert_data(device()->default_resources()[DefaultResources::BasicVert]);
 
 	for(usize i = 0; i != texture_count; ++i) {
 		data.keep_alive(_textures[i]);

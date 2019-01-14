@@ -38,9 +38,9 @@ enum class PrimitiveType {
 
 class MaterialData {
 	public:
-		MaterialData& set_frag_data(SpirVData&& data);
-		MaterialData& set_vert_data(SpirVData&& data);
-		MaterialData& set_geom_data(SpirVData&& data);
+		MaterialData& set_frag_data(const SpirVData& data);
+		MaterialData& set_vert_data(const SpirVData& data);
+		MaterialData& set_geom_data(const SpirVData& data);
 
 		MaterialData& set_bindings(const core::ArrayView<Binding>& binds);
 		MaterialData& add_binding(const Binding& bind);

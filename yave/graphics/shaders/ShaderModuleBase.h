@@ -124,6 +124,8 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 			return _spec_constants;
 		}
 
+		static ShaderType shader_type(const SpirVData& data);
+
 	protected:
 		ShaderModuleBase() = default;
 

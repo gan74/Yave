@@ -47,17 +47,6 @@ static const char* light_type_name(Light::Type type) {
 	return y_fatal("Unsupported light type.");
 }
 
-static AssetPtr<Material> default_material(DevicePtr dptr) {
-	static AssetPtr<Material> material;
-	if(!material) {
-		material = make_asset<Material>(dptr, MaterialData()
-				.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-				.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-			);
-	}
-	return material;
-}
-
 EntityView::EntityView(ContextPtr cptr) :
 		Widget(ICON_FA_OBJECT_GROUP " Entities"),
 		ContextLinked(cptr) {
@@ -86,7 +75,8 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		if(ImGui::MenuItem("Add renderable")) {
 			try {
 				AssetPtr<StaticMesh> mesh = context()->loader().static_mesh().load("cube.ym");
-				auto instance = std::make_unique<StaticMeshInstance>(mesh, default_material(context()->device()));
+				const auto& material = device()->default_resources()[DefaultResources::BasicMaterial];
+				auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
 				instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
 				context()->scene().scene().static_meshes() << std::move(instance);
 

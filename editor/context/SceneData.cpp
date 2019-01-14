@@ -36,11 +36,6 @@ SceneData::SceneData(ContextPtr ctx) :
 		_default_scene_view(_scene),
 		_scene_view(&_default_scene_view) {
 
-	_default_material = make_asset<Material>(device(), MaterialData()
-			.set_frag_data(SpirVData::deserialized(io::File::open("basic.frag.spv").expected("Unable to load spirv file.")))
-			.set_vert_data(SpirVData::deserialized(io::File::open("basic.vert.spv").expected("Unable to load spirv file.")))
-		);
-
 	load("scene.ys");
 }
 
@@ -108,7 +103,11 @@ void SceneData::save(std::string_view filename) {
 void SceneData::load(std::string_view filename) {
 	Y_LOG_PERF("editor,loading");
 	try {
-		auto sce = Scene::deserialized(io::File::open(filename).or_throw("Unable to open scene file."), context()->loader().static_mesh(), _default_material);
+		auto sce = Scene::deserialized(
+				io::File::open(filename).or_throw("Unable to open scene file."),
+				context()->loader().static_mesh(),
+				context()->device()->default_resources()[DefaultResources::BasicMaterial]
+			);
 		_scene = std::move(sce);
 	} catch(std::exception& e) {
 		log_msg(fmt("Unable to load scene: %", e.what()), Log::Error);
@@ -117,7 +116,8 @@ void SceneData::load(std::string_view filename) {
 
 StaticMeshInstance* SceneData::add(AssetId id) {
 	AssetPtr<StaticMesh> mesh = context()->loader().static_mesh().load(id);
-	auto inst = std::make_unique<StaticMeshInstance>(mesh, _default_material);
+	const auto& material = context()->device()->default_resources()[DefaultResources::BasicMaterial];
+	auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
 	StaticMeshInstance* inst_ptr = inst.get();
 	inst->position() = _scene_view->camera().position() + _scene_view->camera().forward() * 2.0f * inst->radius();
 	_to_add << std::move(inst);

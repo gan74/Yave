@@ -35,6 +35,7 @@ struct NonCopyable {
 	NonCopyable& operator=(const NonCopyable &) = delete;
 
 	NonCopyable(NonCopyable&&) = default;
+	NonCopyable& operator=(NonCopyable&&) = default;
 };
 
 struct NonMovable {
@@ -45,7 +46,7 @@ struct NonMovable {
 	NonMovable(NonMovable&&) = delete;
 };
 
-static_assert(!std::is_move_assignable_v<NonCopyable>);
+static_assert(std::is_move_assignable_v<NonCopyable>);
 static_assert(std::is_move_constructible_v<NonCopyable>);
 
 static_assert(!std::is_move_assignable_v<NonMovable>);

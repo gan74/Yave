@@ -95,6 +95,7 @@ void EngineView::update() {
 	if(ImGui::IsWindowHovered()) {
 		if(ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2)) {
 			ImGui::SetWindowFocus();
+			update_picking();
 		}
 	}
 
@@ -106,8 +107,13 @@ void EngineView::update() {
 	update_camera();
 }
 
+void EngineView::update_picking() {
+	math::Vec2 viewport = ImGui::GetWindowSize();
+	math::Vec2 offset = ImGui::GetWindowPos();
 
-
+	math::Vec2 uv = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport);
+	_picked_pos = context()->picking_manager().pick_sync(uv).world_pos;
+}
 
 void EngineView::update_camera() {
 	auto size = content_size();
@@ -118,7 +124,6 @@ void EngineView::update_camera() {
 	math::Vec3 cam_lft = camera.left();
 
 	if(ImGui::IsWindowFocused()) {
-
 		float cam_speed = 500.0f;
 		float dt = cam_speed / ImGui::GetIO().Framerate;
 
@@ -170,6 +175,51 @@ void EngineView::update_camera() {
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
 	camera.set_proj(proj);
 	camera.set_view(view);
+
+	/*auto& camera = _scene_view.camera();
+
+	math::Vec3 cam_pos = camera.position();
+	math::Vec3 cam_fwd = camera.forward();
+	math::Vec3 cam_lft = camera.left();
+	math::Vec3 cam_up = camera.up();
+
+	if(ImGui::IsWindowFocused()) {
+		float cam_speed = 500.0f;
+		float dt = cam_speed / ImGui::GetIO().Framerate;
+
+		if(ImGui::IsKeyDown(int(context()->settings().camera().move_forward))) {
+			cam_pos += cam_fwd * dt;
+		}
+		if(ImGui::IsKeyDown(int(context()->settings().camera().move_backward))) {
+			cam_pos -= cam_fwd * dt;
+		}
+		if(ImGui::IsKeyDown(int(context()->settings().camera().move_left))) {
+			cam_pos += cam_lft * dt;
+		}
+		if(ImGui::IsKeyDown(int(context()->settings().camera().move_right))) {
+			cam_pos -= cam_lft * dt;
+		}
+	}
+
+	if(ImGui::IsMouseDown(1)) {
+		math::Vec3 view_vec = cam_pos - _picked_pos;
+
+		// trackball
+		auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
+		delta *= context()->settings().camera().sensitivity;
+		{
+			auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+			view_vec = pitch(view_vec);
+		}
+		{
+			auto yaw = math::Quaternion<>::from_axis_angle(cam_up, delta.x());
+			view_vec = yaw(view_vec);
+		}
+		cam_pos = view_vec + _picked_pos;
+	}
+
+	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+	camera.set_view(view);*/
 }
 
 void EngineView::update_selection() {
@@ -177,36 +227,22 @@ void EngineView::update_selection() {
 		return;
 	}
 
-
-	math::Vec2 viewport = ImGui::GetWindowSize();
-	math::Vec2 offset = ImGui::GetWindowPos();
-
-	auto inv_matrix = _scene_view.camera().inverse_matrix();
-	auto cam_pos = _scene_view.camera().position();
-
-	math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
-	math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
-	math::Vec3 world = h_world.to<3>() / h_world.w();
-
-	math::Ray<> ray(cam_pos, world - cam_pos);
-
-	float distance = std::numeric_limits<float>::max();
+	Transformable* selected = nullptr;
+	float score = std::numeric_limits<float>::max();
 	for(const auto& tr : context()->scene().scene().static_meshes()) {
-		auto [pos, rot, sc] = tr->transform().decompose();
+		auto [pos, rot, scale] = tr->transform().decompose();
 		unused(rot);
 
-		float scale = std::max({sc.x(), sc.y(), sc.z()});
-		float dist = (pos - cam_pos).length();
+		float radius = tr->radius() * std::max({scale.x(), scale.y(), scale.z()});
+		float sc = (pos - _picked_pos).length() / radius;
 
-		if(ray.intersects(pos, tr->radius() * scale) && dist < distance) {
-			context()->selection().set_selected(tr.get());
-			distance = dist;
+		if(sc < score) {
+			selected = tr.get();
+			score = sc;
 		}
 	}
 
-	if(distance == std::numeric_limits<float>::max()) {
-		context()->selection().set_selected(nullptr);
-	}
+	context()->selection().set_selected(selected);
 }
 
 }

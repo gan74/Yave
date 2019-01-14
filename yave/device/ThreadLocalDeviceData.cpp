@@ -26,15 +26,7 @@ SOFTWARE.
 namespace yave {
 
 ThreadLocalDeviceData::ThreadLocalDeviceData(DevicePtr dptr) :
-		DeviceLinked(dptr)/*,
-		_descriptor_layout_pool(new DescriptorSetLayoutPool(device()))*/ {
-}
-
-ThreadLocalDeviceData::~ThreadLocalDeviceData() {
-}
-
-vk::Device ThreadLocalDeviceData::vk_device() const {
-	return _device;
+		DeviceLinked(dptr) {
 }
 
 }

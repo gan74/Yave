@@ -30,18 +30,10 @@ SOFTWARE.
 
 namespace yave {
 
-class ThreadLocalDeviceData : NonCopyable, public DeviceLinked {
+class ThreadLocalDeviceData : public DeviceLinked, NonCopyable {
 	public:
-		~ThreadLocalDeviceData();
-
-		vk::Device vk_device() const;
-
-	private:
-		friend class Device;
-
-		NotOwner<vk::Device> _device;
-
 		ThreadLocalDeviceData(DevicePtr dptr);
+	private:
 };
 
 }

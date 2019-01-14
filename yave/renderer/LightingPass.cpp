@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "LightingPass.h"
 
+#include <yave/device/Device.h>
+
 #include <y/core/Chrono.h>
 #include <y/io/File.h>
 
@@ -31,7 +33,7 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 	Y_LOG_PERF("deferred,IBL");
 	core::DebugTimer _("IBLData::create_ibl_lut()");
 
-	ComputeProgram brdf_integrator(ComputeShader(dptr, SpirVData::deserialized (io::File::open("brdf_integrator.comp.spv").expected("Unable to open SPIR-V file."))));
+	const ComputeProgram& brdf_integrator = dptr->default_resources()[DefaultResources::BRDFIntegratorProgram];
 
 	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
 
@@ -76,13 +78,6 @@ TextureView IBLData::brdf_lut() const  {
 
 static constexpr usize max_light_count = 1024;
 
-static const ComputeProgram& create_lighting_shader(DevicePtr dptr) {
-	static std::unique_ptr<ComputeProgram> prog;
-	if(!prog) {
-		prog = std::make_unique<ComputeProgram>(ComputeShader(dptr, SpirVData::deserialized(io::File::open("deferred.comp.spv").expected("Unable to open SPIR-V file."))));
-	}
-	return *prog;
-}
 
 LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data) {
 	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
@@ -124,8 +119,7 @@ LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer,
 					mapping[light_count - ++push_data.directional_count] = *l;
 				}
 			}
-
-			const auto& program = create_lighting_shader(recorder.device());
+			const auto& program = recorder.device()->default_resources()[DefaultResources::DeferredLightingProgram];
 			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
 		});
 

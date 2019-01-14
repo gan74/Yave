@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/yave.h>
 #include "PhysicalDevice.h"
 #include "ThreadLocalDeviceData.h"
+#include "DefaultResources.h"
 
 #include "extentions/DebugMarker.h"
 
@@ -61,8 +62,8 @@ class Device : NonCopyable {
 		const Queue& graphic_queue() const;
 		Queue& graphic_queue();
 
-
 		ThreadDevicePtr thread_data() const;
+		const DefaultResources& default_resources() const;
 
 		const vk::PhysicalDeviceLimits& vk_limits() const;
 
@@ -99,7 +100,7 @@ class Device : NonCopyable {
 		mutable DeviceAllocator _allocator;
 
 		mutable concurrent::SpinLock _lock;
-		mutable std::unordered_map<std::thread::id, std::unique_ptr<ThreadLocalDeviceData>> _thread_local_datas;
+		mutable core::Vector<std::unique_ptr<ThreadLocalDeviceData>> _thread_local_datas;
 
 		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
 		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
@@ -109,6 +110,8 @@ class Device : NonCopyable {
 		struct {
 			std::unique_ptr<DebugMarker> debug_marker;
 		} _extensions;
+
+		DefaultResources _default_resources;
 };
 
 

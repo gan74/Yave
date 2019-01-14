@@ -24,18 +24,21 @@ SOFTWARE.
 
 namespace yave {
 
-MaterialData& MaterialData::set_frag_data(SpirVData&& data) {
-	_frag = std::move(data);
+MaterialData& MaterialData::set_frag_data(const SpirVData& data) {
+	y_debug_assert(ShaderModuleBase::shader_type(data) == ShaderType::Fragment);
+	_frag = data;
 	return *this;
 }
 
-MaterialData& MaterialData::set_vert_data(SpirVData&& data) {
-	_vert = std::move(data);
+MaterialData& MaterialData::set_vert_data(const SpirVData& data) {
+	y_debug_assert(ShaderModuleBase::shader_type(data) == ShaderType::Vertex);
+	_vert = data;
 	return *this;
 }
 
-MaterialData& MaterialData::set_geom_data(SpirVData&& data) {
-	_geom = std::move(data);
+MaterialData& MaterialData::set_geom_data(const SpirVData& data) {
+	y_debug_assert(ShaderModuleBase::shader_type(data) == ShaderType::Geomery);
+	_geom = data;
 	return *this;
 }
 

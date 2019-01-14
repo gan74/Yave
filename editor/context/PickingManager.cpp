@@ -29,15 +29,10 @@ SOFTWARE.
 
 namespace editor {
 
-static ComputeShader create_picking_shader(DevicePtr dptr) {
-	return ComputeShader(dptr, SpirVData::deserialized(io::File::open("picking.comp.spv").expected("Unable to open SPIR-V file.")));
-}
-
 static constexpr usize picking_resolution = 512;
 
 PickingManager::PickingManager(ContextPtr ctx) :
 		ContextLinked(ctx),
-		_program(create_picking_shader(device())),
 		_buffer(device(), 1),
 		_depth(device(), vk::Format::eD32Sfloat, math::Vec2ui(picking_resolution)),
 		_descriptor_set(device(), {Binding(TextureView(_depth)), Binding(_buffer)}),
@@ -45,7 +40,7 @@ PickingManager::PickingManager(ContextPtr ctx) :
 }
 
 
-math::Vec3 PickingManager::pick_sync(const math::Vec2& uv) {
+PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
 	FrameGraph framegraph(context()->resource_pool());
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
@@ -55,7 +50,8 @@ math::Vec3 PickingManager::pick_sync(const math::Vec2& uv) {
 				auto render_pass = recorder.bind_framebuffer(_framebuffer);
 				render_scene(render_pass, scene_pass, self);
 			}
-			recorder.dispatch(_program, math::Vec3ui(1), {_descriptor_set}, uv);
+			const auto& program = recorder.device()->default_resources()[DefaultResources::PickingProgram];
+			recorder.dispatch(program, math::Vec3ui(1), {_descriptor_set}, uv);
 		});
 
 	CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
@@ -67,8 +63,14 @@ math::Vec3 PickingManager::pick_sync(const math::Vec2& uv) {
 	auto inv_matrix = context()->scene().scene_view().camera().inverse_matrix();
 	math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
 
-	log_msg(fmt("pick %", p.to<3>() / p.w()));
-	return p.to<3>() / p.w();
+	PickingData data{
+			p.to<3>() / p.w(),
+			depth,
+			uv
+		};
+
+	log_msg(fmt("picked %", data.world_pos));
+	return data;
 }
 
 }

@@ -46,22 +46,17 @@ MainWindow::MainWindow(ContextPtr cptr) :
 		Window({1280, 768}, "Yave", Window::Resizable),
 		ContextLinked(cptr) {
 
-	ImGui::CreateContext();
-	ImGui::GetIO().IniFilename = "editor.ini";
-	ImGui::GetIO().LogFilename = "editor_logs.txt";
-	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	ImGui::GetIO().ConfigDockingWithShift = false;
-	ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
-
 	_ui_renderer = std::make_shared<ImGuiRenderer>(device());
 
 	set_event_handler(new MainEventHandler());
 
 	context()->ui().show<EngineView>();
+	context()->ui().show<EntityView>();
+	context()->ui().show<ResourceBrowser>();
+	context()->ui().show<PropertyPanel>();
 }
 
 MainWindow::~MainWindow() {
-	ImGui::DestroyContext();
 }
 
 void MainWindow::resized() {

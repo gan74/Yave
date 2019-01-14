@@ -58,13 +58,6 @@ static usize mipmap_count(usize size) {
 	return 1 + std::floor(std::log2(size / min_face_size));
 }
 
-static ComputeShader create_convolution_shader(DevicePtr dptr, const Cubemap&) {
-	return ComputeShader(dptr, SpirVData::deserialized(io::File::open("cubemap_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
-}
-
-static ComputeShader create_convolution_shader(DevicePtr dptr, const Texture&) {
-	return ComputeShader(dptr, SpirVData::deserialized(io::File::open("equirec_convolution.comp.spv").expected("Unable to open SPIR-V file.")));
-}
 
 
 using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
@@ -86,6 +79,15 @@ struct ProbeBaseView : ViewBase {
 	}
 };
 
+static const ComputeProgram& convolution_program(DevicePtr dptr, const Cubemap&) {
+	return dptr->default_resources()[DefaultResources::CubemapConvolutionProgram];
+}
+
+static const ComputeProgram& convolution_program(DevicePtr dptr, const Texture&) {
+	return dptr->default_resources()[DefaultResources::EquirecConvolutionProgram];
+}
+
+
 template<ImageType T>
 static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<ImageUsage::TextureBit, T>& texture) {
 	DevicePtr dptr = texture.device();
@@ -96,7 +98,7 @@ static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<Image
 		});
 
 
-	ComputeProgram conv_program(create_convolution_shader(dptr, texture));
+	const ComputeProgram& conv_program = convolution_program(dptr, texture);
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 
 	float roughness = 0.0f;
