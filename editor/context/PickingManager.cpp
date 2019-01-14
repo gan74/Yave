@@ -64,7 +64,11 @@ math::Vec3 PickingManager::pick_sync(const math::Vec2& uv) {
 
 	float depth = TypedMapping(_buffer)[0];
 
-	return math::Vec3(uv, depth);
+	auto inv_matrix = context()->scene().scene_view().camera().inverse_matrix();
+	math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
+
+	log_msg(fmt("pick %", p.to<3>() / p.w()));
+	return p.to<3>() / p.w();
 }
 
 }

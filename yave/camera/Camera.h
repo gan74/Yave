@@ -46,6 +46,7 @@ class Camera {
 		math::Vec3 forward() const;
 		math::Vec3 left() const;
 		math::Vec3 right() const;
+		math::Vec3 up() const;
 		Frustum frustum() const;
 
 		operator uniform::Camera() const;

@@ -41,6 +41,11 @@ static math::Vec3 extract_right(const math::Matrix4<>& view) {
 	return view.row(0).to<3>().normalized();
 }
 
+static math::Vec3 extract_up(const math::Matrix4<>& view) {
+	return view.row(1).to<3>().normalized();
+}
+
+
 static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj) {
 	auto x = viewproj.row(0);
 	auto y = viewproj.row(1);
@@ -110,6 +115,10 @@ math::Vec3 Camera::left() const {
 
 math::Vec3 Camera::right() const {
 	return extract_right(_view);
+}
+
+math::Vec3 Camera::up() const {
+	return extract_up(_view);
 }
 
 Frustum Camera::frustum() const {
