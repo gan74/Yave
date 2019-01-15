@@ -33,13 +33,13 @@ class Mapping : NonCopyable {
 	public:
 		Mapping() = default;
 
-		template<BufferUsage Usage, BufferTransfer Transfer>
-		Mapping(const Buffer<Usage, MemoryType::CpuVisible, Transfer>& buffer) : Mapping(SubBuffer(buffer)) {
+		template<BufferUsage Usage>
+		Mapping(const Buffer<Usage, MemoryType::CpuVisible>& buffer) : Mapping(SubBuffer(buffer)) {
 		}
 
 		Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer);
 
-		static void stage(const SubBuffer<BufferUsage::None, MemoryType::DeviceLocal, BufferTransfer::TransferDst>& dst, CmdBufferRecorder& recorder, const void* data);
+		static void stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data);
 
 		~Mapping();
 

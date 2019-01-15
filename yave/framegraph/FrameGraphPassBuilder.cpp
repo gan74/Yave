@@ -46,16 +46,18 @@ void FrameGraphPassBuilder::add_texture_input(FrameGraphImageId res, PipelineSta
 	add_to_pass(res, ImageUsage::TextureBit, stage);
 }
 
-void FrameGraphPassBuilder::add_depth_output(FrameGraphMutableImageId res, PipelineStage stage) {
-	add_to_pass(res, ImageUsage::DepthBit, stage);
+void FrameGraphPassBuilder::add_depth_output(FrameGraphMutableImageId res) {
+	// transition is done by the renderpass
+	add_to_pass(res, ImageUsage::DepthBit, PipelineStage::None);
 	if(_pass->_depth.is_valid()) {
 		y_fatal("Pass already has a depth output.");
 	}
 	_pass->_depth = res;
 }
 
-void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res, PipelineStage stage) {
-	add_to_pass(res, ImageUsage::ColorBit, stage);
+void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res) {
+	// transition is done by the renderpass
+	add_to_pass(res, ImageUsage::ColorBit, PipelineStage::None);
 	_pass->_colors << res;
 }
 

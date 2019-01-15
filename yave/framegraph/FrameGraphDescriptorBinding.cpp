@@ -57,13 +57,13 @@ Binding FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool
 		case BindingType::External:
 			return _external;
 		case BindingType::InputImage:
-			return pool->get_image<ImageUsage::TextureBit>(_image);
+			return pool->image<ImageUsage::TextureBit>(_image);
 		case BindingType::StorageImage:
-			return pool->get_image<ImageUsage::StorageBit>(_image);
+			return pool->image<ImageUsage::StorageBit>(_image);
 		case BindingType::InputBuffer:
-			return pool->get_buffer<BufferUsage::UniformBit>(_buffer);
+			return pool->buffer<BufferUsage::UniformBit>(_buffer);
 		case BindingType::StorageBuffer:
-			return pool->get_buffer<BufferUsage::StorageBit>(_buffer);
+			return pool->buffer<BufferUsage::StorageBit>(_buffer);
 
 		default:
 		break;

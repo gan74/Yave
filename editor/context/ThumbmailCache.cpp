@@ -22,8 +22,12 @@ SOFTWARE.
 
 #include "ThumbmailCache.h"
 
-namespace editor {
+#include <editor/context/EditorContext.h>
 
+#include <yave/scene/SceneView.h>
+#include <yave/renderer/ToneMappingPass.h>
+
+namespace editor {
 
 ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size) :
 	image(dptr, vk::Format::eR8G8B8A8Unorm, math::Vec2ui(size)),
@@ -34,23 +38,10 @@ ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
 	ContextLinked(ctx),
 	_size(size),
 	_scene_view(_scene) {
-
-	create_renderer();
 }
 
 math::Vec2ui ThumbmailCache::thumbmail_size() const {
 	return math::Vec2ui(_size);
-}
-
-void ThumbmailCache::create_renderer() {
-#if 0
-	auto ibl		= Node::Ptr<IBLData>(new IBLData(device()));
-	auto scene		= Node::Ptr<SceneRenderer>(new SceneRenderer(device(), _scene_view));
-	auto gbuffer	= Node::Ptr<GBufferRenderer>(new GBufferRenderer(scene, thumbmail_size()));
-	auto deferred	= Node::Ptr<TiledDeferredRenderer>(new TiledDeferredRenderer(gbuffer, ibl));
-	auto tonemap	= Node::Ptr<SecondaryRenderer>(new ToneMapper(deferred));
-	_renderer		= Node::Ptr<FramebufferRenderer>(new FramebufferRenderer(tonemap, thumbmail_size()));
-#endif
 }
 
 TextureView* ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
@@ -62,6 +53,27 @@ TextureView* ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 		render_thumbmail(mesh);
 	}
 	return nullptr;
+}
+
+void ThumbmailCache::render(Thumbmail* out) {
+	FrameGraph graph(context()->resource_pool());
+	auto gbuffer = render_gbuffer(graph, &_scene_view, out->image.size());
+	auto lighting = render_lighting(graph, gbuffer, nullptr);
+	auto tone_mapping = render_tone_mapping(graph, lighting);
+
+	/*FrameGraphImageId output_image = tone_mapping.tone_mapped;
+	{
+		FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
+		builder.add_texture_input(output_image, PipelineStage::FragmentBit);
+		builder.set_render_func([&output, output_image](CmdBufferRecorder& rec, const FrameGraphPass* pass) {
+				auto out = std::make_unique<TextureView>(pass->resources()->image<ImageUsage::TextureBit>(output_image));
+				output = out.get();
+				rec.keep_alive(std::move(out));
+			});
+	}
+
+	std::move(graph).render(recorder);
+	recorder.keep_alive(_ibl_data);*/
 }
 
 void ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {

@@ -33,7 +33,10 @@ enum class BufferUsage {
 	IndexBit = uenum(vk::BufferUsageFlagBits::eIndexBuffer),
 	IndirectBit = uenum(vk::BufferUsageFlagBits::eIndirectBuffer),
 	UniformBit = uenum(vk::BufferUsageFlagBits::eUniformBuffer),
-	StorageBit = uenum(vk::BufferUsageFlagBits::eStorageBuffer)
+	StorageBit = uenum(vk::BufferUsageFlagBits::eStorageBuffer),
+
+	TransferSrcBit = uenum(vk::BufferUsageFlagBits::eTransferSrc),
+	TransferDstBit = uenum(vk::BufferUsageFlagBits::eTransferDst)
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {
@@ -44,28 +47,12 @@ constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
 	return BufferUsage(uenum(a) & uenum(b));
 }
 
-
-enum class BufferTransfer {
-	None = 0,
-	TransferSrc = uenum(vk::BufferUsageFlagBits::eTransferSrc),
-	TransferDst = uenum(vk::BufferUsageFlagBits::eTransferDst)
-};
-
-constexpr BufferTransfer operator|(BufferTransfer a, BufferTransfer b) {
-	return BufferTransfer(uenum(a) | uenum(b));
-}
-
-constexpr BufferTransfer operator&(BufferTransfer a, BufferTransfer b) {
-	return BufferTransfer(uenum(a) & uenum(b));
-}
-
-
 inline constexpr MemoryType prefered_memory_type(BufferUsage usage) {
 	return ((usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryType::CpuVisible : MemoryType::DeviceLocal;
 }
 
-inline constexpr BufferTransfer prefered_transfer(MemoryType flags) {
-	return is_cpu_visible(flags) ? BufferTransfer::None : BufferTransfer::TransferDst;
+inline constexpr BufferUsage buffer_transfer_usage(MemoryType flags) {
+	return is_cpu_visible(flags) ? BufferUsage::None : BufferUsage::TransferDstBit;
 }
 
 }

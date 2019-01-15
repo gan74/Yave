@@ -25,12 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <yave/scene/SceneView.h>
-#include <yave/window/EventHandler.h>
-
 #include <yave/renderer/ToneMappingPass.h>
-
-#include <y/math/Volume.h>
-#include <y/io/File.h>
 
 #include <imgui/imgui.h>
 
@@ -65,7 +60,7 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 			FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 			builder.add_texture_input(output_image, PipelineStage::FragmentBit);
 			builder.set_render_func([&output, output_image](CmdBufferRecorder& rec, const FrameGraphPass* pass) {
-					auto out = std::make_unique<TextureView>(pass->resources()->get_image<ImageUsage::TextureBit>(output_image));
+					auto out = std::make_unique<TextureView>(pass->resources()->image<ImageUsage::TextureBit>(output_image));
 					output = out.get();
 					rec.keep_alive(std::move(out));
 				});

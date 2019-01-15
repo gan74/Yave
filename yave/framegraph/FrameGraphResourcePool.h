@@ -39,27 +39,29 @@ class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
 		~FrameGraphResourcePool();
 
 		template<ImageUsage Usage>
-		ImageView<Usage> get_image(FrameGraphImageId res) const {
+		ImageView<Usage> image(FrameGraphImageId res) const {
 			return TransientImageView<Usage>(find(res));
 		}
 
 		template<BufferUsage Usage>
-		SubBuffer<Usage> get_buffer(FrameGraphBufferId res) const {
+		SubBuffer<Usage> buffer(FrameGraphBufferId res) const {
 			return TransientSubBuffer<Usage>(find(res));
 		}
 
 		template<BufferUsage Usage, typename T>
-		TypedSubBuffer<T, Usage> get_buffer(FrameGraphTypedBufferId<T> res) const {
+		TypedSubBuffer<T, Usage> buffer(FrameGraphTypedBufferId<T> res) const {
 			return TypedSubBuffer<T, Usage>(TransientSubBuffer<Usage>(find(res)));
 		}
 
 		template<typename T>
-		TypedMapping<T> get_mapped_buffer(FrameGraphMutableTypedBufferId<T> res) const {
+		TypedMapping<T> mapped_buffer(FrameGraphMutableTypedBufferId<T> res) const {
 			constexpr BufferUsage usage = BufferUsage::None;
 			constexpr MemoryType memory = MemoryType::CpuVisible;
 			TypedSubBuffer<T, usage, memory> subbuffer(TransientSubBuffer<usage, memory>(find(res)));
 			return TypedMapping<T>(subbuffer);
 		}
+
+		//const ImageBase& image_base(FrameGraphMutableImageId res) const;
 
 		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);

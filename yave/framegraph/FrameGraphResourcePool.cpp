@@ -46,6 +46,10 @@ FrameGraphResourcePool::~FrameGraphResourcePool() {
 	}
 }
 
+/*const ImageBase& FrameGraphResourcePool::image_base(FrameGraphMutableImageId res) const {
+	return find(res);
+}*/
+
 void FrameGraphResourcePool::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
 	check_res(res);
 	check_usage(usage);

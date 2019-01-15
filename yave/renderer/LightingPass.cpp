@@ -110,7 +110,7 @@ LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer,
 			} push_data;
 			push_data.camera = scene->camera();
 
-			TypedMapping<uniform::Light> mapping = self->resources()->get_mapped_buffer(light_buffer);
+			TypedMapping<uniform::Light> mapping = self->resources()->mapped_buffer(light_buffer);
 			usize light_count = scene->scene().lights().size();
 			for(const auto& l : scene->scene().lights()) {
 				if(l->type() == Light::Point) {

@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/objects/Light.h>
 #include <yave/objects/Transformable.h>
 
+#include <yave/material/Material.h>
 
 namespace editor {
 
@@ -54,9 +55,19 @@ class Selection {
 			return _light;
 		}
 
+
+		void set_selected(const AssetPtr<Material>& sel) {
+			_material = sel;
+		}
+
+		const auto& material() const {
+			return _material;
+		}
+
 	private:
 		NotOwner<Transformable*> _transformable = nullptr;
 		NotOwner<Light*> _light = nullptr;
+		AssetPtr<Material> _material;
 };
 
 }

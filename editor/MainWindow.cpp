@@ -35,6 +35,7 @@ SOFTWARE.
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/SceneDebug.h>
 #include <editor/widgets/ResourceBrowser.h>
+#include <editor/widgets/MaterialEditor.h>
 
 #include <editor/EngineView.h>
 
@@ -54,6 +55,7 @@ MainWindow::MainWindow(ContextPtr cptr) :
 	context()->ui().show<EntityView>();
 	context()->ui().show<ResourceBrowser>();
 	context()->ui().show<PropertyPanel>();
+	context()->ui().show<MaterialEditor>();
 }
 
 MainWindow::~MainWindow() {

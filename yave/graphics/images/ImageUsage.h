@@ -34,6 +34,9 @@ enum class ImageUsage {
 	ColorBit = uenum(vk::ImageUsageFlagBits::eColorAttachment),
 	StorageBit = uenum(vk::ImageUsageFlagBits::eStorage),
 
+	TransferSrcBit = uenum(vk::ImageUsageFlagBits::eTransferSrc),
+	TransferDstBit = uenum(vk::ImageUsageFlagBits::eTransferDst),
+
 	SwapchainBit = std::max({None, DepthBit, ColorBit, TextureBit, StorageBit}) << 1,
 
 	// Never use directly:

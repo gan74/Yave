@@ -65,7 +65,7 @@ const void* Mapping::data() const {
 	return _mapping;
 }
 
-void Mapping::stage(const SubBuffer<BufferUsage::None, MemoryType::DeviceLocal, BufferTransfer::TransferDst>& dst, CmdBufferRecorder& recorder, const void* data) {
+void Mapping::stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data) {
 	StagingBuffer buffer(dst.device(), dst.byte_size());
 	Mapping map(buffer);
 	std::memcpy(map.data(), data, dst.byte_size());

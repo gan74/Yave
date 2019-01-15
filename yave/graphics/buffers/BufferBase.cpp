@@ -56,8 +56,8 @@ static std::tuple<vk::Buffer, DeviceMemory> alloc_buffer(DevicePtr dptr, usize b
 
 
 
-BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type, BufferTransfer transfer) : _size(byte_size), _usage(usage) {
-	std::tie(_buffer, _memory) = alloc_buffer(dptr, byte_size, vk::BufferUsageFlagBits(usage) | vk::BufferUsageFlagBits(transfer), type);
+BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {
+	std::tie(_buffer, _memory) = alloc_buffer(dptr, byte_size, vk::BufferUsageFlagBits(usage), type);
 }
 
 BufferBase::~BufferBase() {

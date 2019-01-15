@@ -283,7 +283,7 @@ void CmdBufferRecorder::barriers(core::ArrayView<ImageBarrier> images) {
 	barriers({}, images);
 }
 
-void CmdBufferRecorder::copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<yave::BufferTransfer::TransferDst>& dst) {
+void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst) {
 	if(src.byte_size() != dst.byte_size()) {
 		y_fatal("Buffer size do not match.");
 	}
@@ -315,7 +315,7 @@ void CmdBufferRecorder::copy(const CopyBuffer<BufferTransfer::TransferSrc>& src,
 							  dst.vk_image(), vk_image_layout(dst.usage()), vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
 }*/
 
-void CmdBufferRecorder::blit(const ImageBase& src, const ImageBase& dst) {
+/*void CmdBufferRecorder::blit(const ImageBase& src, const ImageBase& dst) {
 	vk::ImageBlit blit = vk::ImageBlit()
 			.setSrcSubresource(
 				vk::ImageSubresourceLayers()
@@ -330,7 +330,7 @@ void CmdBufferRecorder::blit(const ImageBase& src, const ImageBase& dst) {
 		;
 
 	vk_cmd_buffer().blitImage(src.vk_image(), vk_image_layout(src.usage()), dst.vk_image(), vk_image_layout(dst.usage()), blit, vk::Filter::eLinear);
-}
+}*/
 
 RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
 	check_no_renderpass();

@@ -38,10 +38,9 @@ class TypedWrapper final : public Buff {
 	public:
 		using Buff::usage;
 		using Buff::memory_type;
-		using Buff::buffer_transfer;
 
 		using sub_buffer_type = TypedWrapper<Elem, typename Buff::sub_buffer_type>;
-		using base_buffer_type = Buffer<usage, memory_type, buffer_transfer>;
+		using base_buffer_type = Buffer<usage, memory_type>;
 
 		using value_type = Elem;
 
@@ -56,16 +55,16 @@ class TypedWrapper final : public Buff {
 		TypedWrapper(DevicePtr dptr, usize elem_count) : Buff(dptr, elem_count * sizeof(value_type)) {
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		TypedWrapper(const Buffer<U, M, T>& buffer) : Buff(buffer) {
+		template<BufferUsage U, MemoryType M>
+		TypedWrapper(const Buffer<U, M>& buffer) : Buff(buffer) {
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		TypedWrapper(const SubBuffer<U, M, T>& buffer) : Buff(buffer) {
+		template<BufferUsage U, MemoryType M>
+		TypedWrapper(const SubBuffer<U, M>& buffer) : Buff(buffer) {
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		TypedWrapper(const Buffer<U, M, T>& buffer, usize size, usize byte_offset) : Buff(buffer, size * sizeof(value_type), byte_offset) {
+		template<BufferUsage U, MemoryType M>
+		TypedWrapper(const Buffer<U, M>& buffer, usize size, usize byte_offset) : Buff(buffer, size * sizeof(value_type), byte_offset) {
 		}
 
 
@@ -82,11 +81,11 @@ class TypedWrapper final : public Buff {
 		}
 };
 
-template<typename Elem, BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage), BufferTransfer Transfer = prefered_transfer(Memory)>
-using TypedBuffer = TypedWrapper<Elem, Buffer<Usage, Memory, Transfer>>;
+template<typename Elem, BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage)>
+using TypedBuffer = TypedWrapper<Elem, Buffer<Usage, Memory>>;
 
-template<typename Elem, BufferUsage Usage = BufferUsage::None, MemoryType Memory = MemoryType::DontCare, BufferTransfer Transfer = BufferTransfer::None>
-using TypedSubBuffer = TypedWrapper<Elem, SubBuffer<Usage, Memory, Transfer>>;
+template<typename Elem, BufferUsage Usage = BufferUsage::None, MemoryType Memory = MemoryType::DontCare>
+using TypedSubBuffer = TypedWrapper<Elem, SubBuffer<Usage, Memory>>;
 
 
 template<typename Elem>
@@ -142,11 +141,11 @@ class TypedMapping : public Mapping {
 
 };
 
-template<typename Elem, BufferUsage Usage, BufferTransfer Transfer>
-TypedMapping(TypedBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>&) -> TypedMapping<Elem>;
+template<typename Elem, BufferUsage Usage>
+TypedMapping(TypedBuffer<Elem, Usage, MemoryType::CpuVisible>&) -> TypedMapping<Elem>;
 
-template<typename Elem, BufferUsage Usage, BufferTransfer Transfer>
-TypedMapping(TypedSubBuffer<Elem, Usage, MemoryType::CpuVisible, Transfer>&) -> TypedMapping<Elem>;
+template<typename Elem, BufferUsage Usage>
+TypedMapping(TypedSubBuffer<Elem, Usage, MemoryType::CpuVisible>&) -> TypedMapping<Elem>;
 
 }
 

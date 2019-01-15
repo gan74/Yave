@@ -50,7 +50,7 @@ class ThumbmailCache : public ContextLinked, NonCopyable {
 		TextureView* get_thumbmail(const AssetPtr<StaticMesh>& mesh);
 
 	private:
-		void create_renderer();
+		void render(Thumbmail* out);
 		void render_thumbmail(const AssetPtr<StaticMesh>& mesh);
 
 		usize _size;

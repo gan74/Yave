@@ -27,10 +27,10 @@ SOFTWARE.
 
 namespace yave {
 
-template<BufferUsage Usage, MemoryType Memory, BufferTransfer Transfer>
+template<BufferUsage Usage, MemoryType Memory>
 class SubBuffer;
 
-template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage), BufferTransfer Transfer = prefered_transfer(Memory)>
+template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage)>
 class Buffer : public BufferBase {
 
 	protected:
@@ -39,17 +39,16 @@ class Buffer : public BufferBase {
 			return (uenum(a) & uenum(b)) == uenum(b);
 		}
 
-		static constexpr bool is_compatible(BufferUsage U, MemoryType M, BufferTransfer T) {
-			return has(U, Usage) && is_memory_type_compatible(M, Memory) && has(T, Transfer);
+		static constexpr bool is_compatible(BufferUsage U, MemoryType M) {
+			return has(U, Usage) && is_memory_type_compatible(M, Memory);
 		}
 
 	public:
 		static constexpr BufferUsage usage = Usage;
 		static constexpr MemoryType memory_type = Memory;
-		static constexpr BufferTransfer buffer_transfer = Transfer;
 
-		using sub_buffer_type = SubBuffer<usage, memory_type, buffer_transfer>;
-		using base_buffer_type = Buffer<usage, memory_type, buffer_transfer>;
+		using sub_buffer_type = SubBuffer<usage, memory_type>;
+		using base_buffer_type = Buffer<usage, memory_type>;
 
 
 		static usize total_byte_size(usize size) {
@@ -63,20 +62,20 @@ class Buffer : public BufferBase {
 		// This is important: it prevent the ctor from being instanciated for Buffer specialisations that should not be created this way,
 		// thus preventing static_assert from going off.
 		template<typename = void>
-		Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Memory, Transfer) {
-			static_assert(Usage != BufferUsage::None || Transfer != BufferTransfer::None, "Buffers should not have Usage == BufferUsage::None");
+		Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Memory) {
+			static_assert(Usage != BufferUsage::None, "Buffers should not have Usage == BufferUsage::None");
 			static_assert(Memory != MemoryType::DontCare, "Buffers should not have Memory == MemoryType::DontCare");
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		Buffer(Buffer<U, M, T>&& other) {
-			static_assert(is_compatible(U, M, T));
+		template<BufferUsage U, MemoryType M>
+		Buffer(Buffer<U, M>&& other) {
+			static_assert(is_compatible(U, M));
 			swap(other);
 		}
 
-		template<BufferUsage U, MemoryType M, BufferTransfer T>
-		Buffer& operator=(Buffer<U, M, T>&& other) {
-			static_assert(is_compatible(U, M, T));
+		template<BufferUsage U, MemoryType M>
+		Buffer& operator=(Buffer<U, M>&& other) {
+			static_assert(is_compatible(U, M));
 			swap(other);
 			return *this;
 		}

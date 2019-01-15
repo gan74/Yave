@@ -28,10 +28,10 @@ SOFTWARE.
 
 namespace yave {
 
-using StagingBuffer = Buffer<BufferUsage::None, MemoryType::Staging, BufferTransfer::TransferSrc>;
+using StagingBuffer = Buffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
 
 template<typename T>
-using TypedStagingBuffer = TypedBuffer<T, StagingBuffer::usage, StagingBuffer::memory_type, StagingBuffer::buffer_transfer>;
+using TypedStagingBuffer = TypedBuffer<T, StagingBuffer::usage, StagingBuffer::memory_type>;
 
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
@@ -50,16 +50,16 @@ using TypedUniformBuffer = TypedBuffer<T, BufferUsage::UniformBit, Memory>;
 
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::IndexBit)>
-using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit, Memory>;
+using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit | BufferUsage::TransferDstBit, Memory>;
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
-using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit, Memory>;
+using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
-using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit, Memory>;
+using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::IndirectBit)>
-using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit, Memory>;
+using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit | BufferUsage::TransferDstBit, Memory>;
 
 
 template<typename T>

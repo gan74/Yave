@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,46 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
-#define YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
 
-#include "BufferUsage.h"
-#include <yave/device/DeviceLinked.h>
-#include <yave/graphics/memory/DeviceMemory.h>
+#include "MaterialEditor.h"
 
-namespace yave {
+#include <yave/material/Material.h>
+#include <editor/context/EditorContext.h>
 
-class BufferBase : NonCopyable {
+#include <imgui/imgui.h>
 
-	public:
-		DevicePtr device() const;
+namespace editor {
 
-		BufferUsage usage() const;
-		usize byte_size() const;
-		const DeviceMemory& device_memory() const;
-
-		vk::DescriptorBufferInfo descriptor_info() const;
-
-		vk::Buffer vk_buffer() const;
-
-		~BufferBase();
-
-	protected:
-		void swap(BufferBase& other);
-
-		BufferBase() = default;
-		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type);
-
-	private:
-		usize _size = 0;
-		vk::Buffer _buffer;
-		BufferUsage _usage = BufferUsage::None;
-		DeviceMemory _memory;
-};
-
-static_assert(is_safe_base<BufferBase>::value);
-
+MaterialEditor::MaterialEditor(ContextPtr cptr) :
+		Widget(ICON_FA_OBJECT_GROUP " Material Editor"),
+		ContextLinked(cptr) {
 }
 
+void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+	if(!context()->selection().material()) {
+		ImGui::Text("No material selected.");
+		return;
+	}
+	MaterialData& data = const_cast<MaterialData&>(context()->selection().material()->data());
+	ImGui::Text("Binding count: %d", i32(data._bindings.size()));
 
-#endif // YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
+	ImGui::Checkbox("depth tested", &data._depth_tested);
+}
+
+}

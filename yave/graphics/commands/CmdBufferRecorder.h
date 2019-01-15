@@ -130,8 +130,8 @@ class RenderPassRecorder : NonCopyable {
 
 class CmdBufferRecorder : public CmdBufferBase {
 
-		template<BufferTransfer T>
-		using CopyBuffer = SubBuffer<BufferUsage::None, MemoryType::DontCare, T>;
+	using SrcCopyBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
+	using DstCopyBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
 
 	public:
 		using DescriptorSetList = detail::DescriptorSetList;
@@ -158,8 +158,8 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void barriers(core::ArrayView<BufferBarrier> buffers);
 		void barriers(core::ArrayView<ImageBarrier> images);
 
-		void copy(const CopyBuffer<BufferTransfer::TransferSrc>& src, const CopyBuffer<BufferTransfer::TransferDst>& dst);
-		void blit(const ImageBase& src,  const ImageBase& dst);
+		void copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst);
+		//void blit(const ImageBase& src,  const ImageBase& dst);
 
 		// never use directly, needed for internal work and image loading
 		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);

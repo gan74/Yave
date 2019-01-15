@@ -192,10 +192,10 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 
 
 		if(ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1)) {
-			ImGui::OpenPopup("###resourcescontext");
+			ImGui::OpenPopup("###contextmenu");
 		}
 
-		if(ImGui::BeginPopup("###resourcescontext")) {
+		if(ImGui::BeginPopup("###contextmenu")) {
 			if(ImGui::Selectable("New folder")) {
 				filesystem()->create_directory(filesystem()->join(_current->path, "new folder"));
 				_force_refresh = true;
@@ -235,6 +235,10 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 						save_images(path, images);
 						update_node(_current);
 					});
+			}
+			ImGui::Separator();
+			if(ImGui::Selectable("Create material")) {
+				context()->selection().set_selected(context()->device()->default_resources()[DefaultResources::BasicMaterial]);
 			}
 
 			if(FolderAssetStore* store = dynamic_cast<FolderAssetStore*>(&context()->loader().asset_store())) {

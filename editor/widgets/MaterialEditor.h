@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2018 Grégoire Angerand
+Copyright (c) 2016-2018 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,46 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
-#define YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
+#ifndef EDITOR_MATERIALEDITOR_H
+#define EDITOR_MATERIALEDITOR_H
 
-#include "BufferUsage.h"
-#include <yave/device/DeviceLinked.h>
-#include <yave/graphics/memory/DeviceMemory.h>
+#include <editor/editor.h>
 
-namespace yave {
+#include <editor/ui/Widget.h>
 
-class BufferBase : NonCopyable {
+namespace editor {
 
+class MaterialEditor : public Widget, public ContextLinked {
 	public:
-		DevicePtr device() const;
-
-		BufferUsage usage() const;
-		usize byte_size() const;
-		const DeviceMemory& device_memory() const;
-
-		vk::DescriptorBufferInfo descriptor_info() const;
-
-		vk::Buffer vk_buffer() const;
-
-		~BufferBase();
-
-	protected:
-		void swap(BufferBase& other);
-
-		BufferBase() = default;
-		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type);
+		MaterialEditor(ContextPtr cptr);
 
 	private:
-		usize _size = 0;
-		vk::Buffer _buffer;
-		BufferUsage _usage = BufferUsage::None;
-		DeviceMemory _memory;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 };
-
-static_assert(is_safe_base<BufferBase>::value);
 
 }
 
-
-#endif // YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
+#endif // EDITOR_MATERIALEDITOR_H

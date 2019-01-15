@@ -37,7 +37,7 @@ class TransientBuffer : public BufferBase {
 		TransientBuffer() = default;
 
 		TransientBuffer(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type = MemoryType::DontCare) :
-				BufferBase(dptr, byte_size, usage, memory_type(type, usage), prefered_transfer(type)) {
+				BufferBase(dptr, byte_size, usage, memory_type(type, usage)) {
 			_memory_type = type;
 		}
 
