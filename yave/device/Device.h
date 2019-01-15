@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include "PhysicalDevice.h"
-#include "ThreadLocalDeviceData.h"
+#include "ThreadLocalDevice.h"
 #include "DefaultResources.h"
 
 #include "extentions/DebugMarker.h"
@@ -62,7 +62,7 @@ class Device : NonCopyable {
 		const Queue& graphic_queue() const;
 		Queue& graphic_queue();
 
-		ThreadDevicePtr thread_data() const;
+		ThreadDevicePtr thread_device() const;
 		const DefaultResources& default_resources() const;
 
 		const vk::PhysicalDeviceLimits& vk_limits() const;
@@ -75,7 +75,7 @@ class Device : NonCopyable {
 
 		template<typename T>
 		auto create_descriptor_set_layout(T&& t) const {
-			return _descriptor_layout_pool->create_descriptor_set_layout(y_fwd(t));
+			return thread_device()->create_descriptor_set_layout(y_fwd(t));
 		}
 
 		template<typename T>
@@ -100,12 +100,7 @@ class Device : NonCopyable {
 		mutable DeviceAllocator _allocator;
 
 		mutable concurrent::SpinLock _lock;
-		mutable core::Vector<std::unique_ptr<ThreadLocalDeviceData>> _thread_local_datas;
-
-		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
-		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
-
-		std::unique_ptr<DescriptorSetLayoutPool> _descriptor_layout_pool;
+		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
 		struct {
 			std::unique_ptr<DebugMarker> debug_marker;

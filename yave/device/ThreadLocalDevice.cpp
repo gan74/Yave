@@ -20,13 +20,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "ThreadLocalDeviceData.h"
+#include "ThreadLocalDevice.h"
 #include "Device.h"
 
 namespace yave {
 
-ThreadLocalDeviceData::ThreadLocalDeviceData(DevicePtr dptr) :
-		DeviceLinked(dptr) {
+ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) :
+		DeviceLinked(dptr),
+		_disposable_cmd_pool(dptr),
+		_primary_cmd_pool(dptr),
+		_descriptor_layout_pool(std::make_unique<DescriptorSetLayoutPool>(dptr)) {
+}
+
+CmdBuffer<CmdBufferUsage::Disposable> ThreadLocalDevice::create_disposable_cmd_buffer() const {
+	return _disposable_cmd_pool.create_buffer();
+}
+
+CmdBuffer<CmdBufferUsage::Primary> ThreadLocalDevice::create_cmd_buffer() const {
+	return _primary_cmd_pool.create_buffer();
 }
 
 }

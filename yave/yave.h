@@ -43,8 +43,8 @@ using namespace y;
 class Device;
 using DevicePtr = const Device*;
 
-class ThreadLocalDeviceData;
-using ThreadDevicePtr = const ThreadLocalDeviceData*;
+class ThreadLocalDevice;
+using ThreadDevicePtr = const ThreadLocalDevice*;
 
 
 template<typename T>

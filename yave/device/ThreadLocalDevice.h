@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_THREADLOCALDEVICEDATA_H
-#define YAVE_DEVICE_THREADLOCALDEVICEDATA_H
+#ifndef YAVE_DEVICE_THREADLOCALDEVICE_H
+#define YAVE_DEVICE_THREADLOCALDEVICE_H
 
 #include <yave/graphics/vk/vk.h>
 #include <yave/graphics/bindings/DescriptorSetLayoutPool.h>
@@ -30,12 +30,25 @@ SOFTWARE.
 
 namespace yave {
 
-class ThreadLocalDeviceData : public DeviceLinked, NonCopyable {
+class ThreadLocalDevice : public DeviceLinked, NonCopyable {
 	public:
-		ThreadLocalDeviceData(DevicePtr dptr);
+		ThreadLocalDevice(DevicePtr dptr);
+
+		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
+		CmdBuffer<CmdBufferUsage::Primary> create_cmd_buffer() const;
+
+		template<typename T>
+		auto create_descriptor_set_layout(T&& t) const {
+			return _descriptor_layout_pool->create_descriptor_set_layout(y_fwd(t));
+		}
+
 	private:
+		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
+		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
+
+		std::unique_ptr<DescriptorSetLayoutPool> _descriptor_layout_pool;
 };
 
 }
 
-#endif // YAVE_DEVICE_THREADLOCALDEVICEDATA_H
+#endif // YAVE_DEVICE_THREADLOCALDEVICE_H

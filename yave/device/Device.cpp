@@ -107,10 +107,7 @@ Device::Device(Instance& instance) :
 		_queue_families(QueueFamily::all(_physical)),
 		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
 		_sampler(this),
-		_allocator(this),
-		_disposable_cmd_pool(this),
-		_primary_cmd_pool(this),
-		_descriptor_layout_pool(new DescriptorSetLayoutPool(this)) {
+		_allocator(this) {
 
 	if(_instance.debug_params().debug_features_enabled()) {
 		_extensions.debug_marker = std::make_unique<DebugMarker>(_device.device);
@@ -164,19 +161,22 @@ static usize generate_thread_id() {
 	return ++id;
 }
 
-ThreadDevicePtr Device::thread_data() const {
+ThreadDevicePtr Device::thread_device() const {
 	static thread_local usize thread_id = generate_thread_id();
 	static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
 
 	auto& cache = thread_cache;
 	if(cache.first != this) {
 		std::unique_lock _(_lock);
-		while(_thread_local_datas.size() <= thread_id) {
-			_thread_local_datas.emplace_back();
+		while(_thread_devices.size() <= thread_id) {
+			_thread_devices.emplace_back();
 		}
-		auto& data = _thread_local_datas[thread_id];
+		if(_thread_devices.size() > 64) {
+			log_msg("64 ThreadLocalDevice have been created.", Log::Warning);
+		}
+		auto& data = _thread_devices[thread_id];
 		if(!data) {
-			data = std::make_unique<ThreadLocalDeviceData>(this);
+			data = std::make_unique<ThreadLocalDevice>(this);
 		}
 		cache = {this, data.get()};
 		return data.get();
@@ -201,11 +201,11 @@ vk::Sampler Device::vk_sampler() const {
 }
 
 CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() const {
-	return _disposable_cmd_pool.create_buffer();
+	return thread_device()->create_disposable_cmd_buffer();
 }
 
 CmdBuffer<CmdBufferUsage::Primary> Device::create_cmd_buffer() const {
-	return _primary_cmd_pool.create_buffer();
+	return thread_device()->create_cmd_buffer();
 }
 
 const DebugMarker* Device::debug_marker() const {
