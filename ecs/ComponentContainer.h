@@ -33,8 +33,10 @@ class ComponentContainerBase : NonCopyable {
 	public:
 		virtual ~ComponentContainerBase();
 
-		virtual ComponentId create_component() = 0;
 		virtual void flush() = 0;
+
+		virtual ComponentId create_component() = 0;
+		ComponentId create_component(EntityId parent);
 
 		void remove_component(ComponentId id);
 
@@ -43,6 +45,9 @@ class ComponentContainerBase : NonCopyable {
 
 	protected:
 		ComponentContainerBase(std::type_index type);
+
+
+		void set_parent(ComponentId id, EntityId parent);
 
 		core::Vector<EntityId> _parents;
 		core::Vector<ComponentId> _deletions;
@@ -86,7 +91,7 @@ class ComponentContainer final : public ComponentContainerBase {
 		}
 
 	private:
-		FreeList<T, ComponentTag> _components;
+		SlotMap<T, ComponentTag> _components;
 };
 
 }

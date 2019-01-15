@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_ECS_ECS_H
 #define YAVE_ECS_ECS_H
 
-#include "FreeList.h"
+#include "SlotMap.h"
 
 namespace yave {
 namespace ecs {
@@ -37,10 +37,10 @@ struct TypeIndex {
 };
 
 struct EntityTag {};
-using EntityId = FreeListId<EntityTag>;
+using EntityId = SlotMapId<EntityTag>;
 
 struct ComponentTag {};
-using ComponentId = FreeListId<ComponentTag>;
+using ComponentId = SlotMapId<ComponentTag>;
 
 }
 }

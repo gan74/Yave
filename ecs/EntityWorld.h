@@ -101,7 +101,7 @@ class EntityWorld {
 		void remove_component(ComponentContainerBase* container, ComponentId id);
 
 
-		FreeList<Entity, EntityTag> _entities;
+		SlotMap<Entity, EntityTag> _entities;
 		core::Vector<EntityId> _deletions;
 
 		core::Vector<std::unique_ptr<ComponentContainerBase>> _component_containers;

@@ -53,7 +53,7 @@ ComponentId EntityWorld::add_component(ComponentContainerBase* container, Entity
 	if(ent->has_component(type)) {
 		return ent->component_id(type);
 	}
-	ComponentId comp = container->create_component();
+	ComponentId comp = container->create_component(id);
 	ent->add_component(type, comp);
 	return comp;
 }

@@ -31,6 +31,19 @@ ComponentContainerBase::ComponentContainerBase(std::type_index type) : _type(typ
 ComponentContainerBase::~ComponentContainerBase() {
 }
 
+ComponentId ComponentContainerBase::create_component(EntityId parent) {
+	ComponentId id = create_component();
+	set_parent(id, parent);
+	return id;
+}
+
+void ComponentContainerBase::set_parent(ComponentId id, EntityId parent) {
+	while(_parents.size() <= id.index()) {
+		_parents.emplace_back();
+	}
+	_parents[id.index()] = parent;
+}
+
 void ComponentContainerBase::remove_component(ComponentId id) {
 	_deletions << id;
 }
