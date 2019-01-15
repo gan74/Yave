@@ -169,7 +169,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 			++index;
 		}
 
-		bool context_menu = ImGui::IsPopupOpen("###resourcescontext");
+		bool context_menu = ImGui::IsPopupOpen("###contextmenu");
 
 		for(const auto& file : curr->files) {
 			const auto& name = file.first;
