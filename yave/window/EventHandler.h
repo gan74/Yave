@@ -45,7 +45,8 @@ enum class Key {
 	Insert,
 	Delete,
 	Space = ' ',
-	A = 'A', B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
+	A = 'A', B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+	F1, F2, F3, F4, F5, F6, F7, F8, F9, F10_Reserved, F11, F12
 };
 
 static_assert(char(Key::Z) == 'Z');
@@ -65,7 +66,7 @@ class EventHandler {
 		virtual void mouse_pressed(const math::Vec2i&, MouseButton)			{}
 		virtual void mouse_released(const math::Vec2i&, MouseButton)		{}
 
-		virtual void mouse_wheel(int)										{}
+		virtual void mouse_wheel(i32)										{}
 
 		virtual void char_input(u32 character)								{ unused(character); }
 

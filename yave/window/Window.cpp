@@ -25,15 +25,24 @@ namespace yave {
 
 #ifdef Y_OS_WIN
 
-const char class_name[] = "Yave";
+static const char class_name[] = "Yave";
+
+static bool is_ascii(WPARAM w_param, LPARAM l_param) {
+	//https://stackoverflow.com/questions/44660035/how-to-extract-the-character-from-wm-keydown-in-pretranslatemessagemsgpmsg
+	static BYTE kb_state[256];
+	static auto init = GetKeyboardState(kb_state);
+	unused(init);
+	auto scan_code = (l_param >> 16) & 0xFF;
+	WORD ascii = 0;
+	return ToAscii(w_param, scan_code, kb_state, &ascii, 0);
+}
 
 
-static Key to_key(WPARAM param) {
-	char c = char(param);
-	if(std::isalpha(c)) {
-		return Key(std::toupper(c));
+static Key to_key(WPARAM w_param, LPARAM l_param) {
+	if(is_ascii(w_param, l_param)) {
+		return Key(std::toupper(w_param));
 	}
-	switch(param) {
+	switch(w_param) {
 		case VK_TAB:	return Key::Tab;
 		case VK_CLEAR:	return Key::Clear;
 		case VK_BACK:	return Key::Backspace;
@@ -50,6 +59,18 @@ static Key to_key(WPARAM param) {
 		case VK_INSERT: return Key::Insert;
 		case VK_DELETE: return Key::Delete;
 		case VK_SPACE:	return Key::Space;
+		case VK_F1:		return Key::F1;
+		case VK_F2:		return Key::F2;
+		case VK_F3:		return Key::F3;
+		case VK_F4:		return Key::F4;
+		case VK_F5:		return Key::F5;
+		case VK_F6:		return Key::F6;
+		case VK_F7:		return Key::F7;
+		case VK_F8:		return Key::F8;
+		case VK_F9:		return Key::F9;
+		case VK_F10:	return Key::F10_Reserved;
+		case VK_F11:	return Key::F11;
+		case VK_F12:	return Key::F12;
 
 		default:
 			break;
@@ -57,31 +78,30 @@ static Key to_key(WPARAM param) {
 	return Key::Unknown;
 }
 
-LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param) {
+	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 	if(window) {
-		auto& l_param = lParam;
-		switch(uMsg) {
+		switch(u_msg) {
 			case WM_CLOSE:
 				window->close();
 				return 0;
 
 			case WM_SIZE:
-				window->_size = math::Vec2ui(usize(LOWORD(lParam)), usize(HIWORD(lParam)));
+				window->_size = math::Vec2ui(usize(LOWORD(l_param)), usize(HIWORD(l_param)));
 				window->resized();
 				return 0;
 
 			case WM_KEYDOWN:
 			case WM_KEYUP:
 				if(auto handler = window->event_handler()) {
-					auto k = to_key(wParam);
+					auto k = to_key(w_param, l_param);
 					if(k != Key::Unknown) {
-						uMsg == WM_KEYDOWN
+						u_msg == WM_KEYDOWN
 							? handler->key_pressed(k)
 							: handler->key_released(k);
 						return 0;
 					}
-				} else if(uMsg == WM_KEYDOWN && wParam == VK_ESCAPE) {
+				} else if(u_msg == WM_KEYDOWN && w_param == VK_ESCAPE) {
 					// escape close the window by default
 					window->close();
 					return 0;
@@ -90,7 +110,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 
 			case WM_CHAR:
 				if(auto handler = window->event_handler()) {
-					handler->char_input(u32(wParam));
+					handler->char_input(u32(w_param));
 					return 0;
 				}
 				break;
@@ -106,7 +126,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 				if(auto handler = window->event_handler()) {
 					auto pt = reinterpret_cast<const POINTS&>(l_param);
 					math::Vec2i pos = math::Vec2i(pt.x, pt.y);
-					switch(uMsg) {
+					switch(u_msg) {
 						case WM_LBUTTONDOWN:
 							handler->mouse_pressed(pos, EventHandler::LeftButton);
 							return 0;
@@ -136,7 +156,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 							return 0;
 
 						case WM_MOUSEWHEEL:
-							handler->mouse_wheel(int(i16(HIWORD(wParam)) / WHEEL_DELTA));
+							handler->mouse_wheel(i32(i16(HIWORD(w_param)) / WHEEL_DELTA));
 							return 0;
 
 						default:
@@ -149,7 +169,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wPar
 				break;
 		}
 	}
-	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+	return DefWindowProc(hwnd, u_msg, w_param, l_param);
 }
 
 #endif
