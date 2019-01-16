@@ -29,13 +29,29 @@ namespace y {
 namespace core {
 
 class Duration {
+	static constexpr Duration div(double s, double div) {
+		double nano_div = 1000000000 / div;
+		u64 secs = s / div;
+		s -= secs * div;
+		return Duration(secs, u32(s * nano_div));
+	}
 
 	public:
-		static Duration seconds(double s);
-		static Duration milliseconds(double ms);
-		static Duration nanoseconds(u64 ns);
+		static constexpr Duration seconds(double s) {
+			return div(s, 1.0);
+		}
 
-		explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0);
+		static constexpr Duration milliseconds(double ms) {
+			return div(ms, 1000.0);
+		}
+
+		static constexpr Duration nanoseconds(u64 ns) {
+			return Duration(ns / 100000000, ns % 100000000);
+		}
+
+		constexpr explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
+		}
+
 
 		u64 to_nanos() const;
 		double to_micros() const;

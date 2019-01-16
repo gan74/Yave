@@ -25,27 +25,6 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-static Duration div(double s, double div) {
-	double nano_div = 1000000000 / div;
-	u64 secs = s / div;
-	s -= secs * div;
-	return Duration(secs, u32(s * nano_div));
-}
-
-Duration Duration::seconds(double s) {
-	return div(s, 1.0);
-}
-
-Duration Duration::milliseconds(double ms) {
-	return div(ms, 1000.0);
-}
-
-Duration Duration::nanoseconds(u64 ns) {
-	return Duration(ns / 100000000, ns % 100000000);
-}
-
-Duration::Duration(u64 seconds, u32 subsec_nanos) : _secs(seconds), _subsec_ns(subsec_nanos) {
-}
 
 u64 Duration::to_nanos() const {
 	return _secs * 1000000000 + _subsec_ns;
