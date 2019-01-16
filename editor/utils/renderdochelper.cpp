@@ -43,7 +43,6 @@ namespace renderdoc {
 
 #ifdef RENDERDOC_SUPPORTED
 
-namespace detail {
 static RENDERDOC_API_1_1_2 *renderdoc_api = nullptr;
 
 static void init_renderdoc() {
@@ -53,11 +52,18 @@ static void init_renderdoc() {
 	}
 	if(HMODULE module = GetModuleHandleA("renderdoc.dll")) {
 		void* addr = reinterpret_cast<void*>(GetProcAddress(module, "RENDERDOC_GetAPI"));
-		pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(addr);
-		int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, reinterpret_cast<void**>(&renderdoc_api));
-		if(ret != 1) {
-			log_msg("Unable to load RenderDoc API", Log::Warning);
+		if(addr) {
+			pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(addr);
+			if(RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, reinterpret_cast<void**>(&renderdoc_api)) == 1) {
+				return;
+			}
 		}
+	}
+
+	static bool warned = false;
+	if(!warned) {
+		log_msg("Unable to load RenderDoc API", Log::Warning);
+		warned = true;
 	}
 #else
 #warning RenderDoc helper not supported: unsupported OS
@@ -76,21 +82,18 @@ void end_capture() {
 		renderdoc_api->EndFrameCapture(nullptr, nullptr);
 	}
 }
-}
 
 bool is_supported() {
-	detail::init_renderdoc();
-	return detail::renderdoc_api;
+	init_renderdoc();
+	return renderdoc_api;
 }
 
 #else
 
-namespace detail {
 void start_capture() {
 }
 
 void end_capture() {
-}
 }
 
 bool is_supported() {

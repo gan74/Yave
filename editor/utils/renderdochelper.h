@@ -27,17 +27,14 @@ SOFTWARE.
 namespace editor {
 namespace renderdoc {
 
-namespace detail {
 void start_capture();
 void end_capture();
-}
-
 
 bool is_supported();
 
-inline auto start_capture() {
-	detail::start_capture();
-	return ScopeExit([] { detail::end_capture(); });
+inline auto capture() {
+	start_capture();
+	return ScopeExit([] { end_capture(); });
 }
 
 }
