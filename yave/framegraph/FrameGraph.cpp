@@ -38,7 +38,16 @@ const FrameGraphResourcePool* FrameGraph::resources() const {
 template<typename C, typename B>
 static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
 	for(auto&& [res, info] : resources) {
-		if(auto it = to_barrier.find(res); it != to_barrier.end()) {
+		auto it = to_barrier.find(res);
+		bool exists = it != to_barrier.end();
+		if(info.stage == PipelineStage::None) {
+			if(exists) {
+				to_barrier.erase(it);
+			}
+			continue;
+		}
+
+		if(exists) {
 			barriers.emplace_back(pool->barrier(res, it->second, info.stage));
 			it->second = info.stage;
 		} else {

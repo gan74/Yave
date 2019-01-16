@@ -162,7 +162,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const Ima
 		_layers(data.layers()),
 		_mips(data.mipmaps()),
 		_format(data.format()),
-		_usage(usage | vk::ImageUsageFlagBits::eTransferDst) {
+		_usage(usage | ImageUsage::TransferDstBit) {
 
 	check_layer_count(type, _size, _layers);
 

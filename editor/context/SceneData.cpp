@@ -106,7 +106,7 @@ void SceneData::load(std::string_view filename) {
 		auto sce = Scene::deserialized(
 				io::File::open(filename).or_throw("Unable to open scene file."),
 				context()->loader().static_mesh(),
-				context()->device()->default_resources()[DefaultResources::BasicMaterial]
+				device()->default_resources()[DefaultResources::BasicMaterial]
 			);
 		_scene = std::move(sce);
 	} catch(std::exception& e) {
@@ -116,7 +116,7 @@ void SceneData::load(std::string_view filename) {
 
 StaticMeshInstance* SceneData::add(AssetId id) {
 	AssetPtr<StaticMesh> mesh = context()->loader().static_mesh().load(id);
-	const auto& material = context()->device()->default_resources()[DefaultResources::BasicMaterial];
+	const auto& material = device()->default_resources()[DefaultResources::BasicMaterial];
 	auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
 	StaticMeshInstance* inst_ptr = inst.get();
 	inst->position() = _scene_view->camera().position() + _scene_view->camera().forward() * 2.0f * inst->radius();

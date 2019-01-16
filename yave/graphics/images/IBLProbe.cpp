@@ -27,7 +27,6 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/Chrono.h>
-#include <y/io/File.h>
 
 namespace yave {
 
@@ -75,7 +74,8 @@ struct ProbeBaseView : ViewBase {
 					 base.image_size().to<2>() / (1 << mip),
 					 base.usage(),
 					 base.format(),
-					 create_view(base.device(), base.vk_image(), base.format(), mip)) {
+					 create_view(base.device(), base.vk_image(), base.format(), mip),
+					 base.vk_image()) {
 	}
 };
 

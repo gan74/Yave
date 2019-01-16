@@ -34,6 +34,8 @@ class FrameGraphPassBuilder {
 		void add_depth_output(FrameGraphMutableImageId res);
 		void add_color_output(FrameGraphMutableImageId res);
 
+		void add_copy_src(FrameGraphImageId res);
+
 		void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
 		void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
 

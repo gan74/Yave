@@ -62,6 +62,13 @@ void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res) {
 }
 
 
+// --------------------------------- Copies ---------------------------------
+
+void FrameGraphPassBuilder::add_copy_src(FrameGraphImageId res) {
+	add_to_pass(res, ImageUsage::TransferSrcBit, PipelineStage::TransferBit);
+}
+
+
 // --------------------------------- Storage output ---------------------------------
 
 void FrameGraphPassBuilder::add_storage_output(FrameGraphMutableImageId res, usize ds_index, PipelineStage stage) {

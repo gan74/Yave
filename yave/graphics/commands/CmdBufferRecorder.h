@@ -132,6 +132,8 @@ class CmdBufferRecorder : public CmdBufferBase {
 
 	using SrcCopyBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
 	using DstCopyBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
+	using SrcCopyImage = ImageView<ImageUsage::TransferSrcBit>;
+	using DstCopyImage = ImageView<ImageUsage::TransferDstBit>;
 
 	public:
 		using DescriptorSetList = detail::DescriptorSetList;
@@ -159,7 +161,8 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void barriers(core::ArrayView<ImageBarrier> images);
 
 		void copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst);
-		//void blit(const ImageBase& src,  const ImageBase& dst);
+		void copy(const SrcCopyImage& src,  const DstCopyImage& dst);
+		void blit(const SrcCopyImage& src,  const DstCopyImage& dst);
 
 		// never use directly, needed for internal work and image loading
 		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);

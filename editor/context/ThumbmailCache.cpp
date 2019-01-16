@@ -34,10 +34,18 @@ ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size) :
 	view(image) {
 }
 
+ThumbmailCache::SceneData::SceneData(DevicePtr dptr, const AssetPtr<StaticMesh>& mesh)
+	: view(scene) {
+
+	scene.static_meshes() << std::make_unique<StaticMeshInstance>(mesh, dptr->default_resources()[DefaultResources::BasicMaterial]);
+	view.camera().set_view(math::look_at(math::Vec3(mesh->radius() * 1.5f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
+}
+
+
 ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
 	ContextLinked(ctx),
 	_size(size),
-	_scene_view(_scene) {
+	_ibl_data(std::make_shared<IBLData>(device())) {
 }
 
 math::Vec2ui ThumbmailCache::thumbmail_size() const {
@@ -55,42 +63,34 @@ TextureView* ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 	return nullptr;
 }
 
-void ThumbmailCache::render(Thumbmail* out) {
+void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out) {
 	FrameGraph graph(context()->resource_pool());
-	auto gbuffer = render_gbuffer(graph, &_scene_view, out->image.size());
-	auto lighting = render_lighting(graph, gbuffer, nullptr);
+	auto gbuffer = render_gbuffer(graph, &scene.view, out->image.size());
+	auto lighting = render_lighting(graph, gbuffer, _ibl_data);
 	auto tone_mapping = render_tone_mapping(graph, lighting);
 
-	/*FrameGraphImageId output_image = tone_mapping.tone_mapped;
+	FrameGraphImageId output_image = tone_mapping.tone_mapped;
 	{
-		FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
-		builder.add_texture_input(output_image, PipelineStage::FragmentBit);
-		builder.set_render_func([&output, output_image](CmdBufferRecorder& rec, const FrameGraphPass* pass) {
-				auto out = std::make_unique<TextureView>(pass->resources()->image<ImageUsage::TextureBit>(output_image));
-				output = out.get();
-				rec.keep_alive(std::move(out));
+		FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
+		builder.add_copy_src(output_image);
+		builder.set_render_func([out, output_image](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+				recorder.copy(self->resources()->image<ImageUsage::TransferSrcBit>(output_image), out->image);
 			});
 	}
 
 	std::move(graph).render(recorder);
-	recorder.keep_alive(_ibl_data);*/
+	//recorder.keep_alive(_ibl_data);
 }
 
 void ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
-#if 0
-	auto thumb = std::make_unique<Thumbmail>(device(), _size);
+	auto thumbmail = std::make_unique<Thumbmail>(device(), _size);
+	SceneData scene(device(), mesh);
 
-	CmdBufferRecorder rec = (device()->create_disposable_cmd_buffer());
-	RenderingPipeline pipe(_renderer);
-	rec.blit(_renderer->output_image(), thumb->image);
-	pipe.render(rec, FrameToken::create_disposable(thumb->image));
+	CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
+	render(recorder, scene, thumbmail.get());
+	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 
-	/*rec.keep_alive(ScopeExit([this, mesh, th = std::move(thumb)]() mutable { _thumbmails[mesh.id()] = std::move(thumb); }));
-	device()->queue(vk::QueueFlagBits::eGraphics).submit<AsyncSubmit>(std::move(rec));*/
-
-	device()->queue(vk::QueueFlagBits::eGraphics).submit<SyncSubmit>(std::move(rec));
-	_thumbmails[mesh.id()] = std::move(thumb);
-#endif
+	_thumbmails[mesh.id()] = std::move(thumbmail);
 }
 
 

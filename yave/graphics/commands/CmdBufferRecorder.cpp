@@ -290,32 +290,29 @@ void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst)
 	vk_cmd_buffer().copyBuffer(src.vk_buffer(), dst.vk_buffer(), vk::BufferCopy(src.byte_offset(), dst.byte_offset(), src.byte_size()));
 }
 
-/*void CmdBufferRecorder::copy(const ImageBase& src, const ImageBase& dst) {
-	if(src.image_size() != dst.image_size()) {
+void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
+	if(src.size() != dst.size()) {
 		y_fatal("Image size do not match.");
-	}
-	if(src.layers() != dst.layers()) {
-		y_fatal("Image layer count do not match.");
 	}
 
 	auto src_resource = vk::ImageSubresourceLayers()
 		.setAspectMask(src.format().vk_aspect())
 		.setMipLevel(0)
 		.setBaseArrayLayer(0)
-		.setLayerCount(src.layers());
+		.setLayerCount(1);
 	auto dst_resource = vk::ImageSubresourceLayers()
 		.setAspectMask(dst.format().vk_aspect())
 		.setMipLevel(0)
 		.setBaseArrayLayer(0)
-		.setLayerCount(dst.layers());
+		.setLayerCount(1);
 
-	auto extent = vk::Extent3D(src.image_size().x(), src.image_size().y(), src.image_size().z());
+	auto extent = vk::Extent3D(src.size().x(), src.size().y(), 1);
 
 	vk_cmd_buffer().copyImage(src.vk_image(), vk_image_layout(src.usage()),
 							  dst.vk_image(), vk_image_layout(dst.usage()), vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
-}*/
+}
 
-/*void CmdBufferRecorder::blit(const ImageBase& src, const ImageBase& dst) {
+void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
 	vk::ImageBlit blit = vk::ImageBlit()
 			.setSrcSubresource(
 				vk::ImageSubresourceLayers()
@@ -330,7 +327,7 @@ void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst)
 		;
 
 	vk_cmd_buffer().blitImage(src.vk_image(), vk_image_layout(src.usage()), dst.vk_image(), vk_image_layout(dst.usage()), blit, vk::Filter::eLinear);
-}*/
+}
 
 RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
 	check_no_renderpass();

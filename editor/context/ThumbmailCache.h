@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <yave/scene/SceneView.h>
 
+#include <yave/renderer/LightingPass.h>
+
 #include <functional>
 
 namespace editor {
@@ -36,8 +38,15 @@ class ThumbmailCache : public ContextLinked, NonCopyable {
 		struct Thumbmail {
 			Thumbmail(DevicePtr dptr, usize size);
 
-			ColorTextureAttachment image;
+			Image<ImageUsage::ColorBit | ImageUsage::TextureBit | ImageUsage::TransferDstBit> image;
 			TextureView view;
+		};
+
+		struct SceneData : NonMovable {
+			SceneData(DevicePtr dptr, const AssetPtr<StaticMesh>& mesh);
+
+			Scene scene;
+			SceneView view;
 		};
 
 	public:
@@ -50,14 +59,12 @@ class ThumbmailCache : public ContextLinked, NonCopyable {
 		TextureView* get_thumbmail(const AssetPtr<StaticMesh>& mesh);
 
 	private:
-		void render(Thumbmail* out);
+		void render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out);
 		void render_thumbmail(const AssetPtr<StaticMesh>& mesh);
 
 		usize _size;
 
-		Scene _scene;
-		SceneView _scene_view;
-
+		std::shared_ptr<IBLData> _ibl_data;
 		std::unordered_map<AssetId, std::unique_ptr<Thumbmail>> _thumbmails;
 };
 

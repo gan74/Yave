@@ -32,7 +32,7 @@ MemoryInfo::MemoryInfo(ContextPtr cptr) : Widget("Memory info", ImGuiWindowFlags
 }
 
 void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	core::String dump = context()->device()->allocator().dump_info().data();
+	core::String dump = device()->allocator().dump_info().data();
 	ImGui::TextUnformatted(dump.begin(), dump.end());
 }
 

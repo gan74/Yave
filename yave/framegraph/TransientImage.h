@@ -76,7 +76,7 @@ template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class TransientImageView : public ImageView<Usage, Type> {
 	public:
 		TransientImageView(const TransientImage<Type>& image) :
-				ImageView<Usage, Type>(image.device(), image.size(), image.usage(), image.format(), image.vk_view()) {
+				ImageView<Usage, Type>(image.device(), image.size(), image.usage(), image.format(), image.vk_view(), image.vk_image()) {
 
 			if(!ImageView<Usage, Type>::is_compatible(image.usage())) {
 				y_fatal("Invalid image view.");

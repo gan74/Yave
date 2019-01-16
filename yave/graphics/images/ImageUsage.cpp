@@ -31,7 +31,16 @@ static vk::ImageLayout vk_layout(ImageUsage usage) {
 	if((usage & ImageUsage::StorageBit) != ImageUsage::None) {
 		return vk::ImageLayout::eGeneral;
 	}
-	if((usage & ImageUsage::TextureBit) != ImageUsage::None) {
+
+	bool texture = (usage & ImageUsage::TextureBit) != ImageUsage::None;
+	if((usage & ImageUsage::TransferSrcBit) != ImageUsage::None) {
+		return texture ? vk::ImageLayout::eGeneral : vk::ImageLayout::eTransferSrcOptimal;
+	}
+	if((usage & ImageUsage::TransferDstBit) != ImageUsage::None) {
+		return texture ? vk::ImageLayout::eGeneral : vk::ImageLayout::eTransferDstOptimal;
+	}
+
+	if(texture) {
 		return vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
 

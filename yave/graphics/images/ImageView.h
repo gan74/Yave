@@ -42,17 +42,21 @@ class ImageView : public DeviceLinked {
 		ImageView() = default;
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-		ImageView(const Image<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view()) {
+		ImageView(const Image<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
 			static_assert(is_compatible(U));
 		}
 
 		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-		ImageView(const ImageView<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view()) {
+		ImageView(const ImageView<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
 			static_assert(is_compatible(U));
 		}
 
 		vk::ImageView vk_view() const {
 			return _view;
+		}
+
+		vk::Image vk_image() const {
+			return _image;
 		}
 
 		ImageUsage usage() const {
@@ -76,12 +80,13 @@ class ImageView : public DeviceLinked {
 		}
 
 	protected:
-		ImageView(DevicePtr dptr, const size_type& size, ImageUsage usage, ImageFormat format, vk::ImageView view) :
+		ImageView(DevicePtr dptr, const size_type& size, ImageUsage usage, ImageFormat format, vk::ImageView view, vk::Image image) :
 				DeviceLinked(dptr),
 				_size(size),
 				_usage(usage),
 				_format(format),
-				_view(view) {
+				_view(view),
+				_image(image) {
 		}
 
 
@@ -93,6 +98,7 @@ class ImageView : public DeviceLinked {
 		ImageUsage _usage = ImageUsage::None;
 		ImageFormat _format;
 		vk::ImageView _view;
+		vk::Image _image;
 };
 
 using TextureView = ImageView<ImageUsage::TextureBit>;
@@ -104,6 +110,9 @@ using ColorTextureAttachmentView = ImageView<ImageUsage::ColorBit | ImageUsage::
 
 using CubemapView = ImageView<ImageUsage::TextureBit, ImageType::Cube>;
 using CubemapStorageView = ImageView<ImageUsage::StorageBit, ImageType::Cube>;
+
+
+static_assert(sizeof(TextureView) == 5 * 8);
 
 }
 

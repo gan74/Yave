@@ -44,6 +44,9 @@ static vk::AccessFlags vk_layout_access_flags(vk::ImageLayout layout) {
 		case vk::ImageLayout::eTransferDstOptimal:
 			return vk::AccessFlagBits::eTransferWrite;
 
+		case vk::ImageLayout::eTransferSrcOptimal:
+			return vk::AccessFlagBits::eTransferRead;
+
 		case vk::ImageLayout::ePresentSrcKHR:
 			return vk::AccessFlagBits::eMemoryRead;
 

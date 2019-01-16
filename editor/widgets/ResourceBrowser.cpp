@@ -216,6 +216,15 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 					}
 					_force_refresh = true;
 				}
+				if(ImGui::Selectable("Generate thumbmail")) {
+					try {
+						auto name = filesystem()->join(_current->path, _current->name_at(_hovered_index));
+						auto mesh = context()->loader().static_mesh().load(name);
+						context()->thumbmail_cache().get_thumbmail(mesh);
+					} catch(std::exception& e) {
+						log_msg(fmt("Unable to generate thumbmail for asset: %", e.what()), Log::Error);
+					}
+				}
 			}
 
 			ImGui::Separator();
@@ -238,7 +247,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 			}
 			ImGui::Separator();
 			if(ImGui::Selectable("Create material")) {
-				context()->selection().set_selected(context()->device()->default_resources()[DefaultResources::BasicMaterial]);
+				context()->selection().set_selected(device()->default_resources()[DefaultResources::BasicMaterial]);
 			}
 
 			if(FolderAssetStore* store = dynamic_cast<FolderAssetStore*>(&context()->loader().asset_store())) {
