@@ -42,6 +42,7 @@ class DefaultResources : NonCopyable {
 			DeferredLightingComp,
 			SSAOComp,
 			PickingComp,
+			DepthAlphaComp,
 
 			TonemapFrag,
 			BasicFrag,
@@ -64,6 +65,7 @@ class DefaultResources : NonCopyable {
 			DeferredLightingProgram,
 			SSAOProgram,
 			PickingProgram,
+			DepthAlphaProgram,
 
 			MaxComputePrograms
 		};

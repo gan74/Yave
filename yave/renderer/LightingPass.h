@@ -31,6 +31,9 @@ namespace yave {
 class IBLData : public DeviceLinked, NonCopyable {
 	public:
 		IBLData(DevicePtr dptr);
+		IBLData(DevicePtr dptr, const ImageData& envmap_data);
+
+		static IBLData default_data();
 
 		const IBLProbe& envmap() const;
 		TextureView brdf_lut() const;

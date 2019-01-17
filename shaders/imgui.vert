@@ -8,7 +8,7 @@ layout(location = 0) out vec2 v_uv;
 layout(location = 1) out vec4 v_color;
 
 layout(set = 0, binding = 0) uniform sampler2D font_texture;
-layout(set = 1, binding = 0) uniform Data {
+layout(set = 0, binding = 1) uniform Data {
 	vec2 viewport_size;
 } constants;
 

@@ -25,6 +25,8 @@ SOFTWARE.
 #include "MeshImporter.h"
 #include "ImageImporter.h"
 
+#include <y/core/Chrono.h>
+
 namespace editor {
 
 class ResourceBrowser : public Widget, public ContextLinked {
@@ -68,9 +70,17 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		void update_node(DirNode* node);
 		void draw_node(DirNode* node, const core::String& name);
 
+		void set_hovered_index(usize index);
+		bool node_hovered() const;
+
+		bool context_menu_opened() const;
+		void paint_context_menu();
+
 		u32 file_type(const core::String& path) const;
 
-		static constexpr float update_secs = 5.0f;
+		static constexpr auto update_duration = core::Duration::seconds(5.0f);
+		static constexpr auto hover_duration = core::Duration::seconds(0.5f);
+
 		core::Chrono _update_chrono;
 		bool _force_refresh = false;
 
@@ -78,6 +88,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		NotOwner<DirNode*> _current = nullptr;
 
 		usize _hovered_index = usize(-1);
+		core::Chrono _hovered_timer;
 
 
 };

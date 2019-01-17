@@ -1,0 +1,20 @@
+#version 450
+
+#include "yave.glsl"
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(set = 0, binding = 0) uniform sampler2D in_color;
+layout(set = 0, binding = 1) uniform sampler2D in_depth;
+layout(rgba8, set = 0, binding = 2) uniform writeonly image2D out_color;
+
+void main() {
+	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+
+	vec4 color = texelFetch(in_color, coord, 0);
+	float depth = texelFetch(in_depth, coord, 0).x;
+
+	imageStore(out_color, coord, is_OOB(depth) ? vec4(0.0) : color);
+}
+
+

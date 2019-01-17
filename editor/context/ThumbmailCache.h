@@ -38,7 +38,7 @@ class ThumbmailCache : public ContextLinked, NonCopyable {
 		struct Thumbmail {
 			Thumbmail(DevicePtr dptr, usize size);
 
-			Image<ImageUsage::ColorBit | ImageUsage::TextureBit | ImageUsage::TransferDstBit> image;
+			Image<ImageUsage::StorageBit | ImageUsage::TextureBit> image;
 			TextureView view;
 		};
 
@@ -52,7 +52,7 @@ class ThumbmailCache : public ContextLinked, NonCopyable {
 	public:
 		using ThumbmailView = std::reference_wrapper<const TextureView>;
 
-		ThumbmailCache(ContextPtr ctx, usize size = 64);
+		ThumbmailCache(ContextPtr ctx, usize size = 256);
 
 		math::Vec2ui thumbmail_size() const;
 
@@ -60,7 +60,7 @@ class ThumbmailCache : public ContextLinked, NonCopyable {
 
 	private:
 		void render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out);
-		void render_thumbmail(const AssetPtr<StaticMesh>& mesh);
+		TextureView* render_thumbmail(const AssetPtr<StaticMesh>& mesh);
 
 		usize _size;
 

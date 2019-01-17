@@ -42,10 +42,15 @@ ThumbmailCache::SceneData::SceneData(DevicePtr dptr, const AssetPtr<StaticMesh>&
 }
 
 
+static auto load_envmap() {
+	math::Vec4 data(1.0f, 1.0f, 1.0f, 1.0f);
+	return ImageData(math::Vec2ui(1), reinterpret_cast<const u8*>(data.data()), vk::Format::eR32G32B32A32Sfloat);
+}
+
 ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
 	ContextLinked(ctx),
 	_size(size),
-	_ibl_data(std::make_shared<IBLData>(device())) {
+	_ibl_data(std::make_shared<IBLData>(device(), load_envmap())) {
 }
 
 math::Vec2ui ThumbmailCache::thumbmail_size() const {
@@ -58,12 +63,14 @@ TextureView* ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 			return &it->second->view;
 		}
 	} else {
-		render_thumbmail(mesh);
+		return render_thumbmail(mesh);
 	}
 	return nullptr;
 }
 
 void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out) {
+	auto region = recorder.region("ThumbmailCache::render");
+
 	FrameGraph graph(context()->resource_pool());
 	auto gbuffer = render_gbuffer(graph, &scene.view, out->image.size());
 	auto lighting = render_lighting(graph, gbuffer, _ibl_data);
@@ -72,9 +79,11 @@ void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene,
 	FrameGraphImageId output_image = tone_mapping.tone_mapped;
 	{
 		FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
-		builder.add_copy_src(output_image);
-		builder.set_render_func([out, output_image](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-				recorder.copy(self->resources()->image<ImageUsage::TransferSrcBit>(output_image), out->image);
+		builder.add_uniform_input(output_image);
+		builder.add_uniform_input(gbuffer.depth);
+		builder.add_uniform_input(StorageView(out->image));
+		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+				recorder.dispatch_size(device()->default_resources()[DefaultResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
 			});
 	}
 
@@ -82,7 +91,7 @@ void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene,
 	//recorder.keep_alive(_ibl_data);
 }
 
-void ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
+TextureView* ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 	auto thumbmail = std::make_unique<Thumbmail>(device(), _size);
 	SceneData scene(device(), mesh);
 
@@ -90,7 +99,7 @@ void ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 	render(recorder, scene, thumbmail.get());
 	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 
-	_thumbmails[mesh.id()] = std::move(thumbmail);
+	return &(_thumbmails[mesh.id()] = std::move(thumbmail))->view;
 }
 
 

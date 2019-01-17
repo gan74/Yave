@@ -84,36 +84,25 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 		_vertex_buffer(imgui_vertex_buffer_size),
 		_uniform_buffer(device(), 1),
 		_font(device(), load_font()),
-		_font_view(_font),
-		_material(device(), MaterialData()
-			.set_frag_data(device()->default_resources()[DefaultResources::ImguiFrag])
-			.set_vert_data(device()->default_resources()[DefaultResources::ImguiVert])
-			.set_bindings({Binding(_uniform_buffer)})
-			.set_depth_tested(false)
-			.set_culled(false)
-			.set_blended(true)
-		) {
+		_font_view(_font) {
 
 	ImGui::GetIO().Fonts->TexID = &_font_view;
 	setup_style();
 }
 
 const DescriptorSet& ImGuiRenderer::create_descriptor_set(const void* data) {
-	auto tex = reinterpret_cast<const TextureView*>(data);
+	auto tex = data ? reinterpret_cast<const TextureView*>(data) : &_font_view;
 	auto& ds = _descriptor_sets[tex->vk_view()];
 	if(!ds.device()) {
-		ds = DescriptorSet(device(), {Binding(*tex)});
+		ds = DescriptorSet(device(), {Binding(*tex), Binding(_uniform_buffer)});
 	}
 	return ds;
 }
 
 void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* tex) {
 	recorder.bind_buffers(_index_buffer[token], {_vertex_buffer[token]});
-	if(tex) {
-		recorder.bind_material(_material, {create_descriptor_set(tex)});
-	} else {
-		recorder.bind_material(_material);
-	}
+	const auto& material = *device()->default_resources()[DefaultResources::ImguiMaterial];
+	recorder.bind_material(material, {create_descriptor_set(tex)});
 }
 
 void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token) {

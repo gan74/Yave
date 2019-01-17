@@ -44,6 +44,7 @@ class FrameGraphPassBuilder {
 		void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
+		void add_uniform_input(StorageView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(TextureView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(CubemapView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 

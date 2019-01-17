@@ -37,6 +37,8 @@ struct DefaultMaterialData {
 	SpirV frag;
 	SpirV vert;
 	bool depth_tested;
+	bool culled = true;
+	bool blended = false;
 };
 
 static constexpr SpirV compute_spirvs[] = {
@@ -46,13 +48,14 @@ static constexpr SpirV compute_spirvs[] = {
 		SpirV::DeferredLightingComp,
 		SpirV::SSAOComp,
 		SpirV::PickingComp,
+		SpirV::DepthAlphaComp,
 	};
 
 static constexpr DefaultMaterialData material_datas[] = {
 		{SpirV::BasicFrag, SpirV::BasicVert, true},
 		{SpirV::SkinnedFrag, SpirV::SkinnedVert, true},
 		{SpirV::TonemapFrag, SpirV::ScreenVert, false},
-		{SpirV::ImguiFrag, SpirV::ImguiVert, false},
+		{SpirV::ImguiFrag, SpirV::ImguiVert, false, false, true},
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -62,6 +65,7 @@ static constexpr const char* spirv_names[] = {
 		"deferred.comp",
 		"ssao.comp",
 		"picking.comp",
+		"depth_alpha.comp",
 
 		"tonemap.frag",
 		"basic.frag",
@@ -112,6 +116,8 @@ DefaultResources::DefaultResources(DevicePtr dptr) :
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])
 				.set_depth_tested(data.depth_tested)
+				.set_culled(data.culled)
+				.set_blended(data.blended)
 			);
 	}
 }

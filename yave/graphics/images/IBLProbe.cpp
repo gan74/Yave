@@ -115,7 +115,7 @@ static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<Image
 		}
 	}
 
-	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	dptr->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 }
 
 template<ImageType T>

@@ -111,6 +111,10 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_in
 // --------------------------------- External ---------------------------------
 
 #warning external resources are not sync
+void FrameGraphPassBuilder::add_uniform_input(StorageView tex, usize ds_index, PipelineStage) {
+	add_uniform(Binding(tex), ds_index);
+}
+
 void FrameGraphPassBuilder::add_uniform_input(TextureView tex, usize ds_index, PipelineStage) {
 	add_uniform(Binding(tex), ds_index);
 }

@@ -55,7 +55,6 @@ class ImGuiRenderer : public DeviceLinked, NonCopyable {
 
 		Texture _font;
 		TextureView _font_view;
-		Material _material;
 
 		std::unordered_map<VkImageView, DescriptorSet> _descriptor_sets;
 

@@ -49,23 +49,26 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 	return image;
 }
 
-static auto load_envmap(DevicePtr dptr) {
-	ImageData image;
+static auto load_envmap() {
 	try {
-		image = ImageData::deserialized(io::File::open("equirec.yt").or_throw("Unable to open envmap texture."));
+		return ImageData::deserialized(io::File::open("equirec.yt").or_throw("Unable to open envmap texture."));
 	} catch(std::exception& e) {
 		log_msg(e.what(), Log::Error);
+
 		math::Vec4ui data(0xFFFFFFFF);
-		image = ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(data.data()), vk::Format::eR8G8B8A8Unorm);
+		return ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(data.data()), vk::Format::eR8G8B8A8Unorm);
 	}
-	return IBLProbe::from_equirec(Texture(dptr, image));
 }
 
-IBLData::IBLData(DevicePtr dptr) :
+IBLData::IBLData(DevicePtr dptr) : IBLData(dptr, load_envmap()) {
+}
+
+IBLData::IBLData(DevicePtr dptr, const ImageData& envmap_data) :
 		DeviceLinked(dptr),
 		_brdf_lut(create_ibl_lut(dptr)),
-		_envmap(load_envmap(dptr)) {
+		_envmap(IBLProbe::from_equirec(Texture(dptr, envmap_data))) {
 }
+
 
 const IBLProbe& IBLData::envmap() const {
 	return _envmap;
