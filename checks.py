@@ -2,9 +2,12 @@ import sys
 import re
 import os
 
+
 def warn(file, msg):
+	global warn_count
 	#print(re.split(r"[/\\]", file)[-1], ":", msg)
 	print(file, ":", msg)
+	warn_count += 1
 
 def extension(file):
 	return file.split(".")[-1]
@@ -19,7 +22,7 @@ def find_all(a_str, sub):
 		start += len(sub)
 	
 def check_license(content, filename):
-	if not content.strip().startswith("""/*******************************"""):
+	if not content.strip().startswith("""/*******************************\nCopyright"""):
 		warn(filename, "is missing license")
 		
 def check_guards(content, filename):
@@ -36,15 +39,44 @@ def check_guards(content, filename):
 		if "#define " + define in content[end:]:
 			return
 	warn(filename, "is missing include guards")
+	
+	
+def check_rval_getter(content, filename):
+	global try_fix
+	is_getter = re.compile(r"(.*)& [\w+::]*\w+\(.*\) const\s*[;{]")
+	for line in content.split("\n"):
+		line = line.strip()
+		getter = is_getter.match(line)
+		if getter:
+			warn(filename, "reference returning getter (" + line + ") should be const&")
+			if try_fix:
+				index = line.rfind("const")
+				fixed = line[:index] + "const&" + line[index+5:]
+				content = content.replace(line, fixed)
+	return content
 
+#def check_value_types(content, filename):
+#	is_func = re.compile(r"\w+ \w+\((.*)\)\s*[;{]")
+#	for line in content.split("\n"):
+#		line = line.strip()
+#		func = is_func.match(line)
+#		if func:
+#			print(func.group(1))
+#			args = [a.strip() for a in func.group(1).split(",")]
+		
 
 def process(content, filename):
-	check_license(content, filename)
-	check_guards(content, filename)
+	funcs = {check_license, check_guards}
+	for f in funcs:
+		r = f(content, filename)
+		if r is not None:
+			content = r
+	return content
 
 	
-
-projects = {"yave", "y", "editor"}
+try_fix = True
+warn_count = 0
+projects = {"yave", "y", "editor", "ecs"}
 
 for proj in projects:
 	for root, dirs, files in os.walk(proj):
@@ -52,7 +84,15 @@ for proj in projects:
 			if extension(file) not in {"cpp", "h"}:
 				continue
 			fullname = root + "/" + file
+			
 			with open(fullname, "r") as f:
 				content = f.read()
-				# content = content.replace("\\r\\n", "\\n")
-				process(content, fullname)
+				new_content = process(content, fullname)
+				fix = try_fix and new_content != content
+				
+			if fix:
+				print("fixing", fullname)
+				with open(fullname, "w") as f:
+					f.write(new_content)
+print()
+print(warn_count, "warnings")
