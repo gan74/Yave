@@ -39,15 +39,6 @@ class RecordedCmdBuffer : public CmdBufferBase {
 		RecordedCmdBuffer(CmdBufferRecorder&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
 		}
 
-		RecordedCmdBuffer(RecordedCmdBuffer&& other) {
-			swap(other);
-		}
-
-		RecordedCmdBuffer& operator=(RecordedCmdBuffer&& other) {
-			swap(other);
-			return *this;
-		}
-
 	private:
 		friend class CmdBufferRecorder;
 

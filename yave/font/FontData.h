@@ -42,7 +42,6 @@ class FontData : NonCopyable {
 
 	public:
 		FontData() = default;
-		FontData(FontData&& other);
 
 		const ImageData& atlas_data() const;
 

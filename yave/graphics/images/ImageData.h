@@ -35,9 +35,6 @@ class ImageData : NonCopyable {
 	public:
 		ImageData() = default;
 
-		ImageData(ImageData&& other);
-		ImageData& operator=(ImageData&& other);
-
 		usize byte_size(usize mip = 0) const;
 		usize layer_byte_size() const;
 		usize combined_byte_size() const;
@@ -66,8 +63,6 @@ class ImageData : NonCopyable {
 					y_serde_fixed_array(combined_byte_size(), _data.get()))
 
 	private:
-		void swap(ImageData& other);
-
 		math::Vec3ui _size;
 		ImageFormat _format;
 

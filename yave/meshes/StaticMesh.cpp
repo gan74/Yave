@@ -40,22 +40,6 @@ StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
-StaticMesh::StaticMesh(StaticMesh&& other) {
-	swap(other);
-}
-
-StaticMesh& StaticMesh::operator=(StaticMesh&& other) {
-	swap(other);
-	return *this;
-}
-
-void StaticMesh::swap(StaticMesh& other) {
-	std::swap(_triangle_buffer, other._triangle_buffer);
-	std::swap(_vertex_buffer, other._vertex_buffer);
-	std::swap(_indirect_data, other._indirect_data);
-	std::swap(_radius, other._radius);
-}
-
 const TriangleBuffer<>& StaticMesh::triangle_buffer() const {
 	return _triangle_buffer;
 }

@@ -164,9 +164,7 @@ CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
 	return *this;
 }
 
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage) {
-	CmdBufferBase::swap(base);
-
+CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage)  : CmdBufferBase(std::move(base)) {
 	auto info = vk::CommandBufferBeginInfo()
 			.setFlags(cmd_usage(usage))
 		;

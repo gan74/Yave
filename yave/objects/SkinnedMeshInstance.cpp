@@ -35,13 +35,6 @@ SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, cons
 	set_radius(_mesh->radius());
 }
 
-SkinnedMeshInstance::SkinnedMeshInstance(SkinnedMeshInstance&& other) :
-		Renderable(other),
-		_mesh(std::move(other._mesh)),
-		_skeleton(std::move(other._skeleton)),
-		_material(std::move(other._material)) {
-}
-
 void SkinnedMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
 	_skeleton.update();
 

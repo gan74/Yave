@@ -80,21 +80,11 @@ class Functor<Container, Ret(Args...)> {
 		Functor(T func) : _function(std::make_unique<Function<T, Ret, Args...>>(std::move(func))) {
 		}
 
-		Functor(Functor&& other) : _function(nullptr) {
-			std::swap(_function, other._function);
-		}
+		Functor(Functor&&) = default;
+		Functor& operator=(Functor&&) = default;
+		Functor& operator=(const Functor&) = default;
 
 		Functor(const Functor& other) : _function(other._function) {
-		}
-
-		Functor& operator=(Functor&& other) {
-			std::swap(_function, other._function);
-			return *this;
-		}
-
-		Functor& operator=(const Functor& other) {
-			_function = other._function;
-			return *this;
 		}
 
 		bool operator==(const Functor& other) const {

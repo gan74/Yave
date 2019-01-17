@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class ThreadLocalDevice : public DeviceLinked, NonCopyable {
+class ThreadLocalDevice : NonMovable, public DeviceLinked {
 	public:
 		ThreadLocalDevice(DevicePtr dptr);
 

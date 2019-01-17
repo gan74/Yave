@@ -42,9 +42,19 @@ DeviceLinked::DeviceLinked(DevicePtr dev) : _device(dev) {
 DeviceLinked::DeviceLinked(ThreadDevicePtr dev) : DeviceLinked(dev->device()) {
 }
 
+DeviceLinked::DeviceLinked(DeviceLinked&& other) {
+	swap(other);
+}
+
+DeviceLinked& DeviceLinked::operator=(DeviceLinked&& other) {
+	swap(other);
+	return *this;
+}
+
 void DeviceLinked::swap(DeviceLinked& other) {
 	std::swap(_device, other._device);
 }
+
 
 
 
@@ -65,6 +75,15 @@ ThreadDeviceLinked::ThreadDeviceLinked(ThreadDevicePtr dev) : _device(dev) {
 	if(!dev) {
 		y_fatal("Null device.");
 	}
+}
+
+ThreadDeviceLinked::ThreadDeviceLinked(ThreadDeviceLinked&& other) {
+	swap(other);
+}
+
+ThreadDeviceLinked& ThreadDeviceLinked::operator=(ThreadDeviceLinked&& other) {
+	swap(other);
+	return *this;
 }
 
 void ThreadDeviceLinked::swap(ThreadDeviceLinked& other) {

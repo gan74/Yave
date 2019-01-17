@@ -30,17 +30,14 @@ class DescriptorSet : public DescriptorSetBase {
 
 	public:
 		DescriptorSet() = default;
+		DescriptorSet(DescriptorSet&&) = default;
+		DescriptorSet& operator=(DescriptorSet&&) = default;
+
 		DescriptorSet(DevicePtr dptr, core::ArrayView<Binding> bindings);
 
 		~DescriptorSet();
 
-		DescriptorSet(DescriptorSet&& other);
-		DescriptorSet& operator=(DescriptorSet&& other);
-
-
 	protected:
-		void swap(DescriptorSet& other);
-
 		vk::DescriptorPool _pool;
 };
 

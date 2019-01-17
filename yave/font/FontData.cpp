@@ -24,11 +24,6 @@ SOFTWARE.
 
 namespace yave {
 
-FontData::FontData(FontData&& other) {
-	std::swap(_font_atlas, other._font_atlas);
-	std::swap(_chars, other._chars);
-}
-
 const ImageData& FontData::atlas_data() const {
 	return _font_atlas;
 }

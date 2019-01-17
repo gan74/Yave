@@ -42,15 +42,6 @@ SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
-SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) {
-	swap(other);
-}
-
-SkinnedMesh& SkinnedMesh::operator=(SkinnedMesh&& other) {
-	swap(other);
-	return *this;
-}
-
 const TriangleBuffer<>& SkinnedMesh::triangle_buffer() const {
 	return _triangle_buffer;
 }
@@ -69,14 +60,6 @@ const Skeleton& SkinnedMesh::skeleton() const {
 
 float SkinnedMesh::radius() const {
 	return _radius;
-}
-
-void SkinnedMesh::swap(SkinnedMesh& other) {
-	std::swap(_triangle_buffer, other._triangle_buffer);
-	std::swap(_vertex_buffer, other._vertex_buffer);
-	std::swap(_indirect_data, other._indirect_data);
-	std::swap(_skeleton, other._skeleton);
-	std::swap(_radius, other._radius);
 }
 
 }

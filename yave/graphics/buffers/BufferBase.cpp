@@ -94,11 +94,4 @@ vk::DescriptorBufferInfo BufferBase::descriptor_info() const {
 		;
 }
 
-void BufferBase::swap(BufferBase& other) {
-	std::swap(_size, other._size);
-	std::swap(_buffer, other._buffer);
-	std::swap(_usage, other._usage);
-	std::swap(_memory, other._memory);
-}
-
 }

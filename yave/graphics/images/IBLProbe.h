@@ -34,9 +34,6 @@ class IBLProbe : public Cubemap {
 
 		IBLProbe() = default;
 
-		IBLProbe(IBLProbe&& other);
-		IBLProbe& operator=(IBLProbe&& other);
-
 };
 
 }

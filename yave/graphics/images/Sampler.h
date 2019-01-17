@@ -28,22 +28,20 @@ SOFTWARE.
 
 namespace yave {
 
-class Sampler : NonCopyable, public DeviceLinked {
+class Sampler final : NonCopyable, public DeviceLinked {
 
 	public:
 		Sampler() = default;
-		Sampler(DevicePtr dptr);
+		Sampler(Sampler&&) = default;
+		Sampler& operator=(Sampler&&) = default;
 
-		Sampler(Sampler&& other);
-		Sampler& operator=(Sampler&& other);
+		Sampler(DevicePtr dptr);
 
 		~Sampler();
 
 		vk::Sampler vk_sampler() const;
 
 	private:
-		void swap(Sampler& other);
-
 		vk::Sampler _sampler;
 };
 

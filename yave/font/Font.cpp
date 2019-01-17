@@ -39,21 +39,6 @@ Font::Font(DevicePtr dptr, const FontData& data) :
 		_chars(data._chars) {
 }
 
-Font::Font(Font&& other) {
-	swap(other);
-}
-
-Font& Font::operator=(Font&& other) {
-	swap(other);
-	return *this;
-}
-
-void Font::swap(Font& other) {
-	std::swap(_font_atlas, other._font_atlas);
-	std::swap(_quad, other._quad);
-	std::swap(_chars, other._chars);
-}
-
 DevicePtr Font::device() const {
 	return _font_atlas.device();
 }

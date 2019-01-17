@@ -38,14 +38,12 @@ namespace yave {
 
 class RenderPass;
 
-class Material : NonCopyable, public DeviceLinked {
+class Material final : NonCopyable, public DeviceLinked {
 
 	public:
 		static constexpr usize max_compiled_pipelines = 8;
 
 		Material() = default;
-		Material(Material&& other) = default;
-		Material& operator=(Material&& other) = default;
 
 		Material(DevicePtr dptr, MaterialData data);
 		Material(DevicePtr dptr, const BasicMaterialData& data);

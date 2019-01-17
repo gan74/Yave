@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Instance : NonCopyable {
+class Instance : NonMovable {
 	public:
 		Instance(DebugParams debug);
 		~Instance();

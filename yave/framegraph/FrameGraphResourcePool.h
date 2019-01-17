@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-class FrameGraphResourcePool : public DeviceLinked, NonCopyable {
+class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 	public:
 		FrameGraphResourcePool(DevicePtr dptr);
 		~FrameGraphResourcePool();

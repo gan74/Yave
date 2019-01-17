@@ -214,15 +214,4 @@ const DeviceMemory& ImageBase::device_memory() const {
 	return _memory;
 }
 
-void ImageBase::swap(ImageBase& other) {
-	std::swap(_size, other._size);
-	std::swap(_layers, other._layers);
-	std::swap(_mips, other._mips);
-	std::swap(_format, other._format);
-	std::swap(_usage, other._usage);
-	std::swap(_image, other._image);
-	std::swap(_memory, other._memory);
-	std::swap(_view, other._view);
-}
-
 }

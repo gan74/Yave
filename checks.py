@@ -54,6 +54,21 @@ def check_rval_getter(content, filename):
 				fixed = line[:index] + "const&" + line[index+5:]
 				content = content.replace(line, fixed)
 	return content
+	
+def check_default_moves(content, filename):
+	is_move = re.compile(r"(\w+)\(\1&&.+\)\w*[;{]")
+	is_default = re.compile(r"(\w+)\(\1&&\) = default;")
+	for line in content.split("\n"):
+		line = line.strip()
+		move = is_move.match(line)
+		if not move:
+			move = is_default.match(line)
+			
+		if move:
+			if "~" + move.group(1) + "()" not in content:
+				warn(filename, move.group(1) + " has an explicitly declared move ctor but no dtor")
+	
+	
 
 #def check_value_types(content, filename):
 #	is_func = re.compile(r"\w+ \w+\((.*)\)\s*[;{]")
@@ -66,7 +81,7 @@ def check_rval_getter(content, filename):
 		
 
 def process(content, filename):
-	funcs = {check_license, check_guards}
+	funcs = {check_license, check_guards, check_default_moves}
 	for f in funcs:
 		r = f(content, filename)
 		if r is not None:

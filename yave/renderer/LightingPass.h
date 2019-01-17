@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-class IBLData : public DeviceLinked, NonCopyable {
+class IBLData : NonCopyable, public DeviceLinked {
 	public:
 		IBLData(DevicePtr dptr);
 		IBLData(DevicePtr dptr, const ImageData& envmap_data);

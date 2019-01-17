@@ -200,15 +200,4 @@ ShaderModuleBase::~ShaderModuleBase() {
 	destroy(_module);
 }
 
-void ShaderModuleBase::swap(ShaderModuleBase& other) {
-	DeviceLinked::swap(other);
-	std::swap(_module, other._module);
-	std::swap(_type, other._type);
-	std::swap(_bindings, other._bindings);
-	std::swap(_push_constants, other._push_constants);
-	std::swap(_attribs, other._attribs);
-	std::swap(_local_size, other._local_size);
-}
-
-
 }

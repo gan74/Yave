@@ -70,13 +70,13 @@ class Buffer : public BufferBase {
 		template<BufferUsage U, MemoryType M>
 		Buffer(Buffer<U, M>&& other) {
 			static_assert(is_compatible(U, M));
-			swap(other);
+			BufferBase::operator=(other);
 		}
 
 		template<BufferUsage U, MemoryType M>
 		Buffer& operator=(Buffer<U, M>&& other) {
 			static_assert(is_compatible(U, M));
-			swap(other);
+			BufferBase::operator=(other);
 			return *this;
 		}
 };

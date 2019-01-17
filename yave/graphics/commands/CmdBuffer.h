@@ -32,15 +32,6 @@ class CmdBuffer : public CmdBufferBase {
 	public:
 		CmdBuffer() = default;
 
-		CmdBuffer(CmdBuffer&& other) {
-			swap(other);
-		}
-
-		CmdBuffer& operator=(CmdBuffer&& other) {
-			swap(other);
-			return *this;
-		}
-
 	private:
 		friend class CmdBufferPool<Usage>;
 

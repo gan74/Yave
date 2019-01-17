@@ -30,17 +30,16 @@ class DescriptorArray : public DescriptorSetBase {
 
 	public:
 		DescriptorArray() = default;
+		DescriptorArray(DescriptorArray&&) = default;
+		DescriptorArray& operator=(DescriptorArray&&) = default;
+
 		DescriptorArray(DevicePtr dptr, vk::DescriptorType type, usize max_size = -1);
 
 		~DescriptorArray();
 
-		DescriptorArray(DescriptorArray&& other);
-		DescriptorArray& operator=(DescriptorArray&& other);
-
 		usize capacity() const;
 
 		void set(usize index, const Binding& binding);
-
 
 		auto operator[](usize i) {
 			class Ref {
@@ -61,8 +60,6 @@ class DescriptorArray : public DescriptorSetBase {
 		}
 
 	protected:
-		void swap(DescriptorArray& other);
-
 		vk::DescriptorType _type;
 		vk::DescriptorPool _pool;
 		usize _max_elements;

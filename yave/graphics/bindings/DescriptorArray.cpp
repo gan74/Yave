@@ -99,26 +99,9 @@ DescriptorArray::~DescriptorArray() {
 	destroy(_pool);
 }
 
-DescriptorArray::DescriptorArray(DescriptorArray&& other) {
-	swap(other);
-}
-
-DescriptorArray& DescriptorArray::operator=(DescriptorArray&& other) {
-	swap(other);
-	return *this;
-}
-
-void DescriptorArray::swap(DescriptorArray& other) {
-	DescriptorSetBase::swap(other);
-	std::swap(_type, other._type);
-	std::swap(_pool, other._pool);
-	std::swap(_max_elements, other._max_elements);
-}
-
 usize DescriptorArray::capacity() const {
 	return _max_elements;
 }
-
 
 void DescriptorArray::set(usize index, const Binding& binding) {
 	if(binding.vk_descriptor_type() != _type) {

@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace editor {
 
-class Ui : public ContextLinked, NonCopyable {
+class Ui : NonCopyable, public ContextLinked {
 	public:
 		Ui(ContextPtr ctx);
 		~Ui();

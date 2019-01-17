@@ -41,10 +41,8 @@ class Scene : NonCopyable {
 		using Ptr = std::unique_ptr<T>;
 
 		Scene() = default;
-		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
 
-		Scene(Scene&& other);
-		Scene& operator=(Scene&& other);
+		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
 
 		static Scene deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader, const AssetPtr<Material>& default_material);
 		void serialize(io::WriterRef writer) const;
@@ -75,8 +73,6 @@ class Scene : NonCopyable {
 		}
 
 	private:
-		void swap(Scene& other);
-
 		core::Vector<Ptr<StaticMeshInstance>> _statics;
 		core::Vector<Ptr<Renderable>> _renderables;
 		core::Vector<Ptr<Light>> _lights;

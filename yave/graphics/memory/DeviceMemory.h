@@ -32,9 +32,11 @@ class DeviceMemoryHeapBase;
 class DeviceMemory : NonCopyable, public DeviceLinked {
 
 	public:
+		DeviceMemory() = default;
+
 		DeviceMemory(DeviceMemoryHeapBase* heap, vk::DeviceMemory memory, usize offset, usize size);
 		DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size);
-		DeviceMemory() = default;
+
 		~DeviceMemory();
 
 		DeviceMemory(DeviceMemory&& other);

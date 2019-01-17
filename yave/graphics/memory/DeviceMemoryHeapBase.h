@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-class DeviceMemoryHeapBase : NonCopyable, public DeviceLinked {
+class DeviceMemoryHeapBase : NonMovable, public DeviceLinked {
 	public:
 		virtual ~DeviceMemoryHeapBase() {
 		}

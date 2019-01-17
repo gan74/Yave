@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 
 template<ImageType Type = ImageType::TwoD>
-class TransientImage : public ImageBase {
+class TransientImage final : public ImageBase {
 
 	static constexpr bool is_3d = Type == ImageType::ThreeD;
 
@@ -47,23 +47,17 @@ class TransientImage : public ImageBase {
 		TransientImage(DevicePtr dptr, ImageFormat format, ImageUsage usage, const size_type& image_size) : ImageBase(dptr, format, usage, to_3d_size(image_size)) {
 		}
 
-		TransientImage(TransientImage&& other) {
-			swap(other);
-		}
+		TransientImage(TransientImage&&) = default;
+		TransientImage& operator=(TransientImage&&) = default;
 
 		template<ImageUsage U>
 		TransientImage(Image<U, Type>&& other) {
-			swap(other);
-		}
-
-		TransientImage& operator=(TransientImage&& other) {
-			swap(other);
-			return *this;
+			ImageBase::operator=(other);
 		}
 
 		template<ImageUsage U>
 		TransientImage& operator=(Image<U, Type>&& other) {
-			swap(other);
+			ImageBase::operator=(other);
 			return *this;
 		}
 
@@ -73,7 +67,7 @@ class TransientImage : public ImageBase {
 };
 
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
-class TransientImageView : public ImageView<Usage, Type> {
+class TransientImageView final : public ImageView<Usage, Type> {
 	public:
 		TransientImageView(const TransientImage<Type>& image) :
 				ImageView<Usage, Type>(image.device(), image.size(), image.usage(), image.format(), image.vk_view(), image.vk_image()) {

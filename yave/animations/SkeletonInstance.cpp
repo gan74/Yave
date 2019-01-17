@@ -34,25 +34,6 @@ SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
 	flush_data();
 }
 
-SkeletonInstance::SkeletonInstance(SkeletonInstance&& other) {
-	swap(other);
-}
-
-SkeletonInstance& SkeletonInstance::operator=(SkeletonInstance&& other) {
-	swap(other);
-	return *this;
-}
-
-void SkeletonInstance::swap(SkeletonInstance& other) {
-	std::swap(_skeleton, other._skeleton);
-	std::swap(_bone_transforms, other._bone_transforms);
-	std::swap(_bone_transform_buffer, other._bone_transform_buffer);
-	std::swap(_descriptor_set, other._descriptor_set);
-	std::swap(_animation, other._animation);
-	std::swap(_anim_timer, other._anim_timer);
-}
-
-
 void SkeletonInstance::animate(const AssetPtr<Animation>& anim) {
 	_animation = anim;
 	_anim_timer.reset();

@@ -42,10 +42,6 @@ class Font : NonCopyable {
 		Font() = default;
 		Font(DevicePtr dptr, const FontData& data);
 
-		Font(Font&& other);
-		Font& operator=(Font&& other);
-
-
 		CharData char_data(u32 c) const;
 
 		const Texture& char_atlas() const;
@@ -54,8 +50,6 @@ class Font : NonCopyable {
 		DevicePtr device() const;
 
 	private:
-		void swap(Font& other);
-
 		Texture _font_atlas;
 		StaticMesh _quad;
 

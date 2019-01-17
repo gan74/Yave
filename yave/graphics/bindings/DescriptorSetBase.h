@@ -22,18 +22,14 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_BINDINGS_DESCRIPTORSETBASE_H
 #define YAVE_GRAPHICS_BINDINGS_DESCRIPTORSETBASE_H
 
-
 #include "Binding.h"
 
 namespace yave {
 
-class DescriptorSetBase : public DeviceLinked, NonCopyable {
+class DescriptorSetBase : NonCopyable, public DeviceLinked {
 
 	public:
 		DescriptorSetBase() = default;
-
-		DescriptorSetBase(DescriptorSetBase&&) = delete;
-		DescriptorSetBase& operator=(DescriptorSetBase&&) = delete;
 
 		vk::DescriptorSet vk_descriptor_set() const {
 			return _set;
@@ -43,10 +39,8 @@ class DescriptorSetBase : public DeviceLinked, NonCopyable {
 		DescriptorSetBase(DevicePtr dptr) : DeviceLinked(dptr) {
 		}
 
-		void swap(DescriptorSetBase& other) {
-			DeviceLinked::swap(other);
-			std::swap(_set, other._set);
-		}
+		DescriptorSetBase(DescriptorSetBase&&) = default;
+		DescriptorSetBase& operator=(DescriptorSetBase&&) = default;
 
 		vk::DescriptorSet _set;
 };

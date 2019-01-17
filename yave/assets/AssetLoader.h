@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-class AssetLoaderBase : public DeviceLinked, NonCopyable {
+class AssetLoaderBase : NonCopyable, public DeviceLinked {
 	public:
 		AssetLoaderBase(DevicePtr dptr, const std::shared_ptr<AssetStore>& store);
 

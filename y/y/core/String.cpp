@@ -95,7 +95,11 @@ String::String(const String& str) {
 	}
 }
 
+
 String::String(String&& str) {
+	static_assert(std::is_trivially_destructible_v<ShortData>);
+	static_assert(std::is_trivially_destructible_v<LongData>);
+
 	if(str.is_long()) {
 		new(&_l) LongData(std::move(str._l));
 	} else {

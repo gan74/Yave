@@ -31,8 +31,8 @@ namespace y {
 
 struct NonCopyable {
 	constexpr NonCopyable() {}
-	NonCopyable(const NonCopyable &) = delete;
-	NonCopyable& operator=(const NonCopyable &) = delete;
+	NonCopyable(const NonCopyable&) = delete;
+	NonCopyable& operator=(const NonCopyable&) = delete;
 
 	NonCopyable(NonCopyable&&) = default;
 	NonCopyable& operator=(NonCopyable&&) = default;
@@ -40,8 +40,8 @@ struct NonCopyable {
 
 struct NonMovable {
 	constexpr NonMovable() {}
-	NonMovable(const NonMovable &) = delete;
-	NonMovable& operator=(const NonMovable &) = delete;
+	NonMovable(const NonMovable&) = delete;
+	NonMovable& operator=(const NonMovable&) = delete;
 
 	NonMovable(NonMovable&&) = delete;
 };

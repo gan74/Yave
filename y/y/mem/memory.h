@@ -71,7 +71,6 @@ class StdAllocatorAdapter : NonCopyable {
 		using size_type = usize;
 
 		StdAllocatorAdapter() = default;
-		StdAllocatorAdapter(StdAllocatorAdapter&&) = default;
 
 		StdAllocatorAdapter(Allocator&& a) : _allocator(std::move(a)) {
 		}

@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace editor {
 
-class ImGuiRenderer : public DeviceLinked, NonCopyable {
+class ImGuiRenderer : NonCopyable, public DeviceLinked {
 
 	struct Vertex {
 		math::Vec2 pos;

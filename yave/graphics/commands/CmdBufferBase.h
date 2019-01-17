@@ -37,7 +37,7 @@ struct CmdBufferBase : NonCopyable {
 
 	protected:
 		CmdBufferBase() = default;
-		CmdBufferBase(std::shared_ptr<CmdBufferDataProxy>&& proxy);
+		CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& proxy);
 		CmdBufferBase(CmdBufferBase&& other);
 
 		void swap(CmdBufferBase& other);
@@ -48,7 +48,7 @@ struct CmdBufferBase : NonCopyable {
 		}
 
 	private:
-		std::shared_ptr<CmdBufferDataProxy> _proxy;
+		std::unique_ptr<CmdBufferDataProxy> _proxy;
 };
 
 }

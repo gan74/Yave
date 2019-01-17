@@ -131,8 +131,6 @@ class ShaderModuleBase : NonCopyable, public DeviceLinked {
 
 		ShaderModuleBase(DevicePtr dptr, const SpirVData& data);
 
-		void swap(ShaderModuleBase& other);
-
 	private:
 		vk::ShaderModule _module;
 		ShaderType _type = ShaderType::None;

@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-class TransientBuffer : public BufferBase {
+class TransientBuffer final : public BufferBase {
 
 	static constexpr MemoryType memory_type(MemoryType memory, BufferUsage usage) {
 		return memory == MemoryType::DontCare ? prefered_memory_type(usage) : memory;
@@ -41,23 +41,11 @@ class TransientBuffer : public BufferBase {
 			_memory_type = type;
 		}
 
-		TransientBuffer(TransientBuffer&& other) {
-			swap(other);
-		}
-
-		TransientBuffer& operator=(TransientBuffer&& other) {
-			swap(other);
-			return *this;
-		}
+		TransientBuffer(TransientBuffer&&) = default;
+		TransientBuffer& operator=(TransientBuffer&&) = default;
 
 		MemoryType memory_type() const {
 			return _memory_type;
-		}
-
-	protected:
-		void swap(TransientBuffer& other) {
-			BufferBase::swap(other);
-			std::swap(_memory_type, other._memory_type);
 		}
 
 	private:
@@ -66,7 +54,7 @@ class TransientBuffer : public BufferBase {
 
 
 template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare>
-class TransientSubBuffer : public SubBuffer<Usage, Memory> {
+class TransientSubBuffer final : public SubBuffer<Usage, Memory> {
 	public:
 		TransientSubBuffer(const TransientBuffer& buffer) : SubBuffer<Usage, Memory>(buffer) {
 			y_debug_assert(this->byte_size() == buffer.byte_size() && this->byte_offset() == 0);

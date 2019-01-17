@@ -24,15 +24,6 @@ SOFTWARE.
 
 namespace yave {
 
-ImageData::ImageData(ImageData&& other) {
-	swap(other);
-}
-
-ImageData& ImageData::operator=(ImageData&& other) {
-	swap(other);
-	return *this;
-}
-
 usize ImageData::byte_size(usize mip) const {
 	auto s = size(mip);
 	return (s.x() * s.y() * _format.bit_per_pixel()) / 8;
@@ -80,14 +71,6 @@ usize ImageData::data_offset(usize layer, usize mip) const {
 
 const u8* ImageData::data(usize layer, usize mip) const {
 	return _data.get() + data_offset(layer, mip);
-}
-
-void ImageData::swap(ImageData& other) {
-	std::swap(_size, other._size);
-	std::swap(_layers, other._layers);
-	std::swap(_mips, other._mips);
-	std::swap(_format, other._format);
-	std::swap(_data, other._data);
 }
 
 ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips) :

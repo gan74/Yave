@@ -75,23 +75,6 @@ ComputeProgram::~ComputeProgram() {
 	destroy(_pipeline);
 }
 
-ComputeProgram::ComputeProgram(ComputeProgram&& other) {
-	swap(other);
-}
-
-ComputeProgram& ComputeProgram::operator=(ComputeProgram&& other) {
-	swap(other);
-	return *this;
-}
-
-void ComputeProgram::swap(ComputeProgram& other) {
-	DeviceLinked::swap(other);
-	std::swap(_layout, other._layout);
-	std::swap(_pipeline, other._pipeline);
-	std::swap(_local_size, other._local_size);
-}
-
-
 const math::Vec3ui& ComputeProgram::local_size() const {
 	return _local_size;
 }

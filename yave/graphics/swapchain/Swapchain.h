@@ -40,30 +40,25 @@ static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | Ima
 
 using SwapchainImageView = ImageView<SwapchainImageUsage>;
 
-class SwapchainImage : public Image<SwapchainImageUsage> {
-	public:
-		SwapchainImage(SwapchainImage&& other) {
-			swap(other);
-		}
 
-		SwapchainImage& operator=(SwapchainImage&& other) {
-			swap(other);
-			return *this;
-		}
-
-		~SwapchainImage() {
-			// prevents images to delete their vk::Image, this is already done by the swapchain
-#warning swapping a swapchain image with a normal image will break
-			_image = vk::Image();
-		}
-
-	private:
-		friend class Swapchain;
-
-		SwapchainImage() = default;
-};
 
 class Swapchain : NonCopyable, public DeviceLinked {
+
+	class SwapchainImage : public Image<SwapchainImageUsage> {
+		public:
+			SwapchainImage(SwapchainImage&&) = default;
+			SwapchainImage& operator=(SwapchainImage&&) = default;
+
+			~SwapchainImage() {
+				// prevents images to delete their vk::Image, this is already done by the swapchain
+				_image = vk::Image();
+			}
+
+		private:
+			friend class Swapchain;
+
+			SwapchainImage() = default;
+	};
 
 	public:
 #ifdef Y_OS_WIN

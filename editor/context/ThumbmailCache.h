@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace editor {
 
-class ThumbmailCache : public ContextLinked, NonCopyable {
+class ThumbmailCache : NonCopyable, public ContextLinked {
 
 		struct Thumbmail {
 			Thumbmail(DevicePtr dptr, usize size);

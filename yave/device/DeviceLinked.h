@@ -38,10 +38,17 @@ class DeviceLinked {
 		DeviceLinked();
 		DeviceLinked(DevicePtr dev);
 		DeviceLinked(ThreadDevicePtr dev);
+
+		DeviceLinked(const DeviceLinked&) = default;
+		DeviceLinked& operator=(const DeviceLinked&) = default;
+
+		DeviceLinked(DeviceLinked&& other);
+		DeviceLinked& operator=(DeviceLinked&& other);
+
 		void swap(DeviceLinked& other);
 
 	private:
-		DevicePtr _device;
+		DevicePtr _device = nullptr;
 };
 
 class ThreadDeviceLinked {
@@ -55,10 +62,17 @@ class ThreadDeviceLinked {
 	protected:
 		ThreadDeviceLinked();
 		ThreadDeviceLinked(ThreadDevicePtr dev);
+
+		ThreadDeviceLinked(const ThreadDeviceLinked&) = default;
+		ThreadDeviceLinked& operator=(const ThreadDeviceLinked&) = default;
+
+		ThreadDeviceLinked(ThreadDeviceLinked&& other);
+		ThreadDeviceLinked& operator=(ThreadDeviceLinked&& other);
+
 		void swap(ThreadDeviceLinked& other);
 
 	private:
-		ThreadDevicePtr _device;
+		ThreadDevicePtr _device = nullptr;
 };
 
 }

@@ -42,7 +42,7 @@ SOFTWARE.
 
 namespace editor {
 
-class EditorContext : public DeviceLinked, NonCopyable {
+class EditorContext : NonMovable, public DeviceLinked {
 
 	public:
 		EditorContext(DevicePtr dptr);

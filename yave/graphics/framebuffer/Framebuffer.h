@@ -30,16 +30,15 @@ SOFTWARE.
 
 namespace yave {
 
-class Framebuffer : NonCopyable, public DeviceLinked {
+class Framebuffer final : NonCopyable, public DeviceLinked {
 
 	public:
 		Framebuffer() = default;
+		Framebuffer(Framebuffer&&) = default;
+		Framebuffer& operator=(Framebuffer&&) = default;
 
 		Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> colors = {});
 		Framebuffer(DevicePtr dptr, core::ArrayView<ColorAttachmentView> colors);
-
-		Framebuffer(Framebuffer&& other);
-		Framebuffer& operator=(Framebuffer&& other);
 
 		~Framebuffer();
 
@@ -56,8 +55,6 @@ class Framebuffer : NonCopyable, public DeviceLinked {
 		}
 
 	private:
-		void swap(Framebuffer& other);
-
 		math::Vec2ui _size;
 		usize _attachment_count = 0;
 

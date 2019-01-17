@@ -39,17 +39,6 @@ class ShaderModule : public ShaderModuleBase {
 				y_fatal("Spirv data doesn't match ShaderModule Type.");
 			}
 		}
-
-		ShaderModule(ShaderModule&& other) {
-			swap(other);
-		}
-
-		ShaderModule& operator=(ShaderModule&& other) {
-			swap(other);
-		}
-
-	private:
-
 };
 
 using FragmentShader = ShaderModule<ShaderType::Fragment>;

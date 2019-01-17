@@ -100,19 +100,4 @@ DescriptorSet::~DescriptorSet() {
 	destroy(_pool);
 }
 
-DescriptorSet::DescriptorSet(DescriptorSet&& other) {
-	swap(other);
-}
-
-DescriptorSet& DescriptorSet::operator=(DescriptorSet&& other) {
-	swap(other);
-	return *this;
-}
-
-void DescriptorSet::swap(DescriptorSet& other) {
-	DescriptorSetBase::swap(other);
-	std::swap(_pool, other._pool);
-}
-
-
 }

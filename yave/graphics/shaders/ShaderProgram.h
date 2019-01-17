@@ -28,12 +28,13 @@ SOFTWARE.
 
 namespace yave {
 
-class ShaderProgram : NonCopyable, public DeviceLinked {
+class ShaderProgram final : NonCopyable, public DeviceLinked {
 
 	public:
 		static constexpr u32 PerInstanceLocation = 8;
 
 		ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom);
+
 
 		core::ArrayView<vk::PipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
 		core::ArrayView<vk::DescriptorSetLayout> descriptor_layouts() const;

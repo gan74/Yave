@@ -78,7 +78,7 @@ class PushConstant : NonCopyable {
 		usize _size = 0;
 };
 
-struct CmdBufferRegion : public DeviceLinked, NonCopyable {
+struct CmdBufferRegion : NonCopyable, public DeviceLinked {
 	public:
 		CmdBufferRegion() = default;
 

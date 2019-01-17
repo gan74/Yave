@@ -26,15 +26,14 @@ SOFTWARE.
 
 namespace yave {
 
-class ComputeProgram : NonCopyable, public DeviceLinked {
+class ComputeProgram final : NonCopyable, public DeviceLinked {
 	public:
 		ComputeProgram() = default;
+		ComputeProgram(ComputeProgram&&) = default;
+		ComputeProgram& operator=(ComputeProgram&&) = default;
 
 		explicit ComputeProgram(const ComputeShader& comp, const SpecializationData& data = SpecializationData());
 		~ComputeProgram();
-
-		ComputeProgram(ComputeProgram&& other);
-		ComputeProgram& operator=(ComputeProgram&& other);
 
 		const math::Vec3ui& local_size() const;
 
@@ -42,8 +41,6 @@ class ComputeProgram : NonCopyable, public DeviceLinked {
 		vk::PipelineLayout vk_pipeline_layout() const;
 
 	private:
-		void swap(ComputeProgram& other);
-
 		vk::PipelineLayout _layout;
 		vk::Pipeline _pipeline;
 		math::Vec3ui _local_size;

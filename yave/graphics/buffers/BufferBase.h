@@ -31,6 +31,8 @@ namespace yave {
 class BufferBase : NonCopyable {
 
 	public:
+		~BufferBase();
+
 		DevicePtr device() const;
 
 		BufferUsage usage() const;
@@ -41,12 +43,11 @@ class BufferBase : NonCopyable {
 
 		vk::Buffer vk_buffer() const;
 
-		~BufferBase();
-
 	protected:
-		void swap(BufferBase& other);
-
 		BufferBase() = default;
+		BufferBase(BufferBase&&) = default;
+		BufferBase& operator=(BufferBase&&) = default;
+
 		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type);
 
 	private:

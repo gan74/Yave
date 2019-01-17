@@ -84,23 +84,6 @@ Framebuffer::~Framebuffer() {
 	destroy(_framebuffer);
 }
 
-Framebuffer::Framebuffer(Framebuffer&& other) {
-	swap(other);
-}
-
-Framebuffer& Framebuffer::operator=(Framebuffer&& other) {
-	swap(other);
-	return *this;
-}
-
-void Framebuffer::swap(Framebuffer& other) {
-	DeviceLinked::swap(other);
-	std::swap(_size, other._size);
-	std::swap(_attachment_count, other._attachment_count);
-	std::swap(_render_pass, other._render_pass);
-	std::swap(_framebuffer, other._framebuffer);
-}
-
 const math::Vec2ui& Framebuffer::size() const {
 	return _size;
 }

@@ -38,10 +38,8 @@ class SkeletonInstance {
 	public:
 		SkeletonInstance() = default;
 
+		// this seems unsafe...
 		SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton);
-
-		SkeletonInstance(SkeletonInstance&& other);
-		SkeletonInstance& operator=(SkeletonInstance&& other);
 
 		void animate(const AssetPtr<Animation>& anim);
 
@@ -52,8 +50,6 @@ class SkeletonInstance {
 		}
 
 	private:
-		void swap(SkeletonInstance& other);
-
 		void flush_data();
 
 		const Skeleton* _skeleton = nullptr;

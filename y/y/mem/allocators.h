@@ -71,8 +71,7 @@ class PolymorphicAllocatorContainer : NonCopyable {
 		PolymorphicAllocatorContainer(NotOwner<PolymorphicAllocatorBase*> allocator) : _inner(allocator) {
 		}
 
-		PolymorphicAllocatorContainer(PolymorphicAllocatorContainer&& other) : _inner(other._inner) {
-		}
+		PolymorphicAllocatorContainer(PolymorphicAllocatorContainer&&) = default;
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
 			return _inner->allocate(size);
@@ -111,7 +110,6 @@ template<typename Allocator>
 class ThreadSafeAllocator : NonCopyable {
 	public:
 		ThreadSafeAllocator() = default;
-		ThreadSafeAllocator(ThreadSafeAllocator&&) = default;
 
 		ThreadSafeAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}
@@ -137,7 +135,6 @@ class SegregatorAllocator : NonCopyable {
 		static constexpr usize max_size = align_up_to_max(Threshold);
 
 		SegregatorAllocator() = default;
-		SegregatorAllocator(SegregatorAllocator&&) = default;
 
 		SegregatorAllocator(Small&& a) : _small(std::move(a)) {
 		}
@@ -174,7 +171,6 @@ class ElectricFenceAllocator : NonCopyable {
 		static constexpr u8 fence = 0xFE;
 
 		ElectricFenceAllocator() = default;
-		ElectricFenceAllocator(ElectricFenceAllocator&&) = default;
 
 		ElectricFenceAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}
@@ -217,11 +213,6 @@ class LeakDetectorAllocator : NonCopyable {
 		static constexpr usize max_size = Allocator::max_size;
 
 		LeakDetectorAllocator() = default;
-
-		LeakDetectorAllocator(LeakDetectorAllocator&& other) {
-			std::swap(_allocator, other._allocator);
-			std::swap(_alive, other._alive);
-		}
 
 		LeakDetectorAllocator(Allocator&& a) : _allocator(std::move(a)) {
 		}

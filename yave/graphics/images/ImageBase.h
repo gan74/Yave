@@ -33,6 +33,8 @@ namespace yave {
 class ImageBase : NonCopyable {
 
 	public:
+		~ImageBase();
+
 		DevicePtr device() const;
 
 		vk::Image vk_image() const;
@@ -48,16 +50,14 @@ class ImageBase : NonCopyable {
 		ImageFormat format() const;
 		ImageUsage usage() const;
 
-		~ImageBase();
-
 	protected:
 		ImageBase() = default;
+		ImageBase(ImageBase&&) = default;
+		ImageBase& operator=(ImageBase&&) = default;
 
 		ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1);
 		ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data);
 
-
-		void swap(ImageBase& other);
 
 		math::Vec3ui _size;
 		u32 _layers = 1;

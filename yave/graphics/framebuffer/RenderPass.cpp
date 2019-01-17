@@ -185,22 +185,6 @@ RenderPass::~RenderPass() {
 	destroy(_render_pass);
 }
 
-RenderPass::RenderPass(RenderPass&& other) {
-	swap(other);
-}
-
-RenderPass& RenderPass::operator=(RenderPass&& other) {
-	swap(other);
-	return *this;
-}
-
-void RenderPass::swap(RenderPass& other) {
-	DeviceLinked::swap(other);
-	std::swap(_attachment_count, other._attachment_count);
-	std::swap(_render_pass, other._render_pass);
-	std::swap(_layout, other._layout);
-}
-
 vk::RenderPass RenderPass::vk_render_pass() const {
 	return _render_pass;
 }

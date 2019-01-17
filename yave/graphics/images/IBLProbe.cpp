@@ -156,8 +156,9 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 
 	ProbeBase probe(cube.device(), probe_size(cube), cube.format());
 	compute_probe(probe, cube);
+
 	IBLProbe final;
-	final.swap(probe);
+	final.ImageBase::operator=(std::move(probe));
 	return final;
 }
 
@@ -166,18 +167,10 @@ IBLProbe IBLProbe::from_equirec(const Texture& equirec) {
 
 	ProbeBase probe(equirec.device(), probe_size(equirec), equirec.format());
 	compute_probe(probe, equirec);
+
 	IBLProbe final;
-	final.swap(probe);
+	final.ImageBase::operator=(std::move(probe));
 	return final;
-}
-
-IBLProbe::IBLProbe(IBLProbe&& other) {
-	swap(other);
-}
-
-IBLProbe& IBLProbe::operator=(IBLProbe&& other) {
-	swap(other);
-	return *this;
 }
 
 }

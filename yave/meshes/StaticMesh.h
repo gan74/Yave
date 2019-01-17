@@ -37,9 +37,6 @@ class StaticMesh : NonCopyable {
 
 		StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
 
-		StaticMesh(StaticMesh&& other);
-		StaticMesh& operator=(StaticMesh&& other);
-
 		const TriangleBuffer<>& triangle_buffer() const;
 		const VertexBuffer<>& vertex_buffer() const;
 		const vk::DrawIndexedIndirectCommand& indirect_data() const;
@@ -47,8 +44,6 @@ class StaticMesh : NonCopyable {
 		float radius() const;
 
 	private:
-		void swap(StaticMesh& other);
-
 		TriangleBuffer<> _triangle_buffer;
 		VertexBuffer<> _vertex_buffer;
 		vk::DrawIndexedIndirectCommand _indirect_data;

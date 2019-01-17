@@ -37,9 +37,6 @@ class SkinnedMesh : NonCopyable {
 
 		SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);
 
-		SkinnedMesh(SkinnedMesh&& other);
-		SkinnedMesh& operator=(SkinnedMesh&& other);
-
 		const TriangleBuffer<>& triangle_buffer() const;
 		const SkinnedVertexBuffer<>& vertex_buffer() const;
 
@@ -56,10 +53,6 @@ class SkinnedMesh : NonCopyable {
 		Skeleton _skeleton;
 
 		float _radius;
-
-
-		void swap(SkinnedMesh& other);
-
 };
 
 }

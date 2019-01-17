@@ -68,11 +68,11 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		};
 
 		RenderPass() = default;
+		RenderPass(RenderPass&&) = default;
+		RenderPass& operator=(RenderPass&&) = default;
+
 		RenderPass(DevicePtr dptr, ImageData depth, core::ArrayView<ImageData> colors);
 		RenderPass(DevicePtr dptr, core::ArrayView<ImageData> colors);
-
-		RenderPass(RenderPass&& other);
-		RenderPass& operator=(RenderPass&& other);
 
 		~RenderPass();
 
@@ -84,8 +84,6 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		vk::RenderPass vk_render_pass() const;
 
 	private:
-		void swap(RenderPass& other);
-
 		usize _attachment_count = 0;
 		vk::RenderPass _render_pass;
 

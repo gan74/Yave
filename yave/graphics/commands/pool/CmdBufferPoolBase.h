@@ -48,7 +48,7 @@ class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
 		CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);
 
 		void release(CmdBufferData&& data);
-		std::shared_ptr<CmdBufferDataProxy> alloc();
+		std::unique_ptr<CmdBufferDataProxy> alloc();
 
 		void join_all();
 

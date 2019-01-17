@@ -39,7 +39,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Device : NonCopyable {
+class Device : NonMovable {
 
 	struct ScopedDevice {
 		~ScopedDevice();

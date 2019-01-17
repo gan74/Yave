@@ -90,9 +90,6 @@ struct Ok<void> : NonCopyable {
 	Ok() {
 	}
 
-	Ok(Ok&&) {
-	}
-
 	void get() const {
 	}
 };
@@ -101,9 +98,6 @@ struct Ok<void> : NonCopyable {
 template<>
 struct Err<void> : NonCopyable {
 	Err() {
-	}
-
-	Err(Err&&) {
 	}
 
 	void get() const {

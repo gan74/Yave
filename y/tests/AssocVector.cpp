@@ -40,6 +40,9 @@ struct NonCopyableValue : NonCopyable {
 		other.value = -2;
 	}
 
+	~NonCopyableValue() {
+	}
+
 	NonCopyableValue &operator=(NonCopyableValue&& other) {
 		value = std::exchange(other.value, -2);
 		return *this;
