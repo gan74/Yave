@@ -69,14 +69,19 @@ void CmdBufferData::swap(CmdBufferData& other) {
 	std::swap(_fence, other._fence);
 	std::swap(_keep_alive, other._keep_alive);
 	std::swap(_pool, other._pool);
+	std::swap(_signal, other._signal);
+	std::swap(_waits, other._waits);
 }
 
 void CmdBufferData::reset() {
-	_keep_alive.clear();
 	if(_fence) {
 		device()->vk_device().resetFences({_fence});
 	}
 	_cmd_buffer.reset(vk::CommandBufferResetFlags());
+
+	_keep_alive.clear();
+	_waits.clear();
+	_signal = Semaphore();
 }
 
 bool CmdBufferData::try_reset() {
@@ -87,13 +92,10 @@ bool CmdBufferData::try_reset() {
 	return true;
 }
 
-CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferDataProxy&& other) {
-	std::swap(_data, other._data);
-}
-
-CmdBufferDataProxy& CmdBufferDataProxy::operator=(CmdBufferDataProxy&& other) {
-	std::swap(_data, other._data);
-	return *this;
+void CmdBufferData::wait_for(const Semaphore& sem) {
+	if(sem.device() && std::find(_waits.begin(), _waits.end(), sem) == _waits.end()) {
+		_waits.emplace_back(sem);
+	}
 }
 
 CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferData&& d) : _data(std::move(d)) {

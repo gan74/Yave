@@ -23,23 +23,25 @@ SOFTWARE.
 #define YAVE_GRAPHICS_COMMANDS_CmdBufferRecorder_H
 
 #include <yave/yave.h>
-#include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/barriers/Barrier.h>
-#include "CmdBuffer.h"
-
-#include <yave/material/GraphicPipeline.h>
-#include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/framebuffer/Viewport.h>
 
+#include "CmdBuffer.h"
 
 namespace yave {
 
 class DescriptorSetBase;
+class Semaphore;
+class ComputeProgram;
+class Framebuffer;
+class Material;
+class GraphicPipeline;
+class RenderPass;
+
 
 namespace detail {
 using DescriptorSetList = core::ArrayView<std::reference_wrapper<const DescriptorSetBase>>;
 }
-
 
 class PushConstant : NonCopyable {
 
@@ -170,6 +172,12 @@ class CmdBufferRecorder : public CmdBufferBase {
 		template<typename T>
 		void keep_alive(T&& t) {
 			CmdBufferBase::keep_alive(y_fwd(t));
+		}
+
+		template<typename T>
+		T wait_for(SemaphoreBox<T>&& t) {
+			CmdBufferBase::wait_for(static_cast<const Semaphore&>(t));
+			return std::move(t._boxed);
 		}
 
 	protected:

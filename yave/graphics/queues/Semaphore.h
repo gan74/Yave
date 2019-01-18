@@ -19,48 +19,80 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_QUEUES_QUEUE_H
-#define YAVE_GRAPHICS_QUEUES_QUEUE_H
+#ifndef YAVE_GRAPHICS_QUEUES_SEMAPHORE_H
+#define YAVE_GRAPHICS_QUEUES_SEMAPHORE_H
 
+#include <yave/device/DeviceLinked.h>
 #include <yave/graphics/vk/vk.h>
-
-#include "Semaphore.h"
-#include "submit.h"
 
 namespace yave {
 
-class Queue : NonCopyable, public DeviceLinked {
+template<typename T>
+class SemaphoreBox;
+
+class Semaphore {
+	class Shared : NonCopyable, public DeviceLinked {
+		public:
+			Shared() = default;
+			Shared(DevicePtr dptr);
+
+			~Shared();
+
+			vk::Semaphore vk_semaphore() const;
+
+		private:
+			vk::Semaphore _semaphore;
+	};
+
 
 	public:
-		Queue() = default;
-		Queue(Queue&&) = default;
-		Queue& operator=(Queue&&) = default;
+		Semaphore() = default;
 
-		~Queue();
+		DevicePtr device() const;
 
-		vk::Queue vk_queue() const;
+		vk::Semaphore vk_semaphore() const;
 
-		void wait() const;
+		bool operator==(const Semaphore& other) const;
 
-		Semaphore submit_sem(RecordedCmdBuffer&& cmd) const;
+		template<typename T>
+		SemaphoreBox<T> box(T&& t) const;
 
-		template<typename SyncPolicy>
-		void submit(RecordedCmdBuffer&& cmd, const SyncPolicy& policy = SyncPolicy()) const {
-			submit_base(cmd);
-			policy(cmd);
+	private:
+		friend class Queue;
+
+		Semaphore(DevicePtr dptr);
+
+	private:
+		std::shared_ptr<Shared> _semaphore;
+};
+
+
+
+template<typename T>
+class SemaphoreBox : private Semaphore {
+	public:
+		SemaphoreBox(DevicePtr dptr, T&& obj) : Semaphore(dptr), _boxed(std::move(obj)) {
+		}
+
+		SemaphoreBox(const Semaphore& sem, T&& obj) : Semaphore(sem), _boxed(std::move(obj)) {
+		}
+
+		SemaphoreBox(T&& obj) : _boxed(std::move(obj)) {
 		}
 
 
 	private:
-		friend class QueueFamily;
+		friend class CmdBufferRecorder;
 
-		Queue(DevicePtr dptr, vk::Queue queue);
-
-		void submit_base(CmdBufferBase& base) const;
-
-		vk::Queue _queue;
+		T _boxed;
 };
+
+
+template<typename T>
+SemaphoreBox<T> Semaphore::box(T&& t) const {
+	return SemaphoreBox(*this, y_fwd(t));
+}
 
 }
 
-#endif // YAVE_GRAPHICS_QUEUES_QUEUE_H
+#endif // YAVE_GRAPHICS_QUEUES_SEMAPHORE_H

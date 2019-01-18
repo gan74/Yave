@@ -132,7 +132,6 @@ class ThreadSafeAllocator : NonCopyable {
 template<usize Threshold, typename Small, typename Large>
 class SegregatorAllocator : NonCopyable {
 	public:
-		static constexpr usize max_size = align_up_to_max(Threshold);
 
 		SegregatorAllocator() = default;
 
@@ -143,14 +142,14 @@ class SegregatorAllocator : NonCopyable {
 		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
-			if(align_up_to_max(size) <= max_size) {
+			if(align_up_to_max(size) <= Threshold) {
 				return _small.allocate(size);
 			}
 			return _large.allocate(size);
 		}
 
 		void deallocate(void* ptr, usize size) noexcept {
-			if(align_up_to_max(size) <= max_size) {
+			if(align_up_to_max(size) <= Threshold) {
 				_small.deallocate(ptr, size);
 			} else {
 				_large.deallocate(ptr, size);
@@ -165,8 +164,6 @@ class SegregatorAllocator : NonCopyable {
 template<typename Allocator>
 class ElectricFenceAllocator : NonCopyable {
 	public:
-		static constexpr usize max_size = Allocator::max_size;
-
 		static constexpr usize fence_size = align_up_to_max(1024);
 		static constexpr u8 fence = 0xFE;
 
@@ -210,8 +207,6 @@ class ElectricFenceAllocator : NonCopyable {
 template<typename Allocator>
 class LeakDetectorAllocator : NonCopyable {
 	public:
-		static constexpr usize max_size = Allocator::max_size;
-
 		LeakDetectorAllocator() = default;
 
 		LeakDetectorAllocator(Allocator&& a) : _allocator(std::move(a)) {

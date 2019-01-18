@@ -66,7 +66,7 @@ vk::QueueFlags QueueFamily::flags() const {
 core::Vector<Queue> QueueFamily::queues(DevicePtr dptr) const {
 	auto queues = core::vector_with_capacity<Queue>(_queue_count);
 	for(u32 i = 0; i != _queue_count; ++i) {
-		queues << Queue(dptr->vk_device().getQueue(_index, i));
+		queues << Queue(dptr, dptr->vk_device().getQueue(_index, i));
 	}
 	return queues;
 }

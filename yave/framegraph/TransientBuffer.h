@@ -41,9 +41,6 @@ class TransientBuffer final : public BufferBase {
 			_memory_type = type;
 		}
 
-		TransientBuffer(TransientBuffer&&) = default;
-		TransientBuffer& operator=(TransientBuffer&&) = default;
-
 		MemoryType memory_type() const {
 			return _memory_type;
 		}

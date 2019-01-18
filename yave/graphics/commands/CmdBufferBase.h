@@ -26,6 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
+
 struct CmdBufferBase : NonCopyable {
 	public:
 		DevicePtr device() const;
@@ -34,6 +35,7 @@ struct CmdBufferBase : NonCopyable {
 		vk::Fence vk_fence() const;
 
 		void wait() const;
+		void wait_for(const Semaphore& sem);
 
 	protected:
 		CmdBufferBase() = default;
@@ -48,6 +50,8 @@ struct CmdBufferBase : NonCopyable {
 		}
 
 	private:
+		friend class Queue;
+
 		std::unique_ptr<CmdBufferDataProxy> _proxy;
 };
 

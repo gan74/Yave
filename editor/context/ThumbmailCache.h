@@ -56,11 +56,11 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 
 		math::Vec2ui thumbmail_size() const;
 
-		TextureView* get_thumbmail(const AssetPtr<StaticMesh>& mesh);
+		SemaphoreBox<TextureView*> get_thumbmail(const AssetPtr<StaticMesh>& mesh);
 
 	private:
 		void render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out);
-		TextureView* render_thumbmail(const AssetPtr<StaticMesh>& mesh);
+		SemaphoreBox<TextureView*> render_thumbmail(const AssetPtr<StaticMesh>& mesh);
 
 		usize _size;
 

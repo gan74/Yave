@@ -23,6 +23,10 @@ SOFTWARE.
 #include "utils.h"
 #include <y/core/String.h>
 
+#ifdef Y_OS_WIN
+#include <windows.h>
+#endif
+
 #ifdef __GNUG__
 #include <cstdlib>
 #include <memory>
@@ -60,6 +64,7 @@ Nothing fatal(const char* msg, const char* file, int line) {
 		msg_str += fmt(" at line %", line);
 	}
 	log_msg(msg_str, Log::Error);
+	y_breakpoint;
 	std::abort();
 }
 

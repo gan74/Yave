@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 
 #include <yave/graphics/commands/CmdBufferUsage.h>
+#include <yave/graphics/queues/Semaphore.h>
 
 namespace yave {
 
@@ -53,6 +54,8 @@ class CmdBufferData : NonCopyable {
 		void reset();
 		bool try_reset();
 
+		void wait_for(const Semaphore& sem);
+
 		template<typename T>
 		void keep_alive(T&& t) {
 			struct Box : KeepAlive {
@@ -68,21 +71,23 @@ class CmdBufferData : NonCopyable {
 		void swap(CmdBufferData& other);
 
 	private:
+		friend class Queue;
+
 		vk::CommandBuffer _cmd_buffer;
 		vk::Fence _fence;
 
 		core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
 		CmdBufferPoolBase* _pool = nullptr;
+
+		Semaphore _signal;
+		core::Vector<Semaphore> _waits;
 };
 
 
-class CmdBufferDataProxy {
+class CmdBufferDataProxy : NonMovable {
 
 	public:
 		CmdBufferDataProxy() = default;
-		CmdBufferDataProxy(CmdBufferDataProxy&& other);
-		CmdBufferDataProxy& operator=(CmdBufferDataProxy&& other);
-
 		CmdBufferDataProxy(CmdBufferData&& d);
 
 		~CmdBufferDataProxy();

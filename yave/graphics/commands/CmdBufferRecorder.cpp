@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include <yave/material/Material.h>
 #include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/framebuffer/Framebuffer.h>
+#include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/graphics/queues/Semaphore.h>
 
 namespace yave {
 
@@ -172,6 +175,10 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage)
 	vk_cmd_buffer().begin(info);
 }
 
+void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
+	CmdBufferBase::swap(other);
+	std::swap(_render_pass, other._render_pass);
+}
 
 CmdBufferRecorder::~CmdBufferRecorder() {
 	if(_render_pass) {
@@ -196,13 +203,37 @@ void CmdBufferRecorder::check_no_renderpass() const {
 	}
 }
 
-void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
-	CmdBufferBase::swap(other);
-	std::swap(_render_pass, other._render_pass);
-}
-
 CmdBufferRegion CmdBufferRecorder::region(const char* name, const math::Vec4& color) {
 	return CmdBufferRegion(*this, name, color);
+}
+
+
+RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
+	check_no_renderpass();
+
+	auto clear_values = core::vector_with_capacity<vk::ClearValue>(framebuffer.attachment_count() + 1);
+	for(usize i = 0; i != framebuffer.attachment_count(); ++i) {
+		clear_values << vk::ClearColorValue(std::array<float, 4>{{0.0f, 0.0f, 0.0f, 0.0f}});
+	}
+	clear_values << vk::ClearDepthStencilValue(0.0f, 0); // reversed Z
+
+	auto pass_info = vk::RenderPassBeginInfo()
+			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
+			.setRenderPass(framebuffer.render_pass().vk_render_pass())
+			.setFramebuffer(framebuffer.vk_framebuffer())
+			.setPClearValues(clear_values.begin())
+			.setClearValueCount(u32(clear_values.size()))
+		;
+
+	vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
+	_render_pass = &framebuffer.render_pass();
+
+	// set viewport
+	auto size = framebuffer.size();
+	vk_cmd_buffer().setViewport(0, {vk::Viewport(0, 0, size.x(), size.y(), 0.0f, 1.0f)});
+	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(size.x(), size.y()))});
+
+	return RenderPassRecorder(*this, Viewport(size));
 }
 
 void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
@@ -223,7 +254,6 @@ void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3
 
 	vk_cmd_buffer().dispatch(size.x(), size.y(), size.z());
 }
-
 
 void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
 	math::Vec3ui dispatch_size;
@@ -325,34 +355,6 @@ void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
 		;
 
 	vk_cmd_buffer().blitImage(src.vk_image(), vk_image_layout(src.usage()), dst.vk_image(), vk_image_layout(dst.usage()), blit, vk::Filter::eLinear);
-}
-
-RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
-	check_no_renderpass();
-
-	auto clear_values = core::vector_with_capacity<vk::ClearValue>(framebuffer.attachment_count() + 1);
-	for(usize i = 0; i != framebuffer.attachment_count(); ++i) {
-		clear_values << vk::ClearColorValue(std::array<float, 4>{{0.0f, 0.0f, 0.0f, 0.0f}});
-	}
-	clear_values << vk::ClearDepthStencilValue(0.0f, 0); // reversed Z
-
-	auto pass_info = vk::RenderPassBeginInfo()
-			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
-			.setRenderPass(framebuffer.render_pass().vk_render_pass())
-			.setFramebuffer(framebuffer.vk_framebuffer())
-			.setPClearValues(clear_values.begin())
-			.setClearValueCount(u32(clear_values.size()))
-		;
-
-	vk_cmd_buffer().beginRenderPass(pass_info, vk::SubpassContents::eInline);
-	_render_pass = &framebuffer.render_pass();
-
-	// set viewport
-	auto size = framebuffer.size();
-	vk_cmd_buffer().setViewport(0, {vk::Viewport(0, 0, size.x(), size.y(), 0.0f, 1.0f)});
-	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(size.x(), size.y()))});
-
-	return RenderPassRecorder(*this, Viewport(size));
 }
 
 void CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {

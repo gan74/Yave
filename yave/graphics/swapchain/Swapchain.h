@@ -35,12 +35,8 @@ namespace yave {
 
 class Window;
 
-
 static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit;
-
 using SwapchainImageView = ImageView<SwapchainImageUsage>;
-
-
 
 class Swapchain : NonCopyable, public DeviceLinked {
 

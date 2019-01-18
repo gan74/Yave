@@ -57,15 +57,14 @@ math::Vec2ui ThumbmailCache::thumbmail_size() const {
 	return math::Vec2ui(_size);
 }
 
-TextureView* ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
+SemaphoreBox<TextureView*> ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 	if(auto it = _thumbmails.find(mesh.id()); it != _thumbmails.end()) {
 		if(it->second) {
-			return &it->second->view;
+			return SemaphoreBox(&it->second->view);
 		}
 	} else {
 		return render_thumbmail(mesh);
 	}
-	return nullptr;
 }
 
 void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out) {
@@ -91,15 +90,15 @@ void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene,
 	//recorder.keep_alive(_ibl_data);
 }
 
-TextureView* ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
+SemaphoreBox<TextureView*> ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 	auto thumbmail = std::make_unique<Thumbmail>(device(), _size);
 	SceneData scene(device(), mesh);
 
 	CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
 	render(recorder, scene, thumbmail.get());
-	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
+	Semaphore sem = device()->graphic_queue().submit_sem(std::move(recorder));
 
-	return &(_thumbmails[mesh.id()] = std::move(thumbmail))->view;
+	return sem.box(&(_thumbmails[mesh.id()] = std::move(thumbmail))->view);
 }
 
 

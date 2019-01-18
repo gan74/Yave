@@ -285,7 +285,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 			try {
 				auto name = filesystem()->join(_current->path, _current->name_at(_hovered_index));
 				auto mesh = context()->loader().static_mesh().load(name);
-				TextureView* image = context()->thumbmail_cache().get_thumbmail(mesh);
+				TextureView* image = recorder.wait_for(context()->thumbmail_cache().get_thumbmail(mesh));
 				ImGui::Image(image, math::Vec2(150.0f));
 			} catch(std::exception&) {
 				// we don't care, just don't show anything

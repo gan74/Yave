@@ -42,6 +42,10 @@ void CmdBufferBase::wait() const {
 	device()->vk_device().waitForFences({vk_fence()}, true, u64(-1));
 }
 
+void CmdBufferBase::wait_for(const Semaphore& sem) {
+	_proxy->data().wait_for(sem);
+}
+
 DevicePtr CmdBufferBase::device() const {
 	auto pool = _proxy->data().pool();
 	return pool ? pool->device() : nullptr;

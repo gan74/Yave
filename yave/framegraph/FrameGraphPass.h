@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include "FrameGraphResourceId.h"

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,48 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MATERIAL_MATERIAL_H
-#define YAVE_MATERIAL_MATERIAL_H
 
-#include <yave/yave.h>
+#include "Semaphore.h".h"
 
-#include <yave/graphics/framebuffer/RenderPass.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
-
-#include <y/core/AssocVector.h>
-
-#include "GraphicPipeline.h"
-#include "MaterialData.h"
-#include "BasicMaterialData.h"
+#include <yave/device/Device.h>
 
 namespace yave {
 
-class Material final : NonCopyable, public DeviceLinked {
+Semaphore::Shared::Shared(DevicePtr dptr) :
+		DeviceLinked(dptr),
+		_semaphore(device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo())) {
+}
 
-	public:
-		static constexpr usize max_compiled_pipelines = 8;
+Semaphore::Shared::~Shared() {
+	destroy(_semaphore);
+}
 
-		Material() = default;
-
-		Material(DevicePtr dptr, MaterialData data);
-		Material(DevicePtr dptr, const BasicMaterialData& data);
-
-		const GraphicPipeline& compile(const RenderPass& render_pass) const;
-
-		const MaterialData& data() const;
-		const DescriptorSetBase& descriptor_set() const;
-
-	private:
-		//void swap(Material& other);
-
-		MaterialData _data;
-
-		DescriptorSet _set;
-
-		mutable core::AssocVector<RenderPass::Layout, GraphicPipeline> _compiled;
-};
-
+vk::Semaphore Semaphore::Shared::vk_semaphore() const {
+	return _semaphore;
 }
 
 
-#endif // YAVE_MATERIAL_MATERIAL_H
+
+
+
+Semaphore::Semaphore(DevicePtr dptr) : _semaphore(std::make_shared<Shared>(dptr)) {
+}
+
+DevicePtr Semaphore::device() const {
+	return _semaphore ? _semaphore->device() : nullptr;
+}
+
+vk::Semaphore Semaphore::vk_semaphore() const {
+	return _semaphore->vk_semaphore();
+}
+
+bool Semaphore::operator==(const Semaphore& other) const {
+	return other._semaphore == _semaphore;
+}
+
+}

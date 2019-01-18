@@ -26,27 +26,15 @@ SOFTWARE.
 
 namespace yave {
 
-Queue::Queue(vk::Queue queue) : _queue(queue) {
+Queue::Queue(DevicePtr dptr, vk::Queue queue) : DeviceLinked(dptr), _queue(queue) {
 }
 
 Queue::~Queue() {
-	if(_queue) {
+	if(device()) {
 		wait();
 	}
 }
 
-Queue::Queue(Queue&& other) {
-	swap(other);
-}
-
-Queue& Queue::operator=(Queue&& other) {
-	swap(other);
-	return *this;
-}
-
-void Queue::swap(Queue& other) {
-	std::swap(_queue, other._queue);
-}
 
 vk::Queue Queue::vk_queue() const {
 	return _queue;
@@ -56,9 +44,30 @@ void Queue::wait() const {
 	_queue.waitIdle();
 }
 
+Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
+	Semaphore sync(device());
+	cmd._proxy->data()._signal = sync;
+	submit_base(cmd);
+	return sync;
+}
+
 void Queue::submit_base(CmdBufferBase& base) const {
 	auto cmd = base.vk_cmd_buffer();
+
+	const auto& wait = base._proxy->data()._waits;
+	auto wait_semaphores = core::vector_with_capacity<vk::Semaphore>(wait.size());
+	std::transform(wait.begin(), wait.end(), std::back_inserter(wait_semaphores), [](const auto& s) { return s.vk_semaphore(); });
+	core::Vector<vk::PipelineStageFlags> stages(wait.size(), vk::PipelineStageFlagBits::eAllCommands);
+
+	const Semaphore& signal = base._proxy->data()._signal;
+	vk::Semaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : vk::Semaphore();
+
 	_queue.submit(vk::SubmitInfo()
+			.setSignalSemaphoreCount(signal.device() ? 1 : 0)
+			.setPSignalSemaphores(signal.device() ? &sig_semaphore : nullptr)
+			.setWaitSemaphoreCount(wait_semaphores.size())
+			.setPWaitSemaphores(wait_semaphores.data())
+			.setPWaitDstStageMask(stages.data())
 			.setCommandBufferCount(1)
 			.setPCommandBuffers(&cmd),
 		base.vk_fence());
