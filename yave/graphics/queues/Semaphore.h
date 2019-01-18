@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 
 template<typename T>
-class SemaphoreBox;
+class BoxSemaphore;
 
 class Semaphore {
 	class Shared : NonCopyable, public DeviceLinked {
@@ -55,7 +55,7 @@ class Semaphore {
 		bool operator==(const Semaphore& other) const;
 
 		template<typename T>
-		SemaphoreBox<T> box(T&& t) const;
+		BoxSemaphore<T> box(T&& t) const;
 
 	private:
 		friend class Queue;
@@ -69,15 +69,15 @@ class Semaphore {
 
 
 template<typename T>
-class SemaphoreBox : private Semaphore {
+class BoxSemaphore : private Semaphore {
 	public:
-		SemaphoreBox(DevicePtr dptr, T&& obj) : Semaphore(dptr), _boxed(std::move(obj)) {
+		BoxSemaphore(DevicePtr dptr, T&& obj) : Semaphore(dptr), _boxed(std::move(obj)) {
 		}
 
-		SemaphoreBox(const Semaphore& sem, T&& obj) : Semaphore(sem), _boxed(std::move(obj)) {
+		BoxSemaphore(const Semaphore& sem, T&& obj) : Semaphore(sem), _boxed(std::move(obj)) {
 		}
 
-		SemaphoreBox(T&& obj) : _boxed(std::move(obj)) {
+		BoxSemaphore(T&& obj) : _boxed(std::move(obj)) {
 		}
 
 
@@ -89,8 +89,8 @@ class SemaphoreBox : private Semaphore {
 
 
 template<typename T>
-SemaphoreBox<T> Semaphore::box(T&& t) const {
-	return SemaphoreBox(*this, y_fwd(t));
+BoxSemaphore<T> Semaphore::box(T&& t) const {
+	return BoxSemaphore(*this, y_fwd(t));
 }
 
 }

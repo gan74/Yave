@@ -175,7 +175,7 @@ class CmdBufferRecorder : public CmdBufferBase {
 		}
 
 		template<typename T>
-		T wait_for(SemaphoreBox<T>&& t) {
+		T wait_for(BoxSemaphore<T>&& t) {
 			CmdBufferBase::wait_for(static_cast<const Semaphore&>(t));
 			return std::move(t._boxed);
 		}

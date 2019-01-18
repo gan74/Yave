@@ -57,14 +57,13 @@ math::Vec2ui ThumbmailCache::thumbmail_size() const {
 	return math::Vec2ui(_size);
 }
 
-SemaphoreBox<TextureView*> ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
+BoxSemaphore<TextureView*> ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 	if(auto it = _thumbmails.find(mesh.id()); it != _thumbmails.end()) {
 		if(it->second) {
-			return SemaphoreBox(&it->second->view);
+			return BoxSemaphore(&it->second->view);
 		}
-	} else {
-		return render_thumbmail(mesh);
 	}
+	return render_thumbmail(mesh);
 }
 
 void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out) {
@@ -90,7 +89,7 @@ void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene,
 	//recorder.keep_alive(_ibl_data);
 }
 
-SemaphoreBox<TextureView*> ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
+BoxSemaphore<TextureView*> ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
 	auto thumbmail = std::make_unique<Thumbmail>(device(), _size);
 	SceneData scene(device(), mesh);
 
