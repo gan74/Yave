@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/device/DeviceLinked.h>
 #include <y/core/String.h>
 #include <y/serde/serde.h>
+#include <y/io/Buffer.h>
 
 #include "AssetPtr.h"
 #include "AssetStore.h"
@@ -79,7 +80,6 @@ class AssetLoader : public AssetLoaderBase {
 		AssetPtr<T> import(std::string_view name, std::string_view import_from) {
 			return load(load_or_import(name, import_from));
 		}
-
 
 	private:
 		std::unordered_map<AssetId, AssetPtr<T>> _loaded;

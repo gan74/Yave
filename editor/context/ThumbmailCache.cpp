@@ -86,8 +86,9 @@ void ThumbmailCache::process_requests() {
 			}
 
 			ThumbmailFunc func = _requests[i].get();
-			auto thumb = func(*recorder);
-			_thumbmails[thumb->id] = std::move(thumb);
+			if(auto thumb = func(*recorder)) {
+				_thumbmails[thumb->id] = std::move(thumb);
+			}
 
 			_requests.erase_unordered(_requests.begin() + i);
 			--i;

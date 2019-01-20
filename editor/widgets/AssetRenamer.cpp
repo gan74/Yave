@@ -19,25 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_PROPERTYPANEL_H
-#define EDITOR_WIDGETS_PROPERTYPANEL_H
 
-#include <editor/ui/Widget.h>
+#include "AssetRenamer.h"
+#include "ResourceBrowser.h"
+
+#include <editor/context/EditorContext.h>
+
+#include <imgui/imgui.h>
 
 namespace editor {
 
-class PropertyPanel final : public Widget, public ContextLinked {
-	public:
-		PropertyPanel(ContextPtr cptr);
+AssetRenamer::AssetRenamer(ContextPtr ctx, std::string_view name) :
+		Widget("Rename", ImGuiWindowFlags_AlwaysAutoResize),
+		ContextLinked(ctx),
+		_name(name) {
 
-
-		//bool is_visible() const override;
-		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
-
-	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
-};
+	usize size = std::min(_new_name.size(), name.size() + 1);
+	std::copy_n(_name.begin(), size, _new_name.begin());
 
 }
 
-#endif // EDITOR_WIDGETS_PROPERTYPANEL_H
+void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+	ImGui::Text("Rename: \"%s\"", _name.data());
+	ImGui::InputText("", _new_name.data(), _new_name.size());
+
+	if(ImGui::Button("Ok")) {
+		try {
+			context()->asset_store().rename(_name, _new_name.data());
+			context()->ui().for_each<ResourceBrowser>([](ResourceBrowser* b) { b->refresh(); });
+			close();
+		} catch(std::exception& e) {
+			context()->ui().ok("Error", e.what());
+		}
+	}
+
+	ImGui::SameLine();
+	if(ImGui::Button("Cancel")) {
+		close();
+	}
+}
+
+}

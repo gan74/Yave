@@ -45,6 +45,15 @@ class Ui : NonCopyable, public ContextLinked {
 
 		void paint(CmdBufferRecorder& recorder, const FrameToken& token);
 
+		template<typename T, typename F>
+		void for_each(F&& f) {
+			for(auto&& e : _widgets) {
+				if(T* w = dynamic_cast<T*>(e.get())) {
+					f(w);
+				}
+			}
+		}
+
 		template<typename T>
 		T* show() {
 			for(auto&& e : _widgets) {
@@ -56,12 +65,12 @@ class Ui : NonCopyable, public ContextLinked {
 			return add<T>();
 		}
 
-		template<typename T>
-		T* add() {
-			if constexpr(std::is_constructible_v<T, ContextPtr>) {
-				_widgets.emplace_back(std::make_unique<T>(context()));
+		template<typename T, typename... Args>
+		T* add(Args&&... args) {
+			if constexpr(std::is_constructible_v<T, ContextPtr, Args...>) {
+				_widgets.emplace_back(std::make_unique<T>(context(), y_fwd(args)...));
 			} else {
-				_widgets.emplace_back(std::make_unique<T>());
+				_widgets.emplace_back(std::make_unique<T>(y_fwd(args)...));
 			}
 			return dynamic_cast<T*>(_widgets.last().get());
 		}

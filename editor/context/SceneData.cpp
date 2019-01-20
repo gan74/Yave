@@ -126,7 +126,7 @@ StaticMeshInstance* SceneData::add(AssetId id) {
 
 
 StaticMeshInstance* SceneData::add(std::string_view name) {
-	return add(context()->loader().asset_store().id(name));
+	return add(context()->asset_store().id(name));
 }
 
 void SceneData::flush() {

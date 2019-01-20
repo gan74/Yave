@@ -39,6 +39,7 @@ class Material final : NonCopyable, public DeviceLinked {
 
 	public:
 		static constexpr usize max_compiled_pipelines = 8;
+		using load_from = BasicMaterialData;
 
 		Material() = default;
 

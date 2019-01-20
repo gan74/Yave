@@ -30,7 +30,7 @@ SOFTWARE.
 namespace editor {
 
 MaterialEditor::MaterialEditor(ContextPtr cptr) :
-		Widget(ICON_FA_OBJECT_GROUP " Material Editor"),
+		Widget(ICON_FA_BRUSH " Material Editor"),
 		ContextLinked(cptr) {
 }
 

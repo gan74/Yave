@@ -24,14 +24,17 @@ SOFTWARE.
 
 #include "MeshImporter.h"
 #include "ImageImporter.h"
+
+#include <yave/material/BasicMaterialData.h>
 #include <yave/assets/AssetId.h>
 
 namespace editor {
 
-class ResourceBrowser : public Widget, public ContextLinked {
+class ResourceBrowser final : public Widget, public ContextLinked {
+	struct DirNode;
 
 	struct FileInfo {
-		FileInfo(ContextPtr ctx, std::string_view filename);
+		FileInfo(ContextPtr ctx, std::string_view filename, std::string_view fullname);
 
 		core::String name;
 		AssetId id;
@@ -40,12 +43,10 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 	struct DirNode {
 
-		DirNode(std::string_view n, std::string_view p, DirNode* par = nullptr);
-
-		const FileInfo* file_at(usize index) const;
+		DirNode(std::string_view na, std::string_view fullna, DirNode* par = nullptr);
 
 		core::String name;
-		core::String path;
+		core::String full_path;
 
 		core::Vector<FileInfo> files;
 		core::Vector<DirNode> children;
@@ -57,6 +58,8 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 	public:
 		ResourceBrowser(ContextPtr ctx);
+
+		void refresh();
 
 	private:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
@@ -73,6 +76,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		void save_images(const core::String& path, core::ArrayView<Named<ImageData>> images) const;
 		void save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const;
 		void save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const;
+		void save_materials(const core::String& path, core::ArrayView<Named<BasicMaterialData>> mats) const;
 
 		const FileSystemModel* filesystem() const;
 
@@ -80,17 +84,22 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		void update_node(DirNode* node);
 		void draw_node(DirNode* node, const core::String& name);
 
+		bool need_refresh() const;
+
 		bool context_menu_opened() const;
+
+		const FileInfo* hovered_file() const;
+		const DirNode* hovered_dir() const;
 
 
 		static constexpr auto update_duration = core::Duration::seconds(5.0f);
 
 		core::Chrono _update_chrono;
-		bool _force_refresh = false;
+		bool _refresh = false;
 
 		DirNode _root;
 		NotOwner<DirNode*> _current = nullptr;
-		NotOwner<const FileInfo*> _current_file = nullptr;
+		usize _current_hovered_index = usize(-1);
 };
 
 }

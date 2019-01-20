@@ -19,25 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_PROPERTYPANEL_H
-#define EDITOR_WIDGETS_PROPERTYPANEL_H
+#ifndef EDITOR_WIDGETS_ASSETRENAMER_H
+#define EDITOR_WIDGETS_ASSETRENAMER_H
 
 #include <editor/ui/Widget.h>
 
+#include <y/core/Functor.h>
+
 namespace editor {
 
-class PropertyPanel final : public Widget, public ContextLinked {
+class AssetRenamer final : public Widget, public ContextLinked {
 	public:
-		PropertyPanel(ContextPtr cptr);
-
-
-		//bool is_visible() const override;
-		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
+		AssetRenamer(ContextPtr ctx, std::string_view name);
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+
+	private:
+		core::String _name;
+		std::array<char, 1024> _new_name;
+
 };
 
 }
 
-#endif // EDITOR_WIDGETS_PROPERTYPANEL_H
+#endif // EDITOR_WIDGETS_ASSETRENAMER_H

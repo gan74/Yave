@@ -132,16 +132,16 @@ void FolderAssetStore::write_index() const {
 AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) {
 	std::unique_lock lock(_lock);
 
-	auto& entry = _from_name[dst_name];
-	if(entry) {
-		y_throw("Asset already in store.");
-	}
-
 	{
 		auto dst_dir = _filesystem.parent_path(dst_name);
 		if(!_filesystem.exists(dst_dir) && !_filesystem.create_directory(dst_dir)) {
 			y_throw("Unable to create import directory.");
 		}
+	}
+
+	auto& entry = _from_name[dst_name];
+	if(entry) {
+		y_throw("Asset already in store.");
 	}
 
 	// remove/optimize
@@ -220,7 +220,8 @@ void FolderAssetStore::rename(AssetId id, std::string_view new_name) {
 	}
 
 	auto entry_it = _from_name.find(old_name);
-	auto entry = std::move(entry_it->second);
+	std::unique_ptr<Entry> entry = std::move(entry_it->second);
+	entry->name = new_name;
 	_from_name.erase(entry_it);
 	_from_name[new_name] = std::move(entry);
 

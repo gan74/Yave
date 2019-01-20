@@ -72,7 +72,7 @@ void MeshImporter::import_async(const core::String& filename) {
 }
 
 /*void MeshImporter::save_imports(const core::String& dirname) {
-	auto& store = context()->loader().asset_store();
+	auto& store = context()->asset_store();
 	{
 		core::DebugTimer _("MeshImporter::save_imports meshes");
 		for(const auto& mesh : _imported->meshes) {

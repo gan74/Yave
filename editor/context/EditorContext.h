@@ -89,6 +89,10 @@ class EditorContext : NonMovable, public DeviceLinked {
 			return _picking_manager;
 		}
 
+		AssetStore& asset_store() {
+			return _loader.asset_store();
+		}
+
 	private:
 		std::unique_ptr<FileSystemModel> _filesystem;
 

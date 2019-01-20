@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace editor {
 
-class MaterialEditor : public Widget, public ContextLinked {
+class MaterialEditor final : public Widget, public ContextLinked {
 	public:
 		MaterialEditor(ContextPtr cptr);
 

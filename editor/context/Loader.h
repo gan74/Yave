@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include <yave/graphics/images/Image.h>
 #include <yave/meshes/StaticMesh.h>
+#include <yave/material/Material.h>
 
 
 namespace editor {
@@ -38,7 +39,8 @@ class Loader : public DeviceLinked {
 			DeviceLinked(dptr),
 			_store(std::make_shared<FolderAssetStore>()),
 			_textures(dptr, _store),
-			_meshes(dptr, _store) {
+			_meshes(dptr, _store),
+			_materials(dptr, _store) {
 		}
 
 		AssetStore& asset_store() {
@@ -53,12 +55,17 @@ class Loader : public DeviceLinked {
 			return _meshes;
 		}
 
+		AssetLoader<Material>& material() {
+			return _materials;
+		}
+
 
 	private:
 		std::shared_ptr<AssetStore> _store;
 
 		AssetLoader<Texture> _textures;
 		AssetLoader<StaticMesh> _meshes;
+		AssetLoader<Material> _materials;
 };
 
 }
