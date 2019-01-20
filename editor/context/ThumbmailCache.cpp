@@ -40,6 +40,10 @@ ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) 
 ThumbmailCache::SceneData::SceneData(DevicePtr dptr, const AssetPtr<StaticMesh>& mesh)
 	: view(scene) {
 
+	Light light(Light::Directional);
+	light.transform().set_basis(math::Vec3{1.0f, 0.5f, -1.0f}.normalized(), {1.0f, 0.0f, 0.0f});
+	light.color() = 5.0f;
+	scene.lights() << std::make_unique<Light>(light);
 	scene.static_meshes() << std::make_unique<StaticMeshInstance>(mesh, dptr->default_resources()[DefaultResources::BasicMaterial]);
 	view.camera().set_view(math::look_at(math::Vec3(mesh->radius() * 1.5f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 }

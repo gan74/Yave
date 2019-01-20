@@ -84,16 +84,16 @@ static auto icon(u32 type) {
 }
 
 ResourceBrowser::FileInfo::FileInfo(ContextPtr ctx, std::string_view file, std::string_view full) :
-		filename(file),
+		name(file),
 		full_name(full),
 		id(asset_id(ctx, full)),
 		file_type(read_file_type(ctx, id)) {
 }
 
 
-ResourceBrowser::DirNode::DirNode(std::string_view na, std::string_view fullna, DirNode* par) :
-		name(na),
-		full_path(fullna),
+ResourceBrowser::DirNode::DirNode(std::string_view dir, std::string_view full, DirNode* par) :
+		name(dir),
+		full_path(full),
 		parent(par) {
 }
 
@@ -312,7 +312,7 @@ void ResourceBrowser::paint_asset_list(float width) {
 
 	// files
 	for(const auto& file : curr->files) {
-		if(ImGui::Selectable(fmt("% %", icon(file.file_type), file.filename).data(), selected())) {
+		if(ImGui::Selectable(fmt("% %", icon(file.file_type), file.name).data(), selected())) {
 			try {
 				context()->scene().add(file.full_name);
 			} catch(std::exception& e) {

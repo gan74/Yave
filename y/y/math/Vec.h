@@ -360,6 +360,14 @@ class Vec
 			return *this;
 		}
 
+
+		Vec& operator=(const T& v) {
+			for(usize i = 0; i != N; ++i) {
+				_vec[i] -= v;
+			}
+			return *this;
+		}
+
 	private:
 		template<usize M, typename U>
 		friend class Vec;

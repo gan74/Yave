@@ -36,7 +36,7 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 	struct FileInfo {
 		FileInfo(ContextPtr ctx, std::string_view file, std::string_view full);
 
-		core::String filename;
+		core::String name;
 		core::String full_name;
 		AssetId id;
 		u32 file_type;
@@ -44,7 +44,7 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 
 	struct DirNode {
 
-		DirNode(std::string_view na, std::string_view fullna, DirNode* par = nullptr);
+		DirNode(std::string_view dir, std::string_view full, DirNode* par = nullptr);
 
 		core::String name;
 		core::String full_path;
@@ -54,7 +54,6 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 
 		DirNode* parent;
 		bool up_to_date = false;
-
 	};
 
 	public:
