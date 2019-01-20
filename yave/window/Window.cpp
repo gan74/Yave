@@ -81,13 +81,14 @@ static Key to_key(WPARAM w_param, LPARAM l_param) {
 LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param) {
 	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 	if(window) {
+		math::Vec2ui lvec(usize(LOWORD(l_param)), usize(HIWORD(l_param)));
 		switch(u_msg) {
 			case WM_CLOSE:
 				window->close();
 				return 0;
 
 			case WM_SIZE:
-				window->_size = math::Vec2ui(usize(LOWORD(l_param)), usize(HIWORD(l_param)));
+				window->_size = lvec;
 				window->resized();
 				return 0;
 
@@ -124,35 +125,33 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 			case WM_MOUSEMOVE:
 			case WM_MOUSEWHEEL:
 				if(auto handler = window->event_handler()) {
-					auto pt = reinterpret_cast<const POINTS&>(l_param);
-					math::Vec2i pos = math::Vec2i(pt.x, pt.y);
 					switch(u_msg) {
 						case WM_LBUTTONDOWN:
-							handler->mouse_pressed(pos, EventHandler::LeftButton);
+							handler->mouse_pressed(lvec, EventHandler::LeftButton);
 							return 0;
 
 						case WM_RBUTTONDOWN:
-							handler->mouse_pressed(pos, EventHandler::RightButton);
+							handler->mouse_pressed(lvec, EventHandler::RightButton);
 							return 0;
 
 						case WM_MBUTTONDOWN:
-							handler->mouse_pressed(pos, EventHandler::MiddleButton);
+							handler->mouse_pressed(lvec, EventHandler::MiddleButton);
 							return 0;
 
 						case WM_LBUTTONUP:
-							handler->mouse_released(pos, EventHandler::LeftButton);
+							handler->mouse_released(lvec, EventHandler::LeftButton);
 							return 0;
 
 						case WM_RBUTTONUP:
-							handler->mouse_released(pos, EventHandler::RightButton);
+							handler->mouse_released(lvec, EventHandler::RightButton);
 							return 0;
 
 						case WM_MBUTTONUP:
-							handler->mouse_released(pos, EventHandler::MiddleButton);
+							handler->mouse_released(lvec, EventHandler::MiddleButton);
 							return 0;
 
 						case WM_MOUSEMOVE:
-							handler->mouse_moved(pos);
+							handler->mouse_moved(lvec);
 							return 0;
 
 						case WM_MOUSEWHEEL:

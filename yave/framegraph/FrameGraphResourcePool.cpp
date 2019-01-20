@@ -24,12 +24,6 @@ SOFTWARE.
 
 namespace yave {
 
-static void check_res(FrameGraphResourceId res) {
-	if(!res.is_valid()) {
-		y_fatal("Invalid resource.");
-	}
-}
-
 template<typename U>
 static void check_usage(U u) {
 	if(u == U::None) {
@@ -51,7 +45,7 @@ FrameGraphResourcePool::~FrameGraphResourcePool() {
 }*/
 
 void FrameGraphResourcePool::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
-	check_res(res);
+	res.check_valid();
 	check_usage(usage);
 
 	auto& image = _images[res];
@@ -78,7 +72,7 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
 
 
 void FrameGraphResourcePool::create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory) {
-	check_res(res);
+	res.check_valid();
 	check_usage(usage);
 
 	if(memory == MemoryType::DontCare) {
@@ -111,7 +105,7 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 
 
 void FrameGraphResourcePool::release(FrameGraphImageId res) {
-	check_res(res);
+	res.check_valid();
 	if(auto it = _images.find(res); it != _images.end()) {
 		_released_images << std::move(it->second);
 		_images.erase(it);
@@ -121,7 +115,7 @@ void FrameGraphResourcePool::release(FrameGraphImageId res) {
 }
 
 void FrameGraphResourcePool::release(FrameGraphBufferId res) {
-	check_res(res);
+	res.check_valid();
 	if(auto it = _buffers.find(res); it != _buffers.end()) {
 		_released_buffers << std::move(it->second);
 		_buffers.erase(it);
@@ -131,12 +125,12 @@ void FrameGraphResourcePool::release(FrameGraphBufferId res) {
 }
 
 ImageBarrier FrameGraphResourcePool::barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const {
-	check_res(res);
+	res.check_valid();
 	return ImageBarrier(_images.find(res)->second, src, dst);
 }
 
 BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const {
-	check_res(res);
+	res.check_valid();
 	return BufferBarrier(_buffers.find(res)->second, src, dst);
 }
 

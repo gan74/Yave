@@ -131,6 +131,12 @@ class FrameGraphResourceId {
 			return _id != invalid_id;
 		}
 
+		void check_valid() const {
+			if(!is_valid()) {
+				y_fatal("Invalid resource.");
+			}
+		}
+
 	protected:
 		friend class FrameGraph;
 

@@ -25,12 +25,6 @@ SOFTWARE.
 
 namespace yave {
 
-static void check_res(FrameGraphResourceId res) {
-	if(!res.is_valid()) {
-		y_fatal("Invalid resource.");
-	}
-}
-
 FrameGraphPassBuilder::FrameGraphPassBuilder(FrameGraphPass* pass) : _pass(pass) {
 }
 
@@ -142,14 +136,14 @@ void FrameGraphPassBuilder::add_descriptor_binding(Binding bind, usize ds_index)
 }
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage, PipelineStage stage) {
-	check_res(res);
+	res.check_valid();
 	auto& info = _pass->_images[res];
 	info.stage = stage & stage;
 	_pass->_parent->add_usage(res, usage);
 }
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usage, PipelineStage stage) {
-	check_res(res);
+	res.check_valid();
 	auto& info = _pass->_buffers[res];
 	info.stage = stage & stage;
 	_pass->_parent->add_usage(res, usage);
