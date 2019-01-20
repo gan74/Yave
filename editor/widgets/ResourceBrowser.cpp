@@ -41,6 +41,31 @@ static core::String clean_name(std::string_view name) {
 	return str;
 }
 
+static AssetId asset_id(ContextPtr ctx, std::string_view name) {
+	try {
+		return ctx->loader().asset_store().id(name);
+	} catch(...) {
+	}
+
+	return AssetId();
+}
+
+
+static u32 read_file_type(ContextPtr ctx, AssetId id) {
+	if(id.is_valid()) {
+		try {
+			const AssetStore& store = ctx->loader().asset_store();
+			auto reader = store.data(id);
+			u32 magic = reader->read_one<u32>();
+			if(magic == fs::magic_number) {
+				return reader->read_one<u32>();
+			}
+		} catch(...) {
+		}
+	}
+	return u32(-1);
+}
+
 static auto icon(u32 type) {
 	switch(type) {
 		case fs::image_file_type:
@@ -55,17 +80,32 @@ static auto icon(u32 type) {
 	return "";
 }
 
-std::string_view ResourceBrowser::DirNode::name_at(usize index) const {
-	if(index < children.size()) {
-		return children[index].name;
-	}
+
+
+ResourceBrowser::FileInfo::FileInfo(ContextPtr ctx, std::string_view filename) :
+		name(filename),
+		id(asset_id(ctx, name)),
+		file_type(read_file_type(ctx, id)) {
+}
+
+
+ResourceBrowser::DirNode::DirNode(std::string_view n, std::string_view p, DirNode* par) :
+		name(n),
+		path(p),
+		parent(par) {
+}
+
+const ResourceBrowser::FileInfo* ResourceBrowser::DirNode::file_at(usize index) const {
 	index -= children.size();
 	if(index < files.size()) {
-		return files[index].first;
+		return &files[index];
 	}
-	y_fatal("Node does not exists.");
-	return "";
+	return nullptr;
 }
+
+
+
+
 
 ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
 		Widget(ICON_FA_OBJECT_GROUP " Resource browser"),
@@ -85,21 +125,8 @@ void ResourceBrowser::set_current(DirNode* current) {
 	update_node(_current);
 }
 
-u32 ResourceBrowser::file_type(const core::String& path) const {
-	try {
-		const AssetStore& store = context()->loader().asset_store();
-		auto reader = store.data(store.id(path));
-		u32 magic = reader->read_one<u32>();
-		if(magic == fs::magic_number) {
-			return reader->read_one<u32>();
-		}
-	} catch(std::exception&) {
-	}
-
-	return u32(-1);
-}
-
 void ResourceBrowser::update_node(DirNode* node) {
+	_current_file = nullptr;
 	node->children.clear();
 	node->files.clear();
 
@@ -109,7 +136,7 @@ void ResourceBrowser::update_node(DirNode* node) {
 			if(fs->is_directory(full_name)) {
 				node->children << DirNode(name, full_name, node);
 			} else {
-				node->files << std::make_pair(name, file_type(full_name));
+				node->files << FileInfo(context(), name);
 			}
 		});
 
@@ -132,16 +159,8 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 }
 
 
-void ResourceBrowser::set_hovered_index(usize index) {
-	if(_hovered_index != index) {
-		_hovered_index = index;
-		_hovered_timer.reset();
-	}
-}
 
-bool ResourceBrowser::node_hovered() const {
-	return _current && (_current->files.size() + _current->children.size()) > _hovered_index;
-}
+// ----------------------------------- Context menu -----------------------------------
 
 bool ResourceBrowser::context_menu_opened() const {
 	return ImGui::IsPopupOpen("###contextmenu");
@@ -154,16 +173,14 @@ void ResourceBrowser::paint_context_menu() {
 			_force_refresh = true;
 		}
 
-		if(node_hovered()) {
+		if(_current_file) {
 			ImGui::Separator();
 			if(ImGui::Selectable("Rename")) {
-				//context()->loader().asset_store().rename(_current->name_at(_hovered_index), "floop");
 				_force_refresh = true;
 			}
 			if(ImGui::Selectable("Delete")) {
 				try {
-					auto name = filesystem()->join(_current->path, _current->name_at(_hovered_index));
-					context()->loader().asset_store().remove(name);
+					context()->loader().asset_store().remove(_current_file->id);
 				} catch(std::exception& e) {
 					log_msg(fmt("Unable to add delete asset: %", e.what()), Log::Error);
 				}
@@ -205,6 +222,80 @@ void ResourceBrowser::paint_context_menu() {
 	}
 }
 
+
+// ----------------------------------- Tree view -----------------------------------
+
+void ResourceBrowser::paint_tree_view(float width) {
+	ImGui::BeginChild("###resourcestree", ImVec2(width, 0), false);
+	draw_node(&_root, "store");
+	ImGui::EndChild();
+}
+
+
+// ----------------------------------- Asset list -----------------------------------
+
+void ResourceBrowser::paint_asset_list(float width) {
+	bool menu_openned = context_menu_opened();
+
+	ImGui::BeginChild("###resources", ImVec2(width, 0), false);
+
+	if(_current->parent && ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
+		set_current(_current->parent);
+	}
+
+	// dirs
+	auto curr = _current;
+	for(DirNode& n : curr->children) {
+		if(ImGui::Selectable(fmt(ICON_FA_FOLDER " %", n.name).data())) {
+			set_current(&n);
+		}
+
+		if(!menu_openned && ImGui::IsItemHovered()) {
+			_current_file = nullptr;
+		}
+	}
+
+	// files
+	for(const auto& file : curr->files) {
+		const auto& name = file.name;
+		if(ImGui::Selectable(fmt("% %", icon(file.file_type), name).data())) {
+			try {
+				auto full_name = filesystem()->join(_current->path, name);
+				context()->scene().add(full_name);
+			} catch(std::exception& e) {
+				log_msg(fmt("Unable to add object to scene: %", e.what()), Log::Error);
+			}
+		}
+
+		if(!menu_openned && ImGui::IsItemHovered()) {
+			_current_file = &file;
+		}
+	}
+
+	if(ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1)) {
+		ImGui::OpenPopup("###contextmenu");
+	}
+
+	// this needs to be here?
+	paint_context_menu();
+
+	ImGui::EndChild();
+}
+
+
+// ----------------------------------- Preview -----------------------------------
+
+void ResourceBrowser::paint_preview(float width) {
+	if(_current_file) {
+		if(TextureView* image = context()->thumbmail_cache().get_thumbmail(_current_file->id)) {
+			ImGui::Image(image, math::Vec2(width));
+		}
+	}
+}
+
+
+// ----------------------------------- Main UI -----------------------------------
+
 void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	unused(recorder, token);
 
@@ -213,85 +304,26 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 		update_node(_current);
 	}
 
-	float remaining_width = ImGui::GetWindowContentRegionWidth();
-	{
-		float width = std::min(remaining_width * 0.5f, 200.0f);
-		remaining_width -= width;
-		ImGui::BeginChild("###resourcestree", ImVec2(width, 0), false);
-		draw_node(&_root, "store");
-		ImGui::EndChild();
-	}
+	const float width = ImGui::GetWindowContentRegionWidth();
+	const float tree_width = std::min(width * 0.5f, 200.0f);
+	const bool render_preview = width - tree_width > 400.0f;
+	const float list_width = render_preview ? width - tree_width - 200.0f : 0.0f;
+	const float preview_width = width - tree_width - list_width;
 
+	paint_tree_view(tree_width);
 	ImGui::SameLine();
-
-	bool render_preview = true;
-
-	{
-		render_preview = remaining_width > 400.0f;
-		float width = render_preview ? remaining_width - 200.0f : 0.0f;
-		ImGui::BeginChild("###resources", ImVec2(width, 0), false);
-
-		if(_current->parent && ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
-			set_current(_current->parent);
-		}
-
-		usize index = 0;
-		usize hovered = usize(-1);
-
-		auto curr = _current;
-		for(DirNode& n : curr->children) {
-			if(ImGui::Selectable(fmt(ICON_FA_FOLDER " %", n.name).data())) {
-				set_current(&n);
-			}
-
-			hovered = ImGui::IsItemHovered() ? index : hovered;
-			++index;
-		}
+	paint_asset_list(list_width);
 
 
-		for(const auto& file : curr->files) {
-			const auto& name = file.first;
-			if(ImGui::Selectable(fmt("% %", icon(file.second), name).data())) {
-				try {
-					auto full_name = filesystem()->join(_current->path, name);
-					context()->scene().add(full_name);
-				} catch(std::exception& e) {
-					log_msg(fmt("Unable to add object to scene: %", e.what()), Log::Error);
-				}
-			}
-
-			hovered = ImGui::IsItemHovered() ? index : hovered;
-			++index;
-		}
-
-		if(!context_menu_opened()) {
-			set_hovered_index(hovered);
-		}
-
-		if(ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1)) {
-			ImGui::OpenPopup("###contextmenu");
-		}
-
-		paint_context_menu();
-
-		ImGui::EndChild();
-	}
-
-	ImGui::SameLine();
-
-	if(render_preview){
-		if(node_hovered()) {
-			try {
-				auto name = filesystem()->join(_current->path, _current->name_at(_hovered_index));
-				auto mesh = context()->loader().static_mesh().load(name);
-				TextureView* image = recorder.wait_for(context()->thumbmail_cache().get_thumbmail(mesh));
-				ImGui::Image(image, math::Vec2(150.0f));
-			} catch(std::exception&) {
-				// we don't care, just don't show anything
-			}
-		}
+	if(render_preview) {
+		ImGui::SameLine();
+		paint_preview(preview_width);
 	}
 }
+
+
+
+// ----------------------------------- Imports -----------------------------------
 
 template<typename T>
 void ResourceBrowser::save_assets(const core::String& path, core::ArrayView<Named<T>> assets, const char* asset_name_type) const {

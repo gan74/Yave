@@ -49,6 +49,7 @@ static constexpr SpirV compute_spirvs[] = {
 		SpirV::SSAOComp,
 		SpirV::PickingComp,
 		SpirV::DepthAlphaComp,
+		SpirV::CopyComp,
 	};
 
 static constexpr DefaultMaterialData material_datas[] = {
@@ -66,6 +67,7 @@ static constexpr const char* spirv_names[] = {
 		"ssao.comp",
 		"picking.comp",
 		"depth_alpha.comp",
+		"copy.comp",
 
 		"tonemap.frag",
 		"basic.frag",

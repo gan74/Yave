@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace editor {
 
-ImageImporter::ImageImporter(ContextPtr ctx) : Widget("Mesh importer"), ContextLinked(ctx) {
+ImageImporter::ImageImporter(ContextPtr ctx) : Widget("Image importer"), ContextLinked(ctx) {
 	_browser.set_has_parent(true);
 	_browser.set_extension_filter(import::supported_image_extensions());
 	_browser.set_selected_callback([this](const auto& filename) { import_async(filename); return true; });

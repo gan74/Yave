@@ -24,22 +24,24 @@ SOFTWARE.
 
 #include <editor/editor.h>
 #include <y/core/Result.h>
+#include <y/core/Functor.h>
 
 #include <yave/scene/SceneView.h>
-
 #include <yave/renderer/LightingPass.h>
 
-#include <functional>
+#include <future>
+#include <unordered_map>
 
 namespace editor {
 
 class ThumbmailCache : NonCopyable, public ContextLinked {
 
 		struct Thumbmail {
-			Thumbmail(DevicePtr dptr, usize size);
+			Thumbmail(DevicePtr dptr, usize size, AssetId asset);
 
 			Image<ImageUsage::StorageBit | ImageUsage::TextureBit> image;
 			TextureView view;
+			AssetId id;
 		};
 
 		struct SceneData : NonMovable {
@@ -49,6 +51,8 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 			SceneView view;
 		};
 
+		using ThumbmailFunc = core::Function<std::unique_ptr<Thumbmail>(CmdBufferRecorder&)>;
+
 	public:
 		using ThumbmailView = std::reference_wrapper<const TextureView>;
 
@@ -56,16 +60,19 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 
 		math::Vec2ui thumbmail_size() const;
 
-		BoxSemaphore<TextureView*> get_thumbmail(const AssetPtr<StaticMesh>& mesh);
+		TextureView* get_thumbmail(AssetId asset);
 
 	private:
-		void render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out);
-		BoxSemaphore<TextureView*> render_thumbmail(const AssetPtr<StaticMesh>& mesh);
+		void process_requests();
+		void request_thumbmail(AssetId asset);
+		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex);
+		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh);
 
 		usize _size;
 
 		std::shared_ptr<IBLData> _ibl_data;
 		std::unordered_map<AssetId, std::unique_ptr<Thumbmail>> _thumbmails;
+		core::Vector<std::future<ThumbmailFunc>> _requests;
 };
 
 }

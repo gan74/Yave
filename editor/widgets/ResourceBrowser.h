@@ -24,37 +24,47 @@ SOFTWARE.
 
 #include "MeshImporter.h"
 #include "ImageImporter.h"
-
-#include <y/core/Chrono.h>
+#include <yave/assets/AssetId.h>
 
 namespace editor {
 
 class ResourceBrowser : public Widget, public ContextLinked {
+
+	struct FileInfo {
+		FileInfo(ContextPtr ctx, std::string_view filename);
+
+		core::String name;
+		AssetId id;
+		u32 file_type;
+	};
+
 	struct DirNode {
+
+		DirNode(std::string_view n, std::string_view p, DirNode* par = nullptr);
+
+		const FileInfo* file_at(usize index) const;
+
 		core::String name;
 		core::String path;
 
-		core::Vector<std::pair<core::String, u32>> files;
+		core::Vector<FileInfo> files;
 		core::Vector<DirNode> children;
 
 		DirNode* parent;
-
 		bool up_to_date = false;
 
-		DirNode(std::string_view n, std::string_view p, DirNode* par = nullptr) :
-				name(n),
-				path(p),
-				parent(par) {
-		}
-
-		std::string_view name_at(usize index) const;
 	};
 
 	public:
 		ResourceBrowser(ContextPtr ctx);
 
-	protected:
+	private:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+
+		void paint_tree_view(float width = 0.0f);
+		void paint_asset_list(float width = 0.0f);
+		void paint_preview(float width = 0.0f);
+		void paint_context_menu();
 
 	private:
 		template<typename T>
@@ -70,27 +80,17 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		void update_node(DirNode* node);
 		void draw_node(DirNode* node, const core::String& name);
 
-		void set_hovered_index(usize index);
-		bool node_hovered() const;
-
 		bool context_menu_opened() const;
-		void paint_context_menu();
 
-		u32 file_type(const core::String& path) const;
 
 		static constexpr auto update_duration = core::Duration::seconds(5.0f);
-		static constexpr auto hover_duration = core::Duration::seconds(0.5f);
 
 		core::Chrono _update_chrono;
 		bool _force_refresh = false;
 
 		DirNode _root;
 		NotOwner<DirNode*> _current = nullptr;
-
-		usize _hovered_index = usize(-1);
-		core::Chrono _hovered_timer;
-
-
+		NotOwner<const FileInfo*> _current_file = nullptr;
 };
 
 }

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Semaphore.h".h"
+#include "Semaphore.h"
 
 #include <yave/device/Device.h>
 

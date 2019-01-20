@@ -31,7 +31,9 @@ extern "C" {
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <external/stb/stb_image.h>
+//#include <external/stb/stb_image_write.h>
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
@@ -54,22 +56,40 @@ static std::string_view name_from_path(const core::String& path) {
 	return end == begin ? "unamed_image" : std::string_view(begin, end - begin);
 }
 
+/*std::unique_ptr<u8[]> rgb_to_rgba(int w, int h, u8* rgb) {
+	auto rgba = std::make_unique<u8[]>(w * h * 4);
+
+	for(usize i = 0; i != usize(w * h); ++i) {
+		rgba[i * 4 + 0] = rgb[i * 3 + 0];
+		rgba[i * 4 + 1] = rgb[i * 3 + 1];
+		rgba[i * 4 + 2] = rgb[i * 3 + 2];
+		rgba[i * 4 + 3] = 0xFF;
+	}
+
+	return rgba;
+}*/
+
 core::Vector<Named<ImageData>> import_images(const core::String& path) {
 	int width, height, bpp;
 	// stbi_set_flip_vertically_on_load(true);
-	u8* rgb = stbi_load(path.data(), &width, &height, &bpp, 4);
-	y_defer(stbi_image_free(rgb););
+	u8* raw = stbi_load(path.data(), &width, &height, &bpp, 4);
+	y_defer(stbi_image_free(raw););
 
-	if(!rgb) {
+	if(!raw) {
 		y_throw("Unable to load image.");
 	}
 
-	if(bpp != 3 && bpp != 4) {
+	u8* data = raw;
+	/*std::unique_ptr<u8[]> rgba;
+	if(bpp == 3) {
+		rgba = rgb_to_rgba(width, height, raw);
+		data = rgba.get();
+	} else if (bpp != 4) {
 		y_throw("Unable to load image.");
-	}
+	}*/
 
 	core::Vector<Named<ImageData>> images;
-	images.emplace_back(name_from_path(path), ImageData(math::Vec2ui(width, height), rgb, ImageFormat(bpp == 3 ? vk::Format::eR8G8B8Unorm : vk::Format::eR8G8B8A8Unorm)));
+	images.emplace_back(name_from_path(path), ImageData(math::Vec2ui(width, height), data, vk::Format::eR8G8B8A8Unorm));
 	return images;
 }
 

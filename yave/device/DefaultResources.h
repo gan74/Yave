@@ -43,6 +43,7 @@ class DefaultResources : NonCopyable {
 			SSAOComp,
 			PickingComp,
 			DepthAlphaComp,
+			CopyComp,
 
 			TonemapFrag,
 			BasicFrag,
@@ -66,6 +67,7 @@ class DefaultResources : NonCopyable {
 			SSAOProgram,
 			PickingProgram,
 			DepthAlphaProgram,
+			CopyProgram,
 
 			MaxComputePrograms
 		};

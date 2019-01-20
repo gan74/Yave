@@ -86,6 +86,8 @@ void MainWindow::exec() {
 	do {
 		show();
 		while(update()) {
+			core::DebugTimer _("Frame time", core::Duration::milliseconds(30));
+
 			if(_swapchain->size().x() && _swapchain->size().y()) {
 				FrameToken frame = _swapchain->next_frame();
 				CmdBufferRecorder recorder(device()->create_cmd_buffer());

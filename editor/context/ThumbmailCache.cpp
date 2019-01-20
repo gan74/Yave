@@ -27,11 +27,14 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/renderer/ToneMappingPass.h>
 
+#include <thread>
+
 namespace editor {
 
-ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size) :
-	image(dptr, vk::Format::eR8G8B8A8Unorm, math::Vec2ui(size)),
-	view(image) {
+ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) :
+		image(dptr, vk::Format::eR8G8B8A8Unorm, math::Vec2ui(size)),
+		view(image),
+		id(asset) {
 }
 
 ThumbmailCache::SceneData::SceneData(DevicePtr dptr, const AssetPtr<StaticMesh>& mesh)
@@ -57,47 +60,103 @@ math::Vec2ui ThumbmailCache::thumbmail_size() const {
 	return math::Vec2ui(_size);
 }
 
-BoxSemaphore<TextureView*> ThumbmailCache::get_thumbmail(const AssetPtr<StaticMesh>& mesh) {
-	if(auto it = _thumbmails.find(mesh.id()); it != _thumbmails.end()) {
+TextureView* ThumbmailCache::get_thumbmail(AssetId asset) {
+	if(!asset.is_valid()) {
+		return nullptr;
+	}
+
+	process_requests();
+	if(auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
 		if(it->second) {
-			return BoxSemaphore(&it->second->view);
+			return &it->second->view;
+		} else {
+			return nullptr;
 		}
 	}
-	return render_thumbmail(mesh);
+	request_thumbmail(asset);
+	return nullptr;
 }
 
-void ThumbmailCache::render(CmdBufferRecorder& recorder, const SceneData& scene, Thumbmail* out) {
-	auto region = recorder.region("ThumbmailCache::render");
+void ThumbmailCache::process_requests() {
+	std::unique_ptr<CmdBufferRecorder> recorder;
+	for(usize i = 0; i != _requests.size(); ++i) {
+		if(_requests[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+			if(!recorder) {
+				recorder = std::make_unique<CmdBufferRecorder>(device()->create_disposable_cmd_buffer());
+			}
 
-	FrameGraph graph(context()->resource_pool());
-	auto gbuffer = render_gbuffer(graph, &scene.view, out->image.size());
-	auto lighting = render_lighting(graph, gbuffer, _ibl_data);
-	auto tone_mapping = render_tone_mapping(graph, lighting);
+			ThumbmailFunc func = _requests[i].get();
+			auto thumb = func(*recorder);
+			_thumbmails[thumb->id] = std::move(thumb);
 
-	FrameGraphImageId output_image = tone_mapping.tone_mapped;
+			_requests.erase_unordered(_requests.begin() + i);
+			--i;
+		}
+	}
+	if(recorder) {
+		device()->graphic_queue().submit<SyncSubmit>(std::move(*recorder));
+	}
+}
+
+
+void ThumbmailCache::request_thumbmail(AssetId asset) {
+	_thumbmails[asset] = nullptr;
+	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
+			try {
+				auto mesh = context()->loader().static_mesh().load(asset);
+				return [=](CmdBufferRecorder& rec) { return render_thumbmail(rec, mesh); };
+			} catch(...) {
+			}
+
+			try {
+				auto tex = context()->loader().texture().load(asset);
+				return [=](CmdBufferRecorder& rec) { return render_thumbmail(rec, tex); };
+			} catch(...) {
+			}
+
+			return [](CmdBufferRecorder&) { return nullptr; };
+		});
+}
+
+std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) {
+	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, tex.id());
+
 	{
-		FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
-		builder.add_uniform_input(output_image);
-		builder.add_uniform_input(gbuffer.depth);
-		builder.add_uniform_input(StorageView(out->image));
-		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-				recorder.dispatch_size(device()->default_resources()[DefaultResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
-			});
+		DescriptorSet set(device(), {Binding(*tex), Binding(StorageView(thumbmail->image))});
+		recorder.dispatch_size(device()->default_resources()[DefaultResources::CopyProgram],  math::Vec2ui(_size), {set});
+		recorder.keep_alive(std::move(set));
 	}
 
-	std::move(graph).render(recorder);
-	//recorder.keep_alive(_ibl_data);
+	return thumbmail;
 }
 
-BoxSemaphore<TextureView*> ThumbmailCache::render_thumbmail(const AssetPtr<StaticMesh>& mesh) {
-	auto thumbmail = std::make_unique<Thumbmail>(device(), _size);
+std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh) {
+	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, mesh.id());
 	SceneData scene(device(), mesh);
 
-	CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
-	render(recorder, scene, thumbmail.get());
-	Semaphore sem = device()->graphic_queue().submit_sem(std::move(recorder));
+	{
+		auto region = recorder.region("ThumbmailCache::render");
 
-	return sem.box(&(_thumbmails[mesh.id()] = std::move(thumbmail))->view);
+		FrameGraph graph(context()->resource_pool());
+		auto gbuffer = render_gbuffer(graph, &scene.view, thumbmail->image.size());
+		auto lighting = render_lighting(graph, gbuffer, _ibl_data);
+		auto tone_mapping = render_tone_mapping(graph, lighting);
+
+		FrameGraphImageId output_image = tone_mapping.tone_mapped;
+		{
+			FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
+			builder.add_uniform_input(output_image);
+			builder.add_uniform_input(gbuffer.depth);
+			builder.add_uniform_input(StorageView(thumbmail->image));
+			builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+					recorder.dispatch_size(device()->default_resources()[DefaultResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
+				});
+		}
+
+		std::move(graph).render(recorder);
+	}
+
+	return thumbmail;
 }
 
 
