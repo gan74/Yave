@@ -158,11 +158,11 @@ class Result : NonCopyable {
 
 	public:
 		Result(ok_type&& v) : _is_ok(true) {
-			new(&_value) ok_type(std::move(v));
+			::new(&_value) ok_type(std::move(v));
 		}
 
 		Result(err_type&& e) : _is_ok(false) {
-			new(&_error) err_type(std::move(e));
+			::new(&_error) err_type(std::move(e));
 		}
 
 		Result(Result&& other) {
@@ -314,9 +314,9 @@ class Result : NonCopyable {
 
 		void move(Result& other) {
 			if((_is_ok = other.is_ok())) {
-				new(&_value) ok_type(std::move(other._value));
+				::new(&_value) ok_type(std::move(other._value));
 			} else {
-				new(&_error) err_type(std::move(other._error));
+				::new(&_error) err_type(std::move(other._error));
 			}
 		}
 

@@ -90,7 +90,7 @@ void do_not_destroy(T&& t) {
 		~U() {}
 		std::remove_reference_t<T> t;
 	} u;
-	new(&u.t) std::remove_reference_t<T>(y_fwd(t));
+	::new(&u.t) std::remove_reference_t<T>(y_fwd(t));
 }
 
 

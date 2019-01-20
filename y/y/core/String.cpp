@@ -89,9 +89,9 @@ String::String() : _s(ShortData()) {
 
 String::String(const String& str) {
 	if(str.is_long()) {
-		new(&_l) LongData(str._l);
+		::new(&_l) LongData(str._l);
 	} else {
-		new(&_s) ShortData(str._s);
+		::new(&_s) ShortData(str._s);
 	}
 }
 
@@ -101,9 +101,9 @@ String::String(String&& str) {
 	static_assert(std::is_trivially_destructible_v<LongData>);
 
 	if(str.is_long()) {
-		new(&_l) LongData(std::move(str._l));
+		::new(&_l) LongData(std::move(str._l));
 	} else {
-		new(&_s) ShortData(str._s);
+		::new(&_s) ShortData(str._s);
 	}
 }
 
@@ -118,9 +118,9 @@ String::String(const char* str) : String(str, std::strlen(str)) {
 
 String::String(const char* str, usize len) {
 	if(len > max_short_size) {
-		new(&_l) LongData(str, len);
+		::new(&_l) LongData(str, len);
 	} else {
-		new(&_s) ShortData(str, len);
+		::new(&_s) ShortData(str, len);
 	}
 }
 
@@ -174,7 +174,7 @@ void String::clear() {
 	if(is_long()) {
 		free_long(_l);
 	}
-	new(&_s) ShortData();
+	::new(&_s) ShortData();
 }
 
 void String::make_empty() {
@@ -283,9 +283,9 @@ String& String::operator=(const String& str) {
 				free_long(_l);
 			}
 			if(str.is_long()) {
-				new(&_l) LongData(str._l);
+				::new(&_l) LongData(str._l);
 			} else {
-				new(&_s) ShortData(str._s);
+				::new(&_s) ShortData(str._s);
 			}
 		}
 	}

@@ -85,7 +85,7 @@ class SlotMap {
 				if(is_free()) {
 					_storage.next = other._storage.next;
 				} else {
-					new(&_storage.obj) T(other._storage.obj);
+					::new(&_storage.obj) T(other._storage.obj);
 				}
 			}
 
@@ -93,7 +93,7 @@ class SlotMap {
 				if(is_free()) {
 					_storage.next = other._storage.next;
 				} else {
-					new(&_storage.obj) T(std::move(other._storage.obj));
+					::new(&_storage.obj) T(std::move(other._storage.obj));
 				}
 			}
 

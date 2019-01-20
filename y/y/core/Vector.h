@@ -181,14 +181,14 @@ class Vector : ResizePolicy, Allocator {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
-			new(_data_end++) data_type(elem);
+			::new(_data_end++) data_type(elem);
 		}
 
 		void push_back(value_type&& elem) {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
-			new(_data_end++) data_type(std::move(elem));
+			::new(_data_end++) data_type(std::move(elem));
 		}
 
 		template<typename... Args>
@@ -338,7 +338,7 @@ class Vector : ResizePolicy, Allocator {
 				std::copy_n(src, n, dst);
 			} else {
 				for(; n; --n) {
-					new(dst++) data_type(std::move(*(src++)));
+					::new(dst++) data_type(std::move(*(src++)));
 				}
 			}
 		}
