@@ -26,15 +26,19 @@ SOFTWARE.
 
 namespace editor {
 
-static u64 next_id() {
-	static u64 id = 1;
-	return id++;
+UiElement::UiElement(std::string_view title) {
+	set_title(title);
 }
 
-UiElement::UiElement(std::string_view title) :
-		_id(next_id()),
-		_title_with_id(title/* + "###"_s + _id*/),
-		_title(_title_with_id.begin(), title.size()) {
+void UiElement::set_id(u64 id) {
+	_id = id;
+	set_title(_title);
+}
+
+void UiElement::set_title(std::string_view title) {
+	core::String new_title = fmt("%##%", title, _id);
+	_title_with_id = std::move(new_title);
+	_title = std::string_view(_title_with_id.begin(), title.size());
 }
 
 bool UiElement::is_visible() const {

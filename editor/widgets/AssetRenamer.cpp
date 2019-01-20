@@ -29,14 +29,21 @@ SOFTWARE.
 
 namespace editor {
 
-AssetRenamer::AssetRenamer(ContextPtr ctx, std::string_view name) :
+/*static std::string_view decompose_path(std::string_view full_name, std::string_view name) {
+	y_debug_assert(full_name.size() >= name.size());
+	y_debug_assert(full_name.substr(full_name.size() - name.size()) == name);
+	return full_name.substr(0, full_name.size() - name.size());
+}*/
+
+
+AssetRenamer::AssetRenamer(ContextPtr ctx, std::string_view full_name) :
 		Widget("Rename", ImGuiWindowFlags_AlwaysAutoResize),
 		ContextLinked(ctx),
-		_name(name) {
+		_full_name(full_name),
+		_name(filesystem()->filename(_full_name)) {
 
-	usize size = std::min(_new_name.size(), name.size() + 1);
+	usize size = std::min(_new_name.size(), _name.size() + 1);
 	std::copy_n(_name.begin(), size, _new_name.begin());
-
 }
 
 void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
@@ -45,7 +52,11 @@ void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	if(ImGui::Button("Ok")) {
 		try {
-			context()->asset_store().rename(_name, _new_name.data());
+			//auto path = decompose_path(_full_name, _name);
+			auto path = filesystem()->parent_path(_full_name);
+			auto full_new_name = filesystem()->join(path, _new_name.data());
+			context()->asset_store().rename(_full_name, full_new_name);
+
 			context()->ui().for_each<ResourceBrowser>([](ResourceBrowser* b) { b->refresh(); });
 			close();
 		} catch(std::exception& e) {
@@ -58,5 +69,10 @@ void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		close();
 	}
 }
+
+const FileSystemModel* AssetRenamer::filesystem() const {
+	return context()->asset_store().filesystem();
+}
+
 
 }

@@ -41,8 +41,8 @@ class SceneData : public ContextLinked, NonMovable {
 		SceneView& scene_view();
 		SceneView& default_scene_view();
 
-		math::Vec3 to_screen_pos(const math::Vec3& world);
-		math::Vec2 to_window_pos(const math::Vec3& world);
+		/*math::Vec3 to_screen_pos(const math::Vec3& world);
+		math::Vec2 to_window_pos(const math::Vec3& world);*/
 
 		bool is_scene_empty() const;
 

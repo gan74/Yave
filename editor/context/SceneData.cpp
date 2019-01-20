@@ -72,25 +72,6 @@ bool SceneData::is_scene_empty() const {
 		   _scene.lights().is_empty();
 }
 
-math::Vec3 SceneData::to_screen_pos(const math::Vec3& world) {
-	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
-
-	return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
-}
-
-math::Vec2 SceneData::to_window_pos(const math::Vec3& world) {
-	math::Vec2 viewport = ImGui::GetWindowSize();
-	math::Vec2 offset = ImGui::GetWindowPos();
-
-	auto screen = to_screen_pos(world);
-
-	if(screen.z() < 0.0f) {
-		(std::fabs(screen.x()) > std::fabs(screen.y()) ? screen.x() : screen.y()) /= 0.0f; // infs
-	}
-
-	return screen.to<2>() * viewport + offset;
-}
-
 void SceneData::save(std::string_view filename) {
 	Y_LOG_PERF("editor,save");
 	try {

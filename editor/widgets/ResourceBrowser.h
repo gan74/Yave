@@ -34,9 +34,10 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 	struct DirNode;
 
 	struct FileInfo {
-		FileInfo(ContextPtr ctx, std::string_view filename, std::string_view fullname);
+		FileInfo(ContextPtr ctx, std::string_view file, std::string_view full);
 
-		core::String name;
+		core::String filename;
+		core::String full_name;
 		AssetId id;
 		u32 file_type;
 	};
@@ -86,8 +87,7 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 
 		bool need_refresh() const;
 
-		bool context_menu_opened() const;
-
+		void reset_hover();
 		const FileInfo* hovered_file() const;
 		const DirNode* hovered_dir() const;
 

@@ -51,7 +51,6 @@ static AssetId asset_id(ContextPtr ctx, std::string_view name) {
 	return AssetId();
 }
 
-
 static u32 read_file_type(ContextPtr ctx, AssetId id) {
 	if(id.is_valid()) {
 		try {
@@ -84,9 +83,10 @@ static auto icon(u32 type) {
 	return "";
 }
 
-ResourceBrowser::FileInfo::FileInfo(ContextPtr ctx, std::string_view filename, std::string_view fullname) :
-		name(filename),
-		id(asset_id(ctx, fullname)),
+ResourceBrowser::FileInfo::FileInfo(ContextPtr ctx, std::string_view file, std::string_view full) :
+		filename(file),
+		full_name(full),
+		id(asset_id(ctx, full)),
 		file_type(read_file_type(ctx, id)) {
 }
 
@@ -101,7 +101,7 @@ ResourceBrowser::DirNode::DirNode(std::string_view na, std::string_view fullna, 
 
 
 ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
-		Widget(ICON_FA_OBJECT_GROUP " Resource browser"),
+		Widget(ICON_FA_OBJECT_GROUP " Resource Browser"),
 		ContextLinked(ctx),
 		_root("", filesystem()->current_path()) {
 
@@ -119,7 +119,7 @@ void ResourceBrowser::set_current(DirNode* current) {
 }
 
 void ResourceBrowser::update_node(DirNode* node) {
-	_current_hovered_index = usize(-1);
+	reset_hover();
 	node->children.clear();
 	node->files.clear();
 
@@ -140,7 +140,12 @@ void ResourceBrowser::update_node(DirNode* node) {
 void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 	static constexpr ImGuiTreeNodeFlags default_node_flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 	ImGuiTreeNodeFlags flags = default_node_flags/* | (node->children.is_empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/;
+
+	// folding/expending the node will still register as a goto somehow...
 	if(ImGui::TreeNodeEx(fmt(ICON_FA_FOLDER " %", name).data(), flags)) {
+		if(ImGui::IsItemClicked(0)) {
+			set_current(node);
+		}
 		if(!node->up_to_date) {
 			update_node(node);
 		}
@@ -148,6 +153,10 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 			draw_node(&n, n.name);
 		}
 		ImGui::TreePop();
+	} else {
+		if(ImGui::IsItemClicked(0)) {
+			set_current(node);
+		}
 	}
 }
 
@@ -158,6 +167,10 @@ void ResourceBrowser::refresh() {
 
 bool ResourceBrowser::need_refresh() const {
 	return _refresh;
+}
+
+void ResourceBrowser::reset_hover() {
+	_current_hovered_index = usize(-1);
 }
 
 const ResourceBrowser::FileInfo* ResourceBrowser::hovered_file() const {
@@ -181,10 +194,6 @@ const ResourceBrowser::DirNode* ResourceBrowser::hovered_dir() const {
 
 // ----------------------------------- Context menu -----------------------------------
 
-bool ResourceBrowser::context_menu_opened() const {
-	return ImGui::IsPopupOpen("###contextmenu");
-}
-
 void ResourceBrowser::paint_context_menu() {
 	if(ImGui::BeginPopup("###contextmenu")) {
 		if(ImGui::Selectable("New folder")) {
@@ -195,7 +204,7 @@ void ResourceBrowser::paint_context_menu() {
 		if(const FileInfo* file = hovered_file()) {
 			ImGui::Separator();
 			if(ImGui::Selectable("Rename")) {
-				context()->ui().add<AssetRenamer>(file->name);
+				context()->ui().add<AssetRenamer>(file->full_name);
 			}
 			if(ImGui::Selectable("Delete")) {
 				try {
@@ -270,7 +279,7 @@ void ResourceBrowser::paint_tree_view(float width) {
 // ----------------------------------- Asset list -----------------------------------
 
 void ResourceBrowser::paint_asset_list(float width) {
-	bool menu_openned = context_menu_opened();
+	bool menu_openned = ImGui::IsPopupOpen("###contextmenu");
 
 	ImGui::BeginChild("###resources", ImVec2(width, 0), false);
 
@@ -281,16 +290,17 @@ void ResourceBrowser::paint_asset_list(float width) {
 		}
 
 		if(!menu_openned && ImGui::IsItemHovered()) {
-			_current_hovered_index = usize(-1);
+			reset_hover();
 		}
 	}
 
 	usize index = 0;
+	auto selected = [&] { return _current_hovered_index == index; };
 
 	// dirs
 	auto curr = _current;
 	for(DirNode& n : curr->children) {
-		if(ImGui::Selectable(fmt(ICON_FA_FOLDER " %", n.name).data())) {
+		if(ImGui::Selectable(fmt(ICON_FA_FOLDER " %", n.name).data(), selected())) {
 			set_current(&n);
 		}
 
@@ -302,11 +312,9 @@ void ResourceBrowser::paint_asset_list(float width) {
 
 	// files
 	for(const auto& file : curr->files) {
-		const auto& name = file.name;
-		if(ImGui::Selectable(fmt("% %", icon(file.file_type), name).data())) {
+		if(ImGui::Selectable(fmt("% %", icon(file.file_type), file.filename).data(), selected())) {
 			try {
-				auto full_name = filesystem()->join(_current->full_path, name);
-				context()->scene().add(full_name);
+				context()->scene().add(file.full_name);
 			} catch(std::exception& e) {
 				log_msg(fmt("Unable to add object to scene: %", e.what()), Log::Error);
 			}
@@ -325,6 +333,12 @@ void ResourceBrowser::paint_asset_list(float width) {
 	// this needs to be here?
 	paint_context_menu();
 
+
+	if(need_refresh() || (menu_openned && _update_chrono.elapsed() > update_duration)) {
+		_update_chrono.reset();
+		update_node(_current);
+	}
+
 	ImGui::EndChild();
 }
 
@@ -336,6 +350,7 @@ void ResourceBrowser::paint_preview(float width) {
 		if(TextureView* image = context()->thumbmail_cache().get_thumbmail(file->id)) {
 			ImGui::Image(image, math::Vec2(width));
 		}
+
 	}
 }
 
@@ -344,11 +359,6 @@ void ResourceBrowser::paint_preview(float width) {
 
 void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	unused(recorder, token);
-
-	if(need_refresh() || (!context_menu_opened() && _update_chrono.elapsed() > update_duration)) {
-		_update_chrono.reset();
-		update_node(_current);
-	}
 
 	const float width = ImGui::GetWindowContentRegionWidth();
 	const float tree_width = std::min(width * 0.5f, 200.0f);

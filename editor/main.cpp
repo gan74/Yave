@@ -22,10 +22,19 @@ SOFTWARE.
 
 #include "MainWindow.h"
 #include <y/io/File.h>
+#include <csignal>
 
 using namespace editor;
 
+void crash_handler(int) {
+	log_msg("SEGFAULT!");
+	// we might want to save whatever we can here
+}
+
 int main(int argc, char** argv) {
+	std::signal(SIGSEGV, crash_handler);
+
+
 	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
 
 

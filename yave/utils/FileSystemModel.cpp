@@ -26,32 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-static bool is_delimiter(char c) {
-	return c == '\\' || c == '/';
-}
-
-static core::String canonicalize(core::String str) {
-	for(auto& c : str) {
-		if(is_delimiter(c)) {
-			c = '/';
-		}
-	}
-	return str;
-}
-
 core::String FileSystemModel::parent_path(std::string_view path) const {
-	/*if(!path.empty()) {
-		if(is_delimiter(path[path.size() - 1])) {
-			path = path.substr(0, path.size() - 1);
-		}
-
-		for(usize i = 0; i != path.size(); ++i) {
-			usize index = path.size() - i;
-			if(is_delimiter(path[index - 1])) {
-				return path.substr(0, index);
-			}
-		}
-	}*/
 	return absolute(join(path, ".."));
 }
 
@@ -171,6 +146,19 @@ bool LocalFileSystemModel::rename(std::string_view from, std::string_view to) co
 		return false;
 	}
 	return true;
+}
+
+bool LocalFileSystemModel::is_delimiter(char c) const {
+	return c == '\\' || c == '/';
+}
+
+core::String LocalFileSystemModel::canonicalize(core::String path) const {
+	for(auto& c : path) {
+		if(is_delimiter(c)) {
+			c = '/';
+		}
+	}
+	return path;
 }
 
 #endif

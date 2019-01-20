@@ -72,6 +72,9 @@ class LocalFileSystemModel : public FileSystemModel {
 		bool create_directory(std::string_view path) const override;
 		bool remove(std::string_view path) const override;
 		bool rename(std::string_view from, std::string_view to) const override;
+
+		bool is_delimiter(char c) const;
+		core::String canonicalize(core::String path) const;
 };
 
 #endif

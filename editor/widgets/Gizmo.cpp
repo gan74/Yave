@@ -66,7 +66,30 @@ const ImU32 flags =
 		ImGuiWindowFlags_NoFocusOnAppearing |
 		ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-Gizmo::Gizmo(ContextPtr cptr) : Frame("Gizmo", flags), ContextLinked(cptr) {
+Gizmo::Gizmo(ContextPtr cptr, SceneView* view) : Frame("Gizmo", flags), ContextLinked(cptr), _scene_view(view) {
+}
+
+
+bool Gizmo::is_dragging() const {
+	return _dragging_mask;
+}
+
+math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
+	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
+	return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
+}
+
+math::Vec2 Gizmo::to_window_pos(const math::Vec3& world) {
+	math::Vec2 viewport = ImGui::GetWindowSize();
+	math::Vec2 offset = ImGui::GetWindowPos();
+
+	auto screen = to_screen_pos(world);
+
+	if(screen.z() < 0.0f) {
+		(std::fabs(screen.x()) > std::fabs(screen.y()) ? screen.x() : screen.y()) /= 0.0f; // infs
+	}
+
+	return screen.to<2>() * viewport + offset;
 }
 
 void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
@@ -74,9 +97,9 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		return;
 	}
 
-	math::Vec3 cam_fwd = context()->scene().scene_view().camera().forward();
-	math::Vec3 cam_pos = context()->scene().scene_view().camera().position();
-	math::Matrix4<> view_proj = context()->scene().scene_view().camera().viewproj_matrix();
+	math::Vec3 cam_fwd = _scene_view->camera().forward();
+	math::Vec3 cam_pos = _scene_view->camera().position();
+	math::Matrix4<> view_proj = _scene_view->camera().viewproj_matrix();
 	math::Vec3 obj_pos = context()->selection().selected()->transform().position();
 
 	if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
@@ -89,7 +112,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
 
-	auto inv_matrix = context()->scene().scene_view().camera().inverse_matrix();
+	auto inv_matrix = _scene_view->camera().inverse_matrix();
 	math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 	math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
 	math::Vec3 world = h_world.to<3>() / h_world.w();
@@ -97,7 +120,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	float dist = (obj_pos - cam_pos).length();
 	math::Vec3 projected_mouse = cam_pos + ray * dist;
 
-	auto center = context()->scene().to_window_pos(obj_pos);
+	auto center = to_window_pos(obj_pos);
 
 	struct Axis {
 		math::Vec2 vec;
@@ -108,9 +131,9 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	math::Vec3 basis[] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
 	Axis axes[] = {
-			{context()->scene().to_window_pos(obj_pos + basis[0] * perspective), 0},
-			{context()->scene().to_window_pos(obj_pos + basis[1] * perspective), 1},
-			{context()->scene().to_window_pos(obj_pos + basis[2] * perspective), 2}
+			{to_window_pos(obj_pos + basis[0] * perspective), 0},
+			{to_window_pos(obj_pos + basis[1] * perspective), 1},
+			{to_window_pos(obj_pos + basis[2] * perspective), 2}
 		};
 
 	// depth sort axes front to back

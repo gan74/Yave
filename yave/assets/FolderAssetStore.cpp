@@ -44,6 +44,22 @@ core::String FolderAssetStore::FolderFileSystemModel::current_path() const  {
 	return "";
 }
 
+core::String FolderAssetStore::FolderFileSystemModel::parent_path(std::string_view path) const  {
+	if(!path.empty()) {
+		if(is_delimiter(path[path.size() - 1])) {
+			path = path.substr(0, path.size() - 1);
+		}
+
+		for(usize i = 1; i != path.size(); ++i) {
+			usize index = path.size() - i;
+			if(is_delimiter(path[index - 1])) {
+				return path.substr(0, index);
+			}
+		}
+	}
+	return "";
+}
+
 bool FolderAssetStore::FolderFileSystemModel::exists(std::string_view path) const  {
 	return LocalFileSystemModel::exists(join(_root, path));
 }

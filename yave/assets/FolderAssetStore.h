@@ -52,6 +52,7 @@ class FolderAssetStore final : public AssetStore {
 			const core::String& root_path() const;
 
 			core::String current_path() const override;
+			core::String parent_path(std::string_view path) const override;
 			bool exists(std::string_view path) const override;
 			bool is_directory(std::string_view path) const override;
 			core::String absolute(std::string_view path) const override;

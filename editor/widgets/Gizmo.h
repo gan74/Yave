@@ -28,17 +28,19 @@ SOFTWARE.
 
 namespace editor {
 
-class Gizmo : public Frame, public ContextLinked {
+class Gizmo final : public Frame, public ContextLinked {
 	public:
-		Gizmo(ContextPtr cptr);
+		Gizmo(ContextPtr cptr, SceneView* view);
 
-		bool is_dragging() const {
-			return _dragging_mask;
-		}
+		bool is_dragging() const;
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
+		math::Vec3 to_screen_pos(const math::Vec3& world);
+		math::Vec2 to_window_pos(const math::Vec3& world);
+
+		SceneView* _scene_view = nullptr;
 		math::Vec3 _dragging_offset;
 		u32 _dragging_mask = 0;
 };

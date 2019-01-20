@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace editor {
 
-class UiElement : NonCopyable {
+class UiElement : NonMovable {
 	public:
 		UiElement(std::string_view title);
 		virtual ~UiElement() = default;
@@ -42,8 +42,15 @@ class UiElement : NonCopyable {
 
 		std::string_view title() const;
 
+	private:
+		friend class Ui;
+
+		void set_id(u64 id);
+		void set_title(std::string_view title);
+
+		u64 _id = 0;
+
 	protected:
-		u64 _id;
 		core::String _title_with_id;
 		std::string_view _title;
 		bool _visible = true;

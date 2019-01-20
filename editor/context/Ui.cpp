@@ -67,10 +67,24 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 
 	for(usize i = 0; i < _widgets.size();) {
 		if(!_widgets[i]->is_visible()) {
+			ids_for(_widgets[i].get()).released << _widgets[i]->_id;
 			_widgets.erase_unordered(_widgets.begin() + i);
 		} else {
 			++i;
 		}
+	}
+}
+
+Ui::Ids& Ui::ids_for(Widget* widget) {
+	return _ids[typeid(*widget)];
+}
+
+void Ui::set_id(Widget* widget) {
+	auto& ids = ids_for(widget);
+	if(!ids.released.is_empty()) {
+		widget->set_id(ids.released.pop());
+	} else {
+		widget->set_id(ids.next++);
 	}
 }
 

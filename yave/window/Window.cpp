@@ -27,7 +27,7 @@ namespace yave {
 
 static const char class_name[] = "Yave";
 
-static bool is_ascii(WPARAM w_param, LPARAM l_param) {
+static u32 is_ascii(WPARAM w_param, LPARAM l_param) {
 	//https://stackoverflow.com/questions/44660035/how-to-extract-the-character-from-wm-keydown-in-pretranslatemessagemsgpmsg
 	static BYTE kb_state[256];
 	static auto init = GetKeyboardState(kb_state);
@@ -39,7 +39,7 @@ static bool is_ascii(WPARAM w_param, LPARAM l_param) {
 
 
 static Key to_key(WPARAM w_param, LPARAM l_param) {
-	if(is_ascii(w_param, l_param)) {
+	if(!std::iscntrl(w_param) && is_ascii(w_param, l_param)) {
 		return Key(std::toupper(w_param));
 	}
 	switch(w_param) {

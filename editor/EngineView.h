@@ -36,7 +36,7 @@ SOFTWARE.
 
 namespace editor {
 
-class EngineView : public Widget, public ContextLinked {
+class EngineView final : public Widget, public ContextLinked {
 
 	public:
 		EngineView(ContextPtr cptr);

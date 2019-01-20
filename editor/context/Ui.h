@@ -31,9 +31,18 @@ SOFTWARE.
 #include <editor/widgets/FileBrowser.h>
 #include <editor/widgets/MeshImporter.h>
 
+#include <unordered_map>
+#include <typeindex>
+
 namespace editor {
 
 class Ui : NonCopyable, public ContextLinked {
+
+	struct Ids {
+		core::Vector<u64> released;
+		u64 next = 0;
+	};
+
 	public:
 		Ui(ContextPtr ctx);
 		~Ui();
@@ -72,11 +81,17 @@ class Ui : NonCopyable, public ContextLinked {
 			} else {
 				_widgets.emplace_back(std::make_unique<T>(y_fwd(args)...));
 			}
-			return dynamic_cast<T*>(_widgets.last().get());
+			Widget* ptr = _widgets.last().get();
+			set_id(ptr);
+			return dynamic_cast<T*>(ptr);
 		}
 
 	private:
+		Ids& ids_for(Widget* widget);
+		void set_id(Widget* widget);
+
 		core::Vector<std::unique_ptr<Widget>> _widgets;
+		std::unordered_map<std::type_index, Ids> _ids;
 
 };
 

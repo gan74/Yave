@@ -24,18 +24,22 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
+#include <yave/utils/FileSystemModel.h>
 #include <y/core/Functor.h>
 
 namespace editor {
 
 class AssetRenamer final : public Widget, public ContextLinked {
 	public:
-		AssetRenamer(ContextPtr ctx, std::string_view name);
+		AssetRenamer(ContextPtr ctx, std::string_view full_name);
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
 	private:
+		const FileSystemModel* filesystem() const;
+
+		core::String _full_name;
 		core::String _name;
 		std::array<char, 1024> _new_name;
 

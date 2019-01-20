@@ -36,7 +36,7 @@ EngineView::EngineView(ContextPtr cptr) :
 		ContextLinked(cptr),
 		_ibl_data(std::make_shared<IBLData>(device())),
 		_scene_view(context()->scene().scene()),
-		_gizmo(context()) {
+		_gizmo(context(), &_scene_view) {
 	;
 }
 
@@ -79,9 +79,11 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 
 		}
 
-		_gizmo.paint(recorder, token);
-		if(!_gizmo.is_dragging()) {
-			update_selection();
+		/*if(&context()->scene().scene_view() == &_scene_view)*/ {
+			_gizmo.paint(recorder, token);
+			if(!_gizmo.is_dragging()) {
+				update_selection();
+			}
 		}
 	}
 }

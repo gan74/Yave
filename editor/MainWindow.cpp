@@ -191,27 +191,27 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 			}
 
 			if(ImGui::BeginMenu("View")) {
-				if(ImGui::MenuItem("Engine view")) context()->ui().show<EngineView>();
-				if(ImGui::MenuItem("Entity view")) context()->ui().show<EntityView>();
-				if(ImGui::MenuItem("Resource browser")) context()->ui().show<ResourceBrowser>();
+				if(ImGui::MenuItem("Engine view")) context()->ui().add<EngineView>();
+				if(ImGui::MenuItem("Entity view")) context()->ui().add<EntityView>();
+				if(ImGui::MenuItem("Resource browser")) context()->ui().add<ResourceBrowser>();
 
 				if(ImGui::BeginMenu("Debug")) {
-					if(ImGui::MenuItem("Camera debug")) context()->ui().show<CameraDebug>();
-					if(ImGui::MenuItem("Scene debug")) context()->ui().show<SceneDebug>();
+					if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
+					if(ImGui::MenuItem("Scene debug")) context()->ui().add<SceneDebug>();
 
 					y_debug_assert(!ImGui::MenuItem("Debug assert"));
 
 					ImGui::EndMenu();
 				}
 				if(ImGui::BeginMenu("Statistics")) {
-					if(ImGui::MenuItem("Performances")) context()->ui().show<PerformanceMetrics>();
-					if(ImGui::MenuItem("Memory info")) context()->ui().show<MemoryInfo>();
+					if(ImGui::MenuItem("Performances")) context()->ui().add<PerformanceMetrics>();
+					if(ImGui::MenuItem("Memory info")) context()->ui().add<MemoryInfo>();
 					ImGui::EndMenu();
 				}
 
 				ImGui::Separator();
 
-				if(ImGui::MenuItem("Settings")) context()->ui().show<SettingsPanel>();
+				if(ImGui::MenuItem("Settings")) context()->ui().add<SettingsPanel>();
 
 				ImGui::EndMenu();
 			}
