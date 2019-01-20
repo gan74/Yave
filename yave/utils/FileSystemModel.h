@@ -38,7 +38,7 @@ class FileSystemModel : NonCopyable {
 
 
 		virtual core::String current_path() const = 0;
-		virtual core::String parent_path(std::string_view path) const = 0;
+		virtual core::String parent_path(std::string_view path) const;
 		virtual core::String filename(std::string_view path) const = 0;
 
 		virtual bool exists(std::string_view path) const = 0;
@@ -63,7 +63,6 @@ class FileSystemModel : NonCopyable {
 class LocalFileSystemModel : public FileSystemModel {
 	public:
 		core::String current_path() const override;
-		core::String parent_path(std::string_view path) const override;
 		core::String filename(std::string_view path) const override;
 		bool exists(std::string_view path) const override;
 		bool is_directory(std::string_view path) const override;

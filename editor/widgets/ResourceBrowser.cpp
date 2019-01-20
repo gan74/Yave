@@ -140,9 +140,8 @@ void ResourceBrowser::set_hovered_index(usize index) {
 }
 
 bool ResourceBrowser::node_hovered() const {
-	return _hovered_index != usize(-1);
+	return _current && (_current->files.size() + _current->children.size()) > _hovered_index;
 }
-
 
 bool ResourceBrowser::context_menu_opened() const {
 	return ImGui::IsPopupOpen("###contextmenu");

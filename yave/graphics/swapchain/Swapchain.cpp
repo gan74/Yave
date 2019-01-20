@@ -50,7 +50,7 @@ static vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surfac
 }
 
 static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
-	u32 ideal = 2;
+	u32 ideal = 3;
 	if(capabilities.maxImageCount < ideal) {
 		return capabilities.maxImageCount;
 	}

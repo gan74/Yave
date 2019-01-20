@@ -26,6 +26,34 @@ SOFTWARE.
 
 namespace yave {
 
+static bool is_delimiter(char c) {
+	return c == '\\' || c == '/';
+}
+
+static core::String canonicalize(core::String str) {
+	for(auto& c : str) {
+		if(is_delimiter(c)) {
+			c = '/';
+		}
+	}
+	return str;
+}
+
+core::String FileSystemModel::parent_path(std::string_view path) const {
+	/*if(!path.empty()) {
+		if(is_delimiter(path[path.size() - 1])) {
+			path = path.substr(0, path.size() - 1);
+		}
+
+		for(usize i = 0; i != path.size(); ++i) {
+			usize index = path.size() - i;
+			if(is_delimiter(path[index - 1])) {
+				return path.substr(0, index);
+			}
+		}
+	}*/
+	return absolute(join(path, ".."));
+}
 
 core::String FileSystemModel::extention(std::string_view path) const {
 	for(usize i = path.size(); i != 0; --i) {
@@ -55,16 +83,21 @@ const FileSystemModel* FileSystemModel::local_filesystem() {
 #ifndef YAVE_NO_STDFS
 
 core::String LocalFileSystemModel::current_path() const {
-	return fs::current_path().string();
-}
-
-core::String LocalFileSystemModel::parent_path(std::string_view path) const {
-	//return fs::path(path).parent_path().string();
-	return LocalFileSystemModel::join(path, "..");
+	try {
+		return canonicalize(fs::current_path().string());
+	} catch(std::exception& e) {
+		log_msg(fmt("exception caught: %", e.what()), Log::Error);
+	}
+	return "";
 }
 
 core::String LocalFileSystemModel::filename(std::string_view path) const {
-	return fs::path(path).filename().string();
+	try {
+		return fs::path(path).filename().string();
+	} catch(std::exception& e) {
+		log_msg(fmt("exception caught: %", e.what()), Log::Error);
+	}
+	return path;
 }
 
 bool LocalFileSystemModel::exists(std::string_view path) const {
@@ -83,7 +116,7 @@ core::String LocalFileSystemModel::join(std::string_view path, std::string_view 
 	core::String result;
 	result.set_min_capacity(path.size() + name.size() + 1);
 	result += path;
-	if(last != '/' && last != '\\') {
+	if(!is_delimiter(last)) {
 		result.push_back('/');
 	}
 	result += name;
@@ -91,7 +124,12 @@ core::String LocalFileSystemModel::join(std::string_view path, std::string_view 
 }
 
 core::String LocalFileSystemModel::absolute(std::string_view path) const {
-	return fs::absolute(path).string();
+	try {
+		return canonicalize(fs::absolute(path).string());
+	} catch(std::exception& e) {
+		log_msg(fmt("exception caught: %", e.what()), Log::Error);
+	}
+	return path;
 }
 
 void LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
@@ -101,7 +139,8 @@ void LocalFileSystemModel::for_each(std::string_view path, const for_each_f& fun
 			auto str = path.string();
 			func(str);
 		}
-	} catch(...) {
+	} catch(std::exception& e) {
+		log_msg(fmt("exception caught: %", e.what()), Log::Error);
 	}
 }
 
