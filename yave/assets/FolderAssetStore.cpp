@@ -305,6 +305,19 @@ void FolderAssetStore::rename(std::string_view from, std::string_view to) {
 	rename(id(from), to);
 }
 
+void FolderAssetStore::write(AssetId id, io::ReaderRef data) {
+	std::unique_lock lock(_lock);
+
+	y_debug_assert(_from_id.size() == _from_name.size());
+	if(auto it = _from_id.find(id); it != _from_id.end()) {
+		auto filename = _filesystem.join(_filesystem.root_path(), it->second->name);
+		if(!io::File::copy(data, filename)) {
+			y_throw("No asset with this id.");
+		}
+	}
+	y_throw("No asset with this id.");
+}
+
 void FolderAssetStore::clean_index() {
 	std::unique_lock lock(_lock);
 

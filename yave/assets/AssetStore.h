@@ -49,6 +49,8 @@ class AssetStore : NonCopyable {
 
 		virtual void remove(std::string_view name);
 		virtual void rename(std::string_view from, std::string_view to);
+
+		virtual void write(AssetId id, io::ReaderRef data);
 };
 
 }

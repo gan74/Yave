@@ -81,6 +81,8 @@ class FolderAssetStore final : public AssetStore {
 		void remove(std::string_view name) override;
 		void rename(std::string_view from, std::string_view to) override;
 
+		void write(AssetId id, io::ReaderRef data) override;
+
 		void clean_index();
 
 	private:

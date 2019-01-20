@@ -52,4 +52,9 @@ void AssetStore::rename(std::string_view from, std::string_view to) {
 	rename(id(from), to);
 }
 
+void AssetStore::write(AssetId id, io::ReaderRef data) {
+	unused(id, data);
+	y_throw("Unsuported operation.");
+}
+
 }
