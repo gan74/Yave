@@ -31,7 +31,7 @@ namespace yave {
 
 void Scene::serialize(io::WriterRef writer) const {
 	writer->write_one(fs::magic_number);
-	writer->write_one(fs::scene_file_type);
+	writer->write_one(AssetType::Scene);
 	u32 version = 2;
 	writer->write_one(version);
 
@@ -63,7 +63,7 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 
 	struct Header {
 		u32 magic;
-		u32 type;
+		AssetType type;
 		u32 version;
 
 		u32 statics;
@@ -71,7 +71,7 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 
 		bool is_valid() const {
 			return magic == fs::magic_number &&
-				   type == fs::scene_file_type &&
+				   type == AssetType::Scene &&
 				   version == 2;
 		}
 	};

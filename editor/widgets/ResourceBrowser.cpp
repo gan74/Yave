@@ -51,30 +51,23 @@ static AssetId asset_id(ContextPtr ctx, std::string_view name) {
 	return AssetId();
 }
 
-static u32 read_file_type(ContextPtr ctx, AssetId id) {
-	if(id.is_valid()) {
-		try {
-			const AssetStore& store = ctx->asset_store();
-			auto reader = store.data(id);
-			u32 magic = reader->read_one<u32>();
-			if(magic == fs::magic_number) {
-				return reader->read_one<u32>();
-			}
-		} catch(...) {
-		}
+static AssetType read_file_type(ContextPtr ctx, AssetId id) {
+	try {
+		return ctx->asset_store().asset_type(id);
+	} catch(...) {
 	}
-	return u32(-1);
+	return AssetType::Unknonw;
 }
 
-static auto icon(u32 type) {
+static auto icon(AssetType type) {
 	switch(type) {
-		case fs::image_file_type:
+		case AssetType::Image:
 			return ICON_FA_IMAGE;
 
-		case fs::mesh_file_type:
+		case AssetType::Mesh:
 			return ICON_FA_CUBE;
 
-		case fs::material_file_type:
+		case AssetType::Material:
 			return ICON_FA_BRUSH;
 
 		default:
@@ -87,7 +80,7 @@ ResourceBrowser::FileInfo::FileInfo(ContextPtr ctx, std::string_view file, std::
 		name(file),
 		full_name(full),
 		id(asset_id(ctx, full)),
-		file_type(read_file_type(ctx, id)) {
+		type(read_file_type(ctx, id)) {
 }
 
 
@@ -106,6 +99,14 @@ ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
 		_root("", filesystem()->current_path()) {
 
 	set_current(&_root);
+}
+
+void ResourceBrowser::asset_selected(const FileInfo& file) const {
+	try {
+		context()->scene().add(file.full_name);
+	} catch(std::exception& e) {
+		log_msg(fmt("Unable to add object to scene: %", e.what()), Log::Error);
+	}
 }
 
 void ResourceBrowser::set_current(DirNode* current) {
@@ -312,12 +313,8 @@ void ResourceBrowser::paint_asset_list(float width) {
 
 	// files
 	for(const auto& file : curr->files) {
-		if(ImGui::Selectable(fmt("% %", icon(file.file_type), file.name).data(), selected())) {
-			try {
-				context()->scene().add(file.full_name);
-			} catch(std::exception& e) {
-				log_msg(fmt("Unable to add object to scene: %", e.what()), Log::Error);
-			}
+		if(ImGui::Selectable(fmt("% %", icon(file.type), file.name).data(), selected())) {
+			asset_selected(file);
 		}
 
 		if(!menu_openned && ImGui::IsItemHovered()) {

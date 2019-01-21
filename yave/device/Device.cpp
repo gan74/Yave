@@ -204,10 +204,6 @@ CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() con
 	return thread_device()->create_disposable_cmd_buffer();
 }
 
-CmdBuffer<CmdBufferUsage::Primary> Device::create_cmd_buffer() const {
-	return thread_device()->create_cmd_buffer();
-}
-
 const DebugMarker* Device::debug_marker() const {
 	return _extensions.debug_marker.get();
 }

@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "AssetStore.h"
 
+#include <yave/utils/serde.h>
+
 namespace yave {
 
 AssetStore::AssetStore() {
@@ -55,6 +57,15 @@ void AssetStore::rename(std::string_view from, std::string_view to) {
 void AssetStore::write(AssetId id, io::ReaderRef data) {
 	unused(id, data);
 	y_throw("Unsuported operation.");
+}
+
+AssetType AssetStore::asset_type(AssetId id) const {
+	io::ReaderRef reader = data(id);
+	u32 magic = reader->read_one<u32>();
+	if(magic != fs::magic_number) {
+		y_throw("Unknown file type.");
+	}
+	return reader->read_one<AssetType>();
 }
 
 }

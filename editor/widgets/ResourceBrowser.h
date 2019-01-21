@@ -39,7 +39,7 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 		core::String name;
 		core::String full_name;
 		AssetId id;
-		u32 file_type;
+		AssetType type;
 	};
 
 	struct DirNode {
@@ -60,6 +60,9 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 		ResourceBrowser(ContextPtr ctx);
 
 		void refresh();
+
+	protected:
+		virtual void asset_selected(const FileInfo& file) const;
 
 	private:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;

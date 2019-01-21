@@ -56,7 +56,6 @@ class Device : NonMovable {
 		DeviceAllocator& allocator() const;
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
-		CmdBuffer<CmdBufferUsage::Primary> create_cmd_buffer() const;
 
 		const QueueFamily& queue_family(vk::QueueFlags flags) const;
 		const Queue& graphic_queue() const;

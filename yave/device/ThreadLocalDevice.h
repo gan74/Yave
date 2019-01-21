@@ -35,7 +35,6 @@ class ThreadLocalDevice : NonMovable, public DeviceLinked {
 		ThreadLocalDevice(DevicePtr dptr);
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
-		CmdBuffer<CmdBufferUsage::Primary> create_cmd_buffer() const;
 
 		template<typename T>
 		auto create_descriptor_set_layout(T&& t) const {
@@ -44,7 +43,6 @@ class ThreadLocalDevice : NonMovable, public DeviceLinked {
 
 	private:
 		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
-		mutable CmdBufferPool<CmdBufferUsage::Primary> _primary_cmd_pool;
 
 		std::unique_ptr<DescriptorSetLayoutPool> _descriptor_layout_pool;
 };

@@ -90,7 +90,7 @@ void MainWindow::exec() {
 
 			if(_swapchain->size().x() && _swapchain->size().y()) {
 				FrameToken frame = _swapchain->next_frame();
-				CmdBufferRecorder recorder(device()->create_cmd_buffer());
+				CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
 
 				render(recorder, frame);
 				present(recorder, frame);

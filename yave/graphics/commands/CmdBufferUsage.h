@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 
 enum class CmdBufferUsage {
-	Primary = uenum(vk::CommandBufferUsageFlagBits()), // eSimultaneousUse ?
+	//Primary = uenum(vk::CommandBufferUsageFlagBits()), // eSimultaneousUse ?
 	Disposable = uenum(vk::CommandBufferUsageFlagBits::eOneTimeSubmit),
 	//Secondary = uenum((std::max(Primary, Disposable) << 1)) | uenum(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
 };
@@ -37,10 +37,10 @@ enum class CmdBufferUsage {
 class CmdBufferBase;
 class CmdBufferPoolBase;
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
+template<CmdBufferUsage Usage>
 class CmdBufferPool;
 
-template<CmdBufferUsage Usage = CmdBufferUsage::Primary>
+template<CmdBufferUsage Usage>
 class CmdBuffer;
 
 class RecordedCmdBuffer;

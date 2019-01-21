@@ -46,10 +46,10 @@ class MeshData {
 
 
 
-		y_serialize(fs::magic_number, fs::mesh_file_type, u32(6),
+		y_serialize(fs::magic_number, AssetType::Mesh, u32(6),
 			_radius, _vertices, _triangles, _skeleton ? u32(1) : u32(0), y_serde_cond(_skeleton, *_skeleton))
 
-		y_deserialize(fs::magic_number, fs::mesh_file_type, u32(6),
+		y_deserialize(fs::magic_number, AssetType::Mesh, u32(6),
 			_radius, _vertices, _triangles,
 			y_serde_call([this](u32 s) { if(s) { _skeleton = std::make_unique<SkeletonData>(); } }), y_serde_cond(_skeleton, *_skeleton))
 

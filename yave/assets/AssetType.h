@@ -26,14 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-/*enum class AssetType : u8 {
+enum class AssetType : u32 {
 	Mesh = 1,
 	Image = 2,
 	Animation = 3,
 	Font = 4,
 	Scene = 5,
-	Unknown = 0xFF
-};*/
+	Material = 6,
+
+	Unknonw = u32(-1)
+};
 
 }
 

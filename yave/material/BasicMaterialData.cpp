@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 struct BasicMaterialHeader {
-	y_serde(fs::magic_number, fs::material_file_type, u32(1))
+	y_serde(fs::magic_number, AssetType::Material, u32(1))
 };
 
 BasicMaterialData::BasicMaterialData(DevicePtr dptr) : DeviceLinked(dptr) {
