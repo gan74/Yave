@@ -60,6 +60,7 @@ struct Function : FunctionBase<Ret, Args...> {
 		T _func;
 };
 
+
 template<template<typename...> typename Container, typename Ret, typename... Args>
 class Functor {};
 
@@ -73,11 +74,12 @@ struct is_functor<Functor<Container, Ret(Args...)>> {
 	static constexpr bool value = true;
 };
 
+
 template<template<typename...> typename Container, typename Ret, typename... Args>
 class Functor<Container, Ret(Args...)> {
 	public:
 		template<typename T, typename = std::enable_if_t<!is_functor<std::remove_reference_t<T>>::value>>
-		Functor(T func) : _function(std::make_unique<Function<T, Ret, Args...>>(std::move(func))) {
+		Functor(T&& func) : _function(std::make_unique<Function<T, Ret, Args...>>(y_fwd(func))) {
 		}
 
 		Functor(Functor&&) = default;
@@ -103,51 +105,6 @@ class Functor<Container, Ret(Args...)> {
 		Container<FunctionBase<Ret, Args...>> _function;
 };
 
-// http://stackoverflow.com/questions/7943525/is-it-possible-to-figure-out-the-parameter-type-and-return-type-of-a-lambda
-template<typename T>
-struct functor_type : functor_type<decltype(&T::operator())> {
-};
-
-template<typename Ret, typename... Args>
-struct functor_type<Ret(*)(Args...)> {
-
-	template<template<typename...> typename Container>
-	using type = Container<Ret(Args...)>;
-	using traits = function_traits<Ret(Args...)>;
-};
-
-template<typename Ret, typename... Args>
-struct functor_type<Ret(&)(Args...)> {
-
-	template<template<typename...> typename Container>
-	using type = Container<Ret(Args...)>;
-	using traits = function_traits<Ret(Args...)>;
-};
-
-template<typename Ret, typename... Args>
-struct functor_type<Ret(Args...)> {
-
-	template<template<typename...> typename Container>
-	using type = Container<Ret(Args...)>;
-	using traits = function_traits<Ret(Args...)>;
-};
-
-template<typename T, typename Ret, typename... Args>
-struct functor_type<Ret(T::*)(Args...) const> {
-
-	template<template<typename...> typename Container>
-	using type = Container<Ret(Args...)>;
-	using traits = function_traits<Ret(Args...)>;
-};
-
-template<typename T, typename Ret, typename... Args>
-struct functor_type<Ret(T::*)(Args...)> {
-
-	template<template<typename...> typename Container>
-	using type = Container<Ret(Args...)>;
-	using traits = function_traits<Ret(Args...)>;
-};
-
 }
 
 
@@ -158,19 +115,6 @@ using Function = detail::Functor<std::unique_ptr, Ret, Args...>;
 
 template<typename Ret, typename... Args>
 using Functor = detail::Functor<std::shared_ptr, Ret, Args...>;
-
-
-
-
-template<typename T>
-inline auto function(T&& func) {
-	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Function>(y_fwd(func));
-}
-
-template<typename T>
-inline auto functor(T&& func) {
-	return typename detail::functor_type<typename std::remove_reference<T>::type>::template type<Functor>(y_fwd(func));
-}
 
 }
 }

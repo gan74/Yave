@@ -57,6 +57,19 @@ static_assert(std::is_same_v<function_traits<decltype(function_trais_test)>::arg
 static_assert(std::is_same_v<function_traits<decltype(function_trais_test)>::arg_type<1>, double>);
 static_assert(std::is_same_v<function_traits<decltype(function_trais_test)>::arg_type<2>, core::Functor<void()>&>);
 
+template<typename F>
+inline auto function(F&& f) {
+	using traits = function_traits<typename std::remove_reference<F>::type>;
+	return core::Function<typename traits::func_type>(y_fwd(f));
+}
+
+
+template<typename F>
+inline auto functor(F&& f) {
+	using traits = function_traits<typename std::remove_reference<F>::type>;
+	return core::Functor<typename traits::func_type>(y_fwd(f));
+}
+
 y_test_func("Function creation") {
 	int i = 0;
 	auto inc = function([&i]() { ++i; });

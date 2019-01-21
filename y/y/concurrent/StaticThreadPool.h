@@ -35,11 +35,10 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-class StaticThreadPool : NonCopyable {
-	public:
-		using Func = core::Function<void()>;
-
+class StaticThreadPool : NonMovable {
 	private:
+		using Func = core::Functor<void()>;
+
 		struct SharedData {
 			std::mutex lock;
 			std::condition_variable condition;
@@ -53,6 +52,8 @@ class StaticThreadPool : NonCopyable {
 		StaticThreadPool(usize thread_count = std::max(4u, std::thread::hardware_concurrency()));
 
 		~StaticThreadPool();
+
+		usize concurency() const;
 
 		void schedule(Func&& func);
 
@@ -86,6 +87,7 @@ class StaticThreadPool : NonCopyable {
 
 	private:
 		static void worker(std::shared_ptr<SharedData> data);
+
 
 		std::shared_ptr<SharedData> _shared_data;
 		usize _thread_count;

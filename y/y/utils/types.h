@@ -126,7 +126,7 @@ struct function_t<R (*)(Args...)> {
 	using argument_tuple = std::tuple<Args...>;
 };*/
 
-template<typename T>
+template<typename T, typename... Args>
 struct function_traits : function_traits<decltype(&T::operator())> {};
 
 template<typename Ret, typename... Args>
@@ -147,6 +147,7 @@ struct function_traits<Ret(Args...) const> : function_traits<Ret(Args...)> {};*/
 template<typename Ret, typename... Args>
 struct function_traits<Ret(Args...)> {
 	using return_type = Ret;
+	using func_type = Ret(Args...);
 
 	static constexpr usize n_args = sizeof...(Args);
 

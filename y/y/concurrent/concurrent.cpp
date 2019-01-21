@@ -27,108 +27,15 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-bool run_workers = true;
+static usize concurency_level = 4;
 
-std::mutex scheduler_mutex;
-std::condition_variable scheduler_condition;
-std::shared_ptr<detail::ParallelTask> scheduled_task;
-
-usize concurency_level = 1;
-
+StaticThreadPool& default_thread_pool() {
+	static StaticThreadPool _pool;
+	concurency_level = _pool.concurency();
+	return _pool;
+}
 
 namespace detail {
-
-ParallelTask::ParallelTask(u32 n) : _i(0), _p(0), _n(n) {
-}
-
-ParallelTask::~ParallelTask() {
-}
-
-void ParallelTask::run() {
-	while(process_one());
-}
-
-bool ParallelTask::process_one() {
-	u32 i = _i++;
-	if(i >= _n) {
-		return false;
-	}
-	process(usize(i));
-	return !register_done();
-}
-
-void ParallelTask::wait() {
-	std::unique_lock lock(_mutex);
-	_cond.wait(lock, [&]() { return _p == _n; });
-}
-
-bool ParallelTask::register_done() {
-	u32 p = ++_p;
-	if(p == _n) {
-		std::unique_lock lock(_mutex);
-		_cond.notify_one();
-	}
-	return p >= _n;
-}
-
-
-
-void schedule_task(std::shared_ptr<ParallelTask> task) {
-	static SpinLock global_sched_lock;
-
-	while(!global_sched_lock.try_lock()) {
-		if(!task->process_one()) {
-			return;
-		}
-	}
-
-	{
-		std::unique_lock lock(scheduler_mutex);
-		scheduled_task = task;
-	}
-	scheduler_condition.notify_all();
-
-	task->run();
-	task->wait();
-
-	global_sched_lock.unlock();
-}
-
-}
-
-
-
-
-static void work() {
-	void* last = nullptr;
-	while(run_workers) {
-		std::unique_lock lock(scheduler_mutex);
-		auto task = scheduled_task;
-
-		while(!task || task.get() == last) {
-			scheduler_condition.wait(lock);
-			task = scheduled_task;
-		}
-
-		lock.unlock();
-		task->run();
-		last = task.get();
-	}
-}
-
-void init_thread_pool() {
-	static SpinLock lock;
-	if(lock.try_lock()) {
-		concurency_level = std::max(4u, std::thread::hardware_concurrency());
-		for(usize i = 0; i != concurency_level - 1; ++i) {
-			(new std::thread(work))->detach();
-		}
-	}
-}
-
-usize concurency() {
-	return concurency_level;
-}
 
 usize probable_block_count() {
 	return concurency_level * 16;
@@ -137,6 +44,8 @@ usize probable_block_count() {
 usize probable_block_count(usize size) {
 	usize loglog = log2ui(log2ui(size));
 	return std::clamp(concurency_level * (loglog * loglog), usize(1), size);
+}
+
 }
 
 }

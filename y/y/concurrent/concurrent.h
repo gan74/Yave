@@ -22,78 +22,36 @@ SOFTWARE.
 #ifndef Y_CONCURRENT_CONCURRENT_H
 #define Y_CONCURRENT_CONCURRENT_H
 
-#include <y/core/Functor.h>
-#include <y/core/Vector.h>
-#include <y/core/Range.h>
-
-#include <atomic>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
+#include "StaticThreadPool.h"
 
 namespace y {
 namespace concurrent {
 
+StaticThreadPool& default_thread_pool();
+
 namespace detail {
 
-class ParallelTask : NonCopyable {
-	public:
-		ParallelTask(u32 n);
-
-		virtual ~ParallelTask();
-
-		void run();
-		bool process_one();
-
-		void wait();
-
-	protected:
-		virtual void process(usize) = 0;
-
-	private:
-		bool register_done();
-
-		std::atomic<u32> _i;
-		std::atomic<u32> _p;
-		const u32 _n;
-
-		std::mutex _mutex;
-		std::condition_variable _cond;
-};
-
-
-void schedule_task(std::shared_ptr<ParallelTask> task);
-
-template<typename F>
-void schedule_n(F&& func, u32 n) {
-	struct Task : ParallelTask {
-		Task(F&& f, u32 n) : ParallelTask(n), _func(f) {
-		}
-
-		void process(usize i) override {
-			_func(i);
-		}
-
-		F _func;
-	};
-
-	schedule_task(new Task(y_fwd(func), n));
-}
-
-}
-
-
-void init_thread_pool();
-usize concurency();
 usize probable_block_count();
 usize probable_block_count(usize size);
+
+template<typename F>
+void schedule_n(F&& f, usize n) {
+	StaticThreadPool& pool = default_thread_pool();
+	for(usize i = 0; i != n; ++i) {
+		pool.schedule([&] { f(i); });
+	}
+	pool.process_until_empty();
+}
+
+}
+
 
 
 
 template<typename It, typename Func>
 void parallel_indexed_block_for(It begin, It end, Func&& func) {
 	usize size = end - begin;
-	usize chunk = std::max(usize(1), size / (probable_block_count(size) - 1));
+	usize chunk = std::max(usize(1), size / (detail::probable_block_count(size) - 1));
 
 	if(!size) {
 		return;
@@ -174,8 +132,6 @@ auto parallel_collect(It begin, It end, Func&& func) {
 
 	return sum;
 }
-
-
 
 }
 }
