@@ -30,7 +30,8 @@ namespace io {
 
 class Reader : NonCopyable {
 	public:
-		virtual ~Reader();
+		virtual ~Reader() {
+		}
 
 		virtual bool at_end() const = 0;
 

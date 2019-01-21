@@ -28,6 +28,9 @@ find_package(vulkan REQUIRED)
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
+option(YAVE_EDITOR_ASSIMP "Use Assimp in editor" ON)
+option(YAVE_BUILD_SHARED "Build as shared library" OFF)
+
 
 # add y subtree
 add_subdirectory(y)
@@ -80,7 +83,11 @@ endif()
 
 
 if(YAVE_BUILD_YAVE)
-	add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES})
+	if(YAVE_BUILD_SHARED)
+		add_library(yave SHARED ${YAVE_FILES} ${SHADER_FILES})
+	else()
+		add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES})
+	endif()
 
 	target_link_libraries(yave ${Vulkan_LIBRARY})
 	target_link_libraries(yave y spirv-cross-core stdc++fs)
@@ -96,12 +103,11 @@ if(YAVE_BUILD_EDITOR)
 	target_link_libraries(editor yave)
 	target_link_libraries(editor y)
 
-	find_package(assimp)
-	if(assimp_FOUND)
+	if(YAVE_EDITOR_ASSIMP)
+		find_package(assimp)
 		target_link_libraries(editor "${ASSIMP_LIBRARY_DIRS}/libassimp.dll.a")
 		include_directories(SYSTEM ${ASSIMP_INCLUDE_DIRS}) # SYSTEM to kill random warnings
 	else()
-		message("Assimp not found")
 		add_definitions(-DEDITOR_NO_ASSIMP)
 	endif()
 endif()
