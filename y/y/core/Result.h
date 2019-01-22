@@ -90,6 +90,10 @@ struct Ok<void> : NonCopyable {
 	Ok() {
 	}
 
+	template<typename T>
+	Ok(T&&) {
+	}
+
 	void get() const {
 	}
 };
@@ -98,6 +102,10 @@ struct Ok<void> : NonCopyable {
 template<>
 struct Err<void> : NonCopyable {
 	Err() {
+	}
+
+	template<typename T>
+	Err(T&&) {
 	}
 
 	void get() const {
@@ -169,6 +177,11 @@ class Result : NonCopyable {
 			move(other);
 		}
 
+		template<typename A, typename B>
+		Result(Result<A, B>&& other) {
+			move(other);
+		}
+
 		~Result() {
 			destroy();
 		}
@@ -185,6 +198,10 @@ class Result : NonCopyable {
 
 		bool is_ok() const {
 			return _is_ok;
+		}
+
+		explicit operator bool() const {
+			return is_ok();
 		}
 
 		auto&& ok_object() {
@@ -303,7 +320,10 @@ class Result : NonCopyable {
 			}
 		}
 
-	protected:
+	private:
+		template<typename, typename>
+		friend class Result;
+
 		void destroy() {
 			if(is_ok()) {
 				_value.~ok_type();
@@ -312,11 +332,20 @@ class Result : NonCopyable {
 			}
 		}
 
-		void move(Result& other) {
+		template<typename A, typename B>
+		void move(Result<A, B>& other) {
 			if((_is_ok = other.is_ok())) {
-				::new(&_value) ok_type(std::move(other._value));
+				if constexpr(!std::is_void_v<decltype(other._value)>) {
+					::new(&_value) ok_type(std::move(other._value));
+				} else {
+					::new(&_value) ok_type();
+				}
 			} else {
-				::new(&_error) err_type(std::move(other._error));
+				if constexpr(!std::is_void_v<decltype(other._error)>) {
+					::new(&_error) err_type(std::move(other._error));
+				} else {
+					::new(&_error) err_type();
+				}
 			}
 		}
 
