@@ -29,32 +29,74 @@ namespace serde2 {
 
 struct BinaryFormat {
 	template<typename R, typename T>
-	auto read_array(R& reader, T* t, usize n) {
+	Result read_array(R& reader, T* t, usize n) {
 		static_assert(std::is_trivially_copyable_v<T>);
 		return reader.read(reinterpret_cast<u8*>(t), sizeof(T) * n);
 	}
 
 	template<typename R, typename T>
-	auto read(R& reader, T& t) {
+	Result read_one(R& reader, T& t) {
 		static_assert(std::is_trivially_copyable_v<T>);
 		return reader.read(reinterpret_cast<u8*>(&t), sizeof(T));
 	}
 
 
 	template<typename W, typename T>
-	auto write_array(W& writer, const T* t, usize n) {
+	Result write_array(W& writer, const T* t, usize n) {
 		static_assert(std::is_trivially_copyable_v<T>);
-		if(auto r = write<u64>(writer, n); r.is_error()) {
-			return r;
-		}
 		return writer.write(reinterpret_cast<const u8*>(t), sizeof(T) * n);
 	}
 
 	template<typename W, typename T>
-	auto write(W& writer, const T& t) {
+	Result write_one(W& writer, const T& t) {
 		static_assert(std::is_trivially_copyable_v<T>);
-		return writer.write(reinterpret_cast<u8*>(&t), sizeof(T));
+		return writer.write(reinterpret_cast<const u8*>(&t), sizeof(T));
 	}
+};
+
+template<typename Format = serde2::BinaryFormat>
+class FormattedReader : Format {
+	public:
+		FormattedReader(io2::Reader& reader) : _reader(reader) {
+		}
+
+		template<typename T>
+		Result read_one(T& t) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			return Format::read_one(_reader, t);
+		}
+
+		template<typename T>
+		Result read_array(T* t, usize n) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			return Format::read_array(_reader, t, n);
+		}
+
+	private:
+		io2::Reader& _reader;
+};
+
+
+template<typename Format = serde2::BinaryFormat>
+class FormattedWriter : Format {
+	public:
+		FormattedWriter(io2::Writer& writer) : _writer(writer) {
+		}
+
+		template<typename T>
+		Result write_one(const T& t) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			return Format::write_one(_writer, t);
+		}
+
+		template<typename T>
+		Result write_array(const T* t, usize n) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			return Format::write_array(_writer, t, n);
+		}
+
+	private:
+		io2::Writer& _writer;
 };
 
 }

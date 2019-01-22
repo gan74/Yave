@@ -62,10 +62,34 @@ class Reader {
 		T _inner;
 	};
 
+	template<typename T>
+	struct NotOwner : InnerBase {
+		NotOwner(T& t) : _inner(t) {
+		}
+
+		bool at_end() const override {
+			return _inner.at_end();
+		}
+
+		Result read(u8* data, usize max_bytes) override {
+			return _inner.read(data, max_bytes);
+		}
+
+		Result read_all(core::Vector<u8>& data) override {
+			return _inner.read_all(data);
+		}
+
+		T& _inner;
+	};
+
 
 	public:
 		template<typename T>
-		Reader(T&& t) : _inner(std::make_unique<Inner<T>>(y_fwd(t))) {
+		Reader(T&& t) : _inner(std::make_unique<Inner<T>>(y_fwd(t)))  {
+		}
+
+		template<typename T>
+		Reader(T& t) : _inner(std::make_unique<NotOwner<T>>(t))  {
 		}
 
 		bool at_end() const {
@@ -83,7 +107,6 @@ class Reader {
 	private:
 		std::unique_ptr<InnerBase> _inner;
 };
-
 
 
 class Writer {
@@ -110,10 +133,29 @@ class Writer {
 		T _inner;
 	};
 
+	template<typename T>
+	struct NotOwner : InnerBase {
+		NotOwner(T& t) : _inner(t) {
+		}
+
+		void flush() override {
+			_inner.flush();
+		}
+
+		Result write(const u8* data, usize bytes) override {
+			return _inner.write(data, bytes);
+		}
+
+		T& _inner;
+	};
 
 	public:
 		template<typename T>
 		Writer(T&& t) : _inner(std::make_unique<Inner<T>>(y_fwd(t))) {
+		}
+
+		template<typename T>
+		Writer(T& t) : _inner(std::make_unique<NotOwner<T>>(t))  {
 		}
 
 		void flush() {
