@@ -26,6 +26,7 @@ SOFTWARE.
 #include "types.h"
 #include <cstring>
 #include <string_view>
+#include <tuple>
 
 namespace y {
 
@@ -73,9 +74,32 @@ class FmtBuffer {
 			fmt_one(']');
 		}
 
+		template<typename... Args>
+		void fmt_one(const std::tuple<Args...>& tpl) {
+			fmt_tuple_elem<0>(tpl);
+		}
+
+
 		std::string_view done() &&;
 
 	private:
+		template<usize I, typename... Args>
+		void fmt_tuple_elem(const std::tuple<Args...>& tpl) {
+			if(I == 0) {
+				fmt_one('{');
+			}
+			if constexpr(I >= sizeof...(Args)) {
+				fmt_one('}');
+			} else {
+				if(I != 0) {
+					copy(", ", 2);
+				}
+				fmt_one(std::get<I>(tpl));
+				fmt_tuple_elem<I + 1>(tpl);
+			}
+		}
+
+
 		bool try_expand();
 		void advance(usize r);
 
