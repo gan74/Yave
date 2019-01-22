@@ -29,25 +29,6 @@ namespace serde2 {
 
 using Result = core::Result<void>;
 
-namespace detail {
-
-template<typename Arc, typename T>
-static auto has_deserialize(T*) -> bool_type<std::is_same_v<Result, decltype(std::declval<T>().deserialize(std::declval<Arc&>()))>>;
-template<typename Arc, typename T>
-static auto has_deserialize(...) -> std::false_type;
-
-template<typename Arc, typename T>
-static auto has_serialize(T*) -> bool_type<std::is_same_v<Result, decltype(std::declval<T>().serialize(std::declval<Arc&>()))>>;
-template<typename Arc, typename T>
-static auto has_serialize(...) -> std::false_type;
-
-}
-
-template<typename Arc, typename T>
-using is_deserializable = bool_type<decltype(detail::has_deserialize<Arc, T>(nullptr))::value>;
-template<typename Arc, typename T>
-using is_serializable = bool_type<decltype(detail::has_serialize<Arc, T>(nullptr))::value>;
-
 #define y_serialize2(...)										\
 	template<typename Arc>										\
 	y::serde2::Result serialize(Arc& _y_serde_arc) const {		\
@@ -63,6 +44,87 @@ using is_serializable = bool_type<decltype(detail::has_serialize<Arc, T>(nullptr
 #define y_serde2(...)											\
 	y_serialize2(__VA_ARGS__)									\
 	y_deserialize2(__VA_ARGS__)
+
+
+#define y_deserialize_1_2(...)									\
+	y_deserialize2(__VA_ARGS__)									\
+	void deserialize(y::io::ReaderRef r) {						\
+		y::io2::Reader reader(r);								\
+		y::serde2::ReadableArchive<> ar(reader);				\
+		ar(__VA_ARGS__).or_throw("serde2");						\
+	}
+
+#define y_serialize_1_2(...)									\
+	y_serialize2(__VA_ARGS__)									\
+	void serialize(y::io::WriterRef w) const {					\
+		y::io2::Writer writer(w);								\
+		y::serde2::WritableArchive<> ar(writer);				\
+		ar(__VA_ARGS__).or_throw("serde2");						\
+	}
+
+#define y_serde_1_2(...)										\
+	y_serialize_1_2(__VA_ARGS__)								\
+	y_deserialize_1_2(__VA_ARGS__)
+
+
+
+namespace detail {
+template<typename T>
+class Checker {
+	public:
+		Checker(T&& t) : _t(std::move(t)) {
+		}
+
+		template<typename Arc>
+		Result deserialize(Arc& ar) const {
+			T t;
+			if(ar(t) && t == _t) {
+				return core::Ok();
+			}
+			return core::Err();
+		}
+
+		template<typename Arc>
+		Result serialize(Arc& ar) const {
+			return ar(_t);
+		}
+
+	private:
+		T _t;
+};
+
+
+template<typename T>
+class Function {
+	public:
+		Function(T&& t) : _t(std::move(t)) {
+		}
+
+		template<typename Arc>
+		Result deserialize(Arc& ar) {
+			typename function_traits<T>::argument_pack args;
+			if(!ar(args)) {
+				return core::Err();
+			}
+			std::apply(_t, std::move(args));
+			return core::Ok();
+		}
+
+
+	private:
+		T _t;
+};
+}
+
+template<typename T>
+detail::Checker<T> check(T&& t) {
+	return detail::Checker<T>(y_fwd(t));
+}
+
+template<typename T>
+detail::Function<T> func(T&& t) {
+	return detail::Function<T>(y_fwd(t));
+}
 
 
 }

@@ -29,6 +29,7 @@ SOFTWARE.
 #include <vector>
 #include <numeric>
 
+namespace {
 using namespace y;
 using namespace y::core;
 
@@ -73,4 +74,5 @@ y_test_func("ArrayView of non-copyables") {
 
 	/*NonCopyable nc;
 	y_test_assert(test_func_nc({nc, NonCopyable()}) == 2);*/
+}
 }

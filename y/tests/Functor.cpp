@@ -23,6 +23,7 @@ SOFTWARE.
 #include <y/core/Functor.h>
 #include <y/test/test.h>
 
+namespace {
 using namespace y;
 using namespace y::core;
 
@@ -153,4 +154,5 @@ y_test_func("Functor creation") {
 	dec();
 	y_test_assert(!i);
 
+}
 }

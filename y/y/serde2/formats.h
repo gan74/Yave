@@ -25,6 +25,12 @@ SOFTWARE.
 #include "serde.h"
 
 namespace y {
+
+namespace io2 {
+class Reader;
+class Writer;
+}
+
 namespace serde2 {
 
 struct BinaryFormat {

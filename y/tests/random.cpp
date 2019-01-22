@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include <unordered_set>
 
+namespace {
+
 using namespace y;
 
 y_test_func("FastRandom") {
@@ -40,4 +42,6 @@ y_test_func("FastRandom") {
 y_test_func("FastRandom zero seed") {
 	math::FastRandom rnd(0);
 	y_test_assert(rnd() != 0);
+}
+
 }

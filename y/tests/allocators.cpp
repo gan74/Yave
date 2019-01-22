@@ -23,6 +23,7 @@ SOFTWARE.
 #include <y/mem/allocators.h>
 #include <y/core/Vector.h>
 
+namespace {
 using namespace y;
 using namespace memory;
 
@@ -70,3 +71,4 @@ y_test_func("FixedSizeFreeListAllocator basic") {
 	allocator.deallocate(p3, size - 1);
 	allocator.deallocate(p2, min_size);
 }*/
+}

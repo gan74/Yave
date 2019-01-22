@@ -26,6 +26,7 @@ SOFTWARE.
 
 //#include <y/core/String.h>
 
+namespace {
 using namespace y;
 using namespace y::core;
 
@@ -320,4 +321,6 @@ y_test_func("SmallVector move") {
 		y_test_assert(rc.use_count() == 1);
 	}
 }
+}
+
 

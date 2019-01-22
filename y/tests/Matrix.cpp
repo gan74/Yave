@@ -23,9 +23,9 @@ SOFTWARE.
 #include <y/math/Matrix.h>
 #include <y/test/test.h>
 
+namespace {
 using namespace y;
 using namespace y::math;
-
 
 y_test_func("Matrix vec multiply") {
 	Matrix3<> mat(1, 2, 3,
@@ -99,4 +99,5 @@ y_test_func("Matrix sub") {
 
 	using M = Matrix<1, 2>;
 	y_test_assert(mat.sub(0, 2) == M(4, 5));
+}
 }

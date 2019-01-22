@@ -24,6 +24,7 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/test/test.h>
 
+namespace {
 using namespace y;
 using namespace y::math;
 
@@ -83,5 +84,6 @@ y_test_func("Quaternion euler") {
 			}
 		}
 	}
+}
 }
 

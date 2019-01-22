@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
+namespace {
 using namespace y;
 
 struct DRaii : NonCopyable {
@@ -52,6 +53,7 @@ y_test_func("utils do_not_destroy") {
 		do_not_destroy(std::move(r));
 	}
 	y_test_assert(i == 1);
+}
 }
 
 

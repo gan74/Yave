@@ -27,6 +27,7 @@ SOFTWARE.
 #include <memory>
 #include <cstring>
 
+namespace {
 using namespace y;
 using namespace y::core;
 
@@ -245,6 +246,7 @@ y_test_func("fmt smalls") {
 		}
 	}
 	y_test_assert(true);
+}
 }
 
 

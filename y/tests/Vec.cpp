@@ -23,6 +23,7 @@ SOFTWARE.
 #include <y/math/Vec.h>
 #include <y/test/test.h>
 
+namespace {
 using namespace y;
 using namespace y::math;
 
@@ -75,4 +76,5 @@ y_test_func("Vec operators") {
 	static_assert(std::is_same_v<decltype(Vec(1, 2, 3) / 2), Vec<3, int>>, "Invalid Vec operator coercion");
 	static_assert(std::is_same_v<decltype(Vec(1, 2, 3) * 0.5), Vec<3, double>>, "Invalid Vec operator coercion");
 	static_assert(std::is_same_v<decltype(Vec(1, 2.0, 3) * 2), Vec<3, double>>, "Invalid Vec operator coercion");
+}
 }

@@ -24,6 +24,7 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/test/test.h>
 
+namespace {
 using namespace y;
 using namespace y::core;
 
@@ -71,4 +72,5 @@ y_test_func("AssocVector movable values") {
 		const auto& value = av[i];
 		y_test_assert(value.value == int(i));
 	}
+}
 }

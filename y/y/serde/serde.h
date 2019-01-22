@@ -28,6 +28,9 @@ SOFTWARE.
 
 #include <type_traits>
 
+#include <y/io2/io.h>
+#include <y/serde2/archives.h>
+
 
 #define y_serialize(...)														\
 	void serialize(y::io::WriterRef _y_serde_driver) const {					\
