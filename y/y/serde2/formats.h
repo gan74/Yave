@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "io.h"
+#ifndef Y_SERDE2_FORMATS_H
+#define Y_SERDE2_FORMATS_H
+
+#include "serde.h"
 
 namespace y {
-namespace io {
+namespace serde2 {
+
+struct BinaryFormat {
+	template<typename R, typename T>
+	auto read_array(R& reader, T* t, usize n) {
+		static_assert(std::is_trivially_copyable_v<T>);
+		return reader.read(reinterpret_cast<u8*>(t), sizeof(T) * n);
+	}
+
+	template<typename R, typename T>
+	auto read(R& reader, T& t) {
+		static_assert(std::is_trivially_copyable_v<T>);
+		return reader.read(reinterpret_cast<u8*>(&t), sizeof(T));
+	}
+
+
+	template<typename W, typename T>
+	auto write_array(W& writer, const T* t, usize n) {
+		static_assert(std::is_trivially_copyable_v<T>);
+		if(auto r = write<u64>(writer, n); r.is_error()) {
+			return r;
+		}
+		return writer.write(reinterpret_cast<const u8*>(t), sizeof(T) * n);
+	}
+
+	template<typename W, typename T>
+	auto write(W& writer, const T& t) {
+		static_assert(std::is_trivially_copyable_v<T>);
+		return writer.write(reinterpret_cast<u8*>(&t), sizeof(T));
+	}
+};
 
 }
 }
+
+#endif // Y_SERDE2_FORMATS_H

@@ -164,6 +164,10 @@ void FmtBuffer::fmt_one(char i) {
 	copy(&i, 1);
 }
 
+void FmtBuffer::fmt_one(unsigned char i) {
+	copy(reinterpret_cast<char*>(&i), 1);
+}
+
 void FmtBuffer::fmt_one(const void* p) {
 	y_buff_fmt_("%p", p);
 }
