@@ -52,6 +52,15 @@ using Result = core::Result<void>;
 		y::io2::Reader reader(r);								\
 		y::serde2::ReadableArchive<> ar(reader);				\
 		ar(__VA_ARGS__).or_throw("serde2");						\
+	}															\
+	static auto _y_serde_self_type_helper() ->					\
+		std::remove_reference<decltype(*this)>::type;			\
+	static auto deserialized(y::io::ReaderRef r) {				\
+		y::io2::Reader reader(r);								\
+		y::serde2::ReadableArchive<> ar(reader);				\
+		decltype(_y_serde_self_type_helper()) t;				\
+		ar(t).or_throw("serde2");								\
+		return t;												\
 	}
 
 #define y_serialize_1_2(...)									\
@@ -77,7 +86,7 @@ class Checker {
 
 		template<typename Arc>
 		Result deserialize(Arc& ar) const {
-			T t;
+			std::remove_const_t<std::remove_reference_t<T>> t;
 			if(ar(t) && t == _t) {
 				return core::Ok();
 			}
@@ -101,7 +110,7 @@ class Function {
 		}
 
 		template<typename Arc>
-		Result deserialize(Arc& ar) {
+		Result deserialize(Arc& ar) const {
 			typename function_traits<T>::argument_pack args;
 			if(!ar(args)) {
 				return core::Err();

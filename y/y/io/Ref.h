@@ -37,7 +37,6 @@ template<typename T>
 class Ref {
 
 	public:
-		using Result = core::Result<void, usize>;
 
 		Ref() = default;
 
@@ -87,7 +86,9 @@ class Ref {
 
 
 
-		// for serde2, remove
+// for serde2, remove
+#ifdef Y_IO_SERDE2_COMPAT
+		using Result = core::Result<void, usize>;
 		bool at_end() const {
 			return _ref->at_end();
 		}
@@ -122,6 +123,7 @@ class Ref {
 		void flush() {
 			_ref->flush();
 		}
+#endif
 
 	private:
 		void swap(Ref& other) {

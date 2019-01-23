@@ -47,6 +47,22 @@ template<typename T>
 struct Deserializer {
 };
 
+template<typename T>
+struct Deserializer<std::unique_ptr<T>> {
+	template<typename Arc>
+	static Result deserialize(Arc& ar, std::unique_ptr<T>& t) {
+		u32 not_null = 0;
+		if(!deserialize_one(ar, not_null)) {
+			return core::Err();
+		}
+		if(!not_null) {
+			return core::Ok();
+		}
+		t = std::make_unique<T>();
+		return deserialize_one(ar, *t.get());
+	}
+};
+
 template<typename T, typename... Args>
 struct Deserializer<core::Vector<T, Args...>> {
 	template<typename Arc>
@@ -177,6 +193,20 @@ static Result serialize_array(Arc& ar, const T* t, usize n);
 
 template<typename T>
 struct Serializer {
+};
+
+template<typename T>
+struct Serializer<std::unique_ptr<T>> {
+	template<typename Arc>
+	static Result serialize(Arc& ar, const std::unique_ptr<T>& t) {
+		if(!t.get()) {
+			return serialize_one(ar, u32(0));
+		}
+		if(!serialize_one(ar, u32(1))) {
+			return core::Err();
+		}
+		return serialize_one(ar, *t.get());
+	}
 };
 
 template<typename T>

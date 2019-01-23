@@ -27,9 +27,10 @@ SOFTWARE.
 #include "Deserializer.h"
 
 #include <type_traits>
-
+#ifdef Y_IO_SERDE2_COMPAT
 #include <y/io2/io.h>
 #include <y/serde2/archives.h>
+#endif
 
 
 #define y_serialize(...)														\

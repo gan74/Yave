@@ -48,7 +48,7 @@ struct Easy {
 	Trivial t;
 	std::tuple<core::String, int> str;
 
-	y_serde_1_2(str, t, check(-17))
+	y_serde2(str, t, check(-17))
 
 	bool operator==(const Easy& other) const {
 		return std::tie(t, str) == std::tie(other.t, other.str);
@@ -61,7 +61,7 @@ struct Complex {
 	int c;
 	core::String d;
 
-	y_serde_1_2(a, b, d, c)
+	y_serde2(a, b, d, c)
 
 	bool operator==(const Complex& other) const {
 		return std::tie(a, b, c, d) == std::tie(other.a, other.b, other.c, other.d);
