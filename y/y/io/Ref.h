@@ -23,9 +23,12 @@ SOFTWARE.
 #define Y_IO_REF_H
 
 #include <y/utils.h>
-#include <memory>
+#include <y/core/Result.h>
 #include "Reader.h"
 #include "Writer.h"
+
+#include <memory>
+
 
 namespace y {
 namespace io {
@@ -34,6 +37,8 @@ template<typename T>
 class Ref {
 
 	public:
+		using Result = core::Result<void, usize>;
+
 		Ref() = default;
 
 		Ref(const Ref& ref) : _ref(ref._ref) {
@@ -78,6 +83,44 @@ class Ref {
 
 		const T* operator->() const {
 			return _ref;
+		}
+
+
+
+		// for serde2, remove
+		bool at_end() const {
+			return _ref->at_end();
+		}
+
+		Result read(void* data, usize bytes) {
+			try {
+				_ref->read(data, bytes);
+				return core::Ok();
+			} catch(...) {
+				return core::Err(usize(0));
+			}
+		}
+
+		Result read_all(core::Vector<u8>& data) {
+			try {
+				_ref->read_all(data);
+				return core::Ok();
+			} catch(...) {
+				return core::Err(usize(0));
+			}
+		}
+
+		Result write(const void* data, usize bytes) {
+			try {
+				_ref->write(data, bytes);
+				return core::Ok();
+			} catch(...) {
+				return core::Err(usize(0));
+			}
+		}
+
+		void flush() {
+			_ref->flush();
 		}
 
 	private:
