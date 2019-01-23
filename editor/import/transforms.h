@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_IMPORT_TRANSFORMS_H
 #define EDITOR_IMPORT_TRANSFORMS_H
 
-#include "scene.h"
+#include "import.h"
 
 namespace editor {
 namespace import {

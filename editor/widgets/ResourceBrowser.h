@@ -59,7 +59,7 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 	public:
 		ResourceBrowser(ContextPtr ctx);
 
-		void refresh();
+		void refresh() override;
 
 	protected:
 		virtual void asset_selected(const FileInfo& file) const;
@@ -73,14 +73,6 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 		void paint_context_menu();
 
 	private:
-		template<typename T>
-		void save_assets(const core::String& path, core::ArrayView<Named<T>> assets, const char* asset_name_type) const;
-
-		void save_images(const core::String& path, core::ArrayView<Named<ImageData>> images) const;
-		void save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const;
-		void save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const;
-		void save_materials(const core::String& path, core::ArrayView<Named<BasicMaterialData>> mats) const;
-
 		const FileSystemModel* filesystem() const;
 
 		void set_current(DirNode* current);

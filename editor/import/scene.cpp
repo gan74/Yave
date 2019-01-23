@@ -20,16 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "scene.h"
+#include "import.h"
 
 #ifndef EDITOR_NO_ASSIMP
+
+#include <yave/utils/FileSystemModel.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <unordered_set>
+
 namespace editor {
 namespace import {
+
 
 
 static constexpr auto import_flags =
@@ -45,11 +50,38 @@ static constexpr auto import_flags =
 									 aiProcess_ValidateDataStructure |
 									 0;
 
-SceneData import_scene(const core::String& path) {
+
+core::Vector<Named<ImageData>> import_material_textures(core::ArrayView<aiMaterial*> materials, const core::String& filename) {
+	const FileSystemModel* fs = FileSystemModel::local_filesystem();
+
+	usize name_len = fs->filename(filename).size();
+	core::String path(filename.data(), filename.size() - name_len);
+
+	std::unordered_set<core::String> textures;
+	for(aiMaterial* mat : materials) {
+		if(mat->GetTextureCount(aiTextureType_DIFFUSE)) {
+			aiString name;
+			mat->GetTexture(aiTextureType_DIFFUSE, 0, &name);
+			textures.insert(name.C_Str());
+		}
+	}
+
+	core::Vector<Named<ImageData>> images;
+	for(const auto& name : textures) {
+		try {
+			images.emplace_back(import_image(fs->join(path, name)));
+		} catch(std::exception& e) {
+			log_msg(fmt("Unable to load image: %, skipping.", e.what()), Log::Error);
+		}
+	}
+	return images;
+}
+
+SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	core::DebugTimer _("import_scene");
 
 	Assimp::Importer importer;
-	auto scene = importer.ReadFile(path, import_flags);
+	auto scene = importer.ReadFile(filename, import_flags);
 
 	if(!scene) {
 		y_throw("Unable to load scene.");
@@ -61,10 +93,26 @@ SceneData import_scene(const core::String& path) {
 
 	auto meshes = core::ArrayView<aiMesh*>(scene->mMeshes, scene->mNumMeshes);
 	auto animations = core::ArrayView<aiAnimation*>(scene->mAnimations, scene->mNumAnimations);
+	auto materials = core::ArrayView<aiMaterial*>(scene->mMaterials, scene->mNumMaterials);
 
 	SceneData data;
-	std::transform(meshes.begin(), meshes.end(), std::back_inserter(data.meshes), [=](aiMesh* mesh) { return Named(mesh->mName.C_Str(), import_mesh(mesh, scene)); });
-	std::transform(animations.begin(), animations.end(), std::back_inserter(data.animations), [=](aiAnimation* anim) { return Named(anim->mName.C_Str(), import_animation(anim)); });
+
+	if((flags & SceneImportFlags::ImportMeshes) != SceneImportFlags::None) {
+		std::transform(meshes.begin(), meshes.end(), std::back_inserter(data.meshes), [=](aiMesh* mesh) {
+			return Named(clean_asset_name(mesh->mName.C_Str()), import_mesh(mesh, scene));
+		});
+	}
+
+	if((flags & SceneImportFlags::ImportAnims) != SceneImportFlags::None) {
+		std::transform(animations.begin(), animations.end(), std::back_inserter(data.animations), [=](aiAnimation* anim) {
+			return Named(clean_asset_name(anim->mName.C_Str()), import_animation(anim));
+		});
+	}
+
+	if((flags & SceneImportFlags::ImportImages) != SceneImportFlags::None) {
+		data.images = import_material_textures(materials, filename);
+	}
+
 	return data;
 }
 
@@ -84,7 +132,7 @@ core::String supported_scene_extensions() {
 namespace editor {
 namespace import {
 
-SceneData import_scene(const core::String& path) {
+SceneData import_scene(const core::String& filename) {
 	unused(path);
 	y_throw("Scene loading not supported.");
 	SceneData data;

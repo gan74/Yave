@@ -34,6 +34,8 @@ class UiElement : NonMovable {
 		UiElement(std::string_view title);
 		virtual ~UiElement() = default;
 
+		virtual void refresh();
+
 		virtual void paint(CmdBufferRecorder&, const FrameToken&) = 0;
 
 		virtual bool is_visible() const;

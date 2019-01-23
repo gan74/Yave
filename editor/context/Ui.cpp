@@ -75,6 +75,12 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	}
 }
 
+void Ui::refresh_all() {
+	for(auto&& widget : _widgets) {
+		widget->refresh();
+	}
+}
+
 Ui::Ids& Ui::ids_for(Widget* widget) {
 	return _ids[typeid(*widget)];
 }

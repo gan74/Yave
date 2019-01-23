@@ -23,7 +23,7 @@ SOFTWARE.
 #include "ImageImporter.h"
 
 #include <editor/context/EditorContext.h>
-#include <editor/import/image.h>
+#include <editor/import/import.h>
 
 #include <y/io/Buffer.h>
 
@@ -31,7 +31,23 @@ SOFTWARE.
 
 namespace editor {
 
-ImageImporter::ImageImporter(ContextPtr ctx) : Widget("Image importer"), ContextLinked(ctx) {
+static core::String clean_name(std::string_view name) {
+	if(name.empty()) {
+		return "unnamed";
+	}
+	core::String str;
+	str.set_min_capacity(name.size());
+	for(char c : name) {
+		str.push_back(std::isalnum(c) || c == '.' || c == '_' ? c : '_');
+	}
+	return str;
+}
+
+ImageImporter::ImageImporter(ContextPtr ctx, const core::String& import_path) :
+		Widget("Image importer"),
+		ContextLinked(ctx),
+		_import_path(import_path) {
+
 	_browser.set_has_parent(true);
 	_browser.set_extension_filter(import::supported_image_extensions());
 	_browser.set_selected_callback([this](const auto& filename) { import_async(filename); return true; });
@@ -45,7 +61,7 @@ void ImageImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		if(done_loading()) {
 			try {
 				const auto& imported = _import_future.get();
-				_callback(imported);
+				import(imported);
 			} catch(std::exception& e) {
 				context()->ui().ok("Unable to import", fmt("Unable to import scene: %" , e.what()).data());
 				_browser.show();
@@ -68,8 +84,21 @@ bool ImageImporter::done_loading() const {
 
 void ImageImporter::import_async(const core::String& filename) {
 	_import_future = std::async(std::launch::async, [=] {
-		return import::import_images(filename);
+		return import::import_image(filename);
 	});
+}
+
+void ImageImporter::import(const Named<ImageData>& asset) {
+	try {
+		core::String name = context()->asset_store().filesystem()->join(_import_path, clean_name(asset.name()));
+		io::Buffer data;
+		serde::serialize(data, asset.obj());
+		context()->asset_store().import(data, name);
+	} catch(std::exception& e) {
+		log_msg(fmt("Unable save image: %", e.what()), Log::Error);
+	}
+
+	context()->ui().refresh_all();
 }
 
 }

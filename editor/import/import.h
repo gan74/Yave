@@ -19,14 +19,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_IMPORT_SCENE_H
-#define EDITOR_IMPORT_SCENE_H
+#ifndef EDITOR_IMPORT_IMPORT_H
+#define EDITOR_IMPORT_IMPORT_H
 
 #include <editor/editor.h>
 
 #include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
 #include <yave/animations/AnimationChannel.h>
+
+#include <yave/graphics/images/ImageData.h>
 
 #include <y/core/Chrono.h>
 #include <y/math/math.h>
@@ -35,10 +37,32 @@ SOFTWARE.
 class aiAnimation;
 class aiMesh;
 class aiScene;
+class aiMaterial;
 #endif
 
 namespace editor {
 namespace import {
+
+enum class SceneImportFlags {
+	None = 0x00,
+
+	ImportMeshes = 0x01,
+	ImportAnims = 0x02,
+	ImportImages = 0x04,
+
+	ImportAll = 0xFF
+};
+
+constexpr SceneImportFlags operator|(SceneImportFlags l, SceneImportFlags r) {
+	return SceneImportFlags(uenum(l) | uenum(r));
+}
+
+constexpr SceneImportFlags operator&(SceneImportFlags l, SceneImportFlags r)  {
+	return SceneImportFlags(uenum(l) & uenum(r));
+}
+
+
+
 
 struct SkeletonData {
 	core::Vector<SkinWeights> skin;
@@ -48,11 +72,21 @@ struct SkeletonData {
 struct SceneData {
 	core::Vector<Named<MeshData>> meshes;
 	core::Vector<Named<Animation>> animations;
+	core::Vector<Named<ImageData>> images;
 };
 
-SceneData import_scene(const core::String& path);
 
+
+
+core::String clean_asset_name(const core::String& name);
+
+SceneData import_scene(const core::String& filename, SceneImportFlags flags = SceneImportFlags::ImportAll);
 core::String supported_scene_extensions();
+
+
+Named<ImageData> import_image(const core::String& filename);
+core::String supported_image_extensions();
+
 
 #ifndef EDITOR_NO_ASSIMP
 Animation import_animation(aiAnimation* anim);
@@ -63,4 +97,4 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
 }
 }
 
-#endif // EDITOR_IMPORT_SCENE_H
+#endif // EDITOR_IMPORT_IMPORT_H

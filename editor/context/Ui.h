@@ -54,14 +54,7 @@ class Ui : NonCopyable, public ContextLinked {
 
 		void paint(CmdBufferRecorder& recorder, const FrameToken& token);
 
-		template<typename T, typename F>
-		void for_each(F&& f) {
-			for(auto&& e : _widgets) {
-				if(T* w = dynamic_cast<T*>(e.get())) {
-					f(w);
-				}
-			}
-		}
+		void refresh_all();
 
 		template<typename T>
 		T* show() {

@@ -41,6 +41,9 @@ void UiElement::set_title(std::string_view title) {
 	_title = std::string_view(_title_with_id.begin(), title.size());
 }
 
+void UiElement::refresh() {
+}
+
 bool UiElement::is_visible() const {
 	return _visible;
 }

@@ -30,18 +30,6 @@ SOFTWARE.
 
 namespace editor {
 
-static core::String clean_name(std::string_view name) {
-	if(name.empty()) {
-		return "unnamed";
-	}
-	core::String str;
-	str.set_min_capacity(name.size());
-	for(char c : name) {
-		str.push_back(std::isalnum(c) || c == '.' || c == '_' ? c : '_');
-	}
-	return str;
-}
-
 static AssetId asset_id(ContextPtr ctx, std::string_view name) {
 	try {
 		return ctx->asset_store().id(name);
@@ -232,25 +220,14 @@ void ResourceBrowser::paint_context_menu() {
 
 		ImGui::Separator();
 		if(ImGui::Selectable("Import mesh")) {
-			MeshImporter* importer = context()->ui().add<MeshImporter>();
-			importer->set_callback(
-				[this, path = _current->full_path](auto meshes, auto anims) {
-					save_meshes(path, meshes);
-					save_anims(path, anims);
-					update_node(_current);
-				});
+			context()->ui().add<MeshImporter>(_current->full_path);
 		}
 		if(ImGui::Selectable("Import image")) {
-			ImageImporter* importer = context()->ui().add<ImageImporter>();
-			importer->set_callback(
-				[this, path = _current->full_path](auto images) {
-					save_images(path, images);
-					update_node(_current);
-				});
+			context()->ui().add<ImageImporter>(_current->full_path);
 		}
 		ImGui::Separator();
 		if(ImGui::Selectable("Create material")) {
-			save_materials(_current->full_path, {Named("material", BasicMaterialData())});
+			//save_materials(_current->full_path, {Named("material", BasicMaterialData())});
 			context()->selection().set_selected(device()->default_resources()[DefaultResources::BasicMaterial]);
 			refresh();
 		}
@@ -347,7 +324,6 @@ void ResourceBrowser::paint_preview(float width) {
 		if(TextureView* image = context()->thumbmail_cache().get_thumbmail(file->id)) {
 			ImGui::Image(image, math::Vec2(width));
 		}
-
 	}
 }
 
@@ -372,41 +348,6 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 		ImGui::SameLine();
 		paint_preview(preview_width);
 	}
-}
-
-
-
-// ----------------------------------- Imports -----------------------------------
-
-template<typename T>
-void ResourceBrowser::save_assets(const core::String& path, core::ArrayView<Named<T>> assets, const char* asset_name_type) const {
-	try {
-		for(const auto& a : assets) {
-			core::String name = filesystem()->join(path, clean_name(a.name()));
-			log_msg(fmt("Saving % as \"%\"", asset_name_type, name));
-			io::Buffer data;
-			serde::serialize(data, a.obj());
-			context()->asset_store().import(data, name);
-		}
-	} catch(std::exception& e) {
-		log_msg(fmt("Unable save %: %", asset_name_type, e.what()), Log::Error);
-	}
-}
-
-void ResourceBrowser::save_images(const core::String& path, core::ArrayView<Named<ImageData>> images) const {
-	save_assets(path, images, "image");
-}
-
-void ResourceBrowser::save_meshes(const core::String& path, core::ArrayView<Named<MeshData>> meshes) const {
-	save_assets(path, meshes, "mesh");
-}
-
-void ResourceBrowser::save_anims(const core::String& path, core::ArrayView<Named<Animation>> anims) const {
-	save_assets(path, anims, "animation");
-}
-
-void ResourceBrowser::save_materials(const core::String& path, core::ArrayView<Named<BasicMaterialData>> mats) const {
-	save_assets(path, mats, "material");
 }
 
 const FileSystemModel* ResourceBrowser::filesystem() const {

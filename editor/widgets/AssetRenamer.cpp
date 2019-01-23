@@ -57,7 +57,7 @@ void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			auto full_new_name = filesystem()->join(path, _new_name.data());
 			context()->asset_store().rename(_full_name, full_new_name);
 
-			context()->ui().for_each<ResourceBrowser>([](ResourceBrowser* b) { b->refresh(); });
+			context()->ui().refresh_all();
 			close();
 		} catch(std::exception& e) {
 			context()->ui().ok("Error", e.what());

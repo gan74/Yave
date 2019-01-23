@@ -31,25 +31,22 @@ namespace editor {
 class ImageImporter final : public Widget, public ContextLinked {
 
 	public:
-		ImageImporter(ContextPtr ctx);
-
-		template<typename F>
-		void set_callback(F&& func) {
-			_callback = std::forward<F>(func);
-		}
+		ImageImporter(ContextPtr ctx, const core::String& import_path = ".");
 
 	private:
 		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
 
 		void import_async(const core::String& filename);
+		void import(const Named<ImageData>& asset);
 
 		bool done_loading() const;
 		bool is_loading() const;
 
 		FileBrowser _browser;
 
-		std::future<core::Vector<Named<ImageData>>> _import_future;
-		core::Function<void(core::ArrayView<Named<ImageData>>)> _callback = [](auto) {};
+		core::String _import_path;
+
+		std::future<Named<ImageData>> _import_future;
 };
 
 }

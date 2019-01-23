@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "FileBrowser.h"
 
-#include <editor/import/scene.h>
+#include <editor/import/import.h>
 
 #include <future>
 
@@ -32,26 +32,31 @@ namespace editor {
 
 class MeshImporter final : public Widget, public ContextLinked {
 
-	public:
-		MeshImporter(ContextPtr ctx);
+	enum class State {
+		Browsing,
+		Settings,
+		Importing
+	};
 
-		template<typename F>
-		void set_callback(F&& func) {
-			_callback = std::forward<F>(func);
-		}
+	public:
+		MeshImporter(ContextPtr ctx, const core::String& import_path = ".");
 
 	private:
 		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
 
-		void import_async(const core::String& filename);
+		void import(const import::SceneData& scene);
 
 		bool done_loading() const;
-		bool is_loading() const;
+
+		State _state = State::Browsing;
 
 		FileBrowser _browser;
 
+		core::String _import_path;
+		core::String _filename;
+		import::SceneImportFlags _flags = import::SceneImportFlags::ImportAll;
+
 		std::future<import::SceneData> _import_future;
-		core::Function<void(core::ArrayView<Named<MeshData>>, core::ArrayView<Named<Animation>>)> _callback = [](auto, auto) {};
 };
 
 }

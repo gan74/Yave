@@ -19,21 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_IMPORT_IMAGE_H
-#define EDITOR_IMPORT_IMAGE_H
 
-#include <editor/editor.h>
-
-#include <yave/graphics/images/ImageData.h>
+#include "import.h"
 
 namespace editor {
 namespace import {
 
-core::Vector<Named<ImageData>> import_images(const core::String& path);
 
-core::String supported_image_extensions();
+core::String clean_asset_name(const core::String& name) {
+	if(name.is_empty()) {
+		return "unamed";
+	}
+
+	usize begin = 0;
+	for(usize i = 0; i != name.size(); ++i) {
+		if(name[i] == '\\' || name[i] == '/') {
+			begin = i + 1;
+		}
+	}
+
+	usize len = 0;
+	for(usize i = begin; i != name.size(); ++i) {
+		if(name[i] == '.') {
+			break;
+		}
+		++len;
+	}
+
+	core::String n = name.sub_str(begin, len);
+	for(char& c : n) {
+		if(!std::isalnum(c)) {
+			c = '_';
+		}
+	}
+
+	return n.is_empty() ? "unamed" : n;
+}
 
 }
 }
-
-#endif // EDITOR_IMPORT_IMAGE_H
