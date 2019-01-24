@@ -22,9 +22,12 @@ SOFTWARE.
 
 #include "Chrono.h"
 
+#ifdef Y_OS_WIN
+#include <windows.h>
+#endif
+
 namespace y {
 namespace core {
-
 
 u64 Duration::to_nanos() const {
 	return _secs * 1000000000 + _subsec_ns;
@@ -74,7 +77,21 @@ Chrono::Chrono() {
 }
 
 void Chrono::start() {
+#ifdef Y_OS_WIN
+	{
+		LARGE_INTEGER li;
+		QueryPerformanceFrequency(&li);
+		_freq = li.QuadPart;
+	}
+	{
+
+		LARGE_INTEGER li;
+		QueryPerformanceCounter(&li);
+		_counter = li.QuadPart;
+	}
+#else
 	_time = std::chrono::high_resolution_clock::now();
+#endif
 }
 
 Duration Chrono::reset() {
@@ -84,8 +101,16 @@ Duration Chrono::reset() {
 }
 
 Duration Chrono::elapsed() const {
+#ifdef Y_OS_WIN
+	LARGE_INTEGER li;
+	QueryPerformanceCounter(&li);
+	u64 diff = li.QuadPart -_counter;
+	return Duration::seconds(diff / double(_freq));
+	//return Duration(diff / _freq, u32((double(diff) / _freq) * 1000000000.0));
+#else
 	auto nanos = u64(std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - _time).count());
 	return Duration(nanos / 1000000000, nanos % 1000000000);
+#endif
 }
 
 Duration Chrono::program() {

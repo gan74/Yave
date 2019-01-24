@@ -85,7 +85,12 @@ class Chrono {
 		static Duration program();
 
 	private:
+#ifdef Y_OS_WIN
+		u64 _counter;
+		u64 _freq = 1;
+#else
 		std::chrono::time_point<std::chrono::high_resolution_clock> _time;
+#endif
 };
 
 class DebugTimer : NonCopyable {
