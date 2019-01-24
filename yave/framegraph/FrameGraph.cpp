@@ -65,6 +65,42 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 	y_profile();
 #warning no pass culling
 
+	alloc_resources();
+
+	std::unordered_map<FrameGraphResourceId, PipelineStage> to_barrier;
+	core::Vector<BufferBarrier> buffer_barriers;
+	core::Vector<ImageBarrier> image_barriers;
+	for(const auto& pass : _passes) {
+		y_profile_zone(pass->name());
+		auto region = recorder.region(pass->name());
+
+		{
+			y_profile_zone("init");
+			pass->init_framebuffer(_pool.get());
+			pass->init_descriptor_sets(_pool.get());
+		}
+
+		buffer_barriers.make_empty();
+		image_barriers.make_empty();
+		build_barriers(pass->_buffers, buffer_barriers, to_barrier, _pool.get());
+		build_barriers(pass->_images, image_barriers, to_barrier, _pool.get());
+
+		recorder.barriers(buffer_barriers, image_barriers);
+		{
+			y_profile_zone("render");
+			pass->render(recorder);
+		}
+	}
+
+#warning barrier resources at end
+
+	release_resources(recorder);
+	recorder.keep_alive(std::pair{std::move(_pool), std::move(_passes)});
+}
+
+
+void FrameGraph::alloc_resources() {
+	y_profile();
 	for(auto&& [res, info] : _images) {
 		if(is_none(info.usage)) {
 			y_fatal("Unused frame graph image resource.");
@@ -77,34 +113,10 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 		}
 		_pool->create_buffer(res, info.byte_size, info.usage, info.memory_type);
 	}
-
-
-	std::unordered_map<FrameGraphResourceId, PipelineStage> to_barrier;
-	core::Vector<BufferBarrier> buffer_barriers;
-	core::Vector<ImageBarrier> image_barriers;
-	for(const auto& pass : _passes) {
-		auto region = recorder.region(pass->name());
-
-		pass->init_framebuffer(_pool.get());
-		pass->init_descriptor_sets(_pool.get());
-
-		buffer_barriers.make_empty();
-		image_barriers.make_empty();
-		build_barriers(pass->_buffers, buffer_barriers, to_barrier, _pool.get());
-		build_barriers(pass->_images, image_barriers, to_barrier, _pool.get());
-
-		recorder.barriers(buffer_barriers, image_barriers);
-		pass->render(recorder);
-	}
-
-#warning barrier resources at end
-
-	release_resources(recorder);
-	recorder.keep_alive(std::pair{std::move(_pool), std::move(_passes)});
-
 }
 
 void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
+	y_profile();
 	struct BufferRelease : NonCopyable {
 		FrameGraphBufferId res;
 		FrameGraphResourcePool* pool = nullptr;

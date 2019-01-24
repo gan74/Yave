@@ -109,7 +109,6 @@ void ThumbmailCache::request_thumbmail(AssetId asset) {
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
 			y_profile();
 			try {
-
 				switch(context()->asset_store().asset_type(asset)) {
 					case AssetType::Mesh: {
 						auto mesh = context()->loader().static_mesh().load(asset);

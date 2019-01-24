@@ -74,6 +74,7 @@ class FrameGraph : NonCopyable {
 	private:
 		friend class FrameGraphPassBuilder;
 
+		void alloc_resources();
 		void release_resources(CmdBufferRecorder& recorder);
 
 		std::shared_ptr<FrameGraphResourcePool> _pool;

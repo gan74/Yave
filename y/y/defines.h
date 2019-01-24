@@ -48,8 +48,10 @@ struct Nothing;
 
 #define y_fwd(var) std::forward<decltype(var)>(var)
 
+#ifdef Y_DEBUG
 #ifndef Y_PERF_LOG_DISABLED
 #define Y_PERF_LOG_ENABLED
+#endif
 #endif
 
 /****************** OS DEFINES BELOW ******************/

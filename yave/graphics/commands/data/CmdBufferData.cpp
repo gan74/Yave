@@ -74,6 +74,7 @@ void CmdBufferData::swap(CmdBufferData& other) {
 }
 
 void CmdBufferData::reset() {
+	y_profile();
 	if(_fence) {
 		device()->vk_device().resetFences({_fence});
 	}

@@ -102,6 +102,8 @@ void MainWindow::exec() {
 }
 
 void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
+	y_profile();
+
 	RecordedCmdBuffer cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
@@ -168,6 +170,8 @@ void MainWindow::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 }
 
 void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+	y_profile();
+
 	// menu
 	{
 		if(ImGui::BeginMenuBar()) {
