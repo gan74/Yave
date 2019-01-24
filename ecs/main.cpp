@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-/*#include <yave/yave.h>
+#include <yave/yave.h>
 
 #include <y/core/Chrono.h>
 
@@ -86,65 +86,6 @@ int main(int, char**) {
 
 
 	log_msg("Ok!");
-
-	return 0;
-}*/
-
-
-
-#include <y/io2/io.h>
-#include <y/io2/File.h>
-#include <y/io2/BuffReader.h>
-#include <y/io2/Buffer.h>
-#include <y/serde2/archives.h>
-
-using namespace y;
-
-
-struct S {
-	int x;
-	core::String str;
-
-	y_serde2(x, str)
-};
-
-struct Test {
-	u32 a;
-	core::String str;
-	std::tuple<i32, char> tpl;
-	core::Vector<S> vec;
-
-
-	y_serde2(a, str, tpl, vec)
-};
-
-int main(int, char**) {
-	io2::Buffer buffer;
-
-	const char* str = "flubudu lalalalalalalalalalalala lol";
-	log_msg(fmt("%", core::ArrayView<char>(str, std::strlen(str))));
-	{
-		Test t{7, str, {-12, 'l'}, {S{8, "huit"}, S{17, "dix sept"}}};
-		{
-			io2::Writer writer(buffer);
-			serde2::WritableArchive<> ar(writer);
-			ar(t);
-		}
-
-	}
-
-	{
-		io2::Reader reader(buffer);
-		serde2::ReadableArchive<> ar(reader);
-		Test t;
-		ar(t);
-		log_msg(fmt("Test{%, %, %}", t.a, t.str, t.tpl));
-		for(auto&& s : t.vec) {
-			log_msg(fmt("Vec{%, %}", s.x, s.str));
-		}
-	}
-
-	log_msg("ok");
 
 	return 0;
 }
