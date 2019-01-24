@@ -84,6 +84,14 @@ class Ref {
 			return _ref;
 		}
 
+		T* get() {
+			return _ref;
+		}
+
+		const T* get() const {
+			return _ref;
+		}
+
 
 
 // for serde2, remove

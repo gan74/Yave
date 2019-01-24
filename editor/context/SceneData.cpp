@@ -73,7 +73,7 @@ bool SceneData::is_scene_empty() const {
 }
 
 void SceneData::save(std::string_view filename) {
-	Y_LOG_PERF("editor,save");
+	y_profile();
 	try {
 		_scene.serialize(io::File::create(filename).or_throw("Unable to create scene file."));
 	} catch(std::exception& e) {
@@ -82,7 +82,7 @@ void SceneData::save(std::string_view filename) {
 }
 
 void SceneData::load(std::string_view filename) {
-	Y_LOG_PERF("editor,loading");
+	y_profile();
 	try {
 		auto sce = Scene::deserialized(
 				io::File::open(filename).or_throw("Unable to open scene file."),

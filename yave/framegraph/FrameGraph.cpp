@@ -62,6 +62,7 @@ static bool is_none(U u) {
 }
 
 void FrameGraph::render(CmdBufferRecorder& recorder) && {
+	y_profile();
 #warning no pass culling
 
 	for(auto&& [res, info] : _images) {

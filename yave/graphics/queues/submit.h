@@ -33,7 +33,7 @@ struct AsyncSubmit {
 
 struct SyncSubmit {
 	void operator()(const RecordedCmdBuffer& b) const {
-		Y_LOG_PERF("queue");
+		y_profile();
 		b.wait();
 	}
 };

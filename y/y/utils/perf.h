@@ -22,8 +22,7 @@ SOFTWARE.
 #ifndef Y_UTILS_PERF_H
 #define Y_UTILS_PERF_H
 
-#include <y/io/Writer.h>
-#include <y/defines.h>
+#include <y/utils.h>
 #include <memory>
 
 namespace y {
@@ -31,18 +30,13 @@ namespace perf {
 
 // For use with chrome://tracing
 
-void set_output_ptr(std::unique_ptr<io::Writer>&& out);
-
-template<typename T>
-void set_output(T&& t) {
-	set_output_ptr(std::make_unique<T>(y_fwd(t)));
-}
+void set_output_file(const char* out);
 
 void enter(const char* cat, const char* func);
 void leave(const char* cat, const char* func);
 void event(const char* cat, const char* name);
 
-inline auto log_func(const char* cat, const char* func) {
+inline auto log_func(const char* func, const char* cat = "") {
 	class Logger : NonCopyable {
 		const char* _cat;
 		const char* _func;
@@ -59,11 +53,9 @@ inline auto log_func(const char* cat, const char* func) {
 }
 
 #ifdef Y_PERF_LOG_ENABLED
-#define Y_LOG_PERF_LINE_HELPER(cat, LINE) auto _perf_at_ ## LINE = y::perf::log_func(cat, __PRETTY_FUNCTION__)
-#define Y_LOG_PERF_HELPER(cat, LINE) Y_LOG_PERF_LINE_HELPER(cat, LINE)
-#define Y_LOG_PERF(cat) Y_LOG_PERF_HELPER(cat, __LINE__)
+#define y_profile() auto y_create_name_with_prefix(prof) = y::perf::log_func(__PRETTY_FUNCTION__)
 #else
-#define Y_LOG_PERF(cat) do {} while(0)
+#define y_profile() do {} while(false)
 #endif
 
 }

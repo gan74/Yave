@@ -78,7 +78,7 @@ core::Vector<Named<ImageData>> import_material_textures(core::ArrayView<aiMateri
 }
 
 SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
-	core::DebugTimer _("import_scene");
+	y_profile();
 
 	Assimp::Importer importer;
 	auto scene = importer.ReadFile(filename, import_flags);

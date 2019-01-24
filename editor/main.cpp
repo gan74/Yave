@@ -34,8 +34,7 @@ void crash_handler(int) {
 int main(int argc, char** argv) {
 	std::signal(SIGSEGV, crash_handler);
 
-
-	perf::set_output(std::move(io::File::create("perfdump.json").unwrap()));
+	perf::set_output_file("perfdump.json");
 
 
 	bool debug = true;

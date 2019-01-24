@@ -107,6 +107,7 @@ void ThumbmailCache::process_requests() {
 void ThumbmailCache::request_thumbmail(AssetId asset) {
 	_thumbmails[asset] = nullptr;
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
+			y_profile();
 			try {
 
 				switch(context()->asset_store().asset_type(asset)) {

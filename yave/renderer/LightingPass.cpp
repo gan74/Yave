@@ -30,7 +30,7 @@ SOFTWARE.
 namespace yave {
 
 static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
-	Y_LOG_PERF("deferred,IBL");
+	y_profile();
 	core::DebugTimer _("IBLData::create_ibl_lut()");
 
 	const ComputeProgram& brdf_integrator = dptr->default_resources()[DefaultResources::BRDFIntegratorProgram];
@@ -83,6 +83,8 @@ static constexpr usize max_light_count = 1024;
 
 
 LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data) {
+	y_profile();
+
 	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
 	math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 

@@ -33,9 +33,12 @@ struct BasicMaterialHeader {
 BasicMaterialData::BasicMaterialData(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
+BasicMaterialData::BasicMaterialData(DevicePtr dptr, std::array<AssetPtr<Texture>, texture_count>&& textures) : DeviceLinked(dptr), _textures(std::move(textures)) {
+}
+
 BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader) {
 	BasicMaterialHeader().deserialize(reader);
-	BasicMaterialData data;
+	BasicMaterialData data(texture_loader.device());
 	for(auto& tex : data._textures) {
 		tex = texture_loader.load(serde::deserialized<AssetId>(reader));
 	}

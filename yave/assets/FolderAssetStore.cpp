@@ -177,6 +177,7 @@ AssetId FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) 
 }
 
 AssetId FolderAssetStore::id(std::string_view name) const {
+	y_profile();
 	std::unique_lock lock(_lock);
 
 	y_debug_assert(_from_id.size() == _from_name.size());
@@ -187,6 +188,7 @@ AssetId FolderAssetStore::id(std::string_view name) const {
 }
 
 io::ReaderRef FolderAssetStore::data(AssetId id) const {
+	y_profile();
 	std::unique_lock lock(_lock);
 
 	y_debug_assert(_from_id.size() == _from_name.size());

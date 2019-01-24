@@ -39,7 +39,7 @@ MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 GraphicPipeline MaterialCompiler::compile(const Material* material, const RenderPass& render_pass) const {
-	Y_LOG_PERF("material");
+	y_profile();
 	core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
 #warning move program creation
 

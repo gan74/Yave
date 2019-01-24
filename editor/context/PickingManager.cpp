@@ -41,6 +41,8 @@ PickingManager::PickingManager(ContextPtr ctx) :
 
 
 PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
+	y_profile();
+
 	FrameGraph framegraph(context()->resource_pool());
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");

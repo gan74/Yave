@@ -41,6 +41,7 @@ File::~File() {
 	if(_file) {
 		std::fclose(_file);
 	}
+	_file = nullptr;
 }
 
 File::File(File&& other) {

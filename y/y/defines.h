@@ -79,6 +79,6 @@ struct Nothing;
 #define Y_CREATE_NAME_HELPER(prefix, LINE) Y_CREATE_NAME_LINE_HELPER(prefix, LINE)
 
 #define y_create_name_with_prefix(prefix) Y_CREATE_NAME_HELPER(prefix, __LINE__)
-#define y_create_name y_create_name_with_prefix("", __LINE__)
+#define y_create_name y_create_name_with_prefix()
 
 #endif // Y_DEFINES_H

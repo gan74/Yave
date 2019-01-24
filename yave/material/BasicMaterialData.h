@@ -34,6 +34,7 @@ class BasicMaterialData : public DeviceLinked {
 		static constexpr usize texture_count = 4;
 
 		BasicMaterialData() = default;
+		BasicMaterialData(DevicePtr dptr, std::array<AssetPtr<Texture>, texture_count>&& textures);
 
 		static BasicMaterialData deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader);
 		void serialize(io::WriterRef writer) const;

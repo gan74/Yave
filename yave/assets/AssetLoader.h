@@ -58,7 +58,7 @@ class AssetLoader : public AssetLoaderBase {
 		}
 
 		AssetPtr<T> load(AssetId id) {
-			Y_LOG_PERF("asset,loading");
+			y_profile();
 
 			if(id == AssetId::invalid_id()) {
 				y_throw("Invalid id.");

@@ -45,6 +45,7 @@ EngineView::~EngineView() {
 }
 
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+	y_profile();
 	update();
 
 	TextureView* output = nullptr;

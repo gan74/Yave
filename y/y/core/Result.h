@@ -158,6 +158,7 @@ class Result : NonCopyable {
 
 		using ret_value_type = std::remove_reference_t<decltype(std::declval<ok_type>().get())>;
 		using value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_lvalue_reference_t<ret_value_type>>;
+		using value_type_rref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_rvalue_reference_t<ret_value_type>>;
 		using const_value_type_ref = std::conditional_t<std::is_void_v<ret_value_type>, void, std::add_lvalue_reference_t<const ret_value_type>>;
 
 		using ret_error_type = std::remove_reference_t<decltype(std::declval<err_type>().get())>;
@@ -226,6 +227,31 @@ class Result : NonCopyable {
 			return expected("Unwrap failed.");
 		}
 
+		/*value_type_rref unwrap() && {
+			return std::move(expected("Unwrap failed."));
+		}*/
+
+		const_value_type_ref expected(const char* err_msg) const {
+			if(is_error()) {
+				y_fatal(err_msg);
+			}
+			return _value.get();
+		}
+
+		value_type_ref expected(const char* err_msg) {
+			if(is_error()) {
+				y_fatal(err_msg);
+			}
+			return _value.get();
+		}
+
+		/*value_type_rref expected(const char* err_msg) && {
+			if(is_error()) {
+				y_fatal(err_msg);
+			}
+			return std::move(_value.get());
+		}*/
+
 		const_value_type_ref or_throw(const char* err_msg = "Unwrap failed.") const {
 			if(is_error()) {
 				y_throw(err_msg);
@@ -240,6 +266,13 @@ class Result : NonCopyable {
 			return _value.get();
 		}
 
+		/*value_type_rref or_throw(const char* err_msg = "Unwrap failed.") && {
+			if(is_error()) {
+				y_throw(err_msg);
+			}
+			return std::move(_value.get());
+		}*/
+
 		const_error_type_ref error() const {
 			if(is_ok()) {
 				y_fatal("Result is not an error.");
@@ -252,20 +285,6 @@ class Result : NonCopyable {
 				y_fatal("Result is not an error.");
 			}
 			return _error.get();
-		}
-
-		const_value_type_ref expected(const char* err_msg) const {
-			if(is_error()) {
-				y_fatal(err_msg);
-			}
-			return _value.get();
-		}
-
-		value_type_ref expected(const char* err_msg) {
-			if(is_error()) {
-				y_fatal(err_msg);
-			}
-			return _value.get();
 		}
 
 		template<typename U>

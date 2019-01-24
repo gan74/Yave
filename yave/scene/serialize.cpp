@@ -59,7 +59,7 @@ void Scene::serialize(io::WriterRef writer) const {
 }
 
 Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader, const AssetPtr<Material>& default_material) {
-	core::DebugTimer _("Scene::from_file()");
+	y_profile();
 
 	struct Header {
 		u32 magic;

@@ -36,7 +36,7 @@ DeviceAllocator::DeviceAllocator(DevicePtr dptr) :
 }
 
 DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type) {
-	Y_LOG_PERF("memory");
+	y_profile();
 	auto& heap = _dedicated_heaps[type];
 	if(!heap) {
 		heap = std::make_unique<DedicatedDeviceMemoryAllocator>(device(), type);
@@ -45,7 +45,7 @@ DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, Memor
 }
 
 DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
-	Y_LOG_PERF("memory");
+	y_profile();
 	if(reqs.size >= dedicated_threshold) {
 		return dedicated_alloc(reqs, type);
 	}

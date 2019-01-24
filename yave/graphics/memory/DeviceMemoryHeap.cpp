@@ -123,7 +123,7 @@ void DeviceMemoryHeap::free(const FreeBlock& block) {
 }
 
 void DeviceMemoryHeap::compact_block(FreeBlock block) {
-	Y_LOG_PERF("memory");
+	y_profile();
 	// sort ?
 	bool compacted = false;
 	do {

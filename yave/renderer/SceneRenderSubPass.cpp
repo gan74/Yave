@@ -44,8 +44,9 @@ SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBui
 
 
 void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpass, const FrameGraphPass* pass) {
-	auto& descriptor_set = pass->descriptor_sets()[0];
+	y_profile();
 
+	auto& descriptor_set = pass->descriptor_sets()[0];
 
 	// fill render data
 	{

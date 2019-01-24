@@ -100,7 +100,7 @@ static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr 
 }
 
 static void upload_data(ImageBase& image, const ImageData& data) {
-	Y_LOG_PERF("image,staging");
+	y_profile();
 	DevicePtr dptr = image.device();
 
 	auto staging_buffer = get_staging_buffer(dptr, data.combined_byte_size(), data.data());
@@ -119,7 +119,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 }
 
 static void transition_image(ImageBase& image) {
-	Y_LOG_PERF("image");
+	y_profile();
 	DevicePtr dptr = image.device();
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());

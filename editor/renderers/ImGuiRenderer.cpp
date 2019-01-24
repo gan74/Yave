@@ -36,7 +36,7 @@ static constexpr usize imgui_index_buffer_size = 64 * 1024;
 static constexpr usize imgui_vertex_buffer_size = 64 * 1024;
 
 static ImageData load_font() {
-	core::DebugTimer _("load_font");
+	y_profile();
 
 	// https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
 	ImGuiIO& io = ImGui::GetIO();
@@ -108,6 +108,7 @@ void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const FrameToken& 
 void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token) {
 	static_assert(sizeof(ImDrawVert) == sizeof(Vertex), "ImDrawVert is not of expected size");
 	static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
+	y_profile();
 
 	auto region = recorder.region("ImGuiRenderer::render");
 

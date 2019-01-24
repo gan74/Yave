@@ -43,7 +43,7 @@ static core::String clean_name(std::string_view name) {
 }
 
 MeshImporter::MeshImporter(ContextPtr ctx, const core::String& import_path) :
-		Widget("Mesh importer"),
+		Widget("Mesh importer", ImGuiWindowFlags_AlwaysAutoResize),
 		ContextLinked(ctx),
 		_import_path(import_path) {
 
@@ -109,6 +109,7 @@ bool MeshImporter::done_loading() const {
 
 
 void MeshImporter::import(const import::SceneData& scene) {
+	y_profile();
 	auto import_assets = [this](const auto& assets) {
 		for(const auto& a : assets) {
 			try {

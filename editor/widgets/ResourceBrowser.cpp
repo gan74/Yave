@@ -108,6 +108,8 @@ void ResourceBrowser::set_current(DirNode* current) {
 }
 
 void ResourceBrowser::update_node(DirNode* node) {
+	y_profile();
+
 	reset_hover();
 	node->children.clear();
 	node->files.clear();
@@ -332,6 +334,7 @@ void ResourceBrowser::paint_preview(float width) {
 
 void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	unused(recorder, token);
+	y_profile();
 
 	const float width = ImGui::GetWindowContentRegionWidth();
 	const float tree_width = std::min(width * 0.5f, 200.0f);

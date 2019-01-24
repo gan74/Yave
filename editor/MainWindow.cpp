@@ -124,6 +124,8 @@ void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 }
 
 void MainWindow::render(CmdBufferRecorder& recorder, const FrameToken& token) {
+	y_profile();
+
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking |
