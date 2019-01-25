@@ -31,18 +31,6 @@ SOFTWARE.
 
 namespace editor {
 
-static core::String clean_name(std::string_view name) {
-	if(name.empty()) {
-		return "unnamed";
-	}
-	core::String str;
-	str.set_min_capacity(name.size());
-	for(char c : name) {
-		str.push_back(std::isalnum(c) || c == '.' || c == '_' ? c : '_');
-	}
-	return str;
-}
-
 ImageImporter::ImageImporter(ContextPtr ctx, const core::String& import_path) :
 		Widget("Image importer"),
 		ContextLinked(ctx),
@@ -90,7 +78,7 @@ void ImageImporter::import_async(const core::String& filename) {
 
 void ImageImporter::import(const Named<ImageData>& asset) {
 	try {
-		core::String name = context()->asset_store().filesystem()->join(_import_path, clean_name(asset.name()));
+		core::String name = context()->asset_store().filesystem()->join(_import_path, asset.name());
 		io::Buffer data;
 		serde::serialize(data, asset.obj());
 		context()->asset_store().import(data, name);

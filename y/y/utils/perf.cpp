@@ -28,7 +28,7 @@ SOFTWARE.
 #include <mutex>
 #include <cstdio>
 
-#include <sstream>
+#include <list>
 
 #include "os.h"
 
@@ -59,6 +59,14 @@ static double micros() {
 	return core::Chrono::program().to_micros();
 }
 
+static u32 thread_id() {
+	static u32 id = 0;
+	static thread_local u32 tid = ++id;
+	return tid;
+}
+
+#warning TLS destructors not called on windows
+
 static thread_local struct ThreadData : NonMovable {
 	std::shared_ptr<io::File> keep_alive;
 	std::unique_ptr<char[]> buffer;
@@ -67,11 +75,8 @@ static thread_local struct ThreadData : NonMovable {
 
 	ThreadData() :
 			keep_alive(output),
-			buffer(std::make_unique<char[]>(buffer_size)) {
-
-		std::stringstream ss;
-		ss << std::this_thread::get_id();
-		tid = std::stoul(ss.str());
+			buffer(std::make_unique<char[]>(buffer_size)),
+			tid(thread_id()) {
 	}
 
 	~ThreadData() {
@@ -109,7 +114,6 @@ static thread_local struct ThreadData : NonMovable {
 			event("perf", "done writing buffer");
 		}
 	}
-
 } thread_data;
 
 static int paren(const char* buff) {

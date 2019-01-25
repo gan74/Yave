@@ -44,7 +44,7 @@ class MeshImporter final : public Widget, public ContextLinked {
 	private:
 		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
 
-		void import(const import::SceneData& scene);
+		void import(import::SceneData scene);
 
 		bool done_loading() const;
 
@@ -55,6 +55,9 @@ class MeshImporter final : public Widget, public ContextLinked {
 		core::String _import_path;
 		core::String _filename;
 		import::SceneImportFlags _flags = import::SceneImportFlags::ImportAll;
+
+		usize _forward_axis = 0;
+		usize _up_axis = 4;
 
 		std::future<import::SceneData> _import_future;
 };

@@ -275,6 +275,7 @@ void ResourceBrowser::paint_asset_list(float width) {
 	}
 
 	usize index = 0;
+	usize hovered = usize(-1);
 	auto selected = [&] { return _current_hovered_index == index; };
 
 	// dirs
@@ -285,7 +286,7 @@ void ResourceBrowser::paint_asset_list(float width) {
 		}
 
 		if(!menu_openned && ImGui::IsItemHovered()) {
-			_current_hovered_index = index;
+			hovered = index;
 		}
 		++index;
 	}
@@ -297,9 +298,13 @@ void ResourceBrowser::paint_asset_list(float width) {
 		}
 
 		if(!menu_openned && ImGui::IsItemHovered()) {
-			_current_hovered_index = index;
+			hovered = index;
 		}
 		++index;
+	}
+
+	if(!ImGui::IsPopupOpen("###contextmenu")) {
+		_current_hovered_index = hovered;
 	}
 
 	if(ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1)) {
@@ -308,7 +313,6 @@ void ResourceBrowser::paint_asset_list(float width) {
 
 	// this needs to be here?
 	paint_context_menu();
-
 
 	if(need_refresh() || (menu_openned && _update_chrono.elapsed() > update_duration)) {
 		_update_chrono.reset();

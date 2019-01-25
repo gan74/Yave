@@ -80,12 +80,15 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 			pass->init_descriptor_sets(_pool.get());
 		}
 
-		buffer_barriers.make_empty();
-		image_barriers.make_empty();
-		build_barriers(pass->_buffers, buffer_barriers, to_barrier, _pool.get());
-		build_barriers(pass->_images, image_barriers, to_barrier, _pool.get());
+		{
+			y_profile_zone("barriers");
+			buffer_barriers.make_empty();
+			image_barriers.make_empty();
+			build_barriers(pass->_buffers, buffer_barriers, to_barrier, _pool.get());
+			build_barriers(pass->_images, image_barriers, to_barrier, _pool.get());
+			recorder.barriers(buffer_barriers, image_barriers);
+		}
 
-		recorder.barriers(buffer_barriers, image_barriers);
 		{
 			y_profile_zone("render");
 			pass->render(recorder);

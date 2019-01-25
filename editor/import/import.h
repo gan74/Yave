@@ -50,7 +50,8 @@ enum class SceneImportFlags {
 	ImportAnims = 0x02,
 	ImportImages = 0x04,
 
-	ImportAll = 0xFF
+	ImportAll = ImportMeshes | ImportAnims | ImportImages,
+
 };
 
 constexpr SceneImportFlags operator|(SceneImportFlags l, SceneImportFlags r) {

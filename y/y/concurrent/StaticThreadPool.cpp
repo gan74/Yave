@@ -27,27 +27,30 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-StaticThreadPool::StaticThreadPool(usize thread_count) : _shared_data(std::make_shared<SharedData>()), _thread_count(thread_count) {
-	for(usize i = 0; i != _thread_count; ++i) {
-		std::thread t(worker, _shared_data);
-		t.detach();
+StaticThreadPool::StaticThreadPool(usize thread_count) : _shared_data(std::make_shared<SharedData>()) {
+	for(usize i = 0; i != thread_count; ++i) {
+		_threads.emplace_back(worker, _shared_data);
 	}
 }
 
 StaticThreadPool::~StaticThreadPool() {
-	std::unique_lock guard(_shared_data->lock);
 	_shared_data->run = false;
 	_shared_data->condition.notify_all();
+	for(auto& thread : _threads) {
+		thread.join();
+	}
 }
 
 usize StaticThreadPool::concurency() const {
-	return _thread_count;
+	return _threads.size();
 }
 
 void StaticThreadPool::schedule(Func&& func) {
-	std::unique_lock lock(_shared_data->lock);
-	_shared_data->queue.emplace_back(std::move(func));
-	_shared_data->condition.notify_all();
+	{
+		std::unique_lock lock(_shared_data->lock);
+		_shared_data->queue.emplace_back(std::move(func));
+	}
+	_shared_data->condition.notify_one();
 }
 
 void StaticThreadPool::process_until_empty() {
@@ -67,12 +70,14 @@ void StaticThreadPool::process_until_empty() {
 void StaticThreadPool::worker(std::shared_ptr<SharedData> data) {
 	while(data->run) {
 		std::unique_lock lock(data->lock);
-		data->condition.wait(lock, [&] { return !data->queue.empty(); });
-		Func f = std::move(data->queue.front());
-		data->queue.pop_front();
-		lock.unlock();
+		data->condition.wait(lock, [&] { return !data->queue.empty() || !data->run; });
+		if(!data->queue.empty()) {
+			Func f = std::move(data->queue.front());
+			data->queue.pop_front();
+			lock.unlock();
 
-		f();
+			f();
+		}
 	}
 }
 

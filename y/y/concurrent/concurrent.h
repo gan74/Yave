@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "StaticThreadPool.h"
 
+#include <future>
+
 namespace y {
 namespace concurrent {
 
@@ -45,7 +47,21 @@ void schedule_n(F&& f, usize n) {
 
 }
 
-
+template<typename F>
+auto async(F&& func) {
+	using ret_t = decltype(func());
+	std::promise<ret_t> promise;
+	std::future<ret_t> future = promise.get_future();
+	default_thread_pool().schedule([p = std::move(promise), f = y_fwd(func)]() mutable {
+			if constexpr(std::is_void_v<ret_t>) {
+				f();
+				p.set_value();
+			} else {
+				p.set_value(f());
+			}
+		});
+	return future;
+}
 
 
 template<typename It, typename Func>

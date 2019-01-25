@@ -43,6 +43,8 @@ class Widget : public UiElement {
 
 		void set_closable(bool closable);
 
+		void set_flags(u32 flags);
+
 		math::Vec2ui content_size() const;
 
 	private:

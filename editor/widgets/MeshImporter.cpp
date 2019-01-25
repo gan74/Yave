@@ -23,27 +23,16 @@ SOFTWARE.
 #include "MeshImporter.h"
 
 #include <editor/context/EditorContext.h>
-
 #include <y/io/Buffer.h>
+
+#include <editor/import/transforms.h>
 
 #include <imgui/imgui.h>
 
 namespace editor {
 
-static core::String clean_name(std::string_view name) {
-	if(name.empty()) {
-		return "unnamed";
-	}
-	core::String str;
-	str.set_min_capacity(name.size());
-	for(char c : name) {
-		str.push_back(std::isalnum(c) || c == '.' || c == '_' ? c : '_');
-	}
-	return str;
-}
-
 MeshImporter::MeshImporter(ContextPtr ctx, const core::String& import_path) :
-		Widget("Mesh importer", ImGuiWindowFlags_AlwaysAutoResize),
+		Widget("Mesh importer"),
 		ContextLinked(ctx),
 		_import_path(import_path) {
 
@@ -54,6 +43,7 @@ MeshImporter::MeshImporter(ContextPtr ctx, const core::String& import_path) :
 			//import_async(filename);
 			_filename = filename;
 			_state = State::Settings;
+			set_flags(ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
 			return true;
 		});
 }
@@ -73,7 +63,35 @@ void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token
 
 		_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
 				 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
-				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None);
+				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None)
+			;
+
+
+		ImGui::Separator();
+
+		const char* axes[] = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"};
+		if(ImGui::BeginCombo("Forward", axes[_forward_axis])) {
+			for(usize i = 0; i != 6; ++i) {
+				if(ImGui::Selectable(axes[i])) {
+					_forward_axis = i;
+					if(_forward_axis / 2 == _up_axis / 2) {
+						_up_axis = (_up_axis + 2) % 6;
+					}
+				}
+			}
+			ImGui::EndCombo();
+		}
+		if(ImGui::BeginCombo("Up", axes[_up_axis])) {
+			for(usize i = 0; i != 6; ++i) {
+				if(ImGui::Selectable(axes[i])) {
+					_up_axis = i;
+					if(_forward_axis / 2 == _up_axis / 2) {
+						_forward_axis = (_forward_axis + 2) % 6;
+					}
+				}
+			}
+			ImGui::EndCombo();
+		}
 
 
 		if(ImGui::Button("Ok")) {
@@ -89,8 +107,7 @@ void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token
 	} else {
 		if(done_loading()) {
 			try {
-				const auto& data = _import_future.get();
-				import(data);
+				import(std::move(_import_future.get()));
 			} catch(std::exception& e) {
 				context()->ui().ok("Unable to import", fmt("Unable to import scene: %" , e.what()).data());
 				_browser.show();
@@ -106,14 +123,12 @@ bool MeshImporter::done_loading() const {
 	return _import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
-
-
-void MeshImporter::import(const import::SceneData& scene) {
+void MeshImporter::import(import::SceneData scene) {
 	y_profile();
 	auto import_assets = [this](const auto& assets) {
 		for(const auto& a : assets) {
 			try {
-				core::String name = context()->asset_store().filesystem()->join(_import_path, clean_name(a.name()));
+				core::String name = context()->asset_store().filesystem()->join(_import_path, a.name());
 				log_msg(fmt("Saving asset as \"%\"", name));
 				io::Buffer data;
 				serde::serialize(data, a.obj());
@@ -123,6 +138,19 @@ void MeshImporter::import(const import::SceneData& scene) {
 			}
 		}
 	};
+
+
+	if(_forward_axis != 0 || _up_axis != 4) {
+		math::Vec3 axes[] = {{1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
+							 {0.0f, 1.0f, 0.0f}, { 0.0f, -1.0f,  0.0f},
+							 {0.0f, 0.0f, 1.0f}, { 0.0f,  0.0f, -1.0f}};
+		math::Transform<> transform;
+		transform.set_basis(axes[_forward_axis], axes[_up_axis]);
+
+		for(auto& mesh : scene.meshes) {
+			import::transform(mesh.obj(), transform);
+		}
+	}
 
 	import_assets(scene.meshes);
 	import_assets(scene.animations);

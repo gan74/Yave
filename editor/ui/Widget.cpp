@@ -28,7 +28,6 @@ namespace editor {
 
 Widget::Widget(std::string_view title, u32 flags) :
 		UiElement(title),
-		_min_size(100),
 		_flags(flags) {
 }
 
@@ -48,6 +47,10 @@ void Widget::set_has_parent(bool has) {
 
 void Widget::set_closable(bool closable) {
 	_closable = closable;
+}
+
+void Widget::set_flags(u32 flags) {
+	_flags = flags;
 }
 
 math::Vec2ui Widget::content_size() const {

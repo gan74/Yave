@@ -44,6 +44,8 @@ namespace editor {
 namespace import {
 
 Named<ImageData> import_image(const core::String& filename) {
+	y_profile();
+
 	int width, height, bpp;
 	u8* data = stbi_load(filename.data(), &width, &height, &bpp, 4);
 	y_defer(stbi_image_free(data););

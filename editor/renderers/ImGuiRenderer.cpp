@@ -73,6 +73,8 @@ static void setup_style() {
 	style.FrameRounding = 3;
 	style.TabRounding = 0;
 
+	style.WindowMinSize = ImVec2(100, 100);
+
 	// style not complete yet
 
 #include "style.h"

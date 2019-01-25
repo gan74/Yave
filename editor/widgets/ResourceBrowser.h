@@ -82,6 +82,7 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 		bool need_refresh() const;
 
 		void reset_hover();
+
 		const FileInfo* hovered_file() const;
 		const DirNode* hovered_dir() const;
 

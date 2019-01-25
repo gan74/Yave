@@ -52,6 +52,7 @@ void FrameGraphPass::render(CmdBufferRecorder& recorder) const {
 }
 
 void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
+	y_profile();
 	if(_depth.is_valid() || _colors.size()) {
 		DepthAttachmentView depth;
 		if(_depth.is_valid()) {
@@ -66,6 +67,7 @@ void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
 }
 
 void FrameGraphPass::init_descriptor_sets(FrameGraphResourcePool* pool) {
+	y_profile();
 	for(const auto& set : _bindings) {
 		auto bindings = core::vector_with_capacity<Binding>(set.size());
 		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [=](const FrameGraphDescriptorBinding& b) { return b.create_binding(pool); });

@@ -30,6 +30,7 @@ SOFTWARE.
 #include <thread>
 #include <list>
 #include <mutex>
+#include <atomic>
 #include <condition_variable>
 
 namespace y {
@@ -45,7 +46,7 @@ class StaticThreadPool : NonMovable {
 
 			std::list<Func> queue;
 
-			volatile bool run = true;
+			std::atomic<bool> run = true;
 		};
 
 	public:
@@ -62,10 +63,10 @@ class StaticThreadPool : NonMovable {
 		template<typename It, typename F>
 		void parallel_for_each(It begin, It end, F&& func) {
 			usize size = std::distance(begin, end);
-			usize split = _thread_count * 8;
+			usize split = concurency() * 8;
 			usize step = size / split;
 			std::unique_lock lock(_shared_data->lock);
-			if(_thread_count) {
+			if(concurency()) {
 				It next = begin + step;
 				for(usize i = 0; i != split - 1; ++i) {
 					_shared_data->queue.push_back([=] {
@@ -90,7 +91,7 @@ class StaticThreadPool : NonMovable {
 
 
 		std::shared_ptr<SharedData> _shared_data;
-		usize _thread_count;
+		core::Vector<std::thread> _threads;
 };
 
 }
