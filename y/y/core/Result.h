@@ -136,7 +136,7 @@ inline auto Err(T&& e) {
 
 
 template<typename T, typename E = void>
-class Result : NonCopyable {
+class [[nodiscard]] Result : NonCopyable {
 
 	public:
 		using value_type = T;

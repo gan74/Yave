@@ -75,13 +75,13 @@ y_test_func("serde trivial") {
 	{
 		io2::Writer writer(buffer);
 		WritableArchive<> ar(writer);
-		ar(tri);
+		unused(ar(tri));
 	}
 	{
 		io2::Reader reader(buffer);
 		serde2::ReadableArchive<> ar(reader);
 		Trivial t;
-		ar(t);
+		unused(ar(t));
 		y_test_assert(t == tri);
 	}
 }
@@ -94,13 +94,13 @@ y_test_func("serde easy") {
 	{
 		io2::Writer writer(buffer);
 		WritableArchive<> ar(writer);
-		ar(es);
+		unused(ar(es));
 	}
 	{
 		io2::Reader reader(buffer);
 		serde2::ReadableArchive<> ar(reader);
 		Easy e;
-		ar(e);
+		unused(ar(e));
 		y_test_assert(e == es);
 	}
 }
@@ -119,7 +119,7 @@ y_test_func("serde complex") {
 	{
 		io2::Writer writer(buffer);
 		WritableArchive<> ar(writer);
-		ar(e2, comp, t1);
+		unused(ar(e2, comp, t1));
 	}
 	{
 		io2::Reader reader(buffer);
@@ -129,8 +129,8 @@ y_test_func("serde complex") {
 		Complex c;
 		Trivial t;
 
-		ar(e);
-		ar(c, t);
+		unused(ar(e));
+		unused(ar(c, t));
 
 		y_test_assert(e == e2);
 		y_test_assert(c == comp);
