@@ -100,7 +100,6 @@ StaticMeshInstance* SceneData::add(AssetId id) {
 	const auto& material = device()->default_resources()[DefaultResources::BasicMaterial];
 	auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
 	StaticMeshInstance* inst_ptr = inst.get();
-	inst->position() = _scene_view->camera().position() + _scene_view->camera().forward() * 2.0f * inst->radius();
 	_to_add << std::move(inst);
 	return inst_ptr;
 }

@@ -27,9 +27,9 @@ SOFTWARE.
 namespace editor {
 namespace import {
 
-MeshData transform(const MeshData& mesh, const math::Transform<>& tr);
+[[nodiscard]] MeshData transform(const MeshData& mesh, const math::Transform<>& tr);
 
-Animation set_speed(const Animation& anim, float speed);
+[[nodiscard]] Animation set_speed(const Animation& anim, float speed);
 
 }
 }

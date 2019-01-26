@@ -12,5 +12,5 @@ layout(location = 3) in vec2 v_uv;
 
 void main() {
 	out_color = pack_color(vec3(1.0), 0.0);
-	out_normal = pack_normal(v_normal, 0.1);
+	out_normal = pack_normal(v_normal, 0.2);
 }

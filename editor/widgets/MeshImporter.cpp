@@ -43,13 +43,13 @@ MeshImporter::MeshImporter(ContextPtr ctx, const core::String& import_path) :
 			//import_async(filename);
 			_filename = filename;
 			_state = State::Settings;
-			set_flags(ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
 			return true;
 		});
 }
 
 void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)  {
 	using import::SceneImportFlags;
+
 	if(_state == State::Browsing) {
 		_browser.paint(recorder, token);
 	} else if(_state == State::Settings) {
@@ -75,7 +75,7 @@ void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token
 				if(ImGui::Selectable(axes[i])) {
 					_forward_axis = i;
 					if(_forward_axis / 2 == _up_axis / 2) {
-						_up_axis = (_up_axis + 2) % 6;
+						_up_axis = (_up_axis + 4) % 6;
 					}
 				}
 			}
@@ -86,7 +86,7 @@ void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token
 				if(ImGui::Selectable(axes[i])) {
 					_up_axis = i;
 					if(_forward_axis / 2 == _up_axis / 2) {
-						_forward_axis = (_forward_axis + 2) % 6;
+						_forward_axis = (_forward_axis + 4) % 6;
 					}
 				}
 			}
@@ -143,12 +143,16 @@ void MeshImporter::import(import::SceneData scene) {
 	if(_forward_axis != 0 || _up_axis != 4) {
 		math::Vec3 axes[] = {{1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
 							 {0.0f, 1.0f, 0.0f}, { 0.0f, -1.0f,  0.0f},
-							 {0.0f, 0.0f, 1.0f}, { 0.0f,  0.0f, -1.0f}};
+							 {0.0f, 0.0f, 1.0f}, { .0f,  0.0f, -1.0f}};
 		math::Transform<> transform;
-		transform.set_basis(axes[_forward_axis], axes[_up_axis]);
+
+		math::Vec3 forward = axes[_forward_axis];
+		math::Vec3 up = axes[_up_axis];
+#warning detect handedness
+		transform.set_basis(forward, -forward.cross(up), up);
 
 		for(auto& mesh : scene.meshes) {
-			import::transform(mesh.obj(), transform);
+			mesh = import::transform(mesh.obj(), transform.transposed());
 		}
 	}
 
