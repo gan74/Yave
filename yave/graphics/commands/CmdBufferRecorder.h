@@ -35,6 +35,7 @@ class Semaphore;
 class ComputeProgram;
 class Framebuffer;
 class Material;
+class MaterialTemplate;
 class GraphicPipeline;
 class RenderPass;
 
@@ -104,7 +105,8 @@ class RenderPassRecorder : NonCopyable {
 		~RenderPassRecorder();
 
 		// specific
-		void bind_material(const Material& material, DescriptorSetList descriptor_sets = {});
+		void bind_material(const Material& material);
+		void bind_material(const MaterialTemplate& material, DescriptorSetList descriptor_sets = {});
 		void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
 
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);

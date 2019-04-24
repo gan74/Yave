@@ -27,6 +27,9 @@ SOFTWARE.
 namespace yave {
 
 Queue::Queue(DevicePtr dptr, vk::Queue queue) : DeviceLinked(dptr), _queue(queue) {
+#ifdef Y_DEBUG
+	_tptr = dptr->thread_device();
+#endif
 }
 
 Queue::~Queue() {
@@ -52,6 +55,8 @@ Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
 }
 
 void Queue::submit_base(CmdBufferBase& base) const {
+	y_debug_assert(_tptr == device()->thread_device());
+
 	auto cmd = base.vk_cmd_buffer();
 
 	const auto& wait = base._proxy->data()._waits;

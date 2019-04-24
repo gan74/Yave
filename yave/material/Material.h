@@ -22,43 +22,33 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_MATERIAL_H
 #define YAVE_MATERIAL_MATERIAL_H
 
-#include <yave/yave.h>
-
-#include <yave/graphics/framebuffer/RenderPass.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
-
-#include <y/core/AssocVector.h>
-
-#include "GraphicPipeline.h"
-#include "MaterialData.h"
+#include "MaterialTemplate.h"
 #include "BasicMaterialData.h"
 
 namespace yave {
 
-class Material final : NonCopyable, public DeviceLinked {
+class Material final : NonCopyable {
 
 	public:
-		static constexpr usize max_compiled_pipelines = 8;
 		using load_from = BasicMaterialData;
 
 		Material() = default;
+		Material(DevicePtr dptr, BasicMaterialData&& data);
+		Material(const MaterialTemplate* tmp, BasicMaterialData&& data = BasicMaterialData());
 
-		Material(DevicePtr dptr, MaterialData data);
-		Material(DevicePtr dptr, const BasicMaterialData& data);
+		const MaterialTemplate& mat_template() const;
 
-		const GraphicPipeline& compile(const RenderPass& render_pass) const;
-
-		const MaterialData& data() const;
+		const BasicMaterialData& data() const;
 		const DescriptorSetBase& descriptor_set() const;
 
-	private:
-		//void swap(Material& other);
+		DevicePtr device() const;
 
-		MaterialData _data;
+	private:
+		const MaterialTemplate* _template = nullptr;
 
 		DescriptorSet _set;
 
-		mutable core::AssocVector<RenderPass::Layout, GraphicPipeline> _compiled;
+		BasicMaterialData _data;
 };
 
 }

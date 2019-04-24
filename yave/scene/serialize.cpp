@@ -29,23 +29,20 @@ SOFTWARE.
 
 namespace yave {
 
+static constexpr u32 scene_file_version = 3;
+
 void Scene::serialize(io::WriterRef writer) const {
 	writer->write_one(fs::magic_number);
 	writer->write_one(AssetType::Scene);
-	u32 version = 2;
-	writer->write_one(version);
+	writer->write_one(scene_file_version);
 
 	writer->write_one(u32(_statics.size()));
 	writer->write_one(u32(_lights.size()));
 
 	for(const auto& mesh : _statics) {
-		AssetId id = mesh->mesh().id();
-		if(id == AssetId::invalid_id()) {
-			log_msg("Asset with invalid id, skipping.", Log::Warning);
-			continue;
-		}
-		writer->write_one(id);
 		writer->write_one(mesh->transform());
+		writer->write_one(mesh->mesh().id());
+		writer->write_one(mesh->material().id());
 	}
 
 	for(const auto& light : _lights) {
@@ -58,7 +55,7 @@ void Scene::serialize(io::WriterRef writer) const {
 
 }
 
-Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader, const AssetPtr<Material>& default_material) {
+Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader, AssetLoader<Material>& mat_loader, const AssetPtr<Material>& default_material) {
 	y_profile();
 
 	struct Header {
@@ -72,7 +69,7 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 		bool is_valid() const {
 			return magic == fs::magic_number &&
 				   type == AssetType::Scene &&
-				   version == 2;
+				   version == scene_file_version;
 		}
 	};
 
@@ -87,17 +84,21 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 
 	{
 		for(u32 i = 0; i != header.statics; ++i) {
-			auto id = reader->read_one<AssetId>();
 			auto transform = reader->read_one<math::Transform<>>();
 
-			if(id == AssetId::invalid_id()) {
-				log_msg("Skipping asset with invalid id.", Log::Warning);
+			auto mesh_id = reader->read_one<AssetId>();
+			auto mat_id = reader->read_one<AssetId>();
+
+			if(mesh_id == AssetId::invalid_id()) {
+				log_msg("Skipping asset with invalid mesh id.", Log::Warning);
 				continue;
 			}
 
 			try {
-				auto mesh = mesh_loader.load(id);
-				auto inst = std::make_unique<StaticMeshInstance>(mesh, default_material);
+				auto inst = std::make_unique<StaticMeshInstance>(
+						mesh_loader.load(mesh_id),
+						mat_id == AssetId::invalid_id() ? default_material : mat_loader.load(mat_id)
+					);
 				inst->transform() = transform;
 				scene.static_meshes().emplace_back(std::move(inst));
 			} catch(std::exception& e) {

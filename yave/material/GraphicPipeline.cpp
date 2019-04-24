@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-GraphicPipeline::GraphicPipeline(const Material* mat, vk::Pipeline pipeline, vk::PipelineLayout layout) :
+GraphicPipeline::GraphicPipeline(const MaterialTemplate* mat, vk::Pipeline pipeline, vk::PipelineLayout layout) :
 		_material(mat),
 		_pipeline(pipeline),
 		_layout(layout)  {
@@ -61,11 +61,5 @@ vk::Pipeline GraphicPipeline::vk_pipeline() const {
 vk::PipelineLayout GraphicPipeline::vk_pipeline_layout() const {
 	return _layout;
 }
-
-vk::DescriptorSet GraphicPipeline::vk_descriptor_set() const {
-	return _material->descriptor_set().vk_descriptor_set();
-}
-
-
 
 }

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_MATERIAL_MATERIALTEMPLATEDATA_H
+#define YAVE_MATERIAL_MATERIALTEMPLATEDATA_H
 
-#include "SkinnedMeshInstance.h"
+#include <yave/yave.h>
 
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/material/Material.h>
+#include <yave/assets/AssetPtr.h>
+
+#include <yave/graphics/bindings/Binding.h>
+#include <yave/graphics/shaders/SpirVData.h>
 
 namespace yave {
 
-SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material) :
-		_mesh(mesh),
-		_skeleton(_mesh->triangle_buffer().device(), &mesh->skeleton()),
-		_material(material) {
+enum class PrimitiveType {
+	Triangles = uenum(vk::PrimitiveTopology::eTriangleList),
+	Lines = uenum(vk::PrimitiveTopology::eLineList)
+};
 
-	set_radius(_mesh->radius());
+class MaterialTemplateData {
+	public:
+		MaterialTemplateData& set_frag_data(const SpirVData& data);
+		MaterialTemplateData& set_vert_data(const SpirVData& data);
+		MaterialTemplateData& set_geom_data(const SpirVData& data);
+
+		MaterialTemplateData& set_primitive_type(PrimitiveType type);
+
+		MaterialTemplateData& set_depth_tested(bool tested);
+		MaterialTemplateData& set_culled(bool culled);
+		MaterialTemplateData& set_blended(bool blended);
+
+		SpirVData _frag;
+		SpirVData _vert;
+		SpirVData _geom;
+
+		PrimitiveType _primitive_type = PrimitiveType::Triangles;
+
+		bool _depth_tested = true;
+		bool _cull = true;
+		bool _blend = false;
+};
+
 }
 
-void SkinnedMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	_skeleton.update();
-
-	recorder.bind_material(_material->mat_template(), {_material->descriptor_set(), scene_data.descriptor_set, _skeleton.descriptor_set()});
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {SkinnedVertexSubBuffer(_mesh->vertex_buffer())});
-
-	auto indirect = _mesh->indirect_data();
-	indirect.setFirstInstance(scene_data.instance_index);
-	recorder.draw(indirect);
-}
-
-}
+#endif // YAVE_MATERIAL_MATERIALTEMPLATEDATA_H

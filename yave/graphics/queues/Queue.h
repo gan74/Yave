@@ -59,6 +59,10 @@ class Queue : NonCopyable, public DeviceLinked {
 		void submit_base(CmdBufferBase& base) const;
 
 		vk::Queue _queue;
+
+#ifdef Y_DEBUG
+		ThreadDevicePtr _tptr = nullptr;
+#endif
 };
 
 }

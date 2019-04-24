@@ -40,7 +40,12 @@ StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) :
 }
 
 void StaticMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	recorder.bind_material(*_material, {scene_data.descriptor_set});
+	if(_material->descriptor_set().device()) {
+		recorder.bind_material(_material->mat_template(), {_material->descriptor_set(), scene_data.descriptor_set});
+	} else {
+		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set});
+	}
+
 	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer())});
 
 	auto indirect = _mesh->indirect_data();

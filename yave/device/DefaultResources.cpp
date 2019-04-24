@@ -31,7 +31,7 @@ namespace yave {
 
 using SpirV = DefaultResources::SpirV;
 using ComputePrograms = DefaultResources::ComputePrograms;
-using Materials = DefaultResources::Materials;
+using MaterialTemplates = DefaultResources::MaterialTemplates;
 
 struct DefaultMaterialData {
 	SpirV frag;
@@ -83,7 +83,7 @@ static constexpr const char* spirv_names[] = {
 
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
 static constexpr usize compute_count = usize(ComputePrograms::MaxComputePrograms);
-static constexpr usize material_count = usize(Materials::MaxMaterials);
+static constexpr usize material_count = usize(MaterialTemplates::MaxMaterials);
 
 static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
 static_assert(sizeof(compute_spirvs) / sizeof(compute_spirvs[0]) == compute_count);
@@ -102,7 +102,7 @@ static SpirVData load_spirv(const char* name) {
 DefaultResources::DefaultResources(DevicePtr dptr) :
 		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
-		_materials(std::make_unique<AssetPtr<Material>[]>(material_count)) {
+		_materials(std::make_unique<MaterialTemplate[]>(material_count)) {
 
 	for(usize i = 0; i != spirv_count; ++i) {
 		_spirv[i] = load_spirv(spirv_names[i]);
@@ -114,13 +114,14 @@ DefaultResources::DefaultResources(DevicePtr dptr) :
 
 	for(usize i = 0; i != material_count; ++i) {
 		const auto& data = material_datas[i];
-		_materials[i] = make_asset<Material>(dptr, MaterialData()
+		auto template_data = MaterialTemplateData()
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])
 				.set_depth_tested(data.depth_tested)
 				.set_culled(data.culled)
 				.set_blended(data.blended)
-			);
+			;
+		_materials[i] = MaterialTemplate(dptr, std::move(template_data));
 	}
 }
 
@@ -154,8 +155,8 @@ const ComputeProgram& DefaultResources::operator[](ComputePrograms i) const {
 	return _computes[usize(i)];
 }
 
-const AssetPtr<Material>& DefaultResources::operator[](Materials i) const {
-	return _materials[usize(i)];
+const MaterialTemplate* DefaultResources::operator[](MaterialTemplates i) const {
+	return &_materials[usize(i)];
 }
 
 }

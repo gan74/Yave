@@ -22,28 +22,26 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_BASICMATERIALDATA_H
 #define YAVE_MATERIAL_BASICMATERIALDATA_H
 
-#include "MaterialData.h"
+#include <yave/graphics/bindings/DescriptorSet.h>
 
 #include <yave/assets/AssetPtr.h>
 #include <yave/assets/AssetLoader.h>
 
 namespace yave {
 
-class BasicMaterialData : public DeviceLinked {
+class BasicMaterialData {
 	public:
 		static constexpr usize texture_count = 4;
 
 		BasicMaterialData() = default;
-		BasicMaterialData(DevicePtr dptr, std::array<AssetPtr<Texture>, texture_count>&& textures);
+		BasicMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
 		static BasicMaterialData deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader);
 		void serialize(io::WriterRef writer) const;
 
-		MaterialData create_material_data() const;
+		core::ArrayView<AssetPtr<Texture>> textures() const;
 
 	private:
-		BasicMaterialData(DevicePtr dptr);
-
 		std::array<AssetPtr<Texture>, texture_count> _textures;
 };
 

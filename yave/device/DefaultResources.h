@@ -31,7 +31,7 @@ SOFTWARE.
 namespace yave {
 
 class ComputeProgram;
-class Material;
+class MaterialTemplate;
 
 class DefaultResources : NonCopyable {
 	public:
@@ -72,7 +72,7 @@ class DefaultResources : NonCopyable {
 			MaxComputePrograms
 		};
 
-		enum Materials {
+		enum MaterialTemplates {
 			BasicMaterial,
 			BasicSkinnedMaterial,
 			TonemappingMaterial,
@@ -92,14 +92,14 @@ class DefaultResources : NonCopyable {
 
 		const SpirVData& operator[](SpirV i) const;
 		const ComputeProgram& operator[](ComputePrograms i) const;
-		const AssetPtr<Material>& operator[](Materials i) const;
+		const MaterialTemplate* operator[](MaterialTemplates i) const;
 
 	private:
 		void swap(DefaultResources& other);
 
 		std::unique_ptr<SpirVData[]> _spirv;
 		std::unique_ptr<ComputeProgram[]> _computes;
-		std::unique_ptr<AssetPtr<Material>[]> _materials;
+		std::unique_ptr<MaterialTemplate[]> _materials;
 };
 
 }

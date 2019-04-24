@@ -56,7 +56,7 @@ class Selection {
 		}
 
 
-		void set_selected(const AssetPtr<Material>& sel) {
+		void set_selected(const AssetPtr<MaterialTemplate>& sel) {
 			_material = sel;
 		}
 
@@ -67,7 +67,7 @@ class Selection {
 	private:
 		NotOwner<Transformable*> _transformable = nullptr;
 		NotOwner<Light*> _light = nullptr;
-		AssetPtr<Material> _material;
+		AssetPtr<MaterialTemplate> _material;
 };
 
 }

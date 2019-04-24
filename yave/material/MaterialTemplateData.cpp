@@ -20,59 +20,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "MaterialData.h"
+#include "MaterialTemplateData.h"
 
 namespace yave {
 
-MaterialData& MaterialData::set_frag_data(const SpirVData& data) {
+MaterialTemplateData& MaterialTemplateData::set_frag_data(const SpirVData& data) {
 	y_debug_assert(ShaderModuleBase::shader_type(data) == ShaderType::Fragment);
 	_frag = data;
 	return *this;
 }
 
-MaterialData& MaterialData::set_vert_data(const SpirVData& data) {
+MaterialTemplateData& MaterialTemplateData::set_vert_data(const SpirVData& data) {
 	y_debug_assert(ShaderModuleBase::shader_type(data) == ShaderType::Vertex);
 	_vert = data;
 	return *this;
 }
 
-MaterialData& MaterialData::set_geom_data(const SpirVData& data) {
+MaterialTemplateData& MaterialTemplateData::set_geom_data(const SpirVData& data) {
 	y_debug_assert(ShaderModuleBase::shader_type(data) == ShaderType::Geomery);
 	_geom = data;
 	return *this;
 }
 
-MaterialData& MaterialData::set_bindings(const core::ArrayView<Binding>& binds) {
-	_bindings.assign(binds.begin(), binds.end());
-	return *this;
-}
-
-MaterialData& MaterialData::add_binding(const Binding& bind) {
-	_bindings.push_back(bind);
-	return *this;
-}
-
-MaterialData& MaterialData::keep_alive(const GenericAssetPtr& asset) {
-	_keep_alive.emplace_back(asset);
-	return *this;
-}
-
-MaterialData& MaterialData::set_primitive_type(PrimitiveType type) {
+MaterialTemplateData& MaterialTemplateData::set_primitive_type(PrimitiveType type) {
 	_primitive_type = type;
 	return *this;
 }
 
-MaterialData& MaterialData::set_depth_tested(bool tested) {
+MaterialTemplateData& MaterialTemplateData::set_depth_tested(bool tested) {
 	_depth_tested = tested;
 	return *this;
 }
 
-MaterialData& MaterialData::set_culled(bool culled) {
+MaterialTemplateData& MaterialTemplateData::set_culled(bool culled) {
 	_cull = culled;
 	return *this;
 }
 
-MaterialData& MaterialData::set_blended(bool blended) {
+MaterialTemplateData& MaterialTemplateData::set_blended(bool blended) {
 	_blend = blended;
 	return *this;
 }

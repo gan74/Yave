@@ -30,15 +30,14 @@ struct BasicMaterialHeader {
 	y_serde(fs::magic_number, AssetType::Material, u32(1))
 };
 
-BasicMaterialData::BasicMaterialData(DevicePtr dptr) : DeviceLinked(dptr) {
-}
 
-BasicMaterialData::BasicMaterialData(DevicePtr dptr, std::array<AssetPtr<Texture>, texture_count>&& textures) : DeviceLinked(dptr), _textures(std::move(textures)) {
+BasicMaterialData::BasicMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures) :
+		_textures(std::move(textures)) {
 }
 
 BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader) {
 	BasicMaterialHeader().deserialize(reader);
-	BasicMaterialData data(texture_loader.device());
+	BasicMaterialData data;
 	for(auto& tex : data._textures) {
 		tex = texture_loader.load(serde::deserialized<AssetId>(reader));
 	}
@@ -52,18 +51,8 @@ void BasicMaterialData::serialize(io::WriterRef writer) const {
 	}
 }
 
-MaterialData BasicMaterialData::create_material_data() const {
-	auto data = MaterialData()
-				.set_frag_data(device()->default_resources()[DefaultResources::BasicFrag])
-				.set_vert_data(device()->default_resources()[DefaultResources::BasicVert]);
-
-	for(usize i = 0; i != texture_count; ++i) {
-		data.keep_alive(_textures[i]);
-		data.add_binding(Binding(*_textures[i]));
-	}
-
-	return data;
+core::ArrayView<AssetPtr<Texture>> BasicMaterialData::textures() const {
+	return  _textures;
 }
-
 
 }

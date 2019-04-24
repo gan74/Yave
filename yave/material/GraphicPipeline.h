@@ -28,13 +28,13 @@ SOFTWARE.
 
 namespace yave {
 
-class Material;
+class MaterialTemplate;
 
 class GraphicPipeline : NonCopyable {
 
 	public:
 		GraphicPipeline() = default;
-		GraphicPipeline(const Material* mat, vk::Pipeline pipeline, vk::PipelineLayout layout);
+		GraphicPipeline(const MaterialTemplate* mat, vk::Pipeline pipeline, vk::PipelineLayout layout);
 
 		~GraphicPipeline();
 
@@ -43,12 +43,11 @@ class GraphicPipeline : NonCopyable {
 
 		vk::Pipeline vk_pipeline() const;
 		vk::PipelineLayout vk_pipeline_layout() const;
-		vk::DescriptorSet vk_descriptor_set() const;
 
 	private:
 		void swap(GraphicPipeline& other);
 
-		const Material* _material = nullptr;
+		const MaterialTemplate* _material = nullptr;
 
 		vk::Pipeline _pipeline;
 		vk::PipelineLayout _layout;

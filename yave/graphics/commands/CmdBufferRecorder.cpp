@@ -85,7 +85,11 @@ RenderPassRecorder::~RenderPassRecorder() {
 	_cmd_buffer.end_renderpass();
 }
 
-void RenderPassRecorder::bind_material(const Material& material, DescriptorSetList descriptor_sets) {
+void RenderPassRecorder::bind_material(const Material& material) {
+	bind_material(material.mat_template(), {material.descriptor_set()});
+}
+
+void RenderPassRecorder::bind_material(const MaterialTemplate& material, DescriptorSetList descriptor_sets) {
 	bind_pipeline(material.compile(*_cmd_buffer._render_pass), descriptor_sets);
 }
 
@@ -94,9 +98,6 @@ void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, Descript
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size() + 1);
 	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& ds) { return ds.get().vk_descriptor_set(); });
-	if(pipeline.vk_descriptor_set()) {
-		ds << pipeline.vk_descriptor_set();
-	}
 
 	if(!ds.is_empty()) {
 		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});

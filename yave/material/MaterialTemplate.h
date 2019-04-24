@@ -19,54 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MATERIAL_MATERIALDATA_H
-#define YAVE_MATERIAL_MATERIALDATA_H
+#ifndef YAVE_MATERIAL_MATERIALTEMPLATE_H
+#define YAVE_MATERIAL_MATERIALTEMPLATE_H
 
 #include <yave/yave.h>
 
-#include <yave/assets/AssetPtr.h>
+#include <yave/graphics/framebuffer/RenderPass.h>
+#include <yave/graphics/bindings/DescriptorSet.h>
 
-#include <yave/graphics/bindings/Binding.h>
-#include <yave/graphics/shaders/SpirVData.h>
+#include <y/core/AssocVector.h>
+
+#include "GraphicPipeline.h"
+#include "MaterialTemplateData.h"
 
 namespace yave {
 
-enum class PrimitiveType {
-	Triangles = uenum(vk::PrimitiveTopology::eTriangleList),
-	Lines = uenum(vk::PrimitiveTopology::eLineList)
-};
+class MaterialTemplate final : NonCopyable, public DeviceLinked {
 
-class MaterialData {
 	public:
-		MaterialData& set_frag_data(const SpirVData& data);
-		MaterialData& set_vert_data(const SpirVData& data);
-		MaterialData& set_geom_data(const SpirVData& data);
+		static constexpr usize max_compiled_pipelines = 8;
 
-		MaterialData& set_bindings(const core::ArrayView<Binding>& binds);
-		MaterialData& add_binding(const Binding& bind);
+		MaterialTemplate() = default;
+		MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data);
 
-		MaterialData& keep_alive(const GenericAssetPtr& asset);
+		const GraphicPipeline& compile(const RenderPass& render_pass) const;
 
-		MaterialData& set_primitive_type(PrimitiveType type);
+		const MaterialTemplateData& data() const;
 
-		MaterialData& set_depth_tested(bool tested);
-		MaterialData& set_culled(bool culled);
-		MaterialData& set_blended(bool blended);
+	private:
+		//void swap(Material& other);
 
-		core::Vector<Binding> _bindings;
-		core::Vector<GenericAssetPtr> _keep_alive;
+		mutable core::AssocVector<RenderPass::Layout, GraphicPipeline> _compiled;
 
-		SpirVData _frag;
-		SpirVData _vert;
-		SpirVData _geom;
-
-		PrimitiveType _primitive_type = PrimitiveType::Triangles;
-
-		bool _depth_tested = true;
-		bool _cull = true;
-		bool _blend = false;
+		MaterialTemplateData _data;
 };
 
 }
 
-#endif // YAVE_MATERIAL_MATERIALDATA_H
+
+#endif // YAVE_MATERIAL_MATERIALTEMPLATE_H

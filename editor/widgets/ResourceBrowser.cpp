@@ -230,7 +230,6 @@ void ResourceBrowser::paint_context_menu() {
 		ImGui::Separator();
 		if(ImGui::Selectable("Create material")) {
 			//save_materials(_current->full_path, {Named("material", BasicMaterialData())});
-			context()->selection().set_selected(device()->default_resources()[DefaultResources::BasicMaterial]);
 			refresh();
 		}
 

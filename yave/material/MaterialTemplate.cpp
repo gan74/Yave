@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#include "Material.h"
+#include "MaterialCompiler.h"
 
-#include "SkinnedMeshInstance.h"
+#include <yave/device/Device.h>
 
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/material/Material.h>
+#include <mutex>
 
 namespace yave {
 
-SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material) :
-		_mesh(mesh),
-		_skeleton(_mesh->triangle_buffer().device(), &mesh->skeleton()),
-		_material(material) {
-
-	set_radius(_mesh->radius());
+MaterialTemplate::MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data) :
+		DeviceLinked(dptr),
+		_data(std::move(data)) {
 }
 
-void SkinnedMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	_skeleton.update();
+const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) const {
+#warning MaterialTemplate::compile not thread safe
+	if(!render_pass.vk_render_pass()) {
+		y_fatal("Unable to compile material: null renderpass.");
+	}
 
-	recorder.bind_material(_material->mat_template(), {_material->descriptor_set(), scene_data.descriptor_set, _skeleton.descriptor_set()});
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {SkinnedVertexSubBuffer(_mesh->vertex_buffer())});
+	const auto& key = render_pass.layout();
+	auto it = _compiled.find(key);
+	if(it == _compiled.end()) {
+		if(_compiled.size() == max_compiled_pipelines) {
+			log_msg("Discarding graphic pipeline", Log::Warning);
+			std::move(_compiled.begin() + 1, _compiled.end(), _compiled.begin());
+			_compiled.pop();
+		}
 
-	auto indirect = _mesh->indirect_data();
-	indirect.setFirstInstance(scene_data.instance_index);
-	recorder.draw(indirect);
+		MaterialCompiler compiler(device());
+		_compiled.insert(key, compiler.compile(this, render_pass));
+		return _compiled.last().second;
+	}
+	return it->second;
+}
+
+
+const MaterialTemplateData& MaterialTemplate::data() const {
+	return _data;
 }
 
 }

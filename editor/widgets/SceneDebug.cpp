@@ -46,7 +46,7 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		auto cam_pos = context()->scene().scene_view().camera().position();
 
 		try {
-			const auto& material = device()->default_resources()[DefaultResources::BasicMaterial];
+			auto material = make_asset<Material>(device()->default_resources()[DefaultResources::BasicMaterial]);
 			auto mesh = create_mesh(context());
 			float mul = mesh->radius() * 5.0f;
 
