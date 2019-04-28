@@ -23,16 +23,17 @@ SOFTWARE.
 #define YAVE_MESHES_STATICMESH_H
 
 #include "MeshData.h"
+
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/buffers/TypedWrapper.h>
+
+#include <yave/assets/AssetTraits.h>
 
 namespace yave {
 
 class StaticMesh : NonCopyable {
 
 	public:
-		using load_from = MeshData;
-
 		StaticMesh() = default;
 
 		StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
@@ -50,6 +51,8 @@ class StaticMesh : NonCopyable {
 
 		float _radius;
 };
+
+YAVE_DECLARE_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
 
 }
 

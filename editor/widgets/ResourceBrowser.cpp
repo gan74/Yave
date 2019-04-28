@@ -24,6 +24,9 @@ SOFTWARE.
 #include "AssetRenamer.h"
 
 #include <editor/context/EditorContext.h>
+
+#include <yave/assets/FolderAssetStore.h>
+
 #include <y/io/Buffer.h>
 
 #include <imgui/imgui.h>
@@ -44,7 +47,7 @@ static AssetType read_file_type(ContextPtr ctx, AssetId id) {
 		return ctx->asset_store().asset_type(id);
 	} catch(...) {
 	}
-	return AssetType::Unknonw;
+	return AssetType::Unknown;
 }
 
 static auto icon(AssetType type) {
@@ -61,7 +64,7 @@ static auto icon(AssetType type) {
 		default:
 			return ICON_FA_QUESTION;
 	}
-	return "";
+	return ICON_FA_QUESTION;
 }
 
 ResourceBrowser::FileInfo::FileInfo(ContextPtr ctx, std::string_view file, std::string_view full) :

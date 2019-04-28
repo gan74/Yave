@@ -55,10 +55,12 @@ void Scene::serialize(io::WriterRef writer) const {
 
 }
 
-Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_loader, AssetLoader<Material>& mat_loader, const AssetPtr<Material>& default_material) {
+Scene Scene::deserialized(io::ReaderRef reader, GenericAssetLoader& loader) {
 	y_profile();
 
-	struct Header {
+	return Scene();
+
+	/*struct Header {
 		u32 magic;
 		AssetType type;
 		u32 version;
@@ -117,7 +119,7 @@ Scene Scene::deserialized(io::ReaderRef reader, AssetLoader<StaticMesh>& mesh_lo
 		}
 	}
 
-	return scene;
+	return scene;*/
 }
 
 }

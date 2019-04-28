@@ -34,7 +34,7 @@ enum class AssetType : u32 {
 	Scene = 5,
 	Material = 6,
 
-	Unknonw = u32(-1)
+	Unknown = u32(-1)
 };
 
 }

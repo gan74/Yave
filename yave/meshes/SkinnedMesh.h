@@ -24,15 +24,16 @@ SOFTWARE.
 
 #include "MeshData.h"
 #include "Skeleton.h"
+
 #include <yave/graphics/buffers/buffers.h>
+
+#include <yave/assets/AssetTraits.h>
 
 namespace yave {
 
 class SkinnedMesh : NonCopyable {
 
 	public:
-		using load_from = MeshData;
-
 		SkinnedMesh() = default;
 
 		SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);
@@ -54,6 +55,8 @@ class SkinnedMesh : NonCopyable {
 
 		float _radius;
 };
+
+YAVE_DECLARE_ASSET_TRAITS(SkinnedMesh, MeshData, AssetType::Mesh);
 
 }
 

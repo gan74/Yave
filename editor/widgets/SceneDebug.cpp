@@ -35,7 +35,7 @@ SOFTWARE.
 namespace editor {
 
 static AssetPtr<StaticMesh> create_mesh(ContextPtr cptr) {
-	return cptr->loader().static_mesh().import("cube.ym", "../meshes/cube.obj.ym");
+	return cptr->loader().import<StaticMesh>("cube.ym", "../meshes/cube.obj.ym");
 }
 
 SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
@@ -67,7 +67,7 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	if(ImGui::Button("Add skinned mesh")) {
-		add_skinned_mesh(&context()->scene().scene(), context()->loader().texture(), context()->loader().static_mesh());
+		add_skinned_mesh(&context()->scene().scene(), context()->loader());
 	}
 
 	ImGui::Text("Static meshes: %u", unsigned(context()->scene().scene().static_meshes().size()));

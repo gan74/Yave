@@ -26,24 +26,35 @@ SOFTWARE.
 
 namespace yave {
 
+class GenericAssetLoader;
+
+namespace detail {
+DevicePtr device_from_loader(GenericAssetLoader& loader);
+}
+
 template<typename T>
 struct AssetTraits {
-	private:
-		template<typename U>
-		using has_load_from_t = typename U::load_from;
-		static_assert(is_detected_v<has_load_from_t, T>, "Asset type should have ::load_from");
-
-		/*template<typename U>
-		using has_type_t = decltype(U::asset_type);
-		static_assert(is_detected_v<has_type_t, T>, "Asset type should have ::asset_type");*/
-
-	public:
-		// todo: try to deduce using TMP ?
-
-		using load_from = typename T::load_from;
-
-		//static constexpr AssetType asset_type = T::asset_type;
+	static constexpr bool is_asset = false;
 };
+
+#define YAVE_FILL_ASSET_TRAITS(Type, LoadFrom, TypeEnum)						\
+	static constexpr bool is_asset = true;										\
+	static constexpr AssetType type = TypeEnum;									\
+	using load_from = LoadFrom;													\
+	template<typename Ar>														\
+	static Type load_asset(Ar ar, GenericAssetLoader& loader) {					\
+		load_from data;															\
+		ar(data);																\
+		return Type(detail::device_from_loader(loader), data);					\
+	}
+
+
+#define YAVE_DECLARE_ASSET_TRAITS(Type, LoadFrom, TypeEnum)						\
+	template<>																	\
+	struct AssetTraits<Type> {													\
+		YAVE_FILL_ASSET_TRAITS(Type, LoadFrom, TypeEnum)						\
+	}
+
 
 }
 

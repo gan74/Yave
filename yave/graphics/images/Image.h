@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_IMAGES_IMAGE_H
 
 #include <yave/yave.h>
+#include <yave/assets/AssetTraits.h>
 
 #include "ImageBase.h"
 
@@ -45,7 +46,6 @@ class Image : public ImageBase {
 	}
 
 	public:
-		using load_from = ImageData;
 		using size_type = std::conditional_t<is_3d, math::Vec3ui, math::Vec2ui>;
 
 		Image() = default;
@@ -85,6 +85,8 @@ using DepthTextureAttachment = Image<ImageUsage::DepthBit | ImageUsage::TextureB
 using ColorTextureAttachment = Image<ImageUsage::ColorBit | ImageUsage::TextureBit>;
 
 using Cubemap = Image<ImageUsage::TextureBit, ImageType::Cube>;
+
+YAVE_DECLARE_ASSET_TRAITS(Texture, ImageData, AssetType::Image);
 
 }
 

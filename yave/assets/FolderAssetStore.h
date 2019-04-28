@@ -24,11 +24,11 @@ SOFTWARE.
 #define YAVE_ASSETS_FOLDERASSETSTORE_H
 
 #include <y/serde/serde.h>
+#include <yave/utils/FileSystemModel.h>
 
 #include "AssetStore.h"
 
 #include <unordered_map>
-#include <map>
 #include <mutex>
 
 

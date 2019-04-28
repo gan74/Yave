@@ -35,12 +35,13 @@ BasicMaterialData::BasicMaterialData(std::array<AssetPtr<Texture>, texture_count
 		_textures(std::move(textures)) {
 }
 
-BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, AssetLoader<Texture>& texture_loader) {
+BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, GenericAssetLoader& loader) {
 	BasicMaterialHeader().deserialize(reader);
 	BasicMaterialData data;
 	for(auto& tex : data._textures) {
-		tex = texture_loader.load(serde::deserialized<AssetId>(reader));
+		tex = loader.load<Texture>(serde::deserialized<AssetId>(reader));
 	}
+
 	return data;
 }
 

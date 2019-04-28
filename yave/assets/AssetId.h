@@ -73,8 +73,6 @@ struct AssetId {
 
 	private:
 		static constexpr i64 _invalid_id = 0xFFFFFFFFFFFFFFFF;
-		/*static constexpr u64 _id_offset = sizeof(AssetType) * 8;
-		static constexpr u64 _type_mask = ~(0xFFFFFFFFFFFFFFFF << _id_offset);*/
 
 		i64 _id = _invalid_id;
 };

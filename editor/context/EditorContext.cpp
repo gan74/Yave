@@ -21,8 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "EditorContext.h"
-
 #include <yave/device/Device.h>
+#include <yave/assets/FolderAssetStore.h>
 
 namespace editor {
 
@@ -33,7 +33,8 @@ DevicePtr ContextLinked::device() const {
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
-		_loader(device()),
+		_asset_store(std::make_shared<FolderAssetStore>()),
+		_loader(device(), _asset_store),
 		_scene(this),
 		_ui(this),
 		_thumb_cache(this),

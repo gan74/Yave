@@ -26,14 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-AssetLoaderBase::AssetLoaderBase(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
-}
-
-AssetStore& AssetLoaderBase::store() {
-	return *_store;
-}
-
-AssetId AssetLoaderBase::load_or_import(std::string_view name, std::string_view import_from) {
+AssetId GenericAssetLoader::load_or_import(std::string_view name, std::string_view import_from) {
 	try {
 		return _store->id(name);
 	} catch(...) {

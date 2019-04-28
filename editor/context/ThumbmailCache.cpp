@@ -112,11 +112,11 @@ void ThumbmailCache::request_thumbmail(AssetId asset) {
 			try {
 				switch(context()->asset_store().asset_type(asset)) {
 					case AssetType::Mesh: {
-						auto mesh = context()->loader().static_mesh().load(asset);
+						auto mesh = context()->loader().load<StaticMesh>(asset);
 						return [=](CmdBufferRecorder& rec) { return render_thumbmail(rec, mesh); };
 					}
 					case AssetType::Image: {
-						auto tex = context()->loader().texture().load(asset);
+						auto tex = context()->loader().load<Texture>(asset);
 						return [=](CmdBufferRecorder& rec) { return render_thumbmail(rec, tex); };
 					}
 					default:

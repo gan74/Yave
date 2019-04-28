@@ -30,8 +30,6 @@ namespace yave {
 class Material final : NonCopyable {
 
 	public:
-		using load_from = BasicMaterialData;
-
 		Material() = default;
 		Material(DevicePtr dptr, BasicMaterialData&& data);
 		Material(const MaterialTemplate* tmp, BasicMaterialData&& data = BasicMaterialData());
@@ -50,6 +48,8 @@ class Material final : NonCopyable {
 
 		BasicMaterialData _data;
 };
+
+YAVE_DECLARE_ASSET_TRAITS(Material, BasicMaterialData, AssetType::Material);
 
 }
 

@@ -25,11 +25,12 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/io/Ref.h>
 
-#include <yave/utils/FileSystemModel.h>
-
 #include "AssetPtr.h"
+#include "AssetType.h"
 
 namespace yave {
+
+class FileSystemModel;
 
 class AssetStore : NonCopyable {
 

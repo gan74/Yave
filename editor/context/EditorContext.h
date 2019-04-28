@@ -32,7 +32,6 @@ SOFTWARE.
 
 #include "Settings.h"
 #include "SceneData.h"
-#include "Loader.h"
 #include "Selection.h"
 #include "Ui.h"
 #include "ThumbmailCache.h"
@@ -73,7 +72,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 			return _selection;
 		}
 
-		Loader& loader() {
+		GenericAssetLoader& loader() {
 			return _loader;
 		}
 
@@ -90,7 +89,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		}
 
 		AssetStore& asset_store() {
-			return _loader.asset_store();
+			return *_asset_store;
 		}
 
 	private:
@@ -102,8 +101,10 @@ class EditorContext : NonMovable, public DeviceLinked {
 
 		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 
+		std::shared_ptr<AssetStore> _asset_store;
+		GenericAssetLoader _loader;
+
 		Settings _setting;
-		Loader _loader;
 		SceneData _scene;
 		Selection _selection;
 		Ui _ui;

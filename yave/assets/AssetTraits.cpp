@@ -19,55 +19,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_CONTEXT_LOADER_H
-#define EDITOR_CONTEXT_LOADER_H
 
-#include <editor/editor.h>
-#include <yave/assets/AssetLoader.h>
-#include <yave/assets/FolderAssetStore.h>
+#include "AssetTraits.h"
+#include "AssetLoader.h"
 
-#include <yave/graphics/images/Image.h>
-#include <yave/meshes/StaticMesh.h>
-#include <yave/material/Material.h>
+namespace yave {
+namespace detail {
 
-
-namespace editor {
-
-class Loader : public DeviceLinked {
-	public:
-		Loader(DevicePtr dptr) :
-			DeviceLinked(dptr),
-			_store(std::make_shared<FolderAssetStore>()),
-			_textures(dptr, _store),
-			_meshes(dptr, _store),
-			_materials(dptr, _store) {
-		}
-
-		AssetStore& asset_store() {
-			return *_store;
-		}
-
-		AssetLoader<Texture>& texture() {
-			return _textures;
-		}
-
-		AssetLoader<StaticMesh>& static_mesh() {
-			return _meshes;
-		}
-
-		AssetLoader<Material>& material() {
-			return _materials;
-		}
-
-
-	private:
-		std::shared_ptr<AssetStore> _store;
-
-		AssetLoader<Texture> _textures;
-		AssetLoader<StaticMesh> _meshes;
-		AssetLoader<Material> _materials;
-};
-
+DevicePtr device_from_loader(GenericAssetLoader& loader) {
+	return loader.device();
 }
 
-#endif // EDITOR_CONTEXT_LOADER_H
+}
+}

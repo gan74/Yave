@@ -27,6 +27,8 @@ SOFTWARE.
 #include "Semaphore.h"
 #include "submit.h"
 
+#include <mutex>
+
 namespace yave {
 
 class Queue : NonCopyable, public DeviceLinked {
@@ -59,10 +61,8 @@ class Queue : NonCopyable, public DeviceLinked {
 		void submit_base(CmdBufferBase& base) const;
 
 		vk::Queue _queue;
+		std::unique_ptr<std::mutex> _lock;
 
-#ifdef Y_DEBUG
-		ThreadDevicePtr _tptr = nullptr;
-#endif
 };
 
 }

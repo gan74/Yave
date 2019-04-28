@@ -31,8 +31,8 @@ SOFTWARE.
 
 namespace editor {
 
-void add_skinned_mesh(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>&) {
-	DevicePtr dptr = tex_loader.device();
+void add_skinned_mesh(Scene* scene, GenericAssetLoader& loader) {
+	DevicePtr dptr = loader.device();
 
 	auto material = make_asset<Material>(dptr->default_resources()[DefaultResources::BasicSkinnedMaterial]);
 
@@ -58,9 +58,9 @@ void add_skinned_mesh(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoade
 	}
 }
 
-void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<StaticMesh>& mesh_loader) {
+void fill_scene(Scene* scene, GenericAssetLoader& loader) {
 
-	DevicePtr dptr = tex_loader.device();
+	DevicePtr dptr = loader.device();
 
 	{
 		Light l(Light::Directional);
@@ -78,7 +78,7 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 		scene->lights() << std::make_unique<Light>(std::move(l));
 	}
 
-	add_skinned_mesh(scene, tex_loader, mesh_loader);
+	add_skinned_mesh(scene, loader);
 
 	{
 		auto material = make_asset<Material>(dptr->default_resources()[DefaultResources::BasicMaterial]);
@@ -86,7 +86,7 @@ void fill_scene(Scene* scene, AssetLoader<Texture>& tex_loader, AssetLoader<Stat
 		//auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
 
 		try {
-			AssetPtr<StaticMesh> mesh = mesh_loader.import("cube.ym", "../meshes/cube.obj.ym");
+			AssetPtr<StaticMesh> mesh = loader.import<StaticMesh>("cube.ym", "../meshes/cube.obj.ym");
 
 			{
 				auto instance = std::make_unique<StaticMeshInstance>(mesh, material);
