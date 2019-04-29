@@ -55,7 +55,7 @@ void Scene::serialize(io::WriterRef writer) const {
 
 }
 
-Scene Scene::deserialized(io::ReaderRef reader, GenericAssetLoader& loader) {
+Scene Scene::deserialized(io::ReaderRef reader, AssetLoader& loader) {
 	y_profile();
 
 	return Scene();

@@ -35,7 +35,7 @@ BasicMaterialData::BasicMaterialData(std::array<AssetPtr<Texture>, texture_count
 		_textures(std::move(textures)) {
 }
 
-BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, GenericAssetLoader& loader) {
+/*BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, AssetLoader& loader) {
 	BasicMaterialHeader().deserialize(reader);
 	BasicMaterialData data;
 	for(auto& tex : data._textures) {
@@ -50,7 +50,7 @@ void BasicMaterialData::serialize(io::WriterRef writer) const {
 	for(const auto& tex : _textures) {
 		serde::serialize(writer, tex.id());
 	}
-}
+}*/
 
 core::ArrayView<AssetPtr<Texture>> BasicMaterialData::textures() const {
 	return  _textures;

@@ -72,7 +72,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 			return _selection;
 		}
 
-		GenericAssetLoader& loader() {
+		AssetLoader& loader() {
 			return _loader;
 		}
 
@@ -102,7 +102,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 
 		std::shared_ptr<AssetStore> _asset_store;
-		GenericAssetLoader _loader;
+		AssetLoader _loader;
 
 		Settings _setting;
 		SceneData _scene;

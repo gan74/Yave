@@ -109,21 +109,22 @@ void ThumbmailCache::request_thumbmail(AssetId asset) {
 	_thumbmails[asset] = nullptr;
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
 			y_profile();
-			try {
-				switch(context()->asset_store().asset_type(asset)) {
-					case AssetType::Mesh: {
-						auto mesh = context()->loader().load<StaticMesh>(asset);
-						return [=](CmdBufferRecorder& rec) { return render_thumbmail(rec, mesh); };
-					}
-					case AssetType::Image: {
-						auto tex = context()->loader().load<Texture>(asset);
-						return [=](CmdBufferRecorder& rec) { return render_thumbmail(rec, tex); };
-					}
-					default:
-					break;
-				}
 
-			} catch(...) {
+			switch(context()->asset_store().asset_type(asset).unwrap_or(AssetType::Unknown)) {
+				case AssetType::Mesh:
+					if(auto mesh = context()->loader().load<StaticMesh>(asset)) {
+						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, m); };
+					}
+				break;
+
+				case AssetType::Image:
+					if(auto tex = context()->loader().load<Texture>(asset)) {
+						return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
+					}
+				break;
+
+				default:
+				break;
 			}
 
 			return [](CmdBufferRecorder&) { return nullptr; };

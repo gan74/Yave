@@ -35,8 +35,19 @@ SOFTWARE.
 
 namespace yave {
 
-class GenericAssetLoader : NonCopyable, public DeviceLinked {
+class AssetLoader : NonCopyable, public DeviceLinked {
+	public:
+		enum class ErrorType {
+			InvalidID,
+			UnknownID,
+			InvalidData,
+			Unknown
+		};
 
+		template<typename T>
+		using Result = core::Result<AssetPtr<T>, ErrorType>;
+
+	private:
 		class LoaderBase : NonCopyable {
 			public:
 				virtual ~LoaderBase() {
@@ -49,69 +60,82 @@ class GenericAssetLoader : NonCopyable, public DeviceLinked {
 			static_assert(traits::is_asset, "Type is missing asset traits");
 
 			public:
-				AssetPtr<T> load(const GenericAssetLoader& loader, AssetId id) {
+				Result<T> load(AssetLoader& loader, AssetId id) noexcept {
 					y_profile();
 
 					if(id == AssetId::invalid_id()) {
-						y_throw("Invalid id.");
+						return core::Err(ErrorType::InvalidID);
 					}
 
 					auto& asset_ptr = _loaded[id];
 					if(asset_ptr) {
-						return asset_ptr;
+						return core::Ok(asset_ptr);
 					}
 
-					io::ReaderRef data = loader.store().data(id);
-					auto asset = serde::deserialized<typename traits::load_from>(data);
-					return asset_ptr = make_asset_with_id<T>(id, loader.device(), std::move(asset));
+					if(auto reader = loader.store().data(id)) {
+						if(auto asset = traits::load_asset(reader.unwrap(), loader)) {
+							asset_ptr = make_asset_with_id<T>(id, std::move(asset.unwrap()));
+							return core::Ok(asset_ptr);
+						}
+					}
+
+					return core::Err(ErrorType::Unknown);
 				}
 
 			private:
 				std::unordered_map<AssetId, AssetPtr<T>> _loaded;
 		};
 
-	   public:
-			GenericAssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
+   public:
+		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
+		}
+
+		AssetStore& store() {
+			return *_store;
+		}
+
+		const AssetStore& store() const {
+			return *_store;
+		}
+
+		template<typename T>
+		Result<T> load(AssetId id) {
+			return loader_for_type<T>().load(*this, id);
+		}
+
+		template<typename T>
+		Result<T> load(std::string_view name) {
+			return load<T>(store().id(name));
+		}
+
+		template<typename T>
+		Result<T> import(std::string_view name, std::string_view import_from) {
+			return load<T>(load_or_import(name, import_from));
+		}
+
+   private:
+		template<typename T, typename E>
+		Result<T> load(core::Result<AssetId, E> id) {
+			if(id) {
+				return load<T>(id.unwrap());
 			}
+			return core::Err(ErrorType::UnknownID);
+		}
 
-			AssetStore& store() {
-				return *_store;
-			}
-
-			const AssetStore& store() const {
-				return *_store;
-			}
-
-			template<typename T>
-			AssetPtr<T> load(AssetId id) {
-				return loader_for_type<T>().load(*this, id);
-			}
-
-			template<typename T>
-			AssetPtr<T> load(std::string_view name) {
-				return load<T>(store().id(name));
-			}
-
-			template<typename T>
-			AssetPtr<T> import(std::string_view name, std::string_view import_from) {
-				return load<T>(load_or_import(name, import_from));
-			}
-
-	   private:
-			template<typename T>
-			Loader<T>& loader_for_type() {
-				 auto& loader = _loaders[typeid(T)];
-				 if(!loader) {
-					 loader = std::make_unique<Loader<T>>();
-				 }
-				 return *dynamic_cast<Loader<T>*>(loader.get());
-			}
+		template<typename T>
+		Loader<T>& loader_for_type() {
+			 auto& loader = _loaders[typeid(T)];
+			 if(!loader) {
+				 loader = std::make_unique<Loader<T>>();
+			 }
+			 return *dynamic_cast<Loader<T>*>(loader.get());
+		}
 
 
-			AssetId load_or_import(std::string_view name, std::string_view import_from);
+		core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from);
 
-			std::shared_ptr<AssetStore> _store;
-			std::unordered_map<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
+		std::shared_ptr<AssetStore> _store;
+		std::unordered_map<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
 };
 
 }

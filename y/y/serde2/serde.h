@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_SERDE2_SERDE_H
 
 #include <y/core/Result.h>
+#include <y/core/Functor.h>
 
 namespace y {
 namespace serde2 {
@@ -31,13 +32,13 @@ using Result = core::Result<void>;
 
 #define y_serialize2(...)										\
 	template<typename Arc>										\
-	y::serde2::Result serialize(Arc& _y_serde_arc) const {		\
+	y::serde2::Result serialize(Arc _y_serde_arc) const {		\
 		return _y_serde_arc(__VA_ARGS__);						\
 	}
 
 #define y_deserialize2(...)										\
 	template<typename Arc>										\
-	y::serde2::Result deserialize(Arc& _y_serde_arc) {			\
+	y::serde2::Result deserialize(Arc _y_serde_arc) {			\
 		return _y_serde_arc(__VA_ARGS__);						\
 	}
 
@@ -102,7 +103,6 @@ class Checker {
 		T _t;
 };
 
-
 template<typename T>
 class Function {
 	public:
@@ -111,18 +111,24 @@ class Function {
 
 		template<typename Arc>
 		Result deserialize(Arc& ar) const {
-			typename function_traits<T>::argument_pack args;
-			if(!ar(args)) {
-				return core::Err();
+			if constexpr(std::is_convertible_v<T&&, core::Function<Result(Arc&)>>) {
+				return _t(ar);
+			} else {
+				typename function_traits<T>::argument_pack args;
+				if(!ar(args)) {
+					return core::Err();
+				}
+				std::apply(_t, std::move(args));
+				return core::Ok();
 			}
-			std::apply(_t, std::move(args));
-			return core::Ok();
 		}
 
 
 	private:
 		T _t;
 };
+
+
 }
 
 template<typename T>

@@ -34,9 +34,6 @@ SOFTWARE.
 
 namespace editor {
 
-static AssetPtr<StaticMesh> create_mesh(ContextPtr cptr) {
-	return cptr->loader().import<StaticMesh>("cube.ym", "../meshes/cube.obj.ym");
-}
 
 SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
 }
@@ -45,23 +42,22 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::Button("Spawn cubes")) {
 		auto cam_pos = context()->scene().scene_view().camera().position();
 
-		try {
+		if(auto mesh = context()->loader().import<StaticMesh>("cube.ym", "../meshes/cube.obj.ym")) {
 			auto material = make_asset<Material>(device()->default_resources()[DefaultResources::BasicMaterial]);
-			auto mesh = create_mesh(context());
-			float mul = mesh->radius() * 5.0f;
+			float mul = mesh.unwrap()->radius() * 5.0f;
 
 			i32 size = 10;
 			for(i32 x = -size; x != size; ++x) {
 				for(i32 y = -size; y != size; ++y) {
 					for(i32 z = -size; z != size; ++z) {
-						auto inst = std::make_unique<StaticMeshInstance>(mesh, material);
+						auto inst = std::make_unique<StaticMeshInstance>(mesh.unwrap(), material);
 						inst->position() = cam_pos + math::Vec3(x, y, z) * mul;
 						context()->scene().scene().static_meshes().emplace_back(std::move(inst));
 					}
 				}
 			}
-		} catch(std::exception& e) {
-			log_msg(fmt("Unable to add cubes: %", e.what()), Log::Error);
+		} else {
+			log_msg("Unable to add cubes", Log::Error);
 		}
 
 	}

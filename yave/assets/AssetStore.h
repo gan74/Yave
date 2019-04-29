@@ -35,25 +35,41 @@ class FileSystemModel;
 class AssetStore : NonCopyable {
 
 	public:
+		enum class ErrorType {
+			UnknownID,
+			AlreadyExistingID,
+
+			InvalidName,
+
+			FilesytemError,
+
+			UnsupportedOperation,
+			Unknown,
+		};
+
+		template<typename T = void>
+		using Result = core::Result<T, ErrorType>;
+
+
 		AssetStore();
 		virtual ~AssetStore();
 
 		virtual const FileSystemModel* filesystem() const;
 
-		virtual AssetId import(io::ReaderRef data, std::string_view dst_name) = 0;
+		virtual Result<AssetId> import(io::ReaderRef data, std::string_view dst_name) = 0;
 
-		virtual AssetId id(std::string_view name) const = 0;
-		virtual io::ReaderRef data(AssetId id) const = 0;
+		virtual Result<AssetId> id(std::string_view name) const = 0;
+		virtual Result<io::ReaderRef> data(AssetId id) const = 0;
 
-		virtual void remove(AssetId id);
-		virtual void rename(AssetId id, std::string_view new_name);
+		virtual Result<> remove(AssetId id);
+		virtual Result<> rename(AssetId id, std::string_view new_name);
 
-		virtual void remove(std::string_view name);
-		virtual void rename(std::string_view from, std::string_view to);
+		virtual Result<> remove(std::string_view name);
+		virtual Result<> rename(std::string_view from, std::string_view to);
 
-		virtual void write(AssetId id, io::ReaderRef data);
+		virtual Result<> write(AssetId id, io::ReaderRef data);
 
-		virtual AssetType asset_type(AssetId id) const;
+		virtual Result<AssetType> asset_type(AssetId id) const;
 };
 
 }

@@ -26,7 +26,7 @@ SOFTWARE.
 namespace yave {
 namespace detail {
 
-DevicePtr device_from_loader(GenericAssetLoader& loader) {
+DevicePtr device_from_loader(AssetLoader& loader) {
 	return loader.device();
 }
 

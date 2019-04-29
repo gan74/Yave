@@ -51,7 +51,7 @@ void ImageImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 				const auto& imported = _import_future.get();
 				import(imported);
 			} catch(std::exception& e) {
-				context()->ui().ok("Unable to import", fmt("Unable to import scene: %" , e.what()).data());
+				log_msg(fmt("Unable to import scene: %" , e.what()), Log::Error);
 				_browser.show();
 			}
 			close();
@@ -81,7 +81,7 @@ void ImageImporter::import(const Named<ImageData>& asset) {
 		core::String name = context()->asset_store().filesystem()->join(_import_path, asset.name());
 		io::Buffer data;
 		serde::serialize(data, asset.obj());
-		context()->asset_store().import(data, name);
+		context()->asset_store().import(data, name).or_throw("import failed.");
 	} catch(std::exception& e) {
 		log_msg(fmt("Unable save image: %", e.what()), Log::Error);
 	}

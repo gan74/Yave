@@ -82,14 +82,14 @@ bool File::exists(const core::String& name) {
 }
 
 bool File::copy(const core::String& src, const core::String& dst) {
-	if(auto r = create(src); r.is_ok()) {
+	if(auto r = create(src)) {
 		return copy(r.unwrap(), dst);
 	}
 	return false;
 }
 
 bool File::copy(io::ReaderRef src, const core::String& dst) {
-	if(auto r = create(dst); r.is_ok()) {
+	if(auto r = create(dst)) {
 		File dst_file = std::move(r.unwrap());
 		try {
 			char buffer[1024];

@@ -109,7 +109,7 @@ void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token
 			try {
 				import(std::move(_import_future.get()));
 			} catch(std::exception& e) {
-				context()->ui().ok("Unable to import", fmt("Unable to import scene: %" , e.what()).data());
+				log_msg(fmt("Unable to import scene: %" , e.what()), Log::Error);
 				_browser.show();
 			}
 			close();
@@ -132,7 +132,7 @@ void MeshImporter::import(import::SceneData scene) {
 				log_msg(fmt("Saving asset as \"%\"", name));
 				io::Buffer data;
 				serde::serialize(data, a.obj());
-				context()->asset_store().import(data, name);
+				context()->asset_store().import(data, name).or_throw("import failed.");
 			} catch(std::exception& e) {
 				log_msg(fmt("Unable save \"%\": %", a.name(), e.what()), Log::Error);
 			}
@@ -158,7 +158,9 @@ void MeshImporter::import(import::SceneData scene) {
 
 	import_assets(scene.meshes);
 	import_assets(scene.animations);
-	import_assets(scene.images);
+
+#warning image not imported
+	//import_assets(scene.images);
 
 	context()->ui().refresh_all();
 }

@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-core::String FileSystemModel::parent_path(std::string_view path) const {
+FileSystemModel::Result<core::String> FileSystemModel::parent_path(std::string_view path) const {
 	return absolute(join(path, ".."));
 }
 
@@ -39,10 +39,16 @@ core::String FileSystemModel::extention(std::string_view path) const {
 	return "";
 }
 
-bool FileSystemModel::is_parent(std::string_view parent, std::string_view path) const {
+FileSystemModel::Result<bool> FileSystemModel::is_parent(std::string_view parent, std::string_view path) const {
 	auto par = absolute(parent);
+	if(!par) {
+		return core::Err();
+	}
 	auto f = absolute(path);
-	return /*par.size() > f.size() &&*/ f.starts_with(par);
+	if(!f) {
+		return core::Err();
+	}
+	return core::Ok(f.unwrap().starts_with(par.unwrap()));
 }
 
 const FileSystemModel* FileSystemModel::local_filesystem() {
@@ -57,30 +63,36 @@ const FileSystemModel* FileSystemModel::local_filesystem() {
 
 #ifndef YAVE_NO_STDFS
 
-core::String LocalFileSystemModel::current_path() const {
+FileSystemModel::Result<core::String> LocalFileSystemModel::current_path() const {
 	try {
-		return canonicalize(fs::current_path().string());
-	} catch(std::exception& e) {
-		log_msg(fmt("exception caught: %", e.what()), Log::Error);
+		return core::Ok(canonicalize(fs::current_path().string()));
+	} catch(...) {
 	}
-	return "";
+	return core::Err();
 }
 
 core::String LocalFileSystemModel::filename(std::string_view path) const {
 	try {
 		return fs::path(path).filename().string();
-	} catch(std::exception& e) {
-		log_msg(fmt("exception caught: %", e.what()), Log::Error);
+	} catch(...) {
 	}
 	return path;
 }
 
-bool LocalFileSystemModel::exists(std::string_view path) const {
-	return fs::exists(path);
+FileSystemModel::Result<bool> LocalFileSystemModel::exists(std::string_view path) const {
+	try {
+		return core::Ok(fs::exists(path));
+	} catch(...) {
+	}
+	return core::Err();
 }
 
-bool LocalFileSystemModel::is_directory(std::string_view path) const {
-	return fs::is_directory(path);
+FileSystemModel::Result<bool> LocalFileSystemModel::is_directory(std::string_view path) const {
+	try {
+		return core::Ok(fs::is_directory(path));
+	} catch(...) {
+	}
+	return core::Err();
 }
 
 core::String LocalFileSystemModel::join(std::string_view path, std::string_view name) const {
@@ -98,54 +110,51 @@ core::String LocalFileSystemModel::join(std::string_view path, std::string_view 
 	return result;
 }
 
-core::String LocalFileSystemModel::absolute(std::string_view path) const {
+FileSystemModel::Result<core::String> LocalFileSystemModel::absolute(std::string_view path) const {
 	try {
-		return canonicalize(fs::absolute(path).string());
-	} catch(std::exception& e) {
-		log_msg(fmt("exception caught: %", e.what()), Log::Error);
+		return core::Ok(canonicalize(fs::absolute(path).string()));
+	} catch(...) {
 	}
-	return path;
+	return core::Err();
 }
 
-void LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
+FileSystemModel::Result<> LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
 	try {
 		for(auto& p : fs::directory_iterator(path)) {
 			fs::path path = p.path().filename();
 			auto str = path.string();
 			func(str);
 		}
-	} catch(std::exception& e) {
-		log_msg(fmt("exception caught: %", e.what()), Log::Error);
+	} catch(...) {
 	}
+	return core::Err();
 }
 
-bool LocalFileSystemModel::create_directory(std::string_view path) const {
+FileSystemModel::Result<> LocalFileSystemModel::create_directory(std::string_view path) const {
 	try {
 		fs::create_directory(fs::path(path));
+		return core::Ok();
 	} catch(...) {
-		return false;
 	}
-	return true;
+	return core::Err();
 }
 
-bool LocalFileSystemModel::remove(std::string_view path) const {
+FileSystemModel::Result<> LocalFileSystemModel::remove(std::string_view path) const {
 	try {
 		fs::remove_all(fs::path(path));
-	} catch(std::exception& e) {
-		log_msg(e.what());
-		return false;
+		return core::Ok();
+	} catch(...) {
 	}
-	return true;
+	return core::Err();
 }
 
-bool LocalFileSystemModel::rename(std::string_view from, std::string_view to) const {
+FileSystemModel::Result<> LocalFileSystemModel::rename(std::string_view from, std::string_view to) const {
 	try {
 		fs::rename(fs::path(from), fs::path(to));
-	} catch(std::exception& e) {
-		log_msg(e.what());
-		return false;
+		return core::Ok();
+	} catch(...) {
 	}
-	return true;
+	return core::Err();
 }
 
 bool LocalFileSystemModel::is_delimiter(char c) const {

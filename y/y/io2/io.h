@@ -86,11 +86,16 @@ class Reader {
 	public:
 		template<typename T>
 		Reader(T&& t) : _inner(std::make_unique<Inner<T>>(y_fwd(t)))  {
+			static_assert(!std::is_void_v<decltype(t.at_end())>);
 		}
 
 		template<typename T>
-		Reader(T& t) : _inner(std::make_unique<NotOwner<T>>(t))  {
+		explicit Reader(T& t) : _inner(std::make_unique<NotOwner<T>>(t))  {
+			static_assert(!std::is_void_v<decltype(t.at_end())>);
 		}
+
+		Reader(Reader&&) = default;
+		Reader& operator=(Reader&&) = default;
 
 		bool at_end() const {
 			return _inner->at_end();

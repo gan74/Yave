@@ -36,9 +36,6 @@ class BasicMaterialData {
 		BasicMaterialData() = default;
 		BasicMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
-		static BasicMaterialData deserialized(io::ReaderRef reader, GenericAssetLoader& loader);
-		void serialize(io::WriterRef writer) const;
-
 		core::ArrayView<AssetPtr<Texture>> textures() const;
 
 	private:

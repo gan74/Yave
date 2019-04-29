@@ -51,16 +51,13 @@ void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ImGui::InputText("", _new_name.data(), _new_name.size());
 
 	if(ImGui::Button("Ok")) {
-		try {
-			//auto path = decompose_path(_full_name, _name);
-			auto path = filesystem()->parent_path(_full_name);
-			auto full_new_name = filesystem()->join(path, _new_name.data());
-			context()->asset_store().rename(_full_name, full_new_name);
-
+		auto path = filesystem()->parent_path(_full_name);
+		auto full_new_name = path.map([=](auto&& path) { return filesystem()->join(path, _new_name.data()); });
+		if(full_new_name && context()->asset_store().rename(_full_name, full_new_name.unwrap())) {
 			context()->ui().refresh_all();
 			close();
-		} catch(std::exception& e) {
-			context()->ui().ok("Error", e.what());
+		} else {
+			log_msg("Unable to rename asset.", Log::Error);
 		}
 	}
 

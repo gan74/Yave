@@ -33,8 +33,8 @@ SOFTWARE.
 
 namespace editor {
 
-void add_skinned_mesh(Scene* scene, GenericAssetLoader& loader);
-void fill_scene(Scene* scene, GenericAssetLoader& loader);
+void add_skinned_mesh(Scene* scene, AssetLoader& loader);
+void fill_scene(Scene* scene, AssetLoader& loader);
 
 }
 

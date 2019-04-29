@@ -24,12 +24,14 @@ SOFTWARE.
 
 #include "AssetType.h"
 
+#include <y/core/Result.h>
+
 namespace yave {
 
-class GenericAssetLoader;
+class AssetLoader;
 
 namespace detail {
-DevicePtr device_from_loader(GenericAssetLoader& loader);
+DevicePtr device_from_loader(AssetLoader& loader);
 }
 
 template<typename T>
@@ -37,22 +39,25 @@ struct AssetTraits {
 	static constexpr bool is_asset = false;
 };
 
-#define YAVE_FILL_ASSET_TRAITS(Type, LoadFrom, TypeEnum)						\
-	static constexpr bool is_asset = true;										\
-	static constexpr AssetType type = TypeEnum;									\
-	using load_from = LoadFrom;													\
-	template<typename Ar>														\
-	static Type load_asset(Ar ar, GenericAssetLoader& loader) {					\
-		load_from data;															\
-		ar(data);																\
-		return Type(detail::device_from_loader(loader), data);					\
+#define YAVE_FILL_ASSET_TRAITS(Type, LoadFrom, TypeEnum, UseNew)						\
+	static constexpr bool is_asset = true;												\
+	static constexpr AssetType type = TypeEnum;											\
+	using load_from = LoadFrom;															\
+	using Result = core::Result<Type>;													\
+	static Result load_asset(io::ReaderRef reader, AssetLoader& loader) noexcept {		\
+		try {																			\
+			auto data = serde::deserialized<load_from>(reader);							\
+			return core::Ok(Type(detail::device_from_loader(loader), data));			\
+		} catch(...) {																	\
+		}																				\
+		return core::Err();																\
 	}
 
 
-#define YAVE_DECLARE_ASSET_TRAITS(Type, LoadFrom, TypeEnum)						\
-	template<>																	\
-	struct AssetTraits<Type> {													\
-		YAVE_FILL_ASSET_TRAITS(Type, LoadFrom, TypeEnum)						\
+#define YAVE_DECLARE_ASSET_TRAITS(Type, LoadFrom, TypeEnum)								\
+	template<>																			\
+	struct AssetTraits<Type> {															\
+		YAVE_FILL_ASSET_TRAITS(Type, LoadFrom, TypeEnum, false)							\
 	}
 
 

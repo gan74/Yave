@@ -47,34 +47,37 @@ FileBrowser::FileBrowser(const FileSystemModel* filesystem) :
 
 void FileBrowser::set_filesystem(const FileSystemModel* model) {
 	_filesystem = model ? model : FileSystemModel::local_filesystem();
-	set_path(_filesystem->current_path());
+	set_path(_filesystem->current_path().unwrap_or(""));
 }
 
 void FileBrowser::set_path(std::string_view path) {
-	if(!_filesystem->exists(path)) {
+	if(!_filesystem->exists(path).unwrap_or(false)) {
 		set_path(_last_path);
 		return;
 	}
 
 	_entries.clear();
 
-	if(_filesystem->is_directory(path)) {
+	if(_filesystem->is_directory(path).unwrap_or(false)) {
 		_filesystem->for_each(path, [this, path](const auto& name) {
 				EntryType type = EntryType::Directory;
-				if(!_filesystem->is_directory(_filesystem->join(path, name))) {
+				if(!_filesystem->is_directory(_filesystem->join(path, name)).unwrap_or(false)) {
 					auto ext = _filesystem->extention(name);
 					type = std::binary_search(_extensions.begin(), _extensions.end(), ext)
 						? EntryType::Supported : EntryType::Unsupported;
 				}
 				_entries.push_back(std::make_pair(name, type));
-			});
+			}).ignore();
+
 		y::sort(_entries.begin(), _entries.end(), [](const auto& a, const auto& b) { return a.second < b.second; });
 
 		to_buffer(_path_buffer, path);
 		_last_path = path;
 	} else {
 		done(path);
-		set_path(_filesystem->parent_path(path));
+		if(auto p =_filesystem->parent_path(path)) {
+			set_path(p.unwrap());
+		}
 	}
 }
 
@@ -132,7 +135,9 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ImGui::BeginChild("###fileentries");
 	{
 		if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
-			set_path(_filesystem->parent_path(path()));
+			if(auto p = _filesystem->parent_path(path())) {
+				set_path(p.unwrap());
+			}
 		}
 
 		const char* icons[] = {ICON_FA_FOLDER, ICON_FA_FILE_ALT, ICON_FA_QUESTION};

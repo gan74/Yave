@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace editor {
 
-void add_skinned_mesh(Scene* scene, GenericAssetLoader& loader) {
+void add_skinned_mesh(Scene* scene, AssetLoader& loader) {
 	DevicePtr dptr = loader.device();
 
 	auto material = make_asset<Material>(dptr->default_resources()[DefaultResources::BasicSkinnedMaterial]);
@@ -58,7 +58,7 @@ void add_skinned_mesh(Scene* scene, GenericAssetLoader& loader) {
 	}
 }
 
-void fill_scene(Scene* scene, GenericAssetLoader& loader) {
+void fill_scene(Scene* scene, AssetLoader& loader) {
 
 	DevicePtr dptr = loader.device();
 
@@ -86,7 +86,8 @@ void fill_scene(Scene* scene, GenericAssetLoader& loader) {
 		//auto mesh = AssetPtr<StaticMesh>(StaticMesh(dptr, mesh_data));
 
 		try {
-			AssetPtr<StaticMesh> mesh = loader.import<StaticMesh>("cube.ym", "../meshes/cube.obj.ym");
+			auto m = loader.import<StaticMesh>("cube.ym", "../meshes/cube.obj.ym");
+			AssetPtr<StaticMesh> mesh = std::move(m.or_throw("unable to load mesh."));
 
 			{
 				auto instance = std::make_unique<StaticMeshInstance>(mesh, material);

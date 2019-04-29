@@ -51,15 +51,15 @@ class FolderAssetStore final : public AssetStore {
 			FolderFileSystemModel(std::string_view root);
 			const core::String& root_path() const;
 
-			core::String current_path() const override;
-			core::String parent_path(std::string_view path) const override;
-			bool exists(std::string_view path) const override;
-			bool is_directory(std::string_view path) const override;
-			core::String absolute(std::string_view path) const override;
-			void for_each(std::string_view path, const for_each_f& func) const override;
-			bool create_directory(std::string_view path) const override;
-			bool remove(std::string_view path) const override;
-			bool rename(std::string_view from, std::string_view to) const override;
+			Result<core::String> current_path() const override;
+			Result<core::String> parent_path(std::string_view path) const override;
+			Result<bool> exists(std::string_view path) const override;
+			Result<bool> is_directory(std::string_view path) const override;
+			Result<core::String> absolute(std::string_view path) const override;
+			Result<> for_each(std::string_view path, const for_each_f& func) const override;
+			Result<> create_directory(std::string_view path) const override;
+			Result<> remove(std::string_view path) const override;
+			Result<> rename(std::string_view from, std::string_view to) const override;
 
 		private:
 			core::String _root;
@@ -71,23 +71,23 @@ class FolderAssetStore final : public AssetStore {
 
 		const FileSystemModel* filesystem() const override;
 
-		AssetId import(io::ReaderRef data, std::string_view dst_name) override;
+		Result<AssetId> import(io::ReaderRef data, std::string_view dst_name) override;
 
-		AssetId id(std::string_view name) const override;
-		io::ReaderRef data(AssetId id) const override;
+		Result<AssetId> id(std::string_view name) const override;
+		Result<io::ReaderRef> data(AssetId id) const override;
 
-		void remove(AssetId id) override;
-		void rename(AssetId id, std::string_view new_name) override;
-		void remove(std::string_view name) override;
-		void rename(std::string_view from, std::string_view to) override;
+		Result<> remove(AssetId id) override;
+		Result<> rename(AssetId id, std::string_view new_name) override;
+		Result<> remove(std::string_view name) override;
+		Result<> rename(std::string_view from, std::string_view to) override;
 
-		void write(AssetId id, io::ReaderRef data) override;
+		Result<> write(AssetId id, io::ReaderRef data) override;
 
 		void clean_index();
 
 	private:
-		void write_index() const;
-		void read_index();
+		Result<> write_index() const;
+		Result<> read_index();
 
 		FolderFileSystemModel _filesystem;
 		core::String _index_file_path;

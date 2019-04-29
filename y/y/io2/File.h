@@ -38,8 +38,8 @@ class File : NonCopyable {
 		File(File&& other);
 		File& operator=(File&& other);
 
-		static core::Result<File> create(const core::String&  name);
-		static core::Result<File> open(const core::String&  name);
+		static core::Result<File> create(const core::String& name);
+		static core::Result<File> open(const core::String& name);
 
 		usize size() const;
 		usize remaining() const;

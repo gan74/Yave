@@ -26,15 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-AssetId GenericAssetLoader::load_or_import(std::string_view name, std::string_view import_from) {
-	try {
-		return _store->id(name);
-	} catch(...) {
-		if(auto r = io::File::open(import_from); r.is_ok()) {
-			return _store->import(r.unwrap(), name);
-		}
+core::Result<AssetId> AssetLoader::load_or_import(std::string_view name, std::string_view import_from) {
+	if(auto id = _store->id(name)) {
+		return id;
 	}
-	return AssetId::invalid_id();
+
+	if(auto file = io::File::open(import_from)) {
+		return _store->import(file.unwrap(), name);
+	}
+
+	return core::Err();
 }
 
 }

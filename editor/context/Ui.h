@@ -49,6 +49,7 @@ class Ui : NonCopyable, public ContextLinked {
 
 		core::ArrayView<std::unique_ptr<Widget>> widgets() const;
 
+		// don't spam these two: they are synchronous and modal (and now supported outside of win32 right now)
 		bool confirm(const char* message);
 		void ok(const char* title, const char* message);
 

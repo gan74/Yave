@@ -57,7 +57,7 @@ class BuffWriter final : NonCopyable {
 					// can not fit in buffer
 					if(bytes >= free + _size) {
 						Result flushed = flush_r();
-						if(flushed.is_ok() && flushed.unwrap() == previous) {
+						if(flushed && flushed.unwrap() == previous) {
 							return _inner.write(data, bytes);
 						}
 						// fail to flush previous data: 0 byte written for this one
@@ -72,7 +72,7 @@ class BuffWriter final : NonCopyable {
 					// flush and write the rest
 					if(_used == _size) {
 						Result flushed = flush_r();
-						if(flushed.is_error()) {
+						if(!flushed) {
 							return flushed;
 						}
 						if(flushed.unwrap()) {
@@ -83,7 +83,7 @@ class BuffWriter final : NonCopyable {
 					return core::Ok();
 				}();
 
-			if(written.is_ok()) {
+			if(written) {
 				return written;
 			}
 			return core::Err(std::max(previous, written.error()) - previous);

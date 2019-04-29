@@ -26,10 +26,10 @@ SOFTWARE.
 #include "formats.h"
 #include "helper.h"
 
-#include <y/io2/io.h>
-
 namespace y {
 namespace serde2 {
+
+// TODO: We still pay a virtual call by read/write op, change that if possible
 
 template<typename Format = BinaryFormat>
 class ReadableArchive final {

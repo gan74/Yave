@@ -34,20 +34,11 @@ SOFTWARE.
 namespace editor {
 
 static AssetId asset_id(ContextPtr ctx, std::string_view name) {
-	try {
-		return ctx->asset_store().id(name);
-	} catch(...) {
-	}
-
-	return AssetId();
+	return ctx->asset_store().id(name).unwrap_or(AssetId());
 }
 
 static AssetType read_file_type(ContextPtr ctx, AssetId id) {
-	try {
-		return ctx->asset_store().asset_type(id);
-	} catch(...) {
-	}
-	return AssetType::Unknown;
+	return ctx->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 }
 
 static auto icon(AssetType type) {
@@ -74,7 +65,6 @@ ResourceBrowser::FileInfo::FileInfo(ContextPtr ctx, std::string_view file, std::
 		type(read_file_type(ctx, id)) {
 }
 
-
 ResourceBrowser::DirNode::DirNode(std::string_view dir, std::string_view full, DirNode* par) :
 		name(dir),
 		full_path(full),
@@ -87,16 +77,14 @@ ResourceBrowser::DirNode::DirNode(std::string_view dir, std::string_view full, D
 ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
 		Widget(ICON_FA_OBJECT_GROUP " Resource Browser"),
 		ContextLinked(ctx),
-		_root("", filesystem()->current_path()) {
+		_root("", filesystem()->current_path().unwrap_or("")) {
 
 	set_current(&_root);
 }
 
 void ResourceBrowser::asset_selected(const FileInfo& file) const {
-	try {
-		context()->scene().add(file.full_name);
-	} catch(std::exception& e) {
-		log_msg(fmt("Unable to add object to scene: %", e.what()), Log::Error);
+	if(!context()->scene().add(file.full_name)) {
+		log_msg("Unable to add asset to scene.", Log::Error);
 	}
 }
 
@@ -120,12 +108,12 @@ void ResourceBrowser::update_node(DirNode* node) {
 	const auto* fs = filesystem();
 	fs->for_each(node->full_path, [&](const auto& name) {
 			auto full_name = fs->join(node->full_path, name);
-			if(fs->is_directory(full_name)) {
+			if(fs->is_directory(full_name).unwrap_or(false)) {
 				node->children << DirNode(name, full_name, node);
 			} else {
 				node->files << FileInfo(context(), name, full_name);
 			}
-		});
+		}).ignore();
 
 	node->up_to_date = true;
 	_refresh = false;
@@ -191,7 +179,7 @@ const ResourceBrowser::DirNode* ResourceBrowser::hovered_dir() const {
 void ResourceBrowser::paint_context_menu() {
 	if(ImGui::BeginPopup("###contextmenu")) {
 		if(ImGui::Selectable("New folder")) {
-			filesystem()->create_directory(filesystem()->join(_current->full_path, "new folder"));
+			filesystem()->create_directory(filesystem()->join(_current->full_path, "new folder")).ignore();
 			refresh();
 		}
 
@@ -201,10 +189,8 @@ void ResourceBrowser::paint_context_menu() {
 				context()->ui().add<AssetRenamer>(file->full_name);
 			}
 			if(ImGui::Selectable("Delete")) {
-				try {
-					context()->asset_store().remove(file->id);
-				} catch(std::exception& e) {
-					log_msg(fmt("Unable to delete asset: %", e.what()), Log::Error);
+				if(!context()->asset_store().remove(file->id)) {
+					log_msg("Unable to delete asset", Log::Error);
 				}
 				refresh();
 			}
@@ -214,10 +200,8 @@ void ResourceBrowser::paint_context_menu() {
 				context()->ui().add<AssetRenamer>(dir->name);
 			}
 			if(ImGui::Selectable("Delete")) {
-				try {
-					context()->asset_store().remove(dir->full_path);
-				} catch(std::exception& e) {
-					log_msg(fmt("Unable to delete folder: %", e.what()), Log::Error);
+				if(!context()->asset_store().remove(dir->full_path)) {
+					log_msg("Unable to delete folder", Log::Error);
 				}
 				refresh();
 			}

@@ -57,7 +57,7 @@ DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type
 
 	auto& heaps =_heaps[HeapType{reqs.memoryTypeBits, type}];
 	for(auto& heap : heaps) {
-		if(auto r = heap->alloc(reqs); r.is_ok()) {
+		if(auto r = heap->alloc(reqs)) {
 			return std::move(r.unwrap());
 		}
 	}

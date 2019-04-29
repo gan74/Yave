@@ -57,7 +57,7 @@ class BuffReader final : NonCopyable {
 				// too big for buffer
 				if(remaining > _size) {
 					Result read = _inner.read(data + in_buffer, remaining);
-					if(read.is_error()) {
+					if(!read) {
 						audit();
 						return core::Err(read.error() + in_buffer);
 					}
@@ -82,7 +82,7 @@ class BuffReader final : NonCopyable {
 			_offset = 0;
 			Result res = _inner.read_all(data);
 			audit();
-			if(res.is_error()) {
+			if(!res) {
 				return core::Err(res.error() + in_buffer);
 			}
 			return core::Ok();

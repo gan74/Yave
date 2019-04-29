@@ -32,40 +32,52 @@ AssetStore::AssetStore() {
 AssetStore::~AssetStore() {
 }
 
-void AssetStore::remove(AssetId id) {
+AssetStore::Result<> AssetStore::remove(AssetId id) {
 	unused(id);
-	y_throw("Unsuported operation.");
+	return core::Err(ErrorType::UnsupportedOperation);
 }
 
-void AssetStore::rename(AssetId id, std::string_view new_name) {
+AssetStore::Result<> AssetStore::rename(AssetId id, std::string_view new_name) {
 	unused(id, new_name);
-	y_throw("Unsuported operation.");
+	return core::Err(ErrorType::UnsupportedOperation);
 }
 
 const FileSystemModel* AssetStore::filesystem() const {
 	return nullptr;
 }
 
-void AssetStore::remove(std::string_view name) {
-	remove(id(name));
-}
-
-void AssetStore::rename(std::string_view from, std::string_view to) {
-	rename(id(from), to);
-}
-
-void AssetStore::write(AssetId id, io::ReaderRef data) {
-	unused(id, data);
-	y_throw("Unsuported operation.");
-}
-
-AssetType AssetStore::asset_type(AssetId id) const {
-	io::ReaderRef reader = data(id);
-	u32 magic = reader->read_one<u32>();
-	if(magic != fs::magic_number) {
-		y_throw("Unknown file type.");
+AssetStore::Result<> AssetStore::remove(std::string_view name) {
+	if(auto i = id(name)) {
+		 return remove(i.unwrap());
 	}
-	return reader->read_one<AssetType>();
+	return core::Err(ErrorType::UnknownID);
+}
+
+AssetStore::Result<> AssetStore::rename(std::string_view from, std::string_view to) {
+	if(auto i = id(from)) {
+		 return rename(i.unwrap(), to);
+	}
+	return core::Err(ErrorType::UnknownID);
+}
+
+AssetStore::Result<> AssetStore::write(AssetId id, io::ReaderRef data) {
+	unused(id, data);
+	return core::Err(ErrorType::UnsupportedOperation);
+}
+
+AssetStore::Result<AssetType> AssetStore::asset_type(AssetId id) const {
+	try {
+		if(auto reader = data(id)) {
+			u32 magic = reader.unwrap()->read_one<u32>();
+			if(magic == fs::magic_number) {
+				return core::Ok(reader.unwrap()->read_one<AssetType>());
+			}
+			return core::Err(ErrorType::FilesytemError);
+		}
+		return core::Err(ErrorType::UnknownID);
+	} catch(...) {
+	}
+	return core::Err(ErrorType::Unknown);
 }
 
 }
