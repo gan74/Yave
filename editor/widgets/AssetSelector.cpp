@@ -19,57 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_CONTEXT_SELECTION_H
-#define EDITOR_CONTEXT_SELECTION_H
 
-#include <editor/editor.h>
-#include <yave/objects/Light.h>
-#include <yave/objects/Transformable.h>
-
-#include <yave/material/Material.h>
+#include "AssetSelector.h"
 
 namespace editor {
 
-class Selection {
-	public:
-		void set_selected(Light* sel) {
-			_transformable = sel;
-			_light = sel;
-		}
-
-		void set_selected(Transformable* sel) {
-			_transformable = sel;
-			_light = nullptr;
-		}
-
-		void set_selected(std::nullptr_t) {
-			_transformable = nullptr;
-			_light = nullptr;
-		}
-
-		Transformable* selected() const {
-			return _transformable;
-		}
-
-		Light* light() const {
-			return _light;
-		}
-
-
-		void set_selected(const AssetPtr<Material>& sel) {
-			_material = sel;
-		}
-
-		const auto& material() const {
-			return _material;
-		}
-
-	private:
-		NotOwner<Transformable*> _transformable = nullptr;
-		NotOwner<Light*> _light = nullptr;
-		AssetPtr<Material> _material;
-};
-
+AssetSelector::AssetSelector(ContextPtr ctx, AssetType filter) :
+		ResourceBrowser(ctx, fmt("% Asset selector", icon_for_type(filter))),
+		_filter(filter) {
 }
 
-#endif // EDITOR_CONTEXT_SELECTION_H
+void AssetSelector::asset_selected(const FileInfo& file) {
+	if(_selected(file.id)) {
+		close();
+	}
+}
+
+bool AssetSelector::display_asset(const FileInfo& file) const {
+	return file.type == _filter;
+}
+
+}

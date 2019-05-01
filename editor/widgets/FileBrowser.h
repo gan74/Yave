@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace editor {
 
-class FileBrowser : public Widget {
+class FileBrowser final : public Widget {
 	enum class EntryType {
 		Directory,
 		Supported,

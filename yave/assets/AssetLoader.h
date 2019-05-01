@@ -67,7 +67,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 						return core::Err(ErrorType::InvalidID);
 					}
 
-					auto& asset_ptr = _loaded[id];
+					auto asset_ptr = _loaded[id].lock();
 					if(asset_ptr) {
 						return core::Ok(asset_ptr);
 					}
@@ -83,7 +83,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 				}
 
 			private:
-				std::unordered_map<AssetId, AssetPtr<T>> _loaded;
+				std::unordered_map<AssetId, WeakAssetPtr<T>> _loaded;
 		};
 
    public:

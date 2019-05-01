@@ -30,12 +30,14 @@ namespace yave {
 template<typename T>
 class AssetPtr;
 
+template<typename T>
+class WeakAssetPtr;
+
 template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args);
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
-
 
 template<typename T>
 class AssetPtr {
@@ -78,10 +80,15 @@ class AssetPtr {
 		template<typename U, typename... Args>
 		friend AssetPtr<U> make_asset_with_id(AssetId id, Args&&... args);
 
+		friend class WeakAssetPtr<T>;
+
 		friend class GenericAssetPtr;
 
 		template<typename... Args>
 		explicit AssetPtr(AssetId id, Args&&... args) : _ptr(std::make_shared<Pair>(id, y_fwd(args)...)) {
+		}
+
+		AssetPtr(const std::shared_ptr<Pair>& ptr) : _ptr(ptr) {
 		}
 
 	private:
@@ -97,6 +104,23 @@ template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args) {
 	return AssetPtr<T>(id, y_fwd(args)...);
 }
+
+
+template<typename T>
+class WeakAssetPtr {
+	public:
+		WeakAssetPtr() = default;
+
+		WeakAssetPtr(const AssetPtr<T>& ptr) : _ptr(ptr._ptr) {
+		}
+
+		AssetPtr<T> lock() const {
+			return _ptr.lock();
+		}
+
+	private:
+		std::weak_ptr<typename AssetPtr<T>::Pair> _ptr;
+};
 
 
 class GenericAssetPtr {

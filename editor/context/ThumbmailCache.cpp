@@ -91,6 +91,7 @@ void ThumbmailCache::process_requests() {
 			}
 
 			ThumbmailFunc func = _requests[i].get();
+			recorder->keep_alive(func);
 			if(auto thumb = func(*recorder)) {
 				_thumbmails[thumb->id] = std::move(thumb);
 			}

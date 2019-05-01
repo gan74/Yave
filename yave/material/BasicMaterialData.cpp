@@ -36,7 +36,10 @@ core::Result<BasicMaterialData> BasicMaterialData::load(io::ReaderRef reader, As
 		BasicMaterialHeader().deserialize(reader);
 		BasicMaterialData data;
 		for(auto& tex : data._textures) {
-			tex = std::move(loader.load<Texture>(serde::deserialized<AssetId>(reader)).or_throw("Unable to load texture."));
+			auto id = serde::deserialized<AssetId>(reader);
+			if(id != AssetId::invalid_id()) {
+				tex = std::move(loader.load<Texture>(id).or_throw("Unable to load texture."));
+			}
 		}
 		return core::Ok(data);
 	} catch(...) {

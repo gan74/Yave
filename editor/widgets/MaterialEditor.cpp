@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "MaterialEditor.h"
+#include "AssetSelector.h"
 
 #include <yave/material/Material.h>
 #include <editor/context/EditorContext.h>
@@ -39,10 +40,17 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::Text("No material selected.");
 		return;
 	}
-	MaterialTemplateData& data = const_cast<MaterialTemplateData&>(context()->selection().material()->data());
+
+	if(ImGui::Button("Texture")) {
+		AssetSelector* selector = context()->ui().add<AssetSelector>(AssetType::Image);
+		selector->set_selected_callback([](AssetId id) { log_msg(fmt("selected id %", id)); return true; });
+	}
+
+
+	//MaterialTemplateData& data = const_cast<MaterialTemplateData&>(context()->selection().material()->data());
 	//ImGui::Text("Binding count: %d", i32(data._bindings.size()));
 
-	ImGui::Checkbox("depth tested", &data._depth_tested);
+	//ImGui::Checkbox("depth tested", &data._depth_tested);
 }
 
 }

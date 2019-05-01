@@ -51,7 +51,7 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 			SceneView view;
 		};
 
-		using ThumbmailFunc = core::Function<std::unique_ptr<Thumbmail>(CmdBufferRecorder&)>;
+		using ThumbmailFunc = core::Functor<std::unique_ptr<Thumbmail>(CmdBufferRecorder&)>;
 
 	public:
 		using ThumbmailView = std::reference_wrapper<const TextureView>;

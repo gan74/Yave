@@ -30,30 +30,31 @@ SOFTWARE.
 
 namespace editor {
 
-class ResourceBrowser final : public Widget, public ContextLinked {
-	struct DirNode;
+class ResourceBrowser : public Widget, public ContextLinked {
 
-	struct FileInfo {
-		FileInfo(ContextPtr ctx, std::string_view file, std::string_view full);
+	protected:
+		struct FileInfo {
+			FileInfo(ContextPtr ctx, std::string_view file, std::string_view full);
 
-		core::String name;
-		core::String full_name;
-		AssetId id;
-		AssetType type;
-	};
+			const core::String name;
+			const core::String full_name;
+			const AssetId id;
+			const AssetType type;
+		};
 
-	struct DirNode {
-		DirNode(std::string_view dir, std::string_view full, DirNode* par = nullptr);
+	private:
+		struct DirNode {
+			DirNode(std::string_view dir, std::string_view full, DirNode* par = nullptr);
 
-		core::String name;
-		core::String full_path;
+			const core::String name;
+			const core::String full_path;
 
-		core::Vector<FileInfo> files;
-		core::Vector<DirNode> children;
+			core::Vector<FileInfo> files;
+			core::Vector<DirNode> children;
 
-		DirNode* parent;
-		bool up_to_date = false;
-	};
+			DirNode* parent;
+			bool up_to_date = false;
+		};
 
 	public:
 		ResourceBrowser(ContextPtr ctx);
@@ -61,7 +62,12 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 		void refresh() override;
 
 	protected:
-		virtual void asset_selected(const FileInfo& file) const;
+		ResourceBrowser(ContextPtr ctx, std::string_view title);
+
+		virtual void asset_selected(const FileInfo& file);
+		virtual bool display_asset(const FileInfo&file) const;
+
+		static std::string_view icon_for_type(AssetType type);
 
 	private:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;

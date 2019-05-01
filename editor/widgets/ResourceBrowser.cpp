@@ -41,23 +41,6 @@ static AssetType read_file_type(ContextPtr ctx, AssetId id) {
 	return ctx->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 }
 
-static auto icon(AssetType type) {
-	switch(type) {
-		case AssetType::Image:
-			return ICON_FA_IMAGE;
-
-		case AssetType::Mesh:
-			return ICON_FA_CUBE;
-
-		case AssetType::Material:
-			return ICON_FA_BRUSH;
-
-		default:
-			return ICON_FA_QUESTION;
-	}
-	return ICON_FA_QUESTION;
-}
-
 ResourceBrowser::FileInfo::FileInfo(ContextPtr ctx, std::string_view file, std::string_view full) :
 		name(file),
 		full_name(full),
@@ -73,19 +56,54 @@ ResourceBrowser::DirNode::DirNode(std::string_view dir, std::string_view full, D
 
 
 
+ResourceBrowser::ResourceBrowser(ContextPtr ctx) : ResourceBrowser(ctx, ICON_FA_OBJECT_GROUP " Resource Browser") {
+}
 
-ResourceBrowser::ResourceBrowser(ContextPtr ctx) :
-		Widget(ICON_FA_OBJECT_GROUP " Resource Browser"),
+ResourceBrowser::ResourceBrowser(ContextPtr ctx, std::string_view title) :
+		Widget(title, ImGuiWindowFlags_AlwaysVerticalScrollbar),
 		ContextLinked(ctx),
 		_root("", filesystem()->current_path().unwrap_or("")) {
 
 	set_current(&_root);
 }
 
-void ResourceBrowser::asset_selected(const FileInfo& file) const {
-	if(!context()->scene().add(file.full_name)) {
-		log_msg("Unable to add asset to scene.", Log::Error);
+void ResourceBrowser::asset_selected(const FileInfo& file) {
+	switch(file.type) {
+		case AssetType::Material:
+			if(auto material = context()->loader().load<Material>(file.id)) {
+				context()->selection().set_selected(material.unwrap());
+			} else {
+				log_msg("Unable to open material.", Log::Error);
+			}
+		break;
+
+		default:
+			if(!context()->scene().add(file.full_name)) {
+				log_msg("Unable to add asset to scene.", Log::Error);
+			}
+		break;
 	}
+}
+
+bool ResourceBrowser::display_asset(const FileInfo& file) const {
+	return file.type != AssetType::Unknown;
+}
+
+std::string_view ResourceBrowser::icon_for_type(AssetType type) {
+	switch(type) {
+		case AssetType::Image:
+			return ICON_FA_IMAGE;
+
+		case AssetType::Mesh:
+			return ICON_FA_CUBE;
+
+		case AssetType::Material:
+			return ICON_FA_BRUSH;
+
+		default:
+			return ICON_FA_QUESTION;
+	}
+	return ICON_FA_QUESTION;
 }
 
 void ResourceBrowser::set_current(DirNode* current) {
@@ -286,13 +304,15 @@ void ResourceBrowser::paint_asset_list(float width) {
 	}
 
 	// files
-	for(const auto& file : curr->files) {
-		if(ImGui::Selectable(fmt("% %", icon(file.type), file.name).data(), selected())) {
-			asset_selected(file);
-		}
+	for(const FileInfo& file : curr->files) {
+		if(display_asset(file)) {
+			if(ImGui::Selectable(fmt("% %", icon_for_type(file.type), file.name).data(), selected())) {
+				asset_selected(file);
+			}
 
-		if(!menu_openned && ImGui::IsItemHovered()) {
-			hovered = index;
+			if(!menu_openned && ImGui::IsItemHovered()) {
+				hovered = index;
+			}
 		}
 		++index;
 	}
