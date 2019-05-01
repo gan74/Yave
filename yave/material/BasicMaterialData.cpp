@@ -47,7 +47,7 @@ core::Result<BasicMaterialData> BasicMaterialData::load(io::ReaderRef reader, As
 	return core::Err();
 }
 
-core::ArrayView<AssetPtr<Texture>> BasicMaterialData::textures() const {
+const std::array<AssetPtr<Texture>, BasicMaterialData::texture_count>& BasicMaterialData::textures() const {
 	return  _textures;
 }
 

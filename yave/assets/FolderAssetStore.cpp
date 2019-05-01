@@ -191,6 +191,25 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io::ReaderRef data, std::st
 	return core::Ok(id);
 }
 
+AssetStore::Result<> FolderAssetStore::replace(io::ReaderRef data, AssetId id) {
+	std::unique_lock lock(_lock);
+
+	auto& entry = _from_id[id];
+	if(!entry) {
+		return core::Err(ErrorType::UnknownID);
+	}
+
+	// remove/optimize
+	y_defer(write_index().ignore());
+	y_defer(y_debug_assert(_from_id.size() == _from_name.size()));
+
+	auto dst_file = _filesystem.join(_filesystem.root_path(), entry->name);
+	if(!io::File::copy(data, dst_file)) {
+		return core::Err(ErrorType::FilesytemError);
+	}
+	return core::Ok();
+}
+
 AssetStore::Result<AssetId> FolderAssetStore::id(std::string_view name) const {
 	y_profile();
 	std::unique_lock lock(_lock);

@@ -27,11 +27,13 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 #include <yave/graphics/shaders/SpirVData.h>
 #include <yave/graphics/shaders/ShaderModule.h>
+#include <yave/graphics/images/Image.h>
 
 namespace yave {
 
 class ComputeProgram;
 class MaterialTemplate;
+
 
 class DeviceResources final : NonCopyable {
 	public:
@@ -81,6 +83,12 @@ class DeviceResources final : NonCopyable {
 			MaxMaterialTemplates
 		};
 
+		enum Textures {
+			BlackTexture,
+
+			MaxTextures
+		};
+
 		DeviceResources(DevicePtr dptr);
 
 		// can't default for inclusion reasons
@@ -93,6 +101,7 @@ class DeviceResources final : NonCopyable {
 		const SpirVData& operator[](SpirV i) const;
 		const ComputeProgram& operator[](ComputePrograms i) const;
 		const MaterialTemplate* operator[](MaterialTemplates i) const;
+		const Texture* operator[](Textures i) const;
 
 	private:
 		void swap(DeviceResources& other);
@@ -100,8 +109,9 @@ class DeviceResources final : NonCopyable {
 		std::unique_ptr<SpirVData[]> _spirv;
 		std::unique_ptr<ComputeProgram[]> _computes;
 		std::unique_ptr<MaterialTemplate[]> _materials;
-};
+		std::unique_ptr<Texture[]> _textures;
 
+};
 }
 
 #endif // YAVE_DEVICE_DEVICERESOURCES_H

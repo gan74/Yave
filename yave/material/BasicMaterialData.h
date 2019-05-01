@@ -44,7 +44,7 @@ class BasicMaterialData {
 		y_serialize(BasicMaterialHeader(), texture_ids())
 		static core::Result<BasicMaterialData> load(io::ReaderRef reader, AssetLoader& loader) noexcept;
 
-		core::ArrayView<AssetPtr<Texture>> textures() const;
+		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 
 	private:
 		std::array<AssetId, texture_count> texture_ids() const;

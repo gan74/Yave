@@ -35,15 +35,55 @@ MaterialEditor::MaterialEditor(ContextPtr cptr) :
 		ContextLinked(cptr) {
 }
 
+static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, usize index, AssetId id) {
+	if(auto tex = ctx->loader().load<Texture>(id)) {
+		std::array textures = material->data().textures();
+		textures[index] = std::move(tex.unwrap());
+		BasicMaterialData data(std::move(textures));
+
+		try {
+			io::Buffer buffer;
+			data.serialize(buffer);
+			ctx->asset_store().replace(buffer, material.id()).or_throw("");
+
+			ctx->loader().forget(material.id());
+			if(ctx->selection().material() == material) {
+				if(auto mat = ctx->loader().load<Material>(material.id())) {
+					ctx->selection().set_selected(mat.unwrap());
+				}
+			}
+		} catch(...) {
+			log_msg("Unable to save material.", Log::Error);
+		}
+		return;
+	}
+	log_msg("Unable to load texture.", Log::Error);
+}
+
 void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(!context()->selection().material()) {
 		ImGui::Text("No material selected.");
 		return;
 	}
 
-	if(ImGui::Button("Texture")) {
-		AssetSelector* selector = context()->ui().add<AssetSelector>(AssetType::Image);
-		selector->set_selected_callback([](AssetId id) { log_msg(fmt("selected id %", id)); return true; });
+	AssetPtr<Material> material = context()->selection().material();
+	const BasicMaterialData& data = material->data();
+	math::Vec2ui thumb_size = context()->thumbmail_cache().thumbmail_size() / 2;
+
+	for(usize i = 0; i != data.textures().size(); ++i) {
+		TextureView* view = context()->thumbmail_cache().get_thumbmail(data.textures()[i].id());
+		bool clicked = view
+			? ImGui::ImageButton(view, thumb_size)
+			: ImGui::Button(fmt("Texture###%", i).data(), thumb_size);
+
+		if(clicked) {
+			AssetSelector* selector = context()->ui().add<AssetSelector>(AssetType::Image);
+			selector->set_selected_callback([=, ctx = context()](AssetId id) {
+				modify_and_save(ctx, material, i, id);
+				return true;
+			});
+		}
+		ImGui::SameLine();
 	}
 
 

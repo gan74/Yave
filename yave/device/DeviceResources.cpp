@@ -32,6 +32,7 @@ namespace yave {
 using SpirV = DeviceResources::SpirV;
 using ComputePrograms = DeviceResources::ComputePrograms;
 using MaterialTemplates = DeviceResources::MaterialTemplates;
+using Textures = DeviceResources::Textures;
 
 struct DefaultMaterialData {
 	SpirV frag;
@@ -81,13 +82,20 @@ static constexpr const char* spirv_names[] = {
 		"imgui.vert",
 	};
 
+static constexpr std::array<u32, 4> texture_colors[] = {
+		{0, 0, 0, 0},
+	};
+
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
 static constexpr usize compute_count = usize(ComputePrograms::MaxComputePrograms);
 static constexpr usize material_count = usize(MaterialTemplates::MaxMaterialTemplates);
+static constexpr usize texture_count = usize(Textures::MaxTextures);
 
 static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
 static_assert(sizeof(compute_spirvs) / sizeof(compute_spirvs[0]) == compute_count);
 static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == material_count);
+static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_count);
+
 
 
 static SpirVData load_spirv(const char* name) {
@@ -97,12 +105,11 @@ static SpirVData load_spirv(const char* name) {
 
 
 
-
-
 DeviceResources::DeviceResources(DevicePtr dptr) :
 		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
-		_materials(std::make_unique<MaterialTemplate[]>(material_count)) {
+		_materials(std::make_unique<MaterialTemplate[]>(material_count)) ,
+		_textures(std::make_unique<Texture[]>(texture_count)) {
 
 	for(usize i = 0; i != spirv_count; ++i) {
 		_spirv[i] = load_spirv(spirv_names[i]);
@@ -122,6 +129,11 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 				.set_blended(data.blended)
 			;
 		_materials[i] = MaterialTemplate(dptr, std::move(template_data));
+	}
+
+	for(usize i = 0; i != texture_count; ++i) {
+		const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
+		_textures[i] = Texture(dptr, ImageData(math::Vec2ui(2), data, vk::Format::eR8G8B8A8Unorm));
 	}
 }
 
@@ -145,6 +157,7 @@ void DeviceResources::swap(DeviceResources& other) {
 	std::swap(_spirv, other._spirv);
 	std::swap(_computes, other._computes);
 	std::swap(_materials, other._materials);
+	std::swap(_textures, other._textures);
 }
 
 const SpirVData& DeviceResources::operator[](SpirV i) const {
@@ -158,5 +171,10 @@ const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
 const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
 	return &_materials[usize(i)];
 }
+
+const Texture* DeviceResources::operator[](Textures i) const {
+	return &_textures[usize(i)];
+}
+
 
 }

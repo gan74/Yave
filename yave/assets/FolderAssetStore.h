@@ -72,6 +72,7 @@ class FolderAssetStore final : public AssetStore {
 		const FileSystemModel* filesystem() const override;
 
 		Result<AssetId> import(io::ReaderRef data, std::string_view dst_name) override;
+		Result<> replace(io::ReaderRef data, AssetId id) override;
 
 		Result<AssetId> id(std::string_view name) const override;
 		Result<io::ReaderRef> data(AssetId id) const override;

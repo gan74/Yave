@@ -32,7 +32,7 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, core::ArrayView<Asset
 	}
 	auto bindings = core::vector_with_capacity<Binding>(textures.size());
 	for(const AssetPtr<Texture>& tex : textures) {
-		bindings.emplace_back(*tex);
+		bindings.emplace_back(tex ? *tex : *dptr->device_resources()[DeviceResources::BlackTexture]);
 	}
 	return DescriptorSet(dptr, bindings);
 }
