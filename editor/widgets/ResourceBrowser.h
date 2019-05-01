@@ -43,7 +43,6 @@ class ResourceBrowser final : public Widget, public ContextLinked {
 	};
 
 	struct DirNode {
-
 		DirNode(std::string_view dir, std::string_view full, DirNode* par = nullptr);
 
 		core::String name;

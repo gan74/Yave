@@ -30,15 +30,25 @@ SOFTWARE.
 namespace yave {
 
 class BasicMaterialData {
+
+	struct BasicMaterialHeader {
+		y_serde(fs::magic_number, AssetType::Material, u32(1))
+	};
+
 	public:
 		static constexpr usize texture_count = 4;
 
 		BasicMaterialData() = default;
 		BasicMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
+		y_serialize(BasicMaterialHeader(), texture_ids())
+		static core::Result<BasicMaterialData> load(io::ReaderRef reader, AssetLoader& loader) noexcept;
+
 		core::ArrayView<AssetPtr<Texture>> textures() const;
 
 	private:
+		std::array<AssetId, texture_count> texture_ids() const;
+
 		std::array<AssetPtr<Texture>, texture_count> _textures;
 };
 

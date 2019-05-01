@@ -216,7 +216,15 @@ void ResourceBrowser::paint_context_menu() {
 		}
 		ImGui::Separator();
 		if(ImGui::Selectable("Create material")) {
-			//save_materials(_current->full_path, {Named("material", BasicMaterialData())});
+			try {
+				BasicMaterialData material;
+				io::Buffer buffer;
+				material.serialize(buffer);
+				AssetStore& store = context()->asset_store();
+				store.import(buffer, store.filesystem()->join(_current->full_path, "new material")).or_throw("Unable to import material.");
+			} catch(std::exception& e) {
+				log_msg(fmt("Unable to create new material: %", e.what()), Log::Error);
+			}
 			refresh();
 		}
 

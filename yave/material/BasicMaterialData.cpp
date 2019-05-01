@@ -26,34 +26,32 @@ SOFTWARE.
 
 namespace yave {
 
-struct BasicMaterialHeader {
-	y_serde(fs::magic_number, AssetType::Material, u32(1))
-};
-
 
 BasicMaterialData::BasicMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures) :
 		_textures(std::move(textures)) {
 }
 
-/*BasicMaterialData BasicMaterialData::deserialized(io::ReaderRef reader, AssetLoader& loader) {
-	BasicMaterialHeader().deserialize(reader);
-	BasicMaterialData data;
-	for(auto& tex : data._textures) {
-		tex = loader.load<Texture>(serde::deserialized<AssetId>(reader));
+core::Result<BasicMaterialData> BasicMaterialData::load(io::ReaderRef reader, AssetLoader& loader) noexcept {
+	try {
+		BasicMaterialHeader().deserialize(reader);
+		BasicMaterialData data;
+		for(auto& tex : data._textures) {
+			tex = std::move(loader.load<Texture>(serde::deserialized<AssetId>(reader)).or_throw("Unable to load texture."));
+		}
+		return core::Ok(data);
+	} catch(...) {
 	}
-
-	return data;
+	return core::Err();
 }
-
-void BasicMaterialData::serialize(io::WriterRef writer) const {
-	BasicMaterialHeader().serialize(writer);
-	for(const auto& tex : _textures) {
-		serde::serialize(writer, tex.id());
-	}
-}*/
 
 core::ArrayView<AssetPtr<Texture>> BasicMaterialData::textures() const {
 	return  _textures;
+}
+
+std::array<AssetId, BasicMaterialData::texture_count> BasicMaterialData::texture_ids() const {
+	std::array<AssetId, texture_count> ids;
+	std::transform(_textures.begin(), _textures.end(), ids.begin(), [](const auto& tex) { return tex.id(); });
+	return ids;
 }
 
 }
