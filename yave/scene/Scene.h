@@ -44,7 +44,7 @@ class Scene : NonCopyable {
 
 		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
 
-		static Scene deserialized(io::ReaderRef reader, AssetLoader& loader);
+		static core::Result<Scene> load(io::ReaderRef reader, AssetLoader& loader);
 		void serialize(io::WriterRef writer) const;
 
 

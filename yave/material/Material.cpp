@@ -39,7 +39,7 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, core::ArrayView<Asset
 
 
 Material::Material(DevicePtr dptr, BasicMaterialData&& data) :
-		Material(dptr->default_resources()[DefaultResources::BasicMaterial], std::move(data)) {
+		Material(dptr->device_resources()[DeviceResources::BasicMaterialTemplate], std::move(data)) {
 }
 
 Material::Material(const MaterialTemplate* tmp, BasicMaterialData&& data) :

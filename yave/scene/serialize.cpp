@@ -23,6 +23,7 @@ SOFTWARE.
 #include "Scene.h"
 
 #include <yave/material/Material.h>
+#include <yave/device/Device.h>
 
 #include <y/core/Chrono.h>
 #include <y/io/File.h>
@@ -55,71 +56,77 @@ void Scene::serialize(io::WriterRef writer) const {
 
 }
 
-Scene Scene::deserialized(io::ReaderRef reader, AssetLoader& loader) {
+core::Result<Scene> Scene::load(io::ReaderRef reader, AssetLoader& loader) {
 	y_profile();
 
-	return Scene();
+	try {
+		struct Header {
+			u32 magic;
+			AssetType type;
+			u32 version;
 
-	/*struct Header {
-		u32 magic;
-		AssetType type;
-		u32 version;
+			u32 statics;
+			u32 lights;
 
-		u32 statics;
-		u32 lights;
+			bool is_valid() const {
+				return magic == fs::magic_number &&
+					   type == AssetType::Scene &&
+					   version == scene_file_version;
+			}
+		};
 
-		bool is_valid() const {
-			return magic == fs::magic_number &&
-				   type == AssetType::Scene &&
-				   version == scene_file_version;
+		auto header = reader->read_one<Header>();
+		if(!header.is_valid()) {
+			return core::Err();
 		}
-	};
 
-	auto header = reader->read_one<Header>();
-	if(!header.is_valid()) {
-		y_throw("Invalid header.");
-	}
+		DevicePtr dptr = loader.device();
+		AssetPtr<Material> default_mat = make_asset<Material>(dptr->device_resources()[DeviceResources::BasicMaterialTemplate]);
 
-	Scene scene;
-	scene.static_meshes().set_min_capacity(header.statics);
-	scene.lights().set_min_capacity(header.lights);
+		Scene scene;
+		scene.static_meshes().set_min_capacity(header.statics);
+		scene.lights().set_min_capacity(header.lights);
 
-	{
 		for(u32 i = 0; i != header.statics; ++i) {
 			auto transform = reader->read_one<math::Transform<>>();
 
-			auto mesh_id = reader->read_one<AssetId>();
-			auto mat_id = reader->read_one<AssetId>();
+			AssetId mesh_id = reader->read_one<AssetId>();
+			AssetId mat_id = reader->read_one<AssetId>();
 
 			if(mesh_id == AssetId::invalid_id()) {
 				log_msg("Skipping asset with invalid mesh id.", Log::Warning);
 				continue;
 			}
 
-			try {
-				auto inst = std::make_unique<StaticMeshInstance>(
-						mesh_loader.load(mesh_id),
-						mat_id == AssetId::invalid_id() ? default_material : mat_loader.load(mat_id)
-					);
-				inst->transform() = transform;
-				scene.static_meshes().emplace_back(std::move(inst));
-			} catch(std::exception& e) {
-				log_msg(fmt("Unable to load asset: %, Skipping.", e.what()), Log::Warning);
+			auto mesh = loader.load<StaticMesh>(mesh_id);
+			if(!mesh) {
+				log_msg("Unable to load mesh, skipping.", Log::Warning);
 				continue;
 			}
-		}
-	}
 
-	{
+			core::Result<AssetPtr<Material>> material = mat_id.is_valid() ? loader.load<Material>(mat_id) : core::Ok(default_mat);
+			if(!material) {
+				log_msg("Unable to load material, skipping.", Log::Warning);
+				continue;
+			}
+
+			auto inst = std::make_unique<StaticMeshInstance>(std::move(mesh.unwrap()), std::move(material.unwrap()));
+			inst->transform() = transform;
+			scene.static_meshes().emplace_back(std::move(inst));
+		}
+
 		for(u32 i = 0; i != header.lights; ++i) {
 			// load as point, then read on top. Maybe change this ?
 			auto light = std::make_unique<Light>(Light::Point);
 			reader->read_one(*light);
 			scene.lights().emplace_back(std::move(light));
 		}
+
+		return core::Ok(std::move(scene));
+	} catch(...) {
 	}
 
-	return scene;*/
+	return core::Err();
 }
 
 }

@@ -44,7 +44,7 @@ ThumbmailCache::SceneData::SceneData(DevicePtr dptr, const AssetPtr<StaticMesh>&
 	light.transform().set_basis(math::Vec3{1.0f, 0.5f, -1.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 	light.color() = 5.0f;
 	scene.lights() << std::make_unique<Light>(light);
-	auto material = make_asset<Material>(dptr->default_resources()[DefaultResources::BasicMaterial]);
+	auto material = make_asset<Material>(dptr->device_resources()[DeviceResources::BasicMaterialTemplate]);
 	scene.static_meshes() << std::make_unique<StaticMeshInstance>(mesh, material);
 	view.camera().set_view(math::look_at(math::Vec3(mesh->radius() * 1.5f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 }
@@ -136,7 +136,7 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 
 	{
 		DescriptorSet set(device(), {Binding(*tex), Binding(StorageView(thumbmail->image))});
-		recorder.dispatch_size(device()->default_resources()[DefaultResources::CopyProgram],  math::Vec2ui(_size), {set});
+		recorder.dispatch_size(device()->device_resources()[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
 		recorder.keep_alive(std::move(set));
 	}
 
@@ -162,7 +162,7 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 			builder.add_uniform_input(gbuffer.depth);
 			builder.add_uniform_input(StorageView(thumbmail->image));
 			builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-					recorder.dispatch_size(device()->default_resources()[DefaultResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
+					recorder.dispatch_size(device()->device_resources()[DeviceResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
 				});
 		}
 

@@ -52,7 +52,7 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
 				auto render_pass = recorder.bind_framebuffer(_framebuffer);
 				render_scene(render_pass, scene_pass, self);
 			}
-			const auto& program = recorder.device()->default_resources()[DefaultResources::PickingProgram];
+			const auto& program = recorder.device()->device_resources()[DeviceResources::PickingProgram];
 			recorder.dispatch(program, math::Vec3ui(1), {_descriptor_set}, uv);
 		});
 

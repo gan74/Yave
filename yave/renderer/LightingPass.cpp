@@ -33,7 +33,7 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 	y_profile();
 	core::DebugTimer _("IBLData::create_ibl_lut()");
 
-	const ComputeProgram& brdf_integrator = dptr->default_resources()[DefaultResources::BRDFIntegratorProgram];
+	const ComputeProgram& brdf_integrator = dptr->device_resources()[DeviceResources::BRDFIntegratorProgram];
 
 	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
 
@@ -124,7 +124,7 @@ LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer,
 					mapping[light_count - ++push_data.directional_count] = *l;
 				}
 			}
-			const auto& program = recorder.device()->default_resources()[DefaultResources::DeferredLightingProgram];
+			const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLightingProgram];
 			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
 		});
 

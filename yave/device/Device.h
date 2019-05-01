@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/yave.h>
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
-#include "DefaultResources.h"
+#include "DeviceResources.h"
 
 #include "extentions/DebugMarker.h"
 
@@ -62,7 +62,7 @@ class Device : NonMovable {
 		Queue& graphic_queue();
 
 		ThreadDevicePtr thread_device() const;
-		const DefaultResources& default_resources() const;
+		const DeviceResources& device_resources() const;
 
 		const vk::PhysicalDeviceLimits& vk_limits() const;
 
@@ -105,7 +105,7 @@ class Device : NonMovable {
 			std::unique_ptr<DebugMarker> debug_marker;
 		} _extensions;
 
-		DefaultResources _default_resources;
+		DeviceResources _default_resources;
 };
 
 

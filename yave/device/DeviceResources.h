@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_DEFAULTRESOURCES_H
-#define YAVE_DEVICE_DEFAULTRESOURCES_H
+#ifndef YAVE_DEVICE_DEVICERESOURCES_H
+#define YAVE_DEVICE_DEVICERESOURCES_H
 
 #include <yave/yave.h>
 
@@ -33,7 +33,7 @@ namespace yave {
 class ComputeProgram;
 class MaterialTemplate;
 
-class DefaultResources : NonCopyable {
+class DeviceResources final : NonCopyable {
 	public:
 		enum SpirV {
 			EquirecConvolutionComp,
@@ -73,21 +73,21 @@ class DefaultResources : NonCopyable {
 		};
 
 		enum MaterialTemplates {
-			BasicMaterial,
-			BasicSkinnedMaterial,
-			TonemappingMaterial,
-			ImguiMaterial,
+			BasicMaterialTemplate,
+			BasicSkinnedMaterialTemplate,
+			TonemappingMaterialTemplate,
+			ImguiMaterialTemplate,
 
-			MaxMaterials
+			MaxMaterialTemplates
 		};
 
-		DefaultResources(DevicePtr dptr);
+		DeviceResources(DevicePtr dptr);
 
 		// can't default for inclusion reasons
-		DefaultResources();
-		~DefaultResources();
-		DefaultResources(DefaultResources&& other);
-		DefaultResources& operator=(DefaultResources&& other);
+		DeviceResources();
+		~DeviceResources();
+		DeviceResources(DeviceResources&& other);
+		DeviceResources& operator=(DeviceResources&& other);
 
 
 		const SpirVData& operator[](SpirV i) const;
@@ -95,7 +95,7 @@ class DefaultResources : NonCopyable {
 		const MaterialTemplate* operator[](MaterialTemplates i) const;
 
 	private:
-		void swap(DefaultResources& other);
+		void swap(DeviceResources& other);
 
 		std::unique_ptr<SpirVData[]> _spirv;
 		std::unique_ptr<ComputeProgram[]> _computes;
@@ -104,4 +104,4 @@ class DefaultResources : NonCopyable {
 
 }
 
-#endif // YAVE_DEVICE_DEFAULTRESOURCES_H
+#endif // YAVE_DEVICE_DEVICERESOURCES_H

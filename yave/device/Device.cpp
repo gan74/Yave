@@ -119,7 +119,7 @@ Device::Device(Instance& instance) :
 		}
 	}
 
-	_default_resources = DefaultResources(this);
+	_default_resources = DeviceResources(this);
 }
 
 Device::~Device() {
@@ -184,7 +184,7 @@ ThreadDevicePtr Device::thread_device() const {
 	return cache.second;
 }
 
-const DefaultResources& Device::default_resources() const {
+const DeviceResources& Device::device_resources() const {
 	return _default_resources;
 }
 

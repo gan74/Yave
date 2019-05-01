@@ -80,11 +80,11 @@ struct ProbeBaseView : ViewBase {
 };
 
 static const ComputeProgram& convolution_program(DevicePtr dptr, const Cubemap&) {
-	return dptr->default_resources()[DefaultResources::CubemapConvolutionProgram];
+	return dptr->device_resources()[DeviceResources::CubemapConvolutionProgram];
 }
 
 static const ComputeProgram& convolution_program(DevicePtr dptr, const Texture&) {
-	return dptr->default_resources()[DefaultResources::EquirecConvolutionProgram];
+	return dptr->device_resources()[DeviceResources::EquirecConvolutionProgram];
 }
 
 

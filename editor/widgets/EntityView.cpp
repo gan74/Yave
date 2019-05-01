@@ -74,7 +74,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		}
 		if(ImGui::MenuItem("Add renderable")) {
 			if(auto mesh = context()->loader().load<StaticMesh>("cube.ym")) {
-				auto material = make_asset<Material>(device()->default_resources()[DefaultResources::BasicMaterial]);
+				auto material = make_asset<Material>(device()->device_resources()[DeviceResources::BasicMaterialTemplate]);
 				auto instance = std::make_unique<StaticMeshInstance>(std::move(mesh.unwrap()), material);
 				instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
 				context()->scene().scene().static_meshes() << std::move(instance);

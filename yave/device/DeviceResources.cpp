@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DefaultResources.h"
+#include "DeviceResources.h"
 
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/material/Material.h>
@@ -29,9 +29,9 @@ SOFTWARE.
 
 namespace yave {
 
-using SpirV = DefaultResources::SpirV;
-using ComputePrograms = DefaultResources::ComputePrograms;
-using MaterialTemplates = DefaultResources::MaterialTemplates;
+using SpirV = DeviceResources::SpirV;
+using ComputePrograms = DeviceResources::ComputePrograms;
+using MaterialTemplates = DeviceResources::MaterialTemplates;
 
 struct DefaultMaterialData {
 	SpirV frag;
@@ -83,7 +83,7 @@ static constexpr const char* spirv_names[] = {
 
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
 static constexpr usize compute_count = usize(ComputePrograms::MaxComputePrograms);
-static constexpr usize material_count = usize(MaterialTemplates::MaxMaterials);
+static constexpr usize material_count = usize(MaterialTemplates::MaxMaterialTemplates);
 
 static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
 static_assert(sizeof(compute_spirvs) / sizeof(compute_spirvs[0]) == compute_count);
@@ -99,7 +99,7 @@ static SpirVData load_spirv(const char* name) {
 
 
 
-DefaultResources::DefaultResources(DevicePtr dptr) :
+DeviceResources::DeviceResources(DevicePtr dptr) :
 		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
 		_materials(std::make_unique<MaterialTemplate[]>(material_count)) {
@@ -125,37 +125,37 @@ DefaultResources::DefaultResources(DevicePtr dptr) :
 	}
 }
 
-DefaultResources::DefaultResources() {
+DeviceResources::DeviceResources() {
 }
 
-DefaultResources::~DefaultResources() {
+DeviceResources::~DeviceResources() {
 
 }
 
-DefaultResources::DefaultResources(DefaultResources&& other) {
+DeviceResources::DeviceResources(DeviceResources&& other) {
 	swap(other);
 }
 
-DefaultResources& DefaultResources::operator=(DefaultResources&& other) {
+DeviceResources& DeviceResources::operator=(DeviceResources&& other) {
 	swap(other);
 	return *this;
 }
 
-void DefaultResources::swap(DefaultResources& other) {
+void DeviceResources::swap(DeviceResources& other) {
 	std::swap(_spirv, other._spirv);
 	std::swap(_computes, other._computes);
 	std::swap(_materials, other._materials);
 }
 
-const SpirVData& DefaultResources::operator[](SpirV i) const {
+const SpirVData& DeviceResources::operator[](SpirV i) const {
 	return _spirv[usize(i)];
 }
 
-const ComputeProgram& DefaultResources::operator[](ComputePrograms i) const {
+const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
 	return _computes[usize(i)];
 }
 
-const MaterialTemplate* DefaultResources::operator[](MaterialTemplates i) const {
+const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
 	return &_materials[usize(i)];
 }
 

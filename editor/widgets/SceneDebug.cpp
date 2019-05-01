@@ -43,7 +43,7 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		auto cam_pos = context()->scene().scene_view().camera().position();
 
 		if(auto mesh = context()->loader().import<StaticMesh>("cube.ym", "../meshes/cube.obj.ym")) {
-			auto material = make_asset<Material>(device()->default_resources()[DefaultResources::BasicMaterial]);
+			auto material = make_asset<Material>(device()->device_resources()[DeviceResources::BasicMaterialTemplate]);
 			float mul = mesh.unwrap()->radius() * 5.0f;
 
 			i32 size = 10;
