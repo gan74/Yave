@@ -107,7 +107,10 @@ void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 	RecordedCmdBuffer cmd_buffer(std::move(recorder));
 
 	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
-	auto graphic_queue = device()->graphic_queue().vk_queue();
+#warning manual locking needs to go
+	const auto& queue = device()->graphic_queue();
+	std::unique_lock lock(queue.lock());
+	auto graphic_queue = queue.vk_queue();
 	auto vk_buffer = cmd_buffer.vk_cmd_buffer();
 
 	graphic_queue.submit(vk::SubmitInfo()

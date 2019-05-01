@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include <unordered_map>
 #include <typeindex>
+#include <mutex>
 
 namespace yave {
 
@@ -52,6 +53,8 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 			public:
 				virtual ~LoaderBase() {
 				}
+
+				virtual bool forget(AssetId id) = 0;
 		};
 
 		template<typename T>
@@ -62,19 +65,21 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 			public:
 				Result<T> load(AssetLoader& loader, AssetId id) noexcept {
 					y_profile();
+					std::unique_lock lock(_lock);
 
 					if(id == AssetId::invalid_id()) {
 						return core::Err(ErrorType::InvalidID);
 					}
 
-					auto asset_ptr = _loaded[id].lock();
+					auto& weak_ptr = _loaded[id];
+					AssetPtr asset_ptr = weak_ptr.lock();
 					if(asset_ptr) {
 						return core::Ok(asset_ptr);
 					}
 
 					if(auto reader = loader.store().data(id)) {
 						if(auto asset = traits::load_asset(reader.unwrap(), loader)) {
-							asset_ptr = make_asset_with_id<T>(id, std::move(asset.unwrap()));
+							weak_ptr = asset_ptr = make_asset_with_id<T>(id, std::move(asset.unwrap()));
 							return core::Ok(asset_ptr);
 						}
 					}
@@ -82,8 +87,19 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 					return core::Err(ErrorType::Unknown);
 				}
 
+				bool forget(AssetId id) override {
+					std::unique_lock lock(_lock);
+					if(auto it = _loaded.find(id); it != _loaded.end()) {
+						_loaded.erase(it);
+						return true;
+					}
+					return false;
+				}
+
 			private:
 				std::unordered_map<AssetId, WeakAssetPtr<T>> _loaded;
+
+				std::mutex _lock;
 		};
 
    public:
@@ -113,6 +129,16 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 			return load<T>(load_or_import(name, import_from));
 		}
 
+		bool forget(AssetId id) {
+			std::unique_lock lock(_lock);
+			for(auto& loader : _loaders) {
+				if(loader.second->forget(id)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
    private:
 		template<typename T, typename E>
 		Result<T> load(core::Result<AssetId, E> id) {
@@ -124,6 +150,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 		template<typename T>
 		Loader<T>& loader_for_type() {
+			std::unique_lock lock(_lock);
 			 auto& loader = _loaders[typeid(T)];
 			 if(!loader) {
 				 loader = std::make_unique<Loader<T>>();
@@ -134,8 +161,10 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 		core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from);
 
-		std::shared_ptr<AssetStore> _store;
 		std::unordered_map<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
+		std::shared_ptr<AssetStore> _store;
+
+		std::mutex _lock;
 };
 
 }

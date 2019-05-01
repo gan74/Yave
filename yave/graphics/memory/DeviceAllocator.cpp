@@ -25,7 +25,6 @@ SOFTWARE.
 
 namespace yave {
 
-#warning DeviceAllocator is not thread safe
 #warning DeviceAllocator does not count allocs
 
 DeviceAllocator::DeviceAllocator(DevicePtr dptr) :
@@ -46,6 +45,9 @@ DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, Memor
 
 DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
 	y_profile();
+
+	std::unique_lock lock(_lock);
+
 	if(reqs.size >= dedicated_threshold) {
 		return dedicated_alloc(reqs, type);
 	}
@@ -81,6 +83,7 @@ DeviceMemory DeviceAllocator::alloc(vk::Buffer buffer, MemoryType type) {
 
 
 core::String DeviceAllocator::dump_info() const {
+	std::unique_lock lock(_lock);
 	core::String str = "Allocator:\n";
 	str += fmt("  maximum allocations: %\n", _max_allocs);
 	for(auto& heaps : _heaps) {

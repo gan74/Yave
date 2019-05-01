@@ -52,6 +52,9 @@ class Queue : NonCopyable, public DeviceLinked {
 			policy(cmd);
 		}
 
+		std::mutex& lock() const {
+			return *_lock;
+		}
 
 	private:
 		friend class QueueFamily;

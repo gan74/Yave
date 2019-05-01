@@ -73,6 +73,14 @@ class AssetPtr {
 			return _ptr ? _ptr->id : AssetId::invalid_id();
 		}
 
+		bool operator==(const AssetPtr& other) const {
+			return _ptr == other._ptr;
+		}
+
+		bool operator!=(const AssetPtr& other) const {
+			return _ptr != other._ptr;
+		}
+
 	private:
 		template<typename U, typename... Args>
 		friend AssetPtr<U> make_asset(Args&&... args);

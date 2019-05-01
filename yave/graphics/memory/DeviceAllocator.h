@@ -26,6 +26,7 @@ SOFTWARE.
 #include "DedicatedDeviceMemoryAllocator.h"
 
 #include <unordered_map>
+#include <mutex>
 
 namespace yave {
 
@@ -52,6 +53,7 @@ class DeviceAllocator : NonCopyable, public DeviceLinked {
 		std::unordered_map<MemoryType, std::unique_ptr<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
 
 		usize _max_allocs = 0;
+		mutable std::mutex _lock;
 };
 
 }
