@@ -54,13 +54,13 @@ void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpas
 		camera_mapping[0] = subpass.scene_view->camera().viewproj_matrix();
 	}
 
+	usize attrib_index = 0;
 	{
 		auto transform_mapping = pass->resources()->mapped_buffer(subpass.transform_buffer);
 		if(transform_mapping.size() < subpass.scene_view->scene().renderables().size() + subpass.scene_view->scene().static_meshes().size()) {
 			y_fatal("Transform buffer overflow.");
 		}
 
-		u32 attrib_index = 0;
 		{
 			// renderables
 			for(const auto& r : subpass.scene_view->scene().renderables()) {
@@ -75,10 +75,9 @@ void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpas
 	}
 
 	// render stuff
-	{
+	if(attrib_index) {
 		u32 attrib_index = 0;
 
-#warning clean unnecessary buffer binding
 		auto transform_buffer = pass->resources()->buffer<BufferUsage::AttributeBit>(subpass.transform_buffer);
 		recorder.bind_attrib_buffers({transform_buffer, transform_buffer});
 
