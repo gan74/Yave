@@ -106,7 +106,7 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 					// ImGuiColorEditFlags_NoSmallPreview |
 					ImGuiColorEditFlags_NoAlpha |
 					ImGuiColorEditFlags_Float |
-					ImGuiColorEditFlags_RGB;
+					ImGuiColorEditFlags_InputRGB;
 
 		if(ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
 			math::Vec4 color(light->color(), 1.0f);

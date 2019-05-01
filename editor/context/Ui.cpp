@@ -32,7 +32,7 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 	ImGui::GetIO().LogFilename = "editor_logs.txt";
 	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	ImGui::GetIO().ConfigDockingWithShift = false;
-	ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
+	//ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
 }
 
 Ui::~Ui() {
