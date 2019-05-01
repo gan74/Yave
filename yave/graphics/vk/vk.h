@@ -33,6 +33,7 @@ SOFTWARE.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
 #endif
 
 #include <vulkan/vulkan.hpp>
