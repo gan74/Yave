@@ -35,6 +35,12 @@ SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, cons
 	set_radius(_mesh->radius());
 }
 
+void SkinnedMeshInstance::flush_reload() {
+	_skeleton.flush_reload();
+	_mesh.flush_reload();
+	_material.flush_reload();
+}
+
 void SkinnedMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
 	_skeleton.update();
 

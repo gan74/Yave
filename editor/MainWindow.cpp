@@ -67,7 +67,7 @@ void MainWindow::resized() {
 
 void MainWindow::create_swapchain() {
 	// needed because the swapchain immediatly destroys it images
-	device()->graphic_queue().wait();
+	device()->wait_all_queues();
 
 	if(_swapchain) {
 		_swapchain->reset();
@@ -98,32 +98,33 @@ void MainWindow::exec() {
 		}
 	} while(!context()->ui().confirm("Quit ?"));
 
-	device()->graphic_queue().wait();
+	device()->wait_all_queues();
 }
 
 void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
+	{
+		RecordedCmdBuffer cmd_buffer(std::move(recorder));
 
-	RecordedCmdBuffer cmd_buffer(std::move(recorder));
+		vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
+	#warning manual locking needs to go
+		const auto& queue = device()->graphic_queue();
+		std::unique_lock lock(queue.lock());
+		auto graphic_queue = queue.vk_queue();
+		auto vk_buffer = cmd_buffer.vk_cmd_buffer();
 
-	vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
-#warning manual locking needs to go
-	const auto& queue = device()->graphic_queue();
-	std::unique_lock lock(queue.lock());
-	auto graphic_queue = queue.vk_queue();
-	auto vk_buffer = cmd_buffer.vk_cmd_buffer();
+		graphic_queue.submit(vk::SubmitInfo()
+				.setWaitSemaphoreCount(1)
+				.setPWaitSemaphores(&token.image_aquired)
+				.setPWaitDstStageMask(&pipe_stage_flags)
+				.setCommandBufferCount(1)
+				.setPCommandBuffers(&vk_buffer)
+				.setSignalSemaphoreCount(1)
+				.setPSignalSemaphores(&token.render_finished),
+			cmd_buffer.vk_fence());
 
-	graphic_queue.submit(vk::SubmitInfo()
-			.setWaitSemaphoreCount(1)
-			.setPWaitSemaphores(&token.image_aquired)
-			.setPWaitDstStageMask(&pipe_stage_flags)
-			.setCommandBufferCount(1)
-			.setPCommandBuffers(&vk_buffer)
-			.setSignalSemaphoreCount(1)
-			.setPSignalSemaphores(&token.render_finished),
-		cmd_buffer.vk_fence());
-
-	_swapchain->present(token, graphic_queue);
+		_swapchain->present(token, graphic_queue);
+	}
 
 	context()->flush_deferred();
 }
@@ -207,6 +208,7 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
 					if(ImGui::MenuItem("Scene debug")) context()->ui().add<SceneDebug>();
+					if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
 
 					y_debug_assert(!ImGui::MenuItem("Debug assert"));
 

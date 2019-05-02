@@ -61,6 +61,8 @@ class Device : NonMovable {
 		const Queue& graphic_queue() const;
 		Queue& graphic_queue();
 
+		void wait_all_queues() const;
+
 		ThreadDevicePtr thread_device() const;
 		const DeviceResources& device_resources() const;
 
@@ -105,7 +107,7 @@ class Device : NonMovable {
 			std::unique_ptr<DebugMarker> debug_marker;
 		} _extensions;
 
-		DeviceResources _default_resources;
+		DeviceResources _resources;
 };
 
 

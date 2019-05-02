@@ -41,6 +41,8 @@ class SkeletonInstance {
 		// this seems unsafe...
 		SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton);
 
+		void flush_reload();
+
 		void animate(const AssetPtr<Animation>& anim);
 
 		void update();

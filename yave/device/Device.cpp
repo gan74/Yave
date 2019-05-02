@@ -119,7 +119,7 @@ Device::Device(Instance& instance) :
 		}
 	}
 
-	_default_resources = DeviceResources(this);
+	_resources = DeviceResources(this);
 }
 
 Device::~Device() {
@@ -154,6 +154,13 @@ Queue& Device::graphic_queue() {
 	return _queues.first();
 }
 
+void Device::wait_all_queues() const {
+	y_profile();
+	for(const Queue& q : _queues) {
+		q.wait();
+	}
+}
+
 static usize generate_thread_id() {
 	static concurrent::SpinLock lock;
 	static usize id = 0;
@@ -185,7 +192,7 @@ ThreadDevicePtr Device::thread_device() const {
 }
 
 const DeviceResources& Device::device_resources() const {
-	return _default_resources;
+	return _resources;
 }
 
 const vk::PhysicalDeviceLimits& Device::vk_limits() const {

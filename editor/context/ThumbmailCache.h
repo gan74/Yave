@@ -62,6 +62,8 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 
 		TextureView* get_thumbmail(AssetId asset);
 
+		void clear();
+
 	private:
 		void process_requests();
 		void request_thumbmail(AssetId asset);

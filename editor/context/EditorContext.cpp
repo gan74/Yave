@@ -44,6 +44,15 @@ EditorContext::EditorContext(DevicePtr dptr) :
 EditorContext::~EditorContext() {
 }
 
+void EditorContext::flush_reload() {
+	defer([this]() {
+		y_profile_zone("flush reload");
+		_scene.flush_reload();
+		_selection.flush_reload();
+		_thumb_cache.clear();
+	});
+}
+
 void EditorContext::defer(core::Function<void()>&& func) {
 	std::unique_lock _(_deferred_lock);
 	if(_is_flushing_deferred) {
@@ -54,9 +63,9 @@ void EditorContext::defer(core::Function<void()>&& func) {
 
 void EditorContext::flush_deferred() {
 	y_profile();
-	std::unique_lock lcok(_deferred_lock);
+	std::unique_lock lock(_deferred_lock);
 	if(!_deferred.is_empty()) {
-		device()->graphic_queue().wait();
+		device()->wait_all_queues();
 		_is_flushing_deferred = true;
 		for(auto& f : _deferred) {
 			f();

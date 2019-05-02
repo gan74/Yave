@@ -43,6 +43,9 @@ class Renderable : public Transformable {
 
 		virtual void render(RenderPassRecorder&, const SceneData&) const = 0;
 
+		virtual void flush_reload() {
+		}
+
 };
 
 }

@@ -48,6 +48,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 		template<typename T>
 		using Result = core::Result<AssetPtr<T>, ErrorType>;
 
+
 	private:
 		class LoaderBase : NonCopyable {
 			public:
@@ -63,14 +64,27 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 			static_assert(traits::is_asset, "Type is missing asset traits");
 
 			public:
-				Result<T> load(AssetLoader& loader, AssetId id) noexcept {
+				Result<T> set(AssetId id, T&& asset) {
 					y_profile();
-					std::unique_lock lock(_lock);
-
 					if(id == AssetId::invalid_id()) {
 						return core::Err(ErrorType::InvalidID);
 					}
 
+					std::unique_lock lock(_lock);
+					auto& weak_ptr = _loaded[id];
+					AssetPtr asset_ptr = weak_ptr.lock();
+					weak_ptr = (asset_ptr ? asset_ptr._ptr->reloaded : asset_ptr) = make_asset_with_id<T>(id, std::move(asset));
+
+					return core::Ok(asset_ptr);
+				}
+
+				Result<T> load(AssetLoader& loader, AssetId id) noexcept {
+					y_profile();
+					if(id == AssetId::invalid_id()) {
+						return core::Err(ErrorType::InvalidID);
+					}
+
+					std::unique_lock lock(_lock);
 					auto& weak_ptr = _loaded[id];
 					AssetPtr asset_ptr = weak_ptr.lock();
 					if(asset_ptr) {
@@ -78,6 +92,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 					}
 
 					if(auto reader = loader.store().data(id)) {
+						y_profile_zone("loading");
 						if(auto asset = traits::load_asset(reader.unwrap(), loader)) {
 							weak_ptr = asset_ptr = make_asset_with_id<T>(id, std::move(asset.unwrap()));
 							return core::Ok(asset_ptr);
@@ -103,16 +118,12 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 		};
 
    public:
-		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
-		}
+		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store);
 
-		AssetStore& store() {
-			return *_store;
-		}
+		AssetStore& store();
+		const AssetStore& store() const;
 
-		const AssetStore& store() const {
-			return *_store;
-		}
+		bool forget(AssetId id);
 
 		template<typename T>
 		Result<T> load(AssetId id) {
@@ -129,14 +140,9 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 			return load<T>(load_or_import(name, import_from));
 		}
 
-		bool forget(AssetId id) {
-			std::unique_lock lock(_lock);
-			for(auto& loader : _loaders) {
-				if(loader.second->forget(id)) {
-					return true;
-				}
-			}
-			return false;
+		template<typename T>
+		Result<T> set(AssetId id, T asset) {
+			return loader_for_type<T>().set(id, std::move(asset));
 		}
 
    private:
@@ -149,14 +155,16 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 		}
 
 		template<typename T>
-		Loader<T>& loader_for_type() {
+		auto& loader_for_type() {
 			std::unique_lock lock(_lock);
-			 auto& loader = _loaders[typeid(T)];
-			 if(!loader) {
-				 loader = std::make_unique<Loader<T>>();
-			 }
-			 return *dynamic_cast<Loader<T>*>(loader.get());
+			using Type = std::remove_cv_t<std::remove_reference_t<T>>;
+			auto& loader = _loaders[typeid(Type)];
+			if(!loader) {
+				loader = std::make_unique<Loader<Type>>();
+			}
+			return *dynamic_cast<Loader<Type>*>(loader.get());
 		}
+
 
 
 		core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from);

@@ -32,4 +32,14 @@ Scene::Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Re
 		_lights(std::move(lights)) {
 }
 
+void Scene::flush_reload() {
+	y_profile();
+	for(auto& s : _statics) {
+		s->flush_reload();
+	}
+	for(auto& r : _renderables) {
+		r->flush_reload();
+	}
+}
+
 }

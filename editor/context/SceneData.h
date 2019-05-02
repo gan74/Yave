@@ -34,6 +34,7 @@ class SceneData : public ContextLinked, NonMovable {
 	public:
 		SceneData(ContextPtr ctx);
 
+
 		void set_scene_view(SceneView* scene);
 		void reset_scene_view(SceneView* scene);
 
@@ -52,6 +53,7 @@ class SceneData : public ContextLinked, NonMovable {
 		StaticMeshInstance* add(AssetId id);
 		StaticMeshInstance* add(std::string_view name);
 
+		void flush_reload();
 		void flush();
 
 	private:

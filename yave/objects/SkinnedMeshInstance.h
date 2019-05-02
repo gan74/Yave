@@ -40,6 +40,8 @@ class SkinnedMeshInstance final : public Renderable {
 		// cleanup SkeletonInstance so we can un delete this
 		SkinnedMeshInstance& operator=(SkinnedMeshInstance&&) = delete;
 
+		void flush_reload() override;
+
 		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const override;
 
 		void animate(const AssetPtr<Animation>& anim) {

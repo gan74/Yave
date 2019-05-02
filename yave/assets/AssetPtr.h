@@ -27,11 +27,15 @@ SOFTWARE.
 
 namespace yave {
 
+class AssetLoader;
+class GenericAssetPtr;
+
 template<typename T>
 class AssetPtr;
 
 template<typename T>
 class WeakAssetPtr;
+
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args);
@@ -39,11 +43,13 @@ AssetPtr<T> make_asset(Args&&... args);
 template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
 
+
 template<typename T>
 class AssetPtr {
 	struct Pair : NonCopyable {
 		const T asset;
 		AssetId id;
+		AssetPtr<T> reloaded;
 
 		template<typename... Args>
 		Pair(AssetId i, Args&&... args) : asset(y_fwd(args)...), id(i) {
@@ -73,6 +79,21 @@ class AssetPtr {
 			return _ptr ? _ptr->id : AssetId::invalid_id();
 		}
 
+		bool is_reloaded() const {
+			return _ptr && _ptr->reloaded;
+		}
+
+		bool flush_reload() {
+			if(_ptr) {
+				if(auto ptr = _ptr->reloaded) {
+					y_debug_assert(ptr.id() == id());
+					_ptr = std::move(ptr._ptr);
+					return true;
+				}
+			}
+			return false;
+		}
+
 		bool operator==(const AssetPtr& other) const {
 			return _ptr == other._ptr;
 		}
@@ -91,6 +112,8 @@ class AssetPtr {
 		friend class WeakAssetPtr<T>;
 
 		friend class GenericAssetPtr;
+
+		friend class AssetLoader;
 
 		template<typename... Args>
 		explicit AssetPtr(AssetId id, Args&&... args) : _ptr(std::make_shared<Pair>(id, y_fwd(args)...)) {

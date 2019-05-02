@@ -39,6 +39,11 @@ StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) :
 		_material(std::move(other._material)) {
 }
 
+void StaticMeshInstance::flush_reload() {
+	_mesh.flush_reload();
+	_material.flush_reload();
+}
+
 void StaticMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
 	if(_material->descriptor_set().device()) {
 		recorder.bind_material(_material->mat_template(), {_material->descriptor_set(), scene_data.descriptor_set});
@@ -52,5 +57,6 @@ void StaticMeshInstance::render(RenderPassRecorder& recorder, const SceneData& s
 	indirect.setFirstInstance(scene_data.instance_index);
 	recorder.draw(indirect);
 }
+
 
 }

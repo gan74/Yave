@@ -39,6 +39,10 @@ SceneData::SceneData(ContextPtr ctx) :
 	load("scene.ys");
 }
 
+void SceneData::flush_reload() {
+	flush();
+	_scene.flush_reload();
+}
 
 void SceneData::set_scene_view(SceneView* scene) {
 	if(!scene) {

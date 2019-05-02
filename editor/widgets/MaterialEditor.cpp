@@ -45,13 +45,9 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 			io::Buffer buffer;
 			data.serialize(buffer);
 			ctx->asset_store().replace(buffer, material.id()).or_throw("");
+			ctx->loader().set(material.id(), Material(ctx->device(), std::move(data))).or_throw("");
 
-			ctx->loader().forget(material.id());
-			if(ctx->selection().material() == material) {
-				if(auto mat = ctx->loader().load<Material>(material.id())) {
-					ctx->selection().set_selected(mat.unwrap());
-				}
-			}
+			ctx->flush_reload();
 		} catch(...) {
 			log_msg("Unable to save material.", Log::Error);
 		}

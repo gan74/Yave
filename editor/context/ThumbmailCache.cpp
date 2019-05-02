@@ -61,6 +61,10 @@ ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
 	_ibl_data(std::make_shared<IBLData>(device(), load_envmap())) {
 }
 
+void ThumbmailCache::clear() {
+	_thumbmails.clear();
+}
+
 math::Vec2ui ThumbmailCache::thumbmail_size() const {
 	return math::Vec2ui(_size);
 }

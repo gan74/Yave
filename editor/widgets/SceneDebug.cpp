@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "SceneDebug.h"
 
-#include <editor/context/scenes.h>
 #include <editor/context/EditorContext.h>
 
 #include <yave/material/Material.h>
@@ -42,7 +41,7 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::Button("Spawn cubes")) {
 		auto cam_pos = context()->scene().scene_view().camera().position();
 
-		if(auto mesh = context()->loader().import<StaticMesh>("cube.ym", "../meshes/cube.obj.ym")) {
+		if(auto mesh = context()->loader().load<StaticMesh>("Cube")) {
 			auto material = make_asset<Material>(device()->device_resources()[DeviceResources::BasicMaterialTemplate]);
 			float mul = mesh.unwrap()->radius() * 5.0f;
 
@@ -60,10 +59,6 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			log_msg("Unable to add cubes", Log::Error);
 		}
 
-	}
-
-	if(ImGui::Button("Add skinned mesh")) {
-		add_skinned_mesh(&context()->scene().scene(), context()->loader());
 	}
 
 	ImGui::Text("Static meshes: %u", unsigned(context()->scene().scene().static_meshes().size()));

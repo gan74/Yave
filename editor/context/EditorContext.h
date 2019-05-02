@@ -47,10 +47,10 @@ class EditorContext : NonMovable, public DeviceLinked {
 		EditorContext(DevicePtr dptr);
 		~EditorContext();
 
+		void flush_reload();
 
 		void defer(core::Function<void()>&& func);
 		void flush_deferred();
-
 
 		const FileSystemModel* filesystem() const {
 			return _filesystem.get() ? _filesystem.get() : FileSystemModel::local_filesystem();
@@ -91,6 +91,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		AssetStore& asset_store() {
 			return *_asset_store;
 		}
+
 
 	private:
 		std::unique_ptr<FileSystemModel> _filesystem;

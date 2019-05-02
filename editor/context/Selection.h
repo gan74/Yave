@@ -32,6 +32,10 @@ namespace editor {
 
 class Selection {
 	public:
+		void flush_reload() {
+			_material.flush_reload();
+		}
+
 		void set_selected(Light* sel) {
 			_transformable = sel;
 			_light = sel;
