@@ -88,7 +88,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::TreeNode("Renderables")) {
 		for(const auto& r : context()->scene().scene().renderables()) {
 			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
-			bool selected = r.get() == context()->selection().selected();
+			bool selected = r.get() == context()->selection().renderable();
 			ImGui::Selectable(buffer, &selected);
 			if(selected) {
 				context()->selection().set_selected(r.get());
@@ -100,7 +100,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::TreeNode("Meshes")) {
 		for(const auto& r : context()->scene().scene().static_meshes()) {
 			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
-			bool selected = r.get() == context()->selection().selected();
+			bool selected = r.get() == context()->selection().renderable();
 			ImGui::Selectable(buffer, &selected);
 			if(selected) {
 				context()->selection().set_selected(r.get());
@@ -112,7 +112,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::TreeNode("Lights")) {
 		for(const auto& l : context()->scene().scene().lights()) {
 			std::sprintf(buffer, "%s##%p", light_type_name(l->type()), static_cast<void*>(l.get()));
-			bool selected = l.get() == context()->selection().selected();
+			bool selected = l.get() == context()->selection().light();
 			ImGui::Selectable(buffer, &selected);
 			if(selected) {
 				context()->selection().set_selected(l.get());

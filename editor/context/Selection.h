@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/editor.h>
 #include <yave/objects/Light.h>
 #include <yave/objects/Transformable.h>
+#include <yave/objects/Renderable.h>
 
 #include <yave/material/Material.h>
 
@@ -34,30 +35,61 @@ class Selection {
 	public:
 		void flush_reload() {
 			_material.flush_reload();
+			if(_renderable) {
+				_renderable->flush_reload();
+			}
+		}
+
+
+
+		template<typename T, typename = std::enable_if_t<std::is_polymorphic_v<T>>>
+		void set_selected(T* sel) {
+			_light = nullptr;
+			_renderable = dynamic_cast<Renderable*>(sel);
+			_transformable = dynamic_cast<Transformable*>(sel);
+		}
+
+
+		void set_selected(Transformable* sel) {
+			_light = nullptr;
+			_renderable = nullptr;
+			_transformable = sel;
 		}
 
 		void set_selected(Light* sel) {
-			_transformable = sel;
 			_light = sel;
-		}
-
-		void set_selected(Transformable* sel) {
+			_renderable = nullptr;
 			_transformable = sel;
-			_light = nullptr;
 		}
 
 		void set_selected(std::nullptr_t) {
-			_transformable = nullptr;
 			_light = nullptr;
+			_renderable = nullptr;
+			_transformable = nullptr;
 		}
 
-		Transformable* selected() const {
+
+
+		Transformable* transformable() const {
 			return _transformable;
+		}
+
+		Renderable* renderable() const {
+			return _renderable;
 		}
 
 		Light* light() const {
 			return _light;
 		}
+
+
+
+
+		bool has_selected() {
+			return _light || _renderable || _transformable;
+		}
+
+
 
 
 		void set_selected(const AssetPtr<Material>& sel) {
@@ -70,6 +102,7 @@ class Selection {
 
 	private:
 		NotOwner<Transformable*> _transformable = nullptr;
+		NotOwner<Renderable*> _renderable = nullptr;
 		NotOwner<Light*> _light = nullptr;
 		AssetPtr<Material> _material;
 };

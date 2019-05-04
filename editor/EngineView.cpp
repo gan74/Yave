@@ -225,7 +225,7 @@ void EngineView::update_selection() {
 		return;
 	}
 
-	Transformable* selected = nullptr;
+	StaticMeshInstance* selected = nullptr;
 	float score = std::numeric_limits<float>::max();
 	for(const auto& tr : context()->scene().scene().static_meshes()) {
 		auto [pos, rot, scale] = tr->transform().decompose();

@@ -48,6 +48,7 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 			ctx->loader().set(material.id(), Material(ctx->device(), std::move(data))).or_throw("");
 
 			ctx->flush_reload();
+
 		} catch(...) {
 			log_msg("Unable to save material.", Log::Error);
 		}

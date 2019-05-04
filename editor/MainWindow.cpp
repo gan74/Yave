@@ -55,7 +55,6 @@ MainWindow::MainWindow(ContextPtr cptr) :
 	context()->ui().show<EntityView>();
 	context()->ui().show<ResourceBrowser>();
 	context()->ui().show<PropertyPanel>();
-	context()->ui().show<MaterialEditor>();
 }
 
 MainWindow::~MainWindow() {
@@ -204,6 +203,9 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 				if(ImGui::MenuItem("Engine view")) context()->ui().add<EngineView>();
 				if(ImGui::MenuItem("Entity view")) context()->ui().add<EntityView>();
 				if(ImGui::MenuItem("Resource browser")) context()->ui().add<ResourceBrowser>();
+				if(ImGui::MenuItem("Material editor")) context()->ui().add<MaterialEditor>();
+
+				ImGui::Separator();
 
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
@@ -231,7 +233,7 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 	}
 
 
-	if(context()->selection().selected()) {
+	if(context()->selection().has_selected()) {
 		context()->ui().show<PropertyPanel>();
 	}
 

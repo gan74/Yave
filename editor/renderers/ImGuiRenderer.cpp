@@ -103,7 +103,7 @@ const DescriptorSet& ImGuiRenderer::create_descriptor_set(const void* data) {
 
 void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* tex) {
 	recorder.bind_buffers(_index_buffer[token], {_vertex_buffer[token]});
-	const auto& material = *device()->device_resources()[DeviceResources::ImguiMaterialTemplate];
+	const auto* material = device()->device_resources()[DeviceResources::ImguiMaterialTemplate];
 	recorder.bind_material(material, {create_descriptor_set(tex)});
 }
 

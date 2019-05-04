@@ -23,6 +23,7 @@ SOFTWARE.
 #include "PropertyPanel.h"
 
 #include <editor/context/EditorContext.h>
+#include <editor/widgets/AssetSelector.h>
 
 #include <imgui/imgui.h>
 
@@ -55,11 +56,11 @@ void PropertyPanel::paint(CmdBufferRecorder& recorder, const FrameToken& token) 
 }
 
 void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	if(!context()->selection().selected()) {
+	if(!context()->selection().transformable()) {
 		return;
 	}
 
-	Transformable* sel = context()->selection().selected();
+	Transformable* sel = context()->selection().transformable();
 	auto [pos, rot, scale] = sel->transform().decompose();
 
 	if(ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -100,6 +101,25 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
 		}
 	}
+
+	if(Renderable* renderable = context()->selection().renderable()) {
+		if(StaticMeshInstance* mesh = dynamic_cast<StaticMeshInstance*>(renderable)) {
+
+			if(ImGui::CollapsingHeader("Static mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+				if(ImGui::Button(fmt("%", mesh->material().id()).data())) {
+					context()->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
+						[=, ctx = context()](AssetId id) {
+#warning Use ECS to ensure that we dont modify a deleted object
+							if(auto material = ctx->loader().load<Material>(id)) {
+								mesh->material() = material.unwrap();
+							}
+							return true;
+						});
+				}
+			}
+		}
+	}
+
 
 	if(Light* light = context()->selection().light()) {
 		int flags = ImGuiColorEditFlags_NoSidePreview |
