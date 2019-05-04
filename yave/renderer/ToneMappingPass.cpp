@@ -41,7 +41,7 @@ ToneMappingPass render_tone_mapping(FrameGraph& framegraph, const LightingPass& 
 	builder.add_uniform_input(lighting.lit, 0, PipelineStage::ComputeBit);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const auto& material = *recorder.device()->device_resources()[DeviceResources::TonemappingMaterialTemplate];
+			const auto* material = recorder.device()->device_resources()[DeviceResources::TonemappingMaterialTemplate];
 			render_pass.bind_material(material, {self->descriptor_sets()[0]});
 			render_pass.draw(vk::DrawIndirectCommand(6, 1));
 		});

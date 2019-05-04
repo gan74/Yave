@@ -31,6 +31,14 @@ BasicMaterialData::BasicMaterialData(std::array<AssetPtr<Texture>, texture_count
 		_textures(std::move(textures)) {
 }
 
+const std::array<AssetPtr<Texture>, BasicMaterialData::texture_count>& BasicMaterialData::textures() const {
+	return  _textures;
+}
+
+bool BasicMaterialData::is_empty() const {
+	return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return !tex; });
+}
+
 core::Result<BasicMaterialData> BasicMaterialData::load(io::ReaderRef reader, AssetLoader& loader) noexcept {
 	try {
 		BasicMaterialHeader().deserialize(reader);
@@ -45,10 +53,6 @@ core::Result<BasicMaterialData> BasicMaterialData::load(io::ReaderRef reader, As
 	} catch(...) {
 	}
 	return core::Err();
-}
-
-const std::array<AssetPtr<Texture>, BasicMaterialData::texture_count>& BasicMaterialData::textures() const {
-	return  _textures;
 }
 
 std::array<AssetId, BasicMaterialData::texture_count> BasicMaterialData::texture_ids() const {

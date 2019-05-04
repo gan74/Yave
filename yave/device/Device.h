@@ -26,6 +26,7 @@ SOFTWARE.
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
 #include "DeviceResources.h"
+#include "LifetimeManager.h"
 
 #include "extentions/DebugMarker.h"
 
@@ -38,6 +39,7 @@ SOFTWARE.
 #include <thread>
 
 namespace yave {
+
 
 class Device : NonMovable {
 
@@ -66,13 +68,14 @@ class Device : NonMovable {
 		ThreadDevicePtr thread_device() const;
 		const DeviceResources& device_resources() const;
 
+		LifetimeManager& lifetime_manager() const;
+
 		const vk::PhysicalDeviceLimits& vk_limits() const;
 
 		vk::Device vk_device() const;
 		vk::Sampler vk_sampler() const;
 
 		const DebugMarker* debug_marker() const;
-
 
 		template<typename T>
 		auto create_descriptor_set_layout(T&& t) const {
@@ -81,9 +84,18 @@ class Device : NonMovable {
 
 		template<typename T>
 		void destroy(T t) const {
-			/*if(t != T())*/ {
-				detail::destroy(this, t);
-			}
+			//detail::destroy(this, t);
+			destroy_later(t);
+		}
+
+		template<typename T>
+		void destroy_immediate(T t) const {
+			_lifetime_manager.destroy_immediate(t);
+		}
+
+		template<typename T>
+		void destroy_later(T t) const {
+			_lifetime_manager.destroy_later(t);
 		}
 
 	private:
@@ -94,6 +106,8 @@ class Device : NonMovable {
 
 		ScopedDevice _device;
 
+		mutable LifetimeManager _lifetime_manager;
+
 		core::Vector<Queue> _queues;
 
 		Sampler _sampler;
@@ -103,11 +117,12 @@ class Device : NonMovable {
 		mutable concurrent::SpinLock _lock;
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
+		DeviceResources _resources;
+
 		struct {
 			std::unique_ptr<DebugMarker> debug_marker;
 		} _extensions;
 
-		DeviceResources _resources;
 };
 
 

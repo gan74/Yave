@@ -89,8 +89,8 @@ void RenderPassRecorder::bind_material(const Material& material) {
 	bind_material(material.mat_template(), {material.descriptor_set()});
 }
 
-void RenderPassRecorder::bind_material(const MaterialTemplate& material, DescriptorSetList descriptor_sets) {
-	bind_pipeline(material.compile(*_cmd_buffer._render_pass), descriptor_sets);
+void RenderPassRecorder::bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets) {
+	bind_pipeline(material->compile(*_cmd_buffer._render_pass), descriptor_sets);
 }
 
 void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets) {

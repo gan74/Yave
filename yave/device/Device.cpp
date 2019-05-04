@@ -106,6 +106,7 @@ Device::Device(Instance& instance) :
 		_physical(instance),
 		_queue_families(QueueFamily::all(_physical)),
 		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
+		_lifetime_manager(this),
 		_sampler(this),
 		_allocator(this) {
 
@@ -193,6 +194,10 @@ ThreadDevicePtr Device::thread_device() const {
 
 const DeviceResources& Device::device_resources() const {
 	return _resources;
+}
+
+LifetimeManager& Device::lifetime_manager() const {
+	return _lifetime_manager;
 }
 
 const vk::PhysicalDeviceLimits& Device::vk_limits() const {

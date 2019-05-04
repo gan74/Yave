@@ -106,7 +106,7 @@ class RenderPassRecorder : NonCopyable {
 
 		// specific
 		void bind_material(const Material& material);
-		void bind_material(const MaterialTemplate& material, DescriptorSetList descriptor_sets = {});
+		void bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets = {});
 		void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
 
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);

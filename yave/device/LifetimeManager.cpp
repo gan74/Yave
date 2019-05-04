@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,42 +20,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "StaticMeshInstance.h"
-
-#include <yave/material/Material.h>
+#include "LifetimeManager.h"
 
 namespace yave {
 
-StaticMeshInstance::StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
-		_mesh(mesh),
-		_material(material) {
-
-	set_radius(_mesh->radius());
+// https://stackoverflow.com/questions/16190078/how-to-atomically-update-a-maximum-value
+template<typename T>
+static void update_maximum(std::atomic<T>& max, const T& val) {
+	T prev = max;
+	while(prev < val && !max.compare_exchange_weak(prev, val));
 }
 
-StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) :
-		Renderable(other),
-		_mesh(std::move(other._mesh)),
-		_material(std::move(other._material)) {
+
+LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
-void StaticMeshInstance::flush_reload() {
-	_mesh.flush_reload();
-	_material.flush_reload();
-}
-
-void StaticMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	if(_material->descriptor_set().device()) {
-		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set, _material->descriptor_set()});
-	} else {
-		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set});
+LifetimeManager::~LifetimeManager() {
+	for(auto& r : _to_destroy) {
+		detail::destroy(device(), r.second);
 	}
+}
 
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer())});
+ResourceFence LifetimeManager::create_fence() {
+	return ++_fence;
+}
 
-	auto indirect = _mesh->indirect_data();
-	indirect.setFirstInstance(scene_data.instance_index);
-	recorder.draw(indirect);
+ResourceFence LifetimeManager::recycle_fence(ResourceFence fence) {
+	if(ResourceFence(_done_fence) > fence) {
+		update_maximum(_done_fence, fence._value);
+		clear_resources(_done_fence);
+	}
+	return create_fence();
+}
+
+void LifetimeManager::clear_resources(u64 up_to) {
+	y_profile();
+	std::unique_lock lock(_lock);
+	while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
+		detail::destroy(device(), _to_destroy.front().second);
+		_to_destroy.pop_front();
+	}
 }
 
 

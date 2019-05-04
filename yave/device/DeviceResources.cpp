@@ -34,7 +34,7 @@ using ComputePrograms = DeviceResources::ComputePrograms;
 using MaterialTemplates = DeviceResources::MaterialTemplates;
 using Textures = DeviceResources::Textures;
 
-struct DefaultMaterialData {
+struct DeviceMaterialData {
 	SpirV frag;
 	SpirV vert;
 	bool depth_tested;
@@ -53,9 +53,12 @@ static constexpr SpirV compute_spirvs[] = {
 		SpirV::CopyComp,
 	};
 
-static constexpr DefaultMaterialData material_datas[] = {
+static constexpr DeviceMaterialData material_datas[] = {
 		{SpirV::BasicFrag, SpirV::BasicVert, true},
 		{SpirV::SkinnedFrag, SpirV::SkinnedVert, true},
+
+		{SpirV::TexturedFrag, SpirV::BasicVert, true},
+
 		{SpirV::TonemapFrag, SpirV::ScreenVert, false},
 		{SpirV::ImguiFrag, SpirV::ImguiVert, false, false, true},
 	};

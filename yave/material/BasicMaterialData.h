@@ -41,10 +41,12 @@ class BasicMaterialData {
 		BasicMaterialData() = default;
 		BasicMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
+		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
+		bool is_empty() const;
+
+
 		y_serialize(BasicMaterialHeader(), texture_ids())
 		static core::Result<BasicMaterialData> load(io::ReaderRef reader, AssetLoader& loader) noexcept;
-
-		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 
 	private:
 		std::array<AssetId, texture_count> texture_ids() const;

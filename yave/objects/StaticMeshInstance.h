@@ -49,6 +49,15 @@ class StaticMeshInstance final : public Renderable {
 			return _material;
 		}
 
+		auto& mesh() {
+			return _mesh;
+		}
+
+		auto& material() {
+			return _material;
+		}
+
+
 	private:
 		AssetPtr<StaticMesh> _mesh;
 		mutable AssetPtr<Material> _material;

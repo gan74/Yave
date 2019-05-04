@@ -24,12 +24,14 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferUsage.h>
 #include <yave/graphics/queues/Semaphore.h>
+#include <yave/device/LifetimeManager.h>
 
 namespace yave {
 
 class CmdBufferDataProxy;
 
 class CmdBufferData : NonCopyable {
+
 	struct KeepAlive : NonCopyable {
 		virtual ~KeepAlive() {}
 	};
@@ -63,7 +65,7 @@ class CmdBufferData : NonCopyable {
 				~Box() override {}
 				std::remove_reference_t<T> _t;
 			};
-			_keep_alive.emplace_back(new Box(y_fwd(t)));
+			_keep_alive.emplace_back(std::make_unique<Box>(y_fwd(t)));
 		}
 
 
@@ -81,6 +83,7 @@ class CmdBufferData : NonCopyable {
 
 		Semaphore _signal;
 		core::Vector<Semaphore> _waits;
+		ResourceFence _resource_fence;
 };
 
 

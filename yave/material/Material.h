@@ -34,7 +34,7 @@ class Material final : NonCopyable {
 		Material(DevicePtr dptr, BasicMaterialData&& data);
 		Material(const MaterialTemplate* tmp, BasicMaterialData&& data = BasicMaterialData());
 
-		const MaterialTemplate& mat_template() const;
+		const MaterialTemplate* mat_template() const;
 
 		const BasicMaterialData& data() const;
 		const DescriptorSetBase& descriptor_set() const;
@@ -42,7 +42,7 @@ class Material final : NonCopyable {
 		DevicePtr device() const;
 
 	private:
-		const MaterialTemplate* _template = nullptr;
+		NotOwner<const MaterialTemplate*> _template = nullptr;
 
 		DescriptorSet _set;
 

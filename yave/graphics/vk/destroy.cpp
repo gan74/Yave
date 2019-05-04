@@ -20,6 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 namespace detail {
 
+void destroy(DevicePtr dptr, VkResource& resource) {
+	std::visit([=](auto&& r) { destroy(dptr, r); }, resource);
+}
+
+
 void destroy(DevicePtr dptr, vk::Buffer buffer) {
 	/*if(dptr)*/ {
 		dptr->vk_device().destroyBuffer(buffer);

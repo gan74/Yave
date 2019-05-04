@@ -44,7 +44,7 @@ void SkinnedMeshInstance::flush_reload() {
 void SkinnedMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
 	_skeleton.update();
 
-	recorder.bind_material(_material->mat_template(), {_material->descriptor_set(), scene_data.descriptor_set, _skeleton.descriptor_set()});
+	recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set, _skeleton.descriptor_set(), _material->descriptor_set()});
 	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {SkinnedVertexSubBuffer(_mesh->vertex_buffer())});
 
 	auto indirect = _mesh->indirect_data();

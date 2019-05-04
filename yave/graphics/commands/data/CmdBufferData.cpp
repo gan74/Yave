@@ -26,7 +26,7 @@ SOFTWARE.
 namespace yave {
 
 CmdBufferData::CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p) :
-		_cmd_buffer(buf), _fence(fen), _pool(p) {
+		_cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(device()->lifetime_manager().create_fence()) {
 }
 
 CmdBufferData::CmdBufferData(CmdBufferData&& other) {
@@ -71,6 +71,7 @@ void CmdBufferData::swap(CmdBufferData& other) {
 	std::swap(_pool, other._pool);
 	std::swap(_signal, other._signal);
 	std::swap(_waits, other._waits);
+	std::swap(_resource_fence, other._resource_fence);
 }
 
 void CmdBufferData::reset() {
@@ -80,6 +81,7 @@ void CmdBufferData::reset() {
 	}
 	_cmd_buffer.reset(vk::CommandBufferResetFlags());
 
+	_resource_fence = device()->lifetime_manager().recycle_fence(_resource_fence);
 	_keep_alive.clear();
 	_waits.clear();
 	_signal = Semaphore();

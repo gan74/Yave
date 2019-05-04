@@ -77,6 +77,9 @@ class DeviceResources final : NonCopyable {
 		enum MaterialTemplates {
 			BasicMaterialTemplate,
 			BasicSkinnedMaterialTemplate,
+
+			TexturedMaterialTemplate,
+
 			TonemappingMaterialTemplate,
 			ImguiMaterialTemplate,
 
