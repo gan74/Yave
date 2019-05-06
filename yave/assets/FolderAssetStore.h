@@ -75,6 +75,7 @@ class FolderAssetStore final : public AssetStore {
 		Result<> replace(io::ReaderRef data, AssetId id) override;
 
 		Result<AssetId> id(std::string_view name) const override;
+		Result<core::String> name(AssetId id) const override;
 		Result<io::ReaderRef> data(AssetId id) const override;
 
 		Result<> remove(AssetId id) override;

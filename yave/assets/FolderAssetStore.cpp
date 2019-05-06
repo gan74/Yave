@@ -221,6 +221,17 @@ AssetStore::Result<AssetId> FolderAssetStore::id(std::string_view name) const {
 	return core::Err(ErrorType::UnknownID);
 }
 
+AssetStore::Result<core::String> FolderAssetStore::name(AssetId id) const {
+	y_profile();
+	std::unique_lock lock(_lock);
+
+	y_debug_assert(_from_id.size() == _from_name.size());
+	if(auto it = _from_id.find(id); it != _from_id.end()) {
+		return core::Ok(it->second->name);
+	}
+	return core::Err(ErrorType::UnknownID);
+}
+
 AssetStore::Result<io::ReaderRef> FolderAssetStore::data(AssetId id) const {
 	y_profile();
 	std::unique_lock lock(_lock);

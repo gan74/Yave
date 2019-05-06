@@ -60,6 +60,7 @@ class AssetStore : NonCopyable {
 		virtual Result<> replace(io::ReaderRef data, AssetId id) = 0;
 
 		virtual Result<AssetId> id(std::string_view name) const = 0;
+		virtual Result<core::String> name(AssetId id) const = 0;
 		virtual Result<io::ReaderRef> data(AssetId id) const = 0;
 
 		virtual Result<> remove(AssetId id);
