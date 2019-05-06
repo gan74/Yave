@@ -85,10 +85,13 @@ void CmdBufferData::reset() {
 	}
 
 	_cmd_buffer.reset(vk::CommandBufferResetFlags());
-	_keep_alive.clear();
 	_waits.clear();
 	_signal = Semaphore();
 	_resource_fence = device()->lifetime_manager().create_fence();
+}
+
+void CmdBufferData::release_resources() {
+	_keep_alive.clear();
 }
 
 void CmdBufferData::wait_for(const Semaphore& sem) {

@@ -98,7 +98,6 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 #warning barrier resources at end
 
 	release_resources(recorder);
-	//recorder.keep_alive(std::pair{std::move(_pool), std::move(_passes)});
 }
 
 
@@ -142,8 +141,7 @@ void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
 
 	auto buffers = core::vector_with_capacity<BufferRelease>(_buffers.size());
 	std::transform(_buffers.begin(), _buffers.end(), std::back_inserter(buffers), [=](const auto& buff) { return BufferRelease(buff.first, _pool.get()) ; });
-	//recorder.keep_alive(std::pair{_pool, std::move(buffers)});
-	unused(recorder);
+	recorder.keep_alive(std::pair{_pool, std::move(buffers)});
 
 	for(auto&& i : _images) {
 		_pool->release(i.first);

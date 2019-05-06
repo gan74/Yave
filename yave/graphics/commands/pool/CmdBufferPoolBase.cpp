@@ -82,6 +82,7 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
 	if(data.pool() != this) {
 		y_fatal("CmdBufferData was not returned to its original pool.");
 	}
+	data.release_resources();
 	std::unique_lock lock(_lock);
 	_cmd_buffers.push_back(std::move(data));
 }

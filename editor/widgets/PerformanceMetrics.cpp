@@ -35,7 +35,7 @@ PerformanceMetrics::PerformanceMetrics(ContextPtr cptr) : Widget("Performance", 
 void PerformanceMetrics::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	auto time = _timer.reset();
 	ImGui::Text("frame time: %.2fms", time.to_millis());
-	ImGui::Text("Fesources: %.3u waiting deletion", unsigned(device()->lifetime_manager().pending_deletions()));
+	ImGui::Text("%.3u waiting deletion", unsigned(device()->lifetime_manager().pending_deletions()));
 	ImGui::Text("Active command buffers: %.3u", unsigned(device()->lifetime_manager().active_cmd_buffers()));
 
 	_frames[_current_index] = time.to_millis();

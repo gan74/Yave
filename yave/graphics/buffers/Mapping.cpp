@@ -70,8 +70,6 @@ void Mapping::stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBuffer
 	Mapping map(buffer);
 	std::memcpy(map.data(), data, dst.byte_size());
 	recorder.copy(buffer, dst);
-
-	//recorder.keep_alive(std::move(buffer));
 }
 
 }

@@ -53,6 +53,7 @@ class CmdBufferData final : NonCopyable {
 		ResourceFence resource_fence() const;
 
 		void reset();
+		void release_resources();
 
 		void wait_for(const Semaphore& sem);
 
