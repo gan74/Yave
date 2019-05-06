@@ -30,14 +30,6 @@ namespace yave {
 CmdBufferBase::CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& data) : _proxy(std::move(data)) {
 }
 
-CmdBufferBase::CmdBufferBase(CmdBufferBase&& other) {
-	swap(other);
-}
-
-void CmdBufferBase::swap(CmdBufferBase& other) {
-	std::swap(_proxy, other._proxy);
-}
-
 void CmdBufferBase::wait() const {
 	device()->vk_device().waitForFences({vk_fence()}, true, u64(-1));
 }
@@ -47,16 +39,23 @@ void CmdBufferBase::wait_for(const Semaphore& sem) {
 }
 
 DevicePtr CmdBufferBase::device() const {
-	auto pool = _proxy->data().pool();
+	auto pool = _proxy ? _proxy->data().pool() : nullptr;
 	return pool ? pool->device() : nullptr;
 }
 
 vk::CommandBuffer CmdBufferBase::vk_cmd_buffer() const {
-	return _proxy ? _proxy->data().vk_cmd_buffer() : vk::CommandBuffer();
+	y_debug_assert(_proxy);
+	return _proxy->data().vk_cmd_buffer();
 }
 
 vk::Fence CmdBufferBase::vk_fence() const {
-	return  _proxy ? _proxy->data().vk_fence() : vk::Fence();
+	y_debug_assert(_proxy);
+	return  _proxy->data().vk_fence();
+}
+
+ResourceFence CmdBufferBase::resource_fence() const {
+	y_debug_assert(_proxy);
+	return _proxy->data().resource_fence();
 }
 
 }

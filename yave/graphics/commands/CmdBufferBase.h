@@ -26,13 +26,13 @@ SOFTWARE.
 
 namespace yave {
 
-
 struct CmdBufferBase : NonCopyable {
 	public:
 		DevicePtr device() const;
 
 		vk::CommandBuffer vk_cmd_buffer() const;
 		vk::Fence vk_fence() const;
+		ResourceFence resource_fence() const;
 
 		void wait() const;
 		void wait_for(const Semaphore& sem);
@@ -40,9 +40,9 @@ struct CmdBufferBase : NonCopyable {
 	protected:
 		CmdBufferBase() = default;
 		CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& proxy);
-		CmdBufferBase(CmdBufferBase&& other);
 
-		void swap(CmdBufferBase& other);
+		CmdBufferBase(CmdBufferBase&& other) = default;
+		CmdBufferBase& operator=(CmdBufferBase&&) = default;
 
 		template<typename T>
 		void keep_alive(T&& t) {

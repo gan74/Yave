@@ -159,15 +159,6 @@ vk::CommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
 
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
-	swap(other);
-}
-
-CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
-	swap(other);
-	return *this;
-}
-
 CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage)  : CmdBufferBase(std::move(base)) {
 	auto info = vk::CommandBufferBeginInfo()
 			.setFlags(cmd_usage(usage))
@@ -176,17 +167,14 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage)
 	vk_cmd_buffer().begin(info);
 }
 
-void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
-	CmdBufferBase::swap(other);
-	std::swap(_render_pass, other._render_pass);
-}
-
 CmdBufferRecorder::~CmdBufferRecorder() {
-	if(_render_pass) {
-		y_fatal("CmdBufferRecorder destroyed before one of its RenderPassRecorder.");
-	}
-	if(vk_cmd_buffer()) {
-		y_fatal("CmdBufferRecorder destroyed before end() was called.");
+	if(device()) {
+		if(_render_pass) {
+			y_fatal("CmdBufferRecorder destroyed before one of its RenderPassRecorder.");
+		}
+		if(vk_cmd_buffer()) {
+			y_fatal("CmdBufferRecorder destroyed before end() was called.");
+		}
 	}
 }
 

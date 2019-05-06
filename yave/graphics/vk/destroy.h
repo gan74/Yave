@@ -18,34 +18,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "vk.h"
 
-#include <variant>
-
 namespace yave {
 namespace detail {
-
-using VkResource = std::variant<
-		vk::Buffer,
-		vk::Image,
-		vk::ImageView,
-		vk::RenderPass,
-		vk::Framebuffer,
-		vk::Pipeline,
-		vk::PipelineLayout,
-		vk::ShaderModule,
-		vk::Sampler,
-		vk::SwapchainKHR,
-		vk::CommandPool,
-		vk::Fence,
-		vk::DescriptorPool,
-		vk::DescriptorSetLayout,
-		vk::Semaphore,
-		vk::QueryPool,
-		vk::Event,
-
-		vk::SurfaceKHR>;
-
-
-void destroy(DevicePtr dptr, VkResource& resource);
 
 void destroy(DevicePtr dptr, vk::Buffer buffer);
 void destroy(DevicePtr dptr, vk::Image image);
@@ -66,8 +40,6 @@ void destroy(DevicePtr dptr, vk::QueryPool pool);
 void destroy(DevicePtr dptr, vk::Event event);
 
 void destroy(DevicePtr dptr, vk::SurfaceKHR surface);
-
-
 
 }
 }

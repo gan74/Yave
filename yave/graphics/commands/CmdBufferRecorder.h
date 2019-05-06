@@ -146,8 +146,8 @@ class CmdBufferRecorder : public CmdBufferBase {
 		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : CmdBufferRecorder(std::move(buffer), Usage) {
 		}
 
-		CmdBufferRecorder(CmdBufferRecorder&& other);
-		CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
+		CmdBufferRecorder(CmdBufferRecorder&&) = default;
+		CmdBufferRecorder& operator=(CmdBufferRecorder&&) = default;
 
 		~CmdBufferRecorder();
 
@@ -185,8 +185,6 @@ class CmdBufferRecorder : public CmdBufferBase {
 	protected:
 		CmdBufferRecorder() = default;
 		CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage);
-
-		void swap(CmdBufferRecorder& other);
 
 	private:
 		friend class RenderPassRecorder;

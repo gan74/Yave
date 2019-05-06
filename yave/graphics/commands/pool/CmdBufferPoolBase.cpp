@@ -89,12 +89,10 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
 std::unique_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
 	y_profile();
 	std::unique_lock lock(_lock);
-	for(auto it = _cmd_buffers.begin(); it != _cmd_buffers.end(); ++it) {
-		if(it->try_reset()) {
-			auto ptr = std::make_unique<CmdBufferDataProxy>(std::move(*it));
-			_cmd_buffers.erase(it);
-			return ptr;
-		}
+	if(!_cmd_buffers.is_empty()) {
+		CmdBufferData data = _cmd_buffers.pop();
+		data.reset();
+		return std::make_unique<CmdBufferDataProxy>(std::move(data));
 	}
 	return std::make_unique<CmdBufferDataProxy>(create_data());
 }

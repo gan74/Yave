@@ -31,7 +31,10 @@ class DeviceLinked {
 		DevicePtr device() const;
 
 		template<typename T>
-		void destroy(T t) const;
+		void destroy(T&& t) const;
+
+		template<typename T>
+		void destroy_immediate(T&& t) const;
 
 	protected:
 		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
@@ -57,7 +60,10 @@ class ThreadDeviceLinked {
 		DevicePtr device() const;
 
 		template<typename T>
-		void destroy(T t) const;
+		void destroy(T&& t) const;
+
+		template<typename T>
+		void destroy_immediate(T&& t) const;
 
 	protected:
 		ThreadDeviceLinked();

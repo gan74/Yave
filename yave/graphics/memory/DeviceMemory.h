@@ -52,6 +52,10 @@ class DeviceMemory : NonCopyable, public DeviceLinked {
 		void swap(DeviceMemory& other);
 
 	private:
+		friend class LifetimeManager;
+
+		void free();
+
 		NotOwner<DeviceMemoryHeapBase*> _heap = nullptr;
 		vk::DeviceMemory _memory;
 		usize _offset = 0;

@@ -43,6 +43,7 @@ class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
 
 	protected:
 		friend class CmdBufferDataProxy;
+		friend class LifetimeManager;
 
 		CmdBufferPoolBase() = default;
 		CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);

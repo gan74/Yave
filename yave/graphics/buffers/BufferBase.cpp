@@ -63,6 +63,7 @@ BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, Memor
 BufferBase::~BufferBase() {
 	if(device()) {
 		device()->destroy(_buffer);
+		device()->destroy(std::move(_memory));
 	}
 }
 

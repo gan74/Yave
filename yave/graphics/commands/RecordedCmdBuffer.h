@@ -35,6 +35,8 @@ class RecordedCmdBuffer : public CmdBufferBase {
 
 	public:
 		RecordedCmdBuffer() = default;
+		RecordedCmdBuffer(RecordedCmdBuffer&&) = default;
+		RecordedCmdBuffer& operator=(RecordedCmdBuffer&&) = default;
 
 		RecordedCmdBuffer(CmdBufferRecorder&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
 		}

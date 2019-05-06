@@ -47,9 +47,18 @@ DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) {
 }
 
 DeviceMemory::~DeviceMemory() {
+	if(device()) {
+		y_fatal("DeviceMemory has not been freed.");
+	}
+}
+
+void DeviceMemory::free() {
 	if(_memory && _heap) {
 		_heap->free(*this);
 	}
+	// set device to nullptr
+	struct Empty : DeviceLinked {} empty;
+	DeviceLinked::swap(empty);
 }
 
 vk::DeviceMemory DeviceMemory::vk_memory() const {

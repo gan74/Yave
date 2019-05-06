@@ -175,6 +175,7 @@ ImageBase::~ImageBase() {
 	if(device()) {
 		device()->destroy(_view);
 		device()->destroy(_image);
+		device()->destroy(std::move(_memory));
 	}
 }
 

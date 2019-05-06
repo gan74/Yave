@@ -106,9 +106,9 @@ Device::Device(Instance& instance) :
 		_physical(instance),
 		_queue_families(QueueFamily::all(_physical)),
 		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
+		_allocator(this),
 		_lifetime_manager(this),
-		_sampler(this),
-		_allocator(this) {
+		_sampler(this) {
 
 	if(_instance.debug_params().debug_features_enabled()) {
 		_extensions.debug_marker = std::make_unique<DebugMarker>(_device.device);

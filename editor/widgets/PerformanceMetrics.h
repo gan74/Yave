@@ -28,9 +28,9 @@ SOFTWARE.
 
 namespace editor {
 
-class PerformanceMetrics : public Widget {
+class PerformanceMetrics : public Widget, public ContextLinked {
 	public:
-		PerformanceMetrics();
+		PerformanceMetrics(ContextPtr cptr);
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;

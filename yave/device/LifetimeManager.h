@@ -24,18 +24,23 @@ SOFTWARE.
 
 #include "DeviceLinked.h"
 
-#include <y/concurrent/SpinLock.h>
-#include <yave/graphics/vk/destroy.h>
+#include <yave/graphics/memory/DeviceMemory.h>
 
+#include <yave/graphics/vk/vk.h>
+
+#include <y/concurrent/SpinLock.h>
+
+#include <variant>
 #include <mutex>
 #include <deque>
 
 namespace yave {
 
+class CmdBufferData;
+
 class ResourceFence {
 	public:
 		ResourceFence() = default;
-
 
 		bool operator==(const ResourceFence& other) const {
 			return _value == other._value;
@@ -71,37 +76,70 @@ class ResourceFence {
 		}
 
 		u64 _value = 0;
-
 };
 
+
+using ManagedResource = std::variant<
+		DeviceMemory,
+
+		vk::Buffer,
+		vk::Image,
+		vk::ImageView,
+		vk::RenderPass,
+		vk::Framebuffer,
+		vk::Pipeline,
+		vk::PipelineLayout,
+		vk::ShaderModule,
+		vk::Sampler,
+		vk::SwapchainKHR,
+		vk::CommandPool,
+		vk::Fence,
+		vk::DescriptorPool,
+		vk::DescriptorSetLayout,
+		vk::Semaphore,
+		vk::QueryPool,
+		vk::Event,
+
+		vk::SurfaceKHR>;
+
+
+
 class LifetimeManager : NonCopyable, public DeviceLinked {
+
 	public:
 		LifetimeManager(DevicePtr dptr);
 		~LifetimeManager();
 
 		ResourceFence create_fence();
-		[[nodiscard]] ResourceFence recycle_fence(ResourceFence fence);
+
+		void recycle(CmdBufferData&& cmd);
+
+		usize pending_deletions() const;
+		usize active_cmd_buffers() const;
 
 		template<typename T>
-		void destroy_immediate(T t) const {
-			detail::destroy(device(), t);
+		void destroy_immediate(T&& t) const {
+			destroy_resource(y_fwd(t));
 		}
 
 		template<typename T>
-		void destroy_later(T t) {
+		void destroy_later(T&& t) {
 			std::unique_lock lock(_lock);
-			_to_destroy.push_back({_fence, detail::VkResource(t)});
+			_to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));
 		}
 
 	private:
+		void collect();
+		void destroy_resource(ManagedResource& resource) const;
 		void clear_resources(u64 up_to);
 
-		std::deque<std::pair<u64, detail::VkResource>> _to_destroy;
+		std::deque<std::pair<u64, ManagedResource>> _to_destroy;
+		std::deque<CmdBufferData> _in_flight;
 
-		concurrent::SpinLock _lock;
+		mutable concurrent::SpinLock _lock;
 
-		std::atomic<u64> _fence = 1;
-		std::atomic<u64> _done_fence = 0;
+		std::atomic<u64> _counter = 0;
+		u64 _done_counter = 0;
 };
 
 }

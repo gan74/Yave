@@ -34,8 +34,6 @@ SOFTWARE.
 #include <yave/graphics/queues/QueueFamily.h>
 #include <yave/graphics/memory/DeviceAllocator.h>
 
-#include <yave/graphics/vk/destroy.h>
-
 #include <thread>
 
 namespace yave {
@@ -83,19 +81,18 @@ class Device : NonMovable {
 		}
 
 		template<typename T>
-		void destroy(T t) const {
-			//detail::destroy(this, t);
-			destroy_later(t);
+		void destroy(T&& t) const {
+			destroy_later(y_fwd(t));
 		}
 
 		template<typename T>
-		void destroy_immediate(T t) const {
-			_lifetime_manager.destroy_immediate(t);
+		void destroy_immediate(T&& t) const {
+			_lifetime_manager.destroy_immediate(y_fwd(t));
 		}
 
 		template<typename T>
-		void destroy_later(T t) const {
-			_lifetime_manager.destroy_later(t);
+		void destroy_later(T&& t) const {
+			_lifetime_manager.destroy_later(y_fwd(t));
 		}
 
 	private:
@@ -106,13 +103,12 @@ class Device : NonMovable {
 
 		ScopedDevice _device;
 
+		mutable DeviceAllocator _allocator;
 		mutable LifetimeManager _lifetime_manager;
 
 		core::Vector<Queue> _queues;
 
 		Sampler _sampler;
-
-		mutable DeviceAllocator _allocator;
 
 		mutable concurrent::SpinLock _lock;
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
@@ -127,19 +123,32 @@ class Device : NonMovable {
 
 
 template<typename T>
-void DeviceLinked::destroy(T t) const {
+void DeviceLinked::destroy(T&& t) const {
 	if(device()) {
-		device()->destroy(t);
+		device()->destroy(y_fwd(t));
 	}
 }
 
 template<typename T>
-void ThreadDeviceLinked::destroy(T t) const {
+void DeviceLinked::destroy_immediate(T&& t) const {
 	if(device()) {
-		device()->destroy(t);
+		device()->destroy_immediate(y_fwd(t));
 	}
 }
 
+template<typename T>
+void ThreadDeviceLinked::destroy(T&& t) const {
+	if(device()) {
+		device()->destroy(y_fwd(t));
+	}
+}
+
+template<typename T>
+void ThreadDeviceLinked::destroy_immediate(T&& t) const {
+	if(device()) {
+		device()->destroy_immediate(y_fwd(t));
+	}
+}
 
 }
 

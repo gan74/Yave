@@ -95,7 +95,7 @@ void ThumbmailCache::process_requests() {
 			}
 
 			ThumbmailFunc func = _requests[i].get();
-			recorder->keep_alive(func);
+			//recorder->keep_alive(func);
 			if(auto thumb = func(*recorder)) {
 				_thumbmails[thumb->id] = std::move(thumb);
 			}
@@ -142,7 +142,7 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 	{
 		DescriptorSet set(device(), {Binding(*tex), Binding(StorageView(thumbmail->image))});
 		recorder.dispatch_size(device()->device_resources()[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
-		recorder.keep_alive(std::move(set));
+		//recorder.keep_alive(std::move(set));
 	}
 
 	return thumbmail;

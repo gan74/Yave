@@ -21,43 +21,84 @@ SOFTWARE.
 **********************************/
 
 #include "LifetimeManager.h"
+#include "Device.h"
+
+#include <yave/graphics/commands/data/CmdBufferData.h>
+#include <yave/graphics/commands/pool/CmdBufferPoolBase.h>
+
+#include <yave/graphics/vk/destroy.h>
 
 namespace yave {
-
-// https://stackoverflow.com/questions/16190078/how-to-atomically-update-a-maximum-value
-template<typename T>
-static void update_maximum(std::atomic<T>& max, const T& val) {
-	T prev = max;
-	while(prev < val && !max.compare_exchange_weak(prev, val));
-}
-
 
 LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 LifetimeManager::~LifetimeManager() {
+	std::unique_lock lock(_lock);
 	for(auto& r : _to_destroy) {
-		detail::destroy(device(), r.second);
+		destroy_resource(r.second);
 	}
 }
 
 ResourceFence LifetimeManager::create_fence() {
-	return ++_fence;
+	return ++_counter;
 }
 
-ResourceFence LifetimeManager::recycle_fence(ResourceFence fence) {
-	if(ResourceFence(_done_fence) > fence) {
-		update_maximum(_done_fence, fence._value);
-		clear_resources(_done_fence);
+void LifetimeManager::recycle(CmdBufferData&& cmd) {
+	y_profile();
+	std::unique_lock lock(_lock);
+	auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
+							   [](const auto& a, const auto& b) { return a.resource_fence() < b.resource_fence(); });
+	_in_flight.insert(it, std::move(cmd));
+	collect();
+}
+
+void LifetimeManager::collect() {
+	u64 next = _done_counter;
+	while(!_in_flight.empty()) {
+		CmdBufferData& cmd = _in_flight.front();
+		u64 fence = cmd.resource_fence()._value;
+		if(fence == next + 1 && device()->vk_device().getFenceStatus(cmd.vk_fence()) == vk::Result::eSuccess) {
+			if(cmd.pool()) {
+				cmd.pool()->release(std::move(cmd));
+			}
+
+			next = fence;
+			_in_flight.pop_front();
+		} else {
+			break;
+		}
 	}
-	return create_fence();
+	if(next != _done_counter) {
+		clear_resources(_done_counter = next);
+	}
+}
+
+usize LifetimeManager::pending_deletions() const {
+	std::unique_lock lock(_lock);
+	return _to_destroy.size();
+}
+
+usize LifetimeManager::active_cmd_buffers() const {
+	std::unique_lock lock(_lock);
+	return _in_flight.size();
+}
+
+void LifetimeManager::destroy_resource(ManagedResource& resource) const {
+	std::visit(
+		[dptr = device()](auto& res) {
+			if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
+				res.free();
+			} else {
+				detail::destroy(dptr, res);
+			}
+		},
+		resource);
 }
 
 void LifetimeManager::clear_resources(u64 up_to) {
-	y_profile();
-	std::unique_lock lock(_lock);
 	while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
-		detail::destroy(device(), _to_destroy.front().second);
+		destroy_resource(_to_destroy.front().second);
 		_to_destroy.pop_front();
 	}
 }

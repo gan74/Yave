@@ -68,7 +68,7 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 		}
 
 		std::move(graph).render(recorder);
-		recorder.keep_alive(_ibl_data);
+		//recorder.keep_alive(_ibl_data);
 	}
 
 	// ImGui

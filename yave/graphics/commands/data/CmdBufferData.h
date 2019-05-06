@@ -30,7 +30,7 @@ namespace yave {
 
 class CmdBufferDataProxy;
 
-class CmdBufferData : NonCopyable {
+class CmdBufferData final : NonCopyable {
 
 	struct KeepAlive : NonCopyable {
 		virtual ~KeepAlive() {}
@@ -47,14 +47,12 @@ class CmdBufferData : NonCopyable {
 		~CmdBufferData();
 
 		DevicePtr device() const;
-
 		CmdBufferPoolBase* pool() const;
-
 		vk::CommandBuffer vk_cmd_buffer() const;
 		vk::Fence vk_fence() const;
+		ResourceFence resource_fence() const;
 
 		void reset();
-		bool try_reset();
 
 		void wait_for(const Semaphore& sem);
 
@@ -69,11 +67,9 @@ class CmdBufferData : NonCopyable {
 		}
 
 
-	protected:
-		void swap(CmdBufferData& other);
-
 	private:
 		friend class Queue;
+		void swap(CmdBufferData& other);
 
 		vk::CommandBuffer _cmd_buffer;
 		vk::Fence _fence;
@@ -83,6 +79,7 @@ class CmdBufferData : NonCopyable {
 
 		Semaphore _signal;
 		core::Vector<Semaphore> _waits;
+
 		ResourceFence _resource_fence;
 };
 
