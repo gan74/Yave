@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MATERIAL_BASICMATERIALDATA_H
-#define YAVE_MATERIAL_BASICMATERIALDATA_H
+#ifndef YAVE_MATERIAL_SIMPLEMATERIALDATA_H
+#define YAVE_MATERIAL_SIMPLEMATERIALDATA_H
 
 #include <yave/graphics/bindings/DescriptorSet.h>
 
@@ -29,24 +29,24 @@ SOFTWARE.
 
 namespace yave {
 
-class BasicMaterialData {
+class SimpleMaterialData {
 
-	struct BasicMaterialHeader {
+	struct SimpleMaterialHeader {
 		y_serde(fs::magic_number, AssetType::Material, u32(1))
 	};
 
 	public:
 		static constexpr usize texture_count = 4;
 
-		BasicMaterialData() = default;
-		BasicMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
+		SimpleMaterialData() = default;
+		SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
 		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 		bool is_empty() const;
 
 
-		y_serialize(BasicMaterialHeader(), texture_ids())
-		static core::Result<BasicMaterialData> load(io::ReaderRef reader, AssetLoader& loader) noexcept;
+		y_serialize(SimpleMaterialHeader(), texture_ids())
+		static core::Result<SimpleMaterialData> load(io::ReaderRef reader, AssetLoader& loader) noexcept;
 
 	private:
 		std::array<AssetId, texture_count> texture_ids() const;

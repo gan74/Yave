@@ -39,7 +39,6 @@ class PerformanceMetrics : public Widget, public ContextLinked {
 
 		usize _current_index = 0;
 		std::array<float, 100> _frames;
-
 };
 
 }

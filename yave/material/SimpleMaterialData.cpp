@@ -20,29 +20,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "BasicMaterialData.h"
+#include "SimpleMaterialData.h"
 
 #include <y/io/File.h>
 
 namespace yave {
 
 
-BasicMaterialData::BasicMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures) :
+SimpleMaterialData::SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures) :
 		_textures(std::move(textures)) {
 }
 
-const std::array<AssetPtr<Texture>, BasicMaterialData::texture_count>& BasicMaterialData::textures() const {
+const std::array<AssetPtr<Texture>, SimpleMaterialData::texture_count>& SimpleMaterialData::textures() const {
 	return  _textures;
 }
 
-bool BasicMaterialData::is_empty() const {
+bool SimpleMaterialData::is_empty() const {
 	return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return !tex; });
 }
 
-core::Result<BasicMaterialData> BasicMaterialData::load(io::ReaderRef reader, AssetLoader& loader) noexcept {
+core::Result<SimpleMaterialData> SimpleMaterialData::load(io::ReaderRef reader, AssetLoader& loader) noexcept {
 	try {
-		BasicMaterialHeader().deserialize(reader);
-		BasicMaterialData data;
+		SimpleMaterialHeader().deserialize(reader);
+		SimpleMaterialData data;
 		for(auto& tex : data._textures) {
 			auto id = serde::deserialized<AssetId>(reader);
 			if(id != AssetId::invalid_id()) {
@@ -55,7 +55,7 @@ core::Result<BasicMaterialData> BasicMaterialData::load(io::ReaderRef reader, As
 	return core::Err();
 }
 
-std::array<AssetId, BasicMaterialData::texture_count> BasicMaterialData::texture_ids() const {
+std::array<AssetId, SimpleMaterialData::texture_count> SimpleMaterialData::texture_ids() const {
 	std::array<AssetId, texture_count> ids;
 	std::transform(_textures.begin(), _textures.end(), ids.begin(), [](const auto& tex) { return tex.id(); });
 	return ids;

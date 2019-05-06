@@ -39,7 +39,7 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 	if(auto tex = ctx->loader().load<Texture>(id)) {
 		std::array textures = material->data().textures();
 		textures[index] = std::move(tex.unwrap());
-		BasicMaterialData data(std::move(textures));
+		SimpleMaterialData data(std::move(textures));
 
 		try {
 			io::Buffer buffer;
@@ -64,7 +64,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	AssetPtr<Material> material = context()->selection().material();
-	const BasicMaterialData& data = material->data();
+	const SimpleMaterialData& data = material->data();
 	math::Vec2ui thumb_size = context()->thumbmail_cache().thumbmail_size() / 2;
 
 	for(usize i = 0; i != data.textures().size(); ++i) {

@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_MATERIAL_MATERIAL_H
 
 #include "MaterialTemplate.h"
-#include "BasicMaterialData.h"
+#include "SimpleMaterialData.h"
 
 namespace yave {
 
@@ -31,12 +31,12 @@ class Material final : NonCopyable {
 
 	public:
 		Material() = default;
-		Material(DevicePtr dptr, BasicMaterialData&& data);
-		Material(const MaterialTemplate* tmp, BasicMaterialData&& data = BasicMaterialData());
+		Material(DevicePtr dptr, SimpleMaterialData&& data);
+		Material(const MaterialTemplate* tmp, SimpleMaterialData&& data = SimpleMaterialData());
 
 		const MaterialTemplate* mat_template() const;
 
-		const BasicMaterialData& data() const;
+		const SimpleMaterialData& data() const;
 		const DescriptorSetBase& descriptor_set() const;
 
 		DevicePtr device() const;
@@ -46,7 +46,7 @@ class Material final : NonCopyable {
 
 		DescriptorSet _set;
 
-		BasicMaterialData _data;
+		SimpleMaterialData _data;
 };
 
 template<>
@@ -58,7 +58,7 @@ struct AssetTraits<Material> {
 	using Result = core::Result<Material>;
 
 	static Result load_asset(io::ReaderRef reader, AssetLoader& loader) noexcept {
-		return BasicMaterialData::load(reader, loader).map([&](auto&& data) { return Material(loader.device(), std::move(data)); });
+		return SimpleMaterialData::load(reader, loader).map([&](auto&& data) { return Material(loader.device(), std::move(data)); });
 	}
 };
 

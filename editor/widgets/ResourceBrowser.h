@@ -25,7 +25,7 @@ SOFTWARE.
 #include "MeshImporter.h"
 #include "ImageImporter.h"
 
-#include <yave/material/BasicMaterialData.h>
+#include <yave/material/SimpleMaterialData.h>
 #include <yave/assets/AssetId.h>
 
 namespace editor {

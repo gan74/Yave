@@ -235,7 +235,7 @@ void ResourceBrowser::paint_context_menu() {
 		ImGui::Separator();
 		if(ImGui::Selectable("Create material")) {
 			try {
-				BasicMaterialData material;
+				SimpleMaterialData material;
 				io::Buffer buffer;
 				material.serialize(buffer);
 				AssetStore& store = context()->asset_store();

@@ -20,13 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "Material.h"
-#include "BasicMaterialData.h"
+#include "SimpleMaterialData.h"
 
 #include <yave/device/Device.h>
 
 namespace yave {
 
-static DescriptorSet create_descriptor_set(DevicePtr dptr, const BasicMaterialData& data) {
+static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialData& data) {
 	if(data.is_empty()) {
 		return DescriptorSet();
 	}
@@ -38,19 +38,19 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const BasicMaterialDa
 }
 
 
-Material::Material(DevicePtr dptr, BasicMaterialData&& data) :
+Material::Material(DevicePtr dptr, SimpleMaterialData&& data) :
 		_template(dptr->device_resources()[data.is_empty() ? DeviceResources::BasicMaterialTemplate : DeviceResources::TexturedMaterialTemplate]),
 		_set(create_descriptor_set(device(), data)),
 		_data(std::move(data)) {
 }
 
-Material::Material(const MaterialTemplate* tmp, BasicMaterialData&& data) :
+Material::Material(const MaterialTemplate* tmp, SimpleMaterialData&& data) :
 		_template(tmp),
 		_set(create_descriptor_set(device(), data)),
 		_data(std::move(data)) {
 }
 
-const BasicMaterialData& Material::data() const {
+const SimpleMaterialData& Material::data() const {
 	return _data;
 }
 
