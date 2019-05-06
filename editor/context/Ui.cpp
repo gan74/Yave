@@ -61,6 +61,7 @@ void Ui::ok(const char* title, const char* message) {
 }
 
 void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
+	y_profile();
 	for(auto& e : _widgets) {
 		e->paint(recorder, token);
 	}

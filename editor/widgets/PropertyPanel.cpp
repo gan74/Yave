@@ -106,7 +106,8 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		if(StaticMeshInstance* mesh = dynamic_cast<StaticMeshInstance*>(renderable)) {
 
 			if(ImGui::CollapsingHeader("Static mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
-				if(ImGui::Button(fmt("%", mesh->material().id()).data())) {
+				core::String name = context()->asset_store().name(mesh->material().id()).unwrap_or("No material");
+				if(ImGui::Button(name.data())) {
 					context()->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
 						[=, ctx = context()](AssetId id) {
 #warning Use ECS to ensure that we dont modify a deleted object
