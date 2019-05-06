@@ -37,17 +37,23 @@ struct CmdBufferBase : NonCopyable {
 		void wait() const;
 		void wait_for(const Semaphore& sem);
 
+		template<typename T>
+		T wait_for(BoxSemaphore<T>&& t) {
+			CmdBufferBase::wait_for(static_cast<const Semaphore&>(t));
+			return std::move(t._boxed);
+		}
+
+		template<typename T>
+		void keep_alive(T&& t) {
+			_proxy->data().keep_alive(y_fwd(t));
+		}
+
 	protected:
 		CmdBufferBase() = default;
 		CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& proxy);
 
 		CmdBufferBase(CmdBufferBase&& other) = default;
 		CmdBufferBase& operator=(CmdBufferBase&&) = default;
-
-		template<typename T>
-		void keep_alive(T&& t) {
-			_proxy->data().keep_alive(y_fwd(t));
-		}
 
 	private:
 		friend class Queue;

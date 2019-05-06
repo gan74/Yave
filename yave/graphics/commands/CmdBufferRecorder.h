@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_COMMANDS_CmdBufferRecorder_H
-#define YAVE_GRAPHICS_COMMANDS_CmdBufferRecorder_H
+#ifndef YAVE_GRAPHICS_COMMANDS_CMDBUFFERRECORDER_H
+#define YAVE_GRAPHICS_COMMANDS_CMDBUFFERRECORDER_H
 
 #include <yave/yave.h>
 #include <yave/graphics/barriers/Barrier.h>
@@ -171,17 +171,6 @@ class CmdBufferRecorder : public CmdBufferBase {
 		// never use directly, needed for internal work and image loading
 		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
 
-		template<typename T>
-		void keep_alive(T&& t) {
-			CmdBufferBase::keep_alive(y_fwd(t));
-		}
-
-		template<typename T>
-		T wait_for(BoxSemaphore<T>&& t) {
-			CmdBufferBase::wait_for(static_cast<const Semaphore&>(t));
-			return std::move(t._boxed);
-		}
-
 	protected:
 		CmdBufferRecorder() = default;
 		CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage);
@@ -199,4 +188,4 @@ class CmdBufferRecorder : public CmdBufferBase {
 
 }
 
-#endif // YAVE_GRAPHICS_COMMANDS_CmdBufferRecorder_H
+#endif // YAVE_GRAPHICS_COMMANDS_CMDBUFFERRECORDER_H

@@ -47,10 +47,19 @@ ResourceFence LifetimeManager::create_fence() {
 void LifetimeManager::recycle(CmdBufferData&& cmd) {
 	y_profile();
 	std::unique_lock lock(_lock);
+	ResourceFence fence = cmd.resource_fence();
 	auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
 							   [](const auto& a, const auto& b) { return a.resource_fence() < b.resource_fence(); });
 	_in_flight.insert(it, std::move(cmd));
-	collect();
+	if(fence._value == _done_counter + 1) {
+		collect();
+	}
+
+#ifdef Y_DEBUG
+	if(_in_flight.size() > 255) {
+		log_msg(fmt("% command buffer waiting for recycling!"), Log::Warning);
+	}
+#endif
 }
 
 void LifetimeManager::collect() {
