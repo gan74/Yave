@@ -103,64 +103,89 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	if(Renderable* renderable = context()->selection().renderable()) {
-		if(StaticMeshInstance* mesh = dynamic_cast<StaticMeshInstance*>(renderable)) {
-
-			if(ImGui::CollapsingHeader("Static mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
-				core::String name = context()->asset_store().name(mesh->material().id())
-									.map([=](auto&& n) { return context()->asset_store().filesystem()->filename(n); })
-									.unwrap_or("No material");
-				if(ImGui::Button(name.data())) {
-					context()->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
-						[=, ctx = context()](AssetId id) {
-#warning Use ECS to ensure that we dont modify a deleted object
-							if(auto material = ctx->loader().load<Material>(id)) {
-								mesh->material() = material.unwrap();
-							}
-							return true;
-						});
-				}
-			}
+		if(StaticMeshInstance* instance = dynamic_cast<StaticMeshInstance*>(renderable)) {
+			static_mesh_panel(instance);
 		}
 	}
-
 
 	if(Light* light = context()->selection().light()) {
-		int flags = ImGuiColorEditFlags_NoSidePreview |
-					// ImGuiColorEditFlags_NoSmallPreview |
-					ImGuiColorEditFlags_NoAlpha |
-					ImGuiColorEditFlags_Float |
-					ImGuiColorEditFlags_InputRGB;
-
-		if(ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
-			math::Vec4 color(light->color(), 1.0f);
-			if(ImGui::ColorButton("Color", color, flags/*, ImVec2(40, 40)*/)) {
-				ImGui::OpenPopup("Color");
-			}
-			ImGui::SameLine();
-			ImGui::Text("Light color");
-		}
-
-		if(ImGui::BeginPopup("Color")) {
-			ImGui::ColorPicker3("##lightpicker", light->color().begin(), flags);
-
-			ImGui::SameLine();
-			ImGui::BeginGroup();
-			ImGui::Text("temperature slider should be here");
-			ImGui::EndGroup();
-
-			ImGui::EndPopup();
-		}
-
-		ImGui::InputFloat("Intensity", &light->intensity(), 1.0f, 10.0f);
-		ImGui::InputFloat("Radius", &light->radius(), 1.0f, 10.0f);
-
-
+		light_panel(light);
 	}
+
+
 
 	sel->transform() = math::Transform<>(pos, rot, scale);
 
 	//ImGui::Text("Position: %f, %f, %f", sel->position().x(), sel->position().y(), sel->position().z());
 
+}
+
+void PropertyPanel::static_mesh_panel(StaticMeshInstance* instance) {
+#warning Use ECS to ensure that we dont modify a deleted object
+	if(!ImGui::CollapsingHeader("Static mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+		return;
+	}
+
+	auto clean_name = [=](auto&& n) { return context()->asset_store().filesystem()->filename(n); };
+
+	// material
+	{
+		core::String name = context()->asset_store().name(instance->material().id()).map(clean_name).unwrap_or("No material");
+		if(ImGui::Button(name.data())) {
+			context()->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
+				[=, ctx = context()](AssetId id) {
+					if(auto material = ctx->loader().load<Material>(id)) {
+						instance->material() = material.unwrap();
+					}
+					return true;
+				});
+		}
+	}
+
+	// mesh
+	{
+		core::String name = context()->asset_store().name(instance->mesh().id()).map(clean_name).unwrap_or("No mesh");
+		if(ImGui::Button(name.data())) {
+			context()->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+				[=, ctx = context()](AssetId id) {
+					if(auto mesh = ctx->loader().load<StaticMesh>(id)) {
+						instance->mesh() = mesh.unwrap();
+					}
+					return true;
+				});
+		}
+	}
+}
+
+void PropertyPanel::light_panel(Light* light) {
+	int flags = ImGuiColorEditFlags_NoSidePreview |
+				// ImGuiColorEditFlags_NoSmallPreview |
+				ImGuiColorEditFlags_NoAlpha |
+				ImGuiColorEditFlags_Float |
+				ImGuiColorEditFlags_InputRGB;
+
+	if(ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
+		math::Vec4 color(light->color(), 1.0f);
+		if(ImGui::ColorButton("Color", color, flags/*, ImVec2(40, 40)*/)) {
+			ImGui::OpenPopup("Color");
+		}
+		ImGui::SameLine();
+		ImGui::Text("Light color");
+	}
+
+	if(ImGui::BeginPopup("Color")) {
+		ImGui::ColorPicker3("##lightpicker", light->color().begin(), flags);
+
+		ImGui::SameLine();
+		ImGui::BeginGroup();
+		ImGui::Text("temperature slider should be here");
+		ImGui::EndGroup();
+
+		ImGui::EndPopup();
+	}
+
+	ImGui::InputFloat("Intensity", &light->intensity(), 1.0f, 10.0f);
+	ImGui::InputFloat("Radius", &light->radius(), 1.0f, 10.0f);
 }
 
 }

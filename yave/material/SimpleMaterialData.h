@@ -36,14 +36,22 @@ class SimpleMaterialData {
 	};
 
 	public:
-		static constexpr usize texture_count = 4;
+		enum class Textures {
+			Diffuse,
+			Normal,
+			RoughnessMetallic,
+			Max
+		};
+
+		static constexpr usize texture_count = usize(Textures::Max);
 
 		SimpleMaterialData() = default;
 		SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
-		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 		bool is_empty() const;
+		const AssetPtr<Texture>& operator[](Textures tex) const;
 
+		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 
 		y_serialize(SimpleMaterialHeader(), texture_ids())
 		static core::Result<SimpleMaterialData> load(io::ReaderRef reader, AssetLoader& loader) noexcept;

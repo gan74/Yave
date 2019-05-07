@@ -24,6 +24,11 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
+namespace yave {
+class StaticMeshInstance;
+class Light;
+}
+
 namespace editor {
 
 class PropertyPanel final : public Widget, public ContextLinked {
@@ -36,6 +41,9 @@ class PropertyPanel final : public Widget, public ContextLinked {
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+
+		void static_mesh_panel(StaticMeshInstance* instance);
+		void light_panel(Light* light);
 };
 
 }

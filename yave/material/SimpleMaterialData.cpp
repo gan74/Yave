@@ -31,12 +31,16 @@ SimpleMaterialData::SimpleMaterialData(std::array<AssetPtr<Texture>, texture_cou
 		_textures(std::move(textures)) {
 }
 
-const std::array<AssetPtr<Texture>, SimpleMaterialData::texture_count>& SimpleMaterialData::textures() const {
-	return  _textures;
+const AssetPtr<Texture>& SimpleMaterialData::operator[](Textures tex) const {
+	return _textures[usize(tex)];
 }
 
 bool SimpleMaterialData::is_empty() const {
 	return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return !tex; });
+}
+
+const std::array<AssetPtr<Texture>, SimpleMaterialData::texture_count>& SimpleMaterialData::textures() const {
+	return  _textures;
 }
 
 core::Result<SimpleMaterialData> SimpleMaterialData::load(io::ReaderRef reader, AssetLoader& loader) noexcept {

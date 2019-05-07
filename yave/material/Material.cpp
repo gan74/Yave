@@ -27,12 +27,19 @@ SOFTWARE.
 namespace yave {
 
 static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialData& data) {
-	if(data.is_empty()) {
+	if(!dptr || data.is_empty()) {
 		return DescriptorSet();
 	}
-	auto bindings = core::vector_with_capacity<Binding>(data.textures().size());
-	for(const AssetPtr<Texture>& tex : data.textures()) {
-		bindings.emplace_back(tex ? *tex : *dptr->device_resources()[DeviceResources::BlackTexture]);
+
+	std::array<Binding, SimpleMaterialData::texture_count> bindings = {
+			*dptr->device_resources()[DeviceResources::WhiteTexture],
+			*dptr->device_resources()[DeviceResources::FlatNormalTexture],
+			*dptr->device_resources()[DeviceResources::WhiteTexture]
+		};
+	for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
+		if(const auto& tex = data.textures()[i]) {
+			bindings[i] = *tex;
+		}
 	}
 	return DescriptorSet(dptr, bindings);
 }
