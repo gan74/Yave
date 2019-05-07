@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/widgets/AssetSelector.h>
 
-#include <imgui/imgui.h>
+#include <imgui/imgui_yave.h>
 
 namespace editor {
 

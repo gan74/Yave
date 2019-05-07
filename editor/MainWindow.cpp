@@ -39,7 +39,7 @@ SOFTWARE.
 
 #include <editor/EngineView.h>
 
-#include <imgui/imgui.h>
+#include <imgui/imgui_yave.h>
 
 namespace editor {
 

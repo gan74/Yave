@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <yave/objects/Light.h>
 
-#include <imgui/imgui.h>
+#include <imgui/imgui_yave.h>
 
 // remove:
 #include <yave/material/Material.h>

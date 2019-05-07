@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
-#include <imgui/imgui.h>
+#include <imgui/imgui_yave.h>
 
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/framegraph/FrameGraph.h>

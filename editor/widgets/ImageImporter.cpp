@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <y/io/Buffer.h>
 
-#include <imgui/imgui.h>
+#include <imgui/imgui_yave.h>
 
 namespace editor {
 
