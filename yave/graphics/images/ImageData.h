@@ -58,7 +58,7 @@ class ImageData : NonCopyable {
 					y_serde_fixed_array(combined_byte_size(), _data.get()))
 
 		y_serialize(fs::magic_number, AssetType::Image, u32(3),
-					_size.to<2>(), _layers, _mips, _format, combined_byte_size(),
+					_size.to<2>(), _layers, _mips, _format,
 					y_serde_fixed_array(combined_byte_size(), _data.get()))
 
 	private:
