@@ -152,12 +152,12 @@ vec3 project(vec3 pos, mat4 proj_matrix) {
 // -------------------------------- CULLING --------------------------------
 
 bool is_inside(vec4 plane, vec3 pos, float radius) {
-	return dot(vec4(pos, 1.0), plane) + radius < 0.0;
+	return dot(vec4(pos, 1.0), plane) + radius > 0.0;
 }
 
 bool is_inside(Frustum frustum, vec3 pos, float radius) {
 	for(uint i = 0; i != 6; ++i) {
-		if(is_inside(frustum.planes[i], pos, radius)) {
+		if(!is_inside(frustum.planes[i], pos, radius)) {
 			return false;
 		}
 	}
@@ -166,7 +166,7 @@ bool is_inside(Frustum frustum, vec3 pos, float radius) {
 
 bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
 	for(uint i = 0; i != 4; ++i) {
-		if(is_inside(frustum.planes[i], pos, radius)) {
+		if(!is_inside(frustum.planes[i], pos, radius)) {
 			return false;
 		}
 	}
