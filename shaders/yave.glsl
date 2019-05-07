@@ -35,11 +35,13 @@ bool is_OOB(float z) {
 }
 
 uint float_to_uint(float f) {
-	return uint(max_uint * f);
+	return floatBitsToUint(f);
+	// uint(max_uint * f);
 }
 
 float uint_to_float(uint i) {
-	return i / float(max_uint);
+	return uintBitsToFloat(i);
+	//return i / float(max_uint);
 }
 
 float saturate(float x) {
@@ -75,16 +77,16 @@ mat4 indentity() {
 
 vec2 hammersley(uint i, uint N) {
 	uint bits = (i << 16u) | (i >> 16u);
-    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
 	float radical_inverse = float(bits) * 2.3283064365386963e-10;
-    return vec2(float(i) / float(N), radical_inverse);
+	return vec2(float(i) / float(N), radical_inverse);
 }
 
 vec2 to_equirec(vec3 v) {
-    return vec2(atan(-v.y, v.x), asin(v.z)) * vec2(0.1591, 0.3183) + vec2(0.5);
+	return vec2(atan(-v.y, v.x), asin(v.z)) * vec2(0.1591, 0.3183) + vec2(0.5);
 }
 
 vec3 cube_dir(vec2 texCoord, uint side) {
@@ -286,17 +288,17 @@ float variance_shadow(vec2 moments, float depth) {
 vec3 importance_sample_GGX(vec2 Xi, vec3 normal, float roughness) {
 	float a2 = sqr(sqr(roughness));
 
-    float phi = 2.0 * pi * Xi.x;
-    float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (a2 - 1.0) * Xi.y));
-    float sin_theta = sqrt(1.0 - sqr(cos_theta));
+	float phi = 2.0 * pi * Xi.x;
+	float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (a2 - 1.0) * Xi.y));
+	float sin_theta = sqrt(1.0 - sqr(cos_theta));
 
-    vec3 half_vec = vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+	vec3 half_vec = vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
 
-    vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent = normalize(cross(up, normal));
-    vec3 bitangent = cross(normal, tangent);
+	vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+	vec3 tangent = normalize(cross(up, normal));
+	vec3 bitangent = cross(normal, tangent);
 
-    return normalize(tangent * half_vec.x + bitangent * half_vec.y + normal * half_vec.z);
+	return normalize(tangent * half_vec.x + bitangent * half_vec.y + normal * half_vec.z);
 }
 
 vec2 integrate_brdf(float NoV, float roughness) {

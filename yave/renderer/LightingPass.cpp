@@ -81,7 +81,6 @@ TextureView IBLData::brdf_lut() const  {
 
 static constexpr usize max_light_count = 1024;
 
-
 LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data) {
 	y_profile();
 
@@ -108,12 +107,24 @@ LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer,
 	builder.map_update(light_buffer);
 
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			struct CameraData {
+				math::Matrix4<> inv_matrix;
+				math::Vec3 position;
+				u32 padding_0 = 0;
+				math::Vec3 forward;
+				u32 padding_1 = 0;
+			};
 			struct PushData {
-				uniform::Camera camera;
+				CameraData camera;
 				u32 point_count = 0;
 				u32 directional_count = 0;
 			} push_data;
-			push_data.camera = scene->camera();
+
+			const Camera& camera = scene->camera();
+			push_data.camera.inv_matrix = camera.inverse_matrix();
+			push_data.camera.position = camera.position();
+			push_data.camera.forward = camera.forward();
+
 
 			TypedMapping<uniform::Light> mapping = self->resources()->mapped_buffer(light_buffer);
 			usize light_count = scene->scene().lights().size();

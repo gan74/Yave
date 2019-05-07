@@ -125,14 +125,4 @@ Frustum Camera::frustum() const {
 	return extract_frustum(viewproj_matrix());
 }
 
-Camera::operator uniform::Camera() const {
-	return uniform::Camera {
-			inverse_matrix(),
-			position(),
-			0,
-			forward(),
-			0
-		};
-}
-
 }

@@ -47,7 +47,8 @@ struct Light {
 	u32 type;
 };
 
-static_assert(sizeof(Camera) % 16 == 0);
+static_assert(offsetof(Light, radius) == 3 * sizeof(float));
+static_assert(sizeof(Light) == 2 * sizeof(math::Vec4));
 static_assert(sizeof(Light) % 16 == 0);
 
 }

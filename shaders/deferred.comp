@@ -38,27 +38,13 @@ layout(push_constant) uniform PushConstants {
 
 layout(rgba16f, set = 0, binding = 6) uniform writeonly image2D out_color;
 
+
 // -------------------------------- SHARED --------------------------------
 
 shared uint tile_lights[max_tile_lights];
 shared uint tile_light_count;
 
 shared Frustum4 tile_frustum;
-
-
-// -------------------------------- PROFILE --------------------------------
-
-vec3 load_color() {
-	float light_count = tile_light_count + constants.directional_count;
-	float max_lights = constants.point_count + constants.directional_count;
-	return load_spectrum(light_count / max_lights);
-}
-
-vec3 group_color() {
-	ivec2 coord = ivec2(gl_WorkGroupID.xy);
-	return vec3(noise(coord), noise(coord.yx), noise(-coord));
-}
-
 
 
 // -------------------------------- HELPERS --------------------------------
@@ -120,7 +106,6 @@ void cull_lights() {
 
 		for(uint i = range.x; i != range.y; ++i) {
 			if(is_inside(tile_frustum, lights.lights[i].position, lights.lights[i].radius)) {
-			//if(dot(tile_frustum.planes[4].xyz, constants.camera.forward) > 0.0) {
 				uint light_index = atomicAdd(tile_light_count, 1);
 				if(light_index >= max_tile_lights) {
 					break;
@@ -192,7 +177,6 @@ void main() {
 	}
 
 	imageStore(out_color, coord, vec4(irradiance, 1.0));
-	//imageStore(out_color, coord, vec4(load_color(), 1.0));
 	//imageStore(out_color, coord, vec4(tile_light_count / float(max_tile_lights)));
 	//imageStore(out_color, coord, vec4((tile_light_count % 7) / 7.0));
 }
