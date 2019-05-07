@@ -44,7 +44,7 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 		try {
 			io::Buffer buffer;
 			data.serialize(buffer);
-			ctx->asset_store().replace(buffer, material.id()).or_throw("");
+			ctx->asset_store().write(material.id(), buffer).or_throw("");
 			ctx->loader().set(material.id(), Material(ctx->device(), std::move(data))).or_throw("");
 
 			ctx->flush_reload();
@@ -68,6 +68,8 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	math::Vec2ui thumb_size = context()->thumbmail_cache().thumbmail_size() / 2;
 
 	for(usize i = 0; i != data.textures().size(); ++i) {
+		ImGui::PushID(fmt("%", i).data());
+
 		TextureView* view = context()->thumbmail_cache().get_thumbmail(data.textures()[i].id());
 		bool clicked = view
 			? ImGui::ImageButton(view, thumb_size)
@@ -80,6 +82,8 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				return true;
 			});
 		}
+
+		ImGui::PopID();
 		ImGui::SameLine();
 	}
 

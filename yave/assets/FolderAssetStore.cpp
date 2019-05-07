@@ -160,12 +160,9 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io::ReaderRef data, std::st
 	std::unique_lock lock(_lock);
 
 	{
-		auto dst_dir = _filesystem.parent_path(dst_name);
-		if(!dst_dir) {
-			return core::Err(ErrorType::FilesytemError);
-		}
-		if(!_filesystem.exists(dst_dir.unwrap()).unwrap_or(false) &&
-		   !_filesystem.create_directory(dst_dir.unwrap())) {
+		auto dst_dir = _filesystem.parent_path(dst_name).unwrap_or("");
+		if(!_filesystem.exists(dst_dir).unwrap_or(false) &&
+		   !_filesystem.create_directory(dst_dir)) {
 			return core::Err(ErrorType::FilesytemError);
 		}
 	}
@@ -189,25 +186,6 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io::ReaderRef data, std::st
 	entry = std::make_unique<Entry>(Entry{dst_name, id});
 	_from_id[id] = entry.get();
 	return core::Ok(id);
-}
-
-AssetStore::Result<> FolderAssetStore::replace(io::ReaderRef data, AssetId id) {
-	std::unique_lock lock(_lock);
-
-	auto& entry = _from_id[id];
-	if(!entry) {
-		return core::Err(ErrorType::UnknownID);
-	}
-
-	// remove/optimize
-	y_defer(write_index().ignore());
-	y_defer(y_debug_assert(_from_id.size() == _from_name.size()));
-
-	auto dst_file = _filesystem.join(_filesystem.root_path(), entry->name);
-	if(!io::File::copy(data, dst_file)) {
-		return core::Err(ErrorType::FilesytemError);
-	}
-	return core::Ok();
 }
 
 AssetStore::Result<AssetId> FolderAssetStore::id(std::string_view name) const {

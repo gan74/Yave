@@ -72,10 +72,11 @@ class FolderAssetStore final : public AssetStore {
 		const FileSystemModel* filesystem() const override;
 
 		Result<AssetId> import(io::ReaderRef data, std::string_view dst_name) override;
-		Result<> replace(io::ReaderRef data, AssetId id) override;
+		Result<> write(AssetId id, io::ReaderRef data) override;
 
 		Result<AssetId> id(std::string_view name) const override;
 		Result<core::String> name(AssetId id) const override;
+
 		Result<io::ReaderRef> data(AssetId id) const override;
 
 		Result<> remove(AssetId id) override;
@@ -83,7 +84,6 @@ class FolderAssetStore final : public AssetStore {
 		Result<> remove(std::string_view name) override;
 		Result<> rename(std::string_view from, std::string_view to) override;
 
-		Result<> write(AssetId id, io::ReaderRef data) override;
 
 		void clean_index();
 
