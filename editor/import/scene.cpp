@@ -132,8 +132,8 @@ core::String supported_scene_extensions() {
 namespace editor {
 namespace import {
 
-SceneData import_scene(const core::String& filename) {
-	unused(path);
+SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
+	unused(filename, flags);
 	y_throw("Scene loading not supported.");
 	SceneData data;
 	return data;
