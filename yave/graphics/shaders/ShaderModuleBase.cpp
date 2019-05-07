@@ -74,7 +74,8 @@ static vk::DescriptorSetLayoutBinding create_binding(u32 index, ShaderType, vk::
 		;
 }
 
-static auto create_bindings(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources, ShaderType shader_type, vk::DescriptorType type) {
+template<typename R>
+static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType shader_type, vk::DescriptorType type) {
 	auto bindings = std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>();
 	for(const auto& r : resources) {
 		auto id = r.id;
@@ -83,7 +84,8 @@ static auto create_bindings(const spirv_cross::Compiler& compiler, const std::ve
 	return bindings;
 }
 
-static void fail_not_empty(const std::vector<spirv_cross::Resource>& res) {
+template<typename R>
+static void fail_not_empty(const R& res) {
 	if(!res.empty()) {
 		y_fatal("Unsupported resource type.");
 	}
@@ -125,7 +127,8 @@ static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseTy
 	return y_fatal("Unsupported attribute type.");
 }
 
-static auto create_push_constants(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources, ShaderType shader_type) {
+template<typename R>
+static auto create_push_constants(const spirv_cross::Compiler& compiler, const R& resources, ShaderType shader_type) {
 	if(resources.size() > 1) {
 		y_fatal("Too many push constants.");
 	}
@@ -139,7 +142,8 @@ static auto create_push_constants(const spirv_cross::Compiler& compiler, const s
 }
 
 
-static auto create_attribs(const spirv_cross::Compiler& compiler, const std::vector<spirv_cross::Resource>& resources) {
+template<typename R>
+static auto create_attribs(const spirv_cross::Compiler& compiler, const R& resources) {
 	core::Vector<ShaderModuleBase::Attribute> attribs;
 	std::unordered_set<u32> locations;
 	for(const auto& r : resources) {
