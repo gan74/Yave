@@ -131,7 +131,7 @@ void PropertyPanel::static_mesh_panel(StaticMeshInstance* instance) {
 	// material
 	{
 		core::String name = context()->asset_store().name(instance->material().id()).map(clean_name).unwrap_or("No material");
-		if(ImGui::Button(name.data())) {
+		if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
 			context()->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
 				[=, ctx = context()](AssetId id) {
 					if(auto material = ctx->loader().load<Material>(id)) {
@@ -140,12 +140,14 @@ void PropertyPanel::static_mesh_panel(StaticMeshInstance* instance) {
 					return true;
 				});
 		}
+		ImGui::SameLine();
+		ImGui::InputText("Material", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 	}
 
 	// mesh
 	{
 		core::String name = context()->asset_store().name(instance->mesh().id()).map(clean_name).unwrap_or("No mesh");
-		if(ImGui::Button(name.data())) {
+		if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
 			context()->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
 				[=, ctx = context()](AssetId id) {
 					if(auto mesh = ctx->loader().load<StaticMesh>(id)) {
@@ -154,6 +156,8 @@ void PropertyPanel::static_mesh_panel(StaticMeshInstance* instance) {
 					return true;
 				});
 		}
+		ImGui::SameLine();
+		ImGui::InputText("Mesh", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 	}
 }
 
@@ -184,8 +188,10 @@ void PropertyPanel::light_panel(Light* light) {
 		ImGui::EndPopup();
 	}
 
-	ImGui::InputFloat("Intensity", &light->intensity(), 1.0f, 10.0f);
-	ImGui::InputFloat("Radius", &light->radius(), 1.0f, 10.0f);
+	/*ImGui::InputFloat("Intensity", &light->intensity(), 1.0f, 10.0f);
+	ImGui::InputFloat("Radius", &light->radius(), 1.0f, 10.0f);*/
+	ImGui::DragFloat("Intensity", &light->intensity());
+	ImGui::DragFloat("Radius", &light->radius());
 }
 
 }

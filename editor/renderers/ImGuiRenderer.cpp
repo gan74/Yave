@@ -112,7 +112,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 	static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
 	y_profile();
 
-	auto region = recorder.region("ImGuiRenderer::render");
+	auto region = recorder.region("ImGui render pass");
 
 	ImDrawData* draw_data = ImGui::GetDrawData();
 

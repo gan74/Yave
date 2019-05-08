@@ -31,6 +31,8 @@ SOFTWARE.
 
 #include <imgui/imgui_yave.h>
 
+#include <cinttypes>
+
 namespace editor {
 
 static AssetId asset_id(ContextPtr ctx, std::string_view name) {
@@ -77,10 +79,13 @@ void ResourceBrowser::asset_selected(const FileInfo& file) {
 			}
 		break;
 
-		default:
+		case AssetType::Mesh:
 			if(!context()->scene().add(file.full_name)) {
 				log_msg("Unable to add asset to scene.", Log::Error);
 			}
+		break;
+
+		default:
 		break;
 	}
 }
@@ -135,29 +140,6 @@ void ResourceBrowser::update_node(DirNode* node) {
 
 	node->up_to_date = true;
 	_refresh = false;
-}
-
-void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
-	static constexpr ImGuiTreeNodeFlags default_node_flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-	ImGuiTreeNodeFlags flags = default_node_flags/* | (node->children.is_empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/;
-
-	// folding/expending the node will still register as a goto somehow...
-	if(ImGui::TreeNodeEx(fmt(ICON_FA_FOLDER " %", name).data(), flags)) {
-		if(ImGui::IsItemClicked(0)) {
-			set_current(node);
-		}
-		if(!node->up_to_date) {
-			update_node(node);
-		}
-		for(auto& n : node->children) {
-			draw_node(&n, n.name);
-		}
-		ImGui::TreePop();
-	} else {
-		if(ImGui::IsItemClicked(0)) {
-			set_current(node);
-		}
-	}
 }
 
 void ResourceBrowser::refresh() {
@@ -267,6 +249,29 @@ void ResourceBrowser::paint_tree_view(float width) {
 	ImGui::EndChild();
 }
 
+void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
+	static constexpr ImGuiTreeNodeFlags default_node_flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+	ImGuiTreeNodeFlags flags = default_node_flags/* | (node->children.is_empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/;
+
+	// folding/expending the node will still register as a goto somehow...
+	if(ImGui::TreeNodeEx(fmt(ICON_FA_FOLDER " %", name).data(), flags)) {
+		if(ImGui::IsItemClicked(0)) {
+			set_current(node);
+		}
+		if(!node->up_to_date) {
+			update_node(node);
+		}
+		for(auto& n : node->children) {
+			draw_node(&n, n.name);
+		}
+		ImGui::TreePop();
+	} else {
+		if(ImGui::IsItemClicked(0)) {
+			set_current(node);
+		}
+	}
+}
+
 
 // ----------------------------------- Asset list -----------------------------------
 
@@ -341,9 +346,14 @@ void ResourceBrowser::paint_asset_list(float width) {
 
 void ResourceBrowser::paint_preview(float width) {
 	if(const FileInfo* file = hovered_file()) {
+		ImGui::BeginGroup();
+
 		if(TextureView* image = context()->thumbmail_cache().get_thumbmail(file->id)) {
 			ImGui::Image(image, math::Vec2(width));
 		}
+		ImGui::Text("ID: 0x%.8x", unsigned(file->id.id()));
+
+		ImGui::EndGroup();
 	}
 }
 
