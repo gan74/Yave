@@ -106,30 +106,30 @@ void ThumbmailCache::process_requests() {
 }
 
 
-void ThumbmailCache::request_thumbmail(AssetId asset) {
-	_thumbmails[asset] = nullptr;
+void ThumbmailCache::request_thumbmail(AssetId id) {
+	_thumbmails[id] = nullptr;
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
 			y_profile();
 
-			switch(context()->asset_store().asset_type(asset).unwrap_or(AssetType::Unknown)) {
+			switch(context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown)) {
 				case AssetType::Mesh:
-					if(auto mesh = context()->loader().load<StaticMesh>(asset)) {
+					if(auto mesh = context()->loader().load<StaticMesh>(id)) {
 						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
-								return render_thumbmail(rec, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
+								return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
 							};
 					}
 				break;
 
 				case AssetType::Material:
-					if(auto mat = context()->loader().load<Material>(asset)) {
+					if(auto mat = context()->loader().load<Material>(id)) {
 						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
-								return render_thumbmail(rec, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
+								return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
 							};
 					}
 				break;
 
 				case AssetType::Image:
-					if(auto tex = context()->loader().load<Texture>(asset)) {
+					if(auto tex = context()->loader().load<Texture>(id)) {
 						return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
 					}
 				break;
@@ -153,8 +153,8 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 	return thumbmail;
 }
 
-std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const {
-	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, mesh.id());
+std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const {
+	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, id);
 	SceneData scene(mesh, mat);
 
 	{

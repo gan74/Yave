@@ -66,9 +66,9 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 
 	private:
 		void process_requests();
-		void request_thumbmail(AssetId asset);
+		void request_thumbmail(AssetId id);
 		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const;
-		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const;
+		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const;
 
 		usize _size;
 
