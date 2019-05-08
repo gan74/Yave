@@ -116,7 +116,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	static constexpr isize button_width = 75;
 
 	{
-		ImGui::PushItemWidth(-button_width);
+		ImGui::SetNextItemWidth(-button_width);
 		if(ImGui::InputText("###path", _path_buffer.begin(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			set_path(full_path());
 		}
@@ -127,7 +127,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	{
-		ImGui::PushItemWidth(-button_width);
+		ImGui::SetNextItemWidth(-button_width);
 		if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			set_path(full_path());
 		}

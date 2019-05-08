@@ -47,7 +47,7 @@ void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& t
 		auto clean_name = [=](auto&& n) { return context()->asset_store().filesystem()->filename(n); };
 		core::String name = context()->asset_store().name(_selected).map(clean_name).unwrap_or("No mesh");
 
-		ImGui::PushItemWidth(-1);
+		ImGui::SetNextItemWidth(-1);
 		ImGui::InputText("", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 	}
 

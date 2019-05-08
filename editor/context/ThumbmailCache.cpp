@@ -105,7 +105,6 @@ void ThumbmailCache::process_requests() {
 	}
 }
 
-
 void ThumbmailCache::request_thumbmail(AssetId id) {
 	_thumbmails[id] = nullptr;
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
@@ -158,7 +157,7 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 	SceneData scene(mesh, mat);
 
 	{
-		auto region = recorder.region("ThumbmailCache::render");
+		auto region = recorder.region("Thumbmail cache render");
 
 		FrameGraph graph(context()->resource_pool());
 		DefaultRenderer renderer = DefaultRenderer::create(graph, &scene.view, thumbmail->image.size(), _ibl_data);
