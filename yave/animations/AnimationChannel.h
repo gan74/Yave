@@ -44,7 +44,7 @@ class AnimationChannel {
 
 
 		const core::String& name() const;
-		const core::Vector<BoneKey>& keys() const;
+		core::ArrayView<BoneKey> keys() const;
 
 	private:
 		core::String _name;

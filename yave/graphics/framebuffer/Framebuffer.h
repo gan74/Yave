@@ -47,7 +47,7 @@ class Framebuffer final : NonCopyable, public DeviceLinked {
 		vk::Framebuffer vk_framebuffer() const;
 
 		const DepthAttachmentView& depth_attachment() const;
-		const core::Vector<ColorAttachmentView>& color_attachments() const;
+		core::ArrayView<ColorAttachmentView> color_attachments() const;
 		const RenderPass& render_pass() const;
 
 		usize attachment_count() const {

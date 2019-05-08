@@ -38,7 +38,13 @@ MeshData::MeshData(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle
 		y_fatal("Invalid skin data.");
 	}
 
-	std::for_each(_vertices.begin(), _vertices.end(), [this](const auto& v) { _radius = std::max(_radius, v.position.length2()); });
+	math::Vec3 max(-std::numeric_limits<float>::max());
+	math::Vec3 min(std::numeric_limits<float>::max());
+	std::for_each(_vertices.begin(), _vertices.end(), [&](const Vertex& v) {
+		max = max.max(v.position);
+		min = min.min(v.position);
+	});
+	_aabb = AABB(min, max);
 
 	if(!skin.is_empty()) {
 		_skeleton = std::make_unique<SkeletonData>(SkeletonData{std::move(skin), std::move(bones)});
@@ -46,29 +52,33 @@ MeshData::MeshData(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle
 }
 
 float MeshData::radius() const {
-	return _radius;
+	return _aabb.origin_radius();
 }
 
-const core::Vector<Vertex>& MeshData::vertices() const {
+const AABB& MeshData::aabb() const {
+	return _aabb;
+}
+
+core::ArrayView<Vertex> MeshData::vertices() const {
 	return _vertices;
 }
 
-const core::Vector<IndexedTriangle>& MeshData::triangles() const {
+core::ArrayView<IndexedTriangle> MeshData::triangles() const {
 	return _triangles;
 }
 
-const core::Vector<SkinWeights> MeshData::skin() const {
-	if(!_skeleton) {
-		y_fatal("Mesh has no skeleton.");
-	}
-	return _skeleton->skin;
-}
-
-const core::Vector<Bone>& MeshData::bones() const {
+core::ArrayView<Bone> MeshData::bones() const {
 	if(!_skeleton) {
 		y_fatal("Mesh has no skeleton.");
 	}
 	return _skeleton->bones;
+}
+
+core::ArrayView<SkinWeights> MeshData::skin() const {
+	if(!_skeleton) {
+		y_fatal("Mesh has no skeleton.");
+	}
+	return _skeleton->skin;
 }
 
 core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {

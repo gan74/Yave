@@ -40,8 +40,8 @@ class SpirVData {
 		static SpirVData deserialized(io::ReaderRef reader);
 
 	private:
-	   SpirVData(const core::Vector<u32>& data);
-	   SpirVData(const core::Vector<u8>& data);
+		SpirVData(core::ArrayView<u32> data);
+		SpirVData(core::ArrayView<u8> data);
 
 		core::Vector<u32> _data;
 };

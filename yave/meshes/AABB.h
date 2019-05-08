@@ -19,32 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_SKELETON_H
-#define YAVE_MESHES_SKELETON_H
+#ifndef YAVE_MESHES_AABB_H
+#define YAVE_MESHES_AABB_H
 
-#include "Vertex.h"
-#include "Bone.h"
+#include <yave/yave.h>
 
 namespace yave {
 
-class Skeleton {
+class AABB {
 	public:
-		static constexpr usize max_bones = 256;
+		AABB() = default;
 
-		Skeleton() = default;
+		AABB(const math::Vec3& min, const math::Vec3& max) : _min(min), _max(max) {
+			y_debug_assert(_max - _min == (_max - _min).abs());
+		}
 
-		Skeleton(core::ArrayView<Bone> bones);
+		math::Vec3 center() const {
+			return (_min + _max) * 0.5f;
+		}
 
-		core::ArrayView<Bone> bones() const;
-		core::ArrayView<math::Transform<>> bone_transforms() const;
-		core::ArrayView<math::Transform<>> inverse_absolute_transforms() const;
+		math::Vec3 extent() const {
+			return _max - _min;
+		}
+
+		math::Vec3 half_extent() const {
+			return extent() * 0.5f;
+		}
+
+		float radius() const {
+			return extent().length() * 0.5f;
+		}
+
+		float origin_radius() const {
+			return std::sqrt(std::max(_min.length2(), _max.length2()));
+		}
+
+		const math::Vec3& min() const {
+			return _min;
+		}
+
+		const math::Vec3& max() const {
+			return _max;
+		}
 
 	private:
-		core::Vector<Bone> _bones;
-		core::Vector<math::Transform<>> _transforms;
-		core::Vector<math::Transform<>> _inverses;
+		math::Vec3 _min;
+		math::Vec3 _max;
 };
+
+static_assert(std::is_trivially_copyable_v<AABB>);
 
 }
 
-#endif // YAVE_MESHES_SKELETON_H
+#endif // YAVE_MESHES_AABB_H

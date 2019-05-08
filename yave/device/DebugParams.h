@@ -42,16 +42,16 @@ class DebugParams {
 			return _debug_enabled;
 		}
 
-		const core::Vector<const char*>& instance_layers() const {
+		core::ArrayView<const char*> instance_layers() const {
 			return _instance_layers;
 		}
 
-		const core::Vector<const char*>& device_layers() const {
+		core::ArrayView<const char*> device_layers() const {
 			return _device_layers;
 		}
 
 	private:
-		DebugParams(const core::ArrayView<const char*>& instance, const core::ArrayView<const char*>& device, bool callbacks) :
+		DebugParams(core::ArrayView<const char*> instance, core::ArrayView<const char*> device, bool callbacks) :
 				_instance_layers(instance.begin(), instance.end()),
 				_device_layers(device.begin(), device.end()),
 				_debug_enabled(callbacks) {

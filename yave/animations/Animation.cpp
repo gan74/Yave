@@ -27,7 +27,7 @@ namespace yave {
 Animation::Animation(float duration, core::Vector<AnimationChannel>&& channels) : _duration(duration), _channels(std::move(channels)) {
 }
 
-const core::Vector<AnimationChannel>& Animation::channels() const {
+core::ArrayView<AnimationChannel> Animation::channels() const {
 	return _channels;
 }
 

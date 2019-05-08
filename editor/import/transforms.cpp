@@ -26,8 +26,8 @@ namespace editor {
 namespace import {
 
 template<typename T>
-std::remove_const_t<std::remove_reference_t<T>> copy(T&& t) {
-	return t;
+core::Vector<T> copy(core::ArrayView<T> t) {
+	return core::Vector<T>(t);
 }
 
 static math::Vec3 h_transform(const math::Vec3& v, const math::Transform<>& tr) {

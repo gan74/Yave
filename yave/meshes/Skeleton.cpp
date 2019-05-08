@@ -25,7 +25,7 @@ SOFTWARE.
 namespace yave {
 
 template<usize unused = 0>
-static void debug_bone(usize index, const core::Vector<Bone>& bones, const core::String& indent = "") {
+static void debug_bone(usize index, core::ArrayView<Bone> bones, const core::String& indent = "") {
 	log_msg(indent + bones[index].name + " (" + index + ")", Log::Debug);
 	/*log_msg(indent + "{" + bones[index].local_transform.rotation.x() + ", " +
 						   bones[index].local_transform.rotation.y() + ", " +
@@ -39,7 +39,7 @@ static void debug_bone(usize index, const core::Vector<Bone>& bones, const core:
 	}
 }
 
-Skeleton::Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
+Skeleton::Skeleton(core::ArrayView<Bone> bones) : _bones(bones) {
 	if(_bones.size() > max_bones) {
 		y_fatal("Bone count exceeds max_bones.");
 	}
@@ -62,15 +62,15 @@ Skeleton::Skeleton(const core::Vector<Bone>& bones) : _bones(bones) {
 	}*/
 }
 
-const core::Vector<Bone>& Skeleton::bones() const {
+core::ArrayView<Bone> Skeleton::bones() const {
 	return _bones;
 }
 
-const core::Vector<math::Transform<>>& Skeleton::bone_transforms() const {
+core::ArrayView<math::Transform<>> Skeleton::bone_transforms() const {
 	return _transforms;
 }
 
-const core::Vector<math::Transform<>>& Skeleton::inverse_absolute_transforms() const {
+core::ArrayView<math::Transform<>> Skeleton::inverse_absolute_transforms() const {
 	return _inverses;
 }
 

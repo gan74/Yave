@@ -79,7 +79,7 @@ static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& s
 // returns the NEXT binding index
 static u32 create_vertex_attribs(u32 binding,
 								  vk::VertexInputRate rate,
-								  const core::Vector<ShaderModuleBase::Attribute>& vertex_attribs,
+								  core::ArrayView<ShaderModuleBase::Attribute> vertex_attribs,
 								  Bindings& bindings,
 								  Attribs& attribs) {
 
@@ -108,7 +108,7 @@ static u32 create_vertex_attribs(u32 binding,
 }
 
 // Takes a SORTED (by location) Attribute list
-static void create_vertex_attribs(const core::Vector<ShaderModuleBase::Attribute>& vertex_attribs,
+static void create_vertex_attribs(core::ArrayView<ShaderModuleBase::Attribute> vertex_attribs,
 								  Bindings& bindings,
 								  Attribs& attribs) {
 

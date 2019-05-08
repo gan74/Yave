@@ -37,7 +37,7 @@ class Animation {
 		y_serde(fs::magic_number, AssetType::Animation, u32(4), _duration, _channels)
 
 		float duration() const;
-		const core::Vector<AnimationChannel>& channels() const;
+		core::ArrayView<AnimationChannel> channels() const;
 
 		std::optional<math::Transform<>> bone_transform(const core::String& name, float time) const;
 

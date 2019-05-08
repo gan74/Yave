@@ -181,7 +181,7 @@ void DeviceResources::swap(DeviceResources& other) {
 	std::swap(_computes, other._computes);
 	std::swap(_material_templates, other._material_templates);
 	std::swap(_textures, other._textures);
-	std::swap(_meshes, other._materials);
+	std::swap(_materials, other._materials);
 	std::swap(_meshes, other._meshes);
 }
 

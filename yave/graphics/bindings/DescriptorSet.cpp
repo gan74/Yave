@@ -52,7 +52,7 @@ static vk::DescriptorSet create_descriptor_set(DevicePtr dptr, vk::DescriptorPoo
 		).front();
 }
 
-static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Vector<vk::DescriptorSetLayoutBinding>& /*layout_binding*/, const core::ArrayView<Binding>& bindings) {
+static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::ArrayView<Binding>& bindings) {
 	auto writes = core::vector_with_capacity<vk::WriteDescriptorSet>(bindings.size());
 	for(const auto& binding : bindings) {
 		auto w = vk::WriteDescriptorSet()
@@ -92,7 +92,7 @@ DescriptorSet::DescriptorSet(DevicePtr dptr, core::ArrayView<Binding> bindings) 
 		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
 		_pool = create_descriptor_pool(dptr, binding_counts);
 		_set = create_descriptor_set(dptr, _pool, layout);
-		update_sets(dptr, _set, layout_bindings, bindings);
+		update_sets(dptr, _set, bindings);
 	}
 }
 

@@ -100,7 +100,7 @@ const DepthAttachmentView& Framebuffer::depth_attachment() const {
 	return _depth;
 }
 
-const core::Vector<ColorAttachmentView>& Framebuffer::color_attachments() const {
+core::ArrayView<ColorAttachmentView> Framebuffer::color_attachments() const {
 	return _colors;
 }
 
