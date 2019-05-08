@@ -48,13 +48,17 @@ class SimpleMaterialData {
 		SimpleMaterialData() = default;
 		SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
-		bool is_empty() const;
-		const AssetPtr<Texture>& operator[](Textures tex) const;
-
-		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
-
 		y_serialize(SimpleMaterialHeader(), texture_ids())
 		static core::Result<SimpleMaterialData> load(io::ReaderRef reader, AssetLoader& loader) noexcept;
+
+
+		SimpleMaterialData& set_texture(Textures type, AssetPtr<Texture> tex);
+
+		bool is_empty() const;
+
+		const AssetPtr<Texture>& operator[](Textures tex) const;
+		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
+
 
 	private:
 		std::array<AssetId, texture_count> texture_ids() const;

@@ -98,8 +98,7 @@ void SceneData::load(std::string_view filename) {
 
 StaticMeshInstance* SceneData::add(AssetId id) {
 	if(auto mesh = context()->loader().load<StaticMesh>(id)) {
-		auto material = make_asset<Material>(device()->device_resources()[DeviceResources::BasicMaterialTemplate]);
-		auto inst = std::make_unique<StaticMeshInstance>(std::move(mesh.unwrap()), material);
+		auto inst = std::make_unique<StaticMeshInstance>(std::move(mesh.unwrap()), device()->device_resources()[DeviceResources::EmptyMaterial]);
 		StaticMeshInstance* inst_ptr = inst.get();
 		_to_add << std::move(inst);
 		return inst_ptr;

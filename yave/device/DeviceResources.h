@@ -25,15 +25,15 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <yave/assets/AssetPtr.h>
-#include <yave/graphics/shaders/SpirVData.h>
-#include <yave/graphics/shaders/ShaderModule.h>
 #include <yave/graphics/images/Image.h>
 
 namespace yave {
 
+class SpirVData;
 class ComputeProgram;
 class MaterialTemplate;
-
+class Material;
+class StaticMesh;
 
 class DeviceResources final : NonCopyable {
 	public:
@@ -86,6 +86,12 @@ class DeviceResources final : NonCopyable {
 			MaxMaterialTemplates
 		};
 
+		enum Materials {
+			EmptyMaterial,
+
+			MaxMaterials
+		};
+
 		enum Textures {
 			BlackTexture,
 			WhiteTexture,
@@ -95,11 +101,19 @@ class DeviceResources final : NonCopyable {
 			MaxTextures
 		};
 
+		enum Meshes {
+			CubeMesh,
+			SphereMesh,
+
+			MaxMeshes
+		};
+
 		DeviceResources(DevicePtr dptr);
 
 		// can't default for inclusion reasons
 		DeviceResources();
 		~DeviceResources();
+
 		DeviceResources(DeviceResources&& other);
 		DeviceResources& operator=(DeviceResources&& other);
 
@@ -107,15 +121,21 @@ class DeviceResources final : NonCopyable {
 		const SpirVData& operator[](SpirV i) const;
 		const ComputeProgram& operator[](ComputePrograms i) const;
 		const MaterialTemplate* operator[](MaterialTemplates i) const;
-		const Texture* operator[](Textures i) const;
+
+		const AssetPtr<Texture>& operator[](Textures i) const;
+		const AssetPtr<Material>& operator[](Materials i) const;
+		const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
 	private:
 		void swap(DeviceResources& other);
 
 		std::unique_ptr<SpirVData[]> _spirv;
 		std::unique_ptr<ComputeProgram[]> _computes;
-		std::unique_ptr<MaterialTemplate[]> _materials;
-		std::unique_ptr<Texture[]> _textures;
+		std::unique_ptr<MaterialTemplate[]> _material_templates;
+
+		std::unique_ptr<AssetPtr<Texture>[]> _textures;
+		std::unique_ptr<AssetPtr<Material>[]> _materials;
+		std::unique_ptr<AssetPtr<StaticMesh>[]> _meshes;
 
 };
 }

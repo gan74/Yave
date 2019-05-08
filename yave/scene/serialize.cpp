@@ -81,7 +81,7 @@ core::Result<Scene> Scene::load(io::ReaderRef reader, AssetLoader& loader) {
 		}
 
 		DevicePtr dptr = loader.device();
-		AssetPtr<Material> default_mat = make_asset<Material>(dptr->device_resources()[DeviceResources::BasicMaterialTemplate]);
+		AssetPtr<Material> default_mat = dptr->device_resources()[DeviceResources::EmptyMaterial];
 
 		Scene scene;
 		scene.static_meshes().set_min_capacity(header.statics);

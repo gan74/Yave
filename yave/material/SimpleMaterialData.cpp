@@ -31,18 +31,6 @@ SimpleMaterialData::SimpleMaterialData(std::array<AssetPtr<Texture>, texture_cou
 		_textures(std::move(textures)) {
 }
 
-const AssetPtr<Texture>& SimpleMaterialData::operator[](Textures tex) const {
-	return _textures[usize(tex)];
-}
-
-bool SimpleMaterialData::is_empty() const {
-	return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return !tex; });
-}
-
-const std::array<AssetPtr<Texture>, SimpleMaterialData::texture_count>& SimpleMaterialData::textures() const {
-	return  _textures;
-}
-
 core::Result<SimpleMaterialData> SimpleMaterialData::load(io::ReaderRef reader, AssetLoader& loader) noexcept {
 	try {
 		SimpleMaterialHeader().deserialize(reader);
@@ -59,10 +47,29 @@ core::Result<SimpleMaterialData> SimpleMaterialData::load(io::ReaderRef reader, 
 	return core::Err();
 }
 
+
+SimpleMaterialData& SimpleMaterialData::set_texture(Textures type, AssetPtr<Texture> tex) {
+	_textures[usize(type)] = std::move(tex);
+	return *this;
+}
+
+bool SimpleMaterialData::is_empty() const {
+	return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return !tex; });
+}
+
+const AssetPtr<Texture>& SimpleMaterialData::operator[](Textures tex) const {
+	return _textures[usize(tex)];
+}
+
+const std::array<AssetPtr<Texture>, SimpleMaterialData::texture_count>& SimpleMaterialData::textures() const {
+	return  _textures;
+}
+
 std::array<AssetId, SimpleMaterialData::texture_count> SimpleMaterialData::texture_ids() const {
 	std::array<AssetId, texture_count> ids;
 	std::transform(_textures.begin(), _textures.end(), ids.begin(), [](const auto& tex) { return tex.id(); });
 	return ids;
 }
+
 
 }

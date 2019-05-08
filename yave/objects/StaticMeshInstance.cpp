@@ -33,12 +33,6 @@ StaticMeshInstance::StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const A
 	set_radius(_mesh->radius());
 }
 
-StaticMeshInstance::StaticMeshInstance(StaticMeshInstance&& other) :
-		Renderable(other),
-		_mesh(std::move(other._mesh)),
-		_material(std::move(other._material)) {
-}
-
 void StaticMeshInstance::flush_reload() {
 	_mesh.flush_reload();
 	_material.flush_reload();

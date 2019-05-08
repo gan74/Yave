@@ -36,10 +36,6 @@ class SkinnedMeshInstance final : public Renderable {
 	public:
 		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
 
-		SkinnedMeshInstance(SkinnedMeshInstance&&) = default;
-		// cleanup SkeletonInstance so we can un delete this
-		SkinnedMeshInstance& operator=(SkinnedMeshInstance&&) = delete;
-
 		void flush_reload() override;
 
 		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const override;

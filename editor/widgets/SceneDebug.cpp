@@ -41,24 +41,19 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::Button("Spawn cubes")) {
 		auto cam_pos = context()->scene().scene_view().camera().position();
 
-		if(auto mesh = context()->loader().load<StaticMesh>("Cube")) {
-			auto material = make_asset<Material>(device()->device_resources()[DeviceResources::BasicMaterialTemplate]);
-			float mul = mesh.unwrap()->radius() * 5.0f;
+		AssetPtr<StaticMesh> mesh = device()->device_resources()[DeviceResources::CubeMesh];
+		float mul = mesh->radius() * 5.0f;
 
-			i32 size = 10;
-			for(i32 x = -size; x != size; ++x) {
-				for(i32 y = -size; y != size; ++y) {
-					for(i32 z = -size; z != size; ++z) {
-						auto inst = std::make_unique<StaticMeshInstance>(mesh.unwrap(), material);
-						inst->position() = cam_pos + math::Vec3(x, y, z) * mul;
-						context()->scene().scene().static_meshes().emplace_back(std::move(inst));
-					}
+		i32 size = 10;
+		for(i32 x = -size; x != size; ++x) {
+			for(i32 y = -size; y != size; ++y) {
+				for(i32 z = -size; z != size; ++z) {
+					auto inst = std::make_unique<StaticMeshInstance>(mesh, device()->device_resources()[DeviceResources::EmptyMaterial]);
+					inst->position() = cam_pos + math::Vec3(x, y, z) * mul;
+					context()->scene().scene().static_meshes().emplace_back(std::move(inst));
 				}
 			}
-		} else {
-			log_msg("Unable to add cubes", Log::Error);
 		}
-
 	}
 
 	ImGui::Text("Static meshes: %u", unsigned(context()->scene().scene().static_meshes().size()));

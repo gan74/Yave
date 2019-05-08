@@ -34,9 +34,6 @@ class StaticMeshInstance final : public Renderable {
 	public:
 		StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
 
-		StaticMeshInstance(StaticMeshInstance&& other);
-		StaticMeshInstance& operator=(StaticMeshInstance&& other) = delete;
-
 		void flush_reload() override;
 
 		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const override;

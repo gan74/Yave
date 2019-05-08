@@ -45,7 +45,7 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 		};
 
 		struct SceneData : NonMovable {
-			SceneData(DevicePtr dptr, const AssetPtr<StaticMesh>& mesh);
+			SceneData(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat);
 
 			Scene scene;
 			SceneView view;
@@ -68,8 +68,7 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 		void process_requests();
 		void request_thumbmail(AssetId asset);
 		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const;
-		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh) const;
-		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Material>& mat) const;
+		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const;
 
 		usize _size;
 

@@ -68,10 +68,10 @@ MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
 				return bone.has_parent() ? bone : Bone{bone.name, bone.parent, transform(bone.local_transform, tr)};
 			});
 
-		return MeshData::from_parts(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), std::move(bones));
+		return MeshData(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), std::move(bones));
 	}
 
-	return MeshData::from_parts(std::move(vertices), copy(mesh.triangles()));
+	return MeshData(std::move(vertices), copy(mesh.triangles()));
 }
 
 

@@ -37,9 +37,8 @@ MaterialEditor::MaterialEditor(ContextPtr cptr) :
 
 static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, usize index, AssetId id) {
 	if(auto tex = ctx->loader().load<Texture>(id)) {
-		std::array textures = material->data().textures();
-		textures[index] = std::move(tex.unwrap());
-		SimpleMaterialData data(std::move(textures));
+		SimpleMaterialData data = material->data();
+		data.set_texture(SimpleMaterialData::Textures(index), std::move(tex.unwrap()));
 
 		try {
 			io::Buffer buffer;
@@ -48,7 +47,6 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 			ctx->loader().set(material.id(), Material(ctx->device(), std::move(data))).or_throw("");
 
 			ctx->flush_reload();
-
 		} catch(...) {
 			log_msg("Unable to save material.", Log::Error);
 		}

@@ -22,8 +22,14 @@ SOFTWARE.
 
 #include "DeviceResources.h"
 
+#include <yave/graphics/shaders/SpirVData.h>
+#include <yave/graphics/shaders/ShaderModule.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
+
 #include <yave/material/Material.h>
+
+#include <yave/meshes/MeshData.h>
+#include <yave/meshes/StaticMesh.h>
 
 #include <y/io/File.h>
 
@@ -101,20 +107,20 @@ static_assert(sizeof(compute_spirvs) / sizeof(compute_spirvs[0]) == compute_coun
 static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == material_count);
 static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_count);
 
-
-
 static SpirVData load_spirv(const char* name) {
 	return SpirVData::deserialized(io::File::open(fmt("%.spv", name)).expected("Unable to open SPIR-V file."));
 }
 
-
+// implemented in DeviceResourcesData.cpp
+MeshData cube_mesh_data();
+MeshData sphere_mesh_data();
 
 
 DeviceResources::DeviceResources(DevicePtr dptr) :
 		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
-		_materials(std::make_unique<MaterialTemplate[]>(material_count)) ,
-		_textures(std::make_unique<Texture[]>(texture_count)) {
+		_material_templates(std::make_unique<MaterialTemplate[]>(material_count)) ,
+		_textures(std::make_unique<AssetPtr<Texture>[]>(texture_count)) {
 
 	for(usize i = 0; i != spirv_count; ++i) {
 		_spirv[i] = load_spirv(spirv_names[i]);
@@ -133,12 +139,24 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 				.set_culled(data.culled)
 				.set_blended(data.blended)
 			;
-		_materials[i] = MaterialTemplate(dptr, std::move(template_data));
+		_material_templates[i] = MaterialTemplate(dptr, std::move(template_data));
 	}
 
 	for(usize i = 0; i != texture_count; ++i) {
 		const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
-		_textures[i] = Texture(dptr, ImageData(math::Vec2ui(2), data, vk::Format::eR8G8B8A8Unorm));
+		_textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, vk::Format::eR8G8B8A8Unorm));
+	}
+
+
+	{
+		_materials = std::make_unique<AssetPtr<Material>[]>(1);
+		_materials[0] = make_asset<Material>(&_material_templates[usize(BasicMaterialTemplate)]);
+	}
+
+	{
+		_meshes = std::make_unique<AssetPtr<StaticMesh>[]>(2);
+		_meshes[0] = make_asset<StaticMesh>(dptr, cube_mesh_data());
+		_meshes[1] = make_asset<StaticMesh>(dptr, sphere_mesh_data());
 	}
 }
 
@@ -161,24 +179,40 @@ DeviceResources& DeviceResources::operator=(DeviceResources&& other) {
 void DeviceResources::swap(DeviceResources& other) {
 	std::swap(_spirv, other._spirv);
 	std::swap(_computes, other._computes);
-	std::swap(_materials, other._materials);
+	std::swap(_material_templates, other._material_templates);
 	std::swap(_textures, other._textures);
+	std::swap(_meshes, other._materials);
+	std::swap(_meshes, other._meshes);
 }
 
 const SpirVData& DeviceResources::operator[](SpirV i) const {
+	y_debug_assert(usize(i) < usize(MaxSpirV));
 	return _spirv[usize(i)];
 }
 
 const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
+	y_debug_assert(usize(i) < usize(MaxComputePrograms));
 	return _computes[usize(i)];
 }
 
 const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
-	return &_materials[usize(i)];
+	y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
+	return &_material_templates[usize(i)];
 }
 
-const Texture* DeviceResources::operator[](Textures i) const {
-	return &_textures[usize(i)];
+const AssetPtr<Texture>& DeviceResources::operator[](Textures i) const {
+	y_debug_assert(usize(i) < usize(MaxTextures));
+	return _textures[usize(i)];
+}
+
+const AssetPtr<Material>& DeviceResources::operator[](Materials i) const {
+	y_debug_assert(usize(i) < usize(MaxMaterials));
+	return _materials[usize(i)];
+}
+
+const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
+	y_debug_assert(usize(i) < usize(MaxMeshes));
+	return _meshes[usize(i)];
 }
 
 

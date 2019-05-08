@@ -27,6 +27,24 @@ SOFTWARE.
 
 namespace yave {
 
+MeshData::MeshData(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin, core::Vector<Bone>&& bones) :
+		_vertices(std::move(vertices)),
+		_triangles(std::move(triangles)) {
+
+	if(bones.is_empty() != skin.is_empty()) {
+		y_fatal("Invalid skeleton.");
+	}
+	if((!skin.is_empty() && skin.size() != _vertices.size())) {
+		y_fatal("Invalid skin data.");
+	}
+
+	std::for_each(_vertices.begin(), _vertices.end(), [this](const auto& v) { _radius = std::max(_radius, v.position.length2()); });
+
+	if(!skin.is_empty()) {
+		_skeleton = std::make_unique<SkeletonData>(SkeletonData{std::move(skin), std::move(bones)});
+	}
+}
+
 float MeshData::radius() const {
 	return _radius;
 }
@@ -67,29 +85,6 @@ core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
 
 bool MeshData::has_skeleton() const {
 	return bool(_skeleton);
-}
-
-MeshData MeshData::from_parts(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin, core::Vector<Bone>&& bones) {
-	if(bones.is_empty() != skin.is_empty()) {
-		y_fatal("Invalid skeleton.");
-	}
-	if((!skin.is_empty() && skin.size() != vertices.size())) {
-		y_fatal("Invalid skin data.");
-	}
-
-	float radius = 0.0f;
-	std::for_each(vertices.begin(), vertices.end(), [&](const auto& v) { radius = std::max(radius, v.position.length2()); });
-
-	MeshData mesh;
-	mesh._vertices = std::move(vertices);
-	mesh._triangles = std::move(triangles);
-	mesh._radius = std::sqrt(radius);
-
-	if(!skin.is_empty()) {
-		mesh._skeleton = std::make_unique<SkeletonData>(SkeletonData{std::move(skin), std::move(bones)});
-	}
-
-	return mesh;
 }
 
 }

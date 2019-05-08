@@ -77,10 +77,10 @@ MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
 
 	if(mesh->HasBones()) {
 		SkeletonData skeleton = import_skeleton(mesh, scene);
-		return MeshData::from_parts(std::move(vertices), std::move(triangles), std::move(skeleton.skin), std::move(skeleton.bones));
+		return MeshData(std::move(vertices), std::move(triangles), std::move(skeleton.skin), std::move(skeleton.bones));
 	}
 
-	return MeshData::from_parts(std::move(vertices), std::move(triangles));
+	return MeshData(std::move(vertices), std::move(triangles));
 }
 
 }

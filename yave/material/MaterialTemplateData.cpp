@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "MaterialTemplateData.h"
 
+#include <yave/graphics/shaders/ShaderModule.h>
+
 namespace yave {
 
 MaterialTemplateData& MaterialTemplateData::set_frag_data(const SpirVData& data) {

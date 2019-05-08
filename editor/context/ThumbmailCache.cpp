@@ -35,15 +35,14 @@ ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) 
 		id(asset) {
 }
 
-ThumbmailCache::SceneData::SceneData(DevicePtr dptr, const AssetPtr<StaticMesh>& mesh)
+ThumbmailCache::SceneData::SceneData(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat)
 	: view(scene) {
 
 	Light light(Light::Directional);
 	light.transform().set_basis(math::Vec3{1.0f, 0.5f, -1.0f}.normalized(), {1.0f, 0.0f, 0.0f});
 	light.color() = 5.0f;
 	scene.lights() << std::make_unique<Light>(light);
-	auto material = make_asset<Material>(dptr->device_resources()[DeviceResources::BasicMaterialTemplate]);
-	scene.static_meshes() << std::make_unique<StaticMeshInstance>(mesh, material);
+	scene.static_meshes() << std::make_unique<StaticMeshInstance>(mesh, mat);
 	view.camera().set_view(math::look_at(math::Vec3(mesh->radius() * 1.5f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 }
 
@@ -115,13 +114,17 @@ void ThumbmailCache::request_thumbmail(AssetId asset) {
 			switch(context()->asset_store().asset_type(asset).unwrap_or(AssetType::Unknown)) {
 				case AssetType::Mesh:
 					if(auto mesh = context()->loader().load<StaticMesh>(asset)) {
-						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, m); };
+						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
+								return render_thumbmail(rec, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
+							};
 					}
 				break;
 
 				case AssetType::Material:
 					if(auto mat = context()->loader().load<Material>(asset)) {
-						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, m); };
+						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
+								return render_thumbmail(rec, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
+							};
 					}
 				break;
 
@@ -150,9 +153,9 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 	return thumbmail;
 }
 
-std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh) const {
+std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const {
 	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, mesh.id());
-	SceneData scene(device(), mesh);
+	SceneData scene(mesh, mat);
 
 	{
 		auto region = recorder.region("ThumbmailCache::render");
@@ -175,11 +178,6 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 	}
 
 	return thumbmail;
-}
-
-std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Material>& material) const {
-	unused(recorder, material);
-	return nullptr;
 }
 
 

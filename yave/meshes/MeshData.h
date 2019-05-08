@@ -31,7 +31,8 @@ namespace yave {
 class MeshData {
 
 	public:
-		static MeshData from_parts(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin = {}, core::Vector<Bone>&& bones = {});
+		MeshData() = default;
+		MeshData(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin = {}, core::Vector<Bone>&& bones = {});
 
 		float radius() const;
 
@@ -43,8 +44,6 @@ class MeshData {
 		core::Vector<SkinnedVertex> skinned_vertices() const;
 
 		bool has_skeleton() const;
-
-
 
 		y_serialize(fs::magic_number, AssetType::Mesh, u32(6),
 			_radius, _vertices, _triangles, _skeleton ? u32(1) : u32(0), y_serde_cond(_skeleton, *_skeleton))
