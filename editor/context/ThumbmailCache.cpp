@@ -36,7 +36,7 @@ ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) 
 }
 
 ThumbmailCache::SceneData::SceneData(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat)
-	: view(scene) {
+		: view(scene) {
 
 	Light light(Light::Directional);
 	light.transform().set_basis(math::Vec3{1.0f, 0.5f, -1.0f}.normalized(), {1.0f, 0.0f, 0.0f});
@@ -53,9 +53,9 @@ static auto load_envmap() {
 }
 
 ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
-	ContextLinked(ctx),
-	_size(size),
-	_ibl_data(std::make_shared<IBLData>(device(), load_envmap())) {
+		ContextLinked(ctx),
+		_size(size),
+		_ibl_data(std::make_shared<IBLData>(device(), load_envmap())) {
 }
 
 void ThumbmailCache::clear() {

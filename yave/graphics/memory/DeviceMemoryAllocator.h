@@ -43,8 +43,12 @@ class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 		DeviceMemory alloc(vk::Image image);
 		DeviceMemory alloc(vk::Buffer buffer, MemoryType type);
 
-		auto heap_types() const {
+		auto heaps() const {
 			return core::Range(_heaps.begin(), _heaps.end());
+		}
+
+		auto dedicated_heaps() const {
+			return core::Range(_dedicated_heaps.begin(), _dedicated_heaps.end());
 		}
 
 	private:

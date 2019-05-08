@@ -39,7 +39,8 @@ void PerformanceMetrics::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	_frames[_current_index] = time.to_millis();
 	_current_index = (_current_index + 1) % _frames.size();
 
-	ImGui::PlotLines("Timing", _frames.begin(), _frames.size(), _current_index, "", 0.0f, 50.0f, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+	ImGui::SetNextItemWidth(-1);
+	ImGui::PlotLines("###graph", _frames.begin(), _frames.size(), _current_index, "", 0.0f, 50.0f, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
 
 	ImGui::Text("%.3u resources waiting deletion", unsigned(device()->lifetime_manager().pending_deletions()));

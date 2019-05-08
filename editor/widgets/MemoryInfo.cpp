@@ -42,13 +42,14 @@ static const char* memory_type_name(MemoryType type) {
 }
 
 MemoryInfo::MemoryInfo(ContextPtr cptr) : Widget("Memory info", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
+	std::fill(_history.begin(), _history.end(), 0.0f);
 }
 
 void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	y_profile();
 
 	usize total_used = 0;
-	for(auto&& [type, heaps] : device()->allocator().heap_types()) {
+	for(auto&& [type, heaps] : device()->allocator().heaps()) {
 		ImGui::BulletText(fmt("Heap [%]", memory_type_name(type.second)).data());
 		ImGui::Indent();
 		for(const auto& heap : heaps) {
@@ -63,8 +64,31 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::Unindent();
 	}
 
-	ImGui::Spacing();
-	ImGui::Text("Total used: %.1fMB", to_mb(total_used));
+	usize dedicated = 0;
+	for(auto&& [type, heap] : device()->allocator().dedicated_heaps()) {
+		unused(type);
+		dedicated += heap->allocated_size();
+	}
+	total_used += dedicated;
+
+	_max_usage = std::max(_max_usage, total_used);
+
+	{
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("Total used: %.1fMB", to_mb(total_used));
+		ImGui::Text("Max usage: %.1fMB", to_mb(_max_usage));
+		ImGui::Text("Dedicated allocations size: %.1fMB", to_mb(dedicated));
+
+		if(_timer.elapsed().to_secs() * _history.size() > 60.0) {
+			_timer.reset();
+			_history[_current_index] = to_mb(total_used);
+			_current_index = (_current_index + 1) % _history.size();
+		}
+
+		ImGui::SetNextItemWidth(-1);
+		ImGui::PlotLines("###graph", _history.begin(), _history.size(), _current_index, "", 0.0f, to_mb(_max_usage) * 1.33f, ImVec2(0, 80));
+	}
 }
 
 }

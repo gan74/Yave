@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
-#include <yave/scene/SceneView.h>
+#include <y/core/Chrono.h>
 
 namespace editor {
 
@@ -34,6 +34,13 @@ class MemoryInfo : public Widget, public ContextLinked {
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+
+		core::Chrono _timer;
+
+		usize _max_usage = 0;
+
+		usize _current_index = 0;
+		std::array<float, 256> _history;
 };
 
 }
