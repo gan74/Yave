@@ -23,9 +23,10 @@ SOFTWARE.
 #include "SceneRenderSubPass.h"
 
 namespace yave {
+
 static constexpr usize max_batch_size = 128 * 1024;
 
-SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view) {
+SceneRenderSubPass SceneRenderSubPass::create(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view) {
 	auto camera_buffer = framegraph.declare_typed_buffer<math::Matrix4<>>();
 	auto transform_buffer = framegraph.declare_typed_buffer<math::Transform<>>(max_batch_size);
 
@@ -43,32 +44,32 @@ SceneRenderSubPass create_scene_render(FrameGraph& framegraph, FrameGraphPassBui
 }
 
 
-void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpass, const FrameGraphPass* pass) {
+void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const {
 	y_profile();
 
 	auto& descriptor_set = pass->descriptor_sets()[0];
 
 	// fill render data
 	{
-		auto camera_mapping = pass->resources()->mapped_buffer(subpass.camera_buffer);
-		camera_mapping[0] = subpass.scene_view->camera().viewproj_matrix();
+		auto camera_mapping = pass->resources()->mapped_buffer(camera_buffer);
+		camera_mapping[0] = scene_view->camera().viewproj_matrix();
 	}
 
 	usize attrib_index = 0;
 	{
-		auto transform_mapping = pass->resources()->mapped_buffer(subpass.transform_buffer);
-		if(transform_mapping.size() < subpass.scene_view->scene().renderables().size() + subpass.scene_view->scene().static_meshes().size()) {
+		auto transform_mapping = pass->resources()->mapped_buffer(transform_buffer);
+		if(transform_mapping.size() < scene_view->scene().renderables().size() + scene_view->scene().static_meshes().size()) {
 			y_fatal("Transform buffer overflow.");
 		}
 
 		{
 			// renderables
-			for(const auto& r : subpass.scene_view->scene().renderables()) {
+			for(const auto& r : scene_view->scene().renderables()) {
 				transform_mapping[attrib_index++] = r->transform();
 			}
 
 			// static meshes
-			for(const auto& r : subpass.scene_view->scene().static_meshes()) {
+			for(const auto& r : scene_view->scene().static_meshes()) {
 				transform_mapping[attrib_index++] = r->transform();
 			}
 		}
@@ -78,19 +79,19 @@ void render_scene(RenderPassRecorder& recorder, const SceneRenderSubPass& subpas
 	if(attrib_index) {
 		u32 attrib_index = 0;
 
-		auto transform_buffer = pass->resources()->buffer<BufferUsage::AttributeBit>(subpass.transform_buffer);
-		recorder.bind_attrib_buffers({transform_buffer, transform_buffer});
+		auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(transform_buffer);
+		recorder.bind_attrib_buffers({transforms, transforms});
 
 		// renderables
 		{
-			for(const auto& r : subpass.scene_view->scene().renderables()) {
+			for(const auto& r : scene_view->scene().renderables()) {
 				r->render(recorder, Renderable::SceneData{descriptor_set, attrib_index++});
 			}
 		}
 
 		// static meshes
 		{
-			for(const auto& r : subpass.scene_view->scene().static_meshes()) {
+			for(const auto& r : scene_view->scene().static_meshes()) {
 				r->render(recorder, Renderable::SceneData{descriptor_set, attrib_index++});
 			}
 		}

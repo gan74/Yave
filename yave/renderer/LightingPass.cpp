@@ -81,7 +81,7 @@ TextureView IBLData::brdf_lut() const  {
 
 static constexpr usize max_light_count = 1024;
 
-LightingPass render_lighting(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data) {
+LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data) {
 	y_profile();
 
 	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;

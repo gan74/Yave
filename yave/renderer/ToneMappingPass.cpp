@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-ToneMappingPass render_tone_mapping(FrameGraph& framegraph, const LightingPass& lighting) {
+ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, const LightingPass& lighting) {
 	static constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
 	math::Vec2ui size = framegraph.image_size(lighting.lit);
 

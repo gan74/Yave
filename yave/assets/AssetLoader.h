@@ -66,7 +66,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 			public:
 				Result<T> set(AssetId id, T&& asset) {
 					y_profile();
-					if(id == AssetId::invalid_id()) {
+					if(id) {
 						return core::Err(ErrorType::InvalidID);
 					}
 

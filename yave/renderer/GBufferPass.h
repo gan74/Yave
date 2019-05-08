@@ -32,9 +32,10 @@ struct GBufferPass {
 	FrameGraphImageId depth;
 	FrameGraphImageId color;
 	FrameGraphImageId normal;
+
+	static GBufferPass create(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size);
 };
 
-GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size);
 }
 
 

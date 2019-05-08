@@ -19,38 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_LIGHTINGPASS_H
-#define YAVE_RENDERER_LIGHTINGPASS_H
+#ifndef YAVE_RENDERER_RENDERER_H
+#define YAVE_RENDERER_RENDERER_H
 
-#include <yave/graphics/images/IBLProbe.h>
-
-#include "GBufferPass.h"
+#include "ToneMappingPass.h"
 
 namespace yave {
 
-class IBLData : NonCopyable, public DeviceLinked {
-	public:
-		IBLData(DevicePtr dptr);
-		IBLData(DevicePtr dptr, const ImageData& envmap_data);
+struct DefaultRenderer {
+	GBufferPass gbuffer;
+	LightingPass lighting;
+	ToneMappingPass tone_mapping;
 
-		static IBLData default_data();
-
-		const IBLProbe& envmap() const;
-		TextureView brdf_lut() const;
-
-	private:
-		Texture _brdf_lut;
-		IBLProbe _envmap;
+	static DefaultRenderer create(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data);
 };
-
-
-struct LightingPass {
-	FrameGraphImageId lit;
-
-	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data);
-};
-
 
 }
 
-#endif // YAVE_RENDERER_LIGHTINGPASS_H
+#endif // YAVE_RENDERER_RENDERER_H

@@ -23,9 +23,7 @@ SOFTWARE.
 #include "EngineView.h"
 
 #include <editor/context/EditorContext.h>
-
-#include <yave/scene/SceneView.h>
-#include <yave/renderer/ToneMappingPass.h>
+#include <yave/renderer/renderer.h>
 
 #include <imgui/imgui_yave.h>
 
@@ -52,11 +50,9 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 
 	{
 		FrameGraph graph(context()->resource_pool());
-		auto gbuffer = render_gbuffer(graph, &_scene_view, content_size());
-		auto lighting = render_lighting(graph, gbuffer, _ibl_data);
-		auto tone_mapping = render_tone_mapping(graph, lighting);
+		DefaultRenderer renderer = DefaultRenderer::create(graph, &_scene_view, content_size(), _ibl_data);
 
-		FrameGraphImageId output_image = tone_mapping.tone_mapped;
+		FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{
 			FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 			builder.add_texture_input(output_image, PipelineStage::FragmentBit);

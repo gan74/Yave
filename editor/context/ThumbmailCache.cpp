@@ -23,9 +23,7 @@ SOFTWARE.
 #include "ThumbmailCache.h"
 
 #include <editor/context/EditorContext.h>
-
-#include <yave/scene/SceneView.h>
-#include <yave/renderer/ToneMappingPass.h>
+#include <yave/renderer/renderer.h>
 
 #include <thread>
 
@@ -70,7 +68,7 @@ math::Vec2ui ThumbmailCache::thumbmail_size() const {
 }
 
 TextureView* ThumbmailCache::get_thumbmail(AssetId asset) {
-	if(!asset.is_valid()) {
+	if(asset == AssetId::invalid_id()) {
 		return nullptr;
 	}
 
@@ -121,6 +119,12 @@ void ThumbmailCache::request_thumbmail(AssetId asset) {
 					}
 				break;
 
+				case AssetType::Material:
+					if(auto mat = context()->loader().load<Material>(asset)) {
+						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, m); };
+					}
+				break;
+
 				case AssetType::Image:
 					if(auto tex = context()->loader().load<Texture>(asset)) {
 						return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
@@ -135,7 +139,7 @@ void ThumbmailCache::request_thumbmail(AssetId asset) {
 		});
 }
 
-std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) {
+std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const {
 	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, tex.id());
 
 	{
@@ -146,7 +150,7 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 	return thumbmail;
 }
 
-std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh) {
+std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<StaticMesh>& mesh) const {
 	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, mesh.id());
 	SceneData scene(device(), mesh);
 
@@ -154,15 +158,13 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 		auto region = recorder.region("ThumbmailCache::render");
 
 		FrameGraph graph(context()->resource_pool());
-		auto gbuffer = render_gbuffer(graph, &scene.view, thumbmail->image.size());
-		auto lighting = render_lighting(graph, gbuffer, _ibl_data);
-		auto tone_mapping = render_tone_mapping(graph, lighting);
+		DefaultRenderer renderer = DefaultRenderer::create(graph, &scene.view, thumbmail->image.size(), _ibl_data);
 
-		FrameGraphImageId output_image = tone_mapping.tone_mapped;
+		FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{
 			FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
 			builder.add_uniform_input(output_image);
-			builder.add_uniform_input(gbuffer.depth);
+			builder.add_uniform_input(renderer.gbuffer.depth);
 			builder.add_uniform_input(StorageView(thumbmail->image));
 			builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 					recorder.dispatch_size(device()->device_resources()[DeviceResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
@@ -173,6 +175,11 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 	}
 
 	return thumbmail;
+}
+
+std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Material>& material) const {
+	unused(recorder, material);
+	return nullptr;
 }
 
 

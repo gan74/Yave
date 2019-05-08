@@ -40,15 +40,15 @@ struct AssetId {
 			return AssetType(_id & _type_mask);
 		}*/
 
-		constexpr bool is_valid() const {
+		/*constexpr bool is_valid() const {
 			return _id != _invalid_id;
-		}
+		}*/
 
-		constexpr operator i64() const {
+		constexpr operator u64() const {
 			return _id;
 		}
 
-		constexpr i64 id() const {
+		constexpr u64 id() const {
 			return _id;
 		}
 
@@ -68,18 +68,17 @@ struct AssetId {
 		/*constexpr AssetId(i64 id, AssetType type) : _id((id << _id_offset) | i64(type)) {
 		}*/
 
-		constexpr AssetId(i64 id) : _id(id) {
+		constexpr AssetId(u64 id) : _id(id) {
 		}
 
 	private:
-		static constexpr i64 _invalid_id = 0xFFFFFFFFFFFFFFFF;
+		static constexpr u64 _invalid_id = 0xFFFFFFFFFFFFFFFF;
 
-		i64 _id = _invalid_id;
+		u64 _id = _invalid_id;
 };
 
 static_assert(sizeof(AssetId) == sizeof(i64));
 static_assert(AssetId() == AssetId::invalid_id());
-static_assert(!AssetId().is_valid());
 //static_assert(AssetId().type() == AssetType::Unknown);
 static_assert(std::is_trivially_copyable_v<AssetId>);
 
@@ -92,7 +91,7 @@ class AssetIdFactory {
 		}
 
 	private:
-		i64 _next_id = 0;
+		u64 _next_id = 0;
 };
 
 }
@@ -101,9 +100,9 @@ class AssetIdFactory {
 
 namespace std {
 template<>
-struct hash<yave::AssetId> : hash<yave::i64> {
+struct hash<yave::AssetId> : hash<yave::u64> {
 	auto operator()(const yave::AssetId& id) const {
-		return hash<yave::i64>::operator()(id);
+		return hash<yave::u64>::operator()(id);
 	}
 };
 }

@@ -28,9 +28,10 @@ namespace yave {
 
 struct ToneMappingPass {
 	FrameGraphImageId tone_mapped;
+
+	static ToneMappingPass create(FrameGraph& framegraph, const LightingPass& lighting);
 };
 
-ToneMappingPass render_tone_mapping(FrameGraph& framegraph, const LightingPass& lighting);
 
 }
 

@@ -104,7 +104,7 @@ core::Result<Scene> Scene::load(io::ReaderRef reader, AssetLoader& loader) {
 				continue;
 			}
 
-			core::Result<AssetPtr<Material>> material = mat_id.is_valid() ? loader.load<Material>(mat_id) : core::Ok(default_mat);
+			core::Result<AssetPtr<Material>> material = mat_id != AssetId::invalid_id() ? loader.load<Material>(mat_id) : core::Ok(default_mat);
 			if(!material) {
 				log_msg("Unable to load material, skipping.", Log::Warning);
 				continue;

@@ -46,11 +46,11 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
 	FrameGraph framegraph(context()->resource_pool());
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
-	SceneRenderSubPass scene_pass = create_scene_render(framegraph, builder, &context()->scene().scene_view());
+	SceneRenderSubPass scene_pass = SceneRenderSubPass::create(framegraph, builder, &context()->scene().scene_view());
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			{
 				auto render_pass = recorder.bind_framebuffer(_framebuffer);
-				render_scene(render_pass, scene_pass, self);
+				scene_pass.render(render_pass, self);
 			}
 			const auto& program = recorder.device()->device_resources()[DeviceResources::PickingProgram];
 			recorder.dispatch(program, math::Vec3ui(1), {_descriptor_set}, uv);

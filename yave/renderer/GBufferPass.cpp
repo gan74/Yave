@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size) {
+GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size) {
 	static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 	static constexpr vk::Format color_format = vk::Format::eR8G8B8A8Unorm;
 	static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
@@ -39,14 +39,14 @@ GBufferPass render_gbuffer(FrameGraph& framegraph, const SceneView* view, const 
 	pass.depth = depth;
 	pass.color = color;
 	pass.normal = normal;
-	pass.scene_pass = create_scene_render(framegraph, builder, view);
+	pass.scene_pass = SceneRenderSubPass::create(framegraph, builder, view);
 
 	builder.add_depth_output(depth);
 	builder.add_color_output(color);
 	builder.add_color_output(normal);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			render_scene(render_pass, pass.scene_pass, self);
+			pass.scene_pass.render(render_pass, self);
 		});
 
 	return pass;
