@@ -182,6 +182,12 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 		if(ImGui::BeginMenuBar()) {
 			if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
 
+				if(ImGui::MenuItem(ICON_FA_FILE " New")) {
+					context()->scene().set(Scene());
+				}
+
+				ImGui::Separator();
+
 				if(ImGui::MenuItem(ICON_FA_SAVE " Save")) {
 					FileBrowser* browser = context()->ui().show<FileBrowser>();
 					browser->set_extension_filter("*.ys");

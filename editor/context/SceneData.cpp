@@ -89,11 +89,15 @@ void SceneData::load(std::string_view filename) {
 	y_profile();
 	if(auto file = io::File::open(filename)) {
 		if(auto sce = Scene::load(file.unwrap(), context()->loader())) {
-			_scene = std::move(sce.unwrap());
+			set(std::move(sce.unwrap()));
 			return;
 		}
 	}
 	log_msg("Unable to load scene.", Log::Error);
+}
+
+void SceneData::set(Scene&& scene) {
+	_scene = std::move(scene);
 }
 
 StaticMeshInstance* SceneData::add(AssetId id) {

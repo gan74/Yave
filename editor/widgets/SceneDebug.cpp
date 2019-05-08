@@ -38,6 +38,8 @@ SceneDebug::SceneDebug(ContextPtr cptr) : Widget("Scene debug", ImGuiWindowFlags
 }
 
 void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+
+	ImGui::SetNextItemWidth(-1);
 	if(ImGui::Button("Spawn cubes")) {
 		auto cam_pos = context()->scene().scene_view().camera().position();
 
@@ -52,6 +54,32 @@ void SceneDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 					inst->position() = cam_pos + math::Vec3(x, y, z) * mul;
 					context()->scene().scene().static_meshes().emplace_back(std::move(inst));
 				}
+			}
+		}
+	}
+
+	ImGui::SetNextItemWidth(-1);
+	if(ImGui::Button("Spawn material test")) {
+		AssetPtr<StaticMesh> mesh = device()->device_resources()[DeviceResources::SphereMesh];
+
+		i32 size = 10;
+		for(i32 x = 0; x <= size; ++x) {
+			for(i32 y = 0; y <= size; ++y) {
+				u8 roughness = (x / float(size)) * 255;
+				u8 metallic = (y / float(size)) * 255;
+
+				u16 texel = roughness << 8 | metallic;
+
+				std::array<u16, 4> tex_data = {texel, texel, texel, texel};
+				AssetPtr<Texture> texture = make_asset<Texture>(device(), ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(tex_data.data()), vk::Format::eR8G8Unorm));
+				SimpleMaterialData data = SimpleMaterialData()
+						.set_texture(SimpleMaterialData::Diffuse, device()->device_resources()[DeviceResources::RedTexture])
+						.set_texture(SimpleMaterialData::RoughnessMetallic, texture)
+					;
+
+				auto inst = std::make_unique<StaticMeshInstance>(mesh, make_asset<Material>(device(), std::move(data)));
+				inst->position() = math::Vec3(x, y, 0.0f) * 2.0f;
+				context()->scene().scene().static_meshes().emplace_back(std::move(inst));
 			}
 		}
 	}

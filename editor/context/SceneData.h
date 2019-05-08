@@ -49,6 +49,7 @@ class SceneData : public ContextLinked, NonMovable {
 
 		void save(std::string_view filename);
 		void load(std::string_view filename);
+		void set(Scene&& scene);
 
 		StaticMeshInstance* add(AssetId id);
 		StaticMeshInstance* add(std::string_view name);
