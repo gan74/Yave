@@ -113,7 +113,10 @@ std::string_view FileBrowser::path() const {
 
 
 void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+	static constexpr isize button_width = 75;
+
 	{
+		ImGui::PushItemWidth(-button_width);
 		if(ImGui::InputText("###path", _path_buffer.begin(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			set_path(full_path());
 		}
@@ -123,34 +126,39 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		}
 	}
 
-	if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-		set_path(full_path());
-	}
-
-	ImGui::SameLine();
-	if(ImGui::Button("Cancel")) {
-		cancel();
-	}
-
-	ImGui::BeginChild("###fileentries");
 	{
-		if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
-			if(auto p = _filesystem->parent_path(path())) {
-				set_path(p.unwrap());
-			}
+		ImGui::PushItemWidth(-button_width);
+		if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			set_path(full_path());
 		}
 
-		const char* icons[] = {ICON_FA_FOLDER, ICON_FA_FILE_ALT, ICON_FA_QUESTION};
-
-		for(usize i = 0; i != _entries.size(); ++i) {
-			const auto& name = _entries[i].first;
-			if(ImGui::Selectable(fmt("% %", icons[usize(_entries[i].second)], name).data())) {
-				set_path(_filesystem->join(path(), name));
-				break;
-			}
+		ImGui::SameLine();
+		if(ImGui::Button("Cancel")) {
+			cancel();
 		}
 	}
-	ImGui::EndChild();
+
+	{
+		ImGui::BeginChild("###fileentries");
+		{
+			if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
+				if(auto p = _filesystem->parent_path(path())) {
+					set_path(p.unwrap());
+				}
+			}
+
+			const char* icons[] = {ICON_FA_FOLDER, ICON_FA_FILE_ALT, ICON_FA_QUESTION};
+
+			for(usize i = 0; i != _entries.size(); ++i) {
+				const auto& name = _entries[i].first;
+				if(ImGui::Selectable(fmt("% %", icons[usize(_entries[i].second)], name).data())) {
+					set_path(_filesystem->join(path(), name));
+					break;
+				}
+			}
+		}
+		ImGui::EndChild();
+	}
 }
 
 }

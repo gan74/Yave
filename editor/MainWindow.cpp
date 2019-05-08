@@ -31,11 +31,13 @@ SOFTWARE.
 #include <editor/widgets/PropertyPanel.h>
 #include <editor/widgets/SettingsPanel.h>
 #include <editor/widgets/CameraDebug.h>
-#include <editor/widgets/memoryInfo.h>
+#include <editor/widgets/MemoryInfo.h>
 #include <editor/widgets/PerformanceMetrics.h>
-#include <editor/widgets/SceneDebug.h>
 #include <editor/widgets/ResourceBrowser.h>
 #include <editor/widgets/MaterialEditor.h>
+
+#include <editor/widgets/SceneDebug.h>
+#include <editor/widgets/AssetStringifier.h>
 
 #include <editor/EngineView.h>
 
@@ -210,6 +212,7 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
 					if(ImGui::MenuItem("Scene debug")) context()->ui().add<SceneDebug>();
+					if(ImGui::MenuItem("Asset stringifier")) context()->ui().add<AssetStringifier>();
 					if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
 
 					y_debug_assert(!ImGui::MenuItem("Debug assert"));
