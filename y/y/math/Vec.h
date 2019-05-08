@@ -158,6 +158,22 @@ class Vec
 			return v;
 		}
 
+		Vec max(const Vec& v) const {
+			Vec m;
+			for(usize i = 0; i != N; ++i) {
+				m[i] = std::max(_vec[i], v[i]);
+			}
+			return m;
+		}
+
+		Vec min(const Vec& v) const {
+			Vec m;
+			for(usize i = 0; i != N; ++i) {
+				m[i] = std::min(_vec[i], v[i]);
+			}
+			return m;
+		}
+
 		T& x() {
 			return _vec[0];
 		}
