@@ -57,7 +57,7 @@ FileSystemModel::Result<core::String> FolderAssetStore::FolderFileSystemModel::p
 			}
 		}
 	}
-	return core::Err();
+	return core::Ok(core::String());
 }
 
 FileSystemModel::Result<bool> FolderAssetStore::FolderFileSystemModel::exists(std::string_view path) const  {
@@ -259,7 +259,7 @@ AssetStore::Result<> FolderAssetStore::rename(AssetId id, std::string_view new_n
 	}
 
 	if(_from_name.find(new_name) != _from_name.end()) {
-		return core::Err(ErrorType::UnknownID);
+		return core::Err(ErrorType::AlreadyExistingID);
 	}
 
 	const auto& old_name = it->second->name;
