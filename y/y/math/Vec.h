@@ -106,11 +106,7 @@ class Vec
 		Vec& operator=(const Vec&) = default;
 
 		T length2() const {
-			T sum = 0;
-			for(usize i = 0; i != N; ++i) {
-				sum += _vec[i] * _vec[i];
-			}
-			return sum;
+			return dot(*this);
 		}
 
 		auto length() const {
@@ -147,9 +143,17 @@ class Vec
 
 		Vec abs() const {
 			static_assert(std::is_signed_v<T>, "Vec<T>::abs makes no sense for T unsigned");
-			Vec v(*this);
+			Vec v;
 			for(usize i = 0; i != N; ++i) {
 				v[i] = _vec[i] < 0 ? -_vec[i] : _vec[i];
+			}
+			return v;
+		}
+
+		Vec saturated() const {
+			Vec v;
+			for(usize i = 0; i != N; ++i) {
+				v[i] = std::clamp(_vec[i], T(0), T(1));
 			}
 			return v;
 		}
