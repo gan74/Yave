@@ -55,13 +55,6 @@ usize ImageFormat::bit_per_pixel() const {
 		case vk::Format::eR8Uint:
 		case vk::Format::eR8Sint:
 		case vk::Format::eR8Srgb:
-		case vk::Format::eR8G8Unorm:
-		case vk::Format::eR8G8Snorm:
-		case vk::Format::eR8G8Uscaled:
-		case vk::Format::eR8G8Sscaled:
-		case vk::Format::eR8G8Uint:
-		case vk::Format::eR8G8Sint:
-		case vk::Format::eR8G8Srgb:
 		case vk::Format::eS8Uint:
 		case vk::Format::eBc2UnormBlock:
 		case vk::Format::eBc2SrgbBlock:
@@ -84,6 +77,13 @@ usize ImageFormat::bit_per_pixel() const {
 		case vk::Format::eR5G5B5A1UnormPack16:
 		case vk::Format::eB5G5R5A1UnormPack16:
 		case vk::Format::eA1R5G5B5UnormPack16:
+		case vk::Format::eR8G8Unorm:
+		case vk::Format::eR8G8Snorm:
+		case vk::Format::eR8G8Uscaled:
+		case vk::Format::eR8G8Sscaled:
+		case vk::Format::eR8G8Uint:
+		case vk::Format::eR8G8Sint:
+		case vk::Format::eR8G8Srgb:
 		case vk::Format::eR16Unorm:
 		case vk::Format::eR16Snorm:
 		case vk::Format::eR16Uscaled:
