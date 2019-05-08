@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_MEMORY_DEVICEALLOCATOR_H
-#define YAVE_GRAPHICS_MEMORY_DEVICEALLOCATOR_H
+#ifndef YAVE_GRAPHICS_MEMORY_DEVICEMEMORYALLOCATOR_H
+#define YAVE_GRAPHICS_MEMORY_DEVICEMEMORYALLOCATOR_H
 
 #include "DeviceMemoryHeap.h"
 #include "DedicatedDeviceMemoryAllocator.h"
@@ -30,20 +30,22 @@ SOFTWARE.
 
 namespace yave {
 
-class DeviceAllocator : NonCopyable, public DeviceLinked {
+class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 
 	using HeapType = std::pair<u32, MemoryType>;
 
 	static constexpr usize dedicated_threshold = DeviceMemoryHeap::heap_size / 2;
 
 	public:
-		DeviceAllocator() = default;
-		DeviceAllocator(DevicePtr dptr);
+		DeviceMemoryAllocator() = default;
+		DeviceMemoryAllocator(DevicePtr dptr);
 
 		DeviceMemory alloc(vk::Image image);
 		DeviceMemory alloc(vk::Buffer buffer, MemoryType type);
 
-		core::String dump_info() const;
+		auto heap_types() const {
+			return core::Range(_heaps.begin(), _heaps.end());
+		}
 
 	private:
 		DeviceMemory alloc(vk::MemoryRequirements reqs, MemoryType type);
@@ -58,4 +60,4 @@ class DeviceAllocator : NonCopyable, public DeviceLinked {
 
 }
 
-#endif // YAVE_GRAPHICS_MEMORY_DEVICEALLOCATOR_H
+#endif // YAVE_GRAPHICS_MEMORY_DEVICEMEMORYALLOCATOR_H

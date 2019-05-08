@@ -32,7 +32,7 @@ SOFTWARE.
 
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/queues/QueueFamily.h>
-#include <yave/graphics/memory/DeviceAllocator.h>
+#include <yave/graphics/memory/DeviceMemoryAllocator.h>
 
 #include <thread>
 
@@ -53,7 +53,7 @@ class Device : NonMovable {
 		const PhysicalDevice& physical_device() const;
 		const Instance& instance() const;
 
-		DeviceAllocator& allocator() const;
+		DeviceMemoryAllocator& allocator() const;
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
 
@@ -103,7 +103,7 @@ class Device : NonMovable {
 
 		ScopedDevice _device;
 
-		mutable DeviceAllocator _allocator;
+		mutable DeviceMemoryAllocator _allocator;
 		mutable LifetimeManager _lifetime_manager;
 
 		core::Vector<Queue> _queues;

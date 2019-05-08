@@ -134,7 +134,7 @@ const Instance &Device::instance() const {
 	return _instance;
 }
 
-DeviceAllocator& Device::allocator() const {
+DeviceMemoryAllocator& Device::allocator() const {
 	return _allocator;
 }
 

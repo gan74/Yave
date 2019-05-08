@@ -57,7 +57,10 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		void* map(const DeviceMemoryView& view) override;
 		void unmap(const DeviceMemoryView&) override;
 
+		usize size() const;
 		usize available() const; // slow!
+		usize free_blocks() const;
+
 		bool mapped() const;
 
 	private:

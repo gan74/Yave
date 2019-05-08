@@ -149,12 +149,20 @@ void* DeviceMemoryHeap::map(const DeviceMemoryView& view) {
 void DeviceMemoryHeap::unmap(const DeviceMemoryView&) {
 }
 
+usize DeviceMemoryHeap::size() const {
+	return heap_size;
+}
+
 usize DeviceMemoryHeap::available() const {
 	usize tot = 0;
 	for(const auto& b : _blocks) {
 		tot += b.size;
 	}
 	return tot;
+}
+
+usize DeviceMemoryHeap::free_blocks() const {
+	return _blocks.size();
 }
 
 }

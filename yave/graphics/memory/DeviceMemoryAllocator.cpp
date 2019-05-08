@@ -20,21 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DeviceAllocator.h"
+#include "DeviceMemoryAllocator.h"
 #include "alloc.h"
 
 namespace yave {
 
 #warning DeviceAllocator does not count allocs
 
-DeviceAllocator::DeviceAllocator(DevicePtr dptr) :
+DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_max_allocs(dptr->vk_limits().maxMemoryAllocationCount) {
 
 	log_msg(fmt("Max device memory allocation count: %", _max_allocs));
 }
 
-DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type) {
+DeviceMemory DeviceMemoryAllocator::dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type) {
 	y_profile();
 	auto& heap = _dedicated_heaps[type];
 	if(!heap) {
@@ -43,7 +43,7 @@ DeviceMemory DeviceAllocator::dedicated_alloc(vk::MemoryRequirements reqs, Memor
 	return std::move(heap->alloc(reqs).unwrap());
 }
 
-DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
+DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
 	y_profile();
 
 	std::unique_lock lock(_lock);
@@ -72,38 +72,12 @@ DeviceMemory DeviceAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type
 	return std::move(alloc);
 }
 
-
-DeviceMemory DeviceAllocator::alloc(vk::Image image) {
+DeviceMemory DeviceMemoryAllocator::alloc(vk::Image image) {
 	return alloc(device()->vk_device().getImageMemoryRequirements(image), MemoryType::DeviceLocal);
 }
 
-DeviceMemory DeviceAllocator::alloc(vk::Buffer buffer, MemoryType type) {
+DeviceMemory DeviceMemoryAllocator::alloc(vk::Buffer buffer, MemoryType type) {
 	return alloc(device()->vk_device().getBufferMemoryRequirements(buffer), type);
-}
-
-
-core::String DeviceAllocator::dump_info() const {
-	std::unique_lock lock(_lock);
-	core::String str = "Allocator:\n";
-	str += fmt("  maximum allocations: %\n", _max_allocs);
-	for(auto& heaps : _heaps) {
-		//str += "  Memory type = "_s + usize(heaps.first.second) + "|" + heaps.first.first + "\n";
-		str += fmt("  Memory type: % (%)\n", is_cpu_visible(heaps.first.second) ? "CPU" : "Device", heaps.first.first);
-		for(auto& h : heaps.second) {
-			auto available = h->available();
-
-			core::String bar = "                ";
-			float ratio = (available / float(h->heap_size));
-			std::fill_n(bar.begin(), usize(std::round((1.0f - ratio) * bar.size())), '#');
-
-			str += "    heap:\n";
-			str += fmt("      |%|\n", bar);
-			str += fmt("      total: % KB\n", h->heap_size / 1024);
-			str += fmt("      free : % KB\n", available / 1024);
-			str += fmt("      used : % KB\n", (h->heap_size - available) / 1024);
-		}
-	}
-	return str;
 }
 
 }

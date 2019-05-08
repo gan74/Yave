@@ -28,12 +28,43 @@ SOFTWARE.
 
 namespace editor {
 
+static usize to_kb(usize b) {
+	return b / 1024;
+}
+
+static float to_mb(usize b) {
+	return b / float(1024 * 1024);
+}
+
+static const char* memory_type_name(MemoryType type) {
+	const char* names[] = {"Generic", "Device local", "Host visible", "Staging"};
+	return names[usize(type)];
+}
+
 MemoryInfo::MemoryInfo(ContextPtr cptr) : Widget("Memory info", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
 }
 
 void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	core::String dump = device()->allocator().dump_info().data();
-	ImGui::TextUnformatted(dump.begin(), dump.end());
+	y_profile();
+
+	usize total_used = 0;
+	for(auto&& [type, heaps] : device()->allocator().heap_types()) {
+		ImGui::BulletText(fmt("Heap [%]", memory_type_name(type.second)).data());
+		ImGui::Indent();
+		for(const auto& heap : heaps) {
+			usize free = heap->available();
+			usize used = heap->size() - free;
+			total_used += used;
+
+			ImGui::ProgressBar(used / float(heap->size()), ImVec2(0, 0), fmt("%KB / %KB", to_kb(used), to_kb(heap->size())).data());
+			ImGui::Text("Free blocks: %u", unsigned(heap->free_blocks()));
+			ImGui::Spacing();
+		}
+		ImGui::Unindent();
+	}
+
+	ImGui::Spacing();
+	ImGui::Text("Total used: %.1fMB", to_mb(total_used));
 }
 
 }
