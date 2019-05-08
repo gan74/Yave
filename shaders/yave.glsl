@@ -364,7 +364,7 @@ void unpack_color(vec4 buff, out vec3 color, out float metallic) {
 
 void unpack_normal(vec4 buff, out vec3 normal, out float roughness) {
 	normal = normalize(buff.xyz * 2.0 - vec3(1.0));
-	roughness = buff.w;
+	roughness = max(0.05, buff.w);
 }
 
 

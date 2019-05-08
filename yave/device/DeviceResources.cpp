@@ -94,6 +94,7 @@ static constexpr const char* spirv_names[] = {
 static constexpr std::array<u32, 4> texture_colors[] = {
 		{0, 0, 0, 0},
 		{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF},
+		{0xFF0000FF, 0xFF0000FF, 0xFF0000FF, 0xFF0000FF},
 		{0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F}
 	};
 

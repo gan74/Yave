@@ -36,7 +36,7 @@ class SimpleMaterialData {
 	};
 
 	public:
-		enum class Textures {
+		enum Textures {
 			Diffuse,
 			Normal,
 			RoughnessMetallic,
