@@ -39,6 +39,7 @@ struct FunctionBase : NonCopyable {
 	}
 
 	virtual Ret apply(Args...) = 0;
+	virtual Ret apply_const(Args...) const = 0;
 
 };
 
@@ -49,6 +50,14 @@ struct Function : FunctionBase<Ret, Args...> {
 		}
 
 		Ret apply(Args... args) override {
+			if constexpr(std::is_void_v<Ret>) {
+				_func(y_fwd(args)...);
+			} else {
+				return _func(y_fwd(args)...);
+			}
+		}
+
+		Ret apply_const(Args... args) const override {
 			if constexpr(std::is_void_v<Ret>) {
 				_func(y_fwd(args)...);
 			} else {
@@ -97,8 +106,12 @@ class Functor<Container, Ret(Args...)> {
 			return _function != other._function;
 		}
 
-		Ret operator()(Args... args) const {
+		Ret operator()(Args... args) {
 			return _function->apply(y_fwd(args)...);
+		}
+
+		Ret operator()(Args... args) const {
+			return _function->apply_const(y_fwd(args)...);
 		}
 
 	private:
