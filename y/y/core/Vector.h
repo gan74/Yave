@@ -78,7 +78,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		template<typename It>
-		Vector(const It& beg_it, const It& end_it) {
+		Vector(It beg_it, It end_it) {
 			assign(beg_it, end_it);
 		}
 
@@ -158,7 +158,7 @@ class Vector : ResizePolicy, Allocator {
 
 
 		template<typename It>
-		void assign(const It& beg_it, const It& end_it) {
+		void assign(It beg_it, It end_it) {
 			make_empty();
 			set_min_capacity(std::distance(beg_it, end_it));
 			push_back(beg_it, end_it);
