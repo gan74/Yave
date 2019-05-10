@@ -29,11 +29,14 @@ void main() {
 	for(uint i = 0; i != 6; ++i) {
 		vec3 local_dir = normalize(cube_dir(uv, i));
 
-		vec3 conv = constants.roughness <= 0.0
-					? texture(in_envmap, local_dir).rgb
-					: constants.roughness >= 1.0
-						? diffuse_convolution(in_envmap, local_dir)
-						: specular_convolution(in_envmap, local_dir, constants.roughness);
+		vec3 conv;
+		if(constants.roughness <= 0.0) {
+			conv = texture(in_envmap, local_dir).rgb;
+		} else if(constants.roughness >= 1.0) {
+			conv = diffuse_convolution(in_envmap, local_dir);
+		} else {
+			conv = specular_convolution(in_envmap, local_dir, constants.roughness);
+		}
 
 		imageStore(out_image, ivec3(coord, i), vec4(conv, 0.0));
 	}

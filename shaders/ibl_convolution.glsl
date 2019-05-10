@@ -48,9 +48,9 @@ vec3 specular_convolution(samplerCube envmap, vec3 N, float roughness) {
 	vec3 V = N;
 	float total = 0.0;
 	vec3 acc = vec3(0.0);
-	const uint SAMPLE_COUNT = 1024;
-	for(uint i = 0; i != SAMPLE_COUNT; ++i) {
-		vec2 Xi = hammersley(i, SAMPLE_COUNT);
+	const uint sample_count = 1024;
+	for(uint i = 0; i != sample_count; ++i) {
+		vec2 Xi = hammersley(i, sample_count);
 		vec3 H  = importance_sample_GGX(Xi, N, roughness);
 		vec3 L  = normalize(2.0 * dot(V, H) * H - V);
 		float NoL = max(0.0, dot(N, L));
@@ -66,9 +66,9 @@ vec3 specular_convolution(sampler2D envmap, vec3 N, float roughness) {
 	vec3 V = N;
 	float total = 0.0;
 	vec3 acc = vec3(0.0);
-	const uint SAMPLE_COUNT = 1024;
-	for(uint i = 0; i != SAMPLE_COUNT; ++i) {
-		vec2 Xi = hammersley(i, SAMPLE_COUNT);
+	const uint sample_count = 1024;
+	for(uint i = 0; i != sample_count; ++i) {
+		vec2 Xi = hammersley(i, sample_count);
 		vec3 H  = importance_sample_GGX(Xi, N, roughness);
 		vec3 L  = normalize(2.0 * dot(V, H) * H - V);
 		float NoL = max(0.0, dot(N, L));
