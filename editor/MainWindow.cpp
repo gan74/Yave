@@ -135,8 +135,6 @@ void MainWindow::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 
 	Y_TODO(move ui code out of main window)
 
-	_ui_renderer->set_style(context()->settings().ui().style); // move that too
-
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking |

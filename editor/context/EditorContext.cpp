@@ -53,7 +53,7 @@ void EditorContext::flush_reload() {
 	});
 }
 
-void EditorContext::defer(core::Function<void()>&& func) {
+void EditorContext::defer(core::Function<void()> func) {
 	std::unique_lock _(_deferred_lock);
 	if(_is_flushing_deferred) {
 		y_fatal("Defer called from already deferred function.");

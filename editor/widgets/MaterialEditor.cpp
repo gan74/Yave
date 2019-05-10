@@ -63,15 +63,16 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	AssetPtr<Material> material = context()->selection().material();
 	const SimpleMaterialData& data = material->data();
-	math::Vec2ui thumb_size = context()->thumbmail_cache().thumbmail_size() / 2;
+	math::Vec2 thumb_size = context()->thumbmail_cache().thumbmail_size() / 2;
 
+	std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness\nMetallic"};
 	for(usize i = 0; i != data.textures().size(); ++i) {
 		ImGui::PushID(fmt("%", i).data());
 
 		TextureView* view = context()->thumbmail_cache().get_thumbmail(data.textures()[i].id());
 		bool clicked = view
 			? ImGui::ImageButton(view, thumb_size)
-			: ImGui::Button(fmt("Texture###%", i).data(), thumb_size);
+			: ImGui::Button(texture_names[i], thumb_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
 
 		if(clicked) {
 			AssetSelector* selector = context()->ui().add<AssetSelector>(AssetType::Image);
@@ -82,7 +83,6 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		}
 
 		ImGui::PopID();
-		ImGui::SameLine();
 	}
 
 

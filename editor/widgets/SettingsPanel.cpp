@@ -49,7 +49,7 @@ SettingsPanel::SettingsPanel(ContextPtr cptr) : Widget("Settings"), ContextLinke
 void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	int flags = ImGuiTreeNodeFlags_DefaultOpen;
 
-	if(ImGui::CollapsingHeader("UI", flags)) {
+	/*if(ImGui::CollapsingHeader("UI", flags)) {
 		std::array<const char*, 3> style_names = {"Yave", "Corporate", "Corporate 3D"};
 		if(ImGui::BeginCombo("Style", style_names[usize(context()->settings().ui().style)])) {
 			for(usize i = 0; i != style_names.size(); ++i) {
@@ -59,7 +59,7 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			}
 			ImGui::EndCombo();
 		}
-	}
+	}*/
 
 	if(ImGui::CollapsingHeader("Camera", flags)) {
 		keybox("Forward", context()->settings().camera().move_forward);

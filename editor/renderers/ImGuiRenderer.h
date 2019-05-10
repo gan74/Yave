@@ -50,7 +50,6 @@ class ImGuiRenderer : NonCopyable, public DeviceLinked {
 		void render(RenderPassRecorder& recorder, const FrameToken& token);
 
 		void set_style(Style st);
-		Style style() const;
 
 	protected:
 		void setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* data);
@@ -66,10 +65,6 @@ class ImGuiRenderer : NonCopyable, public DeviceLinked {
 		TextureView _font_view;
 
 		std::unordered_map<VkImageView, DescriptorSet> _descriptor_sets;
-
-		Style _style;
-
-
 
 };
 

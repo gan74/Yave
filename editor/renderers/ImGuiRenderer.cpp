@@ -86,18 +86,10 @@ void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const FrameToken& 
 }
 
 void ImGuiRenderer::set_style(Style st) {
-	if(_style == st) {
-		return;
-	}
-
-	_style = st;
+	Style _style = st;
 	{
 #include "style.h"
 	}
-}
-
-ImGuiRenderer::Style ImGuiRenderer::style()  const {
-	return _style;
 }
 
 void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token) {

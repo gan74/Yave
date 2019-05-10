@@ -49,7 +49,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 
 		void flush_reload();
 
-		void defer(core::Function<void()>&& func);
+		void defer(core::Function<void()> func);
 		void flush_deferred();
 
 		const FileSystemModel* filesystem() const {
