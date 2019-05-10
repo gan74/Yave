@@ -34,7 +34,7 @@ MaterialTemplate::MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data) 
 }
 
 const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) const {
-#warning MaterialTemplate::compile not thread safe
+	Y_TODO(make material compilation thread safe?)
 	if(!render_pass.vk_render_pass()) {
 		y_fatal("Unable to compile material: null renderpass.");
 	}

@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-#warning DeviceAllocator does not count allocs
+Y_TODO(DeviceAllocator should track allocation count)
 
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),

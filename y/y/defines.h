@@ -29,6 +29,10 @@ struct Nothing;
 
 }
 
+
+
+#define Y_TODO(msg) /* msg */
+
 #ifndef NDEBUG
 #define Y_DEBUG
 #endif

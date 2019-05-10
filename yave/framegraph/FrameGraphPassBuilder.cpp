@@ -104,7 +104,7 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_in
 
 // --------------------------------- External ---------------------------------
 
-#warning external resources are not sync
+Y_TODO(external framegraph resources are not synchronized)
 void FrameGraphPassBuilder::add_uniform_input(StorageView tex, usize ds_index, PipelineStage) {
 	add_uniform(Binding(tex), ds_index);
 }

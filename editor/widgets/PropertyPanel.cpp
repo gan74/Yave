@@ -121,7 +121,7 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 }
 
 void PropertyPanel::static_mesh_panel(StaticMeshInstance* instance) {
-#warning Use ECS to ensure that we dont modify a deleted object
+	Y_TODO(use ECS to ensure that we dont modify a deleted object)
 	if(!ImGui::CollapsingHeader("Static mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
 		return;
 	}

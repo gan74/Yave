@@ -63,7 +63,7 @@ static bool is_none(U u) {
 
 void FrameGraph::render(CmdBufferRecorder& recorder) && {
 	y_profile();
-#warning no pass culling
+	Y_TODO(Pass culling)
 
 	alloc_resources();
 
@@ -95,7 +95,8 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 		}
 	}
 
-#warning barrier resources at end
+
+	Y_TODO(put resource barriers at the end of the graph to prevent clash with whatever comes after)
 
 	release_resources(recorder);
 }

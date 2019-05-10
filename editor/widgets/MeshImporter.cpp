@@ -148,7 +148,7 @@ void MeshImporter::import(import::SceneData scene) {
 
 		math::Vec3 forward = axes[_forward_axis];
 		math::Vec3 up = axes[_up_axis];
-#warning detect handedness
+		Y_TODO(try to auto detect handedness)
 		transform.set_basis(forward, -forward.cross(up), up);
 
 		for(auto& mesh : scene.meshes) {
@@ -159,7 +159,7 @@ void MeshImporter::import(import::SceneData scene) {
 	import_assets(scene.meshes);
 	import_assets(scene.animations);
 
-#warning image not imported
+	Y_TODO(images are not imported right now)
 	//import_assets(scene.images);
 
 	context()->ui().refresh_all();

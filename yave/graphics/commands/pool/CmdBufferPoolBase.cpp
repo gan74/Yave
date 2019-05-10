@@ -28,7 +28,6 @@ SOFTWARE.
 #include <mutex>
 
 namespace yave {
-#warning command buffers might need to be synchronized at the pool level
 
 static vk::CommandBufferLevel cmd_level(CmdBufferUsage u) {
 	unused(u);

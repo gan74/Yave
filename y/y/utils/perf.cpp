@@ -65,7 +65,7 @@ static u32 thread_id() {
 	return tid;
 }
 
-#warning TLS destructors not called on windows
+Y_TODO(TLS destructors not called on windows)
 
 static thread_local struct ThreadData : NonMovable {
 	std::shared_ptr<io::File> keep_alive;

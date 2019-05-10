@@ -41,7 +41,7 @@ MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, const RenderPass& render_pass) const {
 	y_profile();
 	core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
-#warning move program creation
+	Y_TODO(move program creation programs can be reused)
 
 	DevicePtr dptr = material->device();
 	const auto& mat_data = material->data();
