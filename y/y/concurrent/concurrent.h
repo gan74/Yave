@@ -40,7 +40,7 @@ template<typename F>
 void schedule_n(F&& f, usize n) {
 	StaticThreadPool& pool = default_thread_pool();
 	for(usize i = 0; i != n; ++i) {
-		pool.schedule([&] { f(i); });
+		pool.schedule([=] { f(i); });
 	}
 	pool.process_until_empty();
 }
