@@ -59,7 +59,7 @@ class MainWindow : private Window, public ContextLinked {
 
 		std::unique_ptr<Swapchain> _swapchain;
 		std::unique_ptr<Framebuffer[]> _framebuffers;
-		std::shared_ptr<ImGuiRenderer> _ui_renderer;
+		std::unique_ptr<ImGuiRenderer> _ui_renderer;
 };
 
 }

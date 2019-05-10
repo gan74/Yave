@@ -57,7 +57,7 @@ class Window {
 		const math::Vec2ui& size() const;
 		math::Vec2ui position() const;
 
-		void set_event_handler(EventHandler*&& handler);
+		void set_event_handler(std::unique_ptr<EventHandler> handler);
 		EventHandler* event_handler() const;
 
 	protected:

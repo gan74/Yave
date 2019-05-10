@@ -250,8 +250,8 @@ math::Vec2ui Window::position() const {
 #endif
 }
 
-void Window::set_event_handler(EventHandler*&& handler) {
-	_event_handler = std::unique_ptr<EventHandler>(std::move(handler));
+void Window::set_event_handler(std::unique_ptr<EventHandler> handler) {
+	_event_handler = std::move(handler);
 }
 
 EventHandler* Window::event_handler() const {

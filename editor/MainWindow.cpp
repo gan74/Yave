@@ -49,9 +49,9 @@ MainWindow::MainWindow(ContextPtr cptr) :
 		Window({1280, 768}, "Yave", Window::Resizable),
 		ContextLinked(cptr) {
 
-	_ui_renderer = std::make_shared<ImGuiRenderer>(device());
+	_ui_renderer = std::make_unique<ImGuiRenderer>(device());
 
-	set_event_handler(new MainEventHandler());
+	set_event_handler(std::make_unique<MainEventHandler>());
 
 	context()->ui().show<EngineView>();
 	context()->ui().show<EntityView>();
@@ -132,6 +132,10 @@ void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 
 void MainWindow::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
+
+	Y_TODO(move ui code out of main window)
+
+	_ui_renderer->set_style(context()->settings().ui().style); // move that too
 
 	ImGui::GetIO().DisplaySize = math::Vec2(_swapchain->size());
 

@@ -24,9 +24,9 @@ SOFTWARE.
 
 #include <editor/editor.h>
 #include <yave/window/EventHandler.h>
+#include <editor/renderers/ImGuiRenderer.h>
 
 #include <y/serde/serde.h>
-
 
 namespace editor {
 
@@ -38,6 +38,10 @@ struct CameraSettings {
 	float sensitivity = 4.0f;
 };
 
+struct UiSettings {
+	ImGuiRenderer::Style style = ImGuiRenderer::Style::Corporate3D;
+};
+
 static_assert(std::is_standard_layout_v<CameraSettings> && std::is_trivially_copyable_v<CameraSettings>);
 
 
@@ -47,11 +51,13 @@ class Settings {
 		~Settings();
 
 		CameraSettings& camera();
+		UiSettings& ui();
 
-		y_serde(_camera)
+		y_serde(_camera, _ui)
 
 	private:
 		CameraSettings _camera;
+		UiSettings _ui;
 };
 
 }
