@@ -27,11 +27,22 @@ namespace yave {
 namespace ecs {
 
 namespace detail {
-RegisteredDeserializer* RegisteredDeserializer::head = nullptr;
+static RegisteredType* registered_types_head = nullptr;
+
+void register_type(RegisteredType* type, usize hash, std::unique_ptr<ComponentContainerBase> (*create_container)(io::ReaderRef)) {
+	for(auto* i = registered_types_head; i; i = i->_next) {
+		y_debug_assert(i->_hash != hash);
+	}
+	y_debug_assert(!type->_next);
+	type->_hash = hash;
+	type->_create_container = create_container;
+	type->_next = registered_types_head;
+	registered_types_head = type;
+}
 
 usize registered_types_count() {
 	usize count = 0;
-	for(RegisteredDeserializer* i = RegisteredDeserializer::head; i; i = i->next) {
+	for(auto* i = registered_types_head; i; i = i->_next) {
 		++count;
 	}
 	return count;

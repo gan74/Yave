@@ -64,15 +64,20 @@ class ComponentContainerBase : NonMovable {
 
 
 namespace detail {
-struct RegisteredDeserializer {
-	usize hash = 0;
-	std::unique_ptr<ComponentContainerBase> (*create)(io::ReaderRef);
-	RegisteredDeserializer* next = nullptr;
-	static RegisteredDeserializer* head;
+class RegisteredType {
+	private:
+		friend void register_type(RegisteredType* type, usize hash, std::unique_ptr<ComponentContainerBase> (*create_container)(io::ReaderRef));
+		friend usize registered_types_count();
+
+		usize _hash = 0;
+		std::unique_ptr<ComponentContainerBase> (*_create_container)(io::ReaderRef);
+		RegisteredType* _next = nullptr;
 };
 
+void register_type(RegisteredType* type, usize hash, std::unique_ptr<ComponentContainerBase> (*create_container)(io::ReaderRef));
 usize registered_types_count();
 }
+
 
 
 template<typename T>
@@ -80,13 +85,10 @@ class ComponentContainer final : public ComponentContainerBase {
 
 	static struct Registerer {
 		Registerer() {
-			deser.hash = type_hash<T>();
-			deser.create = [](io::ReaderRef) { return std::unique_ptr<ComponentContainerBase>(); };
-			deser.next = detail::RegisteredDeserializer::head;
-			detail::RegisteredDeserializer::head = &deser;
+			detail::register_type(&type, type_hash<T>(), [](io::ReaderRef) { return std::unique_ptr<ComponentContainerBase>(); });
 		}
 
-		detail::RegisteredDeserializer deser;
+		detail::RegisteredType type;
 	} registerer;
 
 	public:
