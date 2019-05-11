@@ -34,6 +34,7 @@ SOFTWARE.
 
 
 #define y_serialize(...)														\
+	template<typename = void>													\
 	void serialize(y::io::WriterRef _y_serde_driver) const {					\
 		auto y_serde_process = [&_y_serde_driver](auto&&... args) {				\
 			y::serde::serialize_all(_y_serde_driver, 							\
@@ -45,6 +46,7 @@ SOFTWARE.
 #define y_deserialize(...)														\
 	static auto _y_serde_self_type_helper() ->									\
 		typename std::remove_reference<decltype(*this)>::type;					\
+	template<typename = void>													\
 	void deserialize(y::io::ReaderRef _y_serde_driver) {						\
 		auto y_serde_process = [&_y_serde_driver](auto&&... args) {				\
 			y::serde::deserialize_all(_y_serde_driver,							\
@@ -64,6 +66,7 @@ SOFTWARE.
 	}
 
 #define y_deserialize_func(func)												\
+	template<typename = void>													\
 	static auto deserialized(y::io::ReaderRef _y_serde_driver) {				\
 		return y::serde::deserialize_call(_y_serde_driver, func);				\
 	}																			\
@@ -89,7 +92,7 @@ SOFTWARE.
 #define y_serde_call(func) y::serde::detail::Callable(func)
 #define y_serde_cond(cond, ...) y::serde::detail::Callable([&y_serde_process, this]() { if(cond) { y_serde_process(__VA_ARGS__); }; })
 
-#define y_serde_assert(cond) do { if(!(cond)) { y_throw("Serde error: assertion failed " #cond); } } while(false)
+#define y_serde_assert(cond) y::serde::detail::Callable([this]() { if(!(cond)) { y_throw("Serde error: assertion failed " #cond); } })
 
 namespace y {
 namespace serde {
