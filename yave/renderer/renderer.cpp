@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data) {
+DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data) {
 	DefaultRenderer renderer;
 
 	renderer.gbuffer = GBufferPass::create(framegraph, view, size);

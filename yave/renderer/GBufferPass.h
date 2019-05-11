@@ -33,7 +33,7 @@ struct GBufferPass {
 	FrameGraphImageId color;
 	FrameGraphImageId normal;
 
-	static GBufferPass create(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size);
+	static GBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
 };
 
 }

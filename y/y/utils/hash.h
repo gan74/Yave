@@ -28,10 +28,18 @@ namespace y {
 
 // from boost
 template<typename T>
-inline void hash_combine(T& seed, T value) {
+constexpr void hash_combine(T& seed, T value) {
 	seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
+template<typename T>
+constexpr usize type_hash() {
+	usize hash = 0xdeaddead;
+	for(char c : Y_FUNCTION_NAME) {
+		hash_combine(hash, usize(c));
+	}
+	return hash;
+}
 
 template<typename T, typename... Args>
 inline auto hash(const T& t, const Args&... args) {

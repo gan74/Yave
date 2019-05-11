@@ -33,13 +33,13 @@ EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View"),
 		ContextLinked(cptr),
 		_ibl_data(std::make_shared<IBLData>(device())),
-		_scene_view(context()->scene().scene()),
+		_scene_view(&context()->scene().scene(), &context()->world()),
 		_gizmo(context(), &_scene_view) {
 	;
 }
 
 EngineView::~EngineView() {
-	context()->scene().reset_scene_view(&_scene_view);
+	context()->scene().remove_scene_view(&_scene_view);
 }
 
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
@@ -50,7 +50,7 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 
 	{
 		FrameGraph graph(context()->resource_pool());
-		DefaultRenderer renderer = DefaultRenderer::create(graph, &_scene_view, content_size(), _ibl_data);
+		DefaultRenderer renderer = DefaultRenderer::create(graph, _scene_view, content_size(), _ibl_data);
 
 		FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{

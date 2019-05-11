@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 #include <editor/components/EditorComponent.h>
+#include <yave/components/RenderableComponent.h>
 
 #include <imgui/imgui_yave.h>
 
@@ -38,6 +39,8 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::Button("Add entity & component")) {
 		ecs::EntityId id = world.create_entity();
 		world.create_component<EditorComponent>(id, "unanmed component");
+		auto inst = std::make_unique<StaticMeshInstance>(device()->device_resources()[DeviceResources::CubeMesh], device()->device_resources()[DeviceResources::EmptyMaterial]);
+		world.create_component<RenderableComponent>(id, std::move(inst));
 	}
 
 	if(ImGui::TreeNode("Components")) {

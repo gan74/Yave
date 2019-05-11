@@ -87,7 +87,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
 	math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
-	const SceneView* scene = gbuffer.scene_pass.scene_view;
+	const SceneView& scene = gbuffer.scene_pass.scene_view;
 
 	auto lit = framegraph.declare_image(lighting_format, size);
 	auto light_buffer = framegraph.declare_typed_buffer<uniform::Light>(max_light_count);
@@ -120,15 +120,15 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 				u32 directional_count = 0;
 			} push_data;
 
-			const Camera& camera = scene->camera();
+			const Camera& camera = scene.camera();
 			push_data.camera.inv_matrix = camera.inverse_matrix();
 			push_data.camera.position = camera.position();
 			push_data.camera.forward = camera.forward();
 
 
 			TypedMapping<uniform::Light> mapping = self->resources()->mapped_buffer(light_buffer);
-			usize light_count = scene->scene().lights().size();
-			for(const auto& l : scene->scene().lights()) {
+			usize light_count = scene.scene().lights().size();
+			for(const auto& l : scene.scene().lights()) {
 				if(l->type() == Light::Point) {
 					mapping[push_data.point_count++] = *l;
 				} else {

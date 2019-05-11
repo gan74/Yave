@@ -49,6 +49,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	y_profile();
 
 	usize total_used = 0;
+	usize total_allocated = 0;
 	for(auto&& [type, heaps] : device()->allocator().heaps()) {
 		ImGui::BulletText(fmt("Heap [%]", memory_type_name(type.second)).data());
 		ImGui::Indent();
@@ -56,6 +57,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			usize free = heap->available();
 			usize used = heap->size() - free;
 			total_used += used;
+			total_allocated += heap->size();
 
 			ImGui::ProgressBar(used / float(heap->size()), ImVec2(0, 0), fmt("%KB / %KB", to_kb(used), to_kb(heap->size())).data());
 			ImGui::Text("Free blocks: %u", unsigned(heap->free_blocks()));
@@ -70,6 +72,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		dedicated += heap->allocated_size();
 	}
 	total_used += dedicated;
+	total_allocated += dedicated;
 
 	_max_usage = std::max(_max_usage, total_used);
 
@@ -77,8 +80,14 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Text("Total used: %.1fMB", to_mb(total_used));
-		ImGui::Text("Max usage: %.1fMB", to_mb(_max_usage));
 		ImGui::Text("Dedicated allocations size: %.1fMB", to_mb(dedicated));
+		ImGui::Text("Total allocated: %.1fMB", to_mb(total_allocated));
+		ImGui::SetNextItemWidth(-1);
+		ImGui::ProgressBar(total_used / float(total_allocated), ImVec2(0, 0), fmt("%MB / %MB", usize(to_mb(total_used)), usize(to_mb(total_allocated))).data());
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("Max usage: %.1fMB", to_mb(_max_usage));
 
 		if(_timer.elapsed().to_secs() * _history.size() > 60.0) {
 			_timer.reset();

@@ -79,12 +79,6 @@ void ResourceBrowser::asset_selected(const FileInfo& file) {
 			}
 		break;
 
-		case AssetType::Mesh:
-			if(!context()->scene().add(file.full_name)) {
-				log_msg("Unable to add asset to scene.", Log::Error);
-			}
-		break;
-
 		default:
 		break;
 	}

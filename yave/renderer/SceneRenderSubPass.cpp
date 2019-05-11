@@ -22,11 +22,14 @@ SOFTWARE.
 
 #include "SceneRenderSubPass.h"
 
+#include <yave/ecs/EntityWorld.h>
+#include <yave/components/RenderableComponent.h>
+
 namespace yave {
 
 static constexpr usize max_batch_size = 128 * 1024;
 
-SceneRenderSubPass SceneRenderSubPass::create(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view) {
+SceneRenderSubPass SceneRenderSubPass::create(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView& view) {
 	auto camera_buffer = framegraph.declare_typed_buffer<math::Matrix4<>>();
 	auto transform_buffer = framegraph.declare_typed_buffer<math::Transform<>>(max_batch_size);
 
@@ -44,57 +47,69 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraph& framegraph, FrameGraph
 }
 
 
-void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const {
+static usize render_scene(const SceneRenderSubPass* sub_pass, RenderPassRecorder& recorder, const FrameGraphPass* pass, usize index = 0) {
 	y_profile();
 
-	auto& descriptor_set = pass->descriptor_sets()[0];
+	const Scene& scene = sub_pass->scene_view.scene();
 
-	// fill render data
+	auto transform_mapping = pass->resources()->mapped_buffer(sub_pass->transform_buffer);
+	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
+	const auto& descriptor_set = pass->descriptor_sets()[0];
+
+	recorder.bind_attrib_buffers({transforms, transforms});
 	{
-		auto camera_mapping = pass->resources()->mapped_buffer(camera_buffer);
-		camera_mapping[0] = scene_view->camera().viewproj_matrix();
-	}
-
-	usize attrib_index = 0;
-	{
-		auto transform_mapping = pass->resources()->mapped_buffer(transform_buffer);
-		if(transform_mapping.size() < scene_view->scene().renderables().size() + scene_view->scene().static_meshes().size()) {
-			y_fatal("Transform buffer overflow.");
-		}
-
-		{
-			// renderables
-			for(const auto& r : scene_view->scene().renderables()) {
-				transform_mapping[attrib_index++] = r->transform();
-			}
-
-			// static meshes
-			for(const auto& r : scene_view->scene().static_meshes()) {
-				transform_mapping[attrib_index++] = r->transform();
-			}
-		}
-	}
-
-	// render stuff
-	if(attrib_index) {
-		u32 attrib_index = 0;
-
-		auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(transform_buffer);
-		recorder.bind_attrib_buffers({transforms, transforms});
-
 		// renderables
-		{
-			for(const auto& r : scene_view->scene().renderables()) {
-				r->render(recorder, Renderable::SceneData{descriptor_set, attrib_index++});
-			}
+		for(const auto& r : scene.renderables()) {
+			transform_mapping[index] = r->transform();
+			r->render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
+			++index;
 		}
 
 		// static meshes
-		{
-			for(const auto& r : scene_view->scene().static_meshes()) {
-				r->render(recorder, Renderable::SceneData{descriptor_set, attrib_index++});
-			}
+		for(const auto& r : scene.static_meshes()) {
+			transform_mapping[index] = r->transform();
+			r->render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
+			++index;
 		}
+	}
+
+	return index;
+}
+
+
+static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder& recorder, const FrameGraphPass* pass, usize index = 0) {
+	y_profile();
+
+	const ecs::EntityWorld& world = sub_pass->scene_view.world();
+
+	auto transform_mapping = pass->resources()->mapped_buffer(sub_pass->transform_buffer);
+	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
+	const auto& descriptor_set = pass->descriptor_sets()[0];
+
+	recorder.bind_attrib_buffers({transforms, transforms});
+	for(const auto& r : world.components<RenderableComponent>()) {
+		transform_mapping[index] = r->transform();
+		r->render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
+		++index;
+	}
+
+	return index;
+}
+
+void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const {
+	y_profile();
+
+	// fill render data
+	auto camera_mapping = pass->resources()->mapped_buffer(camera_buffer);
+	camera_mapping[0] = scene_view.camera().viewproj_matrix();
+
+	usize index = 0;
+	if(scene_view.has_scene()) {
+		index = render_scene(this, recorder, pass, index);
+	}
+
+	if(scene_view.has_world()) {
+		index = render_world(this, recorder, pass, index);
 	}
 }
 

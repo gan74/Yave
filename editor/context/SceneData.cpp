@@ -33,14 +33,13 @@ namespace editor {
 
 SceneData::SceneData(ContextPtr ctx) :
 		ContextLinked(ctx),
-		_default_scene_view(_scene),
+		_default_scene_view(&_scene),
 		_scene_view(&_default_scene_view) {
 
 	load("scene.ys");
 }
 
 void SceneData::flush_reload() {
-	flush();
 	_scene.flush_reload();
 }
 
@@ -52,7 +51,7 @@ void SceneData::set_scene_view(SceneView* scene) {
 	}
 }
 
-void SceneData::reset_scene_view(SceneView* scene) {
+void SceneData::remove_scene_view(SceneView* scene) {
 	if(_scene_view == scene) {
 		set_scene_view(nullptr);
 	}
@@ -100,26 +99,5 @@ void SceneData::set(Scene&& scene) {
 	context()->selection().set_selected(nullptr);
 	_scene = std::move(scene);
 }
-
-StaticMeshInstance* SceneData::add(AssetId id) {
-	if(auto mesh = context()->loader().load<StaticMesh>(id)) {
-		auto inst = std::make_unique<StaticMeshInstance>(std::move(mesh.unwrap()), device()->device_resources()[DeviceResources::EmptyMaterial]);
-		StaticMeshInstance* inst_ptr = inst.get();
-		_to_add << std::move(inst);
-		return inst_ptr;
-	}
-	return nullptr;
-}
-
-
-StaticMeshInstance* SceneData::add(std::string_view name) {
-	return add(context()->asset_store().id(name).unwrap_or(AssetId()));
-}
-
-void SceneData::flush() {
-	_scene.static_meshes().emplace_back(_to_add.begin(), _to_add.end());
-	_to_add.clear();
-}
-
 
 }

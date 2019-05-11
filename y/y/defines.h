@@ -87,4 +87,12 @@ struct Nothing;
 #define y_create_name_with_prefix(prefix) Y_CREATE_NAME_HELPER(prefix, __LINE__)
 #define y_create_name y_create_name_with_prefix()
 
+
+#if defined(_MSC_VER)
+#define Y_FUNCTION_NAME __FUNCSIG__
+#else
+#define Y_FUNCTION_NAME __PRETTY_FUNCTION__
+#endif
+
+
 #endif // Y_DEFINES_H

@@ -19,21 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_RENDERER_H
-#define YAVE_RENDERER_RENDERER_H
+#ifndef YAVE_COMPONENTS_RENDERABLECOMPONENT_H
+#define YAVE_COMPONENTS_RENDERABLECOMPONENT_H
 
-#include "ToneMappingPass.h"
+#include <yave/objects/Renderable.h>
 
 namespace yave {
 
-struct DefaultRenderer {
-	GBufferPass gbuffer;
-	LightingPass lighting;
-	ToneMappingPass tone_mapping;
+class RenderableComponent {
+	public:
+		RenderableComponent(std::unique_ptr<Renderable> r) : _renderable(std::move(r)) {
+		}
 
-	static DefaultRenderer create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data);
+		const Renderable* operator->() const {
+			return get();
+		}
+
+		Renderable* operator->() {
+			return get();
+		}
+
+
+		const Renderable* get() const {
+			return _renderable.get();
+		}
+
+		Renderable* get() {
+			return _renderable.get();
+		}
+
+
+	private:
+		std::unique_ptr<Renderable> _renderable;
 };
 
 }
 
-#endif // YAVE_RENDERER_RENDERER_H
+#endif // YAVE_COMPONENTS_RENDERABLECOMPONENT_H

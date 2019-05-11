@@ -36,7 +36,7 @@ ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) 
 }
 
 ThumbmailCache::SceneData::SceneData(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat)
-		: view(scene) {
+		: view(&scene) {
 
 	Light light(Light::Directional);
 	light.transform().set_basis(math::Vec3{1.0f, 0.5f, -1.0f}.normalized(), {1.0f, 0.0f, 0.0f});
@@ -160,7 +160,7 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 		auto region = recorder.region("Thumbmail cache render");
 
 		FrameGraph graph(context()->resource_pool());
-		DefaultRenderer renderer = DefaultRenderer::create(graph, &scene.view, thumbmail->image.size(), _ibl_data);
+		DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), _ibl_data);
 
 		FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{

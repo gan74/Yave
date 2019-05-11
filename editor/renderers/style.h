@@ -72,7 +72,7 @@ if(_style == Style::Yave) {
 
 // https://github.com/ocornut/imgui/issues/707#issuecomment-468798935
 if(_style == Style::Corporate || _style == Style::Corporate3D) {
-	float darkening = 0.7f;
+	float darkening = 0.8f;
 	auto dImVec4 = [=](float r, float g, float b, float a) { return ImVec4(r * darkening, g * darkening, b * darkening, a); };
 
 	auto& style = ImGui::GetStyle();

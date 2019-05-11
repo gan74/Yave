@@ -28,12 +28,12 @@ SOFTWARE.
 namespace yave {
 
 struct SceneRenderSubPass {
-	const SceneView* scene_view;
+	SceneView scene_view;
 
 	FrameGraphMutableTypedBufferId<math::Matrix4<>> camera_buffer;
 	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
 
-	static SceneRenderSubPass create(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView* view);
+	static SceneRenderSubPass create(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView& view);
 	void render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const;
 
 };

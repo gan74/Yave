@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView* view, const math::Vec2ui& size) {
+GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
 	static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 	static constexpr vk::Format color_format = vk::Format::eR8G8B8A8Unorm;
 	static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
