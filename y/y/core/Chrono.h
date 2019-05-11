@@ -99,6 +99,8 @@ class DebugTimer : NonCopyable {
 		DebugTimer(const String& msg, const Duration& minimum = Duration());
 		~DebugTimer();
 
+		Duration elapsed() const;
+
 	private:
 		String _msg;
 		Chrono _chrono;

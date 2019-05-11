@@ -128,6 +128,10 @@ DebugTimer::~DebugTimer() {
 	}
 }
 
+Duration DebugTimer::elapsed() const {
+	return _chrono.elapsed();
+}
+
 
 }
 }

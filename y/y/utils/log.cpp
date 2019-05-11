@@ -32,7 +32,7 @@ static constexpr std::array<const char*, 5> log_type_str = {{"info", "warning", 
 
 void log_msg(std::string_view msg, Log type) {
 	static std::mutex lock;
-	std::lock_guard<decltype(lock)> _(lock);
+	std::lock_guard _(lock);
 
 	(type == Log::Error || type == Log::Warning ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
 }
