@@ -24,12 +24,14 @@ SOFTWARE.
 
 #include "ecs.h"
 #include "ComponentBitmask.h"
+#include "ComponentContainer.h"
 
 namespace yave {
 namespace ecs {
 
 struct ReturnIdPolicy {
 	using value_type = EntityId;
+	using reference = const EntityId&;
 
 	template<typename It, typename E>
 	const EntityId& operator()(It it, const E&) const {
@@ -39,6 +41,7 @@ struct ReturnIdPolicy {
 
 struct ReturnEntityPolicy {
 	using value_type = Entity;
+	using reference = Entity&;
 
 	template<typename It, typename E>
 	auto&& operator()(It it, E&& entities) const {
@@ -46,15 +49,38 @@ struct ReturnEntityPolicy {
 	}
 };
 
-/*template<bool Const, typename... Args>
-struct ReturnComponentsPolicy {
-	using value_type = std::conditional_t<Const, std::tuple<const Args&...>, std::tuple<Args&...>>;
 
-	template<typename It, typename E>
-	value_type operator()(It it, E&& entities) const {
-		return entities[*it];
+namespace detail {
+template<typename T, typename... Args>
+std::tuple<T&, Args&...> map_component_ids(const Entity& entity, ComponentContainer<T>* head, ComponentContainer<Args>*... tail) {
+	if constexpr(sizeof...(Args)) {
+		return std::tuple_cat(map_component_ids(entity, head), map_component_ids(entity, tail...));
+	} else {
+		T* component = head->component(entity);
+		y_debug_assert(component);
+		return std::tie(*component);
 	}
-};*/
+}
+}
+
+template<bool Const, typename... Args>
+class ReturnComponentsPolicy {
+	public:
+		using value_type = std::conditional_t<Const, std::tuple<const Args&...>, std::tuple<Args&...>>;
+		using reference = value_type;
+
+		ReturnComponentsPolicy(const std::tuple<ComponentContainer<Args>*...>& containers) : _containers(containers) {
+		}
+
+		template<typename It, typename E>
+		value_type operator()(It it, E&& entities) const {
+			return std::apply(detail::map_component_ids<Args...>, std::tuple_cat(std::make_tuple(entities[*it]), _containers));
+		}
+
+	private:
+		std::tuple<ComponentContainer<Args>*...> _containers;
+};
+
 
 
 
@@ -63,17 +89,21 @@ class MultiComponentIteratorEndSentry {};
 template<typename It, typename ReturnPolicy = ReturnEntityPolicy, bool Const = false>
 class MultiComponentIterator : ReturnPolicy {
 
+	template<typename T>
+	using add_const_to_ref_t = std::conditional_t<std::is_reference_v<T>, const std::remove_reference_t<T>&, T>;
+
 	public:
-		static constexpr bool is_const = Const || std::is_const_v<typename ReturnPolicy::value_type>;
+		static constexpr bool is_const = Const;
 		using end_iterator = MultiComponentIteratorEndSentry;
 
-		using value_type = std::conditional_t<is_const, const typename ReturnPolicy::value_type, typename ReturnPolicy::value_type>;
-		using reference = std::add_lvalue_reference_t<value_type>;
+		using value_type = std::conditional_t<is_const, std::add_const_t<typename ReturnPolicy::value_type>, typename ReturnPolicy::value_type>;
+		using reference = std::conditional_t<is_const, add_const_to_ref_t<typename ReturnPolicy::reference>, typename ReturnPolicy::reference>;
 		using pointer = std::add_pointer_t<value_type>;
 		using difference_type = usize;
-		using iterator_category = std::forward_iterator_tag;
 
-		static_assert(std::is_same_v<typename std::iterator_traits<It>::value_type, EntityId>);
+		// https://stackoverflow.com/questions/46626832/why-are-c-iterators-required-to-return-a-reference
+		using iterator_category = std::conditional_t<std::is_reference_v<reference>, std::forward_iterator_tag, std::input_iterator_tag>;
+
 
 		bool at_end() const {
 			return _iterator == _end;
@@ -98,17 +128,18 @@ class MultiComponentIterator : ReturnPolicy {
 
 		reference get() const {
 			y_debug_assert(_iterator->is_valid());
-			static_assert(std::is_reference_v<decltype(ReturnPolicy::operator()(_iterator, _entities))>);
 			return ReturnPolicy::operator()(_iterator, _entities);
 		}
 
 		pointer operator->() const {
+			static_assert(std::is_reference_v<decltype(get())>);
 			return &get();
 		}
 
 		reference operator*() const {
 			return get();
 		}
+
 
 		bool operator==(const MultiComponentIterator& other) const {
 			return _iterator == other._iterator;
@@ -154,6 +185,40 @@ class MultiComponentIterator : ReturnPolicy {
 		ComponentBitmask _component_type_bits;
 		entity_container_ref _entities;
 };
+
+namespace {
+template<typename T>
+static constexpr bool is_const_ref_v = std::is_reference_v<T> && std::is_const_v<std::remove_reference_t<T>>;
+static_assert(is_const_ref_v<const int&> && !is_const_ref_v<int&> && !is_const_ref_v<int> && !is_const_ref_v<const int>);
+static_assert(!std::is_same_v<std::tuple<int&, float&>, std::tuple<const int&, const float&>>);
+
+template<typename Policy, bool Const = false>
+using MCI = MultiComponentIterator<yave::ecs::EntityId*, Policy, Const>;
+
+static_assert(!MCI<ReturnEntityPolicy>::is_const);
+static_assert(MCI<ReturnEntityPolicy, true>::is_const);
+
+static_assert(std::is_reference_v<typename MCI<ReturnEntityPolicy>::reference>);
+static_assert(std::is_reference_v<typename MCI<ReturnEntityPolicy, true>::reference>);
+
+static_assert(!is_const_ref_v<typename MCI<ReturnEntityPolicy>::reference>);
+static_assert(is_const_ref_v<typename MCI<ReturnEntityPolicy, true>::reference>);
+
+static_assert(std::is_reference_v<decltype(*std::declval<MCI<ReturnEntityPolicy>>())>);
+static_assert(std::is_reference_v<decltype(*std::declval<MCI<ReturnEntityPolicy, true>>())>);
+
+static_assert(is_const_ref_v<typename MCI<ReturnEntityPolicy, true>::reference>);
+static_assert(is_const_ref_v<decltype(*std::declval<MCI<ReturnEntityPolicy, true>>())>);
+
+static_assert(!std::is_reference_v<typename MCI<ReturnComponentsPolicy<false, int, float>>::reference>);
+static_assert(!std::is_reference_v<typename MCI<ReturnComponentsPolicy<true, int, float>, true>::reference>);
+
+static_assert(std::is_same_v<typename MCI<ReturnComponentsPolicy<false, int, float>>::reference, std::tuple<int&, float&>>);
+static_assert(std::is_same_v<typename MCI<ReturnComponentsPolicy<true, int, float>>::reference, std::tuple<const int&, const float&>>);
+
+static_assert(!std::is_reference_v<decltype(*std::declval<MCI<ReturnComponentsPolicy<false, int, float>>>())>);
+static_assert(!std::is_reference_v<decltype(*std::declval<MCI<ReturnComponentsPolicy<true, int, float>>>())>);
+}
 
 }
 }

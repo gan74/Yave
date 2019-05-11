@@ -95,21 +95,6 @@ class EntityWorld : NonCopyable {
 
 
 
-		template<typename T>
-		auto components() {
-			return typed_component_container<T>()->components();
-		}
-
-		template<typename T>
-		auto components() const {
-			const ComponentContainer<T>* container = typed_component_container<T>();
-			return container ? container->components() : ComponentContainer<T>::empty_components();
-		}
-
-
-
-
-
 		template<typename... Args>
 		auto entities_with() {
 			return with_components<Args...>(ReturnEntityPolicy());
@@ -132,6 +117,26 @@ class EntityWorld : NonCopyable {
 		}
 
 
+		template<typename T, typename... Args>
+		auto components() {
+			if constexpr(sizeof...(Args)) {
+				return with_components<T, Args...>(ReturnComponentsPolicy<false, T, Args...>(typed_component_containers<T, Args...>()));
+			} else  {
+				return typed_component_container<T>()->components();
+			}
+		}
+
+		template<typename T, typename... Args>
+		auto components() const {
+			if constexpr(sizeof...(Args)) {
+				return with_components<T, Args...>(ReturnComponentsPolicy<true, T, Args...>(typed_component_containers<T, Args...>()));
+			} else  {
+				const ComponentContainer<T>* container = typed_component_container<T>();
+				return container ? container->components() : ComponentContainer<T>::empty_components();
+			}
+		}
+
+
 
 
 		core::String type_name(TypeIndex index) const;
@@ -139,6 +144,7 @@ class EntityWorld : NonCopyable {
 	private:
 		template<typename... Args, typename ReturnPolicy>
 		auto with_components(const ReturnPolicy& policy) {
+			y_profile();
 			static_assert(sizeof...(Args));
 			core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
 			MultiComponentIterator<decltype(entities.begin()), ReturnPolicy, false> begin(
@@ -148,6 +154,7 @@ class EntityWorld : NonCopyable {
 
 		template<typename... Args, typename ReturnPolicy>
 		auto with_components(const ReturnPolicy& policy) const {
+			y_profile();
 			static_assert(sizeof...(Args));
 			core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
 			MultiComponentIterator<decltype(entities.begin()), ReturnPolicy, true> begin(
@@ -185,6 +192,19 @@ class EntityWorld : NonCopyable {
 		template<typename T>
 		const ComponentContainer<T>* typed_component_container() const {
 			return dynamic_cast<const ComponentContainer<T>*>(component_container<T>());
+		}
+
+		template<typename T, typename... Args>
+		std::tuple<ComponentContainer<T>*, ComponentContainer<Args>*...> typed_component_containers() const {
+			if constexpr(sizeof...(Args)) {
+				return std::tuple_cat(typed_component_containers<T>(),
+									  typed_component_containers<Args...>());
+			} else {
+				// We need non consts here and we want to avoir returning non const everywhere else
+				// Const safety for typed_component_containers is done in ReturnComponentsPolicy
+				// This shouldn't be UB as we component containers are never const
+				return std::make_tuple(const_cast<ComponentContainer<T>*>(typed_component_container<T>()));
+			}
 		}
 
 		template<typename T, typename... Args>

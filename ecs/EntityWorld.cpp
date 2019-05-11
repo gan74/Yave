@@ -89,6 +89,7 @@ core::Result<TypeIndex> EntityWorld::index_for_type(std::type_index type) const 
 }
 
 void EntityWorld::flush() {
+	y_profile();
 	for(EntityId id : _deletions) {
 		if(const Entity* ent = entity(id)) {
 			for(usize i = 0; i != max_entity_component_types; ++i) {

@@ -36,13 +36,11 @@ class Entity final {
 			return _components;
 		}
 
-		const ComponentBitmask& components_bits() const {
-			return _component_type_bits;
-		}
+		const ComponentBitmask& components_bits() const;
+		EntityId id() const;
 
-		EntityId id() const {
-			return _id;
-		}
+		bool has_component(TypeIndex type) const;
+		ComponentId component_id(TypeIndex type) const;
 
 	private:
 		friend class EntityWorld;
@@ -50,8 +48,6 @@ class Entity final {
 
 		usize component_index(TypeIndex type) const;
 
-		bool has_component(TypeIndex type) const;
-		ComponentId component_id(TypeIndex type) const;
 		void add_component(TypeIndex type, ComponentId id);
 		void remove_component(TypeIndex type);
 

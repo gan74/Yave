@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_COMPONENTCONTAINER_H
 
 #include "ecs.h"
+#include "Entity.h"
 
 #include <typeindex>
 
@@ -75,6 +76,15 @@ class ComponentContainer final : public ComponentContainerBase {
 		T* component(ComponentId id) {
 			return _components.get(id);
 		}
+
+		const T* component(const Entity& entity) const {
+			return _components.get(entity.component_id(type()));
+		}
+
+		T* component(const Entity& entity) {
+			return _components.get(entity.component_id(type()));
+		}
+
 
 		ComponentId create_component() override {
 			return _components.add();

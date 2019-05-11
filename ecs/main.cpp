@@ -30,6 +30,7 @@ SOFTWARE.
 using namespace yave;
 using namespace ecs;
 
+
 template<usize N>
 static usize popcnt_(std::bitset<N> t, usize bit) {
 	t <<= N - bit;
@@ -108,7 +109,26 @@ usize count_components(const EntityWorld& w) {
 	return std::distance(c.begin(), c.end());
 }
 
+
+
+template<usize I>
+struct Dummy{};
+
+template<usize I>
+void add_a_lot(EntityWorld& w, core::ArrayView<EntityId> ids, usize div = 3) {
+	math::FastRandom rng(I);
+	for(EntityId id : ids) {
+		if((rng() % div) == 0) {
+			w.add_component<Dummy<I>>(id);
+		}
+	}
+	if constexpr(I != 0) {
+		add_a_lot<I - 1>(w, ids, div + 1);
+	}
+}
+
 void test_perf(usize max = 100000) {
+	y_profile();
 
 #define ADD_CMP(Type) do { if(rng() % 2) { world.add_component<Type>(id); } } while(false)
 #define REM_CMP(Type) do { world.remove_component<Type>(entities[i]); } while(false)
@@ -119,7 +139,40 @@ void test_perf(usize max = 100000) {
 	struct D {};
 	struct E {};
 	struct F {};
-	struct G {};
+
+	struct G {
+		G() : ok(0x17171717) {
+		}
+
+		~G() {
+			y_debug_assert(is_valid());
+			ok = ~0x17171717;
+		}
+
+		bool is_valid() const {
+			return ok == 0x17171717;
+		}
+
+		u32 ok = 0;
+	};
+
+
+	struct Rare {
+		Rare() : ok(0x70707070) {
+		}
+
+		~Rare() {
+			y_debug_assert(is_valid());
+			ok = ~0x70707070;
+		}
+
+		bool is_valid() const {
+			return ok == 0x70707070;
+		}
+
+		u32 ok = 0;
+	};
+
 
 	math::FastRandom rng;
 	EntityWorld world;
@@ -137,6 +190,9 @@ void test_perf(usize max = 100000) {
 			ADD_CMP(E);
 			ADD_CMP(F);
 			ADD_CMP(G);
+			if((rng() % 1000) == 0) {
+				world.add_component<Rare>(id);
+			}
 		}
 	}
 
@@ -183,14 +239,24 @@ void test_perf(usize max = 100000) {
 			REM_CMP(G);
 		}
 	}
+#undef ADD_CMP
+#undef REM_CMP
 
 	{
 		core::DebugTimer _("Flush");
 		world.flush();
 	}
 
-#undef ADD_CMP
-#undef REM_CMP
+
+	{
+		core::DebugTimer _("Add a lot");
+		add_a_lot<10>(world, entities);
+	}
+
+	{
+		core::DebugTimer _("Flush");
+		world.flush();
+	}
 
 
 	log_msg(fmt("A: %", count_components<A>(world)));
@@ -203,7 +269,7 @@ void test_perf(usize max = 100000) {
 
 	usize abd_count = 0;
 	{
-		core::DebugTimer _("Multi 3");
+		core::DebugTimer _("Ids with A, B, D");
 		const EntityWorld& cw = world;
 
 		auto multi = cw.ids_with<D, A, B>();
@@ -220,6 +286,89 @@ void test_perf(usize max = 100000) {
 		}
 		log_msg(fmt("A, B, D: %", abd_count));
 	}
+
+	{
+		core::DebugTimer _("Components A, B, D");
+		usize count = 0;
+		for(auto&& [a, b, d] : world.components<A, B, D>()) {
+			unused(a, b, d);
+			++count;
+		}
+
+		log_msg(fmt("A, B, D: %", count));
+	}
+
+	{
+		core::DebugTimer _("Multi A, E, G");
+		usize count = 0;
+		bool all_ok = true;
+		for(EntityId id : world.ids_with<A, E, G>()) {
+			all_ok &= !!world.component<A>(id);
+			all_ok &= !!world.component<E>(id);
+			all_ok &= !!world.component<G>(id);
+			y_debug_assert(all_ok);
+			++count;
+		}
+		if(!all_ok) {
+			y_fatal("Missing components.");
+		}
+
+		log_msg(fmt("A, E, G: %", count));
+	}
+
+
+	{
+		core::DebugTimer _("Components A, E, G");
+		usize count = 0;
+		for(auto&& [a, e, g] : world.components<A, E, G>()) {
+			unused(a, e, g);
+			y_debug_assert(g.is_valid());
+			++count;
+		}
+
+		log_msg(fmt("A, E, G: %", count));
+	}
+
+	{
+		core::DebugTimer _("Components A, Rare");
+		usize count = 0;
+		for(auto&& [a, r] : world.components<A, Rare>()) {
+			if(!r.is_valid()) {
+				y_fatal("Component broken.");
+			}
+			++count;
+		}
+
+		log_msg(fmt("A, Rare: %", count));
+	}
+
+	{
+		core::DebugTimer _("Components B, Rare");
+		usize count = 0;
+		for(auto&& [b, r] : world.components<B, Rare>()) {
+			if(!r.is_valid()) {
+				y_fatal("Component broken.");
+			}
+			++count;
+		}
+
+		log_msg(fmt("B, Rare: %", count));
+	}
+
+	{
+		core::DebugTimer _("Components Rare");
+		usize count = 0;
+		for(auto&& r : world.components<Rare>()) {
+			if(!r.is_valid()) {
+				y_fatal("Component broken.");
+			}
+			++count;
+		}
+
+		log_msg(fmt("Rare: %", count));
+	}
+
+
 	{
 		core::DebugTimer _("Checking count");
 		usize count = 0;
@@ -232,21 +381,56 @@ void test_perf(usize max = 100000) {
 			y_fatal("Multi failure.");
 		}
 	}
-
 }
 
-void test_remove() {
-
+/*template<typename T>
+[[gnu::noinline]] usize count_cmp(EntityWorld& world) {
+	usize count = 0;
+	for(auto&& c : world.components<T>()) {
+		unused(c);
+		++count;
+	}
+	return count;
 }
+
+void test_perf2(usize max = 1000000) {
+	y_profile();
+
+	struct Common {};
+	struct Rare {
+		volatile int i = 0;
+	};
+
+	math::FastRandom rng;
+	EntityWorld world;
+	auto entities = core::vector_with_capacity<EntityId>(max);
+
+	{
+		core::DebugTimer _("Adding entities");
+		for(usize i = 0; i != max; ++i) {
+			EntityId id = world.create_entity();
+			entities << id;
+			world.add_component<Common>(id);
+			if((rng() % 5000) == 0) {
+				world.add_component<Rare>(id);
+			}
+		}
+	}
+
+	{
+		core::DebugTimer _("Components Rare");
+		log_msg(fmt("Rare: %", count_cmp<Rare>(world)));
+	}
+
+}*/
 
 int main(int, char**) {
-	log_msg("Hello entities");
+	perf::set_output_file("perfdump.json");
 
 	test_multi();
-	test_remove();
 	test_perf();
 
-	log_msg("Ok!");
+	log_msg("[DONE]");
 
 	return 0;
 }

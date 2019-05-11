@@ -25,6 +25,14 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+const ComponentBitmask& Entity::components_bits() const {
+	return _component_type_bits;
+}
+
+EntityId Entity::id() const {
+	return _id;
+}
+
 usize Entity::component_index(TypeIndex type) const {
 	auto t = _component_type_bits << (_component_type_bits.size() - type.index);
 	return t.count();

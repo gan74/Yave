@@ -293,7 +293,7 @@ class SlotMap {
 			return &node.get();
 		}
 
-		const T* get(Id id) const{
+		const T* get(Id id) const {
 			if(id.index() >= _nodes.size()) {
 				return nullptr;
 			}
