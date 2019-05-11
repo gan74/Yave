@@ -199,7 +199,7 @@ class SlotMap {
 				return *this;
 			}
 
-			Iterator& operator++(int) {
+			Iterator operator++(int) {
 				auto a = *this;
 				++(*this);
 				return a;
@@ -235,6 +235,7 @@ class SlotMap {
 					++_it;
 				}
 			}
+
 			internal_t _it;
 	};
 
@@ -293,7 +294,26 @@ class SlotMap {
 		}
 
 		const T* get(Id id) const{
-			return const_cast<std::remove_const_t<decltype(this)>>(this)->get(id);
+			if(id.index() >= _nodes.size()) {
+				return nullptr;
+			}
+			const node_t& node = _nodes[id.index()];
+			if(node.id() != id) {
+				return nullptr;
+			}
+			return &node.get();
+		}
+
+		T& operator[](Id id) {
+			T* ptr = get(id);
+			y_debug_assert(ptr);
+			return *ptr;
+		}
+
+		const T& operator[](Id id) const {
+			const T* ptr = get(id);
+			y_debug_assert(ptr);
+			return *ptr;
 		}
 
 		iterator begin() {

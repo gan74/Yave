@@ -108,7 +108,7 @@ usize count_components(const EntityWorld& w) {
 	return std::distance(c.begin(), c.end());
 }
 
-void test_perf(usize max = 100'000) {
+void test_perf(usize max = 100000) {
 
 #define ADD_CMP(Type) do { if(rng() % 2) { world.add_component<Type>(id); } } while(false)
 #define REM_CMP(Type) do { world.remove_component<Type>(entities[i]); } while(false)
@@ -201,22 +201,36 @@ void test_perf(usize max = 100'000) {
 	log_msg(fmt("F: %", count_components<F>(world)));
 	log_msg(fmt("G: %", count_components<G>(world)));
 
+	usize abd_count = 0;
 	{
 		core::DebugTimer _("Multi 3");
-		auto multi = world.entities_with<D, A, B>();
-		usize count = 0;
+		const EntityWorld& cw = world;
+
+		auto multi = cw.ids_with<D, A, B>();
 		bool all_ok = true;
-		for(const Entity& e : multi) {
-			all_ok &= !!world.component<A>(e.id());
-			all_ok &= !!world.component<B>(e.id());
-			all_ok &= !!world.component<D>(e.id());
+		for(EntityId id : multi) {
+			all_ok &= !!world.component<A>(id);
+			all_ok &= !!world.component<B>(id);
+			all_ok &= !!world.component<D>(id);
 			y_debug_assert(all_ok);
-			++count;
+			++abd_count;
 		}
 		if(!all_ok) {
-			y_fatal("Missing components");
+			y_fatal("Missing components.");
 		}
-		log_msg(fmt("A, B, D: %", count));
+		log_msg(fmt("A, B, D: %", abd_count));
+	}
+	{
+		core::DebugTimer _("Checking count");
+		usize count = 0;
+		for(const Entity& e : world.entities()) {
+			if(world.component<A>(e.id()) && world.component<B>(e.id()) &&world.component<D>(e.id())) {
+				++count;
+			}
+		}
+		if(count != abd_count) {
+			y_fatal("Multi failure.");
+		}
 	}
 
 }

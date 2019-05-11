@@ -28,21 +28,50 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+struct ReturnIdPolicy {
+	using value_type = EntityId;
+
+	template<typename It, typename E>
+	const EntityId& operator()(It it, const E&) const {
+		return *it;
+	}
+};
+
+struct ReturnEntityPolicy {
+	using value_type = Entity;
+
+	template<typename It, typename E>
+	auto&& operator()(It it, E&& entities) const {
+		return entities[*it];
+	}
+};
+
+/*template<bool Const, typename... Args>
+struct ReturnComponentsPolicy {
+	using value_type = std::conditional_t<Const, std::tuple<const Args&...>, std::tuple<Args&...>>;
+
+	template<typename It, typename E>
+	value_type operator()(It it, E&& entities) const {
+		return entities[*it];
+	}
+};*/
+
+
+
 class MultiComponentIteratorEndSentry {};
 
-template<typename It, bool Const = false>
-class MultiComponentIterator {
-
-		using entity_container = std::conditional_t<Const, const SlotMap<Entity, EntityTag>, SlotMap<Entity, EntityTag>>;
-		using entity_container_ref = std::add_lvalue_reference_t<entity_container>;
+template<typename It, typename ReturnPolicy = ReturnEntityPolicy, bool Const = false>
+class MultiComponentIterator : ReturnPolicy {
 
 	public:
-		using value_type = std::conditional_t<Const, const Entity, Entity>;
+		static constexpr bool is_const = Const || std::is_const_v<typename ReturnPolicy::value_type>;
+		using end_iterator = MultiComponentIteratorEndSentry;
+
+		using value_type = std::conditional_t<is_const, const typename ReturnPolicy::value_type, typename ReturnPolicy::value_type>;
 		using reference = std::add_lvalue_reference_t<value_type>;
 		using pointer = std::add_pointer_t<value_type>;
 		using difference_type = usize;
 		using iterator_category = std::forward_iterator_tag;
-		using end_iterator = MultiComponentIteratorEndSentry;
 
 		static_assert(std::is_same_v<typename std::iterator_traits<It>::value_type, EntityId>);
 
@@ -63,17 +92,22 @@ class MultiComponentIterator {
 			return it;
 		}
 
-		pointer get() const {
+		auto&& entity() const {
+			return _entities[*_iterator];
+		}
+
+		reference get() const {
 			y_debug_assert(_iterator->is_valid());
-			return _entities.get(*_iterator);
+			static_assert(std::is_reference_v<decltype(ReturnPolicy::operator()(_iterator, _entities))>);
+			return ReturnPolicy::operator()(_iterator, _entities);
 		}
 
 		pointer operator->() const {
-			return get();
+			return &get();
 		}
 
 		reference operator*() const {
-			return *get();
+			return get();
 		}
 
 		bool operator==(const MultiComponentIterator& other) const {
@@ -95,7 +129,11 @@ class MultiComponentIterator {
 	private:
 		friend class EntityWorld;
 
-		MultiComponentIterator(It it, It end, entity_container_ref entities, const ComponentBitmask& bits) :
+		using entity_container = std::conditional_t<is_const, const SlotMap<Entity, EntityTag>, SlotMap<Entity, EntityTag>>;
+		using entity_container_ref = std::add_lvalue_reference_t<entity_container>;
+
+		MultiComponentIterator(It it, It end, entity_container_ref entities, const ComponentBitmask& bits, const ReturnPolicy& policy = ReturnPolicy()) :
+				ReturnPolicy(policy),
 				_iterator(it),
 				_end(end),
 				_component_type_bits(bits),
@@ -107,7 +145,7 @@ class MultiComponentIterator {
 		}
 
 		bool has_all_bits() const {
-			return _iterator->is_valid() && (get()->components_bits() & _component_type_bits) == _component_type_bits;
+			return _iterator->is_valid() && (entity().components_bits() & _component_type_bits) == _component_type_bits;
 		}
 
 
@@ -121,9 +159,9 @@ class MultiComponentIterator {
 }
 
 namespace std {
-template<typename It, bool Const>
-struct iterator_traits<yave::ecs::MultiComponentIterator<It, Const>> {
-	using iterator_type = yave::ecs::MultiComponentIterator<It, Const>;
+template<typename It, typename ReturnPolicy, bool Const>
+struct iterator_traits<yave::ecs::MultiComponentIterator<It, ReturnPolicy, Const>> {
+	using iterator_type = yave::ecs::MultiComponentIterator<It, ReturnPolicy, Const>;
 	using value_type = typename iterator_type::value_type;
 	using reference = typename iterator_type::reference;
 	using pointer = typename iterator_type::pointer;

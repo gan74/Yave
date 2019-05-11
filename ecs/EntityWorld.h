@@ -109,32 +109,53 @@ class EntityWorld : NonCopyable {
 
 
 
+
 		template<typename... Args>
 		auto entities_with() {
-			if constexpr(sizeof...(Args)) {
-				core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
-				MultiComponentIterator<decltype(entities.begin()), false> begin(entities.begin(), entities.end(), _entities, create_bitmask<Args...>());
-				return core::Range(begin, MultiComponentIteratorEndSentry());
-			} else {
-				return entities();
-			}
+			return with_components<Args...>(ReturnEntityPolicy());
 		}
 
 		template<typename... Args>
 		auto entities_with() const {
-			if constexpr(sizeof...(Args)) {
-				core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
-				MultiComponentIterator<decltype(entities.begin()), true> begin(entities.begin(), entities.end(), _entities, create_bitmask<Args...>());
-				return core::Range(begin, MultiComponentIteratorEndSentry());
-			} else {
-				return entities();
-			}
+			return with_components<Args...>(ReturnEntityPolicy());
 		}
+
+
+		template<typename... Args>
+		auto ids_with() {
+			return with_components<Args...>(ReturnIdPolicy());
+		}
+
+		template<typename... Args>
+		auto ids_with() const {
+			return with_components<Args...>(ReturnIdPolicy());
+		}
+
+
 
 
 		core::String type_name(TypeIndex index) const;
 
 	private:
+		template<typename... Args, typename ReturnPolicy>
+		auto with_components(const ReturnPolicy& policy) {
+			static_assert(sizeof...(Args));
+			core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
+			MultiComponentIterator<decltype(entities.begin()), ReturnPolicy, false> begin(
+						entities.begin(), entities.end(), _entities, create_bitmask<Args...>(), policy);
+			return core::Range(begin, MultiComponentIteratorEndSentry());
+		}
+
+		template<typename... Args, typename ReturnPolicy>
+		auto with_components(const ReturnPolicy& policy) const {
+			static_assert(sizeof...(Args));
+			core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
+			MultiComponentIterator<decltype(entities.begin()), ReturnPolicy, true> begin(
+						entities.begin(), entities.end(), _entities, create_bitmask<Args...>(), policy);
+			return core::Range(begin, MultiComponentIteratorEndSentry());
+		}
+
+
 		template<typename T>
 		ComponentContainerBase* component_container() {
 			TypeIndex type = add_index_for_type<T>();
