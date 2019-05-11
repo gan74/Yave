@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "Entity.h"
 #include "ComponentContainer.h"
+#include "MultiComponentIterator.h"
 
 #include <unordered_map>
 
@@ -67,6 +68,11 @@ class EntityWorld {
 			return typed_component_container<T>()->component(id);
 		}
 
+		template<typename T>
+		T* component(EntityId id) {
+			return component<T>(entity(id)->component_id(index_for_type<T>()));
+		}
+
 
 
 		template<typename T>
@@ -79,11 +85,21 @@ class EntityWorld {
 			return typed_component_container<T>()->components();
 		}
 
+
+		template<typename T, typename... Args>
+		auto entities_with() {
+			auto begin = _entities.begin();
+			auto end = _entities.end();
+			ComponentBitmask mask = create_bitmask<T, Args...>();
+			return core::Range(MultiComponentIterator(begin, end, mask),
+							   MultiComponentIterator(end, end, mask));
+		}
+
 	private:
 		template<typename T>
 		ComponentContainerBase* component_container() {
 			//auto& container = _component_containers[typeid(T)];
-			auto& container = _component_containers[index_for_type(typeid(T)).index];
+			auto& container = _component_containers[index_for_type<T>().index];
 			if(!container) {
 				container = std::make_unique<ComponentContainer<T>>();
 			}
@@ -93,6 +109,27 @@ class EntityWorld {
 		template<typename T>
 		ComponentContainer<T>* typed_component_container() {
 			return dynamic_cast<ComponentContainer<T>*>(component_container<T>());
+		}
+
+
+		template<typename... Args>
+		ComponentBitmask create_bitmask() {
+			ComponentBitmask mask;
+			add_to_bitmask<Args...>(mask);
+			return mask;
+		}
+
+		template<typename T, typename... Args>
+		void add_to_bitmask(ComponentBitmask& mask) {
+			mask[index_for_type<T>().index] = true;
+			if constexpr(sizeof...(Args)) {
+				add_to_bitmask<Args...>(mask);
+			}
+		}
+
+		template<typename T>
+		TypeIndex index_for_type() {
+			return index_for_type(typeid(T));
 		}
 
 		TypeIndex index_for_type(std::type_index type);

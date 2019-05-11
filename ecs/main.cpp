@@ -47,8 +47,56 @@ void test_bitset() {
 	y_debug_assert(popcnt_(set, 13) == 4);
 }
 
+void test_multi() {
+	struct A {};
+	struct B {};
+	struct C {};
+	EntityWorld world;
+	auto tag = [&, i = 0](EntityId id) mutable { *world.component<usize>(world.add_component<usize>(id)) = i++; };
+	{
+		EntityId id = world.create_entity();
+		world.add_component<A>(id);
+		world.add_component<B>(id);
+		world.add_component<C>(id);
+		tag(id);
+	}
+	{
+		EntityId id = world.create_entity();
+		world.add_component<A>(id);
+		world.add_component<B>(id);
+		tag(id);
+	}
+	{
+		EntityId id = world.create_entity();
+		world.add_component<A>(id);
+		world.add_component<C>(id);
+		tag(id);
+	}
+
+	{
+		auto multi = world.entities_with<A, B>();
+		y_debug_assert(multi.size() == 2);
+	}
+	{
+		auto multi = world.entities_with<A>();
+		y_debug_assert(multi.size() == 3);
+	}
+	{
+		auto multi = world.entities_with<C>();
+		y_debug_assert(multi.size() == 2);
+	}
+	{
+		auto multi = world.entities_with<C, A>();
+		y_debug_assert(multi.size() == 2);
+	}
+	{
+		auto multi = world.entities_with<C, A, B>();
+		y_debug_assert(multi.size() == 1);
+	}
+}
+
 int main(int, char**) {
-	log_msg("Hello world");
+	log_msg("Hello entities");
 
 	EntityWorld world;
 
@@ -84,6 +132,7 @@ int main(int, char**) {
 
 	unused(ent, cmp);
 
+	test_multi();
 
 	log_msg("Ok!");
 

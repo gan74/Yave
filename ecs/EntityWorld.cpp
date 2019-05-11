@@ -38,7 +38,9 @@ Entity* EntityWorld::entity(EntityId id) {
 }
 
 EntityId EntityWorld::create_entity() {
-	return _entities.add();
+	EntityId id = _entities.add();
+	entity(id)->_id = id;
+	return id;
 }
 
 void EntityWorld::remove_entity(EntityId id) {

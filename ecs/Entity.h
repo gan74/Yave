@@ -23,23 +23,29 @@ SOFTWARE.
 #define YAVE_ECS_ENTITY_H
 
 #include "ecs.h"
+#include "ComponentBitmask.h"
 
 #include <typeindex>
-#include <bitset>
 
 namespace yave {
 namespace ecs {
 
 class Entity final {
 	public:
-		Entity() = default;
-
 		const auto& components() const {
 			return _components;
 		}
 
+		const ComponentBitmask& components_bits() const {
+			return _component_type_bits;
+		}
+
+		EntityId id() const {
+			return _id;
+		}
+
 	private:
-		friend EntityWorld;
+		friend class EntityWorld;
 
 		usize component_index(TypeIndex type) const;
 
@@ -49,8 +55,10 @@ class Entity final {
 		void remove_component(TypeIndex type);
 
 
-		std::bitset<max_entity_component_types> _component_type_bits;
+		ComponentBitmask _component_type_bits;
 		core::Vector<ComponentId> _components;
+
+		EntityId _id;
 };
 
 }

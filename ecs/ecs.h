@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "SlotMap.h"
 
+#include <bitset>
+
 namespace yave {
 namespace ecs {
 
@@ -31,6 +33,8 @@ class Entity;
 class EntityWorld;
 
 static constexpr usize max_entity_component_types = 64;
+
+using ComponentBitmask = std::bitset<max_entity_component_types>;
 
 struct TypeIndex {
 	usize index;

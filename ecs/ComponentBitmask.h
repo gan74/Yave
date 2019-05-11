@@ -19,42 +19,48 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_ECS_COMPONENTBITMASK_H
+#define YAVE_ECS_COMPONENTBITMASK_H
 
-#include "Entity.h"
+#include "ecs.h"
+
+#include <bitset>
 
 namespace yave {
 namespace ecs {
 
-usize Entity::component_index(TypeIndex type) const {
-	auto t = _component_type_bits << (_component_type_bits.size() - type.index);
-	return t.count();
+using ComponentBitmask = std::bitset<max_entity_component_types>;
+
+/*struct ComponentBitmask {
+	public:
+		ComponentBitmask() = default;
+
+		bool contains(const ComponentBitmask& other) const {
+			return (_bits | other._bits) == other._bits;
+		}
+
+		bool operator==(const ComponentBitmask& other) const {
+			return _bits == other._bits;
+		}
+
+		bool operator!=(const ComponentBitmask& other) const {
+			return _bits == other._bits;
+		}
+
+		auto&& operator[](TypeIndex index) {
+			return _bits[index.index];
+		}
+
+		auto&& operator[](TypeIndex index) const {
+			return _bits[index.index];
+		}
+
+	private:
+		std::bitset<max_entity_component_types> _bits;
+};*/
+
+
+}
 }
 
-bool Entity::has_component(TypeIndex type) const {
-	return _component_type_bits[type.index];
-}
-
-ComponentId Entity::component_id(TypeIndex type) const {
-	if(has_component(type)) {
-		return _components[component_index(type)];
-	}
-	return ComponentId();
-}
-
-void Entity::add_component(TypeIndex type, ComponentId id) {
-	y_debug_assert(!_component_type_bits[type.index]);
-	usize index = component_index(type);
-	_component_type_bits[type.index] = true;
-	_components.push_back(id);
-	std::rotate(_components.begin() + index, _components.end() - 1, _components.end());
-	y_debug_assert(_components[index] == id);
-}
-
-void Entity::remove_component(TypeIndex type) {
-	usize index = component_index(type);
-	_component_type_bits[index] = false;
-	_components.erase(_components.begin() + index);
-}
-
-}
-}
+#endif // YAVE_ECS_COMPONENTBITMASK_H
