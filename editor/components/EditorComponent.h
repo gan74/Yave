@@ -35,6 +35,8 @@ class EditorComponent {
 		const core::String& name() const;
 		bool is_visible() const;
 
+		y_serde(_name, _visible)
+
 	private:
 		core::String _name;
 		bool _visible = true;

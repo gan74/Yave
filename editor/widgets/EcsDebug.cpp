@@ -43,8 +43,13 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		world.create_component<RenderableComponent>(id, std::move(inst));
 	}
 
+	if(ImGui::Button("Flush world")) {
+		world.flush();
+	}
+
 	ImGui::Text("%u component types registered", u32(ecs::detail::registered_types_count()));
 
+	ImGui::Separator();
 	if(ImGui::TreeNode("Components")) {
 		for(const auto& c : world.components<EditorComponent>()) {
 			ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %", c.name()).data());

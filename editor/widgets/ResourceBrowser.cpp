@@ -58,7 +58,7 @@ ResourceBrowser::DirNode::DirNode(std::string_view dir, std::string_view full, D
 
 
 
-ResourceBrowser::ResourceBrowser(ContextPtr ctx) : ResourceBrowser(ctx, ICON_FA_OBJECT_GROUP " Resource Browser") {
+ResourceBrowser::ResourceBrowser(ContextPtr ctx) : ResourceBrowser(ctx, ICON_FA_FOLDER_OPEN " Resource Browser") {
 }
 
 ResourceBrowser::ResourceBrowser(ContextPtr ctx, std::string_view title) :

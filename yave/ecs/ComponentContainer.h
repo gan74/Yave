@@ -64,20 +64,26 @@ class ComponentContainerBase : NonMovable {
 
 
 namespace detail {
+using create_container_t = std::unique_ptr<ComponentContainerBase> (*)(io::ReaderRef, EntityWorld&, TypeIndex);
 class RegisteredType {
 	private:
-		friend void register_type(RegisteredType* type, usize hash, std::unique_ptr<ComponentContainerBase> (*create_container)(io::ReaderRef));
+		friend void register_type(RegisteredType*, usize, create_container_t);
 		friend usize registered_types_count();
 
 		usize _hash = 0;
-		std::unique_ptr<ComponentContainerBase> (*_create_container)(io::ReaderRef);
+		create_container_t _create_container;
 		RegisteredType* _next = nullptr;
 };
 
-void register_type(RegisteredType* type, usize hash, std::unique_ptr<ComponentContainerBase> (*create_container)(io::ReaderRef));
+void register_type(RegisteredType* type, usize hash, create_container_t create_container);
 usize registered_types_count();
+
+template<typename T>
+void register_type(RegisteredType* type, create_container_t create_container) {
+	register_type(type, type_hash<T>(), create_container);
 }
 
+}
 
 
 template<typename T>
@@ -85,14 +91,28 @@ class ComponentContainer final : public ComponentContainerBase {
 
 	static struct Registerer {
 		Registerer() {
-			detail::register_type(&type, type_hash<T>(), [](io::ReaderRef) { return std::unique_ptr<ComponentContainerBase>(); });
+			detail::create_container_t derer_func = nullptr;
+			if constexpr(serde::is_deserializable<T>::value) {
+				derer_func = [](io::ReaderRef reader, EntityWorld& world, TypeIndex type)
+							-> std::unique_ptr<ComponentContainerBase> {
+						try {
+							auto container = std::make_unique<ComponentContainer<T>>(world, type);
+							container->deserialize(reader);
+							return container;
+						} catch(...) {
+						}
+						return nullptr;
+					};
+			}
+			detail::register_type<T>(&type, derer_func);
 		}
 
 		detail::RegisteredType type;
 	} registerer;
 
-	public:
+	struct MagicNumber {};
 
+	public:
 		ComponentContainer(EntityWorld& world, TypeIndex type) :
 				ComponentContainerBase(world, type),
 				_registerer(&registerer) {
@@ -141,9 +161,11 @@ class ComponentContainer final : public ComponentContainerBase {
 			return core::Range<const_iterator>(const_iterator(), const_iterator());
 		}
 
+		y_serde(type_hash<MagicNumber>(), _components)
 
 	private:
 		SlotMap<T, ComponentTag> _components;
+		// make sure that it is ODR used no matter what
 		Registerer* _registerer = nullptr;
 
 };

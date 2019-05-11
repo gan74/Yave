@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 
 	perf::set_output_file("perfdump.json");
 
-	y_debug_assert([] { log_msg("Debug assert enabled"); return true; });
+	y_debug_assert([] { log_msg("Debug assert enabled"); return true; }());
 
 	bool debug = true;
 	for(std::string_view arg : core::ArrayView<const char*>(argv, argc)) {

@@ -29,11 +29,12 @@ namespace ecs {
 namespace detail {
 static RegisteredType* registered_types_head = nullptr;
 
-void register_type(RegisteredType* type, usize hash, std::unique_ptr<ComponentContainerBase> (*create_container)(io::ReaderRef)) {
+void register_type(RegisteredType* type, usize hash, create_container_t create_container) {
 	for(auto* i = registered_types_head; i; i = i->_next) {
 		y_debug_assert(i->_hash != hash);
 	}
 	y_debug_assert(!type->_next);
+
 	type->_hash = hash;
 	type->_create_container = create_container;
 	type->_next = registered_types_head;
