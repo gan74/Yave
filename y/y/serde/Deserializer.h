@@ -87,7 +87,7 @@ template<typename T>
 struct Deserializer<core::Vector<T>> {
 	static void deserialize(io::ReaderRef reader, core::Vector<T>& vec) {
 		u64 size = deserialized<u64>(reader);
-		if constexpr(std::is_default_constructible_v<T>) {
+		if constexpr(std::is_default_constructible_v<T> && std::is_copy_assignable_v<T>) {
 			vec = core::Vector(size, T());
 			deserialize_array(reader, vec.data(), size);
 		} else {
@@ -136,6 +136,7 @@ T deserialized(io::ReaderRef reader) {
 
 template<typename T>
 void deserialize_array(io::ReaderRef reader, T* arr, usize size) {
+	static_assert(!std::is_pointer_v<T> && !std::is_array_v<T> && std::is_default_constructible_v<T>);
 	if constexpr(is_deserializable<T>::value) {
 		for(usize i = 0; i != size; ++i) {
 			arr[i].deserialize(reader);
