@@ -43,6 +43,8 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		world.create_component<RenderableComponent>(id, std::move(inst));
 	}
 
+	ImGui::Text("%u component types registered", u32(ecs::detail::registered_types_count()));
+
 	if(ImGui::TreeNode("Components")) {
 		for(const auto& c : world.components<EditorComponent>()) {
 			ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %", c.name()).data());

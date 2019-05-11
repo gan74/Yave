@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <typeindex>
 
+#include <y/serde/serde.h>
+
 namespace yave {
 namespace ecs {
 
@@ -61,10 +63,37 @@ class ComponentContainerBase : NonMovable {
 };
 
 
+namespace detail {
+struct RegisteredDeserializer {
+	usize hash = 0;
+	std::unique_ptr<ComponentContainerBase> (*create)(io::ReaderRef);
+	RegisteredDeserializer* next = nullptr;
+	static RegisteredDeserializer* head;
+};
+
+usize registered_types_count();
+}
+
+
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
+
+	static struct Registerer {
+		Registerer() {
+			deser.hash = type_hash<T>();
+			deser.create = [](io::ReaderRef) { return std::unique_ptr<ComponentContainerBase>(); };
+			deser.next = detail::RegisteredDeserializer::head;
+			detail::RegisteredDeserializer::head = &deser;
+		}
+
+		detail::RegisteredDeserializer deser;
+	} registerer;
+
 	public:
-		ComponentContainer(EntityWorld& world, TypeIndex type) : ComponentContainerBase(world, type) {
+
+		ComponentContainer(EntityWorld& world, TypeIndex type) :
+				ComponentContainerBase(world, type),
+				_registerer(&registerer) {
 		}
 
 		const T* component(ComponentId id) const {
@@ -110,9 +139,16 @@ class ComponentContainer final : public ComponentContainerBase {
 			return core::Range<const_iterator>(const_iterator(), const_iterator());
 		}
 
+
 	private:
 		SlotMap<T, ComponentTag> _components;
+		Registerer* _registerer = nullptr;
+
 };
+
+
+template<typename T>
+typename ComponentContainer<T>::Registerer ComponentContainer<T>::registerer = ComponentContainer<T>::Registerer();
 
 }
 }

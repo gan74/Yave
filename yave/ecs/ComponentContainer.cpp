@@ -26,6 +26,19 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+namespace detail {
+RegisteredDeserializer* RegisteredDeserializer::head = nullptr;
+
+usize registered_types_count() {
+	usize count = 0;
+	for(RegisteredDeserializer* i = RegisteredDeserializer::head; i; i = i->next) {
+		++count;
+	}
+	return count;
+}
+}
+
+
 ComponentContainerBase::ComponentContainerBase(EntityWorld& world, TypeIndex type) : _world(world), _type(type) {
 }
 
