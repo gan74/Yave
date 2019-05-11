@@ -37,15 +37,15 @@ class ComponentContainerBase : NonCopyable {
 
 		virtual ComponentId create_component() = 0;
 		ComponentId create_component(EntityId parent);
-
 		void remove_component(ComponentId id);
 
+		core::ArrayView<EntityId> parents() const;
 		EntityId parent(ComponentId id) const;
+
 		const std::type_index& type() const;
 
 	protected:
 		ComponentContainerBase(std::type_index type);
-
 
 		void set_parent(ComponentId id, EntityId parent);
 
@@ -78,6 +78,7 @@ class ComponentContainer final : public ComponentContainerBase {
 		void flush() override {
 			for(ComponentId id : _deletions) {
 				_components.remove(id);
+				y_debug_assert(!"parent not updated on component deletion");
 			}
 			_deletions.clear();
 		}

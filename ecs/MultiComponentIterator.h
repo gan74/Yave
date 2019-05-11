@@ -24,18 +24,26 @@ SOFTWARE.
 
 #include "ecs.h"
 #include "ComponentBitmask.h"
+#include "SlotMap.h"
 
 namespace yave {
 namespace ecs {
 
+class MultiComponentIteratorEndSentry {};
+
 template<typename It, bool Const = false>
 class MultiComponentIterator {
+
+		using entity_container = std::conditional_t<Const, const SlotMap<Entity, EntityTag>, SlotMap<Entity, EntityTag>>;
+		using entity_container_ref = std::add_lvalue_reference_t<entity_container>;
+
 	public:
 		using value_type = std::conditional_t<Const, const Entity, Entity>;
 		using reference = std::add_lvalue_reference_t<value_type>;
 		using pointer = std::add_pointer_t<value_type>;
 		using difference_type = usize;
 		using iterator_category = std::forward_iterator_tag;
+		using end_iterator = MultiComponentIteratorEndSentry;
 
 		bool at_end() const {
 			return _iterator == _end;
@@ -54,14 +62,16 @@ class MultiComponentIterator {
 			return it;
 		}
 
+		pointer get() const {
+			return _entities.get(*_iterator);
+		}
+
 		pointer operator->() const {
-			y_debug_assert(has_all_bits());
-			return &(*_iterator);
+			return get();
 		}
 
 		reference operator*() const {
-			y_debug_assert(has_all_bits());
-			return *_iterator;
+			return *get();
 		}
 
 		bool operator==(const MultiComponentIterator& other) const {
@@ -72,23 +82,37 @@ class MultiComponentIterator {
 			return _iterator != other._iterator;
 		}
 
+		bool operator==(const end_iterator&) const {
+			return at_end();
+		}
+
+		bool operator!=(const end_iterator&) const {
+			return !at_end();
+		}
+
 	private:
 		friend class EntityWorld;
 
-		MultiComponentIterator(It it, It end, const ComponentBitmask& bits) : _iterator(it), _end(end), _component_type_bits(bits) {
+		MultiComponentIterator(It it, It end, entity_container_ref entities, const ComponentBitmask& bits) :
+				_iterator(it),
+				_end(end),
+				_component_type_bits(bits),
+				_entities(entities) {
+
 			while(!at_end() && !has_all_bits()) {
 				++_iterator;
 			}
 		}
 
 		bool has_all_bits() const {
-			return (_iterator->components_bits() & _component_type_bits) == _component_type_bits;
+			return (get()->components_bits() & _component_type_bits) == _component_type_bits;
 		}
 
 
 		It _iterator;
 		It _end;
 		ComponentBitmask _component_type_bits;
+		entity_container_ref _entities;
 };
 
 }
@@ -104,6 +128,12 @@ struct iterator_traits<yave::ecs::MultiComponentIterator<It, Const>> {
 	using difference_type = typename iterator_type::difference_type;
 	using iterator_category = typename iterator_type::iterator_category;
 };
+
+template<>
+struct iterator_traits<yave::ecs::MultiComponentIteratorEndSentry> :
+			iterator_traits<yave::ecs::MultiComponentIterator<int*>> {
+};
+
 }
 
 #endif // YAVE_ECS_MULTICOMPONENTITERATOR_H

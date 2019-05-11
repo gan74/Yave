@@ -57,7 +57,16 @@ class Range {
 		}
 
 		usize size() const {
-			return std::distance(_beg, _end);
+			if constexpr(std::is_same_v<Iter, EndIter>) {
+				return std::distance(_beg, _end);
+			} else {
+				usize s = 0;
+				for(auto&& k : *this) {
+					unused(k);
+					++s;
+				}
+				return s;
+			}
 		}
 
 	private:

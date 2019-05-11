@@ -48,6 +48,10 @@ void ComponentContainerBase::remove_component(ComponentId id) {
 	_deletions << id;
 }
 
+core::ArrayView<EntityId> ComponentContainerBase::parents() const {
+	return _parents;
+}
+
 EntityId ComponentContainerBase::parent(ComponentId id) const {
 	u32 index = id.index();
 	return index < _parents.size() ? _parents[index] : EntityId();

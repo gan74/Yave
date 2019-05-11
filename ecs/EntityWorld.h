@@ -46,6 +46,11 @@ class EntityWorld {
 
 
 
+		const auto& entities() const {
+			return _entities;
+		}
+
+
 		template<typename T>
 		ComponentId add_component(EntityId id) {
 			return add_component(component_container<T>(), id);
@@ -86,19 +91,22 @@ class EntityWorld {
 		}
 
 
-		template<typename T, typename... Args>
+		template<typename... Args>
 		auto entities_with() {
-			auto begin = _entities.begin();
-			auto end = _entities.end();
-			ComponentBitmask mask = create_bitmask<T, Args...>();
-			return core::Range(MultiComponentIterator(begin, end, mask),
-							   MultiComponentIterator(end, end, mask));
+			if constexpr(sizeof...(Args)) {
+				core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
+				ComponentBitmask mask = create_bitmask<Args...>();
+				MultiComponentIterator begin(entities.begin(), entities.end(), _entities, mask);
+				MultiComponentIteratorEndSentry end;
+				return core::Range(begin, end);
+			} else {
+				return entities();
+			}
 		}
 
 	private:
 		template<typename T>
 		ComponentContainerBase* component_container() {
-			//auto& container = _component_containers[typeid(T)];
 			auto& container = _component_containers[index_for_type<T>().index];
 			if(!container) {
 				container = std::make_unique<ComponentContainer<T>>();
@@ -111,6 +119,16 @@ class EntityWorld {
 			return dynamic_cast<ComponentContainer<T>*>(component_container<T>());
 		}
 
+		template<typename T, typename... Args>
+		ComponentContainerBase* smallest_container() {
+			ComponentContainerBase* cont = component_container<T>();
+			if constexpr(sizeof...(Args)) {
+				ComponentContainerBase* other = smallest_container<Args...>();
+				//log_msg(fmt("(%) % (%) %", cont->type().name(), cont->parents().size(), other->type().name(), other->parents().size()));
+				return cont->parents().size() < other->parents().size() ? cont : other;
+			}
+			return cont;
+		}
 
 		template<typename... Args>
 		ComponentBitmask create_bitmask() {
