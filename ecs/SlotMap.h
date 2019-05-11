@@ -29,7 +29,7 @@ namespace yave {
 namespace ecs {
 
 template<typename Tag>
-union SlotMapId {
+class SlotMapId {
 	public:
 		SlotMapId() {
 			parts.index = invalid_index;
@@ -62,11 +62,13 @@ union SlotMapId {
 
 		static constexpr u32 invalid_index = u32(-1);
 
-		struct {
-			u32 index;
-			u32 version;
-		} parts;
-		u64 id;
+		union {
+			struct {
+				u32 index;
+				u32 version;
+			} parts;
+			u64 id;
+		};
 };
 
 template<typename T, typename IDTag = T>

@@ -270,108 +270,115 @@ void test_perf(usize max = 100000) {
 	usize abd_count = 0;
 	{
 		core::DebugTimer _("Ids with A, B, D");
-		const EntityWorld& cw = world;
-
-		auto multi = cw.ids_with<D, A, B>();
-		bool all_ok = true;
-		for(EntityId id : multi) {
-			all_ok &= !!world.component<A>(id);
-			all_ok &= !!world.component<B>(id);
-			all_ok &= !!world.component<D>(id);
-			y_debug_assert(all_ok);
-			++abd_count;
-		}
-		if(!all_ok) {
-			y_fatal("Missing components.");
+		{
+			const EntityWorld& cw = world;
+			auto multi = cw.ids_with<D, A, B>();
+			bool all_ok = true;
+			for(EntityId id : multi) {
+				all_ok &= !!world.component<A>(id);
+				all_ok &= !!world.component<B>(id);
+				all_ok &= !!world.component<D>(id);
+				y_debug_assert(all_ok);
+				++abd_count;
+			}
+			if(!all_ok) {
+				y_fatal("Missing components.");
+			}
 		}
 		log_msg(fmt("A, B, D: %", abd_count));
 	}
 
 	{
-		core::DebugTimer _("Components A, B, D");
 		usize count = 0;
-		for(auto&& [a, b, d] : world.components<A, B, D>()) {
-			unused(a, b, d);
-			++count;
+		{
+			core::DebugTimer _("Components A, B, D");
+			for(auto&& [a, b, d] : world.components<A, B, D>()) {
+				unused(a, b, d);
+				++count;
+			}
 		}
-
 		log_msg(fmt("A, B, D: %", count));
 	}
 
 	{
-		core::DebugTimer _("Multi A, E, G");
 		usize count = 0;
-		bool all_ok = true;
-		for(EntityId id : world.ids_with<A, E, G>()) {
-			all_ok &= !!world.component<A>(id);
-			all_ok &= !!world.component<E>(id);
-			all_ok &= !!world.component<G>(id);
-			y_debug_assert(all_ok);
-			++count;
-		}
-		if(!all_ok) {
-			y_fatal("Missing components.");
-		}
-
-		log_msg(fmt("A, E, G: %", count));
-	}
-
-
-	{
-		core::DebugTimer _("Components A, E, G");
-		usize count = 0;
-		for(auto&& [a, e, g] : world.components<A, E, G>()) {
-			unused(a, e, g);
-			y_debug_assert(g.is_valid());
-			++count;
-		}
-
-		log_msg(fmt("A, E, G: %", count));
-	}
-
-	{
-		core::DebugTimer _("Components A, Rare");
-		usize count = 0;
-		for(auto&& [a, r] : world.components<A, Rare>()) {
-			if(!r.is_valid()) {
-				y_fatal("Component broken.");
+		{
+			core::DebugTimer _("Multi A, E, G");
+			bool all_ok = true;
+			for(EntityId id : world.ids_with<A, E, G>()) {
+				all_ok &= !!world.component<A>(id);
+				all_ok &= !!world.component<E>(id);
+				all_ok &= !!world.component<G>(id);
+				y_debug_assert(all_ok);
+				++count;
 			}
-			++count;
+			if(!all_ok) {
+				y_fatal("Missing components.");
+			}
 		}
+		log_msg(fmt("A, E, G: %", count));
+	}
 
+
+	{
+		usize count = 0;
+		{
+			core::DebugTimer _("Components A, E, G");
+			for(auto&& [a, e, g] : world.components<A, E, G>()) {
+				unused(a, e, g);
+				y_debug_assert(g.is_valid());
+				++count;
+			}
+		}
+		log_msg(fmt("A, E, G: %", count));
+	}
+
+	{
+		usize count = 0;
+		{
+			core::DebugTimer _("Components A, Rare");
+			for(auto&& [a, r] : world.components<A, Rare>()) {
+				if(!r.is_valid()) {
+					y_fatal("Component broken.");
+				}
+				++count;
+			}
+		}
 		log_msg(fmt("A, Rare: %", count));
 	}
 
 	{
-		core::DebugTimer _("Components B, Rare");
 		usize count = 0;
-		for(auto&& [b, r] : world.components<B, Rare>()) {
-			if(!r.is_valid()) {
-				y_fatal("Component broken.");
+		{
+			core::DebugTimer _("Components B, Rare");
+			for(auto&& [b, r] : world.components<B, Rare>()) {
+				if(!r.is_valid()) {
+					y_fatal("Component broken.");
+				}
+				++count;
 			}
-			++count;
 		}
-
 		log_msg(fmt("B, Rare: %", count));
 	}
 
-	{
-		core::DebugTimer _("Components Rare");
+	for(usize i = 0; i != 5; ++i) {
 		usize count = 0;
-		for(auto&& r : world.components<Rare>()) {
-			if(!r.is_valid()) {
-				y_fatal("Component broken.");
+		{
+			core::DebugTimer _("Components Rare");
+			for(auto&& r : world.components<Rare>()) {
+				if(!r.is_valid()) {
+					y_fatal("Component broken.");
+				}
+				++count;
 			}
-			++count;
 		}
-
 		log_msg(fmt("Rare: %", count));
 	}
 
 
 	{
-		core::DebugTimer _("Checking count");
 		usize count = 0;
+		core::DebugTimer _("Checking count");
 		for(const Entity& e : world.entities()) {
 			if(world.component<A>(e.id()) && world.component<B>(e.id()) &&world.component<D>(e.id())) {
 				++count;
@@ -383,11 +390,12 @@ void test_perf(usize max = 100000) {
 	}
 }
 
-/*template<typename T>
+template<typename T>
 [[gnu::noinline]] usize count_cmp(EntityWorld& world) {
 	usize count = 0;
 	for(auto&& c : world.components<T>()) {
 		unused(c);
+		c.i++;
 		++count;
 	}
 	return count;
@@ -418,11 +426,16 @@ void test_perf2(usize max = 1000000) {
 	}
 
 	{
-		core::DebugTimer _("Components Rare");
-		log_msg(fmt("Rare: %", count_cmp<Rare>(world)));
+		core::DebugTimer timer("Components Rare");
+		usize count = 0;
+		usize loops = 0;
+		while(timer.elapsed() < core::Duration::seconds(5)) {
+			count += count_cmp<Rare>(world);
+			++loops;
+		}
+		log_msg(fmt("Rare (x%): %, avg = %ms", loops, count, 5000.0 / loops));
 	}
-
-}*/
+}
 
 int main(int, char**) {
 	perf::set_output_file("perfdump.json");
@@ -431,6 +444,7 @@ int main(int, char**) {
 	test_perf();
 
 	log_msg("[DONE]");
+
 
 	return 0;
 }

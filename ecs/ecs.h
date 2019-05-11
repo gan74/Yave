@@ -48,6 +48,28 @@ using EntityId = SlotMapId<EntityTag>;
 struct ComponentTag {};
 using ComponentId = SlotMapId<ComponentTag>;
 
+
+
+
+template<typename T>
+class TypedComponentId : public ComponentId {
+	public:
+		TypedComponentId() = default;
+
+		const ComponentId& to_generic_id() const {
+			return static_cast<const ComponentId&>(*this);
+		}
+
+	private:
+		friend class EntityWorld;
+
+		TypedComponentId(ComponentId id) : ComponentId(id) {
+		}
+};
+
+static_assert(!std::is_constructible_v<TypedComponentId<int>, ComponentId>);
+static_assert(std::is_constructible_v<ComponentId, TypedComponentId<int>>);
+
 }
 }
 

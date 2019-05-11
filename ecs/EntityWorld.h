@@ -56,7 +56,7 @@ class EntityWorld : NonCopyable {
 
 
 		template<typename T>
-		ComponentId add_component(EntityId id) {
+		TypedComponentId<T> add_component(EntityId id) {
 			return add_component(component_container<T>(), id);
 		}
 
@@ -69,6 +69,11 @@ class EntityWorld : NonCopyable {
 
 
 		template<typename T>
+		T* component(TypedComponentId<T> id) {
+			return component<T>(id.to_generic_id());
+		}
+
+		template<typename T>
 		T* component(ComponentId id) {
 			return typed_component_container<T>()->component(id);
 		}
@@ -76,6 +81,11 @@ class EntityWorld : NonCopyable {
 		template<typename T>
 		T* component(EntityId id) {
 			return component<T>(entity(id)->component_id(add_index_for_type<T>()));
+		}
+
+		template<typename T>
+		const T* component(TypedComponentId<T> id) const {
+			return component<T>(id.to_generic_id());
 		}
 
 		template<typename T>
