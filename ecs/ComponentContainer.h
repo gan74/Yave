@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class ComponentContainerBase : NonCopyable {
+class ComponentContainerBase : NonMovable {
 	public:
 		virtual ~ComponentContainerBase();
 
@@ -42,25 +42,30 @@ class ComponentContainerBase : NonCopyable {
 		core::ArrayView<EntityId> parents() const;
 		EntityId parent(ComponentId id) const;
 
-		const std::type_index& type() const;
+		TypeIndex type() const;
+		const EntityWorld& world() const;
 
 	protected:
-		ComponentContainerBase(std::type_index type);
+		ComponentContainerBase(EntityWorld& world, TypeIndex type);
 
 		void set_parent(ComponentId id, EntityId parent);
+		void unset_parent(ComponentId id);
+
+		void finish_flush();
 
 		core::Vector<EntityId> _parents;
 		core::Vector<ComponentId> _deletions;
 
 	private:
-		std::type_index _type;
+		EntityWorld& _world;
+		TypeIndex _type;
 };
 
 
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
 	public:
-		ComponentContainer() : ComponentContainerBase(typeid(T)) {
+		ComponentContainer(EntityWorld& world, TypeIndex type) : ComponentContainerBase(world, type) {
 		}
 
 		const T* component(ComponentId id) const {
@@ -78,17 +83,21 @@ class ComponentContainer final : public ComponentContainerBase {
 		void flush() override {
 			for(ComponentId id : _deletions) {
 				_components.remove(id);
-				y_debug_assert(!"parent not updated on component deletion");
 			}
-			_deletions.clear();
+			finish_flush();
 		}
 
 		auto components() const {
-			return core::Range(_components);
+			return core::Range<typename decltype(_components)::const_iterator>(_components);
 		}
 
 		auto components() {
-			return core::Range(_components);
+			return core::Range<typename decltype(_components)::iterator>(_components);
+		}
+
+		static auto empty_components() {
+			using const_iterator = typename SlotMap<T, ComponentTag>::const_iterator;
+			return core::Range<const_iterator>(const_iterator(), const_iterator());
 		}
 
 	private:

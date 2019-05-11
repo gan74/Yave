@@ -23,6 +23,7 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <y/core/Chrono.h>
+#include <y/math/random.h>
 
 #include "EntityWorld.h"
 
@@ -76,63 +77,160 @@ void test_multi() {
 	{
 		auto multi = world.entities_with<A, B>();
 		y_debug_assert(multi.size() == 2);
+		unused(multi);
 	}
 	{
 		auto multi = world.entities_with<A>();
 		y_debug_assert(multi.size() == 3);
+		unused(multi);
 	}
 	{
 		auto multi = world.entities_with<C>();
 		y_debug_assert(multi.size() == 2);
+		unused(multi);
 	}
 	{
 		auto multi = world.entities_with<C, A>();
 		y_debug_assert(multi.size() == 2);
+		unused(multi);
 	}
 	{
 		auto multi = world.entities_with<C, A, B>();
 		y_debug_assert(multi.size() == 1);
+		unused(multi);
 	}
+}
+
+
+template<typename C>
+usize count_components(const EntityWorld& w) {
+	auto c = w.components<C>();
+	return std::distance(c.begin(), c.end());
+}
+
+void test_perf(usize max = 100'000) {
+
+#define ADD_CMP(Type) do { if(rng() % 2) { world.add_component<Type>(id); } } while(false)
+#define REM_CMP(Type) do { world.remove_component<Type>(entities[i]); } while(false)
+
+	struct A {};
+	struct B {};
+	struct C {};
+	struct D {};
+	struct E {};
+	struct F {};
+	struct G {};
+
+	math::FastRandom rng;
+	EntityWorld world;
+	auto entities = core::vector_with_capacity<EntityId>(max);
+
+	{
+		core::DebugTimer _("Adding entities");
+		for(usize i = 0; i != max; ++i) {
+			EntityId id = world.create_entity();
+			entities << id;
+			world.add_component<A>(id);
+			ADD_CMP(B);
+			ADD_CMP(C);
+			ADD_CMP(D);
+			ADD_CMP(E);
+			ADD_CMP(F);
+			ADD_CMP(G);
+		}
+	}
+
+	log_msg(fmt("A: %", count_components<A>(world)));
+	log_msg(fmt("B: %", count_components<B>(world)));
+	log_msg(fmt("C: %", count_components<C>(world)));
+	log_msg(fmt("D: %", count_components<D>(world)));
+	log_msg(fmt("E: %", count_components<E>(world)));
+	log_msg(fmt("F: %", count_components<F>(world)));
+	log_msg(fmt("G: %", count_components<G>(world)));
+
+
+	{
+		core::DebugTimer _("Removing all");
+		for(usize i = 0; i != max; ++i) {
+			REM_CMP(C);
+		}
+	}
+	{
+		core::DebugTimer _("Removing 1/2");
+		std::shuffle(entities.begin(), entities.end(), math::FastRandom(rng()));
+		for(usize i = 0; i != max / 2; ++i) {
+			REM_CMP(D);
+		}
+	}
+	{
+		core::DebugTimer _("Removing 1/4");
+		std::shuffle(entities.begin(), entities.end(), math::FastRandom(rng()));
+		for(usize i = 0; i != max / 4; ++i) {
+			REM_CMP(E);
+		}
+	}
+	{
+		core::DebugTimer _("Removing 1/8");
+		std::shuffle(entities.begin(), entities.end(), math::FastRandom(rng()));
+		for(usize i = 0; i != max / 8; ++i) {
+			REM_CMP(F);
+		}
+	}
+	{
+		core::DebugTimer _("Removing 1/16");
+		std::shuffle(entities.begin(), entities.end(), math::FastRandom(rng()));
+		for(usize i = 0; i != max / 16; ++i) {
+			REM_CMP(G);
+		}
+	}
+
+	{
+		core::DebugTimer _("Flush");
+		world.flush();
+	}
+
+#undef ADD_CMP
+#undef REM_CMP
+
+
+	log_msg(fmt("A: %", count_components<A>(world)));
+	log_msg(fmt("B: %", count_components<B>(world)));
+	log_msg(fmt("C: %", count_components<C>(world)));
+	log_msg(fmt("D: %", count_components<D>(world)));
+	log_msg(fmt("E: %", count_components<E>(world)));
+	log_msg(fmt("F: %", count_components<F>(world)));
+	log_msg(fmt("G: %", count_components<G>(world)));
+
+	{
+		core::DebugTimer _("Multi 3");
+		auto multi = world.entities_with<D, A, B>();
+		usize count = 0;
+		bool all_ok = true;
+		for(const Entity& e : multi) {
+			all_ok &= !!world.component<A>(e.id());
+			all_ok &= !!world.component<B>(e.id());
+			all_ok &= !!world.component<D>(e.id());
+			y_debug_assert(all_ok);
+			++count;
+		}
+		if(!all_ok) {
+			y_fatal("Missing components");
+		}
+		log_msg(fmt("A, B, D: %", count));
+	}
+
+}
+
+void test_remove() {
+
 }
 
 int main(int, char**) {
 	log_msg("Hello entities");
 
-	EntityWorld world;
-
-	y_debug_assert([] { log_msg("asserts enabled"); return true; }());
-	y_debug_assert(world.entity(EntityId()) == nullptr);
-
-	EntityId id = world.create_entity();
-	y_debug_assert(world.entity(id) != nullptr);
-	y_debug_assert(world.entity(EntityId()) == nullptr);
-	const Entity* ent = world.entity(id);
-	world.remove_entity(id);
-	y_debug_assert(world.entity(id) != nullptr);
-	world.flush();
-	y_debug_assert(world.entity(id) == nullptr);
-	EntityId id2 = world.create_entity();
-	y_debug_assert(id != id2);
-	y_debug_assert(world.entity(id) == nullptr);
-	y_debug_assert(world.entity(id2) != nullptr);
-
-	ComponentId cmp = world.add_component<int>(id2);
-	y_debug_assert(world.components<int>().size() == 1);
-	y_debug_assert(world.components<double>().size() == 0);
-	*world.component<int>(cmp) = 7;
-	y_debug_assert(world.components<int>().size() == 1);
-	y_debug_assert(*world.component<int>(cmp) == 7);
-
-	for(int i : world.components<int>()) {
-		unused(i);
-		y_debug_assert(i == 7);
-	}
-
-	test_bitset();
-
-	unused(ent, cmp);
-
 	test_multi();
+	test_remove();
+	test_perf();
 
 	log_msg("Ok!");
 

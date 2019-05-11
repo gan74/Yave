@@ -188,7 +188,9 @@ class SlotMap {
 			static_assert(!std::is_reference_v<pointer>);
 
 			Iterator(internal_t it  = nullptr) : _it(it) {
-				skip_emtpy();
+				if(it) {
+					skip_emtpy();
+				}
 			}
 
 			Iterator& operator++() {

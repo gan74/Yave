@@ -38,6 +38,8 @@ using ComponentBitmask = std::bitset<max_entity_component_types>;
 
 struct TypeIndex {
 	usize index;
+	bool operator==(const TypeIndex& other) const { return index == other.index; }
+	bool operator!=(const TypeIndex& other) const { return index != other.index; }
 };
 
 struct EntityTag {};

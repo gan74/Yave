@@ -26,12 +26,14 @@ SOFTWARE.
 #include "ComponentContainer.h"
 #include "MultiComponentIterator.h"
 
+#include <y/core/Result.h>
+
 #include <unordered_map>
 
 namespace yave {
 namespace ecs {
 
-class EntityWorld {
+class EntityWorld : NonCopyable {
 
 	public:
 		EntityWorld();
@@ -51,22 +53,20 @@ class EntityWorld {
 		}
 
 
+
+
 		template<typename T>
 		ComponentId add_component(EntityId id) {
 			return add_component(component_container<T>(), id);
 		}
 
 		template<typename T>
-		void remove_component(ComponentId id) {
-			return add_component(component_container<T>(), id);
+		void remove_component(EntityId id) {
+			return remove_component(component_container<T>(), id);
 		}
 
 
 
-		template<typename T>
-		const T* component(ComponentId id) const {
-			return typed_component_container<T>()->component(id);
-		}
 
 		template<typename T>
 		T* component(ComponentId id) {
@@ -75,8 +75,23 @@ class EntityWorld {
 
 		template<typename T>
 		T* component(EntityId id) {
-			return component<T>(entity(id)->component_id(index_for_type<T>()));
+			return component<T>(entity(id)->component_id(add_index_for_type<T>()));
 		}
+
+		template<typename T>
+		const T* component(ComponentId id) const {
+			ComponentContainer<T>* container = typed_component_container<T>();
+			return container ? container->component(id) : nullptr;
+		}
+
+		template<typename T>
+		const T* component(EntityId id) const {
+			if(auto index = index_for_type<T>()) {
+				return component<T>(entity(id)->component_id(index.unwrap()));
+			}
+			return nullptr;
+		}
+
 
 
 
@@ -87,31 +102,58 @@ class EntityWorld {
 
 		template<typename T>
 		auto components() const {
-			return typed_component_container<T>()->components();
+			const ComponentContainer<T>* container = typed_component_container<T>();
+			return container ? container->components() : ComponentContainer<T>::empty_components();
 		}
+
+
 
 
 		template<typename... Args>
 		auto entities_with() {
 			if constexpr(sizeof...(Args)) {
 				core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
-				ComponentBitmask mask = create_bitmask<Args...>();
-				MultiComponentIterator begin(entities.begin(), entities.end(), _entities, mask);
-				MultiComponentIteratorEndSentry end;
-				return core::Range(begin, end);
+				MultiComponentIterator<decltype(entities.begin()), false> begin(entities.begin(), entities.end(), _entities, create_bitmask<Args...>());
+				return core::Range(begin, MultiComponentIteratorEndSentry());
 			} else {
 				return entities();
 			}
 		}
 
+		template<typename... Args>
+		auto entities_with() const {
+			if constexpr(sizeof...(Args)) {
+				core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
+				MultiComponentIterator<decltype(entities.begin()), true> begin(entities.begin(), entities.end(), _entities, create_bitmask<Args...>());
+				return core::Range(begin, MultiComponentIteratorEndSentry());
+			} else {
+				return entities();
+			}
+		}
+
+
+		core::String type_name(TypeIndex index) const;
+
 	private:
 		template<typename T>
 		ComponentContainerBase* component_container() {
-			auto& container = _component_containers[index_for_type<T>().index];
+			TypeIndex type = add_index_for_type<T>();
+			auto& container = _component_containers[type.index];
 			if(!container) {
-				container = std::make_unique<ComponentContainer<T>>();
+				container = std::make_unique<ComponentContainer<T>>(*this, type);
 			}
+			y_debug_assert(container->type() == type);
 			return container.get();
+		}
+
+		template<typename T>
+		const ComponentContainerBase* component_container() const {
+			if(auto index = index_for_type<T>()) {
+				if(index.unwrap().index < _component_containers.size()) {
+					return _component_containers[index.unwrap().index].get();
+				}
+			}
+			return nullptr;
 		}
 
 		template<typename T>
@@ -119,41 +161,53 @@ class EntityWorld {
 			return dynamic_cast<ComponentContainer<T>*>(component_container<T>());
 		}
 
+		template<typename T>
+		const ComponentContainer<T>* typed_component_container() const {
+			return dynamic_cast<const ComponentContainer<T>*>(component_container<T>());
+		}
+
 		template<typename T, typename... Args>
-		ComponentContainerBase* smallest_container() {
-			ComponentContainerBase* cont = component_container<T>();
+		const ComponentContainerBase* smallest_container() const {
+			const ComponentContainerBase* cont = component_container<T>();
 			if constexpr(sizeof...(Args)) {
-				ComponentContainerBase* other = smallest_container<Args...>();
-				//log_msg(fmt("(%) % (%) %", cont->type().name(), cont->parents().size(), other->type().name(), other->parents().size()));
+				const ComponentContainerBase* other = smallest_container<Args...>();
 				return cont->parents().size() < other->parents().size() ? cont : other;
 			}
 			return cont;
 		}
 
 		template<typename... Args>
-		ComponentBitmask create_bitmask() {
+		ComponentBitmask create_bitmask() const {
 			ComponentBitmask mask;
 			add_to_bitmask<Args...>(mask);
 			return mask;
 		}
 
 		template<typename T, typename... Args>
-		void add_to_bitmask(ComponentBitmask& mask) {
-			mask[index_for_type<T>().index] = true;
+		void add_to_bitmask(ComponentBitmask& mask) const {
+			if(auto index = index_for_type<T>()) {
+				mask[index.unwrap().index] = true;
+			}
 			if constexpr(sizeof...(Args)) {
 				add_to_bitmask<Args...>(mask);
 			}
 		}
 
 		template<typename T>
-		TypeIndex index_for_type() {
+		TypeIndex add_index_for_type() {
+			return add_index_for_type(typeid(T));
+		}
+
+		template<typename T>
+		core::Result<TypeIndex> index_for_type() const {
 			return index_for_type(typeid(T));
 		}
 
-		TypeIndex index_for_type(std::type_index type);
+		TypeIndex add_index_for_type(std::type_index type);
+		core::Result<TypeIndex> index_for_type(std::type_index type) const;
 
 		ComponentId add_component(ComponentContainerBase* container, EntityId id);
-		void remove_component(ComponentContainerBase* container, ComponentId id);
+		void remove_component(ComponentContainerBase* container, EntityId id);
 
 
 		SlotMap<Entity, EntityTag> _entities;

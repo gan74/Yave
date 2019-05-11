@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include "ecs.h"
 #include "ComponentBitmask.h"
-#include "SlotMap.h"
 
 namespace yave {
 namespace ecs {
@@ -45,6 +44,8 @@ class MultiComponentIterator {
 		using iterator_category = std::forward_iterator_tag;
 		using end_iterator = MultiComponentIteratorEndSentry;
 
+		static_assert(std::is_same_v<typename std::iterator_traits<It>::value_type, EntityId>);
+
 		bool at_end() const {
 			return _iterator == _end;
 		}
@@ -63,6 +64,7 @@ class MultiComponentIterator {
 		}
 
 		pointer get() const {
+			y_debug_assert(_iterator->is_valid());
 			return _entities.get(*_iterator);
 		}
 
@@ -105,7 +107,7 @@ class MultiComponentIterator {
 		}
 
 		bool has_all_bits() const {
-			return (get()->components_bits() & _component_type_bits) == _component_type_bits;
+			return _iterator->is_valid() && (get()->components_bits() & _component_type_bits) == _component_type_bits;
 		}
 
 
@@ -131,7 +133,7 @@ struct iterator_traits<yave::ecs::MultiComponentIterator<It, Const>> {
 
 template<>
 struct iterator_traits<yave::ecs::MultiComponentIteratorEndSentry> :
-			iterator_traits<yave::ecs::MultiComponentIterator<int*>> {
+			iterator_traits<yave::ecs::MultiComponentIterator<yave::ecs::EntityId*>> {
 };
 
 }

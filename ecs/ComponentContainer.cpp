@@ -21,11 +21,12 @@ SOFTWARE.
 **********************************/
 
 #include "ComponentContainer.h"
+#include "EntityWorld.h"
 
 namespace yave {
 namespace ecs {
 
-ComponentContainerBase::ComponentContainerBase(std::type_index type) : _type(type) {
+ComponentContainerBase::ComponentContainerBase(EntityWorld& world, TypeIndex type) : _world(world), _type(type) {
 }
 
 ComponentContainerBase::~ComponentContainerBase() {
@@ -44,8 +45,16 @@ void ComponentContainerBase::set_parent(ComponentId id, EntityId parent) {
 	_parents[id.index()] = parent;
 }
 
+void ComponentContainerBase::unset_parent(ComponentId id) {
+	if(id.index() < _parents.size()) {
+		_parents[id.index()] = EntityId();
+	}
+}
+
 void ComponentContainerBase::remove_component(ComponentId id) {
-	_deletions << id;
+	if(id.is_valid()) {
+		_deletions << id;
+	}
 }
 
 core::ArrayView<EntityId> ComponentContainerBase::parents() const {
@@ -57,8 +66,21 @@ EntityId ComponentContainerBase::parent(ComponentId id) const {
 	return index < _parents.size() ? _parents[index] : EntityId();
 }
 
-const std::type_index& ComponentContainerBase::type() const {
+void ComponentContainerBase::finish_flush() {
+	for(ComponentId id : _deletions) {
+		Entity* entity = _world.entity(parent(id));
+		entity->remove_component(type());
+		unset_parent(id);
+	}
+	_deletions.clear();
+}
+
+TypeIndex ComponentContainerBase::type() const {
 	return _type;
+}
+
+const EntityWorld& ComponentContainerBase::world() const {
+	return _world;
 }
 
 }

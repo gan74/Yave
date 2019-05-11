@@ -44,14 +44,16 @@ EntityId EntityWorld::create_entity() {
 }
 
 void EntityWorld::remove_entity(EntityId id) {
-	_deletions << id;
+	if(id.is_valid()) {
+		_deletions << id;
+	}
 }
 
 ComponentId EntityWorld::add_component(ComponentContainerBase* container, EntityId id) {
 	Entity* ent = entity(id);
 	y_debug_assert(ent);
 
-	TypeIndex type = index_for_type(container->type());
+	TypeIndex type = container->type();
 	if(ent->has_component(type)) {
 		return ent->component_id(type);
 	}
@@ -60,22 +62,30 @@ ComponentId EntityWorld::add_component(ComponentContainerBase* container, Entity
 	return comp;
 }
 
-void EntityWorld::remove_component(ComponentContainerBase* container, ComponentId id) {
-	Entity* ent = entity(container->parent(id));
+void EntityWorld::remove_component(ComponentContainerBase* container, EntityId id) {
+	Entity* ent = entity(id);
 	y_debug_assert(ent);
 
-	TypeIndex type = index_for_type(container->type());
-	ent->remove_component(type);
+	TypeIndex type = container->type();
+	ComponentId comp_id = ent->component_id(type);
+	container->remove_component(comp_id);
 }
 
-TypeIndex EntityWorld::index_for_type(std::type_index type) {
+TypeIndex EntityWorld::add_index_for_type(std::type_index type) {
 	if(auto it = _component_type_indexes.find(type); it != _component_type_indexes.end()) {
 		return it->second;
 	}
-	usize index = _component_containers.size();
-	_component_type_indexes[type] = TypeIndex{index};
+	TypeIndex index = TypeIndex{_component_containers.size()};
+	_component_type_indexes[type] = index;
 	_component_containers.emplace_back();
-	return TypeIndex{index};
+	return index;
+}
+
+core::Result<TypeIndex> EntityWorld::index_for_type(std::type_index type) const {
+	if(auto it = _component_type_indexes.find(type); it != _component_type_indexes.end()) {
+		return core::Ok(it->second);
+	}
+	return core::Err();
 }
 
 void EntityWorld::flush() {
@@ -94,6 +104,16 @@ void EntityWorld::flush() {
 	for(auto& container : _component_containers) {
 		container->flush();
 	}
+}
+
+
+core::String EntityWorld::type_name(TypeIndex index) const {
+	for(const auto& p : _component_type_indexes) {
+		if(p.second == index) {
+			return y::detail::demangle_type_name(p.first.name());
+		}
+	}
+	return "";
 }
 
 }

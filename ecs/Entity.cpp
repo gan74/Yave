@@ -51,9 +51,12 @@ void Entity::add_component(TypeIndex type, ComponentId id) {
 }
 
 void Entity::remove_component(TypeIndex type) {
-	usize index = component_index(type);
-	_component_type_bits[index] = false;
-	_components.erase(_components.begin() + index);
+	if(has_component(type)) {
+		_component_type_bits[type.index] = false;
+		usize index = component_index(type);
+		y_debug_assert(index < _components.size());
+		_components.erase(_components.begin() + index);
+	}
 }
 
 }

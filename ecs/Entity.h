@@ -46,6 +46,7 @@ class Entity final {
 
 	private:
 		friend class EntityWorld;
+		friend class ComponentContainerBase;
 
 		usize component_index(TypeIndex type) const;
 
