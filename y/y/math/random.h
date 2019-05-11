@@ -46,13 +46,15 @@ class FastRandom {
 #if 1
 class FastRandom {
 	public:
-		FastRandom(u32 seed = 0xdeadbeef) : _a(0xf1ea5eed), _b(seed), _c(seed), _d(seed) {
+		using result_type = u32;
+
+		constexpr FastRandom(u32 seed = 0xdeadbeef) : _a(0xf1ea5eed), _b(seed), _c(seed), _d(seed) {
 			for(usize i = 0; i != 20; ++i) {
 				(*this)();
 			}
 		}
 
-		u32 operator()() {
+		constexpr u32 operator()() {
 			u32 e = _a - rot(_b, 27);
 			_a = _b ^ rot(_c, 17);
 			_b = _c + _d;
@@ -61,8 +63,16 @@ class FastRandom {
 			return _d;
 		}
 
+		static constexpr u32 max() {
+			return u32(-1);
+		}
+
+		static constexpr u32 min() {
+			return 0;
+		}
+
 	private:
-		static u32 rot(u32 x, u32 k) {
+		static constexpr u32 rot(u32 x, u32 k) {
 			return (((x) << (k)) | ((x) >> (32 - (k))));
 		}
 
