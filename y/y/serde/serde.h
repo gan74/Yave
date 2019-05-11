@@ -44,7 +44,7 @@ SOFTWARE.
 
 #define y_deserialize(...)														\
 	static auto _y_serde_self_type_helper() ->									\
-		std::remove_reference<decltype(*this)>::type;							\
+		typename std::remove_reference<decltype(*this)>::type;					\
 	void deserialize(y::io::ReaderRef _y_serde_driver) {						\
 		auto y_serde_process = [&_y_serde_driver](auto&&... args) {				\
 			y::serde::deserialize_all(_y_serde_driver,							\
