@@ -97,6 +97,7 @@ void SceneData::load(std::string_view filename) {
 }
 
 void SceneData::set(Scene&& scene) {
+	context()->selection().set_selected(nullptr);
 	_scene = std::move(scene);
 }
 
