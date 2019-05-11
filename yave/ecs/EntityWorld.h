@@ -55,9 +55,9 @@ class EntityWorld : NonCopyable {
 
 
 
-		template<typename T>
-		TypedComponentId<T> add_component(EntityId id) {
-			return add_component(component_container<T>(), id);
+		template<typename T, typename... Args>
+		TypedComponentId<T> create_component(EntityId id, Args&&... args) {
+			return create_component(typed_component_container<T>(), id, y_fwd(args)...);
 		}
 
 		template<typename T>
@@ -254,11 +254,29 @@ class EntityWorld : NonCopyable {
 			return index_for_type(typeid(T));
 		}
 
+
+
+		template<typename T, typename... Args>
+		ComponentId create_component(ComponentContainer<T>* container, EntityId id, Args&&... args) {
+			Entity* ent = entity(id);
+			y_debug_assert(ent);
+
+			TypeIndex type = container->type();
+			if(ent->has_component(type)) {
+				y_fatal("Component already exists.");
+			}
+			ComponentId comp = container->create_component(id, y_fwd(args)...);
+			ent->add_component(type, comp);
+			return comp;
+		}
+
+		void remove_component(ComponentContainerBase* container, EntityId id);
+
+
+
 		TypeIndex add_index_for_type(std::type_index type);
 		core::Result<TypeIndex> index_for_type(std::type_index type) const;
 
-		ComponentId add_component(ComponentContainerBase* container, EntityId id);
-		void remove_component(ComponentContainerBase* container, EntityId id);
 
 
 		SlotMap<Entity, EntityTag> _entities;

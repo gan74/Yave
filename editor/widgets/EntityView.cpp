@@ -62,9 +62,7 @@ void EntityView::add_light() {
 }
 
 void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	char buffer[256];
-
-	if(ImGui::Button("+", math::Vec2(24))) {
+	if(ImGui::Button(ICON_FA_PLUS, math::Vec2(24))) {
 		ImGui::OpenPopup("Add entity");
 	}
 
@@ -73,22 +71,17 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			add_light();
 		}
 		if(ImGui::MenuItem("Add renderable")) {
-			if(auto mesh = context()->loader().load<StaticMesh>("cube.ym")) {
-				auto instance = std::make_unique<StaticMeshInstance>(std::move(mesh.unwrap()), device()->device_resources()[DeviceResources::EmptyMaterial]);
-				instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-				context()->scene().scene().static_meshes() << std::move(instance);
-			} else {
-				log_msg("Error while adding renderable");
-			}
+			auto instance = std::make_unique<StaticMeshInstance>(device()->device_resources()[DeviceResources::CubeMesh], device()->device_resources()[DeviceResources::EmptyMaterial]);
+			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
+			context()->scene().scene().static_meshes() << std::move(instance);
 		}
 		ImGui::EndPopup();
 	}
 
-	if(ImGui::TreeNode("Renderables")) {
+	if(ImGui::TreeNode(ICON_FA_FOLDER " Renderables")) {
 		for(const auto& r : context()->scene().scene().renderables()) {
-			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
 			bool selected = r.get() == context()->selection().renderable();
-			ImGui::Selectable(buffer, &selected);
+			ImGui::Selectable(fmt(ICON_FA_QUESTION " %##%", type_name(*r), static_cast<void*>(r.get())).data(), &selected);
 			if(selected) {
 				context()->selection().set_selected(r.get());
 			}
@@ -96,11 +89,10 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::TreePop();
 	}
 
-	if(ImGui::TreeNode("Meshes")) {
+	if(ImGui::TreeNode(ICON_FA_FOLDER " Meshes")) {
 		for(const auto& r : context()->scene().scene().static_meshes()) {
-			std::sprintf(buffer, "%s##%p", type_name(*r).data(), static_cast<void*>(r.get()));
 			bool selected = r.get() == context()->selection().renderable();
-			ImGui::Selectable(buffer, &selected);
+			ImGui::Selectable(fmt(ICON_FA_CUBE " %##%", type_name(*r), static_cast<void*>(r.get())).data(), &selected);
 			if(selected) {
 				context()->selection().set_selected(r.get());
 			}
@@ -108,11 +100,10 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::TreePop();
 	}
 
-	if(ImGui::TreeNode("Lights")) {
+	if(ImGui::TreeNode(ICON_FA_FOLDER " Lights")) {
 		for(const auto& l : context()->scene().scene().lights()) {
-			std::sprintf(buffer, "%s##%p", light_type_name(l->type()), static_cast<void*>(l.get()));
 			bool selected = l.get() == context()->selection().light();
-			ImGui::Selectable(buffer, &selected);
+			ImGui::Selectable(fmt(ICON_FA_LIGHTBULB " %##%", light_type_name(l->type()), static_cast<void*>(l.get())).data(), &selected);
 			if(selected) {
 				context()->selection().set_selected(l.get());
 			}

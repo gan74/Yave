@@ -36,8 +36,6 @@ class ComponentContainerBase : NonMovable {
 
 		virtual void flush() = 0;
 
-		virtual ComponentId create_component() = 0;
-		ComponentId create_component(EntityId parent);
 		void remove_component(ComponentId id);
 
 		core::ArrayView<EntityId> parents() const;
@@ -85,9 +83,11 @@ class ComponentContainer final : public ComponentContainerBase {
 			return _components.get(entity.component_id(type()));
 		}
 
-
-		ComponentId create_component() override {
-			return _components.add();
+		template<typename... Args>
+		ComponentId create_component(EntityId parent, Args&&... args) {
+			ComponentId id = _components.add(y_fwd(args)...);
+			set_parent(id, parent);
+			return id;
 		}
 
 		void flush() override {

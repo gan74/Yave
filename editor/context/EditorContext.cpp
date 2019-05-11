@@ -74,6 +74,7 @@ void EditorContext::flush_deferred() {
 		_is_flushing_deferred = false;
 	}
 	_scene.flush();
+	_world.flush();
 }
 
 

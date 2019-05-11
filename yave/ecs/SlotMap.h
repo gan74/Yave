@@ -123,11 +123,12 @@ class SlotMap {
 				return _storage.next != invalid_index;
 			}
 
-			void create(u32 index) {
+			template<typename... Args>
+			void create(u32 index, Args&&... args) {
 				y_debug_assert(is_free());
 				_id.parts.index = index;
 				++_id.parts.version;
-				new(&_storage.obj) T();
+				new(&_storage.obj) T(y_fwd(args)...);
 				y_debug_assert(!is_free());
 			}
 
@@ -255,7 +256,8 @@ class SlotMap {
 			_nodes.emplace_back();
 		}
 
-		Id add() {
+		template<typename... Args>
+		Id add(Args&&... args) {
 			y_debug_assert(_nodes.last().is_free());
 
 			u32 index = _next;
@@ -266,7 +268,7 @@ class SlotMap {
 			}
 			node_t& node = _nodes[index];
 			_next = node.next_free();
-			node.create(index);
+			node.create(index, y_fwd(args)...);
 			y_debug_assert(_nodes.last().is_free());
 			return node.id();
 		}

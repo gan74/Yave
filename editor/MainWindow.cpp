@@ -38,6 +38,7 @@ SOFTWARE.
 
 #include <editor/widgets/SceneDebug.h>
 #include <editor/widgets/AssetStringifier.h>
+#include <editor/widgets/EcsDebug.h>
 
 #include <editor/EngineView.h>
 
@@ -220,10 +221,15 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
 					if(ImGui::MenuItem("Scene debug")) context()->ui().add<SceneDebug>();
+					if(ImGui::MenuItem("ECS debug")) context()->ui().add<EcsDebug>();
+
+					ImGui::Separator();
 					if(ImGui::MenuItem("Asset stringifier")) context()->ui().add<AssetStringifier>();
+
+					ImGui::Separator();
 					if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
 
-					y_debug_assert(!ImGui::MenuItem("Debug assert"));
+					y_debug_assert(!(ImGui::Separator(), ImGui::MenuItem("Debug assert")));
 
 					ImGui::EndMenu();
 				}

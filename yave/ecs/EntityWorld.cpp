@@ -49,19 +49,6 @@ void EntityWorld::remove_entity(EntityId id) {
 	}
 }
 
-ComponentId EntityWorld::add_component(ComponentContainerBase* container, EntityId id) {
-	Entity* ent = entity(id);
-	y_debug_assert(ent);
-
-	TypeIndex type = container->type();
-	if(ent->has_component(type)) {
-		return ent->component_id(type);
-	}
-	ComponentId comp = container->create_component(id);
-	ent->add_component(type, comp);
-	return comp;
-}
-
 void EntityWorld::remove_component(ComponentContainerBase* container, EntityId id) {
 	Entity* ent = entity(id);
 	y_debug_assert(ent);

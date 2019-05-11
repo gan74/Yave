@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include <yave/framegraph/FrameGraphResourcePool.h>
 
+#include <yave/ecs/EntityWorld.h>
+
 #include "Settings.h"
 #include "SceneData.h"
 #include "Selection.h"
@@ -92,6 +94,10 @@ class EditorContext : NonMovable, public DeviceLinked {
 			return *_asset_store;
 		}
 
+		ecs::EntityWorld& world() {
+			return _world;
+		}
+
 
 	private:
 		std::unique_ptr<FileSystemModel> _filesystem;
@@ -112,6 +118,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		ThumbmailCache _thumb_cache;
 		PickingManager _picking_manager;
 
+		ecs::EntityWorld _world;
 };
 
 }
