@@ -68,13 +68,13 @@ static u32 thread_id() {
 Y_TODO(TLS destructors not called on windows)
 
 static thread_local struct ThreadData : NonMovable {
-	std::shared_ptr<io::File> keep_alive;
+	std::shared_ptr<io::File> thread_output;
 	std::unique_ptr<char[]> buffer;
 	usize buffer_offset = 0;
 	u32 tid = 0;
 
 	ThreadData() :
-			keep_alive(output),
+			thread_output(output),
 			buffer(std::make_unique<char[]>(buffer_size)),
 			tid(thread_id()) {
 	}
@@ -87,8 +87,9 @@ static thread_local struct ThreadData : NonMovable {
 		}
 		write(b, len);
 		write_buffer();
-		if(output->is_open()) {
-			output->flush();
+		std::unique_lock lock(mutex);
+		if(thread_output->is_open()) {
+			thread_output->flush();
 		}
 	}
 
@@ -103,15 +104,18 @@ static thread_local struct ThreadData : NonMovable {
 
 	void write_buffer() {
 		std::unique_lock lock(mutex);
-		if(output->is_open() && buffer) {
-			if(!initialized) {
-				initialized = true;
-				const char beg[] = R"({"traceEvents":[)";
-				output->write(beg, sizeof(beg) - 1);
+		try {
+			if(thread_output->is_open() && buffer) {
+				if(!initialized) {
+					initialized = true;
+					const char beg[] = R"({"traceEvents":[)";
+					thread_output->write(beg, sizeof(beg) - 1);
+				}
+				thread_output->write(buffer.get(), buffer_offset);
+				buffer_offset = 0;
+				event("perf", "done writing buffer");
 			}
-			output->write(buffer.get(), buffer_offset);
-			buffer_offset = 0;
-			event("perf", "done writing buffer");
+		} catch(...) {
 		}
 	}
 } thread_data;
