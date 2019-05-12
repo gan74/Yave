@@ -61,45 +61,46 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	Transformable* sel = context()->selection().transformable();
-	auto [pos, rot, scale] = sel->transform().decompose();
+	if(sel && ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+		auto [pos, rot, scale] = sel->transform().decompose();
 
-	if(ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
-		float step = 1.0f;
-		float big_step = 15.0f;
+		// position
+		{
+			ImGui::BeginGroup();
+			ImGui::InputFloat3("Position", pos.data(), "%.2f");
+			ImGui::EndGroup();
+		}
 
-		ImGui::BeginGroup();
-		ImGui::InputFloat("X", &pos.x(), step, big_step);
-		ImGui::InputFloat("Y", &pos.y(), step, big_step);
-		ImGui::InputFloat("Z", &pos.z(), step, big_step);
-		ImGui::EndGroup();
-	}
+		// rotation
+		{
+			auto dedouble_quat = [](math::Quaternion<> q) {
+					return q.x() < 0.0f ? -q.as_vec() : q.as_vec();
+				};
+			auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
+					auto qa = math::Quaternion<>::from_euler(a * math::to_rad(1.0f));
+					auto qb = math::Quaternion<>::from_euler(b * math::to_rad(1.0f));
+					return (dedouble_quat(qa) - dedouble_quat(qb)).length2() < 0.0001f;
+				};
 
-	if(ImGui::CollapsingHeader("Rotation", ImGuiTreeNodeFlags_DefaultOpen)) {
-		math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
-		for(auto& a : euler) {
-			// remove -0.0
-			if(a == 0.0f) {
-				a = 0.0f;
+			math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
+			if(is_same_angle(euler, _euler)) {
+				euler = _euler;
 			}
-			if(a == -180.0f) {
-				a = 180.0f;
+
+			float speed = 1.0f;
+			ImGui::BeginGroup();
+			ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::EndGroup();
+
+			if(!is_same_angle(euler, _euler)) {
+				_euler = euler;
+				rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
 			}
 		}
 
-		bool angle_changed = false;
-		float step = 1.0f;
-		float big_step = 15.0f;
-
-		ImGui::BeginGroup();
-		angle_changed |= ImGui::InputFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], step, big_step);
-		angle_changed |= ImGui::InputFloat("Yaw", &euler[math::Quaternion<>::YawIndex], step, big_step);
-		angle_changed |= ImGui::InputFloat("Roll", &euler[math::Quaternion<>::RollIndex], step, big_step);
-		ImGui::EndGroup();
-
-		// avoid recomputing angle (not always stable in euler space)
-		if(angle_changed) {
-			rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
-		}
+		sel->transform() = math::Transform<>(pos, rot, scale);
 	}
 
 	if(Renderable* renderable = context()->selection().renderable()) {
@@ -113,10 +114,7 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 
-
-	sel->transform() = math::Transform<>(pos, rot, scale);
-
-	//ImGui::Text("Position: %f, %f, %f", sel->position().x(), sel->position().y(), sel->position().z());
+	//ImGui::Text("Position: %f, %f, %f", sel->position().x(), sel->position().y(), sel->position().z());*/
 
 }
 

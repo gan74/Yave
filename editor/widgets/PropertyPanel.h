@@ -44,6 +44,8 @@ class PropertyPanel final : public Widget, public ContextLinked {
 
 		void static_mesh_panel(StaticMeshInstance* instance);
 		void light_panel(Light* light);
+
+		math::Vec3 _euler;
 };
 
 }

@@ -225,7 +225,7 @@ class Quaternion {
 			q.y() = c.x() * s.y() * c.z() + s.x() * c.y() * s.z();
 			q.z() = c.x() * c.y() * s.z() - s.x() * s.y() * c.z();
 			q.w() = c.x() * c.y() * c.z() + s.x() * s.y() * s.z();
-			return q;
+			return q.normalized();
 		}
 
 		static Quaternion from_base(const Vec<3, T>& forward, const Vec<3, T>& left, const Vec<3, T>& up) {
