@@ -212,7 +212,7 @@ class EntityWorld : NonCopyable {
 			} else {
 				// We need non consts here and we want to avoir returning non const everywhere else
 				// Const safety for typed_component_containers is done in ReturnComponentsPolicy
-				// This shouldn't be UB as we component containers are never const
+				// This shouldn't be UB as component containers are never const
 				return std::make_tuple(const_cast<ComponentContainer<T>*>(typed_component_container<T>()));
 			}
 		}
