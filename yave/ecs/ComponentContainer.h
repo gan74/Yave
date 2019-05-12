@@ -130,14 +130,14 @@ class ComponentContainer final : public ComponentContainerBase {
 
 		template<typename... Args>
 		ComponentId create_component(EntityId parent, Args&&... args) {
-			ComponentId id = _components.add(y_fwd(args)...);
+			ComponentId id = _components.insert(y_fwd(args)...);
 			set_parent(id, parent);
 			return id;
 		}
 
 		void flush() override {
 			for(ComponentId id : _deletions) {
-				_components.remove(id);
+				_components.erase(id);
 			}
 			finish_flush();
 		}

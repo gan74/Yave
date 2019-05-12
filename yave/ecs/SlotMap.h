@@ -281,7 +281,7 @@ class SlotMap {
 		}
 
 		template<typename... Args>
-		Id add(Args&&... args) {
+		Id insert(Args&&... args) {
 			y_debug_assert(_nodes.last().is_free());
 
 			u32 index = _next;
@@ -297,7 +297,7 @@ class SlotMap {
 			return node.id();
 		}
 
-		void remove(Id id) {
+		void erase(Id id) {
 			y_debug_assert(_nodes.last().is_free());
 			y_debug_assert(!_nodes.is_empty());
 			if(id.index() >= _nodes.size() - 1) {

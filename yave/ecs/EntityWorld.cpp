@@ -38,7 +38,7 @@ Entity* EntityWorld::entity(EntityId id) {
 }
 
 EntityId EntityWorld::create_entity() {
-	EntityId id = _entities.add();
+	EntityId id = _entities.insert();
 	entity(id)->_id = id;
 	return id;
 }
@@ -88,7 +88,7 @@ void EntityWorld::flush() {
 				}
 			}
 		}
-		_entities.remove(id);
+		_entities.erase(id);
 	}
 
 	for(auto& container : _component_containers) {

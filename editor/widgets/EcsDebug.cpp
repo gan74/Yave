@@ -150,7 +150,7 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ecs::SlotMap<int> m;
 		core::Vector<ecs::SlotMapId<int>> ids;
 		for(int i = 0; i != 10; ++i) {
-			ids << m.add(i);
+			ids << m.insert(i);
 		}
 		for(int i = 0; i != 10; ++i) {
 			y_debug_assert(m[ids[i]] == i);
