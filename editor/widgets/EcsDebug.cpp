@@ -26,7 +26,12 @@ SOFTWARE.
 #include <editor/components/EditorComponent.h>
 #include <yave/components/RenderableComponent.h>
 
+#include <y/io/File.h>
+#include <y/math/random.h>
+
 #include <imgui/imgui_yave.h>
+
+#include <map>
 
 namespace editor {
 
@@ -34,29 +39,140 @@ EcsDebug::EcsDebug(ContextPtr cptr) : Widget("ECS debug", ImGuiWindowFlags_Alway
 }
 
 void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+	struct Foo {}; struct Bar {}; struct Quux {}; struct Cmp {}; struct Bli {};
 	ecs::EntityWorld& world = context()->world();
 
-	if(ImGui::Button("Add entity & component")) {
-		ecs::EntityId id = world.create_entity();
-		world.create_component<EditorComponent>(id, "unanmed component");
-		auto inst = std::make_unique<StaticMeshInstance>(device()->device_resources()[DeviceResources::CubeMesh], device()->device_resources()[DeviceResources::EmptyMaterial]);
-		world.create_component<RenderableComponent>(id, std::move(inst));
+
+	if(ImGui::Button("Add entity")) {
+		_id = world.create_entity();
+		y_debug_assert(_id.is_valid());
+		world.create_component<EditorComponent>(_id, fmt("Entity #%", _id.index()));
 	}
+
+	if(_id.is_valid()) {
+		ImGui::SameLine();
+		if(ImGui::Button("Add component")) {
+			math::FastRandom rng(core::Chrono::program().to_nanos());
+
+			world.create_or_find_component<Foo>(_id);
+			if(rng() % 2 == 0) {
+				world.create_or_find_component<Bar>(_id);
+			}
+			if(rng() % 3 == 0) {
+				world.create_or_find_component<Quux>(_id);
+			}
+			if(rng() % 4 == 0) {
+				world.create_or_find_component<Cmp>(_id);
+			}
+			if(rng() % 5 == 0) {
+				world.create_or_find_component<Bli>(_id);
+			}
+		}
+	}
+
 
 	if(ImGui::Button("Flush world")) {
 		world.flush();
 	}
 
-	ImGui::Text("%u component types registered", u32(ecs::detail::registered_types_count()));
-
-	ImGui::Separator();
-	if(ImGui::TreeNode("Components")) {
-		for(const auto& c : world.components<EditorComponent>()) {
-			ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %", c.name()).data());
+	if(ImGui::Button(ICON_FA_SAVE " Save")) {
+		try {
+			world.serialize(io::File::create("world.yw").or_throw("Unable to create world file"));
+		} catch(std::exception& e) {
+			log_msg(fmt("Unable to save world: %", e.what()));
 		}
+	}
+
+	ImGui::SameLine();
+	if(ImGui::Button(ICON_FA_FOLDER " Load")) {
+		try {
+			ecs::EntityWorld w;
+			w.deserialize(io::File::open("world.yw").or_throw("Unable to open world file"));
+			world = std::move(w);
+		} catch(std::exception& e) {
+			log_msg(fmt("Unable to load world: %", e.what()));
+		}
+	}
+
+	ImGui::SameLine();
+	if(ImGui::Button(ICON_FA_REDO " Reset")) {
+		world = ecs::EntityWorld();
+	}
+
+	ImGui::Spacing();
+	ImGui::Text("%u entities", u32(world.entities().size()));
+
+	ImGui::Spacing();
+	ImGui::Text("%u component types registered", u32(ecs::detail::registered_types_count()));
+	ImGui::Text("%u component types intanced", u32(world.component_types().size()));
+
+	auto clean_name = [](std::string_view str) {
+			auto last = str.find_last_of("::");
+			return last == std::string_view::npos ? str : str.substr(last + 1);
+		};
+
+	ImGui::Spacing();
+	if(ImGui::TreeNode("Component types")) {
+		for(const auto& p : world.component_types()) {
+			ImGui::Selectable(fmt(ICON_FA_LIST_ALT " %", clean_name(world.type_name(p.second))).data());
+		}
+
 		ImGui::TreePop();
 	}
 
+
+	ImGui::Spacing();
+	if(ImGui::TreeNode("Components")) {
+		std::map<ecs::EntityId, core::Vector<core::String>> entities;
+		for(auto type : world.component_types()) {
+			core::String name = clean_name(world.type_name(type.second));
+			for(ecs::EntityId ids : world.ids_with(type.second)) {
+				entities[ids] << name;
+			}
+		}
+		for(const auto& ent : entities) {
+			EditorComponent* ec = world.component<EditorComponent>(ent.first);
+			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %###%", (ec ? ec->name() : "(null)"), ent.first.full_id()).data())) {
+				usize index = 0;
+				for(const core::String& n : ent.second) {
+					ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %###%", n, index++).data());
+				}
+				ImGui::TreePop();
+			}
+		}
+
+		ImGui::TreePop();
+	}
+
+
+
+	if(ImGui::Button("Debug slotmap")) {
+		ecs::SlotMap<int> m;
+		core::Vector<ecs::SlotMapId<int>> ids;
+		for(int i = 0; i != 10; ++i) {
+			ids << m.add(i);
+		}
+		for(int i = 0; i != 10; ++i) {
+			y_debug_assert(m[ids[i]] == i);
+		}
+
+		io::Buffer buffer;
+		m.serialize(buffer);
+
+		ecs::SlotMap<int> n;
+		n.deserialize(buffer);
+
+		for(int i = 0; i != 10; ++i) {
+			y_debug_assert(n[ids[i]] == i);
+		}
+		usize cnt = 0;
+		for(auto i : n) {
+			unused(i);
+			++cnt;
+		}
+		y_debug_assert(cnt == 10);
+		y_debug_assert([] { log_msg("Ok"); return true;}());
+	}
 }
 
 }

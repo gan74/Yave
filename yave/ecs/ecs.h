@@ -36,10 +36,10 @@ static constexpr usize max_entity_component_types = 64;
 
 using ComponentBitmask = std::bitset<max_entity_component_types>;
 
-struct TypeIndex {
+struct ComponentTypeIndex {
 	usize index;
-	bool operator==(const TypeIndex& other) const { return index == other.index; }
-	bool operator!=(const TypeIndex& other) const { return index != other.index; }
+	bool operator==(const ComponentTypeIndex& other) const { return index == other.index; }
+	bool operator!=(const ComponentTypeIndex& other) const { return index != other.index; }
 };
 
 struct EntityTag {};

@@ -48,8 +48,21 @@ class EntityWorld : NonCopyable {
 
 
 
-		const auto& entities() const {
-			return _entities;
+		template<typename T>
+		ComponentTypeIndex add_index_for_type() {
+			return add_index_for_type(typeid(T));
+		}
+
+		template<typename T>
+		core::Result<ComponentTypeIndex> index_for_type() const {
+			return index_for_type(typeid(T));
+		}
+
+
+
+
+		auto entities() const {
+			return core::Range(_entities);
 		}
 
 
@@ -59,6 +72,15 @@ class EntityWorld : NonCopyable {
 		TypedComponentId<T> create_component(EntityId id, Args&&... args) {
 			return create_component(typed_component_container<T>(), id, y_fwd(args)...);
 		}
+
+		template<typename T, typename... Args>
+		TypedComponentId<T> create_or_find_component(EntityId id, Args&&... args) {
+			if(auto comp = component_id<T>(id); comp.is_valid()) {
+				return comp;
+			}
+			return create_component<T>(id, y_fwd(args)...);
+		}
+
 
 		template<typename T>
 		void remove_component(EntityId id) {
@@ -90,7 +112,7 @@ class EntityWorld : NonCopyable {
 
 		template<typename T>
 		const T* component(ComponentId id) const {
-			ComponentContainer<T>* container = typed_component_container<T>();
+			const ComponentContainer<T>* container = typed_component_container<T>();
 			return container ? container->component(id) : nullptr;
 		}
 
@@ -101,6 +123,15 @@ class EntityWorld : NonCopyable {
 			}
 			return nullptr;
 		}
+
+		template<typename T>
+		TypedComponentId<T> component_id(EntityId id) const {
+			if(auto index = index_for_type<T>()) {
+				return entity(id)->component_id(index.unwrap());
+			}
+			return TypedComponentId<T>();
+		}
+
 
 
 
@@ -116,15 +147,18 @@ class EntityWorld : NonCopyable {
 		}
 
 
-		template<typename... Args>
-		auto ids_with() {
-			return with_components<Args...>(ReturnIdPolicy());
-		}
 
 		template<typename... Args>
 		auto ids_with() const {
 			return with_components<Args...>(ReturnIdPolicy());
 		}
+
+		auto ids_with(ComponentTypeIndex index) const {
+			const ComponentContainerBase *container = component_container(index);
+			return container ? container->parents() : decltype(container->parents())();
+		}
+
+
 
 
 		template<typename T, typename... Args>
@@ -149,7 +183,17 @@ class EntityWorld : NonCopyable {
 
 
 
-		core::String type_name(TypeIndex index) const;
+		auto component_types() const {
+			return core::Range(_component_type_indexes.begin(), _component_type_indexes.end());
+		}
+
+		core::String type_name(ComponentTypeIndex index) const;
+
+
+
+
+		void serialize(io::WriterRef writer) const;
+		void deserialize(io::ReaderRef reader);
 
 	private:
 		template<typename... Args, typename ReturnPolicy>
@@ -175,10 +219,10 @@ class EntityWorld : NonCopyable {
 
 		template<typename T>
 		ComponentContainerBase* component_container() {
-			TypeIndex type = add_index_for_type<T>();
+			ComponentTypeIndex type = add_index_for_type<T>();
 			auto& container = _component_containers[type.index];
 			if(!container) {
-				container = std::make_unique<ComponentContainer<T>>(*this, type);
+				container = std::make_unique<ComponentContainer<T>>(*this);
 			}
 			y_debug_assert(container->type() == type);
 			return container.get();
@@ -187,12 +231,18 @@ class EntityWorld : NonCopyable {
 		template<typename T>
 		const ComponentContainerBase* component_container() const {
 			if(auto index = index_for_type<T>()) {
-				if(index.unwrap().index < _component_containers.size()) {
-					return _component_containers[index.unwrap().index].get();
-				}
+				return component_container(index.unwrap());
 			}
 			return nullptr;
 		}
+
+		const ComponentContainerBase* component_container(ComponentTypeIndex index) const {
+			if(index.index < _component_containers.size()) {
+				return _component_containers[index.index].get();
+			}
+			return nullptr;
+		}
+
 
 		template<typename T>
 		ComponentContainer<T>* typed_component_container() {
@@ -244,38 +294,24 @@ class EntityWorld : NonCopyable {
 			}
 		}
 
-		template<typename T>
-		TypeIndex add_index_for_type() {
-			return add_index_for_type(typeid(T));
-		}
-
-		template<typename T>
-		core::Result<TypeIndex> index_for_type() const {
-			return index_for_type(typeid(T));
-		}
-
-
-
 		template<typename T, typename... Args>
 		ComponentId create_component(ComponentContainer<T>* container, EntityId id, Args&&... args) {
 			Entity* ent = entity(id);
 			y_debug_assert(ent);
 
-			TypeIndex type = container->type();
+			ComponentTypeIndex type = container->type();
 			if(ent->has_component(type)) {
 				y_fatal("Component already exists.");
 			}
-			ComponentId comp = container->create_component(id, y_fwd(args)...);
-			ent->add_component(type, comp);
-			return comp;
+			return container->create_component(id, y_fwd(args)...);
 		}
 
 		void remove_component(ComponentContainerBase* container, EntityId id);
 
 
 
-		TypeIndex add_index_for_type(std::type_index type);
-		core::Result<TypeIndex> index_for_type(std::type_index type) const;
+		ComponentTypeIndex add_index_for_type(std::type_index type);
+		core::Result<ComponentTypeIndex> index_for_type(std::type_index type) const;
 
 
 
@@ -283,8 +319,16 @@ class EntityWorld : NonCopyable {
 		core::Vector<EntityId> _deletions;
 
 		core::Vector<std::unique_ptr<ComponentContainerBase>> _component_containers;
-		std::unordered_map<std::type_index, TypeIndex> _component_type_indexes;
+		std::unordered_map<std::type_index, ComponentTypeIndex> _component_type_indexes;
 };
+
+
+namespace detail {
+template<typename T>
+ComponentTypeIndex generate_index_for_type(EntityWorld& world) {
+	return world.add_index_for_type<T>();
+}
+}
 
 }
 }

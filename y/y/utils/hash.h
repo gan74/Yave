@@ -33,10 +33,10 @@ constexpr void hash_combine(T& seed, T value) {
 }
 
 template<typename T>
-constexpr usize type_hash() {
-	usize hash = 0xdeaddead;
+constexpr u64 type_hash() {
+	u64 hash = 0xdeaddead;
 	for(char c : Y_FUNCTION_NAME) {
-		hash_combine(hash, usize(c));
+		hash_combine(hash, u64(c));
 	}
 	return hash;
 }

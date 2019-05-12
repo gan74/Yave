@@ -32,6 +32,42 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+class ComponentContainerBase;
+
+namespace detail {
+using create_container_t = std::unique_ptr<ComponentContainerBase> (*)(io::ReaderRef, EntityWorld&);
+class RegisteredContainerType {
+	public:
+		u64 type_id() const {
+			return _type_id;
+		}
+	private:
+		friend void register_container_type(RegisteredContainerType*, usize, create_container_t);
+		friend usize registered_types_count();
+		friend void serialize_container(io::WriterRef, ComponentContainerBase*);
+		friend std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef, EntityWorld&);
+
+		u64 _type_id = 0;
+		create_container_t _create_container = nullptr;
+		RegisteredContainerType* _next = nullptr;
+};
+
+usize registered_types_count();
+void register_container_type(RegisteredContainerType* type, u64 type_id, create_container_t create_container);
+void serialize_container(io::WriterRef writer, ComponentContainerBase* container);
+std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef reader, EntityWorld& world);
+
+template<typename T>
+void register_container_type(RegisteredContainerType* type, create_container_t create_container) {
+	register_container_type(type, type_hash<T>(), create_container);
+}
+
+template<typename T>
+ComponentTypeIndex generate_index_for_type(EntityWorld& world); // EntityWorld.h
+}
+
+
+
 class ComponentContainerBase : NonMovable {
 	public:
 		virtual ~ComponentContainerBase();
@@ -43,11 +79,11 @@ class ComponentContainerBase : NonMovable {
 		core::ArrayView<EntityId> parents() const;
 		EntityId parent(ComponentId id) const;
 
-		TypeIndex type() const;
+		ComponentTypeIndex type() const;
 		const EntityWorld& world() const;
 
 	protected:
-		ComponentContainerBase(EntityWorld& world, TypeIndex type);
+		ComponentContainerBase(EntityWorld& world, ComponentTypeIndex type);
 
 		void set_parent(ComponentId id, EntityId parent);
 		void unset_parent(ComponentId id);
@@ -58,63 +94,21 @@ class ComponentContainerBase : NonMovable {
 		core::Vector<ComponentId> _deletions;
 
 	private:
-		EntityWorld& _world;
-		TypeIndex _type;
-};
+		friend void detail::serialize_container(io::WriterRef, ComponentContainerBase*);
 
+		virtual void serialize(io::WriterRef) const = 0;
+		virtual u64 serialization_type_id() const = 0;
 
-namespace detail {
-using create_container_t = std::unique_ptr<ComponentContainerBase> (*)(io::ReaderRef, EntityWorld&, TypeIndex);
-class RegisteredType {
 	private:
-		friend void register_type(RegisteredType*, usize, create_container_t);
-		friend usize registered_types_count();
-
-		usize _hash = 0;
-		create_container_t _create_container;
-		RegisteredType* _next = nullptr;
+		EntityWorld& _world;
+		ComponentTypeIndex _type;
 };
-
-void register_type(RegisteredType* type, usize hash, create_container_t create_container);
-usize registered_types_count();
-
-template<typename T>
-void register_type(RegisteredType* type, create_container_t create_container) {
-	register_type(type, type_hash<T>(), create_container);
-}
-
-}
-
 
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
-
-	static struct Registerer {
-		Registerer() {
-			detail::create_container_t derer_func = nullptr;
-			if constexpr(serde::is_deserializable<T>::value) {
-				derer_func = [](io::ReaderRef reader, EntityWorld& world, TypeIndex type)
-							-> std::unique_ptr<ComponentContainerBase> {
-						try {
-							auto container = std::make_unique<ComponentContainer<T>>(world, type);
-							container->deserialize(reader);
-							return container;
-						} catch(...) {
-						}
-						return nullptr;
-					};
-			}
-			detail::register_type<T>(&type, derer_func);
-		}
-
-		detail::RegisteredType type;
-	} registerer;
-
-	struct MagicNumber {};
-
 	public:
-		ComponentContainer(EntityWorld& world, TypeIndex type) :
-				ComponentContainerBase(world, type),
+		ComponentContainer(EntityWorld& world) :
+				ComponentContainerBase(world, detail::generate_index_for_type<T>(world)),
 				_registerer(&registerer) {
 		}
 
@@ -161,13 +155,58 @@ class ComponentContainer final : public ComponentContainerBase {
 			return core::Range<const_iterator>(const_iterator(), const_iterator());
 		}
 
-		y_serde(type_hash<MagicNumber>(), _components)
-
 	private:
 		SlotMap<T, ComponentTag> _components;
+
+
+
+		// ------------------------------------- serde BS -------------------------------------
+
+		static constexpr bool is_serde_compatible = (serde::is_serializable<T>::value && serde::is_deserializable<T>::value) ||
+													std::is_trivially_copyable_v<T>;
+
+		u64 serialization_type_id() const override {
+			return _registerer->type.type_id();
+		}
+
+		void serialize(io::WriterRef writer) const override {
+			if constexpr(is_serde_compatible) {
+				serde::serialize(writer, _parents);
+				serde::serialize(writer, _components);
+			}
+		}
+
+		void deserialize(io::ReaderRef reader) {
+			if constexpr(is_serde_compatible) {
+				serde::deserialize(reader, _parents);
+				serde::deserialize(reader, _components);
+				// fixup references
+				for(auto p : _components.as_pairs()) {
+					set_parent(p.first, parent(p.first));
+				}
+			}
+		}
+
+		static std::unique_ptr<ComponentContainerBase> deserialized(io::ReaderRef reader, EntityWorld& world) {
+			try {
+				auto container = std::make_unique<ComponentContainer<T>>(world);
+				container->deserialize(reader);
+				return container;
+			} catch(...) {
+			}
+			return nullptr;
+		}
+
+		static struct Registerer {
+			Registerer() {
+				detail::register_container_type<T>(&type, is_serde_compatible ? &deserialized : nullptr);
+			}
+
+			detail::RegisteredContainerType type;
+		} registerer;
+
 		// make sure that it is ODR used no matter what
 		Registerer* _registerer = nullptr;
-
 };
 
 

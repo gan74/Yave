@@ -58,7 +58,7 @@ void File::swap(File& other) {
 }
 
 core::Result<File> File::create(const core::String& name) {
-	FILE* file = std::fopen(name.begin(), "wb+");
+	std::FILE* file = std::fopen(name.begin(), "wb+");
 	if(file) {
 		return core::Ok<File>(file);
 	}

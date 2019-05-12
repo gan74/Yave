@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <typeindex>
 
+#include <y/serde/serde.h>
+
 namespace yave {
 namespace ecs {
 
@@ -39,17 +41,19 @@ class Entity final {
 		const ComponentBitmask& components_bits() const;
 		EntityId id() const;
 
-		bool has_component(TypeIndex type) const;
-		ComponentId component_id(TypeIndex type) const;
+		bool has_component(ComponentTypeIndex type) const;
+		ComponentId component_id(ComponentTypeIndex type) const;
+
+		y_serde(_id)
 
 	private:
 		friend class EntityWorld;
 		friend class ComponentContainerBase;
 
-		usize component_index(TypeIndex type) const;
+		usize component_index(ComponentTypeIndex type) const;
 
-		void add_component(TypeIndex type, ComponentId id);
-		void remove_component(TypeIndex type);
+		void add_component(ComponentTypeIndex type, ComponentId id);
+		void remove_component(ComponentTypeIndex type);
 
 
 		ComponentBitmask _component_type_bits;

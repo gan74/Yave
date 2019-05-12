@@ -30,6 +30,7 @@ namespace editor {
 
 class EditorComponent {
 	public:
+		EditorComponent() = default;
 		EditorComponent(std::string_view name);
 
 		const core::String& name() const;

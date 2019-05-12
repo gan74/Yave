@@ -34,6 +34,8 @@ class EcsDebug : public Widget, public ContextLinked {
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+
+		ecs::EntityId _id;
 };
 
 }

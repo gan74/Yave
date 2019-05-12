@@ -46,6 +46,11 @@ class SlotMapId {
 			return i._id != _id;
 		}
 
+		bool operator<(SlotMapId i) const {
+			return std::tie(_parts.index, _parts.version) < std::tie(i._parts.index, i._parts.version);
+		}
+
+
 		bool is_valid() const {
 			return _parts.index != invalid_index;
 		}
@@ -56,6 +61,10 @@ class SlotMapId {
 
 		u32 version() const {
 			return _parts.version;
+		}
+
+		u64 full_id() const {
+			return _id;
 		}
 
 		y_serde(_id)
@@ -86,14 +95,6 @@ class SlotMap {
 
 			FreeListNode() {
 			}
-
-			/*FreeListNode(const FreeListNode& other) : _id(other._id) {
-				if(is_free()) {
-					_storage.next = other._storage.next;
-				} else {
-					::new(&_storage.obj) T(other._storage.obj);
-				}
-			}*/
 
 			FreeListNode(FreeListNode&& other) : _id(other._id) {
 				if(is_free()) {
@@ -163,8 +164,16 @@ class SlotMap {
 				return std::pair<Id, T&>(_id, get());
 			}
 
-			y_serde(_id, y_serde_cond(is_free(), _storage.next),
-						 y_serde_cond(!is_free(), _storage.obj))
+			y_serialize(_id, y_serde_cond(is_free(), _storage.next), y_serde_cond(!is_free(), _storage.obj))
+
+			Y_TODO(this will leak if the node is not default constructed)
+			y_deserialize(_id, y_serde_cond(is_free(), _storage.next),
+							y_serde_cond([this] {
+								if(!is_free()) {
+									::new(&_storage.obj) T();
+								}
+								return !is_free();
+							}(), _storage.obj))
 
 		private:
 			Id _id;
@@ -183,17 +192,17 @@ class SlotMap {
 
 	using node_t = FreeListNode;
 
-	template<bool Const>
+	template<bool Const, bool Pairs = false>
 	class Iterator {
 		using internal_t = std::conditional_t<Const, const node_t*, node_t*>;
 		public:
-			using reference = decltype(std::declval<internal_t>()->get());
+			using reference = std::conditional_t<Pairs, decltype(std::declval<internal_t>()->as_pair()), decltype(std::declval<internal_t>()->get())>;
 			using pointer = decltype(&std::declval<internal_t>()->get());
 			using value_type = std::remove_reference_t<reference>;
 			using difference_type = usize;
 			using iterator_category = std::forward_iterator_tag;
 
-			static_assert(std::is_reference_v<reference>);
+			static_assert(std::is_reference_v<reference> == !Pairs);
 			static_assert(std::is_pointer_v<pointer>);
 			static_assert(!std::is_reference_v<pointer>);
 
@@ -215,11 +224,16 @@ class SlotMap {
 				return a;
 			}
 
-			auto& operator*() const {
-				return _it->get();
+			reference operator*() const {
+				if constexpr(Pairs) {
+					return _it->as_pair();
+				} else {
+					return _it->get();
+				}
 			}
 
-			auto operator->() const {
+			pointer operator->() const {
+				static_assert(!Pairs);
 				return &_it->get();
 			}
 
@@ -255,6 +269,9 @@ class SlotMap {
 		using iterator = Iterator<false>;
 		using const_iterator = Iterator<true>;
 
+		using pair_iterator = Iterator<false, true>;
+		using const_pair_iterator = Iterator<true, true>;
+
 		static constexpr u32 invalid_index = node_t::invalid_index;
 
 
@@ -282,8 +299,8 @@ class SlotMap {
 
 		void remove(Id id) {
 			y_debug_assert(_nodes.last().is_free());
-
-			if(id.index() >= _nodes.size()) {
+			y_debug_assert(!_nodes.is_empty());
+			if(id.index() >= _nodes.size() - 1) {
 				return;
 			}
 			node_t& node = _nodes[id.index()];
@@ -294,7 +311,8 @@ class SlotMap {
 		}
 
 		T* get(Id id) {
-			if(id.index() >= _nodes.size()) {
+			y_debug_assert(!_nodes.is_empty());
+			if(id.index() >= _nodes.size() - 1) {
 				return nullptr;
 			}
 			node_t& node = _nodes[id.index()];
@@ -305,7 +323,8 @@ class SlotMap {
 		}
 
 		const T* get(Id id) const {
-			if(id.index() >= _nodes.size()) {
+			y_debug_assert(!_nodes.is_empty());
+			if(id.index() >= _nodes.size() - 1) {
 				return nullptr;
 			}
 			const node_t& node = _nodes[id.index()];
@@ -345,6 +364,16 @@ class SlotMap {
 			return const_iterator(_nodes.end() - 1);
 		}
 
+		auto as_pairs() {
+			return core::Range(pair_iterator(_nodes.begin()),
+							   pair_iterator(_nodes.end() - 1));
+		}
+
+		auto as_pairs() const {
+			return core::Range(const_pair_iterator(_nodes.begin()),
+							   const_pair_iterator(_nodes.end() - 1));
+		}
+
 		y_serde(_nodes, _next)
 
 	private:
@@ -353,6 +382,16 @@ class SlotMap {
 };
 
 }
+}
+
+namespace std {
+template<typename Tag>
+struct hash<yave::ecs::SlotMapId<Tag>> {
+	auto operator()(const yave::ecs::SlotMapId<Tag>& p) const {
+		auto id = p.full_id();
+		return hash<decltype(id)>()(id);
+	}
+};
 }
 
 #endif // YAVE_ECS_SLOTMAP_H

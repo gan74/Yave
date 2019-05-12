@@ -33,23 +33,23 @@ EntityId Entity::id() const {
 	return _id;
 }
 
-usize Entity::component_index(TypeIndex type) const {
+usize Entity::component_index(ComponentTypeIndex type) const {
 	auto t = _component_type_bits << (_component_type_bits.size() - type.index);
 	return t.count();
 }
 
-bool Entity::has_component(TypeIndex type) const {
+bool Entity::has_component(ComponentTypeIndex type) const {
 	return _component_type_bits[type.index];
 }
 
-ComponentId Entity::component_id(TypeIndex type) const {
+ComponentId Entity::component_id(ComponentTypeIndex type) const {
 	if(has_component(type)) {
 		return _components[component_index(type)];
 	}
 	return ComponentId();
 }
 
-void Entity::add_component(TypeIndex type, ComponentId id) {
+void Entity::add_component(ComponentTypeIndex type, ComponentId id) {
 	y_debug_assert(!_component_type_bits[type.index]);
 	usize index = component_index(type);
 	_component_type_bits[type.index] = true;
@@ -58,7 +58,7 @@ void Entity::add_component(TypeIndex type, ComponentId id) {
 	y_debug_assert(_components[index] == id);
 }
 
-void Entity::remove_component(TypeIndex type) {
+void Entity::remove_component(ComponentTypeIndex type) {
 	if(has_component(type)) {
 		_component_type_bits[type.index] = false;
 		usize index = component_index(type);
