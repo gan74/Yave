@@ -61,8 +61,8 @@ class EntityWorld : NonCopyable {
 
 
 
-		auto entities() const {
-			return core::Range(_entities);
+		const auto& entities() const {
+			return _entities;
 		}
 
 
@@ -183,8 +183,8 @@ class EntityWorld : NonCopyable {
 
 
 
-		auto component_types() const {
-			return core::Range(_component_type_indexes.begin(), _component_type_indexes.end());
+		const auto&  component_types() const {
+			return _component_type_indexes;
 		}
 
 		core::String type_name(ComponentTypeIndex index) const;

@@ -109,7 +109,11 @@ core::String EntityWorld::type_name(ComponentTypeIndex index) const {
 }
 
 void EntityWorld::serialize(io::WriterRef writer) const {
-	_entities.serialize(writer);
+	writer->write_one(u64(_entities.size()));
+	for(const Entity& e : _entities) {
+		writer->write_one(u64(e.id().full_id()));
+	}
+
 
 	usize non_null = std::count_if(_component_containers.begin(), _component_containers.end(), [](const auto& p) { return !!p; });
 	writer->write_one(u32(non_null));
@@ -122,8 +126,12 @@ void EntityWorld::serialize(io::WriterRef writer) const {
 
 void EntityWorld::deserialize(io::ReaderRef reader) {
 	*this = EntityWorld();
-
-	_entities.deserialize(reader);
+	u64 entity_count = reader->read_one<u64>();
+	for(u64 i = 0; i != entity_count; ++i) {
+		EntityId id = EntityId::from_full_id(reader->read_one<u64>());
+		_entities.insert_with_id(id).unwrap();
+		_entities[id]._id = id;
+	}
 
 	u32 container_count = reader->read_one<u32>();
 	for(u32 i = 0; i != container_count; ++i) {

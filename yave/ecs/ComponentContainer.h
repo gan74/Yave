@@ -142,12 +142,13 @@ class ComponentContainer final : public ComponentContainerBase {
 			finish_flush();
 		}
 
-		auto components() const {
-			return core::Range<typename decltype(_components)::const_iterator>(_components);
+
+		auto& components() {
+			return _components;
 		}
 
-		auto components() {
-			return core::Range<typename decltype(_components)::iterator>(_components);
+		const auto& components() const {
+			return _components;
 		}
 
 		static auto empty_components() {
@@ -171,18 +172,22 @@ class ComponentContainer final : public ComponentContainerBase {
 
 		void serialize(io::WriterRef writer) const override {
 			if constexpr(is_serde_compatible) {
-				serde::serialize(writer, _parents);
-				serde::serialize(writer, _components);
+				writer->write_one(u64(_components.size()));
+				for(auto p : _components.as_pairs()) {
+					writer->write_one(u64(parent(p.first).full_id()));
+					serde::serialize(writer, p.second);
+				}
 			}
 		}
 
 		void deserialize(io::ReaderRef reader) {
 			if constexpr(is_serde_compatible) {
-				serde::deserialize(reader, _parents);
-				serde::deserialize(reader, _components);
-				// fixup references
-				for(auto p : _components.as_pairs()) {
-					set_parent(p.first, parent(p.first));
+				u64 component_count = reader->read_one<u64>();
+				for(u64 i = 0; i != component_count; ++i) {
+					u64 parent_id = reader->read_one<u64>();
+					ComponentId id = _components.insert();
+					serde::deserialize(reader, _components[id]);
+					set_parent(id, EntityId::from_full_id(parent_id));
 				}
 			}
 		}

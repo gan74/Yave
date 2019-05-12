@@ -25,6 +25,7 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <yave/yave.h>
 
+#include <y/core/Result.h>
 #include <y/serde/serde.h>
 
 namespace yave {
@@ -36,6 +37,12 @@ class SlotMapId {
 		SlotMapId() {
 			_parts.index = invalid_index;
 			_parts.version = 0;
+		}
+
+		static SlotMapId from_full_id(u64 id) {
+			SlotMapId i;
+			i._id = id;
+			return i;
 		}
 
 		bool operator==(SlotMapId i) const {
@@ -161,7 +168,7 @@ class SlotMap {
 			}
 
 			std::pair<Id, const T&> as_pair() const {
-				return std::pair<Id, T&>(_id, get());
+				return std::pair<Id, const T&>(_id, get());
 			}
 
 			y_serialize(_id, y_serde_cond(is_free(), _storage.next), y_serde_cond(!is_free(), _storage.obj))
@@ -176,6 +183,8 @@ class SlotMap {
 							}(), _storage.obj))
 
 		private:
+			friend class SlotMap;
+
 			Id _id;
 			union Storage {
 				u32 next;
@@ -297,6 +306,36 @@ class SlotMap {
 			return node.id();
 		}
 
+		template<typename... Args>
+		core::Result<void> insert_with_id(Id id, Args&&... args) {
+			y_debug_assert(_nodes.last().is_free());
+
+			u32 index = id.index();
+			if(index < _nodes.size()) {
+				if(!_nodes[index].is_free()) {
+					return core::Err();
+				}
+			}
+
+			while(index >= _nodes.size() - 1) {
+				_nodes[_nodes.size() - 1]._storage.next = _next;
+				_next = _nodes.size() - 1;
+				_nodes.emplace_back();
+			}
+
+			auto* last = &_next;
+			for(auto i = _next; i != invalid_index; i = _nodes[i]._storage.next) {
+				if(i == index) {
+					node_t& node = _nodes[index];
+					*last = node._storage.next;
+					node.create(index, y_fwd(args)...);
+					return core::Ok();
+				}
+				last = &_nodes[i]._storage.next;
+			}
+			return y_fatal("Unable to find index");
+		}
+
 		void erase(Id id) {
 			y_debug_assert(_nodes.last().is_free());
 			y_debug_assert(!_nodes.is_empty());
@@ -372,6 +411,10 @@ class SlotMap {
 		auto as_pairs() const {
 			return core::Range(const_pair_iterator(_nodes.begin()),
 							   const_pair_iterator(_nodes.end() - 1));
+		}
+
+		usize size() const {
+			return std::distance(begin(), end());
 		}
 
 		y_serde(_nodes, _next)
