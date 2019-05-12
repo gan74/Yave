@@ -160,6 +160,10 @@ void FmtBuffer::fmt_one(std::string_view str) {
 	copy(str.data(), str.size());
 }
 
+void FmtBuffer::fmt_one(bool i) {
+	fmt_one(int(i));
+}
+
 void FmtBuffer::fmt_one(char i) {
 	copy(&i, 1);
 }

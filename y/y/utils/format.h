@@ -47,6 +47,7 @@ class FmtBuffer {
 		void fmt_one(const void* p);
 		void fmt_one(const core::String& str);
 		void fmt_one(std::string_view str);
+		void fmt_one(bool i);
 		void fmt_one(char i);
 		void fmt_one(unsigned char i);
 		void fmt_one(int i);
