@@ -32,13 +32,13 @@ using Result = core::Result<void>;
 
 #define y_serialize2(...)										\
 	template<typename Arc>										\
-	y::serde2::Result serialize(Arc _y_serde_arc) const {		\
+	y::serde2::Result serialize(Arc&& _y_serde_arc) const {		\
 		return _y_serde_arc(__VA_ARGS__);						\
 	}
 
 #define y_deserialize2(...)										\
 	template<typename Arc>										\
-	y::serde2::Result deserialize(Arc _y_serde_arc) {			\
+	y::serde2::Result deserialize(Arc&& _y_serde_arc) {			\
 		return _y_serde_arc(__VA_ARGS__);						\
 	}
 
@@ -47,12 +47,11 @@ using Result = core::Result<void>;
 	y_deserialize2(__VA_ARGS__)
 
 
-#define y_deserialize_1_2(...)									\
-	y_deserialize2(__VA_ARGS__)									\
+#define y_serde_deser_compat()									\
 	void deserialize(y::io::ReaderRef r) {						\
 		y::io2::Reader reader(r);								\
-		y::serde2::ReadableArchive<> ar(reader);				\
-		ar(__VA_ARGS__).or_throw("serde2");						\
+		y::serde2::ReadableArchive ar(reader);					\
+		deserialize(ar).or_throw("serde2");						\
 	}															\
 	static auto _y_serde_self_type_helper() ->					\
 		std::remove_reference<decltype(*this)>::type;			\
@@ -64,17 +63,16 @@ using Result = core::Result<void>;
 		return t;												\
 	}
 
-#define y_serialize_1_2(...)									\
-	y_serialize2(__VA_ARGS__)									\
+#define y_serde_ser_compat()									\
 	void serialize(y::io::WriterRef w) const {					\
 		y::io2::Writer writer(w);								\
-		y::serde2::WritableArchive<> ar(writer);				\
-		ar(__VA_ARGS__).or_throw("serde2");						\
+		y::serde2::WritableArchiv ear(writer);					\
+		serialize(ar).or_throw("serde2");						\
 	}
 
-#define y_serde_1_2(...)										\
-	y_serialize_1_2(__VA_ARGS__)								\
-	y_deserialize_1_2(__VA_ARGS__)
+#define y_serde_compat()										\
+	y_serde_deser_compat()										\
+	y_serde_ser_compat()
 
 
 
@@ -86,7 +84,7 @@ class Checker {
 		}
 
 		template<typename Arc>
-		Result deserialize(Arc& ar) const {
+		Result deserialize(Arc& ar) {
 			std::remove_const_t<std::remove_reference_t<T>> t;
 			if(ar(t) && t == _t) {
 				return core::Ok();
@@ -110,7 +108,7 @@ class Function {
 		}
 
 		template<typename Arc>
-		Result deserialize(Arc& ar) const {
+		Result deserialize(Arc& ar) {
 			if constexpr(std::is_convertible_v<T&&, core::Function<Result(Arc&)>>) {
 				return _t(ar);
 			} else {
@@ -127,8 +125,6 @@ class Function {
 	private:
 		T _t;
 };
-
-
 }
 
 template<typename T>

@@ -26,7 +26,6 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <y/core/Result.h>
-#include <y/serde/serde.h>
 
 namespace yave {
 namespace ecs {
@@ -73,8 +72,6 @@ class SlotMapId {
 		u64 full_id() const {
 			return _id;
 		}
-
-		y_serde(_id)
 
 	private:
 		template<typename T, typename IDTag>
@@ -170,17 +167,6 @@ class SlotMap {
 			std::pair<Id, const T&> as_pair() const {
 				return std::pair<Id, const T&>(_id, get());
 			}
-
-			y_serialize(_id, y_serde_cond(is_free(), _storage.next), y_serde_cond(!is_free(), _storage.obj))
-
-			Y_TODO(this will leak if the node is not default constructed)
-			y_deserialize(_id, y_serde_cond(is_free(), _storage.next),
-							y_serde_cond([this] {
-								if(!is_free()) {
-									::new(&_storage.obj) T();
-								}
-								return !is_free();
-							}(), _storage.obj))
 
 		private:
 			friend class SlotMap;
@@ -416,8 +402,6 @@ class SlotMap {
 		usize size() const {
 			return std::distance(begin(), end());
 		}
-
-		y_serde(_nodes, _next)
 
 	private:
 		core::Vector<node_t> _nodes;

@@ -24,12 +24,13 @@ SOFTWARE.
 namespace y {
 namespace io2 {
 
-static Result check_len(usize len, usize expected) {
+static WriteResult check_len_w(usize len, usize expected) {
 	if(len == expected) {
 		return core::Ok();
 	}
 	return core::Err(len);
 }
+
 
 File::File(std::FILE* f) : _file(f) {
 }
@@ -61,7 +62,7 @@ core::Result<File> File::create(const core::String& name) {
 	return core::Err();
 }
 
-core::Result<File, void> File::open(const core::String& name) {
+core::Result<File> File::open(const core::String& name) {
 	std::FILE* file = std::fopen(name.begin(), "rb");
 	if(file) {
 		return core::Ok<File>(file);
@@ -108,14 +109,18 @@ void File::seek(usize byte) {
 	}
 }
 
-Result File::read(u8* data, usize max_bytes) {
+ReadResult File::read(u8* data, usize max_bytes) {
 	if(!_file) {
 		return core::Err<usize>(0);
 	}
-	return check_len(std::fread(data, 1, max_bytes, _file), max_bytes);
+	usize r = std::fread(data, 1, max_bytes, _file);
+	if(r != max_bytes && !std::ferror(_file)) {
+		return core::Err(r);
+	}
+	return core::Ok(r);
 }
 
-Result File::read_all(core::Vector<u8>& data) {
+ReadResult File::read_all(core::Vector<u8>& data) {
 	usize left = remaining();
 	usize size = data.size();
 	data.set_min_capacity(left + size);
@@ -123,17 +128,19 @@ Result File::read_all(core::Vector<u8>& data) {
 	return read(data.begin() + size, left);
 }
 
-Result File::write(const u8* data, usize bytes) {
+WriteResult File::write(const u8* data, usize bytes) {
 	if(!_file) {
 		return core::Err<usize>(0);
 	}
-	return check_len(std::fwrite(data, 1, bytes, _file), bytes);
+	return check_len_w(std::fwrite(data, 1, bytes, _file), bytes);
 }
 
-void File::flush() {
+FlushResult File::flush() {
 	if(_file) {
 		std::fflush(_file);
+		return core::Ok();
 	}
+	return core::Err();
 }
 
 

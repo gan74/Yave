@@ -47,7 +47,7 @@ void test_assert(const char* msg, void (*func)(TestResult &));
 #define Y_TEST_RUNNER y_create_name_with_prefix(runner)
 #define Y_TEST_FAILED y::test::detail::TestResult { false, __FILE__, __LINE__ }
 
-#define y_test_assert(t) do { if(!(t)) { _test_result = Y_TEST_FAILED; return; } } while(0)
+#define y_test_assert(t) do { if(!(t)) { _test_result = Y_TEST_FAILED; return; } } while(false)
 
 #define y_test_func(msg)																				\
 static void Y_TEST_FUNC(y::test::detail::TestResult&);													\
@@ -64,7 +64,7 @@ void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
 
 #else
 
-#define y_test_assert(t) do { y::unused(t) } while(0)
+#define y_test_assert(t) do { y::unused(t) } while(false)
 
 #define y_test_func(msg)																				\
 static void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)

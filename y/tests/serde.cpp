@@ -34,6 +34,19 @@ using namespace y;
 using namespace y::core;
 using namespace y::serde2;
 
+struct DummyWriter {
+	DummyWriter() = default;
+
+	io2::WriteResult write(const u8*, usize) {
+		return core::Ok();
+	}
+
+	io2::FlushResult flush() {
+		return core::Ok();
+	}
+};
+
+
 struct Trivial {
 	int x;
 	float y;
@@ -68,20 +81,42 @@ struct Complex {
 	}
 };
 
+struct RaiiGuard : DummyWriter {
+	bool* alive = nullptr;
+
+	RaiiGuard(bool *a) : alive(a) {
+	}
+
+	RaiiGuard(RaiiGuard&& r) {
+		std::swap(alive, r.alive);
+	}
+
+	RaiiGuard& operator=(RaiiGuard&& r) {
+		std::swap(alive, r.alive);
+		return *this;
+	}
+
+	~RaiiGuard() {
+		if(alive) {
+			*alive = false;
+		}
+	}
+};
+
 y_test_func("serde trivial") {
 	io2::Buffer buffer;
 	Trivial tri{7, 3.1416, {0.0f, 1.0f, 2.7f}};
 
 	{
 		io2::Writer writer(buffer);
-		WritableArchive<> ar(writer);
-		unused(ar(tri));
+		WritableArchive ar(writer);
+		ar(tri).unwrap();
 	}
 	{
 		io2::Reader reader(buffer);
-		serde2::ReadableArchive<> ar(reader);
+		serde2::ReadableArchive ar(reader);
 		Trivial t;
-		unused(ar(t));
+		ar(t).unwrap();
 		y_test_assert(t == tri);
 	}
 }
@@ -93,14 +128,14 @@ y_test_func("serde easy") {
 
 	{
 		io2::Writer writer(buffer);
-		WritableArchive<> ar(writer);
-		unused(ar(es));
+		WritableArchive ar(writer);
+		ar(es).unwrap();
 	}
 	{
 		io2::Reader reader(buffer);
-		serde2::ReadableArchive<> ar(reader);
+		serde2::ReadableArchive ar(reader);
 		Easy e;
-		unused(ar(e));
+		ar(e).unwrap();
 		y_test_assert(e == es);
 	}
 }
@@ -118,23 +153,58 @@ y_test_func("serde complex") {
 
 	{
 		io2::Writer writer(buffer);
-		WritableArchive<> ar(writer);
-		unused(ar(e2, comp, t1));
+		WritableArchive ar(writer);
+		ar(e2, comp, t1).unwrap();
 	}
 	{
 		io2::Reader reader(buffer);
-		serde2::ReadableArchive<> ar(reader);
+		serde2::ReadableArchive ar(reader);
 
 		Easy e;
 		Complex c;
 		Trivial t;
 
-		unused(ar(e));
-		unused(ar(c, t));
+		ar(e).unwrap();
+		ar(c, t).unwrap();
 
 		y_test_assert(e == e2);
 		y_test_assert(c == comp);
 		y_test_assert(t == t1);
+	}
+}
+
+y_test_func("serde RAII") {
+	Trivial tri{7, 3.1416f, {0.0f, 1.0f, 2.7f}};
+	Easy es{tri, {"some long long long, very long, even longer string (probably to bypass SSO)", 99999}};
+
+	{
+		bool alive = true;
+		{
+			RaiiGuard r(&alive);
+			WritableArchive ar(r);
+			y_test_assert(alive);
+			ar(es).unwrap();
+			y_test_assert(alive);
+		}
+		y_test_assert(!alive);
+	}
+
+	{
+		bool alive = true;
+		{
+			auto ar = WritableArchive(RaiiGuard(&alive));
+			y_test_assert(alive);
+			ar(es).unwrap();
+			y_test_assert(alive);
+		}
+		y_test_assert(!alive);
+	}
+
+	{
+		bool alive = true;
+		y_test_assert(alive);
+		WritableArchive(RaiiGuard(&alive))(es, func([&] { y_test_assert(alive); })).unwrap();
+		y_test_assert(!alive);
 	}
 }
 

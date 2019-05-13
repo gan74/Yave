@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "io.h"
 
+#include <y/core/String.h>
+
 #include <cstdio>
 
 namespace y {
@@ -49,11 +51,11 @@ class File : NonCopyable {
 
 		void seek(usize byte);
 
-		Result read(u8* data, usize max_bytes);
-		Result read_all(core::Vector<u8>& data);
+		ReadResult read(u8* data, usize max_bytes);
+		ReadResult read_all(core::Vector<u8>& data);
 
-		Result write(const u8* data, usize bytes);
-		void flush();
+		WriteResult write(const u8* data, usize bytes);
+		FlushResult flush();
 
 	private:
 		File(std::FILE* f);

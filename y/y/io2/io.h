@@ -23,23 +23,23 @@ SOFTWARE.
 #define Y_IO2_IO_H
 
 #include <memory>
-#include <y/core/String.h>
 #include <y/core/Vector.h>
 #include <y/core/Result.h>
 
 namespace y {
 namespace io2 {
 
-using Result = core::Result<void, usize>;
-
+using ReadResult = core::Result<usize, usize>;
+using WriteResult = core::Result<void, usize>;
+using FlushResult = core::Result<void>;
 
 class Reader {
 	struct InnerBase {
 		virtual ~InnerBase() = default;
 
 		virtual bool at_end() const = 0;
-		virtual Result read(u8* data, usize max_bytes) = 0;
-		virtual Result read_all(core::Vector<u8>& data) = 0;
+		virtual ReadResult read(u8* data, usize max_bytes) = 0;
+		virtual ReadResult read_all(core::Vector<u8>& data) = 0;
 	};
 
 	template<typename T>
@@ -51,11 +51,11 @@ class Reader {
 			return _inner.at_end();
 		}
 
-		Result read(u8* data, usize max_bytes) override {
+		ReadResult read(u8* data, usize max_bytes) override {
 			return _inner.read(data, max_bytes);
 		}
 
-		Result read_all(core::Vector<u8>& data) override {
+		ReadResult read_all(core::Vector<u8>& data) override {
 			return _inner.read_all(data);
 		}
 
@@ -71,11 +71,11 @@ class Reader {
 			return _inner.at_end();
 		}
 
-		Result read(u8* data, usize max_bytes) override {
+		ReadResult read(u8* data, usize max_bytes) override {
 			return _inner.read(data, max_bytes);
 		}
 
-		Result read_all(core::Vector<u8>& data) override {
+		ReadResult read_all(core::Vector<u8>& data) override {
 			return _inner.read_all(data);
 		}
 
@@ -101,12 +101,24 @@ class Reader {
 			return _inner->at_end();
 		}
 
-		Result read(u8* data, usize max_bytes) {
+		ReadResult read(u8* data, usize max_bytes) {
 			return _inner->read(data, max_bytes);
 		}
 
-		Result read_all(core::Vector<u8>& data) {
+		ReadResult read_all(core::Vector<u8>& data) {
 			return _inner->read_all(data);
+		}
+
+		template<typename T>
+		ReadResult read_one(T& t) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			return read(reinterpret_cast<u8*>(&t), sizeof(T));
+		}
+
+		template<typename T>
+		ReadResult read_array(T* data, usize count) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			return read(reinterpret_cast<u8*>(data), sizeof(T) * count);
 		}
 
 	private:
@@ -118,8 +130,8 @@ class Writer {
 	struct InnerBase {
 		virtual ~InnerBase() = default;
 
-		virtual void flush() = 0;
-		virtual Result write(const u8* data, usize bytes) = 0;
+		virtual FlushResult flush() = 0;
+		virtual WriteResult write(const u8* data, usize bytes) = 0;
 	};
 
 	template<typename T>
@@ -127,11 +139,11 @@ class Writer {
 		Inner(T&& t) : _inner(std::move(t)) {
 		}
 
-		void flush() override {
-			_inner.flush();
+		FlushResult flush() override {
+			return _inner.flush();
 		}
 
-		Result write(const u8* data, usize bytes) override {
+		WriteResult write(const u8* data, usize bytes) override {
 			return _inner.write(data, bytes);
 		}
 
@@ -143,11 +155,11 @@ class Writer {
 		NotOwner(T& t) : _inner(t) {
 		}
 
-		void flush() override {
-			_inner.flush();
+		FlushResult flush() override {
+			return _inner.flush();
 		}
 
-		Result write(const u8* data, usize bytes) override {
+		WriteResult write(const u8* data, usize bytes) override {
 			return _inner.write(data, bytes);
 		}
 
@@ -163,12 +175,24 @@ class Writer {
 		Writer(T& t) : _inner(std::make_unique<NotOwner<T>>(t))  {
 		}
 
-		void flush() {
-			_inner->flush();
+		FlushResult flush() {
+			return _inner->flush();
 		}
 
-		Result write(const u8* data, usize bytes) {
+		WriteResult write(const u8* data, usize bytes) {
 			return _inner->write(data, bytes);
+		}
+
+		template<typename T>
+		WriteResult write_one(const T& t) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			return write(reinterpret_cast<const u8*>(&t), sizeof(T));
+		}
+
+		template<typename T>
+		WriteResult write_array(T* data, usize count) {
+			static_assert(std::is_trivially_copyable_v<T>);
+			return write(reinterpret_cast<const u8*>(data), sizeof(T) * count);
 		}
 
 	private:

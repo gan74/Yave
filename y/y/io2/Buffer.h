@@ -41,28 +41,29 @@ class Buffer final : NonCopyable {
 			return at_end() ? 0 : _buffer.size() - _read_cursor;
 		}
 
-		Result read(u8* data, usize max_bytes) {
+		ReadResult read(u8* data, usize max_bytes) {
 			usize max = std::min(max_bytes, remaining());
 			std::copy_n(&_buffer[_read_cursor], max, data);
 			_read_cursor += max;
-			if(max == max_bytes) {
-				return core::Ok();
-			}
-			return core::Err(max);
+			return core::Ok(max);
 		}
 
-		Result read_all(core::Vector<u8>& data) {
-			data.push_back(_buffer.begin(), _buffer.end());
-			return core::Ok();
+		ReadResult read_all(core::Vector<u8>& data) {
+			u8* start = &_buffer[_read_cursor];
+			usize r = std::distance(start, _buffer.end());
+			data.push_back(start, _buffer.end());
+			_read_cursor += r;
+			return core::Ok(r);
 		}
 
-		Result write(const u8* data, usize bytes) {
+		WriteResult write(const u8* data, usize bytes) {
 			_buffer.push_back(data, data + bytes);
 			return core::Ok();
 		}
 
 
-		void flush() {
+		FlushResult flush() {
+			return core::Ok();
 		}
 
 	private:

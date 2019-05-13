@@ -22,31 +22,178 @@ SOFTWARE.
 #ifndef Y_SERDE2_HELPER_H
 #define Y_SERDE2_HELPER_H
 
-#include "formats.h"
+#include "serde.h"
 
 namespace y {
-namespace serde2 {
 
+namespace core {
+class String;
+template<typename Elem, typename ResizePolicy, typename Allocator>
+class Vector;
+}
+
+
+namespace serde2 {
 
 // -------------------------------------- deserialize --------------------------------------
 namespace helper {
 
+template<typename T>
+struct Deserializer {};
+
+template<typename T>
+struct Deserializer<T&> : Deserializer<T> {};
+
+template<typename T>
+struct Deserializer<T&&> : Deserializer<T> {};
+
+
 template<typename Arc, typename T>
-static Result deserialize_one(Arc& ar, T& t);
+static Result deserialize_one(Arc& ar, T&& t);
 
 template<typename Arc, typename T>
 static Result deserialize_array(Arc& ar, T* t, usize n);
 
+Y_TODO(deserialized ?)
+
+namespace detail {
 template<typename Arc, typename T>
-static Result deserialize_one(Arc& ar, const T& t);
+static auto has_deserializer(T*) -> bool_type<std::is_same_v<Result, decltype(Deserializer<T>::deserialize(std::declval<Arc&>(), std::declval<T&>()))>>;
+template<typename Arc, typename T>
+static auto has_deserializer(...) -> std::false_type;
 
 template<typename Arc, typename T>
-static Result deserialize_array(Arc& ar, const T* t, usize n);
+static auto has_deserialize(T*) -> bool_type<std::is_same_v<Result, decltype(std::declval<T&>().deserialize(std::declval<Arc&>()))>>;
+template<typename Arc, typename T>
+static auto has_deserialize(...) -> std::false_type;
+}
+
+
+template<typename Arc, typename T, typename U = remove_cvref_t<T>>
+using has_deserializer = bool_type<decltype(detail::has_deserializer<Arc, U>(nullptr))::value>;
+template<typename Arc, typename T, typename U = remove_cvref_t<T>>
+using has_deserialize = bool_type<decltype(detail::has_deserialize<Arc, U>(nullptr))::value>;
+
+
+template<typename Arc, typename T>
+static constexpr bool has_deserializer_v = has_deserializer<Arc, T>::value;
+template<typename Arc, typename T>
+static constexpr bool has_deserialize_v = has_deserialize<Arc, T>::value;
+
+
+template<typename Arc, typename T>
+static Result deserialize_one(Arc& ar, T&& t) {
+	static_assert(!(has_deserializer_v<Arc, T> && has_deserialize_v<Arc, T>));
+
+	if constexpr(has_deserialize_v<Arc, T>) {
+		return t.deserialize(ar);
+	} else if constexpr(has_deserializer_v<Arc, T>){
+		return Deserializer<T>::deserialize(ar, t);
+	} else {
+		return ar.reader().read_one(t);
+	}
+}
+
+template<typename Arc, typename T>
+static Result deserialize_array(Arc& ar, T* t, usize n) {
+	if constexpr(has_deserializer_v<Arc, T> || has_deserialize_v<Arc, T>) {
+		for(usize i = 0; i != n; ++i) {
+			if(!deserialize_one(ar, t[i])) {
+				return core::Err();
+			}
+		}
+		return core::Ok();
+	} else {
+		return ar.reader().read_array(t, n);
+	}
+}
+
+}
+
+
+
+
+
+// -------------------------------------- serialize --------------------------------------
+namespace helper {
 
 template<typename T>
-struct Deserializer {
-};
+struct Serializer {};
 
+template<typename T>
+struct Serializer<const T&> : Serializer<T> {};
+
+template<typename T>
+struct Serializer<T&&> : Serializer<T> {};
+
+
+template<typename Arc, typename T>
+static Result serialize_one(Arc& ar, const T& t);
+
+template<typename Arc, typename T>
+static Result serialize_array(Arc& ar, const T* t, usize n);
+
+
+namespace detail {
+template<typename Arc, typename T, typename U = remove_cvref_t<T>>
+static auto has_serializer(T*) -> bool_type<std::is_same_v<Result, decltype(Serializer<U>::serialize(std::declval<Arc&>(), std::declval<const U&>()))>>;
+template<typename Arc, typename T>
+static auto has_serializer(...) -> std::false_type;
+
+template<typename Arc, typename T>
+static auto has_serialize(T*) -> bool_type<std::is_same_v<Result, decltype(std::declval<const T&>().serialize(std::declval<Arc&>()))>>;
+template<typename Arc, typename T>
+static auto has_serialize(...) -> std::false_type;
+}
+
+
+template<typename Arc, typename T, typename U = remove_cvref_t<T>>
+using has_serializer = bool_type<decltype(detail::has_serializer<Arc, U>(nullptr))::value>;
+template<typename Arc, typename T, typename U = remove_cvref_t<T>>
+using has_serialize = bool_type<decltype(detail::has_serialize<Arc, U>(nullptr))::value>;
+
+
+template<typename Arc, typename T>
+static constexpr bool has_serializer_v = has_serializer<Arc, T>::value;
+template<typename Arc, typename T>
+static constexpr bool has_serialize_v = has_serialize<Arc, T>::value;
+
+
+template<typename Arc, typename T>
+static Result serialize_one(Arc& ar, const T& t) {
+	static_assert(!(has_serializer_v<Arc, T> && has_serialize_v<Arc, T>));
+
+	if constexpr(has_serialize_v<Arc, T>) {
+		return t.serialize(ar);
+	} else if constexpr(has_serializer_v<Arc, T>){
+		return Serializer<T>::serialize(ar, t);
+	} else {
+		return ar.writer().write_one(t);
+	}
+}
+
+template<typename Arc, typename T>
+static Result serialize_array(Arc& ar, const T* t, usize n) {
+	if constexpr(has_serializer_v<Arc, T> || has_serialize_v<Arc, T>) {
+		for(usize i = 0; i != n; ++i) {
+			if(!serialize_one(ar, t[i])) {
+				return core::Err();
+			}
+		}
+		return core::Ok();
+	} else {
+		return ar.writer().write_array(t, n);
+	}
+}
+}
+
+
+
+
+
+
+// -------------------------------------- deserializers --------------------------------------
+namespace helper {
 template<typename T>
 struct Deserializer<std::unique_ptr<T>> {
 	template<typename Arc>
@@ -111,90 +258,11 @@ struct Deserializer<std::tuple<Args...>> {
 		return deserialize_tuple_elem<0>(ar, tpl);
 	}
 };
-
-namespace detail {
-template<typename Arc, typename T>
-static auto has_deserializer(T*) -> bool_type<std::is_same_v<Result, decltype(Deserializer<T>::deserialize(std::declval<Arc&>(), std::declval<T&>()))>>;
-template<typename Arc, typename T>
-static auto has_deserializer(...) -> std::false_type;
-
-template<typename Arc, typename T>
-static auto has_deserialize(T*) -> bool_type<std::is_same_v<Result, decltype(std::declval<T>().deserialize(std::declval<Arc&>()))>>;
-template<typename Arc, typename T>
-static auto has_deserialize(...) -> std::false_type;
-}
-
-template<typename Arc, typename T>
-using has_deserializer = bool_type<decltype(detail::has_deserializer<Arc, T>(nullptr))::value>;
-template<typename Arc, typename T>
-using is_deserializable = bool_type<decltype(detail::has_deserialize<Arc, T>(nullptr))::value>;
-
-template<typename Arc, typename T>
-static Result deserialize_one(Arc& ar, T& t) {
-	if constexpr(is_deserializable<Arc, T>::value) {
-		return t.deserialize(ar);
-	} else if constexpr(has_deserializer<Arc, T>::value){
-		return Deserializer<T>::deserialize(ar, t);
-	} else {
-		return ar.reader().read_one(t);
-	}
-}
-
-template<typename Arc, typename T>
-static Result deserialize_array(Arc& ar, T* t, usize n) {
-	if constexpr(is_deserializable<Arc, T>::value) {
-		for(usize i = 0; i != n; ++i) {
-			if(!deserialize_one(ar, t[i])) {
-				return core::Err();
-			}
-		}
-		return core::Ok();
-	} else if constexpr(has_deserializer<Arc, T>::value) {
-		for(usize i = 0; i != n; ++i) {
-			if(!Deserializer<T>::deserialize(ar, t[i])) {
-				return core::Err();
-			}
-		}
-		return core::Ok();
-	} else {
-		return ar.reader().read_array(t, n);
-	}
-}
-
-template<typename Arc, typename T>
-static Result deserialize_one(Arc& ar, const T& t) {
-	return t.deserialize(ar);
-}
-
-template<typename Arc, typename T>
-static Result deserialize_array(Arc& ar, const T* t, usize n) {
-	for(usize i = 0; i != n; ++i) {
-		if(!deserialize_one(ar, t[i])) {
-			return core::Err();
-		}
-	}
-	return core::Ok();
-}
-
 }
 
 
-
-
-
-// -------------------------------------- serialize --------------------------------------
+// -------------------------------------- serializers --------------------------------------
 namespace helper {
-
-template<typename Arc, typename T>
-static Result serialize_one(Arc& ar, const T& t);
-
-template<typename Arc, typename T>
-static Result serialize_array(Arc& ar, const T* t, usize n);
-
-template<typename T>
-struct Serializer {
-};
-
 template<typename T>
 struct Serializer<std::unique_ptr<T>> {
 	template<typename Arc>
@@ -254,57 +322,8 @@ struct Serializer<std::tuple<Args...>> {
 		return serialize_tuple_elem<0>(ar, tpl);
 	}
 };
-
-namespace detail {
-template<typename Arc, typename T>
-static auto has_serializer(T*) -> bool_type<std::is_same_v<Result, decltype(Serializer<T>::serialize(std::declval<Arc&>(), std::declval<const T&>()))>>;
-template<typename Arc, typename T>
-static auto has_serializer(...) -> std::false_type;
-
-template<typename Arc, typename T>
-static auto has_serialize(T*) -> bool_type<std::is_same_v<Result, decltype(std::declval<T>().serialize(std::declval<Arc&>()))>>;
-template<typename Arc, typename T>
-static auto has_serialize(...) -> std::false_type;
 }
 
-template<typename Arc, typename T>
-using has_serializer = bool_type<decltype(detail::has_serializer<Arc, T>(nullptr))::value>;
-template<typename Arc, typename T>
-using is_serializable = bool_type<decltype(detail::has_serialize<Arc, T>(nullptr))::value>;
-
-template<typename Arc, typename T>
-static Result serialize_one(Arc& ar, const T& t) {
-	if constexpr(is_serializable<Arc, T>::value) {
-		return t.serialize(ar);
-	} else if constexpr(has_serializer<Arc, T>::value){
-		return Serializer<T>::serialize(ar, t);
-	} else {
-		return ar.writer().write_one(t);
-	}
-}
-
-template<typename Arc, typename T>
-static Result serialize_array(Arc& ar, const T* t, usize n) {
-	if constexpr(is_serializable<Arc, T>::value) {
-		for(usize i = 0; i != n; ++i) {
-			if(!serialize_one(ar, t[i])) {
-				return core::Err();
-			}
-		}
-		return core::Ok();
-	} else if constexpr(has_serializer<Arc, T>::value) {
-		for(usize i = 0; i != n; ++i) {
-			if(!Serializer<T>::serialize(ar, t[i])) {
-				return core::Err();
-			}
-		}
-		return core::Ok();
-	} else {
-		return ar.writer().write_array(t, n);
-	}
-}
-
-}
 
 }
 }

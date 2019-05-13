@@ -87,45 +87,6 @@ using bool_type = typename std::integral_constant<bool, B>;
 
 // type traits
 
-/*namespace detail {
-template<typename R, typename... Args>
-std::true_type is_function_pointer_test_inner(R (*)(Args...));
-std::false_type is_function_pointer_test_inner(...);
-
-template<typename T, typename P = decltype(&T::operator+)>
-auto is_function_pointer_test(P) -> decltype(is_function_pointer_test_inner(+std::declval<T>()));
-template<typename T>
-auto is_function_pointer_test(...) -> decltype(is_function_pointer_test_inner(std::declval<T>()));
-
-
-template<typename T>
-static auto has_unary_plus(T*) -> bool_type<!std::is_void_v<decltype(std::declval<T>().operator+())>>;
-template<typename T>
-static auto has_unary_plus(...) -> std::false_type;
-}
-
-template<typename T>
-using is_function_pointer = decltype(detail::is_function_pointer_test<T>(nullptr));
-template<typename T>
-static constexpr bool is_function_pointer_v = is_function_pointer<T>::value;
-
-namespace {
-	static const auto lambda = [] { return 0; };
-	static_assert(is_function_pointer<decltype(lambda)>::value);
-	static_assert(!is_function_pointer<int>::value);
-	static_assert(!is_function_pointer<void*>::value);
-	static_assert(is_function_pointer<void (*)(int)>::value);
-}*/
-
-/*template<typename T>
-struct function_t : function_t<decltype(&T::operator())> {};
-
-template<typename R, typename... Args>
-struct function_t<R (*)(Args...)> {
-	using return_type = R;
-	using argument_tuple = std::tuple<Args...>;
-};*/
-
 template<typename T, typename... Args>
 struct function_traits : function_traits<decltype(&T::operator())> {};
 
@@ -185,6 +146,15 @@ using is_iterable = bool_type<
 
 template<typename T>
 static constexpr bool is_iterable_v = is_iterable<T>::value;
+
+template<typename T>
+struct remove_cvref {
+	using type = std::remove_cv_t<std::remove_reference_t<T>>;
+};
+
+template<typename T>
+using remove_cvref_t = typename remove_cvref<T>::type;
+
 
 namespace detail {
 template<typename T>

@@ -23,19 +23,29 @@ SOFTWARE.
 #define Y_SERDE2_ARCHIVES_H
 
 #include "serde.h"
-#include "formats.h"
 #include "helper.h"
 
 namespace y {
+
+namespace io2 {
+class Reader;
+class Writer;
+}
+
 namespace serde2 {
 
 // TODO: We still pay a virtual call by read/write op, change that if possible
 
-template<typename Format = BinaryFormat>
 class ReadableArchive final {
+
 	public:
-		ReadableArchive(io2::Reader& reader) : _reader(reader) {
+		ReadableArchive(io2::Reader&& reader) : _reader(std::move(reader)) {
 		}
+
+		template<typename T>
+		explicit ReadableArchive(T&& t) : _reader(y_fwd(t)) {
+		}
+
 
 		template<typename T, typename... Args>
 		Result operator()(T&& t, Args&&... args) {
@@ -47,7 +57,7 @@ class ReadableArchive final {
 			return helper::deserialize_array(*this, t, n);
 		}
 
-		FormattedReader<Format>& reader() {
+		io2::Reader& reader() {
 			return _reader;
 		}
 
@@ -68,15 +78,20 @@ class ReadableArchive final {
 			return core::Ok();
 		}
 
-		FormattedReader<Format> _reader;
+		io2::Reader _reader;
 };
 
 
-template<typename Format = BinaryFormat>
 class WritableArchive final {
+
 	public:
-		WritableArchive(io2::Writer& writer) : _writer(writer) {
+		WritableArchive(io2::Writer&& writer) : _writer(std::move(writer)) {
 		}
+
+		template<typename T>
+		explicit WritableArchive(T&& t) : _writer(y_fwd(t)) {
+		}
+
 
 		template<typename T, typename... Args>
 		Result operator()(const T& t, const Args&... args) {
@@ -88,7 +103,7 @@ class WritableArchive final {
 			return helper::serialize_array(*this, t, n);
 		}
 
-		FormattedWriter<Format>& writer() {
+		io2::Writer& writer() {
 			return _writer;
 		}
 
@@ -109,8 +124,24 @@ class WritableArchive final {
 			return core::Ok();
 		}
 
-		FormattedWriter<Format> _writer;
+		io2::Writer _writer;
 };
+
+
+// -------------------------------------- tests --------------------------------------
+namespace {
+struct Serial {
+	u32 i;
+	y_serde2(i)
+};
+static_assert(helper::has_serialize_v<WritableArchive, Serial>);
+static_assert(helper::has_serialize_v<WritableArchive, Serial&>);
+static_assert(helper::has_serialize_v<WritableArchive, const Serial&>);
+
+static_assert(helper::has_deserialize_v<ReadableArchive, Serial>);
+static_assert(helper::has_deserialize_v<ReadableArchive, Serial&>);
+static_assert(helper::has_deserialize_v<ReadableArchive, Serial&&>);
+}
 
 
 }
