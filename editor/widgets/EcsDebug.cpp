@@ -143,36 +143,6 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 		ImGui::TreePop();
 	}
-
-
-
-	if(ImGui::Button("Debug slotmap")) {
-		ecs::SlotMap<int> m;
-		core::Vector<ecs::SlotMapId<int>> ids;
-		for(int i = 0; i != 10; ++i) {
-			ids << m.insert(i);
-		}
-		for(int i = 0; i != 10; ++i) {
-			y_debug_assert(m[ids[i]] == i);
-		}
-
-		io::Buffer buffer;
-		m.serialize(buffer);
-
-		ecs::SlotMap<int> n;
-		n.deserialize(buffer);
-
-		for(int i = 0; i != 10; ++i) {
-			y_debug_assert(n[ids[i]] == i);
-		}
-		usize cnt = 0;
-		for(auto i : n) {
-			unused(i);
-			++cnt;
-		}
-		y_debug_assert(cnt == 10);
-		y_debug_assert([] { log_msg("Ok"); return true;}());
-	}
 }
 
 }
