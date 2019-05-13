@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "Vector.h"
 #include "Range.h"
+#include "Result.h"
 
 namespace y {
 namespace core {
@@ -64,17 +65,31 @@ class SlotMapKey {
 			return _parts.index == invalid_index;
 		}
 
+		u64 numeric_id() const {
+			return _id;
+		}
+
+		static SlotMapKey from_numeric_id(u64 id) {
+			SlotMapKey key;
+			key._id = id;
+			return key;
+		}
+
 	private:
 		template<typename U, typename V>
 		friend class SlotMap;
 
 		void set_null() {
 			_parts.index = invalid_index;
+			++_parts.version;
 		}
 
 		void set(u32 index) {
 			_parts.index = index;
-			++_parts.version;
+		}
+
+		void set_version(u32 v) {
+			_parts.version = v;
 		}
 
 		static constexpr u32 invalid_index = u32(-1);
@@ -114,25 +129,27 @@ class SlotMap {
 					return *this;
 				}
 
-				void clear(usize next_free, usize next_full) {
-					if(!is_empty()) {
-						_key.set_null();
-						_storage.clear(next_free, next_full);
-					}
-				}
-
 				void clear() {
 					if(!is_empty()) {
 						_key.set_null();
 						_storage.clear();
 					}
+					y_debug_assert(is_empty());
 				}
 
 				template<typename... Args>
-				void fill(u32 key_index,  Args&&... args) {
+				void fill(u32 index, Args&&... args) {
 					clear();
-					_key.set(key_index);
+					_key.set(index);
 					_storage.set(y_fwd(args)...);
+				}
+
+				bool increase_version(u32 version) {
+					if(version >= _key.version()) {
+						_key.set_version(version);
+						return true;
+					}
+					return false;
 				}
 
 
@@ -172,16 +189,23 @@ class SlotMap {
 
 
 
-				usize next_free_index() const {
-					y_debug_assert(is_empty());
-					return usize(_storage.next.free_index);
-				}
 
 				usize next_full_index() const {
 					y_debug_assert(is_empty());
-					return usize(_storage.next.full_index);
+					return usize(_storage.free_list.next_full_or_block_begin);
 				}
 
+
+
+				auto& free_list() {
+					y_debug_assert(is_empty());
+					return _storage.free_list;
+				}
+
+				const auto& free_list() const {
+					y_debug_assert(is_empty());
+					return _storage.free_list;
+				}
 
 				static bool is_valid_index(usize index) {
 					return index != invalid_index();
@@ -196,7 +220,7 @@ class SlotMap {
 				union Storage {
 					static constexpr u32 invalid_index = u32(-1);
 
-					Storage() : next({invalid_index, invalid_index}) {
+					Storage() : free_list({invalid_index, invalid_index, invalid_index}) {
 					}
 
 					~Storage() {
@@ -208,19 +232,15 @@ class SlotMap {
 					}
 
 					void clear() {
-						clear(invalid_index, invalid_index);
-					}
-
-					void clear(u32 next_free, u32 next_full) {
 						value.~mapped_type();
-						next.free_index = next_free;
-						next.full_index = next_full;
 					}
 
 					struct {
-						u32 free_index;
-						u32 full_index;
-					} next;
+						u32 next_full_or_block_begin;
+						u32 next_free_block;
+						u32 prev_free_block;
+					} free_list;
+
 					mapped_type value;
 				} _storage;
 
@@ -229,13 +249,13 @@ class SlotMap {
 						other.swap(*this);
 					} else if(!is_empty() && other.is_empty()) { // oh god...
 						std::swap(_key, other._key);
-						auto next = other._storage.next;
+						auto free = other._storage.free_list;
 						new(&other._storage.value) mapped_type(std::move(_storage.value));
 						_storage.value.~mapped_type();
-						_storage.next = next;
+						_storage.free_list = free;
 					} else { // same state
 						if(is_empty()) {
-							std::swap(_storage.next, other._storage.next);
+							std::swap(_storage.free_list, other._storage.free_list);
 						} else {
 							std::swap(_storage.value, other._storage.value);
 						}
@@ -415,28 +435,8 @@ class SlotMap {
 			// guard bucket
 			_buckets.emplace_back();
 			y_debug_assert(_buckets.first().is_empty());
+			audit();
 		}
-
-
-
-		template<typename... Args>
-		key_type insert(Args&&... args) {
-			auto [index, bucket] = take_empty_bucket();
-			bucket.fill(u32(index), y_fwd(args)...);
-			++_live_values;
-			return bucket.key();
-		}
-
-		void erase(key_type key) {
-			if(contains(key)) {
-				free_bucket(key.index());
-				--_live_values;
-			}
-			y_debug_assert(!contains(key));
-		}
-
-
-
 
 		mapped_type* get(key_type key) {
 			return contains(key) ? &_buckets[key.index()].value() : nullptr;
@@ -481,31 +481,195 @@ class SlotMap {
 			*this = SlotMap();
 		}
 
+
+
+		template<typename... Args>
+		key_type insert(Args&&... args) {
+			auto [index, bucket] = take_empty_bucket();
+			bucket.fill(index, y_fwd(args)...);
+			++_live_values;
+			audit();
+			return bucket.key();
+		}
+
+		void erase(key_type key) {
+			if(contains(key)) {
+				free_bucket(key.index());
+				--_live_values;
+			}
+			y_debug_assert(!contains(key));
+			audit();
+		}
+
+		template<typename... Args>
+		Result<mapped_type&> insert_at_index(key_type key, Args&&... args) {
+			y_defer(audit());
+
+			const u32 index = key.index();
+			auto insert_at_head = [=] {
+					y_debug_assert(_free_head == index);
+					insert(y_fwd(args)...);
+					if(!_buckets[index].set_version(key.version())) {
+						return Err();
+					}
+					y_debug_assert(_buckets[index].key() == key);
+					return Ok(operator[](key));
+				};
+
+			// fast path
+			if(index >= _buckets.size()) {
+				while(_free_head != index) {
+					add_bucket();
+				}
+				return insert_at_head();
+			}
+
+			if(!_buckets[index].is_empty()) {
+				return Err();
+			}
+
+			if(_free_head == index) {
+				insert_at_head();
+			}
+
+			for(usize it = _free_head; Bucket::is_valid_index(it); it = _buckets[it].next_free_index()) {
+				if(_buckets[it].next_free_index() == index) {
+					/*auto& free_list = _buckets[it].free_list;
+
+					_buckets[index].set_next_free_index(_free_head);
+					_free_head = index;
+					return insert_at_head();*/
+				}
+			}
+			return y_fatal("Unable to find key.");
+		}
+
 	private:
+		void add_bucket() {
+			y_debug_assert(_free_head >= _buckets.size() - 1);
+			_free_head = _buckets.size() - 1;
+			_buckets.emplace_back();
+		}
+
 		std::pair<usize, Bucket&> take_empty_bucket() {
 			if(_free_head >= _buckets.size() - 1) {
-				_free_head = _buckets.size() - 1;
-				_buckets.emplace_back();
+				add_bucket();
 			}
+
 			Bucket& bucket = _buckets[_free_head];
-			usize index = _free_head;
-			_free_head = bucket.next_free_index();
+			auto& free_list = bucket.free_list();
+
+			y_debug_assert(bucket.is_empty());
+
+			const usize index = _free_head;
+			// 1 size block
+			if(free_list.next_full_or_block_begin == index + 1)  {
+				_free_head = free_list.next_free_block;
+			} else {
+				// block at end
+				if(!Bucket::is_valid_index(free_list.next_full_or_block_begin)) {
+					_free_head = index + 1;
+					_buckets[_free_head].free_list().next_full_or_block_begin = Bucket::invalid_index();
+				} else {
+					Bucket& last_bucket = _buckets[free_list.next_full_or_block_begin - 1];
+					y_debug_assert(last_bucket.free_list().next_full_or_block_begin == index);
+					_free_head = ++last_bucket.free_list().next_full_or_block_begin;
+				}
+			}
+			_buckets[_free_head].free_list().prev_free_block = Bucket::invalid_index();
+
 			return {index, bucket};
 		}
 
 		void free_bucket(usize index) {
 			Bucket& bucket = _buckets[index];
 			y_debug_assert(!bucket.is_empty());
-			Bucket& next_bucket = _buckets[index + 1];
-			usize next_full = next_bucket.is_empty() ? next_bucket.next_full_index() : index + 1;
-			bucket.clear(_free_head, next_full);
-			_free_head = index;
+			bucket.clear();
+
+			if(Bucket& next_bucket = _buckets[index + 1]; next_bucket.is_empty()) {
+				if(index && _buckets[index - 1].is_empty()) {
+					Y_TODO(merge the two blocks)
+					y_debug_assert(false);
+				} else {
+					auto& free_list = next_bucket.free_list();
+
+					bucket.free_list().prev_free_block = free_list.prev_free_block;
+					bucket.free_list().next_full_or_block_begin = free_list.next_full_or_block_begin;
+
+					if(Bucket::is_valid_index(free_list.prev_free_block)) {
+						_buckets[free_list.prev_free_block].free_list().next_free_block = index;
+					} else {
+						y_debug_assert(_free_head == index + 1);
+						_free_head = index;
+					}
+
+					if(Bucket::is_valid_index(free_list.next_full_or_block_begin)) {
+						Bucket& end = _buckets[free_list.next_full_or_block_begin - 1];
+						y_debug_assert(end.free_list().next_full_or_block_begin == index + 1);
+						end.free_list().next_full_or_block_begin = index;
+					}
+				}
+			} else if(index && _buckets[index - 1].is_empty()) {
+				Bucket& prev_bucket = _buckets[index - 1];
+				auto& free_list = prev_bucket.free_list();
+
+				bucket.free_list().next_full_or_block_begin = free_list.next_full_or_block_begin;
+				y_debug_assert(Bucket::is_valid_index(free_list.next_full_or_block_begin));
+				Bucket& begin = _buckets[free_list.next_full_or_block_begin];
+				y_debug_assert(begin.free_list().next_full_or_block_begin == index);
+				begin.free_list().next_full_or_block_begin = index + 1;
+			} else {
+				y_debug_assert(index == 0 || !_buckets[index - 1].is_empty());
+				y_debug_assert(!_buckets[index + 1].is_empty());
+				auto& free_list = bucket.free_list();
+				free_list.next_full_or_block_begin = index + 1;
+				free_list.next_free_block = _free_head;
+				free_list.prev_free_block = Bucket::invalid_index();
+				_free_head = index;
+			}
 		}
 
 		bool is_valid(key_type key) const {
 			return !key.is_null() &&
 				   key.index() < _buckets.size() - 1 &&
 				   _buckets[key.index()].matches_key(key);
+		}
+
+		void audit() const {
+#ifdef Y_AUDIT_SLOTMAP
+			y_debug_assert(_buckets.size() > 0);
+			y_debug_assert(_buckets.last().is_empty());
+			{
+				usize size = 0;
+				for(const Bucket& b : _buckets) {
+					size += !b.is_empty();
+				}
+				y_debug_assert(size == _live_values);
+			}
+			{
+				for(usize i = 0; i != _buckets.size() - 1; ++i) {
+					y_debug_assert(_buckets[i].is_empty() || _buckets[i].key().index() == i);
+				}
+			}
+			{
+				usize empties = _buckets.size() - _live_values;
+				usize real_empties = 0;
+				usize it = _free_head;
+				while(Bucket::is_valid_index(it)) {
+					const Bucket& bucket = _buckets[it];
+					usize block_end = bucket.free_list().next_full_or_block_begin;
+					for(usize i = it; i < block_end && i < _buckets.size(); ++i) {
+						++real_empties;
+						y_debug_assert(_buckets[i].is_empty());
+					}
+					it = bucket.free_list().next_free_block;
+				}
+				y_debug_assert(real_empties == empties);
+			}
+			{
+
+			}
+#endif
 		}
 
 

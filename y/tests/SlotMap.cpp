@@ -19,6 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+
+#define Y_AUDIT_SLOTMAP
+
 #include <y/core/SlotMap.h>
 #include <y/test/test.h>
 #include <vector>
