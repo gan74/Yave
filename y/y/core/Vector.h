@@ -64,6 +64,12 @@ class Vector : ResizePolicy, Allocator {
 		using value_type = Elem;
 		using size_type = usize;
 
+		using reference = value_type&;
+		using const_reference = const value_type&;
+
+		using pointer = value_type*;
+		using const_pointer = const value_type*;
+
 		using iterator = Elem*;
 		using const_iterator = Elem const*;
 
@@ -165,19 +171,21 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		void swap(Vector& v) {
-			if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
-				std::swap<Allocator>(*this, v);
+			if(&v != this) {
+				if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
+					std::swap<Allocator>(*this, v);
+				}
+				std::swap(_data, v._data);
+				std::swap(_data_end, v._data_end);
+				std::swap(_alloc_end, v._alloc_end);
 			}
-			std::swap(_data, v._data);
-			std::swap(_data_end, v._data_end);
-			std::swap(_alloc_end, v._alloc_end);
 		}
 
 		~Vector() {
 			clear();
 		}
 
-		void push_back(const value_type& elem) {
+		void push_back(const_reference elem) {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
@@ -192,7 +200,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		template<typename... Args>
-		value_type& emplace_back(Args&&... args) {
+		reference emplace_back(Args&&... args) {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
@@ -212,6 +220,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		value_type pop() {
+			y_debug_assert(!is_empty());
 			--_data_end;
 			data_type r = std::move(*_data_end);
 			_data_end->~data_type();
@@ -267,35 +276,39 @@ class Vector : ResizePolicy, Allocator {
 			return _data_end;
 		}
 
-		value_type* data() {
+		pointer data() {
 			return _data;
 		}
 
-		const value_type* data() const {
+		const_pointer data() const {
 			return _data;
 		}
 
-		const value_type& operator[](usize i) const {
+		const_reference operator[](size_type i) const {
+			y_debug_assert(i < size());
 			return _data[i];
 		}
 
-		value_type& operator[](usize i) {
+		reference operator[](size_type i) {
+			y_debug_assert(i < size());
 			return _data[i];
 		}
 
-		const value_type& first() const {
+		const_reference first() const {
 			return *_data;
 		}
 
-		value_type& first() {
+		reference first() {
 			return *_data;
 		}
 
-		const value_type& last() const {
+		const_reference last() const {
+			y_debug_assert(!is_empty());
 			return *(_data_end - 1);
 		}
 
-		value_type& last() {
+		reference last() {
+			y_debug_assert(!is_empty());
 			return *(_data_end - 1);
 		}
 
