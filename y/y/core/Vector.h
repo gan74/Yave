@@ -284,12 +284,12 @@ class Vector : ResizePolicy, Allocator {
 			return _data;
 		}
 
-		const_reference operator[](size_type i) const {
+		const_reference operator[](usize i) const {
 			y_debug_assert(i < size());
 			return _data[i];
 		}
 
-		reference operator[](size_type i) {
+		reference operator[](usize i) {
 			y_debug_assert(i < size());
 			return _data[i];
 		}

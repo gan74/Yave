@@ -26,7 +26,6 @@ SOFTWARE.
 #include "ComponentContainer.h"
 #include "MultiComponentIterator.h"
 #include "EntityIdPool.h"
-#include "View.h"
 
 #include <y/core/Result.h>
 

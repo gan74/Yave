@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-/*template<bool Const, typename... Args>
+template<bool Const, typename... Args>
 class View {
 	using vector_tuple = std::conditional_t<Const,
 				std::tuple<const core::SparseVector<Args>&...>,
@@ -38,16 +38,24 @@ class View {
 				std::tuple<const Args&...>,
 				std::tuple<Args&...>>;
 
-	template<typename F, usize I = 0>
-	void for_each(F&& f) {
-		if constexpr(I != sizeof...(Args)) {
-			using type = std::tuple_element_t<I, pointer_tuple>;
-			f(reintepret_cast<type>(_vectors[I]));
-			for_each<F, I + 1>(y_fwd(f));
-		}
-	}
+	using index_type = typename core::SparseVector<void>::index_type;
+	using index_range = decltype(std::declval<core::SparseVector<void>>().indexes());
+
+
+	class EndIterator {};
 
 	class Iterator {
+		template<usize I = 0>
+		auto make_refence_tuple(index_type index) const {
+			if constexpr(I + 1 == sizeof...(Args)) {
+				return std::make_tuple(std::get<I>(_vectors)[index]);
+			} else {
+				return std::tuple_cat(std::make_tuple(std::get<I>(_vectors)[*_it]),
+									  make_refence_tuple<I + 1>(index));
+			}
+		}
+
+
 		public:
 			using value_type = reference_tuple;
 			using reference = value_type;
@@ -55,7 +63,7 @@ class View {
 			using iterator_category = std::random_access_iterator_tag;
 
 			reference operator*() const {
-				return std::apply(make_refence_tuple, _vectors);
+				return make_refence_tuple(*_it);
 			}
 
 			Iterator& operator++() {
@@ -69,19 +77,35 @@ class View {
 				return it;
 			}
 
+			bool operator==(const Iterator& other) const {
+				return _it == other._it;
+			}
+
+			bool operator!=(const Iterator& other) const {
+				return _it != other._it;
+			}
+
+			bool operator==(const EndIterator&) const {
+				return at_end();
+			}
+
+			bool operator!=(const EndIterator&) const {
+				return !at_end();
+			}
+
 			bool at_end() const {
-				return at_end_t();
+				return _it == _end;
 			}
 
 		private:
 			friend class View;
 
-			Iterator(const EntityId2* it, usize shortest, const vector_tuple& vecs) :
-					_it(it),
-					_shortest(shortest),
+			Iterator(index_range range, const vector_tuple& vecs) :
+					_it(range.begin()),
+					_end(range.end()),
 					_vectors(vecs) {
 
-				skip_empty();
+				skip();
 			}
 
 			void advance() {
@@ -96,51 +120,51 @@ class View {
 			}
 
 			template<usize I = 0>
-			bool at_end_t() const {
-				if constexpr(I != sizeof...(Args)) {
-					if(I == shortest && _it == std::get<I>(_vectors).end()) {
-						return true;
-					}
-					return at_end<I + 1>();
-				}
-				return true; // ?
-			}
-
-			template<usize I = 0>
 			bool matches() const {
 				if constexpr(I != sizeof...(Args)) {
-					std::get<I>(_vectors.has(*_it)) && matches<F, I + 1>(y_fwd(f));
+					return std::get<I>(_vectors).has(*_it) && matches<I + 1>();
 				}
+				return true;
 			}
 
-			const u32* _it = nullptr;
-			usize _shortest = 0;
+			typename index_range::const_iterator _it;
+			typename index_range::const_iterator _end;
 			vector_tuple _vectors;
 	};
 
 
-	void build() {
-		if constexpr(I != sizeof...(Args)) {
-			auto&& v = std::get<I>(_vectors);
-			if(v.size() < _size) {
-				_shortest = I;
-				_size = v.size();
-			}
-			build<I + 1>();
+	template<usize I = 0>
+	index_range shortest_range() {
+		auto&& v = std::get<I>(_vectors);
+		if constexpr(I + 1 == sizeof...(Args)) {
+			return v.indexes();
+		} else {
+			index_range s = shortest_range<I + 1>();
+			return s.size() < v.size() ? s : v.indexes();
 		}
 	}
 
 	public:
-		View(const vector_tuple& vecs) : _vectors(vecs) {
-			build();
+		using const_iterator = Iterator;
+
+		View(const vector_tuple& vecs) : _vectors(vecs), _short(shortest_range()) {
+
+			log_msg(fmt("%", _short));
 		}
 
 
+		Iterator begin() const {
+			return const_iterator(_short, _vectors);
+		}
+
+		EndIterator end() const {
+			return EndIterator();
+		}
+
 	private:
 		vector_tuple _vectors;
-		usize _size = usize(-1);
-		usize _shortest = 0;
-};*/
+		index_range _short;
+};
 
 }
 }

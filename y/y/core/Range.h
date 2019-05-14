@@ -35,7 +35,7 @@ class Range {
 		using value_type = typename std::iterator_traits<Iter>::value_type;
 
 		using iterator = Iter;
-		using const_iterator = const Iter;
+		using const_iterator = Iter;
 
 		Range(Iter b, EndIter e) : _beg(b), _end(e) {
 		}

@@ -21,12 +21,42 @@ SOFTWARE.
 **********************************/
 
 #include "EntityWorld.h"
+#include "View.h"
 
 namespace yave {
 namespace ecs {
 
+[[maybe_unused]] static void test_view() {
+	core::SparseVector<float> a;
+	core::SparseVector<int> b;
+	a.insert(100, 13.0f);
+	a.insert(1000, 7.0f);
+	b.insert(1000, 4);
+	b.insert(500, 6);
+	b.erase(500);
+
+	y_debug_assert(a.has(100));
+	y_debug_assert(a.has(1000));
+	y_debug_assert(!a.has(101));
+	y_debug_assert(b.has(1000));
+	y_debug_assert(!b.has(500));
+	y_debug_assert(b[1000] == 4);
+
+
+	log_msg(fmt("a: %", a.indexes()));
+	log_msg(fmt("b: %", b.indexes()));
+
+	View<true, float, int> v(std::make_tuple(a, b));
+
+	for(std::tuple<const float&, const int&> p : v) {
+		log_msg(fmt("%", p));
+		unused(p);
+	}
+}
+
 EntityWorld::EntityWorld() {
 	_component_type_indexes.reserve(max_entity_component_types);
+	test_view();
 }
 
 const Entity* EntityWorld::entity(EntityId id) const {
