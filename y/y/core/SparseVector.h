@@ -29,12 +29,106 @@ SOFTWARE.
 namespace y {
 namespace core {
 
+template<typename Elem, typename Index>
+class SparseVector;
+
 namespace detail {
-class SparseIndexIterator;
+template<bool Const, typename Elem, typename Index>
+class SparseVectorPairIterator {
+
+	using index_type = Index;
+
+	public:
+		using value_type = std::pair<Elem, index_type>;
+		using reference = std::pair<index_type, std::conditional_t<Const, const Elem&, Elem&>>;
+		using difference_type = usize;
+		using iterator_category = std::random_access_iterator_tag;
+
+		reference operator*() const {
+			return {_vec._dense[_index], _vec._values[_index]};
+		}
+
+		reference operator[](usize n) const {
+			return *((*this) + n);
+		}
+
+		SparseVectorPairIterator& operator++() {
+			++_index;
+			return *this;
+		}
+
+		SparseVectorPairIterator& operator--() {
+			--_index;
+			return *this;
+		}
+
+		SparseVectorPairIterator operator++(int) {
+			SparseVectorPairIterator it(*this);
+			++_index;
+			return it;
+		}
+
+		SparseVectorPairIterator operator--(int) {
+			SparseVectorPairIterator it(*this);
+			--_index;
+			return it;
+		}
+
+		bool operator==(const SparseVectorPairIterator& other) const {
+			return _index == other._index;
+		}
+
+		bool operator!=(const SparseVectorPairIterator& other) const {
+			return _index != other._index;
+		}
+
+		bool operator<(const SparseVectorPairIterator& other) const {
+			return _index < other._index;
+		}
+
+		bool operator>(const SparseVectorPairIterator& other) const {
+			return _index > other._index;
+		}
+
+		SparseVectorPairIterator& operator+=(usize n) {
+			_index += n;
+			return *this;
+		}
+
+		SparseVectorPairIterator operator+(usize n) const {
+			SparseVectorPairIterator it(*this);
+			it += n;
+			return it;
+		}
+
+		SparseVectorPairIterator& operator-=(usize n) {
+			_index -= n;
+			return *this;
+		}
+
+		SparseVectorPairIterator operator-(usize n) const {
+			SparseVectorPairIterator it(*this);
+			it -= n;
+			return it;
+		}
+
+		difference_type operator-(const SparseVectorPairIterator& other) const {
+			return _index - other._index;
+		}
+
+	private:
+		friend class SparseVector<Elem, Index>;
+
+		SparseVectorPairIterator(const SparseVector<Elem, Index>& vec, index_type index) : _vec(vec), _index(index) {
+		}
+
+		const SparseVector<Elem, Index>& _vec;
+		index_type _index = 0;
+};
 }
 
-template<typename Elem>
-class SparseVector {
+template<typename Elem, typename Index>
+class SparseVector final {
 
 	struct EmptyVec {
 		void emplace_back() {}
@@ -50,7 +144,7 @@ class SparseVector {
 	public:
 		using value_type = Elem;
 		using size_type = usize;
-		using index_type = usize;
+		using index_type = Index;
 
 		using reference = std::conditional_t<is_void_v, void, non_void&>;
 		using const_reference = std::conditional_t<is_void_v, void, const non_void&>;
@@ -59,107 +153,18 @@ class SparseVector {
 		using const_pointer = const value_type*;
 
 	private:
-		friend class detail::SparseIndexIterator;
-
 		static constexpr usize page_size = 256;
 		static constexpr index_type invalid_index = index_type(-1);
 		using page_type = std::array<index_type, page_size>;
 
 		using value_container = std::conditional_t<is_void_v, EmptyVec, core::Vector<non_void>>;
 
-		template<bool Const>
-		class PairIterator {
-			public:
-				using value_type = std::pair<Elem, index_type>;
-				using reference = std::pair<index_type, std::conditional_t<Const, const Elem&, Elem&>>;
-				using difference_type = usize;
-				using iterator_category = std::random_access_iterator_tag;
-
-				reference operator*() const {
-					return {_vec._dense[_index], _vec._values[_index]};
-				}
-
-				reference operator[](usize n) const {
-					return *((*this) + n);
-				}
-
-				PairIterator& operator++() {
-					++_index;
-					return *this;
-				}
-
-				PairIterator& operator--() {
-					--_index;
-					return *this;
-				}
-
-				PairIterator operator++(int) {
-					PairIterator it(*this);
-					++_index;
-					return it;
-				}
-
-				PairIterator operator--(int) {
-					PairIterator it(*this);
-					--_index;
-					return it;
-				}
-
-				bool operator==(const PairIterator& other) const {
-					return _index == other._index;
-				}
-
-				bool operator!=(const PairIterator& other) const {
-					return _index != other._index;
-				}
-
-				bool operator<(const PairIterator& other) const {
-					return _index < other._index;
-				}
-
-				bool operator>(const PairIterator& other) const {
-					return _index > other._index;
-				}
-
-				PairIterator& operator+=(usize n) {
-					_index += n;
-					return *this;
-				}
-
-				PairIterator operator+(usize n) const {
-					PairIterator it(*this);
-					it += n;
-					return it;
-				}
-
-				PairIterator& operator-=(usize n) {
-					_index -= n;
-					return *this;
-				}
-
-				PairIterator operator-(usize n) const {
-					PairIterator it(*this);
-					it -= n;
-					return it;
-				}
-
-				difference_type operator-(const PairIterator& other) const {
-					return _index - other._index;
-				}
-
-			private:
-				friend class SparseVector;
-
-				PairIterator(SparseVector& vec, index_type index) : _vec(vec), _index(index) {
-				}
-
-				SparseVector& _vec;
-				index_type _index = 0;
-		};
-
 	public:
 		using iterator = typename Vector<non_void>::iterator;
 		using const_iterator = typename Vector<non_void>::const_iterator;
+
+		using pair_iterator = detail::SparseVectorPairIterator<false, Elem, Index>;
+		using const_pair_iterator = detail::SparseVectorPairIterator<true, Elem, Index>;
 
 
 		bool has(index_type index) const {
@@ -169,6 +174,7 @@ class SparseVector {
 
 		template<typename... Args>
 		reference insert(index_type index, Args&&... args) {
+			y_debug_assert(!has(index));
 			auto [i, o] = page_index(index);
 			create_page(i)[o] = _dense.size();
 			_dense.emplace_back(index);
@@ -177,6 +183,7 @@ class SparseVector {
 		}
 
 		void erase(index_type index) {
+			y_debug_assert(has(index));
 			auto [i, o] = page_index(index);
 			index_type dense_index = _sparse[i][o];
 			index_type last_index = _dense.size() - 1;
@@ -193,11 +200,13 @@ class SparseVector {
 
 
 		reference operator[](index_type index) {
+			y_debug_assert(has(index));
 			auto [i, o] = page_index(index);
 			return _values[_sparse[i][o]];
 		}
 
 		const_reference operator[](usize index) const {
+			y_debug_assert(has(index));
 			auto [i, o] = page_index(index);
 			return _values[_sparse[i][o]];
 		}
@@ -264,20 +273,31 @@ class SparseVector {
 		}
 
 		auto as_pairs() {
-			return Range(PairIterator<false>(*this, 0),
-						 PairIterator<false>(*this, size()));
+			return Range(pair_iterator(*this, 0),
+						 pair_iterator(*this, size()));
 		}
 
 		auto as_pairs() const {
-			return Range(PairIterator<true>(*this, 0),
-						 PairIterator<true>(*this, size()));
+			return Range(const_pair_iterator(*this, 0),
+						 const_pair_iterator(*this, size()));
 		}
 
-		ArrayView<index_type> indexes() const {
+		MutableSpan<value_type> values() {
+			return _values;
+		}
+
+		Span<value_type> values() const {
+			return _values;
+		}
+
+		Span<index_type> indexes() const {
 			return _dense;
 		}
 
 	private:
+		template<bool C, typename E, typename I>
+		friend class detail::SparseVectorPairIterator;
+
 		static std::pair<usize, usize> page_index(index_type index) {
 			usize i = index / page_size;
 			usize o = index % page_size;
@@ -301,6 +321,16 @@ class SparseVector {
 }
 }
 
+namespace std {
+template<bool Const, typename Elem, typename Index>
+struct iterator_traits<y::core::detail::SparseVectorPairIterator<Const, Elem, Index>> {
+	using iterator_type = typename y::core::detail::SparseVectorPairIterator<Const, Elem, Index>;
+	using value_type = typename iterator_type::value_type;
+	using reference = typename iterator_type::reference;
+	using difference_type = typename iterator_type::difference_type;
+	using iterator_category = typename iterator_type::iterator_category;
+};
 
+}
 
 #endif // Y_CORE_SPARSEVECTOR_H
