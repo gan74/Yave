@@ -22,89 +22,14 @@ SOFTWARE.
 #ifndef Y_CORE_ARRAYVIEW_H
 #define Y_CORE_ARRAYVIEW_H
 
-#include <y/utils.h>
+#include "Span.h"
 
 namespace y {
 namespace core {
 
+
 template<typename T>
-class ArrayView {
-
-	template<typename U>
-	static constexpr bool is_compat = std::is_constructible_v<const T*, U>;
-
-	template<typename C>
-	using data_type = decltype(std::declval<const C>().data());
-
-	public:
-		using value_type = T;
-		using const_iterator = const T*;
-
-		ArrayView() = default;
-
-		ArrayView(const ArrayView&) = default;
-
-		ArrayView(std::nullptr_t) {
-		}
-
-		ArrayView(const T& t) : _data(&t), _size(1) {
-		}
-
-		ArrayView(const T* data, usize size) : _data(data), _size(size) {
-		}
-
-		template<usize N>
-		ArrayView(const T(&arr)[N]) : _data(arr), _size(N) {
-		}
-
-		template<usize N>
-		ArrayView(const std::array<T, N>& arr) : _data(arr.data()), _size(N) {
-		}
-
-		ArrayView(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
-		}
-
-		template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
-		ArrayView(const C& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
-		}
-
-		usize size() const {
-			return _size;
-		}
-
-		bool is_empty() const {
-			return !_size;
-		}
-
-		const T* data() const {
-			return _data;
-		}
-
-		const_iterator begin() const {
-			return _data;
-		}
-
-		const_iterator end() const {
-			return _data + _size;
-		}
-
-		const_iterator cbegin() const {
-			return _data;
-		}
-
-		const_iterator cend() const {
-			return _data + _size;
-		}
-
-		const T& operator[](usize i) const {
-			return _data[i];
-		}
-
-	private:
-		NotOwner<const T*> _data = nullptr;
-		usize _size = 0;
-
-};
+using ArrayView = Span<T>;
 
 }
 }
