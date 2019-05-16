@@ -26,43 +26,78 @@ namespace yave {
 namespace ecs {
 
 
-EntityId2::EntityId2(u32 index) : _index(index), _version(0) {
+EntityId::EntityId(index_type index) : _index(index), _version(0) {
 }
 
-void EntityId2::clear() {
-	y_debug_assert(_index != invalid_index);
+void EntityId::clear() {
+	y_debug_assert(is_valid());
 	y_debug_assert(_version != invalid_index);
 	_index = invalid_index;
+}
+
+void EntityId::set(index_type index) {
+	y_debug_assert(!is_valid());
+	_index = index;
 	++_version;
 }
 
-void EntityId2::set(u32 index) {
-	y_debug_assert(_index == invalid_index);
-	_index = index;
-}
-
-usize EntityId2::index() const {
+EntityId::index_type EntityId::index() const {
 	return _index;
 }
+
+bool EntityId::is_valid() const {
+	return _index != invalid_index;
+}
+
+bool EntityId::operator==(const EntityId& other) const {
+	return std::tie(_index, _version) == std::tie(other._index, other._version);
+}
+
+bool EntityId::operator!=(const EntityId& other) const {
+	return std::tie(_index, _version) != std::tie(other._index, other._version);
+}
+
 
 
 EntityIdPool::EntityIdPool() {
 	_ids.emplace_back();
 }
 
-EntityId2 EntityIdPool::create() {
+core::Result<void> EntityIdPool::create_with_index(index_type index) {
+	y_debug_assert(EntityId(index).is_valid());
+	_ids.set_min_capacity(index);
+	while(usize(index + 1) >= _ids.size()) {
+		_ids.emplace_back();
+	}
+
+	if(!_ids[index].is_valid()) {
+		_ids[index].set(index);
+
+		if(auto it = std::find(_free.begin(), _free.end(), index); it != _free.end()) {
+			_free.erase_unordered(it);
+		}
+		return core::Ok();
+	}
+
+	return core::Err();
+}
+
+EntityId EntityIdPool::create() {
 	++_size;
 	if(!_free.is_empty()) {
-		u32 index = _free.pop();
+		index_type index = _free.pop();
 		_ids[index].set(index);
 		return _ids[index];
 	}
 
-	u32 index = u32(_ids.size());
-	return _ids.emplace_back(index);
+	y_debug_assert(!_ids.is_empty());
+	index_type index = index_type(_ids.size() - 1);
+	_ids.last().set(index);
+	_ids.emplace_back();
+	return _ids[index];
 }
 
-void EntityIdPool::recycle(EntityId2 id) {
+void EntityIdPool::recycle(EntityId id) {
 	_free.push_back(id._index);
 	_ids[id._index].clear();
 	--_size;
@@ -73,6 +108,7 @@ EntityIdPool::iterator EntityIdPool::begin() {
 }
 
 EntityIdPool::iterator EntityIdPool::end() {
+	y_debug_assert(_ids.last() == EntityId());
 	return _ids.end() - 1;
 }
 
@@ -81,6 +117,7 @@ EntityIdPool::const_iterator EntityIdPool::begin() const {
 }
 
 EntityIdPool::const_iterator EntityIdPool::end() const {
+	y_debug_assert(_ids.last() == EntityId());
 	return _ids.end() - 1;
 }
 

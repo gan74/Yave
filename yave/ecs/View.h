@@ -28,18 +28,18 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-template<bool Const, typename... Args>
+template<bool Const, typename Index, typename... Args>
 class View {
 	using vector_tuple = std::conditional_t<Const,
-				std::tuple<const core::SparseVector<Args>&...>,
-				std::tuple<core::SparseVector<Args>&...>>;
+				std::tuple<const core::SparseVector<Args, Index>&...>,
+				std::tuple<core::SparseVector<Args, Index>&...>>;
 
 	using reference_tuple = std::conditional_t<Const,
 				std::tuple<const Args&...>,
 				std::tuple<Args&...>>;
 
-	using index_type = typename core::SparseVector<void>::index_type;
-	using index_range = decltype(std::declval<core::SparseVector<void>>().indexes());
+	using index_type = Index;
+	using index_range = decltype(std::declval<core::SparseVector<void, index_type>>().indexes());
 
 
 	class EndIterator {};
@@ -145,11 +145,10 @@ class View {
 	}
 
 	public:
+		using iterator = Iterator;
 		using const_iterator = Iterator;
 
 		View(const vector_tuple& vecs) : _vectors(vecs), _short(shortest_range()) {
-
-			log_msg(fmt("%", _short));
 		}
 
 

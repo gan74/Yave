@@ -21,56 +21,16 @@ SOFTWARE.
 **********************************/
 
 #include "EntityWorld.h"
-#include "View.h"
 
 namespace yave {
 namespace ecs {
 
-[[maybe_unused]] static void test_view() {
-	core::SparseVector<float> a;
-	core::SparseVector<int> b;
-	a.insert(100, 13.0f);
-	a.insert(1000, 7.0f);
-	b.insert(1000, 4);
-	b.insert(500, 6);
-	b.erase(500);
-
-	y_debug_assert(a.has(100));
-	y_debug_assert(a.has(1000));
-	y_debug_assert(!a.has(101));
-	y_debug_assert(b.has(1000));
-	y_debug_assert(!b.has(500));
-	y_debug_assert(b[1000] == 4);
-
-
-	log_msg(fmt("a: %", a.indexes()));
-	log_msg(fmt("b: %", b.indexes()));
-
-	View<true, float, int> v(std::make_tuple(a, b));
-
-	for(std::tuple<const float&, const int&> p : v) {
-		log_msg(fmt("%", p));
-		unused(p);
-	}
-}
-
 EntityWorld::EntityWorld() {
-	_component_type_indexes.reserve(max_entity_component_types);
-	test_view();
 }
 
-const Entity* EntityWorld::entity(EntityId id) const {
-	return _entities.get(id);
-}
-
-Entity* EntityWorld::entity(EntityId id) {
-	return _entities.get(id);
-}
 
 EntityId EntityWorld::create_entity() {
-	EntityId id = _entities.insert();
-	entity(id)->_id = id;
-	return id;
+	return _entities.create();
 }
 
 void EntityWorld::remove_entity(EntityId id) {
@@ -79,99 +39,49 @@ void EntityWorld::remove_entity(EntityId id) {
 	}
 }
 
-void EntityWorld::remove_component(ComponentContainerBase* container, EntityId id) {
-	Entity* ent = entity(id);
-	y_debug_assert(ent);
-	y_debug_assert(container);
-
-	ComponentTypeIndex type = container->type();
-	ComponentId comp_id = ent->component_id(type);
-	container->remove_component(comp_id);
-}
-
-ComponentTypeIndex EntityWorld::add_index_for_type(std::type_index type) {
-	if(auto it = _component_type_indexes.find(type); it != _component_type_indexes.end()) {
-		return it->second;
-	}
-	ComponentTypeIndex index = ComponentTypeIndex{_component_containers.size()};
-	_component_type_indexes[type] = index;
-	_component_containers.emplace_back();
-	return index;
-}
-
-core::Result<ComponentTypeIndex> EntityWorld::index_for_type(std::type_index type) const {
-	if(auto it = _component_type_indexes.find(type); it != _component_type_indexes.end()) {
-		return core::Ok(it->second);
-	}
-	return core::Err();
+const EntityIdPool& EntityWorld::entities() const {
+	return _entities;
 }
 
 void EntityWorld::flush() {
 	y_profile();
-	for(EntityId id : _deletions) {
-		if(const Entity* ent = entity(id)) {
-			for(usize i = 0; i != max_entity_component_types; ++i) {
-				ComponentId id = ent->component_id(ComponentTypeIndex{i});
-				if(id.is_valid()) {
-					y_debug_assert(_component_containers[i]);
-					_component_containers[i]->remove_component(id);
-				}
-			}
-		}
-		_entities.erase(id);
+	for(const auto& c : _component_containers) {
+		c.second->remove(_deletions);
 	}
-
-	for(auto& container : _component_containers) {
-		if(container) {
-			container->flush();
-		}
+	for(EntityId id : _deletions) {
+		_entities.recycle(id);
 	}
 }
 
-
 core::String EntityWorld::type_name(ComponentTypeIndex index) const {
-	for(const auto& p : _component_type_indexes) {
-		if(p.second == index) {
-			return y::detail::demangle_type_name(p.first.name());
-		}
-	}
-	return "";
+	return y::detail::demangle_type_name(index.name());
 }
 
 void EntityWorld::serialize(io::WriterRef writer) const {
 	writer->write_one(u64(_entities.size()));
-	for(const Entity& e : _entities) {
-		writer->write_one(u64(e.id().full_id()));
+	for(EntityId id : _entities) {
+		writer->write_one(u64(id.index()));
 	}
 
-
-	usize non_null = std::count_if(_component_containers.begin(), _component_containers.end(), [](const auto& p) { return !!p; });
-	writer->write_one(u32(non_null));
+	writer->write_one(u32(_component_containers.size()));
 	for(const auto& container : _component_containers) {
-		if(container) {
-			detail::serialize_container(writer, container.get());
-		}
+		detail::serialize_container(writer, container.second.get());
 	}
 }
 
 void EntityWorld::deserialize(io::ReaderRef reader) {
 	*this = EntityWorld();
+
 	u64 entity_count = reader->read_one<u64>();
 	for(u64 i = 0; i != entity_count; ++i) {
-		EntityId id = EntityId::from_full_id(reader->read_one<u64>());
-		_entities.insert_with_id(id).unwrap();
-		_entities[id]._id = id;
+		index_type id = index_type(reader->read_one<u64>());
+		_entities.create_with_index(id).unwrap();
 	}
 
 	u32 container_count = reader->read_one<u32>();
 	for(u32 i = 0; i != container_count; ++i) {
-		if(auto container = detail::deserialize_container(reader, *this)) {
-			ComponentTypeIndex type = container->type();
-
-			y_debug_assert(_component_containers.size() > type.index);
-			y_debug_assert(!_component_containers[type.index]);
-
-			_component_containers[type.index] = std::move(container);
+		if(auto container = detail::deserialize_container(reader)) {
+			_component_containers[container->type()] = std::move(container);
 		}
 	}
 }

@@ -57,7 +57,7 @@ void serialize_container(io::WriterRef writer, ComponentContainerBase* container
 	container->serialize(writer);
 }
 
-std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef reader, EntityWorld& world) {
+std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef reader) {
 	if(reader->read_one<u64>() != type_hash<MagicNumber>()) {
 		y_throw("Invalid magic number");
 	}
@@ -65,7 +65,7 @@ std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef read
 	for(auto* i = registered_types_head; i; i = i->_next) {
 		if(i->_type_id == type_id) {
 			if(i->_create_container) {
-				return i->_create_container(reader, world);
+				return i->_create_container(reader);
 			} else {
 				log_msg("null function");
 				return nullptr;
@@ -76,73 +76,5 @@ std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef read
 }
 
 }
-
-
-ComponentContainerBase::ComponentContainerBase(EntityWorld& world, ComponentTypeIndex type) : _world(world), _type(type) {
-}
-
-ComponentContainerBase::~ComponentContainerBase() {
-}
-
-void ComponentContainerBase::set_parent(ComponentId id, EntityId parent) {
-	while(_parents.size() <= id.index()) {
-		_parents.emplace_back();
-	}
-	_parents[id.index()] = parent;
-	Entity* entity = _world.entity(parent);
-	y_debug_assert(entity);
-	y_debug_assert(entity->components().size() == entity->components_bits().count());
-	y_debug_assert(!entity->has_component(type()));
-	entity->add_component(type(), id);
-
-}
-
-void ComponentContainerBase::unset_parent(ComponentId id) {
-	y_debug_assert(_parents[id.index()].is_valid());
-	y_debug_assert(_world.entity(_parents[id.index()])->has_component(type()));
-	if(id.index() < _parents.size()) {
-		_parents[id.index()] = EntityId();
-	}
-}
-
-void ComponentContainerBase::remove_component(ComponentId id) {
-	if(id.is_valid()) {
-		_deletions << id;
-	}
-}
-
-core::ArrayView<EntityId> ComponentContainerBase::parents() const {
-	return _parents;
-}
-
-EntityId ComponentContainerBase::parent(ComponentId id) const {
-	u32 index = id.index();
-	y_debug_assert(index < _parents.size());
-	return _parents[index];
-}
-
-void ComponentContainerBase::finish_flush() {
-	for(ComponentId id : _deletions) {
-		Entity* entity = _world.entity(parent(id));
-
-		y_debug_assert(entity);
-		y_debug_assert(entity->has_component(type()));
-		y_debug_assert(entity->component_id(type()) == id);
-		y_debug_assert(entity->components().size() == entity->components_bits().count());
-
-		entity->remove_component(type());
-		unset_parent(id);
-	}
-	_deletions.clear();
-}
-
-ComponentTypeIndex ComponentContainerBase::type() const {
-	return _type;
-}
-
-const EntityWorld& ComponentContainerBase::world() const {
-	return _world;
-}
-
 }
 }

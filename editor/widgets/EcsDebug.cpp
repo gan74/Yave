@@ -104,7 +104,7 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	ImGui::Spacing();
 	ImGui::Text("%u component types registered", u32(ecs::detail::registered_types_count()));
-	ImGui::Text("%u component types intanced", u32(world.component_types().size()));
+	ImGui::Text("%u component types intanced", u32(world.component_containers().size()));
 
 	auto clean_name = [](std::string_view str) {
 			auto last = str.find_last_of("::");
@@ -113,8 +113,9 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	ImGui::Spacing();
 	if(ImGui::TreeNode("Component types")) {
-		for(const auto& p : world.component_types()) {
-			ImGui::Selectable(fmt(ICON_FA_LIST_ALT " %", clean_name(world.type_name(p.second))).data());
+		for(const auto& p : world.component_containers()) {
+			ecs::ComponentTypeIndex type = p.first;
+			ImGui::Selectable(fmt(ICON_FA_LIST_ALT " %", clean_name(world.type_name(type))).data());
 		}
 
 		ImGui::TreePop();
@@ -123,16 +124,16 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	ImGui::Spacing();
 	if(ImGui::TreeNode("Components")) {
-		std::map<ecs::EntityId, core::Vector<core::String>> entities;
-		for(auto type : world.component_types()) {
-			core::String name = clean_name(world.type_name(type.second));
-			for(ecs::EntityId ids : world.ids_with(type.second)) {
+		std::map<typename ecs::EntityId::index_type, core::Vector<core::String>> entities;
+		for(auto& type : world.component_containers()) {
+			core::String name = clean_name(world.type_name(type.first));
+			for(auto ids : world.indexes(type.first)) {
 				entities[ids] << name;
 			}
 		}
 		for(const auto& ent : entities) {
-			EditorComponent* ec = world.component<EditorComponent>(ent.first);
-			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %###%", (ec ? ec->name() : "(null)"), ent.first.full_id()).data())) {
+			EditorComponent& ec = world.component<EditorComponent>(ecs::EntityId(ent.first));
+			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %###%", ec.name(), ent.first).data())) {
 				usize index = 0;
 				for(const core::String& n : ent.second) {
 					ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %###%", n, index++).data());

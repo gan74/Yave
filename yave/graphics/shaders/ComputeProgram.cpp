@@ -48,7 +48,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 		y_fatal("Incompatible specialization data.");
 	}
 
-	core::ArrayView entries = data.size() ? comp.specialization_entries() : core::ArrayView<vk::SpecializationMapEntry>();
+	auto entries = data.size() ? comp.specialization_entries() : core::ArrayView<vk::SpecializationMapEntry>();
 	auto spec_info = vk::SpecializationInfo()
 			.setMapEntryCount(entries.size())
 			.setPMapEntries(entries.data())

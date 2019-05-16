@@ -22,10 +22,9 @@ SOFTWARE.
 #ifndef YAVE_ECS_ENTITYWORLD_H
 #define YAVE_ECS_ENTITYWORLD_H
 
-#include "Entity.h"
 #include "ComponentContainer.h"
-#include "MultiComponentIterator.h"
 #include "EntityIdPool.h"
+#include "View.h"
 
 #include <y/core/Result.h>
 
@@ -36,159 +35,22 @@ namespace ecs {
 
 class EntityWorld : NonCopyable {
 
-	public:
-		EntityWorld();
+	using index_type = typename EntityId::index_type;
 
-		const Entity* entity(EntityId id) const;
-		Entity* entity(EntityId id);
+	public:
+		template<typename... Args>
+		using EntityView = View<false, index_type, Args...>;
+		template<typename... Args>
+		using ConstEntityView = View<true, index_type, Args...>;
+
+		EntityWorld();
 
 		EntityId create_entity();
 		void remove_entity(EntityId id);
 
+		const EntityIdPool& entities() const;
+
 		void flush();
-
-
-
-		template<typename T>
-		ComponentTypeIndex add_index_for_type() {
-			return add_index_for_type(typeid(T));
-		}
-
-		template<typename T>
-		core::Result<ComponentTypeIndex> index_for_type() const {
-			return index_for_type(typeid(T));
-		}
-
-
-
-
-		const auto& entities() const {
-			return _entities;
-		}
-
-
-
-
-		template<typename T, typename... Args>
-		TypedComponentId<T> create_component(EntityId id, Args&&... args) {
-			return create_component(typed_component_container<T>(), id, y_fwd(args)...);
-		}
-
-		template<typename T, typename... Args>
-		TypedComponentId<T> create_or_find_component(EntityId id, Args&&... args) {
-			if(auto comp = component_id<T>(id); comp.is_valid()) {
-				return comp;
-			}
-			return create_component<T>(id, y_fwd(args)...);
-		}
-
-
-		template<typename T>
-		void remove_component(EntityId id) {
-			return remove_component(component_container<T>(), id);
-		}
-
-
-
-
-		template<typename T>
-		T* component(TypedComponentId<T> id) {
-			return component<T>(id.to_generic_id());
-		}
-
-		template<typename T>
-		T* component(ComponentId id) {
-			return typed_component_container<T>()->component(id);
-		}
-
-		template<typename T>
-		T* component(EntityId id) {
-			return component<T>(entity(id)->component_id(add_index_for_type<T>()));
-		}
-
-		template<typename T>
-		const T* component(TypedComponentId<T> id) const {
-			return component<T>(id.to_generic_id());
-		}
-
-		template<typename T>
-		const T* component(ComponentId id) const {
-			const ComponentContainer<T>* container = typed_component_container<T>();
-			return container ? container->component(id) : nullptr;
-		}
-
-		template<typename T>
-		const T* component(EntityId id) const {
-			if(auto index = index_for_type<T>()) {
-				return component<T>(entity(id)->component_id(index.unwrap()));
-			}
-			return nullptr;
-		}
-
-		template<typename T>
-		TypedComponentId<T> component_id(EntityId id) const {
-			if(auto index = index_for_type<T>()) {
-				return entity(id)->component_id(index.unwrap());
-			}
-			return TypedComponentId<T>();
-		}
-
-
-
-
-
-		template<typename... Args>
-		auto entities_with() {
-			return with_components<Args...>(ReturnEntityPolicy());
-		}
-
-		template<typename... Args>
-		auto entities_with() const {
-			return with_components<Args...>(ReturnEntityPolicy());
-		}
-
-
-
-		template<typename... Args>
-		auto ids_with() const {
-			return with_components<Args...>(ReturnIdPolicy());
-		}
-
-		auto ids_with(ComponentTypeIndex index) const {
-			const ComponentContainerBase *container = component_container(index);
-			return container ? container->parents() : decltype(container->parents())();
-		}
-
-
-
-
-		template<typename T, typename... Args>
-		auto components() {
-			if constexpr(sizeof...(Args)) {
-				return with_components<T, Args...>(ReturnComponentsPolicy<false, T, Args...>(typed_component_containers<T, Args...>()));
-			} else  {
-				return typed_component_container<T>()->components();
-			}
-		}
-
-		template<typename T, typename... Args>
-		auto components() const {
-			if constexpr(sizeof...(Args)) {
-				return with_components<T, Args...>(ReturnComponentsPolicy<true, T, Args...>(typed_component_containers<T, Args...>()));
-			} else  {
-				const ComponentContainer<T>* container = typed_component_container<T>();
-				return container ? container->components() : ComponentContainer<T>::empty_components();
-			}
-		}
-
-
-
-
-		const auto&  component_types() const {
-			return _component_type_indexes;
-		}
-
-		core::String type_name(ComponentTypeIndex index) const;
 
 
 
@@ -196,140 +58,121 @@ class EntityWorld : NonCopyable {
 		void serialize(io::WriterRef writer) const;
 		void deserialize(io::ReaderRef reader);
 
-	private:
-		template<typename... Args, typename ReturnPolicy>
-		auto with_components(const ReturnPolicy& policy) {
-			y_profile();
-			static_assert(sizeof...(Args));
-			core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
-			MultiComponentIterator<decltype(entities.begin()), ReturnPolicy, false> begin(
-						entities.begin(), entities.end(), _entities, create_bitmask<Args...>(), policy);
-			return core::Range(begin, MultiComponentIteratorEndSentry());
+
+
+		template<typename T, typename... Args>
+		T& create_component(EntityId id, Args&&... args) {
+			return container<T>()->template create<T>(id, y_fwd(args)...);
 		}
 
-		template<typename... Args, typename ReturnPolicy>
-		auto with_components(const ReturnPolicy& policy) const {
-			y_profile();
-			static_assert(sizeof...(Args));
-			core::ArrayView<EntityId> entities = smallest_container<Args...>()->parents();
-			MultiComponentIterator<decltype(entities.begin()), ReturnPolicy, true> begin(
-						entities.begin(), entities.end(), _entities, create_bitmask<Args...>(), policy);
-			return core::Range(begin, MultiComponentIteratorEndSentry());
+		template<typename T, typename... Args>
+		T& create_or_find_component(EntityId id, Args&&... args) {
+			return container<T>()->template create_or_find<T>(id, y_fwd(args)...);
 		}
 
 
 		template<typename T>
-		ComponentContainerBase* component_container() {
-			ComponentTypeIndex type = add_index_for_type<T>();
-			auto& container = _component_containers[type.index];
+		T& component(EntityId id) {
+			return container<T>()->template component<T>(id);
+		}
+
+		template<typename T>
+		const T& component(EntityId id) const {
+			return container<T>()->template component<T>(id);
+		}
+
+
+
+		template<typename T>
+		core::MutableSpan<T> components() {
+			return container<T>()->template components<T>();
+		}
+
+		template<typename T>
+		core::Span<T> components() const {
+			const ComponentContainerBase* cont = container<T>();
+			return cont ? cont->components<T>() : decltype(cont->components<T>())();
+		}
+
+
+		template<typename... Args>
+		EntityView<Args...> view() {
+			static_assert(sizeof...(Args));
+			return typed_component_vectors<Args...>();
+		}
+
+		template<typename... Args>
+		ConstEntityView<Args...> view() const {
+			static_assert(sizeof...(Args));
+			return typed_component_vectors<Args...>();
+		}
+
+
+		template<typename T>
+		core::Span<index_type> indexes() const {
+			return indexes(index_for_type<T>());
+		}
+
+		core::Span<index_type> indexes(ComponentTypeIndex type) const {
+			const ComponentContainerBase* cont = container(type);
+			return cont ? cont->indexes() : core::Span<index_type>();
+		}
+
+
+
+		const auto& component_containers() const {
+			return _component_containers;
+		}
+
+
+
+
+		core::String type_name(ComponentTypeIndex type) const;
+
+	private:
+		template<typename T>
+		ComponentContainerBase* container() {
+			auto& container = _component_containers[index_for_type<T>()];
 			if(!container) {
-				container = std::make_unique<ComponentContainer<T>>(*this);
+				container = std::make_unique<ComponentContainer<T>>();
 			}
-			y_debug_assert(container->type() == type);
 			return container.get();
 		}
 
 		template<typename T>
-		const ComponentContainerBase* component_container() const {
-			if(auto index = index_for_type<T>()) {
-				return component_container(index.unwrap());
+		const ComponentContainerBase* container() const {
+			return container(index_for_type<T>());
+		}
+
+		const ComponentContainerBase* container(ComponentTypeIndex type) const {
+			if(auto it = _component_containers.find(type); it != _component_containers.end()) {
+				return it->second.get();
 			}
 			return nullptr;
 		}
 
-		const ComponentContainerBase* component_container(ComponentTypeIndex index) const {
-			if(index.index < _component_containers.size()) {
-				return _component_containers[index.index].get();
-			}
-			return nullptr;
-		}
-
-
-		template<typename T>
-		ComponentContainer<T>* typed_component_container() {
-			return dynamic_cast<ComponentContainer<T>*>(component_container<T>());
-		}
-
-		template<typename T>
-		const ComponentContainer<T>* typed_component_container() const {
-			return dynamic_cast<const ComponentContainer<T>*>(component_container<T>());
-		}
 
 		template<typename T, typename... Args>
-		std::tuple<ComponentContainer<T>*, ComponentContainer<Args>*...> typed_component_containers() const {
+		std::tuple<core::SparseVector<T, index_type>&, core::SparseVector<Args, index_type>&...> typed_component_vectors() const {
 			if constexpr(sizeof...(Args)) {
-				return std::tuple_cat(typed_component_containers<T>(),
-									  typed_component_containers<Args...>());
+				return std::tuple_cat(typed_component_vectors<T>(),
+									  typed_component_vectors<Args...>());
 			} else {
 				// We need non consts here and we want to avoir returning non const everywhere else
 				// Const safety for typed_component_containers is done in ReturnComponentsPolicy
 				// This shouldn't be UB as component containers are never const
-				return std::make_tuple(const_cast<ComponentContainer<T>*>(typed_component_container<T>()));
+				ComponentContainerBase* cont = const_cast<ComponentContainerBase*>(container<T>());
+				return std::make_tuple(cont->component_vector<T>());
 			}
 		}
 
-		template<typename T, typename... Args>
-		const ComponentContainerBase* smallest_container() const {
-			const ComponentContainerBase* cont = component_container<T>();
-			if constexpr(sizeof...(Args)) {
-				const ComponentContainerBase* other = smallest_container<Args...>();
-				return cont->parents().size() < other->parents().size() ? cont : other;
-			}
-			return cont;
-		}
-
-		template<typename... Args>
-		ComponentBitmask create_bitmask() const {
-			ComponentBitmask mask;
-			add_to_bitmask<Args...>(mask);
-			return mask;
-		}
-
-		template<typename T, typename... Args>
-		void add_to_bitmask(ComponentBitmask& mask) const {
-			if(auto index = index_for_type<T>()) {
-				mask[index.unwrap().index] = true;
-			}
-			if constexpr(sizeof...(Args)) {
-				add_to_bitmask<Args...>(mask);
-			}
-		}
-
-		template<typename T, typename... Args>
-		ComponentId create_component(ComponentContainer<T>* container, EntityId id, Args&&... args) {
-			Entity* ent = entity(id);
-			y_debug_assert(ent);
-
-			ComponentTypeIndex type = container->type();
-			if(ent->has_component(type)) {
-				y_fatal("Component already exists.");
-			}
-			return container->create_component(id, y_fwd(args)...);
-		}
-
-		void remove_component(ComponentContainerBase* container, EntityId id);
 
 
-
-		ComponentTypeIndex add_index_for_type(std::type_index type);
-		core::Result<ComponentTypeIndex> index_for_type(std::type_index type) const;
-
-
-
-		SlotMap<Entity, EntityTag> _entities;
+		EntityIdPool _entities;
 		core::Vector<EntityId> _deletions;
 
-		core::Vector<std::unique_ptr<ComponentContainerBase>> _component_containers;
-		std::unordered_map<std::type_index, ComponentTypeIndex> _component_type_indexes;
+		std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _component_containers;
 };
-
-
-namespace detail {
-template<typename T>
-ComponentTypeIndex generate_index_for_type(EntityWorld& world) {
-	return world.add_index_for_type<T>();
-}
-}
 
 }
 }

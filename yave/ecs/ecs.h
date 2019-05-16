@@ -22,53 +22,26 @@ SOFTWARE.
 #ifndef YAVE_ECS_ECS_H
 #define YAVE_ECS_ECS_H
 
-#include "SlotMap.h"
-
-#include <bitset>
+#include <typeindex>
 
 namespace yave {
 namespace ecs {
 
-class Entity;
 class EntityWorld;
 
-static constexpr usize max_entity_component_types = 64;
-
-using ComponentBitmask = std::bitset<max_entity_component_types>;
-
-struct ComponentTypeIndex {
+/*struct ComponentType {
 	usize index;
 	bool operator==(const ComponentTypeIndex& other) const { return index == other.index; }
 	bool operator!=(const ComponentTypeIndex& other) const { return index != other.index; }
-};
+};*/
 
-struct EntityTag {};
-using EntityId = SlotMapId<EntityTag>;
-
-struct ComponentTag {};
-using ComponentId = SlotMapId<ComponentTag>;
-
-
+using ComponentTypeIndex = std::type_index;
 
 
 template<typename T>
-class TypedComponentId : public ComponentId {
-	public:
-		TypedComponentId() = default;
-
-		const ComponentId& to_generic_id() const {
-			return static_cast<const ComponentId&>(*this);
-		}
-
-	private:
-		friend class EntityWorld;
-
-		TypedComponentId(ComponentId id) : ComponentId(id) {
-		}
-};
-
-static_assert(!std::is_constructible_v<TypedComponentId<int>, ComponentId>);
-static_assert(std::is_constructible_v<ComponentId, TypedComponentId<int>>);
+ComponentTypeIndex index_for_type() {
+	return typeid(T);
+}
 
 }
 }

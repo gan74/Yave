@@ -23,9 +23,9 @@ SOFTWARE.
 #define YAVE_ECS_COMPONENTCONTAINER_H
 
 #include "ecs.h"
-#include "Entity.h"
+#include "EntityIdPool.h"
 
-#include <typeindex>
+#include <y/core/SparseVector.h>
 
 #include <y/serde/serde.h>
 
@@ -35,7 +35,7 @@ namespace ecs {
 class ComponentContainerBase;
 
 namespace detail {
-using create_container_t = std::unique_ptr<ComponentContainerBase> (*)(io::ReaderRef, EntityWorld&);
+using create_container_t = std::unique_ptr<ComponentContainerBase> (*)(io::ReaderRef);
 class RegisteredContainerType {
 	public:
 		u64 type_id() const {
@@ -45,7 +45,7 @@ class RegisteredContainerType {
 		friend void register_container_type(RegisteredContainerType*, usize, create_container_t);
 		friend usize registered_types_count();
 		friend void serialize_container(io::WriterRef, ComponentContainerBase*);
-		friend std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef, EntityWorld&);
+		friend std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef);
 
 		u64 _type_id = 0;
 		create_container_t _create_container = nullptr;
@@ -55,43 +55,118 @@ class RegisteredContainerType {
 usize registered_types_count();
 void register_container_type(RegisteredContainerType* type, u64 type_id, create_container_t create_container);
 void serialize_container(io::WriterRef writer, ComponentContainerBase* container);
-std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef reader, EntityWorld& world);
+std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef reader);
 
 template<typename T>
 void register_container_type(RegisteredContainerType* type, create_container_t create_container) {
+	// type_hash is not portable, but without reflection we don't have a choice...
 	register_container_type(type, type_hash<T>(), create_container);
 }
-
-template<typename T>
-ComponentTypeIndex generate_index_for_type(EntityWorld& world); // EntityWorld.h
 }
-
 
 
 class ComponentContainerBase : NonMovable {
 	public:
-		virtual ~ComponentContainerBase();
+		using index_type = typename EntityId::index_type;
 
-		virtual void flush() = 0;
+		virtual ~ComponentContainerBase() {
+		}
 
-		void remove_component(ComponentId id);
+		virtual void remove(core::ArrayView<EntityId> ids) = 0;
+		virtual bool has(EntityId id) const = 0;
+		virtual core::Span<index_type> indexes() const = 0;
 
-		core::ArrayView<EntityId> parents() const;
-		EntityId parent(ComponentId id) const;
+		ComponentTypeIndex type() const {
+			return _type;
+		}
 
-		ComponentTypeIndex type() const;
-		const EntityWorld& world() const;
+		template<typename T, typename... Args>
+		T& create(EntityId id, Args&&... args) {
+			auto i = id.index();
+			return component_vector_fast<T>().insert(i, y_fwd(args)...);
+		}
+
+		template<typename T, typename... Args>
+		T& create_or_find(EntityId id, Args&&... args) {
+			auto i = id.index();
+			auto& vec = component_vector_fast<T>();
+			if(!vec.has(i)) {
+				return vec.insert(i, y_fwd(args)...);
+			}
+			return vec[i];
+		}
+
+		template<typename T>
+		T& get(EntityId id) {
+			return component_vector_fast<T>()[id.index()];
+		}
+
+		template<typename T>
+		const T& get(EntityId id) const {
+			return component_vector_fast<T>()[id.index()];
+		}
+
+		template<typename T>
+		bool has(EntityId id) const {
+			return component_vector_fast<T>().has(id.index());
+		}
+
+		template<typename T>
+		T& component(EntityId id) {
+			return component_vector_fast<T>()[id.index()];
+		}
+
+		template<typename T>
+		T& component(EntityId id) const {
+			return component_vector_fast<T>()[id.index()];
+		}
+
+		template<typename T>
+		core::MutableSpan<T> components() {
+			return component_vector_fast<T>().values();
+		}
+
+		template<typename T>
+		core::Span<T> components() const {
+			return component_vector_fast<T>().values();
+		}
+
+		template<typename T>
+		auto& component_vector() {
+			return component_vector_fast<T>();
+		}
+
+		template<typename T>
+		const auto& component_vector() const {
+			return component_vector_fast<T>();
+		}
 
 	protected:
-		ComponentContainerBase(EntityWorld& world, ComponentTypeIndex type);
+		template<typename T>
+		ComponentContainerBase(core::SparseVector<T, index_type>& sparse) :
+				_sparse_ptr(&sparse),
+				_type(index_for_type<T>()) {
+		}
 
-		void set_parent(ComponentId id, EntityId parent);
-		void unset_parent(ComponentId id);
 
-		void finish_flush();
 
-		core::Vector<EntityId> _parents;
-		core::Vector<ComponentId> _deletions;
+		template<typename T>
+		auto& component_vector_fast() {
+			y_debug_assert(type() == index_for_type<T>());
+			return (*static_cast<core::SparseVector<T, index_type>*>(_sparse_ptr));
+		}
+
+		template<typename T>
+		const auto& component_vector_fast() const {
+			y_debug_assert(type() == index_for_type<T>());
+			return (*static_cast<const core::SparseVector<T, index_type>*>(_sparse_ptr));
+		}
+
+	private:
+		// hacky but avoids dynamic casts and virtual calls
+		void* _sparse_ptr = nullptr;
+		const ComponentTypeIndex _type;
+
 
 	private:
 		friend void detail::serialize_container(io::WriterRef, ComponentContainerBase*);
@@ -99,70 +174,44 @@ class ComponentContainerBase : NonMovable {
 		virtual void serialize(io::WriterRef) const = 0;
 		virtual u64 serialization_type_id() const = 0;
 
-	private:
-		EntityWorld& _world;
-		ComponentTypeIndex _type;
 };
+
+
+
 
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
 	public:
-		ComponentContainer(EntityWorld& world) :
-				ComponentContainerBase(world, detail::generate_index_for_type<T>(world)),
+		ComponentContainer() :
+				ComponentContainerBase(_components), // we don't actually need to care about initilisation order here
 				_registerer(&registerer) {
 		}
 
-		const T* component(ComponentId id) const {
-			return _components.get(id);
-		}
-
-		T* component(ComponentId id) {
-			return _components.get(id);
-		}
-
-		const T* component(const Entity& entity) const {
-			return _components.get(entity.component_id(type()));
-		}
-
-		T* component(const Entity& entity) {
-			return _components.get(entity.component_id(type()));
-		}
-
-		template<typename... Args>
-		ComponentId create_component(EntityId parent, Args&&... args) {
-			ComponentId id = _components.insert(y_fwd(args)...);
-			set_parent(id, parent);
-			return id;
-		}
-
-		void flush() override {
-			for(ComponentId id : _deletions) {
-				_components.erase(id);
+		void remove(core::Span<EntityId> ids) override {
+			for(EntityId id : ids) {
+				auto i = id.index();
+				if(_components.has(i)) {
+					_components.erase(i);
+				}
 			}
-			finish_flush();
 		}
 
-
-		auto& components() {
-			return _components;
+		bool has(EntityId id) const override {
+			return ComponentContainerBase::has<T>(id);
 		}
 
-		const auto& components() const {
-			return _components;
-		}
-
-		static auto empty_components() {
-			using const_iterator = typename SlotMap<T, ComponentTag>::const_iterator;
-			return core::Range<const_iterator>(const_iterator(), const_iterator());
+		core::Span<index_type> indexes() const override {
+			return _components.indexes();
 		}
 
 	private:
-		SlotMap<T, ComponentTag> _components;
+		core::SparseVector<T, index_type> _components;
 
 
 
-		// ------------------------------------- serde BS -------------------------------------
+	// ------------------------------------- serde BS -------------------------------------
 
+	private:
 		static constexpr bool is_serde_compatible = (serde::is_serializable<T>::value && serde::is_deserializable<T>::value) ||
 													std::is_trivially_copyable_v<T>;
 
@@ -174,7 +223,7 @@ class ComponentContainer final : public ComponentContainerBase {
 			if constexpr(is_serde_compatible) {
 				writer->write_one(u64(_components.size()));
 				for(auto p : _components.as_pairs()) {
-					writer->write_one(u64(parent(p.first).full_id()));
+					writer->write_one(u64(p.first));
 					serde::serialize(writer, p.second);
 				}
 			}
@@ -184,17 +233,15 @@ class ComponentContainer final : public ComponentContainerBase {
 			if constexpr(is_serde_compatible) {
 				u64 component_count = reader->read_one<u64>();
 				for(u64 i = 0; i != component_count; ++i) {
-					u64 parent_id = reader->read_one<u64>();
-					ComponentId id = _components.insert();
-					serde::deserialize(reader, _components[id]);
-					set_parent(id, EntityId::from_full_id(parent_id));
+					index_type id = index_type(reader->read_one<u64>());
+					serde::deserialize(reader, _components.insert(id));
 				}
 			}
 		}
 
-		static std::unique_ptr<ComponentContainerBase> deserialized(io::ReaderRef reader, EntityWorld& world) {
+		static std::unique_ptr<ComponentContainerBase> deserialized(io::ReaderRef reader) {
 			try {
-				auto container = std::make_unique<ComponentContainer<T>>(world);
+				auto container = std::make_unique<ComponentContainer<T>>();
 				container->deserialize(reader);
 				return container;
 			} catch(...) {

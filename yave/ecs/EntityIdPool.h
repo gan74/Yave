@@ -25,47 +25,59 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <yave/yave.h>
 
+#include <y/core/Result.h>
 
 namespace yave {
 namespace ecs {
 
-class EntityId2 {
+class EntityId {
 	public:
-		EntityId2() = default;
-		explicit EntityId2(u32 index);
+		using index_type = u32;
 
-		usize index() const;
+		EntityId() = default;
+		explicit EntityId(index_type index);
+
+		index_type index() const;
+
+		bool is_valid() const;
+
+		bool operator==(const EntityId& other) const;
+		bool operator!=(const EntityId& other) const;
 
 	private:
 		friend class EntityIdPool;
 
 		void clear();
-		void set(u32 index);
+		void set(index_type index);
 
-		static constexpr u32 invalid_index = u32(-1);
-		u32 _index = invalid_index;
-		u32 _version = invalid_index;
+		static constexpr index_type invalid_index = index_type(-1);
+		index_type _index = invalid_index;
+		index_type _version = invalid_index;
 };
 
-static_assert(sizeof(EntityId2) == sizeof(u64));
-static_assert(std::is_trivially_copyable_v<EntityId2>);
+static_assert(sizeof(EntityId) == sizeof(u64));
+static_assert(std::is_trivially_copyable_v<EntityId>);
 
 
 class EntityIdPool {
 	template<bool Const>
 	class Iterator {
 		public:
-			using value_type = std::conditional_t<Const, const EntityId2, EntityId2>;
+			using value_type = std::conditional_t<Const, const EntityId, EntityId>;
 			using reference = value_type&;
 			using pointer = value_type*;
 			using difference_type = usize;
 			using iterator_category = std::forward_iterator_tag;
 
 			reference operator*() const {
+				y_debug_assert(!at_end());
+				y_debug_assert(_it->_index != EntityId::invalid_index);
 				return *_it;
 			}
 
 			pointer operator->() const {
+				y_debug_assert(!at_end());
+				y_debug_assert(_it->_index != EntityId::invalid_index);
 				return _it;
 			}
 
@@ -97,7 +109,7 @@ class EntityIdPool {
 			}
 
 			bool at_end() const {
-				return _it->_version == EntityId2::invalid_index;
+				return _it->_version == EntityId::invalid_index;
 			}
 
 		private:
@@ -113,7 +125,7 @@ class EntityIdPool {
 			}
 
 			void skip_empty() {
-				while(!at_end() && _it->_index == EntityId2::invalid_index) {
+				while(!at_end() && _it->_index == EntityId::invalid_index) {
 					++_it;
 				}
 			}
@@ -122,13 +134,17 @@ class EntityIdPool {
 	};
 
 	public:
+		using index_type = typename EntityId::index_type;
+
 		using iterator = Iterator<false>;
 		using const_iterator = Iterator<true>;
 
 		EntityIdPool();
 
-		EntityId2 create();
-		void recycle(EntityId2 id);
+		core::Result<void> create_with_index(index_type index);
+
+		EntityId create();
+		void recycle(EntityId id);
 
 		iterator begin();
 		iterator end();
@@ -138,8 +154,8 @@ class EntityIdPool {
 		usize size() const;
 
 	private:
-		core::Vector<EntityId2> _ids;
-		core::Vector<u32> _free;
+		core::Vector<EntityId> _ids;
+		core::Vector<index_type> _free;
 
 		usize _size = 0;
 };
