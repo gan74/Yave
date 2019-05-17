@@ -34,16 +34,16 @@ class Writer;
 
 namespace serde2 {
 
-// TODO: We still pay a virtual call by read/write op, change that if possible
+Y_TODO(We still pay a virtual call by read/write op, change that if possible)
 
-class ReadableArchive final {
+class ReadableArchive {
 
 	public:
 		ReadableArchive(io2::Reader&& reader) : _reader(std::move(reader)) {
 		}
 
 		template<typename T>
-		explicit ReadableArchive(T&& t) : _reader(y_fwd(t)) {
+		ReadableArchive(T&& t) : _reader(y_fwd(t)) {
 		}
 
 
@@ -82,14 +82,14 @@ class ReadableArchive final {
 };
 
 
-class WritableArchive final {
+class WritableArchive {
 
 	public:
 		WritableArchive(io2::Writer&& writer) : _writer(std::move(writer)) {
 		}
 
 		template<typename T>
-		explicit WritableArchive(T&& t) : _writer(y_fwd(t)) {
+		WritableArchive(T&& t) : _writer(y_fwd(t)) {
 		}
 
 

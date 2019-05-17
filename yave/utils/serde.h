@@ -26,6 +26,8 @@ SOFTWARE.
 #include <yave/assets/AssetType.h>
 
 #include <y/serde/serde.h>
+
+#include <y/io2/io.h>
 #include <y/serde2/serde.h>
 
 namespace yave {

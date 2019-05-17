@@ -31,7 +31,7 @@ struct Nothing;
 
 
 
-#define Y_TODO(msg) /* msg */
+#define Y_TODO(...) /* __VA_ARGS__ */
 
 #ifndef NDEBUG
 #define Y_DEBUG
@@ -51,6 +51,8 @@ struct Nothing;
 #endif
 
 #define y_fwd(var) std::forward<decltype(var)>(var)
+
+#define Y_IO_SERDE2_COMPAT
 
 #ifdef Y_DEBUG
 #ifndef Y_PERF_LOG_DISABLED

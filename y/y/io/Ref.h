@@ -93,33 +93,32 @@ class Ref {
 		}
 
 
-
 // for serde2, remove
 #ifdef Y_IO_SERDE2_COMPAT
-		using Result = core::Result<void, usize>;
+		using WriteResult = core::Result<void, usize>;
+		using ReadResult = core::Result<usize, usize>;
 		bool at_end() const {
 			return _ref->at_end();
 		}
 
-		Result read(void* data, usize bytes) {
+		ReadResult read(void* data, usize bytes) {
 			try {
-				_ref->read(data, bytes);
-				return core::Ok();
+				return core::Ok(_ref->read(data, bytes));
 			} catch(...) {
 				return core::Err(usize(0));
 			}
 		}
 
-		Result read_all(core::Vector<u8>& data) {
+		ReadResult read_all(core::Vector<u8>& data) {
 			try {
 				_ref->read_all(data);
-				return core::Ok();
+				return core::Ok(data.size());
 			} catch(...) {
 				return core::Err(usize(0));
 			}
 		}
 
-		Result write(const void* data, usize bytes) {
+		WriteResult write(const void* data, usize bytes) {
 			try {
 				_ref->write(data, bytes);
 				return core::Ok();
@@ -128,8 +127,13 @@ class Ref {
 			}
 		}
 
-		void flush() {
-			_ref->flush();
+		core::Result<void> flush() {
+			try {
+				_ref->flush();
+				return core::Ok();
+			} catch(...) {
+				return core::Err();
+			}
 		}
 #endif
 

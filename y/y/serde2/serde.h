@@ -51,14 +51,14 @@ using Result = core::Result<void>;
 	void deserialize(y::io::ReaderRef r) {						\
 		y::io2::Reader reader(r);								\
 		y::serde2::ReadableArchive ar(reader);					\
-		deserialize(ar).or_throw("serde2");						\
+		ar(*this).or_throw("serde2");							\
 	}															\
-	static auto _y_serde_self_type_helper() ->					\
+	static auto _y_serde2_self_type_helper() ->					\
 		std::remove_reference<decltype(*this)>::type;			\
 	static auto deserialized(y::io::ReaderRef r) {				\
 		y::io2::Reader reader(r);								\
-		y::serde2::ReadableArchive<> ar(reader);				\
-		decltype(_y_serde_self_type_helper()) t;				\
+		y::serde2::ReadableArchive ar(reader);					\
+		decltype(_y_serde2_self_type_helper()) t;				\
 		ar(t).or_throw("serde2");								\
 		return t;												\
 	}
@@ -66,7 +66,7 @@ using Result = core::Result<void>;
 #define y_serde_ser_compat()									\
 	void serialize(y::io::WriterRef w) const {					\
 		y::io2::Writer writer(w);								\
-		y::serde2::WritableArchiv ear(writer);					\
+		y::serde2::WritableArchive ar(writer);					\
 		serialize(ar).or_throw("serde2");						\
 	}
 
@@ -77,15 +77,15 @@ using Result = core::Result<void>;
 
 
 namespace detail {
-template<typename T>
+template<typename... Args>
 class Checker {
 	public:
-		Checker(T&& t) : _t(std::move(t)) {
+		Checker(Args&&... args) : _t(std::make_tuple(y_fwd(args)...)) {
 		}
 
 		template<typename Arc>
 		Result deserialize(Arc& ar) {
-			std::remove_const_t<std::remove_reference_t<T>> t;
+			decltype(_t) t;
 			if(ar(t) && t == _t) {
 				return core::Ok();
 			}
@@ -98,21 +98,23 @@ class Checker {
 		}
 
 	private:
-		T _t;
+		std::tuple<remove_cvref_t<Args>...> _t;
 };
 
 template<typename T>
 class Function {
 	public:
-		Function(T&& t) : _t(std::move(t)) {
+		Function(T&& t) : _t(y_fwd(t)) {
 		}
 
 		template<typename Arc>
-		Result deserialize(Arc& ar) {
-			if constexpr(std::is_convertible_v<T&&, core::Function<Result(Arc&)>>) {
+		Result deserialize(Arc&& ar) {
+			using ret_t = typename function_traits<T>::return_type;
+			using args_t = typename function_traits<T>::argument_pack ;
+			if constexpr(std::is_convertible_v<ret_t, Result> && std::is_convertible_v<decltype(ar), args_t>) {
 				return _t(ar);
 			} else {
-				typename function_traits<T>::argument_pack args;
+				args_t args;
 				if(!ar(args)) {
 					return core::Err();
 				}
@@ -121,15 +123,52 @@ class Function {
 			}
 		}
 
+		template<typename Arc>
+		Result serialize(Arc&& ar) {
+			if constexpr(std::is_convertible_v<T&&, core::Function<Result(Arc&)>>) {
+				return _t(ar);
+			} else {
+				return ar(_t());
+			}
+		}
+
 
 	private:
 		T _t;
 };
-}
 
 template<typename T>
-detail::Checker<T> check(T&& t) {
-	return detail::Checker<T>(y_fwd(t));
+class Condition : Function<T> {
+	public:
+		Condition(bool c, T&& t) : Function<T>(y_fwd(t)), _c(c) {
+		}
+
+		template<typename Arc>
+		Result deserialize(Arc&& ar) {
+			if(_c) {
+				return Function<T>::deserialize(ar);
+			}
+			return core::Ok();
+		}
+
+		template<typename Arc>
+		Result serialize(Arc&& ar) {
+			if(_c) {
+				return Function<T>::serialize(ar);
+			}
+			return core::Ok();
+		}
+
+
+	private:
+		bool _c;
+};
+
+}
+
+template<typename... Args>
+detail::Checker<Args...> check(Args&&... args) {
+	return detail::Checker<Args...>(y_fwd(args)...);
 }
 
 template<typename T>
@@ -137,6 +176,10 @@ detail::Function<T> func(T&& t) {
 	return detail::Function<T>(y_fwd(t));
 }
 
+template<typename T>
+detail::Condition<T> cond(bool c, T&& t) {
+	return detail::Condition<T>(c, y_fwd(t));
+}
 
 }
 }
