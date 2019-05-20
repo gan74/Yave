@@ -31,36 +31,55 @@ SOFTWARE.
 namespace y {
 namespace serde2 {
 
-#define y_serde2_unfold_arg(N)									\
+#define y_serde2_unfold_arg(N)												\
 	if(!_y_serde_arc(N)) { return y::core::Err(); }
+
+
+
+
+
+#define y_serialize2_arc(ArcType, ...)										\
+	y::serde2::Result serialize(ArcType& _y_serde_arc) const noexcept {		\
+		try {																\
+			Y_REC_MACRO(Y_MACRO_MAP(y_serde2_unfold_arg, __VA_ARGS__))		\
+		} catch(...) {														\
+			return y::core::Err();											\
+		}																	\
+		return y::core::Ok();												\
+	}
+
+
+#define y_deserialize2_arc(ArcType, ...)									\
+	y::serde2::Result deserialize(ArcType& _y_serde_arc) noexcept {			\
+		try {																\
+			Y_REC_MACRO(Y_MACRO_MAP(y_serde2_unfold_arg, __VA_ARGS__))		\
+		} catch(...) {														\
+			return y::core::Err();											\
+		}																	\
+		return y::core::Ok();												\
+	}
+
+
+#define y_serde2_arc(ArcType, ...)											\
+	y_serialize2_arc(ArcType, __VA_ARGS__)									\
+	y_deserialize2_arc(ArcType, __VA_ARGS__)
+
 
 
 #define y_serialize2(...)																			\
 	template<typename Arc, typename = std::enable_if_t<y::serde2::is_writable_archive_v<Arc>>>		\
-	y::serde2::Result serialize(Arc& _y_serde_arc) const noexcept {									\
-		try {																						\
-			Y_REC_MACRO(Y_MACRO_MAP(y_serde2_unfold_arg, __VA_ARGS__))								\
-		} catch(...) {																				\
-			return y::core::Err();																	\
-		}																							\
-		return y::core::Ok();																		\
-	}
+	y_serialize2_arc(Arc, __VA_ARGS__)
 
 #define y_deserialize2(...)																			\
 	template<typename Arc, typename = std::enable_if_t<y::serde2::is_readable_archive_v<Arc>>>		\
-	y::serde2::Result deserialize(Arc& _y_serde_arc) noexcept {										\
-		try {																						\
-			Y_REC_MACRO(Y_MACRO_MAP(y_serde2_unfold_arg, __VA_ARGS__))								\
-		} catch(...) {																				\
-			return y::core::Err();																	\
-		}																							\
-		return y::core::Ok();																		\
-	}
+	y_deserialize2_arc(Arc, __VA_ARGS__)
 
 
 #define y_serde2(...)											\
 	y_serialize2(__VA_ARGS__)									\
 	y_deserialize2(__VA_ARGS__)
+
+
 
 
 namespace detail {

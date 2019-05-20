@@ -22,11 +22,12 @@ SOFTWARE.
 #ifndef YAVE_ECS_ENTITYWORLD_H
 #define YAVE_ECS_ENTITYWORLD_H
 
+#include <yave/utils/serde.h>
+
 #include "ComponentContainer.h"
 #include "EntityIdPool.h"
 #include "View.h"
 
-#include <yave/assets/AssetArchive.h>
 #include <y/core/Result.h>
 
 #include <unordered_map>
@@ -145,6 +146,8 @@ class EntityWorld : NonCopyable {
 			const ComponentContainerBase* cont = container(type);
 			return cont ? cont->indexes() : core::Span<EntityIndex>();
 		}
+
+
 
 
 

@@ -23,7 +23,8 @@ SOFTWARE.
 #include "SceneRenderSubPass.h"
 
 #include <yave/ecs/EntityWorld.h>
-#include <yave/components/RenderableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/TransformableComponent.h>
 
 namespace yave {
 
@@ -87,9 +88,18 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 	const auto& descriptor_set = pass->descriptor_sets()[0];
 
 	recorder.bind_attrib_buffers({transforms, transforms});
-	for(const auto& r : world.components<RenderableComponent>()) {
-		transform_mapping[index] = r->transform();
-		r->render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
+
+	/*for(ecs::EntityId id : world.indexes<StaticMeshComponent>()) {
+		if(TransformableComponent* transformable = world.component<TransformableComponent>(id)) {
+			transform_mapping[index] = transformable->transform();
+		} else {
+			transform_mapping[index] = math::Transform<>();
+		}
+	}*/
+
+	for(const auto& component : world.components<StaticMeshComponent>()) {
+		transform_mapping[index] = math::Transform<>();
+		component.render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
 		++index;
 	}
 

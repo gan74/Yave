@@ -35,10 +35,6 @@ class PropertyPanel final : public Widget, public ContextLinked {
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
-
-		void transformable_panel(Transformable& transformable);
-
-		math::Vec3 _euler;
 };
 
 }

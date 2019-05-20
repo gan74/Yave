@@ -38,18 +38,6 @@ PropertyPanel::PropertyPanel(ContextPtr cptr) :
 
 void PropertyPanel::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	Widget::paint(recorder, token);
-
-	/*if(Transformable* selected = context()->selection().selected()) {
-		auto end_pos = context()->scene().to_window_pos(selected->position());
-		auto start_pos = position() + math::Vec2(0.0f, 12.0f);
-
-		u32 color = ImGui::GetColorU32(ImGuiCol_Text) | 0xFF000000;
-
-		// ImGui::GetWindowDrawList()->AddLine(start_pos, end_pos, color);
-
-		auto point = math::Vec2(std::copysign(128.0f, end_pos.x() - start_pos.x()), 0.0f);
-		ImGui::GetWindowDrawList()->AddBezierCurve(start_pos, start_pos + point, end_pos - point, end_pos, color, 2.0f);
-	}*/
 }
 
 void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
@@ -65,54 +53,6 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			component_widget(p.first, context(), id);
 		}
 	}
-
-	//ImGui::Text("Position: %f, %f, %f", sel->position().x(), sel->position().y(), sel->position().z());*/
-}
-
-void PropertyPanel::transformable_panel(Transformable& transformable) {
-	if(!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-		return;
-	}
-
-	auto [pos, rot, scale] = transformable.transform().decompose();
-
-	// position
-	{
-		ImGui::BeginGroup();
-		ImGui::InputFloat3("Position", pos.data(), "%.2f");
-		ImGui::EndGroup();
-	}
-
-	// rotation
-	{
-		auto dedouble_quat = [](math::Quaternion<> q) {
-				return q.x() < 0.0f ? -q.as_vec() : q.as_vec();
-			};
-		auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
-				auto qa = math::Quaternion<>::from_euler(a * math::to_rad(1.0f));
-				auto qb = math::Quaternion<>::from_euler(b * math::to_rad(1.0f));
-				return (dedouble_quat(qa) - dedouble_quat(qb)).length2() < 0.0001f;
-			};
-
-		math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
-		if(is_same_angle(euler, _euler)) {
-			euler = _euler;
-		}
-
-		float speed = 1.0f;
-		ImGui::BeginGroup();
-		ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
-		ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
-		ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
-		ImGui::EndGroup();
-
-		if(!is_same_angle(euler, _euler)) {
-			_euler = euler;
-			rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
-		}
-	}
-
-	transformable.transform() = math::Transform<>(pos, rot, scale);
 }
 
 }

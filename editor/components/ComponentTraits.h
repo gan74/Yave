@@ -25,9 +25,7 @@ SOFTWARE.
 #include <editor/editor.h>
 #include <yave/ecs/EntityId.h>
 
-#include <editor/components/EditorComponent.h>
-#include <yave/components/LightComponent.h>
-#include <yave/components/RenderableComponent.h>
+#include <typeindex>
 
 namespace yave {
 namespace ecs {

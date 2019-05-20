@@ -26,7 +26,6 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 #include <editor/widgets/AssetSelector.h>
-#include <yave/objects/StaticMeshInstance.h>
 #include <yave/ecs/EntityWorld.h>
 
 #include <imgui/yave_imgui.h>
@@ -94,51 +93,98 @@ void widget<LightComponent>(ContextPtr ctx, ecs::EntityId id) {
 }
 
 template<>
-void widget<RenderableComponent>(ContextPtr ctx, ecs::EntityId id) {
-	RenderableComponent* component = ctx->world().component<RenderableComponent>(id);
-	StaticMeshInstance* instance = dynamic_cast<StaticMeshInstance*>(component->get());
-	if(!instance) {
-		return;
-	}
-
+void widget<StaticMeshComponent>(ContextPtr ctx, ecs::EntityId id) {
+	auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
 	if(!ImGui::CollapsingHeader("Static mesh")) {
 		return;
 	}
 
 	Y_TODO(use ECS to ensure that we dont modify a deleted object)
 
-	auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
-
-	// material
+	StaticMeshComponent* static_mesh = ctx->world().component<StaticMeshComponent>(id);
 	{
-		core::String name = ctx->asset_store().name(instance->material().id()).map(clean_name).unwrap_or("No material");
-		if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
-			ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
-				[=](AssetId asset) {
+		// material
+		{
+			core::String name = ctx->asset_store().name(static_mesh->material().id()).map(clean_name).unwrap_or("No material");
+			if(ImGui::Button(ICON_FA_FOLDER_OPEN "###material")) {
+				ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
+							[=](AssetId asset) {
 					if(auto material = ctx->loader().load<Material>(asset)) {
-						instance->material() = material.unwrap();
+						static_mesh->material() = material.unwrap();
 					}
 					return true;
 				});
+			}
+			ImGui::SameLine();
+			ImGui::InputText("Material", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 		}
-		ImGui::SameLine();
-		ImGui::InputText("Material", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+
+		// mesh
+		{
+			core::String name = ctx->asset_store().name(static_mesh->mesh().id()).map(clean_name).unwrap_or("No mesh");
+			if(ImGui::Button(ICON_FA_FOLDER_OPEN "###mesh")) {
+				ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+							[=](AssetId asset) {
+					if(auto mesh = ctx->loader().load<StaticMesh>(asset)) {
+						static_mesh->mesh() = mesh.unwrap();
+					}
+					return true;
+				});
+			}
+			ImGui::SameLine();
+			ImGui::InputText("Mesh", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+		}
+	}
+}
+
+template<>
+void widget<TransformableComponent>(ContextPtr ctx, ecs::EntityId id) {
+	if(!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+		return;
 	}
 
-	// mesh
+	TransformableComponent* component = ctx->world().component<TransformableComponent>(id);
 	{
-		core::String name = ctx->asset_store().name(instance->mesh().id()).map(clean_name).unwrap_or("No mesh");
-		if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
-			ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
-				[=](AssetId asset) {
-					if(auto mesh = ctx->loader().load<StaticMesh>(asset)) {
-						instance->mesh() = mesh.unwrap();
-					}
-					return true;
-				});
+		math::Vec3 prev_euler; // this should be stable
+		auto [pos, rot, scale] = component->transform().decompose();
+
+		// position
+		{
+			ImGui::BeginGroup();
+			ImGui::InputFloat3("Position", pos.data(), "%.2f");
+			ImGui::EndGroup();
 		}
-		ImGui::SameLine();
-		ImGui::InputText("Mesh", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+
+		// rotation
+		{
+			auto dedouble_quat = [](math::Quaternion<> q) {
+				return q.x() < 0.0f ? -q.as_vec() : q.as_vec();
+			};
+			auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
+				auto qa = math::Quaternion<>::from_euler(a * math::to_rad(1.0f));
+				auto qb = math::Quaternion<>::from_euler(b * math::to_rad(1.0f));
+				return (dedouble_quat(qa) - dedouble_quat(qb)).length2() < 0.0001f;
+			};
+
+			math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
+			if(is_same_angle(euler, prev_euler)) {
+				euler = prev_euler;
+			}
+
+			float speed = 1.0f;
+			ImGui::BeginGroup();
+			ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::EndGroup();
+
+			if(!is_same_angle(euler, prev_euler)) {
+				prev_euler = euler;
+				rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
+			}
+		}
+
+		component->transform() = math::Transform<>(pos, rot, scale);
 	}
 }
 

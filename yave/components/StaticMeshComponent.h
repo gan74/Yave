@@ -19,41 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ASSETS_ASSETARCHIVE_H
-#define YAVE_ASSETS_ASSETARCHIVE_H
+#ifndef YAVE_COMPONENTS_STATICMESHCOMPONENT_H
+#define YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 
-#include "AssetId.h"
+#include <yave/meshes/StaticMesh.h>
+#include <yave/material/Material.h>
 
-#include <yave/utils/serde.h>
+#include <yave/objects/Renderable.h>
 
 namespace yave {
 
-class AssetLoader;
-
-using WritableAssetArchive = serde2::WritableArchive;
-
-class ReadableAssetArchive : public serde2::ReadableArchiveBase<ReadableAssetArchive> {
+class StaticMeshComponent final : public Renderable {
 
 	public:
-		ReadableAssetArchive(io2::Reader& reader, AssetLoader& loader) :
-				serde2::ReadableArchiveBase<ReadableAssetArchive>(reader),
-				_loader(loader) {
-		}
+		StaticMeshComponent() = default;
+		StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
 
-		ReadableAssetArchive(const io2::ReaderPtr& reader, AssetLoader& loader) : ReadableAssetArchive(*reader, loader) {
-		}
+		void flush_reload() override;
 
-		AssetLoader& loader() {
-			return _loader;
-		}
+		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const override;
+
+		const AssetPtr<StaticMesh>& mesh() const;
+		const AssetPtr<Material>& material() const;
+
+		AssetPtr<StaticMesh>& mesh();
+		AssetPtr<Material>& material();
+
+		yave_asset_serde(_mesh, _material)
 
 	private:
-		AssetLoader& _loader;
-
+		AssetPtr<StaticMesh> _mesh;
+		AssetPtr<Material> _material;
 };
 
 }
 
-
-
-#endif // YAVE_ASSETS_ASSETARCHIVE_H
+#endif // YAVE_COMPONENTS_STATICMESHCOMPONENT_H

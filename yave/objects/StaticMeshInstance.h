@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetPtr.h>
 #include <yave/meshes/StaticMesh.h>
+#include <yave/material/Material.h>
 
 #include "Renderable.h"
 
@@ -32,6 +33,7 @@ namespace yave {
 class StaticMeshInstance final : public Renderable {
 
 	public:
+		StaticMeshInstance() = default;
 		StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
 
 		void flush_reload() override;
@@ -53,7 +55,6 @@ class StaticMeshInstance final : public Renderable {
 		auto& material() {
 			return _material;
 		}
-
 
 	private:
 		AssetPtr<StaticMesh> _mesh;

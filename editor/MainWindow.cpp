@@ -53,11 +53,11 @@ MainWindow::MainWindow(ContextPtr cptr) :
 
 	set_event_handler(std::make_unique<MainEventHandler>());
 
+	context()->ui().show<EcsDebug>();
 	context()->ui().show<EngineView>();
 	context()->ui().show<EntityView>();
 	context()->ui().show<ResourceBrowser>();
 	context()->ui().show<PropertyPanel>();
-	context()->ui().show<EcsDebug>();
 }
 
 MainWindow::~MainWindow() {
@@ -180,6 +180,9 @@ void MainWindow::render(CmdBufferRecorder& recorder, const FrameToken& token) {
 void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
 
+	// demo
+	ImGui::ShowDemoWindow();
+
 	// menu
 	{
 		if(ImGui::BeginMenuBar()) {
@@ -251,9 +254,6 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 	}
 
 	context()->ui().paint(recorder, token);
-
-	// demo
-	ImGui::ShowDemoWindow();
 
 }
 

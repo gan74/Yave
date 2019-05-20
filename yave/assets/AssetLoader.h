@@ -23,10 +23,10 @@ SOFTWARE.
 #define YAVE_ASSETS_ASSETLOADER_H
 
 #include <yave/device/DeviceLinked.h>
+#include <yave/utils/serde.h>
 
 #include "AssetPtr.h"
 #include "AssetStore.h"
-#include "AssetArchive.h"
 
 #include <unordered_map>
 #include <typeindex>
@@ -173,6 +173,27 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 		std::mutex _lock;
 };
+
+
+
+template<typename T>
+serde2::Result AssetPtr<T>::serialize(WritableAssetArchive& arc) const noexcept {
+	return arc(id());
+}
+
+template<typename T>
+serde2::Result AssetPtr<T>::deserialize(ReadableAssetArchive& arc)  noexcept {
+	AssetId id;
+	if(!arc(id)) {
+		return core::Err();
+	}
+	auto asset = arc.loader().load<T>(id);
+	if(!asset) {
+		return core::Err();
+	}
+	*this = asset.unwrap();
+	return core::Ok();
+}
 
 }
 

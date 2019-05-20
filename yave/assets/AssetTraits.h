@@ -22,8 +22,7 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_ASSETTRAITS_H
 #define YAVE_ASSETS_ASSETTRAITS_H
 
-#include "AssetType.h"
-#include "AssetArchive.h"
+#include <yave/utils/serde.h>
 
 namespace yave {
 

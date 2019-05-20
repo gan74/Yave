@@ -19,48 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMPONENTS_RENDERABLECOMPONENT_H
-#define YAVE_COMPONENTS_RENDERABLECOMPONENT_H
+#ifndef YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
+#define YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 
-#include <yave/objects/SkinnedMeshInstance.h>
+#include <yave/objects/Transformable.h>
 
 namespace yave {
 
-class RenderableComponent final {
+class TransformableComponent final {
+
 	public:
-		RenderableComponent(std::unique_ptr<Renderable> r) : _renderable(std::move(r)) {
+		TransformableComponent() = default;
+
+		const math::Transform<>& transform() const {
+			return _transform;
 		}
 
-		RenderableComponent() : _renderable(std::make_unique<DummyRenderable>()) {
+		math::Transform<>& transform() {
+			return _transform;
 		}
-
-		const Renderable* operator->() const {
-			return get();
-		}
-
-		Renderable* operator->() {
-			return get();
-		}
-
-
-		const Renderable* get() const {
-			return _renderable.get();
-		}
-
-		Renderable* get() {
-			return _renderable.get();
-		}
-
 
 	private:
-		std::unique_ptr<Renderable> _renderable;
-
-		struct DummyRenderable : Renderable {
-			void render(RenderPassRecorder&, const SceneData&) const override {
-			}
-		};
+		math::Transform<> _transform;
 };
-
 }
 
-#endif // YAVE_COMPONENTS_RENDERABLECOMPONENT_H
+#endif // YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H

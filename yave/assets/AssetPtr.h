@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_ASSETS_ASSETPTR_H
 
 #include "AssetId.h"
+
 #include <memory>
 
 namespace yave {
@@ -101,6 +102,11 @@ class AssetPtr {
 		bool operator!=(const AssetPtr& other) const {
 			return _ptr != other._ptr;
 		}
+
+
+		// AssetLoader.h
+		serde2::Result serialize(WritableAssetArchive& arc) const noexcept;
+		serde2::Result deserialize(ReadableAssetArchive& arc) noexcept;
 
 	private:
 		template<typename U, typename... Args>

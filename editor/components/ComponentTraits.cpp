@@ -22,6 +22,12 @@ SOFTWARE.
 
 #include "ComponentTraits.h"
 
+#include <editor/components/EditorComponent.h>
+
+#include <yave/components/LightComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/TransformableComponent.h>
+
 #include "widgets.h"
 
 #include <imgui/yave_imgui.h>
@@ -90,7 +96,8 @@ void component_widget(std::type_index type, ContextPtr ctx, ecs::EntityId id) {
 
 REGISTER_COMPONENT_TYPE(EditorComponent)
 REGISTER_COMPONENT_TYPE(LightComponent)
-REGISTER_COMPONENT_TYPE(RenderableComponent)
+REGISTER_COMPONENT_TYPE(StaticMeshComponent)
+REGISTER_COMPONENT_TYPE(TransformableComponent)
 
 
 #undef EDITOR_COMPONENT_REGISTERER

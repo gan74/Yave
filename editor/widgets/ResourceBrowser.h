@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_RESOURCEBROWSER_H
 #define EDITOR_WIDGETS_RESOURCEBROWSER_H
 
+#include <yave/assets/AssetId.h>
+
 #include "MeshImporter.h"
 #include "ImageImporter.h"
 

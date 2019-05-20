@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,25 +20,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "StaticMeshInstance.h"
-
-#include <yave/material/Material.h>
+#include "StaticMeshComponent.h"
 
 namespace yave {
 
-StaticMeshInstance::StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
+StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
 		_mesh(mesh),
 		_material(material) {
-
-	set_radius(_mesh->radius());
 }
 
-void StaticMeshInstance::flush_reload() {
+void StaticMeshComponent::flush_reload() {
 	_mesh.flush_reload();
 	_material.flush_reload();
 }
 
-void StaticMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
+
+void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
 	if(!_material || !_mesh) {
 		return;
 	}
@@ -56,5 +53,20 @@ void StaticMeshInstance::render(RenderPassRecorder& recorder, const SceneData& s
 	recorder.draw(indirect);
 }
 
+const AssetPtr<StaticMesh>& StaticMeshComponent::mesh() const {
+	return _mesh;
+}
+
+const AssetPtr<Material>& StaticMeshComponent::material() const {
+	return _material;
+}
+
+AssetPtr<StaticMesh>& StaticMeshComponent::mesh() {
+	return _mesh;
+}
+
+AssetPtr<Material>& StaticMeshComponent::material() {
+	return _material;
+}
 
 }

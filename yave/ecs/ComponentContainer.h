@@ -22,10 +22,11 @@ SOFTWARE.
 #ifndef YAVE_ECS_COMPONENTCONTAINER_H
 #define YAVE_ECS_COMPONENTCONTAINER_H
 
+#include <yave/utils/serde.h>
+
 #include "ecs.h"
 #include "EntityId.h"
 
-#include <yave/assets/AssetArchive.h>
 #include <y/core/SparseVector.h>
 
 

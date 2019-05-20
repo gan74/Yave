@@ -23,6 +23,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 #include <editor/components/ComponentTraits.h>
+#include <editor/components/EditorComponent.h>
 
 #include <yave/ecs/EntityWorld.h>
 
@@ -37,11 +38,6 @@ EntityView::EntityView(ContextPtr cptr) :
 
 void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ecs::EntityWorld& world = context()->world();
-
-
-
-
-
 
 	if(ImGui::Button(ICON_FA_PLUS, math::Vec2(24))) {
 		ImGui::OpenPopup("Add entity");

@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 #include <editor/components/EditorComponent.h>
-#include <yave/components/RenderableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
 
 #include <y/io2/File.h>
 #include <y/math/random.h>
