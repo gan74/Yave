@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "AssetLoader.h"
 
-#include <y/io/File.h>
+#include <y/io2/File.h>
 
 namespace yave {
 
@@ -52,7 +52,7 @@ core::Result<AssetId> AssetLoader::load_or_import(std::string_view name, std::st
 		return id;
 	}
 
-	if(auto file = io::File::open(import_from)) {
+	if(auto file = io2::File::open(import_from)) {
 		return _store->import(file.unwrap(), name);
 	}
 

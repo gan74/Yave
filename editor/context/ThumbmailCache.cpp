@@ -116,6 +116,8 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
 								return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
 							};
+					} else {
+						log_msg("Unable to load static mesh.", Log::Error);
 					}
 				break;
 
@@ -124,12 +126,16 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
 								return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
 							};
+					} else {
+						log_msg("Unable to load material.", Log::Error);
 					}
 				break;
 
 				case AssetType::Image:
 					if(auto tex = context()->loader().load<Texture>(id)) {
 						return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
+					} else {
+						log_msg("Unable to load image.", Log::Error);
 					}
 				break;
 
@@ -168,8 +174,8 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 			builder.add_uniform_input(output_image);
 			builder.add_uniform_input(renderer.gbuffer.depth);
 			builder.add_uniform_input(StorageView(thumbmail->image));
-			builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-					recorder.dispatch_size(device()->device_resources()[DeviceResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
+			builder.set_render_func([=](CmdBufferRecorder& rec, const FrameGraphPass* self) {
+					rec.dispatch_size(device()->device_resources()[DeviceResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
 				});
 		}
 

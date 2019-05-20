@@ -27,85 +27,28 @@ SOFTWARE.
 #include <y/core/Result.h>
 
 namespace y {
+
+namespace serde2 {
+struct ReadableArchive;
+}
+
 namespace io2 {
 
-using ReadResult = core::Result<usize, usize>;
+using ReadUpToResult = core::Result<usize, usize>;
+using ReadResult = core::Result<void, usize>;
 using WriteResult = core::Result<void, usize>;
 using FlushResult = core::Result<void>;
 
-class Reader {
-	struct InnerBase {
-		virtual ~InnerBase() = default;
+class Reader : NonCopyable {
+	public:
+		Reader() = default;
+		virtual ~Reader() = default;
 
 		virtual bool at_end() const = 0;
-		virtual ReadResult read(u8* data, usize max_bytes) = 0;
-		virtual ReadResult read_all(core::Vector<u8>& data) = 0;
-	};
+		virtual ReadResult read(u8* data, usize bytes) = 0;
+		virtual ReadUpToResult read_up_to(u8* data, usize max_bytes) = 0;
+		virtual ReadUpToResult read_all(core::Vector<u8>& data) = 0;
 
-	template<typename T>
-	struct Inner : InnerBase {
-		Inner(T&& t) : _inner(std::move(t)) {
-		}
-
-		bool at_end() const override {
-			return _inner.at_end();
-		}
-
-		ReadResult read(u8* data, usize max_bytes) override {
-			return _inner.read(data, max_bytes);
-		}
-
-		ReadResult read_all(core::Vector<u8>& data) override {
-			return _inner.read_all(data);
-		}
-
-		T _inner;
-	};
-
-	template<typename T>
-	struct NotOwner : InnerBase {
-		NotOwner(T& t) : _inner(t) {
-		}
-
-		bool at_end() const override {
-			return _inner.at_end();
-		}
-
-		ReadResult read(u8* data, usize max_bytes) override {
-			return _inner.read(data, max_bytes);
-		}
-
-		ReadResult read_all(core::Vector<u8>& data) override {
-			return _inner.read_all(data);
-		}
-
-		T& _inner;
-	};
-
-
-	public:
-		template<typename T>
-		Reader(T&& t) : _inner(std::make_unique<Inner<T>>(y_fwd(t)))  {
-		}
-
-		template<typename T>
-		explicit Reader(T& t) : _inner(std::make_unique<NotOwner<T>>(t))  {
-		}
-
-		Reader(Reader&&) = default;
-		Reader& operator=(Reader&&) = default;
-
-		bool at_end() const {
-			return _inner->at_end();
-		}
-
-		ReadResult read(u8* data, usize max_bytes) {
-			return _inner->read(data, max_bytes);
-		}
-
-		ReadResult read_all(core::Vector<u8>& data) {
-			return _inner->read_all(data);
-		}
 
 		template<typename T>
 		ReadResult read_one(T& t) {
@@ -114,72 +57,29 @@ class Reader {
 		}
 
 		template<typename T>
+		core::Result<remove_cvref_t<T>, usize> read_one() {
+			remove_cvref_t<T> t;
+			if(auto r = read_one(t); !r) {
+				return core::Err(r.error());
+			}
+			return core::Ok(std::move(t));
+		}
+
+
+		template<typename T>
 		ReadResult read_array(T* data, usize count) {
 			static_assert(std::is_trivially_copyable_v<T>);
 			return read(reinterpret_cast<u8*>(data), sizeof(T) * count);
 		}
-
-	private:
-		std::unique_ptr<InnerBase> _inner;
 };
 
-
-class Writer {
-	struct InnerBase {
-		virtual ~InnerBase() = default;
+class Writer : NonCopyable {
+	public:
+		Writer() = default;
+		virtual ~Writer() = default;
 
 		virtual FlushResult flush() = 0;
 		virtual WriteResult write(const u8* data, usize bytes) = 0;
-	};
-
-	template<typename T>
-	struct Inner : InnerBase {
-		Inner(T&& t) : _inner(std::move(t)) {
-		}
-
-		FlushResult flush() override {
-			return _inner.flush();
-		}
-
-		WriteResult write(const u8* data, usize bytes) override {
-			return _inner.write(data, bytes);
-		}
-
-		T _inner;
-	};
-
-	template<typename T>
-	struct NotOwner : InnerBase {
-		NotOwner(T& t) : _inner(t) {
-		}
-
-		FlushResult flush() override {
-			return _inner.flush();
-		}
-
-		WriteResult write(const u8* data, usize bytes) override {
-			return _inner.write(data, bytes);
-		}
-
-		T& _inner;
-	};
-
-	public:
-		template<typename T>
-		Writer(T&& t) : _inner(std::make_unique<Inner<T>>(y_fwd(t))) {
-		}
-
-		template<typename T>
-		Writer(T& t) : _inner(std::make_unique<NotOwner<T>>(t))  {
-		}
-
-		FlushResult flush() {
-			return _inner->flush();
-		}
-
-		WriteResult write(const u8* data, usize bytes) {
-			return _inner->write(data, bytes);
-		}
 
 		template<typename T>
 		WriteResult write_one(const T& t) {
@@ -188,14 +88,15 @@ class Writer {
 		}
 
 		template<typename T>
-		WriteResult write_array(T* data, usize count) {
+		WriteResult write_array(const T* data, usize count) {
 			static_assert(std::is_trivially_copyable_v<T>);
 			return write(reinterpret_cast<const u8*>(data), sizeof(T) * count);
 		}
-
-	private:
-		std::unique_ptr<InnerBase> _inner;
 };
+
+using ReaderPtr = std::unique_ptr<Reader>;
+using WriterPtr = std::unique_ptr<Writer>;
+
 
 }
 }

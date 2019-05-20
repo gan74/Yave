@@ -22,13 +22,8 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_FILEBROWSER_H
 #define EDITOR_WIDGETS_FILEBROWSER_H
 
-#include <editor/ui/Frame.h>
 #include <editor/ui/Widget.h>
-
 #include <yave/utils/FileSystemModel.h>
-
-#include <y/core/AssocVector.h>
-#include <y/core/Functor.h>
 
 namespace editor {
 

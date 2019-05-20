@@ -22,24 +22,23 @@ SOFTWARE.
 #ifndef YAVE_ECS_VIEW_H
 #define YAVE_ECS_VIEW_H
 
-#include <y/core/SparseVector.h>
-#include "EntityIdPool.h"
+#include "ComponentContainer.h"
 
 namespace yave {
 namespace ecs {
 
-template<bool Const, typename Index, typename... Args>
+template<bool Const, typename... Args>
 class View {
 	using vector_tuple = std::conditional_t<Const,
-				std::tuple<const core::SparseVector<Args, Index>&...>,
-				std::tuple<core::SparseVector<Args, Index>&...>>;
+				std::tuple<const ComponentVector<Args>&...>,
+				std::tuple<ComponentVector<Args>&...>>;
 
 	using reference_tuple = std::conditional_t<Const,
 				std::tuple<const Args&...>,
 				std::tuple<Args&...>>;
 
-	using index_type = Index;
-	using index_range = decltype(std::declval<core::SparseVector<void, index_type>>().indexes());
+	using index_type = ComponentVector<void>::index_type;
+	using index_range = decltype(std::declval<ComponentVector<void>>().indexes());
 
 
 	class EndIterator {};

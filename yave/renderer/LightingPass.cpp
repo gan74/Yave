@@ -23,9 +23,11 @@ SOFTWARE.
 #include "LightingPass.h"
 
 #include <yave/device/Device.h>
+#include <yave/components/LightComponent.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/core/Chrono.h>
-#include <y/io/File.h>
+#include <y/io2/File.h>
 
 namespace yave {
 
@@ -50,14 +52,19 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 }
 
 static auto load_envmap() {
-	try {
-		return ImageData::deserialized(io::File::open("equirec.yt").or_throw("Unable to open envmap texture."));
-	} catch(std::exception& e) {
-		log_msg(e.what(), Log::Error);
-
-		math::Vec4ui data(0xFFFFFFFF);
-		return ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(data.data()), vk::Format::eR8G8B8A8Unorm);
+	if(auto file = io2::File::open("equirec.yt")) {
+		ImageData data;
+		serde2::ReadableArchive ar(file.unwrap());
+		if(data.deserialize(ar)) {
+			return data;
+		}
+		log_msg("Unable to read envmap texture.", Log::Error);
+	} else {
+		log_msg("Unable to open envmap file.", Log::Error);
 	}
+
+	math::Vec4ui data(0xFFFFFFFF);
+	return ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(data.data()), vk::Format::eR8G8B8A8Unorm);
 }
 
 IBLData::IBLData(DevicePtr dptr) : IBLData(dptr, load_envmap()) {
@@ -127,14 +134,32 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 
 			TypedMapping<uniform::Light> mapping = self->resources()->mapped_buffer(light_buffer);
-			usize light_count = scene.scene().lights().size();
-			for(const auto& l : scene.scene().lights()) {
-				if(l->type() == Light::Point) {
-					mapping[push_data.point_count++] = *l;
-				} else {
-					mapping[light_count - ++push_data.directional_count] = *l;
+
+			Y_TODO(We should not need this)
+			{
+				if(scene.has_scene()) {
+					usize light_count = scene.scene().lights().size();
+					for(const auto& l : scene.scene().lights()) {
+						if(l->type() == Light::Point) {
+							mapping[push_data.point_count++] = *l;
+						} else {
+							mapping[light_count - ++push_data.directional_count] = *l;
+						}
+					}
+				}
+				if(scene.has_world()) {
+					const auto& lights = scene.world().components<LightComponent>();
+					usize light_count = lights.size();
+					for(const auto& l : lights) {
+						if(l.light().type() == Light::Point) {
+							mapping[push_data.point_count++] = l.light();
+						} else {
+							mapping[light_count - ++push_data.directional_count] = l.light();
+						}
+					}
 				}
 			}
+
 			const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLightingProgram];
 			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
 		});

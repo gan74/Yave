@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,45 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_IO_BUFFREADER_H
-#define Y_IO_BUFFREADER_H
 
-#include "Ref.h"
+#include "EntityId.h"
 
-namespace y {
-namespace io {
+namespace yave {
+namespace ecs {
 
-class BuffReader final : public Reader {
+EntityId EntityId::from_unversioned_index(index_type index) {
+	EntityId id;
+	id._index = index;
+	id._version = 0;
+	return id;
+}
 
-	public:
-		static constexpr usize default_buffer_size = 4 * 1024;
+void EntityId::clear() {
+	y_debug_assert(is_valid());
+	y_debug_assert(_version != invalid_index);
+	_index = invalid_index;
+}
 
-		BuffReader(ReaderRef&& r, usize buff_size = default_buffer_size);
-		BuffReader(const ReaderRef& r, usize buff_size = default_buffer_size);
+void EntityId::set(index_type index) {
+	y_debug_assert(!is_valid());
+	_index = index;
+	++_version;
+}
 
-		~BuffReader() override;
+EntityId::index_type EntityId::index() const {
+	return _index;
+}
 
-		BuffReader(BuffReader&& other);
-		BuffReader& operator=(BuffReader&& other);
+bool EntityId::is_valid() const {
+	return _index != invalid_index;
+}
 
-		bool at_end() const override;
+bool EntityId::operator==(const EntityId& other) const {
+	return std::tie(_index, _version) == std::tie(other._index, other._version);
+}
 
-		usize read(void *data, usize bytes) override;
-		void read_all(core::Vector<u8>& data) override;
+bool EntityId::operator!=(const EntityId& other) const {
+	return std::tie(_index, _version) != std::tie(other._index, other._version);
+}
 
-	private:
-		BuffReader(usize buff_size);
-
-		void swap(BuffReader& other);
-
-		usize _size = 0;
-		usize _offset = 0;
-		usize _used = 0;
-		u8* _buffer = nullptr;
-
-		ReaderRef _inner;
-};
 
 }
 }
-#endif // Y_IO_BUFFREADER_H

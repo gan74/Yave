@@ -48,11 +48,11 @@ y_test_func("Transform decompose basic") {
 
 y_test_func("Transform decompose") {
 	int step = 7;
-	for(int p = -180; p < 180; p += step) {
+	for(int ph = -180; ph < 180; ph += step) {
 		for(int y = -180; y < 180; y += step) {
 			for(int r = -180; r < 180; r += step) {
-				auto quat = Quaternion<>::from_euler(to_rad(p), to_rad(y), to_rad(r));
-				Vec3 pos(y, r, p);
+				auto quat = Quaternion<>::from_euler(to_rad(ph), to_rad(y), to_rad(r));
+				Vec3 pos(y, r, ph);
 				Vec3 scale(1.0f + pos.length() * 0.1f);
 				Transform<> tr(pos, quat, scale);
 

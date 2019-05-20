@@ -27,9 +27,9 @@ SOFTWARE.
 
 #include <yave/assets/FolderAssetStore.h>
 
-#include <y/io/Buffer.h>
+#include <y/io2/Buffer.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 #include <cinttypes>
 
@@ -210,15 +210,18 @@ void ResourceBrowser::paint_context_menu() {
 		}
 		ImGui::Separator();
 		if(ImGui::Selectable("Create material")) {
-			try {
-				SimpleMaterialData material;
-				io::Buffer buffer;
-				material.serialize(buffer);
+			SimpleMaterialData material;
+			io2::Buffer buffer;
+			WritableAssetArchive ar(buffer);
+			if(material.serialize(ar)) {
 				AssetStore& store = context()->asset_store();
-				store.import(buffer, store.filesystem()->join(_current->full_path, "new material")).or_throw("Unable to import material.");
-			} catch(std::exception& e) {
-				log_msg(fmt("Unable to create new material: %", e.what()), Log::Error);
+				if(!store.import(buffer, store.filesystem()->join(_current->full_path, "new material"))) {
+					log_msg("Unable to import new material.", Log::Error);
+				}
+			} else {
+				log_msg("Unable to create new material.", Log::Error);
 			}
+
 			refresh();
 		}
 

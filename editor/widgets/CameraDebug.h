@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
-#include <yave/scene/SceneView.h>
-
 namespace editor {
 
 class CameraDebug : public Widget, public ContextLinked {

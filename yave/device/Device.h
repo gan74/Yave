@@ -38,7 +38,6 @@ SOFTWARE.
 
 namespace yave {
 
-
 class Device : NonMovable {
 
 	struct ScopedDevice {

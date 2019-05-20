@@ -19,23 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_SCENEDEBUG_H
-#define EDITOR_WIDGETS_SCENEDEBUG_H
+#ifndef YAVE_ASSETS_ASSETARCHIVE_H
+#define YAVE_ASSETS_ASSETARCHIVE_H
 
-#include <editor/ui/Widget.h>
+#include "AssetId.h"
 
-#include <yave/scene/SceneView.h>
+#include <yave/utils/serde.h>
 
-namespace editor {
+namespace yave {
 
-class SceneDebug : public Widget, public ContextLinked {
+class AssetLoader;
+
+using WritableAssetArchive = serde2::WritableArchive;
+
+class ReadableAssetArchive : public serde2::ReadableArchiveBase<ReadableAssetArchive> {
+
 	public:
-		SceneDebug(ContextPtr cptr);
+		ReadableAssetArchive(io2::Reader& reader, AssetLoader& loader) :
+				serde2::ReadableArchiveBase<ReadableAssetArchive>(reader),
+				_loader(loader) {
+		}
+
+		ReadableAssetArchive(const io2::ReaderPtr& reader, AssetLoader& loader) : ReadableAssetArchive(*reader, loader) {
+		}
+
+		AssetLoader& loader() {
+			return _loader;
+		}
 
 	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+		AssetLoader& _loader;
+
 };
 
 }
 
-#endif // EDITOR_WIDGETS_SCENEDEBUG_H
+
+
+#endif // YAVE_ASSETS_ASSETARCHIVE_H

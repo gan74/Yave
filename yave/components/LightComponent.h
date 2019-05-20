@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,56 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_IO_FILE_H
-#define Y_IO_FILE_H
+#ifndef YAVE_COMPONENTS_LIGHTCOMPONENT_H
+#define YAVE_COMPONENTS_LIGHTCOMPONENT_H
 
-#include <y/core/String.h>
-#include <y/core/Result.h>
+#include <yave/objects/Light.h>
 
-#include "Reader.h"
-#include "Writer.h"
-#include "Ref.h"
+namespace yave {
 
-namespace y {
-namespace io {
-
-class File final : public Reader, public Writer {
-
+class LightComponent final {
 	public:
-		File() = default;
-		~File() override;
+		LightComponent() = default;
 
-		File(File&& other);
-		File& operator=(File&& other);
+		Light& light() {
+			return _light;
+		}
 
-		static core::Result<File> create(const core::String&  name);
-		static core::Result<File> open(const core::String&  name);
-		static bool exists(const core::String& name);
-		static bool copy(const core::String& src, const core::String& dst);
-		static bool copy(io::ReaderRef src, const core::String& dst);
-
-		usize size() const;
-		usize remaining() const;
-
-		bool is_open() const;
-		bool at_end() const override;
-
-		void seek(usize byte);
-
-		usize read(void* data, usize bytes) override;
-		void read_all(core::Vector<u8>& data) override;
-
-		void write(const void* data, usize bytes) override;
-		void flush() override;
+		const Light& light() const {
+			return _light;
+		}
 
 	private:
-		File(std::FILE* f);
-		void swap(File& other);
-
-		std::FILE* _file = nullptr;
+		Light _light = Light(Light::Directional);
 };
 
 }
-}
 
-#endif // Y_IO_FILE_H
+#endif // YAVE_COMPONENTS_LIGHTCOMPONENT_H

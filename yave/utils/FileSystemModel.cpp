@@ -120,9 +120,9 @@ FileSystemModel::Result<core::String> LocalFileSystemModel::absolute(std::string
 
 FileSystemModel::Result<> LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
 	try {
-		for(auto& p : fs::directory_iterator(path)) {
-			fs::path path = p.path().filename();
-			auto str = path.string();
+		for(auto& dir : fs::directory_iterator(path)) {
+			fs::path p = dir.path().filename();
+			auto str = p.string();
 			func(str);
 		}
 	} catch(...) {

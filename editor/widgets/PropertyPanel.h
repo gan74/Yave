@@ -23,11 +23,7 @@ SOFTWARE.
 #define EDITOR_WIDGETS_PROPERTYPANEL_H
 
 #include <editor/ui/Widget.h>
-
-namespace yave {
-class StaticMeshInstance;
-class Light;
-}
+#include <yave/objects/Transformable.h>
 
 namespace editor {
 
@@ -35,15 +31,12 @@ class PropertyPanel final : public Widget, public ContextLinked {
 	public:
 		PropertyPanel(ContextPtr cptr);
 
-
-		//bool is_visible() const override;
 		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
-		void static_mesh_panel(StaticMeshInstance* instance);
-		void light_panel(Light* light);
+		void transformable_panel(Transformable& transformable);
 
 		math::Vec3 _euler;
 };

@@ -22,18 +22,14 @@ SOFTWARE.
 #ifndef YAVE_YAVE_H
 #define YAVE_YAVE_H
 
-#include <y/utils.h>
 #include <y/utils/perf.h>
 
-#include <y/math/Vec.h>
 #include <y/math/math.h>
-#include <y/math/Matrix.h>
 #include <y/math/Transform.h>
 
 #include <y/core/Range.h>
 #include <y/core/Vector.h>
 #include <y/core/String.h>
-#include <y/core/ArrayView.h>
 
 
 namespace yave {

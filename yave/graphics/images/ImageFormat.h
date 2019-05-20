@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_IMAGES_IMAGEFORMAT_H
 
 #include <yave/graphics/vk/vk.h>
+#include <yave/utils/serde.h>
 
 namespace yave {
 
@@ -38,6 +39,9 @@ class ImageFormat {
 		bool is_valid() const;
 
 		bool operator==(const ImageFormat& other) const;
+
+		y_serialize2(u32(_format))
+		y_deserialize2(serde2::func([this](u32 f) { _format = vk::Format(f); }))
 
 	private:
 		vk::Format _format;

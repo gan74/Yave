@@ -39,6 +39,10 @@ void EntityWorld::remove_entity(EntityId id) {
 	}
 }
 
+bool EntityWorld::exists(EntityId id) const {
+	return _entities.contains(id);
+}
+
 const EntityIdPool& EntityWorld::entities() const {
 	return _entities;
 }
@@ -51,39 +55,89 @@ void EntityWorld::flush() {
 	for(EntityId id : _deletions) {
 		_entities.recycle(id);
 	}
+	_deletions.clear();
 }
 
 core::String EntityWorld::type_name(ComponentTypeIndex index) const {
 	return y::detail::demangle_type_name(index.name());
 }
 
-void EntityWorld::serialize(io::WriterRef writer) const {
-	writer->write_one(u64(_entities.size()));
-	for(EntityId id : _entities) {
-		writer->write_one(u64(id.index()));
-	}
 
-	writer->write_one(u32(_component_containers.size()));
-	for(const auto& container : _component_containers) {
-		detail::serialize_container(writer, container.second.get());
+const ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) const {
+	if(auto it = _component_containers.find(type); it != _component_containers.end()) {
+		return it->second.get();
 	}
+	return nullptr;
 }
 
-void EntityWorld::deserialize(io::ReaderRef reader) {
-	*this = EntityWorld();
+ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) {
+	auto& container = _component_containers[type];
+	if(!container) {
+		container = detail::create_container(type);
+	}
+	return container.get();
+}
 
-	u64 entity_count = reader->read_one<u64>();
-	for(u64 i = 0; i != entity_count; ++i) {
-		index_type id = index_type(reader->read_one<u64>());
-		_entities.create_with_index(id).unwrap();
+serde2::Result EntityWorld::serialize(WritableAssetArchive& writer) const {
+	if(!writer(u64(_entities.size()))) {
+		return core::Err();
 	}
 
-	u32 container_count = reader->read_one<u32>();
+	for(EntityId id : _entities) {
+		if(!writer(u64(id.index()))) {
+			return core::Err();
+		}
+	}
+
+	if(!writer(u32(_component_containers.size()))) {
+		return core::Err();
+	}
+	for(const auto& container : _component_containers) {
+		if(!detail::serialize_container(writer, container.second.get())) {
+			return core::Err();
+		}
+	}
+	return core::Ok();
+}
+
+serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
+	*this = EntityWorld();
+
+	u64 entity_count = 0;
+	if(!reader(entity_count)) {
+		return core::Err();
+	}
+
+	for(u64 i = 0; i != entity_count; ++i) {
+		u64 index = 0;
+		if(!reader(index)) {
+			return core::Err();
+		}
+		_entities.create_with_index(EntityIndex(index)).unwrap();
+	}
+	y_debug_assert(_entities.size() == entity_count);
+
+	u32 container_count = 0;
+	if(!reader(container_count)) {
+		return core::Err();
+	}
 	for(u32 i = 0; i != container_count; ++i) {
 		if(auto container = detail::deserialize_container(reader)) {
 			_component_containers[container->type()] = std::move(container);
+		} else {
+			log_msg("Component type can not be deserialized.", Log::Warning);
 		}
 	}
+
+	for(const auto& p : _component_containers) {
+		for(EntityIndex i : p.second->indexes()) {
+			if(!_entities.contains(EntityId::from_unversioned_index(i))) {
+				return core::Err();
+			}
+		}
+	}
+
+	return core::Ok();
 }
 
 }

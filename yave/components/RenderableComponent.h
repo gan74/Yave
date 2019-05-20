@@ -22,13 +22,16 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_RENDERABLECOMPONENT_H
 #define YAVE_COMPONENTS_RENDERABLECOMPONENT_H
 
-#include <yave/objects/Renderable.h>
+#include <yave/objects/SkinnedMeshInstance.h>
 
 namespace yave {
 
-class RenderableComponent {
+class RenderableComponent final {
 	public:
 		RenderableComponent(std::unique_ptr<Renderable> r) : _renderable(std::move(r)) {
+		}
+
+		RenderableComponent() : _renderable(std::make_unique<DummyRenderable>()) {
 		}
 
 		const Renderable* operator->() const {
@@ -51,6 +54,11 @@ class RenderableComponent {
 
 	private:
 		std::unique_ptr<Renderable> _renderable;
+
+		struct DummyRenderable : Renderable {
+			void render(RenderPassRecorder&, const SceneData&) const override {
+			}
+		};
 };
 
 }

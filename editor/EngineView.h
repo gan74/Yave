@@ -22,16 +22,9 @@ SOFTWARE.
 #ifndef EDITOR_ENGINEVIEW_H
 #define EDITOR_ENGINEVIEW_H
 
-#include <editor/editor.h>
-
 #include <editor/ui/Widget.h>
 
 #include <editor/widgets/Gizmo.h>
-
-#include <yave/scene/SceneView.h>
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/material/Material.h>
-
 #include <yave/renderer/LightingPass.h>
 
 namespace editor {

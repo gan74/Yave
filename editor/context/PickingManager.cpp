@@ -23,7 +23,6 @@ SOFTWARE.
 #include "PickingManager.h"
 #include "EditorContext.h"
 
-#include <y/io/File.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/renderer/SceneRenderSubPass.h>
 
@@ -46,7 +45,7 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
 	FrameGraph framegraph(context()->resource_pool());
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
-	SceneRenderSubPass scene_pass = SceneRenderSubPass::create(framegraph, builder, context()->scene().scene_view());
+	SceneRenderSubPass scene_pass = SceneRenderSubPass::create(framegraph, builder, context()->scene_view());
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			{
 				auto render_pass = recorder.bind_framebuffer(_framebuffer);
@@ -62,7 +61,7 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
 
 	float depth = TypedMapping(_buffer)[0];
 
-	auto inv_matrix = context()->scene().scene_view().camera().inverse_matrix();
+	auto inv_matrix = context()->scene_view().camera().inverse_matrix();
 	math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
 
 	PickingData data{

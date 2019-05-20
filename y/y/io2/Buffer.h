@@ -27,13 +27,13 @@ SOFTWARE.
 namespace y {
 namespace io2 {
 
-class Buffer final : NonCopyable {
+class Buffer final : public Reader, public Writer {
 	public:
 		Buffer(usize size = 0) {
 			_buffer.set_min_capacity(size);
 		}
 
-		bool at_end() const {
+		bool at_end() const override {
 			return _read_cursor >= _buffer.size();
 		}
 
@@ -41,14 +41,23 @@ class Buffer final : NonCopyable {
 			return at_end() ? 0 : _buffer.size() - _read_cursor;
 		}
 
-		ReadResult read(u8* data, usize max_bytes) {
+		ReadResult read(u8* data, usize bytes) override {
+			if(remaining() < bytes) {
+				return core::Err<usize>(0);
+			}
+			std::copy_n(&_buffer[_read_cursor], bytes, data);
+			_read_cursor += bytes;
+			return core::Ok();
+		}
+
+		ReadUpToResult read_up_to(u8* data, usize max_bytes) override {
 			usize max = std::min(max_bytes, remaining());
 			std::copy_n(&_buffer[_read_cursor], max, data);
 			_read_cursor += max;
 			return core::Ok(max);
 		}
 
-		ReadResult read_all(core::Vector<u8>& data) {
+		ReadUpToResult read_all(core::Vector<u8>& data) override {
 			u8* start = &_buffer[_read_cursor];
 			usize r = std::distance(start, _buffer.end());
 			data.push_back(start, _buffer.end());
@@ -56,13 +65,13 @@ class Buffer final : NonCopyable {
 			return core::Ok(r);
 		}
 
-		WriteResult write(const u8* data, usize bytes) {
+		WriteResult write(const u8* data, usize bytes) override {
 			_buffer.push_back(data, data + bytes);
 			return core::Ok();
 		}
 
 
-		FlushResult flush() {
+		FlushResult flush() override {
 			return core::Ok();
 		}
 

@@ -71,6 +71,7 @@ static auto get_copy_regions(const ImageData& data) {
 }
 
 static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
+	y_debug_assert(data);
 	auto staging_buffer = StagingBuffer(dptr, byte_size);
 	std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
 	return staging_buffer;

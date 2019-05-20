@@ -22,42 +22,13 @@ SOFTWARE.
 #ifndef YAVE_ECS_ENTITYIDPOOL_H
 #define YAVE_ECS_ENTITYIDPOOL_H
 
-#include <y/core/Vector.h>
-#include <yave/yave.h>
+#include "EntityId.h"
 
+#include <y/core/Vector.h>
 #include <y/core/Result.h>
 
 namespace yave {
 namespace ecs {
-
-class EntityId {
-	public:
-		using index_type = u32;
-
-		EntityId() = default;
-		explicit EntityId(index_type index);
-
-		index_type index() const;
-
-		bool is_valid() const;
-
-		bool operator==(const EntityId& other) const;
-		bool operator!=(const EntityId& other) const;
-
-	private:
-		friend class EntityIdPool;
-
-		void clear();
-		void set(index_type index);
-
-		static constexpr index_type invalid_index = index_type(-1);
-		index_type _index = invalid_index;
-		index_type _version = invalid_index;
-};
-
-static_assert(sizeof(EntityId) == sizeof(u64));
-static_assert(std::is_trivially_copyable_v<EntityId>);
-
 
 class EntityIdPool {
 	template<bool Const>
@@ -134,14 +105,14 @@ class EntityIdPool {
 	};
 
 	public:
-		using index_type = typename EntityId::index_type;
-
 		using iterator = Iterator<false>;
 		using const_iterator = Iterator<true>;
 
 		EntityIdPool();
 
-		core::Result<void> create_with_index(index_type index);
+		core::Result<void> create_with_index(EntityIndex index);
+
+		bool contains(EntityId id) const;
 
 		EntityId create();
 		void recycle(EntityId id);
@@ -155,7 +126,7 @@ class EntityIdPool {
 
 	private:
 		core::Vector<EntityId> _ids;
-		core::Vector<index_type> _free;
+		core::Vector<EntityIndex> _free;
 
 		usize _size = 0;
 };

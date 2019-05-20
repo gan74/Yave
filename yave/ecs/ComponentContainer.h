@@ -23,62 +23,58 @@ SOFTWARE.
 #define YAVE_ECS_COMPONENTCONTAINER_H
 
 #include "ecs.h"
-#include "EntityIdPool.h"
+#include "EntityId.h"
 
+#include <yave/assets/AssetArchive.h>
 #include <y/core/SparseVector.h>
 
-#include <y/serde/serde.h>
 
 namespace yave {
 namespace ecs {
 
+template<typename T>
+using ComponentVector = core::SparseVector<T, EntityIndex>;
+
+
 class ComponentContainerBase;
 
 namespace detail {
-using create_container_t = std::unique_ptr<ComponentContainerBase> (*)(io::ReaderRef);
-class RegisteredContainerType {
-	public:
-		u64 type_id() const {
-			return _type_id;
-		}
-	private:
-		friend void register_container_type(RegisteredContainerType*, usize, create_container_t);
-		friend usize registered_types_count();
-		friend void serialize_container(io::WriterRef, ComponentContainerBase*);
-		friend std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef);
-
-		u64 _type_id = 0;
-		create_container_t _create_container = nullptr;
-		RegisteredContainerType* _next = nullptr;
+using create_container_t = std::unique_ptr<ComponentContainerBase> (*)();
+struct RegisteredContainerType {
+	u64 type_id = 0;
+	std::type_index type_index = typeid(void);
+	create_container_t create_container = nullptr;
+	RegisteredContainerType* next = nullptr;
 };
 
 usize registered_types_count();
-void register_container_type(RegisteredContainerType* type, u64 type_id, create_container_t create_container);
-void serialize_container(io::WriterRef writer, ComponentContainerBase* container);
-std::unique_ptr<ComponentContainerBase> deserialize_container(io::ReaderRef reader);
+void register_container_type(RegisteredContainerType* type, u64 type_id, std::type_index type_index, create_container_t create_container);
+serde2::Result serialize_container(WritableAssetArchive& writer, ComponentContainerBase* container);
+std::unique_ptr<ComponentContainerBase> deserialize_container(ReadableAssetArchive& reader);
+std::unique_ptr<ComponentContainerBase> create_container(std::type_index type_index);
 
 template<typename T>
 void register_container_type(RegisteredContainerType* type, create_container_t create_container) {
 	// type_hash is not portable, but without reflection we don't have a choice...
-	register_container_type(type, type_hash<T>(), create_container);
+	register_container_type(type, type_hash<T>(), typeid(T), create_container);
 }
 }
 
 
 class ComponentContainerBase : NonMovable {
 	public:
-		using index_type = typename EntityId::index_type;
-
 		virtual ~ComponentContainerBase() {
 		}
 
 		virtual void remove(core::ArrayView<EntityId> ids) = 0;
 		virtual bool has(EntityId id) const = 0;
-		virtual core::Span<index_type> indexes() const = 0;
+		virtual core::Result<void> create_empty(EntityId id) = 0;
+		virtual core::Span<EntityIndex> indexes() const = 0;
 
 		ComponentTypeIndex type() const {
 			return _type;
 		}
+
 
 		template<typename T, typename... Args>
 		T& create(EntityId id, Args&&... args) {
@@ -97,29 +93,31 @@ class ComponentContainerBase : NonMovable {
 		}
 
 		template<typename T>
-		T& get(EntityId id) {
+		T& component(EntityId id) {
 			return component_vector_fast<T>()[id.index()];
 		}
 
 		template<typename T>
-		const T& get(EntityId id) const {
+		const T& component(EntityId id) const {
 			return component_vector_fast<T>()[id.index()];
 		}
+
+		template<typename T>
+		T* component_ptr(EntityId id) {
+			return component_vector_fast<T>().try_get(id.index());
+		}
+
+		template<typename T>
+		const T* component_ptr(EntityId id) const {
+			return component_vector_fast<T>().try_get(id.index());
+		}
+
 
 		template<typename T>
 		bool has(EntityId id) const {
 			return component_vector_fast<T>().has(id.index());
 		}
 
-		template<typename T>
-		T& component(EntityId id) {
-			return component_vector_fast<T>()[id.index()];
-		}
-
-		template<typename T>
-		T& component(EntityId id) const {
-			return component_vector_fast<T>()[id.index()];
-		}
 
 		template<typename T>
 		core::MutableSpan<T> components() {
@@ -130,6 +128,7 @@ class ComponentContainerBase : NonMovable {
 		core::Span<T> components() const {
 			return component_vector_fast<T>().values();
 		}
+
 
 		template<typename T>
 		auto& component_vector() {
@@ -143,7 +142,7 @@ class ComponentContainerBase : NonMovable {
 
 	protected:
 		template<typename T>
-		ComponentContainerBase(core::SparseVector<T, index_type>& sparse) :
+		ComponentContainerBase(ComponentVector<T>& sparse) :
 				_sparse_ptr(&sparse),
 				_type(index_for_type<T>()) {
 		}
@@ -153,13 +152,13 @@ class ComponentContainerBase : NonMovable {
 		template<typename T>
 		auto& component_vector_fast() {
 			y_debug_assert(type() == index_for_type<T>());
-			return (*static_cast<core::SparseVector<T, index_type>*>(_sparse_ptr));
+			return (*static_cast<ComponentVector<T>*>(_sparse_ptr));
 		}
 
 		template<typename T>
 		const auto& component_vector_fast() const {
 			y_debug_assert(type() == index_for_type<T>());
-			return (*static_cast<const core::SparseVector<T, index_type>*>(_sparse_ptr));
+			return (*static_cast<const ComponentVector<T>*>(_sparse_ptr));
 		}
 
 	private:
@@ -169,9 +168,11 @@ class ComponentContainerBase : NonMovable {
 
 
 	private:
-		friend void detail::serialize_container(io::WriterRef, ComponentContainerBase*);
+		friend serde2::Result detail::serialize_container(WritableAssetArchive&, ComponentContainerBase*);
+		friend std::unique_ptr<ComponentContainerBase> detail::deserialize_container(ReadableAssetArchive&);
 
-		virtual void serialize(io::WriterRef) const = 0;
+		virtual serde2::Result serialize(WritableAssetArchive&) const = 0;
+		virtual serde2::Result deserialize(ReadableAssetArchive&) = 0;
 		virtual u64 serialization_type_id() const = 0;
 
 };
@@ -200,58 +201,69 @@ class ComponentContainer final : public ComponentContainerBase {
 			return ComponentContainerBase::has<T>(id);
 		}
 
-		core::Span<index_type> indexes() const override {
+		core::Result<void> create_empty(EntityId id) override {
+			if constexpr(std::is_default_constructible_v<T>) {
+				ComponentContainerBase::create<T>(id);
+				return core::Ok();
+			}
+			unused(id);
+			return core::Err();
+		}
+
+		core::Span<EntityIndex> indexes() const override {
 			return _components.indexes();
 		}
 
 	private:
-		core::SparseVector<T, index_type> _components;
+		ComponentVector<T> _components;
 
 
 
 	// ------------------------------------- serde BS -------------------------------------
 
 	private:
-		static constexpr bool is_serde_compatible = (serde::is_serializable<T>::value && serde::is_deserializable<T>::value) ||
-													std::is_trivially_copyable_v<T>;
+		static constexpr bool is_serde_compatible = serde2::is_serializable<WritableAssetArchive, T>::value && serde2::is_deserializable<ReadableAssetArchive, T>::value;
 
 		u64 serialization_type_id() const override {
-			return _registerer->type.type_id();
+			return _registerer->type.type_id;
 		}
 
-		void serialize(io::WriterRef writer) const override {
+		serde2::Result serialize(WritableAssetArchive& writer) const override {
 			if constexpr(is_serde_compatible) {
-				writer->write_one(u64(_components.size()));
+				if(!writer(u64(_components.size()))) {
+					return core::Err();
+				}
 				for(auto p : _components.as_pairs()) {
-					writer->write_one(u64(p.first));
-					serde::serialize(writer, p.second);
+					if(!writer(u64(p.first)) || !writer(p.second)) {
+						return core::Err();
+					}
 				}
 			}
+			return core::Ok();
 		}
 
-		void deserialize(io::ReaderRef reader) {
+		serde2::Result deserialize(ReadableAssetArchive& reader) override {
 			if constexpr(is_serde_compatible) {
-				u64 component_count = reader->read_one<u64>();
-				for(u64 i = 0; i != component_count; ++i) {
-					index_type id = index_type(reader->read_one<u64>());
-					serde::deserialize(reader, _components.insert(id));
+				u64 component_count = 0;
+				if(!reader(component_count)) {
+					return core::Err();
 				}
+				for(u64 i = 0; i != component_count; ++i) {
+					u64 id = 0;
+					if(!reader(id) || !reader(_components.insert(EntityIndex(id)))) {
+						return core::Err();
+					}
+				}
+				y_debug_assert(_components.size() == component_count);
 			}
-		}
-
-		static std::unique_ptr<ComponentContainerBase> deserialized(io::ReaderRef reader) {
-			try {
-				auto container = std::make_unique<ComponentContainer<T>>();
-				container->deserialize(reader);
-				return container;
-			} catch(...) {
-			}
-			return nullptr;
+			return core::Ok();
 		}
 
 		static struct Registerer {
 			Registerer() {
-				detail::register_container_type<T>(&type, is_serde_compatible ? &deserialized : nullptr);
+				detail::register_container_type<T>(&type, []() -> std::unique_ptr<ComponentContainerBase> {
+						return std::make_unique<ComponentContainer<T>>();
+					});
 			}
 
 			detail::RegisteredContainerType type;

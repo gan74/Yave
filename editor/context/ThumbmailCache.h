@@ -23,14 +23,9 @@ SOFTWARE.
 #define EDITOR_UTILS_THUMBMAILCACHE_H
 
 #include <editor/editor.h>
-#include <y/core/Result.h>
-#include <y/core/Functor.h>
-
-#include <yave/scene/SceneView.h>
 #include <yave/renderer/LightingPass.h>
 
 #include <future>
-#include <unordered_map>
 
 namespace editor {
 

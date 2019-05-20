@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
@@ -71,54 +71,61 @@ void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& t
 }
 
 void AssetStringifier::stringify(AssetId id) {
-	if(auto data = context()->asset_store().data(id)) {
-		try {
-			core::DebugTimer timer("Stringify mesh");
-
-			MeshData mesh;
-			mesh.deserialize(data.unwrap());
-
-			_selected = id;
-			_vertices.make_empty();
-			_triangles.make_empty();
-
-			int prec = 3;
-
-			auto vertices = core::vector_with_capacity<core::String>(mesh.vertices().size());
-			std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const Vertex& v) {
-					std::array<char, 1024> buffer;
-					std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff}}",
-								  prec, v.position.x(), prec, v.position.y(), prec, v.position.z(),
-								  prec, v.normal.x(), prec, v.normal.y(), prec, v.normal.z(),
-								  prec, v.tangent.x(), prec, v.tangent.y(), prec, v.tangent.z(),
-								  prec, v.uv.x(), prec, v.uv.y());
-					return buffer.data();
-				});
-			fmt_into(_vertices, "%", vertices);
-			fmt_into(_triangles, "%", mesh.triangles());
-
-			auto fix_brackets = [](char& c) {
-					if(c == '[') {
-						c = '{';
-					}
-					if(c == ']') {
-						c = '}';
-					}
-				};
-
-			for(char& c : _vertices) {
-				fix_brackets(c);
-			}
-			for(char& c : _triangles) {
-				fix_brackets(c);
-			}
-
-			return;
-		} catch(std::exception& e) {
-			log_msg(fmt("Unable to load mesh: %", e.what()), Log::Error);
-		}
+	auto data = context()->asset_store().data(id);
+	if(!data) {
+		log_msg("Unable to fine asset.", Log::Error);
+		clear();
+		return;
 	}
 
+	core::DebugTimer timer("Stringify mesh");
+
+	MeshData mesh;
+	serde2::ReadableArchive ar(*data.unwrap());
+	if(!mesh.deserialize(ar)) {
+		log_msg("Unable to load mesh.", Log::Error);
+		clear();
+		return;
+	}
+
+	_selected = id;
+	_vertices.make_empty();
+	_triangles.make_empty();
+
+	int prec = 3;
+
+	auto vertices = core::vector_with_capacity<core::String>(mesh.vertices().size());
+	std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const Vertex& v) {
+			std::array<char, 1024> buffer;
+			std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff}}",
+						  prec, v.position.x(), prec, v.position.y(), prec, v.position.z(),
+						  prec, v.normal.x(), prec, v.normal.y(), prec, v.normal.z(),
+						  prec, v.tangent.x(), prec, v.tangent.y(), prec, v.tangent.z(),
+						  prec, v.uv.x(), prec, v.uv.y());
+			return buffer.data();
+		});
+	fmt_into(_vertices, "%", vertices);
+	fmt_into(_triangles, "%", mesh.triangles());
+
+	auto fix_brackets = [](char& c) {
+			if(c == '[') {
+				c = '{';
+			}
+			if(c == ']') {
+				c = '}';
+			}
+		};
+
+	for(char& c : _vertices) {
+		fix_brackets(c);
+	}
+	for(char& c : _triangles) {
+		fix_brackets(c);
+	}
+}
+
+
+void AssetStringifier::clear() {
 	_selected = AssetId();
 	_vertices.clear();
 	_triangles.clear();

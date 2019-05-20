@@ -24,56 +24,43 @@ SOFTWARE.
 
 #include <y/core/Result.h>
 #include <y/core/Functor.h>
+#include <y/utils/recmacros.h>
+
+#include "archives.h"
 
 namespace y {
 namespace serde2 {
 
-using Result = core::Result<void>;
+#define y_serde2_unfold_arg(N)									\
+	if(!_y_serde_arc(N)) { return y::core::Err(); }
 
-#define y_serialize2(...)										\
-	template<typename Arc>										\
-	y::serde2::Result serialize(Arc&& _y_serde_arc) const {		\
-		return _y_serde_arc(__VA_ARGS__);						\
+
+#define y_serialize2(...)																			\
+	template<typename Arc, typename = std::enable_if_t<y::serde2::is_writable_archive_v<Arc>>>		\
+	y::serde2::Result serialize(Arc& _y_serde_arc) const noexcept {									\
+		try {																						\
+			Y_REC_MACRO(Y_MACRO_MAP(y_serde2_unfold_arg, __VA_ARGS__))								\
+		} catch(...) {																				\
+			return y::core::Err();																	\
+		}																							\
+		return y::core::Ok();																		\
 	}
 
-#define y_deserialize2(...)										\
-	template<typename Arc>										\
-	y::serde2::Result deserialize(Arc&& _y_serde_arc) {			\
-		return _y_serde_arc(__VA_ARGS__);						\
+#define y_deserialize2(...)																			\
+	template<typename Arc, typename = std::enable_if_t<y::serde2::is_readable_archive_v<Arc>>>		\
+	y::serde2::Result deserialize(Arc& _y_serde_arc) noexcept {										\
+		try {																						\
+			Y_REC_MACRO(Y_MACRO_MAP(y_serde2_unfold_arg, __VA_ARGS__))								\
+		} catch(...) {																				\
+			return y::core::Err();																	\
+		}																							\
+		return y::core::Ok();																		\
 	}
+
 
 #define y_serde2(...)											\
 	y_serialize2(__VA_ARGS__)									\
 	y_deserialize2(__VA_ARGS__)
-
-
-#define y_serde_deser_compat()									\
-	void deserialize(y::io::ReaderRef r) {						\
-		y::io2::Reader reader(r);								\
-		y::serde2::ReadableArchive ar(reader);					\
-		ar(*this).or_throw("serde2");							\
-	}															\
-	static auto _y_serde2_self_type_helper() ->					\
-		std::remove_reference<decltype(*this)>::type;			\
-	static auto deserialized(y::io::ReaderRef r) {				\
-		y::io2::Reader reader(r);								\
-		y::serde2::ReadableArchive ar(reader);					\
-		decltype(_y_serde2_self_type_helper()) t;				\
-		ar(t).or_throw("serde2");								\
-		return t;												\
-	}
-
-#define y_serde_ser_compat()									\
-	void serialize(y::io::WriterRef w) const {					\
-		y::io2::Writer writer(w);								\
-		y::serde2::WritableArchive ar(writer);					\
-		serialize(ar).or_throw("serde2");						\
-	}
-
-#define y_serde_compat()										\
-	y_serde_deser_compat()										\
-	y_serde_ser_compat()
-
 
 
 namespace detail {
@@ -108,27 +95,42 @@ class Function {
 		}
 
 		template<typename Arc>
-		Result deserialize(Arc&& ar) {
+		Result deserialize(Arc& ar) {
 			using ret_t = typename function_traits<T>::return_type;
 			using args_t = typename function_traits<T>::argument_pack ;
-			if constexpr(std::is_convertible_v<ret_t, Result> && std::is_convertible_v<decltype(ar), args_t>) {
+			constexpr bool ret_result = std::is_convertible_v<ret_t, Result>;
+			if constexpr(ret_result && std::is_convertible_v<decltype(ar), args_t>) {
 				return _t(ar);
 			} else {
 				args_t args;
 				if(!ar(args)) {
 					return core::Err();
 				}
-				std::apply(_t, std::move(args));
-				return core::Ok();
+				if constexpr(ret_result) {
+					return std::apply(_t, std::move(args));
+				} else {
+					std::apply(_t, std::move(args));
+					return core::Ok();
+				}
 			}
 		}
 
 		template<typename Arc>
-		Result serialize(Arc&& ar) {
-			if constexpr(std::is_convertible_v<T&&, core::Function<Result(Arc&)>>) {
+		Result serialize(Arc& ar) const {
+			using ret_t = typename function_traits<T>::return_type;
+			using args_t = typename function_traits<T>::argument_pack;
+			constexpr bool ret_result = std::is_convertible_v<ret_t, Result>;
+			if constexpr(ret_result && std::is_convertible_v<decltype(ar), args_t>) {
 				return _t(ar);
 			} else {
-				return ar(_t());
+				if constexpr(ret_result) {
+					return _t();
+				} else if constexpr(std::is_void_v<ret_t>) {
+					_t();
+					return core::Ok();
+				} else {
+					return ar(_t());
+				}
 			}
 		}
 
@@ -144,7 +146,7 @@ class Condition : Function<T> {
 		}
 
 		template<typename Arc>
-		Result deserialize(Arc&& ar) {
+		Result deserialize(Arc& ar) {
 			if(_c) {
 				return Function<T>::deserialize(ar);
 			}
@@ -152,7 +154,7 @@ class Condition : Function<T> {
 		}
 
 		template<typename Arc>
-		Result serialize(Arc&& ar) {
+		Result serialize(Arc& ar) const {
 			if(_c) {
 				return Function<T>::serialize(ar);
 			}
@@ -162,6 +164,28 @@ class Condition : Function<T> {
 
 	private:
 		bool _c;
+};
+
+template<typename T>
+class Array {
+	public:
+		Array(usize s, T* t) : _s(s), _t(y_fwd(t)) {
+		}
+
+		template<typename Arc>
+		Result deserialize(Arc& ar) {
+			return ar.array(_t, _s);
+		}
+
+		template<typename Arc>
+		Result serialize(Arc& ar) const {
+			return ar.array(_t, _s);
+		}
+
+
+	private:
+		usize _s;
+		T* _t;
 };
 
 }
@@ -180,6 +204,30 @@ template<typename T>
 detail::Condition<T> cond(bool c, T&& t) {
 	return detail::Condition<T>(c, y_fwd(t));
 }
+
+template<typename T>
+detail::Array<T> array(usize s, T* t) {
+	return detail::Array<T>(s, t);
+}
+
+
+
+
+// -------------------------------------- tests --------------------------------------
+namespace {
+struct Serial {
+	u32 i;
+	y_serde2(i)
+};
+static_assert(has_serialize_v<WritableArchive, Serial>);
+static_assert(has_serialize_v<WritableArchive, Serial&>);
+static_assert(has_serialize_v<WritableArchive, const Serial&>);
+
+static_assert(has_deserialize_v<ReadableArchive, Serial>);
+static_assert(has_deserialize_v<ReadableArchive, Serial&>);
+static_assert(has_deserialize_v<ReadableArchive, Serial&&>);
+}
+
 
 }
 }

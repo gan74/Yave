@@ -31,8 +31,8 @@ const core::String& EditorComponent::name() const {
 	return _name;
 }
 
-bool EditorComponent::is_visible() const {
-	return _visible;
+void EditorComponent::set_name(core::String name) {
+	_name = std::move(name);
 }
 
 }

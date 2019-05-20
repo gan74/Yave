@@ -148,7 +148,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 	}
 
 	auto skin_points = core::vector_with_capacity<SkinWeights>(mesh->mNumVertices);
-	std::transform(bone_per_vertex.begin(), bone_per_vertex.end(), std::back_inserter(skin_points), [](auto& bones) { return compute_skin(bones); });
+	std::transform(bone_per_vertex.begin(), bone_per_vertex.end(), std::back_inserter(skin_points), [](auto& bns) { return compute_skin(bns); });
 
 
 	return SkeletonData{std::move(skin_points), std::move(bones)};

@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef Y_SERDE2_HELPER_H
 #define Y_SERDE2_HELPER_H
 
-#include "serde.h"
+#include <y/utils.h>
 
 namespace y {
 
@@ -34,6 +34,10 @@ class Vector;
 
 
 namespace serde2 {
+
+using Result = core::Result<void>;
+
+
 
 // -------------------------------------- deserialize --------------------------------------
 namespace helper {
@@ -67,20 +71,26 @@ static auto has_deserialize(T*) -> bool_type<std::is_same_v<Result, decltype(std
 template<typename Arc, typename T>
 static auto has_deserialize(...) -> std::false_type;
 }
+}
 
 
 template<typename Arc, typename T, typename U = remove_cvref_t<T>>
-using has_deserializer = bool_type<decltype(detail::has_deserializer<Arc, U>(nullptr))::value>;
+using has_deserializer = bool_type<decltype(helper::detail::has_deserializer<Arc, U>(nullptr))::value>;
 template<typename Arc, typename T, typename U = remove_cvref_t<T>>
-using has_deserialize = bool_type<decltype(detail::has_deserialize<Arc, U>(nullptr))::value>;
+using has_deserialize = bool_type<decltype(helper::detail::has_deserialize<Arc, U>(nullptr))::value>;
+template<typename Arc, typename T>
+using is_deserializable = bool_type<has_deserialize<Arc, T>::value || has_deserializer<Arc, T>::value || std::is_trivially_copyable_v<T>>;
 
 
 template<typename Arc, typename T>
 static constexpr bool has_deserializer_v = has_deserializer<Arc, T>::value;
 template<typename Arc, typename T>
 static constexpr bool has_deserialize_v = has_deserialize<Arc, T>::value;
+template<typename Arc, typename T>
+static constexpr bool is_deserializable_v = is_deserializable<Arc, T>::value;
 
 
+namespace helper {
 template<typename Arc, typename T>
 static Result deserialize_one(Arc& ar, T&& t) {
 	static_assert(!(has_deserializer_v<Arc, T> && has_deserialize_v<Arc, T>));
@@ -90,6 +100,7 @@ static Result deserialize_one(Arc& ar, T&& t) {
 	} else if constexpr(has_deserializer_v<Arc, T>){
 		return Deserializer<T>::deserialize(ar, t);
 	} else {
+		static_assert(!std::is_pointer_v<T>);
 		return ar.reader().read_one(t);
 	}
 }
@@ -145,20 +156,26 @@ static auto has_serialize(T*) -> bool_type<std::is_same_v<Result, decltype(std::
 template<typename Arc, typename T>
 static auto has_serialize(...) -> std::false_type;
 }
+}
 
 
 template<typename Arc, typename T, typename U = remove_cvref_t<T>>
-using has_serializer = bool_type<decltype(detail::has_serializer<Arc, U>(nullptr))::value>;
+using has_serializer = bool_type<decltype(helper::detail::has_serializer<Arc, U>(nullptr))::value>;
 template<typename Arc, typename T, typename U = remove_cvref_t<T>>
-using has_serialize = bool_type<decltype(detail::has_serialize<Arc, U>(nullptr))::value>;
+using has_serialize = bool_type<decltype(helper::detail::has_serialize<Arc, U>(nullptr))::value>;
+template<typename Arc, typename T>
+using is_serializable = bool_type<has_serialize<Arc, T>::value || has_serializer<Arc, T>::value || std::is_trivially_copyable_v<T>>;
 
 
 template<typename Arc, typename T>
 static constexpr bool has_serializer_v = has_serializer<Arc, T>::value;
 template<typename Arc, typename T>
 static constexpr bool has_serialize_v = has_serialize<Arc, T>::value;
+template<typename Arc, typename T>
+static constexpr bool is_serializable_v = is_serializable<Arc, T>::value;
 
 
+namespace helper {
 template<typename Arc, typename T>
 static Result serialize_one(Arc& ar, const T& t) {
 	static_assert(!(has_serializer_v<Arc, T> && has_serialize_v<Arc, T>));
@@ -168,6 +185,7 @@ static Result serialize_one(Arc& ar, const T& t) {
 	} else if constexpr(has_serializer_v<Arc, T>){
 		return Serializer<T>::serialize(ar, t);
 	} else {
+		static_assert(!std::is_pointer_v<T>);
 		return ar.writer().write_one(t);
 	}
 }

@@ -31,11 +31,11 @@ SOFTWARE.
 namespace y {
 namespace io2 {
 
-class File : NonCopyable {
+class File final : public Reader, public Writer {
 
 	public:
 		File() = default;
-		~File();
+		~File() override;
 
 		File(File&& other);
 		File& operator=(File&& other);
@@ -43,19 +43,22 @@ class File : NonCopyable {
 		static core::Result<File> create(const core::String& name);
 		static core::Result<File> open(const core::String& name);
 
+		static  core::Result<void> copy(Reader& src, const core::String& dst);
+
 		usize size() const;
 		usize remaining() const;
 
 		bool is_open() const;
-		bool at_end() const;
+		bool at_end() const override;
 
 		void seek(usize byte);
 
-		ReadResult read(u8* data, usize max_bytes);
-		ReadResult read_all(core::Vector<u8>& data);
+		ReadResult read(u8* data, usize bytes) override;
+		ReadUpToResult read_up_to(u8* data, usize max_bytes) override;
+		ReadUpToResult read_all(core::Vector<u8>& data) override;
 
-		WriteResult write(const u8* data, usize bytes);
-		FlushResult flush();
+		WriteResult write(const u8* data, usize bytes) override;
+		FlushResult flush() override;
 
 	private:
 		File(std::FILE* f);

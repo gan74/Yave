@@ -22,9 +22,6 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_ASSETSTORE_H
 #define YAVE_ASSETS_ASSETSTORE_H
 
-#include <y/core/String.h>
-#include <y/io/Ref.h>
-
 #include "AssetPtr.h"
 #include "AssetType.h"
 
@@ -51,18 +48,19 @@ class AssetStore : NonCopyable {
 		using Result = core::Result<T, ErrorType>;
 
 
+
 		AssetStore();
 		virtual ~AssetStore();
 
 		virtual const FileSystemModel* filesystem() const;
 
-		virtual Result<AssetId> import(io::ReaderRef data, std::string_view dst_name) = 0;
-		virtual Result<> write(AssetId id, io::ReaderRef data);
+		virtual Result<AssetId> import(io2::Reader& data, std::string_view dst_name) = 0;
+		virtual Result<> write(AssetId id, io2::Reader& data);
 
 		virtual Result<AssetId> id(std::string_view name) const = 0;
 		virtual Result<core::String> name(AssetId id) const = 0;
 
-		virtual Result<io::ReaderRef> data(AssetId id) const = 0;
+		virtual Result<io2::ReaderPtr> data(AssetId id) const = 0;
 
 		virtual Result<> remove(AssetId id);
 		virtual Result<> rename(AssetId id, std::string_view new_name);

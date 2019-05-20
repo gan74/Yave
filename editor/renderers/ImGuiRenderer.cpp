@@ -22,13 +22,13 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/framegraph/FrameGraph.h>
 
 #include <y/core/Chrono.h>
-#include <y/io/File.h>
+#include <yave/utils/FileSystemModel.h>
 
 namespace editor {
 
@@ -42,7 +42,7 @@ static ImageData load_font() {
 	ImGuiIO& io = ImGui::GetIO();
 
 	io.Fonts->AddFontDefault();
-	if(io::File::exists("fonts/fa-solid-900.ttf")) {
+	if(FileSystemModel::local_filesystem()->exists("fonts/fa-solid-900.ttf").unwrap_or(false)) {
 		ImFontConfig config;
 		config.MergeMode = true;
 		const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
@@ -116,8 +116,8 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 	usize index_offset = 0;
 	usize vertex_offset = 0;
 	const void* current_tex = nullptr;
-	for(auto i = 0; i != draw_data->CmdListsCount; ++i) {
-		const ImDrawList* cmd_list = draw_data->CmdLists[i];
+	for(auto c = 0; c != draw_data->CmdListsCount; ++c) {
+		const ImDrawList* cmd_list = draw_data->CmdLists[c];
 
 		if(cmd_list->IdxBuffer.Size + index_offset >= index_subbuffer.size()) {
 			y_fatal("Index buffer overflow.");

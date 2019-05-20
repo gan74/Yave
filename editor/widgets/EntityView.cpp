@@ -22,95 +22,92 @@ SOFTWARE.
 #include "EntityView.h"
 
 #include <editor/context/EditorContext.h>
+#include <editor/components/ComponentTraits.h>
 
-#include <yave/objects/Light.h>
+#include <yave/ecs/EntityWorld.h>
 
-#include <imgui/imgui_yave.h>
-
-// remove:
-#include <yave/material/Material.h>
-#include <y/io/File.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
-
-static const char* light_type_name(Light::Type type) {
-	switch(type) {
-		case Light::Directional:
-			return "Directional";
-
-		case Light::Point:
-			return "Point";
-
-		default:
-		break;
-	}
-	return y_fatal("Unsupported light type.");
-}
 
 EntityView::EntityView(ContextPtr cptr) :
 		Widget(ICON_FA_OBJECT_GROUP " Entities"),
 		ContextLinked(cptr) {
 }
 
-void EntityView::add_light() {
-	Scene::Ptr<Light> light = std::make_unique<Light>(Light::Point);
-	context()->selection().set_selected(light.get());
-
-	light->radius() = 100.0f;
-	light->intensity() = 10000.0;
-	context()->scene().scene().lights() << std::move(light);
-}
-
 void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+	ecs::EntityWorld& world = context()->world();
+
+
+
+
+
+
 	if(ImGui::Button(ICON_FA_PLUS, math::Vec2(24))) {
 		ImGui::OpenPopup("Add entity");
 	}
 
 	if(ImGui::BeginPopup("Add entity")) {
-		if(ImGui::MenuItem("Add light")) {
-			add_light();
-		}
-		if(ImGui::MenuItem("Add renderable")) {
-			auto instance = std::make_unique<StaticMeshInstance>(device()->device_resources()[DeviceResources::CubeMesh], device()->device_resources()[DeviceResources::EmptyMaterial]);
-			instance->transform() = math::Transform<>(math::Vec3(0.0f, 0.0f, 0.0f), math::identity(), math::Vec3(0.1f));
-			context()->scene().scene().static_meshes() << std::move(instance);
+		if(ImGui::MenuItem("Add entity")) {
+			ecs::EntityId id = world.create_entity();
+			world.create_component<EditorComponent>(id);
 		}
 		ImGui::EndPopup();
 	}
 
-	if(ImGui::TreeNode(ICON_FA_FOLDER " Renderables")) {
-		for(const auto& r : context()->scene().scene().renderables()) {
-			bool selected = r.get() == context()->selection().renderable();
-			ImGui::Selectable(fmt(ICON_FA_QUESTION " %##%", type_name(*r), static_cast<void*>(r.get())).data(), &selected);
-			if(selected) {
-				context()->selection().set_selected(r.get());
+	ImGui::Spacing();
+	if(ImGui::BeginChild("###entities")) {
+		for(ecs::EntityId id : world.entities()) {
+			EditorComponent* comp = world.component<EditorComponent>(id);
+			if(!comp) {
+				log_msg("Entity is missing EditorComponent.", Log::Warning);
+				continue;
+			}
+
+			bool selected = context()->selection().selected_entity() == id;
+			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %", comp->name()).data(), selected)) {
+				 context()->selection().set_selected(id);
+			}
+			if(ImGui::IsItemHovered()) {
+				_hovered = id;
 			}
 		}
-		ImGui::TreePop();
 	}
+	ImGui::EndChild();
 
-	if(ImGui::TreeNode(ICON_FA_FOLDER " Meshes")) {
-		for(const auto& r : context()->scene().scene().static_meshes()) {
-			bool selected = r.get() == context()->selection().renderable();
-			ImGui::Selectable(fmt(ICON_FA_CUBE " %##%", type_name(*r), static_cast<void*>(r.get())).data(), &selected);
-			if(selected) {
-				context()->selection().set_selected(r.get());
-			}
+
+
+	if(_hovered.is_valid()) {
+		if(ImGui::IsMouseReleased(1)) {
+			ImGui::OpenPopup("###contextmenu");
 		}
-		ImGui::TreePop();
-	}
 
-	if(ImGui::TreeNode(ICON_FA_FOLDER " Lights")) {
-		for(const auto& l : context()->scene().scene().lights()) {
-			bool selected = l.get() == context()->selection().light();
-			ImGui::Selectable(fmt(ICON_FA_LIGHTBULB " %##%", light_type_name(l->type()), static_cast<void*>(l.get())).data(), &selected);
-			if(selected) {
-				context()->selection().set_selected(l.get());
+		if(ImGui::BeginPopup("###contextmenu")) {
+			if(ImGui::BeginMenu(ICON_FA_PLUS " Add component")) {
+				core::Vector<ComponentTraits> traits = all_component_traits();
+				for(const ComponentTraits& t : traits) {
+					if(t.name.empty()) {
+						continue;
+					}
+					if(ImGui::MenuItem(fmt(ICON_FA_PUZZLE_PIECE " %", t.name).data())) {
+						if(!world.create_component(_hovered, t.type)) {
+							log_msg("Unable to create component.", Log::Error);
+						}
+					}
+				}
+				ImGui::EndMenu();
 			}
-		}
-		ImGui::TreePop();
-	}
 
+			ImGui::Separator();
+			if(ImGui::Selectable(ICON_FA_TIMES " Delete")) {
+				world.remove_entity(_hovered);
+				// we don't unselect the ID to make sure that we can handle case where the id is invalid
+			}
+			ImGui::EndPopup();
+		} else {
+			_hovered = ecs::EntityId();
+		}
+	}
 }
 
 }

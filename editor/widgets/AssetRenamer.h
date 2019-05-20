@@ -24,9 +24,6 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
-#include <yave/utils/FileSystemModel.h>
-#include <y/core/Functor.h>
-
 namespace editor {
 
 class AssetRenamer final : public Widget, public ContextLinked {

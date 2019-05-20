@@ -31,7 +31,7 @@ SOFTWARE.
 #include <yave/meshes/MeshData.h>
 #include <yave/meshes/StaticMesh.h>
 
-#include <y/io/File.h>
+#include <y/io2/File.h>
 
 namespace yave {
 
@@ -109,7 +109,7 @@ static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == material_cou
 static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_count);
 
 static SpirVData load_spirv(const char* name) {
-	return SpirVData::deserialized(io::File::open(fmt("%.spv", name)).expected("Unable to open SPIR-V file."));
+	return SpirVData::deserialized(io2::File::open(fmt("%.spv", name)).expected("Unable to open SPIR-V file."));
 }
 
 // implemented in DeviceResourcesData.cpp

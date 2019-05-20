@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "MeshData.h"
 
-#include <y/io/BuffReader.h>
 #include <y/core/Chrono.h>
 
 namespace yave {

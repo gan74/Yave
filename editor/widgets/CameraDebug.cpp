@@ -23,7 +23,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
@@ -31,7 +31,7 @@ CameraDebug::CameraDebug(ContextPtr cptr) : Widget("Camera debug", ImGuiWindowFl
 }
 
 void CameraDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	const auto& camera = context()->scene().scene_view().camera();
+	const auto& camera = context()->scene_view().camera();
 	auto pos = camera.position();
 	auto fwd = camera.forward();
 	auto lft = camera.left();

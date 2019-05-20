@@ -23,7 +23,6 @@ SOFTWARE.
 #include "ToneMappingPass.h"
 
 #include <yave/material/Material.h>
-#include <y/io/File.h>
 
 namespace yave {
 
@@ -38,7 +37,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, const LightingPa
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
 	builder.add_color_output(tone_mapped);
-	builder.add_uniform_input(lighting.lit, 0, PipelineStage::ComputeBit);
+	builder.add_uniform_input(lighting.lit, 0, PipelineStage::FragmentBit);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 			const auto* material = recorder.device()->device_resources()[DeviceResources::TonemappingMaterialTemplate];

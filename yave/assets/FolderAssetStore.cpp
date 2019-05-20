@@ -23,9 +23,7 @@ SOFTWARE.
 
 #include "FolderAssetStore.h"
 
-#include <y/io/File.h>
-#include <y/io/BuffWriter.h>
-#include <y/io/BuffReader.h>
+#include <y/io2/File.h>
 
 #include <atomic>
 
@@ -117,22 +115,29 @@ AssetStore::Result<> FolderAssetStore::read_index() {
 	std::unique_lock lock(_lock);
 	y_defer(y_debug_assert(_from_id.size() == _from_name.size()));
 
-	try {
-		auto file = io::BuffReader(std::move(io::File::open(_index_file_path).or_throw("Unable to open file.")));
-		_from_id.clear();
-		_from_name.clear();
-		_id_factory.deserialize(file);
-		while(!file.at_end()) {
-			auto entry = std::make_unique<Entry>(serde::deserialized<Entry>(file));
-			_from_id[entry->id] = entry.get();
-			_from_name[entry->name] = std::move(entry);
-		}
-	} catch(std::exception& e) {
-		log_msg(fmt("Exception while reading index file: %", e.what()), Log::Error);
-		log_msg(fmt("% assets imported", _from_id.size()), Log::Error);
+	auto file = io2::File::open(_index_file_path);
+	if(!file) {
+		log_msg("Unable to read index file.", Log::Error);
 		return core::Err(ErrorType::FilesytemError);
 	}
+	serde2::ReadableArchive arc(file.unwrap());
+	_from_id.clear();
+	_from_name.clear();
+	if(!arc(_id_factory)) {
+		log_msg("Unable to read id data.", Log::Error);
+		return core::Err(ErrorType::FilesytemError);
 
+	}
+
+	while(!file.unwrap().at_end()) {
+		auto entry = std::make_unique<Entry>();
+		if(arc(*entry)) {
+			_from_id[entry->id] = entry.get();
+			_from_name[entry->name] = std::move(entry);
+		} else {
+			log_msg("Unable to read index entry.", Log::Error);
+		}
+	}
 	return core::Ok();
 }
 
@@ -140,23 +145,28 @@ AssetStore::Result<> FolderAssetStore::write_index() const {
 	std::unique_lock lock(_lock);
 	y_defer(y_debug_assert(_from_id.size() == _from_name.size()));
 
-	try {
-		if(auto r = io::File::create(_index_file_path)) {
-			auto file = io::BuffWriter(std::move(r.unwrap()));
-			_id_factory.serialize(file);
-			for(const auto& row : _from_id) {
-				const Entry& entry = *row.second;
-				entry.serialize(file);
-			}
-		}
-	} catch(std::exception& e) {
-		log_msg(fmt("Exception while writing index file: %", e.what()), Log::Error);
+	auto file = io2::File::create(_index_file_path);
+	if(!file) {
+		log_msg("Unable to write index file.", Log::Error);
 		return core::Err(ErrorType::FilesytemError);
+	}
+
+	WritableAssetArchive arc(file.unwrap());
+	if(!arc(_id_factory)) {
+		log_msg("Unable to write id data.", Log::Error);
+		return core::Err(ErrorType::FilesytemError);
+	}
+
+	for(const auto& row : _from_id) {
+		const Entry& entry = *row.second;
+		if(!arc(entry)) {
+			log_msg("Unable to write index entry.", Log::Error);
+		}
 	}
 	return core::Ok();
 }
 
-AssetStore::Result<AssetId> FolderAssetStore::import(io::ReaderRef data, std::string_view dst_name) {
+AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::string_view dst_name) {
 	std::unique_lock lock(_lock);
 
 	{
@@ -172,12 +182,12 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io::ReaderRef data, std::st
 		return core::Err(ErrorType::AlreadyExistingID);
 	}
 
-	// remove/optimize
+	Y_TODO(remove/optimize)
 	y_defer(write_index().ignore());
 	y_defer(y_debug_assert(_from_id.size() == _from_name.size()));
 
 	auto dst_file = _filesystem.join(_filesystem.root_path(), dst_name);
-	if(!io::File::copy(data, dst_file)) {
+	if(!io2::File::copy(data, dst_file)) {
 		_from_name.erase(_from_name.find(dst_name));
 		return core::Err(ErrorType::FilesytemError);
 	}
@@ -210,19 +220,23 @@ AssetStore::Result<core::String> FolderAssetStore::name(AssetId id) const {
 	return core::Err(ErrorType::UnknownID);
 }
 
-AssetStore::Result<io::ReaderRef> FolderAssetStore::data(AssetId id) const {
+AssetStore::Result<io2::ReaderPtr> FolderAssetStore::data(AssetId id) const {
 	y_profile();
 	std::unique_lock lock(_lock);
-
 	y_debug_assert(_from_id.size() == _from_name.size());
-	if(auto it = _from_id.find(id); it != _from_id.end()) {
-		auto filename = _filesystem.join(_filesystem.root_path(), it->second->name);
-		if(auto file = io::File::open(filename)) {
-			return core::Ok(io::ReaderRef(std::move(file.unwrap())));
-		}
+
+	auto it = _from_id.find(id);
+	if( it == _from_id.end()) {
+		return core::Err(ErrorType::UnknownID);
+	}
+
+	auto file = io2::File::open(_filesystem.join(_filesystem.root_path(), it->second->name));
+	if(!file) {
 		return core::Err(ErrorType::FilesytemError);
 	}
-	return core::Err(ErrorType::UnknownID);
+
+	io2::ReaderPtr ptr = std::make_unique<io2::File>(std::move(file.unwrap()));
+	return core::Ok(std::move(ptr));
 }
 
 
@@ -341,13 +355,13 @@ AssetStore::Result<> FolderAssetStore::rename(std::string_view from, std::string
 	return core::Err(ErrorType::UnknownID);
 }
 
-AssetStore::Result<> FolderAssetStore::write(AssetId id, io::ReaderRef data) {
+AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data) {
 	std::unique_lock lock(_lock);
 
 	y_debug_assert(_from_id.size() == _from_name.size());
 	if(auto it = _from_id.find(id); it != _from_id.end()) {
 		auto filename = _filesystem.join(_filesystem.root_path(), it->second->name);
-		if(io::File::copy(data, filename)) {
+		if(io2::File::copy(data, filename)) {
 			return core::Ok();
 		}
 		return core::Err(ErrorType::FilesytemError);

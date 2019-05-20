@@ -32,8 +32,6 @@ class Range {
 	public:
 		using iterator_traits = std::iterator_traits<Iter>;
 
-		using value_type = typename std::iterator_traits<Iter>::value_type;
-
 		using iterator = Iter;
 		using const_iterator = Iter;
 

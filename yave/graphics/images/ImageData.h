@@ -51,18 +51,25 @@ class ImageData : NonCopyable {
 
 		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
 
-		y_deserialize(fs::magic_number, AssetType::Image, u32(3),
-					y_serde_call([this](const math::Vec2ui& size) { _size = math::Vec3ui(size, 1); }),
-					_layers, _mips, _format,
-					y_serde_call([this] { _data = std::make_unique<u8[]>(combined_byte_size()); }),
-					y_serde_fixed_array(combined_byte_size(), _data.get()))
 
-		y_serialize(fs::magic_number, AssetType::Image, u32(3),
-					_size.to<2>(), _layers, _mips, _format,
-					y_serde_fixed_array(combined_byte_size(), _data.get()))
+
+
+		y_serialize2(fs::magic_number, AssetType::Image, u32(3),
+			_size.to<2>(), _layers, _mips, _format,
+			serde2::array(combined_byte_size(), _data.get()))
+
+		y_deserialize2(serde2::check(fs::magic_number, AssetType::Image, u32(3)),
+			_size.to<2>(), _layers, _mips, _format,
+			serde2::func([this]() -> serde2::Result {
+				if(!_format.is_valid()) { return core::Err(); }
+				_data = std::make_unique<u8[]>(combined_byte_size());
+				return core::Ok();
+			}),
+			serde2::array(combined_byte_size(), _data.get()))
+
 
 	private:
-		math::Vec3ui _size;
+		math::Vec3ui _size = math::Vec3ui(0, 0, 1);
 		ImageFormat _format;
 
 		u32 _layers = 1;

@@ -32,20 +32,21 @@ namespace core {
 template<typename Elem, typename Index>
 class SparseVector;
 
+
+
 namespace detail {
 template<bool Const, typename Elem, typename Index>
 class SparseVectorPairIterator {
 
-	using index_type = Index;
+	using vec_type = std::conditional_t<Const, const SparseVector<Elem, Index>, SparseVector<Elem, Index>>;
 
 	public:
-		using value_type = std::pair<Elem, index_type>;
-		using reference = std::pair<index_type, std::conditional_t<Const, const Elem&, Elem&>>;
+		using reference = std::pair<Index, std::conditional_t<Const, const Elem&, Elem&>>;
 		using difference_type = usize;
 		using iterator_category = std::random_access_iterator_tag;
 
 		reference operator*() const {
-			return {_vec._dense[_index], _vec._values[_index]};
+			return reference(_vec._dense[_index], _vec._values[_index]);
 		}
 
 		reference operator[](usize n) const {
@@ -119,13 +120,14 @@ class SparseVectorPairIterator {
 	private:
 		friend class SparseVector<Elem, Index>;
 
-		SparseVectorPairIterator(const SparseVector<Elem, Index>& vec, index_type index) : _vec(vec), _index(index) {
+		SparseVectorPairIterator(vec_type& vec, usize index) : _vec(vec), _index(index) {
 		}
 
-		const SparseVector<Elem, Index>& _vec;
-		index_type _index = 0;
+		vec_type& _vec;
+		usize _index = 0;
 };
 }
+
 
 template<typename Elem, typename Index>
 class SparseVector final {
@@ -141,6 +143,8 @@ class SparseVector final {
 	static constexpr bool is_void_v = std::is_void_v<Elem>;
 	using non_void = std::conditional_t<is_void_v, int, Elem>;
 
+	static_assert(std::is_integral_v<Index>);
+
 	public:
 		using value_type = Elem;
 		using size_type = usize;
@@ -153,9 +157,12 @@ class SparseVector final {
 		using const_pointer = const value_type*;
 
 	private:
-		static constexpr usize page_size = 256;
+		static constexpr usize page_size = 1024;
 		static constexpr index_type invalid_index = index_type(-1);
-		using page_type = std::array<index_type, page_size>;
+
+		using page_index_type = u32;
+		static constexpr page_index_type page_invalid_index = page_index_type(-1);
+		using page_type = std::array<page_index_type, page_size>;
 
 		using value_container = std::conditional_t<is_void_v, EmptyVec, core::Vector<non_void>>;
 
@@ -169,14 +176,14 @@ class SparseVector final {
 
 		bool has(index_type index) const {
 			auto [i, o] = page_index(index);
-			return i < _sparse.size() && _sparse[i][o] != invalid_index;
+			return i < _sparse.size() && _sparse[i][o] != page_invalid_index;
 		}
 
 		template<typename... Args>
 		reference insert(index_type index, Args&&... args) {
 			y_debug_assert(!has(index));
 			auto [i, o] = page_index(index);
-			create_page(i)[o] = _dense.size();
+			create_page(i)[o] = page_index_type(_dense.size());
 			_dense.emplace_back(index);
 			_values.emplace_back(y_fwd(args)...);
 			return _values.last();
@@ -185,8 +192,8 @@ class SparseVector final {
 		void erase(index_type index) {
 			y_debug_assert(has(index));
 			auto [i, o] = page_index(index);
-			index_type dense_index = _sparse[i][o];
-			index_type last_index = _dense.size() - 1;
+			page_index_type dense_index = _sparse[i][o];
+			page_index_type last_index = page_index_type(_dense.size() - 1);
 
 			std::swap(_dense[dense_index], _dense[last_index]);
 			std::swap(_values[dense_index], _values[last_index]);
@@ -195,7 +202,7 @@ class SparseVector final {
 
 			auto [li, lo] = page_index(index);
 			_sparse[li][lo] = dense_index;
-			_sparse[i][o] = invalid_index;
+			_sparse[i][o] = page_invalid_index;
 		}
 
 
@@ -205,10 +212,28 @@ class SparseVector final {
 			return _values[_sparse[i][o]];
 		}
 
-		const_reference operator[](usize index) const {
+		const_reference operator[](index_type index) const {
 			y_debug_assert(has(index));
 			auto [i, o] = page_index(index);
 			return _values[_sparse[i][o]];
+		}
+
+		pointer try_get(index_type index) {
+			auto [i, o] = page_index(index);
+			if(i >= _sparse.size()) {
+				return nullptr;
+			}
+			usize pi = _sparse[i][o];
+			return pi < _values.size() ? &_values[pi] : nullptr;
+		}
+
+		const_pointer try_get(index_type index) const {
+			auto [i, o] = page_index(index);
+			if(i >= _sparse.size()) {
+				return nullptr;
+			}
+			usize pi = _sparse[i][o];
+			return pi < _values.size() ? &_values[pi] : nullptr;
 		}
 
 
@@ -299,8 +324,8 @@ class SparseVector final {
 		friend class detail::SparseVectorPairIterator;
 
 		static std::pair<usize, usize> page_index(index_type index) {
-			usize i = index / page_size;
-			usize o = index % page_size;
+			usize i = usize(index) / page_size;
+			usize o = usize(index) % page_size;
 			return {i, o};
 		}
 
@@ -325,7 +350,6 @@ namespace std {
 template<bool Const, typename Elem, typename Index>
 struct iterator_traits<y::core::detail::SparseVectorPairIterator<Const, Elem, Index>> {
 	using iterator_type = typename y::core::detail::SparseVectorPairIterator<Const, Elem, Index>;
-	using value_type = typename iterator_type::value_type;
 	using reference = typename iterator_type::reference;
 	using difference_type = typename iterator_type::difference_type;
 	using iterator_category = typename iterator_type::iterator_category;

@@ -22,8 +22,6 @@ SOFTWARE.
 #ifndef EDITOR_MATERIALEDITOR_H
 #define EDITOR_MATERIALEDITOR_H
 
-#include <editor/editor.h>
-
 #include <editor/ui/Widget.h>
 
 namespace editor {

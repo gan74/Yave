@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <yave/renderer/renderer.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
@@ -33,13 +33,13 @@ EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View"),
 		ContextLinked(cptr),
 		_ibl_data(std::make_shared<IBLData>(device())),
-		_scene_view(&context()->scene().scene(), &context()->world()),
+		_scene_view(&context()->world()),
 		_gizmo(context(), &_scene_view) {
 	;
 }
 
 EngineView::~EngineView() {
-	context()->scene().remove_scene_view(&_scene_view);
+	context()->remove_scene_view(&_scene_view);
 }
 
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
@@ -93,7 +93,7 @@ void EngineView::update() {
 	}
 
 	if(ImGui::IsWindowFocused()) {
-		context()->scene().set_scene_view(&_scene_view);
+		context()->set_scene_view(&_scene_view);
 	}
 
 	// process inputs
@@ -220,7 +220,7 @@ void EngineView::update_selection() {
 		return;
 	}
 
-	StaticMeshInstance* selected = nullptr;
+	/*StaticMeshInstance* selected = nullptr;
 	float score = std::numeric_limits<float>::max();
 	for(const auto& tr : context()->scene().scene().static_meshes()) {
 		auto [pos, rot, scale] = tr->transform().decompose();
@@ -234,8 +234,7 @@ void EngineView::update_selection() {
 			score = sc;
 		}
 	}
-
-	context()->selection().set_selected(selected);
+	context()->selection().set_selected(selected);*/
 }
 
 }

@@ -23,11 +23,11 @@ SOFTWARE.
 #include "MeshImporter.h"
 
 #include <editor/context/EditorContext.h>
-#include <y/io/Buffer.h>
+#include <y/io2/Buffer.h>
 
 #include <editor/import/transforms.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
@@ -130,9 +130,10 @@ void MeshImporter::import(import::SceneData scene) {
 			try {
 				core::String name = context()->asset_store().filesystem()->join(_import_path, a.name());
 				log_msg(fmt("Saving asset as \"%\"", name));
-				io::Buffer data;
-				serde::serialize(data, a.obj());
-				context()->asset_store().import(data, name).or_throw("import failed.");
+				io2::Buffer buffer;
+				WritableAssetArchive ar(buffer);
+				a.obj().serialize(ar).or_throw("import failed.");
+				context()->asset_store().import(buffer, name).or_throw("import failed.");
 			} catch(std::exception& e) {
 				log_msg(fmt("Unable save \"%\": %", a.name(), e.what()), Log::Error);
 			}

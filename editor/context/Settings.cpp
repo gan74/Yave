@@ -22,23 +22,31 @@ SOFTWARE.
 
 #include "Settings.h"
 
-#include <y/io/File.h>
+#include <y/io2/File.h>
 
 namespace editor {
 
 Settings::Settings() {
-	try {
-		deserialize(io::File::open("settings.dat").or_throw("Unable to open settings file."));
-	} catch(std::exception& e) {
-		log_msg(fmt("Unable to load settings: %", e.what()), Log::Error);
+	auto file = io2::File::open("settings.dat");
+	if(!file) {
+		log_msg("Unable to open settings file.", Log::Error);
+		return;
+	}
+	serde2::ReadableArchive ar(file.unwrap());
+	if(!deserialize(ar)) {
+		log_msg("Unable to read settings.", Log::Error);
 	}
 }
 
 Settings::~Settings() {
-	try {
-		serialize(io::File::create("settings.dat").or_throw("Unable to create settings file."));
-	} catch(std::exception& e) {
-		log_msg(fmt("Unable to save settings: %", e.what()), Log::Error);
+	auto file = io2::File::create("settings.dat");
+	if(!file) {
+		log_msg("Unable to open settings file.", Log::Error);
+		return;
+	}
+	serde2::WritableArchive ar(file.unwrap());
+	if(!serialize(ar)) {
+		log_msg("Unable to write settings.", Log::Error);
 	}
 }
 

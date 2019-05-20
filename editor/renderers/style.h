@@ -85,7 +85,7 @@ if(_style == Style::Corporate || _style == Style::Corporate3D) {
 	colors[ImGuiCol_Text]                   =  ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
 	colors[ImGuiCol_TextDisabled]           =  ImVec4(0.40f, 0.40f, 0.40f, 1.00f);
 	//colors[ImGuiCol_ChildBg]                = dImVec4(0.25f, 0.25f, 0.25f, 1.00f);
-	colors[ImGuiCol_ChildBg]                =  ImVec4(0.00f, 0.00f, 0.00f, 0.20f);
+	colors[ImGuiCol_ChildBg]                =  ImVec4(0.00f, 0.00f, 0.00f, 0.15f);
 	colors[ImGuiCol_WindowBg]               = dImVec4(0.25f, 0.25f, 0.25f, 1.00f);
 	colors[ImGuiCol_PopupBg]                = dImVec4(0.25f, 0.25f, 0.25f, 1.00f);
 	colors[ImGuiCol_Border]                 = dImVec4(0.12f, 0.12f, 0.12f, 0.71f);

@@ -23,9 +23,11 @@ SOFTWARE.
 #include "AssetRenamer.h"
 #include "ResourceBrowser.h"
 
+#include <yave/utils/FileSystemModel.h>
+
 #include <editor/context/EditorContext.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
@@ -52,7 +54,7 @@ void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	if(ImGui::Button("Ok")) {
 		auto path = filesystem()->parent_path(_full_name);
-		auto full_new_name = path.map([=](auto&& path) { return filesystem()->join(path, _new_name.data()); });
+		auto full_new_name = path.map([=](auto&& p) { return filesystem()->join(p, _new_name.data()); });
 		if(full_new_name && context()->asset_store().rename(_full_name, full_new_name.unwrap())) {
 			context()->ui().refresh_all();
 			close();

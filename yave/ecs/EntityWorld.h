@@ -26,6 +26,7 @@ SOFTWARE.
 #include "EntityIdPool.h"
 #include "View.h"
 
+#include <yave/assets/AssetArchive.h>
 #include <y/core/Result.h>
 
 #include <unordered_map>
@@ -35,18 +36,18 @@ namespace ecs {
 
 class EntityWorld : NonCopyable {
 
-	using index_type = typename EntityId::index_type;
-
 	public:
 		template<typename... Args>
-		using EntityView = View<false, index_type, Args...>;
+		using EntityView = View<false, Args...>;
 		template<typename... Args>
-		using ConstEntityView = View<true, index_type, Args...>;
+		using ConstEntityView = View<true, Args...>;
 
 		EntityWorld();
 
 		EntityId create_entity();
 		void remove_entity(EntityId id);
+
+		bool exists(EntityId id) const;
 
 		const EntityIdPool& entities() const;
 
@@ -55,10 +56,17 @@ class EntityWorld : NonCopyable {
 
 
 
-		void serialize(io::WriterRef writer) const;
-		void deserialize(io::ReaderRef reader);
+		serde2::Result serialize(WritableAssetArchive& writer) const;
+		serde2::Result deserialize(ReadableAssetArchive& reader);
 
 
+
+		core::Result<void> create_component(EntityId id, ComponentTypeIndex type) {
+			if(ComponentContainerBase* cont = container(type)) {
+				return cont->create_empty(id);
+			}
+			return core::Err();
+		}
 
 		template<typename T, typename... Args>
 		T& create_component(EntityId id, Args&&... args) {
@@ -72,13 +80,33 @@ class EntityWorld : NonCopyable {
 
 
 		template<typename T>
-		T& component(EntityId id) {
+		T* component(EntityId id) {
+			return container<T>()->template component_ptr<T>(id);
+		}
+
+		template<typename T>
+		const T* component(EntityId id) const {
+			return container<T>()->template component_ptr<T>(id);
+		}
+
+		/*template<typename T>
+		T& operator[](EntityId id) {
 			return container<T>()->template component<T>(id);
 		}
 
 		template<typename T>
-		const T& component(EntityId id) const {
+		const T& operator[](EntityId id) const {
 			return container<T>()->template component<T>(id);
+		}*/
+
+
+		template<typename T>
+		bool has(EntityId id) const {
+			if(!exists(id) ) {
+				return false;
+			}
+			const ComponentContainerBase* cont = container<T>();
+			return cont ? cont->has<T>(id) : false;
 		}
 
 
@@ -109,13 +137,13 @@ class EntityWorld : NonCopyable {
 
 
 		template<typename T>
-		core::Span<index_type> indexes() const {
+		core::Span<EntityIndex> indexes() const {
 			return indexes(index_for_type<T>());
 		}
 
-		core::Span<index_type> indexes(ComponentTypeIndex type) const {
+		core::Span<EntityIndex> indexes(ComponentTypeIndex type) const {
 			const ComponentContainerBase* cont = container(type);
-			return cont ? cont->indexes() : core::Span<index_type>();
+			return cont ? cont->indexes() : core::Span<EntityIndex>();
 		}
 
 
@@ -144,16 +172,9 @@ class EntityWorld : NonCopyable {
 			return container(index_for_type<T>());
 		}
 
-		const ComponentContainerBase* container(ComponentTypeIndex type) const {
-			if(auto it = _component_containers.find(type); it != _component_containers.end()) {
-				return it->second.get();
-			}
-			return nullptr;
-		}
-
 
 		template<typename T, typename... Args>
-		std::tuple<core::SparseVector<T, index_type>&, core::SparseVector<Args, index_type>&...> typed_component_vectors() const {
+		std::tuple<ComponentVector<T>&, ComponentVector<Args>&...> typed_component_vectors() const {
 			if constexpr(sizeof...(Args)) {
 				return std::tuple_cat(typed_component_vectors<T>(),
 									  typed_component_vectors<Args...>());
@@ -167,6 +188,8 @@ class EntityWorld : NonCopyable {
 		}
 
 
+		const ComponentContainerBase* container(ComponentTypeIndex type) const;
+		ComponentContainerBase* container(ComponentTypeIndex type);
 
 		EntityIdPool _entities;
 		core::Vector<EntityId> _deletions;

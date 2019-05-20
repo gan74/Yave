@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_ASSETS_ASSET_H
 
 #include "AssetTraits.h"
-#include <y/serde/serde.h>
+#include <yave/utils/serde.h>
 
 namespace yave {
 
@@ -60,7 +60,7 @@ struct AssetId {
 			return _id != other._id;
 		}
 
-		y_serde(_id)
+		y_serde2(_id)
 
 	private:
 		friend class AssetIdFactory;
@@ -84,8 +84,6 @@ static_assert(std::is_trivially_copyable_v<AssetId>);
 
 class AssetIdFactory {
 	public:
-		y_serde(_next_id)
-
 		AssetId create_id() {
 			return AssetId(_next_id++);
 		}

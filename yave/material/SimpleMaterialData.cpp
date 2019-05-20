@@ -22,29 +22,34 @@ SOFTWARE.
 
 #include "SimpleMaterialData.h"
 
-#include <y/io/File.h>
 
 namespace yave {
-
 
 SimpleMaterialData::SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures) :
 		_textures(std::move(textures)) {
 }
 
-core::Result<SimpleMaterialData> SimpleMaterialData::load(io::ReaderRef reader, AssetLoader& loader) noexcept {
-	try {
-		SimpleMaterialHeader().deserialize(reader);
-		SimpleMaterialData data;
-		for(auto& tex : data._textures) {
-			auto id = serde::deserialized<AssetId>(reader);
-			if(id != AssetId::invalid_id()) {
-				tex = std::move(loader.load<Texture>(id).or_throw("Unable to load texture."));
-			}
-		}
-		return core::Ok(data);
-	} catch(...) {
+serde2::Result SimpleMaterialData::deserialize(ReadableAssetArchive& arc) noexcept {
+	SimpleMaterialHeader header;
+	if(!arc(header)) {
+		return core::Err();
 	}
-	return core::Err();
+	for(auto& tex : _textures) {
+		AssetId id;
+		if(!arc(id)) {
+			return core::Err();
+		}
+		if(id != AssetId::invalid_id()) {
+			auto t = arc.loader().load<Texture>(id);
+			if(!t) {
+				return core::Err();
+			}
+			tex = std::move(t.unwrap());
+		} else {
+			tex = AssetPtr<Texture>();
+		}
+	}
+	return core::Ok();
 }
 
 

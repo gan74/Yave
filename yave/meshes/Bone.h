@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_MESHES_BONE_H
 
 #include <yave/yave.h>
-#include <y/serde/serde.h>
+#include <yave/utils/serde.h>
 
 namespace yave {
 
@@ -47,7 +47,8 @@ struct BoneTransform {
 static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should be trivially copyable");
 
 struct Bone {
-	y_serde(name, parent, local_transform)
+
+	y_serde2(name, parent, local_transform)
 
 	core::String name;
 	u32 parent;

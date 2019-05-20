@@ -30,10 +30,10 @@ SOFTWARE.
 
 #include <yave/assets/AssetLoader.h>
 
-#include <y/io/Ref.h>
-
 namespace yave {
 
+// Not used right now
+// At some point this should be filled with data from EntityWorld for rendering
 class Scene : NonCopyable {
 
 	public:
@@ -45,10 +45,6 @@ class Scene : NonCopyable {
 		Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables = {}, core::Vector<Ptr<Light>>&& lights = {});
 
 		void flush_reload();
-
-		static core::Result<Scene> load(io::ReaderRef reader, AssetLoader& loader);
-		void serialize(io::WriterRef writer) const;
-
 
 		const auto& static_meshes() const {
 			return _statics;

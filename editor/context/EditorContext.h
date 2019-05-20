@@ -22,24 +22,13 @@ SOFTWARE.
 #ifndef EDITOR_CONTEXT_EDITORCONTEXT_H
 #define EDITOR_CONTEXT_EDITORCONTEXT_H
 
-#include <editor/editor.h>
-
-#include <y/core/Functor.h>
-#include <yave/device/DeviceLinked.h>
-#include <yave/utils/FileSystemModel.h>
-
-#include <yave/framegraph/FrameGraphResourcePool.h>
-
 #include <yave/ecs/EntityWorld.h>
 
 #include "Settings.h"
-#include "SceneData.h"
 #include "Selection.h"
 #include "Ui.h"
 #include "ThumbmailCache.h"
 #include "PickingManager.h"
-
-#include <mutex>
 
 namespace editor {
 
@@ -54,50 +43,31 @@ class EditorContext : NonMovable, public DeviceLinked {
 		void defer(core::Function<void()> func);
 		void flush_deferred();
 
-		const FileSystemModel* filesystem() const {
-			return _filesystem.get() ? _filesystem.get() : FileSystemModel::local_filesystem();
-		}
+		void save_world() const;
+		void load_world();
+		void new_world();
 
-		const std::shared_ptr<FrameGraphResourcePool>& resource_pool() const {
-			return _resource_pool;
-		}
 
-		Settings& settings() {
-			return _setting;
-		}
+		void set_scene_view(SceneView* scene);
+		void remove_scene_view(SceneView* scene);
 
-		SceneData& scene() {
-			return _scene;
-		}
+		SceneView& scene_view();
+		SceneView& default_scene_view();
 
-		Selection& selection() {
-			return _selection;
-		}
+		ecs::EntityWorld& world();
 
-		AssetLoader& loader() {
-			return _loader;
-		}
 
-		Ui& ui() {
-			return _ui;
-		}
+		const FileSystemModel* filesystem() const;
+		const std::shared_ptr<FrameGraphResourcePool>& resource_pool() const;
 
-		ThumbmailCache& thumbmail_cache() {
-			return _thumb_cache;
-		}
 
-		PickingManager& picking_manager() {
-			return _picking_manager;
-		}
-
-		AssetStore& asset_store() {
-			return *_asset_store;
-		}
-
-		ecs::EntityWorld& world() {
-			return _world;
-		}
-
+		Settings& settings();
+		Selection& selection();
+		AssetLoader& loader();
+		Ui& ui();
+		ThumbmailCache& thumbmail_cache();
+		PickingManager& picking_manager();
+		AssetStore& asset_store();
 
 	private:
 		std::unique_ptr<FileSystemModel> _filesystem;
@@ -111,8 +81,10 @@ class EditorContext : NonMovable, public DeviceLinked {
 		std::shared_ptr<AssetStore> _asset_store;
 		AssetLoader _loader;
 
+		SceneView _default_scene_view;
+		SceneView* _scene_view = nullptr;
+
 		Settings _setting;
-		SceneData _scene;
 		Selection _selection;
 		Ui _ui;
 		ThumbmailCache _thumb_cache;

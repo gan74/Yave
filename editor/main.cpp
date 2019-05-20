@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "MainWindow.h"
-#include <y/io/File.h>
 #include <csignal>
 
 using namespace editor;

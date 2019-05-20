@@ -49,18 +49,7 @@ class Material final : NonCopyable {
 		SimpleMaterialData _data;
 };
 
-template<>
-struct AssetTraits<Material> {
-	static constexpr bool is_asset = true;
-
-	static constexpr AssetType type = AssetType::Material;
-
-	using Result = core::Result<Material>;
-
-	static Result load_asset(io::ReaderRef reader, AssetLoader& loader) noexcept {
-		return SimpleMaterialData::load(reader, loader).map([&](auto&& data) { return Material(loader.device(), std::move(data)); });
-	}
-};
+YAVE_DECLARE_ASSET_TRAITS(Material, SimpleMaterialData, AssetType::Material);
 
 }
 

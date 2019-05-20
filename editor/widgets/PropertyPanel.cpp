@@ -23,21 +23,18 @@ SOFTWARE.
 #include "PropertyPanel.h"
 
 #include <editor/context/EditorContext.h>
-#include <editor/widgets/AssetSelector.h>
+#include <editor/components/ComponentTraits.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
 PropertyPanel::PropertyPanel(ContextPtr cptr) :
 		Widget(ICON_FA_WRENCH " Properties"),
 		ContextLinked(cptr) {
+
 	set_closable(false);
 }
-
-/*bool PropertyPanel::is_visible() const {
-	return UiElement::is_visible() && context()->selection().selected();
-}*/
 
 void PropertyPanel::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	Widget::paint(recorder, token);
@@ -56,140 +53,66 @@ void PropertyPanel::paint(CmdBufferRecorder& recorder, const FrameToken& token) 
 }
 
 void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	if(!context()->selection().transformable()) {
+	if(!context()->selection().has_selected_entity()) {
 		return;
 	}
 
-	Transformable* sel = context()->selection().transformable();
-	if(sel && ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-		auto [pos, rot, scale] = sel->transform().decompose();
+	ecs::EntityWorld& world = context()->world();
+	ecs::EntityId id = context()->selection().selected_entity();
 
-		// position
-		{
-			ImGui::BeginGroup();
-			ImGui::InputFloat3("Position", pos.data(), "%.2f");
-			ImGui::EndGroup();
-		}
-
-		// rotation
-		{
-			auto dedouble_quat = [](math::Quaternion<> q) {
-					return q.x() < 0.0f ? -q.as_vec() : q.as_vec();
-				};
-			auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
-					auto qa = math::Quaternion<>::from_euler(a * math::to_rad(1.0f));
-					auto qb = math::Quaternion<>::from_euler(b * math::to_rad(1.0f));
-					return (dedouble_quat(qa) - dedouble_quat(qb)).length2() < 0.0001f;
-				};
-
-			math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
-			if(is_same_angle(euler, _euler)) {
-				euler = _euler;
-			}
-
-			float speed = 1.0f;
-			ImGui::BeginGroup();
-			ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
-			ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
-			ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
-			ImGui::EndGroup();
-
-			if(!is_same_angle(euler, _euler)) {
-				_euler = euler;
-				rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
-			}
-		}
-
-		sel->transform() = math::Transform<>(pos, rot, scale);
-	}
-
-	if(Renderable* renderable = context()->selection().renderable()) {
-		if(StaticMeshInstance* instance = dynamic_cast<StaticMeshInstance*>(renderable)) {
-			static_mesh_panel(instance);
+	for(const auto& p : world.component_containers()) {
+		if(p.second->has(id)) {
+			component_widget(p.first, context(), id);
 		}
 	}
-
-	if(Light* light = context()->selection().light()) {
-		light_panel(light);
-	}
-
 
 	//ImGui::Text("Position: %f, %f, %f", sel->position().x(), sel->position().y(), sel->position().z());*/
-
 }
 
-void PropertyPanel::static_mesh_panel(StaticMeshInstance* instance) {
-	Y_TODO(use ECS to ensure that we dont modify a deleted object)
-	if(!ImGui::CollapsingHeader("Static mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+void PropertyPanel::transformable_panel(Transformable& transformable) {
+	if(!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
 		return;
 	}
 
-	auto clean_name = [=](auto&& n) { return context()->asset_store().filesystem()->filename(n); };
+	auto [pos, rot, scale] = transformable.transform().decompose();
 
-	// material
+	// position
 	{
-		core::String name = context()->asset_store().name(instance->material().id()).map(clean_name).unwrap_or("No material");
-		if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
-			context()->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
-				[=, ctx = context()](AssetId id) {
-					if(auto material = ctx->loader().load<Material>(id)) {
-						instance->material() = material.unwrap();
-					}
-					return true;
-				});
-		}
-		ImGui::SameLine();
-		ImGui::InputText("Material", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
-	}
-
-	// mesh
-	{
-		core::String name = context()->asset_store().name(instance->mesh().id()).map(clean_name).unwrap_or("No mesh");
-		if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
-			context()->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
-				[=, ctx = context()](AssetId id) {
-					if(auto mesh = ctx->loader().load<StaticMesh>(id)) {
-						instance->mesh() = mesh.unwrap();
-					}
-					return true;
-				});
-		}
-		ImGui::SameLine();
-		ImGui::InputText("Mesh", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
-	}
-}
-
-void PropertyPanel::light_panel(Light* light) {
-	int flags = ImGuiColorEditFlags_NoSidePreview |
-				// ImGuiColorEditFlags_NoSmallPreview |
-				ImGuiColorEditFlags_NoAlpha |
-				ImGuiColorEditFlags_Float |
-				ImGuiColorEditFlags_InputRGB;
-
-	if(ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
-		math::Vec4 color(light->color(), 1.0f);
-		if(ImGui::ColorButton("Color", color, flags/*, ImVec2(40, 40)*/)) {
-			ImGui::OpenPopup("Color");
-		}
-		ImGui::SameLine();
-		ImGui::Text("Light color");
-	}
-
-	if(ImGui::BeginPopup("Color")) {
-		ImGui::ColorPicker3("##lightpicker", light->color().begin(), flags);
-
-		ImGui::SameLine();
 		ImGui::BeginGroup();
-		ImGui::Text("temperature slider should be here");
+		ImGui::InputFloat3("Position", pos.data(), "%.2f");
+		ImGui::EndGroup();
+	}
+
+	// rotation
+	{
+		auto dedouble_quat = [](math::Quaternion<> q) {
+				return q.x() < 0.0f ? -q.as_vec() : q.as_vec();
+			};
+		auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
+				auto qa = math::Quaternion<>::from_euler(a * math::to_rad(1.0f));
+				auto qb = math::Quaternion<>::from_euler(b * math::to_rad(1.0f));
+				return (dedouble_quat(qa) - dedouble_quat(qb)).length2() < 0.0001f;
+			};
+
+		math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
+		if(is_same_angle(euler, _euler)) {
+			euler = _euler;
+		}
+
+		float speed = 1.0f;
+		ImGui::BeginGroup();
+		ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
+		ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
+		ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
 		ImGui::EndGroup();
 
-		ImGui::EndPopup();
+		if(!is_same_angle(euler, _euler)) {
+			_euler = euler;
+			rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
+		}
 	}
 
-	/*ImGui::InputFloat("Intensity", &light->intensity(), 1.0f, 10.0f);
-	ImGui::InputFloat("Radius", &light->radius(), 1.0f, 10.0f);*/
-	ImGui::DragFloat("Intensity", &light->intensity());
-	ImGui::DragFloat("Radius", &light->radius());
+	transformable.transform() = math::Transform<>(pos, rot, scale);
 }
 
 }

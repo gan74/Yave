@@ -24,8 +24,8 @@ SOFTWARE.
 
 #include <editor/editor.h>
 #include <yave/ecs/ecs.h>
-#include <y/core/String.h>
-#include <y/serde/serde.h>
+
+#include <yave/utils/serde.h>
 
 namespace editor {
 
@@ -35,13 +35,12 @@ class EditorComponent {
 		EditorComponent(std::string_view name);
 
 		const core::String& name() const;
-		bool is_visible() const;
+		void set_name(core::String name);
 
-		y_serde(_name, _visible)
+		y_serde2(_name)
 
 	private:
-		core::String _name;
-		bool _visible = true;
+		core::String _name = "Unnamed entity";
 };
 
 }

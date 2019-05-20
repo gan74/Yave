@@ -97,7 +97,7 @@ void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, Descript
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size() + 1);
-	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& ds) { return ds.get().vk_descriptor_set(); });
+	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& d) { return d.get().vk_descriptor_set(); });
 
 	if(!ds.is_empty()) {
 		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});
@@ -229,7 +229,7 @@ void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3
 	check_no_renderpass();
 
 	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
-	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& ds) { return ds.get().vk_descriptor_set(); });
+	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& d) { return d.get().vk_descriptor_set(); });
 
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
 

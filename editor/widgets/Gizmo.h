@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <editor/ui/Frame.h>
 
-#include <yave/scene/SceneView.h>
-
 namespace editor {
 
 class Gizmo final : public Frame, public ContextLinked {

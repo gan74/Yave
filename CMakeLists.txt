@@ -56,6 +56,9 @@ file(GLOB_RECURSE YAVE_FILES
 file(GLOB_RECURSE EDITOR_FILES
 		"editor/*.cpp"
 		"editor/*.h"
+	)
+
+file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
 		"external/imgui/*.cpp"
 		"external/imgui/*.h"
 	)
@@ -73,6 +76,7 @@ file(GLOB_RECURSE SHADER_FILES
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
 	enable_unity_build(yave YAVE_FILES)
+	enable_unity_build(editor EDITOR_FILES)
 endif()
 
 
@@ -88,7 +92,7 @@ if(YAVE_BUILD_YAVE)
 endif()
 
 if(YAVE_BUILD_EDITOR)
-	add_executable(editor ${EDITOR_FILES})
+	add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
 
 	target_link_libraries(editor yave)
 	target_link_libraries(editor y)
@@ -101,7 +105,6 @@ if(YAVE_BUILD_EDITOR)
 		add_definitions(-DEDITOR_NO_ASSIMP)
 	endif()
 endif()
-
 
 
 

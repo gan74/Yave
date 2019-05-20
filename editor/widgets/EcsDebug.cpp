@@ -26,10 +26,10 @@ SOFTWARE.
 #include <editor/components/EditorComponent.h>
 #include <yave/components/RenderableComponent.h>
 
-#include <y/io/File.h>
+#include <y/io2/File.h>
 #include <y/math/random.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 #include <map>
 
@@ -39,7 +39,8 @@ EcsDebug::EcsDebug(ContextPtr cptr) : Widget("ECS debug", ImGuiWindowFlags_Alway
 }
 
 void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	struct Foo {}; struct Bar {}; struct Quux {}; struct Cmp {}; struct Bli {};
+	struct Foo { int i = 0; }; struct Bar { int i = 0; };
+	struct Quux { int i = 0; }; struct Cmp { int i = 0; }; struct Bli { int i = 0; };
 	ecs::EntityWorld& world = context()->world();
 
 
@@ -76,21 +77,28 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	if(ImGui::Button(ICON_FA_SAVE " Save")) {
-		try {
-			world.serialize(io::File::create("world.yw").or_throw("Unable to create world file"));
-		} catch(std::exception& e) {
-			log_msg(fmt("Unable to save world: %", e.what()));
+		if(auto file = io2::File::create("world.yw")) {
+			WritableAssetArchive ar(file.unwrap());
+			if(!world.serialize(ar)) {
+				log_msg("Unable to serialize world");
+			}
+		} else {
+			log_msg("Unable to open file");
 		}
 	}
 
 	ImGui::SameLine();
 	if(ImGui::Button(ICON_FA_FOLDER " Load")) {
-		try {
+
+		if(auto file = io2::File::open("world.yw")) {
 			ecs::EntityWorld w;
-			w.deserialize(io::File::open("world.yw").or_throw("Unable to open world file"));
+			ReadableAssetArchive ar(file.unwrap(), context()->loader());
+			if(!w.deserialize(ar)) {
+				log_msg("Unable to load world.");
+			}
 			world = std::move(w);
-		} catch(std::exception& e) {
-			log_msg(fmt("Unable to load world: %", e.what()));
+		} else {
+			log_msg("Unable to open file.");
 		}
 	}
 
@@ -124,18 +132,22 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	ImGui::Spacing();
 	if(ImGui::TreeNode("Components")) {
-		std::map<typename ecs::EntityId::index_type, core::Vector<core::String>> entities;
+		std::map<typename ecs::EntityIndex, core::Vector<core::String>> entities;
 		for(auto& type : world.component_containers()) {
 			core::String name = clean_name(world.type_name(type.first));
 			for(auto ids : world.indexes(type.first)) {
 				entities[ids] << name;
 			}
 		}
-		for(const auto& ent : entities) {
-			EditorComponent& ec = world.component<EditorComponent>(ecs::EntityId(ent.first));
-			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %###%", ec.name(), ent.first).data())) {
+		for(ecs::EntityId id : world.entities()) {
+			EditorComponent* comp = world.component<EditorComponent>(id);
+			if(!comp) {
+				continue;
+			}
+
+			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %###%", comp->name(), id.index()).data())) {
 				usize index = 0;
-				for(const core::String& n : ent.second) {
+				for(const core::String& n : entities[id.index()]) {
 					ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %###%", n, index++).data());
 				}
 				ImGui::TreePop();

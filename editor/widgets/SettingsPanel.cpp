@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/renderers/ImGuiRenderer.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 

@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/swapchain/FrameToken.h>
 
 namespace editor {

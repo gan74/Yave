@@ -19,46 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_PROPERTIES_PROPERTIES_H
+#define EDITOR_PROPERTIES_PROPERTIES_H
 
-#include "Buffer.h"
+#include <editor/editor.h>
+#include <yave/ecs/EntityId.h>
 
-namespace y {
-namespace io {
+#include <editor/components/EditorComponent.h>
+#include <yave/components/LightComponent.h>
+#include <yave/components/RenderableComponent.h>
 
-Buffer::Buffer(usize size) {
-	_buffer.set_min_capacity(size);
-}
-
-bool Buffer::at_end() const {
-	return _read_cursor >= _buffer.size();
-}
-
-usize Buffer::read(void* data, usize bytes) {
-	if(at_end()) {
-		return 0;
-	}
-	usize max = std::min(bytes, remaining());
-	std::copy_n(&_buffer[_read_cursor], max, reinterpret_cast<u8*>(data));
-
-	_read_cursor += max;
-	return max;
-}
-
-void Buffer::read_all(core::Vector<u8>& data) {
-	data.assign(_buffer.begin(), _buffer.end());
-}
-
-usize Buffer::remaining() const {
-	return at_end() ? 0 : _buffer.size() - _read_cursor;
-}
-
-void Buffer::write(const void* data, usize bytes) {
-	const u8* dat = reinterpret_cast<const u8*>(data);
-	_buffer.push_back(dat, dat + bytes);
-}
-
-void Buffer::flush() {
-}
-
+namespace yave {
+namespace ecs {
+class EntityWorld;
 }
 }
+
+namespace editor {
+
+struct ComponentTraits {
+	using ui_function_t = void (*)(ContextPtr, ecs::EntityId);
+
+	std::type_index type = typeid(void);
+	std::string_view name;
+	ui_function_t widget = nullptr;
+};
+
+ComponentTraits component_traits(std::type_index type);
+core::Vector<ComponentTraits> all_component_traits();
+
+void component_widget(std::type_index type, ContextPtr ctx, ecs::EntityId id);
+
+template<typename T>
+ComponentTraits component_traits() {
+	return component_traits(typeid(T));
+}
+
+
+}
+
+#endif // EDITOR_PROPERTIES_PROPERTIES_H

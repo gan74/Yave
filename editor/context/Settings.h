@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/editor.h>
 #include <yave/window/EventHandler.h>
-#include <y/serde/serde.h>
+#include <yave/utils/serde.h>
 
 namespace editor {
 
@@ -50,7 +50,7 @@ class Settings {
 		CameraSettings& camera();
 		UiSettings& ui();
 
-		y_serde(_camera, _ui)
+		y_serde2(_camera, _ui)
 
 	private:
 		CameraSettings _camera;

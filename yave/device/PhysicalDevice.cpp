@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "PhysicalDevice.h"
 
-
 namespace yave {
 
 static bool is_device_ok(vk::PhysicalDevice device) {
@@ -37,7 +36,6 @@ static vk::PhysicalDevice choose_device(vk::Instance instance) {
 	}
 	return y_fatal("Unable to find a compatible device.");
 }
-
 
 
 

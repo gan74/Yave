@@ -26,8 +26,6 @@ SOFTWARE.
 
 #include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
-#include <yave/animations/AnimationChannel.h>
-
 #include <yave/graphics/images/ImageData.h>
 
 #include <y/core/Chrono.h>

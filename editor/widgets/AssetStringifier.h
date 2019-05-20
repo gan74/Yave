@@ -30,6 +30,8 @@ class AssetStringifier : public Widget, public ContextLinked {
 	public:
 		AssetStringifier(ContextPtr cptr);
 
+		void clear();
+
 	private:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
 

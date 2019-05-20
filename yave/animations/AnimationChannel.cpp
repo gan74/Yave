@@ -31,7 +31,7 @@ AnimationChannel::AnimationChannel(const core::String& name, core::Vector<BoneKe
 }
 
 math::Transform<> AnimationChannel::bone_transform(float time) const {
-	auto key = std::find_if(_keys.begin(), _keys.end(), [=](const auto& key) { return key.time > time; });
+	auto key = std::find_if(_keys.begin(), _keys.end(), [=](const auto& k) { return k.time > time; });
 
 	auto next = key == _keys.end() ? _keys.begin() : key;
 	key = key == _keys.begin() ? key : std::prev(key);

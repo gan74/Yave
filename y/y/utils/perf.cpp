@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "perf.h"
 #include <y/core/Chrono.h>
-#include <y/io/File.h>
+#include <y/io2/File.h>
 
 #include <thread>
 #include <mutex>
@@ -41,7 +41,7 @@ static constexpr usize print_buffer_len = 512;
 
 static std::mutex mutex;
 static bool initialized = false;
-static std::shared_ptr<io::File> output = std::make_shared<io::File>();
+static std::shared_ptr<io2::File> output = std::make_shared<io2::File>();
 #endif
 
 void set_output_file(const char* out) {
@@ -49,7 +49,7 @@ void set_output_file(const char* out) {
 #ifdef Y_PERF_LOG_ENABLED
 	std::unique_lock lock(mutex);
 	initialized = false;
-	*output = std::move(io::File::create(out).expected("Unable to open output file."));
+	*output = std::move(io2::File::create(out).expected("Unable to open output file."));
 #endif
 }
 
@@ -68,7 +68,7 @@ static u32 thread_id() {
 Y_TODO(TLS destructors not called on windows)
 
 static thread_local struct ThreadData : NonMovable {
-	std::shared_ptr<io::File> thread_output;
+	std::shared_ptr<io2::File> thread_output;
 	std::unique_ptr<char[]> buffer;
 	usize buffer_offset = 0;
 	u32 tid = 0;
@@ -89,7 +89,7 @@ static thread_local struct ThreadData : NonMovable {
 		write_buffer();
 		std::unique_lock lock(mutex);
 		if(thread_output->is_open()) {
-			thread_output->flush();
+			thread_output->flush().ignore();
 		}
 	}
 
@@ -109,9 +109,9 @@ static thread_local struct ThreadData : NonMovable {
 				if(!initialized) {
 					initialized = true;
 					const char beg[] = R"({"traceEvents":[)";
-					thread_output->write(beg, sizeof(beg) - 1);
+					thread_output->write(reinterpret_cast<const u8*>(beg), sizeof(beg) - 1).ignore();
 				}
-				thread_output->write(buffer.get(), buffer_offset);
+				thread_output->write(reinterpret_cast<const u8*>(buffer.get()), buffer_offset).ignore();
 				buffer_offset = 0;
 				event("perf", "done writing buffer");
 			}

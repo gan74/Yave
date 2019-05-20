@@ -32,7 +32,7 @@ bool ImageFormat::operator==(const ImageFormat& other) const {
 }
 
 bool ImageFormat::is_valid() const {
-	return _format != vk::Format::eUndefined;
+	return _format != vk::Format::eUndefined && _format < decltype(_format)(VK_FORMAT_END_RANGE);
 }
 
 vk::Format ImageFormat::vk_format() const {

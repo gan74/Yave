@@ -36,13 +36,12 @@ SOFTWARE.
 #include <editor/widgets/ResourceBrowser.h>
 #include <editor/widgets/MaterialEditor.h>
 
-#include <editor/widgets/SceneDebug.h>
 #include <editor/widgets/AssetStringifier.h>
 #include <editor/widgets/EcsDebug.h>
 
 #include <editor/EngineView.h>
 
-#include <imgui/imgui_yave.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
@@ -187,25 +186,22 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 			if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
 
 				if(ImGui::MenuItem(ICON_FA_FILE " New")) {
-					context()->scene().set(Scene());
+					context()->new_world();
 				}
 
 				ImGui::Separator();
 
 				if(ImGui::MenuItem(ICON_FA_SAVE " Save")) {
-					FileBrowser* browser = context()->ui().show<FileBrowser>();
+					context()->defer([ctx = context()] { ctx->save_world(); });
+					/*FileBrowser* browser = context()->ui().show<FileBrowser>();
 					browser->set_extension_filter("*.ys");
 					browser->set_selected_callback(
 							[ctx = context()](const auto& filename) { ctx->scene().save(filename); return true; }
-						);
+						);*/
 				}
 
 				if(ImGui::MenuItem(ICON_FA_FOLDER " Load")) {
-					FileBrowser* browser = context()->ui().show<FileBrowser>();
-					browser->set_extension_filter("*.ys");
-					browser->set_selected_callback(
-							[ctx = context()](const auto& filename) { ctx->scene().load(filename); return true; }
-						);
+					context()->load_world();
 				}
 
 				ImGui::EndMenu();
@@ -221,7 +217,6 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 
 				if(ImGui::BeginMenu("Debug")) {
 					if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
-					if(ImGui::MenuItem("Scene debug")) context()->ui().add<SceneDebug>();
 					if(ImGui::MenuItem("ECS debug")) context()->ui().add<EcsDebug>();
 
 					ImGui::Separator();

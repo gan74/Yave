@@ -26,7 +26,9 @@ SOFTWARE.
 #include <yave/material/Material.h>
 #include <editor/context/EditorContext.h>
 
-#include <imgui/imgui_yave.h>
+#include <y/io2/Buffer.h>
+
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
@@ -40,19 +42,19 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 		SimpleMaterialData data = material->data();
 		data.set_texture(SimpleMaterialData::Textures(index), std::move(tex.unwrap()));
 
-		try {
-			io::Buffer buffer;
-			data.serialize(buffer);
+		io2::Buffer buffer;
+		WritableAssetArchive ar(buffer);
+		if(data.serialize(ar)) {
 			ctx->asset_store().write(material.id(), buffer).or_throw("");
 			ctx->loader().set(material.id(), Material(ctx->device(), std::move(data))).or_throw("");
 
 			ctx->flush_reload();
-		} catch(...) {
+		} else {
 			log_msg("Unable to save material.", Log::Error);
 		}
-		return;
+	} else {
+		log_msg("Unable to load texture.", Log::Error);
 	}
-	log_msg("Unable to load texture.", Log::Error);
 }
 
 void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {

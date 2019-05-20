@@ -23,9 +23,7 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/io2/Buffer.h>
 #include <y/math/math.h>
-#include <y/serde2/archives.h>
-
-#include <y/io/Ref.h>
+#include <y/serde2/serde.h>
 
 #include <y/test/test.h>
 
@@ -34,14 +32,22 @@ using namespace y;
 using namespace y::core;
 using namespace y::serde2;
 
-struct DummyWriter {
+struct Func {
+	y_serialize2(v, (v.size() ? u32(7) : u32(9)))
+	y_deserialize2(v, func([this](u32 x) { s = x + 1; }))
+
+	core::Vector<int> v;
+	u32 s = 0;
+};
+
+struct DummyWriter : public io2::Writer {
 	DummyWriter() = default;
 
-	io2::WriteResult write(const u8*, usize) {
+	io2::WriteResult write(const u8*, usize) override {
 		return core::Ok();
 	}
 
-	io2::FlushResult flush() {
+	io2::FlushResult flush() override {
 		return core::Ok();
 	}
 };
@@ -108,13 +114,11 @@ y_test_func("serde trivial") {
 	Trivial tri{7, 3.1416, {0.0f, 1.0f, 2.7f}};
 
 	{
-		io2::Writer writer(buffer);
-		WritableArchive ar(writer);
+		WritableArchive ar(buffer);
 		ar(tri).unwrap();
 	}
 	{
-		io2::Reader reader(buffer);
-		serde2::ReadableArchive ar(reader);
+		serde2::ReadableArchive ar(buffer);
 		Trivial t;
 		ar(t).unwrap();
 		y_test_assert(t == tri);
@@ -127,13 +131,11 @@ y_test_func("serde easy") {
 	Easy es{tri, {"some long long long, very long, even longer string (probably to bypass SSO)", 99999}};
 
 	{
-		io2::Writer writer(buffer);
-		WritableArchive ar(writer);
+		WritableArchive ar(buffer);
 		ar(es).unwrap();
 	}
 	{
-		io2::Reader reader(buffer);
-		serde2::ReadableArchive ar(reader);
+		serde2::ReadableArchive ar(buffer);
 		Easy e;
 		ar(e).unwrap();
 		y_test_assert(e == es);
@@ -152,13 +154,11 @@ y_test_func("serde complex") {
 	Complex comp{{e0, e1, e2}, {1, 2, 3, 4, 5, 6, 7, 999}, -798, "some other string"};
 
 	{
-		io2::Writer writer(buffer);
-		WritableArchive ar(writer);
+		WritableArchive ar(buffer);
 		ar(e2, comp, t1).unwrap();
 	}
 	{
-		io2::Reader reader(buffer);
-		serde2::ReadableArchive ar(reader);
+		serde2::ReadableArchive ar(buffer);
 
 		Easy e;
 		Complex c;
@@ -192,7 +192,8 @@ y_test_func("serde RAII") {
 	{
 		bool alive = true;
 		{
-			auto ar = WritableArchive(RaiiGuard(&alive));
+			RaiiGuard r(&alive);
+			auto ar = WritableArchive(r);
 			y_test_assert(alive);
 			ar(es).unwrap();
 			y_test_assert(alive);
@@ -203,8 +204,28 @@ y_test_func("serde RAII") {
 	{
 		bool alive = true;
 		y_test_assert(alive);
-		WritableArchive(RaiiGuard(&alive))(es, func([&] { y_test_assert(alive); })).unwrap();
+		RaiiGuard r(&alive);
+		WritableArchive a(r);
+		a(es, func([&] { y_test_assert(alive); })).unwrap();
 		y_test_assert(!alive);
+	}
+}
+
+
+y_test_func("serde func") {
+	io2::Buffer buffer;
+	{
+		Func f;
+		f.v = {1, 2, 3};
+		WritableArchive ar(buffer);
+		f.serialize(ar).unwrap();
+	}
+	{
+		Func f;
+		ReadableArchive ar(buffer);
+		f.deserialize(ar).unwrap();
+		y_test_assert(f.v == core::ArrayView<int>({1, 2, 3}));
+		y_test_assert(f.s == 8);
 	}
 }
 

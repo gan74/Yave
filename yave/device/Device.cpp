@@ -20,7 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <yave/device/Device.h>
+#include "Device.h"
+#include "PhysicalDevice.h"
+
 #include <yave/graphics/commands/CmdBufferBase.h>
 
 #include <mutex>

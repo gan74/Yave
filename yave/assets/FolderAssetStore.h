@@ -23,7 +23,6 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_FOLDERASSETSTORE_H
 #define YAVE_ASSETS_FOLDERASSETSTORE_H
 
-#include <y/serde/serde.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include "AssetStore.h"
@@ -42,7 +41,7 @@ class FolderAssetStore final : public AssetStore {
 		core::String name;
 		AssetId id;
 
-		y_serde(id, name)
+		y_serde2(id, name)
 	};
 
 	// same as LocalFileSystemModel but rooted in a folder
@@ -71,13 +70,13 @@ class FolderAssetStore final : public AssetStore {
 
 		const FileSystemModel* filesystem() const override;
 
-		Result<AssetId> import(io::ReaderRef data, std::string_view dst_name) override;
-		Result<> write(AssetId id, io::ReaderRef data) override;
+		Result<AssetId> import(io2::Reader& data, std::string_view dst_name) override;
+		Result<> write(AssetId id, io2::Reader& data) override;
 
 		Result<AssetId> id(std::string_view name) const override;
 		Result<core::String> name(AssetId id) const override;
 
-		Result<io::ReaderRef> data(AssetId id) const override;
+		Result<io2::ReaderPtr> data(AssetId id) const override;
 
 		Result<> remove(AssetId id) override;
 		Result<> rename(AssetId id, std::string_view new_name) override;

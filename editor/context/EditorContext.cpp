@@ -24,6 +24,8 @@ SOFTWARE.
 #include <yave/device/Device.h>
 #include <yave/assets/FolderAssetStore.h>
 
+#include <y/io2/File.h>
+
 namespace editor {
 
 DevicePtr ContextLinked::device() const {
@@ -35,10 +37,12 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
 		_asset_store(std::make_shared<FolderAssetStore>()),
 		_loader(device(), _asset_store),
-		_scene(this),
+		_scene_view(&_default_scene_view),
 		_ui(this),
 		_thumb_cache(this),
 		_picking_manager(this) {
+
+	load_world();
 }
 
 EditorContext::~EditorContext() {
@@ -47,7 +51,6 @@ EditorContext::~EditorContext() {
 void EditorContext::flush_reload() {
 	defer([this]() {
 		y_profile_zone("flush reload");
-		_scene.flush_reload();
 		_selection.flush_reload();
 		_thumb_cache.clear();
 	});
@@ -76,5 +79,100 @@ void EditorContext::flush_deferred() {
 	_world.flush();
 }
 
+void EditorContext::set_scene_view(SceneView* scene) {
+	if(!scene) {
+		_scene_view = &_default_scene_view;
+	} else {
+		_scene_view = scene;
+	}
+}
+
+void EditorContext::remove_scene_view(SceneView* scene) {
+	if(_scene_view == scene) {
+		set_scene_view(nullptr);
+	}
+}
+
+SceneView& EditorContext::scene_view() {
+	return *_scene_view;
+}
+
+SceneView& EditorContext::default_scene_view() {
+	return _default_scene_view;
+}
+
+ecs::EntityWorld& EditorContext::world() {
+	return _world;
+}
+
+const FileSystemModel* EditorContext::filesystem() const {
+	return _filesystem.get() ? _filesystem.get() : FileSystemModel::local_filesystem();
+}
+
+const std::shared_ptr<FrameGraphResourcePool>& EditorContext::resource_pool() const {
+	return _resource_pool;
+}
+
+Settings& EditorContext::settings() {
+	return _setting;
+}
+
+Selection& EditorContext::selection() {
+	return _selection;
+}
+
+AssetLoader& EditorContext::loader() {
+	return _loader;
+}
+
+Ui& EditorContext::ui() {
+	return _ui;
+}
+
+ThumbmailCache& EditorContext::thumbmail_cache() {
+	return _thumb_cache;
+}
+
+PickingManager& EditorContext::picking_manager() {
+	return _picking_manager;
+}
+
+AssetStore& EditorContext::asset_store() {
+	return *_asset_store;
+}
+
+void EditorContext::save_world() const {
+	auto file = io2::File::create("world.yw");
+	if(!file) {
+		log_msg("Unable to open file.", Log::Error);
+		return;
+	}
+
+	WritableAssetArchive ar(file.unwrap());
+	if(!_world.serialize(ar)) {
+		log_msg("Unable to serialize world.", Log::Error);
+	}
+}
+
+void EditorContext::load_world() {
+	auto file = io2::File::open("world.yw");
+	if(!file) {
+		log_msg("Unable to open file.", Log::Error);
+		return;
+	}
+
+	ecs::EntityWorld world;
+	ReadableAssetArchive ar(file.unwrap(), _loader);
+	if(!world.deserialize(ar)) {
+		log_msg("Unable to deserialize world.", Log::Error);
+		return;
+	}
+
+	_world = std::move(world);
+}
+
+void EditorContext::new_world() {
+	_world = ecs::EntityWorld();
+}
 
 }
