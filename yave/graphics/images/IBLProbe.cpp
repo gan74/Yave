@@ -54,7 +54,7 @@ static usize mipmap_count(usize size) {
 	if(size <= min_face_size) {
 		y_fatal("IBL probe is too small.");
 	}
-	return 1 + std::floor(std::log2(size / min_face_size));
+	return 1 + usize(std::floor(std::log2(size / min_face_size)));
 }
 
 

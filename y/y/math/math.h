@@ -79,7 +79,7 @@ auto perspective(T fovy, T aspect, T z_near, T z_far) {
 // infinite version (no z far)
 template<typename T>
 auto perspective(T fovy, T aspect, T z_near) {
-	const T f = T(1) / tan(fovy / T(2));
+	const T f = T(1.0) / std::tan(fovy / T(2.0));
 
 	// reversed Z
 	Matrix4<T> m(f / aspect, 0, 0, 0,

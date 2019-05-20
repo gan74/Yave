@@ -47,21 +47,21 @@ AnimationChannel import_channel(aiNodeAnim* anim) {
 	std::map<float, BoneTransformInfo> infos;
 	for(usize i = 0; i != anim->mNumPositionKeys; ++i) {
 		aiVectorKey key = anim->mPositionKeys[i];
-		auto& info = infos[key.mTime];
+		auto& info = infos[float(key.mTime)];
 
 		info.transform.position = {key.mValue.x, key.mValue.y, key.mValue.z};
 		info.info |= Position;
 	}
 	for(usize i = 0; i != anim->mNumScalingKeys; ++i) {
 		aiVectorKey key = anim->mScalingKeys[i];
-		auto& info = infos[key.mTime];
+		auto& info = infos[float(key.mTime)];
 
 		info.transform.scale = {key.mValue.x, key.mValue.y, key.mValue.z};
 		info.info |= Scale;
 	}
 	for(usize i = 0; i != anim->mNumRotationKeys; ++i) {
 		aiQuatKey key = anim->mRotationKeys[i];
-		auto& info = infos[key.mTime];
+		auto& info = infos[float(key.mTime)];
 
 		info.transform.rotation = {key.mValue.x, key.mValue.y, key.mValue.z, key.mValue.w};
 		info.info |= Rotation;
@@ -109,7 +109,7 @@ Animation import_animation(aiAnimation* anim) {
 		channels << import_channel(anim->mChannels[i]);
 	}
 
-	return Animation(anim->mDuration, std::move(channels));
+	return Animation(float(anim->mDuration), std::move(channels));
 }
 
 }

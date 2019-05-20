@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.7)
 project(y)
 
-# -Wsign-conversion -Wfloat-conversion
-set(EXTRA_WARNINGS -Wzero-as-null-pointer-constant -Wsign-promo -Wshadow)
+# -Wsign-conversion
+set(EXTRA_WARNINGS -Wzero-as-null-pointer-constant -Wsign-promo -Wfloat-conversion -Wshadow)
 set(MORE_WARNINGS -Woverloaded-virtual -Wnon-virtual-dtor -Wodr -Wdisabled-optimization -Wlogical-op -Wredundant-decls -Wundef -Wtautological-compare)
 set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${EXTRA_WARNINGS} ${MORE_WARNINGS})
 

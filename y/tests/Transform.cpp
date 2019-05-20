@@ -37,7 +37,7 @@ y_test_func("Transform set basis") {
 y_test_func("Transform decompose basic") {
 	auto quat = Quaternion<>::from_euler(to_rad(90.0f), 0.0f, to_rad(90.0f));
 	Vec3 scale(5.0f);
-	Vec3 pos(1.0f, 7.0, 9.0f);
+	Vec3 pos(1.0f, 7.0f, 9.0f);
 	Transform<> tr(pos, quat, scale);
 
 	auto [p, q, s] = tr.decompose();

@@ -134,8 +134,8 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 		for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
 			const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
 
-			vk::Offset2D offset(cmd.ClipRect.x, cmd.ClipRect.y);
-			vk::Extent2D extent(cmd.ClipRect.z - cmd.ClipRect.x, cmd.ClipRect.w - cmd.ClipRect.y);
+			vk::Offset2D offset(u32(cmd.ClipRect.x), u32(cmd.ClipRect.y));
+			vk::Extent2D extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
 			recorder.vk_cmd_buffer().setScissor(0, vk::Rect2D(offset, extent));
 
 			if(cmd.UserCallback) {

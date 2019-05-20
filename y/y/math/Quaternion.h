@@ -88,11 +88,11 @@ class Quaternion {
 		}
 
 		T angle() const {
-			return std::acos(w() * T(2.0));
+			return std::acos(w() * T(2.0f));
 		}
 
 		Vec<3, T> axis() const {
-			return Vec<3, T>(_quat.template to<3>() / std::sqrt(T(1.0) - w() * w()));
+			return Vec<3, T>(_quat.template to<3>() / std::sqrt(T(1.0f) - w() * w()));
 		}
 
 		Quaternion inverse() const {
@@ -105,9 +105,9 @@ class Quaternion {
 
 		Vec<3, T> operator()(const Vec<3, T>& v) const {
 			Vec<3, T> u = _quat.template to<3>();
-			return u * T(2.0) * u.dot(v) +
+			return u * T(2.0f) * u.dot(v) +
 				   v * (w() * w() - u.length2()) +
-				   u.cross(v) * T(2.0) * w();
+				   u.cross(v) * T(2.0f) * w();
 		}
 
 		Vec<4, T> to_axis_angle() const {
@@ -146,49 +146,49 @@ class Quaternion {
 			Vec<4, T> end = end_quat._quat;
 			T dot = _quat.dot(end);
 
-			if(dot < T(0.0)) {
+			if(dot < T(0.0f)) {
 				end = -end;
 				dot = -dot;
 			}
 
-			if(T(1.0) - dot > epsilon<T>) {
+			if(T(1.0f) - dot > epsilon<T>) {
 				T omega = std::acos(dot);
 				T sin = std::sin(omega);
-				T p = std::sin((T(1.0) - factor) * omega) / sin;
+				T p = std::sin((T(1.0f) - factor) * omega) / sin;
 				T q = std::sin(factor * omega) / sin;
 
 				return _quat * p + end * q;
 			}
-			return _quat * (T(1.0) - factor) + end * factor;
+			return _quat * (T(1.0f) - factor) + end * factor;
 		}
 
 		Quaternion lerp(const Quaternion& end_quat, T factor) const {
 			Vec<4, T> end = end_quat._quat;
 			T dot = _quat.dot(end);
 
-			if(dot < T(0.0)) {
+			if(dot < T(0.0f)) {
 				end = -end;
 				dot = -dot;
 			}
 
-			return _quat * (T(1.0) - factor) + end * factor;
+			return _quat * (T(1.0f) - factor) + end * factor;
 		}
 
 		T pitch() const {
-			T a = T(-2.0) * (x() * z() - w() * y());
-			return asin(std::clamp(a, T(-1.0), T(1.0)));
+			T a = T(-2.0f) * (x() * z() - w() * y());
+			return std::asin(std::clamp(a, T(-1.0f), T(1.0f)));
 		}
 
 		T yaw() const {
-			return std::atan2(T(2.0) * (x() * y() + w() * z()), w() * w() + x() * x() - y() * y() - z() * z());
+			return std::atan2(T(2.0f) * (x() * y() + w() * z()), w() * w() + x() * x() - y() * y() - z() * z());
 		}
 
 		T roll() const {
-			//return T(atan(T(2.0) * (y * z + w * x), w * w - x * x - y * y + z * z));
-			T a = T(2.0) * (y() * z() + w() * x());
+			//return T(atan(T(2.0f) * (y * z + w * x), w * w - x * x - y * y + z * z));
+			T a = T(2.0f) * (y() * z() + w() * x());
 			T b = w() * w() - x() * x() - y() * y() + z() * z();
 			if(b == 0 && a == 0) {
-				return T(2.0) * std::atan2(x(), w());
+				return T(2.0f) * std::atan2(x(), w());
 			}
 			return std::atan2(a, b);
 		}
@@ -206,9 +206,9 @@ class Quaternion {
 			f.normalize();
 			Vec<3, T> axis(1, 0, 0);
 			T d = f.dot(axis);
-			if(std::abs(d + T(1.0)) < epsilon<T>()) {
+			if(std::abs(d + T(1.0f)) < epsilon<T>()) {
 				return from_axis_angle(Vec<3, T>(0, 0, 1), pi<T>);
-			} else if(std::abs(d - T(1.0)) < epsilon<T>()) {
+			} else if(std::abs(d - T(1.0f)) < epsilon<T>()) {
 				return Quaternion();
 			}
 			return from_axis_angle(f.cross(axis), -std::acos(d));
@@ -244,7 +244,7 @@ class Quaternion {
 					max_index = i;
 				}
 			}
-			T s = std::sqrt(max + T(1.0)) * T(0.5);
+			T s = std::sqrt(max + T(1.0f)) * T(0.5);
 			T m = T(0.25) / s;
 			switch(max_index) {
 				case 0: // w

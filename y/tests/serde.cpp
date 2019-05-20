@@ -111,7 +111,7 @@ struct RaiiGuard : DummyWriter {
 
 y_test_func("serde trivial") {
 	io2::Buffer buffer;
-	Trivial tri{7, 3.1416, {0.0f, 1.0f, 2.7f}};
+	Trivial tri{7, 3.1416f, {0.0f, 1.0f, 2.7f}};
 
 	{
 		WritableArchive ar(buffer);
@@ -145,7 +145,7 @@ y_test_func("serde easy") {
 y_test_func("serde complex") {
 	io2::Buffer buffer;
 	Trivial t0{7, 3.1416f, {0.0f, 1.0f, 2.7f}};
-	Trivial t1{641, -4.6f, {2.1828, 7.9f, -9999.0f}};
+	Trivial t1{641, -4.6f, {2.1828f, 7.9f, -9999.0f}};
 	Trivial t2{-9256, t0.z.dot(t1.z), t0.z.cross(t1.z)};
 	Easy e0{t1, {"some long long long, very long, even longer string (probably to bypass SSO)", 99999}};
 	Easy e1{t2, {"flublbu", __LINE__}};

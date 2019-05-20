@@ -62,11 +62,11 @@
 //---- Define constructor and implicit cast operators to convert back<>forth from your math types and ImVec2/ImVec4.
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
 
-#define IM_VEC2_CLASS_EXTRA                                                 \
-		ImVec2(const y::math::Vec2& f) { x = f.x(); y = f.y(); }            \
-		operator y::math::Vec2() const { return y::math::Vec2(x, y); }		\
-		ImVec2(const y::math::Vec2ui& f) { x = f.x(); y = f.y(); }			\
-		operator y::math::Vec2ui() const { return y::math::Vec2ui(x, y); }
+#define IM_VEC2_CLASS_EXTRA																	\
+		ImVec2(const y::math::Vec2& f) { x = f.x(); y = f.y(); }							\
+		operator y::math::Vec2() const { return y::math::Vec2(x, y); }						\
+		ImVec2(const y::math::Vec2ui& f) { x = float(f.x()); y = float(f.y()); }			\
+		operator y::math::Vec2ui() const { return y::math::Vec2ui(y::u32(x), y::u32(y)); }
 
 #define IM_VEC4_CLASS_EXTRA																	\
 		ImVec4(const y::math::Vec4& f) { x = f.x(); y = f.y(); z = f.z(); w = f.w(); }		\

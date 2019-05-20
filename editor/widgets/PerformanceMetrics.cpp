@@ -36,7 +36,7 @@ void PerformanceMetrics::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	auto time = _timer.reset();
 	ImGui::Text("frame time: %.2fms", time.to_millis());
 
-	_frames[_current_index] = time.to_millis();
+	_frames[_current_index] = float(time.to_millis());
 	_current_index = (_current_index + 1) % _frames.size();
 
 	ImGui::SetNextItemWidth(-1);

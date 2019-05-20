@@ -47,14 +47,14 @@ class Vec
 {
 	template<usize P, typename... Args>
 	void build(T t, Args... args) {
-		_vec[P] = t;
+		_vec[P] = T(t);
 		build<P + 1>(args...);
 	}
 
 	template<usize P, usize Q, typename U, typename... Args>
 	void build(const Vec<Q, U>& t, Args... args) {
 		for(usize i = 0; i != Q; ++i) {
-			_vec[P + i] = t[i];
+			_vec[P + i] = T(t[i]);
 		}
 		build<P + Q>(args...);
 	}
