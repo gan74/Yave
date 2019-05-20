@@ -73,14 +73,18 @@ MIT
 - [ ] Finish allocators
 - [ ] Rewrite SmallVector (with new allocators)
 - [ ] Rename ArrayView to Span and MutableSpan
-- [ ] DenseMap ?
+- [ ] DenseMap (Is SparseVector enough?)
 - [ ] Log callbacks
 
 ### Framegraph
 - [X] Barriers
 - [X] Reuse resources over frames
+- [ ] Resource aliasing
 
 ### Engine
+- [X] Asset saving and loading
+- [X] Integrate ECS
+- [ ] Make assets easily serializable
 - [ ] Culling
 - [ ] Batching system
 - [ ] Streaming
@@ -91,6 +95,7 @@ MIT
 - [ ] Spot lights
 
 ### Editor
+- [X] Integrate ECS
 - [ ] Save open widgets
 - [ ] Open several views
 - [ ] Rotation & scale 
