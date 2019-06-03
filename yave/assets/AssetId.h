@@ -23,7 +23,6 @@ SOFTWARE.
 #define YAVE_ASSETS_ASSET_H
 
 #include "AssetTraits.h"
-#include <yave/utils/serde.h>
 
 namespace yave {
 
@@ -59,8 +58,6 @@ struct AssetId {
 		constexpr bool operator!=(AssetId other) const {
 			return _id != other._id;
 		}
-
-		y_serde2(_id)
 
 	private:
 		friend class AssetIdFactory;

@@ -25,6 +25,11 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <yave/renderer/renderer.h>
 
+#include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/TransformableComponent.h>
+#include <yave/entities/entities.h>
+
 #include <thread>
 
 namespace editor {
@@ -36,13 +41,20 @@ ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) 
 }
 
 ThumbmailCache::SceneData::SceneData(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat)
-		: view(&scene) {
+		: view(&world) {
 
-	Light light(Light::Directional);
-	light.transform().set_basis(math::Vec3{1.0f, 0.5f, -1.0f}.normalized(), {1.0f, 0.0f, 0.0f});
-	light.color() = 5.0f;
-	scene.lights() << std::make_unique<Light>(light);
-	scene.static_meshes() << std::make_unique<StaticMeshInstance>(mesh, mat);
+	{
+		ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
+		DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
+		light_comp->direction() = math::Vec3{1.0f, 0.5f, -1.0f};
+		light_comp->color() = 5.0f;
+	}
+	{
+		ecs::EntityId mesh_id = world.create_entity(StaticMeshArchetype());
+		StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(mesh_id);
+		*mesh_comp = StaticMeshComponent(mesh, mat);
+		y_debug_assert(world.component<StaticMeshComponent>(mesh_id)->material()->mat_template());
+	}
 	view.camera().set_view(math::look_at(math::Vec3(mesh->radius() * 1.5f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 }
 

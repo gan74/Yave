@@ -19,49 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_OBJECTS_RENDERABLE_H
+#define YAVE_OBJECTS_RENDERABLE_H
 
-#include "Light.h"
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/swapchain/FrameToken.h>
+#include <yave/graphics/buffers/buffers.h>
+
 
 namespace yave {
 
-Light::Light(Type type) : _type(type) {
-}
+class Renderable {
 
-Light::Type Light::type() const {
-	return _type;
-}
-
-math::Vec3& Light::color() {
-	return _color;
-}
-
-const math::Vec3& Light::color() const {
-	return _color;
-}
-
-float& Light::intensity() {
-	return _intensity;
-}
-
-float Light::intensity() const {
-	return _intensity;
-}
-
-float& Light::radius() {
-	return _radius;
-}
-
-float Light::radius() const {
-	return _radius;
-}
-
-Light::operator uniform::Light() const {
-	return uniform::Light {
-			_type == Directional ? forward() : position(),
-			_radius,
-			_color * _intensity,
-			u32(_type)
+	public:
+		struct SceneData {
+			const DescriptorSetBase& descriptor_set;
+			u32 instance_index;
 		};
-}
+
+		/*virtual ~Renderable() {
+		}
+
+		virtual void render(RenderPassRecorder&, const SceneData&) const = 0;
+
+		virtual void flush_reload() {
+		}*/
+
+};
 
 }
+
+
+#endif // YAVE_OBJECTS_RENDERABLE_H

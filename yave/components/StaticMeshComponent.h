@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
 
-#include <yave/objects/Renderable.h>
+#include <yave/scene/Renderable.h>
 
 namespace yave {
 
@@ -35,9 +35,13 @@ class StaticMeshComponent final : public Renderable {
 		StaticMeshComponent() = default;
 		StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
 
-		void flush_reload() override;
+		//StaticMeshComponent(StaticMeshComponent&&) = default;
+		//StaticMeshComponent& operator=(StaticMeshComponent&&) = default;
+		//~StaticMeshComponent();
 
-		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const override;
+		void flush_reload();
+
+		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
 
 		const AssetPtr<StaticMesh>& mesh() const;
 		const AssetPtr<Material>& material() const;

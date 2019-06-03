@@ -30,8 +30,8 @@ namespace ecs {
 template<bool Const, typename... Args>
 class View {
 	using vector_tuple = std::conditional_t<Const,
-				std::tuple<const ComponentVector<Args>&...>,
-				std::tuple<ComponentVector<Args>&...>>;
+				std::tuple<const ComponentVector<Args>*...>,
+				std::tuple<ComponentVector<Args>*...>>;
 
 	using reference_tuple = std::conditional_t<Const,
 				std::tuple<const Args&...>,
@@ -40,16 +40,17 @@ class View {
 	using index_type = ComponentVector<void>::index_type;
 	using index_range = decltype(std::declval<ComponentVector<void>>().indexes());
 
-
 	class EndIterator {};
 
 	class Iterator {
 		template<usize I = 0>
 		auto make_refence_tuple(index_type index) const {
+			y_debug_assert(std::get<I>(_vectors));
+			auto& v = *std::get<I>(_vectors);
 			if constexpr(I + 1 == sizeof...(Args)) {
-				return std::make_tuple(std::get<I>(_vectors)[index]);
+				return std::tie(v[index]);
 			} else {
-				return std::tuple_cat(std::make_tuple(std::get<I>(_vectors)[*_it]),
+				return std::tuple_cat(std::tie(v[*_it]),
 									  make_refence_tuple<I + 1>(index));
 			}
 		}
@@ -59,7 +60,7 @@ class View {
 			using value_type = reference_tuple;
 			using reference = value_type;
 			using difference_type = usize;
-			using iterator_category = std::random_access_iterator_tag;
+			using iterator_category = std::input_iterator_tag;
 
 			reference operator*() const {
 				return make_refence_tuple(*_it);
@@ -121,7 +122,8 @@ class View {
 			template<usize I = 0>
 			bool matches() const {
 				if constexpr(I != sizeof...(Args)) {
-					return std::get<I>(_vectors).has(*_it) && matches<I + 1>();
+					y_debug_assert(std::get<I>(_vectors));
+					return std::get<I>(_vectors)->has(*_it) && matches<I + 1>();
 				}
 				return true;
 			}
@@ -134,12 +136,16 @@ class View {
 
 	template<usize I = 0>
 	index_range shortest_range() {
-		auto&& v = std::get<I>(_vectors);
+		auto* v = std::get<I>(_vectors);
+		if(!v) {
+			return index_range();
+		}
+
 		if constexpr(I + 1 == sizeof...(Args)) {
-			return v.indexes();
+			return v->indexes();
 		} else {
 			index_range s = shortest_range<I + 1>();
-			return s.size() < v.size() ? s : v.indexes();
+			return s.size() < v->size() ? s : v->indexes();
 		}
 	}
 

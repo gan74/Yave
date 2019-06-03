@@ -24,7 +24,8 @@ SOFTWARE.
 
 #include <editor/components/EditorComponent.h>
 
-#include <yave/components/LightComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 
@@ -95,7 +96,8 @@ void component_widget(std::type_index type, ContextPtr ctx, ecs::EntityId id) {
 
 
 REGISTER_COMPONENT_TYPE(EditorComponent)
-REGISTER_COMPONENT_TYPE(LightComponent)
+REGISTER_COMPONENT_TYPE(PointLightComponent)
+REGISTER_COMPONENT_TYPE(DirectionalLightComponent)
 REGISTER_COMPONENT_TYPE(StaticMeshComponent)
 REGISTER_COMPONENT_TYPE(TransformableComponent)
 

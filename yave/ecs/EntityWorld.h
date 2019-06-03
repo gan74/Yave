@@ -79,6 +79,15 @@ class EntityWorld : NonCopyable {
 			return container<T>()->template create_or_find<T>(id, y_fwd(args)...);
 		}
 
+		template<typename T, typename... Args>
+		auto create_components(EntityId id) {
+			create_component<T>(id);
+			if constexpr(sizeof...(Args)) {
+				create_components<Args...>(id);
+			}
+		}
+
+
 
 		template<typename T>
 		T* component(EntityId id) {
@@ -127,13 +136,13 @@ class EntityWorld : NonCopyable {
 		template<typename... Args>
 		EntityView<Args...> view() {
 			static_assert(sizeof...(Args));
-			return typed_component_vectors<Args...>();
+			return EntityView<Args...>(typed_component_vectors<Args...>());
 		}
 
 		template<typename... Args>
 		ConstEntityView<Args...> view() const {
 			static_assert(sizeof...(Args));
-			return typed_component_vectors<Args...>();
+			return ConstEntityView<Args...>(typed_component_vectors<Args...>());
 		}
 
 
@@ -148,6 +157,26 @@ class EntityWorld : NonCopyable {
 		}
 
 
+
+
+
+
+		template<typename... Args>
+		EntityId create_entity(EntityArchetype<Args...>) {
+			EntityId ent = create_entity();
+			create_components<Args...>(ent);
+			return ent;
+		}
+
+		template<typename... Args>
+		EntityView<Args...> view(EntityArchetype<Args...>) {
+			return view<Args...>();
+		}
+
+		template<typename... Args>
+		ConstEntityView<Args...> view(EntityArchetype<Args...>) const {
+			return view<Args...>();
+		}
 
 
 
@@ -177,7 +206,7 @@ class EntityWorld : NonCopyable {
 
 
 		template<typename T, typename... Args>
-		std::tuple<ComponentVector<T>&, ComponentVector<Args>&...> typed_component_vectors() const {
+		std::tuple<ComponentVector<T>*, ComponentVector<Args>*...> typed_component_vectors() const {
 			if constexpr(sizeof...(Args)) {
 				return std::tuple_cat(typed_component_vectors<T>(),
 									  typed_component_vectors<Args...>());
@@ -186,7 +215,7 @@ class EntityWorld : NonCopyable {
 				// Const safety for typed_component_containers is done in ReturnComponentsPolicy
 				// This shouldn't be UB as component containers are never const
 				ComponentContainerBase* cont = const_cast<ComponentContainerBase*>(container<T>());
-				return std::make_tuple(cont->component_vector<T>());
+				return cont ? &cont->component_vector<T>() : nullptr;
 			}
 		}
 

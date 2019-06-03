@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 #include <editor/widgets/AssetSelector.h>
+
+#include <yave/components/PointLightComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
 #include <imgui/yave_imgui.h>
@@ -56,13 +58,12 @@ void widget<EditorComponent>(ContextPtr ctx, ecs::EntityId id) {
 }
 
 template<>
-void widget<LightComponent>(ContextPtr ctx, ecs::EntityId id) {
+void widget<PointLightComponent>(ContextPtr ctx, ecs::EntityId id) {
 	if(!ImGui::CollapsingHeader("Light component")) {
 		return;
 	}
 
-	LightComponent* component = ctx->world().component<LightComponent>(id);
-	Light& light = component->light();
+	PointLightComponent* light = ctx->world().component<PointLightComponent>(id);
 
 	int color_flags = ImGuiColorEditFlags_NoSidePreview |
 					  // ImGuiColorEditFlags_NoSmallPreview |
@@ -70,7 +71,7 @@ void widget<LightComponent>(ContextPtr ctx, ecs::EntityId id) {
 					  ImGuiColorEditFlags_Float |
 					  ImGuiColorEditFlags_InputRGB;
 
-	math::Vec4 color(light.color(), 1.0f);
+	math::Vec4 color(light->color(), 1.0f);
 	if(ImGui::ColorButton("Color", color, color_flags)) {
 		ImGui::OpenPopup("Color");
 	}
@@ -78,7 +79,7 @@ void widget<LightComponent>(ContextPtr ctx, ecs::EntityId id) {
 	ImGui::Text("Light color");
 
 	if(ImGui::BeginPopup("Color")) {
-		ImGui::ColorPicker3("##lightpicker", light.color().begin(), color_flags);
+		ImGui::ColorPicker3("##lightpicker", light->color().begin(), color_flags);
 
 		ImGui::SameLine();
 		ImGui::BeginGroup();
@@ -88,8 +89,8 @@ void widget<LightComponent>(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::EndPopup();
 	}
 
-	ImGui::DragFloat("Intensity", &light.intensity());
-	ImGui::DragFloat("Radius", &light.radius());
+	ImGui::DragFloat("Intensity", &light->intensity());
+	ImGui::DragFloat("Radius", &light->radius());
 }
 
 template<>

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,48 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_STATICMESHINSTANCE_H
-#define YAVE_OBJECTS_STATICMESHINSTANCE_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/meshes/StaticMesh.h>
-#include <yave/material/Material.h>
-
-#include "Renderable.h"
+#include "DirectionalLightComponent.h"
 
 namespace yave {
 
-class StaticMeshInstance final : public Renderable {
+math::Vec3& DirectionalLightComponent::color() {
+	return _color;
+}
 
-	public:
-		StaticMeshInstance() = default;
-		StaticMeshInstance(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
+const math::Vec3& DirectionalLightComponent::color() const {
+	return _color;
+}
 
-		void flush_reload() override;
+math::Vec3& DirectionalLightComponent::direction() {
+	return _direction;
+}
 
-		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const override;
-
-		const auto& mesh() const {
-			return _mesh;
-		}
-
-		const auto& material() const {
-			return _material;
-		}
-
-		auto& mesh() {
-			return _mesh;
-		}
-
-		auto& material() {
-			return _material;
-		}
-
-	private:
-		AssetPtr<StaticMesh> _mesh;
-		mutable AssetPtr<Material> _material;
-};
+const math::Vec3& DirectionalLightComponent::direction() const {
+	return _direction;
 
 }
 
-#endif // YAVE_OBJECTS_STATICMESHINSTANCE_H
+float& DirectionalLightComponent::intensity() {
+	return _intensity;
+}
+
+float DirectionalLightComponent::intensity() const {
+	return _intensity;
+}
+
+}

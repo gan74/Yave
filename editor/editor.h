@@ -30,10 +30,11 @@ class RenderPassRecorder;
 class CmdBufferRecorder;
 class FileSystemModel;
 class SceneView;
-class Scene;
 class FrameGraph;
 class EventHandler;
 class Material;
+class StaticMesh;
+class IBLData;
 }
 
 namespace editor {

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,27 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_COMPONENTS_DIRECTIONALLIGHTCOMPONENT_H
+#define YAVE_COMPONENTS_DIRECTIONALLIGHTCOMPONENT_H
 
-#include "Scene.h"
-
-#include <yave/material/Material.h>
+#include <yave/yave.h>
 
 namespace yave {
 
-Scene::Scene(core::Vector<Ptr<StaticMeshInstance>>&& meshes, core::Vector<Ptr<Renderable>>&& renderables, core::Vector<Ptr<Light>>&& lights) :
-		_statics(std::move(meshes)),
-		_renderables(std::move(renderables)),
-		_lights(std::move(lights)) {
+class DirectionalLightComponent final {
+	public:
+		DirectionalLightComponent() = default;
+
+		math::Vec3& color();
+		const math::Vec3& color() const;
+
+		math::Vec3& direction();
+		const math::Vec3& direction() const;
+
+		float& intensity();
+		float intensity() const;
+
+	private:
+		math::Vec3 _color = math::Vec3{1.0f};
+		math::Vec3 _direction = math::Vec3{0.0f, 0.0f, -1.0f};
+		float _intensity = 1.0f;
+};
 }
 
-void Scene::flush_reload() {
-	y_profile();
-	for(auto& s : _statics) {
-		s->flush_reload();
-	}
-	for(auto& r : _renderables) {
-		r->flush_reload();
-	}
-}
-
-}
+#endif // YAVE_COMPONENTS_DIRECTIONALLIGHTCOMPONENT_H

@@ -51,7 +51,6 @@ EditorContext::~EditorContext() {
 void EditorContext::flush_reload() {
 	defer([this]() {
 		y_profile_zone("flush reload");
-		_selection.flush_reload();
 		_thumb_cache.clear();
 	});
 }

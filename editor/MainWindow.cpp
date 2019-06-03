@@ -248,11 +248,6 @@ void MainWindow::render_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 		}
 	}
 
-
-	if(context()->selection().has_selected()) {
-		context()->ui().show<PropertyPanel>();
-	}
-
 	context()->ui().paint(recorder, token);
 
 }

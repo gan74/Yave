@@ -19,37 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
-#define YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#ifndef YAVE_ENTITIES_ENTITIES_H
+#define YAVE_ENTITIES_ENTITIES_H
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/meshes/SkinnedMesh.h>
-#include <yave/animations/SkeletonInstance.h>
-
-#include "Transformable.h"
-#include "Renderable.h"
+#include <yave/ecs/ecs.h>
 
 namespace yave {
 
-class SkinnedMeshInstance final : public Renderable {
+class TransformableComponent;
+class DirectionalLightComponent;
+class PointLightComponent;
 
-	public:
-		SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material);
+class StaticMeshComponent;
 
-		void flush_reload() override;
+using PointLightArchetype = ecs::EntityArchetype<TransformableComponent, PointLightComponent>;
+using DirectionalLightArchetype = ecs::EntityArchetype<DirectionalLightComponent>;
+using StaticMeshArchetype = ecs::EntityArchetype<TransformableComponent, StaticMeshComponent>;
 
-		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const override;
-
-		void animate(const AssetPtr<Animation>& anim) {
-			_skeleton.animate(anim);
-		}
-
-	private:
-		AssetPtr<SkinnedMesh> _mesh;
-
-		mutable SkeletonInstance _skeleton;
-		mutable AssetPtr<Material> _material;
-};
 }
 
-#endif // YAVE_OBJECTS_SKINNEDMESHINSTANCE_H
+#endif // YAVE_ENTITIES_ENTITIES_H

@@ -19,36 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_OBJECTS_RENDERABLE_H
-#define YAVE_OBJECTS_RENDERABLE_H
+#ifndef YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
+#define YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
 
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/swapchain/FrameToken.h>
-#include <yave/graphics/buffers/buffers.h>
-
-#include "Transformable.h"
+#include <yave/yave.h>
 
 namespace yave {
 
-class Renderable : public Transformable {
-
+class PointLightComponent final {
 	public:
-		struct SceneData {
-			const DescriptorSetBase& descriptor_set;
-			u32 instance_index;
-		};
+		PointLightComponent() = default;
 
-		virtual ~Renderable() {
-		}
+		math::Vec3& color();
+		const math::Vec3& color() const;
 
-		virtual void render(RenderPassRecorder&, const SceneData&) const = 0;
+		float& intensity();
+		float intensity() const;
 
-		virtual void flush_reload() {
-		}
+		float& radius();
+		float radius() const;
 
+	private:
+		math::Vec3 _color = math::Vec3{1.0f};
+		float _intensity = 1.0f;
+		float _radius = 1.0f;
 };
 
 }
 
-
-#endif // YAVE_OBJECTS_RENDERABLE_H
+#endif // YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H

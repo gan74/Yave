@@ -39,7 +39,13 @@ vk::MappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset
 
 	usize aligned_offset = memory::align_down_to(_offset + offset, atom_size);
 	usize end = _offset + size;
-	return vk::MappedMemoryRange(_memory, aligned_offset,  memory::align_up_to(end - aligned_offset, atom_size));
+	y_debug_assert(end > aligned_offset);
+	y_debug_assert(end > _offset);
+
+	usize aligned_size = memory::align_up_to(end - aligned_offset, atom_size);
+	y_debug_assert(aligned_size < size + 1 + atom_size);
+
+	return vk::MappedMemoryRange(_memory, aligned_offset, aligned_size);
 }
 
 vk::DeviceMemory DeviceMemoryView::vk_memory() const {

@@ -23,8 +23,14 @@ SOFTWARE.
 #include "LightingPass.h"
 
 #include <yave/device/Device.h>
-#include <yave/components/LightComponent.h>
+#include <yave/framegraph/FrameGraph.h>
+
 #include <yave/ecs/EntityWorld.h>
+
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/TransformableComponent.h>
+#include <yave/components/DirectionalLightComponent.h>
+#include <yave/entities/entities.h>
 
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
@@ -134,29 +140,23 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 
 			TypedMapping<uniform::Light> mapping = self->resources()->mapped_buffer(light_buffer);
-
-			Y_TODO(We should not need this)
 			{
-				if(scene.has_scene()) {
-					usize light_count = scene.scene().lights().size();
-					for(const auto& l : scene.scene().lights()) {
-						if(l->type() == Light::Point) {
-							mapping[push_data.point_count++] = *l;
-						} else {
-							mapping[light_count - ++push_data.directional_count] = *l;
-						}
-					}
+				for(const auto& [t, l] : scene.world().view(PointLightArchetype())) {
+					mapping[push_data.point_count++] = uniform::Light{
+							t.position(),
+							l.radius(),
+							l.color() * l.intensity(),
+							uniform::Light::Type::Point
+						};
 				}
-				if(scene.has_world()) {
-					const auto& lights = scene.world().components<LightComponent>();
-					usize light_count = lights.size();
-					for(const auto& l : lights) {
-						if(l.light().type() == Light::Point) {
-							mapping[push_data.point_count++] = l.light();
-						} else {
-							mapping[light_count - ++push_data.directional_count] = l.light();
-						}
-					}
+
+				for(const auto& [l] : scene.world().view(DirectionalLightArchetype())) {
+					mapping[push_data.point_count + push_data.directional_count++] = uniform::Light{
+							l.direction().normalized(),
+							0.0f,
+							l.color() * l.intensity(),
+							uniform::Light::Type::Directional
+						};
 				}
 			}
 

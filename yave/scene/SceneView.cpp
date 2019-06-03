@@ -26,34 +26,14 @@ SOFTWARE.
 
 namespace yave {
 
-SceneView::SceneView(const Scene* sce, const ecs::EntityWorld* wor, Camera cam) :
-		_world(wor),
-		_scene(sce),
-		_camera(cam) {
-}
-
-SceneView::SceneView(const Scene* sce, Camera cam) :
-		_scene(sce),
-		_camera(cam) {
-}
-
 SceneView::SceneView(const ecs::EntityWorld* wor, Camera cam) :
 		_world(wor),
 		_camera(cam) {
 }
 
-const Scene& SceneView::scene() const {
-	y_debug_assert(has_scene());
-	return *_scene;
-}
-
 const ecs::EntityWorld& SceneView::world() const {
 	y_debug_assert(has_world());
 	return *_world;
-}
-
-bool SceneView::has_scene() const {
-	return _scene;
 }
 
 bool SceneView::has_world() const {

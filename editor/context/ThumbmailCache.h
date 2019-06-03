@@ -23,7 +23,12 @@ SOFTWARE.
 #define EDITOR_UTILS_THUMBMAILCACHE_H
 
 #include <editor/editor.h>
-#include <yave/renderer/LightingPass.h>
+
+#include <yave/assets/AssetPtr.h>
+#include <yave/graphics/images/ImageView.h>
+
+#include <yave/ecs/EntityWorld.h>
+#include <yave/scene/SceneView.h>
 
 #include <future>
 
@@ -34,7 +39,7 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 		struct Thumbmail {
 			Thumbmail(DevicePtr dptr, usize size, AssetId asset);
 
-			Image<ImageUsage::StorageBit | ImageUsage::TextureBit> image;
+			StorageTexture image;
 			TextureView view;
 			AssetId id;
 		};
@@ -42,7 +47,7 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 		struct SceneData : NonMovable {
 			SceneData(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat);
 
-			Scene scene;
+			ecs::EntityWorld world;
 			SceneView view;
 		};
 

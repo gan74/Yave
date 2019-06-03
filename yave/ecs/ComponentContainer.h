@@ -132,12 +132,12 @@ class ComponentContainerBase : NonMovable {
 
 
 		template<typename T>
-		auto& component_vector() {
+		ComponentVector<T>& component_vector() {
 			return component_vector_fast<T>();
 		}
 
 		template<typename T>
-		const auto& component_vector() const {
+		const ComponentVector<T>& component_vector() const {
 			return component_vector_fast<T>();
 		}
 
@@ -152,12 +152,14 @@ class ComponentContainerBase : NonMovable {
 
 		template<typename T>
 		auto& component_vector_fast() {
+			y_debug_assert(_sparse_ptr);
 			y_debug_assert(type() == index_for_type<T>());
 			return (*static_cast<ComponentVector<T>*>(_sparse_ptr));
 		}
 
 		template<typename T>
 		const auto& component_vector_fast() const {
+			y_debug_assert(_sparse_ptr);
 			y_debug_assert(type() == index_for_type<T>());
 			return (*static_cast<const ComponentVector<T>*>(_sparse_ptr));
 		}

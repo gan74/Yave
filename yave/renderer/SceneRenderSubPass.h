@@ -23,9 +23,12 @@ SOFTWARE.
 #define YAVE_RENDERER_SCENERENDERSUBPASS_H
 
 #include <yave/scene/SceneView.h>
-#include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/FrameGraphResourceId.h>
 
 namespace yave {
+
+class RenderPassRecorder;
+class FrameGraphPassBuilder;
 
 struct SceneRenderSubPass {
 	SceneView scene_view;

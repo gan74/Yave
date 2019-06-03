@@ -41,10 +41,15 @@ struct Camera {
 using Frustum = yave::Frustum;
 
 struct Light {
+	enum class Type : u32 {
+		Directional = 0,
+		Point = 1
+	};
+
 	math::Vec3 position;
 	float radius;
 	math::Vec3 color;
-	u32 type;
+	Type type;
 };
 
 static_assert(offsetof(Light, radius) == 3 * sizeof(float));

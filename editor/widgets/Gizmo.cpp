@@ -23,6 +23,8 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
+#include <yave/components/TransformableComponent.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {
@@ -93,14 +95,19 @@ math::Vec2 Gizmo::to_window_pos(const math::Vec3& world) {
 }
 
 void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	if(!context()->selection().transformable()) {
+	if(!context()->selection().has_selected_entity()) {
+		return;
+	}
+
+	TransformableComponent* transformable = context()->world().component<TransformableComponent>(context()->selection().selected_entity());
+	if(!transformable) {
 		return;
 	}
 
 	math::Vec3 cam_fwd = _scene_view->camera().forward();
 	math::Vec3 cam_pos = _scene_view->camera().position();
 	math::Matrix4<> view_proj = _scene_view->camera().viewproj_matrix();
-	math::Vec3 obj_pos = context()->selection().transformable()->transform().position();
+	math::Vec3 obj_pos = transformable->transform().position();
 
 	if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
 		return;
@@ -225,7 +232,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		auto new_pos = projected_mouse + _dragging_offset;
 		for(usize i = 0; i != 3; ++i) {
 			if(_dragging_mask & (1 << i)) {
-				context()->selection().transformable()->position()[i] = new_pos[i];
+				transformable->position()[i] = new_pos[i];
 			}
 		}
 	}

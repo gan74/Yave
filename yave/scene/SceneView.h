@@ -23,7 +23,6 @@ SOFTWARE.
 #define YAVE_SCENE_SCENEVIEW_H
 
 #include <yave/camera/Camera.h>
-#include "Scene.h"
 
 namespace yave {
 
@@ -34,12 +33,8 @@ class EntityWorld;
 class SceneView {
 	public:
 		SceneView() = default;
-		SceneView(const Scene* sce, const ecs::EntityWorld* wor, Camera cam = Camera());
-
-		SceneView(const Scene* sce, Camera cam = Camera());
 		SceneView(const ecs::EntityWorld* wor, Camera cam = Camera());
 
-		const Scene& scene() const;
 		const ecs::EntityWorld& world() const;
 
 		bool has_scene() const;
@@ -51,7 +46,6 @@ class SceneView {
 
 	private:
 		const ecs::EntityWorld* _world = nullptr;
-		const Scene* _scene = nullptr;
 		Camera _camera;
 };
 

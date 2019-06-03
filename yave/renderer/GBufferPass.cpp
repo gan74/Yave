@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "GBufferPass.h"
 
+#include <yave/framegraph/FrameGraph.h>
+
 namespace yave {
 
 GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {

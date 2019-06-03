@@ -22,26 +22,23 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 #define YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 
-#include <yave/objects/Transformable.h>
+#include <yave/yave.h>
 
 namespace yave {
 
-class TransformableComponent final {
-
+class TransformableComponent final : public math::Transform<> {
 	public:
-		TransformableComponent() = default;
-
-		const math::Transform<>& transform() const {
-			return _transform;
-		}
+		using Transform::Transform;
 
 		math::Transform<>& transform() {
-			return _transform;
+			return *this;
 		}
 
-	private:
-		math::Transform<> _transform;
+		const math::Transform<>& transform() const {
+			return *this;
+		}
 };
+
 }
 
 #endif // YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H

@@ -43,6 +43,10 @@ ComponentTypeIndex index_for_type() {
 	return typeid(T);
 }
 
+template<typename... Args>
+struct EntityArchetype final {
+};
+
 }
 }
 

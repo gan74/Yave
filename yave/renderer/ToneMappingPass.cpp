@@ -23,6 +23,7 @@ SOFTWARE.
 #include "ToneMappingPass.h"
 
 #include <yave/material/Material.h>
+#include <yave/framegraph/FrameGraph.h>
 
 namespace yave {
 

@@ -22,9 +22,14 @@ SOFTWARE.
 
 #include "SceneRenderSubPass.h"
 
+#include <yave/framegraph/FrameGraph.h>
+
 #include <yave/ecs/EntityWorld.h>
-#include <yave/components/StaticMeshComponent.h>
+
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/entities/entities.h>
+
 
 namespace yave {
 
@@ -48,36 +53,6 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraph& framegraph, FrameGraph
 }
 
 
-static usize render_scene(const SceneRenderSubPass* sub_pass, RenderPassRecorder& recorder, const FrameGraphPass* pass, usize index = 0) {
-	y_profile();
-
-	const Scene& scene = sub_pass->scene_view.scene();
-
-	auto transform_mapping = pass->resources()->mapped_buffer(sub_pass->transform_buffer);
-	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
-	const auto& descriptor_set = pass->descriptor_sets()[0];
-
-	recorder.bind_attrib_buffers({transforms, transforms});
-	{
-		// renderables
-		for(const auto& r : scene.renderables()) {
-			transform_mapping[index] = r->transform();
-			r->render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
-			++index;
-		}
-
-		// static meshes
-		for(const auto& r : scene.static_meshes()) {
-			transform_mapping[index] = r->transform();
-			r->render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
-			++index;
-		}
-	}
-
-	return index;
-}
-
-
 static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder& recorder, const FrameGraphPass* pass, usize index = 0) {
 	y_profile();
 
@@ -89,17 +64,9 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 
 	recorder.bind_attrib_buffers({transforms, transforms});
 
-	/*for(ecs::EntityId id : world.indexes<StaticMeshComponent>()) {
-		if(TransformableComponent* transformable = world.component<TransformableComponent>(id)) {
-			transform_mapping[index] = transformable->transform();
-		} else {
-			transform_mapping[index] = math::Transform<>();
-		}
-	}*/
-
-	for(const auto& component : world.components<StaticMeshComponent>()) {
-		transform_mapping[index] = math::Transform<>();
-		component.render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
+	for(const auto& [tr, me] : world.view(StaticMeshArchetype())) {
+		transform_mapping[index] = tr.transform();
+		me.render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
 		++index;
 	}
 
@@ -114,10 +81,6 @@ void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPa
 	camera_mapping[0] = scene_view.camera().viewproj_matrix();
 
 	usize index = 0;
-	if(scene_view.has_scene()) {
-		index = render_scene(this, recorder, pass, index);
-	}
-
 	if(scene_view.has_world()) {
 		index = render_world(this, recorder, pass, index);
 	}

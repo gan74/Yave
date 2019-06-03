@@ -20,36 +20,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "SkinnedMeshInstance.h"
-
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/material/Material.h>
+#include "PointLightComponent.h"
 
 namespace yave {
 
-SkinnedMeshInstance::SkinnedMeshInstance(const AssetPtr<SkinnedMesh>& mesh, const AssetPtr<Material>& material) :
-		_mesh(mesh),
-		_skeleton(_mesh->triangle_buffer().device(), &mesh->skeleton()),
-		_material(material) {
-
-	set_radius(_mesh->radius());
+math::Vec3& PointLightComponent::color() {
+	return _color;
 }
 
-void SkinnedMeshInstance::flush_reload() {
-	_skeleton.flush_reload();
-	_mesh.flush_reload();
-	_material.flush_reload();
+const math::Vec3& PointLightComponent::color() const {
+	return _color;
 }
 
-void SkinnedMeshInstance::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	_skeleton.update();
+float& PointLightComponent::intensity() {
+	return _intensity;
+}
 
-	recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set, _skeleton.descriptor_set(), _material->descriptor_set()});
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {SkinnedVertexSubBuffer(_mesh->vertex_buffer())});
+float PointLightComponent::intensity() const {
+	return _intensity;
+}
 
-	auto indirect = _mesh->indirect_data();
-	indirect.setFirstInstance(scene_data.instance_index);
-	recorder.draw(indirect);
+float& PointLightComponent::radius() {
+	return _radius;
+}
+
+float PointLightComponent::radius() const {
+	return _radius;
 }
 
 }

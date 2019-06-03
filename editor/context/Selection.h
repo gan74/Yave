@@ -22,75 +22,13 @@ SOFTWARE.
 #ifndef EDITOR_CONTEXT_SELECTION_H
 #define EDITOR_CONTEXT_SELECTION_H
 
-#include <yave/objects/Light.h>
-#include <yave/objects/Renderable.h>
-
 #include <yave/material/Material.h>
-#include <yave/ecs/EntityIdPool.h>
+#include <yave/ecs/EntityId.h>
 
 namespace editor {
 
 class Selection {
 	public:
-		void flush_reload() {
-			_material.flush_reload();
-			if(_renderable) {
-				_renderable->flush_reload();
-			}
-		}
-
-
-
-		template<typename T, typename = std::enable_if_t<std::is_polymorphic_v<T>>>
-		void set_selected(T* sel) {
-			_light = nullptr;
-			_renderable = dynamic_cast<Renderable*>(sel);
-			_transformable = dynamic_cast<Transformable*>(sel);
-		}
-
-
-		void set_selected(Transformable* sel) {
-			_light = nullptr;
-			_renderable = nullptr;
-			_transformable = sel;
-		}
-
-		void set_selected(Light* sel) {
-			_light = sel;
-			_renderable = nullptr;
-			_transformable = sel;
-		}
-
-		void set_selected(std::nullptr_t) {
-			_light = nullptr;
-			_renderable = nullptr;
-			_transformable = nullptr;
-		}
-
-
-
-		Transformable* transformable() const {
-			return _transformable;
-		}
-
-		Renderable* renderable() const {
-			return _renderable;
-		}
-
-		Light* light() const {
-			return _light;
-		}
-
-
-
-
-		bool has_selected() {
-			return _light || _renderable || _transformable;
-		}
-
-
-
-
 		void set_selected(const AssetPtr<Material>& sel) {
 			_material = sel;
 		}
@@ -113,9 +51,6 @@ class Selection {
 		}
 
 	private:
-		NotOwner<Transformable*> _transformable = nullptr;
-		NotOwner<Renderable*> _renderable = nullptr;
-		NotOwner<Light*> _light = nullptr;
 		AssetPtr<Material> _material;
 		ecs::EntityId _id;
 };
