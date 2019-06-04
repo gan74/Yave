@@ -29,7 +29,7 @@ target_compile_options(y PUBLIC ${Y_COMPILE_OPTIONS})
 
 
 option(Y_FORCE_ASSERTS "Build asserts even in release" OFF)
-if((Y_FORCE_ASSERTS) OR (CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo))
+if((Y_FORCE_ASSERTS) OR NOT (CMAKE_BUILD_TYPE STREQUAL Release))
 	target_compile_options(y PUBLIC "-DY_DEBUG")
 endif()
 
