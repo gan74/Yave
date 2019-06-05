@@ -19,41 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_PROPERTIES_PROPERTIES_H
-#define EDITOR_PROPERTIES_PROPERTIES_H
 
-#include <editor/editor.h>
-#include <yave/ecs/EntityId.h>
+#include "PropertyPanel.h"
 
-#include <typeindex>
+#include <editor/context/EditorContext.h>
+#include <editor/properties/ComponentTraits.h>
 
-namespace yave {
-namespace ecs {
-class EntityWorld;
-}
-}
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
-struct ComponentTraits {
-	using ui_function_t = void (*)(ContextPtr, ecs::EntityId);
+PropertyPanel::PropertyPanel(ContextPtr cptr) :
+		Widget(ICON_FA_WRENCH " Properties"),
+		ContextLinked(cptr) {
 
-	std::type_index type = typeid(void);
-	std::string_view name;
-	ui_function_t widget = nullptr;
-};
-
-ComponentTraits component_traits(std::type_index type);
-core::Vector<ComponentTraits> all_component_traits();
-
-void component_widget(std::type_index type, ContextPtr ctx, ecs::EntityId id);
-
-template<typename T>
-ComponentTraits component_traits() {
-	return component_traits(typeid(T));
+	set_closable(false);
 }
 
-
+void PropertyPanel::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
+	Widget::paint(recorder, token);
 }
 
-#endif // EDITOR_PROPERTIES_PROPERTIES_H
+void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+	if(!context()->selection().has_selected_entity()) {
+		return;
+	}
+
+	ecs::EntityWorld& world = context()->world();
+	ecs::EntityId id = context()->selection().selected_entity();
+
+	for(const auto& p : world.component_containers()) {
+		if(p.second->has(id)) {
+			component_widget(p.first, context(), id);
+		}
+	}
+}
+
+}

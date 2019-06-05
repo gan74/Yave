@@ -22,12 +22,14 @@ SOFTWARE.
 #ifndef EDITOR_CONTEXT_UI_H
 #define EDITOR_CONTEXT_UI_H
 
-#include <editor/widgets/MeshImporter.h>
+#include <editor/ui/Widget.h>
 
 #include <unordered_map>
 #include <typeindex>
 
 namespace editor {
+
+class ImGuiRenderer;
 
 class Ui : NonCopyable, public ContextLinked {
 
@@ -40,19 +42,21 @@ class Ui : NonCopyable, public ContextLinked {
 		Ui(ContextPtr ctx);
 		~Ui();
 
-		core::ArrayView<std::unique_ptr<Widget>> widgets() const;
+		core::ArrayView<std::unique_ptr<UiElement>> ui_elements() const;
+
+		void refresh_all();
 
 		// don't spam these two: they are synchronous and modal (and now supported outside of win32 right now)
 		bool confirm(const char* message);
 		void ok(const char* title, const char* message);
 
+
 		void paint(CmdBufferRecorder& recorder, const FrameToken& token);
 
-		void refresh_all();
 
 		template<typename T>
 		T* show() {
-			for(auto&& e : _widgets) {
+			for(auto&& e : _elements) {
 				if(T* w = dynamic_cast<T*>(e.get())) {
 					w->show();
 					return w;
@@ -64,21 +68,25 @@ class Ui : NonCopyable, public ContextLinked {
 		template<typename T, typename... Args>
 		T* add(Args&&... args) {
 			if constexpr(std::is_constructible_v<T, ContextPtr, Args...>) {
-				_widgets.emplace_back(std::make_unique<T>(context(), y_fwd(args)...));
+				_elements.emplace_back(std::make_unique<T>(context(), y_fwd(args)...));
 			} else {
-				_widgets.emplace_back(std::make_unique<T>(y_fwd(args)...));
+				_elements.emplace_back(std::make_unique<T>(y_fwd(args)...));
 			}
-			Widget* ptr = _widgets.last().get();
+			UiElement* ptr = _elements.last().get();
 			set_id(ptr);
 			return dynamic_cast<T*>(ptr);
 		}
 
 	private:
-		Ids& ids_for(Widget* widget);
-		void set_id(Widget* widget);
+		Ids& ids_for(UiElement* elem);
+		void set_id(UiElement* elem);
 
-		core::Vector<std::unique_ptr<Widget>> _widgets;
+		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token);
+
+		core::Vector<std::unique_ptr<UiElement>> _elements;
 		std::unordered_map<std::type_index, Ids> _ids;
+
+		std::unique_ptr<ImGuiRenderer> _renderer;
 
 };
 

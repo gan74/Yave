@@ -22,7 +22,7 @@ SOFTWARE.
 #include "EntityView.h"
 
 #include <editor/context/EditorContext.h>
-#include <editor/components/ComponentTraits.h>
+#include <editor/properties/ComponentTraits.h>
 #include <editor/components/EditorComponent.h>
 
 #include <yave/ecs/EntityWorld.h>

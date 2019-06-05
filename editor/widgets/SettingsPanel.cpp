@@ -23,7 +23,6 @@ SOFTWARE.
 #include "SettingsPanel.h"
 
 #include <editor/context/EditorContext.h>
-#include <editor/renderers/ImGuiRenderer.h>
 
 #include <imgui/yave_imgui.h>
 

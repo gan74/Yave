@@ -21,22 +21,34 @@ SOFTWARE.
 **********************************/
 
 #include "MainWindow.h"
+
 #include <csignal>
+
+#include <editor/events/MainEventHandler.h>
+#include <editor/context/EditorContext.h>
+
+#include <yave/graphics/swapchain/Swapchain.h>
 
 using namespace editor;
 
-void crash_handler(int) {
+
+EditorContext* context = nullptr;
+
+
+
+static void crash_handler(int) {
 	log_msg("SEGFAULT!");
-	// we might want to save whatever we can here
+	Y_TODO(we might want to save whatever we can here)
 }
 
-int main(int argc, char** argv) {
+static void setup_handlers() {
 	std::signal(SIGSEGV, crash_handler);
-
-	perf::set_output_file("perfdump.json");
-
 	y_debug_assert([] { log_msg("Debug assert enabled"); return true; }());
+	perf::set_output_file("perfdump.json");
+}
 
+
+static Instance create_instance(int argc, char** argv) {
 	bool debug = true;
 	for(std::string_view arg : core::ArrayView<const char*>(argv, argc)) {
 		if(arg == "--nodebug") {
@@ -44,32 +56,40 @@ int main(int argc, char** argv) {
 			debug = false;
 		}
 	}
+	return Instance(debug ? DebugParams::debug() : DebugParams::none());
+}
 
-	Instance instance(debug ? DebugParams::debug() : DebugParams::none());
+
+int main(int argc, char** argv) {
+
+	setup_handlers();
+	Instance instance = create_instance(argc, argv);
+
 	Device device(instance);
 	EditorContext ctx(&device);
+	context = &ctx;
 
 	MainWindow window(&ctx);
-	window.exec();
+	window.set_event_handler(std::make_unique<MainEventHandler>());
+	window.show();
 
-
-	/*do {
-		window.show();
-		while(update()) {
-			core::DebugTimer _("Frame time", core::Duration::milliseconds(30));
-
-			if(_swapchain->size().x() && _swapchain->size().y()) {
-				FrameToken frame = _swapchain->next_frame();
-				CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
-
-				render(recorder, frame);
-				present(recorder, frame);
-			}
+	for(;;) {
+		if(!window.update() && ctx.ui().confirm("Quit ?")) {
+			break;
 		}
-	} while(!context()->ui().confirm("Quit ?"));
 
-	device()->wait_all_queues();*/
+		Swapchain* swapchain = window.swapchain();
+		if(swapchain && swapchain->size().x() > 0 && swapchain->size().y() > 0) {
+			FrameToken frame = swapchain->next_frame();
+			CmdBufferRecorder recorder(device.create_disposable_cmd_buffer());
 
+			ctx.ui().paint(recorder, frame);
+
+			window.present(recorder, frame);
+		}
+
+		ctx.flush_deferred();
+	}
 
 	return 0;
 }

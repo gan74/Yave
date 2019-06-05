@@ -22,6 +22,23 @@ SOFTWARE.
 
 #include "Ui.h"
 
+#include <editor/context/EditorContext.h>
+
+#include <editor/widgets/EntityView.h>
+#include <editor/widgets/FileBrowser.h>
+#include <editor/widgets/SettingsPanel.h>
+#include <editor/widgets/CameraDebug.h>
+#include <editor/widgets/MemoryInfo.h>
+#include <editor/widgets/PerformanceMetrics.h>
+#include <editor/widgets/ResourceBrowser.h>
+#include <editor/widgets/MaterialEditor.h>
+#include <editor/widgets/AssetStringifier.h>
+#include <editor/widgets/EcsDebug.h>
+
+#include <editor/properties/PropertyPanel.h>
+#include <editor/EngineView.h>
+
+#include <editor/ui/ImGuiRenderer.h>
 #include <imgui/yave_imgui.h>
 
 namespace editor {
@@ -33,14 +50,22 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	ImGui::GetIO().ConfigDockingWithShift = false;
 	//ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
+
+	show<EcsDebug>();
+	show<EngineView>();
+	show<EntityView>();
+	show<ResourceBrowser>();
+	show<PropertyPanel>();
+
+	_renderer = std::make_unique<ImGuiRenderer>(device());
 }
 
 Ui::~Ui() {
 	ImGui::DestroyContext();
 }
 
-core::ArrayView<std::unique_ptr<Widget>> Ui::widgets() const {
-	return _widgets;
+core::ArrayView<std::unique_ptr<UiElement>> Ui::ui_elements() const {
+	return _elements;
 }
 
 bool Ui::confirm(const char* message) {
@@ -60,38 +85,144 @@ void Ui::ok(const char* title, const char* message) {
 #endif
 }
 
+void Ui::refresh_all() {
+	for(auto&& elem : _elements) {
+		elem->refresh();
+	}
+}
+
+Ui::Ids& Ui::ids_for(UiElement* elem) {
+	return _ids[typeid(*elem)];
+}
+
+void Ui::set_id(UiElement* elem) {
+	auto& ids = ids_for(elem);
+	if(!ids.released.is_empty()) {
+		elem->set_id(ids.released.pop());
+	} else {
+		elem->set_id(ids.next++);
+	}
+}
+
+
+
 void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
-	for(auto& e : _widgets) {
+
+	ImGui::GetIO().DisplaySize = token.image_view.size();
+
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking |
+							 ImGuiWindowFlags_NoTitleBar |
+							 ImGuiWindowFlags_NoCollapse |
+							 ImGuiWindowFlags_NoResize |
+							 ImGuiWindowFlags_NoMove |
+							 ImGuiWindowFlags_NoBringToFrontOnFocus |
+							 ImGuiWindowFlags_NoNavFocus;
+
+
+	ImGui::NewFrame();
+
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->Pos);
+	ImGui::SetNextWindowSize(viewport->Size);
+	ImGui::SetNextWindowViewport(viewport->ID);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("Main Window", nullptr, ImGuiWindowFlags_MenuBar | flags);
+
+	ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+
+	ImGui::PopStyleVar(3);
+
+	paint_ui(recorder, token);
+
+	ImGui::End();
+	ImGui::EndFrame();
+	ImGui::Render();
+
+	Framebuffer framebuffer(token.image_view.device(), {token.image_view});
+	RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
+	_renderer->render(pass, token);
+}
+
+void Ui::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+	y_profile();
+	// demo
+	ImGui::ShowDemoWindow();
+
+	// menu
+	{
+		if(ImGui::BeginMenuBar()) {
+			if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
+
+				if(ImGui::MenuItem(ICON_FA_FILE " New")) {
+					context()->new_world();
+				}
+
+				ImGui::Separator();
+
+				if(ImGui::MenuItem(ICON_FA_SAVE " Save")) {
+					context()->defer([ctx = context()] { ctx->save_world(); });
+				}
+
+				if(ImGui::MenuItem(ICON_FA_FOLDER " Load")) {
+					context()->load_world();
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if(ImGui::BeginMenu("View")) {
+				if(ImGui::MenuItem("Engine view")) context()->ui().add<EngineView>();
+				if(ImGui::MenuItem("Entity view")) context()->ui().add<EntityView>();
+				if(ImGui::MenuItem("Resource browser")) context()->ui().add<ResourceBrowser>();
+				if(ImGui::MenuItem("Material editor")) context()->ui().add<MaterialEditor>();
+
+				ImGui::Separator();
+
+				if(ImGui::BeginMenu("Debug")) {
+					if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
+					if(ImGui::MenuItem("ECS debug")) context()->ui().add<EcsDebug>();
+
+					ImGui::Separator();
+					if(ImGui::MenuItem("Asset stringifier")) context()->ui().add<AssetStringifier>();
+
+					ImGui::Separator();
+					if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
+
+					y_debug_assert(!(ImGui::Separator(), ImGui::MenuItem("Debug assert")));
+
+					ImGui::EndMenu();
+				}
+				if(ImGui::BeginMenu("Statistics")) {
+					if(ImGui::MenuItem("Performances")) context()->ui().add<PerformanceMetrics>();
+					if(ImGui::MenuItem("Memory info")) context()->ui().add<MemoryInfo>();
+					ImGui::EndMenu();
+				}
+
+				ImGui::Separator();
+
+				if(ImGui::MenuItem("Settings")) context()->ui().add<SettingsPanel>();
+
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+		}
+	}
+
+	for(auto& e : _elements) {
 		e->paint(recorder, token);
 	}
 
-	for(usize i = 0; i < _widgets.size();) {
-		if(!_widgets[i]->is_visible()) {
-			ids_for(_widgets[i].get()).released << _widgets[i]->_id;
-			_widgets.erase_unordered(_widgets.begin() + i);
+	for(usize i = 0; i < _elements.size();) {
+		if(!_elements[i]->is_visible()) {
+			ids_for(_elements[i].get()).released << _elements[i]->_id;
+			_elements.erase_unordered(_elements.begin() + i);
 		} else {
 			++i;
 		}
-	}
-}
-
-void Ui::refresh_all() {
-	for(auto&& widget : _widgets) {
-		widget->refresh();
-	}
-}
-
-Ui::Ids& Ui::ids_for(Widget* widget) {
-	return _ids[typeid(*widget)];
-}
-
-void Ui::set_id(Widget* widget) {
-	auto& ids = ids_for(widget);
-	if(!ids.released.is_empty()) {
-		widget->set_id(ids.released.pop());
-	} else {
-		widget->set_id(ids.next++);
 	}
 }
 

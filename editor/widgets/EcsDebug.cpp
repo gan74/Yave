@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 
 #include <y/io2/File.h>
+#include <y/core/Chrono.h>
 #include <y/math/random.h>
 
 #include <imgui/yave_imgui.h>

@@ -38,6 +38,7 @@ class UiElement : NonMovable {
 		virtual void paint(CmdBufferRecorder&, const FrameToken&) = 0;
 
 		virtual bool is_visible() const;
+
 		void show();
 		void close();
 

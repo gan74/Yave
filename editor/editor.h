@@ -26,6 +26,8 @@ SOFTWARE.
 
 
 namespace yave {
+class Swapchain;
+class FrameToken;
 class RenderPassRecorder;
 class CmdBufferRecorder;
 class FileSystemModel;

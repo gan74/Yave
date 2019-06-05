@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Window {
+class Window : NonMovable {
 	public:
 		enum Flags {
 			NoFlags = 0,

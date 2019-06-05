@@ -22,36 +22,27 @@ SOFTWARE.
 #ifndef EDITOR_MAINWINDOW_H
 #define EDITOR_MAINWINDOW_H
 
-#include <editor/context/EditorContext.h>
+#include <editor/editor.h>
 
 #include <yave/window/Window.h>
-#include <yave/graphics/swapchain/swapchain.h>
 
 namespace editor {
 
-class ImGuiRenderer;
-
-class MainWindow : private Window, public ContextLinked {
+class MainWindow : public Window, public ContextLinked {
 
 	public:
 		MainWindow(ContextPtr cptr);
 		~MainWindow();
 
-		void exec();
+		Swapchain* swapchain();
+
+		void present(CmdBufferRecorder& recorder, const FrameToken& token);
 
 	private:
 		void resized() override;
-
-		void render(CmdBufferRecorder& recorder, const FrameToken& token);
-		void present(CmdBufferRecorder& recorder, const FrameToken& token);
-
-		void render_ui(CmdBufferRecorder& recorder, const FrameToken& token);
-
 		void create_swapchain();
 
 		std::unique_ptr<Swapchain> _swapchain;
-		std::unique_ptr<Framebuffer[]> _framebuffers;
-		std::unique_ptr<ImGuiRenderer> _ui_renderer;
 };
 
 }
