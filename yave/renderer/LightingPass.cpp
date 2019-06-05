@@ -152,7 +152,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 				for(const auto& [l] : scene.world().view(DirectionalLightArchetype())) {
 					mapping[push_data.point_count + push_data.directional_count++] = uniform::Light{
-							l.direction().normalized(),
+							-l.direction().normalized(),
 							0.0f,
 							l.color() * l.intensity(),
 							uniform::Light::Type::Directional

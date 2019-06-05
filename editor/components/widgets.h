@@ -28,7 +28,10 @@ SOFTWARE.
 #include <editor/widgets/AssetSelector.h>
 
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/DirectionalLightComponent.h>
 #include <yave/ecs/EntityWorld.h>
+
+#include <yave/utils/color.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -37,6 +40,14 @@ namespace editor {
 template<typename T>
 void widget(ContextPtr, ecs::EntityId) {
 }
+
+
+
+
+
+/**************************************************************************
+*								Editor
+**************************************************************************/
 
 template<>
 void widget<EditorComponent>(ContextPtr ctx, ecs::EntityId id) {
@@ -57,14 +68,16 @@ void widget<EditorComponent>(ContextPtr ctx, ecs::EntityId id) {
 	}
 }
 
-template<>
-void widget<PointLightComponent>(ContextPtr ctx, ecs::EntityId id) {
-	if(!ImGui::CollapsingHeader("Light component")) {
-		return;
-	}
 
-	PointLightComponent* light = ctx->world().component<PointLightComponent>(id);
 
+
+
+/**************************************************************************
+*								Lights
+**************************************************************************/
+
+template<typename T>
+static void light_widget(T* light) {
 	int color_flags = ImGuiColorEditFlags_NoSidePreview |
 					  // ImGuiColorEditFlags_NoSmallPreview |
 					  ImGuiColorEditFlags_NoAlpha |
@@ -81,17 +94,55 @@ void widget<PointLightComponent>(ContextPtr ctx, ecs::EntityId id) {
 	if(ImGui::BeginPopup("Color")) {
 		ImGui::ColorPicker3("##lightpicker", light->color().begin(), color_flags);
 
-		ImGui::SameLine();
-		ImGui::BeginGroup();
-		ImGui::Text("temperature slider should be here");
-		ImGui::EndGroup();
+		float kelvin = std::clamp(rgb_to_k(light->color()), 1000.0f, 12000.0f);
+		if(ImGui::SliderFloat("", &kelvin, 1000.0f, 12000.0f, "%.0f°K")) {
+			light->color() = k_to_rbg(kelvin);
+		}
 
 		ImGui::EndPopup();
 	}
 
-	ImGui::DragFloat("Intensity", &light->intensity());
-	ImGui::DragFloat("Radius", &light->radius());
+	ImGui::DragFloat("Intensity", &light->intensity(), 1.0f, 0.0f, std::numeric_limits<float>::max());
 }
+
+template<>
+void widget<PointLightComponent>(ContextPtr ctx, ecs::EntityId id) {
+	if(!ImGui::CollapsingHeader("Point light")) {
+		return;
+	}
+
+	PointLightComponent* light = ctx->world().component<PointLightComponent>(id);
+
+	light_widget(light);
+	ImGui::DragFloat("Radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max());
+}
+
+template<>
+void widget<DirectionalLightComponent>(ContextPtr ctx, ecs::EntityId id) {
+	if(!ImGui::CollapsingHeader("Directional light")) {
+		return;
+	}
+
+	DirectionalLightComponent* light = ctx->world().component<DirectionalLightComponent>(id);
+
+	light_widget(light);
+
+	{
+		ImGui::BeginGroup();
+		ImGui::InputFloat3("Direction", light->direction().data(), "%.2f");
+		ImGui::EndGroup();
+	}
+
+}
+
+
+
+
+
+
+/**************************************************************************
+*								Meshes
+**************************************************************************/
 
 template<>
 void widget<StaticMeshComponent>(ContextPtr ctx, ecs::EntityId id) {
@@ -137,6 +188,14 @@ void widget<StaticMeshComponent>(ContextPtr ctx, ecs::EntityId id) {
 		}
 	}
 }
+
+
+
+
+
+/**************************************************************************
+*								Transformable
+**************************************************************************/
 
 template<>
 void widget<TransformableComponent>(ContextPtr ctx, ecs::EntityId id) {

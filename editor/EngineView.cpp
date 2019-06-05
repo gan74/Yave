@@ -23,6 +23,8 @@ SOFTWARE.
 #include "EngineView.h"
 
 #include <editor/context/EditorContext.h>
+#include <yave/components/TransformableComponent.h>
+
 #include <yave/renderer/renderer.h>
 
 #include <imgui/yave_imgui.h>
@@ -216,25 +218,29 @@ void EngineView::update_camera() {
 }
 
 void EngineView::update_selection() {
+	y_profile();
+
 	if(!ImGui::IsWindowHovered() || !ImGui::IsMouseClicked(0)) {
 		return;
 	}
 
-	/*StaticMeshInstance* selected = nullptr;
+	ecs::EntityId selected_id;
 	float score = std::numeric_limits<float>::max();
-	for(const auto& tr : context()->scene().scene().static_meshes()) {
-		auto [pos, rot, scale] = tr->transform().decompose();
-		unused(rot);
+	for(ecs::EntityId id : context()->world().entities()) {
+		if(TransformableComponent* tr = context()->world().component<TransformableComponent>(id)) {
+			auto [pos, rot, scale] = tr->transform().decompose();
+			unused(rot);
 
-		float radius = tr->radius() * std::max({scale.x(), scale.y(), scale.z()});
-		float sc = (pos - _picked_pos).length() / radius;
+			float radius = 1.0f; // tr->radius() * std::max({scale.x(), scale.y(), scale.z()});
+			float sc = (pos - _picked_pos).length() / radius;
 
-		if(sc < score) {
-			selected = tr.get();
-			score = sc;
+			if(sc < score) {
+				selected_id = id;
+				score = sc;
+			}
 		}
 	}
-	context()->selection().set_selected(selected);*/
+	context()->selection().set_selected(selected_id);
 }
 
 }

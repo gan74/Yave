@@ -37,6 +37,7 @@ class TransformableComponent final : public math::Transform<> {
 		const math::Transform<>& transform() const {
 			return *this;
 		}
+
 };
 
 }

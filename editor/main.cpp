@@ -47,11 +47,29 @@ int main(int argc, char** argv) {
 
 	Instance instance(debug ? DebugParams::debug() : DebugParams::none());
 	Device device(instance);
-
 	EditorContext ctx(&device);
 
 	MainWindow window(&ctx);
 	window.exec();
+
+
+	/*do {
+		window.show();
+		while(update()) {
+			core::DebugTimer _("Frame time", core::Duration::milliseconds(30));
+
+			if(_swapchain->size().x() && _swapchain->size().y()) {
+				FrameToken frame = _swapchain->next_frame();
+				CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
+
+				render(recorder, frame);
+				present(recorder, frame);
+			}
+		}
+	} while(!context()->ui().confirm("Quit ?"));
+
+	device()->wait_all_queues();*/
+
 
 	return 0;
 }

@@ -63,7 +63,7 @@ static math::Vec3 intersect(const math::Vec3& normal, const math::Vec3& center, 
 	return start + direction * t;
 }
 
-const ImU32 flags =
+static const ImU32 flags =
 		ImGuiWindowFlags_NoInputs |
 		ImGuiWindowFlags_NoFocusOnAppearing |
 		ImGuiWindowFlags_NoBringToFrontOnFocus;

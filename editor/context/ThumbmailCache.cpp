@@ -46,7 +46,7 @@ ThumbmailCache::SceneData::SceneData(const AssetPtr<StaticMesh>& mesh, const Ass
 	{
 		ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
 		DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
-		light_comp->direction() = math::Vec3{1.0f, 0.5f, -1.0f};
+		light_comp->direction() = math::Vec3{1.0f, -0.5f, -1.0f};
 		light_comp->color() = 5.0f;
 	}
 	{
