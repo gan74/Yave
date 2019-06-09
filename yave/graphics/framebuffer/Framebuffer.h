@@ -33,12 +33,32 @@ namespace yave {
 class Framebuffer final : NonCopyable, public DeviceLinked {
 
 	public:
+		using LoadOp = RenderPass::LoadOp;
+
+		template<ImageUsage Usage>
+		struct Attachment {
+			Attachment() = default;
+
+			Attachment(const ImageView<Usage>& v) : view(v) {
+			}
+
+			Attachment(const ImageView<Usage>& v, LoadOp op) : view(v), load_op(op) {
+			}
+
+			ImageView<Usage> view;
+			LoadOp load_op = LoadOp::Clear;
+		};
+
+		using ColorAttachment = Attachment<ImageUsage::ColorBit>;
+		using DepthAttachment = Attachment<ImageUsage::DepthBit>;
+
 		Framebuffer() = default;
 		Framebuffer(Framebuffer&&) = default;
 		Framebuffer& operator=(Framebuffer&&) = default;
 
-		Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> colors = {});
-		Framebuffer(DevicePtr dptr, core::ArrayView<ColorAttachmentView> colors);
+		Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::ArrayView<ColorAttachment> colors = {});
+		Framebuffer(DevicePtr dptr, core::ArrayView<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
+		Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
 
 		~Framebuffer();
 
@@ -46,8 +66,6 @@ class Framebuffer final : NonCopyable, public DeviceLinked {
 
 		vk::Framebuffer vk_framebuffer() const;
 
-		const DepthAttachmentView& depth_attachment() const;
-		core::ArrayView<ColorAttachmentView> color_attachments() const;
 		const RenderPass& render_pass() const;
 
 		usize attachment_count() const {
@@ -60,9 +78,6 @@ class Framebuffer final : NonCopyable, public DeviceLinked {
 
 		std::unique_ptr<RenderPass> _render_pass;
 		vk::Framebuffer _framebuffer;
-
-		DepthAttachmentView _depth;
-		core::Vector<ColorAttachmentView> _colors;
 };
 
 }

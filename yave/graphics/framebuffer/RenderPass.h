@@ -31,24 +31,28 @@ SOFTWARE.
 
 namespace yave {
 
-
-
 class RenderPass : NonCopyable, public DeviceLinked {
 	public:
+		enum class LoadOp {
+			Clear,
+			Load
+		};
+
 		struct ImageData {
 			const ImageFormat format = vk::Format::eUndefined;
 			const ImageUsage usage = ImageUsage::None;
+			const LoadOp load_op = LoadOp::Clear;
 
 			ImageData() = default;
 
-			ImageData(ImageFormat fmt, ImageUsage us) : format(fmt), usage(us) {
+			ImageData(ImageFormat fmt, ImageUsage us, LoadOp op) : format(fmt), usage(us), load_op(op) {
 			}
 
-			ImageData(const ImageBase& img) : format(img.format()), usage(img.usage()) {
+			ImageData(const ImageBase& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
 			}
 
 			template<ImageUsage Usage>
-			ImageData(const ImageView<Usage>& img) : format(img.format()), usage(img.usage()) {
+			ImageData(const ImageView<Usage>& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
 			}
 		};
 

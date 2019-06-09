@@ -53,14 +53,14 @@ void FrameGraphPass::render(CmdBufferRecorder& recorder) const {
 
 void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
 	y_profile();
-	if(_depth.is_valid() || _colors.size()) {
-		DepthAttachmentView depth;
-		if(_depth.is_valid()) {
-			depth = pool->image<ImageUsage::DepthBit>(_depth);
+	if(_depth.image.is_valid() || _colors.size()) {
+		Framebuffer::DepthAttachment depth;
+		if(_depth.image.is_valid()) {
+			depth = Framebuffer::DepthAttachment(pool->image<ImageUsage::DepthBit>(_depth.image), _depth.load_op);
 		}
-		auto colors = core::vector_with_capacity<ColorAttachmentView>(_colors.size());
+		auto colors = core::vector_with_capacity<Framebuffer::ColorAttachment>(_colors.size());
 		for(auto&& color : _colors) {
-			colors << pool->image<ImageUsage::ColorBit>(color);
+			colors << Framebuffer::ColorAttachment(pool->image<ImageUsage::ColorBit>(color.image), color.load_op);
 		}
 		_framebuffer = Framebuffer(pool->device(), depth, colors);
 	}

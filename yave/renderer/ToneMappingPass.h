@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 struct ToneMappingPass {
-	FrameGraphImageId tone_mapped;
+	FrameGraphMutableImageId tone_mapped;
 
 	static ToneMappingPass create(FrameGraph& framegraph, const LightingPass& lighting);
 };

@@ -138,12 +138,18 @@ Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dp
 	y_debug_assert(_images.size() == _semaphores.size());
 }
 
+bool Swapchain::is_valid() const {
+	return _size.x() > 0 && _size.y() > 0 && !_images.is_empty();
+}
+
 void Swapchain::reset() {
 	_images.clear();
+	destroy_semaphores();
 
 	auto old = _swapchain;
 
 	build_swapchain();
+	build_semaphores();
 
 	destroy(old);
 
@@ -153,10 +159,7 @@ void Swapchain::reset() {
 Swapchain::~Swapchain() {
 	_images.clear();
 
-	for(const auto& semaphores : _semaphores) {
-		destroy(semaphores.first);
-		destroy(semaphores.second);
-	}
+	destroy_semaphores();
 
 	destroy(_swapchain);
 	destroy(_surface);
@@ -173,6 +176,10 @@ void Swapchain::build_swapchain() {
 
 	_size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
 	_color_format = format.format;
+
+	if(!_size.x() || !_size.y()) {
+		return;
+	}
 
 	_swapchain = device()->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
 			.setImageUsage(image_usage_flags)
@@ -228,9 +235,17 @@ void Swapchain::build_semaphores() {
 	}
 }
 
+void Swapchain::destroy_semaphores() {
+	for(const auto& semaphores : _semaphores) {
+		destroy(semaphores.first);
+		destroy(semaphores.second);
+	}
+	_semaphores.clear();
+}
 
 FrameToken Swapchain::next_frame() {
 	y_debug_assert(_semaphores.size());
+	y_debug_assert(is_valid());
 
 	auto [image_acquired, render_finished] = _semaphores.pop();
 	u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, vk::Fence()).value;

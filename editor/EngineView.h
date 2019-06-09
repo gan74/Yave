@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <editor/widgets/Gizmo.h>
-#include <yave/renderer/LightingPass.h>
+#include <editor/renderer/renderer.h>
 
 namespace editor {
 

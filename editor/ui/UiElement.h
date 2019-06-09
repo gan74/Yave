@@ -31,6 +31,7 @@ namespace editor {
 class UiElement : NonMovable {
 	public:
 		UiElement(std::string_view title);
+
 		virtual ~UiElement() = default;
 
 		virtual void refresh();

@@ -106,7 +106,7 @@ y_test_func("DefaultVectorResizePolicy") {
 	y_test_assert(size.ideal_capacity(0) == 0);
 	//y_test_assert(size.shrink(0, 1));
 
-	for(usize i = 0; i != size.threshold + 3 * size.step; ++i) {
+	for(usize i = 0; i != 1 << 16; ++i) {
 		y_test_assert(size.ideal_capacity(i) >= i);
 	}
 	//cout_vec_sizes(1024 * 32);

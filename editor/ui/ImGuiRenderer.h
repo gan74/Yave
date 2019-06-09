@@ -38,6 +38,8 @@ class ImGuiRenderer : NonCopyable, public DeviceLinked {
 		u32 col;
 	};
 
+	Y_TODO(Merge ImGuiRenderer into Ui)
+
 	public:
 		enum class Style {
 			Yave,

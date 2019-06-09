@@ -52,9 +52,9 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 
 	{
 		FrameGraph graph(context()->resource_pool());
-		DefaultRenderer renderer = DefaultRenderer::create(graph, _scene_view, content_size(), _ibl_data);
+		DefaultEditorRenderer renderer = DefaultEditorRenderer::create(graph, _scene_view, content_size(), _ibl_data);
 
-		FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
+		FrameGraphImageId output_image = renderer.renderer.tone_mapping.tone_mapped;
 		{
 			FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 			builder.add_texture_input(output_image, PipelineStage::FragmentBit);

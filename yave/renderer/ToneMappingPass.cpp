@@ -37,7 +37,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, const LightingPa
 	pass.tone_mapped = tone_mapped;
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
-	builder.add_color_output(tone_mapped);
+	builder.add_color_output(tone_mapped, Framebuffer::LoadOp::Load);
 	builder.add_uniform_input(lighting.lit, 0, PipelineStage::FragmentBit);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());

@@ -25,49 +25,47 @@ SOFTWARE.
 
 namespace yave {
 
-static math::Vec2ui compute_size(const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> views) {
+static math::Vec2ui compute_size(const Framebuffer::DepthAttachment& depth, core::ArrayView<Framebuffer::ColorAttachment> colors) {
 	math::Vec2ui ref;
-	if(depth.device()) {
-		ref = depth.size();
-	} else if(!views.is_empty()) {
-		ref = views[0].size();
+	if(depth.view.device()) {
+		ref = depth.view.size();
+	} else if(!colors.is_empty()) {
+		ref = colors[0].view.size();
 	}
 
-	for(const auto& v : views) {
-		if(v.size() != ref) {
+	for(const auto& c : colors) {
+		if(c.view.size() != ref) {
 			y_fatal("Invalid attachment size.");
 		}
 	}
 	return ref;
 }
 
-static RenderPass* create_render_pass(DevicePtr dptr, const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> colors) {
+static core::Vector<Framebuffer::ColorAttachment> color_attachments(core::ArrayView<ColorAttachmentView> color_views, Framebuffer::LoadOp load_op) {
+	auto colors = core::vector_with_capacity<Framebuffer::ColorAttachment>(color_views.size());
+	std::transform(color_views.begin(), color_views.end(), std::back_inserter(colors), [=](const auto& c) { return Framebuffer::ColorAttachment(c, load_op); });
+	return colors;
+}
+
+static std::unique_ptr<RenderPass> create_render_pass(DevicePtr dptr, const Framebuffer::DepthAttachment& depth, core::ArrayView<Framebuffer::ColorAttachment> colors) {
 	auto color_vec = core::vector_with_capacity<RenderPass::ImageData>(colors.size());
-	std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::ImageData(c); });
-	return depth.device()
-			? new RenderPass(dptr, depth, color_vec)
-			: new RenderPass(dptr, color_vec);
+	std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::ImageData(c.view, c.load_op); });
+	return depth.view.device()
+		? std::make_unique<RenderPass>(dptr, RenderPass::ImageData(depth.view, depth.load_op), color_vec)
+		: std::make_unique<RenderPass>(dptr, color_vec);
 }
 
-
-
-Framebuffer::Framebuffer(DevicePtr dptr, core::ArrayView<ColorAttachmentView> colors) :
-		Framebuffer(dptr, DepthAttachmentView(), colors) {
-}
-
-Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> colors) :
+Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::ArrayView<ColorAttachment> colors) :
 		DeviceLinked(dptr),
 		_size(compute_size(depth, colors)),
 		_attachment_count(colors.size()),
-		_render_pass(create_render_pass(dptr, depth, colors)),
-		_depth(depth),
-		_colors(colors.begin(), colors.end()) {
+		_render_pass(create_render_pass(dptr, depth, colors)) {
 
-	auto views = core::vector_with_capacity<vk::ImageView>(_colors.size() + 1);
-	std::transform(_colors.begin(), _colors.end(), std::back_inserter(views), [](const auto& v) { return v.vk_view(); });
+	auto views = core::vector_with_capacity<vk::ImageView>(colors.size() + 1);
+	std::transform(colors.begin(), colors.end(), std::back_inserter(views), [](const auto& v) { return v.view.vk_view(); });
 
-	if(_depth.device()) {
-		views << _depth.vk_view();
+	if(depth.view.device()) {
+		views << depth.view.vk_view();
 	}
 
 	_framebuffer = device()->vk_device().createFramebuffer(vk::FramebufferCreateInfo()
@@ -78,6 +76,14 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core:
 		.setHeight(_size.y())
 		.setLayers(1)
 	);
+}
+
+Framebuffer::Framebuffer(DevicePtr dptr, core::ArrayView<ColorAttachmentView> colors, LoadOp load_op) :
+		Framebuffer(dptr, DepthAttachment(), color_attachments(colors, load_op)) {
+}
+
+Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::ArrayView<ColorAttachmentView> colors, LoadOp load_op) :
+		Framebuffer(dptr, DepthAttachment(depth, load_op), color_attachments(colors, load_op)) {
 }
 
 Framebuffer::~Framebuffer() {
@@ -94,14 +100,6 @@ vk::Framebuffer Framebuffer::vk_framebuffer() const {
 
 const RenderPass& Framebuffer::render_pass() const {
 	return *_render_pass;
-}
-
-const DepthAttachmentView& Framebuffer::depth_attachment() const {
-	return _depth;
-}
-
-core::ArrayView<ColorAttachmentView> Framebuffer::color_attachments() const {
-	return _colors;
 }
 
 }

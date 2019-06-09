@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 		}
 
 		Swapchain* swapchain = window.swapchain();
-		if(swapchain && swapchain->size().x() > 0 && swapchain->size().y() > 0) {
+		if(swapchain && swapchain->is_valid()) {
 			FrameToken frame = swapchain->next_frame();
 			CmdBufferRecorder recorder(device.create_disposable_cmd_buffer());
 

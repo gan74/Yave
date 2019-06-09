@@ -207,7 +207,7 @@ y_test_func("serde RAII") {
 		RaiiGuard r(&alive);
 		WritableArchive a(r);
 		a(es, func([&] { y_test_assert(alive); })).unwrap();
-		y_test_assert(!alive);
+		y_test_assert(alive);
 	}
 }
 

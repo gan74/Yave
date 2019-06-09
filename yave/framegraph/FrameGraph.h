@@ -67,6 +67,7 @@ class FrameGraph : NonCopyable {
 		void add_usage(FrameGraphImageId res, ImageUsage usage);
 		void add_usage(FrameGraphBufferId res, BufferUsage usage);
 		void set_cpu_visible(FrameGraphMutableBufferId res);
+		bool is_attachment(FrameGraphImageId res) const;
 
 
 		math::Vec2ui image_size(FrameGraphImageId res) const;

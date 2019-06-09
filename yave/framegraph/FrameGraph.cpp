@@ -175,7 +175,7 @@ FrameGraphPassBuilder FrameGraph::add_pass(std::string_view name) {
 
 
 template<typename T, typename C>
-static auto& check_exists(C& c, T t) {
+static auto&& check_exists(C& c, T t) {
 	auto it = c.find(t);
 	if(it == c.end()) {
 		y_fatal("Resource doesn't exist.");
@@ -196,6 +196,11 @@ void FrameGraph::add_usage(FrameGraphBufferId res, BufferUsage usage) {
 void FrameGraph::set_cpu_visible(FrameGraphMutableBufferId res) {
 	auto& info = check_exists(_buffers, res);
 	info.memory_type = MemoryType::CpuVisible;
+}
+
+bool FrameGraph::is_attachment(FrameGraphImageId res) const {
+	const auto& info = check_exists(_images, res);
+	return (info.usage & ImageUsage::Attachment) != ImageUsage::None;
 }
 
 math::Vec2ui FrameGraph::image_size(FrameGraphImageId res) const {

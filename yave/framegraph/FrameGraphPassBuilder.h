@@ -31,8 +31,8 @@ class FrameGraphPassBuilder {
 	public:
 		void add_texture_input(FrameGraphImageId res, PipelineStage stage);
 
-		void add_depth_output(FrameGraphMutableImageId res);
-		void add_color_output(FrameGraphMutableImageId res);
+		void add_depth_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
+		void add_color_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
 
 		void add_copy_src(FrameGraphImageId res);
 

@@ -25,18 +25,12 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <editor/widgets/EntityView.h>
-#include <editor/widgets/FileBrowser.h>
-#include <editor/widgets/SettingsPanel.h>
-#include <editor/widgets/CameraDebug.h>
-#include <editor/widgets/MemoryInfo.h>
-#include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/ResourceBrowser.h>
-#include <editor/widgets/MaterialEditor.h>
-#include <editor/widgets/AssetStringifier.h>
 #include <editor/widgets/EcsDebug.h>
 
 #include <editor/properties/PropertyPanel.h>
 #include <editor/EngineView.h>
+#include <editor/ui/MenuBar.h>
 
 #include <editor/ui/ImGuiRenderer.h>
 #include <imgui/yave_imgui.h>
@@ -56,6 +50,7 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 	show<EntityView>();
 	show<ResourceBrowser>();
 	show<PropertyPanel>();
+	show<MenuBar>();
 
 	_renderer = std::make_unique<ImGuiRenderer>(device());
 }
@@ -142,75 +137,18 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	ImGui::EndFrame();
 	ImGui::Render();
 
-	Framebuffer framebuffer(token.image_view.device(), {token.image_view});
-	RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
-	_renderer->render(pass, token);
+	{
+		y_profile_zone("ui render");
+		Framebuffer framebuffer(token.image_view.device(), {token.image_view});
+		RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
+		_renderer->render(pass, token);
+	}
 }
 
 void Ui::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
 	// demo
 	ImGui::ShowDemoWindow();
-
-	// menu
-	{
-		if(ImGui::BeginMenuBar()) {
-			if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
-
-				if(ImGui::MenuItem(ICON_FA_FILE " New")) {
-					context()->new_world();
-				}
-
-				ImGui::Separator();
-
-				if(ImGui::MenuItem(ICON_FA_SAVE " Save")) {
-					context()->defer([ctx = context()] { ctx->save_world(); });
-				}
-
-				if(ImGui::MenuItem(ICON_FA_FOLDER " Load")) {
-					context()->load_world();
-				}
-
-				ImGui::EndMenu();
-			}
-
-			if(ImGui::BeginMenu("View")) {
-				if(ImGui::MenuItem("Engine view")) context()->ui().add<EngineView>();
-				if(ImGui::MenuItem("Entity view")) context()->ui().add<EntityView>();
-				if(ImGui::MenuItem("Resource browser")) context()->ui().add<ResourceBrowser>();
-				if(ImGui::MenuItem("Material editor")) context()->ui().add<MaterialEditor>();
-
-				ImGui::Separator();
-
-				if(ImGui::BeginMenu("Debug")) {
-					if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
-					if(ImGui::MenuItem("ECS debug")) context()->ui().add<EcsDebug>();
-
-					ImGui::Separator();
-					if(ImGui::MenuItem("Asset stringifier")) context()->ui().add<AssetStringifier>();
-
-					ImGui::Separator();
-					if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
-
-					y_debug_assert(!(ImGui::Separator(), ImGui::MenuItem("Debug assert")));
-
-					ImGui::EndMenu();
-				}
-				if(ImGui::BeginMenu("Statistics")) {
-					if(ImGui::MenuItem("Performances")) context()->ui().add<PerformanceMetrics>();
-					if(ImGui::MenuItem("Memory info")) context()->ui().add<MemoryInfo>();
-					ImGui::EndMenu();
-				}
-
-				ImGui::Separator();
-
-				if(ImGui::MenuItem("Settings")) context()->ui().add<SettingsPanel>();
-
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
-		}
-	}
 
 	for(auto& e : _elements) {
 		e->paint(recorder, token);

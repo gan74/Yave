@@ -29,25 +29,21 @@ namespace y {
 namespace core {
 
 struct DefaultVectorResizePolicy {
-	static constexpr usize threshold = 8 * 1024;
 	static constexpr usize minimum = 16;
-	static constexpr usize step = 8 * 1024;
+	static constexpr usize delta = 16;
 
-	usize ideal_capacity(usize size) const {
+	static usize ideal_capacity(usize size) {
 		if(!size) {
 			return 0;
 		}
 		if(size < minimum) {
 			return minimum;
 		}
-		if(size < threshold) {
-			return 2 << (log2ui(size) + 1);
-		}
-		usize steps = (size - threshold) / step;
-		return threshold + (steps + 1) * step;
+		usize l = log2ui(size + delta);
+		return (4 << l) - (1 << l) - delta;
 	}
 
-	bool shrink(usize size, usize capacity) const {
+	static bool shrink(usize size, usize capacity) {
 		unused(size, capacity);
 		return false;
 		//return !size || (capacity - size) > 2 * step;

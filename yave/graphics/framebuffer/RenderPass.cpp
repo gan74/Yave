@@ -92,17 +92,23 @@ static std::array<vk::SubpassDependency, 2> create_z_pass_dependencies() {
 		}};
 }
 
+static vk::AttachmentLoadOp attachment_load_op(const RenderPass::ImageData& image) {
+	return image.load_op == RenderPass::LoadOp::Clear
+		? vk::AttachmentLoadOp::eClear
+		: vk::AttachmentLoadOp::eLoad;
+}
 
 static vk::AttachmentDescription create_attachment(RenderPass::ImageData image) {
+	auto layout = vk_final_image_layout(image.usage);
 	return vk::AttachmentDescription()
 		.setFormat(image.format.vk_format())
 		.setSamples(vk::SampleCountFlagBits::e1)
-		.setLoadOp(vk::AttachmentLoadOp::eClear)
+		.setLoadOp(attachment_load_op(image))
 		.setStoreOp(vk::AttachmentStoreOp::eStore)
 		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-		//.setInitialLayout(vk_initial_image_layout(image.usage))
-		.setFinalLayout(vk_final_image_layout(image.usage))
+		.setFinalLayout(layout)
+		.setInitialLayout(layout)
 	;
 }
 

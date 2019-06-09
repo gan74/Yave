@@ -37,6 +37,12 @@ SOFTWARE.
 namespace yave {
 
 class FrameGraphPass : NonCopyable {
+
+	struct Attachment {
+		FrameGraphImageId image;
+		Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear;
+	};
+
 	public:
 		struct ResourceUsageInfo {
 			PipelineStage stage = PipelineStage::None;
@@ -73,8 +79,8 @@ class FrameGraphPass : NonCopyable {
 		core::Vector<core::Vector<FrameGraphDescriptorBinding>> _bindings;
 		core::Vector<DescriptorSet> _descriptor_sets;
 
-		FrameGraphImageId _depth;
-		core::Vector<FrameGraphImageId> _colors;
+		Attachment _depth;
+		core::Vector<Attachment> _colors;
 
 		Framebuffer _framebuffer;
 };
