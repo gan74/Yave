@@ -127,15 +127,17 @@ void MeshImporter::import(import::SceneData scene) {
 	y_profile();
 	auto import_assets = [this](const auto& assets) {
 		for(const auto& a : assets) {
-			try {
-				core::String name = context()->asset_store().filesystem()->join(_import_path, a.name());
-				log_msg(fmt("Saving asset as \"%\"", name));
-				io2::Buffer buffer;
-				WritableAssetArchive ar(buffer);
-				a.obj().serialize(ar).or_throw("import failed.");
-				context()->asset_store().import(buffer, name).or_throw("import failed.");
-			} catch(std::exception& e) {
-				log_msg(fmt("Unable save \"%\": %", a.name(), e.what()), Log::Error);
+			core::String name = context()->asset_store().filesystem()->join(_import_path, a.name());
+			log_msg(fmt("Saving asset as \"%\"", name));
+			io2::Buffer buffer;
+			WritableAssetArchive ar(buffer);
+			if(!a.obj().serialize(ar)) {
+				log_msg(fmt("Unable serialize \"%\"", a.name()), Log::Error);
+				continue;
+			}
+			if(!context()->asset_store().import(buffer, name)) {
+				log_msg(fmt("Unable import \"%\"", a.name()), Log::Error);
+				continue;
 			}
 		}
 	};

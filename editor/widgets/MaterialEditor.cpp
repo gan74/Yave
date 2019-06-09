@@ -38,23 +38,32 @@ MaterialEditor::MaterialEditor(ContextPtr cptr) :
 }
 
 static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, usize index, AssetId id) {
-	if(auto tex = ctx->loader().load<Texture>(id)) {
-		SimpleMaterialData data = material->data();
-		data.set_texture(SimpleMaterialData::Textures(index), std::move(tex.unwrap()));
-
-		io2::Buffer buffer;
-		WritableAssetArchive ar(buffer);
-		if(data.serialize(ar)) {
-			ctx->asset_store().write(material.id(), buffer).or_throw("");
-			ctx->loader().set(material.id(), Material(ctx->device(), std::move(data))).or_throw("");
-
-			ctx->flush_reload();
-		} else {
-			log_msg("Unable to save material.", Log::Error);
-		}
-	} else {
+	auto tex = ctx->loader().load<Texture>(id);
+	if(!tex) {
 		log_msg("Unable to load texture.", Log::Error);
+		return;
 	}
+	SimpleMaterialData data = material->data();
+	data.set_texture(SimpleMaterialData::Textures(index), std::move(tex.unwrap()));
+
+	io2::Buffer buffer;
+	WritableAssetArchive ar(buffer);
+	if(!data.serialize(ar)) {
+		log_msg("Unable to serialize material.", Log::Error);
+		return;
+	}
+
+	if(!ctx->asset_store().write(material.id(), buffer)) {
+		log_msg("Unable to write material.", Log::Error);
+		return;
+	}
+
+	if(!ctx->loader().set(material.id(), Material(ctx->device(), std::move(data)))) {
+		log_msg("Unable to reload material.", Log::Error);
+		// force flush_reload anyway
+	}
+
+	ctx->flush_reload();
 }
 
 void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {

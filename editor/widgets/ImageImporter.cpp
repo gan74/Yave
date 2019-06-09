@@ -77,14 +77,16 @@ void ImageImporter::import_async(const core::String& filename) {
 }
 
 void ImageImporter::import(const Named<ImageData>& asset) {
-	try {
-		core::String name = context()->asset_store().filesystem()->join(_import_path, asset.name());
-		io2::Buffer buffer;
-		WritableAssetArchive ar(buffer);
-		asset.obj().serialize(ar).or_throw("?");
-		context()->asset_store().import(buffer, name).or_throw("import failed.");
-	} catch(std::exception& e) {
-		log_msg(fmt("Unable save image: %", e.what()), Log::Error);
+	core::String name = context()->asset_store().filesystem()->join(_import_path, asset.name());
+	io2::Buffer buffer;
+	WritableAssetArchive ar(buffer);
+	if(!asset.obj().serialize(ar)) {
+		log_msg(fmt("Unable serialize image"), Log::Error);
+		return;
+	}
+	if(!context()->asset_store().import(buffer, name)) {
+		log_msg(fmt("Unable import image"), Log::Error);
+		// refresh anyway
 	}
 
 	context()->ui().refresh_all();
