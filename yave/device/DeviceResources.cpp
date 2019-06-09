@@ -55,7 +55,6 @@ static constexpr SpirV compute_spirvs[] = {
 		SpirV::DeferredLightingComp,
 		SpirV::SSAOComp,
 		SpirV::PickingComp,
-		SpirV::DepthAlphaComp,
 		SpirV::CopyComp,
 	};
 
@@ -66,7 +65,6 @@ static constexpr DeviceMaterialData material_datas[] = {
 		{SpirV::TexturedFrag, SpirV::BasicVert, true},
 
 		{SpirV::TonemapFrag, SpirV::ScreenVert, false},
-		{SpirV::ImguiFrag, SpirV::ImguiVert, false, false, true},
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -76,19 +74,16 @@ static constexpr const char* spirv_names[] = {
 		"deferred.comp",
 		"ssao.comp",
 		"picking.comp",
-		"depth_alpha.comp",
 		"copy.comp",
 
 		"tonemap.frag",
 		"basic.frag",
 		"skinned.frag",
 		"textured.frag",
-		"imgui.frag",
 
 		"basic.vert",
 		"skinned.vert",
 		"screen.vert",
-		"imgui.vert",
 	};
 
 static constexpr std::array<u32, 4> texture_colors[] = {
@@ -100,17 +95,13 @@ static constexpr std::array<u32, 4> texture_colors[] = {
 
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
 static constexpr usize compute_count = usize(ComputePrograms::MaxComputePrograms);
-static constexpr usize material_count = usize(MaterialTemplates::MaxMaterialTemplates);
+static constexpr usize template_count = usize(MaterialTemplates::MaxMaterialTemplates);
 static constexpr usize texture_count = usize(Textures::MaxTextures);
 
 static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
 static_assert(sizeof(compute_spirvs) / sizeof(compute_spirvs[0]) == compute_count);
-static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == material_count);
+static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == template_count);
 static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_count);
-
-static SpirVData load_spirv(const char* name) {
-	return SpirVData::deserialized(io2::File::open(fmt("%.spv", name)).expected("Unable to open SPIR-V file."));
-}
 
 // implemented in DeviceResourcesData.cpp
 MeshData cube_mesh_data();
@@ -120,18 +111,18 @@ MeshData sphere_mesh_data();
 DeviceResources::DeviceResources(DevicePtr dptr) :
 		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
-		_material_templates(std::make_unique<MaterialTemplate[]>(material_count)) ,
+		_material_templates(std::make_unique<MaterialTemplate[]>(template_count)),
 		_textures(std::make_unique<AssetPtr<Texture>[]>(texture_count)) {
 
 	for(usize i = 0; i != spirv_count; ++i) {
-		_spirv[i] = load_spirv(spirv_names[i]);
+		_spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
 	}
 
 	for(usize i = 0; i != compute_count; ++i) {
 		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[usize(compute_spirvs[i])]));
 	}
 
-	for(usize i = 0; i != material_count; ++i) {
+	for(usize i = 0; i != template_count; ++i) {
 		const auto& data = material_datas[i];
 		auto template_data = MaterialTemplateData()
 				.set_frag_data(_spirv[data.frag])
@@ -165,7 +156,6 @@ DeviceResources::DeviceResources() {
 }
 
 DeviceResources::~DeviceResources() {
-
 }
 
 DeviceResources::DeviceResources(DeviceResources&& other) {

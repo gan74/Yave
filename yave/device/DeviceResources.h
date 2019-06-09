@@ -44,19 +44,16 @@ class DeviceResources final : NonCopyable {
 			DeferredLightingComp,
 			SSAOComp,
 			PickingComp,
-			DepthAlphaComp,
 			CopyComp,
 
 			TonemapFrag,
 			BasicFrag,
 			SkinnedFrag,
 			TexturedFrag,
-			ImguiFrag,
 
 			BasicVert,
 			SkinnedVert,
 			ScreenVert,
-			ImguiVert,
 
 			MaxSpirV
 		};
@@ -68,7 +65,6 @@ class DeviceResources final : NonCopyable {
 			DeferredLightingProgram,
 			SSAOProgram,
 			PickingProgram,
-			DepthAlphaProgram,
 			CopyProgram,
 
 			MaxComputePrograms
@@ -81,7 +77,6 @@ class DeviceResources final : NonCopyable {
 			TexturedMaterialTemplate,
 
 			TonemappingMaterialTemplate,
-			ImguiMaterialTemplate,
 
 			MaxMaterialTemplates
 		};

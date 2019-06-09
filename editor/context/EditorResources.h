@@ -19,52 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERERS_IMGUIRENDERER_H
-#define EDITOR_RENDERERS_IMGUIRENDERER_H
+#ifndef EDITOR_CONTEXT_EDITORRESOURCES_H
+#define EDITOR_CONTEXT_EDITORRESOURCES_H
 
 #include <editor/editor.h>
 
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/graphics/buffers/MultiBufferWrapper.h>
-#include <yave/material/Material.h>
+#include <yave/graphics/images/Image.h>
 
 namespace editor {
 
-class ImGuiRenderer : NonCopyable, public ContextLinked {
-
-	struct Vertex {
-		math::Vec2 pos;
-		math::Vec2 uv;
-		u32 col;
-	};
-
-	Y_TODO(Merge ImGuiRenderer into Ui)
-
+class EditorResources final : NonMovable {
 	public:
-		enum class Style {
-			Yave,
-			Corporate,
-			Corporate3D
+		enum SpirV {
+			DepthAlphaComp,
+
+			ImGuiFrag,
+
+			ImGuiVert,
+			ImGuiVert3D,
+
+			MaxSpirV
 		};
 
-		ImGuiRenderer(ContextPtr ctx);
+		enum ComputePrograms {
+			DepthAlphaProgram,
 
-		void render(RenderPassRecorder& recorder, const FrameToken& token);
+			MaxComputePrograms
+		};
 
-		void set_style(Style st);
+		enum MaterialTemplates {
+			ImGuiMaterialTemplate,
+
+			MaxMaterialTemplates
+		};
+
+
+		EditorResources(DevicePtr dptr);
+
+		// can't default for inclusion reasons
+		~EditorResources();
+
+		const ComputeProgram& operator[](ComputePrograms i) const;
+		const MaterialTemplate* operator[](MaterialTemplates i) const;
 
 	private:
-		void setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* data);
-		DescriptorSet create_descriptor_set(const void* tex);
+		std::unique_ptr<SpirVData[]> _spirv;
+		std::unique_ptr<ComputeProgram[]> _computes;
+		std::unique_ptr<MaterialTemplate[]> _material_templates;
 
-		MultiBufferWrapper<TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible>> _index_buffer;
-		MultiBufferWrapper<TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible>> _vertex_buffer;
-		TypedUniformBuffer<math::Vec2> _uniform_buffer;
-
-		Texture _font;
-		TextureView _font_view;
 };
 
 }
 
-#endif // EDITOR_RENDERERS_IMGUIRENDERER_H
+#endif // EDITOR_CONTEXT_EDITORRESOURCES_H

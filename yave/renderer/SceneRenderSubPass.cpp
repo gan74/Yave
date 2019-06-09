@@ -52,7 +52,6 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraph& framegraph, FrameGraph
 	return pass;
 }
 
-
 static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder& recorder, const FrameGraphPass* pass, usize index = 0) {
 	y_profile();
 

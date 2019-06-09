@@ -22,33 +22,25 @@ SOFTWARE.
 #ifndef EDITOR_CONTEXT_SELECTION_H
 #define EDITOR_CONTEXT_SELECTION_H
 
+#include <editor/editor.h>
+
 #include <yave/material/Material.h>
+#include <yave/assets/AssetPtr.h>
 #include <yave/ecs/EntityId.h>
 
 namespace editor {
 
 class Selection {
 	public:
-		void set_selected(const AssetPtr<Material>& sel) {
-			_material = sel;
-		}
+		void flush_reload();
 
-		const auto& material() const {
-			return _material;
-		}
+		void set_selected(const AssetPtr<Material>& sel);
+		const AssetPtr<Material>& material() const;
 
+		bool has_selected_entity() const;
 
-		bool has_selected_entity() const {
-			return _id.is_valid();
-		}
-
-		ecs::EntityId selected_entity() const {
-			return _id;
-		}
-
-		void set_selected(ecs::EntityId id) {
-			_id = id;
-		}
+		ecs::EntityId selected_entity() const;
+		void set_selected(ecs::EntityId id);
 
 	private:
 		AssetPtr<Material> _material;

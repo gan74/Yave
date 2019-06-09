@@ -29,6 +29,7 @@ SOFTWARE.
 #include "Ui.h"
 #include "ThumbmailCache.h"
 #include "PickingManager.h"
+#include "EditorResources.h"
 
 namespace editor {
 
@@ -61,6 +62,9 @@ class EditorContext : NonMovable, public DeviceLinked {
 		const std::shared_ptr<FrameGraphResourcePool>& resource_pool() const;
 
 
+		const EditorResources& resources() const;
+
+
 		Settings& settings();
 		Selection& selection();
 		AssetLoader& loader();
@@ -76,6 +80,8 @@ class EditorContext : NonMovable, public DeviceLinked {
 		core::Vector<core::Function<void()>> _deferred;
 		bool _is_flushing_deferred = false;
 
+		EditorResources _resources;
+
 		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 
 		std::shared_ptr<AssetStore> _asset_store;
@@ -83,6 +89,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 
 		SceneView _default_scene_view;
 		SceneView* _scene_view = nullptr;
+
 
 		Settings _setting;
 		Selection _selection;

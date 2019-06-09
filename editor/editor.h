@@ -26,6 +26,9 @@ SOFTWARE.
 
 
 namespace yave {
+class SpirVData;
+class ComputeProgram;
+class MaterialTemplate;
 class Swapchain;
 class FrameToken;
 class RenderPassRecorder;

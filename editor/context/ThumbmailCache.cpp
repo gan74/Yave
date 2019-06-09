@@ -187,7 +187,7 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 			builder.add_uniform_input(renderer.gbuffer.depth);
 			builder.add_uniform_input(StorageView(thumbmail->image));
 			builder.set_render_func([=](CmdBufferRecorder& rec, const FrameGraphPass* self) {
-					rec.dispatch_size(device()->device_resources()[DeviceResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
+					rec.dispatch_size(context()->resources()[EditorResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
 				});
 		}
 

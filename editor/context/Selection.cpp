@@ -19,52 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERERS_IMGUIRENDERER_H
-#define EDITOR_RENDERERS_IMGUIRENDERER_H
 
-#include <editor/editor.h>
-
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/graphics/buffers/MultiBufferWrapper.h>
-#include <yave/material/Material.h>
+#include "Selection.h"
 
 namespace editor {
 
-class ImGuiRenderer : NonCopyable, public ContextLinked {
-
-	struct Vertex {
-		math::Vec2 pos;
-		math::Vec2 uv;
-		u32 col;
-	};
-
-	Y_TODO(Merge ImGuiRenderer into Ui)
-
-	public:
-		enum class Style {
-			Yave,
-			Corporate,
-			Corporate3D
-		};
-
-		ImGuiRenderer(ContextPtr ctx);
-
-		void render(RenderPassRecorder& recorder, const FrameToken& token);
-
-		void set_style(Style st);
-
-	private:
-		void setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* data);
-		DescriptorSet create_descriptor_set(const void* tex);
-
-		MultiBufferWrapper<TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible>> _index_buffer;
-		MultiBufferWrapper<TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible>> _vertex_buffer;
-		TypedUniformBuffer<math::Vec2> _uniform_buffer;
-
-		Texture _font;
-		TextureView _font_view;
-};
-
+void Selection::flush_reload() {
+	_material.flush_reload();
 }
 
-#endif // EDITOR_RENDERERS_IMGUIRENDERER_H
+
+void Selection::set_selected(const AssetPtr<Material>& sel) {
+	_material = sel;
+}
+
+const AssetPtr<Material>& Selection::material() const {
+	return _material;
+}
+
+
+bool Selection::has_selected_entity() const {
+	return _id.is_valid();
+}
+
+ecs::EntityId Selection::selected_entity() const {
+	return _id;
+}
+
+void Selection::set_selected(ecs::EntityId id) {
+	_id = id;
+}
+
+}

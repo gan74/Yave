@@ -34,6 +34,7 @@ DevicePtr ContextLinked::device() const {
 
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
+		_resources(dptr),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
 		_asset_store(std::make_shared<FolderAssetStore>()),
 		_loader(device(), _asset_store),
@@ -52,6 +53,8 @@ void EditorContext::flush_reload() {
 	defer([this]() {
 		y_profile_zone("flush reload");
 		_thumb_cache.clear();
+		_selection.flush_reload();
+		_ui.refresh_all();
 	});
 }
 
@@ -110,6 +113,10 @@ const FileSystemModel* EditorContext::filesystem() const {
 
 const std::shared_ptr<FrameGraphResourcePool>& EditorContext::resource_pool() const {
 	return _resource_pool;
+}
+
+const EditorResources& EditorContext::resources() const {
+	return _resources;
 }
 
 Settings& EditorContext::settings() {

@@ -22,13 +22,15 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
-#include <imgui/yave_imgui.h>
+#include <editor/context/EditorContext.h>
 
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/framegraph/FrameGraph.h>
+#include <yave/utils/FileSystemModel.h>
 
 #include <y/core/Chrono.h>
-#include <yave/utils/FileSystemModel.h>
+
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 
@@ -58,8 +60,8 @@ static ImageData load_font() {
 	return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8G8B8A8Unorm));
 }
 
-ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
-		DeviceLinked(dptr),
+ImGuiRenderer::ImGuiRenderer(ContextPtr ctx) :
+		ContextLinked(ctx),
 		_index_buffer(imgui_index_buffer_size),
 		_vertex_buffer(imgui_vertex_buffer_size),
 		_uniform_buffer(device(), 1),
@@ -70,19 +72,17 @@ ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
 	set_style(Style::Corporate3D);
 }
 
-const DescriptorSet& ImGuiRenderer::create_descriptor_set(const void* data) {
+DescriptorSet ImGuiRenderer::create_descriptor_set(const void* data) {
 	auto tex = data ? reinterpret_cast<const TextureView*>(data) : &_font_view;
-	auto& ds = _descriptor_sets[tex->vk_view()];
-	if(!ds.device()) {
-		ds = DescriptorSet(device(), {Binding(*tex), Binding(_uniform_buffer)});
-	}
-	return ds;
+	return DescriptorSet(device(), {Binding(*tex), Binding(_uniform_buffer)});
 }
 
 void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* tex) {
+	y_profile();
 	recorder.bind_buffers(_index_buffer[token], {_vertex_buffer[token]});
-	const auto* material = device()->device_resources()[DeviceResources::ImguiMaterialTemplate];
-	recorder.bind_material(material, {create_descriptor_set(tex)});
+	const auto* material = context()->resources()[EditorResources::ImGuiMaterialTemplate];
+	DescriptorSet ds = create_descriptor_set(tex);
+	recorder.bind_material(material, {ds});
 }
 
 void ImGuiRenderer::set_style(Style st) {

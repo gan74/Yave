@@ -52,7 +52,7 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 	show<PropertyPanel>();
 	show<MenuBar>();
 
-	_renderer = std::make_unique<ImGuiRenderer>(device());
+	_renderer = std::make_unique<ImGuiRenderer>(context());
 }
 
 Ui::~Ui() {
