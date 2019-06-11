@@ -33,7 +33,8 @@ namespace yave {
 
 enum class PrimitiveType {
 	Triangles = uenum(vk::PrimitiveTopology::eTriangleList),
-	Lines = uenum(vk::PrimitiveTopology::eLineList)
+	Lines = uenum(vk::PrimitiveTopology::eLineList),
+	Points = uenum(vk::PrimitiveTopology::ePointList)
 };
 
 class MaterialTemplateData {

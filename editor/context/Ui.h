@@ -44,6 +44,8 @@ class Ui : NonCopyable, public ContextLinked {
 
 		core::ArrayView<std::unique_ptr<UiElement>> ui_elements() const;
 
+		const ImGuiRenderer& renderer() const;
+
 		void refresh_all();
 
 		// don't spam these two: they are synchronous and modal (and now supported outside of win32 right now)

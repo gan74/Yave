@@ -39,17 +39,23 @@ using MaterialTemplates = EditorResources::MaterialTemplates;
 
 static constexpr const char* spirv_names[] = {
 		"depth_alpha.comp",
+
 		"imgui.frag",
+
 		"imgui.vert",
-		"imgui.vert",
+		"imgui_billboard.vert",
+
+		"imgui_billboard.geom",
 	};
 
 struct DeviceMaterialData {
 	SpirV frag;
 	SpirV vert;
+	SpirV geom = SpirV::MaxSpirV;
 	bool depth_tested;
 	bool culled = true;
 	bool blended = false;
+	PrimitiveType prim_type = PrimitiveType::Triangles;
 };
 
 static constexpr SpirV compute_spirvs[] = {
@@ -57,7 +63,8 @@ static constexpr SpirV compute_spirvs[] = {
 	};
 
 static constexpr DeviceMaterialData material_datas[] = {
-		{SpirV::ImGuiFrag, SpirV::ImGuiVert, false, false, true},
+		{SpirV::ImGuiFrag, SpirV::ImGuiVert, SpirV::MaxSpirV, false, false, true, PrimitiveType::Triangles},
+		{SpirV::ImGuiFrag, SpirV::ImGuiBillBoardVert, SpirV::ImGuiBillBoardGeom, true, false, true, PrimitiveType::Points},
 	};
 
 
@@ -91,7 +98,13 @@ EditorResources::EditorResources(DevicePtr dptr) :
 				.set_depth_tested(data.depth_tested)
 				.set_culled(data.culled)
 				.set_blended(data.blended)
+				.set_primitive_type(data.prim_type)
 			;
+
+		if(data.geom != SpirV::MaxSpirV) {
+			template_data.set_geom_data(_spirv[data.geom]);
+		}
+
 		_material_templates[i] = MaterialTemplate(dptr, std::move(template_data));
 	}
 }

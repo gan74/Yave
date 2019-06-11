@@ -29,7 +29,8 @@ namespace yave {
 struct GBufferPass {
 	SceneRenderSubPass scene_pass;
 
-	FrameGraphImageId depth;
+	Y_TODO(make framegraph image that are used as attachments by several passes non mutable when possible)
+	FrameGraphMutableImageId depth;
 	FrameGraphImageId color;
 	FrameGraphImageId normal;
 

@@ -74,8 +74,12 @@ int main(int argc, char** argv) {
 	window.show();
 
 	for(;;) {
-		if(!window.update() && ctx.ui().confirm("Quit ?")) {
-			break;
+		if(!window.update()) {
+			if(ctx.ui().confirm("Quit ?")) {
+				break;
+			} else {
+				window.show();
+			}
 		}
 
 		Swapchain* swapchain = window.swapchain();

@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERER_RENDERER_H
-#define EDITOR_RENDERER_RENDERER_H
+#ifndef EDITOR_RENDERER_EDITORRENDERER_H
+#define EDITOR_RENDERER_EDITORRENDERER_H
 
 #include <editor/editor.h>
 
@@ -28,21 +28,21 @@ SOFTWARE.
 
 namespace editor {
 
-struct DefaultEditorRendererSettings {
-	bool enable_editor_entities = false;
+struct EditorRendererSettings {
+	bool enable_editor_entities = true;
 };
 
 
-struct DefaultEditorRenderer {
-	using Settings = DefaultEditorRendererSettings;
+struct EditorRenderer {
+	using Settings = EditorRendererSettings;
 
 	DefaultRenderer renderer;
 
-	static DefaultEditorRenderer create(ContextPtr ctx,
+	static EditorRenderer create(ContextPtr ctx,
 										FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size,
 										const std::shared_ptr<IBLData>& ibl_data, const Settings& settings = Settings());
 };
 
 }
 
-#endif // EDITOR_RENDERER_RENDERER_H
+#endif // EDITOR_RENDERER_EDITORRENDERER_H

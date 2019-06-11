@@ -53,6 +53,8 @@ class ImGuiRenderer : NonCopyable, public ContextLinked {
 
 		void set_style(Style st);
 
+		const Texture& font_texture() const;
+
 	private:
 		void setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* data);
 		DescriptorSet create_descriptor_set(const void* tex);

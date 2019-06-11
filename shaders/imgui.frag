@@ -14,5 +14,8 @@ layout(set = 0, binding = 1) uniform Data {
 
 void main() {
 	vec4 color = v_color * texture(font_texture, v_uv);
+	if(color.a < 1.0 / 255.0) {
+		discard;
+	}
 	out_color = color;
 }

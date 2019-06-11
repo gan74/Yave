@@ -36,7 +36,9 @@ class EditorResources final : NonMovable {
 			ImGuiFrag,
 
 			ImGuiVert,
-			ImGuiVert3D,
+			ImGuiBillBoardVert,
+
+			ImGuiBillBoardGeom,
 
 			MaxSpirV
 		};
@@ -49,6 +51,7 @@ class EditorResources final : NonMovable {
 
 		enum MaterialTemplates {
 			ImGuiMaterialTemplate,
+			ImGuiBillBoardMaterialTemplate,
 
 			MaxMaterialTemplates
 		};

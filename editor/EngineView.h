@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <editor/widgets/Gizmo.h>
-#include <editor/renderer/renderer.h>
+#include <editor/renderer/EditorRenderer.h>
 
 namespace editor {
 

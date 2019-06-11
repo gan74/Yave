@@ -72,6 +72,11 @@ ImGuiRenderer::ImGuiRenderer(ContextPtr ctx) :
 	set_style(Style::Corporate3D);
 }
 
+
+const Texture& ImGuiRenderer::font_texture() const {
+	return _font;
+}
+
 DescriptorSet ImGuiRenderer::create_descriptor_set(const void* data) {
 	auto tex = data ? reinterpret_cast<const TextureView*>(data) : &_font_view;
 	return DescriptorSet(device(), {Binding(*tex), Binding(_uniform_buffer)});

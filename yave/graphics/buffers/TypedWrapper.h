@@ -95,7 +95,7 @@ class TypedMapping : public Mapping {
 		//using Mapping::Mapping;
 
 		using iterator = Elem* ;
-		using const_iterator = Elem const* ;
+		using const_iterator = Elem const*;
 		using value_type = Elem;
 
 		template<typename Buff>
@@ -137,6 +137,14 @@ class TypedMapping : public Mapping {
 
 		const value_type& operator[](usize i) const{
 			return begin()[i];
+		}
+
+		value_type* operator->() {
+			return begin();
+		}
+
+		const value_type* operator->() const{
+			return begin();
 		}
 
 };

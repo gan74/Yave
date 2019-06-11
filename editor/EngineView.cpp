@@ -52,7 +52,7 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 
 	{
 		FrameGraph graph(context()->resource_pool());
-		DefaultEditorRenderer renderer = DefaultEditorRenderer::create(context(), graph, _scene_view, content_size(), _ibl_data);
+		EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, content_size(), _ibl_data);
 
 		FrameGraphImageId output_image = renderer.renderer.tone_mapping.tone_mapped;
 		{
