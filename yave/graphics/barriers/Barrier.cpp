@@ -61,31 +61,6 @@ static vk::AccessFlags vk_layout_access_flags(vk::ImageLayout layout) {
 	return y_fatal("Unsupported layout transition.");
 }
 
-vk::ImageMemoryBarrier create_image_barrier(
-		vk::Image image,
-		ImageFormat format,
-		usize layers,
-		usize mips,
-		vk::ImageLayout old_layout,
-		vk::ImageLayout new_layout) {
-
-	return vk::ImageMemoryBarrier()
-			.setOldLayout(old_layout)
-			.setNewLayout(new_layout)
-			.setSrcAccessMask(vk_layout_access_flags(old_layout))
-			.setDstAccessMask(vk_layout_access_flags(new_layout))
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setImage(image)
-			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.vk_aspect())
-					.setLayerCount(layers)
-					.setLevelCount(mips)
-				)
-		;
-}
-
-
 static vk::AccessFlags vk_dst_access_flags(PipelineStage dst) {
 	if((dst & PipelineStage::AllShadersBit) != PipelineStage::None) {
 		return vk::AccessFlagBits::eShaderRead;
@@ -123,6 +98,48 @@ static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
 	return y_fatal("Unsuported pipeline stage.");
 }
 
+static vk::PipelineStageFlags vk_barrier_stage(vk::AccessFlags access) {
+	if(access == vk::AccessFlags() || access == vk::AccessFlagBits::eMemoryRead) {
+		return vk::PipelineStageFlagBits::eHost;
+	}
+	if(access & (vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentRead)) {
+		return vk::PipelineStageFlagBits::eEarlyFragmentTests |
+			   vk::PipelineStageFlagBits::eLateFragmentTests;
+	}
+	if(access & (vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentRead)) {
+		return vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	if(access & (vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite)) {
+		return vk::PipelineStageFlagBits::eTransfer;
+	}
+	if(access & (vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite)) {
+		return vk::PipelineStageFlagBits::eVertexShader |
+			   vk::PipelineStageFlagBits::eFragmentShader |
+			   vk::PipelineStageFlagBits::eComputeShader;
+	}
+
+	return y_fatal("Unknown access flags.");
+}
+
+
+static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
+	return vk::ImageMemoryBarrier()
+			.setOldLayout(old_layout)
+			.setNewLayout(new_layout)
+			.setSrcAccessMask(vk_layout_access_flags(old_layout))
+			.setDstAccessMask(vk_layout_access_flags(new_layout))
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setImage(image)
+			.setSubresourceRange(vk::ImageSubresourceRange()
+					.setAspectMask(format.vk_aspect())
+					.setLayerCount(layers)
+					.setLevelCount(mips)
+				)
+		;
+}
+
+
 static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, ImageUsage usage, PipelineStage src, PipelineStage dst) {
 	auto layout = vk_image_layout(usage);
 	return vk::ImageMemoryBarrier()
@@ -159,6 +176,36 @@ ImageBarrier::ImageBarrier(const ImageBase& image, PipelineStage src, PipelineSt
 		_src(src), _dst(dst) {
 }
 
+ImageBarrier ImageBarrier::transition_barrier(const ImageBase& image, vk::ImageLayout src_layout, vk::ImageLayout dst_layout) {
+	ImageBarrier barrier;
+	barrier._barrier = create_barrier(image.vk_image(), image.format(), image.layers(), image.mipmaps(), src_layout, dst_layout);
+	barrier._src = PipelineStage(uenum(vk_barrier_stage(barrier._barrier.srcAccessMask)));
+	barrier._dst = PipelineStage(uenum(vk_barrier_stage(barrier._barrier.dstAccessMask)));
+
+	return barrier;
+}
+
+ImageBarrier ImageBarrier::transition_to_barrier(const ImageBase& image, vk::ImageLayout dst_layout) {
+	return transition_barrier(image, vk_image_layout(image.usage()), dst_layout);
+}
+
+ImageBarrier ImageBarrier::transition_from_barrier(const ImageBase& image, vk::ImageLayout src_layout) {
+	return transition_barrier(image, src_layout, vk_image_layout(image.usage()));
+}
+
+vk::ImageMemoryBarrier ImageBarrier::vk_barrier() const {
+	return _barrier;
+}
+
+PipelineStage ImageBarrier::dst_stage() const {
+	return _dst;
+}
+
+PipelineStage ImageBarrier::src_stage() const {
+	return _src;
+}
+
+
 
 BufferBarrier::BufferBarrier(const BufferBase& buffer, PipelineStage src, PipelineStage dst) :
 		_barrier(create_barrier(buffer.vk_buffer(), buffer.byte_size(), 0, src, dst)),
@@ -170,7 +217,17 @@ BufferBarrier::BufferBarrier(const SubBufferBase& buffer, PipelineStage src, Pip
 		_src(src), _dst(dst) {
 }
 
+vk::BufferMemoryBarrier BufferBarrier::vk_barrier() const {
+	return _barrier;
+}
 
+PipelineStage BufferBarrier::dst_stage() const {
+	return _dst;
+}
+
+PipelineStage BufferBarrier::src_stage() const {
+	return _src;
+}
 
 
 }

@@ -29,12 +29,28 @@ namespace yave {
 
 class FrameGraphPassBuilder {
 	public:
+		FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+		FrameGraphMutableBufferId declare_buffer(usize byte_size);
+
+		FrameGraphMutableImageId declare_copy(FrameGraphImageId src);
+		//FrameGraphMutableBufferId declare_copy(FrameGraphBufferId src);
+
+		template<typename T>
+		FrameGraphMutableTypedBufferId<T> declare_typed_buffer(usize size = 1) {
+			return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * size));
+		}
+
+
+
 		void add_texture_input(FrameGraphImageId res, PipelineStage stage);
 
 		void add_depth_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
 		void add_color_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
 
 		void add_copy_src(FrameGraphImageId res);
+		void add_copy_dst(FrameGraphMutableImageId res);
+		void add_copy_src(FrameGraphBufferId res);
+		void add_copy_dst(FrameGraphMutableBufferId res);
 
 		void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
 		void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
@@ -71,6 +87,8 @@ class FrameGraphPassBuilder {
 		void add_uniform(FrameGraphDescriptorBinding binding, usize ds_index);
 
 		void set_cpu_visible(FrameGraphMutableBufferId res);
+
+		FrameGraph* parent();
 
 
 		FrameGraphPass* _pass = nullptr;

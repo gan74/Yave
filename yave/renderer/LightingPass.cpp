@@ -102,13 +102,14 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 	const SceneView& scene = gbuffer.scene_pass.scene_view;
 
-	auto lit = framegraph.declare_image(lighting_format, size);
-	auto light_buffer = framegraph.declare_typed_buffer<uniform::Light>(max_light_count);
+	FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
+
+	auto lit = builder.declare_image(lighting_format, size);
+	auto light_buffer = builder.declare_typed_buffer<uniform::Light>(max_light_count);
 
 	LightingPass pass;
 	pass.lit = lit;
 
-	FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
 	builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
@@ -116,9 +117,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 	builder.add_uniform_input(ibl_data->brdf_lut(), 0, PipelineStage::ComputeBit);
 	builder.add_storage_input(light_buffer, 0, PipelineStage::ComputeBit);
 	builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
-
 	builder.map_update(light_buffer);
-
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			struct CameraData {
 				math::Matrix4<> inv_matrix;

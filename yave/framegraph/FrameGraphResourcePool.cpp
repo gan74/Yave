@@ -134,6 +134,16 @@ BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBufferId res, PipelineSt
 	return BufferBarrier(_buffers.find(res)->second, src, dst);
 }
 
+const ImageBase& FrameGraphResourcePool::image_base(FrameGraphImageId res) const {
+	res.check_valid();
+	return _images.find(res)->second;
+}
+
+const BufferBase& FrameGraphResourcePool::buffer_base(FrameGraphBufferId res) const {
+	res.check_valid();
+	return _buffers.find(res)->second;
+}
+
 usize FrameGraphResourcePool::allocated_resources() const {
 	return _images.size() + _buffers.size() + _released_images.size() + _released_buffers.size();
 }

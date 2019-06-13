@@ -142,6 +142,7 @@ class CmdBufferRecorder : public CmdBufferBase {
 	public:
 		using DescriptorSetList = detail::DescriptorSetList;
 
+
 		template<CmdBufferUsage Usage>
 		CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : CmdBufferRecorder(std::move(buffer), Usage) {
 		}
@@ -168,7 +169,9 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void copy(const SrcCopyImage& src,  const DstCopyImage& dst);
 		void blit(const SrcCopyImage& src,  const DstCopyImage& dst);
 
-		// never use directly, needed for internal work and image loading
+		void barriered_copy(const ImageBase& src,  const ImageBase& dst);
+
+		// never use directly, needed for internal work
 		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
 
 	protected:

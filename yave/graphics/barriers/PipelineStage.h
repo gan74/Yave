@@ -26,20 +26,26 @@ SOFTWARE.
 
 namespace yave {
 
+// https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkPipelineStageFlagBits.html
 enum class PipelineStage {
 	None = 0,
 
-	BeginOfPipe = uenum(vk::PipelineStageFlagBits::eBottomOfPipe),
-	EndOfPipe = uenum(vk::PipelineStageFlagBits::eTopOfPipe),
+	BeginOfPipe = uenum(vk::PipelineStageFlagBits::eTopOfPipe),
+	EndOfPipe = uenum(vk::PipelineStageFlagBits::eBottomOfPipe),
 
 	TransferBit = uenum(vk::PipelineStageFlagBits::eTransfer),
 	HostBit = uenum(vk::PipelineStageFlagBits::eHost),
 	VertexInputBit = uenum(vk::PipelineStageFlagBits::eVertexInput),
 	VertexBit = uenum(vk::PipelineStageFlagBits::eVertexShader),
-	FragmentBit = uenum(vk::PipelineStageFlagBits::eFragmentShader) | uenum(vk::PipelineStageFlagBits::eEarlyFragmentTests) | uenum(vk::PipelineStageFlagBits::eLateFragmentTests),
+	FragmentBit = uenum(vk::PipelineStageFlagBits::eFragmentShader),
 	ComputeBit = uenum(vk::PipelineStageFlagBits::eComputeShader),
+
+	// early is load, late is store
+	DepthAttachmentOutBit = uenum(vk::PipelineStageFlagBits::eEarlyFragmentTests) | uenum(vk::PipelineStageFlagBits::eLateFragmentTests),
+	// counts for both loads and stores
 	ColorAttachmentOutBit = uenum(vk::PipelineStageFlagBits::eColorAttachmentOutput),
 
+	AllAttachmentOutBit = DepthAttachmentOutBit | ColorAttachmentOutBit,
 	AllShadersBit = VertexBit | FragmentBit | ComputeBit,
 
 	All = uenum(vk::PipelineStageFlagBits::eAllCommands)

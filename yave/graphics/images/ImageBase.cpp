@@ -111,9 +111,9 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 
 	{
 		auto region = recorder.region("Image upload");
-		recorder.transition_image(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+		recorder.barriers({ImageBarrier::transition_barrier(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal)});
 		recorder.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
-		recorder.transition_image(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()));
+		recorder.barriers({ImageBarrier::transition_barrier(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()))});
 	}
 
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
@@ -124,7 +124,7 @@ static void transition_image(ImageBase& image) {
 	DevicePtr dptr = image.device();
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
-	recorder.transition_image(image, vk::ImageLayout::eUndefined, vk_image_layout(image.usage()));
+	recorder.barriers({ImageBarrier::transition_barrier(image, vk::ImageLayout::eUndefined, vk_image_layout(image.usage()))});
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 

@@ -24,15 +24,18 @@ SOFTWARE.
 
 namespace yave {
 
-FrameGraph::FrameGraph(const std::shared_ptr<FrameGraphResourcePool>& pool) : _pool(pool) {
+template<typename U>
+static bool is_none(U u) {
+	return u == U::None;
 }
 
-DevicePtr FrameGraph::device() const {
-	return _pool->device();
-}
-
-const FrameGraphResourcePool* FrameGraph::resources() const {
-	return _pool.get();
+template<typename T, typename C>
+static auto&& check_exists(C& c, T t) {
+	auto it = c.find(t);
+	if(it == c.end()) {
+		y_fatal("Resource doesn't exist.");
+	}
+	return it->second;
 }
 
 template<typename C, typename B>
@@ -40,7 +43,9 @@ static void build_barriers(const C& resources, B& barriers, std::unordered_map<F
 	for(auto&& [res, info] : resources) {
 		auto it = to_barrier.find(res);
 		bool exists = it != to_barrier.end();
-		if(info.stage == PipelineStage::None) {
+		// barrier around attachments are handled by the renderpass
+		PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
+		if(stage == PipelineStage::None) {
 			if(exists) {
 				to_barrier.erase(it);
 			}
@@ -56,9 +61,29 @@ static void build_barriers(const C& resources, B& barriers, std::unordered_map<F
 	}
 }
 
-template<typename U>
-static bool is_none(U u) {
-	return u == U::None;
+
+static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> copies,
+						std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
+
+	Y_TODO(We might end up barriering twice here)
+	for(auto [src, dst] : copies) {
+		to_barrier.erase(src);
+		to_barrier.erase(dst);
+
+		recorder.barriered_copy(pool->image_base(src), pool->image_base(dst));
+	}
+}
+
+
+FrameGraph::FrameGraph(const std::shared_ptr<FrameGraphResourcePool>& pool) : _pool(pool) {
+}
+
+DevicePtr FrameGraph::device() const {
+	return _pool->device();
+}
+
+const FrameGraphResourcePool* FrameGraph::resources() const {
+	return _pool.get();
 }
 
 void FrameGraph::render(CmdBufferRecorder& recorder) && {
@@ -73,6 +98,11 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 	for(const auto& pass : _passes) {
 		y_profile_zone(pass->name());
 		auto region = recorder.region(pass->name());
+
+		{
+			y_profile_zone("prepare");
+			copy_images(recorder, pass->_image_copies, to_barrier, _pool.get());
+		}
 
 		{
 			y_profile_zone("init");
@@ -173,14 +203,12 @@ FrameGraphPassBuilder FrameGraph::add_pass(std::string_view name) {
 	return FrameGraphPassBuilder(ptr);
 }
 
+const FrameGraph::ImageCreateInfo& FrameGraph::info(FrameGraphImageId res) const {
+	return check_exists(_images, res);
+}
 
-template<typename T, typename C>
-static auto&& check_exists(C& c, T t) {
-	auto it = c.find(t);
-	if(it == c.end()) {
-		y_fatal("Resource doesn't exist.");
-	}
-	return it->second;
+const FrameGraph::BufferCreateInfo& FrameGraph::info(FrameGraphBufferId res) const {
+	return check_exists(_buffers, res);
 }
 
 void FrameGraph::add_usage(FrameGraphImageId res, ImageUsage usage) {

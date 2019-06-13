@@ -223,7 +223,7 @@ void Swapchain::build_swapchain() {
 
 	CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
 	for(auto& i : _images) {
-		recorder.transition_image(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+		recorder.barriers({ImageBarrier::transition_barrier(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR)});
 	}
 	device()->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }

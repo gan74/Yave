@@ -33,6 +33,27 @@ void FrameGraphPassBuilder::set_render_func(FrameGraphPass::render_func&& func) 
 }
 
 
+// --------------------------------- Declarations ---------------------------------
+
+FrameGraphMutableImageId FrameGraphPassBuilder::declare_image(ImageFormat format, const math::Vec2ui& size) {
+	return parent()->declare_image(format, size);
+}
+
+FrameGraphMutableBufferId FrameGraphPassBuilder::declare_buffer(usize byte_size) {
+	return parent()->declare_buffer(byte_size);
+}
+
+FrameGraphMutableImageId FrameGraphPassBuilder::declare_copy(FrameGraphImageId src) {
+	const auto& src_info = parent()->info(src);
+	auto res = declare_image(src_info.format, src_info.size);
+	_pass->_image_copies.emplace_back(src, res);
+	// copies are done before the pass proper so we don't set the stage
+	add_to_pass(src, ImageUsage::TransferSrcBit, PipelineStage::None);
+	add_to_pass(res, ImageUsage::TransferDstBit, PipelineStage::None);
+	return res;
+}
+
+
 // --------------------------------- Texture ---------------------------------
 
 void FrameGraphPassBuilder::add_texture_input(FrameGraphImageId res, PipelineStage stage) {
@@ -44,7 +65,7 @@ void FrameGraphPassBuilder::add_texture_input(FrameGraphImageId res, PipelineSta
 
 void FrameGraphPassBuilder::add_depth_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op) {
 	// transition is done by the renderpass
-	add_to_pass(res, ImageUsage::DepthBit, PipelineStage::None);
+	add_to_pass(res, ImageUsage::DepthBit, PipelineStage::DepthAttachmentOutBit);
 	if(_pass->_depth.image.is_valid()) {
 		y_fatal("Pass already has a depth output.");
 	}
@@ -53,7 +74,7 @@ void FrameGraphPassBuilder::add_depth_output(FrameGraphMutableImageId res, Frame
 
 void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op) {
 	// transition is done by the renderpass
-	add_to_pass(res, ImageUsage::ColorBit, PipelineStage::None);
+	add_to_pass(res, ImageUsage::ColorBit, PipelineStage::ColorAttachmentOutBit);
 	_pass->_colors << FrameGraphPass::Attachment{res, load_op};
 }
 
@@ -62,6 +83,18 @@ void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res, Frame
 
 void FrameGraphPassBuilder::add_copy_src(FrameGraphImageId res) {
 	add_to_pass(res, ImageUsage::TransferSrcBit, PipelineStage::TransferBit);
+}
+
+void FrameGraphPassBuilder::add_copy_dst(FrameGraphMutableImageId res) {
+	add_to_pass(res, ImageUsage::TransferDstBit, PipelineStage::TransferBit);
+}
+
+void FrameGraphPassBuilder::add_copy_src(FrameGraphBufferId res) {
+	add_to_pass(res, BufferUsage::TransferSrcBit, PipelineStage::TransferBit);
+}
+
+void FrameGraphPassBuilder::add_copy_dst(FrameGraphMutableBufferId res) {
+	add_to_pass(res, BufferUsage::TransferDstBit, PipelineStage::TransferBit);
 }
 
 
@@ -137,18 +170,27 @@ void FrameGraphPassBuilder::add_descriptor_binding(Binding bind, usize ds_index)
 	add_uniform(bind, ds_index);
 }
 
+template<typename T>
+void set_stage(T& info, PipelineStage stage) {
+	if(info.stage != PipelineStage::None) {
+		Y_TODO(This should be either one write or many reads)
+		y_fatal("Resource can only be used once per pass (previous stage was %).", usize(info.stage));
+	}
+	info.stage = stage;
+}
+
 void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage, PipelineStage stage) {
 	res.check_valid();
 	auto& info = _pass->_images[res];
-	info.stage = stage & stage;
-	_pass->_parent->add_usage(res, usage);
+	set_stage(info, stage);
+	parent()->add_usage(res, usage);
 }
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usage, PipelineStage stage) {
 	res.check_valid();
 	auto& info = _pass->_buffers[res];
-	info.stage = stage & stage;
-	_pass->_parent->add_usage(res, usage);
+	set_stage(info, stage);
+	parent()->add_usage(res, usage);
 }
 
 void FrameGraphPassBuilder::add_uniform(FrameGraphDescriptorBinding binding, usize ds_index) {
@@ -160,7 +202,11 @@ void FrameGraphPassBuilder::add_uniform(FrameGraphDescriptorBinding binding, usi
 }
 
 void FrameGraphPassBuilder::set_cpu_visible(FrameGraphMutableBufferId res) {
-	_pass->_parent->set_cpu_visible(res);
+	parent()->set_cpu_visible(res);
+}
+
+FrameGraph* FrameGraphPassBuilder::parent() {
+	return _pass->_parent;
 }
 
 }

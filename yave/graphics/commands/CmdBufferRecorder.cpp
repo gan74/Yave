@@ -34,29 +34,6 @@ static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 	return vk::CommandBufferUsageFlagBits(uenum(u) /*& ~uenum(CmdBufferUsage::Secondary)*/);
 }
 
-static vk::PipelineStageFlags pipeline_stage(vk::AccessFlags access) {
-	if(access == vk::AccessFlags() || access == vk::AccessFlagBits::eMemoryRead) {
-		return vk::PipelineStageFlagBits::eHost;
-	}
-	if(access & (vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentRead)) {
-		return vk::PipelineStageFlagBits::eEarlyFragmentTests |
-			   vk::PipelineStageFlagBits::eLateFragmentTests;
-	}
-	if(access & (vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentRead)) {
-		return vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	}
-	if(access & (vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite)) {
-		return vk::PipelineStageFlagBits::eTransfer;
-	}
-	if(access & (vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite)) {
-		return vk::PipelineStageFlagBits::eVertexShader |
-			   vk::PipelineStageFlagBits::eFragmentShader |
-			   vk::PipelineStageFlagBits::eComputeShader;
-	}
-
-	return y_fatal("Unknown access flags.");
-}
-
 
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
@@ -347,23 +324,48 @@ void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
 }
 
 void CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
-	check_no_renderpass();
+	barriers({ImageBarrier::transition_barrier(image, src, dst)});
+}
 
-	auto barrier = create_image_barrier(
-			image.vk_image(),
-			image.format(),
-			image.layers(),
-			image.mipmaps(),
-			src,
-			dst
-		);
+void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
 
-	vk_cmd_buffer().pipelineBarrier(
-			pipeline_stage(barrier.srcAccessMask),
-			pipeline_stage(barrier.dstAccessMask),
-			vk::DependencyFlagBits::eByRegion,
-			nullptr, nullptr, barrier
-		);
+	{
+		std::array<ImageBarrier, 2> image_barriers = {
+				ImageBarrier::transition_to_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
+				ImageBarrier::transition_barrier(dst, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal),
+			};
+		barriers(image_barriers);
+	}
+
+	{
+		if(src.image_size() != dst.image_size()) {
+			y_fatal("Image size do not match.");
+		}
+
+		auto src_resource = vk::ImageSubresourceLayers()
+			.setAspectMask(src.format().vk_aspect())
+			.setMipLevel(0)
+			.setBaseArrayLayer(0)
+			.setLayerCount(src.layers());
+		auto dst_resource = vk::ImageSubresourceLayers()
+			.setAspectMask(dst.format().vk_aspect())
+			.setMipLevel(0)
+			.setBaseArrayLayer(0)
+			.setLayerCount(dst.layers());
+
+		auto extent = vk::Extent3D(src.image_size().x(), src.image_size().y(), src.image_size().z());
+
+		vk_cmd_buffer().copyImage(src.vk_image(), vk::ImageLayout::eTransferSrcOptimal,
+								  dst.vk_image(), vk::ImageLayout::eTransferDstOptimal, vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
+	}
+
+	{
+		std::array<ImageBarrier, 2> image_barriers = {
+				ImageBarrier::transition_from_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
+				ImageBarrier::transition_from_barrier(dst, vk::ImageLayout::eTransferDstOptimal)
+			};
+		barriers(image_barriers);
+	}
 }
 
 }

@@ -61,8 +61,6 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 			return TypedMapping<T>(subbuffer);
 		}
 
-		//const ImageBase& image_base(FrameGraphMutableImageId res) const;
-
 		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
 
@@ -71,6 +69,9 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 
 		ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;
 		BufferBarrier barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const;
+
+		const ImageBase& image_base(FrameGraphImageId res) const;
+		const BufferBase& buffer_base(FrameGraphBufferId res) const;
 
 		usize allocated_resources() const;
 

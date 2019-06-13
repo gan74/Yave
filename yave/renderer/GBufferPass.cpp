@@ -31,17 +31,17 @@ GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView& view, c
 	static constexpr vk::Format color_format = vk::Format::eR8G8B8A8Unorm;
 	static constexpr vk::Format normal_format = vk::Format::eR16G16B16A16Unorm;
 
-	auto depth = framegraph.declare_image(depth_format, size);
-	auto color = framegraph.declare_image(color_format, size);
-	auto normal = framegraph.declare_image(normal_format, size);
-
 	FrameGraphPassBuilder builder = framegraph.add_pass("G-buffer pass");
+
+	auto depth = builder.declare_image(depth_format, size);
+	auto color = builder.declare_image(color_format, size);
+	auto normal = builder.declare_image(normal_format, size);
 
 	GBufferPass pass;
 	pass.depth = depth;
 	pass.color = color;
 	pass.normal = normal;
-	pass.scene_pass = SceneRenderSubPass::create(framegraph, builder, view);
+	pass.scene_pass = SceneRenderSubPass::create(builder, view);
 
 	builder.add_depth_output(depth);
 	builder.add_color_output(color);

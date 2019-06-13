@@ -19,35 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_RENDERER_EDITORENTITYPASS_H
+#define EDITOR_RENDERER_EDITORENTITYPASS_H
 
-#include "ToneMappingPass.h"
+#include <editor/editor.h>
 
-#include <yave/material/Material.h>
-#include <yave/framegraph/FrameGraph.h>
+#include <yave/renderer/renderer.h>
 
-namespace yave {
+namespace editor {
 
-ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, const LightingPass& lighting) {
-	static constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
-	math::Vec2ui size = framegraph.image_size(lighting.lit);
+struct EditorEntityPass {
 
-	FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
+	FrameGraphImageId depth;
+	FrameGraphImageId color;
 
-	auto tone_mapped = builder.declare_image(format, size);
-
-	ToneMappingPass pass;
-	pass.tone_mapped = tone_mapped;
-
-	builder.add_color_output(tone_mapped, Framebuffer::LoadOp::Load);
-	builder.add_uniform_input(lighting.lit, 0, PipelineStage::FragmentBit);
-	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const auto* material = recorder.device()->device_resources()[DeviceResources::TonemappingMaterialTemplate];
-			render_pass.bind_material(material, {self->descriptor_sets()[0]});
-			render_pass.draw(vk::DrawIndirectCommand(6, 1));
-		});
-
-	return pass;
-}
+	static EditorEntityPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color);
+};
 
 }
+
+#endif // EDITOR_RENDERER_EDITORENTITYPASS_H

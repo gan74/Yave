@@ -49,32 +49,27 @@ class FrameGraph : NonCopyable {
 		DevicePtr device() const;
 		const FrameGraphResourcePool* resources() const;
 
-
 		void render(CmdBufferRecorder& recorder) &&;
 
-
 		FrameGraphPassBuilder add_pass(std::string_view name);
-
-		FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
-		FrameGraphMutableBufferId declare_buffer(usize byte_size);
-
-		template<typename T>
-		FrameGraphMutableTypedBufferId<T> declare_typed_buffer(usize size = 1) {
-			return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * size));
-		}
-
-
-		void add_usage(FrameGraphImageId res, ImageUsage usage);
-		void add_usage(FrameGraphBufferId res, BufferUsage usage);
-		void set_cpu_visible(FrameGraphMutableBufferId res);
-		bool is_attachment(FrameGraphImageId res) const;
-
 
 		math::Vec2ui image_size(FrameGraphImageId res) const;
 
 	private:
 		friend class FrameGraphPassBuilder;
 
+		FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+		FrameGraphMutableBufferId declare_buffer(usize byte_size);
+
+		const ImageCreateInfo& info(FrameGraphImageId res) const;
+		const BufferCreateInfo& info(FrameGraphBufferId res) const;
+
+		void add_usage(FrameGraphImageId res, ImageUsage usage);
+		void add_usage(FrameGraphBufferId res, BufferUsage usage);
+		void set_cpu_visible(FrameGraphMutableBufferId res);
+		bool is_attachment(FrameGraphImageId res) const;
+
+	private:
 		void alloc_resources();
 		void release_resources(CmdBufferRecorder& recorder);
 

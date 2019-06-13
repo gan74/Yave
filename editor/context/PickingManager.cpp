@@ -45,7 +45,7 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
 	FrameGraph framegraph(context()->resource_pool());
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
-	SceneRenderSubPass scene_pass = SceneRenderSubPass::create(framegraph, builder, context()->scene_view());
+	SceneRenderSubPass scene_pass = SceneRenderSubPass::create(builder, context()->scene_view());
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			{
 				auto render_pass = recorder.bind_framebuffer(_framebuffer);

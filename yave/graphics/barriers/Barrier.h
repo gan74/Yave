@@ -32,25 +32,24 @@ SOFTWARE.
 
 namespace yave {
 
-vk::ImageMemoryBarrier create_image_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, vk::ImageLayout old_layout, vk::ImageLayout new_layout);
-
 class ImageBarrier {
 	public:
 		ImageBarrier(const ImageBase& image, PipelineStage src, PipelineStage dst);
 
-		vk::ImageMemoryBarrier vk_barrier() const {
-			return _barrier;
-		}
+		// for internal use, don't call for giggles
+		static ImageBarrier transition_barrier(const ImageBase& image, vk::ImageLayout src_layout, vk::ImageLayout dst_layout);
+		static ImageBarrier transition_to_barrier(const ImageBase& image, vk::ImageLayout dst_layout);
+		static ImageBarrier transition_from_barrier(const ImageBase& image, vk::ImageLayout src_layout);
 
-		PipelineStage dst_stage() const {
-			return _dst;
-		}
 
-		PipelineStage src_stage() const {
-			return _src;
-		}
+		vk::ImageMemoryBarrier vk_barrier() const;
+
+		PipelineStage dst_stage() const;
+		PipelineStage src_stage() const;
 
 	private:
+		ImageBarrier() = default;
+
 		vk::ImageMemoryBarrier _barrier;
 		PipelineStage _src;
 		PipelineStage _dst;
@@ -61,17 +60,11 @@ class BufferBarrier {
 		BufferBarrier(const BufferBase& buffer, PipelineStage src, PipelineStage dst);
 		BufferBarrier(const SubBufferBase& buffer, PipelineStage src, PipelineStage dst);
 
-		vk::BufferMemoryBarrier vk_barrier() const {
-			return _barrier;
-		}
 
-		PipelineStage dst_stage() const {
-			return _dst;
-		}
+		vk::BufferMemoryBarrier vk_barrier() const;
 
-		PipelineStage src_stage() const {
-			return _src;
-		}
+		PipelineStage dst_stage() const;
+		PipelineStage src_stage() const;
 
 	private:
 		vk::BufferMemoryBarrier _barrier;

@@ -36,7 +36,7 @@ struct SceneRenderSubPass {
 	FrameGraphMutableTypedBufferId<math::Matrix4<>> camera_buffer;
 	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
 
-	static SceneRenderSubPass create(FrameGraph& framegraph, FrameGraphPassBuilder& builder, const SceneView& view);
+	static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& view);
 	void render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const;
 
 };

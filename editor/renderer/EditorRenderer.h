@@ -22,9 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_RENDERER_EDITORRENDERER_H
 #define EDITOR_RENDERER_EDITORRENDERER_H
 
-#include <editor/editor.h>
-
-#include <yave/renderer/renderer.h>
+#include "EditorEntityPass.h"
 
 namespace editor {
 
@@ -37,10 +35,13 @@ struct EditorRenderer {
 	using Settings = EditorRendererSettings;
 
 	DefaultRenderer renderer;
+	EditorEntityPass entity_pass;
+
+	FrameGraphImageId out;
 
 	static EditorRenderer create(ContextPtr ctx,
-										FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size,
-										const std::shared_ptr<IBLData>& ibl_data, const Settings& settings = Settings());
+								 FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size,
+								 const std::shared_ptr<IBLData>& ibl_data, const Settings& settings = Settings());
 };
 
 }

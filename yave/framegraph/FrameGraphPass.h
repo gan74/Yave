@@ -36,7 +36,7 @@ SOFTWARE.
 
 namespace yave {
 
-class FrameGraphPass : NonCopyable {
+class FrameGraphPass final : NonMovable {
 
 	struct Attachment {
 		FrameGraphImageId image;
@@ -83,6 +83,9 @@ class FrameGraphPass : NonCopyable {
 		core::Vector<Attachment> _colors;
 
 		Framebuffer _framebuffer;
+
+		core::Vector<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> _image_copies;
+		//core::Vector<std::pair<FrameGraphBufferId, FrameGraphMutableBufferId>> _buffer_copies;
 };
 
 }
