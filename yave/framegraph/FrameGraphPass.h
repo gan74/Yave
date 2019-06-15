@@ -50,7 +50,7 @@ class FrameGraphPass final : NonMovable {
 
 		using render_func = core::Function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
-		FrameGraphPass(std::string_view name, FrameGraph* parent);
+		FrameGraphPass(std::string_view name, FrameGraph* parent, usize index);
 
 		const core::String& name() const;
 		const FrameGraphResourcePool* resources() const;
@@ -71,6 +71,7 @@ class FrameGraphPass final : NonMovable {
 		core::String _name;
 
 		FrameGraph* _parent = nullptr;
+		const usize _index;
 
 		using hash_t = std::hash<FrameGraphResourceId>;
 		std::unordered_map<FrameGraphImageId, ResourceUsageInfo, hash_t> _images;

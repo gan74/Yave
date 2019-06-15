@@ -34,6 +34,9 @@ SOFTWARE.
 namespace yave {
 
 class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
+
+	Y_TODO(Split resource alloc and id mapping into two classes)
+
 	public:
 		FrameGraphResourcePool(DevicePtr dptr);
 		~FrameGraphResourcePool();
@@ -64,6 +67,8 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
 
+		void create_alias(FrameGraphImageId res, FrameGraphImageId alias);
+
 		void release(FrameGraphImageId res);
 		void release(FrameGraphBufferId res);
 
@@ -73,6 +78,8 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 		const ImageBase& image_base(FrameGraphImageId res) const;
 		const BufferBase& buffer_base(FrameGraphBufferId res) const;
 
+		bool are_aliased(FrameGraphImageId a, FrameGraphImageId b) const;
+
 		usize allocated_resources() const;
 
 		u32 create_resource_id();
@@ -81,18 +88,28 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 		const TransientImage<>& find(FrameGraphImageId res) const;
 		const TransientBuffer& find(FrameGraphBufferId res) const;
 
+		struct ImageContainer {
+			template<typename... Args>
+			ImageContainer(Args&&... args) : image(y_fwd(args)...) {}
 
-		bool create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+			TransientImage<> image;
+			usize aliases = 0;
+		};
+
+		ImageContainer* create_image_from_pool(ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory);
 
 		using hash_t = std::hash<FrameGraphResourceId>;
-		std::unordered_map<FrameGraphImageId, TransientImage<>, hash_t> _images;
+		std::unordered_map<FrameGraphImageId, ImageContainer*, hash_t> _images;
 		std::unordered_map<FrameGraphBufferId, TransientBuffer, hash_t> _buffers;
 
-		core::Vector<TransientImage<>> _released_images;
+		core::Vector<ImageContainer*> _released_images;
 		core::Vector<TransientBuffer> _released_buffers;
 
 		u32 _next_id = 0;
+
+
+		core::Vector<std::unique_ptr<ImageContainer>> _image_storage;
 };
 
 }

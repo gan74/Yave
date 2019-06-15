@@ -26,25 +26,12 @@ SOFTWARE.
 
 namespace y {
 namespace core {
-template<typename Key, typename Value>
-struct MapEntry : public std::pair<Key, Value> {
-	using std::pair<Key, Value>::pair;
-
-	constexpr bool operator==(const Key& k) const {
-		return this->first == k;
-	}
-
-	constexpr bool operator==(const MapEntry& e) const {
-		return this->first == e;
-	}
-};
-
 
 template<typename Key, typename Value, typename ResizePolicy = DefaultVectorResizePolicy>
-class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
+class AssocVector : public Vector<std::pair<Key, Value>, ResizePolicy> {
 
 	public:
-		using value_type = MapEntry<Key, Value>;
+		using value_type = std::pair<Key, Value>;
 		using Vector<value_type, ResizePolicy>::Vector;
 
 		using iterator = typename Vector<value_type, ResizePolicy>::iterator;
@@ -57,7 +44,7 @@ class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
 
 		Value& operator[](const Key& key) {
 			for(value_type& e : *this) {
-				if(e == key) {
+				if(e.first == key) {
 					return e.second;
 				}
 			}
@@ -66,11 +53,19 @@ class AssocVector : public Vector<MapEntry<Key, Value>, ResizePolicy> {
 		}
 
 		iterator find(const Key& key) {
-			return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k == key; });
+			return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k.first == key; });
 		}
 
 		const_iterator find(const Key& key) const {
-			return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k == key; });
+			return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k.first == key; });
+		}
+
+		iterator find_value(const Value& val) {
+			return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k.second == val; });
+		}
+
+		const_iterator find_value(const Value& val) const {
+			return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k.second == val; });
 		}
 
 	private:

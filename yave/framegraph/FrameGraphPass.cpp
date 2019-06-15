@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-FrameGraphPass::FrameGraphPass(std::string_view name, FrameGraph* parent) : _name(name), _parent(parent) {
+FrameGraphPass::FrameGraphPass(std::string_view name, FrameGraph* parent, usize index) : _name(name), _parent(parent), _index(index) {
 }
 
 const core::String& FrameGraphPass::name() const {

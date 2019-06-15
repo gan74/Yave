@@ -31,13 +31,20 @@ namespace yave {
 
 class FrameGraph : NonCopyable {
 
-	struct ImageCreateInfo {
+	struct ResourceCreateInfo {
+		usize first_use = 0;
+		usize last_use = 0;
+
+		void register_use(usize index);
+	};
+
+	struct ImageCreateInfo : ResourceCreateInfo {
 		math::Vec2ui size;
 		ImageFormat format;
 		ImageUsage usage = ImageUsage::None;
 	};
 
-	struct BufferCreateInfo {
+	struct BufferCreateInfo : ResourceCreateInfo {
 		usize byte_size;
 		BufferUsage usage = BufferUsage::None;
 		MemoryType memory_type = MemoryType::DontCare;
@@ -64,12 +71,14 @@ class FrameGraph : NonCopyable {
 		const ImageCreateInfo& info(FrameGraphImageId res) const;
 		const BufferCreateInfo& info(FrameGraphBufferId res) const;
 
-		void add_usage(FrameGraphImageId res, ImageUsage usage);
-		void add_usage(FrameGraphBufferId res, BufferUsage usage);
-		void set_cpu_visible(FrameGraphMutableBufferId res);
+		void register_usage(FrameGraphImageId res, ImageUsage usage, const FrameGraphPass* pass);
+		void register_usage(FrameGraphBufferId res, BufferUsage usage, const FrameGraphPass* pass);
+		void set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
+
 		bool is_attachment(FrameGraphImageId res) const;
 
 	private:
+		void alloc_resources_for_pass(const FrameGraphPass* pass);
 		void alloc_resources();
 		void release_resources(CmdBufferRecorder& recorder);
 
@@ -80,6 +89,8 @@ class FrameGraph : NonCopyable {
 		using hash_t = std::hash<FrameGraphResourceId>;
 		std::unordered_map<FrameGraphImageId, ImageCreateInfo, hash_t> _images;
 		std::unordered_map<FrameGraphBufferId, BufferCreateInfo, hash_t> _buffers;
+
+		usize _pass_index = 0;
 
 };
 

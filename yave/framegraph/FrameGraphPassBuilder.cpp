@@ -183,14 +183,14 @@ void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage,
 	res.check_valid();
 	auto& info = _pass->_images[res];
 	set_stage(info, stage);
-	parent()->add_usage(res, usage);
+	parent()->register_usage(res, usage, _pass);
 }
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usage, PipelineStage stage) {
 	res.check_valid();
 	auto& info = _pass->_buffers[res];
 	set_stage(info, stage);
-	parent()->add_usage(res, usage);
+	parent()->register_usage(res, usage, _pass);
 }
 
 void FrameGraphPassBuilder::add_uniform(FrameGraphDescriptorBinding binding, usize ds_index) {
@@ -202,7 +202,7 @@ void FrameGraphPassBuilder::add_uniform(FrameGraphDescriptorBinding binding, usi
 }
 
 void FrameGraphPassBuilder::set_cpu_visible(FrameGraphMutableBufferId res) {
-	parent()->set_cpu_visible(res);
+	parent()->set_cpu_visible(res, _pass);
 }
 
 FrameGraph* FrameGraphPassBuilder::parent() {

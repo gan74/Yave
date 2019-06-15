@@ -61,16 +61,21 @@ static void build_barriers(const C& resources, B& barriers, std::unordered_map<F
 	}
 }
 
-
 static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> copies,
 						std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
 
 	Y_TODO(We might end up barriering twice here)
 	for(auto [src, dst] : copies) {
-		to_barrier.erase(src);
-		to_barrier.erase(dst);
-
-		recorder.barriered_copy(pool->image_base(src), pool->image_base(dst));
+		if(pool->are_aliased(src, dst)) {
+			if(auto it = to_barrier.find(src); it != to_barrier.end()) {
+				to_barrier[dst] = it->second;
+				to_barrier.erase(it);
+			}
+		} else {
+			to_barrier.erase(src);
+			to_barrier.erase(dst);
+			recorder.barriered_copy(pool->image_base(src), pool->image_base(dst));
+		}
 	}
 }
 
@@ -130,7 +135,6 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 
 	release_resources(recorder);
 }
-
 
 void FrameGraph::alloc_resources() {
 	y_profile();
@@ -197,7 +201,7 @@ FrameGraphMutableBufferId FrameGraph::declare_buffer(usize byte_size) {
 }
 
 FrameGraphPassBuilder FrameGraph::add_pass(std::string_view name) {
-	auto pass = std::make_unique<FrameGraphPass>(name, this);
+	auto pass = std::make_unique<FrameGraphPass>(name, this, ++_pass_index);
 	FrameGraphPass* ptr = pass.get();
 	 _passes << std::move(pass);
 	return FrameGraphPassBuilder(ptr);
@@ -211,19 +215,29 @@ const FrameGraph::BufferCreateInfo& FrameGraph::info(FrameGraphBufferId res) con
 	return check_exists(_buffers, res);
 }
 
-void FrameGraph::add_usage(FrameGraphImageId res, ImageUsage usage) {
+void FrameGraph::ResourceCreateInfo::register_use(usize index) {
+	if(!first_use) {
+		first_use = index;
+	}
+	last_use = std::max(last_use,index);
+}
+
+void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, const FrameGraphPass* pass) {
 	auto& info = check_exists(_images, res);
 	info.usage = info.usage | usage;
+	info.register_use(pass->_index);
 }
 
-void FrameGraph::add_usage(FrameGraphBufferId res, BufferUsage usage) {
+void FrameGraph::register_usage(FrameGraphBufferId res, BufferUsage usage, const FrameGraphPass* pass) {
 	auto& info = check_exists(_buffers, res);
 	info.usage = info.usage | usage;
+	info.register_use(pass->_index);
 }
 
-void FrameGraph::set_cpu_visible(FrameGraphMutableBufferId res) {
+void FrameGraph::set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass*pass) {
 	auto& info = check_exists(_buffers, res);
 	info.memory_type = MemoryType::CpuVisible;
+	info.register_use(pass->_index);
 }
 
 bool FrameGraph::is_attachment(FrameGraphImageId res) const {

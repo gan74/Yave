@@ -40,36 +40,20 @@ FrameGraphResourcePool::~FrameGraphResourcePool() {
 	}
 }
 
-/*const ImageBase& FrameGraphResourcePool::image_base(FrameGraphMutableImageId res) const {
-	return find(res);
-}*/
-
 void FrameGraphResourcePool::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
 	res.check_valid();
 	check_usage(usage);
 
 	auto& image = _images[res];
-	if(image.device()) {
+	if(image) {
 		y_fatal("Image already exists.");
 	}
-	if(!create_image_from_pool(image, format, size, usage)) {
-		image = TransientImage<>(device(), format, usage, size);
+
+	if(!(image = create_image_from_pool(format, size, usage))) {
+		_image_storage << std::make_unique<ImageContainer>(device(), format, usage, size);
+		image = _image_storage.last().get();
 	}
 }
-
-
-bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
-	for(auto it = _released_images.begin(); it != _released_images.end(); ++it) {
-		auto& img = *it;
-		if(img.format() == format && img.size() == size && img.usage() == usage) {
-			res = std::move(img);
-			_released_images.erase_unordered(it);
-			return true;
-		}
-	}
-	return false;
-}
-
 
 void FrameGraphResourcePool::create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory) {
 	res.check_valid();
@@ -86,6 +70,38 @@ void FrameGraphResourcePool::create_buffer(FrameGraphBufferId res, usize byte_si
 		buffer = TransientBuffer(device(), byte_size, usage, memory);
 	}
 }
+
+
+void FrameGraphResourcePool::create_alias(FrameGraphImageId res, FrameGraphImageId alias) {
+	res.check_valid();
+	alias.check_valid();
+
+	auto& orig = _images[alias];
+	if(!orig) {
+		y_fatal("Image doesn't exists.");
+	}
+
+	auto& image = _images[res];
+	if(image) {
+		y_fatal("Image already exists.");
+	}
+
+	image = orig;
+}
+
+
+FrameGraphResourcePool::ImageContainer* FrameGraphResourcePool::create_image_from_pool(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+	for(auto it = _released_images.begin(); it != _released_images.end(); ++it) {
+		ImageContainer* img = *it;
+		if(img->image.format() == format && img->image.size() == size && img->image.usage() == usage) {
+			y_debug_assert(img->aliases == 0);
+			_released_images.erase_unordered(it);
+			return img;
+		}
+	}
+	return nullptr;
+}
+
 
 bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
 	for(auto it = _released_buffers.begin(); it != _released_buffers.end(); ++it) {
@@ -107,8 +123,12 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 void FrameGraphResourcePool::release(FrameGraphImageId res) {
 	res.check_valid();
 	if(auto it = _images.find(res); it != _images.end()) {
-		_released_images << std::move(it->second);
-		_images.erase(it);
+		if(it->second->aliases) {
+			--(it->second->aliases);
+		} else {
+			_released_images << it->second;
+			_images.erase(it);
+		}
 	} else {
 		y_fatal("Released image resource does not belong to pool.");
 	}
@@ -124,9 +144,20 @@ void FrameGraphResourcePool::release(FrameGraphBufferId res) {
 	}
 }
 
+bool FrameGraphResourcePool::are_aliased(FrameGraphImageId a, FrameGraphImageId b) const {
+	a.check_valid();
+	b.check_valid();
+	if(auto a_it = _images.find(a); a_it != _images.end()) {
+		if(auto b_it = _images.find(b); b_it != _images.end()) {
+			return a_it->second == b_it->second;
+		}
+	}
+	return false;
+}
+
 ImageBarrier FrameGraphResourcePool::barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const {
 	res.check_valid();
-	return ImageBarrier(_images.find(res)->second, src, dst);
+	return ImageBarrier(_images.find(res)->second->image, src, dst);
 }
 
 BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const {
@@ -135,17 +166,15 @@ BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBufferId res, PipelineSt
 }
 
 const ImageBase& FrameGraphResourcePool::image_base(FrameGraphImageId res) const {
-	res.check_valid();
-	return _images.find(res)->second;
+	return find(res);
 }
 
 const BufferBase& FrameGraphResourcePool::buffer_base(FrameGraphBufferId res) const {
-	res.check_valid();
-	return _buffers.find(res)->second;
+	return find(res);
 }
 
 usize FrameGraphResourcePool::allocated_resources() const {
-	return _images.size() + _buffers.size() + _released_images.size() + _released_buffers.size();
+	return _buffers.size() + _released_buffers.size() + _image_storage.size();
 }
 
 u32 FrameGraphResourcePool::create_resource_id() {
@@ -158,7 +187,7 @@ const TransientImage<>& FrameGraphResourcePool::find(FrameGraphImageId res) cons
 		y_fatal("Invalid image resource.");
 	}
 	if(auto it = _images.find(res); it != _images.end()) {
-		return it->second;
+		return it->second->image;
 	}
 
 	return y_fatal("Image resource doesn't exist.");
