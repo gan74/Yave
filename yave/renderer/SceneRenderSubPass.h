@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/framegraph/FrameGraphResourceId.h>
 
+#include <yave/scene/Renderable.h>
+
 namespace yave {
 
 class RenderPassRecorder;
@@ -33,7 +35,7 @@ class FrameGraphPassBuilder;
 struct SceneRenderSubPass {
 	SceneView scene_view;
 
-	FrameGraphMutableTypedBufferId<math::Matrix4<>> camera_buffer;
+	FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer;
 	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
 
 	static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& view);

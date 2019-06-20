@@ -2,7 +2,7 @@
 
 #include "ibl_convolution.glsl"
 
-layout(local_size_x = 16, local_size_y = 16) in;
+layout(local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 0, binding = 0) uniform samplerCube in_envmap;
 layout(rgba8, set = 0, binding = 1) uniform writeonly imageCube out_image;

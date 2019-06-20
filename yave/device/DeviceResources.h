@@ -43,7 +43,6 @@ class DeviceResources final : NonCopyable {
 			BRDFIntegratorComp,
 			DeferredLightingComp,
 			SSAOComp,
-			PickingComp,
 			CopyComp,
 
 			TonemapFrag,
@@ -64,7 +63,6 @@ class DeviceResources final : NonCopyable {
 			BRDFIntegratorProgram,
 			DeferredLightingProgram,
 			SSAOProgram,
-			PickingProgram,
 			CopyProgram,
 
 			MaxComputePrograms

@@ -39,11 +39,15 @@ using MaterialTemplates = EditorResources::MaterialTemplates;
 
 static constexpr const char* spirv_names[] = {
 		"depth_alpha.comp",
+		"picking.comp",
 
 		"imgui.frag",
+		"imgui_billboard.frag",
+		"basic_picking.frag",
 
 		"imgui.vert",
 		"imgui_billboard.vert",
+		"basic_picking.vert",
 
 		"imgui_billboard.geom",
 	};
@@ -60,11 +64,13 @@ struct DeviceMaterialData {
 
 static constexpr SpirV compute_spirvs[] = {
 		SpirV::DepthAlphaComp,
+		SpirV::PickingComp
 	};
 
 static constexpr DeviceMaterialData material_datas[] = {
-		{SpirV::ImGuiFrag, SpirV::ImGuiVert, SpirV::MaxSpirV, false, false, true, PrimitiveType::Triangles},
-		{SpirV::ImGuiFrag, SpirV::ImGuiBillBoardVert, SpirV::ImGuiBillBoardGeom, true, false, true, PrimitiveType::Points},
+		{SpirV::ImGuiFrag,			SpirV::ImGuiVert,			SpirV::MaxSpirV,			false,	false,	true,	PrimitiveType::Triangles},
+		{SpirV::ImGuiBillBoardFrag, SpirV::ImGuiBillBoardVert,	SpirV::ImGuiBillBoardGeom,	true,	false,	true,	PrimitiveType::Points},
+		{SpirV::PickingFrag,		SpirV::PickingVert,			SpirV::MaxSpirV,			true,	true,	true,	PrimitiveType::Triangles},
 	};
 
 
@@ -72,6 +78,7 @@ static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
 static constexpr usize compute_count = usize(ComputePrograms::MaxComputePrograms);
 static constexpr usize template_count = usize(MaterialTemplates::MaxMaterialTemplates);
 
+static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == 9);
 static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
 static_assert(sizeof(compute_spirvs) / sizeof(compute_spirvs[0]) == compute_count);
 static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == template_count);

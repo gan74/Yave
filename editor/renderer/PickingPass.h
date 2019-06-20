@@ -19,66 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_CONTEXT_EDITORRESOURCES_H
-#define EDITOR_CONTEXT_EDITORRESOURCES_H
+#ifndef EDITOR_RENDERER_PICKINGPASS_H
+#define EDITOR_RENDERER_PICKINGPASS_H
 
 #include <editor/editor.h>
 
-#include <yave/graphics/images/Image.h>
+#include <yave/renderer/renderer.h>
 
 namespace editor {
 
-class EditorResources final : NonMovable {
-	public:
-		enum SpirV {
-			DepthAlphaComp,
-			PickingComp,
+struct PickingPass {
+	SceneView scene_view;
 
-			ImGuiFrag,
-			ImGuiBillBoardFrag,
-			PickingFrag,
+	FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer;
+	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
 
-			ImGuiVert,
-			ImGuiBillBoardVert,
-			PickingVert,
+	FrameGraphImageId depth;
+	FrameGraphImageId id;
 
-			ImGuiBillBoardGeom,
-
-			MaxSpirV
-		};
-
-		enum ComputePrograms {
-			DepthAlphaProgram,
-			PickingProgram,
-
-			MaxComputePrograms
-		};
-
-		enum MaterialTemplates {
-			ImGuiMaterialTemplate,
-			ImGuiBillBoardMaterialTemplate,
-
-			PickingMaterialTemplate,
-
-			MaxMaterialTemplates
-		};
-
-
-		EditorResources(DevicePtr dptr);
-
-		// can't default for inclusion reasons
-		~EditorResources();
-
-		const ComputeProgram& operator[](ComputePrograms i) const;
-		const MaterialTemplate* operator[](MaterialTemplates i) const;
-
-	private:
-		std::unique_ptr<SpirVData[]> _spirv;
-		std::unique_ptr<ComputeProgram[]> _computes;
-		std::unique_ptr<MaterialTemplate[]> _material_templates;
-
+	static PickingPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
 };
 
 }
 
-#endif // EDITOR_CONTEXT_EDITORRESOURCES_H
+#endif // EDITOR_RENDERER_PICKINGPASS_H

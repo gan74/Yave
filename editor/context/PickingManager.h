@@ -28,24 +28,26 @@ SOFTWARE.
 namespace editor {
 
 class PickingManager : public ContextLinked {
-	using ReadBackBuffer = TypedBuffer<float, BufferUsage::StorageBit, MemoryType::CpuVisible>;
+	struct ReadBackData {
+		float depth;
+		u32 id;
+	};
+
+	using ReadBackBuffer = TypedBuffer<ReadBackData, BufferUsage::StorageBit, MemoryType::CpuVisible>;
 	public:
 		struct PickingData {
 			math::Vec3 world_pos;
 			float depth;
 			math::Vec2 uv;
+			u32 instance_id;
 		};
 
 		PickingManager(ContextPtr ctx);
 
-		PickingData pick_sync(const math::Vec2& uv);
+		PickingData pick_sync(const math::Vec2& uv, const math::Vec2ui& size = math::Vec2ui(512));
 
 	private:
 		ReadBackBuffer _buffer;
-		DepthTextureAttachment _depth;
-		DescriptorSet _descriptor_set;
-		Framebuffer _framebuffer;
-
 };
 
 }

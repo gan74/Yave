@@ -36,13 +36,10 @@ SOFTWARE.
 #include <imgui/yave_imgui.h>
 
 
-#include <imgui/yave_imgui.h>
-
 // we actually need this to index utf-8 chars from the imgui font
 IMGUI_API int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* in_text_end);
 
 
-// mostly copied from SceneRednerSubPass
 namespace editor {
 
 static constexpr usize max_batch_size = 128 * 1024;

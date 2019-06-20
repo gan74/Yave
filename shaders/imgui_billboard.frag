@@ -10,9 +10,11 @@ layout(set = 0, binding = 1) uniform Data {
 	vec2 viewport_size;
 } constants;
 
-//const float gamma = 2.2f;
+const float smoothing = 1.0 / 16.0;
+const float alpha_edge = 0.7;
 
 void main() {
 	vec4 color = v_color * texture(font_texture, v_uv);
-	out_color = color;
+	float alpha_step = smoothstep(alpha_edge - smoothing, alpha_edge + smoothing, color.a);
+	out_color = vec4(color.rgb, alpha_step);
 }

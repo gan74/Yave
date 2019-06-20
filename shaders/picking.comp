@@ -3,16 +3,22 @@
 layout(local_size_x = 1, local_size_y = 1) in;
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
-layout(set = 0, binding = 1) writeonly buffer Output {
+layout(set = 0, binding = 1) uniform usampler2D in_id;
+
+layout(set = 0, binding = 2) writeonly buffer Output {
 	float depth;
-} output_depth;
+	uint instance_id;
+} output_data;
 
 layout(push_constant) uniform PushConstants {
 	vec2 uv;
 } constants;
 
 void main() {
-	output_depth.depth = texture(in_depth, constants.uv).r;
+	output_data.depth = texture(in_depth, constants.uv).r;
+
+	ivec2 size = textureSize(in_id, 0);
+	output_data.instance_id = uint(texelFetch(in_id, ivec2(size * constants.uv), 0).r);
 }
 
 

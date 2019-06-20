@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/graphics/swapchain/FrameToken.h>
 #include <yave/graphics/buffers/buffers.h>
 
+#include <yave/graphics/bindings/uniforms.h>
 
 namespace yave {
 
@@ -36,6 +37,8 @@ class Renderable {
 			const DescriptorSetBase& descriptor_set;
 			u32 instance_index;
 		};
+
+		using CameraData = uniform::ViewProj;
 
 		/*virtual ~Renderable() {
 		}

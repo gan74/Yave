@@ -24,42 +24,44 @@ SOFTWARE.
 #include "EditorContext.h"
 
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/renderer/SceneRenderSubPass.h>
+
+#include <editor/renderer/PickingPass.h>
 
 namespace editor {
 
-static constexpr usize picking_resolution = 512;
-
 PickingManager::PickingManager(ContextPtr ctx) :
 		ContextLinked(ctx),
-		_buffer(device(), 1),
-		_depth(device(), vk::Format::eD32Sfloat, math::Vec2ui(picking_resolution)),
-		_descriptor_set(device(), {Binding(TextureView(_depth)), Binding(_buffer)}),
-		_framebuffer(device(), _depth) {
+		_buffer(device(), 1) {
 }
 
 
-PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
+PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv, const math::Vec2ui& size) {
 	y_profile();
 
 	FrameGraph framegraph(context()->resource_pool());
 
-	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
-	SceneRenderSubPass scene_pass = SceneRenderSubPass::create(builder, context()->scene_view());
-	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			{
-				auto render_pass = recorder.bind_framebuffer(_framebuffer);
-				scene_pass.render(render_pass, self);
-			}
-			const auto& program = recorder.device()->device_resources()[DeviceResources::PickingProgram];
-			recorder.dispatch(program, math::Vec3ui(1), {_descriptor_set}, uv);
+
+	PickingPass scene_pass = PickingPass::create(context(), framegraph, context()->scene_view(), size);
+
+	{
+		FrameGraphPassBuilder builder = framegraph.add_pass("Picking readback pass");
+
+		builder.add_uniform_input(scene_pass.depth);
+		builder.add_uniform_input(scene_pass.id);
+		builder.add_descriptor_binding(Binding(_buffer));
+
+		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			const auto& program = context()->resources()[EditorResources::PickingProgram];
+			recorder.dispatch(program, math::Vec3ui(1), {self->descriptor_sets()[0]}, uv);
 		});
+	}
 
 	CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
 	std::move(framegraph).render(recorder);
 	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 
-	float depth = TypedMapping(_buffer)[0];
+	ReadBackData read_back = TypedMapping(_buffer)[0];
+	float depth = read_back.depth;
 
 	auto inv_matrix = context()->scene_view().camera().inverse_matrix();
 	math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
@@ -67,10 +69,11 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv) {
 	PickingData data{
 			p.to<3>() / p.w(),
 			depth,
-			uv
+			uv,
+			read_back.id
 		};
 
-	log_msg(fmt("picked %", data.world_pos));
+	log_msg(fmt("picked: % (id: %)", data.world_pos, data.instance_id));
 	return data;
 }
 

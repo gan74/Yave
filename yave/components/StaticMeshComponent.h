@@ -42,6 +42,7 @@ class StaticMeshComponent final : public Renderable {
 		void flush_reload();
 
 		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
+		void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
 		const AssetPtr<StaticMesh>& mesh() const;
 		const AssetPtr<Material>& material() const;
