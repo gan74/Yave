@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERER_PICKINGPASS_H
-#define EDITOR_RENDERER_PICKINGPASS_H
+#ifndef EDITOR_RENDERER_SCENEPICKINGPASS_H
+#define EDITOR_RENDERER_SCENEPICKINGPASS_H
 
 #include <editor/editor.h>
 
@@ -28,19 +28,15 @@ SOFTWARE.
 
 namespace editor {
 
-struct PickingPass {
+struct ScenePickingPass {
 	SceneView scene_view;
-
-	FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer;
-	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
-	FrameGraphMutableTypedBufferId<u32> id_buffer;
 
 	FrameGraphImageId depth;
 	FrameGraphImageId id;
 
-	static PickingPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
+	static ScenePickingPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
 };
 
 }
 
-#endif // EDITOR_RENDERER_PICKINGPASS_H
+#endif // EDITOR_RENDERER_SCENEPICKINGPASS_H

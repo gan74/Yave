@@ -27,7 +27,8 @@ SOFTWARE.
 
 #include <yave/graphics/shaders/ComputeProgram.h>
 
-#include <editor/renderer/PickingPass.h>
+#include <editor/renderer/EditorEntityPass.h>
+#include <editor/renderer/ScenePickingPass.h>
 
 namespace editor {
 
@@ -46,13 +47,15 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv, cons
 	FrameGraph framegraph(context()->resource_pool());
 
 
-	PickingPass scene_pass = PickingPass::create(context(), framegraph, context()->scene_view(), size);
+	Y_TODO(Take editor renderer settings into account for picking)
+	ScenePickingPass scene_pass = ScenePickingPass::create(context(), framegraph, context()->scene_view(), size);
+	EditorEntityPass entity_pass = EditorEntityPass::create(context(), framegraph, context()->scene_view(), scene_pass.depth, scene_pass.id, true);
 
 	{
 		FrameGraphPassBuilder builder = framegraph.add_pass("Picking readback pass");
 
-		builder.add_uniform_input(scene_pass.depth);
-		builder.add_uniform_input(scene_pass.id);
+		builder.add_uniform_input(entity_pass.depth);
+		builder.add_uniform_input(entity_pass.id);
 		builder.add_descriptor_binding(Binding(_buffer));
 
 		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -81,7 +84,7 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv, cons
 			read_back.id
 		};
 
-	//log_msg(fmt("picked: % (id: %)", data.world_pos, data.entity_index));
+	//log_msg(fmt("picked: % (depth: %, id: %)", data.world_pos, data.depth, data.entity_index));
 	return data;
 }
 

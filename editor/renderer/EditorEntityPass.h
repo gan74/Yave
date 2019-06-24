@@ -29,11 +29,11 @@ SOFTWARE.
 namespace editor {
 
 struct EditorEntityPass {
-
 	FrameGraphImageId depth;
 	FrameGraphImageId color;
+	FrameGraphImageId id;
 
-	static EditorEntityPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool picking = false);
+	static EditorEntityPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color_id, bool picking = false);
 };
 
 }

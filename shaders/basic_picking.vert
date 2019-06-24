@@ -10,13 +10,13 @@ layout(location = 2) in vec3 in_tangent;
 layout(location = 3) in vec2 in_uv;
 
 layout(location = 8) in mat4 in_model;
-layout(location = 13) in uint in_id;
+layout(location = 12) in uint in_id;
 
-layout(location = 0) out uint instance_id;
+layout(location = 0) out uint out_instance_id;
 
 void main() {
 	mat3 model = mat3(in_model);
 	gl_Position = view_proj.matrix * in_model * vec4(in_position, 1.0);
 
-	instance_id = in_id;
+	out_instance_id = in_id;
 }

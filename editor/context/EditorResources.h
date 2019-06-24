@@ -59,6 +59,7 @@ class EditorResources final : NonMovable {
 			ImGuiBillBoardMaterialTemplate,
 
 			PickingMaterialTemplate,
+			ImGuiBillBoardPickingMaterialTemplate,
 
 			MaxMaterialTemplates
 		};

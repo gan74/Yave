@@ -105,9 +105,11 @@ void EngineView::update() {
 void EngineView::update_picking() {
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
+	math::Vec2 mouse = ImGui::GetIO().MousePos;
 
-	math::Vec2 uv = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport);
-	auto picking_data = context()->picking_manager().pick_sync(uv, viewport);
+	// substract tab height
+	math::Vec2 uv = (mouse - offset - math::Vec2(0, 24)) / viewport;
+	auto picking_data = context()->picking_manager().pick_sync(uv, content_size());
 
 	_picked_pos = picking_data.world_pos;
 	_picked_entity_id = picking_data.hit() ? context()->world().id_from_index(picking_data.entity_index) : ecs::EntityId();

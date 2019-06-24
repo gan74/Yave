@@ -20,9 +20,10 @@ layout(location = 5) in vec4 in_skin_weights;
 
 layout(location = 8) in mat4 in_model;
 
-layout(location = 0) out vec3 v_normal;
-layout(location = 1) out vec2 v_uv;
-
+layout(location = 0) out vec3 out_normal;
+layout(location = 1) out vec3 out_tangent;
+layout(location = 2) out vec3 out_bitangent;
+layout(location = 3) out vec2 out_uv;
 
 void main() {
 	mat4 bone_matrix = in_skin_weights.x * bones.transforms[in_skin_indexes.x] +
@@ -30,7 +31,9 @@ void main() {
 					   in_skin_weights.z * bones.transforms[in_skin_indexes.z] +
 					   in_skin_weights.w * bones.transforms[in_skin_indexes.w];
 
-	v_uv = in_uv;
-	v_normal = mat3(in_model) * mat3(bone_matrix) * in_normal;
+	out_uv = in_uv;
+	out_normal = mat3(in_model) * mat3(bone_matrix) * in_normal;
+	out_normal = mat3(in_model) * mat3(bone_matrix) * in_tangent;
+	out_bitangent = cross(out_tangent, out_normal);
 	gl_Position = view_proj.matrix * in_model * bone_matrix * vec4(in_position, 1.0);
 }

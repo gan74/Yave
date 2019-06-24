@@ -4,13 +4,12 @@
 
 layout(set = 0, binding = 0) uniform sampler2D in_color;
 
-layout(location = 0) in vec2 v_uv;
+layout(location = 0) in vec2 in_uv;
 
 layout(location = 0) out vec4 out_color;
 
 const float gamma = 2.0;
 const float inv_gamma = 1.0 / gamma;
-
 
 void main() {
 	ivec2 coord = ivec2(gl_FragCoord.xy);

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "PickingPass.h"
+#include "ScenePickingPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 
@@ -39,16 +39,25 @@ namespace editor {
 
 static constexpr usize max_batch_size = 128 * 1024;
 
-static usize render_world(ContextPtr ctx, RenderPassRecorder& recorder, const PickingPass& picking_pass, const FrameGraphPass* pass, usize index = 0) {
+static usize render_world(ContextPtr ctx,
+						  RenderPassRecorder& recorder, const FrameGraphPass* pass,
+						  const SceneView& scene_view,
+						  FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer,
+						  FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer,
+						  FrameGraphMutableTypedBufferId<u32> id_buffer,
+						  usize index = 0) {
 	y_profile();
 
-	const ecs::EntityWorld& world = picking_pass.scene_view.world();
+	const ecs::EntityWorld& world = scene_view.world();
 
-	auto transform_mapping = pass->resources()->mapped_buffer(picking_pass.transform_buffer);
-	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(picking_pass.transform_buffer);
+	auto camera_mapping = pass->resources()->mapped_buffer(camera_buffer);
+	camera_mapping[0] = scene_view.camera().viewproj_matrix();
 
-	auto id_mapping = pass->resources()->mapped_buffer(picking_pass.id_buffer);
-	auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(picking_pass.id_buffer);
+	auto transform_mapping = pass->resources()->mapped_buffer(transform_buffer);
+	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(transform_buffer);
+
+	auto id_mapping = pass->resources()->mapped_buffer(id_buffer);
+	auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(id_buffer);
 
 	recorder.bind_attrib_buffers({transforms, transforms, ids});
 	recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
@@ -58,7 +67,7 @@ static usize render_world(ContextPtr ctx, RenderPassRecorder& recorder, const Pi
 		if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
 			transform_mapping[index] = tr->transform();
 			id_mapping[index] = entity_index;
-			 world.component<StaticMeshComponent>(id)->render_mesh(recorder, u32(index));
+			world.component<StaticMeshComponent>(id)->render_mesh(recorder, u32(index));
 			++index;
 		}
 	}
@@ -66,9 +75,7 @@ static usize render_world(ContextPtr ctx, RenderPassRecorder& recorder, const Pi
 	return index;
 }
 
-PickingPass PickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
-	unused(ctx);
-
+ScenePickingPass ScenePickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
 	static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
 	static constexpr vk::Format id_format = vk::Format::eR32Uint;
 
@@ -81,18 +88,14 @@ PickingPass PickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const Sc
 	auto depth = builder.declare_image(depth_format, size);
 	auto id = builder.declare_image(id_format, size);
 
-	PickingPass pass;
+	ScenePickingPass pass;
 	pass.scene_view = view;
-	pass.camera_buffer = camera_buffer;
-	pass.transform_buffer = transform_buffer;
-	pass.id_buffer = id_buffer;
 	pass.depth = depth;
 	pass.id = id;
 
 	builder.add_uniform_input(camera_buffer);
 	builder.add_attrib_input(transform_buffer);
 	builder.add_attrib_input(id_buffer);
-	builder.map_update(camera_buffer);
 	builder.map_update(transform_buffer);
 	builder.map_update(id_buffer);
 
@@ -100,7 +103,7 @@ PickingPass PickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const Sc
 	builder.add_color_output(id);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			render_world(ctx, render_pass, pass, self);
+			render_world(ctx, render_pass, self, view, camera_buffer, transform_buffer, id_buffer);
 		});
 
 	return pass;
