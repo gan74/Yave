@@ -36,6 +36,7 @@ class EntityId {
 		static EntityId from_unversioned_index(index_type index);
 
 		index_type index() const;
+		index_type version() const;
 
 		bool is_valid() const;
 

@@ -33,6 +33,7 @@ struct PickingPass {
 
 	FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer;
 	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
+	FrameGraphMutableTypedBufferId<u32> id_buffer;
 
 	FrameGraphImageId depth;
 	FrameGraphImageId id;

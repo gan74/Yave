@@ -39,7 +39,6 @@ SOFTWARE.
 // we actually need this to index utf-8 chars from the imgui font
 IMGUI_API int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* in_text_end);
 
-
 namespace editor {
 
 static constexpr usize max_batch_size = 128 * 1024;
@@ -112,7 +111,9 @@ static void render_editor_entities(ContextPtr ctx,
 }
 
 
-EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color) {
+EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool picking) {
+	unused(picking);
+
 	FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
 	auto pass_buffer = builder.declare_typed_buffer<EditorEntityPassData>();

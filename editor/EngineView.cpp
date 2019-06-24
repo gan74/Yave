@@ -107,7 +107,20 @@ void EngineView::update_picking() {
 	math::Vec2 offset = ImGui::GetWindowPos();
 
 	math::Vec2 uv = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport);
-	_picked_pos = context()->picking_manager().pick_sync(uv).world_pos;
+	auto picking_data = context()->picking_manager().pick_sync(uv, viewport);
+
+	_picked_pos = picking_data.world_pos;
+	_picked_entity_id = picking_data.hit() ? context()->world().id_from_index(picking_data.entity_index) : ecs::EntityId();
+}
+
+void EngineView::update_selection() {
+	y_profile();
+
+	if(!ImGui::IsWindowHovered() || !ImGui::IsMouseClicked(0)) {
+		return;
+	}
+
+	context()->selection().set_selected(_picked_entity_id);
 }
 
 void EngineView::update_camera() {
@@ -215,32 +228,6 @@ void EngineView::update_camera() {
 
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
 	camera.set_view(view);*/
-}
-
-void EngineView::update_selection() {
-	y_profile();
-
-	if(!ImGui::IsWindowHovered() || !ImGui::IsMouseClicked(0)) {
-		return;
-	}
-
-	ecs::EntityId selected_id;
-	float score = std::numeric_limits<float>::max();
-	for(ecs::EntityId id : context()->world().entities()) {
-		if(TransformableComponent* tr = context()->world().component<TransformableComponent>(id)) {
-			auto [pos, rot, scale] = tr->transform().decompose();
-			unused(rot);
-
-			float radius = 1.0f; // tr->radius() * std::max({scale.x(), scale.y(), scale.z()});
-			float sc = (pos - _picked_pos).length() / radius;
-
-			if(sc < score) {
-				selected_id = id;
-				score = sc;
-			}
-		}
-	}
-	context()->selection().set_selected(selected_id);
 }
 
 }

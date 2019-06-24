@@ -114,6 +114,8 @@ class EntityIdPool {
 
 		bool contains(EntityId id) const;
 
+		EntityId id_from_index(EntityIndex index) const;
+
 		EntityId create();
 		void recycle(EntityId id);
 

@@ -28,6 +28,7 @@ namespace editor {
 
 struct EditorRendererSettings {
 	bool enable_editor_entities = true;
+	float billboard_size = 64.0f;
 };
 
 

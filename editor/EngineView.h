@@ -27,6 +27,8 @@ SOFTWARE.
 #include <editor/widgets/Gizmo.h>
 #include <editor/renderer/EditorRenderer.h>
 
+#include <yave/ecs/EntityId.h>
+
 namespace editor {
 
 class EngineView final : public Widget, public ContextLinked {
@@ -52,7 +54,9 @@ class EngineView final : public Widget, public ContextLinked {
 
 		// subwidgets & stuff
 		Gizmo _gizmo;
+
 		math::Vec3 _picked_pos;
+		ecs::EntityId _picked_entity_id;
 };
 
 static_assert(!std::is_move_assignable_v<EngineView>);

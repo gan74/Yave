@@ -78,10 +78,10 @@ static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& s
 
 // returns the NEXT binding index
 static u32 create_vertex_attribs(u32 binding,
-								  vk::VertexInputRate rate,
-								  core::ArrayView<ShaderModuleBase::Attribute> vertex_attribs,
-								  Bindings& bindings,
-								  Attribs& attribs) {
+								 vk::VertexInputRate rate,
+								 core::ArrayView<ShaderModuleBase::Attribute> vertex_attribs,
+								 Bindings& bindings,
+								 Attribs& attribs) {
 
 	if(!vertex_attribs.is_empty()) {
 		u32 offset = 0;
@@ -112,15 +112,20 @@ static void create_vertex_attribs(core::ArrayView<ShaderModuleBase::Attribute> v
 								  Bindings& bindings,
 								  Attribs& attribs) {
 
+	y_debug_assert(std::is_sorted(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; }));
+
 	core::Vector<ShaderModuleBase::Attribute> v_attribs;
 	core::Vector<ShaderModuleBase::Attribute> i_attribs;
 
 	for(const auto& attr : vertex_attribs) {
-		(attr.location < ShaderProgram::PerInstanceLocation ? v_attribs : i_attribs) << attr;
+		(attr.location < ShaderProgram::per_instance_location ? v_attribs : i_attribs) << attr;
 	}
 
 	u32 inst = create_vertex_attribs(0, vk::VertexInputRate::eVertex, v_attribs, bindings, attribs);
-	create_vertex_attribs(inst, vk::VertexInputRate::eInstance, i_attribs, bindings, attribs);
+
+	for(const auto& attrib : i_attribs) {
+		inst = create_vertex_attribs(inst, vk::VertexInputRate::eInstance, {attrib}, bindings, attribs);
+	}
 }
 
 

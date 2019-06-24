@@ -48,6 +48,8 @@ class EntityWorld : NonCopyable {
 		EntityId create_entity();
 		void remove_entity(EntityId id);
 
+		EntityId id_from_index(EntityIndex index) const;
+
 		bool exists(EntityId id) const;
 
 		const EntityIdPool& entities() const;

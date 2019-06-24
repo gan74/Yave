@@ -39,7 +39,9 @@ class PickingManager : public ContextLinked {
 			math::Vec3 world_pos;
 			float depth;
 			math::Vec2 uv;
-			u32 instance_id;
+			u32 entity_index;
+
+			bool hit() const;
 		};
 
 		PickingManager(ContextPtr ctx);

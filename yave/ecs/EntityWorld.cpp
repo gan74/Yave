@@ -39,6 +39,10 @@ void EntityWorld::remove_entity(EntityId id) {
 	}
 }
 
+EntityId EntityWorld::id_from_index(EntityIndex index) const {
+	return _entities.id_from_index(index);
+}
+
 bool EntityWorld::exists(EntityId id) const {
 	return _entities.contains(id);
 }

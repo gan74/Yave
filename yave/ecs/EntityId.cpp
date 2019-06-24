@@ -48,6 +48,10 @@ EntityId::index_type EntityId::index() const {
 	return _index;
 }
 
+EntityId::index_type EntityId::version() const {
+	return _version;
+}
+
 bool EntityId::is_valid() const {
 	return _index != invalid_index;
 }

@@ -34,7 +34,7 @@ SOFTWARE.
 
 Y_TODO(merge with scene sub pass?)
 
-// mostly copied from SceneRednerSubPass
+// mostly copied from SceneRednerSubPass and EditorEntityPass
 namespace editor {
 
 static constexpr usize max_batch_size = 128 * 1024;
@@ -47,13 +47,20 @@ static usize render_world(ContextPtr ctx, RenderPassRecorder& recorder, const Pi
 	auto transform_mapping = pass->resources()->mapped_buffer(picking_pass.transform_buffer);
 	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(picking_pass.transform_buffer);
 
-	recorder.bind_attrib_buffers({transforms, transforms});
+	auto id_mapping = pass->resources()->mapped_buffer(picking_pass.id_buffer);
+	auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(picking_pass.id_buffer);
+
+	recorder.bind_attrib_buffers({transforms, transforms, ids});
 	recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
 
-	for(const auto& [tr, me] : world.view(StaticMeshArchetype())) {
-		transform_mapping[index] = tr.transform();
-		me.render_mesh(recorder, u32(index));
-		++index;
+	for(ecs::EntityIndex entity_index : world.indexes<StaticMeshComponent>()) {
+		ecs::EntityId id = world.id_from_index(entity_index);
+		if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+			transform_mapping[index] = tr->transform();
+			id_mapping[index] = entity_index;
+			 world.component<StaticMeshComponent>(id)->render_mesh(recorder, u32(index));
+			++index;
+		}
 	}
 
 	return index;
@@ -69,6 +76,8 @@ PickingPass PickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const Sc
 
 	auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
 	auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
+	auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
+
 	auto depth = builder.declare_image(depth_format, size);
 	auto id = builder.declare_image(id_format, size);
 
@@ -76,13 +85,16 @@ PickingPass PickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const Sc
 	pass.scene_view = view;
 	pass.camera_buffer = camera_buffer;
 	pass.transform_buffer = transform_buffer;
+	pass.id_buffer = id_buffer;
 	pass.depth = depth;
 	pass.id = id;
 
 	builder.add_uniform_input(camera_buffer);
 	builder.add_attrib_input(transform_buffer);
+	builder.add_attrib_input(id_buffer);
 	builder.map_update(camera_buffer);
 	builder.map_update(transform_buffer);
+	builder.map_update(id_buffer);
 
 	builder.add_depth_output(depth);
 	builder.add_color_output(id);

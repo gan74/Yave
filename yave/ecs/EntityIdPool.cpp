@@ -54,6 +54,13 @@ bool EntityIdPool::contains(EntityId id) const {
 	return index < _ids.size() && _ids[index] == id;
 }
 
+EntityId EntityIdPool::id_from_index(EntityIndex index) const {
+	if(index >= _ids.size()) {
+		return EntityId::from_unversioned_index(index);
+	}
+	return _ids[index];
+}
+
 EntityId EntityIdPool::create() {
 	++_size;
 	if(!_free.is_empty()) {
