@@ -20,24 +20,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "AssetSelector.h"
-#include <editor/utils/assets.h>
+#include "ui.h"
+#include "assets.h"
+
+#include <editor/context/EditorContext.h>
+#include <editor/widgets/AssetSelector.h>
+
+#include <yave/utils/FileSystemModel.h>
+
+#include <imgui/yave_imgui.h>
 
 namespace editor {
+namespace imgui {
 
-AssetSelector::AssetSelector(ContextPtr ctx, AssetType filter) :
-		ResourceBrowser(ctx, fmt("% Asset selector", asset_type_icon(filter))),
-		_filter(filter) {
+bool asset_selector(ContextPtr ctx, AssetId id, AssetType type) {
+	auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
+
+	core::String asset_name = asset_type_name(type);
+	core::String no_asset = fmt("No %", asset_name);
+	core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or(no_asset);
+	bool ret = ImGui::Button(fmt("%###%", ICON_FA_FOLDER_OPEN, id.id()).data());
+	ImGui::SameLine();
+	ImGui::InputText(asset_name.data(), name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+	return ret;
 }
 
-void AssetSelector::asset_selected(const FileInfo& file) {
-	if(_selected(file.id)) {
-		close();
-	}
 }
-
-bool AssetSelector::display_asset(const FileInfo& file) const {
-	return file.type == _filter;
-}
-
 }

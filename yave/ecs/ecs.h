@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_ECS_H
 
 #include <typeindex>
+#include <y/utils.h>
 
 namespace yave {
 namespace ecs {
@@ -45,6 +46,11 @@ ComponentTypeIndex index_for_type() {
 
 template<typename... Args>
 struct EntityArchetype final {
+
+	static constexpr usize component_count = sizeof...(Args);
+
+	template<typename T>
+	using with = EntityArchetype<T, Args...>;
 };
 
 }

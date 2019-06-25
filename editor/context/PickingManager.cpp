@@ -23,8 +23,6 @@ SOFTWARE.
 #include "PickingManager.h"
 #include "EditorContext.h"
 
-#include <editor/utils/renderdochelper.h>
-
 #include <yave/graphics/shaders/ComputeProgram.h>
 
 #include <editor/renderer/EditorEntityPass.h>
@@ -66,10 +64,7 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv, cons
 
 	CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
 	std::move(framegraph).render(recorder);
-	{
-		auto _ = renderdoc::capture();
-		device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
-	}
+	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 
 	ReadBackData read_back = TypedMapping(_buffer)[0];
 	float depth = read_back.depth;

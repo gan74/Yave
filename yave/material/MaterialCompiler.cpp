@@ -29,10 +29,11 @@ SOFTWARE.
 
 namespace yave {
 
-static core::ArrayView<vk::PipelineShaderStageCreateInfo> depth_only_stages(core::ArrayView<vk::PipelineShaderStageCreateInfo> stages) {
-	auto is_vertex_stage = [](const vk::PipelineShaderStageCreateInfo& s) { return s.stage == vk::ShaderStageFlagBits::eVertex; };
-	y_debug_assert(std::count_if(stages.begin(), stages.end(), is_vertex_stage) == 1);
-	return *std::find_if(stages.begin(), stages.end(), is_vertex_stage);
+static void depth_only_stages(core::Vector<vk::PipelineShaderStageCreateInfo>& stages) {
+	auto is_frag_stage = [](const vk::PipelineShaderStageCreateInfo& s) { return s.stage == vk::ShaderStageFlagBits::eFragment; };
+	if(auto it = std::find_if(stages.begin(), stages.end(), is_frag_stage); it != stages.end()) {
+		stages.erase_unordered(it);
+	}
 }
 
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
@@ -51,9 +52,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 	GeometryShader geom = mat_data._geom.is_empty() ? GeometryShader() : GeometryShader(dptr, mat_data._geom);
 	ShaderProgram program(frag, vert, geom);
 
-	auto pipeline_shader_stage = program.vk_pipeline_stage_info();
+	core::Vector<vk::PipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());
 	if(render_pass.is_depth_only()) {
-		pipeline_shader_stage = depth_only_stages(pipeline_shader_stage);
+		depth_only_stages(pipeline_shader_stages);
 	}
 
 	auto attribute_bindings = program.attribute_bindings();
@@ -137,8 +138,8 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 		;
 
 	auto pipeline = device()->vk_device().createGraphicsPipeline(vk::PipelineCache(), vk::GraphicsPipelineCreateInfo()
-			.setStageCount(u32(pipeline_shader_stage.size()))
-			.setPStages(pipeline_shader_stage.begin())
+			.setStageCount(u32(pipeline_shader_stages.size()))
+			.setPStages(pipeline_shader_stages.begin())
 			.setPDynamicState(&dynamic_states)
 			.setPVertexInputState(&vertex_input)
 			.setPInputAssemblyState(&input_assembly)

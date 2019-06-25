@@ -19,25 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_UTILS_UI_H
+#define EDITOR_UTILS_UI_H
 
-#include "AssetSelector.h"
-#include <editor/utils/assets.h>
+#include <editor/editor.h>
+
+#include <yave/assets/AssetId.h>
 
 namespace editor {
+namespace imgui {
 
-AssetSelector::AssetSelector(ContextPtr ctx, AssetType filter) :
-		ResourceBrowser(ctx, fmt("% Asset selector", asset_type_icon(filter))),
-		_filter(filter) {
-}
-
-void AssetSelector::asset_selected(const FileInfo& file) {
-	if(_selected(file.id)) {
-		close();
-	}
-}
-
-bool AssetSelector::display_asset(const FileInfo& file) const {
-	return file.type == _filter;
-}
+bool asset_selector(ContextPtr ctx, AssetId id, AssetType type);
 
 }
+}
+
+#endif // EDITOR_UTILS_UI_H

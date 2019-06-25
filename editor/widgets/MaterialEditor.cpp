@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include <y/io2/Buffer.h>
 
+#include <editor/utils/ui.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {
@@ -74,26 +76,25 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	AssetPtr<Material> material = context()->selection().material();
 	const SimpleMaterialData& data = material->data();
-	math::Vec2 thumb_size = context()->thumbmail_cache().thumbmail_size() / 2;
 
-	std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness\nMetallic"};
+	if(TextureView* view = context()->thumbmail_cache().get_thumbmail(material.id())) {
+		math::Vec2 size = content_size().x() < view->size().x()
+			? math::Vec2(content_size().x())
+			: math::Vec2(view->size());
+		ImGui::Image(view, size);
+	}
+
+	std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness/Metallic"};
 	for(usize i = 0; i != data.textures().size(); ++i) {
-		ImGui::PushID(fmt("%", i).data());
+		ImGui::CollapsingHeader(texture_names[i], ImGuiTreeNodeFlags_DefaultOpen);
 
-		TextureView* view = context()->thumbmail_cache().get_thumbmail(data.textures()[i].id());
-		bool clicked = view
-			? ImGui::ImageButton(view, thumb_size)
-			: ImGui::Button(texture_names[i], thumb_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
-
-		if(clicked) {
-			AssetSelector* selector = context()->ui().add<AssetSelector>(AssetType::Image);
-			selector->set_selected_callback([=, ctx = context()](AssetId id) {
-				modify_and_save(ctx, material, i, id);
-				return true;
-			});
+		if(imgui::asset_selector(context(), data.textures()[i].id(), AssetType::Image)) {
+			context()->ui().add<AssetSelector>(AssetType::Image)->set_selected_callback(
+				[=, ctx = context()](AssetId id) {
+					modify_and_save(ctx, material, i, id);
+					return true;
+				});
 		}
-
-		ImGui::PopID();
 	}
 
 

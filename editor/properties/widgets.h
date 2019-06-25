@@ -31,6 +31,7 @@ SOFTWARE.
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
+#include <editor/utils/ui.h>
 #include <yave/utils/color.h>
 
 #include <imgui/yave_imgui.h>
@@ -146,7 +147,6 @@ void widget<DirectionalLightComponent>(ContextPtr ctx, ecs::EntityId id) {
 
 template<>
 void widget<StaticMeshComponent>(ContextPtr ctx, ecs::EntityId id) {
-	auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
 	if(!ImGui::CollapsingHeader("Static mesh")) {
 		return;
 	}
@@ -156,35 +156,25 @@ void widget<StaticMeshComponent>(ContextPtr ctx, ecs::EntityId id) {
 	StaticMeshComponent* static_mesh = ctx->world().component<StaticMeshComponent>(id);
 	{
 		// material
-		{
-			core::String name = ctx->asset_store().name(static_mesh->material().id()).map(clean_name).unwrap_or("No material");
-			if(ImGui::Button(ICON_FA_FOLDER_OPEN "###material")) {
-				ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
-							[=](AssetId asset) {
+		if(imgui::asset_selector(ctx, static_mesh->material().id(), AssetType::Material)) {
+			ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
+				[=](AssetId asset) {
 					if(auto material = ctx->loader().load<Material>(asset)) {
 						static_mesh->material() = material.unwrap();
 					}
 					return true;
 				});
-			}
-			ImGui::SameLine();
-			ImGui::InputText("Material", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 		}
 
 		// mesh
-		{
-			core::String name = ctx->asset_store().name(static_mesh->mesh().id()).map(clean_name).unwrap_or("No mesh");
-			if(ImGui::Button(ICON_FA_FOLDER_OPEN "###mesh")) {
-				ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
-							[=](AssetId asset) {
+		if(imgui::asset_selector(ctx, static_mesh->mesh().id(), AssetType::Mesh)) {
+			ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+				[=](AssetId asset) {
 					if(auto mesh = ctx->loader().load<StaticMesh>(asset)) {
 						static_mesh->mesh() = mesh.unwrap();
 					}
 					return true;
 				});
-			}
-			ImGui::SameLine();
-			ImGui::InputText("Mesh", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 		}
 	}
 }

@@ -26,35 +26,49 @@ SOFTWARE.
 #include <editor/components/EditorComponent.h>
 
 #include <yave/ecs/EntityWorld.h>
+#include <yave/entities/entities.h>
+
+#include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/PointLightComponent.h>
 
 #include <imgui/yave_imgui.h>
 
 namespace editor {
+
+static core::String clean_component_name(std::string_view name) {
+	if(name.empty()) {
+		return name;
+	}
+	core::String clean;
+	clean.push_back(name[0]);
+
+	for(char c : core::Range(name.begin() + 1, name.end())) {
+		if(std::isupper(c)) {
+			clean.push_back(' ');
+		}
+		clean.push_back(std::tolower(c));
+	}
+	return clean;
+}
+
+using EditorEmptyEntity = ecs::EntityArchetype<EditorComponent>;
+using EditorStaticMesh = StaticMeshArchetype::with<EditorComponent>;
+using EditorPointLight = PointLightArchetype::with<EditorComponent>;
+
+static_assert(EditorStaticMesh::component_count == 3);
+
 
 EntityView::EntityView(ContextPtr cptr) :
 		Widget(ICON_FA_OBJECT_GROUP " Entities"),
 		ContextLinked(cptr) {
 }
 
-void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	ecs::EntityWorld& world = context()->world();
-
-	if(ImGui::Button(ICON_FA_PLUS, math::Vec2(24))) {
-		ImGui::OpenPopup("Add entity");
-	}
-
-	if(ImGui::BeginPopup("Add entity")) {
-		if(ImGui::MenuItem("Add entity")) {
-			ecs::EntityId id = world.create_entity();
-			world.create_component<EditorComponent>(id);
-		}
-		ImGui::EndPopup();
-	}
-
-	ImGui::Spacing();
+void EntityView::paint_view() {
+	const ecs::EntityWorld& world = context()->world();
 	if(ImGui::BeginChild("###entities")) {
 		for(ecs::EntityId id : world.entities()) {
-			EditorComponent* comp = world.component<EditorComponent>(id);
+			const EditorComponent* comp = world.component<EditorComponent>(id);
 			if(!comp) {
 				log_msg("Entity is missing EditorComponent.", Log::Warning);
 				continue;
@@ -70,6 +84,63 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		}
 	}
 	ImGui::EndChild();
+}
+
+void EntityView::paint_clustered_view() {
+	const ecs::EntityWorld& world = context()->world();
+	if(ImGui::BeginChild("###entities")) {
+		if(ImGui::TreeNode("Static meshes")) {
+			for(const auto& [ed, tr, _] : world.view(EditorStaticMesh())) {
+				ImGui::TreeNodeEx(fmt(ICON_FA_CUBE " %", ed.name()).data(), ImGuiTreeNodeFlags_Leaf);
+				ImGui::TreePop();
+			}
+			ImGui::TreePop();
+		}
+		if(ImGui::TreeNode("Point lights")) {
+			for(const auto& [ed, tr, _] : world.view(EditorPointLight())) {
+				ImGui::TreeNodeEx(fmt(ICON_FA_LIGHTBULB " %", ed.name()).data(), ImGuiTreeNodeFlags_Leaf);
+				ImGui::TreePop();
+			}
+			ImGui::TreePop();
+		}
+	}
+	ImGui::EndChild();
+}
+
+void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+	ecs::EntityWorld& world = context()->world();
+
+	if(ImGui::Button(ICON_FA_PLUS, math::Vec2(24))) {
+		ImGui::OpenPopup("Add entity");
+	}
+	ImGui::SameLine();
+	ImGui::Checkbox("Clustered view", &_clustered_view);
+
+
+	if(ImGui::BeginPopup("Add entity")) {
+		if(ImGui::MenuItem("Add empty entity")) {
+			world.create_entity(EditorEmptyEntity());
+		}
+		if(ImGui::MenuItem("Add static mesh")) {
+			world.create_entity(EditorStaticMesh());
+		}
+		ImGui::Separator();
+		if(ImGui::MenuItem("Add point light")) {
+			world.create_entity(EditorPointLight());
+		}
+		ImGui::EndPopup();
+	}
+
+
+
+
+
+	ImGui::Spacing();
+	if(_clustered_view) {
+		paint_clustered_view();
+	} else {
+		paint_view();
+	}
 
 
 
@@ -82,10 +153,10 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			if(ImGui::BeginMenu(ICON_FA_PLUS " Add component")) {
 				core::Vector<ComponentTraits> traits = all_component_traits();
 				for(const ComponentTraits& t : traits) {
-					if(t.name.empty()) {
+					if(t.name.empty() || world.has(_hovered, t.type)) {
 						continue;
 					}
-					if(ImGui::MenuItem(fmt(ICON_FA_PUZZLE_PIECE " %", t.name).data())) {
+					if(ImGui::MenuItem(fmt(ICON_FA_PUZZLE_PIECE " %", clean_component_name(t.name)).data())) {
 						if(!world.create_component(_hovered, t.type)) {
 							log_msg("Unable to create component.", Log::Error);
 						}

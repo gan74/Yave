@@ -23,15 +23,14 @@ SOFTWARE.
 #include "ResourceBrowser.h"
 #include "AssetRenamer.h"
 
+#include <editor/utils/assets.h>
 #include <editor/context/EditorContext.h>
-
 #include <yave/assets/FolderAssetStore.h>
 
 #include <y/io2/Buffer.h>
 
 #include <imgui/yave_imgui.h>
 
-#include <cinttypes>
 
 namespace editor {
 
@@ -86,23 +85,6 @@ void ResourceBrowser::asset_selected(const FileInfo& file) {
 
 bool ResourceBrowser::display_asset(const FileInfo& file) const {
 	return file.type != AssetType::Unknown;
-}
-
-std::string_view ResourceBrowser::icon_for_type(AssetType type) {
-	switch(type) {
-		case AssetType::Image:
-			return ICON_FA_IMAGE;
-
-		case AssetType::Mesh:
-			return ICON_FA_CUBE;
-
-		case AssetType::Material:
-			return ICON_FA_BRUSH;
-
-		default:
-			return ICON_FA_QUESTION;
-	}
-	return ICON_FA_QUESTION;
 }
 
 void ResourceBrowser::set_current(DirNode* current) {
@@ -308,7 +290,7 @@ void ResourceBrowser::paint_asset_list(float width) {
 	// files
 	for(const FileInfo& file : curr->files) {
 		if(display_asset(file)) {
-			if(ImGui::Selectable(fmt("% %", icon_for_type(file.type), file.name).data(), selected())) {
+			if(ImGui::Selectable(fmt("% %", asset_type_icon(file.type), file.name).data(), selected())) {
 				asset_selected(file);
 			}
 

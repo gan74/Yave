@@ -20,24 +20,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "AssetSelector.h"
-#include <editor/utils/assets.h>
+#include "assets.h"
+
+#include <imgui/IconsFontAwesome5.h>
 
 namespace editor {
 
-AssetSelector::AssetSelector(ContextPtr ctx, AssetType filter) :
-		ResourceBrowser(ctx, fmt("% Asset selector", asset_type_icon(filter))),
-		_filter(filter) {
-}
+std::string_view asset_type_name(AssetType type) {
+	switch(type) {
+		case AssetType::Mesh:
+			return "Mesh";
 
-void AssetSelector::asset_selected(const FileInfo& file) {
-	if(_selected(file.id)) {
-		close();
+		case AssetType::Image:
+			return "Image";
+
+		case AssetType::Animation:
+			return "Animation";
+
+		case AssetType::Font:
+			return "Font";
+
+		case AssetType::Scene:
+			return "Scene";
+
+		case AssetType::Material:
+			return "Material";
+
+		default:
+			break;
 	}
+	return "Asset";
 }
 
-bool AssetSelector::display_asset(const FileInfo& file) const {
-	return file.type == _filter;
+std::string_view asset_type_icon(AssetType type) {
+	switch(type) {
+		case AssetType::Image:
+			return ICON_FA_IMAGE;
+
+		case AssetType::Mesh:
+			return ICON_FA_CUBE;
+
+		case AssetType::Material:
+			return ICON_FA_BRUSH;
+
+		default:
+			return ICON_FA_QUESTION;
+	}
+	return ICON_FA_QUESTION;
 }
 
 }

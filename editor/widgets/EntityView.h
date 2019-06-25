@@ -34,7 +34,12 @@ class EntityView final : public Widget, public ContextLinked {
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
+		void paint_view();
+		void paint_clustered_view();
+
 		ecs::EntityId _hovered;
+
+		bool _clustered_view = false;
 };
 
 }

@@ -66,8 +66,6 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		virtual void asset_selected(const FileInfo& file);
 		virtual bool display_asset(const FileInfo&file) const;
 
-		static std::string_view icon_for_type(AssetType type);
-
 	private:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
 

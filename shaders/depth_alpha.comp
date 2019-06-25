@@ -14,7 +14,7 @@ void main() {
 	vec4 color = texelFetch(in_color, coord, 0);
 	float depth = texelFetch(in_depth, coord, 0).x;
 
-	imageStore(out_color, coord, is_OOB(depth) ? vec4(0.0) : color);
+	imageStore(out_color, coord, is_OOB(depth) ? vec4(vec3(0.0), 1.0) : color);
 }
 
 
