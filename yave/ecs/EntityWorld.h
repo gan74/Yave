@@ -222,7 +222,6 @@ class EntityWorld : NonCopyable {
 									  typed_component_vectors<Args...>());
 			} else {
 				// We need non consts here and we want to avoir returning non const everywhere else
-				// Const safety for typed_component_containers is done in ReturnComponentsPolicy
 				// This shouldn't be UB as component containers are never const
 				ComponentContainerBase* cont = const_cast<ComponentContainerBase*>(container<T>());
 				return cont ? &cont->component_vector<T>() : nullptr;

@@ -42,7 +42,59 @@ class View {
 
 	class EndIterator {};
 
-	class Iterator {
+
+
+
+	template<typename It>
+	struct ReturnComponents {
+		using value_type = reference_tuple;
+		using reference = value_type;
+
+		reference operator*() const {
+			return static_cast<const It*>(this)->components();
+		}
+	};
+
+	template<typename It>
+	struct ReturnIndex {
+		using value_type = index_type;
+		using reference = index_type;
+
+		reference operator*() const {
+			return static_cast<const It*>(this)->index();
+		}
+	};
+
+	template<typename It>
+	class IndexComponents {
+		public:
+			auto index() const {
+				return _it->index();
+			}
+
+			auto components() const {
+				return _it->components();
+			}
+
+			IndexComponents(const It* it) : _it(it) {
+			}
+
+		private:
+			const It* _it;
+	};
+
+	template<typename It>
+	struct ReturnIndexComponents {
+		using value_type = IndexComponents<It>;
+		using reference = IndexComponents<It>;
+
+		reference operator*() const {
+			return IndexComponents<It>(static_cast<const It*>(this));
+		}
+	};
+
+	template<template<typename> class ReturnPolicy>
+	class Iterator : public ReturnPolicy<Iterator<ReturnPolicy>> {
 		template<usize I = 0>
 		auto make_refence_tuple(index_type index) const {
 			y_debug_assert(std::get<I>(_vectors));
@@ -55,15 +107,16 @@ class View {
 			}
 		}
 
-
 		public:
-			using value_type = reference_tuple;
-			using reference = value_type;
 			using difference_type = usize;
 			using iterator_category = std::input_iterator_tag;
 
-			reference operator*() const {
+			reference_tuple components() const {
 				return make_refence_tuple(*_it);
+			}
+
+			index_type index() const {
+				return *_it;
 			}
 
 			Iterator& operator++() {
@@ -150,20 +203,37 @@ class View {
 	}
 
 	public:
-		using iterator = Iterator;
-		using const_iterator = Iterator;
+		using iterator = Iterator<ReturnIndexComponents>;
+		using const_iterator = Iterator<ReturnIndexComponents>;
+
+		using component_iterator = Iterator<ReturnComponents>;
+		using const_component_iterator = Iterator<ReturnComponents>;
+
+		using const_index_iterator = Iterator<ReturnIndex>;
+
+		using end_iterator = EndIterator;
 
 		View(const vector_tuple& vecs) : _vectors(vecs), _short(shortest_range()) {
 		}
 
 
-		Iterator begin() const {
+		const_iterator begin() const {
 			return const_iterator(_short, _vectors);
 		}
 
-		EndIterator end() const {
-			return EndIterator();
+		end_iterator end() const {
+			return end_iterator();
 		}
+
+		auto components() const {
+			return core::Range(const_component_iterator(_short, _vectors), end_iterator());
+		}
+
+		auto indexes() const {
+			return core::Range(const_index_iterator(_short, _vectors), end_iterator());
+		}
+
+
 
 	private:
 		vector_tuple _vectors;

@@ -63,7 +63,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 
 	recorder.bind_attrib_buffers({transforms, transforms});
 
-	for(const auto& [tr, me] : world.view(StaticMeshArchetype())) {
+	for(const auto& [tr, me] : world.view(StaticMeshArchetype()).components()) {
 		transform_mapping[index] = tr.transform();
 		me.render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
 		++index;

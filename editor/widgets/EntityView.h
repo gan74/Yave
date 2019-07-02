@@ -39,7 +39,7 @@ class EntityView final : public Widget, public ContextLinked {
 
 		ecs::EntityId _hovered;
 
-		bool _clustered_view = false;
+		bool _clustered_view = true;
 };
 
 }

@@ -60,7 +60,7 @@ static_assert(EditorStaticMesh::component_count == 3);
 
 
 EntityView::EntityView(ContextPtr cptr) :
-		Widget(ICON_FA_OBJECT_GROUP " Entities"),
+		Widget(ICON_FA_CUBES " Entities"),
 		ContextLinked(cptr) {
 }
 
@@ -89,15 +89,15 @@ void EntityView::paint_view() {
 void EntityView::paint_clustered_view() {
 	const ecs::EntityWorld& world = context()->world();
 	if(ImGui::BeginChild("###entities")) {
-		if(ImGui::TreeNode("Static meshes")) {
-			for(const auto& [ed, tr, _] : world.view(EditorStaticMesh())) {
+		if(ImGui::TreeNodeEx(ICON_FA_CUBE " Static meshes", ImGuiTreeNodeFlags_DefaultOpen)) {
+			for(const auto& [ed, tr, _] : world.view(EditorStaticMesh()).components()) {
 				ImGui::TreeNodeEx(fmt(ICON_FA_CUBE " %", ed.name()).data(), ImGuiTreeNodeFlags_Leaf);
 				ImGui::TreePop();
 			}
 			ImGui::TreePop();
 		}
-		if(ImGui::TreeNode("Point lights")) {
-			for(const auto& [ed, tr, _] : world.view(EditorPointLight())) {
+		if(ImGui::TreeNodeEx(ICON_FA_LIGHTBULB " Point lights", ImGuiTreeNodeFlags_DefaultOpen)) {
+			for(const auto& [ed, tr, _] : world.view(EditorPointLight()).components()) {
 				ImGui::TreeNodeEx(fmt(ICON_FA_LIGHTBULB " %", ed.name()).data(), ImGuiTreeNodeFlags_Leaf);
 				ImGui::TreePop();
 			}
@@ -121,10 +121,10 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		if(ImGui::MenuItem("Add empty entity")) {
 			world.create_entity(EditorEmptyEntity());
 		}
+		ImGui::Separator();
 		if(ImGui::MenuItem("Add static mesh")) {
 			world.create_entity(EditorStaticMesh());
 		}
-		ImGui::Separator();
 		if(ImGui::MenuItem("Add point light")) {
 			world.create_entity(EditorPointLight());
 		}

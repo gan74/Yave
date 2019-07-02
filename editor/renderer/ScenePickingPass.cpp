@@ -62,14 +62,12 @@ static usize render_world(ContextPtr ctx,
 	recorder.bind_attrib_buffers({transforms, transforms, ids});
 	recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
 
-	for(ecs::EntityIndex entity_index : world.indexes<StaticMeshComponent>()) {
-		ecs::EntityId id = world.id_from_index(entity_index);
-		if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
-			transform_mapping[index] = tr->transform();
-			id_mapping[index] = entity_index;
-			world.component<StaticMeshComponent>(id)->render_mesh(recorder, u32(index));
-			++index;
-		}
+	for(auto ent : world.view(StaticMeshArchetype())) {
+		const auto& [tr, mesh] = ent.components();
+		transform_mapping[index] = tr.transform();
+		id_mapping[index] = ent.index();
+		mesh.render_mesh(recorder, u32(index));
+		++index;
 	}
 
 	return index;

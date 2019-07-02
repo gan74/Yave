@@ -140,7 +140,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 			TypedMapping<uniform::Light> mapping = self->resources()->mapped_buffer(light_buffer);
 			{
-				for(const auto& [t, l] : scene.world().view(PointLightArchetype())) {
+				for(const auto& [t, l] : scene.world().view(PointLightArchetype()).components()) {
 					mapping[push_data.point_count++] = uniform::Light{
 							t.position(),
 							l.radius(),
@@ -149,7 +149,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 						};
 				}
 
-				for(const auto& [l] : scene.world().view(DirectionalLightArchetype())) {
+				for(const auto& [l] : scene.world().view(DirectionalLightArchetype()).components()) {
 					mapping[push_data.point_count + push_data.directional_count++] = uniform::Light{
 							-l.direction().normalized(),
 							0.0f,
