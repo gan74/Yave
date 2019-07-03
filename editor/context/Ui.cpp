@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <editor/widgets/EntityView.h>
 #include <editor/widgets/ResourceBrowser.h>
-#include <editor/widgets/EcsDebug.h>
+#include <editor/widgets/Console.h>
 
 #include <editor/properties/PropertyPanel.h>
 #include <editor/EngineView.h>
@@ -45,10 +45,10 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 	ImGui::GetIO().ConfigDockingWithShift = false;
 	//ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
 
-	show<EcsDebug>();
 	show<EngineView>();
 	show<EntityView>();
 	show<ResourceBrowser>();
+	show<Console>();
 	show<PropertyPanel>();
 	show<MenuBar>();
 

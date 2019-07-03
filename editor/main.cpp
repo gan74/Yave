@@ -33,8 +33,16 @@ using namespace editor;
 
 
 EditorContext* context = nullptr;
+bool debug_instance = false;
+bool display_console = false;
 
 
+
+static void hide_console() {
+#ifdef Y_OS_WIN
+	ShowWindow(GetConsoleWindow(), SW_HIDE);
+#endif
+}
 
 static void crash_handler(int) {
 	log_msg("SEGFAULT!");
@@ -47,23 +55,47 @@ static void setup_handlers() {
 	perf::set_output_file("perfdump.json");
 }
 
-
-static Instance create_instance(int argc, char** argv) {
-	bool debug = true;
+static void parse_args(int argc, char** argv) {
 	for(std::string_view arg : core::ArrayView<const char*>(argv, argc)) {
 		if(arg == "--nodebug") {
-			log_msg("Vulkan debugging disabled", Log::Warning);
-			debug = false;
+			debug_instance = false;
+		}
+		if(arg == "--console") {
+			display_console = true;
 		}
 	}
-	return Instance(debug ? DebugParams::debug() : DebugParams::none());
+
+	if(!display_console) {
+		hide_console();
+	}
+}
+
+static void setup_logger() {
+	set_log_callback([](std::string_view msg, Log type, void*) {
+			if(context) {
+				context->log_message(msg, type);
+			}
+			return !display_console;
+		});
+}
+
+static Instance create_instance() {
+	if(!debug_instance) {
+		log_msg("Vulkan debugging disabled", Log::Warning);
+	}
+	return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }
 
 
-int main(int argc, char** argv) {
 
+
+
+int main(int argc, char** argv) {
+	parse_args(argc, argv);
 	setup_handlers();
-	Instance instance = create_instance(argc, argv);
+	setup_logger();
+
+	Instance instance = create_instance();
 
 	Device device(instance);
 	EditorContext ctx(&device);

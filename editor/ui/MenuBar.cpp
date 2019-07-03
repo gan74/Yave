@@ -34,6 +34,7 @@ SOFTWARE.
 #include <editor/widgets/MaterialEditor.h>
 #include <editor/widgets/AssetStringifier.h>
 #include <editor/widgets/EcsDebug.h>
+#include <editor/widgets/Console.h>
 
 #include <editor/properties/PropertyPanel.h>
 #include <editor/EngineView.h>
@@ -71,6 +72,8 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
 			if(ImGui::MenuItem("Entity view")) context()->ui().add<EntityView>();
 			if(ImGui::MenuItem("Resource browser")) context()->ui().add<ResourceBrowser>();
 			if(ImGui::MenuItem("Material editor")) context()->ui().add<MaterialEditor>();
+			ImGui::Separator();
+			if(ImGui::MenuItem("Console")) context()->ui().add<Console>();
 
 			ImGui::Separator();
 

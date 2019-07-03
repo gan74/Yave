@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "log.h"
-#include <y/utils.h>
+#ifndef EDITOR_WIDGETS_CONSOLE_H
+#define EDITOR_WIDGETS_CONSOLE_H
 
-#include <mutex>
+#include <editor/ui/Widget.h>
 
-#include <iostream>
+namespace editor {
 
-namespace y {
+class Console : public Widget, public ContextLinked {
+	public:
+		Console(ContextPtr cptr);
 
-static log_callback callback = nullptr;
-static void* callback_user_data = nullptr;
+	private:
+		static constexpr usize log_type_count = usize(Log::Perf) + 1;
 
-static std::mutex lock;
+		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
-void log_msg(std::string_view msg, Log type) {
-	static constexpr std::array<const char*, 5> log_type_str = {{"info", "warning", "error", "debug", "perf"}};
-	std::lock_guard _(lock);
 
-	if(callback && callback(msg, type, callback_user_data)) {
-		return;
-	}
-
-	(type == Log::Error || type == Log::Warning ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
-}
-
-void set_log_callback(log_callback func, void* user_data) {
-	std::lock_guard _(lock);
-	callback = func;
-	callback_user_data = user_data;
-}
+		std::array<char, 1024> _filter;
+		std::array<bool, log_type_count> _log_types;
+		std::array<usize, log_type_count> _log_counts;
+};
 
 }
+
+#endif // EDITOR_WIDGETS_CONSOLE_H

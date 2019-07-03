@@ -139,7 +139,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	{
-		ImGui::BeginChild("###fileentries");
+		ImGui::BeginChild("###fileentries", ImVec2(), true);
 		{
 			if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
 				if(auto p = _filesystem->parent_path(path())) {

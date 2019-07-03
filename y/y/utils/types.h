@@ -125,7 +125,6 @@ struct function_traits<Ret(Args...)> {
 };
 
 
-
 namespace detail {
 template<typename T>
 static auto has_begin(T*) -> bool_type<!std::is_void_v<decltype(std::declval<T>().begin())>>;

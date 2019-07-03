@@ -34,8 +34,11 @@ enum class Log {
 	Perf
 };
 
-
 void log_msg(std::string_view msg, Log type = Log::Info);
+
+
+using log_callback = bool(*)(std::string_view msg, Log type, void* user_data);
+void set_log_callback(log_callback func, void* user_data = nullptr);
 
 }
 

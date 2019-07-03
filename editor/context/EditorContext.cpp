@@ -81,6 +81,10 @@ void EditorContext::flush_deferred() {
 	_world.flush();
 }
 
+void EditorContext::log_message(std::string_view msg, Log type) {
+	_logs.log_msg(msg, type);
+}
+
 void EditorContext::set_scene_view(SceneView* scene) {
 	if(!scene) {
 		_scene_view = &_default_scene_view;
@@ -145,6 +149,10 @@ PickingManager& EditorContext::picking_manager() {
 
 AssetStore& EditorContext::asset_store() {
 	return *_asset_store;
+}
+
+Logs& EditorContext::logs() {
+	return _logs;
 }
 
 void EditorContext::save_world() const {

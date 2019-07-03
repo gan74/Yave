@@ -30,6 +30,7 @@ SOFTWARE.
 #include "ThumbmailCache.h"
 #include "PickingManager.h"
 #include "EditorResources.h"
+#include "Logs.h"
 
 namespace editor {
 
@@ -43,6 +44,8 @@ class EditorContext : NonMovable, public DeviceLinked {
 
 		void defer(core::Function<void()> func);
 		void flush_deferred();
+
+		void log_message(std::string_view msg, Log type);
 
 		void save_world() const;
 		void load_world();
@@ -72,6 +75,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		ThumbmailCache& thumbmail_cache();
 		PickingManager& picking_manager();
 		AssetStore& asset_store();
+		Logs& logs();
 
 	private:
 		std::unique_ptr<FileSystemModel> _filesystem;
@@ -96,6 +100,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		Ui _ui;
 		ThumbmailCache _thumb_cache;
 		PickingManager _picking_manager;
+		Logs _logs;
 
 		ecs::EntityWorld _world;
 };

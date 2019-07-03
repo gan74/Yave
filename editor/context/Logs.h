@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "log.h"
-#include <y/utils.h>
+#ifndef EDITOR_CONTEXT_LOGS_H
+#define EDITOR_CONTEXT_LOGS_H
 
-#include <mutex>
+#include <editor/editor.h>
 
-#include <iostream>
+#include <y/core/Vector.h>
 
-namespace y {
+namespace editor {
 
-static log_callback callback = nullptr;
-static void* callback_user_data = nullptr;
+class Logs {
+	public:
+		struct Message {
+			core::String msg;
+			Log type;
+		};
 
-static std::mutex lock;
+		void clear() {
+			_msgs.clear();
+		}
 
-void log_msg(std::string_view msg, Log type) {
-	static constexpr std::array<const char*, 5> log_type_str = {{"info", "warning", "error", "debug", "perf"}};
-	std::lock_guard _(lock);
+		void log_msg(core::String msg, Log type = Log::Info) {
+			log_msg(Message{std::move(msg), type});
+		}
 
-	if(callback && callback(msg, type, callback_user_data)) {
-		return;
-	}
+		void log_msg(Message msg) {
+			_msgs.emplace_back(std::move(msg));
+		}
 
-	(type == Log::Error || type == Log::Warning ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
+		core::Span<Message> messages() const {
+			return _msgs;
+		}
+
+	private:
+		core::Vector<Message> _msgs;
+};
+
 }
 
-void set_log_callback(log_callback func, void* user_data) {
-	std::lock_guard _(lock);
-	callback = func;
-	callback_user_data = user_data;
-}
-
-}
+#endif // EDITOR_CONTEXT_LOGS_H

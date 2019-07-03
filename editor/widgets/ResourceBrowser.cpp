@@ -223,7 +223,7 @@ void ResourceBrowser::paint_context_menu() {
 // ----------------------------------- Tree view -----------------------------------
 
 void ResourceBrowser::paint_tree_view(float width) {
-	ImGui::BeginChild("###resourcestree", ImVec2(width, 0), false);
+	ImGui::BeginChild("###resourcestree", ImVec2(width, 0), true);
 	draw_node(&_root, "store");
 	ImGui::EndChild();
 }
@@ -257,7 +257,7 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 void ResourceBrowser::paint_asset_list(float width) {
 	bool menu_openned = ImGui::IsPopupOpen("###contextmenu");
 
-	ImGui::BeginChild("###resources", ImVec2(width, 0), false);
+	ImGui::BeginChild("###resources", ImVec2(width, 0), true);
 
 	// back
 	{

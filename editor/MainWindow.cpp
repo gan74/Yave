@@ -31,7 +31,7 @@ SOFTWARE.
 namespace editor {
 
 MainWindow::MainWindow(ContextPtr cptr) :
-		Window({1280, 768}, "Yave", Window::Resizable),
+		Window({1280, 768}, "Yave", Window::Flags(Window::Resizable/* | Window::HideConsole*/)),
 		ContextLinked(cptr) {
 }
 
