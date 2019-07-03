@@ -39,6 +39,8 @@ class Console : public Widget, public ContextLinked {
 		std::array<char, 1024> _filter;
 		std::array<bool, log_type_count> _log_types;
 		std::array<usize, log_type_count> _log_counts;
+
+		bool _auto_scroll = true;
 };
 
 }

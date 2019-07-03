@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace y {
 
-static log_callback callback = nullptr;
+static detail::log_callback callback = nullptr;
 static void* callback_user_data = nullptr;
 
 static std::mutex lock;
@@ -44,7 +44,7 @@ void log_msg(std::string_view msg, Log type) {
 	(type == Log::Error || type == Log::Warning ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
 }
 
-void set_log_callback(log_callback func, void* user_data) {
+void set_log_callback(detail::log_callback func, void* user_data) {
 	std::lock_guard _(lock);
 	callback = func;
 	callback_user_data = user_data;

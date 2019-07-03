@@ -145,6 +145,11 @@ void Console::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		}
 	}
 
+	_auto_scroll = std::abs(ImGui::GetScrollMaxY() - ImGui::GetScrollY()) < 1.0f;
+	if(_auto_scroll) {
+		ImGui::SetScrollHereY(1.0f);
+	}
+
 	ImGui::EndChild();
 }
 

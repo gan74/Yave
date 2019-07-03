@@ -47,8 +47,8 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 
 	show<EngineView>();
 	show<EntityView>();
-	show<ResourceBrowser>();
 	show<Console>();
+	show<ResourceBrowser>();
 	show<PropertyPanel>();
 	show<MenuBar>();
 
