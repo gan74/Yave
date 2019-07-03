@@ -133,11 +133,14 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			world.create_entity(EditorEmptyEntity());
 		}
 		ImGui::Separator();
-		if(ImGui::MenuItem("Add static mesh")) {
+		if(ImGui::MenuItem(ICON_FA_CUBE " Add static mesh")) {
 			world.create_entity(EditorStaticMesh());
 		}
-		if(ImGui::MenuItem("Add point light")) {
+		if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add point light")) {
 			world.create_entity(EditorPointLight());
+		}
+		if(ImGui::MenuItem(ICON_FA_SUN " Add sun light")) {
+			world.create_entity(EditorSunLight());
 		}
 		ImGui::EndPopup();
 	}
