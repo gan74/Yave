@@ -27,6 +27,24 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+namespace detail {
+// https://stackoverflow.com/questions/18063451/get-index-of-a-tuple-elements-type
+template<typename T, typename Tpl>
+struct tuple_index {
+};
+
+template<typename T, typename... Args>
+struct tuple_index<T, std::tuple<T, Args...>> {
+	static constexpr usize value = 0;
+};
+
+template<typename T, typename U, typename... Args>
+struct tuple_index<T, std::tuple<U, Args...>> {
+	static constexpr usize value = tuple_index<T, std::tuple<Args...>>::value;
+};
+}
+
+
 template<bool Const, typename... Args>
 class View {
 	using vector_tuple = std::conditional_t<Const,
@@ -41,7 +59,6 @@ class View {
 	using index_range = decltype(std::declval<ComponentVector<void>>().indexes());
 
 	class EndIterator {};
-
 
 
 
@@ -74,6 +91,14 @@ class View {
 
 			auto components() const {
 				return _it->components();
+			}
+
+			template<typename T>
+			auto&& component() const {
+				using type = std::conditional_t<Const, const std::decay_t<T>&, std::decay_t<T>>;
+				constexpr usize index = detail::tuple_index<type, decltype(components())>::value;
+				static_assert(std::is_same_v<type, std::tuple_element_t<index, decltype(components())>>);
+				return std::get<index>(components());
 			}
 
 			IndexComponents(const It* it) : _it(it) {

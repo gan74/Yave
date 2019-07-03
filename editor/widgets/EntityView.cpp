@@ -31,6 +31,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/DirectionalLightComponent.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -55,6 +56,7 @@ static core::String clean_component_name(std::string_view name) {
 using EditorEmptyEntity = ecs::EntityArchetype<EditorComponent>;
 using EditorStaticMesh = StaticMeshArchetype::with<EditorComponent>;
 using EditorPointLight = PointLightArchetype::with<EditorComponent>;
+using EditorSunLight = DirectionalLightArchetype::with<EditorComponent>;
 
 static_assert(EditorStaticMesh::component_count == 3);
 
@@ -66,7 +68,7 @@ EntityView::EntityView(ContextPtr cptr) :
 
 void EntityView::paint_view() {
 	const ecs::EntityWorld& world = context()->world();
-	if(ImGui::BeginChild("###entities")) {
+	if(ImGui::BeginChild("###entities", ImVec2(), true)) {
 		for(ecs::EntityId id : world.entities()) {
 			const EditorComponent* comp = world.component<EditorComponent>(id);
 			if(!comp) {
@@ -75,7 +77,7 @@ void EntityView::paint_view() {
 			}
 
 			bool selected = context()->selection().selected_entity() == id;
-			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %", comp->name()).data(), selected)) {
+			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %###%", comp->name(), id.index()).data(), selected)) {
 				 context()->selection().set_selected(id);
 			}
 			if(ImGui::IsItemHovered()) {
@@ -88,21 +90,30 @@ void EntityView::paint_view() {
 
 void EntityView::paint_clustered_view() {
 	const ecs::EntityWorld& world = context()->world();
-	if(ImGui::BeginChild("###entities")) {
-		if(ImGui::TreeNodeEx(ICON_FA_CUBE " Static meshes", ImGuiTreeNodeFlags_DefaultOpen)) {
-			for(const auto& [ed, tr, _] : world.view(EditorStaticMesh()).components()) {
-				ImGui::TreeNodeEx(fmt(ICON_FA_CUBE " %", ed.name()).data(), ImGuiTreeNodeFlags_Leaf);
-				ImGui::TreePop();
+
+	auto group = [&](auto archetype, const char* icon, const char* name) {
+		if(ImGui::TreeNodeEx(fmt("% %", icon, name).data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+			for(auto entity : world.view(archetype)) {
+				const EditorComponent& editor_comp = entity.template component<EditorComponent>();
+				ImGui::TreeNodeEx(fmt("% %###%", icon, editor_comp.name(), entity.index()).data(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+
+				ecs::EntityId id = world.id_from_index(entity.index());
+				if(ImGui::IsItemClicked()) {
+					context()->selection().set_selected(id);
+				}
+				if(ImGui::IsItemHovered()) {
+					_hovered = id;
+				}
 			}
+
 			ImGui::TreePop();
 		}
-		if(ImGui::TreeNodeEx(ICON_FA_LIGHTBULB " Point lights", ImGuiTreeNodeFlags_DefaultOpen)) {
-			for(const auto& [ed, tr, _] : world.view(EditorPointLight()).components()) {
-				ImGui::TreeNodeEx(fmt(ICON_FA_LIGHTBULB " %", ed.name()).data(), ImGuiTreeNodeFlags_Leaf);
-				ImGui::TreePop();
-			}
-			ImGui::TreePop();
-		}
+	};
+
+	if(ImGui::BeginChild("###entities", ImVec2(), true)) {
+		group(EditorStaticMesh(), ICON_FA_CUBE, "Static meshes");
+		group(EditorPointLight(), ICON_FA_LIGHTBULB, "Point lights");
+		group(EditorSunLight(), ICON_FA_SUN, "Sun lights");
 	}
 	ImGui::EndChild();
 }
