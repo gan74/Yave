@@ -32,6 +32,8 @@ namespace editor {
 static constexpr float gizmo_hover_width = 7.5f;
 static constexpr float gizmo_width = 2.5f;
 static constexpr float gizmo_size = 0.15f;
+static constexpr float gizmo_radius = 1.0f;
+static constexpr float gizmo_pick_radius = 0.05f;
 static constexpr u32 gizmo_alpha = 0xB0000000;
 
 // stuff for the 2 axes selection
@@ -76,6 +78,10 @@ bool Gizmo::is_dragging() const {
 	return _dragging_mask;
 }
 
+void Gizmo::set_mode(Mode mode) {
+	_mode = mode;
+}
+
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
 	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
 	return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
@@ -99,10 +105,17 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		return;
 	}
 
+	if(ImGui::IsKeyReleased(int(Key::A))) {
+		_mode = Mode(!usize(_mode));
+	}
+
 	TransformableComponent* transformable = context()->world().component<TransformableComponent>(context()->selection().selected_entity());
 	if(!transformable) {
 		return;
 	}
+
+	auto axis_color = [](usize index) { return 0xFF << (8 * index); };
+	const u32 hover_color = 0x001A80FF;
 
 	math::Vec3 cam_fwd = _scene_view->camera().forward();
 	math::Vec3 cam_pos = _scene_view->camera().position();
@@ -113,8 +126,8 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		return;
 	}
 
-	auto projected = (view_proj * math::Vec4(obj_pos, 1.0f));
-	auto perspective = gizmo_size * projected.w();
+	math::Vec4 projected = (view_proj * math::Vec4(obj_pos, 1.0f));
+	float perspective = gizmo_size * projected.w();
 
 	math::Vec2 viewport = ImGui::GetWindowSize();
 	math::Vec2 offset = ImGui::GetWindowPos();
@@ -129,111 +142,162 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	auto center = to_window_pos(obj_pos);
 
-	struct Axis {
-		math::Vec2 vec;
-		usize index;
-		u32 mask() const { return 1 << index; }
-		u32 color() const { return 0xFF << (8 * index); }
-	};
+	const math::Vec3 basis[] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
 
-	math::Vec3 basis[] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
-	Axis axes[] = {
-			{to_window_pos(obj_pos + basis[0] * perspective), 0},
-			{to_window_pos(obj_pos + basis[1] * perspective), 1},
-			{to_window_pos(obj_pos + basis[2] * perspective), 2}
+	if(_mode == Translate) {
+		struct Axis {
+			math::Vec2 vec;
+			usize index;
+			u32 mask() const { return 1 << index; }
 		};
 
-	// depth sort axes front to back
-	sort(std::begin(axes), std::end(axes), [&](const Axis& a, const Axis& b) {
-		return basis[a.index].dot(cam_fwd) < basis[b.index].dot(cam_fwd);
-	});
+		Axis axes[] = {
+				{to_window_pos(obj_pos + basis[0] * perspective), 0},
+				{to_window_pos(obj_pos + basis[1] * perspective), 1},
+				{to_window_pos(obj_pos + basis[2] * perspective), 2}
+			};
 
-	// compute hover
-	u32 hover_mask = _dragging_mask;
-	if(!hover_mask) {
-		for(usize k = 0; k != 3; ++k) {
-			usize i = 2 - k;
-			usize index = axes[i].index;
-			math::Vec3 proj = intersect(basis[index], obj_pos, cam_pos, projected_mouse) - obj_pos;
-			float da = proj.dot(basis[(index + 1) % 3]);
-			float db = proj.dot(basis[(index + 2) % 3]);
+		// depth sort axes front to back
+		sort(std::begin(axes), std::end(axes), [&](const Axis& a, const Axis& b) {
+			return basis[a.index].dot(cam_fwd) < basis[b.index].dot(cam_fwd);
+		});
 
-			float len = gizmo_size_mul_2 * perspective;
-			if(da > 0.0f && db > 0.0f && da < len && db < len) {
-				hover_mask = axes[(i + 1) % 3].mask() | axes[(i + 2) % 3].mask();
-				break;
-			}
-		}
-
-		// axes
+		// compute hover
+		u32 hover_mask = _dragging_mask;
 		if(!hover_mask) {
-			math::Vec2 cursor = math::Vec2(ImGui::GetIO().MousePos) - center;
-			for(usize i = 0; i != 3; ++i) {
-				if(is_clicking(cursor, axes[i].vec - center)) {
-					hover_mask = axes[i].mask();
+			for(usize k = 0; k != 3; ++k) {
+				usize i = 2 - k;
+				usize index = axes[i].index;
+				math::Vec3 proj = intersect(basis[index], obj_pos, cam_pos, projected_mouse) - obj_pos;
+				float da = proj.dot(basis[(index + 1) % 3]);
+				float db = proj.dot(basis[(index + 2) % 3]);
+
+				float len = gizmo_size_mul_2 * perspective;
+				if(da > 0.0f && db > 0.0f && da < len && db < len) {
+					hover_mask = axes[(i + 1) % 3].mask() | axes[(i + 2) % 3].mask();
 					break;
 				}
 			}
-		}
-	}
 
-	// draw
-	{
-		// quads
-		u32 hover_color = 0x001A80FF;
-		for(usize i = 0; i != 3; ++i) {
-			usize a = (i + 1) % 3;
-			usize b = (i + 2) % 3;
-			u32 mask = axes[a].mask() | axes[b].mask();
-			bool hovered = (hover_mask & mask) == mask;
-			u32 color = hovered ? hover_color : axes[i].color();
-
-			auto smaller = [&] (const math::Vec2& v) { return (v - center) * gizmo_size_mul_2 + center; };
-			ImVec2 pts[] = {
-					center,
-					smaller(axes[a].vec),
-					smaller(axes[a].vec + axes[b].vec - center),
-					smaller(axes[b].vec)
-				};
-			ImGui::GetWindowDrawList()->AddConvexPolyFilled(pts, 4, gizmo_alpha_2 | color);
-		}
-
-		// axes
-		for(usize k = 0; k != 3; ++k) {
-			usize i = 2 - k;
-			bool hovered = hover_mask & axes[i].mask();
-			u32 color = hovered ? hover_color : axes[i].color();
-			ImGui::GetWindowDrawList()->AddLine(center, axes[i].vec, gizmo_alpha | color, gizmo_width);
-		}
-		ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
-	}
-
-	/*math::Vec3 plan_normal(1.0f);
-	for(usize i = 0; i != 3; ++i) {
-		u32 mask = 1 << i;
-		if(_dragging_mask & mask) {
-			plan_normal[i] = 0.0f;
-		}
-	}
-	projected_mouse = intersect(plan_normal, obj_pos, cam_pos, world);*/
-
-	// click
-	{
-		if(is_clicked()) {
-			_dragging_mask = hover_mask;
-			_dragging_offset = obj_pos - projected_mouse;
-		} else if(!ImGui::IsMouseDown(0)) {
-			_dragging_mask = 0;
-		}
-	}
-
-	// drag
-	if(_dragging_mask) {
-		auto new_pos = projected_mouse + _dragging_offset;
-		for(usize i = 0; i != 3; ++i) {
-			if(_dragging_mask & (1 << i)) {
-				transformable->position()[i] = new_pos[i];
+			// axes
+			if(!hover_mask) {
+				math::Vec2 cursor = math::Vec2(ImGui::GetIO().MousePos) - center;
+				for(usize i = 0; i != 3; ++i) {
+					if(is_clicking(cursor, axes[i].vec - center)) {
+						hover_mask = axes[i].mask();
+						break;
+					}
+				}
 			}
+		}
+
+		// draw
+		{
+			// quads
+			for(usize i = 0; i != 3; ++i) {
+				usize a = (i + 1) % 3;
+				usize b = (i + 2) % 3;
+				u32 mask = axes[a].mask() | axes[b].mask();
+				bool hovered = (hover_mask & mask) == mask;
+				u32 color = hovered ? hover_color : axis_color(axes[i].index);
+
+				auto smaller = [&] (const math::Vec2& v) { return (v - center) * gizmo_size_mul_2 + center; };
+				ImVec2 pts[] = {
+						center,
+						smaller(axes[a].vec),
+						smaller(axes[a].vec + axes[b].vec - center),
+						smaller(axes[b].vec)
+					};
+				ImGui::GetWindowDrawList()->AddConvexPolyFilled(pts, 4, gizmo_alpha_2 | color);
+			}
+
+			// axes
+			for(usize k = 0; k != 3; ++k) {
+				usize i = 2 - k;
+				bool hovered = hover_mask & axes[i].mask();
+				u32 color = hovered ? hover_color : axis_color(axes[i].index);
+				ImGui::GetWindowDrawList()->AddLine(center, axes[i].vec, gizmo_alpha | color, gizmo_width);
+			}
+			ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
+		}
+
+		/*math::Vec3 plan_normal(1.0f);
+		for(usize i = 0; i != 3; ++i) {
+			u32 mask = 1 << i;
+			if(_dragging_mask & mask) {
+				plan_normal[i] = 0.0f;
+			}
+		}
+		projected_mouse = intersect(plan_normal, obj_pos, cam_pos, world);*/
+
+		// click
+		{
+			if(is_clicked()) {
+				_dragging_mask = hover_mask;
+				_dragging_offset = obj_pos - projected_mouse;
+			} else if(!ImGui::IsMouseDown(0)) {
+				_dragging_mask = 0;
+			}
+		}
+
+		// drag
+		if(_dragging_mask) {
+			auto new_pos = projected_mouse + _dragging_offset;
+			for(usize i = 0; i != 3; ++i) {
+				if(_dragging_mask & (1 << i)) {
+					transformable->position()[i] = new_pos[i];
+				}
+			}
+		}
+	} else if(_mode == Rotate) {
+		const usize segment_count = 64;
+		float seg_ang_size = (1.0f / segment_count) * 2.0f * math::pi<float>;
+		usize rotation_axis = _rotation_axis;
+
+		for(usize axis = 0; axis != 3; ++axis) {
+			usize rot_axis = (axis + 2) % 3;
+			math::Vec3 proj = intersect(basis[rot_axis], obj_pos, cam_pos, projected_mouse) - obj_pos;
+			bool hovered = std::abs((obj_pos - proj).length() - perspective) < gizmo_pick_radius * perspective;
+			if(hovered) {
+				rotation_axis = rot_axis;
+			}
+
+			u32 color = rotation_axis == rot_axis ? hover_color :  axis_color(rot_axis);
+
+			auto screen_pos = [&](usize i) {
+					math::Vec3 pos;
+					pos[axis] = std::sin(i * seg_ang_size);
+					pos[(axis + 1) % 3] = std::cos(i * seg_ang_size);
+					return to_window_pos(obj_pos + pos * gizmo_radius * perspective);
+				};
+
+			math::Vec2 last = screen_pos(0);
+			for(usize i = 1; i != segment_count + 1; ++i) {
+				math::Vec2 next = screen_pos(i);
+				ImGui::GetWindowDrawList()->AddLine(last, next, gizmo_alpha | color, gizmo_width);
+				last = next;
+			}
+		}
+
+		auto compute_angle = [&](usize axis) {
+				math::Vec3 proj = intersect(basis[axis], obj_pos, cam_pos, projected_mouse) - obj_pos;
+				math::Vec3 vec = (obj_pos - proj).normalized();
+				return std::copysign(std::acos(vec[(axis + 1) % 3]), vec[(axis + 2) % 3]);
+			};
+
+		if(is_clicked()) {
+			_rotation_axis = rotation_axis;
+			_rotation_offset = compute_angle(_rotation_axis);
+		} if(!ImGui::IsMouseDown(0)) {
+			_rotation_axis = usize(-1);
+		}
+
+		if(_rotation_axis != usize(-1)) {
+			float angle = compute_angle(_rotation_axis);
+			math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(basis[_rotation_axis], (angle - _rotation_offset));
+			math::Transform<>& tr = transformable->transform();
+			tr.set_basis(rot(tr.forward()), rot(tr.left()), rot(tr.up()));
+			_rotation_offset = angle;
 		}
 	}
 }
