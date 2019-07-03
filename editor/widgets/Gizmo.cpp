@@ -82,6 +82,10 @@ void Gizmo::set_mode(Mode mode) {
 	_mode = mode;
 }
 
+void Gizmo::set_space(Space space) {
+	_space = space;
+}
+
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
 	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
 	return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
@@ -105,8 +109,11 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		return;
 	}
 
-	if(ImGui::IsKeyReleased(int(Key::A))) {
+	if(ImGui::IsKeyReleased(int(Key::R))) {
 		_mode = Mode(!usize(_mode));
+	}
+	if(ImGui::IsKeyReleased(int(Key::A))) {
+		_space = Space(!usize(_space));
 	}
 
 	TransformableComponent* transformable = context()->world().component<TransformableComponent>(context()->selection().selected_entity());
@@ -120,7 +127,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	math::Vec3 cam_fwd = _scene_view->camera().forward();
 	math::Vec3 cam_pos = _scene_view->camera().position();
 	math::Matrix4<> view_proj = _scene_view->camera().viewproj_matrix();
-	math::Vec3 obj_pos = transformable->transform().position();
+	auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
 
 	if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
 		return;
@@ -142,7 +149,16 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	auto center = to_window_pos(obj_pos);
 
-	const math::Vec3 basis[] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
+
+	std::array<math::Vec3, 3> basis = {math::Vec3{1.0f, 0.0f, 0.0f},
+									   math::Vec3{0.0f, 1.0f, 0.0f},
+									   math::Vec3{0.0f, 0.0f, 1.0f}};
+	if(_space == Object) {
+		for(math::Vec3& a : basis) {
+			a = obj_rot(a);
+		}
+	}
+
 
 	if(_mode == Translate) {
 		struct Axis {
@@ -242,10 +258,11 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 		// drag
 		if(_dragging_mask) {
-			auto new_pos = projected_mouse + _dragging_offset;
+			math::Vec3 new_pos = projected_mouse + _dragging_offset;
+			math::Vec3 vec = new_pos - transformable->position();
 			for(usize i = 0; i != 3; ++i) {
 				if(_dragging_mask & (1 << i)) {
-					transformable->position()[i] = new_pos[i];
+					transformable->position() += basis[i] * vec.dot(basis[i]);
 				}
 			}
 		}
@@ -265,9 +282,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			u32 color = rotation_axis == rot_axis ? hover_color :  axis_color(rot_axis);
 
 			auto screen_pos = [&](usize i) {
-					math::Vec3 pos;
-					pos[axis] = std::sin(i * seg_ang_size);
-					pos[(axis + 1) % 3] = std::cos(i * seg_ang_size);
+					math::Vec3 pos = basis[axis] * std::sin(i * seg_ang_size) + basis[(axis + 1) % 3] * std::cos(i * seg_ang_size);
 					return to_window_pos(obj_pos + pos * gizmo_radius * perspective);
 				};
 
