@@ -70,6 +70,10 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 		ImGui::SliderFloat("Sensitivity", &context()->settings().camera().sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
 	}
+	if(ImGui::CollapsingHeader("Interface", flags)) {
+		keybox("Change gizmo mode", context()->settings().ui().change_gizmo_mode);
+		keybox("Chnage gizmo space", context()->settings().ui().change_gizmo_space);
+	}
 }
 
 }

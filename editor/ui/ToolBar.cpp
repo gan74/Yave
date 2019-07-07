@@ -71,10 +71,11 @@ void ToolBar::paint(CmdBufferRecorder&, const FrameToken&) {
 
 		if(const EngineView* view = context()->ui().find<EngineView>()) {
 			if(view->is_focussed()) {
-				if(ImGui::IsKeyReleased(int(Key::R))) {
+				const UiSettings& settings = context()->settings().ui();
+				if(ImGui::IsKeyReleased(int(settings.change_gizmo_mode))) {
 					gizmo_mode = Gizmo::Mode(!usize(gizmo_mode));
 				}
-				if(ImGui::IsKeyReleased(int(Key::A))) {
+				if(ImGui::IsKeyReleased(int(settings.change_gizmo_space))) {
 					gizmo_space = Gizmo::Space(!usize(gizmo_space));
 				}
 			}
