@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "assets.h"
 
-#include <imgui/IconsFontAwesome5.h>
+#include <imgui/yave_imgui.h>
 
 namespace editor {
 

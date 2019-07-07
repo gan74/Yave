@@ -19,51 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_UI_WIDGET_H
-#define EDITOR_UI_WIDGET_H
+#ifndef EDITOR_UI_TOOLBAR_H
+#define EDITOR_UI_TOOLBAR_H
 
 #include "UiElement.h"
 
 namespace editor {
 
-class Widget : public UiElement {
-
+class ToolBar : public UiElement, public ContextLinked {
 	public:
-		Widget(std::string_view title, u32 flags = 0);
-
-		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
-
-		const math::Vec2& position() const;
-		const math::Vec2& size() const;
-
-		bool is_focussed() const;
-
-		void set_has_parent(bool has);
+		ToolBar(ContextPtr ctx);
 
 	protected:
-		virtual void paint_ui(CmdBufferRecorder&, const FrameToken&) = 0;
-
-		void set_closable(bool closable);
-
-		void set_flags(u32 flags);
-
-		math::Vec2ui content_size() const;
-
-	private:
-		void update_attribs();
-
-		math::Vec2 _position;
-		math::Vec2 _size;
-
-		math::Vec2 _min_size;
-
-		u32 _flags;
-		bool _closable = true;
-		bool _has_parent = false;
-		bool _docked = false;
-		bool _focussed = false;
+		void paint(CmdBufferRecorder&, const FrameToken&) override;
 };
 
 }
 
-#endif // EDITOR_UI_WIDGET_H
+#endif // EDITOR_UI_TOOLBAR_H

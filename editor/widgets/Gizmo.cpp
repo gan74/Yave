@@ -77,14 +77,6 @@ bool Gizmo::is_dragging() const {
 	return _dragging_mask || _rotation_axis != usize(-1);
 }
 
-void Gizmo::set_mode(Mode mode) {
-	_mode = mode;
-}
-
-void Gizmo::set_space(Space space) {
-	_space = space;
-}
-
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
 	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
 	return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
@@ -108,12 +100,12 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		return;
 	}
 
-	if(ImGui::IsKeyReleased(int(Key::R))) {
+	/*if(ImGui::IsKeyReleased(int(Key::R))) {
 		_mode = Mode(!usize(_mode));
 	}
 	if(ImGui::IsKeyReleased(int(Key::A))) {
 		_space = Space(!usize(_space));
-	}
+	}*/
 
 	TransformableComponent* transformable = context()->world().component<TransformableComponent>(context()->selection().selected_entity());
 	if(!transformable) {
@@ -152,14 +144,19 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	std::array<math::Vec3, 3> basis = {math::Vec3{1.0f, 0.0f, 0.0f},
 									   math::Vec3{0.0f, 1.0f, 0.0f},
 									   math::Vec3{0.0f, 0.0f, 1.0f}};
-	if(_space == Object) {
+
+
+
+	Mode gizmo_mode = context()->editor_state().gizmo_mode;
+	Space gizmo_space = context()->editor_state().gizmo_space;
+	if(gizmo_space == Local) {
 		for(math::Vec3& a : basis) {
 			a = obj_rot(a);
 		}
 	}
 
 
-	if(_mode == Translate) {
+	if(gizmo_mode == Translate) {
 		struct Axis {
 			math::Vec2 vec;
 			usize index;
@@ -265,7 +262,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				}
 			}
 		}
-	} else if(_mode == Rotate) {
+	} else if(gizmo_mode == Rotate) {
 		const usize segment_count = 64;
 		float seg_ang_size = (1.0f / segment_count) * 2.0f * math::pi<float>;
 		usize rotation_axis = _rotation_axis;

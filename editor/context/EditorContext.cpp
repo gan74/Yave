@@ -123,8 +123,12 @@ const EditorResources& EditorContext::resources() const {
 	return _resources;
 }
 
+EditorState& EditorContext::editor_state() {
+	return _editor_state;
+}
+
 Settings& EditorContext::settings() {
-	return _setting;
+	return _settings;
 }
 
 Selection& EditorContext::selection() {

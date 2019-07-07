@@ -55,14 +55,21 @@ class Ui : NonCopyable, public ContextLinked {
 
 		void paint(CmdBufferRecorder& recorder, const FrameToken& token);
 
+		template<typename T>
+		T* find() {
+			for(auto&& e : _elements) {
+				if(T* w = dynamic_cast<T*>(e.get())) {
+					return w;
+				}
+			}
+			return nullptr;
+		}
 
 		template<typename T>
 		T* show() {
-			for(auto&& e : _elements) {
-				if(T* w = dynamic_cast<T*>(e.get())) {
-					w->show();
-					return w;
-				}
+			if(T* w = find<T>()) {
+				w->show();
+				return w;
 			}
 			return add<T>();
 		}

@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
+#include "EditorState.h"
 #include "Settings.h"
 #include "Selection.h"
 #include "Ui.h"
@@ -67,7 +68,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 
 		const EditorResources& resources() const;
 
-
+		EditorState& editor_state();
 		Settings& settings();
 		Selection& selection();
 		AssetLoader& loader();
@@ -95,7 +96,8 @@ class EditorContext : NonMovable, public DeviceLinked {
 		SceneView* _scene_view = nullptr;
 
 
-		Settings _setting;
+		EditorState _editor_state;
+		Settings _settings;
 		Selection _selection;
 		Ui _ui;
 		ThumbmailCache _thumb_cache;

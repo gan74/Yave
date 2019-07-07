@@ -35,15 +35,12 @@ class Gizmo final : public Frame, public ContextLinked {
 
 		enum Space {
 			World,
-			Object,
+			Local,
 		};
 
 		Gizmo(ContextPtr cptr, SceneView* view);
 
 		bool is_dragging() const;
-
-		void set_mode(Mode mode);
-		void set_space(Space space);
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
@@ -51,8 +48,6 @@ class Gizmo final : public Frame, public ContextLinked {
 		math::Vec3 to_screen_pos(const math::Vec3& world);
 		math::Vec2 to_window_pos(const math::Vec3& world);
 
-		Mode _mode = Translate;
-		Space _space = World;
 		SceneView* _scene_view = nullptr;
 
 		usize _rotation_axis = usize(-1);

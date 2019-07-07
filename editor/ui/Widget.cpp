@@ -41,6 +41,10 @@ const math::Vec2& Widget::size() const {
 	return _size;
 }
 
+bool Widget::is_focussed() const {
+	return _focussed;
+}
+
 void Widget::set_has_parent(bool has) {
 	_has_parent = has;
 }
@@ -61,6 +65,7 @@ void Widget::update_attribs() {
 	_position = ImGui::GetWindowPos();
 	_size = ImGui::GetWindowSize();
 	_docked = ImGui::IsWindowDocked();
+	_focussed = ImGui::IsWindowFocused();
 }
 
 static void fix_undocked_bg() {

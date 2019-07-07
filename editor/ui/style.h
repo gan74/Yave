@@ -72,7 +72,7 @@ if(_style == Style::Yave) {
 
 // https://github.com/ocornut/imgui/issues/707#issuecomment-468798935
 if(_style == Style::Corporate || _style == Style::Corporate3D) {
-	float darkening = 0.8f;
+	float darkening = 1.0f;
 	auto dImVec4 = [=](float r, float g, float b, float a) { return ImVec4(r * darkening, g * darkening, b * darkening, a); };
 
 	auto& style = ImGui::GetStyle();
@@ -96,7 +96,8 @@ if(_style == Style::Corporate || _style == Style::Corporate3D) {
 	colors[ImGuiCol_TitleBg]                = dImVec4(0.19f, 0.19f, 0.19f, 1.00f);
 	colors[ImGuiCol_TitleBgActive]          = dImVec4(0.22f, 0.22f, 0.22f, 1.00f);
 	colors[ImGuiCol_TitleBgCollapsed]       = dImVec4(0.17f, 0.17f, 0.17f, 0.90f);
-	colors[ImGuiCol_MenuBarBg]              = dImVec4(0.335f, 0.335f, 0.335f, 1.000f);
+	//colors[ImGuiCol_MenuBarBg]              = dImVec4(0.335f, 0.335f, 0.335f, 1.000f);
+	colors[ImGuiCol_MenuBarBg]              = dImVec4(0.00f, 0.00f, 0.00f, 0.25f);
 	colors[ImGuiCol_ScrollbarBg]            = dImVec4(0.24f, 0.24f, 0.24f, 0.53f);
 	colors[ImGuiCol_ScrollbarGrab]          = dImVec4(0.41f, 0.41f, 0.41f, 1.00f);
 	colors[ImGuiCol_ScrollbarGrabHovered]   = dImVec4(0.52f, 0.52f, 0.52f, 1.00f);
