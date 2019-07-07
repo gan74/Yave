@@ -30,6 +30,7 @@ SOFTWARE.
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <unordered_map>
 #include <unordered_set>
 
 namespace editor {
@@ -51,31 +52,49 @@ static constexpr auto import_flags =
 									 0;
 
 
-core::Vector<Named<ImageData>> import_material_textures(core::ArrayView<aiMaterial*> materials, const core::String& filename) {
+static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(core::ArrayView<aiMaterial*> materials, const core::String& filename) {
 	const FileSystemModel* fs = FileSystemModel::local_filesystem();
 
 	usize name_len = fs->filename(filename).size();
 	core::String path(filename.data(), filename.size() - name_len);
 
-	std::unordered_set<core::String> textures;
+	auto texture_name = [](aiMaterial* mat, aiTextureType type) {
+			if(mat->GetTextureCount(type)) {
+				aiString name;
+				mat->GetTexture(type, 0, &name);
+				return core::String(name.C_Str());
+			}
+			return core::String();
+		};
+
+	std::unordered_map<core::String, Named<ImageData>> images;
+	core::Vector<Named<MaterialData>> mats;
 	for(aiMaterial* mat : materials) {
-		if(mat->GetTextureCount(aiTextureType_DIFFUSE)) {
-			aiString name;
-			mat->GetTexture(aiTextureType_DIFFUSE, 0, &name);
-			textures.insert(name.C_Str());
-		}
+		auto process_tex = [&](aiTextureType type) -> std::string_view {
+				core::String name = texture_name(mat, type);
+				if(name.is_empty()) {
+					return "";
+				}
+				auto it = images.find(name);
+				if(it == images.end()) {
+					it = images.insert(std::pair(name, import_image(fs->join(path, name)))).first;
+				}
+				return it->second.name();
+			};
+
+		MaterialData material_data;
+		material_data.textures[SimpleMaterialData::Diffuse] = process_tex(aiTextureType_DIFFUSE);
+		material_data.textures[SimpleMaterialData::Normal] = process_tex(aiTextureType_NORMALS);
+		material_data.textures[SimpleMaterialData::RoughnessMetallic] = process_tex(aiTextureType_SHININESS);
+		mats.emplace_back(clean_asset_name(mat->GetName().C_Str()), std::move(material_data));
 	}
 
-	core::Vector<Named<ImageData>> images;
-	for(const auto& name : textures) {
-		try {
-			images.emplace_back(import_image(fs->join(path, name)));
-		} catch(std::exception& e) {
-			log_msg(fmt("Unable to load image: %, skipping.", e.what()), Log::Error);
-		}
-	}
-	return images;
+	core::Vector<Named<ImageData>> imgs;
+	std::transform(images.begin(), images.end(), std::back_inserter(imgs), [](auto& i) { return std::move(i.second); });
+
+	return {std::move(imgs), std::move(mats)};
 }
+
 
 SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	y_profile();
@@ -95,6 +114,8 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	auto animations = core::ArrayView<aiAnimation*>(scene->mAnimations, scene->mNumAnimations);
 	auto materials = core::ArrayView<aiMaterial*>(scene->mMaterials, scene->mNumMaterials);
 
+	log_msg(fmt("% meshes, % animations, % materials found", meshes.size(), animations.size(), materials.size()));
+
 	SceneData data;
 
 	if((flags & SceneImportFlags::ImportMeshes) != SceneImportFlags::None) {
@@ -109,8 +130,15 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 		});
 	}
 
-	if((flags & SceneImportFlags::ImportImages) != SceneImportFlags::None) {
-		data.images = import_material_textures(materials, filename);
+
+	if((flags & (SceneImportFlags::ImportImages | SceneImportFlags::ImportMaterials)) != SceneImportFlags::None) {
+		auto [imgs, mats] = import_materias_and_textures(materials, filename);
+		if((flags & SceneImportFlags::ImportImages) != SceneImportFlags::None) {
+			data.images = std::move(imgs);
+		}
+		if((flags & SceneImportFlags::ImportMaterials) != SceneImportFlags::None) {
+			data.materials = std::move(mats);
+		}
 	}
 
 	return data;

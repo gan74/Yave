@@ -43,6 +43,8 @@ class SimpleMaterialData {
 			Max
 		};
 
+		Y_TODO(creating materials requires loading textures)
+
 		static constexpr usize texture_count = usize(Textures::Max);
 
 		SimpleMaterialData() = default;

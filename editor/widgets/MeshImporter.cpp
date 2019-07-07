@@ -23,9 +23,10 @@ SOFTWARE.
 #include "MeshImporter.h"
 
 #include <editor/context/EditorContext.h>
-#include <y/io2/Buffer.h>
-
 #include <editor/import/transforms.h>
+#include <editor/utils/assets.h>
+
+#include <y/io2/Buffer.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -56,16 +57,18 @@ void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token
 		bool import_meshes = (_flags & SceneImportFlags::ImportMeshes) != SceneImportFlags::None;
 		bool import_anims = (_flags & SceneImportFlags::ImportAnims) != SceneImportFlags::None;
 		bool import_images = (_flags & SceneImportFlags::ImportImages) != SceneImportFlags::None;
+		bool import_materials = (_flags & SceneImportFlags::ImportMaterials) != SceneImportFlags::None;
 
 		ImGui::Checkbox("Import meshes", &import_meshes);
 		ImGui::Checkbox("Import animations", &import_anims);
 		ImGui::Checkbox("Import images", &import_images);
+		ImGui::Checkbox("Import materials", &import_materials);
 
 		_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
 				 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
-				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None)
+				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
+				 (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None)
 			;
-
 
 		ImGui::Separator();
 
@@ -125,22 +128,46 @@ bool MeshImporter::done_loading() const {
 
 void MeshImporter::import(import::SceneData scene) {
 	y_profile();
-	auto import_assets = [this](const auto& assets) {
-		for(const auto& a : assets) {
-			core::String name = context()->asset_store().filesystem()->join(_import_path, a.name());
-			log_msg(fmt("Saving asset as \"%\"", name));
-			io2::Buffer buffer;
-			WritableAssetArchive ar(buffer);
-			if(!a.obj().serialize(ar)) {
-				log_msg(fmt("Unable serialize \"%\"", a.name()), Log::Error);
-				continue;
+
+	auto make_full_name = [this](std::string_view import_path, std::string_view name) {
+			core::String path = _import_path;
+			if(!import_path.empty()) {
+				path = context()->asset_store().filesystem()->join(path, import_path);
 			}
-			if(!context()->asset_store().import(buffer, name)) {
-				log_msg(fmt("Unable import \"%\"", a.name()), Log::Error);
-				continue;
+			return context()->asset_store().filesystem()->join(path, name);
+		};
+
+	auto import_assets = [&](const auto& assets, std::string_view import_path) {
+			for(const auto& a : assets) {
+				core::String name = make_full_name(import_path, a.name());
+				log_msg(fmt("Saving asset as \"%\"", name));
+				io2::Buffer buffer;
+				WritableAssetArchive ar(buffer);
+				if(!a.obj().serialize(ar)) {
+					log_msg(fmt("Unable serialize \"%\"", a.name()), Log::Error);
+					continue;
+				}
+				if(!context()->asset_store().import(buffer, name)) {
+					log_msg(fmt("Unable import \"%\"", a.name()), Log::Error);
+					continue;
+				}
 			}
-		}
-	};
+		};
+
+	auto compile_material = [&](const import::MaterialData& data, std::string_view texture_include_path) {
+			SimpleMaterialData material;
+			for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
+				if(!data.textures[i].is_empty()) {
+					core::String tex_full_name = make_full_name(texture_include_path, data.textures[i]);
+					if(auto texture = context()->loader().load<Texture>(tex_full_name)) {
+						material.set_texture(SimpleMaterialData::Textures(i), std::move(texture.unwrap()));
+					} else {
+						log_msg(fmt("Unable to load texture \"%\"", tex_full_name), Log::Error);
+					}
+				}
+			}
+			return material;
+		};
 
 
 	if(_forward_axis != 0 || _up_axis != 4) {
@@ -159,11 +186,20 @@ void MeshImporter::import(import::SceneData scene) {
 		}
 	}
 
-	import_assets(scene.meshes);
-	import_assets(scene.animations);
 
-	Y_TODO(images are not imported right now)
-	//import_assets(scene.images);
+
+	{
+		bool separate_folders = !scene.meshes.is_empty() + !scene.animations.is_empty() + !scene.images.is_empty();
+		import_assets(scene.meshes, separate_folders ? "meshes" : "");
+		import_assets(scene.animations, separate_folders ? "animations" : "");
+		import_assets(scene.images, separate_folders ? "images" : "");
+
+		auto materials = core::vector_with_capacity<Named<SimpleMaterialData>>(scene.materials.size());
+		std::transform(scene.materials.begin(), scene.materials.end(), std::back_inserter(materials),
+					   [&](const auto& m) { return Named(m.name(), compile_material(m.obj(), separate_folders ? "images" : "")); });
+
+		import_assets(materials, separate_folders ? "materials" : "");
+	}
 
 	context()->ui().refresh_all();
 }

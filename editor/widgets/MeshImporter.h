@@ -54,6 +54,7 @@ class MeshImporter final : public Widget, public ContextLinked {
 
 		core::String _import_path;
 		core::String _filename;
+
 		import::SceneImportFlags _flags = import::SceneImportFlags::ImportAll;
 
 		usize _forward_axis = 0;

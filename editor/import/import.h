@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
+#include <yave/material/SimpleMaterialData.h>
 #include <yave/graphics/images/ImageData.h>
 
 #include <y/core/Chrono.h>
@@ -47,8 +48,9 @@ enum class SceneImportFlags {
 	ImportMeshes = 0x01,
 	ImportAnims = 0x02,
 	ImportImages = 0x04,
+	ImportMaterials = 0x08,
 
-	ImportAll = ImportMeshes | ImportAnims | ImportImages,
+	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials,
 
 };
 
@@ -68,10 +70,15 @@ struct SkeletonData {
 	core::Vector<Bone> bones;
 };
 
+struct MaterialData {
+	std::array<core::String, SimpleMaterialData::texture_count> textures;
+};
+
 struct SceneData {
 	core::Vector<Named<MeshData>> meshes;
 	core::Vector<Named<Animation>> animations;
 	core::Vector<Named<ImageData>> images;
+	core::Vector<Named<MaterialData>> materials;
 };
 
 
