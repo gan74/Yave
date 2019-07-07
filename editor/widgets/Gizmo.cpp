@@ -73,9 +73,8 @@ static const ImU32 flags =
 Gizmo::Gizmo(ContextPtr cptr, SceneView* view) : Frame("Gizmo", flags), ContextLinked(cptr), _scene_view(view) {
 }
 
-
 bool Gizmo::is_dragging() const {
-	return _dragging_mask;
+	return _dragging_mask || _rotation_axis != usize(-1);
 }
 
 void Gizmo::set_mode(Mode mode) {
@@ -273,7 +272,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 		for(usize axis = 0; axis != 3; ++axis) {
 			usize rot_axis = (axis + 2) % 3;
-			math::Vec3 proj = intersect(basis[rot_axis], obj_pos, cam_pos, projected_mouse) - obj_pos;
+			math::Vec3 proj = intersect(basis[rot_axis], obj_pos, cam_pos, projected_mouse);
 			bool hovered = std::abs((obj_pos - proj).length() - perspective) < gizmo_pick_radius * perspective;
 			if(hovered) {
 				rotation_axis = rot_axis;
