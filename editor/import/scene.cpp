@@ -87,6 +87,21 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 		material_data.textures[SimpleMaterialData::Normal] = process_tex(aiTextureType_NORMALS);
 		material_data.textures[SimpleMaterialData::RoughnessMetallic] = process_tex(aiTextureType_SHININESS);
 		mats.emplace_back(clean_asset_name(mat->GetName().C_Str()), std::move(material_data));
+
+
+		{
+			aiTextureType loaded[] = {aiTextureType_DIFFUSE, aiTextureType_NORMALS, aiTextureType_SHININESS};
+			for(usize i = 0; i != AI_TEXTURE_TYPE_MAX + 1; ++i) {
+				aiTextureType type = aiTextureType(i);
+				if(mat->GetTextureCount(type)) {
+					if(std::find(std::begin(loaded), std::end(loaded), i) == std::end(loaded)) {
+						log_msg(fmt("Material \"%\" texture \"%\" has unknown type %.", mat->GetName().C_Str(), texture_name(mat, type), i), Log::Warning);
+						// load texture anyway
+						process_tex(type);
+					}
+				}
+			}
+		}
 	}
 
 	core::Vector<Named<ImageData>> imgs;
