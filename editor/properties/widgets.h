@@ -108,7 +108,7 @@ static void light_widget(T* light) {
 
 template<>
 void widget<PointLightComponent>(ContextPtr ctx, ecs::EntityId id) {
-	if(!ImGui::CollapsingHeader("Point light")) {
+	if(!ImGui::CollapsingHeader("Point light", ImGuiTreeNodeFlags_DefaultOpen)) {
 		return;
 	}
 
@@ -120,7 +120,7 @@ void widget<PointLightComponent>(ContextPtr ctx, ecs::EntityId id) {
 
 template<>
 void widget<DirectionalLightComponent>(ContextPtr ctx, ecs::EntityId id) {
-	if(!ImGui::CollapsingHeader("Directional light")) {
+	if(!ImGui::CollapsingHeader("Directional light", ImGuiTreeNodeFlags_DefaultOpen)) {
 		return;
 	}
 
@@ -151,27 +151,29 @@ void widget<StaticMeshComponent>(ContextPtr ctx, ecs::EntityId id) {
 		return;
 	}
 
-	Y_TODO(use ECS to ensure that we dont modify a deleted object)
-
-	StaticMeshComponent* static_mesh = ctx->world().component<StaticMeshComponent>(id);
+	auto static_mesh = [ctx, id]() -> StaticMeshComponent* { return ctx->world().component<StaticMeshComponent>(id); };
 	{
 		// material
-		if(imgui::asset_selector(ctx, static_mesh->material().id(), AssetType::Material)) {
+		if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material)) {
 			ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
 				[=](AssetId asset) {
 					if(auto material = ctx->loader().load<Material>(asset)) {
-						static_mesh->material() = material.unwrap();
+						if(StaticMeshComponent* comp = static_mesh()) {
+							comp->material() = material.unwrap();
+						}
 					}
 					return true;
 				});
 		}
 
 		// mesh
-		if(imgui::asset_selector(ctx, static_mesh->mesh().id(), AssetType::Mesh)) {
+		if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh)) {
 			ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
 				[=](AssetId asset) {
 					if(auto mesh = ctx->loader().load<StaticMesh>(asset)) {
-						static_mesh->mesh() = mesh.unwrap();
+						if(StaticMeshComponent* comp = static_mesh()) {
+							comp->mesh() = mesh.unwrap();
+						}
 					}
 					return true;
 				});
