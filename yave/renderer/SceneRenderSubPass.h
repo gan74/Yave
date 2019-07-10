@@ -33,6 +33,8 @@ class RenderPassRecorder;
 class FrameGraphPassBuilder;
 
 struct SceneRenderSubPass {
+	static constexpr usize max_batch_size = 128 * 1024;
+
 	SceneView scene_view;
 
 	FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer;

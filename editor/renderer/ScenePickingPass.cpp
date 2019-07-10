@@ -37,8 +37,6 @@ Y_TODO(merge with scene sub pass?)
 // mostly copied from SceneRednerSubPass and EditorEntityPass
 namespace editor {
 
-static constexpr usize max_batch_size = 128 * 1024;
-
 static usize render_world(ContextPtr ctx,
 						  RenderPassRecorder& recorder, const FrameGraphPass* pass,
 						  const SceneView& scene_view,

@@ -29,6 +29,8 @@ SOFTWARE.
 namespace editor {
 
 struct EditorEntityPass {
+	static constexpr usize max_batch_size = 128 * 1024;
+
 	FrameGraphImageId depth;
 	FrameGraphImageId color;
 	FrameGraphImageId id;

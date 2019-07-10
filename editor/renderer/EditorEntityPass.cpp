@@ -41,8 +41,6 @@ IMGUI_API int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, co
 
 namespace editor {
 
-static constexpr usize max_batch_size = 128 * 1024;
-
 struct ImGuiBillboardVertex {
 	math::Vec3 position;
 	math::Vec2 uv;

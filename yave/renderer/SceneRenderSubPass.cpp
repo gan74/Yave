@@ -33,8 +33,6 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr usize max_batch_size = 128 * 1024;
-
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
 	auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
 	auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
