@@ -84,9 +84,12 @@ class FolderAssetStore final : public AssetStore {
 		Result<> rename(std::string_view from, std::string_view to) override;
 
 
-		void clean_index();
+		bool is_valid_path(std::string_view path) const;
+		bool is_valid_name(std::string_view name) const;
 
+		void clean_index();
 	private:
+
 		Result<> write_index() const;
 		Result<> read_index();
 

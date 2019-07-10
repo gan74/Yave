@@ -111,6 +111,16 @@ const FileSystemModel* FolderAssetStore::filesystem() const {
 	return &_filesystem;
 }
 
+bool FolderAssetStore::is_valid_path(std::string_view path) const {
+	return _filesystem.is_canonical(path) && is_valid_name(_filesystem.filename(path));
+}
+
+bool FolderAssetStore::is_valid_name(std::string_view name) const {
+	return !name.empty() && std::all_of(name.begin(), name.end(), [](char c) {
+			return std::isalnum(c) || c == ' ' || c == '_' || c == '.';
+		});
+}
+
 AssetStore::Result<> FolderAssetStore::read_index() {
 	std::unique_lock lock(_lock);
 	y_defer(y_debug_assert(_from_id.size() == _from_name.size()));
@@ -132,6 +142,7 @@ AssetStore::Result<> FolderAssetStore::read_index() {
 	while(!file.unwrap().at_end()) {
 		auto entry = std::make_unique<Entry>();
 		if(arc(*entry)) {
+			entry->name = _filesystem.canonicalize(entry->name); // just in case
 			_from_id[entry->id] = entry.get();
 			_from_name[entry->name] = std::move(entry);
 		} else {
@@ -167,6 +178,10 @@ AssetStore::Result<> FolderAssetStore::write_index() const {
 }
 
 AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::string_view dst_name) {
+	if(!is_valid_path(dst_name)) {
+		return core::Err(ErrorType::InvalidName);
+	}
+
 	std::unique_lock lock(_lock);
 
 	{
@@ -226,7 +241,7 @@ AssetStore::Result<io2::ReaderPtr> FolderAssetStore::data(AssetId id) const {
 	y_debug_assert(_from_id.size() == _from_name.size());
 
 	auto it = _from_id.find(id);
-	if( it == _from_id.end()) {
+	if(it == _from_id.end()) {
 		return core::Err(ErrorType::UnknownID);
 	}
 
@@ -261,7 +276,7 @@ AssetStore::Result<> FolderAssetStore::remove(AssetId id) {
 }
 
 AssetStore::Result<> FolderAssetStore::rename(AssetId id, std::string_view new_name) {
-	if(new_name.empty()) {
+	if(!is_valid_path(new_name)) {
 		return core::Err(ErrorType::InvalidName);
 	}
 
@@ -323,7 +338,7 @@ AssetStore::Result<> FolderAssetStore::remove(std::string_view name) {
 }
 
 AssetStore::Result<> FolderAssetStore::rename(std::string_view from, std::string_view to) {
-	if(to.empty()) {
+	if(!is_valid_path(to)) {
 		return core::Err(ErrorType::InvalidName);
 	}
 

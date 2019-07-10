@@ -79,7 +79,8 @@ class LocalFileSystemModel : public FileSystemModel {
 		Result<> rename(std::string_view from, std::string_view to) const override;
 
 		bool is_delimiter(char c) const;
-		core::String canonicalize(core::String path) const;
+		core::String canonicalize(std::string_view path) const;
+		bool is_canonical(std::string_view path) const;
 };
 
 #endif

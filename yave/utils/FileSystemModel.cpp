@@ -161,13 +161,19 @@ bool LocalFileSystemModel::is_delimiter(char c) const {
 	return c == '\\' || c == '/';
 }
 
-core::String LocalFileSystemModel::canonicalize(core::String path) const {
-	for(auto& c : path) {
+core::String LocalFileSystemModel::canonicalize(std::string_view path) const {
+	core::String canonical(fs::path(path.data()).lexically_normal().string());
+	for(auto& c : canonical) {
 		if(is_delimiter(c)) {
 			c = '/';
 		}
 	}
-	return path;
+	return canonical;
+}
+
+bool LocalFileSystemModel::is_canonical(std::string_view path) const {
+	fs::path p(path.data());
+	return p == p.lexically_normal();
 }
 
 #endif
