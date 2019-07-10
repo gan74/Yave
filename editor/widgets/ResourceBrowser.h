@@ -80,6 +80,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		void set_current(DirNode* current);
 		void update_node(DirNode* node);
 		void draw_node(DirNode* node, const core::String& name);
+		void make_drop_target(const DirNode* node);
 
 		bool need_refresh() const;
 

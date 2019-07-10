@@ -123,7 +123,8 @@ if(_style == Style::Corporate || _style == Style::Corporate3D) {
 	colors[ImGuiCol_PlotHistogramHovered]   = dImVec4(1.00f, 0.60f, 0.00f, 1.00f);
 	colors[ImGuiCol_TextSelectedBg]         = dImVec4(0.73f, 0.73f, 0.73f, 0.35f);
 	colors[ImGuiCol_ModalWindowDimBg]       = dImVec4(0.80f, 0.80f, 0.80f, 0.35f);
-	colors[ImGuiCol_DragDropTarget]         = dImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+	//colors[ImGuiCol_DragDropTarget]         = dImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+	colors[ImGuiCol_DragDropTarget]         = dImVec4(0.90f, 0.70f, 0.00f, 1.00f);
 	colors[ImGuiCol_NavHighlight]           = dImVec4(0.26f, 0.59f, 0.98f, 1.00f);
 	colors[ImGuiCol_NavWindowingHighlight]  = dImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 	colors[ImGuiCol_NavWindowingDimBg]      = dImVec4(0.80f, 0.80f, 0.80f, 0.20f);

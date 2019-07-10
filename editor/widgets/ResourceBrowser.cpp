@@ -108,9 +108,9 @@ void ResourceBrowser::update_node(DirNode* node) {
 	fs->for_each(node->full_path, [&](const auto& name) {
 			auto full_name = fs->join(node->full_path, name);
 			if(fs->is_directory(full_name).unwrap_or(false)) {
-				node->children << DirNode(name, full_name, node);
+				node->children.emplace_back(name, full_name, node);
 			} else {
-				node->files << FileInfo(context(), name, full_name);
+				node->files.emplace_back(context(), name, full_name);
 			}
 		}).ignore();
 
@@ -147,6 +147,20 @@ const ResourceBrowser::DirNode* ResourceBrowser::hovered_dir() const {
 		return &_current->children[_current_hovered_index];
 	}
 	return nullptr;
+}
+
+void ResourceBrowser::make_drop_target(const DirNode* node) {
+	if(ImGui::BeginDragDropTarget()) {
+		if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("YAVE_ASSET_NAME")) {
+			const char* original_name = reinterpret_cast<const char*>(payload->Data);
+			const FileSystemModel* fs = filesystem();
+			if(!context()->asset_store().rename(original_name, fs->join(node->full_path, fs->filename(original_name)))) {
+				log_msg(fmt("Unable to move \"%\" to \"%\"", original_name, node->full_path), Log::Error);
+			}
+			refresh();
+		}
+		ImGui::EndDragDropTarget();
+	}
 }
 
 
@@ -234,6 +248,7 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 
 	// folding/expending the node will still register as a goto somehow...
 	if(ImGui::TreeNodeEx(fmt(ICON_FA_FOLDER " %", name).data(), flags)) {
+		make_drop_target(node);
 		if(ImGui::IsItemClicked(0)) {
 			set_current(node);
 		}
@@ -245,6 +260,7 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 		}
 		ImGui::TreePop();
 	} else {
+		make_drop_target(node);
 		if(ImGui::IsItemClicked(0)) {
 			set_current(node);
 		}
@@ -265,6 +281,8 @@ void ResourceBrowser::paint_asset_list(float width) {
 			set_current(_current->parent);
 		}
 
+		make_drop_target(_current->parent);
+
 		if(!menu_openned && ImGui::IsItemHovered()) {
 			reset_hover();
 		}
@@ -281,6 +299,13 @@ void ResourceBrowser::paint_asset_list(float width) {
 			set_current(&n);
 		}
 
+		make_drop_target(&n);
+
+		if(ImGui::BeginDragDropSource()) {
+			ImGui::SetDragDropPayload("YAVE_ASSET_NAME", n.full_path.data(), n.full_path.size() + 1);
+			ImGui::EndDragDropSource();
+		}
+
 		if(!menu_openned && ImGui::IsItemHovered()) {
 			hovered = index;
 		}
@@ -292,6 +317,11 @@ void ResourceBrowser::paint_asset_list(float width) {
 		if(display_asset(file)) {
 			if(ImGui::Selectable(fmt("% %", asset_type_icon(file.type), file.name).data(), selected())) {
 				asset_selected(file);
+			}
+
+			if(ImGui::BeginDragDropSource()) {
+				ImGui::SetDragDropPayload("YAVE_ASSET_NAME", file.full_name.data(), file.full_name.size() + 1);
+				ImGui::EndDragDropSource();
 			}
 
 			if(!menu_openned && ImGui::IsItemHovered()) {
