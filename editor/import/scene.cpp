@@ -52,11 +52,26 @@ static constexpr auto import_flags =
 									 0;
 
 
-static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(core::ArrayView<aiMaterial*> materials, const core::String& filename) {
+
+
+static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(core::ArrayView<aiMaterial*> materials,
+																												 const core::String& filename) {
 	const FileSystemModel* fs = FileSystemModel::local_filesystem();
 
 	usize name_len = fs->filename(filename).size();
 	core::String path(filename.data(), filename.size() - name_len);
+
+	auto material_name = [](aiMaterial* mat) -> core::String {
+			/*if(auto it = material_names.find(mat); it != material_names.end()) {
+				return it->second;
+			}
+			return "unamed_material";*/
+			aiString name;
+			if(mat->Get(AI_MATKEY_NAME, name) != AI_SUCCESS) {
+				return "unamed_material";
+			}
+			return clean_asset_name(name.C_Str());
+		};
 
 	auto texture_name = [](aiMaterial* mat, aiTextureType type) {
 			if(mat->GetTextureCount(type)) {
@@ -86,7 +101,7 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 		material_data.textures[SimpleMaterialData::Diffuse] = process_tex(aiTextureType_DIFFUSE);
 		material_data.textures[SimpleMaterialData::Normal] = process_tex(aiTextureType_NORMALS);
 		material_data.textures[SimpleMaterialData::RoughnessMetallic] = process_tex(aiTextureType_SHININESS);
-		mats.emplace_back(clean_asset_name(mat->GetName().C_Str()), std::move(material_data));
+		mats.emplace_back(material_name(mat), std::move(material_data));
 
 
 		{
@@ -95,7 +110,7 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 				aiTextureType type = aiTextureType(i);
 				if(mat->GetTextureCount(type)) {
 					if(std::find(std::begin(loaded), std::end(loaded), i) == std::end(loaded)) {
-						log_msg(fmt("Material \"%\" texture \"%\" has unknown type %.", mat->GetName().C_Str(), texture_name(mat, type), i), Log::Warning);
+						log_msg(fmt("Material \"%\" texture \"%\" has unknown type %.", material_name(mat), texture_name(mat, type), i), Log::Warning);
 						// load texture anyway
 						process_tex(type);
 					}
