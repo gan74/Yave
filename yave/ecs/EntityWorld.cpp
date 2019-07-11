@@ -82,7 +82,16 @@ ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) {
 	return container.get();
 }
 
+
+struct EntityWorldHeader {
+	y_serde2(serde2::check(fs::magic_number, AssetType::World, u32(1)))
+};
+
 serde2::Result EntityWorld::serialize(WritableAssetArchive& writer) const {
+	if(!writer(EntityWorldHeader())) {
+		return core::Err();
+	}
+
 	if(!writer(u64(_entities.size()))) {
 		return core::Err();
 	}
@@ -107,6 +116,13 @@ serde2::Result EntityWorld::serialize(WritableAssetArchive& writer) const {
 serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
 	*this = EntityWorld();
 
+	{
+		EntityWorldHeader header;
+		if(!reader(header)) {
+			return core::Err();
+		}
+	}
+
 	u64 entity_count = 0;
 	if(!reader(entity_count)) {
 		return core::Err();
@@ -117,7 +133,9 @@ serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
 		if(!reader(index)) {
 			return core::Err();
 		}
-		_entities.create_with_index(EntityIndex(index)).unwrap();
+		if(!_entities.create_with_index(EntityIndex(index))) {
+			return core::Err();
+		}
 	}
 	y_debug_assert(_entities.size() == entity_count);
 

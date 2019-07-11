@@ -46,6 +46,9 @@ std::string_view asset_type_name(AssetType type) {
 		case AssetType::Material:
 			return "Material";
 
+		case AssetType::World:
+			return "World";
+
 		default:
 			break;
 	}
@@ -62,6 +65,9 @@ std::string_view asset_type_icon(AssetType type) {
 
 		case AssetType::Material:
 			return ICON_FA_BRUSH;
+
+		case AssetType::World:
+			return ICON_FA_DATABASE;
 
 		default:
 			return ICON_FA_QUESTION;
