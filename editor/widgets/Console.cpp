@@ -133,17 +133,17 @@ void Console::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ImGui::BeginChild("###console", ImVec2(), true, ImGuiWindowFlags_HorizontalScrollbar);
 
 	std::fill(_log_counts.begin(), _log_counts.end(), 0);
-	for(const auto& msg : context()->logs().messages()) {
-		++_log_counts[usize(msg.type)];
-		if(!_log_types[usize(msg.type)]) {
-			continue;
-		}
-		if(!_filter.front() || match(msg.msg.begin(), _filter.begin())) {
-			ImGui::PushStyleColor(ImGuiCol_Text, log_color(msg.type));
-			ImGui::Selectable(fmt("% %", log_icon(msg.type), msg.msg).data());
-			ImGui::PopStyleColor();
-		}
-	}
+	context()->logs().for_each([&](const Logs::Message& msg) {
+			++_log_counts[usize(msg.type)];
+			if(!_log_types[usize(msg.type)]) {
+				return;
+			}
+			if(!_filter.front() || match(msg.msg.begin(), _filter.begin())) {
+				ImGui::PushStyleColor(ImGuiCol_Text, log_color(msg.type));
+				ImGui::Selectable(fmt("% %", log_icon(msg.type), msg.msg).data());
+				ImGui::PopStyleColor();
+			}
+		});
 
 	_auto_scroll = std::abs(ImGui::GetScrollMaxY() - ImGui::GetScrollY()) < 1.0f;
 	if(_auto_scroll) {

@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
+#include <mutex>
+
 namespace editor {
 
 class Logs {
@@ -36,6 +38,7 @@ class Logs {
 		};
 
 		void clear() {
+			std::unique_lock lock(_lock);
 			_msgs.clear();
 		}
 
@@ -44,14 +47,24 @@ class Logs {
 		}
 
 		void log_msg(Message msg) {
+			std::unique_lock lock(_lock);
 			_msgs.emplace_back(std::move(msg));
 		}
 
-		core::Span<Message> messages() const {
+		/*core::Span<Message> messages() const {
 			return _msgs;
+		}*/
+
+		template<typename F>
+		void for_each(F&& func) const {
+			std::unique_lock lock(_lock);
+			for(const Message& m : _msgs) {
+				func(m);
+			}
 		}
 
 	private:
+		mutable std::mutex _lock;
 		core::Vector<Message> _msgs;
 };
 
