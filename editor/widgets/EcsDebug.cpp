@@ -109,11 +109,11 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	ImGui::Spacing();
-	ImGui::Text("%u entities", u32(world.entities().size()));
+	ImGui::Text("%u entities", unsigned(world.entities().size()));
 
 	ImGui::Spacing();
-	ImGui::Text("%u component types registered", u32(ecs::detail::registered_types_count()));
-	ImGui::Text("%u component types intanced", u32(world.component_containers().size()));
+	ImGui::Text("%u component types registered", unsigned(ecs::detail::registered_types_count()));
+	ImGui::Text("%u component types intanced", unsigned(world.component_type_count()));
 
 	auto clean_name = [](std::string_view str) {
 			auto last = str.find_last_of("::");
@@ -122,8 +122,7 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	ImGui::Spacing();
 	if(ImGui::TreeNode("Component types")) {
-		for(const auto& p : world.component_containers()) {
-			ecs::ComponentTypeIndex type = p.first;
+		for(const ecs::ComponentTypeIndex& type : world.component_types()) {
 			ImGui::Selectable(fmt(ICON_FA_LIST_ALT " %", clean_name(world.type_name(type))).data());
 		}
 
@@ -134,9 +133,9 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ImGui::Spacing();
 	if(ImGui::TreeNode("Components")) {
 		std::map<typename ecs::EntityIndex, core::Vector<core::String>> entities;
-		for(auto& type : world.component_containers()) {
-			core::String name = clean_name(world.type_name(type.first));
-			for(auto ids : world.indexes(type.first)) {
+		for(const ecs::ComponentTypeIndex& type: world.component_types()) {
+			core::String name = clean_name(world.type_name(type));
+			for(ecs::EntityIndex ids : world.indexes(type)) {
 				entities[ids] << name;
 			}
 		}

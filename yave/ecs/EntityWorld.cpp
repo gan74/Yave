@@ -62,6 +62,23 @@ void EntityWorld::flush() {
 	_deletions.clear();
 }
 
+void EntityWorld::merge(EntityWorld&& other) {
+	y_profile();
+	std::unordered_map<EntityIndex, EntityId> id_map;
+	for(EntityId id : other.entities()) {
+		id_map[id.index()] = create_entity();
+	}
+	for(auto& container : other._component_containers) {
+		std::unique_ptr<ComponentContainerBase>& this_container = _component_containers[container.first];
+		if(!this_container) {
+			this_container = std::move(container.second);
+		} else {
+			this_container->merge(container.second.get(), id_map);
+		}
+	}
+	other = EntityWorld(); // just in case
+}
+
 core::String EntityWorld::type_name(ComponentTypeIndex index) const {
 	return y::detail::demangle_type_name(index.name());
 }
@@ -81,7 +98,6 @@ ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) {
 	}
 	return container.get();
 }
-
 
 struct EntityWorldHeader {
 	y_serde2(serde2::check(fs::magic_number, AssetType::World, u32(1)))

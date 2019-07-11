@@ -26,6 +26,12 @@ SOFTWARE.
 #include <editor/import/transforms.h>
 #include <editor/utils/assets.h>
 
+#include <editor/components/EditorComponent.h>
+
+#include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/entities/entities.h>
+
 #include <y/io2/Buffer.h>
 
 #include <imgui/yave_imgui.h>
@@ -54,20 +60,24 @@ void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token
 	if(_state == State::Browsing) {
 		_browser.paint(recorder, token);
 	} else if(_state == State::Settings) {
-		bool import_meshes = (_flags & SceneImportFlags::ImportMeshes) != SceneImportFlags::None;
-		bool import_anims = (_flags & SceneImportFlags::ImportAnims) != SceneImportFlags::None;
-		bool import_images = (_flags & SceneImportFlags::ImportImages) != SceneImportFlags::None;
-		bool import_materials = (_flags & SceneImportFlags::ImportMaterials) != SceneImportFlags::None;
+		bool import_meshes = (_flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes;
+		bool import_anims = (_flags & SceneImportFlags::ImportAnims) == SceneImportFlags::ImportAnims;
+		bool import_images = (_flags & SceneImportFlags::ImportImages) == SceneImportFlags::ImportImages;
+		bool import_materials = (_flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials;
+		bool import_objects = (_flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportObjects;
 
 		ImGui::Checkbox("Import meshes", &import_meshes);
 		ImGui::Checkbox("Import animations", &import_anims);
 		ImGui::Checkbox("Import images", &import_images);
 		ImGui::Checkbox("Import materials", &import_materials);
+		ImGui::Separator();
+		ImGui::Checkbox("Import objects and create world", &import_objects);
 
 		_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
 				 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
 				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
-				 (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None)
+				 (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None) |
+				 (import_objects ? SceneImportFlags::ImportObjects : SceneImportFlags::None)
 			;
 
 		ImGui::Separator();
@@ -137,20 +147,25 @@ void MeshImporter::import(import::SceneData scene) {
 			return context()->asset_store().filesystem()->join(path, name);
 		};
 
+	auto import_asset = [&](const auto& asset, std::string_view name) {
+			log_msg(fmt("Saving asset as \"%\"", name));
+			y_profile_zone("asset import");
+			io2::Buffer buffer;
+			WritableAssetArchive ar(buffer);
+			if(asset.serialize(ar)) {
+				if(context()->asset_store().import(buffer, name)) {
+					return;
+				}
+				log_msg(fmt("Unable import \"%\"", name), Log::Error);
+			} else {
+				log_msg(fmt("Unable serialize \"%\"", name), Log::Error);
+			}
+		};
+
 	auto import_assets = [&](const auto& assets, std::string_view import_path) {
 			for(const auto& a : assets) {
 				core::String name = make_full_name(import_path, a.name());
-				log_msg(fmt("Saving asset as \"%\"", name));
-				io2::Buffer buffer;
-				WritableAssetArchive ar(buffer);
-				if(!a.obj().serialize(ar)) {
-					log_msg(fmt("Unable serialize \"%\"", a.name()), Log::Error);
-					continue;
-				}
-				if(!context()->asset_store().import(buffer, name)) {
-					log_msg(fmt("Unable import \"%\"", a.name()), Log::Error);
-					continue;
-				}
+				import_asset(a.obj(), name);
 			}
 		};
 
@@ -190,15 +205,56 @@ void MeshImporter::import(import::SceneData scene) {
 
 	{
 		bool separate_folders = !scene.meshes.is_empty() + !scene.animations.is_empty() + !scene.images.is_empty();
-		import_assets(scene.meshes, separate_folders ? "meshes" : "");
-		import_assets(scene.animations, separate_folders ? "animations" : "");
-		import_assets(scene.images, separate_folders ? "images" : "");
+		core::String mesh_import_path = separate_folders ? "meshes" : "";
+		core::String animations_import_path = separate_folders ? "animations" : "";
+		core::String image_import_path = separate_folders ? "images" : "";
+		core::String material_import_path = separate_folders ? "materials" : "";
+		core::String world_import_path = "";
 
-		auto materials = core::vector_with_capacity<Named<SimpleMaterialData>>(scene.materials.size());
-		std::transform(scene.materials.begin(), scene.materials.end(), std::back_inserter(materials),
-					   [&](const auto& m) { return Named(m.name(), compile_material(m.obj(), separate_folders ? "images" : "")); });
+		{
+			import_assets(scene.meshes, mesh_import_path);
+			import_assets(scene.animations, animations_import_path);
+			import_assets(scene.images, image_import_path);
+		}
 
-		import_assets(materials, separate_folders ? "materials" : "");
+		{
+			auto materials = core::vector_with_capacity<Named<SimpleMaterialData>>(scene.materials.size());
+			std::transform(scene.materials.begin(), scene.materials.end(), std::back_inserter(materials),
+						   [&](const auto& m) { return Named(m.name(), compile_material(m.obj(), image_import_path)); });
+
+			import_assets(materials, material_import_path);
+		}
+
+		{
+			using import::SceneImportFlags;
+			if((_flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportObjects) {
+				y_profile_zone("import world");
+
+				ecs::EntityWorld world;
+				for(const auto& named_obj : scene.objects) {
+					const auto& object = named_obj.obj();
+
+					auto material = context()->loader().load<Material>(make_full_name(material_import_path, object.material));
+					auto mesh = context()->loader().load<StaticMesh>(make_full_name(mesh_import_path, object.mesh));
+
+					if(!material) {
+						log_msg(fmt("Unable to load material \"%\"", object.material), Log::Error);
+						continue;
+					}
+
+					if(!mesh) {
+						log_msg(fmt("Unable to load mesh \"%\"", object.mesh), Log::Error);
+						continue;
+					}
+
+					ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
+					world.create_component<EditorComponent>(entity, named_obj.name());
+				}
+
+				core::String name = make_full_name(world_import_path, "world");
+				import_asset(world, name);
+			}
+		}
 	}
 
 	context()->ui().refresh_all();

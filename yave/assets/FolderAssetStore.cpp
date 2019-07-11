@@ -122,6 +122,7 @@ bool FolderAssetStore::is_valid_name(std::string_view name) const {
 }
 
 AssetStore::Result<> FolderAssetStore::read_index() {
+	y_profile();
 	std::unique_lock lock(_lock);
 	y_defer(y_debug_assert(_from_id.size() == _from_name.size()));
 
@@ -153,6 +154,7 @@ AssetStore::Result<> FolderAssetStore::read_index() {
 }
 
 AssetStore::Result<> FolderAssetStore::write_index() const {
+	y_profile();
 	std::unique_lock lock(_lock);
 	y_defer(y_debug_assert(_from_id.size() == _from_name.size()));
 
@@ -178,6 +180,7 @@ AssetStore::Result<> FolderAssetStore::write_index() const {
 }
 
 AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::string_view dst_name) {
+	y_profile();
 	if(!is_valid_path(dst_name)) {
 		return core::Err(ErrorType::InvalidName);
 	}
@@ -256,6 +259,7 @@ AssetStore::Result<io2::ReaderPtr> FolderAssetStore::data(AssetId id) const {
 
 
 AssetStore::Result<> FolderAssetStore::remove(AssetId id) {
+	y_profile();
 	std::unique_lock lock(_lock);
 
 	auto it = _from_id.find(id);
@@ -276,6 +280,7 @@ AssetStore::Result<> FolderAssetStore::remove(AssetId id) {
 }
 
 AssetStore::Result<> FolderAssetStore::rename(AssetId id, std::string_view new_name) {
+	y_profile();
 	if(!is_valid_path(new_name)) {
 		return core::Err(ErrorType::InvalidName);
 	}
@@ -307,6 +312,7 @@ AssetStore::Result<> FolderAssetStore::rename(AssetId id, std::string_view new_n
 }
 
 AssetStore::Result<> FolderAssetStore::remove(std::string_view name) {
+	y_profile();
 	{
 		std::unique_lock lock(_lock);
 		if(filesystem()->is_directory(name).unwrap_or(false)) {
@@ -338,6 +344,7 @@ AssetStore::Result<> FolderAssetStore::remove(std::string_view name) {
 }
 
 AssetStore::Result<> FolderAssetStore::rename(std::string_view from, std::string_view to) {
+	y_profile();
 	if(!is_valid_path(to)) {
 		return core::Err(ErrorType::InvalidName);
 	}
@@ -371,6 +378,7 @@ AssetStore::Result<> FolderAssetStore::rename(std::string_view from, std::string
 }
 
 AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data) {
+	y_profile();
 	std::unique_lock lock(_lock);
 
 	y_debug_assert(_from_id.size() == _from_name.size());
@@ -385,6 +393,7 @@ AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data) {
 }
 
 void FolderAssetStore::clean_index() {
+	y_profile();
 	std::unique_lock lock(_lock);
 
 	core::Vector<decltype(_from_name)::iterator> to_remove;

@@ -52,6 +52,17 @@ static constexpr auto import_flags =
 									 0;
 
 
+static core::String material_name(aiMaterial* mat) {
+	/*if(auto it = material_names.find(mat); it != material_names.end()) {
+		return it->second;
+	}
+	return "unamed_material";*/
+	aiString name;
+	if(mat->Get(AI_MATKEY_NAME, name) != AI_SUCCESS) {
+		return "unamed_material";
+	}
+	return clean_asset_name(name.C_Str());
+}
 
 
 static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(core::ArrayView<aiMaterial*> materials,
@@ -60,18 +71,6 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 
 	usize name_len = fs->filename(filename).size();
 	core::String path(filename.data(), filename.size() - name_len);
-
-	auto material_name = [](aiMaterial* mat) -> core::String {
-			/*if(auto it = material_names.find(mat); it != material_names.end()) {
-				return it->second;
-			}
-			return "unamed_material";*/
-			aiString name;
-			if(mat->Get(AI_MATKEY_NAME, name) != AI_SUCCESS) {
-				return "unamed_material";
-			}
-			return clean_asset_name(name.C_Str());
-		};
 
 	auto texture_name = [](aiMaterial* mat, aiTextureType type) {
 			if(mat->GetTextureCount(type)) {
@@ -148,13 +147,13 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
 	SceneData data;
 
-	if((flags & SceneImportFlags::ImportMeshes) != SceneImportFlags::None) {
+	if((flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes) {
 		std::transform(meshes.begin(), meshes.end(), std::back_inserter(data.meshes), [=](aiMesh* mesh) {
 			return Named(clean_asset_name(mesh->mName.C_Str()), import_mesh(mesh, scene));
 		});
 	}
 
-	if((flags & SceneImportFlags::ImportAnims) != SceneImportFlags::None) {
+	if((flags & SceneImportFlags::ImportAnims) == SceneImportFlags::ImportAnims) {
 		std::transform(animations.begin(), animations.end(), std::back_inserter(data.animations), [=](aiAnimation* anim) {
 			return Named(clean_asset_name(anim->mName.C_Str()), import_animation(anim));
 		});
@@ -163,11 +162,17 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
 	if((flags & (SceneImportFlags::ImportImages | SceneImportFlags::ImportMaterials)) != SceneImportFlags::None) {
 		auto [imgs, mats] = import_materias_and_textures(materials, filename);
-		if((flags & SceneImportFlags::ImportImages) != SceneImportFlags::None) {
-			data.images = std::move(imgs);
-		}
-		if((flags & SceneImportFlags::ImportMaterials) != SceneImportFlags::None) {
+		data.images = std::move(imgs);
+		if((flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials) {
 			data.materials = std::move(mats);
+		}
+	}
+
+	if((flags & SceneImportFlags::ImportAnims) == SceneImportFlags::ImportObjects) {
+		for(usize i = 0; i != meshes.size(); ++i) {
+			if(meshes[i]->mMaterialIndex < materials.size()) {
+				data.objects.emplace_back(meshes[i]->mName.C_Str(), ObjectData{meshes[i]->mName.C_Str(), material_name(materials[meshes[i]->mMaterialIndex])});
+			}
 		}
 	}
 

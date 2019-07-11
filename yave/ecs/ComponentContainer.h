@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <y/core/SparseVector.h>
 
+#include <unordered_map>
+
 
 namespace yave {
 namespace ecs {
@@ -72,9 +74,12 @@ class ComponentContainerBase : NonMovable {
 		virtual core::Result<void> create_empty(EntityId id) = 0;
 		virtual core::Span<EntityIndex> indexes() const = 0;
 
+		virtual void merge(ComponentContainerBase* container, const std::unordered_map<EntityIndex, EntityId>& id_map) = 0;
+
 		ComponentTypeIndex type() const {
 			return _type;
 		}
+
 
 
 		template<typename T, typename... Args>
@@ -191,7 +196,19 @@ class ComponentContainer final : public ComponentContainerBase {
 				_registerer(&registerer) {
 		}
 
+		void merge(ComponentContainerBase* container, const std::unordered_map<EntityIndex, EntityId>& id_map) override {
+			y_profile();
+			if(ComponentContainer<T>* cont = dynamic_cast<ComponentContainer<T>*>(container)) {
+				for(auto&& [index, comp] : cont->_components.as_pairs()) {
+					if(auto it = id_map.find(index); it != id_map.end()) {
+						_components.insert(it->second.index(), std::move(comp));
+					}
+				}
+			}
+		}
+
 		void remove(core::Span<EntityId> ids) override {
+			y_profile();
 			for(EntityId id : ids) {
 				auto i = id.index();
 				if(_components.has(i)) {
@@ -232,6 +249,7 @@ class ComponentContainer final : public ComponentContainerBase {
 		}
 
 		serde2::Result serialize(WritableAssetArchive& writer) const override {
+			y_profile();
 			if constexpr(is_serde_compatible) {
 				if(!writer(u64(_components.size()))) {
 					return core::Err();
@@ -246,6 +264,7 @@ class ComponentContainer final : public ComponentContainerBase {
 		}
 
 		serde2::Result deserialize(ReadableAssetArchive& reader) override {
+			y_profile();
 			if constexpr(is_serde_compatible) {
 				u64 component_count = 0;
 				if(!reader(component_count)) {

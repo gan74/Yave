@@ -45,12 +45,13 @@ namespace import {
 enum class SceneImportFlags {
 	None = 0x00,
 
-	ImportMeshes = 0x01,
-	ImportAnims = 0x02,
-	ImportImages = 0x04,
-	ImportMaterials = 0x08,
+	ImportMeshes	= 0x01,
+	ImportAnims		= 0x02,
+	ImportImages	= 0x04,
+	ImportMaterials = 0x08 | ImportImages,
+	ImportObjects	= 0x10 | ImportMeshes | ImportMaterials,
 
-	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials,
+	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportObjects
 
 };
 
@@ -74,11 +75,17 @@ struct MaterialData {
 	std::array<core::String, SimpleMaterialData::texture_count> textures;
 };
 
+struct ObjectData {
+	core::String mesh;
+	core::String material;
+};
+
 struct SceneData {
 	core::Vector<Named<MeshData>> meshes;
 	core::Vector<Named<Animation>> animations;
 	core::Vector<Named<ImageData>> images;
 	core::Vector<Named<MaterialData>> materials;
+	core::Vector<Named<ObjectData>> objects;
 };
 
 

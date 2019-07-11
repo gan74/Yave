@@ -48,9 +48,9 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ecs::EntityWorld& world = context()->world();
 	ecs::EntityId id = context()->selection().selected_entity();
 
-	for(const auto& p : world.component_containers()) {
-		if(p.second->has(id)) {
-			component_widget(p.first, context(), id);
+	for(const ecs::ComponentTypeIndex& type : world.component_types()) {
+		if(world.has(id, type)) {
+			component_widget(type, context(), id);
 		}
 	}
 }
