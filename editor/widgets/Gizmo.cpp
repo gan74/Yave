@@ -65,12 +65,12 @@ static math::Vec3 intersect(const math::Vec3& normal, const math::Vec3& center, 
 	return start + direction * t;
 }
 
-static const ImU32 flags =
+static const ImU32 gizmo_flags =
 		ImGuiWindowFlags_NoInputs |
 		ImGuiWindowFlags_NoFocusOnAppearing |
 		ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-Gizmo::Gizmo(ContextPtr cptr, SceneView* view) : Frame("Gizmo", flags), ContextLinked(cptr), _scene_view(view) {
+Gizmo::Gizmo(ContextPtr cptr, SceneView* view) : Frame("Gizmo", gizmo_flags), ContextLinked(cptr), _scene_view(view) {
 }
 
 bool Gizmo::is_dragging() const {
