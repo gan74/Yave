@@ -74,7 +74,7 @@ class ComponentContainerBase : NonMovable {
 		virtual core::Result<void> create_empty(EntityId id) = 0;
 		virtual core::Span<EntityIndex> indexes() const = 0;
 
-		virtual void merge(ComponentContainerBase* container, const std::unordered_map<EntityIndex, EntityId>& id_map) = 0;
+		virtual void add(const ComponentContainerBase* other, const std::unordered_map<EntityIndex, EntityId>& id_map) = 0;
 
 		ComponentTypeIndex type() const {
 			return _type;
@@ -196,12 +196,12 @@ class ComponentContainer final : public ComponentContainerBase {
 				_registerer(&registerer) {
 		}
 
-		void merge(ComponentContainerBase* container, const std::unordered_map<EntityIndex, EntityId>& id_map) override {
+		void add(const ComponentContainerBase* other, const std::unordered_map<EntityIndex, EntityId>& id_map) override {
 			y_profile();
-			if(ComponentContainer<T>* cont = dynamic_cast<ComponentContainer<T>*>(container)) {
-				for(auto&& [index, comp] : cont->_components.as_pairs()) {
+			if(const ComponentContainer<T>* container = dynamic_cast<const ComponentContainer<T>*>(other)) {
+				for(const auto& [index, comp] : container->_components.as_pairs()) {
 					if(auto it = id_map.find(index); it != id_map.end()) {
-						_components.insert(it->second.index(), std::move(comp));
+						_components.insert(it->second.index(), comp);
 					}
 				}
 			}

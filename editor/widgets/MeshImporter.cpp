@@ -249,6 +249,9 @@ void MeshImporter::import(import::SceneData scene) {
 
 					ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
 					world.create_component<EditorComponent>(entity, named_obj.name());
+					StaticMeshComponent* static_mesh = world.component<StaticMeshComponent>(entity);
+					static_mesh->material() = material.unwrap();
+					static_mesh->mesh() = mesh.unwrap();
 				}
 
 				core::String name = make_full_name(world_import_path, "world");

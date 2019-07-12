@@ -168,10 +168,11 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 		}
 	}
 
-	if((flags & SceneImportFlags::ImportAnims) == SceneImportFlags::ImportObjects) {
+	if((flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportObjects) {
 		for(usize i = 0; i != meshes.size(); ++i) {
 			if(meshes[i]->mMaterialIndex < materials.size()) {
-				data.objects.emplace_back(meshes[i]->mName.C_Str(), ObjectData{meshes[i]->mName.C_Str(), material_name(materials[meshes[i]->mMaterialIndex])});
+				core::String mesh_name = clean_asset_name(meshes[i]->mName.C_Str());
+				data.objects.emplace_back(mesh_name, ObjectData{mesh_name, material_name(materials[meshes[i]->mMaterialIndex])});
 			}
 		}
 	}

@@ -62,21 +62,19 @@ void EntityWorld::flush() {
 	_deletions.clear();
 }
 
-void EntityWorld::merge(EntityWorld&& other) {
+void EntityWorld::add(const EntityWorld& other) {
 	y_profile();
 	std::unordered_map<EntityIndex, EntityId> id_map;
 	for(EntityId id : other.entities()) {
 		id_map[id.index()] = create_entity();
 	}
-	for(auto& container : other._component_containers) {
-		std::unique_ptr<ComponentContainerBase>& this_container = _component_containers[container.first];
+	for(const auto& other_container : other._component_containers) {
+		std::unique_ptr<ComponentContainerBase>& this_container = _component_containers[other_container.first];
 		if(!this_container) {
-			this_container = std::move(container.second);
-		} else {
-			this_container->merge(container.second.get(), id_map);
+			this_container = detail::create_container(other_container.second->type());
 		}
+		this_container->add(other_container.second.get(), id_map);
 	}
-	other = EntityWorld(); // just in case
 }
 
 core::String EntityWorld::type_name(ComponentTypeIndex index) const {

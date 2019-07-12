@@ -78,6 +78,20 @@ void ResourceBrowser::asset_selected(const FileInfo& file) {
 			}
 		break;
 
+		case AssetType::World:
+			if(auto data = context()->asset_store().data(file.id)) {
+				ecs::EntityWorld world;
+				ReadableAssetArchive ar(*(data.unwrap()), context()->loader());
+				if(ar(world)) {
+					context()->world().add(world);
+				} else {
+					log_msg("Unable to deserialize world.", Log::Error);
+				}
+			} else {
+				log_msg("Unable to open world.", Log::Error);
+			}
+		break;
+
 		default:
 		break;
 	}
