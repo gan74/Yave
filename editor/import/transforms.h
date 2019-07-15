@@ -31,6 +31,8 @@ namespace import {
 
 [[nodiscard]] Animation set_speed(const Animation& anim, float speed);
 
+[[nodiscard]] ImageData compute_mipmaps(const ImageData& image);
+
 }
 }
 

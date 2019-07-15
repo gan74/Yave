@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_MESHIMPORTER_H
-#define EDITOR_WIDGETS_MESHIMPORTER_H
+#ifndef EDITOR_WIDGETS_SCENEIMPORTER_H
+#define EDITOR_WIDGETS_SCENEIMPORTER_H
 
 #include "FileBrowser.h"
 
@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace editor {
 
-class MeshImporter final : public Widget, public ContextLinked {
+class SceneImporter final : public Widget, public ContextLinked {
 
 	enum class State {
 		Browsing,
@@ -39,7 +39,7 @@ class MeshImporter final : public Widget, public ContextLinked {
 	};
 
 	public:
-		MeshImporter(ContextPtr ctx, const core::String& import_path = ".");
+		SceneImporter(ContextPtr ctx, const core::String& import_path = ".");
 
 	private:
 		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
@@ -65,4 +65,4 @@ class MeshImporter final : public Widget, public ContextLinked {
 
 }
 
-#endif // EDITOR_WIDGETS_MESHIMPORTER_H
+#endif // EDITOR_WIDGETS_SCENEIMPORTER_H

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "MeshImporter.h"
+#include "SceneImporter.h"
 
 #include <editor/context/EditorContext.h>
 #include <editor/import/transforms.h>
@@ -38,7 +38,7 @@ SOFTWARE.
 
 namespace editor {
 
-MeshImporter::MeshImporter(ContextPtr ctx, const core::String& import_path) :
+SceneImporter::SceneImporter(ContextPtr ctx, const core::String& import_path) :
 		Widget("Mesh importer"),
 		ContextLinked(ctx),
 		_import_path(import_path) {
@@ -54,7 +54,7 @@ MeshImporter::MeshImporter(ContextPtr ctx, const core::String& import_path) :
 		});
 }
 
-void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)  {
+void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)  {
 	using import::SceneImportFlags;
 
 	if(_state == State::Browsing) {
@@ -132,11 +132,11 @@ void MeshImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token
 	}
 }
 
-bool MeshImporter::done_loading() const {
+bool SceneImporter::done_loading() const {
 	return _import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
-void MeshImporter::import(import::SceneData scene) {
+void SceneImporter::import(import::SceneData scene) {
 	y_profile();
 
 	auto make_full_name = [this](std::string_view import_path, std::string_view name) {

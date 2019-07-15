@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/utils/FileSystemModel.h>
 
+#include "transforms.h"
+
 extern "C" {
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -43,7 +45,7 @@ extern "C" {
 namespace editor {
 namespace import {
 
-Named<ImageData> import_image(const core::String& filename) {
+Named<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
 	y_profile();
 
 	int width, height, bpp;
@@ -54,7 +56,11 @@ Named<ImageData> import_image(const core::String& filename) {
 		y_throw(fmt("Unable to load image \"%\".", filename).data());
 	}
 
-	return {clean_asset_name(filename), ImageData(math::Vec2ui(width, height), data, vk::Format::eR8G8B8A8Unorm)};
+	ImageData img(math::Vec2ui(width, height), data, vk::Format::eR8G8B8A8Unorm);
+	if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
+		img = compute_mipmaps(img);
+	}
+	return {clean_asset_name(filename), std::move(img)};
 }
 
 core::String supported_image_extensions() {

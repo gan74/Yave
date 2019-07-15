@@ -42,30 +42,6 @@ class aiMaterial;
 namespace editor {
 namespace import {
 
-enum class SceneImportFlags {
-	None = 0x00,
-
-	ImportMeshes	= 0x01,
-	ImportAnims		= 0x02,
-	ImportImages	= 0x04,
-	ImportMaterials = 0x08 | ImportImages,
-	ImportObjects	= 0x10 | ImportMeshes | ImportMaterials,
-
-	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportObjects
-
-};
-
-constexpr SceneImportFlags operator|(SceneImportFlags l, SceneImportFlags r) {
-	return SceneImportFlags(uenum(l) | uenum(r));
-}
-
-constexpr SceneImportFlags operator&(SceneImportFlags l, SceneImportFlags r)  {
-	return SceneImportFlags(uenum(l) & uenum(r));
-}
-
-
-
-
 struct SkeletonData {
 	core::Vector<SkinWeights> skin;
 	core::Vector<Bone> bones;
@@ -89,23 +65,74 @@ struct SceneData {
 };
 
 
-
-
+// ----------------------------- UTILS -----------------------------
 core::String clean_asset_name(const core::String& name);
+
+
+
+
+
+// ----------------------------- SCENE -----------------------------
+enum class SceneImportFlags {
+	None = 0x00,
+
+	ImportMeshes	= 0x01,
+	ImportAnims		= 0x02,
+	ImportImages	= 0x04,
+	ImportMaterials = 0x08 | ImportImages,
+	ImportObjects	= 0x10 | ImportMeshes | ImportMaterials,
+
+	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportObjects
+
+};
 
 SceneData import_scene(const core::String& filename, SceneImportFlags flags = SceneImportFlags::ImportAll);
 core::String supported_scene_extensions();
 
 
-Named<ImageData> import_image(const core::String& filename);
+
+
+
+// ----------------------------- IMAGES -----------------------------
+enum class ImageImportFlags {
+	None = 0x00,
+
+	GenerateMipmaps = 0x01,
+};
+
+Named<ImageData> import_image(const core::String& filename, ImageImportFlags flags = ImageImportFlags::None);
 core::String supported_image_extensions();
 
 
+
+
+
+// ----------------------------- ASSIMPS -----------------------------
 #ifndef EDITOR_NO_ASSIMP
 Animation import_animation(aiAnimation* anim);
 MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
 SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
 #endif
+
+
+
+
+
+constexpr SceneImportFlags operator|(SceneImportFlags l, SceneImportFlags r) {
+	return SceneImportFlags(uenum(l) | uenum(r));
+}
+
+constexpr SceneImportFlags operator&(SceneImportFlags l, SceneImportFlags r)  {
+	return SceneImportFlags(uenum(l) & uenum(r));
+}
+
+constexpr ImageImportFlags operator|(ImageImportFlags l, ImageImportFlags r) {
+	return ImageImportFlags(uenum(l) | uenum(r));
+}
+
+constexpr ImageImportFlags operator&(ImageImportFlags l, ImageImportFlags r)  {
+	return ImageImportFlags(uenum(l) & uenum(r));
+}
 
 }
 }

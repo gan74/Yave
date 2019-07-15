@@ -34,6 +34,11 @@ class ImageData : NonCopyable {
 	public:
 		ImageData() = default;
 
+		static usize mip_count(const math::Vec3ui& size);
+		static math::Vec3ui mip_size(const math::Vec3ui& size, usize mip = 0);
+		static usize byte_size(const math::Vec3ui& size, ImageFormat format, usize mip = 0);
+		static usize layer_byte_size(const math::Vec3ui& size, ImageFormat format, usize mips = 1);
+
 		usize byte_size(usize mip = 0) const;
 		usize layer_byte_size() const;
 		usize combined_byte_size() const;

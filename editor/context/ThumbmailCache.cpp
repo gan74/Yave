@@ -97,7 +97,9 @@ TextureView* ThumbmailCache::get_thumbmail(AssetId asset) {
 
 void ThumbmailCache::process_requests() {
 	std::unique_ptr<CmdBufferRecorder> recorder;
-	for(usize i = 0; i != _requests.size(); ++i) {
+
+	static constexpr usize max_parallel_requests = 8;
+	for(usize i = 0; i != std::min(max_parallel_requests, _requests.size()); ++i) {
 		if(_requests[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
 			if(!recorder) {
 				recorder = std::make_unique<CmdBufferRecorder>(device()->create_disposable_cmd_buffer());

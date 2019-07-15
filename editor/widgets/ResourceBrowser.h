@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetId.h>
 
-#include "MeshImporter.h"
+#include "SceneImporter.h"
 #include "ImageImporter.h"
 
 namespace editor {

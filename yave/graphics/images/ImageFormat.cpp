@@ -31,6 +31,10 @@ bool ImageFormat::operator==(const ImageFormat& other) const {
 	return _format == other._format;
 }
 
+bool ImageFormat::operator!=(const ImageFormat& other) const {
+	return _format != other._format;
+}
+
 bool ImageFormat::is_valid() const {
 	return _format != vk::Format::eUndefined && _format < decltype(_format)(VK_FORMAT_END_RANGE);
 }

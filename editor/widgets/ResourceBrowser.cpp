@@ -212,8 +212,8 @@ void ResourceBrowser::paint_context_menu() {
 		}
 
 		ImGui::Separator();
-		if(ImGui::Selectable("Import mesh")) {
-			context()->ui().add<MeshImporter>(_current->full_path);
+		if(ImGui::Selectable("Import objects")) {
+			context()->ui().add<SceneImporter>(_current->full_path);
 		}
 		if(ImGui::Selectable("Import image")) {
 			context()->ui().add<ImageImporter>(_current->full_path);

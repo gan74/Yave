@@ -24,17 +24,35 @@ SOFTWARE.
 
 namespace yave {
 
+usize ImageData::mip_count(const math::Vec3ui& size) {
+	usize max_dim = std::max({size.x(), size.y(), size.z()});
+	usize l = log2ui(max_dim);
+	return usize(1 << l) == max_dim ? l : l + 1;
+}
+
+math::Vec3ui ImageData::mip_size(const math::Vec3ui& size, usize mip) {
+	return {std::max(u32(1), size.x() >> mip), std::max(u32(1), size.y() >> mip), std::max(u32(1), size.z() >> mip)};
+}
+
+usize ImageData::byte_size(const math::Vec3ui& size, ImageFormat format, usize mip) {
+	auto s = mip_size(size, mip);
+	return (s.x() * s.y() * s.z() * format.bit_per_pixel()) / 8;
+}
+
+usize ImageData::layer_byte_size(const math::Vec3ui& size, ImageFormat format, usize mips) {
+	usize data_size = 0;
+	for(usize i = 0; i != mips; ++i) {
+		data_size += byte_size(size, format, i);
+	}
+	return data_size;
+}
+
 usize ImageData::byte_size(usize mip) const {
-	auto s = size(mip);
-	return (s.x() * s.y() * _format.bit_per_pixel()) / 8;
+	return byte_size(_size, _format, mip);
 }
 
 usize ImageData::layer_byte_size() const {
-	usize data_size = 0;
-	for(usize i = 0; i != _mips; ++i) {
-		data_size += byte_size(i);
-	}
-	return data_size;
+	return layer_byte_size(_size, _format, _mips);
 }
 
 usize ImageData::combined_byte_size() const {
@@ -54,7 +72,7 @@ const math::Vec3ui& ImageData::size() const {
 }
 
 math::Vec3ui ImageData::size(usize mip) const {
-	return {std::max(u32(1), _size.x() >> mip), std::max(u32(1), _size.y() >> mip), std::max(u32(1), _size.z() >> mip)};
+	return mip_size(_size, mip);
 }
 
 const ImageFormat& ImageData::format() const {

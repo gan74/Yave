@@ -93,5 +93,57 @@ Animation set_speed(const Animation& anim, float speed) {
 	return Animation(anim.duration() / speed, std::move(channels));
 }
 
+ImageData compute_mipmaps(const ImageData& image) {
+	if(image.layers() != 1 || image.size().z() != 1) {
+		y_fatal("Only one layer is supported.");
+	}
+	if(image.format() != ImageFormat(vk::Format::eR8G8B8A8Unorm)) {
+		y_fatal("Only RGBA is supported.");
+	}
+
+	ImageFormat format(vk::Format::eR8G8B8A8Unorm);
+	const usize components = 4;
+
+	usize mip_count = ImageData::mip_count(image.size());
+	usize data_size = ImageData::layer_byte_size(image.size(), format, mip_count);
+	std::unique_ptr<u8[]> data = std::make_unique<u8[]>(data_size);
+
+	auto compute_mip = [components](const u8* image_data, u8* output, const math::Vec2ui& orig_size) -> usize {
+			usize cursor = 0;
+			math::Vec2ui mip_size = {std::max(1u, orig_size.x() / 2),
+									 std::max(1u, orig_size.y() / 2)};
+			usize row_size = orig_size.x();
+
+			for(usize y = 0; y != mip_size.x(); ++y) {
+				for(usize x = 0; x != mip_size.x(); ++x) {
+					usize orig = (x * 2 + y * 2 * row_size);
+					for(usize c = 0; c != components; ++c) {
+						u32 acc  = image_data[components * (orig) + c];
+						acc		+= image_data[components * (orig + 1) + c];
+						acc		+= image_data[components * (orig + row_size) + c];
+						acc		+= image_data[components * (orig + row_size + 1) + c];
+						output[cursor++] = std::min(acc / 4, 0xFFu);
+					}
+				}
+			}
+			return cursor;
+		};
+
+
+	y_debug_assert(mip_count > 1);
+
+	u8* image_data = data.get();
+	usize mip_byte_size = image.byte_size(0);
+	std::memcpy(image_data, image.data(), mip_byte_size);
+	for(usize mip = 0; mip < mip_count; ++mip) {
+		usize s = compute_mip(image_data, image_data + mip_byte_size, image.size(mip).to<2>());
+		image_data += mip_byte_size;
+		mip_byte_size = s;
+	}
+	y_debug_assert(image_data == data.get() + data_size);
+
+	return ImageData(image.size().to<2>(), data.get(), format, mip_count);
+}
+
 }
 }

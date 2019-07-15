@@ -36,36 +36,22 @@ SOFTWARE.
 namespace editor {
 namespace import {
 
+struct SceneImportContext {
+	usize unamed_materials = 0;
+};
 
 
-static constexpr auto import_flags =
-									 aiProcess_Triangulate |
-									 aiProcess_FindInvalidData |
-									 aiProcess_GenSmoothNormals |
-									 aiProcess_CalcTangentSpace |
-									 aiProcess_GenUVCoords |
-									 aiProcess_ImproveCacheLocality |
-									 aiProcess_OptimizeGraph |
-									 aiProcess_OptimizeMeshes |
-									 aiProcess_JoinIdenticalVertices |
-									 aiProcess_ValidateDataStructure |
-									 0;
 
-
-static core::String material_name(aiMaterial* mat) {
-	/*if(auto it = material_names.find(mat); it != material_names.end()) {
-		return it->second;
-	}
-	return "unamed_material";*/
+static core::String clean_material_name(SceneImportContext& ctx, aiMaterial* mat) {
 	aiString name;
 	if(mat->Get(AI_MATKEY_NAME, name) != AI_SUCCESS) {
-		return "unamed_material";
+		return fmt("unamed_material_%", ctx.unamed_materials++);
 	}
 	return clean_asset_name(name.C_Str());
 }
 
-
-static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(core::ArrayView<aiMaterial*> materials,
+static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(SceneImportContext& ctx,
+																												 core::ArrayView<aiMaterial*> materials,
 																												 const core::String& filename) {
 	const FileSystemModel* fs = FileSystemModel::local_filesystem();
 
@@ -91,7 +77,7 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 				}
 				auto it = images.find(name);
 				if(it == images.end()) {
-					it = images.insert(std::pair(name, import_image(fs->join(path, name)))).first;
+					it = images.insert(std::pair(name, import_image(fs->join(path, name), ImageImportFlags::GenerateMipmaps))).first;
 				}
 				return it->second.name();
 			};
@@ -100,7 +86,7 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 		material_data.textures[SimpleMaterialData::Diffuse] = process_tex(aiTextureType_DIFFUSE);
 		material_data.textures[SimpleMaterialData::Normal] = process_tex(aiTextureType_NORMALS);
 		material_data.textures[SimpleMaterialData::RoughnessMetallic] = process_tex(aiTextureType_SHININESS);
-		mats.emplace_back(material_name(mat), std::move(material_data));
+		mats.emplace_back(clean_material_name(ctx, mat), std::move(material_data));
 
 
 		{
@@ -109,7 +95,7 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 				aiTextureType type = aiTextureType(i);
 				if(mat->GetTextureCount(type)) {
 					if(std::find(std::begin(loaded), std::end(loaded), i) == std::end(loaded)) {
-						log_msg(fmt("Material \"%\" texture \"%\" has unknown type %.", material_name(mat), texture_name(mat, type), i), Log::Warning);
+						log_msg(fmt("Material \"%\" texture \"%\" has unknown type %.", clean_material_name(ctx, mat), texture_name(mat, type), i), Log::Warning);
 						// load texture anyway
 						process_tex(type);
 					}
@@ -128,6 +114,19 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	y_profile();
 
+	static constexpr auto import_flags =
+										 aiProcess_Triangulate |
+										 aiProcess_FindInvalidData |
+										 aiProcess_GenSmoothNormals |
+										 aiProcess_CalcTangentSpace |
+										 aiProcess_GenUVCoords |
+										 aiProcess_ImproveCacheLocality |
+										 aiProcess_OptimizeGraph |
+										 aiProcess_OptimizeMeshes |
+										 aiProcess_JoinIdenticalVertices |
+										 aiProcess_ValidateDataStructure |
+										 0;
+
 	Assimp::Importer importer;
 	auto scene = importer.ReadFile(filename, import_flags);
 
@@ -138,6 +137,8 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	if(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
 		log_msg("Scene is incomplete!", Log::Warning);
 	}
+
+	SceneImportContext ctx;
 
 	auto meshes = core::ArrayView<aiMesh*>(scene->mMeshes, scene->mNumMeshes);
 	auto animations = core::ArrayView<aiAnimation*>(scene->mAnimations, scene->mNumAnimations);
@@ -161,7 +162,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
 
 	if((flags & (SceneImportFlags::ImportImages | SceneImportFlags::ImportMaterials)) != SceneImportFlags::None) {
-		auto [imgs, mats] = import_materias_and_textures(materials, filename);
+		auto [imgs, mats] = import_materias_and_textures(ctx, materials, filename);
 		data.images = std::move(imgs);
 		if((flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials) {
 			data.materials = std::move(mats);
@@ -172,7 +173,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 		for(usize i = 0; i != meshes.size(); ++i) {
 			if(meshes[i]->mMaterialIndex < materials.size()) {
 				core::String mesh_name = clean_asset_name(meshes[i]->mName.C_Str());
-				data.objects.emplace_back(mesh_name, ObjectData{mesh_name, material_name(materials[meshes[i]->mMaterialIndex])});
+				data.objects.emplace_back(mesh_name, ObjectData{mesh_name, data.materials[meshes[i]->mMaterialIndex].name()});
 			}
 		}
 	}
