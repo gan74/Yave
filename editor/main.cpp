@@ -33,8 +33,14 @@ using namespace editor;
 
 
 EditorContext* context = nullptr;
-bool debug_instance = false;
+
+#ifdef Y_DEBUG
+bool display_console = true;
+bool debug_instance = true;
+#else
 bool display_console = false;
+bool debug_instance = false;
+#endif
 
 
 
@@ -60,6 +66,9 @@ static void parse_args(int argc, char** argv) {
 		if(arg == "--nodebug") {
 			debug_instance = false;
 		}
+		if(arg == "--debug") {
+			debug_instance = true;
+		}
 		if(arg == "--console") {
 			display_console = true;
 		}
@@ -68,6 +77,7 @@ static void parse_args(int argc, char** argv) {
 	if(!display_console) {
 		hide_console();
 	}
+	y_debug_assert([] { log_msg("Asserts enabled."); return true; }());
 }
 
 static void setup_logger() {
