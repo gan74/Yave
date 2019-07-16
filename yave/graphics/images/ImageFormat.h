@@ -35,8 +35,11 @@ class ImageFormat {
 		vk::ImageAspectFlags vk_aspect() const;
 
 		usize bit_per_pixel() const;
+		usize components() const;
 
 		bool is_valid() const;
+		bool is_block_format() const;
+		bool is_float() const;
 
 		bool operator==(const ImageFormat& other) const;
 		bool operator!=(const ImageFormat& other) const;

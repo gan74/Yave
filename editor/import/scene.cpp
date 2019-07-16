@@ -114,18 +114,22 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	y_profile();
 
-	static constexpr auto import_flags =
-										 aiProcess_Triangulate |
-										 aiProcess_FindInvalidData |
-										 aiProcess_GenSmoothNormals |
-										 aiProcess_CalcTangentSpace |
-										 aiProcess_GenUVCoords |
-										 aiProcess_ImproveCacheLocality |
-										 aiProcess_OptimizeGraph |
-										 aiProcess_OptimizeMeshes |
-										 aiProcess_JoinIdenticalVertices |
-										 aiProcess_ValidateDataStructure |
-										 0;
+	int import_flags =
+			aiProcess_Triangulate |
+			aiProcess_FindInvalidData |
+			aiProcess_GenSmoothNormals |
+			//aiProcess_CalcTangentSpace |
+			aiProcess_GenUVCoords |
+			aiProcess_ImproveCacheLocality |
+			aiProcess_OptimizeGraph |
+			aiProcess_OptimizeMeshes |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_ValidateDataStructure |
+			0;
+
+	if((flags & SceneImportFlags::FlipUVs) == SceneImportFlags::FlipUVs) {
+		import_flags |= aiProcess_FlipUVs;
+	}
 
 	Assimp::Importer importer;
 	auto scene = importer.ReadFile(filename, import_flags);

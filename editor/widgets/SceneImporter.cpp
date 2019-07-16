@@ -65,6 +65,7 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		bool import_images = (_flags & SceneImportFlags::ImportImages) == SceneImportFlags::ImportImages;
 		bool import_materials = (_flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials;
 		bool import_objects = (_flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportObjects;
+		bool flip_uvs = (_flags & SceneImportFlags::FlipUVs) == SceneImportFlags::FlipUVs;
 
 		ImGui::Checkbox("Import meshes", &import_meshes);
 		ImGui::Checkbox("Import animations", &import_anims);
@@ -72,13 +73,6 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		ImGui::Checkbox("Import materials", &import_materials);
 		ImGui::Separator();
 		ImGui::Checkbox("Import objects and create world", &import_objects);
-
-		_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
-				 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
-				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
-				 (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None) |
-				 (import_objects ? SceneImportFlags::ImportObjects : SceneImportFlags::None)
-			;
 
 		ImGui::Separator();
 
@@ -105,6 +99,16 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 			}
 			ImGui::EndCombo();
 		}
+
+		ImGui::Checkbox("Flip UVs", &flip_uvs);
+
+		_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
+				 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
+				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
+				 (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None) |
+				 (import_objects ? SceneImportFlags::ImportObjects : SceneImportFlags::None) |
+				 (flip_uvs ? SceneImportFlags::FlipUVs : SceneImportFlags::None)
+			;
 
 
 		if(ImGui::Button("Ok")) {
@@ -188,7 +192,7 @@ void SceneImporter::import(import::SceneData scene) {
 	if(_forward_axis != 0 || _up_axis != 4) {
 		math::Vec3 axes[] = {{1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
 							 {0.0f, 1.0f, 0.0f}, { 0.0f, -1.0f,  0.0f},
-							 {0.0f, 0.0f, 1.0f}, { .0f,  0.0f, -1.0f}};
+							 {0.0f, 0.0f, 1.0f}, { 0.0f,  0.0f, -1.0f}};
 		math::Transform<> transform;
 
 		math::Vec3 forward = axes[_forward_axis];
@@ -200,6 +204,12 @@ void SceneImporter::import(import::SceneData scene) {
 			mesh = import::transform(mesh.obj(), transform.transposed());
 		}
 	}
+
+	// Apparently Assimp can't do this properly...
+	for(auto& mesh : scene.meshes) {
+		mesh = import::compute_tangents(mesh.obj());
+	}
+
 
 
 

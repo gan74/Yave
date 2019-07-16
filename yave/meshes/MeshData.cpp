@@ -68,21 +68,21 @@ core::ArrayView<IndexedTriangle> MeshData::triangles() const {
 
 core::ArrayView<Bone> MeshData::bones() const {
 	if(!_skeleton) {
-		y_fatal("Mesh has no skeleton.");
+		return {};
 	}
 	return _skeleton->bones;
 }
 
 core::ArrayView<SkinWeights> MeshData::skin() const {
 	if(!_skeleton) {
-		y_fatal("Mesh has no skeleton.");
+		return {};
 	}
 	return _skeleton->skin;
 }
 
 core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
 	if(!_skeleton) {
-		y_fatal("Mesh has no skeleton.");
+		return {};
 	}
 
 	auto verts = core::vector_with_capacity<SkinnedVertex>(_vertices.size());

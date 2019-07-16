@@ -82,6 +82,8 @@ enum class SceneImportFlags {
 	ImportMaterials = 0x08 | ImportImages,
 	ImportObjects	= 0x10 | ImportMeshes | ImportMaterials,
 
+	FlipUVs			= 0x20,
+
 	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportObjects
 
 };

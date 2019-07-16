@@ -28,6 +28,7 @@ namespace editor {
 namespace import {
 
 [[nodiscard]] MeshData transform(const MeshData& mesh, const math::Transform<>& tr);
+[[nodiscard]] MeshData compute_tangents(const MeshData& mesh);
 
 [[nodiscard]] Animation set_speed(const Animation& anim, float speed);
 

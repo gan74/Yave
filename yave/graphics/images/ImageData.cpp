@@ -26,8 +26,12 @@ namespace yave {
 
 usize ImageData::mip_count(const math::Vec3ui& size) {
 	usize max_dim = std::max({size.x(), size.y(), size.z()});
-	usize l = log2ui(max_dim);
-	return usize(1 << l) == max_dim ? l : l + 1;
+	usize l = 1;
+	while(max_dim > 1) {
+		++l;
+		max_dim >>= 1;
+	}
+	return l;
 }
 
 math::Vec3ui ImageData::mip_size(const math::Vec3ui& size, usize mip) {

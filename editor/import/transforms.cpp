@@ -74,7 +74,26 @@ MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
 	return MeshData(std::move(vertices), copy(mesh.triangles()));
 }
 
+MeshData compute_tangents(const MeshData& mesh) {
+	core::Vector<Vertex> vertices = copy(mesh.vertices());
+	core::Vector<IndexedTriangle> triangles = copy(mesh.triangles());
 
+	for(IndexedTriangle tri : triangles) {
+		math::Vec3 edges[] = {vertices[tri[1]].position - vertices[tri[0]].position, vertices[tri[2]].position - vertices[tri[0]].position};
+		math::Vec2 uvs[] = {vertices[tri[0]].uv, vertices[tri[1]].uv, vertices[tri[2]].uv};
+		float dt[] = {uvs[1].y() - uvs[0].y(), uvs[2].y() - uvs[0].y()};
+		math::Vec3 ta = -((edges[0] * dt[1]) - (edges[1] * dt[0])).normalized();
+		vertices[tri[0]].tangent += ta;
+		vertices[tri[1]].tangent += ta;
+		vertices[tri[2]].tangent += ta;
+	}
+
+	for(Vertex& v : vertices) {
+		v.tangent.normalize();
+	}
+
+	return MeshData(std::move(vertices), std::move(triangles), copy(mesh.skin()), copy(mesh.bones()));
+}
 
 
 static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
@@ -105,6 +124,7 @@ ImageData compute_mipmaps(const ImageData& image) {
 	const usize components = 4;
 
 	usize mip_count = ImageData::mip_count(image.size());
+	y_debug_assert(mip_count >= 1);
 	usize data_size = ImageData::layer_byte_size(image.size(), format, mip_count);
 	std::unique_ptr<u8[]> data = std::make_unique<u8[]>(data_size);
 
@@ -114,7 +134,7 @@ ImageData compute_mipmaps(const ImageData& image) {
 									 std::max(1u, orig_size.y() / 2)};
 			usize row_size = orig_size.x();
 
-			for(usize y = 0; y != mip_size.x(); ++y) {
+			for(usize y = 0; y != mip_size.y(); ++y) {
 				for(usize x = 0; x != mip_size.x(); ++x) {
 					usize orig = (x * 2 + y * 2 * row_size);
 					for(usize c = 0; c != components; ++c) {
@@ -130,7 +150,6 @@ ImageData compute_mipmaps(const ImageData& image) {
 		};
 
 
-	y_debug_assert(mip_count > 1);
 
 	u8* image_data = data.get();
 	usize mip_byte_size = image.byte_size(0);
@@ -140,6 +159,7 @@ ImageData compute_mipmaps(const ImageData& image) {
 		image_data += mip_byte_size;
 		mip_byte_size = s;
 	}
+	y_debug_assert(image_data <= data.get() + data_size);
 	y_debug_assert(image_data == data.get() + data_size);
 
 	return ImageData(image.size().to<2>(), data.get(), format, mip_count);

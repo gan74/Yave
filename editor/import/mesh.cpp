@@ -53,13 +53,13 @@ MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
 			};
 	}
 
-	if(mesh->HasTangentsAndBitangents()) {
+	/*if(mesh->HasTangentsAndBitangents()) {
 		for(usize i = 0; i != vertex_count; ++i) {
 			vertices[i].tangent = {mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z};
 		}
 	} else {
 		log_msg("Mesh has no tangents", Log::Warning);
-	}
+	}*/
 
 	if(mesh->HasTextureCoords(0)) {
 		for(usize i = 0; i != vertex_count; ++i) {
