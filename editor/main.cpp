@@ -29,6 +29,9 @@ SOFTWARE.
 
 #include <yave/graphics/swapchain/Swapchain.h>
 
+#include <yave/assets/SQLiteAssetStore.h>
+#include <y/core/Chrono.h>
+
 using namespace editor;
 
 
@@ -101,6 +104,40 @@ static Instance create_instance() {
 
 
 int main(int argc, char** argv) {
+	setup_handlers();
+	SQLiteAssetStore store("test.sqlite3");
+	const FileSystemModel* fs = store.filesystem();
+	core::Chrono timer;
+	{
+		auto r = fs->exists("doesntexists");
+		y_debug_assert(r.unwrap() == false);
+	}
+	{
+		log_msg(fmt("exits = %", fs->exists("maybeexsits").unwrap()));
+		auto r = fs->create_directory("maybeexsits");
+		log_msg(fmt("exited = %", r.is_error()));
+		fs->remove("maybeexsits").unwrap();
+		log_msg("deleted");
+	}
+	{
+		fs->create_directory("temp").unwrap();
+		fs->rename("temp", "temp2").unwrap();
+		fs->remove("temp2").unwrap();
+		y_debug_assert(fs->exists("temp2").unwrap() == false);
+		y_debug_assert(fs->exists("temp").unwrap() == false);
+	}
+	{
+		y_debug_assert(fs->filename("pwet/foo") == "foo");
+		y_debug_assert(fs->filename("pwet/") == "");
+		y_debug_assert(fs->filename("pwet") == "pwet");
+		y_debug_assert(fs->parent_path("pwet/foo").unwrap() == "pwet");
+	}
+	log_msg(fmt("Ok (%s)", timer.elapsed().to_secs()));
+	return 0;
+
+
+
+
 	parse_args(argc, argv);
 	setup_handlers();
 	setup_logger();

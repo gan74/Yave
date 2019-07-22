@@ -54,7 +54,14 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 		FrameGraph graph(context()->resource_pool());
 		EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, content_size(), _ibl_data);
 
-		FrameGraphImageId output_image = renderer.out;
+		FrameGraphImageId output_images[] = {
+				renderer.out,
+				renderer.renderer.gbuffer.color,
+				renderer.renderer.gbuffer.normal,
+				renderer.renderer.gbuffer.depth,
+			};
+		FrameGraphImageId output_image = output_images[usize(_view_mode)];
+
 		{
 			FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 			builder.add_texture_input(output_image, PipelineStage::FragmentBit);
@@ -148,6 +155,10 @@ void EngineView::update_camera() {
 		}
 		if(ImGui::IsKeyDown(int(context()->settings().camera().move_right))) {
 			cam_pos -= cam_lft * dt;
+		}
+
+		if(ImGui::IsKeyPressed(int(Key::K))) {
+			_view_mode = ViewMode((usize(_view_mode) + 1) % usize(ViewMode::Max));
 		}
 
 

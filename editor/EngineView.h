@@ -34,6 +34,16 @@ namespace editor {
 class EngineView final : public Widget, public ContextLinked {
 
 	public:
+		enum class ViewMode {
+			Lit,
+			Color,
+			Normals,
+
+			Depth,
+
+			Max,
+		};
+
 		EngineView(ContextPtr cptr);
 		~EngineView();
 
@@ -51,6 +61,8 @@ class EngineView final : public Widget, public ContextLinked {
 		std::shared_ptr<IBLData> _ibl_data;
 
 		SceneView _scene_view;
+
+		ViewMode _view_mode = ViewMode::Lit;
 
 		// subwidgets & stuff
 		Gizmo _gizmo;

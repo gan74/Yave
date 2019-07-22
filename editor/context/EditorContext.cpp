@@ -23,6 +23,7 @@ SOFTWARE.
 #include "EditorContext.h"
 #include <yave/device/Device.h>
 #include <yave/assets/FolderAssetStore.h>
+#include <yave/assets/SQLiteAssetStore.h>
 
 #include <y/io2/File.h>
 
@@ -36,7 +37,7 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_resources(dptr),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
-		_asset_store(std::make_shared<FolderAssetStore>()),
+		_asset_store(std::make_shared<SQLiteAssetStore>()),
 		_loader(device(), _asset_store),
 		_scene_view(&_default_scene_view),
 		_ui(this),
