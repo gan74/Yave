@@ -93,7 +93,7 @@ static vk::Device create_device(
 			.setPpEnabledExtensionNames(exts.begin())
 			.setEnabledLayerCount(u32(debug.device_layers().size()))
 			.setPpEnabledLayerNames(debug.device_layers().begin())
-			.setQueueCreateInfoCount(queue_create_infos.size())
+			.setQueueCreateInfoCount(u32(queue_create_infos.size()))
 			.setPQueueCreateInfos(queue_create_infos.begin())
 			.setPEnabledFeatures(&required)
 		);
