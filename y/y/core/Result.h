@@ -203,9 +203,8 @@ class [[nodiscard]] Result : NonCopyable {
 
 		// this is necessary to avoid stuff like "if(result)" checking only the state of the result and not the contained value
 		// forcing an explicit unwrap seems like the best way to avoid sneaky mistakes
-		template<typename U, typename = std::enable_if_t<!std::is_same_v<T, bool>>>
-		explicit operator U() const {
-			static_assert(std::is_same_v<U, bool>);
+		explicit operator bool() const {
+			static_assert(!std::is_same_v<std::decay_t<T>, bool>);
 			return is_ok();
 		}
 
