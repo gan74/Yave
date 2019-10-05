@@ -41,9 +41,10 @@ class MutableSpan {
 		using iterator = T*;
 		using const_iterator = const T*;
 
-		MutableSpan() = default;
+		constexpr MutableSpan() = default;
 
-		MutableSpan(const MutableSpan&) = default;
+		constexpr MutableSpan(const MutableSpan&) = default;
+		constexpr MutableSpan& operator=(const MutableSpan&) = default;
 
 		MutableSpan(std::nullptr_t) {
 		}
@@ -109,7 +110,7 @@ class MutableSpan {
 			return _data + _size;
 		}
 
-		const T& operator[](usize i) const {
+		T& operator[](usize i) const {
 			return _data[i];
 		}
 
@@ -121,6 +122,7 @@ class MutableSpan {
 
 template<typename T>
 using Span = MutableSpan<const T>;
+
 }
 }
 

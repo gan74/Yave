@@ -31,6 +31,7 @@ SOFTWARE.
 #include <yave/assets/AssetType.h>
 
 #include <y/core/Result.h>
+#include <y/utils/iter.h>
 
 #include <unordered_map>
 
@@ -39,43 +40,7 @@ namespace ecs {
 
 class EntityWorld : NonCopyable {
 
-	Y_TODO(this should be in utils somewhere)
-	class ComponentTypeIterator {
-		using iterator_type = std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>>::const_iterator;
-		public:
-			ComponentTypeIterator(iterator_type it) : _it(it) {
-			}
-
-			ComponentTypeIterator& operator++() {
-				++_it;
-				return *this;
-			}
-
-			ComponentTypeIterator operator++(int) {
-				iterator_type it = _it;
-				++_it;
-				return ComponentTypeIterator(it);
-			}
-
-			bool operator==(const ComponentTypeIterator& other) const {
-				return _it == other._it;
-			}
-
-			bool operator!=(const ComponentTypeIterator& other) const {
-				return _it != other._it;
-			}
-
-			const ComponentTypeIndex& operator*() const {
-				return _it->first;
-			}
-
-			const ComponentTypeIndex* operator->() const {
-				return &_it->first;
-			}
-
-		private:
-			iterator_type _it;
-	};
+	using ComponentTypeIterator = TupleMemberIterator<0, std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>>::const_iterator>;
 
 	public:
 		template<typename... Args>
