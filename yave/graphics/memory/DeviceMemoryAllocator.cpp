@@ -69,7 +69,7 @@ DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryTyp
 
 	heaps.push_back(std::move(heap));
 
-	return std::move(alloc);
+    return /*std::move*/(alloc);
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(vk::Image image) {

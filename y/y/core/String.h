@@ -79,7 +79,8 @@ class String {
 		ShortLenType length;
 
 		ShortData();
-		ShortData(const ShortData& _s);
+		ShortData(const ShortData&) = default;
+		
 		ShortData(const char* str, usize len);
 
 		ShortData& operator=(const ShortData &) = delete;

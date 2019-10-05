@@ -55,10 +55,6 @@ String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_l
 String::ShortData::ShortData() : data{0}, length(0) {
 }
 
-String::ShortData::ShortData(const ShortData& s) {
-	std::memcpy(this, &s, sizeof(ShortData));
-}
-
 String::ShortData::ShortData(const char* str, usize len) : length(len) {
 	if(str) {
 		std::memcpy(data, str, len);
