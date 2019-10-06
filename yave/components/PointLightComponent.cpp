@@ -48,4 +48,13 @@ float PointLightComponent::radius() const {
 	return _radius;
 }
 
+float& PointLightComponent::falloff() {
+	return _falloff;
+}
+
+float PointLightComponent::falloff() const {
+	return _falloff;
+}
+
+
 }

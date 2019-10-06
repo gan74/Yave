@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
 
 #include <yave/yave.h>
+#include <y/serde2/serde.h>
 
 namespace yave {
 
@@ -39,10 +40,14 @@ class PointLightComponent final {
 		float& radius();
 		float radius() const;
 
+		float& falloff();
+		float falloff() const;
+
 	private:
 		math::Vec3 _color = math::Vec3{1.0f};
 		float _intensity = 1.0f;
 		float _radius = 1.0f;
+		float _falloff = 1.0f;
 };
 
 }

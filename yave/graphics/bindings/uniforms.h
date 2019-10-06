@@ -50,10 +50,13 @@ struct Light {
 	float radius;
 	math::Vec3 color;
 	Type type;
+
+	math::Vec3 padding;
+	float falloff;
 };
 
 static_assert(offsetof(Light, radius) == 3 * sizeof(float));
-static_assert(sizeof(Light) == 2 * sizeof(math::Vec4));
+static_assert(sizeof(Light) == 3 * sizeof(math::Vec4));
 static_assert(sizeof(Light) % 16 == 0);
 
 }

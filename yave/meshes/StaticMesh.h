@@ -38,18 +38,21 @@ class StaticMesh : NonCopyable {
 
 		StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
 
+		DevicePtr device() const;
+
 		const TriangleBuffer<>& triangle_buffer() const;
 		const VertexBuffer<>& vertex_buffer() const;
 		const vk::DrawIndexedIndirectCommand& indirect_data() const;
 
 		float radius() const;
+		const AABB& aabb() const;
 
 	private:
 		TriangleBuffer<> _triangle_buffer;
 		VertexBuffer<> _vertex_buffer;
 		vk::DrawIndexedIndirectCommand _indirect_data;
 
-		float _radius;
+		AABB _aabb;
 };
 
 YAVE_DECLARE_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);

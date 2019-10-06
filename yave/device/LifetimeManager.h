@@ -72,7 +72,7 @@ class ResourceFence {
 	private:
 		friend class LifetimeManager;
 
-		ResourceFence(u32 v) : _value(v) {
+		ResourceFence(u64 v) : _value(v) {
 		}
 
 		u64 _value = 0;
@@ -114,6 +114,8 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 
 		void recycle(CmdBufferData&& cmd);
 
+		void collect();
+
 		usize pending_deletions() const;
 		usize active_cmd_buffers() const;
 
@@ -129,7 +131,6 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 		}
 
 	private:
-		void collect();
 		void destroy_resource(ManagedResource& resource) const;
 		void clear_resources(u64 up_to);
 

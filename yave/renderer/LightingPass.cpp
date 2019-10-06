@@ -140,21 +140,27 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 			TypedMapping<uniform::Light> mapping = self->resources()->mapped_buffer(light_buffer);
 			{
-				for(const auto& [t, l] : scene.world().view(PointLightArchetype()).components()) {
+				for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
+					static_assert(std::is_reference_v<decltype(t)> && std::is_reference_v<decltype(l)>);
 					mapping[push_data.point_count++] = uniform::Light{
 							t.position(),
 							l.radius(),
 							l.color() * l.intensity(),
-							uniform::Light::Type::Point
+							uniform::Light::Type::Point,
+							math::Vec3(),
+							std::max(math::epsilon<float>, l.falloff())
 						};
 				}
 
-				for(const auto& [l] : scene.world().view(DirectionalLightArchetype()).components()) {
+				for(auto [l] : scene.world().view(DirectionalLightArchetype()).components()) {
+					static_assert(std::is_reference_v<decltype(l)>);
 					mapping[push_data.point_count + push_data.directional_count++] = uniform::Light{
 							-l.direction().normalized(),
 							0.0f,
 							l.color() * l.intensity(),
-							uniform::Light::Type::Directional
+							uniform::Light::Type::Directional,
+							math::Vec3(),
+							0.0f
 						};
 				}
 			}

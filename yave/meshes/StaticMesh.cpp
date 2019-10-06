@@ -32,12 +32,16 @@ StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
 		_triangle_buffer(dptr, mesh_data.triangles().size()),
 		_vertex_buffer(dptr, mesh_data.vertices().size()),
 		_indirect_data(mesh_data.triangles().size() * 3, 1),
-		_radius(mesh_data.radius()) {
+		_aabb(mesh_data.aabb()) {
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
 	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
 	Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+}
+
+DevicePtr StaticMesh::device() const {
+	return _triangle_buffer.device();
 }
 
 const TriangleBuffer<>& StaticMesh::triangle_buffer() const {
@@ -53,7 +57,12 @@ const vk::DrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
 }
 
 float StaticMesh::radius() const {
-	return _radius;
+	return _aabb.origin_radius();
 }
+
+const AABB& StaticMesh::aabb() const {
+	return _aabb;
+}
+
 
 }

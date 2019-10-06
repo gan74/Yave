@@ -38,6 +38,9 @@ LifetimeManager::~LifetimeManager() {
 	for(auto& r : _to_destroy) {
 		destroy_resource(r.second);
 	}
+	if(_in_flight.size()) {
+		y_fatal("% CmdBuffer still in flight.", _in_flight.size());
+	}
 }
 
 ResourceFence LifetimeManager::create_fence() {

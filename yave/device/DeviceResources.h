@@ -98,6 +98,7 @@ class DeviceResources final : NonCopyable {
 		enum Meshes {
 			CubeMesh,
 			SphereMesh,
+			SweepMesh,
 
 			MaxMeshes
 		};

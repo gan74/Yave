@@ -104,6 +104,7 @@ static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_coun
 // implemented in DeviceResourcesData.cpp
 MeshData cube_mesh_data();
 MeshData sphere_mesh_data();
+MeshData sweep_mesh_data();
 
 
 DeviceResources::DeviceResources(DevicePtr dptr) :
@@ -144,9 +145,10 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 	}
 
 	{
-		_meshes = std::make_unique<AssetPtr<StaticMesh>[]>(2);
+		_meshes = std::make_unique<AssetPtr<StaticMesh>[]>(3);
 		_meshes[0] = make_asset<StaticMesh>(dptr, cube_mesh_data());
 		_meshes[1] = make_asset<StaticMesh>(dptr, sphere_mesh_data());
+		_meshes[2] = make_asset<StaticMesh>(dptr, sweep_mesh_data());
 	}
 }
 
