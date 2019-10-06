@@ -127,6 +127,10 @@ Device::Device(Instance& instance) :
 }
 
 Device::~Device() {
+	for(Queue& q : _queues) {
+		q.wait();
+	}
+	_lifetime_manager.collect();
 }
 
 const PhysicalDevice& Device::physical_device() const {
