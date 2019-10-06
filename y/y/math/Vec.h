@@ -383,7 +383,7 @@ class Vec
 
 		Vec& operator=(const T& v) {
 			for(usize i = 0; i != N; ++i) {
-				_vec[i] -= v;
+				_vec[i] = v;
 			}
 			return *this;
 		}
