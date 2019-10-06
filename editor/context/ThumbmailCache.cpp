@@ -146,7 +146,6 @@ void ThumbmailCache::process_requests() {
 	for(usize i = 0; i != std::min(max_parallel_requests, _requests.size()); ++i) {
 		if(_requests[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
 			if(!recorder) {
-				renderdoc::start_capture();
 				recorder = std::make_unique<CmdBufferRecorder>(device()->create_disposable_cmd_buffer());
 			}
 
@@ -161,7 +160,6 @@ void ThumbmailCache::process_requests() {
 	}
 	if(recorder) {
 		device()->graphic_queue().submit<SyncSubmit>(std::move(*recorder));
-		renderdoc::end_capture();
 	}
 }
 
