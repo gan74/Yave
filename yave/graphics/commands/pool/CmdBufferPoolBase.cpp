@@ -31,6 +31,7 @@ namespace yave {
 
 static vk::CommandBufferLevel cmd_level(CmdBufferUsage u) {
 	unused(u);
+	y_debug_assert(u == CmdBufferUsage::Disposable);
 	return /*u == CmdBufferUsage::Secondary ? vk::CommandBufferLevel::eSecondary :*/ vk::CommandBufferLevel::ePrimary;
 }
 
@@ -54,8 +55,7 @@ CmdBufferPoolBase::CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred) :
 CmdBufferPoolBase::~CmdBufferPoolBase() {
 	if(device()) {
 		if(_fences.size() != _cmd_buffers.size()) {
-			/*y_fatal*/
-			log_msg(fmt("CmdBuffers are still in use (% fences, % buffers).", _fences.size(), _cmd_buffers.size()), Log::Warning);
+			y_fatal("CmdBuffers are still in use (% fences, % buffers).", _fences.size(), _cmd_buffers.size());
 		}
 		join_all();
 		_cmd_buffers.clear();
