@@ -43,34 +43,36 @@ static Key to_key(WPARAM w_param, LPARAM l_param) {
 		return Key(std::toupper(w_param));
 	}
 	switch(w_param) {
-		case VK_TAB:	return Key::Tab;
-		case VK_CLEAR:	return Key::Clear;
-		case VK_BACK:	return Key::Backspace;
-		case VK_RETURN: return Key::Enter;
-		case VK_ESCAPE: return Key::Escape;
-		case VK_PRIOR:	return Key::PageUp;
-		case VK_NEXT:	return Key::PageDown;
-		case VK_END:	return Key::End;
-		case VK_HOME:	return Key::Home;
-		case VK_LEFT:	return Key::Left;
-		case VK_RIGHT:	return Key::Right;
-		case VK_UP:		return Key::Up;
-		case VK_DOWN:	return Key::Down;
-		case VK_INSERT: return Key::Insert;
-		case VK_DELETE: return Key::Delete;
-		case VK_SPACE:	return Key::Space;
-		case VK_F1:		return Key::F1;
-		case VK_F2:		return Key::F2;
-		case VK_F3:		return Key::F3;
-		case VK_F4:		return Key::F4;
-		case VK_F5:		return Key::F5;
-		case VK_F6:		return Key::F6;
-		case VK_F7:		return Key::F7;
-		case VK_F8:		return Key::F8;
-		case VK_F9:		return Key::F9;
-		case VK_F10:	return Key::F10_Reserved;
-		case VK_F11:	return Key::F11;
-		case VK_F12:	return Key::F12;
+		case VK_TAB:		return Key::Tab;
+		case VK_CLEAR:		return Key::Clear;
+		case VK_BACK:		return Key::Backspace;
+		case VK_RETURN:		return Key::Enter;
+		case VK_ESCAPE:		return Key::Escape;
+		case VK_PRIOR:		return Key::PageUp;
+		case VK_NEXT:		return Key::PageDown;
+		case VK_END:		return Key::End;
+		case VK_HOME:		return Key::Home;
+		case VK_LEFT:		return Key::Left;
+		case VK_RIGHT:		return Key::Right;
+		case VK_UP:			return Key::Up;
+		case VK_DOWN:		return Key::Down;
+		case VK_INSERT:		return Key::Insert;
+		case VK_DELETE:		return Key::Delete;
+		case VK_SPACE:		return Key::Space;
+		case VK_F1:			return Key::F1;
+		case VK_F2:			return Key::F2;
+		case VK_F3:			return Key::F3;
+		case VK_F4:			return Key::F4;
+		case VK_F5:			return Key::F5;
+		case VK_F6:			return Key::F6;
+		case VK_F7:			return Key::F7;
+		case VK_F8:			return Key::F8;
+		case VK_F9:			return Key::F9;
+		case VK_F10:		return Key::F10_Reserved;
+		case VK_F11:		return Key::F11;
+		case VK_F12:		return Key::F12;
+		case VK_MENU:		return Key::Alt;
+		case VK_CONTROL:	return Key::Ctrl;
 
 		default:
 			break;
@@ -92,29 +94,35 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 				window->resized();
 				return 0;
 
+			case WM_SYSKEYDOWN:
+			case WM_SYSKEYUP:
 			case WM_KEYDOWN:
-			case WM_KEYUP:
+			case WM_KEYUP: {
+				bool is_down = u_msg == WM_SYSKEYDOWN ||
+							   u_msg == WM_KEYDOWN;
+				/*bool is_system = u_msg == WM_SYSKEYDOWN ||
+								 u_msg == WM_SYSKEYUP;*/
 				if(auto handler = window->event_handler()) {
 					auto k = to_key(w_param, l_param);
 					if(k != Key::Unknown) {
-						u_msg == WM_KEYDOWN
+						is_down
 							? handler->key_pressed(k)
 							: handler->key_released(k);
 						return 0;
 					}
-				} else if(u_msg == WM_KEYDOWN && w_param == VK_ESCAPE) {
+				} else if(is_down && w_param == VK_ESCAPE) {
 					// escape close the window by default
 					window->close();
 					return 0;
 				}
-				break;
+			} break;
 
 			case WM_CHAR:
 				if(auto handler = window->event_handler()) {
 					handler->char_input(u32(w_param));
 					return 0;
 				}
-				break;
+			break;
 
 			case WM_LBUTTONDOWN:
 			case WM_RBUTTONDOWN:
@@ -159,13 +167,13 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 							return 0;
 
 						default:
-							break;
+						break;
 					}
 				}
 				break;
 
 			default:
-				break;
+			break;
 		}
 	}
 	return DefWindowProc(hwnd, u_msg, w_param, l_param);
