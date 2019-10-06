@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_CAMERACONTROLLER_H
 
 #include <editor/editor.h>
+#include <editor/context/PickingManager.h>
 
 namespace editor {
 
@@ -31,6 +32,11 @@ class CameraController : public ContextLinked {
 		CameraController(ContextPtr ctx);
 
 		virtual ~CameraController() = default;
+
+		virtual bool viewport_clicked(const PickingManager::PickingData& point) {
+			unused(point);
+			return false;
+		}
 
 		virtual void update_camera(Camera& camera, const math::Vec2ui& viewport_size) = 0;
 };
@@ -41,6 +47,28 @@ class FPSCameraController final : public CameraController {
 
 		void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
 };
+
+class HoudiniCameraController final : public CameraController {
+	public:
+		HoudiniCameraController(ContextPtr ctx);
+
+		bool viewport_clicked(const PickingManager::PickingData& point) override;
+
+		void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
+
+	private:
+		int camera_key() const;
+
+		math::Vec3 _picked_pos;
+		math::Vec3 _target_offset;
+		math::Vec3 _orig_pos;
+
+		math::Vec2 _picking_uvs;
+		math::Vec2 _cumulated_delta;
+
+		bool _init = false;
+};
+
 
 }
 

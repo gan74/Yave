@@ -96,12 +96,6 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				});
 		}
 	}
-
-
-	//MaterialTemplateData& data = const_cast<MaterialTemplateData&>(context()->selection().material()->data());
-	//ImGui::Text("Binding count: %d", i32(data._bindings.size()));
-
-	//ImGui::Checkbox("depth tested", &data._depth_tested);
 }
 
 }

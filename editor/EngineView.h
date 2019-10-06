@@ -58,7 +58,6 @@ class EngineView final : public Widget, public ContextLinked {
 		// subwidgets & stuff
 		Gizmo _gizmo;
 
-		math::Vec3 _picked_pos;
 		ecs::EntityId _picked_entity_id;
 };
 

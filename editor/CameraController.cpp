@@ -34,11 +34,11 @@ CameraController::CameraController(ContextPtr ctx) : ContextLinked(ctx) {
 }
 
 
-
 FPSCameraController::FPSCameraController(ContextPtr ctx) : CameraController(ctx) {
 }
 
 void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& viewport_size) {
+	const CameraSettings& settings = context()->settings().camera();
 	math::Vec3 cam_pos = camera.position();
 	math::Vec3 cam_fwd = camera.forward();
 	math::Vec3 cam_lft = camera.left();
@@ -47,23 +47,23 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
 		float cam_speed = 500.0f;
 		float dt = cam_speed / ImGui::GetIO().Framerate;
 
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_forward))) {
+		if(ImGui::IsKeyDown(int(settings.move_forward))) {
 			cam_pos += cam_fwd * dt;
 		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_backward))) {
+		if(ImGui::IsKeyDown(int(settings.move_backward))) {
 			cam_pos -= cam_fwd * dt;
 		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_left))) {
+		if(ImGui::IsKeyDown(int(settings.move_left))) {
 			cam_pos += cam_lft * dt;
 		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_right))) {
+		if(ImGui::IsKeyDown(int(settings.move_right))) {
 			cam_pos -= cam_lft * dt;
 		}
 
 
 		if(ImGui::IsMouseDown(1)) {
-			auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
-			delta *= context()->settings().camera().sensitivity;
+			auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(viewport_size);
+			delta *= settings.fps_sensitivity;
 
 			{
 				auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
@@ -90,8 +90,130 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
 		}
 	}
 
-	float fov = math::to_rad(60.0f);
-	auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), 1.0f);
+	float fov = math::to_rad(settings.fov);
+	auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
+	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+	camera.set_proj(proj);
+	camera.set_view(view);
+}
+
+
+
+HoudiniCameraController::HoudiniCameraController(ContextPtr ctx) : CameraController(ctx) {
+}
+
+int HoudiniCameraController::camera_key() const {
+	return int(Key::Alt);
+}
+
+bool HoudiniCameraController::viewport_clicked(const PickingManager::PickingData& point) {
+	if(ImGui::IsKeyDown(camera_key())) {
+		_picked_pos = point.world_pos;
+		_picking_uvs = point.uv;
+		_init = true;
+
+		return true;
+	}
+	return false;
+}
+
+void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& viewport_size) {
+	bool cam_key_down = ImGui::IsKeyDown(camera_key());
+
+	const CameraSettings& settings = context()->settings().camera();
+	math::Vec3 cam_pos = camera.position();
+	math::Vec3 cam_fwd = camera.forward();
+	math::Vec3 cam_lft = camera.left();
+	math::Vec3 cam_up = camera.up();
+
+	if(ImGui::IsWindowFocused()) {
+		float cam_speed = 500.0f;
+		float dt = cam_speed / ImGui::GetIO().Framerate;
+
+		if(ImGui::IsKeyDown(int(settings.move_forward))) {
+			cam_pos += cam_fwd * dt;
+		}
+		if(ImGui::IsKeyDown(int(settings.move_backward))) {
+			cam_pos -= cam_fwd * dt;
+		}
+		if(ImGui::IsKeyDown(int(settings.move_left))) {
+			cam_pos += cam_lft * dt;
+		}
+		if(ImGui::IsKeyDown(int(settings.move_right))) {
+			cam_pos -= cam_lft * dt;
+		}
+	}
+
+
+	math::Vec2 delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(viewport_size);
+	_cumulated_delta += delta;
+
+	if(_init) {
+		bool finite = true;
+		for(float f : _picked_pos) {
+			finite &= std::isfinite(f);
+		}
+
+		if(!finite) {
+			math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4(_picking_uvs * 2.0f - 1.0f, 0.1f, 1.0f);
+			_picked_pos = hp.to<3>() / hp.w();
+		}
+
+		float dist = (cam_pos - _picked_pos).length();
+		math::Vec3 target_pos = cam_pos + cam_fwd * dist;
+		_target_offset = target_pos - _picked_pos;
+		_orig_pos = cam_pos;
+
+		_cumulated_delta = 0.0f;
+		delta = 0.0f;
+
+		_init = false;
+	}
+
+	// trackball
+	if(cam_key_down && ImGui::IsMouseDown(0)) {
+		math::Vec3 boom_arm = cam_pos - _picked_pos;
+
+		// trackball
+		delta *= settings.trackball_sensitivity;
+		{
+			auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+			boom_arm = pitch(boom_arm);
+			_target_offset = pitch(_target_offset);
+		}
+		{
+			auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, -1.0f), delta.x());
+			boom_arm = yaw(boom_arm);
+			_target_offset = yaw(_target_offset);
+
+			cam_lft = yaw(cam_lft);
+		}
+
+		cam_pos = _picked_pos + boom_arm;
+		cam_fwd = (_picked_pos + _target_offset - cam_pos).normalized();
+	}
+
+	// dolly
+	if(cam_key_down && ImGui::IsMouseDown(1)) {
+		math::Vec3 dolly_vec = _picked_pos - _orig_pos;
+		float f = _cumulated_delta.y() * -settings.dolly_sensitivity;
+		cam_pos = _picked_pos - dolly_vec * (1.0f + f);
+	}
+
+	// pan
+	if(cam_key_down && ImGui::IsMouseDown(2)) {
+		cam_pos += delta.x() * cam_lft + delta.y() * cam_up;
+	}
+
+
+	// kill any roll that might arise from imprecisions
+	{
+		cam_lft.z() = 0.0f;
+		cam_lft.normalize();
+	}
+
+	float fov = math::to_rad(settings.fov);
+	auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
 	camera.set_proj(proj);
 	camera.set_view(view);

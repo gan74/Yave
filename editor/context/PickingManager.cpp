@@ -44,7 +44,6 @@ PickingManager::PickingData PickingManager::pick_sync(const math::Vec2& uv, cons
 
 	FrameGraph framegraph(context()->resource_pool());
 
-
 	Y_TODO(Take editor renderer settings into account for picking)
 	ScenePickingPass scene_pass = ScenePickingPass::create(context(), framegraph, context()->scene_view(), size);
 	EditorEntityPass entity_pass = EditorEntityPass::create(context(), framegraph, context()->scene_view(), scene_pass.depth, scene_pass.id, true);

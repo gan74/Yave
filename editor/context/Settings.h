@@ -29,11 +29,20 @@ SOFTWARE.
 namespace editor {
 
 struct CameraSettings {
+	float z_near = 1.0f;
+	float fov = 60.0f;
+
+	// FPS
 	Key move_forward = Key::W;
 	Key move_backward = Key::S;
 	Key move_right = Key::D;
 	Key move_left = Key::A;
-	float sensitivity = 4.0f;
+	float fps_sensitivity = 4.0f;
+
+	// Houdini
+	float trackball_sensitivity = 6.0f;
+	float dolly_sensitivity = 2.5f;
+
 };
 
 struct UiSettings {

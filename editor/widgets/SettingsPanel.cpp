@@ -42,13 +42,15 @@ static void keybox(const char* name, Key& key) {
 	ImGui::PopItemWidth();
 }
 
-SettingsPanel::SettingsPanel(ContextPtr cptr) : Widget("Settings"), ContextLinked(cptr) {
+SettingsPanel::SettingsPanel(ContextPtr cptr) : Widget(ICON_FA_COG " Settings"), ContextLinked(cptr) {
 }
 
 void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	int flags = ImGuiTreeNodeFlags_DefaultOpen;
 
-	/*if(ImGui::CollapsingHeader("UI", flags)) {
+	ImGui::BeginChild("###settings");
+
+	/*if(ImGui::TreeNodeEx("UI", flags)) {
 		std::array<const char*, 3> style_names = {"Yave", "Corporate", "Corporate 3D"};
 		if(ImGui::BeginCombo("Style", style_names[usize(context()->settings().ui().style)])) {
 			for(usize i = 0; i != style_names.size(); ++i) {
@@ -58,22 +60,47 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			}
 			ImGui::EndCombo();
 		}
+		ImGui::TreePop();
 	}*/
 
-	if(ImGui::CollapsingHeader("Camera", flags)) {
-		keybox("Forward", context()->settings().camera().move_forward);
-		keybox("Backward", context()->settings().camera().move_backward);
-		keybox("Left", context()->settings().camera().move_left);
-		keybox("Right", context()->settings().camera().move_right);
+	if(ImGui::TreeNodeEx(ICON_FA_VIDEO " Camera", flags)) {
 
-		ImGui::Separator();
+		if(ImGui::TreeNodeEx("FPS Camera", flags)) {
+			keybox("Forward", context()->settings().camera().move_forward);
+			ImGui::SameLine();
+			keybox("Backward", context()->settings().camera().move_backward);
 
-		ImGui::SliderFloat("Sensitivity", &context()->settings().camera().sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+			keybox("Left", context()->settings().camera().move_left);
+			ImGui::SameLine();
+			keybox("Right", context()->settings().camera().move_right);
+
+			ImGui::SliderFloat("Sensitivity###FPS", &context()->settings().camera().fps_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+
+			ImGui::TreePop();
+		}
+
+		if(ImGui::TreeNodeEx("Houdini Camera", flags)) {
+			ImGui::SliderFloat("Trackball sensitivity###Houdini", &context()->settings().camera().trackball_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+			ImGui::SliderFloat("Dolly sensitivity###Houdini", &context()->settings().camera().dolly_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+
+			ImGui::TreePop();
+		}
+
+		ImGui::SliderFloat("Near plane distance", &context()->settings().camera().z_near, 0.01f, 10.0f, "%.2f", 2.0f);
+		ImGui::SliderFloat("Field of view", &context()->settings().camera().fov, 30.0f, 170.0f, "%.0f", 2.0f);
+
+		ImGui::TreePop();
 	}
-	if(ImGui::CollapsingHeader("Interface", flags)) {
+
+	if(ImGui::TreeNodeEx(ICON_FA_WINDOW_RESTORE " Interface", flags)) {
 		keybox("Change gizmo mode", context()->settings().ui().change_gizmo_mode);
-		keybox("Chnage gizmo space", context()->settings().ui().change_gizmo_space);
+		ImGui::SameLine();
+		keybox("Change gizmo space", context()->settings().ui().change_gizmo_space);
+
+		ImGui::TreePop();
 	}
+
+	ImGui::EndChild();
 }
 
 }

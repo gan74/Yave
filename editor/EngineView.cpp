@@ -36,7 +36,7 @@ EngineView::EngineView(ContextPtr cptr) :
 		ContextLinked(cptr),
 		_ibl_data(std::make_shared<IBLData>(device())),
 		_scene_view(&context()->world()),
-		_camera_controller(std::make_unique<FPSCameraController>(context())),
+		_camera_controller(std::make_unique<HoudiniCameraController>(context())),
 		_gizmo(context(), &_scene_view) {
 }
 
@@ -103,15 +103,21 @@ void EngineView::update() {
 }
 
 void EngineView::update_picking() {
-	math::Vec2 viewport = ImGui::GetWindowSize();
+	math::Vec2ui viewport_size = content_size();
 	math::Vec2 offset = ImGui::GetWindowPos();
 	math::Vec2 mouse = ImGui::GetIO().MousePos;
+	math::Vec2 uv = (mouse - offset - math::Vec2(ImGui::GetWindowContentRegionMin())) / math::Vec2(viewport_size);
 
-	// substract tab height
-	math::Vec2 uv = (mouse - offset - math::Vec2(0, 24)) / viewport;
-	auto picking_data = context()->picking_manager().pick_sync(uv, content_size());
+	if(uv.x() < 0.0f || uv.y() < 0.0f) {
+		return;
+	}
 
-	_picked_pos = picking_data.world_pos;
+	auto picking_data = context()->picking_manager().pick_sync(uv, viewport_size);
+	if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
+		// event has been eaten by the camera controller, don't proceed further
+		return;
+	}
+
 	_picked_entity_id = picking_data.hit() ? context()->world().id_from_index(picking_data.entity_index) : ecs::EntityId();
 }
 
@@ -132,51 +138,6 @@ void EngineView::update_camera() {
 
 		_camera_controller->update_camera(camera, size);
 	}
-
-	/*auto& camera = _scene_view.camera();
-
-	math::Vec3 cam_pos = camera.position();
-	math::Vec3 cam_fwd = camera.forward();
-	math::Vec3 cam_lft = camera.left();
-	math::Vec3 cam_up = camera.up();
-
-	if(ImGui::IsWindowFocused()) {
-		float cam_speed = 500.0f;
-		float dt = cam_speed / ImGui::GetIO().Framerate;
-
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_forward))) {
-			cam_pos += cam_fwd * dt;
-		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_backward))) {
-			cam_pos -= cam_fwd * dt;
-		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_left))) {
-			cam_pos += cam_lft * dt;
-		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_right))) {
-			cam_pos -= cam_lft * dt;
-		}
-	}
-
-	if(ImGui::IsMouseDown(1)) {
-		math::Vec3 view_vec = cam_pos - _picked_pos;
-
-		// trackball
-		auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
-		delta *= context()->settings().camera().sensitivity;
-		{
-			auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
-			view_vec = pitch(view_vec);
-		}
-		{
-			auto yaw = math::Quaternion<>::from_axis_angle(cam_up, delta.x());
-			view_vec = yaw(view_vec);
-		}
-		cam_pos = view_vec + _picked_pos;
-	}
-
-	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
-	camera.set_view(view);*/
 }
 
 }

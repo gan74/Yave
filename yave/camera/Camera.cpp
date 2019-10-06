@@ -42,7 +42,7 @@ static math::Vec3 extract_right(const math::Matrix4<>& view) {
 }
 
 static math::Vec3 extract_up(const math::Matrix4<>& view) {
-	return view.row(1).to<3>().normalized();
+	return -view.row(1).to<3>().normalized();
 }
 
 
