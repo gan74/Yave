@@ -19,51 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_ENGINEVIEW_H
-#define EDITOR_ENGINEVIEW_H
+#ifndef EDITOR_CAMERACONTROLLER_H
+#define EDITOR_CAMERACONTROLLER_H
 
-#include <editor/ui/Widget.h>
-
-#include <editor/widgets/Gizmo.h>
-#include <editor/renderer/EditorRenderer.h>
-
-#include <yave/ecs/EntityId.h>
-
-#include "CameraController.h"
+#include <editor/editor.h>
 
 namespace editor {
 
-class EngineView final : public Widget, public ContextLinked {
-
+class CameraController : public ContextLinked {
 	public:
-		EngineView(ContextPtr cptr);
-		~EngineView() override;
+		CameraController(ContextPtr ctx);
 
-	private:
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+		virtual ~CameraController() = default;
 
-	private:
-		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
-
-		void update();
-		void update_camera();
-		void update_selection();
-		void update_picking();
-
-		std::shared_ptr<IBLData> _ibl_data;
-
-		SceneView _scene_view;
-		std::unique_ptr<CameraController> _camera_controller;
-
-		// subwidgets & stuff
-		Gizmo _gizmo;
-
-		math::Vec3 _picked_pos;
-		ecs::EntityId _picked_entity_id;
+		virtual void update_camera(Camera& camera, const math::Vec2ui& viewport_size) = 0;
 };
 
-static_assert(!std::is_move_assignable_v<EngineView>);
+class FPSCameraController final : public CameraController {
+	public:
+		FPSCameraController(ContextPtr ctx);
+
+		void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
+};
 
 }
 
-#endif // EDITOR_ENGINEVIEW_H
+#endif // EDITOR_CAMERACONTROLLER_H

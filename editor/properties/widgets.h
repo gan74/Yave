@@ -115,7 +115,8 @@ void widget<PointLightComponent>(ContextPtr ctx, ecs::EntityId id) {
 	PointLightComponent* light = ctx->world().component<PointLightComponent>(id);
 
 	light_widget(light);
-	ImGui::DragFloat("Radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max());
+	ImGui::DragFloat("Radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+	ImGui::DragFloat("Falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
 }
 
 template<>
@@ -154,7 +155,7 @@ void widget<StaticMeshComponent>(ContextPtr ctx, ecs::EntityId id) {
 	auto static_mesh = [ctx, id]() -> StaticMeshComponent* { return ctx->world().component<StaticMeshComponent>(id); };
 	{
 		// material
-		if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material)) {
+		if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material, "Material")) {
 			ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
 				[=](AssetId asset) {
 					if(auto material = ctx->loader().load<Material>(asset)) {
@@ -167,7 +168,7 @@ void widget<StaticMeshComponent>(ContextPtr ctx, ecs::EntityId id) {
 		}
 
 		// mesh
-		if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh)) {
+		if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh, "Mesh")) {
 			ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
 				[=](AssetId asset) {
 					if(auto mesh = ctx->loader().load<StaticMesh>(asset)) {

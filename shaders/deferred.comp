@@ -152,7 +152,7 @@ void main() {
 			vec3 light_dir = light.position - world_pos;
 			float distance = length(light_dir);
 			light_dir /= distance;
-			float att = attenuation(distance, light.radius);
+			float att = attenuation(distance, light.radius, light.falloff);
 
 			vec3 radiance = light.color * att;
 			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);

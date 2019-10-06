@@ -29,7 +29,7 @@ SOFTWARE.
 namespace editor {
 namespace imgui {
 
-bool asset_selector(ContextPtr ctx, AssetId id, AssetType type);
+bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text);
 
 }
 }

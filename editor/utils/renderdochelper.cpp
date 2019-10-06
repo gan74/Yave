@@ -61,7 +61,7 @@ static void init_renderdoc() {
 	}
 
 	static bool warned = false;
-	if(!warned) {
+	if(!renderdoc_api && !warned) {
 		log_msg("Unable to load RenderDoc API", Log::Warning);
 		warned = true;
 	}

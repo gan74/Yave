@@ -23,7 +23,7 @@ SOFTWARE.
 #define EDITOR_EDITOR_H
 
 #include <yave/yave.h>
-
+#include <editor/utils/renderdochelper.h>
 
 namespace yave {
 class SpirVData;
@@ -40,6 +40,7 @@ class EventHandler;
 class Material;
 class StaticMesh;
 class IBLData;
+class Camera;
 }
 
 namespace editor {

@@ -32,11 +32,11 @@ SOFTWARE.
 using namespace editor;
 
 
-EditorContext* context = nullptr;
+static EditorContext* context = nullptr;
 
 #ifdef Y_DEBUG
-bool display_console = true;
-bool debug_instance = true;
+static bool display_console = true;
+static bool debug_instance = true;
 #else
 bool display_console = false;
 bool debug_instance = false;

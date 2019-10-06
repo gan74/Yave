@@ -17,6 +17,9 @@ struct Light {
 	float radius;
 	vec3 color;
 	uint type;
+
+	vec3 padding;
+	float falloff;
 };
 
 struct Frustum {
@@ -204,6 +207,10 @@ float attenuation(float distance, float radius) {
 	return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);
 }
 
+float attenuation(float distance, float radius, float falloff) {
+	return attenuation(distance * falloff, radius * falloff);
+}
+
 /*vec3 reflection(samplerCube envmap, vec3 normal, vec3 view) {
 	vec3 r = reflect(view, normal);
 	return textureLod(envmap, r, 0).rgb;
@@ -354,7 +361,7 @@ vec4 pack_color(vec3 color, float metallic) {
 }
 
 vec4 pack_normal(vec3 normal, float roughness) {
-	return vec4(normal * 0.5 + vec3(0.5), roughness);
+	return vec4(normalize(normal) * 0.5 + vec3(0.5), roughness);
 }
 
 void unpack_color(vec4 buff, out vec3 color, out float metallic) {

@@ -36,8 +36,8 @@ EngineView::EngineView(ContextPtr cptr) :
 		ContextLinked(cptr),
 		_ibl_data(std::make_shared<IBLData>(device())),
 		_scene_view(&context()->world()),
+		_camera_controller(std::make_unique<FPSCameraController>(context())),
 		_gizmo(context(), &_scene_view) {
-	;
 }
 
 EngineView::~EngineView() {
@@ -126,65 +126,12 @@ void EngineView::update_selection() {
 }
 
 void EngineView::update_camera() {
-	auto size = content_size();
-	auto& camera = _scene_view.camera();
+	if(_camera_controller) {
+		auto size = content_size();
+		auto& camera = _scene_view.camera();
 
-	math::Vec3 cam_pos = camera.position();
-	math::Vec3 cam_fwd = camera.forward();
-	math::Vec3 cam_lft = camera.left();
-
-	if(ImGui::IsWindowFocused()) {
-		float cam_speed = 500.0f;
-		float dt = cam_speed / ImGui::GetIO().Framerate;
-
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_forward))) {
-			cam_pos += cam_fwd * dt;
-		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_backward))) {
-			cam_pos -= cam_fwd * dt;
-		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_left))) {
-			cam_pos += cam_lft * dt;
-		}
-		if(ImGui::IsKeyDown(int(context()->settings().camera().move_right))) {
-			cam_pos -= cam_lft * dt;
-		}
-
-
-		if(ImGui::IsMouseDown(1)) {
-			auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(ImGui::GetWindowSize());
-			delta *= context()->settings().camera().sensitivity;
-
-			{
-				auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
-				cam_fwd = pitch(cam_fwd);
-			}
-			{
-				auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
-				cam_fwd = yaw(cam_fwd);
-				cam_lft = yaw(cam_lft);
-			}
-
-			auto euler = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft)).to_euler();
-			bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
-			euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
-			auto rotation = math::Quaternion<>::from_euler(euler);
-			cam_fwd = rotation({1.0f, 0.0f, 0.0f});
-			cam_lft = rotation({0.0f, 1.0f, 0.0f});
-		}
-
-
-		if(ImGui::IsMouseDown(2)) {
-			auto delta = ImGui::GetIO().MouseDelta;
-			cam_pos -= (delta.y * cam_fwd.cross(cam_lft) + delta.x * cam_lft);
-		}
+		_camera_controller->update_camera(camera, size);
 	}
-
-	float fov = math::to_rad(60.0f);
-	auto proj = math::perspective(fov, float(size.x()) / float(size.y()), 1.0f);
-	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
-	camera.set_proj(proj);
-	camera.set_view(view);
 
 	/*auto& camera = _scene_view.camera();
 

@@ -45,7 +45,7 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 		};
 
 		struct SceneData : NonMovable {
-			SceneData(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat);
+			SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat);
 
 			ecs::EntityWorld world;
 			SceneView view;

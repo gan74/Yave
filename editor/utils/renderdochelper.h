@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_UTILS_RENDERDOCHELPER_H
 
 #include <editor/editor.h>
+#include <y/utils.h>
 
 namespace editor {
 namespace renderdoc {
@@ -34,7 +35,7 @@ bool is_supported();
 
 inline auto capture() {
 	start_capture();
-	return ScopeExit([] { end_capture(); });
+	return y::ScopeExit([] { end_capture(); });
 }
 
 }
