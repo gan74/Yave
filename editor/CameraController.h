@@ -66,6 +66,8 @@ class HoudiniCameraController final : public CameraController {
 		math::Vec2 _picking_uvs;
 		math::Vec2 _cumulated_delta;
 
+		float _picking_depth;
+
 		bool _init = false;
 };
 
