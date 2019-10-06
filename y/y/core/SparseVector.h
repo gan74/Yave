@@ -194,15 +194,23 @@ class SparseVector final {
 			auto [i, o] = page_index(index);
 			page_index_type dense_index = _sparse[i][o];
 			page_index_type last_index = page_index_type(_dense.size() - 1);
+			index_type last_sparse = _dense[last_index];
+
+			y_debug_assert(_dense[dense_index] == index);
 
 			std::swap(_dense[dense_index], _dense[last_index]);
-			std::swap(_values[dense_index], _values[last_index]);
+			if constexpr(!is_void_v) {
+				std::swap(_values[dense_index], _values[last_index]);
+			}
+
 			_dense.pop();
 			_values.pop();
 
-			auto [li, lo] = page_index(index);
+			auto [li, lo] = page_index(last_sparse);
 			_sparse[li][lo] = dense_index;
-			_sparse[i][o] = page_invalid_index;
+			_sparse[i][o] = invalid_index;
+
+			y_debug_assert(!has(index));
 		}
 
 
@@ -337,6 +345,25 @@ class SparseVector final {
 			}
 			return _sparse[page_i];
 		}
+
+		/*void audit() {
+#ifdef Y_DEBUG
+			if constexpr(!is_void_v) {
+				y_debug_assert(_dense.size() == _values.size());
+			}
+			usize total = 0;
+			for(usize i = 0; i != _sparse.size(); ++i) {
+				for(usize o = 0; o != page_size; ++o) {
+					if(_sparse[i][o] != invalid_index) {
+						y_debug_assert(_sparse[i][o] < _dense.size());
+						y_debug_assert(page_index(_dense[_sparse[i][o]]) == std::pair(i, o));
+						++total;
+					}
+				}
+			}
+			y_debug_assert(total == _dense.size());
+#endif
+		}*/
 
 		value_container _values;
 		Vector<index_type> _dense;
