@@ -65,6 +65,7 @@ static constexpr DeviceMaterialData material_datas[] = {
 		{SpirV::TexturedFrag, SpirV::BasicVert, true},
 
 		{SpirV::TonemapFrag, SpirV::ScreenVert, false},
+		{SpirV::RayleighSkyFrag, SpirV::ScreenVert, true},
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -77,6 +78,7 @@ static constexpr const char* spirv_names[] = {
 		"copy.comp",
 
 		"tonemap.frag",
+		"rayleigh_sky.frag",
 		"basic.frag",
 		"skinned.frag",
 		"textured.frag",

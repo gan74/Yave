@@ -49,6 +49,8 @@ class Camera {
 		math::Vec3 up() const;
 		Frustum frustum() const;
 
+		operator uniform::LightingCamera() const;
+
 	private:
 		void update_viewproj() const;
 

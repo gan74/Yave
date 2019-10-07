@@ -23,12 +23,14 @@ SOFTWARE.
 #define YAVE_RENDERER_RENDERER_H
 
 #include "ToneMappingPass.h"
+#include "RayleighSkyPass.h"
 
 namespace yave {
 
 struct DefaultRenderer {
 	GBufferPass gbuffer;
 	LightingPass lighting;
+	RayleighSkyPass sky;
 	ToneMappingPass tone_mapping;
 
 	static DefaultRenderer create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data);

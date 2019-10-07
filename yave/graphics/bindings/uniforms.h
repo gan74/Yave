@@ -30,7 +30,7 @@ namespace uniform {
 
 using ViewProj = math::Matrix4<>;
 
-struct Camera {
+/*struct Camera {
 	math::Matrix4<> inv_matrix;
 	math::Vec3 position;
 	u32 padding_0;
@@ -38,7 +38,7 @@ struct Camera {
 	u32 padding_1;
 };
 
-static_assert(sizeof(Camera) % 16 == 0);
+static_assert(sizeof(Camera) % 16 == 0);*/
 
 
 using Frustum = yave::Frustum;

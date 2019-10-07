@@ -113,14 +113,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 		u32 light_count = 0;
 	};
 
-	uniform::LightingCamera camera_data;
-	{
-		const Camera& camera = scene.camera();
-		camera_data.inv_matrix = camera.inverse_matrix();
-		camera_data.position = camera.position();
-		camera_data.forward = camera.forward();
-	}
-
+	uniform::LightingCamera camera_data = scene.camera();
 
 	{
 		auto directional_buffer = ambient_builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_light_count);

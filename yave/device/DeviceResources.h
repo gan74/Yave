@@ -47,6 +47,7 @@ class DeviceResources final : NonCopyable {
 			CopyComp,
 
 			TonemapFrag,
+			RayleighSkyFrag,
 			BasicFrag,
 			SkinnedFrag,
 			TexturedFrag,
@@ -77,6 +78,7 @@ class DeviceResources final : NonCopyable {
 			TexturedMaterialTemplate,
 
 			TonemappingMaterialTemplate,
+			RayleighSkyMaterialTemplate,
 
 			MaxMaterialTemplates
 		};

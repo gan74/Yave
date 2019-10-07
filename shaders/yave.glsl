@@ -1,3 +1,5 @@
+#ifndef YAVE_GLSL
+#define YAVE_GLSL
 
 // -------------------------------- CONSTANTS --------------------------------
 
@@ -11,16 +13,6 @@ const uint max_tile_lights = 256;
 
 
 // -------------------------------- TYPES --------------------------------
-
-struct Light {
-	vec3 position;
-	float radius;
-	vec3 color;
-	uint type;
-
-	vec3 padding;
-	float falloff;
-};
 
 struct DirectionalLight {
 	vec3 direction;
@@ -399,4 +391,4 @@ void unpack_normal(vec4 buff, out vec3 normal, out float roughness) {
 	roughness = max(0.05, buff.w);
 }
 
-
+#endif

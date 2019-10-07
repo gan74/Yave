@@ -124,14 +124,14 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 }
 
 
-EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color_id, bool picking) {
+EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool picking) {
 	FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
 	auto pass_buffer = builder.declare_typed_buffer<EditorEntityPassData>();
 	auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(max_batch_size);
 	auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
 	auto depth = builder.declare_copy(in_depth);
-	auto color = builder.declare_copy(in_color_id);
+	auto color = builder.declare_copy(in_color);
 
 	EditorEntityPass pass;
 	pass.depth = depth;

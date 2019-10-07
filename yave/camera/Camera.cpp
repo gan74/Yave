@@ -125,4 +125,12 @@ Frustum Camera::frustum() const {
 	return extract_frustum(viewproj_matrix());
 }
 
+Camera::operator uniform::LightingCamera() const {
+	uniform::LightingCamera camera_data;
+	camera_data.inv_matrix = inverse_matrix();
+	camera_data.position = position();
+	camera_data.forward = forward();
+	return camera_data;
+}
+
 }
