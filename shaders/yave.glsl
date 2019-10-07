@@ -22,6 +22,31 @@ struct Light {
 	float falloff;
 };
 
+struct DirectionalLight {
+	vec3 direction;
+	float padding_0;
+
+	vec3 color;
+	float padding_1;
+};
+
+struct PointLight {
+	vec3 position;
+	float radius;
+
+	vec3 color;
+	float falloff;
+};
+
+
+struct LightingCamera {
+	mat4 inv_matrix;
+	vec3 position;
+	uint padding_0;
+	vec3 forward;
+	uint padding_1;
+};
+
 struct Frustum {
 	vec4 planes[6];
 };

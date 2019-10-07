@@ -41,7 +41,8 @@ class DeviceResources final : NonCopyable {
 			EquirecConvolutionComp,
 			CubemapConvolutionComp,
 			BRDFIntegratorComp,
-			DeferredLightingComp,
+			DeferredSunComp,
+			DeferredLocalsComp,
 			SSAOComp,
 			CopyComp,
 
@@ -61,7 +62,8 @@ class DeviceResources final : NonCopyable {
 			EquirecConvolutionProgram,
 			CubemapConvolutionProgram,
 			BRDFIntegratorProgram,
-			DeferredLightingProgram,
+			DeferredSunProgram,
+			DeferredLocalsProgram,
 			SSAOProgram,
 			CopyProgram,
 

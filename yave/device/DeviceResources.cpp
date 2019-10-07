@@ -52,7 +52,8 @@ static constexpr SpirV compute_spirvs[] = {
 		SpirV::EquirecConvolutionComp,
 		SpirV::CubemapConvolutionComp,
 		SpirV::BRDFIntegratorComp,
-		SpirV::DeferredLightingComp,
+		SpirV::DeferredSunComp,
+		SpirV::DeferredLocalsComp,
 		SpirV::SSAOComp,
 		SpirV::CopyComp,
 	};
@@ -70,7 +71,8 @@ static constexpr const char* spirv_names[] = {
 		"equirec_convolution.comp",
 		"cubemap_convolution.comp",
 		"brdf_integrator.comp",
-		"deferred.comp",
+		"deferred_sun.comp",
+		"deferred_locals.comp",
 		"ssao.comp",
 		"copy.comp",
 

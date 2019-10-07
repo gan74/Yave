@@ -91,8 +91,8 @@ TextureView IBLData::brdf_lut() const  {
 	return _brdf_lut;
 }
 
-
-static constexpr usize max_light_count = 1024;
+static constexpr usize max_directional_light_count = 16;
+static constexpr usize max_point_light_count = 1024;
 
 LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data) {
 	y_profile();
@@ -102,73 +102,88 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 	const SceneView& scene = gbuffer.scene_pass.scene_view;
 
-	FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
 
-	auto lit = builder.declare_image(lighting_format, size);
-	auto light_buffer = builder.declare_typed_buffer<uniform::Light>(max_light_count);
+	FrameGraphPassBuilder ambient_builder = framegraph.add_pass("Ambient/Sun pass");
+	FrameGraphPassBuilder point_builder = framegraph.add_pass("Lighting pass");
 
-	LightingPass pass;
-	pass.lit = lit;
+	auto lit = ambient_builder.declare_image(lighting_format, size);
 
-	builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
-	builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
-	builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
-	builder.add_uniform_input(ibl_data->envmap(), 0, PipelineStage::ComputeBit);
-	builder.add_uniform_input(ibl_data->brdf_lut(), 0, PipelineStage::ComputeBit);
-	builder.add_storage_input(light_buffer, 0, PipelineStage::ComputeBit);
-	builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
-	builder.map_update(light_buffer);
-	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			struct CameraData {
-				math::Matrix4<> inv_matrix;
-				math::Vec3 position;
-				u32 padding_0 = 0;
-				math::Vec3 forward;
-				u32 padding_1 = 0;
-			};
-			struct PushData {
-				CameraData camera;
-				u32 point_count = 0;
-				u32 directional_count = 0;
-			} push_data;
+	struct PushData {
+		uniform::LightingCamera camera;
+		u32 light_count = 0;
+	};
 
-			const Camera& camera = scene.camera();
-			push_data.camera.inv_matrix = camera.inverse_matrix();
-			push_data.camera.position = camera.position();
-			push_data.camera.forward = camera.forward();
+	uniform::LightingCamera camera_data;
+	{
+		const Camera& camera = scene.camera();
+		camera_data.inv_matrix = camera.inverse_matrix();
+		camera_data.position = camera.position();
+		camera_data.forward = camera.forward();
+	}
 
 
-			TypedMapping<uniform::Light> mapping = self->resources()->mapped_buffer(light_buffer);
-			{
+	{
+		auto directional_buffer = ambient_builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_light_count);
+
+		ambient_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
+		ambient_builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
+		ambient_builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
+		ambient_builder.add_uniform_input(ibl_data->envmap(), 0, PipelineStage::ComputeBit);
+		ambient_builder.add_uniform_input(ibl_data->brdf_lut(), 0, PipelineStage::ComputeBit);
+		ambient_builder.add_storage_input(directional_buffer, 0, PipelineStage::ComputeBit);
+		ambient_builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
+		ambient_builder.map_update(directional_buffer);
+
+		ambient_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+				PushData push_data{camera_data, 0};
+				TypedMapping<uniform::DirectionalLight> mapping = self->resources()->mapped_buffer(directional_buffer);
+				for(auto [l] : scene.world().view(DirectionalLightArchetype()).components()) {
+					static_assert(std::is_reference_v<decltype(l)>);
+					mapping[push_data.light_count++] = uniform::DirectionalLight{
+							-l.direction().normalized(),
+							0,
+							l.color() * l.intensity(),
+							0
+						};
+				}
+
+				const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredSunProgram];
+				recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
+			});
+	}
+
+
+	{
+		auto light_buffer = point_builder.declare_typed_buffer<uniform::PointLight>(max_point_light_count);
+
+		point_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
+		point_builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
+		point_builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
+		point_builder.add_storage_input(light_buffer, 0, PipelineStage::ComputeBit);
+		point_builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
+		point_builder.map_update(light_buffer);
+
+		point_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+				PushData push_data{camera_data, 0};
+				TypedMapping<uniform::PointLight> mapping = self->resources()->mapped_buffer(light_buffer);
 				for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
 					static_assert(std::is_reference_v<decltype(t)> && std::is_reference_v<decltype(l)>);
-					mapping[push_data.point_count++] = uniform::Light{
+					mapping[push_data.light_count++] = uniform::PointLight{
 							t.position(),
 							l.radius(),
 							l.color() * l.intensity(),
-							uniform::Light::Type::Point,
-							math::Vec3(),
 							std::max(math::epsilon<float>, l.falloff())
 						};
 				}
 
-				for(auto [l] : scene.world().view(DirectionalLightArchetype()).components()) {
-					static_assert(std::is_reference_v<decltype(l)>);
-					mapping[push_data.point_count + push_data.directional_count++] = uniform::Light{
-							-l.direction().normalized(),
-							0.0f,
-							l.color() * l.intensity(),
-							uniform::Light::Type::Directional,
-							math::Vec3(),
-							0.0f
-						};
-				}
-			}
 
-			const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLightingProgram];
-			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
-		});
+				const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLocalsProgram];
+				recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
+			});
+	}
 
+	LightingPass pass;
+	pass.lit = lit;
 	return pass;
 }
 

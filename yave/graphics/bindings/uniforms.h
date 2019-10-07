@@ -38,26 +38,47 @@ struct Camera {
 	u32 padding_1;
 };
 
+static_assert(sizeof(Camera) % 16 == 0);
+
+
 using Frustum = yave::Frustum;
 
-struct Light {
-	enum class Type : u32 {
-		Directional = 0,
-		Point = 1
-	};
+static_assert(sizeof(Frustum) % 16 == 0);
 
-	math::Vec3 position;
-	float radius;
+
+struct DirectionalLight {
+	math::Vec3 direction;
+	u32 padding_0 = 0;
+
 	math::Vec3 color;
-	Type type;
-
-	math::Vec3 padding;
-	float falloff;
+	u32 padding_1 = 0;
 };
 
-static_assert(offsetof(Light, radius) == 3 * sizeof(float));
-static_assert(sizeof(Light) == 3 * sizeof(math::Vec4));
-static_assert(sizeof(Light) % 16 == 0);
+static_assert(sizeof(DirectionalLight) % 16 == 0);
+
+
+struct PointLight {
+	math::Vec3 position;
+	float radius = 1.0f;
+
+	math::Vec3 color;
+	float falloff = 1.0f;
+};
+
+static_assert(sizeof(PointLight) % 16 == 0);
+
+
+struct LightingCamera {
+	math::Matrix4<> inv_matrix;
+
+	math::Vec3 position;
+	u32 padding_0 = 0;
+
+	math::Vec3 forward;
+	u32 padding_1 = 0;
+};
+
+static_assert(sizeof(LightingCamera) % 16 == 0);
 
 }
 }
