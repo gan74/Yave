@@ -126,7 +126,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 	math::Vec3 cam_fwd = camera.forward();
 	math::Vec3 cam_lft = camera.left();
 
-	if(ImGui::IsWindowFocused()) {
+	/*if(ImGui::IsWindowFocused()) {
 		float cam_speed = 500.0f;
 		float dt = cam_speed / ImGui::GetIO().Framerate;
 
@@ -142,6 +142,15 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 		if(ImGui::IsKeyDown(int(settings.move_right))) {
 			cam_pos -= cam_lft * dt;
 		}
+	}*/
+
+	for(int i = 0; i != 3; ++i) {
+		if(ImGui::IsMouseClicked(i)) {
+			_mouse_button = i;
+		}
+	}
+	if(_mouse_button >= 0 && !ImGui::IsMouseDown(_mouse_button)) {
+		_mouse_button = -1;
 	}
 
 
@@ -172,7 +181,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 
 
 	// Trackball
-	if(cam_key_down && ImGui::IsMouseDown(0)) {
+	if(cam_key_down && _mouse_button == 0) {
 		math::Vec3 boom_arm = cam_pos - _picked_pos;
 		delta *= settings.trackball_sensitivity;
 		{
@@ -193,14 +202,14 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 	}
 
 	// Dolly
-	if(cam_key_down && ImGui::IsMouseDown(1)) {
+	if(cam_key_down && _mouse_button == 1) {
 		math::Vec3 dolly_vec = _picked_pos - _orig_pos;
 		float f = _cumulated_delta.y() * -settings.dolly_sensitivity;
 		cam_pos = _picked_pos - dolly_vec * (1.0f + f);
 	}
 
 	// Pan
-	if(cam_key_down && ImGui::IsMouseDown(2)) {
+	if(cam_key_down && _mouse_button == 2) {
 		math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4((_picking_uvs - delta) * 2.0f - 1.0f, _picking_depth, 1.0f);
 		cam_pos = _orig_pos + (hp.to<3>() / hp.w()) - _picked_pos;
 	}

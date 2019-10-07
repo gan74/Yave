@@ -69,6 +69,7 @@ class HoudiniCameraController final : public CameraController {
 		float _picking_depth;
 
 		bool _init = false;
+		int _mouse_button = -1;
 };
 
 
