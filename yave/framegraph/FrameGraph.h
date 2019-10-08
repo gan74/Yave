@@ -78,7 +78,6 @@ class FrameGraph : NonCopyable {
 		bool is_attachment(FrameGraphImageId res) const;
 
 	private:
-		void alloc_resources_for_pass(const FrameGraphPass* pass);
 		void alloc_resources();
 		void release_resources(CmdBufferRecorder& recorder);
 

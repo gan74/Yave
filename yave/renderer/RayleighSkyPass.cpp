@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 
 #include <yave/components/DirectionalLightComponent.h>
+#include <y/core/Chrono.h>
 
 
 namespace yave {
@@ -39,6 +40,9 @@ static math::Vec4 sun_data(const ecs::EntityWorld& world) {
 		}
 	}
 	return dir.is_zero() ? math::Vec4(0.0f, 0.0f, 1.0f, 10.0f) : dir;
+
+	/*float time = float(core::Chrono::program().to_secs());
+	return math::Vec4(std::cos(time), 0.0f, std::sin(time), 20.0f);*/
 }
 
 RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_depth, FrameGraphImageId in_color) {
@@ -48,16 +52,16 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 		uniform::LightingCamera camera_data;
 		math::Vec3 sun_direction;
 		float sun_intensity;
-		float base_height;
+		float origin_height;
 		float planet_height;
 		float atmo_height;
 	} sky_data {
 			scene_view.camera(),
 			-sun.to<3>().normalized(),
 			sun.w(),
-			6400.0f * 1000.0f + 500.0f,
-			6400.0f * 1000.0f,
-			6500.0f * 1000.0f
+			6360.0f * 1000.0f + 100.0f,
+			6360.0f * 1000.0f,
+			6420.0f * 1000.0f
 		};
 
 
@@ -68,7 +72,8 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 	auto buffer = builder.declare_typed_buffer<SkyData>(1);
 
 	RayleighSkyPass pass;
-	pass.lit = color;
+	pass.depth = depth;
+	pass.color = color;
 
 	builder.add_uniform_input(buffer);
 	builder.map_update(buffer);

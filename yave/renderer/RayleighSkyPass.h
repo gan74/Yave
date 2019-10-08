@@ -27,7 +27,8 @@ SOFTWARE.
 namespace yave {
 
 struct RayleighSkyPass {
-	FrameGraphImageId lit;
+	FrameGraphImageId depth;
+	FrameGraphImageId color;
 
 	static RayleighSkyPass create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_depth, FrameGraphImageId in_color);
 };
