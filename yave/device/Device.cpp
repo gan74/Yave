@@ -23,6 +23,8 @@ SOFTWARE.
 #include "Device.h"
 #include "PhysicalDevice.h"
 
+#include "extentions/DebugMarker.h"
+
 #include <yave/graphics/commands/CmdBufferBase.h>
 
 #include <mutex>
@@ -39,15 +41,8 @@ static void check_features(const vk::PhysicalDeviceFeatures& features, const vk:
 	}
 }
 
-static core::Vector<const char*> extensions(const DebugParams& debug) {
-	auto exts = core::vector_with_capacity<const char*>(4);
-	exts << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
-
-	if(debug.debug_features_enabled()) {
-		exts << DebugMarker::name();
-	}
-
-	return exts;
+static std::array<const char*, 1> extensions() {
+	return {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 }
 
 static vk::Device create_device(
@@ -86,7 +81,7 @@ static vk::Device create_device(
 
 	check_features(physical.getFeatures(), required);
 
-	auto exts = extensions(debug);
+	auto exts = extensions();
 
 	return physical.createDevice(vk::DeviceCreateInfo()
 			.setEnabledExtensionCount(u32(exts.size()))
@@ -112,10 +107,6 @@ Device::Device(Instance& instance) :
 		_allocator(this),
 		_lifetime_manager(this),
 		_sampler(this) {
-
-	if(_instance.debug_params().debug_features_enabled()) {
-		_extensions.debug_marker = std::make_unique<DebugMarker>(_device.device);
-	}
 
 	for(const auto& family : _queue_families) {
 		for(auto& queue : family.queues(this)) {
@@ -223,8 +214,8 @@ CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() con
 	return thread_device()->create_disposable_cmd_buffer();
 }
 
-const DebugMarker* Device::debug_marker() const {
-	return _extensions.debug_marker.get();
+const DebugUtils* Device::debug_utils() const {
+	return _instance.debug_utils();
 }
 
 

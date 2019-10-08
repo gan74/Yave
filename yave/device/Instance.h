@@ -27,9 +27,12 @@ SOFTWARE.
 
 #include "DebugParams.h"
 
-#include "extentions/DebugCallback.h"
-
 namespace yave {
+
+class DebugCallback;
+class DebugMarker;
+
+class DebugUtils;
 
 class Instance : NonMovable {
 	public:
@@ -38,11 +41,14 @@ class Instance : NonMovable {
 
 		const DebugParams& debug_params() const;
 
+		const DebugUtils* debug_utils() const;
+
 		vk::Instance vk_instance() const;
 
 	private:
 		struct {
-			std::unique_ptr<DebugCallback> debug_callback;
+			//std::unique_ptr<DebugCallback> debug_callback;
+			std::unique_ptr<DebugUtils> debug_utils;
 		} _extensions;
 
 		DebugParams _debug_params;

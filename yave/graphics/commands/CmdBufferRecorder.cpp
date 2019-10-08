@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/queues/Semaphore.h>
 
+#include <yave/device/extentions/DebugUtils.h>
+
 namespace yave {
 
 static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
@@ -38,8 +40,8 @@ static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
 CmdBufferRegion::~CmdBufferRegion() {
-	if(device() && device()->debug_marker()) {
-		device()->debug_marker()->end_region(_buffer);
+	if(device() && device()->debug_utils()) {
+		device()->debug_utils()->end_region(_buffer);
 	}
 }
 
@@ -47,7 +49,7 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char
 		DeviceLinked(cmd_buffer.device()),
 		_buffer(cmd_buffer.vk_cmd_buffer()) {
 
-	if(auto marker = device()->debug_marker()) {
+	if(auto marker = device()->debug_utils()) {
 		marker->begin_region(_buffer, name, color);
 	}
 }

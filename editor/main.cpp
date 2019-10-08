@@ -57,7 +57,6 @@ static void crash_handler(int) {
 
 static void setup_handlers() {
 	std::signal(SIGSEGV, crash_handler);
-	y_debug_assert([] { log_msg("Debug assert enabled"); return true; }());
 	perf::set_output_file("perfdump.json");
 }
 
@@ -77,7 +76,7 @@ static void parse_args(int argc, char** argv) {
 	if(!display_console) {
 		hide_console();
 	}
-	y_debug_assert([] { log_msg("Asserts enabled."); return true; }());
+	y_debug_assert([] { log_msg("Debug asserts enabled."); return true; }());
 }
 
 static void setup_logger() {
@@ -91,7 +90,7 @@ static void setup_logger() {
 
 static Instance create_instance() {
 	if(!debug_instance) {
-		log_msg("Vulkan debugging disabled", Log::Warning);
+		log_msg("Vulkan debugging disabled.", Log::Warning);
 	}
 	return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }

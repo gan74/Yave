@@ -23,12 +23,11 @@ SOFTWARE.
 #define YAVE_DEVICE_DEVICE_H
 
 #include <yave/yave.h>
+
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
 #include "DeviceResources.h"
 #include "LifetimeManager.h"
-
-#include "extentions/DebugMarker.h"
 
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/queues/QueueFamily.h>
@@ -72,7 +71,7 @@ class Device : NonMovable {
 		vk::Device vk_device() const;
 		vk::Sampler vk_sampler() const;
 
-		const DebugMarker* debug_marker() const;
+		const DebugUtils* debug_utils() const;
 
 		template<typename T>
 		auto create_descriptor_set_layout(T&& t) const {
@@ -113,11 +112,6 @@ class Device : NonMovable {
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
 		DeviceResources _resources;
-
-		struct {
-			std::unique_ptr<DebugMarker> debug_marker;
-		} _extensions;
-
 };
 
 

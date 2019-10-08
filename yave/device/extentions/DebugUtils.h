@@ -19,26 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_EXTENTIONS_DEBUGCALLBACK_H
-#define YAVE_DEVICE_EXTENTIONS_DEBUGCALLBACK_H
+#ifndef YAVE_DEVICE_EXTENTIONS_DEBUGUTILS_H
+#define YAVE_DEVICE_EXTENTIONS_DEBUGUTILS_H
 
 #include <yave/graphics/vk/vk.h>
 
 namespace yave {
 
-class DebugCallback : NonCopyable {
+class DebugUtils : NonCopyable {
 	public:
 		static const char* name();
 
-		DebugCallback(vk::Instance instance);
-		~DebugCallback();
+		DebugUtils(vk::Instance instance);
+		~DebugUtils();
+
+		void begin_region(vk::CommandBuffer buffer, const char* name, const math::Vec4& color = math::Vec4()) const;
+		void end_region(vk::CommandBuffer buffer) const;
 
 	private:
 		vk::Instance _instance;
-		VkDebugReportCallbackEXT _callback = {};
+		VkDebugUtilsMessengerEXT _messenger = {};
+
+		PFN_vkCmdBeginDebugUtilsLabelEXT _begin_label = nullptr;
+		PFN_vkCmdEndDebugUtilsLabelEXT _end_label = nullptr;
 
 };
 
 }
 
-#endif // YAVE_DEVICE_EXTENTIONS_DEBUGCALLBACK_H
+#endif // YAVE_DEVICE_EXTENTIONS_DEBUGUTILS_H
