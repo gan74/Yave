@@ -59,9 +59,9 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 			scene_view.camera(),
 			-sun.to<3>().normalized(),
 			sun.w(),
-			6360.0f * 1000.0f + 100.0f,
+			6360.0f * 1000.0f + 100.0f /*+ std::pow(float(core::Chrono::program().to_secs()) * 3.0f, 3.0f)*/,
 			6360.0f * 1000.0f,
-			6420.0f * 1000.0f
+			6420.0f * 1000.0f,
 		};
 
 
