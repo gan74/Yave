@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "FrameGraph.h"
 
+#include <yave/utils/color.h>
+
 namespace yave {
 
 template<typename U>
@@ -100,9 +102,11 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 	std::unordered_map<FrameGraphResourceId, PipelineStage> to_barrier;
 	core::Vector<BufferBarrier> buffer_barriers;
 	core::Vector<ImageBarrier> image_barriers;
+
+	usize pass_id = 0;
 	for(const auto& pass : _passes) {
 		y_profile_zone(pass->name());
-		auto region = recorder.region(pass->name());
+		auto region = recorder.region(pass->name(), math::Vec4(identifying_color(pass_id++), 1.0f));
 
 		{
 			y_profile_zone("prepare");

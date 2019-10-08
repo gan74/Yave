@@ -26,18 +26,26 @@ SOFTWARE.
 
 namespace yave {
 
-//https://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
-inline math::Vec3 hue_to_rgb(float h) {
-	float h6 = h * 6.0f;
-	float r = std::abs(h6 - 3.0f) - 1.0f;
-	float g = 2.0f - std::abs(h6 - 2.0f);
-	float b = 2.0f - std::abs(h6 - 4.0f);
-	return {r, g, b};
-}
-
+// from imgui
 inline math::Vec3 hsv_to_rgb(float h, float s, float v) {
-	math::Vec3 hue = hue_to_rgb(h);
-	return (((hue - 1.0f) * s + 1.0f) * v).saturated();
+	h = std::fmod(h, 1.0f) * 6.0f;
+	int i = int(h);
+	float f = h - float(i);
+	float p = v * (1.0f - s);
+	float q = v * (1.0f - s * f);
+	float t = v * (1.0f - s * (1.0f - f));
+
+	switch(i) {
+		case 0: return math::Vec3(v, t, p);
+		case 1: return math::Vec3(q, v, p);
+		case 2: return math::Vec3(p, v, t);
+		case 3: return math::Vec3(p, q, v);
+		case 4: return math::Vec3(t, p, v);
+
+		default:
+		break;
+	}
+	return math::Vec3(v, p, q);
 }
 
 // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
@@ -70,6 +78,11 @@ inline float rgb_to_k(const math::Vec3& rgb) {
 	double x = std::pow(r, 7.507239275877164);
 	double k_100 = (8.018790685011271e18 + 60.0 * x) / x;
 	return float(k_100 * 100.0);
+}
+
+// https://gamedev.stackexchange.com/a/46469
+inline math::Vec3 identifying_color(usize index, float s = 0.5f, float v = 1.0f) {
+	return hsv_to_rgb(std::fmod(index * 0.618033988749895f, 1.0f), s, v);
 }
 
 }
