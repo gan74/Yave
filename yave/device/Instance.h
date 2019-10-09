@@ -22,15 +22,11 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_INSTANCE_H
 #define YAVE_DEVICE_INSTANCE_H
 
-
 #include <yave/graphics/vk/vk.h>
 
 #include "DebugParams.h"
 
 namespace yave {
-
-class DebugCallback;
-class DebugMarker;
 
 class DebugUtils;
 
@@ -47,7 +43,6 @@ class Instance : NonMovable {
 
 	private:
 		struct {
-			//std::unique_ptr<DebugCallback> debug_callback;
 			std::unique_ptr<DebugUtils> debug_utils;
 		} _extensions;
 

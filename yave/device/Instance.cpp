@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "Instance.h"
 
-#include "extentions/DebugCallback.h"
 #include "extentions/DebugUtils.h"
 
 namespace yave {

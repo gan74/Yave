@@ -22,8 +22,7 @@ SOFTWARE.
 
 #include "DebugUtils.h"
 
-#include <yave/device/Instance.h>
-#include <yave/graphics/vk/vk.h>
+#include <yave/device/Device.h>
 
 namespace yave {
 
@@ -100,17 +99,28 @@ DebugUtils::~DebugUtils() {
 }
 
 void DebugUtils::begin_region(vk::CommandBuffer buffer, const char* name, const math::Vec4& color) const {
-	vk::DebugUtilsLabelEXT label = vk::DebugUtilsLabelEXT()
-			.setPLabelName(name)
-			.setColor({color.x(), color.y(), color.z(), color.w()})
-		;
+	VkDebugUtilsLabelEXT label = {};
+	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	label.pLabelName = name;
+	for(usize i = 0; i != 4; ++i) {
+		label.color[i] = color[i];
+	}
 
-	VkDebugUtilsLabelEXT l = label;
-	_begin_label(buffer, &l);
+	_begin_label(buffer, &label);
 }
 
 void DebugUtils::end_region(vk::CommandBuffer buffer) const {
 	_end_label(buffer);
+}
+
+void DebugUtils::set_resource_name(DevicePtr dptr, u64 resource, const char *name) const {
+	VkDebugUtilsObjectNameInfoEXT name_info = {};
+	name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+	name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+	name_info.objectHandle = resource;
+	name_info.pObjectName = name;
+
+	_set_object_name(dptr->vk_device(), &name_info);
 }
 
 }

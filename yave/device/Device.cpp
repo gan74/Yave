@@ -23,8 +23,6 @@ SOFTWARE.
 #include "Device.h"
 #include "PhysicalDevice.h"
 
-#include "extentions/DebugMarker.h"
-
 #include <yave/graphics/commands/CmdBufferBase.h>
 
 #include <mutex>
