@@ -27,6 +27,19 @@ namespace yave {
 
 Y_TODO(DeviceAllocator should track allocation count)
 
+
+usize DeviceMemoryAllocator::heap_size_for_type(MemoryType type) {
+	if(type == MemoryType::Staging) {
+		return default_heap_size / 8;
+	}
+	return default_heap_size;
+}
+
+usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
+	return heap_size_for_type(type) / 2;
+}
+
+
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_max_allocs(dptr->vk_limits().maxMemoryAllocationCount) {
@@ -48,7 +61,7 @@ DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryTyp
 
 	std::unique_lock lock(_lock);
 
-	if(reqs.size >= dedicated_threshold) {
+	if(reqs.size >= dedicated_threshold_for_type(type)) {
 		return dedicated_alloc(reqs, type);
 	}
 
@@ -64,7 +77,7 @@ DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryTyp
 		}
 	}
 
-	auto heap = std::make_unique<DeviceMemoryHeap>(device(), reqs.memoryTypeBits, type);
+	auto heap = std::make_unique<DeviceMemoryHeap>(device(), reqs.memoryTypeBits, type, heap_size_for_type(type));
 	auto alloc = std::move(heap->alloc(reqs).unwrap());
 
 	heaps.push_back(std::move(heap));

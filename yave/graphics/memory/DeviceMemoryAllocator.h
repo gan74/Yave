@@ -34,7 +34,7 @@ class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 
 	using HeapType = std::pair<u32, MemoryType>;
 
-	static constexpr usize dedicated_threshold = DeviceMemoryHeap::heap_size / 2;
+	static constexpr usize default_heap_size = 128 * 1024 * 1024;
 
 	public:
 		DeviceMemoryAllocator() = default;
@@ -52,6 +52,9 @@ class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 		}
 
 	private:
+		static usize heap_size_for_type(MemoryType type);
+		static usize dedicated_threshold_for_type(MemoryType type);
+
 		DeviceMemory alloc(vk::MemoryRequirements reqs, MemoryType type);
 		DeviceMemory dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type);
 
