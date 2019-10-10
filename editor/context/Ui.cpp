@@ -107,9 +107,11 @@ void Ui::set_id(UiElement* elem) {
 
 
 
+
 void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
 
+	ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
 	ImGui::GetIO().DisplaySize = token.image_view.size();
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking |
@@ -140,7 +142,6 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	paint_ui(recorder, token);
 
 	ImGui::End();
-	ImGui::EndFrame();
 	ImGui::Render();
 
 	{

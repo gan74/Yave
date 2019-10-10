@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
+#include <y/core/Chrono.h>
+
 #include <unordered_map>
 #include <typeindex>
 
@@ -96,6 +98,8 @@ class Ui : NonCopyable, public ContextLinked {
 		std::unordered_map<std::type_index, Ids> _ids;
 
 		std::unique_ptr<ImGuiRenderer> _renderer;
+
+		core::Chrono _frame_timer;
 
 };
 
