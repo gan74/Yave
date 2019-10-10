@@ -4,9 +4,10 @@
 // -------------------------------- CONSTANTS --------------------------------
 
 const float pi = 3.1415926535897932384626433832795;
+const float euler = 2.7182818284590452353602874713526;
 const float epsilon = 0.001;
 
-const uint max_uint = uint(0xFFFFFFF);
+const uint max_uint = uint(0xFFFFFFFF);
 
 const uint max_bones = 256;
 const uint max_tile_lights = 256;
@@ -30,7 +31,6 @@ struct PointLight {
 	float falloff;
 };
 
-
 struct LightingCamera {
 	mat4 inv_matrix;
 	vec3 position;
@@ -47,21 +47,17 @@ struct Frustum4 {
 	vec4 planes[4];
 };
 
+struct ToneMappingParams {
+	float avg_log_luminance;
+	float white_point;
+
+	vec2 padding_0;
+};
 
 // -------------------------------- UTILS --------------------------------
 
 bool is_OOB(float z) {
 	return z <= 0.0; // reversed Z
-}
-
-uint float_to_uint(float f) {
-	return floatBitsToUint(f);
-	// uint(max_uint * f);
-}
-
-float uint_to_float(uint i) {
-	return uintBitsToFloat(i);
-	//return i / float(max_uint);
 }
 
 float saturate(float x) {
@@ -86,6 +82,10 @@ float sqr(float x) {
 
 float noise(vec2 co) {
 	return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+float log10(float x) {
+	return (1.0 / log(10.0)) * log(x);
 }
 
 mat4 indentity() {
@@ -122,6 +122,9 @@ vec3 cube_dir(vec2 texCoord, uint side) {
 	if(side == 5) return vec3(-tex.x, -tex.y, -1.0); // bottom
 }
 
+float luminance(vec3 rgb) {
+	return dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+}
 
 // -------------------------------- SPECTRUM --------------------------------
 
@@ -152,7 +155,6 @@ vec3 spectrum(uint x) {
 }
 
 
-
 // -------------------------------- PROJECTION --------------------------------
 
 vec3 unproject_ndc(vec3 ndc, mat4 inv_matrix) {
@@ -170,6 +172,7 @@ vec3 project(vec3 pos, mat4 proj_matrix) {
 	vec3 p3 = p.xyz / p.w;
 	return vec3(p3.xy * 0.5 + vec2(0.5), p3.z);
 }
+
 
 // -------------------------------- CULLING --------------------------------
 
@@ -198,15 +201,17 @@ bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
 
 // -------------------------------- HDR --------------------------------
 
-vec3 reinhard(vec3 hdr, float k) {
-	return hdr / (hdr + k);
+float reinhard(float lum, float white) {
+	return lum * ((1.0 + lum) / sqr(white)) / (1.0 + lum);
 }
 
-vec3 reinhard(vec3 hdr) {
-	return reinhard(hdr, 1.0);
+vec3 reinhard(vec3 hdr, float white) {
+	float lum = luminance(hdr);
+	float scale = reinhard(lum, white) / lum;
+	return hdr * scale;
 }
 
-vec3 uncharted2(vec3 hdr) {
+float uncharted2(float hdr) {
 	float A = 0.15;
 	float B = 0.50;
 	float C = 0.10;
@@ -216,6 +221,25 @@ vec3 uncharted2(vec3 hdr) {
 	return ((hdr * (A * hdr + C * B) + D * E) / (hdr * (A * hdr + B) + D * F)) - E / F;
 }
 
+vec3 uncharted2(vec3 hdr) {
+	return vec3(uncharted2(hdr.r), uncharted2(hdr.g), uncharted2(hdr.b));
+}
+
+vec3 uncharted2(vec3 hdr, float white) {
+	float exposure_bias = 1.0;
+	float scale = 1.0 / uncharted2(white);
+	return uncharted2(hdr * exposure_bias) * scale;
+}
+
+vec3 ACES_fast(vec3 hdr) {
+	hdr *= 0.6;
+	float A = 2.51;
+	float B = 0.03;
+	float C = 2.43;
+	float D = 0.59;
+	float E = 0.14;
+	return (hdr * (A * hdr + B)) / (hdr * (C * hdr + E) + E);
+}
 
 // -------------------------------- LIGHTING --------------------------------
 

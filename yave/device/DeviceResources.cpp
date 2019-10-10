@@ -48,16 +48,6 @@ struct DeviceMaterialData {
 	bool blended = false;
 };
 
-static constexpr SpirV compute_spirvs[] = {
-		SpirV::EquirecConvolutionComp,
-		SpirV::CubemapConvolutionComp,
-		SpirV::BRDFIntegratorComp,
-		SpirV::DeferredSunComp,
-		SpirV::DeferredLocalsComp,
-		SpirV::SSAOComp,
-		SpirV::CopyComp,
-	};
-
 static constexpr DeviceMaterialData material_datas[] = {
 		{SpirV::BasicFrag, SpirV::BasicVert, true},
 		{SpirV::SkinnedFrag, SpirV::SkinnedVert, true},
@@ -76,6 +66,11 @@ static constexpr const char* spirv_names[] = {
 		"deferred_locals.comp",
 		"ssao.comp",
 		"copy.comp",
+		"lum_downsample_0.comp",
+		"lum_downsample_1.comp",
+		"histogram_clear.comp",
+		"histogram.comp",
+		"tonemap_params.comp",
 
 		"tonemap.frag",
 		"rayleigh_sky.frag",
@@ -101,7 +96,6 @@ static constexpr usize template_count = usize(MaterialTemplates::MaxMaterialTemp
 static constexpr usize texture_count = usize(Textures::MaxTextures);
 
 static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
-static_assert(sizeof(compute_spirvs) / sizeof(compute_spirvs[0]) == compute_count);
 static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == template_count);
 static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_count);
 
@@ -122,7 +116,7 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 	}
 
 	for(usize i = 0; i != compute_count; ++i) {
-		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[usize(compute_spirvs[i])]));
+		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[i]));
 	}
 
 	for(usize i = 0; i != template_count; ++i) {

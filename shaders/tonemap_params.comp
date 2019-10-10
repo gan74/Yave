@@ -1,0 +1,45 @@
+#version 450
+
+#include "yave.glsl"
+
+layout(local_size_x = 1, local_size_y = 1) in;
+
+layout(set = 0, binding = 0) writeonly buffer ToneMapping {
+	ToneMappingParams params;
+} params;
+
+layout(set = 0, binding = 1) uniform usampler2D in_histogram;
+
+void main() {
+	const int histogram_size = textureSize(in_histogram, 0).x;
+
+	int max_index = 0;
+	float total_samples = 0.0;
+
+	for(int i = histogram_size - 1; i != -1; --i) {
+		uint bin = texelFetch(in_histogram, ivec2(i, 0), 0).r;
+		if(bin != 0) {
+			max_index = max(max_index, i);
+			total_samples += bin;
+		}
+	}
+
+	float white_point = 0.0;
+
+	float clip_white = total_samples * 0.1;
+	for(int i = max_index; i != -1; --i) {
+		float bin = float(texelFetch(in_histogram, ivec2(i, 0), 0).r);
+		if(bin > clip_white) {
+			float t = clip_white / bin;
+			white_point = exp(i - 16) * exp(1.0 - t);
+			break;
+		}
+		clip_white -= bin;
+	}
+
+
+
+	params.params.avg_log_luminance = 1.0f;
+	params.params.white_point = white_point;
+}
+

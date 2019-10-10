@@ -30,15 +30,7 @@ namespace uniform {
 
 using ViewProj = math::Matrix4<>;
 
-/*struct Camera {
-	math::Matrix4<> inv_matrix;
-	math::Vec3 position;
-	u32 padding_0;
-	math::Vec3 forward;
-	u32 padding_1;
-};
-
-static_assert(sizeof(Camera) % 16 == 0);*/
+static_assert(sizeof(ViewProj) % 16 == 0);
 
 
 using Frustum = yave::Frustum;
@@ -79,6 +71,16 @@ struct LightingCamera {
 };
 
 static_assert(sizeof(LightingCamera) % 16 == 0);
+
+
+struct ToneMappingParams {
+	float avg_log_luminance = 0.1f;
+	float white_point = 2.0f;
+
+	math::Vec2 padding_0;
+};
+
+static_assert(sizeof(ToneMappingParams) % 16 == 0);
 
 }
 }

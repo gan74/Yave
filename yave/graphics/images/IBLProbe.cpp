@@ -115,6 +115,7 @@ static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<Image
 		}
 	}
 
+	// use sync compute to avoid having to sync later
 	dptr->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 }
 
@@ -127,7 +128,6 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
 		y_fatal("IBL probe is too small.");
 	}
 
-	// we need to store the views and use sync compute so we don't delete them while they are still in use
 	auto mip_views = core::vector_with_capacity<ViewBase>(probe.mipmaps());
 	for(usize i = 0; i != probe.mipmaps(); ++i) {
 		mip_views << ProbeBaseView(probe, i);

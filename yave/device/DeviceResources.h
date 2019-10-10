@@ -45,6 +45,11 @@ class DeviceResources final : NonCopyable {
 			DeferredLocalsComp,
 			SSAOComp,
 			CopyComp,
+			DownsampleLum0Comp,
+			DownsampleLum1Comp,
+			HistogramClearComp,
+			HistogramComp,
+			ToneMapParamsComp,
 
 			TonemapFrag,
 			RayleighSkyFrag,
@@ -67,6 +72,11 @@ class DeviceResources final : NonCopyable {
 			DeferredLocalsProgram,
 			SSAOProgram,
 			CopyProgram,
+			DownsampleLum0Program,
+			DownsampleLum1Program,
+			HistogramClearProgram,
+			HistogramProgram,
+			ToneMapParamsProgram,
 
 			MaxComputePrograms
 		};

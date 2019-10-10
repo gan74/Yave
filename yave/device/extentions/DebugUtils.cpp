@@ -32,7 +32,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
 		const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
 		void*) {
 
-	Log level = Log::Info;
+	Log level = Log::Debug;
 	switch(severity) {
 		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
 			level = Log::Info;
@@ -56,7 +56,17 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
 		src = "Performance";
 	}
 
-	log_msg(fmt("Vk: @[%]: %\n", src, callback_data->pMessage),  level);
+	core::String labels = "";
+	for(usize i = 0; i != callback_data->cmdBufLabelCount; ++i) {
+		labels += callback_data->pCmdBufLabels[i].pLabelName;
+		labels += " ";
+	}
+
+	log_msg(fmt("Vk: @[%] %:\n%\n", src, labels, callback_data->pMessage),  level);
+
+	if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+		y_breakpoint;
+	}
 
 	return false;
 }
