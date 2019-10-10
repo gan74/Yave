@@ -94,10 +94,15 @@ void EntityView::paint_clustered_view() {
 	auto group = [&](auto archetype, const char* icon, const char* name) {
 		if(ImGui::TreeNodeEx(fmt("% %", icon, name).data(), ImGuiTreeNodeFlags_DefaultOpen)) {
 			for(auto entity : world.view(archetype)) {
-				const EditorComponent& editor_comp = entity.template component<EditorComponent>();
-				ImGui::TreeNodeEx(fmt("% %###%", icon, editor_comp.name(), entity.index()).data(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-
 				ecs::EntityId id = world.id_from_index(entity.index());
+				const EditorComponent& editor_comp = entity.template component<EditorComponent>();
+
+				int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+				if(context()->selection().selected_entity() == id) {
+					flags |= ImGuiTreeNodeFlags_Selected;
+				}
+				ImGui::TreeNodeEx(fmt("% %###%", icon, editor_comp.name(), entity.index()).data(), flags);
+
 				if(ImGui::IsItemClicked()) {
 					context()->selection().set_selected(id);
 				}

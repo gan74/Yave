@@ -46,8 +46,6 @@ class EngineView final : public Widget, public ContextLinked {
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
 		void update();
-		void update_camera();
-		void update_selection();
 		void update_picking();
 
 		std::shared_ptr<IBLData> _ibl_data;
@@ -57,8 +55,6 @@ class EngineView final : public Widget, public ContextLinked {
 
 		// subwidgets & stuff
 		Gizmo _gizmo;
-
-		ecs::EntityId _picked_entity_id;
 };
 
 static_assert(!std::is_move_assignable_v<EngineView>);

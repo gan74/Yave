@@ -46,12 +46,11 @@ EngineView::~EngineView() {
 
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
-	update();
 
 	TextureView* output = nullptr;
+	FrameGraph graph(context()->resource_pool());
 
 	{
-		FrameGraph graph(context()->resource_pool());
 		EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, content_size(), _ibl_data);
 
 		FrameGraphImageId output_image = renderer.out;
@@ -77,13 +76,11 @@ void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) 
 
 		}
 
-		/*if(&context()->scene().scene_view() == &_scene_view)*/ {
-			_gizmo.paint(recorder, token);
-			if(!_gizmo.is_dragging()) {
-				update_selection();
-			}
-		}
+		_gizmo.paint(recorder, token);
 	}
+
+	// this needs to be after the gizmo is painted to avoid drag and selection interferences
+	update();
 }
 
 void EngineView::update() {
@@ -98,8 +95,12 @@ void EngineView::update() {
 		context()->set_scene_view(&_scene_view);
 	}
 
-	// process inputs
-	update_camera();
+	if(_camera_controller) {
+		auto size = content_size();
+		auto& camera = _scene_view.camera();
+
+		_camera_controller->update_camera(camera, size);
+	}
 }
 
 void EngineView::update_picking() {
@@ -118,25 +119,11 @@ void EngineView::update_picking() {
 		return;
 	}
 
-	_picked_entity_id = picking_data.hit() ? context()->world().id_from_index(picking_data.entity_index) : ecs::EntityId();
-}
-
-void EngineView::update_selection() {
-	y_profile();
-
-	if(!ImGui::IsWindowHovered() || !ImGui::IsMouseClicked(0)) {
-		return;
-	}
-
-	context()->selection().set_selected(_picked_entity_id);
-}
-
-void EngineView::update_camera() {
-	if(_camera_controller) {
-		auto size = content_size();
-		auto& camera = _scene_view.camera();
-
-		_camera_controller->update_camera(camera, size);
+	if(ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0)) {
+		if(!_gizmo.is_dragging()) {
+			ecs::EntityId picked_id = picking_data.hit() ? context()->world().id_from_index(picking_data.entity_index) : ecs::EntityId();
+			context()->selection().set_selected(picked_id);
+		}
 	}
 }
 
