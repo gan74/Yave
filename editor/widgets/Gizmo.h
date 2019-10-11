@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_GIZMO_H
 #define EDITOR_WIDGETS_GIZMO_H
 
-#include <editor/ui/Frame.h>
+#include <editor/editor.h>
 
 namespace editor {
 
