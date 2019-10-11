@@ -224,7 +224,9 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 		auto region = recorder.region("Thumbmail cache render");
 
 		FrameGraph graph(context()->resource_pool());
-		DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), _ibl_data);
+		RendererSettings settings;
+		settings.tone_mapping.auto_exposure = false;
+		DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), _ibl_data, settings);
 
 		FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{

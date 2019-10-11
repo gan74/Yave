@@ -38,7 +38,6 @@ math::Vec3& DirectionalLightComponent::direction() {
 
 const math::Vec3& DirectionalLightComponent::direction() const {
 	return _direction;
-
 }
 
 float& DirectionalLightComponent::intensity() {

@@ -8,9 +8,9 @@ layout(set = 0, binding = 0) uniform Data {
 	LightingCamera camera;
 
 	vec3 sun_direction;
-	float sun_intensity;
-
 	float base_height;
+
+	vec3 sun_color;
 	float planet_height;
 	float atmo_height;
 } constants;
@@ -26,5 +26,5 @@ void main() {
 	                    constants.planet_height,
 	                    constants.sun_direction);
 
-	out_color = vec4(sky * constants.sun_intensity, 1.0);
+	out_color = vec4(sky * constants.sun_color, 1.0);
 }

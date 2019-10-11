@@ -32,14 +32,15 @@ SOFTWARE.
 
 namespace yave {
 
-static math::Vec4 sun_data(const ecs::EntityWorld& world) {
-	math::Vec4 dir;
+static DirectionalLightComponent sun_data(const ecs::EntityWorld& world) {
+	DirectionalLightComponent sun;
+	sun.intensity() = 0.0f;
 	for(auto [l] : world.view<DirectionalLightComponent>().components()) {
-		if(dir.w() < l.intensity()) {
-			dir = math::Vec4(l.direction(), l.intensity());
+		if(sun.intensity() < l.intensity()) {
+			sun = l;
 		}
 	}
-	return dir.is_zero() ? math::Vec4(0.0f, 0.0f, 1.0f, 10.0f) : dir;
+	return sun;
 
 	/*float time = float(core::Chrono::program().to_secs());
 	return math::Vec4(std::cos(time), 0.0f, std::sin(time), 20.0f);*/
@@ -47,19 +48,20 @@ static math::Vec4 sun_data(const ecs::EntityWorld& world) {
 
 RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_depth, FrameGraphImageId in_color) {
 
-	math::Vec4 sun = sun_data(scene_view.world());
+	DirectionalLightComponent sun = sun_data(scene_view.world());
 	struct SkyData {
 		uniform::LightingCamera camera_data;
 		math::Vec3 sun_direction;
-		float sun_intensity;
 		float origin_height;
+
+		math::Vec3 sun_color;
 		float planet_height;
 		float atmo_height;
 	} sky_data {
 			scene_view.camera(),
-			-sun.to<3>().normalized(),
-			sun.w(),
+			-sun.direction().normalized(),
 			6360.0f * 1000.0f + 100.0f /*+ std::pow(float(core::Chrono::program().to_secs()) * 3.0f, 3.0f)*/,
+			sun.color() * sun.intensity(),
 			6360.0f * 1000.0f,
 			6420.0f * 1000.0f,
 		};
