@@ -40,7 +40,7 @@ class EngineView final : public Widget, public ContextLinked {
 		~EngineView() override;
 
 	private:
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+		void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
 
 	private:
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);

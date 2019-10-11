@@ -72,15 +72,13 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 	}
 }
 
-void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
 	y_profile();
 
-	draw(recorder);
-	_gizmo.paint(recorder, token);
-	draw_rendering_menu();
-
-	// this needs to be after the gizmo is painted to avoid drag and selection interferences
 	update();
+	draw(recorder);
+	_gizmo.draw();
+	draw_rendering_menu();
 }
 
 void EngineView::draw_rendering_menu() {
@@ -123,7 +121,7 @@ void EngineView::update() {
 		context()->set_scene_view(&_scene_view);
 	}
 
-	if(focussed && hovered && _camera_controller) {
+	if(focussed && hovered && !_gizmo.is_dragging() && _camera_controller) {
 		auto size = content_size();
 		auto& camera = _scene_view.camera();
 		_camera_controller->update_camera(camera, size);
@@ -136,15 +134,19 @@ void EngineView::pick() {
 	math::Vec2 mouse = ImGui::GetIO().MousePos;
 	math::Vec2 uv = (mouse - offset - math::Vec2(ImGui::GetWindowContentRegionMin())) / math::Vec2(viewport_size);
 
-	if(uv.x() < 0.0f || uv.y() < 0.0f) {
+	if(uv.x() < 0.0f || uv.y() < 0.0f ||
+	   uv.x() > 1.0f || uv.y() > 1.0f) {
+
 		return;
 	}
 
 	auto picking_data = context()->picking_manager().pick_sync(_scene_view, uv, viewport_size);
 	if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
 		// event has been eaten by the camera controller, don't proceed further
+		_gizmo.set_allow_drag(false);
 		return;
 	}
+	_gizmo.set_allow_drag(true);
 
 	if(ImGui::IsMouseClicked(0)) {
 		if(!_gizmo.is_dragging()) {

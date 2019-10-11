@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace editor {
 
-class Gizmo final : public Frame, public ContextLinked {
+class Gizmo final : public ContextLinked {
 	public:
 		enum Mode {
 			Translate,
@@ -40,10 +40,12 @@ class Gizmo final : public Frame, public ContextLinked {
 
 		Gizmo(ContextPtr cptr, SceneView* view);
 
+		void draw();
+
 		bool is_dragging() const;
+		void set_allow_drag(bool allow);
 
 	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
 		math::Vec3 to_screen_pos(const math::Vec3& world);
 		math::Vec2 to_window_pos(const math::Vec3& world);
@@ -55,6 +57,8 @@ class Gizmo final : public Frame, public ContextLinked {
 
 		math::Vec3 _dragging_offset;
 		u32 _dragging_mask = 0;
+
+		bool _allow_drag = true;
 };
 
 }
