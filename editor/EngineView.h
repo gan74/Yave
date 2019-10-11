@@ -51,7 +51,7 @@ class EngineView final : public Widget, public ContextLinked {
 		bool is_clicked() const;
 
 		void update();
-		void pick();
+		void update_picking();
 
 		std::shared_ptr<IBLData> _ibl_data;
 		EditorRendererSettings _settings;

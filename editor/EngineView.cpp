@@ -75,10 +75,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
 	y_profile();
 
-	update();
 	draw(recorder);
 	_gizmo.draw();
 	draw_rendering_menu();
+
+	update();
 }
 
 void EngineView::draw_rendering_menu() {
@@ -114,7 +115,7 @@ void EngineView::update() {
 		ImGui::SetWindowFocus();
 		focussed = true;
 
-		pick();
+		update_picking();
 	}
 
 	if(focussed) {
@@ -128,7 +129,9 @@ void EngineView::update() {
 	}
 }
 
-void EngineView::pick() {
+void EngineView::update_picking() {
+	_gizmo.set_allow_drag(true);
+
 	math::Vec2ui viewport_size = content_size();
 	math::Vec2 offset = ImGui::GetWindowPos();
 	math::Vec2 mouse = ImGui::GetIO().MousePos;
@@ -143,10 +146,10 @@ void EngineView::pick() {
 	auto picking_data = context()->picking_manager().pick_sync(_scene_view, uv, viewport_size);
 	if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
 		// event has been eaten by the camera controller, don't proceed further
+		log_msg("camera");
 		_gizmo.set_allow_drag(false);
 		return;
 	}
-	_gizmo.set_allow_drag(true);
 
 	if(ImGui::IsMouseClicked(0)) {
 		if(!_gizmo.is_dragging()) {
