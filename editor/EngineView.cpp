@@ -48,16 +48,37 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 	TextureView* output = nullptr;
 	FrameGraph graph(context()->resource_pool());
 
-	EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, content_size(), _ibl_data, _settings);
+	math::Vec2ui output_size = content_size();
+	EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _ibl_data, _settings);
 
-	FrameGraphImageId output_image = renderer.out;
+
 	{
 		FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
-		builder.add_texture_input(output_image, PipelineStage::FragmentBit);
-		builder.set_render_func([&output, output_image](CmdBufferRecorder& rec, const FrameGraphPass* pass) {
-				auto out = std::make_unique<TextureView>(pass->resources()->image<ImageUsage::TextureBit>(output_image));
+
+		auto output_image = builder.declare_image(vk::Format::eR8G8B8A8Unorm, output_size);
+		auto buffer = builder.declare_typed_buffer<u32>(1);
+
+		auto gbuffer = renderer.renderer.gbuffer;
+		builder.add_image_usage(output_image, ImageUsage::TextureBit);
+		builder.add_color_output(output_image);
+		builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
+		builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
+		builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
+		builder.add_uniform_input(renderer.out, 0, PipelineStage::FragmentBit);
+		builder.add_uniform_input(buffer);
+		builder.map_update(buffer);
+		builder.set_render_func([=, index = u32(_view), &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+				auto out = std::make_unique<TextureView>(self->resources()->image<ImageUsage::TextureBit>(output_image));
 				output = out.get();
-				rec.keep_alive(std::move(out));
+				recorder.keep_alive(std::move(out));
+
+				TypedMapping<u32> mapping = self->resources()->mapped_buffer(buffer);
+				mapping[0] = index;
+
+				auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+				const auto* material = context()->resources()[EditorResources::CopyTargetMaterialTemplate];
+				render_pass.bind_material(material, {self->descriptor_sets()[0]});
+				render_pass.draw(vk::DrawIndirectCommand(6, 1));
 			});
 	}
 
@@ -92,10 +113,25 @@ void EngineView::draw_rendering_menu() {
 	if(ImGui::BeginPopup("###renderersettings")) {
 		ImGui::MenuItem("Editor entities", nullptr, &_settings.enable_editor_entities);
 
+		ImGui::Separator();
 		if(ImGui::BeginMenu("Tone mapping")) {
 			ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
 			ImGui::MenuItem("Auto exposure", nullptr, &settings.auto_exposure);
 			ImGui::EndMenu();
+		}
+
+		ImGui::Separator();
+		{
+			const char* output_names[] = {
+					"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth"
+				};
+			for(usize i = 0; i != usize(RenderView::MaxRenderViews); ++i) {
+				bool selected = usize(_view) == i;
+				ImGui::MenuItem(output_names[i], nullptr, &selected);
+				if(selected) {
+					_view = RenderView(i);
+				}
+			}
 		}
 
 		ImGui::EndPopup();
@@ -108,6 +144,9 @@ bool EngineView::is_clicked() const {
 }
 
 void EngineView::update() {
+
+	_gizmo.set_allow_drag(true);
+
 	bool hovered = ImGui::IsWindowHovered();
 	bool focussed = ImGui::IsWindowFocused();
 
@@ -130,8 +169,6 @@ void EngineView::update() {
 }
 
 void EngineView::update_picking() {
-	_gizmo.set_allow_drag(true);
-
 	math::Vec2ui viewport_size = content_size();
 	math::Vec2 offset = ImGui::GetWindowPos();
 	math::Vec2 mouse = ImGui::GetIO().MousePos;
@@ -146,7 +183,6 @@ void EngineView::update_picking() {
 	auto picking_data = context()->picking_manager().pick_sync(_scene_view, uv, viewport_size);
 	if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
 		// event has been eaten by the camera controller, don't proceed further
-		log_msg("camera");
 		_gizmo.set_allow_drag(false);
 		return;
 	}

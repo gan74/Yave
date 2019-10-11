@@ -54,10 +54,10 @@ FrameGraphMutableImageId FrameGraphPassBuilder::declare_copy(FrameGraphImageId s
 }
 
 
-// --------------------------------- Texture ---------------------------------
+// --------------------------------- Usage ---------------------------------
 
-void FrameGraphPassBuilder::add_texture_input(FrameGraphImageId res, PipelineStage stage) {
-	add_to_pass(res, ImageUsage::TextureBit, stage);
+void FrameGraphPassBuilder::add_image_usage(FrameGraphImageId res, ImageUsage usage) {
+	parent()->register_usage(res, usage, _pass);
 }
 
 

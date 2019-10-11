@@ -36,6 +36,18 @@ namespace editor {
 class EngineView final : public Widget, public ContextLinked {
 
 	public:
+		enum class RenderView {
+			Lit,
+			Albedo,
+			Normal,
+			Metallic,
+			Roughness,
+
+			Depth,
+
+			MaxRenderViews
+		};
+
 		EngineView(ContextPtr cptr);
 		~EngineView() override;
 
@@ -52,6 +64,8 @@ class EngineView final : public Widget, public ContextLinked {
 
 		void update();
 		void update_picking();
+
+		RenderView _view = RenderView::Lit;
 
 		std::shared_ptr<IBLData> _ibl_data;
 		EditorRendererSettings _settings;

@@ -37,7 +37,9 @@ class EditorResources final : NonMovable {
 			ImGuiFrag,
 			ImGuiBillBoardFrag,
 			PickingFrag,
+			CopyTargetFrag,
 
+			ScreenVert,
 			ImGuiVert,
 			ImGuiBillBoardVert,
 			PickingVert,
@@ -60,6 +62,8 @@ class EditorResources final : NonMovable {
 
 			PickingMaterialTemplate,
 			ImGuiBillBoardPickingMaterialTemplate,
+
+			CopyTargetMaterialTemplate,
 
 			MaxMaterialTemplates
 		};

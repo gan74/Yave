@@ -182,6 +182,7 @@ void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
 	std::transform(_buffers.begin(), _buffers.end(), std::back_inserter(buffers), [=](const auto& buff) { return BufferRelease(buff.first, _pool.get()) ; });
 	recorder.keep_alive(std::pair{_pool, std::move(buffers)});
 
+	Y_TODO(Images might get reused by an other thread before the command buffer is finished)
 	for(auto&& i : _images) {
 		_pool->release(i.first);
 	}
@@ -254,5 +255,9 @@ math::Vec2ui FrameGraph::image_size(FrameGraphImageId res) const {
 	return info.size;
 }
 
+ImageFormat FrameGraph::image_format(FrameGraphImageId res) const {
+	const auto& info = check_exists(_images, res);
+	return info.format;
+}
 
 }

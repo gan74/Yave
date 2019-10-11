@@ -61,6 +61,7 @@ class FrameGraph : NonCopyable {
 		FrameGraphPassBuilder add_pass(std::string_view name);
 
 		math::Vec2ui image_size(FrameGraphImageId res) const;
+		ImageFormat image_format(FrameGraphImageId res) const;
 
 	private:
 		friend class FrameGraphPassBuilder;

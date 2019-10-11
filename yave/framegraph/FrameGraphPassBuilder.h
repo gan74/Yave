@@ -40,9 +40,7 @@ class FrameGraphPassBuilder {
 			return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * size));
 		}
 
-
-
-		void add_texture_input(FrameGraphImageId res, PipelineStage stage);
+		void add_image_usage(FrameGraphImageId res, ImageUsage usage);
 
 		void add_depth_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
 		void add_color_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
