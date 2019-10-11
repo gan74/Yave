@@ -27,13 +27,21 @@ SOFTWARE.
 
 namespace yave {
 
+struct RendererSettings {
+	ToneMappingSettings tone_mapping;
+};
+
 struct DefaultRenderer {
 	GBufferPass gbuffer;
 	LightingPass lighting;
 	RayleighSkyPass sky;
 	ToneMappingPass tone_mapping;
 
-	static DefaultRenderer create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data);
+	static DefaultRenderer create(FrameGraph& framegraph,
+								  const SceneView& view,
+								  const math::Vec2ui& size,
+								  const std::shared_ptr<IBLData>& ibl_data,
+								  const RendererSettings& settings = RendererSettings());
 };
 
 }

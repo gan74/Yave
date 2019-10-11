@@ -29,18 +29,19 @@ SOFTWARE.
 
 namespace yave {
 
-ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, bool auto_exposure) {
+ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings) {
 	static constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
-	static const math::Vec2ui histogram_size = math::Vec2ui(256, 1);
+	static const math::Vec2ui histogram_size = math::Vec2ui(32, 1);
 
 	math::Vec2ui size = framegraph.image_size(in_lit);
 
+	FrameGraphMutableImageId histogram;
 	FrameGraphMutableTypedBufferId<uniform::ToneMappingParams> params;
 
-	if(auto_exposure) {
+	if(settings.auto_exposure) {
 		FrameGraphPassBuilder clear_builder = framegraph.add_pass("Histogram clear pass");
 
-		auto histogram = clear_builder.declare_image(vk::Format::eR32Uint, histogram_size);
+		histogram = clear_builder.declare_image(vk::Format::eR32Uint, histogram_size);
 
 		clear_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
 		clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -72,7 +73,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 	FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
 
 	auto tone_mapped = builder.declare_image(format, size);
-	if(!auto_exposure) {
+	if(!settings.auto_exposure) {
 		params = builder.declare_typed_buffer<uniform::ToneMappingParams>(1);
 		builder.map_update(params);
 	}
@@ -81,9 +82,9 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 	builder.add_uniform_input(in_lit, 0, PipelineStage::FragmentBit);
 	builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-		if(!auto_exposure) {
+		if(!settings.auto_exposure) {
 			TypedMapping<uniform::ToneMappingParams> mapping = self->resources()->mapped_buffer(params);
-			mapping[0] = {0.25f, 2.0f, {}};
+			mapping[0].avg_log_luminance = 0.5f;
 		}
 
 		auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -95,6 +96,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 
 	ToneMappingPass pass;
 	pass.tone_mapped = tone_mapped;
+	pass.histogram = histogram;
 	pass.params = params;
 
 	return pass;

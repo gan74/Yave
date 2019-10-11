@@ -26,11 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
+struct ToneMappingSettings {
+	bool auto_exposure = true;
+};
+
 struct ToneMappingPass {
 	FrameGraphImageId tone_mapped;
+	FrameGraphImageId histogram;
 	FrameGraphTypedBufferId<uniform::ToneMappingParams> params;
 
-	static ToneMappingPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, bool auto_exposure = false);
+	static ToneMappingPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings = ToneMappingSettings());
 };
 
 

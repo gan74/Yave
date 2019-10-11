@@ -27,14 +27,14 @@ SOFTWARE.
 namespace editor {
 
 struct EditorRendererSettings {
+	RendererSettings renderer_settings;
+
 	bool enable_editor_entities = true;
 	float billboard_size = 64.0f;
 };
 
 
 struct EditorRenderer {
-	using Settings = EditorRendererSettings;
-
 	DefaultRenderer renderer;
 	EditorEntityPass entity_pass;
 
@@ -42,7 +42,7 @@ struct EditorRenderer {
 
 	static EditorRenderer create(ContextPtr ctx,
 								 FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size,
-								 const std::shared_ptr<IBLData>& ibl_data, const Settings& settings = Settings());
+								 const std::shared_ptr<IBLData>& ibl_data, const EditorRendererSettings& settings = EditorRendererSettings());
 };
 
 }

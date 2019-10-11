@@ -25,9 +25,9 @@ SOFTWARE.
 
 namespace editor {
 
-EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data, const Settings& settings) {
+EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data, const EditorRendererSettings& settings) {
 	EditorRenderer renderer;
-	renderer.renderer = DefaultRenderer::create(framegraph, view, size, ibl_data);
+	renderer.renderer = DefaultRenderer::create(framegraph, view, size, ibl_data, settings.renderer_settings);
 	renderer.out = renderer.renderer.tone_mapping.tone_mapped;
 
 	if(settings.enable_editor_entities) {

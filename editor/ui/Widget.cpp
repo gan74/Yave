@@ -58,7 +58,7 @@ void Widget::set_flags(u32 flags) {
 }
 
 math::Vec2ui Widget::content_size() const {
-	return math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin());
+	return (math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
 }
 
 void Widget::update_attribs() {

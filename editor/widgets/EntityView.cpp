@@ -48,7 +48,7 @@ static core::String clean_component_name(std::string_view name) {
 		if(std::isupper(c)) {
 			clean.push_back(' ');
 		}
-		clean.push_back(std::tolower(c));
+		clean.push_back(char(std::tolower(c)));
 	}
 	return clean;
 }

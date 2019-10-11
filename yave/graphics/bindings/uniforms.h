@@ -74,8 +74,8 @@ static_assert(sizeof(LightingCamera) % 16 == 0);
 
 
 struct ToneMappingParams {
-	float avg_log_luminance = 0.1f;
-	float white_point = 2.0f;
+	float avg_log_luminance = 0.5f;
+	float white_point = 1.0f;
 
 	math::Vec2 padding_0;
 };

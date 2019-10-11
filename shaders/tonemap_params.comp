@@ -13,33 +13,25 @@ layout(set = 0, binding = 1) uniform usampler2D in_histogram;
 void main() {
 	const int histogram_size = textureSize(in_histogram, 0).x;
 
-	int max_index = 0;
-	float total_samples = 0.0;
-
+	uint total_samples = 0;
 	for(int i = histogram_size - 1; i != -1; --i) {
 		uint bin = texelFetch(in_histogram, ivec2(i, 0), 0).r;
-		if(bin != 0) {
-			max_index = max(max_index, i);
-			total_samples += bin;
+		total_samples += bin;
+	}
+
+	float white_point = -1.0;
+	float average = 0.0;
+	for(int i = histogram_size - 1; i != -1; --i) {
+		float bin_lum = exp(i - 16);
+		uint bin = texelFetch(in_histogram, ivec2(i, 0), 0).r;
+
+		average += bin_lum * (bin / float(total_samples));
+		if(white_point < 0.0 && bin != 0) {
+			white_point = bin_lum;
 		}
 	}
 
-	float white_point = 0.0;
-
-	float clip_white = total_samples * 0.1;
-	for(int i = max_index; i != -1; --i) {
-		float bin = float(texelFetch(in_histogram, ivec2(i, 0), 0).r);
-		if(bin > clip_white) {
-			float t = clip_white / bin;
-			white_point = exp(i - 16) * exp(1.0 - t);
-			break;
-		}
-		clip_white -= bin;
-	}
-
-
-
-	params.params.avg_log_luminance = 1.0f;
+	params.params.avg_log_luminance = average;
 	params.params.white_point = white_point;
 }
 

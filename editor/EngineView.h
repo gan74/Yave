@@ -45,10 +45,16 @@ class EngineView final : public Widget, public ContextLinked {
 	private:
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
+		void draw(CmdBufferRecorder& recorder);
+		void draw_rendering_menu();
+
+		bool is_clicked() const;
+
 		void update();
-		void update_picking();
+		void pick();
 
 		std::shared_ptr<IBLData> _ibl_data;
+		EditorRendererSettings _settings;
 
 		SceneView _scene_view;
 		std::unique_ptr<CameraController> _camera_controller;
