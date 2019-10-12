@@ -50,7 +50,7 @@ void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& 
 }
 
 void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder, u32 instance_index) const {
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer())});
+	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), VertexSubBuffer(_mesh->vertex_buffer()));
 	auto indirect = _mesh->indirect_data();
 	indirect.setFirstInstance(instance_index);
 	recorder.draw(indirect);

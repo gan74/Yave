@@ -57,7 +57,7 @@ static usize render_world(ContextPtr ctx,
 	auto id_mapping = pass->resources()->mapped_buffer(id_buffer);
 	auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(id_buffer);
 
-	recorder.bind_attrib_buffers({transforms, transforms, ids});
+	recorder.bind_attrib_buffers({}, {transforms, ids});
 	recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
 
 	for(auto ent : world.view(StaticMeshArchetype())) {

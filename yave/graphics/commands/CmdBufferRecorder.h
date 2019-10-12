@@ -112,9 +112,9 @@ class RenderPassRecorder : NonCopyable {
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);
 		void draw(const vk::DrawIndirectCommand& indirect);
 
-		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
+		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::ArrayView<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
-		void bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
+		void bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::ArrayView<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 
 		const Viewport& viewport() const;
 

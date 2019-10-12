@@ -99,24 +99,38 @@ void RenderPassRecorder::draw(const vk::DrawIndirectCommand& indirect) {
 						 indirect.firstInstance);
 }
 
-void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
+void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices,
+									  const SubBuffer<BufferUsage::AttributeBit>& per_vertex,
+									  core::ArrayView<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
 	bind_index_buffer(indices);
-	bind_attrib_buffers(attribs);
+	bind_attrib_buffers(per_vertex, per_instance);
 }
 
 void RenderPassRecorder::bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices) {
 	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
 }
 
-void RenderPassRecorder::bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
-	u32 attrib_count = attribs.size();
+void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::ArrayView<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
+	if(per_instance.is_empty()) {
+		vk_cmd_buffer().bindVertexBuffers(u32(0), per_vertex.vk_buffer(), per_vertex.byte_offset());
+	} else {
+		bool has_per_vertex = per_vertex.device();
+		u32 attrib_count = per_instance.size() + has_per_vertex;
 
-	auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);
-	auto buffers = core::vector_with_capacity<vk::Buffer>(attrib_count);
-	std::transform(attribs.begin(), attribs.end(), std::back_inserter(offsets), [](const auto& buffer) { return buffer.byte_offset(); });
-	std::transform(attribs.begin(), attribs.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
+		auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);
+		auto buffers = core::vector_with_capacity<vk::Buffer>(attrib_count);
 
-	vk_cmd_buffer().bindVertexBuffers(u32(0), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
+		if(has_per_vertex) {
+			offsets << per_vertex.byte_offset();
+			buffers << per_vertex.vk_buffer();
+		}
+
+		std::transform(per_instance.begin(), per_instance.end(), std::back_inserter(offsets), [](const auto& buffer) { return buffer.byte_offset(); });
+		std::transform(per_instance.begin(), per_instance.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
+
+		vk_cmd_buffer().bindVertexBuffers(u32(!has_per_vertex), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
+	}
+
 }
 
 const Viewport& RenderPassRecorder::viewport() const {

@@ -87,7 +87,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 
 	{
 		auto vertices = pass->resources()->buffer<BufferUsage::AttributeBit>(vertex_buffer);
-		recorder.bind_attrib_buffers({vertices});
+		recorder.bind_attrib_buffers(vertices);
 	}
 
 	{
