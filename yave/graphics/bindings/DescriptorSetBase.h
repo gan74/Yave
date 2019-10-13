@@ -26,26 +26,24 @@ SOFTWARE.
 
 namespace yave {
 
-class DescriptorSetBase : NonCopyable, public DeviceLinked {
+class DescriptorSetBase /*: NonCopyable, public DeviceLinked*/ {
 
 	public:
 		DescriptorSetBase() = default;
+
+		bool is_null() const {
+			return !_set;
+		}
 
 		vk::DescriptorSet vk_descriptor_set() const {
 			return _set;
 		}
 
 	protected:
-		DescriptorSetBase(DevicePtr dptr) : DeviceLinked(dptr) {
-		}
-
-		DescriptorSetBase(DescriptorSetBase&&) = default;
-		DescriptorSetBase& operator=(DescriptorSetBase&&) = default;
-
 		vk::DescriptorSet _set;
 };
 
-static_assert(is_safe_base<DescriptorSetBase>::value);
+static_assert(sizeof(DescriptorSetBase) == sizeof(vk::DescriptorSet));
 
 }
 

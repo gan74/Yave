@@ -63,7 +63,7 @@ void FrameGraphResourcePool::create_buffer(FrameGraphBufferId res, usize byte_si
 		memory = prefered_memory_type(usage);
 	}
 	auto& buffer = _buffers[res];
-	if(buffer.device()) {
+	if(!buffer.is_null()) {
 		y_fatal("Buffer already exists.");
 	}
 	if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {

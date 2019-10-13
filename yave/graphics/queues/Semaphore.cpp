@@ -50,6 +50,10 @@ DevicePtr Semaphore::device() const {
 	return _semaphore ? _semaphore->device() : nullptr;
 }
 
+bool Semaphore::is_null() const {
+	return !device();
+}
+
 vk::Semaphore Semaphore::vk_semaphore() const {
 	return _semaphore->vk_semaphore();
 }

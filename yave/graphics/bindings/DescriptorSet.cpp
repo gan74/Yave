@@ -96,7 +96,7 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, core::Span<Bindin
 
 
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Binding> bindings) : DescriptorSetBase(dptr) {
+DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Binding> bindings) : DeviceLinked(dptr) {
 	if(!bindings.is_empty()) {
 		auto layout_bindings = core::vector_with_capacity<vk::DescriptorSetLayoutBinding>(bindings.size());
 

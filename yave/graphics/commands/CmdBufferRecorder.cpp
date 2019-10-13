@@ -75,11 +75,14 @@ void RenderPassRecorder::bind_material(const MaterialTemplate* material, Descrip
 void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
-	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size() + 1);
-	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& d) { return d.get().vk_descriptor_set(); });
-
-	if(!ds.is_empty()) {
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});
+	if(!descriptor_sets.is_empty()) {
+		vk_cmd_buffer().bindDescriptorSets(
+				vk::PipelineBindPoint::eGraphics,
+				pipeline.vk_pipeline_layout(),
+				0,
+				descriptor_sets.size(), reinterpret_cast<const vk::DescriptorSet*>(descriptor_sets.begin()),
+				0, nullptr
+			);
 	}
 }
 
@@ -143,6 +146,10 @@ CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& c
 
 DevicePtr RenderPassRecorder::device() const {
 	return _cmd_buffer.device();
+}
+
+bool RenderPassRecorder::is_null() const {
+	return !device();
 }
 
 vk::CommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
@@ -221,13 +228,16 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
 	check_no_renderpass();
 
-	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
-	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& d) { return d.get().vk_descriptor_set(); });
-
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
 
-	if(!ds.is_empty()) {
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
+	if(!descriptor_sets.is_empty()) {
+		vk_cmd_buffer().bindDescriptorSets(
+				vk::PipelineBindPoint::eCompute,
+				program.vk_pipeline_layout(),
+				0,
+				descriptor_sets.size(), reinterpret_cast<const vk::DescriptorSet*>(descriptor_sets.begin()),
+				0, nullptr
+			);
 	}
 
 	if(!push_constants.is_empty()) {

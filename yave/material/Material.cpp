@@ -73,4 +73,8 @@ DevicePtr Material::device() const {
 	return _template->device();
 }
 
+bool Material::is_null() const {
+	return !_template;
+}
+
 }

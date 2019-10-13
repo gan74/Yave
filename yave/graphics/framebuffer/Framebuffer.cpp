@@ -27,7 +27,7 @@ namespace yave {
 
 static math::Vec2ui compute_size(const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
 	math::Vec2ui ref;
-	if(depth.view.device()) {
+	if(!depth.view.is_null()) {
 		ref = depth.view.size();
 	} else if(!colors.is_empty()) {
 		ref = colors[0].view.size();
@@ -64,7 +64,7 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
 	auto views = core::vector_with_capacity<vk::ImageView>(colors.size() + 1);
 	std::transform(colors.begin(), colors.end(), std::back_inserter(views), [](const auto& v) { return v.view.vk_view(); });
 
-	if(depth.view.device()) {
+	if(!depth.view.is_null()) {
 		views << depth.view.vk_view();
 	}
 

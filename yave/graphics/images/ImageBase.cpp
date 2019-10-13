@@ -184,6 +184,10 @@ DevicePtr ImageBase::device() const {
 	return _memory.device();
 }
 
+bool ImageBase::is_null() const {
+	return !device();
+}
+
 const math::Vec3ui& ImageBase::image_size() const {
 	return _size;
 }

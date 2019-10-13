@@ -52,6 +52,10 @@ DevicePtr CmdBufferData::device() const {
 	return _pool ? _pool->device() : nullptr;
 }
 
+bool CmdBufferData::is_null() const {
+	return !device();
+}
+
 CmdBufferPoolBase* CmdBufferData::pool() const {
 	return _pool;
 }
@@ -106,7 +110,7 @@ CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferData&& d) : _data(std::move(d)) 
 }
 
 CmdBufferDataProxy::~CmdBufferDataProxy() {
-	if(_data.device()) {
+	if(!_data.is_null()) {
 		_data.device()->lifetime_manager().recycle(std::move(_data));
 		//_data.pool()->release(std::move(_data));
 	}

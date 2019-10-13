@@ -44,6 +44,10 @@ DevicePtr StaticMesh::device() const {
 	return _triangle_buffer.device();
 }
 
+bool StaticMesh::is_null() const {
+	return !device();
+}
+
 const TriangleBuffer<>& StaticMesh::triangle_buffer() const {
 	return _triangle_buffer;
 }

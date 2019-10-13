@@ -71,6 +71,10 @@ DevicePtr BufferBase::device() const {
 	return _memory.device();
 }
 
+bool BufferBase::is_null() const {
+	return !device();
+}
+
 BufferUsage BufferBase::usage() const {
 	return _usage;
 }

@@ -47,6 +47,8 @@ class CmdBufferData final : NonCopyable {
 		~CmdBufferData();
 
 		DevicePtr device() const;
+		bool is_null() const;
+
 		CmdBufferPoolBase* pool() const;
 		vk::CommandBuffer vk_cmd_buffer() const;
 		vk::Fence vk_fence() const;

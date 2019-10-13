@@ -29,6 +29,7 @@ namespace yave {
 class DeviceLinked {
 	public:
 		DevicePtr device() const;
+		bool is_null() const;
 
 		template<typename T>
 		void destroy(T&& t) const;

@@ -39,6 +39,7 @@ class StaticMesh : NonCopyable {
 		StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
 
 		DevicePtr device() const;
+		bool is_null() const;
 
 		const TriangleBuffer<>& triangle_buffer() const;
 		const VertexBuffer<>& vertex_buffer() const;

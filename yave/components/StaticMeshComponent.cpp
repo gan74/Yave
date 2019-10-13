@@ -40,10 +40,10 @@ void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& 
 		return;
 	}
 
-	if(_material->descriptor_set().device()) {
-		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set, _material->descriptor_set()});
-	} else {
+	if(_material->descriptor_set().is_null()) {
 		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set});
+	} else {
+		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set, _material->descriptor_set()});
 	}
 
 	render_mesh(recorder, scene_data.instance_index);

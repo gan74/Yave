@@ -41,7 +41,7 @@ class RenderPass;
 
 
 namespace detail {
-using DescriptorSetList = core::Span<std::reference_wrapper<const DescriptorSetBase>>;
+using DescriptorSetList = core::Span<DescriptorSetBase>;
 }
 
 class PushConstant : NonCopyable {
@@ -104,6 +104,9 @@ class RenderPassRecorder : NonCopyable {
 
 		~RenderPassRecorder();
 
+		DevicePtr device() const;
+		bool is_null() const;
+
 		// specific
 		void bind_material(const Material& material);
 		void bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets = {});
@@ -120,7 +123,6 @@ class RenderPassRecorder : NonCopyable {
 
 		// proxies from _cmd_buffer
 		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
-		DevicePtr device() const;
 		vk::CommandBuffer vk_cmd_buffer() const;
 
 	private:

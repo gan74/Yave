@@ -49,6 +49,7 @@ class Semaphore {
 		Semaphore() = default;
 
 		DevicePtr device() const;
+		bool is_null() const;
 
 		vk::Semaphore vk_semaphore() const;
 

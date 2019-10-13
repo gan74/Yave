@@ -29,6 +29,10 @@ DevicePtr DeviceLinked::device() const {
 	return _device;
 }
 
+bool DeviceLinked::is_null() const {
+	return !_device;
+}
+
 DeviceLinked::DeviceLinked() : _device(nullptr) {
 	// for putting breakpoints
 }

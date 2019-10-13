@@ -34,6 +34,7 @@ class BufferBase : NonCopyable {
 		~BufferBase();
 
 		DevicePtr device() const;
+		bool is_null() const;
 
 		BufferUsage usage() const;
 		usize byte_size() const;

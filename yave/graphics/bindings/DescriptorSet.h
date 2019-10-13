@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class DescriptorSet : public DescriptorSetBase {
+class DescriptorSet : public DeviceLinked, public DescriptorSetBase, NonCopyable {
 
 	public:
 		DescriptorSet() = default;

@@ -38,6 +38,14 @@ SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_len, usize byte_
 SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, base.byte_size(), 0) {
 }
 
+DevicePtr SubBufferBase::device() const {
+	return _memory.device();
+}
+
+bool SubBufferBase::is_null() const {
+	return !device();
+}
+
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
 	const auto& limits = dptr->vk_limits();
 	usize align = limits.nonCoherentAtomSize;
@@ -76,10 +84,6 @@ vk::DescriptorBufferInfo SubBufferBase::descriptor_info() const {
 
 vk::MappedMemoryRange SubBufferBase::memory_range() const {
 	return _memory.vk_mapped_range(_size, _offset);
-}
-
-DevicePtr SubBufferBase::device() const {
-	return _memory.device();
 }
 
 }

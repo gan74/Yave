@@ -37,7 +37,7 @@ const FrameGraphResourcePool* FrameGraphPass::resources() const {
 }
 
 const Framebuffer& FrameGraphPass::framebuffer() const {
-	if(!_framebuffer.device()) {
+	if(_framebuffer.is_null()) {
 		y_fatal("Pass has no framebuffer.");
 	}
 	return _framebuffer;
