@@ -33,7 +33,7 @@ class DescriptorSet : public DescriptorSetBase {
 		DescriptorSet(DescriptorSet&&) = default;
 		DescriptorSet& operator=(DescriptorSet&&) = default;
 
-		DescriptorSet(DevicePtr dptr, core::ArrayView<Binding> bindings);
+		DescriptorSet(DevicePtr dptr, core::Span<Binding> bindings);
 
 		~DescriptorSet();
 

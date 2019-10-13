@@ -28,17 +28,34 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const std::unordered_map<vk::DescriptorType, u32>& binding_counts) {
-	auto sizes = core::vector_with_capacity<vk::DescriptorPoolSize>(binding_counts.size());
-	std::transform(binding_counts.begin(), binding_counts.end(), std::back_inserter(sizes), [](const auto& count) {
-			return vk::DescriptorPoolSize()
-					.setType(count.first)
-					.setDescriptorCount(count.second)
+static constexpr usize max_descriptor_type = std::max({
+		usize(vk::DescriptorType::eSampler),
+		usize(vk::DescriptorType::eCombinedImageSampler),
+		usize(vk::DescriptorType::eSampledImage),
+		usize(vk::DescriptorType::eStorageImage),
+		usize(vk::DescriptorType::eUniformTexelBuffer),
+		usize(vk::DescriptorType::eStorageTexelBuffer),
+		usize(vk::DescriptorType::eUniformBuffer),
+		usize(vk::DescriptorType::eStorageBuffer),
+		usize(vk::DescriptorType::eUniformBufferDynamic),
+		usize(vk::DescriptorType::eStorageBufferDynamic)
+	}) + 1;
+
+static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const std::array<u32, max_descriptor_type>& binding_counts) {
+	usize sizes_count = 0;
+	std::array<vk::DescriptorPoolSize, max_descriptor_type> sizes;
+
+	for(usize i = 0; i != binding_counts.size(); ++i) {
+		if(binding_counts[i]) {
+			sizes[sizes_count++]
+					.setType(vk::DescriptorType(i))
+					.setDescriptorCount(binding_counts[i])
 				;
-		});
+		}
+	}
 
 	return dptr->vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
-			.setPoolSizeCount(sizes.size())
+			.setPoolSizeCount(sizes_count)
 			.setPPoolSizes(sizes.begin())
 			.setMaxSets(1)
 		);
@@ -79,14 +96,14 @@ static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Array
 
 
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, core::ArrayView<Binding> bindings) : DescriptorSetBase(dptr) {
+DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Binding> bindings) : DescriptorSetBase(dptr) {
 	if(!bindings.is_empty()) {
 		auto layout_bindings = core::vector_with_capacity<vk::DescriptorSetLayoutBinding>(bindings.size());
 
-		std::unordered_map<vk::DescriptorType, u32> binding_counts;
+		std::array<u32, max_descriptor_type> binding_counts = {};
 		for(const auto& binding : bindings) {
 			layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
-			++binding_counts[binding.vk_descriptor_type()];
+			++binding_counts[usize(binding.vk_descriptor_type())];
 		}
 
 		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
