@@ -55,7 +55,7 @@ class SpecializationData : NonCopyable {
 		}
 
 		template<typename T>
-		SpecializationData(const core::Span<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+		SpecializationData(core::Span<T> arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
 			static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
 		}
 

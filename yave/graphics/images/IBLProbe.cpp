@@ -89,7 +89,7 @@ static const ComputeProgram& convolution_program(DevicePtr dptr, const Texture&)
 
 
 template<ImageType T>
-static void fill_probe(const core::Span<ViewBase>& views, const Image<ImageUsage::TextureBit, T>& texture) {
+static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::TextureBit, T>& texture) {
 	DevicePtr dptr = texture.device();
 
 	auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());

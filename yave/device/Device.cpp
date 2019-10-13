@@ -45,7 +45,7 @@ static std::array<const char*, 1> extensions() {
 
 static vk::Device create_device(
 		vk::PhysicalDevice physical,
-		const core::Span<QueueFamily>& queue_families,
+		core::Span<QueueFamily> queue_families,
 		const DebugParams& debug) {
 
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
