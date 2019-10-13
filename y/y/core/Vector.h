@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef Y_CORE_VECTOR_H
 #define Y_CORE_VECTOR_H
 
-#include "ArrayView.h"
+#include "Span.h"
 #include <cstring>
 
 namespace y {
@@ -91,7 +91,7 @@ class Vector : ResizePolicy, Allocator {
 		Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
 		}
 
-		explicit Vector(ArrayView<value_type> other) : Vector(other.begin(), other.end()) {
+		explicit Vector(Span<value_type> other) : Vector(other.begin(), other.end()) {
 		}
 
 		template<typename... Args>
@@ -119,7 +119,7 @@ class Vector : ResizePolicy, Allocator {
 			return *this;
 		}
 
-		Vector& operator=(ArrayView<value_type> l) {
+		Vector& operator=(Span<value_type> l) {
 			if(contains_it(l.begin())) {
 				Vector other(l);
 				swap(other);
@@ -140,22 +140,22 @@ class Vector : ResizePolicy, Allocator {
 			return *this;
 		}
 
-		bool operator==(ArrayView<value_type> v) const {
+		bool operator==(Span<value_type> v) const {
 			return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
 		}
 
-		bool operator!=(ArrayView<value_type> v) const {
+		bool operator!=(Span<value_type> v) const {
 			return !operator==(v);
 		}
 
 		template<typename... Args>
 		bool operator==(const Vector<Elem, Args...>& v) const {
-			return operator==(ArrayView<value_type>(v));
+			return operator==(Span<value_type>(v));
 		}
 
 		template<typename... Args>
 		bool operator!=(const Vector<Elem, Args...>& v) const {
-			return operator!=(ArrayView<value_type>(v));
+			return operator!=(Span<value_type>(v));
 		}
 
 

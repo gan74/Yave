@@ -26,7 +26,7 @@ namespace editor {
 namespace import {
 
 template<typename T>
-core::Vector<T> copy(core::ArrayView<T> t) {
+core::Vector<T> copy(core::Span<T> t) {
 	return core::Vector<T>(t);
 }
 

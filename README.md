@@ -82,7 +82,7 @@ MIT
 ### Framegraph
 - [X] Barriers
 - [X] Reuse resources over frames
-- [ ] Resource aliasing to avoid copies
+- [X] Resource aliasing to avoid copies
 - [ ] Merge mapped buffers
 
 ### Engine

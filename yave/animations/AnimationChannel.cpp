@@ -49,7 +49,7 @@ const core::String& AnimationChannel::name() const {
 	return _name;
 }
 
-core::ArrayView<AnimationChannel::BoneKey> AnimationChannel::keys() const {
+core::Span<AnimationChannel::BoneKey> AnimationChannel::keys() const {
 	return _keys;
 }
 

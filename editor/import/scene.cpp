@@ -51,7 +51,7 @@ static core::String clean_material_name(SceneImportContext& ctx, aiMaterial* mat
 }
 
 static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(SceneImportContext& ctx,
-																												 core::ArrayView<aiMaterial*> materials,
+																												 core::Span<aiMaterial*> materials,
 																												 const core::String& filename) {
 	const FileSystemModel* fs = FileSystemModel::local_filesystem();
 
@@ -144,9 +144,9 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
 	SceneImportContext ctx;
 
-	auto meshes = core::ArrayView<aiMesh*>(scene->mMeshes, scene->mNumMeshes);
-	auto animations = core::ArrayView<aiAnimation*>(scene->mAnimations, scene->mNumAnimations);
-	auto materials = core::ArrayView<aiMaterial*>(scene->mMaterials, scene->mNumMaterials);
+	auto meshes = core::Span<aiMesh*>(scene->mMeshes, scene->mNumMeshes);
+	auto animations = core::Span<aiAnimation*>(scene->mAnimations, scene->mNumAnimations);
+	auto materials = core::Span<aiMaterial*>(scene->mMaterials, scene->mNumMaterials);
 
 	log_msg(fmt("% meshes, % animations, % materials found", meshes.size(), animations.size(), materials.size()));
 

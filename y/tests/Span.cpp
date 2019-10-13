@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <y/core/ArrayView.h>
+#include <y/core/Span.h>
 #include <y/core/Vector.h>
 #include <y/test/test.h>
 
@@ -33,20 +33,20 @@ namespace {
 using namespace y;
 using namespace y::core;
 
-static usize test_func_c(ArrayView<char> a) {
+static usize test_func_c(Span<char> a) {
 	return a.size();
 }
 
-static usize test_func(ArrayView<int> a) {
+static usize test_func(Span<int> a) {
 	return a.size();
 }
 
-static usize test_func_nc(ArrayView<NonCopyable> a) {
+static usize test_func_nc(Span<NonCopyable> a) {
 	return a.size();
 }
 
 
-y_test_func("ArrayView creation") {
+y_test_func("Span creation") {
 	y_test_assert(test_func({1, 2, 3}) == 3);
 
 	auto vec = Vector({1, 2, 3, 4});
@@ -68,7 +68,7 @@ y_test_func("ArrayView creation") {
 	y_test_assert(test_func(17) == 1);
 }
 
-y_test_func("ArrayView of non-copyables") {
+y_test_func("Span of non-copyables") {
 	y_test_assert(test_func_nc(NonCopyable()) == 1);
 	y_test_assert(test_func_nc({NonCopyable(), NonCopyable()}) == 2);
 

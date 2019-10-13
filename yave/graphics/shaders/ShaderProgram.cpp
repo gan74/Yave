@@ -79,7 +79,7 @@ static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& s
 // returns the NEXT binding index
 static u32 create_vertex_attribs(u32 binding,
 								 vk::VertexInputRate rate,
-								 core::ArrayView<ShaderModuleBase::Attribute> vertex_attribs,
+								 core::Span<ShaderModuleBase::Attribute> vertex_attribs,
 								 Bindings& bindings,
 								 Attribs& attribs) {
 
@@ -108,7 +108,7 @@ static u32 create_vertex_attribs(u32 binding,
 }
 
 // Takes a SORTED (by location) Attribute list
-static void create_vertex_attribs(core::ArrayView<ShaderModuleBase::Attribute> vertex_attribs,
+static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex_attribs,
 								  Bindings& bindings,
 								  Attribs& attribs) {
 
@@ -160,11 +160,11 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 	}
 }
 
-core::ArrayView<vk::PipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
+core::Span<vk::PipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
 	return _stages;
 }
 
-core::ArrayView<vk::DescriptorSetLayout> ShaderProgram::descriptor_layouts() const {
+core::Span<vk::DescriptorSetLayout> ShaderProgram::descriptor_layouts() const {
 	return _layouts;
 }
 

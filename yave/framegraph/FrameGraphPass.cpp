@@ -43,7 +43,7 @@ const Framebuffer& FrameGraphPass::framebuffer() const {
 	return _framebuffer;
 }
 
-core::ArrayView<DescriptorSet> FrameGraphPass::descriptor_sets() const {
+core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
 	return _descriptor_sets;
 }
 

@@ -101,7 +101,7 @@ void RenderPassRecorder::draw(const vk::DrawIndirectCommand& indirect) {
 
 void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices,
 									  const SubBuffer<BufferUsage::AttributeBit>& per_vertex,
-									  core::ArrayView<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
+									  core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
 	bind_index_buffer(indices);
 	bind_attrib_buffers(per_vertex, per_instance);
 }
@@ -110,7 +110,7 @@ void RenderPassRecorder::bind_index_buffer(const SubBuffer<BufferUsage::IndexBit
 	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
 }
 
-void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::ArrayView<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
+void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
 	if(per_instance.is_empty()) {
 		vk_cmd_buffer().bindVertexBuffers(u32(0), per_vertex.vk_buffer(), per_vertex.byte_offset());
 	} else {
@@ -249,7 +249,7 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
 	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images) {
+void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
 	check_no_renderpass();
 
 	if(buffers.is_empty() && images.is_empty()) {
@@ -285,11 +285,11 @@ void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::A
 		);
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers) {
+void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers) {
 	barriers(buffers, {});
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<ImageBarrier> images) {
+void CmdBufferRecorder::barriers(core::Span<ImageBarrier> images) {
 	barriers({}, images);
 }
 

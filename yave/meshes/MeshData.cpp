@@ -58,22 +58,22 @@ const AABB& MeshData::aabb() const {
 	return _aabb;
 }
 
-core::ArrayView<Vertex> MeshData::vertices() const {
+core::Span<Vertex> MeshData::vertices() const {
 	return _vertices;
 }
 
-core::ArrayView<IndexedTriangle> MeshData::triangles() const {
+core::Span<IndexedTriangle> MeshData::triangles() const {
 	return _triangles;
 }
 
-core::ArrayView<Bone> MeshData::bones() const {
+core::Span<Bone> MeshData::bones() const {
 	if(!_skeleton) {
 		return {};
 	}
 	return _skeleton->bones;
 }
 
-core::ArrayView<SkinWeights> MeshData::skin() const {
+core::Span<SkinWeights> MeshData::skin() const {
 	if(!_skeleton) {
 		return {};
 	}

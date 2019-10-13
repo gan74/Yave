@@ -296,9 +296,9 @@ struct Serializer<std::unique_ptr<T>> {
 };
 
 template<typename T>
-struct Serializer<core::ArrayView<T>> {
+struct Serializer<core::Span<T>> {
 	template<typename Arc>
-	static Result serialize(Arc& ar, core::ArrayView<T> t) {
+	static Result serialize(Arc& ar, core::Span<T> t) {
 		if(!serialize_one(ar, u64(t.size()))) {
 			return core::Err();
 		}
@@ -310,7 +310,7 @@ template<typename T, typename... Args>
 struct Serializer<core::Vector<T, Args...>> {
 	template<typename Arc>
 	static Result serialize(Arc& ar, const core::Vector<T, Args...>& t) {
-		return serialize_one(ar, core::ArrayView<T>(t));
+		return serialize_one(ar, core::Span<T>(t));
 	}
 };
 
@@ -318,7 +318,7 @@ template<>
 struct Serializer<core::String> {
 	template<typename Arc>
 	static Result serialize(Arc& ar, const core::String& t) {
-		return serialize_one(ar, core::ArrayView<core::String::value_type>(t));
+		return serialize_one(ar, core::Span<core::String::value_type>(t));
 	}
 };
 

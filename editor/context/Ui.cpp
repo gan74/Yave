@@ -65,7 +65,7 @@ const ImGuiRenderer& Ui::renderer() const {
 	return *_renderer;
 }
 
-core::ArrayView<std::unique_ptr<UiElement>> Ui::ui_elements() const {
+core::Span<std::unique_ptr<UiElement>> Ui::ui_elements() const {
 	return _elements;
 }
 

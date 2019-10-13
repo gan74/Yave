@@ -69,7 +69,7 @@ static vk::DescriptorSet create_descriptor_set(DevicePtr dptr, vk::DescriptorPoo
 		).front();
 }
 
-static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::ArrayView<Binding>& bindings) {
+static void update_sets(DevicePtr dptr, vk::DescriptorSet set, const core::Span<Binding>& bindings) {
 	auto writes = core::vector_with_capacity<vk::WriteDescriptorSet>(bindings.size());
 	for(const auto& binding : bindings) {
 		auto w = vk::WriteDescriptorSet()

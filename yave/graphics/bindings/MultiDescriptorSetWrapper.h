@@ -36,7 +36,7 @@ namespace yave {
 /*template<typename T = DescriptorSet>
 class MultiDescriptorSetWrapper {
 	public:
-		MultiDescriptorSetWrapper(const core::ArrayView<Binding>& bindings) : _bindings(bindings) {
+		MultiDescriptorSetWrapper(const core::Span<Binding>& bindings) : _bindings(bindings) {
 		}
 
 		T& operator[](const FrameToken& token) {

@@ -87,7 +87,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 		y_throw("Empty skeleton.");
 	}
 
-	auto mesh_bones = core::ArrayView<aiBone*>(mesh->mBones, mesh->mNumBones);
+	auto mesh_bones = core::Span<aiBone*>(mesh->mBones, mesh->mNumBones);
 
 	core::Vector<aiNode*> bone_nodes;
 	bone_nodes << nullptr;

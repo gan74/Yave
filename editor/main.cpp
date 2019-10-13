@@ -61,7 +61,7 @@ static void setup_handlers() {
 }
 
 static void parse_args(int argc, char** argv) {
-	for(std::string_view arg : core::ArrayView<const char*>(argv, argc)) {
+	for(std::string_view arg : core::Span<const char*>(argv, argc)) {
 		if(arg == "--nodebug") {
 			debug_instance = false;
 		}

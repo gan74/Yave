@@ -41,7 +41,7 @@ class RenderPass;
 
 
 namespace detail {
-using DescriptorSetList = core::ArrayView<std::reference_wrapper<const DescriptorSetBase>>;
+using DescriptorSetList = core::Span<std::reference_wrapper<const DescriptorSetBase>>;
 }
 
 class PushConstant : NonCopyable {
@@ -56,7 +56,7 @@ class PushConstant : NonCopyable {
 		}
 
 		template<typename T>
-		constexpr PushConstant(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+		constexpr PushConstant(const core::Span<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
 			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
 		}
@@ -112,9 +112,9 @@ class RenderPassRecorder : NonCopyable {
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);
 		void draw(const vk::DrawIndirectCommand& indirect);
 
-		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::ArrayView<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
+		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
-		void bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::ArrayView<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
+		void bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 
 		const Viewport& viewport() const;
 
@@ -161,9 +161,9 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 
-		void barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images);
-		void barriers(core::ArrayView<BufferBarrier> buffers);
-		void barriers(core::ArrayView<ImageBarrier> images);
+		void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);
+		void barriers(core::Span<BufferBarrier> buffers);
+		void barriers(core::Span<ImageBarrier> images);
 
 		void copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst);
 		void copy(const SrcCopyImage& src,  const DstCopyImage& dst);

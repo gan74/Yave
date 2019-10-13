@@ -33,11 +33,11 @@ class Skeleton {
 
 		Skeleton() = default;
 
-		Skeleton(core::ArrayView<Bone> bones);
+		Skeleton(core::Span<Bone> bones);
 
-		core::ArrayView<Bone> bones() const;
-		core::ArrayView<math::Transform<>> bone_transforms() const;
-		core::ArrayView<math::Transform<>> inverse_absolute_transforms() const;
+		core::Span<Bone> bones() const;
+		core::Span<math::Transform<>> bone_transforms() const;
+		core::Span<math::Transform<>> inverse_absolute_transforms() const;
 
 	private:
 		core::Vector<Bone> _bones;

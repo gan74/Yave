@@ -69,7 +69,7 @@ class ComponentContainerBase : NonMovable {
 		virtual ~ComponentContainerBase() {
 		}
 
-		virtual void remove(core::ArrayView<EntityId> ids) = 0;
+		virtual void remove(core::Span<EntityId> ids) = 0;
 		virtual bool has(EntityId id) const = 0;
 		virtual core::Result<void> create_empty(EntityId id) = 0;
 		virtual core::Span<EntityIndex> indexes() const = 0;

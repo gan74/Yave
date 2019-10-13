@@ -38,11 +38,11 @@ class MeshData {
 		float radius() const;
 		const AABB& aabb() const;
 
-		core::ArrayView<Vertex> vertices() const;
-		core::ArrayView<IndexedTriangle> triangles() const;
+		core::Span<Vertex> vertices() const;
+		core::Span<IndexedTriangle> triangles() const;
 
-		core::ArrayView<Bone> bones() const;
-		core::ArrayView<SkinWeights> skin() const;
+		core::Span<Bone> bones() const;
+		core::Span<SkinWeights> skin() const;
 		core::Vector<SkinnedVertex> skinned_vertices() const;
 
 		bool has_skeleton() const;

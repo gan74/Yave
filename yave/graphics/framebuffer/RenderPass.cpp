@@ -120,7 +120,7 @@ static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usi
 }
 
 
-static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, core::ArrayView<RenderPass::ImageData> colors) {
+static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, core::Span<RenderPass::ImageData> colors) {
 	auto attachments = core::vector_with_capacity<vk::AttachmentDescription>(colors.size() + 1);
 	std::transform(colors.begin(), colors.end(), std::back_inserter(attachments), [=](const auto& color) { return create_attachment(color); });
 
@@ -154,7 +154,7 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData de
 	;
 }
 
-RenderPass::Layout::Layout(ImageData depth, core::ArrayView<ImageData> colors) : _depth(depth.format) {
+RenderPass::Layout::Layout(ImageData depth, core::Span<ImageData> colors) : _depth(depth.format) {
 	_colors.reserve(colors.size());
 	std::transform(colors.begin(), colors.end(), std::back_inserter(_colors), [](const auto& e) { return e.format; });
 }
@@ -176,14 +176,14 @@ bool RenderPass::Layout::operator==(const Layout& other) const {
 }
 
 
-RenderPass::RenderPass(DevicePtr dptr, ImageData depth, core::ArrayView<ImageData> colors) :
+RenderPass::RenderPass(DevicePtr dptr, ImageData depth, core::Span<ImageData> colors) :
 		DeviceLinked(dptr),
 		_attachment_count(colors.size()),
 		_render_pass(create_renderpass(dptr, depth, colors)),
 		_layout(depth, colors) {
 }
 
-RenderPass::RenderPass(DevicePtr dptr, core::ArrayView<ImageData> colors) :
+RenderPass::RenderPass(DevicePtr dptr, core::Span<ImageData> colors) :
 		RenderPass(dptr, ImageData(), colors) {
 }
 

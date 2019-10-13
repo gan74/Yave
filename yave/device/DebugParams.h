@@ -42,22 +42,22 @@ class DebugParams {
 			return _debug_enabled;
 		}
 
-		core::ArrayView<const char*> instance_layers() const {
+		core::Span<const char*> instance_layers() const {
 			return _instance_layers;
 		}
 
-		core::ArrayView<const char*> device_layers() const {
+		core::Span<const char*> device_layers() const {
 			return _device_layers;
 		}
 
 	private:
-		DebugParams(core::ArrayView<const char*> instance, core::ArrayView<const char*> device, bool callbacks) :
+		DebugParams(core::Span<const char*> instance, core::Span<const char*> device, bool callbacks) :
 				_instance_layers(instance.begin(), instance.end()),
 				_device_layers(device.begin(), device.end()),
 				_debug_enabled(callbacks) {
 		}
 
-		DebugParams(const core::ArrayView<const char*>& layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
+		DebugParams(const core::Span<const char*>& layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
 		}
 
 		core::Vector<const char*> _instance_layers;

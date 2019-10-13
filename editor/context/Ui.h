@@ -44,7 +44,7 @@ class Ui : NonCopyable, public ContextLinked {
 		Ui(ContextPtr ctx);
 		~Ui();
 
-		core::ArrayView<std::unique_ptr<UiElement>> ui_elements() const;
+		core::Span<std::unique_ptr<UiElement>> ui_elements() const;
 
 		const ImGuiRenderer& renderer() const;
 

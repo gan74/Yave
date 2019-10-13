@@ -59,7 +59,7 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		class Layout {
 			public:
 				Layout() = default;
-				Layout(ImageData depth, core::ArrayView<ImageData> colors);
+				Layout(ImageData depth, core::Span<ImageData> colors);
 
 				u64 hash() const;
 				bool is_depth_only() const;
@@ -75,8 +75,8 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		RenderPass(RenderPass&&) = default;
 		RenderPass& operator=(RenderPass&&) = default;
 
-		RenderPass(DevicePtr dptr, ImageData depth, core::ArrayView<ImageData> colors);
-		RenderPass(DevicePtr dptr, core::ArrayView<ImageData> colors);
+		RenderPass(DevicePtr dptr, ImageData depth, core::Span<ImageData> colors);
+		RenderPass(DevicePtr dptr, core::Span<ImageData> colors);
 
 		~RenderPass();
 

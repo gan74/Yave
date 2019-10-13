@@ -224,7 +224,7 @@ y_test_func("serde func") {
 		Func f;
 		ReadableArchive ar(buffer);
 		f.deserialize(ar).unwrap();
-		y_test_assert(f.v == core::ArrayView<int>({1, 2, 3}));
+		y_test_assert(f.v == core::Span<int>({1, 2, 3}));
 		y_test_assert(f.s == 8);
 	}
 }
