@@ -25,12 +25,17 @@ SOFTWARE.
 namespace yave {
 
 DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data, const RendererSettings& settings) {
+	y_profile();
+
 	DefaultRenderer renderer;
 
 	renderer.gbuffer = GBufferPass::create(framegraph, view, size);
 	renderer. lighting = LightingPass::create(framegraph, renderer.gbuffer, ibl_data);
 	renderer.sky = RayleighSkyPass::create(framegraph, view, renderer.gbuffer.depth, renderer.lighting.lit);
 	renderer.tone_mapping = ToneMappingPass::create(framegraph, renderer.sky.color, settings.tone_mapping);
+
+	renderer.color = renderer.tone_mapping.tone_mapped;
+	renderer.depth = renderer.sky.depth;
 
 	return renderer;
 }

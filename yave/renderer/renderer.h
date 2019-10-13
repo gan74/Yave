@@ -37,6 +37,9 @@ struct DefaultRenderer {
 	RayleighSkyPass sky;
 	ToneMappingPass tone_mapping;
 
+	FrameGraphImageId color;
+	FrameGraphImageId depth;
+
 	static DefaultRenderer create(FrameGraph& framegraph,
 								  const SceneView& view,
 								  const math::Vec2ui& size,

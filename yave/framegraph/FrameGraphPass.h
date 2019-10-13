@@ -85,7 +85,7 @@ class FrameGraphPass final : NonMovable {
 
 		Framebuffer _framebuffer;
 
-		core::Vector<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> _image_copies;
+		//core::Vector<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> _image_copies;
 		//core::Vector<std::pair<FrameGraphBufferId, FrameGraphMutableBufferId>> _buffer_copies;
 };
 

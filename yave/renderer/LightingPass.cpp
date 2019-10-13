@@ -95,8 +95,6 @@ static constexpr usize max_directional_light_count = 16;
 static constexpr usize max_point_light_count = 1024;
 
 LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data) {
-	y_profile();
-
 	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
 	math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 

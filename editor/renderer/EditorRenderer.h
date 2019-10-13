@@ -38,7 +38,8 @@ struct EditorRenderer {
 	DefaultRenderer renderer;
 	EditorEntityPass entity_pass;
 
-	FrameGraphImageId out;
+	FrameGraphImageId color;
+	FrameGraphImageId depth;
 
 	static EditorRenderer create(ContextPtr ctx,
 								 FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size,

@@ -67,10 +67,13 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
 
-		void create_alias(FrameGraphImageId res, FrameGraphImageId alias);
+		void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
 
 		void release(FrameGraphImageId res);
 		void release(FrameGraphBufferId res);
+
+		bool is_alive(FrameGraphImageId res) const;
+		bool is_alive(FrameGraphBufferId res) const;
 
 		ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;
 		BufferBarrier barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const;

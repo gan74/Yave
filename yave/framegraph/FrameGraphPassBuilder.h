@@ -40,15 +40,10 @@ class FrameGraphPassBuilder {
 			return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * size));
 		}
 
-		void add_image_usage(FrameGraphImageId res, ImageUsage usage);
+		void add_image_input_usage(FrameGraphImageId res, ImageUsage usage);
 
 		void add_depth_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
 		void add_color_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
-
-		void add_copy_src(FrameGraphImageId res);
-		void add_copy_dst(FrameGraphMutableImageId res);
-		void add_copy_src(FrameGraphBufferId res);
-		void add_copy_dst(FrameGraphMutableBufferId res);
 
 		void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
 		void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
@@ -79,12 +74,12 @@ class FrameGraphPassBuilder {
 
 		FrameGraphPassBuilder(FrameGraphPass* pass);
 
-		void add_to_pass(FrameGraphImageId res, ImageUsage usage, PipelineStage stage);
-		void add_to_pass(FrameGraphBufferId res, BufferUsage usage, PipelineStage stage);
+		void add_to_pass(FrameGraphImageId res, ImageUsage usage, bool is_written, PipelineStage stage);
+		void add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage);
 
 		void add_uniform(FrameGraphDescriptorBinding binding, usize ds_index);
 
-		void set_cpu_visible(FrameGraphMutableBufferId res);
+		void set_cpu_visible(FrameGraphMutableBufferId res); 
 
 		FrameGraph* parent();
 

@@ -60,6 +60,9 @@ constexpr ImageUsage operator~(ImageUsage l) {
 	return ImageUsage(~uenum(l));
 }
 
+constexpr bool is_copy_usage(ImageUsage usage) {
+	return (usage & (ImageUsage::TransferDstBit | ImageUsage::TransferSrcBit)) != ImageUsage::None;
+}
 
 constexpr bool is_attachment_usage(ImageUsage usage) {
 	return (usage & ImageUsage::Attachment) != ImageUsage::None;
