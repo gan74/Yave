@@ -100,15 +100,17 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 			case WM_KEYUP: {
 				bool is_down = u_msg == WM_SYSKEYDOWN ||
 							   u_msg == WM_KEYDOWN;
-				/*bool is_system = u_msg == WM_SYSKEYDOWN ||
-								 u_msg == WM_SYSKEYUP;*/
+				bool is_system = u_msg == WM_SYSKEYDOWN ||
+								 u_msg == WM_SYSKEYUP;
 				if(auto handler = window->event_handler()) {
 					auto k = to_key(w_param, l_param);
 					if(k != Key::Unknown) {
 						is_down
 							? handler->key_pressed(k)
 							: handler->key_released(k);
-						return 0;
+						if(!is_system) {
+							return 0;
+						}
 					}
 				} else if(is_down && w_param == VK_ESCAPE) {
 					// escape close the window by default
