@@ -110,7 +110,7 @@ class Binding {
 					return true;
 				default:
 					break;
-			};
+			}
 			return false;
 		}
 
@@ -123,7 +123,7 @@ class Binding {
 					return true;
 				default:
 					break;
-			};
+			}
 			return false;
 		}
 

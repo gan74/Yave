@@ -19,36 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_BINDINGS_DESCRIPTORSETBASE_H
-#define YAVE_GRAPHICS_BINDINGS_DESCRIPTORSETBASE_H
 
+#include "DescriptorSetBase.h"
 #include "Binding.h"
 
 namespace yave {
 
-class DescriptorSetBase /*: NonCopyable, public DeviceLinked*/ {
-
-	public:
-		DescriptorSetBase() = default;
-
-		bool is_null() const {
-			return !_set;
-		}
-
-		vk::DescriptorSet vk_descriptor_set() const {
-			return _set;
-		}
-
-	protected:
-		// helpers for parent classes
-		void create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
-		void update_set(DevicePtr dptr, core::Span<Binding> bindings);
-
-		vk::DescriptorSet _set;
-};
-
-static_assert(sizeof(DescriptorSetBase) == sizeof(vk::DescriptorSet));
-
+void DescriptorSetBase::create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout) {
+	_set = dptr->vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
+	        .setDescriptorPool(pool)
+	        .setDescriptorSetCount(1)
+	        .setPSetLayouts(&layout)
+	    ).front();
 }
 
-#endif // YAVE_GRAPHICS_BINDINGS_DESCRIPTORSETBASE_H
+void DescriptorSetBase::update_set(DevicePtr dptr, core::Span<Binding> bindings) {
+	auto writes = core::vector_with_capacity<vk::WriteDescriptorSet>(bindings.size());
+	for(const auto& binding : bindings) {
+		auto w = vk::WriteDescriptorSet()
+		        .setDstSet(_set)
+		        .setDstBinding(u32(writes.size()))
+		        .setDstArrayElement(0)
+		        .setDescriptorCount(1)
+		        .setDescriptorType(binding.vk_descriptor_type())
+		    ;
+
+		if(binding.is_buffer()) {
+			w.setPBufferInfo(&binding.descriptor_info().buffer);
+		} else if(binding.is_image()) {
+			w.setPImageInfo(&binding.descriptor_info().image);
+		} else {
+			y_fatal("Unknown descriptor type.");
+		}
+
+		writes << w;
+	}
+	dptr->vk_device().updateDescriptorSets(u32(writes.size()), writes.begin(), 0, nullptr);
+}
+
+}

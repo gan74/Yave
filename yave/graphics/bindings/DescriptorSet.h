@@ -22,23 +22,23 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_BINDINGS_DESCRIPTORSET_H
 #define YAVE_GRAPHICS_BINDINGS_DESCRIPTORSET_H
 
-#include "DescriptorSetBase.h"
+#include "DescriptorPool.h"
 
 namespace yave {
 
 class DescriptorSet : public DeviceLinked, public DescriptorSetBase, NonCopyable {
 
 	public:
+		using DeviceLinked::is_null;
+
 		DescriptorSet() = default;
 		DescriptorSet(DescriptorSet&&) = default;
 		DescriptorSet& operator=(DescriptorSet&&) = default;
 
 		DescriptorSet(DevicePtr dptr, core::Span<Binding> bindings);
 
-		~DescriptorSet();
-
 	protected:
-		vk::DescriptorPool _pool;
+		DescriptorPool _pool;
 };
 
 }
