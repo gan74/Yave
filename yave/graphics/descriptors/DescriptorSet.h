@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,36 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_BINDINGS_DESCRIPTORSETBASE_H
-#define YAVE_GRAPHICS_BINDINGS_DESCRIPTORSETBASE_H
+#ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSET_H
+#define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSET_H
 
-#include "Binding.h"
+#include "DescriptorPool.h"
 
 namespace yave {
 
-class DescriptorSetBase /*: NonCopyable, public DeviceLinked*/ {
+class DescriptorSet : public DeviceLinked, public DescriptorSetBase, NonCopyable {
 
 	public:
-		DescriptorSetBase() = default;
+		using DeviceLinked::is_null;
 
-		bool is_null() const {
-			return !_set;
-		}
+		DescriptorSet() = default;
+		DescriptorSet(DescriptorSet&&) = default;
+		DescriptorSet& operator=(DescriptorSet&&) = default;
 
-		vk::DescriptorSet vk_descriptor_set() const {
-			return _set;
-		}
+		DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
 
 	protected:
-		// helpers for parent classes
-		void create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
-		void update_set(DevicePtr dptr, core::Span<Binding> bindings);
-
-		vk::DescriptorSet _set;
+		DescriptorPool _pool;
 };
-
-static_assert(sizeof(DescriptorSetBase) == sizeof(vk::DescriptorSet));
 
 }
 
-#endif // YAVE_GRAPHICS_BINDINGS_DESCRIPTORSETBASE_H
+#endif // YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSET_H

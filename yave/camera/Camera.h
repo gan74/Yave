@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_CAMERA_CAMERA_H
 #define YAVE_CAMERA_CAMERA_H
 
-#include <yave/graphics/bindings/uniforms.h>
+#include <yave/graphics/descriptors/uniforms.h>
 #include "Frustum.h"
 
 namespace yave {

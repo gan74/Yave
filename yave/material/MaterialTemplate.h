@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <yave/graphics/framebuffer/RenderPass.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <y/core/AssocVector.h>
 

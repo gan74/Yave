@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +19,70 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_GRAPHICS_DESCRIPTORS_UNIFORMS_H
+#define YAVE_GRAPHICS_DESCRIPTORS_UNIFORMS_H
 
-#include "DescriptorSet.h"
-#include "Binding.h"
+#include <yave/yave.h>
+#include <yave/camera/Frustum.h>
 
 namespace yave {
+namespace uniform {
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Binding> bindings) : _pool(dptr, bindings) {
-	if(!bindings.is_empty()) {
-		auto layout_bindings = core::vector_with_capacity<vk::DescriptorSetLayoutBinding>(bindings.size());
+using ViewProj = math::Matrix4<>;
 
-		for(const auto& binding : bindings) {
-			layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
-		}
+static_assert(sizeof(ViewProj) % 16 == 0);
 
-		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
 
-		create_descriptor_set(dptr, _pool.vk_pool(), layout);
-		update_set(dptr, bindings);
-	}
+using Frustum = yave::Frustum;
+
+static_assert(sizeof(Frustum) % 16 == 0);
+
+
+struct DirectionalLight {
+	math::Vec3 direction;
+	u32 padding_0 = 0;
+
+	math::Vec3 color;
+	u32 padding_1 = 0;
+};
+
+static_assert(sizeof(DirectionalLight) % 16 == 0);
+
+
+struct PointLight {
+	math::Vec3 position;
+	float radius = 1.0f;
+
+	math::Vec3 color;
+	float falloff = 1.0f;
+};
+
+static_assert(sizeof(PointLight) % 16 == 0);
+
+
+struct LightingCamera {
+	math::Matrix4<> inv_matrix;
+
+	math::Vec3 position;
+	u32 padding_0 = 0;
+
+	math::Vec3 forward;
+	u32 padding_1 = 0;
+};
+
+static_assert(sizeof(LightingCamera) % 16 == 0);
+
+
+struct ToneMappingParams {
+	float avg_log_luminance = 0.5f;
+	float white_point = 1.0f;
+
+	math::Vec2 padding_0;
+};
+
+static_assert(sizeof(ToneMappingParams) % 16 == 0);
+
+}
 }
 
-}
+#endif // YAVE_GRAPHICS_DESCRIPTORS_UNIFORMS_H

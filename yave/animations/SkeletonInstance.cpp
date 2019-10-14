@@ -29,7 +29,7 @@ SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
 		_skeleton(skeleton),
 		_bone_transforms(new std::array<math::Transform<>, Skeleton::max_bones>()),
 		_bone_transform_buffer(dptr, Skeleton::max_bones),
-		_descriptor_set(dptr, {Binding(_bone_transform_buffer)}) {
+		_descriptor_set(dptr, {Descriptor(_bone_transform_buffer)}) {
 
 	flush_data();
 }

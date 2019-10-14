@@ -23,7 +23,7 @@ SOFTWARE.
 #include "CmdBufferRecorder.h"
 
 #include <yave/material/Material.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/queues/Semaphore.h>

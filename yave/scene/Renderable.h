@@ -26,7 +26,7 @@ SOFTWARE.
 #include <yave/graphics/swapchain/FrameToken.h>
 #include <yave/graphics/buffers/buffers.h>
 
-#include <yave/graphics/bindings/uniforms.h>
+#include <yave/graphics/descriptors/uniforms.h>
 
 namespace yave {
 

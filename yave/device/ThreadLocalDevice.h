@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_DEVICE_THREADLOCALDEVICE_H
 
 #include <yave/graphics/vk/vk.h>
-#include <yave/graphics/bindings/DescriptorSetLayoutPool.h>
+#include <yave/graphics/descriptors/DescriptorSetLayoutPool.h>
 #include <yave/graphics/commands/pool/CmdBufferPool.h>
 
 #include "DeviceLinked.h"

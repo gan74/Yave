@@ -125,15 +125,15 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_in
 
 Y_TODO(external framegraph resources are not synchronized)
 void FrameGraphPassBuilder::add_uniform_input(StorageView tex, usize ds_index, PipelineStage) {
-	add_uniform(Binding(tex), ds_index);
+	add_uniform(Descriptor(tex), ds_index);
 }
 
 void FrameGraphPassBuilder::add_uniform_input(TextureView tex, usize ds_index, PipelineStage) {
-	add_uniform(Binding(tex), ds_index);
+	add_uniform(Descriptor(tex), ds_index);
 }
 
 void FrameGraphPassBuilder::add_uniform_input(CubemapView tex, usize ds_index, PipelineStage) {
-	add_uniform(Binding(tex), ds_index);
+	add_uniform(Descriptor(tex), ds_index);
 }
 
 
@@ -150,7 +150,7 @@ void FrameGraphPassBuilder::add_index_input(FrameGraphBufferId res, PipelineStag
 
 // --------------------------------- stuff ---------------------------------
 
-void FrameGraphPassBuilder::add_descriptor_binding(Binding bind, usize ds_index) {
+void FrameGraphPassBuilder::add_descriptor_binding(Descriptor bind, usize ds_index) {
 	add_uniform(bind, ds_index);
 }
 

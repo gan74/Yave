@@ -53,7 +53,7 @@ PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_vie
 
 		builder.add_uniform_input(entity_pass.depth);
 		builder.add_uniform_input(entity_pass.id);
-		builder.add_descriptor_binding(Binding(_buffer));
+		builder.add_descriptor_binding(Descriptor(_buffer));
 
 		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			const auto& program = context()->resources()[EditorResources::PickingProgram];

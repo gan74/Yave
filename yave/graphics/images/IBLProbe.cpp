@@ -23,7 +23,7 @@ SOFTWARE.
 #include "IBLProbe.h"
 
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/Chrono.h>
@@ -94,7 +94,7 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
 
 	auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
 	std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
-			return DescriptorSet(dptr, {Binding(texture), Binding(view)});
+			return DescriptorSet(dptr, {Descriptor(texture), Descriptor(view)});
 		});
 
 

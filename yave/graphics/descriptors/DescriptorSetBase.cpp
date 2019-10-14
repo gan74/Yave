@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "DescriptorSetBase.h"
-#include "Binding.h"
+#include "Descriptor.h"
 
 namespace yave {
 
@@ -33,7 +33,7 @@ void DescriptorSetBase::create_descriptor_set(DevicePtr dptr, vk::DescriptorPool
 	    ).front();
 }
 
-void DescriptorSetBase::update_set(DevicePtr dptr, core::Span<Binding> bindings) {
+void DescriptorSetBase::update_set(DevicePtr dptr, core::Span<Descriptor> bindings) {
 	auto writes = core::vector_with_capacity<vk::WriteDescriptorSet>(bindings.size());
 	for(const auto& binding : bindings) {
 		auto w = vk::WriteDescriptorSet()

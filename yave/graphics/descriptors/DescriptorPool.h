@@ -45,7 +45,7 @@ class DescriptorPoolSize {
 
 
 		DescriptorPoolSize() = default;
-		DescriptorPoolSize(core::Span<Binding> bindings);
+		DescriptorPoolSize(core::Span<Descriptor> bindings);
 
 		const math::Vec<max_descriptor_type, u32>& sizes() const;
 
@@ -64,7 +64,7 @@ class DescriptorPool : public DeviceLinked, NonCopyable {
 		DescriptorPool(DescriptorPool&&) = default;
 		DescriptorPool& operator=(DescriptorPool&&) = default;
 
-		DescriptorPool(DevicePtr dptr, core::Span<Binding> bindings);
+		DescriptorPool(DevicePtr dptr, core::Span<Descriptor> bindings);
 		DescriptorPool(DevicePtr dptr, const DescriptorPoolSize& size);
 
 		~DescriptorPool();

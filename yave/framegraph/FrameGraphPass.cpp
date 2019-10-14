@@ -69,7 +69,7 @@ void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
 void FrameGraphPass::init_descriptor_sets(FrameGraphResourcePool* pool) {
 	y_profile();
 	for(const auto& set : _bindings) {
-		auto bindings = core::vector_with_capacity<Binding>(set.size());
+		auto bindings = core::vector_with_capacity<Descriptor>(set.size());
 		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [=](const FrameGraphDescriptorBinding& b) { return b.create_binding(pool); });
 		_descriptor_sets << DescriptorSet(pool->device(), bindings);
 	}

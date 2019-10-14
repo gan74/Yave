@@ -19,28 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_BINDINGS_DESCRIPTORSET_H
-#define YAVE_GRAPHICS_BINDINGS_DESCRIPTORSET_H
+#ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETLAYOUTPOOL_H
+#define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETLAYOUTPOOL_H
 
-#include "DescriptorPool.h"
+#include <yave/graphics/vk/vk.h>
+
+#include <yave/device/DeviceLinked.h>
+#include <y/core/AssocVector.h>
 
 namespace yave {
 
-class DescriptorSet : public DeviceLinked, public DescriptorSetBase, NonCopyable {
+class DescriptorSetLayoutPool : NonCopyable, public DeviceLinked {
 
 	public:
-		using DeviceLinked::is_null;
+		using Key = core::Vector<vk::DescriptorSetLayoutBinding>;
 
-		DescriptorSet() = default;
-		DescriptorSet(DescriptorSet&&) = default;
-		DescriptorSet& operator=(DescriptorSet&&) = default;
+		DescriptorSetLayoutPool(DevicePtr dptr);
+		~DescriptorSetLayoutPool();
 
-		DescriptorSet(DevicePtr dptr, core::Span<Binding> bindings);
+		vk::DescriptorSetLayout create_descriptor_set_layout(const Key& bindings);
 
-	protected:
-		DescriptorPool _pool;
+		vk::DescriptorSetLayout operator()(const Key& bindings) {
+			return create_descriptor_set_layout(bindings);
+		}
+
+	private:
+		core::AssocVector<Key, vk::DescriptorSetLayout> _layouts;
+
+
 };
+
+
 
 }
 
-#endif // YAVE_GRAPHICS_BINDINGS_DESCRIPTORSET_H
+#endif // YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETLAYOUTPOOL_H

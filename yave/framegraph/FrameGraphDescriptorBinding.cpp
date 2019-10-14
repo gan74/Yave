@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Binding& bind) : _type(BindingType::External), _external(bind) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Descriptor& bind) : _type(BindingType::External), _external(bind) {
 }
 
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type) :
@@ -52,7 +52,7 @@ FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(
 	return FrameGraphDescriptorBinding(res, BindingType::InputImage);
 }
 
-Binding FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool) const {
+Descriptor FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool) const {
 	switch(_type) {
 		case BindingType::External:
 			return _external;

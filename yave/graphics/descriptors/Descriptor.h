@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_BINDINGS_BINDING_H
-#define YAVE_GRAPHICS_BINDINGS_BINDING_H
+#ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTOR_H
+#define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTOR_H
 
 #include <yave/yave.h>
 #include <yave/device/Device.h>
@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Binding {
+class Descriptor {
 
 	public:
 		union DescriptorInfo {
@@ -45,7 +45,7 @@ class Binding {
 		};
 
 		template<ImageType Type>
-		Binding(const ImageView<ImageUsage::TextureBit, Type>& view) :
+		Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view) :
 				 _type(vk::DescriptorType::eCombinedImageSampler),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(view.usage()))
@@ -54,7 +54,7 @@ class Binding {
 		}
 
 		template<ImageType Type>
-		Binding(const ImageView<ImageUsage::StorageBit, Type>& view) :
+		Descriptor(const ImageView<ImageUsage::StorageBit, Type>& view) :
 				 _type(vk::DescriptorType::eStorageImage),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(ImageUsage::StorageBit))
@@ -63,23 +63,23 @@ class Binding {
 		}
 
 		template<ImageUsage Usage, ImageType Type>
-		Binding(const Image<Usage, Type>& image) : Binding(ImageView<Usage, Type>(image)) {
+		Descriptor(const Image<Usage, Type>& image) : Descriptor(ImageView<Usage, Type>(image)) {
 		}
 
 
-		Binding(const SubBuffer<BufferUsage::UniformBit>& buffer) :
+		Descriptor(const SubBuffer<BufferUsage::UniformBit>& buffer) :
 				_type(vk::DescriptorType::eUniformBuffer),
 				_info(buffer.descriptor_info()) {
 		}
 
-		Binding(const SubBuffer<BufferUsage::StorageBit>& buffer) :
+		Descriptor(const SubBuffer<BufferUsage::StorageBit>& buffer) :
 				_type(vk::DescriptorType::eStorageBuffer),
 				_info(buffer.descriptor_info()) {
 		}
 
 		template<BufferUsage Usage, MemoryType Memory>
-		Binding(const Buffer<Usage, Memory>& buffer) :
-				Binding(SubBuffer<(Usage & BufferUsage::StorageBit) != BufferUsage::None ? BufferUsage::StorageBit : BufferUsage::UniformBit>(buffer)) {
+		Descriptor(const Buffer<Usage, Memory>& buffer) :
+				Descriptor(SubBuffer<(Usage & BufferUsage::StorageBit) != BufferUsage::None ? BufferUsage::StorageBit : BufferUsage::UniformBit>(buffer)) {
 		}
 
 		auto descriptor_set_layout_binding(usize index) const {
@@ -135,4 +135,4 @@ class Binding {
 
 }
 
-#endif // YAVE_GRAPHICS_BINDINGS_BINDING_H
+#endif // YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTOR_H

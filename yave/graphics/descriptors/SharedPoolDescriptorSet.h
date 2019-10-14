@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,52 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ANIMATIONS_SKELETONINSTANCE_H
-#define YAVE_ANIMATIONS_SKELETONINSTANCE_H
+#ifndef YAVE_GRAPHICS_DESCRIPTORS_SHAREDPOOLDESCRIPTORSET_H
+#define YAVE_GRAPHICS_DESCRIPTORS_SHAREDPOOLDESCRIPTORSET_H
 
-#include <y/core/Chrono.h>
-
-#include <yave/meshes/Skeleton.h>
-#include <yave/assets/AssetPtr.h>
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
-
-#include "Animation.h"
+#include "DescriptorPool.h"
 
 namespace yave {
 
-class SkeletonInstance {
+class SharedPoolDescriptorSet : public DescriptorSetBase {
 
 	public:
-		SkeletonInstance() = default;
+		SharedPoolDescriptorSet() = default;
+		SharedPoolDescriptorSet(SharedPoolDescriptorSet&&) = default;
+		SharedPoolDescriptorSet& operator=(SharedPoolDescriptorSet&&) = default;
 
-		// this seems unsafe...
-		SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton);
+		SharedPoolDescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
 
-		void flush_reload();
+		DevicePtr device() const;
+		bool is_null() const;
 
-		void animate(const AssetPtr<Animation>& anim);
-
-		void update();
-
-		const auto& descriptor_set() const {
-			return _descriptor_set;
-		}
-
-	private:
-		void flush_data();
-
-		const Skeleton* _skeleton = nullptr;
-		std::unique_ptr<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
-
-		TypedUniformBuffer<math::Transform<>, MemoryType::CpuVisible> _bone_transform_buffer;
-		DescriptorSet _descriptor_set;
-
-		AssetPtr<Animation> _animation;
-		core::Chrono _anim_timer;
-
+	protected:
+		DescriptorPool _pool;
 };
 
 }
 
-#endif // YAVE_ANIMATIONS_SKELETONINSTANCE_H
+#endif // YAVE_GRAPHICS_DESCRIPTORS_SHAREDPOOLDESCRIPTORSET_H

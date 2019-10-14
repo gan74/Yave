@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <y/core/Functor.h>
 
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/buffers/buffers.h>

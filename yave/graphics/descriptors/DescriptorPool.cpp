@@ -22,11 +22,11 @@ SOFTWARE.
 
 #include "DescriptorPool.h"
 
-#include <yave/graphics/bindings/Binding.h>
+#include <yave/graphics/descriptors/Descriptor.h>
 
 namespace yave {
 
-DescriptorPoolSize::DescriptorPoolSize(core::Span<Binding> bindings) {
+DescriptorPoolSize::DescriptorPoolSize(core::Span<Descriptor> bindings) {
 	for(const auto& binding : bindings) {
 		++_sizes[usize(binding.vk_descriptor_type())];
 	}
@@ -79,7 +79,7 @@ static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const Descripto
 }
 
 
-DescriptorPool::DescriptorPool(DevicePtr dptr, core::Span<Binding> bindings) : DescriptorPool(dptr, DescriptorPoolSize(bindings)) {
+DescriptorPool::DescriptorPool(DevicePtr dptr, core::Span<Descriptor> bindings) : DescriptorPool(dptr, DescriptorPoolSize(bindings)) {
 }
 
 DescriptorPool::DescriptorPool(DevicePtr dptr, const DescriptorPoolSize& size) :

@@ -19,52 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ANIMATIONS_SKELETONINSTANCE_H
-#define YAVE_ANIMATIONS_SKELETONINSTANCE_H
+#ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETBASE_H
+#define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETBASE_H
 
-#include <y/core/Chrono.h>
-
-#include <yave/meshes/Skeleton.h>
-#include <yave/assets/AssetPtr.h>
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
-
-#include "Animation.h"
+#include "Descriptor.h"
 
 namespace yave {
 
-class SkeletonInstance {
+class DescriptorSetBase /*: NonCopyable, public DeviceLinked*/ {
 
 	public:
-		SkeletonInstance() = default;
+		DescriptorSetBase() = default;
 
-		// this seems unsafe...
-		SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton);
-
-		void flush_reload();
-
-		void animate(const AssetPtr<Animation>& anim);
-
-		void update();
-
-		const auto& descriptor_set() const {
-			return _descriptor_set;
+		bool is_null() const {
+			return !_set;
 		}
 
-	private:
-		void flush_data();
+		vk::DescriptorSet vk_descriptor_set() const {
+			return _set;
+		}
 
-		const Skeleton* _skeleton = nullptr;
-		std::unique_ptr<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
+	protected:
+		// helpers for parent classes
+		void create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
+		void update_set(DevicePtr dptr, core::Span<Descriptor> bindings);
 
-		TypedUniformBuffer<math::Transform<>, MemoryType::CpuVisible> _bone_transform_buffer;
-		DescriptorSet _descriptor_set;
-
-		AssetPtr<Animation> _animation;
-		core::Chrono _anim_timer;
-
+		vk::DescriptorSet _set;
 };
+
+static_assert(sizeof(DescriptorSetBase) == sizeof(vk::DescriptorSet));
 
 }
 
-#endif // YAVE_ANIMATIONS_SKELETONINSTANCE_H
+#endif // YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETBASE_H

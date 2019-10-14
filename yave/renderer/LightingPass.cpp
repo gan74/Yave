@@ -45,7 +45,7 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 
 	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
 
-	DescriptorSet dset(dptr, {Binding(StorageView(image))});
+	DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
 
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 	{

@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <yave/graphics/buffers/Mapping.h>
 
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 
 #include "FrameGraphResourceToken.h"

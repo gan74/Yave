@@ -67,7 +67,7 @@ class FrameGraphPassBuilder {
 
 		void set_render_func(FrameGraphPass::render_func&& func);
 
-		void add_descriptor_binding(Binding bind, usize ds_index = 0);
+		void add_descriptor_binding(Descriptor bind, usize ds_index = 0);
 
 	private:
 		friend class FrameGraph;
