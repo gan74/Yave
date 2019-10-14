@@ -26,18 +26,19 @@ SOFTWARE.
 
 namespace yave {
 
-class DescriptorSet : public DeviceLinked, public DescriptorSetBase, NonCopyable {
+class DescriptorSet final : public DescriptorSetBase, NonCopyable {
 
 	public:
-		using DeviceLinked::is_null;
-
 		DescriptorSet() = default;
 		DescriptorSet(DescriptorSet&&) = default;
 		DescriptorSet& operator=(DescriptorSet&&) = default;
 
 		DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
 
-	protected:
+		DevicePtr device() const;
+		bool is_null() const;
+
+	private:
 		DescriptorPool _pool;
 };
 

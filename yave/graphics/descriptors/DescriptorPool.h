@@ -47,6 +47,8 @@ class DescriptorPoolSize {
 		DescriptorPoolSize() = default;
 		DescriptorPoolSize(core::Span<Descriptor> bindings);
 
+		void add_descriptor(const Descriptor& d);
+
 		const math::Vec<max_descriptor_type, u32>& sizes() const;
 
 		u32 operator[](vk::DescriptorType i) const;

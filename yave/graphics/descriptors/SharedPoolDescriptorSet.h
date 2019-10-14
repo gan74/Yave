@@ -26,20 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-class SharedPoolDescriptorSet : public DescriptorSetBase {
+class SharedPoolDescriptorSet final : public DescriptorSetBase, NonCopyable {
 
 	public:
 		SharedPoolDescriptorSet() = default;
 		SharedPoolDescriptorSet(SharedPoolDescriptorSet&&) = default;
 		SharedPoolDescriptorSet& operator=(SharedPoolDescriptorSet&&) = default;
 
-		SharedPoolDescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
+		SharedPoolDescriptorSet(DescriptorPool& pool, core::Span<Descriptor> bindings);
 
-		DevicePtr device() const;
 		bool is_null() const;
-
-	protected:
-		DescriptorPool _pool;
 };
 
 }

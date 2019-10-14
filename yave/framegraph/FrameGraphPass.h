@@ -58,7 +58,7 @@ class FrameGraphPass final : NonMovable {
 		const Framebuffer& framebuffer() const;
 		core::Span<DescriptorSet> descriptor_sets() const;
 
-		void render(CmdBufferRecorder& recorder) const;
+		void render(CmdBufferRecorder& recorder) &&;
 
 	private:
 		friend class FrameGraph;
@@ -66,6 +66,8 @@ class FrameGraphPass final : NonMovable {
 
 		void init_framebuffer(FrameGraphResourcePool* pool);
 		void init_descriptor_sets(FrameGraphResourcePool* pool);
+
+		DescriptorPoolSize descriptor_pool_size() const;
 
 		render_func _render = [](CmdBufferRecorder&, const FrameGraphPass*) {};
 		core::String _name;
@@ -84,9 +86,6 @@ class FrameGraphPass final : NonMovable {
 		core::Vector<Attachment> _colors;
 
 		Framebuffer _framebuffer;
-
-		//core::Vector<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> _image_copies;
-		//core::Vector<std::pair<FrameGraphBufferId, FrameGraphMutableBufferId>> _buffer_copies;
 };
 
 }

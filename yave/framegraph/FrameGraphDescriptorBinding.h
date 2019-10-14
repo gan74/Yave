@@ -42,7 +42,7 @@ class FrameGraphDescriptorBinding {
 	};
 
 	public:
-		FrameGraphDescriptorBinding(const Descriptor& bind);
+		FrameGraphDescriptorBinding(const Descriptor& desc);
 
 		static FrameGraphDescriptorBinding create_storage_binding(FrameGraphBufferId res);
 		static FrameGraphDescriptorBinding create_storage_binding(FrameGraphImageId res);
@@ -50,7 +50,8 @@ class FrameGraphDescriptorBinding {
 		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphBufferId res);
 		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphImageId res);
 
-		Descriptor create_binding(FrameGraphResourcePool* pool) const;
+		Descriptor create_and_save_descriptor(FrameGraphResourcePool* pool);
+		Descriptor create_descriptor(FrameGraphResourcePool* pool) const;
 
 	private:
 		FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type);

@@ -47,7 +47,7 @@ core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
 	return _descriptor_sets;
 }
 
-void FrameGraphPass::render(CmdBufferRecorder& recorder) const {
+void FrameGraphPass::render(CmdBufferRecorder& recorder) && {
 	_render(recorder, this);
 }
 
@@ -70,7 +70,7 @@ void FrameGraphPass::init_descriptor_sets(FrameGraphResourcePool* pool) {
 	y_profile();
 	for(const auto& set : _bindings) {
 		auto bindings = core::vector_with_capacity<Descriptor>(set.size());
-		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [=](const FrameGraphDescriptorBinding& b) { return b.create_binding(pool); });
+		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [=](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(pool); });
 		_descriptor_sets << DescriptorSet(pool->device(), bindings);
 	}
 }

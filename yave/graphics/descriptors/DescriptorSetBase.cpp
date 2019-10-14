@@ -26,14 +26,18 @@ SOFTWARE.
 namespace yave {
 
 void DescriptorSetBase::create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout) {
+	y_profile();
+
 	_set = dptr->vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
 	        .setDescriptorPool(pool)
-	        .setDescriptorSetCount(1)
-	        .setPSetLayouts(&layout)
+			.setDescriptorSetCount(1)
+			.setPSetLayouts(&layout)
 	    ).front();
 }
 
 void DescriptorSetBase::update_set(DevicePtr dptr, core::Span<Descriptor> bindings) {
+	y_profile();
+
 	auto writes = core::vector_with_capacity<vk::WriteDescriptorSet>(bindings.size());
 	for(const auto& binding : bindings) {
 		auto w = vk::WriteDescriptorSet()

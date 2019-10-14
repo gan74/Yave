@@ -184,7 +184,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 
 		{
 			y_profile_zone("render");
-			pass->render(recorder);
+			std::move(*pass).render(recorder);
 		}
 	}
 

@@ -28,8 +28,12 @@ namespace yave {
 
 DescriptorPoolSize::DescriptorPoolSize(core::Span<Descriptor> bindings) {
 	for(const auto& binding : bindings) {
-		++_sizes[usize(binding.vk_descriptor_type())];
+		add_descriptor(binding);
 	}
+}
+
+void DescriptorPoolSize::add_descriptor(const Descriptor& d) {
+	++_sizes[usize(d.vk_descriptor_type())];
 }
 
 const math::Vec<DescriptorPoolSize::max_descriptor_type, u32>& DescriptorPoolSize::sizes() const {
@@ -53,7 +57,12 @@ DescriptorPoolSize DescriptorPoolSize::operator+(const DescriptorPoolSize& other
 }
 
 
+
+
+
 static vk::DescriptorPool create_descriptor_pool(DevicePtr dptr, const DescriptorPoolSize& size) {
+	y_profile();
+
 	usize sizes_count = 0;
 	std::array<vk::DescriptorPoolSize, DescriptorPoolSize::max_descriptor_type> sizes;
 

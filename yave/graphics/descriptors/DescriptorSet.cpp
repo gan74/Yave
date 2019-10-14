@@ -40,4 +40,13 @@ DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings) : 
 	}
 }
 
+DevicePtr DescriptorSet::device() const {
+	return _pool.device();
+}
+
+bool DescriptorSet::is_null() const {
+	return !device();
+}
+
+
 }

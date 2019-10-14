@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-SharedPoolDescriptorSet::SharedPoolDescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings) : _pool(dptr, bindings) {
+SharedPoolDescriptorSet::SharedPoolDescriptorSet(DescriptorPool& pool, core::Span<Descriptor> bindings) {
 	if(!bindings.is_empty()) {
 		auto layout_bindings = core::vector_with_capacity<vk::DescriptorSetLayoutBinding>(bindings.size());
 
@@ -33,20 +33,12 @@ SharedPoolDescriptorSet::SharedPoolDescriptorSet(DevicePtr dptr, core::Span<Desc
 			layout_bindings << binding.descriptor_set_layout_binding(layout_bindings.size());
 		}
 
+		DevicePtr dptr = pool.device();
 		auto layout = dptr->create_descriptor_set_layout(layout_bindings);
 
-		create_descriptor_set(dptr, _pool.vk_pool(), layout);
+		create_descriptor_set(dptr, pool.vk_pool(), layout);
 		update_set(dptr, bindings);
 	}
-}
-
-
-DevicePtr SharedPoolDescriptorSet::device() const {
-	return _pool.device();
-}
-
-bool SharedPoolDescriptorSet::is_null() const {
-	return !device();
 }
 
 }
