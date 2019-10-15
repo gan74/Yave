@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace editor {
 
-CameraDebug::CameraDebug(ContextPtr cptr) : Widget("Camera debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
+CameraDebug::CameraDebug(ContextPtr cptr) : Widget(ICON_FA_VIDEO " Camera debug", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
 }
 
 void CameraDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {

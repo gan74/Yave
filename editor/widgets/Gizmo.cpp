@@ -81,6 +81,23 @@ void Gizmo::set_allow_drag(bool allow) {
 	_allow_drag = allow;
 }
 
+
+Gizmo::Mode Gizmo::mode() const {
+	return _mode;
+}
+
+void Gizmo::set_mode(Mode mode) {
+	_mode = mode;
+}
+
+Gizmo::Space Gizmo::space() const {
+	return _space;
+}
+
+void Gizmo::set_space(Space space) {
+	_space = space;
+}
+
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
 	auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
 	return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
@@ -156,17 +173,14 @@ void Gizmo::draw() {
 									   math::Vec3{0.0f, 0.0f, 1.0f}};
 
 
-
-	Mode gizmo_mode = context()->editor_state().gizmo_mode;
-	Space gizmo_space = context()->editor_state().gizmo_space;
-	if(gizmo_space == Local) {
+	if(_space == Local) {
 		for(math::Vec3& a : basis) {
 			a = obj_rot(a);
 		}
 	}
 
 
-	if(gizmo_mode == Translate) {
+	if(_mode == Translate) {
 		struct Axis {
 			math::Vec2 vec;
 			usize index;
@@ -272,7 +286,7 @@ void Gizmo::draw() {
 				}
 			}
 		}
-	} else if(gizmo_mode == Rotate) {
+	} else if(_mode == Rotate) {
 		const usize segment_count = 64;
 		float seg_ang_size = (1.0f / segment_count) * 2.0f * math::pi<float>;
 		usize rotation_axis = _rotation_axis;

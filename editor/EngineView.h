@@ -54,11 +54,15 @@ class EngineView final : public Widget, public ContextLinked {
 	private:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
 
+		void before_paint() override;
+		void after_paint() override;
+
 	private:
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
 		void draw(CmdBufferRecorder& recorder);
-		void draw_rendering_menu();
+		void draw_menu_bar();
+		void draw_gizmo_tool_bar();
 
 		bool is_clicked() const;
 

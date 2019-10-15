@@ -108,7 +108,7 @@ static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE instance, HWND ha
 	if(!has_wsi_support(dptr, surface)) {
 		y_fatal("No WSI support.");
 	}
-	log_msg("Vulkan WSI supported !");
+	log_msg("Vulkan WSI supported!");
 	return surface;
 }
 #endif

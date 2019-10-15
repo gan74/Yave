@@ -144,6 +144,8 @@ if(_style == Style::Corporate || _style == Style::Corporate3D) {
 
 	style.ScrollbarSize = 18;
 
+	style.IndentSpacing = 12;
+
 	style.WindowBorderSize = 1;
 	style.ChildBorderSize  = 1;
 	style.PopupBorderSize  = 1;

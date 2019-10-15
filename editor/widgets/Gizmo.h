@@ -45,6 +45,12 @@ class Gizmo final : public ContextLinked {
 		bool is_dragging() const;
 		void set_allow_drag(bool allow);
 
+		Mode mode() const;
+		void set_mode(Mode mode);
+
+		Space space() const;
+		void set_space(Space space);
+
 	private:
 
 		math::Vec3 to_screen_pos(const math::Vec3& world);
@@ -59,6 +65,8 @@ class Gizmo final : public ContextLinked {
 		u32 _dragging_mask = 0;
 
 		bool _allow_drag = true;
+		Mode _mode = Translate;
+		Space _space = World;
 };
 
 }

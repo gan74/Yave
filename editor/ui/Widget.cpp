@@ -81,6 +81,8 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 		return;
 	}
 
+	before_paint();
+
 	if(_has_parent) {
 		if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
 			paint_ui(recorder, token);
@@ -104,6 +106,8 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 		}
 		ImGui::End();
 	}
+
+	after_paint();
 }
 
 }

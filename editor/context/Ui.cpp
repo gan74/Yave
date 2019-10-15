@@ -31,7 +31,6 @@ SOFTWARE.
 #include <editor/properties/PropertyPanel.h>
 #include <editor/EngineView.h>
 #include <editor/ui/MenuBar.h>
-#include <editor/ui/ToolBar.h>
 
 #include <editor/ui/ImGuiRenderer.h>
 #include <imgui/yave_imgui.h>
@@ -52,7 +51,6 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 	show<ResourceBrowser>();
 	show<PropertyPanel>();
 	show<MenuBar>();
-	show<ToolBar>();
 
 	_renderer = std::make_unique<ImGuiRenderer>(context());
 }

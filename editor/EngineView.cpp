@@ -32,7 +32,7 @@ SOFTWARE.
 namespace editor {
 
 EngineView::EngineView(ContextPtr cptr) :
-		Widget(ICON_FA_DESKTOP " Engine View"),
+		Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
 		ContextLinked(cptr),
 		_ibl_data(std::make_shared<IBLData>(device())),
 		_scene_view(&context()->world()),
@@ -42,6 +42,17 @@ EngineView::EngineView(ContextPtr cptr) :
 
 EngineView::~EngineView() {
 	context()->remove_scene_view(&_scene_view);
+}
+
+void EngineView::before_paint() {
+	ImGui::PushStyleColor(ImGuiCol_MenuBarBg, math::Vec4(0.0f));
+	ImGui::PushStyleColor(ImGuiCol_Border, math::Vec4(0.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2(2.0f, 0.0f));
+}
+
+void EngineView::after_paint() {
+	ImGui::PopStyleColor(2);
+	ImGui::PopStyleVar(1);
 }
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
@@ -96,47 +107,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
 	y_profile();
 
+	draw_menu_bar();
 	draw(recorder);
 	_gizmo.draw();
-	draw_rendering_menu();
 
 	update();
-}
-
-void EngineView::draw_rendering_menu() {
-	ImGui::SetCursorPos(math::Vec2(ImGui::GetWindowContentRegionMin()) + math::Vec2(8));
-
-	if(ImGui::Button(ICON_FA_COG)) {
-		ImGui::OpenPopup("###renderersettings");
-	}
-
-	if(ImGui::BeginPopup("###renderersettings")) {
-		ImGui::MenuItem("Editor entities", nullptr, &_settings.enable_editor_entities);
-
-		ImGui::Separator();
-		if(ImGui::BeginMenu("Tone mapping")) {
-			ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
-			ImGui::MenuItem("Auto exposure", nullptr, &settings.auto_exposure);
-			ImGui::EndMenu();
-		}
-
-		ImGui::Separator();
-		{
-			const char* output_names[] = {
-					"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth"
-				};
-			for(usize i = 0; i != usize(RenderView::MaxRenderViews); ++i) {
-				bool selected = usize(_view) == i;
-				ImGui::MenuItem(output_names[i], nullptr, &selected);
-				if(selected) {
-					_view = RenderView(i);
-				}
-			}
-		}
-
-		ImGui::EndPopup();
-	}
-
 }
 
 bool EngineView::is_clicked() const {
@@ -144,10 +119,12 @@ bool EngineView::is_clicked() const {
 }
 
 void EngineView::update() {
-
 	_gizmo.set_allow_drag(true);
 
-	bool hovered = ImGui::IsWindowHovered();
+	math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - math::Vec2(ImGui::GetWindowPos());
+	auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
+
+	bool hovered = less(mouse_pos, ImGui::GetWindowContentRegionMax()) && less(ImGui::GetWindowContentRegionMin(), mouse_pos);
 	bool focussed = ImGui::IsWindowFocused();
 
 	if(hovered && is_clicked()) {
@@ -193,6 +170,74 @@ void EngineView::update_picking() {
 			context()->selection().set_selected(picked_id);
 		}
 	}
+}
+
+void EngineView::draw_menu_bar() {
+	if(ImGui::BeginMenuBar()) {
+
+		if(ImGui::BeginMenu("Render")) {
+			ImGui::MenuItem("Editor entities", nullptr, &_settings.enable_editor_entities);
+
+			ImGui::Separator();
+			if(ImGui::BeginMenu("Tone mapping")) {
+				ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
+				ImGui::MenuItem("Auto exposure", nullptr, &settings.auto_exposure);
+				ImGui::EndMenu();
+			}
+
+			ImGui::Separator();
+			{
+				const char* output_names[] = {
+						"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth"
+					};
+				for(usize i = 0; i != usize(RenderView::MaxRenderViews); ++i) {
+					bool selected = usize(_view) == i;
+					ImGui::MenuItem(output_names[i], nullptr, &selected);
+					if(selected) {
+						_view = RenderView(i);
+					}
+				}
+			}
+			ImGui::EndMenu();
+		}
+
+		draw_gizmo_tool_bar();
+
+		ImGui::EndMenuBar();
+	}
+}
+
+void EngineView::draw_gizmo_tool_bar() {
+	auto gizmo_mode = _gizmo.mode();
+	auto gizmo_space = _gizmo.space();
+	{
+		if(ImGui::MenuItem(ICON_FA_ARROWS_ALT, nullptr, false, gizmo_mode != Gizmo::Translate)) {
+			gizmo_mode = Gizmo::Translate;
+		}
+		if(ImGui::MenuItem(ICON_FA_SYNC_ALT, nullptr, false, gizmo_mode != Gizmo::Rotate)) {
+			gizmo_mode = Gizmo::Rotate;
+		}
+	}
+	{
+		if(ImGui::MenuItem(ICON_FA_MOUNTAIN, nullptr, false, gizmo_space != Gizmo::World)) {
+			gizmo_space = Gizmo::World;
+		}
+		if(ImGui::MenuItem(ICON_FA_CUBE, nullptr, false, gizmo_space != Gizmo::Local)) {
+			gizmo_space = Gizmo::Local;
+		}
+	}
+
+	if(is_focussed()) {
+		const UiSettings& settings = context()->settings().ui();
+		if(ImGui::IsKeyReleased(int(settings.change_gizmo_mode))) {
+			gizmo_mode = Gizmo::Mode(!usize(gizmo_mode));
+		}
+		if(ImGui::IsKeyReleased(int(settings.change_gizmo_space))) {
+			gizmo_space = Gizmo::Space(!usize(gizmo_space));
+		}
+	}
+	_gizmo.set_mode(gizmo_mode);
+	_gizmo.set_space(gizmo_space);
 }
 
 }

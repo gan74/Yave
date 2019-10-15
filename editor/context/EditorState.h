@@ -23,13 +23,10 @@ SOFTWARE.
 #define EDITOR_CONTEXT_EDITORSSTATE_H
 
 #include <editor/editor.h>
-#include <editor/widgets/Gizmo.h>
 
 namespace editor {
 
 struct EditorState {
-	Gizmo::Mode gizmo_mode = Gizmo::Translate;
-	Gizmo::Space gizmo_space = Gizmo::World;
 };
 
 }
