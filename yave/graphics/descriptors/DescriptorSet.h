@@ -22,24 +22,29 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSET_H
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSET_H
 
-#include "DescriptorPool.h"
+#include "DescriptorSetBase.h"
+#include "DescriptorSetAllocator.h"
 
 namespace yave {
 
-class DescriptorSet final : public DescriptorSetBase, NonCopyable {
+class DescriptorSet : public DescriptorSetBase, NonCopyable {
 
 	public:
 		DescriptorSet() = default;
-		DescriptorSet(DescriptorSet&&) = default;
-		DescriptorSet& operator=(DescriptorSet&&) = default;
 
 		DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
+		~DescriptorSet();
+
+		DescriptorSet(DescriptorSet&&);
+		DescriptorSet& operator=(DescriptorSet&&);
 
 		DevicePtr device() const;
 		bool is_null() const;
 
 	private:
-		DescriptorPool _pool;
+		void swap(DescriptorSet& other);
+
+		DescriptorSetData _data;
 };
 
 }

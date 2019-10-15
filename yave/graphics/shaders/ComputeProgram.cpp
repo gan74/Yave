@@ -35,7 +35,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
 	auto layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
 	for(const auto& binding : bindings) {
-		layouts[binding.first] = device()->create_descriptor_set_layout(binding.second);
+		layouts[binding.first] = device()->descriptor_set_layout(binding.second).vk_descriptor_set_layout();
 	}
 	_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(u32(layouts.size()))

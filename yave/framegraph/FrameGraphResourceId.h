@@ -222,7 +222,6 @@ struct hash<yave::FrameGraphResourceId> : hash<y::u32>{
 		return hash<y::u32>::operator()(r.id());
 	}
 };
-
 }
 
 #endif // YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCEID_H

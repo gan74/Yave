@@ -50,7 +50,6 @@ class FrameGraphDescriptorBinding {
 		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphBufferId res);
 		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphImageId res);
 
-		Descriptor create_and_save_descriptor(FrameGraphResourcePool* pool);
 		Descriptor create_descriptor(FrameGraphResourcePool* pool) const;
 
 	private:

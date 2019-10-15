@@ -27,9 +27,7 @@ namespace y {
 namespace concurrent {
 
 SpinLock::SpinLock() :
-	//_spin(ATOMIC_FLAG_INIT)
-	_spin(Unlocked)
-	{
+	_spin(Unlocked) {
 }
 
 SpinLock::~SpinLock() {

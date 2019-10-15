@@ -98,6 +98,22 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::SetNextItemWidth(-1);
 		ImGui::PlotLines("###graph", _history.begin(), _history.size(), _current_index, "", 0.0f, to_mb(_max_usage) * 1.33f, ImVec2(0, 80));
 	}
+
+	{
+		ImGui::Spacing();
+		ImGui::Separator();
+
+		DescriptorSetAllocator& alloc = context()->device()->descriptor_set_allocator();
+		usize pools = alloc.pool_count();
+		usize total_sets = pools * DescriptorSetPool::pool_size;
+		usize free_sets = alloc.free_sets();
+		usize used_sets = total_sets - free_sets;
+
+		ImGui::Text("Descriptor set layouts: %u", u32(alloc.layout_count()));
+		ImGui::Text("Descriptor set pools: %u", u32(pools));
+
+		ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt("% / % sets", used_sets, total_sets).data());
+	}
 }
 
 }

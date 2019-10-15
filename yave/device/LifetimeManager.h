@@ -24,8 +24,8 @@ SOFTWARE.
 
 #include "DeviceLinked.h"
 
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemory.h>
-
 #include <yave/graphics/vk/vk.h>
 
 #include <y/concurrent/SpinLock.h>
@@ -81,6 +81,7 @@ class ResourceFence {
 
 using ManagedResource = std::variant<
 		DeviceMemory,
+		DescriptorSetData,
 
 		vk::Buffer,
 		vk::Image,

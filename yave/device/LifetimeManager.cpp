@@ -97,6 +97,8 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 		[dptr = device()](auto& res) {
 			if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
 				res.free();
+			} else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
+				res.recycle();
 			} else {
 				detail::destroy(dptr, res);
 			}

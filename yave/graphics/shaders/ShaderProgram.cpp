@@ -149,7 +149,7 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 		if(!_bindings.empty()) {
 			_layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
 			for(const auto& binding : _bindings) {
-				_layouts[binding.first] = device()->create_descriptor_set_layout(binding.second);
+				_layouts[binding.first] = device()->descriptor_set_layout(binding.second).vk_descriptor_set_layout();
 			}
 		}
 	}

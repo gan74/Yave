@@ -52,10 +52,10 @@ FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(
 	return FrameGraphDescriptorBinding(res, BindingType::InputImage);
 }
 
-Descriptor FrameGraphDescriptorBinding::create_and_save_descriptor(FrameGraphResourcePool* pool) {
+/*Descriptor FrameGraphDescriptorBinding::create_and_save_descriptor(FrameGraphResourcePool* pool) {
 	operator=(FrameGraphDescriptorBinding(create_descriptor(pool)));
 	return _external;
-}
+}*/
 
 Descriptor FrameGraphDescriptorBinding::create_descriptor(FrameGraphResourcePool* pool) const {
 	switch(_type) {

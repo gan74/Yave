@@ -104,7 +104,8 @@ Device::Device(Instance& instance) :
 		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
 		_allocator(this),
 		_lifetime_manager(this),
-		_sampler(this) {
+		_sampler(this),
+		_descriptor_set_allocator(this) {
 
 	for(const auto& family : _queue_families) {
 		for(auto& queue : family.queues(this)) {
@@ -132,6 +133,10 @@ const Instance &Device::instance() const {
 
 DeviceMemoryAllocator& Device::allocator() const {
 	return _allocator;
+}
+
+DescriptorSetAllocator& Device::descriptor_set_allocator() const {
+	return _descriptor_set_allocator;
 }
 
 const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {

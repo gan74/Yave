@@ -29,6 +29,8 @@ SOFTWARE.
 #include "DeviceResources.h"
 #include "LifetimeManager.h"
 
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
+
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/queues/QueueFamily.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
@@ -52,6 +54,7 @@ class Device : NonMovable {
 		const Instance& instance() const;
 
 		DeviceMemoryAllocator& allocator() const;
+		DescriptorSetAllocator& descriptor_set_allocator() const;
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
 
@@ -73,9 +76,10 @@ class Device : NonMovable {
 
 		const DebugUtils* debug_utils() const;
 
+
 		template<typename T>
-		auto create_descriptor_set_layout(T&& t) const {
-			return thread_device()->create_descriptor_set_layout(y_fwd(t));
+		auto&& descriptor_set_layout(T&& t) const {
+			return descriptor_set_allocator().descriptor_set_layout(y_fwd(t));
 		}
 
 		template<typename T>
@@ -112,6 +116,7 @@ class Device : NonMovable {
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
 		DeviceResources _resources;
+		mutable DescriptorSetAllocator _descriptor_set_allocator;
 };
 
 
