@@ -30,6 +30,9 @@ namespace {
 using namespace y;
 using namespace y::core;
 
+static_assert(is_iterable_v<const core::Vector<int>&>);
+static_assert(is_iterable_v<core::Vector<int>&>);
+
 struct Big {
 	u64 _big[256];
 };

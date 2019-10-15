@@ -139,8 +139,8 @@ static auto has_end(...) -> std::false_type;
 
 template<typename T>
 using is_iterable = bool_type<
-		decltype(detail::has_begin<T>(nullptr))::value &&
-		decltype(detail::has_end<T>(nullptr))::value
+		decltype(detail::has_begin<std::remove_reference_t<T>>(nullptr))::value &&
+		decltype(detail::has_end<std::remove_reference_t<T>>(nullptr))::value
 	>;
 
 template<typename T>

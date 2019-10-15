@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,65 +19,55 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_UTILS_ITER_H
-#define Y_UTILS_ITER_H
+#include <y/core/Vector.h>
+#include <y/core/String.h>
+#include <y/math/Vec.h>
+#include <y/reflect/reflect.h>
 
-#include "types.h"
+#include <y/test/test.h>
 
-namespace y {
+namespace {
+using namespace y;
+using namespace y::core;
 
-template<usize I, typename It>
-class TupleMemberIterator {
-	using iterator_type = It;
+struct Trivial {
+	int x = 1;
+	float y = 2;
+	math::Vec3 z = {3.0f, 4.0f, 5.0f};
 
-	public:
-		TupleMemberIterator(iterator_type it) : _it(it) {
-		}
+	y_reflect(x, y, z)
+};
 
-		TupleMemberIterator& operator++() {
-			++_it;
-			return *this;
-		}
+struct Easy {
+	Trivial t;
+	std::tuple<core::String, int> str = {"a string", 7};
 
-		TupleMemberIterator operator++(int) {
-			iterator_type it = _it;
-			++_it;
-			return TupleMemberIterator(it);
-		}
+	y_reflect(str, t, -17)
+};
 
-		TupleMemberIterator& operator--() {
-			--_it;
-			return *this;
-		}
+struct Complex {
+	core::Vector<Easy> a;
+	core::Vector<int> b;
+	int c;
+	core::String d;
 
-		TupleMemberIterator operator--(int) {
-			iterator_type it = _it;
-			--_it;
-			return TupleMemberIterator(it);
-		}
-
-		bool operator==(const TupleMemberIterator& other) const {
-			return _it == other._it;
-		}
-
-		bool operator!=(const TupleMemberIterator& other) const {
-			return _it != other._it;
-		}
-
-		auto&& operator*() const {
-			return std::get<I>(*_it);
-		}
-
-		auto* operator->() const {
-			return &std::get<I>(*_it);
-		}
-
-	private:
-		iterator_type _it;
+	y_reflect(a, b, d, c)
 };
 
 
+y_test_func("reflect trivial") {
+	{
+		usize iters = 0;
+		Easy tr;
+		tr.reflect([&](std::string_view, auto&&) { ++iters; });
+		y_test_assert(iters == 11 + std::get<0>(tr.str).size());
+	}
+
+	{
+		usize iters = 0;
+		reflect::reflect([&](std::string_view, auto&&) { ++iters; }, std::pair<int, float>(1, 2.0f));
+		y_test_assert(iters == 3);
+	}
 }
 
-
-#endif // Y_UTILS_ITER_H
+}
