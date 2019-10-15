@@ -48,7 +48,7 @@ SettingsPanel::SettingsPanel(ContextPtr cptr) : Widget(ICON_FA_COG " Settings"),
 void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	int flags = ImGuiTreeNodeFlags_DefaultOpen;
 
-	ImGui::BeginChild("###settings");
+	ImGui::BeginChild("###settings", ImVec2(0.0f, -24.0f));
 
 	/*if(ImGui::TreeNodeEx("UI", flags)) {
 		std::array<const char*, 3> style_names = {"Yave", "Corporate", "Corporate 3D"};
@@ -74,14 +74,14 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			ImGui::SameLine();
 			keybox("Right", context()->settings().camera().move_right);
 
-			ImGui::SliderFloat("Sensitivity###FPS", &context()->settings().camera().fps_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+			ImGui::SliderFloat("Sensitivity##FPS", &context()->settings().camera().fps_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
 
 			ImGui::TreePop();
 		}
 
 		if(ImGui::TreeNodeEx("Houdini Camera", flags)) {
-			ImGui::SliderFloat("Trackball sensitivity###Houdini", &context()->settings().camera().trackball_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
-			ImGui::SliderFloat("Dolly sensitivity###Houdini", &context()->settings().camera().dolly_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+			ImGui::SliderFloat("Trackball sensitivity##Houdini", &context()->settings().camera().trackball_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+			ImGui::SliderFloat("Dolly sensitivity##Houdini", &context()->settings().camera().dolly_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
 
 			ImGui::TreePop();
 		}
@@ -101,6 +101,10 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	ImGui::EndChild();
+
+	if(ImGui::Button("Reset to defaults")) {
+		context()->settings() = Settings(false);
+	}
 }
 
 }

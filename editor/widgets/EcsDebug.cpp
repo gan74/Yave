@@ -145,10 +145,10 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				continue;
 			}
 
-			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %###%", comp->name(), id.index()).data())) {
+			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %##%", comp->name(), id.index()).data())) {
 				usize index = 0;
 				for(const core::String& n : entities[id.index()]) {
-					ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %###%", n, index++).data());
+					ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %##%", n, index++).data());
 				}
 				ImGui::TreePop();
 			}

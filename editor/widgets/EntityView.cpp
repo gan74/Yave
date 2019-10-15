@@ -77,7 +77,7 @@ void EntityView::paint_view() {
 			}
 
 			bool selected = context()->selection().selected_entity() == id;
-			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %###%", comp->name(), id.index()).data(), selected)) {
+			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %##%", comp->name(), id.index()).data(), selected)) {
 				 context()->selection().set_selected(id);
 			}
 			if(ImGui::IsItemHovered()) {
@@ -101,7 +101,7 @@ void EntityView::paint_clustered_view() {
 				if(context()->selection().selected_entity() == id) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
-				ImGui::TreeNodeEx(fmt("% %###%", icon, editor_comp.name(), entity.index()).data(), flags);
+				ImGui::TreeNodeEx(fmt("% %##%", icon, editor_comp.name(), entity.index()).data(), flags);
 
 				if(ImGui::IsItemClicked()) {
 					context()->selection().set_selected(id);

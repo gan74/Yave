@@ -55,7 +55,7 @@ static_assert(std::is_standard_layout_v<CameraSettings> && std::is_trivially_cop
 
 class Settings {
 	public:
-		Settings();
+		Settings(bool load = true);
 		~Settings();
 
 		CameraSettings& camera();

@@ -66,6 +66,7 @@ class EngineView final : public Widget, public ContextLinked {
 
 		bool is_clicked() const;
 
+		void update_proj();
 		void update();
 		void update_picking();
 

@@ -107,6 +107,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
 	y_profile();
 
+	update_proj();
+
 	draw_menu_bar();
 	draw(recorder);
 	_gizmo.draw();
@@ -118,14 +120,27 @@ bool EngineView::is_clicked() const {
 	return ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2);
 }
 
+
+void EngineView::update_proj() {
+	const CameraSettings& settings = context()->settings().camera();
+	math::Vec2ui viewport_size = content_size();
+
+	float fov = math::to_rad(settings.fov);
+	auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
+	_scene_view.camera().set_proj(proj);
+}
+
 void EngineView::update() {
 	_gizmo.set_allow_drag(true);
 
 	math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - math::Vec2(ImGui::GetWindowPos());
 	auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
 
-	bool hovered = less(mouse_pos, ImGui::GetWindowContentRegionMax()) && less(ImGui::GetWindowContentRegionMin(), mouse_pos);
 	bool focussed = ImGui::IsWindowFocused();
+	bool hovered =
+			ImGui::IsWindowHovered() &&
+			less(mouse_pos, ImGui::GetWindowContentRegionMax()) &&
+			less(ImGui::GetWindowContentRegionMin(), mouse_pos);
 
 	if(hovered && is_clicked()) {
 		ImGui::SetWindowFocus();

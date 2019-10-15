@@ -92,10 +92,7 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
 		}
 	}
 
-	float fov = math::to_rad(settings.fov);
-	auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
-	camera.set_proj(proj);
 	camera.set_view(view);
 }
 
@@ -223,13 +220,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 		cam_lft.normalize();
 	}
 
-	float fov = math::to_rad(settings.fov);
-	auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
-
-	if(std::all_of(proj.begin(), proj.end(), [](float x) { return std::isfinite(x); })) {
-		camera.set_proj(proj);
-	}
 	if(std::all_of(view.begin(), view.end(), [](float x) { return std::isfinite(x); })) {
 		camera.set_view(view);
 	}

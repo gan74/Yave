@@ -26,15 +26,18 @@ SOFTWARE.
 
 namespace editor {
 
-Settings::Settings() {
-	auto file = io2::File::open("settings.dat");
-	if(!file) {
-		log_msg("Unable to open settings file.", Log::Error);
-		return;
-	}
-	serde2::ReadableArchive ar(file.unwrap());
-	if(!deserialize(ar)) {
-		log_msg("Unable to read settings.", Log::Error);
+Settings::Settings(bool load) {
+	if(load) {
+		auto file = io2::File::open("settings.dat");
+		if(!file) {
+			log_msg("Unable to open settings file.", Log::Error);
+			return;
+		}
+		serde2::ReadableArchive ar(file.unwrap());
+		if(!deserialize(ar)) {
+			log_msg("Unable to read settings.", Log::Error);
+			*this = Settings(false);
+		}
 	}
 }
 
