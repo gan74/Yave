@@ -52,7 +52,8 @@ void EngineView::before_paint() {
 
 void EngineView::after_paint() {
 	ImGui::PopStyleColor(2);
-	ImGui::PopStyleVar(1);
+	// poped during menu rendering
+	// ImGui::PopStyleVar(1);
 }
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
@@ -189,6 +190,7 @@ void EngineView::update_picking() {
 
 void EngineView::draw_menu_bar() {
 	if(ImGui::BeginMenuBar()) {
+		ImGui::PopStyleVar(1);
 
 		if(ImGui::BeginMenu("Render")) {
 			ImGui::MenuItem("Editor entities", nullptr, &_settings.enable_editor_entities);
@@ -212,6 +214,13 @@ void EngineView::draw_menu_bar() {
 						_view = RenderView(i);
 					}
 				}
+			}
+			ImGui::EndMenu();
+		}
+
+		if(ImGui::BeginMenu("Camera")) {
+			if(ImGui::MenuItem("Reset camera")) {
+				_scene_view.camera().set_view(Camera().view_matrix());
 			}
 			ImGui::EndMenu();
 		}
