@@ -62,11 +62,17 @@ void LifetimeManager::recycle(CmdBufferData&& cmd) {
 }
 
 void LifetimeManager::collect() {
+	y_profile();
 	u64 next = _done_counter;
 	while(!_in_flight.empty()) {
 		CmdBufferData& cmd = _in_flight.front();
 		u64 fence = cmd.resource_fence()._value;
-		if(fence == next + 1 && device()->vk_device().getFenceStatus(cmd.vk_fence()) == vk::Result::eSuccess) {
+		auto status = vk::Result::eNotReady;
+		{
+			y_profile_zone("Fence status");
+			status = device()->vk_device().getFenceStatus(cmd.vk_fence());
+		}
+		if(fence == next + 1 && status == vk::Result::eSuccess) {
 			if(cmd.pool()) {
 				cmd.pool()->release(std::move(cmd));
 			}
@@ -93,13 +99,17 @@ usize LifetimeManager::active_cmd_buffers() const {
 }
 
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
+	y_profile();
 	std::visit(
 		[dptr = device()](auto& res) {
 			if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
+				y_profile_zone("Memory");
 				res.free();
 			} else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
+				y_profile_zone("Descriptor set");
 				res.recycle();
 			} else {
+				y_profile_zone("Vk resource");
 				detail::destroy(dptr, res);
 			}
 		},
@@ -107,6 +117,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 }
 
 void LifetimeManager::clear_resources(u64 up_to) {
+	y_profile();
 	while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
 		destroy_resource(_to_destroy.front().second);
 		_to_destroy.pop_front();

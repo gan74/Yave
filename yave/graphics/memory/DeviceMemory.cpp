@@ -53,6 +53,7 @@ DeviceMemory::~DeviceMemory() {
 }
 
 void DeviceMemory::free() {
+	y_profile();
 	if(_memory && _heap) {
 		_heap->free(*this);
 	}

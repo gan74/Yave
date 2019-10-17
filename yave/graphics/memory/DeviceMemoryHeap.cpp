@@ -75,10 +75,12 @@ DeviceMemoryHeap::~DeviceMemoryHeap() {
 }
 
 DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {
+	y_profile();
 	return DeviceMemory(this, _memory, offset, size);
 }
 
 core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) {
+	y_profile();
 	usize size = align_size(reqs.size, alignment);
 
 	for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
@@ -123,6 +125,7 @@ void DeviceMemoryHeap::free(const DeviceMemory& memory) {
 }
 
 void DeviceMemoryHeap::free(const FreeBlock& block) {
+	y_profile();
 	y_debug_assert(block.end_offset() <= size());
 	compact_block(block);
 }

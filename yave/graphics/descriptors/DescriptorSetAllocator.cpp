@@ -121,6 +121,7 @@ DescriptorSetPool::~DescriptorSetPool() {
 }
 
 DescriptorSetData DescriptorSetPool::alloc() {
+	y_profile();
 	auto lock = std::unique_lock(_lock);
 	if(is_full() || _taken[_first_free]) {
 		y_fatal("DescriptorSetPoolPage is full.");
@@ -140,6 +141,7 @@ DescriptorSetData DescriptorSetPool::alloc() {
 }
 
 void DescriptorSetPool::recycle(u32 id) {
+	y_profile();
 	auto lock = std::unique_lock(_lock);
 	y_debug_assert(_taken[id]);
 	_taken.reset(id);

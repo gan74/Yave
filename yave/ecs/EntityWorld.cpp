@@ -53,13 +53,15 @@ const EntityIdPool& EntityWorld::entities() const {
 
 void EntityWorld::flush() {
 	y_profile();
-	for(const auto& c : _component_containers) {
-		c.second->remove(_deletions);
+	if(!_deletions.is_empty()) {
+		for(const auto& c : _component_containers) {
+			c.second->remove(_deletions);
+		}
+		for(EntityId id : _deletions) {
+			_entities.recycle(id);
+		}
+		_deletions.clear();
 	}
-	for(EntityId id : _deletions) {
-		_entities.recycle(id);
-	}
-	_deletions.clear();
 }
 
 void EntityWorld::add(const EntityWorld& other) {

@@ -36,7 +36,7 @@ namespace y {
 namespace perf {
 
 #ifdef Y_PERF_LOG_ENABLED
-static constexpr usize buffer_size = 16 * 1024;
+static constexpr usize buffer_size = 256 * 1024;
 static constexpr usize print_buffer_len = 512;
 
 static std::mutex mutex;
