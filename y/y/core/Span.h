@@ -46,71 +46,71 @@ class MutableSpan {
 		constexpr MutableSpan(const MutableSpan&) = default;
 		constexpr MutableSpan& operator=(const MutableSpan&) = default;
 
-		MutableSpan(std::nullptr_t) {
+		constexpr MutableSpan(std::nullptr_t) {
 		}
 
-		MutableSpan(T& t) : _data(&t), _size(1) {
+		constexpr MutableSpan(T& t) : _data(&t), _size(1) {
 		}
 
-		MutableSpan(T* data, usize size) : _data(data), _size(size) {
-		}
-
-		template<usize N>
-		MutableSpan(T(&arr)[N]) : _data(arr), _size(N) {
+		constexpr MutableSpan(T* data, usize size) : _data(data), _size(size) {
 		}
 
 		template<usize N>
-		MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
+		constexpr MutableSpan(T (&arr)[N]) : _data(arr), _size(N) {
 		}
 
-		MutableSpan(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
+		template<usize N>
+		constexpr MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
+		}
+
+		constexpr MutableSpan(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
 		}
 
 		template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
-		MutableSpan(C&& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
+		constexpr MutableSpan(C&& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
 		}
 
-		usize size() const {
+		constexpr usize size() const {
 			return _size;
 		}
 
-		bool is_empty() const {
+		constexpr bool is_empty() const {
 			return !_size;
 		}
 
-		T* data() {
+		constexpr T* data() {
 			return _data;
 		}
 
-		const T* data() const {
+		constexpr const T* data() const {
 			return _data;
 		}
 
-		iterator begin() {
+		constexpr iterator begin() {
 			return _data;
 		}
 
-		iterator end() {
+		constexpr iterator end() {
 			return _data + _size;
 		}
 
-		const_iterator begin() const {
+		constexpr const_iterator begin() const {
 			return _data;
 		}
 
-		const_iterator end() const {
+		constexpr const_iterator end() const {
 			return _data + _size;
 		}
 
-		const_iterator cbegin() const {
+		constexpr const_iterator cbegin() const {
 			return _data;
 		}
 
-		const_iterator cend() const {
+		constexpr const_iterator cend() const {
 			return _data + _size;
 		}
 
-		T& operator[](usize i) const {
+		constexpr T& operator[](usize i) const {
 			return _data[i];
 		}
 
