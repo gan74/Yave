@@ -21,7 +21,13 @@ SOFTWARE.
 **********************************/
 
 #include "SpinLock.h"
-#include <thread>
+
+#if __has_include(<immintrin.h>)
+#include <immintrin.h>
+#define Y_ASM_PAUSE() _mm_pause()
+#else
+#define Y_ASM_PAUSE() do {} while(false)
+#endif
 
 namespace y {
 namespace concurrent {
@@ -35,11 +41,8 @@ SpinLock::~SpinLock() {
 
 void SpinLock::lock() {
 	for(usize failed = 0; !try_lock(); ++failed) {
-		if(failed >= yield_threshold) {
-			std::this_thread::yield();
-		}
+		Y_ASM_PAUSE();
 	}
-
 }
 
 bool SpinLock::try_lock() {
