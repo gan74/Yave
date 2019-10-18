@@ -96,4 +96,12 @@ struct Nothing;
 #endif
 
 
+// For some reason gcc 9.2 accepts even in C++17
+#if __cpp_constexpr >= 201907L
+#define Y_CONSTEXPR_VIRTUAL constexpr virtual
+#else
+#define Y_CONSTEXPR_VIRTUAL virtual
+#endif
+
+
 #endif // Y_DEFINES_H

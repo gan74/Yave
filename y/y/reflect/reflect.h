@@ -114,7 +114,7 @@ struct Reflector<std::pair<A, B>> {
 template<typename R, typename T>
 void reflect(R&& reflector, T&& obj, std::string_view name) {
 	using refl_t = decltype(reflector);
-	using obj_t = decltype(obj);
+	using obj_t = std::remove_reference_t<decltype(obj)>&;
 	static_assert(std::is_invocable_v<refl_t, std::string_view, obj_t>);
 
 	if constexpr(std::is_invocable_r_v<bool, refl_t, obj_t>) {

@@ -19,41 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_UTILS_DETECT_H
-#define Y_UTILS_DETECT_H
+#ifndef Y_UTILS_NAME_H
+#define Y_UTILS_NAME_H
 
-// Should be replaced by std::is_detected, once it gets implemented
+#include <string_view>
+
 namespace y {
-
 namespace detail {
-template<typename Default, typename AlwaysVoid, template<typename...> typename Op, typename... Args>
-struct Detector {
-  using value_t = std::false_type;
-  using type = Default;
-};
+// Trick from https://github.com/Neargye/nameof
+template<typename... T>
+constexpr std::string_view ct_type_name() {
+#if defined(__clang__)
+	return std::string_view{__PRETTY_FUNCTION__ + 49, sizeof(__PRETTY_FUNCTION__) - 52};
+#elif defined(__GNUC__)
+	return std::string_view{__PRETTY_FUNCTION__ + 64, sizeof(__PRETTY_FUNCTION__) - 116};
+#elif defined(_MSC_VER)
+#warning ct_type_name is not properly supported on MSVC
+	return std::string_view{__FUNCSIG__};
+#else
+static_assert(false, "ct_type_name is not supported");
+#endif
+}
+}
 
-template<typename Default, template<typename...> typename Op, typename... Args>
-struct Detector<Default, std::void_t<Op<Args...>>, Op, Args...> {
-  // Note that std::void_t is a C++17 feature
-  using value_t = std::true_type;
-  using type = Op<Args...>;
-};
+template<typename T>
+constexpr std::string_view ct_type_name() {
+	return detail::ct_type_name<T>();
+}
 
-struct NoneSuch {
-	NoneSuch() = delete;
-	~NoneSuch() = delete;
-	NoneSuch(NoneSuch const&) = delete;
-	void operator=(NoneSuch const&) = delete;
-};
-} // namespace detail
-
-template<template<typename...> typename Op, typename... Args>
-using is_detected = typename detail::Detector<detail::NoneSuch, void, Op, Args...>::value_t;
-
-template<template<typename...> typename Op, typename... Args>
-inline constexpr bool is_detected_v = is_detected<Op, Args...>::value;
+static_assert(ct_type_name<int>() == "int");
+static_assert(ct_type_name<float>() == "float");
+static_assert(ct_type_name<std::string_view>() == "std::basic_string_view<char, std::char_traits<char> >");
 
 }
 
 
-#endif // Y_UTILS_DETECT_H
+#endif // Y_UTILS_NAME_H
