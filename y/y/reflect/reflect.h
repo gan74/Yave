@@ -192,25 +192,11 @@ constexpr RuntimeData Type::reflection_data() const {
 
 
 
-struct MemberData {
-	using get_t = const void* (*)(const void* obj);
-
-	const std::string_view name;
-	const Type type;
-	const get_t get_c;
-
-	void* get(void* p) const {
-		return const_cast<void*>(get_c(p));
-	}
-};
-
-
 template<typename T>
 constexpr RuntimeData reflection_data();
 
 template<typename T>
 constexpr RuntimeData reflection_data(T&& t);
-
 
 
 template<typename T>
@@ -248,6 +234,36 @@ constexpr const Type type() {
 }
 
 
+struct MemberData {
+	using get_t = const void* (*)(const void* obj);
+
+	const std::string_view name;
+	const Type type;
+	const get_t get_c;
+
+	void* get_raw(void* p) const {
+		return const_cast<void*>(get_c(p));
+	}
+
+	const void* get_raw(const void* p) const {
+		return get_c(p);
+	}
+
+	template<typename T>
+	T& get(void* p) const {
+		y_debug_assert(reflect::type<T>() == type);
+		return *static_cast<T*>(get_raw(p));
+	}
+
+	template<typename T>
+	const T& get(const void* p) const {
+		y_debug_assert(reflect::type<T>() == type);
+		return *static_cast<const T*>(get_raw(p));
+	}
+};
+
+
+
 namespace detail {
 template<typename T, bool B>
 struct ReflectionMemberData {};
@@ -274,12 +290,12 @@ struct ReflectionInheritanceData<T, true> {
 
 template<typename T>
 constexpr RuntimeData reflection_data() {
-	using with_ref = T;
 	using without_ref = std::remove_reference_t<T>;
+	using without_ptr = std::remove_pointer_t<without_ref>;
 	return RuntimeData {
-		type<with_ref>(),
-		detail::ReflectionMemberData<without_ref, has_reflection_v<without_ref>>::member_data,
-		detail::ReflectionInheritanceData<without_ref, has_inheritance_reflection_v<without_ref>>::inheritance_data
+		type<without_ref>(),
+		detail::ReflectionMemberData<without_ptr, has_reflection_v<without_ptr>>::member_data,
+		detail::ReflectionInheritanceData<without_ptr, has_inheritance_reflection_v<without_ptr>>::inheritance_data
 	};
 }
 

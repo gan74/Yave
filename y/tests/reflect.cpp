@@ -58,7 +58,7 @@ struct Easy {
 struct Complex {
 	core::Vector<Easy> a;
 	core::Vector<int> b;
-	int c;
+	int c = 9;
 	core::String d;
 
 	y_reflect(a, b, d, c)
@@ -108,6 +108,33 @@ y_test_func("reflect inheritance") {
 	y_test_assert(reflect::reflection_data(*poly).type == reflect::type<Derived>());
 }
 
+y_test_func("reflect pointer") {
+	auto cx = std::make_unique<Complex>();
+	reflect::RuntimeData data = reflect::reflection_data(cx.get());
+	y_test_assert(data.type.flags.is_pointer);
+	y_test_assert(data.members.size() == 4);
+	y_test_assert(data.members[3].type.name == "int");
+	y_test_assert(data.members[3].name == "c");
+	y_test_assert(data.members[3].get<int>(cx.get()) == 9);
+}
+
+y_test_func("reflect set") {
+	Trivial refl;
+	Trivial* refl_ptr = &refl;
+
+	y_test_assert(!reflect::reflection_data(refl).type.flags.is_pointer);
+	y_test_assert(reflect::reflection_data(refl_ptr).type.flags.is_pointer);
+
+	{
+		auto data = reflect::reflection_data(refl_ptr);
+		y_test_assert(data.members[1].name == "y");
+		data.members[1].get<float>(refl_ptr) = 13.0f;
+	}
+
+	y_test_assert(refl.x == Trivial{}.x);
+	y_test_assert(refl.z == Trivial{}.z);
+	y_test_assert(refl.y == 13.0f);
+}
 
 static constexpr usize count_members(const reflect::RuntimeData& data) {
 	usize total = 0;
@@ -131,7 +158,7 @@ y_test_func("reflect constexpr") {
 	y_test_assert(cx_members == 4);
 }
 
-template<typename = void>
+[[maybe_unused]]
 static void print_refl(const reflect::RuntimeData& data, usize indent = 0) {
 	if(!data.type.flags.has_reflection) {
 		return;
