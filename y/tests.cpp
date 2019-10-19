@@ -23,6 +23,7 @@ SOFTWARE.
 #include <y/test/test.h>
 #include <y/mem/allocators.h>
 #include <y/core/Vector.h>
+#include <y/reflect/reflect.h>
 
 #include <y/core/Chrono.h>
 
@@ -31,6 +32,25 @@ using namespace memory;
 
 y_test_func("Test test") {
 	y_test_assert(true);
+}
+
+struct Refl {
+	int x = 1;
+	int y = 2;
+
+	y_reflect(x, y)
+};
+
+void reflection() {
+	{
+		auto data = reflect::reflection_data<Refl*>();
+		log_msg(fmt("% -> % (%)", data.type.name, data.members.size(), data.type.flags.is_pointer));
+	}
+
+	{
+		auto data = reflect::reflection_data<Refl>();
+		log_msg(fmt("% -> % (%)", data.type.name, data.members.size(), data.type.flags.is_pointer));
+	}
 }
 
 
@@ -42,7 +62,9 @@ using Vec = core::Vector<T, core::DefaultVectorResizePolicy, A<T>>;
 
 int main() {
 
-	int size = 1000000;
+	reflection();
+
+	/*int size = 1000000;
 
 	{
 		core::DebugTimer _("std::allocator");
@@ -57,7 +79,7 @@ int main() {
 		for(int i = 0; i != size; ++i) {
 			v.emplace_back(i);
 		}
-	}
+	}*/
 
 
 	/*usize i = 1024;
