@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/utils/serde.h>
 
+#include <y/utils/detect.h>
+
 #include "ecs.h"
 #include "EntityId.h"
 
@@ -42,6 +44,10 @@ using ComponentVector = core::SparseVector<T, EntityIndex>;
 class ComponentContainerBase;
 
 namespace detail {
+
+template<typename T>
+using has_required_components_t = decltype(std::declval<T>().required_components_archetype());
+
 using create_container_t = std::unique_ptr<ComponentContainerBase> (*)();
 struct RegisteredContainerType {
 	u64 type_id = 0;
@@ -71,7 +77,7 @@ class ComponentContainerBase : NonMovable {
 
 		virtual void remove(core::Span<EntityId> ids) = 0;
 		virtual bool has(EntityId id) const = 0;
-		virtual core::Result<void> create_empty(EntityId id) = 0;
+		virtual core::Result<void> create_empty(EntityWorld& world, EntityId id) = 0;
 		virtual core::Span<EntityIndex> indexes() const = 0;
 
 		virtual void add(const ComponentContainerBase* other, const std::unordered_map<EntityIndex, EntityId>& id_map) = 0;
@@ -83,20 +89,23 @@ class ComponentContainerBase : NonMovable {
 
 
 		template<typename T, typename... Args>
-		T& create(EntityId id, Args&&... args) {
+		T& create(EntityWorld& world, EntityId id, Args&&... args) {
+			add_required_components(world, id);
 			auto i = id.index();
 			return component_vector_fast<T>().insert(i, y_fwd(args)...);
 		}
 
 		template<typename T, typename... Args>
-		T& create_or_find(EntityId id, Args&&... args) {
+		T& create_or_find(EntityWorld& world, EntityId id, Args&&... args) {
 			auto i = id.index();
 			auto& vec = component_vector_fast<T>();
 			if(!vec.has(i)) {
+				add_required_components(world, id);
 				return vec.insert(i, y_fwd(args)...);
 			}
 			return vec[i];
 		}
+
 
 		template<typename T>
 		T& component(EntityId id) {
@@ -146,11 +155,16 @@ class ComponentContainerBase : NonMovable {
 			return component_vector_fast<T>();
 		}
 
+		core::Span<ComponentTypeIndex> required_components() const {
+			return _required;
+		}
+
 	protected:
 		template<typename T>
-		ComponentContainerBase(ComponentVector<T>& sparse) :
+		ComponentContainerBase(ComponentVector<T>& sparse, core::Span<ComponentTypeIndex> required) :
 				_sparse_ptr(&sparse),
-				_type(index_for_type<T>()) {
+				_type(index_for_type<T>()),
+				_required(required) {
 		}
 
 
@@ -173,15 +187,20 @@ class ComponentContainerBase : NonMovable {
 		// hacky but avoids dynamic casts and virtual calls
 		void* _sparse_ptr = nullptr;
 		const ComponentTypeIndex _type;
-
+		const core::Span<ComponentTypeIndex> _required;
 
 	private:
+		friend class EntityWorld;
 		friend serde2::Result detail::serialize_container(WritableAssetArchive&, ComponentContainerBase*);
 		friend std::unique_ptr<ComponentContainerBase> detail::deserialize_container(ReadableAssetArchive&);
 
 		virtual serde2::Result serialize(WritableAssetArchive&) const = 0;
 		virtual serde2::Result deserialize(ReadableAssetArchive&) = 0;
 		virtual u64 serialization_type_id() const = 0;
+
+		Y_TODO(make template to avoid the round trip)
+		// EntityWorld.cpp
+		void add_required_components(EntityWorld& world, EntityId id) const;
 
 };
 
@@ -192,7 +211,7 @@ template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
 	public:
 		ComponentContainer() :
-				ComponentContainerBase(_components), // we don't actually need to care about initilisation order here
+				ComponentContainerBase(_components, _required_indexes), // we don't actually need to care about initilisation order here
 				_registerer(&registerer) {
 		}
 
@@ -221,9 +240,9 @@ class ComponentContainer final : public ComponentContainerBase {
 			return ComponentContainerBase::has<T>(id);
 		}
 
-		core::Result<void> create_empty(EntityId id) override {
+		core::Result<void> create_empty(EntityWorld& world, EntityId id) override {
 			if constexpr(std::is_default_constructible_v<T>) {
-				ComponentContainerBase::create<T>(id);
+				ComponentContainerBase::create_or_find<T>(world, id);
 				return core::Ok();
 			}
 			unused(id);
@@ -237,7 +256,16 @@ class ComponentContainer final : public ComponentContainerBase {
 	private:
 		ComponentVector<T> _components;
 
+	private:
+		static auto required_components_indexes() {
+			if constexpr(is_detected_v<detail::has_required_components_t, T>) {
+				return T::required_components_archetype().indexes();
+			} else {
+				return std::array<ComponentTypeIndex, 0>{};
+			}
+		}
 
+		const decltype(required_components_indexes()) _required_indexes = required_components_indexes();
 
 	// ------------------------------------- serde BS -------------------------------------
 

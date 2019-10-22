@@ -79,6 +79,8 @@ class EditorContext : NonMovable, public DeviceLinked {
 		Logs& logs();
 
 	private:
+		static ecs::EntityWorld create_editor_world();
+
 		std::unique_ptr<FileSystemModel> _filesystem;
 
 		std::mutex _deferred_lock;

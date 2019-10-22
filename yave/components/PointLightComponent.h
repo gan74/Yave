@@ -22,12 +22,14 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
 #define YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
 
-#include <yave/yave.h>
-#include <y/serde2/serde.h>
+#include <yave/ecs/ecs.h>
+
+#include "TransformableComponent.h"
 
 namespace yave {
 
-class PointLightComponent final {
+
+class PointLightComponent final : public ecs::RequiredComponents<TransformableComponent> {
 	public:
 		PointLightComponent() = default;
 

@@ -68,22 +68,31 @@ class EntityWorld : NonCopyable {
 		serde2::Result deserialize(ReadableAssetArchive& reader);
 
 
+		template<typename T>
+		void add_required_component_type() {
+			static_assert(std::is_default_constructible_v<T>);
+			_required_components << index_for_type<T>();
+			for(EntityId id : entities()) {
+				create_component<T>(id);
+			}
+		}
+
 
 		core::Result<void> create_component(EntityId id, ComponentTypeIndex type) {
 			if(ComponentContainerBase* cont = container(type)) {
-				return cont->create_empty(id);
+				return cont->create_empty(*this, id);
 			}
 			return core::Err();
 		}
 
 		template<typename T, typename... Args>
 		T& create_component(EntityId id, Args&&... args) {
-			return container<T>()->template create<T>(id, y_fwd(args)...);
+			return container<T>()->template create<T>(*this, id, y_fwd(args)...);
 		}
 
 		template<typename T, typename... Args>
 		T& create_or_find_component(EntityId id, Args&&... args) {
-			return container<T>()->template create_or_find<T>(id, y_fwd(args)...);
+			return container<T>()->template create_or_find<T>(*this, id, y_fwd(args)...);
 		}
 
 		template<typename T, typename... Args>
@@ -203,6 +212,9 @@ class EntityWorld : NonCopyable {
 							   ComponentTypeIterator(_component_containers.end()));
 		}
 
+		core::Span<ComponentTypeIndex> required_component_types() const {
+			return _required_components;
+		}
 
 
 		core::String type_name(ComponentTypeIndex type) const;
@@ -240,10 +252,15 @@ class EntityWorld : NonCopyable {
 		const ComponentContainerBase* container(ComponentTypeIndex type) const;
 		ComponentContainerBase* container(ComponentTypeIndex type);
 
+		void add_required_components(EntityId id);
+
 		EntityIdPool _entities;
 		core::Vector<EntityId> _deletions;
 
 		std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _component_containers;
+
+		Y_TODO(Do we have to serialize this?)
+		core::Vector<ComponentTypeIndex> _required_components;
 };
 
 }

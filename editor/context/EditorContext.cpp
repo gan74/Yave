@@ -24,6 +24,8 @@ SOFTWARE.
 #include <yave/device/Device.h>
 #include <yave/assets/FolderAssetStore.h>
 
+#include <editor/components/EditorComponent.h>
+
 #include <y/io2/File.h>
 
 namespace editor {
@@ -41,7 +43,9 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		_scene_view(&_default_scene_view),
 		_ui(this),
 		_thumb_cache(this),
-		_picking_manager(this) {
+		_picking_manager(this),
+		_world(create_editor_world()) {
+
 
 	load_world();
 }
@@ -179,7 +183,8 @@ void EditorContext::load_world() {
 		return;
 	}
 
-	ecs::EntityWorld world;
+	ecs::EntityWorld world = create_editor_world();
+
 	ReadableAssetArchive ar(file.unwrap(), _loader);
 	if(!world.deserialize(ar)) {
 		log_msg("Unable to deserialize world.", Log::Error);
@@ -187,10 +192,18 @@ void EditorContext::load_world() {
 	}
 
 	_world = std::move(world);
+	y_debug_assert(_world.required_component_types().size() == 1);
 }
 
 void EditorContext::new_world() {
-	_world = ecs::EntityWorld();
+	_world = create_editor_world();
+}
+
+ecs::EntityWorld EditorContext::create_editor_world() {
+	ecs::EntityWorld world;
+	world.add_required_component_type<EditorComponent>();
+	y_debug_assert(world.required_component_types().size() == 1);
+	return world;
 }
 
 }

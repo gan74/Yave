@@ -38,8 +38,8 @@ static EditorContext* context = nullptr;
 static bool display_console = true;
 static bool debug_instance = true;
 #else
-bool display_console = false;
-bool debug_instance = false;
+static bool display_console = false;
+static bool debug_instance = false;
 #endif
 
 

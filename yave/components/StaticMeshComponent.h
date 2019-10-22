@@ -22,14 +22,18 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 #define YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 
+#include <yave/ecs/ecs.h>
+
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
 
 #include <yave/scene/Renderable.h>
 
+#include "TransformableComponent.h"
+
 namespace yave {
 
-class StaticMeshComponent final : public Renderable {
+class StaticMeshComponent final : public Renderable, public ecs::RequiredComponents<TransformableComponent> {
 
 	public:
 		StaticMeshComponent() = default;

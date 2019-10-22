@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_ECS_H
 
 #include <typeindex>
-#include <y/utils.h>
+#include <yave/yave.h>
 
 namespace yave {
 namespace ecs {
@@ -41,6 +41,7 @@ using ComponentTypeIndex = std::type_index;
 
 template<typename T>
 ComponentTypeIndex index_for_type() {
+	static_assert(!std::is_reference_v<T>);
 	return typeid(T);
 }
 
@@ -51,7 +52,20 @@ struct EntityArchetype final {
 
 	template<typename T>
 	using with = EntityArchetype<T, Args...>;
+
+	static inline auto indexes() {
+		return std::array{index_for_type<Args>()...};
+	}
 };
+
+template<typename... Args>
+struct RequiredComponents {
+	static inline constexpr auto required_components_archetype() {
+		static_assert(std::is_default_constructible_v<std::tuple<Args...>>);
+		return EntityArchetype<Args...>{};
+	}
+};
+
 
 }
 }

@@ -42,6 +42,7 @@ EcsDebug::EcsDebug(ContextPtr cptr) : Widget("ECS debug", ImGuiWindowFlags_Alway
 void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	struct Foo { int i = 0; }; struct Bar { int i = 0; };
 	struct Quux { int i = 0; }; struct Cmp { int i = 0; }; struct Bli { int i = 0; };
+	struct Required : ecs::RequiredComponents<Bli> {};
 	ecs::EntityWorld& world = context()->world();
 
 
@@ -69,6 +70,11 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			if(rng() % 5 == 0) {
 				world.create_or_find_component<Bli>(_id);
 			}
+		}
+
+		ImGui::SameLine();
+		if(ImGui::Button("Add required component")) {
+			world.create_or_find_component<Required>(_id);
 		}
 	}
 
@@ -101,11 +107,6 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		} else {
 			log_msg("Unable to open file.");
 		}
-	}
-
-	ImGui::SameLine();
-	if(ImGui::Button(ICON_FA_REDO " Reset")) {
-		world = ecs::EntityWorld();
 	}
 
 	ImGui::Spacing();

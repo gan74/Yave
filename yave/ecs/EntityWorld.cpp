@@ -30,7 +30,9 @@ EntityWorld::EntityWorld() {
 
 
 EntityId EntityWorld::create_entity() {
-	return _entities.create();
+	EntityId id = _entities.create();
+	add_required_components(id);
+	return id;
 }
 
 void EntityWorld::remove_entity(EntityId id) {
@@ -99,6 +101,12 @@ ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) {
 	return container.get();
 }
 
+void EntityWorld::add_required_components(EntityId id) {
+	for(const ComponentTypeIndex& tpe : _required_components) {
+		create_component(id, tpe).ignore();
+	}
+}
+
 struct EntityWorldHeader {
 	y_serde2(serde2::check(fs::magic_number, AssetType::World, u32(1)))
 };
@@ -130,7 +138,10 @@ serde2::Result EntityWorld::serialize(WritableAssetArchive& writer) const {
 }
 
 serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
+	// _required_components is not serialized so we don't clear it
+	auto required = std::move(_required_components);
 	*this = EntityWorld();
+	_required_components = std::move(required);
 
 	{
 		EntityWorldHeader header;
@@ -167,16 +178,35 @@ serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
 		}
 	}
 
+	if(!_required_components.is_empty()) {
+		for(EntityId id : entities()) {
+			add_required_components(id);
+		}
+	}
+
 	for(const auto& p : _component_containers) {
 		for(EntityIndex i : p.second->indexes()) {
-			if(!_entities.contains(EntityId::from_unversioned_index(i))) {
+			EntityId id = EntityId::from_unversioned_index(i);
+			if(!_entities.contains(id)) {
 				return core::Err();
 			}
+			p.second->add_required_components(*this, id);
 		}
 	}
 
 	return core::Ok();
 }
+
+
+
+
+
+void ComponentContainerBase::add_required_components(EntityWorld& world, EntityId id) const {
+	for(const ComponentTypeIndex& tpe : _required) {
+		world.create_component(id, tpe).ignore();
+	}
+}
+
 
 }
 }
