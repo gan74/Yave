@@ -23,7 +23,6 @@ SOFTWARE.
 #define EDITOR_WIDGETS_PROPERTYPANEL_H
 
 #include <editor/ui/Widget.h>
-#include <yave/objects/Transformable.h>
 
 namespace editor {
 
