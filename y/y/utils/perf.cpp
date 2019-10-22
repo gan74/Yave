@@ -24,6 +24,7 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
 
+#include <atomic>
 #include <thread>
 #include <mutex>
 #include <cstdio>
@@ -34,20 +35,24 @@ namespace y {
 namespace perf {
 
 #ifdef Y_PERF_LOG_ENABLED
+
 static constexpr usize buffer_size = 256 * 1024;
 static constexpr usize print_buffer_len = 512;
 
 static std::mutex mutex;
 static bool initialized = false;
-static std::shared_ptr<io2::File> output = std::make_shared<io2::File>();
+static std::unique_ptr<io2::File> output;
+static std::atomic<u32> open_threads = 0;
 #endif
 
 void set_output_file(const char* out) {
 	unused(out);
 #ifdef Y_PERF_LOG_ENABLED
 	std::unique_lock lock(mutex);
-	initialized = false;
-	*output = std::move(io2::File::create(out).expected("Unable to open output file."));
+	if(output) {
+		y_fatal("set_output_file should only be called once.");
+	}
+	output = std::make_unique<io2::File>(std::move(io2::File::create(out).expected("Unable to open output file.")));
 #endif
 }
 
@@ -58,36 +63,40 @@ static double micros() {
 }
 
 static u32 thread_id() {
-	static u32 id = 0;
+	static std::atomic<u32> id = 0;
 	static thread_local u32 tid = ++id;
 	return tid;
 }
 
-Y_TODO(TLS destructors not called on windows)
+static bool is_output_open() {
+	return output && output->is_open();
+}
 
-static thread_local struct ThreadData : NonMovable {
-	std::shared_ptr<io2::File> thread_output;
+struct ThreadData : NonMovable {
 	std::unique_ptr<char[]> buffer;
 	usize buffer_offset = 0;
-	u32 tid = 0;
 
-	ThreadData() :
-			thread_output(output),
-			buffer(std::make_unique<char[]>(buffer_size)),
-			tid(thread_id()) {
+	ThreadData() : buffer(std::make_unique<char[]>(buffer_size)) {
+		++open_threads;
 	}
 
 	~ThreadData() {
+		bool is_last_thread = --open_threads == 0;
 		char b[print_buffer_len];
-		usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f}]})", tid, micros());
+		usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f})", thread_id(), micros());
 		if(len >= sizeof(b)) {
 			y_fatal("Too long.");
 		}
 		write(b, len);
+		if(is_last_thread) {
+			write("]}", 2);
+		} else {
+			write(",", 1);
+		}
 		write_buffer();
 		std::unique_lock lock(mutex);
-		if(thread_output->is_open()) {
-			thread_output->flush().ignore();
+		if(is_output_open()) {
+			output->flush().ignore();
 		}
 	}
 
@@ -102,21 +111,30 @@ static thread_local struct ThreadData : NonMovable {
 
 	void write_buffer() {
 		std::unique_lock lock(mutex);
-		try {
-			if(thread_output->is_open() && buffer) {
-				if(!initialized) {
-					initialized = true;
-					const char beg[] = R"({"traceEvents":[)";
-					thread_output->write(reinterpret_cast<const u8*>(beg), sizeof(beg) - 1).ignore();
-				}
-				thread_output->write(reinterpret_cast<const u8*>(buffer.get()), buffer_offset).ignore();
-				buffer_offset = 0;
-				event("perf", "done writing buffer");
+		if(is_output_open() && buffer) {
+			if(!initialized) {
+				initialized = true;
+				const char beg[] = R"({"traceEvents":[)";
+				output->write(reinterpret_cast<const u8*>(beg), sizeof(beg) - 1).ignore();
 			}
-		} catch(...) {
+			output->write(reinterpret_cast<const u8*>(buffer.get()), buffer_offset).ignore();
+			buffer_offset = 0;
+			event("perf", "done writing buffer");
 		}
 	}
-} thread_data;
+};
+
+ThreadData* thread_data() {
+	static std::list<std::unique_ptr<ThreadData>> thread_datas;
+	static thread_local ThreadData* data = nullptr;
+	if(!data) {
+		std::unique_lock lock(mutex);
+		thread_datas.emplace_back(std::make_unique<ThreadData>());
+		data = thread_datas.back().get();
+	}
+	y_debug_assert(data);
+	return data;
+}
 
 static int paren(const char* buff) {
 	if(const char* p = std::strchr(buff, '('); p) {
@@ -127,29 +145,29 @@ static int paren(const char* buff) {
 
 void enter(const char* cat, const char* func) {
 	char b[print_buffer_len];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, thread_data.tid, micros());
+	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}
-	thread_data.write(b, len);
+	thread_data()->write(b, len);
 }
 
 void leave(const char* cat, const char* func) {
 	char b[print_buffer_len];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, thread_data.tid, micros());
+	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}
-	thread_data.write(b, len);
+	thread_data()->write(b, len);
 }
 
 void event(const char* cat, const char* name) {
 	char b[print_buffer_len];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"i","pid":0,"tid":%u,"ts":%f},)", name, cat, thread_data.tid, micros());
+	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"i","pid":0,"tid":%u,"ts":%f},)", name, cat, thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}
-	thread_data.write(b, len);
+	thread_data()->write(b, len);
 }
 
 #endif
