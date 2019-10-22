@@ -30,8 +30,6 @@ SOFTWARE.
 
 #include <list>
 
-#include "os.h"
-
 namespace y {
 namespace perf {
 

@@ -20,32 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "concurrent.h"
-#include "SpinLock.h"
-
-#include <y/core/Vector.h>
 
 namespace y {
 namespace concurrent {
 
-static usize concurency_level = 4;
-
 StaticThreadPool& default_thread_pool() {
 	static StaticThreadPool _pool;
-	concurency_level = _pool.concurency();
 	return _pool;
-}
-
-namespace detail {
-
-usize probable_block_count() {
-	return concurency_level * 16;
-}
-
-usize probable_block_count(usize size) {
-	usize loglog = log2ui(log2ui(size));
-	return std::clamp(concurency_level * (loglog * loglog), usize(1), size);
-}
-
 }
 
 }

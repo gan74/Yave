@@ -36,7 +36,6 @@ SOFTWARE.
 #include <y/utils/sort.h>
 #include <y/utils/hash.h>
 #include <y/utils/log.h>
-#include <y/utils/os.h>
 
 #define y_defer(expr) auto y_create_name_with_prefix(defer) = y::ScopeExit([&]() { expr; })
 
