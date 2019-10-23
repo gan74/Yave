@@ -22,9 +22,7 @@ void main() {
 	ivec2 coord = ivec2(gl_FragCoord.xy);
 	vec3 hdr = texelFetch(in_color, coord, 0).rgb;
 
-	// vec3 ldr = reinhard(hdr, params.params.white_point);
-	float scaled = 0.5 / params.params.avg_log_luminance;
-	vec3 ldr = uncharted2(hdr * scaled);
+	vec3 ldr = ACES_fast(hdr, params.params.white_point);
 
 
 	out_color = vec4(pow(ldr, vec3(inv_gamma)), 1.0);

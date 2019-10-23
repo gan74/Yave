@@ -48,7 +48,7 @@ struct Frustum4 {
 };
 
 struct ToneMappingParams {
-	float avg_log_luminance;
+	float avg_luminance;
 	float white_point;
 
 	vec2 padding_0;
@@ -231,7 +231,7 @@ vec3 uncharted2(vec3 hdr, float white) {
 	return uncharted2(hdr * exposure_bias) * scale;
 }
 
-vec3 ACES_fast(vec3 hdr) {
+float ACES_fast(float hdr) {
 	hdr *= 0.6;
 	float A = 2.51;
 	float B = 0.03;
@@ -239,6 +239,16 @@ vec3 ACES_fast(vec3 hdr) {
 	float D = 0.59;
 	float E = 0.14;
 	return (hdr * (A * hdr + B)) / (hdr * (C * hdr + E) + E);
+}
+
+vec3 ACES_fast(vec3 hdr) {
+	return vec3(ACES_fast(hdr.r), ACES_fast(hdr.g), ACES_fast(hdr.b));
+}
+
+vec3 ACES_fast(vec3 hdr, float white) {
+	float exposure_bias = 1.0;
+	float scale = 1.0 / ACES_fast(white);
+	return ACES_fast(hdr * exposure_bias) * scale;
 }
 
 // -------------------------------- LIGHTING --------------------------------

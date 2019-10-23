@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "ToneMappingPass.h"
 
+#include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/material/Material.h>
 #include <yave/framegraph/FrameGraph.h>
 
@@ -31,7 +32,7 @@ namespace yave {
 
 ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings) {
 	static constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
-	static const math::Vec2ui histogram_size = math::Vec2ui(32, 1);
+	static const math::Vec2ui histogram_size = math::Vec2ui(64, 1);
 
 	math::Vec2ui size = framegraph.image_size(in_lit);
 
@@ -56,6 +57,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 		histogram_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			const auto& program = recorder.device()->device_resources()[DeviceResources::HistogramProgram];
 			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
+			y_debug_assert(program.thread_count() == histogram_size.x());
 		});
 
 		FrameGraphPassBuilder params_builder = framegraph.add_pass("Tone mapping params pass");
@@ -67,6 +69,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 		params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			const auto& program = recorder.device()->device_resources()[DeviceResources::ToneMapParamsProgram];
 			recorder.dispatch(program, math::Vec3ui(1), {self->descriptor_sets()[0]});
+			y_debug_assert(program.thread_count() == histogram_size.x());
 		});
 	}
 

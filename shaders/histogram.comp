@@ -10,43 +10,36 @@ layout(local_size_x = group_size, local_size_y = group_size) in;
 layout(r32ui, set = 0, binding = 0) uniform uimage2D out_histogram;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
 
-shared float tile_lum[thread_count];
+shared uint histogram[thread_count];
 
+
+uint lum_to_bin(float lum) {
+	float log_lum = log2(lum) + 16.0;
+	if(log_lum <= 0.0) {
+		return 0;
+	}
+	return min(thread_count - 1, uint(log_lum));
+}
+
+// https://bruop.github.io/exposure/
 void main() {
+	uint index = gl_LocalInvocationIndex;
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	uint colunm_id = gl_LocalInvocationID.x * group_size;
-	uint tile_id = colunm_id + gl_LocalInvocationID.y;
+	ivec2 size = textureSize(in_color, 0);
 
 	float lum = luminance(texelFetch(in_color, coord, 0).rgb);
-	float log_lum = log(max(epsilon, lum));
+	uint bin = lum_to_bin(lum);
 
-	{
-		tile_lum[tile_id] = log_lum;
+	histogram[index] = 0;
+
+	barrier();
+
+	if(coord.x <= size.x && coord.y <= size.y) {
+		atomicAdd(histogram[bin], 1);
 	}
 
 	barrier();
 
-
-	if(gl_LocalInvocationID.y == 0) {
-		float sum = 0.0;
-		for(uint i = 0; i != group_size; ++i) {
-			sum += tile_lum[colunm_id + i];
-		}
-		tile_lum[colunm_id] = sum;
-	}
-
-	barrier();
-
-
-	if(gl_LocalInvocationID.xy == ivec2(0)) {
-		float sum = 0.0;
-		for(uint i = 0; i != group_size; ++i) {
-			sum += tile_lum[i * group_size];
-		}
-
-		float avg_log_lum = sum / thread_count;
-		int int_lum = max(0, 16 + int(avg_log_lum));
-		imageAtomicAdd(out_histogram, ivec2(int_lum, 0), 1);
-	}
+	imageAtomicAdd(out_histogram, ivec2(index, 0), histogram[index]);
 }
 

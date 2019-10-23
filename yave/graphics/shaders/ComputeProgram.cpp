@@ -79,6 +79,10 @@ const math::Vec3ui& ComputeProgram::local_size() const {
 	return _local_size;
 }
 
+usize ComputeProgram::thread_count() const {
+	return _local_size.x() * _local_size.y() * _local_size.z();
+}
+
 vk::Pipeline ComputeProgram::vk_pipeline() const {
 	return _pipeline;
 }

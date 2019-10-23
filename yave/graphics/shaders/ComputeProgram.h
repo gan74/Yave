@@ -36,6 +36,7 @@ class ComputeProgram final : NonCopyable, public DeviceLinked {
 		~ComputeProgram();
 
 		const math::Vec3ui& local_size() const;
+		usize thread_count() const;
 
 		vk::Pipeline vk_pipeline() const;
 		vk::PipelineLayout vk_pipeline_layout() const;

@@ -2,7 +2,10 @@
 
 #include "yave.glsl"
 
-layout(local_size_x = 1, local_size_y = 1) in;
+const uint group_size = 8;
+const uint thread_count = group_size * group_size;
+
+layout(local_size_x = group_size, local_size_y = group_size) in;
 
 layout(set = 0, binding = 0) writeonly buffer ToneMapping {
 	ToneMappingParams params;
@@ -10,28 +13,52 @@ layout(set = 0, binding = 0) writeonly buffer ToneMapping {
 
 layout(set = 0, binding = 1) uniform usampler2D in_histogram;
 
+shared uint histogram[thread_count];
+shared uint total;
+
+// https://bruop.github.io/exposure/
 void main() {
-	const int histogram_size = textureSize(in_histogram, 0).x;
+	uint index = gl_LocalInvocationIndex;
+	uint colunm_id = gl_LocalInvocationID.x * group_size;
+	uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
 
-	uint total_samples = 0;
-	for(int i = histogram_size - 1; i != -1; --i) {
-		uint bin = texelFetch(in_histogram, ivec2(i, 0), 0).r;
-		total_samples += bin;
+	histogram[index] = bin_size * index;
+	
+	if(index == 0) {
+		total = 0;
 	}
 
-	float white_point = -1.0;
-	float average = 0.0;
-	for(int i = histogram_size - 1; i != -1; --i) {
-		float bin_lum = exp(i - 16);
-		uint bin = texelFetch(in_histogram, ivec2(i, 0), 0).r;
+	barrier();
 
-		average += bin_lum * (bin / float(total_samples));
-		if(white_point < 0.0 && bin != 0) {
-			white_point = bin_lum;
+	atomicAdd(total, bin_size);
+
+	if(gl_LocalInvocationID.y == 0) {
+		uint sum = 0;
+		for(uint i = 0; i != group_size; ++i) {
+			sum += histogram[colunm_id + i];
 		}
+		histogram[colunm_id] = sum;
 	}
 
-	params.params.avg_log_luminance = average;
-	params.params.white_point = white_point;
+	barrier();
+
+	if(index == 0) {
+		uint weighted = 0;
+		for(uint i = 0; i != group_size; ++i) {
+			weighted += histogram[i * group_size];
+		}
+
+		uint black = bin_size;
+
+		float log_avg = (weighted / float(max(total, black + 1) - black)) - 16.0;	
+		float avg = exp2(log_avg);
+
+		params.params.avg_luminance = avg;
+		params.params.white_point = avg * 9.6;
+	}
 }
+
+
+
+
 
