@@ -22,7 +22,20 @@ void main() {
 	ivec2 coord = ivec2(gl_FragCoord.xy);
 	vec3 hdr = texelFetch(in_color, coord, 0).rgb;
 
-	vec3 ldr = ACES_fast(hdr, params.params.white_point);
+	float max_lum = (params.params.max_lum + epsilon);
+
+#if 1
+	vec3 Yxy = RGB_to_Yxy(hdr);
+	Yxy.x /= max_lum;
+	hdr = Yxy_to_RGB(Yxy);
+
+	vec3 ldr = ACES_fast(hdr);
+#else
+	float lum = luminance(hdr);
+	float scale = lum / max_lum;
+
+	vec3 ldr = ACES_fast(hdr * scale);
+#endif
 
 
 	out_color = vec4(pow(ldr, vec3(inv_gamma)), 1.0);

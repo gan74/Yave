@@ -12,6 +12,10 @@ const uint max_uint = uint(0xFFFFFFFF);
 const uint max_bones = 256;
 const uint max_tile_lights = 256;
 
+const float lum_histogram_offset = 8.0;
+const float lum_histogram_mul = 8.0;
+
+
 
 // -------------------------------- TYPES --------------------------------
 
@@ -49,7 +53,7 @@ struct Frustum4 {
 
 struct ToneMappingParams {
 	float avg_luminance;
-	float white_point;
+	float max_lum;
 
 	vec2 padding_0;
 };
@@ -199,6 +203,49 @@ bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
 }
 
 
+// -------------------------------- COLOR --------------------------------
+
+// https://github.com/BruOp/bae/blob/master/examples/common/shaderlib.sh
+vec3 RGB_to_XYZ(vec3 rgb) {
+	// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+	return vec3(
+	    dot(vec3(0.4124564, 0.3575761, 0.1804375), rgb),
+	    dot(vec3(0.2126729, 0.7151522, 0.0721750), rgb),
+	    dot(vec3(0.0193339, 0.1191920, 0.9503041), rgb)
+	);
+}
+
+vec3 XYZ_to_RGB(vec3 xyz) {
+	return vec3(
+	    dot(vec3( 3.2404542, -1.5371385, -0.4985314), xyz),
+	    dot(vec3(-0.9692660,  1.8760108,  0.0415560), xyz),
+	    dot(vec3( 0.0556434, -0.2040259,  1.0572252), xyz)
+	);
+}
+
+vec3 XYZ_to_Yxy(vec3 xyz) {
+	// http://www.brucelindbloom.com/index.html?Eqn_xyY_to_XYZ.html
+	float i = 1.0 / dot(xyz, vec3(1.0));
+	return vec3(xyz.y, xyz.x * i, xyz.y * i);
+}
+
+vec3 Yxy_to_XYZ(vec3 Yxy) {
+	return vec3(
+	    Yxy.x * Yxy.y / Yxy.z,
+	    Yxy.x,
+	    Yxy.x * (1.0 - Yxy.y - Yxy.z) / Yxy.z
+	);
+}
+
+vec3 RGB_to_Yxy(vec3 rgb) {
+	return XYZ_to_Yxy(RGB_to_XYZ(rgb));
+}
+
+vec3 Yxy_to_RGB(vec3 Yxy) {
+	return XYZ_to_RGB(Yxy_to_XYZ(Yxy));
+}
+
+
 // -------------------------------- HDR --------------------------------
 
 float reinhard(float lum, float white) {
@@ -225,14 +272,7 @@ vec3 uncharted2(vec3 hdr) {
 	return vec3(uncharted2(hdr.r), uncharted2(hdr.g), uncharted2(hdr.b));
 }
 
-vec3 uncharted2(vec3 hdr, float white) {
-	float exposure_bias = 1.0;
-	float scale = 1.0 / uncharted2(white);
-	return uncharted2(hdr * exposure_bias) * scale;
-}
-
 float ACES_fast(float hdr) {
-	hdr *= 0.6;
 	float A = 2.51;
 	float B = 0.03;
 	float C = 2.43;
@@ -243,12 +283,6 @@ float ACES_fast(float hdr) {
 
 vec3 ACES_fast(vec3 hdr) {
 	return vec3(ACES_fast(hdr.r), ACES_fast(hdr.g), ACES_fast(hdr.b));
-}
-
-vec3 ACES_fast(vec3 hdr, float white) {
-	float exposure_bias = 1.0;
-	float scale = 1.0 / ACES_fast(white);
-	return ACES_fast(hdr * exposure_bias) * scale;
 }
 
 // -------------------------------- LIGHTING --------------------------------

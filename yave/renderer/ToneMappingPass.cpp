@@ -32,7 +32,7 @@ namespace yave {
 
 ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings) {
 	static constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
-	static const math::Vec2ui histogram_size = math::Vec2ui(64, 1);
+	static const math::Vec2ui histogram_size = math::Vec2ui(256, 1);
 
 	math::Vec2ui size = framegraph.image_size(in_lit);
 
@@ -87,7 +87,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 		if(!settings.auto_exposure) {
 			TypedMapping<uniform::ToneMappingParams> mapping = self->resources()->mapped_buffer(params);
-			mapping[0].avg_log_luminance = 0.5f;
+			mapping[0] = uniform::ToneMappingParams();
 		}
 
 		auto render_pass = recorder.bind_framebuffer(self->framebuffer());

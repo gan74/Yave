@@ -32,8 +32,6 @@ SOFTWARE.
 #include <typeinfo>
 #include <string_view>
 
-
-
 namespace y {
 namespace reflect {
 
@@ -109,6 +107,18 @@ namespace reflect {
 	y_reflect_init_polymorphic()							\
 	y_reflect_member_data(__VA_ARGS__)
 
+
+
+#define y_reflect_external(Type, ...)															\
+	namespace ::y::reflect::detail {															\
+		template<>																				\
+		struct ReflectionMemberData<Type, false> {												\
+			using SelfType = Type;																\
+			static constexpr std::array member_data = {											\
+				Y_REC_MACRO(Y_MACRO_MAP(y_reflect_unfold_member, __VA_ARGS__))					\
+			};																					\
+		};																						\
+	}
 
 
 namespace detail {
@@ -327,7 +337,5 @@ static_assert(type<std::string_view>() == type<std::string_view>());
 }
 }
 }
-
-
 
 #endif // Y_REFLECT_REFLECT_H

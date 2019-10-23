@@ -36,12 +36,15 @@ y_test_func("Test test") {
 
 struct Refl {
 	int x = 1;
+	int non_refl = -1;
 	int y = 2;
 
 	y_reflect(x, y)
 };
 
 void reflection() {
+	Refl refl;
+	Refl* refl_ptr = &refl;
 	{
 		auto data = reflect::reflection_data<Refl*>();
 		log_msg(fmt("% -> % (%)", data.type.name, data.members.size(), data.type.flags.is_pointer));
@@ -51,6 +54,13 @@ void reflection() {
 		auto data = reflect::reflection_data<Refl>();
 		log_msg(fmt("% -> % (%)", data.type.name, data.members.size(), data.type.flags.is_pointer));
 	}
+
+	{
+		auto data = reflect::reflection_data(refl_ptr);
+		data.members[1].get<int>(refl_ptr) = 13;
+	}
+
+	log_msg(fmt("Refl { x: % non_refl: % y: % }", refl.x, refl.non_refl, refl.y));
 }
 
 

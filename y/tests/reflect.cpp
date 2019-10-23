@@ -87,6 +87,12 @@ struct Derived : public Polymorphic {
 	y_reflect_polymorphic(y)
 };
 
+struct WithConst {
+	const int a = 4;
+	int b = 5;
+
+	y_reflect(a, b)
+};
 
 y_test_func("reflect polymorphic") {
 	reflect::RuntimeData data = reflect::reflection_data<Polymorphic>();
@@ -158,11 +164,13 @@ y_test_func("reflect constexpr") {
 	y_test_assert(cx_members == 4);
 }
 
+
+
 [[maybe_unused]]
 static void print_refl(const reflect::RuntimeData& data, usize indent = 0) {
-	if(!data.type.flags.has_reflection) {
+	/*if(!data.type.flags.has_reflection) {
 		return;
-	}
+	}*/
 	auto in = [=]() {
 		core::String line;
 		for(usize i = 0; i != indent; ++i) {
@@ -178,5 +186,6 @@ static void print_refl(const reflect::RuntimeData& data, usize indent = 0) {
 		print_refl(m.type.reflection_data(), indent + 1);
 	}
 }
+
 
 }

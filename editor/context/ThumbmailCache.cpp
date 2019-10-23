@@ -56,19 +56,20 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 		: view(&world) {
 
 	DevicePtr dptr = ctx->device();
+	float intensity = 0.35f;
 
 	{
 		ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
 		DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
 		light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
-		light_comp->intensity() = 3.0f;
+		light_comp->intensity() = 3.0f * intensity;
 	}
 	{
 		ecs::EntityId light_id = world.create_entity(PointLightArchetype());
 		world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
 		PointLightComponent* light = world.component<PointLightComponent>(light_id);
 		light->color() = k_to_rbg(2500.0f);
-		light->intensity() = 1.5f;
+		light->intensity() = 1.5f * intensity;
 		light->falloff() = 0.5f;
 		light->radius() = 2.0f;
 	}
@@ -77,7 +78,7 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 		world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
 		PointLightComponent* light = world.component<PointLightComponent>(light_id);
 		light->color() = k_to_rbg(10000.0f);
-		light->intensity() = 1.5f;
+		light->intensity() = 1.5f * intensity;
 		light->falloff() = 0.5f;
 		light->radius() = 2.0f;
 	}

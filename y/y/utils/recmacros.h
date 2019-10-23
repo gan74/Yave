@@ -26,7 +26,7 @@ SOFTWARE.
 
 /****************** RECURSIVE MACROS ******************/
 
-#define Y_REC_MACRO(...) Y_MACRO_64(__VA_ARGS__)
+#define Y_REC_MACRO(...) Y_MACRO_8(__VA_ARGS__)
 /*#define Y_MACRO_1024(...) Y_MACRO_512(Y_MACRO_512(__VA_ARGS__))
 #define Y_MACRO_512(...) Y_MACRO_256(Y_MACRO_256(__VA_ARGS__))*/
 #define Y_MACRO_256(...) Y_MACRO_128(Y_MACRO_128(__VA_ARGS__))
