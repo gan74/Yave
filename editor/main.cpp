@@ -89,13 +89,22 @@ static void setup_logger() {
 }
 
 static Instance create_instance() {
+	y_profile();
 	if(!debug_instance) {
 		log_msg("Vulkan debugging disabled.", Log::Warning);
 	}
 	return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }
 
+static Device create_device(Instance& instance) {
+	y_profile();
+	return Device(instance);
+}
 
+static EditorContext create_constext(const Device& device) {
+	y_profile();
+	return EditorContext(&device);
+}
 
 
 
@@ -106,8 +115,8 @@ int main(int argc, char** argv) {
 
 	Instance instance = create_instance();
 
-	Device device(instance);
-	EditorContext ctx(&device);
+	Device device = create_device(instance);
+	EditorContext ctx = create_constext(device);
 	context = &ctx;
 
 	MainWindow window(&ctx);

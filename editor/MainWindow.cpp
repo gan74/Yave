@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <yave/graphics/swapchain/swapchain.h>
+#include <yave/graphics/swapchain/Swapchain.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -47,6 +47,7 @@ void MainWindow::resized() {
 }
 
 void MainWindow::create_swapchain() {
+	y_profile();
 	// needed because the swapchain immediatly destroys it images
 	device()->wait_all_queues();
 

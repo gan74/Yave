@@ -230,6 +230,7 @@ void Window::close() {
 
 bool Window::update() {
 #ifdef Y_OS_WIN
+	y_profile();
 	MSG msg;
 	while(PeekMessage(&msg, _hwnd, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
@@ -241,6 +242,7 @@ bool Window::update() {
 
 void Window::show() {
 #ifdef Y_OS_WIN
+	y_profile();
 	_run = true;
 	ShowWindow(_hwnd, SW_SHOW);
 	SetForegroundWindow(_hwnd);

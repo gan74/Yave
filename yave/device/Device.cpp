@@ -48,6 +48,8 @@ static vk::Device create_device(
 		core::Span<QueueFamily> queue_families,
 		const DebugParams& debug) {
 
+	y_profile();
+
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
 
 	auto prio_count = std::max_element(queue_families.begin(), queue_families.end(),
@@ -81,6 +83,7 @@ static vk::Device create_device(
 
 	auto exts = extensions();
 
+	y_profile_zone("physical device");
 	return physical.createDevice(vk::DeviceCreateInfo()
 			.setEnabledExtensionCount(u32(exts.size()))
 			.setPpEnabledExtensionNames(exts.begin())
@@ -113,13 +116,14 @@ Device::Device(Instance& instance) :
 		}
 	}
 
-	_resources = DeviceResources(this);
+	{
+		y_profile_zone("device resources");
+		_resources = DeviceResources(this);
+	}
 }
 
 Device::~Device() {
-	for(Queue& q : _queues) {
-		q.wait();
-	}
+	wait_all_queues();
 	_lifetime_manager.collect();
 }
 
@@ -158,9 +162,7 @@ Queue& Device::graphic_queue() {
 
 void Device::wait_all_queues() const {
 	y_profile();
-	for(const Queue& q : _queues) {
-		q.wait();
-	}
+	vk_device().waitIdle();
 }
 
 static usize generate_thread_id() {

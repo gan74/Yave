@@ -68,6 +68,7 @@ core::Span<std::unique_ptr<UiElement>> Ui::ui_elements() const {
 }
 
 bool Ui::confirm(const char* message) {
+	y_profile();
 #ifdef Y_OS_WIN
 	return MessageBox(GetActiveWindow(), message, "Confirm", MB_OKCANCEL) != IDCANCEL;
 #else
@@ -77,6 +78,7 @@ bool Ui::confirm(const char* message) {
 }
 
 void Ui::ok(const char* title, const char* message) {
+	y_profile();
 #ifdef Y_OS_WIN
 	MessageBox(GetActiveWindow(), message, title, MB_OK);
 #else
