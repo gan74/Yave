@@ -111,6 +111,7 @@ class MutableSpan {
 		}
 
 		constexpr T& operator[](usize i) const {
+			y_debug_assert(i < size());
 			return _data[i];
 		}
 
