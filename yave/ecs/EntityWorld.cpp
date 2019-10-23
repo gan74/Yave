@@ -178,19 +178,20 @@ serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
 		}
 	}
 
-	if(!_required_components.is_empty()) {
-		for(EntityId id : entities()) {
-			add_required_components(id);
-		}
-	}
-
 	for(const auto& p : _component_containers) {
+		p.second->post_deserialize(*this);
+		// do some checking
 		for(EntityIndex i : p.second->indexes()) {
 			EntityId id = EntityId::from_unversioned_index(i);
 			if(!_entities.contains(id)) {
 				return core::Err();
 			}
-			p.second->add_required_components(*this, id);
+		}
+	}
+
+	if(!_required_components.is_empty()) {
+		for(EntityId id : entities()) {
+			add_required_components(id);
 		}
 	}
 
@@ -200,12 +201,6 @@ serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
 
 
 
-
-void ComponentContainerBase::add_required_components(EntityWorld& world, EntityId id) const {
-	for(const ComponentTypeIndex& tpe : _required) {
-		world.create_component(id, tpe).ignore();
-	}
-}
 
 
 }

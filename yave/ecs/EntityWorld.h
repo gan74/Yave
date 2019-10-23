@@ -79,30 +79,27 @@ class EntityWorld : NonCopyable {
 
 
 		core::Result<void> create_component(EntityId id, ComponentTypeIndex type) {
+			y_debug_assert(exists(id));
 			if(ComponentContainerBase* cont = container(type)) {
-				return cont->create_empty(*this, id);
+				return cont->create_one(*this, id);
 			}
 			return core::Err();
 		}
 
 		template<typename T, typename... Args>
 		T& create_component(EntityId id, Args&&... args) {
+			y_debug_assert(exists(id));
 			return container<T>()->template create<T>(*this, id, y_fwd(args)...);
 		}
 
 		template<typename T, typename... Args>
-		T& create_or_find_component(EntityId id, Args&&... args) {
-			return container<T>()->template create_or_find<T>(*this, id, y_fwd(args)...);
-		}
-
-		template<typename T, typename... Args>
-		auto create_components(EntityId id) {
+		void create_components(EntityId id) {
+			y_debug_assert(exists(id));
 			create_component<T>(id);
 			if constexpr(sizeof...(Args)) {
 				create_components<Args...>(id);
 			}
 		}
-
 
 
 		template<typename T>
@@ -128,7 +125,7 @@ class EntityWorld : NonCopyable {
 
 		template<typename T>
 		bool has(EntityId id) const {
-			if(!exists(id) ) {
+			if(!exists(id)) {
 				return false;
 			}
 			const ComponentContainerBase* cont = container<T>();
@@ -136,7 +133,7 @@ class EntityWorld : NonCopyable {
 		}
 
 		bool has(EntityId id, ComponentTypeIndex type) const {
-			if(!exists(id) ) {
+			if(!exists(id)) {
 				return false;
 			}
 			const ComponentContainerBase* cont = container(type);
@@ -262,6 +259,13 @@ class EntityWorld : NonCopyable {
 		Y_TODO(Do we have to serialize this?)
 		core::Vector<ComponentTypeIndex> _required_components;
 };
+
+
+
+template<typename... Args>
+void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityId id) {
+	world.create_components<Args...>(id);
+}
 
 }
 }

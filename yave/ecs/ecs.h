@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_ECS_H
 
 #include <typeindex>
-#include <yave/yave.h>
+#include "EntityId.h"
 
 namespace yave {
 namespace ecs {
@@ -64,6 +64,10 @@ struct RequiredComponents {
 		static_assert(std::is_default_constructible_v<std::tuple<Args...>>);
 		return EntityArchetype<Args...>{};
 	}
+
+	// EntityWorld.h
+	static inline void add_required_components(EntityWorld& world, EntityId id);
+
 };
 
 

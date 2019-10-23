@@ -57,24 +57,24 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		if(ImGui::Button("Add component")) {
 			math::FastRandom rng(core::Chrono::program().to_nanos());
 
-			world.create_or_find_component<Foo>(_id);
+			world.create_component<Foo>(_id);
 			if(rng() % 2 == 0) {
-				world.create_or_find_component<Bar>(_id);
+				world.create_component<Bar>(_id);
 			}
 			if(rng() % 3 == 0) {
-				world.create_or_find_component<Quux>(_id);
+				world.create_component<Quux>(_id);
 			}
 			if(rng() % 4 == 0) {
-				world.create_or_find_component<Cmp>(_id);
+				world.create_component<Cmp>(_id);
 			}
 			if(rng() % 5 == 0) {
-				world.create_or_find_component<Bli>(_id);
+				world.create_component<Bli>(_id);
 			}
 		}
 
 		ImGui::SameLine();
 		if(ImGui::Button("Add required component")) {
-			world.create_or_find_component<Required>(_id);
+			world.create_component<Required>(_id);
 		}
 	}
 
