@@ -200,7 +200,7 @@ class Vector : ResizePolicy, Allocator {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
-			return *(new(_data_end++) data_type(y_fwd(args)...));
+			return *(::new(_data_end++) data_type(y_fwd(args)...));
 		}
 
 		template<typename It>
@@ -291,10 +291,12 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		const_reference first() const {
+			y_debug_assert(!is_empty());
 			return *_data;
 		}
 
 		reference first() {
+			y_debug_assert(!is_empty());
 			return *_data;
 		}
 

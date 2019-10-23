@@ -163,7 +163,7 @@ void leave(const char* cat, const char* func) {
 
 void event(const char* cat, const char* name) {
 	char b[print_buffer_len];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"i","pid":0,"tid":%u,"ts":%f},)", name, cat, thread_id(), micros());
+	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"I","pid":0,"tid":%u,"ts":%f},)", name, cat, thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}
