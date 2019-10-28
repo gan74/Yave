@@ -189,8 +189,9 @@ class ComponentContainerBase : NonMovable {
 
 		virtual serde2::Result serialize(WritableAssetArchive&) const = 0;
 		virtual serde2::Result deserialize(ReadableAssetArchive&) = 0;
-		virtual void post_deserialize(EntityWorld&);
 		virtual u64 serialization_type_id() const = 0;
+
+		virtual void post_deserialize(EntityWorld&) {}
 };
 
 
