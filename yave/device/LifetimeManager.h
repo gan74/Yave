@@ -127,7 +127,7 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 
 		template<typename T>
 		void destroy_later(T&& t) {
-			std::unique_lock lock(_lock);
+			std::unique_lock lock(_resource_lock);
 			_to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));
 		}
 
@@ -138,7 +138,8 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 		std::deque<std::pair<u64, ManagedResource>> _to_destroy;
 		std::deque<CmdBufferData> _in_flight;
 
-		mutable concurrent::SpinLock _lock;
+		mutable concurrent::SpinLock _cmd_lock;
+		mutable concurrent::SpinLock _resource_lock;
 
 		std::atomic<u64> _counter = 0;
 		u64 _done_counter = 0;

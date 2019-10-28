@@ -115,8 +115,10 @@ class Device : NonMovable {
 		mutable concurrent::SpinLock _lock;
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
-		DeviceResources _resources;
 		mutable DescriptorSetAllocator _descriptor_set_allocator;
+
+		// this needs to be at the very bottom since it holds handles to resources and stuff
+		DeviceResources _resources;
 };
 
 

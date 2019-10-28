@@ -123,7 +123,15 @@ Device::Device(Instance& instance) :
 }
 
 Device::~Device() {
+	Y_TODO(Why do we need this?)
+	{
+		CmdBufferPool<CmdBufferUsage::Disposable> pool(this);
+		CmdBufferRecorder rec = pool.create_buffer();
+		graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(rec)));
+	}
+
 	wait_all_queues();
+	_thread_devices.clear();
 	_lifetime_manager.collect();
 }
 
@@ -174,10 +182,10 @@ static usize generate_thread_id() {
 
 ThreadDevicePtr Device::thread_device() const {
 	static thread_local usize thread_id = generate_thread_id();
-	static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
+	//static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
 
-	auto& cache = thread_cache;
-	if(cache.first != this) {
+	/*auto& cache = thread_cache;
+	if(cache.first != this)*/ {
 		std::unique_lock _(_lock);
 		while(_thread_devices.size() <= thread_id) {
 			_thread_devices.emplace_back();
@@ -189,10 +197,10 @@ ThreadDevicePtr Device::thread_device() const {
 		if(!data) {
 			data = std::make_unique<ThreadLocalDevice>(this);
 		}
-		cache = {this, data.get()};
+		//cache = {this, data.get()};
 		return data.get();
 	}
-	return cache.second;
+	//return cache.second;
 }
 
 const DeviceResources& Device::device_resources() const {

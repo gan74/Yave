@@ -34,10 +34,18 @@ LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 LifetimeManager::~LifetimeManager() {
-	std::unique_lock lock(_lock);
+	y_debug_assert(_counter == _done_counter);
 	for(auto& r : _to_destroy) {
+		/*std::visit([](auto& r) {
+			log_msg(type_name(r));
+			if constexpr(std::is_same_v<remove_cvref_t<decltype(r)>, DescriptorSetData>) {
+				y_breakpoint;
+			}
+		}, r.second);*/
+
 		destroy_resource(r.second);
 	}
+
 	if(_in_flight.size()) {
 		y_fatal("% CmdBuffer still in flight.", _in_flight.size());
 	}
@@ -49,52 +57,67 @@ ResourceFence LifetimeManager::create_fence() {
 
 void LifetimeManager::recycle(CmdBufferData&& cmd) {
 	y_profile();
-	std::unique_lock lock(_lock);
-	auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
-								[](const auto& a, const auto& b) { return a.resource_fence() < b.resource_fence(); });
-	_in_flight.insert(it, std::move(cmd));
 
-	if(_in_flight.front().resource_fence()._value == _done_counter + 1) {
-		collect();
+	bool run_collect = false;
+	{
+		std::unique_lock lock(_cmd_lock);
+		auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
+								   [](const auto& a, const auto& b) { return a.resource_fence() < b.resource_fence(); });
+		_in_flight.insert(it, std::move(cmd));
+		run_collect = (_in_flight.front().resource_fence()._value == _done_counter + 1);
 	}
 
-	y_debug_assert(_in_flight.size() < 256);
+	if(run_collect) {
+		collect();
+	}
 }
 
 void LifetimeManager::collect() {
 	y_profile();
-	u64 next = _done_counter;
-	while(!_in_flight.empty()) {
-		CmdBufferData& cmd = _in_flight.front();
-		u64 fence = cmd.resource_fence()._value;
-		auto status = vk::Result::eNotReady;
-		{
-			y_profile_zone("Fence status");
-			status = device()->vk_device().getFenceStatus(cmd.vk_fence());
-		}
-		if(fence == next + 1 && status == vk::Result::eSuccess) {
-			if(cmd.pool()) {
-				cmd.pool()->release(std::move(cmd));
+
+	u64 next = 0;
+	bool clear = false;
+
+	{
+		std::unique_lock lock(_cmd_lock);
+		next = _done_counter;
+		while(!_in_flight.empty()) {
+			CmdBufferData& cmd = _in_flight.front();
+			u64 fence = cmd.resource_fence()._value;
+			if(fence != next + 1) {
+				break;
 			}
 
-			next = fence;
-			_in_flight.pop_front();
-		} else {
-			break;
+			if(device()->vk_device().getFenceStatus(cmd.vk_fence()) == vk::Result::eSuccess) {
+				if(cmd.pool()) {
+					cmd.pool()->release(std::move(cmd));
+				}
+
+				next = fence;
+				_in_flight.pop_front();
+			} else {
+				break;
+			}
+		}
+
+		if(next != _done_counter) {
+			clear = true;
+			_done_counter = next;
 		}
 	}
-	if(next != _done_counter) {
-		clear_resources(_done_counter = next);
+
+	if(clear) {
+		clear_resources(next);
 	}
 }
 
 usize LifetimeManager::pending_deletions() const {
-	std::unique_lock lock(_lock);
+	std::unique_lock lock(_resource_lock);
 	return _to_destroy.size();
 }
 
 usize LifetimeManager::active_cmd_buffers() const {
-	std::unique_lock lock(_lock);
+	std::unique_lock lock(_cmd_lock);
 	return _in_flight.size();
 }
 
@@ -118,9 +141,18 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 
 void LifetimeManager::clear_resources(u64 up_to) {
 	y_profile();
-	while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
-		destroy_resource(_to_destroy.front().second);
-		_to_destroy.pop_front();
+	core::Vector<ManagedResource> to_del;
+
+	{
+		std::unique_lock lock(_resource_lock);
+		while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
+			to_del << std::move(_to_destroy.front().second);
+			_to_destroy.pop_front();
+		}
+	}
+
+	for(auto& res : to_del) {
+		destroy_resource(res);
 	}
 }
 

@@ -162,9 +162,14 @@ vk::DescriptorPool DescriptorSetPool::vk_pool() const {
 }
 
 usize DescriptorSetPool::free_sets() const {
-	auto lock = std::unique_lock(_lock);
-	return pool_size - _taken.count();
+	return pool_size - used_sets();
 }
+
+usize DescriptorSetPool::used_sets() const {
+	auto lock = std::unique_lock(_lock);
+	return _taken.count();
+}
+
 
 
 DescriptorSetAllocator::DescriptorSetAllocator(DevicePtr dptr) : DeviceLinked(dptr) {
@@ -219,6 +224,17 @@ usize DescriptorSetAllocator::free_sets() const {
 	for(const auto& l : _layouts) {
 		for(const auto& p : l.second.pools) {
 			count += p->free_sets();
+		}
+	}
+	return count;
+}
+
+usize DescriptorSetAllocator::used_sets() const {
+	auto lock = std::unique_lock(_lock);
+	usize count = 0;
+	for(const auto& l : _layouts) {
+		for(const auto& p : l.second.pools) {
+			count += p->used_sets();
 		}
 	}
 	return count;

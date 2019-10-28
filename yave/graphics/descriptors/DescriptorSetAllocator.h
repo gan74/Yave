@@ -124,6 +124,7 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 
 		// Slow: for debug only
 		usize free_sets() const;
+		usize used_sets() const;
 
 	private:
 		std::bitset<pool_size> _taken;
@@ -154,6 +155,7 @@ class DescriptorSetAllocator : NonCopyable, public DeviceLinked  {
 		usize layout_count() const;
 		usize pool_count() const;
 		usize free_sets() const;
+		usize used_sets() const;
 
 	private:
 		Pools& layout(const Key& bindings);

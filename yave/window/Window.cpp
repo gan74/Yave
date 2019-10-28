@@ -188,12 +188,12 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 Window::Window(const math::Vec2ui& size, const core::String& name, Flags flags) : _size(size), _name(name), _event_handler(nullptr) {
 #ifdef Y_OS_WIN
 	_run = true;
-	_hInstance = GetModuleHandle(nullptr);
+	_hinstance = GetModuleHandle(nullptr);
 	WNDCLASSEX wc = {};
 	wc.cbSize        = sizeof(WNDCLASSEX);
 	wc.style		 = CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc   = windows_event_handler;
-	wc.hInstance     = _hInstance;
+	wc.hInstance     = _hinstance;
 	wc.hIcon         = LoadIcon(nullptr, IDI_APPLICATION);
 	wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
 	wc.hbrBackground = HBRUSH(COLOR_WINDOW + 1);
@@ -211,14 +211,15 @@ Window::Window(const math::Vec2ui& size, const core::String& name, Flags flags) 
 	RECT wr = {0, 0, LONG(size.x()), LONG(size.y())};
 	AdjustWindowRectEx(&wr, style, FALSE, ex_style);
 
-	_hwnd = CreateWindowEx(0, class_name, name.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, nullptr, nullptr, _hInstance, nullptr);
+	_hwnd = CreateWindowEx(0, class_name, name.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, nullptr, nullptr, _hinstance, nullptr);
 	SetWindowLongPtr(_hwnd, GWLP_USERDATA, LONG_PTR(this));
 #endif
 }
 
 Window::~Window() {
 #ifdef Y_OS_WIN
-	UnregisterClass(class_name, _hInstance);
+	DestroyWindow(_hwnd);
+	UnregisterClass(class_name, _hinstance);
 #endif
 }
 

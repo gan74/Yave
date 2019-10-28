@@ -50,6 +50,7 @@ static void hide_console() {
 #endif
 }
 
+[[maybe_unused]]
 static void crash_handler(int) {
 	log_msg("SEGFAULT!");
 	Y_TODO(we might want to save whatever we can here)
@@ -115,6 +116,7 @@ int main(int argc, char** argv) {
 
 	Instance instance = create_instance();
 
+
 	Device device = create_device(instance);
 	EditorContext ctx = create_constext(device);
 	context = &ctx;
@@ -144,6 +146,13 @@ int main(int argc, char** argv) {
 
 		ctx.flush_deferred();
 	}
+
+
+
+
+	set_log_callback(nullptr);
+	context = nullptr;
+
 
 	return 0;
 }
