@@ -83,6 +83,7 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) 
 	y_profile();
 	usize size = align_size(reqs.size, alignment);
 
+	std::unique_lock lock(_lock);
 	for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
 		usize full_size = it->size;
 
@@ -133,6 +134,7 @@ void DeviceMemoryHeap::free(const FreeBlock& block) {
 void DeviceMemoryHeap::compact_block(FreeBlock block) {
 	y_profile();
 	// sort ?
+	std::unique_lock lock(_lock);
 	bool compacted = false;
 	do {
 		compacted = false;
@@ -162,6 +164,7 @@ usize DeviceMemoryHeap::size() const {
 }
 
 usize DeviceMemoryHeap::available() const {
+	std::unique_lock lock(_lock);
 	usize tot = 0;
 	for(const auto& b : _blocks) {
 		tot += b.size;
@@ -170,6 +173,7 @@ usize DeviceMemoryHeap::available() const {
 }
 
 usize DeviceMemoryHeap::free_blocks() const {
+	std::unique_lock lock(_lock);
 	return _blocks.size();
 }
 

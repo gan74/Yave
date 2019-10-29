@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_MEMORY_DEVICEMEMORYHEAP_H
 #define YAVE_GRAPHICS_MEMORY_DEVICEMEMORYHEAP_H
 
-#include <y/concurrent/SpinLock.h>
-
 #include "DeviceMemoryHeapBase.h"
+
+#include <mutex>
 
 namespace yave {
 
@@ -71,6 +71,7 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		core::Vector<FreeBlock> _blocks;
 		u8* _mapping = nullptr;
 
+		mutable std::mutex _lock;
 };
 
 }

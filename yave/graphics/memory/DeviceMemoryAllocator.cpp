@@ -59,6 +59,7 @@ DeviceMemory DeviceMemoryAllocator::dedicated_alloc(vk::MemoryRequirements reqs,
 DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
 	y_profile();
 
+	Y_TODO(We are double locking here, each heap will lock internally)
 	std::unique_lock lock(_lock);
 
 	if(reqs.size >= dedicated_threshold_for_type(type)) {

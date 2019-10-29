@@ -26,7 +26,6 @@ SOFTWARE.
 #include "DedicatedDeviceMemoryAllocator.h"
 
 #include <unordered_map>
-#include <mutex>
 
 namespace yave {
 
