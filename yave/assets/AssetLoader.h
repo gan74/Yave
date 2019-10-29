@@ -187,6 +187,11 @@ serde2::Result AssetPtr<T>::deserialize(ReadableAssetArchive& arc)  noexcept {
 	if(!arc(id)) {
 		return core::Err();
 	}
+	if(id == AssetId::invalid_id()) {
+		*this = AssetPtr();
+		return core::Ok();
+	}
+
 	auto asset = arc.loader().load<T>(id);
 	if(!asset) {
 		return core::Err();
