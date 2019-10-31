@@ -89,6 +89,16 @@ auto perspective(T fovy, T aspect, T z_near) {
 	return m;
 }
 
+// https://github.com/g-truc/glm/blob/1498e094b95d1d89164c6442c632d775a2a1bab5/glm/ext/matrix_clip_space.inl
+template<typename T>
+auto ortho(T left, T right, T bottom, T top, T z_near, T z_far) {
+	Matrix4<T> m(T(2) / (right - left), 0, 0, 0,
+				 0, T(2) / (top - bottom), 0, 0, 
+				 0, 0, T(1) / (z_far - z_near), 0,
+				 -(right + left) / (right - left), -(top + bottom) / (top - bottom), -z_near / (z_far - z_near), 1);
+	return m;
+}
+
 template<typename T>
 auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up) {
 	Vec<3, T> z((eye - center).normalized());

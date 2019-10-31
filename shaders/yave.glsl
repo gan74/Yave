@@ -35,6 +35,15 @@ struct PointLight {
 	float falloff;
 };
 
+struct VirtualLight {
+	vec3 position;
+	float intensity;
+
+	vec3 normal;
+	float padding_0;
+};
+
+
 struct LightingCamera {
 	mat4 inv_matrix;
 	vec3 position;
@@ -95,6 +104,10 @@ uint hash(uint x) {
 	x ^= (x >> 11u);
 	x += (x << 15u);
 	return x;
+}
+
+uint hash(uvec2 x) {
+	return hash(x.x ^ hash(x.y));
 }
 
 float log10(float x) {
