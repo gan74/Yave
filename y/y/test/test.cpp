@@ -36,11 +36,12 @@ const char* test_box_msg(const char* msg) {
 }
 
 void test_assert(const char* msg, void (*func)(TestResult &)) {
-	const char* ok		= "  [ OK ]   ";
-	const char* failure = "[ FAILED ] ";
+	const char* ok		= "\x1b[32m  [ OK ]   \x1b[0m";
+	const char* failure = "\x1b[31m[ FAILED ] \x1b[0m";
 
 	// Because of this function may be called during static initialization we must initialize cout
 	std::ios_base::Init init;
+	y::detail::setup_console();
 
 
 	std::cout << msg << ":";

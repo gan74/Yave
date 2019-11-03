@@ -38,6 +38,8 @@ void log_msg(std::string_view msg, Log type = Log::Info);
 
 
 namespace detail {
+void setup_console();
+
 using log_callback = bool(*)(std::string_view msg, Log type, void* user_data);
 }
 
