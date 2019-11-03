@@ -29,6 +29,16 @@ SOFTWARE.
 
 #include <y/io2/File.h>
 
+#define y_try_status(result)																	\
+	do {																						\
+		if(auto&& _y_try_result = (result); _y_try_result.is_error()) { 						\
+			return std::move(_y_try_result.err_object());										\
+		} else {																				\
+			status = status | _y_try_result.unwrap();											\
+		}																						\
+	} while(false)
+
+
 namespace y {
 namespace serde3 {
 
@@ -129,7 +139,7 @@ class ReadableArchive {
 
 	using size_type = detail::size_type;
 
-	static constexpr bool force_safe = true;
+	static constexpr bool force_safe = false;
 
 	struct HeaderOffset {
 		detail::Header header;
@@ -159,15 +169,16 @@ class ReadableArchive {
 			y_try_discard(_file.read_one(header));
 			y_try_discard(_file.read_one(size));
 
+			Success status = Success::Full;
 			if constexpr(has_serde3_v<T>) {
 				auto check =  detail::build_header(object);
 				if(header != check) {
 					if(header.type.type_hash != check.type.type_hash) {
 						return core::Err();
 					}
-					y_try(deserialize_members<true>(object.object, header.members.count));
+					y_try_status(deserialize_members<true>(object.object, header.members.count));
 				} else {
-					y_try(deserialize_members<force_safe>(object.object, header.members.count));
+					y_try_status(deserialize_members<force_safe>(object.object, header.members.count));
 				}
 			} else {
 				static_assert(std::is_trivially_copyable_v<T>);
@@ -176,10 +187,10 @@ class ReadableArchive {
 					_file.seek(_file.tell() + size);
 					return core::Ok(Success::Partial);
 				}
-				y_try(read_one(object.object));
+				y_try_status(read_one(object.object));
 			}
 
-			return core::Ok(Success::Full);
+			return core::Ok(status);
 		}
 
 
@@ -187,9 +198,9 @@ class ReadableArchive {
 		Result deserialize_members_internal(std::tuple<NamedObject<Args>...> members,
 		                                    const ObjectData& object_data) {
 
-			Success status = Success::Full;
-
 			unused(members, object_data);
+
+			Success status = Success::Full;
 			if constexpr(I < sizeof...(Args)) {
 				if constexpr(Safe) {
 					bool found = false;
@@ -197,7 +208,7 @@ class ReadableArchive {
 					for(const auto& m : object_data.members) {
 						if(m.header == header) {
 							_file.seek(m.offset);
-							y_try(deserialize_one(std::get<I>(members)));
+							y_try_status(deserialize_one(std::get<I>(members)));
 							found = true;
 							break;
 						}
@@ -206,10 +217,10 @@ class ReadableArchive {
 						status = Success::Partial;
 					}
 				} else {
-					y_try(deserialize_one(std::get<I>(members)));
+					y_try_status(deserialize_one(std::get<I>(members)));
 				}
 
-				y_try((deserialize_members_internal<Safe, I + 1>(members, object_data)));
+				y_try_status((deserialize_members_internal<Safe, I + 1>(members, object_data)));
 			} else if constexpr(Safe) {
 				_file.seek(object_data.end_offset);
 			}
@@ -253,10 +264,10 @@ class ReadableArchive {
 		io2::File _file;
 };
 
-
-
 }
 }
+
+#undef y_try_status
 
 
 #endif // Y_SERDE3_ARCHIVES_H

@@ -81,8 +81,8 @@ template<typename T>
 constexpr u32 serde3_type_hash() {
 	using naked = remove_cvref_t<T>;
 	u32 hash = ct_str_hash(ct_type_name<naked>());
-	hash_combine(hash, u32(sizeof(naked)));
-	hash_combine(hash, u32(alignof(naked)));
+	//hash_combine(hash, u32(sizeof(naked)));
+	//hash_combine(hash, u32(alignof(naked)));
 	return hash;
 }
 

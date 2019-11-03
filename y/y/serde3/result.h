@@ -32,6 +32,13 @@ enum class Success {
 	Partial
 };
 
+inline Success operator|(Success a, Success b) {
+	return a == Success::Full && b == Success::Full
+		? Success::Full
+		: Success::Partial;
+}
+
+
 using Result = core::Result<Success, void>;
 
 }

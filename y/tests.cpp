@@ -49,9 +49,10 @@ struct NestedStruct {
 struct TestStruct {
 	int x = 9;
 	int y = 443;
+	float w = 13.0f;
 	NestedStruct z;
 
-	y_serde3(z, x, y)
+	y_serde3(x, y, w, z)
 };
 
 
@@ -67,7 +68,7 @@ int main() {
 		Success s = arc.deserialize(t).unwrap();
 
 		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"));
-		log_msg(fmt("{%, %, {%}}", t.x, t.y, t.z.i));
+		log_msg(fmt("{%, %, %, {%}}", t.x, t.y, t.w, t.z.i));
 	}
 	return 0;
 }
