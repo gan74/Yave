@@ -129,15 +129,6 @@ String::~String() {
 	}
 }
 
-String String::from_owned(Owner<char*> owned) {
-	usize len = std::strlen(owned);
-	String str;
-	str._l.length = len;
-	str._l.capacity = len;
-	str._l.data = owned;
-	return str;
-}
-
 void String::set_min_capacity(usize cap) {
 	if(cap > capacity() && cap > max_short_size) {
 		usize self_size = size();

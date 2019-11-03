@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,58 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_IO2_FILE_H
-#define Y_IO2_FILE_H
+#ifndef Y_SERDE3_RESULT_H
+#define Y_SERDE3_RESULT_H
 
-#include "io.h"
-
-#include <y/core/String.h>
-
-#include <cstdio>
+#include <y/core/Result.h>
 
 namespace y {
-namespace io2 {
+namespace serde3 {
 
-class File final : public Reader, public Writer {
-
-	public:
-		File() = default;
-		~File() override;
-
-		File(File&& other);
-		File& operator=(File&& other);
-
-		static core::Result<File> create(const core::String& name);
-		static core::Result<File> open(const core::String& name);
-
-		static  core::Result<void> copy(Reader& src, const core::String& dst);
-
-		usize size() const;
-		usize remaining() const;
-
-		bool is_open() const;
-		bool at_end() const override;
-
-		void seek(usize byte);
-		void reset();
-		usize tell() const;
-
-		ReadResult read(u8* data, usize bytes) override;
-		ReadUpToResult read_up_to(u8* data, usize max_bytes) override;
-		ReadUpToResult read_all(core::Vector<u8>& data) override;
-
-		WriteResult write(const u8* data, usize bytes) override;
-		FlushResult flush() override;
-
-	private:
-		File(std::FILE* f);
-
-		void swap(File& other);
-
-		std::FILE* _file = nullptr;
+enum class Success {
+	Full,
+	Partial
 };
 
+using Result = core::Result<Success, void>;
+
 }
 }
 
-#endif // Y_IO2_FILE_H
+#endif // Y_SERDE3_RESULT_H

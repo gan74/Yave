@@ -117,6 +117,7 @@ y_test_func("serde trivial") {
 		WritableArchive ar(buffer);
 		ar(tri).unwrap();
 	}
+	buffer.reset();
 	{
 		serde2::ReadableArchive ar(buffer);
 		Trivial t;
@@ -134,6 +135,7 @@ y_test_func("serde easy") {
 		WritableArchive ar(buffer);
 		ar(es).unwrap();
 	}
+	buffer.reset();
 	{
 		serde2::ReadableArchive ar(buffer);
 		Easy e;
@@ -157,6 +159,7 @@ y_test_func("serde complex") {
 		WritableArchive ar(buffer);
 		ar(e2, comp, t1).unwrap();
 	}
+	buffer.reset();
 	{
 		serde2::ReadableArchive ar(buffer);
 
@@ -220,6 +223,7 @@ y_test_func("serde func") {
 		WritableArchive ar(buffer);
 		f.serialize(ar).unwrap();
 	}
+	buffer.reset();
 	{
 		Func f;
 		ReadableArchive ar(buffer);

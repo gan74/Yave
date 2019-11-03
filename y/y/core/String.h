@@ -117,9 +117,6 @@ class String {
 
 		~String();
 
-		// String take ownership
-		static String from_owned(Owner<char*> owned);
-
 		void set_min_capacity(usize cap);
 
 		usize size() const;

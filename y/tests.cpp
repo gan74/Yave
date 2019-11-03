@@ -21,90 +21,54 @@ SOFTWARE.
 **********************************/
 
 #include <y/test/test.h>
-#include <y/mem/allocators.h>
-#include <y/core/Vector.h>
-#include <y/reflect/reflect.h>
+#include <y/serde3/serde.h>
+#include <y/serde3/archives.h>
 
-#include <y/core/Chrono.h>
+#include <y/utils/name.h>
+#include <y/utils/hash.h>
+
+#include <y/core/String.h>
+#include <y/io2/File.h>
 
 using namespace y;
-using namespace memory;
+using namespace serde3;
 
 y_test_func("Test test") {
 	y_test_assert(true);
 }
 
-struct Refl {
-	int x = 1;
-	int non_refl = -1;
-	int y = 2;
 
-	y_reflect(x, y)
+
+
+struct NestedStruct {
+	float i = 3.14159f;
+
+	y_serde3(i)
 };
 
-void reflection() {
-	Refl refl;
-	Refl* refl_ptr = &refl;
-	{
-		auto data = reflect::reflection_data<Refl*>();
-		log_msg(fmt("% -> % (%)", data.type.name, data.members.size(), data.type.flags.is_pointer));
-	}
+struct TestStruct {
+	int x = 9;
+	int y = 443;
+	NestedStruct z;
 
-	{
-		auto data = reflect::reflection_data<Refl>();
-		log_msg(fmt("% -> % (%)", data.type.name, data.members.size(), data.type.flags.is_pointer));
-	}
-
-	{
-		auto data = reflect::reflection_data(refl_ptr);
-		data.members[1].get<int>(refl_ptr) = 13;
-	}
-
-	log_msg(fmt("Refl { x: % non_refl: % y: % }", refl.x, refl.non_refl, refl.y));
-}
-
-
-#include <memory>
-
-template<typename T, template<typename...> typename A>
-using Vec = core::Vector<T, core::DefaultVectorResizePolicy, A<T>>;
+	y_serde3(z, x, y)
+};
 
 
 int main() {
-
-	reflection();
-
-	/*int size = 1000000;
-
+	/*{
+		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
+		TestStruct t{4, 5, {2.71727f}};
+		arc.serialize(t).unwrap();
+	}*/
 	{
-		core::DebugTimer _("std::allocator");
-		core::Vector<int> v;
-		for(int i = 0; i != size; ++i) {
-			v.emplace_back(i);
-		}
+		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
+		TestStruct t;
+		Success s = arc.deserialize(t).unwrap();
+
+		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"));
+		log_msg(fmt("{%, %, {%}}", t.x, t.y, t.z.i));
 	}
-	{
-		core::DebugTimer _("Allocator");
-		Vec<int, StdAllocatorAdapter> v;
-		for(int i = 0; i != size; ++i) {
-			v.emplace_back(i);
-		}
-	}*/
-
-
-	/*usize i = 1024;
-	while(true) {
-		log_msg(fmt("alloc: %KB", i / 1024));
-		void* ptr = malloc(i);
-		if(!ptr) {
-			log_msg("FAILED!", Log::Error);
-			break;
-		}
-		memset(ptr, 0, i);
-		free(ptr);
-		i *= 2;
-		log_msg("OK!");
-	}*/
 	return 0;
 }
 

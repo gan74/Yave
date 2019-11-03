@@ -128,6 +128,17 @@ void File::seek(usize byte) {
 	}
 }
 
+void File::reset() {
+	seek(0);
+}
+
+usize File::tell() const {
+	if(_file) {
+		return usize(std::ftell(_file));
+	}
+	return 0;
+}
+
 ReadResult File::read(u8* data, usize bytes) {
 	if(!_file) {
 		return core::Err<usize>(0);

@@ -34,39 +34,61 @@ class Buffer final : public Reader, public Writer {
 		}
 
 		bool at_end() const override {
-			return _read_cursor >= _buffer.size();
+			return _cursor >= _buffer.size();
 		}
 
 		usize remaining() const {
-			return at_end() ? 0 : _buffer.size() - _read_cursor;
+			return at_end() ? 0 : _buffer.size() - _cursor;
 		}
+
+		void seek(usize byte) {
+			_cursor = std::min(_buffer.size(), byte);
+		}
+
+		void reset() {
+			_cursor = 0;
+		}
+
+		usize tell() const {
+			return _cursor;
+		}
+
 
 		ReadResult read(u8* data, usize bytes) override {
 			if(remaining() < bytes) {
 				return core::Err<usize>(0);
 			}
-			std::copy_n(&_buffer[_read_cursor], bytes, data);
-			_read_cursor += bytes;
+			std::copy_n(&_buffer[_cursor], bytes, data);
+			_cursor += bytes;
 			return core::Ok();
 		}
 
 		ReadUpToResult read_up_to(u8* data, usize max_bytes) override {
 			usize max = std::min(max_bytes, remaining());
-			std::copy_n(&_buffer[_read_cursor], max, data);
-			_read_cursor += max;
+			std::copy_n(&_buffer[_cursor], max, data);
+			_cursor += max;
 			return core::Ok(max);
 		}
 
 		ReadUpToResult read_all(core::Vector<u8>& data) override {
-			u8* start = &_buffer[_read_cursor];
+			u8* start = &_buffer[_cursor];
 			usize r = std::distance(start, _buffer.end());
 			data.push_back(start, _buffer.end());
-			_read_cursor += r;
+			_cursor += r;
 			return core::Ok(r);
 		}
 
 		WriteResult write(const u8* data, usize bytes) override {
-			_buffer.push_back(data, data + bytes);
+			if(at_end()) {
+				_buffer.push_back(data, data + bytes);
+				_cursor += bytes;
+			} else {
+				usize end = std::max(_buffer.size(), _cursor + bytes);
+				usize overwrite = end - _cursor;
+				std::copy_n(data, overwrite, &_buffer[_cursor]);
+				_buffer.push_back(data + overwrite, data + bytes);
+				_cursor += bytes - overwrite;
+			}
 			return core::Ok();
 		}
 
@@ -77,7 +99,7 @@ class Buffer final : public Reader, public Writer {
 
 	private:
 		core::Vector<u8> _buffer;
-		usize _read_cursor = 0;
+		usize _cursor = 0;
 
 };
 

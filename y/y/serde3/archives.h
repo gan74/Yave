@@ -1,0 +1,262 @@
+/*******************************
+Copyright (c) 2016-2019 Gr�goire Angerand
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+**********************************/
+#ifndef Y_SERDE3_ARCHIVES_H
+#define Y_SERDE3_ARCHIVES_H
+
+#include <y/core/Vector.h>
+
+#include "headers.h"
+#include "result.h"
+
+#include <y/io2/File.h>
+
+namespace y {
+namespace serde3 {
+
+namespace detail {
+using size_type = u64;
+}
+
+
+class WritableArchive {
+
+	using size_type = detail::size_type;
+
+	template<typename T>
+	static constexpr bool need_size_patch = has_serde3_v<T>;
+
+	struct SizePatch {
+		usize index = 0;
+		detail::size_type size = 0;
+	};
+
+	public:
+	    WritableArchive(io2::File file) : _file(std::move(file)) {
+		}
+
+		~WritableArchive() {
+			y_debug_assert(_patches.is_empty());
+		}
+
+		template<typename T>
+		Result serialize(const T& t) {
+			y_try(serialize_one(NamedObject{t, "#root"}));
+			return finalize();
+		}
+
+	private:
+		Result finalize() {
+			for(const SizePatch& patch : _patches) {
+				_file.seek(patch.index);
+				y_try_discard(_file.write_one(patch.size));
+			}
+			_patches.make_empty();
+
+			return core::Ok(Success::Full);
+		}
+
+		template<typename T>
+		Result serialize_one(NamedObject<T> object) {
+			auto header = detail::build_header(object);
+			y_try(write_one(header));
+
+			if constexpr(has_serde3_v<T>) {
+				usize index = _patches.size();
+				_patches.push_back({_file.tell(), 0});
+
+				y_try(write_one(size_type(-1)));
+				y_try(serialize_members(object.object));
+
+				SizePatch& patch = _patches[index];
+				patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
+			} else {
+				static_assert(std::is_trivially_copyable_v<T>);
+				y_try(write_one(size_type(sizeof(T))));
+				y_try(write_one(object.object));
+			}
+			return core::Ok(Success::Full);
+		}
+
+		template<usize I, typename... Args>
+		Result serialize_members_internal(std::tuple<NamedObject<Args>...> objects) {
+			unused(objects);
+			if constexpr(I < sizeof...(Args)) {
+				y_try(serialize_one(std::get<I>(objects)));
+				y_try(serialize_members_internal<I + 1>(objects));
+			}
+			return core::Ok(Success::Full);
+		}
+
+		template<typename T>
+		Result serialize_members(const T& object) {
+			return serialize_members_internal<0>(object._y_serde3_refl());
+		}
+
+
+		template<typename T>
+		Result write_one(const T& t) {
+			y_try_discard(_file.write_one(t));
+			return core::Ok(Success::Full);
+		}
+
+	private:
+		io2::File _file;
+		core::Vector<SizePatch> _patches;
+};
+
+
+
+class ReadableArchive {
+
+	using size_type = detail::size_type;
+
+	static constexpr bool force_safe = true;
+
+	struct HeaderOffset {
+		detail::Header header;
+		usize offset = 0;
+	};
+
+	struct ObjectData {
+		core::Vector<HeaderOffset> members;
+		usize end_offset = 0;
+	};
+
+	public:
+	    ReadableArchive(io2::File file) : _file(std::move(file)) {
+		}
+
+		template<typename T>
+		Result deserialize(T& t) {
+			return deserialize_one(NamedObject{t, "#root"});
+		}
+
+	private:
+		template<typename T>
+		Result deserialize_one(NamedObject<T> object) {
+			detail::Header header;
+			size_type size = size_type(-1);
+
+			y_try_discard(_file.read_one(header));
+			y_try_discard(_file.read_one(size));
+
+			if constexpr(has_serde3_v<T>) {
+				auto check =  detail::build_header(object);
+				if(header != check) {
+					if(header.type.type_hash != check.type.type_hash) {
+						return core::Err();
+					}
+					y_try(deserialize_members<true>(object.object, header.members.count));
+				} else {
+					y_try(deserialize_members<force_safe>(object.object, header.members.count));
+				}
+			} else {
+				static_assert(std::is_trivially_copyable_v<T>);
+
+				if(header != detail::build_header(object)) {
+					_file.seek(_file.tell() + size);
+					return core::Ok(Success::Partial);
+				}
+				y_try(read_one(object.object));
+			}
+
+			return core::Ok(Success::Full);
+		}
+
+
+		template<bool Safe, usize I, typename... Args>
+		Result deserialize_members_internal(std::tuple<NamedObject<Args>...> members,
+		                                    const ObjectData& object_data) {
+
+			Success status = Success::Full;
+
+			unused(members, object_data);
+			if constexpr(I < sizeof...(Args)) {
+				if constexpr(Safe) {
+					bool found = false;
+					auto header = detail::build_header(std::get<I>(members));
+					for(const auto& m : object_data.members) {
+						if(m.header == header) {
+							_file.seek(m.offset);
+							y_try(deserialize_one(std::get<I>(members)));
+							found = true;
+							break;
+						}
+					}
+					if(!found) {
+						status = Success::Partial;
+					}
+				} else {
+					y_try(deserialize_one(std::get<I>(members)));
+				}
+
+				y_try((deserialize_members_internal<Safe, I + 1>(members, object_data)));
+			} else if constexpr(Safe) {
+				_file.seek(object_data.end_offset);
+			}
+
+			return core::Ok(status);
+		}
+
+		template<bool Safe, typename T>
+		Result deserialize_members(T& object, usize serialized_member_count) {
+			ObjectData data;
+
+			if constexpr(Safe) {
+				usize obj_start = _file.tell();
+				for(usize i = 0; i != serialized_member_count; ++i) {
+					usize offset = _file.tell();
+
+					detail::Header header;
+					size_type size = size_type(-1);
+
+					y_try_discard(_file.read_one(header));
+					y_try_discard(_file.read_one(size));
+
+					_file.seek(offset + size + sizeof(header) + sizeof(size_type));
+
+					data.members << HeaderOffset{header, offset};
+				}
+				data.end_offset = _file.tell();
+				_file.seek(obj_start);
+			}
+
+			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
+		}
+
+		template<typename T>
+		Result read_one(T& t) {
+			y_try_discard(_file.read_one(t));
+			return core::Ok(Success::Full);
+		}
+
+	private:
+		io2::File _file;
+};
+
+
+
+}
+}
+
+
+#endif // Y_SERDE3_ARCHIVES_H
