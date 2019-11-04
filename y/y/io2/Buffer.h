@@ -29,73 +29,24 @@ namespace io2 {
 
 class Buffer final : public Reader, public Writer {
 	public:
-		Buffer(usize size = 0) {
-			_buffer.set_min_capacity(size);
-		}
+		Buffer(usize size = 0);
+		~Buffer() override;
 
-		bool at_end() const override {
-			return _cursor >= _buffer.size();
-		}
+		bool at_end() const override;
+		usize remaining() const;
 
-		usize remaining() const {
-			return at_end() ? 0 : _buffer.size() - _cursor;
-		}
+		void seek(usize byte);
+		void seek_end();
+		void reset();
+		usize tell() const;
 
-		void seek(usize byte) {
-			_cursor = std::min(_buffer.size(), byte);
-		}
+		ReadResult read(u8* data, usize bytes) override;
+		ReadUpToResult read_up_to(u8* data, usize max_bytes) override;
+		ReadUpToResult read_all(core::Vector<u8>& data) override;
 
-		void reset() {
-			_cursor = 0;
-		}
+		WriteResult write(const u8* data, usize bytes) override;
 
-		usize tell() const {
-			return _cursor;
-		}
-
-
-		ReadResult read(u8* data, usize bytes) override {
-			if(remaining() < bytes) {
-				return core::Err<usize>(0);
-			}
-			std::copy_n(&_buffer[_cursor], bytes, data);
-			_cursor += bytes;
-			return core::Ok();
-		}
-
-		ReadUpToResult read_up_to(u8* data, usize max_bytes) override {
-			usize max = std::min(max_bytes, remaining());
-			std::copy_n(&_buffer[_cursor], max, data);
-			_cursor += max;
-			return core::Ok(max);
-		}
-
-		ReadUpToResult read_all(core::Vector<u8>& data) override {
-			u8* start = &_buffer[_cursor];
-			usize r = std::distance(start, _buffer.end());
-			data.push_back(start, _buffer.end());
-			_cursor += r;
-			return core::Ok(r);
-		}
-
-		WriteResult write(const u8* data, usize bytes) override {
-			if(at_end()) {
-				_buffer.push_back(data, data + bytes);
-				_cursor += bytes;
-			} else {
-				usize end = std::max(_buffer.size(), _cursor + bytes);
-				usize overwrite = end - _cursor;
-				std::copy_n(data, overwrite, &_buffer[_cursor]);
-				_buffer.push_back(data + overwrite, data + bytes);
-				_cursor += bytes - overwrite;
-			}
-			return core::Ok();
-		}
-
-
-		FlushResult flush() override {
-			return core::Ok();
-		}
+		FlushResult flush() override;
 
 	private:
 		core::Vector<u8> _buffer;
