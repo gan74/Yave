@@ -52,6 +52,7 @@ class File final : public Reader, public Writer {
 		bool at_end() const override;
 
 		void seek(usize byte);
+		void seek_end();
 		void reset();
 		usize tell() const;
 

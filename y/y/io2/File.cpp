@@ -128,6 +128,12 @@ void File::seek(usize byte) {
 	}
 }
 
+void File::seek_end() {
+	if(_file) {
+		std::fseek(_file, 0, SEEK_END);
+	}
+}
+
 void File::reset() {
 	seek(0);
 }
