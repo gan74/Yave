@@ -54,8 +54,6 @@ constexpr usize member_count() {
 }
 
 
-
-
 template<typename T>
 struct NamedObject {
 	T& object;
@@ -70,7 +68,6 @@ NamedObject(T&, std::string_view) -> NamedObject<T>;
 
 
 
-
 #define y_serde3_create_item(object) y::serde3::NamedObject{object, #object},
 
 #define y_serde3_refl_qual(qual, ...) constexpr auto _y_serde3_refl() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_serde3_create_item, __VA_ARGS__))}; }
@@ -79,6 +76,7 @@ NamedObject(T&, std::string_view) -> NamedObject<T>;
 #define y_serde3(...)								\
 	y_serde3_refl_qual(/* */, __VA_ARGS__)			\
 	y_serde3_refl_qual(const, __VA_ARGS__)
+
 
 
 }

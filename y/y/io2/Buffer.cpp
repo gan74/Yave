@@ -56,7 +56,6 @@ usize Buffer::tell() const {
 	return _cursor;
 }
 
-
 ReadResult Buffer::read(u8* data, usize bytes) {
 	if(remaining() < bytes) {
 		return core::Err<usize>(0);

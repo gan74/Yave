@@ -104,7 +104,7 @@ constexpr u32 ct_str_hash(std::string_view str) {
 }
 
 template<typename T>
-constexpr u32 serde3_type_hash() {
+constexpr u32 header_type_hash() {
 	using naked = remove_cvref_t<T>;
 	u32 hash = ct_str_hash(ct_type_name<naked>());
 
@@ -125,7 +125,7 @@ template<typename T>
 constexpr TypeHeader build_type_header(NamedObject<T> obj) {
 	return TypeHeader {
 		set_flags<T>(ct_str_hash(obj.name)),
-		serde3_type_hash<T>()
+		header_type_hash<T>()
 	};
 }
 

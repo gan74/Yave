@@ -23,10 +23,12 @@ SOFTWARE.
 #include <y/test/test.h>
 #include <y/serde3/serde.h>
 #include <y/serde3/archives.h>
+#include <y/serde3/poly.h>
 
 #include <y/utils/name.h>
 #include <y/utils/hash.h>
 
+#include <y/core/Chrono.h>
 #include <y/core/String.h>
 #include <y/io2/File.h>
 
@@ -49,26 +51,60 @@ struct NestedStruct {
 struct TestStruct {
 	int x = 9;
 	int y = 443;
-	float w = 13.0f;
 	NestedStruct z;
 
-	y_serde3(x, y, w, z)
+	y_serde3(x, y, z)
+};
+
+struct Base {
+	virtual ~Base() = default;
+	y_serde3_poly_base(Base)
+
+	virtual void print() {
+		log_msg("Base");
+	}
+};
+
+struct Derived : Base {
+	y_serde3_poly(Derived)
+
+	int x = 16;
+
+	y_serde3(x)
+
+	void print() override {
+		log_msg("Derived");
+	}
 };
 
 
+
+
 int main() {
-	/*{
+	log_msg(fmt("Poly: %", Base::_y_serde3_poly_base.registered_type_count()));
+	usize count = 1000;
+	{
 		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
 		TestStruct t{4, 5, {2.71727f}};
-		arc.serialize(t).unwrap();
-	}*/
+		for(usize i = 0; i != count; ++i) {
+			arc.serialize(t).unwrap();
+		}
+	}
 	{
 		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
 		TestStruct t;
-		Success s = arc.deserialize(t).unwrap();
 
-		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"));
-		log_msg(fmt("{%, %, %, {%}}", t.x, t.y, t.w, t.z.i));
+		Success s = Success::Full;
+		{
+			core::DebugTimer _("deserialize");
+			for(usize i = 0; i != count; ++i) {
+				s = arc.deserialize(t).unwrap();
+			}
+		}
+
+
+		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"), s == Success::Full ? Log::Info : Log::Error);
+		log_msg(fmt("{%, %, {%}}", t.x, t.y, t.z.i));
 	}
 	return 0;
 }
