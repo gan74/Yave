@@ -25,7 +25,7 @@ SOFTWARE.
 #include <y/core/Vector.h>
 
 #include "headers.h"
-#include "result.h"
+#include "conversions.h"
 
 #include <y/io2/File.h>
 
@@ -96,7 +96,12 @@ class WritableArchive {
 				_patches.push_back({_file.tell(), 0});
 
 				y_try(write_one(size_type(-1)));
-				y_try(serialize_members(object.object));
+
+				if constexpr(has_serde3_poly_v<T>) {
+					y_try(object.object->_y_serde3_poly_serialize(*this));
+				} else {
+					y_try(serialize_members(object.object));
+				}
 
 				SizePatch& patch = _patches[index];
 				patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
@@ -143,7 +148,7 @@ class ReadableArchive {
 	static constexpr bool force_safe = false;
 
 	struct HeaderOffset {
-		detail::Header header;
+		detail::FullHeader header;
 		usize offset = 0;
 	};
 
@@ -164,15 +169,27 @@ class ReadableArchive {
 	private:
 		template<typename T>
 		Result deserialize_one(NamedObject<T> object) {
-			detail::Header header;
+			detail::FullHeader header;
 			size_type size = size_type(-1);
 
 			y_try_discard(read_header(header));
 			y_try_discard(_file.read_one(size));
 
 			Success status = Success::Full;
-			if constexpr(has_serde3_v<T>) {
-				auto check =  detail::build_header(object);
+
+			const auto check = detail::build_header(object);
+			if constexpr(has_serde3_poly_v<T>) {
+				static_assert(has_serde3_v<T>);
+				if(header.type.type_hash != check.type.type_hash) {
+					return core::Err();
+				}
+				object.object = T::_y_serde3_poly_base::create_from_id(header.type_id);
+				if(!object.object) {
+					_file.seek(_file.tell() + size);
+					return core::Ok(Success::Partial);
+				}
+				y_try_status(object.object->deserialize(*this));
+			} else if constexpr(has_serde3_v<T>) {
 				if(header != check) {
 					if(header.type.type_hash != check.type.type_hash) {
 						return core::Err();
@@ -181,12 +198,19 @@ class ReadableArchive {
 				} else {
 					y_try_status(deserialize_members<force_safe>(object.object, header.members.count));
 				}
+
 			} else {
 				static_assert(std::is_trivially_copyable_v<T>);
-
-				if(detail::build_header(object) != header) {
-					_file.seek(_file.tell() + size);
-					return core::Ok(Success::Partial);
+				if(header != check) {
+					static constexpr usize max_prim_size = 4 * sizeof(float);
+					if(header.type.name_hash == check.type.name_hash && size <= max_prim_size) {
+						std::array<u8, max_prim_size> buffer;
+						y_try_discard(_file.read(buffer.data(), size));
+						return try_convert<T>(object.object, header.type, buffer.data());
+					} else {
+						_file.seek(_file.tell() + size);
+						return core::Ok(Success::Partial);
+					}
 				}
 				y_try_status(read_one(object.object));
 			}
@@ -207,7 +231,7 @@ class ReadableArchive {
 					bool found = false;
 					auto header = detail::build_header(std::get<I>(members));
 					for(const auto& m : object_data.members) {
-						if(header == m.header) {
+						if(m.header.type.name_hash == header.type.name_hash) {
 							_file.seek(m.offset);
 							y_try_status(deserialize_one(std::get<I>(members)));
 							found = true;
@@ -238,7 +262,7 @@ class ReadableArchive {
 				for(usize i = 0; i != serialized_member_count; ++i) {
 					usize offset = _file.tell();
 
-					detail::Header header;
+					detail::FullHeader header;
 					size_type size = size_type(-1);
 
 					y_try_discard(read_header(header));
@@ -257,20 +281,25 @@ class ReadableArchive {
 
 		template<typename T>
 		Result read_one(T& t) {
-			static_assert(!std::is_same_v<std::remove_reference_t<T>, detail::Header>);
+			static_assert(!std::is_same_v<std::remove_reference_t<T>, detail::FullHeader>);
 			y_try_discard(_file.read_one(t));
 			return core::Ok(Success::Full);
 		}
 
-		Result read_header(detail::Header& header) {
-#ifdef Y_SLIM_POD_HEADER
+		Result read_header(detail::FullHeader& header) {
 			y_try_discard(_file.read_one(header.type));
-			if(header.type.has_serde()) {
-				y_try_discard(_file.read_one(header.members));
-			}
-#else
-			y_try_discard(_file.read_one(header));
+			if(header.type.is_polymorphic()) {
+				y_try_discard(_file.read_one(header.type_id));
+			} else {
+				bool read_members = true;
+#ifdef Y_SLIM_POD_HEADER
+				read_members = header.type.has_serde();
 #endif
+				if(read_members) {
+					y_try_discard(_file.read_one(header.members));
+				}
+
+			}
 			return core::Ok(Success::Full);
 		}
 

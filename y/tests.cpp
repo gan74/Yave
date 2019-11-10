@@ -31,6 +31,7 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/core/String.h>
 #include <y/io2/File.h>
+#include <y/io2/Buffer.h>
 
 using namespace y;
 using namespace serde3;
@@ -38,6 +39,50 @@ using namespace serde3;
 y_test_func("Test test") {
 	y_test_assert(true);
 }
+
+struct Base {
+	virtual ~Base() = default;
+
+	virtual void print() {
+		log_msg("Base");
+	}
+
+	y_serde3_poly_base(Base)
+};
+
+struct Derived : Base {
+	int x = 16;
+
+	void print() override {
+		log_msg("Derived");
+	}
+
+	y_serde3(x)
+	y_serde3_poly(Derived)
+};
+
+template<typename T>
+struct Template : Base {
+	T t = {};
+
+	void print() override {
+		log_msg(fmt("Template<%>", ct_type_name<T>()));
+	}
+
+	y_serde3(t)
+	y_serde3_poly(Template)
+
+};
+
+int foobar() {
+	Template<int> t;
+	return t.t;
+}
+
+static_assert(has_serde3_poly_v<Derived*>);
+static_assert(has_serde3_poly_v<Base*>);
+static_assert(!has_serde3_poly_v<Base>);
+static_assert(has_serde3_poly_v<Template<float>*>);
 
 
 
@@ -50,46 +95,48 @@ struct NestedStruct {
 
 struct TestStruct {
 	int x = 9;
-	int y = 443;
+	float y = 443;
 	NestedStruct z;
 
-	y_serde3(x, y, z)
-};
-
-struct Base {
-	virtual ~Base() = default;
-	y_serde3_poly_base(Base)
-
-	virtual void print() {
-		log_msg("Base");
-	}
-};
-
-struct Derived : Base {
-	y_serde3_poly(Derived)
-
-	int x = 16;
-
-	y_serde3(x)
-
-	void print() override {
-		log_msg("Derived");
-	}
+	y_serde3(z, x, y)
 };
 
 
-
+auto poly_objects() {
+	core::Vector<std::unique_ptr<Base>> v;
+	v << std::make_unique<Derived>();
+	v << std::make_unique<Template<int>>();
+	v << std::make_unique<Derived>();
+	v << std::make_unique<Template<float>>();
+	return v;
+}
 
 int main() {
-	log_msg(fmt("Poly: %", Base::_y_serde3_poly_base.registered_type_count()));
-	usize count = 1000;
+	/*{
+		WritableArchive arc(std::move(io2::File::create("poly.txt").unwrap()));
+		for(const auto& p : poly_objects()) {
+			arc.serialize(p).unwrap();
+		}
+	}
 	{
+		ReadableArchive arc(std::move(io2::File::open("poly.txt").unwrap()));
+		usize size = poly_objects().size();
+		for(usize i = 0; i != size; ++i) {
+			std::unique_ptr<Base> b;
+			arc.deserialize(b).unwrap();
+			b->print();
+		}
+	}*/
+
+
+	usize count = 1000;
+	/*{
 		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
 		TestStruct t{4, 5, {2.71727f}};
 		for(usize i = 0; i != count; ++i) {
 			arc.serialize(t).unwrap();
 		}
-	}
+	}*/
 	{
 		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
 		TestStruct t;

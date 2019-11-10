@@ -34,10 +34,16 @@ namespace serde3 {
 namespace detail {
 template<typename T>
 using has_serde3_t = decltype(std::declval<T>()._y_serde3_refl());
+template<typename T>
+using has_serde3_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
 }
 
 template<typename T>
 static constexpr bool has_serde3_v = is_detected_v<detail::has_serde3_t, T>;
+
+template<typename T>
+static constexpr bool has_serde3_poly_v = is_detected_v<detail::has_serde3_poly_t, T>;
+
 
 template<typename T>
 constexpr auto members(T&& t) {
@@ -53,7 +59,6 @@ constexpr usize member_count() {
 	return std::tuple_size_v<decltype(members(std::declval<T&>()))>;
 }
 
-
 template<typename T>
 struct NamedObject {
 	T& object;
@@ -62,9 +67,6 @@ struct NamedObject {
 	constexpr NamedObject(T& t, std::string_view n) : object(t), name(n) {
 	}
 };
-
-template<typename T>
-NamedObject(T&, std::string_view) -> NamedObject<T>;
 
 
 

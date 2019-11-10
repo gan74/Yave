@@ -26,6 +26,7 @@ SOFTWARE.
 #include <y/utils/hash.h>
 
 #include "serde.h"
+#include "poly.h"
 
 #define Y_SLIM_POD_HEADER
 
@@ -38,13 +39,16 @@ struct TypeHeader {
 	u32 type_hash = 0;
 
 	constexpr bool has_serde() const {
-		return name_hash & 0x01;
+		return type_hash & 0x01;
+	}
+
+	constexpr bool is_polymorphic() const {
+		return type_hash & 0x02;
 	}
 
 	constexpr bool operator==(const TypeHeader& other) const {
 		return name_hash == other.name_hash && type_hash == other.type_hash;
 	}
-
 };
 
 struct MembersHeader {
@@ -56,42 +60,69 @@ struct MembersHeader {
 	}
 };
 
-struct Header {
-	TypeHeader type;
-	MembersHeader members;
-
-	constexpr bool operator==(const Header& other) const {
-		return type == other.type && members == other.members;
-	}
-
-	constexpr bool operator!=(const Header& other) const {
-		return !operator==(other);
-	}
-};
-
 struct TrivialHeader {
 	TypeHeader type;
 
 	constexpr bool operator==(const TrivialHeader& other) const {
 		return type == other.type;
 	}
-
-	constexpr bool operator==(const Header& other) const {
-		return type == other.type && other.members.count == 0;
-	}
-
 	constexpr bool operator!=(const TrivialHeader& other) const {
 		return !operator==(other);
 	}
+};
 
-	constexpr bool operator!=(const Header& other) const {
+struct PolyHeader {
+	TypeHeader type;
+	TypeId type_id;
+
+	constexpr bool operator==(const PolyHeader& other) const {
+		return type == other.type && type_id == other.type_id;
+	}
+
+	constexpr bool operator!=(const PolyHeader& other) const {
+		return !operator==(other);
+	}
+};
+
+
+struct ObjectHeader {
+	TypeHeader type;
+	MembersHeader members;
+
+	constexpr bool operator==(const ObjectHeader& other) const {
+		return type == other.type && members == other.members;
+	}
+
+	constexpr bool operator!=(const ObjectHeader& other) const {
+		return !operator==(other);
+	}
+};
+
+struct FullHeader {
+	TypeHeader type;
+	MembersHeader members;
+	TypeId type_id;
+
+	constexpr bool operator==(const TrivialHeader& other) const {
+		return type == other.type;
+	}
+
+	constexpr bool operator==(const PolyHeader& other) const {
+		return type == other.type && type_id == other.type_id;
+	}
+
+	constexpr bool operator==(const ObjectHeader& other) const {
+		return type == other.type && members == other.members;
+	}
+
+	template<typename T>
+	constexpr bool operator!=(const T& other) const {
 		return !operator==(other);
 	}
 };
 
 static_assert(sizeof(TypeHeader) == sizeof(u64));
 static_assert(sizeof(MembersHeader) == sizeof(u64));
-static_assert(sizeof(Header) == sizeof(TypeHeader) + sizeof(MembersHeader));
 
 
 
@@ -107,24 +138,23 @@ template<typename T>
 constexpr u32 header_type_hash() {
 	using naked = remove_cvref_t<T>;
 	u32 hash = ct_str_hash(ct_type_name<naked>());
-
-	return hash;
-}
-
-template<typename T>
-constexpr u32 set_flags(u32 hash) {
-	constexpr u32 last_bit = 0x01;
 	if constexpr(has_serde3_v<T>) {
-		return hash | last_bit;
+		hash |= 0x01;
 	} else {
-		return hash & ~last_bit;
+		hash &= ~0x01;
 	}
+	if constexpr(has_serde3_poly_v<T>) {
+		hash |= 0x02;
+	} else {
+		hash &= ~0x02;
+	}
+	return hash;
 }
 
 template<typename T>
 constexpr TypeHeader build_type_header(NamedObject<T> obj) {
 	return TypeHeader {
-		set_flags<T>(ct_str_hash(obj.name)),
+		ct_str_hash(obj.name),
 		header_type_hash<T>()
 	};
 }
@@ -153,23 +183,30 @@ constexpr MembersHeader build_members_header(NamedObject<T> obj) {
 
 template<typename T>
 constexpr auto build_header(NamedObject<T> obj) {
+	if constexpr(has_serde3_poly_v<T>) {
+		return PolyHeader {
+			build_type_header(obj),
+			obj.object._y_serde3_poly_type_id()
+		};
+	} else {
 #ifdef Y_SLIM_POD_HEADER
-	if constexpr(has_serde3_v<T>) {
-		return Header {
+		if constexpr(has_serde3_v<T>) {
+			return ObjectHeader {
+				build_type_header(obj),
+				build_members_header(obj)
+			};
+		} else {
+			return TrivialHeader {
+				build_type_header(obj)
+			};
+		}
+#else
+		return ObjectHeader {
 			build_type_header(obj),
 			build_members_header(obj)
 		};
-	} else {
-		return TrivialHeader {
-			build_type_header(obj)
-		};
-	}
-#else
-	return Header {
-		build_type_header(obj),
-		build_members_header(obj)
-	};
 #endif
+	}
 }
 
 }
