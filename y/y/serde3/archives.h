@@ -29,6 +29,13 @@ SOFTWARE.
 
 #include <y/io2/io.h>
 
+#define Y_SERDE3_BUFFER
+
+#ifdef Y_SERDE3_BUFFER
+#include <y/io2/Buffer.h>
+#endif
+
+
 #define y_try_status(result)																	\
 	do {																						\
 		if(auto&& _y_try_result = (result); _y_try_result.is_error()) { 						\
@@ -59,20 +66,33 @@ class WritableArchive final {
 	template<typename T>
 	static constexpr bool need_size_patch = has_serde3_v<T>;
 
+	static constexpr usize buffer_size = 64 * 1024;
+
 	struct SizePatch {
 		usize index = 0;
 		detail::size_type size = 0;
 	};
 
 	public:
-		WritableArchive(File file) : _file(std::move(file)) {
-		}
+		WritableArchive(File file) :
+				_file(std::move(file))
+#ifdef Y_SERDE3_BUFFER
+				, _buffer(buffer_size)
+#endif
+		{}
 
 		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Writer, F>>>
-		explicit WritableArchive(F file) : _file(std::make_unique<F>(std::move(file))) {
-		}
+		explicit WritableArchive(F file) :
+			  _file(std::make_unique<F>(std::move(file)))
+#ifdef Y_SERDE3_BUFFER
+			, _buffer(buffer_size)
+#endif
+		{}
 
 		~WritableArchive() {
+#ifdef Y_SERDE3_BUFFER
+			y_debug_assert(!_buffer.tell());
+#endif
 			y_debug_assert(_patches.is_empty());
 		}
 
@@ -83,7 +103,37 @@ class WritableArchive final {
 		}
 
 	private:
+		Result flush() {
+#ifdef Y_SERDE3_BUFFER
+			y_try(finalize_in_buffer());
+			usize buffer_size = _buffer.tell();
+			if(buffer_size) {
+				y_try_discard(_file->write(_buffer.data(), buffer_size));
+				_buffer.clear();
+			}
+#endif
+			return core::Ok(Success::Full);
+		}
+
+		Result finalize_in_buffer() {
+#ifdef Y_SERDE3_BUFFER
+			usize i = _file->tell();
+			while(!_patches.is_empty()) {
+				const auto& p = _patches.last();
+				if(p.index <= i) {
+					break;
+				}
+				_buffer.seek(p.index - i);
+				y_try_discard(_buffer.write_one(p.size));
+				_patches.pop();
+			}
+			_buffer.seek_end();
+#endif
+			return core::Ok(Success::Full);
+		}
+
 		Result finalize() {
+			y_try(flush());
 			usize pos = _file->tell();
 			for(const SizePatch& patch : _patches) {
 				_file->seek(patch.index);
@@ -117,7 +167,7 @@ class WritableArchive final {
 		Result serialize_collection(NamedObject<T> object) {
 			static_assert(is_iterable_v<T>);
 
-			SizePatch patch{_file->tell(), 0};
+			SizePatch patch{tell(), 0};
 
 			{
 				y_try(write_one(size_type(-1)));
@@ -127,8 +177,8 @@ class WritableArchive final {
 				}
 			}
 
-			patch.size = (size_type(_file->tell()) - size_type(patch.index)) - sizeof(size_type);
-			_patches.push_back(patch);
+			patch.size = (size_type(tell()) - size_type(patch.index)) - sizeof(size_type);
+			push_patch(patch);
 
 			return core::Ok(Success::Full);
 		}
@@ -143,20 +193,20 @@ class WritableArchive final {
 				return write_one(size_type(0));
 			}
 
-			SizePatch patch{_file->tell(), 0};
+			SizePatch patch{tell(), 0};
 
 			{
 				y_try(write_one(size_type(-1)));
 				y_try(object.object->_y_serde3_poly_serialize(*this));
 			}
 
-			patch.size = (size_type(_file->tell()) - size_type(patch.index)) - sizeof(size_type);
+			patch.size = (size_type(tell()) - size_type(patch.index)) - sizeof(size_type);
 			// make sure size isn't 0 for non null
 			if(!patch.size) {
 				y_try(write_one(u8(0)));
 				++patch.size;
 			}
-			_patches.push_back(patch);
+			push_patch(patch);
 
 			return core::Ok(Success::Full);
 		}
@@ -178,15 +228,15 @@ class WritableArchive final {
 		Result serialize_object(NamedObject<T> object) {
 			static_assert(!has_serde3_poly_v<T>);
 
-			SizePatch patch{_file->tell(), 0};
+			SizePatch patch{tell(), 0};
 
 			{
 				y_try(write_one(size_type(-1)));
 				y_try(serialize_members(object.object));
 			}
 
-			patch.size = (size_type(_file->tell()) - size_type(patch.index)) - sizeof(size_type);
-			_patches.push_back(patch);
+			patch.size = (size_type(tell()) - size_type(patch.index)) - sizeof(size_type);
+			push_patch(patch);
 
 			return core::Ok(Success::Full);
 		}
@@ -210,12 +260,34 @@ class WritableArchive final {
 		// ------------------------------- WRITE -------------------------------
 		template<typename T>
 		Result write_one(const T& t) {
+#ifdef Y_SERDE3_BUFFER
+			if(_buffer.size() + sizeof(T) > buffer_size) {
+				y_try(flush());
+			}
+			y_try_discard(_buffer.write_one(t));
+#else
 			y_try_discard(_file->write_one(t));
+#endif
 			return core::Ok(Success::Full);
+		}
+
+		usize tell() const {
+#ifdef Y_SERDE3_BUFFER
+			return _file->tell() + _buffer.tell();
+#else
+			return _file->tell();
+#endif
+		}
+
+		void push_patch(SizePatch patch) {
+			_patches << patch;
 		}
 
 	private:
 		File _file;
+#ifdef Y_SERDE3_BUFFER
+		io2::Buffer _buffer;
+#endif
 		core::Vector<SizePatch> _patches;
 };
 
