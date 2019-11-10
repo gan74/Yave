@@ -107,24 +107,36 @@ auto poly_objects() {
 	v << std::make_unique<Derived>();
 	v << std::make_unique<Template<int>>();
 	v << std::make_unique<Derived>();
+	v << nullptr;
 	v << std::make_unique<Template<float>>();
 	return v;
 }
 
-int main() {
-	{
+auto simple_objects() {
+	core::Vector<int> v;
+	v << 4;
+	v << 10;
+	v << -9;
+	v << 9999999;
+	v << 0;
+	return v;
+}
+
+int main() {{
 		WritableArchive arc(std::move(io2::File::create("poly.txt").unwrap()));
-		for(const auto& p : poly_objects()) {
-			arc.serialize(p).unwrap();
-		}
+		arc.serialize(poly_objects()).unwrap();
 	}
 	{
 		ReadableArchive arc(std::move(io2::File::open("poly.txt").unwrap()));
-		usize size = poly_objects().size();
-		for(usize i = 0; i != size; ++i) {
-			std::unique_ptr<Base> b;
-			arc.deserialize(b).unwrap();
-			b->print();
+
+		decltype(poly_objects()) col;
+		arc.deserialize(col).unwrap();
+		for(const auto& b : col) {
+			if(b) {
+				b->print();
+			} else {
+				log_msg("(null)");
+			}
 		}
 	}
 

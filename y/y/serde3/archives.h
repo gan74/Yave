@@ -44,6 +44,10 @@ namespace serde3 {
 
 namespace detail {
 using size_type = u64;
+
+static constexpr std::string_view version_string = "serde3.v1.0";
+static constexpr std::string_view collection_version_string = "serde3.col.v1.0";
+
 }
 
 
@@ -69,7 +73,7 @@ class WritableArchive {
 
 		template<typename T>
 		Result serialize(const T& t) {
-			y_try(serialize_one(NamedObject{t, "#root"}));
+			y_try(serialize_one(NamedObject{t, detail::version_string}));
 			return finalize();
 		}
 
@@ -95,9 +99,33 @@ class WritableArchive {
 				return serialize_poly(object);
 			} else if constexpr(has_serde3_v<T>) {
 				return serialize_object(object);
-			} else {
+			} else if constexpr(std::is_trivially_copyable_v<T>) {
 				return serialize_pod(object);
+			} else {
+				return serialize_collection(object);
 			}
+		}
+
+
+		// ------------------------------- COLLECTION -------------------------------
+		template<typename T>
+		Result serialize_collection(NamedObject<T> object) {
+			static_assert(is_iterable_v<T>);
+
+			SizePatch patch{_file.tell(), 0};
+
+			{
+				y_try(write_one(size_type(-1)));
+				y_try(write_one(size_type(object.object.size())));
+				for(const auto& item : object.object) {
+					y_try(serialize_one(NamedObject{item, detail::collection_version_string}));
+				}
+			}
+
+			patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
+			_patches.push_back(patch);
+
+			return core::Ok(Success::Full);
 		}
 
 
@@ -133,6 +161,7 @@ class WritableArchive {
 		template<typename T>
 		Result serialize_pod(NamedObject<T> object) {
 			static_assert(std::is_trivially_copyable_v<T>);
+			static_assert(!std::is_pointer_v<T>);
 
 			y_try(write_one(size_type(sizeof(T))));
 			return write_one(object.object);
@@ -209,7 +238,7 @@ class ReadableArchive {
 
 		template<typename T>
 		Result deserialize(T& t) {
-			return deserialize_one(NamedObject{t, "#root"});
+			return deserialize_one(NamedObject{t, detail::version_string});
 		}
 
 	private:
@@ -225,11 +254,44 @@ class ReadableArchive {
 				return deserialize_poly(object, header, size);
 			} else if constexpr(has_serde3_v<T>) {
 				return deserialize_object(object, header, size);
-			} else {
+			} else if constexpr(std::is_trivially_copyable_v<T>) {
 				return deserialize_pod(object, header, size);
+			} else {
+				return deserialize_collection(object, header, size);
 			}
 		}
 
+
+		// ------------------------------- COLLECTION -------------------------------
+		template<typename T>
+		Result deserialize_collection(NamedObject<T> object, const detail::FullHeader header, size_type size) {
+			static_assert(is_iterable_v<T>);
+
+			object.object.clear();
+
+			const auto check = detail::build_header(object);
+			if(header != check) {
+				_file.seek(_file.tell() + size);
+				return core::Ok(Success::Partial);
+			}
+
+			size_type collection_size = 0;
+			y_try(read_one(collection_size));
+
+			try {
+				try_reserve(object.object, usize(collection_size));
+			} catch(std::bad_alloc&) {
+				_file.seek(_file.tell() + size - sizeof(size_type));
+				return core::Ok(Success::Partial);
+			}
+
+			for(size_type i = 0; i != collection_size; ++i) {
+				object.object.emplace_back();
+				y_try(deserialize_one(NamedObject{object.object.last(), detail::collection_version_string}));
+			}
+
+			return core::Ok(Success::Full);
+		}
 
 		// ------------------------------- POLY -------------------------------
 		template<typename T>
@@ -255,6 +317,7 @@ class ReadableArchive {
 		template<typename T>
 			Result deserialize_pod(NamedObject<T> object, const detail::FullHeader header, size_type size) {
 			static_assert(std::is_trivially_copyable_v<T>);
+			static_assert(!std::is_pointer_v<T>);
 
 			const auto check = detail::build_header(object);
 			if(header != check) {
