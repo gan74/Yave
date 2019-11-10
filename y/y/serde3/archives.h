@@ -77,15 +77,19 @@ class WritableArchive final {
 		WritableArchive(File file) :
 				_file(std::move(file))
 #ifdef Y_SERDE3_BUFFER
-				, _buffer(buffer_size)
+				,
+				_buffer(buffer_size),
+				_cached_file_size(_file->tell())
 #endif
 		{}
 
 		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Writer, F>>>
 		explicit WritableArchive(F file) :
-			  _file(std::make_unique<F>(std::move(file)))
+				_file(std::make_unique<F>(std::move(file)))
 #ifdef Y_SERDE3_BUFFER
-			, _buffer(buffer_size)
+				,
+				_buffer(buffer_size),
+				_cached_file_size(_file->tell())
 #endif
 		{}
 
@@ -111,6 +115,7 @@ class WritableArchive final {
 				y_try_discard(_file->write(_buffer.data(), buffer_size));
 				_buffer.clear();
 			}
+			_cached_file_size = _file->tell();
 #endif
 			return core::Ok(Success::Full);
 		}
@@ -273,7 +278,7 @@ class WritableArchive final {
 
 		usize tell() const {
 #ifdef Y_SERDE3_BUFFER
-			return _file->tell() + _buffer.tell();
+			return _cached_file_size + _buffer.tell();
 #else
 			return _file->tell();
 #endif
@@ -287,6 +292,7 @@ class WritableArchive final {
 		File _file;
 #ifdef Y_SERDE3_BUFFER
 		io2::Buffer _buffer;
+		usize _cached_file_size = 0;
 #endif
 		core::Vector<SizePatch> _patches;
 };

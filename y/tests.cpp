@@ -129,7 +129,8 @@ auto simple_objects() {
 	return v;
 }
 
-int main() {{
+int main() {
+	{
 		WritableArchive arc(std::move(io2::File::create("poly.txt").unwrap()));
 		arc.serialize(poly_objects()).unwrap();
 	}
@@ -149,6 +150,25 @@ int main() {{
 
 
 	usize count = 100000;
+	// vec
+	{
+		core::Vector<TestStruct> tests;
+		for(usize i = 0; i != count; ++i) {
+			tests << TestStruct{4, 5, {2.71727f}};
+		}
+
+		core::DebugTimer _("serialize vec");
+		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
+		arc.serialize(tests).unwrap();
+	}
+	{
+		core::DebugTimer _("deserialize vec");
+		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
+		core::Vector<TestStruct> tests;
+		arc.deserialize(tests).unwrap();
+	}
+
+	// individual
 	{
 		core::DebugTimer _("serialize");
 		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
