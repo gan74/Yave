@@ -75,22 +75,20 @@ class WritableArchive final {
 
 	public:
 		WritableArchive(File file) :
-				_file(std::move(file))
+				_file(std::move(file)),
 #ifdef Y_SERDE3_BUFFER
-				,
 				_buffer(buffer_size),
-				_cached_file_size(_file->tell())
 #endif
+				_cached_file_size(_file->tell())
 		{}
 
 		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Writer, F>>>
 		explicit WritableArchive(F file) :
-				_file(std::make_unique<F>(std::move(file)))
+				_file(std::make_unique<F>(std::move(file))),
 #ifdef Y_SERDE3_BUFFER
-				,
 				_buffer(buffer_size),
-				_cached_file_size(_file->tell())
 #endif
+				_cached_file_size(_file->tell())
 		{}
 
 		~WritableArchive() {
@@ -108,8 +106,8 @@ class WritableArchive final {
 
 	private:
 		Result flush() {
-#ifdef Y_SERDE3_BUFFER
 			y_try(finalize_in_buffer());
+#ifdef Y_SERDE3_BUFFER
 			usize buffer_size = _buffer.tell();
 			if(buffer_size) {
 				y_try_discard(_file->write(_buffer.data(), buffer_size));
@@ -121,14 +119,14 @@ class WritableArchive final {
 		}
 
 		Result finalize_in_buffer() {
+			y_debug_assert(_cached_file_size == _file->tell());
 #ifdef Y_SERDE3_BUFFER
-			usize i = _file->tell();
 			while(!_patches.is_empty()) {
 				const auto& p = _patches.last();
-				if(p.index <= i) {
+				if(p.index <= _cached_file_size) {
 					break;
 				}
-				_buffer.seek(p.index - i);
+				_buffer.seek(p.index - _cached_file_size);
 				y_try_discard(_buffer.write_one(p.size));
 				_patches.pop();
 			}
@@ -271,6 +269,7 @@ class WritableArchive final {
 			}
 			y_try_discard(_buffer.write_one(t));
 #else
+			_cached_file_size += sizeof(T);
 			y_try_discard(_file->write_one(t));
 #endif
 			return core::Ok(Success::Full);
@@ -280,7 +279,7 @@ class WritableArchive final {
 #ifdef Y_SERDE3_BUFFER
 			return _cached_file_size + _buffer.tell();
 #else
-			return _file->tell();
+			return _cached_file_size;
 #endif
 		}
 
@@ -290,10 +289,11 @@ class WritableArchive final {
 
 	private:
 		File _file;
+
 #ifdef Y_SERDE3_BUFFER
 		io2::Buffer _buffer;
-		usize _cached_file_size = 0;
 #endif
+		usize _cached_file_size = 0;
 		core::Vector<SizePatch> _patches;
 };
 
