@@ -82,14 +82,9 @@ class WritableArchive final {
 				_cached_file_size(_file->tell())
 		{}
 
-		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Writer, F>>>
-		explicit WritableArchive(F file) :
-				_file(std::make_unique<F>(std::move(file))),
-#ifdef Y_SERDE3_BUFFER
-				_buffer(buffer_size),
-#endif
-				_cached_file_size(_file->tell())
-		{}
+		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Writer, remove_cvref_t<F>>>>
+		explicit WritableArchive(F&& file) : WritableArchive(std::make_unique<remove_cvref_t<F>>(y_fwd(file))) {
+		}
 
 		~WritableArchive() {
 #ifdef Y_SERDE3_BUFFER
@@ -320,8 +315,8 @@ class ReadableArchive final {
 		ReadableArchive(File file) : _file(std::move(file)) {
 		}
 
-		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Reader, F>>>
-		explicit ReadableArchive(F file) : _file(std::make_unique<F>(std::move(file))) {
+		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Reader, remove_cvref_t<F>>>>
+		explicit ReadableArchive(F&& file) : ReadableArchive(std::make_unique<remove_cvref_t<F>>(y_fwd(file))) {
 		}
 
 		template<typename T>

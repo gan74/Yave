@@ -41,6 +41,8 @@ namespace serde3 {
 
 template<typename T>
 Result try_convert(T& t, detail::TypeHeader type, const void* data) {
+	unused(t, type, data);
+
 	y_serde3_try_convert(u8);
 	y_serde3_try_convert(u16);
 	y_serde3_try_convert(u32);
