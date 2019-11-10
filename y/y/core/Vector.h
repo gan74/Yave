@@ -210,7 +210,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		template<typename It>
-		void emplace_back(It beg_it, const It end_it) {
+		void emplace_back(It beg_it, It end_it) {
 			set_min_capacity(size() + std::distance(beg_it, end_it));
 			std::move(beg_it, end_it, std::back_inserter(*this));
 		}
@@ -376,6 +376,10 @@ class Vector : ResizePolicy, Allocator {
 
 		// uses data_end !!
 		void unsafe_set_capacity(usize new_cap) {
+			if(new_cap == capacity()) {
+				return;
+			}
+
 			usize current_size = size();
 			usize num_to_move = std::min(new_cap, current_size);
 
