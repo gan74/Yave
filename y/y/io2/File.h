@@ -51,10 +51,11 @@ class File final : public Reader, public Writer {
 		bool is_open() const;
 		bool at_end() const override;
 
-		void seek(usize byte);
+		void seek(usize byte) override;
+		usize tell() const override;
+
 		void seek_end();
 		void reset();
-		usize tell() const;
 
 		ReadResult read(u8* data, usize bytes) override;
 		ReadUpToResult read_up_to(u8* data, usize max_bytes) override;

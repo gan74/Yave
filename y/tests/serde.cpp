@@ -43,6 +43,14 @@ struct Func {
 struct DummyWriter : public io2::Writer {
 	DummyWriter() = default;
 
+
+	void seek(usize) override {
+	}
+
+	usize tell() const override {
+		return 0;
+	}
+
 	io2::WriteResult write(const u8*, usize) override {
 		return core::Ok();
 	}

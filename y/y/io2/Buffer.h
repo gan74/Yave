@@ -35,10 +35,11 @@ class Buffer final : public Reader, public Writer {
 		bool at_end() const override;
 		usize remaining() const;
 
-		void seek(usize byte);
+		void seek(usize byte) override;
+		usize tell() const override;
+
 		void seek_end();
 		void reset();
-		usize tell() const;
 
 		ReadResult read(u8* data, usize bytes) override;
 		ReadUpToResult read_up_to(u8* data, usize max_bytes) override;

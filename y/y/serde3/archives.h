@@ -27,7 +27,7 @@ SOFTWARE.
 #include "headers.h"
 #include "conversions.h"
 
-#include <y/io2/File.h>
+#include <y/io2/io.h>
 
 #define y_try_status(result)																	\
 	do {																						\
@@ -51,8 +51,9 @@ static constexpr std::string_view collection_version_string = "serde3.col.v1.0";
 }
 
 
-class WritableArchive {
+class WritableArchive final {
 
+	using File = io2::WriterPtr;
 	using size_type = detail::size_type;
 
 	template<typename T>
@@ -64,7 +65,11 @@ class WritableArchive {
 	};
 
 	public:
-	    WritableArchive(io2::File file) : _file(std::move(file)) {
+		WritableArchive(File file) : _file(std::move(file)) {
+		}
+
+		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Writer, F>>>
+		explicit WritableArchive(F file) : _file(std::make_unique<F>(std::move(file))) {
 		}
 
 		~WritableArchive() {
@@ -79,13 +84,13 @@ class WritableArchive {
 
 	private:
 		Result finalize() {
-			usize pos = _file.tell();
+			usize pos = _file->tell();
 			for(const SizePatch& patch : _patches) {
-				_file.seek(patch.index);
-				y_try_discard(_file.write_one(patch.size));
+				_file->seek(patch.index);
+				y_try_discard(_file->write_one(patch.size));
 			}
 			_patches.make_empty();
-			_file.seek(pos);
+			_file->seek(pos);
 
 			return core::Ok(Success::Full);
 		}
@@ -112,7 +117,7 @@ class WritableArchive {
 		Result serialize_collection(NamedObject<T> object) {
 			static_assert(is_iterable_v<T>);
 
-			SizePatch patch{_file.tell(), 0};
+			SizePatch patch{_file->tell(), 0};
 
 			{
 				y_try(write_one(size_type(-1)));
@@ -122,7 +127,7 @@ class WritableArchive {
 				}
 			}
 
-			patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
+			patch.size = (size_type(_file->tell()) - size_type(patch.index)) - sizeof(size_type);
 			_patches.push_back(patch);
 
 			return core::Ok(Success::Full);
@@ -138,14 +143,14 @@ class WritableArchive {
 				return write_one(size_type(0));
 			}
 
-			SizePatch patch{_file.tell(), 0};
+			SizePatch patch{_file->tell(), 0};
 
 			{
 				y_try(write_one(size_type(-1)));
 				y_try(object.object->_y_serde3_poly_serialize(*this));
 			}
 
-			patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
+			patch.size = (size_type(_file->tell()) - size_type(patch.index)) - sizeof(size_type);
 			// make sure size isn't 0 for non null
 			if(!patch.size) {
 				y_try(write_one(u8(0)));
@@ -173,14 +178,14 @@ class WritableArchive {
 		Result serialize_object(NamedObject<T> object) {
 			static_assert(!has_serde3_poly_v<T>);
 
-			SizePatch patch{_file.tell(), 0};
+			SizePatch patch{_file->tell(), 0};
 
 			{
 				y_try(write_one(size_type(-1)));
 				y_try(serialize_members(object.object));
 			}
 
-			patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
+			patch.size = (size_type(_file->tell()) - size_type(patch.index)) - sizeof(size_type);
 			_patches.push_back(patch);
 
 			return core::Ok(Success::Full);
@@ -205,19 +210,20 @@ class WritableArchive {
 		// ------------------------------- WRITE -------------------------------
 		template<typename T>
 		Result write_one(const T& t) {
-			y_try_discard(_file.write_one(t));
+			y_try_discard(_file->write_one(t));
 			return core::Ok(Success::Full);
 		}
 
 	private:
-		io2::File _file;
+		File _file;
 		core::Vector<SizePatch> _patches;
 };
 
 
 
-class ReadableArchive {
+class ReadableArchive final {
 
+	using File = io2::ReaderPtr;
 	using size_type = detail::size_type;
 
 	static constexpr bool force_safe = false;
@@ -233,7 +239,11 @@ class ReadableArchive {
 	};
 
 	public:
-	    ReadableArchive(io2::File file) : _file(std::move(file)) {
+		ReadableArchive(File file) : _file(std::move(file)) {
+		}
+
+		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Reader, F>>>
+		explicit ReadableArchive(F file) : _file(std::make_unique<F>(std::move(file))) {
 		}
 
 		template<typename T>
@@ -248,7 +258,7 @@ class ReadableArchive {
 			size_type size = size_type(-1);
 
 			y_try_discard(read_header(header));
-			y_try_discard(_file.read_one(size));
+			y_try_discard(_file->read_one(size));
 
 			if constexpr(has_serde3_poly_v<T>) {
 				return deserialize_poly(object, header, size);
@@ -269,10 +279,10 @@ class ReadableArchive {
 
 			object.object.clear();
 
-			usize end = _file.tell() + size;
+			usize end = _file->tell() + size;
 			const auto check = detail::build_header(object);
 			if(header != check) {
-				_file.seek(end);
+				_file->seek(end);
 				return core::Ok(Success::Partial);
 			}
 
@@ -296,7 +306,7 @@ class ReadableArchive {
 				}
 				return core::Ok(Success::Full);
 			} catch(std::bad_alloc&) {
-				_file.seek(end);
+				_file->seek(end);
 				return core::Ok(Success::Partial);
 			}
 
@@ -311,7 +321,7 @@ class ReadableArchive {
 				using element_type = typename T::element_type;
 				object.object = element_type::_y_serde3_poly_base.create_from_id(header.type_id);
 				if(!object.object) {
-					_file.seek(_file.tell() + size);
+					_file->seek(_file->tell() + size);
 					return core::Ok(Success::Partial);
 				}
 				return object.object->_y_serde3_poly_deserialize(*this);
@@ -333,10 +343,10 @@ class ReadableArchive {
 				static constexpr usize max_prim_size = 4 * sizeof(float);
 				if(header.type.name_hash == check.type.name_hash && size <= max_prim_size) {
 					std::array<u8, max_prim_size> buffer;
-					y_try_discard(_file.read(buffer.data(), size));
+					y_try_discard(_file->read(buffer.data(), size));
 					return try_convert<T>(object.object, header.type, buffer.data());
 				} else {
-					_file.seek(_file.tell() + size);
+					_file->seek(_file->tell() + size);
 					return core::Ok(Success::Partial);
 				}
 			}
@@ -373,7 +383,7 @@ class ReadableArchive {
 					auto header = detail::build_header(std::get<I>(members));
 					for(const auto& m : object_data.members) {
 						if(m.header.type.name_hash == header.type.name_hash) {
-							_file.seek(m.offset);
+							_file->seek(m.offset);
 							y_try_status(deserialize_one(std::get<I>(members)));
 							found = true;
 							break;
@@ -388,7 +398,7 @@ class ReadableArchive {
 
 				y_try_status((deserialize_members_internal<Safe, I + 1>(members, object_data)));
 			} else if constexpr(Safe) {
-				_file.seek(object_data.end_offset);
+				_file->seek(object_data.end_offset);
 			}
 
 			return core::Ok(status);
@@ -399,22 +409,22 @@ class ReadableArchive {
 			ObjectData data;
 
 			if constexpr(Safe) {
-				usize obj_start = _file.tell();
+				usize obj_start = _file->tell();
 				for(usize i = 0; i != serialized_member_count; ++i) {
-					usize offset = _file.tell();
+					usize offset = _file->tell();
 
 					detail::FullHeader header;
 					size_type size = size_type(-1);
 
 					y_try_discard(read_header(header));
-					y_try_discard(_file.read_one(size));
+					y_try_discard(_file->read_one(size));
 
-					_file.seek(_file.tell() + size);
+					_file->seek(_file->tell() + size);
 
 					data.members << HeaderOffset{header, offset};
 				}
-				data.end_offset = _file.tell();
-				_file.seek(obj_start);
+				data.end_offset = _file->tell();
+				_file->seek(obj_start);
 			}
 
 			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
@@ -425,21 +435,21 @@ class ReadableArchive {
 		template<typename T>
 		Result read_one(T& t) {
 			static_assert(!std::is_same_v<std::remove_reference_t<T>, detail::FullHeader>);
-			y_try_discard(_file.read_one(t));
+			y_try_discard(_file->read_one(t));
 			return core::Ok(Success::Full);
 		}
 
 		Result read_header(detail::FullHeader& header) {
-			y_try_discard(_file.read_one(header.type));
+			y_try_discard(_file->read_one(header.type));
 			if(header.type.is_polymorphic()) {
-				y_try_discard(_file.read_one(header.type_id));
+				y_try_discard(_file->read_one(header.type_id));
 			} else {
 				bool read_members = true;
 #ifdef Y_SLIM_POD_HEADER
 				read_members = header.type.has_serde();
 #endif
 				if(read_members) {
-					y_try_discard(_file.read_one(header.members));
+					y_try_discard(_file->read_one(header.members));
 				}
 
 			}
@@ -447,7 +457,7 @@ class ReadableArchive {
 		}
 
 	private:
-		io2::File _file;
+		File _file;
 };
 
 }

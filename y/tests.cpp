@@ -148,8 +148,9 @@ int main() {{
 	}
 
 
-	/*usize count = 1000;
+	usize count = 100000;
 	{
+		core::DebugTimer _("serialize");
 		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
 		TestStruct t{4, 5, {2.71727f}};
 		for(usize i = 0; i != count; ++i) {
@@ -171,7 +172,7 @@ int main() {{
 
 		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"), s == Success::Full ? Log::Info : Log::Error);
 		log_msg(fmt("{%, %, {%}}", t.x, t.y, t.z.i));
-	}*/
+	}
 	return 0;
 }
 
