@@ -112,7 +112,7 @@ auto poly_objects() {
 }
 
 int main() {
-	/*{
+	{
 		WritableArchive arc(std::move(io2::File::create("poly.txt").unwrap()));
 		for(const auto& p : poly_objects()) {
 			arc.serialize(p).unwrap();
@@ -126,17 +126,17 @@ int main() {
 			arc.deserialize(b).unwrap();
 			b->print();
 		}
-	}*/
+	}
 
 
-	usize count = 1000;
-	/*{
+	/*usize count = 1000;
+	{
 		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
 		TestStruct t{4, 5, {2.71727f}};
 		for(usize i = 0; i != count; ++i) {
 			arc.serialize(t).unwrap();
 		}
-	}*/
+	}
 	{
 		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
 		TestStruct t;
@@ -152,7 +152,7 @@ int main() {
 
 		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"), s == Success::Full ? Log::Info : Log::Error);
 		log_msg(fmt("{%, %, {%}}", t.x, t.y, t.z.i));
-	}
+	}*/
 	return 0;
 }
 

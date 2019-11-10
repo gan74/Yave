@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -91,25 +91,69 @@ class WritableArchive {
 			auto header = detail::build_header(object);
 			y_try(write_one(header));
 
-			if constexpr(has_serde3_v<T>) {
-				usize index = _patches.size();
-				_patches.push_back({_file.tell(), 0});
-
-				y_try(write_one(size_type(-1)));
-
-				if constexpr(has_serde3_poly_v<T>) {
-					y_try(object.object->_y_serde3_poly_serialize(*this));
-				} else {
-					y_try(serialize_members(object.object));
-				}
-
-				SizePatch& patch = _patches[index];
-				patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
+			if constexpr(has_serde3_poly_v<T>) {
+				return serialize_poly(object);
+			} else if constexpr(has_serde3_v<T>) {
+				return serialize_object(object);
 			} else {
-				static_assert(std::is_trivially_copyable_v<T>);
-				y_try(write_one(size_type(sizeof(T))));
-				y_try(write_one(object.object));
+				return serialize_pod(object);
 			}
+		}
+
+
+		// ------------------------------- POLY -------------------------------
+		template<typename T>
+		Result serialize_poly(NamedObject<T> object) {
+			static_assert(!has_serde3_v<T>);
+
+			if(object.object == nullptr) {
+				return write_one(size_type(0));
+			}
+
+			SizePatch patch{_file.tell(), 0};
+
+			{
+				y_try(write_one(size_type(-1)));
+				y_try(object.object->_y_serde3_poly_serialize(*this));
+			}
+
+			patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
+			// make sure size isn't 0 for non null
+			if(!patch.size) {
+				y_try(write_one(u8(0)));
+				++patch.size;
+			}
+			_patches.push_back(patch);
+
+			return core::Ok(Success::Full);
+		}
+
+
+		// ------------------------------- POD -------------------------------
+		template<typename T>
+		Result serialize_pod(NamedObject<T> object) {
+			static_assert(std::is_trivially_copyable_v<T>);
+
+			y_try(write_one(size_type(sizeof(T))));
+			return write_one(object.object);
+		}
+
+
+		// ------------------------------- OBJECT -------------------------------
+		template<typename T>
+		Result serialize_object(NamedObject<T> object) {
+			static_assert(!has_serde3_poly_v<T>);
+
+			SizePatch patch{_file.tell(), 0};
+
+			{
+				y_try(write_one(size_type(-1)));
+				y_try(serialize_members(object.object));
+			}
+
+			patch.size = (size_type(_file.tell()) - size_type(patch.index)) - sizeof(size_type);
+			_patches.push_back(patch);
+
 			return core::Ok(Success::Full);
 		}
 
@@ -128,6 +172,8 @@ class WritableArchive {
 			return serialize_members_internal<0>(object._y_serde3_refl());
 		}
 
+
+		// ------------------------------- WRITE -------------------------------
 		template<typename T>
 		Result write_one(const T& t) {
 			y_try_discard(_file.write_one(t));
@@ -175,54 +221,77 @@ class ReadableArchive {
 			y_try_discard(read_header(header));
 			y_try_discard(_file.read_one(size));
 
-			Success status = Success::Full;
-
-			const auto check = detail::build_header(object);
 			if constexpr(has_serde3_poly_v<T>) {
-				static_assert(has_serde3_v<T>);
-				if(header.type.type_hash != check.type.type_hash) {
-					return core::Err();
-				}
-				object.object = T::_y_serde3_poly_base::create_from_id(header.type_id);
+				return deserialize_poly(object, header, size);
+			} else if constexpr(has_serde3_v<T>) {
+				return deserialize_object(object, header, size);
+			} else {
+				return deserialize_pod(object, header, size);
+			}
+		}
+
+
+		// ------------------------------- POLY -------------------------------
+		template<typename T>
+		Result deserialize_poly(NamedObject<T> object, const detail::FullHeader header, size_type size) {
+			static_assert(!has_serde3_v<T>);
+
+			if(size != 0) {
+				using element_type = typename T::element_type;
+				object.object = element_type::_y_serde3_poly_base.create_from_id(header.type_id);
 				if(!object.object) {
 					_file.seek(_file.tell() + size);
 					return core::Ok(Success::Partial);
 				}
-				y_try_status(object.object->deserialize(*this));
-			} else if constexpr(has_serde3_v<T>) {
-				if(header != check) {
-					if(header.type.type_hash != check.type.type_hash) {
-						return core::Err();
-					}
-					y_try_status(deserialize_members<true>(object.object, header.members.count));
-				} else {
-					y_try_status(deserialize_members<force_safe>(object.object, header.members.count));
-				}
-
+				return object.object->_y_serde3_poly_deserialize(*this);
 			} else {
-				static_assert(std::is_trivially_copyable_v<T>);
-				if(header != check) {
-					static constexpr usize max_prim_size = 4 * sizeof(float);
-					if(header.type.name_hash == check.type.name_hash && size <= max_prim_size) {
-						std::array<u8, max_prim_size> buffer;
-						y_try_discard(_file.read(buffer.data(), size));
-						return try_convert<T>(object.object, header.type, buffer.data());
-					} else {
-						_file.seek(_file.tell() + size);
-						return core::Ok(Success::Partial);
-					}
-				}
-				y_try_status(read_one(object.object));
+				object.object = nullptr;
+				return core::Ok(Success::Full);
 			}
-
-			return core::Ok(status);
 		}
 
 
+		// ------------------------------- POD -------------------------------
+		template<typename T>
+			Result deserialize_pod(NamedObject<T> object, const detail::FullHeader header, size_type size) {
+			static_assert(std::is_trivially_copyable_v<T>);
+
+			const auto check = detail::build_header(object);
+			if(header != check) {
+				static constexpr usize max_prim_size = 4 * sizeof(float);
+				if(header.type.name_hash == check.type.name_hash && size <= max_prim_size) {
+					std::array<u8, max_prim_size> buffer;
+					y_try_discard(_file.read(buffer.data(), size));
+					return try_convert<T>(object.object, header.type, buffer.data());
+				} else {
+					_file.seek(_file.tell() + size);
+					return core::Ok(Success::Partial);
+				}
+			}
+			return read_one(object.object);
+		}
+
+
+		// ------------------------------- OBJECT -------------------------------
+		template<typename T>
+		Result deserialize_object(NamedObject<T> object, const detail::FullHeader header, size_type) {
+			static_assert(has_serde3_v<T>);
+			static_assert(!has_serde3_poly_v<T>);
+
+			const auto check = detail::build_header(object);
+			if(header != check) {
+				if(header.type.type_hash != check.type.type_hash) {
+					return core::Err();
+				}
+				return deserialize_members<true>(object.object, header.members.count);
+			} else {
+				return deserialize_members<force_safe>(object.object, header.members.count);
+			}
+		}
+
 		template<bool Safe, usize I, typename... Args>
 		Result deserialize_members_internal(std::tuple<NamedObject<Args>...> members,
-		                                    const ObjectData& object_data) {
-
+											const ObjectData& object_data) {
 			unused(members, object_data);
 
 			Success status = Success::Full;
@@ -279,6 +348,8 @@ class ReadableArchive {
 			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
 		}
 
+
+		// ------------------------------- READ -------------------------------
 		template<typename T>
 		Result read_one(T& t) {
 			static_assert(!std::is_same_v<std::remove_reference_t<T>, detail::FullHeader>);

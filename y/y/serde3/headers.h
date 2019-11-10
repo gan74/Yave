@@ -186,7 +186,7 @@ constexpr auto build_header(NamedObject<T> obj) {
 	if constexpr(has_serde3_poly_v<T>) {
 		return PolyHeader {
 			build_type_header(obj),
-			obj.object._y_serde3_poly_type_id()
+			obj.object->_y_serde3_poly_type_id()
 		};
 	} else {
 #ifdef Y_SLIM_POD_HEADER
