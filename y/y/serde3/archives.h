@@ -269,9 +269,10 @@ class ReadableArchive {
 
 			object.object.clear();
 
+			usize end = _file.tell() + size;
 			const auto check = detail::build_header(object);
 			if(header != check) {
-				_file.seek(_file.tell() + size);
+				_file.seek(end);
 				return core::Ok(Success::Partial);
 			}
 
@@ -279,18 +280,26 @@ class ReadableArchive {
 			y_try(read_one(collection_size));
 
 			try {
-				try_reserve(object.object, usize(collection_size));
+				if constexpr(has_emplace_back_v<T>) {
+					if constexpr(has_reserve_v<T>) {
+						object.object.reserve(collection_size);
+					}
+					for(size_type i = 0; i != collection_size; ++i) {
+						object.object.emplace_back();
+						y_try(deserialize_one(NamedObject{object.object.last(), detail::collection_version_string}));
+					}
+				} else {
+					object.object.resize(collection_size);
+					for(size_type i = 0; i != collection_size; ++i) {
+						y_try(deserialize_one(NamedObject{object.object[usize(i)], detail::collection_version_string}));
+					}
+				}
+				return core::Ok(Success::Full);
 			} catch(std::bad_alloc&) {
-				_file.seek(_file.tell() + size - sizeof(size_type));
+				_file.seek(end);
 				return core::Ok(Success::Partial);
 			}
 
-			for(size_type i = 0; i != collection_size; ++i) {
-				object.object.emplace_back();
-				y_try(deserialize_one(NamedObject{object.object.last(), detail::collection_version_string}));
-			}
-
-			return core::Ok(Success::Full);
 		}
 
 		// ------------------------------- POLY -------------------------------

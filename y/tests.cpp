@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include <y/core/Chrono.h>
 #include <y/core/String.h>
+#include <y/core/FixedArray.h>
 #include <y/io2/File.h>
 #include <y/io2/Buffer.h>
 
@@ -103,12 +104,18 @@ struct TestStruct {
 
 
 auto poly_objects() {
-	core::Vector<std::unique_ptr<Base>> v;
+	/*core::Vector<std::unique_ptr<Base>> v;
 	v << std::make_unique<Derived>();
 	v << std::make_unique<Template<int>>();
 	v << std::make_unique<Derived>();
 	v << nullptr;
-	v << std::make_unique<Template<float>>();
+	v << std::make_unique<Template<float>>();*/
+	core::FixedArray<std::unique_ptr<Base>> v(5);
+	v[0] = std::make_unique<Derived>();
+	v[1] = std::make_unique<Template<int>>();
+	v[2] = std::make_unique<Derived>();
+	v[3] = nullptr;
+	v[4] = std::make_unique<Template<float>>();
 	return v;
 }
 
