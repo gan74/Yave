@@ -40,6 +40,7 @@ class Buffer final : public Reader, public Writer {
 
 		void seek_end();
 		void reset();
+		void clear();
 
 		ReadResult read(u8* data, usize bytes) override;
 		ReadUpToResult read_up_to(u8* data, usize max_bytes) override;
@@ -48,6 +49,9 @@ class Buffer final : public Reader, public Writer {
 		WriteResult write(const u8* data, usize bytes) override;
 
 		FlushResult flush() override;
+
+		const u8* data() const;
+		usize size() const;
 
 	private:
 		core::Vector<u8> _buffer;
