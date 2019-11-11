@@ -319,6 +319,7 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 	check(sqlite3_exec(_database, "PRAGMA cache_size = 1048576", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "PRAGMA page_size = 65536", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "PRAGMA temp_store = MEMORY", nullptr, nullptr, nullptr));
+	check(sqlite3_exec(_database, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr));
 
 	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Data    (uid  INT  PRIMARY KEY, data BLOB);", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Folders (name TEXT PRIMARY KEY, folderid INTEGER UNIQUE);", nullptr, nullptr, nullptr));
@@ -328,6 +329,9 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 
 	check(sqlite3_exec(_database, "CREATE UNIQUE INDEX uidindex ON Data(uid)", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "CREATE UNIQUE INDEX nameindex ON Names(name)", nullptr, nullptr, nullptr));
+
+	// root folder
+	check(sqlite3_exec(_database, "INSERT INTO Folders(name, folderid) VALUES(\"/\", 0)", nullptr, nullptr, nullptr));
 
 	// dangerous!!
 	check(sqlite3_exec(_database, "PRAGMA synchronous = OFF", nullptr, nullptr, nullptr)); // unsafe if the OS crashes
@@ -371,6 +375,7 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
 	}
 
 	AssetId id = next_id();
+	y_try(write(id, data));
 
 	{
 		sqlite3_stmt* stmt = nullptr;
@@ -381,11 +386,11 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
 		y_defer(sqlite3_finalize(stmt));
 
 		if(!is_done(sqlite3_step(stmt))) {
+			remove(id).ignore();
 			return core::Err(ErrorType::Unknown);
 		}
 	}
 
-	y_try(write(id, data));
 
 	return core::Ok(id);
 }

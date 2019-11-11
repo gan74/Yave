@@ -166,9 +166,9 @@ int main(int argc, char** argv) {
 			y_debug_assert(reader->at_end());
 		}
 
-		fs->remove("folder/file").unwrap();
+		fs->remove("folder").unwrap();
 		y_debug_assert(!fs->exists("folder/file").unwrap());
-		y_debug_assert(fs->exists("folder/").unwrap());
+		y_debug_assert(!fs->exists("folder/").unwrap());
 		y_debug_assert(store.id("folder/file").is_error());
 
 	}
