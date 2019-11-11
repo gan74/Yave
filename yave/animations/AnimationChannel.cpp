@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,7 @@ const core::String& AnimationChannel::name() const {
 	return _name;
 }
 
-core::ArrayView<AnimationChannel::BoneKey> AnimationChannel::keys() const {
+core::Span<AnimationChannel::BoneKey> AnimationChannel::keys() const {
 	return _keys;
 }
 

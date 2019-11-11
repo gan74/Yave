@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ void FrameGraphResourcePool::create_buffer(FrameGraphBufferId res, usize byte_si
 		memory = prefered_memory_type(usage);
 	}
 	auto& buffer = _buffers[res];
-	if(buffer.device()) {
+	if(!buffer.is_null()) {
 		y_fatal("Buffer already exists.");
 	}
 	if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
@@ -72,18 +72,18 @@ void FrameGraphResourcePool::create_buffer(FrameGraphBufferId res, usize byte_si
 }
 
 
-void FrameGraphResourcePool::create_alias(FrameGraphImageId res, FrameGraphImageId alias) {
-	res.check_valid();
-	alias.check_valid();
+void FrameGraphResourcePool::create_alias(FrameGraphImageId dst, FrameGraphImageId src) {
+	dst.check_valid();
+	src.check_valid();
 
-	auto& orig = _images[alias];
+	auto& orig = _images[src];
 	if(!orig) {
-		y_fatal("Image doesn't exists.");
+		y_fatal("Source image doesn't exists.");
 	}
 
-	auto& image = _images[res];
+	auto& image = _images[dst];
 	if(image) {
-		y_fatal("Image already exists.");
+		y_fatal("Destination image already exists.");
 	}
 
 	image = orig;
@@ -142,6 +142,14 @@ void FrameGraphResourcePool::release(FrameGraphBufferId res) {
 	} else {
 		y_fatal("Released buffer resource does not belong to pool.");
 	}
+}
+
+bool FrameGraphResourcePool::is_alive(FrameGraphImageId res) const {
+	return _images.find(res) != _images.end();
+}
+
+bool FrameGraphResourcePool::is_alive(FrameGraphBufferId res) const {
+	return _buffers.find(res) != _buffers.end();
 }
 
 bool FrameGraphResourcePool::are_aliased(FrameGraphImageId a, FrameGraphImageId b) const {

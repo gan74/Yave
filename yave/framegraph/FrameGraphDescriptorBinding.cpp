@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Binding& bind) : _type(BindingType::External), _external(bind) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Descriptor& desc) : _type(BindingType::External), _external(desc) {
 }
 
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type) :
@@ -52,7 +52,12 @@ FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(
 	return FrameGraphDescriptorBinding(res, BindingType::InputImage);
 }
 
-Binding FrameGraphDescriptorBinding::create_binding(FrameGraphResourcePool* pool) const {
+/*Descriptor FrameGraphDescriptorBinding::create_and_save_descriptor(FrameGraphResourcePool* pool) {
+	operator=(FrameGraphDescriptorBinding(create_descriptor(pool)));
+	return _external;
+}*/
+
+Descriptor FrameGraphDescriptorBinding::create_descriptor(FrameGraphResourcePool* pool) const {
 	switch(_type) {
 		case BindingType::External:
 			return _external;

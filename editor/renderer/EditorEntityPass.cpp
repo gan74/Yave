@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ struct ImGuiBillboardVertex {
 	math::Vec3 position;
 	math::Vec2 uv;
 	math::Vec2 size;
+	u32 entity_index;
 };
 
 struct EditorEntityPassData {
@@ -70,8 +71,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 								   RenderPassRecorder& recorder, const FrameGraphPass* pass,
 								   const SceneView& scene_view,
 								   FrameGraphMutableTypedBufferId<EditorEntityPassData> pass_buffer,
-								   FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer,
-								   FrameGraphMutableTypedBufferId<u32> id_buffer) {
+								   FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer) {
 
 	y_profile();
 
@@ -87,8 +87,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 
 	{
 		auto vertices = pass->resources()->buffer<BufferUsage::AttributeBit>(vertex_buffer);
-		auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(id_buffer);
-		recorder.bind_attrib_buffers({vertices, ids});
+		recorder.bind_attrib_buffers(vertices);
 	}
 
 	{
@@ -103,12 +102,10 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 
 		usize index = 0;
 		auto vertex_mapping = pass->resources()->mapped_buffer(vertex_buffer);
-		auto id_mapping = pass->resources()->mapped_buffer(id_buffer);
 
 		auto push_entity = [&](ecs::EntityIndex entity_index) {
 				if(const TransformableComponent* tr = world.component<TransformableComponent>(world.id_from_index(entity_index))) {
-					id_mapping[index] = entity_index;
-					vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size};
+					vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, entity_index};
 					++index;
 				}
 			};
@@ -124,14 +121,13 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 }
 
 
-EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color_id, bool picking) {
+EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool picking) {
 	FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
 	auto pass_buffer = builder.declare_typed_buffer<EditorEntityPassData>();
 	auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(max_batch_size);
-	auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
 	auto depth = builder.declare_copy(in_depth);
-	auto color = builder.declare_copy(in_color_id);
+	auto color = builder.declare_copy(in_color);
 
 	EditorEntityPass pass;
 	pass.depth = depth;
@@ -141,17 +137,15 @@ EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph
 	builder.add_uniform_input(pass_buffer);
 
 	builder.add_attrib_input(vertex_buffer);
-	builder.add_attrib_input(id_buffer);
 
 	builder.map_update(pass_buffer);
 	builder.map_update(vertex_buffer);
-	builder.map_update(id_buffer);
 
 	builder.add_depth_output(depth, Framebuffer::LoadOp::Load);
 	builder.add_color_output(color, Framebuffer::LoadOp::Load);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			render_editor_entities(ctx, picking, render_pass, self, view, pass_buffer, vertex_buffer, id_buffer);
+			render_editor_entities(ctx, picking, render_pass, self, view, pass_buffer, vertex_buffer);
 		});
 
 	return pass;

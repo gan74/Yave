@@ -48,17 +48,10 @@ static core::String clean_component_name(std::string_view name) {
 		if(std::isupper(c)) {
 			clean.push_back(' ');
 		}
-		clean.push_back(std::tolower(c));
+		clean.push_back(char(std::tolower(c)));
 	}
 	return clean;
 }
-
-using EditorEmptyEntity = ecs::EntityArchetype<EditorComponent>;
-using EditorStaticMesh = StaticMeshArchetype::with<EditorComponent>;
-using EditorPointLight = PointLightArchetype::with<EditorComponent>;
-using EditorSunLight = DirectionalLightArchetype::with<EditorComponent>;
-
-static_assert(EditorStaticMesh::component_count == 3);
 
 
 EntityView::EntityView(ContextPtr cptr) :
@@ -68,6 +61,7 @@ EntityView::EntityView(ContextPtr cptr) :
 
 void EntityView::paint_view() {
 	const ecs::EntityWorld& world = context()->world();
+	
 	if(ImGui::BeginChild("###entities", ImVec2(), true)) {
 		for(ecs::EntityId id : world.entities()) {
 			const EditorComponent* comp = world.component<EditorComponent>(id);
@@ -77,7 +71,7 @@ void EntityView::paint_view() {
 			}
 
 			bool selected = context()->selection().selected_entity() == id;
-			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %###%", comp->name(), id.index()).data(), selected)) {
+			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %##%", comp->name(), id.index()).data(), selected)) {
 				 context()->selection().set_selected(id);
 			}
 			if(ImGui::IsItemHovered()) {
@@ -93,11 +87,17 @@ void EntityView::paint_clustered_view() {
 
 	auto group = [&](auto archetype, const char* icon, const char* name) {
 		if(ImGui::TreeNodeEx(fmt("% %", icon, name).data(), ImGuiTreeNodeFlags_DefaultOpen)) {
-			for(auto entity : world.view(archetype)) {
-				const EditorComponent& editor_comp = entity.template component<EditorComponent>();
-				ImGui::TreeNodeEx(fmt("% %###%", icon, editor_comp.name(), entity.index()).data(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-
+			using EditorArchetype = typename decltype(archetype)::template with<EditorComponent>;
+			for(auto entity : world.view(EditorArchetype())) {
 				ecs::EntityId id = world.id_from_index(entity.index());
+				const EditorComponent& editor_comp = entity.template component<EditorComponent>();
+
+				int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+				if(context()->selection().selected_entity() == id) {
+					flags |= ImGuiTreeNodeFlags_Selected;
+				}
+				ImGui::TreeNodeEx(fmt("% %##%", icon, editor_comp.name(), entity.index()).data(), flags);
+
 				if(ImGui::IsItemClicked()) {
 					context()->selection().set_selected(id);
 				}
@@ -111,9 +111,9 @@ void EntityView::paint_clustered_view() {
 	};
 
 	if(ImGui::BeginChild("###entities", ImVec2(), true)) {
-		group(EditorStaticMesh(), ICON_FA_CUBE, "Static meshes");
-		group(EditorPointLight(), ICON_FA_LIGHTBULB, "Point lights");
-		group(EditorSunLight(), ICON_FA_SUN, "Sun lights");
+		group(StaticMeshArchetype(), ICON_FA_CUBE, "Static meshes");
+		group(PointLightArchetype(), ICON_FA_LIGHTBULB, "Point lights");
+		group(DirectionalLightArchetype(), ICON_FA_SUN, "Sun lights");
 	}
 	ImGui::EndChild();
 }
@@ -129,19 +129,24 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 
 	if(ImGui::BeginPopup("Add entity")) {
+		ecs::EntityId ent;
 		if(ImGui::MenuItem("Add empty entity")) {
-			world.create_entity(EditorEmptyEntity());
+			ent = world.create_entity();
 		}
 		ImGui::Separator();
 		if(ImGui::MenuItem(ICON_FA_CUBE " Add static mesh")) {
-			world.create_entity(EditorStaticMesh());
+			ent = world.create_entity(StaticMeshArchetype());
 		}
 		if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add point light")) {
-			world.create_entity(EditorPointLight());
+			ent = world.create_entity(PointLightArchetype());
 		}
 		if(ImGui::MenuItem(ICON_FA_SUN " Add sun light")) {
-			world.create_entity(EditorSunLight());
+			ent = world.create_entity(DirectionalLightArchetype());
 		}
+		
+		y_debug_assert(!ent.is_valid() || world.has<EditorComponent>(ent));
+		y_debug_assert(world.required_component_types().size() > 0);
+
 		ImGui::EndPopup();
 	}
 

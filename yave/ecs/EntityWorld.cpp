@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +28,10 @@ namespace ecs {
 EntityWorld::EntityWorld() {
 }
 
-
 EntityId EntityWorld::create_entity() {
-	return _entities.create();
+	EntityId id = _entities.create();
+	add_required_components(id);
+	return id;
 }
 
 void EntityWorld::remove_entity(EntityId id) {
@@ -53,13 +54,15 @@ const EntityIdPool& EntityWorld::entities() const {
 
 void EntityWorld::flush() {
 	y_profile();
-	for(const auto& c : _component_containers) {
-		c.second->remove(_deletions);
+	if(!_deletions.is_empty()) {
+		for(const auto& c : _component_containers) {
+			c.second->remove(_deletions);
+		}
+		for(EntityId id : _deletions) {
+			_entities.recycle(id);
+		}
+		_deletions.clear();
 	}
-	for(EntityId id : _deletions) {
-		_entities.recycle(id);
-	}
-	_deletions.clear();
 }
 
 void EntityWorld::add(const EntityWorld& other) {
@@ -77,8 +80,10 @@ void EntityWorld::add(const EntityWorld& other) {
 	}
 }
 
-core::String EntityWorld::type_name(ComponentTypeIndex index) const {
-	return y::detail::demangle_type_name(index.name());
+std::string_view EntityWorld::type_name(ComponentTypeIndex index) const {
+	static constexpr std::string_view no_name = "unknown";
+	const ComponentContainerBase* cont = container(index);
+	return cont ? cont->type_name() : no_name;
 }
 
 
@@ -95,6 +100,18 @@ ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) {
 		container = detail::create_container(type);
 	}
 	return container.get();
+}
+
+void EntityWorld::add_required_components(EntityId id) {
+	for(const ComponentTypeIndex& tpe : _required_components) {
+		create_component(id, tpe).ignore();
+	}
+}
+
+void EntityWorld::post_deserialization() {
+	for(const auto& p : _component_containers) {
+		p.second->post_deserialize(*this);
+	}
 }
 
 struct EntityWorldHeader {
@@ -128,7 +145,10 @@ serde2::Result EntityWorld::serialize(WritableAssetArchive& writer) const {
 }
 
 serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
+	// _required_components is not serialized so we don't clear it
+	auto required = std::move(_required_components);
 	*this = EntityWorld();
+	_required_components = std::move(required);
 
 	{
 		EntityWorldHeader header;
@@ -166,15 +186,29 @@ serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
 	}
 
 	for(const auto& p : _component_containers) {
+		p.second->post_deserialize(*this);
+		// do some checking
 		for(EntityIndex i : p.second->indexes()) {
-			if(!_entities.contains(EntityId::from_unversioned_index(i))) {
+			EntityId id = EntityId::from_unversioned_index(i);
+			if(!_entities.contains(id)) {
 				return core::Err();
 			}
 		}
 	}
 
+	if(!_required_components.is_empty()) {
+		for(EntityId id : entities()) {
+			add_required_components(id);
+		}
+	}
+
 	return core::Ok();
 }
+
+
+
+
+
 
 }
 }

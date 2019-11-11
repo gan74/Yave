@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef Y_CORE_VECTOR_H
 #define Y_CORE_VECTOR_H
 
-#include "ArrayView.h"
+#include "Span.h"
 #include <cstring>
 
 namespace y {
@@ -91,7 +91,7 @@ class Vector : ResizePolicy, Allocator {
 		Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
 		}
 
-		explicit Vector(ArrayView<value_type> other) : Vector(other.begin(), other.end()) {
+		explicit Vector(Span<value_type> other) : Vector(other.begin(), other.end()) {
 		}
 
 		template<typename... Args>
@@ -119,7 +119,7 @@ class Vector : ResizePolicy, Allocator {
 			return *this;
 		}
 
-		Vector& operator=(ArrayView<value_type> l) {
+		Vector& operator=(Span<value_type> l) {
 			if(contains_it(l.begin())) {
 				Vector other(l);
 				swap(other);
@@ -140,22 +140,22 @@ class Vector : ResizePolicy, Allocator {
 			return *this;
 		}
 
-		bool operator==(ArrayView<value_type> v) const {
+		bool operator==(Span<value_type> v) const {
 			return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
 		}
 
-		bool operator!=(ArrayView<value_type> v) const {
+		bool operator!=(Span<value_type> v) const {
 			return !operator==(v);
 		}
 
 		template<typename... Args>
 		bool operator==(const Vector<Elem, Args...>& v) const {
-			return operator==(ArrayView<value_type>(v));
+			return operator==(Span<value_type>(v));
 		}
 
 		template<typename... Args>
 		bool operator!=(const Vector<Elem, Args...>& v) const {
-			return operator!=(ArrayView<value_type>(v));
+			return operator!=(Span<value_type>(v));
 		}
 
 
@@ -200,7 +200,7 @@ class Vector : ResizePolicy, Allocator {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
-			return *(new(_data_end++) data_type(y_fwd(args)...));
+			return *(::new(_data_end++) data_type(y_fwd(args)...));
 		}
 
 		template<typename It>
@@ -210,7 +210,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		template<typename It>
-		void emplace_back(It beg_it, const It end_it) {
+		void emplace_back(It beg_it, It end_it) {
 			set_min_capacity(size() + std::distance(beg_it, end_it));
 			std::move(beg_it, end_it, std::back_inserter(*this));
 		}
@@ -291,10 +291,12 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		const_reference first() const {
+			y_debug_assert(!is_empty());
 			return *_data;
 		}
 
 		reference first() {
+			y_debug_assert(!is_empty());
 			return *_data;
 		}
 
@@ -374,6 +376,10 @@ class Vector : ResizePolicy, Allocator {
 
 		// uses data_end !!
 		void unsafe_set_capacity(usize new_cap) {
+			if(new_cap == capacity()) {
+				return;
+			}
+
 			usize current_size = size();
 			usize num_to_move = std::min(new_cap, current_size);
 

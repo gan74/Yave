@@ -1,5 +1,5 @@
 /*******************************
-Copyright () 2016-2018 Grégoire Angerand
+Copyright () 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -182,6 +182,10 @@ ImageBase::~ImageBase() {
 
 DevicePtr ImageBase::device() const {
 	return _memory.device();
+}
+
+bool ImageBase::is_null() const {
+	return !device();
 }
 
 const math::Vec3ui& ImageBase::image_size() const {

@@ -21,58 +21,178 @@ SOFTWARE.
 **********************************/
 
 #include <y/test/test.h>
-#include <y/mem/allocators.h>
-#include <y/core/Vector.h>
+#include <y/serde3/serde.h>
+#include <y/serde3/archives.h>
+#include <y/serde3/poly.h>
+
+#include <y/utils/name.h>
+#include <y/utils/hash.h>
 
 #include <y/core/Chrono.h>
+#include <y/core/String.h>
+#include <y/core/FixedArray.h>
+#include <y/io2/File.h>
+#include <y/io2/Buffer.h>
 
 using namespace y;
-using namespace memory;
+using namespace serde3;
 
 y_test_func("Test test") {
 	y_test_assert(true);
 }
 
+struct Base {
+	virtual ~Base() = default;
 
-#include <memory>
+	virtual void print() {
+		log_msg("Base");
+	}
 
-template<typename T, template<typename...> typename A>
-using Vec = core::Vector<T, core::DefaultVectorResizePolicy, A<T>>;
+	y_serde3_poly_base(Base)
+};
 
+struct Derived : Base {
+	int x = 16;
+
+	void print() override {
+		log_msg("Derived");
+	}
+
+	y_serde3(x)
+	y_serde3_poly(Derived)
+};
+
+template<typename T>
+struct Template : Base {
+	T t = {};
+
+	void print() override {
+		log_msg(fmt("Template<%>", ct_type_name<T>()));
+	}
+
+	y_serde3(t)
+	y_serde3_poly(Template)
+
+};
+
+int foobar() {
+	Template<int> t;
+	return t.t;
+}
+
+static_assert(has_serde3_poly_v<Derived*>);
+static_assert(has_serde3_poly_v<Base*>);
+static_assert(!has_serde3_poly_v<Base>);
+static_assert(has_serde3_poly_v<Template<float>*>);
+
+
+
+
+struct NestedStruct {
+	std::pair<int, double> p = {-17, 1.6461341};
+
+	y_serde3(p)
+};
+
+struct TestStruct {
+	int x = 9;
+	float y = 443;
+	NestedStruct z;
+
+	y_serde3(z, x, y)
+};
+
+
+auto poly_objects() {
+	/*core::Vector<std::unique_ptr<Base>> v;
+	v << std::make_unique<Derived>();
+	v << std::make_unique<Template<int>>();
+	v << std::make_unique<Derived>();
+	v << nullptr;
+	v << std::make_unique<Template<float>>();*/
+	core::FixedArray<std::unique_ptr<Base>> v(5);
+	v[0] = std::make_unique<Derived>();
+	v[1] = std::make_unique<Template<int>>();
+	v[2] = std::make_unique<Derived>();
+	v[3] = nullptr;
+	v[4] = std::make_unique<Template<float>>();
+	return v;
+}
+
+auto simple_objects() {
+	core::Vector<int> v;
+	v << 4;
+	v << 10;
+	v << -9;
+	v << 9999999;
+	v << 0;
+	return v;
+}
 
 int main() {
-
-	int size = 1000000;
-
 	{
-		core::DebugTimer _("std::allocator");
-		core::Vector<int> v;
-		for(int i = 0; i != size; ++i) {
-			v.emplace_back(i);
+		WritableArchive arc(std::move(io2::File::create("poly.txt").unwrap()));
+		arc.serialize(poly_objects()).unwrap();
+	}
+	{
+		ReadableArchive arc(std::move(io2::File::open("poly.txt").unwrap()));
+
+		decltype(poly_objects()) col;
+		arc.deserialize(col).unwrap();
+		for(const auto& b : col) {
+			if(b) {
+				b->print();
+			} else {
+				log_msg("(null)");
+			}
+		}
+	}
+
+
+	usize count = 100000;
+	// vec
+	{
+		core::Vector<TestStruct> tests;
+		for(usize i = 0; i != count; ++i) {
+			tests << TestStruct{4, 5, {{32, 2.71727}}};
+		}
+
+		core::DebugTimer _("serialize vec");
+		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
+		arc.serialize(tests).unwrap();
+	}
+	{
+		core::DebugTimer _("deserialize vec");
+		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
+		core::Vector<TestStruct> tests;
+		arc.deserialize(tests).unwrap();
+	}
+
+	// individual
+	{
+		core::DebugTimer _("serialize");
+		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
+		TestStruct t{4, 5, {{32, 2.71727}}};
+		for(usize i = 0; i != count; ++i) {
+			arc.serialize(t).unwrap();
 		}
 	}
 	{
-		core::DebugTimer _("Allocator");
-		Vec<int, StdAllocatorAdapter> v;
-		for(int i = 0; i != size; ++i) {
-			v.emplace_back(i);
+		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
+		TestStruct t;
+
+		Success s = Success::Full;
+		{
+			core::DebugTimer _("deserialize");
+			for(usize i = 0; i != count; ++i) {
+				s = arc.deserialize(t).unwrap();
+			}
 		}
+
+
+		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"), s == Success::Full ? Log::Info : Log::Error);
+		log_msg(fmt("{%, %, {%, %}}", t.x, t.y, t.z.p.first, t.z.p.second));
 	}
-
-
-	/*usize i = 1024;
-	while(true) {
-		log_msg(fmt("alloc: %KB", i / 1024));
-		void* ptr = malloc(i);
-		if(!ptr) {
-			log_msg("FAILED!", Log::Error);
-			break;
-		}
-		memset(ptr, 0, i);
-		free(ptr);
-		i *= 2;
-		log_msg("OK!");
-	}*/
 	return 0;
 }
 

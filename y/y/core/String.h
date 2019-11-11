@@ -79,7 +79,8 @@ class String {
 		ShortLenType length;
 
 		ShortData();
-		ShortData(const ShortData& _s);
+		ShortData(const ShortData&) = default;
+		
 		ShortData(const char* str, usize len);
 
 		ShortData& operator=(const ShortData &) = delete;
@@ -116,9 +117,6 @@ class String {
 
 		~String();
 
-		// String take ownership
-		static String from_owned(Owner<char*> owned);
-
 		void set_min_capacity(usize cap);
 
 		usize size() const;
@@ -130,6 +128,7 @@ class String {
 		void make_empty();
 		void shrink(usize new_size);
 		void grow(usize new_size, char c);
+		void resize(usize new_size, char c = ' ');
 
 		char* data();
 		const char* data() const;

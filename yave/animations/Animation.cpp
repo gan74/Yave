@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@ namespace yave {
 Animation::Animation(float duration, core::Vector<AnimationChannel>&& channels) : _duration(duration), _channels(std::move(channels)) {
 }
 
-core::ArrayView<AnimationChannel> Animation::channels() const {
+core::Span<AnimationChannel> Animation::channels() const {
 	return _channels;
 }
 

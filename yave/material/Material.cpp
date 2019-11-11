@@ -31,7 +31,7 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
 		return DescriptorSet();
 	}
 
-	std::array<Binding, SimpleMaterialData::texture_count> bindings = {
+	std::array<Descriptor, SimpleMaterialData::texture_count> bindings = {
 			*dptr->device_resources()[DeviceResources::WhiteTexture],
 			*dptr->device_resources()[DeviceResources::FlatNormalTexture],
 			*dptr->device_resources()[DeviceResources::RedTexture]
@@ -71,6 +71,10 @@ const MaterialTemplate* Material::mat_template() const {
 
 DevicePtr Material::device() const {
 	return _template->device();
+}
+
+bool Material::is_null() const {
+	return !_template;
 }
 
 }

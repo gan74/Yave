@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,55 +29,33 @@ namespace io2 {
 
 class Buffer final : public Reader, public Writer {
 	public:
-		Buffer(usize size = 0) {
-			_buffer.set_min_capacity(size);
-		}
+		Buffer(usize size = 0);
+		~Buffer() override;
 
-		bool at_end() const override {
-			return _read_cursor >= _buffer.size();
-		}
+		bool at_end() const override;
+		usize remaining() const;
 
-		usize remaining() const {
-			return at_end() ? 0 : _buffer.size() - _read_cursor;
-		}
+		void seek(usize byte) override;
+		usize tell() const override;
 
-		ReadResult read(u8* data, usize bytes) override {
-			if(remaining() < bytes) {
-				return core::Err<usize>(0);
-			}
-			std::copy_n(&_buffer[_read_cursor], bytes, data);
-			_read_cursor += bytes;
-			return core::Ok();
-		}
+		void seek_end();
+		void reset();
+		void clear();
 
-		ReadUpToResult read_up_to(u8* data, usize max_bytes) override {
-			usize max = std::min(max_bytes, remaining());
-			std::copy_n(&_buffer[_read_cursor], max, data);
-			_read_cursor += max;
-			return core::Ok(max);
-		}
+		ReadResult read(u8* data, usize bytes) override;
+		ReadUpToResult read_up_to(u8* data, usize max_bytes) override;
+		ReadUpToResult read_all(core::Vector<u8>& data) override;
 
-		ReadUpToResult read_all(core::Vector<u8>& data) override {
-			u8* start = &_buffer[_read_cursor];
-			usize r = std::distance(start, _buffer.end());
-			data.push_back(start, _buffer.end());
-			_read_cursor += r;
-			return core::Ok(r);
-		}
+		WriteResult write(const u8* data, usize bytes) override;
 
-		WriteResult write(const u8* data, usize bytes) override {
-			_buffer.push_back(data, data + bytes);
-			return core::Ok();
-		}
+		FlushResult flush() override;
 
-
-		FlushResult flush() override {
-			return core::Ok();
-		}
+		const u8* data() const;
+		usize size() const;
 
 	private:
 		core::Vector<u8> _buffer;
-		usize _read_cursor = 0;
+		usize _cursor = 0;
 
 };
 

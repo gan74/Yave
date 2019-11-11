@@ -1,0 +1,148 @@
+#version 450
+
+#include "yave.glsl"
+
+// -------------------------------- I/O --------------------------------
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(set = 0, binding = 0) uniform sampler2D in_depth;
+layout(set = 0, binding = 1) uniform sampler2D in_color;
+layout(set = 0, binding = 2) uniform sampler2D in_normal;
+
+layout(rgba16f, set = 0, binding = 4) uniform image2D out_color;
+
+layout(set = 0, binding = 3) readonly buffer Lights {
+	PointLight lights[];
+} lights;
+
+layout(push_constant) uniform PushConstants {
+	LightingCamera camera;
+	uint light_count;
+} constants;
+
+
+// -------------------------------- SHARED --------------------------------
+
+shared uint tile_lights[max_tile_lights];
+shared uint tile_light_count;
+
+shared Frustum4 tile_frustum;
+
+
+// -------------------------------- HELPERS --------------------------------
+
+vec4 plane(vec3 p0, vec3 p1, vec3 p2) {
+	vec3 n = normalize(cross(p0 - p1, p2 - p1));
+	return vec4(-n, dot(n, p1));
+}
+
+uvec2 dispatch_range(uint num) {
+	uint thread_count = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+	uint range = 1 + (num / thread_count);
+	uint begin = min(gl_LocalInvocationIndex * range, num);
+	uint end = min(begin + range, num);
+	return uvec2(begin, end);
+}
+
+
+
+// -------------------------------- CULLING --------------------------------
+
+Frustum4 build_group_frustum() {
+	vec3 ndc_top_left = unproject_ndc(vec3(-1.0, 1.0, 1.0), constants.camera.inv_matrix);
+	vec3 ndc_bot_left = unproject_ndc(vec3(-1.0, -1.0, 1.0), constants.camera.inv_matrix); // we can probably deduce than one
+	vec3 ndc_bot_right = unproject_ndc(vec3(1.0, -1.0, 1.0), constants.camera.inv_matrix);
+
+	vec3 x_step = (ndc_bot_right - ndc_bot_left) / gl_NumWorkGroups.x;
+	vec3 y_step = (ndc_top_left - ndc_bot_left) / gl_NumWorkGroups.y;
+
+	vec3 tile_bot_left  = ndc_bot_left + x_step *  gl_WorkGroupID.x      + y_step *  gl_WorkGroupID.y;
+	vec3 tile_bot_right = ndc_bot_left + x_step * (gl_WorkGroupID.x + 1) + y_step *  gl_WorkGroupID.y;
+	vec3 tile_top_left  = ndc_bot_left + x_step *  gl_WorkGroupID.x      + y_step * (gl_WorkGroupID.y + 1);
+	vec3 tile_top_right = ndc_bot_left + x_step * (gl_WorkGroupID.x + 1) + y_step * (gl_WorkGroupID.y + 1);
+
+	vec3 cam_pos = constants.camera.position;
+
+	Frustum4 frustum;
+	frustum.planes[0] = plane(cam_pos, tile_top_left, tile_bot_left);
+	frustum.planes[1] = plane(cam_pos, tile_bot_right, tile_top_right);
+	frustum.planes[2] = plane(cam_pos, tile_top_right, tile_top_left);
+	frustum.planes[3] = plane(cam_pos, tile_bot_left, tile_bot_right);
+
+	//frustum.planes[4] = plane(vec3(tile_top_left.xy, 0.0), vec3(tile_bot_left.xy, 0.0), vec3(tile_bot_right.xy, 0.0));
+
+	return frustum;
+}
+
+
+void cull_lights() {
+	if(gl_LocalInvocationIndex == 0) {
+		tile_light_count = 0;
+		tile_frustum = build_group_frustum();
+	}
+
+	barrier();
+
+	{
+		uvec2 range = dispatch_range(constants.light_count);
+
+		for(uint i = range.x; i != range.y; ++i) {
+			if(is_inside(tile_frustum, lights.lights[i].position, lights.lights[i].radius)) {
+				uint light_index = atomicAdd(tile_light_count, 1);
+				if(light_index >= max_tile_lights) {
+					break;
+				}
+				tile_lights[light_index] = i;
+			}
+		}
+	}
+
+	barrier();
+}
+
+
+
+// -------------------------------- MAIN --------------------------------
+
+void main() {
+	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+
+	cull_lights();
+
+	float depth = texelFetch(in_depth, coord, 0).x;
+	vec3 irradiance = vec3(0.0);
+
+	if(!is_OOB(depth)) {
+		vec3 albedo;
+		float metallic;
+		vec3 normal;
+		float roughness;
+		unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
+		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
+
+		vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
+		vec3 view_dir = normalize(constants.camera.position - world_pos);
+
+		// point lights
+		uint point_light_count = min(max_tile_lights, tile_light_count);
+		for(uint i = 0; i != point_light_count; ++i) {
+			PointLight light = lights.lights[tile_lights[i]];
+
+			// light_dir dot view_dir > 0
+			vec3 light_dir = light.position - world_pos;
+			float distance = length(light_dir);
+			light_dir /= distance;
+			float att = attenuation(distance, light.radius, light.falloff);
+
+			vec3 radiance = light.color * att;
+			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+		}
+	}
+
+	vec4 original_color = imageLoad(out_color, coord);
+	imageStore(out_color, coord, original_color + vec4(irradiance, 1.0));
+}
+
+

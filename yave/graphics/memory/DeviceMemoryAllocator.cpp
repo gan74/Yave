@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,19 @@ namespace yave {
 
 Y_TODO(DeviceAllocator should track allocation count)
 
+
+usize DeviceMemoryAllocator::heap_size_for_type(MemoryType type) {
+	if(type == MemoryType::Staging) {
+		return default_heap_size / 8;
+	}
+	return default_heap_size;
+}
+
+usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
+	return heap_size_for_type(type) / 2;
+}
+
+
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_max_allocs(dptr->vk_limits().maxMemoryAllocationCount) {
@@ -46,9 +59,10 @@ DeviceMemory DeviceMemoryAllocator::dedicated_alloc(vk::MemoryRequirements reqs,
 DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
 	y_profile();
 
+	Y_TODO(We are double locking here, each heap will lock internally)
 	std::unique_lock lock(_lock);
 
-	if(reqs.size >= dedicated_threshold) {
+	if(reqs.size >= dedicated_threshold_for_type(type)) {
 		return dedicated_alloc(reqs, type);
 	}
 
@@ -64,12 +78,12 @@ DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryTyp
 		}
 	}
 
-	auto heap = std::make_unique<DeviceMemoryHeap>(device(), reqs.memoryTypeBits, type);
+	auto heap = std::make_unique<DeviceMemoryHeap>(device(), reqs.memoryTypeBits, type, heap_size_for_type(type));
 	auto alloc = std::move(heap->alloc(reqs).unwrap());
 
 	heaps.push_back(std::move(heap));
 
-	return std::move(alloc);
+    return /*std::move*/(alloc);
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(vk::Image image) {

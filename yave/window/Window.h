@@ -50,7 +50,7 @@ class Window : NonMovable {
 		void show();
 
 		#ifdef Y_OS_WIN
-			HINSTANCE instance() const { return _hInstance; }
+			HINSTANCE instance() const { return _hinstance; }
 			HWND handle() const { return _hwnd; }
 		#endif
 
@@ -68,7 +68,7 @@ class Window : NonMovable {
 		#ifdef Y_OS_WIN
 			static LRESULT CALLBACK windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 			static void mouse_event(Window* window, UINT uMsg, POINTS pt);
-			HINSTANCE _hInstance;
+			HINSTANCE _hinstance;
 			HWND _hwnd;
 			bool _run;
 		#endif

@@ -46,13 +46,13 @@ template<usize N, typename T = float>
 class Vec
 {
 	template<usize P, typename... Args>
-	void build(T t, Args... args) {
+	constexpr void build(T t, Args... args) {
 		_vec[P] = T(t);
 		build<P + 1>(args...);
 	}
 
 	template<usize P, usize Q, typename U, typename... Args>
-	void build(const Vec<Q, U>& t, Args... args) {
+	constexpr void build(const Vec<Q, U>& t, Args... args) {
 		for(usize i = 0; i != Q; ++i) {
 			_vec[P + i] = T(t[i]);
 		}
@@ -60,7 +60,7 @@ class Vec
 	}
 
 	template<usize P>
-	void build() {
+	constexpr void build() {
 		static_assert(P == N, "Wrong number of arguments");
 	}
 
@@ -75,45 +75,45 @@ class Vec
 		using const_iterator = const T*;
 
 		template<typename A, typename B, typename... Args>
-		Vec(A a, B b, Args... args) {
+		constexpr Vec(A a, B b, Args... args) {
 			build<0>(a, b, args...);
 		}
 
-		explicit Vec(T t) {
+		explicit constexpr Vec(T t) {
 			std::fill(begin(), end(), t);
 		}
 
 		template<typename X>
-		Vec(const Vec<N, X>& v) {
+		constexpr Vec(const Vec<N, X>& v) {
 			std::copy(v.begin(), v.end(), begin());
 		}
 
-		Vec(const std::array<T, N>& v) {
+		constexpr Vec(const std::array<T, N>& v) {
 			std::copy(v.begin(), v.end(), begin());
 		}
 
 		template<usize S>
-		Vec(const T(&v)[S]) {
+		constexpr Vec(const T(&v)[S]) {
 			static_assert(S == N || !S, "Wrong number of arguments");
 			std::copy(std::begin(v), std::end(v), begin());
 		}
 
-		Vec(detail::identity_t&&) {
+		constexpr Vec(detail::identity_t&&) {
 		}
 
-		Vec() = default;
-		Vec(const Vec&) = default;
-		Vec& operator=(const Vec&) = default;
+		constexpr Vec() = default;
+		constexpr Vec(const Vec&) = default;
+		constexpr Vec& operator=(const Vec&) = default;
 
-		T length2() const {
+		constexpr T length2() const {
 			return dot(*this);
 		}
 
-		auto length() const {
+		constexpr auto length() const {
 			return std::sqrt(length2());
 		}
 
-		T dot(const Vec& o) const {
+		constexpr T dot(const Vec& o) const {
 			T sum = 0;
 			for(usize i = 0; i != N; ++i) {
 				sum += _vec[i] * o._vec[i];
@@ -121,7 +121,7 @@ class Vec
 			return sum;
 		}
 
-		Vec cross(const Vec& o) const {
+		constexpr Vec cross(const Vec& o) const {
 			Vec v;
 			for(usize i = 0; i != N; ++i) {
 				v[i] = _vec[(i + 1) % N] * o._vec[(i + 2) % N] - _vec[(i + 2) % N] * o._vec[(i + 1) % N];
@@ -129,19 +129,19 @@ class Vec
 			return v;
 		}
 
-		void normalize() {
+		constexpr void normalize() {
 			if(!is_zero()) {
 				operator*=(1.0f / length());
 			}
 		}
 
-		Vec normalized() const {
+		constexpr Vec normalized() const {
 			Vec v(*this);
 			v.normalize();
 			return v;
 		}
 
-		Vec abs() const {
+		constexpr Vec abs() const {
 			static_assert(std::is_signed_v<T>, "Vec<T>::abs makes no sense for T unsigned");
 			Vec v;
 			for(usize i = 0; i != N; ++i) {
@@ -150,7 +150,7 @@ class Vec
 			return v;
 		}
 
-		Vec saturated() const {
+		constexpr Vec saturated() const {
 			Vec v;
 			for(usize i = 0; i != N; ++i) {
 				v[i] = std::clamp(_vec[i], T(0), T(1));
@@ -158,7 +158,7 @@ class Vec
 			return v;
 		}
 
-		Vec max(const Vec& v) const {
+		constexpr Vec max(const Vec& v) const {
 			Vec m;
 			for(usize i = 0; i != N; ++i) {
 				m[i] = std::max(_vec[i], v[i]);
@@ -166,7 +166,7 @@ class Vec
 			return m;
 		}
 
-		Vec min(const Vec& v) const {
+		constexpr Vec min(const Vec& v) const {
 			Vec m;
 			for(usize i = 0; i != N; ++i) {
 				m[i] = std::min(_vec[i], v[i]);
@@ -174,52 +174,52 @@ class Vec
 			return m;
 		}
 
-		T& x() {
+		constexpr T& x() {
 			return _vec[0];
 		}
 
-		const T& x() const {
+		constexpr const T& x() const {
 			return _vec[0];
 		}
 
-		T& y() {
+		constexpr T& y() {
 			static_assert(N > 1, "Accessing out of bound member");
 			return _vec[1];
 		}
 
-		const T& y() const {
+		constexpr const T& y() const {
 			static_assert(N > 1, "Accessing out of bound member");
 			return _vec[1];
 		}
 
-		T& z() {
+		constexpr T& z() {
 			static_assert(N > 2, "Accessing out of bound member");
 			return _vec[2];
 		}
 
-		const T& z() const {
+		constexpr const T& z() const {
 			static_assert(N > 2, "Accessing out of bound member");
 			return _vec[2];
 		}
 
-		T& w() {
+		constexpr T& w() {
 			static_assert(N > 3, "Accessing out of bound member");
 			return _vec[3];
 		}
 
-		const T& w() const {
+		constexpr const T& w() const {
 			static_assert(N > 3, "Accessing out of bound member");
 			return _vec[3];
 		}
 
 		template<usize M>
-		const Vec<M, T>& to() const {
+		constexpr const Vec<M, T>& to() const {
 			static_assert(M <= N, "Accessing out of bound member");
 			return reinterpret_cast<const Vec<M, T>&>(*this);
 		}
 
 		template<usize M>
-		Vec<M, T>& to() {
+		constexpr Vec<M, T>& to() {
 			static_assert(M <= N, "Accessing out of bound member");
 			return reinterpret_cast<Vec<M, T>&>(*this);
 		}
@@ -235,7 +235,7 @@ class Vec
 			return v;
 		}
 
-		bool is_zero() const {
+		constexpr bool is_zero() const {
 			for(usize i = 0; i != N; ++i) {
 				if(_vec[i]) {
 					return false;
@@ -244,43 +244,43 @@ class Vec
 			return true;
 		}
 
-		const_iterator begin() const {
+		constexpr const_iterator begin() const {
 			return _vec;
 		}
 
-		const_iterator end() const {
+		constexpr const_iterator end() const {
 			return _vec + N;
 		}
 
-		const_iterator cbegin() const {
+		constexpr const_iterator cbegin() const {
 			return _vec;
 		}
 
-		const_iterator cend() const {
+		constexpr const_iterator cend() const {
 			return _vec + N;
 		}
 
-		iterator begin() {
+		constexpr iterator begin() {
 			return _vec;
 		}
 
-		iterator end() {
+		constexpr iterator end() {
 			return _vec + N;
 		}
 
-		T* data() {
+		constexpr T* data() {
 			return _vec;
 		}
 
-		const T* data() const {
+		constexpr const T* data() const {
 			return _vec;
 		}
 
-		T& operator[](usize i) {
+		constexpr T& operator[](usize i) {
 			return _vec[i];
 		}
 
-		const T& operator[](usize i) const {
+		constexpr const T& operator[](usize i) const {
 			return _vec[i];
 		}
 
@@ -289,19 +289,19 @@ class Vec
 		}
 
 		template<usize I>
-		const T& get() const {
+		constexpr const T& get() const {
 			static_assert(I < N, "Accessing out of bound member");
 			return _vec[I];
 		}
 
 		template<usize I>
-		void set(const T& t) {
+		constexpr void set(const T& t) {
 			static_assert(I < N, "Accessing out of bound member");
 			_vec[I] = t;
 		}
 
 
-		bool operator!=(const Vec<N, T>& o) const {
+		constexpr bool operator!=(const Vec<N, T>& o) const {
 			for(usize i = 0; i != N; ++i) {
 				if(o._vec[i] != _vec[i]) {
 					return true;
@@ -310,11 +310,11 @@ class Vec
 			return false;
 		}
 
-		bool operator==(const Vec<N, T>& o) const {
+		constexpr bool operator==(const Vec<N, T>& o) const {
 			return !operator!=(o);
 		}
 
-		Vec operator-() const {
+		constexpr Vec operator-() const {
 			Vec t;
 			for(usize i = 0; i != N; ++i) {
 				t[i] = -_vec[i];
@@ -322,28 +322,28 @@ class Vec
 			return t;
 		}
 
-		Vec& operator*=(const T& t) {
+		constexpr Vec& operator*=(const T& t) {
 			for(usize i = 0; i != N; ++i) {
 				_vec[i] *= t;
 			}
 			return *this;
 		}
 
-		Vec& operator/=(const T& t) {
+		constexpr Vec& operator/=(const T& t) {
 			for(usize i = 0; i != N; ++i) {
 				_vec[i] /= t;
 			}
 			return *this;
 		}
 
-		Vec& operator+=(const T& t) {
+		constexpr Vec& operator+=(const T& t) {
 			for(usize i = 0; i != N; ++i) {
 				_vec[i] += t;
 			}
 			return *this;
 		}
 
-		Vec& operator-=(const T& t) {
+		constexpr Vec& operator-=(const T& t) {
 			for(usize i = 0; i != N; ++i) {
 				_vec[i] -= t;
 			}
@@ -352,28 +352,28 @@ class Vec
 
 
 
-		Vec& operator*=(const Vec& v) {
+		constexpr Vec& operator*=(const Vec& v) {
 			for(usize i = 0; i != N; ++i) {
 				_vec[i] *= v[i];
 			}
 			return *this;
 		}
 
-		Vec& operator/=(const Vec& v) {
+		constexpr Vec& operator/=(const Vec& v) {
 			for(usize i = 0; i != N; ++i) {
 				_vec[i] /= v[i];
 			}
 			return *this;
 		}
 
-		Vec& operator+=(const Vec& v) {
+		constexpr Vec& operator+=(const Vec& v) {
 			for(usize i = 0; i != N; ++i) {
 				_vec[i] += v[i];
 			}
 			return *this;
 		}
 
-		Vec& operator-=(const Vec& v) {
+		constexpr Vec& operator-=(const Vec& v) {
 			for(usize i = 0; i != N; ++i) {
 				_vec[i] -= v[i];
 			}
@@ -381,9 +381,9 @@ class Vec
 		}
 
 
-		Vec& operator=(const T& v) {
+		constexpr Vec& operator=(const T& v) {
 			for(usize i = 0; i != N; ++i) {
-				_vec[i] -= v;
+				_vec[i] = v;
 			}
 			return *this;
 		}

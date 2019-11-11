@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +59,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
 	const auto& descriptor_set = pass->descriptor_sets()[0];
 
-	recorder.bind_attrib_buffers({transforms, transforms});
+	recorder.bind_attrib_buffers({}, {transforms});
 
 	for(const auto& [tr, me] : world.view(StaticMeshArchetype()).components()) {
 		transform_mapping[index] = tr.transform();

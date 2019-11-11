@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -48,6 +48,10 @@ Semaphore::Semaphore(DevicePtr dptr) : _semaphore(std::make_shared<Shared>(dptr)
 
 DevicePtr Semaphore::device() const {
 	return _semaphore ? _semaphore->device() : nullptr;
+}
+
+bool Semaphore::is_null() const {
+	return !device();
 }
 
 vk::Semaphore Semaphore::vk_semaphore() const {

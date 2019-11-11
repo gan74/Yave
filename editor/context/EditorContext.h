@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -79,6 +79,8 @@ class EditorContext : NonMovable, public DeviceLinked {
 		Logs& logs();
 
 	private:
+		static ecs::EntityWorld create_editor_world();
+
 		std::unique_ptr<FileSystemModel> _filesystem;
 
 		std::mutex _deferred_lock;

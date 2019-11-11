@@ -1,6 +1,6 @@
 
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ class FolderAssetStore final : public AssetStore {
 		AssetId id;
 
 		y_serde2(id, name)
+		y_serde3(id, name)
 	};
 
 	// same as LocalFileSystemModel but rooted in a folder

@@ -23,12 +23,13 @@ SOFTWARE.
 #define YAVE_DEVICE_DEVICE_H
 
 #include <yave/yave.h>
+
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
 #include "DeviceResources.h"
 #include "LifetimeManager.h"
 
-#include "extentions/DebugMarker.h"
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/queues/QueueFamily.h>
@@ -53,6 +54,7 @@ class Device : NonMovable {
 		const Instance& instance() const;
 
 		DeviceMemoryAllocator& allocator() const;
+		DescriptorSetAllocator& descriptor_set_allocator() const;
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
 
@@ -72,11 +74,12 @@ class Device : NonMovable {
 		vk::Device vk_device() const;
 		vk::Sampler vk_sampler() const;
 
-		const DebugMarker* debug_marker() const;
+		const DebugUtils* debug_utils() const;
+
 
 		template<typename T>
-		auto create_descriptor_set_layout(T&& t) const {
-			return thread_device()->create_descriptor_set_layout(y_fwd(t));
+		auto&& descriptor_set_layout(T&& t) const {
+			return descriptor_set_allocator().descriptor_set_layout(y_fwd(t));
 		}
 
 		template<typename T>
@@ -112,12 +115,10 @@ class Device : NonMovable {
 		mutable concurrent::SpinLock _lock;
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
+		mutable DescriptorSetAllocator _descriptor_set_allocator;
+
+		// this needs to be at the very bottom since it holds handles to resources and stuff
 		DeviceResources _resources;
-
-		struct {
-			std::unique_ptr<DebugMarker> debug_marker;
-		} _extensions;
-
 };
 
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,17 +40,10 @@ class FrameGraphPassBuilder {
 			return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * size));
 		}
 
-
-
-		void add_texture_input(FrameGraphImageId res, PipelineStage stage);
+		void add_image_input_usage(FrameGraphImageId res, ImageUsage usage);
 
 		void add_depth_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
 		void add_color_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear);
-
-		void add_copy_src(FrameGraphImageId res);
-		void add_copy_dst(FrameGraphMutableImageId res);
-		void add_copy_src(FrameGraphBufferId res);
-		void add_copy_dst(FrameGraphMutableBufferId res);
 
 		void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
 		void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
@@ -74,19 +67,19 @@ class FrameGraphPassBuilder {
 
 		void set_render_func(FrameGraphPass::render_func&& func);
 
-		void add_descriptor_binding(Binding bind, usize ds_index = 0);
+		void add_descriptor_binding(Descriptor bind, usize ds_index = 0);
 
 	private:
 		friend class FrameGraph;
 
 		FrameGraphPassBuilder(FrameGraphPass* pass);
 
-		void add_to_pass(FrameGraphImageId res, ImageUsage usage, PipelineStage stage);
-		void add_to_pass(FrameGraphBufferId res, BufferUsage usage, PipelineStage stage);
+		void add_to_pass(FrameGraphImageId res, ImageUsage usage, bool is_written, PipelineStage stage);
+		void add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage);
 
 		void add_uniform(FrameGraphDescriptorBinding binding, usize ds_index);
 
-		void set_cpu_visible(FrameGraphMutableBufferId res);
+		void set_cpu_visible(FrameGraphMutableBufferId res); 
 
 		FrameGraph* parent();
 

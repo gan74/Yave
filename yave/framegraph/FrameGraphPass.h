@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <y/core/Functor.h>
 
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/buffers/buffers.h>
@@ -56,9 +56,9 @@ class FrameGraphPass final : NonMovable {
 		const FrameGraphResourcePool* resources() const;
 
 		const Framebuffer& framebuffer() const;
-		core::ArrayView<DescriptorSet> descriptor_sets() const;
+		core::Span<DescriptorSet> descriptor_sets() const;
 
-		void render(CmdBufferRecorder& recorder) const;
+		void render(CmdBufferRecorder& recorder) &&;
 
 	private:
 		friend class FrameGraph;
@@ -84,9 +84,6 @@ class FrameGraphPass final : NonMovable {
 		core::Vector<Attachment> _colors;
 
 		Framebuffer _framebuffer;
-
-		core::Vector<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> _image_copies;
-		//core::Vector<std::pair<FrameGraphBufferId, FrameGraphMutableBufferId>> _buffer_copies;
 };
 
 }

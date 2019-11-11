@@ -32,10 +32,12 @@ namespace yave {
 
 
 static vk::SurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, vk::SurfaceKHR surface) {
+	y_profile();
 	return dptr->physical_device().vk_physical_device().getSurfaceCapabilitiesKHR(surface);
 }
 
 static vk::SurfaceFormatKHR get_surface_format(DevicePtr dptr, vk::SurfaceKHR surface) {
+	y_profile();
 	return dptr->physical_device().vk_physical_device().getSurfaceFormatsKHR(surface).front();
 }
 
@@ -108,12 +110,13 @@ static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE instance, HWND ha
 	if(!has_wsi_support(dptr, surface)) {
 		y_fatal("No WSI support.");
 	}
-	log_msg("Vulkan WSI supported !");
+	log_msg("Vulkan WSI supported!");
 	return surface;
 }
 #endif
 
 static vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
+	y_profile();
 	#ifdef Y_OS_WIN
 		return create_surface(dptr, window->instance(), window->handle());
 	#endif
@@ -181,23 +184,26 @@ void Swapchain::build_swapchain() {
 		return;
 	}
 
-	_swapchain = device()->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
-			.setImageUsage(image_usage_flags)
-			.setImageSharingMode(vk::SharingMode::eExclusive)
-			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-			.setImageArrayLayers(1)
-			.setClipped(true)
-			.setSurface(_surface)
-			.setPreTransform(capabilities.currentTransform)
-			.setImageFormat(format.format)
-			.setImageColorSpace(format.colorSpace)
-			.setImageExtent(capabilities.currentExtent)
-			.setMinImageCount(get_image_count(capabilities))
-			.setPresentMode(get_present_mode(device(), _surface))
-			.setOldSwapchain(_swapchain)
-		);
+	{
+		y_profile_zone("create swapchain");
+		_swapchain = device()->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
+				.setImageUsage(image_usage_flags)
+				.setImageSharingMode(vk::SharingMode::eExclusive)
+				.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
+				.setImageArrayLayers(1)
+				.setClipped(true)
+				.setSurface(_surface)
+				.setPreTransform(capabilities.currentTransform)
+				.setImageFormat(format.format)
+				.setImageColorSpace(format.colorSpace)
+				.setImageExtent(capabilities.currentExtent)
+				.setMinImageCount(get_image_count(capabilities))
+				.setPresentMode(get_present_mode(device(), _surface))
+				.setOldSwapchain(_swapchain)
+			);
+	}
 
-
+	y_profile_zone("image setup");
 	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
 		auto view = create_image_view(device(), image, _color_format.vk_format());
 

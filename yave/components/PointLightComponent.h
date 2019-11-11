@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,14 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
 #define YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
 
-#include <yave/yave.h>
+#include <yave/ecs/ecs.h>
+
+#include "TransformableComponent.h"
 
 namespace yave {
 
-class PointLightComponent final {
+
+class PointLightComponent final : public ecs::RequiredComponents<TransformableComponent> {
 	public:
 		PointLightComponent() = default;
 
@@ -39,10 +42,14 @@ class PointLightComponent final {
 		float& radius();
 		float radius() const;
 
+		float& falloff();
+		float falloff() const;
+
 	private:
 		math::Vec3 _color = math::Vec3{1.0f};
 		float _intensity = 1.0f;
 		float _radius = 1.0f;
+		float _falloff = 1.0f;
 };
 
 }

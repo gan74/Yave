@@ -30,12 +30,16 @@ namespace y {
 namespace concurrent {
 
 class SpinLock : NonCopyable {
-
-	static constexpr usize yield_threshold = usize(-1);
-
+#ifndef Y_DEBUG
 	using Type = bool;
 	static constexpr Type Locked = true;
 	static constexpr Type Unlocked = false;
+#else
+	using Type = u32;
+	static constexpr Type Destroyed = 2;
+	static constexpr Type Locked = 1;
+	static constexpr Type Unlocked = 0;
+#endif
 
 	public:
 		SpinLock();

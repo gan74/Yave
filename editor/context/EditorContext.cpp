@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/SQLiteAssetStore.h>
 
+#include <editor/components/EditorComponent.h>
+
 #include <y/io2/File.h>
 
 namespace editor {
@@ -42,7 +44,9 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		_scene_view(&_default_scene_view),
 		_ui(this),
 		_thumb_cache(this),
-		_picking_manager(this) {
+		_picking_manager(this),
+		_world(create_editor_world()) {
+
 
 	load_world();
 }
@@ -160,8 +164,10 @@ Logs& EditorContext::logs() {
 	return _logs;
 }
 
+static constexpr std::string_view world_file = "world.yw";
+
 void EditorContext::save_world() const {
-	auto file = io2::File::create("world.yw");
+	auto file = io2::File::create(world_file);
 	if(!file) {
 		log_msg("Unable to open file.", Log::Error);
 		return;
@@ -169,29 +175,63 @@ void EditorContext::save_world() const {
 
 	WritableAssetArchive ar(file.unwrap());
 	if(!_world.serialize(ar)) {
-		log_msg("Unable to serialize world.", Log::Error);
+		log_msg("Unable to save world.", Log::Error);
 	}
+
+	/*{
+		auto file = io2::File::create(fmt("%.2", world_file));
+		if(!file) {
+			log_msg("Unable to open file.", Log::Error);
+			return;
+		}
+		serde3::WritableArchive arc(std::move(file.unwrap()));
+		if(!arc.serialize(_world)) {
+			log_msg("Unable to save world.", Log::Error);
+		}
+	}*/
 }
 
 void EditorContext::load_world() {
-	auto file = io2::File::open("world.yw");
+	auto file = io2::File::open(world_file);
 	if(!file) {
 		log_msg("Unable to open file.", Log::Error);
 		return;
 	}
 
-	ecs::EntityWorld world;
+	ecs::EntityWorld world = create_editor_world();
+
 	ReadableAssetArchive ar(file.unwrap(), _loader);
 	if(!world.deserialize(ar)) {
-		log_msg("Unable to deserialize world.", Log::Error);
+		log_msg("Unable to load world.", Log::Error);
 		return;
 	}
 
+	/*{
+		ecs::EntityWorld world2 = create_editor_world();
+		auto file = io2::File::create(fmt("%.2", world_file));
+		if(!file) {
+			log_msg("Unable to open file.", Log::Error);
+			return;
+		}
+		serde3::ReadableArchive arc(std::move(file.unwrap()));
+		if(!arc.deserialize(world2)) {
+			log_msg("Unable to load world.", Log::Error);
+		}
+	}*/
+
 	_world = std::move(world);
+	y_debug_assert(_world.required_component_types().size() == 1);
 }
 
 void EditorContext::new_world() {
-	_world = ecs::EntityWorld();
+	_world = create_editor_world();
+}
+
+ecs::EntityWorld EditorContext::create_editor_world() {
+	ecs::EntityWorld world;
+	world.add_required_component_type<EditorComponent>();
+	y_debug_assert(world.required_component_types().size() == 1);
+	return world;
 }
 
 }

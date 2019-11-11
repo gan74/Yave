@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,46 +29,57 @@ SOFTWARE.
 
 #include <yave/ecs/EntityId.h>
 
+#include "CameraController.h"
+
 namespace editor {
 
 class EngineView final : public Widget, public ContextLinked {
 
 	public:
-		enum class ViewMode {
+		enum class RenderView {
 			Lit,
-			Color,
-			Normals,
+			Albedo,
+			Normal,
+			Metallic,
+			Roughness,
 
 			Depth,
 
-			Max,
+			MaxRenderViews
 		};
 
 		EngineView(ContextPtr cptr);
-		~EngineView();
+		~EngineView() override;
 
 	private:
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+		void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
+
+		void before_paint() override;
+		void after_paint() override;
 
 	private:
 		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
+		void draw(CmdBufferRecorder& recorder);
+		void draw_menu_bar();
+		void draw_gizmo_tool_bar();
+
+		bool is_clicked() const;
+
+		void update_proj();
 		void update();
-		void update_camera();
-		void update_selection();
 		void update_picking();
 
+		RenderView _view = RenderView::Lit;
+
 		std::shared_ptr<IBLData> _ibl_data;
+		EditorRendererSettings _settings;
 
 		SceneView _scene_view;
-
-		ViewMode _view_mode = ViewMode::Lit;
+		std::unique_ptr<CameraController> _camera_controller;
 
 		// subwidgets & stuff
 		Gizmo _gizmo;
-
-		math::Vec3 _picked_pos;
-		ecs::EntityId _picked_entity_id;
 };
 
 static_assert(!std::is_move_assignable_v<EngineView>);

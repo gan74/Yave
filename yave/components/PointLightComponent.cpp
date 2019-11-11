@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -47,5 +47,14 @@ float& PointLightComponent::radius() {
 float PointLightComponent::radius() const {
 	return _radius;
 }
+
+float& PointLightComponent::falloff() {
+	return _falloff;
+}
+
+float PointLightComponent::falloff() const {
+	return _falloff;
+}
+
 
 }

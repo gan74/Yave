@@ -1,0 +1,65 @@
+#version 450
+
+#include "yave.glsl"
+
+const uint group_size = 16;
+const uint thread_count = group_size * group_size;
+
+layout(local_size_x = group_size, local_size_y = group_size) in;
+
+layout(set = 0, binding = 0) writeonly buffer ToneMapping {
+	ToneMappingParams params;
+} params;
+
+layout(set = 0, binding = 1) uniform usampler2D in_histogram;
+
+shared uint histogram[thread_count];
+shared uint total;
+
+// https://bruop.github.io/exposure/
+void main() {
+	uint index = gl_LocalInvocationIndex;
+	uint colunm_id = gl_LocalInvocationID.x * group_size;
+	uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
+
+	histogram[index] = bin_size * index;
+	
+	if(index == 0) {
+		total = 0;
+	}
+
+	barrier();
+
+	atomicAdd(total, bin_size);
+
+	if(gl_LocalInvocationID.y == 0) {
+		uint sum = 0;
+		for(uint i = 0; i != group_size; ++i) {
+			sum += histogram[colunm_id + i];
+		}
+		histogram[colunm_id] = sum;
+	}
+
+	barrier();
+
+	if(index == 0) {
+		uint weighted = 0;
+		for(uint i = 0; i != group_size; ++i) {
+			weighted += histogram[i * group_size];
+		}
+
+		uint black = bin_size;
+		uint non_black = max(total, black + 1) - black;
+
+		float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
+		float avg = exp2(log_avg);
+
+		params.params.avg_luminance = avg;
+		params.params.max_lum = avg * 9.6;
+	}
+}
+
+
+
+
+

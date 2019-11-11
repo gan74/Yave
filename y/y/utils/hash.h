@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_UTILS_HASH_H
 
 #include "types.h"
+#include "name.h"
 
 namespace y {
 
@@ -35,11 +36,22 @@ constexpr void hash_combine(T& seed, T value) {
 template<typename T>
 constexpr u64 type_hash() {
 	u64 hash = 0xdeaddead;
+	Y_TODO(Replace by ct_type_name)
 	for(char c : Y_FUNCTION_NAME) {
 		hash_combine(hash, u64(c));
 	}
 	return hash;
 }
+
+template<typename T>
+constexpr u64 type_hash_2() {
+	u64 hash = 0xd5a7de585d2af52b;
+	for(char c : ct_type_name<T>()) {
+		hash_combine(hash, u64(c));
+	}
+	return hash;
+}
+
 
 template<typename T, typename... Args>
 inline auto hash(const T& t, const Args&... args) {

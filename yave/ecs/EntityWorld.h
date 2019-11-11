@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ SOFTWARE.
 #include <yave/assets/AssetType.h>
 
 #include <y/core/Result.h>
+#include <y/utils/iter.h>
 
 #include <unordered_map>
 
@@ -39,43 +40,7 @@ namespace ecs {
 
 class EntityWorld : NonCopyable {
 
-	Y_TODO(this should be in utils somewhere)
-	class ComponentTypeIterator {
-		using iterator_type = std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>>::const_iterator;
-		public:
-			ComponentTypeIterator(iterator_type it) : _it(it) {
-			}
-
-			ComponentTypeIterator& operator++() {
-				++_it;
-				return *this;
-			}
-
-			ComponentTypeIterator operator++(int) {
-				iterator_type it = _it;
-				++_it;
-				return ComponentTypeIterator(it);
-			}
-
-			bool operator==(const ComponentTypeIterator& other) const {
-				return _it == other._it;
-			}
-
-			bool operator!=(const ComponentTypeIterator& other) const {
-				return _it != other._it;
-			}
-
-			const ComponentTypeIndex& operator*() const {
-				return _it->first;
-			}
-
-			const ComponentTypeIndex* operator->() const {
-				return &_it->first;
-			}
-
-		private:
-			iterator_type _it;
-	};
+	using ComponentTypeIterator = TupleMemberIterator<0, std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>>::const_iterator>;
 
 	public:
 		template<typename... Args>
@@ -103,32 +68,38 @@ class EntityWorld : NonCopyable {
 		serde2::Result deserialize(ReadableAssetArchive& reader);
 
 
+		template<typename T>
+		void add_required_component_type() {
+			static_assert(std::is_default_constructible_v<T>);
+			_required_components << index_for_type<T>();
+			for(EntityId id : entities()) {
+				create_component<T>(id);
+			}
+		}
+
 
 		core::Result<void> create_component(EntityId id, ComponentTypeIndex type) {
+			y_debug_assert(exists(id));
 			if(ComponentContainerBase* cont = container(type)) {
-				return cont->create_empty(id);
+				return cont->create_one(*this, id);
 			}
 			return core::Err();
 		}
 
 		template<typename T, typename... Args>
 		T& create_component(EntityId id, Args&&... args) {
-			return container<T>()->template create<T>(id, y_fwd(args)...);
+			y_debug_assert(exists(id));
+			return container<T>()->template create<T>(*this, id, y_fwd(args)...);
 		}
 
 		template<typename T, typename... Args>
-		T& create_or_find_component(EntityId id, Args&&... args) {
-			return container<T>()->template create_or_find<T>(id, y_fwd(args)...);
-		}
-
-		template<typename T, typename... Args>
-		auto create_components(EntityId id) {
+		void create_components(EntityId id) {
+			y_debug_assert(exists(id));
 			create_component<T>(id);
 			if constexpr(sizeof...(Args)) {
 				create_components<Args...>(id);
 			}
 		}
-
 
 
 		template<typename T>
@@ -154,7 +125,7 @@ class EntityWorld : NonCopyable {
 
 		template<typename T>
 		bool has(EntityId id) const {
-			if(!exists(id) ) {
+			if(!exists(id)) {
 				return false;
 			}
 			const ComponentContainerBase* cont = container<T>();
@@ -162,7 +133,7 @@ class EntityWorld : NonCopyable {
 		}
 
 		bool has(EntityId id, ComponentTypeIndex type) const {
-			if(!exists(id) ) {
+			if(!exists(id)) {
 				return false;
 			}
 			const ComponentContainerBase* cont = container(type);
@@ -238,11 +209,27 @@ class EntityWorld : NonCopyable {
 							   ComponentTypeIterator(_component_containers.end()));
 		}
 
+		core::Span<ComponentTypeIndex> required_component_types() const {
+			return _required_components;
+		}
 
 
-		core::String type_name(ComponentTypeIndex type) const;
+		std::string_view type_name(ComponentTypeIndex type) const;
+
+
+
+		y_serde3(_entities, _component_containers)
 
 	private:
+		struct Hash {
+			usize operator()(ComponentTypeIndex index) const {
+				return usize(index.type_hash);
+			}
+		};
+
+
+		void post_deserialization();
+
 		template<typename T>
 		ComponentContainerBase* container() {
 			auto& container = _component_containers[index_for_type<T>()];
@@ -275,11 +262,23 @@ class EntityWorld : NonCopyable {
 		const ComponentContainerBase* container(ComponentTypeIndex type) const;
 		ComponentContainerBase* container(ComponentTypeIndex type);
 
+		void add_required_components(EntityId id);
+
 		EntityIdPool _entities;
 		core::Vector<EntityId> _deletions;
 
-		std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _component_containers;
+		std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>,Hash> _component_containers;
+
+		Y_TODO(Do we have to serialize this?)
+		core::Vector<ComponentTypeIndex> _required_components;
 };
+
+
+
+template<typename... Args>
+void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityId id) {
+	world.create_components<Args...>(id);
+}
 
 }
 }

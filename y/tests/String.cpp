@@ -97,19 +97,6 @@ y_test_func("String add") {
 	y_test_assert((a + 4) == "a stringanother string4");
 }
 
-y_test_func("String from_owned") {
-	usize size = 28;
-	char* c_str = new char[size + 1];
-	std::memcpy(c_str, get_long_c_str(), size);
-	c_str[size] = 0;
-
-	auto str = String::from_owned(c_str);
-
-	usize index = size / 2;
-	++str[index];
-	y_test_assert(str[index] == get_long_c_str()[index] + 1);
-}
-
 y_test_func("String from") {
 	{
 		auto s = core::String() + 125;

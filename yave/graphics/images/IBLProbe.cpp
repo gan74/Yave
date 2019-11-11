@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@ SOFTWARE.
 #include "IBLProbe.h"
 
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/Chrono.h>
@@ -89,12 +89,12 @@ static const ComputeProgram& convolution_program(DevicePtr dptr, const Texture&)
 
 
 template<ImageType T>
-static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<ImageUsage::TextureBit, T>& texture) {
+static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::TextureBit, T>& texture) {
 	DevicePtr dptr = texture.device();
 
 	auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
 	std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
-			return DescriptorSet(dptr, {Binding(texture), Binding(view)});
+			return DescriptorSet(dptr, {Descriptor(texture), Descriptor(view)});
 		});
 
 
@@ -115,6 +115,7 @@ static void fill_probe(const core::ArrayView<ViewBase>& views, const Image<Image
 		}
 	}
 
+	// use sync compute to avoid having to sync later
 	dptr->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 }
 
@@ -127,7 +128,6 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
 		y_fatal("IBL probe is too small.");
 	}
 
-	// we need to store the views and use sync compute so we don't delete them while they are still in use
 	auto mip_views = core::vector_with_capacity<ViewBase>(probe.mipmaps());
 	for(usize i = 0; i != probe.mipmaps(); ++i) {
 		mip_views << ProbeBaseView(probe, i);

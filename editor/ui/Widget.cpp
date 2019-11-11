@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ void Widget::set_flags(u32 flags) {
 }
 
 math::Vec2ui Widget::content_size() const {
-	return math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin());
+	return (math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
 }
 
 void Widget::update_attribs() {
@@ -80,6 +80,8 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	if(!is_visible()) {
 		return;
 	}
+
+	before_paint();
 
 	if(_has_parent) {
 		if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
@@ -104,6 +106,8 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 		}
 		ImGui::End();
 	}
+
+	after_paint();
 }
 
 }

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,6 @@ SOFTWARE.
 #include <editor/properties/PropertyPanel.h>
 #include <editor/EngineView.h>
 #include <editor/ui/MenuBar.h>
-#include <editor/ui/ToolBar.h>
 
 #include <editor/ui/ImGuiRenderer.h>
 #include <imgui/yave_imgui.h>
@@ -52,7 +51,6 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 	show<ResourceBrowser>();
 	show<PropertyPanel>();
 	show<MenuBar>();
-	show<ToolBar>();
 
 	_renderer = std::make_unique<ImGuiRenderer>(context());
 }
@@ -65,11 +63,12 @@ const ImGuiRenderer& Ui::renderer() const {
 	return *_renderer;
 }
 
-core::ArrayView<std::unique_ptr<UiElement>> Ui::ui_elements() const {
+core::Span<std::unique_ptr<UiElement>> Ui::ui_elements() const {
 	return _elements;
 }
 
 bool Ui::confirm(const char* message) {
+	y_profile();
 #ifdef Y_OS_WIN
 	return MessageBox(GetActiveWindow(), message, "Confirm", MB_OKCANCEL) != IDCANCEL;
 #else
@@ -79,6 +78,7 @@ bool Ui::confirm(const char* message) {
 }
 
 void Ui::ok(const char* title, const char* message) {
+	y_profile();
 #ifdef Y_OS_WIN
 	MessageBox(GetActiveWindow(), message, title, MB_OK);
 #else
@@ -107,9 +107,11 @@ void Ui::set_id(UiElement* elem) {
 
 
 
+
 void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
 
+	ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
 	ImGui::GetIO().DisplaySize = token.image_view.size();
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking |
@@ -140,7 +142,6 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	paint_ui(recorder, token);
 
 	ImGui::End();
-	ImGui::EndFrame();
 	ImGui::Render();
 
 	{

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_CAMERA_CAMERA_H
 #define YAVE_CAMERA_CAMERA_H
 
-#include <yave/graphics/bindings/uniforms.h>
+#include <yave/graphics/descriptors/uniforms.h>
 #include "Frustum.h"
 
 namespace yave {
@@ -48,6 +48,8 @@ class Camera {
 		math::Vec3 right() const;
 		math::Vec3 up() const;
 		Frustum frustum() const;
+
+		operator uniform::LightingCamera() const;
 
 	private:
 		void update_viewproj() const;

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@ SOFTWARE.
 #define EDITOR_EDITOR_H
 
 #include <yave/yave.h>
-
+#include <editor/utils/renderdochelper.h>
 
 namespace yave {
 class SpirVData;
@@ -40,6 +40,7 @@ class EventHandler;
 class Material;
 class StaticMesh;
 class IBLData;
+class Camera;
 }
 
 namespace editor {

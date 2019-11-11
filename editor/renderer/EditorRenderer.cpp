@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,17 +22,20 @@ SOFTWARE.
 
 #include "EditorRenderer.h"
 
-
 namespace editor {
 
-EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data, const Settings& settings) {
+EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data, const EditorRendererSettings& settings) {
+	y_profile();
+
 	EditorRenderer renderer;
-	renderer.renderer = DefaultRenderer::create(framegraph, view, size, ibl_data);
-	renderer.out = renderer.renderer.tone_mapping.tone_mapped;
+	renderer.renderer = DefaultRenderer::create(framegraph, view, size, ibl_data, settings.renderer_settings);
+
+	renderer.color = renderer.renderer.color;
+	renderer.depth = renderer.renderer.depth;
 
 	if(settings.enable_editor_entities) {
-		renderer.entity_pass = EditorEntityPass::create(ctx, framegraph, view, renderer.renderer.gbuffer.depth, renderer.renderer.tone_mapping.tone_mapped);
-		renderer.out = renderer.entity_pass.color;
+		renderer.entity_pass = EditorEntityPass::create(ctx, framegraph, view, renderer.depth, renderer.color);
+		renderer.color = renderer.entity_pass.color;
 	}
 
 	return renderer;

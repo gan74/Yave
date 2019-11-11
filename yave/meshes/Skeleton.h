@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,11 +33,11 @@ class Skeleton {
 
 		Skeleton() = default;
 
-		Skeleton(core::ArrayView<Bone> bones);
+		Skeleton(core::Span<Bone> bones);
 
-		core::ArrayView<Bone> bones() const;
-		core::ArrayView<math::Transform<>> bone_transforms() const;
-		core::ArrayView<math::Transform<>> inverse_absolute_transforms() const;
+		core::Span<Bone> bones() const;
+		core::Span<math::Transform<>> bone_transforms() const;
+		core::Span<math::Transform<>> inverse_absolute_transforms() const;
 
 	private:
 		core::Vector<Bone> _bones;

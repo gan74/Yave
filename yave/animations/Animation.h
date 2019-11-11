@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +35,10 @@ class Animation {
 		Animation(float duration, core::Vector<AnimationChannel>&& channels);
 
 		y_serde2(serde2::check(fs::magic_number, AssetType::Animation, u32(4)), _duration, _channels)
+		y_serde3(_duration, _channels)
 
 		float duration() const;
-		core::ArrayView<AnimationChannel> channels() const;
+		core::Span<AnimationChannel> channels() const;
 
 		std::optional<math::Transform<>> bone_transform(const core::String& name, float time) const;
 

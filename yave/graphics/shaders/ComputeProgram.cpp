@@ -35,7 +35,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
 	auto layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
 	for(const auto& binding : bindings) {
-		layouts[binding.first] = device()->create_descriptor_set_layout(binding.second);
+		layouts[binding.first] = device()->descriptor_set_layout(binding.second).vk_descriptor_set_layout();
 	}
 	_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(u32(layouts.size()))
@@ -48,7 +48,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 		y_fatal("Incompatible specialization data.");
 	}
 
-	auto entries = data.size() ? comp.specialization_entries() : core::ArrayView<vk::SpecializationMapEntry>();
+	auto entries = data.size() ? comp.specialization_entries() : core::Span<vk::SpecializationMapEntry>();
 	auto spec_info = vk::SpecializationInfo()
 			.setMapEntryCount(entries.size())
 			.setPMapEntries(entries.data())
@@ -77,6 +77,10 @@ ComputeProgram::~ComputeProgram() {
 
 const math::Vec3ui& ComputeProgram::local_size() const {
 	return _local_size;
+}
+
+usize ComputeProgram::thread_count() const {
+	return _local_size.x() * _local_size.y() * _local_size.z();
 }
 
 vk::Pipeline ComputeProgram::vk_pipeline() const {

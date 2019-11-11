@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
 		_skeleton(skeleton),
 		_bone_transforms(new std::array<math::Transform<>, Skeleton::max_bones>()),
 		_bone_transform_buffer(dptr, Skeleton::max_bones),
-		_descriptor_set(dptr, {Binding(_bone_transform_buffer)}) {
+		_descriptor_set(dptr, {Descriptor(_bone_transform_buffer)}) {
 
 	flush_data();
 }

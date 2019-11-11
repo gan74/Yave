@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,7 @@ namespace yave {
 
 ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) :
 		DeviceLinked(dptr),
-		_disposable_cmd_pool(dptr),
-		_descriptor_layout_pool(std::make_unique<DescriptorSetLayoutPool>(dptr)) {
+		_disposable_cmd_pool(dptr) {
 }
 
 CmdBuffer<CmdBufferUsage::Disposable> ThreadLocalDevice::create_disposable_cmd_buffer() const {

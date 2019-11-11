@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,8 @@ SOFTWARE.
 **********************************/
 #ifndef YAVE_ECS_ENTITYIDPOOL_H
 #define YAVE_ECS_ENTITYIDPOOL_H
+
+#include <yave/utils/serde.h>
 
 #include "EntityId.h"
 
@@ -108,6 +110,8 @@ class EntityIdPool {
 		using iterator = Iterator<false>;
 		using const_iterator = Iterator<true>;
 
+		using value_type = EntityId;
+
 		EntityIdPool();
 
 		core::Result<void> create_with_index(EntityIndex index);
@@ -125,6 +129,8 @@ class EntityIdPool {
 		const_iterator end() const;
 
 		usize size() const;
+
+		y_serde3(_ids, _size)
 
 	private:
 		core::Vector<EntityId> _ids;

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,7 @@ static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should
 struct Bone {
 
 	y_serde2(name, parent, local_transform)
+	y_serde3(name, parent, local_transform)
 
 	core::String name;
 	u32 parent;

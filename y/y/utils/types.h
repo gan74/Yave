@@ -139,8 +139,8 @@ static auto has_end(...) -> std::false_type;
 
 template<typename T>
 using is_iterable = bool_type<
-		decltype(detail::has_begin<T>(nullptr))::value &&
-		decltype(detail::has_end<T>(nullptr))::value
+		decltype(detail::has_begin<std::remove_reference_t<T>>(nullptr))::value &&
+		decltype(detail::has_end<std::remove_reference_t<T>>(nullptr))::value
 	>;
 
 template<typename T>
@@ -155,19 +155,27 @@ template<typename T>
 using remove_cvref_t = typename remove_cvref<T>::type;
 
 
+
 namespace detail {
 template<typename T>
 using has_size_t = decltype(std::declval<T&>().size());
 template<typename T>
 using has_reserve_t = decltype(std::declval<T&>().reserve(std::declval<usize>()));
+template<typename T>
+using has_resize_t = decltype(std::declval<T&>().resize(std::declval<usize>()));
+template<typename T>
+using has_emplace_back_t = decltype(std::declval<T&>().emplace_back());
 }
 
 template<typename T>
-void try_reserve(T& t, usize size) {
-	if constexpr(is_detected_v<detail::has_reserve_t, T>) {
-		t.reserve(size);
-	}
-}
+static constexpr bool has_size_v = is_detected_v<detail::has_size_t, T>;
+template<typename T>
+static constexpr bool has_reserve_v = is_detected_v<detail::has_reserve_t, T>;
+template<typename T>
+static constexpr bool has_resize_v = is_detected_v<detail::has_resize_t, T>;
+template<typename T>
+static constexpr bool has_emplace_back_v = is_detected_v<detail::has_emplace_back_t, T>;
+
 
 }
 

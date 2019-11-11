@@ -39,21 +39,16 @@ static void check_features(const vk::PhysicalDeviceFeatures& features, const vk:
 	}
 }
 
-static core::Vector<const char*> extensions(const DebugParams& debug) {
-	auto exts = core::vector_with_capacity<const char*>(4);
-	exts << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
-
-	if(debug.debug_features_enabled()) {
-		exts << DebugMarker::name();
-	}
-
-	return exts;
+static std::array<const char*, 1> extensions() {
+	return {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 }
 
 static vk::Device create_device(
 		vk::PhysicalDevice physical,
-		const core::ArrayView<QueueFamily>& queue_families,
+		core::Span<QueueFamily> queue_families,
 		const DebugParams& debug) {
+
+	y_profile();
 
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
 
@@ -86,14 +81,15 @@ static vk::Device create_device(
 
 	check_features(physical.getFeatures(), required);
 
-	auto exts = extensions(debug);
+	auto exts = extensions();
 
+	y_profile_zone("physical device");
 	return physical.createDevice(vk::DeviceCreateInfo()
 			.setEnabledExtensionCount(u32(exts.size()))
 			.setPpEnabledExtensionNames(exts.begin())
 			.setEnabledLayerCount(u32(debug.device_layers().size()))
 			.setPpEnabledLayerNames(debug.device_layers().begin())
-			.setQueueCreateInfoCount(queue_create_infos.size())
+			.setQueueCreateInfoCount(u32(queue_create_infos.size()))
 			.setPQueueCreateInfos(queue_create_infos.begin())
 			.setPEnabledFeatures(&required)
 		);
@@ -111,11 +107,8 @@ Device::Device(Instance& instance) :
 		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
 		_allocator(this),
 		_lifetime_manager(this),
-		_sampler(this) {
-
-	if(_instance.debug_params().debug_features_enabled()) {
-		_extensions.debug_marker = std::make_unique<DebugMarker>(_device.device);
-	}
+		_sampler(this),
+		_descriptor_set_allocator(this) {
 
 	for(const auto& family : _queue_families) {
 		for(auto& queue : family.queues(this)) {
@@ -123,10 +116,23 @@ Device::Device(Instance& instance) :
 		}
 	}
 
-	_resources = DeviceResources(this);
+	{
+		y_profile_zone("device resources");
+		_resources = DeviceResources(this);
+	}
 }
 
 Device::~Device() {
+	Y_TODO(Why do we need this?)
+	{
+		CmdBufferPool<CmdBufferUsage::Disposable> pool(this);
+		CmdBufferRecorder rec = pool.create_buffer();
+		graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(rec)));
+	}
+
+	wait_all_queues();
+	_thread_devices.clear();
+	_lifetime_manager.collect();
 }
 
 const PhysicalDevice& Device::physical_device() const {
@@ -139,6 +145,10 @@ const Instance &Device::instance() const {
 
 DeviceMemoryAllocator& Device::allocator() const {
 	return _allocator;
+}
+
+DescriptorSetAllocator& Device::descriptor_set_allocator() const {
+	return _descriptor_set_allocator;
 }
 
 const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
@@ -160,9 +170,7 @@ Queue& Device::graphic_queue() {
 
 void Device::wait_all_queues() const {
 	y_profile();
-	for(const Queue& q : _queues) {
-		q.wait();
-	}
+	vk_device().waitIdle();
 }
 
 static usize generate_thread_id() {
@@ -174,10 +182,10 @@ static usize generate_thread_id() {
 
 ThreadDevicePtr Device::thread_device() const {
 	static thread_local usize thread_id = generate_thread_id();
-	static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
+	//static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
 
-	auto& cache = thread_cache;
-	if(cache.first != this) {
+	/*auto& cache = thread_cache;
+	if(cache.first != this)*/ {
 		std::unique_lock _(_lock);
 		while(_thread_devices.size() <= thread_id) {
 			_thread_devices.emplace_back();
@@ -189,10 +197,10 @@ ThreadDevicePtr Device::thread_device() const {
 		if(!data) {
 			data = std::make_unique<ThreadLocalDevice>(this);
 		}
-		cache = {this, data.get()};
+		//cache = {this, data.get()};
 		return data.get();
 	}
-	return cache.second;
+	//return cache.second;
 }
 
 const DeviceResources& Device::device_resources() const {
@@ -219,8 +227,8 @@ CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() con
 	return thread_device()->create_disposable_cmd_buffer();
 }
 
-const DebugMarker* Device::debug_marker() const {
-	return _extensions.debug_marker.get();
+const DebugUtils* Device::debug_utils() const {
+	return _instance.debug_utils();
 }
 
 

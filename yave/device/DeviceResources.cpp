@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -48,15 +48,6 @@ struct DeviceMaterialData {
 	bool blended = false;
 };
 
-static constexpr SpirV compute_spirvs[] = {
-		SpirV::EquirecConvolutionComp,
-		SpirV::CubemapConvolutionComp,
-		SpirV::BRDFIntegratorComp,
-		SpirV::DeferredLightingComp,
-		SpirV::SSAOComp,
-		SpirV::CopyComp,
-	};
-
 static constexpr DeviceMaterialData material_datas[] = {
 		{SpirV::BasicFrag, SpirV::BasicVert, true},
 		{SpirV::SkinnedFrag, SpirV::SkinnedVert, true},
@@ -64,17 +55,23 @@ static constexpr DeviceMaterialData material_datas[] = {
 		{SpirV::TexturedFrag, SpirV::BasicVert, true},
 
 		{SpirV::TonemapFrag, SpirV::ScreenVert, false},
+		{SpirV::RayleighSkyFrag, SpirV::ScreenVert, true},
 	};
 
 static constexpr const char* spirv_names[] = {
 		"equirec_convolution.comp",
 		"cubemap_convolution.comp",
 		"brdf_integrator.comp",
-		"deferred.comp",
+		"deferred_sun.comp",
+		"deferred_locals.comp",
 		"ssao.comp",
-		"copy.comp",
+        "copy.comp",
+		"histogram_clear.comp",
+		"histogram.comp",
+		"tonemap_params.comp",
 
 		"tonemap.frag",
+		"rayleigh_sky.frag",
 		"basic.frag",
 		"skinned.frag",
 		"textured.frag",
@@ -97,13 +94,13 @@ static constexpr usize template_count = usize(MaterialTemplates::MaxMaterialTemp
 static constexpr usize texture_count = usize(Textures::MaxTextures);
 
 static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
-static_assert(sizeof(compute_spirvs) / sizeof(compute_spirvs[0]) == compute_count);
 static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == template_count);
 static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_count);
 
 // implemented in DeviceResourcesData.cpp
 MeshData cube_mesh_data();
 MeshData sphere_mesh_data();
+MeshData sweep_mesh_data();
 
 
 DeviceResources::DeviceResources(DevicePtr dptr) :
@@ -117,7 +114,7 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 	}
 
 	for(usize i = 0; i != compute_count; ++i) {
-		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[usize(compute_spirvs[i])]));
+		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[i]));
 	}
 
 	for(usize i = 0; i != template_count; ++i) {
@@ -144,9 +141,10 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 	}
 
 	{
-		_meshes = std::make_unique<AssetPtr<StaticMesh>[]>(2);
+		_meshes = std::make_unique<AssetPtr<StaticMesh>[]>(3);
 		_meshes[0] = make_asset<StaticMesh>(dptr, cube_mesh_data());
 		_meshes[1] = make_asset<StaticMesh>(dptr, sphere_mesh_data());
+		_meshes[2] = make_asset<StaticMesh>(dptr, sweep_mesh_data());
 	}
 }
 

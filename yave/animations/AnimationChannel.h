@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@ class AnimationChannel {
 		y_serialize2(_name, _keys)
 		y_deserialize2(serde2::func([](const core::String& name, core::Vector<BoneKey>&& keys) { return AnimationChannel(name, std::move(keys)); }))
 
+		y_serde3(_name, _keys)
 
 		AnimationChannel() = default;
 		AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys);
@@ -44,7 +45,7 @@ class AnimationChannel {
 
 
 		const core::String& name() const;
-		core::ArrayView<BoneKey> keys() const;
+		core::Span<BoneKey> keys() const;
 
 	private:
 		core::String _name;

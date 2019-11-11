@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,10 @@ CmdBufferData::~CmdBufferData() {
 
 DevicePtr CmdBufferData::device() const {
 	return _pool ? _pool->device() : nullptr;
+}
+
+bool CmdBufferData::is_null() const {
+	return !device();
 }
 
 CmdBufferPoolBase* CmdBufferData::pool() const {
@@ -106,7 +110,7 @@ CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferData&& d) : _data(std::move(d)) 
 }
 
 CmdBufferDataProxy::~CmdBufferDataProxy() {
-	if(_data.device()) {
+	if(!_data.is_null()) {
 		_data.device()->lifetime_manager().recycle(std::move(_data));
 		//_data.pool()->release(std::move(_data));
 	}

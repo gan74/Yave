@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -86,9 +86,9 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness/Metallic"};
 	for(usize i = 0; i != data.textures().size(); ++i) {
-		ImGui::CollapsingHeader(texture_names[i], ImGuiTreeNodeFlags_DefaultOpen);
+		//ImGui::CollapsingHeader(texture_names[i], ImGuiTreeNodeFlags_DefaultOpen);
 
-		if(imgui::asset_selector(context(), data.textures()[i].id(), AssetType::Image)) {
+		if(imgui::asset_selector(context(), data.textures()[i].id(), AssetType::Image, texture_names[i])) {
 			context()->ui().add<AssetSelector>(AssetType::Image)->set_selected_callback(
 				[=, ctx = context()](AssetId id) {
 					modify_and_save(ctx, material, i, id);
@@ -96,12 +96,6 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				});
 		}
 	}
-
-
-	//MaterialTemplateData& data = const_cast<MaterialTemplateData&>(context()->selection().material()->data());
-	//ImGui::Text("Binding count: %d", i32(data._bindings.size()));
-
-	//ImGui::Checkbox("depth tested", &data._depth_tested);
 }
 
 }

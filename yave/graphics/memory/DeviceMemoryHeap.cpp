@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -46,21 +46,26 @@ void DeviceMemoryHeap::FreeBlock::merge(const FreeBlock& block) {
 }
 
 
-DeviceMemoryHeap::DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type) :
+DeviceMemoryHeap::DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type, usize heap_size) :
 		DeviceMemoryHeapBase(dptr),
 		_memory(alloc_memory(dptr, heap_size, type_bits, type)),
+		_heap_size(heap_size),
 		_blocks({FreeBlock{0, heap_size}}),
 		_mapping(is_cpu_visible(type)
 				? static_cast<u8*>(device()->vk_device().mapMemory(_memory, 0, heap_size))
 				: nullptr
 			) {
+
+	if(_heap_size % alignment) {
+		y_fatal("Heap size is not a multiple of alignment.");
+	}
 }
 
 DeviceMemoryHeap::~DeviceMemoryHeap() {
 	if(_blocks.size() != 1) {
 		y_fatal("Not all memory has been free: heap fragmented.");
 	}
-	if(_blocks[0].offset || _blocks[0].size != heap_size) {
+	if(_blocks[0].offset || _blocks[0].size != _heap_size) {
 		y_fatal("Not all memory has been freed.");
 	}
 	if(_mapping) {
@@ -70,12 +75,15 @@ DeviceMemoryHeap::~DeviceMemoryHeap() {
 }
 
 DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {
+	y_profile();
 	return DeviceMemory(this, _memory, offset, size);
 }
 
 core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) {
+	y_profile();
 	usize size = align_size(reqs.size, alignment);
 
+	std::unique_lock lock(_lock);
 	for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
 		usize full_size = it->size;
 
@@ -118,13 +126,15 @@ void DeviceMemoryHeap::free(const DeviceMemory& memory) {
 }
 
 void DeviceMemoryHeap::free(const FreeBlock& block) {
-	y_debug_assert(block.end_offset() <= heap_size);
+	y_profile();
+	y_debug_assert(block.end_offset() <= size());
 	compact_block(block);
 }
 
 void DeviceMemoryHeap::compact_block(FreeBlock block) {
 	y_profile();
 	// sort ?
+	std::unique_lock lock(_lock);
 	bool compacted = false;
 	do {
 		compacted = false;
@@ -150,10 +160,11 @@ void DeviceMemoryHeap::unmap(const DeviceMemoryView&) {
 }
 
 usize DeviceMemoryHeap::size() const {
-	return heap_size;
+	return _heap_size;
 }
 
 usize DeviceMemoryHeap::available() const {
+	std::unique_lock lock(_lock);
 	usize tot = 0;
 	for(const auto& b : _blocks) {
 		tot += b.size;
@@ -162,6 +173,7 @@ usize DeviceMemoryHeap::available() const {
 }
 
 usize DeviceMemoryHeap::free_blocks() const {
+	std::unique_lock lock(_lock);
 	return _blocks.size();
 }
 

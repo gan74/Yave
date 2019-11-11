@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_UTILS_RENDERDOCHELPER_H
 
 #include <editor/editor.h>
+#include <y/utils.h>
 
 namespace editor {
 namespace renderdoc {
@@ -34,7 +35,7 @@ bool is_supported();
 
 inline auto capture() {
 	start_capture();
-	return ScopeExit([] { end_capture(); });
+	return y::ScopeExit([] { end_capture(); });
 }
 
 }

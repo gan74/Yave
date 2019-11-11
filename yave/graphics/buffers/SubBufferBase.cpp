@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,14 @@ SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_len, usize byte_
 }
 
 SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, base.byte_size(), 0) {
+}
+
+DevicePtr SubBufferBase::device() const {
+	return _memory.device();
+}
+
+bool SubBufferBase::is_null() const {
+	return !device();
 }
 
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
@@ -76,10 +84,6 @@ vk::DescriptorBufferInfo SubBufferBase::descriptor_info() const {
 
 vk::MappedMemoryRange SubBufferBase::memory_range() const {
 	return _memory.vk_mapped_range(_size, _offset);
-}
-
-DevicePtr SubBufferBase::device() const {
-	return _memory.device();
 }
 
 }

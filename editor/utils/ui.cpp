@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,15 +33,14 @@ SOFTWARE.
 namespace editor {
 namespace imgui {
 
-bool asset_selector(ContextPtr ctx, AssetId id, AssetType type) {
+bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text) {
 	auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
 
-	core::String asset_name = asset_type_name(type);
-	core::String no_asset = fmt("No %", asset_name);
+	core::String no_asset = fmt("No %", asset_type_name(type));
 	core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or(no_asset);
-	bool ret = ImGui::Button(fmt("%###%_%", ICON_FA_FOLDER_OPEN, id.id(), uenum(type)).data());
+	bool ret = ImGui::Button(fmt("%###%_%_%", ICON_FA_FOLDER_OPEN, id.id(), uenum(type), text.data()).data());
 	ImGui::SameLine();
-	ImGui::InputText(asset_name.data(), name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+	ImGui::InputText(text.data(), name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 	return ret;
 }
 

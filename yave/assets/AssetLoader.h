@@ -156,7 +156,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 		template<typename T>
 		auto& loader_for_type() {
 			std::unique_lock lock(_lock);
-			using Type = std::remove_cv_t<std::remove_reference_t<T>>;
+			using Type = remove_cvref_t<T>;
 			auto& loader = _loaders[typeid(Type)];
 			if(!loader) {
 				loader = std::make_unique<Loader<Type>>();
@@ -187,6 +187,11 @@ serde2::Result AssetPtr<T>::deserialize(ReadableAssetArchive& arc)  noexcept {
 	if(!arc(id)) {
 		return core::Err();
 	}
+	if(id == AssetId::invalid_id()) {
+		*this = AssetPtr();
+		return core::Ok();
+	}
+
 	auto asset = arc.loader().load<T>(id);
 	if(!asset) {
 		return core::Err();

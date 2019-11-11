@@ -55,10 +55,6 @@ String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_l
 String::ShortData::ShortData() : data{0}, length(0) {
 }
 
-String::ShortData::ShortData(const ShortData& s) {
-	std::memcpy(this, &s, sizeof(ShortData));
-}
-
 String::ShortData::ShortData(const char* str, usize len) : length(len) {
 	if(str) {
 		std::memcpy(data, str, len);
@@ -133,15 +129,6 @@ String::~String() {
 	}
 }
 
-String String::from_owned(Owner<char*> owned) {
-	usize len = std::strlen(owned);
-	String str;
-	str._l.length = len;
-	str._l.capacity = len;
-	str._l.data = owned;
-	return str;
-}
-
 void String::set_min_capacity(usize cap) {
 	if(cap > capacity() && cap > max_short_size) {
 		usize self_size = size();
@@ -214,6 +201,10 @@ void String::grow(usize new_size, char c) {
 	char* d = data();
 	std::memset(d + s, c, new_size - s);
 	d[new_size] = 0;
+}
+
+void String::resize(usize new_size, char c) {
+	grow(new_size, c);
 }
 
 

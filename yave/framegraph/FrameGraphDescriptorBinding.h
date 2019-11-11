@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "FrameGraphResourceToken.h"
 
-#include <yave/graphics/bindings/Binding.h>
+#include <yave/graphics/descriptors/Descriptor.h>
 
 namespace yave {
 
@@ -42,7 +42,7 @@ class FrameGraphDescriptorBinding {
 	};
 
 	public:
-		FrameGraphDescriptorBinding(const Binding& bind);
+		FrameGraphDescriptorBinding(const Descriptor& desc);
 
 		static FrameGraphDescriptorBinding create_storage_binding(FrameGraphBufferId res);
 		static FrameGraphDescriptorBinding create_storage_binding(FrameGraphImageId res);
@@ -50,7 +50,7 @@ class FrameGraphDescriptorBinding {
 		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphBufferId res);
 		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphImageId res);
 
-		Binding create_binding(FrameGraphResourcePool* pool) const;
+		Descriptor create_descriptor(FrameGraphResourcePool* pool) const;
 
 	private:
 		FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type);
@@ -60,7 +60,7 @@ class FrameGraphDescriptorBinding {
 		union {
 			FrameGraphImageId _image;
 			FrameGraphBufferId _buffer;
-			Binding _external;
+			Descriptor _external;
 		};
 };
 

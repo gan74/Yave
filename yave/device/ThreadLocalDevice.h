@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,6 @@ SOFTWARE.
 #define YAVE_DEVICE_THREADLOCALDEVICE_H
 
 #include <yave/graphics/vk/vk.h>
-#include <yave/graphics/bindings/DescriptorSetLayoutPool.h>
 #include <yave/graphics/commands/pool/CmdBufferPool.h>
 
 #include "DeviceLinked.h"
@@ -36,15 +35,8 @@ class ThreadLocalDevice : NonMovable, public DeviceLinked {
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
 
-		template<typename T>
-		auto create_descriptor_set_layout(T&& t) const {
-			return _descriptor_layout_pool->create_descriptor_set_layout(y_fwd(t));
-		}
-
 	private:
 		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
-
-		std::unique_ptr<DescriptorSetLayoutPool> _descriptor_layout_pool;
 };
 
 }

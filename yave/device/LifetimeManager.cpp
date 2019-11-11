@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,9 +34,20 @@ LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 LifetimeManager::~LifetimeManager() {
-	std::unique_lock lock(_lock);
+	y_debug_assert(_counter == _done_counter);
 	for(auto& r : _to_destroy) {
+		/*std::visit([](auto& r) {
+			log_msg(type_name(r));
+			if constexpr(std::is_same_v<remove_cvref_t<decltype(r)>, DescriptorSetData>) {
+				y_breakpoint;
+			}
+		}, r.second);*/
+
 		destroy_resource(r.second);
+	}
+
+	if(_in_flight.size()) {
+		y_fatal("% CmdBuffer still in flight.", _in_flight.size());
 	}
 }
 
@@ -46,55 +57,82 @@ ResourceFence LifetimeManager::create_fence() {
 
 void LifetimeManager::recycle(CmdBufferData&& cmd) {
 	y_profile();
-	std::unique_lock lock(_lock);
-	auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
-								[](const auto& a, const auto& b) { return a.resource_fence() < b.resource_fence(); });
-	_in_flight.insert(it, std::move(cmd));
 
-	if(_in_flight.front().resource_fence()._value == _done_counter + 1) {
-		collect();
+	bool run_collect = false;
+	{
+		std::unique_lock lock(_cmd_lock);
+		auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
+								   [](const auto& a, const auto& b) { return a.resource_fence() < b.resource_fence(); });
+		_in_flight.insert(it, std::move(cmd));
+		run_collect = (_in_flight.front().resource_fence()._value == _done_counter + 1);
 	}
 
-	y_debug_assert(_in_flight.size() < 256);
+	if(run_collect) {
+		collect();
+	}
 }
 
 void LifetimeManager::collect() {
-	u64 next = _done_counter;
-	while(!_in_flight.empty()) {
-		CmdBufferData& cmd = _in_flight.front();
-		u64 fence = cmd.resource_fence()._value;
-		if(fence == next + 1 && device()->vk_device().getFenceStatus(cmd.vk_fence()) == vk::Result::eSuccess) {
-			if(cmd.pool()) {
-				cmd.pool()->release(std::move(cmd));
+	y_profile();
+
+	u64 next = 0;
+	bool clear = false;
+
+	{
+		std::unique_lock lock(_cmd_lock);
+		next = _done_counter;
+		while(!_in_flight.empty()) {
+			CmdBufferData& cmd = _in_flight.front();
+			u64 fence = cmd.resource_fence()._value;
+			if(fence != next + 1) {
+				break;
 			}
 
-			next = fence;
-			_in_flight.pop_front();
-		} else {
-			break;
+			if(device()->vk_device().getFenceStatus(cmd.vk_fence()) == vk::Result::eSuccess) {
+				if(cmd.pool()) {
+					cmd.pool()->release(std::move(cmd));
+				}
+
+				next = fence;
+				_in_flight.pop_front();
+			} else {
+				break;
+			}
+		}
+
+		if(next != _done_counter) {
+			clear = true;
+			_done_counter = next;
 		}
 	}
-	if(next != _done_counter) {
-		clear_resources(_done_counter = next);
+
+	if(clear) {
+		clear_resources(next);
 	}
 }
 
 usize LifetimeManager::pending_deletions() const {
-	std::unique_lock lock(_lock);
+	std::unique_lock lock(_resource_lock);
 	return _to_destroy.size();
 }
 
 usize LifetimeManager::active_cmd_buffers() const {
-	std::unique_lock lock(_lock);
+	std::unique_lock lock(_cmd_lock);
 	return _in_flight.size();
 }
 
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
+	y_profile();
 	std::visit(
 		[dptr = device()](auto& res) {
 			if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
+				y_profile_zone("Memory");
 				res.free();
+			} else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
+				y_profile_zone("Descriptor set");
+				res.recycle();
 			} else {
+				y_profile_zone("Vk resource");
 				detail::destroy(dptr, res);
 			}
 		},
@@ -102,9 +140,19 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 }
 
 void LifetimeManager::clear_resources(u64 up_to) {
-	while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
-		destroy_resource(_to_destroy.front().second);
-		_to_destroy.pop_front();
+	y_profile();
+	core::Vector<ManagedResource> to_del;
+
+	{
+		std::unique_lock lock(_resource_lock);
+		while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
+			to_del << std::move(_to_destroy.front().second);
+			_to_destroy.pop_front();
+		}
+	}
+
+	for(auto& res : to_del) {
+		destroy_resource(res);
 	}
 }
 

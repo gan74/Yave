@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,9 @@ struct ReadableArchive;
 
 namespace io2 {
 
+class File;
+class Buffer;
+
 using ReadUpToResult = core::Result<usize, usize>;
 using ReadResult = core::Result<void, usize>;
 using WriteResult = core::Result<void, usize>;
@@ -49,6 +52,8 @@ class Reader : NonCopyable {
 		virtual ReadUpToResult read_up_to(u8* data, usize max_bytes) = 0;
 		virtual ReadUpToResult read_all(core::Vector<u8>& data) = 0;
 
+		virtual void seek(usize byte) = 0;
+		virtual usize tell() const = 0;
 
 		template<typename T>
 		ReadResult read_one(T& t) {
@@ -77,6 +82,9 @@ class Writer : NonCopyable {
 	public:
 		Writer() = default;
 		virtual ~Writer() = default;
+
+		virtual void seek(usize byte) = 0;
+		virtual usize tell() const = 0;
 
 		virtual FlushResult flush() = 0;
 		virtual WriteResult write(const u8* data, usize bytes) = 0;

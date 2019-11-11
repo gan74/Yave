@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ EcsDebug::EcsDebug(ContextPtr cptr) : Widget("ECS debug", ImGuiWindowFlags_Alway
 void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	struct Foo { int i = 0; }; struct Bar { int i = 0; };
 	struct Quux { int i = 0; }; struct Cmp { int i = 0; }; struct Bli { int i = 0; };
+	struct Required : ecs::RequiredComponents<Bli> {};
 	ecs::EntityWorld& world = context()->world();
 
 
@@ -56,19 +57,24 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		if(ImGui::Button("Add component")) {
 			math::FastRandom rng(core::Chrono::program().to_nanos());
 
-			world.create_or_find_component<Foo>(_id);
+			world.create_component<Foo>(_id);
 			if(rng() % 2 == 0) {
-				world.create_or_find_component<Bar>(_id);
+				world.create_component<Bar>(_id);
 			}
 			if(rng() % 3 == 0) {
-				world.create_or_find_component<Quux>(_id);
+				world.create_component<Quux>(_id);
 			}
 			if(rng() % 4 == 0) {
-				world.create_or_find_component<Cmp>(_id);
+				world.create_component<Cmp>(_id);
 			}
 			if(rng() % 5 == 0) {
-				world.create_or_find_component<Bli>(_id);
+				world.create_component<Bli>(_id);
 			}
+		}
+
+		ImGui::SameLine();
+		if(ImGui::Button("Add required component")) {
+			world.create_component<Required>(_id);
 		}
 	}
 
@@ -101,11 +107,6 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		} else {
 			log_msg("Unable to open file.");
 		}
-	}
-
-	ImGui::SameLine();
-	if(ImGui::Button(ICON_FA_REDO " Reset")) {
-		world = ecs::EntityWorld();
 	}
 
 	ImGui::Spacing();
@@ -145,10 +146,10 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				continue;
 			}
 
-			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %###%", comp->name(), id.index()).data())) {
+			if(ImGui::TreeNode(fmt(ICON_FA_CUBE " %##%", comp->name(), id.index()).data())) {
 				usize index = 0;
 				for(const core::String& n : entities[id.index()]) {
-					ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %###%", n, index++).data());
+					ImGui::Selectable(fmt(ICON_FA_PUZZLE_PIECE " %##%", n, index++).data());
 				}
 				ImGui::TreePop();
 			}

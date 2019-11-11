@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ static math::Vec3 extract_right(const math::Matrix4<>& view) {
 }
 
 static math::Vec3 extract_up(const math::Matrix4<>& view) {
-	return view.row(1).to<3>().normalized();
+	return -view.row(1).to<3>().normalized();
 }
 
 
@@ -123,6 +123,14 @@ math::Vec3 Camera::up() const {
 
 Frustum Camera::frustum() const {
 	return extract_frustum(viewproj_matrix());
+}
+
+Camera::operator uniform::LightingCamera() const {
+	uniform::LightingCamera camera_data;
+	camera_data.inv_matrix = inverse_matrix();
+	camera_data.position = position();
+	camera_data.forward = forward();
+	return camera_data;
 }
 
 }

@@ -27,13 +27,12 @@ The editor is currently unusable but I am working on it.
  * editor: A scene editor build on top of yave
  * shaders: All the shaders for both the engine and the editor
  * external: Third party libraries
- * tools: Tools to create yave assets, should be moved into the editor soon 
 
 
 ## Building
 You need:
  * CMake (3.7)
- * A C++17 compiler (GCC 7.1)
+ * A C++17 compiler (such as GCC 9.2)
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
  * For tools:
    * [Assimp](http://assimp.sourceforge.net/)
@@ -51,6 +50,8 @@ Implemented features:
  * Compute shaders
  * Swapchain
  * Framebuffers
+ * Resources lifetime management
+ * Framegraph
  * Rendering pipeline
    * Tiled deferred shader
      * Physically based lighting
@@ -70,38 +71,49 @@ MIT
 
 
 ### Y
+- [X] Log callbacks
 - [ ] Finish allocators
 - [ ] Rewrite SmallVector (with new allocators)
 - [ ] Rename ArrayView to Span and MutableSpan
 - [ ] DenseMap (Is SparseVector enough?)
-- [ ] Log callbacks
+- [ ] Basic reflection
+- [ ] More robust serialization
 
 ### Framegraph
 - [X] Barriers
 - [X] Reuse resources over frames
-- [ ] Resource aliasing
+- [X] Resource aliasing to avoid copies
+- [ ] Merge mapped buffers
 
 ### Engine
 - [X] Asset saving and loading
 - [X] Integrate ECS
+- [X] Switch to VK_EXT_debug_utils
+- [X] Sky
 - [ ] Make assets easily serializable
 - [ ] Culling
 - [ ] Batching system
 - [ ] Streaming
-- [ ] Material system
+- [ ] Proper material system
 - [ ] Shadows
 - [ ] GI
-- [ ] Sky
 - [ ] Spot lights
+- [ ] Actual tone mapping
 
 ### Editor
 - [X] Integrate ECS
+- [X] Open several views
+- [X] Rotation 
+- [X] Create materials 
+- [X] Editor only entities 
 - [ ] Save open widgets
-- [ ] Open several views
-- [ ] Rotation & scale 
-- [ ] Create materials 
-- [ ] Edit object mesh/materials 
-- [ ] Tool entities 
-
+- [ ] Scale 
+- [ ] Edit materials
+- [ ] Prefabs
+- [ ] Better save system
+- [ ] Undo/redo
+- [ ] Integrated profiler
+- [ ] Edit shaders?
+- [ ] Edit or create meshes?
 
 

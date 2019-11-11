@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ inline auto log_func(const char* func, const char* cat = "") {
 }
 
 #ifdef Y_PERF_LOG_ENABLED
-#define y_profile() auto y_create_name_with_prefix(prof) = y::perf::log_func(__PRETTY_FUNCTION__)
+#define y_profile() auto y_create_name_with_prefix(prof) = y::perf::log_func(Y_FUNCTION_NAME)
 #define y_profile_zone(name) auto y_create_name_with_prefix(prof) = y::perf::log_func(name)
 #else
 #define y_profile_zone(cat) do {} while(false)

@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "Instance.h"
 
+#include "extentions/DebugUtils.h"
+
 namespace yave {
 
 Instance::Instance(DebugParams debug) : _debug_params(debug) {
@@ -29,16 +31,16 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 	extention_names = {VK_KHR_SURFACE_EXTENSION_NAME};
 
 	if(_debug_params.debug_features_enabled()) {
-		extention_names << DebugCallback::name();
+		//extention_names << DebugCallback::name();
+		extention_names << DebugUtils::name();
 	}
-
 
 	#ifdef Y_OS_WIN
 		extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 	#endif
 
 	auto app_info = vk::ApplicationInfo()
-			.setApiVersion(VK_MAKE_VERSION(1, 0, 0))
+			.setApiVersion(VK_MAKE_VERSION(1, 1, 0))
 			.setPApplicationName("Yave")
 			.setPEngineName("Yave")
 		;
@@ -52,7 +54,9 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 		);
 
 	if(_debug_params.debug_features_enabled()) {
-		_extensions.debug_callback = std::make_unique<DebugCallback>(_instance);
+		log_msg("Vulkan debugging enabled.");
+		//_extensions.debug_callback = std::make_unique<DebugCallback>(_instance);
+		_extensions.debug_utils = std::make_unique<DebugUtils>(_instance);
 	}
 }
 
@@ -64,6 +68,10 @@ Instance::~Instance() {
 
 const DebugParams& Instance::debug_params() const {
 	return _debug_params;
+}
+
+const DebugUtils* Instance::debug_utils() const {
+	return _extensions.debug_utils.get();
 }
 
 vk::Instance Instance::vk_instance() const {

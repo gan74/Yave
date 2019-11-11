@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@ SOFTWARE.
 #include "DedicatedDeviceMemoryAllocator.h"
 
 #include <unordered_map>
-#include <mutex>
 
 namespace yave {
 
@@ -34,7 +33,7 @@ class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 
 	using HeapType = std::pair<u32, MemoryType>;
 
-	static constexpr usize dedicated_threshold = DeviceMemoryHeap::heap_size / 2;
+	static constexpr usize default_heap_size = 128 * 1024 * 1024;
 
 	public:
 		DeviceMemoryAllocator() = default;
@@ -52,6 +51,9 @@ class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 		}
 
 	private:
+		static usize heap_size_for_type(MemoryType type);
+		static usize dedicated_threshold_for_type(MemoryType type);
+
 		DeviceMemory alloc(vk::MemoryRequirements reqs, MemoryType type);
 		DeviceMemory dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type);
 

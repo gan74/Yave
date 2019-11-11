@@ -24,7 +24,7 @@ SOFTWARE.
 namespace yave {
 
 
-SpirVData::SpirVData(core::ArrayView<u8> data) {
+SpirVData::SpirVData(core::Span<u8> data) {
 	if(data.size() % 4) {
 		y_fatal("Invalid SPIR-V data.");
 	}
@@ -32,7 +32,7 @@ SpirVData::SpirVData(core::ArrayView<u8> data) {
 	std::memcpy(_data.begin(), data.begin(), data.size());
 }
 
-SpirVData::SpirVData(core::ArrayView<u32> data) : _data(data) {
+SpirVData::SpirVData(core::Span<u32> data) : _data(data) {
 	if(data.is_empty()) {
 		y_fatal("Invalid SPIR-V data.");
 	}

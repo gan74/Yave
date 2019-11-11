@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetPtr.h>
 
-#include <yave/graphics/bindings/Binding.h>
+#include <yave/graphics/descriptors/Descriptor.h>
 #include <yave/graphics/shaders/SpirVData.h>
 
 namespace yave {

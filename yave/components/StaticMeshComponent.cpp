@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,17 +40,21 @@ void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& 
 		return;
 	}
 
-	if(_material->descriptor_set().device()) {
-		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set, _material->descriptor_set()});
-	} else {
+	if(_material->descriptor_set().is_null()) {
 		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set});
+	} else {
+		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set, _material->descriptor_set()});
 	}
 
 	render_mesh(recorder, scene_data.instance_index);
 }
 
 void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder, u32 instance_index) const {
-	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), {VertexSubBuffer(_mesh->vertex_buffer())});
+	if(!_mesh) {
+		return;
+	}
+	
+	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), VertexSubBuffer(_mesh->vertex_buffer()));
 	auto indirect = _mesh->indirect_data();
 	indirect.setFirstInstance(instance_index);
 	recorder.draw(indirect);

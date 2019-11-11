@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,18 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 #define YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 
+#include <yave/ecs/ecs.h>
+
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
 
 #include <yave/scene/Renderable.h>
 
+#include "TransformableComponent.h"
+
 namespace yave {
 
-class StaticMeshComponent final : public Renderable {
+class StaticMeshComponent final : public Renderable, public ecs::RequiredComponents<TransformableComponent> {
 
 	public:
 		StaticMeshComponent() = default;
@@ -51,6 +55,7 @@ class StaticMeshComponent final : public Renderable {
 		AssetPtr<Material>& material();
 
 		yave_asset_serde(_mesh, _material)
+		y_serde3(_mesh, _material)
 
 	private:
 		AssetPtr<StaticMesh> _mesh;

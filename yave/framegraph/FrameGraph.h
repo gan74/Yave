@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,22 +32,38 @@ namespace yave {
 class FrameGraph : NonCopyable {
 
 	struct ResourceCreateInfo {
+		usize last_read = 0;
+		usize last_write = 0;
 		usize first_use = 0;
-		usize last_use = 0;
 
-		void register_use(usize index);
+		bool can_alias_on_last = false;
+
+		usize last_use() const;
+
+		void register_use(usize index, bool is_written);
 	};
 
 	struct ImageCreateInfo : ResourceCreateInfo {
 		math::Vec2ui size;
 		ImageFormat format;
 		ImageUsage usage = ImageUsage::None;
+
+		FrameGraphImageId copy_src;
+		FrameGraphImageId alias;
+
+		void register_alias(const ImageCreateInfo& other);
 	};
 
 	struct BufferCreateInfo : ResourceCreateInfo {
 		usize byte_size;
 		BufferUsage usage = BufferUsage::None;
 		MemoryType memory_type = MemoryType::DontCare;
+	};
+
+	struct ImageCopyInfo {
+		usize pass_index = 0;
+		FrameGraphMutableImageId dst;
+		FrameGraphImageId src;
 	};
 
 	public:
@@ -61,6 +77,7 @@ class FrameGraph : NonCopyable {
 		FrameGraphPassBuilder add_pass(std::string_view name);
 
 		math::Vec2ui image_size(FrameGraphImageId res) const;
+		ImageFormat image_format(FrameGraphImageId res) const;
 
 	private:
 		friend class FrameGraphPassBuilder;
@@ -71,15 +88,20 @@ class FrameGraph : NonCopyable {
 		const ImageCreateInfo& info(FrameGraphImageId res) const;
 		const BufferCreateInfo& info(FrameGraphBufferId res) const;
 
-		void register_usage(FrameGraphImageId res, ImageUsage usage, const FrameGraphPass* pass);
-		void register_usage(FrameGraphBufferId res, BufferUsage usage, const FrameGraphPass* pass);
+		void register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);
+		void register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass);
+		void register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass);
+
 		void set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
 
 		bool is_attachment(FrameGraphImageId res) const;
 
 	private:
-		void alloc_resources_for_pass(const FrameGraphPass* pass);
+		const core::String& pass_name(usize pass_index) const;
+
 		void alloc_resources();
+		void alloc_image(FrameGraphImageId res, const ImageCreateInfo& info) const;
+
 		void release_resources(CmdBufferRecorder& recorder);
 
 		std::shared_ptr<FrameGraphResourcePool> _pool;
@@ -89,6 +111,8 @@ class FrameGraph : NonCopyable {
 		using hash_t = std::hash<FrameGraphResourceId>;
 		std::unordered_map<FrameGraphImageId, ImageCreateInfo, hash_t> _images;
 		std::unordered_map<FrameGraphBufferId, BufferCreateInfo, hash_t> _buffers;
+
+		core::Vector<ImageCopyInfo> _image_copies;
 
 		usize _pass_index = 0;
 

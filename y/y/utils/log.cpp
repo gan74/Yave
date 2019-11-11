@@ -26,7 +26,29 @@ SOFTWARE.
 
 #include <iostream>
 
+#ifdef Y_OS_WIN
+#include <windows.h>
+#endif
+
 namespace y {
+
+namespace detail {
+void setup_console() {
+#ifdef Y_OS_WIN
+	static bool setup = false;
+	if(!setup) {
+		setup = true;
+		auto std_out = ::GetStdHandle(STD_OUTPUT_HANDLE);
+		DWORD mode = 0;
+		if(!::GetConsoleMode(std_out, &mode)) {
+			return;
+		}
+		mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+		::SetConsoleMode(std_out, mode);
+	}
+#endif
+}
+}
 
 static detail::log_callback callback = nullptr;
 static void* callback_user_data = nullptr;
@@ -34,14 +56,24 @@ static void* callback_user_data = nullptr;
 static std::mutex lock;
 
 void log_msg(std::string_view msg, Log type) {
-	static constexpr std::array<const char*, 5> log_type_str = {{"info", "warning", "error", "debug", "perf"}};
+	// https://en.wikipedia.org/wiki/ANSI_escape_code
+	static constexpr std::array<const char*, 5> log_type_str = {{
+		"[info] ",
+		"\x1b[33m[warning]\x1b[0m ",
+		"\x1b[31m[error]\x1b[0m ",
+		"\x1b[94m[debug]\x1b[0m ",
+		"\x1b[35m[perf]\x1b[0m "
+	}};
+
 	std::lock_guard _(lock);
+
+	detail::setup_console();
 
 	if(callback && callback(msg, type, callback_user_data)) {
 		return;
 	}
 
-	(type == Log::Error || type == Log::Warning ? std::cerr : std::cout) << "[" << log_type_str[usize(type)] << "] " << msg << std::endl;
+	(type == Log::Error || type == Log::Warning ? std::cerr : std::cout) << log_type_str[usize(type)] << msg << std::endl;
 }
 
 void set_log_callback(detail::log_callback func, void* user_data) {

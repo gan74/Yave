@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,8 @@ SOFTWARE.
 
 #include "DeviceLinked.h"
 
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemory.h>
-
 #include <yave/graphics/vk/vk.h>
 
 #include <y/concurrent/SpinLock.h>
@@ -72,7 +72,7 @@ class ResourceFence {
 	private:
 		friend class LifetimeManager;
 
-		ResourceFence(u32 v) : _value(v) {
+		ResourceFence(u64 v) : _value(v) {
 		}
 
 		u64 _value = 0;
@@ -81,6 +81,7 @@ class ResourceFence {
 
 using ManagedResource = std::variant<
 		DeviceMemory,
+		DescriptorSetData,
 
 		vk::Buffer,
 		vk::Image,
@@ -114,6 +115,8 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 
 		void recycle(CmdBufferData&& cmd);
 
+		void collect();
+
 		usize pending_deletions() const;
 		usize active_cmd_buffers() const;
 
@@ -124,19 +127,19 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 
 		template<typename T>
 		void destroy_later(T&& t) {
-			std::unique_lock lock(_lock);
+			std::unique_lock lock(_resource_lock);
 			_to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));
 		}
 
 	private:
-		void collect();
 		void destroy_resource(ManagedResource& resource) const;
 		void clear_resources(u64 up_to);
 
 		std::deque<std::pair<u64, ManagedResource>> _to_destroy;
 		std::deque<CmdBufferData> _in_flight;
 
-		mutable concurrent::SpinLock _lock;
+		mutable concurrent::SpinLock _cmd_lock;
+		mutable concurrent::SpinLock _resource_lock;
 
 		std::atomic<u64> _counter = 0;
 		u64 _done_counter = 0;

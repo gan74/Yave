@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,29 +27,28 @@ namespace y {
 
 namespace detail {
 template<typename Default, typename AlwaysVoid, template<typename...> typename Op, typename... Args>
-struct detector {
+struct Detector {
   using value_t = std::false_type;
   using type = Default;
 };
 
 template<typename Default, template<typename...> typename Op, typename... Args>
-struct detector<Default, std::void_t<Op<Args...>>, Op, Args...> {
+struct Detector<Default, std::void_t<Op<Args...>>, Op, Args...> {
   // Note that std::void_t is a C++17 feature
   using value_t = std::true_type;
   using type = Op<Args...>;
 };
 
-struct nonesuch {
-    nonesuch() = delete;
-    ~nonesuch() = delete;
-    nonesuch(nonesuch const&) = delete;
-    void operator=(nonesuch const&) = delete;
+struct NoneSuch {
+	NoneSuch() = delete;
+	~NoneSuch() = delete;
+	NoneSuch(NoneSuch const&) = delete;
+	void operator=(NoneSuch const&) = delete;
 };
-
 } // namespace detail
 
 template<template<typename...> typename Op, typename... Args>
-using is_detected = typename detail::detector<detail::nonesuch, void, Op, Args...>::value_t;
+using is_detected = typename detail::Detector<detail::NoneSuch, void, Op, Args...>::value_t;
 
 template<template<typename...> typename Op, typename... Args>
 inline constexpr bool is_detected_v = is_detected<Op, Args...>::value;

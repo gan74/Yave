@@ -22,11 +22,11 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_GIZMO_H
 #define EDITOR_WIDGETS_GIZMO_H
 
-#include <editor/ui/Frame.h>
+#include <editor/editor.h>
 
 namespace editor {
 
-class Gizmo final : public Frame, public ContextLinked {
+class Gizmo final : public ContextLinked {
 	public:
 		enum Mode {
 			Translate,
@@ -40,10 +40,18 @@ class Gizmo final : public Frame, public ContextLinked {
 
 		Gizmo(ContextPtr cptr, SceneView* view);
 
+		void draw();
+
 		bool is_dragging() const;
+		void set_allow_drag(bool allow);
+
+		Mode mode() const;
+		void set_mode(Mode mode);
+
+		Space space() const;
+		void set_space(Space space);
 
 	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
 		math::Vec3 to_screen_pos(const math::Vec3& world);
 		math::Vec2 to_window_pos(const math::Vec3& world);
@@ -55,6 +63,10 @@ class Gizmo final : public Frame, public ContextLinked {
 
 		math::Vec3 _dragging_offset;
 		u32 _dragging_mask = 0;
+
+		bool _allow_drag = true;
+		Mode _mode = Translate;
+		Space _space = World;
 };
 
 }

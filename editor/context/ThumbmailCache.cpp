@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,13 +26,27 @@ SOFTWARE.
 #include <yave/renderer/renderer.h>
 
 #include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/entities/entities.h>
+#include <yave/utils/color.h>
+
+#include <editor/utils/assets.h>
 
 #include <thread>
 
 namespace editor {
+
+static math::Transform<> center_to_camera(const AABB& box) {
+	float scale = 0.22f / std::max(math::epsilon<float>, box.radius());
+	float angle = (box.extent().x() > box.extent().y() ? 90.0f : 0.0f) + 30.0f;
+	auto rot = math::Quaternion<>::from_euler(0.0f, math::to_rad(angle), 0.0f);
+	math::Vec3 tr = rot(box.center() * scale);
+	return math::Transform<>(math::Vec3(0.0f, -0.65f, 0.65f) - tr,
+							 rot,
+							 math::Vec3(scale));
+}
 
 ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) :
 		image(dptr, vk::Format::eR8G8B8A8Unorm, math::Vec2ui(size)),
@@ -40,27 +54,60 @@ ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) 
 		id(asset) {
 }
 
-ThumbmailCache::SceneData::SceneData(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat)
+ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat)
 		: view(&world) {
+
+	DevicePtr dptr = ctx->device();
+	float intensity = 0.35f;
 
 	{
 		ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
 		DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
-		light_comp->direction() = math::Vec3{1.0f, -0.5f, -1.0f};
-		light_comp->color() = 5.0f;
+		light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
+		light_comp->intensity() = 3.0f * intensity;
 	}
+	{
+		ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+		world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
+		PointLightComponent* light = world.component<PointLightComponent>(light_id);
+		light->color() = k_to_rbg(2500.0f);
+		light->intensity() = 1.5f * intensity;
+		light->falloff() = 0.5f;
+		light->radius() = 2.0f;
+	}
+	{
+		ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+		world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
+		PointLightComponent* light = world.component<PointLightComponent>(light_id);
+		light->color() = k_to_rbg(10000.0f);
+		light->intensity() = 1.5f * intensity;
+		light->falloff() = 0.5f;
+		light->radius() = 2.0f;
+	}
+
+	{
+		ecs::EntityId bg_id = world.create_entity(StaticMeshArchetype());
+		StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(bg_id);
+		*mesh_comp = StaticMeshComponent(dptr->device_resources()[DeviceResources::SweepMesh], dptr->device_resources()[DeviceResources::EmptyMaterial]);
+	}
+
 	{
 		ecs::EntityId mesh_id = world.create_entity(StaticMeshArchetype());
 		StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(mesh_id);
 		*mesh_comp = StaticMeshComponent(mesh, mat);
+
+		TransformableComponent* trans_comp = world.component<TransformableComponent>(mesh_id);
+		trans_comp->transform() = center_to_camera(mesh->aabb());
+
 		y_debug_assert(world.component<StaticMeshComponent>(mesh_id)->material()->mat_template());
 	}
-	view.camera().set_view(math::look_at(math::Vec3(mesh->radius() * 1.5f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
+
+	view.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 }
 
 
 static auto load_envmap() {
-	math::Vec4 data(1.0f, 1.0f, 1.0f, 1.0f);
+	math::Vec4 data(0.1f);
 	return ImageData(math::Vec2ui(1), reinterpret_cast<const u8*>(data.data()), vk::Format::eR32G32B32A32Sfloat);
 }
 
@@ -119,19 +166,20 @@ void ThumbmailCache::process_requests() {
 	}
 }
 
+static constexpr const char unable_to_load_error[] = "Unable to load static %.";
+
 void ThumbmailCache::request_thumbmail(AssetId id) {
 	_thumbmails[id] = nullptr;
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
 			y_profile();
 
-			switch(context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown)) {
+			AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+			switch(asset_type) {
 				case AssetType::Mesh:
 					if(auto mesh = context()->loader().load<StaticMesh>(id)) {
 						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
 								return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
 							};
-					} else {
-						log_msg("Unable to load static mesh.", Log::Error);
 					}
 				break;
 
@@ -140,22 +188,20 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
 								return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
 							};
-					} else {
-						log_msg("Unable to load material.", Log::Error);
 					}
 				break;
 
 				case AssetType::Image:
 					if(auto tex = context()->loader().load<Texture>(id)) {
 						return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
-					} else {
-						log_msg("Unable to load image.", Log::Error);
 					}
 				break;
 
 				default:
 				break;
 			}
+			log_msg(fmt(unable_to_load_error, asset_type_name(asset_type)), Log::Error);
+
 
 			return [](CmdBufferRecorder&) { return nullptr; };
 		});
@@ -165,7 +211,7 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, tex.id());
 
 	{
-		DescriptorSet set(device(), {Binding(*tex), Binding(StorageView(thumbmail->image))});
+		DescriptorSet set(device(), {Descriptor(*tex), Descriptor(StorageView(thumbmail->image))});
 		recorder.dispatch_size(device()->device_resources()[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
 	}
 
@@ -174,13 +220,15 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 
 std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const {
 	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, id);
-	SceneData scene(mesh, mat);
+	SceneData scene(context(), mesh, mat);
 
 	{
 		auto region = recorder.region("Thumbmail cache render");
 
 		FrameGraph graph(context()->resource_pool());
-		DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), _ibl_data);
+		RendererSettings settings;
+		settings.tone_mapping.auto_exposure = false;
+		DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), _ibl_data, settings);
 
 		FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{

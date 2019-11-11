@@ -92,7 +92,7 @@ usize ImageData::data_offset(usize layer, usize mip) const {
 }
 
 const u8* ImageData::data(usize layer, usize mip) const {
-	return _data.get() + data_offset(layer, mip);
+	return _data.data() + data_offset(layer, mip);
 }
 
 ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips) :
@@ -102,8 +102,8 @@ ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat forma
 		_mips(mips) {
 
 	usize data_size = combined_byte_size();
-	_data = std::make_unique<u8[]>(data_size);
-	std::memcpy(_data.get(), data, data_size);
+	_data = core::FixedArray<u8>(data_size);
+	std::memcpy(_data.data(), data, data_size);
 }
 
 }

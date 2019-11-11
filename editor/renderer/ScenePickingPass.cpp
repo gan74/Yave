@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ static usize render_world(ContextPtr ctx,
 	auto id_mapping = pass->resources()->mapped_buffer(id_buffer);
 	auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(id_buffer);
 
-	recorder.bind_attrib_buffers({transforms, transforms, ids});
+	recorder.bind_attrib_buffers({}, {transforms, ids});
 	recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
 
 	for(auto ent : world.view(StaticMeshArchetype())) {

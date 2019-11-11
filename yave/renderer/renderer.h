@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,15 +23,28 @@ SOFTWARE.
 #define YAVE_RENDERER_RENDERER_H
 
 #include "ToneMappingPass.h"
+#include "RayleighSkyPass.h"
 
 namespace yave {
+
+struct RendererSettings {
+	ToneMappingSettings tone_mapping;
+};
 
 struct DefaultRenderer {
 	GBufferPass gbuffer;
 	LightingPass lighting;
+	RayleighSkyPass sky;
 	ToneMappingPass tone_mapping;
 
-	static DefaultRenderer create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data);
+	FrameGraphImageId color;
+	FrameGraphImageId depth;
+
+	static DefaultRenderer create(FrameGraph& framegraph,
+								  const SceneView& view,
+								  const math::Vec2ui& size,
+								  const std::shared_ptr<IBLData>& ibl_data,
+								  const RendererSettings& settings = RendererSettings());
 };
 
 }

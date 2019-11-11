@@ -41,8 +41,8 @@ static constexpr float gizmo_size_mul_2 = 0.25f;
 static constexpr u32 gizmo_alpha_2 = 0x60000000;
 
 
-static bool is_clicked() {
-	return ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
+static bool is_clicked(bool allow_drag) {
+	return allow_drag && ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
 }
 
 static bool is_clicking(math::Vec2 cursor, const math::Vec2& vec) {
@@ -70,11 +70,32 @@ static const ImU32 gizmo_flags =
 		ImGuiWindowFlags_NoFocusOnAppearing |
 		ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-Gizmo::Gizmo(ContextPtr cptr, SceneView* view) : Frame("Gizmo", gizmo_flags), ContextLinked(cptr), _scene_view(view) {
+Gizmo::Gizmo(ContextPtr cptr, SceneView* view) : ContextLinked(cptr), _scene_view(view) {
 }
 
 bool Gizmo::is_dragging() const {
-	return _dragging_mask || _rotation_axis != usize(-1);
+	return _allow_drag && (_dragging_mask || _rotation_axis != usize(-1));
+}
+
+void Gizmo::set_allow_drag(bool allow) {
+	_allow_drag = allow;
+}
+
+
+Gizmo::Mode Gizmo::mode() const {
+	return _mode;
+}
+
+void Gizmo::set_mode(Mode mode) {
+	_mode = mode;
+}
+
+Gizmo::Space Gizmo::space() const {
+	return _space;
+}
+
+void Gizmo::set_space(Space space) {
+	_space = space;
 }
 
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
@@ -95,8 +116,14 @@ math::Vec2 Gizmo::to_window_pos(const math::Vec3& world) {
 	return screen.to<2>() * viewport + offset;
 }
 
-void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void Gizmo::draw() {
 	if(!context()->selection().has_selected_entity()) {
+		return;
+	}
+
+	y_defer(ImGui::EndChild());
+	ImGui::SetNextWindowBgAlpha(0.0f);
+	if(!ImGui::BeginChild("###gizmo", ImVec2(0, 0), false, gizmo_flags)) {
 		return;
 	}
 
@@ -146,17 +173,14 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 									   math::Vec3{0.0f, 0.0f, 1.0f}};
 
 
-
-	Mode gizmo_mode = context()->editor_state().gizmo_mode;
-	Space gizmo_space = context()->editor_state().gizmo_space;
-	if(gizmo_space == Local) {
+	if(_space == Local) {
 		for(math::Vec3& a : basis) {
 			a = obj_rot(a);
 		}
 	}
 
 
-	if(gizmo_mode == Translate) {
+	if(_mode == Translate) {
 		struct Axis {
 			math::Vec2 vec;
 			usize index;
@@ -244,7 +268,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 		// click
 		{
-			if(is_clicked()) {
+			if(is_clicked(_allow_drag)) {
 				_dragging_mask = hover_mask;
 				_dragging_offset = obj_pos - projected_mouse;
 			} else if(!ImGui::IsMouseDown(0)) {
@@ -262,7 +286,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				}
 			}
 		}
-	} else if(gizmo_mode == Rotate) {
+	} else if(_mode == Rotate) {
 		const usize segment_count = 64;
 		float seg_ang_size = (1.0f / segment_count) * 2.0f * math::pi<float>;
 		usize rotation_axis = _rotation_axis;
@@ -296,7 +320,7 @@ void Gizmo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				return std::copysign(std::acos(vec[(axis + 1) % 3]), vec[(axis + 2) % 3]);
 			};
 
-		if(is_clicked()) {
+		if(is_clicked(_allow_drag)) {
 			_rotation_axis = rotation_axis;
 			_rotation_offset = compute_angle(_rotation_axis);
 		} if(!ImGui::IsMouseDown(0)) {

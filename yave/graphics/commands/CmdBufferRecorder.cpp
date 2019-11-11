@@ -23,10 +23,12 @@ SOFTWARE.
 #include "CmdBufferRecorder.h"
 
 #include <yave/material/Material.h>
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/queues/Semaphore.h>
+
+#include <yave/device/extentions/DebugUtils.h>
 
 namespace yave {
 
@@ -38,8 +40,8 @@ static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
 CmdBufferRegion::~CmdBufferRegion() {
-	if(device() && device()->debug_marker()) {
-		device()->debug_marker()->end_region(_buffer);
+	if(device() && device()->debug_utils()) {
+		device()->debug_utils()->end_region(_buffer);
 	}
 }
 
@@ -47,7 +49,7 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char
 		DeviceLinked(cmd_buffer.device()),
 		_buffer(cmd_buffer.vk_cmd_buffer()) {
 
-	if(auto marker = device()->debug_marker()) {
+	if(auto marker = device()->debug_utils()) {
 		marker->begin_region(_buffer, name, color);
 	}
 }
@@ -73,11 +75,14 @@ void RenderPassRecorder::bind_material(const MaterialTemplate* material, Descrip
 void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets) {
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
-	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size() + 1);
-	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& d) { return d.get().vk_descriptor_set(); });
-
-	if(!ds.is_empty()) {
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline_layout(), 0, vk::ArrayProxy(u32(ds.size()), ds.cbegin()), {});
+	if(!descriptor_sets.is_empty()) {
+		vk_cmd_buffer().bindDescriptorSets(
+				vk::PipelineBindPoint::eGraphics,
+				pipeline.vk_pipeline_layout(),
+				0,
+				descriptor_sets.size(), reinterpret_cast<const vk::DescriptorSet*>(descriptor_sets.begin()),
+				0, nullptr
+			);
 	}
 }
 
@@ -97,24 +102,38 @@ void RenderPassRecorder::draw(const vk::DrawIndirectCommand& indirect) {
 						 indirect.firstInstance);
 }
 
-void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
+void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices,
+									  const SubBuffer<BufferUsage::AttributeBit>& per_vertex,
+									  core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
 	bind_index_buffer(indices);
-	bind_attrib_buffers(attribs);
+	bind_attrib_buffers(per_vertex, per_instance);
 }
 
 void RenderPassRecorder::bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices) {
 	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
 }
 
-void RenderPassRecorder::bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs) {
-	u32 attrib_count = attribs.size();
+void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
+	if(per_instance.is_empty()) {
+		vk_cmd_buffer().bindVertexBuffers(u32(0), per_vertex.vk_buffer(), per_vertex.byte_offset());
+	} else {
+		bool has_per_vertex = per_vertex.device();
+		u32 attrib_count = per_instance.size() + has_per_vertex;
 
-	auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);
-	auto buffers = core::vector_with_capacity<vk::Buffer>(attrib_count);
-	std::transform(attribs.begin(), attribs.end(), std::back_inserter(offsets), [](const auto& buffer) { return buffer.byte_offset(); });
-	std::transform(attribs.begin(), attribs.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
+		auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);
+		auto buffers = core::vector_with_capacity<vk::Buffer>(attrib_count);
 
-	vk_cmd_buffer().bindVertexBuffers(u32(0), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
+		if(has_per_vertex) {
+			offsets << per_vertex.byte_offset();
+			buffers << per_vertex.vk_buffer();
+		}
+
+		std::transform(per_instance.begin(), per_instance.end(), std::back_inserter(offsets), [](const auto& buffer) { return buffer.byte_offset(); });
+		std::transform(per_instance.begin(), per_instance.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
+
+		vk_cmd_buffer().bindVertexBuffers(u32(!has_per_vertex), vk::ArrayProxy(attrib_count, buffers.cbegin()), vk::ArrayProxy(attrib_count, offsets.cbegin()));
+	}
+
 }
 
 const Viewport& RenderPassRecorder::viewport() const {
@@ -127,6 +146,10 @@ CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& c
 
 DevicePtr RenderPassRecorder::device() const {
 	return _cmd_buffer.device();
+}
+
+bool RenderPassRecorder::is_null() const {
+	return !device();
 }
 
 vk::CommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
@@ -205,13 +228,16 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
 	check_no_renderpass();
 
-	auto ds = core::vector_with_capacity<vk::DescriptorSet>(descriptor_sets.size());
-	std::transform(descriptor_sets.begin(), descriptor_sets.end(), std::back_inserter(ds), [](const auto& d) { return d.get().vk_descriptor_set(); });
-
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
 
-	if(!ds.is_empty()) {
-		vk_cmd_buffer().bindDescriptorSets(vk::PipelineBindPoint::eCompute, program.vk_pipeline_layout(), 0, ds.size(), ds.begin(), 0, nullptr);
+	if(!descriptor_sets.is_empty()) {
+		vk_cmd_buffer().bindDescriptorSets(
+				vk::PipelineBindPoint::eCompute,
+				program.vk_pipeline_layout(),
+				0,
+				descriptor_sets.size(), reinterpret_cast<const vk::DescriptorSet*>(descriptor_sets.begin()),
+				0, nullptr
+			);
 	}
 
 	if(!push_constants.is_empty()) {
@@ -233,7 +259,7 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
 	dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images) {
+void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
 	check_no_renderpass();
 
 	if(buffers.is_empty() && images.is_empty()) {
@@ -269,11 +295,11 @@ void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers, core::A
 		);
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<BufferBarrier> buffers) {
+void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers) {
 	barriers(buffers, {});
 }
 
-void CmdBufferRecorder::barriers(core::ArrayView<ImageBarrier> images) {
+void CmdBufferRecorder::barriers(core::Span<ImageBarrier> images) {
 	barriers({}, images);
 }
 

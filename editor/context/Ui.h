@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
+#include <y/core/Chrono.h>
+
 #include <unordered_map>
 #include <typeindex>
 
@@ -42,7 +44,7 @@ class Ui : NonCopyable, public ContextLinked {
 		Ui(ContextPtr ctx);
 		~Ui();
 
-		core::ArrayView<std::unique_ptr<UiElement>> ui_elements() const;
+		core::Span<std::unique_ptr<UiElement>> ui_elements() const;
 
 		const ImGuiRenderer& renderer() const;
 
@@ -96,6 +98,8 @@ class Ui : NonCopyable, public ContextLinked {
 		std::unordered_map<std::type_index, Ids> _ids;
 
 		std::unique_ptr<ImGuiRenderer> _renderer;
+
+		core::Chrono _frame_timer;
 
 };
 

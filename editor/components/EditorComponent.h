@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ class EditorComponent {
 		void set_name(core::String name);
 
 		y_serde2(_name)
+		y_serde3(_name)
 
 	private:
 		core::String _name = "Unnamed entity";

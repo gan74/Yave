@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-struct ToneMappingPass {
-	FrameGraphMutableImageId tone_mapped;
+struct ToneMappingSettings {
+	bool auto_exposure = true;
+};
 
-	static ToneMappingPass create(FrameGraph& framegraph, const LightingPass& lighting);
+struct ToneMappingPass {
+	FrameGraphImageId tone_mapped;
+	FrameGraphImageId histogram;
+	FrameGraphTypedBufferId<uniform::ToneMappingParams> params;
+
+	static ToneMappingPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings = ToneMappingSettings());
 };
 
 

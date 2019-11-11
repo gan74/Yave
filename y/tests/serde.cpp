@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,14 @@ struct Func {
 
 struct DummyWriter : public io2::Writer {
 	DummyWriter() = default;
+
+
+	void seek(usize) override {
+	}
+
+	usize tell() const override {
+		return 0;
+	}
 
 	io2::WriteResult write(const u8*, usize) override {
 		return core::Ok();
@@ -117,6 +125,7 @@ y_test_func("serde trivial") {
 		WritableArchive ar(buffer);
 		ar(tri).unwrap();
 	}
+	buffer.reset();
 	{
 		serde2::ReadableArchive ar(buffer);
 		Trivial t;
@@ -134,6 +143,7 @@ y_test_func("serde easy") {
 		WritableArchive ar(buffer);
 		ar(es).unwrap();
 	}
+	buffer.reset();
 	{
 		serde2::ReadableArchive ar(buffer);
 		Easy e;
@@ -157,6 +167,7 @@ y_test_func("serde complex") {
 		WritableArchive ar(buffer);
 		ar(e2, comp, t1).unwrap();
 	}
+	buffer.reset();
 	{
 		serde2::ReadableArchive ar(buffer);
 
@@ -220,11 +231,12 @@ y_test_func("serde func") {
 		WritableArchive ar(buffer);
 		f.serialize(ar).unwrap();
 	}
+	buffer.reset();
 	{
 		Func f;
 		ReadableArchive ar(buffer);
 		f.deserialize(ar).unwrap();
-		y_test_assert(f.v == core::ArrayView<int>({1, 2, 3}));
+		y_test_assert(f.v == core::Span<int>({1, 2, 3}));
 		y_test_assert(f.s == 8);
 	}
 }

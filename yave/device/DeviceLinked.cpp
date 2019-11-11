@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,10 @@ namespace yave {
 
 DevicePtr DeviceLinked::device() const {
 	return _device;
+}
+
+bool DeviceLinked::is_null() const {
+	return !_device;
 }
 
 DeviceLinked::DeviceLinked() : _device(nullptr) {

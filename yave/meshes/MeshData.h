@@ -38,11 +38,11 @@ class MeshData {
 		float radius() const;
 		const AABB& aabb() const;
 
-		core::ArrayView<Vertex> vertices() const;
-		core::ArrayView<IndexedTriangle> triangles() const;
+		core::Span<Vertex> vertices() const;
+		core::Span<IndexedTriangle> triangles() const;
 
-		core::ArrayView<Bone> bones() const;
-		core::ArrayView<SkinWeights> skin() const;
+		core::Span<Bone> bones() const;
+		core::Span<SkinWeights> skin() const;
 		core::Vector<SkinnedVertex> skinned_vertices() const;
 
 		bool has_skeleton() const;
@@ -52,12 +52,15 @@ class MeshData {
 		y_deserialize2(serde2::check(fs::magic_number, AssetType::Mesh, u32(7)), _aabb, _vertices, _triangles,
 					serde2::func([this](u32 s) { if(s) { _skeleton = std::make_unique<SkeletonData>(); } }), serde2::cond(!!_skeleton, [this]{ return *_skeleton; }))
 
+		y_serde3(_aabb, _triangles, _skeleton)
+
 	private:
 		struct SkeletonData {
 			core::Vector<SkinWeights> skin;
 			core::Vector<Bone> bones;
 
 			y_serde2(skin, bones)
+			y_serde3(skin, bones)
 		};
 
 		AABB _aabb;

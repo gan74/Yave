@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_ECS_H
 
 #include <typeindex>
-#include <y/utils.h>
+#include "EntityId.h"
 
 namespace yave {
 namespace ecs {
@@ -36,12 +36,19 @@ class EntityWorld;
 	bool operator!=(const ComponentTypeIndex& other) const { return index != other.index; }
 };*/
 
-using ComponentTypeIndex = std::type_index;
+struct ComponentTypeIndex {
+	u64 type_hash = 0;
+
+	bool operator==(const ComponentTypeIndex& other) const { return type_hash == other.type_hash; }
+	bool operator!=(const ComponentTypeIndex& other) const { return type_hash != other.type_hash; }
+};
 
 
 template<typename T>
 ComponentTypeIndex index_for_type() {
-	return typeid(T);
+	static_assert(!std::is_reference_v<T>);
+	using naked = remove_cvref_t<T>;
+	return ComponentTypeIndex{type_hash_2<naked>()};
 }
 
 template<typename... Args>
@@ -51,7 +58,24 @@ struct EntityArchetype final {
 
 	template<typename T>
 	using with = EntityArchetype<T, Args...>;
+
+	static inline auto indexes() {
+		return std::array{index_for_type<Args>()...};
+	}
 };
+
+template<typename... Args>
+struct RequiredComponents {
+	static inline constexpr auto required_components_archetype() {
+		static_assert(std::is_default_constructible_v<std::tuple<Args...>>);
+		return EntityArchetype<Args...>{};
+	}
+
+	// EntityWorld.h
+	static inline void add_required_components(EntityWorld& world, EntityId id);
+
+};
+
 
 }
 }

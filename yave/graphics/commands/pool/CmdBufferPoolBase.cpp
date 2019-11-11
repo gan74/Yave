@@ -31,6 +31,7 @@ namespace yave {
 
 static vk::CommandBufferLevel cmd_level(CmdBufferUsage u) {
 	unused(u);
+	y_debug_assert(u == CmdBufferUsage::Disposable);
 	return /*u == CmdBufferUsage::Secondary ? vk::CommandBufferLevel::eSecondary :*/ vk::CommandBufferLevel::ePrimary;
 }
 
@@ -54,7 +55,7 @@ CmdBufferPoolBase::CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred) :
 CmdBufferPoolBase::~CmdBufferPoolBase() {
 	if(device()) {
 		if(_fences.size() != _cmd_buffers.size()) {
-			y_fatal("CmdBuffers are still in use.");
+			y_fatal("CmdBuffers are still in use (% fences, % buffers).", _fences.size(), _cmd_buffers.size());
 		}
 		join_all();
 		_cmd_buffers.clear();
@@ -71,7 +72,7 @@ void CmdBufferPoolBase::join_all() {
 		return;
 	}
 
-	if(device()->vk_device().waitForFences(_fences.size(), _fences.data(), true, u64(-1)) != vk::Result::eSuccess) {
+	if(device()->vk_device().waitForFences(u32(_fences.size()), _fences.data(), true, u64(-1)) != vk::Result::eSuccess) {
 		y_fatal("Unable to join fences.");
 	}
 }

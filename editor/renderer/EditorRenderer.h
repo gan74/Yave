@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,22 +27,23 @@ SOFTWARE.
 namespace editor {
 
 struct EditorRendererSettings {
+	RendererSettings renderer_settings;
+
 	bool enable_editor_entities = true;
 	float billboard_size = 64.0f;
 };
 
 
 struct EditorRenderer {
-	using Settings = EditorRendererSettings;
-
 	DefaultRenderer renderer;
 	EditorEntityPass entity_pass;
 
-	FrameGraphImageId out;
+	FrameGraphImageId color;
+	FrameGraphImageId depth;
 
 	static EditorRenderer create(ContextPtr ctx,
 								 FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size,
-								 const std::shared_ptr<IBLData>& ibl_data, const Settings& settings = Settings());
+								 const std::shared_ptr<IBLData>& ibl_data, const EditorRendererSettings& settings = EditorRendererSettings());
 };
 
 }

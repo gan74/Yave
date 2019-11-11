@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <yave/graphics/buffers/Mapping.h>
 
-#include <yave/graphics/bindings/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 
 #include "FrameGraphResourceToken.h"
@@ -67,10 +67,13 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
 
-		void create_alias(FrameGraphImageId res, FrameGraphImageId alias);
+		void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
 
 		void release(FrameGraphImageId res);
 		void release(FrameGraphBufferId res);
+
+		bool is_alive(FrameGraphImageId res) const;
+		bool is_alive(FrameGraphBufferId res) const;
 
 		ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;
 		BufferBarrier barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const;

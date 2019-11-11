@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ class RenderPass;
 
 
 namespace detail {
-using DescriptorSetList = core::ArrayView<std::reference_wrapper<const DescriptorSetBase>>;
+using DescriptorSetList = core::Span<DescriptorSetBase>;
 }
 
 class PushConstant : NonCopyable {
@@ -56,7 +56,7 @@ class PushConstant : NonCopyable {
 		}
 
 		template<typename T>
-		constexpr PushConstant(const core::ArrayView<T>& arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+		constexpr PushConstant(core::Span<T> arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
 			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
 		}
@@ -104,6 +104,9 @@ class RenderPassRecorder : NonCopyable {
 
 		~RenderPassRecorder();
 
+		DevicePtr device() const;
+		bool is_null() const;
+
 		// specific
 		void bind_material(const Material& material);
 		void bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets = {});
@@ -112,15 +115,14 @@ class RenderPassRecorder : NonCopyable {
 		void draw(const vk::DrawIndexedIndirectCommand& indirect);
 		void draw(const vk::DrawIndirectCommand& indirect);
 
-		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
+		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
-		void bind_attrib_buffers(const core::ArrayView<SubBuffer<BufferUsage::AttributeBit>>& attribs);
+		void bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 
 		const Viewport& viewport() const;
 
 		// proxies from _cmd_buffer
 		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
-		DevicePtr device() const;
 		vk::CommandBuffer vk_cmd_buffer() const;
 
 	private:
@@ -161,9 +163,9 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 		void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 
-		void barriers(core::ArrayView<BufferBarrier> buffers, core::ArrayView<ImageBarrier> images);
-		void barriers(core::ArrayView<BufferBarrier> buffers);
-		void barriers(core::ArrayView<ImageBarrier> images);
+		void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);
+		void barriers(core::Span<BufferBarrier> buffers);
+		void barriers(core::Span<ImageBarrier> images);
 
 		void copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst);
 		void copy(const SrcCopyImage& src,  const DstCopyImage& dst);

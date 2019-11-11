@@ -1,22 +1,55 @@
+#ifndef YAVE_GLSL
+#define YAVE_GLSL
 
 // -------------------------------- CONSTANTS --------------------------------
 
 const float pi = 3.1415926535897932384626433832795;
+const float euler = 2.7182818284590452353602874713526;
 const float epsilon = 0.001;
 
-const uint max_uint = uint(0xFFFFFFF);
+const uint max_uint = uint(0xFFFFFFFF);
 
 const uint max_bones = 256;
 const uint max_tile_lights = 256;
 
+const float lum_histogram_offset = 8.0;
+const float lum_histogram_mul = 8.0;
+
+
 
 // -------------------------------- TYPES --------------------------------
 
-struct Light {
+struct DirectionalLight {
+	vec3 direction;
+	float padding_0;
+
+	vec3 color;
+	float padding_1;
+};
+
+struct PointLight {
 	vec3 position;
 	float radius;
+
 	vec3 color;
-	uint type;
+	float falloff;
+};
+
+struct VirtualLight {
+	vec3 position;
+	float intensity;
+
+	vec3 normal;
+	float padding_0;
+};
+
+
+struct LightingCamera {
+	mat4 inv_matrix;
+	vec3 position;
+	uint padding_0;
+	vec3 forward;
+	uint padding_1;
 };
 
 struct Frustum {
@@ -27,21 +60,17 @@ struct Frustum4 {
 	vec4 planes[4];
 };
 
+struct ToneMappingParams {
+	float avg_luminance;
+	float max_lum;
+
+	vec2 padding_0;
+};
 
 // -------------------------------- UTILS --------------------------------
 
 bool is_OOB(float z) {
 	return z <= 0.0; // reversed Z
-}
-
-uint float_to_uint(float f) {
-	return floatBitsToUint(f);
-	// uint(max_uint * f);
-}
-
-float uint_to_float(uint i) {
-	return uintBitsToFloat(i);
-	//return i / float(max_uint);
 }
 
 float saturate(float x) {
@@ -66,6 +95,23 @@ float sqr(float x) {
 
 float noise(vec2 co) {
 	return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+uint hash(uint x) {
+	x += (x << 10u);
+	x ^= (x >>  6u);
+	x += (x <<  3u);
+	x ^= (x >> 11u);
+	x += (x << 15u);
+	return x;
+}
+
+uint hash(uvec2 x) {
+	return hash(x.x ^ hash(x.y));
+}
+
+float log10(float x) {
+	return (1.0 / log(10.0)) * log(x);
 }
 
 mat4 indentity() {
@@ -102,6 +148,9 @@ vec3 cube_dir(vec2 texCoord, uint side) {
 	if(side == 5) return vec3(-tex.x, -tex.y, -1.0); // bottom
 }
 
+float luminance(vec3 rgb) {
+	return dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+}
 
 // -------------------------------- SPECTRUM --------------------------------
 
@@ -132,7 +181,6 @@ vec3 spectrum(uint x) {
 }
 
 
-
 // -------------------------------- PROJECTION --------------------------------
 
 vec3 unproject_ndc(vec3 ndc, mat4 inv_matrix) {
@@ -150,6 +198,7 @@ vec3 project(vec3 pos, mat4 proj_matrix) {
 	vec3 p3 = p.xyz / p.w;
 	return vec3(p3.xy * 0.5 + vec2(0.5), p3.z);
 }
+
 
 // -------------------------------- CULLING --------------------------------
 
@@ -176,17 +225,62 @@ bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
 }
 
 
+// -------------------------------- COLOR --------------------------------
+
+// https://github.com/BruOp/bae/blob/master/examples/common/shaderlib.sh
+vec3 RGB_to_XYZ(vec3 rgb) {
+	// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+	return vec3(
+	    dot(vec3(0.4124564, 0.3575761, 0.1804375), rgb),
+	    dot(vec3(0.2126729, 0.7151522, 0.0721750), rgb),
+	    dot(vec3(0.0193339, 0.1191920, 0.9503041), rgb)
+	);
+}
+
+vec3 XYZ_to_RGB(vec3 xyz) {
+	return vec3(
+	    dot(vec3( 3.2404542, -1.5371385, -0.4985314), xyz),
+	    dot(vec3(-0.9692660,  1.8760108,  0.0415560), xyz),
+	    dot(vec3( 0.0556434, -0.2040259,  1.0572252), xyz)
+	);
+}
+
+vec3 XYZ_to_Yxy(vec3 xyz) {
+	// http://www.brucelindbloom.com/index.html?Eqn_xyY_to_XYZ.html
+	float i = 1.0 / dot(xyz, vec3(1.0));
+	return vec3(xyz.y, xyz.x * i, xyz.y * i);
+}
+
+vec3 Yxy_to_XYZ(vec3 Yxy) {
+	return vec3(
+	    Yxy.x * Yxy.y / Yxy.z,
+	    Yxy.x,
+	    Yxy.x * (1.0 - Yxy.y - Yxy.z) / Yxy.z
+	);
+}
+
+vec3 RGB_to_Yxy(vec3 rgb) {
+	return XYZ_to_Yxy(RGB_to_XYZ(rgb));
+}
+
+vec3 Yxy_to_RGB(vec3 Yxy) {
+	return XYZ_to_RGB(Yxy_to_XYZ(Yxy));
+}
+
+
 // -------------------------------- HDR --------------------------------
 
-vec3 reinhard(vec3 hdr, float k) {
-	return hdr / (hdr + k);
+float reinhard(float lum, float white) {
+	return lum * ((1.0 + lum) / sqr(white)) / (1.0 + lum);
 }
 
-vec3 reinhard(vec3 hdr) {
-	return reinhard(hdr, 1.0);
+vec3 reinhard(vec3 hdr, float white) {
+	float lum = luminance(hdr);
+	float scale = reinhard(lum, white) / lum;
+	return hdr * scale;
 }
 
-vec3 uncharted2(vec3 hdr) {
+float uncharted2(float hdr) {
 	float A = 0.15;
 	float B = 0.50;
 	float C = 0.10;
@@ -196,12 +290,32 @@ vec3 uncharted2(vec3 hdr) {
 	return ((hdr * (A * hdr + C * B) + D * E) / (hdr * (A * hdr + B) + D * F)) - E / F;
 }
 
+vec3 uncharted2(vec3 hdr) {
+	return vec3(uncharted2(hdr.r), uncharted2(hdr.g), uncharted2(hdr.b));
+}
+
+float ACES_fast(float hdr) {
+	float A = 2.51;
+	float B = 0.03;
+	float C = 2.43;
+	float D = 0.59;
+	float E = 0.14;
+	return (hdr * (A * hdr + B)) / (hdr * (C * hdr + E) + E);
+}
+
+vec3 ACES_fast(vec3 hdr) {
+	return vec3(ACES_fast(hdr.r), ACES_fast(hdr.g), ACES_fast(hdr.b));
+}
 
 // -------------------------------- LIGHTING --------------------------------
 
 float attenuation(float distance, float radius) {
 	float x = min(distance, radius);
 	return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);
+}
+
+float attenuation(float distance, float radius, float falloff) {
+	return attenuation(distance * falloff, radius * falloff);
 }
 
 /*vec3 reflection(samplerCube envmap, vec3 normal, vec3 view) {
@@ -354,7 +468,7 @@ vec4 pack_color(vec3 color, float metallic) {
 }
 
 vec4 pack_normal(vec3 normal, float roughness) {
-	return vec4(normal * 0.5 + vec3(0.5), roughness);
+	return vec4(normalize(normal) * 0.5 + vec3(0.5), roughness);
 }
 
 void unpack_color(vec4 buff, out vec3 color, out float metallic) {
@@ -367,4 +481,4 @@ void unpack_normal(vec4 buff, out vec3 normal, out float roughness) {
 	roughness = max(0.05, buff.w);
 }
 
-
+#endif

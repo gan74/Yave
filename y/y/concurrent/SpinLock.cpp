@@ -21,36 +21,47 @@ SOFTWARE.
 **********************************/
 
 #include "SpinLock.h"
-#include <thread>
+
+#if __has_include(<immintrin.h>)
+#include <immintrin.h>
+#define Y_ASM_PAUSE() _mm_pause()
+#else
+#define Y_ASM_PAUSE() do {} while(false)
+#endif
 
 namespace y {
 namespace concurrent {
 
 SpinLock::SpinLock() :
-	//_spin(ATOMIC_FLAG_INIT)
-	_spin(Unlocked)
-	{
+	_spin(Unlocked) {
 }
 
 SpinLock::~SpinLock() {
+#ifdef Y_DEBUG
+	bool unlocked = _spin.exchange(Destroyed, std::memory_order_acquire) == Unlocked;
+	unused(unlocked);
+	y_debug_assert(unlocked);
+#endif
 }
 
 void SpinLock::lock() {
 	for(usize failed = 0; !try_lock(); ++failed) {
-		if(failed >= yield_threshold) {
-			std::this_thread::yield();
-		}
+		Y_ASM_PAUSE();
 	}
-
 }
 
 bool SpinLock::try_lock() {
-	//return !_spin.test_and_set(std::memory_order_acquire);
-	return _spin.exchange(Locked, std::memory_order_acquire) == Unlocked;
+	Type res = _spin.exchange(Locked, std::memory_order_acquire);
+#ifdef Y_DEBUG
+	y_debug_assert(res != Destroyed);
+#endif
+	return res == Unlocked;
 }
 
 void SpinLock::unlock() {
-	//_spin.clear();
+#ifdef Y_DEBUG
+	y_debug_assert(_spin != Destroyed);
+#endif
 	_spin.store(Unlocked, std::memory_order_release);
 }
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,61 +42,60 @@ using ComponentVector = core::SparseVector<T, EntityIndex>;
 class ComponentContainerBase;
 
 namespace detail {
+
+template<typename T>
+using has_required_components_t = decltype(std::declval<T>().required_components_archetype());
+
 using create_container_t = std::unique_ptr<ComponentContainerBase> (*)();
 struct RegisteredContainerType {
 	u64 type_id = 0;
-	std::type_index type_index = typeid(void);
+	ComponentTypeIndex type_index = {};
 	create_container_t create_container = nullptr;
 	RegisteredContainerType* next = nullptr;
 };
 
 usize registered_types_count();
-void register_container_type(RegisteredContainerType* type, u64 type_id, std::type_index type_index, create_container_t create_container);
+void register_container_type(RegisteredContainerType* type, u64 type_id, ComponentTypeIndex type_index, create_container_t create_container);
 serde2::Result serialize_container(WritableAssetArchive& writer, ComponentContainerBase* container);
 std::unique_ptr<ComponentContainerBase> deserialize_container(ReadableAssetArchive& reader);
-std::unique_ptr<ComponentContainerBase> create_container(std::type_index type_index);
+std::unique_ptr<ComponentContainerBase> create_container(ComponentTypeIndex type_index);
 
 template<typename T>
 void register_container_type(RegisteredContainerType* type, create_container_t create_container) {
 	// type_hash is not portable, but without reflection we don't have a choice...
-	register_container_type(type, type_hash<T>(), typeid(T), create_container);
+	register_container_type(type, type_hash<T>(), index_for_type<T>(), create_container);
 }
 }
 
 
 class ComponentContainerBase : NonMovable {
 	public:
-		virtual ~ComponentContainerBase() {
-		}
+		virtual ~ComponentContainerBase();
 
-		virtual void remove(core::ArrayView<EntityId> ids) = 0;
+		virtual void remove(core::Span<EntityId> ids) = 0;
 		virtual bool has(EntityId id) const = 0;
-		virtual core::Result<void> create_empty(EntityId id) = 0;
+		virtual core::Result<void> create_one(EntityWorld& world, EntityId id) = 0;
 		virtual core::Span<EntityIndex> indexes() const = 0;
 
 		virtual void add(const ComponentContainerBase* other, const std::unordered_map<EntityIndex, EntityId>& id_map) = 0;
+
+		virtual std::string_view type_name() const = 0;
 
 		ComponentTypeIndex type() const {
 			return _type;
 		}
 
-
-
 		template<typename T, typename... Args>
-		T& create(EntityId id, Args&&... args) {
-			auto i = id.index();
-			return component_vector_fast<T>().insert(i, y_fwd(args)...);
-		}
-
-		template<typename T, typename... Args>
-		T& create_or_find(EntityId id, Args&&... args) {
+		T& create(EntityWorld& world, EntityId id, Args&&... args) {
 			auto i = id.index();
 			auto& vec = component_vector_fast<T>();
+			add_required_components<T>(world, id);
 			if(!vec.has(i)) {
 				return vec.insert(i, y_fwd(args)...);
 			}
 			return vec[i];
 		}
+
 
 		template<typename T>
 		T& component(EntityId id) {
@@ -146,6 +145,8 @@ class ComponentContainerBase : NonMovable {
 			return component_vector_fast<T>();
 		}
 
+		//y_serde3_poly_base(ComponentContainerBase)
+
 	protected:
 		template<typename T>
 		ComponentContainerBase(ComponentVector<T>& sparse) :
@@ -153,6 +154,18 @@ class ComponentContainerBase : NonMovable {
 				_type(index_for_type<T>()) {
 		}
 
+		template<typename T>
+		static void add_required_components(EntityWorld& world, EntityId id) {
+			unused(world, id);
+			if constexpr(is_detected_v<detail::has_required_components_t, T>) {
+				T::add_required_components(world, id);
+			}
+		}
+
+	private:
+		// hacky but avoids dynamic casts and virtual calls
+		void* _sparse_ptr = nullptr;
+		const ComponentTypeIndex _type;
 
 
 		template<typename T>
@@ -170,12 +183,7 @@ class ComponentContainerBase : NonMovable {
 		}
 
 	private:
-		// hacky but avoids dynamic casts and virtual calls
-		void* _sparse_ptr = nullptr;
-		const ComponentTypeIndex _type;
-
-
-	private:
+		friend class EntityWorld;
 		friend serde2::Result detail::serialize_container(WritableAssetArchive&, ComponentContainerBase*);
 		friend std::unique_ptr<ComponentContainerBase> detail::deserialize_container(ReadableAssetArchive&);
 
@@ -183,6 +191,7 @@ class ComponentContainerBase : NonMovable {
 		virtual serde2::Result deserialize(ReadableAssetArchive&) = 0;
 		virtual u64 serialization_type_id() const = 0;
 
+		virtual void post_deserialize(EntityWorld&) {}
 };
 
 
@@ -192,7 +201,7 @@ template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
 	public:
 		ComponentContainer() :
-				ComponentContainerBase(_components), // we don't actually need to care about initilisation order here
+				ComponentContainerBase(_components), // we don't actually need to care about initialization order here
 				_registerer(&registerer) {
 		}
 
@@ -221,9 +230,9 @@ class ComponentContainer final : public ComponentContainerBase {
 			return ComponentContainerBase::has<T>(id);
 		}
 
-		core::Result<void> create_empty(EntityId id) override {
+		core::Result<void> create_one(EntityWorld& world, EntityId id) override {
 			if constexpr(std::is_default_constructible_v<T>) {
-				ComponentContainerBase::create<T>(id);
+				ComponentContainerBase::create<T>(world, id);
 				return core::Ok();
 			}
 			unused(id);
@@ -234,10 +243,15 @@ class ComponentContainer final : public ComponentContainerBase {
 			return _components.indexes();
 		}
 
+		std::string_view type_name() const override {
+			return ct_type_name<T>();
+		}
+
+		y_serde3(_components)
+		//y_serde3_poly(ComponentContainer)
+
 	private:
 		ComponentVector<T> _components;
-
-
 
 	// ------------------------------------- serde BS -------------------------------------
 
@@ -280,6 +294,13 @@ class ComponentContainer final : public ComponentContainerBase {
 			}
 			return core::Ok();
 		}
+
+		void post_deserialize(EntityWorld& world) override {
+			for(EntityIndex index : indexes()) {
+				add_required_components<T>(world, EntityId::from_unversioned_index(index));
+			}
+		}
+
 
 		static struct Registerer {
 			Registerer() {

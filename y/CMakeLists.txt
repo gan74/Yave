@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.7)
 project(y)
 
-# -Wsign-conversion
-set(EXTRA_WARNINGS -Wzero-as-null-pointer-constant -Wsign-promo -Wfloat-conversion -Wshadow)
+# -Wsign-conversion -Wshadow
+set(EXTRA_WARNINGS -Wzero-as-null-pointer-constant -Wsign-promo -Wfloat-conversion) 
 set(MORE_WARNINGS -Woverloaded-virtual -Wnon-virtual-dtor -Wodr -Wdisabled-optimization -Wlogical-op -Wredundant-decls -Wundef -Wtautological-compare)
-set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${EXTRA_WARNINGS} ${MORE_WARNINGS})
+# -Wno-init-list-lifetime cause trouble with Span and vulkan.hpp
+set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${EXTRA_WARNINGS} ${MORE_WARNINGS} -Wno-init-list-lifetime)
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wodr")

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,17 +37,17 @@ const FrameGraphResourcePool* FrameGraphPass::resources() const {
 }
 
 const Framebuffer& FrameGraphPass::framebuffer() const {
-	if(!_framebuffer.device()) {
+	if(_framebuffer.is_null()) {
 		y_fatal("Pass has no framebuffer.");
 	}
 	return _framebuffer;
 }
 
-core::ArrayView<DescriptorSet> FrameGraphPass::descriptor_sets() const {
+core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
 	return _descriptor_sets;
 }
 
-void FrameGraphPass::render(CmdBufferRecorder& recorder) const {
+void FrameGraphPass::render(CmdBufferRecorder& recorder) && {
 	_render(recorder, this);
 }
 
@@ -69,8 +69,8 @@ void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
 void FrameGraphPass::init_descriptor_sets(FrameGraphResourcePool* pool) {
 	y_profile();
 	for(const auto& set : _bindings) {
-		auto bindings = core::vector_with_capacity<Binding>(set.size());
-		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [=](const FrameGraphDescriptorBinding& b) { return b.create_binding(pool); });
+		auto bindings = core::vector_with_capacity<Descriptor>(set.size());
+		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [=](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(pool); });
 		_descriptor_sets << DescriptorSet(pool->device(), bindings);
 	}
 }

@@ -35,14 +35,14 @@ SOFTWARE.
 using namespace editor;
 
 
-EditorContext* context = nullptr;
+static EditorContext* context = nullptr;
 
 #ifdef Y_DEBUG
-bool display_console = true;
-bool debug_instance = true;
+static bool display_console = true;
+static bool debug_instance = true;
 #else
-bool display_console = false;
-bool debug_instance = false;
+static bool display_console = false;
+static bool debug_instance = false;
 #endif
 
 
@@ -53,6 +53,7 @@ static void hide_console() {
 #endif
 }
 
+[[maybe_unused]]
 static void crash_handler(int) {
 	log_msg("SEGFAULT!");
 	Y_TODO(we might want to save whatever we can here)
@@ -60,12 +61,11 @@ static void crash_handler(int) {
 
 static void setup_handlers() {
 	std::signal(SIGSEGV, crash_handler);
-	y_debug_assert([] { log_msg("Debug assert enabled"); return true; }());
 	perf::set_output_file("perfdump.json");
 }
 
 static void parse_args(int argc, char** argv) {
-	for(std::string_view arg : core::ArrayView<const char*>(argv, argc)) {
+	for(std::string_view arg : core::Span<const char*>(argv, argc)) {
 		if(arg == "--nodebug") {
 			debug_instance = false;
 		}
@@ -80,7 +80,7 @@ static void parse_args(int argc, char** argv) {
 	if(!display_console) {
 		hide_console();
 	}
-	y_debug_assert([] { log_msg("Asserts enabled."); return true; }());
+	y_debug_assert([] { log_msg("Debug asserts enabled."); return true; }());
 }
 
 static void setup_logger() {
@@ -93,13 +93,22 @@ static void setup_logger() {
 }
 
 static Instance create_instance() {
+	y_profile();
 	if(!debug_instance) {
-		log_msg("Vulkan debugging disabled", Log::Warning);
+		log_msg("Vulkan debugging disabled.", Log::Warning);
 	}
 	return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }
 
+static Device create_device(Instance& instance) {
+	y_profile();
+	return Device(instance);
+}
 
+static EditorContext create_constext(const Device& device) {
+	y_profile();
+	return EditorContext(&device);
+}
 
 
 
@@ -144,8 +153,9 @@ int main(int argc, char** argv) {
 
 	Instance instance = create_instance();
 
-	Device device(instance);
-	EditorContext ctx(&device);
+
+	Device device = create_device(instance);
+	EditorContext ctx = create_constext(device);
 	context = &ctx;
 
 	MainWindow window(&ctx);
@@ -173,6 +183,13 @@ int main(int argc, char** argv) {
 
 		ctx.flush_deferred();
 	}
+
+
+
+
+	set_log_callback(nullptr);
+	context = nullptr;
+
 
 	return 0;
 }

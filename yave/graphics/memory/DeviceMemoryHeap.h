@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2019 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_MEMORY_DEVICEMEMORYHEAP_H
 #define YAVE_GRAPHICS_MEMORY_DEVICEMEMORYHEAP_H
 
-#include <y/concurrent/SpinLock.h>
-
 #include "DeviceMemoryHeapBase.h"
+
+#include <mutex>
 
 namespace yave {
 
@@ -43,12 +43,8 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 	public:
 		static constexpr usize alignment = 256;
 
-		static constexpr usize heap_size = 1024 * 1024 * 128;
 
-		static_assert(heap_size % alignment == 0, "Heap size is not a multiple of alignment");
-
-
-		DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type);
+		DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type, usize heap_size);
 		~DeviceMemoryHeap() override;
 
 		core::Result<DeviceMemory> alloc(vk::MemoryRequirements reqs) override;
@@ -71,9 +67,11 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		void compact_block(FreeBlock block);
 
 		vk::DeviceMemory _memory;
+		usize _heap_size = 0;
 		core::Vector<FreeBlock> _blocks;
 		u8* _mapping = nullptr;
 
+		mutable std::mutex _lock;
 };
 
 }
