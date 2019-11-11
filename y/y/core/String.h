@@ -128,6 +128,7 @@ class String {
 		void make_empty();
 		void shrink(usize new_size);
 		void grow(usize new_size, char c);
+		void resize(usize new_size, char c = ' ');
 
 		char* data();
 		const char* data() const;

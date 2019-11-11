@@ -89,9 +89,9 @@ static_assert(has_serde3_poly_v<Template<float>*>);
 
 
 struct NestedStruct {
-	float i = 3.14159f;
+	std::pair<int, double> p = {-17, 1.6461341};
 
-	y_serde3(i)
+	y_serde3(p)
 };
 
 struct TestStruct {
@@ -154,7 +154,7 @@ int main() {
 	{
 		core::Vector<TestStruct> tests;
 		for(usize i = 0; i != count; ++i) {
-			tests << TestStruct{4, 5, {2.71727f}};
+			tests << TestStruct{4, 5, {{32, 2.71727}}};
 		}
 
 		core::DebugTimer _("serialize vec");
@@ -172,7 +172,7 @@ int main() {
 	{
 		core::DebugTimer _("serialize");
 		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
-		TestStruct t{4, 5, {2.71727f}};
+		TestStruct t{4, 5, {{32, 2.71727}}};
 		for(usize i = 0; i != count; ++i) {
 			arc.serialize(t).unwrap();
 		}
@@ -191,7 +191,7 @@ int main() {
 
 
 		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"), s == Success::Full ? Log::Info : Log::Error);
-		log_msg(fmt("{%, %, {%}}", t.x, t.y, t.z.i));
+		log_msg(fmt("{%, %, {%, %}}", t.x, t.y, t.z.p.first, t.z.p.second));
 	}
 	return 0;
 }

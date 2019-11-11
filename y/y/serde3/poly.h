@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_SERDE3_POLY_H
 
 #include "serde.h"
+#include "result.h"
 #include <y/utils/name.h>
 
 #include <memory>

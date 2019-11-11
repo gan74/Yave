@@ -52,10 +52,49 @@ namespace serde3 {
 namespace detail {
 using size_type = u64;
 
-static constexpr std::string_view version_string = "serde3.v1.0";
+static constexpr std::string_view version_string			= "serde3.v1.0";
 static constexpr std::string_view collection_version_string = "serde3.col.v1.0";
+static constexpr std::string_view tuple_version_string		= "serde3.tpl.v1.0";
+
+template<typename T>
+struct IsTuple {
+	static constexpr bool value = false;
+};
+
+template<typename... Args>
+struct IsTuple<std::tuple<Args...>> {
+	static constexpr bool value = true;
+};
+
+template<typename A, typename B>
+struct IsTuple<std::pair<A, B>> {
+	static constexpr bool value = true;
+};
+
+template<typename T>
+struct Deconst {
+	using type = T;
+};
+
+template<typename... Args>
+struct Deconst<std::tuple<Args...>> {
+	using type = std::tuple<std::remove_const_t<Args>...>;
+};
+
+template<typename A, typename B>
+struct Deconst<std::pair<A, B>> {
+	using type = std::pair<std::remove_const_t<A>, std::remove_const_t<B>>;
+};
 
 }
+
+template<typename T>
+static constexpr bool is_tuple_v = detail::IsTuple<remove_cvref_t<T>>::value;
+
+template<typename T>
+using deconst_t = typename detail::Deconst<remove_cvref_t<T>>::type;
+
+
 
 
 class WritableArchive final {
@@ -148,12 +187,15 @@ class WritableArchive final {
 			auto header = detail::build_header(object);
 			y_try(write_one(header));
 
+			pre_serialization(object);
 			if constexpr(has_serde3_poly_v<T>) {
 				return serialize_poly(object);
 			} else if constexpr(has_serde3_v<T>) {
 				return serialize_object(object);
 			} else if constexpr(std::is_trivially_copyable_v<T>) {
 				return serialize_pod(object);
+			} else if constexpr(is_tuple_v<T>) {
+				return serialize_tuple(object);
 			} else {
 				return serialize_collection(object);
 			}
@@ -255,6 +297,43 @@ class WritableArchive final {
 		}
 
 
+		// ------------------------------- TUPLE -------------------------------
+		template<typename T>
+		Result serialize_tuple(NamedObject<T> object) {
+			SizePatch patch{tell(), 0};
+
+			{
+				y_try(write_one(size_type(-1)));
+				y_try(serialize_tuple_members<0>(object.object));
+			}
+
+			patch.size = (size_type(tell()) - size_type(patch.index)) - sizeof(size_type);
+			push_patch(patch);
+
+			return core::Ok(Success::Full);
+		}
+
+		template<usize I, typename Tpl>
+		Result serialize_tuple_members(const Tpl& object) {
+			unused(object);
+			if constexpr(I < std::tuple_size_v<Tpl>) {
+				y_try(serialize_one(NamedObject{std::get<I>(object), detail::tuple_version_string}));
+				return serialize_tuple_members<I + 1>(object);
+			}
+			return core::Ok(Success::Full);
+		}
+
+
+		// ------------------------------- PRE -------------------------------
+		template<typename T>
+		void pre_serialization(NamedObject<T> object) {
+			unused(object);
+			if constexpr(has_serde3_pre_ser_v<T>) {
+				object.object.pre_serialization();
+			}
+		}
+
+
 		// ------------------------------- WRITE -------------------------------
 		template<typename T>
 		Result write_one(const T& t) {
@@ -343,6 +422,8 @@ class ReadableArchive final {
 				return post_deserialization(object, deserialize_object(object, header, size));
 			} else if constexpr(std::is_trivially_copyable_v<T>) {
 				return post_deserialization(object, deserialize_pod(object, header, size));
+			} else if constexpr(is_tuple_v<T>) {
+				return post_deserialization(object, deserialize_tuple(object, header, size));
 			} else {
 				return post_deserialization(object, deserialize_collection(object, header, size));
 			}
@@ -354,7 +435,8 @@ class ReadableArchive final {
 		Result deserialize_collection(NamedObject<T> object, const detail::FullHeader header, size_type size) {
 			static_assert(is_iterable_v<T>);
 
-			object.object.clear();
+			//object.object.clear();
+			object.object = T();
 
 			usize end = tell() + size;
 			const auto check = detail::build_header(object);
@@ -367,18 +449,26 @@ class ReadableArchive final {
 			y_try(read_one(collection_size));
 
 			try {
+				if constexpr(has_reserve_v<T>) {
+					object.object.reserve(collection_size);
+				}
+
 				if constexpr(has_emplace_back_v<T>) {
-					if constexpr(has_reserve_v<T>) {
-						object.object.reserve(collection_size);
-					}
 					for(size_type i = 0; i != collection_size; ++i) {
 						object.object.emplace_back();
 						y_try(deserialize_one(NamedObject{object.object.last(), detail::collection_version_string}));
 					}
-				} else {
+				} else if constexpr(has_resize_v<T>) {
 					object.object.resize(collection_size);
 					for(size_type i = 0; i != collection_size; ++i) {
 						y_try(deserialize_one(NamedObject{object.object[usize(i)], detail::collection_version_string}));
+					}
+				} else {
+					using value_type = deconst_t<typename T::value_type>;
+					for(size_type i = 0; i != collection_size; ++i) {
+						value_type value;
+						y_try(deserialize_one(NamedObject{value, detail::collection_version_string}));
+						object.object.insert(std::move(value));
 					}
 				}
 				return core::Ok(Success::Full);
@@ -386,7 +476,6 @@ class ReadableArchive final {
 				seek(end);
 				return core::Ok(Success::Partial);
 			}
-
 		}
 
 		// ------------------------------- POLY -------------------------------
@@ -505,6 +594,29 @@ class ReadableArchive final {
 			}
 
 			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
+		}
+
+
+		// ------------------------------- TUPLE -------------------------------
+		template<typename T>
+		Result deserialize_tuple(NamedObject<T> object, const detail::FullHeader header, size_type size) {
+			const auto check = detail::build_header(object);
+			if(header != check) {
+				seek(tell() + size);
+				return core::Ok(Success::Partial);
+			} else {
+				return deserialize_tuple_members<0>(object.object);
+			}
+		}
+
+		template<usize I, typename Tpl>
+		Result deserialize_tuple_members(Tpl& object) {
+			unused(object);
+			if constexpr(I < std::tuple_size_v<Tpl>) {
+				y_try(deserialize_one(NamedObject{std::get<I>(object), detail::tuple_version_string}));
+				return deserialize_tuple_members<I + 1>(object);
+			}
+			return core::Ok(Success::Full);
 		}
 
 

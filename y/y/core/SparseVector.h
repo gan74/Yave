@@ -146,15 +146,17 @@ class SparseVector final {
 	static_assert(std::is_integral_v<Index>);
 
 	public:
-		using value_type = Elem;
+		using element_type = Elem;
 		using size_type = usize;
 		using index_type = Index;
+
+		using value_type = std::pair<index_type, non_void>;
 
 		using reference = std::conditional_t<is_void_v, void, non_void&>;
 		using const_reference = std::conditional_t<is_void_v, void, const non_void&>;
 
-		using pointer = value_type*;
-		using const_pointer = const value_type*;
+		using pointer = element_type*;
+		using const_pointer = const element_type*;
 
 	private:
 		static constexpr usize page_size = 1024;
@@ -187,6 +189,10 @@ class SparseVector final {
 			_dense.emplace_back(index);
 			_values.emplace_back(y_fwd(args)...);
 			return _values.last();
+		}
+
+		reference insert(value_type&& value) {
+			return insert(value.first, std::move(value.second));
 		}
 
 		void erase(index_type index) {
@@ -315,11 +321,11 @@ class SparseVector final {
 						 const_pair_iterator(*this, size()));
 		}
 
-		MutableSpan<value_type> values() {
+		MutableSpan<element_type> values() {
 			return _values;
 		}
 
-		Span<value_type> values() const {
+		Span<element_type> values() const {
 			return _values;
 		}
 

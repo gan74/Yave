@@ -203,6 +203,10 @@ void String::grow(usize new_size, char c) {
 	d[new_size] = 0;
 }
 
+void String::resize(usize new_size, char c) {
+	grow(new_size, c);
+}
+
 
 char* String::data() {
 	return is_long() ? _l.data : _s.data;
