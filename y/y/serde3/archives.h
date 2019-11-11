@@ -334,13 +334,17 @@ class ReadableArchive final {
 			y_try_discard(_file->read_one(size));
 
 			if constexpr(has_serde3_poly_v<T>) {
-				return deserialize_poly(object, header, size);
+				auto res = deserialize_poly(object, header, size);
+				if(res.is_ok() && object.object != nullptr) {
+					return post_deserialization(NamedObject(*object.object, object.name), std::move(res));
+				}
+				return res;
 			} else if constexpr(has_serde3_v<T>) {
-				return deserialize_object(object, header, size);
+				return post_deserialization(object, deserialize_object(object, header, size));
 			} else if constexpr(std::is_trivially_copyable_v<T>) {
-				return deserialize_pod(object, header, size);
+				return post_deserialization(object, deserialize_pod(object, header, size));
 			} else {
-				return deserialize_collection(object, header, size);
+				return post_deserialization(object, deserialize_collection(object, header, size));
 			}
 		}
 
@@ -352,10 +356,10 @@ class ReadableArchive final {
 
 			object.object.clear();
 
-			usize end = _file->tell() + size;
+			usize end = tell() + size;
 			const auto check = detail::build_header(object);
 			if(header != check) {
-				_file->seek(end);
+				seek(end);
 				return core::Ok(Success::Partial);
 			}
 
@@ -379,7 +383,7 @@ class ReadableArchive final {
 				}
 				return core::Ok(Success::Full);
 			} catch(std::bad_alloc&) {
-				_file->seek(end);
+				seek(end);
 				return core::Ok(Success::Partial);
 			}
 
@@ -394,7 +398,7 @@ class ReadableArchive final {
 				using element_type = typename T::element_type;
 				object.object = element_type::_y_serde3_poly_base.create_from_id(header.type_id);
 				if(!object.object) {
-					_file->seek(_file->tell() + size);
+					seek(tell() + size);
 					return core::Ok(Success::Partial);
 				}
 				return object.object->_y_serde3_poly_deserialize(*this);
@@ -419,7 +423,7 @@ class ReadableArchive final {
 					y_try_discard(_file->read(buffer.data(), size));
 					return try_convert<T>(object.object, header.type, buffer.data());
 				} else {
-					_file->seek(_file->tell() + size);
+					seek(tell() + size);
 					return core::Ok(Success::Partial);
 				}
 			}
@@ -456,7 +460,7 @@ class ReadableArchive final {
 					auto header = detail::build_header(std::get<I>(members));
 					for(const auto& m : object_data.members) {
 						if(m.header.type.name_hash == header.type.name_hash) {
-							_file->seek(m.offset);
+							seek(m.offset);
 							y_try_status(deserialize_one(std::get<I>(members)));
 							found = true;
 							break;
@@ -471,7 +475,7 @@ class ReadableArchive final {
 
 				y_try_status((deserialize_members_internal<Safe, I + 1>(members, object_data)));
 			} else if constexpr(Safe) {
-				_file->seek(object_data.end_offset);
+				seek(object_data.end_offset);
 			}
 
 			return core::Ok(status);
@@ -482,9 +486,9 @@ class ReadableArchive final {
 			ObjectData data;
 
 			if constexpr(Safe) {
-				usize obj_start = _file->tell();
+				usize obj_start = tell();
 				for(usize i = 0; i != serialized_member_count; ++i) {
-					usize offset = _file->tell();
+					usize offset = tell();
 
 					detail::FullHeader header;
 					size_type size = size_type(-1);
@@ -492,15 +496,26 @@ class ReadableArchive final {
 					y_try_discard(read_header(header));
 					y_try_discard(_file->read_one(size));
 
-					_file->seek(_file->tell() + size);
+					seek(tell() + size);
 
 					data.members << HeaderOffset{header, offset};
 				}
-				data.end_offset = _file->tell();
-				_file->seek(obj_start);
+				data.end_offset = tell();
+				seek(obj_start);
 			}
 
 			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
+		}
+
+
+		// ------------------------------- POST -------------------------------
+		template<typename T>
+		Result post_deserialization(NamedObject<T> object, Result res) {
+			unused(object);
+			if constexpr(has_serde3_post_deser_v<T>) {
+				object.object.post_deserialization();
+			}
+			return res;
 		}
 
 
@@ -524,9 +539,16 @@ class ReadableArchive final {
 				if(read_members) {
 					y_try_discard(_file->read_one(header.members));
 				}
-
 			}
 			return core::Ok(Success::Full);
+		}
+
+		usize tell() const {
+			return _file->tell();
+		}
+
+		void seek(usize offset) {
+			_file->seek(offset);
 		}
 
 	private:
