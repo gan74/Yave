@@ -114,7 +114,7 @@ static EditorContext create_constext(const Device& device) {
 
 int main(int argc, char** argv) {
 	setup_handlers();
-	FileSystemModel::local_filesystem()->remove("./test.sqlite3").unwrap();
+	FileSystemModel::local_filesystem()->remove("./test.sqlite3").expected("Unable to delete database");
 	SQLiteAssetStore store("test.sqlite3");
 	const FileSystemModel* fs = store.filesystem();
 	core::Chrono timer;
@@ -157,6 +157,20 @@ int main(int argc, char** argv) {
 		y_debug_assert(id != AssetId::invalid_id());
 		y_debug_assert(fs->is_directory("folder").unwrap());
 		y_debug_assert(fs->exists("folder/file").unwrap());
+
+		{
+			io2::ReaderPtr reader = std::move(store.data(id).unwrap());
+			u64 d = 0;
+			reader->read_one(d).unwrap();
+			y_debug_assert(d == data);
+			y_debug_assert(reader->at_end());
+		}
+
+		fs->remove("folder/file").unwrap();
+		y_debug_assert(!fs->exists("folder/file").unwrap());
+		y_debug_assert(fs->exists("folder/").unwrap());
+		y_debug_assert(store.id("folder/file").is_error());
+
 	}
 
 	return 0;
