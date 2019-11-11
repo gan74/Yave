@@ -163,8 +163,10 @@ Logs& EditorContext::logs() {
 	return _logs;
 }
 
+static constexpr std::string_view world_file = "world.yw";
+
 void EditorContext::save_world() const {
-	auto file = io2::File::create("world.yw");
+	auto file = io2::File::create(world_file);
 	if(!file) {
 		log_msg("Unable to open file.", Log::Error);
 		return;
@@ -172,12 +174,12 @@ void EditorContext::save_world() const {
 
 	WritableAssetArchive ar(file.unwrap());
 	if(!_world.serialize(ar)) {
-		log_msg("Unable to serialize world.", Log::Error);
+		log_msg("Unable to save world.", Log::Error);
 	}
 }
 
 void EditorContext::load_world() {
-	auto file = io2::File::open("world.yw");
+	auto file = io2::File::open(world_file);
 	if(!file) {
 		log_msg("Unable to open file.", Log::Error);
 		return;
@@ -187,7 +189,7 @@ void EditorContext::load_world() {
 
 	ReadableAssetArchive ar(file.unwrap(), _loader);
 	if(!world.deserialize(ar)) {
-		log_msg("Unable to deserialize world.", Log::Error);
+		log_msg("Unable to load world.", Log::Error);
 		return;
 	}
 

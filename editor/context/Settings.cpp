@@ -22,34 +22,37 @@ SOFTWARE.
 
 #include "Settings.h"
 
+#include <y/serde3/archives.h>
 #include <y/io2/File.h>
 
 namespace editor {
 
+static constexpr std::string_view settings_file = "settings.dat";
+
 Settings::Settings(bool load) {
 	if(load) {
-		auto file = io2::File::open("settings.dat");
+		auto file = io2::File::open(settings_file);
 		if(!file) {
 			log_msg("Unable to open settings file.", Log::Error);
 			return;
 		}
-		serde2::ReadableArchive ar(file.unwrap());
-		if(!deserialize(ar)) {
-			log_msg("Unable to read settings.", Log::Error);
+		serde3::ReadableArchive arc(std::move(file.unwrap()));
+		if(!arc.deserialize(*this)) {
+			log_msg("Unable to read settings file.", Log::Error);
 			*this = Settings(false);
 		}
 	}
 }
 
 Settings::~Settings() {
-	auto file = io2::File::create("settings.dat");
+	auto file = io2::File::create(settings_file);
 	if(!file) {
 		log_msg("Unable to open settings file.", Log::Error);
 		return;
 	}
-	serde2::WritableArchive ar(file.unwrap());
-	if(!serialize(ar)) {
-		log_msg("Unable to write settings.", Log::Error);
+	serde3::WritableArchive arc(std::move(file.unwrap()));
+	if(!arc.serialize(*this)) {
+		log_msg("Unable to write settings file.", Log::Error);
 	}
 }
 

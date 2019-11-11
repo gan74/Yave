@@ -43,11 +43,15 @@ struct CameraSettings {
 	float trackball_sensitivity = 6.0f;
 	float dolly_sensitivity = 2.5f;
 
+	y_serde3(z_near, fov, move_forward, move_backward, move_right, move_left, fps_sensitivity, trackball_sensitivity, dolly_sensitivity)
+
 };
 
 struct UiSettings {
 	Key change_gizmo_mode = Key::R;
 	Key change_gizmo_space = Key::Q;
+
+	y_serde3(change_gizmo_mode, change_gizmo_space)
 };
 
 static_assert(std::is_standard_layout_v<CameraSettings> && std::is_trivially_copyable_v<CameraSettings>);
@@ -62,6 +66,7 @@ class Settings {
 		UiSettings& ui();
 
 		y_serde2(_camera, _ui)
+		y_serde3(_camera, _ui)
 
 	private:
 		CameraSettings _camera;
