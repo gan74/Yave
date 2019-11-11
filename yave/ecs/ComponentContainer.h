@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <yave/utils/serde.h>
 
-#include <y/utils/detect.h>
-
 #include "ecs.h"
 #include "EntityId.h"
 
@@ -51,29 +49,28 @@ using has_required_components_t = decltype(std::declval<T>().required_components
 using create_container_t = std::unique_ptr<ComponentContainerBase> (*)();
 struct RegisteredContainerType {
 	u64 type_id = 0;
-	std::type_index type_index = typeid(void);
+	ComponentTypeIndex type_index = {};
 	create_container_t create_container = nullptr;
 	RegisteredContainerType* next = nullptr;
 };
 
 usize registered_types_count();
-void register_container_type(RegisteredContainerType* type, u64 type_id, std::type_index type_index, create_container_t create_container);
+void register_container_type(RegisteredContainerType* type, u64 type_id, ComponentTypeIndex type_index, create_container_t create_container);
 serde2::Result serialize_container(WritableAssetArchive& writer, ComponentContainerBase* container);
 std::unique_ptr<ComponentContainerBase> deserialize_container(ReadableAssetArchive& reader);
-std::unique_ptr<ComponentContainerBase> create_container(std::type_index type_index);
+std::unique_ptr<ComponentContainerBase> create_container(ComponentTypeIndex type_index);
 
 template<typename T>
 void register_container_type(RegisteredContainerType* type, create_container_t create_container) {
 	// type_hash is not portable, but without reflection we don't have a choice...
-	register_container_type(type, type_hash<T>(), typeid(T), create_container);
+	register_container_type(type, type_hash<T>(), index_for_type<T>(), create_container);
 }
 }
 
 
 class ComponentContainerBase : NonMovable {
 	public:
-		virtual ~ComponentContainerBase() {
-		}
+		virtual ~ComponentContainerBase();
 
 		virtual void remove(core::Span<EntityId> ids) = 0;
 		virtual bool has(EntityId id) const = 0;
@@ -81,6 +78,8 @@ class ComponentContainerBase : NonMovable {
 		virtual core::Span<EntityIndex> indexes() const = 0;
 
 		virtual void add(const ComponentContainerBase* other, const std::unordered_map<EntityIndex, EntityId>& id_map) = 0;
+
+		virtual std::string_view type_name() const = 0;
 
 		ComponentTypeIndex type() const {
 			return _type;
@@ -146,6 +145,8 @@ class ComponentContainerBase : NonMovable {
 			return component_vector_fast<T>();
 		}
 
+		//y_serde3_poly_base(ComponentContainerBase)
+
 	protected:
 		template<typename T>
 		ComponentContainerBase(ComponentVector<T>& sparse) :
@@ -160,7 +161,6 @@ class ComponentContainerBase : NonMovable {
 				T::add_required_components(world, id);
 			}
 		}
-
 
 	private:
 		// hacky but avoids dynamic casts and virtual calls
@@ -242,6 +242,13 @@ class ComponentContainer final : public ComponentContainerBase {
 		core::Span<EntityIndex> indexes() const override {
 			return _components.indexes();
 		}
+
+		std::string_view type_name() const override {
+			return ct_type_name<T>();
+		}
+
+		y_serde3(_components)
+		//y_serde3_poly(ComponentContainer)
 
 	private:
 		ComponentVector<T> _components;

@@ -32,6 +32,8 @@ SOFTWARE.
 #include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 
+#include <editor/utils/assets.h>
+
 #include <thread>
 
 namespace editor {
@@ -164,19 +166,20 @@ void ThumbmailCache::process_requests() {
 	}
 }
 
+static constexpr const char unable_to_load_error[] = "Unable to load static %.";
+
 void ThumbmailCache::request_thumbmail(AssetId id) {
 	_thumbmails[id] = nullptr;
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
 			y_profile();
 
-			switch(context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown)) {
+			AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+			switch(asset_type) {
 				case AssetType::Mesh:
 					if(auto mesh = context()->loader().load<StaticMesh>(id)) {
 						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
 								return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
 							};
-					} else {
-						log_msg("Unable to load static mesh.", Log::Error);
 					}
 				break;
 
@@ -185,22 +188,20 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
 								return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
 							};
-					} else {
-						log_msg("Unable to load material.", Log::Error);
 					}
 				break;
 
 				case AssetType::Image:
 					if(auto tex = context()->loader().load<Texture>(id)) {
 						return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
-					} else {
-						log_msg("Unable to load image.", Log::Error);
 					}
 				break;
 
 				default:
 				break;
 			}
+			log_msg(fmt(unable_to_load_error, asset_type_name(asset_type)), Log::Error);
+
 
 			return [](CmdBufferRecorder&) { return nullptr; };
 		});

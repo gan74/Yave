@@ -38,7 +38,7 @@ usize registered_types_count() {
 	return count;
 }
 
-void register_container_type(RegisteredContainerType* type, u64 type_id, std::type_index type_index, create_container_t create_container) {
+void register_container_type(RegisteredContainerType* type, u64 type_id, ComponentTypeIndex type_index, create_container_t create_container) {
 	for(auto* i = registered_types_head; i; i = i->next) {
 		y_debug_assert(i->type_id != type_id);
 	}
@@ -77,7 +77,7 @@ std::unique_ptr<ComponentContainerBase> deserialize_container(ReadableAssetArchi
 	return nullptr;
 }
 
-std::unique_ptr<ComponentContainerBase> create_container(std::type_index type_index) {
+std::unique_ptr<ComponentContainerBase> create_container(ComponentTypeIndex type_index) {
 	for(auto* i = registered_types_head; i; i = i->next) {
 		if(i->type_index == type_index) {
 			return i->create_container();
@@ -87,5 +87,9 @@ std::unique_ptr<ComponentContainerBase> create_container(std::type_index type_in
 }
 
 }
+
+ComponentContainerBase::~ComponentContainerBase() {
+}
+
 }
 }

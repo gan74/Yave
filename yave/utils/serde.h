@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <y/io2/io.h>
 #include <y/serde2/serde.h>
+#include <y/serde3/serde.h>
+#include <y/serde3/archives.h>
 
 namespace yave {
 

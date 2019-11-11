@@ -23,9 +23,9 @@ SOFTWARE.
 #define EDITOR_PROPERTIES_COMPONENTTRAITS_H
 
 #include <editor/editor.h>
+#include <yave/ecs/ecs.h>
 #include <yave/ecs/EntityId.h>
 
-#include <typeindex>
 
 namespace yave {
 namespace ecs {
@@ -38,19 +38,19 @@ namespace editor {
 struct ComponentTraits {
 	using ui_function_t = void (*)(ContextPtr, ecs::EntityId);
 
-	std::type_index type = typeid(void);
+	ecs::ComponentTypeIndex type = {};
 	std::string_view name;
 	ui_function_t widget = nullptr;
 };
 
-ComponentTraits component_traits(std::type_index type);
+ComponentTraits component_traits(ecs::ComponentTypeIndex type);
 core::Vector<ComponentTraits> all_component_traits();
 
-void component_widget(std::type_index type, ContextPtr ctx, ecs::EntityId id);
+void component_widget(ecs::ComponentTypeIndex type, ContextPtr ctx, ecs::EntityId id);
 
 template<typename T>
 ComponentTraits component_traits() {
-	return component_traits(typeid(T));
+	return component_traits(ecs::index_for_type<T>());
 }
 
 

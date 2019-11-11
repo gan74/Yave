@@ -176,6 +176,18 @@ void EditorContext::save_world() const {
 	if(!_world.serialize(ar)) {
 		log_msg("Unable to save world.", Log::Error);
 	}
+
+	/*{
+		auto file = io2::File::create(fmt("%.2", world_file));
+		if(!file) {
+			log_msg("Unable to open file.", Log::Error);
+			return;
+		}
+		serde3::WritableArchive arc(std::move(file.unwrap()));
+		if(!arc.serialize(_world)) {
+			log_msg("Unable to save world.", Log::Error);
+		}
+	}*/
 }
 
 void EditorContext::load_world() {
@@ -192,6 +204,19 @@ void EditorContext::load_world() {
 		log_msg("Unable to load world.", Log::Error);
 		return;
 	}
+
+	/*{
+		ecs::EntityWorld world2 = create_editor_world();
+		auto file = io2::File::create(fmt("%.2", world_file));
+		if(!file) {
+			log_msg("Unable to open file.", Log::Error);
+			return;
+		}
+		serde3::ReadableArchive arc(std::move(file.unwrap()));
+		if(!arc.deserialize(world2)) {
+			log_msg("Unable to load world.", Log::Error);
+		}
+	}*/
 
 	_world = std::move(world);
 	y_debug_assert(_world.required_component_types().size() == 1);

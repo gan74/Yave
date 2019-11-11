@@ -42,6 +42,7 @@ class FolderAssetStore final : public AssetStore {
 		AssetId id;
 
 		y_serde2(id, name)
+		y_serde3(id, name)
 	};
 
 	// same as LocalFileSystemModel but rooted in a folder

@@ -36,13 +36,19 @@ class EntityWorld;
 	bool operator!=(const ComponentTypeIndex& other) const { return index != other.index; }
 };*/
 
-using ComponentTypeIndex = std::type_index;
+struct ComponentTypeIndex {
+	u64 type_hash = 0;
+
+	bool operator==(const ComponentTypeIndex& other) const { return type_hash == other.type_hash; }
+	bool operator!=(const ComponentTypeIndex& other) const { return type_hash != other.type_hash; }
+};
 
 
 template<typename T>
 ComponentTypeIndex index_for_type() {
 	static_assert(!std::is_reference_v<T>);
-	return typeid(T);
+	using naked = remove_cvref_t<T>;
+	return ComponentTypeIndex{type_hash_2<naked>()};
 }
 
 template<typename... Args>

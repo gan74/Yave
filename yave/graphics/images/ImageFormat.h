@@ -47,6 +47,8 @@ class ImageFormat {
 		y_serialize2(u32(_format))
 		y_deserialize2(serde2::func([this](u32 f) { _format = vk::Format(f); }))
 
+		y_serde3(_format)
+
 	private:
 		vk::Format _format;
 };

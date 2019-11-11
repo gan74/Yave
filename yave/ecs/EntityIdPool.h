@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef YAVE_ECS_ENTITYIDPOOL_H
 #define YAVE_ECS_ENTITYIDPOOL_H
 
+#include <yave/utils/serde.h>
+
 #include "EntityId.h"
 
 #include <y/core/Vector.h>
@@ -108,6 +110,8 @@ class EntityIdPool {
 		using iterator = Iterator<false>;
 		using const_iterator = Iterator<true>;
 
+		using value_type = EntityId;
+
 		EntityIdPool();
 
 		core::Result<void> create_with_index(EntityIndex index);
@@ -125,6 +129,8 @@ class EntityIdPool {
 		const_iterator end() const;
 
 		usize size() const;
+
+		y_serde3(_ids, _size)
 
 	private:
 		core::Vector<EntityId> _ids;

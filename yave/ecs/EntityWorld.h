@@ -214,9 +214,22 @@ class EntityWorld : NonCopyable {
 		}
 
 
-		core::String type_name(ComponentTypeIndex type) const;
+		std::string_view type_name(ComponentTypeIndex type) const;
+
+
+
+		y_serde3(_entities, _component_containers)
 
 	private:
+		struct Hash {
+			usize operator()(ComponentTypeIndex index) const {
+				return usize(index.type_hash);
+			}
+		};
+
+
+		void post_deserialization();
+
 		template<typename T>
 		ComponentContainerBase* container() {
 			auto& container = _component_containers[index_for_type<T>()];
@@ -254,7 +267,7 @@ class EntityWorld : NonCopyable {
 		EntityIdPool _entities;
 		core::Vector<EntityId> _deletions;
 
-		std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _component_containers;
+		std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>,Hash> _component_containers;
 
 		Y_TODO(Do we have to serialize this?)
 		core::Vector<ComponentTypeIndex> _required_components;

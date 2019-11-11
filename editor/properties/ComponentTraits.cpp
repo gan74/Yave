@@ -54,7 +54,7 @@ void register_component_type(RegisteredComponentType* type, ComponentTraits trai
 }
 
 
-ComponentTraits component_traits(std::type_index type) {
+ComponentTraits component_traits(ecs::ComponentTypeIndex type) {
 	for(auto* i = registered_types_head; i; i = i->next) {
 		if(i->traits.type == type) {
 			return i->traits;
@@ -73,7 +73,7 @@ core::Vector<ComponentTraits> all_component_traits() {
 }
 
 
-void component_widget(std::type_index type, ContextPtr ctx, ecs::EntityId id) {
+void component_widget(ecs::ComponentTypeIndex type, ContextPtr ctx, ecs::EntityId id) {
 	ComponentTraits traits = component_traits(type);
 	if(traits.widget) {
 		traits.widget(ctx, id);
@@ -82,16 +82,16 @@ void component_widget(std::type_index type, ContextPtr ctx, ecs::EntityId id) {
 
 
 #define EDITOR_COMPONENT_REGISTERER y_create_name_with_prefix(component)
-#define REGISTER_COMPONENT_TYPE(Type)																			\
-	namespace {																									\
-		class EDITOR_COMPONENT_REGISTERER {																		\
-			EDITOR_COMPONENT_REGISTERER() {																		\
-				register_component_type(&type, ComponentTraits{typeid(Type), #Type, &widget<Type>});			\
-			}																									\
-			static EDITOR_COMPONENT_REGISTERER registerer;														\
-			RegisteredComponentType type;																		\
-		};																										\
-		EDITOR_COMPONENT_REGISTERER EDITOR_COMPONENT_REGISTERER::registerer = EDITOR_COMPONENT_REGISTERER();	\
+#define REGISTER_COMPONENT_TYPE(Type)																				\
+	namespace {																										\
+		class EDITOR_COMPONENT_REGISTERER {																			\
+			EDITOR_COMPONENT_REGISTERER() {																			\
+				register_component_type(&type, ComponentTraits{ecs::index_for_type<Type>(), #Type, &widget<Type>});	\
+			}																										\
+			static EDITOR_COMPONENT_REGISTERER registerer;															\
+			RegisteredComponentType type;																			\
+		};																											\
+		EDITOR_COMPONENT_REGISTERER EDITOR_COMPONENT_REGISTERER::registerer = EDITOR_COMPONENT_REGISTERER();		\
 	}
 
 

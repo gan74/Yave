@@ -28,7 +28,6 @@ namespace ecs {
 EntityWorld::EntityWorld() {
 }
 
-
 EntityId EntityWorld::create_entity() {
 	EntityId id = _entities.create();
 	add_required_components(id);
@@ -81,8 +80,10 @@ void EntityWorld::add(const EntityWorld& other) {
 	}
 }
 
-core::String EntityWorld::type_name(ComponentTypeIndex index) const {
-	return y::detail::demangle_type_name(index.name());
+std::string_view EntityWorld::type_name(ComponentTypeIndex index) const {
+	static constexpr std::string_view no_name = "unknown";
+	const ComponentContainerBase* cont = container(index);
+	return cont ? cont->type_name() : no_name;
 }
 
 
@@ -104,6 +105,12 @@ ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) {
 void EntityWorld::add_required_components(EntityId id) {
 	for(const ComponentTypeIndex& tpe : _required_components) {
 		create_component(id, tpe).ignore();
+	}
+}
+
+void EntityWorld::post_deserialization() {
+	for(const auto& p : _component_containers) {
+		p.second->post_deserialize(*this);
 	}
 }
 

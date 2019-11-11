@@ -73,7 +73,7 @@ void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& t
 void AssetStringifier::stringify(AssetId id) {
 	auto data = context()->asset_store().data(id);
 	if(!data) {
-		log_msg("Unable to fine asset.", Log::Error);
+		log_msg("Unable to find asset.", Log::Error);
 		clear();
 		return;
 	}
@@ -83,7 +83,7 @@ void AssetStringifier::stringify(AssetId id) {
 	MeshData mesh;
 	serde2::ReadableArchive ar(*data.unwrap());
 	if(!mesh.deserialize(ar)) {
-		log_msg("Unable to load mesh.", Log::Error);
+		log_msg("Unable to load asset.", Log::Error);
 		clear();
 		return;
 	}

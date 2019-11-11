@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/utils/serde.h>
 #include <y/math/Vec.h>
+#include <y/core/FixedArray.h>
 
 #include "ImageFormat.h"
 
@@ -61,17 +62,18 @@ class ImageData : NonCopyable {
 
 		y_serialize2(fs::magic_number, AssetType::Image, u32(3),
 			_size.to<2>(), _layers, _mips, _format,
-			serde2::array(combined_byte_size(), _data.get()))
+			serde2::array(combined_byte_size(), _data.data()))
 
 		y_deserialize2(serde2::check(fs::magic_number, AssetType::Image, u32(3)),
 			_size.to<2>(), _layers, _mips, _format,
 			serde2::func([this]() -> serde2::Result {
 				if(!_format.is_valid()) { return core::Err(); }
-				_data = std::make_unique<u8[]>(combined_byte_size());
+				_data = core::FixedArray<u8>(combined_byte_size());
 				return core::Ok();
 			}),
-			serde2::array(combined_byte_size(), _data.get()))
+			serde2::array(combined_byte_size(), _data.data()))
 
+		y_serde3(_size, _layers, _mips, _data)
 
 	private:
 		math::Vec3ui _size = math::Vec3ui(0, 0, 1);
@@ -80,7 +82,7 @@ class ImageData : NonCopyable {
 		u32 _layers = 1;
 		u32 _mips = 1;
 
-		std::unique_ptr<u8[]> _data;
+		core::FixedArray<u8> _data;
 };
 
 }

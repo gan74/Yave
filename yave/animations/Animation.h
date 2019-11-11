@@ -35,6 +35,7 @@ class Animation {
 		Animation(float duration, core::Vector<AnimationChannel>&& channels);
 
 		y_serde2(serde2::check(fs::magic_number, AssetType::Animation, u32(4)), _duration, _channels)
+		y_serde3(_duration, _channels)
 
 		float duration() const;
 		core::Span<AnimationChannel> channels() const;

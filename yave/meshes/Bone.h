@@ -49,6 +49,7 @@ static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should
 struct Bone {
 
 	y_serde2(name, parent, local_transform)
+	y_serde3(name, parent, local_transform)
 
 	core::String name;
 	u32 parent;

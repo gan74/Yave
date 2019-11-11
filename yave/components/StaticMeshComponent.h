@@ -55,6 +55,7 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
 		AssetPtr<Material>& material();
 
 		yave_asset_serde(_mesh, _material)
+		y_serde3(_mesh, _material)
 
 	private:
 		AssetPtr<StaticMesh> _mesh;
