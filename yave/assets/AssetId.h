@@ -35,6 +35,10 @@ struct AssetId {
 			return AssetId();
 		}
 
+		static constexpr AssetId from_id(u64 id) {
+			return AssetId(id);
+		}
+
 		/*constexpr AssetType type() const {
 			return AssetType(_id & _type_mask);
 		}*/

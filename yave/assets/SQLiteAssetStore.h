@@ -63,6 +63,8 @@ class SQLiteAssetStore final : public AssetStore {
 
 			void check(int res) const;
 
+			i64 next_folder_id() const;
+
 			sqlite3* _database = nullptr;
 	};
 
@@ -88,8 +90,9 @@ class SQLiteAssetStore final : public AssetStore {
 	private:
 		void check(int res) const;
 
+		Result<i64> find_folder(std::string_view name, bool or_create = true);
+
 		AssetId next_id();
-		i64 next_folder_id();
 
 		sqlite3* _database = nullptr;
 		SQLiteFileSystemModel _filesystem;

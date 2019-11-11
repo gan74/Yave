@@ -114,36 +114,52 @@ static EditorContext create_constext(const Device& device) {
 
 int main(int argc, char** argv) {
 	setup_handlers();
+	FileSystemModel::local_filesystem()->remove("./test.sqlite3").unwrap();
 	SQLiteAssetStore store("test.sqlite3");
 	const FileSystemModel* fs = store.filesystem();
 	core::Chrono timer;
 	{
-		auto r = fs->exists("doesntexists");
-		y_debug_assert(r.unwrap() == false);
+		{
+			auto r = fs->exists("doesntexists");
+			y_debug_assert(r.unwrap() == false);
+		}
+		{
+			log_msg(fmt("exits = %", fs->exists("maybeexsits").unwrap()));
+			auto r = fs->create_directory("maybeexsits");
+			log_msg(fmt("exited = %", r.is_error()));
+			fs->remove("maybeexsits").unwrap();
+			log_msg("deleted");
+		}
+		{
+			fs->create_directory("temp").unwrap();
+			fs->rename("temp", "temp2").unwrap();
+			fs->remove("temp2").unwrap();
+			y_debug_assert(fs->exists("temp2").unwrap() == false);
+			y_debug_assert(fs->exists("temp").unwrap() == false);
+		}
+		{
+			y_debug_assert(fs->filename("pwet/foo") == "foo");
+			y_debug_assert(fs->filename("pwet/") == "");
+			y_debug_assert(fs->filename("pwet") == "pwet");
+			y_debug_assert(fs->parent_path("pwet/foo").unwrap() == "pwet");
+		}
 	}
-	{
-		log_msg(fmt("exits = %", fs->exists("maybeexsits").unwrap()));
-		auto r = fs->create_directory("maybeexsits");
-		log_msg(fmt("exited = %", r.is_error()));
-		fs->remove("maybeexsits").unwrap();
-		log_msg("deleted");
-	}
-	{
-		fs->create_directory("temp").unwrap();
-		fs->rename("temp", "temp2").unwrap();
-		fs->remove("temp2").unwrap();
-		y_debug_assert(fs->exists("temp2").unwrap() == false);
-		y_debug_assert(fs->exists("temp").unwrap() == false);
-	}
-	{
-		y_debug_assert(fs->filename("pwet/foo") == "foo");
-		y_debug_assert(fs->filename("pwet/") == "");
-		y_debug_assert(fs->filename("pwet") == "pwet");
-		y_debug_assert(fs->parent_path("pwet/foo").unwrap() == "pwet");
-	}
-	log_msg(fmt("Ok (%s)", timer.elapsed().to_secs()));
-	return 0;
+	log_msg(fmt("Ok (%ms)", timer.reset().to_millis()));
 
+
+	{
+		const u64 data = 0xabcdef0123456789;
+		io2::Buffer buffer;
+		buffer.write_one(data).unwrap();
+		buffer.reset();
+
+		AssetId id = store.import(buffer, "folder/file").unwrap();
+		y_debug_assert(id != AssetId::invalid_id());
+		y_debug_assert(fs->is_directory("folder").unwrap());
+		y_debug_assert(fs->exists("folder/file").unwrap());
+	}
+
+	return 0;
 
 
 
