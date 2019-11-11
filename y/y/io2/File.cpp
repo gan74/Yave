@@ -24,6 +24,23 @@ SOFTWARE.
 namespace y {
 namespace io2 {
 
+
+static usize f_tell(std::FILE* file) {
+#ifdef Y_NO_64_BITS_FILES
+	return std::ftell(file);
+#else
+	return ftello64(file);
+#endif
+}
+
+static void f_seek(std::FILE* file, usize offset, int w) {
+#ifdef Y_NO_64_BITS_FILES
+	fseek(file, offset, w);
+#else
+	fseeko64(file, offset, w);
+#endif
+}
+
 static WriteResult check_len_w(usize len, usize expected) {
 	if(len == expected) {
 		return core::Ok();
@@ -95,8 +112,8 @@ usize File::size() const {
 	}
 	std::fpos_t pos = {};
 	std::fgetpos(_file, &pos);
-	std::fseek(_file, 0, SEEK_END);
-	auto len = usize(std::ftell(_file));
+	f_seek(_file, 0, SEEK_END);
+	auto len = f_tell(_file);
 	std::fsetpos(_file, &pos);
 	return len;
 }
@@ -107,9 +124,9 @@ usize File::remaining() const {
 	}
 	std::fpos_t pos = {};
 	std::fgetpos(_file, &pos);
-	auto offset = usize(std::ftell(_file));
-	std::fseek(_file, 0, SEEK_END);
-	auto len = usize(std::ftell(_file));
+	auto offset = f_tell(_file);
+	f_seek(_file, 0, SEEK_END);
+	auto len = f_tell(_file);
 	std::fsetpos(_file, &pos);
 	return len - offset;
 }
@@ -124,13 +141,13 @@ bool File::at_end() const {
 
 void File::seek(usize byte) {
 	if(_file) {
-		std::fseek(_file, byte, SEEK_SET);
+		f_seek(_file, byte, SEEK_SET);
 	}
 }
 
 void File::seek_end() {
 	if(_file) {
-		std::fseek(_file, 0, SEEK_END);
+		f_seek(_file, 0, SEEK_END);
 	}
 }
 
@@ -140,7 +157,7 @@ void File::reset() {
 
 usize File::tell() const {
 	if(_file) {
-		return usize(std::ftell(_file));
+		return f_tell(_file);
 	}
 	return 0;
 }
