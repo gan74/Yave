@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/graphics/swapchain/Swapchain.h>
 
 #include <yave/assets/SQLiteAssetStore.h>
+#include <yave/assets/FolderAssetStore.h>
 #include <y/core/Chrono.h>
 
 using namespace editor;
@@ -116,6 +117,7 @@ int main(int argc, char** argv) {
 	setup_handlers();
 	FileSystemModel::local_filesystem()->remove("./test.sqlite3").expected("Unable to delete database");
 	SQLiteAssetStore store("test.sqlite3");
+	//FolderAssetStore store("test");
 	const FileSystemModel* fs = store.filesystem();
 	core::Chrono timer;
 	{
@@ -172,6 +174,7 @@ int main(int argc, char** argv) {
 		y_debug_assert(store.id("folder/file").is_error());
 
 	}
+	log_msg(fmt("Ok (%ms)", timer.reset().to_millis()));
 
 	return 0;
 
