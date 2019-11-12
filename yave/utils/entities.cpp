@@ -31,7 +31,6 @@ SOFTWARE.
 namespace yave {
 
 core::Result<float> entity_radius(ecs::EntityWorld& world, ecs::EntityId id) {
-	float radius = 10.0f;
 	if(StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
 		if(mesh->mesh()) {
 			return core::Ok(mesh->mesh()->radius());
