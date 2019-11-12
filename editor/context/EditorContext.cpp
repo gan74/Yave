@@ -22,7 +22,10 @@ SOFTWARE.
 
 #include "EditorContext.h"
 #include <yave/device/Device.h>
-#include <yave/assets/FolderAssetStore.h>
+
+#include <yave/assets/SQLiteAssetStore.h>
+
+#include <editor/components/EditorComponent.h>
 
 #include <editor/components/EditorComponent.h>
 
@@ -38,7 +41,7 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_resources(dptr),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
-		_asset_store(std::make_shared<FolderAssetStore>()),
+		_asset_store(std::make_shared<SQLiteAssetStore>()),
 		_loader(device(), _asset_store),
 		_scene_view(&_default_scene_view),
 		_ui(this),
@@ -168,7 +171,7 @@ static constexpr std::string_view world_file = "world.yw";
 void EditorContext::save_world() const {
 	auto file = io2::File::create(world_file);
 	if(!file) {
-		log_msg("Unable to open file.", Log::Error);
+		log_msg("Unable to open world file.", Log::Error);
 		return;
 	}
 
@@ -193,7 +196,7 @@ void EditorContext::save_world() const {
 void EditorContext::load_world() {
 	auto file = io2::File::open(world_file);
 	if(!file) {
-		log_msg("Unable to open file.", Log::Error);
+		log_msg("Unable to open world file.", Log::Error);
 		return;
 	}
 

@@ -52,6 +52,14 @@ file(GLOB_RECURSE YAVE_FILES
 		"yave/*.cpp"
 	)
 
+file(GLOB_RECURSE SQLITE_FILES
+		"external/sqlite/*.h"
+		"external/sqlite/*.c"
+	)
+
+set(YAVE_FILES ${YAVE_FILES} ${SQLITE_FILES})
+
+
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
 		"editor/*.cpp"

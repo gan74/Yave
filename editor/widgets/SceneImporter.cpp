@@ -72,6 +72,7 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		ImGui::Checkbox("Import images", &import_images);
 		ImGui::Checkbox("Import materials", &import_materials);
 		ImGui::Separator();
+
 		ImGui::Checkbox("Import objects and create world", &import_objects);
 
 		ImGui::Separator();
@@ -102,6 +103,8 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 
 		ImGui::Checkbox("Flip UVs", &flip_uvs);
 
+		import_materials &= import_images;
+		import_objects &= import_meshes && import_materials;
 		_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
 				 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
 				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
@@ -110,6 +113,12 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 				 (flip_uvs ? SceneImportFlags::FlipUVs : SceneImportFlags::None)
 			;
 
+		if(import_materials && import_images) {
+			_flags = _flags | SceneImportFlags::ImportMaterials;
+		}
+		if(import_objects && import_meshes && import_materials) {
+			_flags = _flags | SceneImportFlags::ImportObjects;
+		}
 
 		if(ImGui::Button("Ok")) {
 			_state = State::Importing;
@@ -157,6 +166,7 @@ void SceneImporter::import(import::SceneData scene) {
 			io2::Buffer buffer;
 			WritableAssetArchive ar(buffer);
 			if(asset.serialize(ar)) {
+				buffer.reset();
 				if(context()->asset_store().import(buffer, name)) {
 					return;
 				}
@@ -214,11 +224,11 @@ void SceneImporter::import(import::SceneData scene) {
 
 
 	{
-		bool separate_folders = !scene.meshes.is_empty() + !scene.animations.is_empty() + !scene.images.is_empty();
-		core::String mesh_import_path = separate_folders ? "meshes" : "";
-		core::String animations_import_path = separate_folders ? "animations" : "";
-		core::String image_import_path = separate_folders ? "images" : "";
-		core::String material_import_path = separate_folders ? "materials" : "";
+		bool separate_folders = !scene.meshes.is_empty() + !scene.animations.is_empty() + !scene.images.is_empty() > 1;
+		core::String mesh_import_path = separate_folders ? "Meshes" : "";
+		core::String animations_import_path = separate_folders ? "Animations" : "";
+		core::String image_import_path = separate_folders ? "Textures" : "";
+		core::String material_import_path = separate_folders ? "Materials" : "";
 		core::String world_import_path = "";
 
 		{

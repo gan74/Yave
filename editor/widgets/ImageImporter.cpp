@@ -84,6 +84,7 @@ void ImageImporter::import(const Named<ImageData>& asset) {
 		log_msg(fmt("Unable serialize image"), Log::Error);
 		return;
 	}
+	buffer.reset();
 	if(!context()->asset_store().import(buffer, name)) {
 		log_msg(fmt("Unable import image"), Log::Error);
 		// refresh anyway

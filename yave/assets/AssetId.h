@@ -35,6 +35,10 @@ struct AssetId {
 			return AssetId();
 		}
 
+		static constexpr AssetId from_id(u64 id) {
+			return AssetId(id);
+		}
+
 		/*constexpr AssetType type() const {
 			return AssetType(_id & _type_mask);
 		}*/
@@ -81,6 +85,15 @@ static_assert(std::is_trivially_copyable_v<AssetId>);
 
 class AssetIdFactory {
 	public:
+		static AssetIdFactory create(u64 first) {
+			if(first == AssetId::invalid_id()) {
+				y_fatal("Invalid first ID.");
+			}
+			AssetIdFactory factory;
+			factory._next_id = first;
+			return factory;
+		}
+
 		AssetId create_id() {
 			return AssetId(_next_id++);
 		}

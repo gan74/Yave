@@ -55,6 +55,7 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 		return;
 	}
 
+	buffer.reset();
 	if(!ctx->asset_store().write(material.id(), buffer)) {
 		log_msg("Unable to write material.", Log::Error);
 		return;
