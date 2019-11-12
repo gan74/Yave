@@ -30,7 +30,6 @@ SOFTWARE.
 #include <yave/graphics/swapchain/Swapchain.h>
 
 #include <yave/assets/SQLiteAssetStore.h>
-#include <yave/assets/FolderAssetStore.h>
 #include <y/core/Chrono.h>
 
 using namespace editor;

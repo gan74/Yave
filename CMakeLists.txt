@@ -57,9 +57,6 @@ file(GLOB_RECURSE SQLITE_FILES
 		"external/sqlite/*.c"
 	)
 
-set(YAVE_FILES ${YAVE_FILES} ${SQLITE_FILES})
-
-
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
 		"editor/*.cpp"
@@ -89,6 +86,8 @@ endif()
 
 
 if(YAVE_BUILD_YAVE)
+	add_library(sqlite3 STATIC ${SQLITE_FILES})
+
 	if(YAVE_BUILD_SHARED)
 		add_library(yave SHARED ${YAVE_FILES} ${SHADER_FILES})
 	else()
@@ -96,7 +95,7 @@ if(YAVE_BUILD_YAVE)
 	endif()
 
 	target_link_libraries(yave ${Vulkan_LIBRARY})
-	target_link_libraries(yave y spirv-cross-core stdc++fs)
+	target_link_libraries(yave y spirv-cross-core stdc++fs sqlite3)
 endif()
 
 if(YAVE_BUILD_EDITOR)
