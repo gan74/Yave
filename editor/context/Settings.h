@@ -43,7 +43,13 @@ struct CameraSettings {
 	float trackball_sensitivity = 6.0f;
 	float dolly_sensitivity = 2.5f;
 
-	y_serde3(z_near, fov, move_forward, move_backward, move_right, move_left, fps_sensitivity, trackball_sensitivity, dolly_sensitivity)
+	// Other camera
+	Key center_on_obj = Key::H;
+
+	y_serde3(z_near, fov,
+			 move_forward, move_backward, move_right, move_left,
+			 fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
+			 center_on_obj)
 
 };
 

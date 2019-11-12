@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <yave/camera/Camera.h>
+#include <yave/utils/entities.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -32,8 +33,36 @@ SOFTWARE.
 
 namespace editor {
 
+template<typename T>
+static bool fully_finite(const T& t) {
+	return std::all_of(t.begin(), t.end(), [](float x) { return std::isfinite(x); });
+}
+
 CameraController::CameraController(ContextPtr ctx) : ContextLinked(ctx) {
 }
+
+void CameraController::process_generic_shortcuts(Camera& camera) {
+	const CameraSettings& settings = context()->settings().camera();
+	math::Vec3 cam_pos = camera.position();
+	math::Vec3 cam_fwd = camera.forward();
+	math::Vec3 cam_lft = camera.left();
+
+	if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
+		auto id = context()->selection().selected_entity();
+		if(id.is_valid()) {
+			if(auto pos = entity_position(context()->world(), id)) {
+				float radius = entity_radius(context()->world(), id).unwrap_or(10.0f);
+				cam_pos = pos.unwrap() - cam_fwd * (radius * 1.5f);
+			}
+		}
+	}
+
+	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+	if(fully_finite(view)) {
+		camera.set_view(view);
+	}
+}
+
 
 
 FPSCameraController::FPSCameraController(ContextPtr ctx) : CameraController(ctx) {
@@ -93,7 +122,9 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
 	}
 
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
-	camera.set_view(view);
+	if(fully_finite(view)) {
+		camera.set_view(view);
+	}
 }
 
 
@@ -221,7 +252,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 	}
 
 	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
-	if(std::all_of(view.begin(), view.end(), [](float x) { return std::isfinite(x); })) {
+	if(fully_finite(view)) {
 		camera.set_view(view);
 	}
 }

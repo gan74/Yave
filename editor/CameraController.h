@@ -39,6 +39,8 @@ class CameraController : public ContextLinked {
 		}
 
 		virtual void update_camera(Camera& camera, const math::Vec2ui& viewport_size) = 0;
+		virtual void process_generic_shortcuts(Camera& camera);
+
 };
 
 class FPSCameraController final : public CameraController {

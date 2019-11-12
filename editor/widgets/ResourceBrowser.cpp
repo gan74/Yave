@@ -25,7 +25,6 @@ SOFTWARE.
 
 #include <editor/utils/assets.h>
 #include <editor/context/EditorContext.h>
-#include <yave/assets/FolderAssetStore.h>
 
 #include <y/io2/Buffer.h>
 
@@ -242,14 +241,6 @@ void ResourceBrowser::paint_context_menu() {
 			}
 
 			refresh();
-		}
-
-		if(FolderAssetStore* store = dynamic_cast<FolderAssetStore*>(&context()->asset_store())) {
-			ImGui::Separator();
-			if(ImGui::Selectable("Clean index")) {
-				store->clean_index();
-				refresh();
-			}
 		}
 
 		ImGui::EndPopup();

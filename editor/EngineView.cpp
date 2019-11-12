@@ -154,10 +154,14 @@ void EngineView::update() {
 		context()->set_scene_view(&_scene_view);
 	}
 
-	if(focussed && hovered && !_gizmo.is_dragging() && _camera_controller) {
-		auto size = content_size();
+
+	if(hovered && !_gizmo.is_dragging() && _camera_controller) {
 		auto& camera = _scene_view.camera();
-		_camera_controller->update_camera(camera, size);
+		_camera_controller->process_generic_shortcuts(camera);
+		if(focussed) {
+			auto size = content_size();
+			_camera_controller->update_camera(camera, size);
+		}
 	}
 }
 
