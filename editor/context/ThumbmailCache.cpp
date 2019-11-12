@@ -166,8 +166,6 @@ void ThumbmailCache::process_requests() {
 	}
 }
 
-static constexpr const char unable_to_load_error[] = "Unable to load static %.";
-
 void ThumbmailCache::request_thumbmail(AssetId id) {
 	_thumbmails[id] = nullptr;
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
@@ -200,7 +198,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 				default:
 				break;
 			}
-			log_msg(fmt(unable_to_load_error, asset_type_name(asset_type)), Log::Error);
+			log_msg(fmt("Unable to load %.", asset_type_name(asset_type)), Log::Error);
 
 
 			return [](CmdBufferRecorder&) { return nullptr; };

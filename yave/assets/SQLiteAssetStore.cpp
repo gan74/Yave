@@ -1,4 +1,4 @@
-/*******************************
+﻿/*******************************
 Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -139,17 +139,18 @@ FileSystemModel::Result<core::String> SQLiteAssetStore::SQLiteFileSystemModel::p
 			return core::Ok(core::String(path.substr(0, i - 1)));
 		}
 	}
-	return core::Ok(core::String(path));
+	return core::Ok(core::String());
 }
 
 FileSystemModel::Result<bool> SQLiteAssetStore::SQLiteFileSystemModel::exists(std::string_view path) const {
 	y_profile();
 
-	bool is_folder = is_delimiter(path.back());
+	bool has_delim = !path.empty() && is_delimiter(path.back());
+
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT 1 FROM Assets WHERE name = ? UNION SELECT 1 FROM Folders WHERE name = ?", -1, &stmt, nullptr));
 	check(sqlite3_bind_text(stmt, 1, path.data(), path.size(), nullptr));
-	check(sqlite3_bind_text(stmt, 2, path.data(), path.size() - is_folder, nullptr));
+	check(sqlite3_bind_text(stmt, 2, path.data(), path.size() - has_delim, nullptr));
 	y_defer(sqlite3_finalize(stmt));
 
 	return core::Ok(is_row(step_db(stmt)));
@@ -158,9 +159,11 @@ FileSystemModel::Result<bool> SQLiteAssetStore::SQLiteFileSystemModel::exists(st
 FileSystemModel::Result<bool> SQLiteAssetStore::SQLiteFileSystemModel::is_directory(std::string_view path) const {
 	y_profile();
 
+	bool has_delim = !path.empty() && is_delimiter(path.back());
+
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT 1 FROM Folders WHERE name = ?", -1, &stmt, nullptr));
-	check(sqlite3_bind_text(stmt, 1, path.data(), path.size(), nullptr));
+	check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
 	y_defer(sqlite3_finalize(stmt));
 
 	return core::Ok(is_row(step_db(stmt)));
@@ -173,37 +176,57 @@ FileSystemModel::Result<core::String> SQLiteAssetStore::SQLiteFileSystemModel::a
 FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
 	y_profile();
 
+	bool remove_delim = !path.empty();
 	auto fid = folder_id(path);
 	y_try(fid);
 
 	{
 		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "SELECT name FROM Assets WHERE folderid = ?", -1, &stmt, nullptr));
+		check(sqlite3_prepare_v2(_database, "SELECT name FROM (SELECT name FROM Assets WHERE folderid = ? UNION SELECT name FROM Folders WHERE parentid = ?)", -1, &stmt, nullptr));
 		check(sqlite3_bind_int64(stmt, 1, fid.unwrap()));
+		check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
 		y_defer(sqlite3_finalize(stmt));
 
-		for(auto row : rows(stmt, 0)) {
-			const char* name_data = reinterpret_cast<const char*>(row);
-			func(name_data);
+		for(auto row : rows(stmt)) {
+			std::string_view name = reinterpret_cast<const char*>(row);
+			if(path.size() < name.size()) {
+				name = name.substr(path.size() + remove_delim);
+			}
+			func(name);
 		}
 	}
+
 	return core::Ok();
 }
 
 FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::create_directory(std::string_view path) const {
 	y_profile();
 
+	auto parent = parent_path(path);
+	y_try(parent);
+
+	auto fid = folder_id(parent.unwrap());
+	y_try(fid);
+
+	i64 next_id = next_folder_id();
+
 	{
+		bool has_delim = !path.empty() && is_delimiter(path.back());
+
 		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "INSERT INTO Folders(name, folderid) VALUES(?, ?)", -1, &stmt, nullptr));
-		check(sqlite3_bind_text(stmt, 1, path.data(), path.size(), nullptr));
-		check(sqlite3_bind_int64(stmt, 2, next_folder_id()));
+		check(sqlite3_prepare_v2(_database, "INSERT INTO Folders(name, folderid, parentid) VALUES(?, ?, ?)", -1, &stmt, nullptr));
+		check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
+		check(sqlite3_bind_int64(stmt, 2, next_id));
+		check(sqlite3_bind_int64(stmt, 3, fid.unwrap()));
 		y_defer(sqlite3_finalize(stmt));
 
 		if(!is_done(step_db(stmt))) {
 			return core::Err();
 		}
 	}
+	log_msg(fmt("Folder created: %", path));
+
+	y_debug_assert(folder_id(path).unwrap() == next_id);
 	return core::Ok();
 }
 
@@ -211,9 +234,11 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::remove(std::s
 	y_profile();
 
 	{
+		bool has_delim = !path.empty() && is_delimiter(path.back());
+
 		sqlite3_stmt* stmt = nullptr;
 		check(sqlite3_prepare_v2(_database, "DELETE FROM Folders WHERE name = ?", -1, &stmt, nullptr));
-		check(sqlite3_bind_text(stmt, 1, path.data(), path.size(), nullptr));
+		check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
 		y_defer(sqlite3_finalize(stmt));
 
 		if(!is_done(step_db(stmt))) {
@@ -236,11 +261,21 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::remove(std::s
 FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::string_view from, std::string_view to) const {
 	y_profile();
 
+	auto parent = parent_path(to);
+	y_try(parent);
+
+	auto fid = folder_id(parent.unwrap());
+	y_try(fid);
+
 	{
+		bool to_has_delim = !to.empty() && is_delimiter(to.back());
+		bool from_has_delim = !from.empty() && is_delimiter(from.back());
+
 		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "UPDATE Folders SET name = ? WHERE name = ?", -1, &stmt, nullptr));
-		check(sqlite3_bind_text(stmt, 1, to.data(), to.size(), nullptr));
-		check(sqlite3_bind_text(stmt, 2, from.data(), from.size(), nullptr));
+		check(sqlite3_prepare_v2(_database, "UPDATE Folders SET name = ?, parentid = ? WHERE name = ?", -1, &stmt, nullptr));
+		check(sqlite3_bind_text(stmt, 1, to.data(), to.size() - to_has_delim, nullptr));
+		check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
+		check(sqlite3_bind_text(stmt, 3, from.data(), from.size() - from_has_delim, nullptr));
 		y_defer(sqlite3_finalize(stmt));
 
 		if(!is_done(step_db(stmt))) {
@@ -249,9 +284,10 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 	}
 	{
 		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "UPDATE Assets SET name = ? WHERE name = ?", -1, &stmt, nullptr));
+		check(sqlite3_prepare_v2(_database, "UPDATE Assets SET name = ?, folderid = ? WHERE name = ?", -1, &stmt, nullptr));
 		check(sqlite3_bind_text(stmt, 1, to.data(), to.size(), nullptr));
-		check(sqlite3_bind_text(stmt, 2, from.data(), from.size(), nullptr));
+		check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
+		check(sqlite3_bind_text(stmt, 3, from.data(), from.size(), nullptr));
 		y_defer(sqlite3_finalize(stmt));
 
 		if(!is_done(step_db(stmt))) {
@@ -265,23 +301,32 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 FileSystemModel::Result<i64> SQLiteAssetStore::SQLiteFileSystemModel::folder_id(std::string_view path) const {
 	y_profile();
 
+	bool has_delim = !path.empty() && is_delimiter(path.back());
+
+	if(path.empty() || (has_delim && path.size() == 1)) {
+		return core::Ok(i64(0));
+	}
+
+
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT folderid FROM Folders WHERE name = ?", -1, &stmt, nullptr));
-	check(sqlite3_bind_text(stmt, 1, path.data(), path.size(), nullptr));
+	check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
 	y_defer(sqlite3_finalize(stmt));
 
 	if(!is_row(step_db(stmt))) {
 		return core::Err();
 	}
 
-	return core::Ok(sqlite3_column_int64(stmt, 0));
+	i64 id = sqlite3_column_int64(stmt, 0);
+	y_debug_assert(id != 0);
+	return core::Ok(id);
 }
 
 i64 SQLiteAssetStore::SQLiteFileSystemModel::next_folder_id() const {
 	y_profile();
 
 	sqlite3_stmt* stmt = nullptr;
-	check(sqlite3_prepare_v2(_database, "SELECT folderid FROM Folders ORDER BY folderid LIMIT 1", -1, &stmt, nullptr));
+	check(sqlite3_prepare_v2(_database, "SELECT MAX(folderid) FROM Folders", -1, &stmt, nullptr));
 	y_defer(sqlite3_finalize(stmt));
 
 	if(!is_row(step_db(stmt))) {
@@ -309,35 +354,47 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 	check(sqlite3_open(path.data(), &_database));
 	_filesystem._database = _database;
 
+	log_msg(fmt("Max BLOB length = % bytes", sqlite3_limit(_database, SQLITE_LIMIT_LENGTH, -1)));
+
 	{
 		sqlite3_stmt* stmt = nullptr;
 		check(sqlite3_prepare_v2(_database, "SELECT name FROM sqlite_master WHERE type = 'table'", -1, &stmt, nullptr));
 		y_defer(sqlite3_finalize(stmt));
 
 		for(auto name : rows(stmt)) {
-			log_msg(fmt("Found: TABLE %", name), Log::Debug);
+			log_msg(fmt("Found: TABLE %", reinterpret_cast<const char*>(name)), Log::Debug);
+		}
+	}
+	{
+		sqlite3_stmt* stmt = nullptr;
+		check(sqlite3_prepare_v2(_database, "SELECT name FROM sqlite_master WHERE type = 'index'", -1, &stmt, nullptr));
+		y_defer(sqlite3_finalize(stmt));
+
+		for(auto name : rows(stmt)) {
+			log_msg(fmt("Found: INDEX %", reinterpret_cast<const char*>(name)), Log::Debug);
 		}
 	}
 
-	log_msg(fmt("Max BLOB length = % bytes", sqlite3_limit(_database, SQLITE_LIMIT_LENGTH, -1)));
 
 	check(sqlite3_exec(_database, "PRAGMA cache_size = 1048576", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "PRAGMA page_size = 65536", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "PRAGMA temp_store = MEMORY", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr));
 
-	//check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Data    (uid  INT  PRIMARY KEY);", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Folders (name TEXT PRIMARY KEY, folderid INTEGER UNIQUE);", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Assets  (uid  INT  PRIMARY KEY, name TEXT UNIQUE, folderid INT, data BLOB,"
+	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Folders (name TEXT    PRIMARY KEY, folderid INTEGER UNIQUE, parentid INTEGER,"
+										"FOREIGN KEY(parentid) REFERENCES Folders(folderid) ON DELETE CASCADE);", nullptr, nullptr, nullptr));
+	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Assets  (uid  INTEGER PRIMARY KEY, name TEXT UNIQUE, folderid INTEGER, data BLOB,"
 										"FOREIGN KEY(folderid) REFERENCES Folders(folderid) ON DELETE CASCADE);", nullptr, nullptr, nullptr));
 
-	check(sqlite3_exec(_database, "CREATE UNIQUE INDEX uidindex  ON Assets(uid)", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "CREATE UNIQUE INDEX nameindex ON Assets(name)", nullptr, nullptr, nullptr));
+	// Not needed, sqlite will create indexes automatically
+	/*check(sqlite3_exec(_database, "CREATE UNIQUE INDEX IF NOT EXISTS uidindex  ON Assets(uid)", nullptr, nullptr, nullptr));
+	check(sqlite3_exec(_database, "CREATE UNIQUE INDEX IF NOT EXISTS nameindex ON Assets(name)", nullptr, nullptr, nullptr));*/
 
-	// root folder
-	check(sqlite3_exec(_database, "INSERT INTO Folders(name, folderid) VALUES(\"/\", 0)", nullptr, nullptr, nullptr));
+	// Root folder
+	check(sqlite3_exec(_database, "INSERT INTO Folders(name, folderid) SELECT \"\", 0 "
+										"WHERE NOT EXISTS(SELECT 1 FROM Folders WHERE folderid = 0);", nullptr, nullptr, nullptr));
 
-	// dangerous!!
+	// Dangerous!!
 	check(sqlite3_exec(_database, "PRAGMA synchronous = OFF", nullptr, nullptr, nullptr)); // unsafe if the OS crashes
 }
 
@@ -378,6 +435,8 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
 		return core::Err(folder_id.error());
 	}
 
+
+	// this is not thread safe
 	AssetId id = next_id();
 
 	{
@@ -394,8 +453,10 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
 		}
 	}
 
-	y_try(write(id, data));
-
+	if(auto w = write(id, data); !w) {
+		remove(id).ignore();
+		return core::Err(w.error());
+	}
 
 	return core::Ok(id);
 }
@@ -504,13 +565,8 @@ AssetStore::Result<> SQLiteAssetStore::rename(AssetId id, std::string_view new_n
 AssetStore::Result<> SQLiteAssetStore::remove(std::string_view name) {
 	y_profile();
 
-	sqlite3_stmt* stmt = nullptr;
-	check(sqlite3_prepare_v2(_database, "DELETE FROM Assets WHERE name = ?", -1, &stmt, nullptr));
-	check(sqlite3_bind_text(stmt, 1, name.data(), name.size(), nullptr));
-	y_defer(sqlite3_finalize(stmt));
-
-	if(!is_done(step_db(stmt))) {
-		return core::Err(ErrorType::UnknownID);
+	if(!_filesystem.remove(name)) {
+		return core::Err(ErrorType::FilesytemError);
 	}
 
 	return core::Ok();
@@ -530,7 +586,7 @@ AssetId SQLiteAssetStore::next_id() {
 	y_profile();
 
 	sqlite3_stmt* stmt = nullptr;
-	check(sqlite3_prepare_v2(_database, "SELECT uid FROM Assets ORDER BY uid LIMIT 1", -1, &stmt, nullptr));
+	check(sqlite3_prepare_v2(_database, "SELECT MAX(uid) FROM Assets", -1, &stmt, nullptr));
 	y_defer(sqlite3_finalize(stmt));
 
 	auto to_id = [](i64 id) { return AssetIdFactory::create(u64(id)).create_id(); };
@@ -542,10 +598,6 @@ AssetId SQLiteAssetStore::next_id() {
 }
 
 SQLiteAssetStore::Result<i64> SQLiteAssetStore::find_folder(std::string_view name, bool or_create) {
-	if(name.empty()) {
-		return core::Ok(i64(0));
-	}
-
 	if(auto fid = _filesystem.folder_id(name)) {
 		return core::Ok(fid.unwrap());
 	}

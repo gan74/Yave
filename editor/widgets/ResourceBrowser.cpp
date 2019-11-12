@@ -98,7 +98,9 @@ void ResourceBrowser::asset_selected(const FileInfo& file) {
 }
 
 bool ResourceBrowser::display_asset(const FileInfo& file) const {
-	return file.type != AssetType::Unknown;
+	unused(file);
+	return true;
+	//return file.type != AssetType::Unknown;
 }
 
 void ResourceBrowser::set_current(DirNode* current) {
@@ -119,14 +121,18 @@ void ResourceBrowser::update_node(DirNode* node) {
 	node->files.clear();
 
 	const auto* fs = filesystem();
-	fs->for_each(node->full_path, [&](const auto& name) {
+	bool is_error = fs->for_each(node->full_path, [&](const auto& name) {
 			auto full_name = fs->join(node->full_path, name);
 			if(fs->is_directory(full_name).unwrap_or(false)) {
 				node->children.emplace_back(name, full_name, node);
 			} else {
 				node->files.emplace_back(context(), name, full_name);
 			}
-		}).ignore();
+		}).is_error();
+
+	if(is_error) {
+		log_msg(fmt("Unable to explore \"%\"", node->full_path), Log::Warning);
+	}
 
 	node->up_to_date = true;
 	_refresh = false;
@@ -169,7 +175,7 @@ void ResourceBrowser::make_drop_target(const DirNode* node) {
 			const char* original_name = reinterpret_cast<const char*>(payload->Data);
 			const FileSystemModel* fs = filesystem();
 			if(!context()->asset_store().rename(original_name, fs->join(node->full_path, fs->filename(original_name)))) {
-				log_msg(fmt("Unable to move \"%\" to \"%\"", original_name, node->full_path), Log::Error);
+				log_msg(fmt("Unable to move \"%\" to \"%\".", original_name, node->full_path), Log::Error);
 			}
 			refresh();
 		}
@@ -183,7 +189,9 @@ void ResourceBrowser::make_drop_target(const DirNode* node) {
 void ResourceBrowser::paint_context_menu() {
 	if(ImGui::BeginPopup("###contextmenu")) {
 		if(ImGui::Selectable("New folder")) {
-			filesystem()->create_directory(filesystem()->join(_current->full_path, "new folder")).ignore();
+			if(!filesystem()->create_directory(filesystem()->join(_current->full_path, "new folder"))) {
+				log_msg("Unable to create directory.", Log::Error);
+			}
 			refresh();
 		}
 
@@ -194,7 +202,7 @@ void ResourceBrowser::paint_context_menu() {
 			}
 			if(ImGui::Selectable("Delete")) {
 				if(!context()->asset_store().remove(file->id)) {
-					log_msg("Unable to delete asset", Log::Error);
+					log_msg("Unable to delete asset.", Log::Error);
 				}
 				refresh();
 			}
@@ -205,7 +213,7 @@ void ResourceBrowser::paint_context_menu() {
 			}
 			if(ImGui::Selectable("Delete")) {
 				if(!context()->asset_store().remove(dir->full_path)) {
-					log_msg("Unable to delete folder", Log::Error);
+					log_msg("Unable to delete folder.", Log::Error);
 				}
 				refresh();
 			}
@@ -224,6 +232,7 @@ void ResourceBrowser::paint_context_menu() {
 			io2::Buffer buffer;
 			WritableAssetArchive ar(buffer);
 			if(material.serialize(ar)) {
+				buffer.reset();
 				AssetStore& store = context()->asset_store();
 				if(!store.import(buffer, store.filesystem()->join(_current->full_path, "new material"))) {
 					log_msg("Unable to import new material.", Log::Error);
