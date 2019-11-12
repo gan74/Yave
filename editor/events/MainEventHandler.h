@@ -46,8 +46,8 @@ class MainEventHandler : public EventHandler
 		void key_pressed(Key key) override;
 		void key_released(Key key) override;
 
-
 	private:
+		void key_event(Key key, bool pressed);
 };
 
 }

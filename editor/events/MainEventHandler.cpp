@@ -25,6 +25,7 @@ SOFTWARE.
 
 namespace editor {
 
+
 static void set_key_bindings() {
 	ImGuiIO& io = ImGui::GetIO();
 	io.KeyMap[ImGuiKey_Tab]			= int(Key::Tab);
@@ -40,6 +41,13 @@ static void set_key_bindings() {
 	io.KeyMap[ImGuiKey_Backspace]	= int(Key::Backspace);
 	io.KeyMap[ImGuiKey_Enter]		= int(Key::Enter);
 	io.KeyMap[ImGuiKey_Escape]		= int(Key::Escape);
+
+	io.KeyMap[ImGuiKey_A] 			= int(Key::Max);
+	io.KeyMap[ImGuiKey_C] 			= io.KeyMap[ImGuiKey_A] + 1;
+	io.KeyMap[ImGuiKey_V] 			= io.KeyMap[ImGuiKey_A] + 2;
+	io.KeyMap[ImGuiKey_X] 			= io.KeyMap[ImGuiKey_A] + 3;
+	io.KeyMap[ImGuiKey_Y] 			= io.KeyMap[ImGuiKey_A] + 4;
+	io.KeyMap[ImGuiKey_Z] 			= io.KeyMap[ImGuiKey_A] + 5;
 }
 
 
@@ -73,11 +81,41 @@ void MainEventHandler::char_input(u32 character) {
 }
 
 void MainEventHandler::key_pressed(Key key) {
-	ImGui::GetIO().KeysDown[u32(key)] = true;
+	key_event(key, true);
 }
 
 void MainEventHandler::key_released(Key key) {
-	ImGui::GetIO().KeysDown[u32(key)] = false;
+	key_event(key, false);
+}
+
+
+void MainEventHandler::key_event(Key key, bool pressed) {
+	auto& io = ImGui::GetIO();
+
+	io.KeysDown[u32(key)] = pressed;
+
+	switch(key) {
+		case Key::Ctrl:
+			io.KeyCtrl = pressed;
+		break;
+
+		case Key::Alt:
+			io.KeyAlt = pressed;
+		break;
+
+		default:
+		break;
+	}
+
+	std::array shortcuts = {Key::A, Key::C, Key::V, Key::X, Key::Y, Key::Z};
+	for(usize i = 0; i != shortcuts.size(); ++i) {
+		bool& down = io.KeysDown[io.KeyMap[ImGuiKey_A + i]];
+		if(shortcuts[i] == key) {
+			down = pressed;
+		}
+		down &= io.KeyCtrl;
+	}
+
 }
 
 }

@@ -64,38 +64,43 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}*/
 
 	if(ImGui::TreeNodeEx(ICON_FA_VIDEO " Camera", flags)) {
+		CameraSettings& cam = context()->settings().camera();
 
 		if(ImGui::TreeNodeEx("FPS Camera", flags)) {
-			keybox("Forward", context()->settings().camera().move_forward);
+			keybox("Forward", cam.move_forward);
 			ImGui::SameLine();
-			keybox("Backward", context()->settings().camera().move_backward);
+			keybox("Backward", cam.move_backward);
 
-			keybox("Left", context()->settings().camera().move_left);
+			keybox("Left", cam.move_left);
 			ImGui::SameLine();
-			keybox("Right", context()->settings().camera().move_right);
+			keybox("Right", cam.move_right);
 
-			ImGui::SliderFloat("Sensitivity##FPS", &context()->settings().camera().fps_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+			ImGui::SliderFloat("Sensitivity##FPS", &cam.fps_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
 
 			ImGui::TreePop();
 		}
 
 		if(ImGui::TreeNodeEx("Houdini Camera", flags)) {
-			ImGui::SliderFloat("Trackball sensitivity##Houdini", &context()->settings().camera().trackball_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
-			ImGui::SliderFloat("Dolly sensitivity##Houdini", &context()->settings().camera().dolly_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+			ImGui::SliderFloat("Trackball sensitivity##Houdini", &cam.trackball_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+			ImGui::SliderFloat("Dolly sensitivity##Houdini", &cam.dolly_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
 
 			ImGui::TreePop();
 		}
 
-		ImGui::SliderFloat("Near plane distance", &context()->settings().camera().z_near, 0.01f, 10.0f, "%.2f", 2.0f);
-		ImGui::SliderFloat("Field of view", &context()->settings().camera().fov, 30.0f, 170.0f, "%.0f", 2.0f);
+		ImGui::SliderFloat("Near plane distance", &cam.z_near, 0.01f, 10.0f, "%.2f", 2.0f);
+		ImGui::SliderFloat("Field of view", &cam.fov, 30.0f, 170.0f, "%.0f", 2.0f);
+
+		keybox("Center on selected object", cam.center_on_obj);
 
 		ImGui::TreePop();
 	}
 
 	if(ImGui::TreeNodeEx(ICON_FA_WINDOW_RESTORE " Interface", flags)) {
-		keybox("Change gizmo mode", context()->settings().ui().change_gizmo_mode);
+		UiSettings& ui = context()->settings().ui();
+
+		keybox("Change gizmo mode", ui.change_gizmo_mode);
 		ImGui::SameLine();
-		keybox("Change gizmo space", context()->settings().ui().change_gizmo_space);
+		keybox("Change gizmo space", ui.change_gizmo_space);
 
 		ImGui::TreePop();
 	}
