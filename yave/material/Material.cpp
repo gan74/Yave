@@ -34,7 +34,8 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
 	std::array<Descriptor, SimpleMaterialData::texture_count> bindings = {
 			*dptr->device_resources()[DeviceResources::WhiteTexture],
 			*dptr->device_resources()[DeviceResources::FlatNormalTexture],
-			*dptr->device_resources()[DeviceResources::RedTexture]
+			*dptr->device_resources()[DeviceResources::RedTexture],
+			*dptr->device_resources()[DeviceResources::BlackTexture]
 		};
 	for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
 		if(const auto& tex = data.textures()[i]) {

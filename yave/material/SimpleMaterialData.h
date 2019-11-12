@@ -39,7 +39,8 @@ class SimpleMaterialData {
 		enum Textures {
 			Diffuse,
 			Normal,
-			RoughnessMetallic,
+			Roughness,
+			Metallic,
 			Max
 		};
 

@@ -85,7 +85,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::Image(view, size);
 	}
 
-	std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness/Metallic"};
+	std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
 	for(usize i = 0; i != data.textures().size(); ++i) {
 		//ImGui::CollapsingHeader(texture_names[i], ImGuiTreeNodeFlags_DefaultOpen);
 
