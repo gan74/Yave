@@ -106,7 +106,7 @@ static Device create_device(Instance& instance) {
 	return Device(instance);
 }
 
-static EditorContext create_constext(const Device& device) {
+static EditorContext create_context(const Device& device) {
 	y_profile();
 	return EditorContext(&device);
 }
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 
 
 	Device device = create_device(instance);
-	EditorContext ctx = create_constext(device);
+	EditorContext ctx = create_context(device);
 	context = &ctx;
 
 	MainWindow window(&ctx);
