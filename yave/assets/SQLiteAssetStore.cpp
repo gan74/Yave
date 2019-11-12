@@ -267,15 +267,28 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 	auto fid = folder_id(parent.unwrap());
 	y_try(fid);
 
-	{
-		bool to_has_delim = !to.empty() && is_delimiter(to.back());
-		bool from_has_delim = !from.empty() && is_delimiter(from.back());
+	bool to_has_delim = !to.empty() && is_delimiter(to.back());
+	bool from_has_delim = !from.empty() && is_delimiter(from.back());
 
+	{
 		sqlite3_stmt* stmt = nullptr;
 		check(sqlite3_prepare_v2(_database, "UPDATE Folders SET name = ?, parentid = ? WHERE name = ?", -1, &stmt, nullptr));
 		check(sqlite3_bind_text(stmt, 1, to.data(), to.size() - to_has_delim, nullptr));
 		check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
 		check(sqlite3_bind_text(stmt, 3, from.data(), from.size() - from_has_delim, nullptr));
+		y_defer(sqlite3_finalize(stmt));
+
+		if(!is_done(step_db(stmt))) {
+			return core::Err();
+		}
+	}
+	{
+		sqlite3_stmt* stmt = nullptr;
+		check(sqlite3_prepare_v2(_database, "UPDATE Assets SET name = ? || SUBSTR(name, ?) WHERE SUBSTR(name, 0, ?) LIKE ?", -1, &stmt, nullptr));
+		check(sqlite3_bind_text(stmt, 1, to.data(), to.size() - to_has_delim, nullptr));
+		check(sqlite3_bind_int64(stmt, 2, from.size() - from_has_delim + 1));
+		check(sqlite3_bind_int64(stmt, 3, from.size() - from_has_delim + 1));
+		check(sqlite3_bind_text(stmt, 4, from.data(), from.size() - from_has_delim, nullptr));
 		y_defer(sqlite3_finalize(stmt));
 
 		if(!is_done(step_db(stmt))) {
@@ -380,6 +393,8 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 	check(sqlite3_exec(_database, "PRAGMA page_size = 65536", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "PRAGMA temp_store = MEMORY", nullptr, nullptr, nullptr));
 	check(sqlite3_exec(_database, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr));
+	check(sqlite3_exec(_database, "PRAGMA case_sensitive_like = ON", nullptr, nullptr, nullptr));
+
 
 	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Folders (name TEXT    PRIMARY KEY, folderid INTEGER UNIQUE, parentid INTEGER,"
 										"FOREIGN KEY(parentid) REFERENCES Folders(folderid) ON DELETE CASCADE);", nullptr, nullptr, nullptr));
@@ -391,7 +406,7 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 	check(sqlite3_exec(_database, "CREATE UNIQUE INDEX IF NOT EXISTS nameindex ON Assets(name)", nullptr, nullptr, nullptr));*/
 
 	// Root folder
-	check(sqlite3_exec(_database, "INSERT INTO Folders(name, folderid) SELECT \"\", 0 "
+	check(sqlite3_exec(_database, "INSERT INTO Folders(name, folderid) SELECT '', 0 "
 										"WHERE NOT EXISTS(SELECT 1 FROM Folders WHERE folderid = 0);", nullptr, nullptr, nullptr));
 
 	// Dangerous!!
