@@ -22,7 +22,6 @@ SOFTWARE.
 #include "EntityView.h"
 
 #include <editor/context/EditorContext.h>
-#include <editor/properties/ComponentTraits.h>
 #include <editor/components/EditorComponent.h>
 
 #include <yave/ecs/EntityWorld.h>
@@ -37,6 +36,7 @@ SOFTWARE.
 
 namespace editor {
 
+[[maybe_unused]]
 static core::String clean_component_name(std::string_view name) {
 	if(name.empty()) {
 		return name;
@@ -86,7 +86,21 @@ void EntityView::paint_clustered_view() {
 	const ecs::EntityWorld& world = context()->world();
 
 	auto group = [&](auto archetype, const char* icon, const char* name) {
+		auto draw_category_menu = [=] {
+			if(ImGui::IsItemClicked(1)) {
+				ImGui::OpenPopup("Add entity");
+			}
+			if(ImGui::BeginPopup("Add entity")) {
+				if(ImGui::MenuItem(fmt("% %", icon, "Add entity").data())) {
+					context()->world().create_entity(archetype);
+				}
+				ImGui::EndPopup();
+			}
+		};
+
 		if(ImGui::TreeNodeEx(fmt("% %", icon, name).data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+			draw_category_menu();
+
 			using EditorArchetype = typename decltype(archetype)::template with<EditorComponent>;
 			for(auto entity : world.view(EditorArchetype())) {
 				ecs::EntityId id = world.id_from_index(entity.index());
@@ -107,6 +121,8 @@ void EntityView::paint_clustered_view() {
 			}
 
 			ImGui::TreePop();
+		} else {
+			draw_category_menu();
 		}
 	};
 
@@ -170,7 +186,12 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 		if(ImGui::BeginPopup("###contextmenu")) {
 			if(ImGui::BeginMenu(ICON_FA_PLUS " Add component")) {
-				core::Vector<ComponentTraits> traits = all_component_traits();
+
+				ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+				ImGui::MenuItem(ICON_FA_EXCLAMATION_TRIANGLE " Adding individual components is not supported");
+				ImGui::PopStyleColor();
+
+				/*core::Vector<ComponentTraits> traits = all_component_traits();
 				for(const ComponentTraits& t : traits) {
 					if(t.name.empty() || world.has(_hovered, t.type)) {
 						continue;
@@ -180,7 +201,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 							log_msg("Unable to create component.", Log::Error);
 						}
 					}
-				}
+				}*/
 				ImGui::EndMenu();
 			}
 

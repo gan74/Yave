@@ -23,7 +23,7 @@ SOFTWARE.
 #include "PropertyPanel.h"
 
 #include <editor/context/EditorContext.h>
-#include <editor/properties/ComponentTraits.h>
+#include <editor/properties/componentwidgets.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -45,13 +45,9 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		return;
 	}
 
-	ecs::EntityWorld& world = context()->world();
 	ecs::EntityId id = context()->selection().selected_entity();
-
-	for(const ecs::ComponentTypeIndex& type : world.component_types()) {
-		if(world.has(id, type)) {
-			component_widget(type, context(), id);
-		}
+	if(id.is_valid()) {
+		draw_component_widgets(context(), id);
 	}
 }
 
