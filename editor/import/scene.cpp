@@ -85,7 +85,8 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 		MaterialData material_data;
 		material_data.textures[SimpleMaterialData::Diffuse] = process_tex(aiTextureType_DIFFUSE);
 		material_data.textures[SimpleMaterialData::Normal] = process_tex(aiTextureType_NORMALS);
-		material_data.textures[SimpleMaterialData::RoughnessMetallic] = process_tex(aiTextureType_SHININESS);
+		material_data.textures[SimpleMaterialData::Roughness] = process_tex(aiTextureType_SHININESS);
+		material_data.textures[SimpleMaterialData::Metallic] = process_tex(aiTextureType_UNKNOWN);
 		mats.emplace_back(clean_material_name(ctx, mat), std::move(material_data));
 
 
