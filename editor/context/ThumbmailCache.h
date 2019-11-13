@@ -41,7 +41,7 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 
 			StorageTexture image;
 			TextureView view;
-			AssetId id;
+			const AssetId id;
 
 			core::Vector<std::pair<core::String, core::String>> properties;
 		};

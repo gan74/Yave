@@ -120,7 +120,7 @@ ImageData compute_mipmaps(const ImageData& image) {
 		y_fatal("Only RGBA is supported.");
 	}
 
-	ImageFormat format(vk::Format::eR8G8B8A8Unorm);
+	const ImageFormat format(vk::Format::eR8G8B8A8Unorm);
 	const usize components = 4;
 
 	usize mip_count = ImageData::mip_count(image.size());

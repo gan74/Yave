@@ -33,9 +33,9 @@ namespace editor {
 class ImGuiRenderer : NonCopyable, public ContextLinked {
 
 	struct Vertex {
-		math::Vec2 pos;
-		math::Vec2 uv;
-		u32 col;
+		const math::Vec2 pos;
+		const math::Vec2 uv;
+		const u32 col;
 	};
 
 	Y_TODO(Merge ImGuiRenderer into Ui)

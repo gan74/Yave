@@ -35,7 +35,7 @@ class Renderable {
 	public:
 		struct SceneData {
 			const DescriptorSetBase& descriptor_set;
-			u32 instance_index;
+			const u32 instance_index;
 		};
 
 		using CameraData = uniform::ViewProj;

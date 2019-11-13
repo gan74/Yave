@@ -60,7 +60,7 @@ class EntityIdPool {
 			}
 
 			Iterator operator++(int) {
-				Iterator it(*this);
+				const Iterator it(*this);
 				advance();
 				return it;
 			}

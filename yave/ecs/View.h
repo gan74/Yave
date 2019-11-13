@@ -150,7 +150,7 @@ class View {
 			}
 
 			Iterator operator++(int) {
-				Iterator it(*this);
+				const Iterator it(*this);
 				operator++();
 				return it;
 			}

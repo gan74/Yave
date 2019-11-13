@@ -71,7 +71,7 @@ PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_vie
 	auto inv_matrix = scene_view.camera().inverse_matrix();
 	math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
 
-	PickingData data{
+	const PickingData data{
 			p.to<3>() / p.w(),
 			depth,
 			uv,

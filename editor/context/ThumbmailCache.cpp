@@ -107,7 +107,7 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 
 
 static auto load_envmap() {
-	math::Vec4 data(0.1f);
+	const math::Vec4 data(0.1f);
 	return ImageData(math::Vec2ui(1), reinterpret_cast<const u8*>(data.data()), vk::Format::eR32G32B32A32Sfloat);
 }
 

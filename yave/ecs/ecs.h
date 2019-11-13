@@ -31,7 +31,7 @@ namespace ecs {
 class EntityWorld;
 
 /*struct ComponentType {
-	usize index;
+	const usize index;
 	bool operator==(const ComponentTypeIndex& other) const { return index == other.index; }
 	bool operator!=(const ComponentTypeIndex& other) const { return index != other.index; }
 };*/

@@ -49,7 +49,7 @@ void Queue::wait() const {
 }
 
 Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
-	Semaphore sync(device());
+	const Semaphore sync(device());
 	cmd._proxy->data()._signal = sync;
 	submit_base(cmd);
 	return sync;

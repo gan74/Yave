@@ -29,17 +29,17 @@ namespace editor {
 
 class PickingManager : public ContextLinked {
 	struct ReadBackData {
-		float depth;
-		u32 id;
+		const float depth;
+		const u32 id;
 	};
 
 	using ReadBackBuffer = TypedBuffer<ReadBackData, BufferUsage::StorageBit, MemoryType::CpuVisible>;
 	public:
 		struct PickingData {
-			math::Vec3 world_pos;
-			float depth;
-			math::Vec2 uv;
-			u32 entity_index;
+			const math::Vec3 world_pos;
+			const float depth;
+			const math::Vec2 uv;
+			const u32 entity_index;
 
 			bool hit() const;
 		};

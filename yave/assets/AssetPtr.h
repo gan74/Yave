@@ -49,7 +49,7 @@ template<typename T>
 class AssetPtr {
 	struct Pair : NonCopyable {
 		const T asset;
-		AssetId id;
+		const AssetId id;
 		AssetPtr<T> reloaded;
 
 		template<typename... Args>
