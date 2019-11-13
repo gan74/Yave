@@ -205,20 +205,24 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		});
 }
 
+static std::array<char, 32> rounded_string(float value) {
+	std::array<char, 32> buffer;
+	std::snprintf(buffer.data(), buffer.size(), "%.2f", double(value));
+	return buffer;
+}
+
 static void add_size_property(core::Vector<std::pair<core::String, core::String>>& properties, ContextPtr ctx, AssetId id) {
 	std::array suffixes = {"B", "KB", "MB", "GB"};
 	if(auto data = ctx->asset_store().data(id)) {
-		double size = data.unwrap()->remaining();
+		float size = data.unwrap()->remaining();
 		usize i = 0;
 		for(; i != suffixes.size() - 1; ++i) {
-			if(size < 1024.0) {
+			if(size < 1024.0f) {
 				break;
 			}
-			size /= 1024.0;
+			size /= 1024.0f;
 		}
-		std::array<char, 256> buffer;
-		std::snprintf(buffer.data(), buffer.size(), "%.2f", size);
-		properties.emplace_back("Size on disk", fmt("% %", buffer.data(), suffixes[i]));
+		properties.emplace_back("Size on disk", fmt("% %", rounded_string(size).data(), suffixes[i]));
 	}
 }
 
@@ -264,6 +268,10 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 		std::move(graph).render(recorder);
 	}
 
+	if(id == mesh.id()) {
+		thumbmail->properties.emplace_back("Triangles", fmt("%", mesh->triangle_buffer().size()));
+		thumbmail->properties.emplace_back("Radius", fmt("%", rounded_string(mesh->radius()).data()));
+	}
 	add_size_property(thumbmail->properties, context(), id);
 
 	return thumbmail;
