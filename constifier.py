@@ -30,38 +30,61 @@ def in_namespaces(type):
             return True
     return False
 
+def is_prototype(line):
+    line = line.strip()
+    if "operator=" in line:
+        return True
+    if line.endswith(") {") or line.endswith(") const {") or line.endswith("();") or line.endswith(") const;"):
+        return True
+    if "virtual " in line or "override " in line:
+        return True
+    return False
 
 def process_file(fullname):
     content = ""
     with open(fullname, "r") as f:
         content = f.read()
+    
+    comment = False
+    for line in content.split("\n"):
         
-    run = True
-    while run:
-        run = False
-        for line in content.split("\n"):
-            trimmed = line.lstrip()
-            split = trimmed.split(" ", 2)
-            if len(split) < 2:
-                continue
-                
-            if split[1][0] == '_':
-                continue
-                
-            type_name = split[0]
+        trimmed = line.lstrip()
+        
+        
+        if trimmed.startswith("/*"):
+            comment = True
+        if "*/" in trimmed:
+            comment = False
             
-            if in_types(type_name) or in_namespaces(type_name):
-                print("   ", de_templatize(type_name))
-                new_line = line[:len(line) - len(trimmed)] + "const " + trimmed
+        if comment:
+            continue
+        
+        if trimmed.startswith("if("):
+            trimmed = trimmed[3:]
+        else:
+            if is_prototype(line):
+                continue
+        
+        split = trimmed.split(" ")
+        if len(split) < 2:
+            continue
+            
+        if len(split[1]) == 0 or split[1][0] == '_':
+            continue
+            
+        type_name = split[0]
+        
+        if in_types(type_name) or in_namespaces(type_name):
+            print("   ", de_templatize(type_name))
+            new_line = line[:len(line) - len(trimmed)] + "const " + trimmed
+            
+            new_content = content.replace(line, new_line)
+            with open(fullname, "w") as f:
+                f.write(new_content)
                 
-                new_content = content.replace(line, new_line)
-                with open(fullname, "w") as f:
-                    f.write(new_content)
-                    
-                if try_compile():
-                    content = new_content
-                    run = True
-                    break
+            if try_compile():
+                content = new_content
+                
     with open(fullname, "w") as f:
         f.write(content)
 
@@ -106,14 +129,11 @@ def find_classes(folders):
                     types.add(u)
 
 
-
-
-projects = {"y"} #{"yave", "editor"}
-
+projects = {"y", "yave", "editor"}
 
 namespaces = {"core::", "math::", "std::", "vk::", "detail::"}
+types = {"float", "double", "int", "auto", "T", "U", "C", "R", "F", "It"}
 
-types = {"float", "double", "int" "auto", "T", "U", "C", "R", "F", "It"}
 find_classes(projects)
 
 
