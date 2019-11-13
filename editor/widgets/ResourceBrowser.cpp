@@ -371,10 +371,14 @@ void ResourceBrowser::paint_preview(float width) {
 	if(const FileInfo* file = hovered_file()) {
 		ImGui::BeginGroup();
 
-		if(TextureView* image = context()->thumbmail_cache().get_thumbmail(file->id)) {
+		auto thumb_data = context()->thumbmail_cache().get_thumbmail(file->id);
+		if(TextureView* image = thumb_data.image) {
 			ImGui::Image(image, math::Vec2(width));
 		}
 		ImGui::Text("ID: 0x%.8x", unsigned(file->id.id()));
+		for(const auto& [name, value] : thumb_data.properties) {
+			ImGui::Text(fmt("%: %", name, value).data());
+		}
 
 		ImGui::EndGroup();
 	}

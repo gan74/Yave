@@ -46,7 +46,7 @@ class File final : public Reader, public Writer {
 		static  core::Result<void> copy(Reader& src, const core::String& dst);
 
 		usize size() const;
-		usize remaining() const;
+		usize remaining() const override;
 
 		bool is_open() const;
 		bool at_end() const override;

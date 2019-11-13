@@ -48,6 +48,8 @@ class Reader : NonCopyable {
 		virtual ~Reader() = default;
 
 		virtual bool at_end() const = 0;
+		virtual usize remaining() const = 0;
+
 		virtual ReadResult read(u8* data, usize bytes) = 0;
 		virtual ReadUpToResult read_up_to(u8* data, usize max_bytes) = 0;
 		virtual ReadUpToResult read_all(core::Vector<u8>& data) = 0;

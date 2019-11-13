@@ -43,6 +43,9 @@ vk::Format ImageFormat::vk_format() const {
 	return _format;
 }
 
+core::String ImageFormat::name() const {
+	return vk::to_string(_format);
+}
 
 bool ImageFormat::is_block_format() const {
 	switch(_format) {

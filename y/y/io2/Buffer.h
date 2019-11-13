@@ -33,7 +33,7 @@ class Buffer final : public Reader, public Writer {
 		~Buffer() override;
 
 		bool at_end() const override;
-		usize remaining() const;
+		usize remaining() const override;
 
 		void seek(usize byte) override;
 		usize tell() const override;

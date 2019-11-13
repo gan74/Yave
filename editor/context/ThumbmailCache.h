@@ -36,12 +36,14 @@ namespace editor {
 
 class ThumbmailCache : NonCopyable, public ContextLinked {
 
-		struct Thumbmail {
-			Thumbmail(DevicePtr dptr, usize size, AssetId asset);
+		struct ThumbmailData {
+			ThumbmailData(DevicePtr dptr, usize size, AssetId asset);
 
 			StorageTexture image;
 			TextureView view;
 			AssetId id;
+
+			core::Vector<std::pair<core::String, core::String>> properties;
 		};
 
 		struct SceneData : NonMovable {
@@ -51,29 +53,34 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 			SceneView view;
 		};
 
-		using ThumbmailFunc = core::Functor<std::unique_ptr<Thumbmail>(CmdBufferRecorder&)>;
+		using ThumbmailFunc = core::Functor<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
 
 	public:
 		using ThumbmailView = std::reference_wrapper<const TextureView>;
+
+		struct Thumbmail {
+			TextureView* image = nullptr;
+			core::Span<std::pair<core::String, core::String>> properties;
+		};
 
 		ThumbmailCache(ContextPtr ctx, usize size = 256);
 
 		math::Vec2ui thumbmail_size() const;
 
-		TextureView* get_thumbmail(AssetId asset);
+		Thumbmail get_thumbmail(AssetId asset);
 
 		void clear();
 
 	private:
 		void process_requests();
 		void request_thumbmail(AssetId id);
-		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const;
-		std::unique_ptr<Thumbmail> render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const;
+		std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const;
+		std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const;
 
 		usize _size;
 
 		std::shared_ptr<IBLData> _ibl_data;
-		std::unordered_map<AssetId, std::unique_ptr<Thumbmail>> _thumbmails;
+		std::unordered_map<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
 		core::Vector<std::future<ThumbmailFunc>> _requests;
 };
 

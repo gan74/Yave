@@ -41,6 +41,8 @@ class ImageFormat {
 		bool is_block_format() const;
 		bool is_float() const;
 
+		core::String name() const;
+
 		bool operator==(const ImageFormat& other) const;
 		bool operator!=(const ImageFormat& other) const;
 

@@ -48,7 +48,7 @@ static math::Transform<> center_to_camera(const AABB& box) {
 							 math::Vec3(scale));
 }
 
-ThumbmailCache::Thumbmail::Thumbmail(DevicePtr dptr, usize size, AssetId asset) :
+ThumbmailCache::ThumbmailData::ThumbmailData(DevicePtr dptr, usize size, AssetId asset) :
 		image(dptr, vk::Format::eR8G8B8A8Unorm, math::Vec2ui(size)),
 		view(image),
 		id(asset) {
@@ -125,21 +125,21 @@ math::Vec2ui ThumbmailCache::thumbmail_size() const {
 	return math::Vec2ui(_size);
 }
 
-TextureView* ThumbmailCache::get_thumbmail(AssetId asset) {
+ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 	if(asset == AssetId::invalid_id()) {
-		return nullptr;
+		return Thumbmail{};
 	}
 
 	process_requests();
 	if(auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
 		if(it->second) {
-			return &it->second->view;
+			return Thumbmail{&it->second->view, it->second->properties};
 		} else {
-			return nullptr;
+			return Thumbmail{};
 		}
 	}
 	request_thumbmail(asset);
-	return nullptr;
+	return Thumbmail{};
 }
 
 void ThumbmailCache::process_requests() {
@@ -205,19 +205,41 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		});
 }
 
-std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const {
-	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, tex.id());
+static void add_size_property(core::Vector<std::pair<core::String, core::String>>& properties, ContextPtr ctx, AssetId id) {
+	std::array suffixes = {"B", "KB", "MB", "GB"};
+	if(auto data = ctx->asset_store().data(id)) {
+		double size = data.unwrap()->remaining();
+		usize i = 0;
+		for(; i != suffixes.size() - 1; ++i) {
+			if(size < 1024.0) {
+				break;
+			}
+			size /= 1024.0;
+		}
+		std::array<char, 256> buffer;
+		std::snprintf(buffer.data(), buffer.size(), "%.2f", size);
+		properties.emplace_back("Size on disk", fmt("% %", buffer.data(), suffixes[i]));
+	}
+}
+
+std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const {
+	auto thumbmail = std::make_unique<ThumbmailData>(device(), _size, tex.id());
 
 	{
 		DescriptorSet set(device(), {Descriptor(*tex), Descriptor(StorageView(thumbmail->image))});
 		recorder.dispatch_size(device()->device_resources()[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
 	}
 
+	thumbmail->properties.emplace_back("Size", fmt("% x %", tex->size().x(), tex->size().y()));
+	thumbmail->properties.emplace_back("Mipmaps", fmt("%", tex->mipmaps()));
+	thumbmail->properties.emplace_back("Format", tex->format().name());
+	add_size_property(thumbmail->properties, context(), tex.id());
+
 	return thumbmail;
 }
 
-std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const {
-	auto thumbmail = std::make_unique<Thumbmail>(device(), _size, id);
+std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const {
+	auto thumbmail = std::make_unique<ThumbmailData>(device(), _size, id);
 	SceneData scene(context(), mesh, mat);
 
 	{
@@ -241,6 +263,8 @@ std::unique_ptr<ThumbmailCache::Thumbmail> ThumbmailCache::render_thumbmail(CmdB
 
 		std::move(graph).render(recorder);
 	}
+
+	add_size_property(thumbmail->properties, context(), id);
 
 	return thumbmail;
 }

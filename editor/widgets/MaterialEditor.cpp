@@ -78,7 +78,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	AssetPtr<Material> material = context()->selection().material();
 	const SimpleMaterialData& data = material->data();
 
-	if(TextureView* view = context()->thumbmail_cache().get_thumbmail(material.id())) {
+	if(TextureView* view = context()->thumbmail_cache().get_thumbmail(material.id()).image) {
 		math::Vec2 size = content_size().x() < view->size().x()
 			? math::Vec2(content_size().x())
 			: math::Vec2(view->size());
