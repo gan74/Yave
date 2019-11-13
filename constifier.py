@@ -12,6 +12,24 @@ def extension(file):
     return file.split(".")[-1]
     
     
+def de_templatize(type):
+    return type.split("<", 1)[0]
+    
+def in_types(type):
+    if type[-1] == '*' or type[-1] == '&':
+        type = type[:-1]
+    return de_templatize(type) in types
+    
+    
+def in_namespaces(type):
+    type = de_templatize(type)
+    if '(' in type:
+        return False
+    for ns in namespaces:
+        if type.startswith(ns):
+            return True
+    return False
+
 
 def process_file(fullname):
     content = ""
@@ -24,16 +42,16 @@ def process_file(fullname):
         for line in content.split("\n"):
             trimmed = line.lstrip()
             split = trimmed.split(" ", 2)
-            if len(split) != 2:
+            if len(split) < 2:
                 continue
                 
             if split[1][0] == '_':
                 continue
                 
             type_name = split[0]
-            if type_name[-1] == '*' or type_name[-1] == '&':
-                type_name = type_name[:-1]
-            if type_name in types:
+            
+            if in_types(type_name) or in_namespaces(type_name):
+                print("   ", de_templatize(type_name))
                 new_line = line[:len(line) - len(trimmed)] + "const " + trimmed
                 
                 new_content = content.replace(line, new_line)
@@ -66,9 +84,9 @@ def process_files(folders):
                 
     
 def find_classes(folders):
-    find_class = re.compile(r"class ([A-Za-z]+)")
-    find_struct = re.compile(r"struct ([A-Za-z]+)")
-    find_using = re.compile(r"using ([A-Za-z]+)")
+    find_class = re.compile(r"class ([A-Za-z0-9_]+)")
+    find_struct = re.compile(r"struct ([A-Za-z0-9_]+)")
+    find_using = re.compile(r"using ([A-Za-z0-9_]+)")
     for proj in folders:
         for root, dirs, files in os.walk(proj):
             for file in files:
@@ -92,8 +110,12 @@ def find_classes(folders):
 
 projects = {"y"} #{"yave", "editor"}
 
-types = {"float", "usize", "isize", "T", "U", "C", "R", "auto", "u32", "math::Vec2", "math::Vec3", "math::Vec3", "math::Vec4", "math::Matrix2<>", "math::Matrix3<>", "math::Matrix4<>", "math::Quaternion<>"}
+
+namespaces = {"core::", "math::", "std::", "vk::", "detail::"}
+
+types = {"float", "double", "int" "auto", "T", "U", "C", "R", "F", "It"}
 find_classes(projects)
+
 
 print("Initial compilation")
 if not try_compile():
