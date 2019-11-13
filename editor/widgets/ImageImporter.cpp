@@ -59,7 +59,6 @@ void ImageImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 			ImGui::Text("Loading...");
 		}
 	}
-
 }
 
 bool ImageImporter::is_loading() const {
@@ -72,7 +71,7 @@ bool ImageImporter::done_loading() const {
 
 void ImageImporter::import_async(const core::String& filename) {
 	_import_future = std::async(std::launch::async, [=] {
-		return import::import_image(filename);
+		return import::import_image(filename, import::ImageImportFlags::GenerateMipmaps);
 	});
 }
 

@@ -152,7 +152,7 @@ void ResourceBrowser::reset_hover() {
 
 const ResourceBrowser::FileInfo* ResourceBrowser::hovered_file() const {
 	if(_current) {
-		usize index = _current_hovered_index - _current->children.size();
+		const usize index = _current_hovered_index - _current->children.size();
 		if(index < _current->files.size()) {
 			return &_current->files[index];
 		}
@@ -227,7 +227,7 @@ void ResourceBrowser::paint_context_menu() {
 		}
 		ImGui::Separator();
 		if(ImGui::Selectable("Create material")) {
-			SimpleMaterialData material;
+			const SimpleMaterialData material;
 			io2::Buffer buffer;
 			WritableAssetArchive ar(buffer);
 			if(material.serialize(ar)) {
@@ -258,7 +258,7 @@ void ResourceBrowser::paint_tree_view(float width) {
 
 void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 	static constexpr ImGuiTreeNodeFlags default_node_flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-	ImGuiTreeNodeFlags flags = default_node_flags/* | (node->children.is_empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/;
+	const ImGuiTreeNodeFlags flags = default_node_flags/* | (node->children.is_empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/;
 
 	// folding/expending the node will still register as a goto somehow...
 	if(ImGui::TreeNodeEx(fmt(ICON_FA_FOLDER " %", name).data(), flags)) {
@@ -304,7 +304,7 @@ void ResourceBrowser::paint_asset_list(float width) {
 
 	usize index = 0;
 	usize hovered = usize(-1);
-	auto selected = [&] { return _current_hovered_index == index; };
+	const auto selected = [&] { return _current_hovered_index == index; };
 
 	// dirs
 	auto curr = _current;
@@ -371,7 +371,7 @@ void ResourceBrowser::paint_preview(float width) {
 	if(const FileInfo* file = hovered_file()) {
 		ImGui::BeginGroup();
 
-		auto thumb_data = context()->thumbmail_cache().get_thumbmail(file->id);
+		const auto thumb_data = context()->thumbmail_cache().get_thumbmail(file->id);
 		if(TextureView* image = thumb_data.image) {
 			ImGui::Image(image, math::Vec2(width));
 		}
@@ -391,14 +391,18 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 	unused(recorder, token);
 	y_profile();
 
+	const bool show_tree = false;
+
 	const float width = ImGui::GetWindowContentRegionWidth();
-	const float tree_width = std::min(width * 0.5f, 200.0f);
+	const float tree_width = show_tree ? std::min(width * 0.5f, 200.0f) : 0.0f;
 	const bool render_preview = width - tree_width > 400.0f;
 	const float list_width = render_preview ? width - tree_width - 200.0f : 0.0f;
 	const float preview_width = width - tree_width - list_width;
 
-	paint_tree_view(tree_width);
-	ImGui::SameLine();
+	if(show_tree) {
+		paint_tree_view(tree_width);
+		ImGui::SameLine();
+	}
 	paint_asset_list(list_width);
 
 
