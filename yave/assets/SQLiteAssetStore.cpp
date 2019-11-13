@@ -208,16 +208,14 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::create_direct
 	auto fid = folder_id(parent.unwrap());
 	y_try(fid);
 
-	i64 next_id = next_folder_id();
 
 	{
 		bool has_delim = !path.empty() && is_delimiter(path.back());
 
 		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "INSERT INTO Folders(name, folderid, parentid) VALUES(?, ?, ?)", -1, &stmt, nullptr));
+		check(sqlite3_prepare_v2(_database, "INSERT INTO Folders(name, folderid, parentid) VALUES(?, (SELECT MAX(folderid) FROM Folders) + 1, ?)", -1, &stmt, nullptr));
 		check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
-		check(sqlite3_bind_int64(stmt, 2, next_id));
-		check(sqlite3_bind_int64(stmt, 3, fid.unwrap()));
+		check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
 		y_defer(sqlite3_finalize(stmt));
 
 		if(!is_done(step_db(stmt))) {
@@ -226,7 +224,6 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::create_direct
 	}
 	log_msg(fmt("Folder created: %", path));
 
-	y_debug_assert(folder_id(path).unwrap() == next_id);
 	return core::Ok();
 }
 
@@ -284,19 +281,6 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 	}
 	{
 		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "UPDATE Assets SET name = ? || SUBSTR(name, ?) WHERE SUBSTR(name, 0, ?) LIKE ?", -1, &stmt, nullptr));
-		check(sqlite3_bind_text(stmt, 1, to.data(), to.size() - to_has_delim, nullptr));
-		check(sqlite3_bind_int64(stmt, 2, from.size() - from_has_delim + 1));
-		check(sqlite3_bind_int64(stmt, 3, from.size() - from_has_delim + 1));
-		check(sqlite3_bind_text(stmt, 4, from.data(), from.size() - from_has_delim, nullptr));
-		y_defer(sqlite3_finalize(stmt));
-
-		if(!is_done(step_db(stmt))) {
-			return core::Err();
-		}
-	}
-	{
-		sqlite3_stmt* stmt = nullptr;
 		check(sqlite3_prepare_v2(_database, "UPDATE Assets SET name = ?, folderid = ? WHERE name = ?", -1, &stmt, nullptr));
 		check(sqlite3_bind_text(stmt, 1, to.data(), to.size(), nullptr));
 		check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
@@ -335,23 +319,6 @@ FileSystemModel::Result<i64> SQLiteAssetStore::SQLiteFileSystemModel::folder_id(
 	return core::Ok(id);
 }
 
-i64 SQLiteAssetStore::SQLiteFileSystemModel::next_folder_id() const {
-	y_profile();
-
-	sqlite3_stmt* stmt = nullptr;
-	check(sqlite3_prepare_v2(_database, "SELECT MAX(folderid) FROM Folders", -1, &stmt, nullptr));
-	y_defer(sqlite3_finalize(stmt));
-
-	if(!is_row(step_db(stmt))) {
-		return 1;
-	}
-	i64 max_id = sqlite3_column_int64(stmt, 0);
-	return std::max(max_id, i64(0)) + 1;
-}
-
-
-
-
 
 
 void SQLiteAssetStore::check(int res) const {
@@ -388,29 +355,44 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 		}
 	}
 
+	// Set pragmas
+	{
+		// Dangerous!!
+		check(sqlite3_exec(_database, "PRAGMA synchronous = OFF", nullptr, nullptr, nullptr)); // unsafe if the OS crashes
 
-	check(sqlite3_exec(_database, "PRAGMA cache_size = 1048576", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "PRAGMA page_size = 65536", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "PRAGMA temp_store = MEMORY", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "PRAGMA case_sensitive_like = ON", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "PRAGMA cache_size = 1048576", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "PRAGMA page_size = 65536", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "PRAGMA temp_store = MEMORY", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "PRAGMA case_sensitive_like = ON", nullptr, nullptr, nullptr));
+	}
+
+	// Create tables
+	{
+		check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Folders (name TEXT    PRIMARY KEY, folderid INTEGER UNIQUE, parentid INTEGER,"
+									  "FOREIGN KEY(parentid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Assets  (uid  INTEGER PRIMARY KEY, name TEXT UNIQUE, folderid INTEGER, data BLOB,"
+									  "FOREIGN KEY(folderid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
+	}
+
+	// Create triggers
+	{
+		check(sqlite3_exec(_database, "DROP TRIGGER IF EXISTS renameassetstrigger", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "DROP TRIGGER IF EXISTS renamefolderstrigger", nullptr, nullptr, nullptr));
+
+		check(sqlite3_exec(_database, "CREATE TRIGGER renameassetstrigger AFTER UPDATE ON Folders "
+											"BEGIN UPDATE Assets SET name = NEW.name || SUBSTR(name, LENGTH(OLD.name) + 1) "
+											"WHERE SUBSTR(name, 0, LENGTH(OLD.name) + 1) LIKE OLD.name; END", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "CREATE TRIGGER renamefolderstrigger AFTER UPDATE ON Folders "
+											"BEGIN UPDATE Folders SET name = NEW.name || SUBSTR(name, LENGTH(OLD.name) + 1) "
+											"WHERE SUBSTR(name, 0, LENGTH(OLD.name) + 1) LIKE OLD.name AND folderid <> NEW.folderid; END", nullptr, nullptr, nullptr));
+	}
 
 
-	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Folders (name TEXT    PRIMARY KEY, folderid INTEGER UNIQUE, parentid INTEGER,"
-										"FOREIGN KEY(parentid) REFERENCES Folders(folderid) ON DELETE CASCADE);", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Assets  (uid  INTEGER PRIMARY KEY, name TEXT UNIQUE, folderid INTEGER, data BLOB,"
-										"FOREIGN KEY(folderid) REFERENCES Folders(folderid) ON DELETE CASCADE);", nullptr, nullptr, nullptr));
-
-	// Not needed, sqlite will create indexes automatically
-	/*check(sqlite3_exec(_database, "CREATE UNIQUE INDEX IF NOT EXISTS uidindex  ON Assets(uid)", nullptr, nullptr, nullptr));
-	check(sqlite3_exec(_database, "CREATE UNIQUE INDEX IF NOT EXISTS nameindex ON Assets(name)", nullptr, nullptr, nullptr));*/
-
-	// Root folder
+	// Create root folder
 	check(sqlite3_exec(_database, "INSERT INTO Folders(name, folderid) SELECT '', 0 "
 										"WHERE NOT EXISTS(SELECT 1 FROM Folders WHERE folderid = 0);", nullptr, nullptr, nullptr));
 
-	// Dangerous!!
-	check(sqlite3_exec(_database, "PRAGMA synchronous = OFF", nullptr, nullptr, nullptr)); // unsafe if the OS crashes
 }
 
 SQLiteAssetStore::~SQLiteAssetStore() {

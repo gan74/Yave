@@ -64,7 +64,6 @@ class SQLiteAssetStore final : public AssetStore {
 			void check(int res) const;
 
 			Result<i64> folder_id(std::string_view path) const;
-			i64 next_folder_id() const;
 
 			sqlite3* _database = nullptr;
 	};
