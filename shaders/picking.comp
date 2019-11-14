@@ -17,7 +17,7 @@ layout(push_constant) uniform PushConstants {
 void main() {
 	output_data.depth = texture(in_depth, constants.uv).r;
 
-	ivec2 size = textureSize(in_id, 0);
+	const ivec2 size = textureSize(in_id, 0);
 	output_data.entity_id = uint(texelFetch(in_id, ivec2(size * constants.uv), 0).r);
 }
 

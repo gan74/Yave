@@ -18,9 +18,9 @@ shared uint total;
 
 // https://bruop.github.io/exposure/
 void main() {
-	uint index = gl_LocalInvocationIndex;
-	uint colunm_id = gl_LocalInvocationID.x * group_size;
-	uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
+	const uint index = gl_LocalInvocationIndex;
+	const uint colunm_id = gl_LocalInvocationID.x * group_size;
+	const uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
 
 	histogram[index] = bin_size * index;
 	
@@ -48,11 +48,11 @@ void main() {
 			weighted += histogram[i * group_size];
 		}
 
-		uint black = bin_size;
-		uint non_black = max(total, black + 1) - black;
+		const uint black = bin_size;
+		const uint non_black = max(total, black + 1) - black;
 
-		float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
-		float avg = exp2(log_avg);
+		const float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
+		const float avg = exp2(log_avg);
 
 		params.params.avg_luminance = avg;
 		params.params.max_lum = avg * 9.6;

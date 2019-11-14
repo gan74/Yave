@@ -19,22 +19,23 @@ const float inv_gamma = 1.0 / gamma;
 // https://www.academia.edu/24772316/Programming_Vertex_Geometry_and_Pixel_Shaders_Screenshots_of_Alan_Wake_courtesy_of_Remedy_Entertainment
 // https://imdoingitwrong.wordpress.com/2010/08/19/why-reinhard-desaturates-my-blacks-3/
 void main() {
-	ivec2 coord = ivec2(gl_FragCoord.xy);
+	const ivec2 coord = ivec2(gl_FragCoord.xy);
+	const float max_lum = (params.params.max_lum + epsilon);
+
 	vec3 hdr = texelFetch(in_color, coord, 0).rgb;
 
-	float max_lum = (params.params.max_lum + epsilon);
 
 #if 1
 	vec3 Yxy = RGB_to_Yxy(hdr);
 	Yxy.x /= max_lum;
 	hdr = Yxy_to_RGB(Yxy);
 
-	vec3 ldr = ACES_fast(hdr);
+	const vec3 ldr = ACES_fast(hdr);
 #else
-	float lum = luminance(hdr);
-	float scale = lum / max_lum;
+	const float lum = luminance(hdr);
+	const float scale = lum / max_lum;
 
-	vec3 ldr = ACES_fast(hdr * scale);
+	const vec3 ldr = ACES_fast(hdr * scale);
 #endif
 
 

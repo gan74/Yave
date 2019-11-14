@@ -14,7 +14,7 @@ shared uint histogram[thread_count];
 
 
 uint lum_to_bin(float lum) {
-	float log_lum = log2(lum) + lum_histogram_offset;
+	const float log_lum = log2(lum) + lum_histogram_offset;
 	if(log_lum <= 0.0) {
 		return 0;
 	}
@@ -23,12 +23,12 @@ uint lum_to_bin(float lum) {
 
 // https://bruop.github.io/exposure/
 void main() {
-	uint index = gl_LocalInvocationIndex;
-	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 size = textureSize(in_color, 0);
+	const uint index = gl_LocalInvocationIndex;
+	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	const ivec2 size = textureSize(in_color, 0);
 
-	float lum = luminance(texelFetch(in_color, coord, 0).rgb);
-	uint bin = lum_to_bin(lum);
+	const float lum = luminance(texelFetch(in_color, coord, 0).rgb);
+	const uint bin = lum_to_bin(lum);
 
 	histogram[index] = 0;
 

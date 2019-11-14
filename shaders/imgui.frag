@@ -13,6 +13,6 @@ layout(set = 0, binding = 1) uniform Data {
 //const float gamma = 2.2f;
 
 void main() {
-	vec4 color = v_color * texture(font_texture, v_uv);
+	const vec4 color = v_color * texture(font_texture, v_uv);
 	out_color = color;
 }

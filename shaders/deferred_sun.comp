@@ -33,10 +33,10 @@ layout(push_constant) uniform PushConstants {
 // -------------------------------- MAIN --------------------------------
 
 void main() {
-	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 
-	float depth = texelFetch(in_depth, coord, 0).x;
+	const float depth = texelFetch(in_depth, coord, 0).x;
 	vec3 irradiance = vec3(0.0);
 
 	if(!is_OOB(depth)) {
@@ -47,23 +47,23 @@ void main() {
 		unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
 		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
-		vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
-		vec3 view_dir = normalize(constants.camera.position - world_pos);
+		const vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
+		const vec3 view_dir = normalize(constants.camera.position - world_pos);
 
 		// directional lights
 		for(uint i = 0; i != constants.light_count; ++i) {
-			DirectionalLight light = lights.lights[i];
+			const DirectionalLight light = lights.lights[i];
 
-			vec3 light_dir = light.direction; // assume normalized
+			const vec3 light_dir = light.direction; // assume normalized
 
-			vec3 radiance = light.color;
+			const vec3 radiance = light.color;
 			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
 		}
 
 #ifdef USE_IBL
 		irradiance += ibl_irradiance(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
 	} else {
-		vec3 forward = normalize(unproject(uv, 1.0, constants.camera.inv_matrix) - constants.camera.position);
+		const vec3 forward = normalize(unproject(uv, 1.0, constants.camera.inv_matrix) - constants.camera.position);
 		irradiance = texture(in_envmap, forward).rgb;
 #endif
 	}

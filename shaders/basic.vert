@@ -19,7 +19,7 @@ layout(location = 3) out vec2 out_uv;
 void main() {
 	out_uv = in_uv;
 
-	mat3 model = mat3(in_model);
+	const mat3 model = mat3(in_model);
 	out_normal = model * in_normal;
 	out_tangent = model * in_tangent;
 	out_bitangent = cross(out_tangent, out_normal);

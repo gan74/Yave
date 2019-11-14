@@ -7,7 +7,7 @@ layout(local_size_x = 64, local_size_y = 1) in;
 layout(r32ui, set = 0, binding = 0) uniform writeonly uimage2D out_histogram;
 
 void main() {
-	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	imageStore(out_histogram, ivec2(coord), uvec4(0.0));
 }
 

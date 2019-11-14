@@ -13,14 +13,14 @@ layout(set = 0, binding = 1) uniform Data {
 } constants;
 
 void main() {
-	vec2 viewport = constants.viewport_size;
+	const vec2 viewport = constants.viewport_size;
 
-	mat4 proj = mat4(2.0 / viewport.x, 0.0, 0.0, 0.0,
-					 0.0, 2.0 / -viewport.y, 0.0, 0.0,
-					 0.0, 0.0, -1.0, 0.0,
-					 -1.0, 1.0, 0.0, 1.0);
+	const mat4 proj = mat4(2.0 / viewport.x, 0.0, 0.0, 0.0,
+						   0.0, 2.0 / -viewport.y, 0.0, 0.0,
+						   0.0, 0.0, -1.0, 0.0,
+						   -1.0, 1.0, 0.0, 1.0);
 	out_uv = uv;
 	out_color = vec4((col >> 0) & 0xFF, (col >> 8) & 0xFF, (col >> 16) & 0xFF, (col >> 24) & 0xFF) / 255.0;
-	vec4 pos = proj * vec4(position.x, viewport.y - position.y, 0.0, 1.0);
+	const vec4 pos = proj * vec4(position.x, viewport.y - position.y, 0.0, 1.0);
 	gl_Position = pos;
 }

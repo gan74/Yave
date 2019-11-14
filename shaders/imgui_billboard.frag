@@ -15,7 +15,7 @@ const float smoothing = 1.0 / 16.0;
 const float alpha_edge = 0.7;
 
 void main() {
-	vec4 color = in_color * texture(font_texture, in_uv);
-	float alpha_step = smoothstep(alpha_edge - smoothing, alpha_edge + smoothing, color.a);
+	const vec4 color = in_color * texture(font_texture, in_uv);
+	const float alpha_step = smoothstep(alpha_edge - smoothing, alpha_edge + smoothing, color.a);
 	out_color = vec4(color.rgb, alpha_step);
 }

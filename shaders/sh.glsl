@@ -20,6 +20,11 @@ struct SH {
 };
 
 
+SH empty_sh() {
+	const vec3 z = vec3(0.0, 0.0, 0.0);
+	return SH(z, z, z, z, z, z, z, z, z);
+}
+
 SHBasis compute_sh_basis(vec3 dir) {
 	return SHBasis(
 	    0.282095,
@@ -66,7 +71,7 @@ SH add_sh(SH a, SH b) {
 
 vec3 eval_sh(SH sh, vec3 dir) {
 	const vec3 A = vec3(pi, 2.0 / 3.0 * pi, pi / 4.0);
-	SHBasis basis = compute_sh_basis(dir);
+	const SHBasis basis = compute_sh_basis(dir);
 	return
 	    A.x * basis.Y00 * sh.L00 +
 	    A.y * basis.Y1_1 * sh.L1_1 +

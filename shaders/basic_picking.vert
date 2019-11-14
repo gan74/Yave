@@ -17,7 +17,7 @@ layout(location = 1) out vec2 out_uv;
 layout(location = 2) out vec4 out_color;
 
 void main() {
-	mat3 model = mat3(in_model);
+	const mat3 model = mat3(in_model);
 	gl_Position = view_proj.matrix * in_model * vec4(in_position, 1.0);
 
 	out_instance_id = in_id;

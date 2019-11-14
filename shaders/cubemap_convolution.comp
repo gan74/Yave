@@ -23,11 +23,11 @@ vec3 debug_cube(uint side) {
 }
 
 void main() {
-	vec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / vec2(imageSize(out_image).xy);
+	const vec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	const vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / vec2(imageSize(out_image).xy);
 
 	for(uint i = 0; i != 6; ++i) {
-		vec3 local_dir = normalize(cube_dir(uv, i));
+		const vec3 local_dir = normalize(cube_dir(uv, i));
 
 		vec3 conv;
 		if(constants.roughness <= 0.0) {

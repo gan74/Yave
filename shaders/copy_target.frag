@@ -16,7 +16,7 @@ layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 out_color;
 
 void main() {
-	ivec2 coord = ivec2(gl_FragCoord.xy);
+	const ivec2 coord = ivec2(gl_FragCoord.xy);
 
 	vec3 albedo;
 	float metallic;
@@ -25,8 +25,8 @@ void main() {
 	unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
 	unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 	
-	float depth = texelFetch(in_depth, coord, 0).r; 
-	vec3 final = texelFetch(in_final, coord, 0).rgb;
+	const float depth = texelFetch(in_depth, coord, 0).r; 
+	const vec3 final = texelFetch(in_final, coord, 0).rgb;
 
 	vec3 color = final;
 	

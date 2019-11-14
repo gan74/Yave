@@ -1,3 +1,5 @@
+#ifndef SCREEN_SPACE_GLSL
+#define SCREEN_SPACE_GLSL
 
 #include "yave.glsl"
 
@@ -94,17 +96,17 @@ vec2 bounce_uv(vec2 uv) {
 }
 
 vec3 sample_dir(vec3 normal, uint i) {
-	vec3 s = sample_dirs[i & 0x3F];
+	const vec3 s = sample_dirs[i & 0x3F];
 	return dot(normal, s) < 0.0 ? -s : s;
 }
 
 vec3 bent_normal(sampler2D in_depth, float depth, vec3 normal, vec2 uv, float radius, vec3 world_pos, mat4 matrix, uint samples) {
 	vec3 bent = normal;
 	for(uint i = 0; i != samples; ++i) {
-		float n = noise(uv + vec2(i, depth));
-		vec3 s = sample_dir(normal, i) * radius * n;
-		vec3 proj = project(world_pos + s, matrix);
-		float d = texture(in_depth, bounce_uv(proj.xy)).x;
+		const float n = noise(uv + vec2(i, depth));
+		const vec3 s = sample_dir(normal, i) * radius * n;
+		const vec3 proj = project(world_pos + s, matrix);
+		const float d = texture(in_depth, bounce_uv(proj.xy)).x;
 		if(proj.z < d) {
 			bent += normalize(s);
 		}
@@ -115,10 +117,10 @@ vec3 bent_normal(sampler2D in_depth, float depth, vec3 normal, vec2 uv, float ra
 float ambient_occlusion(sampler2D in_depth, float depth, vec3 normal, vec2 uv, float radius, vec3 world_pos, mat4 matrix, uint samples) {
 	float occlusion = 0.0;
 	for(uint i = 0; i != samples; ++i) {
-		float n = noise(uv + vec2(i, depth));
-		vec3 s = sample_dir(normal, i) * radius * n;
-		vec3 proj = project(world_pos + s, matrix);
-		float d = texture(in_depth, bounce_uv(proj.xy)).x;
+		const float n = noise(uv + vec2(i, depth));
+		const vec3 s = sample_dir(normal, i) * radius * n;
+		const vec3 proj = project(world_pos + s, matrix);
+		const float d = texture(in_depth, bounce_uv(proj.xy)).x;
 
 		if(proj.z < d) {
 			occlusion += 1.0;
@@ -127,7 +129,6 @@ float ambient_occlusion(sampler2D in_depth, float depth, vec3 normal, vec2 uv, f
 	return occlusion / samples;
 }
 
-
-
+#endif
 
 

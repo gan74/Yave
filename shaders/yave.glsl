@@ -127,7 +127,7 @@ vec2 hammersley(uint i, uint N) {
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	float radical_inverse = float(bits) * 2.3283064365386963e-10;
+	const float radical_inverse = float(bits) * 2.3283064365386963e-10;
 	return vec2(float(i) / float(N), radical_inverse);
 }
 
@@ -136,7 +136,7 @@ vec2 to_equirec(vec3 v) {
 }
 
 vec3 cube_dir(vec2 texCoord, uint side) {
-	vec2 tex = texCoord * 2.0 - 1.0;
+	const vec2 tex = texCoord * 2.0 - 1.0;
 
 	if(side == 0) return vec3(1.0, -tex.y, -tex.x); // front
 	if(side == 1) return vec3(-1.0, -tex.y, tex.x); // back
@@ -184,18 +184,18 @@ vec3 spectrum(uint x) {
 // -------------------------------- PROJECTION --------------------------------
 
 vec3 unproject_ndc(vec3 ndc, mat4 inv_matrix) {
-	vec4 p = inv_matrix * vec4(ndc, 1.0);
+	const vec4 p = inv_matrix * vec4(ndc, 1.0);
 	return p.xyz / p.w;
 }
 
 vec3 unproject(vec2 uv, float depth, mat4 inv_matrix) {
-	vec3 ndc = vec3(uv * 2.0 - vec2(1.0), depth);
+	const vec3 ndc = vec3(uv * 2.0 - vec2(1.0), depth);
 	return unproject_ndc(ndc, inv_matrix);
 }
 
 vec3 project(vec3 pos, mat4 proj_matrix) {
-	vec4 p = proj_matrix * vec4(pos, 1.0);
-	vec3 p3 = p.xyz / p.w;
+	const vec4 p = proj_matrix * vec4(pos, 1.0);
+	const vec3 p3 = p.xyz / p.w;
 	return vec3(p3.xy * 0.5 + vec2(0.5), p3.z);
 }
 
@@ -247,7 +247,7 @@ vec3 XYZ_to_RGB(vec3 xyz) {
 
 vec3 XYZ_to_Yxy(vec3 xyz) {
 	// http://www.brucelindbloom.com/index.html?Eqn_xyY_to_XYZ.html
-	float i = 1.0 / dot(xyz, vec3(1.0));
+	const float i = 1.0 / dot(xyz, vec3(1.0));
 	return vec3(xyz.y, xyz.x * i, xyz.y * i);
 }
 
@@ -275,18 +275,18 @@ float reinhard(float lum, float white) {
 }
 
 vec3 reinhard(vec3 hdr, float white) {
-	float lum = luminance(hdr);
-	float scale = reinhard(lum, white) / lum;
+	const float lum = luminance(hdr);
+	const float scale = reinhard(lum, white) / lum;
 	return hdr * scale;
 }
 
 float uncharted2(float hdr) {
-	float A = 0.15;
-	float B = 0.50;
-	float C = 0.10;
-	float D = 0.20;
-	float E = 0.02;
-	float F = 0.30;
+	const float A = 0.15;
+	const float B = 0.50;
+	const float C = 0.10;
+	const float D = 0.20;
+	const float E = 0.02;
+	const float F = 0.30;
 	return ((hdr * (A * hdr + C * B) + D * E) / (hdr * (A * hdr + B) + D * F)) - E / F;
 }
 
@@ -295,11 +295,11 @@ vec3 uncharted2(vec3 hdr) {
 }
 
 float ACES_fast(float hdr) {
-	float A = 2.51;
-	float B = 0.03;
-	float C = 2.43;
-	float D = 0.59;
-	float E = 0.14;
+	const float A = 2.51;
+	const float B = 0.03;
+	const float C = 2.43;
+	const float D = 0.59;
+	const float E = 0.14;
 	return (hdr * (A * hdr + B)) / (hdr * (C * hdr + E) + E);
 }
 
@@ -310,7 +310,7 @@ vec3 ACES_fast(vec3 hdr) {
 // -------------------------------- LIGHTING --------------------------------
 
 float attenuation(float distance, float radius) {
-	float x = min(distance, radius);
+	const float x = min(distance, radius);
 	return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);
 }
 
@@ -319,18 +319,18 @@ float attenuation(float distance, float radius, float falloff) {
 }
 
 /*vec3 reflection(samplerCube envmap, vec3 normal, vec3 view) {
-	vec3 r = reflect(view, normal);
+	const vec3 r = reflect(view, normal);
 	return textureLod(envmap, r, 0).rgb;
 }*/
 
 float D_GGX(float NoH, float roughness) {
-	float a2 = sqr(sqr(roughness));
-	float denom = sqr(sqr(NoH) * (a2 - 1.0) + 1.0) * pi;
+	const float a2 = sqr(sqr(roughness));
+	const float denom = sqr(sqr(NoH) * (a2 - 1.0) + 1.0) * pi;
 	return a2 / denom;
 }
 
 float G_sub_GGX(float NoV, float k) {
-	float denom = NoV * (1.0 - k) + k;
+	const float denom = NoV * (1.0 - k) + k;
 	return NoV / denom;
 }
 
@@ -338,8 +338,8 @@ float G_GGX(float NoV, float NoL, float k) {
 	// k for direct lighting = sqr(roughness + 1.0) / 8.0;
 	// k for IBL             = sqr(roughness) / 2.0;
 
-	float ggx_v = G_sub_GGX(NoV, k);
-	float ggx_l = G_sub_GGX(NoL, k);
+	const float ggx_v = G_sub_GGX(NoV, k);
+	const float ggx_l = G_sub_GGX(NoL, k);
 	return ggx_v * ggx_l;
 }
 
@@ -356,12 +356,12 @@ vec3 F_Schlick(float NoV, vec3 F0, float roughness) {
 }
 
 float brdf_cook_torrance(float NoH, float NoV, float NoL, float roughness) {
-	float D = D_GGX(NoH, roughness);
+	const float D = D_GGX(NoH, roughness);
 
-	float k_direct = sqr(roughness + 1.0) / 8.0;
-	float G = G_GGX(NoV, NoL, k_direct);
+	const float k_direct = sqr(roughness + 1.0) / 8.0;
+	const float G = G_GGX(NoV, NoL, k_direct);
 
-	float denom = 4.0 * NoL * NoV + epsilon;
+	const float denom = 4.0 * NoL * NoV + epsilon;
 
 	return D * G / denom;
 }
@@ -371,19 +371,19 @@ float brdf_lambert() {
 }
 
 vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
-	vec3 half_vec = normalize(light_dir + view_dir);
-	float NoH = max(0.0, dot(normal, half_vec));
-	float NoV = max(0.0, dot(normal, view_dir));
-	float NoL = max(0.0, dot(normal, light_dir));
-	float HoV = max(0.0, dot(half_vec, view_dir));
+	const vec3 half_vec = normalize(light_dir + view_dir);
+	const float NoH = max(0.0, dot(normal, half_vec));
+	const float NoV = max(0.0, dot(normal, view_dir));
+	const float NoL = max(0.0, dot(normal, light_dir));
+	const float HoV = max(0.0, dot(half_vec, view_dir));
 
-	vec3 F = F_Schlick(HoV, approx_F0(metallic, albedo));
+	const vec3 F = F_Schlick(HoV, approx_F0(metallic, albedo));
 
-	vec3 kS = F;
-	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+	const vec3 kS = F;
+	const vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-	vec3 specular = kS * brdf_cook_torrance(NoH, NoV, NoL, roughness);
-	vec3 diffuse = kD * albedo * brdf_lambert();
+	const vec3 specular = kS * brdf_cook_torrance(NoH, NoV, NoL, roughness);
+	const vec3 diffuse = kD * albedo * brdf_lambert();
 
 	return (diffuse + specular) * NoL;
 }
@@ -391,51 +391,51 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 // -------------------------------- SHADOW --------------------------------
 
 float variance_shadow(vec2 moments, float depth) {
-	float variance = sqr(moments.x) - moments.y;
-	float diff = moments.x - depth;
-	float p = variance / (variance + sqr(diff));
+	const float variance = sqr(moments.x) - moments.y;
+	const float diff = moments.x - depth;
+	const float p = variance / (variance + sqr(diff));
 	return max(p, depth <= moments.x ? 1.0 : 0.0);
 }
 
 // -------------------------------- IBL --------------------------------
 
 vec3 importance_sample_GGX(vec2 Xi, vec3 normal, float roughness) {
-	float a2 = sqr(sqr(roughness));
+	const float a2 = sqr(sqr(roughness));
 
-	float phi = 2.0 * pi * Xi.x;
-	float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (a2 - 1.0) * Xi.y));
-	float sin_theta = sqrt(1.0 - sqr(cos_theta));
+	const float phi = 2.0 * pi * Xi.x;
+	const float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (a2 - 1.0) * Xi.y));
+	const float sin_theta = sqrt(1.0 - sqr(cos_theta));
 
-	vec3 half_vec = vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+	const vec3 half_vec = vec3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
 
-	vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-	vec3 tangent = normalize(cross(up, normal));
-	vec3 bitangent = cross(normal, tangent);
+	const vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+	const vec3 tangent = normalize(cross(up, normal));
+	const vec3 bitangent = cross(normal, tangent);
 
 	return normalize(tangent * half_vec.x + bitangent * half_vec.y + normal * half_vec.z);
 }
 
 vec2 integrate_brdf(float NoV, float roughness) {
-	vec3 V = vec3(sqrt(1.0 - NoV * NoV), 0.0, NoV);
+	const vec3 V = vec3(sqrt(1.0 - NoV * NoV), 0.0, NoV);
 
 	vec2 integr = vec2(0.0);
 
-	vec3 N = vec3(0.0, 0.0, 1.0);
+	const vec3 N = vec3(0.0, 0.0, 1.0);
 	const uint SAMPLE_COUNT = 1024;
 	for(uint i = 0; i != SAMPLE_COUNT; ++i) {
-		vec2 Xi = hammersley(i, SAMPLE_COUNT);
-		vec3 H  = importance_sample_GGX(Xi, N, roughness);
-		vec3 L  = normalize(2.0 * dot(V, H) * H - V);
+		const vec2 Xi = hammersley(i, SAMPLE_COUNT);
+		const vec3 H  = importance_sample_GGX(Xi, N, roughness);
+		const vec3 L  = normalize(2.0 * dot(V, H) * H - V);
 
-		float NoL = max(0.0, L.z);
-		float NoH = max(0.0, H.z);
-		float VoH = max(0.0, dot(V, H));
+		const float NoL = max(0.0, L.z);
+		const float NoH = max(0.0, H.z);
+		const float VoH = max(0.0, dot(V, H));
 
 		if(NoL > 0.0) {
-			float k_ibl = sqr(roughness) * 0.5;
-			float G = G_GGX(NoV, NoL, k_ibl);
-			float G_Vis = (G * VoH) / (NoH * NoV);
-			float Fc = pow(1.0 - VoH, 5.0);
+			const float k_ibl = sqr(roughness) * 0.5;
+			const float G = G_GGX(NoV, NoL, k_ibl);
+			const float G_Vis = (G * VoH) / (NoH * NoV);
+			const float Fc = pow(1.0 - VoH, 5.0);
 
 			integr += vec2((1.0 - Fc) * G_Vis, Fc * G_Vis);
 		}
@@ -444,18 +444,18 @@ vec2 integrate_brdf(float NoV, float roughness) {
 }
 
 vec3 ibl_irradiance(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
-	uint probe_mips = textureQueryLevels(probe);
-	float NoV = max(0.0, dot(normal, view_dir));
+	const uint probe_mips = textureQueryLevels(probe);
+	const float NoV = max(0.0, dot(normal, view_dir));
 
-	vec3 kS = F_Schlick(NoV, approx_F0(metallic, albedo), roughness);
-	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+	const vec3 kS = F_Schlick(NoV, approx_F0(metallic, albedo), roughness);
+	const vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-	vec3 irradiance = textureLod(probe, normal, probe_mips - 1).rgb;
-	vec3 diffuse = kD * irradiance * albedo;
+	const vec3 irradiance = textureLod(probe, normal, probe_mips - 1).rgb;
+	const vec3 diffuse = kD * irradiance * albedo;
 
-	vec3 reflected = reflect(-view_dir, normal);
-	vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy; // TODO: make it so we don't wrap (which breaks roughness close to 0 or 1)
-	vec3 specular = (kS * brdf.x + brdf.y) * textureLod(probe, reflected, roughness * probe_mips).rgb;
+	const vec3 reflected = reflect(-view_dir, normal);
+	const vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy; // TODO: make it so we don't wrap (which breaks roughness close to 0 or 1)
+	const vec3 specular = (kS * brdf.x + brdf.y) * textureLod(probe, reflected, roughness * probe_mips).rgb;
 
 	return diffuse + specular;
 }

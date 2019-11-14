@@ -26,10 +26,10 @@ layout(location = 2) out vec3 out_bitangent;
 layout(location = 3) out vec2 out_uv;
 
 void main() {
-	mat4 bone_matrix = in_skin_weights.x * bones.transforms[in_skin_indexes.x] +
-					   in_skin_weights.y * bones.transforms[in_skin_indexes.y] +
-					   in_skin_weights.z * bones.transforms[in_skin_indexes.z] +
-					   in_skin_weights.w * bones.transforms[in_skin_indexes.w];
+	const mat4 bone_matrix = in_skin_weights.x * bones.transforms[in_skin_indexes.x] +
+							 in_skin_weights.y * bones.transforms[in_skin_indexes.y] +
+							 in_skin_weights.z * bones.transforms[in_skin_indexes.z] +
+							 in_skin_weights.w * bones.transforms[in_skin_indexes.w];
 
 	out_uv = in_uv;
 	out_normal = mat3(in_model) * mat3(bone_matrix) * in_normal;

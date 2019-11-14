@@ -21,15 +21,15 @@ vec3 unpack_normal_map(vec2 normal) {
 }
 
 void main() {
-	vec3 color = texture(in_color, in_uv).rgb;
-	vec3 normal = unpack_normal_map(texture(in_normal_map, in_uv).xy);
+	const vec3 color = texture(in_color, in_uv).rgb;
+	const vec3 normal = unpack_normal_map(texture(in_normal_map, in_uv).xy);
 
-	float roughness = texture(in_roughness, in_uv).x;
-	float metallic = texture(in_metallic, in_uv).x;
+	const float roughness = texture(in_roughness, in_uv).x;
+	const float metallic = texture(in_metallic, in_uv).x;
 
-	vec3 mapped_normal = normal.x * in_tangent +
-						 normal.y * in_bitangent +
-						 normal.z * in_normal;
+	const vec3 mapped_normal = normal.x * in_tangent +
+							   normal.y * in_bitangent +
+							   normal.z * in_normal;
 
 	out_color = pack_color(color, metallic);
 	out_normal = pack_normal(mapped_normal, roughness);

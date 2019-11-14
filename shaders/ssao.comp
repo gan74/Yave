@@ -19,9 +19,9 @@ layout(push_constant) uniform PushConstants {
 
 
 float ssao(ivec2 coord) {
-	vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 
-	float depth = texelFetch(in_depth, coord, 0).x;
+	const float depth = texelFetch(in_depth, coord, 0).x;
 
 	if(is_OOB(depth)) {
 		return 0.0;
@@ -31,15 +31,15 @@ float ssao(ivec2 coord) {
 	float roughness = 0.0;
 	unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
-	mat4 matrix = inverse(constants.camera.inv_matrix);
-	vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
+	const mat4 matrix = inverse(constants.camera.inv_matrix);
+	const vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
 
 	//return bent_normal(in_depth, depth, normal, uv, 5.0, world_pos, matrix, 64);
 	return ambient_occlusion(in_depth, depth, normal, uv, 15.0, world_pos, matrix, 64);
 }
 
 void main() {
-	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 
 	imageStore(out_color, coord, vec4(ssao(coord)));
 }
