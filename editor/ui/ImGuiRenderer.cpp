@@ -62,9 +62,9 @@ static ImageData load_font() {
 
 ImGuiRenderer::ImGuiRenderer(ContextPtr ctx) :
 		ContextLinked(ctx),
-		_index_buffer(imgui_index_buffer_size),
+		/*_index_buffer(imgui_index_buffer_size),
 		_vertex_buffer(imgui_vertex_buffer_size),
-		_uniform_buffer(device(), 1),
+		_uniform_buffer(device(), 1),*/
 		_font(device(), load_font()),
 		_font_view(_font) {
 
@@ -77,19 +77,6 @@ const Texture& ImGuiRenderer::font_texture() const {
 	return _font;
 }
 
-DescriptorSet ImGuiRenderer::create_descriptor_set(const void* data) {
-	const auto tex = data ? reinterpret_cast<const TextureView*>(data) : &_font_view;
-	return DescriptorSet(device(), {Descriptor(*tex), Descriptor(_uniform_buffer)});
-}
-
-void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* tex) {
-	y_profile();
-	recorder.bind_buffers(_index_buffer[token], {_vertex_buffer[token]});
-	const auto* material = context()->resources()[EditorResources::ImGuiMaterialTemplate];
-	const DescriptorSet ds = create_descriptor_set(tex);
-	recorder.bind_material(material, {ds});
-}
-
 void ImGuiRenderer::set_style(Style st) {
 	Style _style = st;
 	{
@@ -97,7 +84,7 @@ void ImGuiRenderer::set_style(Style st) {
 	}
 }
 
-void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token) {
+void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 	static_assert(sizeof(ImDrawVert) == sizeof(Vertex), "ImDrawVert is not of expected size");
 	static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
 	y_profile();
@@ -110,25 +97,43 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 		return;
 	}
 
-	const auto index_subbuffer = _index_buffer[token];
-	const auto vertex_subbuffer = _vertex_buffer[token];
-	auto indexes = TypedMapping(index_subbuffer);
-	auto vertices = TypedMapping(vertex_subbuffer);
-	auto uniform = TypedMapping(_uniform_buffer);
+	const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(device(), imgui_index_buffer_size);
+	const TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(device(), imgui_vertex_buffer_size);
+	const TypedUniformBuffer<math::Vec2> uniform_buffer(device(), 1);
 
+	auto indexes = TypedMapping(index_buffer);
+	auto vertices = TypedMapping(vertex_buffer);
+
+	auto uniform = TypedMapping(uniform_buffer);
 	uniform[0] = math::Vec2(ImGui::GetIO().DisplaySize);
+
+
+	const auto create_descriptor_set = [&](const void* data) {
+		const auto* tex = static_cast<const TextureView*>(data);
+		return DescriptorSet(device(), {Descriptor(*tex), Descriptor(uniform_buffer)});
+	};
+
+	const DescriptorSetBase default_set = create_descriptor_set(&_font_view);
+
+	const auto setup_state = [&](const void* tex) {
+		y_profile();
+		const auto* material = context()->resources()[EditorResources::ImGuiMaterialTemplate];
+		recorder.bind_material(material, {tex ? create_descriptor_set(tex) : default_set});
+	};
 
 	usize index_offset = 0;
 	usize vertex_offset = 0;
 	const void* current_tex = nullptr;
+
+	recorder.bind_buffers(index_buffer, {vertex_buffer});
 	for(auto c = 0; c != draw_data->CmdListsCount; ++c) {
 		const ImDrawList* cmd_list = draw_data->CmdLists[c];
 
-		if(cmd_list->IdxBuffer.Size + index_offset >= index_subbuffer.size()) {
+		if(cmd_list->IdxBuffer.Size + index_offset >= index_buffer.size()) {
 			y_fatal("Index buffer overflow.");
 		}
 
-		if(cmd_list->VtxBuffer.Size + vertex_offset >= vertex_subbuffer.size()) {
+		if(cmd_list->VtxBuffer.Size + vertex_offset >= vertex_buffer.size()) {
 			y_fatal("Vertex buffer overflow.");
 		}
 
@@ -151,7 +156,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 
 			if(cmd.ElemCount) {
 				if(current_tex != cmd.TextureId) {
-					setup_state(recorder, token, current_tex = cmd.TextureId);
+					setup_state(current_tex = cmd.TextureId);
 				}
 				recorder.draw(vk::DrawIndexedIndirectCommand()
 						.setFirstIndex(drawn_index_offset)

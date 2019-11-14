@@ -25,7 +25,6 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <yave/graphics/buffers/buffers.h>
-#include <yave/graphics/buffers/MultiBufferWrapper.h>
 #include <yave/material/Material.h>
 
 namespace editor {
@@ -49,20 +48,13 @@ class ImGuiRenderer : NonCopyable, public ContextLinked {
 
 		ImGuiRenderer(ContextPtr ctx);
 
-		void render(RenderPassRecorder& recorder, const FrameToken& token);
+		void render(RenderPassRecorder& recorder, const FrameToken&);
 
 		void set_style(Style st);
 
 		const Texture& font_texture() const;
 
 	private:
-		void setup_state(RenderPassRecorder& recorder, const FrameToken& token, const void* data);
-		DescriptorSet create_descriptor_set(const void* tex);
-
-		MultiBufferWrapper<TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible>> _index_buffer;
-		MultiBufferWrapper<TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible>> _vertex_buffer;
-		TypedUniformBuffer<math::Vec2> _uniform_buffer;
-
 		Texture _font;
 		TextureView _font_view;
 };
