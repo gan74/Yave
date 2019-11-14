@@ -19,7 +19,6 @@ shared uint total;
 // https://bruop.github.io/exposure/
 void main() {
 	const uint index = gl_LocalInvocationIndex;
-	const uint colunm_id = gl_LocalInvocationID.x * group_size;
 	const uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
 
 	histogram[index] = bin_size * index;
@@ -32,22 +31,15 @@ void main() {
 
 	atomicAdd(total, bin_size);
 
-	if(gl_LocalInvocationID.y == 0) {
-		uint sum = 0;
-		for(uint i = 0; i != group_size; ++i) {
-			sum += histogram[colunm_id + i];
+	for(uint i = 1; i < thread_count; i <<= 1) {
+		if(index + i < thread_count) {
+			histogram[index] += histogram[index + i];
 		}
-		histogram[colunm_id] = sum;
+		barrier();
 	}
 
-	barrier();
-
 	if(index == 0) {
-		uint weighted = 0;
-		for(uint i = 0; i != group_size; ++i) {
-			weighted += histogram[i * group_size];
-		}
-
+		const uint weighted = histogram[0];
 		const uint black = bin_size;
 		const uint non_black = max(total, black + 1) - black;
 
