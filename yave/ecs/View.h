@@ -123,7 +123,7 @@ class View {
 		template<usize I = 0>
 		auto make_refence_tuple(index_type index) const {
 			y_debug_assert(std::get<I>(_vectors));
-			auto& v = *std::get<I>(_vectors);
+			const auto& v = *std::get<I>(_vectors);
 			if constexpr(I + 1 == sizeof...(Args)) {
 				return std::tie(v[index]);
 			} else {
@@ -214,7 +214,7 @@ class View {
 
 	template<usize I = 0>
 	index_range shortest_range() {
-		auto* v = std::get<I>(_vectors);
+		const auto* v = std::get<I>(_vectors);
 		if(!v) {
 			return index_range();
 		}

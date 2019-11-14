@@ -2,7 +2,7 @@
 Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
+const of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
@@ -145,7 +145,7 @@ FileSystemModel::Result<core::String> SQLiteAssetStore::SQLiteFileSystemModel::p
 FileSystemModel::Result<bool> SQLiteAssetStore::SQLiteFileSystemModel::exists(std::string_view path) const {
 	y_profile();
 
-	bool has_delim = !path.empty() && is_delimiter(path.back());
+	const bool has_delim = !path.empty() && is_delimiter(path.back());
 
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT 1 FROM Assets WHERE name = ? UNION SELECT 1 FROM Folders WHERE name = ?", -1, &stmt, nullptr));
@@ -159,7 +159,7 @@ FileSystemModel::Result<bool> SQLiteAssetStore::SQLiteFileSystemModel::exists(st
 FileSystemModel::Result<bool> SQLiteAssetStore::SQLiteFileSystemModel::is_directory(std::string_view path) const {
 	y_profile();
 
-	bool has_delim = !path.empty() && is_delimiter(path.back());
+	const bool has_delim = !path.empty() && is_delimiter(path.back());
 
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT 1 FROM Folders WHERE name = ?", -1, &stmt, nullptr));
@@ -210,7 +210,7 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::create_direct
 
 
 	{
-		bool has_delim = !path.empty() && is_delimiter(path.back());
+		const bool has_delim = !path.empty() && is_delimiter(path.back());
 
 		sqlite3_stmt* stmt = nullptr;
 		check(sqlite3_prepare_v2(_database, "INSERT INTO Folders(name, folderid, parentid) VALUES(?, (SELECT MAX(folderid) FROM Folders) + 1, ?)", -1, &stmt, nullptr));
@@ -231,7 +231,7 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::remove(std::s
 	y_profile();
 
 	{
-		bool has_delim = !path.empty() && is_delimiter(path.back());
+		const bool has_delim = !path.empty() && is_delimiter(path.back());
 
 		sqlite3_stmt* stmt = nullptr;
 		check(sqlite3_prepare_v2(_database, "DELETE FROM Folders WHERE name = ?", -1, &stmt, nullptr));
@@ -264,8 +264,8 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 	auto fid = folder_id(parent.unwrap());
 	y_try(fid);
 
-	bool to_has_delim = !to.empty() && is_delimiter(to.back());
-	bool from_has_delim = !from.empty() && is_delimiter(from.back());
+	const bool to_has_delim = !to.empty() && is_delimiter(to.back());
+	const bool from_has_delim = !from.empty() && is_delimiter(from.back());
 
 	{
 		sqlite3_stmt* stmt = nullptr;
@@ -298,7 +298,7 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 FileSystemModel::Result<i64> SQLiteAssetStore::SQLiteFileSystemModel::folder_id(std::string_view path) const {
 	y_profile();
 
-	bool has_delim = !path.empty() && is_delimiter(path.back());
+	const bool has_delim = !path.empty() && is_delimiter(path.back());
 
 	if(path.empty() || (has_delim && path.size() == 1)) {
 		return core::Ok(i64(0));
@@ -314,7 +314,7 @@ FileSystemModel::Result<i64> SQLiteAssetStore::SQLiteFileSystemModel::folder_id(
 		return core::Err();
 	}
 
-	i64 id = sqlite3_column_int64(stmt, 0);
+	const i64 id = sqlite3_column_int64(stmt, 0);
 	y_debug_assert(id != 0);
 	return core::Ok(id);
 }
@@ -409,8 +409,8 @@ const FileSystemModel* SQLiteAssetStore::filesystem() const {
 AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::string_view dst_name) {
 	y_profile();
 
-	core::String filename = _filesystem.filename(dst_name);
-	auto parent_path = _filesystem.parent_path(dst_name);
+	const core::String filename = _filesystem.filename(dst_name);
+	const auto parent_path = _filesystem.parent_path(dst_name);
 
 	if(filename.is_empty()) {
 		return core::Err(ErrorType::InvalidName);
@@ -419,7 +419,7 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
 		return core::Err(ErrorType::FilesytemError);
 	}
 
-	if(auto e = _filesystem.exists(dst_name); e.is_ok()) {
+	if(const auto e = _filesystem.exists(dst_name); e.is_ok()) {
 		if(e.unwrap()) {
 			return core::Err(ErrorType::AlreadyExistingID);
 		}
@@ -427,7 +427,7 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
 		return core::Err(ErrorType::FilesytemError);
 	}
 
-	auto folder_id = find_folder(parent_path.unwrap());
+	const auto folder_id = find_folder(parent_path.unwrap());
 	if(!folder_id) {
 		return core::Err(folder_id.error());
 	}
@@ -450,7 +450,7 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
 		}
 	}
 
-	if(auto w = write(id, data); !w) {
+	if(const auto w = write(id, data); !w) {
 		remove(id).ignore();
 		return core::Err(w.error());
 	}
@@ -523,7 +523,7 @@ AssetStore::Result<io2::ReaderPtr> SQLiteAssetStore::data(AssetId id) const {
 		return core::Err(ErrorType::UnknownID);
 	}
 
-	int size = sqlite3_column_bytes(stmt, 0);
+	const int size = sqlite3_column_bytes(stmt, 0);
 	const void* data = sqlite3_column_blob(stmt, 0);
 
 	auto buffer = std::make_unique<io2::Buffer>(size);
@@ -586,16 +586,16 @@ AssetId SQLiteAssetStore::next_id() {
 	check(sqlite3_prepare_v2(_database, "SELECT MAX(uid) FROM Assets", -1, &stmt, nullptr));
 	y_defer(sqlite3_finalize(stmt));
 
-	auto to_id = [](i64 id) { return AssetIdFactory::create(u64(id)).create_id(); };
+	const auto to_id = [](i64 id) { return AssetIdFactory::create(u64(id)).create_id(); };
 	if(!is_row(step_db(stmt))) {
 		return to_id(std::numeric_limits<i64>::lowest());
 	}
-	i64 max_id = sqlite3_column_int64(stmt, 0);
+	const i64 max_id = sqlite3_column_int64(stmt, 0);
 	return to_id(max_id + 1);
 }
 
 SQLiteAssetStore::Result<i64> SQLiteAssetStore::find_folder(std::string_view name, bool or_create) {
-	if(auto fid = _filesystem.folder_id(name)) {
+	if(const auto fid = _filesystem.folder_id(name)) {
 		return core::Ok(fid.unwrap());
 	}
 

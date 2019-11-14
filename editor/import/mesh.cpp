@@ -42,7 +42,7 @@ MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
 		y_throw("Mesh has no normals.");
 	}
 
-	usize vertex_count = mesh->mNumVertices;
+	const usize vertex_count = mesh->mNumVertices;
 	auto vertices = core::vector_with_capacity<Vertex>(vertex_count);
 
 	for(usize i = 0; i != vertex_count; ++i) {
@@ -69,7 +69,7 @@ MeshData import_mesh(aiMesh* mesh, const aiScene* scene) {
 		log_msg("Mesh has no UVs", Log::Warning);
 	}
 
-	usize triangle_count = mesh->mNumFaces;
+	const usize triangle_count = mesh->mNumFaces;
 	auto triangles = core::vector_with_capacity<IndexedTriangle>(triangle_count);
 	for(usize i = 0; i != triangle_count; ++i) {
 		triangles << IndexedTriangle{mesh->mFaces[i].mIndices[0], mesh->mFaces[i].mIndices[1], mesh->mFaces[i].mIndices[2]};

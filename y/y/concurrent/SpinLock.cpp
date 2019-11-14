@@ -38,7 +38,7 @@ SpinLock::SpinLock() :
 
 SpinLock::~SpinLock() {
 #ifdef Y_DEBUG
-	bool unlocked = _spin.exchange(Destroyed, std::memory_order_acquire) == Unlocked;
+	const bool unlocked = _spin.exchange(Destroyed, std::memory_order_acquire) == Unlocked;
 	unused(unlocked);
 	y_debug_assert(unlocked);
 #endif
@@ -51,7 +51,7 @@ void SpinLock::lock() {
 }
 
 bool SpinLock::try_lock() {
-	Type res = _spin.exchange(Locked, std::memory_order_acquire);
+	const Type res = _spin.exchange(Locked, std::memory_order_acquire);
 #ifdef Y_DEBUG
 	y_debug_assert(res != Destroyed);
 #endif

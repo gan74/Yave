@@ -117,7 +117,7 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ImGui::Text("%u component types intanced", unsigned(world.component_type_count()));
 
 	auto clean_name = [](std::string_view str) {
-			auto last = str.find_last_of("::");
+			const auto last = str.find_last_of("::");
 			return last == std::string_view::npos ? str : str.substr(last + 1);
 		};
 
@@ -135,13 +135,13 @@ void EcsDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(ImGui::TreeNode("Components")) {
 		std::map<typename ecs::EntityIndex, core::Vector<core::String>> entities;
 		for(const ecs::ComponentTypeIndex& type: world.component_types()) {
-			core::String name = clean_name(world.type_name(type));
+			const core::String name = clean_name(world.type_name(type));
 			for(ecs::EntityIndex ids : world.indexes(type)) {
 				entities[ids] << name;
 			}
 		}
 		for(ecs::EntityId id : world.entities()) {
-			EditorComponent* comp = world.component<EditorComponent>(id);
+			const EditorComponent* comp = world.component<EditorComponent>(id);
 			if(!comp) {
 				continue;
 			}

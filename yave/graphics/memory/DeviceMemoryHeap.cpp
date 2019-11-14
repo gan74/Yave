@@ -81,21 +81,21 @@ DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {
 
 core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) {
 	y_profile();
-	usize size = align_size(reqs.size, alignment);
+	const usize size = align_size(reqs.size, alignment);
 
-	std::unique_lock lock(_lock);
+	const std::unique_lock lock(_lock);
 	for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
-		usize full_size = it->size;
+		const usize full_size = it->size;
 
 		if(full_size < size) {
 			continue;
 		}
 
-		usize offset = it->offset;
+		const usize offset = it->offset;
 
-		usize aligned_offset = align_size(offset, reqs.alignment);
-		usize align_correction = aligned_offset - offset;
-		usize aligned_size = full_size - align_correction;
+		const usize aligned_offset = align_size(offset, reqs.alignment);
+		const usize align_correction = aligned_offset - offset;
+		const usize aligned_size = full_size - align_correction;
 
 		y_debug_assert(aligned_size % alignment == 0);
 		y_debug_assert(aligned_offset % alignment == 0);
@@ -108,7 +108,7 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) 
 			}
 			return core::Ok(create(aligned_offset, size));
 		} else if(aligned_size > size) {
-			usize end = offset + full_size;
+			const usize end = offset + full_size;
 			it->size = end - (it->offset = aligned_offset + size);
 			if(align_correction) {
 				_blocks << FreeBlock{offset, align_correction};
@@ -134,7 +134,7 @@ void DeviceMemoryHeap::free(const FreeBlock& block) {
 void DeviceMemoryHeap::compact_block(FreeBlock block) {
 	y_profile();
 	// sort ?
-	std::unique_lock lock(_lock);
+	const std::unique_lock lock(_lock);
 	bool compacted = false;
 	do {
 		compacted = false;
@@ -164,7 +164,7 @@ usize DeviceMemoryHeap::size() const {
 }
 
 usize DeviceMemoryHeap::available() const {
-	std::unique_lock lock(_lock);
+	const std::unique_lock lock(_lock);
 	usize tot = 0;
 	for(const auto& b : _blocks) {
 		tot += b.size;
@@ -173,7 +173,7 @@ usize DeviceMemoryHeap::available() const {
 }
 
 usize DeviceMemoryHeap::free_blocks() const {
-	std::unique_lock lock(_lock);
+	const std::unique_lock lock(_lock);
 	return _blocks.size();
 }
 

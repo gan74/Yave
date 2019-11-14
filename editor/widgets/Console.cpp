@@ -107,7 +107,7 @@ void Console::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		context()->logs().clear();
 	}
 
-	usize total = std::accumulate(_log_counts.begin(), _log_counts.end(), 0);
+	const usize total = std::accumulate(_log_counts.begin(), _log_counts.end(), 0);
 	for(usize i = 0; i != log_type_count; ++i) {
 		ImGui::PushStyleColor(ImGuiCol_Text, _log_types[i] ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 		ImGui::SameLine();

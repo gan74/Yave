@@ -66,9 +66,9 @@ static const vk::MemoryPropertyFlags* memory_type_flags[] = {
 
 inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType type) {
 	for(const vk::MemoryPropertyFlags* type_flags = memory_type_flags[uenum(type)]; *type_flags; ++type_flags) {
-		vk::MemoryPropertyFlags flags = *type_flags;
+		const vk::MemoryPropertyFlags flags = *type_flags;
 		for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
-			auto memory_type = properties.memoryTypes[i];
+			const auto memory_type = properties.memoryTypes[i];
 			if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
 				return i;
 			}

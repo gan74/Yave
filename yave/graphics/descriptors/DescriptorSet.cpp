@@ -44,7 +44,7 @@ DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings) {
 }
 
 DescriptorSet::~DescriptorSet() {
-	if(DevicePtr dptr = device()) {
+	if(const DevicePtr dptr = device()) {
 		dptr->destroy(std::move(_data));
 	}
 }

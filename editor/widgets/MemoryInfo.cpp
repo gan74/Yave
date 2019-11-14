@@ -55,7 +55,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::Indent();
 		for(const auto& heap : heaps) {
 			usize free = heap->available();
-			usize used = heap->size() - free;
+			const usize used = heap->size() - free;
 			total_used += used;
 			total_allocated += heap->size();
 
@@ -105,9 +105,9 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 		DescriptorSetAllocator& alloc = context()->device()->descriptor_set_allocator();
 		usize pools = alloc.pool_count();
-		usize total_sets = pools * DescriptorSetPool::pool_size;
+		const usize total_sets = pools * DescriptorSetPool::pool_size;
 		usize free_sets = alloc.free_sets();
-		usize used_sets = total_sets - free_sets;
+		const usize used_sets = total_sets - free_sets;
 
 		ImGui::Text("Descriptor set layouts: %u", u32(alloc.layout_count()));
 		ImGui::Text("Descriptor set pools: %u", u32(pools));

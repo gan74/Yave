@@ -30,14 +30,14 @@ using namespace y::math;
 static_assert(is_iterable_v<Vec3>);
 
 y_test_func("Vec creation") {
-	Vec<2> a(1, 2);
-	Vec<3> b(a, 3);
-	Vec<3> c(0, a);
-	Vec<6> d(a, 3, b);
+	const Vec<2> a(1, 2);
+	const Vec<3> b(a, 3);
+	const Vec<3> c(0, a);
+	const Vec<6> d(a, 3, b);
 
 	y_test_assert(d == Vec<6>(1, 2, 3, 1, 2, 3));
 
-	Vec<3, i32> e(7);
+	const Vec<3, i32> e(7);
 	y_test_assert(e.x() == 7 && e.y() == 7 && e.z() == 7);
 }
 
@@ -55,14 +55,14 @@ y_test_func("Vec zero") {
 }
 
 y_test_func("Vec cross") {
-	Vec<3> a(1, 0, 0);
-	Vec<3> b(0, 1, 0);
+	const Vec<3> a(1, 0, 0);
+	const Vec<3> b(0, 1, 0);
 
 	y_test_assert(a.cross(b) == Vec<3>(0, 0, 1));
 }
 
 y_test_func("Vec Vec(...)") {
-	auto v = Vec(1, Vec(2, 3), 4, Vec(5));
+	const auto v = Vec(1, Vec(2, 3), 4, Vec(5));
 	y_test_assert(v.x() == 1 && v.y() == 2 && v.z() == 3 && v.w() == 4 && v[4] == 5);
 }
 

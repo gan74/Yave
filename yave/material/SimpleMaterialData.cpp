@@ -40,7 +40,7 @@ serde2::Result SimpleMaterialData::deserialize(ReadableAssetArchive& arc) noexce
 			return core::Err();
 		}
 		if(id != AssetId::invalid_id()) {
-			auto t = arc.loader().load<Texture>(id);
+			const auto t = arc.loader().load<Texture>(id);
 			if(!t) {
 				return core::Err();
 			}

@@ -83,7 +83,7 @@ DebugUtils::DebugUtils(vk::Instance instance) : _instance(instance) {
 	_end_label = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(_instance.getProcAddr("vkCmdEndDebugUtilsLabelEXT"));
 
 
-	auto create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(_instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
+	const auto create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(_instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
 
 	VkDebugUtilsMessengerCreateInfoEXT create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -104,7 +104,7 @@ DebugUtils::DebugUtils(vk::Instance instance) : _instance(instance) {
 }
 
 DebugUtils::~DebugUtils() {
-	auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(_instance.getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
+	const auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(_instance.getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
 	destroy_messenger(_instance, _messenger, nullptr);
 }
 

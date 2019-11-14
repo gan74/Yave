@@ -39,7 +39,7 @@ math::Vec3ui ImageData::mip_size(const math::Vec3ui& size, usize mip) {
 }
 
 usize ImageData::byte_size(const math::Vec3ui& size, ImageFormat format, usize mip) {
-	auto s = mip_size(size, mip);
+	const auto s = mip_size(size, mip);
 	return (s.x() * s.y() * s.z() * format.bit_per_pixel()) / 8;
 }
 

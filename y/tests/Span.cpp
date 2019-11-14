@@ -49,7 +49,7 @@ static usize test_func_nc(Span<NonCopyable> a) {
 y_test_func("Span creation") {
 	y_test_assert(test_func({1, 2, 3}) == 3);
 
-	auto vec = Vector({1, 2, 3, 4});
+	const auto vec = Vector({1, 2, 3, 4});
 	y_test_assert(test_func(vec) == 4);
 
 	y_test_assert(test_func(SmallVector<int>({1, 2, 3, 4})) == 4);

@@ -62,14 +62,14 @@ auto perspective(T fovy, T aspect, T z_near, T z_far) {
 	const T f = T(1) / tan(fovy / T(2));
 
 	// reversed Z
-	auto span = z_near - z_far;
-	Matrix4<T> m(f / aspect, 0, 0, 0,
+	const auto span = z_near - z_far;
+	const Matrix4<T> m(f / aspect, 0, 0, 0,
 				 0, f, 0, 0,
 				 0, 0, -T(1) - (z_far / span), -(z_far * z_near) / span,
 				 0, 0, -T(1), 0);
 
 	/*auto span = z_far - z_near;
-	Matrix4<T> m(f / aspect, 0, 0, 0,
+	const Matrix4<T> m(f / aspect, 0, 0, 0,
 				 0, f, 0, 0,
 				 0, 0, -(z_far + z_near) /span, -(z_far * z_near) / span,
 				 0, 0, -T(1), 0);*/
@@ -82,7 +82,7 @@ auto perspective(T fovy, T aspect, T z_near) {
 	const T f = T(1.0) / std::tan(fovy / T(2.0));
 
 	// reversed Z
-	Matrix4<T> m(f / aspect, 0, 0, 0,
+	const Matrix4<T> m(f / aspect, 0, 0, 0,
 				 0, f, 0, 0,
 				 0, 0, 0, z_near,
 				 0, 0, -T(1), 0);
@@ -92,7 +92,7 @@ auto perspective(T fovy, T aspect, T z_near) {
 // https://github.com/g-truc/glm/blob/1498e094b95d1d89164c6442c632d775a2a1bab5/glm/ext/matrix_clip_space.inl
 template<typename T>
 auto ortho(T left, T right, T bottom, T top, T z_near, T z_far) {
-	Matrix4<T> m(T(2) / (right - left), 0, 0, 0,
+	const Matrix4<T> m(T(2) / (right - left), 0, 0, 0,
 				 0, T(2) / (top - bottom), 0, 0, 
 				 0, 0, T(1) / (z_far - z_near), 0,
 				 -(right + left) / (right - left), -(top + bottom) / (top - bottom), -z_near / (z_far - z_near), 1);
@@ -101,9 +101,9 @@ auto ortho(T left, T right, T bottom, T top, T z_near, T z_far) {
 
 template<typename T>
 auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up) {
-	Vec<3, T> z((eye - center).normalized());
-	Vec<3, T> y(up.cross(z).normalized());
-	Vec<3, T> x(y.cross(z));
+	const Vec<3, T> z((eye - center).normalized());
+	const Vec<3, T> y(up.cross(z).normalized());
+	const Vec<3, T> x(y.cross(z));
 
 	return Matrix4<T>(y, -y.dot(eye),
 					 x, -x.dot(eye),
@@ -114,19 +114,19 @@ auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
 
 template<typename T>
 auto rotation(Vec<3, T> axis, T angle, const Matrix4<T>& base = identity()) {
-	T a = angle;
-	T c = std::cos(a);
-	T s = std::sin(a);
+	const T a = angle;
+	const T c = std::cos(a);
+	const T s = std::sin(a);
 
 	axis.normalize();
-	Vec<3, T> tmp((T(1) - c) * axis);
+	const Vec<3, T> tmp((T(1) - c) * axis);
 
-	Matrix4<T> m(c + tmp[0] * axis[0], tmp[0] * axis[1] + s * axis[2], tmp[0] * axis[2] - s * axis[1], 0,
+	const Matrix4<T> m(c + tmp[0] * axis[0], tmp[0] * axis[1] + s * axis[2], tmp[0] * axis[2] - s * axis[1], 0,
 				 tmp[1] * axis[0] - s * axis[2], c + tmp[1] * axis[1], tmp[1] * axis[2] + s * axis[0], 0,
 				 tmp[2] * axis[0] + s * axis[1], tmp[2] * axis[1] - s * axis[0], c + tmp[2] * axis[2], 0,
 				 0, 0, 0, 0);
 
-	Matrix4<T> r(base.row(0) * m[0][0] + base.row(1) * m[0][1] + base.row(2) * m[0][2],
+	const Matrix4<T> r(base.row(0) * m[0][0] + base.row(1) * m[0][1] + base.row(2) * m[0][2],
 				 base.row(0) * m[1][0] + base.row(1) * m[1][1] + base.row(2) * m[1][2],
 				 base.row(0) * m[2][0] + base.row(1) * m[2][1] + base.row(2) * m[2][2],
 				 base.row(3));

@@ -43,7 +43,7 @@ class Device : NonMovable {
 
 	struct ScopedDevice {
 		~ScopedDevice();
-		vk::Device device;
+		const vk::Device device;
 	};
 
 	public:

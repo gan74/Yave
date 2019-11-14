@@ -184,7 +184,7 @@ class WritableArchive final {
 
 		template<typename T>
 		Result serialize_one(NamedObject<T> object) {
-			auto header = detail::build_header(object);
+			const auto header = detail::build_header(object);
 			y_try(write_one(header));
 
 			pre_serialization(object);
@@ -438,7 +438,7 @@ class ReadableArchive final {
 			//object.object.clear();
 			object.object = T();
 
-			usize end = tell() + size;
+			const usize end = tell() + size;
 			const auto check = detail::build_header(object);
 			if(header != check) {
 				seek(end);
@@ -546,7 +546,7 @@ class ReadableArchive final {
 			if constexpr(I < sizeof...(Args)) {
 				if constexpr(Safe) {
 					bool found = false;
-					auto header = detail::build_header(std::get<I>(members));
+					const auto header = detail::build_header(std::get<I>(members));
 					for(const auto& m : object_data.members) {
 						if(m.header.type.name_hash == header.type.name_hash) {
 							seek(m.offset);

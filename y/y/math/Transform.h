@@ -95,7 +95,7 @@ struct Transform : Matrix4<T> {
 		const auto& x = this->column(0).template to<3>();
 		const auto& y = this->column(1).template to<3>();
 		const auto& z = this->column(2).template to<3>();
-		Vec<3, T> scale = {x.length(), y.length(), z.length()};
+		const Vec<3, T> scale = {x.length(), y.length(), z.length()};
 		return {position(), Quaternion<T>::from_base(x / scale.x(), y / scale.y(), z / scale.z()), scale};
 	}
 

@@ -60,8 +60,8 @@ class DebugParams {
 		DebugParams(core::Span<const char*> layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
 		}
 
-		core::Vector<const char*> _instance_layers;
-		core::Vector<const char*> _device_layers;
+		const core::Vector<const char*> _instance_layers;
+		const core::Vector<const char*> _device_layers;
 		bool _debug_enabled;
 };
 

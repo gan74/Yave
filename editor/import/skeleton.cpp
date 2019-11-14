@@ -58,7 +58,7 @@ static aiNode* common_parent(aiNode* a, aiNode* b) {
 
 static void add_bone_refs(aiBone* bone, u32 index, core::Vector<core::Vector<BoneRef>>& refs) {
 	for(usize i = 0; i != bone->mNumWeights; ++i) {
-		auto w = bone->mWeights[i];
+		const auto w = bone->mWeights[i];
 		refs[w.mVertexId] << BoneRef{index, w.mWeight};
 	}
 }
@@ -67,7 +67,7 @@ static SkinWeights compute_skin(core::Vector<BoneRef>& refs) {
 	sort(refs.begin(), refs.end());
 	SkinWeights skin;
 
-	usize max = std::min(refs.size(), skin.size);
+	const usize max = std::min(refs.size(), skin.size);
 
 	float total = 0.0f;
 	for(usize i = 0; i != max; ++i) {
@@ -87,7 +87,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 		y_throw("Empty skeleton.");
 	}
 
-	auto mesh_bones = core::Span<aiBone*>(mesh->mBones, mesh->mNumBones);
+	const auto mesh_bones = core::Span<aiBone*>(mesh->mBones, mesh->mNumBones);
 
 	core::Vector<aiNode*> bone_nodes;
 	bone_nodes << nullptr;
@@ -115,7 +115,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 		aiNode* node = bone_nodes[index];
 
 		u32 parent_index = u32(-1);
-		if(auto parent = bone_map.find(node->mParent->mName.C_Str()); parent != bone_map.end()) {
+		if(const auto parent = bone_map.find(node->mParent->mName.C_Str()); parent != bone_map.end()) {
 			parent_index = u32(parent->second.first);
 			if(parent_index >= index) {
 				y_throw("Parent serialized after children.");
@@ -143,7 +143,7 @@ SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene) {
 	core::Vector<core::Vector<BoneRef>> bone_per_vertex(mesh->mNumVertices, core::Vector<BoneRef>());
 	for(usize i = 0; i != mesh->mNumBones; ++i) {
 		aiBone* bone = mesh->mBones[i];
-		usize index = bone_map[std::string(bone->mName.C_Str())].first;
+		const usize index = bone_map[std::string(bone->mName.C_Str())].first;
 		add_bone_refs(bone, index, bone_per_vertex);
 	}
 

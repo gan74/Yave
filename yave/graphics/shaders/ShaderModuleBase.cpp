@@ -78,7 +78,7 @@ template<typename R>
 static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType shader_type, vk::DescriptorType type) {
 	auto bindings = std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>();
 	for(const auto& r : resources) {
-		auto id = r.id;
+		const auto id = r.id;
 		bindings[compiler.get_decoration(id, spv::DecorationDescriptorSet)] << create_binding(compiler.get_decoration(id, spv::DecorationBinding), shader_type, type);
 	}
 	return bindings;
@@ -147,7 +147,7 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const R& resou
 	core::Vector<ShaderModuleBase::Attribute> attribs;
 	std::unordered_set<u32> locations;
 	for(const auto& r : resources) {
-		auto location = compiler.get_decoration(r.id, spv::DecorationLocation);
+		const auto location = compiler.get_decoration(r.id, spv::DecorationLocation);
 		const auto& type = compiler.get_type(r.type_id);
 
 		attribs << ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype)};
@@ -190,7 +190,7 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	u32 spec_offset = 0;
 	for(const auto& cst : compiler.get_specialization_constants()) {
 		const auto& type = compiler.get_type(compiler.get_constant(cst.id).constant_type);
-		u32 size = type.width / 8;
+		const u32 size = type.width / 8;
 		_spec_constants << vk::SpecializationMapEntry(cst.constant_id, spec_offset, size);
 		spec_offset += size;
 	}

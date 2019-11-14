@@ -52,7 +52,7 @@ class MultiBufferWrapper {
 			}
 			DevicePtr dptr = token.image_view.device();
 
-			usize byte_size = Buffer::total_byte_size(_size);
+			const usize byte_size = Buffer::total_byte_size(_size);
 			_aligned_byte_size = align_size(byte_size, subbuffer_t::alignment(dptr));
 
 			_buffer = buffer_t(dptr, _aligned_byte_size * token.image_count);

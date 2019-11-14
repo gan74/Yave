@@ -87,7 +87,7 @@ y_test_func("Function creation") {
 	y_test_assert(!i);
 
 	{
-		auto dec = std::move(inc);
+		const auto dec = std::move(inc);
 		dec();
 		y_test_assert(i == -1);
 	}
@@ -100,12 +100,12 @@ y_test_func("Function creation") {
 y_test_func("Function method creation") {
 	{
 		NonConstFunctorStruct t;
-		auto func = function(t);
+		const auto func = function(t);
 		y_test_assert(func(4) == 3);
 	}
 	{
 		ForwardStruct t;
-		auto func = function(t);
+		const auto func = function(t);
 		y_test_assert(func(4) == 3);
 		int i = 7;
 		// should not work
@@ -115,7 +115,7 @@ y_test_func("Function method creation") {
 }
 
 y_test_func("Function argument forwarding") {
-	auto func = function(forward_func);
+	const auto func = function(forward_func);
 	int i = 4;
 	// should not work
 	// func(i);
@@ -126,14 +126,14 @@ y_test_func("Function argument forwarding") {
 
 y_test_func("Function void boxing") {
 	int i = 0;
-	auto inc = function([&i]() { return ++i; });
+	const auto inc = function([&i]() { return ++i; });
 	inc();
 	y_test_assert(i == 1);
 }
 
 y_test_func("Functor creation") {
 	int i = 0;
-	auto inc = functor([&i]() { ++i; });
+	const auto inc = functor([&i]() { ++i; });
 
 	inc();
 	y_test_assert(i == 1);
@@ -143,7 +143,7 @@ y_test_func("Functor creation") {
 	dec();
 	y_test_assert(i == 2);
 	{
-		auto d = functor([&i]() { --i; });
+		const auto d = functor([&i]() { --i; });
 		dec = d;
 	}
 	dec();

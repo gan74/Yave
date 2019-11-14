@@ -59,7 +59,7 @@ void StaticThreadPool::process_until_empty() {
 		if(_shared_data->queue.empty()) {
 			return;
 		}
-		Func f = std::move(_shared_data->queue.front());
+		const Func f = std::move(_shared_data->queue.front());
 		_shared_data->queue.pop_front();
 		lock.unlock();
 
@@ -72,7 +72,7 @@ void StaticThreadPool::worker(std::shared_ptr<SharedData> data) {
 		std::unique_lock lock(data->lock);
 		data->condition.wait(lock, [&] { return !data->queue.empty() || !data->run; });
 		if(!data->queue.empty()) {
-			Func f = std::move(data->queue.front());
+			const Func f = std::move(data->queue.front());
 			data->queue.pop_front();
 			lock.unlock();
 

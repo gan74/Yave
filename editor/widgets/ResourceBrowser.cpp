@@ -70,7 +70,7 @@ ResourceBrowser::ResourceBrowser(ContextPtr ctx, std::string_view title) :
 void ResourceBrowser::asset_selected(const FileInfo& file) {
 	switch(file.type) {
 		case AssetType::Material:
-			if(auto material = context()->loader().load<Material>(file.id)) {
+			if(const auto material = context()->loader().load<Material>(file.id)) {
 				context()->selection().set_selected(material.unwrap());
 			} else {
 				log_msg("Unable to open material.", Log::Error);
@@ -78,7 +78,7 @@ void ResourceBrowser::asset_selected(const FileInfo& file) {
 		break;
 
 		case AssetType::World:
-			if(auto data = context()->asset_store().data(file.id)) {
+			if(const auto data = context()->asset_store().data(file.id)) {
 				ecs::EntityWorld world;
 				ReadableAssetArchive ar(*(data.unwrap()), context()->loader());
 				if(ar(world)) {
@@ -121,7 +121,7 @@ void ResourceBrowser::update_node(DirNode* node) {
 
 	const auto* fs = filesystem();
 	bool is_error = fs->for_each(node->full_path, [&](const auto& name) {
-			auto full_name = fs->join(node->full_path, name);
+			const auto full_name = fs->join(node->full_path, name);
 			if(fs->is_directory(full_name).unwrap_or(false)) {
 				node->children.emplace_back(name, full_name, node);
 			} else {
@@ -285,7 +285,7 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 // ----------------------------------- Asset list -----------------------------------
 
 void ResourceBrowser::paint_asset_list(float width) {
-	bool menu_openned = ImGui::IsPopupOpen("###contextmenu");
+	const bool menu_openned = ImGui::IsPopupOpen("###contextmenu");
 
 	ImGui::BeginChild("###resources", ImVec2(width, 0), true);
 
@@ -307,7 +307,7 @@ void ResourceBrowser::paint_asset_list(float width) {
 	const auto selected = [&] { return _current_hovered_index == index; };
 
 	// dirs
-	auto curr = _current;
+	const auto curr = _current;
 	for(DirNode& n : curr->children) {
 		if(ImGui::Selectable(fmt(ICON_FA_FOLDER " %", n.name).data(), selected())) {
 			set_current(&n);

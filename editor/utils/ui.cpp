@@ -34,11 +34,11 @@ namespace editor {
 namespace imgui {
 
 bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text) {
-	auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
+	const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
 
-	core::String no_asset = fmt("No %", asset_type_name(type));
+	const core::String no_asset = fmt("No %", asset_type_name(type));
 	core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or(no_asset);
-	bool ret = ImGui::Button(fmt("%###%_%_%", ICON_FA_FOLDER_OPEN, id.id(), uenum(type), text.data()).data());
+	const bool ret = ImGui::Button(fmt("%###%_%_%", ICON_FA_FOLDER_OPEN, id.id(), uenum(type), text.data()).data());
 	ImGui::SameLine();
 	ImGui::InputText(text.data(), name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 	return ret;

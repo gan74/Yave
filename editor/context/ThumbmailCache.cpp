@@ -39,10 +39,10 @@ SOFTWARE.
 namespace editor {
 
 static math::Transform<> center_to_camera(const AABB& box) {
-	float scale = 0.22f / std::max(math::epsilon<float>, box.radius());
-	float angle = (box.extent().x() > box.extent().y() ? 90.0f : 0.0f) + 30.0f;
-	auto rot = math::Quaternion<>::from_euler(0.0f, math::to_rad(angle), 0.0f);
-	math::Vec3 tr = rot(box.center() * scale);
+	const float scale = 0.22f / std::max(math::epsilon<float>, box.radius());
+	const float angle = (box.extent().x() > box.extent().y() ? 90.0f : 0.0f) + 30.0f;
+	const auto rot = math::Quaternion<>::from_euler(0.0f, math::to_rad(angle), 0.0f);
+	const math::Vec3 tr = rot(box.center() * scale);
 	return math::Transform<>(math::Vec3(0.0f, -0.65f, 0.65f) - tr,
 							 rot,
 							 math::Vec3(scale));
@@ -58,7 +58,7 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 		: view(&world) {
 
 	DevicePtr dptr = ctx->device();
-	float intensity = 0.35f;
+	const float intensity = 0.35f;
 
 	{
 		ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
@@ -131,7 +131,7 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 	}
 
 	process_requests();
-	if(auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
+	if(const auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
 		if(it->second) {
 			return Thumbmail{&it->second->view, it->second->properties};
 		} else {
@@ -171,10 +171,10 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
 			y_profile();
 
-			AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+			const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 			switch(asset_type) {
 				case AssetType::Mesh:
-					if(auto mesh = context()->loader().load<StaticMesh>(id)) {
+					if(const auto mesh = context()->loader().load<StaticMesh>(id)) {
 						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
 								return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
 							};
@@ -182,7 +182,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 				break;
 
 				case AssetType::Material:
-					if(auto mat = context()->loader().load<Material>(id)) {
+					if(const auto mat = context()->loader().load<Material>(id)) {
 						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
 								return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
 							};
@@ -190,7 +190,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 				break;
 
 				case AssetType::Image:
-					if(auto tex = context()->loader().load<Texture>(id)) {
+					if(const auto tex = context()->loader().load<Texture>(id)) {
 						return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
 					}
 				break;
@@ -212,8 +212,8 @@ static std::array<char, 32> rounded_string(float value) {
 }
 
 static void add_size_property(core::Vector<std::pair<core::String, core::String>>& properties, ContextPtr ctx, AssetId id) {
-	std::array suffixes = {"B", "KB", "MB", "GB"};
-	if(auto data = ctx->asset_store().data(id)) {
+	const std::array suffixes = {"B", "KB", "MB", "GB"};
+	if(const auto data = ctx->asset_store().data(id)) {
 		float size = data.unwrap()->remaining();
 		usize i = 0;
 		for(; i != suffixes.size() - 1; ++i) {
@@ -230,7 +230,7 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 	auto thumbmail = std::make_unique<ThumbmailData>(device(), _size, tex.id());
 
 	{
-		DescriptorSet set(device(), {Descriptor(*tex), Descriptor(StorageView(thumbmail->image))});
+		const DescriptorSet set(device(), {Descriptor(*tex), Descriptor(StorageView(thumbmail->image))});
 		recorder.dispatch_size(device()->device_resources()[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
 	}
 
@@ -244,17 +244,17 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 
 std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const {
 	auto thumbmail = std::make_unique<ThumbmailData>(device(), _size, id);
-	SceneData scene(context(), mesh, mat);
+	const SceneData scene(context(), mesh, mat);
 
 	{
-		auto region = recorder.region("Thumbmail cache render");
+		const auto region = recorder.region("Thumbmail cache render");
 
 		FrameGraph graph(context()->resource_pool());
 		RendererSettings settings;
 		settings.tone_mapping.auto_exposure = false;
-		DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), _ibl_data, settings);
+		const DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), _ibl_data, settings);
 
-		FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
+		const FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{
 			FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
 			builder.add_uniform_input(output_image);

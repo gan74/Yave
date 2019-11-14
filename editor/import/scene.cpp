@@ -51,12 +51,12 @@ static core::String clean_material_name(SceneImportContext& ctx, aiMaterial* mat
 }
 
 static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(SceneImportContext& ctx,
-																												 core::Span<aiMaterial*> materials,
+																												 const core::Span<aiMaterial*> materials,
 																												 const core::String& filename) {
 	const FileSystemModel* fs = FileSystemModel::local_filesystem();
 
 	usize name_len = fs->filename(filename).size();
-	core::String path(filename.data(), filename.size() - name_len);
+	const core::String path(filename.data(), filename.size() - name_len);
 
 	auto texture_name = [](aiMaterial* mat, aiTextureType type) {
 			if(mat->GetTextureCount(type)) {
@@ -70,8 +70,8 @@ static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData
 	std::unordered_map<core::String, Named<ImageData>> images;
 	core::Vector<Named<MaterialData>> mats;
 	for(aiMaterial* mat : materials) {
-		auto process_tex = [&](aiTextureType type) -> std::string_view {
-				core::String name = texture_name(mat, type);
+		const auto process_tex = [&](aiTextureType type) -> std::string_view {
+				const core::String name = texture_name(mat, type);
 				if(name.is_empty()) {
 					return "";
 				}
@@ -133,7 +133,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	}
 
 	Assimp::Importer importer;
-	auto scene = importer.ReadFile(filename, import_flags);
+	const auto scene = importer.ReadFile(filename, import_flags);
 
 	if(!scene) {
 		y_throw("Unable to load scene.");
@@ -145,9 +145,9 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
 	SceneImportContext ctx;
 
-	auto meshes = core::Span<aiMesh*>(scene->mMeshes, scene->mNumMeshes);
-	auto animations = core::Span<aiAnimation*>(scene->mAnimations, scene->mNumAnimations);
-	auto materials = core::Span<aiMaterial*>(scene->mMaterials, scene->mNumMaterials);
+	const auto meshes = core::Span<aiMesh*>(scene->mMeshes, scene->mNumMeshes);
+	const auto animations = core::Span<aiAnimation*>(scene->mAnimations, scene->mNumAnimations);
+	const auto materials = core::Span<aiMaterial*>(scene->mMaterials, scene->mNumMaterials);
 
 	log_msg(fmt("% meshes, % animations, % materials found", meshes.size(), animations.size(), materials.size()));
 
@@ -177,7 +177,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	if((flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportObjects) {
 		for(usize i = 0; i != meshes.size(); ++i) {
 			if(meshes[i]->mMaterialIndex < materials.size()) {
-				core::String mesh_name = clean_asset_name(meshes[i]->mName.C_Str());
+				const core::String mesh_name = clean_asset_name(meshes[i]->mName.C_Str());
 				data.objects.emplace_back(mesh_name, ObjectData{mesh_name, data.materials[meshes[i]->mMaterialIndex].name()});
 			}
 		}

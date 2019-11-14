@@ -42,7 +42,7 @@ static vk::SurfaceFormatKHR get_surface_format(DevicePtr dptr, vk::SurfaceKHR su
 }
 
 static vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surface) {
-	auto present_modes = dptr->physical_device().vk_physical_device().getSurfacePresentModesKHR(surface);
+	const auto present_modes = dptr->physical_device().vk_physical_device().getSurfacePresentModesKHR(surface);
 	for(auto mode : present_modes) {
 		if(mode == vk::PresentModeKHR::eMailbox) {
 			return mode;
@@ -52,7 +52,7 @@ static vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surfac
 }
 
 static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
-	u32 ideal = 3;
+	const u32 ideal = 3;
 	if(capabilities.maxImageCount < ideal) {
 		return capabilities.maxImageCount;
 	}
@@ -71,14 +71,14 @@ static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
 }*/
 
 static vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Format format) {
-	auto mapping = vk::ComponentMapping()
+	const auto mapping = vk::ComponentMapping()
 			.setR(vk::ComponentSwizzle::eIdentity)
 			.setG(vk::ComponentSwizzle::eIdentity)
 			.setB(vk::ComponentSwizzle::eIdentity)
 			.setA(vk::ComponentSwizzle::eIdentity)
 		;
 
-	auto subrange = vk::ImageSubresourceRange()
+	const auto subrange = vk::ImageSubresourceRange()
 			.setAspectMask(vk::ImageAspectFlagBits::eColor)
 			.setBaseArrayLayer(0)
 			.setBaseMipLevel(0)
@@ -102,7 +102,7 @@ static bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
 
 #ifdef Y_OS_WIN
 static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE instance, HWND handle) {
-	auto surface = dptr->instance().vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
+	const auto surface = dptr->instance().vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
 			.setHinstance(instance)
 			.setHwnd(handle)
 		);
@@ -149,7 +149,7 @@ void Swapchain::reset() {
 	_images.clear();
 	destroy_semaphores();
 
-	auto old = _swapchain;
+	const auto old = _swapchain;
 
 	build_swapchain();
 	build_semaphores();
@@ -169,10 +169,10 @@ Swapchain::~Swapchain() {
 }
 
 void Swapchain::build_swapchain() {
-	auto capabilities = compute_capabilities(device(), _surface);
-	auto format = get_surface_format(device(), _surface);
+	const auto capabilities = compute_capabilities(device(), _surface);
+	const auto format = get_surface_format(device(), _surface);
 
-	auto image_usage_flags = vk::ImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
+	const auto image_usage_flags = vk::ImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
 	if((capabilities.supportedUsageFlags & image_usage_flags) != image_usage_flags) {
 		y_fatal("Swapchain does not support required usage flags.");
 	}
@@ -205,7 +205,7 @@ void Swapchain::build_swapchain() {
 
 	y_profile_zone("image setup");
 	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
-		auto view = create_image_view(device(), image, _color_format.vk_format());
+		const auto view = create_image_view(device(), image, _color_format.vk_format());
 
 		struct SwapchainImageMemory : DeviceMemory {
 			SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk::DeviceMemory(), 0, 0) {
@@ -254,7 +254,7 @@ FrameToken Swapchain::next_frame() {
 	y_debug_assert(is_valid());
 
 	auto [image_acquired, render_finished] = _semaphores.pop();
-	u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, vk::Fence()).value;
+	const u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, vk::Fence()).value;
 
 	return FrameToken {
 			++_frame_id,

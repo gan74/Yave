@@ -178,7 +178,7 @@ void SceneImporter::import(import::SceneData scene) {
 
 	auto import_assets = [&](const auto& assets, std::string_view import_path) {
 			for(const auto& a : assets) {
-				core::String name = make_full_name(import_path, a.name());
+				const core::String name = make_full_name(import_path, a.name());
 				import_asset(a.obj(), name);
 			}
 		};
@@ -187,8 +187,8 @@ void SceneImporter::import(import::SceneData scene) {
 			SimpleMaterialData material;
 			for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
 				if(!data.textures[i].is_empty()) {
-					core::String tex_full_name = make_full_name(texture_include_path, data.textures[i]);
-					if(auto texture = context()->loader().load<Texture>(tex_full_name)) {
+					const core::String tex_full_name = make_full_name(texture_include_path, data.textures[i]);
+					if(const auto texture = context()->loader().load<Texture>(tex_full_name)) {
 						material.set_texture(SimpleMaterialData::Textures(i), std::move(texture.unwrap()));
 					} else {
 						log_msg(fmt("Unable to load texture \"%\"", tex_full_name), Log::Error);
@@ -200,13 +200,13 @@ void SceneImporter::import(import::SceneData scene) {
 
 
 	if(_forward_axis != 0 || _up_axis != 4) {
-		math::Vec3 axes[] = {{1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
+		const math::Vec3 axes[] = {{1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
 							 {0.0f, 1.0f, 0.0f}, { 0.0f, -1.0f,  0.0f},
 							 {0.0f, 0.0f, 1.0f}, { 0.0f,  0.0f, -1.0f}};
 		math::Transform<> transform;
 
-		math::Vec3 forward = axes[_forward_axis];
-		math::Vec3 up = axes[_up_axis];
+		const math::Vec3 forward = axes[_forward_axis];
+		const math::Vec3 up = axes[_up_axis];
 		Y_TODO(try to auto detect handedness)
 		transform.set_basis(forward, -forward.cross(up), up);
 
@@ -224,12 +224,12 @@ void SceneImporter::import(import::SceneData scene) {
 
 
 	{
-		bool separate_folders = !scene.meshes.is_empty() + !scene.animations.is_empty() + !scene.images.is_empty() > 1;
-		core::String mesh_import_path = separate_folders ? "Meshes" : "";
-		core::String animations_import_path = separate_folders ? "Animations" : "";
-		core::String image_import_path = separate_folders ? "Textures" : "";
-		core::String material_import_path = separate_folders ? "Materials" : "";
-		core::String world_import_path = "";
+		const bool separate_folders = !scene.meshes.is_empty() + !scene.animations.is_empty() + !scene.images.is_empty() > 1;
+		const core::String mesh_import_path = separate_folders ? "Meshes" : "";
+		const core::String animations_import_path = separate_folders ? "Animations" : "";
+		const core::String image_import_path = separate_folders ? "Textures" : "";
+		const core::String material_import_path = separate_folders ? "Materials" : "";
+		const core::String world_import_path = "";
 
 		{
 			import_assets(scene.meshes, mesh_import_path);
@@ -254,8 +254,8 @@ void SceneImporter::import(import::SceneData scene) {
 				for(const auto& named_obj : scene.objects) {
 					const auto& object = named_obj.obj();
 
-					auto material = context()->loader().load<Material>(make_full_name(material_import_path, object.material));
-					auto mesh = context()->loader().load<StaticMesh>(make_full_name(mesh_import_path, object.mesh));
+					const auto material = context()->loader().load<Material>(make_full_name(material_import_path, object.material));
+					const auto mesh = context()->loader().load<StaticMesh>(make_full_name(mesh_import_path, object.mesh));
 
 					if(!material) {
 						log_msg(fmt("Unable to load material \"%\"", object.material), Log::Error);
@@ -274,7 +274,7 @@ void SceneImporter::import(import::SceneData scene) {
 					static_mesh->mesh() = mesh.unwrap();
 				}
 
-				core::String name = make_full_name(world_import_path, "world");
+				const core::String name = make_full_name(world_import_path, "world");
 				import_asset(world, name);
 			}
 		}

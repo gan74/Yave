@@ -104,11 +104,11 @@ Duration Chrono::elapsed() const {
 #ifdef Y_OS_WIN
 	LARGE_INTEGER li;
 	QueryPerformanceCounter(&li);
-	u64 diff = li.QuadPart -_counter;
+	const u64 diff = li.QuadPart -_counter;
 	return Duration::seconds(diff / double(_freq));
 	//return Duration(diff / _freq, u32((double(diff) / _freq) * 1000000000.0));
 #else
-	auto nanos = u64(std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - _time).count());
+	const auto nanos = u64(std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - _time).count());
 	return Duration(nanos / 1000000000, nanos % 1000000000);
 #endif
 }
@@ -123,7 +123,7 @@ DebugTimer::DebugTimer(const String& msg, const Duration& minimum) : _msg(msg), 
 }
 
 DebugTimer::~DebugTimer() {
-	if(auto time = _chrono.elapsed(); time >= _minimum) {
+	if(const auto time = _chrono.elapsed(); time >= _minimum) {
 		log_msg(fmt("%: %ms", _msg, time.to_millis()), Log::Perf);
 	}
 }

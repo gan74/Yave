@@ -160,16 +160,16 @@ struct Type {
 	const obj_relection_data_fn obj_reflection_data_func;
 
 	const struct Flags {
-		u32 is_polymorphic				: 1;
-		u32 is_trivial					: 1;
-		u32 is_trivially_copyable		: 1;
-		u32 is_primitive				: 1;
-		u32 is_void						: 1;
-		u32 is_pointer					: 1;
+		const u32 is_polymorphic				: 1;
+		const u32 is_trivial					: 1;
+		const u32 is_trivially_copyable		: 1;
+		const u32 is_primitive				: 1;
+		const u32 is_void						: 1;
+		const u32 is_pointer					: 1;
 
-		u32 has_reflection				: 1;
-		u32 has_polymorphic_reflection	: 1;
-		u32 has_inheritance_reflection	: 1;
+		const u32 has_reflection				: 1;
+		const u32 has_polymorphic_reflection	: 1;
+		const u32 has_inheritance_reflection	: 1;
 	} flags;
 
 	template<typename T>

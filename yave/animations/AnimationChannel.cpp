@@ -33,13 +33,13 @@ AnimationChannel::AnimationChannel(const core::String& name, core::Vector<BoneKe
 math::Transform<> AnimationChannel::bone_transform(float time) const {
 	auto key = std::find_if(_keys.begin(), _keys.end(), [=](const auto& k) { return k.time > time; });
 
-	auto next = key == _keys.end() ? _keys.begin() : key;
+	const auto next = key == _keys.end() ? _keys.begin() : key;
 	key = key == _keys.begin() ? key : std::prev(key);
 
 	float delta = next->time - key->time;
 	delta = delta < 0.0f ? delta + _keys.last().time : delta;
 
-	float factor = (time - key->time) / delta;
+	const float factor = (time - key->time) / delta;
 
 	return key->local_transform.lerp(next->local_transform, factor);
 }

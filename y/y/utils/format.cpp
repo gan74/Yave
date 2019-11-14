@@ -69,8 +69,8 @@ std::string_view FmtBuffer::done() && {
 bool FmtBuffer::try_expand() {
 	if(_dynamic) {
 		const char* begin = _dynamic->begin();
-		usize start_offset = _start - begin;
-		usize buffer_offset = _buffer - begin;
+		const usize start_offset = _start - begin;
+		const usize buffer_offset = _buffer - begin;
 
 		{
 			usize cap = _dynamic->capacity();
@@ -93,7 +93,7 @@ bool FmtBuffer::try_expand() {
 		return false;
 	}
 
-	usize size = _buffer - _start;
+	const usize size = _buffer - _start;
 	_buffer = fmt_buffer;
 	std::memmove(_buffer, _start, size);
 	_start = _buffer;
@@ -107,7 +107,7 @@ bool FmtBuffer::try_expand() {
 }
 
 void FmtBuffer::advance(usize r) {
-	usize l = std::min(_buffer_size, r);
+	const usize l = std::min(_buffer_size, r);
 	_buffer += l;
 	_buffer_size -= l;
 	y_debug_assert(_dynamic || _buffer <= fmt_buffer + fmt_total_buffer_size);

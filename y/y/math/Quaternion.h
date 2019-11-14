@@ -152,10 +152,10 @@ class Quaternion {
 			}
 
 			if(T(1.0f) - dot > epsilon<T>) {
-				T omega = std::acos(dot);
-				T sin = std::sin(omega);
-				T p = std::sin((T(1.0f) - factor) * omega) / sin;
-				T q = std::sin(factor * omega) / sin;
+				const T omega = std::acos(dot);
+				const T sin = std::sin(omega);
+				const T p = std::sin((T(1.0f) - factor) * omega) / sin;
+				const T q = std::sin(factor * omega) / sin;
 
 				return _quat * p + end * q;
 			}
@@ -175,7 +175,7 @@ class Quaternion {
 		}
 
 		T pitch() const {
-			T a = T(-2.0f) * (x() * z() - w() * y());
+			const T a = T(-2.0f) * (x() * z() - w() * y());
 			return std::asin(std::clamp(a, T(-1.0f), T(1.0f)));
 		}
 
@@ -185,7 +185,7 @@ class Quaternion {
 
 		T roll() const {
 			//return T(atan(T(2.0f) * (y * z + w * x), w * w - x * x - y * y + z * z));
-			T a = T(2.0f) * (y() * z() + w() * x());
+			const T a = T(2.0f) * (y() * z() + w() * x());
 			T b = w() * w() - x() * x() - y() * y() + z() * z();
 			if(b == 0 && a == 0) {
 				return T(2.0f) * std::atan2(x(), w());
@@ -204,8 +204,8 @@ class Quaternion {
 
 		static Quaternion look_at(Vec<3, T> f) {
 			f.normalize();
-			Vec<3, T> axis(1, 0, 0);
-			T d = f.dot(axis);
+			const Vec<3, T> axis(1, 0, 0);
+			const T d = f.dot(axis);
 			if(std::abs(d + T(1.0f)) < epsilon<T>()) {
 				return from_axis_angle(Vec<3, T>(0, 0, 1), pi<T>);
 			} else if(std::abs(d - T(1.0f)) < epsilon<T>()) {
@@ -218,8 +218,8 @@ class Quaternion {
 			// from https://github.com/g-truc/glm/blob/master/glm/gtc/quaternion.inl#L173
 
 			// swizzle of doom
-			Vec<3, T> c(std::cos(roll * T(0.5)), std::cos(pitch * T(0.5)), std::cos(yaw * T(0.5)));
-			Vec<3, T> s(std::sin(roll * T(0.5)), std::sin(pitch * T(0.5)), std::sin(yaw * T(0.5)));
+			const Vec<3, T> c(std::cos(roll * T(0.5)), std::cos(pitch * T(0.5)), std::cos(yaw * T(0.5)));
+			const Vec<3, T> s(std::sin(roll * T(0.5)), std::sin(pitch * T(0.5)), std::sin(yaw * T(0.5)));
 			Vec<4, T> q;
 			q.x() = s.x() * c.y() * c.z() - c.x() * s.y() * s.z();
 			q.y() = c.x() * s.y() * c.z() + s.x() * c.y() * s.z();
@@ -230,7 +230,7 @@ class Quaternion {
 
 		static Quaternion from_base(const Vec<3, T>& forward, const Vec<3, T>& left, const Vec<3, T>& up) {
 			// from https://github.com/g-truc/glm/blob/master/glm/gtc/quaternion.inl#L650
-			T wxyz[4] = {
+			const T wxyz[4] = {
 					forward.x() + left.y() + up.z(),
 					forward.x() - left.y() - up.z(),
 					left.y() - forward.x() - up.z(),
@@ -244,8 +244,8 @@ class Quaternion {
 					max_index = i;
 				}
 			}
-			T s = std::sqrt(max + T(1.0f)) * T(0.5);
-			T m = T(0.25) / s;
+			const T s = std::sqrt(max + T(1.0f)) * T(0.5);
+			const T m = T(0.25) / s;
 			switch(max_index) {
 				case 0: // w
 					return Quaternion((left[2] - up[1]) * m, (up[0] - forward[2]) * m, (forward[1] - left[0]) * m, s);

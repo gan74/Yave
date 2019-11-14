@@ -60,7 +60,7 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 		TypedMapping<T> mapped_buffer(FrameGraphMutableTypedBufferId<T> res) const {
 			constexpr BufferUsage usage = BufferUsage::None;
 			constexpr MemoryType memory = MemoryType::CpuVisible;
-			TypedSubBuffer<T, usage, memory> subbuffer(TransientSubBuffer<usage, memory>(find(res)));
+			const TypedSubBuffer<T, usage, memory> subbuffer(TransientSubBuffer<usage, memory>(find(res)));
 			return TypedMapping<T>(subbuffer);
 		}
 
@@ -95,7 +95,7 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 			template<typename... Args>
 			ImageContainer(Args&&... args) : image(y_fwd(args)...) {}
 
-			TransientImage<> image;
+			const TransientImage<> image;
 			usize aliases = 0;
 		};
 

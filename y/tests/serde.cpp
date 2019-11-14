@@ -64,7 +64,7 @@ struct DummyWriter : public io2::Writer {
 struct Trivial {
 	int x;
 	float y;
-	math::Vec3 z;
+	const math::Vec3 z;
 
 	bool operator==(const Trivial& other) const {
 		return std::tie(x, y, z) == std::tie(other.x, other.y, other.z);

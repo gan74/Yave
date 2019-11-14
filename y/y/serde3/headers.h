@@ -35,8 +35,8 @@ namespace serde3 {
 namespace detail {
 
 struct TypeHeader {
-	u32 name_hash = 0;
-	u32 type_hash = 0;
+	const u32 name_hash = 0;
+	const u32 type_hash = 0;
 
 	constexpr bool has_serde() const {
 		return type_hash & 0x01;
@@ -52,8 +52,8 @@ struct TypeHeader {
 };
 
 struct MembersHeader {
-	u32 member_hash = 0;
-	u32 count = 0;
+	const u32 member_hash = 0;
+	const u32 count = 0;
 
 	constexpr bool operator==(const MembersHeader& other) const {
 		return member_hash == other.member_hash && count == other.count;
@@ -163,7 +163,7 @@ template<usize I, typename... Args>
 constexpr void hash_members(u32& hash, std::tuple<NamedObject<Args>...> objects) {
 	unused(hash, objects);
 	if constexpr(I < sizeof...(Args)) {
-		TypeHeader tpe = build_type_header(std::get<I>(objects));
+		const TypeHeader tpe = build_type_header(std::get<I>(objects));
 		hash_combine(hash, tpe.name_hash);
 		hash_combine(hash, tpe.type_hash);
 

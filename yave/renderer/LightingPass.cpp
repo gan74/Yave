@@ -45,11 +45,11 @@ static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
 
 	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
 
-	DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
+	const DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
 
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 	{
-		auto region = recorder.region("IBLData::create_ibl_lut");
+		const auto region = recorder.region("IBLData::create_ibl_lut");
 		recorder.dispatch_size(brdf_integrator, image.size(), {dset});
 	}
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
@@ -69,7 +69,7 @@ static auto load_envmap() {
 		log_msg("Unable to open envmap file.", Log::Error);
 	}
 
-	math::Vec4ui data(0xFFFFFFFF);
+	const math::Vec4ui data(0xFFFFFFFF);
 	return ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(data.data()), vk::Format::eR8G8B8A8Unorm);
 }
 
@@ -96,7 +96,7 @@ static constexpr usize max_point_light_count = 1024;
 
 LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data) {
 	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
-	math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+	const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
 	const SceneView& scene = gbuffer.scene_pass.scene_view;
 
@@ -104,7 +104,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 	FrameGraphPassBuilder ambient_builder = framegraph.add_pass("Ambient/Sun pass");
 	FrameGraphPassBuilder point_builder = framegraph.add_pass("Lighting pass");
 
-	auto lit = ambient_builder.declare_image(lighting_format, size);
+	const auto lit = ambient_builder.declare_image(lighting_format, size);
 
 	struct PushData {
 		uniform::LightingCamera camera;
@@ -114,7 +114,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 	uniform::LightingCamera camera_data = scene.camera();
 
 	{
-		auto directional_buffer = ambient_builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_light_count);
+		const auto directional_buffer = ambient_builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_light_count);
 
 		ambient_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
 		ambient_builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
@@ -145,7 +145,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 
 	{
-		auto light_buffer = point_builder.declare_typed_buffer<uniform::PointLight>(max_point_light_count);
+		const auto light_buffer = point_builder.declare_typed_buffer<uniform::PointLight>(max_point_light_count);
 
 		point_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
 		point_builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);

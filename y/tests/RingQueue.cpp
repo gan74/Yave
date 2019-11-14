@@ -53,14 +53,14 @@ struct RaiiCounter : NonCopyable {
 };
 
 y_test_func("RingQueue creation") {
-	usize cap = 256;
-	RingQueue<int> q(cap);
+	const usize cap = 256;
+	const RingQueue<int> q(cap);
 	y_test_assert(q.size() == 0);
 	y_test_assert(q.capacity() == cap);
 }
 
 y_test_func("RingQueue push/pop") {
-	usize cap = 256;
+	const usize cap = 256;
 	RingQueue<usize> q(cap);
 
 	for(usize i = 0; i != cap / 2; ++i) {
@@ -74,7 +74,7 @@ y_test_func("RingQueue push/pop") {
 }
 
 y_test_func("RingQueue full") {
-	usize cap = 256;
+	const usize cap = 256;
 	RingQueue<usize> q(cap);
 	y_test_assert(q.is_empty());
 

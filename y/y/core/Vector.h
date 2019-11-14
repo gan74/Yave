@@ -39,7 +39,7 @@ struct DefaultVectorResizePolicy {
 		if(size < minimum) {
 			return minimum;
 		}
-		usize l = log2ui(size + delta);
+		const usize l = log2ui(size + delta);
 		return (4 << l) - (1 << l) - delta;
 	}
 
@@ -121,7 +121,7 @@ class Vector : ResizePolicy, Allocator {
 
 		Vector& operator=(Span<value_type> l) {
 			if(contains_it(l.begin())) {
-				Vector other(l);
+				const Vector other(l);
 				swap(other);
 			} else {
 				assign(l.begin(), l.end());
@@ -132,7 +132,7 @@ class Vector : ResizePolicy, Allocator {
 		template<typename... Args>
 		Vector& operator=(const Vector<Elem, Args...>& l) {
 			if(contains_it(l.begin())) {
-				Vector other(l);
+				const Vector other(l);
 				swap(other);
 			} else {
 				assign(l.begin(), l.end());
@@ -381,7 +381,7 @@ class Vector : ResizePolicy, Allocator {
 			}
 
 			usize current_size = size();
-			usize num_to_move = std::min(new_cap, current_size);
+			const usize num_to_move = std::min(new_cap, current_size);
 
 			data_type* new_data = new_cap ? Allocator::allocate(new_cap) : nullptr;
 

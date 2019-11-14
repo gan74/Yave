@@ -52,8 +52,8 @@ struct MaterialData {
 };
 
 struct ObjectData {
-	core::String mesh;
-	core::String material;
+	const core::String mesh;
+	const core::String material;
 };
 
 struct SceneData {

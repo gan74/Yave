@@ -44,7 +44,7 @@ void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& t
 		}
 		ImGui::SameLine();
 
-		auto clean_name = [=](auto&& n) { return context()->asset_store().filesystem()->filename(n); };
+		const auto clean_name = [=](auto&& n) { return context()->asset_store().filesystem()->filename(n); };
 		core::String name = context()->asset_store().name(_selected).map(clean_name).unwrap_or("No mesh");
 
 		ImGui::SetNextItemWidth(-1);
@@ -71,14 +71,14 @@ void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& t
 }
 
 void AssetStringifier::stringify(AssetId id) {
-	auto data = context()->asset_store().data(id);
+	const auto data = context()->asset_store().data(id);
 	if(!data) {
 		log_msg("Unable to find asset.", Log::Error);
 		clear();
 		return;
 	}
 
-	core::DebugTimer timer("Stringify mesh");
+	const core::DebugTimer timer("Stringify mesh");
 
 	MeshData mesh;
 	serde2::ReadableArchive ar(*data.unwrap());
@@ -92,7 +92,7 @@ void AssetStringifier::stringify(AssetId id) {
 	_vertices.make_empty();
 	_triangles.make_empty();
 
-	int prec = 3;
+	const int prec = 3;
 
 	auto vertices = core::vector_with_capacity<core::String>(mesh.vertices().size());
 	std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const Vertex& v) {

@@ -34,7 +34,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 	static constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
 	static const math::Vec2ui histogram_size = math::Vec2ui(256, 1);
 
-	math::Vec2ui size = framegraph.image_size(in_lit);
+	const math::Vec2ui size = framegraph.image_size(in_lit);
 
 	FrameGraphMutableImageId histogram;
 	FrameGraphMutableTypedBufferId<uniform::ToneMappingParams> params;
@@ -75,7 +75,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
 
-	auto tone_mapped = builder.declare_image(format, size);
+	const auto tone_mapped = builder.declare_image(format, size);
 	if(!settings.auto_exposure) {
 		params = builder.declare_typed_buffer<uniform::ToneMappingParams>(1);
 		builder.map_update(params);

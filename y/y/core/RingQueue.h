@@ -80,14 +80,14 @@ class RingQueue : NonCopyable, Allocator {
 
 		template<typename... Args>
 		reference emplace(Args&&... args) {
-			auto& ref = *(::new(_data + next_index()) data_type(y_fwd(args)...));
+			const auto& ref = *(::new(_data + next_index()) data_type(y_fwd(args)...));
 			++_size;
 			return ref;
 		}
 
 		value_type pop() {
 			y_debug_assert(!is_empty());
-			data_type r = std::move(_data[_beg_index]);
+			const data_type r = std::move(_data[_beg_index]);
 			_data[_beg_index].~data_type();
 			increment_begin();
 			return r;

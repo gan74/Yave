@@ -102,11 +102,11 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 
 	float roughness = 0.0f;
-	float roughness_step = 1.0f / (views.size() - 1);
+	const float roughness_step = 1.0f / (views.size() - 1);
 
 	math::Vec2ui size = views[0].size();
 	{
-		auto region = recorder.region("IBL probe generation");
+		const auto region = recorder.region("IBL probe generation");
 		for(usize i = 0; i != views.size(); ++i) {
 			recorder.dispatch_size(conv_program, size, {descriptor_sets[i]}, roughness);
 
@@ -147,7 +147,7 @@ static usize probe_size(const Cubemap& cube) {
 
 static usize probe_size(const Texture& tex) {
 	const auto& size = tex.size();
-	usize face = (size.x() * size.y()) / 6;
+	const usize face = (size.x() * size.y()) / 6;
 	return std::max(min_face_size * 2, usize(1) << usize(std::ceil(std::log2(std::sqrt(face)))));
 }
 

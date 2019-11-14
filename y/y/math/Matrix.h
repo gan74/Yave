@@ -76,8 +76,8 @@ class Matrix {
 
 		template<typename U>
 		void set_at(usize i, U u) {
-			usize r = i / M;
-			usize c = i % M;
+			const usize r = i / M;
+			const usize c = i % M;
 			_vecs[c][r] = u;
 		}
 
@@ -137,7 +137,7 @@ class Matrix {
 
 		template<typename U>
 		auto operator+(const Matrix<N, M, U>& m) const {
-			Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
+			const Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
 			for(usize i = 0; i != N; ++i) {
 				mat._vecs[i] = _vecs[i] + m._vecs[i];
 			}
@@ -177,8 +177,8 @@ class Matrix {
 			Matrix<N - 1, M - 1, T> mat;
 			for(usize i = 0; i != vec_count - 1; ++i) {
 				for(usize j = 0; j != vec_size - 1; ++j) {
-					usize ir = i < c ? i : i + 1;
-					usize jr = j < r ? j : j + 1;
+					const usize ir = i < c ? i : i + 1;
+					const usize jr = j < r ? j : j + 1;
 					mat._vecs[i][j] = _vecs[ir][jr];
 				}
 			}
@@ -199,7 +199,7 @@ class Matrix {
 			d = 1 / d;
 			for(usize i = 0; i != N; ++i) {
 				for(usize j = 0; j != N; ++j) {
-					auto s = sub(i, j).determinant() * d * (i % 2 == j % 2 ? 1 : -1);
+					const auto s = sub(i, j).determinant() * d * (i % 2 == j % 2 ? 1 : -1);
 					inv._vecs[i][j] = s;
 				}
 			}
@@ -290,7 +290,7 @@ namespace detail {
 			}
 		} sgn;
 		T d(0);
-		auto row = mat.row(0);
+		const auto row = mat.row(0);
 		for(usize i = 0; i != N; ++i) {
 			d = d + sgn(i + 1) * row[i] * mat.sub(0, i).determinant();
 		}

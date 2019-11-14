@@ -78,7 +78,7 @@ const Texture& ImGuiRenderer::font_texture() const {
 }
 
 DescriptorSet ImGuiRenderer::create_descriptor_set(const void* data) {
-	auto tex = data ? reinterpret_cast<const TextureView*>(data) : &_font_view;
+	const auto tex = data ? reinterpret_cast<const TextureView*>(data) : &_font_view;
 	return DescriptorSet(device(), {Descriptor(*tex), Descriptor(_uniform_buffer)});
 }
 
@@ -86,7 +86,7 @@ void ImGuiRenderer::setup_state(RenderPassRecorder& recorder, const FrameToken& 
 	y_profile();
 	recorder.bind_buffers(_index_buffer[token], {_vertex_buffer[token]});
 	const auto* material = context()->resources()[EditorResources::ImGuiMaterialTemplate];
-	DescriptorSet ds = create_descriptor_set(tex);
+	const DescriptorSet ds = create_descriptor_set(tex);
 	recorder.bind_material(material, {ds});
 }
 
@@ -102,7 +102,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 	static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
 	y_profile();
 
-	auto region = recorder.region("ImGui render pass");
+	const auto region = recorder.region("ImGui render pass");
 
 	ImDrawData* draw_data = ImGui::GetDrawData();
 
@@ -110,8 +110,8 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 		return;
 	}
 
-	auto index_subbuffer = _index_buffer[token];
-	auto vertex_subbuffer = _vertex_buffer[token];
+	const auto index_subbuffer = _index_buffer[token];
+	const auto vertex_subbuffer = _vertex_buffer[token];
 	auto indexes = TypedMapping(index_subbuffer);
 	auto vertices = TypedMapping(vertex_subbuffer);
 	auto uniform = TypedMapping(_uniform_buffer);
@@ -139,8 +139,8 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken& token
 		for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
 			const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
 
-			vk::Offset2D offset(u32(cmd.ClipRect.x), u32(cmd.ClipRect.y));
-			vk::Extent2D extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
+			const vk::Offset2D offset(u32(cmd.ClipRect.x), u32(cmd.ClipRect.y));
+			const vk::Extent2D extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
 			recorder.vk_cmd_buffer().setScissor(0, vk::Rect2D(offset, extent));
 
 			if(cmd.UserCallback) {

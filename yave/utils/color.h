@@ -29,11 +29,11 @@ namespace yave {
 // from imgui
 inline math::Vec3 hsv_to_rgb(float h, float s, float v) {
 	h = std::fmod(h, 1.0f) * 6.0f;
-	int i = int(h);
-	float f = h - float(i);
-	float p = v * (1.0f - s);
-	float q = v * (1.0f - s * f);
-	float t = v * (1.0f - s * (1.0f - f));
+	const int i = int(h);
+	const float f = h - float(i);
+	const float p = v * (1.0f - s);
+	const float q = v * (1.0f - s * f);
+	const float t = v * (1.0f - s * (1.0f - f));
 
 	switch(i) {
 		case 0: return math::Vec3(v, t, p);
@@ -50,15 +50,15 @@ inline math::Vec3 hsv_to_rgb(float h, float s, float v) {
 
 // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
 inline math::Vec3 k_to_rbg(float k) {
-	double k_100 = std::min(40000.0, std::max(1000.0, double(k))) / 100.0;
-	double r = k_100 <= 66.0
+	const double k_100 = std::min(40000.0, std::max(1000.0, double(k))) / 100.0;
+	const double r = k_100 <= 66.0
 		? 255.0
 		: 329.698727446 * std::pow(k_100 - 60.0, -0.1332047592);
-	double g = k_100 <= 66.0
+	const double g = k_100 <= 66.0
 		? 99.4708025861 * std::log(k_100) - 161.1195681661
 		: 288.1221695283 * std::pow(k_100 - 60.0, -0.0755148492);
 
-	double b = k_100 >= 66.0
+	const double b = k_100 >= 66.0
 		? 255.0
 		: k_100 <= 19.0
 			? 0.0
@@ -69,14 +69,14 @@ inline math::Vec3 k_to_rbg(float k) {
 
 inline float rgb_to_k(const math::Vec3& rgb) {
 	if(rgb.x() >= 1.0f) {
-		double g = double(rgb.y()) * 255.0;
-		double k_100 = 5.0519153526 * std::exp(0.0100532012812 * g);
+		const double g = double(rgb.y()) * 255.0;
+		const double k_100 = 5.0519153526 * std::exp(0.0100532012812 * g);
 		return float(k_100 * 100.0);
 	}
 
-	double r = double(rgb.x()) * 255.0;
-	double x = std::pow(r, 7.507239275877164);
-	double k_100 = (8.018790685011271e18 + 60.0 * x) / x;
+	const double r = double(rgb.x()) * 255.0;
+	const double x = std::pow(r, 7.507239275877164);
+	const double k_100 = (8.018790685011271e18 + 60.0 * x) / x;
 	return float(k_100 * 100.0);
 }
 

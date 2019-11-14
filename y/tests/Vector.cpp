@@ -104,7 +104,7 @@ static void cout_vec_sizes(usize max, P p = P()) {
 }*/
 
 y_test_func("DefaultVectorResizePolicy") {
-	DefaultVectorResizePolicy size;
+	const DefaultVectorResizePolicy size;
 
 	y_test_assert(size.ideal_capacity(0) == 0);
 	//y_test_assert(size.shrink(0, 1));
@@ -237,7 +237,7 @@ y_test_func("Vector iteration") {
 }
 
 y_test_func("Vector vector(...)") {
-	auto vec = Vector({1, 2, 3, 4, 5, 6, 7, 8});
+	const auto vec = Vector({1, 2, 3, 4, 5, 6, 7, 8});
 	y_test_assert(vec.capacity() >= 8);
 	y_test_assert(vec.size() == 8);
 
@@ -274,14 +274,14 @@ y_test_func("SmallVector allocation") {
 }
 
 y_test_func("SmallVector size") {
-	SmallVector<Big> vec({Big{}});
+	const SmallVector<Big> vec({Big{}});
 	y_test_assert(vec.size() == 1);
 }
 
 y_test_func("SmallVector copy") {
 	{
-		SmallVector<int, 8> vec = {1, 2, 3, 4};
-		SmallVector<int, 8> cpy = vec;
+		const SmallVector<int, 8> vec = {1, 2, 3, 4};
+		const SmallVector<int, 8> cpy = vec;
 		y_test_assert(cpy.size() == 4);
 		y_test_assert(cpy[0] == 1);
 		y_test_assert(cpy[1] == 2);
@@ -289,13 +289,13 @@ y_test_func("SmallVector copy") {
 		y_test_assert(cpy[3] == 4);
 	}
 	{
-		std::shared_ptr<int> rc(new int(2));
+		const std::shared_ptr<int> rc(new int(2));
 		y_test_assert(rc.use_count() == 1);
 		SmallVector<std::shared_ptr<int>, 8> vec;
 		vec.push_back(rc);
 		y_test_assert(rc.use_count() == 2);
 		{
-			SmallVector<std::shared_ptr<int>, 8> cpy = vec;
+			const SmallVector<std::shared_ptr<int>, 8> cpy = vec;
 			y_test_assert(rc.use_count() == 3);
 		}
 		y_test_assert(rc.use_count() == 2);
@@ -304,8 +304,8 @@ y_test_func("SmallVector copy") {
 
 y_test_func("SmallVector move") {
 	{
-		SmallVector<int, 8> vec = {1, 2, 3, 4};
-		SmallVector<int, 8> cpy(std::move(vec));
+		const SmallVector<int, 8> vec = {1, 2, 3, 4};
+		const SmallVector<int, 8> cpy(std::move(vec));
 		y_test_assert(cpy.size() == 4);
 		y_test_assert(cpy[0] == 1);
 		y_test_assert(cpy[1] == 2);
@@ -313,13 +313,13 @@ y_test_func("SmallVector move") {
 		y_test_assert(cpy[3] == 4);
 	}
 	{
-		std::shared_ptr<int> rc(new int(7));
+		const std::shared_ptr<int> rc(new int(7));
 		SmallVector<std::shared_ptr<int>, 8> vec;
 		vec.push_back(rc);
 		y_test_assert(rc.use_count() == 2);
 		{
 			y_test_assert(rc.use_count() == 2);
-			SmallVector<std::shared_ptr<int>, 8> cpy = std::move(vec);
+			const SmallVector<std::shared_ptr<int>, 8> cpy = std::move(vec);
 		}
 		y_test_assert(rc.use_count() == 1);
 	}

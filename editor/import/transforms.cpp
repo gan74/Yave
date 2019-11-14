@@ -31,7 +31,7 @@ core::Vector<T> copy(core::Span<T> t) {
 }
 
 static math::Vec3 h_transform(const math::Vec3& v, const math::Transform<>& tr) {
-	auto h = tr * math::Vec4(v, 1.0f);
+	const auto h = tr * math::Vec4(v, 1.0f);
 	return h.to<3>() / h.w();
 }
 
@@ -79,9 +79,9 @@ MeshData compute_tangents(const MeshData& mesh) {
 	core::Vector<IndexedTriangle> triangles = copy(mesh.triangles());
 
 	for(IndexedTriangle tri : triangles) {
-		math::Vec3 edges[] = {vertices[tri[1]].position - vertices[tri[0]].position, vertices[tri[2]].position - vertices[tri[0]].position};
-		math::Vec2 uvs[] = {vertices[tri[0]].uv, vertices[tri[1]].uv, vertices[tri[2]].uv};
-		float dt[] = {uvs[1].y() - uvs[0].y(), uvs[2].y() - uvs[0].y()};
+		const math::Vec3 edges[] = {vertices[tri[1]].position - vertices[tri[0]].position, vertices[tri[2]].position - vertices[tri[0]].position};
+		const math::Vec2 uvs[] = {vertices[tri[0]].uv, vertices[tri[1]].uv, vertices[tri[2]].uv};
+		const float dt[] = {uvs[1].y() - uvs[0].y(), uvs[2].y() - uvs[0].y()};
 		math::Vec3 ta = -((edges[0] * dt[1]) - (edges[1] * dt[0])).normalized();
 		vertices[tri[0]].tangent += ta;
 		vertices[tri[1]].tangent += ta;
@@ -123,20 +123,20 @@ ImageData compute_mipmaps(const ImageData& image) {
 	const ImageFormat format(vk::Format::eR8G8B8A8Unorm);
 	const usize components = 4;
 
-	usize mip_count = ImageData::mip_count(image.size());
+	const usize mip_count = ImageData::mip_count(image.size());
 	y_debug_assert(mip_count >= 1);
-	usize data_size = ImageData::layer_byte_size(image.size(), format, mip_count);
-	std::unique_ptr<u8[]> data = std::make_unique<u8[]>(data_size);
+	const usize data_size = ImageData::layer_byte_size(image.size(), format, mip_count);
+	const std::unique_ptr<u8[]> data = std::make_unique<u8[]>(data_size);
 
-	auto compute_mip = [components](const u8* image_data, u8* output, const math::Vec2ui& orig_size) -> usize {
+	const auto compute_mip = [components](const u8* image_data, u8* output, const math::Vec2ui& orig_size) -> usize {
 			usize cursor = 0;
-			math::Vec2ui mip_size = {std::max(1u, orig_size.x() / 2),
+			const math::Vec2ui mip_size = {std::max(1u, orig_size.x() / 2),
 									 std::max(1u, orig_size.y() / 2)};
 			usize row_size = orig_size.x();
 
 			for(usize y = 0; y != mip_size.y(); ++y) {
 				for(usize x = 0; x != mip_size.x(); ++x) {
-					usize orig = (x * 2 + y * 2 * row_size);
+					const usize orig = (x * 2 + y * 2 * row_size);
 					for(usize c = 0; c != components; ++c) {
 						u32 acc  = image_data[components * (orig) + c];
 						acc		+= image_data[components * (orig + 1) + c];
@@ -155,7 +155,7 @@ ImageData compute_mipmaps(const ImageData& image) {
 	usize mip_byte_size = image.byte_size(0);
 	std::memcpy(image_data, image.data(), mip_byte_size);
 	for(usize mip = 0; mip < mip_count; ++mip) {
-		usize s = compute_mip(image_data, image_data + mip_byte_size, image.size(mip).to<2>());
+		const usize s = compute_mip(image_data, image_data + mip_byte_size, image.size(mip).to<2>());
 		image_data += mip_byte_size;
 		mip_byte_size = s;
 	}

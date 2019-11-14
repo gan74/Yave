@@ -43,14 +43,14 @@ class Ray final : public Volume<T> {
 		}
 
 		bool intersects(const Vec<3, T>& v, T r) const override {
-			Vec<3, T> p(v - _start);
-			T dot = _direction.dot(p);
+			const Vec<3, T> p(v - _start);
+			const T dot = _direction.dot(p);
 			return dot > T(0) && p.length2() - dot * dot < (r * r);
 		}
 
 		T distance(const Vec<3, T>& v) const {
-			Vec<3, T> p(v - _start);
-			T dot = _direction.dot(p);
+			const Vec<3, T> p(v - _start);
+			const T dot = _direction.dot(p);
 			return std::sqrt(p.length2() - dot * dot);
 		}
 

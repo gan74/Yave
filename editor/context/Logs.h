@@ -33,12 +33,12 @@ namespace editor {
 class Logs {
 	public:
 		struct Message {
-			core::String msg;
-			Log type;
+			const core::String msg;
+			const Log type;
 		};
 
 		void clear() {
-			std::unique_lock lock(_lock);
+			const std::unique_lock lock(_lock);
 			_msgs.clear();
 		}
 
@@ -47,7 +47,7 @@ class Logs {
 		}
 
 		void log_msg(Message msg) {
-			std::unique_lock lock(_lock);
+			const std::unique_lock lock(_lock);
 			_msgs.emplace_back(std::move(msg));
 		}
 
@@ -57,7 +57,7 @@ class Logs {
 
 		template<typename F>
 		void for_each(F&& func) const {
-			std::unique_lock lock(_lock);
+			const std::unique_lock lock(_lock);
 			for(const Message& m : _msgs) {
 				func(m);
 			}

@@ -30,8 +30,8 @@ namespace core {
 
 class Duration {
 	static constexpr Duration div(double s, double div) {
-		double nano_div = 1000000000 / div;
-		u64 secs = u64(s / div);
+		const double nano_div = 1000000000 / div;
+		const u64 secs = u64(s / div);
 		s -= secs * div;
 		return Duration(secs, u32(s * nano_div));
 	}

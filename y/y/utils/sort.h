@@ -60,7 +60,7 @@ inline void sort(It begin, It end) {
 template<typename It, typename C = std::less<>>
 inline constexpr bool is_sorted(It b, It e, C comp = C()) {
 	if(b != e) {
-		auto next = b;
+		const auto next = b;
 		while(++next != e) {
 			if(comp(*next, *b)) {
 				return false;
@@ -75,7 +75,7 @@ namespace detail {
 template<typename T, usize N>
 static constexpr void ct_sort(std::array<T, N>& arr, usize left, usize right) {
 	auto ct_swap = [](T& lhs, T& rhs) {
-		T tmp = std::move(lhs);
+		const T tmp = std::move(lhs);
 		lhs = std::move(rhs);
 		rhs = std::move(tmp);
 	};
@@ -99,7 +99,7 @@ static constexpr void ct_sort(std::array<T, N>& arr, usize left, usize right) {
 
 template <typename T, usize N>
 constexpr std::array<T, N> ct_sort(std::array<T, N> arr) {
-	std::array<T, N> sorted = arr;
+	const std::array<T, N> sorted = arr;
 	detail::ct_sort(sorted, 0, N);
 	return sorted;
 }
@@ -129,8 +129,8 @@ struct tuple_sort {
 		template<usize I, usize J, usize TupleSize, typename LoopTuple>
 		struct tuple_sort_impl {
 			using tuple_type = std::conditional_t<Comparator<
-					std::tuple_element_t<I, LoopTuple>,
-					std::tuple_element_t<J, LoopTuple>
+					const std::tuple_element_t<I, LoopTuple>,
+					const std::tuple_element_t<J, LoopTuple>
 				>::value,
 				typename detail::tuple_element_swap<I, J, LoopTuple>::type,
 				LoopTuple>;

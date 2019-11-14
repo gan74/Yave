@@ -31,7 +31,7 @@ SOFTWARE.
 namespace yave {
 
 core::Result<float> entity_radius(ecs::EntityWorld& world, ecs::EntityId id) {
-	if(StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
+	if(const StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
 		if(mesh->mesh()) {
 			return core::Ok(mesh->mesh()->radius());
 		}
@@ -40,7 +40,7 @@ core::Result<float> entity_radius(ecs::EntityWorld& world, ecs::EntityId id) {
 }
 
 core::Result<math::Vec3> entity_position(ecs::EntityWorld& world, ecs::EntityId id) {
-	if(TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+	if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
 		return core::Ok(tr->transform().position());
 	}
 	return core::Err();

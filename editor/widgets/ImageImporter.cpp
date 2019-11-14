@@ -76,7 +76,7 @@ void ImageImporter::import_async(const core::String& filename) {
 }
 
 void ImageImporter::import(const Named<ImageData>& asset) {
-	core::String name = context()->asset_store().filesystem()->join(_import_path, asset.name());
+	const core::String name = context()->asset_store().filesystem()->join(_import_path, asset.name());
 	io2::Buffer buffer;
 	WritableAssetArchive ar(buffer);
 	if(!asset.obj().serialize(ar)) {

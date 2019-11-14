@@ -86,7 +86,7 @@ class AssetPtr {
 
 		bool flush_reload() {
 			if(_ptr) {
-				if(auto ptr = _ptr->reloaded) {
+				if(const auto ptr = _ptr->reloaded) {
 					y_debug_assert(ptr.id() == id());
 					_ptr = std::move(ptr._ptr);
 					return true;

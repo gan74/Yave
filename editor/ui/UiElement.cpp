@@ -36,7 +36,7 @@ void UiElement::set_id(u64 id) {
 }
 
 void UiElement::set_title(std::string_view title) {
-	core::String new_title = fmt("%##%", title, _id);
+	const core::String new_title = fmt("%##%", title, _id);
 	_title_with_id = std::move(new_title);
 	_title = std::string_view(_title_with_id.begin(), title.size());
 }

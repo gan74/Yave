@@ -83,7 +83,7 @@ class String {
 		
 		ShortData(const char* str, usize len);
 
-		ShortData& operator=(const ShortData &) = delete;
+		const ShortData& operator=(const ShortData &) = delete;
 		ShortData& operator=(ShortData&& other) = default;
 
 	};

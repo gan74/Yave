@@ -99,7 +99,7 @@ static vk::AttachmentLoadOp attachment_load_op(const RenderPass::ImageData& imag
 }
 
 static vk::AttachmentDescription create_attachment(RenderPass::ImageData image) {
-	auto layout = vk_final_image_layout(image.usage);
+	const auto layout = vk_final_image_layout(image.usage);
 	return vk::AttachmentDescription()
 		.setFormat(image.format.vk_format())
 		.setSamples(vk::SampleCountFlagBits::e1)

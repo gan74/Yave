@@ -60,8 +60,8 @@ void LifetimeManager::recycle(CmdBufferData&& cmd) {
 
 	bool run_collect = false;
 	{
-		std::unique_lock lock(_cmd_lock);
-		auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
+		const std::unique_lock lock(_cmd_lock);
+		const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
 								   [](const auto& a, const auto& b) { return a.resource_fence() < b.resource_fence(); });
 		_in_flight.insert(it, std::move(cmd));
 		run_collect = (_in_flight.front().resource_fence()._value == _done_counter + 1);
@@ -79,11 +79,11 @@ void LifetimeManager::collect() {
 	bool clear = false;
 
 	{
-		std::unique_lock lock(_cmd_lock);
+		const std::unique_lock lock(_cmd_lock);
 		next = _done_counter;
 		while(!_in_flight.empty()) {
 			CmdBufferData& cmd = _in_flight.front();
-			u64 fence = cmd.resource_fence()._value;
+			const u64 fence = cmd.resource_fence()._value;
 			if(fence != next + 1) {
 				break;
 			}
@@ -112,12 +112,12 @@ void LifetimeManager::collect() {
 }
 
 usize LifetimeManager::pending_deletions() const {
-	std::unique_lock lock(_resource_lock);
+	const std::unique_lock lock(_resource_lock);
 	return _to_destroy.size();
 }
 
 usize LifetimeManager::active_cmd_buffers() const {
-	std::unique_lock lock(_cmd_lock);
+	const std::unique_lock lock(_cmd_lock);
 	return _in_flight.size();
 }
 
@@ -144,7 +144,7 @@ void LifetimeManager::clear_resources(u64 up_to) {
 	core::Vector<ManagedResource> to_del;
 
 	{
-		std::unique_lock lock(_resource_lock);
+		const std::unique_lock lock(_resource_lock);
 		while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
 			to_del << std::move(_to_destroy.front().second);
 			_to_destroy.pop_front();

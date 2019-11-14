@@ -40,7 +40,7 @@ const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) 
 	}
 
 	const auto& key = render_pass.layout();
-	auto it = _compiled.find(key);
+	const auto it = _compiled.find(key);
 	if(it == _compiled.end()) {
 		if(_compiled.size() == max_compiled_pipelines) {
 			log_msg("Discarding graphic pipeline", Log::Warning);
@@ -48,7 +48,7 @@ const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) 
 			_compiled.pop();
 		}
 
-		MaterialCompiler compiler(device());
+		const MaterialCompiler compiler(device());
 		_compiled.insert(key, compiler.compile(this, render_pass));
 		return _compiled.last().second;
 	}

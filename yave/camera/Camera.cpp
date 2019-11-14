@@ -27,7 +27,7 @@ namespace yave {
 static math::Vec3 extract_position(const math::Matrix4<>& view) {
 	math::Vec3 pos;
 	for(usize i = 0; i != 3; ++i) {
-		auto v = view.row(i);
+		const auto v = view.row(i);
 		pos -= v.to<3>() * v.w();
 	}
 	return pos;
@@ -47,10 +47,10 @@ static math::Vec3 extract_up(const math::Matrix4<>& view) {
 
 
 static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj) {
-	auto x = viewproj.row(0);
-	auto y = viewproj.row(1);
-	auto z = viewproj.row(2);
-	auto w = viewproj.row(3);
+	const auto x = viewproj.row(0);
+	const auto y = viewproj.row(1);
+	const auto z = viewproj.row(2);
+	const auto w = viewproj.row(3);
 	return {{
 			(w + x).normalized(),
 			(w - x).normalized(),
@@ -62,7 +62,7 @@ static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj) {
 }
 
 Camera::Camera() {
-	float ratio = 4.0f / 3.0f;
+	const float ratio = 4.0f / 3.0f;
 	set_proj(math::perspective(math::to_rad(45), ratio, 0.1f));
 	set_view(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}));
 }

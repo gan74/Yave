@@ -48,7 +48,7 @@ static std::atomic<u32> open_threads = 0;
 void set_output_file(const char* out) {
 	unused(out);
 #ifdef Y_PERF_LOG_ENABLED
-	std::unique_lock lock(mutex);
+	const std::unique_lock lock(mutex);
 	if(output) {
 		y_fatal("set_output_file should only be called once.");
 	}
@@ -81,9 +81,9 @@ struct ThreadData : NonMovable {
 	}
 
 	~ThreadData() {
-		bool is_last_thread = --open_threads == 0;
+		const bool is_last_thread = --open_threads == 0;
 		char b[print_buffer_len];
-		usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f})", thread_id(), micros());
+		const usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f})", thread_id(), micros());
 		if(len >= sizeof(b)) {
 			y_fatal("Too long.");
 		}
@@ -94,14 +94,14 @@ struct ThreadData : NonMovable {
 			write(",", 1);
 		}
 		write_buffer();
-		std::unique_lock lock(mutex);
+		const std::unique_lock lock(mutex);
 		if(is_output_open()) {
 			output->flush().ignore();
 		}
 	}
 
 	void write(const char* str, usize len) {
-		usize remaining = buffer_size - buffer_offset;
+		const usize remaining = buffer_size - buffer_offset;
 		if(len >= remaining) {
 			write_buffer();
 		}
@@ -110,7 +110,7 @@ struct ThreadData : NonMovable {
 	}
 
 	void write_buffer() {
-		std::unique_lock lock(mutex);
+		const std::unique_lock lock(mutex);
 		if(is_output_open() && buffer) {
 			if(!initialized) {
 				initialized = true;
@@ -128,7 +128,7 @@ ThreadData* thread_data() {
 	static std::list<std::unique_ptr<ThreadData>> thread_datas;
 	static thread_local ThreadData* data = nullptr;
 	if(!data) {
-		std::unique_lock lock(mutex);
+		const std::unique_lock lock(mutex);
 		thread_datas.emplace_back(std::make_unique<ThreadData>());
 		data = thread_datas.back().get();
 	}
@@ -145,7 +145,7 @@ static int paren(const char* buff) {
 
 void enter(const char* cat, const char* func) {
 	char b[print_buffer_len];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, thread_id(), micros());
+	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}
@@ -154,7 +154,7 @@ void enter(const char* cat, const char* func) {
 
 void leave(const char* cat, const char* func) {
 	char b[print_buffer_len];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, thread_id(), micros());
+	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}
@@ -163,7 +163,7 @@ void leave(const char* cat, const char* func) {
 
 void event(const char* cat, const char* name) {
 	char b[print_buffer_len];
-	usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"I","pid":0,"tid":%u,"ts":%f},)", name, cat, thread_id(), micros());
+	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"I","pid":0,"tid":%u,"ts":%f},)", name, cat, thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}

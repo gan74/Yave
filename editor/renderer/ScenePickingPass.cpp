@@ -40,9 +40,9 @@ namespace editor {
 static usize render_world(ContextPtr ctx,
 						  RenderPassRecorder& recorder, const FrameGraphPass* pass,
 						  const SceneView& scene_view,
-						  FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer,
-						  FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer,
-						  FrameGraphMutableTypedBufferId<u32> id_buffer,
+						  const FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer,
+						  const FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer,
+						  const FrameGraphMutableTypedBufferId<u32> id_buffer,
 						  usize index = 0) {
 	y_profile();
 
@@ -52,10 +52,10 @@ static usize render_world(ContextPtr ctx,
 	camera_mapping[0] = scene_view.camera().viewproj_matrix();
 
 	auto transform_mapping = pass->resources()->mapped_buffer(transform_buffer);
-	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(transform_buffer);
+	const auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(transform_buffer);
 
 	auto id_mapping = pass->resources()->mapped_buffer(id_buffer);
-	auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(id_buffer);
+	const auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(id_buffer);
 
 	recorder.bind_attrib_buffers({}, {transforms, ids});
 	recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
@@ -78,11 +78,11 @@ ScenePickingPass ScenePickingPass::create(ContextPtr ctx, FrameGraph& framegraph
 	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
 
 	auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
-	auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
-	auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
+	const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
+	const auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
 
-	auto depth = builder.declare_image(depth_format, size);
-	auto id = builder.declare_image(id_format, size);
+	const auto depth = builder.declare_image(depth_format, size);
+	const auto id = builder.declare_image(id_format, size);
 
 	ScenePickingPass pass;
 	pass.scene_view = view;

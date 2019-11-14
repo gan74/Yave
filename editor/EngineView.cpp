@@ -61,16 +61,16 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 	FrameGraph graph(context()->resource_pool());
 
 	math::Vec2ui output_size = content_size();
-	EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _ibl_data, _settings);
+	const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _ibl_data, _settings);
 
 
 	{
 		FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 
-		auto output_image = builder.declare_image(vk::Format::eR8G8B8A8Unorm, output_size);
-		auto buffer = builder.declare_typed_buffer<u32>(1);
+		const auto output_image = builder.declare_image(vk::Format::eR8G8B8A8Unorm, output_size);
+		const auto buffer = builder.declare_typed_buffer<u32>(1);
 
-		auto gbuffer = renderer.renderer.gbuffer;
+		const auto gbuffer = renderer.renderer.gbuffer;
 		builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
 		builder.add_color_output(output_image);
 		builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
@@ -126,19 +126,19 @@ void EngineView::update_proj() {
 	const CameraSettings& settings = context()->settings().camera();
 	math::Vec2ui viewport_size = content_size();
 
-	float fov = math::to_rad(settings.fov);
-	auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
+	const float fov = math::to_rad(settings.fov);
+	const auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
 	_scene_view.camera().set_proj(proj);
 }
 
 void EngineView::update() {
 	_gizmo.set_allow_drag(true);
 
-	math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - math::Vec2(ImGui::GetWindowPos());
-	auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
+	const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - math::Vec2(ImGui::GetWindowPos());
+	const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
 
 	bool focussed = ImGui::IsWindowFocused();
-	bool hovered =
+	const bool hovered =
 			ImGui::IsWindowHovered() &&
 			less(mouse_pos, ImGui::GetWindowContentRegionMax()) &&
 			less(ImGui::GetWindowContentRegionMin(), mouse_pos);
@@ -168,8 +168,8 @@ void EngineView::update() {
 void EngineView::update_picking() {
 	math::Vec2ui viewport_size = content_size();
 	math::Vec2 offset = ImGui::GetWindowPos();
-	math::Vec2 mouse = ImGui::GetIO().MousePos;
-	math::Vec2 uv = (mouse - offset - math::Vec2(ImGui::GetWindowContentRegionMin())) / math::Vec2(viewport_size);
+	const math::Vec2 mouse = ImGui::GetIO().MousePos;
+	const math::Vec2 uv = (mouse - offset - math::Vec2(ImGui::GetWindowContentRegionMin())) / math::Vec2(viewport_size);
 
 	if(uv.x() < 0.0f || uv.y() < 0.0f ||
 	   uv.x() > 1.0f || uv.y() > 1.0f) {
@@ -177,7 +177,7 @@ void EngineView::update_picking() {
 		return;
 	}
 
-	auto picking_data = context()->picking_manager().pick_sync(_scene_view, uv, viewport_size);
+	const auto picking_data = context()->picking_manager().pick_sync(_scene_view, uv, viewport_size);
 	if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
 		// event has been eaten by the camera controller, don't proceed further
 		_gizmo.set_allow_drag(false);

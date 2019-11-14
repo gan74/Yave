@@ -33,9 +33,9 @@ GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView& view, c
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("G-buffer pass");
 
-	auto depth = builder.declare_image(depth_format, size);
-	auto color = builder.declare_image(color_format, size);
-	auto normal = builder.declare_image(normal_format, size);
+	const auto depth = builder.declare_image(depth_format, size);
+	const auto color = builder.declare_image(color_format, size);
+	const auto normal = builder.declare_image(normal_format, size);
 
 	GBufferPass pass;
 	pass.depth = depth;

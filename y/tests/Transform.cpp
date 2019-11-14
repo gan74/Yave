@@ -35,10 +35,10 @@ y_test_func("Transform set basis") {
 }
 
 y_test_func("Transform decompose basic") {
-	auto quat = Quaternion<>::from_euler(to_rad(90.0f), 0.0f, to_rad(90.0f));
-	Vec3 scale(5.0f);
-	Vec3 pos(1.0f, 7.0f, 9.0f);
-	Transform<> tr(pos, quat, scale);
+	const auto quat = Quaternion<>::from_euler(to_rad(90.0f), 0.0f, to_rad(90.0f));
+	const Vec3 scale(5.0f);
+	const Vec3 pos(1.0f, 7.0f, 9.0f);
+	const Transform<> tr(pos, quat, scale);
 
 	auto [p, q, s] = tr.decompose();
 	y_test_assert(p == pos);
@@ -47,18 +47,18 @@ y_test_func("Transform decompose basic") {
 }
 
 y_test_func("Transform decompose") {
-	int step = 7;
+	const int step = 7;
 	for(int ph = -180; ph < 180; ph += step) {
 		for(int y = -180; y < 180; y += step) {
 			for(int r = -180; r < 180; r += step) {
-				auto quat = Quaternion<>::from_euler(to_rad(ph), to_rad(y), to_rad(r));
-				Vec3 pos(y, r, ph);
-				Vec3 scale(1.0f + pos.length() * 0.1f);
-				Transform<> tr(pos, quat, scale);
+				const auto quat = Quaternion<>::from_euler(to_rad(ph), to_rad(y), to_rad(r));
+				const Vec3 pos(y, r, ph);
+				const Vec3 scale(1.0f + pos.length() * 0.1f);
+				const Transform<> tr(pos, quat, scale);
 
 				auto [p, q, s] = tr.decompose();
 
-				Vec3 v(0.5f, 0.75f, 1.0f);
+				const Vec3 v(0.5f, 0.75f, 1.0f);
 				y_test_assert((p - pos).length() < 0.001f);
 				y_test_assert((q(v) - quat(v)).length() < 0.001f);
 				y_test_assert((s - scale).length() < 0.001f);

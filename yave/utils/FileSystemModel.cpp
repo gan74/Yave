@@ -40,11 +40,11 @@ core::String FileSystemModel::extention(std::string_view path) const {
 }
 
 FileSystemModel::Result<bool> FileSystemModel::is_parent(std::string_view parent, std::string_view path) const {
-	auto par = absolute(parent);
+	const auto par = absolute(parent);
 	if(!par) {
 		return core::Err();
 	}
-	auto f = absolute(path);
+	const auto f = absolute(path);
 	if(!f) {
 		return core::Err();
 	}

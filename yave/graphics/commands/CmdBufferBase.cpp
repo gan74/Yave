@@ -39,7 +39,7 @@ void CmdBufferBase::wait_for(const Semaphore& sem) {
 }
 
 DevicePtr CmdBufferBase::device() const {
-	auto pool = _proxy ? _proxy->data().pool() : nullptr;
+	const auto pool = _proxy ? _proxy->data().pool() : nullptr;
 	return pool ? pool->device() : nullptr;
 }
 

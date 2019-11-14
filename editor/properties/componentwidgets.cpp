@@ -67,13 +67,13 @@ void draw_component_widgets(ContextPtr ctx, ecs::EntityId id) {
 
 template<typename T>
 static void light_widget(T* light) {
-	int color_flags = ImGuiColorEditFlags_NoSidePreview |
+	const int color_flags = ImGuiColorEditFlags_NoSidePreview |
 					  // ImGuiColorEditFlags_NoSmallPreview |
 					  ImGuiColorEditFlags_NoAlpha |
 					  ImGuiColorEditFlags_Float |
 					  ImGuiColorEditFlags_InputRGB;
 
-	math::Vec4 color(light->color(), 1.0f);
+	const math::Vec4 color(light->color(), 1.0f);
 	if(ImGui::ColorButton("Color", color, color_flags)) {
 		ImGui::OpenPopup("Color");
 	}
@@ -144,13 +144,13 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		return;
 	}
 
-	auto static_mesh = [ctx, id]() -> StaticMeshComponent* { return ctx->world().component<StaticMeshComponent>(id); };
+	const auto static_mesh = [ctx, id]() -> StaticMeshComponent* { return ctx->world().component<StaticMeshComponent>(id); };
 	{
 		// material
 		if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material, "Material")) {
 			ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
 				[=](AssetId asset) {
-					if(auto material = ctx->loader().load<Material>(asset)) {
+					if(const auto material = ctx->loader().load<Material>(asset)) {
 						if(StaticMeshComponent* comp = static_mesh()) {
 							comp->material() = material.unwrap();
 						}
@@ -163,7 +163,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh, "Mesh")) {
 			ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
 				[=](AssetId asset) {
-					if(auto mesh = ctx->loader().load<StaticMesh>(asset)) {
+					if(const auto mesh = ctx->loader().load<StaticMesh>(asset)) {
 						if(StaticMeshComponent* comp = static_mesh()) {
 							comp->mesh() = mesh.unwrap();
 						}

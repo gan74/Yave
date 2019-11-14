@@ -88,7 +88,7 @@ std::string_view EntityWorld::type_name(ComponentTypeIndex index) const {
 
 
 const ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) const {
-	if(auto it = _component_containers.find(type); it != _component_containers.end()) {
+	if(const auto it = _component_containers.find(type); it != _component_containers.end()) {
 		return it->second.get();
 	}
 	return nullptr;
@@ -146,7 +146,7 @@ serde2::Result EntityWorld::serialize(WritableAssetArchive& writer) const {
 
 serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
 	// _required_components is not serialized so we don't clear it
-	auto required = std::move(_required_components);
+	const auto required = std::move(_required_components);
 	*this = EntityWorld();
 	_required_components = std::move(required);
 
@@ -189,7 +189,7 @@ serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
 		p.second->post_deserialize(*this);
 		// do some checking
 		for(EntityIndex i : p.second->indexes()) {
-			EntityId id = EntityId::from_unversioned_index(i);
+			const EntityId id = EntityId::from_unversioned_index(i);
 			if(!_entities.contains(id)) {
 				return core::Err();
 			}

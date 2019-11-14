@@ -70,7 +70,7 @@ void EntityView::paint_view() {
 				continue;
 			}
 
-			bool selected = context()->selection().selected_entity() == id;
+			const bool selected = context()->selection().selected_entity() == id;
 			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %##%", comp->name(), id.index()).data(), selected)) {
 				 context()->selection().set_selected(id);
 			}
@@ -86,7 +86,7 @@ void EntityView::paint_clustered_view() {
 	const ecs::EntityWorld& world = context()->world();
 
 	auto group = [&](auto archetype, const char* icon, const char* name) {
-		auto draw_category_menu = [=] {
+		const auto draw_category_menu = [=] {
 			if(ImGui::IsItemClicked(1)) {
 				ImGui::OpenPopup("Add entity");
 			}

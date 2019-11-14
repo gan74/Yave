@@ -38,7 +38,7 @@ void setup_console() {
 	static bool setup = false;
 	if(!setup) {
 		setup = true;
-		auto std_out = ::GetStdHandle(STD_OUTPUT_HANDLE);
+		const auto std_out = ::GetStdHandle(STD_OUTPUT_HANDLE);
 		DWORD mode = 0;
 		if(!::GetConsoleMode(std_out, &mode)) {
 			return;

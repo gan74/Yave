@@ -44,7 +44,7 @@ vk::Queue Queue::vk_queue() const {
 }
 
 void Queue::wait() const {
-	std::unique_lock lock(*_lock);
+	const std::unique_lock lock(*_lock);
 	_queue.waitIdle();
 }
 
@@ -56,14 +56,14 @@ Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
 }
 
 void Queue::submit_base(CmdBufferBase& base) const {
-	std::unique_lock lock(*_lock);
+	const std::unique_lock lock(*_lock);
 
 	auto cmd = base.vk_cmd_buffer();
 
 	const auto& wait = base._proxy->data()._waits;
 	auto wait_semaphores = core::vector_with_capacity<vk::Semaphore>(wait.size());
 	std::transform(wait.begin(), wait.end(), std::back_inserter(wait_semaphores), [](const auto& s) { return s.vk_semaphore(); });
-	core::Vector<vk::PipelineStageFlags> stages(wait.size(), vk::PipelineStageFlagBits::eAllCommands);
+	const core::Vector<vk::PipelineStageFlags> stages(wait.size(), vk::PipelineStageFlagBits::eAllCommands);
 
 	const Semaphore& signal = base._proxy->data()._signal;
 	vk::Semaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : vk::Semaphore();

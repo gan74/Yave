@@ -75,7 +75,7 @@ void EditorContext::defer(core::Function<void()> func) {
 
 void EditorContext::flush_deferred() {
 	y_profile();
-	std::unique_lock lock(_deferred_lock);
+	const std::unique_lock lock(_deferred_lock);
 	if(!_deferred.is_empty()) {
 		device()->wait_all_queues();
 		_is_flushing_deferred = true;

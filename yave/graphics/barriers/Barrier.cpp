@@ -141,7 +141,7 @@ static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format
 
 
 static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, ImageUsage usage, PipelineStage src, PipelineStage dst) {
-	auto layout = vk_image_layout(usage);
+	const auto layout = vk_image_layout(usage);
 	return vk::ImageMemoryBarrier()
 			.setOldLayout(layout)
 			.setNewLayout(layout)

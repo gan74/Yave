@@ -39,7 +39,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 		extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 	#endif
 
-	auto app_info = vk::ApplicationInfo()
+	const auto app_info = vk::ApplicationInfo()
 			.setApiVersion(VK_MAKE_VERSION(1, 1, 0))
 			.setPApplicationName("Yave")
 			.setPEngineName("Yave")

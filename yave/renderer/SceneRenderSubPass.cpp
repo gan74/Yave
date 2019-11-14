@@ -35,7 +35,7 @@ namespace yave {
 
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
 	auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
-	auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
+	const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
 
 	SceneRenderSubPass pass;
 	pass.scene_view = view;
@@ -56,7 +56,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 	const ecs::EntityWorld& world = sub_pass->scene_view.world();
 
 	auto transform_mapping = pass->resources()->mapped_buffer(sub_pass->transform_buffer);
-	auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
+	const auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
 	const auto& descriptor_set = pass->descriptor_sets()[0];
 
 	recorder.bind_attrib_buffers({}, {transforms});

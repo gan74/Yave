@@ -76,7 +76,7 @@ void FrameGraphResourcePool::create_alias(FrameGraphImageId dst, FrameGraphImage
 	dst.check_valid();
 	src.check_valid();
 
-	auto& orig = _images[src];
+	const auto& orig = _images[src];
 	if(!orig) {
 		y_fatal("Source image doesn't exists.");
 	}
@@ -122,7 +122,7 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 
 void FrameGraphResourcePool::release(FrameGraphImageId res) {
 	res.check_valid();
-	if(auto it = _images.find(res); it != _images.end()) {
+	if(const auto it = _images.find(res); it != _images.end()) {
 		if(it->second->aliases) {
 			--(it->second->aliases);
 		} else {
@@ -136,7 +136,7 @@ void FrameGraphResourcePool::release(FrameGraphImageId res) {
 
 void FrameGraphResourcePool::release(FrameGraphBufferId res) {
 	res.check_valid();
-	if(auto it = _buffers.find(res); it != _buffers.end()) {
+	if(const auto it = _buffers.find(res); it != _buffers.end()) {
 		_released_buffers << std::move(it->second);
 		_buffers.erase(it);
 	} else {
@@ -155,8 +155,8 @@ bool FrameGraphResourcePool::is_alive(FrameGraphBufferId res) const {
 bool FrameGraphResourcePool::are_aliased(FrameGraphImageId a, FrameGraphImageId b) const {
 	a.check_valid();
 	b.check_valid();
-	if(auto a_it = _images.find(a); a_it != _images.end()) {
-		if(auto b_it = _images.find(b); b_it != _images.end()) {
+	if(const auto a_it = _images.find(a); a_it != _images.end()) {
+		if(const auto b_it = _images.find(b); b_it != _images.end()) {
 			return a_it->second == b_it->second;
 		}
 	}
@@ -194,7 +194,7 @@ const TransientImage<>& FrameGraphResourcePool::find(FrameGraphImageId res) cons
 	if(!res.is_valid()) {
 		y_fatal("Invalid image resource.");
 	}
-	if(auto it = _images.find(res); it != _images.end()) {
+	if(const auto it = _images.find(res); it != _images.end()) {
 		return it->second->image;
 	}
 
@@ -205,7 +205,7 @@ const TransientBuffer& FrameGraphResourcePool::find(FrameGraphBufferId res) cons
 	if(!res.is_valid()) {
 		y_fatal("Invalid buffer resource.");
 	}
-	if(auto it = _buffers.find(res); it != _buffers.end()) {
+	if(const auto it = _buffers.find(res); it != _buffers.end()) {
 		return it->second;
 	}
 	return y_fatal("Buffer resource doesn't exist.");

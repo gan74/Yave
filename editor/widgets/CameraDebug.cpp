@@ -35,9 +35,9 @@ void CameraDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	auto pos = camera.position();
 	auto fwd = camera.forward();
 	auto lft = camera.left();
-	auto up = fwd.cross(lft);
+	const auto up = fwd.cross(lft);
 
-	math::Quaternion<> rot = math::Quaternion<>::from_base(fwd, lft, up);
+	const math::Quaternion<> rot = math::Quaternion<>::from_base(fwd, lft, up);
 
 	ImGui::Text("position: %.1f, %.1f, %.1f", pos.x(), pos.y(), pos.z());
 	ImGui::Text("forward : %.1f, %.1f, %.1f", fwd.x(), fwd.y(), fwd.z());
@@ -47,9 +47,9 @@ void CameraDebug::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ImGui::Text("rotation: %.1f, %.1f, %.1f, %.1f", rot.x(), rot.y(), rot.z(), rot.w());
 
 	if(ImGui::CollapsingHeader("Rotation")) {
-		auto x = rot({1.0f, 0.0f, 0.0f});
-		auto y = rot({0.0f, 1.0f, 0.0f});
-		auto z = rot({0.0f, 0.0f, 1.0f});
+		const auto x = rot({1.0f, 0.0f, 0.0f});
+		const auto y = rot({0.0f, 1.0f, 0.0f});
+		const auto z = rot({0.0f, 0.0f, 1.0f});
 		ImGui::Text("X axis: %.1f, %.1f, %.1f", x.x(), x.y(), x.z());
 		ImGui::Text("Y axis: %.1f, %.1f, %.1f", y.x(), y.y(), y.z());
 		ImGui::Text("Z axis: %.1f, %.1f, %.1f", z.x(), z.y(), z.z());

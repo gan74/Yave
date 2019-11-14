@@ -31,7 +31,7 @@ namespace yave {
 ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationData& data) : DeviceLinked(comp.device()), _local_size(comp.local_size()) {
 	const auto& bindings = comp.bindings();
 
-	u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
+	const u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
 	auto layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
 	for(const auto& binding : bindings) {
@@ -49,7 +49,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 	}
 
 	auto entries = data.size() ? comp.specialization_entries() : core::Span<vk::SpecializationMapEntry>();
-	auto spec_info = vk::SpecializationInfo()
+	const auto spec_info = vk::SpecializationInfo()
 			.setMapEntryCount(entries.size())
 			.setPMapEntries(entries.data())
 			.setDataSize(data.size())
@@ -57,7 +57,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
 		;
 
-	auto stage = vk::PipelineShaderStageCreateInfo()
+	const auto stage = vk::PipelineShaderStageCreateInfo()
 			.setModule(comp.vk_shader_module())
 			.setStage(vk::ShaderStageFlagBits::eCompute)
 			.setPName("main")

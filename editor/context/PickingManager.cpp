@@ -45,8 +45,8 @@ PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_vie
 	FrameGraph framegraph(context()->resource_pool());
 
 	Y_TODO(Take editor renderer settings into account for picking)
-	ScenePickingPass scene_pass = ScenePickingPass::create(context(), framegraph, scene_view, size);
-	EditorEntityPass entity_pass = EditorEntityPass::create(context(), framegraph, scene_view, scene_pass.depth, scene_pass.id, true);
+	const ScenePickingPass scene_pass = ScenePickingPass::create(context(), framegraph, scene_view, size);
+	const EditorEntityPass entity_pass = EditorEntityPass::create(context(), framegraph, scene_view, scene_pass.depth, scene_pass.id, true);
 
 	{
 		FrameGraphPassBuilder builder = framegraph.add_pass("Picking readback pass");
@@ -65,11 +65,11 @@ PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_vie
 	std::move(framegraph).render(recorder);
 	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 
-	ReadBackData read_back = TypedMapping(_buffer)[0];
-	float depth = read_back.depth;
+	const ReadBackData read_back = TypedMapping(_buffer)[0];
+	const float depth = read_back.depth;
 
 	auto inv_matrix = scene_view.camera().inverse_matrix();
-	math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
+	const math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
 
 	const PickingData data{
 			p.to<3>() / p.w(),

@@ -107,7 +107,7 @@ void MainEventHandler::key_event(Key key, bool pressed) {
 		break;
 	}
 
-	std::array shortcuts = {Key::A, Key::C, Key::V, Key::X, Key::Y, Key::Z};
+	const std::array shortcuts = {Key::A, Key::C, Key::V, Key::X, Key::Y, Key::Z};
 	for(usize i = 0; i != shortcuts.size(); ++i) {
 		bool& down = io.KeysDown[io.KeyMap[ImGuiKey_A + i]];
 		if(shortcuts[i] == key) {

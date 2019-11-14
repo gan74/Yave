@@ -30,8 +30,8 @@ SOFTWARE.
 namespace yave {
 
 static void check_features(const vk::PhysicalDeviceFeatures& features, const vk::PhysicalDeviceFeatures& required) {
-	auto feats = reinterpret_cast<const vk::Bool32*>(&features);
-	auto req = reinterpret_cast<const vk::Bool32*>(&required);
+	const auto feats = reinterpret_cast<const vk::Bool32*>(&features);
+	const auto req = reinterpret_cast<const vk::Bool32*>(&required);
 	for(usize i = 0; i != sizeof(features) / sizeof(vk::Bool32); ++i) {
 		if(req[i] && !feats[i]) {
 			y_fatal("Required Vulkan feature not supported");
@@ -44,17 +44,17 @@ static std::array<const char*, 1> extensions() {
 }
 
 static vk::Device create_device(
-		vk::PhysicalDevice physical,
-		core::Span<QueueFamily> queue_families,
+		const vk::PhysicalDevice physical,
+		const core::Span<QueueFamily> queue_families,
 		const DebugParams& debug) {
 
 	y_profile();
 
 	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
 
-	auto prio_count = std::max_element(queue_families.begin(), queue_families.end(),
+	const auto prio_count = std::max_element(queue_families.begin(), queue_families.end(),
 			[](const auto& a, const auto& b) { return a.count() < b.count(); })->count();
-	core::Vector<float> priorities(prio_count, 1.0f);
+	const core::Vector<float> priorities(prio_count, 1.0f);
 	std::transform(queue_families.begin(), queue_families.end(), std::back_inserter(queue_create_infos), [&](const auto& q) {
 		return vk::DeviceQueueCreateInfo()
 				.setQueueFamilyIndex(q.index())

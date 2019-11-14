@@ -131,10 +131,12 @@ def find_classes(folders):
 
 projects = {"y", "yave", "editor"}
 
-namespaces = {"core::", "math::", "std::", "vk::", "detail::"}
-types = {"float", "double", "int", "auto", "T", "U", "C", "R", "F", "It"}
+#namespaces = {"core::", "math::", "std::", "vk::", "detail::"}
+#types = {"float", "double", "int", "bool", "auto", "T", "U", "C", "R", "F", "It"}
 
-find_classes(projects)
+#find_classes(projects)
+namespaces = {}
+types = {"bool"}
 
 
 print("Initial compilation")

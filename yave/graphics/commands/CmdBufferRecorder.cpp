@@ -49,7 +49,7 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char
 		DeviceLinked(cmd_buffer.device()),
 		_buffer(cmd_buffer.vk_cmd_buffer()) {
 
-	if(auto marker = device()->debug_utils()) {
+	if(const auto marker = device()->debug_utils()) {
 		marker->begin_region(_buffer, name, color);
 	}
 }
@@ -118,7 +118,7 @@ void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::Attrib
 		vk_cmd_buffer().bindVertexBuffers(u32(0), per_vertex.vk_buffer(), per_vertex.byte_offset());
 	} else {
 		bool has_per_vertex = per_vertex.device();
-		u32 attrib_count = per_instance.size() + has_per_vertex;
+		const u32 attrib_count = per_instance.size() + has_per_vertex;
 
 		auto offsets = core::vector_with_capacity<vk::DeviceSize>(attrib_count);
 		auto buffers = core::vector_with_capacity<vk::Buffer>(attrib_count);
@@ -160,7 +160,7 @@ vk::CommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 
 CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage)  : CmdBufferBase(std::move(base)) {
-	auto info = vk::CommandBufferBeginInfo()
+	const auto info = vk::CommandBufferBeginInfo()
 			.setFlags(cmd_usage(usage))
 		;
 
@@ -206,7 +206,7 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 	}
 	clear_values << vk::ClearDepthStencilValue(0.0f, 0); // reversed Z
 
-	auto pass_info = vk::RenderPassBeginInfo()
+	const auto pass_info = vk::RenderPassBeginInfo()
 			.setRenderArea(vk::Rect2D({0, 0}, {framebuffer.size().x(), framebuffer.size().y()}))
 			.setRenderPass(framebuffer.render_pass().vk_render_pass())
 			.setFramebuffer(framebuffer.vk_framebuffer())
@@ -315,25 +315,25 @@ void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
 		y_fatal("Image size do not match.");
 	}
 
-	auto src_resource = vk::ImageSubresourceLayers()
+	const auto src_resource = vk::ImageSubresourceLayers()
 		.setAspectMask(src.format().vk_aspect())
 		.setMipLevel(0)
 		.setBaseArrayLayer(0)
 		.setLayerCount(1);
-	auto dst_resource = vk::ImageSubresourceLayers()
+	const auto dst_resource = vk::ImageSubresourceLayers()
 		.setAspectMask(dst.format().vk_aspect())
 		.setMipLevel(0)
 		.setBaseArrayLayer(0)
 		.setLayerCount(1);
 
-	auto extent = vk::Extent3D(src.size().x(), src.size().y(), 1);
+	const auto extent = vk::Extent3D(src.size().x(), src.size().y(), 1);
 
 	vk_cmd_buffer().copyImage(src.vk_image(), vk_image_layout(src.usage()),
 							  dst.vk_image(), vk_image_layout(dst.usage()), vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
 }
 
 void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
-	vk::ImageBlit blit = vk::ImageBlit()
+	const vk::ImageBlit blit = vk::ImageBlit()
 			.setSrcSubresource(
 				vk::ImageSubresourceLayers()
 					.setAspectMask(src.format().vk_aspect())
@@ -356,7 +356,7 @@ void CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, 
 void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
 
 	{
-		std::array<ImageBarrier, 2> image_barriers = {
+		const std::array<ImageBarrier, 2> image_barriers = {
 				ImageBarrier::transition_to_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
 				ImageBarrier::transition_barrier(dst, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal),
 			};
@@ -368,25 +368,25 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
 			y_fatal("Image size do not match.");
 		}
 
-		auto src_resource = vk::ImageSubresourceLayers()
+		const auto src_resource = vk::ImageSubresourceLayers()
 			.setAspectMask(src.format().vk_aspect())
 			.setMipLevel(0)
 			.setBaseArrayLayer(0)
 			.setLayerCount(src.layers());
-		auto dst_resource = vk::ImageSubresourceLayers()
+		const auto dst_resource = vk::ImageSubresourceLayers()
 			.setAspectMask(dst.format().vk_aspect())
 			.setMipLevel(0)
 			.setBaseArrayLayer(0)
 			.setLayerCount(dst.layers());
 
-		auto extent = vk::Extent3D(src.image_size().x(), src.image_size().y(), src.image_size().z());
+		const auto extent = vk::Extent3D(src.image_size().x(), src.image_size().y(), src.image_size().z());
 
 		vk_cmd_buffer().copyImage(src.vk_image(), vk::ImageLayout::eTransferSrcOptimal,
 								  dst.vk_image(), vk::ImageLayout::eTransferDstOptimal, vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
 	}
 
 	{
-		std::array<ImageBarrier, 2> image_barriers = {
+		const std::array<ImageBarrier, 2> image_barriers = {
 				ImageBarrier::transition_from_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
 				ImageBarrier::transition_from_barrier(dst, vk::ImageLayout::eTransferDstOptimal)
 			};

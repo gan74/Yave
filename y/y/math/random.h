@@ -55,7 +55,7 @@ class FastRandom {
 		}
 
 		constexpr u32 operator()() {
-			u32 e = _a - rot(_b, 27);
+			const u32 e = _a - rot(_b, 27);
 			_a = _b ^ rot(_c, 17);
 			_b = _c + _d;
 			_c = _d + e;

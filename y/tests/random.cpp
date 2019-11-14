@@ -31,7 +31,7 @@ using namespace y;
 
 y_test_func("FastRandom") {
 	std::unordered_set<u32> output;
-	usize max = 50000;
+	const usize max = 50000;
 	math::FastRandom rnd;
 	for(usize i = 0; i != max; ++i) {
 		output.insert(rnd());

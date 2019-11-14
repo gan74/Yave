@@ -54,7 +54,7 @@ static auto get_copy_regions(const ImageData& data) {
 
 	for(usize l = 0; l != data.layers(); ++l) {
 		for(usize m = 0; m != data.mipmaps(); ++m) {
-			auto size = data.size(m);
+			const auto size = data.size(m);
 			regions << vk::BufferImageCopy()
 				.setBufferOffset(data.data_offset(l, m))
 				.setImageExtent(vk::Extent3D(size.x(), size.y(), size.z()))
@@ -93,7 +93,7 @@ static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat fo
 }
 
 static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
-	auto image = create_image(dptr, size, layers, mips, format, usage, type);
+	const auto image = create_image(dptr, size, layers, mips, format, usage, type);
 	auto memory = dptr->allocator().alloc(image);
 	bind_image_memory(dptr, image, memory);
 
@@ -104,13 +104,13 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	y_profile();
 	DevicePtr dptr = image.device();
 
-	auto staging_buffer = get_staging_buffer(dptr, data.combined_byte_size(), data.data());
-	auto regions = get_copy_regions(data);
+	const auto staging_buffer = get_staging_buffer(dptr, data.combined_byte_size(), data.data());
+	const auto regions = get_copy_regions(data);
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
 
 	{
-		auto region = recorder.region("Image upload");
+		const auto region = recorder.region("Image upload");
 		recorder.barriers({ImageBarrier::transition_barrier(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal)});
 		recorder.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
 		recorder.barriers({ImageBarrier::transition_barrier(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout(image.usage()))});

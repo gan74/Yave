@@ -40,7 +40,7 @@ void test_assert(const char* msg, void (*func)(TestResult &)) {
 	const char* failure = "\x1b[31m[ FAILED ] \x1b[0m";
 
 	// Because of this function may be called during static initialization we must initialize cout
-	std::ios_base::Init init;
+	const std::ios_base::Init init;
 	y::detail::setup_console();
 
 

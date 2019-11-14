@@ -40,7 +40,7 @@ class TupleMemberIterator {
 		}
 
 		TupleMemberIterator operator++(int) {
-			iterator_type it = _it;
+			const iterator_type it = _it;
 			++_it;
 			return TupleMemberIterator(it);
 		}
@@ -51,7 +51,7 @@ class TupleMemberIterator {
 		}
 
 		TupleMemberIterator operator--(int) {
-			iterator_type it = _it;
+			const iterator_type it = _it;
 			--_it;
 			return TupleMemberIterator(it);
 		}

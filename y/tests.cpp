@@ -149,7 +149,7 @@ int main() {
 	}
 
 
-	usize count = 100000;
+	const usize count = 100000;
 	// vec
 	{
 		core::Vector<TestStruct> tests;

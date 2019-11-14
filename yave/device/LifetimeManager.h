@@ -127,7 +127,7 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 
 		template<typename T>
 		void destroy_later(T&& t) {
-			std::unique_lock lock(_resource_lock);
+			const std::unique_lock lock(_resource_lock);
 			_to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));
 		}
 

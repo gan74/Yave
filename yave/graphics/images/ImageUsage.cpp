@@ -32,7 +32,7 @@ static vk::ImageLayout vk_layout(ImageUsage usage) {
 		return vk::ImageLayout::eGeneral;
 	}
 
-	bool texture = (usage & ImageUsage::TextureBit) != ImageUsage::None;
+	const bool texture = (usage & ImageUsage::TextureBit) != ImageUsage::None;
 	if((usage & ImageUsage::TransferSrcBit) != ImageUsage::None) {
 		return texture ? vk::ImageLayout::eGeneral : vk::ImageLayout::eTransferSrcOptimal;
 	}

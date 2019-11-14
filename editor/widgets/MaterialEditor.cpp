@@ -40,7 +40,7 @@ MaterialEditor::MaterialEditor(ContextPtr cptr) :
 }
 
 static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, usize index, AssetId id) {
-	auto tex = ctx->loader().load<Texture>(id);
+	const auto tex = ctx->loader().load<Texture>(id);
 	if(!tex) {
 		log_msg("Unable to load texture.", Log::Error);
 		return;
@@ -79,13 +79,13 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	const SimpleMaterialData& data = material->data();
 
 	if(TextureView* view = context()->thumbmail_cache().get_thumbmail(material.id()).image) {
-		math::Vec2 size = content_size().x() < view->size().x()
+		const math::Vec2 size = content_size().x() < view->size().x()
 			? math::Vec2(content_size().x())
 			: math::Vec2(view->size());
 		ImGui::Image(view, size);
 	}
 
-	std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
+	const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
 	for(usize i = 0; i != data.textures().size(); ++i) {
 		//ImGui::CollapsingHeader(texture_names[i], ImGuiTreeNodeFlags_DefaultOpen);
 

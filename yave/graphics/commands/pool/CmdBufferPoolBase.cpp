@@ -83,13 +83,13 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
 		y_fatal("CmdBufferData was not returned to its original pool.");
 	}
 	data.release_resources();
-	std::unique_lock lock(_lock);
+	const std::unique_lock lock(_lock);
 	_cmd_buffers.push_back(std::move(data));
 }
 
 std::unique_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
 	y_profile();
-	std::unique_lock lock(_lock);
+	const std::unique_lock lock(_lock);
 	if(!_cmd_buffers.is_empty()) {
 		CmdBufferData data = _cmd_buffers.pop();
 		data.reset();
@@ -99,13 +99,13 @@ std::unique_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
 }
 
 CmdBufferData CmdBufferPoolBase::create_data() {
-	auto buffer = device()->vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
+	const auto buffer = device()->vk_device().allocateCommandBuffers(vk::CommandBufferAllocateInfo()
 			.setCommandBufferCount(1)
 			.setCommandPool(_pool)
 			.setLevel(cmd_level(_usage))
 		).back();
 
-	auto fence = device()->vk_device().createFence(vk::FenceCreateInfo());
+	const auto fence = device()->vk_device().createFence(vk::FenceCreateInfo());
 
 	_fences << fence;
 	//log_msg("new command buffer created (" + core::str(uenum(_usage)) + ") " + _cmd_buffers.size() + " waiting");

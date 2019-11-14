@@ -37,7 +37,7 @@ struct BoneTransform {
 	}
 
 	math::Transform<> lerp(const BoneTransform& end, float factor) const {
-		float q = 1.0f - factor;
+		const float q = 1.0f - factor;
 		return math::Transform<>(position * q + end.position * factor,
 								 rotation.slerp(end.rotation, factor),
 								 scale * q + end.scale * factor);
@@ -51,10 +51,10 @@ struct Bone {
 	y_serde2(name, parent, local_transform)
 	y_serde3(name, parent, local_transform)
 
-	core::String name;
-	u32 parent;
+	const core::String name;
+	const u32 parent;
 
-	BoneTransform local_transform;
+	const BoneTransform local_transform;
 
 	bool has_parent() const {
 		return parent != u32(-1);

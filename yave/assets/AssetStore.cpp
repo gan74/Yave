@@ -47,14 +47,14 @@ const FileSystemModel* AssetStore::filesystem() const {
 }
 
 AssetStore::Result<> AssetStore::remove(std::string_view name) {
-	if(auto i = id(name)) {
+	if(const auto i = id(name)) {
 		 return remove(i.unwrap());
 	}
 	return core::Err(ErrorType::UnknownID);
 }
 
 AssetStore::Result<> AssetStore::rename(std::string_view from, std::string_view to) {
-	if(auto i = id(from)) {
+	if(const auto i = id(from)) {
 		 return rename(i.unwrap(), to);
 	}
 	return core::Err(ErrorType::UnknownID);
@@ -66,12 +66,12 @@ AssetStore::Result<> AssetStore::write(AssetId id, io2::Reader& data) {
 }
 
 AssetStore::Result<AssetType> AssetStore::asset_type(AssetId id) const {
-	auto dat = data(id);
+	const auto dat = data(id);
 	if(dat) {
 		auto& reader = *dat.unwrap();
 		using magic_t = decltype(fs::magic_number);
 		if(reader.read_one<magic_t>().unwrap_or(0) == fs::magic_number) {
-			if(auto type = reader.read_one<AssetType>()) {
+			if(const auto type = reader.read_one<AssetType>()) {
 				return core::Ok(type.unwrap());
 			}
 		}

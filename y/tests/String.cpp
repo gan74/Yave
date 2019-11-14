@@ -36,7 +36,7 @@ const char* get_long_c_str() {
 }
 
 y_test_func("String short creation") {
-	String s = "lele";
+	const String s = "lele";
 
 	y_test_assert(!std::strcmp(s, "lele"));
 	y_test_assert(s.size() == 4);
@@ -58,21 +58,21 @@ y_test_func("String copy") {
 	y_test_assert(s.size() == 0 && s.is_empty() && !s.is_long() && s.capacity() == String::max_short_size && s.data() && !*s.data());
 
 	{
-		auto short_str = String(get_long_c_str(), String::max_short_size);
+		const auto short_str = String(get_long_c_str(), String::max_short_size);
 		y_test_assert(!short_str.is_long());
 		s = short_str;
 	}
 	y_test_assert(!s.is_long());
 
 	{
-		auto long_str = String(get_long_c_str(), String::max_short_size + 1);
+		const auto long_str = String(get_long_c_str(), String::max_short_size + 1);
 		y_test_assert(long_str.is_long());
 		s = long_str;
 	}
 	y_test_assert(s.is_long());
 
 	s = get_long_c_str();
-	String s2 = s;
+	const String s2 = s;
 	y_test_assert(s == s2);
 }
 
@@ -99,11 +99,11 @@ y_test_func("String add") {
 
 y_test_func("String from") {
 	{
-		auto s = core::String() + 125;
+		const auto s = core::String() + 125;
 		y_test_assert(!std::strcmp(s, "125"));
 	}
 	{
-		auto s = core::String() + "flubudu";
+		const auto s = core::String() + "flubudu";
 		y_test_assert(!std::strcmp(s, "flubudu"));
 	}
 	/*{
@@ -117,20 +117,20 @@ y_test_func("String from") {
 }
 
 y_test_func("String find") {
-	auto s = String(get_long_c_str());
+	const auto s = String(get_long_c_str());
 
-	auto found = s.find("strings");
-	auto end = s.find("flubudu");
+	const auto found = s.find("strings");
+	const auto end = s.find("flubudu");
 
 	y_test_assert(found != s.end());
 	y_test_assert(end == s.end());
 }
 
 y_test_func("String find") {
-	auto s = String(get_long_c_str());
+	const auto s = String(get_long_c_str());
 
-	auto found = s.find("strings");
-	auto end = s.find("flubudu");
+	const auto found = s.find("strings");
+	const auto end = s.find("flubudu");
 
 	y_test_assert(found != s.end());
 	y_test_assert(end == s.end());
@@ -168,8 +168,8 @@ y_test_func("fmt vec") {
 }
 
 y_test_func("fmt vector") {
-	Vector<int> a = {1, 2, 3};
-	Vector<int> b;
+	const Vector<int> a = {1, 2, 3};
+	const Vector<int> b;
 	const char* f = fmt("% %", a, b).data();
 
 	y_test_assert(!std::strcmp("[1, 2, 3] []", f));
@@ -177,14 +177,14 @@ y_test_func("fmt vector") {
 
 y_test_func("fmt long") {
 	for(usize i = 0; i != 64; ++i) {
-		usize size = 16 * fmt_max_size;
-		auto long_str = std::make_unique<char[]>(size + 1);
+		const usize size = 16 * fmt_max_size;
+		const auto long_str = std::make_unique<char[]>(size + 1);
 		std::memset(long_str.get(), 'a', size);
 		long_str[size] = 0;
 
 		const char* f = fmt("%", long_str.get()).data();
 
-		usize f_len = std::strlen(f);
+		const usize f_len = std::strlen(f);
 		y_test_assert(f_len > 0 && f_len < size);
 		y_test_assert(f_len == fmt_max_size);
 		y_test_assert(!std::memcmp(f, long_str.get(), f_len));

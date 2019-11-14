@@ -38,7 +38,7 @@ const AssetStore& AssetLoader::store() const {
 }
 
 bool AssetLoader::forget(AssetId id) {
-	std::unique_lock lock(_lock);
+	const std::unique_lock lock(_lock);
 	for(auto& loader : _loaders) {
 		if(loader.second->forget(id)) {
 			return true;

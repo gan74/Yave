@@ -216,7 +216,7 @@ template<typename T>
 struct Deserializer<std::unique_ptr<T>> {
 	template<typename Arc>
 	static Result deserialize(Arc& ar, std::unique_ptr<T>& t) {
-		u32 not_null = 0;
+		const u32 not_null = 0;
 		if(!deserialize_one(ar, not_null)) {
 			return core::Err();
 		}

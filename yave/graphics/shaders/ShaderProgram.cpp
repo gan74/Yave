@@ -49,7 +49,7 @@ static void merge_push_constants(T& into, const T& o) {
 static vk::Format vec_format(const ShaderModuleBase::Attribute& attr) {
 	static_assert(uenum(vk::Format::eR32G32B32A32Sfloat) == uenum(vk::Format::eR32G32B32A32Uint) + uenum(ShaderModuleBase::AttribType::Float));
 
-	usize type = usize(attr.type);
+	const usize type = usize(attr.type);
 	switch(attr.vec_size) {
 		case 1:
 			return vk::Format(uenum(vk::Format::eR32Uint) + type);
@@ -78,15 +78,15 @@ static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& s
 
 // returns the NEXT binding index
 static u32 create_vertex_attribs(u32 binding,
-								 vk::VertexInputRate rate,
-								 core::Span<ShaderModuleBase::Attribute> vertex_attribs,
+								 const vk::VertexInputRate rate,
+								 const core::Span<ShaderModuleBase::Attribute> vertex_attribs,
 								 Bindings& bindings,
 								 Attribs& attribs) {
 
 	if(!vertex_attribs.is_empty()) {
 		u32 offset = 0;
 		for(const auto& attr : vertex_attribs) {
-			auto format = vec_format(attr);
+			const auto format = vec_format(attr);
 			for(u32 i = 0; i != attr.columns; ++i) {
 				attribs << vk::VertexInputAttributeDescription()
 						.setBinding(binding)
@@ -144,7 +144,7 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 		merge_push_constants(_push_constants, vert.push_constants());
 		merge_push_constants(_push_constants, geom.push_constants());
 
-		u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
+		const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
 		if(!_bindings.empty()) {
 			_layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());

@@ -48,7 +48,7 @@ static DirectionalLightComponent sun_data(const ecs::EntityWorld& world) {
 
 RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_depth, FrameGraphImageId in_color) {
 
-	DirectionalLightComponent sun = sun_data(scene_view.world());
+	const DirectionalLightComponent sun = sun_data(scene_view.world());
 	struct SkyData {
 		uniform::LightingCamera camera_data;
 		math::Vec3 sun_direction;
@@ -69,9 +69,9 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Rayleigh sky pass");
 
-	auto depth = builder.declare_copy(in_depth);
-	auto color = builder.declare_copy(in_color);
-	auto buffer = builder.declare_typed_buffer<SkyData>(1);
+	const auto depth = builder.declare_copy(in_depth);
+	const auto color = builder.declare_copy(in_color);
+	const auto buffer = builder.declare_typed_buffer<SkyData>(1);
 
 	RayleighSkyPass pass;
 	pass.depth = depth;

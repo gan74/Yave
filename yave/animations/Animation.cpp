@@ -36,7 +36,7 @@ float Animation::duration() const {
 }
 
 std::optional<math::Transform<>> Animation::bone_transform(const core::String& name, float time) const {
-	auto channel = std::find_if(_channels.begin(), _channels.end(), [&](const auto& ch) { return ch.name() == name; });
+	const auto channel = std::find_if(_channels.begin(), _channels.end(), [&](const auto& ch) { return ch.name() == name; });
 
 	if(channel == _channels.end()) {
 		return std::optional<math::Transform<>>();

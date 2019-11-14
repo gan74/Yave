@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
 	Instance instance = create_instance();
 
 
-	Device device = create_device(instance);
+	const Device device = create_device(instance);
 	EditorContext ctx = create_context(device);
 	context = &ctx;
 

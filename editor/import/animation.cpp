@@ -73,7 +73,7 @@ AnimationChannel import_channel(aiNodeAnim* anim) {
 
 
 	if(infos.begin()->first > 0.0f) {
-		auto first = infos.begin()->second;
+		const auto first = infos.begin()->second;
 		infos[0.0f] = first;
 	}
 

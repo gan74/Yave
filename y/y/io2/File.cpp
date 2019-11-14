@@ -96,7 +96,7 @@ core::Result<void> File::copy(Reader& src, const core::String& dst) {
 	File dst_file = std::move(f.unwrap());
 	u8 buffer[1024];
 	while(!src.at_end()) {
-		if(auto r = src.read_up_to(buffer, sizeof(buffer))) {
+		if(const auto r = src.read_up_to(buffer, sizeof(buffer))) {
 			if(dst_file.write(buffer, r.unwrap())) {
 				continue;
 			}
@@ -113,7 +113,7 @@ usize File::size() const {
 	std::fpos_t pos = {};
 	std::fgetpos(_file, &pos);
 	f_seek(_file, 0, SEEK_END);
-	auto len = f_tell(_file);
+	const auto len = f_tell(_file);
 	std::fsetpos(_file, &pos);
 	return len;
 }
@@ -124,9 +124,9 @@ usize File::remaining() const {
 	}
 	std::fpos_t pos = {};
 	std::fgetpos(_file, &pos);
-	auto offset = f_tell(_file);
+	const auto offset = f_tell(_file);
 	f_seek(_file, 0, SEEK_END);
-	auto len = f_tell(_file);
+	const auto len = f_tell(_file);
 	std::fsetpos(_file, &pos);
 	return len - offset;
 }
@@ -166,7 +166,7 @@ ReadResult File::read(u8* data, usize bytes) {
 	if(!_file) {
 		return core::Err<usize>(0);
 	}
-	usize r = std::fread(data, 1, bytes, _file);
+	const usize r = std::fread(data, 1, bytes, _file);
 	if(r != bytes) {
 		return core::Err(r);
 	}
@@ -177,7 +177,7 @@ ReadUpToResult File::read_up_to(u8* data, usize max_bytes) {
 	if(!_file) {
 		return core::Err<usize>(0);
 	}
-	usize r = std::fread(data, 1, max_bytes, _file);
+	const usize r = std::fread(data, 1, max_bytes, _file);
 	if(std::ferror(_file)) {
 		return core::Err(r);
 	}

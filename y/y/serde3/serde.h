@@ -72,7 +72,7 @@ constexpr usize member_count() {
 template<typename T>
 struct NamedObject {
 	T& object;
-	std::string_view name;
+	const std::string_view name;
 
 	constexpr NamedObject(T& t, std::string_view n) : object(t), name(n) {
 	}

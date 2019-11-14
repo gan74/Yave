@@ -72,7 +72,7 @@ static bool is_none(U u) {
 
 template<typename T, typename C>
 static auto&& check_exists(C& c, T t) {
-	auto it = c.find(t);
+	const auto it = c.find(t);
 	if(it == c.end()) {
 		y_fatal("Resource doesn't exist.");
 	}
@@ -82,10 +82,10 @@ static auto&& check_exists(C& c, T t) {
 template<typename C, typename B>
 static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
 	for(auto&& [res, info] : resources) {
-		auto it = to_barrier.find(res);
+		const auto it = to_barrier.find(res);
 		bool exists = it != to_barrier.end();
 		// barrier around attachments are handled by the renderpass
-		PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
+		const PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
 		if(stage == PipelineStage::None) {
 			if(exists) {
 				to_barrier.erase(it);
@@ -107,7 +107,7 @@ static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, Frame
 
 	Y_TODO(We might end up barriering twice here)
 	if(pool->are_aliased(src, dst)) {
-		if(auto it = to_barrier.find(src); it != to_barrier.end()) {
+		if(const auto it = to_barrier.find(src); it != to_barrier.end()) {
 			to_barrier[dst] = it->second;
 			to_barrier.erase(it);
 		}
@@ -156,7 +156,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 	usize pass_id = 0;
 	for(const auto& pass : _passes) {
 		y_profile_zone(pass->name());
-		auto region = recorder.region(pass->name(), math::Vec4(identifying_color(pass_id++), 1.0f));
+		const auto region = recorder.region(pass->name(), math::Vec4(identifying_color(pass_id++), 1.0f));
 
 		{
 			y_profile_zone("prepare");
@@ -339,7 +339,7 @@ void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is
 	auto& info = check_exists(_images, res);
 	info.usage = info.usage | usage;
 
-	bool can_alias = info.last_use() != pass->_index || info.can_alias_on_last;
+	const bool can_alias = info.last_use() != pass->_index || info.can_alias_on_last;
 	info.register_use(pass->_index, is_written);
 
 	// copies are done before the pass so we can alias even if the image is copied

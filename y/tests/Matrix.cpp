@@ -28,7 +28,7 @@ using namespace y;
 using namespace y::math;
 
 y_test_func("Matrix vec multiply") {
-	Matrix3<> mat(1, 2, 3,
+	const Matrix3<> mat(1, 2, 3,
 				  4, 5, 6,
 				  7, 8, 9);
 
@@ -38,11 +38,11 @@ y_test_func("Matrix vec multiply") {
 }
 
 y_test_func("Matrix multiply") {
-	Matrix3<> a(1, 2, 3,
+	const Matrix3<> a(1, 2, 3,
 				4, 5, 6,
 				7, 8, 9);
 
-	Matrix3<> b(10, 11, 12,
+	const Matrix3<> b(10, 11, 12,
 				13, 14, 15,
 				16, 17, 18);
 
@@ -58,10 +58,10 @@ y_test_func("Matrix determinant") {
 }
 
 y_test_func("Matrix inverse") {
-	auto i = Matrix3<>(1, 2, 3,
+	const auto i = Matrix3<>(1, 2, 3,
 					   7, 8, 0,
 					   4, 5, 6).inverse();
-	auto e = Matrix3<>(-16, -1, 8,
+	const auto e = Matrix3<>(-16, -1, 8,
 					   14, 2, -7,
 					   -1, -1, 2) * (1 / 9.0f);
 
@@ -70,7 +70,7 @@ y_test_func("Matrix inverse") {
 
 
 y_test_func("Matrix asymetrical") {
-	Matrix<2, 3> mat(1, 2, 3,
+	const Matrix<2, 3> mat(1, 2, 3,
 					 4, 5, 6);
 
 	y_test_assert(mat.row(0) == Vec(1.0f, 2.0f, 3.0f) && mat.row(1) == Vec(4, 5, 6));
@@ -80,10 +80,10 @@ y_test_func("Matrix asymetrical") {
 }
 
 y_test_func("Matrix asymetrical multiply") {
-	Matrix<2, 3> a(1, 2, 3,
+	const Matrix<2, 3> a(1, 2, 3,
 				   4, 5, 6);
 
-	Matrix<3, 2> b(7, 8,
+	const Matrix<3, 2> b(7, 8,
 				   9, 10,
 				   11, 12);
 
@@ -94,7 +94,7 @@ y_test_func("Matrix asymetrical multiply") {
 }
 
 y_test_func("Matrix sub") {
-	Matrix<2, 3> mat(1, 2, 3,
+	const Matrix<2, 3> mat(1, 2, 3,
 					 4, 5, 6);
 
 	using M = Matrix<1, 2>;

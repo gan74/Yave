@@ -32,7 +32,7 @@ static u32 is_ascii(WPARAM w_param, LPARAM l_param) {
 	static BYTE kb_state[256];
 	static auto init = GetKeyboardState(kb_state);
 	unused(init);
-	auto scan_code = (l_param >> 16) & 0xFF;
+	const auto scan_code = (l_param >> 16) & 0xFF;
 	WORD ascii = 0;
 	return ToAscii(w_param, scan_code, kb_state, &ascii, 0);
 }
@@ -83,7 +83,7 @@ static Key to_key(WPARAM w_param, LPARAM l_param) {
 LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param) {
 	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 	if(window) {
-		math::Vec2ui lvec(usize(LOWORD(l_param)), usize(HIWORD(l_param)));
+		const math::Vec2ui lvec(usize(LOWORD(l_param)), usize(HIWORD(l_param)));
 		switch(u_msg) {
 			case WM_CLOSE:
 				window->close();
@@ -98,12 +98,12 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 			case WM_SYSKEYUP:
 			case WM_KEYDOWN:
 			case WM_KEYUP: {
-				bool is_down = u_msg == WM_SYSKEYDOWN ||
+				const bool is_down = u_msg == WM_SYSKEYDOWN ||
 							   u_msg == WM_KEYDOWN;
-				bool is_system = u_msg == WM_SYSKEYDOWN ||
+				const bool is_system = u_msg == WM_SYSKEYDOWN ||
 								 u_msg == WM_SYSKEYUP;
-				if(auto handler = window->event_handler()) {
-					auto k = to_key(w_param, l_param);
+				if(const auto handler = window->event_handler()) {
+					const auto k = to_key(w_param, l_param);
 					if(k != Key::Unknown) {
 						is_down
 							? handler->key_pressed(k)
@@ -120,7 +120,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 			} break;
 
 			case WM_CHAR:
-				if(auto handler = window->event_handler()) {
+				if(const auto handler = window->event_handler()) {
 					handler->char_input(u32(w_param));
 					return 0;
 				}
@@ -134,7 +134,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 			case WM_MBUTTONUP:
 			case WM_MOUSEMOVE:
 			case WM_MOUSEWHEEL:
-				if(auto handler = window->event_handler()) {
+				if(const auto handler = window->event_handler()) {
 					switch(u_msg) {
 						case WM_LBUTTONDOWN:
 							handler->mouse_pressed(lvec, EventHandler::LeftButton);

@@ -68,7 +68,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 						return core::Err(ErrorType::InvalidID);
 					}
 
-					std::unique_lock lock(_lock);
+					const std::unique_lock lock(_lock);
 					auto& weak_ptr = _loaded[id];
 					AssetPtr asset_ptr = weak_ptr.lock();
 					weak_ptr = (asset_ptr ? asset_ptr._ptr->reloaded : asset_ptr) = make_asset_with_id<T>(id, std::move(asset));
@@ -76,20 +76,20 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 					return core::Ok(asset_ptr);
 				}
 
-				Result<T> load(AssetLoader& loader, AssetId id) noexcept {
+				const Result<T> load(AssetLoader& loader, AssetId id) noexcept {
 					y_profile();
 					if(id == AssetId::invalid_id()) {
 						return core::Err(ErrorType::InvalidID);
 					}
 
-					std::unique_lock lock(_lock);
+					const std::unique_lock lock(_lock);
 					auto& weak_ptr = _loaded[id];
 					AssetPtr asset_ptr = weak_ptr.lock();
 					if(asset_ptr) {
 						return core::Ok(asset_ptr);
 					}
 
-					if(auto reader = loader.store().data(id)) {
+					if(const auto reader = loader.store().data(id)) {
 						y_profile_zone("loading");
 						ReadableAssetArchive arc(*reader.unwrap(), loader);
 						if(auto asset = traits::load_asset(arc)) {
@@ -102,8 +102,8 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 				}
 
 				bool forget(AssetId id) override {
-					std::unique_lock lock(_lock);
-					if(auto it = _loaded.find(id); it != _loaded.end()) {
+					const std::unique_lock lock(_lock);
+					if(const auto it = _loaded.find(id); it != _loaded.end()) {
 						_loaded.erase(it);
 						return true;
 					}
@@ -155,7 +155,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 		template<typename T>
 		auto& loader_for_type() {
-			std::unique_lock lock(_lock);
+			const std::unique_lock lock(_lock);
 			using Type = remove_cvref_t<T>;
 			auto& loader = _loaders[typeid(Type)];
 			if(!loader) {
@@ -192,7 +192,7 @@ serde2::Result AssetPtr<T>::deserialize(ReadableAssetArchive& arc)  noexcept {
 		return core::Ok();
 	}
 
-	auto asset = arc.loader().load<T>(id);
+	const auto asset = arc.loader().load<T>(id);
 	if(!asset) {
 		return core::Err();
 	}

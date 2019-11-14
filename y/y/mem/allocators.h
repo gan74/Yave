@@ -115,12 +115,12 @@ class ThreadSafeAllocator : NonCopyable {
 		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
-			std::unique_lock lock(_lock);
+			const std::unique_lock lock(_lock);
 			return _allocator.allocate(size);
 		}
 
 		void deallocate(void* ptr, usize size) noexcept {
-			std::unique_lock lock(_lock);
+			const std::unique_lock lock(_lock);
 			_allocator.deallocate(ptr, size);
 		}
 
@@ -186,12 +186,12 @@ class ElectricFenceAllocator : NonCopyable {
 		}
 
 		void deallocate(void* ptr, usize size) noexcept {
-			u8* f_end = static_cast<u8*>(ptr);
-			u8* f_begin = f_end - fence_size;
+			const u8* f_end = static_cast<u8*>(ptr);
+			const u8* f_begin = f_end - fence_size;
 			if(ptr) {
 				u8* s_begin = f_end + size;
 				u8* s_end = s_begin + fence_size;
-				auto is_fence = [](u8 c) { return c == fence; };
+				const auto is_fence = [](u8 c) { return c == fence; };
 				if(std::find_if_not(f_begin, f_end, is_fence) != f_end ||
 				   std::find_if_not(s_begin, s_end, is_fence) != s_end) {
 					y_fatal("Fence altered: buffer overflow detected (alloc size: %).", size);

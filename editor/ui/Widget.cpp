@@ -70,9 +70,9 @@ void Widget::update_attribs() {
 
 static void fix_undocked_bg() {
 	ImVec4* colors = ImGui::GetStyle().Colors;
-	math::Vec4 window_bg = colors[ImGuiCol_WindowBg];
-	math::Vec4 child_col = colors[ImGuiCol_ChildBg];
-	math::Vec4 final(math::lerp(window_bg.to<3>(), child_col.to<3>(), child_col.w()), window_bg.w());
+	const math::Vec4 window_bg = colors[ImGuiCol_WindowBg];
+	const math::Vec4 child_col = colors[ImGuiCol_ChildBg];
+	const math::Vec4 final(math::lerp(window_bg.to<3>(), child_col.to<3>(), child_col.w()), window_bg.w());
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, final);
 }
 
@@ -95,7 +95,7 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 		if(!_docked) {
 			fix_undocked_bg();
 		}
-		bool b = ImGui::Begin(_title_with_id.begin(), _closable ? &_visible : nullptr, _flags);
+		const bool b = ImGui::Begin(_title_with_id.begin(), _closable ? &_visible : nullptr, _flags);
 		if(!_docked) {
 			ImGui::PopStyleColor();
 		}

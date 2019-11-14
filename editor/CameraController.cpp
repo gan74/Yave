@@ -50,14 +50,14 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
 	if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
 		auto id = context()->selection().selected_entity();
 		if(id.is_valid()) {
-			if(auto pos = entity_position(context()->world(), id)) {
-				float radius = entity_radius(context()->world(), id).unwrap_or(10.0f);
+			if(const auto pos = entity_position(context()->world(), id)) {
+				const float radius = entity_radius(context()->world(), id).unwrap_or(10.0f);
 				cam_pos = pos.unwrap() - cam_fwd * (radius * 1.5f);
 			}
 		}
 	}
 
-	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+	const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
 	if(fully_finite(view)) {
 		camera.set_view(view);
 	}
@@ -75,8 +75,8 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
 	math::Vec3 cam_lft = camera.left();
 
 	if(ImGui::IsWindowFocused()) {
-		float cam_speed = 500.0f;
-		float dt = cam_speed / ImGui::GetIO().Framerate;
+		const float cam_speed = 500.0f;
+		const float dt = cam_speed / ImGui::GetIO().Framerate;
 
 		if(ImGui::IsKeyDown(int(settings.move_forward))) {
 			cam_pos += cam_fwd * dt;
@@ -97,31 +97,31 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
 			delta *= settings.fps_sensitivity;
 
 			{
-				auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+				const auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
 				cam_fwd = pitch(cam_fwd);
 			}
 			{
-				auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
+				const auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
 				cam_fwd = yaw(cam_fwd);
 				cam_lft = yaw(cam_lft);
 			}
 
 			auto euler = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft)).to_euler();
-			bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
+			const bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
 			euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
-			auto rotation = math::Quaternion<>::from_euler(euler);
+			const auto rotation = math::Quaternion<>::from_euler(euler);
 			cam_fwd = rotation({1.0f, 0.0f, 0.0f});
 			cam_lft = rotation({0.0f, 1.0f, 0.0f});
 		}
 
 
 		if(ImGui::IsMouseDown(2)) {
-			auto delta = ImGui::GetIO().MouseDelta;
+			const auto delta = ImGui::GetIO().MouseDelta;
 			cam_pos -= (delta.y * cam_fwd.cross(cam_lft) + delta.x * cam_lft);
 		}
 	}
 
-	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+	const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
 	if(fully_finite(view)) {
 		camera.set_view(view);
 	}
@@ -149,7 +149,7 @@ bool HoudiniCameraController::viewport_clicked(const PickingManager::PickingData
 }
 
 void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& viewport_size) {
-	bool cam_key_down = ImGui::IsKeyDown(camera_key());
+	const bool cam_key_down = ImGui::IsKeyDown(camera_key());
 
 	const CameraSettings& settings = context()->settings().camera();
 	math::Vec3 cam_pos = camera.position();
@@ -157,8 +157,8 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 	math::Vec3 cam_lft = camera.left();
 
 	/*if(ImGui::IsWindowFocused()) {
-		float cam_speed = 500.0f;
-		float dt = cam_speed / ImGui::GetIO().Framerate;
+		const float cam_speed = 500.0f;
+		const float dt = cam_speed / ImGui::GetIO().Framerate;
 
 		if(ImGui::IsKeyDown(int(settings.move_forward))) {
 			cam_pos += cam_fwd * dt;
@@ -191,13 +191,13 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 		}
 
 		if(!finite) {
-			math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4(_picking_uvs * 2.0f - 1.0f, 1.0f, 1.0f);
+			const math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4(_picking_uvs * 2.0f - 1.0f, 1.0f, 1.0f);
 			_picked_pos = hp.to<3>() / hp.w();
 			_picking_depth = 1.0f;
 		}
 
 		float dist = (cam_pos - _picked_pos).length();
-		math::Vec3 target_pos = cam_pos + cam_fwd * dist;
+		const math::Vec3 target_pos = cam_pos + cam_fwd * dist;
 		_target_offset = target_pos - _picked_pos;
 		_orig_pos = cam_pos;
 
@@ -215,12 +215,12 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 		math::Vec3 boom_arm = cam_pos - _picked_pos;
 		delta *= settings.trackball_sensitivity;
 		{
-			auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+			const auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
 			boom_arm = pitch(boom_arm);
 			_target_offset = pitch(_target_offset);
 		}
 		{
-			auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, -1.0f), delta.x());
+			const auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, -1.0f), delta.x());
 			boom_arm = yaw(boom_arm);
 			_target_offset = yaw(_target_offset);
 
@@ -233,14 +233,14 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 
 	// Dolly
 	if(cam_key_down && _mouse_button == 1) {
-		math::Vec3 dolly_vec = _picked_pos - _orig_pos;
-		float f = _cumulated_delta.y() * -settings.dolly_sensitivity;
+		const math::Vec3 dolly_vec = _picked_pos - _orig_pos;
+		const float f = _cumulated_delta.y() * -settings.dolly_sensitivity;
 		cam_pos = _picked_pos - dolly_vec * (1.0f + f);
 	}
 
 	// Pan
 	if(cam_key_down && _mouse_button == 2) {
-		math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4((_picking_uvs - delta) * 2.0f - 1.0f, _picking_depth, 1.0f);
+		const math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4((_picking_uvs - delta) * 2.0f - 1.0f, _picking_depth, 1.0f);
 		cam_pos = _orig_pos + (hp.to<3>() / hp.w()) - _picked_pos;
 	}
 
@@ -251,7 +251,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 		cam_lft.normalize();
 	}
 
-	auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+	const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
 	if(fully_finite(view)) {
 		camera.set_view(view);
 	}

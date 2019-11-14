@@ -69,7 +69,7 @@ char* String::alloc_long(usize capacity) {
 }
 
 usize String::compute_capacity(usize len) {
-	usize cap = DefaultVectorResizePolicy().ideal_capacity(len + 1) - 1;
+	const usize cap = DefaultVectorResizePolicy().ideal_capacity(len + 1) - 1;
 	y_debug_assert(cap >= len + 1);
 	return cap;
 }
@@ -221,7 +221,7 @@ String::iterator String::find(const char* str) {
 }
 
 String::const_iterator String::find(const char* str) const {
-	const_iterator found = std::strstr(data(), str);
+	const const_iterator found = std::strstr(data(), str);
 	return found ? found : end();
 }
 
@@ -311,7 +311,7 @@ String& String::operator+=(std::string_view str) {
 
 String& String::append(const char* other_data, usize other_size) {
 	usize self_size = size();
-	usize total_size = self_size + other_size;
+	const usize total_size = self_size + other_size;
 
 	if(capacity() >= total_size) {
 		// in place
@@ -342,7 +342,7 @@ char String::operator[](usize i) const {
 
 
 bool String::operator==(const char* str) const {
-	usize len = std::strlen(str);
+	const usize len = std::strlen(str);
 	return size() == len ? std::equal(begin(), end(), str, str + len) : false;
 }
 

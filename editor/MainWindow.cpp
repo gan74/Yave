@@ -61,12 +61,12 @@ void MainWindow::create_swapchain() {
 void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
 	{
-		RecordedCmdBuffer cmd_buffer(std::move(recorder));
+		const RecordedCmdBuffer cmd_buffer(std::move(recorder));
 
-		vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
+		const vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
 		Y_TODO(manual locking needs for queue presentation needs to go)
 		const auto& queue = device()->graphic_queue();
-		std::unique_lock lock(queue.lock());
+		const std::unique_lock lock(queue.lock());
 		auto graphic_queue = queue.vk_queue();
 		auto vk_buffer = cmd_buffer.vk_cmd_buffer();
 

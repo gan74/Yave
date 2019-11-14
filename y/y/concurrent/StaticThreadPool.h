@@ -62,10 +62,10 @@ class StaticThreadPool : NonMovable {
 
 		template<typename It, typename F>
 		void parallel_for_each(It begin, It end, F&& func) {
-			usize size = std::distance(begin, end);
-			usize split = concurency() * 8;
-			usize step = size / split;
-			std::unique_lock lock(_shared_data->lock);
+			const usize size = std::distance(begin, end);
+			const usize split = concurency() * 8;
+			const usize step = size / split;
+			const std::unique_lock lock(_shared_data->lock);
 			if(concurency()) {
 				It next = begin + step;
 				for(usize i = 0; i != split - 1; ++i) {

@@ -46,7 +46,7 @@ SettingsPanel::SettingsPanel(ContextPtr cptr) : Widget(ICON_FA_COG " Settings"),
 }
 
 void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	int flags = ImGuiTreeNodeFlags_DefaultOpen;
+	const int flags = ImGuiTreeNodeFlags_DefaultOpen;
 
 	ImGui::BeginChild("###settings", ImVec2(0.0f, -24.0f));
 

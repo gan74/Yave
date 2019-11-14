@@ -29,7 +29,7 @@ namespace editor {
 
 template<usize N>
 static void to_buffer(std::array<char, N>& buffer, std::string_view str) {
-	usize len = std::min(buffer.size() - 1, str.size());
+	const usize len = std::min(buffer.size() - 1, str.size());
 	std::copy_n(str.begin(), len, buffer.begin());
 	buffer[len] = 0;
 }
@@ -62,7 +62,7 @@ void FileBrowser::set_path(std::string_view path) {
 		_filesystem->for_each(path, [this, path](const auto& name) {
 				EntryType type = EntryType::Directory;
 				if(!_filesystem->is_directory(_filesystem->join(path, name)).unwrap_or(false)) {
-					auto ext = _filesystem->extention(name);
+					const auto ext = _filesystem->extention(name);
 					type = std::binary_search(_extensions.begin(), _extensions.end(), ext)
 						? EntryType::Supported : EntryType::Unsupported;
 				}
@@ -75,7 +75,7 @@ void FileBrowser::set_path(std::string_view path) {
 		_last_path = path;
 	} else {
 		done(path);
-		if(auto p =_filesystem->parent_path(path)) {
+		if(const auto p =_filesystem->parent_path(path)) {
 			set_path(p.unwrap());
 		}
 	}
@@ -103,7 +103,7 @@ void FileBrowser::cancel() {
 }
 
 core::String FileBrowser::full_path() const {
-	std::string_view name(_name_buffer.begin(), std::strlen(_name_buffer.begin()));
+	const std::string_view name(_name_buffer.begin(), std::strlen(_name_buffer.begin()));
 	return _filesystem->join(path(), name);
 }
 
@@ -142,7 +142,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::BeginChild("###fileentries", ImVec2(), true);
 		{
 			if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
-				if(auto p = _filesystem->parent_path(path())) {
+				if(const auto p = _filesystem->parent_path(path())) {
 					set_path(p.unwrap());
 				}
 			}

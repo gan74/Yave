@@ -72,15 +72,15 @@ if(_style == Style::Yave) {
 
 // https://github.com/ocornut/imgui/issues/707#issuecomment-468798935
 if(_style == Style::Corporate || _style == Style::Corporate3D) {
-	float darkening = 1.0f;
-	auto dImVec4 = [=](float r, float g, float b, float a) { return ImVec4(r * darkening, g * darkening, b * darkening, a); };
+	const float darkening = 1.0f;
+	const auto dImVec4 = [=](float r, float g, float b, float a) { return ImVec4(r * darkening, g * darkening, b * darkening, a); };
 
 	auto& style = ImGui::GetStyle();
 	ImVec4* colors = style.Colors;
 
 	/// 0 = FLAT APPEARENCE
 	/// 1 = MORE "3D" LOOK
-	int is_3D = _style == Style::Corporate3D ? 1 : 0;
+	const int is_3D = _style == Style::Corporate3D ? 1 : 0;
 
 	colors[ImGuiCol_Text]                   =  ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
 	colors[ImGuiCol_TextDisabled]           =  ImVec4(0.40f, 0.40f, 0.40f, 1.00f);

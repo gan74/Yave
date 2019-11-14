@@ -30,8 +30,8 @@ SOFTWARE.
 namespace yave {
 
 static void depth_only_stages(core::Vector<vk::PipelineShaderStageCreateInfo>& stages) {
-	auto is_frag_stage = [](const vk::PipelineShaderStageCreateInfo& s) { return s.stage == vk::ShaderStageFlagBits::eFragment; };
-	if(auto it = std::find_if(stages.begin(), stages.end(), is_frag_stage); it != stages.end()) {
+	const auto is_frag_stage = [](const vk::PipelineShaderStageCreateInfo& s) { return s.stage == vk::ShaderStageFlagBits::eFragment; };
+	if(const auto it = std::find_if(stages.begin(), stages.end(), is_frag_stage); it != stages.end()) {
 		stages.erase_unordered(it);
 	}
 }
@@ -47,10 +47,10 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 	DevicePtr dptr = material->device();
 	const auto& mat_data = material->data();
 
-	FragmentShader frag = FragmentShader(dptr, mat_data._frag);
-	VertexShader vert = VertexShader(dptr, mat_data._vert);
-	GeometryShader geom = mat_data._geom.is_empty() ? GeometryShader() : GeometryShader(dptr, mat_data._geom);
-	ShaderProgram program(frag, vert, geom);
+	const FragmentShader frag = FragmentShader(dptr, mat_data._frag);
+	const VertexShader vert = VertexShader(dptr, mat_data._vert);
+	const GeometryShader geom = mat_data._geom.is_empty() ? GeometryShader() : GeometryShader(dptr, mat_data._geom);
+	const ShaderProgram program(frag, vert, geom);
 
 	core::Vector<vk::PipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());
 	if(render_pass.is_depth_only()) {
@@ -60,14 +60,14 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 	auto attribute_bindings = program.attribute_bindings();
 	auto attribute_descriptions = program.attributes_descriptions();
 
-	auto vertex_input = vk::PipelineVertexInputStateCreateInfo()
+	const auto vertex_input = vk::PipelineVertexInputStateCreateInfo()
 			.setVertexAttributeDescriptionCount(attribute_descriptions.size())
 			.setPVertexAttributeDescriptions(attribute_descriptions.begin())
 			.setVertexBindingDescriptionCount(attribute_bindings.size())
 			.setPVertexBindingDescriptions(attribute_bindings.begin())
 		;
 
-	auto input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
+	const auto input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
 			.setTopology(vk::PrimitiveTopology(mat_data._primitive_type))
 			.setPrimitiveRestartEnable(false)
 		;
@@ -75,14 +75,14 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 	auto viewport = vk::Viewport();
 	auto scissor = vk::Rect2D();
 
-	auto viewport_state = vk::PipelineViewportStateCreateInfo()
+	const auto viewport_state = vk::PipelineViewportStateCreateInfo()
 			.setViewportCount(1)
 			.setPViewports(&viewport)
 			.setScissorCount(1)
 			.setPScissors(&scissor)
 		;
 
-	auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
+	const auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
 			.setCullMode(mat_data._cull ? vk::CullModeFlagBits::eBack : vk::CullModeFlagBits::eNone)
 			//.setCullMode(vk::CullModeFlagBits::eNone)
 			.setPolygonMode(vk::PolygonMode::eFill)
@@ -92,12 +92,12 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 			.setDepthClampEnable(false)
 		;
 
-	auto multisampling = vk::PipelineMultisampleStateCreateInfo()
+	const auto multisampling = vk::PipelineMultisampleStateCreateInfo()
 			.setSampleShadingEnable(false)
 			.setRasterizationSamples(vk::SampleCountFlagBits::e1)
 		;
 
-	auto color_blend_attachment = vk::PipelineColorBlendAttachmentState()
+	const auto color_blend_attachment = vk::PipelineColorBlendAttachmentState()
 			.setBlendEnable(mat_data._blend)
 			.setColorBlendOp(vk::BlendOp::eAdd)
 			.setAlphaBlendOp(vk::BlendOp::eAdd)
@@ -108,9 +108,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eA)
 		;
 
-	auto att_blends = core::Vector<vk::PipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
+	const auto att_blends = core::Vector<vk::PipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
 
-	auto color_blending = vk::PipelineColorBlendStateCreateInfo()
+	const auto color_blending = vk::PipelineColorBlendStateCreateInfo()
 			.setLogicOpEnable(false)
 			.setLogicOp(vk::LogicOp::eCopy)
 			.setAttachmentCount(u32(att_blends.size()))
@@ -118,26 +118,26 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 			.setBlendConstants({{0.0f, 0.0f, 0.0f, 0.0f}})
 		;
 
-	auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
+	const auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
 			.setDepthTestEnable(mat_data._depth_tested)
 			.setDepthWriteEnable(true)
 			.setDepthCompareOp(vk::CompareOp::eGreaterOrEqual) // reversed Z
 		;
 
-	auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
+	const auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(u32(program.descriptor_layouts().size()))
 			.setPSetLayouts(program.descriptor_layouts().begin())
 			.setPushConstantRangeCount(u32(program.push_constants().size()))
 			.setPPushConstantRanges(program.push_constants().begin())
 		);
 
-	std::array<vk::DynamicState, 2> dynamics = {{vk::DynamicState::eViewport, vk::DynamicState::eScissor}};
-	auto dynamic_states = vk::PipelineDynamicStateCreateInfo()
+	const std::array<vk::DynamicState, 2> dynamics = {{vk::DynamicState::eViewport, vk::DynamicState::eScissor}};
+	const auto dynamic_states = vk::PipelineDynamicStateCreateInfo()
 			.setDynamicStateCount(dynamics.size())
 			.setPDynamicStates(dynamics.begin())
 		;
 
-	auto pipeline = device()->vk_device().createGraphicsPipeline(vk::PipelineCache(), vk::GraphicsPipelineCreateInfo()
+	const auto pipeline = device()->vk_device().createGraphicsPipeline(vk::PipelineCache(), vk::GraphicsPipelineCreateInfo()
 			.setStageCount(u32(pipeline_shader_stages.size()))
 			.setPStages(pipeline_shader_stages.begin())
 			.setPDynamicState(&dynamic_states)

@@ -55,7 +55,7 @@ constexpr u64 type_hash_2() {
 
 template<typename T, typename... Args>
 inline auto hash(const T& t, const Args&... args) {
-	auto h = std::hash<T>()(t);
+	const auto h = std::hash<T>()(t);
 	if constexpr(sizeof...(args)) {
 		hash_combine(h, hash(args...));
 	}

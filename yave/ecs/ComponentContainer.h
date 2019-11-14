@@ -209,7 +209,7 @@ class ComponentContainer final : public ComponentContainerBase {
 			y_profile();
 			if(const ComponentContainer<T>* container = dynamic_cast<const ComponentContainer<T>*>(other)) {
 				for(const auto& [index, comp] : container->_components.as_pairs()) {
-					if(auto it = id_map.find(index); it != id_map.end()) {
+					if(const auto it = id_map.find(index); it != id_map.end()) {
 						_components.insert(it->second.index(), comp);
 					}
 				}

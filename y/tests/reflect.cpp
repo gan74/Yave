@@ -33,9 +33,9 @@ using namespace y;
 using namespace y::core;
 
 struct Trivial {
-	int x = 1;
-	float y = 2;
-	math::Vec3 z = {3.0f, 4.0f, 5.0f};
+	const int x = 1;
+	const float y = 2;
+	const math::Vec3 z = {3.0f, 4.0f, 5.0f};
 
 	y_reflect(x, y, z)
 
@@ -46,7 +46,7 @@ struct Trivial {
 
 struct Easy {
 	Trivial t;
-	std::tuple<core::String, int> str = {"a string", 7};
+	const std::tuple<core::String, int> str = {"a string", 7};
 
 	y_reflect(str, t)
 
@@ -56,10 +56,10 @@ struct Easy {
 };
 
 struct Complex {
-	core::Vector<Easy> a;
-	core::Vector<int> b;
-	int c = 9;
-	core::String d;
+	const core::Vector<Easy> a;
+	const core::Vector<int> b;
+	const int c = 9;
+	const core::String d;
 
 	y_reflect(a, b, d, c)
 
@@ -89,7 +89,7 @@ struct Derived : public Polymorphic {
 
 struct WithConst {
 	const int a = 4;
-	int b = 5;
+	const int b = 5;
 
 	y_reflect(a, b)
 };
@@ -132,7 +132,7 @@ y_test_func("reflect set") {
 	y_test_assert(reflect::reflection_data(refl_ptr).type.flags.is_pointer);
 
 	{
-		auto data = reflect::reflection_data(refl_ptr);
+		const auto data = reflect::reflection_data(refl_ptr);
 		y_test_assert(data.members[1].name == "y");
 		data.members[1].get<float>(refl_ptr) = 13.0f;
 	}

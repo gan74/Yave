@@ -70,7 +70,7 @@ static std::pair<math::Vec2, math::Vec2> compute_uv_size(const char* c) {
 static void render_editor_entities(ContextPtr ctx, bool picking,
 								   RenderPassRecorder& recorder, const FrameGraphPass* pass,
 								   const SceneView& scene_view,
-								   FrameGraphMutableTypedBufferId<EditorEntityPassData> pass_buffer,
+								   const FrameGraphMutableTypedBufferId<EditorEntityPassData> pass_buffer,
 								   FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer) {
 
 	y_profile();
@@ -86,7 +86,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 	}
 
 	{
-		auto vertices = pass->resources()->buffer<BufferUsage::AttributeBit>(vertex_buffer);
+		const auto vertices = pass->resources()->buffer<BufferUsage::AttributeBit>(vertex_buffer);
 		recorder.bind_attrib_buffers(vertices);
 	}
 
@@ -98,7 +98,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 	}
 
 	{
-		auto [uv, size] = compute_uv_size(ICON_FA_LIGHTBULB);
+		const auto [uv, size] = compute_uv_size(ICON_FA_LIGHTBULB);
 
 		usize index = 0;
 		auto vertex_mapping = pass->resources()->mapped_buffer(vertex_buffer);
@@ -125,9 +125,9 @@ EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph
 	FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
 	auto pass_buffer = builder.declare_typed_buffer<EditorEntityPassData>();
-	auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(max_batch_size);
-	auto depth = builder.declare_copy(in_depth);
-	auto color = builder.declare_copy(in_color);
+	const auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(max_batch_size);
+	const auto depth = builder.declare_copy(in_depth);
+	const auto color = builder.declare_copy(in_color);
 
 	EditorEntityPass pass;
 	pass.depth = depth;
