@@ -360,19 +360,20 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 		// Dangerous!!
 		check(sqlite3_exec(_database, "PRAGMA synchronous = OFF", nullptr, nullptr, nullptr)); // unsafe if the OS crashes
 
-		check(sqlite3_exec(_database, "PRAGMA cache_size = 1048576", nullptr, nullptr, nullptr));
 		check(sqlite3_exec(_database, "PRAGMA page_size = 65536", nullptr, nullptr, nullptr));
 		check(sqlite3_exec(_database, "PRAGMA temp_store = MEMORY", nullptr, nullptr, nullptr));
 		check(sqlite3_exec(_database, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr));
 		check(sqlite3_exec(_database, "PRAGMA case_sensitive_like = ON", nullptr, nullptr, nullptr));
 	}
 
-	// Create tables
+	// Create tables & indexes
 	{
 		check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Folders (name TEXT    PRIMARY KEY, folderid INTEGER UNIQUE, parentid INTEGER,"
 									  "FOREIGN KEY(parentid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
 		check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Assets  (uid  INTEGER PRIMARY KEY, name TEXT UNIQUE, folderid INTEGER, data BLOB,"
 									  "FOREIGN KEY(folderid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
+
+		check(sqlite3_exec(_database, "CREATE INDEX IF NOT EXISTS assetidindex ON Assets(uid)", nullptr, nullptr, nullptr));
 	}
 
 	// Create triggers
@@ -580,26 +581,10 @@ AssetStore::Result<io2::ReaderPtr> SQLiteAssetStore::data(AssetId id) const {
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT data FROM Assets WHERE uid = ?", -1, &stmt, nullptr));
 	check(sqlite3_bind_int64(stmt, 1, i64(id.id())));
-	//y_defer(sqlite3_finalize(stmt));
 
 	if(!is_row(step_db(stmt))) {
 		return core::Err(ErrorType::UnknownID);
 	}
-
-	/*const int size = sqlite3_column_bytes(stmt, 0);
-	const void* data = [=] {
-		y_profile_zone("retrieve");
-		return sqlite3_column_blob(stmt, 0);
-	}();
-
-	auto buffer = std::make_unique<io2::Buffer>(size);
-	{
-		y_profile_zone("Copy");
-		if(!buffer->write(static_cast<const u8*>(data), size)) {
-			return core::Err(ErrorType::FilesytemError);
-		}
-		buffer->reset();
-	}*/
 
 	auto buffer = std::make_unique<SQLiteBuffer>(stmt);
 	return core::Ok(io2::ReaderPtr(std::move(buffer)));
