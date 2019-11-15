@@ -43,6 +43,7 @@ static std::mutex mutex;
 static bool initialized = false;
 static std::unique_ptr<io2::File> output;
 static std::atomic<u32> open_threads = 0;
+static std::atomic<bool> is_destroying = false;
 #endif
 
 void set_output_file(const char* out) {
@@ -63,6 +64,7 @@ static double micros() {
 }
 
 static u32 thread_id() {
+	y_debug_assert(!is_destroying);
 	static std::atomic<u32> id = 0;
 	static thread_local u32 tid = ++id;
 	return tid;
@@ -75,15 +77,19 @@ static bool is_output_open() {
 struct ThreadData : NonMovable {
 	std::unique_ptr<char[]> buffer;
 	usize buffer_offset = 0;
+	const u32 tid;
 
-	ThreadData() : buffer(std::make_unique<char[]>(buffer_size)) {
+	ThreadData() : buffer(std::make_unique<char[]>(buffer_size)), tid(thread_id()) {
 		++open_threads;
 	}
 
 	~ThreadData() {
 		const bool is_last_thread = --open_threads == 0;
+		if(is_last_thread) {
+			is_destroying = true;
+		}
 		char b[print_buffer_len];
-		const usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f})", thread_id(), micros());
+		const usize len = std::snprintf(b, sizeof(b), R"({"name":"thread closed","cat":"perf","ph":"i","pid":0,"tid":%u,"ts":%f})", tid, micros());
 		if(len >= sizeof(b)) {
 			y_fatal("Too long.");
 		}
@@ -119,12 +125,12 @@ struct ThreadData : NonMovable {
 			}
 			output->write(reinterpret_cast<const u8*>(buffer.get()), buffer_offset).ignore();
 			buffer_offset = 0;
-			event("perf", "done writing buffer");
 		}
 	}
 };
 
 ThreadData* thread_data() {
+	y_debug_assert(!is_destroying);
 	static std::list<std::unique_ptr<ThreadData>> thread_datas;
 	static thread_local ThreadData* data = nullptr;
 	if(!data) {
