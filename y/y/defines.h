@@ -26,7 +26,7 @@ namespace y {
 
 struct Nothing;
 [[noreturn]] Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
-
+void break_in_debugger();
 }
 
 
@@ -74,8 +74,8 @@ struct Nothing;
 
 
 
-#if defined(Y_OS_WIN) && defined(Y_DEBUG)
-#define y_breakpoint do { if(IsDebuggerPresent()) { DebugBreak(); } } while(false)
+#ifdef Y_DEBUG
+#define y_breakpoint do { y::break_in_debugger(); } while(false)
 #else
 #define y_breakpoint do {} while(false)
 #endif

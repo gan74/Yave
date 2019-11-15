@@ -55,6 +55,15 @@ namespace detail {
 }
 
 
+void break_in_debugger() {
+#ifdef Y_OS_WIN
+	if(IsDebuggerPresent()) {
+		DebugBreak();
+	}
+#endif
+}
+
+
 Nothing fatal(const char* msg, const char* file, int line) {
 	core::String msg_str(msg);
 	if(file) {
