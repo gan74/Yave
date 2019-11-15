@@ -80,8 +80,8 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 	builder.add_uniform_input(buffer);
 	builder.map_update(buffer);
 
-	builder.add_depth_output(depth, Framebuffer::LoadOp::Load);
-	builder.add_color_output(color, Framebuffer::LoadOp::Load);
+	builder.add_depth_output(depth);
+	builder.add_color_output(color);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			TypedMapping<SkyData> mapping = self->resources()->mapped_buffer(buffer);
 			mapping[0] = sky_data;

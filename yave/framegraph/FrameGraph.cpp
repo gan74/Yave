@@ -334,6 +334,10 @@ void FrameGraph::ImageCreateInfo::register_alias(const ImageCreateInfo& other) {
 	can_alias_on_last = false;
 }
 
+bool FrameGraph::ImageCreateInfo::is_aliased() const {
+	return copy_src.is_valid() || alias.is_valid();
+}
+
 void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass) {
 	check_usage_io(usage, is_written);
 	auto& info = check_exists(_images, res);

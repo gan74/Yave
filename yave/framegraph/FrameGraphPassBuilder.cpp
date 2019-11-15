@@ -66,19 +66,19 @@ void FrameGraphPassBuilder::add_image_input_usage(FrameGraphImageId res, ImageUs
 
 // --------------------------------- Framebuffer ---------------------------------
 
-void FrameGraphPassBuilder::add_depth_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op) {
+void FrameGraphPassBuilder::add_depth_output(FrameGraphMutableImageId res) {
 	// transition is done by the renderpass
 	add_to_pass(res, ImageUsage::DepthBit, true, PipelineStage::DepthAttachmentOutBit);
 	if(_pass->_depth.image.is_valid()) {
 		y_fatal("Pass already has a depth output.");
 	}
-	_pass->_depth = {res, load_op};
+	_pass->_depth = FrameGraphPass::Attachment{res};
 }
 
-void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res, Framebuffer::LoadOp load_op) {
+void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res) {
 	// transition is done by the renderpass
 	add_to_pass(res, ImageUsage::ColorBit, true, PipelineStage::ColorAttachmentOutBit);
-	_pass->_colors << FrameGraphPass::Attachment{res, load_op};
+	_pass->_colors << FrameGraphPass::Attachment{res};
 }
 
 

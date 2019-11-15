@@ -141,8 +141,8 @@ EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph
 	builder.map_update(pass_buffer);
 	builder.map_update(vertex_buffer);
 
-	builder.add_depth_output(depth, Framebuffer::LoadOp::Load);
-	builder.add_color_output(color, Framebuffer::LoadOp::Load);
+	builder.add_depth_output(depth);
+	builder.add_color_output(color);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 			render_editor_entities(ctx, picking, render_pass, self, view, pass_buffer, vertex_buffer);

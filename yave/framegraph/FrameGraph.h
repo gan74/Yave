@@ -52,6 +52,7 @@ class FrameGraph : NonCopyable {
 		FrameGraphImageId alias;
 
 		void register_alias(const ImageCreateInfo& other);
+		bool is_aliased() const;
 	};
 
 	struct BufferCreateInfo : ResourceCreateInfo {
@@ -81,6 +82,7 @@ class FrameGraph : NonCopyable {
 
 	private:
 		friend class FrameGraphPassBuilder;
+		friend class FrameGraphPass;
 
 		FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
 		FrameGraphMutableBufferId declare_buffer(usize byte_size);

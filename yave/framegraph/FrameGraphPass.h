@@ -40,7 +40,6 @@ class FrameGraphPass final : NonMovable {
 
 	struct Attachment {
 		FrameGraphImageId image;
-		Framebuffer::LoadOp load_op = Framebuffer::LoadOp::Clear;
 	};
 
 	public:
