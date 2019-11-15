@@ -511,27 +511,97 @@ AssetStore::Result<core::String> SQLiteAssetStore::name(AssetId id) const {
 	return core::Ok(core::String(name_data));
 }
 
+
+class SQLiteBuffer final : public io2::Reader {
+	public:
+		SQLiteBuffer(sqlite3_stmt* stmt) :
+				_stmt(stmt),
+				_buffer(static_cast<const u8*>(sqlite3_column_blob(stmt, 0))),
+				_size(sqlite3_column_bytes(stmt, 0)) {
+		}
+
+		~SQLiteBuffer() override {
+			sqlite3_finalize(_stmt);
+		}
+
+		bool at_end() const override {
+			return !remaining();
+		}
+
+		usize remaining() const override {
+			return _size - _cursor;
+		}
+
+		void seek(usize byte) override {
+			y_debug_assert(byte < _size);
+			_cursor = byte;
+		}
+
+		usize tell() const override {
+			return _cursor;
+		}
+
+		io2::ReadResult read(u8* data, usize bytes) override {
+			if(remaining() < bytes) {
+				return core::Err<usize>(0);
+			}
+			std::copy_n(&_buffer[_cursor], bytes, data);
+			_cursor += bytes;
+			return core::Ok();
+		}
+
+		io2::ReadUpToResult read_up_to(u8* data, usize max_bytes) override {
+			const usize max = std::min(max_bytes, remaining());
+			y_debug_assert(_cursor < _size || !max);
+			std::copy_n(&_buffer[_cursor], max, data);
+			_cursor += max;
+			y_debug_assert(_cursor < _size);
+			return core::Ok(max);
+		}
+
+		io2::ReadUpToResult read_all(core::Vector<u8>& data) override {
+			const usize r = _size - _cursor;
+			data.push_back(_buffer + _cursor, _buffer + _size);
+			_cursor = _size;
+			return core::Ok(r);
+		}
+
+	private:
+		sqlite3_stmt* _stmt = nullptr;
+		const u8* _buffer = nullptr;
+		usize _size = 0;
+		usize _cursor = 0;
+};
+
+
 AssetStore::Result<io2::ReaderPtr> SQLiteAssetStore::data(AssetId id) const {
 	y_profile();
 
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT data FROM Assets WHERE uid = ?", -1, &stmt, nullptr));
 	check(sqlite3_bind_int64(stmt, 1, i64(id.id())));
-	y_defer(sqlite3_finalize(stmt));
+	//y_defer(sqlite3_finalize(stmt));
 
 	if(!is_row(step_db(stmt))) {
 		return core::Err(ErrorType::UnknownID);
 	}
 
-	const int size = sqlite3_column_bytes(stmt, 0);
-	const void* data = sqlite3_column_blob(stmt, 0);
+	/*const int size = sqlite3_column_bytes(stmt, 0);
+	const void* data = [=] {
+		y_profile_zone("retrieve");
+		return sqlite3_column_blob(stmt, 0);
+	}();
 
 	auto buffer = std::make_unique<io2::Buffer>(size);
-	if(!buffer->write(static_cast<const u8*>(data), size)) {
-		return core::Err(ErrorType::FilesytemError);
-	}
+	{
+		y_profile_zone("Copy");
+		if(!buffer->write(static_cast<const u8*>(data), size)) {
+			return core::Err(ErrorType::FilesytemError);
+		}
+		buffer->reset();
+	}*/
 
-	buffer->reset();
+	auto buffer = std::make_unique<SQLiteBuffer>(stmt);
 	return core::Ok(io2::ReaderPtr(std::move(buffer)));
 }
 
