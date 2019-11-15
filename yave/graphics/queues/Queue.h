@@ -48,6 +48,7 @@ class Queue : NonCopyable, public DeviceLinked {
 
 		template<typename SyncPolicy>
 		void submit(RecordedCmdBuffer&& cmd, const SyncPolicy& policy = SyncPolicy()) const {
+			y_profile();
 			submit_base(cmd);
 			policy(cmd);
 		}

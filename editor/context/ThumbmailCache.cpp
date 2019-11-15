@@ -126,6 +126,7 @@ math::Vec2ui ThumbmailCache::thumbmail_size() const {
 }
 
 ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
+	y_profile();
 	if(asset == AssetId::invalid_id()) {
 		return Thumbmail{};
 	}
@@ -143,10 +144,12 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 }
 
 void ThumbmailCache::process_requests() {
+	y_profile();
 	std::unique_ptr<CmdBufferRecorder> recorder;
 
 	static constexpr usize max_parallel_requests = 8;
 	for(usize i = 0; i != std::min(max_parallel_requests, _requests.size()); ++i) {
+		// For some reason wait_for(0s) can take up to 3ms on gcc 9.2 so we might end up losing a lot of time here...
 		if(_requests[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
 			if(!recorder) {
 				recorder = std::make_unique<CmdBufferRecorder>(device()->create_disposable_cmd_buffer());
