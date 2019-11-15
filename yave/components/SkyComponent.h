@@ -19,25 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ENTITIES_ENTITIES_H
-#define YAVE_ENTITIES_ENTITIES_H
+#ifndef YAVE_COMPONENTS_SKYCOMPONENT_H
+#define YAVE_COMPONENTS_SKYCOMPONENT_H
 
-#include <yave/ecs/ecs.h>
+#include "DirectionalLightComponent.h"
 
 namespace yave {
 
-class TransformableComponent;
-class PointLightComponent;
-class DirectionalLightComponent;
-class SkyComponent;
+class SkyComponent final {
+	public:
+		static constexpr auto earth_beta = math::Vec3(5.5e-6f, 13.0e-6f, 22.4e-6f);
 
-class StaticMeshComponent;
+		SkyComponent() = default;
 
-using PointLightArchetype = ecs::EntityArchetype<TransformableComponent, PointLightComponent>;
-using StaticMeshArchetype = ecs::EntityArchetype<TransformableComponent, StaticMeshComponent>;
-using DirectionalLightArchetype = ecs::EntityArchetype<DirectionalLightComponent>;
-using SkyArchetype = ecs::EntityArchetype<SkyComponent>;
+		DirectionalLightComponent& sun();
+		const DirectionalLightComponent& sun() const;
 
+		float planet_radius() const;
+		float& planet_radius();
+
+		float atmosphere_radius() const;
+		float& atmosphere_radius();
+
+		const math::Vec3& beta_rayleight() const;
+		math::Vec3& beta_rayleight();
+
+
+	private:
+		DirectionalLightComponent _sun;
+
+		math::Vec3 _beta_rayleight = earth_beta;
+		float _planet_radius = 6360.0f * 1000.0f;
+		float _atmos_radius = 6420.0f * 1000.0f;
+};
 }
 
-#endif // YAVE_ENTITIES_ENTITIES_H
+#endif // YAVE_COMPONENTS_SKYCOMPONENT_H

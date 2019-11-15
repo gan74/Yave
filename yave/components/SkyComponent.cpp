@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ENTITIES_ENTITIES_H
-#define YAVE_ENTITIES_ENTITIES_H
 
-#include <yave/ecs/ecs.h>
+#include "SkyComponent.h"
 
 namespace yave {
 
-class TransformableComponent;
-class PointLightComponent;
-class DirectionalLightComponent;
-class SkyComponent;
-
-class StaticMeshComponent;
-
-using PointLightArchetype = ecs::EntityArchetype<TransformableComponent, PointLightComponent>;
-using StaticMeshArchetype = ecs::EntityArchetype<TransformableComponent, StaticMeshComponent>;
-using DirectionalLightArchetype = ecs::EntityArchetype<DirectionalLightComponent>;
-using SkyArchetype = ecs::EntityArchetype<SkyComponent>;
-
+DirectionalLightComponent& SkyComponent::sun() {
+	return _sun;
 }
 
-#endif // YAVE_ENTITIES_ENTITIES_H
+const DirectionalLightComponent& SkyComponent::sun() const {
+	return _sun;
+}
+
+float SkyComponent::planet_radius() const {
+	return _planet_radius;
+}
+
+float& SkyComponent::planet_radius() {
+	return _planet_radius;
+}
+
+float SkyComponent::atmosphere_radius() const {
+	return _atmos_radius;
+}
+
+float& SkyComponent::atmosphere_radius() {
+	return _atmos_radius;
+}
+
+const math::Vec3& SkyComponent::beta_rayleight() const {
+	return _beta_rayleight;
+}
+
+math::Vec3& SkyComponent::beta_rayleight() {
+	return _beta_rayleight;
+}
+
+}

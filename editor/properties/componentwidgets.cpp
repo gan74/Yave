@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/components/EditorComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/SkyComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 
@@ -107,10 +108,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
 	light_widget(light);
 
-	ImGui::BeginGroup();
 	ImGui::DragFloat("Radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
 	ImGui::DragFloat("Falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
-	ImGui::EndGroup();
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
@@ -125,11 +124,33 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
 	light_widget(light);
 
-	ImGui::BeginGroup();
 	ImGui::InputFloat3("Direction", light->direction().data(), "%.2f");
-	ImGui::EndGroup();
 }
 
+
+editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
+	SkyComponent* sky = ctx->world().component<SkyComponent>(id);
+	if(!sky) {
+		return;
+	}
+
+	if(!ImGui::CollapsingHeader("Sky", ImGuiTreeNodeFlags_DefaultOpen)) {
+		return;
+	}
+
+	light_widget(&sky->sun());
+
+	math::Vec3 beta = sky->beta_rayleight() * 1e6f;
+	if(ImGui::InputFloat3("Beta", beta.data(), "%.2f")) {
+		sky->beta_rayleight() = beta * 1e-6f;
+	}
+
+	ImGui::SameLine();
+
+	if(ImGui::Button(ICON_FA_GLOBE_AFRICA)) {
+		sky->beta_rayleight() = SkyComponent::earth_beta;
+	}
+}
 
 
 /**************************************************************************

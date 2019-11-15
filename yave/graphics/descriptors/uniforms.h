@@ -77,10 +77,27 @@ struct ToneMappingParams {
 	float avg_luminance = 0.5f;
 	float max_lum = 1.0f;
 
-	math::Vec2 padding_0;
+	math::Vec2ui padding_0;
 };
 
 static_assert(sizeof(ToneMappingParams) % 16 == 0);
+
+struct SH {
+	std::array<math::Vec3, 9> values;
+};
+
+struct SkyLight {
+	math::Vec3 sun_direction;
+	u32 padding_0;
+
+	math::Vec3 sun_color;
+	u32 padding_1;
+
+	SH sh;
+	u32 padding_2;
+};
+
+static_assert(sizeof(SkyLight) % 16 == 0);
 
 }
 }

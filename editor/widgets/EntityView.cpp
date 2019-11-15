@@ -31,6 +31,7 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/SkyComponent.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -52,6 +53,67 @@ static core::String clean_component_name(std::string_view name) {
 	}
 	return clean;
 }
+
+class ArchetypeBase {
+	public:
+		virtual ~ArchetypeBase() {
+		}
+
+		const char* name() const {
+			return _name;
+		}
+
+		const char* icon() const {
+			return _icon;
+		}
+
+		virtual ecs::EntityId create(ecs::EntityWorld& world) const = 0;
+		virtual void for_each(ecs::EntityWorld& world, const core::Function<void(ecs::EntityId)>& func) const = 0;
+
+	protected:
+		ArchetypeBase(const char* name, const char* icon) : _name(clean_component_name(name)), _icon(icon) {
+		}
+
+
+		core::String _name = "";
+		const char* _icon = ICON_FA_CUBES;
+};
+
+template<typename T>
+class DynArchtype : public ArchetypeBase {
+	public:
+		DynArchtype(const char* name, const char* icon) : ArchetypeBase(name, icon) {
+		}
+
+		ecs::EntityId create(ecs::EntityWorld& world) const override {
+			return world.create_entity(T());
+		}
+
+		void for_each(ecs::EntityWorld& world, const core::Function<void(ecs::EntityId)>& func) const override {
+			for(auto entity : world.view(T())) {
+				ecs::EntityId id = world.id_from_index(entity.index());
+				func(id);
+			}
+		}
+
+};
+
+
+#define MAKE_ARCHETYPE(name, icon) std::make_unique<DynArchtype<name ## Archetype::with<EditorComponent>>>(#name, icon)
+
+static core::Span<std::unique_ptr<ArchetypeBase>> entity_archtypes() {
+	static core::Vector<std::unique_ptr<ArchetypeBase>> archs;
+	if(archs.is_empty()) {
+		archs << MAKE_ARCHETYPE(StaticMesh, ICON_FA_CUBE);
+		archs << MAKE_ARCHETYPE(PointLight, ICON_FA_LIGHTBULB);
+		archs << MAKE_ARCHETYPE(DirectionalLight, ICON_FA_SUN);
+		archs << MAKE_ARCHETYPE(Sky, ICON_FA_CLOUD_SUN);
+	}
+	return archs;
+}
+
+#undef MAKE_ARCHETYPE
+
 
 
 EntityView::EntityView(ContextPtr cptr) :
@@ -82,35 +144,39 @@ void EntityView::paint_view() {
 	ImGui::EndChild();
 }
 
+
+
+
 void EntityView::paint_clustered_view() {
 	const ecs::EntityWorld& world = context()->world();
 
-	auto group = [&](auto archetype, const char* icon, const char* name) {
-		const auto draw_category_menu = [=] {
+	auto paint_group = [&](const ArchetypeBase& archetype) {
+		const char* icon = archetype.icon();
+
+		const auto paint_category_menu = [&] {
 			if(ImGui::IsItemClicked(1)) {
 				ImGui::OpenPopup("Add entity");
 			}
 			if(ImGui::BeginPopup("Add entity")) {
 				if(ImGui::MenuItem(fmt("% %", icon, "Add entity").data())) {
-					context()->world().create_entity(archetype);
+					archetype.create(context()->world());
 				}
 				ImGui::EndPopup();
 			}
 		};
 
-		if(ImGui::TreeNodeEx(fmt("% %", icon, name).data(), ImGuiTreeNodeFlags_DefaultOpen)) {
-			draw_category_menu();
+		if(ImGui::TreeNodeEx(fmt("% %", icon, archetype.name()).data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+			paint_category_menu();
 
-			using EditorArchetype = typename decltype(archetype)::template with<EditorComponent>;
-			for(auto entity : world.view(EditorArchetype())) {
-				ecs::EntityId id = world.id_from_index(entity.index());
-				const EditorComponent& editor_comp = entity.template component<EditorComponent>();
+			archetype.for_each(context()->world(), [&](ecs::EntityId id) {
+				const EditorComponent* editor_comp = world.component<EditorComponent>(id);
+				y_debug_assert(editor_comp);
 
 				int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 				if(context()->selection().selected_entity() == id) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
-				ImGui::TreeNodeEx(fmt("% %##%", icon, editor_comp.name(), entity.index()).data(), flags);
+				ImGui::TreeNodeEx(fmt("% %##%", icon, editor_comp->name(), id.index()).data(), flags);
 
 				if(ImGui::IsItemClicked()) {
 					context()->selection().set_selected(id);
@@ -118,18 +184,18 @@ void EntityView::paint_clustered_view() {
 				if(ImGui::IsItemHovered()) {
 					_hovered = id;
 				}
-			}
+			});
 
 			ImGui::TreePop();
 		} else {
-			draw_category_menu();
+			paint_category_menu();
 		}
 	};
 
 	if(ImGui::BeginChild("###entities", ImVec2(), true)) {
-		group(StaticMeshArchetype(), ICON_FA_CUBE, "Static meshes");
-		group(PointLightArchetype(), ICON_FA_LIGHTBULB, "Point lights");
-		group(DirectionalLightArchetype(), ICON_FA_SUN, "Sun lights");
+		for(const auto& archetype : entity_archtypes()) {
+			paint_group(*archetype);
+		}
 	}
 	ImGui::EndChild();
 }
@@ -150,14 +216,11 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			ent = world.create_entity();
 		}
 		ImGui::Separator();
-		if(ImGui::MenuItem(ICON_FA_CUBE " Add static mesh")) {
-			ent = world.create_entity(StaticMeshArchetype());
-		}
-		if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add point light")) {
-			ent = world.create_entity(PointLightArchetype());
-		}
-		if(ImGui::MenuItem(ICON_FA_SUN " Add sun light")) {
-			ent = world.create_entity(DirectionalLightArchetype());
+
+		for(const auto& archetype : entity_archtypes()) {
+			if(ImGui::MenuItem(fmt("% Add %", archetype->icon(), archetype->name()).data())) {
+				ent = archetype->create(world);
+			}
 		}
 		
 		y_debug_assert(!ent.is_valid() || world.has<EditorComponent>(ent));
