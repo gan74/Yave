@@ -70,15 +70,18 @@ void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 		auto graphic_queue = queue.vk_queue();
 		auto vk_buffer = cmd_buffer.vk_cmd_buffer();
 
-		graphic_queue.submit(vk::SubmitInfo()
-				.setWaitSemaphoreCount(1)
-				.setPWaitSemaphores(&token.image_aquired)
-				.setPWaitDstStageMask(&pipe_stage_flags)
-				.setCommandBufferCount(1)
-				.setPCommandBuffers(&vk_buffer)
-				.setSignalSemaphoreCount(1)
-				.setPSignalSemaphores(&token.render_finished),
-			cmd_buffer.vk_fence());
+		{
+			y_profile_zone("queue submit");
+			graphic_queue.submit(vk::SubmitInfo()
+					.setWaitSemaphoreCount(1)
+					.setPWaitSemaphores(&token.image_aquired)
+					.setPWaitDstStageMask(&pipe_stage_flags)
+					.setCommandBufferCount(1)
+					.setPCommandBuffers(&vk_buffer)
+					.setSignalSemaphoreCount(1)
+					.setPSignalSemaphores(&token.render_finished),
+				cmd_buffer.vk_fence());
+		}
 
 		_swapchain->present(token, graphic_queue);
 	}

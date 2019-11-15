@@ -167,6 +167,7 @@ void ThumbmailCache::process_requests() {
 }
 
 void ThumbmailCache::request_thumbmail(AssetId id) {
+	y_profile();
 	_thumbmails[id] = nullptr;
 	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
 			y_profile();

@@ -122,17 +122,13 @@ usize LifetimeManager::active_cmd_buffers() const {
 }
 
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
-	y_profile();
 	std::visit(
 		[dptr = device()](auto& res) {
 			if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
-				y_profile_zone("Memory");
 				res.free();
 			} else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
-				y_profile_zone("Descriptor set");
 				res.recycle();
 			} else {
-				y_profile_zone("Vk resource");
 				detail::destroy(dptr, res);
 			}
 		},

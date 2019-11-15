@@ -90,7 +90,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		const DirNode* hovered_dir() const;
 
 
-		static constexpr auto update_duration = core::Duration::seconds(5.0f);
+		static constexpr auto update_duration = core::Duration::seconds(5.0);
 
 		core::Chrono _update_chrono;
 		bool _refresh = false;

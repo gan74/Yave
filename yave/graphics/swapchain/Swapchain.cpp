@@ -267,16 +267,20 @@ FrameToken Swapchain::next_frame() {
 }
 
 void Swapchain::present(const FrameToken& token, vk::Queue queue) {
+	y_profile();
 	_semaphores << std::pair(token.image_aquired, token.render_finished);
 	std::rotate(_semaphores.begin(), _semaphores.end() - 1, _semaphores.end());
 
-	queue.presentKHR(vk::PresentInfoKHR()
-			.setSwapchainCount(1)
-			.setPSwapchains(&_swapchain)
-			.setPImageIndices(&token.image_index)
-			.setWaitSemaphoreCount(1)
-			.setPWaitSemaphores(&token.render_finished)
-		);
+	{
+		y_profile_zone("queue present");
+		queue.presentKHR(vk::PresentInfoKHR()
+						 .setSwapchainCount(1)
+						 .setPSwapchains(&_swapchain)
+						 .setPImageIndices(&token.image_index)
+						 .setWaitSemaphoreCount(1)
+						 .setPWaitSemaphores(&token.render_finished)
+						 );
+	}
 }
 
 vk::SwapchainKHR Swapchain::vk_swapchain() const {
