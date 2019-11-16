@@ -38,8 +38,10 @@ class ImageFormat {
 		usize components() const;
 
 		bool is_valid() const;
-		bool is_block_format() const;
 		bool is_float() const;
+
+		bool is_block_format() const;
+		bool is_depth_format() const;
 
 		core::String name() const;
 

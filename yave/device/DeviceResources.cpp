@@ -130,7 +130,6 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 
 	for(usize i = 0; i != template_count; ++i) {
 		const auto& data = material_datas[i];
-		log_msg(spirv_names[data.frag]);
 		auto template_data = MaterialTemplateData()
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])

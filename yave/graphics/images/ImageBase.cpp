@@ -34,6 +34,7 @@ static void bind_image_memory(DevicePtr dptr, vk::Image image, const DeviceMemor
 }
 
 static vk::Image create_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+	y_debug_assert(usage != ImageUsage::TransferDstBit);
 	return dptr->vk_device().createImage(vk::ImageCreateInfo()
 			.setSharingMode(vk::SharingMode::eExclusive)
 			.setFlags(type == ImageType::Cube ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlags())

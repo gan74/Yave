@@ -29,10 +29,9 @@ namespace yave {
 class GBufferPass;
 
 struct RayleighSkyPass {
-	FrameGraphImageId depth;
 	FrameGraphImageId lit;
 
-	static RayleighSkyPass create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_lit, const GBufferPass& gbuffer);
+	static RayleighSkyPass create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_lit, FrameGraphImageId in_depth, const GBufferPass& gbuffer);
 };
 
 }

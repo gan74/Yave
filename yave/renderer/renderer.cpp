@@ -31,11 +31,11 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 
 	renderer.gbuffer = GBufferPass::create(framegraph, view, size);
 	renderer. lighting = LightingPass::create(framegraph, renderer.gbuffer, ibl_data);
-	renderer.sky = RayleighSkyPass::create(framegraph, view, renderer.lighting.lit, renderer.gbuffer);
+	renderer.sky = RayleighSkyPass::create(framegraph, view, renderer.lighting.lit, renderer.gbuffer.depth, renderer.gbuffer);
 	renderer.tone_mapping = ToneMappingPass::create(framegraph, renderer.sky.lit, settings.tone_mapping);
 
 	renderer.color = renderer.tone_mapping.tone_mapped;
-	renderer.depth = renderer.sky.depth;
+	renderer.depth = renderer.gbuffer.depth;
 
 	return renderer;
 }

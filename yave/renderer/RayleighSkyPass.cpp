@@ -32,13 +32,11 @@ SOFTWARE.
 
 namespace yave {
 
-RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_lit, const GBufferPass& gbuffer) {
+RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_lit, FrameGraphImageId in_depth, const GBufferPass& gbuffer) {
 
 	RayleighSkyPass pass;
-	pass.depth = gbuffer.depth;
 	pass.lit = in_lit;
 
-	FrameGraphMutableImageId depth;
 	FrameGraphMutableImageId lit;
 
 	for(auto [sky] : scene_view.world().view<SkyComponent>().components()) {
@@ -73,12 +71,11 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 
 		FrameGraphPassBuilder builder = framegraph.add_pass("Rayleigh sky pass");
 
-		if(!depth.is_valid()) {
-			pass.depth = depth = builder.declare_copy(pass.depth);
+		if(!lit.is_valid()) {
 			pass.lit = lit = builder.declare_copy(pass.lit);
 		}
 
-		builder.add_uniform_input(gbuffer.depth);
+		builder.add_uniform_input(in_depth);
 		builder.add_uniform_input(gbuffer.color);
 		builder.add_uniform_input(gbuffer.normal);
 

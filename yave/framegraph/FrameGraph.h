@@ -39,7 +39,6 @@ class FrameGraph : NonCopyable {
 		bool can_alias_on_last = false;
 
 		usize last_use() const;
-
 		void register_use(usize index, bool is_written);
 	};
 
@@ -53,6 +52,7 @@ class FrameGraph : NonCopyable {
 
 		void register_alias(const ImageCreateInfo& other);
 		bool is_aliased() const;
+		bool has_usage() const;
 	};
 
 	struct BufferCreateInfo : ResourceCreateInfo {

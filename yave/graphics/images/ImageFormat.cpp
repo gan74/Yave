@@ -72,6 +72,19 @@ bool ImageFormat::is_block_format() const {
 	}
 }
 
+bool ImageFormat::is_depth_format() const {
+	switch(_format) {
+		case vk::Format::eD16Unorm:
+		case vk::Format::eD32Sfloat:
+		case vk::Format::eD16UnormS8Uint:
+		case vk::Format::eD24UnormS8Uint:
+		case vk::Format::eD32SfloatS8Uint:
+			return true;
+
+		default:
+			return false;
+	}
+}
 
 bool ImageFormat::is_float() const {
 	switch(_format) {

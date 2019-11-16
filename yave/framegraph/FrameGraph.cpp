@@ -224,6 +224,11 @@ void FrameGraph::alloc_resources() {
 		if(info.alias.is_valid()) {
 			_pool->create_alias(res, info.alias);
 		} else {
+			if(!info.has_usage()) {
+				log_msg(fmt("Image declared by % has no usage.", pass_name(info.first_use)), Log::Warning);
+				// All images should support texturing
+				info.usage = info.usage | ImageUsage::TextureBit;
+			}
 			_pool->create_image(res, info.format, info.size, info.usage);
 		}
 	}
@@ -336,6 +341,10 @@ void FrameGraph::ImageCreateInfo::register_alias(const ImageCreateInfo& other) {
 
 bool FrameGraph::ImageCreateInfo::is_aliased() const {
 	return copy_src.is_valid() || alias.is_valid();
+}
+
+bool FrameGraph::ImageCreateInfo::has_usage() const {
+	return (usage & ~ImageUsage::TransferDstBit) != ImageUsage::None;
 }
 
 void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass) {
