@@ -105,6 +105,10 @@ static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
 	return AnimationChannel(anim.name(), std::move(keys));
 }
 
+static ImageData copy(const ImageData& image) {
+	return ImageData(image.size().to<2>(), image.data(), image.format(), image.mipmaps());
+}
+
 Animation set_speed(const Animation& anim, float speed) {
 	auto channels = core::vector_with_capacity<AnimationChannel>(anim.channels().size());
 	std::transform(anim.channels().begin(), anim.channels().end(), std::back_inserter(channels), [=](const auto& channel){ return set_speed(channel, speed); });
@@ -114,10 +118,12 @@ Animation set_speed(const Animation& anim, float speed) {
 
 ImageData compute_mipmaps(const ImageData& image) {
 	if(image.layers() != 1 || image.size().z() != 1) {
-		y_fatal("Only one layer is supported.");
+		log_msg("Only one layer is supported.", Log::Error);
+		return copy(image);
 	}
 	if(image.format() != ImageFormat(vk::Format::eR8G8B8A8Unorm)) {
-		y_fatal("Only RGBA is supported.");
+		log_msg("Only RGBA is supported.", Log::Error);
+		return copy(image);
 	}
 
 	const ImageFormat format(vk::Format::eR8G8B8A8Unorm);
