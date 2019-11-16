@@ -1,7 +1,7 @@
 #ifndef SH_GLSL
 #define SH_GLSL
 
-#include "yave.glsl"
+#include "constants.glsl"
 
 // https://seblagarde.wordpress.com/2011/10/09/dive-in-sh-buffer-idea/
 // https://www.shadertoy.com/view/lt2GRD
@@ -16,12 +16,13 @@ struct SHBasis {
 };
 
 struct SH {
-	vec3  L00, L11, L10, L1_1, L21, L2_1, L2_2, L20, L22;
+	// vec4 for padding
+	vec4  L00, L11, L10, L1_1, L21, L2_1, L2_2, L20, L22;
 };
 
 
 SH empty_sh() {
-	const vec3 z = vec3(0.0, 0.0, 0.0);
+	const vec4 z = vec4(0.0, 0.0, 0.0, 0.0);
 	return SH(z, z, z, z, z, z, z, z, z);
 }
 
@@ -39,7 +40,8 @@ SHBasis compute_sh_basis(vec3 dir) {
 	);
 }
 
-SH compute_sh(vec3 color, vec3 dir) {
+SH compute_sh(vec3 col, vec3 dir) {
+	const vec4 color = vec4(col, 0.0);
 	SHBasis basis = compute_sh_basis(dir);
 	return SH(
 	    basis.Y00 * color,
@@ -73,15 +75,15 @@ vec3 eval_sh(SH sh, vec3 dir) {
 	const vec3 A = vec3(pi, 2.0 / 3.0 * pi, pi / 4.0);
 	const SHBasis basis = compute_sh_basis(dir);
 	return
-	    A.x * basis.Y00 * sh.L00 +
-	    A.y * basis.Y1_1 * sh.L1_1 +
-	    A.y * basis.Y10 * sh.L10 +
-	    A.y * basis.Y11 * sh.L11 +
-	    A.z * basis.Y2_2 * sh.L2_2 +
-	    A.z * basis.Y2_1 * sh.L2_1 +
-	    A.z * basis.Y20 * sh.L20 +
-	    A.z * basis.Y21 * sh.L21 +
-	    A.z * basis.Y22 * sh.L22;
+	    A.x * basis.Y00  * sh.L00.xyz +
+	    A.y * basis.Y1_1 * sh.L1_1.xyz +
+	    A.y * basis.Y10  * sh.L10.xyz +
+	    A.y * basis.Y11  * sh.L11.xyz +
+	    A.z * basis.Y2_2 * sh.L2_2.xyz +
+	    A.z * basis.Y2_1 * sh.L2_1.xyz +
+	    A.z * basis.Y20  * sh.L20.xyz +
+	    A.z * basis.Y21  * sh.L21.xyz +
+	    A.z * basis.Y22  * sh.L22.xyz;
 }
 
 

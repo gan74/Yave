@@ -82,9 +82,28 @@ struct ToneMappingParams {
 
 static_assert(sizeof(ToneMappingParams) % 16 == 0);
 
-struct SH {
-	std::array<math::Vec3, 9> values;
+
+struct RayleighSky {
+	uniform::LightingCamera camera_data;
+	math::Vec3 sun_direction;
+	float origin_height;
+
+	math::Vec3 sun_color;
+	float planet_height;
+
+	math::Vec3 beta_rayleigh;
+	float atmo_height;
 };
+
+static_assert(sizeof(RayleighSky) % 16 == 0);
+
+
+struct SH {
+	std::array<math::Vec4, 9> values;
+};
+
+static_assert(sizeof(SH) % 16 == 0);
+
 
 struct SkyLight {
 	math::Vec3 sun_direction;
@@ -94,7 +113,6 @@ struct SkyLight {
 	u32 padding_1;
 
 	SH sh;
-	u32 padding_2;
 };
 
 static_assert(sizeof(SkyLight) % 16 == 0);

@@ -26,71 +26,73 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
-#include <yave/components/DirectionalLightComponent.h>
-#include <y/core/Chrono.h>
+#include <yave/components/SkyComponent.h>
 
+#include "GBufferPass.h"
 
 namespace yave {
 
-static DirectionalLightComponent sun_data(const ecs::EntityWorld& world) {
-	DirectionalLightComponent sun;
-	sun.intensity() = 0.0f;
-	for(auto [l] : world.view<DirectionalLightComponent>().components()) {
-		if(sun.intensity() < l.intensity()) {
-			sun = l;
-		}
-	}
-	return sun;
-
-	/*float time = float(core::Chrono::program().to_secs());
-	return math::Vec4(std::cos(time), 0.0f, std::sin(time), 20.0f);*/
-}
-
-RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_depth, FrameGraphImageId in_color) {
-
-	const DirectionalLightComponent sun = sun_data(scene_view.world());
-	struct SkyData {
-		uniform::LightingCamera camera_data;
-		math::Vec3 sun_direction;
-		float origin_height;
-
-		math::Vec3 sun_color;
-		float planet_height;
-		float atmo_height;
-	} sky_data {
-			scene_view.camera(),
-			-sun.direction().normalized(),
-			6360.0f * 1000.0f + 100.0f /*+ std::pow(float(core::Chrono::program().to_secs()) * 3.0f, 3.0f)*/,
-			sun.color() * sun.intensity(),
-			6360.0f * 1000.0f,
-			6420.0f * 1000.0f,
-		};
-
-
-	FrameGraphPassBuilder builder = framegraph.add_pass("Rayleigh sky pass");
-
-	const auto depth = builder.declare_copy(in_depth);
-	const auto color = builder.declare_copy(in_color);
-	const auto buffer = builder.declare_typed_buffer<SkyData>(1);
+RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_lit, const GBufferPass& gbuffer) {
 
 	RayleighSkyPass pass;
-	pass.depth = depth;
-	pass.color = color;
+	pass.depth = gbuffer.depth;
+	pass.lit = in_lit;
 
-	builder.add_uniform_input(buffer);
-	builder.map_update(buffer);
+	FrameGraphMutableImageId depth;
+	FrameGraphMutableImageId lit;
 
-	builder.add_depth_output(depth);
-	builder.add_color_output(color);
-	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			TypedMapping<SkyData> mapping = self->resources()->mapped_buffer(buffer);
+	for(auto [sky] : scene_view.world().view<SkyComponent>().components()) {
+		const auto& sun = sky.sun();
+
+		uniform::RayleighSky sky_data {
+			scene_view.camera(),
+			-sun.direction().normalized(),
+			sky.planet_radius() + 100.0f,
+			sun.color() * sun.intensity(),
+			sky.planet_radius(),
+			sky.beta_rayleight(),
+			sky.atmosphere_radius()
+		};
+
+		FrameGraphPassBuilder params_builder = framegraph.add_pass("Rayleigh sky params pass");
+
+		const auto buffer = params_builder.declare_typed_buffer<uniform::RayleighSky>(1);
+		const auto sky_light_buffer = params_builder.declare_typed_buffer<uniform::SkyLight>(1);
+
+		params_builder.add_uniform_input(buffer);
+		params_builder.map_update(buffer);
+
+		params_builder.add_storage_output(sky_light_buffer);
+		params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			TypedMapping<uniform::RayleighSky> mapping = self->resources()->mapped_buffer(buffer);
 			mapping[0] = sky_data;
 
-			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const auto* material = recorder.device()->device_resources()[DeviceResources::RayleighSkyMaterialTemplate];
-			render_pass.bind_material(material, {self->descriptor_sets()[0]});
-			render_pass.draw(vk::DrawIndirectCommand(6, 1));
+			const auto& program = recorder.device()->device_resources()[DeviceResources::SkyLightParamsProgram];
+			recorder.dispatch(program, math::Vec3ui(1), {self->descriptor_sets()[0]});
 		});
+
+		FrameGraphPassBuilder builder = framegraph.add_pass("Rayleigh sky pass");
+
+		if(!depth.is_valid()) {
+			pass.depth = depth = builder.declare_copy(pass.depth);
+			pass.lit = lit = builder.declare_copy(pass.lit);
+		}
+
+		builder.add_uniform_input(gbuffer.depth);
+		builder.add_uniform_input(gbuffer.color);
+		builder.add_uniform_input(gbuffer.normal);
+
+		builder.add_uniform_input(buffer);
+		builder.add_uniform_input(sky_light_buffer);
+
+		builder.add_color_output(lit);
+		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+				auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+				const auto* material = recorder.device()->device_resources()[DeviceResources::RayleighSkyMaterialTemplate];
+				render_pass.bind_material(material, {self->descriptor_sets()[0]});
+				render_pass.draw(vk::DrawIndirectCommand(6, 1));
+			});
+	}
 
 	return pass;
 }

@@ -1,30 +1,17 @@
 #ifndef YAVE_GLSL
 #define YAVE_GLSL
 
-// -------------------------------- CONSTANTS --------------------------------
-
-const float pi = 3.1415926535897932384626433832795;
-const float euler = 2.7182818284590452353602874713526;
-const float epsilon = 0.001;
-
-const uint max_uint = uint(0xFFFFFFFF);
-
-const uint max_bones = 256;
-const uint max_tile_lights = 256;
-
-const float lum_histogram_offset = 8.0;
-const float lum_histogram_mul = 8.0;
-
-
+#include "constants.glsl"
+#include "sh.glsl"
 
 // -------------------------------- TYPES --------------------------------
 
 struct DirectionalLight {
 	vec3 direction;
-	float padding_0;
+	uint padding_0;
 
 	vec3 color;
-	float padding_1;
+	uint padding_1;
 };
 
 struct PointLight {
@@ -40,7 +27,7 @@ struct VirtualLight {
 	float intensity;
 
 	vec3 normal;
-	float padding_0;
+	uint padding_0;
 };
 
 
@@ -64,7 +51,7 @@ struct ToneMappingParams {
 	float avg_luminance;
 	float max_lum;
 
-	vec2 padding_0;
+	ivec2 padding_0;
 };
 
 // -------------------------------- UTILS --------------------------------
@@ -372,6 +359,7 @@ float brdf_lambert() {
 
 vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
 	const vec3 half_vec = normalize(light_dir + view_dir);
+
 	const float NoH = max(0.0, dot(normal, half_vec));
 	const float NoV = max(0.0, dot(normal, view_dir));
 	const float NoL = max(0.0, dot(normal, light_dir));
@@ -386,6 +374,22 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 	const vec3 diffuse = kD * albedo * brdf_lambert();
 
 	return (diffuse + specular) * NoL;
+}
+
+
+vec3 LSH(vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo, SH sh) {
+	const vec3 refl_vec = reflect(view_dir, normal);
+
+	const float HoV = 1.0;
+	const vec3 F = F_Schlick(HoV, approx_F0(metallic, albedo));
+
+	const vec3 kS = F;
+	const vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+	const vec3 specular = kS * eval_sh(sh, refl_vec);
+	const vec3 diffuse = kD * albedo * eval_sh(sh, normal);
+
+	return diffuse + specular;
 }
 
 // -------------------------------- SHADOW --------------------------------

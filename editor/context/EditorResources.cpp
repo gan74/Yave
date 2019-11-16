@@ -55,13 +55,13 @@ static constexpr const char* spirv_names[] = {
 	};
 
 struct DeviceMaterialData {
-	SpirV frag;
-	SpirV vert;
-	SpirV geom = SpirV::MaxSpirV;
-	bool depth_tested;
-	bool culled = true;
-	bool blended = false;
-	PrimitiveType prim_type = PrimitiveType::Triangles;
+	const SpirV frag;
+	const SpirV vert;
+	const SpirV geom = SpirV::MaxSpirV;
+	const bool depth_tested;
+	const bool culled = true;
+	const bool blended = false;
+	const PrimitiveType prim_type = PrimitiveType::Triangles;
 };
 
 
@@ -100,7 +100,7 @@ EditorResources::EditorResources(DevicePtr dptr) :
 		auto template_data = MaterialTemplateData()
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])
-				.set_depth_tested(data.depth_tested)
+				.set_depth_test(data.depth_tested ? DepthTest::Standard : DepthTest::None)
 				.set_culled(data.culled)
 				.set_blended(data.blended)
 				.set_primitive_type(data.prim_type)

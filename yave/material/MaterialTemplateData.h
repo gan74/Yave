@@ -31,10 +31,18 @@ SOFTWARE.
 
 namespace yave {
 
+class MaterialCompiler;
+
 enum class PrimitiveType {
 	Triangles = uenum(vk::PrimitiveTopology::eTriangleList),
 	Lines = uenum(vk::PrimitiveTopology::eLineList),
 	Points = uenum(vk::PrimitiveTopology::ePointList)
+};
+
+enum class DepthTest {
+	Standard,
+	Reversed,
+	None
 };
 
 class MaterialTemplateData {
@@ -45,9 +53,13 @@ class MaterialTemplateData {
 
 		MaterialTemplateData& set_primitive_type(PrimitiveType type);
 
-		MaterialTemplateData& set_depth_tested(bool tested);
+		MaterialTemplateData& set_depth_test(DepthTest test);
 		MaterialTemplateData& set_culled(bool culled);
 		MaterialTemplateData& set_blended(bool blended);
+
+
+	private:
+		friend class MaterialCompiler;
 
 		SpirVData _frag;
 		SpirVData _vert;
@@ -55,7 +67,7 @@ class MaterialTemplateData {
 
 		PrimitiveType _primitive_type = PrimitiveType::Triangles;
 
-		bool _depth_tested = true;
+		DepthTest _depth_tested = DepthTest::Standard;
 		bool _cull = true;
 		bool _blend = false;
 };

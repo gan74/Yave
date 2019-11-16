@@ -119,9 +119,11 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 		;
 
 	const auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
-			.setDepthTestEnable(mat_data._depth_tested)
+			.setDepthTestEnable(mat_data._depth_tested != DepthTest::None)
 			.setDepthWriteEnable(true)
-			.setDepthCompareOp(vk::CompareOp::eGreaterOrEqual) // reversed Z
+			.setDepthCompareOp(mat_data._depth_tested == DepthTest::Reversed
+							   ? vk::CompareOp::eLessOrEqual
+							   : vk::CompareOp::eGreaterOrEqual) // reversed Z
 		;
 
 	const auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()

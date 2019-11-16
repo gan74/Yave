@@ -41,15 +41,16 @@ class DeviceResources final : NonCopyable {
 			EquirecConvolutionComp,
 			CubemapConvolutionComp,
 			BRDFIntegratorComp,
-			DeferredSunComp,
+			DeferredAmbientComp,
 			DeferredLocalsComp,
 			SSAOComp,
 			CopyComp,
 			HistogramClearComp,
 			HistogramComp,
 			ToneMapParamsComp,
+			SkyLightParamsComp,
 
-			TonemapFrag,
+			ToneMapFrag,
 			RayleighSkyFrag,
 			BasicFrag,
 			SkinnedFrag,
@@ -66,13 +67,14 @@ class DeviceResources final : NonCopyable {
 			EquirecConvolutionProgram,
 			CubemapConvolutionProgram,
 			BRDFIntegratorProgram,
-			DeferredSunProgram,
+			DeferredAmbientProgram,
 			DeferredLocalsProgram,
 			SSAOProgram,
 			CopyProgram,
 			HistogramClearProgram,
 			HistogramProgram,
 			ToneMapParamsProgram,
+			SkyLightParamsProgram,
 
 			MaxComputePrograms
 		};
@@ -83,7 +85,7 @@ class DeviceResources final : NonCopyable {
 
 			TexturedMaterialTemplate,
 
-			TonemappingMaterialTemplate,
+			ToneMappingMaterialTemplate,
 			RayleighSkyMaterialTemplate,
 
 			MaxMaterialTemplates

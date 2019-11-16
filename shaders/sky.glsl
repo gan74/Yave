@@ -2,6 +2,31 @@
 #define ATMOSPHERE_GLSL
 
 #include "yave.glsl"
+#include "sh.glsl"
+
+struct RayleighSky {
+	LightingCamera camera;
+
+	vec3 sun_direction;
+	float base_height;
+
+	vec3 sun_color;
+	float planet_height;
+
+	vec3 beta_rayleigh;
+	float atmo_height;
+};
+
+struct SkyLight {
+	vec3 sun_direction;
+	uint padding_0;
+
+	vec3 sun_color;
+	uint padding_1;
+
+	SH sh;
+};
+
 
 vec2 ray_sphere(vec3 origin, vec3 dir, float radius) {
 	const float a = dot(dir, dir);
@@ -21,7 +46,8 @@ vec2 ray_sphere(vec3 origin, vec3 dir, float radius) {
 
 // https://github.com/wwwtyro/glsl-atmosphere
 // https://www.scratchapixel.com/lessons/procedural-generation-virtual-worlds/simulating-sky
-vec3 rayleigh(float origin_height, vec3 dir, float atmo_radius, float planet_radius, vec3 sun_dir) {
+
+vec3 rayleigh(float origin_height, vec3 dir, float atmo_radius, float planet_radius, vec3 sun_dir, vec3 beta_ray) {
 
 	const uint step_count = 16;
 	const uint light_step_count = 2;
@@ -31,7 +57,6 @@ vec3 rayleigh(float origin_height, vec3 dir, float atmo_radius, float planet_rad
 	const float H_ray = 8e3;
 	const float H_mie = 1.2e3;
 
-	const vec3 beta_ray = vec3(5.5e-6, 13.0e-6, 22.4e-6);
 	const float beta_mie = 21e-6;
 
 	vec2 p = ray_sphere(origin, dir, atmo_radius);
@@ -102,6 +127,10 @@ vec3 rayleigh(float origin_height, vec3 dir, float atmo_radius, float planet_rad
 
 	return (ray * beta_ray * phase_ray) +
 	       (mie * beta_mie * phase_mie);
+}
+
+vec3 rayleigh(float origin_height, vec3 dir, float atmo_radius, float planet_radius, vec3 sun_dir) {
+	return rayleigh(origin_height, dir, atmo_radius, planet_radius, sun_dir, vec3(5.5e-6, 13.0e-6, 22.4e-6));
 }
 
 #endif

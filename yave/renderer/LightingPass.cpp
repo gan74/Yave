@@ -138,7 +138,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 						};
 				}
 
-				const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredSunProgram];
+				const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredAmbientProgram];
 				recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
 			});
 	}
@@ -167,9 +167,10 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 						};
 				}
 
-
-				const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLocalsProgram];
-				recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
+				if(push_data.light_count) {
+					const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLocalsProgram];
+					recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
+				}
 			});
 	}
 

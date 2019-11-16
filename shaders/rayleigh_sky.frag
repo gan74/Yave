@@ -1,29 +1,54 @@
 #version 450
 
-#include "atmosphere.glsl"
+#include "sky.glsl"
 
-layout(location = 0) out vec4 out_color;
+layout(set = 0, binding = 0) uniform sampler2D in_depth;
+layout(set = 0, binding = 1) uniform sampler2D in_color;
+layout(set = 0, binding = 2) uniform sampler2D in_normal;
 
-layout(set = 0, binding = 0) uniform Data {
-	LightingCamera camera;
+layout(set = 0, binding = 3) uniform RayleighSkyData {
+	RayleighSky sky;
+} sky;
 
-	vec3 sun_direction;
-	float base_height;
+layout(set = 0, binding = 4) uniform SkyLightData {
+	SkyLight light;
+} light;
 
-	vec3 sun_color;
-	float planet_height;
-	float atmo_height;
-} constants;
 
 layout(location = 0) in vec2 in_uv;
 
-void main() {const vec3 forward = normalize(unproject(in_uv, 1.0, constants.camera.inv_matrix) - constants.camera.position);
+layout(location = 0) out vec4 out_color;
 
-	const vec3 sky = rayleigh(constants.camera.position.z + constants.base_height,
-							  forward,
-							  constants.atmo_height,
-							  constants.planet_height,
-							  constants.sun_direction);
 
-	out_color = vec4(sky * constants.sun_color, 1.0);
+void main() {
+	const RayleighSky sky = sky.sky;
+	const SkyLight light = light.light;
+
+	const vec3 view_dir = normalize(unproject(in_uv, 1.0, sky.camera.inv_matrix) - sky.camera.position);
+	const ivec2 coord = ivec2(gl_FragCoord.xy);
+	const vec2 uv = in_uv;
+
+	const float depth = texelFetch(in_depth, coord, 0).x;
+	vec3 irradiance = vec3(0.0);
+
+	if(!is_OOB(depth)) {
+		vec3 albedo;
+		float metallic;
+		vec3 normal;
+		float roughness;
+		unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
+		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
+
+		irradiance = light.sun_color * L0(normal, light.sun_direction, view_dir, roughness, metallic, albedo);
+		irradiance += LSH(normal, view_dir, roughness, metallic, albedo, light.sh);
+	} else {
+		irradiance = rayleigh(sky.camera.position.z + sky.base_height,
+		                      view_dir,
+		                      sky.atmo_height,
+		                      sky.planet_height,
+		                      sky.sun_direction,
+		                      sky.beta_rayleigh) * sky.sun_color;
+	}
+
+	out_color = vec4(irradiance, 1.0);
 }

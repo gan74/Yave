@@ -41,34 +41,45 @@ using MaterialTemplates = DeviceResources::MaterialTemplates;
 using Textures = DeviceResources::Textures;
 
 struct DeviceMaterialData {
-	SpirV frag;
-	SpirV vert;
-	bool depth_tested;
-	bool culled = true;
-	bool blended = false;
+	const SpirV frag;
+	const SpirV vert;
+	const DepthTest depth_test;
+	const bool culled;
+	const bool blended;
+
+	static constexpr DeviceMaterialData screen(SpirV frag, DepthTest depth = DepthTest::None, bool blended = false) {
+		return DeviceMaterialData{frag, SpirV::ScreenVert, depth, false, blended};
+	}
+
+	static constexpr DeviceMaterialData basic(SpirV frag) {
+		return DeviceMaterialData{frag, SpirV::BasicVert, DepthTest::Standard, true, false};
+	}
+
+	static constexpr DeviceMaterialData skinned(SpirV frag) {
+		return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTest::Standard, true, false};
+	}
 };
 
 static constexpr DeviceMaterialData material_datas[] = {
-		{SpirV::BasicFrag, SpirV::BasicVert, true},
-		{SpirV::SkinnedFrag, SpirV::SkinnedVert, true},
-
-		{SpirV::TexturedFrag, SpirV::BasicVert, true},
-
-		{SpirV::TonemapFrag, SpirV::ScreenVert, false},
-		{SpirV::RayleighSkyFrag, SpirV::ScreenVert, true},
+		DeviceMaterialData::basic(SpirV::BasicFrag),
+		DeviceMaterialData::skinned(SpirV::SkinnedFrag),
+		DeviceMaterialData::basic(SpirV::TexturedFrag),
+		DeviceMaterialData::screen(SpirV::ToneMapFrag),
+		DeviceMaterialData::screen(SpirV::RayleighSkyFrag),
 	};
 
 static constexpr const char* spirv_names[] = {
 		"equirec_convolution.comp",
 		"cubemap_convolution.comp",
 		"brdf_integrator.comp",
-		"deferred_sun.comp",
+		"deferred_ambient.comp",
 		"deferred_locals.comp",
 		"ssao.comp",
         "copy.comp",
 		"histogram_clear.comp",
 		"histogram.comp",
 		"tonemap_params.comp",
+		"skylight_params.comp",
 
 		"tonemap.frag",
 		"rayleigh_sky.frag",
@@ -119,10 +130,11 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 
 	for(usize i = 0; i != template_count; ++i) {
 		const auto& data = material_datas[i];
+		log_msg(spirv_names[data.frag]);
 		auto template_data = MaterialTemplateData()
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])
-				.set_depth_tested(data.depth_tested)
+				.set_depth_test(data.depth_test)
 				.set_culled(data.culled)
 				.set_blended(data.blended)
 			;

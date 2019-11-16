@@ -26,11 +26,13 @@ SOFTWARE.
 
 namespace yave {
 
+class GBufferPass;
+
 struct RayleighSkyPass {
 	FrameGraphImageId depth;
-	FrameGraphImageId color;
+	FrameGraphImageId lit;
 
-	static RayleighSkyPass create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_depth, FrameGraphImageId in_color);
+	static RayleighSkyPass create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_lit, const GBufferPass& gbuffer);
 };
 
 }

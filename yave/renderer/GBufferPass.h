@@ -30,7 +30,7 @@ struct GBufferPass {
 	SceneRenderSubPass scene_pass;
 
 	Y_TODO(make framegraph image that are used as attachments by several passes non mutable when possible)
-	FrameGraphMutableImageId depth;
+	FrameGraphImageId depth;
 	FrameGraphImageId color;
 	FrameGraphImageId normal;
 

@@ -95,8 +95,12 @@ vec2 bounce_uv(vec2 uv) {
 	return vec2(bounce(uv.x), bounce(uv.y));
 }
 
+vec3 sample_dir(uint i) {
+	return sample_dirs[i & 0x3F];
+}
+
 vec3 sample_dir(vec3 normal, uint i) {
-	const vec3 s = sample_dirs[i & 0x3F];
+	const vec3 s = sample_dir(i);
 	return dot(normal, s) < 0.0 ? -s : s;
 }
 
