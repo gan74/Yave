@@ -140,6 +140,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
 	light_widget(&sky->sun());
 
+	ImGui::InputFloat3("Direction", sky->sun().direction().data(), "%.2f");
+
 	math::Vec3 beta = sky->beta_rayleight() * 1e6f;
 	if(ImGui::InputFloat3("Beta", beta.data(), "%.2f")) {
 		sky->beta_rayleight() = beta * 1e-6f;
@@ -192,6 +194,66 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 					return true;
 				});
 		}
+	}
+}
+
+
+
+/**************************************************************************
+*								Transformable
+**************************************************************************/
+
+editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
+	TransformableComponent* component = ctx->world().component<TransformableComponent>(id);
+	if(!component) {
+		return;
+	}
+
+	if(!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+		return;
+	}
+
+	{
+		math::Vec3 prev_euler; // this should be stable
+		auto [pos, rot, scale] = component->transform().decompose();
+
+		// position
+		{
+			ImGui::BeginGroup();
+			ImGui::InputFloat3("Position", pos.data(), "%.2f");
+			ImGui::EndGroup();
+		}
+
+		// rotation
+		{
+			auto dedouble_quat = [](math::Quaternion<> q) {
+				return q.x() < 0.0f ? -q.as_vec() : q.as_vec();
+			};
+			auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
+				auto qa = math::Quaternion<>::from_euler(a * math::to_rad(1.0f));
+				auto qb = math::Quaternion<>::from_euler(b * math::to_rad(1.0f));
+				return (dedouble_quat(qa) - dedouble_quat(qb)).length2() < 0.0001f;
+			};
+
+			math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
+			if(is_same_angle(euler, prev_euler)) {
+				euler = prev_euler;
+			}
+
+			float speed = 1.0f;
+			ImGui::BeginGroup();
+			ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
+			ImGui::EndGroup();
+
+			if(!is_same_angle(euler, prev_euler)) {
+				prev_euler = euler;
+				rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
+			}
+		}
+
+		component->transform() = math::Transform<>(pos, rot, scale);
 	}
 }
 
