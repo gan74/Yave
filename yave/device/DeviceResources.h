@@ -25,7 +25,9 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <yave/assets/AssetPtr.h>
+
 #include <yave/graphics/images/Image.h>
+#include <yave/graphics/images/ImageView.h>
 
 namespace yave {
 
@@ -124,6 +126,7 @@ class DeviceResources final : NonCopyable {
 		DeviceResources(DeviceResources&& other);
 		DeviceResources& operator=(DeviceResources&& other);
 
+		TextureView brdf_lut() const;
 
 		const SpirVData& operator[](SpirV i) const;
 		const ComputeProgram& operator[](ComputePrograms i) const;
@@ -143,6 +146,8 @@ class DeviceResources final : NonCopyable {
 		std::unique_ptr<AssetPtr<Texture>[]> _textures;
 		std::unique_ptr<AssetPtr<Material>[]> _materials;
 		std::unique_ptr<AssetPtr<StaticMesh>[]> _meshes;
+
+		Texture _brdf_lut;
 
 };
 }

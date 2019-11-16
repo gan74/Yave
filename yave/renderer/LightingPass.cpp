@@ -37,25 +37,7 @@ SOFTWARE.
 
 namespace yave {
 
-static Texture create_ibl_lut(DevicePtr dptr, usize size = 512) {
-	y_profile();
-	core::DebugTimer _("IBLData::create_ibl_lut()");
 
-	const ComputeProgram& brdf_integrator = dptr->device_resources()[DeviceResources::BRDFIntegratorProgram];
-
-	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
-
-	const DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
-
-	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
-	{
-		const auto region = recorder.region("IBLData::create_ibl_lut");
-		recorder.dispatch_size(brdf_integrator, image.size(), {dset});
-	}
-	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
-
-	return image;
-}
 
 static auto load_envmap() {
 	if(auto file = io2::File::open("equirec.yt")) {
@@ -78,7 +60,6 @@ IBLData::IBLData(DevicePtr dptr) : IBLData(dptr, load_envmap()) {
 
 IBLData::IBLData(DevicePtr dptr, const ImageData& envmap_data) :
 		DeviceLinked(dptr),
-		_brdf_lut(create_ibl_lut(dptr)),
 		_envmap(IBLProbe::from_equirec(Texture(dptr, envmap_data))) {
 }
 
@@ -87,9 +68,6 @@ const IBLProbe& IBLData::envmap() const {
 	return _envmap;
 }
 
-TextureView IBLData::brdf_lut() const  {
-	return _brdf_lut;
-}
 
 static constexpr usize max_directional_light_count = 16;
 static constexpr usize max_point_light_count = 1024;
@@ -120,7 +98,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 		ambient_builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
 		ambient_builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
 		ambient_builder.add_uniform_input(ibl_data->envmap(), 0, PipelineStage::ComputeBit);
-		ambient_builder.add_uniform_input(ibl_data->brdf_lut(), 0, PipelineStage::ComputeBit);
+		ambient_builder.add_uniform_input(framegraph.device()->device_resources().brdf_lut(), 0, PipelineStage::ComputeBit);
 		ambient_builder.add_storage_input(directional_buffer, 0, PipelineStage::ComputeBit);
 		ambient_builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
 		ambient_builder.map_update(directional_buffer);

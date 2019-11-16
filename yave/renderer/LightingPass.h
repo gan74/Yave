@@ -36,10 +36,8 @@ class IBLData : NonCopyable, public DeviceLinked {
 		static IBLData default_data();
 
 		const IBLProbe& envmap() const;
-		TextureView brdf_lut() const;
 
 	private:
-		Texture _brdf_lut;
 		IBLProbe _envmap;
 };
 

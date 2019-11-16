@@ -78,6 +78,7 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 		builder.add_uniform_input(in_depth);
 		builder.add_uniform_input(gbuffer.color);
 		builder.add_uniform_input(gbuffer.normal);
+		builder.add_uniform_input(framegraph.device()->device_resources().brdf_lut());
 
 		builder.add_uniform_input(buffer);
 		builder.add_uniform_input(sky_light_buffer);

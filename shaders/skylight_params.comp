@@ -33,7 +33,7 @@ void main() {
 								sky.sun_direction,
 								sky.beta_rayleigh) * sky.sun_color;
 
-	sky_sh[index] = compute_sh(color, direction);
+	sky_sh[index] = compute_sh(color, -direction);
 
 	barrier();
 

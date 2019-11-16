@@ -6,11 +6,13 @@ layout(set = 0, binding = 0) uniform sampler2D in_depth;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
 layout(set = 0, binding = 2) uniform sampler2D in_normal;
 
-layout(set = 0, binding = 3) uniform RayleighSkyData {
+layout(set = 0, binding = 3) uniform sampler2D brdf_lut;
+
+layout(set = 0, binding = 4) uniform RayleighSkyData {
 	RayleighSky sky;
 } sky;
 
-layout(set = 0, binding = 4) uniform SkyLightData {
+layout(set = 0, binding = 5) uniform SkyLightData {
 	SkyLight light;
 } light;
 
@@ -18,6 +20,7 @@ layout(set = 0, binding = 4) uniform SkyLightData {
 layout(location = 0) in vec2 in_uv;
 
 layout(location = 0) out vec4 out_color;
+
 
 
 void main() {
@@ -40,7 +43,7 @@ void main() {
 		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
 		irradiance = light.sun_color * L0(normal, light.sun_direction, view_dir, roughness, metallic, albedo);
-		irradiance += LSH(normal, view_dir, roughness, metallic, albedo, light.sh);
+		irradiance += sh_irradiance(light.sh, brdf_lut, normal, view_dir, roughness, metallic, albedo);
 	} else {
 		irradiance = rayleigh(sky.camera.position.z + sky.base_height,
 		                      view_dir,

@@ -31,6 +31,7 @@ SOFTWARE.
 #include <yave/meshes/MeshData.h>
 #include <yave/meshes/StaticMesh.h>
 
+#include <y/core/Chrono.h>
 #include <y/io2/File.h>
 
 namespace yave {
@@ -114,6 +115,24 @@ MeshData sphere_mesh_data();
 MeshData sweep_mesh_data();
 
 
+static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integrator, usize size = 512) {
+	y_profile();
+	core::DebugTimer _("create_ibl_lut()");
+
+	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
+
+	const DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
+
+	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
+	{
+		const auto region = recorder.region("IBLData::create_ibl_lut");
+		recorder.dispatch_size(brdf_integrator, image.size(), {dset});
+	}
+	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+
+	return image;
+}
+
 DeviceResources::DeviceResources(DevicePtr dptr) :
 		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
@@ -157,6 +176,8 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 		_meshes[1] = make_asset<StaticMesh>(dptr, sphere_mesh_data());
 		_meshes[2] = make_asset<StaticMesh>(dptr, sweep_mesh_data());
 	}
+
+	_brdf_lut = create_brdf_lut(dptr, operator[](BRDFIntegratorProgram));
 }
 
 DeviceResources::DeviceResources() {
@@ -181,6 +202,11 @@ void DeviceResources::swap(DeviceResources& other) {
 	std::swap(_textures, other._textures);
 	std::swap(_materials, other._materials);
 	std::swap(_meshes, other._meshes);
+	std::swap(_brdf_lut, other._brdf_lut);
+}
+
+TextureView DeviceResources::brdf_lut() const {
+	return _brdf_lut;
 }
 
 const SpirVData& DeviceResources::operator[](SpirV i) const {

@@ -376,22 +376,6 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 	return (diffuse + specular) * NoL;
 }
 
-
-vec3 LSH(vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo, SH sh) {
-	const vec3 refl_vec = reflect(view_dir, normal);
-
-	const float HoV = 1.0;
-	const vec3 F = F_Schlick(HoV, approx_F0(metallic, albedo));
-
-	const vec3 kS = F;
-	const vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
-
-	const vec3 specular = kS * eval_sh(sh, refl_vec);
-	const vec3 diffuse = kD * albedo * eval_sh(sh, normal);
-
-	return diffuse + specular;
-}
-
 // -------------------------------- SHADOW --------------------------------
 
 float variance_shadow(vec2 moments, float depth) {
@@ -460,6 +444,22 @@ vec3 ibl_irradiance(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 vie
 	const vec3 reflected = reflect(-view_dir, normal);
 	const vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy; // TODO: make it so we don't wrap (which breaks roughness close to 0 or 1)
 	const vec3 specular = (kS * brdf.x + brdf.y) * textureLod(probe, reflected, roughness * probe_mips).rgb;
+
+	return diffuse + specular;
+}
+
+vec3 sh_irradiance(SH probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+	const float NoV = max(0.0, dot(normal, view_dir));
+
+	const vec3 kS = F_Schlick(NoV, approx_F0(metallic, albedo), roughness);
+	const vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+	const vec3 irradiance = eval_sh(probe, normal);
+	const vec3 diffuse = kD * irradiance * albedo;
+
+	const vec3 reflected = reflect(-view_dir, normal);
+	const vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy; // TODO: make it so we don't wrap (which breaks roughness close to 0 or 1)
+	const vec3 specular = (kS * brdf.x + brdf.y) * eval_sh(probe, reflected);
 
 	return diffuse + specular;
 }
