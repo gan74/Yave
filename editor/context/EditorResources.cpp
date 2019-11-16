@@ -100,9 +100,9 @@ EditorResources::EditorResources(DevicePtr dptr) :
 		auto template_data = MaterialTemplateData()
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])
-				.set_depth_test(data.depth_tested ? DepthTest::Standard : DepthTest::None)
+				.set_depth_test(data.depth_tested ? DepthTestMode::Standard : DepthTestMode::None)
 				.set_culled(data.culled)
-				.set_blended(data.blended)
+				.set_blend_mode(data.blended ? BlendMode::SrcAlpha : BlendMode::None)
 				.set_primitive_type(data.prim_type)
 			;
 

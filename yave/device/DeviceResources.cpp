@@ -43,20 +43,20 @@ using Textures = DeviceResources::Textures;
 struct DeviceMaterialData {
 	const SpirV frag;
 	const SpirV vert;
-	const DepthTest depth_test;
+	const DepthTestMode depth_test;
+	const BlendMode blend_mode;
 	const bool culled;
-	const bool blended;
 
-	static constexpr DeviceMaterialData screen(SpirV frag, DepthTest depth = DepthTest::None, bool blended = false) {
-		return DeviceMaterialData{frag, SpirV::ScreenVert, depth, false, blended};
+	static constexpr DeviceMaterialData screen(SpirV frag, bool blended = false) {
+		return DeviceMaterialData{frag, SpirV::ScreenVert, DepthTestMode::None, blended ? BlendMode::Add : BlendMode::None, false};
 	}
 
 	static constexpr DeviceMaterialData basic(SpirV frag) {
-		return DeviceMaterialData{frag, SpirV::BasicVert, DepthTest::Standard, true, false};
+		return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None, true};
 	}
 
 	static constexpr DeviceMaterialData skinned(SpirV frag) {
-		return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTest::Standard, true, false};
+		return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTestMode::Standard, BlendMode::None, true};
 	}
 };
 
@@ -65,7 +65,7 @@ static constexpr DeviceMaterialData material_datas[] = {
 		DeviceMaterialData::skinned(SpirV::SkinnedFrag),
 		DeviceMaterialData::basic(SpirV::TexturedFrag),
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
-		DeviceMaterialData::screen(SpirV::RayleighSkyFrag),
+		DeviceMaterialData::screen(SpirV::RayleighSkyFrag, true),
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -136,7 +136,7 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 				.set_vert_data(_spirv[data.vert])
 				.set_depth_test(data.depth_test)
 				.set_culled(data.culled)
-				.set_blended(data.blended)
+				.set_blend_mode(data.blend_mode)
 			;
 		_material_templates[i] = MaterialTemplate(dptr, std::move(template_data));
 	}

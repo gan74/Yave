@@ -36,6 +36,28 @@ static void depth_only_stages(core::Vector<vk::PipelineShaderStageCreateInfo>& s
 	}
 }
 
+static vk::BlendFactor src_blend_factor(BlendMode mode) {
+	switch(mode) {
+		case BlendMode::SrcAlpha:
+			return vk::BlendFactor::eSrcAlpha;
+
+		default:
+			return vk::BlendFactor::eOne;
+	}
+}
+
+static vk::BlendFactor dst_blend_factor(BlendMode mode) {
+	switch(mode) {
+		case BlendMode::SrcAlpha:
+			return vk::BlendFactor::eOneMinusSrcAlpha;
+
+		default:
+			return vk::BlendFactor::eOne;
+	}
+}
+
+
+
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
@@ -97,14 +119,16 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 			.setRasterizationSamples(vk::SampleCountFlagBits::e1)
 		;
 
+	const auto src_blend = src_blend_factor(mat_data._blend_mode);
+	const auto dst_blend = dst_blend_factor(mat_data._blend_mode);
 	const auto color_blend_attachment = vk::PipelineColorBlendAttachmentState()
-			.setBlendEnable(mat_data._blend)
+			.setBlendEnable(mat_data._blend_mode != BlendMode::None)
 			.setColorBlendOp(vk::BlendOp::eAdd)
 			.setAlphaBlendOp(vk::BlendOp::eAdd)
-			.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-			.setDstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-			.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
-			.setSrcAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
+			.setDstColorBlendFactor(dst_blend)
+			.setDstAlphaBlendFactor(dst_blend)
+			.setSrcColorBlendFactor(src_blend)
+			.setSrcAlphaBlendFactor(src_blend)
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eA)
 		;
 
@@ -119,9 +143,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 		;
 
 	const auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
-			.setDepthTestEnable(mat_data._depth_tested != DepthTest::None)
+			.setDepthTestEnable(mat_data._depth_tested != DepthTestMode::None)
 			.setDepthWriteEnable(true)
-			.setDepthCompareOp(mat_data._depth_tested == DepthTest::Reversed
+			.setDepthCompareOp(mat_data._depth_tested == DepthTestMode::Reversed
 							   ? vk::CompareOp::eLessOrEqual
 							   : vk::CompareOp::eGreaterOrEqual) // reversed Z
 		;

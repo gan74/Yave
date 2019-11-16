@@ -49,8 +49,13 @@ MaterialTemplateData& MaterialTemplateData::set_primitive_type(PrimitiveType typ
 	return *this;
 }
 
-MaterialTemplateData& MaterialTemplateData::set_depth_test(DepthTest test) {
+MaterialTemplateData& MaterialTemplateData::set_depth_test(DepthTestMode test) {
 	_depth_tested = test;
+	return *this;
+}
+
+MaterialTemplateData& MaterialTemplateData::set_blend_mode(BlendMode blend) {
+	_blend_mode = blend;
 	return *this;
 }
 
@@ -59,9 +64,5 @@ MaterialTemplateData& MaterialTemplateData::set_culled(bool culled) {
 	return *this;
 }
 
-MaterialTemplateData& MaterialTemplateData::set_blended(bool blended) {
-	_blend = blended;
-	return *this;
-}
 
 }

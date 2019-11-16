@@ -39,10 +39,16 @@ enum class PrimitiveType {
 	Points = uenum(vk::PrimitiveTopology::ePointList)
 };
 
-enum class DepthTest {
+enum class DepthTestMode {
 	Standard,
 	Reversed,
 	None
+};
+
+enum class BlendMode {
+	None,
+	Add,
+	SrcAlpha,
 };
 
 class MaterialTemplateData {
@@ -53,9 +59,10 @@ class MaterialTemplateData {
 
 		MaterialTemplateData& set_primitive_type(PrimitiveType type);
 
-		MaterialTemplateData& set_depth_test(DepthTest test);
+		MaterialTemplateData& set_depth_test(DepthTestMode test);
+		MaterialTemplateData& set_blend_mode(BlendMode blend);
+
 		MaterialTemplateData& set_culled(bool culled);
-		MaterialTemplateData& set_blended(bool blended);
 
 
 	private:
@@ -67,9 +74,9 @@ class MaterialTemplateData {
 
 		PrimitiveType _primitive_type = PrimitiveType::Triangles;
 
-		DepthTest _depth_tested = DepthTest::Standard;
+		DepthTestMode _depth_tested = DepthTestMode::Standard;
+		BlendMode _blend_mode = BlendMode::None;
 		bool _cull = true;
-		bool _blend = false;
 };
 
 }
