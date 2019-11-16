@@ -124,14 +124,14 @@ ImageData compute_mipmaps(const ImageData& image) {
 	const usize components = 4;
 
 	const usize mip_count = ImageData::mip_count(image.size());
-	y_debug_assert(mip_count >= 1);
 	const usize data_size = ImageData::layer_byte_size(image.size(), format, mip_count);
 	const std::unique_ptr<u8[]> data = std::make_unique<u8[]>(data_size);
 
-	const auto compute_mip = [components](const u8* image_data, u8* output, const math::Vec2ui& orig_size) -> usize {
+	const auto compute_mip = [&](const u8* image_data, u8* output, const math::Vec2ui& orig_size) -> usize {
 			usize cursor = 0;
 			const math::Vec2ui mip_size = {std::max(1u, orig_size.x() / 2),
-									 std::max(1u, orig_size.y() / 2)};
+										   std::max(1u, orig_size.y() / 2)};
+
 			usize row_size = orig_size.x();
 
 			for(usize y = 0; y != mip_size.y(); ++y) {
@@ -142,6 +142,7 @@ ImageData compute_mipmaps(const ImageData& image) {
 						acc		+= image_data[components * (orig + 1) + c];
 						acc		+= image_data[components * (orig + row_size) + c];
 						acc		+= image_data[components * (orig + row_size + 1) + c];
+						y_debug_assert(output + cursor < data.get() + data_size);
 						output[cursor++] = std::min(acc / 4, 0xFFu);
 					}
 				}
@@ -150,17 +151,16 @@ ImageData compute_mipmaps(const ImageData& image) {
 		};
 
 
-
 	u8* image_data = data.get();
 	usize mip_byte_size = image.byte_size(0);
 	std::memcpy(image_data, image.data(), mip_byte_size);
-	for(usize mip = 0; mip < mip_count; ++mip) {
+	for(usize mip = 0; mip < mip_count - 1; ++mip) {
 		const usize s = compute_mip(image_data, image_data + mip_byte_size, image.size(mip).to<2>());
 		image_data += mip_byte_size;
 		mip_byte_size = s;
 	}
-	y_debug_assert(image_data <= data.get() + data_size);
-	y_debug_assert(image_data == data.get() + data_size);
+	y_debug_assert(image_data + mip_byte_size == data.get() + data_size);
+
 
 	return ImageData(image.size().to<2>(), data.get(), format, mip_count);
 }
