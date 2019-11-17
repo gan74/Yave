@@ -35,6 +35,12 @@ SOFTWARE.
 
 namespace y {
 
+#ifdef Y_DEBUG
+namespace core::result {
+bool break_on_error = false;
+}
+#endif
+
 namespace detail {
 
 #ifdef __GNUG__

@@ -41,6 +41,20 @@ SOFTWARE.
 namespace y {
 namespace core {
 
+namespace result {
+#ifdef Y_DEBUG
+extern bool break_on_error;
+inline void err_break() {
+	 if(result::break_on_error) {
+		 y_breakpoint;
+	 }
+}
+#else
+inline void err_break() {
+}
+#endif
+}
+
 namespace detail {
 
 template<typename T>
@@ -111,15 +125,14 @@ struct Err<void> : NonCopyable {
 	void get() const {
 	}
 };
-
 }
-
 
 inline auto Ok() {
 	return detail::Ok<void>();
 }
 
 inline auto Err() {
+	result::err_break();
 	return detail::Err<void>();
 }
 
@@ -130,6 +143,7 @@ inline auto Ok(T&& t) {
 
 template<typename T>
 inline auto Err(T&& e) {
+	result::err_break();
 	return detail::Err<std::remove_const_t<std::remove_reference_t<T>>>(y_fwd(e));
 }
 
