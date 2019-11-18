@@ -33,7 +33,6 @@ SOFTWARE.
 #include <editor/widgets/ResourceBrowser.h>
 #include <editor/widgets/MaterialEditor.h>
 #include <editor/widgets/AssetStringifier.h>
-#include <editor/widgets/EcsDebug.h>
 #include <editor/widgets/Console.h>
 
 #include <editor/properties/PropertyPanel.h>
@@ -79,7 +78,6 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
 
 			if(ImGui::BeginMenu("Debug")) {
 				if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
-				if(ImGui::MenuItem("ECS debug")) context()->ui().add<EcsDebug>();
 
 				ImGui::Separator();
 				if(ImGui::MenuItem("Asset stringifier")) context()->ui().add<AssetStringifier>();

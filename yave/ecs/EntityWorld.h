@@ -62,12 +62,6 @@ class EntityWorld : NonCopyable {
 		void flush();
 
 
-		void add(const EntityWorld& other);
-
-		serde2::Result serialize(WritableAssetArchive& writer) const;
-		serde2::Result deserialize(ReadableAssetArchive& reader);
-
-
 		template<typename T>
 		void add_required_component_type() {
 			static_assert(std::is_default_constructible_v<T>);
@@ -111,16 +105,6 @@ class EntityWorld : NonCopyable {
 		const T* component(EntityId id) const {
 			return container<T>()->template component_ptr<T>(id);
 		}
-
-		/*template<typename T>
-		T& operator[](EntityId id) {
-			return container<T>()->template component<T>(id);
-		}
-
-		template<typename T>
-		const T& operator[](EntityId id) const {
-			return container<T>()->template component<T>(id);
-		}*/
 
 
 		template<typename T>
@@ -200,6 +184,7 @@ class EntityWorld : NonCopyable {
 		}
 
 
+
 		usize component_type_count() const {
 			return _component_containers.size();
 		}
@@ -214,8 +199,7 @@ class EntityWorld : NonCopyable {
 		}
 
 
-		std::string_view type_name(ComponentTypeIndex type) const;
-
+		std::string_view component_type_name(ComponentTypeIndex type) const;
 
 
 		y_serde3(_entities, _component_containers)
@@ -227,8 +211,6 @@ class EntityWorld : NonCopyable {
 			}
 		};
 
-
-		void post_deserialization();
 
 		template<typename T>
 		ComponentContainerBase* container() {

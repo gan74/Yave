@@ -65,25 +65,10 @@ void EntityWorld::flush() {
 	}
 }
 
-void EntityWorld::add(const EntityWorld& other) {
-	y_profile();
-	std::unordered_map<EntityIndex, EntityId> id_map;
-	for(EntityId id : other.entities()) {
-		id_map[id.index()] = create_entity();
-	}
-	for(const auto& other_container : other._component_containers) {
-		std::unique_ptr<ComponentContainerBase>& this_container = _component_containers[other_container.first];
-		if(!this_container) {
-			this_container = detail::create_container(other_container.second->type());
-		}
-		this_container->add(other_container.second.get(), id_map);
-	}
-}
-
-std::string_view EntityWorld::type_name(ComponentTypeIndex index) const {
+std::string_view EntityWorld::component_type_name(ComponentTypeIndex index) const {
 	static constexpr std::string_view no_name = "unknown";
 	const ComponentContainerBase* cont = container(index);
-	return cont ? cont->type_name() : no_name;
+	return cont ? cont->component_type_name() : no_name;
 }
 
 
@@ -97,7 +82,7 @@ const ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) co
 ComponentContainerBase* EntityWorld::container(ComponentTypeIndex type) {
 	auto& container = _component_containers[type];
 	if(!container) {
-		container = detail::create_container(type);
+		return nullptr;
 	}
 	return container.get();
 }
@@ -107,108 +92,6 @@ void EntityWorld::add_required_components(EntityId id) {
 		create_component(id, tpe).ignore();
 	}
 }
-
-void EntityWorld::post_deserialization() {
-	for(const auto& p : _component_containers) {
-		p.second->post_deserialize(*this);
-	}
-}
-
-struct EntityWorldHeader {
-	y_serde2(serde2::check(fs::magic_number, AssetType::World, u32(1)))
-};
-
-serde2::Result EntityWorld::serialize(WritableAssetArchive& writer) const {
-	if(!writer(EntityWorldHeader())) {
-		return core::Err();
-	}
-
-	if(!writer(u64(_entities.size()))) {
-		return core::Err();
-	}
-
-	for(EntityId id : _entities) {
-		if(!writer(u64(id.index()))) {
-			return core::Err();
-		}
-	}
-
-	if(!writer(u32(_component_containers.size()))) {
-		return core::Err();
-	}
-	for(const auto& container : _component_containers) {
-		if(!detail::serialize_container(writer, container.second.get())) {
-			return core::Err();
-		}
-	}
-	return core::Ok();
-}
-
-serde2::Result EntityWorld::deserialize(ReadableAssetArchive& reader) {
-	// _required_components is not serialized so we don't clear it
-	const auto required = std::move(_required_components);
-	*this = EntityWorld();
-	_required_components = std::move(required);
-
-	{
-		EntityWorldHeader header;
-		if(!reader(header)) {
-			return core::Err();
-		}
-	}
-
-	u64 entity_count = 0;
-	if(!reader(entity_count)) {
-		return core::Err();
-	}
-
-	for(u64 i = 0; i != entity_count; ++i) {
-		u64 index = 0;
-		if(!reader(index)) {
-			return core::Err();
-		}
-		if(!_entities.create_with_index(EntityIndex(index))) {
-			return core::Err();
-		}
-	}
-	y_debug_assert(_entities.size() == entity_count);
-
-	u32 container_count = 0;
-	if(!reader(container_count)) {
-		return core::Err();
-	}
-	for(u32 i = 0; i != container_count; ++i) {
-		if(auto container = detail::deserialize_container(reader)) {
-			_component_containers[container->type()] = std::move(container);
-		} else {
-			log_msg("Component type can not be deserialized.", Log::Warning);
-		}
-	}
-
-	for(const auto& p : _component_containers) {
-		p.second->post_deserialize(*this);
-		// do some checking
-		for(EntityIndex i : p.second->indexes()) {
-			const EntityId id = EntityId::from_unversioned_index(i);
-			if(!_entities.contains(id)) {
-				return core::Err();
-			}
-		}
-	}
-
-	if(!_required_components.is_empty()) {
-		for(EntityId id : entities()) {
-			add_required_components(id);
-		}
-	}
-
-	return core::Ok();
-}
-
-
-
-
-
 
 }
 }

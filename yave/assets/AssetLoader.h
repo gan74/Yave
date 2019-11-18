@@ -174,7 +174,12 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 		std::mutex _lock;
 };
 
-
+template<typename T>
+void AssetPtr<T>::post_deserialize(AssetLoader& loader)  {
+	if(auto r = loader.load<T>(_id)) {
+		_ptr = r.unwrap()._ptr;
+	}
+}
 
 template<typename T>
 serde2::Result AssetPtr<T>::serialize(WritableAssetArchive& arc) const noexcept {

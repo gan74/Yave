@@ -64,17 +64,12 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		bool import_anims = (_flags & SceneImportFlags::ImportAnims) == SceneImportFlags::ImportAnims;
 		bool import_images = (_flags & SceneImportFlags::ImportImages) == SceneImportFlags::ImportImages;
 		bool import_materials = (_flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials;
-		bool import_objects = (_flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportObjects;
 		bool flip_uvs = (_flags & SceneImportFlags::FlipUVs) == SceneImportFlags::FlipUVs;
 
 		ImGui::Checkbox("Import meshes", &import_meshes);
 		ImGui::Checkbox("Import animations", &import_anims);
 		ImGui::Checkbox("Import images", &import_images);
 		ImGui::Checkbox("Import materials", &import_materials);
-		ImGui::Separator();
-
-		ImGui::Checkbox("Import objects and create world", &import_objects);
-
 		ImGui::Separator();
 
 		const char* axes[] = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"};
@@ -104,20 +99,15 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		ImGui::Checkbox("Flip UVs", &flip_uvs);
 
 		import_materials &= import_images;
-		import_objects &= import_meshes && import_materials;
 		_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
 				 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
 				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
 				 (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None) |
-				 (import_objects ? SceneImportFlags::ImportObjects : SceneImportFlags::None) |
 				 (flip_uvs ? SceneImportFlags::FlipUVs : SceneImportFlags::None)
 			;
 
 		if(import_materials && import_images) {
 			_flags = _flags | SceneImportFlags::ImportMaterials;
-		}
-		if(import_objects && import_meshes && import_materials) {
-			_flags = _flags | SceneImportFlags::ImportObjects;
 		}
 
 		if(ImGui::Button("Ok")) {
@@ -133,7 +123,7 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 	} else {
 		if(done_loading()) {
 			try {
-				import(std::move(_import_future.get()));
+				import(_import_future.get());
 			} catch(std::exception& e) {
 				log_msg(fmt("Unable to import scene: %" , e.what()), Log::Error);
 				_browser.show();
@@ -245,39 +235,6 @@ void SceneImporter::import(import::SceneData scene) {
 			import_assets(materials, material_import_path);
 		}
 
-		{
-			using import::SceneImportFlags;
-			if((_flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportObjects) {
-				y_profile_zone("import world");
-
-				ecs::EntityWorld world;
-				for(const auto& named_obj : scene.objects) {
-					const auto& object = named_obj.obj();
-
-					const auto material = context()->loader().load<Material>(make_full_name(material_import_path, object.material));
-					const auto mesh = context()->loader().load<StaticMesh>(make_full_name(mesh_import_path, object.mesh));
-
-					if(!material) {
-						log_msg(fmt("Unable to load material \"%\"", object.material), Log::Error);
-						continue;
-					}
-
-					if(!mesh) {
-						log_msg(fmt("Unable to load mesh \"%\"", object.mesh), Log::Error);
-						continue;
-					}
-
-					ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
-					world.create_component<EditorComponent>(entity, named_obj.name());
-					StaticMeshComponent* static_mesh = world.component<StaticMeshComponent>(entity);
-					static_mesh->material() = material.unwrap();
-					static_mesh->mesh() = mesh.unwrap();
-				}
-
-				const core::String name = make_full_name(world_import_path, "world");
-				import_asset(world, name);
-			}
-		}
 	}
 
 	context()->ui().refresh_all();

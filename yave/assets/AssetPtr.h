@@ -77,7 +77,7 @@ class AssetPtr {
 		}
 
 		AssetId id() const {
-			return _ptr ? _ptr->id : AssetId::invalid_id();
+			return _id;
 		}
 
 		bool is_reloaded() const {
@@ -108,6 +108,9 @@ class AssetPtr {
 		serde2::Result serialize(WritableAssetArchive& arc) const noexcept;
 		serde2::Result deserialize(ReadableAssetArchive& arc) noexcept;
 
+		y_serde3(_id)
+		void post_deserialize(AssetLoader& loader);
+
 	private:
 		template<typename U, typename... Args>
 		friend AssetPtr<U> make_asset(Args&&... args);
@@ -116,20 +119,24 @@ class AssetPtr {
 		friend AssetPtr<U> make_asset_with_id(AssetId id, Args&&... args);
 
 		friend class WeakAssetPtr<T>;
-
 		friend class GenericAssetPtr;
-
 		friend class AssetLoader;
 
 		template<typename... Args>
-		explicit AssetPtr(AssetId id, Args&&... args) : _ptr(std::make_shared<Pair>(id, y_fwd(args)...)) {
+		explicit AssetPtr(AssetId id, Args&&... args) :
+				_ptr(std::make_shared<Pair>(id, y_fwd(args)...)),
+				_id(id) {
 		}
 
-		AssetPtr(const std::shared_ptr<Pair>& ptr) : _ptr(ptr) {
+		AssetPtr(std::shared_ptr<Pair> ptr) : _ptr(std::move(ptr)) {
+			if(_ptr) {
+				_id = _ptr->id;
+			}
 		}
 
 	private:
 		std::shared_ptr<Pair> _ptr;
+		AssetId _id;
 };
 
 template<typename T, typename... Args>

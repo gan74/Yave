@@ -26,68 +26,6 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-namespace detail {
-static RegisteredContainerType* registered_types_head = nullptr;
-struct MagicNumber{};
-
-usize registered_types_count() {
-	usize count = 0;
-	for(auto* i = registered_types_head; i; i = i->next) {
-		++count;
-	}
-	return count;
-}
-
-void register_container_type(RegisteredContainerType* type, u64 type_id, ComponentTypeIndex type_index, create_container_t create_container) {
-	for(auto* i = registered_types_head; i; i = i->next) {
-		y_debug_assert(i->type_id != type_id);
-	}
-	y_debug_assert(!type->next);
-
-	type->type_id = type_id;
-	type->type_index = type_index;
-	type->create_container = create_container;
-	type->next = registered_types_head;
-	registered_types_head = type;
-}
-
-serde2::Result serialize_container(WritableAssetArchive& writer, ComponentContainerBase* container) {
-	u64 type_id = container->serialization_type_id();
-	if(!writer(u64(type_hash<MagicNumber>())) || !writer(u64(type_id))) {
-		return core::Err();
-	}
-	return container->serialize(writer);
-}
-
-std::unique_ptr<ComponentContainerBase> deserialize_container(ReadableAssetArchive& reader) {
-	u64 magic = 0;
-	u64 type_id = 0;
-	if(!reader(magic) || magic != type_hash<MagicNumber>() || !reader(type_id)) {
-		return nullptr;
-	}
-	for(auto* i = registered_types_head; i; i = i->next) {
-		if(i->type_id == type_id) {
-			auto cont = i->create_container();
-			if(cont->deserialize(reader)) {
-				return cont;
-			}
-			return nullptr;
-		}
-	}
-	return nullptr;
-}
-
-std::unique_ptr<ComponentContainerBase> create_container(ComponentTypeIndex type_index) {
-	for(auto* i = registered_types_head; i; i = i->next) {
-		if(i->type_index == type_index) {
-			return i->create_container();
-		}
-	}
-	return nullptr;
-}
-
-}
-
 ComponentContainerBase::~ComponentContainerBase() {
 }
 

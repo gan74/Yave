@@ -38,33 +38,11 @@ namespace ecs {
 template<typename T>
 using ComponentVector = core::SparseVector<T, EntityIndex>;
 
-
 class ComponentContainerBase;
 
 namespace detail {
-
 template<typename T>
 using has_required_components_t = decltype(std::declval<T>().required_components_archetype());
-
-using create_container_t = std::unique_ptr<ComponentContainerBase> (*)();
-struct RegisteredContainerType {
-	u64 type_id = 0;
-	ComponentTypeIndex type_index = {};
-	create_container_t create_container = nullptr;
-	RegisteredContainerType* next = nullptr;
-};
-
-usize registered_types_count();
-void register_container_type(RegisteredContainerType* type, u64 type_id, ComponentTypeIndex type_index, create_container_t create_container);
-serde2::Result serialize_container(WritableAssetArchive& writer, ComponentContainerBase* container);
-std::unique_ptr<ComponentContainerBase> deserialize_container(ReadableAssetArchive& reader);
-std::unique_ptr<ComponentContainerBase> create_container(ComponentTypeIndex type_index);
-
-template<typename T>
-void register_container_type(RegisteredContainerType* type, create_container_t create_container) {
-	// type_hash is not portable, but without reflection we don't have a choice...
-	register_container_type(type, type_hash<T>(), index_for_type<T>(), create_container);
-}
 }
 
 
@@ -77,9 +55,7 @@ class ComponentContainerBase : NonMovable {
 		virtual core::Result<void> create_one(EntityWorld& world, EntityId id) = 0;
 		virtual core::Span<EntityIndex> indexes() const = 0;
 
-		virtual void add(const ComponentContainerBase* other, const std::unordered_map<EntityIndex, EntityId>& id_map) = 0;
-
-		virtual std::string_view type_name() const = 0;
+		virtual std::string_view component_type_name() const = 0;
 
 		ComponentTypeIndex type() const {
 			return _type;
@@ -145,7 +121,9 @@ class ComponentContainerBase : NonMovable {
 			return component_vector_fast<T>();
 		}
 
-		//y_serde3_poly_base(ComponentContainerBase)
+
+		y_serde3_poly_base(ComponentContainerBase)
+		virtual void post_deserialize_poly(AssetLoader&) = 0;
 
 	protected:
 		template<typename T>
@@ -181,17 +159,6 @@ class ComponentContainerBase : NonMovable {
 			y_debug_assert(type() == index_for_type<T>());
 			return (*static_cast<const ComponentVector<T>*>(_sparse_ptr));
 		}
-
-	private:
-		friend class EntityWorld;
-		friend serde2::Result detail::serialize_container(WritableAssetArchive&, ComponentContainerBase*);
-		friend std::unique_ptr<ComponentContainerBase> detail::deserialize_container(ReadableAssetArchive&);
-
-		virtual serde2::Result serialize(WritableAssetArchive&) const = 0;
-		virtual serde2::Result deserialize(ReadableAssetArchive&) = 0;
-		virtual u64 serialization_type_id() const = 0;
-
-		virtual void post_deserialize(EntityWorld&) {}
 };
 
 
@@ -200,20 +167,7 @@ class ComponentContainerBase : NonMovable {
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
 	public:
-		ComponentContainer() :
-				ComponentContainerBase(_components), // we don't actually need to care about initialization order here
-				_registerer(&registerer) {
-		}
-
-		void add(const ComponentContainerBase* other, const std::unordered_map<EntityIndex, EntityId>& id_map) override {
-			y_profile();
-			if(const ComponentContainer<T>* container = dynamic_cast<const ComponentContainer<T>*>(other)) {
-				for(const auto& [index, comp] : container->_components.as_pairs()) {
-					if(const auto it = id_map.find(index); it != id_map.end()) {
-						_components.insert(it->second.index(), comp);
-					}
-				}
-			}
+		ComponentContainer() : ComponentContainerBase(_components) {
 		}
 
 		void remove(core::Span<EntityId> ids) override {
@@ -243,82 +197,22 @@ class ComponentContainer final : public ComponentContainerBase {
 			return _components.indexes();
 		}
 
-		std::string_view type_name() const override {
+		std::string_view component_type_name() const override {
 			return ct_type_name<T>();
 		}
 
 		y_serde3(_components)
-		//y_serde3_poly(ComponentContainer)
+		y_serde3_poly(ComponentContainer)
+
+		void post_deserialize_poly(AssetLoader& loader) override {
+			serde3::ReadableArchive::post_deserialize(*this, loader);
+		}
 
 	private:
 		ComponentVector<T> _components;
-
-	// ------------------------------------- serde BS -------------------------------------
-
-	private:
-		static constexpr bool is_serde_compatible = serde2::is_serializable<WritableAssetArchive, T>::value && serde2::is_deserializable<ReadableAssetArchive, T>::value;
-
-		u64 serialization_type_id() const override {
-			return _registerer->type.type_id;
-		}
-
-		serde2::Result serialize(WritableAssetArchive& writer) const override {
-			y_profile();
-			if constexpr(is_serde_compatible) {
-				if(!writer(u64(_components.size()))) {
-					return core::Err();
-				}
-				for(auto p : _components.as_pairs()) {
-					if(!writer(u64(p.first)) || !writer(p.second)) {
-						return core::Err();
-					}
-				}
-			}
-			return core::Ok();
-		}
-
-		serde2::Result deserialize(ReadableAssetArchive& reader) override {
-			y_profile();
-			if constexpr(is_serde_compatible) {
-				u64 component_count = 0;
-				if(!reader(component_count)) {
-					return core::Err();
-				}
-				for(u64 i = 0; i != component_count; ++i) {
-					u64 id = 0;
-					if(!reader(id) || !reader(_components.insert(EntityIndex(id)))) {
-						return core::Err();
-					}
-				}
-				y_debug_assert(_components.size() == component_count);
-			}
-			return core::Ok();
-		}
-
-		void post_deserialize(EntityWorld& world) override {
-			for(EntityIndex index : indexes()) {
-				add_required_components<T>(world, EntityId::from_unversioned_index(index));
-			}
-		}
-
-
-		static struct Registerer {
-			Registerer() {
-				detail::register_container_type<T>(&type, []() -> std::unique_ptr<ComponentContainerBase> {
-						return std::make_unique<ComponentContainer<T>>();
-					});
-			}
-
-			detail::RegisteredContainerType type;
-		} registerer;
-
-		// make sure that it is ODR used no matter what
-		Registerer* _registerer = nullptr;
 };
 
-
-template<typename T>
-typename ComponentContainer<T>::Registerer ComponentContainer<T>::registerer = ComponentContainer<T>::Registerer();
+static_assert(serde3::has_serde3_post_deser_poly_v<ComponentContainerBase*, AssetLoader&>);
 
 }
 }

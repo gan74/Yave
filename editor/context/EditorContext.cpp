@@ -166,60 +166,35 @@ Logs& EditorContext::logs() {
 	return _logs;
 }
 
-static constexpr std::string_view world_file = "world.yw";
+static constexpr std::string_view world_file = "world.yw3";
 
 void EditorContext::save_world() const {
 	auto file = io2::File::create(world_file);
 	if(!file) {
-		log_msg("Unable to open world file.", Log::Error);
+		log_msg("Unable to open file.", Log::Error);
 		return;
 	}
-
-	WritableAssetArchive ar(file.unwrap());
-	if(!_world.serialize(ar)) {
+	serde3::WritableArchive arc(std::move(file.unwrap()));
+	if(!arc.serialize(_world)) {
 		log_msg("Unable to save world.", Log::Error);
 	}
-
-	/*{
-		auto file = io2::File::create(fmt("%.2", world_file));
-		if(!file) {
-			log_msg("Unable to open file.", Log::Error);
-			return;
-		}
-		serde3::WritableArchive arc(std::move(file.unwrap()));
-		if(!arc.serialize(_world)) {
-			log_msg("Unable to save world.", Log::Error);
-		}
-	}*/
 }
 
 void EditorContext::load_world() {
-	auto file = io2::File::open(world_file);
-	if(!file) {
-		log_msg("Unable to open world file.", Log::Error);
-		return;
-	}
-
 	ecs::EntityWorld world = create_editor_world();
 
-	ReadableAssetArchive ar(file.unwrap(), _loader);
-	if(!world.deserialize(ar)) {
-		log_msg("Unable to load world.", Log::Error);
+	auto file = io2::File::open(world_file);
+	if(!file) {
+		log_msg("Unable to open file.", Log::Error);
 		return;
 	}
-
-	/*{
-		ecs::EntityWorld world2 = create_editor_world();
-		auto file = io2::File::create(fmt("%.2", world_file));
-		if(!file) {
-			log_msg("Unable to open file.", Log::Error);
-			return;
-		}
-		serde3::ReadableArchive arc(std::move(file.unwrap()));
-		if(!arc.deserialize(world2)) {
-			log_msg("Unable to load world.", Log::Error);
-		}
-	}*/
+	serde3::ReadableArchive arc(std::move(file.unwrap()));
+	const auto status = arc.deserialize(world, loader());
+	if(status.is_error()) {
+		log_msg("Unable to load world.", Log::Error);
+	} else if(status.unwrap() == serde3::Success::Partial) {
+		log_msg("World was only partialy loaded.", Log::Warning);
+	}
 
 	_world = std::move(world);
 	y_debug_assert(_world.required_component_types().size() == 1);
