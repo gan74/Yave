@@ -11,6 +11,6 @@ layout(location = 2) in vec3 in_bitangent;
 layout(location = 3) in vec2 in_uv;
 
 void main() {
-	out_color = pack_color(vec3(1.0), 0.0);
+	out_color = pack_color(vec3(0.5), 0.0);
 	out_normal = pack_normal(in_normal, 0.2);
 }

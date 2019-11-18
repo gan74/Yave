@@ -102,6 +102,7 @@ class DeviceResources final : NonCopyable {
 		enum Textures {
 			BlackTexture,
 			WhiteTexture,
+			GreyTexture,
 			RedTexture,
 
 			FlatNormalTexture,

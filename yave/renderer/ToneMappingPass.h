@@ -28,6 +28,7 @@ namespace yave {
 
 struct ToneMappingSettings {
 	bool auto_exposure = true;
+	float key_value = 0.148f;
 };
 
 struct ToneMappingPass {

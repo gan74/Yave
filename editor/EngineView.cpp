@@ -203,6 +203,7 @@ void EngineView::draw_menu_bar() {
 			if(ImGui::BeginMenu("Tone mapping")) {
 				ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
 				ImGui::MenuItem("Auto exposure", nullptr, &settings.auto_exposure);
+				ImGui::SliderFloat("Key", &settings.key_value, 0.01f, 1.0f);
 				ImGui::EndMenu();
 			}
 

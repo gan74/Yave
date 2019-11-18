@@ -92,7 +92,7 @@ static void light_widget(T* light) {
 		ImGui::EndPopup();
 	}
 
-	ImGui::DragFloat("Intensity", &light->intensity(), 1.0f, 0.0f, std::numeric_limits<float>::max());
+	ImGui::DragFloat("Intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max());
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
@@ -214,14 +214,11 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 	}
 
 	{
-		math::Vec3 prev_euler; // this should be stable
 		auto [pos, rot, scale] = component->transform().decompose();
 
 		// position
 		{
-			ImGui::BeginGroup();
 			ImGui::InputFloat3("Position", pos.data(), "%.2f");
-			ImGui::EndGroup();
 		}
 
 		// rotation
@@ -235,20 +232,18 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 				return (dedouble_quat(qa) - dedouble_quat(qb)).length2() < 0.0001f;
 			};
 
-			math::Vec3 euler = rot.to_euler() * math::to_deg(1.0f);
-			if(is_same_angle(euler, prev_euler)) {
+			const math::Vec3 base_euler = rot.to_euler() * math::to_deg(1.0f);
+			math::Vec3 euler = base_euler;
+			/*if(is_same_angle(euler, prev_euler)) {
 				euler = prev_euler;
-			}
+			}*/
 
-			float speed = 1.0f;
-			ImGui::BeginGroup();
+			const float speed = 1.0f;
 			ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
 			ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
 			ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
-			ImGui::EndGroup();
 
-			if(!is_same_angle(euler, prev_euler)) {
-				prev_euler = euler;
+			if(!is_same_angle(euler, base_euler)) {
 				rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
 			}
 		}

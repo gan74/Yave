@@ -76,19 +76,25 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 	FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
 
 	const auto tone_mapped = builder.declare_image(format, size);
+	const auto key_value = builder.declare_typed_buffer<float>();
+
 	if(!settings.auto_exposure) {
-		params = builder.declare_typed_buffer<uniform::ToneMappingParams>(1);
+		params = builder.declare_typed_buffer<uniform::ToneMappingParams>();
 		builder.map_update(params);
 	}
 
 	builder.add_color_output(tone_mapped);
 	builder.add_uniform_input(in_lit, 0, PipelineStage::FragmentBit);
 	builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
+	builder.add_uniform_input(key_value, 0, PipelineStage::FragmentBit);
+	builder.map_update(key_value);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+		self->resources()->mapped_buffer(key_value)[0] = settings.key_value;
 		if(!settings.auto_exposure) {
 			TypedMapping<uniform::ToneMappingParams> mapping = self->resources()->mapped_buffer(params);
 			mapping[0] = uniform::ToneMappingParams();
 		}
+
 
 		auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 		const auto* material = recorder.device()->device_resources()[DeviceResources::ToneMappingMaterialTemplate];

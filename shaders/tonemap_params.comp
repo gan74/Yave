@@ -46,7 +46,7 @@ void main() {
 		const float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
 		const float avg = exp2(log_avg);
 
-		params.params.avg_luminance = avg;
+		params.params.avg_lum = avg;
 		params.params.max_lum = avg * 9.6;
 	}
 }

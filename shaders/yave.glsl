@@ -48,7 +48,7 @@ struct Frustum4 {
 };
 
 struct ToneMappingParams {
-	float avg_luminance;
+	float avg_lum;
 	float max_lum;
 
 	ivec2 padding_0;
