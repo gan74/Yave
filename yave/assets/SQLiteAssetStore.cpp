@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "SQLiteAssetStore.h"
 
+#include <thread>
+
 #ifndef YAVE_NO_SQLITE
 
 #include <sqlite/sqlite3.h>
@@ -398,6 +400,13 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 
 SQLiteAssetStore::~SQLiteAssetStore() {
 	y_profile();
+
+	u32 timeout = 8;
+	while(sqlite3_next_stmt(_database, nullptr)) {
+		log_msg("Waiting for DB to finish.");
+		std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
+		timeout = std::min(timeout * 2, u32(1024));
+	}
 
 	check(sqlite3_close(_database));
 }
