@@ -36,6 +36,10 @@ SOFTWARE.
 #endif
 
 
+namespace yave {
+class AssetLoader;
+}
+
 #define y_try_status(result)																	\
 	do {																						\
 		if(auto&& _y_try_result = (result); _y_try_result.is_error()) { 						\
@@ -70,31 +74,10 @@ template<typename A, typename B>
 struct IsTuple<std::pair<A, B>> {
 	static constexpr bool value = true;
 };
-
-template<typename T>
-struct Deconst {
-	using type = T;
-};
-
-template<typename... Args>
-struct Deconst<std::tuple<Args...>> {
-	using type = std::tuple<std::remove_const_t<Args>...>;
-};
-
-template<typename A, typename B>
-struct Deconst<std::pair<A, B>> {
-	using type = std::pair<std::remove_const_t<A>, std::remove_const_t<B>>;
-};
-
 }
 
 template<typename T>
 static constexpr bool is_tuple_v = detail::IsTuple<remove_cvref_t<T>>::value;
-
-template<typename T>
-using deconst_t = typename detail::Deconst<remove_cvref_t<T>>::type;
-
-
 
 
 class WritableArchive final {
@@ -187,15 +170,14 @@ class WritableArchive final {
 			const auto header = detail::build_header(object);
 			y_try(write_one(header));
 
-			pre_serialization(object);
 			if constexpr(has_serde3_poly_v<T>) {
 				return serialize_poly(object);
 			} else if constexpr(has_serde3_v<T>) {
 				return serialize_object(object);
-			} else if constexpr(std::is_trivially_copyable_v<T>) {
-				return serialize_pod(object);
 			} else if constexpr(is_tuple_v<T>) {
 				return serialize_tuple(object);
+			} else if constexpr(std::is_trivially_copyable_v<T>) {
+				return serialize_pod(object);
 			} else {
 				return serialize_collection(object);
 			}
@@ -324,16 +306,6 @@ class WritableArchive final {
 		}
 
 
-		// ------------------------------- PRE -------------------------------
-		template<typename T>
-		void pre_serialization(NamedObject<T> object) {
-			unused(object);
-			if constexpr(has_serde3_pre_ser_v<T>) {
-				object.object.pre_serialization();
-			}
-		}
-
-
 		// ------------------------------- WRITE -------------------------------
 		template<typename T>
 		Result write_one(const T& t) {
@@ -398,10 +370,21 @@ class ReadableArchive final {
 		explicit ReadableArchive(F&& file) : ReadableArchive(std::make_unique<remove_cvref_t<F>>(y_fwd(file))) {
 		}
 
-		template<typename T>
-		Result deserialize(T& t) {
-			return deserialize_one(NamedObject{t, detail::version_string});
+		template<typename T, typename... Args>
+		Result deserialize(T& t, Args&&... args) {
+			auto res = deserialize_one(NamedObject{t, detail::version_string});
+			if(res) {
+				post_deserialize(t, y_fwd(args)...);
+			}
+			return res;
 		}
+
+		Y_TODO(post_deserialize might be called several time in some cases (poly mostly))
+		template<typename T, typename... Args>
+		static void post_deserialize(T& t, Args&&... args) {
+			post_deserialize_one(t, y_fwd(args)...);
+		}
+
 
 	private:
 		template<typename T>
@@ -413,19 +396,15 @@ class ReadableArchive final {
 			y_try_discard(_file->read_one(size));
 
 			if constexpr(has_serde3_poly_v<T>) {
-				auto res = deserialize_poly(object, header, size);
-				if(res.is_ok() && object.object != nullptr) {
-					return post_deserialization(NamedObject(*object.object, object.name), std::move(res));
-				}
-				return res;
+				return deserialize_poly(object, header, size);
 			} else if constexpr(has_serde3_v<T>) {
-				return post_deserialization(object, deserialize_object(object, header, size));
-			} else if constexpr(std::is_trivially_copyable_v<T>) {
-				return post_deserialization(object, deserialize_pod(object, header, size));
+				return deserialize_object(object, header, size);
 			} else if constexpr(is_tuple_v<T>) {
-				return post_deserialization(object, deserialize_tuple(object, header, size));
+				return deserialize_tuple(object, header, size);
+			} else if constexpr(std::is_trivially_copyable_v<T>) {
+				return deserialize_pod(object, header, size);
 			} else {
-				return post_deserialization(object, deserialize_collection(object, header, size));
+				return deserialize_collection(object, header, size);
 			}
 		}
 
@@ -471,6 +450,9 @@ class ReadableArchive final {
 						object.object.insert(std::move(value));
 					}
 				}
+				if(object.object.size() != collection_size) {
+					return core::Err();
+				}
 				return core::Ok(Success::Full);
 			} catch(std::bad_alloc&) {
 				seek(end);
@@ -500,7 +482,7 @@ class ReadableArchive final {
 
 		// ------------------------------- POD -------------------------------
 		template<typename T>
-			Result deserialize_pod(NamedObject<T> object, const detail::FullHeader header, size_type size) {
+		Result deserialize_pod(NamedObject<T> object, const detail::FullHeader header, size_type size) {
 			static_assert(std::is_trivially_copyable_v<T>);
 			static_assert(!std::is_pointer_v<T>);
 
@@ -621,13 +603,56 @@ class ReadableArchive final {
 
 
 		// ------------------------------- POST -------------------------------
-		template<typename T>
-		Result post_deserialization(NamedObject<T> object, Result res) {
-			unused(object);
-			if constexpr(has_serde3_post_deser_v<T>) {
-				object.object.post_deserialization();
+		template<typename T, typename... Args>
+		static void post_deserialize_one(T& t, Args&&... args) {
+			unused(t);
+			if constexpr(has_serde3_poly_v<T>) {
+				if constexpr(has_serde3_post_deser_poly_v<T>) {
+					t->post_deserialize_poly();
+				}
+				if constexpr(has_serde3_post_deser_poly_v<T, Args...>) {
+					t->post_deserialize_poly(args...);
+				}
+			} else {
+				if constexpr(has_serde3_post_deser_v<T>) {
+					t.post_deserialize();
+				}
+				if constexpr(has_serde3_post_deser_v<T, Args...>) {
+					t.post_deserialize(args...);
+				}
 			}
-			return res;
+
+
+			if constexpr(has_serde3_v<T>) {
+				post_deserialize_named_tuple<0>(t._y_serde3_refl(), args...);
+			} else if constexpr(is_tuple_v<T>) {
+				post_deserialize_tuple<0>(t, args...);
+			} else if constexpr(is_iterable_v<T>) {
+				post_deserialize_collection(t, args...);
+			}
+		}
+
+		template<typename C, typename... Args>
+		static void post_deserialize_collection(C& col, Args&&... args) {
+			for(auto&& item : col) {
+				post_deserialize_one(item, args...);
+			}
+		}
+
+		template<usize I, typename Tpl, typename... Args>
+		static void post_deserialize_tuple(Tpl& objects, Args&&... args) {
+			if constexpr(I < std::tuple_size_v<Tpl>) {
+				post_deserialize_one(std::get<I>(objects), args...);
+				post_deserialize_tuple<I + 1>(objects, args...);
+			}
+		}
+
+		template<usize I, typename Tpl, typename... Args>
+		static void post_deserialize_named_tuple(const Tpl& objects, Args&&... args) {
+			if constexpr(I < std::tuple_size_v<Tpl>) {
+				post_deserialize_one(std::get<I>(objects).object, args...);
+				post_deserialize_named_tuple<I + 1>(objects, args...);
+			}
 		}
 
 

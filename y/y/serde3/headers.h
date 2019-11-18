@@ -32,6 +32,28 @@ SOFTWARE.
 
 namespace y {
 namespace serde3 {
+
+namespace detail {
+template<typename T>
+struct Deconst {
+	using type = remove_cvref_t<T>;
+};
+
+template<typename... Args>
+struct Deconst<std::tuple<Args...>> {
+	using type = std::tuple<remove_cvref_t<Args>...>;
+};
+
+template<typename A, typename B>
+struct Deconst<std::pair<A, B>> {
+	using type = std::pair<remove_cvref_t<A>, remove_cvref_t<B>>;
+};
+}
+
+template<typename T>
+using deconst_t = typename detail::Deconst<remove_cvref_t<T>>::type;
+
+
 namespace detail {
 
 struct TypeHeader {
@@ -136,7 +158,7 @@ constexpr u32 ct_str_hash(std::string_view str) {
 
 template<typename T>
 constexpr u32 header_type_hash() {
-	using naked = remove_cvref_t<T>;
+	using naked = deconst_t<T>;
 	u32 hash = ct_str_hash(ct_type_name<naked>());
 	if constexpr(has_serde3_v<T>) {
 		hash |= 0x01;

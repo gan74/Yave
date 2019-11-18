@@ -117,11 +117,11 @@ struct PolyType {
 	    return y::serde3::detail::poly_type_id<y::remove_cvref_t<decltype(*this)>>();								\
     }																												\
 	y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive& arc) const override {					\
-	    _y_register.used();																							\
+		_y_register.used();																							\
 	    return arc.serialize(*this);																				\
     }																												\
 	y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive& arc) override {						\
-	    _y_register.used();																							\
+		_y_register.used();																							\
 	    return arc.deserialize(*this);																				\
     }
 
