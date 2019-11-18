@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef Y_SERDE3_ARCHIVES_H
 #define Y_SERDE3_ARCHIVES_H
 
+#include <memory>
+
 #include <y/core/Vector.h>
 
 #include "headers.h"
@@ -59,6 +61,8 @@ using size_type = u64;
 static constexpr std::string_view version_string			= "serde3.v1.0";
 static constexpr std::string_view collection_version_string = "serde3.col.v1.0";
 static constexpr std::string_view tuple_version_string		= "serde3.tpl.v1.0";
+static constexpr std::string_view ptr_version_string		= "serde3.ptr.v1.0";
+
 
 template<typename T>
 struct IsTuple {
@@ -74,15 +78,64 @@ template<typename A, typename B>
 struct IsTuple<std::pair<A, B>> {
 	static constexpr bool value = true;
 };
+
+
+template<typename T>
+struct StdPtr {
+	static constexpr bool is_std_ptr = false;
+};
+
+template<typename T>
+struct StdPtr<std::unique_ptr<T>> {
+	static constexpr bool is_std_ptr = true;
+	static auto make() {
+		return std::make_unique<T>();
+	}
+};
+
+template<typename T>
+struct StdPtr<std::shared_ptr<T>> {
+	static constexpr bool is_std_ptr = true;
+	static auto make() {
+		return std::make_shared<T>();
+	}
+};
+
+
+template<typename T>
+struct IsArray {
+	static constexpr bool value = false;
+};
+
+template<typename T, usize N>
+struct IsArray<std::array<T, N>> {
+	static constexpr bool value = true;
+};
+
 }
 
 template<typename T>
 static constexpr bool is_tuple_v = detail::IsTuple<remove_cvref_t<T>>::value;
 
+template<typename T>
+static constexpr bool is_std_ptr_v = detail::StdPtr<remove_cvref_t<T>>::is_std_ptr;
+
+template<typename T>
+static constexpr bool is_array_v = detail::IsArray<remove_cvref_t<T>>::value;
+
+template<typename T>
+auto make_std_ptr() {
+	static_assert(is_std_ptr_v<T>);
+	return detail::StdPtr<T>::make();
+}
+
+
+
 
 class WritableArchive final {
 
-	using File = io2::WriterPtr;
+	//using File = io2::WriterPtr;
+	using File = io2::Writer;
 	using size_type = detail::size_type;
 
 	template<typename T>
@@ -96,16 +149,16 @@ class WritableArchive final {
 	};
 
 	public:
-		WritableArchive(File file) :
-				_file(std::move(file)),
+		WritableArchive(File& file) :
+				_file(file),
 #ifdef Y_SERDE3_BUFFER
 				_buffer(buffer_size),
 #endif
-				_cached_file_size(_file->tell())
+				_cached_file_size(_file.tell())
 		{}
 
-		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Writer, remove_cvref_t<F>>>>
-		explicit WritableArchive(F&& file) : WritableArchive(std::make_unique<remove_cvref_t<F>>(y_fwd(file))) {
+		WritableArchive(std::unique_ptr<File> file) : WritableArchive(*file) {
+			_storage = std::move(file);
 		}
 
 		~WritableArchive() {
@@ -127,16 +180,16 @@ class WritableArchive final {
 #ifdef Y_SERDE3_BUFFER
 			usize buffer_size = _buffer.tell();
 			if(buffer_size) {
-				y_try_discard(_file->write(_buffer.data(), buffer_size));
+				y_try_discard(_file.write(_buffer.data(), buffer_size));
 				_buffer.clear();
 			}
-			_cached_file_size = _file->tell();
+			_cached_file_size = _file.tell();
 #endif
 			return core::Ok(Success::Full);
 		}
 
 		Result finalize_in_buffer() {
-			y_debug_assert(_cached_file_size == _file->tell());
+			y_debug_assert(_cached_file_size == _file.tell());
 #ifdef Y_SERDE3_BUFFER
 			while(!_patches.is_empty()) {
 				const auto& p = _patches.last();
@@ -154,13 +207,13 @@ class WritableArchive final {
 
 		Result finalize() {
 			y_try(flush());
-			usize pos = _file->tell();
+			usize pos = _file.tell();
 			for(const SizePatch& patch : _patches) {
-				_file->seek(patch.index);
-				y_try_discard(_file->write_one(patch.size));
+				_file.seek(patch.index);
+				y_try_discard(_file.write_one(patch.size));
 			}
 			_patches.make_empty();
-			_file->seek(pos);
+			_file.seek(pos);
 
 			return core::Ok(Success::Full);
 		}
@@ -178,9 +231,32 @@ class WritableArchive final {
 				return serialize_tuple(object);
 			} else if constexpr(std::is_trivially_copyable_v<T>) {
 				return serialize_pod(object);
+			} else if constexpr(is_std_ptr_v<T>) {
+				return serialize_ptr(object);
 			} else {
 				return serialize_collection(object);
 			}
+		}
+
+
+		// ------------------------------- PTR -------------------------------
+		template<typename T>
+		Result serialize_ptr(NamedObject<T> object) {
+			if(object.object == nullptr) {
+				return write_one(size_type(0));
+			}
+
+			SizePatch patch{tell(), 0};
+
+			{
+				y_try(write_one(size_type(-1)));
+				y_try(serialize_one(NamedObject{*object.object, detail::ptr_version_string}));
+			}
+
+			patch.size = (size_type(tell()) - size_type(patch.index)) - sizeof(size_type);
+			push_patch(patch);
+
+			return core::Ok(Success::Full);
 		}
 
 
@@ -316,7 +392,7 @@ class WritableArchive final {
 			y_try_discard(_buffer.write_one(t));
 #else
 			_cached_file_size += sizeof(T);
-			y_try_discard(_file->write_one(t));
+			y_try_discard(_file.write_one(t));
 #endif
 			return core::Ok(Success::Full);
 		}
@@ -334,20 +410,28 @@ class WritableArchive final {
 		}
 
 	private:
-		File _file;
+		File& _file;
 
 #ifdef Y_SERDE3_BUFFER
 		io2::Buffer _buffer;
 #endif
 		usize _cached_file_size = 0;
 		core::Vector<SizePatch> _patches;
+
+		std::unique_ptr<File> _storage;
 };
+
+
+
+
+
 
 
 
 class ReadableArchive final {
 
-	using File = io2::ReaderPtr;
+	//using File = io2::ReaderPtr;
+	using File = io2::Reader;
 	using size_type = detail::size_type;
 
 	static constexpr bool force_safe = false;
@@ -363,11 +447,11 @@ class ReadableArchive final {
 	};
 
 	public:
-		ReadableArchive(File file) : _file(std::move(file)) {
+		ReadableArchive(File& file) : _file(file) {
 		}
 
-		template<typename F, typename = std::enable_if_t<std::is_base_of_v<io2::Reader, remove_cvref_t<F>>>>
-		explicit ReadableArchive(F&& file) : ReadableArchive(std::make_unique<remove_cvref_t<F>>(y_fwd(file))) {
+		ReadableArchive(std::unique_ptr<File> file) : ReadableArchive(*file) {
+			_storage = std::move(file);
 		}
 
 		template<typename T, typename... Args>
@@ -393,7 +477,7 @@ class ReadableArchive final {
 			size_type size = size_type(-1);
 
 			y_try_discard(read_header(header));
-			y_try_discard(_file->read_one(size));
+			y_try_discard(_file.read_one(size));
 
 			if constexpr(has_serde3_poly_v<T>) {
 				return deserialize_poly(object, header, size);
@@ -403,9 +487,32 @@ class ReadableArchive final {
 				return deserialize_tuple(object, header, size);
 			} else if constexpr(std::is_trivially_copyable_v<T>) {
 				return deserialize_pod(object, header, size);
+			} else if constexpr(is_std_ptr_v<T>) {
+				return deserialize_ptr(object, header, size);
 			} else {
 				return deserialize_collection(object, header, size);
 			}
+		}
+
+
+		// ------------------------------- PTR -------------------------------
+		template<typename T>
+		Result deserialize_ptr(NamedObject<T> object, const detail::FullHeader header, size_type size) {
+			static_assert(is_std_ptr_v<T>);
+
+			object.object = nullptr;
+			if(!size) {
+				return core::Ok(Success::Full);
+			}
+
+			const auto check = detail::build_header(object);
+			if(header != check) {
+				seek(tell() + size);
+				return core::Ok(Success::Partial);
+			}
+
+			object.object = make_std_ptr<T>();
+			return deserialize_one(NamedObject{*object.object, detail::ptr_version_string});
 		}
 
 
@@ -445,9 +552,13 @@ class ReadableArchive final {
 				} else {
 					using value_type = deconst_t<typename T::value_type>;
 					for(size_type i = 0; i != collection_size; ++i) {
-						value_type value;
-						y_try(deserialize_one(NamedObject{value, detail::collection_version_string}));
-						object.object.insert(std::move(value));
+						if constexpr(is_array_v<T>) {
+							y_try(deserialize_one(NamedObject{object.object[i], detail::collection_version_string}));
+						} else {
+							value_type value;
+							y_try(deserialize_one(NamedObject{value, detail::collection_version_string}));
+							object.object.insert(std::move(value));
+						}
 					}
 				}
 				if(object.object.size() != collection_size) {
@@ -491,7 +602,7 @@ class ReadableArchive final {
 				static constexpr usize max_prim_size = 4 * sizeof(float);
 				if(header.type.name_hash == check.type.name_hash && size <= max_prim_size) {
 					std::array<u8, max_prim_size> buffer;
-					y_try_discard(_file->read(buffer.data(), size));
+					y_try_discard(_file.read(buffer.data(), size));
 					return try_convert<T>(object.object, header.type, buffer.data());
 				} else {
 					seek(tell() + size);
@@ -565,7 +676,7 @@ class ReadableArchive final {
 					size_type size = size_type(-1);
 
 					y_try_discard(read_header(header));
-					y_try_discard(_file->read_one(size));
+					y_try_discard(_file.read_one(size));
 
 					seek(tell() + size);
 
@@ -660,36 +771,37 @@ class ReadableArchive final {
 		template<typename T>
 		Result read_one(T& t) {
 			static_assert(!std::is_same_v<std::remove_reference_t<T>, detail::FullHeader>);
-			y_try_discard(_file->read_one(t));
+			y_try_discard(_file.read_one(t));
 			return core::Ok(Success::Full);
 		}
 
 		Result read_header(detail::FullHeader& header) {
-			y_try_discard(_file->read_one(header.type));
+			y_try_discard(_file.read_one(header.type));
 			if(header.type.is_polymorphic()) {
-				y_try_discard(_file->read_one(header.type_id));
+				y_try_discard(_file.read_one(header.type_id));
 			} else {
 				bool read_members = true;
 #ifdef Y_SLIM_POD_HEADER
 				read_members = header.type.has_serde();
 #endif
 				if(read_members) {
-					y_try_discard(_file->read_one(header.members));
+					y_try_discard(_file.read_one(header.members));
 				}
 			}
 			return core::Ok(Success::Full);
 		}
 
 		usize tell() const {
-			return _file->tell();
+			return _file.tell();
 		}
 
 		void seek(usize offset) {
-			_file->seek(offset);
+			_file.seek(offset);
 		}
 
 	private:
-		File _file;
+		File& _file;
+		std::unique_ptr<File> _storage;
 };
 
 }
