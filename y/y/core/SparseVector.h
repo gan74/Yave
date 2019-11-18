@@ -169,11 +169,14 @@ class SparseVector final {
 		using value_container = std::conditional_t<is_void_v, EmptyVec, core::Vector<non_void>>;
 
 	public:
-		using iterator = typename Vector<non_void>::iterator;
-		using const_iterator = typename Vector<non_void>::const_iterator;
+		//using iterator = typename Vector<non_void>::iterator;
+		//using const_iterator = typename Vector<non_void>::const_iterator;
 
 		using pair_iterator = detail::SparseVectorPairIterator<false, Elem, Index>;
 		using const_pair_iterator = detail::SparseVectorPairIterator<true, Elem, Index>;
+
+		using iterator = pair_iterator;
+		using const_iterator = const_pair_iterator;
 
 
 		bool has(index_type index) const {
@@ -280,35 +283,27 @@ class SparseVector final {
 		}
 
 		const_iterator begin() const {
-			return _values.begin();
+			return as_pairs().begin();
 		}
 
 		const_iterator end() const {
-			return _values.end();
+			return as_pairs().end();
 		}
 
 		const_iterator cbegin() const {
-			return _values.begin();
+			return as_pairs().begin();
 		}
 
 		const_iterator cend() const {
-			return _values.end();
+			return as_pairs().end();
 		}
 
 		iterator begin() {
-			return _values.begin();
+			return as_pairs().begin();
 		}
 
 		iterator end() {
-			return _values.end();
-		}
-
-		pointer data() {
-			return _values.data();
-		}
-
-		const_pointer data() const {
-			return _values.data();
+			return as_pairs().end();
 		}
 
 		auto as_pairs() {
