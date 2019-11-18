@@ -189,15 +189,18 @@ void SceneImporter::import(import::SceneData scene) {
 		};
 
 
+	Y_TODO(try to auto detect handedness)
 	if(_forward_axis != 0 || _up_axis != 4) {
-		const math::Vec3 axes[] = {{1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
-							 {0.0f, 1.0f, 0.0f}, { 0.0f, -1.0f,  0.0f},
-							 {0.0f, 0.0f, 1.0f}, { 0.0f,  0.0f, -1.0f}};
-		math::Transform<> transform;
+		const math::Vec3 axes[] = {
+				{1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
+				{0.0f, 1.0f, 0.0f}, { 0.0f, -1.0f,  0.0f},
+				{0.0f, 0.0f, 1.0f}, { 0.0f,  0.0f, -1.0f}
+			};
 
 		const math::Vec3 forward = axes[_forward_axis];
 		const math::Vec3 up = axes[_up_axis];
-		Y_TODO(try to auto detect handedness)
+
+		math::Transform<> transform;
 		transform.set_basis(forward, -forward.cross(up), up);
 
 		for(auto& mesh : scene.meshes) {
@@ -209,8 +212,6 @@ void SceneImporter::import(import::SceneData scene) {
 	for(auto& mesh : scene.meshes) {
 		mesh = import::compute_tangents(mesh.obj());
 	}
-
-
 
 
 	{

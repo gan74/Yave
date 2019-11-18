@@ -181,30 +181,6 @@ void AssetPtr<T>::post_deserialize(AssetLoader& loader)  {
 	}
 }
 
-template<typename T>
-serde2::Result AssetPtr<T>::serialize(WritableAssetArchive& arc) const noexcept {
-	return arc(id());
-}
-
-template<typename T>
-serde2::Result AssetPtr<T>::deserialize(ReadableAssetArchive& arc)  noexcept {
-	AssetId id;
-	if(!arc(id)) {
-		return core::Err();
-	}
-	if(id == AssetId::invalid_id()) {
-		*this = AssetPtr();
-		return core::Ok();
-	}
-
-	const auto asset = arc.loader().load<T>(id);
-	if(!asset) {
-		return core::Err();
-	}
-	*this = asset.unwrap();
-	return core::Ok();
-}
-
 }
 
 #endif // YAVE_ASSETS_ASSETLOADER_H

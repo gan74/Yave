@@ -105,9 +105,6 @@ class AssetPtr {
 
 
 		// AssetLoader.h
-		serde2::Result serialize(WritableAssetArchive& arc) const noexcept;
-		serde2::Result deserialize(ReadableAssetArchive& arc) noexcept;
-
 		y_serde3(_id)
 		void post_deserialize(AssetLoader& loader);
 

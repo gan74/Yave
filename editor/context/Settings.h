@@ -71,7 +71,6 @@ class Settings {
 		CameraSettings& camera();
 		UiSettings& ui();
 
-		y_serde2(_camera, _ui)
 		y_serde3(_camera, _ui)
 
 	private:

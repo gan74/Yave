@@ -37,7 +37,6 @@ class EditorComponent {
 		const core::String& name() const;
 		void set_name(core::String name);
 
-		y_serde2(_name)
 		y_serde3(_name)
 
 	private:
