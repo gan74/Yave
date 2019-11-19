@@ -174,7 +174,7 @@ void EditorContext::save_world() const {
 		log_msg("Unable to open file.", Log::Error);
 		return;
 	}
-	serde3::WritableArchive arc(std::move(file.unwrap()));
+	serde3::WritableArchive arc(file.unwrap());
 	if(!arc.serialize(_world)) {
 		log_msg("Unable to save world.", Log::Error);
 	}
@@ -188,7 +188,7 @@ void EditorContext::load_world() {
 		log_msg("Unable to open file.", Log::Error);
 		return;
 	}
-	serde3::ReadableArchive arc(std::move(file.unwrap()));
+	serde3::ReadableArchive arc(file.unwrap());
 	const auto status = arc.deserialize(world, loader());
 	if(status.is_error()) {
 		log_msg("Unable to load world.", Log::Error);

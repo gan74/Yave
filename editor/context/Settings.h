@@ -57,7 +57,9 @@ struct UiSettings {
 	Key change_gizmo_mode = Key::R;
 	Key change_gizmo_space = Key::Q;
 
-	y_serde3(change_gizmo_mode, change_gizmo_space)
+	bool filter_assets = true;
+
+	y_serde3(change_gizmo_mode, change_gizmo_space, filter_assets)
 };
 
 static_assert(std::is_standard_layout_v<CameraSettings> && std::is_trivially_copyable_v<CameraSettings>);

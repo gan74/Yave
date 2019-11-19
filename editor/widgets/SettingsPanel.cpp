@@ -102,6 +102,8 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::SameLine();
 		keybox("Change gizmo space", ui.change_gizmo_space);
 
+		ImGui::Checkbox("Filter assets in browsers", &ui.filter_assets);
+
 		ImGui::TreePop();
 	}
 

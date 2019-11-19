@@ -24,13 +24,9 @@ SOFTWARE.
 
 #include <yave/utils/serde.h>
 
+#include "AssetType.h"
+
 namespace yave {
-
-class AssetLoader;
-
-namespace detail {
-DevicePtr device_from_loader(AssetLoader& loader);
-}
 
 template<typename T>
 struct AssetTraits {
@@ -41,14 +37,7 @@ struct AssetTraits {
 	static constexpr bool is_asset = true;													\
 	static constexpr AssetType type = TypeEnum;												\
 	using load_from = LoadFrom;																\
-	using Result = core::Result<Type>;														\
-	static Result load_asset(ReadableAssetArchive& arc) noexcept {							\
-		load_from data;																		\
-		if(!arc(data)) {																	\
-			return core::Err();																\
-		}																					\
-		return core::Ok(Type(detail::device_from_loader(arc.loader()), std::move(data)));	\
-	}
+	using Result = core::Result<Type>;
 
 
 #define YAVE_DECLARE_ASSET_TRAITS(Type, LoadFrom, TypeEnum)									\

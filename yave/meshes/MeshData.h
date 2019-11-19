@@ -47,19 +47,13 @@ class MeshData {
 
 		bool has_skeleton() const;
 
-		y_serialize2(fs::magic_number, AssetType::Mesh, u32(7), _aabb, _vertices, _triangles,
-					(_skeleton ? u32(1) : u32(0)), serde2::cond(!!_skeleton, [this] { return *_skeleton; }))
-		y_deserialize2(serde2::check(fs::magic_number, AssetType::Mesh, u32(7)), _aabb, _vertices, _triangles,
-					serde2::func([this](u32 s) { if(s) { _skeleton = std::make_unique<SkeletonData>(); } }), serde2::cond(!!_skeleton, [this]{ return *_skeleton; }))
-
-		y_serde3(_aabb, _triangles, _skeleton)
+		y_serde3(_aabb, _vertices, _triangles, _skeleton)
 
 	private:
 		struct SkeletonData {
 			core::Vector<SkinWeights> skin;
 			core::Vector<Bone> bones;
 
-			y_serde2(skin, bones)
 			y_serde3(skin, bones)
 		};
 

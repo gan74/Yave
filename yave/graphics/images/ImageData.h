@@ -34,6 +34,8 @@ class ImageData : NonCopyable {
 
 	public:
 		ImageData() = default;
+		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
+
 
 		static usize mip_count(const math::Vec3ui& size);
 		static math::Vec3ui mip_size(const math::Vec3ui& size, usize mip = 0);
@@ -55,25 +57,8 @@ class ImageData : NonCopyable {
 		usize data_offset(usize layer = 0, usize mip = 0) const;
 		const u8* data(usize layer = 0, usize mip = 0) const;
 
-		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
 
-
-
-
-		y_serialize2(fs::magic_number, AssetType::Image, u32(3),
-			_size.to<2>(), _layers, _mips, _format,
-			serde2::array(combined_byte_size(), _data.data()))
-
-		y_deserialize2(serde2::check(fs::magic_number, AssetType::Image, u32(3)),
-			_size.to<2>(), _layers, _mips, _format,
-			serde2::func([this]() -> serde2::Result {
-				if(!_format.is_valid()) { return core::Err(); }
-				_data = core::FixedArray<u8>(combined_byte_size());
-				return core::Ok();
-			}),
-			serde2::array(combined_byte_size(), _data.data()))
-
-		y_serde3(_size, _layers, _mips, _data)
+		y_serde3(_size, _format, _layers, _mips, _data)
 
 	private:
 		math::Vec3ui _size = math::Vec3ui(0, 0, 1);

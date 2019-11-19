@@ -49,8 +49,8 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 	data.set_texture(SimpleMaterialData::Textures(index), std::move(tex.unwrap()));
 
 	io2::Buffer buffer;
-	WritableAssetArchive ar(buffer);
-	if(!data.serialize(ar)) {
+	serde3::WritableArchive arc(buffer);
+	if(!arc.serialize(data)) {
 		log_msg("Unable to serialize material.", Log::Error);
 		return;
 	}

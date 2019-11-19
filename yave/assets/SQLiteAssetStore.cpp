@@ -371,9 +371,9 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 	// Create tables & indexes
 	{
 		check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Folders (name TEXT    PRIMARY KEY, folderid INTEGER UNIQUE, parentid INTEGER,"
-									  "FOREIGN KEY(parentid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
-		check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Assets  (uid  INTEGER PRIMARY KEY, name TEXT UNIQUE, folderid INTEGER, data BLOB,"
-									  "FOREIGN KEY(folderid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
+											"FOREIGN KEY(parentid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Assets  (uid  INTEGER PRIMARY KEY, name TEXT UNIQUE, folderid INTEGER, type INTEGER, data BLOB,"
+											"FOREIGN KEY(folderid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
 
 		check(sqlite3_exec(_database, "CREATE INDEX IF NOT EXISTS assetidindex ON Assets(uid)", nullptr, nullptr, nullptr));
 	}
@@ -416,7 +416,7 @@ const FileSystemModel* SQLiteAssetStore::filesystem() const {
 }
 
 
-AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::string_view dst_name) {
+AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::string_view dst_name, AssetType type) {
 	y_profile();
 
 	const core::String filename = _filesystem.filename(dst_name);
@@ -448,10 +448,11 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
 
 	{
 		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "INSERT INTO Assets(name, uid, folderid) VALUES(?, ?, ?)", -1, &stmt, nullptr));
+		check(sqlite3_prepare_v2(_database, "INSERT INTO Assets(name, uid, folderid, type) VALUES(?, ?, ?, ?)", -1, &stmt, nullptr));
 		check(sqlite3_bind_text(stmt, 1, dst_name.data(), dst_name.size(), nullptr));
 		check(sqlite3_bind_int64(stmt, 2, id.id()));
 		check(sqlite3_bind_int64(stmt, 3, folder_id.unwrap()));
+		check(sqlite3_bind_int(stmt, 4, int(type)));
 		y_defer(sqlite3_finalize(stmt));
 
 		if(!is_done(step_db(stmt))) {
@@ -641,6 +642,21 @@ AssetStore::Result<> SQLiteAssetStore::rename(std::string_view from, std::string
 	}
 
 	return core::Ok();
+}
+
+AssetStore::Result<AssetType> SQLiteAssetStore::asset_type(AssetId id) const {
+	y_profile();
+
+	sqlite3_stmt* stmt = nullptr;
+	check(sqlite3_prepare_v2(_database, "SELECT type FROM Assets WHERE uid = ?", -1, &stmt, nullptr));
+	check(sqlite3_bind_int64(stmt, 1, i64(id.id())));
+	y_defer(sqlite3_finalize(stmt));
+
+	if(!is_row(step_db(stmt))) {
+		return core::Err(ErrorType::UnknownID);
+	}
+
+	return core::Ok(AssetType(sqlite3_column_int(stmt, 0)));
 }
 
 AssetId SQLiteAssetStore::next_id() {

@@ -215,11 +215,11 @@ void ResourceBrowser::paint_context_menu() {
 		if(ImGui::Selectable("Create material")) {
 			const SimpleMaterialData material;
 			io2::Buffer buffer;
-			WritableAssetArchive ar(buffer);
-			if(material.serialize(ar)) {
+			serde3::WritableArchive arc(buffer);
+			if(arc.serialize(material)) {
 				buffer.reset();
 				AssetStore& store = context()->asset_store();
-				if(!store.import(buffer, store.filesystem()->join(_current->full_path, "new material"))) {
+				if(!store.import(buffer, store.filesystem()->join(_current->full_path, "new material"), AssetType::Material)) {
 					log_msg("Unable to import new material.", Log::Error);
 				}
 			} else {
@@ -313,8 +313,9 @@ void ResourceBrowser::paint_asset_list(float width) {
 	}
 
 	// files
+	const UiSettings& settings = context()->settings().ui();
 	for(const FileInfo& file : curr->files) {
-		if(display_asset(file)) {
+		if(!settings.filter_assets || display_asset(file)) {
 			if(ImGui::Selectable(fmt("% %", asset_type_icon(file.type), file.name).data(), selected())) {
 				asset_selected(file);
 			}

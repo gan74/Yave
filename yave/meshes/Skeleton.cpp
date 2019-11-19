@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-template<usize unused = 0>
+[[maybe_unused]]
 static void debug_bone(usize index, core::Span<Bone> bones, const core::String& indent = "") {
 	log_msg(indent + bones[index].name + " (" + index + ")", Log::Debug);
 	/*log_msg(indent + "{" + bones[index].local_transform.rotation.x() + ", " +

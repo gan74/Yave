@@ -27,11 +27,6 @@ SOFTWARE.
 #include <y/core/Result.h>
 
 namespace y {
-
-namespace serde2 {
-struct ReadableArchive;
-}
-
 namespace io2 {
 
 class File;
@@ -106,7 +101,6 @@ class Writer : NonCopyable {
 
 using ReaderPtr = std::unique_ptr<Reader>;
 using WriterPtr = std::unique_ptr<Writer>;
-
 
 }
 }

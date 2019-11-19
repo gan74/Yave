@@ -150,14 +150,14 @@ void SceneImporter::import(import::SceneData scene) {
 			return context()->asset_store().filesystem()->join(path, name);
 		};
 
-	auto import_asset = [&](const auto& asset, std::string_view name) {
+	auto import_asset = [&](const auto& asset, std::string_view name, AssetType type) {
 			log_msg(fmt("Saving asset as \"%\"", name));
 			y_profile_zone("asset import");
 			io2::Buffer buffer;
-			WritableAssetArchive ar(buffer);
-			if(asset.serialize(ar)) {
+			serde3::WritableArchive arc(buffer);
+			if(arc.serialize(asset)) {
 				buffer.reset();
-				if(context()->asset_store().import(buffer, name)) {
+				if(context()->asset_store().import(buffer, name, type)) {
 					return;
 				}
 				log_msg(fmt("Unable import \"%\"", name), Log::Error);
@@ -166,10 +166,10 @@ void SceneImporter::import(import::SceneData scene) {
 			}
 		};
 
-	auto import_assets = [&](const auto& assets, std::string_view import_path) {
+	auto import_assets = [&](const auto& assets, std::string_view import_path, AssetType type) {
 			for(const auto& a : assets) {
 				const core::String name = make_full_name(import_path, a.name());
-				import_asset(a.obj(), name);
+				import_asset(a.obj(), name, type);
 			}
 		};
 
@@ -223,9 +223,9 @@ void SceneImporter::import(import::SceneData scene) {
 		const core::String world_import_path = "";
 
 		{
-			import_assets(scene.meshes, mesh_import_path);
-			import_assets(scene.animations, animations_import_path);
-			import_assets(scene.images, image_import_path);
+			import_assets(scene.meshes, mesh_import_path, AssetType::Mesh);
+			import_assets(scene.animations, animations_import_path, AssetType::Animation);
+			import_assets(scene.images, image_import_path, AssetType::Image);
 		}
 
 		{
@@ -233,7 +233,7 @@ void SceneImporter::import(import::SceneData scene) {
 			std::transform(scene.materials.begin(), scene.materials.end(), std::back_inserter(materials),
 						   [&](const auto& m) { return Named(m.name(), compile_material(m.obj(), image_import_path)); });
 
-			import_assets(materials, material_import_path);
+			import_assets(materials, material_import_path, AssetType::Material);
 		}
 
 	}

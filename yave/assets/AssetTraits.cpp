@@ -24,11 +24,5 @@ SOFTWARE.
 #include "AssetLoader.h"
 
 namespace yave {
-namespace detail {
 
-DevicePtr device_from_loader(AssetLoader& loader) {
-	return loader.device();
-}
-
-}
 }

@@ -129,13 +129,18 @@ auto simple_objects() {
 	return v;
 }
 
+template<typename T>
+auto make_arc(T& t) {
+	return std::make_unique<T>(std::move(t));
+}
+
 int main() {
 	{
-		WritableArchive arc(std::move(io2::File::create("poly.txt").unwrap()));
+		WritableArchive arc(make_arc(io2::File::create("poly.txt").unwrap()));
 		arc.serialize(poly_objects()).unwrap();
 	}
 	{
-		ReadableArchive arc(std::move(io2::File::open("poly.txt").unwrap()));
+		ReadableArchive arc(make_arc(io2::File::open("poly.txt").unwrap()));
 
 		decltype(poly_objects()) col;
 		arc.deserialize(col).unwrap();
@@ -158,12 +163,12 @@ int main() {
 		}
 
 		core::DebugTimer _("serialize vec");
-		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
+		WritableArchive arc(make_arc(io2::File::create("test.txt").unwrap()));
 		arc.serialize(tests).unwrap();
 	}
 	{
 		core::DebugTimer _("deserialize vec");
-		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
+		ReadableArchive arc(make_arc(io2::File::open("test.txt").unwrap()));
 		core::Vector<TestStruct> tests;
 		arc.deserialize(tests).unwrap();
 	}
@@ -171,14 +176,14 @@ int main() {
 	// individual
 	{
 		core::DebugTimer _("serialize");
-		WritableArchive arc(std::move(io2::File::create("test.txt").unwrap()));
+		WritableArchive arc(make_arc(io2::File::create("test.txt").unwrap()));
 		TestStruct t{4, 5, {{32, 2.71727}}};
 		for(usize i = 0; i != count; ++i) {
 			arc.serialize(t).unwrap();
 		}
 	}
 	{
-		ReadableArchive arc(std::move(io2::File::open("test.txt").unwrap()));
+		ReadableArchive arc(make_arc(io2::File::open("test.txt").unwrap()));
 		TestStruct t;
 
 		Success s = Success::Full;

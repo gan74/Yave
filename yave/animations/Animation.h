@@ -34,13 +34,13 @@ class Animation {
 
 		Animation(float duration, core::Vector<AnimationChannel>&& channels);
 
-		y_serde2(serde2::check(fs::magic_number, AssetType::Animation, u32(4)), _duration, _channels)
-		y_serde3(_duration, _channels)
-
 		float duration() const;
 		core::Span<AnimationChannel> channels() const;
 
 		std::optional<math::Transform<>> bone_transform(const core::String& name, float time) const;
+
+
+		y_serde3(_duration, _channels)
 
 	private:
 		float _duration = 0.0f;

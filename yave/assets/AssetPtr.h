@@ -103,7 +103,6 @@ class AssetPtr {
 			return _ptr != other._ptr;
 		}
 
-
 		// AssetLoader.h
 		y_serde3(_id)
 		void post_deserialize(AssetLoader& loader);

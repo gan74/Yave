@@ -66,18 +66,8 @@ AssetStore::Result<> AssetStore::write(AssetId id, io2::Reader& data) {
 }
 
 AssetStore::Result<AssetType> AssetStore::asset_type(AssetId id) const {
-	const auto dat = data(id);
-	if(dat) {
-		auto& reader = *dat.unwrap();
-		using magic_t = decltype(fs::magic_number);
-		if(reader.read_one<magic_t>().unwrap_or(0) == fs::magic_number) {
-			if(const auto type = reader.read_one<AssetType>()) {
-				return core::Ok(type.unwrap());
-			}
-		}
-		return core::Err(ErrorType::FilesytemError);
-	}
-	return core::Err(dat.error());
+	unused(id);
+	return core::Err(ErrorType::UnsupportedOperation);
 }
 
 }

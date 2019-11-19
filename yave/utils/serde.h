@@ -23,55 +23,12 @@ SOFTWARE.
 #define YAVE_UTILS_SERDE_H
 
 #include <yave/yave.h>
-#include <yave/assets/AssetType.h>
 
-#include <y/io2/io.h>
-#include <y/serde2/serde.h>
 #include <y/serde3/serde.h>
 #include <y/serde3/archives.h>
 
 namespace yave {
-
-namespace fs {
-static constexpr u32 magic_number = 0x65766179;
-}
-
 class AssetLoader;
-
-using WritableAssetArchive = serde2::WritableArchive;
-
-class ReadableAssetArchive : public serde2::ReadableArchiveBase<ReadableAssetArchive> {
-
-	public:
-		ReadableAssetArchive(io2::Reader& reader, AssetLoader& loader) :
-				serde2::ReadableArchiveBase<ReadableAssetArchive>(reader),
-				_loader(loader) {
-		}
-
-		ReadableAssetArchive(const io2::ReaderPtr& reader, AssetLoader& loader) : ReadableAssetArchive(*reader, loader) {
-		}
-
-		AssetLoader& loader() {
-			return _loader;
-		}
-
-	private:
-		AssetLoader& _loader;
-
-};
-
-#define yave_asset_serialize(...)									\
-	y_serialize2_arc(yave::WritableAssetArchive, __VA_ARGS__)
-
-#define yave_asset_deserialize(...)									\
-	y_deserialize2_arc(yave::ReadableAssetArchive, __VA_ARGS__)
-
-
-#define yave_asset_serde(...)										\
-	yave_asset_serialize(__VA_ARGS__)								\
-	yave_asset_deserialize(__VA_ARGS__)
-
-
 }
 
 #endif // YAVE_UTILS_SERDE_H

@@ -47,14 +47,10 @@ struct BoneTransform {
 static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should be trivially copyable");
 
 struct Bone {
+	core::String name;
+	u32 parent;
 
-	y_serde2(name, parent, local_transform)
-	y_serde3(name, parent, local_transform)
-
-	const core::String name;
-	const u32 parent;
-
-	const BoneTransform local_transform;
+	BoneTransform local_transform;
 
 	bool has_parent() const {
 		return parent != u32(-1);
@@ -63,6 +59,8 @@ struct Bone {
 	math::Transform<> transform() const {
 		return local_transform.to_transform();
 	}
+
+	y_serde3(name, parent, local_transform)
 };
 
 

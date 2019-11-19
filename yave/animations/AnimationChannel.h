@@ -42,9 +42,6 @@ class AnimationChannel {
 		core::Span<BoneKey> keys() const;
 
 
-		y_serialize2(_name, _keys)
-		y_deserialize2(serde2::func([](const core::String& name, core::Vector<BoneKey>&& keys) { return AnimationChannel(name, std::move(keys)); }))
-
 		y_serde3(_name, _keys)
 
 	private:

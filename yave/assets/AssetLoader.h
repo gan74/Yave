@@ -89,13 +89,15 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 						return core::Ok(asset_ptr);
 					}
 
-					if(const auto reader = loader.store().data(id)) {
+					if(auto reader = loader.store().data(id)) {
 						y_profile_zone("loading");
-						ReadableAssetArchive arc(*reader.unwrap(), loader);
-						if(auto asset = traits::load_asset(arc)) {
-							weak_ptr = asset_ptr = make_asset_with_id<T>(id, std::move(asset.unwrap()));
-							return core::Ok(asset_ptr);
+						serde3::ReadableArchive arc(std::move(reader.unwrap()));
+						typename traits::load_from load_from;
+						if(!arc.deserialize(load_from, loader)) {
+							return core::Err(ErrorType::InvalidData);
 						}
+						weak_ptr = asset_ptr = make_asset_with_id<T>(id, loader.device(), std::move(load_from));
+						return core::Ok(std::move(asset_ptr));
 					}
 
 					return core::Err(ErrorType::Unknown);
@@ -136,7 +138,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 		template<typename T>
 		Result<T> import(std::string_view name, std::string_view import_from) {
-			return load<T>(load_or_import(name, import_from));
+			return load<T>(load_or_import(name, import_from, AssetTraits<T>::type));
 		}
 
 		template<typename T>
@@ -166,7 +168,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 
 
-		core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from);
+		core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from, AssetType type);
 
 		std::unordered_map<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
 		std::shared_ptr<AssetStore> _store;

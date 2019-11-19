@@ -74,7 +74,7 @@ class SQLiteAssetStore final : public AssetStore {
 
 		const FileSystemModel* filesystem() const override;
 
-		Result<AssetId> import(io2::Reader& data, std::string_view dst_name) override;
+		Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) override;
 		Result<> write(AssetId id, io2::Reader& data) override;
 
 		Result<AssetId> id(std::string_view name) const override;
@@ -86,6 +86,8 @@ class SQLiteAssetStore final : public AssetStore {
 		Result<> rename(AssetId id, std::string_view new_name) override;
 		Result<> remove(std::string_view name) override;
 		Result<> rename(std::string_view from, std::string_view to) override;
+
+		Result<AssetType> asset_type(AssetId id) const override;
 
 	private:
 		void check(int res) const;

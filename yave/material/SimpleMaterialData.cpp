@@ -29,30 +29,6 @@ SimpleMaterialData::SimpleMaterialData(std::array<AssetPtr<Texture>, texture_cou
 		_textures(std::move(textures)) {
 }
 
-serde2::Result SimpleMaterialData::deserialize(ReadableAssetArchive& arc) noexcept {
-	SimpleMaterialHeader header;
-	if(!arc(header)) {
-		return core::Err();
-	}
-	for(auto& tex : _textures) {
-		AssetId id;
-		if(!arc(id)) {
-			return core::Err();
-		}
-		if(id != AssetId::invalid_id()) {
-			const auto t = arc.loader().load<Texture>(id);
-			if(!t) {
-				return core::Err();
-			}
-			tex = std::move(t.unwrap());
-		} else {
-			tex = AssetPtr<Texture>();
-		}
-	}
-	return core::Ok();
-}
-
-
 SimpleMaterialData& SimpleMaterialData::set_texture(Textures type, AssetPtr<Texture> tex) {
 	_textures[usize(type)] = std::move(tex);
 	return *this;

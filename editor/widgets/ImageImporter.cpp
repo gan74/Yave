@@ -78,13 +78,13 @@ void ImageImporter::import_async(const core::String& filename) {
 void ImageImporter::import(const Named<ImageData>& asset) {
 	const core::String name = context()->asset_store().filesystem()->join(_import_path, asset.name());
 	io2::Buffer buffer;
-	WritableAssetArchive ar(buffer);
-	if(!asset.obj().serialize(ar)) {
+	serde3::WritableArchive arc(buffer);
+	if(!arc.serialize(asset.obj())) {
 		log_msg(fmt("Unable serialize image"), Log::Error);
 		return;
 	}
 	buffer.reset();
-	if(!context()->asset_store().import(buffer, name)) {
+	if(!context()->asset_store().import(buffer, name, AssetType::Image)) {
 		log_msg(fmt("Unable import image"), Log::Error);
 		// refresh anyway
 	}

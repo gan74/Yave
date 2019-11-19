@@ -40,17 +40,6 @@ namespace yave {
 
 
 static auto load_envmap() {
-	if(auto file = io2::File::open("equirec.yt")) {
-		ImageData data;
-		serde2::ReadableArchive ar(file.unwrap());
-		if(data.deserialize(ar)) {
-			return data;
-		}
-		log_msg("Unable to read envmap texture.", Log::Error);
-	} else {
-		log_msg("Unable to open envmap file.", Log::Error);
-	}
-
 	const math::Vec4ui data(0xFFFFFFFF);
 	return ImageData(math::Vec2ui(2), reinterpret_cast<const u8*>(data.data()), vk::Format::eR8G8B8A8Unorm);
 }

@@ -31,10 +31,6 @@ namespace yave {
 
 class SimpleMaterialData {
 
-	struct SimpleMaterialHeader {
-		y_serde2(serde2::check(fs::magic_number, AssetType::Material, u32(1)))
-	};
-
 	public:
 		enum Textures {
 			Diffuse,
@@ -51,11 +47,6 @@ class SimpleMaterialData {
 		SimpleMaterialData() = default;
 		SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
-		y_serialize2(SimpleMaterialHeader(), texture_ids())
-		serde2::Result deserialize(ReadableAssetArchive& arc) noexcept;
-
-
-
 		SimpleMaterialData& set_texture(Textures type, AssetPtr<Texture> tex);
 
 		bool is_empty() const;
@@ -63,15 +54,13 @@ class SimpleMaterialData {
 		const AssetPtr<Texture>& operator[](Textures tex) const;
 		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 
+		y_serde3(_textures)
 
 	private:
 		std::array<AssetId, texture_count> texture_ids() const;
 
 		std::array<AssetPtr<Texture>, texture_count> _textures;
 };
-
-static_assert(serde2::has_serialize_v<WritableAssetArchive, SimpleMaterialData>);
-static_assert(serde2::has_deserialize_v<ReadableAssetArchive, SimpleMaterialData>);
 
 }
 

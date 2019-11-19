@@ -36,7 +36,7 @@ Settings::Settings(bool load) {
 			log_msg("Unable to open settings file.", Log::Error);
 			return;
 		}
-		serde3::ReadableArchive arc(std::move(file.unwrap()));
+		serde3::ReadableArchive arc(file.unwrap());
 		if(!arc.deserialize(*this)) {
 			log_msg("Unable to read settings file.", Log::Error);
 			*this = Settings(false);
@@ -50,7 +50,7 @@ Settings::~Settings() {
 		log_msg("Unable to open settings file.", Log::Error);
 		return;
 	}
-	serde3::WritableArchive arc(std::move(file.unwrap()));
+	serde3::WritableArchive arc(file.unwrap());
 	if(!arc.serialize(*this)) {
 		log_msg("Unable to write settings file.", Log::Error);
 	}
