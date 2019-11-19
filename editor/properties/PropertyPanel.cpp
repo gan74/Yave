@@ -47,7 +47,9 @@ void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	ecs::EntityId id = context()->selection().selected_entity();
 	if(id.is_valid()) {
+		ImGui::PushID("widgets");
 		draw_component_widgets(context(), id);
+		ImGui::PopID();
 	}
 }
 

@@ -52,9 +52,13 @@ void register_component_widget(ComponentWidgetData* data) {
 }
 
 void draw_component_widgets(ContextPtr ctx, ecs::EntityId id) {
+	usize index = 0;
 	for(detail::ComponentWidgetData* data = detail::first_component; data; data = data->next) {
 		y_debug_assert(data->func);
+
+		ImGui::PushID(fmt("wid %", index++).data());
 		data->func(ctx, id);
+		ImGui::PopID();
 	}
 }
 
@@ -163,7 +167,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 	if(!ctx->world().component<StaticMeshComponent>(id)) {
 		return;
 	}
-	if(!ImGui::CollapsingHeader("Static mesh")) {
+	if(!ImGui::CollapsingHeader("Static mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
 		return;
 	}
 
