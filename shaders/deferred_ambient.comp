@@ -4,7 +4,8 @@
 
 // -------------------------------- DEFINES --------------------------------
 
-//#define USE_IBL
+#define USE_IBL
+#define IBL_BACKGROUND
 
 // -------------------------------- I/O --------------------------------
 
@@ -63,8 +64,10 @@ void main() {
 #ifdef USE_IBL
 		irradiance += ibl_irradiance(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
 	} else {
+#ifdef IBL_BACKGROUND
 		const vec3 forward = normalize(unproject(uv, 1.0, constants.camera.inv_matrix) - constants.camera.position);
 		irradiance = texture(in_envmap, forward).rgb;
+#endif
 #endif
 	}
 	imageStore(out_color, coord, vec4(irradiance, 1.0));

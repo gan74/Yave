@@ -58,7 +58,7 @@ class Semaphore {
 		template<typename T>
 		BoxSemaphore<T> box(T&& t) const;
 
-	private:
+	protected:
 		friend class Queue;
 
 		Semaphore(DevicePtr dptr);

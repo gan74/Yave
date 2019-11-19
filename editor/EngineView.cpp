@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include "EngineView.h"
 
+#include <editor/widgets/AssetSelector.h>
 #include <editor/context/EditorContext.h>
-#include <yave/components/TransformableComponent.h>
 
 #include <yave/renderer/renderer.h>
 
@@ -34,7 +34,7 @@ namespace editor {
 EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
 		ContextLinked(cptr),
-		_ibl_probe(context()->device()->device_resources().ibl_probe()),
+		_ibl_probe(context()->device()->device_resources().empty_probe()),
 		_scene_view(&context()->world()),
 		_camera_controller(std::make_unique<HoudiniCameraController>(context())),
 		_gizmo(context(), &_scene_view) {
@@ -220,6 +220,24 @@ void EngineView::draw_menu_bar() {
 					}
 				}
 			}
+
+			ImGui::Separator();
+			if(ImGui::BeginMenu("IBL")) {
+				if(ImGui::MenuItem("Set IBL probe")) {
+					add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
+						[this](AssetId id) {
+							if(auto tex = context()->loader().load<Texture>(id)) {
+								_ibl_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*tex.unwrap()));
+							}
+							return true;
+						});
+				}
+				if(ImGui::MenuItem("Reset IBL probe")) {
+					_ibl_probe = context()->device()->device_resources().empty_probe();
+				}
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMenu();
 		}
 
