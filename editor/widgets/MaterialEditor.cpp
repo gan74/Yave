@@ -90,7 +90,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		//ImGui::CollapsingHeader(texture_names[i], ImGuiTreeNodeFlags_DefaultOpen);
 
 		if(imgui::asset_selector(context(), data.textures()[i].id(), AssetType::Image, texture_names[i])) {
-			context()->ui().add<AssetSelector>(AssetType::Image)->set_selected_callback(
+			add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
 				[=, ctx = context()](AssetId id) {
 					modify_and_save(ctx, material, i, id);
 					return true;

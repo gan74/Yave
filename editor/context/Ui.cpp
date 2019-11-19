@@ -152,23 +152,39 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	}
 }
 
+void Ui::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child) {
+	for(usize i = 0; i < elements.size(); ++i) {
+		y_debug_assert(elements[i]->is_child() == is_child);
+		if(!elements[i]->has_visible_children()) {
+			if(!is_child) {
+				ids_for(elements[i].get()).released << elements[i]->_id;
+			}
+			elements.erase_unordered(elements.begin() + i);
+			--i;
+		} else {
+			cull_closed(elements[i]->_children, true);
+		}
+	}
+}
+
+void Ui::paint(UiElement* elem, CmdBufferRecorder& recorder, const FrameToken& token) {
+	elem->paint(recorder, token);
+
+	for(const auto& child : elem->children()) {
+		child->paint(recorder, token);
+	}
+}
+
 void Ui::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
 	// demo
 	ImGui::ShowDemoWindow();
 
 	for(auto& e : _elements) {
-		e->paint(recorder, token);
+		paint(e.get(), recorder, token);
 	}
 
-	for(usize i = 0; i < _elements.size();) {
-		if(!_elements[i]->is_visible()) {
-			ids_for(_elements[i].get()).released << _elements[i]->_id;
-			_elements.erase_unordered(_elements.begin() + i);
-		} else {
-			++i;
-		}
-	}
+	cull_closed(_elements);
 }
 
 }

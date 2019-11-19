@@ -30,6 +30,9 @@ UiElement::UiElement(std::string_view title) {
 	set_title(title);
 }
 
+UiElement::~UiElement() {
+}
+
 void UiElement::set_id(u64 id) {
 	_id = id;
 	set_title(_title);
@@ -41,11 +44,23 @@ void UiElement::set_title(std::string_view title) {
 	_title = std::string_view(_title_with_id.begin(), title.size());
 }
 
+bool UiElement::has_visible_children() const {
+	return is_visible() || std::any_of(_children.begin(), _children.end(), [](const auto& child) { return child->has_visible_children(); });
+}
+
 void UiElement::refresh() {
 }
 
 bool UiElement::is_visible() const {
 	return _visible;
+}
+
+bool UiElement::is_child() const {
+	return _is_child;
+}
+
+bool UiElement::has_children() const {
+	return _children.size();
 }
 
 std::string_view UiElement::title() const {
@@ -58,6 +73,10 @@ void UiElement::show() {
 
 void UiElement::close() {
 	_visible = false;
+}
+
+core::Span<std::unique_ptr<UiElement>> UiElement::children() const {
+	return _children;
 }
 
 }

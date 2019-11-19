@@ -33,7 +33,7 @@ AssetStringifier::AssetStringifier(ContextPtr cptr) :
 		ContextLinked(cptr),
 		_selector(cptr, AssetType::Mesh) {
 
-	_selector.set_has_parent(true);
+	_selector.set_draw_in_parent(true);
 	_selector.set_selected_callback([this](AssetId id) { stringify(id); return true; });
 }
 

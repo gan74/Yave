@@ -32,18 +32,29 @@ class UiElement : NonMovable {
 	public:
 		UiElement(std::string_view title);
 
-		virtual ~UiElement() = default;
+		virtual ~UiElement();
 
 		virtual void refresh();
 
 		virtual void paint(CmdBufferRecorder&, const FrameToken&) = 0;
 
-		virtual bool is_visible() const;
+		bool is_visible() const;
+		bool is_child() const;
+		bool has_children() const;
 
 		void show();
 		void close();
 
 		std::string_view title() const;
+		core::Span<std::unique_ptr<UiElement>> children() const;
+
+
+		template<typename T, typename... Args>
+		T* add_child(Args&&... args) {
+			_children.emplace_back(std::make_unique<T>(y_fwd(args)...));
+			_children.last()->_is_child = true;
+			return dynamic_cast<T*>(_children.last().get());
+		}
 
 	private:
 		friend class Ui;
@@ -51,12 +62,17 @@ class UiElement : NonMovable {
 		void set_id(u64 id);
 		void set_title(std::string_view title);
 
+		bool has_visible_children() const;
+
 		u64 _id = 0;
+		bool _is_child = false;
+		core::Vector<std::unique_ptr<UiElement>> _children;
 
 	protected:
 		core::String _title_with_id;
 		std::string_view _title;
 		bool _visible = true;
+
 
 };
 

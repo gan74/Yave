@@ -38,7 +38,7 @@ class Widget : public UiElement {
 
 		bool is_focussed() const;
 
-		void set_has_parent(bool has);
+		void set_draw_in_parent(bool has);
 
 	protected:
 		virtual void paint_ui(CmdBufferRecorder&, const FrameToken&) = 0;
@@ -61,7 +61,7 @@ class Widget : public UiElement {
 
 		u32 _flags;
 		bool _closable = true;
-		bool _has_parent = false;
+		bool _draw_in_parent = false;
 		bool _docked = false;
 		bool _focussed = false;
 };

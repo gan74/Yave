@@ -32,12 +32,12 @@ Widget::Widget(std::string_view title, u32 flags) :
 }
 
 const math::Vec2& Widget::position() const {
-	y_debug_assert(!_has_parent);
+	y_debug_assert(!_draw_in_parent);
 	return _position;
 }
 
 const math::Vec2& Widget::size() const {
-	y_debug_assert(!_has_parent);
+	y_debug_assert(!_draw_in_parent);
 	return _size;
 }
 
@@ -45,8 +45,8 @@ bool Widget::is_focussed() const {
 	return _focussed;
 }
 
-void Widget::set_has_parent(bool has) {
-	_has_parent = has;
+void Widget::set_draw_in_parent(bool has) {
+	_draw_in_parent = has;
 }
 
 void Widget::set_closable(bool closable) {
@@ -83,7 +83,11 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 
 	before_paint();
 
-	if(_has_parent) {
+	if(_draw_in_parent) {
+		if(has_children()) {
+			y_fatal("Widgets drawn in parents can not have childrens");
+		}
+
 		if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
 			paint_ui(recorder, token);
 		}
@@ -95,7 +99,11 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 		if(!_docked) {
 			fix_undocked_bg();
 		}
-		const bool b = ImGui::Begin(_title_with_id.begin(), _closable ? &_visible : nullptr, _flags);
+
+		const bool closable = _closable && !has_children();
+		const u32 extra_flags = is_child() ? ImGuiWindowFlags_NoSavedSettings : 0;
+
+		const bool b = ImGui::Begin(_title_with_id.begin(), closable ? &_visible : nullptr, _flags | extra_flags);
 		if(!_docked) {
 			ImGui::PopStyleColor();
 		}
