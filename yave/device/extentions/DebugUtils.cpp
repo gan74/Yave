@@ -32,6 +32,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
 		const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
 		void*) {
 
+
+	{
+		constexpr std::string_view black_listed = "UNASSIGNED-CoreValidation-DrawState-VtxIndexOutOfBounds";
+		if(black_listed == callback_data->pMessageIdName) {
+			return false;
+		}
+	}
+
 	Log level = Log::Debug;
 	switch(severity) {
 		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
