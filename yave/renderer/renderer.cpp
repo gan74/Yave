@@ -24,13 +24,13 @@ SOFTWARE.
 
 namespace yave {
 
-DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data, const RendererSettings& settings) {
+DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLProbe>& ibl_probe, const RendererSettings& settings) {
 	y_profile();
 
 	DefaultRenderer renderer;
 
 	renderer.gbuffer = GBufferPass::create(framegraph, view, size);
-	renderer. lighting = LightingPass::create(framegraph, renderer.gbuffer, ibl_data);
+	renderer. lighting = LightingPass::create(framegraph, renderer.gbuffer, ibl_probe);
 	renderer.sky = RayleighSkyPass::create(framegraph, view, renderer.lighting.lit, renderer.gbuffer.depth, renderer.gbuffer);
 	renderer.tone_mapping = ToneMappingPass::create(framegraph, renderer.sky.lit, settings.tone_mapping);
 

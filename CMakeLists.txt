@@ -30,6 +30,7 @@ option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
 option(YAVE_EDITOR_ASSIMP "Use Assimp in editor" ON)
 option(YAVE_BUILD_SHARED "Build as shared library" OFF)
+option(YAVE_UNITY_BUILD "Force unity build" OFF)
 
 
 # add y subtree
@@ -79,7 +80,7 @@ file(GLOB_RECURSE SHADER_FILES
 
 
 
-if(CMAKE_BUILD_TYPE STREQUAL Release)
+if(CMAKE_BUILD_TYPE STREQUAL Release OR YAVE_UNITY_BUILD)
 	enable_unity_build(yave YAVE_FILES)
 	enable_unity_build(editor EDITOR_FILES)
 endif()

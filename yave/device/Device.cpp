@@ -100,6 +100,17 @@ Device::ScopedDevice::~ScopedDevice() {
 	device.destroy();
 }
 
+
+static core::Vector<Queue> create_queues(DevicePtr dptr, core::Vector<QueueFamily> families) {
+	core::Vector<Queue> queues;
+	for(const auto& family : families) {
+		for(auto& queue : family.queues(dptr)) {
+			queues.push_back(std::move(queue));
+		}
+	}
+	return queues;
+}
+
 Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
@@ -107,19 +118,10 @@ Device::Device(Instance& instance) :
 		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
 		_allocator(this),
 		_lifetime_manager(this),
+		_queues(create_queues(this, _queue_families)),
 		_sampler(this),
-		_descriptor_set_allocator(this) {
-
-	for(const auto& family : _queue_families) {
-		for(auto& queue : family.queues(this)) {
-			_queues.push_back(std::move(queue));
-		}
-	}
-
-	{
-		y_profile_zone("device resources");
-		_resources = DeviceResources(this);
-	}
+		_descriptor_set_allocator(this),
+		_resources(this) {
 }
 
 Device::~Device() {

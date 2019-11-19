@@ -36,8 +36,9 @@ class ComputeProgram;
 class MaterialTemplate;
 class Material;
 class StaticMesh;
+class IBLProbe;
 
-class DeviceResources final : NonCopyable {
+class DeviceResources final : NonMovable {
 	public:
 		enum SpirV {
 			EquirecConvolutionComp,
@@ -118,16 +119,14 @@ class DeviceResources final : NonCopyable {
 			MaxMeshes
 		};
 
+
 		DeviceResources(DevicePtr dptr);
 
 		// can't default for inclusion reasons
-		DeviceResources();
 		~DeviceResources();
 
-		DeviceResources(DeviceResources&& other);
-		DeviceResources& operator=(DeviceResources&& other);
-
 		TextureView brdf_lut() const;
+		const std::shared_ptr<IBLProbe>& ibl_probe() const;
 
 		const SpirVData& operator[](SpirV i) const;
 		const ComputeProgram& operator[](ComputePrograms i) const;
@@ -138,8 +137,6 @@ class DeviceResources final : NonCopyable {
 		const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
 	private:
-		void swap(DeviceResources& other);
-
 		std::unique_ptr<SpirVData[]> _spirv;
 		std::unique_ptr<ComputeProgram[]> _computes;
 		std::unique_ptr<MaterialTemplate[]> _material_templates;
@@ -148,6 +145,7 @@ class DeviceResources final : NonCopyable {
 		std::unique_ptr<AssetPtr<Material>[]> _materials;
 		std::unique_ptr<AssetPtr<StaticMesh>[]> _meshes;
 
+		std::shared_ptr<IBLProbe> _probe;
 		Texture _brdf_lut;
 
 };

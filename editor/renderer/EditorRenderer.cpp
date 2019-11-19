@@ -24,11 +24,11 @@ SOFTWARE.
 
 namespace editor {
 
-EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLData>& ibl_data, const EditorRendererSettings& settings) {
+EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLProbe>& ibl_probe, const EditorRendererSettings& settings) {
 	y_profile();
 
 	EditorRenderer renderer;
-	renderer.renderer = DefaultRenderer::create(framegraph, view, size, ibl_data, settings.renderer_settings);
+	renderer.renderer = DefaultRenderer::create(framegraph, view, size, ibl_probe, settings.renderer_settings);
 
 	renderer.color = renderer.renderer.color;
 	renderer.depth = renderer.renderer.depth;

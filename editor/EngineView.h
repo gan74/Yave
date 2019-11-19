@@ -72,7 +72,7 @@ class EngineView final : public Widget, public ContextLinked {
 
 		RenderView _view = RenderView::Lit;
 
-		std::shared_ptr<IBLData> _ibl_data;
+		std::shared_ptr<IBLProbe> _ibl_probe;
 		EditorRendererSettings _settings;
 
 		SceneView _scene_view;

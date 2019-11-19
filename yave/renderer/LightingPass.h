@@ -28,24 +28,10 @@ SOFTWARE.
 
 namespace yave {
 
-class IBLData : NonCopyable, public DeviceLinked {
-	public:
-		IBLData(DevicePtr dptr);
-		IBLData(DevicePtr dptr, const ImageData& envmap_data);
-
-		static IBLData default_data();
-
-		const IBLProbe& envmap() const;
-
-	private:
-		IBLProbe _envmap;
-};
-
-
 struct LightingPass {
 	FrameGraphImageId lit;
 
-	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLData>& ibl_data);
+	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe);
 };
 
 

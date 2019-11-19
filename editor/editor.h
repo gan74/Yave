@@ -39,7 +39,7 @@ class FrameGraph;
 class EventHandler;
 class Material;
 class StaticMesh;
-class IBLData;
+class IBLProbe;
 class Camera;
 }
 

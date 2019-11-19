@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/meshes/MeshData.h>
 #include <yave/meshes/StaticMesh.h>
 
+#include <yave/graphics/images/IBLProbe.h>
+
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
 
@@ -127,7 +129,7 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
 
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 	{
-		const auto region = recorder.region("IBLData::create_ibl_lut");
+		const auto region = recorder.region("create_brdf_lut");
 		recorder.dispatch_size(brdf_integrator, image.size(), {dset});
 	}
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
@@ -179,36 +181,20 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 		_meshes[2] = make_asset<StaticMesh>(dptr, sweep_mesh_data());
 	}
 
-	_brdf_lut = create_brdf_lut(dptr, operator[](BRDFIntegratorProgram));
-}
 
-DeviceResources::DeviceResources() {
+	_brdf_lut = create_brdf_lut(dptr, operator[](BRDFIntegratorProgram));
+	_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](WhiteTexture)));
 }
 
 DeviceResources::~DeviceResources() {
 }
 
-DeviceResources::DeviceResources(DeviceResources&& other) {
-	swap(other);
-}
-
-DeviceResources& DeviceResources::operator=(DeviceResources&& other) {
-	swap(other);
-	return *this;
-}
-
-void DeviceResources::swap(DeviceResources& other) {
-	std::swap(_spirv, other._spirv);
-	std::swap(_computes, other._computes);
-	std::swap(_material_templates, other._material_templates);
-	std::swap(_textures, other._textures);
-	std::swap(_materials, other._materials);
-	std::swap(_meshes, other._meshes);
-	std::swap(_brdf_lut, other._brdf_lut);
-}
-
 TextureView DeviceResources::brdf_lut() const {
 	return _brdf_lut;
+}
+
+const std::shared_ptr<IBLProbe>& DeviceResources::ibl_probe() const {
+	return _probe;
 }
 
 const SpirVData& DeviceResources::operator[](SpirV i) const {

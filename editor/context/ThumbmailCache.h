@@ -81,7 +81,6 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 
 		usize _size;
 
-		std::shared_ptr<IBLData> _ibl_data;
 		std::unordered_map<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
 		core::Vector<std::future<ThumbmailFunc>> _requests;
 };

@@ -33,7 +33,6 @@ class IBLProbe : public Cubemap {
 		static IBLProbe from_equirec(const Texture& equirec);
 
 		IBLProbe() = default;
-
 };
 
 }

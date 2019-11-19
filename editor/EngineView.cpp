@@ -34,7 +34,7 @@ namespace editor {
 EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
 		ContextLinked(cptr),
-		_ibl_data(std::make_shared<IBLData>(device())),
+		_ibl_probe(context()->device()->device_resources().ibl_probe()),
 		_scene_view(&context()->world()),
 		_camera_controller(std::make_unique<HoudiniCameraController>(context())),
 		_gizmo(context(), &_scene_view) {
@@ -61,7 +61,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 	FrameGraph graph(context()->resource_pool());
 
 	math::Vec2ui output_size = content_size();
-	const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _ibl_data, _settings);
+	const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _ibl_probe, _settings);
 
 
 	{

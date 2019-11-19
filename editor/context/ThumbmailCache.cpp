@@ -107,15 +107,9 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 }
 
 
-static auto load_envmap() {
-	const math::Vec4 data(0.1f);
-	return ImageData(math::Vec2ui(1), reinterpret_cast<const u8*>(data.data()), vk::Format::eR32G32B32A32Sfloat);
-}
-
 ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
 		ContextLinked(ctx),
-		_size(size),
-		_ibl_data(std::make_shared<IBLData>(device(), load_envmap())) {
+		_size(size) {
 }
 
 void ThumbmailCache::clear() {
@@ -257,7 +251,7 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 		FrameGraph graph(context()->resource_pool());
 		RendererSettings settings;
 		settings.tone_mapping.auto_exposure = false;
-		const DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), _ibl_data, settings);
+		const DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), device()->device_resources().ibl_probe(), settings);
 
 		const FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{

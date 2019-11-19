@@ -43,7 +43,7 @@ struct DefaultRenderer {
 	static DefaultRenderer create(FrameGraph& framegraph,
 								  const SceneView& view,
 								  const math::Vec2ui& size,
-								  const std::shared_ptr<IBLData>& ibl_data,
+								  const std::shared_ptr<IBLProbe>& ibl_probe,
 								  const RendererSettings& settings = RendererSettings());
 };
 
