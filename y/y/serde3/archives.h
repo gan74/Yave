@@ -438,6 +438,8 @@ class WritableArchive final {
 		}
 
 		void push_patch(SizePatch patch) {
+			y_debug_assert(patch.index + patch.size <= tell());
+			y_debug_assert(patch.size < size_type(-1));
 			_patches << patch;
 		}
 
@@ -511,7 +513,8 @@ class ReadableArchive final {
 			y_try_discard(read_header(header));
 			y_try_discard(_file.read_one(size));
 
-#ifdef Y_DEBUG
+			// this breaks if we return an error
+#if 0
 			const usize end = tell() + size;
 			y_defer(y_debug_assert(tell() == end));
 #endif
@@ -629,8 +632,7 @@ class ReadableArchive final {
 				}
 				return core::Ok(Success::Full);
 			} catch(std::bad_alloc&) {
-				seek(end);
-				return core::Ok(Success::Partial);
+				return core::Err();
 			}
 		}
 
@@ -671,8 +673,9 @@ class ReadableArchive final {
 					seek(tell() + size);
 					return core::Ok(Success::Partial);
 				}
+			} else {
+				return read_one(object.object);
 			}
-			return read_one(object.object);
 		}
 
 
