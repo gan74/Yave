@@ -127,6 +127,7 @@ class DeviceResources final : NonMovable {
 
 		TextureView brdf_lut() const;
 		const std::shared_ptr<IBLProbe>& ibl_probe() const;
+		const std::shared_ptr<IBLProbe>& empty_probe() const;
 
 		const SpirVData& operator[](SpirV i) const;
 		const ComputeProgram& operator[](ComputePrograms i) const;
@@ -146,6 +147,7 @@ class DeviceResources final : NonMovable {
 		std::unique_ptr<AssetPtr<StaticMesh>[]> _meshes;
 
 		std::shared_ptr<IBLProbe> _probe;
+		std::shared_ptr<IBLProbe> _empty_probe;
 		Texture _brdf_lut;
 
 };

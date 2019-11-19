@@ -184,6 +184,7 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 
 	_brdf_lut = create_brdf_lut(dptr, operator[](BRDFIntegratorProgram));
 	_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](WhiteTexture)));
+	_empty_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
 }
 
 DeviceResources::~DeviceResources() {
@@ -195,6 +196,10 @@ TextureView DeviceResources::brdf_lut() const {
 
 const std::shared_ptr<IBLProbe>& DeviceResources::ibl_probe() const {
 	return _probe;
+}
+
+const std::shared_ptr<IBLProbe>& DeviceResources::empty_probe() const {
+	return _empty_probe;
 }
 
 const SpirVData& DeviceResources::operator[](SpirV i) const {
