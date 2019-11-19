@@ -275,6 +275,7 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 
 	if(id == mesh.id()) {
 		thumbmail->properties.emplace_back("Triangles", fmt("%", mesh->triangle_buffer().size()));
+		thumbmail->properties.emplace_back("Vertices", fmt("%", mesh->vertex_buffer().size()));
 		thumbmail->properties.emplace_back("Radius", fmt("%", rounded_string(mesh->radius()).data()));
 	}
 	add_size_property(thumbmail->properties, context(), id);
